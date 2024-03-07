@@ -17,5 +17,6 @@
 #define GEOS_PYTHON_PYSOLVER_HPP_
 
 #include "physicsSolvers/PhysicsSolverBase.hpp"
+#include "mesh/DomainPartition.hpp"
 
 #endif

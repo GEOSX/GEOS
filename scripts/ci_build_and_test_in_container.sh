@@ -38,6 +38,12 @@ Usage: $0
       run a code build and test.
   --data-basename output.tar.gz
       If some data needs to be extracted from the build, the argument will define the tarball. Has to be a `tar.gz`.
+  --enable-hypre
+      One of ON or OFF (default is ON). Build geos with hypre.
+  --enable-hypre-device
+      One of CPU, CUDA, or HIP (default is CPU). Build geos with hypre GPU support.
+  --enable-trilinos
+      One of ON or OFF (default is OFF). Build geos with trilinos.
   --exchange-dir /path/to/exchange
       Folder to share data with outside of the container.
   --host-config host-config/my_config.cmake
@@ -71,19 +77,21 @@ exit 1
 # Then we'll move to the build dir.
 or_die cd $(dirname $0)/..
 
-# Parsing using getopt
-args=$(or_die getopt -a -o h --long build-exe-only,cmake-build-type:,code-coverage,data-basename:,exchange-dir:,host-config:,install-dir-basename:,makefile,ninja,no-install-schema,no-run-unit-tests,nproc:,repository:,run-integrated-tests,sccache-credentials:,test-code-style,test-documentation,help -- "$@")
+args=$(or_die getopt -a -o h --long build-exe-only,cmake-build-type:,code-coverage,data-basename:,enable-hypre:,enable-hypre-device:,enable-trilinos:,exchange-dir:,host-config:,install-dir-basename:,makefile,ninja,no-install-schema,no-run-unit-tests,nproc:,repository:,run-integrated-tests,sccache-credentials:,test-code-style,test-documentation,help -- "$@")
 
 # Variables with default values
 BUILD_EXE_ONLY=false
 BUILD_GENERATOR=""
 GEOS_INSTALL_SCHEMA=true
 HOST_CONFIG="host-configs/environment.cmake"
+ENABLE_HYPRE=ON
+ENABLE_HYPRE_DEVICE=CPU
 RUN_UNIT_TESTS=true
 RUN_INTEGRATED_TESTS=false
 UPLOAD_TEST_BASELINES=false
 TEST_CODE_STYLE=false
 TEST_DOCUMENTATION=false
+ENABLE_TRILINOS=OFF
 CODE_COVERAGE=false
 NPROC="$(nproc)"
 
@@ -109,6 +117,9 @@ do
       fi
       unset DATA_BASENAME DATA_BASENAME_EXT
       shift 2;;
+    --enable-hypre)          ENABLE_HYPRE=$2;            shift 2;;
+    --enable-hypre-device)   ENABLE_HYPRE_DEVICE=$2;     shift 2;;
+    --enable-trilinos)       ENABLE_TRILINOS=$2;         shift 2;;
     --exchange-dir)          DATA_EXCHANGE_DIR=$2;       shift 2;;
     --host-config)           HOST_CONFIG=$2;             shift 2;;
     --install-dir-basename)  GEOS_DIR=${GEOSX_TPL_DIR}/../$2; shift 2;;
@@ -233,6 +244,9 @@ or_die python3 scripts/config-build.py \
                ${BUILD_GENERATOR} \
                -DBLT_MPI_COMMAND_APPEND='"--allow-run-as-root;--oversubscribe"' \
                -DGEOS_INSTALL_SCHEMA=${GEOS_INSTALL_SCHEMA} \
+               -DENABLE_HYPRE=${ENABLE_HYPRE} \
+               -DENABLE_HYPRE_DEVICE=${ENABLE_HYPRE_DEVICE} \
+               -DENABLE_TRILINOS=${ENABLE_TRILINOS} \
                -DENABLE_COVERAGE=$([[ "${CODE_COVERAGE}" = true ]] && echo 1 || echo 0) \
                ${SCCACHE_CMAKE_ARGS} \
                ${ATS_CMAKE_ARGS}
