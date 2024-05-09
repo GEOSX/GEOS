@@ -84,14 +84,15 @@ BUILD_EXE_ONLY=false
 BUILD_GENERATOR=""
 GEOS_INSTALL_SCHEMA=true
 HOST_CONFIG="host-configs/environment.cmake"
-ENABLE_HYPRE=ON
+ENABLE_HYPRE=OFF
 ENABLE_HYPRE_DEVICE=CPU
+GEOS_LA_INTERFACE=Trilinos
 RUN_UNIT_TESTS=true
 RUN_INTEGRATED_TESTS=false
 UPLOAD_TEST_BASELINES=false
 TEST_CODE_STYLE=false
 TEST_DOCUMENTATION=false
-ENABLE_TRILINOS=OFF
+ENABLE_TRILINOS=ON
 CODE_COVERAGE=false
 NPROC="$(nproc)"
 
@@ -150,6 +151,10 @@ fi
 if [[ -z "${GEOS_DIR}" ]]; then
   echo "Installation folder undefined. Set to default value '/dev/null'. You can define it using '--install-dir-basename'."
   GEOS_DIR=/dev/null
+fi
+
+if [[ "${ENABLE_HYPRE}" = ON ]]; then
+  GEOS_LA_INTERFACE=Hypre
 fi
 
 if [[ ! -z "${SCCACHE_CREDS}" ]]; then
@@ -247,6 +252,7 @@ or_die python3 scripts/config-build.py \
                -DENABLE_HYPRE=${ENABLE_HYPRE} \
                -DENABLE_HYPRE_DEVICE=${ENABLE_HYPRE_DEVICE} \
                -DENABLE_TRILINOS=${ENABLE_TRILINOS} \
+               -DGEOS_LA_INTERFACE:PATH=${GEOS_LA_INTERFACE} \
                -DENABLE_COVERAGE=$([[ "${CODE_COVERAGE}" = true ]] && echo 1 || echo 0) \
                ${SCCACHE_CMAKE_ARGS} \
                ${ATS_CMAKE_ARGS}
