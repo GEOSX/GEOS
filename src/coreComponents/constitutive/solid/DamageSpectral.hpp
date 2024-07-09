@@ -52,8 +52,8 @@ public:
                          real64 const & inputDegradationLowerLimit,
                          int const & inputExtDrivingForceFlag,
                          arrayView1d< real64 > const & inputTensileStrength,
-                         real64 const & inputCompressStrength,
-                         real64 const & inputDeltaCoefficient,
+                         arrayView1d< real64 > const & inputCompressStrength,
+                         arrayView1d< real64 > const & inputDeltaCoefficient,
                          real64 const & inputDamagePressure,
                          arrayView1d< real64 > const & inputBiotCoefficient,
                          PARAMS && ... baseParams ):
@@ -338,8 +338,8 @@ public:
                                                                        m_degradationLowerLimit,
                                                                        m_extDrivingForceFlag,
                                                                        m_tensileStrength.toView(),
-                                                                       m_compressStrength,
-                                                                       m_deltaCoefficient,
+                                                                       m_compressStrength.toView(),
+                                                                       m_deltaCoefficient.toView(),
                                                                        m_damagePressure,
                                                                        m_biotCoefficient.toView() );
   }

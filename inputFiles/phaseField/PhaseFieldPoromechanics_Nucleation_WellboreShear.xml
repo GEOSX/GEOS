@@ -162,7 +162,7 @@
 
     <BiotPorosity
       name="concretePorosity"
-      grainBulkModulus="8.35e4"
+      defaultGrainBulkModulus="8.35e4"
       defaultReferencePorosity="0.1"/>
 
     <DamagePermeability

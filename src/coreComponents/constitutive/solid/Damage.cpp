@@ -41,12 +41,14 @@ Damage< BASE >::Damage( string const & name, Group * const parent ):
   m_degradationLowerLimit( 0.0 ),
   m_extDrivingForceFlag( 0 ),
   m_defaultTensileStrength(),
-  m_compressStrength(),
-  m_deltaCoefficient(),
+  m_defaultCompressStrength(),
+  m_defaultDeltaCoefficient(),
   m_damagePressure(),
   m_biotCoefficient(),
   m_criticalFractureEnergy(),
-  m_tensileStrength()
+  m_tensileStrength(),
+  m_compressStrength(),
+  m_deltaCoefficient()
 {
   this->registerWrapper( viewKeyStruct::newDamageString(), &m_newDamage ).
     setApplyDefaultValue( 0.0 ).
@@ -115,14 +117,24 @@ Damage< BASE >::Damage( string const & name, Group * const parent ):
     setPlotLevel( PlotLevel::LEVEL_0 ).
     setDescription( "Tensile strength from the uniaxial tension test" );
 
-  this->registerWrapper( viewKeyStruct::compressStrengthString(), &m_compressStrength ).
+  this->registerWrapper( viewKeyStruct::defaultCompressStrengthString(), &m_defaultCompressStrength ).
     setApplyDefaultValue( 0.0 ).
     setInputFlag( InputFlags::OPTIONAL ).
+    setDescription( "Default compressive strength from the uniaxial compression test" );
+  
+  this->registerWrapper( viewKeyStruct::compressStrengthString(), &m_compressStrength ).
+    setApplyDefaultValue( 0.0 ).
+    setPlotLevel( PlotLevel::LEVEL_0 ).
     setDescription( "Compressive strength from the uniaxial compression test" );
+
+  this->registerWrapper( viewKeyStruct::defaultDeltaCoefficientString(), &m_defaultDeltaCoefficient ).
+    setApplyDefaultValue( -1.0 ).
+    setInputFlag( InputFlags::OPTIONAL ).
+    setDescription( "Default coefficient in the calculation of the external driving force" );
 
   this->registerWrapper( viewKeyStruct::deltaCoefficientString(), &m_deltaCoefficient ).
     setApplyDefaultValue( -1.0 ).
-    setInputFlag( InputFlags::OPTIONAL ).
+    setPlotLevel( PlotLevel::LEVEL_0 ).
     setDescription( "Coefficient in the calculation of the external driving force" );
 
   this->registerWrapper( viewKeyStruct::damagePressureString(), &m_damagePressure ).
@@ -148,10 +160,10 @@ void Damage< BASE >::postProcessInput()
   GEOS_ERROR_IF( m_extDrivingForceFlag == 1 && m_defaultTensileStrength <= 0.0,
                  BASE::getDataContext() << ": tensile strength must be input and positive when the"
                                            " external driving force flag is turned on" );
-  GEOS_ERROR_IF( m_extDrivingForceFlag == 1 && m_compressStrength <= 0.0,
+  GEOS_ERROR_IF( m_extDrivingForceFlag == 1 && m_defaultCompressStrength  <= 0.0,
                  BASE::getDataContext() << ": compressive strength must be input and positive when the"
                                            " external driving force flag is turned on" );
-  GEOS_ERROR_IF( m_extDrivingForceFlag == 1 && m_deltaCoefficient < 0.0,
+  GEOS_ERROR_IF( m_extDrivingForceFlag == 1 && m_defaultDeltaCoefficient < 0.0,
                  BASE::getDataContext() << ": delta coefficient must be input and non-negative when the"
                                            " external driving force flag is turned on" );
 
@@ -161,6 +173,12 @@ void Damage< BASE >::postProcessInput()
 
   this->template getWrapper< array1d< real64 > >( viewKeyStruct::tensileStrengthString() ).
     setApplyDefaultValue( m_defaultTensileStrength );
+
+  this->template getWrapper< array1d< real64 > >( viewKeyStruct::compressStrengthString() ).
+    setApplyDefaultValue( m_defaultCompressStrength );
+  
+  this->template getWrapper< array1d< real64 > >( viewKeyStruct::deltaCoefficientString() ).
+    setApplyDefaultValue( m_defaultDeltaCoefficient );
 }
 
 template< typename BASE >
@@ -176,6 +194,8 @@ void Damage< BASE >::allocateConstitutiveData( dataRepository::Group & parent,
   m_biotCoefficient.resize( parent.size() );
   m_criticalFractureEnergy.resize( parent.size() );
   m_tensileStrength.resize( parent.size() );
+  m_compressStrength.resize( parent.size() );
+  m_deltaCoefficient.resize( parent.size() );
   BASE::allocateConstitutiveData( parent, numConstitutivePointsPerParentIndex );
 }
 

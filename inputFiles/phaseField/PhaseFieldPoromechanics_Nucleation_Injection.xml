@@ -150,7 +150,7 @@
 
     <BiotPorosity
       name="rockPorosity"
-      grainBulkModulus="83.333335e9"
+      defaultGrainBulkModulus="83.333335e9"
       defaultReferencePorosity="0.1"/>
 
     <DamagePermeability
