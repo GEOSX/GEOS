@@ -71,7 +71,7 @@ void MultiPhaseVolumeWeightedThermalConductivity::allocateConstitutiveData( data
   }
 }
 
-void MultiPhaseVolumeWeightedThermalConductivity::postProcessInput()
+void MultiPhaseVolumeWeightedThermalConductivity::postInputInitialization()
 {
   GEOS_THROW_IF( m_rockThermalConductivityComponents[0] <= 0 ||
                  m_rockThermalConductivityComponents[1] <= 0 ||

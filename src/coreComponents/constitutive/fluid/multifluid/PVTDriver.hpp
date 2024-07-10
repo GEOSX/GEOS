@@ -44,7 +44,7 @@ public:
 
   static string catalogName() { return "PVTDriver"; }
 
-  void postProcessInput() override;
+  void postInputInitialization() override;
 
   virtual bool execute( real64 const GEOS_UNUSED_PARAM( time_n ),
                         real64 const GEOS_UNUSED_PARAM( dt ),

@@ -51,7 +51,7 @@ CompositionalMultiphaseReservoirAndWells< RESERVOIR_SOLVER >::
 
 template<>
 CompositionalMultiphaseBase *
-CompositionalMultiphaseReservoirAndWells< CompositionalMultiphaseBase >::
+CompositionalMultiphaseReservoirAndWells<>::
 flowSolver() const
 {
   return this->reservoirSolver();
@@ -59,7 +59,7 @@ flowSolver() const
 
 template<>
 CompositionalMultiphaseBase *
-CompositionalMultiphaseReservoirAndWells< MultiphasePoromechanics< CompositionalMultiphaseBase > >::
+CompositionalMultiphaseReservoirAndWells< MultiphasePoromechanics<> >::
 flowSolver() const
 {
   return this->reservoirSolver()->flowSolver();
@@ -67,7 +67,7 @@ flowSolver() const
 
 template<>
 void
-CompositionalMultiphaseReservoirAndWells< CompositionalMultiphaseBase >::
+CompositionalMultiphaseReservoirAndWells<>::
 setMGRStrategy()
 {
   if( flowSolver()->getLinearSolverParameters().mgr.strategy == LinearSolverParameters::MGR::StrategyType::compositionalMultiphaseHybridFVM )
@@ -84,7 +84,7 @@ setMGRStrategy()
 
 template<>
 void
-CompositionalMultiphaseReservoirAndWells< MultiphasePoromechanics< CompositionalMultiphaseBase > >::
+CompositionalMultiphaseReservoirAndWells< MultiphasePoromechanics<> >::
 setMGRStrategy()
 {
   // flow solver here is indeed flow solver, not poromechanics solver
@@ -426,13 +426,13 @@ assembleCouplingTerms( real64 const time_n,
   } );
 }
 
-template class CompositionalMultiphaseReservoirAndWells< CompositionalMultiphaseBase >;
-template class CompositionalMultiphaseReservoirAndWells< MultiphasePoromechanics< CompositionalMultiphaseBase > >;
+template class CompositionalMultiphaseReservoirAndWells<>;
+template class CompositionalMultiphaseReservoirAndWells< MultiphasePoromechanics<> >;
 
 namespace
 {
-typedef CompositionalMultiphaseReservoirAndWells< CompositionalMultiphaseBase > CompositionalMultiphaseFlowAndWells;
-typedef CompositionalMultiphaseReservoirAndWells< MultiphasePoromechanics< CompositionalMultiphaseBase > > CompositionalMultiphasePoromechanicsAndWells;
+typedef CompositionalMultiphaseReservoirAndWells<> CompositionalMultiphaseFlowAndWells;
+typedef CompositionalMultiphaseReservoirAndWells< MultiphasePoromechanics<> > CompositionalMultiphasePoromechanicsAndWells;
 REGISTER_CATALOG_ENTRY( SolverBase, CompositionalMultiphaseFlowAndWells, string const &, Group * const )
 REGISTER_CATALOG_ENTRY( SolverBase, CompositionalMultiphasePoromechanicsAndWells, string const &, Group * const )
 }

@@ -30,6 +30,8 @@ namespace constitutive
 namespace compositional
 {
 
+class ModelParameters;
+
 /**
  * @brief Struct storing the submodels describing the fluid phase behavior.
  * @tparam DENSITY Class describing the density model
@@ -51,13 +53,21 @@ struct PhaseModel
    * @param[in] componentProperties EOS parameters for components
    */
   PhaseModel( string const & phaseModelName,
-              ComponentProperties const & componentProperties ):
+              ComponentProperties const & componentProperties,
+              integer const phaseIndex,
+              ModelParameters const & modelParameters ):
     density( phaseModelName + "_" + Density::catalogName(),
-             componentProperties ),
+             componentProperties,
+             phaseIndex,
+             modelParameters ),
     viscosity( phaseModelName + "_" + Viscosity::catalogName(),
-               componentProperties ),
+               componentProperties,
+               phaseIndex,
+               modelParameters ),
     enthalpy( phaseModelName + "_" + Enthalpy::catalogName(),
-              componentProperties )
+              componentProperties,
+              phaseIndex,
+              modelParameters )
   {}
 
   /// The phase density model
@@ -122,6 +132,17 @@ struct PhaseModel
                           viscosity,
                           enthalpy );
   }
+
+  // Create parameters unique to this model
+  static std::unique_ptr< ModelParameters > createParameters( std::unique_ptr< ModelParameters > parameters )
+  {
+    std::unique_ptr< ModelParameters > phaseParameters = std::move( parameters );
+    phaseParameters = Density::createParameters( std::move( phaseParameters ) );
+    phaseParameters = Viscosity::createParameters( std::move( phaseParameters ) );
+    phaseParameters = Enthalpy::createParameters( std::move( phaseParameters ) );
+    return phaseParameters;
+  }
+
 };
 
 // A no-op phase model

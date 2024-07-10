@@ -13,7 +13,7 @@
  */
 
 /**
- * @file CellElementStencilTPFA.hpp
+ * @file StencilBase.hpp
  */
 
 #ifndef GEOS_FINITEVOLUME_STENCILBASE_HPP_

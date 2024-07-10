@@ -268,7 +268,7 @@ public:
 
 
 protected:
-  virtual void postProcessInput() override;
+  virtual void postInputInitialization() override;
 
   array2d< real64 > m_newPorosity;
 

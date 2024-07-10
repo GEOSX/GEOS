@@ -127,7 +127,7 @@ if( ENABLE_CUDA )
   list( APPEND extraComponentsLinkList cuda )
 endif()
 
-if( ENABLE_CUDA_NVTOOLSEXT )
+if( ENABLE_CUDA AND ENABLE_CUDA_NVTOOLSEXT )
   list( APPEND extraComponentsLinkList CUDA::nvToolsExt )
 endif()
 
@@ -232,8 +232,8 @@ install( FILES ${CMAKE_BINARY_DIR}/schema.xsd
 ################################
 # Add python environment setup
 ################################
-# message(WARNING "Temporarily changing the geosPythonBranch to cusini/fix-streak-cert-fail")
-# set(GEOS_PYTHON_PACKAGES_BRANCH "cusini/fix-streak-cert-fail" CACHE STRING "" FORCE)
+# message(WARNING "Temporarily changing the geosPythonBranch to feature/packaging")
+# set(GEOS_PYTHON_PACKAGES_BRANCH "feature/packaging" CACHE STRING "" FORCE)
 
 
 if ( Python3_EXECUTABLE )

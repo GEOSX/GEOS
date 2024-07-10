@@ -86,7 +86,7 @@ public:
 
 private:
 
-  void postProcessInput() override;
+  void postInputInitialization() override;
 
   string m_plotFileRoot;
   integer m_writeEdgeMesh;

@@ -494,7 +494,6 @@ buildCollocatedEdgeBuckets( std::map< globalIndex, globalIndex > const & referen
                             arrayView2d< localIndex const > const edgeToNodes )
 {
   GEOS_ASSERT_EQ( edgeToNodes.size( 1 ), 2 );
-  static constexpr std::string_view nodeNotFound = "Internal error when trying to access the reference collocated node for global node {}.";
 
   // Checks if the node `gni` is handled as a collocated node on the curren rank.
   auto hasCollocatedNode = [&]( globalIndex const gni ) -> bool
@@ -526,6 +525,8 @@ buildCollocatedEdgeBuckets( std::map< globalIndex, globalIndex > const & referen
   std::map< std::pair< globalIndex, globalIndex >, std::set< localIndex > > collocatedEdgeBuckets;
   for( auto const & p: edgesIds )
   {
+    static constexpr std::string_view nodeNotFound = "Internal error when trying to access the reference collocated node for global node {}.";
+
     std::pair< globalIndex, globalIndex > const & nodes = p.first;
     localIndex const & edge = p.second;
 

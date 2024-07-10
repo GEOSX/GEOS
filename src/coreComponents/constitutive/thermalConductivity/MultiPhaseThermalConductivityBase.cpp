@@ -40,9 +40,9 @@ MultiPhaseThermalConductivityBase::MultiPhaseThermalConductivityBase( string con
   registerField( fields::thermalconductivity::dEffectiveConductivity_dPhaseVolFraction{}, &m_dEffectiveConductivity_dPhaseVolFrac );
 }
 
-void MultiPhaseThermalConductivityBase::postProcessInput()
+void MultiPhaseThermalConductivityBase::postInputInitialization()
 {
-  ConstitutiveBase::postProcessInput();
+  ConstitutiveBase::postInputInitialization();
 
   integer const numPhases = numFluidPhases();
   GEOS_THROW_IF_LT_MSG( numPhases, 2,

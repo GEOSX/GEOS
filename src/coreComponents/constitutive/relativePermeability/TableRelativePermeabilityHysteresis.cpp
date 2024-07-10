@@ -161,9 +161,9 @@ TableRelativePermeabilityHysteresis::TableRelativePermeabilityHysteresis( std::s
 
 }
 
-void TableRelativePermeabilityHysteresis::postProcessInput()
+void TableRelativePermeabilityHysteresis::postInputInitialization()
 {
-  RelativePermeabilityBase::postProcessInput();
+  RelativePermeabilityBase::postInputInitialization();
 
   using IPT = TableRelativePermeabilityHysteresis::ImbibitionPhasePairPhaseType;
 

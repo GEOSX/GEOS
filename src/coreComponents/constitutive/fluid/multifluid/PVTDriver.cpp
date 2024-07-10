@@ -92,7 +92,7 @@ PVTDriver::PVTDriver( const string & name,
     setDescription( "Baseline file" );
 }
 
-void PVTDriver::postProcessInput()
+void PVTDriver::postInputInitialization()
 {
   // Validate some inputs
   GEOS_ERROR_IF( m_outputMassDensity != 0 && m_outputMassDensity != 1,

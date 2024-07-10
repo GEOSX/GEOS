@@ -109,7 +109,7 @@ public:
 
 protected:
 
-  virtual void postProcessInput() override;
+  virtual void postInputInitialization() override;
 
 //START_SPHINX_INCLUDE_02
   array1d< real64 > m_phaseMinVolumeFraction;

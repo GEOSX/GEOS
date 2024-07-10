@@ -73,7 +73,7 @@ ReactiveFluidDriver::~ReactiveFluidDriver()
 {}
 
 
-void ReactiveFluidDriver::postProcessInput()
+void ReactiveFluidDriver::postInputInitialization()
 {
   // get number of phases and components
 

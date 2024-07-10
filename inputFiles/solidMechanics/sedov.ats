@@ -1,6 +1,5 @@
 # Integrated Test Docs Begin Parameters
-import geos_ats
-from geos_ats.test_builder import generate_geos_tests, RestartcheckParameters, TestDeck, CurveCheckParameters
+from geos.ats.test_builder import generate_geos_tests, RestartcheckParameters, TestDeck, CurveCheckParameters
 
 restartcheck_params = {}
 restartcheck_params["atol"] = 2.0E-10

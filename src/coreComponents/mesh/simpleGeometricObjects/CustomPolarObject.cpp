@@ -48,7 +48,7 @@ CustomPolarObject::CustomPolarObject( const string & name, Group * const parent 
 CustomPolarObject::~CustomPolarObject()
 {}
 
-void CustomPolarObject::postProcessInput()
+void CustomPolarObject::postInputInitialization()
 {
   // Make sure that you have an orthonormal basis.
   LvArray::tensorOps::normalize< 3 >( m_normal );

@@ -68,7 +68,7 @@ TEST( FieldSpecification, Aquifer )
   auto & aquiferAngle = aquiferBC.getReference< real64 >( AquiferBoundaryCondition::viewKeyStruct::aquiferAngleString() );
   aquiferAngle = 20.0;
 
-  aquiferBC.postProcessInputRecursive();
+  aquiferBC.postInputInitializationRecursive();
 
   AquiferBoundaryCondition::KernelWrapper aquiferBCWrapper = aquiferBC.createKernelWrapper();
 

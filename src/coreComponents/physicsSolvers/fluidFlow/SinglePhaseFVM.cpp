@@ -36,6 +36,7 @@
 #include "physicsSolvers/fluidFlow/ThermalSinglePhaseBaseKernels.hpp"
 #include "physicsSolvers/fluidFlow/SinglePhaseFVMKernels.hpp"
 #include "physicsSolvers/fluidFlow/ThermalSinglePhaseFVMKernels.hpp"
+#include "physicsSolvers/fluidFlow/StabilizedSinglePhaseFVMKernels.hpp"
 
 #include "physicsSolvers/fluidFlow/SinglePhaseProppantFluxKernels.hpp"
 #include "physicsSolvers/multiphysics/poromechanicsKernels/SinglePhasePoromechanicsEmbeddedFractures.hpp"
@@ -305,12 +306,12 @@ void SinglePhaseFVM< BASE >::applySystemSolution( DofManager const & dofManager,
   } );
 }
 
-template< >
-void SinglePhaseFVM< SinglePhaseBase >::assembleFluxTerms( real64 const dt,
-                                                           DomainPartition const & domain,
-                                                           DofManager const & dofManager,
-                                                           CRSMatrixView< real64, globalIndex const > const & localMatrix,
-                                                           arrayView1d< real64 > const & localRhs )
+template<>
+void SinglePhaseFVM<>::assembleFluxTerms( real64 const dt,
+                                          DomainPartition const & domain,
+                                          DofManager const & dofManager,
+                                          CRSMatrixView< real64, globalIndex const > const & localMatrix,
+                                          arrayView1d< real64 > const & localRhs )
 {
   GEOS_MARK_FUNCTION;
 
@@ -359,6 +360,46 @@ void SinglePhaseFVM< SinglePhaseBase >::assembleFluxTerms( real64 const dt,
   } );
 
 }
+
+
+template< >
+void SinglePhaseFVM< SinglePhaseBase >::assembleStabilizedFluxTerms( real64 const dt,
+                                                                     DomainPartition const & domain,
+                                                                     DofManager const & dofManager,
+                                                                     CRSMatrixView< real64, globalIndex const > const & localMatrix,
+                                                                     arrayView1d< real64 > const & localRhs )
+{
+  GEOS_MARK_FUNCTION;
+
+  NumericalMethodsManager const & numericalMethodManager = domain.getNumericalMethodManager();
+  FiniteVolumeManager const & fvManager = numericalMethodManager.getFiniteVolumeManager();
+  FluxApproximationBase const & fluxApprox = fvManager.getFluxApproximation( m_discretizationName );
+
+  string const & dofKey = dofManager.getKey( SinglePhaseBase::viewKeyStruct::elemDofFieldString() );
+
+  forDiscretizationOnMeshTargets( domain.getMeshBodies(), [&] ( string const &,
+                                                                MeshLevel const & mesh,
+                                                                arrayView1d< string const > const & )
+  {
+    fluxApprox.forAllStencils( mesh, [&]( auto & stencil )
+    {
+      typename TYPEOFREF( stencil ) ::KernelWrapper stencilWrapper = stencil.createKernelWrapper();
+
+      // No thermal support yet
+      stabilizedSinglePhaseFVMKernels::FaceBasedAssemblyKernelFactory::createAndLaunch< parallelDevicePolicy<> >( dofManager.rankOffset(),
+                                                                                                                  dofKey,
+                                                                                                                  getName(),
+                                                                                                                  mesh.getElemManager(),
+                                                                                                                  stencilWrapper,
+                                                                                                                  dt,
+                                                                                                                  localMatrix.toViewConstSizes(),
+                                                                                                                  localRhs.toView() );
+
+    } );
+  } );
+
+}
+
 
 
 template<>
@@ -415,6 +456,16 @@ void SinglePhaseFVM< SinglePhaseProppantBase >::assembleFluxTerms( real64 const 
   } );
 }
 
+template< >
+void SinglePhaseFVM< SinglePhaseProppantBase >::assembleStabilizedFluxTerms( real64 const dt,
+                                                                             DomainPartition const & domain,
+                                                                             DofManager const & dofManager,
+                                                                             CRSMatrixView< real64, globalIndex const > const & localMatrix,
+                                                                             arrayView1d< real64 > const & localRhs )
+{
+  GEOS_UNUSED_VAR( dt, domain, dofManager, localMatrix, localRhs );
+  GEOS_ERROR( "Stabilized flux not available with this flow solver" );
+}
 
 template< typename BASE >
 void SinglePhaseFVM< BASE >::assembleEDFMFluxTerms( real64 const GEOS_UNUSED_PARAM ( time_n ),
@@ -831,12 +882,12 @@ void SinglePhaseFVM< SinglePhaseProppantBase >::applyAquiferBC( real64 const GEO
 }
 
 template<>
-void SinglePhaseFVM< SinglePhaseBase >::applyAquiferBC( real64 const time,
-                                                        real64 const dt,
-                                                        DomainPartition & domain,
-                                                        DofManager const & dofManager,
-                                                        CRSMatrixView< real64, globalIndex const > const & localMatrix,
-                                                        arrayView1d< real64 > const & localRhs ) const
+void SinglePhaseFVM<>::applyAquiferBC( real64 const time,
+                                       real64 const dt,
+                                       DomainPartition & domain,
+                                       DofManager const & dofManager,
+                                       CRSMatrixView< real64, globalIndex const > const & localMatrix,
+                                       arrayView1d< real64 > const & localRhs ) const
 {
   GEOS_MARK_FUNCTION;
 
@@ -902,9 +953,9 @@ void SinglePhaseFVM< SinglePhaseBase >::applyAquiferBC( real64 const time,
 
 namespace
 {
-typedef SinglePhaseFVM< SinglePhaseBase > NoProppant;
-typedef SinglePhaseFVM< SinglePhaseProppantBase > Proppant;
-REGISTER_CATALOG_ENTRY( SolverBase, NoProppant, string const &, Group * const )
-REGISTER_CATALOG_ENTRY( SolverBase, Proppant, string const &, Group * const )
+typedef SinglePhaseFVM< SinglePhaseProppantBase > SinglePhaseFVMProppant;
+REGISTER_CATALOG_ENTRY( SolverBase, SinglePhaseFVMProppant, string const &, Group * const )
+typedef SinglePhaseFVM<> SinglePhaseFVM;
+REGISTER_CATALOG_ENTRY( SolverBase, SinglePhaseFVM, string const &, Group * const )
 }
 } /* namespace geos */

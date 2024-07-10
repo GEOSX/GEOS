@@ -91,7 +91,8 @@ FlowSolverBase::FlowSolverBase( string const & name,
   m_isThermal( 0 ),
   m_keepFlowVariablesConstantDuringInitStep( 0 ),
   m_isFixedStressPoromechanicsUpdate( false ),
-  m_isJumpStabilized( false )
+  m_isJumpStabilized( false ),
+  m_isLaggingFractureStencilWeightsUpdate( 0 )
 {
   this->registerWrapper( viewKeyStruct::isThermalString(), &m_isThermal ).
     setApplyDefaultValue( 0 ).
@@ -754,6 +755,8 @@ void FlowSolverBase::prepareStencilWeights( DomainPartition & domain ) const
     FiniteVolumeManager const & fvManager = numericalMethodManager.getFiniteVolumeManager();
     FluxApproximationBase const & fluxApprox = fvManager.getFluxApproximation( getDiscretizationName() );
     ElementRegionManager::ElementViewAccessor< arrayView1d< real64 const > > hydraulicAperture =
+      m_isLaggingFractureStencilWeightsUpdate ?
+      mesh.getElemManager().constructViewAccessor< array1d< real64 >, arrayView1d< real64 const > >( fields::flow::aperture0::key() ) :
       mesh.getElemManager().constructViewAccessor< array1d< real64 >, arrayView1d< real64 const > >( fields::flow::hydraulicAperture::key() );
 
     fluxApprox.forStencils< SurfaceElementStencil, FaceElementToCellStencil, EmbeddedSurfaceToCellStencil >( mesh, [&]( auto & stencil )

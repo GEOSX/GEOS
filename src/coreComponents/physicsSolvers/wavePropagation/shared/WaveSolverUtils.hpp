@@ -41,6 +41,13 @@ struct WaveSolverUtils
     strainIntegration,  ///< use strain integration for DAS
   };
 
+  enum class AttenuationType : integer
+  {
+    none,               ///< deactivate attenuation (default)
+    sls,                ///< istandard-linear-solid description [Fichtner 2014]
+  };
+
+
   GEOS_HOST_DEVICE
   static real32 evaluateRicker( real64 const time_n, real32 const f0, real32 const t0, localIndex const order )
   {
@@ -413,6 +420,10 @@ ENUM_STRINGS( WaveSolverUtils::DASType,
               "none",
               "dipole",
               "strainIntegration" );
+
+ENUM_STRINGS( WaveSolverUtils::AttenuationType,
+              "none",
+              "sls" );
 
 } /* namespace geos */
 

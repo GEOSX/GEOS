@@ -361,9 +361,7 @@ public:
                               NodeManager & nodeManager );
 
 protected:
-  virtual void postProcessInput() override final;
-
-  virtual void setConstitutiveNamesCallSuper( ParticleSubRegionBase & subRegion ) const override;
+  virtual void postInputInitialization() override final;
 
   std::vector< array2d< localIndex > > m_mappedNodes; // mappedNodes[subregion index][particle index][node index]. dims = {# of subregions,
                                                       // # of particles, # of nodes a particle on the subregion maps to}
@@ -457,7 +455,7 @@ private:
     }
   };
 
-  virtual void setConstitutiveNames( ParticleSubRegionBase & subRegion ) const override;
+  void setParticlesConstitutiveNames( ParticleSubRegionBase & subRegion ) const;
 };
 
 ENUM_STRINGS( SolidMechanicsMPM::TimeIntegrationOption,

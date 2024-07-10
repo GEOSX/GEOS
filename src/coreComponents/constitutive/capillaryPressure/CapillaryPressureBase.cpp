@@ -48,9 +48,9 @@ CapillaryPressureBase::CapillaryPressureBase( string const & name,
 
 }
 
-void CapillaryPressureBase::postProcessInput()
+void CapillaryPressureBase::postInputInitialization()
 {
-  ConstitutiveBase::postProcessInput();
+  ConstitutiveBase::postInputInitialization();
 
   integer const numPhases = numFluidPhases();
   GEOS_THROW_IF_LT_MSG( numPhases, 2,

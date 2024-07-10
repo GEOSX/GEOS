@@ -73,9 +73,9 @@ void ProppantSlurryFluid::allocateConstitutiveData( dataRepository::Group & pare
 }
 
 
-void ProppantSlurryFluid::postProcessInput()
+void ProppantSlurryFluid::postInputInitialization()
 {
-  SlurryFluidBase::postProcessInput();
+  SlurryFluidBase::postInputInitialization();
 
   GEOS_ERROR_IF_LT_MSG( m_compressibility, 0.0,
                         getFullName() << ": invalid value of " << viewKeyStruct::compressibilityString() );

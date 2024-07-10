@@ -171,7 +171,7 @@ protected:
 
 protected:
 
-  virtual void postProcessInput() override;
+  virtual void postInputInitialization() override;
 
   void createChemicalReactions();
 

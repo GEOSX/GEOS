@@ -128,7 +128,7 @@ public:
 
 
 private:
-  virtual void postProcessInput() override;
+  virtual void postInputInitialization() override;
 
   real64 m_referencePressure;
 

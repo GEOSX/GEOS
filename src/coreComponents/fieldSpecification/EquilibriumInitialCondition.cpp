@@ -89,7 +89,7 @@ EquilibriumInitialCondition::EquilibriumInitialCondition( string const & name, G
   addSetName( "all" );
 }
 
-void EquilibriumInitialCondition::postProcessInput()
+void EquilibriumInitialCondition::postInputInitialization()
 {
 
   GEOS_THROW_IF( ( m_temperatureVsElevationTableName.empty() != m_componentFractionVsElevationTableNames.empty() ),

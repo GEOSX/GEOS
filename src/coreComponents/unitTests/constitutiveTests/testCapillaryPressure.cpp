@@ -49,7 +49,7 @@ CapillaryPressureBase & makeBrooksCoreyCapPressureTwoPhase( string const & name,
   real64 & capPressureEpsilon = capPressure.getReference< real64 >( BrooksCoreyCapillaryPressure::viewKeyStruct::capPressureEpsilonString() );
   capPressureEpsilon = 1e-4;
 
-  capPressure.postProcessInputRecursive();
+  capPressure.postInputInitializationRecursive();
   return capPressure;
 }
 
@@ -78,7 +78,7 @@ CapillaryPressureBase & makeBrooksCoreyCapPressureThreePhase( string const & nam
   real64 & capPressureEpsilon = capPressure.getReference< real64 >( BrooksCoreyCapillaryPressure::viewKeyStruct::capPressureEpsilonString() );
   capPressureEpsilon = 1e-7;
 
-  capPressure.postProcessInputRecursive();
+  capPressure.postInputInitializationRecursive();
   return capPressure;
 }
 
@@ -108,7 +108,7 @@ CapillaryPressureBase & makeVanGenuchtenCapPressureTwoPhase( string const & name
   real64 & capPressureEpsilon = capPressure.getReference< real64 >( VanGenuchtenCapillaryPressure::viewKeyStruct::capPressureEpsilonString() );
   capPressureEpsilon = 1e-4;
 
-  capPressure.postProcessInputRecursive();
+  capPressure.postInputInitializationRecursive();
   return capPressure;
 }
 
@@ -137,7 +137,7 @@ CapillaryPressureBase & makeVanGenuchtenCapPressureThreePhase( string const & na
   real64 & capPressureEpsilon = capPressure.getReference< real64 >( VanGenuchtenCapillaryPressure::viewKeyStruct::capPressureEpsilonString() );
   capPressureEpsilon = 1e-4;
 
-  capPressure.postProcessInputRecursive();
+  capPressure.postInputInitializationRecursive();
   return capPressure;
 }
 
@@ -187,7 +187,7 @@ CapillaryPressureBase & makeTableCapPressureTwoPhase( string const & name, Group
   auto & waterTableName = capPressure.getReference< string >( TableCapillaryPressure::viewKeyStruct::wettingNonWettingCapPresTableNameString() );
   waterTableName = "water_pc";
 
-  capPressure.postProcessInputRecursive();
+  capPressure.postInputInitializationRecursive();
   capPressure.initialize(); // to test all the checks
   return capPressure;
 }
@@ -270,7 +270,7 @@ CapillaryPressureBase & makeTableCapPressureThreePhase( string const & name, Gro
   auto & gasTableName = capPressure.getReference< string >( TableCapillaryPressure::viewKeyStruct::nonWettingIntermediateCapPresTableNameString() );
   gasTableName = "gas_og_pc";
 
-  capPressure.postProcessInputRecursive();
+  capPressure.postInputInitializationRecursive();
   capPressure.initialize(); // to test all the checks
   return capPressure;
 }
@@ -338,7 +338,7 @@ CapillaryPressureBase & makeJFunctionCapPressureTwoPhase( string const & name, G
     capPressure.getReference< JFunctionCapillaryPressure::PermeabilityDirection >( JFunctionCapillaryPressure::viewKeyStruct::permeabilityDirectionString() );
   permeabilityDirection = JFunctionCapillaryPressure::PermeabilityDirection::XY;
 
-  capPressure.postProcessInputRecursive();
+  capPressure.postInputInitializationRecursive();
   capPressure.initialize(); // to test all the checks
 
   return capPressure;
@@ -432,7 +432,7 @@ CapillaryPressureBase & makeJFunctionCapPressureThreePhase( string const & name,
     capPressure.getReference< JFunctionCapillaryPressure::PermeabilityDirection >( JFunctionCapillaryPressure::viewKeyStruct::permeabilityDirectionString() );
   permeabilityDirection = JFunctionCapillaryPressure::PermeabilityDirection::Z;
 
-  capPressure.postProcessInputRecursive();
+  capPressure.postInputInitializationRecursive();
   capPressure.initialize(); // to test all the checks
   return capPressure;
 }

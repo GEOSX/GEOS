@@ -78,9 +78,9 @@ void BiotPorosity::allocateConstitutiveData( dataRepository::Group & parent,
   m_meanTotalStressIncrement_k.resize( 0, numConstitutivePointsPerParentIndex );
 }
 
-void BiotPorosity::postProcessInput()
+void BiotPorosity::postInputInitialization()
 {
-  PorosityBase::postProcessInput();
+  PorosityBase::postInputInitialization();
 
   getWrapper< array1d< real64 > >( fields::porosity::thermalExpansionCoefficient::key() ).
     setApplyDefaultValue( m_defaultThermalExpansionCoefficient );

@@ -651,7 +651,7 @@ protected:
    */
   virtual void resizeFields( localIndex const size, localIndex const numPts );
 
-  virtual void postProcessInput() override;
+  virtual void postInputInitialization() override;
 
   // flag indicating whether input/output component fractions are treated as mass fractions
   int m_useMass;

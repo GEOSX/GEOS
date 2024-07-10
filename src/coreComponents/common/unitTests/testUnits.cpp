@@ -112,6 +112,26 @@ TEST( Units, SystemDurationFormatTest )
       "5500y, 20d, 12h02m25s (173565007345 s)",
       Years( 5500 ) + Days( 20 ) + hours( 12 ) + seconds( 145 ) ),
 
+    DurationCase(
+      "-(00h00m00s) (-1.11e-07 s)",
+      -nanoseconds( 111 ) ),
+
+    DurationCase(
+      "-(00h00m01s) (-1 s)",
+      -seconds( 1 ) ),
+
+    DurationCase(
+      "-(00h02m25s) (-145.016 s)",
+      -seconds( 145 ) - milliseconds( 16 ) ),
+
+    DurationCase(
+      "-(22h25m45s) (-80745.016 s)",
+      -hours( 20 ) - minutes( 145 ) - seconds( 45 ) - milliseconds( 16 ) ),
+
+    DurationCase(
+      "-(5500y, 20d, 12h02m25s) (-173565007345 s)",
+      -Years( 5500 ) - Days( 20 ) - hours( 12 ) - seconds( 145 ) ),
+
   };
 
   const SystemClock::duration maxDuration = SystemClock::duration::max();
@@ -127,7 +147,7 @@ TEST( Units, SystemDurationFormatTest )
     EXPECT_STREQ( durationCase.m_expectedString.c_str(),
                   TimeFormatInfo::fromSeconds( durationCase.m_simDuration ).toString().c_str() ) << errorInfo;
 
-    if( durationCase.m_simDuration <= maxSystemTime )
+    if( 0.0 < durationCase.m_simDuration && durationCase.m_simDuration <= maxSystemTime )
     {
       EXPECT_STREQ( durationCase.m_expectedString.c_str(),
                     TimeFormatInfo::fromDuration( durationCase.m_systemDuration ).toString().c_str() ) << errorInfo;

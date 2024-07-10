@@ -59,9 +59,9 @@ std::unique_ptr< ConstitutiveBase > ReactiveMultiFluid::
   return clone;
 }
 
-void ReactiveMultiFluid::postProcessInput()
+void ReactiveMultiFluid::postInputInitialization()
 {
-  MultiFluidBase::postProcessInput();
+  MultiFluidBase::postInputInitialization();
 
   GEOS_THROW_IF_NE_MSG( numFluidPhases(), 1,
                         GEOS_FMT( "{}: invalid number of phases", getFullName() ),

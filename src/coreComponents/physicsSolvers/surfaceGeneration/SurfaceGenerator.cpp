@@ -221,7 +221,7 @@ SurfaceGenerator::SurfaceGenerator( const string & name,
     setInputFlag( InputFlags::FALSE );
 }
 
-void SurfaceGenerator::postProcessInput()
+void SurfaceGenerator::postInputInitialization()
 {
   static const std::set< integer > binaryOptions = { 0, 1 };
 
@@ -725,13 +725,11 @@ int SurfaceGenerator::separationDriver( DomainPartition & domain,
         localIndex const numNodesInFace = faceToNodeMap.sizeOfArray( faceMap[ kfe ][ 0 ] );
         for( localIndex a = 0; a < numNodesInFace; ++a )
         {
-          localIndex const aa = a < 2 ? a : numNodesInFace - a + 1;
-          localIndex const bb = aa == 0 ? aa : numNodesInFace - aa;
 
           // TODO HACK need to generalize to something other than quads
           //wu40: I temporarily make it work for tet mesh. Need further check with Randy.
-          nodeMap[ kfe ][ a ]   = faceToNodeMap( faceMap[ kfe ][ 0 ], aa );
-          nodeMap[ kfe ][ a + numNodesInFace ] = faceToNodeMap( faceMap[ kfe ][ 1 ], bb );
+          nodeMap[ kfe ][ a ]   = faceToNodeMap( faceMap[ kfe ][ 0 ], a );
+          nodeMap[ kfe ][ a + numNodesInFace ] = faceToNodeMap( faceMap[ kfe ][ 1 ], a );
         }
 
         if( numNodesInFace == 3 )

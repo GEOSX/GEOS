@@ -37,9 +37,9 @@ BlackOilFluid::BlackOilFluid( string const & name,
     .setRestartFlags( RestartFlags::NO_WRITE );
 }
 
-void BlackOilFluid::postProcessInput()
+void BlackOilFluid::postInputInitialization()
 {
-  BlackOilFluidBase::postProcessInput();
+  BlackOilFluidBase::postInputInitialization();
 
   GEOS_THROW_IF_NE_MSG( numFluidPhases(), 3,
                         GEOS_FMT( "{}: this model only supports three-phase flow", getFullName() ),

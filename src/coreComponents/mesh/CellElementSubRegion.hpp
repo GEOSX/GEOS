@@ -191,6 +191,10 @@ public:
     static constexpr char const * toEmbSurfString() { return "ToEmbeddedSurfaces"; }
     /// @return String key to fracturedCells
     static constexpr char const * fracturedCellsString() { return "fracturedCells"; }
+    /// @return String key to bubbleCells
+    static constexpr char const * bubbleCellsString() { return "bubbleCells"; }
+    /// @return String key to toFaceElements
+    static constexpr char const * toFaceElementsString() { return "toFaceElements"; }
 
     /// ViewKey for the constitutive grouping
     dataRepository::ViewKey constitutiveGrouping  = { constitutiveGroupingString() };
@@ -316,6 +320,32 @@ public:
   EmbSurfMapType const & embeddedSurfacesList() const { return m_toEmbeddedSurfaces; }
 
   /**
+   * @brief Set the array of bubble elements.
+   * @param[in] bubbleCells The array of bubble elements.
+   */
+  void setBubbleElementsList( arrayView1d< localIndex const > const bubbleCells )
+  { m_bubbleCells = bubbleCells; }
+
+  /**
+   * @brief @return The array view of bubble elements.
+   */
+  arrayView1d< localIndex const > const bubbleElementsList() const
+  { return m_bubbleCells.toViewConst(); }
+
+  /**
+   * @brief Set the array of neighboring face elements.
+   * @param[in] faceElemsList The array of neighboring face elements.
+   */
+  void setFaceElementsList( arrayView2d< localIndex const > const faceElemsList )
+  { m_toFaceElements = faceElemsList; }
+
+  /**
+   * @brief @return  The array of neighboring face elements.
+   */
+  arrayView2d< localIndex const > const faceElementsList() const
+  { return m_toFaceElements.toViewConst(); }
+
+  /**
    * @brief Compute the center of each element in the subregion.
    * @param[in] X an arrayView of (const) node positions
    */
@@ -378,6 +408,14 @@ private:
 
   /// Map from local Cell Elements to Embedded Surfaces
   EmbSurfMapType m_toEmbeddedSurfaces;
+
+  /// List of the elements adjacent to faceElement (useful for bubble elements)
+  array1d< localIndex > m_bubbleCells;
+
+  /// List of face IDs adjacent to faceElement (useful for bubble elements).
+  /// A 2D array is needed to store both the face ID in the physical space
+  /// and the corresponding face ID in the parent element space.
+  array2d< localIndex > m_toFaceElements;
 
   /**
    * @brief Pack element-to-node and element-to-face maps

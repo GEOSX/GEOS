@@ -24,6 +24,7 @@
 #include "physicsSolvers/fluidFlow/SinglePhaseBaseFields.hpp"
 #include "physicsSolvers/fluidFlow/SinglePhaseFVM.hpp"
 #include "physicsSolvers/fluidFlow/FlowSolverBaseFields.hpp"
+#include "testFlowUtils.hpp"
 
 namespace geos
 {
@@ -32,29 +33,6 @@ namespace testing
 {
 
 using namespace geos::constitutive;
-
-void checkDerivative( real64 const valueEps,
-                      real64 const value,
-                      real64 const deriv,
-                      real64 const eps,
-                      real64 const relTol,
-                      real64 const absTol,
-                      string const & name,
-                      string const & var )
-{
-  real64 const numDeriv = (valueEps - value) / eps;
-  checkRelativeError( deriv, numDeriv, relTol, absTol, "d(" + name + ")/d(" + var + ")" );
-}
-
-void checkDerivative( real64 const valueEps,
-                      real64 const value,
-                      real64 const deriv,
-                      real64 const eps,
-                      real64 const relTol,
-                      string const & name,
-                      string const & var )
-{ return checkDerivative( valueEps, value, deriv, eps, relTol, DEFAULT_ABS_TOL, name, var ); }
-
 
 void fillNumericalJacobian( arrayView1d< real64 const > const & residual,
                             arrayView1d< real64 const > const & residualOrig,
@@ -111,7 +89,7 @@ void setupProblemFromXML( ProblemManager & problemManager, char const * const xm
   problemManager.applyInitialConditions();
 }
 
-void testMobilityNumericalDerivatives( SinglePhaseFVM< SinglePhaseBase > & solver,
+void testMobilityNumericalDerivatives( SinglePhaseFVM<> & solver,
                                        DomainPartition & domain,
                                        bool const isThermal,
                                        real64 const perturbParameter,

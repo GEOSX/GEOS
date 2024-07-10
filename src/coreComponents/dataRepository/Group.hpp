@@ -779,10 +779,10 @@ public:
                                   xmlWrapper::xmlNodePos const & nodePos );
 
   /**
-   * @brief Recursively call postProcessInput() to apply post processing after
+   * @brief Recursively call postInputInitialization() to apply post processing after
    * reading input values.
    */
-  void postProcessInputRecursive();
+  void postInputInitializationRecursive();
 
   ///@}
 
@@ -1414,6 +1414,15 @@ public:
    */
   void setInputFlags( InputFlags flags ) { m_input_flags = flags; }
 
+  /**
+   * @brief Structure to hold scoped key names
+   */
+  struct viewKeyStruct
+  {
+    /// @return String for the logLevel wrapper
+    static constexpr char const * logLevelString() { return "logLevel"; }
+  };
+
   ///@}
 
   /**
@@ -1500,7 +1509,7 @@ protected:
    * This function provides capability to post process input values prior to
    * any other initialization operations.
    */
-  virtual void postProcessInput() {}
+  virtual void postInputInitialization() {}
 
   /**
    * @brief Called by Initialize() prior to initializing sub-Groups.

@@ -46,7 +46,7 @@ ThickPlane::~ThickPlane()
 {}
 
 
-void ThickPlane::postProcessInput()
+void ThickPlane::postInputInitialization()
 {
   m_thickness *= 0.5; // actually store the half-thickness
   GEOS_ERROR_IF( m_thickness <= 0,

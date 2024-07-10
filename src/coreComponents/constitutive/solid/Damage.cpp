@@ -150,9 +150,9 @@ Damage< BASE >::Damage( string const & name, Group * const parent ):
 
 
 template< typename BASE >
-void Damage< BASE >::postProcessInput()
+void Damage< BASE >::postInputInitialization()
 {
-  BASE::postProcessInput();
+  BASE::postInputInitialization();
 
   GEOS_ERROR_IF( m_extDrivingForceFlag != 0 && m_extDrivingForceFlag!= 1,
                  BASE::getDataContext() << ": invalid external driving force flag option - must"

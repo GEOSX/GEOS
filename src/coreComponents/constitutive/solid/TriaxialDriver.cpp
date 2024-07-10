@@ -74,7 +74,7 @@ TriaxialDriver::~TriaxialDriver()
 {}
 
 
-void TriaxialDriver::postProcessInput()
+void TriaxialDriver::postInputInitialization()
 {
 
   // initialize table functions

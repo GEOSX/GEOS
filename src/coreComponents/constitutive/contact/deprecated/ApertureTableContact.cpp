@@ -54,7 +54,7 @@ ApertureTableContact::ApertureTableContact( string const & name,
 ApertureTableContact::~ApertureTableContact()
 {}
 
-void ApertureTableContact::postProcessInput()
+void ApertureTableContact::postInputInitialization()
 {
   FunctionManager const & functionManager = FunctionManager::getInstance();
 

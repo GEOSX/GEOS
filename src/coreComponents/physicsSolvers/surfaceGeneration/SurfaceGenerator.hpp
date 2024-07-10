@@ -99,7 +99,7 @@ public:
 
   inline string const getFractureRegionName() const { return m_fractureRegionName; }
 
-  void postProcessInput() override final;
+  void postInputInitialization() override final;
 
 protected:
 

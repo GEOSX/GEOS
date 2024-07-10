@@ -83,7 +83,7 @@
         referenceElevation="20"
         targetBHP="9e7"
         targetTotalRate="8e-3"
-        injectionTemperature="297.15"           
+        injectionTemperature="297.15"
         injectionStream="{ 0.0, 1.0 }"/>
       <WellControls
         name="wellControls6"
@@ -92,7 +92,7 @@
         referenceElevation="20"
         targetBHP="9e7"
         targetTotalRate="8e-3"
-        injectionTemperature="297.15"           
+        injectionTemperature="297.15"
         injectionStream="{ 0.0, 1.0 }"/>
       <WellControls
         name="wellControls7"
@@ -101,7 +101,7 @@
         referenceElevation="40"
         targetBHP="9e7"
         targetTotalRate="8e-3"
-        injectionTemperature="297.15"           
+        injectionTemperature="297.15"
         injectionStream="{ 0.0, 1.0 }"/>
       <WellControls
         name="wellControls8"
@@ -110,7 +110,7 @@
         referenceElevation="20"
         targetBHP="9e7"
         targetTotalRate="8e-3"
-        injectionTemperature="297.15"           
+        injectionTemperature="297.15"
         injectionStream="{ 0.0, 1.0 }"/>
       <WellControls
         name="wellControls9"
@@ -119,7 +119,7 @@
         referenceElevation="20"
         targetBHP="9e7"
         targetTotalRate="8e-3"
-        injectionTemperature="297.15"   
+        injectionTemperature="297.15"
         injectionStream="{ 0.0, 1.0 }"/>
       <WellControls
         name="wellControls10"
@@ -128,7 +128,7 @@
         referenceElevation="20"
         targetBHP="9e7"
         targetTotalRate="8e-3"
-        injectionTemperature="297.15"           
+        injectionTemperature="297.15"
         injectionStream="{ 0.0, 1.0 }"/>
       <WellControls
         name="wellControls11"
@@ -137,7 +137,7 @@
         referenceElevation="20"
         targetBHP="9e7"
         targetTotalRate="8e-3"
-        injectionTemperature="297.15"           
+        injectionTemperature="297.15"
         injectionStream="{ 0.0, 1.0 }"/>
       <WellControls
         name="wellControls12"
@@ -146,7 +146,7 @@
         referenceElevation="20"
         targetBHP="9e7"
         targetTotalRate="8e-3"
-        injectionTemperature="297.15"           
+        injectionTemperature="297.15"
         injectionStream="{ 0.0, 1.0 }"/>
     </CompositionalMultiphaseWell>
   </Solvers>
@@ -209,7 +209,7 @@
       timeFrequency="7.5e6"
       targetExactTimestep="0"
       target="/Outputs/restartOutput"/>
-    
+
   </Events>
 
   <!-- SPHINX_TUT_DEAD_OIL_EGG_EVENTS_END -->
@@ -374,7 +374,7 @@
 
     <Restart
       name="restartOutput"/>
-    
+
   </Outputs>
 
   <!-- SPHINX_TUT_DEAD_OIL_EGG_OUTPUTS_END -->

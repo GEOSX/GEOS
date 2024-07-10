@@ -509,6 +509,17 @@ public:
   }
 
   /**
+   * @brief Add up more text to the existing description string of the wrapper.
+   * @param description the description to add to the end of the previous one.
+   * @return a pointer to this wrapper
+   */
+  WrapperBase & appendDescription( string const & description )
+  {
+    m_description += description;
+    return *this;
+  }
+
+  /**
    * @brief Get the description string of the wrapper.
    * @return this wrapper's description string
    */

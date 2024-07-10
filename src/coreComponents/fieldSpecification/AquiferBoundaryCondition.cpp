@@ -113,7 +113,7 @@ AquiferBoundaryCondition::AquiferBoundaryCondition( string const & name, Group *
 
 }
 
-void AquiferBoundaryCondition::postProcessInput()
+void AquiferBoundaryCondition::postInputInitialization()
 {
   GEOS_THROW_IF_LE_MSG( m_permeability, 0.0,
                         getCatalogName() << " " << getDataContext() <<

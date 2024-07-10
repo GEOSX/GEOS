@@ -84,9 +84,9 @@ TableRelativePermeability::TableRelativePermeability( std::string const & name,
                     "Valid options \n* " + EnumStrings< ThreePhaseInterpolator >::concat( "\n* " ) );
 }
 
-void TableRelativePermeability::postProcessInput()
+void TableRelativePermeability::postInputInitialization()
 {
-  RelativePermeabilityBase::postProcessInput();
+  RelativePermeabilityBase::postInputInitialization();
 
   integer const numPhases = m_phaseNames.size();
   GEOS_THROW_IF( numPhases != 2 && numPhases != 3,

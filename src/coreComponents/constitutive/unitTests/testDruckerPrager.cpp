@@ -82,7 +82,7 @@ void testDruckerPragerDriver()
 
   xmlWrapper::xmlNode xmlConstitutiveNode = xmlDocument.getChild( "Constitutive" );
   constitutiveManager.processInputFileRecursive( xmlDocument, xmlConstitutiveNode );
-  constitutiveManager.postProcessInputRecursive();
+  constitutiveManager.postInputInitializationRecursive();
 
   localIndex constexpr numElem = 2;
   localIndex constexpr numQuad = 4;
@@ -198,7 +198,7 @@ void testDruckerPragerExtendedDriver()
 
   xmlWrapper::xmlNode xmlConstitutiveNode = xmlDocument.getChild( "Constitutive" );
   constitutiveManager.processInputFileRecursive( xmlDocument, xmlConstitutiveNode );
-  constitutiveManager.postProcessInputRecursive();
+  constitutiveManager.postInputInitializationRecursive();
 
   localIndex constexpr numElem = 2;
   localIndex constexpr numQuad = 4;

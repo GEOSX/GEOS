@@ -324,7 +324,7 @@ public:
 
 
 protected:
-  virtual void postProcessInput() override;
+  virtual void postInputInitialization() override;
 
   /// Material parameter: The default value of yield stress
   real64 m_defaultYieldStress;

@@ -107,7 +107,7 @@ private:
   /// Optional parameter indicating if the class should use Virtual Elements.
   int m_useVem;
 
-  void postProcessInput() override final;
+  void postInputInitialization() override final;
 
 };
 

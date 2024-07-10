@@ -64,16 +64,20 @@ set( constitutive_headers
      fluid/multifluid/compositional/functions/CompositionalProperties.hpp     
      fluid/multifluid/compositional/functions/CompositionalPropertiesImpl.hpp     
      fluid/multifluid/compositional/functions/CubicEOSPhaseModel.hpp     
+     fluid/multifluid/compositional/functions/FugacityCalculator.hpp
      fluid/multifluid/compositional/functions/KValueInitialization.hpp
      fluid/multifluid/compositional/functions/NegativeTwoPhaseFlash.hpp
      fluid/multifluid/compositional/functions/RachfordRice.hpp
+     fluid/multifluid/compositional/functions/StabilityTest.hpp
      fluid/multifluid/compositional/models/ComponentProperties.hpp
      fluid/multifluid/compositional/models/CompositionalDensity.hpp
      fluid/multifluid/compositional/models/ConstantViscosity.hpp
+     fluid/multifluid/compositional/models/EquationOfState.hpp
      fluid/multifluid/compositional/models/FunctionBase.hpp
      fluid/multifluid/compositional/models/LohrenzBrayClarkViscosity.hpp
      fluid/multifluid/compositional/models/LohrenzBrayClarkViscosityImpl.hpp
      fluid/multifluid/compositional/models/NegativeTwoPhaseFlashModel.hpp
+     fluid/multifluid/compositional/models/ModelParameters.hpp
      fluid/multifluid/compositional/models/NullModel.hpp
      fluid/multifluid/compositional/models/PhaseModel.hpp
      fluid/multifluid/compositional/CompositionalMultiphaseFluid.hpp
@@ -226,10 +230,8 @@ set( constitutive_sources
      fluid/multifluid/compositional/models/NegativeTwoPhaseFlashModel.cpp
      fluid/multifluid/compositional/CompositionalMultiphaseFluid.cpp
      fluid/multifluid/compositional/CompositionalMultiphaseFluidUpdates.cpp
-     fluid/multifluid/compositional/PVTDriverRunTestCompositionalPR.cpp
-     fluid/multifluid/compositional/PVTDriverRunTestCompositionalPRLBC.cpp
-     fluid/multifluid/compositional/PVTDriverRunTestCompositionalSRK.cpp
-     fluid/multifluid/compositional/PVTDriverRunTestCompositionalSRKLBC.cpp
+     fluid/multifluid/compositional/PVTDriverRunTestCompositionalTwoPhaseConstantViscosity.cpp
+     fluid/multifluid/compositional/PVTDriverRunTestCompositionalTwoPhaseLohrenzBrayClarkViscosity.cpp
      fluid/multifluid/reactive/ReactiveBrineFluid.cpp
      fluid/multifluid/reactive/ReactiveMultiFluid.cpp
      fluid/multifluid/reactive/ReactiveFluidDriver.cpp

@@ -584,7 +584,7 @@ public:
     static constexpr char const * discretizationString() { return "discretization"; }
     static constexpr char const * targetRegionsString() { return "targetRegions"; }
     static constexpr char const * meshTargetsString() { return "meshTargets"; }
-
+    static constexpr char const * writeLinearSystemString() { return "writeLinearSystem"; }
   };
 
   struct groupKeyStruct
@@ -663,6 +663,10 @@ public:
     return m_nonlinearSolverParameters;
   }
 
+  virtual void
+  synchronizeNonlinearSolverParameters()
+  { /* empty here, overriden in CoupledSolver */ }
+
   /**
    * @brief Get position of a given region within solver's target region list
    * @param regionName the region name to find
@@ -730,6 +734,7 @@ public:
   virtual bool registerCallback( void * func, const std::type_info & funcType ) final override;
 
   SolverStatistics & getSolverStatistics() { return m_solverStatistics; }
+  SolverStatistics const & getSolverStatistics() const { return m_solverStatistics; }
 
   /**
    * @brief Return PySolver type.
@@ -769,8 +774,6 @@ protected:
    *  names set.
    */
   virtual void setConstitutiveNamesCallSuper( ElementSubRegionBase & subRegion ) const { GEOS_UNUSED_VAR( subRegion ); }
-  virtual void setConstitutiveNamesCallSuper( ParticleSubRegionBase & subRegion ) const { GEOS_UNUSED_VAR( subRegion ); } // particle
-                                                                                                                          // overload
 
   template< typename BASETYPE = constitutive::ConstitutiveBase, typename LOOKUP_TYPE >
   static BASETYPE const & getConstitutiveModel( dataRepository::Group const & dataGroup, LOOKUP_TYPE const & key );
@@ -798,6 +801,9 @@ protected:
 
   /// Custom preconditioner for the "native" iterative solver
   std::unique_ptr< PreconditionerBase< LAInterface > > m_precond;
+
+  /// flag for debug output of matrix, rhs, and solution
+  integer m_writeLinearSystem;
 
   /// Linear solver parameters
   LinearSolverParametersInput m_linearSolverParameters;
@@ -832,7 +838,6 @@ private:
    *  names set.
    */
   virtual void setConstitutiveNames( ElementSubRegionBase & subRegion ) const { GEOS_UNUSED_VAR( subRegion ); }
-  virtual void setConstitutiveNames( ParticleSubRegionBase & subRegion ) const { GEOS_UNUSED_VAR( subRegion ); } // particle overload
 
   bool solveNonlinearSystem( real64 const & time_n,
                              real64 const & dt,

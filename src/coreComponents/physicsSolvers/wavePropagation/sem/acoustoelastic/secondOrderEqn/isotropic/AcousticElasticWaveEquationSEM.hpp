@@ -68,9 +68,9 @@ public:
   CoupledWaveSolver & operator=( CoupledWaveSolver && ) = delete;
 
   virtual void
-  postProcessInput() override final
+  postInputInitialization() override final
   {
-    SolverBase::postProcessInput();
+    SolverBase::postInputInitialization();
 
     forEachArgInTuple( m_solvers, [&]( auto & solver, auto idx )
     {

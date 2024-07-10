@@ -447,12 +447,17 @@ Elem2dTo3dInfo buildElem2dTo3dElemAndFaces( vtkSmartPointer< vtkDataSet > faceMe
     ng2l[globalPtIds->GetValue( i )] = i;
   }
 
-  // Let's build the elem2d to elem3d mapping. We need to find the 3d elements!
+  // Let's build the elem2d to elem3d mapping.
+  // We need to find the 3d elements (and only the 3d elements, so we can safely ignore the others).
   // First we compute the mapping from all the boundary nodes to the 3d elements that rely on those nodes.
   std::map< vtkIdType, std::vector< vtkIdType > > nodesToCellsFull;
   for( vtkIdType i = 0; i < boundary->GetNumberOfCells(); ++i )
   {
     vtkIdType const cellId = boundaryCells->GetValue( i );
+    if( mesh->GetCell( cellId )->GetCellDimension() != 3 )
+    {
+      continue;
+    }
     vtkIdList * pointIds = boundary->GetCell( i )->GetPointIds();
     for( int j = 0; j < pointIds->GetNumberOfIds(); ++j )
     {

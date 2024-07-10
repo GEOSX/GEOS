@@ -729,7 +729,7 @@ public:
   }
 
 protected:
-  virtual void postProcessInput() override;
+  virtual void postInputInitialization() override;
 
   /// The default value of the Young's modulus E1 for any new
   /// allocations.

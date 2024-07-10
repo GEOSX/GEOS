@@ -141,6 +141,36 @@ public:
                      real64 ( &N )[numNodes] );
 
   /**
+   * @brief Calculate shape bubble functions values at a given point in the parent space.
+   * @param pointCoord coordinates of the given point.
+   * @param N An array to pass back the shape function values.
+   */
+  GEOS_HOST_DEVICE
+  GEOS_FORCE_INLINE
+  static void calcBubbleN( real64 const (&pointCoord)[2],
+                           real64 (& N)[1] )
+  {
+    LagrangeBasis1::TensorProduct2D::valueBubble( pointCoord, N );
+  }
+
+  /**
+   * @brief Calculate shape bubble functions values at a
+   *   quadrature point.
+   * @param q Index of the quadrature point.
+   * @param N An array to pass back the shape function values.
+   */
+  GEOS_HOST_DEVICE
+  inline
+  static void calcBubbleN( localIndex const q,
+                           real64 (& N)[1] )
+  {
+    real64 const qCoords[2] = { quadratureFactor *parentCoords0( q ),
+                                quadratureFactor *parentCoords1( q ) };
+
+    calcBubbleN( qCoords, N );
+  }
+
+  /**
    * @brief Calculate the integration weights for a quadrature point.
    * @param q Index of the quadrature point.
    * @param X Array containing the coordinates of the support points.
@@ -168,6 +198,21 @@ public:
                                         [maxSupportPoints * NUMDOFSPERTRIALSUPPORTPOINT]
                                         [maxSupportPoints * NUMDOFSPERTRIALSUPPORTPOINT],
                                         real64 const & scaleFactor );
+
+  /**
+   * @brief Calculate the node permutation between the parent element and the geometric element.
+   *   Note: The optimal location for this calculation is yet to be determined.
+   * @param permutation An array to return the node permutation.
+   */
+  GEOS_HOST_DEVICE
+  inline
+  static void getPermutation( int (& permutation)[numNodes] )
+  {
+    permutation[0] = 0;
+    permutation[1] = 1;
+    permutation[2] = 3;
+    permutation[3] = 2;
+  }
 
 private:
   /// The area of the element in the parent configuration.

@@ -160,7 +160,7 @@ public:
 
   real64 relaxationTime() const { return m_relaxationTime; }
 
-  virtual void postProcessInput() override;
+  virtual void postInputInitialization() override;
 
   virtual void allocateConstitutiveData( dataRepository::Group & parent,
                                          localIndex const numConstitutivePointsPerParentIndex ) override;

@@ -117,7 +117,7 @@ protected:
     ElementRegionManager & elementManager = domain.getMeshBody( 0 ).getBaseDiscretization().getElemManager();
     xmlWrapper::xmlNode topLevelNode = xmlProblemNode.child( elementManager.getName().c_str() );
     elementManager.processInputFileRecursive( xmlDocument, topLevelNode );
-    elementManager.postProcessInputRecursive();
+    elementManager.postInputInitializationRecursive();
 
     problemManager.problemSetup();
     problemManager.applyInitialConditions();

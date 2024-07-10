@@ -65,13 +65,13 @@ Rectangle::Rectangle( const real64 oldX, const real64 oldY,
 
   m_points.resize( 4, 3 );
   //parent->registerGroup< Rectangle >( name, std::move( this ) );
-  this->postProcessInput();
+  this->postInputInitialization();
 }
 
 Rectangle::~Rectangle()
 {}
 
-void Rectangle::postProcessInput()
+void Rectangle::postInputInitialization()
 {
   // Make sure that you have an orthonormal basis.
   LvArray::tensorOps::normalize< 3 >( m_normal );

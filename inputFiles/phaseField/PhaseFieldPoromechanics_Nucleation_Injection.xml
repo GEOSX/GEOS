@@ -145,8 +145,8 @@
       extDrivingForceFlag="1"
       degradationLowerLimit="1e-6"
       defaultTensileStrength="5.5e6"
-      compressiveStrength="40.0e6"
-      deltaCoefficient="0.44"/>
+      defaultCompressiveStrength="40.0e6"
+      defaultDeltaCoefficient="0.44"/>
 
     <BiotPorosity
       name="rockPorosity"

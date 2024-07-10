@@ -61,7 +61,7 @@ ExternalMeshGeneratorBase::ExternalMeshGeneratorBase( string const & name,
     setDescription( "Names of the surfacic fields in GEOSX to import into" );
 }
 
-void ExternalMeshGeneratorBase::postProcessInput()
+void ExternalMeshGeneratorBase::postInputInitialization()
 {
   auto const checkSizes = [this]( arrayView1d< string const > from, arrayView1d< string const > to,
                                   string const & fromKey, string const & toKey )

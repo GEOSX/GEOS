@@ -407,7 +407,7 @@ public:
   static string catalogName() { return string( "Damage" ) + BASE::m_catalogNameString; }
   virtual string getCatalogName() const override { return catalogName(); }
 
-  virtual void postProcessInput() override;
+  virtual void postInputInitialization() override;
 
   virtual void allocateConstitutiveData( dataRepository::Group & parent,
                                          localIndex const numConstitutivePointsPerParentIndex ) override;

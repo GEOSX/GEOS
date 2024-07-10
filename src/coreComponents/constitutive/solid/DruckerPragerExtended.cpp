@@ -113,9 +113,9 @@ void DruckerPragerExtended::allocateConstitutiveData( dataRepository::Group & pa
 }
 
 
-void DruckerPragerExtended::postProcessInput()
+void DruckerPragerExtended::postInputInitialization()
 {
-  ElasticIsotropic::postProcessInput();
+  ElasticIsotropic::postInputInitialization();
 
   GEOS_THROW_IF( m_defaultCohesion < 0,
                  getFullName() << ": Negative cohesion value detected", InputError );

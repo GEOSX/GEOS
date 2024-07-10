@@ -313,7 +313,8 @@
   
   <Outputs>
     <VTK
-      name="vtkOutput"/>
+      name="vtkOutput"
+      plotFileRoot="co2_flux_3d"/>
 
     <Restart
       name="sidreRestart"/>

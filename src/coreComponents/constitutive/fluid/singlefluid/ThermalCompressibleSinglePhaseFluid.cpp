@@ -71,9 +71,9 @@ void ThermalCompressibleSinglePhaseFluid::allocateConstitutiveData( dataReposito
   m_internalEnergy.setValues< serialPolicy >( m_referenceInternalEnergy );
 }
 
-void ThermalCompressibleSinglePhaseFluid::postProcessInput()
+void ThermalCompressibleSinglePhaseFluid::postInputInitialization()
 {
-  CompressibleSinglePhaseFluid::postProcessInput();
+  CompressibleSinglePhaseFluid::postInputInitialization();
 
   auto const checkNonnegative = [&]( real64 const value, auto const & attribute )
   {

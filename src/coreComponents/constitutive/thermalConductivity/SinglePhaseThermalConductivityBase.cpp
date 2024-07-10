@@ -34,9 +34,9 @@ SinglePhaseThermalConductivityBase::SinglePhaseThermalConductivityBase( string c
   registerField( fields::thermalconductivity::effectiveConductivity{}, &m_effectiveConductivity );
 }
 
-void SinglePhaseThermalConductivityBase::postProcessInput()
+void SinglePhaseThermalConductivityBase::postInputInitialization()
 {
-  ConstitutiveBase::postProcessInput();
+  ConstitutiveBase::postInputInitialization();
 
   m_effectiveConductivity.resize( 0, 0, 3 );
 }

@@ -434,6 +434,11 @@ public:
 
   ///}@
 
+  /**
+   * @brief Get the maximum number of nodes per face.
+   * @return the maximum number of nodes per face
+   */
+  constexpr static int maxFaceNodes() { return MAX_FACE_NODES; }
 private:
 
   /**

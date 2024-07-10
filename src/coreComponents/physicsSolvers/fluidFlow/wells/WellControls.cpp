@@ -215,7 +215,7 @@ TableFunction * createWellTable( string const & tableName,
 
 }
 
-void WellControls::postProcessInput()
+void WellControls::postInputInitialization()
 {
   // 0) Assign the value of the current well control
   // When the simulation starts from a restart file, we don't want to use the inputControl,

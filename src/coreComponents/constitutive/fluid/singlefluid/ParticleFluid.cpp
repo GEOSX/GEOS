@@ -79,9 +79,9 @@ ParticleFluid::ParticleFluid( string const & name, Group * const parent ):
 
 ParticleFluid::~ParticleFluid() = default;
 
-void ParticleFluid::postProcessInput()
+void ParticleFluid::postInputInitialization()
 {
-  ParticleFluidBase::postProcessInput();
+  ParticleFluidBase::postInputInitialization();
 
   GEOS_ERROR_IF( m_proppantDensity < 500.0,
                  "Invalid proppantDensity in ParticleFluid "

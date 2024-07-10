@@ -83,9 +83,9 @@ void CeramicDamage::allocateConstitutiveData( dataRepository::Group & parent,
 }
 
 
-void CeramicDamage::postProcessInput()
+void CeramicDamage::postInputInitialization()
 {
-  ElasticIsotropic::postProcessInput();
+  ElasticIsotropic::postInputInitialization();
 
   GEOS_THROW_IF( m_tensileStrength < 0.0, "Tensile strength must be a positive number.", InputError );
   GEOS_THROW_IF( m_compressiveStrength < m_tensileStrength, "Compressive strength must be greater than tensile strength.", InputError );

@@ -27,7 +27,7 @@ namespace geos
 {
 
 /// @tparam RESERVOIR_SOLVER compositional flow or compositional poromechanics solver
-template< typename RESERVOIR_SOLVER >
+template< typename RESERVOIR_SOLVER = CompositionalMultiphaseBase >
 class CompositionalMultiphaseReservoirAndWells : public CoupledReservoirAndWellsBase< RESERVOIR_SOLVER,
                                                                                       CompositionalMultiphaseWell >
 {
@@ -84,44 +84,10 @@ public:
                                       CRSMatrixView< real64, globalIndex const > const & localMatrix,
                                       arrayView1d< real64 > const & localRhs ) override;
 
-  void
-  assembleFluxTerms( real64 const dt,
-                     DomainPartition const & domain,
-                     DofManager const & dofManager,
-                     CRSMatrixView< real64, globalIndex const > const & localMatrix,
-                     arrayView1d< real64 > const & localRhs ) const
-  { flowSolver()->assembleFluxTerms( dt, domain, dofManager, localMatrix, localRhs );  }
-  void
-  assembleStabilizedFluxTerms( real64 const dt,
-                               DomainPartition const & domain,
-                               DofManager const & dofManager,
-                               CRSMatrixView< real64, globalIndex const > const & localMatrix,
-                               arrayView1d< real64 > const & localRhs ) const
-  { flowSolver()->assembleStabilizedFluxTerms( dt, domain, dofManager, localMatrix, localRhs );  }
-
-  void setKeepFlowVariablesConstantDuringInitStep( bool const keepFlowVariablesConstantDuringInitStep )
-  { flowSolver()->setKeepFlowVariablesConstantDuringInitStep( keepFlowVariablesConstantDuringInitStep ); }
-
-  real64 updateFluidState( ElementSubRegionBase & subRegion ) const
-  { return flowSolver()->updateFluidState( subRegion ); }
-  void updatePorosityAndPermeability( CellElementSubRegion & subRegion ) const
-  { flowSolver()->updatePorosityAndPermeability( subRegion ); }
-  void updateSolidInternalEnergyModel( ObjectManagerBase & dataGroup ) const
-  { flowSolver()->updateSolidInternalEnergyModel( dataGroup ); }
-
-  integer & isThermal() { return flowSolver()->isThermal(); }
   integer useSimpleAccumulation() const { return flowSolver()->useSimpleAccumulation(); }
   integer useTotalMassEquation() const { return flowSolver()->useTotalMassEquation(); }
   integer numFluidPhases() { return flowSolver()->numFluidPhases(); }
   integer numFluidComponents() { return flowSolver()->numFluidComponents(); }
-
-  void enableFixedStressPoromechanicsUpdate()
-  { flowSolver()->enableFixedStressPoromechanicsUpdate();  }
-
-  void enableJumpStabilization()
-  {flowSolver()->enableJumpStabilization(); }
-
-  virtual void saveSequentialIterationState( DomainPartition & domain ) override final { flowSolver()->saveSequentialIterationState( domain ); }
 
 protected:
 

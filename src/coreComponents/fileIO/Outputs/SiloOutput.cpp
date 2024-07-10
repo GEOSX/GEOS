@@ -85,7 +85,7 @@ SiloOutput::SiloOutput( string const & name,
 SiloOutput::~SiloOutput()
 {}
 
-void SiloOutput::postProcessInput()
+void SiloOutput::postInputInitialization()
 {
   string const fieldNamesString = viewKeysStruct::fieldNames;
   string const onlyPlotSpecifiedFieldNamesString = viewKeysStruct::onlyPlotSpecifiedFieldNames;

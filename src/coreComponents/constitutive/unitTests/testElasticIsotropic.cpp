@@ -81,7 +81,7 @@ TEST( ElasticIsotropicTests, testStateUpdatePoint )
 
   xmlWrapper::xmlNode xmlConstitutiveNode = xmlDocument.getChild( "Constitutive" );
   constitutiveManager.processInputFileRecursive( xmlDocument, xmlConstitutiveNode );
-  constitutiveManager.postProcessInputRecursive();
+  constitutiveManager.postInputInitializationRecursive();
 
   dataRepository::Group disc( "discretization", &rootGroup );
   disc.resize( 2 );

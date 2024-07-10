@@ -62,9 +62,6 @@ public:
 
   /**@}*/
 
-private:
-
-  using Base = FieldStatisticsBase< SinglePhaseBase >;
 
   /**
    * @struct viewKeyStruct holds char strings and viewKeys for fast lookup
@@ -104,6 +101,10 @@ private:
     /// total region uncompacted pore volume
     real64 totalUncompactedPoreVolume;
   };
+
+private:
+
+  using Base = FieldStatisticsBase< SinglePhaseBase >;
 
   /**
    * @brief Compute some statistics on the reservoir (average field pressure, etc)

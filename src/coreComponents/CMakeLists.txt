@@ -28,7 +28,7 @@ if ( ENABLE_CUDA )
   list( APPEND parallelDeps cuda )
 endif()
 
-if( ENABLE_CUDA_NVTOOLSEXT )
+if( ENABLE_CUDA AND ENABLE_CUDA_NVTOOLSEXT )
   list( APPEND parallelDeps CUDA::nvToolsExt )
 endif()
 

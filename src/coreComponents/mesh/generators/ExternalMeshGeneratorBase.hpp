@@ -54,7 +54,7 @@ protected:
   };
   /// @endcond
 
-  void postProcessInput() override;
+  void postInputInitialization() override;
 
   /// Path to the mesh file
   Path m_filePath;

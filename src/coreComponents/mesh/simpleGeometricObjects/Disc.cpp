@@ -48,7 +48,7 @@ Disc::Disc( const string & name, Group * const parent ):
 Disc::~Disc()
 {}
 
-void Disc::postProcessInput()
+void Disc::postInputInitialization()
 {
   // Make sure that you have an orthonormal basis.
   LvArray::tensorOps::normalize< 3 >( m_normal );

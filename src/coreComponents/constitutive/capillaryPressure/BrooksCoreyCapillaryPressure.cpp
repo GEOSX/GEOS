@@ -56,9 +56,9 @@ BrooksCoreyCapillaryPressure::BrooksCoreyCapillaryPressure( string const & name,
     setDescription( "Factor used to scale the phase capillary pressure, defined as: one minus the sum of the phase minimum volume fractions." );
 }
 
-void BrooksCoreyCapillaryPressure::postProcessInput()
+void BrooksCoreyCapillaryPressure::postInputInitialization()
 {
-  CapillaryPressureBase::postProcessInput();
+  CapillaryPressureBase::postInputInitialization();
 
   auto const checkInputSize = [&]( auto const & array, auto const & attribute )
   {

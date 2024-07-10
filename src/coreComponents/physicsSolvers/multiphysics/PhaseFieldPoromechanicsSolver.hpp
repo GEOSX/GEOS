@@ -66,7 +66,7 @@ public:
 
   virtual void resetStateToBeginningOfStep( DomainPartition & domain ) override final;
 
-  virtual void postProcessInput() override final;
+  virtual void postInputInitialization() override final;
 
   /**
    * @brief accessor for the pointer to the poromechanics solver

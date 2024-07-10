@@ -286,6 +286,14 @@ else()
 endif()
 
 ################################
+# CUDA
+################################
+if ( ENABLE_CUDA)
+  find_package(CUDAToolkit REQUIRED)
+  message( " ----> $CUDAToolkit_VERSION = ${CUDAToolkit_VERSION}")
+endif()
+
+################################
 # CAMP ( required before raja on crusher / using spack installed tpls )
 ################################
 if(DEFINED CAMP_DIR)
@@ -631,41 +639,45 @@ endif()
 if(DEFINED HYPRE_DIR AND ENABLE_HYPRE)
     message(STATUS "HYPRE_DIR = ${HYPRE_DIR}")
 
-    set( HYPRE_DEPENDS blas lapack umpire)
+    set( HYPRE_DEPENDS blas lapack umpire )
     if( ENABLE_SUPERLU_DIST )
-        set( HYPRE_DEPENDS ${HYPRE_DEPENDS} superlu_dist )
+        list( APPEND HYPRE_DEPENDS superlu_dist )
     endif()
     if( ${ENABLE_HYPRE_DEVICE} STREQUAL "CUDA" )
-        set( EXTRA_LIBS ${CUDA_cusparse_LIBRARY} ${CUDA_cublas_LIBRARY} ${CUDA_curand_LIBRARY} ${CUDA_cusolver_LIBRARY} )
+        list( APPEND HYPRE_DEPENDS CUDA::cusparse CUDA::cublas CUDA::curand CUDA::cusolver )
+
+        # Add libnvJitLink when using CUDA >= 12.2.2. Note: requires cmake >= 3.26
+        if( CUDAToolkit_VERSION VERSION_GREATER_EQUAL "12.2.2" )
+           list( APPEND HYPRE_DEPENDS CUDA::nvJitLink )
+        endif()
     elseif( ${ENABLE_HYPRE_DEVICE} STREQUAL "HIP" )
         find_package( rocblas REQUIRED )
         find_package( rocsolver REQUIRED )
         find_package( rocsparse REQUIRED )
         find_package( rocrand REQUIRED )
-        set( HYPRE_DEPENDS ${HYPRE_DEPENDS} roc::rocblas roc::rocsparse roc::rocsolver roc::rocrand )
+        append( APPEND HYPRE_DEPENDS roc::rocblas roc::rocsparse roc::rocsolver roc::rocrand )
     endif( )
 
-    find_and_import(NAME hypre
-                      INCLUDE_DIRECTORIES ${HYPRE_DIR}/include
-                      LIBRARY_DIRECTORIES ${HYPRE_DIR}/lib
-                      HEADER HYPRE.h
-                      LIBRARIES HYPRE
-                      EXTRA_LIBRARIES ${EXTRA_LIBS}
-                      DEPENDS ${HYPRE_DEPENDS})
+    find_and_import( NAME hypre
+                     INCLUDE_DIRECTORIES ${HYPRE_DIR}/include
+                     LIBRARY_DIRECTORIES ${HYPRE_DIR}/lib
+                     HEADER HYPRE.h
+                     LIBRARIES HYPRE
+                     DEPENDS ${HYPRE_DEPENDS} )
 
     extract_version_from_header( NAME hypre
                                  HEADER "${HYPRE_DIR}/include/HYPRE_config.h"
                                  VERSION_STRING "HYPRE_RELEASE_VERSION" )
 
     # Extract some additional information about development version of hypre
-    file(READ ${HYPRE_DIR}/include/HYPRE_config.h header_file)
-    if("${header_file}" MATCHES "HYPRE_DEVELOP_STRING *\"([^\"]*)\"")
-        set(hypre_dev_string "${CMAKE_MATCH_1}")
-        if("${header_file}" MATCHES "HYPRE_BRANCH_NAME *\"([^\"]*)\"")
-            set(hypre_dev_branch "${CMAKE_MATCH_1}")
+    file( READ ${HYPRE_DIR}/include/HYPRE_config.h header_file )
+    if( "${header_file}" MATCHES "HYPRE_DEVELOP_STRING *\"([^\"]*)\"" )
+        set( hypre_dev_string "${CMAKE_MATCH_1}" )
+        if( "${header_file}" MATCHES "HYPRE_BRANCH_NAME *\"([^\"]*)\"" )
+            set( hypre_dev_branch "${CMAKE_MATCH_1}" )
         endif()
-        set(hypre_VERSION "${hypre_dev_string} (${hypre_dev_branch})" CACHE STRING "" FORCE)
-        message(" ----> hypre_VERSION = ${hypre_VERSION}")
+        set( hypre_VERSION "${hypre_dev_string} (${hypre_dev_branch})" CACHE STRING "" FORCE )
+        message( " ----> hypre_VERSION = ${hypre_VERSION}" )
     endif()
 
     # Prepend Hypre to link flags, fix for Umpire appearing before Hypre on the link line
@@ -682,8 +694,8 @@ if(DEFINED HYPRE_DIR AND ENABLE_HYPRE)
     #   set(ENABLE_HYPRE ON CACHE BOOL "")
     # endif()
 
-    set(ENABLE_HYPRE ON CACHE BOOL "")
-    set(thirdPartyLibs ${thirdPartyLibs} hypre ${HYPRE_DEPENDS} )
+    set( ENABLE_HYPRE ON CACHE BOOL "" )
+    set( thirdPartyLibs ${thirdPartyLibs} hypre ${HYPRE_DEPENDS} )
 else()
     if(ENABLE_HYPRE)
         message(WARNING "ENABLE_HYPRE is ON but HYPRE_DIR isn't defined.")
@@ -900,24 +912,6 @@ if(NOT ENABLE_${upper_LAI})
 endif()
 option(GEOSX_LA_INTERFACE_${upper_LAI} "${upper_LAI} LA interface is selected" ON)
 
-################################
-# Fesapi
-################################
-# if(DEFINED FESAPI_DIR)
-#     message(STATUS "FESAPI_DIR = ${FESAPI_DIR}")
-
-#     find_and_import(NAME FesapiCpp
-#                  INCLUDE_DIRECTORIES ${FESAPI_DIR}/include
-#                  LIBRARY_DIRECTORIES ${FESAPI_DIR}/lib
-#                  HEADER fesapi/nsDefinitions.h
-#                  LIBRARIES FesapiCpp
-#                  DEPENDS hdf5)
-
-#     set(FESAPI_DIR ON CACHE BOOL "")
-#     set(thirdPartyLibs ${thirdPartyLibs} FesapiCpp)
-# else()
-    message(STATUS "Not using Fesapi")
-# endif()
 
 message(STATUS "thirdPartyLibs = ${thirdPartyLibs}")
 
@@ -925,12 +919,7 @@ message(STATUS "thirdPartyLibs = ${thirdPartyLibs}")
 # NvToolExt
 ###############################
 if ( ENABLE_CUDA AND ENABLE_CUDA_NVTOOLSEXT )
-  find_package(CUDAToolkit REQUIRED)
-
-  message( " ----> $CUDAToolkit_VERSION = ${CUDAToolkit_VERSION}")
-
   set(thirdPartyLibs ${thirdPartyLibs} CUDA::nvToolsExt)
 endif()
 
 message(STATUS "thirdPartyLibs = ${thirdPartyLibs}")
-

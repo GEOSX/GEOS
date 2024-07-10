@@ -51,7 +51,7 @@ CoulombContact::CoulombContact( string const & name, Group * const parent ):
 CoulombContact::~CoulombContact()
 {}
 
-void CoulombContact::postProcessInput()
+void CoulombContact::postInputInitialization()
 {
   GEOS_THROW_IF( m_frictionCoefficient < 0.0,
                  getFullName() << ": The provided friction coefficient is less than zero. Value: " << m_frictionCoefficient,

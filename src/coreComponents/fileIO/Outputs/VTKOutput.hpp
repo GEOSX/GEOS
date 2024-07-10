@@ -45,7 +45,7 @@ public:
    */
   static string catalogName() { return "VTK"; }
 
-  virtual void postProcessInput() override;
+  virtual void postInputInitialization() override;
 
   /**
    * @brief Set the plotFileRoot name for the output
@@ -89,6 +89,7 @@ public:
     static constexpr auto plotFileRoot = "plotFileRoot";
     static constexpr auto writeFEMFaces = "writeFEMFaces";
     static constexpr auto writeGhostCells = "writeGhostCells";
+    static constexpr auto writeFaceElementsAs3D = "writeFaceElementsAs3D";
     static constexpr auto plotLevel = "plotLevel";
     static constexpr auto binaryString = "format";
     static constexpr auto outputRegionTypeString = "outputRegionType";
@@ -114,6 +115,9 @@ private:
 
   /// Should the vtk files contain the ghost cells or not.
   integer m_writeGhostCells;
+
+  /// Should the face elements be written as 3d volumes or not.
+  integer m_writeFaceElementsAs3D;
 
   /// flag to decide whether we only plot the specified field names
   integer m_onlyPlotSpecifiedFieldNames;

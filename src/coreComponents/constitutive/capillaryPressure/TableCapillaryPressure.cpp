@@ -67,9 +67,9 @@ TableCapillaryPressure::TableCapillaryPressure( std::string const & name,
     setRestartFlags( RestartFlags::NO_WRITE );
 }
 
-void TableCapillaryPressure::postProcessInput()
+void TableCapillaryPressure::postInputInitialization()
 {
-  CapillaryPressureBase::postProcessInput();
+  CapillaryPressureBase::postInputInitialization();
 
   integer const numPhases = m_phaseNames.size();
   GEOS_THROW_IF( numPhases != 2 && numPhases != 3,

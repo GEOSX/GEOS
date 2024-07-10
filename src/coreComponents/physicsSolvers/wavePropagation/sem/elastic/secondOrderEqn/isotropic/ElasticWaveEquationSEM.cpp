@@ -156,6 +156,20 @@ void ElasticWaveEquationSEM::registerDataOnMesh( Group & meshBodies )
                                elasticfields::StiffnessVectorz,
                                elasticfields::ElasticFreeSurfaceNodeIndicator >( getName() );
 
+    if( m_attenuationType == WaveSolverUtils::AttenuationType::sls )
+    {
+      integer l = m_slsReferenceAngularFrequencies.size( 0 );
+      nodeManager.registerField< elasticfields::DivPsix,
+                                 elasticfields::DivPsiy,
+                                 elasticfields::DivPsiz,
+                                 elasticfields::StiffnessVectorAx,
+                                 elasticfields::StiffnessVectorAy,
+                                 elasticfields::StiffnessVectorAz >( getName() );
+      nodeManager.getField< elasticfields::DivPsix >().resizeDimension< 1 >( l );
+      nodeManager.getField< elasticfields::DivPsiy >().resizeDimension< 1 >( l );
+      nodeManager.getField< elasticfields::DivPsiz >().resizeDimension< 1 >( l );
+    }
+
     FaceManager & faceManager = mesh.getFaceManager();
     faceManager.registerField< elasticfields::ElasticFreeSurfaceFaceIndicator >( getName() );
 
@@ -166,6 +180,11 @@ void ElasticWaveEquationSEM::registerDataOnMesh( Group & meshBodies )
       subRegion.registerField< elasticfields::ElasticVelocityVp >( getName() );
       subRegion.registerField< elasticfields::ElasticVelocityVs >( getName() );
       subRegion.registerField< elasticfields::ElasticDensity >( getName() );
+      if( m_attenuationType == WaveSolverUtils::AttenuationType::sls )
+      {
+        subRegion.registerField< elasticfields::ElasticQualityFactorP >( getName() );
+        subRegion.registerField< elasticfields::ElasticQualityFactorS >( getName() );
+      }
 
       if( m_useVTI )
       {
@@ -173,7 +192,6 @@ void ElasticWaveEquationSEM::registerDataOnMesh( Group & meshBodies )
         subRegion.registerField< elasticvtifields::Epsilon >( getName() );
         subRegion.registerField< elasticvtifields::Delta >( getName() );
       }
-
     } );
 
   } );
@@ -181,9 +199,9 @@ void ElasticWaveEquationSEM::registerDataOnMesh( Group & meshBodies )
 
 
 
-void ElasticWaveEquationSEM::postProcessInput()
+void ElasticWaveEquationSEM::postInputInitialization()
 {
-  WaveSolverBase::postProcessInput();
+  WaveSolverBase::postInputInitialization();
 
   if( m_useDAS == WaveSolverUtils::DASType::none )
   {
@@ -415,12 +433,53 @@ void ElasticWaveEquationSEM::initializePostInitialConditionsPreSubGroups()
                                                                              dampingz );
       } );
     } );
+
+    // check anelasticity coefficient and/or compute it if needed
+    if( m_attenuationType == WaveSolverUtils::AttenuationType::sls )
+    {
+      real32 minQVal = computeGlobalMinQFactor();
+      if( m_slsAnelasticityCoefficients.size( 0 ) == 1 && m_slsAnelasticityCoefficients[ 0 ] < 0 )
+      {
+        m_slsAnelasticityCoefficients[ 0 ] = 2.0 * minQVal / ( minQVal - 1.0 );
+      }
+      // test if anelasticity is too high and artifacts could appear
+      real32 ySum = 0.0;
+      for( integer l = 0; l < m_slsAnelasticityCoefficients.size( 0 ); l++ )
+      {
+        ySum += m_slsAnelasticityCoefficients[ l ];
+      }
+      GEOS_WARNING_IF( ySum > minQVal, "The anelasticity parameters are too high for the given quality factor. This could lead to solution artifacts such as zero-velocity waves." );
+    }
+
   } );
 
   WaveSolverUtils::initTrace( "seismoTraceReceiver", getName(), m_outputSeismoTrace, m_receiverConstants.size( 0 ), m_receiverIsLocal );
   WaveSolverUtils::initTrace( "dasTraceReceiver", getName(), m_outputSeismoTrace, m_linearDASGeometry.size( 0 ), m_receiverIsLocal );
 }
 
+real32 ElasticWaveEquationSEM::computeGlobalMinQFactor()
+{
+  RAJA::ReduceMin< ReducePolicy< EXEC_POLICY >, real32 > minQ( LvArray::NumericLimits< real32 >::max );
+  DomainPartition & domain = getGroupByPath< DomainPartition >( "/Problem/domain" );
+
+  forDiscretizationOnMeshTargets( domain.getMeshBodies(), [&] ( string const &,
+                                                                MeshLevel & mesh,
+                                                                arrayView1d< string const > const & regionNames )
+  {
+    mesh.getElemManager().forElementSubRegions< CellElementSubRegion >( regionNames, [&]( localIndex const,
+                                                                                          CellElementSubRegion & elementSubRegion )
+    {
+      arrayView1d< real32 const > const qp = elementSubRegion.getField< elasticfields::ElasticQualityFactorP >();
+      arrayView1d< real32 const > const qs = elementSubRegion.getField< elasticfields::ElasticQualityFactorS >();
+      forAll< EXEC_POLICY >( elementSubRegion.size(), [=] GEOS_HOST_DEVICE ( localIndex const e ) {
+        minQ.min( qp[e] );
+        minQ.min( qs[e] );
+      } );
+    } );
+  } );
+  real32 minQVal = minQ.get();
+  return MpiWrapper::min< real32 >( minQVal );
+}
 
 void ElasticWaveEquationSEM::applyFreeSurfaceBC( real64 const time, DomainPartition & domain )
 {
@@ -552,8 +611,7 @@ void ElasticWaveEquationSEM::computeUnknowns( real64 const &,
 
   if( m_useVTI )
   {
-    auto kernelFactory = ElasticVTIWaveEquationSEMKernels::ExplicitElasticVTISEMFactory( dt );
-
+    auto kernelFactory = elasticVTIWaveEquationSEMKernels::ExplicitElasticVTISEMFactory( dt );
     finiteElement::
       regionBasedKernelApplication< EXEC_POLICY,
                                     constitutive::NullModel,
@@ -566,7 +624,19 @@ void ElasticWaveEquationSEM::computeUnknowns( real64 const &,
   else
   {
     auto kernelFactory = elasticWaveEquationSEMKernels::ExplicitElasticSEMFactory( dt );
+    finiteElement::
+      regionBasedKernelApplication< EXEC_POLICY,
+                                    constitutive::NullModel,
+                                    CellElementSubRegion >( mesh,
+                                                            regionNames,
+                                                            getDiscretizationName(),
+                                                            "",
+                                                            kernelFactory );
+  }
 
+  if( m_attenuationType == WaveSolverUtils::AttenuationType::sls )
+  {
+    auto kernelFactory = elasticWaveEquationSEMKernels::ExplicitElasticAttenuativeSEMFactory( dt );
     finiteElement::
       regionBasedKernelApplication< EXEC_POLICY,
                                     constitutive::NullModel,
@@ -585,9 +655,29 @@ void ElasticWaveEquationSEM::computeUnknowns( real64 const &,
   addSourceToRightHandSide( cycleForSource, rhsx, rhsy, rhsz );
 
   SortedArrayView< localIndex const > const solverTargetNodesSet = m_solverTargetNodesSet.toViewConst();
-  ElasticTimeSchemeSEM::LeapFrog( dt, ux_np1, ux_n, ux_nm1, uy_np1, uy_n, uy_nm1, uz_np1, uz_n, uz_nm1,
-                                  mass, dampingx, dampingy, dampingz, stiffnessVectorx, stiffnessVectory,
-                                  stiffnessVectorz, rhsx, rhsy, rhsz, solverTargetNodesSet );
+  if( m_attenuationType == WaveSolverUtils::AttenuationType::sls )
+  {
+    arrayView1d< real32 > const stiffnessVectorAx = nodeManager.getField< elasticfields::StiffnessVectorAx >();
+    arrayView1d< real32 > const stiffnessVectorAy = nodeManager.getField< elasticfields::StiffnessVectorAy >();
+    arrayView1d< real32 > const stiffnessVectorAz = nodeManager.getField< elasticfields::StiffnessVectorAz >();
+    arrayView2d< real32 > const divpsix = nodeManager.getField< elasticfields::DivPsix >();
+    arrayView2d< real32 > const divpsiy = nodeManager.getField< elasticfields::DivPsiy >();
+    arrayView2d< real32 > const divpsiz = nodeManager.getField< elasticfields::DivPsiz >();
+    arrayView1d< real32 > const referenceFrequencies = m_slsReferenceAngularFrequencies.toView();
+    arrayView1d< real32 > const anelasticityCoefficients = m_slsAnelasticityCoefficients.toView();
+    ElasticTimeSchemeSEM::AttenuationLeapFrog( dt, ux_np1, ux_n, ux_nm1, uy_np1, uy_n, uy_nm1, uz_np1, uz_n, uz_nm1,
+                                               divpsix, divpsiy, divpsiz,
+                                               mass, dampingx, dampingy, dampingz, stiffnessVectorx, stiffnessVectory,
+                                               stiffnessVectorz, stiffnessVectorAx, stiffnessVectorAy, stiffnessVectorAz,
+                                               rhsx, rhsy, rhsz, solverTargetNodesSet,
+                                               referenceFrequencies, anelasticityCoefficients );
+  }
+  else
+  {
+    ElasticTimeSchemeSEM::LeapFrog( dt, ux_np1, ux_n, ux_nm1, uy_np1, uy_n, uy_nm1, uz_np1, uz_n, uz_nm1,
+                                    mass, dampingx, dampingy, dampingz, stiffnessVectorx, stiffnessVectory,
+                                    stiffnessVectorz, rhsx, rhsy, rhsz, solverTargetNodesSet );
+  }
 }
 
 void ElasticWaveEquationSEM::synchronizeUnknowns( real64 const & time_n,
@@ -599,13 +689,6 @@ void ElasticWaveEquationSEM::synchronizeUnknowns( real64 const & time_n,
 {
   NodeManager & nodeManager = mesh.getNodeManager();
 
-  arrayView1d< real32 > const stiffnessVectorx = nodeManager.getField< elasticfields::StiffnessVectorx >();
-  arrayView1d< real32 > const stiffnessVectory = nodeManager.getField< elasticfields::StiffnessVectory >();
-  arrayView1d< real32 > const stiffnessVectorz = nodeManager.getField< elasticfields::StiffnessVectorz >();
-
-  arrayView1d< real32 > const ux_nm1 = nodeManager.getField< elasticfields::Displacementx_nm1 >();
-  arrayView1d< real32 > const uy_nm1 = nodeManager.getField< elasticfields::Displacementy_nm1 >();
-  arrayView1d< real32 > const uz_nm1 = nodeManager.getField< elasticfields::Displacementz_nm1 >();
   arrayView1d< real32 > const ux_n   = nodeManager.getField< elasticfields::Displacementx_n >();
   arrayView1d< real32 > const uy_n   = nodeManager.getField< elasticfields::Displacementy_n >();
   arrayView1d< real32 > const uz_n   = nodeManager.getField< elasticfields::Displacementz_n >();
@@ -613,13 +696,14 @@ void ElasticWaveEquationSEM::synchronizeUnknowns( real64 const & time_n,
   arrayView1d< real32 > const uy_np1 = nodeManager.getField< elasticfields::Displacementy_np1 >();
   arrayView1d< real32 > const uz_np1 = nodeManager.getField< elasticfields::Displacementz_np1 >();
 
-  arrayView1d< real32 > const rhsx = nodeManager.getField< elasticfields::ForcingRHSx >();
-  arrayView1d< real32 > const rhsy = nodeManager.getField< elasticfields::ForcingRHSy >();
-  arrayView1d< real32 > const rhsz = nodeManager.getField< elasticfields::ForcingRHSz >();
-
   /// synchronize displacement fields
   FieldIdentifiers fieldsToBeSync;
   fieldsToBeSync.addFields( FieldLocation::Node, { elasticfields::Displacementx_np1::key(), elasticfields::Displacementy_np1::key(), elasticfields::Displacementz_np1::key() } );
+
+  if( m_slsReferenceAngularFrequencies.size( 0 ) > 0 )
+  {
+    fieldsToBeSync.addFields( FieldLocation::Node, { elasticfields::DivPsix::key(), elasticfields::DivPsiy::key(), elasticfields::DivPsiz::key() } );
+  }
 
   CommunicationTools & syncFields = CommunicationTools::getInstance();
   syncFields.synchronizeFields( fieldsToBeSync,
@@ -685,6 +769,17 @@ void ElasticWaveEquationSEM::prepareNextTimestep( MeshLevel & mesh )
     stiffnessVectorx[a] = stiffnessVectory[a] = stiffnessVectorz[a] = 0.0;
     rhsx[a] = rhsy[a] = rhsz[a] = 0.0;
   } );
+  if( m_attenuationType == WaveSolverUtils::AttenuationType::sls )
+  {
+    arrayView1d< real32 > const stiffnessVectorAx = nodeManager.getField< elasticfields::StiffnessVectorAx >();
+    arrayView1d< real32 > const stiffnessVectorAy = nodeManager.getField< elasticfields::StiffnessVectorAy >();
+    arrayView1d< real32 > const stiffnessVectorAz = nodeManager.getField< elasticfields::StiffnessVectorAz >();
+    forAll< EXEC_POLICY >( solverTargetNodesSet.size(), [=] GEOS_HOST_DEVICE ( localIndex const n )
+    {
+      localIndex const a = solverTargetNodesSet[n];
+      stiffnessVectorAx[a] = stiffnessVectorAy[a] = stiffnessVectorAz[a] = 0.0;
+    } );
+  }
 
 }
 

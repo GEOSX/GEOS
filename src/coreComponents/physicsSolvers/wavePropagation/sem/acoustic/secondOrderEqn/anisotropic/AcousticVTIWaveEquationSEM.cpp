@@ -101,10 +101,10 @@ void AcousticVTIWaveEquationSEM::registerDataOnMesh( Group & meshBodies )
 }
 
 
-void AcousticVTIWaveEquationSEM::postProcessInput()
+void AcousticVTIWaveEquationSEM::postInputInitialization()
 {
 
-  WaveSolverBase::postProcessInput();
+  WaveSolverBase::postInputInitialization();
 
   localIndex const numReceiversGlobal = m_receiverCoordinates.size( 0 );
 

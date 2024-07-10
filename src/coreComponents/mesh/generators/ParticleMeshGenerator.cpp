@@ -326,9 +326,9 @@ void ParticleMeshGenerator::fillParticleBlockManager( ParticleBlockManager & par
   //GEOS_LOG_RANK( "Total number of particles on this rank: " << particleManager.size() );
 }
 
-void ParticleMeshGenerator::postProcessInput()
+void ParticleMeshGenerator::postInputInitialization()
 {
-  //GEOS_LOG_RANK_0( "Someone called ParticleMeshGenerator::postProcessInput!" );
+  //GEOS_LOG_RANK_0( "Someone called ParticleMeshGenerator::postInputInitialization!" );
 }
 
 void ParticleMeshGenerator::importFieldOnArray( Block block,

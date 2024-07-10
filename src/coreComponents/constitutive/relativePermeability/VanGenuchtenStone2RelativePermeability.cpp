@@ -67,9 +67,9 @@ VanGenuchtenStone2RelativePermeability::VanGenuchtenStone2RelativePermeability( 
 
 }
 
-void VanGenuchtenStone2RelativePermeability::postProcessInput()
+void VanGenuchtenStone2RelativePermeability::postInputInitialization()
 {
-  RelativePermeabilityBase::postProcessInput();
+  RelativePermeabilityBase::postInputInitialization();
 
   GEOS_THROW_IF( m_phaseOrder[PhaseType::OIL] < 0,
                  GEOS_FMT( "{}: reference oil phase has not been defined and must be included in model", getFullName() ),

@@ -42,7 +42,7 @@ LinearIsotropicDispersion::deliverClone( string const & name,
   return DispersionBase::deliverClone( name, parent );
 }
 
-void LinearIsotropicDispersion::postProcessInput()
+void LinearIsotropicDispersion::postInputInitialization()
 {
   GEOS_THROW_IF( m_longitudinalDispersivity < 0,
                  GEOS_FMT( "{}: longitudinal dispersivity must be positive",

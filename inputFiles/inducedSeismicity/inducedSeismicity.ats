@@ -1,6 +1,5 @@
 import os
-import geos_ats
-from geos_ats.test_builder import TestDeck, RestartcheckParameters, generate_geos_tests, CurveCheckParameters
+from geos.ats.test_builder import TestDeck, RestartcheckParameters, generate_geos_tests, CurveCheckParameters
 
 curvecheck_params = {}
 curvecheck_params["filename"] = "seismicityRate.hdf5"

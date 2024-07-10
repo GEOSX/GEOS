@@ -104,6 +104,30 @@ DECLARE_FIELD( Displacementz_np1,
                WRITE_AND_READ,
                "z-component of displacement at time n+1." );
 
+DECLARE_FIELD( DivPsix,
+               "divpsix",
+               array2d< real32 >,
+               0,
+               NOPLOT,
+               WRITE_AND_READ,
+               "x-component of memory variables for attenuation." );
+
+DECLARE_FIELD( DivPsiy,
+               "divpsiy",
+               array2d< real32 >,
+               0,
+               NOPLOT,
+               WRITE_AND_READ,
+               "y-component of memory variables for attenuation." );
+
+DECLARE_FIELD( DivPsiz,
+               "divpsiz",
+               array2d< real32 >,
+               0,
+               NOPLOT,
+               WRITE_AND_READ,
+               "z-component of memory variables for attenuation." );
+
 DECLARE_FIELD( Stresstensorxx,
                "stresstensorxx",
                array2d< real32 >,
@@ -216,6 +240,30 @@ DECLARE_FIELD( StiffnessVectorz,
                WRITE_AND_READ,
                "z-component of stiffness vector." );
 
+DECLARE_FIELD( StiffnessVectorAx,
+               "stiffnessVectorAx",
+               array1d< real32 >,
+               0,
+               NOPLOT,
+               WRITE_AND_READ,
+               "x-component of attenuation stiffness vector." );
+
+DECLARE_FIELD( StiffnessVectorAy,
+               "stiffnessVectorAy",
+               array1d< real32 >,
+               0,
+               NOPLOT,
+               WRITE_AND_READ,
+               "y-component of attenuation stiffness vector." );
+
+DECLARE_FIELD( StiffnessVectorAz,
+               "stiffnessVectorAz",
+               array1d< real32 >,
+               0,
+               NOPLOT,
+               WRITE_AND_READ,
+               "z-component of attenuation stiffness vector." );
+
 DECLARE_FIELD( DampingVectorx,
                "dampingVectorx",
                array1d< real32 >,
@@ -263,6 +311,22 @@ DECLARE_FIELD( ElasticDensity,
                NOPLOT,
                WRITE_AND_READ,
                "Medium density of the cell" );
+
+DECLARE_FIELD( ElasticQualityFactorP,
+               "elasticQualityFactorP",
+               array1d< real32 >,
+               0,
+               NOPLOT,
+               WRITE_AND_READ,
+               "Quality factor for P-wave attenuation in the cell" );
+
+DECLARE_FIELD( ElasticQualityFactorS,
+               "elasticQualityFactorS",
+               array1d< real32 >,
+               0,
+               NOPLOT,
+               WRITE_AND_READ,
+               "Quality factor for S-wave attenuation in the cell" );
 
 DECLARE_FIELD( ElasticFreeSurfaceFaceIndicator,
                "elasticFreeSurfaceFaceIndicator",

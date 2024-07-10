@@ -894,6 +894,15 @@ public:
   }
 
   /**
+   * @copydoc WrapperBase::appendDescription(string const &)
+   */
+  Wrapper< T > & appendDescription( string const & description )
+  {
+    WrapperBase::appendDescription( description );
+    return *this;
+  }
+
+  /**
    * @copydoc WrapperBase::setRegisteringObjects(string const &)
    */
   Wrapper< T > & setRegisteringObjects( string const & objectName )

@@ -33,9 +33,9 @@ DispersionBase::DispersionBase( string const & name, Group * const parent )
   registerField( fields::dispersion::dispersivity{}, &m_dispersivity );
 }
 
-void DispersionBase::postProcessInput()
+void DispersionBase::postInputInitialization()
 {
-  ConstitutiveBase::postProcessInput();
+  ConstitutiveBase::postInputInitialization();
 
   m_dispersivity.resize( 0, 0, 3 );
 }

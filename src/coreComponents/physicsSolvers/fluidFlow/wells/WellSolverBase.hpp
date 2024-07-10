@@ -289,15 +289,27 @@ private:
 
 protected:
 
-  virtual void postProcessInput() override;
+  virtual void postInputInitialization() override;
 
   virtual void initializePostInitialConditionsPreSubGroups() override;
+
+  virtual void initializePostSubGroups() override;
 
   /**
    * @brief Initialize all the primary and secondary variables in all the wells
    * @param domain the domain containing the well manager to access individual wells
    */
   virtual void initializeWells( DomainPartition & domain ) = 0;
+
+  /**
+   * @brief Make sure that the well constraints are compatible
+   * @param time_n the time at the beginning of the time step
+   * @param dt the time step dt
+   * @param subRegion the well subRegion
+   */
+  virtual void validateWellConstraints( real64 const & time_n,
+                                        real64 const & dt,
+                                        WellElementSubRegion const & subRegion ) = 0;
 
   virtual void printRates( real64 const & time_n,
                            real64 const & dt,

@@ -303,7 +303,7 @@ TEST( ConformingVirtualElementOrder1, hexahedra )
   ElementRegionManager & elementManager = mesh.getElemManager();
   xmlWrapper::xmlNode topLevelNode = xmlProblemNode.child( elementManager.getName().c_str() );
   elementManager.processInputFileRecursive( inputFile, topLevelNode );
-  elementManager.postProcessInputRecursive();
+  elementManager.postInputInitializationRecursive();
   problemManager.problemSetup();
 
   // Test computed projectors for all cells in MeshLevel
@@ -356,7 +356,7 @@ TEST( ConformingVirtualElementOrder1, wedges )
   ElementRegionManager & elementManager = mesh.getElemManager();
   xmlWrapper::xmlNode topLevelNode = xmlProblemNode.child( elementManager.getName().c_str() );
   elementManager.processInputFileRecursive( inputFile, topLevelNode );
-  elementManager.postProcessInputRecursive();
+  elementManager.postInputInitializationRecursive();
   problemManager.problemSetup();
 
   // Test computed projectors for all cells in MeshLevel

@@ -1,7 +1,6 @@
 """
 Primary ATS script
 """
-import os
 import ats
 from pathlib import Path
 

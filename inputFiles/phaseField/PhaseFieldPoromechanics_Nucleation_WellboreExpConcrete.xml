@@ -156,8 +156,8 @@
       extDrivingForceFlag="1"
       degradationLowerLimit="1e-6"
       defaultTensileStrength="5.5"
-      compressiveStrength="40.0"
-      deltaCoefficient="3.28"/>
+      defaultCompressiveStrength="40.0"
+      defaultDeltaCoefficient="3.28"/>
 
     <BiotPorosity
       name="concretePorosity"

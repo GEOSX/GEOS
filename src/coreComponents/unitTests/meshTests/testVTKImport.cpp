@@ -69,7 +69,7 @@ void TestMeshImport( string const & meshFilePath, V const & validate, string con
 
   MeshManager meshManager( "mesh", &root );
   meshManager.processInputFileRecursive( xmlDocument, xmlMeshNode );
-  meshManager.postProcessInputRecursive();
+  meshManager.postInputInitializationRecursive();
   DomainPartition domain( "domain", &root );
   meshManager.generateMeshes( domain );
 

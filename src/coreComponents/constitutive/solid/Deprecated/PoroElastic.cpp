@@ -73,9 +73,9 @@ PoroElastic< BASE >::~PoroElastic()
 {}
 
 template< typename BASE >
-void PoroElastic< BASE >::postProcessInput()
+void PoroElastic< BASE >::postInputInitialization()
 {
-  BASE::postProcessInput();
+  BASE::postInputInitialization();
   m_poreVolumeRelation.setCoefficients( m_referencePressure, 1.0, m_compressibility );
 }
 

@@ -20,10 +20,10 @@
 #define GEOS_CONSTITUTIVE_FLUID_MULTIFLUID_COMPOSITIONAL_MODELS_NEGATIVETWOPHASEFLASHMODEL_HPP_
 
 #include "FunctionBase.hpp"
+#include "EquationOfState.hpp"
 
 #include "constitutive/fluid/multifluid/Layouts.hpp"
 #include "constitutive/fluid/multifluid/MultiFluidUtils.hpp"
-#include "constitutive/fluid/multifluid/compositional/functions/CubicEOSPhaseModel.hpp"
 #include "constitutive/fluid/multifluid/compositional/functions/NegativeTwoPhaseFlash.hpp"
 
 namespace geos
@@ -35,7 +35,8 @@ namespace constitutive
 namespace compositional
 {
 
-template< typename EOS_TYPE_LIQUID, typename EOS_TYPE_VAPOUR >
+class EquationOfState;
+
 class NegativeTwoPhaseFlashModelUpdate final : public FunctionBaseUpdate
 {
 public:
@@ -45,7 +46,9 @@ public:
 
   NegativeTwoPhaseFlashModelUpdate( integer const numComponents,
                                     integer const liquidIndex,
-                                    integer const vapourIndex );
+                                    integer const vapourIndex,
+                                    EquationOfStateType const liquidEos,
+                                    EquationOfStateType const vapourEos );
 
   // Mark as a 2-phase flash
   GEOS_HOST_DEVICE
@@ -64,33 +67,35 @@ public:
     integer const numDofs = 2 + m_numComponents;
 
     // Iterative solve to converge flash
-    bool const flashStatus = NegativeTwoPhaseFlash::compute< EOS_TYPE_LIQUID, EOS_TYPE_VAPOUR >(
-      m_numComponents,
-      pressure,
-      temperature,
-      compFraction,
-      componentProperties,
-      kValues,
-      phaseFraction.value[m_vapourIndex],
-      phaseCompFraction.value[m_liquidIndex],
-      phaseCompFraction.value[m_vapourIndex] );
+    bool const flashStatus = NegativeTwoPhaseFlash::compute( m_numComponents,
+                                                             pressure,
+                                                             temperature,
+                                                             compFraction,
+                                                             componentProperties,
+                                                             m_liquidEos,
+                                                             m_vapourEos,
+                                                             kValues,
+                                                             phaseFraction.value[m_vapourIndex],
+                                                             phaseCompFraction.value[m_liquidIndex],
+                                                             phaseCompFraction.value[m_vapourIndex] );
     GEOS_ERROR_IF( !flashStatus,
                    GEOS_FMT( "Negative two phase flash failed to converge at pressure {:.5e} and temperature {:.3f}",
                              pressure, temperature ));
 
     // Calculate derivatives
-    NegativeTwoPhaseFlash::computeDerivatives< EOS_TYPE_LIQUID, EOS_TYPE_VAPOUR >(
-      m_numComponents,
-      pressure,
-      temperature,
-      compFraction,
-      componentProperties,
-      phaseFraction.value[m_vapourIndex],
-      phaseCompFraction.value[m_liquidIndex].toSliceConst(),
-      phaseCompFraction.value[m_vapourIndex].toSliceConst(),
-      phaseFraction.derivs[m_vapourIndex],
-      phaseCompFraction.derivs[m_liquidIndex],
-      phaseCompFraction.derivs[m_vapourIndex] );
+    NegativeTwoPhaseFlash::computeDerivatives( m_numComponents,
+                                               pressure,
+                                               temperature,
+                                               compFraction,
+                                               componentProperties,
+                                               m_liquidEos,
+                                               m_vapourEos,
+                                               phaseFraction.value[m_vapourIndex],
+                                               phaseCompFraction.value[m_liquidIndex].toSliceConst(),
+                                               phaseCompFraction.value[m_vapourIndex].toSliceConst(),
+                                               phaseFraction.derivs[m_vapourIndex],
+                                               phaseCompFraction.derivs[m_liquidIndex],
+                                               phaseCompFraction.derivs[m_vapourIndex] );
 
     // Complete by calculating liquid phase fraction
     phaseFraction.value[m_liquidIndex] = 1.0 - phaseFraction.value[m_vapourIndex];
@@ -102,16 +107,18 @@ public:
 
 private:
   integer const m_numComponents;
-  integer const m_liquidIndex{0};
-  integer const m_vapourIndex{1};
+  integer const m_liquidIndex;
+  integer const m_vapourIndex;
+  EquationOfStateType const m_liquidEos;
+  EquationOfStateType const m_vapourEos;
 };
 
-template< typename EOS_TYPE_LIQUID, typename EOS_TYPE_VAPOUR >
 class NegativeTwoPhaseFlashModel : public FunctionBase
 {
 public:
   NegativeTwoPhaseFlashModel( string const & name,
-                              ComponentProperties const & componentProperties );
+                              ComponentProperties const & componentProperties,
+                              ModelParameters const & modelParameters );
 
   static string catalogName();
 
@@ -121,21 +128,20 @@ public:
   }
 
   /// Type of kernel wrapper for in-kernel update
-  using KernelWrapper = NegativeTwoPhaseFlashModelUpdate< EOS_TYPE_LIQUID, EOS_TYPE_VAPOUR >;
+  using KernelWrapper = NegativeTwoPhaseFlashModelUpdate;
 
   /**
    * @brief Create an update kernel wrapper.
    * @return the wrapper
    */
   KernelWrapper createKernelWrapper() const;
-};
 
-using NegativeTwoPhaseFlashPRPR = NegativeTwoPhaseFlashModel<
-  CubicEOSPhaseModel< PengRobinsonEOS >,
-  CubicEOSPhaseModel< PengRobinsonEOS > >;
-using NegativeTwoPhaseFlashSRKSRK = NegativeTwoPhaseFlashModel<
-  CubicEOSPhaseModel< SoaveRedlichKwongEOS >,
-  CubicEOSPhaseModel< SoaveRedlichKwongEOS > >;
+  // Create parameters unique to this model
+  static std::unique_ptr< ModelParameters > createParameters( std::unique_ptr< ModelParameters > parameters );
+
+private:
+  EquationOfState const * m_parameters{};
+};
 
 } // end namespace compositional
 

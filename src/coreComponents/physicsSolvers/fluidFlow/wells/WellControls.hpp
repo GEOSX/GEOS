@@ -62,7 +62,7 @@ public:
     PHASEVOLRATE, /**< The well operates at a specified phase volumetric flow rate */
     TOTALVOLRATE, /**< The well operates at a specified total volumetric flow rate */
     MASSRATE, /**<The well operates at a specified mass rate */
-    UNINITIALIZED, /**< This is the current well control before postProcessInput (needed to restart from file properly) */
+    UNINITIALIZED, /**< This is the current well control before postInputInitialization (needed to restart from file properly) */
   };
 
 
@@ -326,7 +326,7 @@ public:
 
 protected:
 
-  virtual void postProcessInput() override;
+  virtual void postInputInitialization() override;
 
 private:
 

@@ -60,7 +60,7 @@ ProppantPermeability::deliverClone( string const & name,
   return ConstitutiveBase::deliverClone( name, parent );
 }
 
-void ProppantPermeability::postProcessInput()
+void ProppantPermeability::postInputInitialization()
 {
   real64 const oneMinusMaxConcentration = ( 1.0 - m_maxProppantConcentration );
   m_proppantPackPermeability  = m_proppantDiameter * m_proppantDiameter / 180.0;

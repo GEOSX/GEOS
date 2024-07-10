@@ -54,6 +54,10 @@ public:
 
   /// The number of nodes/support points per element.
   constexpr static localIndex numNodes = 4;
+
+  /// The number of faces/support points per element.
+  constexpr static localIndex numFaces = 4;
+
   /// The maximum number of support points per element.
   constexpr static localIndex maxSupportPoints = numNodes;
 
@@ -182,6 +186,49 @@ public:
                      real64 ( &N )[numNodes] );
 
   /**
+   * @brief Calculate face bubble functions values for each face at a
+   *   given point in the parent space.
+   * @param pointCoord coordinates of the given point.
+   * @param N An array to pass back the shape function values for each support
+   *   face.
+   */
+  GEOS_HOST_DEVICE
+  GEOS_FORCE_INLINE
+  static void calcFaceBubbleN( real64 const (&pointCoord)[3],
+                               real64 (& N)[numFaces] )
+  {
+
+    real64 const r = pointCoord[0];
+    real64 const s = pointCoord[1];
+    real64 const t = pointCoord[2];
+
+    N[0] = (1 - r - s - t) * r * t;
+    N[1] = (1 - r - s - t) * r * s;
+    N[2] = (1 - r - s - t) * t * s;
+    N[3] = r * s * t;
+  }
+
+  /**
+   * @brief Calculate face bubble functions values for each face at a
+   *   quadrature point.
+   * @param q Index of the quadrature point.
+   * @param N An array to pass back the shape function values for each support
+   *   point.
+   */
+  GEOS_HOST_DEVICE
+  inline
+  static void calcFaceBubbleN( localIndex const q,
+                               real64 (& N)[numFaces] )
+  {
+    GEOS_UNUSED_VAR( q );
+
+    // single quadrature point (centroid), i.e.  r = s = t = 1/4
+    real64 const pointCoord[3] = {0.25, 0.25, 0.25};
+
+    calcFaceBubbleN( pointCoord, N );
+  }
+
+  /**
    * @brief Calculate the shape functions derivatives wrt the physical
    *   coordinates.
    * @param q Index of the quadrature point.
@@ -211,6 +258,20 @@ public:
                            real64 const (&X)[numNodes][3],
                            StackVariables const & stack,
                            real64 ( &gradN )[numNodes][3] );
+
+  /**
+   * @brief Calculate the bubble function derivatives wrt the physical
+   *   coordinates.
+   * @param q Index of the quadrature point.
+   * @param X Array containing the coordinates of the support points.
+   * @param gradN Array to contain the shape bubble function derivatives for all
+   *   support points at the coordinates of the quadrature point @p q.
+   * @return The determinant of the parent/physical transformation matrix.
+   */
+  GEOS_HOST_DEVICE
+  static real64 calcGradFaceBubbleN( localIndex const q,
+                                     real64 const (&X)[numNodes][3],
+                                     real64 ( &gradN )[numFaces][3] );
 
   /**
    * @brief Calculate the integration weights for a quadrature point.
@@ -381,6 +442,65 @@ real64 H1_Tetrahedron_Lagrange1_Gauss1::
              real64 ( & gradN )[numNodes][3] )
 {
   return calcGradN( q, X, gradN );
+}
+
+GEOS_HOST_DEVICE
+inline
+real64
+H1_Tetrahedron_Lagrange1_Gauss1::calcGradFaceBubbleN( localIndex const q,
+                                                      real64 const (&X)[numNodes][3],
+                                                      real64 (& gradN)[numFaces][3] )
+{
+
+  GEOS_UNUSED_VAR( q );
+
+  real64 detJ = determinantJacobianTransformation( X );
+  real64 factor = 1.0 / ( detJ );
+
+  real64 J[3][3] = {{0}};
+
+  J[0][0] = (-X[0][1]*( X[3][2] - X[2][2] ) + X[2][1]*( X[3][2] - X[0][2] ) - X[3][1]*( X[2][2] - X[0][2] ))*factor;
+  J[0][1] = ( X[0][0]*( X[3][2] - X[2][2] ) - X[2][0]*( X[3][2] - X[0][2] ) + X[3][0]*( X[2][2] - X[0][2] ))*factor;
+  J[0][2] = (-X[0][0]*( X[3][1] - X[2][1] ) + X[2][0]*( X[3][1] - X[0][1] ) - X[3][0]*( X[2][1] - X[0][1] ))*factor;
+
+  J[1][0] = ( X[0][1]*( X[3][2] - X[1][2] ) - X[1][1]*( X[3][2] - X[0][2] ) + X[3][1]*( X[1][2] - X[0][2] ))*factor;
+  J[1][1] = (-X[0][0]*( X[3][2] - X[1][2] ) + X[1][0]*( X[3][2] - X[0][2] ) - X[3][0]*( X[1][2] - X[0][2] ))*factor;
+  J[1][2] = ( X[0][0]*( X[3][1] - X[1][1] ) - X[1][0]*( X[3][1] - X[0][1] ) + X[3][0]*( X[1][1] - X[0][1] ))*factor;
+
+  J[2][0] = (-X[0][1]*( X[2][2] - X[1][2] ) + X[1][1]*( X[2][2] - X[0][2] ) - X[2][1]*( X[1][2] - X[0][2] ))*factor;
+  J[2][1] = ( X[0][0]*( X[2][2] - X[1][2] ) - X[1][0]*( X[2][2] - X[0][2] ) + X[2][0]*( X[1][2] - X[0][2] ))*factor;
+  J[2][2] = (-X[0][0]*( X[2][1] - X[1][1] ) + X[1][0]*( X[2][1] - X[0][1] ) - X[2][0]*( X[1][1] - X[0][1] ))*factor;
+
+  real64 dNdXi[numFaces][3] = {{0}};
+  // single quadrature point (centroid), i.e.  r = s = t = 1/4
+  real64 const r = 1.0 / 4.0;
+  real64 const s = 1.0 / 4.0;
+  real64 const t = 1.0 / 4.0;
+
+  dNdXi[0][0] = ( 1 - 2 * r - s - t ) * t; // dN0/dr
+  dNdXi[0][1] = -r * t;                    // dN0/ds
+  dNdXi[0][2] = ( 1 - r - s - 2 * t ) * r; // dN0/dt
+
+  dNdXi[1][0] = ( 1 - 2 * r - s - t ) * s; // dN1/dr
+  dNdXi[1][1] = ( 1 - r - 2 * s - t ) * r; // dN1/ds
+  dNdXi[1][2] =  -r * s;                   // dN1/dt
+
+  dNdXi[2][0] = -t * s;                    // dN2/dr
+  dNdXi[2][1] = ( 1 - r - 2 * s - t ) * t; // dN2/ds
+  dNdXi[2][2] = ( 1 - r - s - 2 * t ) * s; // dN2/dt
+
+  dNdXi[3][0] = t * s;                     // dN3/dr
+  dNdXi[3][1] = r * t;                     // dN3/ds
+  dNdXi[3][2] = r * s;                     // dN3/dt
+
+  for( int fi=0; fi<numFaces; ++fi )
+  {
+    gradN[fi][0] = dNdXi[fi][0] * J[0][0] + dNdXi[fi][1] * J[1][0] + dNdXi[fi][2] * J[2][0];
+    gradN[fi][1] = dNdXi[fi][0] * J[0][1] + dNdXi[fi][1] * J[1][1] + dNdXi[fi][2] * J[2][1];
+    gradN[fi][2] = dNdXi[fi][0] * J[0][2] + dNdXi[fi][1] * J[1][2] + dNdXi[fi][2] * J[2][2];
+  }
+
+  return detJ * weight;
 }
 
 //*************************************************************************************************

@@ -583,7 +583,7 @@ public:
 
 
 protected:
-  virtual void postProcessInput() override;
+  virtual void postInputInitialization() override;
 
   /// Material parameter: The default value of the recompression index
   real64 m_defaultRecompressionIndex;

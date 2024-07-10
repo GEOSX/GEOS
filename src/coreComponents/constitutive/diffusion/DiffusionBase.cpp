@@ -44,9 +44,9 @@ DiffusionBase::DiffusionBase( string const & name, Group * const parent )
   registerField( fields::diffusion::phaseDiffusivityMultiplier{}, &m_phaseDiffusivityMultiplier );
 }
 
-void DiffusionBase::postProcessInput()
+void DiffusionBase::postInputInitialization()
 {
-  ConstitutiveBase::postProcessInput();
+  ConstitutiveBase::postInputInitialization();
 
   integer const numPhases = numFluidPhases();
   GEOS_THROW_IF_LT_MSG( numPhases, 2,

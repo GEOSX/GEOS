@@ -180,6 +180,40 @@ real64 ComputeSurfaceArea( arrayView2d< real64 const > const & points,
 }
 
 /**
+ * @brief Calculate the diameter of a set of points in a given dimension.
+ * @tparam DIMENSION The dimensionality of the points.
+ * @tparam POINT_COORDS_TYPE The type of the container holding the point coordinates.
+ * @param[in] points The container holding the coordinates of the points.
+ * @param[in] numPoints The number of points in the container.
+ * @return The diameter of the set of points.
+ */
+template< localIndex DIMENSION, typename POINT_COORDS_TYPE >
+GEOS_HOST_DEVICE
+GEOS_FORCE_INLINE
+real64 computeDiameter( POINT_COORDS_TYPE points,
+                        localIndex const & numPoints )
+{
+  real64 diameter = 0;
+  for( localIndex numPoint = 0; numPoint < numPoints; ++numPoint )
+  {
+    for( localIndex numOthPoint = 0; numOthPoint < numPoint; ++numOthPoint )
+    {
+      real64 candidateDiameter = 0.0;
+      for( localIndex i = 0; i < DIMENSION; ++i )
+      {
+        real64 coordDiff = points[numPoint][i] - points[numOthPoint][i];
+        candidateDiameter += coordDiff * coordDiff;
+      }
+      if( diameter < candidateDiameter )
+      {
+        diameter = candidateDiameter;
+      }
+    }
+  }
+  return LvArray::math::sqrt< real64 >( diameter );
+}
+
+/**
  * @brief Calculate the centroid of a convex 3D polygon as well as the normal and the rotation matrix.
  * @tparam CENTER_TYPE The type of @p center.
  * @tparam NORMAL_TYPE The type of @p normal.

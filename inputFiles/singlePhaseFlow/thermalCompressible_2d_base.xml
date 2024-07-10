@@ -24,21 +24,21 @@
     </FiniteVolume>
   </NumericalMethods>
 
-  <ElementRegions>
-    <CellElementRegion
-      name="region"
-      cellBlocks="{ cb }"
-      materialList="{ fluid, rock, thermalCond }"/>
-  </ElementRegions>
-
   <Constitutive>
 
     <CompressibleSolidConstantPermeability
-      name="rock"
+      name="rock_linear"
       solidModelName="nullSolid"
       porosityModelName="rockPorosity"
       permeabilityModelName="rockPerm"
-      solidInternalEnergyModelName="rockInternalEnergy"/>
+      solidInternalEnergyModelName="rockInternalEnergy_linear"/>
+
+    <CompressibleSolidConstantPermeability
+      name="rock_nonLinear"
+      solidModelName="nullSolid"
+      porosityModelName="rockPorosity"
+      permeabilityModelName="rockPerm"
+      solidInternalEnergyModelName="rockInternalEnergy_nonLinear"/>
 
     <NullModel
       name="nullSolid"/>
@@ -51,11 +51,20 @@
 
 	<!-- SPHINX_SolidInternalEnergy -->
     <SolidInternalEnergy
-      name="rockInternalEnergy"
-      volumetricHeatCapacity="4.56e6"
+      name="rockInternalEnergy_linear"
+      referenceVolumetricHeatCapacity="4.56e6"
       referenceTemperature="0"
       referenceInternalEnergy="0"/>
 	<!-- SPHINX_SolidInternalEnergyEnd -->
+
+    <!-- SPHINX_SolidInternalEnergy_nonLinear -->
+    <SolidInternalEnergy
+      name="rockInternalEnergy_nonLinear"
+      referenceVolumetricHeatCapacity="4.56e6"
+      dVolumetricHeatCapacity_dTemperature="1e6"
+      referenceTemperature="0"
+      referenceInternalEnergy="0"/>
+    <!-- SPHINX_SolidInternalEnergy_nonLinearEnd -->
 
     <ConstantPermeability
       name="rockPerm"

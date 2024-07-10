@@ -50,9 +50,9 @@ RelativePermeabilityBase::RelativePermeabilityBase( string const & name, Group *
 
 }
 
-void RelativePermeabilityBase::postProcessInput()
+void RelativePermeabilityBase::postInputInitialization()
 {
-  ConstitutiveBase::postProcessInput();
+  ConstitutiveBase::postInputInitialization();
 
   integer const numPhases = numFluidPhases();
   GEOS_THROW_IF_LT_MSG( numPhases, 2,

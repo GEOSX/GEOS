@@ -160,11 +160,11 @@ integer BlackOilFluidBase::getWaterPhaseIndex() const
   return PVTProps::PVTFunctionHelpers::findName( m_phaseNames, expectedWaterPhaseNames, viewKeyStruct::phaseNamesString() );
 }
 
-void BlackOilFluidBase::postProcessInput()
+void BlackOilFluidBase::postInputInitialization()
 {
   m_componentNames = m_phaseNames;
 
-  MultiFluidBase::postProcessInput();
+  MultiFluidBase::postInputInitialization();
 
   m_phaseTypes.resize( numFluidPhases() );
   m_phaseOrder.resizeDefault( MAX_NUM_PHASES, -1 );

@@ -76,9 +76,9 @@ integer CompositionalMultiphaseFluidPVTPackage::getWaterPhaseIndex() const
   return PVTProps::PVTFunctionHelpers::findName( m_phaseNames, expectedWaterPhaseNames, viewKeyStruct::phaseNamesString() );
 }
 
-void CompositionalMultiphaseFluidPVTPackage::postProcessInput()
+void CompositionalMultiphaseFluidPVTPackage::postInputInitialization()
 {
-  MultiFluidBase::postProcessInput();
+  MultiFluidBase::postInputInitialization();
 
   auto const getPVTPackagePhaseType = [&]( string const & phaseName )
   {

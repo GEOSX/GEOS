@@ -101,13 +101,19 @@ public:
     {
       m_component_properties = std::make_unique< constitutive::compositional::ComponentProperties >(
         componentNames,
-        molecularWeight,
-        criticalPressure,
-        criticalTemperature,
-        criticalVolume,
-        acentricFactor,
-        volumeShift,
-        binaryCoeff );
+        molecularWeight );
+      createArray( m_component_properties->m_componentCriticalPressure, criticalPressure );
+      createArray( m_component_properties->m_componentCriticalTemperature, criticalTemperature );
+      createArray( m_component_properties->m_componentAcentricFactor, acentricFactor );
+      createArray( m_component_properties->m_componentVolumeShift, volumeShift );
+      m_component_properties->m_componentBinaryCoeff.resize( NC, NC );
+      for( integer ic = 0; ic < NC; ++ic )
+      {
+        for( integer jc = 0; jc < NC; ++jc )
+        {
+          m_component_properties->m_componentBinaryCoeff( ic, jc ) = binaryCoeff( ic, jc );
+        }
+      }
     }
     return *m_component_properties;
   }

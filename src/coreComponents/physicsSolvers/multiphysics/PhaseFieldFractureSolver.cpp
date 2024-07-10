@@ -44,9 +44,9 @@ PhaseFieldFractureSolver::~PhaseFieldFractureSolver()
   // TODO Auto-generated destructor stub
 }
 
-void PhaseFieldFractureSolver::postProcessInput()
+void PhaseFieldFractureSolver::postInputInitialization()
 {
-  Base::postProcessInput();
+  Base::postInputInitialization();
   GEOS_WARNING_IF( getNonlinearSolverParameters().m_couplingType == NonlinearSolverParameters::CouplingType::FullyImplicit,
                    "FullyImplicit coupling not implemented for this solver. A sequential coupling approach will be used." );
   getNonlinearSolverParameters().m_couplingType = NonlinearSolverParameters::CouplingType::Sequential;

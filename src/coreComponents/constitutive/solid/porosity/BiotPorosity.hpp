@@ -309,7 +309,7 @@ public:
   }
 
 protected:
-  virtual void postProcessInput() override;
+  virtual void postInputInitialization() override;
 
 
   /// Default thermal expansion coefficients (read from XML)

@@ -175,7 +175,7 @@ private:
 
 protected:
 
-  virtual void postProcessInput() override;
+  virtual void postInputInitialization() override;
 
   /// phase names read from input
   string_array m_phaseNames;

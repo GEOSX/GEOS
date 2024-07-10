@@ -173,8 +173,28 @@ void PeriodicEvent::checkOptionalFunctionThreshold( real64 const time,
     // (Note: this shouldn't occur very often, since it is only called if the base forecast <= 0)
 #ifdef GEOSX_USE_MPI
     real64 result_global;
-    MPI_Allreduce( &result, &result_global, 1, MPI_DOUBLE, MPI_MAX, MPI_COMM_WORLD );
-    result = result_global;
+    switch( m_functionStatOption )
+    {
+      case 0:
+      {
+        MPI_Allreduce( &result, &result_global, 1, MPI_DOUBLE, MPI_MIN, MPI_COMM_WORLD );
+        result = result_global;
+        break;
+      }
+      case 1:
+      {
+        int nprocs;
+        MPI_Comm_size( MPI_COMM_WORLD, &nprocs );
+        MPI_Allreduce( &result, &result_global, 1, MPI_DOUBLE, MPI_SUM, MPI_COMM_WORLD );
+        result = result_global / nprocs;
+        break;
+      }
+      case 2:
+      {
+        MPI_Allreduce( &result, &result_global, 1, MPI_DOUBLE, MPI_MAX, MPI_COMM_WORLD );
+        result = result_global;
+      }
+    }
 #endif
   }
 

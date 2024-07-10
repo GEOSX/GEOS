@@ -63,11 +63,11 @@ ElasticIsotropic::ElasticIsotropic( string const & name, Group * const parent ):
 ElasticIsotropic::~ElasticIsotropic()
 {}
 
-void ElasticIsotropic::postProcessInput()
+void ElasticIsotropic::postInputInitialization()
 {
   // check what constants the user actually input, and do conversions as needed
 
-  SolidBase::postProcessInput();
+  SolidBase::postInputInitialization();
 
   real64 & nu = getReference< real64 >( viewKeyStruct::defaultPoissonRatioString() );
   real64 & E  = getReference< real64 >( viewKeyStruct::defaultYoungModulusString() );

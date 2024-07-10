@@ -51,9 +51,9 @@ SingleFluidBase::SingleFluidBase( string const & name, Group * const parent )
 
 }
 
-void SingleFluidBase::postProcessInput()
+void SingleFluidBase::postInputInitialization()
 {
-  ConstitutiveBase::postProcessInput();
+  ConstitutiveBase::postInputInitialization();
 
   // for fracture elements, set the default value
   getField< fields::singlefluid::density_n >().

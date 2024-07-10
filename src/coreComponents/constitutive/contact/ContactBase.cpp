@@ -67,7 +67,7 @@ ContactBase::~ContactBase()
 {}
 
 
-void ContactBase::postProcessInput()
+void ContactBase::postInputInitialization()
 {
 
   GEOS_THROW_IF( m_apertureTableName.empty(),

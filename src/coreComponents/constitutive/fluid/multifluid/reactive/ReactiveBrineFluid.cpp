@@ -111,9 +111,9 @@ integer ReactiveBrineFluid< PHASE > ::getWaterPhaseIndex() const
 
 
 template< typename PHASE >
-void ReactiveBrineFluid< PHASE > ::postProcessInput()
+void ReactiveBrineFluid< PHASE > ::postInputInitialization()
 {
-  ReactiveMultiFluid::postProcessInput();
+  ReactiveMultiFluid::postInputInitialization();
 
   GEOS_THROW_IF_NE_MSG( numFluidPhases(), 1,
                         GEOS_FMT( "{}: invalid number of phases", getFullName() ),

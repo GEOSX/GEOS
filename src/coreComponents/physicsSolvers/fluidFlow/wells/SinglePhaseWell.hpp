@@ -255,8 +255,6 @@ public:
 
 protected:
 
-  virtual void initializePostSubGroups() override;
-
   void printRates( real64 const & time_n,
                    real64 const & dt,
                    DomainPartition & domain ) override;
@@ -275,9 +273,9 @@ private:
    * @param dt the time step dt
    * @param subRegion the well subRegion
    */
-  void validateWellConstraints( real64 const & time_n,
-                                real64 const & dt,
-                                WellElementSubRegion const & subRegion ) const;
+  virtual void validateWellConstraints( real64 const & time_n,
+                                        real64 const & dt,
+                                        WellElementSubRegion const & subRegion ) override;
 
 };
 

@@ -69,13 +69,13 @@
   </Events>
 
   <Constitutive>
-    <CompositionalTwoPhaseFluidPengRobinson
+    <CompositionalTwoPhaseFluid
       name="liveOilPR"
       phaseNames="{ oil, gas }"
+      equationsOfState="{ pr, pr }"
       componentNames="{ CO2, N2, C1, C2, C3, C4, C5, C6, C7+ }"
       componentCriticalPressure="{ 73.8659e5, 33.9439e5, 46.0421e5, 48.8387e5, 42.4552e5, 37.47e5, 33.5892e5, 30.1037e5, 20.549e5 }"
       componentCriticalTemperature="{ 304.7, 126.2, 190.6, 305.43, 369.8, 419.5, 465.9, 507.5, 678.8 }"
-      componentCriticalVolume="{ 9.3999e-05, 9.0001e-05, 9.7999e-05, 1.4800e-04, 2.0000e-04, 2.5800e-04, 3.1000e-04, 3.5100e-04, 6.8243e-04 }"
       componentAcentricFactor="{ 0.225, 0.04, 0.013, 0.0986, 0.1524, 0.1956, 0.2413, 0.299, 0.5618 }"
       componentMolarWeight="{ 44.01e-3, 28.01e-3, 16.04e-3, 30.07e-3, 44.1e-3, 58.12e-3, 72.15e-3, 84e-3, 173e-3 }"
       componentVolumeShift="{ -0.04958, -0.136012, -0.1486264, -0.10863408, -0.08349872, -0.06331568, -0.04196464, -0.0150072, 0.0000 }"
@@ -90,9 +90,10 @@
         { 1.0000e-02, 0.0000e+00, 2.8000e-02, 1.0000e-02, 1.0000e-02, 0.0000e+00, 0.0000e+00, 0.0000e+00, 0.0000e+00 },
         { 1.0000e-02, 0.0000e+00, 4.5320e-02, 1.0000e-02, 1.0000e-02, 0.0000e+00, 0.0000e+00, 0.0000e+00, 0.0000e+00 }
       }" />
-    <CompositionalTwoPhaseFluidPengRobinsonLBC
+    <CompositionalTwoPhaseFluidLohrenzBrayClark
       name="liveOilPRLBC"
       phaseNames="{ oil, gas }"
+      equationsOfState="{ pr, pr }"
       componentNames="{ CO2, N2, C1, C2, C3, C4, C5, C6, C7+ }"
       componentCriticalPressure="{ 73.8659e5, 33.9439e5, 46.0421e5, 48.8387e5, 42.4552e5, 37.47e5, 33.5892e5, 30.1037e5, 20.549e5 }"
       componentCriticalTemperature="{ 304.7, 126.2, 190.6, 305.43, 369.8, 419.5, 465.9, 507.5, 678.8 }"
@@ -111,13 +112,13 @@
         { 1.0000e-02, 0.0000e+00, 2.8000e-02, 1.0000e-02, 1.0000e-02, 0.0000e+00, 0.0000e+00, 0.0000e+00, 0.0000e+00 },
         { 1.0000e-02, 0.0000e+00, 4.5320e-02, 1.0000e-02, 1.0000e-02, 0.0000e+00, 0.0000e+00, 0.0000e+00, 0.0000e+00 }
       }" />
-    <CompositionalTwoPhaseFluidSoaveRedlichKwong
+    <CompositionalTwoPhaseFluid
       name="liveOilSRK"
       phaseNames="{ oil, gas }"
+      equationsOfState="{ srk, srk }"
       componentNames="{ CO2, N2, C1, C2, C3, C4, C5, C6, C7+ }"
       componentCriticalPressure="{ 73.8659e5, 33.9439e5, 46.0421e5, 48.8387e5, 42.4552e5, 37.47e5, 33.5892e5, 30.1037e5, 20.549e5 }"
       componentCriticalTemperature="{ 304.7, 126.2, 190.6, 305.43, 369.8, 419.5, 465.9, 507.5, 678.8 }"
-      componentCriticalVolume="{ 9.3999e-05, 9.0001e-05, 9.7999e-05, 1.4800e-04, 2.0000e-04, 2.5800e-04, 3.1000e-04, 3.5100e-04, 6.8243e-04 }"
       componentAcentricFactor="{ 0.225, 0.04, 0.013, 0.0986, 0.1524, 0.1956, 0.2413, 0.299, 0.5618 }"
       componentMolarWeight="{ 44.01e-3, 28.01e-3, 16.04e-3, 30.07e-3, 44.1e-3, 58.12e-3, 72.15e-3, 84e-3, 173e-3 }"
       componentVolumeShift="{ -0.04958, -0.136012, -0.1486264, -0.10863408, -0.08349872, -0.06331568, -0.04196464, -0.0150072, 0.0000 }"
@@ -132,9 +133,10 @@
         { 1.0000e-02, 0.0000e+00, 2.8000e-02, 1.0000e-02, 1.0000e-02, 0.0000e+00, 0.0000e+00, 0.0000e+00, 0.0000e+00 },
         { 1.0000e-02, 0.0000e+00, 4.5320e-02, 1.0000e-02, 1.0000e-02, 0.0000e+00, 0.0000e+00, 0.0000e+00, 0.0000e+00 }
       }" />      
-    <CompositionalTwoPhaseFluidSoaveRedlichKwongLBC
+    <CompositionalTwoPhaseFluidLohrenzBrayClark
       name="liveOilSRKLBC"
       phaseNames="{ oil, gas }"
+      equationsOfState="{ srk, srk }"
       componentNames="{ CO2, N2, C1, C2, C3, C4, C5, C6, C7+ }"
       componentCriticalPressure="{ 73.8659e5, 33.9439e5, 46.0421e5, 48.8387e5, 42.4552e5, 37.47e5, 33.5892e5, 30.1037e5, 20.549e5 }"
       componentCriticalTemperature="{ 304.7, 126.2, 190.6, 305.43, 369.8, 419.5, 465.9, 507.5, 678.8 }"

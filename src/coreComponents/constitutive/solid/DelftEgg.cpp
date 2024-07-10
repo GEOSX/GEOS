@@ -108,9 +108,9 @@ void DelftEgg::allocateConstitutiveData( Group & parent,
 }
 
 
-void DelftEgg::postProcessInput()
+void DelftEgg::postInputInitialization()
 {
-  ElasticIsotropic::postProcessInput();
+  ElasticIsotropic::postInputInitialization();
 
   GEOS_THROW_IF( m_defaultCslSlope <= 0,
                  getFullName() << ": Non-positive slope of critical state line detected", InputError );

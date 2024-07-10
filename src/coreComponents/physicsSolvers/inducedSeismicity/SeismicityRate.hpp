@@ -135,7 +135,7 @@ protected:
   void constructFaultStressProjectionTensors( real64 ( &faultNormalProjectionTensor )[6],
                                               real64 ( &faultShearProjectionTensor )[6] ) const;
 
-  virtual void postProcessInput() override;
+  virtual void postInputInitialization() override;
 
   /// pointer to stress solver
   SolverBase * m_stressSolver;

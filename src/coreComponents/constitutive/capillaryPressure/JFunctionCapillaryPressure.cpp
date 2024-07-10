@@ -120,9 +120,9 @@ JFunctionCapillaryPressure::JFunctionCapillaryPressure( std::string const & name
     setRestartFlags( RestartFlags::NO_WRITE );
 }
 
-void JFunctionCapillaryPressure::postProcessInput()
+void JFunctionCapillaryPressure::postInputInitialization()
 {
-  CapillaryPressureBase::postProcessInput();
+  CapillaryPressureBase::postInputInitialization();
 
   integer const numPhases = m_phaseNames.size();
   GEOS_THROW_IF( numPhases != 2 && numPhases != 3,

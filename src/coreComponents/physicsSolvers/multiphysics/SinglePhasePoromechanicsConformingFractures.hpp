@@ -23,15 +23,17 @@
 #include "physicsSolvers/multiphysics/CoupledSolver.hpp"
 #include "physicsSolvers/contact/SolidMechanicsLagrangeContact.hpp"
 #include "physicsSolvers/fluidFlow/SinglePhaseBase.hpp"
+#include "dataRepository/Group.hpp"
 
 namespace geos
 {
 
-class SinglePhasePoromechanicsConformingFractures : public SinglePhasePoromechanics< SinglePhaseBase, SolidMechanicsLagrangeContact >
+template< typename FLOW_SOLVER = SinglePhaseBase >
+class SinglePhasePoromechanicsConformingFractures : public SinglePhasePoromechanics< FLOW_SOLVER, SolidMechanicsLagrangeContact >
 {
 public:
 
-  using Base = SinglePhasePoromechanics< SinglePhaseBase, SolidMechanicsLagrangeContact >;
+  using Base = SinglePhasePoromechanics< FLOW_SOLVER, SolidMechanicsLagrangeContact >;
   using Base::m_solvers;
   using Base::m_dofManager;
   using Base::m_localMatrix;
@@ -47,7 +49,7 @@ public:
    * @param parent the parent group of this instantiation of SinglePhasePoromechanicsConformingFractures
    */
   SinglePhasePoromechanicsConformingFractures( const string & name,
-                                               Group * const parent );
+                                               dataRepository::Group * const parent );
 
   /// Destructor for the class
   ~SinglePhasePoromechanicsConformingFractures() override {}
@@ -57,7 +59,18 @@ public:
    * @return string that contains the catalog name to generate a new SinglePhasePoromechanicsConformingFractures object through the object
    * catalog.
    */
-  static string catalogName() { return "SinglePhasePoromechanicsConformingFractures"; }
+  static string catalogName()
+  {
+    if constexpr ( std::is_same_v< FLOW_SOLVER, SinglePhaseBase > )
+    {
+      return "SinglePhasePoromechanicsConformingFractures";
+    }
+    else
+    {
+      return FLOW_SOLVER::catalogName() + "PoromechanicsConformingFractures";
+    }
+  }
+
   /**
    * @copydoc SolverBase::getCatalogName()
    */
@@ -89,15 +102,11 @@ public:
 
   virtual void updateState( DomainPartition & domain ) override final;
 
-  bool resetConfigurationToDefault( DomainPartition & domain ) const override final;
-
-  bool updateConfiguration( DomainPartition & domain ) override final;
-
-  void outputConfigurationStatistics( DomainPartition const & domain ) const override final;
-
   /**@}*/
 
 private:
+
+  static const localIndex m_maxFaceNodes=11; // Maximum number of nodes on a contact face
 
   void assembleElementBasedContributions( real64 const time_n,
                                           real64 const dt,

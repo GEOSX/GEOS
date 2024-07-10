@@ -65,9 +65,9 @@ BrooksCoreyBakerRelativePermeability::BrooksCoreyBakerRelativePermeability( stri
 
 }
 
-void BrooksCoreyBakerRelativePermeability::postProcessInput()
+void BrooksCoreyBakerRelativePermeability::postInputInitialization()
 {
-  RelativePermeabilityBase::postProcessInput();
+  RelativePermeabilityBase::postInputInitialization();
 
   GEOS_THROW_IF( m_phaseOrder[PhaseType::OIL] < 0,
                  GEOS_FMT( "{}: reference oil phase has not been defined and must be included in model", getFullName() ),

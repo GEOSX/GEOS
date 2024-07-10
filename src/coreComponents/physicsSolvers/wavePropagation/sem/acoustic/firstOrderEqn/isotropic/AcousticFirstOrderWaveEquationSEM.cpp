@@ -136,9 +136,9 @@ void AcousticFirstOrderWaveEquationSEM::registerDataOnMesh( Group & meshBodies )
 }
 
 
-void AcousticFirstOrderWaveEquationSEM::postProcessInput()
+void AcousticFirstOrderWaveEquationSEM::postInputInitialization()
 {
-  WaveSolverBase::postProcessInput();
+  WaveSolverBase::postInputInitialization();
 
   localIndex const numSourcesGlobal = m_sourceCoordinates.size( 0 );
   localIndex const numReceiversGlobal = m_receiverCoordinates.size( 0 );

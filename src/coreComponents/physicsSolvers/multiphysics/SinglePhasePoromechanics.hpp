@@ -26,7 +26,7 @@
 namespace geos
 {
 
-template< typename FLOW_SOLVER, typename MECHANICS_SOLVER = SolidMechanicsLagrangianFEM >
+template< typename FLOW_SOLVER = SinglePhaseBase, typename MECHANICS_SOLVER = SolidMechanicsLagrangianFEM >
 class SinglePhasePoromechanics : public PoromechanicsSolver< FLOW_SOLVER, MECHANICS_SOLVER >
 {
 public:
@@ -37,6 +37,9 @@ public:
   using Base::m_localMatrix;
   using Base::m_rhs;
   using Base::m_solution;
+  using Base::m_stabilizationType;
+  using Base::m_stabilizationRegionNames;
+  using Base::m_stabilizationMultiplier;
 
   /**
    * @brief main constructor for SinglePhasePoromechanics objects
@@ -77,7 +80,7 @@ public:
    */
   /**@{*/
 
-  virtual void postProcessInput() override;
+  virtual void postInputInitialization() override;
 
   virtual void setupCoupling( DomainPartition const & domain,
                               DofManager & dofManager ) const override;

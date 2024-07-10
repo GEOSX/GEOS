@@ -277,7 +277,7 @@ public:
 
 protected:
 
-  virtual void postProcessInput() override;
+  virtual void postInputInitialization() override;
 
   //START_SPHINX_INCLUDE_00
   array2d< real64 > m_density;

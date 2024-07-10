@@ -12,7 +12,7 @@
       logLevel="1">
       <NonlinearSolverParameters
         newtonTol="1.0e-5"
-        newtonMaxIter="10"
+        newtonMaxIter="100"
         maxTimeStepCuts="1"/>
       <LinearSolverParameters
         directParallel="0"/>

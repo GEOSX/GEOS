@@ -49,12 +49,13 @@ namespace elasticWaveEquationSEMKernels
 
 template< typename SUBREGION_TYPE,
           typename CONSTITUTIVE_TYPE,
-          typename FE_TYPE >
-class ExplicitElasticSEM : public finiteElement::KernelBase< SUBREGION_TYPE,
-                                                             CONSTITUTIVE_TYPE,
-                                                             FE_TYPE,
-                                                             1,
-                                                             1 >
+          typename FE_TYPE,
+          typename SX = elasticfields::StiffnessVectorx, typename SY = elasticfields::StiffnessVectory, typename SZ = elasticfields::StiffnessVectorz >
+class ExplicitElasticSEMBase : public finiteElement::KernelBase< SUBREGION_TYPE,
+                                                                 CONSTITUTIVE_TYPE,
+                                                                 FE_TYPE,
+                                                                 1,
+                                                                 1 >
 {
 public:
 
@@ -86,14 +87,14 @@ public:
    * @param targetRegionIndex Index of the region the subregion belongs to.
    * @param dt The time interval for the step.
    */
-  ExplicitElasticSEM( NodeManager & nodeManager,
-                      EdgeManager const & edgeManager,
-                      FaceManager const & faceManager,
-                      localIndex const targetRegionIndex,
-                      SUBREGION_TYPE const & elementSubRegion,
-                      FE_TYPE const & finiteElementSpace,
-                      CONSTITUTIVE_TYPE & inputConstitutiveType,
-                      real64 const dt ):
+  ExplicitElasticSEMBase( NodeManager & nodeManager,
+                          EdgeManager const & edgeManager,
+                          FaceManager const & faceManager,
+                          localIndex const targetRegionIndex,
+                          SUBREGION_TYPE const & elementSubRegion,
+                          FE_TYPE const & finiteElementSpace,
+                          CONSTITUTIVE_TYPE & inputConstitutiveType,
+                          real64 const dt ):
     Base( elementSubRegion,
           finiteElementSpace,
           inputConstitutiveType ),
@@ -101,9 +102,9 @@ public:
     m_ux_n( nodeManager.getField< elasticfields::Displacementx_n >() ),
     m_uy_n( nodeManager.getField< elasticfields::Displacementy_n >() ),
     m_uz_n( nodeManager.getField< elasticfields::Displacementz_n >() ),
-    m_stiffnessVectorx( nodeManager.getField< elasticfields::StiffnessVectorx >() ),
-    m_stiffnessVectory( nodeManager.getField< elasticfields::StiffnessVectory >() ),
-    m_stiffnessVectorz( nodeManager.getField< elasticfields::StiffnessVectorz >() ),
+    m_stiffnessVectorx( nodeManager.getField< SX >() ),
+    m_stiffnessVectory( nodeManager.getField< SY >() ),
+    m_stiffnessVectorz( nodeManager.getField< SZ >() ),
     m_density( elementSubRegion.template getField< elasticfields::ElasticDensity >() ),
     m_velocityVp( elementSubRegion.template getField< elasticfields::ElasticVelocityVp >() ),
     m_velocityVs( elementSubRegion.template getField< elasticfields::ElasticVelocityVs >() ),
@@ -115,12 +116,11 @@ public:
   }
 
 
-
   //*****************************************************************************
   /**
    * @copydoc geos::finiteElement::KernelBase::StackVariables
    *
-   * ### ExplicitElasticSEM Description
+   * ### ExplicitElasticSEMBase Description
    * Adds a stack arrays for the nodal force, primary displacement variable, etc.
    */
   struct StackVariables : Base::StackVariables
@@ -187,7 +187,7 @@ public:
   /**
    * @copydoc geos::finiteElement::KernelBase::quadraturePointKernel
    *
-   * ### ExplicitElasticSEM Description
+   * ### ExplicitElasticSEMBase Description
    * Calculates stiffness vector
    *
    */
@@ -255,13 +255,95 @@ protected:
   /// The time increment for this time integration step.
   real64 const m_dt;
 
-
 };
 
 
-/// The factory used to construct a ExplicitAcousticWaveEquation kernel.
+/// Specialization for standard iso elastic kernel
+template< typename SUBREGION_TYPE,
+          typename CONSTITUTIVE_TYPE,
+          typename FE_TYPE >
+using ExplicitElasticSEM = ExplicitElasticSEMBase< SUBREGION_TYPE, CONSTITUTIVE_TYPE, FE_TYPE >;
 using ExplicitElasticSEMFactory = finiteElement::KernelFactory< ExplicitElasticSEM,
                                                                 real64 >;
+/// Specialization for attenuation kernel
+template< typename SUBREGION_TYPE,
+          typename CONSTITUTIVE_TYPE,
+          typename FE_TYPE >
+class ExplicitElasticAttenuativeSEM : public ExplicitElasticSEMBase< SUBREGION_TYPE,
+                                                                     CONSTITUTIVE_TYPE,
+                                                                     FE_TYPE,
+                                                                     elasticfields::StiffnessVectorAx,
+                                                                     elasticfields::StiffnessVectorAy,
+                                                                     elasticfields::StiffnessVectorAz >
+{
+public:
+
+  /// Alias for the base class;
+  using Base = ExplicitElasticSEMBase< SUBREGION_TYPE,
+                                       CONSTITUTIVE_TYPE,
+                                       FE_TYPE,
+                                       elasticfields::StiffnessVectorAx,
+                                       elasticfields::StiffnessVectorAy,
+                                       elasticfields::StiffnessVectorAz >;
+
+//*****************************************************************************
+  /**
+   * @brief Constructor
+   * @copydoc geos::finiteElement::KernelBase::KernelBase
+   * @param nodeManager Reference to the NodeManager object.
+   * @param edgeManager Reference to the EdgeManager object.
+   * @param faceManager Reference to the FaceManager object.
+   * @param targetRegionIndex Index of the region the subregion belongs to.
+   * @param dt The time interval for the step.
+   */
+  ExplicitElasticAttenuativeSEM( NodeManager & nodeManager,
+                                 EdgeManager const & edgeManager,
+                                 FaceManager const & faceManager,
+                                 localIndex const targetRegionIndex,
+                                 SUBREGION_TYPE const & elementSubRegion,
+                                 FE_TYPE const & finiteElementSpace,
+                                 CONSTITUTIVE_TYPE & inputConstitutiveType,
+                                 real64 const dt ):
+    Base( nodeManager,
+          edgeManager,
+          faceManager,
+          targetRegionIndex,
+          elementSubRegion,
+          finiteElementSpace,
+          inputConstitutiveType,
+          dt ),
+    m_qualityFactorP( elementSubRegion.template getField< elasticfields::ElasticQualityFactorP >() ),
+    m_qualityFactorS( elementSubRegion.template getField< elasticfields::ElasticQualityFactorS >() )
+  {}
+
+  /**
+   * @copydoc geos::finiteElement::KernelBase::setup
+   *
+   * Copies the primary variable, and position into the local stack array.
+   */
+  GEOS_HOST_DEVICE
+  inline
+  void setup( localIndex const k,
+              typename Base::StackVariables & stack ) const
+  {
+    Base::setup( k, stack );
+    real64 lambdap2mua= (stack.lambda + 2.0 * stack.mu ) / m_qualityFactorP[ k ];
+    stack.mu =  stack.mu / m_qualityFactorS[ k ];
+    stack.lambda = (lambdap2mua - 2.0 * stack.mu );
+  }
+
+protected:
+
+  /// The array containing the P-wave attenuation quality factor
+  arrayView1d< real32 const > const m_qualityFactorP;
+
+  /// The array containing the S-wave attenuation quality factor
+  arrayView1d< real32 const > const m_qualityFactorS;
+
+};
+
+using ExplicitElasticAttenuativeSEMFactory = finiteElement::KernelFactory< ExplicitElasticAttenuativeSEM,
+                                                                           real64 >;
 
 } // namespace ElasticWaveEquationSEMKernels
 

@@ -59,7 +59,7 @@ void ConstantDiffusion::allocateConstitutiveData( dataRepository::Group & parent
   }
 }
 
-void ConstantDiffusion::postProcessInput()
+void ConstantDiffusion::postInputInitialization()
 {
   GEOS_THROW_IF( m_diffusivityComponents.size() != 3,
                  GEOS_FMT( "{}: the size of the diffusivity must be equal to 3",

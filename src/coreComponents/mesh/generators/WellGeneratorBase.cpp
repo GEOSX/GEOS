@@ -152,7 +152,7 @@ void WellGeneratorBase::generateWellGeometry( )
 
 }
 
-void WellGeneratorBase::postProcessInput()
+void WellGeneratorBase::postInputInitialization()
 {
   GEOS_THROW_IF( m_radius <= 0,
                  "Invalid " << viewKeyStruct::radiusString() << " in well " << getName(),

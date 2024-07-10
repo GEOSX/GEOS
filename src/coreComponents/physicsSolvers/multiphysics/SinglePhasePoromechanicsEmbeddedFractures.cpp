@@ -50,9 +50,9 @@ SinglePhasePoromechanicsEmbeddedFractures::SinglePhasePoromechanicsEmbeddedFract
 SinglePhasePoromechanicsEmbeddedFractures::~SinglePhasePoromechanicsEmbeddedFractures()
 {}
 
-void SinglePhasePoromechanicsEmbeddedFractures::postProcessInput()
+void SinglePhasePoromechanicsEmbeddedFractures::postInputInitialization()
 {
-  Base::postProcessInput();
+  Base::postInputInitialization();
 
   GEOS_ERROR_IF( solidMechanicsSolver()->useStaticCondensation(),
                  GEOS_FMT( "{}: {} = 1 in {} solver named {} is not supported for {}",

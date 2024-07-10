@@ -92,9 +92,9 @@ void CompressibleSinglePhaseFluid::allocateConstitutiveData( dataRepository::Gro
   m_viscosity.setValues< serialPolicy >( m_referenceViscosity );
 }
 
-void CompressibleSinglePhaseFluid::postProcessInput()
+void CompressibleSinglePhaseFluid::postInputInitialization()
 {
-  SingleFluidBase::postProcessInput();
+  SingleFluidBase::postInputInitialization();
 
   auto const checkNonnegative = [&]( real64 const value, auto const & attribute )
   {

@@ -162,7 +162,7 @@ protected:
   };
   /// @endcond
 
-  void postProcessInput() override;
+  void postInputInitialization() override;
 
   /// Mesh number of dimension
   int m_dim;

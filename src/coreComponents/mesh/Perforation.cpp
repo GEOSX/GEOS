@@ -48,7 +48,7 @@ Perforation::Perforation( string const & name, Group * const parent )
 }
 
 
-void Perforation::postProcessInput()
+void Perforation::postInputInitialization()
 {
   GEOS_ERROR_IF( m_distanceFromHead <= 0,
                  getWrapperDataContext( viewKeyStruct::distanceFromHeadString() ) <<

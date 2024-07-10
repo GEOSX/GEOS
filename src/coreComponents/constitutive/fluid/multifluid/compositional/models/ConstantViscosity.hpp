@@ -33,7 +33,7 @@ namespace compositional
 class ConstantViscosityUpdate final : public FunctionBaseUpdate
 {
 public:
-  ConstantViscosityUpdate() = default;
+  explicit ConstantViscosityUpdate( real64 const constantPhaseViscosity );
 
   template< integer USD1, integer USD2 >
   GEOS_HOST_DEVICE
@@ -46,13 +46,20 @@ public:
                 real64 & viscosity,
                 arraySlice1d< real64, USD2 > const & dViscosity,
                 bool useMass ) const;
+
+private:
+  real64 const m_constantPhaseViscosity;
 };
 
 class ConstantViscosity : public FunctionBase
 {
 public:
+  static constexpr real64 defaultViscosity = 0.001;
+public:
   ConstantViscosity( string const & name,
-                     ComponentProperties const & componentProperties );
+                     ComponentProperties const & componentProperties,
+                     integer const phaseIndex,
+                     ModelParameters const & modelParameters );
 
   static string catalogName() { return ""; }
 
@@ -69,6 +76,31 @@ public:
    * @return the wrapper
    */
   KernelWrapper createKernelWrapper() const;
+
+  // Parameters for constant viscosity model
+  class Parameters : public ModelParameters
+  {
+public:
+    Parameters( std::unique_ptr< ModelParameters > parameters );
+    ~Parameters() override = default;
+
+    array1d< real64 > m_constantPhaseViscosity;
+
+private:
+    void registerParametersImpl( MultiFluidBase * fluid ) override;
+    void postInputInitializationImpl( MultiFluidBase const * fluid, ComponentProperties const & componentProperties ) override;
+
+    struct viewKeyStruct
+    {
+      static constexpr char const * constantPhaseViscosityString() { return "constantPhaseViscosity"; }
+    };
+  };
+
+  // Create parameters unique to this model
+  static std::unique_ptr< ModelParameters > createParameters( std::unique_ptr< ModelParameters > parameters );
+
+private:
+  real64 m_constantPhaseViscosity{defaultViscosity};
 };
 
 template< integer USD1, integer USD2 >
@@ -88,7 +120,7 @@ void ConstantViscosityUpdate::compute( ComponentProperties::KernelWrapper const 
   GEOS_UNUSED_VAR( phaseComposition );
   GEOS_UNUSED_VAR( density, dDensity );
 
-  viscosity = 0.001;
+  viscosity = m_constantPhaseViscosity;
 
   LvArray::forValuesInSlice( dViscosity, setZero );
 }

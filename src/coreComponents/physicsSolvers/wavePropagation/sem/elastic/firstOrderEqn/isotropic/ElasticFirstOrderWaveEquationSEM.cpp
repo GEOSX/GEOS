@@ -175,10 +175,10 @@ void ElasticFirstOrderWaveEquationSEM::registerDataOnMesh( Group & meshBodies )
 
 
 
-void ElasticFirstOrderWaveEquationSEM::postProcessInput()
+void ElasticFirstOrderWaveEquationSEM::postInputInitialization()
 {
 
-  WaveSolverBase::postProcessInput();
+  WaveSolverBase::postInputInitialization();
 
   localIndex const numSourcesGlobal = m_sourceCoordinates.size( 0 );
   m_sourceElem.resize( numSourcesGlobal );

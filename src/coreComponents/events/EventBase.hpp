@@ -156,7 +156,7 @@ public:
 
   /**
    * @brief Helper function to validate the consistency of the event input
-   * @note We cannot use postProcessInput here because we can perform the validation only after the m_target pointer is set
+   * @note We cannot use postInputInitialization here because we can perform the validation only after the m_target pointer is set
    */
   virtual void validate() const {};
 

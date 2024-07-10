@@ -175,9 +175,9 @@ ElasticOrthotropic::ElasticOrthotropic( string const & name, Group * const paren
 ElasticOrthotropic::~ElasticOrthotropic()
 {}
 
-void ElasticOrthotropic::postProcessInput()
+void ElasticOrthotropic::postInputInitialization()
 {
-  SolidBase::postProcessInput();
+  SolidBase::postInputInitialization();
 
   real64 & c11 = getReference< real64 >( viewKeyStruct::defaultC11String() );
   real64 & c12 = getReference< real64 >( viewKeyStruct::defaultC12String() );

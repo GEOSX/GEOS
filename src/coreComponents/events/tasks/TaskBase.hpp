@@ -65,8 +65,8 @@ public:
     return false;
   }
 
-  /// @copydoc geos::dataRepository::Group::postProcessInput( )
-  void postProcessInput() override;
+  /// @copydoc geos::dataRepository::Group::postInputInitialization( )
+  void postInputInitialization() override;
 };
 
 } /* namespace */

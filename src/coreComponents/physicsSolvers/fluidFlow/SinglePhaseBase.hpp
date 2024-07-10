@@ -170,6 +170,22 @@ public:
                      arrayView1d< real64 > const & localRhs ) = 0;
 
   /**
+   * @brief assembles the flux terms for all cells including jump stabilization
+   * @param time_n previous time value
+   * @param dt time step
+   * @param domain the physical domain object
+   * @param dofManager degree-of-freedom manager associated with the linear system
+   * @param localMatrix the system matrix
+   * @param localRhs the system right-hand side vector
+   */
+  virtual void
+  assembleStabilizedFluxTerms( real64 const dt,
+                               DomainPartition const & domain,
+                               DofManager const & dofManager,
+                               CRSMatrixView< real64, globalIndex const > const & localMatrix,
+                               arrayView1d< real64 > const & localRhs ) = 0;
+
+  /**
    * @brief assembles the flux terms for all cells for the poroelastic case
    * @param time_n previous time value
    * @param dt time step
@@ -270,7 +286,7 @@ public:
    * @brief Function to update all constitutive state and dependent variables
    * @param subRegion subregion that contains the fields
    */
-  void
+  real64
   updateFluidState( ElementSubRegionBase & subRegion ) const;
 
 

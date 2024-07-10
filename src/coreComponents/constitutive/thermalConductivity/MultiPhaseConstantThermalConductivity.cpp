@@ -59,7 +59,7 @@ void MultiPhaseConstantThermalConductivity::allocateConstitutiveData( dataReposi
   }
 }
 
-void MultiPhaseConstantThermalConductivity::postProcessInput()
+void MultiPhaseConstantThermalConductivity::postInputInitialization()
 {
   GEOS_THROW_IF( m_thermalConductivityComponents[0] < 0 ||
                  m_thermalConductivityComponents[1] < 0 ||

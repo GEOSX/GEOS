@@ -332,7 +332,7 @@ void LohrenzBrayClarkViscosityUpdate::computePhaseViscosity_LohrenzBrayClark( in
 
   auto const & criticalPressure    = componentProperties.m_componentCriticalPressure;
   auto const & criticalTemperature = componentProperties.m_componentCriticalTemperature;
-  auto const & criticalVolume      = componentProperties.m_componentCriticalVolume;
+  auto const & criticalVolume      = m_componentCriticalVolume;
   auto const & molarWeight         = componentProperties.m_componentMolarWeight;
 
   for( integer ic = 0; ic < numComponents; ++ic )

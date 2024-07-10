@@ -310,7 +310,7 @@ public:
 
 private:
 
-  virtual void postProcessInput() override;
+  virtual void postInputInitialization() override;
 
   /// the max number of fluid phases
   integer m_numPhases;

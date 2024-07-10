@@ -179,7 +179,8 @@
 
   <Outputs>
     <VTK
-      name="vtkOutput"/>
+      name="vtkOutput"
+      plotFileRoot="deadoil_2ph_staircase_gravity_segregation_3d"/>
     <Restart
       name="restartOutput"/>
   </Outputs>

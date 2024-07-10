@@ -66,7 +66,7 @@ PressurePermeability::deliverClone( string const & name,
   return PermeabilityBase::deliverClone( name, parent );
 }
 
-void PressurePermeability::postProcessInput()
+void PressurePermeability::postInputInitialization()
 {
   for( localIndex i=0; i < 3; i++ )
   {

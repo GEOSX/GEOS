@@ -73,7 +73,7 @@
     <!-- SPHINX_HeatCapacityProperties -->
     <SolidInternalEnergy
       name="rockInternalEnergy"
-      volumetricHeatCapacity="1.89e6"
+      referenceVolumetricHeatCapacity="1.89e6"
       referenceTemperature="0"
       referenceInternalEnergy="0"/>
     <!-- SPHINX_HeatCapacityPropertiesEnd -->

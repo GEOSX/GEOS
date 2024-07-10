@@ -28,7 +28,7 @@ namespace geos
 {
 using namespace fields;
 /// Namespace to contain the elastic wave kernels.
-namespace ElasticVTIWaveEquationSEMKernels
+namespace elasticVTIWaveEquationSEMKernels
 {
 
 /**
@@ -286,7 +286,7 @@ protected:
 using ExplicitElasticVTISEMFactory = finiteElement::KernelFactory< ExplicitElasticVTISEM,
                                                                    real64 >;
 
-} // namespace ElasticVTIWaveEquationSEMKernels
+} // namespace elasticVTIWaveEquationSEMKernels
 
 } // namespace geos
 

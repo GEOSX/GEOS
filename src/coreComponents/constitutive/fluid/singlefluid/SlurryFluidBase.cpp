@@ -81,9 +81,9 @@ SlurryFluidBase::SlurryFluidBase( string const & name, Group * const parent ):
 
 SlurryFluidBase::~SlurryFluidBase() = default;
 
-void SlurryFluidBase::postProcessInput()
+void SlurryFluidBase::postInputInitialization()
 {
-  SingleFluidBase::postProcessInput();
+  SingleFluidBase::postInputInitialization();
 
   localIndex const NC = numFluidComponents();
 

@@ -75,7 +75,7 @@ PerfectlyMatchedLayer::PerfectlyMatchedLayer( string const & name, Group * const
 
 }
 
-void PerfectlyMatchedLayer::postProcessInput()
+void PerfectlyMatchedLayer::postInputInitialization()
 {
   GEOS_THROW_IF( (m_xMax[0]<m_xMin[0] || m_xMax[1]<m_xMin[1] || m_xMax[2]<m_xMin[2]),
                  getCatalogName() << " " << getDataContext() << " "

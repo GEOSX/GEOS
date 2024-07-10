@@ -79,6 +79,54 @@ public:
    */
   void outputStatistics() const;
 
+  /**
+   * @return Number of time steps
+   */
+  integer getNumTimeSteps() const
+  { return m_numTimeSteps; }
+
+  /**
+   * @return Number of time step cuts
+   */
+  integer getNumTimeStepCuts() const
+  { return m_numTimeStepCuts; }
+
+  /**
+   * @return Cumulative number of successful outer loop iterations
+   */
+  integer getNumSuccessfulOuterLoopIterations() const
+  { return m_numSuccessfulOuterLoopIterations; }
+
+  /**
+   * @return Cumulative number of successful nonlinear iterations
+   */
+  integer getNumSuccessfulNonlinearIterations() const
+  { return m_numSuccessfulNonlinearIterations; }
+
+  /**
+   * @return Cumulative number of successful linear iterations
+   */
+  integer getNumSuccessfulLinearIterations() const
+  { return m_numSuccessfulLinearIterations; }
+
+  /**
+   * @return Cumulative number of discarded outer loop iterations
+   */
+  integer getNumDiscardedOuterLoopIterations() const
+  { return m_numDiscardedOuterLoopIterations; }
+
+  /**
+   * @return Cumulative number of discarded nonlinear iterations
+   */
+  integer getNumDiscardedNonlinearIterations() const
+  { return m_numDiscardedNonlinearIterations; }
+
+  /**
+   * @return Cumulative number of discarded linear iterations
+   */
+  integer getNumDiscardedLinearIterations() const
+  { return m_numDiscardedLinearIterations; }
+
 private:
 
   /**

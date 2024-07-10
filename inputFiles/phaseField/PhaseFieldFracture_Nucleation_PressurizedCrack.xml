@@ -114,8 +114,8 @@
       extDrivingForceFlag="1"
       degradationLowerLimit="1e-6"
       defaultTensileStrength="5.5"
-      compressiveStrength="40.0"
-      deltaCoefficient="6.85"
+      defaultCompressiveStrength="40.0"
+      defaultDeltaCoefficient="6.85"
       damagePressure="0.1568"/>
   </Constitutive>
 

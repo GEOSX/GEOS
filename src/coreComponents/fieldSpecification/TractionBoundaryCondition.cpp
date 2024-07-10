@@ -72,7 +72,7 @@ TractionBoundaryCondition::TractionBoundaryCondition( string const & name, Group
 }
 
 
-void TractionBoundaryCondition::postProcessInput()
+void TractionBoundaryCondition::postInputInitialization()
 {
   if( m_tractionType == TractionType::vector )
   {

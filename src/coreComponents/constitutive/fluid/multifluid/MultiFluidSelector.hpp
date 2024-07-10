@@ -47,13 +47,13 @@ void constitutiveUpdatePassThru( MultiFluidBase const & fluid,
                                CO2BrinePhillipsFluid,
                                CO2BrineEzrokhiFluid,
                                CO2BrinePhillipsThermalFluid,
+// Including these in a CUDA build will lead to compiler segfault.
+// Need to split compilation units for all the options
 #if !defined(GEOS_DEVICE_COMPILE)
                                CO2BrineEzrokhiThermalFluid,
-                               CompositionalTwoPhasePengRobinsonLBCViscosity,
-                               CompositionalTwoPhaseSoaveRedlichKwongLBCViscosity,
+                               CompositionalTwoPhaseLohrenzBrayClarkViscosity,
 #endif
-                               CompositionalTwoPhasePengRobinsonConstantViscosity,
-                               CompositionalTwoPhaseSoaveRedlichKwongConstantViscosity
+                               CompositionalTwoPhaseConstantViscosity
                                >::execute( fluid, std::forward< LAMBDA >( lambda ) );
 }
 
@@ -69,13 +69,13 @@ void constitutiveUpdatePassThru( MultiFluidBase & fluid,
                                CO2BrinePhillipsFluid,
                                CO2BrineEzrokhiFluid,
                                CO2BrinePhillipsThermalFluid,
+// Including these in a CUDA build will lead to compiler segfault.
+// Need to split compilation units for all the options"
 #if !defined(GEOS_DEVICE_COMPILE)
                                CO2BrineEzrokhiThermalFluid,
-                               CompositionalTwoPhasePengRobinsonLBCViscosity,
-                               CompositionalTwoPhaseSoaveRedlichKwongLBCViscosity,
+                               CompositionalTwoPhaseLohrenzBrayClarkViscosity,
 #endif
-                               CompositionalTwoPhasePengRobinsonConstantViscosity,
-                               CompositionalTwoPhaseSoaveRedlichKwongConstantViscosity
+                               CompositionalTwoPhaseConstantViscosity
                                >::execute( fluid, std::forward< LAMBDA >( lambda ) );
 }
 

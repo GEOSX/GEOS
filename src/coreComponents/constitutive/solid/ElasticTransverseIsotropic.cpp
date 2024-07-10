@@ -112,9 +112,9 @@ ElasticTransverseIsotropic::ElasticTransverseIsotropic( string const & name, Gro
 ElasticTransverseIsotropic::~ElasticTransverseIsotropic()
 {}
 
-void ElasticTransverseIsotropic::postProcessInput()
+void ElasticTransverseIsotropic::postInputInitialization()
 {
-  SolidBase::postProcessInput();
+  SolidBase::postInputInitialization();
 
   real64 & c11  = getReference< real64 >( viewKeyStruct::defaultC11String() );
   real64 & c13  = getReference< real64 >( viewKeyStruct::defaultC13String() );

@@ -49,9 +49,9 @@ ContactSolverBase::ContactSolverBase( const string & name,
     setInputFlag( dataRepository::InputFlags::FALSE );
 }
 
-void ContactSolverBase::postProcessInput()
+void ContactSolverBase::postInputInitialization()
 {
-  SolidMechanicsLagrangianFEM::postProcessInput();
+  SolidMechanicsLagrangianFEM::postInputInitialization();
 
   GEOS_THROW_IF( m_timeIntegrationOption != TimeIntegrationOption::QuasiStatic,
                  GEOS_FMT( "{} {}: The attribute `{}` must be `{}`",

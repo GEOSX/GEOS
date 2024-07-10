@@ -72,6 +72,23 @@ public:
    *             is a shortcut that should eventually be fixed by keeping this information in the HDF5 buffer.
    */
   virtual localIndex getBufferedCount() = 0;
+
+  /**
+   * @brief Get the log-level for BufferedHistoryIO classes
+   * @return the current log-level
+   */
+  int getLogLevel() const { return m_logLevel; }
+
+  /**
+   * @brief Set the log-level for BufferedHistoryIO classes
+   * @param[in] logLevel the log-level to set
+   */
+  void setLogLevel( int logLevel ) { m_logLevel = logLevel; }
+
+private:
+
+  /// the log-level
+  int m_logLevel = 0;
 };
 
 }

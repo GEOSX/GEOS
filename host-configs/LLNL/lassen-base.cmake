@@ -31,19 +31,19 @@ set(ENABLE_CUDA_NVTOOLSEXT OFF CACHE BOOL "")
 
 # ESSL
 set(ENABLE_ESSL ON CACHE BOOL "" FORCE )
-set(ESSL_INCLUDE_DIRS /usr/tcetmp/packages/essl/essl-6.3.0.2/include CACHE STRING "" FORCE )
-set(ESSL_LIBRARIES /usr/tcetmp/packages/essl/essl-6.3.0.2/lib64/libesslsmpcuda.so
+set(ESSL_DIR /usr/tcetmp/packages/essl/essl-6.3.0.2 CACHE STRING "" FORCE )
+set(ESSL_INCLUDE_DIRS ${ESSL_DIR}/include CACHE STRING "" FORCE )
+set(ESSL_LIBRARIES ${ESSL_DIR}/lib64/libesslsmpcuda.so
                    ${CUDA_TOOLKIT_ROOT_DIR}/lib64/libcublas.so
                    ${CUDA_TOOLKIT_ROOT_DIR}/lib64/libcublasLt.so
                    ${CUDA_TOOLKIT_ROOT_DIR}/lib64/libcudart.so
-                   /usr/tcetmp/packages/essl/essl-6.3.0.2/lib64/liblapackforessl.so
-                   /usr/tcetmp/packages/essl/essl-6.3.0.2/lib64/liblapackforessl_.so
+                   ${ESSL_DIR}/lib64/liblapackforessl.so
+                   ${ESSL_DIR}/lib64/liblapackforessl_.so
                    CACHE PATH "" FORCE )
-                   
+
 # TPL
 set(ENABLE_PAPI OFF CACHE BOOL "")
 set(SILO_BUILD_TYPE powerpc64-unknown-linux-gnu CACHE STRING "")
-set(ENABLE_FESAPI OFF CACHE BOOL "" FORCE)
 
 # GEOSX specific options
 set(ENABLE_PVTPackage ON CACHE BOOL "")

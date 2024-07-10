@@ -60,8 +60,8 @@
       criticalStrainEnergy="0"
       extDrivingForceFlag="1"
       defaultTensileStrength="27.0"
-      compressiveStrength="77.0"
-      deltaCoefficient="3.22"/>
+      defaultCompressiveStrength="77.0"
+      defaultDeltaCoefficient="3.22"/>
   </Constitutive>
 
   <FieldSpecifications>

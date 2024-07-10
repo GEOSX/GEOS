@@ -46,9 +46,9 @@ void PressurePorosity::allocateConstitutiveData( dataRepository::Group & parent,
   PorosityBase::allocateConstitutiveData( parent, numConstitutivePointsPerParentIndex );
 }
 
-void PressurePorosity::postProcessInput()
+void PressurePorosity::postInputInitialization()
 {
-  PorosityBase::postProcessInput();
+  PorosityBase::postInputInitialization();
   // TODO valdate input
 }
 

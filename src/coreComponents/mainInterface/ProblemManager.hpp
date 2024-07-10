@@ -328,7 +328,7 @@ protected:
   /**
    * @brief Post process the command line input
    */
-  virtual void postProcessInput() override final;
+  virtual void postInputInitialization() override final;
 
 private:
 

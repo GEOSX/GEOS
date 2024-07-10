@@ -54,9 +54,9 @@ ParticleFluidBase::ParticleFluidBase( string const & name, Group * const parent 
 
 ParticleFluidBase::~ParticleFluidBase() = default;
 
-void ParticleFluidBase::postProcessInput()
+void ParticleFluidBase::postInputInitialization()
 {
-  ConstitutiveBase::postProcessInput();
+  ConstitutiveBase::postInputInitialization();
 }
 
 void ParticleFluidBase::allocateConstitutiveData( Group & parent,

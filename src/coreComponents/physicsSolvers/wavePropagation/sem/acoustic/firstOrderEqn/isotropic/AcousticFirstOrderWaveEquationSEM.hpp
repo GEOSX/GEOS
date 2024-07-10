@@ -109,7 +109,7 @@ public:
 
 protected:
 
-  virtual void postProcessInput() override final;
+  virtual void postInputInitialization() override final;
 
   virtual void initializePostInitialConditionsPreSubGroups() override final;
 

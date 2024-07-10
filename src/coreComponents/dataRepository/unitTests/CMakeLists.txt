@@ -7,7 +7,7 @@ set( dataRepository_tests
 
 set( dependencyList ${parallelDeps} gtest dataRepository )
 
-if( ENABLE_CUDA_NVTOOLSEXT )
+if( ENABLE_CUDA AND ENABLE_CUDA_NVTOOLSEXT )
   list( APPEND dependencyList CUDA::nvToolsExt )
 endif()
 

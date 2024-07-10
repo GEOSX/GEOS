@@ -87,7 +87,7 @@ void ConstantPermeability::initializeState() const
   } );
 }
 
-void ConstantPermeability::postProcessInput()
+void ConstantPermeability::postInputInitialization()
 {}
 
 REGISTER_CATALOG_ENTRY( ConstitutiveBase, ConstantPermeability, string const &, Group * const )

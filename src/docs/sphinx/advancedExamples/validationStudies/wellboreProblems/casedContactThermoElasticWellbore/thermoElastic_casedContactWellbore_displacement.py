@@ -49,7 +49,7 @@ def main():
 	plt.plot( displacement_radial_analytic_1e4s[:,0],
 		      displacement_radial_analytic_1e4s[:,1],
 		      'r-',
-		      label='Analytic, no debonding: t = 1e4 (s)')
+		      label='Analytic: t = 1e4 (s)')
 	
 	# Plot radial displacement at 1e5 (s)
 	plt.plot( rCoord,
@@ -60,7 +60,7 @@ def main():
 	plt.plot( displacement_radial_analytic_1e5s[:,0],
 		      displacement_radial_analytic_1e5s[:,1],
 		      'b-',
-		      label='Analytic, no debonding: t = 1e5 (s)')
+		      label='Analytic: t = 1e5 (s)')
 	
 	plt.grid()
 	plt.ylabel(r'Displacement [m]')

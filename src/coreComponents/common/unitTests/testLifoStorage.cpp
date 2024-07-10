@@ -29,7 +29,7 @@ template< typename >
 struct RAJAHelper
 {};
 
-using serialPolicy = RAJA::loop_exec;
+using serialPolicy = RAJA::seq_exec;
 
 template<>
 struct RAJAHelper< serialPolicy >
@@ -153,23 +153,9 @@ void testLifoStorageAsync( int elemCnt, int numberOfElementsOnDevice, int number
 }
 
 
-TEST( LifoStorageTest, LifoStorageBufferOnHost )
-{
-  testLifoStorage< local::serialPolicy >( 10, 2, 3, 10 );
-}
-
-TEST( LifoStorageTest, LifoStorageBufferOnHostNoDeviceBuffer )
-{
-  testLifoStorage< local::serialPolicy >( 10, 0, 3, 10 );
-}
-
-TEST( LifoStorageTest, LifoStorageAsyncBufferOnHost )
-{
-  testLifoStorageAsync< local::serialPolicy >( 10, 2, 3, 10 );
-}
-
 
 #ifdef GEOS_USE_CUDA
+// running tests on GPUs
 TEST( LifoStorageTest, LifoStorageBufferOnCUDA )
 {
   testLifoStorage< local::devicePolicy< 32 > >( 10, 2, 3, 10 );
@@ -205,6 +191,24 @@ TEST( LifoStorageTest, LifoStorageAsyncBufferOnCUDA )
 {
   testLifoStorageAsync< local::devicePolicy< 32 > >( 10, 2, 3, 10 );
 }
+
+#else
+// running tests on CPUs
+TEST( LifoStorageTest, LifoStorageBufferOnHost )
+{
+  testLifoStorage< local::serialPolicy >( 10, 2, 3, 10 );
+}
+
+TEST( LifoStorageTest, LifoStorageBufferOnHostNoDeviceBuffer )
+{
+  testLifoStorage< local::serialPolicy >( 10, 0, 3, 10 );
+}
+
+TEST( LifoStorageTest, LifoStorageAsyncBufferOnHost )
+{
+  testLifoStorageAsync< local::serialPolicy >( 10, 2, 3, 10 );
+}
+
 #endif
 
 }

@@ -40,7 +40,7 @@ namespace timingHelpers
 }
 
 
-#if defined( GEOS_USE_CUDA_NVTOOLSEXT )
+#if defined( GEOS_USE_CUDA ) && defined( GEOS_USE_CUDA_NVTOOLSEXT )
 
 #include "nvToolsExt.h"
 

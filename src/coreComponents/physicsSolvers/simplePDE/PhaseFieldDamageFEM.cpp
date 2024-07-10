@@ -131,9 +131,9 @@ void PhaseFieldDamageFEM::registerDataOnMesh( Group & meshBodies )
   } );
 }
 
-void PhaseFieldDamageFEM::postProcessInput()
+void PhaseFieldDamageFEM::postInputInitialization()
 {
-  SolverBase::postProcessInput();
+  SolverBase::postInputInitialization();
 
   // Set basic parameters for solver
   // m_linearSolverParameters.logLevel = 0;

@@ -157,9 +157,9 @@ void MultiFluidBase::allocateConstitutiveData( dataRepository::Group & parent,
   resizeFields( parent.size(), numConstitutivePointsPerParentIndex );
 }
 
-void MultiFluidBase::postProcessInput()
+void MultiFluidBase::postInputInitialization()
 {
-  ConstitutiveBase::postProcessInput();
+  ConstitutiveBase::postInputInitialization();
 
   integer const numComp = numFluidComponents();
   integer const numPhase = numFluidPhases();

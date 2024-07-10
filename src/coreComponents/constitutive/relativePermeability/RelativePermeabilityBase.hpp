@@ -200,7 +200,7 @@ protected:
    */
   virtual void resizeFields( localIndex const size, localIndex const numPts );
 
-  virtual void postProcessInput() override;
+  virtual void postInputInitialization() override;
 
   // phase names read from input
   string_array m_phaseNames;

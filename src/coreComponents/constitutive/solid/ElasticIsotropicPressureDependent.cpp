@@ -77,11 +77,11 @@ ElasticIsotropicPressureDependent::~ElasticIsotropicPressureDependent()
 {}
 
 
-void ElasticIsotropicPressureDependent::postProcessInput()
+void ElasticIsotropicPressureDependent::postInputInitialization()
 {
   // check what constants the user actually input, and do conversions as needed
 
-  SolidBase::postProcessInput();
+  SolidBase::postInputInitialization();
 
   real64 & G  = m_defaultShearModulus;
   real64 & Cr  = m_defaultRecompressionIndex;

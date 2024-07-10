@@ -734,7 +734,7 @@ findNeighborRanks( std::vector< vtkBoundingBox > boundingBoxes )
 }
 
 
-vtkSmartPointer< vtkDataSet > manageGlobalIds( vtkSmartPointer< vtkDataSet > mesh, int useGlobalIds )
+vtkSmartPointer< vtkDataSet > manageGlobalIds( vtkSmartPointer< vtkDataSet > mesh, int useGlobalIds, bool isFractured )
 {
   auto hasGlobalIds = []( vtkSmartPointer< vtkDataSet > m ) -> bool
   {
@@ -776,6 +776,8 @@ vtkSmartPointer< vtkDataSet > manageGlobalIds( vtkSmartPointer< vtkDataSet > mes
   }
   else
   {
+    GEOS_ERROR_IF( isFractured, "Automatic generation of global IDs for fractured meshes is disabled. Please split with  mesh_doctor. \n" << generalMeshErrorAdvice );
+
     GEOS_LOG_RANK_0( "Generating global Ids from VTK mesh" );
     output = generateGlobalIDs( mesh );
   }
@@ -910,7 +912,7 @@ redistributeMeshes( integer const logLevel,
   }
 
   // Generate global IDs for vertices and cells, if needed
-  vtkSmartPointer< vtkDataSet > mesh = manageGlobalIds( loadedMesh, useGlobalIds );
+  vtkSmartPointer< vtkDataSet > mesh = manageGlobalIds( loadedMesh, useGlobalIds, !std::empty( fractures ) );
 
   if( MpiWrapper::commRank( comm ) != ( MpiWrapper::commSize( comm ) - 1 ) )
   {

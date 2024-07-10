@@ -54,7 +54,7 @@ FiniteElementDiscretization::~FiniteElementDiscretization()
 {}
 
 
-void FiniteElementDiscretization::postProcessInput()
+void FiniteElementDiscretization::postInputInitialization()
 {
   GEOS_ERROR_IF( m_useVem < 0 || m_useVem > 1,
                  getDataContext() << ": The flag useVirtualElements can be either 0 or 1" );

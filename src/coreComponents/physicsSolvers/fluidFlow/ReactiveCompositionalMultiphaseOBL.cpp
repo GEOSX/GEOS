@@ -23,6 +23,7 @@
 #include "discretizationMethods/NumericalMethodsManager.hpp"
 #include "fieldSpecification/FieldSpecificationManager.hpp"
 #include "fieldSpecification/SourceFluxBoundaryCondition.hpp"
+#include "fieldSpecification/SourceFluxStatistics.hpp"
 #include "finiteVolume/FiniteVolumeManager.hpp"
 #include "finiteVolume/FluxApproximationBase.hpp"
 #include "mesh/DomainPartition.hpp"
@@ -184,10 +185,10 @@ void ReactiveCompositionalMultiphaseOBL::implicitStepComplete( real64 const & ti
   } );
 }
 
-void ReactiveCompositionalMultiphaseOBL::postProcessInput()
+void ReactiveCompositionalMultiphaseOBL::postInputInitialization()
 {
   // need to override to skip the check for fluidModel, which is enabled in FlowSolverBase
-  SolverBase::postProcessInput();
+  SolverBase::postInputInitialization();
 
   GEOS_THROW_IF_GT_MSG( m_maxCompFracChange, 1.0,
                         GEOS_FMT( "{}: The maximum absolute change in component fraction is set to {}, while it must not be greater than 1.0",
@@ -861,6 +862,8 @@ void ReactiveCompositionalMultiphaseOBL::applySourceFluxBC( real64 const time,
       arrayView1d< real64 > rhsContributionArrayView = rhsContributionArray.toView();
       localIndex const rankOffset = dofManager.rankOffset();
 
+      RAJA::ReduceSum< parallelDeviceReduce, real64 > massProd( 0.0 );
+
       // note that the dofArray will not be used after this step (simpler to use dofNumber instead)
       fs.computeRhsContribution< FieldSpecificationAdd,
                                  parallelDevicePolicy<> >( targetSet.toViewConst(),
@@ -890,7 +893,8 @@ void ReactiveCompositionalMultiphaseOBL::applySourceFluxBC( real64 const time,
                                                            fluidComponentId,
                                                            dofNumber,
                                                            rhsContributionArrayView,
-                                                           localRhs] GEOS_HOST_DEVICE ( localIndex const a )
+                                                           localRhs,
+                                                           massProd] GEOS_HOST_DEVICE ( localIndex const a )
       {
         // we need to filter out ghosts here, because targetSet may contain them
         localIndex const ei = targetSet[a];
@@ -901,7 +905,18 @@ void ReactiveCompositionalMultiphaseOBL::applySourceFluxBC( real64 const time,
 
         // for all "fluid components", we add the value to the component mass balance equation
         globalIndex const compMassBalanceRow = dofNumber[ei] - rankOffset + fluidComponentId;
-        localRhs[compMassBalanceRow] += rhsContributionArrayView[a] / sizeScalingFactor;
+        real64 const rhsValue = rhsContributionArrayView[a] / sizeScalingFactor;
+        localRhs[compMassBalanceRow] += rhsValue;
+        massProd += rhsValue;
+      } );
+
+      SourceFluxStatsAggregator::forAllFluxStatWrappers( subRegion, fs.getName(),
+                                                         [&]( SourceFluxStatsAggregator::WrappedStats & wrapper )
+      {
+        // set the new sub-region statistics for this timestep
+        array1d< real64 > massProdArr{ m_numComponents };
+        massProdArr[fluidComponentId] = massProd.get();
+        wrapper.gatherTimeStepStats( time, dt, massProdArr.toViewConst(), targetSet.size() );
       } );
     } );
   } );

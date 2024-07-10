@@ -86,8 +86,10 @@
 
 
 #define FE_TYPES_2D \
-  finiteElement::H1_QuadrilateralFace_Lagrange1_GaussLegendre2  \
+  finiteElement::H1_QuadrilateralFace_Lagrange1_GaussLegendre2, \
   finiteElement::H1_TriangleFace_Lagrange1_Gauss1
+
+#define BASE_FE_TYPES_2D FE_TYPES_2D
 
 namespace geos
 {

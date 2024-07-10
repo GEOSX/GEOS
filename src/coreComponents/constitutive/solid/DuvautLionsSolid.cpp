@@ -44,9 +44,9 @@ DuvautLionsSolid< BASE >::DuvautLionsSolid( string const & name, Group * const p
 
 
 template< typename BASE >
-void DuvautLionsSolid< BASE >::postProcessInput()
+void DuvautLionsSolid< BASE >::postInputInitialization()
 {
-  BASE::postProcessInput();
+  BASE::postInputInitialization();
 }
 
 template< typename BASE >

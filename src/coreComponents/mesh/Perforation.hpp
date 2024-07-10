@@ -126,7 +126,7 @@ public:
   viewKeysPerforation;
 
 protected:
-  void postProcessInput() override;
+  void postInputInitialization() override;
 
 private:
   /// Linear distance from well head

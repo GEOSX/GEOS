@@ -91,7 +91,7 @@ private:
   };
 
 
-  void postProcessInput() override;
+  void postInputInitialization() override;
 
   /// Name of the solid mechanics solver
   string m_solidSolverName;

@@ -289,9 +289,9 @@ SolidMechanicsMPM::SolidMechanicsMPM( const string & name,
     setDescription( "number of elements along partition directions" );
 }
 
-void SolidMechanicsMPM::postProcessInput()
+void SolidMechanicsMPM::postInputInitialization()
 {
-  SolverBase::postProcessInput();
+  SolverBase::postInputInitialization();
 
   // Activate neighbor list if necessary
   if( m_damageFieldPartitioning == 1 || m_surfaceDetection == 1 /*|| m_directionalOverlapCorrection == 1*/ )
@@ -342,8 +342,7 @@ void SolidMechanicsMPM::registerDataOnMesh( Group & meshBodies )
                                                                       [&]( localIndex const,
                                                                            ParticleSubRegionBase & subRegion )
       {
-        setConstitutiveNamesCallSuper( subRegion );
-        setConstitutiveNames( subRegion );
+        setParticlesConstitutiveNames( subRegion );
       } );
     }
 
@@ -1966,10 +1965,8 @@ void SolidMechanicsMPM::solverProfilingIf( std::string label, bool condition )
   }
 }
 
-void SolidMechanicsMPM::setConstitutiveNamesCallSuper( ParticleSubRegionBase & subRegion ) const
+void SolidMechanicsMPM::setParticlesConstitutiveNames( ParticleSubRegionBase & subRegion ) const
 {
-  SolverBase::setConstitutiveNamesCallSuper( subRegion );
-
   subRegion.registerWrapper< string >( viewKeyStruct::solidMaterialNamesString() ).
     setPlotLevel( PlotLevel::NOPLOT ).
     setRestartFlags( RestartFlags::NO_WRITE ).
@@ -1978,11 +1975,6 @@ void SolidMechanicsMPM::setConstitutiveNamesCallSuper( ParticleSubRegionBase & s
   string & solidMaterialName = subRegion.getReference< string >( viewKeyStruct::solidMaterialNamesString() );
   solidMaterialName = SolverBase::getConstitutiveName< SolidBase >( subRegion );
   GEOS_ERROR_IF( solidMaterialName.empty(), GEOS_FMT( "SolidBase model not found on subregion {}", subRegion.getName() ) );
-}
-
-void SolidMechanicsMPM::setConstitutiveNames( ParticleSubRegionBase & subRegion ) const
-{
-  GEOS_UNUSED_VAR( subRegion );
 }
 
 real64 SolidMechanicsMPM::computeNeighborList( ParticleManager & particleManager )

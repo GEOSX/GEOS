@@ -67,7 +67,7 @@ void PorosityBase::allocateConstitutiveData( dataRepository::Group & parent,
   ConstitutiveBase::allocateConstitutiveData( parent, numConstitutivePointsPerParentIndex );
 }
 
-void PorosityBase::postProcessInput()
+void PorosityBase::postInputInitialization()
 {
   getField< fields::porosity::referencePorosity >().
     setApplyDefaultValue( m_defaultReferencePorosity );

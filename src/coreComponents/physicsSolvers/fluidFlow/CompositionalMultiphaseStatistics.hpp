@@ -141,7 +141,7 @@ private:
                           real64 const dt,
                           DomainPartition & domain ) const;
 
-  void postProcessInput() override;
+  void postInputInitialization() override;
 
   void registerDataOnMesh( Group & meshBodies ) override;
 

@@ -88,7 +88,7 @@ private:
     constexpr static char const * solidMechanicsStatisticsNameString() { return "solidMechanicsStatisticsName"; }
   };
 
-  void postProcessInput() override;
+  void postInputInitialization() override;
 
 //  void registerDataOnMesh( Group & meshBodies ) override;
 

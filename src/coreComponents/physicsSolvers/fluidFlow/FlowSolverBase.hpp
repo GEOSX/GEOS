@@ -20,6 +20,7 @@
 #define GEOS_PHYSICSSOLVERS_FINITEVOLUME_FLOWSOLVERBASE_HPP_
 
 #include "physicsSolvers/SolverBase.hpp"
+#include "common/Units.hpp"
 
 namespace geos
 {
@@ -136,6 +137,12 @@ public:
   integer & isThermal() { return m_isThermal; }
 
   /**
+   * @return The unit in which we evaluate the amount of fluid per element (Mass or Mole).
+   */
+  virtual units::Unit getMassUnit() const
+  { return units::Unit::Mass; }
+
+  /**
    * @brief Function to activate the flag allowing negative pressure
    */
   void allowNegativePressure() { m_allowNegativePressure = 1; }
@@ -149,6 +156,8 @@ public:
   { m_keepFlowVariablesConstantDuringInitStep = keepFlowVariablesConstantDuringInitStep; }
 
   virtual bool checkSequentialSolutionIncrements( DomainPartition & domain ) const override;
+
+  void enableLaggingFractureStencilWeightsUpdate(){ m_isLaggingFractureStencilWeightsUpdate = 1; };
 
 protected:
 
@@ -221,6 +230,8 @@ protected:
 private:
   virtual void setConstitutiveNames( ElementSubRegionBase & subRegion ) const override;
 
+  // flag to determine whether or not to apply lagging update for the fracture stencil weights
+  integer m_isLaggingFractureStencilWeightsUpdate;
 
 };
 

@@ -86,9 +86,9 @@ void ModifiedCamClay::allocateConstitutiveData( dataRepository::Group & parent,
 }
 
 
-void ModifiedCamClay::postProcessInput()
+void ModifiedCamClay::postInputInitialization()
 {
-  ElasticIsotropicPressureDependent::postProcessInput();
+  ElasticIsotropicPressureDependent::postInputInitialization();
 
   GEOS_THROW_IF( m_defaultCslSlope <= 0,
                  getFullName() << ": Non-positive slope of critical state line detected", InputError );

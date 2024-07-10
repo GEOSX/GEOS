@@ -118,7 +118,7 @@ static PyObject * setOutputDir( PyVTKOutput * self, PyObject * args )
   try
   {
     self->group->setOutputDirectory( path );
-    self->group->postProcessInput();
+    self->group->postInputInitialization();
   }
   catch( std::out_of_range const & e )
   {
@@ -154,7 +154,7 @@ static PyObject * setOutputFileRootName( PyVTKOutput * self, PyObject * args )
   try
   {
     self->group->setPlotFileRoot( filename );
-    self->group->postProcessInput();
+    self->group->postInputInitialization();
   }
   catch( std::out_of_range const & e )
   {

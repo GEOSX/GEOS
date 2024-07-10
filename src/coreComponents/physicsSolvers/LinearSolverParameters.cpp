@@ -17,6 +17,7 @@
  */
 
 #include "LinearSolverParameters.hpp"
+#include "fileIO/Table/TableFormatter.hpp"
 
 namespace geos
 {
@@ -200,7 +201,7 @@ LinearSolverParametersInput::LinearSolverParametersInput( string const & name,
     setDescription( "ILU(T) threshold factor" );
 }
 
-void LinearSolverParametersInput::postProcessInput()
+void LinearSolverParametersInput::postInputInitialization()
 {
   m_parameters.logLevel = getLogLevel();
 
@@ -257,6 +258,79 @@ void LinearSolverParametersInput::postProcessInput()
                         ": Invalid value." );
 
   // TODO input validation for other AMG parameters ?
+
+  if( getLogLevel() > 0 )
+    print();
+}
+
+void LinearSolverParametersInput::print()
+{
+  TableData tableData;
+  tableData.addRow( "Log level", getLogLevel());
+  tableData.addRow( "Linear solver type", m_parameters.solverType );
+  tableData.addRow( "Preconditioner type", m_parameters.preconditionerType );
+  tableData.addRow( "Stop if error", m_parameters.stopIfError );
+  if( m_parameters.solverType == LinearSolverParameters::SolverType::direct )
+  {
+    tableData.addRow( "Check residual", m_parameters.direct.checkResidual );
+    tableData.addRow( "Scale rows and columns", m_parameters.direct.equilibrate );
+    tableData.addRow( "Columns permutation", m_parameters.direct.colPerm );
+    tableData.addRow( "Rows permutation", m_parameters.direct.rowPerm );
+    tableData.addRow( "Replace tiny pivots", m_parameters.direct.replaceTinyPivot );
+    tableData.addRow( "Perform iterative refinement", m_parameters.direct.iterativeRefine );
+    tableData.addRow( "Use parallel solver", m_parameters.direct.parallel );
+  }
+  else
+  {
+    tableData.addRow( "Maximum iterations", m_parameters.krylov.maxIterations );
+    if( m_parameters.solverType == LinearSolverParameters::SolverType::gmres ||
+        m_parameters.solverType == LinearSolverParameters::SolverType::fgmres )
+    {
+      tableData.addRow( "Maximum iterations before restart", m_parameters.krylov.maxRestart );
+    }
+    tableData.addRow( "Use adaptive tolerance", m_parameters.krylov.useAdaptiveTol );
+    if( m_parameters.krylov.useAdaptiveTol )
+    {
+      tableData.addRow( "Weakest-allowed tolerance", m_parameters.krylov.weakestTol );
+    }
+    else
+    {
+      tableData.addRow( "Relative convergence tolerance", m_parameters.krylov.relTolerance );
+    }
+  }
+  if( m_parameters.preconditionerType == LinearSolverParameters::PreconditionerType::amg )
+  {
+    tableData.addRow( "AMG", "" );
+    tableData.addRow( "  Smoother sweeps", m_parameters.amg.numSweeps );
+    tableData.addRow( "  Smoother type", m_parameters.amg.smootherType );
+    tableData.addRow( "  Relaxation factor for the smoother", m_parameters.amg.relaxWeight );
+    tableData.addRow( "  Coarsest level solver/smoother type", m_parameters.amg.coarseType );
+    tableData.addRow( "  Coarsening algorithm", m_parameters.amg.coarseningType );
+    tableData.addRow( "  Interpolation algorithm", m_parameters.amg.interpolationType );
+    tableData.addRow( "  Interpolation maximum number of nonzeros per row", m_parameters.amg.interpolationMaxNonZeros );
+    tableData.addRow( "  Number of functions", m_parameters.amg.numFunctions );
+    tableData.addRow( "  Number of paths for aggressive coarsening", m_parameters.amg.aggressiveNumPaths );
+    tableData.addRow( "  Number of levels for aggressive coarsening", m_parameters.amg.aggressiveNumLevels );
+    tableData.addRow( "  Aggressive interpolation algorithm", m_parameters.amg.aggressiveInterpType );
+    tableData.addRow( "  Strength-of-connection threshold", m_parameters.amg.threshold );
+    tableData.addRow( "  Apply separate component filter for multi-variable problems", m_parameters.amg.separateComponents );
+    tableData.addRow( "  Near null space approximation", m_parameters.amg.nullSpaceType );
+  }
+  else if( m_parameters.preconditionerType == LinearSolverParameters::PreconditionerType::iluk ||
+           m_parameters.preconditionerType == LinearSolverParameters::PreconditionerType::ilut )
+  {
+    tableData.addRow( "ILU(K) fill factor", m_parameters.ifact.fill );
+    if( m_parameters.preconditionerType == LinearSolverParameters::PreconditionerType::ilut )
+    {
+      tableData.addRow( "ILU(T) threshold factor", m_parameters.ifact.threshold );
+    }
+  }
+  TableLayout const tableLayout = TableLayout( {
+      TableLayout::ColumnParam{"Parameter", TableLayout::Alignment::left},
+      TableLayout::ColumnParam{"Value", TableLayout::Alignment::left},
+    }, GEOS_FMT( "{}: linear solver", getParent().getName() ) );
+  TableTextFormatter const tableFormatter( tableLayout );
+  GEOS_LOG_RANK_0( tableFormatter.toString( tableData ));
 }
 
 REGISTER_CATALOG_ENTRY( Group, LinearSolverParametersInput, string const &, Group * const )

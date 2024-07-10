@@ -82,6 +82,18 @@ enum Unit : integer
 
   /// Solubility in g/L
   Solubility,
+
+  /// Mass in kg
+  Mass,
+
+  /// Mole in mol
+  Mole,
+
+  /// Mass rate in kg/s
+  MassRate,
+
+  /// Mole rate in mol/s
+  MoleRate,
 };
 
 
@@ -104,6 +116,10 @@ constexpr inline std::string_view getDescription( Unit unit )
     case Enthalpy:        return "enthalpy [J/kg]";
     case Density:         return "density [kg/m3]";
     case Solubility:      return "solubility [g/L]";
+    case Mass:            return "mass [kg]";
+    case Mole:            return "mole [mol]";
+    case MassRate:        return "mass rate [kg/s]";
+    case MoleRate:        return "mole rate [mol/s]";
   }
 }
 
@@ -122,6 +138,14 @@ constexpr inline std::string_view getSymbol( Unit unit )
     case TemperatureInC:  return "C";
     case Distance:        return "m";
     case Time:            return "s";
+    case Viscosity:       return "Pa*s";
+    case Enthalpy:        return "J/kg";
+    case Density:         return "kg/m3";
+    case Solubility:      return "g/L";
+    case Mass:            return "kg";
+    case Mole:            return "mol";
+    case MassRate:        return "kg/s";
+    case MoleRate:        return "mol/s";
   }
 }
 
@@ -143,6 +167,14 @@ inline string formatValue( real64 value, Unit unit )
     case TemperatureInC:  return GEOS_FMT( "temperature of {} [K]", convertCToK( value ) );
     case Distance:        return GEOS_FMT( "distance of {} [s]", value );
     case Time:            return GEOS_FMT( "time of {} [s]", value );
+    case Viscosity:       return GEOS_FMT( "viscosity of {} [Pa*s]", value );
+    case Enthalpy:        return GEOS_FMT( "enthalpy of {} [J/kg]", value );
+    case Density:         return GEOS_FMT( "density of {} [kg/m3]", value );
+    case Solubility:      return GEOS_FMT( "solubility of {} [g/L]", value );
+    case Mass:            return GEOS_FMT( "mass of {} [kg]", value );
+    case Mole:            return GEOS_FMT( "mole of {} [mol]", value );
+    case MassRate:        return GEOS_FMT( "mass rate of {} [kg/s]", value );
+    case MoleRate:        return GEOS_FMT( "mole rate of {} [mol/s]", value );
   }
 }
 
@@ -175,18 +207,17 @@ static constexpr double YearSeconds = YearDays * DaySeconds;
 struct TimeFormatInfo
 {
   /// Total time (including the decimal part) this instance represents in seconds
-  double m_totalSeconds = 0.0;
+  double const m_totalSeconds = 0.0;
   /// Number of integral years to show
-  int m_years = 0;
+  int const m_years = 0;
   /// Number of integral days to show
-  int m_days = 0;
+  int const m_days = 0;
   /// Number of integral hours to show
-  int m_hours = 0;
+  int const m_hours = 0;
   /// Number of integral minutes to show
-  int m_minutes = 0;
+  int const m_minutes = 0;
   /// Number of integral seconds to show
-  int m_seconds = 0;
-
+  int const m_seconds = 0;
 
   /**
    * @brief Construct a TimeFormatInfo from raw data (which must be coherent)
@@ -216,9 +247,19 @@ struct TimeFormatInfo
   friend std::ostream & operator<<( std::ostream & os, TimeFormatInfo const & ctx );
 
   /**
-   * @return a user friendly string representation of this structure.
+   * @return a comprehensive string representation of this structure.
    */
   string toString() const;
+
+  /**
+   * @return a user friendly string representation of this structure (YDHMS format, without subsecond details).
+   */
+  string toUnfoldedString() const;
+
+  /**
+   * @return a precise string representation of this structure (decimal seconds).
+   */
+  string toSecondsString() const;
 };
 
 

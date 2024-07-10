@@ -111,7 +111,7 @@ InternalWellboreGenerator::InternalWellboreGenerator( string const & name,
 
 }
 
-void InternalWellboreGenerator::postProcessInput()
+void InternalWellboreGenerator::postInputInitialization()
 {
 
   GEOS_ERROR_IF( m_nElems[1].size() > 1,
@@ -298,7 +298,7 @@ void InternalWellboreGenerator::postProcessInput()
     }
   }
 
-  InternalMeshGenerator::postProcessInput();
+  InternalMeshGenerator::postInputInitialization();
 }
 
 void InternalWellboreGenerator::reduceNumNodesForPeriodicBoundary( SpatialPartition & partition,

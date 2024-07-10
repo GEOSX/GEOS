@@ -30,7 +30,8 @@ SolidInternalEnergy::SolidInternalEnergy( string const & name, Group * const par
   ConstitutiveBase( name, parent ),
   m_internalEnergy(),
   m_dInternalEnergy_dTemperature(),
-  m_volumetricHeatCapacity(),
+  m_referenceVolumetricHeatCapacity(),
+  m_dVolumetricHeatCapacity_dTemperature(),
   m_referenceTemperature(),
   m_referenceInternalEnergy()
 {
@@ -47,9 +48,14 @@ SolidInternalEnergy::SolidInternalEnergy( string const & name, Group * const par
     setApplyDefaultValue( 0.0 ).
     setDescription( "Derivative of the solid internal energy w.r.t. temperature [J/(m^3.K)]" );
 
-  registerWrapper( viewKeyStruct::volumetricHeatCapacityString(), &m_volumetricHeatCapacity ).
+  registerWrapper( viewKeyStruct::referenceVolumetricHeatCapacityString(), &m_referenceVolumetricHeatCapacity ).
     setInputFlag( InputFlags::REQUIRED ).
-    setDescription( "Solid volumetric heat capacity [J/(kg.K)]" );
+    setDescription( "Reference solid volumetric heat capacity [J/(kg.K)]" );
+
+  registerWrapper( viewKeyStruct::dVolumetricHeatCapacity_dTemperatureString(), &m_dVolumetricHeatCapacity_dTemperature ).
+    setInputFlag( InputFlags::OPTIONAL ).
+    setApplyDefaultValue( 0.0 ).
+    setDescription( "Derivative of the solid volumetric heat capacity w.r.t. temperature [J/(m^3.K^2)]" );
 
   registerWrapper( viewKeyStruct::referenceTemperatureString(), &m_referenceTemperature ).
     setInputFlag( InputFlags::REQUIRED ).

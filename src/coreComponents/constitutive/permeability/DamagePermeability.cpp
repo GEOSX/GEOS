@@ -49,7 +49,7 @@ void DamagePermeability::allocateConstitutiveData( dataRepository::Group & paren
   PermeabilityBase::allocateConstitutiveData( parent, numConstitutivePointsPerParentIndex );
 }
 
-void DamagePermeability::postProcessInput()
+void DamagePermeability::postInputInitialization()
 {}
 
 REGISTER_CATALOG_ENTRY( ConstitutiveBase, DamagePermeability, string const &, Group * const )

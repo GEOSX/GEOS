@@ -21,7 +21,7 @@
 #include "constitutive/capillaryPressure/capillaryPressureSelector.hpp"
 #include "functions/FunctionManager.hpp"
 #include "functions/TableFunction.hpp"
-#include "unitTests/fluidFlowTests/testCompFlowUtils.hpp"
+#include "unitTests/fluidFlowTests/testFlowUtils.hpp"
 
 // TPL includes
 #include <gtest/gtest.h>

@@ -39,7 +39,7 @@ InternalWellGenerator::InternalWellGenerator( string const & name, Group * const
     setDescription( "Connectivity of the polyline segments" );
 }
 
-void InternalWellGenerator::postProcessInput()
+void InternalWellGenerator::postInputInitialization()
 {
   GEOS_THROW_IF( m_polyNodeCoords.size( 1 ) != m_nDims,
                  "InternalWell " << getWrapperDataContext( viewKeyStruct::polylineNodeCoordsString() ) <<

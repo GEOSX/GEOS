@@ -88,7 +88,7 @@ protected:
   };
   /// @endcond
 
-  void postProcessInput() override final;
+  void postInputInitialization() override final;
 
 private:
 

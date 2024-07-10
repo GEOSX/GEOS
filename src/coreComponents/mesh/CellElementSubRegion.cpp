@@ -44,6 +44,10 @@ CellElementSubRegion::CellElementSubRegion( string const & name, Group * const p
 
   registerWrapper( viewKeyStruct::fracturedCellsString(), &m_fracturedCells ).setSizedFromParent( 1 );
 
+  registerWrapper( viewKeyStruct::bubbleCellsString(), &m_bubbleCells ).setSizedFromParent( 0 );
+
+  registerWrapper( viewKeyStruct::toFaceElementsString(), &m_toFaceElements ).setSizedFromParent( 0 );
+
   excludeWrappersFromPacking( { viewKeyStruct::nodeListString(),
                                 viewKeyStruct::edgeListString(),
                                 viewKeyStruct::faceListString(),

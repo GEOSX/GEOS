@@ -86,7 +86,7 @@ void RelpermDriver::outputResults()
 }
 
 
-void RelpermDriver::postProcessInput()
+void RelpermDriver::postInputInitialization()
 {
   constitutive::ConstitutiveManager
   & constitutiveManager = this->getGroupByPath< constitutive::ConstitutiveManager >( "/Problem/domain/Constitutive" );

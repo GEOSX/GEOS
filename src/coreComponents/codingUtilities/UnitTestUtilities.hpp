@@ -82,8 +82,8 @@ T expected( T expectedSerial,
 constexpr real64 DEFAULT_ABS_TOL = 1E-12;
 constexpr real64 DEFAULT_REL_TOL = std::numeric_limits< real64 >::epsilon();
 
-::testing::AssertionResult checkRelativeErrorFormat( const char *, const char *, const char *, const char *,
-                                                     real64 const v1, real64 const v2, real64 const relTol, real64 const absTol )
+inline ::testing::AssertionResult checkRelativeErrorFormat( const char *, const char *, const char *, const char *,
+                                                            real64 const v1, real64 const v2, real64 const relTol, real64 const absTol )
 {
   real64 const delta = std::abs( v1 - v2 );
   real64 const value = std::max( std::abs( v1 ), std::abs( v2 ) );
@@ -99,23 +99,23 @@ constexpr real64 DEFAULT_REL_TOL = std::numeric_limits< real64 >::epsilon();
   return ::testing::AssertionSuccess();
 }
 
-::testing::AssertionResult checkRelativeErrorFormat( char const * a, char const * b, char const * c,
-                                                     real64 const v1, real64 const v2, real64 const relTol )
+inline ::testing::AssertionResult checkRelativeErrorFormat( char const * a, char const * b, char const * c,
+                                                            real64 const v1, real64 const v2, real64 const relTol )
 { return checkRelativeErrorFormat( a, b, c, "DEFAULT_ABS_TOL", v1, v2, relTol, DEFAULT_ABS_TOL ); }
 
-void checkRelativeError( real64 const v1, real64 const v2, real64 const relTol )
+inline void checkRelativeError( real64 const v1, real64 const v2, real64 const relTol )
 { EXPECT_PRED_FORMAT3( checkRelativeErrorFormat, v1, v2, relTol ); }
 
-void checkRelativeError( real64 const v1, real64 const v2, real64 const relTol, real64 const absTol )
+inline void checkRelativeError( real64 const v1, real64 const v2, real64 const relTol, real64 const absTol )
 { EXPECT_PRED_FORMAT4( checkRelativeErrorFormat, v1, v2, relTol, absTol ); }
 
-void checkRelativeError( real64 const v1, real64 const v2, real64 const relTol, string const & name )
+inline void checkRelativeError( real64 const v1, real64 const v2, real64 const relTol, string const & name )
 {
   SCOPED_TRACE( name );
   EXPECT_PRED_FORMAT3( checkRelativeErrorFormat, v1, v2, relTol );
 }
 
-void checkRelativeError( real64 const v1, real64 const v2, real64 const relTol, real64 const absTol, string const & name )
+inline void checkRelativeError( real64 const v1, real64 const v2, real64 const relTol, real64 const absTol, string const & name )
 {
   SCOPED_TRACE( name );
   EXPECT_PRED_FORMAT4( checkRelativeErrorFormat, v1, v2, relTol, absTol );

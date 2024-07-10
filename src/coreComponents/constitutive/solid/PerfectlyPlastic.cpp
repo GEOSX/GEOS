@@ -53,9 +53,9 @@ void PerfectlyPlastic::allocateConstitutiveData( dataRepository::Group & parent,
 }
 
 
-void PerfectlyPlastic::postProcessInput()
+void PerfectlyPlastic::postInputInitialization()
 {
-  ElasticIsotropic::postProcessInput();
+  ElasticIsotropic::postInputInitialization();
 
   GEOS_THROW_IF( m_defaultYieldStress < 0.0, "Negative yield stress detected", InputError );
 

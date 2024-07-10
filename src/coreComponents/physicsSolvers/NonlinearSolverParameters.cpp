@@ -14,6 +14,7 @@
 
 #include "NonlinearSolverParameters.hpp"
 #include "common/Logger.hpp"
+#include "fileIO/Table/TableFormatter.hpp"
 
 namespace geos
 {
@@ -147,6 +148,11 @@ NonlinearSolverParameters::NonlinearSolverParameters( string const & name,
     setInputFlag( InputFlags::OPTIONAL ).
     setDescription( "Max number of times that the configuration can be changed" );
 
+  registerWrapper( viewKeysStruct::configurationToleranceString(), &m_configurationTolerance ).
+    setApplyDefaultValue( 0.0 ).
+    setInputFlag( InputFlags::OPTIONAL ).
+    setDescription( "Configuration tolerance" );
+
   /// GEOS mainly uses FIM coupling so let's define FIM as the default.
   registerWrapper( viewKeysStruct::couplingTypeString(), &m_couplingType ).
     setInputFlag( dataRepository::InputFlags::OPTIONAL ).
@@ -172,7 +178,7 @@ NonlinearSolverParameters::NonlinearSolverParameters( string const & name,
 
 }
 
-void NonlinearSolverParameters::postProcessInput()
+void NonlinearSolverParameters::postInputInitialization()
 {
   GEOS_ERROR_IF_LE_MSG( m_timeStepDecreaseIterLimit, m_timeStepIncreaseIterLimit,
                         getWrapperDataContext( viewKeysStruct::timeStepIncreaseIterLimString() ) <<
@@ -183,41 +189,52 @@ void NonlinearSolverParameters::postProcessInput()
 
   if( getLogLevel() > 0 )
   {
-    GEOS_LOG_RANK_0( "Nonlinear solver parameters:" );
-    GEOS_LOG_RANK_0( GEOS_FMT( "  Line search action = {}", EnumStrings< LineSearchAction >::toString( m_lineSearchAction ) ) );
-    if( m_lineSearchAction != LineSearchAction::None )
-    {
-      GEOS_LOG_RANK_0( GEOS_FMT( "  Line search interpolation type = {}", EnumStrings< LineSearchInterpolationType >::toString( m_lineSearchInterpType ) ) );
-      GEOS_LOG_RANK_0( GEOS_FMT( "  Line search maximum number of cuts = {}", m_lineSearchMaxCuts ) );
-      GEOS_LOG_RANK_0( GEOS_FMT( "  Line search cut factor = {}", m_lineSearchCutFactor ) );
-      GEOS_LOG_RANK_0( GEOS_FMT( "  Line search starting iteration = {}", m_lineSearchStartingIteration ) );
-      GEOS_LOG_RANK_0( GEOS_FMT( "  Line search residual increase factor = {}", m_lineSearchResidualFactor ) );
-    }
-    GEOS_LOG_RANK_0( GEOS_FMT( "  Norm type (flow solver) = {}", EnumStrings< solverBaseKernels::NormType >::toString( m_normType ) ) );
-    GEOS_LOG_RANK_0( GEOS_FMT( "  Minimum residual normalizer = {}", m_minNormalizer ) );
-    GEOS_LOG_RANK_0( GEOS_FMT( "  Convergence tolerance = {}", m_newtonTol ) );
-    GEOS_LOG_RANK_0( GEOS_FMT( "  Maximum iterations = {}", m_maxIterNewton ) );
-    GEOS_LOG_RANK_0( GEOS_FMT( "  Minimum iterations = {}", m_minIterNewton ) );
-    GEOS_LOG_RANK_0( GEOS_FMT( "  Maximum allowed residual norm = {}", m_maxAllowedResidualNorm ) );
-    GEOS_LOG_RANK_0( GEOS_FMT( "  Allow non-converged = {}", m_allowNonConverged ) );
-    GEOS_LOG_RANK_0( GEOS_FMT( "  Time step decrease iterations limit = {}", m_timeStepDecreaseIterLimit ) );
-    GEOS_LOG_RANK_0( GEOS_FMT( "  Time step increase iterations limit = {}", m_timeStepIncreaseIterLimit ) );
-    GEOS_LOG_RANK_0( GEOS_FMT( "  Time step decrease factor = {}", m_timeStepDecreaseFactor ) );
-    GEOS_LOG_RANK_0( GEOS_FMT( "  Time step increase factor = {}", m_timeStepDecreaseFactor ) );
-    GEOS_LOG_RANK_0( GEOS_FMT( "  Time step cut factor = {}", m_timeStepCutFactor ) );
-    GEOS_LOG_RANK_0( GEOS_FMT( "  Maximum time step cuts = {}", m_maxTimeStepCuts ) );
-    GEOS_LOG_RANK_0( GEOS_FMT( "  Maximum sub time steps = {}", m_maxSubSteps ) );
-    GEOS_LOG_RANK_0( GEOS_FMT( "  Maximum number of configuration attempts = {}", m_maxNumConfigurationAttempts ) );
-    GEOS_LOG_RANK_0( GEOS_FMT( "  Coupling type = {}", EnumStrings< CouplingType >::toString( m_couplingType ) ) );
-    if( m_couplingType == CouplingType::Sequential )
-    {
-      GEOS_LOG_RANK_0( GEOS_FMT( "  Sequential convergence criterion = {}", EnumStrings< SequentialConvergenceCriterion >::toString( m_sequentialConvergenceCriterion ) ) );
-      GEOS_LOG_RANK_0( GEOS_FMT( "  Subcycling = {}", m_subcyclingOption ) );
-    }
+    print();
   }
 }
 
-
+void NonlinearSolverParameters::print() const
+{
+  TableData tableData;
+  tableData.addRow( "Log level", getLogLevel());
+  tableData.addRow( "Line search", "" );
+  tableData.addRow( "  Action", m_lineSearchAction );
+  if( m_lineSearchAction != LineSearchAction::None )
+  {
+    tableData.addRow( "  Interpolation type", m_lineSearchInterpType );
+    tableData.addRow( "  Maximum number of cuts", m_lineSearchMaxCuts );
+    tableData.addRow( "  Cut factor", m_lineSearchCutFactor );
+    tableData.addRow( "  Starting iteration", m_lineSearchStartingIteration );
+    tableData.addRow( "  Residual increase factor", m_lineSearchResidualFactor );
+  }
+  tableData.addRow( "Norm type (flow solver)", m_normType );
+  tableData.addRow( "Minimum residual normalizer", m_minNormalizer );
+  tableData.addRow( "Convergence tolerance", m_newtonTol );
+  tableData.addRow( "Maximum iterations", m_maxIterNewton );
+  tableData.addRow( "Minimum iterations", m_minIterNewton );
+  tableData.addRow( "Maximum allowed residual norm", m_maxAllowedResidualNorm );
+  tableData.addRow( "Allow non-converged", m_allowNonConverged );
+  tableData.addRow( "Time step decrease iterations limit", m_timeStepDecreaseIterLimit );
+  tableData.addRow( "Time step increase iterations limit", m_timeStepIncreaseIterLimit );
+  tableData.addRow( "Time step decrease factor", m_timeStepDecreaseFactor );
+  tableData.addRow( "Time step increase factor", m_timeStepDecreaseFactor );
+  tableData.addRow( "Time step cut factor", m_timeStepCutFactor );
+  tableData.addRow( "Maximum time step cuts", m_maxTimeStepCuts );
+  tableData.addRow( "Maximum sub time steps", m_maxSubSteps );
+  tableData.addRow( "Maximum number of configuration attempts", m_maxNumConfigurationAttempts );
+  tableData.addRow( "Coupling type", m_couplingType );
+  if( m_couplingType == CouplingType::Sequential )
+  {
+    tableData.addRow( "Sequential convergence criterion", m_sequentialConvergenceCriterion );
+    tableData.addRow( "Subcycling", m_subcyclingOption );
+  }
+  TableLayout const tableLayout = TableLayout( {
+      TableLayout::ColumnParam{"Parameter", TableLayout::Alignment::left},
+      TableLayout::ColumnParam{"Value", TableLayout::Alignment::left},
+    }, GEOS_FMT( "{}: nonlinear solver", getParent().getName() ) );
+  TableTextFormatter const tableFormatter( tableLayout );
+  GEOS_LOG_RANK_0( tableFormatter.toString( tableData ));
+}
 
 REGISTER_CATALOG_ENTRY( Group, NonlinearSolverParameters, string const &, Group * const )
 

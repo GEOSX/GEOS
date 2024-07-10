@@ -56,9 +56,9 @@ BrooksCoreyRelativePermeability::BrooksCoreyRelativePermeability( string const &
 
 }
 
-void BrooksCoreyRelativePermeability::postProcessInput()
+void BrooksCoreyRelativePermeability::postInputInitialization()
 {
-  RelativePermeabilityBase::postProcessInput();
+  RelativePermeabilityBase::postInputInitialization();
 
   auto const checkInputSize = [&]( auto const & array, auto const & attribute )
   {
