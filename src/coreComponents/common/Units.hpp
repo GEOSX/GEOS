@@ -280,7 +280,7 @@ struct GEOS_FMT_NS::formatter< geos::units::TimeFormatInfo > : GEOS_FMT_NS::form
    * @param ctx formatting state consisting of the formatting arguments and the output iterator
    * @return iterator to the output buffer
    */
-  auto format( geos::units::TimeFormatInfo const & durationData, format_context & ctx )
+  auto format( geos::units::TimeFormatInfo const & durationData, format_context & ctx ) const
   {
     return GEOS_FMT_NS::formatter< std::string >::format( durationData.toString(), ctx );
   }

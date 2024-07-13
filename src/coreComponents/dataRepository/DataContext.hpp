@@ -217,7 +217,7 @@ struct GEOS_FMT_NS::formatter< geos::dataRepository::DataContext > : GEOS_FMT_NS
    * @param ctx formatting state consisting of the formatting arguments and the output iterator
    * @return iterator to the output buffer
    */
-  auto format( geos::dataRepository::DataContext const & dataContext, format_context & ctx )
+  auto format( geos::dataRepository::DataContext const & dataContext, format_context & ctx ) const
   {
     return GEOS_FMT_NS::formatter< std::string >::format( dataContext.toString(), ctx );
   }

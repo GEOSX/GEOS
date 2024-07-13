@@ -80,8 +80,6 @@ public:
   {
     setReduction( precond, mgrData );
 
-    GEOS_LAI_CHECK_ERROR( HYPRE_MGRSetPMaxElmts( precond.ptr, 0 ));
-
     // CHECK: the mechanics solver setup was missing: was there a reason?
     // Configure the BoomerAMG solver used as F-relaxation for the first level
     setMechanicsFSolver( precond, mgrData );

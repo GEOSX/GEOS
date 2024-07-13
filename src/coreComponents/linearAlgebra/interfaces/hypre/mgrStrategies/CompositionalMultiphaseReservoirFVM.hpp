@@ -94,7 +94,7 @@ public:
     m_levelFRelaxType[2]          = MGRFRelaxationType::none;
     m_levelInterpType[2]          = MGRInterpolationType::injection;
     m_levelRestrictType[2]        = MGRRestrictionType::blockColLumped; // True-IMPES
-    m_levelCoarseGridMethod[2]    = MGRCoarseGridMethod::galerkinRAI;
+    m_levelCoarseGridMethod[2]    = MGRCoarseGridMethod::galerkin;
     m_levelGlobalSmootherType[2]  = MGRGlobalSmootherType::ilu0;
     m_levelGlobalSmootherIters[2] = 1;
   }

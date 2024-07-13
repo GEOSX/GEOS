@@ -43,22 +43,21 @@ struct StateUpdateKernel
    * @param[in] volume the volume
    * @param[out] deltaVolume the change in volume
    * @param[out] aperture the aperture
-   * @param[in] minimumHydraulicAperture the
    * @param[in] oldHydraulicAperture the old hydraulic aperture
    * @param[out] hydraulicAperture the effecture aperture
    * @param[in] fractureTraction the fracture traction
    */
-  template< typename POLICY, typename POROUS_WRAPPER >
+  template< typename POLICY, typename POROUS_WRAPPER, typename CONTACT_WRAPPER >
   static void
   launch( localIndex const size,
           POROUS_WRAPPER const & porousMaterialWrapper,
+          CONTACT_WRAPPER const & contactWrapper,
           arrayView2d< real64 const > const & dispJump,
           arrayView1d< real64 const > const & pressure,
           arrayView1d< real64 const > const & area,
           arrayView1d< real64 const > const & volume,
           arrayView1d< real64 > const & deltaVolume,
           arrayView1d< real64 > const & aperture,
-          arrayView1d< real64 const > const & minimumHydraulicAperture,
           arrayView1d< real64 const > const & oldHydraulicAperture,
           arrayView1d< real64 > const & hydraulicAperture,
           arrayView2d< real64 const > const & fractureTraction )
@@ -69,8 +68,8 @@ struct StateUpdateKernel
       // update aperture to be equal to the normal displacement jump
       aperture[k] = dispJump[k][0]; // the first component of the jump is the normal one.
 
-      hydraulicAperture[k] = minimumHydraulicAperture[k] + aperture[k];
-      real64 const dHydraulicAperture_dNormalJump = 1.0;
+      real64 dHydraulicAperture_dNormalJump = 0.0;
+      hydraulicAperture[k] = contactWrapper.computeHydraulicAperture( aperture[k], dHydraulicAperture_dNormalJump );
 
       deltaVolume[k] = hydraulicAperture[k] * area[k] - volume[k];
 

@@ -62,6 +62,7 @@ protected:
 
   void computeFractureStateStatistics( MeshLevel const & mesh,
                                        globalIndex & numStick,
+                                       globalIndex & numNewSlip,
                                        globalIndex & numSlip,
                                        globalIndex & numOpen ) const;
 

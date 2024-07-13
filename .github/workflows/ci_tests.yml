@@ -26,7 +26,7 @@ jobs:
     if: github.event_name == 'pull_request'
     steps:
       - name: Check if the PR name has conventional semantics
-        uses: amannn/action-semantic-pull-request@e9fabac35e210fea40ca5b14c0da95a099eff26f # v5.4.0
+        uses: amannn/action-semantic-pull-request@v5.5.3
         id: lint_pr_title
         env:
           GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
@@ -38,6 +38,7 @@ jobs:
   # Jobs will be cancelled if PR is a draft.
   # PR status must be "Open" to run CI.
   is_not_draft_pull_request:
+    if: ${{ always() }}
     needs: [semantic_pull_request]
     # Everywhere in this workflow, we use the most recent ubuntu distribution available in Github Actions
     # to ensure maximum support of google cloud's sdk.
@@ -170,19 +171,6 @@ jobs:
             ENABLE_HYPRE: ON
             ENABLE_TRILINOS: OFF
 
-          - name: Pecan CPU (centos 7.7, gcc 8.2.0, open-mpi 4.0.1, mkl 2019.5)
-            CMAKE_BUILD_TYPE: Release
-            DOCKER_REPOSITORY: geosx/pecan-cpu-gcc8.2.0-openmpi4.0.1-mkl2019.5
-            HOST_CONFIG: host-configs/TOTAL/pecan-CPU.cmake
-            GCP_BUCKET: geosx/Pecan-CPU
-
-          - name: Pangea 2 (centos 7.6, gcc 8.3.0, open-mpi 2.1.5, mkl 2019.3)
-            CMAKE_BUILD_TYPE: Release
-            DOCKER_REPOSITORY: geosx/pangea2-gcc8.3.0-openmpi2.1.5-mkl2019.3
-            ENABLE_HYPRE: ON
-            ENABLE_TRILINOS: OFF
-            GCP_BUCKET: geosx/Pangea2
-
           - name: Sherlock CPU (centos 7.9.2009, gcc 10.1.0, open-mpi 4.1.2, openblas 0.3.10)
             CMAKE_BUILD_TYPE: Release
             DOCKER_REPOSITORY: geosx/sherlock-gcc10.1.0-openmpi4.1.2-openblas0.3.10-zlib1.2.11
@@ -305,16 +293,6 @@ jobs:
             DOCKER_RUN_ARGS: "--cpus=8 --memory=256g --runtime=nvidia --gpus all -v /etc/pki/ca-trust/source/anchors/:/usr/local/share/ca-certificates/llnl:ro"
             DOCKER_CERTS_DIR: "/usr/local/share/ca-certificates"
             DOCKER_CERTS_UPDATE_COMMAND: "update-ca-certificates"
-
-          - name: Centos (7.7, gcc 8.3.1, open-mpi 1.10.7, cuda 11.8.89)
-            BUILD_AND_TEST_CLI_ARGS: "--no-run-unit-tests --no-install-schema"
-            CMAKE_BUILD_TYPE: Release
-            DOCKER_REPOSITORY: geosx/centos7.7-gcc8.3.1-cuda11.8.89
-            RUNS_ON: streak2
-            NPROC: 8
-            DOCKER_RUN_ARGS: "--cpus=8 --memory=128g --runtime=nvidia -v /etc/pki/ca-trust/source/anchors/:/etc/pki/ca-trust/source/anchors/llnl:ro"
-            DOCKER_CERTS_DIR: "/etc/pki/ca-trust/source/anchors"
-            DOCKER_CERTS_UPDATE_COMMAND: "update-ca-trust"
           
           # compiler error in ElasticFirstOrderWaveEquationSEMKernel::StressComputation::launch in call to FE_TYPE::computeFirstOrderStiffnessTermX
           # - name: Rockylinux (8, clang 17.0.6, cuda 12.5)
@@ -325,20 +303,20 @@ jobs:
           #   NPROC: 2
           #   DOCKER_RUN_ARGS: "--cpus=1 --memory=128g --runtime=nvidia -v /etc/pki/ca-trust/source/anchors/:/etc/pki/ca-trust/source/anchors/llnl:ro"
           #   DOCKER_CERTS_DIR: "/etc/pki/ca-trust/source/anchors"
+          #   DOCKER_CERTS_UPDATE_COMMAND: "update-ca-trust"
+          
+          # compiler error in ElasticFirstOrderWaveEquationSEMKernel::StressComputation::launch in call to FE_TYPE::computeFirstOrderStiffnessTermX
+          # - name: Rockylinux (8, gcc 8.5, cuda 12.5)
+          #   BUILD_AND_TEST_CLI_ARGS: "--no-run-unit-tests --no-install-schema"
+          #   CMAKE_BUILD_TYPE: Release
+          #   DOCKER_REPOSITORY: geosx/rockylinux8-gcc8-cuda12.5
+          #   RUNS_ON: streak2
+          #   NPROC: 2
+          #   DOCKER_RUN_ARGS: "--cpus=1 --memory=128g --runtime=nvidia -v /etc/pki/ca-trust/source/anchors/:/etc/pki/ca-trust/source/anchors/llnl:ro"
+          #   DOCKER_CERTS_DIR: "/etc/pki/ca-trust/source/anchors"
           #   DOCKER_CERTS_UPDATE_COMMAND: "update-ca-trust"  
 
           # Below this line, jobs that deploy to Google Cloud.
-          - name: Pecan GPU (centos 7.7, gcc 8.2.0, open-mpi 4.0.1, mkl 2019.5, cuda 11.5.119)
-            BUILD_AND_TEST_CLI_ARGS: "--build-exe-only --no-install-schema"
-            CMAKE_BUILD_TYPE: Release
-            DOCKER_REPOSITORY: geosx/pecan-gpu-gcc8.2.0-openmpi4.0.1-mkl2019.5-cuda11.5.119
-            HOST_CONFIG: host-configs/TOTAL/pecan-GPU.cmake
-            RUNS_ON: streak2
-            NPROC: 8
-            DOCKER_RUN_ARGS: "--cpus=8 --memory=128g --runtime=nvidia -v /etc/pki/ca-trust/source/anchors/:/etc/pki/ca-trust/source/anchors/llnl:ro"
-            DOCKER_CERTS_DIR: "/etc/pki/ca-trust/source/anchors"
-            DOCKER_CERTS_UPDATE_COMMAND: "update-ca-trust"
-
           - name: Sherlock GPU (centos 7.9.2009, gcc 10.1.0, open-mpi 4.1.2, openblas 0.3.10, cuda 11.7.1,)
             BUILD_AND_TEST_CLI_ARGS: "--no-run-unit-tests --no-install-schema"
             CMAKE_BUILD_TYPE: Release

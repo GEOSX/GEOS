@@ -82,7 +82,6 @@ public:
     m_levelInterpType[1]         = MGRInterpolationType::jacobi;
     m_levelRestrictType[1]       = MGRRestrictionType::injection;
     m_levelCoarseGridMethod[1]   = MGRCoarseGridMethod::nonGalerkin;
-
   }
 
   /**
@@ -95,8 +94,6 @@ public:
               HypreMGRData & mgrData )
   {
     setReduction( precond, mgrData );
-
-    GEOS_LAI_CHECK_ERROR( HYPRE_MGRSetPMaxElmts( precond.ptr, 0 ));
 
     // Configure the BoomerAMG solver used as F-relaxation for the second level
     GEOS_LAI_CHECK_ERROR( HYPRE_BoomerAMGCreate( &mgrData.mechSolver.ptr ) );
@@ -114,7 +111,7 @@ public:
 #else
     GEOS_LAI_CHECK_ERROR( HYPRE_BoomerAMGSetRelaxOrder( mgrData.mechSolver.ptr, 1 ) );
 #endif
-    GEOS_LAI_CHECK_ERROR( HYPRE_MGRSetFSolverAtLevel( 1, precond.ptr, mgrData.mechSolver.ptr ) );
+    GEOS_LAI_CHECK_ERROR( HYPRE_MGRSetFSolverAtLevel( precond.ptr, mgrData.mechSolver.ptr, 1 ) );
 
     // Configure the BoomerAMG solver used as mgr coarse solver for the pressure reduced system
     setPressureAMG( mgrData.coarseSolver );

@@ -22,7 +22,9 @@
 #endif
 
 #ifdef GEOSX_USE_FMT
+#ifndef FMT_HEADER_ONLY
 #define FMT_HEADER_ONLY
+#endif
 // Differentiate between standalone fmt path and umpire's fmt path
 #include "../include/fmt/core.h"
 #include "../include/fmt/chrono.h"
@@ -63,7 +65,7 @@ struct fmt::formatter< T, std::enable_if_t< std::is_enum< T >::value > >
    * @return An iterator pointing to the end of the formatted string.
    */
   template< typename FormatContext >
-  auto format( const T & value, FormatContext & ctx )
+  auto format( const T & value, FormatContext & ctx ) const
   {
     return fmt::format_to( ctx.out(), "{}", static_cast< std::underlying_type_t< T > >( value ) );
   }

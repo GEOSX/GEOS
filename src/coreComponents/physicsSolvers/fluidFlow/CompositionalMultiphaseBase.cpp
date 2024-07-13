@@ -2585,9 +2585,6 @@ void CompositionalMultiphaseBase::updateState( DomainPartition & domain )
 {
   GEOS_MARK_FUNCTION;
 
-  if( m_keepFlowVariablesConstantDuringInitStep )
-    return;
-
   real64 maxDeltaPhaseVolFrac = 0.0;
   forDiscretizationOnMeshTargets( domain.getMeshBodies(), [&]( string const &,
                                                                MeshLevel & mesh,

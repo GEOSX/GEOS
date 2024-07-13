@@ -515,9 +515,8 @@ enum class MGRCoarseGridMethod : HYPRE_Int
                           //!< approximated by its diagonal inverse
   cprLikeBlockDiag = 3,   //!< Non-Galerkin coarse grid computation with dropping strategy: CPR-like approximation with inv(A_FF)
                           //!< approximated by its block diagonal inverse
-  approximateInverse = 4, //!< Non-Galerkin coarse grid computation with dropping strategy: inv(A_FF) approximated by sparse approximate
+  approximateInverse = 4  //!< Non-Galerkin coarse grid computation with dropping strategy: inv(A_FF) approximated by sparse approximate
                           //!< inverse
-  galerkinRAI = 5         //!< Galerkin coarse grid computation with arbitrary classical restriction and injective prolongation
 };
 
 /**

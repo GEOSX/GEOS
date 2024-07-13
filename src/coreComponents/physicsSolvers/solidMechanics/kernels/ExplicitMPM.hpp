@@ -32,8 +32,8 @@ namespace solidMechanicsMPMKernels
 
 // A helper function to calculate polar decomposition. TODO: Previously this was an LvArray method, hopefully it will be again someday.
 GEOS_HOST_DEVICE
-void polarDecomposition( real64 (& R)[3][3],
-                         real64 const (&matrix)[3][3] )
+static inline void polarDecomposition( real64 (& R)[3][3],
+                                       real64 const (&matrix)[3][3] )
 {
   // Initialize
   LvArray::tensorOps::copy< 3, 3 >( R, matrix );

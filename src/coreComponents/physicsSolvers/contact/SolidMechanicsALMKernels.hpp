@@ -406,8 +406,8 @@ struct ComputeRotationMatricesKernel
     forAll< POLICY >( size, [=] GEOS_HOST_DEVICE ( localIndex const k )
     {
 
-      localIndex const & f0 = elemsToFaces[k][0];
-      localIndex const & f1 = elemsToFaces[k][1];
+      localIndex const f0 = elemsToFaces[k][0];
+      localIndex const f1 = elemsToFaces[k][1];
 
       real64 Nbar[3];
       Nbar[0] = faceNormal[f0][0] - faceNormal[f1][0];

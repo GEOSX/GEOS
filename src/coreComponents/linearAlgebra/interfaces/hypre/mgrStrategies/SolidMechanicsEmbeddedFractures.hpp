@@ -64,7 +64,7 @@ public:
     setupLabels();
 
     // Level 0
-    m_levelFRelaxType[0]         = MGRFRelaxationType::gsElimWInverse;
+    m_levelFRelaxType[0]         = MGRFRelaxationType::jacobi;
     m_levelFRelaxIters[0]        = 1;
     m_levelInterpType[0]         = MGRInterpolationType::blockJacobi;
     m_levelRestrictType[0]       = MGRRestrictionType::injection;
@@ -82,7 +82,6 @@ public:
               HypreMGRData & mgrData )
   {
     setReduction( precond, mgrData );
-    GEOS_LAI_CHECK_ERROR( HYPRE_MGRSetPMaxElmts( precond.ptr, 0 ));
 
     // Configure the BoomerAMG solver used as mgr coarse solver for the displacement reduced system
     setDisplacementAMG( mgrData.coarseSolver );

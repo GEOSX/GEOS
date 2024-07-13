@@ -74,7 +74,7 @@ public:
     m_levelGlobalSmootherType[0] = MGRGlobalSmootherType::none;
 
     // Level 1
-    m_levelFRelaxType[1]          = MGRFRelaxationType::gsElimWInverse;
+    m_levelFRelaxType[1]         = MGRFRelaxationType::gsElimWInverse;
     m_levelFRelaxIters[1]        = 1;
     m_levelInterpType[1]         = MGRInterpolationType::blockJacobi;
     m_levelRestrictType[1]       = MGRRestrictionType::injection;
@@ -92,8 +92,6 @@ public:
               HypreMGRData & mgrData )
   {
     setReduction( precond, mgrData );
-
-    GEOS_LAI_CHECK_ERROR( HYPRE_MGRSetPMaxElmts( precond.ptr, 0 ));
 
     // Configure the BoomerAMG solver used as F-relaxation for the first level
     setMechanicsFSolver( precond, mgrData );

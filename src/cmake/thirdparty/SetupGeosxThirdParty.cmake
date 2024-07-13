@@ -339,6 +339,31 @@ if(DEFINED CAMP_DIR)
 endif()
 
 ################################
+# FMT
+################################
+if(DEFINED FMT_DIR)
+    message(STATUS "FMT_DIR = ${FMT_DIR}")
+
+    find_package(fmt REQUIRED
+                 PATHS ${FMT_DIR}
+                 NO_DEFAULT_PATH)
+
+    message( " ----> fmt_VERSION = ${fmt_VERSION}")
+
+    get_target_property(includeDirs fmt::fmt-header-only INTERFACE_INCLUDE_DIRECTORIES)
+
+    set_property(TARGET fmt::fmt-header-only
+                 APPEND PROPERTY INTERFACE_SYSTEM_INCLUDE_DIRECTORIES
+                 ${includeDirs})
+
+    set(ENABLE_FMT ON CACHE BOOL "")
+
+    set(thirdPartyLibs ${thirdPartyLibs} fmt::fmt-header-only )
+else()
+    mandatory_tpl_doesnt_exist("{fmt}" FMT_DIR)
+endif()
+
+################################
 # Umpire
 ################################
 if(DEFINED UMPIRE_DIR)
@@ -711,7 +736,7 @@ endif()
 if(DEFINED TRILINOS_DIR AND ENABLE_TRILINOS)
     message(STATUS "TRILINOS_DIR = ${TRILINOS_DIR}")
 
-    include(${TRILINOS_DIR}/lib/cmake/Trilinos/TrilinosConfig.cmake)
+    include(${TRILINOS_DIR}/lib64/cmake/Trilinos/TrilinosConfig.cmake)
 
     list(REMOVE_ITEM Trilinos_LIBRARIES "gtest")
     list(REMOVE_DUPLICATES Trilinos_LIBRARIES)
@@ -813,30 +838,6 @@ else()
     message(STATUS "Not using VTK")
 endif()
 
-################################
-# FMT
-################################
-if(DEFINED FMT_DIR)
-    message(STATUS "FMT_DIR = ${FMT_DIR}")
-
-    find_package(fmt REQUIRED
-                 PATHS ${FMT_DIR}
-                 NO_DEFAULT_PATH)
-
-    message( " ----> fmt_VERSION = ${fmt_VERSION}")
-
-    get_target_property(includeDirs fmt::fmt INTERFACE_INCLUDE_DIRECTORIES)
-
-    set_property(TARGET fmt::fmt
-                 APPEND PROPERTY INTERFACE_SYSTEM_INCLUDE_DIRECTORIES
-                 ${includeDirs})
-
-    set(ENABLE_FMT ON CACHE BOOL "")
-
-    set(thirdPartyLibs ${thirdPartyLibs} fmt::fmt )
-else()
-    mandatory_tpl_doesnt_exist("{fmt}" FMT_DIR)
-endif()
 
 ################################
 # uncrustify

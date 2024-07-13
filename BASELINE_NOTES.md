@@ -6,17 +6,25 @@ This file is designed to track changes to the integrated test baselines.
 Any developer who updates the baseline ID in the .integrated_tests.yaml file is expected to create an entry in this file with the pull request number, date, and their justification for rebaselining.
 These notes should be in reverse-chronological order, and use the following time format: (YYYY-MM-DD).
 
+PR #3194 (2024-07-10)
+======================
+Use aperture table in poromechanics with conforming fractures. Rebaseline the corresponding cases.
+
+
 PR #3006 (2024-07-01)
 ======================
 Added baselines for new tests. Relaxing tolerances for singlePhasePoromechanics_FaultModel_smoke.
+
 
 PR #3196 (2024-06-28)
 ======================
 Added isLaggingFractureStencilWeightsUpdate to hydrofracture solve. Rebaseline because of the new input.
 
+
 PR #3177 (2024-06-28)
 ======================
 Added logLevel to TimeHistoryOutput. Rebaseline because of the new input flag.
+
 
 PR #3181 (2024-06-25)
 ======================

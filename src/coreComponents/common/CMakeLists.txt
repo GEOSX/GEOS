@@ -59,8 +59,8 @@ if (TARGET conduit)
   set( dependencyList ${dependencyList} conduit )
 endif()
 
-if (TARGET fmt::fmt)
-  set( dependencyList ${dependencyList} fmt::fmt )
+if (TARGET fmt::fmt-header-only)
+  set( dependencyList ${dependencyList} fmt::fmt-header-only )
 endif()
 
 if (TARGET fmt)

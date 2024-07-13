@@ -684,7 +684,7 @@ struct GEOS_FMT_NS::formatter< std::optional< T > > : GEOS_FMT_NS::formatter< T 
    * @param ctx formatting state consisting of the formatting arguments and the output iterator
    * @return return the corresponding value string. If std::optional<T> is empty retun an empty string
    */
-  auto format( std::optional< T > const & opt, format_context & ctx )
+  auto format( std::optional< T > const & opt, format_context & ctx ) const
   {
     if( opt )
     {
