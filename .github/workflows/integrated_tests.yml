@@ -1,0 +1,31 @@
+name: Integrated Tests
+
+on: 
+  pull_request:
+    types: [ labeled ]
+  workflow_dispatch:
+
+jobs:
+
+  # If the 'ci: run integrated tests' PR label is found, the integrated tests will be run immediately after the cpu jobs.
+  # Note: The integrated tests are optional and are (for the moment) run for convenience only.
+  run_integrated_tests:
+    if: "${{ github.event.label.name == 'ci: run integrated tests' }}"
+    uses: ./.github/workflows/build_and_test.yml
+    secrets: inherit
+    with:
+      BUILD_AND_TEST_CLI_ARGS: --build-exe-only
+      BUILD_TYPE: integrated_tests
+      CMAKE_BUILD_TYPE: Release
+      DOCKER_IMAGE_TAG: ${{ needs.is_not_draft_pull_request.outputs.DOCKER_IMAGE_TAG }}
+      DOCKER_REPOSITORY: geosx/ubuntu22.04-gcc11
+      ENABLE_HYPRE: ON
+      ENABLE_TRILINOS: OFF
+      GCP_BUCKET: geosx/integratedTests
+      RUNS_ON: streak2-32core
+      NPROC: 32
+      DOCKER_RUN_ARGS: "--cpus=32 --memory=384g -v /etc/pki/ca-trust/source/anchors/:/usr/local/share/ca-certificates/llnl:ro"
+      DOCKER_CERTS_DIR: "/usr/local/share/ca-certificates"
+      DOCKER_CERTS_UPDATE_COMMAND: "update-ca-certificates"
+      REQUIRED_LABEL: "ci: run integrated tests"
+      LOCAL_BASELINE_DIR: /data/GEOS/baselines

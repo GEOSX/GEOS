@@ -1,0 +1,74 @@
+name: CPU builds
+
+on:
+  pull_request: # Run workflow on PRs to the develop branch with modification on *.hpp or *.cpp files
+    branches:
+      - develop
+    paths: 
+      - '**.hpp'
+      - '**.cpp'
+  push: # Run workflow on push to the develop branch.
+    branches: 
+      - develop
+  workflow_dispatch: # Workflow can be run manually
+
+jobs:
+  # Matrix containing all the CPU build.
+  # Those are quite fast and can efficiently benefit from the `sccache' tool to make them even faster.
+  cpu_builds:
+    name: ${{ matrix.name }}
+    strategy:
+      # In-progress jobs will not be cancelled if there is a failure
+      fail-fast : false
+      matrix:
+        include:
+          - name: Ubuntu (20.04, gcc 9.4.0, open-mpi 4.0.3)
+            CMAKE_BUILD_TYPE: Release
+            DOCKER_REPOSITORY: geosx/ubuntu20.04-gcc9
+
+          - name: Ubuntu debug (20.04, gcc 10.5.0, open-mpi 4.0.3) - github codespaces
+            CMAKE_BUILD_TYPE: Debug
+            DOCKER_REPOSITORY: geosx/ubuntu20.04-gcc10
+
+          - name: Ubuntu (20.04, gcc 10.5.0, open-mpi 4.0.3) - github codespaces
+            CMAKE_BUILD_TYPE: Release
+            DOCKER_REPOSITORY: geosx/ubuntu20.04-gcc10
+
+          - name: Ubuntu (22.04, gcc 11.4.0, open-mpi 4.1.2)
+            CMAKE_BUILD_TYPE: Release
+            DOCKER_REPOSITORY: geosx/ubuntu22.04-gcc11
+            ENABLE_HYPRE: ON
+            ENABLE_TRILINOS: OFF
+            GCP_BUCKET: geosx/ubuntu22.04-gcc11
+
+          - name: Ubuntu (22.04, gcc 12.3.0, open-mpi 4.1.2)
+            CMAKE_BUILD_TYPE: Release
+            DOCKER_REPOSITORY: geosx/ubuntu22.04-gcc12
+            ENABLE_HYPRE: ON
+            ENABLE_TRILINOS: OFF
+
+          - name: Ubuntu (22.04, clang 15.0.7, open-mpi 4.1.2)
+            CMAKE_BUILD_TYPE: Release
+            DOCKER_REPOSITORY: geosx/ubuntu22.04-clang15
+            ENABLE_HYPRE: ON
+            ENABLE_TRILINOS: OFF
+
+          - name: Sherlock CPU (centos 7.9.2009, gcc 10.1.0, open-mpi 4.1.2, openblas 0.3.10)
+            CMAKE_BUILD_TYPE: Release
+            DOCKER_REPOSITORY: geosx/sherlock-gcc10.1.0-openmpi4.1.2-openblas0.3.10-zlib1.2.11
+            ENABLE_HYPRE: ON
+            ENABLE_TRILINOS: OFF
+            GCP_BUCKET: geosx/Sherlock-CPU
+            HOST_CONFIG: host-configs/Stanford/sherlock-gcc10-ompi4.1.2-openblas0.3.10.cmake
+
+    uses: ./.github/workflows/build_and_test.yml
+    with:
+      CMAKE_BUILD_TYPE: ${{ matrix.CMAKE_BUILD_TYPE }}
+      DOCKER_IMAGE_TAG: ${{ needs.is_not_draft_pull_request.outputs.DOCKER_IMAGE_TAG }}
+      DOCKER_REPOSITORY: ${{ matrix.DOCKER_REPOSITORY }}
+      ENABLE_HYPRE: ${{ matrix.ENABLE_HYPRE }}
+      ENABLE_TRILINOS: ${{ matrix.ENABLE_TRILINOS }}
+      GCP_BUCKET: ${{ matrix.GCP_BUCKET }}
+      HOST_CONFIG: ${{ matrix.HOST_CONFIG }}
+      RUNS_ON: ubuntu-22.04
+    secrets: inherit
