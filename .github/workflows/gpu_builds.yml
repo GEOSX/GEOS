@@ -11,11 +11,35 @@ on:
   workflow_dispatch: # Workflow can be run manually
 
 jobs:
+  get_docker_image_tag:
+    # if the current added label is for GPUs
+    if: "${{ github.event.label.name == 'ci: run CUDA builds' && vars.COMPLIANCE_SUCCESS}}"
+    # Everywhere in this workflow, we use the most recent ubuntu distribution available in Github Actions
+    # to ensure maximum support of google cloud's sdk.
+    runs-on: ubuntu-22.04
+    outputs:
+      DOCKER_IMAGE_TAG: ${{ steps.extract_docker_image_tag.outputs.DOCKER_IMAGE_TAG }}
+    steps:      
+    # The TPL tag is contained in the codespaces configuration to avoid duplications.
+    - name: Checkout .devcontainer/devcontainer.json
+      uses: actions/checkout@v4.1.7
+      with:
+        sparse-checkout: |
+          .devcontainer/devcontainer.json
+        sparse-checkout-cone-mode: false
+        submodules: false
+        lfs: false
+        fetch-depth: 1
+    - name: Extract docker image tag
+      id: extract_docker_image_tag
+      run: |
+        echo "DOCKER_IMAGE_TAG=$(jq '.build.args.GEOS_TPL_TAG' -r .devcontainer/devcontainer.json)" >> "$GITHUB_OUTPUT"
+
   # If the 'ci: run CUDA builds' PR label is found, the cuda jobs run immediately along side linux jobs.
   # Note: CUDA jobs should only be run if PR is ready to merge.
   cuda_builds:
-    # if the current added label is for GPUs
-    if: "${{ github.event.label.name == 'ci: run CUDA builds' && vars.COMPLIANCE_SUCCESS}}"
+    needs:
+      - get_docker_image_tag
     name: ${{ matrix.name }}
     strategy:
       # In-progress jobs will not be cancelled if there is a failure
@@ -92,7 +116,7 @@ jobs:
       CMAKE_BUILD_TYPE: ${{ matrix.CMAKE_BUILD_TYPE }}
       DOCKER_CERTS_DIR: ${{ matrix.DOCKER_CERTS_DIR }}
       DOCKER_CERTS_UPDATE_COMMAND: ${{ matrix.DOCKER_CERTS_UPDATE_COMMAND }}
-      DOCKER_IMAGE_TAG: ${{ needs.is_not_draft_pull_request.outputs.DOCKER_IMAGE_TAG }}
+      DOCKER_IMAGE_TAG: ${{ needs.get_docker_image_tag.outputs.DOCKER_IMAGE_TAG }}
       DOCKER_REPOSITORY: ${{ matrix.DOCKER_REPOSITORY }}
       DOCKER_RUN_ARGS: ${{ matrix.DOCKER_RUN_ARGS }}
       ENABLE_HYPRE_DEVICE: ${{ matrix.ENABLE_HYPRE_DEVICE }}
@@ -104,3 +128,8 @@ jobs:
       RUNS_ON: ${{ matrix.RUNS_ON }}
       REQUIRED_LABEL: "ci: run CUDA builds"
     secrets: inherit
+
+  remove_label:
+    uses: actions-ecosystem/action-remove-labels@v1
+    with:
+      labels: 'ci: run CUDA builds'

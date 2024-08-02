@@ -1,4 +1,4 @@
-name: Compliance Tests
+name: Compliance Tests & CPU builds
 
 on: 
   pull_request:
@@ -14,7 +14,8 @@ concurrency:
 
 jobs:
   # Checks if PR title follows conventional semantics
-  semantic_pull_request:    
+  semantic_pull_request:
+    name: Checks if PR title follows conventional semantics
     permissions:
       pull-requests: write  # for amannn/action-semantic-pull-request to analyze PRs and 
       statuses: write  # for amannn/action-semantic-pull-request to mark status of analyzed PR
@@ -36,6 +37,7 @@ jobs:
   # Jobs will be cancelled if PR is a draft.
   # PR status must be "Open" to run CI.
   get_docker_image_tag:
+    name: Get TPL tag
     needs: [semantic_pull_request]
     # Everywhere in this workflow, we use the most recent ubuntu distribution available in Github Actions
     # to ensure maximum support of google cloud's sdk.
@@ -76,6 +78,7 @@ jobs:
   # PR must be assigned to be merged.
   # This job will fail if this is not the case.
   if_not_unassigned_pull_request:
+    name: Check PR assignement
     needs: [semantic_pull_request]
     runs-on: ubuntu-22.04
     steps:
@@ -144,10 +147,30 @@ jobs:
     - name: Check that the baseline logs are modified if rebaselines are detected
       run: "scripts/check_baseline_log.sh"
 
+  # Convenience job - passes when all other jobs have passed (must pass the CUDA jobs).
+  check_that_all_jobs_succeeded:
+    runs-on: ubuntu-22.04
+    needs:
+      # - is_not_draft_pull_request
+      - if_not_unassigned_pull_request
+      - are_submodules_in_sync
+      - check_code_style_and_documentation
+      - baseline_log
+    steps:
+      - run: |
+          echo "if_not_unassigned_pull_request: ${{needs.if_not_unassigned_pull_request.result}}"
+          echo "are_submodules_in_sync: ${{needs.are_submodules_in_sync.result}}"
+          echo "check_code_style_and_documentation: ${{needs.check_code_style_and_documentation.result}}"
+          echo "COMPLIANCE_SUCCESS = ${{
+            needs.if_not_unassigned_pull_request.result == 'success' &&
+            needs.are_submodules_in_sync.result == 'success' &&
+            needs.check_code_style_and_documentation.result == 'success'
+          }}" >> $GITHUB_ENV
+
   code_coverage:
     needs:
-      - if_not_unassigned_pull_request
       - get_docker_image_tag
+      - check_that_all_jobs_succeeded
     uses: ./.github/workflows/build_and_test.yml
     secrets: inherit
     with:
@@ -161,33 +184,10 @@ jobs:
       GCP_BUCKET: geosx/ubuntu22.04-gcc11
       RUNS_ON: Runner_4core_16GB
 
-  
-
-  # Convenience job - passes when all other jobs have passed (must pass the CUDA jobs).
-  check_that_all_jobs_succeeded:
-    runs-on: ubuntu-22.04
-    needs:
-      # - is_not_draft_pull_request
-      - if_not_unassigned_pull_request
-      - are_submodules_in_sync
-      - check_code_style_and_documentation
-      - baseline_log
-      - code_coverage
-    steps:
-      - run: |
-          echo "if_not_unassigned_pull_request: ${{needs.if_not_unassigned_pull_request.result}}"
-          echo "are_submodules_in_sync: ${{needs.are_submodules_in_sync.result}}"
-          echo "check_code_style_and_documentation: ${{needs.check_code_style_and_documentation.result}}"
-          echo "COMPLIANCE_SUCCESS = ${{
-            needs.if_not_unassigned_pull_request.result == 'success' &&
-            needs.are_submodules_in_sync.result == 'success' &&
-            needs.check_code_style_and_documentation.result == 'success'
-          }}" >> $GITHUB_ENV
-
   cpu_builds:
     name: CPU builds
     needs:
-      - get_docker_image_tag 
+      - get_docker_image_tag
       - check_that_all_jobs_succeeded
     uses: ./.github/workflows/cpu_builds.yml
     with:

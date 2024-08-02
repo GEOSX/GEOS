@@ -6,18 +6,42 @@ on:
   workflow_dispatch:
 
 jobs:
+  get_docker_image_tag:
+    if: "${{ github.event.label.name == 'ci: run integrated tests' }}"
+    # Everywhere in this workflow, we use the most recent ubuntu distribution available in Github Actions
+    # to ensure maximum support of google cloud's sdk.
+    runs-on: ubuntu-22.04
+    outputs:
+      DOCKER_IMAGE_TAG: ${{ steps.extract_docker_image_tag.outputs.DOCKER_IMAGE_TAG }}
+    steps:      
+    # The TPL tag is contained in the codespaces configuration to avoid duplications.
+    - name: Checkout .devcontainer/devcontainer.json
+      uses: actions/checkout@v4.1.7
+      with:
+        sparse-checkout: |
+          .devcontainer/devcontainer.json
+        sparse-checkout-cone-mode: false
+        submodules: false
+        lfs: false
+        fetch-depth: 1
+    - name: Extract docker image tag
+      id: extract_docker_image_tag
+      run: |
+        echo "DOCKER_IMAGE_TAG=$(jq '.build.args.GEOS_TPL_TAG' -r .devcontainer/devcontainer.json)" >> "$GITHUB_OUTPUT"
+
 
   # If the 'ci: run integrated tests' PR label is found, the integrated tests will be run immediately after the cpu jobs.
   # Note: The integrated tests are optional and are (for the moment) run for convenience only.
   run_integrated_tests:
-    if: "${{ github.event.label.name == 'ci: run integrated tests' }}"
+    needs: 
+      - get_docker_image_tag
     uses: ./.github/workflows/build_and_test.yml
     secrets: inherit
     with:
       BUILD_AND_TEST_CLI_ARGS: --build-exe-only
       BUILD_TYPE: integrated_tests
       CMAKE_BUILD_TYPE: Release
-      DOCKER_IMAGE_TAG: ${{ needs.is_not_draft_pull_request.outputs.DOCKER_IMAGE_TAG }}
+      DOCKER_IMAGE_TAG: ${{ needs.get_docker_image_tag.outputs.DOCKER_IMAGE_TAG }}
       DOCKER_REPOSITORY: geosx/ubuntu22.04-gcc11
       ENABLE_HYPRE: ON
       ENABLE_TRILINOS: OFF
@@ -29,3 +53,8 @@ jobs:
       DOCKER_CERTS_UPDATE_COMMAND: "update-ca-certificates"
       REQUIRED_LABEL: "ci: run integrated tests"
       LOCAL_BASELINE_DIR: /data/GEOS/baselines
+
+  remove_label:
+    uses: actions-ecosystem/action-remove-labels@v1
+    with:
+      labels: 'ci: run integrated tests'
