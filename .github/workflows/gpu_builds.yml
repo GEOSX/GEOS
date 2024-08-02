@@ -130,6 +130,9 @@ jobs:
     secrets: inherit
 
   remove_label:
-    uses: actions-ecosystem/action-remove-labels@v1
-    with:
-      labels: 'ci: run CUDA builds'
+    runs-on: ubuntu-22.04
+    steps:
+      - name: Remove the label
+        uses: actions-ecosystem/action-remove-labels@v1
+        with:
+            labels: 'ci: run CUDA builds'

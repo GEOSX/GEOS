@@ -55,6 +55,9 @@ jobs:
       LOCAL_BASELINE_DIR: /data/GEOS/baselines
 
   remove_label:
-    uses: actions-ecosystem/action-remove-labels@v1
-    with:
-      labels: 'ci: run integrated tests'
+    runs-on: ubuntu-22.04
+    steps:
+      - name: Remove the label
+        uses: actions-ecosystem/action-remove-labels@v1
+        with:
+            labels: 'ci: run CUDA builds'
