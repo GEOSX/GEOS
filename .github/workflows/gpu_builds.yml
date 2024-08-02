@@ -130,6 +130,7 @@ jobs:
     secrets: inherit
 
   remove_label:
+    if: always()
     needs: 
       - cuda_builds
     runs-on: ubuntu-22.04

@@ -57,6 +57,7 @@ jobs:
       LOCAL_BASELINE_DIR: /data/GEOS/baselines
 
   remove_label:
+    if: always()
     needs: 
       - run_integrated_tests
     runs-on: ubuntu-22.04

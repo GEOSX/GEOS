@@ -190,6 +190,4 @@ jobs:
       - get_docker_image_tag
       - check_that_all_jobs_succeeded
     uses: ./.github/workflows/cpu_builds.yml
-    with:
-        DOCKER_IMAGE_TAG: ${{ needs.get_docker_image_tag.outputs.DOCKER_IMAGE_TAG }}
     secrets: inherit
