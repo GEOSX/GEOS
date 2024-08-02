@@ -2,7 +2,7 @@ name: Compliance Tests
 
 on: 
   pull_request:
-      types: [opened, synchronize, reopened, edited]
+      types: [opened, synchronize, reopened, edited, assigned]
   workflow_dispatch:
 
 # Cancels in-progress workflows for a PR when updated
