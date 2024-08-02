@@ -187,7 +187,6 @@ jobs:
   cpu_builds:
     name: CPU builds
     needs:
-      - get_docker_image_tag
       - check_that_all_jobs_succeeded
     uses: ./.github/workflows/cpu_builds.yml
     secrets: inherit
