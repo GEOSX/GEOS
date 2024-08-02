@@ -13,7 +13,7 @@ on:
 jobs:
   get_docker_image_tag:
     # if the current added label is for GPUs
-    if: "${{ github.event.label.name == 'ci: run CUDA builds' && vars.COMPLIANCE_SUCCESS}}"
+    if: "${{ github.event.label.name == 'ci: run CUDA builds'}}"
     # Everywhere in this workflow, we use the most recent ubuntu distribution available in Github Actions
     # to ensure maximum support of google cloud's sdk.
     runs-on: ubuntu-22.04
@@ -130,6 +130,8 @@ jobs:
     secrets: inherit
 
   remove_label:
+    needs: 
+      - cuda_builds
     runs-on: ubuntu-22.04
     steps:
       - name: Remove the label
