@@ -1,21 +1,31 @@
 name: CPU builds
 
 on:
-  pull_request: # Run workflow on PRs to the develop branch with modification on *.hpp or *.cpp files
+  pull_request: # Run workflow on PRs to the develop branch with changes on *.hpp or *.cpp files when PR is opened, synchronized, reopented and ready fo review
     branches:
       - develop
     paths: 
       - '**.hpp'
       - '**.cpp'
+    types:
+      - opened
+      - synchronize
+      - reopened
+      - ready_for_review
   push: # Run workflow on push to the develop branch.
     branches: 
       - develop
   workflow_dispatch: # Workflow can be run manually
 
+
 jobs:
   # Matrix containing all the CPU build.
   # Those are quite fast and can efficiently benefit from the `sccache' tool to make them even faster.
   cpu_builds:
+    if: |
+      vars.COMPLIANCE_SUCCESS && 
+      github.event_name == 'push' ||
+      (github.event_name == 'pull_request' && !github.event.pull_request.draft && github.event.pull_request.assignees > 0)
     name: ${{ matrix.name }}
     strategy:
       # In-progress jobs will not be cancelled if there is a failure
@@ -64,7 +74,7 @@ jobs:
     uses: ./.github/workflows/build_and_test.yml
     with:
       CMAKE_BUILD_TYPE: ${{ matrix.CMAKE_BUILD_TYPE }}
-      DOCKER_IMAGE_TAG: ${{ needs.is_not_draft_pull_request.outputs.DOCKER_IMAGE_TAG }}
+      DOCKER_IMAGE_TAG: ${{ vars.DOCKER_IMAGE_TAG }}
       DOCKER_REPOSITORY: ${{ matrix.DOCKER_REPOSITORY }}
       ENABLE_HYPRE: ${{ matrix.ENABLE_HYPRE }}
       ENABLE_TRILINOS: ${{ matrix.ENABLE_TRILINOS }}

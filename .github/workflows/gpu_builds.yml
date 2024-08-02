@@ -15,7 +15,7 @@ jobs:
   # Note: CUDA jobs should only be run if PR is ready to merge.
   cuda_builds:
     # if the current added label is for GPUs
-    if: "${{ github.event.label.name == 'ci: run CUDA builds' }}"
+    if: "${{ github.event.label.name == 'ci: run CUDA builds' && vars.COMPLIANCE_SUCCESS}}"
     name: ${{ matrix.name }}
     strategy:
       # In-progress jobs will not be cancelled if there is a failure
