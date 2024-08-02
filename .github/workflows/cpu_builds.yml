@@ -11,7 +11,6 @@ on:
 
 jobs:
   get_docker_image_tag:
-    if: "${{ github.event.label.name == 'ci: run integrated tests' }}"
     # Everywhere in this workflow, we use the most recent ubuntu distribution available in Github Actions
     # to ensure maximum support of google cloud's sdk.
     runs-on: ubuntu-22.04
