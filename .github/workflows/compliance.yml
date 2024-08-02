@@ -35,7 +35,7 @@ jobs:
     
   # Jobs will be cancelled if PR is a draft.
   # PR status must be "Open" to run CI.
-  is_not_draft_pull_request:
+  get_docker_image_tag:
     needs: [semantic_pull_request]
     # Everywhere in this workflow, we use the most recent ubuntu distribution available in Github Actions
     # to ensure maximum support of google cloud's sdk.
@@ -43,19 +43,19 @@ jobs:
     outputs:
       DOCKER_IMAGE_TAG: ${{ steps.extract_docker_image_tag.outputs.DOCKER_IMAGE_TAG }}
     steps:
-    - name: Check that the PR is not a draft (cancel rest of jobs otherwise)
-      id: extract_pr_info
-      run: |
-        if [[ ${{github.event_name}} == 'pull_request' ]]; then 
-          # We do not rely on the `github.event.pull_request.labels` information since it's cached at the job.
-          # Changing labels or assignee in the PR would not allow to simply re-run the job with a different outcome.
-          pr_json=$(curl -H "Accept: application/vnd.github+json" https://api.github.com/repos/${{ github.repository }}/pulls/${{ github.event.number }})
+    # - name: Check that the PR is not a draft (cancel rest of jobs otherwise)
+    #   id: extract_pr_info
+    #   run: |
+    #     if [[ ${{github.event_name}} == 'pull_request' ]]; then 
+    #       # We do not rely on the `github.event.pull_request.labels` information since it's cached at the job.
+    #       # Changing labels or assignee in the PR would not allow to simply re-run the job with a different outcome.
+    #       pr_json=$(curl -H "Accept: application/vnd.github+json" https://api.github.com/repos/${{ github.repository }}/pulls/${{ github.event.number }})
           
-          # We stop the workflow if the pr is draft
-          draft_status=$(echo ${pr_json} | jq '.draft')
-          echo "Draft status of PR is ${draft_status}."
-          if [[ $draft_status == true ]]; then exit 1 ; fi
-        fi
+    #       # We stop the workflow if the pr is draft
+    #       draft_status=$(echo ${pr_json} | jq '.draft')
+    #       echo "Draft status of PR is ${draft_status}."
+    #       if [[ $draft_status == true ]]; then exit 1 ; fi
+    #     fi
 
         
     # The TPL tag is contained in the codespaces configuration to avoid duplications.
@@ -76,7 +76,7 @@ jobs:
   # PR must be assigned to be merged.
   # This job will fail if this is not the case.
   if_not_unassigned_pull_request:
-    needs: [is_not_draft_pull_request]
+    needs: [semantic_pull_request]
     runs-on: ubuntu-22.04
     steps:
     - name: If this is a PR, Check that it is assigned
@@ -90,7 +90,7 @@ jobs:
   # Validates that the PR is still pointing to the HEAD of the main branch of the submodules repositories.
   # (There are exceptions, read the script about those).
   are_submodules_in_sync:
-    needs: [is_not_draft_pull_request]
+    needs: [if_not_unassigned_pull_request]
     runs-on: ubuntu-22.04
     steps:
     # The integrated test submodule repository contains large data (using git lfs).
@@ -107,7 +107,9 @@ jobs:
 
   check_code_style_and_documentation:
     name: ${{ matrix.name }}
-    needs: [is_not_draft_pull_request]
+    needs: 
+      - if_not_unassigned_pull_request
+      - get_docker_image_tag
     strategy:
       fail-fast : false
       matrix:
@@ -122,13 +124,13 @@ jobs:
     with:
       BUILD_AND_TEST_CLI_ARGS: ${{ matrix.BUILD_AND_TEST_ARGS }}
       CMAKE_BUILD_TYPE: Release
-      DOCKER_IMAGE_TAG: ${{ needs.is_not_draft_pull_request.outputs.DOCKER_IMAGE_TAG }}
+      DOCKER_IMAGE_TAG: ${{ needs.get_docker_image_tag.outputs.DOCKER_IMAGE_TAG }}
       DOCKER_REPOSITORY: geosx/ubuntu20.04-gcc9
       RUNS_ON: ubuntu-22.04
       USE_SCCACHE: false
 
   baseline_log:
-    needs: [is_not_draft_pull_request]
+    needs: [if_not_unassigned_pull_request]
     runs-on: ubuntu-22.04
     steps:
     - name: Checkout Repository
@@ -144,14 +146,15 @@ jobs:
 
   code_coverage:
     needs:
-      - is_not_draft_pull_request
+      - if_not_unassigned_pull_request
+      - get_docker_image_tag
     uses: ./.github/workflows/build_and_test.yml
     secrets: inherit
     with:
       BUILD_AND_TEST_CLI_ARGS: "--no-run-unit-tests"
       CMAKE_BUILD_TYPE: Debug
       CODE_COVERAGE: true
-      DOCKER_IMAGE_TAG: ${{ needs.is_not_draft_pull_request.outputs.DOCKER_IMAGE_TAG }}
+      DOCKER_IMAGE_TAG: ${{ needs.get_docker_image_tag.outputs.DOCKER_IMAGE_TAG }}
       DOCKER_REPOSITORY: geosx/ubuntu22.04-gcc11
       ENABLE_HYPRE: ON
       ENABLE_TRILINOS: OFF
@@ -164,16 +167,29 @@ jobs:
   check_that_all_jobs_succeeded:
     runs-on: ubuntu-22.04
     needs:
-    - if_not_unassigned_pull_request
-    - are_submodules_in_sync
-    - check_code_style_and_documentation
+      # - is_not_draft_pull_request
+      - if_not_unassigned_pull_request
+      - are_submodules_in_sync
+      - check_code_style_and_documentation
+      - baseline_log
+      - code_coverage
     steps:
-    - run: |
-        echo "if_not_unassigned_pull_request: ${{needs.if_not_unassigned_pull_request.result}}"
-        echo "are_submodules_in_sync: ${{needs.are_submodules_in_sync.result}}"
-        echo "check_code_style_and_documentation: ${{needs.check_code_style_and_documentation.result}}"
-        echo "COMPLIANCE_SUCCESS = ${{
-          needs.if_not_unassigned_pull_request.result == 'success' &&
-          needs.are_submodules_in_sync.result == 'success' &&
-          needs.check_code_style_and_documentation.result == 'success'
-        }}" >> $GITHUB_ENV
+      - run: |
+          echo "if_not_unassigned_pull_request: ${{needs.if_not_unassigned_pull_request.result}}"
+          echo "are_submodules_in_sync: ${{needs.are_submodules_in_sync.result}}"
+          echo "check_code_style_and_documentation: ${{needs.check_code_style_and_documentation.result}}"
+          echo "COMPLIANCE_SUCCESS = ${{
+            needs.if_not_unassigned_pull_request.result == 'success' &&
+            needs.are_submodules_in_sync.result == 'success' &&
+            needs.check_code_style_and_documentation.result == 'success'
+          }}" >> $GITHUB_ENV
+
+  cpu_builds:
+    name: CPU builds
+    needs:
+      - get_docker_image_tag 
+      - check_that_all_jobs_succeeded
+    uses: ./.github/workflows/cpu_builds.yml
+    with:
+        DOCKER_IMAGE_TAG: ${{ needs.get_docker_image_tag.outputs.DOCKER_IMAGE_TAG }}
+    secrets: inherit
