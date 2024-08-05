@@ -22,8 +22,8 @@ jobs:
         uses: actions-ecosystem/action-remove-labels@v1
         with:
             labels: |
-              'ci: run CUDA builds'
-              'ci: run integrated tests'
+              ci: run CUDA builds
+              ci: run integrated tests
 
   # Checks if PR title follows conventional semantics
   semantic_pull_request:
