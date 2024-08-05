@@ -95,20 +95,6 @@ jobs:
           #   DOCKER_CERTS_UPDATE_COMMAND: "update-ca-trust"  
 
           # Below this line, jobs that deploy to Google Cloud.
-          - name: Sherlock GPU (centos 7.9.2009, gcc 10.1.0, open-mpi 4.1.2, openblas 0.3.10, cuda 11.7.1,)
-            BUILD_AND_TEST_CLI_ARGS: "--no-run-unit-tests --no-install-schema"
-            CMAKE_BUILD_TYPE: Release
-            DOCKER_REPOSITORY: geosx/sherlock-gcc10.1.0-openmpi4.1.2-cuda11.7.1-openblas0.3.10-zlib1.2.11
-            ENABLE_HYPRE_DEVICE: CUDA
-            ENABLE_HYPRE: ON
-            ENABLE_TRILINOS: OFF
-            GCP_BUCKET: geosx/Sherlock-GPU
-            HOST_CONFIG: host-configs/Stanford/sherlock-gcc10-ompi4.1.2-openblas0.3.10-cuda11.7.1-sm70.cmake
-            RUNS_ON: streak2
-            NPROC: 8
-            DOCKER_RUN_ARGS: "--cpus=8 --memory=128g --runtime=nvidia -v /etc/pki/ca-trust/source/anchors/:/etc/pki/ca-trust/source/anchors/llnl:ro"
-            DOCKER_CERTS_DIR: "/etc/pki/ca-trust/source/anchors"
-            DOCKER_CERTS_UPDATE_COMMAND: "update-ca-trust"
 
     uses: ./.github/workflows/build_and_test.yml
     with:

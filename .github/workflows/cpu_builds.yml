@@ -73,14 +73,6 @@ jobs:
             ENABLE_HYPRE: ON
             ENABLE_TRILINOS: OFF
 
-          - name: Sherlock CPU (centos 7.9.2009, gcc 10.1.0, open-mpi 4.1.2, openblas 0.3.10)
-            CMAKE_BUILD_TYPE: Release
-            DOCKER_REPOSITORY: geosx/sherlock-gcc10.1.0-openmpi4.1.2-openblas0.3.10-zlib1.2.11
-            ENABLE_HYPRE: ON
-            ENABLE_TRILINOS: OFF
-            GCP_BUCKET: geosx/Sherlock-CPU
-            HOST_CONFIG: host-configs/Stanford/sherlock-gcc10-ompi4.1.2-openblas0.3.10.cmake
-
     uses: ./.github/workflows/build_and_test.yml
     with:
       CMAKE_BUILD_TYPE: ${{ matrix.CMAKE_BUILD_TYPE }}
