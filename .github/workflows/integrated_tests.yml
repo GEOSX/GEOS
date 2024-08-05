@@ -34,7 +34,7 @@ jobs:
 
   # If the 'ci: run integrated tests' PR label is found, the integrated tests will be run immediately after the cpu jobs.
   # Note: The integrated tests are optional and are (for the moment) run for convenience only.
-  run_integrated_tests:
+  run_integrated_tests: 
     needs: 
       - get_docker_image_tag
     uses: ./.github/workflows/build_and_test.yml
@@ -65,4 +65,4 @@ jobs:
       - name: Remove the label
         uses: actions-ecosystem/action-remove-labels@v1
         with:
-            labels: 'ci: run CUDA builds'
+            labels: 'ci: run integrated tests'
