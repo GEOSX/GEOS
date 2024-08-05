@@ -13,9 +13,22 @@ concurrency:
 # Please define `build.args.GEOS_TPL_TAG` in `.devcontainer/devcontainer.json`
 
 jobs:
+  # Alows remove labels at sync avoiding gpu / integrated tests run
+  remove_labels:
+    if: github.event.action != 'opened'
+    runs-on: ubuntu-22.04
+    steps:
+      - name: Remove the label
+        uses: actions-ecosystem/action-remove-labels@v1
+        with:
+            labels: |
+              'ci: run CUDA builds'
+              'ci: run integrated tests'
+
   # Checks if PR title follows conventional semantics
   semantic_pull_request:
     name: Checks if PR title follows conventional semantics
+    needs: remove_labels
     permissions:
       pull-requests: write  # for amannn/action-semantic-pull-request to analyze PRs and 
       statuses: write  # for amannn/action-semantic-pull-request to mark status of analyzed PR
