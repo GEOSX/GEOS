@@ -88,6 +88,8 @@ public:
   {
     std::mt19937 generator( seed );
     std::uniform_real_distribution< real64 > distribution( -10.0, 10.0 );
+
+    solution[N-1] = 0.0;
     for( ptrdiff_t i=0; i<N-1; ++i )
     {
       solution[i] = 0.0;
