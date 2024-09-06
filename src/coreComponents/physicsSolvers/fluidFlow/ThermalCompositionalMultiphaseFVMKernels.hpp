@@ -405,7 +405,7 @@ public:
       //       computing the following quantities: potGrad, phaseFlux, k_up, er_up, esr_up, ei_up
 
       real64 dPhaseFlux_dT[numFluxSupportPoints]{};
-
+      // integer const numDir = 1;
       real64 faceNormal[3];
       m_stencilWrapper.getFaceNormal( connectionIndex, faceNormal );
 
@@ -1230,7 +1230,7 @@ public:
       //       computing the following quantities: potGrad, phaseFlux
       // It is easier to hard-code the if/else because it is difficult to address elem and face variables in a uniform way
 
-
+      // integer const numDir = 1;
       real64 faceNormal[3];
       m_stencilWrapper.getFaceNormal( kf, faceNormal );
 

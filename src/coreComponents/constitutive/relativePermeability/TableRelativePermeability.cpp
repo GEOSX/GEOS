@@ -154,7 +154,7 @@ void TableRelativePermeability::resizeFields( localIndex const size, localIndex 
   RelativePermeabilityBase::resizeFields( size, numPts );
 
   integer const numPhases = numFluidPhases();
-  integer const numDir = m_wettingNonWettingRelPermTableNames.size(0);
+  integer const numDir =  m_wettingNonWettingRelPermTableNames.size(0);
 
 
   m_phaseRelPerm.resize( size, numPts, numPhases, numDir );
@@ -284,7 +284,7 @@ void TableRelativePermeability::createAllTableKernelWrappers()
   FunctionManager const & functionManager = FunctionManager::getInstance();
 
   integer const numPhases = m_phaseNames.size();
-  integer const numDir = m_wettingNonWettingRelPermTableNames.size(0);
+  integer const numDir =  m_wettingNonWettingRelPermTableNames.size(0);
   // we want to make sure that the wrappers are always up-to-date, so we recreate them everytime
 
   m_relPermKernelWrappers.clear();

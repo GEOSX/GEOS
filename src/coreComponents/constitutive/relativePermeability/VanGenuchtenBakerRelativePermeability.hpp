@@ -178,7 +178,7 @@ VanGenuchtenBakerRelativePermeabilityUpdate::
   integer const ipGas  = m_phaseOrder[PT::GAS];
 
 
-  integer const numDir = m_volFracScale.size(0);
+  integer const numDir = 1;
 
   for( int dir = 0; dir < numDir; ++dir )
   {

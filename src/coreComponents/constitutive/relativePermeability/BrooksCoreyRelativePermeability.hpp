@@ -133,7 +133,7 @@ BrooksCoreyRelativePermeabilityUpdate::
 {
   LvArray::forValuesInSlice( dPhaseRelPerm_dPhaseVolFrac, []( real64 & val ){ val = 0.0; } );
 
-  integer const numDir = m_phaseRelPermExponent.size(0);
+  integer const numDir = 1;
 
   for( int dir = 0; dir < numDir; ++dir )
   {

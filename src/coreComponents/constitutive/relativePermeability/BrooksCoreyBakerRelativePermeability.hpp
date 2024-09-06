@@ -184,7 +184,7 @@ BrooksCoreyBakerRelativePermeabilityUpdate::
   integer const ipOil = m_phaseOrder[PT::OIL];
   integer const ipGas = m_phaseOrder[PT::GAS];
 
-  integer const numDir = m_waterOilRelPermExponent.size(0);
+  integer const numDir = 1;
 
   for( int dir = 0; dir < numDir; ++dir )
   {

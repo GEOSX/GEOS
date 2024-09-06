@@ -92,7 +92,7 @@ void BrooksCoreyStone2RelativePermeability::postInputInitialization()
 {
   RelativePermeabilityBase::postInputInitialization();
 
-  integer const numDir = m_waterOilRelPermExponent.size(0);
+  integer const numDir = 3;
 
   m_volFracScale.resize( numDir /*ndims*/ );
 

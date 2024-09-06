@@ -188,7 +188,7 @@ VanGenuchtenStone2RelativePermeabilityUpdate::
   real64 oilRelPerm_go = 0.0; // oil rel perm using two-phase gas-oil data
   real64 dOilRelPerm_go_dOilVolFrac = 0.0; // derivative w.r.t to So
 
-  integer const numDir = phaseRelPerm.size(1);
+  integer const numDir = 1;
 
   // this function assumes that the oil phase can always be present (i.e., ipOil > 0)
   for( int dir=0; dir<numDir; ++dir )

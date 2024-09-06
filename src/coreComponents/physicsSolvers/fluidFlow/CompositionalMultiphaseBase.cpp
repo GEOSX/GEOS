@@ -283,7 +283,7 @@ void CompositionalMultiphaseBase::registerDataOnMesh( Group & meshBodies )
 
   // n_c components + one pressure ( + one temperature if needed )
   m_numDofPerCell = m_isThermal ? m_numComponents + 2 : m_numComponents + 1;
-  
+  // const localIndex numDir = 3;
 
   // 2. Register and resize all fields as necessary
   forDiscretizationOnMeshTargets( meshBodies, [&]( string const &,

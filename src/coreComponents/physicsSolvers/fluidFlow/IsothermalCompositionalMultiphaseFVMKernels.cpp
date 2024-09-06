@@ -84,7 +84,7 @@ CFLFluxKernel::
            ElementView< arrayView2d< real64, compflow::USD_COMP > > const & compOutflux )
 {
   integer const numDir = phaseRelPerm.size(3);
-
+  std::cout << "Size of iso1: " << numDir << std::endl;
   // loop over phases, compute and upwind phase flux and sum contributions to each component's flux
   for( integer ip = 0; ip < numPhases; ++ip )
   {
@@ -205,7 +205,7 @@ CFLFluxKernel::
                                    transmissibility,
                                    dTrans_dPres );
 
-
+    // integer const numDir = 3;
     real64 faceNormal[3];
     stencilWrapper.getFaceNormal( iconn, faceNormal );
 
@@ -292,7 +292,7 @@ CFLKernel::
   // then, depending on the regime, apply the appropriate CFL formula
   phaseCFLNumber = 0;
   integer const numDir =  phaseRelPerm.size(1);
-
+  std::cout << "Size of iso2: " << numDir << std::endl;
 
   for( int dir = 0; dir < numDir; ++dir )
   {

@@ -180,7 +180,7 @@ BrooksCoreyStone2RelativePermeabilityUpdate::
   real64 oilRelPerm_go = 0; // oil rel perm using two-phase gas-oil data
   real64 dOilRelPerm_go_dOilVolFrac = 0; // derivative w.r.t to So
 
-  integer const numDir = m_waterOilRelPermExponent.size(0);
+  integer const numDir = 3;
 
   // this function assumes that the oil phase can always be present (i.e., ipOil > 0)
 

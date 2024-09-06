@@ -73,7 +73,7 @@ void VanGenuchtenBakerRelativePermeability::resizeFields( localIndex const size,
   RelativePermeabilityBase::resizeFields( size, numPts );
 
   integer const numPhases = 3;
-  integer const numDir = m_waterOilRelPermExponentInv.size(0);
+  integer const numDir = 1;
 
 
   m_phaseRelPerm.resize( size, numPts, numPhases, numDir );
@@ -90,7 +90,7 @@ void VanGenuchtenBakerRelativePermeability::postInputInitialization()
 {
   RelativePermeabilityBase::postInputInitialization();
 
-  integer const numDir = m_waterOilRelPermExponentInv.size(0);
+  integer const numDir = 1;
 
   m_volFracScale.resize( numDir /*ndims*/ );
 
