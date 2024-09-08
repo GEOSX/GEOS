@@ -98,7 +98,7 @@ void RelativePermeabilityBase::resizeFields( localIndex const size, localIndex c
 {
 
 
-  integer const numDir = m_phaseRelPerm.size(3);
+  //integer const numDir = m_phaseRelPerm.size(3);
   integer const numPhases = numFluidPhases();
 
 
