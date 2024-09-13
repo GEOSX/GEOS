@@ -21,7 +21,7 @@ set(ESSL_LIBRARIES /sw/ascent/essl/6.2.0-20190419/essl/6.2/lib64/libesslsmpcuda.
                    /sw/ascent/xl/16.1.1-3/lib/libxlf90_r.so.1
                    ${CUDA_TOOLKIT_ROOT_DIR}/lib64/libcublas.so
                    ${CUDA_TOOLKIT_ROOT_DIR}/lib64/libcudart.so
-		   ${GEOSX_TPL_ROOT_DIR}/liblapackforessl.a
+		   ${GEOS_TPL_ROOT_DIR}/liblapackforessl.a
                    /sw/ascent/xl/16.1.1-3/xlC/16.1.1/lib/libxl.a
                    CACHE PATH "")
 

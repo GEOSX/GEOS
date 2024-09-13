@@ -85,9 +85,9 @@
     <!-- SPHINX_PermeabilityPropertiesEnd -->
 
     <!-- SPHINX_ThermalProperties -->
-    <SinglePhaseConstantThermalConductivity
+    <SinglePhaseThermalConductivity
       name="rockThermalCond"
-      thermalConductivityComponents="{ 6.6, 6.6, 6.6 }"/>
+      defaultThermalConductivityComponents="{ 6.6, 6.6, 6.6 }"/>
     <!-- SPHINX_ThermalPropertiesEnd -->
 
     <!-- SPHINX_FluidProperties -->

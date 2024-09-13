@@ -72,7 +72,7 @@ args=$(or_die getopt -a -o h --long build-exe-only,cmake-build-type:,code-covera
 
 # Variables with default values
 BUILD_EXE_ONLY=false
-GEOSX_INSTALL_SCHEMA=true
+GEOS_INSTALL_SCHEMA=true
 HOST_CONFIG="host-configs/environment.cmake"
 RUN_UNIT_TESTS=true
 RUN_INTEGRATED_TESTS=false
@@ -103,8 +103,8 @@ do
       shift 2;;
     --exchange-dir)          DATA_EXCHANGE_DIR=$2;       shift 2;;
     --host-config)           HOST_CONFIG=$2;             shift 2;;
-    --install-dir-basename)  GEOSX_DIR=${GEOSX_TPL_DIR}/../$2; shift 2;;
-    --no-install-schema)     GEOSX_INSTALL_SCHEMA=false; shift;;
+    --install-dir-basename)  GEOS_DIR=${GEOSX_TPL_DIR}/../$2; shift 2;;
+    --no-install-schema)     GEOS_INSTALL_SCHEMA=false; shift;;
     --no-run-unit-tests)     RUN_UNIT_TESTS=false;       shift;;
     --nproc)                 NPROC=$2;                   shift 2;;
     --repository)            GEOS_SRC_DIR=$2;            shift 2;;
@@ -127,9 +127,9 @@ if [[ -z "${GEOS_SRC_DIR}" ]]; then
   exit 1
 fi
 
-if [[ -z "${GEOSX_DIR}" ]]; then
+if [[ -z "${GEOS_DIR}" ]]; then
   echo "Installation folder undefined. Set to default value '/dev/null'. You can define it using '--install-dir-basename'."
-  GEOSX_DIR=/dev/null
+  GEOS_DIR=/dev/null
 fi
 
 if [[ ! -z "${SCCACHE_CREDS}" ]]; then
@@ -215,21 +215,21 @@ fi
 # In case we have more powerful nodes, consider removing `--oversubscribe` and use `--use-hwthread-cpus` instead.
 # This will tells OpenMPI to discover the number of hardware threads on the node,
 # and use that as the number of slots available. (There is a distinction between threads and cores).
-GEOSX_BUILD_DIR=/tmp/geos-build
+GEOS_BUILD_DIR=/tmp/geos-build
 or_die python3 scripts/config-build.py \
                -hc ${HOST_CONFIG} \
                -bt ${CMAKE_BUILD_TYPE} \
-               -bp ${GEOSX_BUILD_DIR} \
-               -ip ${GEOSX_DIR} \
+               -bp ${GEOS_BUILD_DIR} \
+               -ip ${GEOS_DIR} \
                --ninja \
                -DBLT_MPI_COMMAND_APPEND='"--allow-run-as-root;--oversubscribe"' \
-               -DGEOSX_INSTALL_SCHEMA=${GEOSX_INSTALL_SCHEMA} \
+               -DGEOS_INSTALL_SCHEMA=${GEOS_INSTALL_SCHEMA} \
                -DENABLE_COVERAGE=$([[ "${CODE_COVERAGE}" = true ]] && echo 1 || echo 0) \
                ${SCCACHE_CMAKE_ARGS} \
                ${ATS_CMAKE_ARGS}
 
 # The configuration step is now over, we can now move to the build directory for the build!
-or_die cd ${GEOSX_BUILD_DIR}
+or_die cd ${GEOS_BUILD_DIR}
 
 # Code style check
 if [[ "${TEST_CODE_STYLE}" = true ]]; then
@@ -253,7 +253,13 @@ else
   if [[ ! -z "${DATA_BASENAME_WE}" ]]; then
     # Here we pack the installation.
     # The `--transform` parameter provides consistency between the tarball name and the unpacked folder.
-    or_die tar czf ${DATA_EXCHANGE_DIR}/${DATA_BASENAME_WE}.tar.gz --directory=${GEOSX_TPL_DIR}/.. --transform "s|^./|${DATA_BASENAME_WE}/|" .
+    echo "DATA_EXCHANGE_DIR=${DATA_EXCHANGE_DIR}"
+    echo "DATA_BASENAME_WE=${DATA_BASENAME_WE}"
+    echo "GEOS_TPL_DIR=${GEOS_TPL_DIR}"
+    echo "GEOSX_TPL_DIR=${GEOSX_TPL_DIR}"
+    GEOS_TPL_DIR=${GEOSX_TPL_DIR}
+    echo tar czf ${DATA_EXCHANGE_DIR}/${DATA_BASENAME_WE}.tar.gz --directory=${GEOS_TPL_DIR}/.. --transform "s|^./|${DATA_BASENAME_WE}/|" .
+    or_die tar czf ${DATA_EXCHANGE_DIR}/${DATA_BASENAME_WE}.tar.gz --directory=${GEOS_TPL_DIR}/.. --transform "s|^./|${DATA_BASENAME_WE}/|" .
   fi
 fi
 
@@ -264,7 +270,7 @@ fi
 
 if [[ "${CODE_COVERAGE}" = true ]]; then
   or_die ninja coreComponents_coverage
-  cp -r ${GEOSX_BUILD_DIR}/coreComponents_coverage.info.cleaned ${GEOS_SRC_DIR}/geos_coverage.info.cleaned
+  cp -r ${GEOS_BUILD_DIR}/coreComponents_coverage.info.cleaned ${GEOS_SRC_DIR}/geos_coverage.info.cleaned
 fi
 
 # Run the unit tests (excluding previously ran checks).

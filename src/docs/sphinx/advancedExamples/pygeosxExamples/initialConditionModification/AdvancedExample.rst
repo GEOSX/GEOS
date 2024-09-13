@@ -59,32 +59,32 @@ Similar to the previous example, the python script begins by importing the requi
 
 .. literalinclude:: ../../../../../../examples/pygeosxExamples/sedovWithStressFunction/run_sedov_problem.py
   :language: python
-  :start-after: # PYGEOSX_INITIALIZATION
-  :end-before: # PYGEOSX_INITIALIZATION_END
+  :start-after: # PYGEOS_INITIALIZATION
+  :end-before: # PYGEOS_INITIALIZATION_END
 
 The next steps rely on a python function that we use to set stress.
 The argument to this function, x, is assumed to be a numpy array of element centers:
 
 .. literalinclude:: ../../../../../../examples/pygeosxExamples/sedovWithStressFunction/run_sedov_problem.py
   :language: python
-  :start-after: # PYGEOSX_STRESS_FN
-  :end-before: # PYGEOSX_STRESS_FN_END
+  :start-after: # PYGEOS_STRESS_FN
+  :end-before: # PYGEOS_STRESS_FN_END
 
 In the following section, we zero out the initial stress and then set it based on `stress_fn`.
 While doing this, we use `wrapper.print_global_value_range` to check on the process.
 
 .. literalinclude:: ../../../../../../examples/pygeosxExamples/sedovWithStressFunction/run_sedov_problem.py
   :language: python
-  :start-after: # PYGEOSX_STRESS_IC
-  :end-before: # PYGEOSX_STRESS_IC_END
+  :start-after: # PYGEOS_STRESS_IC
+  :end-before: # PYGEOS_STRESS_IC_END
 
 Finally, we run the simulation.
 As an optional step, we extract numpy arrays from the datastructure using different parallel approaches:
 
 .. literalinclude:: ../../../../../../examples/pygeosxExamples/sedovWithStressFunction/run_sedov_problem.py
   :language: python
-  :start-after: # PYGEOSX_MAIN_LOOP
-  :end-before: # PYGEOSX_MAIN_LOOP_END
+  :start-after: # PYGEOS_MAIN_LOOP
+  :end-before: # PYGEOS_MAIN_LOOP_END
 
 
 ---------------------------------

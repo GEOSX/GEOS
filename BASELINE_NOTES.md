@@ -6,6 +6,65 @@ This file is designed to track changes to the integrated test baselines.
 Any developer who updates the baseline ID in the .integrated_tests.yaml file is expected to create an entry in this file with the pull request number, date, and their justification for rebaselining.
 These notes should be in reverse-chronological order, and use the following time format: (YYYY-MM-DD).
 
+PR #3322 (2024-09-06)
+======================
+Print out fracture state for contact model. Rebaseline the corresponding cases.
+
+
+PR #3302 (2024-09-05)
+======================
+Added restartcheks to hydrofrac cases and reduced time of cases that were too long.
+
+
+PR #3135 (2024-09-04)
+======================
+Temperature dependent single phase thermal conductivity. Rebaseline all thermal cases. 
+
+
+PR #3294 (2024-09-01)
+======================
+Re-enable enforcement of wave propagation integrated test pass.
+
+
+PR #3300 (2024-08-28)
+======================
+Re-enable floating point exceptions. Rebaseline due to minor changing default value of maxRelativeCompDensChange from 1.7976931348623157e+308 to 1.7976931348623157e+208. 
+
+PR #3283 (2024-08-22)
+======================
+Reuse computeSinglePhaseFlux. Rebaseline due to minor numerical diffs. 
+
+
+PR #3249 (2024-08-14)
+======================
+Two initialization options for poromechanical models. Rebaseline the corresponding cases. 
+
+
+PR #3278 (2024-08-12)
+======================
+Renamed GEOSX to GEOS in enternal mesh import, so rebaseline to change these names is the baselines. 
+
+
+PR #3202 (2024-08-03)
+======================
+Acoustic VTI tests needed rebaselining after update in source and receiver location algorithm.
+
+
+PR #3215 (2024-07-23)
+======================
+Changed the default value for massCreation and name of the wrapper.
+
+
+PR #3194 (2024-07-22)
+======================
+Check pore volume for all element types, also check that default aperture > 0. Rebaseline for modified tests. No real results change.
+
+
+PR #3213 (2024-07-12)
+======================
+Added baselines for new tests on Dirichlet boundary conditions for multiphase flow.
+
+
 PR #3194 (2024-07-10)
 ======================
 Use aperture table in poromechanics with conforming fractures. Rebaseline the corresponding cases.

@@ -19,6 +19,7 @@ These models are grouped together based on their input/output interface.
    PermeabilityModels
    PorousSolids
    TemperatureDependentSolidVolumetricHeatCapacity
+   TemperatureDependentThermalConductivity
 
 
 In an input XML file, constitutive models are listed in the ``<Constitutive>`` block.

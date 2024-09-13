@@ -25,7 +25,7 @@ def getHydromechanicalParametersFromXML(xmlFilePath):
     G = E / 2.0 / (1.0 + nu)
     hydromechanicalParameters["bulkModulus"] = K
     hydromechanicalParameters["shearModulus"] = G
-    Ks = float(param2.get("grainBulkModulus"))
+    Ks = float(param2.get("defaultGrainBulkModulus"))
 
     hydromechanicalParameters["biotCoefficient"] = 1.0 - K / Ks
     hydromechanicalParameters["porosity"] = float(param2.get("defaultReferencePorosity"))

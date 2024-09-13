@@ -2,11 +2,12 @@
  * ------------------------------------------------------------------------------------------------------------
  * SPDX-License-Identifier: LGPL-2.1-only
  *
- * Copyright (c) 2018-2019 Lawrence Livermore National Security LLC
- * Copyright (c) 2018-2019 The Board of Trustees of the Leland Stanford Junior University
- * Copyright (c) 2018-2019 TotalEnergies
- * Copyright (c) 2019-     GEOSX Contributors
- * All right reserved
+ * Copyright (c) 2016-2024 Lawrence Livermore National Security LLC
+ * Copyright (c) 2018-2024 Total, S.A
+ * Copyright (c) 2018-2024 The Board of Trustees of the Leland Stanford Junior University
+ * Copyright (c) 2023-2024 Chevron
+ * Copyright (c) 2019-     GEOS/GEOSX Contributors
+ * All rights reserved
  *
  * See top level LICENSE, COPYRIGHT, CONTRIBUTORS, NOTICE, and ACKNOWLEDGEMENTS files for details.
  * ------------------------------------------------------------------------------------------------------------
@@ -23,7 +24,7 @@
 // TPL includes
 #include <conduit.hpp>
 
-#if defined( GEOSX_USE_CALIPER )
+#if defined( GEOS_USE_CALIPER )
   #include <caliper/cali-manager.h>
 #endif
 
@@ -83,7 +84,7 @@ GeosxState::GeosxState( std::unique_ptr< CommandLineOptions > && commandLineOpti
   m_rootNode( std::make_unique< conduit::Node >() ),
   m_problemManager( nullptr ),
   m_commTools( std::make_unique< CommunicationTools >() ),
-#if defined( GEOSX_USE_CALIPER )
+#if defined( GEOS_USE_CALIPER )
   m_caliperManager( std::make_unique< cali::ConfigManager >() ),
 #endif
   m_initTime(),
@@ -91,7 +92,7 @@ GeosxState::GeosxState( std::unique_ptr< CommandLineOptions > && commandLineOpti
 {
   Timer timer( m_initTime );
 
-#if defined( GEOSX_USE_CALIPER )
+#if defined( GEOS_USE_CALIPER )
   setupCaliper( *m_caliperManager, getCommandLineOptions() );
 #endif
 
@@ -111,7 +112,7 @@ GeosxState::GeosxState( std::unique_ptr< CommandLineOptions > && commandLineOpti
 //////////////////////////////////////////////////////////////////////////////////////////////////////////////////
 GeosxState::~GeosxState()
 {
-#if defined( GEOSX_USE_CALIPER )
+#if defined( GEOS_USE_CALIPER )
   m_caliperManager->flush();
 #endif
 
@@ -165,7 +166,7 @@ void GeosxState::applyInitialConditions()
   }
 
   m_state = State::READY_TO_RUN;
-  MpiWrapper::barrier( MPI_COMM_GEOSX );
+  MpiWrapper::barrier( MPI_COMM_GEOS );
 }
 
 //////////////////////////////////////////////////////////////////////////////////////////////////////////////////

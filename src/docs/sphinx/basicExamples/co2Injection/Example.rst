@@ -264,13 +264,13 @@ The simulation can be launched with 4 cores using MPI-parallelism:
 
 .. code-block:: console
 
-  mpirun -np 4 geosx -i simpleCo2InjTutorial.xml -x 1 -y 1 -z 4
+  mpirun -np 4 geosx -i simpleCo2InjTutorial_smoke.xml -x 1 -y 1 -z 4
 
 A restart from a checkpoint file `simpleCo2InjTutorial_restart_000000024.root` is always available thanks to the following command line :
 
 .. code-block:: console
 
-  mpirun -np 4 geosx -i simpleCo2InjTutorial.xml -r simpleCo2InjTutorial_restart_000000024 -x 1 -y 1 -z 4
+  mpirun -np 4 geosx -i simpleCo2InjTutorial_smoke.xml -r simpleCo2InjTutorial_restart_000000024 -x 1 -y 1 -z 4
 
 The output then shows the loading of HDF5 restart files by each core. 
 

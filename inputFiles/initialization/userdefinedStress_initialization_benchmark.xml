@@ -1,0 +1,47 @@
+<?xml version="1.0"?>
+
+<Problem>
+  <Included>
+    <File name="./userdefinedStress_initialization_base.xml" />
+  </Included>
+
+  <!-- SPHINX_MESH -->
+  <Mesh>
+    <InternalMesh
+      name="mesh1"
+      elementTypes="{ C3D8 }"
+      xCoords="{ 0.0, 1000 }"
+      yCoords="{ 0.0, 1000 }"
+      zCoords="{ -1000, 0 }"
+      nx="{ 20 }"
+      ny="{ 20 }"
+      nz="{ 40 }"
+      cellBlockNames="{ cb1 }" />
+  </Mesh>
+  <!-- SPHINX_MESH_END -->
+
+  <!-- SPHINX_EVENTS -->
+  <Events
+    maxTime="10.0"
+    minTime="-1e10">
+
+    <PeriodicEvent
+      name="outputs"
+      timeFrequency="10.0"
+      target="/Outputs/vtkOutput" />
+
+    <PeriodicEvent
+      name="solverApplication0"
+      beginTime="0.0"
+      endTime="10.0"
+      target="/Solvers/poroSolve" />
+
+    <SoloEvent 
+      beginTime="-1e10" 
+      name="singlephasePoromechanicsPreEquilibrationStep"
+      target="/Tasks/singlephasePoromechanicsPreEquilibrationStep"
+      targetTime="-1e10" />
+
+  </Events>
+   <!-- SPHINX_EVENTS_END-->
+</Problem>

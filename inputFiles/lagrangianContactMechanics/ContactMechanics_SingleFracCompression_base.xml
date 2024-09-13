@@ -57,8 +57,8 @@
     <SurfaceElementRegion
       name="Fracture"
       faceBlock="faceElementSubRegion"
-      defaultAperture="0.0"
-      materialList="{ fractureMaterial }"/>
+      defaultAperture="1.0e-6"
+      materialList="{ frictionLaw }"/>
   </ElementRegions>
 
 <!-- SPHINX_MATERIAL -->
@@ -70,20 +70,11 @@
       defaultShearModulus="1.0e10"/>
 
     <Coulomb
-      name="fractureMaterial"
+      name="frictionLaw"
       cohesion="0.0"
-      frictionCoefficient="0.577350269"
-      apertureTableName="apertureTable"/>
+      frictionCoefficient="0.577350269"/>
   </Constitutive>
 <!-- SPHINX_MATERIAL_END -->
-
-
-  <Functions>
-    <TableFunction
-      name="apertureTable"
-      coordinates="{ -1.0e-3, 0.0 }"
-      values="{ 0.002e-3, 0.02e-3 }"/>      
-  </Functions>
 
 <!-- SPHINX_BC -->
   <FieldSpecifications>

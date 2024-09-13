@@ -8,6 +8,7 @@ componentAcentricFactor      real64_array       required Component acentric fact
 componentBinaryCoeff         real64_array2d     {{0}}    Table of binary interaction coefficients                                                                     
 componentCriticalPressure    real64_array       required Component critical pressures                                                                                 
 componentCriticalTemperature real64_array       required Component critical temperatures                                                                              
+componentCriticalVolume      real64_array       {0}      Component critical volumes                                                                                   
 componentMolarWeight         real64_array       required Component molar weights                                                                                      
 componentNames               string_array       required List of component names                                                                                      
 componentVolumeShift         real64_array       {0}      Component volume shifts                                                                                      

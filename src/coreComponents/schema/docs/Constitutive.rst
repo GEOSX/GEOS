@@ -42,6 +42,7 @@ ElasticTransverseIsotropic                    node         :ref:`XML_ElasticTran
 ExponentialDecayPermeability                  node         :ref:`XML_ExponentialDecayPermeability`                  
 ExtendedDruckerPrager                         node         :ref:`XML_ExtendedDruckerPrager`                         
 FrictionlessContact                           node         :ref:`XML_FrictionlessContact`                           
+HydraulicApertureTable                        node         :ref:`XML_HydraulicApertureTable`                        
 JFunctionCapillaryPressure                    node         :ref:`XML_JFunctionCapillaryPressure`                    
 LinearIsotropicDispersion                     node         :ref:`XML_LinearIsotropicDispersion`                     
 ModifiedCamClay                               node         :ref:`XML_ModifiedCamClay`                               
@@ -72,7 +73,7 @@ ProppantSlurryFluid                           node         :ref:`XML_ProppantSlu
 ProppantSolidProppantPermeability             node         :ref:`XML_ProppantSolidProppantPermeability`             
 ReactiveBrine                                 node         :ref:`XML_ReactiveBrine`                                 
 ReactiveBrineThermal                          node         :ref:`XML_ReactiveBrineThermal`                          
-SinglePhaseConstantThermalConductivity        node         :ref:`XML_SinglePhaseConstantThermalConductivity`        
+SinglePhaseThermalConductivity                node         :ref:`XML_SinglePhaseThermalConductivity`                
 SlipDependentPermeability                     node         :ref:`XML_SlipDependentPermeability`                     
 SolidInternalEnergy                           node         :ref:`XML_SolidInternalEnergy`                           
 TableCapillaryPressure                        node         :ref:`XML_TableCapillaryPressure`                        

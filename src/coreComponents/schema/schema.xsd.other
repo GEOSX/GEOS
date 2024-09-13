@@ -1330,6 +1330,7 @@
 	</xsd:complexType>
 	<xsd:complexType name="TasksType">
 		<xsd:choice minOccurs="0" maxOccurs="unbounded">
+			<xsd:element name="CellToCellDataCollection" type="CellToCellDataCollectionType" />
 			<xsd:element name="CompositionalMultiphaseReservoirPoromechanicsInitialization" type="CompositionalMultiphaseReservoirPoromechanicsInitializationType" />
 			<xsd:element name="CompositionalMultiphaseStatistics" type="CompositionalMultiphaseStatisticsType" />
 			<xsd:element name="HydrofractureInitialization" type="HydrofractureInitializationType" />
@@ -1347,6 +1348,16 @@
 			<xsd:element name="SourceFluxStatistics" type="SourceFluxStatisticsType" />
 			<xsd:element name="TriaxialDriver" type="TriaxialDriverType" />
 		</xsd:choice>
+	</xsd:complexType>
+	<xsd:complexType name="CellToCellDataCollectionType">
+		<!--cellAGlobalId => (no description available)-->
+		<xsd:attribute name="cellAGlobalId" type="globalIndex_array" />
+		<!--cellBGlobalId => (no description available)-->
+		<xsd:attribute name="cellBGlobalId" type="globalIndex_array" />
+		<!--transmissibilityAB => (no description available)-->
+		<xsd:attribute name="transmissibilityAB" type="real64_array" />
+		<!--transmissibilityBA => (no description available)-->
+		<xsd:attribute name="transmissibilityBA" type="real64_array" />
 	</xsd:complexType>
 	<xsd:complexType name="CompositionalMultiphaseReservoirPoromechanicsInitializationType" />
 	<xsd:complexType name="CompositionalMultiphaseStatisticsType" />
@@ -1441,6 +1452,7 @@
 			<xsd:element name="ExponentialDecayPermeability" type="ExponentialDecayPermeabilityType" />
 			<xsd:element name="ExtendedDruckerPrager" type="ExtendedDruckerPragerType" />
 			<xsd:element name="FrictionlessContact" type="FrictionlessContactType" />
+			<xsd:element name="HydraulicApertureTable" type="HydraulicApertureTableType" />
 			<xsd:element name="JFunctionCapillaryPressure" type="JFunctionCapillaryPressureType" />
 			<xsd:element name="LinearIsotropicDispersion" type="LinearIsotropicDispersionType" />
 			<xsd:element name="ModifiedCamClay" type="ModifiedCamClayType" />
@@ -1471,7 +1483,7 @@
 			<xsd:element name="ProppantSolidProppantPermeability" type="ProppantSolidProppantPermeabilityType" />
 			<xsd:element name="ReactiveBrine" type="ReactiveBrineType" />
 			<xsd:element name="ReactiveBrineThermal" type="ReactiveBrineThermalType" />
-			<xsd:element name="SinglePhaseConstantThermalConductivity" type="SinglePhaseConstantThermalConductivityType" />
+			<xsd:element name="SinglePhaseThermalConductivity" type="SinglePhaseThermalConductivityType" />
 			<xsd:element name="SlipDependentPermeability" type="SlipDependentPermeabilityType" />
 			<xsd:element name="SolidInternalEnergy" type="SolidInternalEnergyType" />
 			<xsd:element name="TableCapillaryPressure" type="TableCapillaryPressureType" />
@@ -2326,6 +2338,7 @@
 		<xsd:attribute name="thermalExpansionCoefficient" type="real64_array" />
 	</xsd:complexType>
 	<xsd:complexType name="FrictionlessContactType" />
+	<xsd:complexType name="HydraulicApertureTableType" />
 	<xsd:complexType name="JFunctionCapillaryPressureType">
 		<!--dPhaseCapPressure_dPhaseVolFraction => Derivative of phase capillary pressure with respect to phase volume fraction-->
 		<xsd:attribute name="dPhaseCapPressure_dPhaseVolFraction" type="real64_array4d" />
@@ -2651,7 +2664,9 @@
 		<!--useMass => (no description available)-->
 		<xsd:attribute name="useMass" type="integer" />
 	</xsd:complexType>
-	<xsd:complexType name="SinglePhaseConstantThermalConductivityType">
+	<xsd:complexType name="SinglePhaseThermalConductivityType">
+		<!--dEffectiveConductivity_dT => Derivative of effective conductivity w.r.t. temperature-->
+		<xsd:attribute name="dEffectiveConductivity_dT" type="real64_array3d" />
 		<!--effectiveConductivity => Effective conductivity-->
 		<xsd:attribute name="effectiveConductivity" type="real64_array3d" />
 	</xsd:complexType>

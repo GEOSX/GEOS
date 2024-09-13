@@ -2,10 +2,11 @@
  * ------------------------------------------------------------------------------------------------------------
  * SPDX-License-Identifier: LGPL-2.1-only
  *
- * Copyright (c) 2018-2020 Lawrence Livermore National Security LLC
- * Copyright (c) 2018-2020 The Board of Trustees of the Leland Stanford Junior University
- * Copyright (c) 2018-2020 TotalEnergies
- * Copyright (c) 2019-     GEOSX Contributors
+ * Copyright (c) 2016-2024 Lawrence Livermore National Security LLC
+ * Copyright (c) 2018-2024 Total, S.A
+ * Copyright (c) 2018-2024 The Board of Trustees of the Leland Stanford Junior University
+ * Copyright (c) 2023-2024 Chevron
+ * Copyright (c) 2019-     GEOS/GEOSX Contributors
  * All rights reserved
  *
  * See top level LICENSE, COPYRIGHT, CONTRIBUTORS, NOTICE, and ACKNOWLEDGEMENTS files for details.
@@ -39,9 +40,6 @@ namespace geos
 
 namespace compositionalMultiphaseHybridFVMKernels
 {
-
-using namespace constitutive;
-
 
 // struct to specify local and neighbor derivatives
 struct Pos
@@ -343,8 +341,8 @@ struct AssemblerKernelHelper
                           ElementViewConst< arrayView3d< real64 const, relperm::USD_MOB > > const & phaseMob,
                           ElementViewConst< arrayView4d< real64 const, relperm::USD_MOB_DC > > const & dPhaseMob,
                           ElementViewConst< arrayView3d< real64 const, compflow::USD_COMP_DC > > const & dCompFrac_dCompDens,
-                          ElementViewConst< arrayView4d< real64 const, multifluid::USD_PHASE_COMP > > const & phaseCompFrac,
-                          ElementViewConst< arrayView5d< real64 const, multifluid::USD_PHASE_COMP_DC > > const & dPhaseCompFrac,
+                          ElementViewConst< arrayView4d< real64 const, constitutive::multifluid::USD_PHASE_COMP > > const & phaseCompFrac,
+                          ElementViewConst< arrayView5d< real64 const, constitutive::multifluid::USD_PHASE_COMP_DC > > const & dPhaseCompFrac,
                           ElementViewConst< arrayView1d< globalIndex const > > const & elemDofNumber,
                           arraySlice2d< real64 const > const & transMatrixGrav,
                           real64 const (&oneSidedVolFlux)[NF],
@@ -531,8 +529,8 @@ struct AssemblerKernel
            ElementViewConst< arrayView3d< real64 const, relperm::USD_MOB > > const & phaseMob,
            ElementViewConst< arrayView4d< real64 const, relperm::USD_MOB_DC > > const & dPhaseMob,
            ElementViewConst< arrayView3d< real64 const, compflow::USD_COMP_DC > > const & dCompFrac_dCompDens,
-           ElementViewConst< arrayView4d< real64 const, multifluid::USD_PHASE_COMP > > const & phaseCompFrac,
-           ElementViewConst< arrayView5d< real64 const, multifluid::USD_PHASE_COMP_DC > > const & dPhaseCompFrac,
+           ElementViewConst< arrayView4d< real64 const, constitutive::multifluid::USD_PHASE_COMP > > const & phaseCompFrac,
+           ElementViewConst< arrayView5d< real64 const, constitutive::multifluid::USD_PHASE_COMP_DC > > const & dPhaseCompFrac,
            ElementViewConst< arrayView1d< globalIndex const > > const & elemDofNumber,
            integer const elemGhostRank,
            globalIndex const rankOffset,
@@ -565,7 +563,7 @@ struct FluxKernel
                       fields::flow::dGlobalCompFraction_dGlobalCompDensity >;
 
   using MultiFluidAccessors =
-    StencilMaterialAccessors< MultiFluidBase,
+    StencilMaterialAccessors< constitutive::MultiFluidBase,
                               fields::multifluid::phaseDensity,
                               fields::multifluid::dPhaseDensity,
                               fields::multifluid::phaseMassDensity,
@@ -628,12 +626,12 @@ struct FluxKernel
           ElementViewConst< arrayView3d< real64 const, relperm::USD_MOB > > const & phaseMob,
           ElementViewConst< arrayView4d< real64 const, relperm::USD_MOB_DC > > const & dPhaseMob,
           ElementViewConst< arrayView3d< real64 const, compflow::USD_COMP_DC > > const & dCompFrac_dCompDens,
-          ElementViewConst< arrayView3d< real64 const, multifluid::USD_PHASE > > const & phaseDens,
-          ElementViewConst< arrayView4d< real64 const, multifluid::USD_PHASE_DC > > const & dPhaseDens,
-          ElementViewConst< arrayView3d< real64 const, multifluid::USD_PHASE > > const & phaseMassDens,
-          ElementViewConst< arrayView4d< real64 const, multifluid::USD_PHASE_DC > > const & dPhaseMassDens,
-          ElementViewConst< arrayView4d< real64 const, multifluid::USD_PHASE_COMP > > const & phaseCompFrac,
-          ElementViewConst< arrayView5d< real64 const, multifluid::USD_PHASE_COMP_DC > > const & dPhaseCompFrac,
+          ElementViewConst< arrayView3d< real64 const, constitutive::multifluid::USD_PHASE > > const & phaseDens,
+          ElementViewConst< arrayView4d< real64 const, constitutive::multifluid::USD_PHASE_DC > > const & dPhaseDens,
+          ElementViewConst< arrayView3d< real64 const, constitutive::multifluid::USD_PHASE > > const & phaseMassDens,
+          ElementViewConst< arrayView4d< real64 const, constitutive::multifluid::USD_PHASE_DC > > const & dPhaseMassDens,
+          ElementViewConst< arrayView4d< real64 const, constitutive::multifluid::USD_PHASE_COMP > > const & phaseCompFrac,
+          ElementViewConst< arrayView5d< real64 const, constitutive::multifluid::USD_PHASE_COMP_DC > > const & dPhaseCompFrac,
           ElementViewConst< arrayView1d< globalIndex const > > const & elemDofNumber,
           globalIndex const rankOffset,
           real64 const lengthTolerance,
@@ -671,8 +669,8 @@ public:
    * @param[in] relperm the relperm model
    */
   PhaseMobilityKernel( ObjectManagerBase & subRegion,
-                       MultiFluidBase const & fluid,
-                       RelativePermeabilityBase const & relperm )
+                       constitutive::MultiFluidBase const & fluid,
+                       constitutive::RelativePermeabilityBase const & relperm )
     : Base(),
     m_phaseVolFrac( subRegion.getField< fields::flow::phaseVolumeFraction >()),
     m_dPhaseVolFrac( subRegion.getField< fields::flow::dPhaseVolumeFraction >()),
@@ -695,7 +693,7 @@ public:
   void compute( localIndex const ei,
                 FUNC && phaseMobilityKernelOp = NoOpFunc{} ) const
   {
-    using Deriv = multifluid::DerivativeOffset;
+    using Deriv = constitutive::multifluid::DerivativeOffset;
 
     arraySlice2d< real64 const,
                   compflow::USD_COMP_DC - 1 > const dCompFrac_dCompDens = m_dCompFrac_dCompDens[ei];
@@ -784,8 +782,8 @@ protected:
   arrayView3d< real64 const, compflow::USD_COMP_DC > m_dCompFrac_dCompDens;
 
   /// Views on the phase viscosities
-  arrayView3d< real64 const, multifluid::USD_PHASE > m_phaseVisc;
-  arrayView4d< real64 const, multifluid::USD_PHASE_DC > m_dPhaseVisc;
+  arrayView3d< real64 const, constitutive::multifluid::USD_PHASE > m_phaseVisc;
+  arrayView4d< real64 const, constitutive::multifluid::USD_PHASE_DC > m_dPhaseVisc;
 
   /// Views on the phase relative permeabilities
   arrayView4d< real64 const, relperm::USD_RELPERM > m_phaseRelPerm;
@@ -820,8 +818,8 @@ public:
   createAndLaunch( integer const numComp,
                    integer const numPhase,
                    ObjectManagerBase & subRegion,
-                   MultiFluidBase const & fluid,
-                   RelativePermeabilityBase const & relperm )
+                   constitutive::MultiFluidBase const & fluid,
+                   constitutive::RelativePermeabilityBase const & relperm )
   {
     if( numPhase == 2 )
     {
@@ -993,7 +991,7 @@ protected:
   ElementViewConst< arrayView2d< real64 const > > const m_porosity_n;
 
   /// View on total mass/molar density at the previous converged time step
-  ElementViewConst< arrayView2d< real64 const, multifluid::USD_FLUID > > const m_totalDens_n;
+  ElementViewConst< arrayView2d< real64 const, constitutive::multifluid::USD_FLUID > > const m_totalDens_n;
 
 };
 

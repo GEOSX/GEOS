@@ -48,8 +48,8 @@
 
     <SurfaceElementRegion
       name="Fracture"
-      defaultAperture="0.0"
-      materialList="{ fractureMaterial, rock }"/>
+      defaultAperture="1.0e-6"
+      materialList="{ frictionLaw, rock }"/>
   </ElementRegions>
 
   <Constitutive>
@@ -60,9 +60,8 @@
       defaultShearModulus="1.0e4"/>
 
     <Coulomb
-      name="fractureMaterial"
+      name="frictionLaw"
       cohesion="0.0"
-      apertureTableName="apertureTable"
       frictionCoefficient="0.577350269189626"/>
   </Constitutive>
 
@@ -123,13 +122,6 @@
       scale="0.0"
       setNames="{ rear }"/>
   </FieldSpecifications>
- 
-  <Functions>
-    <TableFunction
-      name="apertureTable"
-      coordinates="{ -1.0e-3, 0.0 }"
-      values="{ 0.0, 0.0 }"/>
-  </Functions>
 
   <Outputs>
     <Silo

@@ -2,10 +2,11 @@
  * ------------------------------------------------------------------------------------------------------------
  * SPDX-License-Identifier: LGPL-2.1-only
  *
- * Copyright (c) 2018-2020 Lawrence Livermore National Security LLC
- * Copyright (c) 2018-2020 The Board of Trustees of the Leland Stanford Junior University
- * Copyright (c) 2018-2020 TotalEnergies
- * Copyright (c) 2019-     GEOSX Contributors
+ * Copyright (c) 2016-2024 Lawrence Livermore National Security LLC
+ * Copyright (c) 2018-2024 Total, S.A
+ * Copyright (c) 2018-2024 The Board of Trustees of the Leland Stanford Junior University
+ * Copyright (c) 2023-2024 Chevron
+ * Copyright (c) 2019-     GEOS/GEOSX Contributors
  * All rights reserved
  *
  * See top level LICENSE, COPYRIGHT, CONTRIBUTORS, NOTICE, and ACKNOWLEDGEMENTS files for details.
@@ -32,14 +33,16 @@ struct PreComputeSourcesAndReceivers
    * @tparam EXEC_POLICY execution policy
    * @tparam FE_TYPE finite element type
    * @param[in] size the number of cells in the subRegion
-   * @param[in] numFacesPerElem number of faces per element
-   * @param[in] nodeCoords coordinates of the nodes
+   * @param[in] baseFacesToNodes face to node map
+   * @param[in] baseNodeCoords coordinates of the nodes
+   * @param[in] baseNodeLocalToGlobal local to global index map for nodes
+   * @param[in] elementLocalToGlobal local to global index map for elements
+   * @param[in] baseNodesToElements node to element map for the base mesh
+   * @param[in] baseElemsToNodes element to node map for the base mesh
    * @param[in] elemGhostRank rank of the ghost element
    * @param[in] elemsToNodes map from element to nodes
    * @param[in] elemsToFaces map from element to faces
    * @param[in] elemCenter coordinates of the element centers
-   * @param[in] faceNormal normal of each faces
-   * @param[in] faceCenter coordinates of the center of a face
    * @param[in] sourceCoordinates coordinates of the source terms
    * @param[out] sourceIsAccessible flag indicating whether the source is accessible or not
    * @param[out] sourceNodeIds indices of the nodes of the element where the source is located
@@ -57,14 +60,16 @@ struct PreComputeSourcesAndReceivers
   template< typename EXEC_POLICY, typename FE_TYPE >
   static void
   Compute1DSourceAndReceiverConstants( localIndex const size,
-                                       localIndex const numFacesPerElem,
-                                       arrayView2d< WaveSolverBase::wsCoordType const, nodes::REFERENCE_POSITION_USD > const nodeCoords,
+                                       ArrayOfArraysView< localIndex const > const baseFacesToNodes,
+                                       arrayView2d< real64 const, nodes::REFERENCE_POSITION_USD > const baseNodeCoords,
+                                       arrayView1d< globalIndex const > const baseNodeLocalToGlobal,
+                                       arrayView1d< globalIndex const > const elementLocalToGlobal,
+                                       ArrayOfArraysView< localIndex const > const baseNodesToElements,
+                                       arrayView2d< localIndex const, cells::NODE_MAP_USD > const & baseElemsToNodes,
                                        arrayView1d< integer const > const elemGhostRank,
                                        arrayView2d< localIndex const, cells::NODE_MAP_USD > const & elemsToNodes,
                                        arrayView2d< localIndex const > const elemsToFaces,
                                        arrayView2d< real64 const > const & elemCenter,
-                                       arrayView2d< real64 const > const faceNormal,
-                                       arrayView2d< real64 const > const faceCenter,
                                        arrayView2d< real64 const > const sourceCoordinates,
                                        arrayView1d< localIndex > const sourceIsAccessible,
                                        arrayView2d< localIndex > const sourceNodeIds,
@@ -97,22 +102,24 @@ struct PreComputeSourcesAndReceivers
           real64 const coords[3] = { sourceCoordinates[isrc][0],
                                      sourceCoordinates[isrc][1],
                                      sourceCoordinates[isrc][2] };
-
           bool const sourceFound =
-            WaveSolverUtils::locateSourceElement( numFacesPerElem,
-                                                  center,
-                                                  faceNormal,
-                                                  faceCenter,
-                                                  elemsToFaces[k],
-                                                  coords );
+            computationalGeometry::isPointInsideConvexPolyhedronRobust( k,
+                                                                        baseNodeCoords,
+                                                                        elemsToFaces,
+                                                                        baseFacesToNodes,
+                                                                        baseNodesToElements,
+                                                                        baseNodeLocalToGlobal,
+                                                                        elementLocalToGlobal,
+                                                                        center,
+                                                                        coords );
           if( sourceFound )
           {
             real64 coordsOnRefElem[3]{};
 
 
             WaveSolverUtils::computeCoordinatesOnReferenceElement< FE_TYPE >( coords,
-                                                                              elemsToNodes[k],
-                                                                              nodeCoords,
+                                                                              baseElemsToNodes[k],
+                                                                              baseNodeCoords,
                                                                               coordsOnRefElem );
 
             sourceIsAccessible[isrc] = 1;
@@ -147,18 +154,21 @@ struct PreComputeSourcesAndReceivers
 
           real64 coordsOnRefElem[3]{};
           bool const receiverFound =
-            WaveSolverUtils::locateSourceElement( numFacesPerElem,
-                                                  center,
-                                                  faceNormal,
-                                                  faceCenter,
-                                                  elemsToFaces[k],
-                                                  coords );
+            computationalGeometry::isPointInsideConvexPolyhedronRobust( k,
+                                                                        baseNodeCoords,
+                                                                        elemsToFaces,
+                                                                        baseFacesToNodes,
+                                                                        baseNodesToElements,
+                                                                        baseNodeLocalToGlobal,
+                                                                        elementLocalToGlobal,
+                                                                        center,
+                                                                        coords );
 
           if( receiverFound && elemGhostRank[k] < 0 )
           {
             WaveSolverUtils::computeCoordinatesOnReferenceElement< FE_TYPE >( coords,
-                                                                              elemsToNodes[k],
-                                                                              nodeCoords,
+                                                                              baseElemsToNodes[k],
+                                                                              baseNodeCoords,
                                                                               coordsOnRefElem );
 
             receiverIsLocal[ircv] = 1;
@@ -186,14 +196,16 @@ struct PreComputeSourcesAndReceivers
    * @tparam EXEC_POLICY execution policy
    * @tparam FE_TYPE finite element type
    * @param[in] size the number of cells in the subRegion
-   * @param[in] numFacesPerElem number of faces per element
-   * @param[in] nodeCoords coordinates of the nodes
+   * @param[in] baseFacesToNodes face to node map of the base mesh
+   * @param[in] baseNodeCoords coordinates of the nodes of the base mesh
+   * @param[in] baseNodeLocalToGlobal local to global index map for nodes of the base mesh
+   * @param[in] elementLocalToGlobal local to global index map for elements (for the base or high order mesh)
+   * @param[in] baseNodesToElements local node to element map for the base mesh
+   * @param[in] baseElemsToNodes element to node map for the base mesh
    * @param[in] elemGhostRank rank of the ghost element
    * @param[in] elemsToNodes map from element to nodes
    * @param[in] elemsToFaces map from element to faces
    * @param[in] elemCenter coordinates of the element centers
-   * @param[in] faceNormal normal of each faces
-   * @param[in] faceCenter coordinates of the center of a face
    * @param[in] sourceCoordinates coordinates of the source terms
    * @param[out] sourceIsAccessible flag indicating whether the source is accessible or not
    * @param[out] sourceElem element where a source is located
@@ -214,14 +226,16 @@ struct PreComputeSourcesAndReceivers
   static void
   Compute1DSourceAndReceiverConstantsWithElementsAndRegionStorage( localIndex const size,
                                                                    localIndex const regionIndex,
-                                                                   localIndex const numFacesPerElem,
-                                                                   arrayView2d< WaveSolverBase::wsCoordType const, nodes::REFERENCE_POSITION_USD > const nodeCoords,
+                                                                   ArrayOfArraysView< localIndex const > const baseFacesToNodes,
+                                                                   arrayView2d< real64 const, nodes::REFERENCE_POSITION_USD > const baseNodeCoords,
+                                                                   arrayView1d< globalIndex const > const baseNodeLocalToGlobal,
+                                                                   arrayView1d< globalIndex const > const elementLocalToGlobal,
+                                                                   ArrayOfArraysView< localIndex const > const baseNodesToElements,
+                                                                   arrayView2d< localIndex const, cells::NODE_MAP_USD > const & baseElemsToNodes,
                                                                    arrayView1d< integer const > const elemGhostRank,
                                                                    arrayView2d< localIndex const, cells::NODE_MAP_USD > const & elemsToNodes,
                                                                    arrayView2d< localIndex const > const elemsToFaces,
                                                                    arrayView2d< real64 const > const & elemCenter,
-                                                                   arrayView2d< real64 const > const faceNormal,
-                                                                   arrayView2d< real64 const > const faceCenter,
                                                                    arrayView2d< real64 const > const sourceCoordinates,
                                                                    arrayView1d< localIndex > const sourceIsAccessible,
                                                                    arrayView1d< localIndex > const sourceElem,
@@ -260,20 +274,22 @@ struct PreComputeSourcesAndReceivers
                                      sourceCoordinates[isrc][2] };
 
           bool const sourceFound =
-            WaveSolverUtils::locateSourceElement( numFacesPerElem,
-                                                  center,
-                                                  faceNormal,
-                                                  faceCenter,
-                                                  elemsToFaces[k],
-                                                  coords );
-
+            computationalGeometry::isPointInsideConvexPolyhedronRobust( k,
+                                                                        baseNodeCoords,
+                                                                        elemsToFaces,
+                                                                        baseFacesToNodes,
+                                                                        baseNodesToElements,
+                                                                        baseNodeLocalToGlobal,
+                                                                        elementLocalToGlobal,
+                                                                        center,
+                                                                        coords );
           if( sourceFound )
           {
             real64 coordsOnRefElem[3]{};
 
             WaveSolverUtils::computeCoordinatesOnReferenceElement< FE_TYPE >( coords,
-                                                                              elemsToNodes[k],
-                                                                              nodeCoords,
+                                                                              baseElemsToNodes[k],
+                                                                              baseNodeCoords,
                                                                               coordsOnRefElem );
 
             sourceIsAccessible[isrc] = 1;
@@ -310,18 +326,21 @@ struct PreComputeSourcesAndReceivers
 
           real64 coordsOnRefElem[3]{};
           bool const receiverFound =
-            WaveSolverUtils::locateSourceElement( numFacesPerElem,
-                                                  center,
-                                                  faceNormal,
-                                                  faceCenter,
-                                                  elemsToFaces[k],
-                                                  coords );
+            computationalGeometry::isPointInsideConvexPolyhedronRobust( k,
+                                                                        baseNodeCoords,
+                                                                        elemsToFaces,
+                                                                        baseFacesToNodes,
+                                                                        baseNodesToElements,
+                                                                        baseNodeLocalToGlobal,
+                                                                        elementLocalToGlobal,
+                                                                        center,
+                                                                        coords );
 
           if( receiverFound && elemGhostRank[k] < 0 )
           {
             WaveSolverUtils::computeCoordinatesOnReferenceElement< FE_TYPE >( coords,
-                                                                              elemsToNodes[k],
-                                                                              nodeCoords,
+                                                                              baseElemsToNodes[k],
+                                                                              baseNodeCoords,
                                                                               coordsOnRefElem );
             receiverIsLocal[ircv] = 1;
             receiverElem[ircv] = k;
@@ -351,14 +370,16 @@ struct PreComputeSourcesAndReceivers
    * @tparam EXEC_POLICY execution policy
    * @tparam FE_TYPE finite element type
    * @param[in] size the number of cells in the subRegion
-   * @param[in] numFacesPerElem number of face on an element
-   * @param[in] nodeCoords coordinates of the nodes
+   * @param[in] baseFacesToNodes face to node map
+   * @param[in] baseNodeCoords coordinates of the nodes
+   * @param[in] baseNodeLocalToGlobal local to global index map for nodes
+   * @param[in] elementLocalToGlobal local to global index map for elements
+   * @param[in] baseNodesToElements node to element map for the base mesh
+   * @param[in] baseElemsToNodes element to node map for the base mesh
    * @param[in] elemGhostRank array containing the ghost rank
    * @param[in] elemsToNodes map from element to nodes
    * @param[in] elemsToFaces map from element to faces
    * @param[in] elemCenter coordinates of the element centers
-   * @param[in] faceNormal array containing the normal of all faces
-   * @param[in] faceCenter array containing the center of all faces
    * @param[in] sourceCoordinates coordinates of the source terms
    * @param[out] sourceIsAccessible flag indicating whether the source is accessible or not
    * @param[out] sourceNodeIds indices of the nodes of the element where the source is located
@@ -384,14 +405,16 @@ struct PreComputeSourcesAndReceivers
   template< typename EXEC_POLICY, typename FE_TYPE >
   static void
   Compute3DSourceAndReceiverConstantsWithDAS( localIndex const size,
-                                              localIndex const numFacesPerElem,
-                                              arrayView2d< WaveSolverBase::wsCoordType const, nodes::REFERENCE_POSITION_USD > const nodeCoords,
+                                              ArrayOfArraysView< localIndex const > const baseFacesToNodes,
+                                              arrayView2d< real64 const, nodes::REFERENCE_POSITION_USD > const baseNodeCoords,
+                                              arrayView1d< globalIndex const > const baseNodeLocalToGlobal,
+                                              arrayView1d< globalIndex const > const elementLocalToGlobal,
+                                              ArrayOfArraysView< localIndex const > const baseNodesToElements,
+                                              arrayView2d< localIndex const, cells::NODE_MAP_USD > const & baseElemsToNodes,
                                               arrayView1d< integer const > const elemGhostRank,
                                               arrayView2d< localIndex const, cells::NODE_MAP_USD > const & elemsToNodes,
                                               arrayView2d< localIndex const > const elemsToFaces,
                                               arrayView2d< real64 const > const & elemCenter,
-                                              arrayView2d< real64 const > const faceNormal,
-                                              arrayView2d< real64 const > const faceCenter,
                                               arrayView2d< real64 const > const sourceCoordinates,
                                               arrayView1d< localIndex > const sourceIsAccessible,
                                               arrayView2d< localIndex > const sourceNodeIds,
@@ -437,24 +460,27 @@ struct PreComputeSourcesAndReceivers
                                      sourceCoordinates[isrc][1],
                                      sourceCoordinates[isrc][2] };
 
-          real64 xLocal[numNodesPerElem][3];
+          real64 xLocal[8][3];
 
-          for( localIndex a=0; a< numNodesPerElem; ++a )
+          for( localIndex a = 0; a < 8; ++a )
           {
-            for( localIndex i=0; i<3; ++i )
+            for( localIndex i = 0; i < 3; ++i )
             {
-              xLocal[a][i] = nodeCoords( elemsToNodes( k, a ), i );
+              xLocal[a][i] = baseNodeCoords( baseElemsToNodes( k, a ), i );
             }
           }
 
 
           bool const sourceFound =
-            WaveSolverUtils::locateSourceElement( numFacesPerElem,
-                                                  center,
-                                                  faceNormal,
-                                                  faceCenter,
-                                                  elemsToFaces[k],
-                                                  coords );
+            computationalGeometry::isPointInsideConvexPolyhedronRobust( k,
+                                                                        baseNodeCoords,
+                                                                        elemsToFaces,
+                                                                        baseFacesToNodes,
+                                                                        baseNodesToElements,
+                                                                        baseNodeLocalToGlobal,
+                                                                        elementLocalToGlobal,
+                                                                        center,
+                                                                        coords );
 
           if( sourceFound )
           {
@@ -462,15 +488,15 @@ struct PreComputeSourcesAndReceivers
 
 
             WaveSolverUtils::computeCoordinatesOnReferenceElement< FE_TYPE >( coords,
-                                                                              elemsToNodes[k],
-                                                                              nodeCoords,
+                                                                              baseElemsToNodes[k],
+                                                                              baseNodeCoords,
                                                                               coordsOnRefElem );
             sourceIsAccessible[isrc] = 1;
 
             real64 N[numNodesPerElem];
             real64 gradN[numNodesPerElem][3];
             FE_TYPE::calcN( coordsOnRefElem, N );
-            FE_TYPE::calcGradN( coordsOnRefElem, xLocal, gradN );
+            FE_TYPE::calcGradNWithCorners( coordsOnRefElem, xLocal, gradN );
             R2SymTensor moment = sourceMoment;
             for( localIndex q=0; q< numNodesPerElem; ++q )
             {
@@ -555,33 +581,36 @@ struct PreComputeSourcesAndReceivers
                                      receiverCenter[ 1 ] + receiverVector[ 1 ] * receiverLength * samplePointLocations[ iSample ],
                                      receiverCenter[ 2 ] + receiverVector[ 2 ] * receiverLength * samplePointLocations[ iSample ] };
           bool const sampleFound =
-            WaveSolverUtils::locateSourceElement( numFacesPerElem,
-                                                  center,
-                                                  faceNormal,
-                                                  faceCenter,
-                                                  elemsToFaces[k],
-                                                  coords );
+            computationalGeometry::isPointInsideConvexPolyhedronRobust( k,
+                                                                        baseNodeCoords,
+                                                                        elemsToFaces,
+                                                                        baseFacesToNodes,
+                                                                        baseNodesToElements,
+                                                                        baseNodeLocalToGlobal,
+                                                                        elementLocalToGlobal,
+                                                                        center,
+                                                                        coords );
           if( sampleFound && elemGhostRank[k] < 0 )
           {
             real64 coordsOnRefElem[3]{};
-            real64 xLocal[numNodesPerElem][3];
+            real64 xLocal[8][3];
 
-            for( localIndex a=0; a< numNodesPerElem; ++a )
+            for( localIndex a = 0; a < 8; ++a )
             {
-              for( localIndex i=0; i<3; ++i )
+              for( localIndex i=0; i < 3; ++i )
               {
-                xLocal[a][i] = nodeCoords( elemsToNodes( k, a ), i );
+                xLocal[a][i] = baseNodeCoords( baseElemsToNodes( k, a ), i );
               }
             }
 
             WaveSolverUtils::computeCoordinatesOnReferenceElement< FE_TYPE >( coords,
-                                                                              elemsToNodes[k],
-                                                                              nodeCoords,
+                                                                              baseElemsToNodes[k],
+                                                                              baseNodeCoords,
                                                                               coordsOnRefElem );
             real64 N[numNodesPerElem];
             real64 gradN[numNodesPerElem][3];
             FE_TYPE::calcN( coordsOnRefElem, N );
-            FE_TYPE::calcGradN( coordsOnRefElem, xLocal, gradN );
+            FE_TYPE::calcGradNWithCorners( coordsOnRefElem, xLocal, gradN );
             for( localIndex a = 0; a < numNodesPerElem; ++a )
             {
               receiverNodeIds[ircv][iSample * numNodesPerElem + a] = elemsToNodes( k,
@@ -602,12 +631,15 @@ struct PreComputeSourcesAndReceivers
         // determine if the current rank is the owner of this receiver
         real64 const coords[3] = { receiverCenter[ 0 ], receiverCenter[ 1 ], receiverCenter[ 2 ] };
         bool const receiverFound =
-          WaveSolverUtils::locateSourceElement( numFacesPerElem,
-                                                center,
-                                                faceNormal,
-                                                faceCenter,
-                                                elemsToFaces[k],
-                                                coords );
+          computationalGeometry::isPointInsideConvexPolyhedronRobust( k,
+                                                                      baseNodeCoords,
+                                                                      elemsToFaces,
+                                                                      baseFacesToNodes,
+                                                                      baseNodesToElements,
+                                                                      baseNodeLocalToGlobal,
+                                                                      elementLocalToGlobal,
+                                                                      center,
+                                                                      coords );
         if( receiverFound && elemGhostRank[k] < 0 )
         {
           receiverIsLocal[ ircv ] = 1;

@@ -1,0 +1,210 @@
+<Problem>
+  <NumericalMethods>
+    <FiniteVolume>
+      <TwoPointFluxApproximation
+        name="TPFA"
+      />
+    </FiniteVolume>
+  </NumericalMethods>
+
+  <ElementRegions>
+    <CellElementRegion
+      name="casing"
+      cellBlocks="{ casing }"
+      materialList="{ }"/>
+    <CellElementRegion
+      name="cement"
+      cellBlocks="{ cement }"
+      materialList="{ fluid, cement, relperm }"/>
+    <CellElementRegion
+      name="rock"
+      cellBlocks="{ rock }"
+      materialList="{ fluid, shale, relperm }"/>
+  </ElementRegions>
+
+  <Constitutive>  
+
+    <NullModel
+      name="nullSolid"/>
+
+    <CompressibleSolidConstantPermeability
+      name="cement"
+      solidModelName="nullSolid"
+      porosityModelName="cementPorosity"
+      permeabilityModelName="cementPerm"/>
+
+    <PressurePorosity
+      name="cementPorosity"
+      defaultReferencePorosity="0.4"
+      referencePressure="0"
+      compressibility="5e-10"/>
+
+    <ConstantPermeability
+      name="cementPerm"
+      permeabilityComponents="{ 1e-15, 1e-15, 1e-15}"/>       
+
+   <CompressibleSolidConstantPermeability
+      name="shale"
+      solidModelName="nullSolid"
+      porosityModelName="shalePorosity"
+      permeabilityModelName="shalePerm"/>  
+
+    <PressurePorosity
+      name="shalePorosity"
+      defaultReferencePorosity="0.2"
+      referencePressure="0"
+      compressibility="5.0e-12"/>
+
+    <ConstantPermeability
+      name="shalePerm"
+      permeabilityComponents="{ 1e-17, 1e-17, 1e-17}"/>   
+
+    <CO2BrinePhillipsFluid
+      name="fluid"
+      phaseNames="{ gas, water }"
+      componentNames="{ co2, water }"
+      componentMolarWeight="{ 44e-3, 18e-3 }"
+      phasePVTParaFiles="{ pvtgas.txt, pvtliquid.txt }"
+      flashModelParaFile="co2flash.txt"/>
+
+    <BrooksCoreyRelativePermeability
+      name="relperm"
+      phaseNames="{ gas, water }"
+      phaseMinVolumeFraction="{ 0.05, 0.30 }"
+      phaseRelPermExponent="{ 2.0, 2.0 }"
+      phaseRelPermMaxValue="{ 1, 1 }"/>
+    
+  </Constitutive>
+
+  <FieldSpecifications>
+    
+    <!-- Cement -->
+
+    <FieldSpecification
+      name="initialPressureCement"
+      initialCondition="1"
+      setNames="{ all }"
+      objectPath="ElementRegions/cement"
+      fieldName="pressure"
+      scale="2e7"/>
+    <FieldSpecification
+      name="initialCompositionCement_co2"
+      initialCondition="1"
+      setNames="{ all }"
+      objectPath="ElementRegions/cement"
+      fieldName="globalCompFraction"
+      component="0"
+      scale="0.0001"/>
+    <FieldSpecification
+      name="initialCompositionCement_water"
+      initialCondition="1"
+      setNames="{ all }"
+      objectPath="ElementRegions/cement"
+      fieldName="globalCompFraction"
+      component="1"
+      scale="0.9999"/>
+    
+    <!-- Rock -->
+    
+    <FieldSpecification
+      name="initialPressureRock"
+      initialCondition="1"
+      setNames="{ all }"
+      objectPath="ElementRegions/rock"
+      fieldName="pressure"
+      scale="2e7"/>
+    <FieldSpecification
+      name="initialCompositionRock_co2"
+      initialCondition="1"
+      setNames="{ all }"
+      objectPath="ElementRegions/rock"
+      fieldName="globalCompFraction"
+      component="0"
+      scale="0.0001"/>
+    <FieldSpecification
+      name="initialCompositionRock_water"
+      initialCondition="1"
+      setNames="{ all }"
+      objectPath="ElementRegions/rock"
+      fieldName="globalCompFraction"
+      component="1"
+      scale="0.9999"/>
+    
+    <!-- Source and BCs  -->
+
+    <FieldSpecification
+      name="topPressure"
+      objectPath="faceManager"
+      fieldName="pressure"
+      scale="2e7"
+      setNames="{ output }"/>
+    <FieldSpecification
+      name="topTemperature"
+      objectPath="faceManager"
+      fieldName="temperature"
+      scale="368.15"
+      setNames="{ output }"/>
+    <FieldSpecification
+      name="topComposition_co2"
+      objectPath="faceManager"
+      fieldName="globalCompFraction"
+      component="0"
+      scale="0.0001"
+      setNames="{ output }"/>
+    <FieldSpecification
+      name="topComposition_water"
+      objectPath="faceManager"
+      fieldName="globalCompFraction"
+      component="1"
+      scale="0.9999"
+      setNames="{ output }"/>
+
+    <FieldSpecification
+      name="bottomPressure"
+      objectPath="faceManager"
+      fieldName="pressure"
+      scale="1"
+      functionName="timeFunction"
+      setNames="{ sourceLeak }"/>
+    <FieldSpecification
+      name="bottomTemperature"
+      objectPath="faceManager"
+      fieldName="temperature"
+      scale="368.15"
+      setNames="{ sourceLeak }"/>
+    <FieldSpecification
+      name="bottomComposition_co2"
+      objectPath="faceManager"
+      fieldName="globalCompFraction"
+      component="0"
+      scale="0.99"
+      setNames="{ sourceLeak }"/>
+    <FieldSpecification
+      name="bottomComposition_water"
+      objectPath="faceManager"
+      fieldName="globalCompFraction"
+      component="1"
+      scale="0.01"
+      setNames="{ sourceLeak }"/>
+    
+  </FieldSpecifications>
+
+  <Tasks>
+
+    <CompositionalMultiphaseStatistics
+      name="compflowStatistics"
+      flowSolverName="compositionalMultiphaseFlow"
+      logLevel="1"
+      computeCFLNumbers="1"
+      computeRegionStatistics="0"/>
+    
+  </Tasks>
+  
+  <Functions>
+    <TableFunction
+      name="timeFunction"
+      inputVarNames="{ time }"
+      coordinates="{ 0.0, 946080000 }"
+      values="{ 2.00981e7, 2.02e7 }"/>
+  </Functions>
+</Problem>

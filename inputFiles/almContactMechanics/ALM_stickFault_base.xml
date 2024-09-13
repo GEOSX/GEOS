@@ -77,7 +77,7 @@
     <SurfaceElementRegion
       name="Fracture"
       faceBlock="faceElementSubRegion"
-      defaultAperture="0.0"
+      defaultAperture="1e-6"
       materialList="{ fractureMaterial, rock }"/>
   </ElementRegions>
 
@@ -92,8 +92,11 @@
     <Coulomb
       name="fractureMaterial"
       cohesion="0.0"
-      frictionCoefficient="0.1"
-      apertureTableName="apertureTable"/>
+      frictionCoefficient="0.1"/>
+
+    <HydraulicApertureTable
+      name="hApertureModel"
+      apertureTableName="apertureTable"/>  
   </Constitutive>
 
   <Functions>

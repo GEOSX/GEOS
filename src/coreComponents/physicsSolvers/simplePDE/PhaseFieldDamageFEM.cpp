@@ -2,10 +2,11 @@
  * ------------------------------------------------------------------------------------------------------------
  * SPDX-License-Identifier: LGPL-2.1-only
  *
- * Copyright (c) 2018-2020 Lawrence Livermore National Security LLC
- * Copyright (c) 2018-2020 The Board of Trustees of the Leland Stanford Junior University
- * Copyright (c) 2018-2020 TotalEnergies
- * Copyright (c) 2019-     GEOSX Contributors
+ * Copyright (c) 2016-2024 Lawrence Livermore National Security LLC
+ * Copyright (c) 2018-2024 Total, S.A
+ * Copyright (c) 2018-2024 The Board of Trustees of the Leland Stanford Junior University
+ * Copyright (c) 2023-2024 Chevron
+ * Copyright (c) 2019-     GEOS/GEOSX Contributors
  * All rights reserved
  *
  * See top level LICENSE, COPYRIGHT, CONTRIBUTORS, NOTICE, and ACKNOWLEDGEMENTS files for details.
@@ -519,8 +520,8 @@ PhaseFieldDamageFEM::calculateResidualNorm( real64 const & GEOS_UNUSED_PARAM( ti
   // globalResidualNorm[1]: max of max force of each rank. Basically max force globally
   real64 globalResidualNorm[2] = {0, 0};
 
-  const int rank = MpiWrapper::commRank( MPI_COMM_GEOSX );
-  const int size = MpiWrapper::commSize( MPI_COMM_GEOSX );
+  const int rank = MpiWrapper::commRank( MPI_COMM_GEOS );
+  const int size = MpiWrapper::commSize( MPI_COMM_GEOS );
   array1d< real64 > globalValues( size * 2 );
 
   // Everything is done on rank 0
@@ -529,7 +530,7 @@ PhaseFieldDamageFEM::calculateResidualNorm( real64 const & GEOS_UNUSED_PARAM( ti
                       globalValues.data(),
                       2,
                       0,
-                      MPI_COMM_GEOSX );
+                      MPI_COMM_GEOS );
 
   if( rank==0 )
   {
@@ -541,7 +542,7 @@ PhaseFieldDamageFEM::calculateResidualNorm( real64 const & GEOS_UNUSED_PARAM( ti
     }
   }
 
-  MpiWrapper::bcast( globalResidualNorm, 2, 0, MPI_COMM_GEOSX );
+  MpiWrapper::bcast( globalResidualNorm, 2, 0, MPI_COMM_GEOS );
 
 
   const real64 residual = sqrt( globalResidualNorm[0] ) / ( globalResidualNorm[1] );

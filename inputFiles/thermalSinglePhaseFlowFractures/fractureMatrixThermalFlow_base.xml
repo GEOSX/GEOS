@@ -27,9 +27,9 @@
       specificHeatCapacity="1.672e2"
       referenceInternalEnergy="0.001"/>
 
-    <SinglePhaseConstantThermalConductivity
+    <SinglePhaseThermalConductivity
       name="thermalCond"
-      thermalConductivityComponents="{ 1, 1, 1 }"/>
+      defaultThermalConductivityComponents="{ 1, 1, 1 }"/>
 
     <CompressibleSolidParallelPlatesPermeability
       name="fractureFilling"

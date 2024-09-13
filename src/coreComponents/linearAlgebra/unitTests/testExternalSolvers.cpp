@@ -2,11 +2,12 @@
  * ------------------------------------------------------------------------------------------------------------
  * SPDX-License-Identifier: LGPL-2.1-only
  *
- * Copyright (c) 2018-2019 Lawrence Livermore National Security LLC
- * Copyright (c) 2018-2019 The Board of Trustees of the Leland Stanford Junior University
- * Copyright (c) 2018-2019 TotalEnergies
- * Copyright (c) 2019-     GEOSX Contributors
- * All right reserved
+ * Copyright (c) 2016-2024 Lawrence Livermore National Security LLC
+ * Copyright (c) 2018-2024 Total, S.A
+ * Copyright (c) 2018-2024 The Board of Trustees of the Leland Stanford Junior University
+ * Copyright (c) 2023-2024 Chevron
+ * Copyright (c) 2019-     GEOS/GEOSX Contributors
+ * All rights reserved
  *
  * See top level LICENSE, COPYRIGHT, CONTRIBUTORS, NOTICE, and ACKNOWLEDGEMENTS files for details.
  * ------------------------------------------------------------------------------------------------------------
@@ -150,7 +151,7 @@ protected:
   void SetUp() override
   {
     globalIndex constexpr n = 100;
-    geos::testing::compute2DLaplaceOperator( MPI_COMM_GEOSX, n, this->matrix );
+    geos::testing::compute2DLaplaceOperator( MPI_COMM_GEOS, n, this->matrix );
 
     // Condition number for the Laplacian matrix estimate: 4 * n^2 / pi^2
     this->cond_est = 4.0 * n * n / std::pow( M_PI, 2 );
@@ -203,15 +204,15 @@ REGISTER_TYPED_TEST_SUITE_P( SolverTestLaplace2D,
                              CG_AMG );
 #endif
 
-#ifdef GEOSX_USE_TRILINOS
+#ifdef GEOS_USE_TRILINOS
 INSTANTIATE_TYPED_TEST_SUITE_P( Trilinos, SolverTestLaplace2D, TrilinosInterface, );
 #endif
 
-#ifdef GEOSX_USE_HYPRE
+#ifdef GEOS_USE_HYPRE
 INSTANTIATE_TYPED_TEST_SUITE_P( Hypre, SolverTestLaplace2D, HypreInterface, );
 #endif
 
-#ifdef GEOSX_USE_PETSC
+#ifdef GEOS_USE_PETSC
 INSTANTIATE_TYPED_TEST_SUITE_P( Petsc, SolverTestLaplace2D, PetscInterface, );
 #endif
 
@@ -231,7 +232,7 @@ protected:
   void SetUp() override
   {
     globalIndex constexpr n = 100;
-    geos::testing::compute2DElasticityOperator( MPI_COMM_GEOSX, 1.0, 1.0, n, n, 10000., 0.2, this->matrix );
+    geos::testing::compute2DElasticityOperator( MPI_COMM_GEOS, 1.0, 1.0, n, n, 10000., 0.2, this->matrix );
     this->cond_est = 1e4; // not a true condition number estimate, but enough to pass tests
   }
 };
@@ -269,15 +270,15 @@ REGISTER_TYPED_TEST_SUITE_P( SolverTestElasticity2D,
                              GMRES_AMG );
 #endif
 
-#ifdef GEOSX_USE_TRILINOS
+#ifdef GEOS_USE_TRILINOS
 INSTANTIATE_TYPED_TEST_SUITE_P( Trilinos, SolverTestElasticity2D, TrilinosInterface, );
 #endif
 
-#ifdef GEOSX_USE_HYPRE
+#ifdef GEOS_USE_HYPRE
 INSTANTIATE_TYPED_TEST_SUITE_P( Hypre, SolverTestElasticity2D, HypreInterface, );
 #endif
 
-#ifdef GEOSX_USE_PETSC
+#ifdef GEOS_USE_PETSC
 INSTANTIATE_TYPED_TEST_SUITE_P( Petsc, SolverTestElasticity2D, PetscInterface, );
 #endif
 

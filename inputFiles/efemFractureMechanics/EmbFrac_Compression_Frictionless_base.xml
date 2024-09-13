@@ -9,7 +9,8 @@
       initialDt="10"
       timeIntegrationOption="QuasiStatic"
       discretization="FE1"
-      logLevel="1">
+      logLevel="1"
+      contactPenaltyStiffness="1.0e8">
       <NonlinearSolverParameters
         newtonTol="1.0e-6"
         newtonMaxIter="2"
@@ -48,7 +49,7 @@
       name="Fracture"
       faceBlock="embeddedSurfaceSubRegion"
       subRegionType="embeddedElement"
-      materialList="{ fractureContact }"
+      materialList="{ frictionLaw }"
       defaultAperture="1e-3"/>
   </ElementRegions>
 
@@ -60,17 +61,8 @@
       defaultShearModulus="1.0e10"/>
 
     <FrictionlessContact
-      name="fractureContact"
-      penaltyStiffness="1.0e8"
-      apertureTableName="apertureTable"/>
+      name="frictionLaw"/>
   </Constitutive>
-
-  <Functions>
-    <TableFunction
-      name="apertureTable"
-      coordinates="{ -1.0e-3, 0.0 }"
-      values="{ 0.002e-3, 0.02e-3 }"/>
-  </Functions>
 
   <FieldSpecifications>
     <Traction

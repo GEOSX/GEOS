@@ -13,7 +13,7 @@
       name="mesh"
       file="../../../../../GEOSDATA/DataSets/Egg/egg.vtu"
       fieldsToImport="{ PERM }"
-      fieldNamesInGEOSX="{ rockPerm_permeability }">
+      fieldNamesInGEOS="{ rockPerm_permeability }">
 
       <InternalWell
         name="wellProducer1"

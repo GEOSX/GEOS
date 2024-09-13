@@ -149,14 +149,17 @@ jobs:
           - name: Ubuntu (20.04, gcc 9.4.0, open-mpi 4.0.3)
             CMAKE_BUILD_TYPE: Release
             DOCKER_REPOSITORY: geosx/ubuntu20.04-gcc9
+            BUILD_SHARED_LIBS: ON
 
           - name: Ubuntu debug (20.04, gcc 10.5.0, open-mpi 4.0.3) - github codespaces
             CMAKE_BUILD_TYPE: Debug
             DOCKER_REPOSITORY: geosx/ubuntu20.04-gcc10
+            BUILD_SHARED_LIBS: ON
 
           - name: Ubuntu (20.04, gcc 10.5.0, open-mpi 4.0.3) - github codespaces
             CMAKE_BUILD_TYPE: Release
             DOCKER_REPOSITORY: geosx/ubuntu20.04-gcc10
+            BUILD_SHARED_LIBS: ON
 
           - name: Ubuntu (22.04, gcc 11.4.0, open-mpi 4.1.2)
             CMAKE_BUILD_TYPE: Release
@@ -164,36 +167,31 @@ jobs:
             ENABLE_HYPRE: ON
             ENABLE_TRILINOS: OFF
             GCP_BUCKET: geosx/ubuntu22.04-gcc11
+            BUILD_SHARED_LIBS: ON
 
           - name: Ubuntu (22.04, gcc 12.3.0, open-mpi 4.1.2)
             CMAKE_BUILD_TYPE: Release
             DOCKER_REPOSITORY: geosx/ubuntu22.04-gcc12
             ENABLE_HYPRE: ON
             ENABLE_TRILINOS: OFF
+            BUILD_SHARED_LIBS: ON
 
           - name: Ubuntu (22.04, clang 15.0.7, open-mpi 4.1.2)
             CMAKE_BUILD_TYPE: Release
             DOCKER_REPOSITORY: geosx/ubuntu22.04-clang15
             ENABLE_HYPRE: ON
             ENABLE_TRILINOS: OFF
-
-          - name: Sherlock CPU (centos 7.9.2009, gcc 10.1.0, open-mpi 4.1.2, openblas 0.3.10)
-            CMAKE_BUILD_TYPE: Release
-            DOCKER_REPOSITORY: geosx/sherlock-gcc10.1.0-openmpi4.1.2-openblas0.3.10-zlib1.2.11
-            ENABLE_HYPRE: ON
-            ENABLE_TRILINOS: OFF
-            GCP_BUCKET: geosx/Sherlock-CPU
-            HOST_CONFIG: host-configs/Stanford/sherlock-gcc10-ompi4.1.2-openblas0.3.10.cmake
+            BUILD_SHARED_LIBS: ON
 
     uses: ./.github/workflows/build_and_test.yml
     with:
+      BUILD_SHARED_LIBS: ${{ matrix.BUILD_SHARED_LIBS }}
       CMAKE_BUILD_TYPE: ${{ matrix.CMAKE_BUILD_TYPE }}
       DOCKER_IMAGE_TAG: ${{ needs.is_not_draft_pull_request.outputs.DOCKER_IMAGE_TAG }}
       DOCKER_REPOSITORY: ${{ matrix.DOCKER_REPOSITORY }}
       ENABLE_HYPRE: ${{ matrix.ENABLE_HYPRE }}
       ENABLE_TRILINOS: ${{ matrix.ENABLE_TRILINOS }}
       GCP_BUCKET: ${{ matrix.GCP_BUCKET }}
-      HOST_CONFIG: ${{ matrix.HOST_CONFIG }}
       RUNS_ON: ubuntu-22.04
     secrets: inherit
 
@@ -323,20 +321,6 @@ jobs:
           #   DOCKER_CERTS_UPDATE_COMMAND: "update-ca-trust"  
 
           # Below this line, jobs that deploy to Google Cloud.
-          - name: Sherlock GPU (centos 7.9.2009, gcc 10.1.0, open-mpi 4.1.2, openblas 0.3.10, cuda 11.7.1,)
-            BUILD_AND_TEST_CLI_ARGS: "--no-run-unit-tests --no-install-schema"
-            CMAKE_BUILD_TYPE: Release
-            DOCKER_REPOSITORY: geosx/sherlock-gcc10.1.0-openmpi4.1.2-cuda11.7.1-openblas0.3.10-zlib1.2.11
-            ENABLE_HYPRE_DEVICE: CUDA
-            ENABLE_HYPRE: ON
-            ENABLE_TRILINOS: OFF
-            GCP_BUCKET: geosx/Sherlock-GPU
-            HOST_CONFIG: host-configs/Stanford/sherlock-gcc10-ompi4.1.2-openblas0.3.10-cuda11.7.1-sm70.cmake
-            RUNS_ON: streak2
-            NPROC: 8
-            DOCKER_RUN_ARGS: "--cpus=8 --memory=128g --runtime=nvidia -v /etc/pki/ca-trust/source/anchors/:/etc/pki/ca-trust/source/anchors/llnl:ro"
-            DOCKER_CERTS_DIR: "/etc/pki/ca-trust/source/anchors"
-            DOCKER_CERTS_UPDATE_COMMAND: "update-ca-trust"
 
     uses: ./.github/workflows/build_and_test.yml
     with:
@@ -350,8 +334,6 @@ jobs:
       ENABLE_HYPRE_DEVICE: ${{ matrix.ENABLE_HYPRE_DEVICE }}
       ENABLE_HYPRE: ${{ matrix.ENABLE_HYPRE }}
       ENABLE_TRILINOS: ${{ matrix.ENABLE_TRILINOS }}
-      GCP_BUCKET: ${{ matrix.GCP_BUCKET }}
-      HOST_CONFIG: ${{ matrix.HOST_CONFIG }}
       NPROC: ${{ matrix.NPROC }}
       RUNS_ON: ${{ matrix.RUNS_ON }}
       REQUIRED_LABEL: "ci: run CUDA builds"

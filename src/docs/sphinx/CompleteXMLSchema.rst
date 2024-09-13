@@ -150,6 +150,13 @@ Element: CellElementRegion
 .. include:: ../../coreComponents/schema/docs/CellElementRegion.rst
 
 
+.. _XML_CellToCellDataCollection:
+
+Element: CellToCellDataCollection
+=================================
+.. include:: ../../coreComponents/schema/docs/CellToCellDataCollection.rst
+
+
 .. _XML_CeramicDamage:
 
 Element: CeramicDamage
@@ -554,6 +561,13 @@ Element: HaltEvent
 Element: HybridMimeticDiscretization
 ====================================
 .. include:: ../../coreComponents/schema/docs/HybridMimeticDiscretization.rst
+
+
+.. _XML_HydraulicApertureTable:
+
+Element: HydraulicApertureTable
+===============================
+.. include:: ../../coreComponents/schema/docs/HydraulicApertureTable.rst
 
 
 .. _XML_Hydrofracture:
@@ -1046,13 +1060,6 @@ Element: Silo
 .. include:: ../../coreComponents/schema/docs/Silo.rst
 
 
-.. _XML_SinglePhaseConstantThermalConductivity:
-
-Element: SinglePhaseConstantThermalConductivity
-===============================================
-.. include:: ../../coreComponents/schema/docs/SinglePhaseConstantThermalConductivity.rst
-
-
 .. _XML_SinglePhaseFVM:
 
 Element: SinglePhaseFVM
@@ -1156,6 +1163,13 @@ Element: SinglePhaseReservoirPoromechanicsInitialization
 Element: SinglePhaseStatistics
 ==============================
 .. include:: ../../coreComponents/schema/docs/SinglePhaseStatistics.rst
+
+
+.. _XML_SinglePhaseThermalConductivity:
+
+Element: SinglePhaseThermalConductivity
+=======================================
+.. include:: ../../coreComponents/schema/docs/SinglePhaseThermalConductivity.rst
 
 
 .. _XML_SinglePhaseWell:
@@ -1610,6 +1624,13 @@ Datastructure: CellElementRegion
 .. include:: ../../coreComponents/schema/docs/CellElementRegion_other.rst
 
 
+.. _DATASTRUCTURE_CellToCellDataCollection:
+
+Datastructure: CellToCellDataCollection
+=======================================
+.. include:: ../../coreComponents/schema/docs/CellToCellDataCollection_other.rst
+
+
 .. _DATASTRUCTURE_CeramicDamage:
 
 Datastructure: CeramicDamage
@@ -2021,6 +2042,13 @@ Datastructure: HaltEvent
 Datastructure: HybridMimeticDiscretization
 ==========================================
 .. include:: ../../coreComponents/schema/docs/HybridMimeticDiscretization_other.rst
+
+
+.. _DATASTRUCTURE_HydraulicApertureTable:
+
+Datastructure: HydraulicApertureTable
+=====================================
+.. include:: ../../coreComponents/schema/docs/HydraulicApertureTable_other.rst
 
 
 .. _DATASTRUCTURE_Hydrofracture:
@@ -2527,13 +2555,6 @@ Datastructure: Silo
 .. include:: ../../coreComponents/schema/docs/Silo_other.rst
 
 
-.. _DATASTRUCTURE_SinglePhaseConstantThermalConductivity:
-
-Datastructure: SinglePhaseConstantThermalConductivity
-=====================================================
-.. include:: ../../coreComponents/schema/docs/SinglePhaseConstantThermalConductivity_other.rst
-
-
 .. _DATASTRUCTURE_SinglePhaseFVM:
 
 Datastructure: SinglePhaseFVM
@@ -2637,6 +2658,13 @@ Datastructure: SinglePhaseReservoirPoromechanicsInitialization
 Datastructure: SinglePhaseStatistics
 ====================================
 .. include:: ../../coreComponents/schema/docs/SinglePhaseStatistics_other.rst
+
+
+.. _DATASTRUCTURE_SinglePhaseThermalConductivity:
+
+Datastructure: SinglePhaseThermalConductivity
+=============================================
+.. include:: ../../coreComponents/schema/docs/SinglePhaseThermalConductivity_other.rst
 
 
 .. _DATASTRUCTURE_SinglePhaseWell:

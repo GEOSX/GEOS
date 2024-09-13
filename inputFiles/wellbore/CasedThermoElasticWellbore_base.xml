@@ -142,17 +142,17 @@
     <!-- SPHINX_PermeabilityPropertiesEnd -->
 
     <!-- SPHINX_ThermalProperties -->
-    <SinglePhaseConstantThermalConductivity
+    <SinglePhaseThermalConductivity
       name="casingThermalCond"
-      thermalConductivityComponents="{ 15, 15, 15 }"/>
+      defaultThermalConductivityComponents="{ 15, 15, 15 }"/>
 
-    <SinglePhaseConstantThermalConductivity
+    <SinglePhaseThermalConductivity
       name="cementThermalCond"
-      thermalConductivityComponents="{ 1.0, 1.0, 1.0 }"/>
+      defaultThermalConductivityComponents="{ 1.0, 1.0, 1.0 }"/>
 
-    <SinglePhaseConstantThermalConductivity
+    <SinglePhaseThermalConductivity
       name="rockThermalCond"
-      thermalConductivityComponents="{ 1.66, 1.66, 1.66 }"/>
+      defaultThermalConductivityComponents="{ 1.66, 1.66, 1.66 }"/>
     <!-- SPHINX_ThermalPropertiesEnd -->
 
     <!-- SPHINX_FluidProperties -->

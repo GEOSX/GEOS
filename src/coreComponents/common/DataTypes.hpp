@@ -2,10 +2,11 @@
  * ------------------------------------------------------------------------------------------------------------
  * SPDX-License-Identifier: LGPL-2.1-only
  *
- * Copyright (c) 2018-2020 Lawrence Livermore National Security LLC
- * Copyright (c) 2018-2020 The Board of Trustees of the Leland Stanford Junior University
- * Copyright (c) 2018-2020 TotalEnergies
- * Copyright (c) 2019-     GEOSX Contributors
+ * Copyright (c) 2016-2024 Lawrence Livermore National Security LLC
+ * Copyright (c) 2018-2024 Total, S.A
+ * Copyright (c) 2018-2024 The Board of Trustees of the Leland Stanford Junior University
+ * Copyright (c) 2023-2024 Chevron
+ * Copyright (c) 2019-     GEOS/GEOSX Contributors
  * All rights reserved
  *
  * See top level LICENSE, COPYRIGHT, CONTRIBUTORS, NOTICE, and ACKNOWLEDGEMENTS files for details.
@@ -16,7 +17,7 @@
  * @file DataTypes.hpp
  *
  * This file contains various aliases and functions that provide operations regarding the
- * use of the data types.
+ * use of the static types.
  */
 
 #ifndef GEOS_COMMON_DATATYPES_HPP
@@ -28,7 +29,6 @@
 #include "BufferAllocator.hpp"
 #include "DataLayouts.hpp"
 #include "Tensor.hpp"
-#include "Logger.hpp"
 #include "LvArray/src/Macros.hpp"
 #include "LvArray/src/Array.hpp"
 #include "LvArray/src/ArrayOfArrays.hpp"
@@ -45,7 +45,7 @@
 #include <camp/camp.hpp>
 
 // System includes
-#ifdef GEOSX_USE_MPI
+#ifdef GEOS_USE_MPI
   #include <mpi.h>
 #endif
 
@@ -65,51 +65,10 @@
 #include <vector>
 
 /*
- * top level geosx namespace contains all code that is specific to GEOSX
+ * top level geos namespace contains all code that is specific to GEOSX
  */
 namespace geos
 {
-
-/**
- * @brief Perform a type cast of base to derived pointer.
- * @tparam NEW_TYPE      derived pointer type
- * @tparam EXISTING_TYPE base type
- * @param val            base pointer to cast
- * @return               pointer cast to derived type or @p nullptr
- */
-template< typename NEW_TYPE, typename EXISTING_TYPE >
-NEW_TYPE dynamicCast( EXISTING_TYPE * const val )
-{
-  static_assert( std::is_pointer< NEW_TYPE >::value, "NEW_TYPE must be a pointer." );
-  return dynamic_cast< NEW_TYPE >( val );
-}
-
-/**
- * @brief Perform a type cast of base to derived reference.
- * @tparam NEW_TYPE      derived reference type
- * @tparam EXISTING_TYPE base type
- * @param val            base reference to cast
- * @return               reference cast to derived type or @p nullptr
- */
-template< typename NEW_TYPE, typename EXISTING_TYPE >
-NEW_TYPE dynamicCast( EXISTING_TYPE & val )
-{
-  static_assert( std::is_reference< NEW_TYPE >::value, "NEW_TYPE must be a reference." );
-
-  using POINTER_TO_NEW_TYPE = std::remove_reference_t< NEW_TYPE > *;
-  POINTER_TO_NEW_TYPE ptr = dynamicCast< POINTER_TO_NEW_TYPE >( &val );
-  GEOS_ERROR_IF( ptr == nullptr, "Cast from " << LvArray::system::demangleType( val ) << " to " <<
-                 LvArray::system::demangleType< NEW_TYPE >() << " failed." );
-
-  return *ptr;
-}
-
-/// Global MPI communicator used by GEOSX.
-#ifdef GEOSX_USE_MPI
-extern MPI_Comm MPI_COMM_GEOSX;
-#else
-extern int MPI_COMM_GEOSX;
-#endif
 
 /**
  * @name Basic data types used in GEOSX.
@@ -123,10 +82,10 @@ using size_t      = std::size_t;
 using integer     = std::int32_t;
 
 /// Local index type (for indexing objects within an MPI partition).
-using localIndex  = GEOSX_LOCALINDEX_TYPE;
+using localIndex  = GEOS_LOCALINDEX_TYPE;
 
 /// Global index type (for indexing objects across MPI partitions).
-using globalIndex = GEOSX_GLOBALINDEX_TYPE;
+using globalIndex = GEOS_GLOBALINDEX_TYPE;
 
 /// String type.
 using string      = std::string;
@@ -149,7 +108,7 @@ using real64 = double;
 /// Type stored in communication buffers.
 using buffer_unit_type = signed char;
 
-#ifdef GEOSX_USE_CHAI
+#ifdef GEOS_USE_CHAI
 /// Type of storage for communication buffers.
 using buffer_type = std::vector< buffer_unit_type, BufferAllocator< buffer_unit_type > >;
 #else
