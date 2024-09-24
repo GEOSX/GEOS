@@ -40,5 +40,5 @@ set(LAPACK_LIBRARIES "${OPENBLAS_ROOT}/lib/libopenblas.so" CACHE STRING "")
 set(ENABLE_VALGRIND OFF CACHE BOOL "")
 set(ENABLE_CALIPER ON CACHE BOOL "")
 
-set(GEOS_TPL_DIR "$ENV{GEOSX_TPL_DIR}" CACHE PATH "" FORCE)
+set(GEOS_TPL_DIR "/home/groups/smbenson/larsonr/codes/thirdPartyLibs/install-sherlock-gcc10-ompi4.1.2-openblas0.3.10-release" CACHE PATH "" FORCE)
 include(${CMAKE_CURRENT_LIST_DIR}/../tpls.cmake)
