@@ -6,6 +6,25 @@ This file is designed to track changes to the integrated test baselines.
 Any developer who updates the baseline ID in the .integrated_tests.yaml file is expected to create an entry in this file with the pull request number, date, and their justification for rebaselining.
 These notes should be in reverse-chronological order, and use the following time format: (YYYY-MM-DD).
 
+PR #3163 (2024-09-20)
+=====================
+Added new fields (krylovStrongestTol, adaptiveGamma, adaptiveExponent) to the LinearSolverParameters for adaptive tolerances.
+
+PR #3338 (2024-09-19)
+======================
+Updated time-stepping logic. Rebaseline due to new input parameter and minor numerical diffs.
+
+
+PR #3217 (2024-09-16)
+======================
+ALM slip and open modes with relative tests.
+
+
+PR #3318 (2024-09-12)
+======================
+Modified SeismicityRate poroelastic case.
+
+
 PR #3322 (2024-09-06)
 ======================
 Print out fracture state for contact model. Rebaseline the corresponding cases.
@@ -28,11 +47,12 @@ Re-enable enforcement of wave propagation integrated test pass.
 
 PR #3300 (2024-08-28)
 ======================
-Re-enable floating point exceptions. Rebaseline due to minor changing default value of maxRelativeCompDensChange from 1.7976931348623157e+308 to 1.7976931348623157e+208. 
+Re-enable floating point exceptions. Rebaseline due to minor changing default value of maxRelativeCompDensChange from 1.7976931348623157e+308 to 1.7976931348623157e+208.
+
 
 PR #3283 (2024-08-22)
 ======================
-Reuse computeSinglePhaseFlux. Rebaseline due to minor numerical diffs. 
+Reuse computeSinglePhaseFlux. Rebaseline due to minor numerical diffs.
 
 
 PR #3249 (2024-08-14)

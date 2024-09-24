@@ -30,7 +30,7 @@ block.
 
 The following attributes are supported:
 
-.. include:: /coreComponents/schema/docs/SlipDependentPermeability.rst
+.. include:: /docs/sphinx/datastructure/SlipDependentPermeability.rst
 
 
 Example

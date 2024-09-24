@@ -4,6 +4,8 @@ import numpy as np
 import matplotlib.pyplot as plt
 import wellboreAnalyticalSolutions as analytic
 import xml.etree.ElementTree as ElementTree
+import os
+import argparse
 
 
 # Rotate stress from local coordinates of an inclined borehole to the global coordinates system
@@ -101,7 +103,7 @@ def getParametersFromXML(xmlFilePath):
 
     porosity = float(tree.find('Constitutive/BiotPorosity').get('defaultReferencePorosity'))
 
-    skeletonBulkModulus = float(tree.find('Constitutive/BiotPorosity').get('grainBulkModulus'))
+    skeletonBulkModulus = float(tree.find('Constitutive/BiotPorosity').get('defaultGrainBulkModulus'))
     fluidCompressibility = float(tree.find('Constitutive/CompressibleSinglePhaseFluid').get('compressibility'))
 
     bBiot = 1.0 - bulkModulus / skeletonBulkModulus
@@ -141,7 +143,21 @@ def getWellboreGeometryFromXML(xmlFilePath):
 
 
 def main():
-    xmlFilePathPrefix = "../../../../../../../inputFiles/wellbore/DeviatedPoroElasticWellbore_Drilling"
+
+   # Initialize the argument parser
+    parser = argparse.ArgumentParser(description="Script to generate figure from tutorial.")
+
+    # Add arguments to accept individual file paths
+    parser.add_argument('--geosDir', help='Path to the GEOS repository ', default='../../../../../../..')
+    parser.add_argument('--outputDir', help='Path to output directory', default='.')
+
+    # Parse the command-line arguments
+    args = parser.parse_args()
+
+    outputDir = args.outputDir
+    geosDir = args.geosDir
+
+    xmlFilePathPrefix = geosDir + "/inputFiles/wellbore/DeviatedPoroElasticWellbore_Drilling"
 
     geometry = getWellboreGeometryFromXML(xmlFilePathPrefix + "_benchmark.xml")
     parameters = getParametersFromXML(xmlFilePathPrefix + "_base.xml")
@@ -193,7 +209,7 @@ def main():
 
     # Get radial coordinate and compute analytical results
     r = []
-    for line in open('stress_11_drilling.curve', 'r'):
+    for line in open( outputDir + '/stress_11_drilling.curve', 'r'):
         if not (line.strip().startswith("#") or line.strip() == ''):
             values = [float(s) for s in line.split()]
             rval = values[0]
@@ -202,43 +218,43 @@ def main():
     # Get stress_ij and pore pressure
     # These data are extracted along the y-axis from the well center (theta angle = 90°)
     stress_11, stress_12, stress_13, stress_22, stress_23, stress_33, pPore = [], [], [], [], [], [], []
-    for line in open('stress_11_drilling.curve', 'r'):
+    for line in open( outputDir + '/stress_11_drilling.curve', 'r'):
         if not (line.strip().startswith("#") or line.strip() == ''):
             values = [float(s) for s in line.split()]
             sigVal = values[1] * 1e-6    # convert to MPa
             stress_11.append(sigVal)
 
-    for line in open('stress_12_drilling.curve', 'r'):
+    for line in open( outputDir + '/stress_12_drilling.curve', 'r'):
         if not (line.strip().startswith("#") or line.strip() == ''):
             values = [float(s) for s in line.split()]
             sigVal = values[1] * 1e-6    # convert to MPa
             stress_12.append(sigVal)
 
-    for line in open('stress_13_drilling.curve', 'r'):
+    for line in open( outputDir + '/stress_13_drilling.curve', 'r'):
         if not (line.strip().startswith("#") or line.strip() == ''):
             values = [float(s) for s in line.split()]
             sigVal = values[1] * 1e-6    # convert to MPa
             stress_13.append(sigVal)
 
-    for line in open('stress_22_drilling.curve', 'r'):
+    for line in open( outputDir + '/stress_22_drilling.curve', 'r'):
         if not (line.strip().startswith("#") or line.strip() == ''):
             values = [float(s) for s in line.split()]
             sigVal = values[1] * 1e-6    # convert to MPa
             stress_22.append(sigVal)
 
-    for line in open('stress_23_drilling.curve', 'r'):
+    for line in open( outputDir + '/stress_23_drilling.curve', 'r'):
         if not (line.strip().startswith("#") or line.strip() == ''):
             values = [float(s) for s in line.split()]
             sigVal = values[1] * 1e-6    # convert to MPa
             stress_23.append(sigVal)
 
-    for line in open('stress_33_drilling.curve', 'r'):
+    for line in open( outputDir + '/stress_33_drilling.curve', 'r'):
         if not (line.strip().startswith("#") or line.strip() == ''):
             values = [float(s) for s in line.split()]
             sigVal = values[1] * 1e-6    # convert to MPa
             stress_33.append(sigVal)
 
-    for line in open('pressure_drilling.curve', 'r'):
+    for line in open( outputDir + '/pressure_drilling.curve', 'r'):
         if not (line.strip().startswith("#") or line.strip() == ''):
             values = [float(s) for s in line.split()]
             pPoreVal = values[1] * 1e-6    # convert to MPa

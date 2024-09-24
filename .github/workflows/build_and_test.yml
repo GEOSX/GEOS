@@ -55,6 +55,9 @@ on:
         required: false
         type: string
         default: ''
+      HOST_ARCH:
+        required: false
+        type: string
       RUNS_ON:
         required: true
         type: string
@@ -67,7 +70,11 @@ on:
         type: string
       LOCAL_BASELINE_DIR:
         required: false
-        type: string  
+        type: string
+      BUILD_GENERATOR:
+        required: false
+        type: string
+        default: '--ninja'
     secrets:
       GOOGLE_CLOUD_GCP:
         required: false
@@ -104,19 +111,25 @@ jobs:
 
     - id: 'auth'
       if: ${{ inputs.GCP_BUCKET || inputs.USE_SCCACHE }}
-      uses: 'google-github-actions/auth@v2.1.3'
+      uses: 'google-github-actions/auth@v2.1.5'
       with:
         credentials_json: '${{ secrets.GOOGLE_CLOUD_GCP }}'
         create_credentials_file: true
 
     - name: 'Set up Cloud SDK'
       if: inputs.GCP_BUCKET
-      uses: 'google-github-actions/setup-gcloud@v2.1.0'
+      uses: 'google-github-actions/setup-gcloud@v2.1.1'
       with:
         version: '>= 363.0.0'
 
     - name: Print environment
       run: printenv
+
+    - name: Setup QEMU for ${{ inputs.HOST_ARCH }} emulation
+      if: ${{ inputs.HOST_ARCH }}
+      uses: docker/setup-qemu-action@v3
+      with:
+        platforms: ${{ inputs.HOST_ARCH }}
 
     - name: Build, test, deploy.
       run: |
@@ -138,6 +151,10 @@ jobs:
         if [[ -n "${{ inputs.NPROC }}" ]]; then
           NPROC=${{ inputs.NPROC }}
           script_args+=(--nproc ${NPROC})
+        fi
+
+        if [[ -n "${{ inputs.BUILD_GENERATOR }}" ]]; then
+          script_args+=(${{ inputs.BUILD_GENERATOR }})
         fi
 
         docker_args+=(${{ inputs.DOCKER_RUN_ARGS }})

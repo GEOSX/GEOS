@@ -265,7 +265,7 @@
       fieldName="casingSolid_stress"
       component="2"
       scale="573913043.5"/>
-    <!-- SPHINX_StressCasingInit -->
+    <!-- SPHINX_StressCasingInitEnd -->
 
     <FieldSpecification
       name="initialSigma_x_cement"

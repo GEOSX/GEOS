@@ -686,6 +686,9 @@ public:
     /// @return string for the initialDt wrapper
     static constexpr char const * initialDtString() { return "initialDt"; }
 
+    /// @return string for the minDtIncreaseInterval wrapper
+    static constexpr char const * minDtIncreaseIntervalString() { return "minDtIncreaseInterval"; }
+
     /// @return string for the maxStableDt wrapper
     static constexpr char const * maxStableDtString() { return "maxStableDt"; }
 
@@ -931,12 +934,14 @@ protected:
    *
    * @param newNewtonNorm Residual norm at current iteration
    * @param oldNewtonNorm Residual norm at previous iteration
-   * @param weakestTol Weakest tolerance allowed (default 1e-3).
+   * @param krylovParams Linear solver parameters
+   * @param logLevel Log level
    * @return Adaptive tolerance recommendation
    */
   static real64 eisenstatWalker( real64 const newNewtonNorm,
                                  real64 const oldNewtonNorm,
-                                 real64 const weakestTol );
+                                 LinearSolverParameters::Krylov const & krylovParams,
+                                 integer const logLevel );
 
   /**
    * @brief Get the Constitutive Name object
@@ -1007,6 +1012,9 @@ protected:
 
   /// timestep of the next cycle
   real64 m_nextDt;
+
+  /// Number of cycles since last timestep cut
+  integer m_numTimestepsSinceLastDtCut;
 
   /// name of the FV discretization object in the data repository
   string m_discretizationName;

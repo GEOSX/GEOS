@@ -33,7 +33,7 @@ block.
 
 The following attributes are supported:
 
-.. include:: /coreComponents/schema/docs/BiotPorosity.rst
+.. include:: /docs/sphinx/datastructure/BiotPorosity.rst
 
 Example
 =======================

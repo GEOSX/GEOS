@@ -200,7 +200,7 @@ Inspecting Results
 In the example, we request vtk output files for time-series (time history). We use paraview to visualize the outcome at the time 0s.
 The following figure shows the final gradient of pressure and of the effective vertical stress after initialization is completed.
 
-.. _problemInitializationPres:
+.. _problemInitializationPressure:
 .. figure:: pressure_field.png
    :align: center
    :width: 500
@@ -208,7 +208,7 @@ The following figure shows the final gradient of pressure and of the effective v
 
    Simulation result of pressure
 
-.. _problemInitializationSZZ:
+.. _problemInitializationStressZZ:
 .. figure:: effective_SZZ.png
    :align: center
    :width: 500

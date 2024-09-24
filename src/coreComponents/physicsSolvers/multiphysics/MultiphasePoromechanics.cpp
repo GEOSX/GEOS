@@ -296,7 +296,7 @@ void MultiphasePoromechanics< FLOW_SOLVER, MECHANICS_SOLVER >::updateBulkDensity
   // update the bulk density
   poromechanicsKernels::
     MultiphaseBulkDensityKernelFactory::
-    createAndLaunch< parallelDevicePolicy<> >( this->flowSolver()->numFluidPhases(),
+    createAndLaunch< parallelDevicePolicy<> >( this->flowSolver()->numFluidComponents(),
                                                fluid,
                                                solid,
                                                subRegion );

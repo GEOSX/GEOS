@@ -71,12 +71,14 @@ int main( int argc, char *argv[] )
   // A NotAnError is thrown if "-h" or "--help" option is used.
   catch( NotAnError const & )
   {
+    basicCleanup();
     return 0;
   }
   catch( std::exception const & e )
   {
     GEOS_LOG( e.what() );
     LvArray::system::callErrorHandler();
+    basicCleanup();
     std::abort();
   }
   return 0;

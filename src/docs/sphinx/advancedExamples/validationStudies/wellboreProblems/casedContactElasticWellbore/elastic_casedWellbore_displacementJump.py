@@ -13,8 +13,8 @@ def main():
 
 	# Plot GEOSX results
 	hf = h5py.File(hdf5FilePath, 'r')
-	time = np.array( hf.get('displacementJump Time') )
-	displacementJump = np.array( hf.get('displacementJump') )
+	time = np.asarray( hf.get('displacementJump Time') )
+	displacementJump = np.asarray( hf.get('displacementJump') )
 
 	nTime = time.shape[0]
 

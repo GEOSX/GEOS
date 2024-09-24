@@ -98,12 +98,12 @@ public:
    * @param sig
    * @param tau
    */
-  void computeTotalStressOnFault( arrayView1d< real64 const > const biotCoefficient,
-                                  arrayView1d< real64 const > const pres,
+  void computeTotalStressOnFault( arrayView1d< real64 const > const & biotCoefficient,
+                                  arrayView1d< real64 const > const & pres,
                                   real64 const (&faultNormalProjectionTensor)[6],
                                   real64 const (&faultShearProjectionTensor)[6],
-                                  arrayView1d< real64 > const sig,
-                                  arrayView1d< real64 > const tau ) const;
+                                  arrayView1d< real64 > const & sig,
+                                  arrayView1d< real64 > const & tau ) const;
 
   /**
    * @brief called in SolverStep before member stress solver is called to

@@ -14,8 +14,8 @@
  */
 
 // Source includes
-#ifndef GEOS_PYGEOS_PYGEOS_HPP_
-#define GEOS_PYGEOS_PYGEOS_HPP_
+#ifndef GEOS_PYGEOSX_PYGEOSX_HPP_
+#define GEOS_PYGEOSX_PYGEOSX_HPP_
 
 #include "LvArray/src/python/pythonForwardDeclarations.hpp"
 #include "mainInterface/GeosxState.hpp"

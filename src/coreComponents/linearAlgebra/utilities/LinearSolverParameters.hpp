@@ -124,6 +124,9 @@ struct LinearSolverParameters
 #endif
     integer useAdaptiveTol = false;   ///< Use Eisenstat-Walker adaptive tolerance
     real64 weakestTol = 1e-3;         ///< Weakest allowed tolerance when using adaptive method
+    real64 strongestTol = 1e-8;       ///< Strongest allowed tolerance when using adaptive method
+    real64 adaptiveGamma = 0.1;       ///< Gamma parameter for adaptive method
+    real64 adaptiveExponent = 1.0;    ///< Exponent parameter for adaptive method
   }
   krylov;                             ///< Krylov-method parameter struct
 

@@ -22,12 +22,9 @@
 #define GEOS_FIELDSPECIFICATION_PERFECTLYMATCHEDLAYER_HPP_
 
 #include "FieldSpecificationBase.hpp"
-#include "mesh/DomainPartition.hpp"
 
 namespace geos
 {
-
-class DomainPartition;
 
 /**
  * @class PerfectlyMatchedLayer

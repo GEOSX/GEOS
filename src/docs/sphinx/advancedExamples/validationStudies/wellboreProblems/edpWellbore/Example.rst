@@ -201,8 +201,6 @@ Inspecting results
 
 In the above example, we requested hdf5 output files. We can therefore use python scripts to visualize the outcome. Below figure shows the comparisons between the numerical predictions (marks) and the corresponding analytical solutions (solid curves) with respect to the distributions of principal stress components, stress path on the wellbore surface, the supporting wellbore pressure and wellbore size. It is clear that the GEOS predictions are in excellent agreement with the analytical results. On the top-right figure, we added also a comparison between GEOS results for elasto-plastic material and the anlytical solutions of an elastic material. Note that the elastic solutions are differed from the elasto-plastic results even in the elastic zone (r/a>2).
 
-.. plot:: docs/sphinx/advancedExamples/validationStudies/wellboreProblems/edpWellbore/edpWellbore_plot.py
-
 .. _edpWellboreVerificationFig:
 .. figure:: edpWellboreVerification.png
    :align: center

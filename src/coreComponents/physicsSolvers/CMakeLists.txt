@@ -6,8 +6,7 @@ set( physicsSolvers_headers
      SolverBase.hpp
      SolverBaseKernels.hpp
      SolverStatistics.hpp
-     FieldStatisticsBase.hpp
- )
+     FieldStatisticsBase.hpp )
 
 # Specify solver sources
 set( physicsSolvers_sources
@@ -51,7 +50,7 @@ if( GEOS_ENABLE_WAVEPROPAGATION )
   add_subdirectory( wavePropagation )
 endif()
 
-set( dependencyList ${parallelDeps} fileIO discretizationMethods events )
+set( dependencyList ${parallelDeps} fileIO discretizationMethods events linearAlgebra )
 
 if( ENABLE_PYGEOSX )
   list( APPEND physicsSolvers_headers

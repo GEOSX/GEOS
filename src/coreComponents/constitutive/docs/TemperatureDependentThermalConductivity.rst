@@ -34,7 +34,7 @@ domain in the ``<ElementRegions>`` block.
 
 The following attributes are supported:
 
-.. include:: /coreComponents/schema/docs/SinglePhaseThermalConductivity.rst
+.. include:: /docs/sphinx/datastructure/SinglePhaseThermalConductivity.rst
 
 
 Example

@@ -39,6 +39,7 @@ SolverBase::SolverBase( string const & name,
   m_cflFactor(),
   m_maxStableDt{ 1e99 },
   m_nextDt( 1e99 ),
+  m_numTimestepsSinceLastDtCut( -1 ),
   m_dofManager( name ),
   m_linearSolverParameters( groupKeyStruct::linearSolverParametersString(), this ),
   m_nonlinearSolverParameters( groupKeyStruct::nonlinearSolverParametersString(), this ),
@@ -247,6 +248,16 @@ bool SolverBase::execute( real64 const time_n,
                           DomainPartition & domain )
 {
   GEOS_MARK_FUNCTION;
+
+  /*
+   * Reset counter indicating the number of cycles since the last timestep cut
+   * when the new timestep. "-1" means that no time-step cut has ocurred.
+   * */
+  if( dt < m_nextDt )
+  {
+    m_numTimestepsSinceLastDtCut = -1;
+  }
+
   real64 dtRemaining = dt;
   real64 nextDt = dt;
 
@@ -311,6 +322,12 @@ bool SolverBase::execute( real64 const time_n,
   // Decide what to do with the next Dt for the event running the solver.
   m_nextDt = setNextDt( nextDt, domain );
 
+  // Increase counter to indicate how many cycles since the last timestep cut
+  if( m_numTimestepsSinceLastDtCut >= 0 )
+  {
+    m_numTimestepsSinceLastDtCut++;
+  }
+
   logEndOfCycleInformation( cycleNumber, numOfSubSteps, subStepDt );
 
   return false;
@@ -337,12 +354,20 @@ void SolverBase::logEndOfCycleInformation( integer const cycleNumber,
 real64 SolverBase::setNextDt( real64 const & currentDt,
                               DomainPartition & domain )
 {
+  integer const minTimeStepIncreaseInterval = m_nonlinearSolverParameters.minTimeStepIncreaseInterval();
   real64 const nextDtNewton = setNextDtBasedOnNewtonIter( currentDt );
   if( m_nonlinearSolverParameters.getLogLevel() > 0 )
     GEOS_LOG_RANK_0( GEOS_FMT( "{}: next time step based on Newton iterations = {}", getName(), nextDtNewton ));
   real64 const nextDtStateChange = setNextDtBasedOnStateChange( currentDt, domain );
   if( m_nonlinearSolverParameters.getLogLevel() > 0 )
     GEOS_LOG_RANK_0( GEOS_FMT( "{}: next time step based on state change = {}", getName(), nextDtStateChange ));
+
+  if( ( m_numTimestepsSinceLastDtCut >= 0 ) && ( m_numTimestepsSinceLastDtCut < minTimeStepIncreaseInterval ) )
+  {
+    GEOS_LOG_LEVEL_RANK_0( 1, GEOS_FMT( "{}: time-step size will be kept the same since it's been {} cycles since last cut.",
+                                        getName(), m_numTimestepsSinceLastDtCut ) );
+    return currentDt;
+  }
 
   if( nextDtNewton < nextDtStateChange )      // time step size decided based on convergence
   {
@@ -706,22 +731,24 @@ bool SolverBase::lineSearchWithParabolicInterpolation( real64 const & time_n,
 
 real64 SolverBase::eisenstatWalker( real64 const newNewtonNorm,
                                     real64 const oldNewtonNorm,
-                                    real64 const weakestTol )
+                                    LinearSolverParameters::Krylov const & krylovParams,
+                                    integer const logLevel )
 {
-  real64 const strongestTol = 1e-8;
-  real64 const exponent = 2.0;
-  real64 const gamma = 0.9;
-
-  real64 normRatio = newNewtonNorm / oldNewtonNorm;
-  if( normRatio > 1 )
-    normRatio = 1;
-
-  real64 newKrylovTol = gamma*std::pow( normRatio, exponent );
-  real64 altKrylovTol = gamma*std::pow( oldNewtonNorm, exponent );
+  real64 normRatio = std::min( newNewtonNorm / oldNewtonNorm, 1.0 );
+  real64 newKrylovTol = krylovParams.adaptiveGamma * std::pow( normRatio, krylovParams.adaptiveExponent );
+  // the following is a safeguard to avoid too sharp tolerance reduction
+  // the bound is the quadratic reduction wrt previous value
+  real64 altKrylovTol = std::pow( krylovParams.relTolerance, 2.0 );
 
   real64 krylovTol = std::max( newKrylovTol, altKrylovTol );
-  krylovTol = std::min( krylovTol, weakestTol );
-  krylovTol = std::max( krylovTol, strongestTol );
+  krylovTol = std::min( krylovTol, krylovParams.weakestTol );
+  krylovTol = std::max( krylovTol, krylovParams.strongestTol );
+
+  if( logLevel > 0 )
+  {
+    GEOS_LOG_RANK_0( GEOS_FMT( "        Adaptive linear tolerance = {:4.2e} (norm ratio = {:4.2e}, old tolerance = {:4.2e}, new tolerance = {:4.2e}, safeguard = {:4.2e})",
+                               krylovTol, normRatio, krylovParams.relTolerance, newKrylovTol, altKrylovTol ) );
+  }
 
   return krylovTol;
 }
@@ -816,6 +843,7 @@ real64 SolverBase::nonlinearImplicitStep( real64 const & time_n,
     {
       // cut timestep, go back to beginning of step and restart the Newton loop
       stepDt *= dtCutFactor;
+      m_numTimestepsSinceLastDtCut = 0;
       GEOS_LOG_LEVEL_RANK_0 ( 1, GEOS_FMT( "New dt = {}", stepDt ) );
 
       // notify the solver statistics counter that this is a time step cut
@@ -983,15 +1011,15 @@ bool SolverBase::solveNonlinearSystem( real64 const & time_n,
       }
     }
 
-    // if using adaptive Krylov tolerance scheme, update tolerance.
-    LinearSolverParameters::Krylov & krylovParams = m_linearSolverParameters.get().krylov;
-    if( krylovParams.useAdaptiveTol )
-    {
-      krylovParams.relTolerance = eisenstatWalker( residualNorm, lastResidual, krylovParams.weakestTol );
-    }
-
     {
       Timer timer( m_timers["linear solver total"] );
+
+      // if using adaptive Krylov tolerance scheme, update tolerance.
+      LinearSolverParameters::Krylov & krylovParams = m_linearSolverParameters.get().krylov;
+      if( krylovParams.useAdaptiveTol )
+      {
+        krylovParams.relTolerance = newtonIter > 0 ? eisenstatWalker( residualNorm, lastResidual, krylovParams, m_linearSolverParameters.getLogLevel() ) : krylovParams.weakestTol;
+      }
 
       // TODO: Trilinos currently requires this, re-evaluate after moving to Tpetra-based solvers
       if( m_precond )

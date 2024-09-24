@@ -15,11 +15,11 @@ def main():
     # Read simulation output from HDF5 file
     hf = h5py.File(hdf5FilePathTemperature, 'r')
     timeTemperature = hf.get('temperature Time')
-    timeTemperature = np.array(timeTemperature)
+    timeTemperature = np.asarray(timeTemperature)
     centerTemperature = hf.get('temperature elementCenter')
-    centerTemperature = np.array(centerTemperature)
+    centerTemperature = np.asarray(centerTemperature)
     temperature = hf.get('temperature')
-    temperature = np.array(temperature)
+    temperature = np.asarray(temperature)
     
     time = 1
     posElement1 = -1

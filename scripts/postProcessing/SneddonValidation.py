@@ -77,7 +77,7 @@ def main(filesPaths):
     # Read HDF5
     hf = h5py.File(hdf5File1Path, 'r')
     jump = hf.get('displacementJump')
-    jump = np.array(jump)
+    jump = np.asarray(jump)
     aperture = jump[0, :, 0]
 
     hf = h5py.File(hdf5File1Path, 'r')

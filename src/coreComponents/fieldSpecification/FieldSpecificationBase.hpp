@@ -26,7 +26,6 @@
 #include "codingUtilities/Utilities.hpp"
 #include "dataRepository/Group.hpp"
 #include "functions/FunctionBase.hpp"
-#include "linearAlgebra/interfaces/InterfaceTypes.hpp"
 #include "common/FieldSpecificationOps.hpp"
 #include "mesh/ObjectManagerBase.hpp"
 #include "mesh/MeshObjectPath.hpp"
