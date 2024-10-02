@@ -126,6 +126,22 @@ you have suggestions for improving the guides below, please post an issue on our
 
             To the Python Tools Documentation
 
+    .. grid-item-card::
+
+        Feature Requests, Reporting Bugs, and Support
+        ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+
+        To make feature requests, report bugs, or get support (after reviewing the user guide) please submit an issue on Github.
+
+        +++
+
+        .. button-link:: https://github.com/GEOS-DEV/GEOS/issues/new/choose
+            :expand:
+            :color: info
+            :click-parent:
+
+            To the "New issue" page on the GEOS Github repository
+
 
 ********************
 Table of Contents
@@ -150,7 +166,7 @@ Table of Contents
 
    docs/sphinx/buildGuide/Index
 
-   docs/sphinx/CompleteXMLSchema
+   docs/sphinx/datastructure/CompleteXMLSchema
 
    docs/sphinx/Contributors
 

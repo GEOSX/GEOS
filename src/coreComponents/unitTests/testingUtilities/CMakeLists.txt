@@ -15,19 +15,19 @@ set( testingUtilities_sources
 #
 # Specify all dependencies
 #
-set( dependencyList ${parallelDeps} gtest )
+set( tplDependencyList ${parallelDeps} gtest )
 
-if ( GEOSX_BUILD_SHARED_LIBS )
-  list( APPEND dependencyList geosx_core )
-else()
-  list( APPEND dependencyList ${geosx_core_libs} )
-endif()
-   
+set( dependencyList events )
+geos_decorate_link_dependencies( LIST decoratedDependencies
+                                 DEPENDENCIES ${dependencyList} )
+
 blt_add_library( NAME       testingUtilities
                  SOURCES    ${testingUtilities_sources}
                  HEADERS    ${testingUtilities_headers}
-                 DEPENDS_ON ${dependencyList}
-                 OBJECT     ${GEOSX_BUILD_OBJ_LIBS}
+                 DEPENDS_ON ${decoratedDependencies} ${tplDependencyList}
+                 OBJECT     ${GEOS_BUILD_OBJ_LIBS}
+                 SHARED     ${GEOS_BUILD_SHARED_LIBS}
                )
 
 target_include_directories( testingUtilities PUBLIC ${CMAKE_SOURCE_DIR}/coreComponents )
+target_include_directories( testingUtilities PUBLIC ${CMAKE_BINARY_DIR}/include )

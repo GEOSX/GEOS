@@ -58,7 +58,7 @@ These parameters are used with the fluid density model (depending for compositio
 
 The full list of parameters is provided below:
 
-.. include:: /coreComponents/schema/docs/HydrostaticEquilibrium.rst
+.. include:: /docs/sphinx/datastructure/HydrostaticEquilibrium.rst
 
 
 Examples

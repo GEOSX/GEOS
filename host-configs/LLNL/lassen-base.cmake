@@ -7,8 +7,7 @@
 #
 ###############################################################################
 
-set( GEOSX_BUILD_SHARED_LIBS ON CACHE BOOL "" )
-set( GEOSX_BUILD_OBJ_LIBS OFF CACHE BOOL "" )
+set( GEOS_BUILD_OBJ_LIBS OFF CACHE BOOL "" )
 # Fortran
 set(ENABLE_FORTRAN OFF CACHE BOOL "")
 
@@ -54,7 +53,7 @@ if( ${ENABLE_HYPRE_DEVICE} STREQUAL "HIP" OR ${ENABLE_HYPRE_DEVICE} STREQUAL "CU
     set(ENABLE_TRILINOS OFF CACHE BOOL "" FORCE )
 else()
     set(ENABLE_HYPRE OFF CACHE BOOL "" FORCE )
-    set(GEOSX_LA_INTERFACE "Trilinos" CACHE STRING "" FORCE )
+    set(GEOS_LA_INTERFACE "Trilinos" CACHE STRING "" FORCE )
 endif()
 
 # Documentation

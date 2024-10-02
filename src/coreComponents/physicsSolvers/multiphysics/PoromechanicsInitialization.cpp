@@ -2,10 +2,11 @@
  * ------------------------------------------------------------------------------------------------------------
  * SPDX-License-Identifier: LGPL-2.1-only
  *
- * Copyright (c) 2018-2020 Lawrence Livermore National Security LLC
- * Copyright (c) 2018-2020 The Board of Trustees of the Leland Stanford Junior University
- * Copyright (c) 2018-2020 TotalEnergies
- * Copyright (c) 2019-     GEOSX Contributors
+ * Copyright (c) 2016-2024 Lawrence Livermore National Security LLC
+ * Copyright (c) 2018-2024 Total, S.A
+ * Copyright (c) 2018-2024 The Board of Trustees of the Leland Stanford Junior University
+ * Copyright (c) 2023-2024 Chevron
+ * Copyright (c) 2019-     GEOS/GEOSX Contributors
  * All rights reserved
  *
  * See top level LICENSE, COPYRIGHT, CONTRIBUTORS, NOTICE, and ACKNOWLEDGEMENTS files for details.
@@ -24,7 +25,6 @@
 #include "physicsSolvers/multiphysics/SinglePhasePoromechanicsConformingFractures.hpp"
 #include "physicsSolvers/multiphysics/SinglePhasePoromechanicsEmbeddedFractures.hpp"
 #include "physicsSolvers/multiphysics/HydrofractureSolver.hpp"
-#include "mainInterface/ProblemManager.hpp"
 #include "physicsSolvers/fluidFlow/SinglePhaseBase.hpp"
 #include "physicsSolvers/multiphysics/SinglePhaseReservoirAndWells.hpp"
 #include "physicsSolvers/multiphysics/CompositionalMultiphaseReservoirAndWells.hpp"
@@ -67,8 +67,8 @@ void
 PoromechanicsInitialization< POROMECHANICS_SOLVER >::
 postInputInitialization()
 {
-  ProblemManager & problemManager = this->getGroupByPath< ProblemManager >( "/Problem" );
-  PhysicsSolverManager & physicsSolverManager = problemManager.getPhysicsSolverManager();
+  Group & problemManager = this->getGroupByPath( "/Problem" );
+  Group & physicsSolverManager = problemManager.getGroup( "Solvers" );
 
   GEOS_THROW_IF( !physicsSolverManager.hasGroup( m_poromechanicsSolverName ),
                  GEOS_FMT( "{}: {} solver named {} not found",
@@ -81,7 +81,7 @@ postInputInitialization()
 
   if( !m_solidMechanicsStatisticsName.empty())
   {
-    TasksManager & tasksManager = problemManager.getTasksManager();
+    TasksManager & tasksManager = problemManager.getGroup< TasksManager >( "Tasks" );
 
     GEOS_THROW_IF( !tasksManager.hasGroup( m_solidMechanicsStatisticsName ),
                    GEOS_FMT( "{}: statistics task named {} not found",

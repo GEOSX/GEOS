@@ -2,10 +2,11 @@
  * ------------------------------------------------------------------------------------------------------------
  * SPDX-License-Identifier: LGPL-2.1-only
  *
- * Copyright (c) 2018-2020 Lawrence Livermore National Security LLC
- * Copyright (c) 2018-2020 The Board of Trustees of the Leland Stanford Junior University
- * Copyright (c) 2018-2020 TotalEnergies
- * Copyright (c) 2019-     GEOSX Contributors
+ * Copyright (c) 2016-2024 Lawrence Livermore National Security LLC
+ * Copyright (c) 2018-2024 Total, S.A
+ * Copyright (c) 2018-2024 The Board of Trustees of the Leland Stanford Junior University
+ * Copyright (c) 2023-2024 Chevron
+ * Copyright (c) 2019-     GEOS/GEOSX Contributors
  * All rights reserved
  *
  * See top level LICENSE, COPYRIGHT, CONTRIBUTORS, NOTICE, and ACKNOWLEDGEMENTS files for details.
@@ -103,6 +104,9 @@ MultiphasePoromechanics( NodeManager const & nodeManager,
 
     m_fluidPhaseMassDensity = fluid.phaseMassDensity();
     m_dFluidPhaseMassDensity = fluid.dPhaseMassDensity();
+
+    m_useMass = fluid.getMassFlag();
+    m_componentMolarWeight = fluid.componentMolarWeights();
   }
 }
 
@@ -213,39 +217,18 @@ computeBodyForce( localIndex const k,
                   StackVariables & stack,
                   FUNC && bodyForceKernelOp ) const
 {
-  using Deriv = constitutive::multifluid::DerivativeOffset;
-
   GEOS_UNUSED_VAR( dPorosity_dTemperature );
-
-  arraySlice1d< real64 const, constitutive::multifluid::USD_PHASE - 2 > const phaseMassDensity = m_fluidPhaseMassDensity[k][q];
-  arraySlice2d< real64 const, constitutive::multifluid::USD_PHASE_DC - 2 > const dPhaseMassDensity = m_dFluidPhaseMassDensity[k][q];
-  arraySlice1d< real64 const, compflow::USD_PHASE - 1 > const phaseVolFrac = m_fluidPhaseVolFrac[k];
-  arraySlice2d< real64 const, compflow::USD_PHASE_DC - 1 > const dPhaseVolFrac = m_dFluidPhaseVolFrac[k];
-  arraySlice2d< real64 const, compflow::USD_COMP_DC - 1 > const dGlobalCompFrac_dGlobalCompDensity = m_dGlobalCompFraction_dGlobalCompDensity[k];
 
   // Step 1: compute fluid total mass density and its derivatives
 
   real64 totalMassDensity = 0.0;
-  real64 dTotalMassDensity_dPressure = 0.0;
   real64 dTotalMassDensity_dComponents[maxNumComponents]{};
-  real64 dPhaseMassDensity_dComponents[maxNumComponents]{};
 
-  for( integer ip = 0; ip < m_numPhases; ++ip )
+  arraySlice1d< real64 const, compflow::USD_COMP - 1 > const compDens = m_compDens[k];
+  for( integer ic = 0; ic < m_numComponents; ++ic )
   {
-    totalMassDensity += phaseVolFrac( ip ) * phaseMassDensity( ip );
-    dTotalMassDensity_dPressure += dPhaseVolFrac( ip, Deriv::dP ) * phaseMassDensity( ip )
-                                   + phaseVolFrac( ip ) * dPhaseMassDensity( ip, Deriv::dP );
-
-    applyChainRule( m_numComponents,
-                    dGlobalCompFrac_dGlobalCompDensity,
-                    dPhaseMassDensity[ip],
-                    dPhaseMassDensity_dComponents,
-                    Deriv::dC );
-    for( integer jc = 0; jc < m_numComponents; ++jc )
-    {
-      dTotalMassDensity_dComponents[jc] += dPhaseVolFrac( ip, Deriv::dC+jc ) * phaseMassDensity( ip )
-                                           + phaseVolFrac( ip ) * dPhaseMassDensity_dComponents[jc];
-    }
+    totalMassDensity = totalMassDensity + ( m_useMass ? compDens[ic] : compDens[ic] * m_componentMolarWeight[ic] );
+    dTotalMassDensity_dComponents[ic] = m_useMass ? 1.0 : m_componentMolarWeight[ic];
   }
 
   // Step 2: compute mixture density as an average between total mass density and solid density
@@ -253,8 +236,7 @@ computeBodyForce( localIndex const k,
   real64 const mixtureDensity = ( 1.0 - porosity ) * m_solidDensity( k, q ) + porosity * totalMassDensity;
   real64 const dMixtureDens_dVolStrainIncrement = dPorosity_dVolStrain * ( -m_solidDensity( k, q ) + totalMassDensity );
   real64 const dMixtureDens_dPressure = dPorosity_dPressure * ( -m_solidDensity( k, q ) + totalMassDensity )
-                                        + ( 1.0 - porosity ) * dSolidDensity_dPressure
-                                        + porosity * dTotalMassDensity_dPressure;
+                                        + ( 1.0 - porosity ) * dSolidDensity_dPressure;
   LvArray::tensorOps::scale< maxNumComponents >( dTotalMassDensity_dComponents, porosity );
 
   // Step 3: finally, get the body force

@@ -4,9 +4,9 @@
 set(CONFIG_NAME "pangea3-gcc8.4.1-ompi-4.1.2" CACHE PATH "")
 
 # Set up the tpls
-set(GEOSX_TPL_DIR "$ENV{GEOSX_TPL_DIR}" CACHE PATH "" FORCE)
-if (NOT DEFINED GEOSX_TPL_DIR)
-  message(FATAL_ERROR "You must set GEOSX_TPL_DIR with -D GEOSX_TPL_DIR=")
+set(GEOS_TPL_DIR "$ENV{GEOSX_TPL_DIR}" CACHE PATH "" FORCE)
+if (NOT DEFINED GEOS_TPL_DIR)
+  message(FATAL_ERROR "You must set GEOS_TPL_DIR with -D GEOS_TPL_DIR=")
 endif ()
 
 
@@ -77,7 +77,6 @@ set(ENABLE_MATHPRESSO OFF CACHE BOOL "")
 # Silo configure script doesn't recognize systype
 set(SILO_BUILD_TYPE powerpc64-unknown-linux-gnu CACHE STRING "")
 
-set(GEOSX_BUILD_SHARED_LIBS OFF CACHE BOOL "")
 set(ENABLE_PVTPackage ON CACHE BOOL "")
 
 set(ENABLE_CALIPER ON CACHE BOOL "")
@@ -98,7 +97,7 @@ endif()
 
 set(ENABLE_DOXYGEN OFF CACHE PATH "")
 
-set(PETSC_OMP_DIR ${GEOSX_TPL_ROOT_DIR}/omp-links-for-petsc CACHE STRING "")
+set(PETSC_OMP_DIR ${GEOS_TPL_ROOT_DIR}/omp-links-for-petsc CACHE STRING "")
 
 # PETSc doesn't seem to work correctly with clang.
 set(ENABLE_PETSC OFF CACHE BOOL "")

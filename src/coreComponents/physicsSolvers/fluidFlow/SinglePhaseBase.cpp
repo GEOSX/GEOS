@@ -2,10 +2,11 @@
  * ------------------------------------------------------------------------------------------------------------
  * SPDX-License-Identifier: LGPL-2.1-only
  *
- * Copyright (c) 2018-2020 Lawrence Livermore National Security LLC
- * Copyright (c) 2018-2020 The Board of Trustees of the Leland Stanford Junior University
- * Copyright (c) 2018-2020 TotalEnergies
- * Copyright (c) 2019-     GEOSX Contributors
+ * Copyright (c) 2016-2024 Lawrence Livermore National Security LLC
+ * Copyright (c) 2018-2024 Total, S.A
+ * Copyright (c) 2018-2024 The Board of Trustees of the Leland Stanford Junior University
+ * Copyright (c) 2023-2024 Chevron
+ * Copyright (c) 2019-     GEOS/GEOSX Contributors
  * All rights reserved
  *
  * See top level LICENSE, COPYRIGHT, CONTRIBUTORS, NOTICE, and ACKNOWLEDGEMENTS files for details.
@@ -31,7 +32,7 @@
 #include "fieldSpecification/EquilibriumInitialCondition.hpp"
 #include "fieldSpecification/FieldSpecificationManager.hpp"
 #include "fieldSpecification/SourceFluxBoundaryCondition.hpp"
-#include "fieldSpecification/SourceFluxStatistics.hpp"
+#include "physicsSolvers/fluidFlow/SourceFluxStatistics.hpp"
 #include "finiteVolume/FiniteVolumeManager.hpp"
 #include "functions/TableFunction.hpp"
 #include "mainInterface/ProblemManager.hpp"
@@ -95,10 +96,18 @@ void SinglePhaseBase::registerDataOnMesh( Group & meshBodies )
       subRegion.registerField< fields::flow::mass >( getName() );
       subRegion.registerField< fields::flow::mass_n >( getName() );
 
+
       if( m_isThermal )
       {
         subRegion.registerField< dMobility_dTemperature >( getName() );
       }
+    } );
+
+    elemManager.forElementSubRegions< SurfaceElementSubRegion >( regionNames,
+                                                                 [&]( localIndex const,
+                                                                      SurfaceElementSubRegion & subRegion )
+    {
+      subRegion.registerField< fields::flow::massCreated >( getName() );
     } );
 
     FaceManager & faceManager = mesh.getFaceManager();
@@ -309,29 +318,24 @@ void SinglePhaseBase::updateEnergy( ElementSubRegionBase & subRegion ) const
 
 void SinglePhaseBase::updateSolidInternalEnergyModel( ObjectManagerBase & dataGroup ) const
 {
-  arrayView1d< real64 const > const temp = dataGroup.getField< fields::flow::temperature >();
+  arrayView1d< real64 const > const temperature = dataGroup.getField< fields::flow::temperature >();
 
   string const & solidInternalEnergyName = dataGroup.getReference< string >( viewKeyStruct::solidInternalEnergyNamesString() );
   SolidInternalEnergy & solidInternalEnergy = getConstitutiveModel< SolidInternalEnergy >( dataGroup, solidInternalEnergyName );
 
   SolidInternalEnergy::KernelWrapper solidInternalEnergyWrapper = solidInternalEnergy.createKernelUpdates();
 
-  thermalSinglePhaseBaseKernels::SolidInternalEnergyUpdateKernel::launch< parallelDevicePolicy<> >( dataGroup.size(), solidInternalEnergyWrapper, temp );
+  thermalSinglePhaseBaseKernels::SolidInternalEnergyUpdateKernel::launch< parallelDevicePolicy<> >( dataGroup.size(), solidInternalEnergyWrapper, temperature );
 }
 
 void SinglePhaseBase::updateThermalConductivity( ElementSubRegionBase & subRegion ) const
 {
-  //START_SPHINX_INCLUDE_COUPLEDSOLID
-  CoupledSolidBase const & porousSolid =
-    getConstitutiveModel< CoupledSolidBase >( subRegion, subRegion.template getReference< string >( viewKeyStruct::solidNamesString() ) );
-  //END_SPHINX_INCLUDE_COUPLEDSOLID
-
-  arrayView2d< real64 const > const porosity = porousSolid.getPorosity();
-
   string const & thermalConductivityName = subRegion.template getReference< string >( viewKeyStruct::thermalConductivityNamesString() );
   SinglePhaseThermalConductivityBase const & conductivityMaterial =
     getConstitutiveModel< SinglePhaseThermalConductivityBase >( subRegion, thermalConductivityName );
-  conductivityMaterial.update( porosity );
+
+  arrayView1d< real64 const > const & temperature = subRegion.template getField< fields::flow::temperature >();
+  conductivityMaterial.updateFromTemperature( temperature );
 }
 
 real64 SinglePhaseBase::updateFluidState( ElementSubRegionBase & subRegion ) const
@@ -462,14 +466,8 @@ void SinglePhaseBase::initializePostInitialConditionsPreSubGroups()
     {
       region.forElementSubRegions< FaceElementSubRegion >( [&]( FaceElementSubRegion & subRegion )
       {
-        ConstitutiveBase & fluid = getConstitutiveModel( subRegion, subRegion.getReference< string >( viewKeyStruct::fluidNamesString() )  );
-        real64 const defaultDensity = getFluidProperties( fluid ).defaultDensity;
-
         subRegion.getWrapper< real64_array >( fields::flow::hydraulicAperture::key() ).
           setApplyDefaultValue( region.getDefaultAperture() );
-
-        subRegion.getWrapper< real64_array >( FaceElementSubRegion::viewKeyStruct::creationMassString() ).
-          setApplyDefaultValue( defaultDensity * region.getDefaultAperture() );
       } );
     } );
 
@@ -791,7 +789,7 @@ void SinglePhaseBase::implicitStepComplete( real64 const & time,
     {
       arrayView1d< integer const > const elemGhostRank = subRegion.ghostRank();
       arrayView1d< real64 const > const volume = subRegion.getElementVolume();
-      arrayView1d< real64 > const creationMass = subRegion.getReference< real64_array >( FaceElementSubRegion::viewKeyStruct::creationMassString() );
+      arrayView1d< real64 > const creationMass = subRegion.getField< fields::flow::massCreated >();
 
       SingleFluidBase const & fluid =
         getConstitutiveModel< SingleFluidBase >( subRegion, subRegion.template getReference< string >( viewKeyStruct::fluidNamesString() ) );
@@ -1130,7 +1128,7 @@ void SinglePhaseBase::applySourceFluxBC( real64 const time_n,
           real64 const rhsValue = rhsContributionArrayView[a] / sizeScalingFactor; // scale the contribution by the sizeScalingFactor here!
           localRhs[massRowIndex] += rhsValue;
           massProd += rhsValue;
-          //add the value to the energey balance equation if the flux is positive (i.e., it's a producer)
+          //add the value to the energy balance equation if the flux is positive (i.e., it's a producer)
           if( rhsContributionArrayView[a] > 0.0 )
           {
             globalIndex const pressureDofIndex    = dofNumber[ei] - rankOffset;

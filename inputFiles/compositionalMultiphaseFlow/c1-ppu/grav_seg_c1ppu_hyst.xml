@@ -50,7 +50,7 @@
 
     <PeriodicEvent
       name="restart"
-      cycleFrequency="100" 
+      cycleFrequency="50" 
       targetExactTimestep="1"
       target="/Outputs/restartOutput_hyst"/>
 

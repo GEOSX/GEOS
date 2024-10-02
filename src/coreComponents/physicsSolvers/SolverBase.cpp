@@ -2,10 +2,11 @@
  * ------------------------------------------------------------------------------------------------------------
  * SPDX-License-Identifier: LGPL-2.1-only
  *
- * Copyright (c) 2018-2020 Lawrence Livermore National Security LLC
- * Copyright (c) 2018-2020 The Board of Trustees of the Leland Stanford Junior University
- * Copyright (c) 2018-2020 TotalEnergies
- * Copyright (c) 2019-     GEOSX Contributors
+ * Copyright (c) 2016-2024 Lawrence Livermore National Security LLC
+ * Copyright (c) 2018-2024 Total, S.A
+ * Copyright (c) 2018-2024 The Board of Trustees of the Leland Stanford Junior University
+ * Copyright (c) 2023-2024 Chevron
+ * Copyright (c) 2019-     GEOS/GEOSX Contributors
  * All rights reserved
  *
  * See top level LICENSE, COPYRIGHT, CONTRIBUTORS, NOTICE, and ACKNOWLEDGEMENTS files for details.
@@ -20,8 +21,9 @@
 #include "mesh/DomainPartition.hpp"
 #include "math/interpolation/Interpolation.hpp"
 #include "common/Timer.hpp"
+#include "common/Units.hpp"
 
-#if defined(GEOSX_USE_PYGEOSX)
+#if defined(GEOS_USE_PYGEOSX)
 #include "python/PySolverType.hpp"
 #endif
 
@@ -37,6 +39,7 @@ SolverBase::SolverBase( string const & name,
   m_cflFactor(),
   m_maxStableDt{ 1e99 },
   m_nextDt( 1e99 ),
+  m_numTimestepsSinceLastDtCut( -1 ),
   m_dofManager( name ),
   m_linearSolverParameters( groupKeyStruct::linearSolverParametersString(), this ),
   m_nonlinearSolverParameters( groupKeyStruct::nonlinearSolverParametersString(), this ),
@@ -245,10 +248,24 @@ bool SolverBase::execute( real64 const time_n,
                           DomainPartition & domain )
 {
   GEOS_MARK_FUNCTION;
+
+  /*
+   * Reset counter indicating the number of cycles since the last timestep cut
+   * when the new timestep. "-1" means that no time-step cut has ocurred.
+   * */
+  if( dt < m_nextDt )
+  {
+    m_numTimestepsSinceLastDtCut = -1;
+  }
+
   real64 dtRemaining = dt;
   real64 nextDt = dt;
 
   integer const maxSubSteps = m_nonlinearSolverParameters.m_maxSubSteps;
+
+  // Keep track of substeps. It is useful to output these.
+  std::vector< real64 > subStepDt( maxSubSteps, 0.0 );
+  integer numOfSubSteps = 0;
 
   for( integer subStep = 0; subStep < maxSubSteps && dtRemaining > 0.0; ++subStep )
   {
@@ -259,6 +276,8 @@ bool SolverBase::execute( real64 const time_n,
                                           nextDt,
                                           cycleNumber,
                                           domain );
+    numOfSubSteps++;
+    subStepDt[subStep] = dtAccepted;
 
     // increment the cumulative number of nonlinear and linear iterations
     m_solverStatistics.saveTimeStepStatistics();
@@ -303,18 +322,52 @@ bool SolverBase::execute( real64 const time_n,
   // Decide what to do with the next Dt for the event running the solver.
   m_nextDt = setNextDt( nextDt, domain );
 
+  // Increase counter to indicate how many cycles since the last timestep cut
+  if( m_numTimestepsSinceLastDtCut >= 0 )
+  {
+    m_numTimestepsSinceLastDtCut++;
+  }
+
+  logEndOfCycleInformation( cycleNumber, numOfSubSteps, subStepDt );
+
   return false;
+}
+
+void SolverBase::logEndOfCycleInformation( integer const cycleNumber,
+                                           integer const numOfSubSteps,
+                                           std::vector< real64 > const & subStepDt ) const
+{
+  // The formating here is a work in progress.
+  GEOS_LOG_RANK_0( "\n------------------------- TIMESTEP END -------------------------" );
+  GEOS_LOG_RANK_0( GEOS_FMT( "    - Cycle:      {}", cycleNumber ) );
+  GEOS_LOG_RANK_0( GEOS_FMT( "    - N substeps: {}", numOfSubSteps ) );
+  std::string logMessage = "    - dt:";
+  for( integer i = 0; i < numOfSubSteps; ++i )
+  {
+    logMessage += "  " + units::TimeFormatInfo::fromSeconds( subStepDt[i] ).toString();
+  }
+  // Log the complete message once
+  GEOS_LOG_RANK_0( logMessage );
+  GEOS_LOG_RANK_0( "------------------------------------------------------------------\n" );
 }
 
 real64 SolverBase::setNextDt( real64 const & currentDt,
                               DomainPartition & domain )
 {
+  integer const minTimeStepIncreaseInterval = m_nonlinearSolverParameters.minTimeStepIncreaseInterval();
   real64 const nextDtNewton = setNextDtBasedOnNewtonIter( currentDt );
   if( m_nonlinearSolverParameters.getLogLevel() > 0 )
     GEOS_LOG_RANK_0( GEOS_FMT( "{}: next time step based on Newton iterations = {}", getName(), nextDtNewton ));
   real64 const nextDtStateChange = setNextDtBasedOnStateChange( currentDt, domain );
   if( m_nonlinearSolverParameters.getLogLevel() > 0 )
     GEOS_LOG_RANK_0( GEOS_FMT( "{}: next time step based on state change = {}", getName(), nextDtStateChange ));
+
+  if( ( m_numTimestepsSinceLastDtCut >= 0 ) && ( m_numTimestepsSinceLastDtCut < minTimeStepIncreaseInterval ) )
+  {
+    GEOS_LOG_LEVEL_RANK_0( 1, GEOS_FMT( "{}: time-step size will be kept the same since it's been {} cycles since last cut.",
+                                        getName(), m_numTimestepsSinceLastDtCut ) );
+    return currentDt;
+  }
 
   if( nextDtNewton < nextDtStateChange )      // time step size decided based on convergence
   {
@@ -460,7 +513,7 @@ real64 SolverBase::linearImplicitStep( real64 const & time_n,
       Timer timer_create( m_timers["linear solver create"] );
 
       // Compose parallel LA matrix out of local matrix
-      m_matrix.create( m_localMatrix.toViewConst(), m_dofManager.numLocalDofs(), MPI_COMM_GEOSX );
+      m_matrix.create( m_localMatrix.toViewConst(), m_dofManager.numLocalDofs(), MPI_COMM_GEOS );
     }
 
     // Output the linear system matrix/rhs for debugging purposes
@@ -675,49 +728,27 @@ bool SolverBase::lineSearchWithParabolicInterpolation( real64 const & time_n,
   return lineSearchSuccess;
 }
 
-/**
- * @brief Eisenstat-Walker adaptive tolerance
- *
- * This method enables an inexact-Newton method is which the linear solver
- * tolerance is chosen based on the nonlinear solver convergence behavior.
- * In early Newton iterations, the search direction is usually imprecise, and
- * therefore a weak linear convergence tolerance can be chosen to minimize
- * computational cost.  As the search gets closer to the true solution, however,
- * more stringent linear tolerances are necessary to maintain quadratic convergence
- * behavior.
- *
- * The user can set the weakest tolerance allowed, with a default of 1e-3.
- * Even weaker values (e.g. 1e-2,1e-1) can be used for further speedup, but may
- * occasionally cause convergence problems.  Use this parameter with caution.  The
- * most stringent tolerance is hardcoded to 1e-8, which is sufficient for
- * most problems.
- *
- * See Eisenstat, S.C. and Walker, H.F., 1996. Choosing the forcing terms in an
- * inexact Newton method. SIAM Journal on Scientific Computing, 17(1), pp.16-32.
- *
- * @param newNewtonNorm Residual norm at current iteration
- * @param oldNewtonNorm Residual norm at previous iteration
- * @param weakestTol Weakest tolerance allowed (default 1e-3).
- * @return Adaptive tolerance recommendation
- */
+
 real64 SolverBase::eisenstatWalker( real64 const newNewtonNorm,
                                     real64 const oldNewtonNorm,
-                                    real64 const weakestTol )
+                                    LinearSolverParameters::Krylov const & krylovParams,
+                                    integer const logLevel )
 {
-  real64 const strongestTol = 1e-8;
-  real64 const exponent = 2.0;
-  real64 const gamma = 0.9;
-
-  real64 normRatio = newNewtonNorm / oldNewtonNorm;
-  if( normRatio > 1 )
-    normRatio = 1;
-
-  real64 newKrylovTol = gamma*std::pow( normRatio, exponent );
-  real64 altKrylovTol = gamma*std::pow( oldNewtonNorm, exponent );
+  real64 normRatio = std::min( newNewtonNorm / oldNewtonNorm, 1.0 );
+  real64 newKrylovTol = krylovParams.adaptiveGamma * std::pow( normRatio, krylovParams.adaptiveExponent );
+  // the following is a safeguard to avoid too sharp tolerance reduction
+  // the bound is the quadratic reduction wrt previous value
+  real64 altKrylovTol = std::pow( krylovParams.relTolerance, 2.0 );
 
   real64 krylovTol = std::max( newKrylovTol, altKrylovTol );
-  krylovTol = std::min( krylovTol, weakestTol );
-  krylovTol = std::max( krylovTol, strongestTol );
+  krylovTol = std::min( krylovTol, krylovParams.weakestTol );
+  krylovTol = std::max( krylovTol, krylovParams.strongestTol );
+
+  if( logLevel > 0 )
+  {
+    GEOS_LOG_RANK_0( GEOS_FMT( "        Adaptive linear tolerance = {:4.2e} (norm ratio = {:4.2e}, old tolerance = {:4.2e}, new tolerance = {:4.2e}, safeguard = {:4.2e})",
+                               krylovTol, normRatio, krylovParams.relTolerance, newKrylovTol, altKrylovTol ) );
+  }
 
   return krylovTol;
 }
@@ -812,6 +843,7 @@ real64 SolverBase::nonlinearImplicitStep( real64 const & time_n,
     {
       // cut timestep, go back to beginning of step and restart the Newton loop
       stepDt *= dtCutFactor;
+      m_numTimestepsSinceLastDtCut = 0;
       GEOS_LOG_LEVEL_RANK_0 ( 1, GEOS_FMT( "New dt = {}", stepDt ) );
 
       // notify the solver statistics counter that this is a time step cut
@@ -979,15 +1011,15 @@ bool SolverBase::solveNonlinearSystem( real64 const & time_n,
       }
     }
 
-    // if using adaptive Krylov tolerance scheme, update tolerance.
-    LinearSolverParameters::Krylov & krylovParams = m_linearSolverParameters.get().krylov;
-    if( krylovParams.useAdaptiveTol )
-    {
-      krylovParams.relTolerance = eisenstatWalker( residualNorm, lastResidual, krylovParams.weakestTol );
-    }
-
     {
       Timer timer( m_timers["linear solver total"] );
+
+      // if using adaptive Krylov tolerance scheme, update tolerance.
+      LinearSolverParameters::Krylov & krylovParams = m_linearSolverParameters.get().krylov;
+      if( krylovParams.useAdaptiveTol )
+      {
+        krylovParams.relTolerance = newtonIter > 0 ? eisenstatWalker( residualNorm, lastResidual, krylovParams, m_linearSolverParameters.getLogLevel() ) : krylovParams.weakestTol;
+      }
 
       // TODO: Trilinos currently requires this, re-evaluate after moving to Tpetra-based solvers
       if( m_precond )
@@ -1000,7 +1032,7 @@ bool SolverBase::solveNonlinearSystem( real64 const & time_n,
 
         // Compose parallel LA matrix/rhs out of local LA matrix/rhs
         //
-        m_matrix.create( m_localMatrix.toViewConst(), m_dofManager.numLocalDofs(), MPI_COMM_GEOSX );
+        m_matrix.create( m_localMatrix.toViewConst(), m_dofManager.numLocalDofs(), MPI_COMM_GEOS );
       }
 
       // Output the linear system matrix/rhs for debugging purposes
@@ -1096,10 +1128,10 @@ void SolverBase::setupSystem( DomainPartition & domain,
   localMatrix.setName( this->getName() + "/matrix" );
 
   rhs.setName( this->getName() + "/rhs" );
-  rhs.create( dofManager.numLocalDofs(), MPI_COMM_GEOSX );
+  rhs.create( dofManager.numLocalDofs(), MPI_COMM_GEOS );
 
   solution.setName( this->getName() + "/solution" );
-  solution.create( dofManager.numLocalDofs(), MPI_COMM_GEOSX );
+  solution.create( dofManager.numLocalDofs(), MPI_COMM_GEOS );
 }
 
 void SolverBase::assembleSystem( real64 const GEOS_UNUSED_PARAM( time ),
@@ -1402,7 +1434,7 @@ void SolverBase::saveSequentialIterationState( DomainPartition & GEOS_UNUSED_PAR
   GEOS_ERROR( "Call to SolverBase::saveSequentialIterationState. Method should be overloaded by the solver" );
 }
 
-#if defined(GEOSX_USE_PYGEOSX)
+#if defined(GEOS_USE_PYGEOSX)
 PyTypeObject * SolverBase::getPythonType() const
 { return python::getPySolverType(); }
 #endif

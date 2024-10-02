@@ -2,10 +2,11 @@
  * ------------------------------------------------------------------------------------------------------------
  * SPDX-License-Identifier: LGPL-2.1-only
  *
- * Copyright (c) 2018-2020 Lawrence Livermore National Security LLC
- * Copyright (c) 2018-2020 The Board of Trustees of the Leland Stanford Junior University
- * Copyright (c) 2018-2020 TotalEnergies
- * Copyright (c) 2019-     GEOSX Contributors
+ * Copyright (c) 2016-2024 Lawrence Livermore National Security LLC
+ * Copyright (c) 2018-2024 Total, S.A
+ * Copyright (c) 2018-2024 The Board of Trustees of the Leland Stanford Junior University
+ * Copyright (c) 2023-2024 Chevron
+ * Copyright (c) 2019-     GEOS/GEOSX Contributors
  * All rights reserved
  *
  * See top level LICENSE, COPYRIGHT, CONTRIBUTORS, NOTICE, and ACKNOWLEDGEMENTS files for details.
@@ -39,7 +40,7 @@ using serialReduce = RAJA::seq_reduce;
 using serialStream = RAJA::resources::Host;
 using serialEvent = RAJA::resources::HostEvent;
 
-#if defined( GEOSX_USE_OPENMP )
+#if defined( GEOS_USE_OPENMP )
 
 auto const parallelHostMemorySpace = hostMemorySpace;
 
@@ -70,10 +71,10 @@ void RAJA_INLINE parallelHostSync() { }
 #if defined( GEOS_USE_CUDA )
 auto const parallelDeviceMemorySpace = LvArray::MemorySpace::cuda;
 
-template< size_t BLOCK_SIZE = GEOSX_BLOCK_SIZE >
+template< size_t BLOCK_SIZE = GEOS_BLOCK_SIZE >
 using parallelDevicePolicy = RAJA::cuda_exec< BLOCK_SIZE >;
 
-template< size_t BLOCK_SIZE = GEOSX_BLOCK_SIZE >
+template< size_t BLOCK_SIZE = GEOS_BLOCK_SIZE >
 using parallelDeviceAsyncPolicy = RAJA::cuda_exec_async< BLOCK_SIZE >;
 
 using parallelDeviceStream = RAJA::resources::Cuda;
@@ -96,7 +97,7 @@ RAJA_INLINE parallelDeviceEvent forAll( RESOURCE && stream, const localIndex end
 
 auto const parallelDeviceMemorySpace = LvArray::MemorySpace::hip;
 
-template< size_t BLOCK_SIZE = GEOSX_BLOCK_SIZE >
+template< size_t BLOCK_SIZE = GEOS_BLOCK_SIZE >
 using parallelDevicePolicy = RAJA::hip_exec< BLOCK_SIZE >;
 
 
@@ -109,7 +110,7 @@ using parallelDeviceAtomic = RAJA::hip_atomic;
 void RAJA_INLINE parallelDeviceSync() { RAJA::synchronize< RAJA::hip_synchronize >( ); }
 
 // the async dispatch policy caused runtime issues as of rocm@4.5.2, hasn't been checked in rocm@5:
-template< size_t BLOCK_SIZE = GEOSX_BLOCK_SIZE >
+template< size_t BLOCK_SIZE = GEOS_BLOCK_SIZE >
 using parallelDeviceAsyncPolicy = parallelDevicePolicy< BLOCK_SIZE >; // RAJA::hip_exec_async< BLOCK_SIZE >;
 
 template< typename POLICY, typename RESOURCE, typename LAMBDA >
@@ -160,7 +161,7 @@ struct PolicyMap< serialPolicy >
   using reduce = serialReduce;
 };
 
-#if defined(GEOSX_USE_OPENMP)
+#if defined(GEOS_USE_OPENMP)
 template<>
 struct PolicyMap< RAJA::omp_parallel_for_exec >
 {
@@ -170,8 +171,8 @@ struct PolicyMap< RAJA::omp_parallel_for_exec >
 #endif
 
 #if defined(GEOS_USE_CUDA)
-template< typename X, typename Y, size_t BLOCK_SIZE, bool ASYNC >
-struct PolicyMap< RAJA::policy::cuda::cuda_exec_explicit< X, Y, BLOCK_SIZE, ASYNC > >
+template< typename X, typename Y, typename C, size_t BLOCK_SIZE, bool ASYNC >
+struct PolicyMap< RAJA::policy::cuda::cuda_exec_explicit< X, Y, C, BLOCK_SIZE, ASYNC > >
 {
   using atomic = RAJA::cuda_atomic;
   using reduce = RAJA::cuda_reduce;

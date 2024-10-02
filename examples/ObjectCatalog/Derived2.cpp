@@ -11,6 +11,7 @@
  * See top level LICENSE, COPYRIGHT, CONTRIBUTORS, NOTICE, and ACKNOWLEDGEMENTS files for details.
  * ------------------------------------------------------------------------------------------------------------
  */
+
 #include "Derived2.hpp"
 
 

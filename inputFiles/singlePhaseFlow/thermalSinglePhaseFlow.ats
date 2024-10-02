@@ -22,9 +22,17 @@ decks = [
         check_step=20,
         restartcheck_params=RestartcheckParameters(**restartcheck_params)),
     TestDeck(
-        name="thermalCompressible_nonLinear_2d_smoke",
+        name="thermalCompressible_temperatureDependentVolumetricHeatCapacity_smoke",
         description=
-        'non-linear thermal diffusion around a wellbore)',
+        'a wellbore problem with temperature dependent volumetric heat capacity)',
+        partitions=((1, 1, 1), (2, 2, 1)),
+        restart_step=1,
+        check_step=2,
+        restartcheck_params=RestartcheckParameters(**restartcheck_params)),
+    TestDeck(
+        name="thermalCompressible_temperatureDependentSinglePhaseThermalConductivity_smoke",
+        description=
+        'a wellbore problem with temperature dependent thermal conductivity)',
         partitions=((1, 1, 1), (2, 2, 1)),
         restart_step=1,
         check_step=2,

@@ -244,7 +244,7 @@ The models are represented by ``<CO2BrinePhillipsFluid>``, ``<CO2BrineEzrokhiFlu
 
 The following attributes are supported:
 
-.. include:: ../../../coreComponents/schema/docs/CO2BrinePhillipsFluid.rst
+.. include:: /docs/sphinx/datastructure/CO2BrinePhillipsFluid.rst
 
 Supported phase names are:
 

@@ -2,10 +2,11 @@
  * ------------------------------------------------------------------------------------------------------------
  * SPDX-License-Identifier: LGPL-2.1-only
  *
- * Copyright (c) 2018-2020 Lawrence Livermore National Security LLC
- * Copyright (c) 2018-2020 The Board of Trustees of the Leland Stanford Junior University
- * Copyright (c) 2018-2020 TotalEnergies
- * Copyright (c) 2019-     GEOSX Contributors
+ * Copyright (c) 2016-2024 Lawrence Livermore National Security LLC
+ * Copyright (c) 2018-2024 Total, S.A
+ * Copyright (c) 2018-2024 The Board of Trustees of the Leland Stanford Junior University
+ * Copyright (c) 2023-2024 Chevron
+ * Copyright (c) 2019-     GEOS/GEOSX Contributors
  * All rights reserved
  *
  * See top level LICENSE, COPYRIGHT, CONTRIBUTORS, NOTICE, and ACKNOWLEDGEMENTS files for details.
@@ -16,12 +17,12 @@
  * @file SolidMechanicsLagrangeContact.cpp
  *
  */
-#define GEOSX_DISPATCH_VEM
+#define GEOS_DISPATCH_VEM
 #include "SolidMechanicsLagrangeContact.hpp"
 
 #include "common/TimingMacros.hpp"
 #include "constitutive/ConstitutiveManager.hpp"
-#include "constitutive/contact/ContactSelector.hpp"
+#include "constitutive/contact/FrictionSelector.hpp"
 #include "constitutive/fluid/singlefluid/SingleFluidBase.hpp"
 #include "finiteVolume/FiniteVolumeManager.hpp"
 #include "finiteVolume/FluxApproximationBase.hpp"
@@ -1457,8 +1458,8 @@ void SolidMechanicsLagrangeContact::
                                                             [&]( localIndex const,
                                                                  FaceElementSubRegion const & subRegion )
   {
-    string const & contactRelationName = subRegion.template getReference< string >( viewKeyStruct::contactRelationNameString() );
-    ContactBase const & contact = getConstitutiveModel< ContactBase >( subRegion, contactRelationName );
+    string const & frictionLawName = subRegion.template getReference< string >( viewKeyStruct::frictionLawNameString() );
+    FrictionBase const & frictionLaw = getConstitutiveModel< FrictionBase >( subRegion, frictionLawName );
 
     arrayView1d< globalIndex const > const & tracDofNumber = subRegion.getReference< globalIndex_array >( tracDofKey );
     arrayView1d< integer const > const & ghostRank = subRegion.ghostRank();
@@ -1472,10 +1473,10 @@ void SolidMechanicsLagrangeContact::
     arrayView2d< real64 const > const & previousDispJump = subRegion.getField< contact::oldDispJump >();
     arrayView1d< real64 const > const & slidingTolerance = subRegion.getReference< array1d< real64 > >( viewKeyStruct::slidingToleranceString() );
 
-    constitutiveUpdatePassThru( contact, [&] ( auto & castedContact )
+    constitutiveUpdatePassThru( frictionLaw, [&] ( auto & castedFrictionLaw )
     {
-      using ContactType = TYPEOFREF( castedContact );
-      typename ContactType::KernelWrapper contactWrapper = castedContact.createKernelWrapper();
+      using FrictionType = TYPEOFREF( castedFrictionLaw );
+      typename FrictionType::KernelWrapper frictionWrapper = castedFrictionLaw.createKernelUpdates();
 
       forAll< parallelHostPolicy >( subRegion.size(), [=] ( localIndex const kfe )
       {
@@ -1576,8 +1577,8 @@ void SolidMechanicsLagrangeContact::
                 }
 
                 real64 dLimitTau_dNormalTraction = 0;
-                real64 const limitTau = contactWrapper.computeLimitTangentialTractionNorm( traction[kfe][0],
-                                                                                           dLimitTau_dNormalTraction );
+                real64 const limitTau = frictionWrapper.computeLimitTangentialTractionNorm( traction[kfe][0],
+                                                                                            dLimitTau_dNormalTraction );
 
                 real64 sliding[ 2 ] = { dispJump[kfe][1] - previousDispJump[kfe][1], dispJump[kfe][2] - previousDispJump[kfe][2] };
                 real64 slidingNorm = sqrt( sliding[ 0 ]*sliding[ 0 ] + sliding[ 1 ]*sliding[ 1 ] );
@@ -2229,8 +2230,8 @@ bool SolidMechanicsLagrangeContact::updateConfiguration( DomainPartition & domai
     elemManager.forElementSubRegions< FaceElementSubRegion >( regionNames, [&]( localIndex const,
                                                                                 FaceElementSubRegion & subRegion )
     {
-      string const & contactRelationName = subRegion.template getReference< string >( viewKeyStruct::contactRelationNameString() );
-      ContactBase const & contact = getConstitutiveModel< ContactBase >( subRegion, contactRelationName );
+      string const & fricitonLawName = subRegion.template getReference< string >( viewKeyStruct::frictionLawNameString() );
+      FrictionBase const & frictionLaw = getConstitutiveModel< FrictionBase >( subRegion, fricitonLawName );
 
       arrayView1d< integer const > const & ghostRank = subRegion.ghostRank();
       arrayView2d< real64 const > const & traction = subRegion.getField< contact::traction >();
@@ -2246,10 +2247,10 @@ bool SolidMechanicsLagrangeContact::updateConfiguration( DomainPartition & domai
       RAJA::ReduceSum< parallelHostReduce, real64 > changed( 0 );
       RAJA::ReduceSum< parallelHostReduce, real64 > total( 0 );
 
-      constitutiveUpdatePassThru( contact, [&] ( auto & castedContact )
+      constitutiveUpdatePassThru( frictionLaw, [&] ( auto & castedFrictionLaw )
       {
-        using ContactType = TYPEOFREF( castedContact );
-        typename ContactType::KernelWrapper contactWrapper = castedContact.createKernelWrapper();
+        using FrictionType = TYPEOFREF( castedFrictionLaw );
+        typename FrictionType::KernelWrapper frictionWrapper = castedFrictionLaw.createKernelUpdates();
 
         forAll< parallelHostPolicy >( subRegion.size(), [=] ( localIndex const kfe )
         {
@@ -2281,8 +2282,8 @@ bool SolidMechanicsLagrangeContact::updateConfiguration( DomainPartition & domai
 
               real64 dLimitTangentialTractionNorm_dTraction = 0.0;
               real64 const limitTau =
-                contactWrapper.computeLimitTangentialTractionNorm( traction[kfe][0],
-                                                                   dLimitTangentialTractionNorm_dTraction );
+                frictionWrapper.computeLimitTangentialTractionNorm( traction[kfe][0],
+                                                                    dLimitTangentialTractionNorm_dTraction );
 
               if( originalFractureState == FractureState::Stick && currentTau >= limitTau )
               {

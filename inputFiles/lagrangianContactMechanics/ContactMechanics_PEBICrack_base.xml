@@ -13,7 +13,7 @@
 
     <ElementRegions>
         <CellElementRegion name="Region" cellBlocks="{ hexahedra, pentagonalPrisms, hexagonalPrisms }" materialList="{ rock }"/>
-        <SurfaceElementRegion name="Fracture" faceBlock="fracture" defaultAperture="0" materialList="{ fractureMaterial }"/>
+        <SurfaceElementRegion name="Fracture" faceBlock="fracture" defaultAperture="1e-6" materialList="{ fractureMaterial }"/>
     </ElementRegions>
 
     <Geometry>
@@ -26,7 +26,7 @@
 
     <Constitutive>
         <ElasticIsotropic name="rock" defaultDensity="2700" defaultBulkModulus="3333e6" defaultShearModulus="2000e6"/>
-        <Coulomb name="fractureMaterial" cohesion="0" frictionCoefficient="0.1" apertureTableName="apertureTable"/>
+        <Coulomb name="fractureMaterial" cohesion="0" frictionCoefficient="0.1"/>
     </Constitutive>
 
     <Functions>

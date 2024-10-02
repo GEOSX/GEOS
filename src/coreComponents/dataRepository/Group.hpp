@@ -2,10 +2,11 @@
  * ------------------------------------------------------------------------------------------------------------
  * SPDX-License-Identifier: LGPL-2.1-only
  *
- * Copyright (c) 2018-2020 Lawrence Livermore National Security LLC
- * Copyright (c) 2018-2020 The Board of Trustees of the Leland Stanford Junior University
- * Copyright (c) 2018-2020 TotalEnergies
- * Copyright (c) 2019-     GEOSX Contributors
+ * Copyright (c) 2016-2024 Lawrence Livermore National Security LLC
+ * Copyright (c) 2018-2024 Total, S.A
+ * Copyright (c) 2018-2024 The Board of Trustees of the Leland Stanford Junior University
+ * Copyright (c) 2023-2024 Chevron
+ * Copyright (c) 2019-     GEOS/GEOSX Contributors
  * All rights reserved
  *
  * See top level LICENSE, COPYRIGHT, CONTRIBUTORS, NOTICE, and ACKNOWLEDGEMENTS files for details.
@@ -142,7 +143,7 @@ public:
   using CatalogInterface = dataRepository::CatalogInterface< Group, string const &, Group * const >;
 
   /**
-   * @brief Get the singleton catalog for this class.
+   * @brief Get the singleton catalog for this Group.
    * @return reference to the catalog object
    */
   static CatalogInterface::CatalogType & getCatalog();
@@ -337,8 +338,12 @@ public:
                    "Group " << getDataContext() << " has no child named " << key << std::endl
                             << dumpSubGroupsNames(),
                    std::domain_error );
-
-    return dynamicCast< T & >( *child );
+    T * const castedChild = dynamicCast< T * >( child );
+    GEOS_THROW_IF( castedChild == nullptr,
+                   GEOS_FMT( "{} was expected to be a '{}'.",
+                             child->getDataContext(), LvArray::system::demangleType< T >() ),
+                   BadTypeError );
+    return *castedChild;
   }
 
   /**
@@ -352,8 +357,12 @@ public:
                    "Group " << getDataContext() << " has no child named " << key << std::endl
                             << dumpSubGroupsNames(),
                    std::domain_error );
-
-    return dynamicCast< T const & >( *child );
+    T const * const castedChild = dynamicCast< T const * >( child );
+    GEOS_THROW_IF( castedChild == nullptr,
+                   GEOS_FMT( "{} was expected to be a '{}'.",
+                             child->getDataContext(), LvArray::system::demangleType< T >() ),
+                   BadTypeError );
+    return *castedChild;
   }
 
   /**
@@ -1491,7 +1500,7 @@ public:
    * @brief Return PyGroup type.
    * @return Return PyGroup type.
    */
-#if defined(GEOSX_USE_PYGEOSX)
+#if defined(GEOS_USE_PYGEOSX)
   virtual PyTypeObject * getPythonType() const;
 #endif
 

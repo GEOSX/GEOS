@@ -23,7 +23,8 @@
         preconditionerType="mgr"
         krylovTol="1e-4"
         krylovAdaptiveTol="1"
-        krylovWeakestTol="1e-2"/>
+        krylovWeakestTol="1e-2"
+        logLevel="1"/>
     </CompositionalMultiphaseReservoir>
 
     <CompositionalMultiphaseFVM

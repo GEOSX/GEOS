@@ -2,10 +2,11 @@
  * ------------------------------------------------------------------------------------------------------------
  * SPDX-License-Identifier: LGPL-2.1-only
  *
- * Copyright (c) 2018-2020 Lawrence Livermore National Security LLC
- * Copyright (c) 2018-2020 The Board of Trustees of the Leland Stanford Junior University
- * Copyright (c) 2018-2020 TotalEnergies
- * Copyright (c) 2019-     GEOSX Contributors
+ * Copyright (c) 2016-2024 Lawrence Livermore National Security LLC
+ * Copyright (c) 2018-2024 Total, S.A
+ * Copyright (c) 2018-2024 The Board of Trustees of the Leland Stanford Junior University
+ * Copyright (c) 2023-2024 Chevron
+ * Copyright (c) 2019-     GEOS/GEOSX Contributors
  * All rights reserved
  *
  * See top level LICENSE, COPYRIGHT, CONTRIBUTORS, NOTICE, and ACKNOWLEDGEMENTS files for details.
@@ -168,10 +169,10 @@ public:
     localMatrix.setName( this->getName() + "/localMatrix" );
 
     rhs.setName( this->getName() + "/rhs" );
-    rhs.create( dofManager.numLocalDofs(), MPI_COMM_GEOSX );
+    rhs.create( dofManager.numLocalDofs(), MPI_COMM_GEOS );
 
     solution.setName( this->getName() + "/solution" );
-    solution.create( dofManager.numLocalDofs(), MPI_COMM_GEOSX );
+    solution.create( dofManager.numLocalDofs(), MPI_COMM_GEOS );
   }
 
   /**@}*/
@@ -363,12 +364,12 @@ private:
           forAll< serialPolicy >( perforationData.size(), [=] ( localIndex const iperf )
           {
             GEOS_UNUSED_VAR( iperf ); // unused if geos_error_if is nulld
-            GEOS_LOG_RANK( GEOS_FMT( "Perforation at ({},{},{}); perforated element center: ({},{},{}); transmissibility: {} Pa.s.rm^3/s/Pa",
+            GEOS_LOG_RANK( GEOS_FMT( "Perforation at ({},{},{}); perforated element center: ({},{},{}); transmissibility: {} [{}]",
                                      perfLocation[iperf][0], perfLocation[iperf][1], perfLocation[iperf][2],
                                      elemCenter[resElemRegion[iperf]][resElemSubRegion[iperf]][resElemIndex[iperf]][0],
                                      elemCenter[resElemRegion[iperf]][resElemSubRegion[iperf]][resElemIndex[iperf]][1],
                                      elemCenter[resElemRegion[iperf]][resElemSubRegion[iperf]][resElemIndex[iperf]][2],
-                                     perfTrans[iperf] ) );
+                                     perfTrans[iperf], getSymbol( units::Transmissibility ) ) );
           } );
         }
       } );

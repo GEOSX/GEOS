@@ -2,10 +2,11 @@
  * ------------------------------------------------------------------------------------------------------------
  * SPDX-License-Identifier: LGPL-2.1-only
  *
- * Copyright (c) 2018-2020 Lawrence Livermore National Security LLC
- * Copyright (c) 2018-2020 The Board of Trustees of the Leland Stanford Junior University
- * Copyright (c) 2018-2020 TotalEnergies
- * Copyright (c) 2019-     GEOSX Contributors
+ * Copyright (c) 2016-2024 Lawrence Livermore National Security LLC
+ * Copyright (c) 2018-2024 Total, S.A
+ * Copyright (c) 2018-2024 The Board of Trustees of the Leland Stanford Junior University
+ * Copyright (c) 2023-2024 Chevron
+ * Copyright (c) 2019-     GEOS/GEOSX Contributors
  * All rights reserved
  *
  * See top level LICENSE, COPYRIGHT, CONTRIBUTORS, NOTICE, and ACKNOWLEDGEMENTS files for details.
@@ -360,13 +361,18 @@ std::unique_ptr< MODEL > makePVTFunction( string const & filename,
   {
     array1d< string > const strs = stringutilities::tokenizeBySpaces< array1d >( str );
 
+    TableFunction::OutputOptions const pvtOutputOpts = {
+      true,// writeCSV
+      true, // writeInLog
+    };
+
     if( strs.size()>1 && strs[0] == key )
     {
       pvtFunction = std::make_unique< MODEL >( strs[1],
                                                strs,
                                                componentNames,
                                                componentMolarWeight,
-                                               true ); // print PVT tables
+                                               pvtOutputOpts );
     }
   }
   GEOS_ERROR_IF( pvtFunction == nullptr,
@@ -400,7 +406,10 @@ std::unique_ptr< MODEL > makeFlashModel( string const & filename,
   while( std::getline( is, str ) )
   {
     array1d< string > const strs = stringutilities::tokenizeBySpaces< array1d >( str );
-
+    TableFunction::OutputOptions const flashOutputOpts = {
+      true, // writeCSV
+      true, // writeInLog
+    };
     if( strs.size()>1 && strs[0] == key )
     {
       flashModel = std::make_unique< MODEL >( strs[1],
@@ -408,7 +417,7 @@ std::unique_ptr< MODEL > makeFlashModel( string const & filename,
                                               phaseNames,
                                               componentNames,
                                               componentMolarWeight,
-                                              true ); // print PVT tables
+                                              flashOutputOpts );
     }
   }
   GEOS_ERROR_IF( flashModel == nullptr,

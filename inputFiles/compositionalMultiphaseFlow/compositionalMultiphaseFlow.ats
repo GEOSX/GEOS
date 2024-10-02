@@ -94,6 +94,14 @@ decks = [
         check_step=20,
         restartcheck_params=RestartcheckParameters(**restartcheck_params)),
     TestDeck(
+        name="co2_flux_dirichlet",
+        description=
+        "Compositional co2-brine flow test (2D co2 injection, 2-phase co2-brine, Table 2-phase relperm curves, Dirichlet boundary)",
+        partitions=((1, 1, 1), (2, 1, 3)),
+        restart_step=23,
+        check_step=46,
+        restartcheck_params=RestartcheckParameters(**restartcheck_params)),
+    TestDeck(
         name="deadoil_3ph_staircase_obl_3d",
         description=
         "Smoke test for a staircase deadoil test (3D displacement, 3-phase dead-oil, OBL)",

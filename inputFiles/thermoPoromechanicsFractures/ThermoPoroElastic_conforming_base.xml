@@ -74,7 +74,7 @@
 
     <SurfaceElementRegion
       name="Fracture"
-      materialList="{ water, fractureFilling, fractureContact, thermalCond }"
+      materialList="{ water, fractureFilling, fractureContact, thermalCond, hApertureModel }"
       defaultAperture="1.e-4"/>
   </ElementRegions>
 

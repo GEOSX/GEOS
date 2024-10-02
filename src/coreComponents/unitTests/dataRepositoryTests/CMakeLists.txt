@@ -3,33 +3,15 @@ set( dataRepository_tests
      testObjectCatalog.cpp
      testRestartBasic.cpp
      testRestartExtended.cpp
-     testPacking.cpp
      testWrapperHelpers.cpp
      testGroupPath.cpp )
 
-set( dependencyList ${parallelDeps} gtest )
+set( tplDependencyList ${parallelDeps} gtest )
 
-if ( GEOSX_BUILD_SHARED_LIBS )
-  list( APPEND dependencyList geosx_core )
-else()
-  list( APPEND dependencyList ${geosx_core_libs} )
-endif()
+set( dependencyList mainInterface )
 
-if (TARGET pugixml::pugixml)
-  list( APPEND dependencyList pugixml::pugixml )
-endif()
-
-if (TARGET pugixml)
-  list( APPEND dependencyList pugixml )
-endif()
-
-if (TARGET fmt::fmt-header-only)
-  list( APPEND dependencyList fmt::fmt-header-only )
-endif()
-
-if (TARGET fmt)
-  list( APPEND dependencyList fmt )
-endif()
+geos_decorate_link_dependencies( LIST decoratedDependencies
+                                 DEPENDENCIES ${dependencyList} )
 
 # Add gtest C++ based tests
 foreach(test ${dataRepository_tests})
@@ -37,7 +19,7 @@ foreach(test ${dataRepository_tests})
     blt_add_executable( NAME ${test_name}
                         SOURCES ${test}
                         OUTPUT_DIR ${TEST_OUTPUT_DIRECTORY}
-                        DEPENDS_ON ${dependencyList} )
+                        DEPENDS_ON ${decoratedDependencies} ${tplDependencyList} )
 
     geos_add_test( NAME ${test_name}
                    COMMAND ${test_name} )

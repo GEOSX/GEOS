@@ -38,7 +38,6 @@
       target="/Outputs/restartOutput"/>
   </Events>
 
-  <!-- SPHINX_FEDiscretizationEnd -->
   <ElementRegions>
     <CellElementRegion
       name="Region2"

@@ -11,7 +11,7 @@ if ( ENABLE_CALIPER )
         testCaliperSmoke.cpp )
 endif()
 
-set( dependencyList ${parallelDeps} common hdf5 gtest )
+set( dependencyList ${parallelDeps} common HDF5::HDF5 gtest )
 
 # Add gtest C++ based tests
 foreach(test ${gtest_geosx_tests})

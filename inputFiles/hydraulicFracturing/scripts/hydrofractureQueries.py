@@ -8,8 +8,8 @@ import hdf5_wrapper
 import xml.etree.ElementTree as ElementTree
 
 
-def getFracHeightFromXML(fracType):
-    prefix = "../../../../../../../inputFiles/hydraulicFracturing/"
+def getFracHeightFromXML(fracType, geosDir):
+    prefix = geosDir + "/inputFiles/hydraulicFracturing/"
 
     tree = ElementTree.parse(prefix + fracType + "_benchmark.xml")
 
@@ -36,35 +36,47 @@ def getFracHeightFromXML(fracType):
 
 
 def main():
+
+   # Initialize the argument parser
+    parser = argparse.ArgumentParser(description="Script to generate figure from tutorial.")
+
+    # Add arguments to accept individual file paths
+    parser.add_argument('--geosDir', help='Path to the GEOS repository ', default='../../../../../../..')
+
+    # Parse the command-line arguments
+    args = parser.parse_args()
+
     # Load and process GEOSX results
     # File path
+    geosDir = args.geosDir
+
     fracType = sys.argv[1]
-    prefix = "../../../../../../../inputFiles/hydraulicFracturing/"
+    prefix = geosDir + "/inputFiles/hydraulicFracturing/"
     hdf5File = prefix + fracType + '_output.hdf5'
 
     # Get frac height from XML file
     if fracType == 'kgdToughnessDominated' or fracType == 'kgdViscosityDominated' or fracType == 'pknViscosityDominated':
-        fracHeight = getFracHeightFromXML(fracType)
+        fracHeight = getFracHeightFromXML(fracType, geosDir)
 
     # Read simulation output from HDF5 file
     # Global Coordinate of Element Center
     hf = hdf5_wrapper.hdf5_wrapper(hdf5File)
     xl = hf['pressure elementCenter']
-    xl = np.array(xl)
+    xl = np.asarray(xl)
     xcord = xl[-1, :, 0]
     ycord = xl[-1, :, 1]
     zcord = xl[-1, :, 2]
     tl = hf['pressure Time']
-    tl = np.array(tl)
+    tl = np.asarray(tl)
     # Load pressure
     fpre = hf['pressure']
-    fpre = np.array(fpre)
+    fpre = np.asarray(fpre)
     # Load elementAperture
     aper = hf['elementAperture']
-    aper = np.array(aper)
+    aper = np.asarray(aper)
     # Load elementArea
     area = hf['elementArea']
-    area = np.array(area)
+    area = np.asarray(area)
 
     # Find injection location
     ind = np.argmin(ycord)

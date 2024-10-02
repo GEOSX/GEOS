@@ -69,7 +69,7 @@
       file="../../../GEOSDATA/DataSets/Egg/egg_withBurdens_small.vts"
       regionAttribute="elementRegionMarker"
       fieldsToImport="{ PERM }"
-      fieldNamesInGEOSX="{ rockPermeability_permeability }"/>
+      fieldNamesInGEOS="{ rockPermeability_permeability }"/>
   </Mesh>
 
   <Geometry>

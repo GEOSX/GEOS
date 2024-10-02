@@ -2,10 +2,11 @@
  * ------------------------------------------------------------------------------------------------------------
  * SPDX-License-Identifier: LGPL-2.1-only
  *
- * Copyright (c) 2018-2020 Lawrence Livermore National Security LLC
- * Copyright (c) 2018-2020 The Board of Trustees of the Leland Stanford Junior University
- * Copyright (c) 2018-2020 TotalEnergies
- * Copyright (c) 2019-     GEOSX Contributors
+ * Copyright (c) 2016-2024 Lawrence Livermore National Security LLC
+ * Copyright (c) 2018-2024 Total, S.A
+ * Copyright (c) 2018-2024 The Board of Trustees of the Leland Stanford Junior University
+ * Copyright (c) 2023-2024 Chevron
+ * Copyright (c) 2019-     GEOS/GEOSX Contributors
  * All rights reserved
  *
  * See top level LICENSE, COPYRIGHT, CONTRIBUTORS, NOTICE, and ACKNOWLEDGEMENTS files for details.
@@ -18,6 +19,7 @@
 
 #include "EpetraVector.hpp"
 
+#include "codingUtilities/RTTypes.hpp"
 #include "codingUtilities/Utilities.hpp"
 #include "linearAlgebra/interfaces/trilinos/EpetraUtils.hpp"
 
@@ -289,11 +291,11 @@ globalIndex EpetraVector::iupper() const
 MPI_Comm EpetraVector::comm() const
 {
   GEOS_LAI_ASSERT( created() );
-#ifdef GEOSX_USE_MPI
+#ifdef GEOS_USE_MPI
   return dynamicCast< Epetra_MpiComm const & >( m_vec->Map().Comm() ).Comm();
 #else
-  return MPI_COMM_GEOSX;
+  return MPI_COMM_GEOS;
 #endif
 }
 
-} // end geosx
+} // end geos

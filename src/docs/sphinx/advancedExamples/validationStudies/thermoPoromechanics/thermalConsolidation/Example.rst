@@ -31,7 +31,7 @@ The initial temperature of the saturated soil is 0 degrees Celsius.
 The soil column is insulated and sealed everywhere, except at the top surface.
 The problem setup is illustrated below.
 
-.. _problemSketchFig:
+.. _thermoPoroMechanicsProblemSketchFig:
 .. figure:: sketch.png
    :align: center
    :width: 350

@@ -1,9 +1,22 @@
 import matplotlib
 import numpy as np
 import matplotlib.pyplot as plt
+import os
+import argparse
 
 
 def main():
+
+   # Initialize the argument parser
+    parser = argparse.ArgumentParser(description="Script to generate figure from tutorial.")
+
+    # Add arguments to accept individual file paths
+    parser.add_argument('--outputDir', help='Path to output directory', default='.')
+
+    # Parse the command-line arguments
+    args = parser.parse_args()
+    outputDir = args.outputDir
+
 
     # Experiments (Rubin, 1983)
     H = 0.055
@@ -16,7 +29,7 @@ def main():
     P58list = [1.677, 4.145, 4.134, 3.507, 3.381, 2.827, 2.292, 1.894, 1.557, 1.345, 1.172, 1.050, 0.949]
 
     # Load GEOSX results
-    GTime, GWellP, G58P, G57P, GAper, GArea = np.loadtxt("model_results.txt", skiprows=1, unpack=True)
+    GTime, GWellP, G58P, G57P, GAper, GArea = np.loadtxt(outputDir + "/model_results.txt", skiprows=1, unpack=True)
     GLength = GArea / H * 1000
     GTime = GTime + Tinj
 

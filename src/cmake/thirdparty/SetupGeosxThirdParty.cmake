@@ -117,7 +117,7 @@ macro(mandatory_tpl_doesnt_exist
 
     message(FATAL_ERROR
             "GEOSX requires ${CURRENT_TPL_NAME}, either :\n"
-            "  - Verify that you provided a valid TPL installation directory (GEOSX_TPL_DIR = \"${GEOSX_TPL_DIR}\"),\n"
+            "  - Verify that you provided a valid TPL installation directory (GEOS_TPL_DIR = \"${GEOS_TPL_DIR}\"),\n"
             "  - Or set ${CURRENT_TPL_DIR_VAR} to the ${CURRENT_TPL_NAME} installation directory (${CURRENT_TPL_DIR_VAR} = \"${${CURRENT_TPL_DIR_VAR}}\").\n")
 
 endmacro(mandatory_tpl_doesnt_exist)
@@ -216,27 +216,16 @@ endif()
 if(DEFINED HDF5_DIR)
     message(STATUS "HDF5_DIR = ${HDF5_DIR}")
 
-    set(HDF5_ROOT ${HDF5_DIR})
-    set(HDF5_USE_STATIC_LIBRARIES FALSE)
-    set(HDF5_NO_FIND_PACKAGE_CONFIG_FILE ON)
-    include(FindHDF5)
+    find_package(HDF5 REQUIRED
+                 PATHS ${HDF5_DIR}
+                 NO_DEFAULT_PATH)
 
-    # On some platforms (Summit) HDF5 lists /usr/include in it's list of include directories.
-    # When this happens you can get really opaque include errors.
-    list(REMOVE_ITEM HDF5_INCLUDE_DIRS /usr/include)
-
-    blt_import_library(NAME hdf5
-                       INCLUDES ${HDF5_INCLUDE_DIRS}
-                       LIBRARIES ${HDF5_LIBRARIES}
-                       TREAT_INCLUDES_AS_SYSTEM ON)
-
-    file(READ "${HDF5_DIR}/include/H5public.h" header_file )
-    string(REGEX MATCH "version: *([0-9]+.[0-9]+.[0-9]+)" _ ${header_file})
-    set( HDF5_VERSION "${CMAKE_MATCH_1}" CACHE STRING "" FORCE )
     message( " ----> HDF5 version ${HDF5_VERSION}")
 
+    blt_convert_to_system_includes(TARGET HDF5::HDF5)
+
     set(ENABLE_HDF5 ON CACHE BOOL "")
-    set(thirdPartyLibs ${thirdPartyLibs} hdf5)
+    set(thirdPartyLibs ${thirdPartyLibs} HDF5::HDF5 )
 else()
     mandatory_tpl_doesnt_exist("hdf5" HDF5_DIR)
 endif()
@@ -252,7 +241,7 @@ if(DEFINED SILO_DIR AND ENABLE_SILO)
                       LIBRARY_DIRECTORIES ${SILO_DIR}/lib
                       HEADER silo.h
                       LIBRARIES siloh5
-                      DEPENDS hdf5)
+                      DEPENDS HDF5::HDF5 )
 
 
     set(ENABLE_SILO ON CACHE BOOL "")
@@ -344,7 +333,7 @@ endif()
 if(DEFINED FMT_DIR)
     message(STATUS "FMT_DIR = ${FMT_DIR}")
 
-    find_package(fmt REQUIRED
+    find_package(FMT REQUIRED
                  PATHS ${FMT_DIR}
                  NO_DEFAULT_PATH)
 
@@ -355,6 +344,7 @@ if(DEFINED FMT_DIR)
     set_property(TARGET fmt::fmt-header-only
                  APPEND PROPERTY INTERFACE_SYSTEM_INCLUDE_DIRECTORIES
                  ${includeDirs})
+
 
     set(ENABLE_FMT ON CACHE BOOL "")
 
@@ -712,7 +702,7 @@ if(DEFINED HYPRE_DIR AND ENABLE_HYPRE)
 
     # if( ENABLE_CUDA AND ( NOT ${ENABLE_HYPRE_DEVICE} STREQUAL "CUDA" ) )
     #   set(ENABLE_HYPRE OFF CACHE BOOL "" FORCE)
-    #   if( GEOSX_LA_INTERFACE STREQUAL "Hypre")
+    #   if( GEOS_LA_INTERFACE STREQUAL "Hypre")
     #     message( FATAL_ERROR "Hypre LAI selected, but ENABLE_HYPRE_DEVICE not 'CUDA' while ENABLE_CUDA is ON.")
     #   endif()
     # else()
@@ -907,11 +897,11 @@ endif()
 ################################
 # LAI
 ################################
-string(TOUPPER "${GEOSX_LA_INTERFACE}" upper_LAI)
+string(TOUPPER "${GEOS_LA_INTERFACE}" upper_LAI)
 if(NOT ENABLE_${upper_LAI})
-  message(FATAL_ERROR "${GEOSX_LA_INTERFACE} LA interface is selected, but ENABLE_${upper_LAI} is OFF")
+  message(FATAL_ERROR "${GEOS_LA_INTERFACE} LA interface is selected, but ENABLE_${upper_LAI} is OFF")
 endif()
-option(GEOSX_LA_INTERFACE_${upper_LAI} "${upper_LAI} LA interface is selected" ON)
+option(GEOS_LA_INTERFACE_${upper_LAI} "${upper_LAI} LA interface is selected" ON)
 
 
 message(STATUS "thirdPartyLibs = ${thirdPartyLibs}")

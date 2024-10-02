@@ -2,10 +2,11 @@
  * ------------------------------------------------------------------------------------------------------------
  * SPDX-License-Identifier: LGPL-2.1-only
  *
- * Copyright (c) 2018-2020 Lawrence Livermore National Security LLC
- * Copyright (c) 2018-2020 The Board of Trustees of the Leland Stanford Junior University
- * Copyright (c) 2018-2020 TotalEnergies
- * Copyright (c) 2019-     GEOSX Contributors
+ * Copyright (c) 2016-2024 Lawrence Livermore National Security LLC
+ * Copyright (c) 2018-2024 Total, S.A
+ * Copyright (c) 2018-2024 The Board of Trustees of the Leland Stanford Junior University
+ * Copyright (c) 2023-2024 Chevron
+ * Copyright (c) 2019-     GEOS/GEOSX Contributors
  * All rights reserved
  *
  * See top level LICENSE, COPYRIGHT, CONTRIBUTORS, NOTICE, and ACKNOWLEDGEMENTS files for details.
@@ -363,8 +364,8 @@ struct WaveSolverUtils
    * @brief Convert a mesh element point coordinate into a coordinate on the reference element
    * @tparam FE_TYPE finite element type
    * @param[in] coords coordinate of the point
-   * @param[in] elemsToNodes map to obtaint global nodes from element index
-   * @param[in] nodeCoords array of mesh nodes coordinates
+   * @param[in] elemsToNodes element to node map for the base mesh
+   * @param[in] nodeCoords array of base mesh nodes coordinates
    * @param[out] coordsOnRefElem to contain the coordinate computed in the reference element
    */
   template< typename FE_TYPE >
@@ -372,14 +373,14 @@ struct WaveSolverUtils
   static void
   computeCoordinatesOnReferenceElement( real64 const (&coords)[3],
                                         arraySlice1d< localIndex const, cells::NODE_MAP_USD - 1 > const elemsToNodes,
-                                        arrayView2d< wsCoordType const, nodes::REFERENCE_POSITION_USD > const nodeCoords,
+                                        arrayView2d< real64 const, nodes::REFERENCE_POSITION_USD > const nodeCoords,
                                         real64 (& coordsOnRefElem)[3] )
   {
     // only the eight corners of the mesh cell are needed to compute the Jacobian
     real64 xLocal[8][3]{};
     for( localIndex a = 0; a < 8; ++a )
     {
-      LvArray::tensorOps::copy< 3 >( xLocal[a], nodeCoords[ elemsToNodes[ FE_TYPE::meshIndexToLinearIndex3D( a )] ] );
+      LvArray::tensorOps::copy< 3 >( xLocal[a], nodeCoords[ elemsToNodes[ a ] ] );
     }
     // coordsOnRefElem = invJ*(coords-coordsNode_0)
     real64 invJ[3][3]{};

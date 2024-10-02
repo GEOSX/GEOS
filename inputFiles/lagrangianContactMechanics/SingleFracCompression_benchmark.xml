@@ -1,0 +1,75 @@
+<?xml version="1.0" ?>
+
+<Problem>
+
+  <Included>
+    <File name="./SingleFracCompression_base.xml"/>
+  </Included>
+
+<!-- SPHINX_MESH -->
+  <Mesh>
+    <VTKMesh
+      name="CubeHex"
+      file="crackInPlane_benchmark.vtu"/>
+  </Mesh>
+
+  <Geometry>
+    <Rectangle
+      name="fracture"
+      normal="{-0.342020143325669, 0.939692620785908, 0.0}"
+      origin="{0.0, 0.0, 0.0}"
+      lengthVector="{0.939692620785908, 0.342020143325669, 0.0}"
+      widthVector="{0.0, 0.0, 1.0}"
+      dimensions="{ 2, 10 }"/>
+
+    <Rectangle
+      name="core"
+      normal="{-0.342020143325669, 0.939692620785908, 0.0}"
+      origin="{0.0, 0.0, 0.0}"
+      lengthVector="{0.939692620785908, 0.342020143325669, 0.0}"
+      widthVector="{0.0, 0.0, 1.0}"
+      dimensions="{ 2, 10 }"/>
+
+    <Box
+      name="rightPoint"
+      xMin="{ 39.9, -40.1, -0.001}"
+      xMax="{ 40.1,  40.1,  0.051}"/>
+
+    <Box
+      name="leftPoint"
+      xMin="{-40.1, -40.1, -0.001}"
+      xMax="{-39.9,  40.1,  0.051}"/>
+
+    <Box
+      name="topPoint"
+      xMin="{-40.1, 39.9, -0.001}"
+      xMax="{ 40.1, 40.1,  0.051}"/>
+
+    <Box
+      name="bottomPoint"
+      xMin="{-40.1, -40.1, -0.001}"
+      xMax="{ 40.1, -39.9,  0.051}"/>
+
+    <Box
+      name="front"
+      xMin="{-40.1, -40.1, -0.001}"
+      xMax="{ 40.1,  40.1,  0.001}"/>
+
+    <Box
+      name="rear"
+      xMin="{-40.1, -40.1, 0.049}"
+      xMax="{ 40.1,  40.1, 0.051}"/>
+
+    <Box
+      name="xmin"
+      xMin="{-40.1, -40.1, -0.001}"
+      xMax="{-39.9,  40.1,  0.051}"/>
+
+    <Box
+      name="xmax"
+      xMin="{39.9, -40.1, -0.001}"
+      xMax="{40.1,  40.1, 0.051}"/>
+  </Geometry>
+<!-- SPHINX_MESH_END -->
+
+</Problem>

@@ -2,10 +2,11 @@
  * ------------------------------------------------------------------------------------------------------------
  * SPDX-License-Identifier: LGPL-2.1-only
  *
- * Copyright (c) 2018-2020 Lawrence Livermore National Security LLC
- * Copyright (c) 2018-2020 The Board of Trustees of the Leland Stanford Junior University
- * Copyright (c) 2018-2020 TotalEnergies
- * Copyright (c) 2019-     GEOSX Contributors
+ * Copyright (c) 2016-2024 Lawrence Livermore National Security LLC
+ * Copyright (c) 2018-2024 Total, S.A
+ * Copyright (c) 2018-2024 The Board of Trustees of the Leland Stanford Junior University
+ * Copyright (c) 2023-2024 Chevron
+ * Copyright (c) 2019-     GEOS/GEOSX Contributors
  * All rights reserved
  *
  * See top level LICENSE, COPYRIGHT, CONTRIBUTORS, NOTICE, and ACKNOWLEDGEMENTS files for details.
@@ -18,6 +19,7 @@
 
 #include "CompositionalMultiphaseHybridFVM.hpp"
 
+#include "mesh/DomainPartition.hpp"
 #include "constitutive/ConstitutivePassThru.hpp"
 #include "constitutive/fluid/multifluid/MultiFluidBase.hpp"
 #include "constitutive/relativePermeability/RelativePermeabilityBase.hpp"
@@ -33,7 +35,7 @@
 #include "physicsSolvers/fluidFlow/CompositionalMultiphaseHybridFVMKernels.hpp"
 
 /**
- * @namespace the geosx namespace that encapsulates the majority of the code
+ * @namespace the geos namespace that encapsulates the majority of the code
  */
 namespace geos
 {
@@ -609,8 +611,8 @@ real64 CompositionalMultiphaseHybridFVM::calculateResidualNorm( real64 const & G
                                                               [&]( localIndex const,
                                                                    ElementSubRegionBase const & subRegion )
     {
-      real64 subRegionResidualNorm[1]{};
-      real64 subRegionResidualNormalizer[1]{};
+      real64 subRegionResidualNorm[2]{};
+      real64 subRegionResidualNormalizer[2]{};
 
       string const & fluidName = subRegion.getReference< string >( viewKeyStruct::fluidNamesString() );
       MultiFluidBase const & fluid = getConstitutiveModel< MultiFluidBase >( subRegion, fluidName );
@@ -638,6 +640,8 @@ real64 CompositionalMultiphaseHybridFVM::calculateResidualNorm( real64 const & G
 
       if( normType == solverBaseKernels::NormType::Linf )
       {
+        // take max between mass and volume residual
+        subRegionResidualNorm[0] = LvArray::math::max( subRegionResidualNorm[0], subRegionResidualNorm[1] );
         if( subRegionResidualNorm[0] > localResidualNorm )
         {
           localResidualNorm = subRegionResidualNorm[0];
@@ -645,6 +649,8 @@ real64 CompositionalMultiphaseHybridFVM::calculateResidualNorm( real64 const & G
       }
       else
       {
+        // sum up mass and volume residual
+        subRegionResidualNorm[0] = subRegionResidualNorm[0] + subRegionResidualNorm[1];
         localResidualNorm += subRegionResidualNorm[0];
         localResidualNormalizer += subRegionResidualNormalizer[0];
       }

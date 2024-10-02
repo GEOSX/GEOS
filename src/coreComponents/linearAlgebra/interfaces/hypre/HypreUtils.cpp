@@ -2,11 +2,12 @@
  * ------------------------------------------------------------------------------------------------------------
  * SPDX-License-Identifier: LGPL-2.1-only
  *
- * Copyright (c) 2018-2019 Lawrence Livermore National Security LLC
- * Copyright (c) 2018-2019 The Board of Trustees of the Leland Stanford Junior University
- * Copyright (c) 2018-2019 Total, S.A
- * Copyright (c) 2019-     GEOSX Contributors
- * All right reserved
+ * Copyright (c) 2016-2024 Lawrence Livermore National Security LLC
+ * Copyright (c) 2018-2024 Total, S.A
+ * Copyright (c) 2018-2024 The Board of Trustees of the Leland Stanford Junior University
+ * Copyright (c) 2023-2024 Chevron
+ * Copyright (c) 2019-     GEOS/GEOSX Contributors
+ * All rights reserved
  *
  * See top level LICENSE, COPYRIGHT, CONTRIBUTORS, NOTICE, and ACKNOWLEDGEMENTS files for details.
  * ------------------------------------------------------------------------------------------------------------
@@ -59,7 +60,7 @@ HYPRE_Int SuperLUDistSolve( HYPRE_Solver solver,
                             HYPRE_ParVector x )
 {
   GEOS_UNUSED_VAR( A );
-#if defined(GEOSX_USE_SUPERLU_DIST)
+#if defined(GEOS_USE_SUPERLU_DIST)
   return hypre_SLUDistSolve( solver, b, x );
 #else
   GEOS_UNUSED_VAR( solver );
@@ -72,7 +73,7 @@ HYPRE_Int SuperLUDistSolve( HYPRE_Solver solver,
 
 HYPRE_Int SuperLUDistDestroy( HYPRE_Solver solver )
 {
-#if defined(GEOSX_USE_SUPERLU_DIST)
+#if defined(GEOS_USE_SUPERLU_DIST)
   return hypre_SLUDistDestroy( solver );
 #else
   GEOS_UNUSED_VAR( solver );
