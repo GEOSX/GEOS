@@ -11,9 +11,19 @@ on:
   workflow_dispatch: # Workflow can be run manually
 
 jobs:
-  get_docker_image_tag:
-    # if the current added label is for GPUs
-    if: "${{ github.event.label.name == 'ci: run CUDA builds'}}"
+  # If the 'ci: run CUDA builds' PR label is found, the cuda jobs run.
+  remove_label:    
+    if: "${{ github.event.label.name == 'ci: run CUDA builds'}}"    
+    runs-on: ubuntu-22.04
+    steps:
+      - name: Remove the label
+        uses: actions-ecosystem/action-remove-labels@v1.3.0
+        with:
+            labels: 'ci: run CUDA builds'
+
+  get_docker_image_tag:    
+    needs: 
+      - remove_label
     # Everywhere in this workflow, we use the most recent ubuntu distribution available in Github Actions
     # to ensure maximum support of google cloud's sdk.
     runs-on: ubuntu-22.04
@@ -35,7 +45,6 @@ jobs:
       run: |
         echo "DOCKER_IMAGE_TAG=$(jq '.build.args.GEOS_TPL_TAG' -r .devcontainer/devcontainer.json)" >> "$GITHUB_OUTPUT"
 
-  # If the 'ci: run CUDA builds' PR label is found, the cuda jobs run immediately along side linux jobs.
   # Note: CUDA jobs should only be run if PR is ready to merge.
   cuda_builds:
     needs:
@@ -139,14 +148,3 @@ jobs:
       RUNS_ON: ${{ matrix.RUNS_ON }}
       REQUIRED_LABEL: "ci: run CUDA builds"
     secrets: inherit
-
-  remove_label:
-    if: always()
-    needs: 
-      - cuda_builds
-    runs-on: ubuntu-22.04
-    steps:
-      - name: Remove the label
-        uses: actions-ecosystem/action-remove-labels@v1
-        with:
-            labels: 'ci: run CUDA builds'

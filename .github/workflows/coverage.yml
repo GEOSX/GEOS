@@ -11,9 +11,20 @@ on:
   workflow_dispatch: # Workflow can be run manually
 
 jobs:
-  get_docker_image_tag:
-    # if the current added label is for GPUs
+  # If the 'ci: run code coverage' PR label is found, the coverage jobs run
+  remove_label:
     if: "${{ github.event.label.name == 'ci: run code coverage'}}"
+    runs-on: ubuntu-22.04
+    steps:
+      - name: Remove the label
+        uses: actions-ecosystem/action-remove-labels@v1.3.0
+        with:
+            labels: 'ci: run code coverage'
+
+  # first get the docker image
+  get_docker_image_tag:        
+    needs: 
+      - remove_label
     # Everywhere in this workflow, we use the most recent ubuntu distribution available in Github Actions
     # to ensure maximum support of google cloud's sdk.
     runs-on: ubuntu-22.04
@@ -35,7 +46,6 @@ jobs:
       run: |
         echo "DOCKER_IMAGE_TAG=$(jq '.build.args.GEOS_TPL_TAG' -r .devcontainer/devcontainer.json)" >> "$GITHUB_OUTPUT"
 
-  # If the 'ci: run code coverage' PR label is found, the cuda jobs run immediately along side linux jobs.
   code_coverage:
     needs:
       - get_docker_image_tag
@@ -51,14 +61,3 @@ jobs:
       GCP_BUCKET: geosx/ubuntu22.04-gcc11
       RUNS_ON: Runner_4core_16GB
     secrets: inherit
-
-  remove_label:
-    if: always()
-    needs: 
-      - code_coverage
-    runs-on: ubuntu-22.04
-    steps:
-      - name: Remove the label
-        uses: actions-ecosystem/action-remove-labels@v1
-        with:
-            labels: 'ci: run code coverage'

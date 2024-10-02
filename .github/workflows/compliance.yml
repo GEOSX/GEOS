@@ -13,28 +13,14 @@ concurrency:
 # Please define `build.args.GEOS_TPL_TAG` in `.devcontainer/devcontainer.json`
 
 jobs:
-  # Alows remove labels at sync avoiding gpu / integrated tests run
-  remove_labels:
-    if: github.event.action != 'opened'
-    runs-on: ubuntu-22.04
-    steps:
-      - name: Remove the label
-        uses: actions-ecosystem/action-remove-labels@v1
-        with:
-            labels: |
-              ci: run CUDA builds
-              ci: run integrated tests
-
   # Checks if PR title follows conventional semantics
   semantic_pull_request:
     name: Checks if PR title follows conventional semantics
-    needs: remove_labels
     permissions:
       pull-requests: write  # for amannn/action-semantic-pull-request to analyze PRs and 
       statuses: write  # for amannn/action-semantic-pull-request to mark status of analyzed PR
       contents: read    
     runs-on: ubuntu-latest
-    
     steps:
       - name: Check if the PR name has conventional semantics
         if: github.event_name == 'pull_request'
@@ -57,22 +43,7 @@ jobs:
     runs-on: ubuntu-22.04
     outputs:
       DOCKER_IMAGE_TAG: ${{ steps.extract_docker_image_tag.outputs.DOCKER_IMAGE_TAG }}
-    steps:
-    # - name: Check that the PR is not a draft (cancel rest of jobs otherwise)
-    #   id: extract_pr_info
-    #   run: |
-    #     if [[ ${{github.event_name}} == 'pull_request' ]]; then 
-    #       # We do not rely on the `github.event.pull_request.labels` information since it's cached at the job.
-    #       # Changing labels or assignee in the PR would not allow to simply re-run the job with a different outcome.
-    #       pr_json=$(curl -H "Accept: application/vnd.github+json" https://api.github.com/repos/${{ github.repository }}/pulls/${{ github.event.number }})
-          
-    #       # We stop the workflow if the pr is draft
-    #       draft_status=$(echo ${pr_json} | jq '.draft')
-    #       echo "Draft status of PR is ${draft_status}."
-    #       if [[ $draft_status == true ]]; then exit 1 ; fi
-    #     fi
-
-        
+    steps:      
     # The TPL tag is contained in the codespaces configuration to avoid duplications.
     - name: Checkout .devcontainer/devcontainer.json
       uses: actions/checkout@v4.1.7

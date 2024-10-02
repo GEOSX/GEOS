@@ -1,6 +1,9 @@
 name: Release
 
 on:
+  pull_request: # Run workflow on PRs to the develop branch 
+    branches:
+      - develop
   workflow_dispatch:
 
 env:

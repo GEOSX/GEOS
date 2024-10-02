@@ -8,8 +8,19 @@ on:
   workflow_dispatch:
 
 jobs:
+  # If the 'ci: run integrated tests' PR label is found, the integrated tests jobs run.
+  remove_label:
+    if: "${{ github.event.label.name == 'ci: run integrated tests' }}"    
+    runs-on: ubuntu-22.04
+    steps:
+      - name: Remove the label
+        uses: actions-ecosystem/action-remove-labels@v1.3.0
+        with:
+            labels: 'ci: run integrated tests'
+
   get_docker_image_tag:
-    if: "${{ github.event.label.name == 'ci: run integrated tests' }}"
+    needs: 
+      - remove_label
     # Everywhere in this workflow, we use the most recent ubuntu distribution available in Github Actions
     # to ensure maximum support of google cloud's sdk.
     runs-on: ubuntu-22.04
@@ -55,14 +66,3 @@ jobs:
       DOCKER_CERTS_UPDATE_COMMAND: "update-ca-certificates"
       REQUIRED_LABEL: "ci: run integrated tests"
       LOCAL_BASELINE_DIR: /data/GEOS/baselines
-
-  remove_label:
-    if: always()
-    needs: 
-      - run_integrated_tests
-    runs-on: ubuntu-22.04
-    steps:
-      - name: Remove the label
-        uses: actions-ecosystem/action-remove-labels@v1
-        with:
-            labels: 'ci: run integrated tests'
