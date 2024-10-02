@@ -46,8 +46,15 @@ jobs:
       - name: Build Changelog
         id: github_release
         uses: mikepenz/release-changelog-builder-action@v5
+        with:
+          fromTag: ${{ steps.semver.outputs.current }}
         env:
           GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+
+      - name: Print debug
+        run: |
+          echo "${{ steps.github_release.outputs.changelog }}"
+    
       # - name: Create Release
       #   uses: ncipollo/release-action@v1.14.0
       #   with:
