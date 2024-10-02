@@ -1,0 +1,79 @@
+name: Deploy
+
+on:
+  pull_request: # Run workflow on PRs to the develop branch 
+    branches:
+      - develop
+  workflow_dispatch:
+
+
+jobs:
+  deploy:
+    runs-on: ubuntu-latest
+
+    steps:
+      - name: Checkout Code
+        uses: actions/checkout@v4.1.7
+        with:
+          submodules: false
+          lfs: false
+
+      # - name: Detect API Change
+      #   id: changed-api
+      #   uses: tj-actions/changed-files@v43
+      #   with:
+      #     # Avoid using single or double quotes for multiline patterns
+      #     files: |
+      #       src/coreComponents/schema/**/*.{xsd,rst}
+
+      # - name: Run step if test file(s) change        
+      #   if: steps.changed-api.outputs.any_changed == 'true'
+      #   env:
+      #     BUMP_BEHAVIOR: "major"
+      #   run: |
+      #     echo "Must be a major change"
+
+      - name: Get Next Version
+        id: semver
+        uses: ietf-tools/semver-action@v1.8.0
+        with:
+          token: ${{ secrets.GITHUB_TOKEN }}
+          branch: develop
+          noVersionBumpBehavior: patch
+
+      - name: Create Draft Release
+        uses: ncipollo/release-action@v1.14.0
+        with:
+          prerelease: true
+          draft: false
+          commit: ${{ github.sha }}
+          tag: ${{ steps.semver.outputs.nextStrict }}
+          name: ${{ steps.semver.outputs.nextStrict }}
+          body: '*pending*'
+          token: ${{ secrets.GITHUB_TOKEN }}
+
+      - name: Update CHANGELOG
+        id: changelog
+        uses: requarks/changelog-action@v1.10.2
+        with:
+          token: ${{ github.token }}
+          fromTag: ${{ steps.semver.outputs.nextStrict }}
+          toTag: ${{ steps.semver.outputs.current }}
+          excludeTypes: ''
+          writeToFile: false
+
+      - name: Extract docker image tag
+        id: extract_docker_image_tag
+        run: |
+          echo "${{ steps.changelog.outputs.changes }}"
+
+      - name: Create Release
+        uses: ncipollo/release-action@v1.14.0
+        with:
+          allowUpdates: true
+          makeLatest: true
+          draft: false
+          tag: ${{ steps.semver.outputs.nextStrict }}
+          name: ${{ steps.semver.outputs.nextStrict }}
+          body: ${{ steps.changelog.outputs.changes }}
+          token: ${{ secrets.GITHUB_TOKEN }}
