@@ -1,9 +1,6 @@
 name: Deploy
 
 on:
-  pull_request: # Run workflow on PRs to the develop branch 
-    branches:
-      - develop
   workflow_dispatch:
 
 
@@ -61,11 +58,6 @@ jobs:
           toTag: ${{ steps.semver.outputs.current }}
           excludeTypes: ''
           writeToFile: false
-
-      - name: Extract docker image tag
-        id: extract_docker_image_tag
-        run: |
-          echo "${{ steps.changelog.outputs.changes }}"
 
       - name: Create Release
         uses: ncipollo/release-action@v1.14.0
