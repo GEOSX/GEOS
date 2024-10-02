@@ -180,23 +180,6 @@ jobs:
             needs.check_code_style_and_documentation.result == 'success'
           }}" >> $GITHUB_ENV
 
-  code_coverage:
-    needs:
-      - get_docker_image_tag
-      - check_that_all_jobs_succeeded
-    uses: ./.github/workflows/build_and_test.yml
-    secrets: inherit
-    with:
-      BUILD_AND_TEST_CLI_ARGS: "--no-run-unit-tests"
-      CMAKE_BUILD_TYPE: Debug
-      CODE_COVERAGE: true
-      DOCKER_IMAGE_TAG: ${{ needs.get_docker_image_tag.outputs.DOCKER_IMAGE_TAG }}
-      DOCKER_REPOSITORY: geosx/ubuntu22.04-gcc11
-      ENABLE_HYPRE: ON
-      ENABLE_TRILINOS: OFF
-      GCP_BUCKET: geosx/ubuntu22.04-gcc11
-      RUNS_ON: Runner_4core_16GB
-
   cpu_builds:
     name: CPU builds
     needs:

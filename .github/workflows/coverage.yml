@@ -1,0 +1,64 @@
+name: Code coverage
+
+on: 
+  pull_request: # Run workflow on PRs to the develop branch on labeled event
+    branches:
+      - develop
+    types: [ labeled ]
+  push: # Run workflow on push to the develop branch.
+    branches:
+    - develop
+  workflow_dispatch: # Workflow can be run manually
+
+jobs:
+  get_docker_image_tag:
+    # if the current added label is for GPUs
+    if: "${{ github.event.label.name == 'ci: run code coverage'}}"
+    # Everywhere in this workflow, we use the most recent ubuntu distribution available in Github Actions
+    # to ensure maximum support of google cloud's sdk.
+    runs-on: ubuntu-22.04
+    outputs:
+      DOCKER_IMAGE_TAG: ${{ steps.extract_docker_image_tag.outputs.DOCKER_IMAGE_TAG }}
+    steps:      
+    # The TPL tag is contained in the codespaces configuration to avoid duplications.
+    - name: Checkout .devcontainer/devcontainer.json
+      uses: actions/checkout@v4.1.7
+      with:
+        sparse-checkout: |
+          .devcontainer/devcontainer.json
+        sparse-checkout-cone-mode: false
+        submodules: false
+        lfs: false
+        fetch-depth: 1
+    - name: Extract docker image tag
+      id: extract_docker_image_tag
+      run: |
+        echo "DOCKER_IMAGE_TAG=$(jq '.build.args.GEOS_TPL_TAG' -r .devcontainer/devcontainer.json)" >> "$GITHUB_OUTPUT"
+
+  # If the 'ci: run code coverage' PR label is found, the cuda jobs run immediately along side linux jobs.
+  code_coverage:
+    needs:
+      - get_docker_image_tag
+    uses: ./.github/workflows/build_and_test.yml    
+    with:
+      BUILD_AND_TEST_CLI_ARGS: "--no-run-unit-tests"
+      CMAKE_BUILD_TYPE: Debug
+      CODE_COVERAGE: true
+      DOCKER_IMAGE_TAG: ${{ needs.get_docker_image_tag.outputs.DOCKER_IMAGE_TAG }}
+      DOCKER_REPOSITORY: geosx/ubuntu22.04-gcc11
+      ENABLE_HYPRE: ON
+      ENABLE_TRILINOS: OFF
+      GCP_BUCKET: geosx/ubuntu22.04-gcc11
+      RUNS_ON: Runner_4core_16GB
+    secrets: inherit
+
+  remove_label:
+    if: always()
+    needs: 
+      - code_coverage
+    runs-on: ubuntu-22.04
+    steps:
+      - name: Remove the label
+        uses: actions-ecosystem/action-remove-labels@v1
+        with:
+            labels: 'ci: run code coverage'
