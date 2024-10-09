@@ -954,8 +954,6 @@ real64 AcousticWaveEquationSEM::explicitStepBackward( real64 const & time_n,
   {
     NodeManager & nodeManager = mesh.getNodeManager();
 
-    arrayView1d< real32 const > const mass = nodeManager.getField< acousticfields::AcousticMassVector >();
-
     arrayView1d< real32 > const p_nm1 = nodeManager.getField< acousticfields::Pressure_nm1 >();
     arrayView1d< real32 > const p_n = nodeManager.getField< acousticfields::Pressure_n >();
     arrayView1d< real32 > const p_np1 = nodeManager.getField< acousticfields::Pressure_np1 >();
@@ -1027,7 +1025,7 @@ real64 AcousticWaveEquationSEM::explicitStepBackward( real64 const & time_n,
                                                                           p_n,
                                                                           p_forward,
                                                                           grad,
-                                                                          grad2);
+                                                                          grad2 );
 
 
         } );
@@ -1039,8 +1037,8 @@ real64 AcousticWaveEquationSEM::explicitStepBackward( real64 const & time_n,
         // {
         //   if( elemGhostRank[eltIdx]<0 )
         //   {
-	//     grad2[eltIdx] = -1/(pow(density[eltIdx]*velocity[eltIdx],2)) * grad[eltIdx] - 1/pow(density[eltIdx],2) * grad2[eltIdx];
-	//     grad[eltIdx]= -2/(density[eltIdx]*pow(velocity[eltIdx],3)) * grad[eltIdx];
+        //     grad2[eltIdx] = -1/(pow(density[eltIdx]*velocity[eltIdx],2)) * grad[eltIdx] - 1/pow(density[eltIdx],2) * grad2[eltIdx];
+        //     grad[eltIdx]= -2/(density[eltIdx]*pow(velocity[eltIdx],3)) * grad[eltIdx];
         //   }
         // } );
       } );

@@ -155,11 +155,11 @@ struct AcousticMatricesSEM
   template< typename FE_TYPE >
   struct GradientKappaBuoyancy
   {
-  
+
     GradientKappaBuoyancy( FE_TYPE const & finiteElement )
       : m_finiteElement( finiteElement )
     {}
-  
+
     /**
      * @brief Launch the computation of the 2 gradients relative to the coeff of the wave equation K=1/rho*c2 and b=1/rho
      * @tparam EXEC_POLICY the execution policy
@@ -184,7 +184,7 @@ struct AcousticMatricesSEM
                      arrayView1d< real32 const > const p_n,
                      arrayView1d< real32 > const grad,
                      arrayView1d< real32 > const grad2 )
-  
+
     {
       forAll< EXEC_POLICY >( size, [=] GEOS_HOST_DEVICE ( localIndex const e )
       {
@@ -203,7 +203,7 @@ struct AcousticMatricesSEM
           constexpr localIndex numQuadraturePointsPerElem = FE_TYPE::numQuadraturePoints;
           for( localIndex q = 0; q < numQuadraturePointsPerElem; ++q )
           {
-            localIndex nodeIdx = elemsToNodes(e,q);
+            localIndex nodeIdx = elemsToNodes( e, q );
             grad[e] += q_dt2[nodeIdx] * p_n[nodeIdx] * m_finiteElement.computeMassTerm( q, xLocal );
             m_finiteElement.template computeStiffnessTerm( q, xLocal, [&] ( const int i, const int j, const real64 val )
             {
