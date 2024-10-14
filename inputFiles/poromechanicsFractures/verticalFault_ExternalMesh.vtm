@@ -1,0 +1,14 @@
+<?xml version="1.0"?>
+<VTKFile type="vtkMultiBlockDataSet" version="1.0">
+    <vtkMultiBlockDataSet>
+        <DataSet 
+          name="main" 
+          file="Domain_Mesh_FaultModel.vtu"
+          fieldsToImport="{ YoungModulus, PoissonRatio  }"
+          fieldNamesInGEOS="{ rock_youngModulus, rock_poissonRatio }"
+        />
+        <DataSet 
+          name="fracture" 
+          file="Fault_Mesh_FaultModel.vtu"/>
+    </vtkMultiBlockDataSet>
+</VTKFile>

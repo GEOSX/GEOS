@@ -7,9 +7,8 @@
       name="poroSolver"
       targetRegions="{ Domain, Fracture }"
       initialDt="1e-3"
-      fracturesSolverName="fractureMechSolver"
       flowSolverName="flowSolver"
-      solidSolverName="matrixMechSolver"
+      solidSolverName="fractureMechSolver"
       logLevel="1">
       <NonlinearSolverParameters
         newtonTol="1.0e-5"
@@ -23,15 +22,9 @@
     <SolidMechanicsEmbeddedFractures
       name="fractureMechSolver"
       targetRegions="{ Domain, Fracture }"
-      solidSolverName="matrixMechSolver"
-      fractureRegionName="Fracture"
-      contactRelationName="fractureContact"/>
-
-    <SolidMechanicsLagrangianSSLE
-      name="matrixMechSolver"
       timeIntegrationOption="QuasiStatic"
       discretization="FE1"
-      targetRegions="{ Domain }"/>
+      contactPenaltyStiffness="4.0e9"/>
 
     <SinglePhaseFVM
       name="flowSolver"
@@ -74,7 +67,7 @@
     <SurfaceElementRegion
       name="Fracture"
       subRegionType="embeddedElement"
-      materialList="{ water, fractureFilling, fractureContact }"
+      materialList="{ water, fractureFilling, fractureContact, hApertureModel }"
       defaultAperture="5.e-3"/>
   </ElementRegions>
 
@@ -106,7 +99,7 @@
 
     <BiotPorosity
       name="rockPorosity"
-      grainBulkModulus="1e27"
+      defaultGrainBulkModulus="1e27"
       defaultReferencePorosity="0.2"/>
 
     <CompressibleSolidParallelPlatesPermeability
@@ -128,10 +121,14 @@
       name="fracturePerm"/>
 
     <FrictionlessContact
-      name="fractureContact"
-      penaltyStiffness="4.0e9"
-      apertureTableName="apertureTable"/>    
+      name="fractureContact"/> 
+
+    <HydraulicApertureTable
+      name="hApertureModel"
+      apertureTableName="apertureTable"/>       
   </Constitutive>
+
+  
 
   <FieldSpecifications>
 

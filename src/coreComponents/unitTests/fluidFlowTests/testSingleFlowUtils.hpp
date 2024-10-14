@@ -2,10 +2,11 @@
  * ------------------------------------------------------------------------------------------------------------
  * SPDX-License-Identifier: LGPL-2.1-only
  *
- * Copyright (c) 2018-2020 Lawrence Livermore National Security LLC
- * Copyright (c) 2018-2020 The Board of Trustees of the Leland Stanford Junior University
- * Copyright (c) 2018-2020 TotalEnergies
- * Copyright (c) 2019-     GEOSX Contributors
+ * Copyright (c) 2016-2024 Lawrence Livermore National Security LLC
+ * Copyright (c) 2018-2024 Total, S.A
+ * Copyright (c) 2018-2024 The Board of Trustees of the Leland Stanford Junior University
+ * Copyright (c) 2023-2024 Chevron
+ * Copyright (c) 2019-     GEOS/GEOSX Contributors
  * All rights reserved
  *
  * See top level LICENSE, COPYRIGHT, CONTRIBUTORS, NOTICE, and ACKNOWLEDGEMENTS files for details.
@@ -24,37 +25,13 @@
 #include "physicsSolvers/fluidFlow/SinglePhaseBaseFields.hpp"
 #include "physicsSolvers/fluidFlow/SinglePhaseFVM.hpp"
 #include "physicsSolvers/fluidFlow/FlowSolverBaseFields.hpp"
+#include "testFlowUtils.hpp"
 
 namespace geos
 {
 
 namespace testing
 {
-
-using namespace geos::constitutive;
-
-void checkDerivative( real64 const valueEps,
-                      real64 const value,
-                      real64 const deriv,
-                      real64 const eps,
-                      real64 const relTol,
-                      real64 const absTol,
-                      string const & name,
-                      string const & var )
-{
-  real64 const numDeriv = (valueEps - value) / eps;
-  checkRelativeError( deriv, numDeriv, relTol, absTol, "d(" + name + ")/d(" + var + ")" );
-}
-
-void checkDerivative( real64 const valueEps,
-                      real64 const value,
-                      real64 const deriv,
-                      real64 const eps,
-                      real64 const relTol,
-                      string const & name,
-                      string const & var )
-{ return checkDerivative( valueEps, value, deriv, eps, relTol, DEFAULT_ABS_TOL, name, var ); }
-
 
 void fillNumericalJacobian( arrayView1d< real64 const > const & residual,
                             arrayView1d< real64 const > const & residualOrig,
@@ -83,7 +60,7 @@ void setupProblemFromXML( ProblemManager & problemManager, char const * const xm
     GEOS_LOG_RANK_0( "Error offset: " << xmlResult.offset );
   }
 
-  int mpiSize = MpiWrapper::commSize( MPI_COMM_GEOSX );
+  int mpiSize = MpiWrapper::commSize( MPI_COMM_GEOS );
 
   dataRepository::Group & commandLine =
     problemManager.getGroup< dataRepository::Group >( problemManager.groupKeys.commandLine );
@@ -111,7 +88,7 @@ void setupProblemFromXML( ProblemManager & problemManager, char const * const xm
   problemManager.applyInitialConditions();
 }
 
-void testMobilityNumericalDerivatives( SinglePhaseFVM< SinglePhaseBase > & solver,
+void testMobilityNumericalDerivatives( SinglePhaseFVM<> & solver,
                                        DomainPartition & domain,
                                        bool const isThermal,
                                        real64 const perturbParameter,

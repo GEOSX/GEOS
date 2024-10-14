@@ -12,12 +12,12 @@
     <SolidMechanicsEmbeddedFractures
       name="mechSolve"
       targetRegions="{ Domain, Fracture }"
-      fractureRegionName="Fracture"
       initialDt="10"
-      solidSolverName="matrixSolver"
-      contactRelationName="fractureContact"
+      timeIntegrationOption="QuasiStatic"
       logLevel="1"
-      useStaticCondensation="1">
+      discretization="FE1"
+      useStaticCondensation="1"
+      contactPenaltyStiffness="0.0e8">
       <NonlinearSolverParameters
         newtonTol="1.0e-6"
         newtonMaxIter="2"
@@ -27,14 +27,6 @@
         solverType="direct"
         logLevel="0"/>
     </SolidMechanicsEmbeddedFractures>
-
-    <SolidMechanicsLagrangianSSLE
-      name="matrixSolver"
-      timeIntegrationOption="QuasiStatic"
-      logLevel="1"
-      discretization="FE1"
-      targetRegions="{ Domain }"
-      />
 
     <EmbeddedSurfaceGenerator
       name="SurfaceGenerator"

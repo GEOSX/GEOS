@@ -2,21 +2,19 @@
 
 <Problem>
   <Included>
-    <File name="./ContactMechanics_TFrac_base.xml"/>
+    <File name="./TFrac_smoke.xml"/>
   </Included>
 
   <Solvers
     gravityVector="{0.0, 0.0, 0.0}">
    <!-- SPHINX_SOLVER -->
-   <LagrangianContact
+   <SolidMechanicsLagrangeContact
    name="lagrangiancontact"
-   solidSolverName="lagsolve"
+   timeIntegrationOption="QuasiStatic"
    stabilizationName="TPFAstabilization"
    logLevel="1"
    discretization="FE1"
-   targetRegions="{ Region, Fracture }"
-   contactRelationName="fractureMaterial"
-   fractureRegionName="Fracture">
+   targetRegions="{ Region, Fracture }">
    <NonlinearSolverParameters
      newtonTol="1.0e-8"
      logLevel="2"
@@ -29,48 +27,16 @@
      solverType="direct"
      directParallel="0"
      logLevel="0"/>
- </LagrangianContact>
-
- <SolidMechanics_LagrangianFEM
-   name="lagsolve"
-   timeIntegrationOption="QuasiStatic"
-   logLevel="0"
-   discretization="FE1"
-   surfaceGeneratorName="SurfaceGen"
-   targetRegions="{ Region }">
-   <NonlinearSolverParameters
-     newtonTol="1.0e-6"
-     newtonMaxIter="5"/>
-   <LinearSolverParameters
-     krylovTol="1.0e-10"
-     logLevel="0"/>
- </SolidMechanics_LagrangianFEM>
-
- <SurfaceGenerator
-   name="SurfaceGen"
-   logLevel="0"
-   fractureRegion="Fracture"
-   targetRegions="{ Region }"
-   rockToughness="1.0e6"
-   mpiCommOrder="1"/>
-<!-- SPHINX_SOLVER_END -->
+ </SolidMechanicsLagrangeContact>
 </Solvers>
 
-  <!-- SPHINX_MESH -->
-  <Mesh>
-    <InternalMesh
-      name="mesh1"
-      elementTypes="{ C3D8 }"
-      xCoords="{ -1000, -100, 100, 1000 }"
-      yCoords="{ -1000, -100, 100, 1000 }"
-      zCoords="{ 0, 1 }"
-      nx="{ 5, 52, 5 }"
-      ny="{ 5, 52, 5 }"
-      nz="{ 2 }"
-      cellBlockNames="{ cb1 }"/>
-  </Mesh>
-  <!-- SPHINX_MESH_END -->
- 
+  <NumericalMethods>
+    <FiniteVolume>
+      <TwoPointFluxApproximation
+        name="TPFAstabilization"/>
+    </FiniteVolume>
+  </NumericalMethods>
+
   <Events
     maxTime="0.2">
     <SoloEvent

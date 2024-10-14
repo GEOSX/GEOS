@@ -2,10 +2,11 @@
  * ------------------------------------------------------------------------------------------------------------
  * SPDX-License-Identifier: LGPL-2.1-only
  *
- * Copyright (c) 2018-2020 Lawrence Livermore National Security LLC
- * Copyright (c) 2018-2020 The Board of Trustees of the Leland Stanford Junior University
- * Copyright (c) 2018-2020 TotalEnergies
- * Copyright (c) 2019-     GEOSX Contributors
+ * Copyright (c) 2016-2024 Lawrence Livermore National Security LLC
+ * Copyright (c) 2018-2024 Total, S.A
+ * Copyright (c) 2018-2024 The Board of Trustees of the Leland Stanford Junior University
+ * Copyright (c) 2023-2024 Chevron
+ * Copyright (c) 2019-     GEOS/GEOSX Contributors
  * All rights reserved
  *
  * See top level LICENSE, COPYRIGHT, CONTRIBUTORS, NOTICE, and ACKNOWLEDGEMENTS files for details.
@@ -66,12 +67,10 @@ void SinglePhaseWell::registerDataOnMesh( Group & meshBodies )
                                                               [&]( localIndex const,
                                                                    WellElementSubRegion & subRegion )
     {
-      subRegion.registerField< fields::well::pressure_n >( getName() );
-      subRegion.registerField< fields::well::pressure >( getName() ).
-        setRestartFlags( RestartFlags::WRITE_AND_READ );
-
-      subRegion.registerField< fields::well::temperature_n >( getName() );
-      subRegion.registerField< fields::well::temperature >( getName() );
+      string & fluidName = subRegion.getReference< string >( viewKeyStruct::fluidNamesString() );
+      fluidName = getConstitutiveName< SingleFluidBase >( subRegion );
+      GEOS_ERROR_IF( fluidName.empty(), GEOS_FMT( "{}: Fluid model not found on subregion {}",
+                                                  getDataContext(), subRegion.getName() ) );
 
       subRegion.registerField< fields::well::connectionRate_n >( getName() );
       subRegion.registerField< fields::well::connectionRate >( getName() );
@@ -101,31 +100,6 @@ void SinglePhaseWell::registerDataOnMesh( Group & meshBodies )
         outputFile << "Time [s],BHP [Pa],Total rate [kg/s],Total " << conditionKey << " volumetric rate ["<<unitKey<<"m3/s]" << std::endl;
         outputFile.close();
       }
-
-      string & fluidName = subRegion.getReference< string >( viewKeyStruct::fluidNamesString() );
-      fluidName = getConstitutiveName< SingleFluidBase >( subRegion );
-      GEOS_ERROR_IF( fluidName.empty(), GEOS_FMT( "{}: Fluid model not found on subregion {}",
-                                                  getDataContext(), subRegion.getName() ) );
-
-    } );
-  } );
-}
-
-void SinglePhaseWell::initializePostSubGroups()
-{
-
-  WellSolverBase::initializePostSubGroups();
-  DomainPartition & domain = this->getGroupByPath< DomainPartition >( "/Problem/domain" );
-  forDiscretizationOnMeshTargets( domain.getMeshBodies(), [&] ( string const &,
-                                                                MeshLevel & mesh,
-                                                                arrayView1d< string const > const & regionNames )
-  {
-    ElementRegionManager & elemManager = mesh.getElemManager();
-    elemManager.forElementSubRegions< WellElementSubRegion >( regionNames,
-                                                              [&]( localIndex const,
-                                                                   WellElementSubRegion & subRegion )
-    {
-      validateWellConstraints( 0, 0, subRegion );
     } );
   } );
 }
@@ -137,7 +111,7 @@ string SinglePhaseWell::resElementDofName() const
 
 void SinglePhaseWell::validateWellConstraints( real64 const & time_n,
                                                real64 const & dt,
-                                               WellElementSubRegion const & subRegion ) const
+                                               WellElementSubRegion const & subRegion )
 {
   WellControls const & wellControls = getWellControls( subRegion );
   WellControls::Control const currentControl = wellControls.getControl();

@@ -1,71 +1,6 @@
 <?xml version="1.0" ?>
 
 <Problem>
-  <Solvers
-    gravityVector="{ 0.0, 0.0, 0.0}">
-    <SinglePhasePoromechanicsConformingFractures
-      name="poroSolver"
-      targetRegions="{ Domain, Fracture }"
-      initialDt="1e-3"
-      LagrangianContactSolverName="fractureMechSolver"
-      poromechanicsSolverName="singlePhasePoromechanicsSolver"
-      logLevel="1">
-      <NonlinearSolverParameters
-        maxTimeStepCuts="1"
-        newtonMaxIter="10"
-        maxNumConfigurationAttempts="10"
-        lineSearchInterpolationType="Parabolic"
-        maxAllowedResidualNorm="1.0e15"/>
-      <LinearSolverParameters
-        directParallel="0"/>
-    </SinglePhasePoromechanicsConformingFractures>
-
-    <SinglePhasePoromechanics
-      name="singlePhasePoromechanicsSolver"
-      solidSolverName="matrixMechSolver"
-      flowSolverName="flowSolver"
-      logLevel="1"
-      targetRegions="{ Domain }">
-    </SinglePhasePoromechanics>
-
-    <LagrangianContact
-      name="fractureMechSolver"
-      solidSolverName="matrixMechSolver"
-      stabilizationName="singlePhaseTPFA_stab"
-      logLevel="1"
-      targetRegions="{ Domain, Fracture }"
-      fractureRegionName="Fracture"
-      discretization="FE1"
-      contactRelationName="fractureContact"/>  
-
-    <SolidMechanics_LagrangianFEM
-      name="matrixMechSolver"
-      timeIntegrationOption="QuasiStatic"
-      discretization="FE1"
-      targetRegions="{ Domain }"
-      logLevel="1"/>
-
-    <SinglePhaseFVM
-      name="flowSolver"
-      logLevel="1"
-      discretization="singlePhaseTPFA"
-      targetRegions="{ Domain, Fracture }">
-      <NonlinearSolverParameters
-        newtonTol="1.0e-2"
-        newtonMaxIter="8"/>
-      <LinearSolverParameters
-        directParallel="0"/>
-    </SinglePhaseFVM>
-
-    <SurfaceGenerator
-      logLevel="0"
-      name="SurfaceGen"
-      targetRegions="{ Domain }"
-      fractureRegion="Fracture"
-      rockToughness="1e6"
-      mpiCommOrder="1"/>
-  </Solvers>
-
   <Geometry>
     <Box
       name="fracture"
@@ -96,7 +31,7 @@
     <SurfaceElementRegion
       name="Fracture"
       faceBlock="FractureSubRegion"
-      materialList="{ water, fractureFilling, fractureContact }"
+      materialList="{ water, fractureFilling, fractureContact, hApertureModel }"
       defaultAperture="1e-3"/>
   </ElementRegions>
 
@@ -128,7 +63,7 @@
 
     <BiotPorosity
       name="rockPorosity"
-      grainBulkModulus="1.0e27"
+      defaultGrainBulkModulus="1.0e27"
       defaultReferencePorosity="0.2"/>
 
     <CompressibleSolidParallelPlatesPermeability
@@ -152,8 +87,11 @@
     <Coulomb
       name="fractureContact"
       cohesion="0.0"
-      frictionCoefficient="0.1"
-      apertureTableName="apertureTable"/>
+      frictionCoefficient="0.1"/>
+
+    <HydraulicApertureTable
+      name="hApertureModel"
+      apertureTableName="apertureTable"/>    
   </Constitutive>
 
   <FieldSpecifications>

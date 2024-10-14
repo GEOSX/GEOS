@@ -2,10 +2,11 @@
  * ------------------------------------------------------------------------------------------------------------
  * SPDX-License-Identifier: LGPL-2.1-only
  *
- * Copyright (c) 2018-2020 Lawrence Livermore National Security LLC
- * Copyright (c) 2018-2020 The Board of Trustees of the Leland Stanford Junior University
- * Copyright (c) 2018-2020 TotalEnergies
- * Copyright (c) 2020-     GEOSX Contributors
+ * Copyright (c) 2016-2024 Lawrence Livermore National Security LLC
+ * Copyright (c) 2018-2024 Total, S.A
+ * Copyright (c) 2018-2024 The Board of Trustees of the Leland Stanford Junior University
+ * Copyright (c) 2023-2024 Chevron
+ * Copyright (c) 2019-     GEOS/GEOSX Contributors
  * All rights reserved
  *
  * See top level LICENSE, COPYRIGHT, CONTRIBUTORS, NOTICE, and ACKNOWLEDGEMENTS files for details.
@@ -20,10 +21,10 @@
 #include "dataRepository/Group.hpp"
 
 #include <vtkCell.h>
-
+#include <vtkCellData.h>
 #include <vtkExtractEdges.h>
 #include <vtkGeometryFilter.h>
-#include <vtkCellData.h>
+#include <vtkPointData.h>
 
 #include <algorithm>
 
@@ -176,16 +177,18 @@ ArrayOfArrays< localIndex > build2dElemTo2dNodes( vtkSmartPointer< vtkDataSet > 
 ArrayOfArrays< array1d< globalIndex > > buildCollocatedNodesBucketsOf2dElemsMap( ArrayOfArrays< localIndex > const & elem2dTo2dNodes,
                                                                                  ArrayOfArrays< globalIndex > const & nodes2dToCollocatedNodes )
 {
+  localIndex const num2dElems = elem2dTo2dNodes.size();
   ArrayOfArrays< array1d< globalIndex > > result;
   // Allocation...
-  result.resize( elem2dTo2dNodes.size() );
-  for( localIndex e2d = 0; e2d < elem2dTo2dNodes.size(); ++e2d )
+  result.resize( num2dElems );
+  for( localIndex e2d = 0; e2d < num2dElems; ++e2d )
   {
     result.resizeArray( e2d, elem2dTo2dNodes[e2d].size() );
   }
-  for( localIndex e2d = 0; e2d < elem2dTo2dNodes.size(); ++e2d )
+  for( localIndex e2d = 0; e2d < num2dElems; ++e2d )
   {
-    for( integer ni = 0; ni < elem2dTo2dNodes[e2d].size(); ++ni )
+    auto const numNodes = elem2dTo2dNodes[e2d].size();
+    for( integer ni = 0; ni < numNodes; ++ni )
     {
       auto & dest = result( e2d, ni );
       localIndex const node = elem2dTo2dNodes[e2d][ni];
@@ -269,7 +272,8 @@ ArrayOfArrays< localIndex > buildFace2dToElems2d( vtkPolyData * edges,
  * @param edges[in] The edges as computed by vtk.
  * @param collocatedNodes[in] The collocated nodes information.
  * @param nodeToEdges[in] The node to edges mapping.
- * @return The 2d face to 3d edge mapping.
+ * @return The 2d face to 3d edge mapping. In the case where the face is at the boundary of the MPI domain,
+ * then the edge index will be set to @e -1 for further actions.
  */
 array1d< localIndex > buildFace2dToEdge( vtkIdTypeArray const * globalPtIds,
                                          vtkPolyData * edges,
@@ -314,7 +318,11 @@ array1d< localIndex > buildFace2dToEdge( vtkIdTypeArray const * globalPtIds,
       }
     }
     auto const res = std::max_element( edgeCount.cbegin(), edgeCount.cend(), comp );
-    face2dToEdge[i] = LvArray::integerConversion< localIndex >( res->first );
+    // If we're in a case where there aren't two edges sharing two nodes,
+    // then it means that we're in a corner case where the 2d element is on the boundary of the MPI domain,
+    // and maybe some nodes are missing for the 2d element to be properly and consistently defines.
+    // In this case, we explicitly set the edge index at `-1`, so we can get back on it later.
+    face2dToEdge[i] = res->second < 2 ? -1: LvArray::integerConversion< localIndex >( res->first );
   }
 
   return face2dToEdge;
@@ -361,7 +369,11 @@ ArrayOfArrays< localIndex > buildElem2dToEdges( vtkIdType num2dElements,
   {
     for( auto const & face2dIndex: elem2dToFace2d[elemIndex] )
     {
-      elem2dToEdges.emplaceBack( elemIndex, face2dToEdge[face2dIndex] );
+      localIndex const & e = face2dToEdge[face2dIndex];
+      if( e > -1 )
+      {
+        elem2dToEdges.emplaceBack( elemIndex, e );
+      }
     }
   }
 
@@ -369,17 +381,28 @@ ArrayOfArrays< localIndex > buildElem2dToEdges( vtkIdType num2dElements,
 }
 
 /**
- * @brief Utility structure which connects 2d element to their 3d element and faces neighbors.
+ * @brief Utility structure which connects 2d element to their 3d element, faces and nodes neighbors.
  */
 struct Elem2dTo3dInfo
 {
   ToCellRelation< ArrayOfArrays< localIndex > > elem2dToElem3d;
   ArrayOfArrays< localIndex > elem2dToFaces;
+  /**
+   * @brief All the neighboring points of the 2d element @e available on the current MPI rank.
+   * @note During the MPI partitioning, a 2d element may not already have its neighbors (face, 3d element).
+   * But this does not mean that the 2d element has no neighboring points.
+   * @note This container will not keep the order of the nodes.
+   * @note This container may not contain all the nodes of the 2d element.
+   * The missing nodes must therefore be added as part of the ghosting process.
+   */
+  ArrayOfArrays< localIndex > elem2dToNodes;
 
   Elem2dTo3dInfo( ToCellRelation< ArrayOfArrays< localIndex > > && elem2dToElem3d_,
-                  ArrayOfArrays< localIndex > && elem2dToFaces_ )
+                  ArrayOfArrays< localIndex > && elem2dToFaces_,
+                  ArrayOfArrays< localIndex > && elem2dToNodes_ )
     : elem2dToElem3d( elem2dToElem3d_ ),
-    elem2dToFaces( elem2dToFaces_ )
+    elem2dToFaces( elem2dToFaces_ ),
+    elem2dToNodes( elem2dToNodes_ )
   { }
 };
 
@@ -419,12 +442,23 @@ Elem2dTo3dInfo buildElem2dTo3dElemAndFaces( vtkSmartPointer< vtkDataSet > faceMe
   vtkIdTypeArray const * globalPtIds = vtkIdTypeArray::FastDownCast( mesh->GetPointData()->GetGlobalIds() );
   vtkIdTypeArray const * globalCellIds = vtkIdTypeArray::FastDownCast( mesh->GetCellData()->GetGlobalIds() );
 
-  // Let's build the elem2d to elem3d mapping. We need to find the 3d elements!
+  std::map< vtkIdType, localIndex > ng2l;  // global to local mapping for nodes.
+  for( vtkIdType i = 0; i < globalPtIds->GetNumberOfValues(); ++i )
+  {
+    ng2l[globalPtIds->GetValue( i )] = i;
+  }
+
+  // Let's build the elem2d to elem3d mapping.
+  // We need to find the 3d elements (and only the 3d elements, so we can safely ignore the others).
   // First we compute the mapping from all the boundary nodes to the 3d elements that rely on those nodes.
   std::map< vtkIdType, std::vector< vtkIdType > > nodesToCellsFull;
   for( vtkIdType i = 0; i < boundary->GetNumberOfCells(); ++i )
   {
     vtkIdType const cellId = boundaryCells->GetValue( i );
+    if( mesh->GetCell( cellId )->GetCellDimension() != 3 )
+    {
+      continue;
+    }
     vtkIdList * pointIds = boundary->GetCell( i )->GetPointIds();
     for( int j = 0; j < pointIds->GetNumberOfIds(); ++j )
     {
@@ -460,12 +494,13 @@ Elem2dTo3dInfo buildElem2dTo3dElemAndFaces( vtkSmartPointer< vtkDataSet > faceMe
   ArrayOfArrays< localIndex > elem2dToElem3d( num2dElements, 2 );
   ArrayOfArrays< localIndex > elem2dToCellBlock( num2dElements, 2 );
   ArrayOfArrays< localIndex > elem2dToFaces( num2dElements, 2 );
+  ArrayOfArrays< localIndex > elem2dToNodes( num2dElements, 10 );
 
   // Now we loop on all the 2d elements.
-  for( int i = 0; i < num2dElements; ++i )
+  for( int e2d = 0; e2d < num2dElements; ++e2d )
   {
     // We collect all the duplicated points that are involved for each 2d element.
-    vtkIdList * pointIds = faceMesh->GetCell( i )->GetPointIds();
+    vtkIdList * pointIds = faceMesh->GetCell( e2d )->GetPointIds();
     std::size_t const elem2dNumPoints = pointIds->GetNumberOfIds();
     // All the duplicated points of the 2d element. Note that we lose the collocation of the duplicated nodes.
     std::set< vtkIdType > duplicatedPointOfElem2d;
@@ -473,6 +508,21 @@ Elem2dTo3dInfo buildElem2dTo3dElemAndFaces( vtkSmartPointer< vtkDataSet > faceMe
     {
       std::vector< vtkIdType > const & ns = collocatedNodes[ pointIds->GetId( j ) ];
       duplicatedPointOfElem2d.insert( ns.cbegin(), ns.cend() );
+    }
+
+    for( vtkIdType const & gni: duplicatedPointOfElem2d )
+    {
+      auto it = ng2l.find( gni );
+      if( it != ng2l.cend() )  // If the node is not on this rank, we want to ignore this entry.
+      {
+        // The node lists in `elem2dToNodes` may be in any order.
+        // Anyway, there will be a specific step to reset the appropriate order.
+        // Note that due to ghosting, there will also always be some cases where
+        // some nodes will be missing in `elem2dToNodes` _before_ the ghosting.
+        // After the ghosting, the whole information will be gathered,
+        // but a reordering step will always be compulsory.
+        elem2dToNodes.emplaceBack( e2d, it->second );
+      }
     }
 
     // Here, we collect all the 3d elements that are concerned by at least one of those duplicated elements.
@@ -495,7 +545,7 @@ Elem2dTo3dInfo buildElem2dTo3dElemAndFaces( vtkSmartPointer< vtkDataSet > faceMe
       if( e2n.second.size() == elem2dNumPoints )
       {
         // Now we know that the element 3d has a face that touches the element 2d. Let's find which one.
-        elem2dToElem3d.emplaceBack( i, elemToFaces.getElementIndexInCellBlock( e2n.first ) );
+        elem2dToElem3d.emplaceBack( e2d, elemToFaces.getElementIndexInCellBlock( e2n.first ) );
         // Computing the elem2dToFaces mapping.
         auto faces = elemToFaces[e2n.first];
         for( int j = 0; j < faces.size( 0 ); ++j )
@@ -509,8 +559,8 @@ Elem2dTo3dInfo buildElem2dTo3dElemAndFaces( vtkSmartPointer< vtkDataSet > faceMe
           }
           if( globalNodes == e2n.second )
           {
-            elem2dToFaces.emplaceBack( i, faceIndex );
-            elem2dToCellBlock.emplaceBack( i, elemToFaces.getCellBlockIndex( e2n.first ) );
+            elem2dToFaces.emplaceBack( e2d, faceIndex );
+            elem2dToCellBlock.emplaceBack( e2d, elemToFaces.getCellBlockIndex( e2n.first ) );
             break;
           }
         }
@@ -519,7 +569,7 @@ Elem2dTo3dInfo buildElem2dTo3dElemAndFaces( vtkSmartPointer< vtkDataSet > faceMe
   }
 
   auto cellRelation = ToCellRelation< ArrayOfArrays< localIndex > >( std::move( elem2dToCellBlock ), std::move( elem2dToElem3d ) );
-  return Elem2dTo3dInfo( std::move( cellRelation ), std::move( elem2dToFaces ) );
+  return Elem2dTo3dInfo( std::move( cellRelation ), std::move( elem2dToFaces ), std::move( elem2dToNodes ) );
 }
 
 
@@ -615,20 +665,19 @@ void importFractureNetwork( string const & faceBlockName,
   vtkIdType const num2dElements = faceMesh->GetNumberOfCells();
   // Now let's build the elem2dTo* mappings.
   Elem2dTo3dInfo elem2dTo3d = buildElem2dTo3dElemAndFaces( faceMesh, mesh, collocatedNodes, faceToNodes.toViewConst(), elemToFaces );
-  ArrayOfArrays< localIndex > elem2dToNodes = buildElem2dToNodes( num2dElements, faceToNodes.toViewConst(), elem2dTo3d.elem2dToFaces.toViewConst() );
 
   ArrayOfArrays< localIndex > face2dToElems2d = buildFace2dToElems2d( edges, faceMesh );
   array1d< localIndex > face2dToEdge = buildFace2dToEdge( vtkIdTypeArray::FastDownCast( mesh->GetPointData()->GetGlobalIds() ), edges, collocatedNodes, nodeToEdges.toViewConst() );
   ArrayOfArrays< localIndex > const elem2dToFace2d = buildElem2dToFace2d( num2dElements, face2dToElems2d.toViewConst() );
-  ArrayOfArrays< localIndex > elem2DToEdges = buildElem2dToEdges( num2dElements, face2dToEdge.toViewConst(), elem2dToFace2d.toViewConst() );
+  ArrayOfArrays< localIndex > elem2dToEdges = buildElem2dToEdges( num2dElements, face2dToEdge.toViewConst(), elem2dToFace2d.toViewConst() );
 
   // Mappings are now computed. Just create the face block by value.
   FaceBlock & faceBlock = cellBlockManager.registerFaceBlock( faceBlockName );
 
   faceBlock.setNum2dElements( num2dElements );
   faceBlock.setNum2dFaces( num2dFaces );
-  faceBlock.set2dElemToNodes( std::move( elem2dToNodes ) );
-  faceBlock.set2dElemToEdges( std::move( elem2DToEdges ) );
+  faceBlock.set2dElemToNodes( std::move( elem2dTo3d.elem2dToNodes ) );
+  faceBlock.set2dElemToEdges( std::move( elem2dToEdges ) );
   faceBlock.set2dFaceToEdge( std::move( face2dToEdge ) );
   faceBlock.set2dFaceTo2dElems( std::move( face2dToElems2d ) );
 

@@ -2,10 +2,11 @@
  * ------------------------------------------------------------------------------------------------------------
  * SPDX-License-Identifier: LGPL-2.1-only
  *
- * Copyright (c) 2018-2020 Lawrence Livermore National Security LLC
- * Copyright (c) 2018-2020 The Board of Trustees of the Leland Stanford Junior University
- * Copyright (c) 2018-2020 TotalEnergies
- * Copyright (c) 2019-     GEOSX Contributors
+ * Copyright (c) 2016-2024 Lawrence Livermore National Security LLC
+ * Copyright (c) 2018-2024 Total, S.A
+ * Copyright (c) 2018-2024 The Board of Trustees of the Leland Stanford Junior University
+ * Copyright (c) 2023-2024 Chevron
+ * Copyright (c) 2019-     GEOS/GEOSX Contributors
  * All rights reserved
  *
  * See top level LICENSE, COPYRIGHT, CONTRIBUTORS, NOTICE, and ACKNOWLEDGEMENTS files for details.
@@ -23,6 +24,7 @@
 #include "discretizationMethods/NumericalMethodsManager.hpp"
 #include "fieldSpecification/FieldSpecificationManager.hpp"
 #include "fieldSpecification/SourceFluxBoundaryCondition.hpp"
+#include "physicsSolvers/fluidFlow/SourceFluxStatistics.hpp"
 #include "finiteVolume/FiniteVolumeManager.hpp"
 #include "finiteVolume/FluxApproximationBase.hpp"
 #include "mesh/DomainPartition.hpp"
@@ -184,10 +186,10 @@ void ReactiveCompositionalMultiphaseOBL::implicitStepComplete( real64 const & ti
   } );
 }
 
-void ReactiveCompositionalMultiphaseOBL::postProcessInput()
+void ReactiveCompositionalMultiphaseOBL::postInputInitialization()
 {
   // need to override to skip the check for fluidModel, which is enabled in FlowSolverBase
-  SolverBase::postProcessInput();
+  SolverBase::postInputInitialization();
 
   GEOS_THROW_IF_GT_MSG( m_maxCompFracChange, 1.0,
                         GEOS_FMT( "{}: The maximum absolute change in component fraction is set to {}, while it must not be greater than 1.0",
@@ -444,7 +446,7 @@ real64 ReactiveCompositionalMultiphaseOBL::scalingForSystemSolution( DomainParti
     } );
   } );
 
-  return LvArray::math::max( MpiWrapper::min( scalingFactor, MPI_COMM_GEOSX ), m_minScalingFactor );
+  return LvArray::math::max( MpiWrapper::min( scalingFactor, MPI_COMM_GEOS ), m_minScalingFactor );
 }
 
 bool ReactiveCompositionalMultiphaseOBL::checkSystemSolution( DomainPartition & domain,
@@ -492,7 +494,7 @@ bool ReactiveCompositionalMultiphaseOBL::checkSystemSolution( DomainPartition & 
     } );
   } );
 
-  return MpiWrapper::min( localCheck, MPI_COMM_GEOSX );
+  return MpiWrapper::min( localCheck, MPI_COMM_GEOS );
 }
 
 void ReactiveCompositionalMultiphaseOBL::applySystemSolution( DofManager const & dofManager,
@@ -564,7 +566,6 @@ void ReactiveCompositionalMultiphaseOBL::initializePostInitialConditionsPreSubGr
 
   DomainPartition & domain = this->getGroupByPath< DomainPartition >( "/Problem/domain" );
 
-  // set mass fraction flag on fluid models
   forDiscretizationOnMeshTargets( domain.getMeshBodies(), [&]( string const &,
                                                                MeshLevel & mesh,
                                                                arrayView1d< string const > const & regionNames )
@@ -843,8 +844,8 @@ void ReactiveCompositionalMultiphaseOBL::applySourceFluxBC( real64 const time,
       {
         globalIndex const numTargetElems = MpiWrapper::sum< globalIndex >( targetSet.size() );
         GEOS_LOG_RANK_0( GEOS_FMT( bcLogMessage,
-                                   getName(), time+dt, SourceFluxBoundaryCondition::catalogName(),
-                                   fs.getName(), setName, subRegion.getName(), fs.getScale(), numTargetElems ) );
+                                   getName(), time+dt, fs.getCatalogName(), fs.getName(),
+                                   setName, subRegion.getName(), fs.getScale(), numTargetElems ) );
       }
 
       if( targetSet.size() == 0 )
@@ -861,6 +862,8 @@ void ReactiveCompositionalMultiphaseOBL::applySourceFluxBC( real64 const time,
       array1d< real64 > rhsContributionArray( targetSet.size() );
       arrayView1d< real64 > rhsContributionArrayView = rhsContributionArray.toView();
       localIndex const rankOffset = dofManager.rankOffset();
+
+      RAJA::ReduceSum< parallelDeviceReduce, real64 > massProd( 0.0 );
 
       // note that the dofArray will not be used after this step (simpler to use dofNumber instead)
       fs.computeRhsContribution< FieldSpecificationAdd,
@@ -891,7 +894,8 @@ void ReactiveCompositionalMultiphaseOBL::applySourceFluxBC( real64 const time,
                                                            fluidComponentId,
                                                            dofNumber,
                                                            rhsContributionArrayView,
-                                                           localRhs] GEOS_HOST_DEVICE ( localIndex const a )
+                                                           localRhs,
+                                                           massProd] GEOS_HOST_DEVICE ( localIndex const a )
       {
         // we need to filter out ghosts here, because targetSet may contain them
         localIndex const ei = targetSet[a];
@@ -902,7 +906,18 @@ void ReactiveCompositionalMultiphaseOBL::applySourceFluxBC( real64 const time,
 
         // for all "fluid components", we add the value to the component mass balance equation
         globalIndex const compMassBalanceRow = dofNumber[ei] - rankOffset + fluidComponentId;
-        localRhs[compMassBalanceRow] += rhsContributionArrayView[a] / sizeScalingFactor;
+        real64 const rhsValue = rhsContributionArrayView[a] / sizeScalingFactor;
+        localRhs[compMassBalanceRow] += rhsValue;
+        massProd += rhsValue;
+      } );
+
+      SourceFluxStatsAggregator::forAllFluxStatWrappers( subRegion, fs.getName(),
+                                                         [&]( SourceFluxStatsAggregator::WrappedStats & wrapper )
+      {
+        // set the new sub-region statistics for this timestep
+        array1d< real64 > massProdArr{ m_numComponents };
+        massProdArr[fluidComponentId] = massProd.get();
+        wrapper.gatherTimeStepStats( time, dt, massProdArr.toViewConst(), targetSet.size() );
       } );
     } );
   } );
@@ -1082,8 +1097,8 @@ void ReactiveCompositionalMultiphaseOBL::applyDirichletBC( real64 const time,
       {
         globalIndex const numTargetElems = MpiWrapper::sum< globalIndex >( targetSet.size() );
         GEOS_LOG_RANK_0( GEOS_FMT( bcLogMessage,
-                                   getName(), time+dt, FieldSpecificationBase::catalogName(),
-                                   fs.getName(), setName, subRegion.getName(), fs.getScale(), numTargetElems ) );
+                                   getName(), time+dt, fs.getCatalogName(), fs.getName(),
+                                   setName, subRegion.getName(), fs.getScale(), numTargetElems ) );
       }
 
       fs.applyFieldValue< FieldSpecificationEqual, parallelDevicePolicy<> >( targetSet,
@@ -1122,8 +1137,8 @@ void ReactiveCompositionalMultiphaseOBL::applyDirichletBC( real64 const time,
       {
         globalIndex const numTargetElems = MpiWrapper::sum< globalIndex >( targetSet.size() );
         GEOS_LOG_RANK_0( GEOS_FMT( bcLogMessage,
-                                   getName(), time+dt, FieldSpecificationBase::catalogName(),
-                                   fs.getName(), setName, subRegion.getName(), fs.getScale(), numTargetElems ) );
+                                   getName(), time+dt, fs.getCatalogName(), fs.getName(),
+                                   setName, subRegion.getName(), fs.getScale(), numTargetElems ) );
       }
 
       fs.applyFieldValue< FieldSpecificationEqual, parallelDevicePolicy<> >( targetSet,

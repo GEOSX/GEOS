@@ -3,37 +3,17 @@ set( gtest_geosx_tests
      testReservoirSinglePhaseMSWells.cpp
      testWellEnums.cpp )
 
-set( dependencyList ${parallelDeps} gtest )
+set( tplDependencyList ${parallelDeps} gtest )
 
-if ( GEOSX_BUILD_SHARED_LIBS )
-  list( APPEND dependencyList geosx_core ${parallelDeps} )
-else()
-  list( APPEND dependencyList ${geosx_core_libs} ${parallelDeps} )
-endif()
+set( dependencyList mainInterface )
 
 if( ENABLE_PVTPackage )
     list( APPEND gtest_geosx_tests
           testReservoirCompositionalMultiphaseMSWells.cpp )
-
-    list( APPEND dependencyList PVTPackage )
 endif()
 
-if (TARGET pugixml::pugixml)
-  list( APPEND dependencyList pugixml::pugixml )
-endif()
-
-if (TARGET pugixml)
-  list( APPEND dependencyList pugixml )
-endif()
-
-if (TARGET fmt::fmt)
-  list( APPEND dependencyList fmt::fmt )
-endif()
-
-if (TARGET fmt)
-  list( APPEND dependencyList fmt )
-endif()
-
+geos_decorate_link_dependencies( LIST decoratedDependencies
+                                 DEPENDENCIES ${dependencyList} )
 # Add gtest C++ based tests
 foreach(test ${gtest_geosx_tests})
   get_filename_component( test_name ${test} NAME_WE )
@@ -41,7 +21,7 @@ foreach(test ${gtest_geosx_tests})
   blt_add_executable( NAME ${test_name}
                       SOURCES ${test}
                       OUTPUT_DIR ${TEST_OUTPUT_DIRECTORY}
-                      DEPENDS_ON ${dependencyList} )
+                      DEPENDS_ON ${decoratedDependencies} ${tplDependencyList} )
 
   geos_add_test( NAME ${test_name}
                  COMMAND ${test_name} )

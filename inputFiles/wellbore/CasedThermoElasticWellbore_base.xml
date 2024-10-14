@@ -94,35 +94,35 @@
     <BiotPorosity
       name="casingPorosity"
       defaultReferencePorosity="1e-6"
-      grainBulkModulus="159.4202899e9"/>
+      defaultGrainBulkModulus="159.4202899e9"/>
 
     <BiotPorosity
       name="cementPorosity"
       defaultReferencePorosity="1e-6"
-      grainBulkModulus="2.298850575e9"/>
+      defaultGrainBulkModulus="2.298850575e9"/>
 
     <BiotPorosity
       name="rockPorosity"
       defaultReferencePorosity="1e-6"
-      grainBulkModulus="5.535714286e9"/>
+      defaultGrainBulkModulus="5.535714286e9"/>
     <!-- SPHINX_PoroElasticPropertiesEnd -->
 
     <!-- SPHINX_HeatCapacityProperties -->
     <SolidInternalEnergy
       name="casingInternalEnergy"
-      volumetricHeatCapacity="1.375e6"
+      referenceVolumetricHeatCapacity="1.375e6"
       referenceTemperature="0"
       referenceInternalEnergy="0"/>
 
     <SolidInternalEnergy
       name="cementInternalEnergy"
-      volumetricHeatCapacity="4.2e6"
+      referenceVolumetricHeatCapacity="4.2e6"
       referenceTemperature="0"
       referenceInternalEnergy="0"/>
 
     <SolidInternalEnergy
       name="rockInternalEnergy"
-      volumetricHeatCapacity="4.56e6"
+      referenceVolumetricHeatCapacity="4.56e6"
       referenceTemperature="0"
       referenceInternalEnergy="0"/>
     <!-- SPHINX_HeatCapacityPropertiesEnd -->
@@ -142,17 +142,17 @@
     <!-- SPHINX_PermeabilityPropertiesEnd -->
 
     <!-- SPHINX_ThermalProperties -->
-    <SinglePhaseConstantThermalConductivity
+    <SinglePhaseThermalConductivity
       name="casingThermalCond"
-      thermalConductivityComponents="{ 15, 15, 15 }"/>
+      defaultThermalConductivityComponents="{ 15, 15, 15 }"/>
 
-    <SinglePhaseConstantThermalConductivity
+    <SinglePhaseThermalConductivity
       name="cementThermalCond"
-      thermalConductivityComponents="{ 1.0, 1.0, 1.0 }"/>
+      defaultThermalConductivityComponents="{ 1.0, 1.0, 1.0 }"/>
 
-    <SinglePhaseConstantThermalConductivity
+    <SinglePhaseThermalConductivity
       name="rockThermalCond"
-      thermalConductivityComponents="{ 1.66, 1.66, 1.66 }"/>
+      defaultThermalConductivityComponents="{ 1.66, 1.66, 1.66 }"/>
     <!-- SPHINX_ThermalPropertiesEnd -->
 
     <!-- SPHINX_FluidProperties -->
@@ -265,7 +265,7 @@
       fieldName="casingSolid_stress"
       component="2"
       scale="573913043.5"/>
-    <!-- SPHINX_StressCasingInit -->
+    <!-- SPHINX_StressCasingInitEnd -->
 
     <FieldSpecification
       name="initialSigma_x_cement"

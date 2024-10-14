@@ -2,10 +2,11 @@
  * ------------------------------------------------------------------------------------------------------------
  * SPDX-License-Identifier: LGPL-2.1-only
  *
- * Copyright (c) 2018-2020 Lawrence Livermore National Security LLC
- * Copyright (c) 2018-2020 The Board of Trustees of the Leland Stanford Junior University
- * Copyright (c) 2018-2020 TotalEnergies
- * Copyright (c) 2019-     GEOSX Contributors
+ * Copyright (c) 2016-2024 Lawrence Livermore National Security LLC
+ * Copyright (c) 2018-2024 Total, S.A
+ * Copyright (c) 2018-2024 The Board of Trustees of the Leland Stanford Junior University
+ * Copyright (c) 2023-2024 Chevron
+ * Copyright (c) 2019-     GEOS/GEOSX Contributors
  * All rights reserved
  *
  * See top level LICENSE, COPYRIGHT, CONTRIBUTORS, NOTICE, and ACKNOWLEDGEMENTS files for details.
@@ -108,7 +109,7 @@ public:
                        string_array const & inputPara,
                        string_array const & componentNames,
                        array1d< real64 > const & componentMolarWeight,
-                       bool const printTable );
+                       TableFunction::OutputOptions const pvtOutputOpts );
 
   virtual ~EzrokhiBrineDensity() override = default;
 
@@ -171,7 +172,8 @@ void EzrokhiBrineDensityUpdate::compute( real64 const & pressure,
                                          arraySlice1d< real64, USD3 > const & dValue,
                                          bool useMass ) const
 {
-  using Deriv = multifluid::DerivativeOffset;
+  constexpr integer numDof = 4;
+  using Deriv = constitutive::multifluid::DerivativeOffset;
 
   real64 waterSatDensity_dTemperature = 0.0;
   real64 waterSatPressure_dTemperature = 0.0;
@@ -188,32 +190,39 @@ void EzrokhiBrineDensityUpdate::compute( real64 const & pressure,
 
   real64 const coefPhaseComposition = m_coef0 + temperature * ( m_coef1 + m_coef2 * temperature );
 
-  // we have to convert molar component phase fraction (phaseComposition[m_CO2Index]) to mass fraction
-  real64 const waterMWInv = 1.0 / (phaseComposition[m_CO2Index] * m_componentMolarWeight[m_CO2Index]
-                                   + phaseComposition[m_waterIndex] * m_componentMolarWeight[m_waterIndex]);
+  real64 const mw_co2 = m_componentMolarWeight[m_CO2Index];
+  real64 const mw_h2o = m_componentMolarWeight[m_waterIndex];
 
-  real64 const massPhaseCompositionCO2 = phaseComposition[m_CO2Index] * m_componentMolarWeight[m_CO2Index] * waterMWInv;
+  // we have to convert molar component phase fraction (phaseComposition[m_CO2Index]) to mass fraction
+  real64 const waterMWInv = 1.0 / (phaseComposition[m_CO2Index] * mw_co2 + phaseComposition[m_waterIndex] * mw_h2o);
+  real64 dWaterMWInv[numDof]{};
+  for( integer dof = 0; dof < numDof; ++dof )
+  {
+    dWaterMWInv[dof] = -(dPhaseComposition[m_CO2Index][dof] * mw_co2 + dPhaseComposition[m_waterIndex][dof] * mw_h2o)*waterMWInv*waterMWInv;
+  }
+
+  real64 const massPhaseCompositionCO2 = phaseComposition[m_CO2Index] * mw_co2 * waterMWInv;
 
   real64 const exponent = coefPhaseComposition * massPhaseCompositionCO2;
+  real64 dExponent[numDof]{};
+  for( integer dof = 0; dof < numDof; ++dof )
+  {
+    dExponent[dof] = coefPhaseComposition * mw_co2 *
+                     (dPhaseComposition[m_CO2Index][dof] * waterMWInv + phaseComposition[m_CO2Index] * dWaterMWInv[dof]);
+  }
+  dExponent[Deriv::dT] += ( m_coef1 + 2.0 * m_coef2 * temperature) * massPhaseCompositionCO2;
 
-  real64 const exponent_dPressure = coefPhaseComposition * dPhaseComposition[m_CO2Index][Deriv::dP];
-  real64 const exponent_dTemperature = coefPhaseComposition * dPhaseComposition[m_CO2Index][Deriv::dT] +
-                                       ( m_coef1 + 2 * m_coef2 * temperature) * massPhaseCompositionCO2;
-  // compute only common part of derivatives w.r.t. CO2 and water phase compositions
-  // later to be multiplied by (phaseComposition[m_waterIndex]) and ( -phaseComposition[m_CO2Index] ) respectively
-  real64 const exponent_dPhaseComp = coefPhaseComposition * m_componentMolarWeight[m_CO2Index] * m_componentMolarWeight[m_waterIndex] * waterMWInv * waterMWInv;
-  real64 exponentPowered = pow( 10, exponent );
+  real64 exponentPowered = pow( 10.0, exponent );
 
   value = waterDensity * exponentPowered;
 
-  real64 const dValueCoef = LvArray::math::log( 10 ) * value;
-  dValue[Deriv::dP] = dValueCoef * exponent_dPressure + waterDensity_dPressure * exponentPowered;
-  dValue[Deriv::dT] = dValueCoef * exponent_dTemperature + waterDensity_dTemperature * exponentPowered;
+  real64 const dValueCoef = LvArray::math::log( 10.0 ) * value;
 
-  // here, we multiply common part of derivatives by specific coefficients
-  real64 const dValue_dPhaseComp = dValueCoef * exponent_dPhaseComp;
-  dValue[Deriv::dC+m_CO2Index] = dValue_dPhaseComp * phaseComposition[m_waterIndex] * dPhaseComposition[m_CO2Index][Deriv::dC+m_CO2Index];
-  dValue[Deriv::dC+m_waterIndex] = dValue_dPhaseComp * ( -phaseComposition[m_CO2Index] ) * dPhaseComposition[m_waterIndex][Deriv::dC+m_waterIndex];
+  dValue[Deriv::dP] = dValueCoef * dExponent[Deriv::dP] + waterDensity_dPressure * exponentPowered;
+  dValue[Deriv::dT] = dValueCoef * dExponent[Deriv::dT] + waterDensity_dTemperature * exponentPowered;
+
+  dValue[Deriv::dC+m_CO2Index] = dValueCoef * dExponent[Deriv::dC+m_CO2Index];
+  dValue[Deriv::dC+m_waterIndex] = dValueCoef * dExponent[Deriv::dC+m_waterIndex];
 
   if( !useMass )
   {

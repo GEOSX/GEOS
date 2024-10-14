@@ -2,10 +2,11 @@
  * ------------------------------------------------------------------------------------------------------------
  * SPDX-License-Identifier: LGPL-2.1-only
  *
- * Copyright (c) 2018-2020 Lawrence Livermore National Security LLC
- * Copyright (c) 2018-2020 The Board of Trustees of the Leland Stanford Junior University
- * Copyright (c) 2018-2020 TotalEnergies
- * Copyright (c) 2019-     GEOSX Contributors
+ * Copyright (c) 2016-2024 Lawrence Livermore National Security LLC
+ * Copyright (c) 2018-2024 Total, S.A
+ * Copyright (c) 2018-2024 The Board of Trustees of the Leland Stanford Junior University
+ * Copyright (c) 2023-2024 Chevron
+ * Copyright (c) 2019-     GEOS/GEOSX Contributors
  * All rights reserved
  *
  * See top level LICENSE, COPYRIGHT, CONTRIBUTORS, NOTICE, and ACKNOWLEDGEMENTS files for details.
@@ -17,6 +18,7 @@
 #include "constitutive/fluid/multifluid/compositional/functions/NegativeTwoPhaseFlash.hpp"
 #include "constitutive/fluid/multifluid/compositional/functions/CubicEOSPhaseModel.hpp"
 #include "TestFluid.hpp"
+#include "TestFluidUtilities.hpp"
 
 using namespace geos::constitutive::compositional;
 
@@ -58,12 +60,14 @@ using FlashData = std::tuple<
   Feed< NC > const    // expected vapour composition
   >;
 
-template< int NC, typename EOS_TYPE >
+template< int NC, EquationOfStateType EOS_TYPE >
 class NegativeTwoPhaseFlashTestFixture :  public ::testing::TestWithParam< FlashData< NC > >
 {
   static constexpr real64 relTol = 1.0e-5;
   static constexpr real64 absTol = 1.0e-7;
   static constexpr int numComps = NC;
+  static constexpr int numDofs = NC + 2;
+  using Deriv = geos::constitutive::multifluid::DerivativeOffset;
 public:
   NegativeTwoPhaseFlashTestFixture()
     : m_fluid( FluidData< NC >::createFluid() )
@@ -77,30 +81,35 @@ public:
 
     real64 const pressure = std::get< 0 >( data );
     real64 const temperature = std::get< 1 >( data );
-    array1d< real64 > composition;
+    stackArray1d< real64, numComps > composition;
     TestFluid< NC >::createArray( composition, std::get< 2 >( data ));
 
     bool const expectedStatus = std::get< 3 >( data );
     real64 const expectedVapourFraction = std::get< 4 >( data );
 
-    stackArray1d< real64, NC > expectedLiquidComposition;
+    stackArray1d< real64, numComps > expectedLiquidComposition;
     TestFluid< NC >::createArray( expectedLiquidComposition, std::get< 5 >( data ));
-    stackArray1d< real64, NC > expectedVapourComposition;
+    stackArray1d< real64, numComps > expectedVapourComposition;
     TestFluid< NC >::createArray( expectedVapourComposition, std::get< 6 >( data ));
 
     real64 vapourFraction = -1.0;
-    array1d< real64 > liquidComposition( numComps );
-    array1d< real64 > vapourComposition( numComps );
+    stackArray1d< real64, numComps > liquidComposition( numComps );
+    stackArray1d< real64, numComps > vapourComposition( numComps );
+    stackArray2d< real64, numComps > kValues( 1, numComps );
+    kValues.zero();
 
-    bool status = NegativeTwoPhaseFlash::compute< EOS_TYPE, EOS_TYPE >(
+    bool status = NegativeTwoPhaseFlash::compute(
       numComps,
       pressure,
       temperature,
-      composition,
+      composition.toSliceConst(),
       componentProperties,
+      EOS_TYPE,
+      EOS_TYPE,
+      kValues.toSlice(),
       vapourFraction,
-      liquidComposition,
-      vapourComposition );
+      liquidComposition.toSlice(),
+      vapourComposition.toSlice() );
 
     // Check the flash success result
     ASSERT_EQ( expectedStatus, status );
@@ -132,14 +141,140 @@ public:
     }
   }
 
+  void testFlashDerivatives( FlashData< NC > const & data )
+  {
+    // Number of output values from each flash calculation
+    constexpr integer numValues = 1 + 2*numComps;
+
+    auto componentProperties = this->m_fluid->createKernelWrapper();
+
+    bool const expectedStatus = std::get< 3 >( data );
+    if( !expectedStatus ) return;
+
+    real64 const pressure = std::get< 0 >( data );
+    real64 const temperature = std::get< 1 >( data );
+    stackArray1d< real64, numComps > composition;
+    TestFluid< NC >::createArray( composition, std::get< 2 >( data ));
+
+    real64 vapourFraction = -1.0;
+    stackArray1d< real64, numComps > liquidComposition( numComps );
+    stackArray1d< real64, numComps > vapourComposition( numComps );
+    stackArray2d< real64, numComps > kValues( 1, numComps );
+    kValues.zero();
+
+    stackArray1d< real64, numDofs > vapourFractionDerivs( numDofs );
+    stackArray2d< real64, numComps * numDofs > liquidCompositionDerivs( numComps, numDofs );
+    stackArray2d< real64, numComps * numDofs > vapourCompositionDerivs( numComps, numDofs );
+    stackArray1d< real64, numValues > derivatives( numValues );
+
+    // Combine values and derivatives into a single output
+    auto const concatDerivatives = []( integer const kc, auto & derivs, auto const & v, auto const & xmf, auto const & ymf ){
+      derivs[0] = v[kc];
+      for( integer ic = 0; ic < numComps; ++ic )
+      {
+        derivs[1+ic] = xmf( ic, kc );
+        derivs[1+ic+numComps] = ymf( ic, kc );
+      }
+    };
+    std::cout << std::scientific << std::setprecision( 8 );
+
+    auto const evaluateFlash = [&]( real64 const p, real64 const t, auto const & zmf, auto & values ){
+      stackArray1d< real64, numComps > displacedLiquidComposition( numComps );
+      stackArray1d< real64, numComps > displacedVapourComposition( numComps );
+      kValues.zero();
+
+      NegativeTwoPhaseFlash::compute(
+        numComps,
+        p,
+        t,
+        zmf.toSliceConst(),
+        componentProperties,
+        EOS_TYPE,
+        EOS_TYPE,
+        kValues.toSlice(),
+        values[0],
+        displacedLiquidComposition.toSlice(),
+        displacedVapourComposition.toSlice() );
+      for( integer ic = 0; ic < numComps; ++ic )
+      {
+        values[1+ic] = displacedLiquidComposition[ic];
+        values[1+ic+numComps] = displacedVapourComposition[ic];
+      }
+    };
+
+    NegativeTwoPhaseFlash::compute(
+      numComps,
+      pressure,
+      temperature,
+      composition.toSliceConst(),
+      componentProperties,
+      EOS_TYPE,
+      EOS_TYPE,
+      kValues.toSlice(),
+      vapourFraction,
+      liquidComposition.toSlice(),
+      vapourComposition.toSlice() );
+
+    NegativeTwoPhaseFlash::computeDerivatives(
+      numComps,
+      pressure,
+      temperature,
+      composition.toSliceConst(),
+      componentProperties,
+      EOS_TYPE,
+      EOS_TYPE,
+      vapourFraction,
+      liquidComposition.toSliceConst(),
+      vapourComposition.toSliceConst(),
+      vapourFractionDerivs.toSlice(),
+      liquidCompositionDerivs.toSlice(),
+      vapourCompositionDerivs.toSlice() );
+
+    // Test against numerically calculated values
+    // --- Pressure derivatives ---
+    concatDerivatives( Deriv::dP, derivatives, vapourFractionDerivs, liquidCompositionDerivs, vapourCompositionDerivs );
+    real64 const dp = 1.0e-4 * pressure;
+    geos::testing::internal::testNumericalDerivative< numValues >(
+      pressure, dp, derivatives,
+      [&]( real64 const p, auto & values ) {
+      evaluateFlash( p, temperature, composition, values );
+    } );
+
+    // --- Temperature derivatives ---
+    concatDerivatives( Deriv::dT, derivatives, vapourFractionDerivs, liquidCompositionDerivs, vapourCompositionDerivs );
+    real64 const dT = 1.0e-6 * temperature;
+    geos::testing::internal::testNumericalDerivative< numValues >(
+      temperature, dT, derivatives,
+      [&]( real64 const t, auto & values ) {
+      evaluateFlash( pressure, t, composition, values );
+    } );
+
+    // --- Composition derivatives ---
+    real64 constexpr dz = 1.0e-7;
+    for( integer jc = 0; jc < numComps; ++jc )
+    {
+      if( composition[jc] < 1.0e-6 ) continue;
+      integer const kc = Deriv::dC + jc;
+      concatDerivatives( kc, derivatives, vapourFractionDerivs, liquidCompositionDerivs, vapourCompositionDerivs );
+      geos::testing::internal::testNumericalDerivative< numValues >(
+        0.0, dz, derivatives,
+        [&]( real64 const z, auto & values ) {
+        real64 const originalFraction = composition[jc];
+        composition[jc] += z;
+        evaluateFlash( pressure, temperature, composition, values );
+        composition[jc] = originalFraction;
+      }, relTol, absTol );
+    }
+  }
+
 protected:
   std::unique_ptr< TestFluid< NC > > m_fluid{};
 };
 
-using NegativeTwoPhaseFlash2CompPR = NegativeTwoPhaseFlashTestFixture< 2, CubicEOSPhaseModel< PengRobinsonEOS > >;
-using NegativeTwoPhaseFlash2CompSRK = NegativeTwoPhaseFlashTestFixture< 2, CubicEOSPhaseModel< SoaveRedlichKwongEOS > >;
-using NegativeTwoPhaseFlash4CompPR = NegativeTwoPhaseFlashTestFixture< 4, CubicEOSPhaseModel< PengRobinsonEOS > >;
-using NegativeTwoPhaseFlash4CompSRK = NegativeTwoPhaseFlashTestFixture< 4, CubicEOSPhaseModel< SoaveRedlichKwongEOS > >;
+using NegativeTwoPhaseFlash2CompPR = NegativeTwoPhaseFlashTestFixture< 2, EquationOfStateType::PengRobinson >;
+using NegativeTwoPhaseFlash2CompSRK = NegativeTwoPhaseFlashTestFixture< 2, EquationOfStateType::SoaveRedlichKwong >;
+using NegativeTwoPhaseFlash4CompPR = NegativeTwoPhaseFlashTestFixture< 4, EquationOfStateType::PengRobinson >;
+using NegativeTwoPhaseFlash4CompSRK = NegativeTwoPhaseFlashTestFixture< 4, EquationOfStateType::SoaveRedlichKwong >;
 
 TEST_P( NegativeTwoPhaseFlash2CompPR, testNegativeFlash )
 {
@@ -159,6 +294,26 @@ TEST_P( NegativeTwoPhaseFlash4CompPR, testNegativeFlash )
 TEST_P( NegativeTwoPhaseFlash4CompSRK, testNegativeFlash )
 {
   testFlash( GetParam() );
+}
+
+TEST_P( NegativeTwoPhaseFlash2CompPR, testNegativeFlashDerivatives )
+{
+  testFlashDerivatives( GetParam() );
+}
+
+TEST_P( NegativeTwoPhaseFlash2CompSRK, testNegativeFlashDerivatives )
+{
+  testFlashDerivatives( GetParam() );
+}
+
+TEST_P( NegativeTwoPhaseFlash4CompPR, testNegativeFlashDerivatives )
+{
+  testFlashDerivatives( GetParam() );
+}
+
+TEST_P( NegativeTwoPhaseFlash4CompSRK, testNegativeFlashDerivatives )
+{
+  testFlashDerivatives( GetParam() );
 }
 
 //-------------------------------------------------------------------------------
@@ -210,10 +365,10 @@ INSTANTIATE_TEST_SUITE_P(
     FlashData< 2 >( 1.013250e+05, 1.231500e+02, { 0.50000000, 0.50000000 }, true, 0.44681454, { 0.90248098, 0.09751902 }, { 0.00170237, 0.99829763 } ),
     FlashData< 2 >( 1.013250e+05, 1.231500e+02, { 0.90000000, 0.10000000 }, true, 0.00275426, { 0.90248098, 0.09751902 }, { 0.00170237, 0.99829763 } ),
     FlashData< 2 >( 1.000000e+06, 1.231500e+02, { 0.10000000, 0.90000000 }, true, 0.00000000, { 0.10000000, 0.90000000 }, { 0.10000000, 0.90000000 } ),
-    FlashData< 2 >( 1.000000e+06, 1.231500e+02, { 0.50000000, 0.50000000 }, false, 0.00000000, { 0.50000000, 0.50000000 }, { 0.49950202, 0.50049798 } ),
+    FlashData< 2 >( 1.000000e+06, 1.231500e+02, { 0.50000000, 0.50000000 }, true, 0.00000000, { 0.50000000, 0.50000000 }, { 0.49950202, 0.50049798 } ),
     FlashData< 2 >( 1.000000e+06, 1.231500e+02, { 0.90000000, 0.10000000 }, true, 0.00000000, { 0.90000000, 0.10000000 }, { 0.90000000, 0.10000000 } ),
     FlashData< 2 >( 5.000000e+06, 1.231500e+02, { 0.75000000, 0.25000000 }, true, 0.00000000, { 0.75000000, 0.25000000 }, { 0.74999999, 0.25000001 } ),
-    FlashData< 2 >( 5.000000e+06, 1.231500e+02, { 0.50000000, 0.50000000 }, false, 0.00000000, { 0.50000000, 0.50000000 }, { 0.49979984, 0.50020016 } ),
+    FlashData< 2 >( 5.000000e+06, 1.231500e+02, { 0.50000000, 0.50000000 }, true, 0.00000000, { 0.50000000, 0.50000000 }, { 0.49979984, 0.50020016 } ),
     FlashData< 2 >( 5.000000e+06, 1.231500e+02, { 0.90000000, 0.10000000 }, true, 0.00000000, { 0.90000000, 0.10000000 }, { 0.90000000, 0.10000000 } ),
     FlashData< 2 >( 1.000000e+08, 1.231500e+02, { 0.90000000, 0.10000000 }, true, 0.00000000, { 0.90000000, 0.10000000 }, { 0.90000000, 0.10000000 } ),
     FlashData< 2 >( 1.000000e+05, 1.931500e+02, { 0.10000000, 0.90000000 }, true, 1.00000000, { 0.10000000, 0.90000000 }, { 0.10000000, 0.90000000 } ),
@@ -316,13 +471,13 @@ INSTANTIATE_TEST_SUITE_P(
                     { 0.59975210, 0.00000000, 0.00078842, 0.39945949 } ),
     FlashData< 4 >( 1.000000e+07, 4.731500e+02, { 0.01000000, 0.00000000, 0.00000000, 0.99000000 }, true, 0.01121076, { 0.00102378, 0.00000000, 0.00000000, 0.99897622 },
                     { 0.80170284, 0.00000000, 0.00000000, 0.19829716 } ),
-    FlashData< 4 >( 1.000000e+08, 4.731500e+02, { 0.05695100, 0.10481800, 0.10482200, 0.73340900 }, false, 0.00000000, { 0.05695100, 0.10481800, 0.10482200, 0.73340900 },
+    FlashData< 4 >( 1.000000e+08, 4.731500e+02, { 0.05695100, 0.10481800, 0.10482200, 0.73340900 }, true, 0.00000000, { 0.05695100, 0.10481800, 0.10482200, 0.73340900 },
                     { 0.72438623, 0.02564505, 0.01665696, 0.23331176 } ),
-    FlashData< 4 >( 1.000000e+08, 4.731500e+02, { 0.15695100, 0.10481800, 0.10482200, 0.63340900 }, false, 0.00000000, { 0.15695100, 0.10481800, 0.10482200, 0.63340900 },
+    FlashData< 4 >( 1.000000e+08, 4.731500e+02, { 0.15695100, 0.10481800, 0.10482200, 0.63340900 }, true, 0.00000000, { 0.15695100, 0.10481800, 0.10482200, 0.63340900 },
                     { 0.73612750, 0.02738195, 0.01777184, 0.21871871 } ),
     FlashData< 4 >( 1.000000e+08, 4.731500e+02, { 0.00000000, 0.10481800, 0.10482200, 0.79036000 }, true, 0.72801768, { 0.00000000, 0.38538472, 0.38540005, 0.22921523 },
                     { 0.00000000, 0.00000023, 0.00000000, 0.99999977 } ),
-    FlashData< 4 >( 1.000000e+08, 4.731500e+02, { 0.10481800, 0.00000000, 0.10482200, 0.79036000 }, false, 0.00000000, { 0.10481800, 0.00000000, 0.10482200, 0.79036000 },
+    FlashData< 4 >( 1.000000e+08, 4.731500e+02, { 0.10481800, 0.00000000, 0.10482200, 0.79036000 }, true, 0.00000000, { 0.10481800, 0.00000000, 0.10482200, 0.79036000 },
                     { 0.74504275, 0.00000000, 0.01613702, 0.23882023 } )
     )
   );

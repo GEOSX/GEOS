@@ -115,7 +115,7 @@ Here, Modified Cam-Clay ``ModifiedCamClay`` is used to simulate the elastoplasti
 
 The following material parameters should be defined properly to reproduce the analytical example:
 
-.. include:: ../../../../../../../src/coreComponents/schema/docs/ModifiedCamClay.rst
+.. include:: /docs/sphinx/datastructure/ModifiedCamClay.rst
 
 
 The constitutive parameters such as the density, the bulk modulus, and the shear modulus are specified in the International System of Units.

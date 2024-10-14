@@ -2,10 +2,11 @@
  * ------------------------------------------------------------------------------------------------------------
  * SPDX-License-Identifier: LGPL-2.1-only
  *
- * Copyright (c) 2018-2020 Lawrence Livermore National Security LLC
- * Copyright (c) 2018-2020 The Board of Trustees of the Leland Stanford Junior University
- * Copyright (c) 2018-2020 TotalEnergies
- * Copyright (c) 2019-     GEOSX Contributors
+ * Copyright (c) 2016-2024 Lawrence Livermore National Security LLC
+ * Copyright (c) 2018-2024 Total, S.A
+ * Copyright (c) 2018-2024 The Board of Trustees of the Leland Stanford Junior University
+ * Copyright (c) 2023-2024 Chevron
+ * Copyright (c) 2019-     GEOS/GEOSX Contributors
  * All rights reserved
  *
  * See top level LICENSE, COPYRIGHT, CONTRIBUTORS, NOTICE, and ACKNOWLEDGEMENTS files for details.
@@ -182,6 +183,7 @@ void createAMG( LinearSolverParameters const & params,
     GEOS_LAI_CHECK_ERROR( HYPRE_BoomerAMGSetNumPaths( precond.ptr, params.amg.aggressiveNumPaths ) );
     GEOS_LAI_CHECK_ERROR( HYPRE_BoomerAMGSetAggNumLevels( precond.ptr, params.amg.aggressiveNumLevels ) );
     GEOS_LAI_CHECK_ERROR( HYPRE_BoomerAMGSetAggInterpType( precond.ptr, aggInterpType ) );
+    GEOS_LAI_CHECK_ERROR( HYPRE_BoomerAMGSetAggPMaxElmts( precond.ptr, params.amg.aggressiveInterpMaxNonZeros ) );
   }
 
   // Set coarsest level solver
@@ -414,7 +416,7 @@ void HyprePreconditioner::setup( Matrix const & mat )
       {
         m_precond->destroy( m_precond->ptr );
       }
-#if defined(GEOSX_USE_SUPERLU_DIST)
+#if defined(GEOS_USE_SUPERLU_DIST)
       hypre_SLUDistSetup( &m_precond->ptr, precondMat.unwrapped(), 0 );
 #endif
     }

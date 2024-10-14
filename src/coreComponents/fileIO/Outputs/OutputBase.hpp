@@ -2,10 +2,11 @@
  * ------------------------------------------------------------------------------------------------------------
  * SPDX-License-Identifier: LGPL-2.1-only
  *
- * Copyright (c) 2018-2020 Lawrence Livermore National Security LLC
- * Copyright (c) 2018-2020 The Board of Trustees of the Leland Stanford Junior University
- * Copyright (c) 2018-2020 TotalEnergies
- * Copyright (c) 2019-     GEOSX Contributors
+ * Copyright (c) 2016-2024 Lawrence Livermore National Security LLC
+ * Copyright (c) 2018-2024 Total, S.A
+ * Copyright (c) 2018-2024 The Board of Trustees of the Leland Stanford Junior University
+ * Copyright (c) 2023-2024 Chevron
+ * Copyright (c) 2019-     GEOS/GEOSX Contributors
  * All rights reserved
  *
  * See top level LICENSE, COPYRIGHT, CONTRIBUTORS, NOTICE, and ACKNOWLEDGEMENTS files for details.
@@ -40,12 +41,6 @@ public:
   virtual ~OutputBase() override;
 
   /**
-   * @brief Catalog name interface.
-   * @return This type's catalog name.
-   **/
-  static string catalogName() { return "OutputBase"; }
-
-  /**
    * @brief Setter for the output directory
    * @param  outputDir The output directory
    **/
@@ -55,7 +50,7 @@ public:
    * @brief Getter for the output directory
    * @return The output directory
    **/
-  static string getOutputDirectory() {return m_outputDirectory;}
+  static string const & getOutputDirectory();
 
   /**
    * @brief Setter for the file name root
@@ -67,7 +62,7 @@ public:
    * @brief Getter for the file name root
    * @return The file name root
    **/
-  static string getFileNameRoot() { return m_fileNameRoot; }
+  static string const & getFileNameRoot();
 
   /// Method for setting up output directories.
   virtual void setupDirectoryStructure();
@@ -97,6 +92,8 @@ public:
    **/
   integer parallelThreads() const { return m_parallelThreads; }
 
+
+
 protected:
   /**
    * @brief Do initialization prior to calling initialization operations
@@ -108,9 +105,6 @@ protected:
 private:
   string m_childDirectory;
   integer m_parallelThreads;
-
-  static string m_outputDirectory;
-  static string m_fileNameRoot;
 
 };
 

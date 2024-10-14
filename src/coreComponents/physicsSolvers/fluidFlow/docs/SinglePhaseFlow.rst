@@ -90,7 +90,7 @@ Like any solver, time stepping is driven by events, see :ref:`EventManager`.
 
 The following attributes are supported:
 
-.. include:: /coreComponents/schema/docs/SinglePhaseFVM.rst
+.. include:: /docs/sphinx/datastructure/SinglePhaseFVM.rst
 
 In particular:
 

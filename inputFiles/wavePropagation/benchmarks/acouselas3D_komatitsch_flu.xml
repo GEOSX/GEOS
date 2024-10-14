@@ -1,0 +1,39 @@
+<?xml version="1.0" ?>
+
+<Problem>
+  <Solvers>
+    <!-- define the solver, source coordinates, time source frequency, receiver coordinates -->
+    <AcousticSEM
+      name="acousticSolver"
+      discretization="FE1"
+      targetRegions="{ Fluid }"
+      sourceCoordinates="{ { 1575, 2400, 2900 } }"
+      timeSourceFrequency="10"
+      timeSourceDelay="0.115"
+      rickerOrder="3"
+      outputSeismoTrace="1"
+      dtSeismoTrace="1e-3"
+      receiverCoordinates="{ { 3752.2936, 2400, 2933.3333 } }"/>
+    <ElasticSEM
+      name="elasticSolver"
+      discretization="FE1"
+      targetRegions="{ Solid }"
+      outputSeismoTrace="1"
+      dtSeismoTrace="1e-3"
+      receiverCoordinates="{ { 3752.2936, 2400, 1866.6667 } }"/>
+    <!-- NOTES:
+      - coupled solver must be declared at the end (for interface computations)
+      - discretization is also needed for the correct mesh to be passed through from the coupled solver to the elastic / acoustic solvers
+    -->
+    <AcousticElasticSEM
+      name="acousticelasticSolver"
+      discretization="FE1"
+      targetRegions="{ Solid, Fluid }"
+      acousticSolverName="acousticSolver"
+      elasticSolverName="elasticSolver"/>
+  </Solvers>
+
+  <Included>
+    <File name="./acouselas3D_komatitsch_base.xml"/>
+  </Included>
+</Problem>

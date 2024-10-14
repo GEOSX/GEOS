@@ -1,6 +1,6 @@
 .. _UsingDocker:
 
-[Unsupported] Developing inside Docker with precompiled TPL binaries
+[Best effort] Developing inside Docker with precompiled TPL binaries
 ====================================================================
 
 For development purposes, you may want to use the publicly available docker images instead of compiling them yourself.

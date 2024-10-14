@@ -25,7 +25,7 @@ parser.add_argument('-d',
                     default='integratedTests',
                     help='directory to search recursively for files with specified extension')
 
-parser.add_argument('-ext', '--extension', type=str, default='.data', help='extension of files to filter')
+parser.add_argument('-ext', '--extension', type=str, default='.log', help='extension of files to filter')
 
 parser.add_argument('-tl',
                     '--numTrailingLines',
@@ -48,9 +48,11 @@ if unknown_args:
 matchStrings = ['Error:']
 
 # What stings to look for in order to exclude a block
+print( args.exclusionStrings )
+exclusionStrings = []
 #exclusionStrings = [ 'sizedFromParent', 'different shapes' ]
-#exclusionStrings = [ 'sizedFromParent', 'different shapes', 'but not the' ]
-exclusionStrings = ['logLevel', 'NonlinearSolverParameters', 'has a child', 'different shapes', 'different types', 'differing types']
+#exclusionStrings = [ 'but not the' ]
+#exclusionStrings = ['logLevel', 'NonlinearSolverParameters', 'has a child', 'different shapes', 'different types', 'differing types']
 exclusionStrings += args.exclusionStrings
 
 directory = args.directory

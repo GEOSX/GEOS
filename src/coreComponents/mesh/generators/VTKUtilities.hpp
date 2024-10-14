@@ -2,10 +2,11 @@
  * ------------------------------------------------------------------------------------------------------------
  * SPDX-License-Identifier: LGPL-2.1-only
  *
- * Copyright (c) 2018-2020 Lawrence Livermore National Security LLC
- * Copyright (c) 2018-2020 The Board of Trustees of the Leland Stanford Junior University
- * Copyright (c) 2018-2020 Total, S.A
- * Copyright (c) 2019-     GEOSX Contributors
+ * Copyright (c) 2016-2024 Lawrence Livermore National Security LLC
+ * Copyright (c) 2018-2024 Total, S.A
+ * Copyright (c) 2018-2024 The Board of Trustees of the Leland Stanford Junior University
+ * Copyright (c) 2023-2024 Chevron
+ * Copyright (c) 2019-     GEOS/GEOSX Contributors
  * All rights reserved
  *
  * See top level LICENSE, COPYRIGHT, CONTRIBUTORS, NOTICE, and ACKNOWLEDGEMENTS files for details.
@@ -20,23 +21,18 @@
 #define GEOS_MESH_GENERATORS_VTKUTILITIES_HPP
 
 #include "common/DataTypes.hpp"
-#include "common/DataLayouts.hpp"
 #include "common/MpiWrapper.hpp"
-#include "mesh/DomainPartition.hpp"
 #include "mesh/generators/CellBlockManager.hpp"
 
-#include <vtkSmartPointer.h>
 #include <vtkDataSet.h>
 #include <vtkMultiProcessController.h>
+#include <vtkSmartPointer.h>
 
 #include <numeric>
 #include <unordered_set>
 
 namespace geos
 {
-
-using namespace dataRepository;
-
 namespace vtk
 {
 
@@ -223,7 +219,7 @@ string buildCellBlockName( ElementType const type, int const regionId );
  */
 void importMaterialField( std::vector< vtkIdType > const & cellIds,
                           vtkDataArray * vtkArray,
-                          WrapperBase & wrapper );
+                          dataRepository::WrapperBase & wrapper );
 
 /**
  * @brief Imports 1d and 2d arrays from @p vtkArray to @p wrapper, only for @p cellIds
@@ -233,7 +229,7 @@ void importMaterialField( std::vector< vtkIdType > const & cellIds,
  */
 void importRegularField( std::vector< vtkIdType > const & cellIds,
                          vtkDataArray * vtkArray,
-                         WrapperBase & wrapper );
+                         dataRepository::WrapperBase & wrapper );
 
 /**
  * @brief Imports 1d and 2d arrays from @p vtkArray to @p wrapper, for all the elements/cells of the provided wrapper.
@@ -241,7 +237,7 @@ void importRegularField( std::vector< vtkIdType > const & cellIds,
  * @param wrapper The destination.
  */
 void importRegularField( vtkDataArray * vtkArray,
-                         WrapperBase & wrapper );
+                         dataRepository::WrapperBase & wrapper );
 
 
 } // namespace vtk

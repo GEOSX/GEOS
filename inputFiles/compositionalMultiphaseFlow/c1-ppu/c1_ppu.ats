@@ -1,5 +1,4 @@
-import geos_ats
-from geos_ats.test_builder import TestDeck, RestartcheckParameters, generate_geos_tests
+from geos.ats.test_builder import TestDeck, RestartcheckParameters, generate_geos_tests
 
 restartcheck_params = {}
 restartcheck_params["atol"] = 1.0E-6
@@ -9,8 +8,8 @@ decks = [
     TestDeck(name="grav_seg_c1ppu_hyst",
              description="Smoke test for C1-PPU (1D displacement, C1-PPU)",
              partitions=((1, 1, 1), (1, 1, 2)),
-             restart_step=87,
-             check_step=109,
+             restart_step=50,
+             check_step=88,
              restartcheck_params=RestartcheckParameters(atol=1e-4, rtol=1e-3)),
 ]
 

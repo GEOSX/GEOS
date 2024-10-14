@@ -88,11 +88,11 @@
       beginTime="1e5"
       target="/Solvers/compflow"/>
 
-    <!--  <PeriodicEvent
+    <PeriodicEvent
       name="restarts"
       timeFrequency="1e7"
       targetExactTimestep="0"
-      target="/Outputs/restartOutput"/>-->
+      target="/Outputs/restartOutput"/>
   </Events>
 
   <NumericalMethods>
@@ -312,7 +312,8 @@
 
   <Outputs>
     <VTK
-      name="vtkOutput"/>
+      name="vtkOutput"
+      plotFileRoot="deadoil_3ph_corey_1d_fractured"/>
 
     <Restart
       name="restartOutput"/>

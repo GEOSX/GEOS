@@ -69,7 +69,7 @@
       file="../../../GEOSDATA/DataSets/Egg/egg_withBurdens_small.vts"
       regionAttribute="elementRegionMarker"
       fieldsToImport="{ PERM }"
-      fieldNamesInGEOSX="{ rockPermeability_permeability }"/>
+      fieldNamesInGEOS="{ rockPermeability_permeability }"/>
   </Mesh>
 
   <Geometry>
@@ -202,7 +202,7 @@
 
     <BiotPorosity
       name="rockPorosity"
-      grainBulkModulus="1.0e27"
+      defaultGrainBulkModulus="1.0e27"
       defaultReferencePorosity="0.2"/>
 
   </Constitutive>

@@ -63,7 +63,7 @@
 
     <SolidInternalEnergy
       name="rockInternalEnergy"
-      volumetricHeatCapacity="1.95e6"
+      referenceVolumetricHeatCapacity="1.95e6"
       referenceTemperature="273.0"
       referenceInternalEnergy="5.33e8"/>
 
@@ -83,9 +83,9 @@
       specificHeatCapacity="4.0e3"
       referenceInternalEnergy="1.1e6"/>
 
-    <SinglePhaseConstantThermalConductivity
+    <SinglePhaseThermalConductivity
       name="thermalCond"
-      thermalConductivityComponents="{ 3.5, 3.5, 3.5 }"/>
+      defaultThermalConductivityComponents="{ 3.5, 3.5, 3.5 }"/>
     
   </Constitutive>
 

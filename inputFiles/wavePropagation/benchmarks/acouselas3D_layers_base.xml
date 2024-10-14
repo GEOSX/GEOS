@@ -1,0 +1,138 @@
+<?xml version="1.0" ?>
+
+<Problem>
+  <Events maxTime="1.0">
+    <PeriodicEvent
+      name="solidfluidSolverApplications"
+      forceDt="1e-3"
+      target="/Solvers/acousticelasticSolver"/>
+    <SoloEvent
+      name="solidSolverApplications"
+      forceDt="1e-3"
+      endTime="0"
+      target="/Solvers/elasticSolver"/>
+    <SoloEvent
+      name="fluidSolverApplications"
+      forceDt="1e-3"
+      endTime="0"
+      target="/Solvers/acousticSolver"/>
+    <PeriodicEvent
+      name="outputs"
+      timeFrequency="1e-1"
+      targetExactTimestep="0"
+      target="/Outputs/vtkOutput"/>
+  </Events>
+
+  <NumericalMethods>
+    <FiniteElements>
+      <FiniteElementSpace
+        name="FE1"
+        order="2"
+        formulation="SEM"/>
+    </FiniteElements>
+  </NumericalMethods>
+
+  <ElementRegions>
+    <CellElementRegion
+      name="Fluid1"
+      cellBlocks="{ fluid1 }"
+      materialList="{ nullModel }"/>
+    <CellElementRegion
+      name="Fluid2"
+      cellBlocks="{ fluid2 }"
+      materialList="{ nullModel }"/>
+    <CellElementRegion
+      name="Solid1"
+      cellBlocks="{ solid1 }"
+      materialList="{ nullModel }"/>
+    <CellElementRegion
+      name="Solid2"
+      cellBlocks="{ solid2 }"
+      materialList="{ nullModel }"/>
+  </ElementRegions>
+
+  <Constitutive>
+    <NullModel name="nullModel"/>
+  </Constitutive>
+
+  <Outputs>
+    <VTK
+      name="vtkOutput"
+      fieldNames="{ pressure_np1, displacementx_np1, displacementy_np1, displacementz_np1 }"
+      levelNames="{ FE1 }"
+      onlyPlotSpecifiedFieldNames="1"/>
+  </Outputs>
+
+  <FieldSpecifications>
+    <FieldSpecification
+      name="acousticVelocity1"
+      initialCondition="1"
+      objectPath="mesh/FE1/ElementRegions/Fluid1/fluid1"
+      fieldName="acousticVelocity"
+      scale="1500.0"
+      setNames="{ all }"/>
+    <FieldSpecification
+      name="acousticDensity1"
+      initialCondition="1"
+      objectPath="mesh/FE1/ElementRegions/Fluid1/fluid1"
+      fieldName="acousticDensity"
+      scale="1000.0"
+      setNames="{ all }"/>
+    <FieldSpecification
+      name="acousticVelocity2"
+      initialCondition="1"
+      objectPath="mesh/FE1/ElementRegions/Fluid2/fluid2"
+      fieldName="acousticVelocity"
+      scale="3000.0"
+      setNames="{ all }"/>
+    <FieldSpecification
+      name="acousticDensity2"
+      initialCondition="1"
+      objectPath="mesh/FE1/ElementRegions/Fluid2/fluid2"
+      fieldName="acousticDensity"
+      scale="1000.0"
+      setNames="{ all }"/>
+    <FieldSpecification
+      name="elasticVelocityVp1"
+      initialCondition="1"
+      objectPath="mesh/FE1/ElementRegions/Solid1/solid1"
+      fieldName="elasticVelocityVp"
+      scale="2000.0"
+      setNames="{ all }"/>
+    <FieldSpecification
+      name="elasticVelocityVs1"
+      initialCondition="1"
+      objectPath="mesh/FE1/ElementRegions/Solid1/solid1"
+      fieldName="elasticVelocityVs"
+      scale="1555.0"
+      setNames="{ all }"/>
+    <FieldSpecification
+      name="elasticDensity1"
+      initialCondition="1"
+      objectPath="mesh/FE1/ElementRegions/Solid1/solid1"
+      fieldName="elasticDensity"
+      scale="1900.0"
+      setNames="{ all }"/>
+    <FieldSpecification
+      name="elasticVelocityVp2"
+      initialCondition="1"
+      objectPath="mesh/FE1/ElementRegions/Solid2/solid2"
+      fieldName="elasticVelocityVp"
+      scale="2500.0"
+      setNames="{ all }"/>
+    <FieldSpecification
+      name="elasticVelocityVs2"
+      initialCondition="1"
+      objectPath="mesh/FE1/ElementRegions/Solid2/solid2"
+      fieldName="elasticVelocityVs"
+      scale="1755.0"
+      setNames="{ all }"/>
+    <FieldSpecification
+      name="elasticDensity2"
+      initialCondition="1"
+      objectPath="mesh/FE1/ElementRegions/Solid2/solid2"
+      fieldName="elasticDensity"
+      scale="2100.0"
+      setNames="{ all }"/>
+  </FieldSpecifications>
+</Problem>

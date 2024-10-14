@@ -1,19 +1,19 @@
 #!/bin/bash
 set -o pipefail
 
+export PYTHONDONTWRITEBYTECODE=1
+
 printenv
 
 SCRIPT_NAME=$0
 echo "Running CLI ${SCRIPT_NAME} $@"
 
-echo "running nproc"
-nproc
 
 # docs.docker.com/config/containers/resource_constraints
 # Inside the container, tools like free report the host's available swap, not what's available inside the container.
 # Don't rely on the output of free or similar tools to determine whether swap is present.
-echo "running free -m"
-free -m
+echo "running free -g"
+free -g
 
 # The or_die function run the passed command line and
 # exits the program in case of non zero error code
@@ -44,10 +44,16 @@ Usage: $0
       The host-config. Path is relative to the root of the repository.
   --install-dir-basename GEOS-e42ffc1
       GEOS installation basename.
+  --makefile
+      Use "Unix Makefiles" as build system generator.
+  --ninja
+      Use "Ninja" as build system generator.
   --no-install-schema
       Do not install the xsd schema.
   --no-run-unit-tests
       Do not run the unit tests (but they will be built).
+  --nproc N
+      Number of cores to use for the build.
   --repository /path/to/repository
       Internal mountpoint where the geos repository will be available. 
   --run-integrated-tests
@@ -66,17 +72,20 @@ exit 1
 or_die cd $(dirname $0)/..
 
 # Parsing using getopt
-args=$(or_die getopt -a -o h --long build-exe-only,cmake-build-type:,code-coverage,data-basename:,exchange-dir:,host-config:,install-dir-basename:,no-install-schema,no-run-unit-tests,repository:,run-integrated-tests,sccache-credentials:,test-code-style,test-documentation,help -- "$@")
+args=$(or_die getopt -a -o h --long build-exe-only,cmake-build-type:,code-coverage,data-basename:,exchange-dir:,host-config:,install-dir-basename:,makefile,ninja,no-install-schema,no-run-unit-tests,nproc:,repository:,run-integrated-tests,sccache-credentials:,test-code-style,test-documentation,help -- "$@")
 
 # Variables with default values
 BUILD_EXE_ONLY=false
-GEOSX_INSTALL_SCHEMA=true
+BUILD_GENERATOR=""
+GEOS_INSTALL_SCHEMA=true
 HOST_CONFIG="host-configs/environment.cmake"
 RUN_UNIT_TESTS=true
 RUN_INTEGRATED_TESTS=false
+UPLOAD_TEST_BASELINES=false
 TEST_CODE_STYLE=false
 TEST_DOCUMENTATION=false
 CODE_COVERAGE=false
+NPROC="$(nproc)"
 
 eval set -- ${args}
 while :
@@ -87,6 +96,9 @@ do
       RUN_UNIT_TESTS=false
       shift;;
     --cmake-build-type)      CMAKE_BUILD_TYPE=$2;        shift 2;;
+    --ninja)
+        BUILD_GENERATOR=$1;
+        shift;;
     --data-basename)
       DATA_BASENAME=$2
       DATA_BASENAME_WE=${DATA_BASENAME%%.*}
@@ -99,11 +111,14 @@ do
       shift 2;;
     --exchange-dir)          DATA_EXCHANGE_DIR=$2;       shift 2;;
     --host-config)           HOST_CONFIG=$2;             shift 2;;
-    --install-dir-basename)  GEOSX_DIR=${GEOSX_TPL_DIR}/../$2; shift 2;;
-    --no-install-schema)     GEOSX_INSTALL_SCHEMA=false; shift;;
+    --install-dir-basename)  GEOS_DIR=${GEOSX_TPL_DIR}/../$2; shift 2;;
+    --makefile)              BUILD_GENERATOR="";         shift;;
+    --no-install-schema)     GEOS_INSTALL_SCHEMA=false; shift;;
     --no-run-unit-tests)     RUN_UNIT_TESTS=false;       shift;;
+    --nproc)                 NPROC=$2;                   shift 2;;
     --repository)            GEOS_SRC_DIR=$2;            shift 2;;
     --run-integrated-tests)  RUN_INTEGRATED_TESTS=true;  shift;;
+    --upload-test-baselines) UPLOAD_TEST_BASELINES=true; shift;;
     --code-coverage)         CODE_COVERAGE=true;         shift;;
     --sccache-credentials)   SCCACHE_CREDS=$2;           shift 2;;
     --test-code-style)       TEST_CODE_STYLE=true;       shift;;
@@ -121,9 +136,9 @@ if [[ -z "${GEOS_SRC_DIR}" ]]; then
   exit 1
 fi
 
-if [[ -z "${GEOSX_DIR}" ]]; then
+if [[ -z "${GEOS_DIR}" ]]; then
   echo "Installation folder undefined. Set to default value '/dev/null'. You can define it using '--install-dir-basename'."
-  GEOSX_DIR=/dev/null
+  GEOS_DIR=/dev/null
 fi
 
 if [[ ! -z "${SCCACHE_CREDS}" ]]; then
@@ -143,9 +158,9 @@ EOT
   # The path to the `sccache` executable is available through the SCCACHE environment variable.
   SCCACHE_CMAKE_ARGS="-DCMAKE_CXX_COMPILER_LAUNCHER=${SCCACHE} -DCMAKE_CUDA_COMPILER_LAUNCHER=${SCCACHE}"
 
-  if [[ ${HOSTNAME} == 'streak.llnl.gov' ]]; then
-    DOCKER_CERTS_DIR=/usr/local/share/ca-certificates
-    for file in "${GEOS_SRC_DIR}"/certificates/*.crt.pem; do
+  if [ -n "${DOCKER_CERTS_DIR}" ] && [ -n "${DOCKER_CERTS_UPDATE_COMMAND}" ]; then
+    echo "updating certificates."
+    for file in "${DOCKER_CERTS_DIR}"/llnl/*.crt.pem; do
       if [ -f "$file" ]; then
         filename=$(basename -- "$file")
         filename_no_ext="${filename%.*}"
@@ -154,18 +169,18 @@ EOT
         echo "Copied $filename to $new_filename"
       fi
     done
-    update-ca-certificates 
-    # gcloud config set core/custom_ca_certs_file cert.pem'
-    
-    NPROC=8
-  else
-    NPROC=$(nproc)
+    ${DOCKER_CERTS_UPDATE_COMMAND}
   fi
-  echo "Using ${NPROC} cores."
 
   echo "sccache initial state"
   ${SCCACHE} --show-stats
 fi
+
+if [ -z "${NPROC}" ]; then
+  NPROC=$(nproc)
+  echo "NPROC unset, setting to ${NPROC}..."
+fi
+echo "Using ${NPROC} cores."
 
 if [[ "${RUN_INTEGRATED_TESTS}" = true ]]; then
   echo "Running the integrated tests has been requested."
@@ -174,7 +189,18 @@ if [[ "${RUN_INTEGRATED_TESTS}" = true ]]; then
   or_die apt-get install -y virtualenv python3-dev python-is-python3
   ATS_PYTHON_HOME=/tmp/run_integrated_tests_virtualenv
   or_die virtualenv ${ATS_PYTHON_HOME}
-  ATS_CMAKE_ARGS="-DATS_ARGUMENTS=\"--machine openmpi --ats openmpi_mpirun=/usr/bin/mpirun --ats openmpi_args=--allow-run-as-root --ats openmpi_procspernode=2 --ats openmpi_maxprocs=2\" -DPython3_ROOT_DIR=${ATS_PYTHON_HOME}"
+
+  python3 -m pip cache purge
+
+  # Setup a temporary directory to hold tests
+  tempdir=$(mktemp -d)
+  echo "Setting up a temporary directory to hold tests and baselines: $tempdir"
+  trap "rm -rf $tempdir" EXIT
+  ATS_BASELINE_DIR=$tempdir/GEOS_integratedTests_baselines
+  ATS_WORKING_DIR=$tempdir/GEOS_integratedTests_working
+
+  export ATS_FILTER="np<=32"
+  ATS_CMAKE_ARGS="-DATS_ARGUMENTS=\"--machine openmpi --ats openmpi_mpirun=/usr/bin/mpirun --ats openmpi_args=--allow-run-as-root --ats openmpi_procspernode=32 --ats openmpi_maxprocs=32\" -DPython3_ROOT_DIR=${ATS_PYTHON_HOME} -DATS_BASELINE_DIR=${ATS_BASELINE_DIR} -DATS_WORKING_DIR=${ATS_WORKING_DIR}"
 fi
 
 
@@ -194,25 +220,25 @@ fi
 # The option `--oversubscribe` tells OpenMPI to allow more MPI ranks than the node has cores.
 # This is needed because our unit test `blt_mpi_smoke` is run in parallel with _hard coded_ 4 ranks.
 # While some of our ci nodes may have less cores available.
-# 
+#
 # In case we have more powerful nodes, consider removing `--oversubscribe` and use `--use-hwthread-cpus` instead.
 # This will tells OpenMPI to discover the number of hardware threads on the node,
 # and use that as the number of slots available. (There is a distinction between threads and cores).
-GEOSX_BUILD_DIR=/tmp/geos-build
+GEOS_BUILD_DIR=/tmp/geos-build
 or_die python3 scripts/config-build.py \
                -hc ${HOST_CONFIG} \
                -bt ${CMAKE_BUILD_TYPE} \
-               -bp ${GEOSX_BUILD_DIR} \
-               -ip ${GEOSX_DIR} \
-               --ninja \
+               -bp ${GEOS_BUILD_DIR} \
+               -ip ${GEOS_DIR} \
+               ${BUILD_GENERATOR} \
                -DBLT_MPI_COMMAND_APPEND='"--allow-run-as-root;--oversubscribe"' \
-               -DGEOSX_INSTALL_SCHEMA=${GEOSX_INSTALL_SCHEMA} \
+               -DGEOS_INSTALL_SCHEMA=${GEOS_INSTALL_SCHEMA} \
                -DENABLE_COVERAGE=$([[ "${CODE_COVERAGE}" = true ]] && echo 1 || echo 0) \
                ${SCCACHE_CMAKE_ARGS} \
                ${ATS_CMAKE_ARGS}
 
 # The configuration step is now over, we can now move to the build directory for the build!
-or_die cd ${GEOSX_BUILD_DIR}
+or_die cd ${GEOS_BUILD_DIR}
 
 # Code style check
 if [[ "${TEST_CODE_STYLE}" = true ]]; then
@@ -228,15 +254,21 @@ fi
 
 # Performing the requested build.
 if [[ "${BUILD_EXE_ONLY}" = true ]]; then
-  or_die ninja -j $NPROC geosx
+  or_die cmake --build . -j $NPROC --target geosx
 else
-  or_die ninja -j $NPROC
-  or_die ninja install
+  or_die cmake --build . -j $NPROC
+  or_die cmake --install .
 
   if [[ ! -z "${DATA_BASENAME_WE}" ]]; then
     # Here we pack the installation.
     # The `--transform` parameter provides consistency between the tarball name and the unpacked folder.
-    or_die tar czf ${DATA_EXCHANGE_DIR}/${DATA_BASENAME_WE}.tar.gz --directory=${GEOSX_TPL_DIR}/.. --transform "s|^./|${DATA_BASENAME_WE}/|" .
+    echo "DATA_EXCHANGE_DIR=${DATA_EXCHANGE_DIR}"
+    echo "DATA_BASENAME_WE=${DATA_BASENAME_WE}"
+    echo "GEOS_TPL_DIR=${GEOS_TPL_DIR}"
+    echo "GEOSX_TPL_DIR=${GEOSX_TPL_DIR}"
+    GEOS_TPL_DIR=${GEOSX_TPL_DIR}
+    echo tar czf ${DATA_EXCHANGE_DIR}/${DATA_BASENAME_WE}.tar.gz --directory=${GEOS_TPL_DIR}/.. --transform "s|^./|${DATA_BASENAME_WE}/|" .
+    or_die tar czf ${DATA_EXCHANGE_DIR}/${DATA_BASENAME_WE}.tar.gz --directory=${GEOS_TPL_DIR}/.. --transform "s|^./|${DATA_BASENAME_WE}/|" .
   fi
 fi
 
@@ -246,14 +278,14 @@ if [[ ! -z "${SCCACHE_CREDS}" ]]; then
 fi
 
 if [[ "${CODE_COVERAGE}" = true ]]; then
-  or_die ninja coreComponents_coverage
-  cp -r ${GEOSX_BUILD_DIR}/coreComponents_coverage.info.cleaned ${GEOS_SRC_DIR}/geos_coverage.info.cleaned
+  or_die cmake --build . --target coreComponents_coverage
+  cp -r ${GEOS_BUILD_DIR}/coreComponents_coverage.info.cleaned ${GEOS_SRC_DIR}/geos_coverage.info.cleaned
 fi
 
 # Run the unit tests (excluding previously ran checks).
 if [[ "${RUN_UNIT_TESTS}" = true ]]; then
-  if [[ ${HOSTNAME} == 'streak.llnl.gov' ]]; then
-    or_die ctest --output-on-failure -E "testUncrustifyCheck|testDoxygenCheck|testLifoStorage|testExternalSolvers"
+  if [ ${HOSTNAME} == 'streak.llnl.gov' ] || [ ${HOSTNAME} == 'streak2.llnl.gov' ]; then
+    or_die ctest --output-on-failure -E "testUncrustifyCheck|testDoxygenCheck|testExternalSolvers"
   else
     or_die ctest --output-on-failure -E "testUncrustifyCheck|testDoxygenCheck"
   fi
@@ -261,32 +293,52 @@ fi
 
 if [[ "${RUN_INTEGRATED_TESTS}" = true ]]; then
   # We split the process in two steps. First installing the environment, then running the tests.
-  or_die ninja ats_environment
-  # The tests are not run using ninja (`ninja --verbose ats_run`) because it swallows the output while all the simulations are running.
+  or_die cmake --build . --target ats_environment
+
+  # The tests are not run using cmake (`cmake --build . --verbose  --target ats_run`)
+  # because with ninja it swallows the output while all the
+  # simulations are running.
   # We directly use the script instead...
-  # Temporarily, we are not adding the `--failIfTestsFail` options to `geos_ats.sh`.
-  # Therefore, `ats` will exit with error code 0, even if some tests fail.
-  # Add `--failIfTestsFail` when you want `failIfTestsFail` to reflect the content of the tests.
-  integratedTests/geos_ats.sh
-  # Even (and even moreover) if the integrated tests fail, we want to pack the results for further investigations.
-  # So we store the status code for further use.
-  INTEGRATED_TEST_EXIT_STATUS=$?
+  echo "Available baselines:"
+  ls -lR /tmp/geos/baselines
+
+  echo "Running integrated tests..."
+  integratedTests/geos_ats.sh --baselineCacheDirectory /tmp/geos/baselines
+  tar -czf ${DATA_EXCHANGE_DIR}/test_logs_${DATA_BASENAME_WE}.tar.gz integratedTests/TestResults
+
+  echo "Checking results..."
+  bin/geos_ats_log_check integratedTests/TestResults/test_results.ini -y ${GEOS_SRC_DIR}/.integrated_tests.yaml &> $tempdir/log_check.txt
+  cat $tempdir/log_check.txt
+
+  if grep -q "Overall status: PASSED" "$tempdir/log_check.txt"; then
+    echo "IntegratedTests passed. No rebaseline required."
+    INTEGRATED_TEST_EXIT_STATUS=0
+  else
+    echo "IntegratedTests failed. Rebaseline is required."
+
+    # Rebaseline and pack into an archive
+    echo "Rebaselining..."
+    integratedTests/geos_ats.sh -a rebaselinefailed
+
+    echo "Packing baselines..."
+    integratedTests/geos_ats.sh -a pack_baselines --baselineArchiveName ${DATA_EXCHANGE_DIR}/baseline_${DATA_BASENAME_WE}.tar.gz --baselineCacheDirectory /tmp/geos/baselines
+    INTEGRATED_TEST_EXIT_STATUS=1
+  fi
+
+  echo "Done!"
+
+  # INTEGRATED_TEST_EXIT_STATUS=$?
   echo "The return code of the integrated tests is ${INTEGRATED_TEST_EXIT_STATUS}"
-
-  # Whatever the result of the integrated tests, we want to pack both the logs and the computed results.
-  # They are not in the same folder, so we do it in 2 steps.
-  # The `--transform` parameter is here to separate the two informations (originally in a folder with the same name)
-  # in two different folder with meaningful names when unpacking. 
-  or_die tar cfM ${DATA_EXCHANGE_DIR}/${DATA_BASENAME_WE}.tar --directory ${GEOS_SRC_DIR}    --transform "s/^integratedTests/${DATA_BASENAME_WE}\/repo/" integratedTests
-  or_die tar rfM ${DATA_EXCHANGE_DIR}/${DATA_BASENAME_WE}.tar --directory ${GEOSX_BUILD_DIR} --transform "s/^integratedTests/${DATA_BASENAME_WE}\/logs/" integratedTests
-  or_die gzip ${DATA_EXCHANGE_DIR}/${DATA_BASENAME_WE}.tar
-
-  # want to clean the integrated tests folder to avoid polluting the next build.
-  or_die integratedTests/geos_ats.sh -a clean
 fi
 
 # Cleaning the build directory.
-or_die ninja clean
+or_die cmake --build . --target clean
+
+
+# Clean the repository
+or_die cd ${GEOS_SRC_DIR}/inputFiles
+find . -name *.pyc | xargs rm -f
+
 
 # If we're here, either everything went OK or we have to deal with the integrated tests manually.
 if [[ ! -z "${INTEGRATED_TEST_EXIT_STATUS+x}" ]]; then

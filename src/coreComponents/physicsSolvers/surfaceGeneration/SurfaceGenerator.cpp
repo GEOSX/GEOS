@@ -2,10 +2,11 @@
  * ------------------------------------------------------------------------------------------------------------
  * SPDX-License-Identifier: LGPL-2.1-only
  *
- * Copyright (c) 2018-2020 Lawrence Livermore National Security LLC
- * Copyright (c) 2018-2020 The Board of Trustees of the Leland Stanford Junior University
- * Copyright (c) 2018-2020 TotalEnergies
- * Copyright (c) 2019-     GEOSX Contributors
+ * Copyright (c) 2016-2024 Lawrence Livermore National Security LLC
+ * Copyright (c) 2018-2024 Total, S.A
+ * Copyright (c) 2018-2024 The Board of Trustees of the Leland Stanford Junior University
+ * Copyright (c) 2023-2024 Chevron
+ * Copyright (c) 2019-     GEOS/GEOSX Contributors
  * All rights reserved
  *
  * See top level LICENSE, COPYRIGHT, CONTRIBUTORS, NOTICE, and ACKNOWLEDGEMENTS files for details.
@@ -221,7 +222,7 @@ SurfaceGenerator::SurfaceGenerator( const string & name,
     setInputFlag( InputFlags::FALSE );
 }
 
-void SurfaceGenerator::postProcessInput()
+void SurfaceGenerator::postInputInitialization()
 {
   static const std::set< integer > binaryOptions = { 0, 1 };
 
@@ -453,7 +454,7 @@ void SurfaceGenerator::postRestartInitialization()
       FluxApproximationBase * const fluxApprox = fvManager.getGroupPointer< FluxApproximationBase >( a );
       if( fluxApprox!=nullptr )
       {
-        fluxApprox->addToFractureStencil( meshLevel, this->m_fractureRegionName, false );
+        fluxApprox->addToFractureStencil( meshLevel, this->m_fractureRegionName );
       }
     }
 
@@ -508,13 +509,11 @@ real64 SurfaceGenerator::solverStep( real64 const & time_n,
       FluxApproximationBase * const fluxApprox = fvManager.getGroupPointer< FluxApproximationBase >( a );
       if( fluxApprox!=nullptr )
       {
-        fluxApprox->addToFractureStencil( meshLevel, this->m_fractureRegionName, true );
+        fluxApprox->addToFractureStencil( meshLevel, this->m_fractureRegionName );
       }
     }
 
     FaceElementSubRegion & fractureSubRegion = fractureRegion.getUniqueSubRegion< FaceElementSubRegion >();
-    fractureSubRegion.m_recalculateConnectionsFor2dFaces.clear();
-    fractureSubRegion.m_newFaceElements.clear();
 
     // Recreate geometric sets
     meshLevel.getNodeManager().buildGeometricSets( GeometricObjectManager::getInstance() );
@@ -665,7 +664,7 @@ int SurfaceGenerator::separationDriver( DomainPartition & domain,
       }
     }
 
-#ifdef GEOSX_USE_MPI
+#ifdef GEOS_USE_MPI
 
     modifiedObjects.clearNewFromModified();
 
@@ -727,13 +726,11 @@ int SurfaceGenerator::separationDriver( DomainPartition & domain,
         localIndex const numNodesInFace = faceToNodeMap.sizeOfArray( faceMap[ kfe ][ 0 ] );
         for( localIndex a = 0; a < numNodesInFace; ++a )
         {
-          localIndex const aa = a < 2 ? a : numNodesInFace - a + 1;
-          localIndex const bb = aa == 0 ? aa : numNodesInFace - aa;
 
           // TODO HACK need to generalize to something other than quads
           //wu40: I temporarily make it work for tet mesh. Need further check with Randy.
-          nodeMap[ kfe ][ a ]   = faceToNodeMap( faceMap[ kfe ][ 0 ], aa );
-          nodeMap[ kfe ][ a + numNodesInFace ] = faceToNodeMap( faceMap[ kfe ][ 1 ], bb );
+          nodeMap[ kfe ][ a ]   = faceToNodeMap( faceMap[ kfe ][ 0 ], a );
+          nodeMap[ kfe ][ a + numNodesInFace ] = faceToNodeMap( faceMap[ kfe ][ 1 ], a );
         }
 
         if( numNodesInFace == 3 )
@@ -4571,7 +4568,7 @@ SurfaceGenerator::calculateRuptureRate( SurfaceElementRegion & faceElementRegion
                          &globalMaxRuptureRate,
                          1,
                          MPI_MAX,
-                         MPI_COMM_GEOSX );
+                         MPI_COMM_GEOS );
 
   return globalMaxRuptureRate;
 }

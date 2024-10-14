@@ -2,10 +2,11 @@
  * ------------------------------------------------------------------------------------------------------------
  * SPDX-License-Identifier: LGPL-2.1-only
  *
- * Copyright (c) 2018-2020 Lawrence Livermore National Security LLC
- * Copyright (c) 2018-2020 The Board of Trustees of the Leland Stanford Junior University
- * Copyright (c) 2018-2020 TotalEnergies
- * Copyright (c) 2019-     GEOSX Contributors
+ * Copyright (c) 2016-2024 Lawrence Livermore National Security LLC
+ * Copyright (c) 2018-2024 Total, S.A
+ * Copyright (c) 2018-2024 The Board of Trustees of the Leland Stanford Junior University
+ * Copyright (c) 2023-2024 Chevron
+ * Copyright (c) 2019-     GEOS/GEOSX Contributors
  * All rights reserved
  *
  * See top level LICENSE, COPYRIGHT, CONTRIBUTORS, NOTICE, and ACKNOWLEDGEMENTS files for details.
@@ -87,7 +88,7 @@ public:
                                getDataContext(),
                                solverName, solverType ),
                      InputError );
-      GEOS_LOG_LEVEL_RANK_0( 1, GEOS_FMT( "{}: found {} solver named {}", getName(), solver->catalogName(), solverName ) );
+      GEOS_LOG_LEVEL_RANK_0( 1, GEOS_FMT( "{}: found {} solver named {}", getName(), solver->getCatalogName(), solverName ) );
     } );
   }
 
@@ -161,6 +162,7 @@ public:
     } );
   }
 
+  // general version of assembleSystem function, keep in mind many solvers will override it
   virtual void
   assembleSystem( real64 const time_n,
                   real64 const dt,
@@ -171,18 +173,13 @@ public:
   {
     /// Fully-coupled assembly.
 
-    // 1. we sync the nonlinear convergence history. The coupled solver parameters are the one being
-    // used. We want to propagate the info to subsolvers. It can be important for solvers that
-    // have special treatment for specific iterations.
-    synchronizeNonLinearParameters();
-
-    // 2. Assemble matrix blocks of each individual solver
+    // 1. Assemble matrix blocks of each individual solver
     forEachArgInTuple( m_solvers, [&]( auto & solver, auto )
     {
       solver->assembleSystem( time_n, dt, domain, dofManager, localMatrix, localRhs );
     } );
 
-    // 3. Assemble coupling blocks
+    // 2. Assemble coupling blocks
     assembleCouplingTerms( time_n, dt, domain, dofManager, localMatrix, localRhs );
   }
 
@@ -355,12 +352,40 @@ public:
     return isConverged;
   }
 
-  virtual void saveSequentialIterationState( DomainPartition & domain ) const override
+  virtual bool updateConfiguration( DomainPartition & domain ) override
+  {
+    bool result = true;
+    forEachArgInTuple( m_solvers, [&]( auto & solver, auto )
+    {
+      result &= solver->updateConfiguration( domain );
+    } );
+    return result;
+  }
+
+  virtual void outputConfigurationStatistics( DomainPartition const & domain ) const override
   {
     forEachArgInTuple( m_solvers, [&]( auto & solver, auto )
     {
-      solver->saveSequentialIterationState( domain );
+      solver->outputConfigurationStatistics( domain );
     } );
+  }
+
+  virtual void resetConfigurationToBeginningOfStep( DomainPartition & domain ) override
+  {
+    forEachArgInTuple( m_solvers, [&]( auto & solver, auto )
+    {
+      solver->resetConfigurationToBeginningOfStep( domain );
+    } );
+  }
+
+  virtual bool resetConfigurationToDefault( DomainPartition & domain ) const override
+  {
+    bool result = true;
+    forEachArgInTuple( m_solvers, [&]( auto & solver, auto )
+    {
+      result &= solver->resetConfigurationToDefault( domain );
+    } );
+    return result;
   }
 
 protected:
@@ -441,9 +466,9 @@ protected:
       resetStateToBeginningOfStep( domain );
 
       integer & iter = solverParams.m_numNewtonIterations;
-      iter = 0;
+
       /// Sequential coupling loop
-      while( iter < solverParams.m_maxIterNewton )
+      for( iter = 0; iter < solverParams.m_maxIterNewton; iter++ )
       {
         // Increment the solver statistics for reporting purposes
         // Pass a "0" as argument (0 linear iteration) to skip the output of linear iteration stats at the end
@@ -460,6 +485,9 @@ protected:
                                                            cycleNumber,
                                                            domain );
 
+          // save fields (e.g. pressure and temperature) after inner solve
+          solver->saveSequentialIterationState( domain );
+
           mapSolutionBetweenSolvers( domain, idx() );
 
           if( solverDt < stepDt ) // subsolver had to cut the time step
@@ -475,11 +503,10 @@ protected:
                                                   stepDt,
                                                   domain );
 
-        // save fields (e.g. pressure and temperature) at the end of this iteration
-        saveSequentialIterationState( domain );
-
         if( isConverged )
         {
+          // we still want to count current iteration
+          ++iter;
           // exit outer loop
           break;
         }
@@ -487,8 +514,6 @@ protected:
         {
           finishSequentialIteration( iter, domain );
         }
-
-        ++iter;
       }
 
       if( isConverged )
@@ -547,10 +572,10 @@ protected:
     GEOS_UNUSED_VAR( domain, solverType );
   }
 
-  bool checkSequentialConvergence( int const & iter,
-                                   real64 const & time_n,
-                                   real64 const & dt,
-                                   DomainPartition & domain )
+  virtual bool checkSequentialConvergence( int const & iter,
+                                           real64 const & time_n,
+                                           real64 const & dt,
+                                           DomainPartition & domain )
   {
     NonlinearSolverParameters const & params = getNonlinearSolverParameters();
     bool isConverged = true;
@@ -636,7 +661,7 @@ protected:
   }
 
   virtual void
-  postProcessInput() override
+  postInputInitialization() override
   {
     setSubSolvers();
 
@@ -651,6 +676,11 @@ protected:
                              EnumStrings< NonlinearSolverParameters::LineSearchAction >::toString( NonlinearSolverParameters::LineSearchAction::None ) ),
                    InputError );
 
+    if( !isSequential )
+    {
+      synchronizeNonlinearSolverParameters();
+    }
+
     if( m_nonlinearSolverParameters.m_nonlinearAccelerationType != NonlinearSolverParameters::NonlinearAccelerationType::None )
       validateNonlinearAcceleration();
   }
@@ -664,12 +694,12 @@ protected:
                  InputError );
   }
 
-  void
-  synchronizeNonLinearParameters()
+  virtual void
+  synchronizeNonlinearSolverParameters() override
   {
     forEachArgInTuple( m_solvers, [&]( auto & solver, auto )
     {
-      solver->getNonlinearSolverParameters() = m_nonlinearSolverParameters;
+      solver->getNonlinearSolverParameters() = getNonlinearSolverParameters();
     } );
   }
 

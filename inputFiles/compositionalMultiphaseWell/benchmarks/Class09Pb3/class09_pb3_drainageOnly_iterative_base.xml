@@ -54,6 +54,34 @@
         targetTotalRateTableName="totalRateTable"
         injectionTemperature="353.15"
         injectionStream="{ 1.0, 0.0 }"/>
+      <WellControls
+        name="MAX_MASS_INJ"
+        logLevel="1"
+        type="injector"
+        control="massRate"
+        referenceElevation="-3000"
+        targetBHP="1e8"
+        enableCrossflow="0"
+        useSurfaceConditions="1"
+        surfacePressure="101325"
+        surfaceTemperature="288.71"
+        targetMassRate="15"
+        injectionTemperature="353.15"
+        injectionStream="{ 1.0, 0.0 }"/>
+      <WellControls
+        name="MAX_MASS_INJ_TABLE"
+        logLevel="1"
+        type="injector"
+        control="massRate"
+        referenceElevation="-3000"
+        targetBHP="1e8"
+        enableCrossflow="0"
+        useSurfaceConditions="1"
+        surfacePressure="101325"
+        surfaceTemperature="288.71"
+	targetMassRateTableName="totalMassTable"
+        injectionTemperature="353.15"
+        injectionStream="{ 1.0, 0.0 }"/>
     </CompositionalMultiphaseWell>
       <!-- SPHINX_SOLVER_WELL_END -->
   </Solvers>
@@ -220,6 +248,12 @@
       values="{ 8.02849025 , 0, 0}" 
       interpolation="lower"/>
 
+    <TableFunction
+      name="totalMassTable"
+      inputVarNames="{time}"
+      coordinates="{0, 7.7198e8, 1.544e9}"
+      values="{ 15 , 0, 0}" 
+      interpolation="lower"/>
   </Functions>
   
 </Problem>

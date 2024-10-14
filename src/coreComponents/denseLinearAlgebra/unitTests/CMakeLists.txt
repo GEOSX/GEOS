@@ -1,5 +1,7 @@
 set( serial_tests
-     testBlasLapack.cpp )
+     testBlasLapack.cpp
+     testSolveLinearSystem.cpp
+     testDenseLASolvers.cpp )
 
 set( dependencyList gtest denseLinearAlgebra )
 

@@ -46,6 +46,28 @@
       outputPhaseComposition="1"
       baseline="testPVT_CO2Brine_testCo2BrineEzrokhiMixtureB.txt"
       logLevel="1" />
+    <PVTDriver
+      name="testCo2SpycherPruessBrinePhillipsMixtureA"
+      fluid="co2BrinePhillipsMixtureSpycherPruess"
+      feedComposition="{ 0.1, 0.9 }"
+      pressureControl="pressureFunction"
+      temperatureControl="temperatureFunction"
+      steps="20"
+      outputCompressibility="1"
+      outputPhaseComposition="1"
+      baseline="testPVT_CO2Brine_testCo2SpycherPruessBrinePhillipsMixtureA.txt"
+      logLevel="1" />
+    <PVTDriver
+      name="testCo2SpycherPruessBrinePhillipsMixtureB"
+      fluid="co2BrinePhillipsMixtureSpycherPruess"
+      feedComposition="{ 0.3, 0.7 }"
+      pressureControl="pressureFunction"
+      temperatureControl="temperatureFunction"
+      steps="20"
+      outputCompressibility="1"
+      outputPhaseComposition="1"
+      baseline="testPVT_CO2Brine_testCo2SpycherPruessBrinePhillipsMixtureB.txt"
+      logLevel="1" />
   </Tasks>
 
   <Events
@@ -62,6 +84,12 @@
     <SoloEvent
       name="eventCo2BrineEzrokhiMixtureB"
       target="/Tasks/testCo2BrineEzrokhiMixtureB" />
+    <SoloEvent
+      name="eventCo2SpycherPruessBrinePhillipsMixtureA"
+      target="/Tasks/testCo2SpycherPruessBrinePhillipsMixtureA" />
+    <SoloEvent
+      name="eventCo2SpycherPruessBrinePhillipsMixtureB"
+      target="/Tasks/testCo2SpycherPruessBrinePhillipsMixtureB" />
   </Events>
 
   <Constitutive>
@@ -79,6 +107,13 @@
       componentMolarWeight="{ 44e-3, 18e-3 }"
       phasePVTParaFiles="{ testPVT_data/carbonDioxidePVT.txt, testPVT_data/brinePVTEzrokhi.txt }"
       flashModelParaFile="testPVT_data/carbonDioxideFlash.txt" />
+    <CO2BrinePhillipsFluid
+      name="co2BrinePhillipsMixtureSpycherPruess"
+      phaseNames="{ gas, water }"
+      componentNames="{ co2, water }"
+      componentMolarWeight="{ 44e-3, 18e-3 }"
+      phasePVTParaFiles="{ testPVT_data/carbonDioxidePVT.txt, testPVT_data/brinePVT.txt }"
+      flashModelParaFile="testPVT_data/carbonDioxideSpycherPruessFlash.txt" />
   </Constitutive>
 
   <Functions>

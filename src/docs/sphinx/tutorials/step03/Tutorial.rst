@@ -214,7 +214,8 @@ The constitutive parameters such as the density, the viscosity, and the compress
   To consider an incompressible fluid, the user has to set the compressibility to 0.
 
 .. note::
-  GEOS handles permeability as a diagonal matrix, so the three values of the permeability tensor are set individually using the ``component`` field.
+  Currently GEOS handles permeability as a diagonal matrix, so the three values of the permeability tensor are set individually using the ``component`` field.
+  The ability for a full tensor permeability is planned for future releases.
 
 
 .. _FieldSpecifications_tag_field_case:

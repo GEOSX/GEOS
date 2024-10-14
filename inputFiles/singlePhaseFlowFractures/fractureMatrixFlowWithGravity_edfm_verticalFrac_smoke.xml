@@ -133,7 +133,7 @@
       name="rockPorosity"
       defaultReferencePorosity="0.05"
       referencePressure="0.0"
-      compressibility="0.0e-9"/>
+      compressibility="1.0e-9"/>
 
     <ConstantPermeability
       name="rockPerm"

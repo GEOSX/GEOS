@@ -2,10 +2,11 @@
  * ------------------------------------------------------------------------------------------------------------
  * SPDX-License-Identifier: LGPL-2.1-only
  *
- * Copyright (c) 2018-2020 Lawrence Livermore National Security LLC
- * Copyright (c) 2018-2020 The Board of Trustees of the Leland Stanford Junior University
- * Copyright (c) 2018-2020 TotalEnergies
- * Copyright (c) 2019-     GEOSX Contributors
+ * Copyright (c) 2016-2024 Lawrence Livermore National Security LLC
+ * Copyright (c) 2018-2024 Total, S.A
+ * Copyright (c) 2018-2024 The Board of Trustees of the Leland Stanford Junior University
+ * Copyright (c) 2023-2024 Chevron
+ * Copyright (c) 2019-     GEOS/GEOSX Contributors
  * All rights reserved
  *
  * See top level LICENSE, COPYRIGHT, CONTRIBUTORS, NOTICE, and ACKNOWLEDGEMENTS files for details.
@@ -26,9 +27,12 @@
 namespace geos
 {
 
-class SinglePhasePoromechanicsEmbeddedFractures : public SinglePhasePoromechanics< SinglePhaseBase >
+class SinglePhasePoromechanicsEmbeddedFractures : public SinglePhasePoromechanics< SinglePhaseBase, SolidMechanicsEmbeddedFractures >
 {
 public:
+
+  using Base = SinglePhasePoromechanics< SinglePhaseBase, SolidMechanicsEmbeddedFractures >;
+
   SinglePhasePoromechanicsEmbeddedFractures( const std::string & name,
                                              Group * const parent );
   ~SinglePhasePoromechanicsEmbeddedFractures() override;
@@ -38,7 +42,7 @@ public:
    * @return string that contains the catalog name to generate a new SinglePhasePoromechanicsEmbeddedFractures object through the object
    * catalog.
    */
-  static string catalogName() { return "SinglePhasePoromechanicsEmbeddedFractures"; }
+  static string catalogName() { return Base::catalogName() + "EmbeddedFractures"; }
   /**
    * @copydoc SolverBase::getCatalogName()
    */
@@ -58,47 +62,12 @@ public:
              DofManager & dofManager ) const override;
 
   virtual void
-  implicitStepSetup( real64 const & time_n,
-                     real64 const & dt,
-                     DomainPartition & domain ) override final;
-
-  virtual void
   assembleSystem( real64 const time,
                   real64 const dt,
                   DomainPartition & domain,
                   DofManager const & dofManager,
                   CRSMatrixView< real64, globalIndex const > const & localMatrix,
                   arrayView1d< real64 > const & localRhs ) override;
-
-  virtual void
-  applyBoundaryConditions( real64 const time_n,
-                           real64 const dt,
-                           DomainPartition & domain,
-                           DofManager const & dofManager,
-                           CRSMatrixView< real64, globalIndex const > const & localMatrix,
-                           arrayView1d< real64 > const & localRhs ) override;
-
-  virtual real64
-  calculateResidualNorm( real64 const & time_n,
-                         real64 const & dt,
-                         DomainPartition const & domain,
-                         DofManager const & dofManager,
-                         arrayView1d< real64 const > const & localRhs ) override;
-
-  virtual void
-  applySystemSolution( DofManager const & dofManager,
-                       arrayView1d< real64 const > const & localSolution,
-                       real64 const scalingFactor,
-                       real64 const dt,
-                       DomainPartition & domain ) override;
-
-  virtual void
-  implicitStepComplete( real64 const & time_n,
-                        real64 const & dt,
-                        DomainPartition & domain ) override final;
-
-  virtual void
-  resetStateToBeginningOfStep( DomainPartition & domain ) override;
 
   /**
    * @Brief add extra nnz to each row induced by the coupling
@@ -126,15 +95,13 @@ public:
 
   struct viewKeyStruct : SinglePhasePoromechanics::viewKeyStruct
   {
-    constexpr static char const * fracturesSolverNameString() { return "fracturesSolverName"; }
-
     constexpr static char const * dTraction_dPressureString() { return "dTraction_dPressure"; }
   };
 
 
 protected:
 
-  virtual void postProcessInput() override final;
+  virtual void postInputInitialization() override final;
 
   virtual void initializePostInitialConditionsPreSubGroups() override final;
 
@@ -150,10 +117,6 @@ private:
                          CRSMatrixView< real64, globalIndex const > const & localMatrix,
                          arrayView1d< real64 > const & localRhs,
                          real64 const & dt );
-
-  string m_fracturesSolverName;
-
-  SolidMechanicsEmbeddedFractures * m_fracturesSolver;
 
 };
 
@@ -174,7 +137,7 @@ real64 SinglePhasePoromechanicsEmbeddedFractures::assemblyLaunch( MeshLevel & me
   NodeManager const & nodeManager = mesh.getNodeManager();
 
   ElementRegionManager const & elemManager = mesh.getElemManager();
-  SurfaceElementRegion const & region = elemManager.getRegion< SurfaceElementRegion >( m_fracturesSolver->getFractureRegionName() );
+  SurfaceElementRegion const & region = elemManager.getRegion< SurfaceElementRegion >( solidMechanicsSolver()->getUniqueFractureRegionName() );
   EmbeddedSurfaceSubRegion const & subRegion = region.getSubRegion< EmbeddedSurfaceSubRegion >( 0 );
 
   string const dofKey = dofManager.getKey( fields::solidMechanics::totalDisplacement::key() );
@@ -193,6 +156,7 @@ real64 SinglePhasePoromechanicsEmbeddedFractures::assemblyLaunch( MeshLevel & me
                                 dt,
                                 gravityVectorData,
                                 flowDofKey,
+                                m_performStressInitialization,
                                 FlowSolverBase::viewKeyStruct::fluidNamesString() );
 
   real64 const maxForce =
@@ -201,7 +165,7 @@ real64 SinglePhasePoromechanicsEmbeddedFractures::assemblyLaunch( MeshLevel & me
                                     CONSTITUTIVE_BASE,
                                     CellElementSubRegion >( mesh,
                                                             regionNames,
-                                                            m_fracturesSolver->getSolidSolver()->getDiscretizationName(),
+                                                            solidMechanicsSolver()->getDiscretizationName(),
                                                             materialNamesString,
                                                             kernelWrapper );
 
@@ -221,7 +185,7 @@ real64 SinglePhasePoromechanicsEmbeddedFractures::assemblyLaunch( MeshLevel & me
                                   CONSTITUTIVE_BASE,
                                   CellElementSubRegion >( mesh,
                                                           regionNames,
-                                                          m_fracturesSolver->getSolidSolver()->getDiscretizationName(),
+                                                          solidMechanicsSolver()->getDiscretizationName(),
                                                           materialNamesString,
                                                           EFEMkernelWrapper );
 

@@ -2,27 +2,29 @@
  * ------------------------------------------------------------------------------------------------------------
  * SPDX-License-Identifier: LGPL-2.1-only
  *
- * Copyright (c) 2018-2020 Lawrence Livermore National Security LLC
- * Copyright (c) 2018-2020 The Board of Trustees of the Leland Stanford Junior University
- * Copyright (c) 2018-2020 TotalEnergies
- * Copyright (c) 2019-     GEOSX Contributors
+ * Copyright (c) 2016-2024 Lawrence Livermore National Security LLC
+ * Copyright (c) 2018-2024 Total, S.A
+ * Copyright (c) 2018-2024 The Board of Trustees of the Leland Stanford Junior University
+ * Copyright (c) 2023-2024 Chevron
+ * Copyright (c) 2019-     GEOS/GEOSX Contributors
  * All rights reserved
  *
  * See top level LICENSE, COPYRIGHT, CONTRIBUTORS, NOTICE, and ACKNOWLEDGEMENTS files for details.
  * ------------------------------------------------------------------------------------------------------------
  */
 
-#define GEOSX_DISPATCH_VEM /// enables VEM in FiniteElementDispatch
+#define GEOS_DISPATCH_VEM /// enables VEM in FiniteElementDispatch
 
 // Source includes
 #include "ProblemManager.hpp"
 #include "GeosxState.hpp"
 #include "initialization.hpp"
 
-#include "codingUtilities/StringUtilities.hpp"
+#include "common/format/StringUtilities.hpp"
 #include "common/Path.hpp"
 #include "common/TimingMacros.hpp"
 #include "constitutive/ConstitutiveManager.hpp"
+#include "constitutiveDrivers/solid/TriaxialDriver.hpp"
 #include "dataRepository/ConduitRestart.hpp"
 #include "dataRepository/RestartFlags.hpp"
 #include "dataRepository/KeyNames.hpp"
@@ -79,7 +81,7 @@ ProblemManager::ProblemManager( conduit::Node & root ):
   registerGroup< MeshManager >( groupKeys.meshManager );
   registerGroup< OutputManager >( groupKeys.outputManager );
   m_physicsSolverManager = &registerGroup< PhysicsSolverManager >( groupKeys.physicsSolverManager );
-  registerGroup< TasksManager >( groupKeys.tasksManager );
+  m_tasksManager = &registerGroup< TasksManager >( groupKeys.tasksManager );
   m_functionManager = &registerGroup< FunctionManager >( groupKeys.functionManager );
 
   // Command line entries
@@ -136,11 +138,21 @@ ProblemManager::ProblemManager( conduit::Node & root ):
     setApplyDefaultValue( 0 ).
     setRestartFlags( RestartFlags::WRITE ).
     setDescription( "Whether to disallow using pinned memory allocations for MPI communication buffers." );
-
 }
 
 ProblemManager::~ProblemManager()
-{}
+{
+  {
+    // This is a dummy to force the inclusion of constitutiveDrivers in the linking process for systems that have "--no-as-needed" as a
+    // default.
+    // The "correct" way to do this is in cmake using:
+    //   target_link_options(constitutiveDrivers INTERFACE "SHELL:LINKER:--no-as-needed")
+    // but this applies "--no-as-needed" to all targets that link to constitutiveDrivers, which is not what we want.
+    // Also "--no-as-needed" is not supported on all platforms, so we have to guard the use of it.
+    // This is a workaround until we can figure out in cmake without too much trouble.
+    TriaxialDriver dummy( "dummy", this );
+  }
+}
 
 
 Group * ProblemManager::createChild( string const & GEOS_UNUSED_PARAM( childKey ), string const & GEOS_UNUSED_PARAM( childName ) )
@@ -150,7 +162,7 @@ Group * ProblemManager::createChild( string const & GEOS_UNUSED_PARAM( childKey 
 void ProblemManager::problemSetup()
 {
   GEOS_MARK_FUNCTION;
-  postProcessInputRecursive();
+  postInputInitializationRecursive();
 
   generateMesh();
 
@@ -490,7 +502,7 @@ void ProblemManager::parseXMLDocument( xmlWrapper::xmlDocument & xmlDocument )
 }
 
 
-void ProblemManager::postProcessInput()
+void ProblemManager::postInputInitialization()
 {
   DomainPartition & domain = getDomainPartition();
 
@@ -525,7 +537,7 @@ void ProblemManager::postProcessInput()
   if( repartition )
   {
     partition.setPartitions( xpar, ypar, zpar );
-    int const mpiSize = MpiWrapper::commSize( MPI_COMM_GEOSX );
+    int const mpiSize = MpiWrapper::commSize( MPI_COMM_GEOS );
     // Case : Using MPI domain decomposition and partition are not defined (mainly for external mesh readers)
     if( mpiSize > 1 && xpar == 1 && ypar == 1 && zpar == 1 )
     {
@@ -540,22 +552,22 @@ void ProblemManager::initializationOrder( string_array & order )
 {
   SortedArray< string > usedNames;
 
+  // first, numerical methods
+  order.emplace_back( groupKeys.numericalMethodsManager.key() );
+  usedNames.insert( groupKeys.numericalMethodsManager.key() );
 
-  {
-    order.emplace_back( groupKeys.numericalMethodsManager.key() );
-    usedNames.insert( groupKeys.numericalMethodsManager.key() );
-  }
+  // next, domain
+  order.emplace_back( groupKeys.domain.key() );
+  usedNames.insert( groupKeys.domain.key() );
 
-  {
-    order.emplace_back( groupKeys.domain.key() );
-    usedNames.insert( groupKeys.domain.key() );
-  }
+  // next, events
+  order.emplace_back( groupKeys.eventManager.key() );
+  usedNames.insert( groupKeys.eventManager.key() );
 
-  {
-    order.emplace_back( groupKeys.eventManager.key() );
-    usedNames.insert( groupKeys.eventManager.key() );
-  }
+  // (keeping outputs for the end)
+  usedNames.insert( groupKeys.outputManager.key() );
 
+  // next, everything...
   for( auto const & subGroup : this->getSubGroups() )
   {
     if( usedNames.count( subGroup.first ) == 0 )
@@ -563,6 +575,9 @@ void ProblemManager::initializationOrder( string_array & order )
       order.emplace_back( subGroup.first );
     }
   }
+
+  // end with outputs (in order to define the chunk sizes after any data source)
+  order.emplace_back( groupKeys.outputManager.key() );
 }
 
 
@@ -665,6 +680,7 @@ void ProblemManager::generateMesh()
   }
 
   domain.setupCommunications( useNonblockingMPI );
+  domain.outputPartitionInformation();
 
   domain.forMeshBodies( [&]( MeshBody & meshBody )
   {
@@ -683,13 +699,21 @@ void ProblemManager::generateMesh()
       FaceManager & faceManager = meshLevel.getFaceManager();
       EdgeManager & edgeManager = meshLevel.getEdgeManager();
       NodeManager const & nodeManager = meshLevel.getNodeManager();
+      ElementRegionManager & elementManager = meshLevel.getElemManager();
 
-      // The computation of geometric quantities is now possible for `FaceElementSubRegion`,
-      // because the ghosting ensures that the neighbor cells of the fracture elements are available.
-      // These neighbor cells are providing the node information to the fracture elements.
-      meshLevel.getElemManager().forElementSubRegions< FaceElementSubRegion >( [&]( FaceElementSubRegion & subRegion )
+      elementManager.forElementSubRegions< FaceElementSubRegion >( [&]( FaceElementSubRegion & subRegion )
       {
+        /// 1. The computation of geometric quantities which is now possible for `FaceElementSubRegion`,
+        // because the ghosting ensures that the neighbor cells of the fracture elements are available.
+        // These neighbor cells are providing the node information to the fracture elements.
         subRegion.calculateElementGeometricQuantities( nodeManager, faceManager );
+
+        // 2. Reorder the face map based on global numbering of neighboring cells
+        subRegion.flipFaceMap( faceManager, elementManager );
+
+        // 3. We flip the face normals of faces adjacent to the faceElements if they are not pointing in the
+        // direction of the fracture.
+        subRegion.fixNeighboringFacesNormals( faceManager, elementManager );
       } );
 
       faceManager.setIsExternal();
@@ -969,9 +993,9 @@ map< std::tuple< string, string, string, string >, localIndex > ProblemManager::
                 } );
               } );
 
-              // For now FaceElementSubRegions do not have a FE type associated with them. They don't need one for now and
+              // For now SurfaceElementSubRegion do not have a FE type associated with them. They don't need one for now and
               // it would have to be a heterogeneous one coz they are usually heterogeneous subregions.
-              elemRegion.forElementSubRegions< FaceElementSubRegion >( [&]( FaceElementSubRegion const & subRegion )
+              elemRegion.forElementSubRegions< SurfaceElementSubRegion >( [&]( SurfaceElementSubRegion const & subRegion )
               {
                 localIndex & numQuadraturePointsInList = regionQuadrature[ std::make_tuple( meshBodyName,
                                                                                             meshLevel.getName(),

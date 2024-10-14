@@ -66,14 +66,14 @@
     <BiotPorosity
       name="rockPorosity"
       defaultReferencePorosity="0.001"
-      grainBulkModulus="23.5e9"
+      defaultGrainBulkModulus="23.5e9"
       defaultPorosityTEC="4e-5"/>
     <!-- SPHINX_PoroElasticPropertiesEnd -->
 
     <!-- SPHINX_HeatCapacityProperties -->
     <SolidInternalEnergy
       name="rockInternalEnergy"
-      volumetricHeatCapacity="1.89e6"
+      referenceVolumetricHeatCapacity="1.89e6"
       referenceTemperature="0"
       referenceInternalEnergy="0"/>
     <!-- SPHINX_HeatCapacityPropertiesEnd -->
@@ -85,9 +85,9 @@
     <!-- SPHINX_PermeabilityPropertiesEnd -->
 
     <!-- SPHINX_ThermalProperties -->
-    <SinglePhaseConstantThermalConductivity
+    <SinglePhaseThermalConductivity
       name="rockThermalCond"
-      thermalConductivityComponents="{ 6.6, 6.6, 6.6 }"/>
+      defaultThermalConductivityComponents="{ 6.6, 6.6, 6.6 }"/>
     <!-- SPHINX_ThermalPropertiesEnd -->
 
     <!-- SPHINX_FluidProperties -->
@@ -161,6 +161,7 @@
       setNames="{ zneg, zpos }"/>
     <!-- SPHINX_PlaneStrainAxisymmetryBCEnd -->
 
+    <!-- SPHINX_StressInit -->
     <FieldSpecification
       name="initialSigma_x_rock"
       initialCondition="1"
@@ -185,6 +186,7 @@
       fieldName="rockSolid_stress"
       component="2"
       scale="0"/>
+    <!-- SPHINX_StressInitEnd -->
 
     <!-- SPHINX_PorePressureBC -->
     <FieldSpecification

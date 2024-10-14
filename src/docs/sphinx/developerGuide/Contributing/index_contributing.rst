@@ -1,3 +1,5 @@
+.. _Contributing:
+
 ###############################################################################
 Contributing
 ###############################################################################
@@ -26,3 +28,5 @@ Contributing
    UsingDocker.rst
 
    InstallWin.rst
+
+   WorkInteractivelyOnCI.rst

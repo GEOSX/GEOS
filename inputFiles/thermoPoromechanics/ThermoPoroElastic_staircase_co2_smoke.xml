@@ -49,7 +49,10 @@
       nx="{ 3, 3 }"
       ny="{ 3, 3 }"
       nz="{ 2, 2, 2, 2 }"
-      cellBlockNames="{ b00, b01, b02, b03, b04, b05, b06, b07, b08, b09, b10, b11, b12, b13, b14, b15 }"/>
+      cellBlockNames="{ cb-0_0_0, cb-1_0_0, cb-0_1_0, cb-1_1_0,
+                        cb-0_0_1, cb-1_0_1, cb-0_1_1, cb-1_1_1,
+                        cb-0_0_2, cb-1_0_2, cb-0_1_2, cb-1_1_2,
+			cb-0_0_3, cb-1_0_3, cb-0_1_3, cb-1_1_3 }"/>
   </Mesh>
 
   <Geometry>
@@ -73,31 +76,10 @@
       target="/Outputs/vtkOutput"/>
 
     <SoloEvent
-      name="multiphasePoroelasticityPreEquilibrationStep"
+      name="multiphasePoroelasticityEquilibrationStep"
       targetTime="-1e11"
       beginTime="-1e11"
-      target="/Tasks/multiphasePoroelasticityPreEquilibrationStep"/>
-    
-    <PeriodicEvent
-      name="solverApplicationsEquilibration"
-      beginTime="-1e11"
-      endTime="0"
-      maxEventDt="1e11"
-      target="/Solvers/multiphasePoroelasticity"/>
-
-    <SoloEvent
-      name="multiphasePoroelasticityPostEquilibrationStep"
-      targetTime="0"
-      target="/Tasks/multiphasePoroelasticityPostEquilibrationStep"/>
-    
-    <PeriodicEvent
-      name="linearElasticityStatistics"
-      timeFrequency="1e6"
-      target="/Tasks/linearElasticityStatistics"/>
-    <PeriodicEvent
-      name="twoPhaseFlowStatistics"
-      timeFrequency="1e6"
-      target="/Tasks/twoPhaseFlowStatistics"/>
+      target="/Tasks/multiphasePoroelasticityEquilibrationStep"/>
     
     <PeriodicEvent
       name="solverApplications1"
@@ -109,6 +91,14 @@
       maxEventDt="1e6"
       target="/Solvers/multiphasePoroelasticity"/>
 
+    <PeriodicEvent
+      name="linearElasticityStatistics"
+      timeFrequency="1e6"
+      target="/Tasks/linearElasticityStatistics"/>
+    <PeriodicEvent
+      name="twoPhaseFlowStatistics"
+      timeFrequency="1e6"
+      target="/Tasks/twoPhaseFlowStatistics"/>
     
     <PeriodicEvent
       name="restarts"
@@ -131,11 +121,11 @@
   <ElementRegions>
     <CellElementRegion
       name="channel"
-      cellBlocks="{ b08, b00, b01, b05, b06, b14, b15, b11 }"
+      cellBlocks="{ cb-1_0_0, cb-0_0_0, cb-0_0_1, cb-0_1_1, cb-0_1_2, cb-1_1_2, cb-1_1_3, cb-1_0_3 }"
       materialList="{ fluid, porousRockChannel, relperm, thermalCond }"/>
     <CellElementRegion
       name="barrier"
-      cellBlocks="{ b04, b12, b13, b09, b10, b02, b03, b07 }"
+      cellBlocks="{ cb-0_1_0, cb-1_1_0, cb-1_1_1, cb-1_0_1, cb-1_0_2, cb-0_0_2, cb-0_0_3, cb-0_1_3 }"
       materialList="{ fluid, porousRockBarrier, relperm, thermalCond }"/>
   </ElementRegions>
 
@@ -171,7 +161,7 @@
       permeabilityComponents="{ 9.8e-13, 9.8e-13, 9.8e-13 }"/>
     <BiotPorosity
       name="rockPorosityChannel"
-      grainBulkModulus="1.0e27"
+      defaultGrainBulkModulus="1.0e27"
       defaultReferencePorosity="0.2"
       defaultPorosityTEC="1e-5"/>
 
@@ -192,13 +182,13 @@
       permeabilityComponents="{ 9.8e-16, 9.8e-16, 9.8e-16 }"/>
     <BiotPorosity
       name="rockPorosityBarrier"
-      grainBulkModulus="1.0e27"
+      defaultGrainBulkModulus="1.0e27"
       defaultReferencePorosity="0.05"
       defaultPorosityTEC="1e-5"/>
 
     <SolidInternalEnergy
       name="rockInternalEnergy"
-      volumetricHeatCapacity="1.95e6"
+      referenceVolumetricHeatCapacity="1.95e6"
       referenceTemperature="353.15"
       referenceInternalEnergy="0"/>
 
@@ -335,16 +325,9 @@
 
     <MultiphasePoromechanicsInitialization 
       logLevel="1"      
-      name="multiphasePoroelasticityPreEquilibrationStep"
-      performStressInitialization="1"
+      name="multiphasePoroelasticityEquilibrationStep"
       poromechanicsSolverName="multiphasePoroelasticity"/>
-    
-    <MultiphasePoromechanicsInitialization 
-      logLevel="1"      
-      name="multiphasePoroelasticityPostEquilibrationStep"
-      performStressInitialization="0"
-      poromechanicsSolverName="multiphasePoroelasticity"/>
-    
+   
   </Tasks>
   
 </Problem>

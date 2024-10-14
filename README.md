@@ -1,6 +1,6 @@
 [![DOI](https://zenodo.org/badge/131810578.svg)](https://zenodo.org/badge/latestdoi/131810578)
 [![codecov](https://codecov.io/github/GEOS-DEV/GEOS/graph/badge.svg?token=0VTEHPQG58)](https://codecov.io/github/GEOS-DEV/GEOS)
-![CI](https://github.com/GEOS-DEV/GEOS/actions/workflows/ci_tests.yml/badge.svg)
+[![CI](https://github.com/GEOS-DEV/GEOS/actions/workflows/ci_tests.yml/badge.svg)](https://github.com/GEOS-DEV/GEOS/actions?query=branch%3Adevelop)
 [![docs](https://readthedocs.com/projects/geosx-geosx/badge/?version=latest)](https://geosx-geosx.readthedocs-hosted.com/en/latest/)
 
 Welcome to the GEOS project!
@@ -21,10 +21,13 @@ page for more details on the HPC, numerics,
 and applied engineering components of this effort.
 
 Documentation
----------------------
+-------------
 
-Our documentation is hosted [here](https://geosx-geosx.readthedocs-hosted.com/en/latest/?).
+Please visit the [Main documentation for GEOS](https://geosx-geosx.readthedocs-hosted.com/en/latest/?).
 
+If you would like to contribute to GEOS, please see the [developer guide](https://geosx-geosx.readthedocs-hosted.com/en/latest/docs/sphinx/developerGuide/Index.html)
+
+If you would like to report a bug, please submit an [issue](https://github.com/GEOS-DEV/GEOS/issues/new/choose). 
 
 Who develops GEOS?
 -------------------

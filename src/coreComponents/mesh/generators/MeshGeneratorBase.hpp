@@ -2,10 +2,11 @@
  * ------------------------------------------------------------------------------------------------------------
  * SPDX-License-Identifier: LGPL-2.1-only
  *
- * Copyright (c) 2018-2020 Lawrence Livermore National Security LLC
- * Copyright (c) 2018-2020 The Board of Trustees of the Leland Stanford Junior University
- * Copyright (c) 2018-2020 TotalEnergies
- * Copyright (c) 2019-     GEOSX Contributors
+ * Copyright (c) 2016-2024 Lawrence Livermore National Security LLC
+ * Copyright (c) 2018-2024 Total, S.A
+ * Copyright (c) 2018-2024 The Board of Trustees of the Leland Stanford Junior University
+ * Copyright (c) 2023-2024 Chevron
+ * Copyright (c) 2019-     GEOS/GEOSX Contributors
  * All rights reserved
  *
  * See top level LICENSE, COPYRIGHT, CONTRIBUTORS, NOTICE, and ACKNOWLEDGEMENTS files for details.
@@ -20,7 +21,6 @@
 #define GEOS_MESH_GENERATORS_MESHGENERATORBASE_HPP
 
 #include "mesh/mpiCommunications/SpatialPartition.hpp"
-#include "mesh/generators/CellBlockManagerABC.hpp"
 
 #include "dataRepository/Group.hpp"
 #include "dataRepository/WrapperBase.hpp"
@@ -53,12 +53,6 @@ public:
    */
   explicit MeshGeneratorBase( string const & name,
                               Group * const parent );
-
-  /**
-   * @brief Return the name of the MeshGenerator in object catalog.
-   * @return string that contains the catalog name of the MeshGenerator
-   */
-  static string catalogName() { return "MeshGeneratorBase"; }
 
   /// This function is used to expand any catalogs in the data structure
   virtual void expandObjectCatalogs() override;
@@ -120,22 +114,22 @@ public:
   virtual void freeResources() {}
 
   /**
-   * @brief Get the name mapping between mesh volumic field names and internal GEOSX volumic field names.
+   * @brief Get the name mapping between mesh volumic field names and internal GEOS volumic field names.
    * @return The string to string mapping of field names.
    */
   std::map< string, string > const & getVolumicFieldsMapping() const { return m_volumicFields; }
 
   /**
-   * @brief Get the name mapping between mesh surfacic field names and internal GEOSX surfacic field names.
+   * @brief Get the name mapping between mesh surfacic field names and internal GEOS surfacic field names.
    * @return The string to string mapping of field names.
    */
   std::map< string, string > const & getSurfacicFieldsMapping() const { return m_surfacicFields; }
 
 protected:
-  /// Mapping from volumic field source to GEOSX field.
+  /// Mapping from volumic field source to GEOS field.
   std::map< string, string > m_volumicFields;
 
-  /// Mapping from surfacic field source to GEOSX field.
+  /// Mapping from surfacic field source to GEOS field.
   std::map< string, string > m_surfacicFields;
 
 private:

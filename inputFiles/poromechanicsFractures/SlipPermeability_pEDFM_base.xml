@@ -7,13 +7,12 @@
       name="poroSolver"
       targetRegions="{ Domain, Fracture }"
       initialDt="1e-3"
-      fracturesSolverName="fractureMechSolver"
       flowSolverName="flowSolver"
-      solidSolverName="matrixMechSolver"
+      solidSolverName="fractureMechSolver"
       logLevel="1">
       <NonlinearSolverParameters
         newtonTol="1.0e-5"
-        newtonMaxIter="10"
+        newtonMaxIter="100"
         maxTimeStepCuts="1"/>
       <LinearSolverParameters
         directParallel="0"/>
@@ -22,15 +21,9 @@
     <SolidMechanicsEmbeddedFractures
       name="fractureMechSolver"
       targetRegions="{ Domain, Fracture }"
-      solidSolverName="matrixMechSolver"
-      fractureRegionName="Fracture"
-      contactRelationName="fractureContact"/>
-
-    <SolidMechanicsLagrangianSSLE
-      name="matrixMechSolver"
       timeIntegrationOption="QuasiStatic"
       discretization="FE1"
-      targetRegions="{ Domain }"/>
+      contactPenaltyStiffness="2.0e11"/>
 
     <SinglePhaseFVM
       name="flowSolver"
@@ -57,8 +50,7 @@
     <FiniteVolume>
       <TwoPointFluxApproximation
         name="singlePhaseTPFA"
-        usePEDFM="1"
-      />
+        usePEDFM="1"/>
     </FiniteVolume>
   </NumericalMethods>
 
@@ -72,7 +64,7 @@
       name="Fracture"
       faceBlock="embeddedSurfaceSubRegion"
       subRegionType="embeddedElement"
-      materialList="{ water, fractureFilling, fractureContact }"
+      materialList="{ water, fractureFilling, fractureContact, hApertureModel}"
       defaultAperture="1e-3"/>
   </ElementRegions>
   
@@ -104,7 +96,7 @@
 
     <BiotPorosity
       name="rockPorosity"
-      grainBulkModulus="1.0e27"
+      defaultGrainBulkModulus="1.0e27"
       defaultReferencePorosity="0.2"/>
 
     <CompressibleSolidSlipDependentPermeability
@@ -129,9 +121,11 @@
       initialPermeability="{1e-15, 1e-15, 1e-15}"/>
       
     <FrictionlessContact
-      name="fractureContact"
-      penaltyStiffness="2.0e11"
-      apertureTableName="aperTable"/>
+      name="fractureContact"/>
+
+    <HydraulicApertureTable
+      name="hApertureModel"
+      apertureTableName="aperTable"/>  
   </Constitutive>
   
   <Functions>

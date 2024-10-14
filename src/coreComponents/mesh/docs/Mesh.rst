@@ -23,7 +23,7 @@ Basic Example
 The Internal Mesh Generator allows one to quickly build simple cartesian grids and divide
 them into several regions.  The following attributes are supported in the input block for InternalMesh:
 
-.. include:: /coreComponents/schema/docs/InternalMesh.rst
+.. include:: /docs/sphinx/datastructure/InternalMesh.rst
 
 
 The following is an example XML ``<mesh>`` block, which will generate a vertical beam with two ``CellBlocks`` (one in red and one in blue in the following picture).
@@ -121,15 +121,18 @@ with the following code.
                   nx="{5, 5}"
                   ny="{5, 5}"
                   nz="{3, 3, 3, 3}"
-                  cellBlockNames="{b00,b01,b02,b03,b04,b05,b06,b07,b08,b09,b10,b11,b12,b13,b14,b15}"/>
+                  cellBlockNames="{cb-0_0_0, cb-1_0_0, cb-0_1_0, cb-1_1_0,
+                                   cb-0_0_1, cb-1_0_1, cb-0_1_1, cb-1_1_1,
+                                   cb-0_0_2, cb-1_0_2, cb-0_1_2, cb-1_1_2,
+                                   cb-0_0_3, cb-1_0_3, cb-0_1_3, cb-1_1_3}"/>
   </Mesh>
 
   <ElementRegions>
      <CellElementRegion name="Channel"
-                    cellBlocks="{b08,b00,b01,b05,b06,b14,b15,b11}"
+                    cellBlocks="{cb-1_0_0, cb-0_0_0, cb-0_0_1, cb-0_1_1, cb-0_1_2, cb-1_1_2, cb-1_1_3, cb-1_0_3}"
                     materialList="{fluid1, rock, relperm}"/>
      <CellElementRegion name="Barrier"
-                    cellBlocks="{b04,b12,b13,b09,b10,b02,b03,b07}"
+                    cellBlocks="{cb-0_1_0, cb-1_1_0, cb-1_1_1, cb-1_0_1, cb-1_0_2, cb-0_0_2, cb-0_0_3, cb-0_1_3}"
                     materialList="{}"/>
   </ElementRegions>
 
@@ -139,6 +142,7 @@ Thus, the generated mesh will be :
    :align: center
    :width: 500
 
+Note that ``CellBlocks`` are ordered following the natural IJK logic, with indices increasing first in I (x-direction), then in J (y-direction) and last in K (z-direction).
 
 .. _ExternalMeshUsage:
 
@@ -283,7 +287,7 @@ Importing surfaces
 ******************
 
 Surfaces are imported through point sets in GEOS. This feature is supported using only the ``vtk`` file format.
-In the same way than the regions, the surfaces of interests can be defined using the `physical entity names`_.
+In the same way than the regions, the surfaces of interests can be defined using the `physical entity names`.
 The surfaces are automatically import in GEOS if they exist in the ``vtk`` file.
 Within GEOS, the point set will have the same name than the one given in the file. This name can be used
 again to impose boundary condition. For instance, if a surface is named "Bottom" and the user wants to

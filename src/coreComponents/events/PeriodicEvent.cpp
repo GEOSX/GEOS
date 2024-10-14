@@ -2,10 +2,11 @@
  * ------------------------------------------------------------------------------------------------------------
  * SPDX-License-Identifier: LGPL-2.1-only
  *
- * Copyright (c) 2018-2020 Lawrence Livermore National Security LLC
- * Copyright (c) 2018-2020 The Board of Trustees of the Leland Stanford Junior University
- * Copyright (c) 2018-2020 TotalEnergies
- * Copyright (c) 2019-     GEOSX Contributors
+ * Copyright (c) 2016-2024 Lawrence Livermore National Security LLC
+ * Copyright (c) 2018-2024 Total, S.A
+ * Copyright (c) 2018-2024 The Board of Trustees of the Leland Stanford Junior University
+ * Copyright (c) 2023-2024 Chevron
+ * Copyright (c) 2019-     GEOS/GEOSX Contributors
  * All rights reserved
  *
  * See top level LICENSE, COPYRIGHT, CONTRIBUTORS, NOTICE, and ACKNOWLEDGEMENTS files for details.
@@ -18,7 +19,7 @@
 
 #include "PeriodicEvent.hpp"
 
-#include "common/Format.hpp"
+#include "common/format/Format.hpp"
 #include "functions/FunctionManager.hpp"
 
 namespace geos
@@ -171,10 +172,30 @@ void PeriodicEvent::checkOptionalFunctionThreshold( real64 const time,
 
     // Because the function applied to an object may differ by rank, synchronize
     // (Note: this shouldn't occur very often, since it is only called if the base forecast <= 0)
-#ifdef GEOSX_USE_MPI
+#ifdef GEOS_USE_MPI
     real64 result_global;
-    MPI_Allreduce( &result, &result_global, 1, MPI_DOUBLE, MPI_MAX, MPI_COMM_WORLD );
-    result = result_global;
+    switch( m_functionStatOption )
+    {
+      case 0:
+      {
+        MPI_Allreduce( &result, &result_global, 1, MPI_DOUBLE, MPI_MIN, MPI_COMM_WORLD );
+        result = result_global;
+        break;
+      }
+      case 1:
+      {
+        int nprocs;
+        MPI_Comm_size( MPI_COMM_WORLD, &nprocs );
+        MPI_Allreduce( &result, &result_global, 1, MPI_DOUBLE, MPI_SUM, MPI_COMM_WORLD );
+        result = result_global / nprocs;
+        break;
+      }
+      case 2:
+      {
+        MPI_Allreduce( &result, &result_global, 1, MPI_DOUBLE, MPI_MAX, MPI_COMM_WORLD );
+        result = result_global;
+      }
+    }
 #endif
   }
 

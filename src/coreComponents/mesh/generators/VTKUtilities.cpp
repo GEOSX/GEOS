@@ -2,10 +2,11 @@
  * ------------------------------------------------------------------------------------------------------------
  * SPDX-License-Identifier: LGPL-2.1-only
  *
- * Copyright (c) 2018-2020 Lawrence Livermore National Security LLC
- * Copyright (c) 2018-2020 The Board of Trustees of the Leland Stanford Junior University
- * Copyright (c) 2018-2020 Total, S.A
- * Copyright (c) 2019-     GEOSX Contributors
+ * Copyright (c) 2016-2024 Lawrence Livermore National Security LLC
+ * Copyright (c) 2018-2024 Total, S.A
+ * Copyright (c) 2018-2024 The Board of Trustees of the Leland Stanford Junior University
+ * Copyright (c) 2023-2024 Chevron
+ * Copyright (c) 2019-     GEOS/GEOSX Contributors
  * All rights reserved
  *
  * See top level LICENSE, COPYRIGHT, CONTRIBUTORS, NOTICE, and ACKNOWLEDGEMENTS files for details.
@@ -18,7 +19,7 @@
 #include "mesh/generators/VTKUtilities.hpp"
 
 #include "mesh/generators/ParMETISInterface.hpp"
-#ifdef GEOSX_USE_SCOTCH
+#ifdef GEOS_USE_SCOTCH
 #include "mesh/generators/PTScotchInterface.hpp"
 #endif
 
@@ -60,7 +61,7 @@
 #include <vtkXMLStructuredGridReader.h>
 #include <vtkXMLUnstructuredGridReader.h>
 
-#ifdef GEOSX_USE_MPI
+#ifdef GEOS_USE_MPI
 #include <vtkMPIController.h>
 #include <vtkMPI.h>
 #else
@@ -71,6 +72,7 @@
 
 namespace geos
 {
+using namespace dataRepository;
 
 namespace vtk
 {
@@ -141,7 +143,7 @@ std::vector< T > collectUniqueValues( std::vector< T > const & data )
 {
   // Exchange the sizes of the data across all ranks.
   array1d< int > dataSizes( MpiWrapper::commSize() );
-  MpiWrapper::allGather( LvArray::integerConversion< int >( data.size() ), dataSizes, MPI_COMM_GEOSX );
+  MpiWrapper::allGather( LvArray::integerConversion< int >( data.size() ), dataSizes, MPI_COMM_GEOS );
   // `totalDataSize` contains the total data size across all the MPI ranks.
   int const totalDataSize = std::accumulate( dataSizes.begin(), dataSizes.end(), 0 );
 
@@ -152,7 +154,7 @@ std::vector< T > collectUniqueValues( std::vector< T > const & data )
   // `displacements` is the offset (relative to the receive buffer) to store the data for each rank.
   std::vector< int > displacements( MpiWrapper::commSize(), 0 );
   std::partial_sum( dataSizes.begin(), dataSizes.end() - 1, displacements.begin() + 1 );
-  MpiWrapper::allgatherv( data.data(), data.size(), allData.data(), dataSizes.data(), displacements.data(), MPI_COMM_GEOSX );
+  MpiWrapper::allgatherv( data.data(), data.size(), allData.data(), dataSizes.data(), displacements.data(), MPI_COMM_GEOS );
 
   // Finalizing by sorting, removing duplicates and trimming the result vector at the proper size.
   std::sort( allData.begin(), allData.end() );
@@ -401,9 +403,9 @@ splitMeshByPartition( vtkSmartPointer< vtkDataSet > mesh,
 
 vtkSmartPointer< vtkMultiProcessController > getController()
 {
-#ifdef GEOSX_USE_MPI
+#ifdef GEOS_USE_MPI
   vtkNew< vtkMPIController > controller;
-  vtkMPICommunicatorOpaqueComm vtkGeosxComm( &MPI_COMM_GEOSX );
+  vtkMPICommunicatorOpaqueComm vtkGeosxComm( &MPI_COMM_GEOS );
   vtkNew< vtkMPICommunicator > communicator;
   communicator->InitializeExternal( &vtkGeosxComm );
   controller->SetCommunicator( communicator );
@@ -641,7 +643,7 @@ AllMeshes redistributeByCellGraph( AllMeshes & input,
       }
       case PartitionMethod::ptscotch:
       {
-#ifdef GEOSX_USE_SCOTCH
+#ifdef GEOS_USE_SCOTCH
         GEOS_WARNING_IF( numRefinements > 0, "Partition refinement is not supported by 'ptscotch' partitioning method" );
         return ptscotch::partition( graph.toViewConst(), numRanks, comm );
 #else
@@ -676,13 +678,13 @@ AllMeshes redistributeByCellGraph( AllMeshes & input,
 
   // First for the main 3d mesh...
   vtkSmartPointer< vtkPartitionedDataSet > const splitMesh = splitMeshByPartition( input.getMainMesh(), numRanks, newPartitions.toViewConst() );
-  vtkSmartPointer< vtkUnstructuredGrid > finalMesh = vtk::redistribute( *splitMesh, MPI_COMM_GEOSX );
+  vtkSmartPointer< vtkUnstructuredGrid > finalMesh = vtk::redistribute( *splitMesh, MPI_COMM_GEOS );
   // ... and then for the fractures.
   std::map< string, vtkSmartPointer< vtkDataSet > > finalFractures;
   for( auto const & [fractureName, fracture]: input.getFaceBlocks() )
   {
     vtkSmartPointer< vtkPartitionedDataSet > const splitFracMesh = splitMeshByPartition( fracture, numRanks, newFracturePartitions[fractureName].toViewConst() );
-    vtkSmartPointer< vtkUnstructuredGrid > const finalFracMesh = vtk::redistribute( *splitFracMesh, MPI_COMM_GEOSX );
+    vtkSmartPointer< vtkUnstructuredGrid > const finalFracMesh = vtk::redistribute( *splitFracMesh, MPI_COMM_GEOS );
     finalFractures[fractureName] = finalFracMesh;
   }
 
@@ -734,7 +736,7 @@ findNeighborRanks( std::vector< vtkBoundingBox > boundingBoxes )
 }
 
 
-vtkSmartPointer< vtkDataSet > manageGlobalIds( vtkSmartPointer< vtkDataSet > mesh, int useGlobalIds )
+vtkSmartPointer< vtkDataSet > manageGlobalIds( vtkSmartPointer< vtkDataSet > mesh, int useGlobalIds, bool isFractured )
 {
   auto hasGlobalIds = []( vtkSmartPointer< vtkDataSet > m ) -> bool
   {
@@ -745,7 +747,7 @@ vtkSmartPointer< vtkDataSet > manageGlobalIds( vtkSmartPointer< vtkDataSet > mes
     // Add global ids on the fly if needed
     int const me = hasGlobalIds( mesh );
     int everyone;
-    MpiWrapper::allReduce( &me, &everyone, 1, MPI_MAX, MPI_COMM_GEOSX );
+    MpiWrapper::allReduce( &me, &everyone, 1, MPI_MAX, MPI_COMM_GEOS );
 
     if( everyone and not me )
     {
@@ -776,6 +778,8 @@ vtkSmartPointer< vtkDataSet > manageGlobalIds( vtkSmartPointer< vtkDataSet > mes
   }
   else
   {
+    GEOS_ERROR_IF( isFractured, "Automatic generation of global IDs for fractured meshes is disabled. Please split with  mesh_doctor. \n" << generalMeshErrorAdvice );
+
     GEOS_LOG_RANK_0( "Generating global Ids from VTK mesh" );
     output = generateGlobalIDs( mesh );
   }
@@ -888,7 +892,7 @@ ensureNoEmptyRank( vtkSmartPointer< vtkDataSet > mesh,
                       "\nWarning! We strongly encourage the use of partitionRefinement > 5 for this number of MPI ranks \n" );
 
   vtkSmartPointer< vtkPartitionedDataSet > const splitMesh = splitMeshByPartition( mesh, numProcs, newParts.toViewConst() );
-  return vtk::redistribute( *splitMesh, MPI_COMM_GEOSX );
+  return vtk::redistribute( *splitMesh, MPI_COMM_GEOS );
 }
 
 
@@ -910,7 +914,7 @@ redistributeMeshes( integer const logLevel,
   }
 
   // Generate global IDs for vertices and cells, if needed
-  vtkSmartPointer< vtkDataSet > mesh = manageGlobalIds( loadedMesh, useGlobalIds );
+  vtkSmartPointer< vtkDataSet > mesh = manageGlobalIds( loadedMesh, useGlobalIds, !std::empty( fractures ) );
 
   if( MpiWrapper::commRank( comm ) != ( MpiWrapper::commSize( comm ) - 1 ) )
   {
@@ -971,7 +975,7 @@ redistributeMeshes( integer const logLevel,
  * @brief Identify the GEOSX type of the polyhedron
  *
  * @param cell The vtk cell VTK_POLYHEDRON
- * @return The geosx element type associated to VTK_POLYHEDRON
+ * @return The geos element type associated to VTK_POLYHEDRON
  */
 geos::ElementType buildGeosxPolyhedronType( vtkCell * const cell )
 {
@@ -1696,7 +1700,7 @@ std::vector< int > getVtkToGeosxNodeOrdering( ElementType const elemType )
     case ElementType::Prism6:        return { 0, 1, 2, 3, 4, 5, 6, 7, 8, 9, 10, 11 };
     default:
     {
-      GEOS_ERROR( "Cannot get vtk to geosx node ordering based on geosx element type " << elemType );
+      GEOS_ERROR( "Cannot get vtk to geos node ordering based on geos element type " << elemType );
       break;
     }
   }
@@ -1720,7 +1724,7 @@ std::vector< int > getVtkToGeosxNodeOrdering( VTKCellType const vtkType )
     case VTK_HEXAGONAL_PRISM:  return getVtkToGeosxNodeOrdering( ElementType::Prism6 );
     default:
     {
-      GEOS_ERROR( "Cannot get vtk to geosx node ordering based on vtk cell type " << vtkType );
+      GEOS_ERROR( "Cannot get vtk to geos node ordering based on vtk cell type " << vtkType );
       break;
     }
   }
@@ -2110,8 +2114,8 @@ real64 writeNodes( integer const logLevel,
     bb.GetMaxPoint( xMax );
   }
 
-  MpiWrapper::min< real64 >( xMin, xMin, MPI_COMM_GEOSX );
-  MpiWrapper::max< real64 >( xMax, xMax, MPI_COMM_GEOSX );
+  MpiWrapper::min< real64 >( xMin, xMin, MPI_COMM_GEOS );
+  MpiWrapper::max< real64 >( xMax, xMax, MPI_COMM_GEOS );
   LvArray::tensorOps::subtract< 3 >( xMax, xMin );
   return LvArray::tensorOps::l2Norm< 3 >( xMax );
 }

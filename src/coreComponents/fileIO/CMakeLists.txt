@@ -28,7 +28,7 @@ set( fileIO_sources
      timeHistory/PackCollection.cpp
      timeHistory/HDFHistoryIO.cpp )
 
-set( dependencyList ${parallelDeps} mesh constitutive hdf5 )
+set( dependencyList ${parallelDeps} events mesh HDF5::HDF5 )
 if( ENABLE_PYGEOSX )
   list( APPEND fileIO_headers
         python/PyCatalystOutputType.hpp
@@ -46,13 +46,13 @@ endif()
 
 if( ENABLE_MPI )
   add_subdirectory( coupling/hdf5_interface )
-  list( APPEND dependencyList mpi hdf5_interface )
+  list( APPEND dependencyList mpi hdf5_interface HDF5::HDF5 )
   list( APPEND fileIO_headers coupling/ChomboCoupler.hpp Outputs/ChomboIO.hpp )
   list( APPEND fileIO_sources coupling/ChomboCoupler.cpp Outputs/ChomboIO.cpp )
 endif()
 
 if( ENABLE_SILO )
-  list( APPEND dependencyList silo )
+  list( APPEND dependencyList silo HDF5::HDF5)
   list( APPEND fileIO_headers 
                silo/SiloFile.hpp 
                Outputs/SiloOutput.hpp )
@@ -77,7 +77,7 @@ if( ENABLE_VTK )
     list( APPEND dependencyList VTK::IOLegacy VTK::IOXML )
 endif()
 
-if( ENABLE_CUDA_NVTOOLSEXT )
+if( ENABLE_CUDA AND ENABLE_CUDA_NVTOOLSEXT )
   list( APPEND dependencyList CUDA::nvToolsExt )
 endif()
 
@@ -88,13 +88,21 @@ if ( ENABLE_CATALYST )
   list( APPEND dependencyList fileIOCatalyst ) 
 endif()
 
+geos_decorate_link_dependencies( LIST decoratedDependencies
+                                 DEPENDENCIES ${dependencyList} )
+
 blt_add_library( NAME       fileIO
                  SOURCES    ${fileIO_sources}
                  HEADERS    ${fileIO_headers}
-                 DEPENDS_ON ${dependencyList}
-                 OBJECT     ${GEOSX_BUILD_OBJ_LIBS} )
+                 DEPENDS_ON ${decoratedDependencies}
+                 OBJECT     ${GEOS_BUILD_OBJ_LIBS}
+                 SHARED     ${GEOS_BUILD_SHARED_LIBS}
+               )
 
 
 target_include_directories( fileIO PUBLIC ${CMAKE_SOURCE_DIR}/coreComponents )
+
+install( TARGETS fileIO LIBRARY DESTINATION ${CMAKE_INSTALL_PREFIX}/lib )
+
 
 

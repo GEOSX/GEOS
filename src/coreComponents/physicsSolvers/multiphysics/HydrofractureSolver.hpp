@@ -2,10 +2,11 @@
  * ------------------------------------------------------------------------------------------------------------
  * SPDX-License-Identifier: LGPL-2.1-only
  *
- * Copyright (c) 2018-2020 Lawrence Livermore National Security LLC
- * Copyright (c) 2018-2020 The Board of Trustees of the Leland Stanford Junior University
- * Copyright (c) 2018-2020 TotalEnergies
- * Copyright (c) 2019-     GEOSX Contributors
+ * Copyright (c) 2016-2024 Lawrence Livermore National Security LLC
+ * Copyright (c) 2018-2024 Total, S.A
+ * Copyright (c) 2018-2024 The Board of Trustees of the Leland Stanford Junior University
+ * Copyright (c) 2023-2024 Chevron
+ * Copyright (c) 2019-     GEOS/GEOSX Contributors
  * All rights reserved
  *
  * See top level LICENSE, COPYRIGHT, CONTRIBUTORS, NOTICE, and ACKNOWLEDGEMENTS files for details.
@@ -29,7 +30,7 @@ namespace geos
 
 using dataRepository::Group;
 
-template< typename POROMECHANICS_SOLVER = SinglePhasePoromechanics< SinglePhaseBase > >
+template< typename POROMECHANICS_SOLVER = SinglePhasePoromechanics<> >
 class HydrofractureSolver : public POROMECHANICS_SOLVER
 {
 public:
@@ -68,7 +69,19 @@ public:
   /// Destructor for the class
   ~HydrofractureSolver() override {}
 
-  static string catalogName();
+  static string catalogName()
+  {
+    // single phase
+    if constexpr ( std::is_same_v< POROMECHANICS_SOLVER, SinglePhasePoromechanics< SinglePhaseBase > > )
+    {
+      return "Hydrofracture";
+    }
+//  // multi phase (TODO)
+//  else if constexpr ( std::is_same_v< POROMECHANICS_SOLVER, MultiphasePoromechanics< CompositionalMultiphaseBase > > )
+//  {
+//    return "MultiphaseHydrofracture";
+//  }
+  }
   /**
    * @copydoc SolverBase::getCatalogName()
    */
@@ -112,6 +125,10 @@ public:
 
   virtual void updateState( DomainPartition & domain ) override final;
 
+  virtual void implicitStepComplete( real64 const & time_n,
+                                     real64 const & dt,
+                                     DomainPartition & domain ) override final;
+
   /**@}*/
 
   void updateHydraulicApertureAndFracturePermeability( DomainPartition & domain );
@@ -138,19 +155,27 @@ public:
     return m_derivativeFluxResidual_dAperture->toViewConst();
   }
 
+  enum class InitializationType : integer
+  {
+    Pressure,
+    Displacement,
+  };
+
   struct viewKeyStruct : Base::viewKeyStruct
   {
-    constexpr static char const * contactRelationNameString() { return "contactRelationName"; }
-
     constexpr static char const * surfaceGeneratorNameString() { return "surfaceGeneratorName"; }
 
     constexpr static char const * maxNumResolvesString() { return "maxNumResolves"; }
 
     constexpr static char const * isMatrixPoroelasticString() { return "isMatrixPoroelastic"; }
 
+    constexpr static char const * newFractureInitializationTypeString() { return "newFractureInitializationType"; }
+
     constexpr static char const * useQuasiNewtonString() { return "useQuasiNewton"; }
 
-#ifdef GEOSX_USE_SEPARATION_COEFFICIENT
+    constexpr static char const * isLaggingFractureStencilWeightsUpdateString() { return "isLaggingFractureStencilWeightsUpdate"; }
+
+#ifdef GEOS_USE_SEPARATION_COEFFICIENT
     constexpr static char const * separationCoeff0String() { return "separationCoeff0"; }
     constexpr static char const * apertureAtFailureString() { return "apertureAtFailure"; }
 #endif
@@ -158,7 +183,7 @@ public:
 
 protected:
 
-  virtual void postProcessInput() override final;
+  virtual void postInputInitialization() override final;
 
   /**
    * @Brief add the nnz induced by the flux-aperture coupling
@@ -194,6 +219,13 @@ private:
                                          int const cycleNumber,
                                          DomainPartition & domain ) override final;
 
+
+  /**
+   * @brief Initialize fields on the newly created elements of the fracture.
+   * @param domain the physical domain object
+   */
+  void initializeNewFractureFields( DomainPartition & domain );
+
   // name of the contact relation
   string m_contactRelationName;
 
@@ -211,9 +243,19 @@ private:
 
   integer m_isMatrixPoroelastic;
 
+  // flag to determine which initialization type to use for the new fracture cell
+  InitializationType m_newFractureInitializationType;
+
   integer m_useQuasiNewton;   // use Quasi-Newton (see https://arxiv.org/abs/2111.00264)
 
+  // flag to determine whether or not to apply lagging update for the fracture stencil weights
+  integer m_isLaggingFractureStencilWeightsUpdate;
+
 };
+
+ENUM_STRINGS( HydrofractureSolver< SinglePhasePoromechanics< SinglePhaseBase > >::InitializationType,
+              "Pressure",
+              "Displacement" );
 
 
 } /* namespace geos */

@@ -10,7 +10,7 @@
       partitionMethod="ptscotch"
       scale="{ 50, 50, 50 }"
       fieldsToImport="{ PORO, NTG, DENSITY, BULKMOD }"
-      fieldNamesInGEOSX="{ rockPorosity_referencePorosity, netToGross, skeleton_density, skeleton_bulkModulus }"
+      fieldNamesInGEOS="{ rockPorosity_referencePorosity, netToGross, skeleton_density, skeleton_bulkModulus }"
       file="../singlePhaseFlow/pebi3d_with_properties.vtu"/>
 
   </Mesh>
@@ -116,7 +116,7 @@
       permeabilityComponents="{ 9.8e-13, 9.8e-13, 9.8e-13 }"/>
     <BiotPorosity
       name="rockPorosity"
-      grainBulkModulus="1.0e27"
+      defaultGrainBulkModulus="1.0e27"
       defaultReferencePorosity="0.2"/>
 
   </Constitutive>

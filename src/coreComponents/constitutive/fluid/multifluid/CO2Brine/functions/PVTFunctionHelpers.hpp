@@ -2,10 +2,11 @@
  * ------------------------------------------------------------------------------------------------------------
  * SPDX-License-Identifier: LGPL-2.1-only
  *
- * Copyright (c) 2018-2020 Lawrence Livermore National Security LLC
- * Copyright (c) 2018-2020 The Board of Trustees of the Leland Stanford Junior University
- * Copyright (c) 2018-2020 TotalEnergies
- * Copyright (c) 2019-     GEOSX Contributors
+ * Copyright (c) 2016-2024 Lawrence Livermore National Security LLC
+ * Copyright (c) 2018-2024 Total, S.A
+ * Copyright (c) 2018-2024 The Board of Trustees of the Leland Stanford Junior University
+ * Copyright (c) 2023-2024 Chevron
+ * Copyright (c) 2019-     GEOS/GEOSX Contributors
  * All rights reserved
  *
  * See top level LICENSE, COPYRIGHT, CONTRIBUTORS, NOTICE, and ACKNOWLEDGEMENTS files for details.
@@ -18,6 +19,8 @@
 
 #include "common/DataTypes.hpp"
 #include "common/Units.hpp"
+#include "common/logger/Logger.hpp"
+#include "common/format/StringUtilities.hpp"
 
 #ifndef GEOS_CONSTITUTIVE_FLUID_MULTIFLUID_CO2BRINE_FUNCTIONS_PVTFUNCTIONHELPERS_HPP_
 #define GEOS_CONSTITUTIVE_FLUID_MULTIFLUID_CO2BRINE_FUNCTIONS_PVTFUNCTIONHELPERS_HPP_
@@ -122,8 +125,8 @@ public:
   localIndex nPressures() const { return coords[coordType::PRES].size(); }
   localIndex nTemperatures() const { return coords[coordType::TEMP].size(); }
 
-  void appendPressure( const real64 & pres ) { coords[coordType::PRES].emplace_back( pres ); }
-  void appendTemperature( const real64 & temp ) { coords[coordType::TEMP].emplace_back( temp ); }
+  PTTableCoordinates & appendPressure( const real64 & pres ) { coords[coordType::PRES].emplace_back( pres ); return *this; }
+  PTTableCoordinates & appendTemperature( const real64 & temp ) { coords[coordType::TEMP].emplace_back( temp ); return *this; }
 
   real64 const & getPressure( localIndex i ) const { return coords[coordType::PRES][i]; }
   real64 const & getTemperature( localIndex i ) const { return coords[coordType::TEMP][i]; }

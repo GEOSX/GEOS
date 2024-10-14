@@ -27,9 +27,9 @@
       solidSolverName="linearElasticity"
       flowSolverName="twoPhaseFlow"
       stabilizationType="Global"
-      stabilizationRegionNames="{ channel, barrier }"
+      stabilizationRegionNames="{ channel }"
       logLevel="1"
-      targetRegions="{ channel, barrier }"/>
+      targetRegions="{ channel }"/>
 
     <SolidMechanicsLagrangianSSLE
       name="linearElasticity"
@@ -44,7 +44,7 @@
       discretization="fluidTPFA"
       targetRelativePressureChangeInTimeStep="1"
       targetPhaseVolFractionChangeInTimeStep="1"
-      targetRegions="{ channel, barrier  }"
+      targetRegions="{ channel  }"
       temperature="300"
       useMass="1"/>
 
@@ -90,32 +90,11 @@
       target="/Outputs/vtkOutput"/>
 
     <SoloEvent
-      name="multiphasePoroelasticityPreEquilibrationStep"
+      name="multiphasePoroelasticityEquilibrationStep"
       targetTime="-1e11"
       beginTime="-1e11"
-      target="/Tasks/multiphasePoroelasticityPreEquilibrationStep"/>
-    
-    <PeriodicEvent
-      name="solverApplicationsEquilibration"
-      beginTime="-1e11"
-      endTime="0"
-      maxEventDt="1e11"
-      target="/Solvers/reservoirSystem"/>
+      target="/Tasks/multiphasePoroelasticityEquilibrationStep"/>
 
-    <SoloEvent
-      name="multiphasePoroelasticityPostEquilibrationStep"
-      targetTime="0"
-      target="/Tasks/multiphasePoroelasticityPostEquilibrationStep"/>
-    
-    <PeriodicEvent
-      name="linearElasticityStatistics"
-      timeFrequency="1e6"
-      target="/Tasks/linearElasticityStatistics"/>
-    <PeriodicEvent
-      name="twoPhaseFlowStatistics"
-      timeFrequency="1e6"
-      target="/Tasks/twoPhaseFlowStatistics"/>
-    
     <PeriodicEvent
       name="solverApplications1"
       endTime="1e3"
@@ -126,6 +105,14 @@
       maxEventDt="1e6"
       target="/Solvers/reservoirSystem"/>
 
+    <PeriodicEvent
+      name="linearElasticityStatistics"
+      timeFrequency="1e6"
+      target="/Tasks/linearElasticityStatistics"/>
+    <PeriodicEvent
+      name="twoPhaseFlowStatistics"
+      timeFrequency="1e6"
+      target="/Tasks/twoPhaseFlowStatistics"/>
     
     <PeriodicEvent
       name="restarts"
@@ -156,15 +143,9 @@
 
     <MultiphasePoromechanicsInitialization 
       logLevel="1"      
-      name="multiphasePoroelasticityPreEquilibrationStep"
-      performStressInitialization="1"
-      poromechanicsSolverName="multiphasePoroelasticity"/>
-    
-    <MultiphasePoromechanicsInitialization 
-      logLevel="1"      
-      name="multiphasePoroelasticityPostEquilibrationStep"
-      performStressInitialization="0"
-      poromechanicsSolverName="multiphasePoroelasticity"/>
+      name="multiphasePoroelasticityEquilibrationStep"
+      poromechanicsSolverName="multiphasePoroelasticity"
+      solidMechanicsStatisticsName="linearElasticityStatistics"/>
     
   </Tasks>
   

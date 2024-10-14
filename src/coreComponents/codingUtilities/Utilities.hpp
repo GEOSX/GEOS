@@ -2,10 +2,11 @@
  * ------------------------------------------------------------------------------------------------------------
  * SPDX-License-Identifier: LGPL-2.1-only
  *
- * Copyright (c) 2018-2020 Lawrence Livermore National Security LLC
- * Copyright (c) 2018-2020 The Board of Trustees of the Leland Stanford Junior University
- * Copyright (c) 2018-2020 TotalEnergies
- * Copyright (c) 2019-     GEOSX Contributors
+ * Copyright (c) 2016-2024 Lawrence Livermore National Security LLC
+ * Copyright (c) 2018-2024 Total, S.A
+ * Copyright (c) 2018-2024 The Board of Trustees of the Leland Stanford Junior University
+ * Copyright (c) 2023-2024 Chevron
+ * Copyright (c) 2019-     GEOS/GEOSX Contributors
  * All rights reserved
  *
  * See top level LICENSE, COPYRIGHT, CONTRIBUTORS, NOTICE, and ACKNOWLEDGEMENTS files for details.
@@ -19,7 +20,8 @@
 #ifndef GEOS_CODINGUTILITIES_UTILITIES_H_
 #define GEOS_CODINGUTILITIES_UTILITIES_H_
 
-#include "codingUtilities/StringUtilities.hpp"
+#include "common/format/StringUtilities.hpp"
+#include "common/logger/Logger.hpp"
 #include "common/DataTypes.hpp"
 #include "LvArray/src/limits.hpp"
 #include "common/GEOS_RAJA_Interface.hpp"
@@ -209,6 +211,31 @@ VAL findOption( mapBase< KEY, VAL, SORTED > const & map,
   return iter->second;
 }
 
+namespace
+{
+
+/**
+ * @brief Apply functor @p transformer onto the map elements and store the results into a container of type @p C.
+ * @tparam MAP Type of the considered map.
+ * @tparam C Type of the container holding the keys.
+ * @tparam TRANSFORMER Type of the unary functor.
+ * @param[in] map The map from which keys will be extracted.
+ * @param transformer Which unary functor to apply to the @p map elements.
+ * @return The container with the results for the @p transformer application.
+ */
+template< template< typename ... > class C, typename MAP, typename TRANSFORMER >
+auto mapTransformer( MAP const & map,
+                     TRANSFORMER const & transformer )
+{
+  using v = std::invoke_result_t< TRANSFORMER, typename MAP::const_reference >;
+  C< v > result;
+  auto inserter = std::inserter( result, result.end() );
+  std::transform( map.begin(), map.end(), inserter, transformer );
+  return result;
+}
+
+}
+
 /**
  * @brief Extract the keys from the given map.
  * @tparam MAP Type of the considered map.
@@ -219,11 +246,24 @@ VAL findOption( mapBase< KEY, VAL, SORTED > const & map,
 template< template< typename ... > class C = std::vector, typename MAP >
 C< typename MAP::key_type > mapKeys( MAP const & map )
 {
-  C< typename MAP::key_type > keys;
-  auto transformer = []( auto const & p ) { return p.first; };
-  auto inserter = std::inserter( keys, keys.end() );
-  std::transform( map.begin(), map.end(), inserter, transformer );
-  return keys;
+  auto transformer = []( auto const & p ) -> typename MAP::key_type
+  { return p.first; };
+  return mapTransformer< C >( map, transformer );
+}
+
+/**
+ * @brief Extract the values from the given map.
+ * @tparam MAP Type of the considered map.
+ * @tparam C Type of the container holding the values.
+ * @param[in] map The map from which values will be extracted.
+ * @return The container with the values.
+ */
+template< template< typename ... > class C = std::vector, typename MAP >
+C< typename MAP::mapped_type > mapValues( MAP const & map )
+{
+  auto transformer = []( typename MAP::const_reference p ) -> typename MAP::mapped_type
+  { return p.second; };
+  return mapTransformer< C >( map, transformer );
 }
 
 namespace internal

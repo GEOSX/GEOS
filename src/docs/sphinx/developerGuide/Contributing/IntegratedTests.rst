@@ -6,57 +6,112 @@ Integrated Tests
 
 About
 =================================
-*integratedTests* is a submodule of *GEOS* residing at the top level of the directory structure.
-It defines a set of tests that will run *GEOS* with various *.xml* files and partitioning schemes using the `Automated Test System <https://ats.readthedocs.io/en/latest/>`_ (ATS).
-For each scenario, test performance is evaluated by comparing output files to baselines recorded in this repository.
+The GEOS integrated test system leverages the `Automated Test System <https://ats.readthedocs.io/en/latest/>`_ (ATS) and `GEOS ATS <https://github.com/GEOS-DEV/geosPythonPackages>`_ packages to run various combinations of input files and machine configurations.
+The output of these runs are then compared to baseline files and/or analytic solutions to guarantee the accuracy of the code.
 
 
 Structure
 =================================
 
-The *integratedTests* repository includes a python package (*integratedTests/scripts/geos_ats_package*) and a directory containing test definitions (*integratedTests/tests/allTests*).
-A typical test directory will include an *.ats* file, which defines the behavior of tests or points to child test directories, symbolic links to any required *.xml* files, and a directory containing baseline files.
+GEOS integrated tests are defined in the *GEOS/inputFiles* directory, and are organized into folders based on the physical processes being tested.
+A test folder can contain any number of *.ats* configuration files, *.xml* input files, and supporting inputs (tables files, meshes, etc.).
 
 
 .. code-block:: sh
 
-  - integratedTests/
-    - scripts/
-      - geos_ats_package
-  - tests/
-    - allTests/
-      - main.ats/
-      - sedov/
-        - baselines/
-          - sedov_XX/
-            - <baseline-files>
-        - sedov.ats
-        - sedov.xml
+  - inputFiles/
+    - main.ats/
+    - solidMechanics/
+      - sedov.ats
+      - sedov.xml
+    - etc.
+  - .integrated_tests.yaml
 
 
-High level integrated test results are recorded in the GEOS build directory: */path/to/GEOS/build-xyz/integratedTests/TestsResults*.
-These include *.log* and *.err* files for each test and a *test_results.html* summary file, which can be inspected in your browser.
-
-
-.. note::
-  Baseline files are stored using the git LFS (large file storage) plugin.
-  If you followed the suggested commands in the quickstart guide, then your environment is likely already setup.
-
-  However, if lfs is not yet activated, then the contents of baseline files may look something like this:
-
-  0to100_restart_000000100/rank_0000003.hdf5
-  version https://git-lfs.github.com/spec/v1
-  oid sha256:09bbe1e92968852cb915b971af35b0bba519fae7cf5934f3abc7b709ea76308c
-  size 1761208
-
-  If this is the case, try running the following commands: ``git lfs install`` and ``git lfs pull``.
+Test baselines are stored as *.tar.gz* archive and share the same directory structure as *GEOS/inputFiles*.
+During test execution, the *geos_ats* package will fetch and unpack any necessary baselines described in the top-level *.integrated_tests.yaml* configuration file.
 
 
 
 How to Run the Tests
 =================================
 
-In most cases, integrated tests processes can be triggered in the GEOS build directory with the following commands:
+GEOS CI Pipeline
+---------------------------------
+
+In most cases, developers will be able to rely on the integrated tests that are run as part of the GEOS CI Pipeline.
+These can be triggered if the **ci: run integrated tests** label is selected for a pull request (this can be added from the right-hand panel on PR page).
+
+To inspect the results of CI tests, select the *Checks* tab from the top of the pull request and then select *run_integrated_tests/build_test_deploy* from the left-hand panel.
+
+
+.. image:: integrated_test_location_pr_a.png
+   :width: 400px
+
+
+.. image:: integrated_test_location_pr_b.png
+   :width: 400px
+
+
+This page will show the full output of GEOS build process and the integrated test suite.
+At the bottom of this page, the logs will contain a summary of the test results and a list of any ignored/failed tests.
+
+
+.. code-block:: sh
+
+  =======================
+  Integrated test results
+  =======================
+  expected: 0
+  created: 0
+  batched: 0
+  filtered: 104
+  skipped: 0
+  running: 0
+  passed: 215
+  timedout: 0 (3 ignored)
+  halted: 0
+  lsferror: 0
+  failed: 0
+  =======================
+  Ignored tests
+  =======================
+  pennyShapedToughnessDominated_smoke_01
+  pennyShapedViscosityDominated_smoke_01
+  pknViscosityDominated_smoke_01
+  =======================
+  Overall status: PASSED
+  =======================
+
+
+The log will provide instructions on where to download the test results and a baseline ID that can be assigned in the *.integrated_tests.yaml* file.
+
+
+
+. code-block:: sh
+
+  Download the bundle at https://storage.googleapis.com/geosx/integratedTests/baseline_integratedTests-pr3044-4400-e6359ca.tar.gz
+  New baseline ID: baseline_integratedTests-pr3044-4400-e6359ca
+
+
+
+.. note::
+  Integrated tests within GEOS CI pipeline are run on a shared machine, and may take up to 30 minutes to complete.  It may take some time for the tests to begin if the machine is in use by other developers.
+
+
+Manual Test Runs
+---------------------------------
+
+Before running the integrated tests manually, we recommend that you define the following variables in your machine's host configuration file:
+
+* `ATS_WORKING_DIR` : The location where tests should be run (default=*GEOS/[build-dir]/integratedTests/workingDir*)
+* `ATS_BASELINE_DIR` : The location where test baselines should be stored (default=*GEOS/integratedTests*)
+
+.. note::
+  The `ATS_WORKING_DIR` should be located on a file system that is amenable to parallel file IO.
+
+
+After building GEOS, the integrated tests can be triggered in the GEOS build directory with the following commands:
 
 * `make ats_environment` : Setup the testing environment (Note: this step is run by default for the other make targets).  This process will install packages required for testing into the python environment defined in your current host config file.  Depending on how you have built GEOS, you may be prompted to manually run the `make pygeosx` command and then re-run this step.
 * `make ats_run` : Run all of the available tests (see the below note on testing resources).
@@ -66,7 +121,7 @@ In most cases, integrated tests processes can be triggered in the GEOS build dir
 
 
 .. note::
-  The `make_ats_environment` step will attempt to collect python packages github and pypi, so it should be run from a machine with internet access.
+  The `make_ats_environment` and `ats_run` steps may require internet access to collect python packages and baseline files.
 
 
 .. note::
@@ -84,8 +139,10 @@ In most cases, integrated tests processes can be triggered in the GEOS build dir
   When running test or creating new baselines on LC systems, we recommend that you use the *quartz-gcc-12-release* configuration
 
 
+.. _overrideTestBehavior:
+
 Override Test Behavior
--------------------------
+----------------------
 
 For cases where you need additional control over the integrated tests behavior, you can use this script in your build directory: */path/to/GEOS/build-xyz/integratedTests/geos_ats.sh*.
 To run the tests, simply call this script with any desired arguments (see the output of `geos_ats.sh --help` for additional details.)
@@ -176,7 +233,7 @@ Otherwise, you will need to track down and potentially fix the issue that trigge
 Test Output
 --------------------------------
 
-Output files from the tests will be stored in the TestResults directory (*/path/to/GEOS/build-xyz/integratedTests/TestsResults*) or in a subdirectory next to their corresponding *.xml* file (*integratedTests/tests/allTests/testGroup/testName_xx*).
+Output files from the tests will be stored in the specified working directory (linked here: */path/to/GEOS/build-xyz/integratedTests/TestsResults*).
 Using the serial beam bending test as an example, key output files include:
 
 * *beamBending_01.data* : Contains the standard output for all test steps.
@@ -395,10 +452,10 @@ They use a Python 3.x syntax, and have a set of ATS-related methods loaded into 
 The root configuration file (*integratedTests/tests/allTests/main.ats*) finds and includes any test definitions in its subdirectories.
 The remaining configuration files typically add one or more tests with varying partitioning and input xml files to ATS.
 
-The *integratedTests/tests/allTests/sedov/sedov.ats* file shows how to add three groups of tests.
+The *inputFiles/solidMechanics/sedov.ats* file shows how to add three groups of tests.
 This file begins by defining a set of common parameters, which are used later:
 
-.. literalinclude:: ../../../../../integratedTests/tests/allTests/sedov/sedov.ats
+.. literalinclude:: ../../../../../inputFiles/solidMechanics/sedov.ats
   :language: python
   :start-after: # Integrated Test Docs Begin Parameters
   :end-before: # Integrated Test Docs End Parameters
@@ -406,216 +463,65 @@ This file begins by defining a set of common parameters, which are used later:
 
 It then enters over the requested partitioning schemes: 
 
-.. literalinclude:: ../../../../../integratedTests/tests/allTests/sedov/sedov.ats
+.. literalinclude:: ../../../../../inputFiles/solidMechanics/sedov.ats
   :language: python
   :start-after: # Integrated Test Docs Begin Test Loop
   :end-before: # Integrated Test Docs End Test Loop
 
 
-and registers a unique test case with the `TestCase` method, which accepts the following arguments:
+and registers a unique test case with the `TestDeck` method, which accepts the following arguments:
 
-* name : The name of the test.  The expected convention for this variable is 'testName_N' (N = number of ranks) or 'testName_X_Y_Z' (X, Y, and Z ranks per dimension)
-* desc : A brief description of the test
-* label : The test label (typically 'auto')
-* owner : The point(s) of contact for the test
-* independent : A flag indicating whether the test is dependent on another test (typically True)
-* steps: A tuple containing the test steps (minimum length = 1)
-
-
-Test steps are run sequentially, and are created with the `geos` method.
-If a given test step fails, then it will produce an error and any subsequent steps will be canceled.
-This method accepts the following keyword arguments:
-
-* deck : The name of the input xml file.
-* np : The number of parallel processes required to run the step.
-* ngpu : The number of GPU devices required to run the step.  Note: this argument is typically ignored for geos builds/machines that are not configured to use GPU's.  In addition, we typically expect that np=ngpu.
-* x_partitions : The number of partitions to use along the x-dimension
-* y_partitions : The number of partitions to use along the y-dimension
-* z_partitions : The number of partitions to use along the z-dimension
-* name : The header to use for output file names
-* restartcheck_params : (optional) If this value is defined, run a restart check with these parameters (specified as a dictionary).
-* curvecheck_params : (optional) If this value is defined, run a curve check with these parameters (specified as a dictionary).
-* restart_file : (optional) The name of a restart file to resume from.  To use this option, there must be a previous step that produces the selected restart file.
-* baseline_pattern : (optional) The regex for the baseline files to use (required if the name of the step differs from the baseline)
-* allow_rebaseline : A flag that indicates whether this step can be rebaselined.  This is typically only true for the first step in a test case.
+* name : The name of the test
+* description : A brief description of the test
+* partitions : A list of partition schemes to be tested
+* restart_step : The cycle number where GEOS should test its restart capability
+* check_step : The cycle number where GEOS should evaluate output files
+* restartcheck_params : Parameters to forward to the restart check (tolerance, etc.)
+* curvecheck_params: Parameters to forward to the curve check (tolerance, etc.)
 
 
-Note that a given *.ats* file can create any number of tests and link to any number of input xml files.
-For any given test step, we expect that at least one restart or curve check be defined.
+.. note::
+  An *.ats* file can create any number of tests and link to any number of input xml files.
+  For any given test step, we expect that at least one restart or curve check be defined.
 
 
 Creating a New Test Directory
 -------------------------------
 
-To add a new set of tests, create a new folder in the `integratedTests/tests/allTests*` directory.
+To add a new set of tests, create a new folder under the `GEOS/inputFiles` directory.
 This folder needs to include at least one *.ats* file to be included in the integrated tests.
 Using the sedov example, after creating *sedov.ats* the directory should look like
 
 .. code-block:: sh
 
-  - integratedTests/tests/allTests/sedov/
-    - sedov.ats
-    - sedov.xml (this file should be a symbolic link to a GEOS input file located somewhere within */path/to/GEOS/inputFiles*)
-
-At this point you should run the integrated tests (in the build directory run: `make ats_run`).
-Assuming that the new *geos* step for your test case was successful, the subsequent *restartcheck* step will fail because the baselines have not yet been created.
-At this point the directory should look like this:
-
-.. code-block:: sh
-
-  - integratedTests/tests/allTests/sedov/
-    - sedov/
-      - <geosx files>...
-      - <ats files>...
+  - inputFiles/solidMechanics
     - sedov.ats
     - sedov.xml
-    - <ats files>...
 
 
-You can then follow the steps in the next section to record the initial baseline files.
+These changes will be reflected in the new baselines after triggering the manual rebaseline step. 
 
 
 .. _rebaselining-tests:
 
 Rebaselining Tests
-----------------------------
+=====================
 
 Occasionally you may need to add or update baseline files in the repository (possibly due to feature changes in the code).
 This process is called rebaselining.
 We suggest the following workflow:
 
 
-Step 1
-^^^^^^^^^
+#. Open a pull request for your branch on github and select the **ci: run integrated tests** label
+#. Wait for the tests to finish
+#. Download and unpack the new baselines from the link provided at the bottom of the test logs
+#. Inspect the test results using the *test_results.html* file
+#. Verify that the changes in the baseline files are desired
+#. Update the baseline ID in the *GEOS/.integrated_tests.yaml* file
+#. Add a justification for the baseline changes to the *GEOS/BASELINE_NOTES.md* file
+#. Commit your changes and push the code
+#. Wait for the CI tests to re-run and verify that the integrated tests step passed
 
-In the GEOS repository, create or checkout a branch with your modifications:
-
-.. code-block:: sh
-
-  cd /path/to/GEOS
-  git checkout -b user/feature/newFeature
-
-
-Add your changes, confirm that they produce the expected results, and get approval for a pull request.
-If your branch needs to be rebaselined, make sure to indicate this in your pull request with the appropriate Label.
-
-
-Step 2
-^^^^^^^^^
-
-Go to the integratedTests submodule, checkout and pull develop, and create a branch with the same name as the one in the main GEOS repository:
-
-.. code-block:: sh
-
-  cd /path/to/GEOS/integratedTests
-  git checkout develop
-  git pull
-  git checkout -b user/feature/newFeature
-
-
-Step 3
-^^^^^^^^^
-
-Go back to your GEOS build directory and run the integrated tests:
-
-.. code-block:: sh
-
-  # Note: on shared machines, run these commands in an allocation
-  cd /path/to/GEOS/build-dir/
-  make ats_run
-
-
-Inspect the test results that fail and determine which need to be **legitimately** rebaselined.
-Arbitrarily changing baselines defeats the purpose of the integrated tests.
-In your PR discussion, please identify which tests will change and any unusual behavior.
-
-
-Step 4
-^^^^^^^^^
-
-We can then rebaseline the tests.
-In most cases, you will want to rebaseline all of the tests marked as **FAILED**.
-To do this you can run this command in the build directory:
-
-.. code-block:: sh
-
-  make ats_rebaseline_failed
-
-
-Otherwise, you can run the following command, and select whether tests should be rebaselined one at a time via a ``[y/n]`` prompt.
-
-.. code-block:: sh
-
-  make ats_rebaseline_failed
-
-
-Make sure to only answer ``y`` to the tests that you actually want to rebaseline, otherwise correct baselines for already passing tests will still be updated and bloat your pull request and repository size.
-
-
-Step 5
-^^^^^^^^^
-
-Confirm that the new baselines are working as expected.
-You can do this by cleaning the test directories and re-running the tests:
-
-.. code-block:: sh
-
-  # Note: on shared machines, run these commands in an allocation
-  cd /path/to/GEOS/build-dir/
-  make ats_clean
-  make ats_run
-
-
-At this point you should pass all the integratedTests.
-
-
-Step 6
-^^^^^^^^^
-
-Clean out unnecessary files and add new ones to the branch:
-
-.. code-block:: sh
-
-  cd /path/to/GEOS/build-dir/
-  make ats_clean
-  
-  # Check for new or modified files
-  cd /path/to/GEOS/integratedTests
-  git status
-
-  # Add new or modified files
-  git add file_a file_b ...
-  git commit -m "Updating baselines"
-  git push origin user/feature/newFeature
-
-
-Step 6
-^^^^^^^^^
-
-If you haven't already done so, create a merge request for your integratedTests branch.
-Once you have received approval for your PR and are ready to continue, you can click merge the branch by clicking the button on github.
-
-You should then checkout the develop branch of integratedTests and pull the new changes.
-
-.. code-block:: sh
-
-  cd /path/to/GEOS/integratedTests
-  git checkout develop
-  git pull
-
-
-You then need to update the integratedTests 'hash' in your associated GEOS branch.
-
-.. code-block:: sh
-
-  cd /path/to/GEOS/
-  git add integratedTests
-  git commit -m "Updating the integratedTests hash"
-  git push origin user/feature/newFeature
-
-
-At this point, you will need to wait for the CI/CD tests to run on github.
-After they succeed, you can merge your branch into develop using the button on github. 
 
 
 
@@ -628,4 +534,4 @@ We highly recommend running tests and rebaselining on an MPI-aware platform.
 
 **Filtering Checks**: A common reason for rebaselining is that you have changed the name of an XML node in the input files.
 While the baselines may be numerically identical, the restarts will fail because they contain different node names.
-In this situation, it can be useful to add a filter to the restart check script using the *geos_ats.sh* script (see the `-e` and `-m` options in :ref:`Override Test Behavior` )
+In this situation, it can be useful to add a filter to the restart check script using the *geos_ats.sh* script (see the `-e` and `-m` options in :ref:`overrideTestBehavior` )

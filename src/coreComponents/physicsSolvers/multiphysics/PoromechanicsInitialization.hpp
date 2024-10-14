@@ -2,10 +2,11 @@
  * ------------------------------------------------------------------------------------------------------------
  * SPDX-License-Identifier: LGPL-2.1-only
  *
- * Copyright (c) 2018-2020 Lawrence Livermore National Security LLC
- * Copyright (c) 2018-2020 The Board of Trustees of the Leland Stanford Junior University
- * Copyright (c) 2018-2020 TotalEnergies
- * Copyright (c) 2019-     GEOSX Contributors
+ * Copyright (c) 2016-2024 Lawrence Livermore National Security LLC
+ * Copyright (c) 2018-2024 Total, S.A
+ * Copyright (c) 2018-2024 The Board of Trustees of the Leland Stanford Junior University
+ * Copyright (c) 2023-2024 Chevron
+ * Copyright (c) 2019-     GEOS/GEOSX Contributors
  * All rights reserved
  *
  * See top level LICENSE, COPYRIGHT, CONTRIBUTORS, NOTICE, and ACKNOWLEDGEMENTS files for details.
@@ -24,6 +25,7 @@
 
 namespace geos
 {
+class SolidMechanicsStatistics;
 
 /**
  * @class PoromechanicsInitialization
@@ -53,7 +55,10 @@ public:
   ~PoromechanicsInitialization() override;
 
   /// Accessor for the catalog name
-  static string catalogName();
+  static string catalogName()
+  {
+    return POROMECHANICS_SOLVER::catalogName() + "Initialization";
+  }
 
   /**
    * @defgroup Tasks Interface Functions
@@ -80,21 +85,25 @@ private:
   {
     /// String for the poromechanics solver name
     constexpr static char const * poromechanicsSolverNameString() { return "poromechanicsSolverName"; }
-    /// String for the solver configuration
-    constexpr static char const * performStressInitializationString() { return "performStressInitialization"; }
+    /// String for the solid mechanics statistics name
+    constexpr static char const * solidMechanicsStatisticsNameString() { return "solidMechanicsStatisticsName"; }
   };
 
+  void postInputInitialization() override;
 
-  void postProcessInput() override;
+//  void registerDataOnMesh( Group & meshBodies ) override;
 
   /// Name of the poromechanics solver
   string m_poromechanicsSolverName;
 
-  /// Pointer to the multiphase poromechanics solver
+  /// Name of the solid mechanics statistics
+  string m_solidMechanicsStatisticsName;
+
+  /// Pointer to the poromechanics solver
   POROMECHANICS_SOLVER * m_poromechanicsSolver;
 
-  /// Flag to indicate that the solver is going to perform stress initialization
-  integer m_performStressInitialization;
+  /// Pointer to the solid mechanics statistics
+  SolidMechanicsStatistics * m_solidMechanicsStatistics;
 
   SolidMechanicsStateReset m_solidMechanicsStateResetTask;
 

@@ -11,17 +11,20 @@ PIP_CMD="pip --disable-pip-version-check"
 PACKAGE_BRANCH=main
 
 
-declare -a TARGET_PACKAGES=("geosx_mesh_tools_package"
-                            "geosx_mesh_doctor"
-                            "geosx_xml_tools_package"
-                            "hdf5_wrapper_package"
-                            "pygeosx_tools_package"
-                            "geos_ats_package")
+declare -a TARGET_PACKAGES=("geos-mesh-tools"
+                            "geos-mesh-doctor"
+                            "geos-xml-tools"
+                            "hdf5-wrapper"
+                            "pygeos-tools"
+                            "geos-ats")
 declare -a LINK_SCRIPTS=("preprocess_xml"
                          "format_xml"
                          "convert_abaqus"
                          "run_geos_ats"
                          "setup_ats_environment"
+                         "geos_ats_log_check"
+                         "geos_ats_restart_check"
+                         "geos_ats_curve_check"
                          "activate"
                          "python")
 
@@ -112,6 +115,10 @@ then
     exit 1
 fi
 
+
+# Updating pip
+echo "Updating pip"
+$PYTHON_TARGET -m pip install --upgrade pip
 
 # Install packages
 echo "Installing python packages..."

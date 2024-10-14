@@ -2,10 +2,11 @@
  * ------------------------------------------------------------------------------------------------------------
  * SPDX-License-Identifier: LGPL-2.1-only
  *
- * Copyright (c) 2018-2020 Lawrence Livermore National Security LLC
- * Copyright (c) 2018-2020 The Board of Trustees of the Leland Stanford Junior University
- * Copyright (c) 2018-2020 TotalEnergies
- * Copyright (c) 2019-     GEOSX Contributors
+ * Copyright (c) 2016-2024 Lawrence Livermore National Security LLC
+ * Copyright (c) 2018-2024 Total, S.A
+ * Copyright (c) 2018-2024 The Board of Trustees of the Leland Stanford Junior University
+ * Copyright (c) 2023-2024 Chevron
+ * Copyright (c) 2019-     GEOS/GEOSX Contributors
  * All rights reserved
  *
  * See top level LICENSE, COPYRIGHT, CONTRIBUTORS, NOTICE, and ACKNOWLEDGEMENTS files for details.
@@ -62,7 +63,19 @@ public:
 
   virtual string getCatalogName() const override { return catalogName(); }
 
-  virtual bool isThermal() const override;
+  static constexpr bool isThermalType()
+  {
+    return !( std::is_same_v< typename PHASE1::Enthalpy, PVTProps::NoOpPVTFunction > ||
+              std::is_same_v< typename PHASE2::Enthalpy, PVTProps::NoOpPVTFunction > );
+  }
+
+  static constexpr integer min_n_components = 2;
+  static constexpr integer max_n_components = 2;
+
+  virtual bool isThermal() const override
+  {
+    return isThermalType();
+  }
 
   /**
    * @brief Kernel wrapper class for CO2BrineFluid.
@@ -158,16 +171,20 @@ private:
     static constexpr char const * flashModelParaFileString() { return "flashModelParaFile"; }
     static constexpr char const * solubilityTablesString() { return "solubilityTableNames"; }
     static constexpr char const * phasePVTParaFilesString() { return "phasePVTParaFiles"; }
+    static constexpr char const * writeCSVFlagString() { return "writeCSV"; }
   };
 
 protected:
 
-  virtual void postProcessInput() override;
+  virtual void postInputInitialization() override;
 
   virtual void initializePreSubGroups() override;
 
 private:
 
+  /**
+   * @brief Create a PVT Model and output them
+   */
   void createPVTModels();
 
   /// Names of the files defining the viscosity and density models
@@ -185,6 +202,8 @@ private:
   /// Index of the gas phase
   integer m_p2Index;
 
+  /// Output csv file containing informations about PVT
+  integer m_writeCSV;
 
   /// Brine constitutive models
   std::unique_ptr< PHASE1 > m_phase1;
@@ -194,7 +213,6 @@ private:
 
   // Flash model
   std::unique_ptr< FLASH > m_flash;
-
 };
 
 // these aliases are useful in constitutive dispatch

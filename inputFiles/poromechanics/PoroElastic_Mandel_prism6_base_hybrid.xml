@@ -80,7 +80,7 @@
 
     <BiotPorosity
       name="shalePorosity"
-      grainBulkModulus="1.0e27"
+      defaultGrainBulkModulus="1.0e27"
       defaultReferencePorosity="0.375"/>
 
     <ConstantPermeability

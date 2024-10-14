@@ -2,10 +2,11 @@
  * ------------------------------------------------------------------------------------------------------------
  * SPDX-License-Identifier: LGPL-2.1-only
  *
- * Copyright (c) 2018-2020 Lawrence Livermore National Security LLC
- * Copyright (c) 2018-2020 The Board of Trustees of the Leland Stanford Junior University
- * Copyright (c) 2018-2020 TotalEnergies
- * Copyright (c) 2019-     GEOSX Contributors
+ * Copyright (c) 2016-2024 Lawrence Livermore National Security LLC
+ * Copyright (c) 2018-2024 Total, S.A
+ * Copyright (c) 2018-2024 The Board of Trustees of the Leland Stanford Junior University
+ * Copyright (c) 2023-2024 Chevron
+ * Copyright (c) 2019-     GEOS/GEOSX Contributors
  * All rights reserved
  *
  * See top level LICENSE, COPYRIGHT, CONTRIBUTORS, NOTICE, and ACKNOWLEDGEMENTS files for details.
@@ -13,7 +14,7 @@
  */
 
 #include "common/GeosxConfig.hpp"
-#include "common/Logger.hpp"
+#include "common/logger/Logger.hpp"
 #include "mainInterface/GeosxVersion.hpp"
 
 namespace geos
@@ -21,10 +22,10 @@ namespace geos
 
 std::string getVersion()
 {
-#if defined(GEOSX_GIT_BRANCH) && defined(GEOSX_GIT_HASH)
-  return GEOSX_VERSION_FULL " (" GEOSX_GIT_BRANCH ", sha1: " GEOSX_GIT_HASH ")";
+#if defined(GEOS_GIT_BRANCH) && defined(GEOS_GIT_HASH)
+  return GEOS_VERSION_FULL " (" GEOS_GIT_BRANCH ", sha1: " GEOS_GIT_HASH ")";
 #else
-  return GEOSX_VERSION_FULL;
+  return GEOS_VERSION_FULL;
 #endif
 }
 
@@ -80,7 +81,7 @@ void outputVersionInfo()
   GEOS_LOG_RANK_0( "  - openmp version: " << _OPENMP );
 #endif
 
-#if defined(GEOSX_USE_MPI)
+#if defined(GEOS_USE_MPI)
   {
     char version[MPI_MAX_LIBRARY_VERSION_STRING];
     int len;
@@ -122,11 +123,11 @@ void outputVersionInfo()
 #endif
 
 #if defined(metis_VERSION)
-  GEOS_LOG_RANK_0( "  - METIS version: " << STRINGIZE( METIS_VERSION ) );
+  GEOS_LOG_RANK_0( "  - METIS version: " << STRINGIZE( metis_VERSION ) );
 #endif
 
 #if defined(parmetis_VERSION)
-  GEOS_LOG_RANK_0( "  - PARAMETIS version: " << STRINGIZE( PARAMETIS_VERSION ) );
+  GEOS_LOG_RANK_0( "  - PARAMETIS version: " << STRINGIZE( parmetis_VERSION ) );
 #endif
 
 #if defined(scotch_VERSION)
@@ -163,7 +164,7 @@ void outputVersionInfo()
 
 #if \
   defined(GEOS_USE_DEVICE) && \
-  defined(GEOSX_USE_HYPRE) && \
+  defined(GEOS_USE_HYPRE) && \
   ( GEOS_USE_HYPRE_DEVICE == GEOS_USE_HYPRE_CPU )
   GEOS_LOG_RANK_0( "" );
   GEOS_LOG_RANK_0( "**************************************************" );

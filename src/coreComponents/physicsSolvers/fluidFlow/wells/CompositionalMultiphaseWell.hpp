@@ -2,10 +2,11 @@
  * ------------------------------------------------------------------------------------------------------------
  * SPDX-License-Identifier: LGPL-2.1-only
  *
- * Copyright (c) 2018-2020 Lawrence Livermore National Security LLC
- * Copyright (c) 2018-2020 The Board of Trustees of the Leland Stanford Junior University
- * Copyright (c) 2018-2020 TotalEnergies
- * Copyright (c) 2019-     GEOSX Contributors
+ * Copyright (c) 2016-2024 Lawrence Livermore National Security LLC
+ * Copyright (c) 2018-2024 Total, S.A
+ * Copyright (c) 2018-2024 The Board of Trustees of the Leland Stanford Junior University
+ * Copyright (c) 2023-2024 Chevron
+ * Copyright (c) 2019-     GEOS/GEOSX Contributors
  * All rights reserved
  *
  * See top level LICENSE, COPYRIGHT, CONTRIBUTORS, NOTICE, and ACKNOWLEDGEMENTS files for details.
@@ -19,10 +20,7 @@
 #ifndef GEOS_PHYSICSSOLVERS_FLUIDFLOW_WELLS_COMPOSITIONALMULTIPHASEWELL_HPP_
 #define GEOS_PHYSICSSOLVERS_FLUIDFLOW_WELLS_COMPOSITIONALMULTIPHASEWELL_HPP_
 
-#include "constitutive/fluid/multifluid/Layouts.hpp"
-#include "constitutive/relativePermeability/layouts.hpp"
 #include "physicsSolvers/fluidFlow/wells/WellSolverBase.hpp"
-#include "physicsSolvers/fluidFlow/CompositionalMultiphaseBaseFields.hpp"
 #include "physicsSolvers/fluidFlow/CompositionalMultiphaseBase.hpp"
 
 namespace geos
@@ -289,10 +287,13 @@ public:
 
     static constexpr char const * maxAbsolutePresChangeString() { return "maxAbsolutePressureChange"; }
 
+    static constexpr char const * maxRelativeCompDensChangeString() { return "maxRelativeCompDensChange"; }
+
     static constexpr char const * allowLocalCompDensChoppingString() { return CompositionalMultiphaseBase::viewKeyStruct::allowLocalCompDensChoppingString(); }
 
     // control data (not registered on the mesh)
 
+    static constexpr char const * massDensityString() { return "massDensity";}
     static constexpr char const * currentBHPString() { return "currentBHP"; }
 
     static constexpr char const * dCurrentBHP_dPresString() { return "dCurrentBHP_dPres"; }
@@ -319,7 +320,7 @@ public:
 
 protected:
 
-  virtual void postProcessInput() override;
+  virtual void postInputInitialization() override;
 
   virtual void initializePostSubGroups() override;
 
@@ -354,9 +355,9 @@ protected:
    * @param dt the time step dt
    * @param subRegion the well subRegion
    */
-  void validateWellConstraints( real64 const & time_n,
-                                real64 const & dt,
-                                WellElementSubRegion const & subRegion );
+  virtual void validateWellConstraints( real64 const & time_n,
+                                        real64 const & dt,
+                                        WellElementSubRegion const & subRegion ) override;
 
   void printRates( real64 const & time_n,
                    real64 const & dt,
@@ -395,6 +396,9 @@ private:
 
   /// maximum (absolute) change in pressure between two Newton iterations
   real64 m_maxAbsolutePresChange;
+
+  /// maximum (relative) change in component density between two Newton iterations
+  real64 m_maxRelativeCompDensChange;
 
   /// minimum value of the scaling factor obtained by enforcing maxCompFracChange
   real64 m_minScalingFactor;

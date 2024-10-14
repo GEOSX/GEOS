@@ -2,10 +2,11 @@
  * ------------------------------------------------------------------------------------------------------------
  * SPDX-License-Identifier: LGPL-2.1-only
  *
- * Copyright (c) 2018-2020 Lawrence Livermore National Security LLC
- * Copyright (c) 2018-2020 The Board of Trustees of the Leland Stanford Junior University
- * Copyright (c) 2018-2020 TotalEnergies
- * Copyright (c) 2019-     GEOSX Contributors
+ * Copyright (c) 2016-2024 Lawrence Livermore National Security LLC
+ * Copyright (c) 2018-2024 Total, S.A
+ * Copyright (c) 2018-2024 The Board of Trustees of the Leland Stanford Junior University
+ * Copyright (c) 2023-2024 Chevron
+ * Copyright (c) 2019-     GEOS/GEOSX Contributors
  * All rights reserved
  *
  * See top level LICENSE, COPYRIGHT, CONTRIBUTORS, NOTICE, and ACKNOWLEDGEMENTS files for details.
@@ -289,15 +290,27 @@ private:
 
 protected:
 
-  virtual void postProcessInput() override;
+  virtual void postInputInitialization() override;
 
   virtual void initializePostInitialConditionsPreSubGroups() override;
+
+  virtual void initializePostSubGroups() override;
 
   /**
    * @brief Initialize all the primary and secondary variables in all the wells
    * @param domain the domain containing the well manager to access individual wells
    */
   virtual void initializeWells( DomainPartition & domain ) = 0;
+
+  /**
+   * @brief Make sure that the well constraints are compatible
+   * @param time_n the time at the beginning of the time step
+   * @param dt the time step dt
+   * @param subRegion the well subRegion
+   */
+  virtual void validateWellConstraints( real64 const & time_n,
+                                        real64 const & dt,
+                                        WellElementSubRegion const & subRegion ) = 0;
 
   virtual void printRates( real64 const & time_n,
                            real64 const & dt,

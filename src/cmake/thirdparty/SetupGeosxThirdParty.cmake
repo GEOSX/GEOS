@@ -1,6 +1,15 @@
 ####################################
+#
 # 3rd Party Dependencies
+#
+# Setup all GEOS TPL
+#
 ####################################
+
+
+################################
+# Helper macros & functions
+################################
 
 macro(find_and_import)
     set(singleValueArgs NAME HEADER)
@@ -101,7 +110,21 @@ macro(extract_version_from_header)
 
 endmacro( extract_version_from_header)
 
+
+macro(mandatory_tpl_doesnt_exist
+      CURRENT_TPL_NAME
+      CURRENT_TPL_DIR_VAR)
+
+    message(FATAL_ERROR
+            "GEOSX requires ${CURRENT_TPL_NAME}, either :\n"
+            "  - Verify that you provided a valid TPL installation directory (GEOS_TPL_DIR = \"${GEOS_TPL_DIR}\"),\n"
+            "  - Or set ${CURRENT_TPL_DIR_VAR} to the ${CURRENT_TPL_NAME} installation directory (${CURRENT_TPL_DIR_VAR} = \"${${CURRENT_TPL_DIR_VAR}}\").\n")
+
+endmacro(mandatory_tpl_doesnt_exist)
+
+
 set(thirdPartyLibs "")
+
 
 ################################
 # BLAS/LAPACK
@@ -184,7 +207,7 @@ if(DEFINED CONDUIT_DIR)
 
     set(thirdPartyLibs ${thirdPartyLibs} conduit::conduit)
 else()
-    message(FATAL_ERROR "GEOSX requires conduit, set CONDUIT_DIR to the conduit installation directory.")
+    mandatory_tpl_doesnt_exist("Conduit" CONDUIT_DIR)
 endif()
 
 ################################
@@ -193,29 +216,18 @@ endif()
 if(DEFINED HDF5_DIR)
     message(STATUS "HDF5_DIR = ${HDF5_DIR}")
 
-    set(HDF5_ROOT ${HDF5_DIR})
-    set(HDF5_USE_STATIC_LIBRARIES FALSE)
-    set(HDF5_NO_FIND_PACKAGE_CONFIG_FILE ON)
-    include(FindHDF5)
+    find_package(HDF5 REQUIRED
+                 PATHS ${HDF5_DIR}
+                 NO_DEFAULT_PATH)
 
-    # On some platforms (Summit) HDF5 lists /usr/include in it's list of include directories.
-    # When this happens you can get really opaque include errors.
-    list(REMOVE_ITEM HDF5_INCLUDE_DIRS /usr/include)
-
-    blt_import_library(NAME hdf5
-                       INCLUDES ${HDF5_INCLUDE_DIRS}
-                       LIBRARIES ${HDF5_LIBRARIES}
-                       TREAT_INCLUDES_AS_SYSTEM ON)
-
-    file(READ "${HDF5_DIR}/include/H5public.h" header_file )
-    string(REGEX MATCH "version: *([0-9]+.[0-9]+.[0-9]+)" _ ${header_file})
-    set( HDF5_VERSION "${CMAKE_MATCH_1}" CACHE STRING "" FORCE )
     message( " ----> HDF5 version ${HDF5_VERSION}")
 
+    blt_convert_to_system_includes(TARGET HDF5::HDF5)
+
     set(ENABLE_HDF5 ON CACHE BOOL "")
-    set(thirdPartyLibs ${thirdPartyLibs} hdf5)
+    set(thirdPartyLibs ${thirdPartyLibs} HDF5::HDF5 )
 else()
-    message(FATAL_ERROR "GEOSX requires hdf5, set HDF5_DIR to the hdf5 installation directory.")
+    mandatory_tpl_doesnt_exist("hdf5" HDF5_DIR)
 endif()
 
 ################################
@@ -229,7 +241,7 @@ if(DEFINED SILO_DIR AND ENABLE_SILO)
                       LIBRARY_DIRECTORIES ${SILO_DIR}/lib
                       HEADER silo.h
                       LIBRARIES siloh5
-                      DEPENDS hdf5)
+                      DEPENDS HDF5::HDF5 )
 
 
     set(ENABLE_SILO ON CACHE BOOL "")
@@ -259,7 +271,15 @@ if(DEFINED PUGIXML_DIR)
       set(thirdPartyLibs ${thirdPartyLibs} pugixml)
     endif()
 else()
-    message(FATAL_ERROR "GEOSX requires pugixml, set PUGIXML_DIR to the pugixml installation directory.")
+    mandatory_tpl_doesnt_exist("pugixml" PUGIXML_DIR)
+endif()
+
+################################
+# CUDA
+################################
+if ( ENABLE_CUDA)
+  find_package(CUDAToolkit REQUIRED)
+  message( " ----> $CUDAToolkit_VERSION = ${CUDAToolkit_VERSION}")
 endif()
 
 ################################
@@ -291,7 +311,7 @@ if(DEFINED RAJA_DIR)
     set(ENABLE_RAJA ON CACHE BOOL "")
     set(thirdPartyLibs ${thirdPartyLibs} RAJA )
 else()
-    message(FATAL_ERROR "GEOSX requires RAJA, set RAJA_DIR to the RAJA installation directory.")
+    mandatory_tpl_doesnt_exist("RAJA" RAJA_DIR)
 endif()
 
 ################################
@@ -305,6 +325,32 @@ if(DEFINED CAMP_DIR)
         get_target_property(CAMP_INCLUDE_DIRS camp INTERFACE_INCLUDE_DIRECTORIES)
         set_target_properties(camp PROPERTIES INTERFACE_SYSTEM_INCLUDE_DIRECTORIES "${CAMP_INCLUDE_DIRS}")
     endif()
+endif()
+
+################################
+# FMT
+################################
+if(DEFINED FMT_DIR)
+    message(STATUS "FMT_DIR = ${FMT_DIR}")
+
+    find_package(FMT REQUIRED
+                 PATHS ${FMT_DIR}
+                 NO_DEFAULT_PATH)
+
+    message( " ----> fmt_VERSION = ${fmt_VERSION}")
+
+    get_target_property(includeDirs fmt::fmt-header-only INTERFACE_INCLUDE_DIRECTORIES)
+
+    set_property(TARGET fmt::fmt-header-only
+                 APPEND PROPERTY INTERFACE_SYSTEM_INCLUDE_DIRECTORIES
+                 ${includeDirs})
+
+
+    set(ENABLE_FMT ON CACHE BOOL "")
+
+    set(thirdPartyLibs ${thirdPartyLibs} fmt::fmt-header-only )
+else()
+    mandatory_tpl_doesnt_exist("{fmt}" FMT_DIR)
 endif()
 
 ################################
@@ -322,7 +368,7 @@ if(DEFINED UMPIRE_DIR)
     set(ENABLE_UMPIRE ON CACHE BOOL "")
     set(thirdPartyLibs ${thirdPartyLibs} umpire)
 else()
-    message(FATAL_ERROR "GEOSX requires Umpire, set UMPIRE_DIR to the Umpire installation directory.")
+    mandatory_tpl_doesnt_exist("Umpire" UMPIRE_DIR)
 endif()
 
 
@@ -345,7 +391,7 @@ if(DEFINED CHAI_DIR)
     set(ENABLE_CHAI ON CACHE BOOL "")
     set(thirdPartyLibs ${thirdPartyLibs} chai)
 else()
-    message(FATAL_ERROR "GEOSX requires CHAI, set CHAI_DIR to the CHAI installation directory.")
+    mandatory_tpl_doesnt_exist("CHAI" CHAI_DIR)
 endif()
 
 ################################
@@ -608,41 +654,45 @@ endif()
 if(DEFINED HYPRE_DIR AND ENABLE_HYPRE)
     message(STATUS "HYPRE_DIR = ${HYPRE_DIR}")
 
-    set( HYPRE_DEPENDS blas lapack umpire)
+    set( HYPRE_DEPENDS blas lapack umpire )
     if( ENABLE_SUPERLU_DIST )
-        set( HYPRE_DEPENDS ${HYPRE_DEPENDS} superlu_dist )
+        list( APPEND HYPRE_DEPENDS superlu_dist )
     endif()
     if( ${ENABLE_HYPRE_DEVICE} STREQUAL "CUDA" )
-        set( EXTRA_LIBS ${CUDA_cusparse_LIBRARY} ${CUDA_cublas_LIBRARY} ${CUDA_curand_LIBRARY} )
+        list( APPEND HYPRE_DEPENDS CUDA::cusparse CUDA::cublas CUDA::curand CUDA::cusolver )
+
+        # Add libnvJitLink when using CUDA >= 12.2.2. Note: requires cmake >= 3.26
+        if( CUDAToolkit_VERSION VERSION_GREATER_EQUAL "12.2.2" )
+           list( APPEND HYPRE_DEPENDS CUDA::nvJitLink )
+        endif()
     elseif( ${ENABLE_HYPRE_DEVICE} STREQUAL "HIP" )
         find_package( rocblas REQUIRED )
         find_package( rocsolver REQUIRED )
         find_package( rocsparse REQUIRED )
         find_package( rocrand REQUIRED )
-        set( HYPRE_DEPENDS ${HYPRE_DEPENDS} roc::rocblas roc::rocsparse roc::rocsolver roc::rocrand )
+        append( APPEND HYPRE_DEPENDS roc::rocblas roc::rocsparse roc::rocsolver roc::rocrand )
     endif( )
 
-    find_and_import(NAME hypre
-                      INCLUDE_DIRECTORIES ${HYPRE_DIR}/include
-                      LIBRARY_DIRECTORIES ${HYPRE_DIR}/lib
-                      HEADER HYPRE.h
-                      LIBRARIES HYPRE
-                      EXTRA_LIBRARIES ${EXTRA_LIBS}
-                      DEPENDS ${HYPRE_DEPENDS})
+    find_and_import( NAME hypre
+                     INCLUDE_DIRECTORIES ${HYPRE_DIR}/include
+                     LIBRARY_DIRECTORIES ${HYPRE_DIR}/lib
+                     HEADER HYPRE.h
+                     LIBRARIES HYPRE
+                     DEPENDS ${HYPRE_DEPENDS} )
 
     extract_version_from_header( NAME hypre
                                  HEADER "${HYPRE_DIR}/include/HYPRE_config.h"
                                  VERSION_STRING "HYPRE_RELEASE_VERSION" )
 
     # Extract some additional information about development version of hypre
-    file(READ ${HYPRE_DIR}/include/HYPRE_config.h header_file)
-    if("${header_file}" MATCHES "HYPRE_DEVELOP_STRING *\"([^\"]*)\"")
-        set(hypre_dev_string "${CMAKE_MATCH_1}")
-        if("${header_file}" MATCHES "HYPRE_BRANCH_NAME *\"([^\"]*)\"")
-            set(hypre_dev_branch "${CMAKE_MATCH_1}")
+    file( READ ${HYPRE_DIR}/include/HYPRE_config.h header_file )
+    if( "${header_file}" MATCHES "HYPRE_DEVELOP_STRING *\"([^\"]*)\"" )
+        set( hypre_dev_string "${CMAKE_MATCH_1}" )
+        if( "${header_file}" MATCHES "HYPRE_BRANCH_NAME *\"([^\"]*)\"" )
+            set( hypre_dev_branch "${CMAKE_MATCH_1}" )
         endif()
-        set(hypre_VERSION "${hypre_dev_string} (${hypre_dev_branch})" CACHE STRING "" FORCE)
-        message(" ----> hypre_VERSION = ${hypre_VERSION}")
+        set( hypre_VERSION "${hypre_dev_string} (${hypre_dev_branch})" CACHE STRING "" FORCE )
+        message( " ----> hypre_VERSION = ${hypre_VERSION}" )
     endif()
 
     # Prepend Hypre to link flags, fix for Umpire appearing before Hypre on the link line
@@ -652,15 +702,15 @@ if(DEFINED HYPRE_DIR AND ENABLE_HYPRE)
 
     # if( ENABLE_CUDA AND ( NOT ${ENABLE_HYPRE_DEVICE} STREQUAL "CUDA" ) )
     #   set(ENABLE_HYPRE OFF CACHE BOOL "" FORCE)
-    #   if( GEOSX_LA_INTERFACE STREQUAL "Hypre")
+    #   if( GEOS_LA_INTERFACE STREQUAL "Hypre")
     #     message( FATAL_ERROR "Hypre LAI selected, but ENABLE_HYPRE_DEVICE not 'CUDA' while ENABLE_CUDA is ON.")
     #   endif()
     # else()
     #   set(ENABLE_HYPRE ON CACHE BOOL "")
     # endif()
 
-    set(ENABLE_HYPRE ON CACHE BOOL "")
-    set(thirdPartyLibs ${thirdPartyLibs} hypre ${HYPRE_DEPENDS} )
+    set( ENABLE_HYPRE ON CACHE BOOL "" )
+    set( thirdPartyLibs ${thirdPartyLibs} hypre ${HYPRE_DEPENDS} )
 else()
     if(ENABLE_HYPRE)
         message(WARNING "ENABLE_HYPRE is ON but HYPRE_DIR isn't defined.")
@@ -676,7 +726,7 @@ endif()
 if(DEFINED TRILINOS_DIR AND ENABLE_TRILINOS)
     message(STATUS "TRILINOS_DIR = ${TRILINOS_DIR}")
 
-    include(${TRILINOS_DIR}/lib/cmake/Trilinos/TrilinosConfig.cmake)
+    include(${TRILINOS_DIR}/lib64/cmake/Trilinos/TrilinosConfig.cmake)
 
     list(REMOVE_ITEM Trilinos_LIBRARIES "gtest")
     list(REMOVE_DUPLICATES Trilinos_LIBRARIES)
@@ -822,31 +872,6 @@ else()
 endif()
 
 ################################
-# FMT
-################################
-if(DEFINED FMT_DIR)
-    message(STATUS "FMT_DIR = ${FMT_DIR}")
-
-    find_package(fmt REQUIRED
-                 PATHS ${FMT_DIR}
-                 NO_DEFAULT_PATH)
-
-    message( " ----> fmt_VERSION = ${fmt_VERSION}")
-
-    get_target_property(includeDirs fmt::fmt INTERFACE_INCLUDE_DIRECTORIES)
-
-    set_property(TARGET fmt::fmt
-                 APPEND PROPERTY INTERFACE_SYSTEM_INCLUDE_DIRECTORIES
-                 ${includeDirs})
-
-    set(ENABLE_FMT ON CACHE BOOL "")
-
-    set(thirdPartyLibs ${thirdPartyLibs} fmt::fmt )
-else()
-    message(FATAL_ERROR "GEOSX requires {fmt}, set FMT_DIR to the {fmt} installation directory.")
-endif()
-
-################################
 # uncrustify
 ################################
 if(UNCRUSTIFY_FOUND)
@@ -884,7 +909,7 @@ if( ${CMAKE_VERSION} VERSION_LESS "3.19" )
     set( PYTHON_AND_VERSION Python3 )
     set( PYTHON_OPTIONAL_COMPONENTS)
 else()
-    set( PYTHON_AND_VERSION Python3 3.7.0...3.11.2 )
+    set( PYTHON_AND_VERSION Python3 3.6.0...3.12.2 )
     set( PYTHON_OPTIONAL_COMPONENTS OPTIONAL_COMPONENTS Development NumPy)
 endif()
 if(ENABLE_PYGEOSX)
@@ -914,30 +939,12 @@ endif()
 ################################
 # LAI
 ################################
-string(TOUPPER "${GEOSX_LA_INTERFACE}" upper_LAI)
+string(TOUPPER "${GEOS_LA_INTERFACE}" upper_LAI)
 if(NOT ENABLE_${upper_LAI})
-  message(FATAL_ERROR "${GEOSX_LA_INTERFACE} LA interface is selected, but ENABLE_${upper_LAI} is OFF")
+  message(FATAL_ERROR "${GEOS_LA_INTERFACE} LA interface is selected, but ENABLE_${upper_LAI} is OFF")
 endif()
-option(GEOSX_LA_INTERFACE_${upper_LAI} "${upper_LAI} LA interface is selected" ON)
+option(GEOS_LA_INTERFACE_${upper_LAI} "${upper_LAI} LA interface is selected" ON)
 
-################################
-# Fesapi
-################################
-# if(DEFINED FESAPI_DIR)
-#     message(STATUS "FESAPI_DIR = ${FESAPI_DIR}")
-
-#     find_and_import(NAME FesapiCpp
-#                  INCLUDE_DIRECTORIES ${FESAPI_DIR}/include
-#                  LIBRARY_DIRECTORIES ${FESAPI_DIR}/lib
-#                  HEADER fesapi/nsDefinitions.h
-#                  LIBRARIES FesapiCpp
-#                  DEPENDS hdf5)
-
-#     set(FESAPI_DIR ON CACHE BOOL "")
-#     set(thirdPartyLibs ${thirdPartyLibs} FesapiCpp)
-# else()
-    message(STATUS "Not using Fesapi")
-# endif()
 
 message(STATUS "thirdPartyLibs = ${thirdPartyLibs}")
 
@@ -945,12 +952,7 @@ message(STATUS "thirdPartyLibs = ${thirdPartyLibs}")
 # NvToolExt
 ###############################
 if ( ENABLE_CUDA AND ENABLE_CUDA_NVTOOLSEXT )
-  find_package(CUDAToolkit REQUIRED)
-
-  message( " ----> $CUDAToolkit_VERSION = ${CUDAToolkit_VERSION}")
-
   set(thirdPartyLibs ${thirdPartyLibs} CUDA::nvToolsExt)
 endif()
 
 message(STATUS "thirdPartyLibs = ${thirdPartyLibs}")
-

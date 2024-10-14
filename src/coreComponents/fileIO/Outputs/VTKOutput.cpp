@@ -2,10 +2,11 @@
  * ------------------------------------------------------------------------------------------------------------
  * SPDX-License-Identifier: LGPL-2.1-only
  *
- * Copyright (c) 2018-2020 Lawrence Livermore National Security LLC
- * Copyright (c) 2018-2020 The Board of Trustees of the Leland Stanford Junior University
- * Copyright (c) 2018-2020 TotalEnergies
- * Copyright (c) 2019-     GEOSX Contributors
+ * Copyright (c) 2016-2024 Lawrence Livermore National Security LLC
+ * Copyright (c) 2018-2024 Total, S.A
+ * Copyright (c) 2018-2024 The Board of Trustees of the Leland Stanford Junior University
+ * Copyright (c) 2023-2024 Chevron
+ * Copyright (c) 2019-     GEOS/GEOSX Contributors
  * All rights reserved
  *
  * See top level LICENSE, COPYRIGHT, CONTRIBUTORS, NOTICE, and ACKNOWLEDGEMENTS files for details.
@@ -19,7 +20,7 @@
 #include "VTKOutput.hpp"
 
 
-#if defined(GEOSX_USE_PYGEOSX)
+#if defined(GEOS_USE_PYGEOSX)
 #include "fileIO/python/PyVTKOutputType.hpp"
 #endif
 
@@ -60,6 +61,11 @@ VTKOutput::VTKOutput( string const & name,
     setInputFlag( InputFlags::OPTIONAL ).
     setDescription( "Should the vtk files contain the ghost cells or not." );
 
+  registerWrapper( viewKeysStruct::writeFaceElementsAs3D, &m_writeFaceElementsAs3D ).
+    setApplyDefaultValue( 0 ).
+    setInputFlag( InputFlags::OPTIONAL ).
+    setDescription( "Should the face elements be written as 3d volumes or not." );
+
   registerWrapper( viewKeysStruct::onlyPlotSpecifiedFieldNames, &m_onlyPlotSpecifiedFieldNames ).
     setApplyDefaultValue( 0 ).
     setInputFlag( InputFlags::OPTIONAL ).
@@ -89,7 +95,7 @@ VTKOutput::VTKOutput( string const & name,
 VTKOutput::~VTKOutput()
 {}
 
-void VTKOutput::postProcessInput()
+void VTKOutput::postInputInitialization()
 {
   m_writer.setOutputLocation( getOutputDirectory(), m_plotFileRoot );
   m_writer.setFieldNames( m_fieldNames.toViewConst() );
@@ -116,6 +122,9 @@ void VTKOutput::postProcessInput()
                         "{} `{}`: found {} fields to plot in `{}`, in addition to all fields with `plotLevel` smaller or equal to {}.",
                         catalogName(), getDataContext(),
                         std::to_string( m_fieldNames.size() ), fieldNamesString, m_plotLevel ) );
+
+  GEOS_ERROR_IF( m_writeFaceElementsAs3D, GEOS_FMT( "{} `{}`: 3D vtk plot of faceElements is not yet supported.",
+                                                    catalogName(), getDataContext() ) );
 }
 
 
@@ -140,6 +149,7 @@ bool VTKOutput::execute( real64 const time_n,
   GEOS_LOG_LEVEL_RANK_0( 1, GEOS_FMT( "{}: writing {} at time {} s (cycle number {})", getName(), m_fieldNames, time_n + dt, cycleNumber ));
 
   m_writer.setWriteGhostCells( m_writeGhostCells );
+  m_writer.setWriteFaceElementsAs3D ( m_writeFaceElementsAs3D );
   m_writer.setOutputMode( m_writeBinaryData );
   m_writer.setOutputRegionType( m_outputRegionType );
   m_writer.setPlotLevel( m_plotLevel );
@@ -148,7 +158,7 @@ bool VTKOutput::execute( real64 const time_n,
   return false;
 }
 
-#if defined(GEOSX_USE_PYGEOSX)
+#if defined(GEOS_USE_PYGEOSX)
 PyTypeObject * VTKOutput::getPythonType() const
 {
   return python::getPyVTKOutputType();

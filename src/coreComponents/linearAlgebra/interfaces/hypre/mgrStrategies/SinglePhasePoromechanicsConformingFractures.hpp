@@ -2,10 +2,11 @@
  * ------------------------------------------------------------------------------------------------------------
  * SPDX-License-Identifier: LGPL-2.1-only
  *
- * Copyright (c) 2018-2020 Lawrence Livermore National Security LLC
- * Copyright (c) 2018-2020 The Board of Trustees of the Leland Stanford Junior University
- * Copyright (c) 2018-2020 TotalEnergies
- * Copyright (c) 2019-     GEOSX Contributors
+ * Copyright (c) 2016-2024 Lawrence Livermore National Security LLC
+ * Copyright (c) 2018-2024 Total, S.A
+ * Copyright (c) 2018-2024 The Board of Trustees of the Leland Stanford Junior University
+ * Copyright (c) 2023-2024 Chevron
+ * Copyright (c) 2019-     GEOS/GEOSX Contributors
  * All rights reserved
  *
  * See top level LICENSE, COPYRIGHT, CONTRIBUTORS, NOTICE, and ACKNOWLEDGEMENTS files for details.
@@ -20,8 +21,6 @@
 #define GEOS_LINEARALGEBRA_INTERFACES_HYPREMGRSINGLEPHASEPOROMECHANICSCONFORMINGFRACTURES_HPP_
 
 #include "linearAlgebra/interfaces/hypre/HypreMGR.hpp"
-
-#define BRANCH_MGR_FSOLVER
 
 namespace geos
 {
@@ -38,15 +37,15 @@ namespace mgr
  * dofLabel: 0 = displacement, x-component
  * dofLabel: 1 = displacement, y-component
  * dofLabel: 2 = displacement, z-component
- * dofLabel: 3 = pressure (cell elem + fracture elems)
- * dofLabel: 4 = face-centered lagrange multiplier (tn)
- * dofLabel: 5 = face-centered lagrange multiplier (tt1)
- * dofLabel: 6 = face-centered lagrange multiplier (tt2)
+ * dofLabel: 3 = face-centered lagrange multiplier (tn)
+ * dofLabel: 4 = face-centered lagrange multiplier (tt1)
+ * dofLabel: 5 = face-centered lagrange multiplier (tt2)
+ * dofLabel: 6 = pressure (cell elem + fracture elems)
 
  *
  * Ingredients:
- * 1. Level 1: F-points displacement (4,5,6), C-points pressure (0,1,2,3)
- * 2. Level 2: F-points displacement (0,1,2), C-points pressure (3)
+ * 1. Level 1: F-points displacement (3,4,5), C-points pressure (0,1,2,6)
+ * 2. Level 2: F-points displacement (0,1,2), C-points pressure (6)
  * 2. F-points smoother: BoomerAMG, single V-cycle
  * 3. C-points coarse-grid/Schur complement solver: BoomerAMG
  * 4. Global smoother: none
@@ -66,9 +65,9 @@ public:
     m_labels[0].push_back( 0 );
     m_labels[0].push_back( 1 );
     m_labels[0].push_back( 2 );
-    m_labels[0].push_back( 3 );
+    m_labels[0].push_back( 6 );
     // we keep p
-    m_labels[1].push_back( 3 );
+    m_labels[1].push_back( 6 );
 
     setupLabels();
 
@@ -103,7 +102,6 @@ public:
               HypreMGRData & mgrData )
   {
     setReduction( precond, mgrData );
-    GEOS_LAI_CHECK_ERROR( HYPRE_MGRSetPMaxElmts( precond.ptr, 0 ));
 
     // Configure the BoomerAMG solver used as F-relaxation for the second level
     GEOS_LAI_CHECK_ERROR( HYPRE_BoomerAMGCreate( &mgrData.mechSolver.ptr ) );
@@ -121,7 +119,7 @@ public:
 #else
     GEOS_LAI_CHECK_ERROR( HYPRE_BoomerAMGSetRelaxOrder( mgrData.mechSolver.ptr, 1 ) );
 #endif
-    GEOS_LAI_CHECK_ERROR( HYPRE_MGRSetFSolverAtLevel( 1, precond.ptr, mgrData.mechSolver.ptr ) );
+    GEOS_LAI_CHECK_ERROR( HYPRE_MGRSetFSolverAtLevel( precond.ptr, mgrData.mechSolver.ptr, 1 ) );
 
     // Configure the BoomerAMG solver used as mgr coarse solver for the pressure reduced system
     setPressureAMG( mgrData.coarseSolver );

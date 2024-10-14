@@ -1,0 +1,25 @@
+<Problem>
+  <Included>
+  <File
+      name="./SeismicityRate_poromechanics_base.xml"/>
+  </Included>
+  <Mesh>
+    <InternalMesh
+      name="mesh1"
+      elementTypes="{ C3D8 }"
+      xCoords="{ 0, 1110 }"
+      yCoords="{ 0, 1110 }"
+      zCoords="{ -1110, 0 }"
+      nx="{ 11 }"
+      ny="{ 11 }"
+      nz="{ 11 }"
+      cellBlockNames="{ cb1 }"/>
+  </Mesh>
+
+  <Geometry>
+    <Box
+      name="source"
+      xMin="{ 490, 490, -1110.01 }"
+      xMax="{ 610, 610, -500.01 }"/>
+  </Geometry>
+</Problem>

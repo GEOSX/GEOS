@@ -75,7 +75,7 @@
 
     <BiotPorosity
       name="rockPorosity"
-      grainBulkModulus="48208109259"
+      defaultGrainBulkModulus="48208109259"
       defaultReferencePorosity="0.3"/>
 
     <ConstantPermeability

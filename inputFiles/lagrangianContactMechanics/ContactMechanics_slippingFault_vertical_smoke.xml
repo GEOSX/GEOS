@@ -3,107 +3,64 @@
 <Problem>
 
   <Included>
-    <File name="./ContactMechanics_slippingFault_base.xml"/>
+    <File name="./SlippingFault_vertical_smoke.xml"/>
   </Included>
 
-  <Mesh>
-    <InternalMesh
-      name="mesh1"
-      elementTypes="{ C3D8 }"
-      xCoords="{ -25, 0, 25 }"
-      yCoords="{ -100, 100 }"
-      zCoords="{ 0, 1 }"
-      nx="{ 5, 5 }"
-      ny="{ 40 }"
-      nz="{ 2 }"
-      cellBlockNames="{ cb1 }"/>
-  </Mesh>
+  <Solvers
+    gravityVector="{0.0, 0.0, 0.0}">
+    <SolidMechanicsLagrangeContact
+      name="lagrangiancontact"
+      timeIntegrationOption="QuasiStatic"
+      stabilizationName="TPFAstabilization"
+      logLevel="1"
+      discretization="FE1"
+      targetRegions="{ Region, Fracture }">
+      <NonlinearSolverParameters
+        newtonTol="1.0e-8"
+        logLevel="2"
+        newtonMaxIter="10"
+        maxNumConfigurationAttempts="10"
+        lineSearchAction="Require"
+        lineSearchMaxCuts="2"
+        maxTimeStepCuts="2"/>
+      <LinearSolverParameters
+        solverType="direct"
+        directParallel="0"
+        logLevel="0"/>
+    </SolidMechanicsLagrangeContact>
+  </Solvers>
 
-  <Geometry>
-    <Rectangle
-      name="fracture"
-      normal="{1.0, 0.0, 0.0}"
-      origin="{0.0, 0.0, 0.0}"
-      lengthVector="{0.0, 1.0, 0.0}"
-      widthVector="{0.0, 0.0, 1.0}"
-      dimensions="{ 180, 10 }"/>
+  <NumericalMethods>
+    <FiniteVolume>
+      <TwoPointFluxApproximation
+        name="TPFAstabilization"/>
+    </FiniteVolume>
+  </NumericalMethods>
 
-    <Rectangle
-      name="core"
-      normal="{1.0, 0.0, 0.0}"
-      origin="{0.0, 0.0, 0.0}"
-      lengthVector="{0.0, 1.0, 0.0}"
-      widthVector="{0.0, 0.0, 1.0}"
-      dimensions="{ 180, 10 }"/>
-    
-  </Geometry>
+  <Events
+    maxTime="1.0">
+    <SoloEvent
+      name="preFracture"
+      target="/Solvers/SurfaceGen"/>
 
-  <FieldSpecifications>
-    <FieldSpecification
-      name="frac"
-      initialCondition="1"
-      setNames="{ fracture }"
-      objectPath="faceManager"
-      fieldName="ruptureState"
-      scale="1"/>
+    <PeriodicEvent
+      name="solverApplications"
+      beginTime="0.0"
+      endTime="1.0"
+      forceDt="0.1"
+      target="/Solvers/lagrangiancontact"/>
 
-    <FieldSpecification
-      name="separableFace"
-      initialCondition="1"
-      setNames="{ core }"
-      objectPath="faceManager"
-      fieldName="isFaceSeparable"
-      scale="1"/>
+    <PeriodicEvent
+      name="restarts"
+      timeFrequency="0.5"
+      target="/Outputs/restartOutput"/>
 
-    <FieldSpecification
-      name="yconstraint"
-      objectPath="nodeManager"
-      fieldName="totalDisplacement"
-      component="1"
-      scale="0.0"
-      setNames="{ xneg }"/>
+    <PeriodicEvent
+      name="outputs"
+      beginTime="0.0"
+      endTime="1.0"
+      forceDt="0.1"
+      target="/Outputs/vtkOutput"/>
+  </Events> 
 
-    <FieldSpecification
-      name="xconstraint"
-      objectPath="nodeManager"
-      fieldName="totalDisplacement"
-      component="0"
-      scale="0.0"
-      setNames="{ yneg, ypos, xneg, xpos }"/>
-
-    <FieldSpecification
-      name="zconstraint"
-      objectPath="nodeManager"
-      fieldName="totalDisplacement"
-      component="2"
-      scale="0.0"
-      setNames="{ zneg, zpos }"/>
-
-    <FieldSpecification 
-      name="Sigmax"
-      initialCondition="1"
-      setNames="{ all }"
-      objectPath="ElementRegions/Region"
-      fieldName="rock_stress"
-      component="0"
-      scale="-4.25e6"/>
-
-    <FieldSpecification
-      name="shearLoad"
-      objectPath="nodeManager"
-      fieldName="totalDisplacement"
-      component="1"
-      scale="0.01"
-      setNames="{ xpos }"
-      functionName="dispFunction"/>
-  </FieldSpecifications>
-
-  <Outputs>
-    <VTK
-      name="vtkOutput"
-      plotFileRoot="faultSlip_vertical"/>
-
-    <Restart
-      name="restartOutput"/>      
-    </Outputs>
 </Problem>

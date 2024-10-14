@@ -2,10 +2,11 @@
  * ------------------------------------------------------------------------------------------------------------
  * SPDX-License-Identifier: LGPL-2.1-only
  *
- * Copyright (c) 2018-2020 Lawrence Livermore National Security LLC
- * Copyright (c) 2018-2020 The Board of Trustees of the Leland Stanford Junior University
- * Copyright (c) 2018-2020 TotalEnergies
- * Copyright (c) 2019-     GEOSX Contributors
+ * Copyright (c) 2016-2024 Lawrence Livermore National Security LLC
+ * Copyright (c) 2018-2024 Total, S.A
+ * Copyright (c) 2018-2024 The Board of Trustees of the Leland Stanford Junior University
+ * Copyright (c) 2023-2024 Chevron
+ * Copyright (c) 2019-     GEOS/GEOSX Contributors
  * All rights reserved
  *
  * See top level LICENSE, COPYRIGHT, CONTRIBUTORS, NOTICE, and ACKNOWLEDGEMENTS files for details.
@@ -45,12 +46,6 @@ public:
    */
   WellGeneratorBase( const string & name,
                      Group * const parent );
-
-  /**
-   * @brief Get the catalog name.
-   * @return the name of this type in the catalog
-   */
-  static string catalogName() { return "WellGeneratorBase"; }
 
   /// This function is used to expand any catalogs in the data structure
   virtual void expandObjectCatalogs() override;
@@ -244,7 +239,7 @@ protected:
    * @brief This function provides capability to post process input values prior to
    * any other initialization operations.
    */
-  void postProcessInput() override;
+  void postInputInitialization() override;
 
   /**
    * @name Helper functions to construct the geometry of the well
@@ -301,7 +296,8 @@ protected:
   ///@}
 
   /// @cond DO_NOT_DOCUMENT
-  void debugWellGeometry() const;
+  void logInternalWell() const;
+  void logPerforationTable() const;
   /// @endcond
 
   /// Global number of perforations

@@ -24,10 +24,7 @@ set(MPI_Fortran_COMPILER "ftn" CACHE PATH "" FORCE)
 set(MPIEXEC              "/usr/bin/srun" CACHE PATH "")
 set(MPIEXEC_NUMPROC_FLAG "-n" CACHE STRING "")
 
-set(GEOSX_TPL_DIR "/global/project/projectdirs/m1411/GEOSX/tpls/install-cori-intel-release-22-07-20" CACHE PATH "" )
-
-set(GEOSX_LINK_PREPEND_FLAG  "-Wl,--whole-archive"    CACHE STRING "" FORCE)
-set(GEOSX_LINK_POSTPEND_FLAG "-Wl,--no-whole-archive" CACHE STRING "" FORCE)
+set(GEOS_TPL_DIR "/global/project/projectdirs/m1411/GEOSX/tpls/install-cori-intel-release-22-07-20" CACHE PATH "" )
 
 set(ENABLE_SPHINX_EXECUTABLE OFF CACHE BOOL "")
 set(ENABLE_UNCRUSTIFY OFF CACHE BOOL "")

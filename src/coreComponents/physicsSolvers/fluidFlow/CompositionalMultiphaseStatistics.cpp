@@ -2,10 +2,11 @@
  * ------------------------------------------------------------------------------------------------------------
  * SPDX-License-Identifier: LGPL-2.1-only
  *
- * Copyright (c) 2018-2020 Lawrence Livermore National Security LLC
- * Copyright (c) 2018-2020 The Board of Trustees of the Leland Stanford Junior University
- * Copyright (c) 2018-2020 TotalEnergies
- * Copyright (c) 2019-     GEOSX Contributors
+ * Copyright (c) 2016-2024 Lawrence Livermore National Security LLC
+ * Copyright (c) 2018-2024 Total, S.A
+ * Copyright (c) 2018-2024 The Board of Trustees of the Leland Stanford Junior University
+ * Copyright (c) 2023-2024 Chevron
+ * Copyright (c) 2019-     GEOS/GEOSX Contributors
  * All rights reserved
  *
  * See top level LICENSE, COPYRIGHT, CONTRIBUTORS, NOTICE, and ACKNOWLEDGEMENTS files for details.
@@ -61,9 +62,9 @@ CompositionalMultiphaseStatistics::CompositionalMultiphaseStatistics( const stri
     setDescription( "Flag to decide whether a phase is considered mobile (when the relperm is above the threshold) or immobile (when the relperm is below the threshold) in metric 2" );
 }
 
-void CompositionalMultiphaseStatistics::postProcessInput()
+void CompositionalMultiphaseStatistics::postInputInitialization()
 {
-  Base::postProcessInput();
+  Base::postInputInitialization();
 
   if( dynamicCast< CompositionalMultiphaseHybridFVM * >( m_solver ) && m_computeCFLNumbers != 0 )
   {
@@ -115,8 +116,7 @@ void CompositionalMultiphaseStatistics::registerDataOnMesh( Group & meshBodies )
         if( m_writeCSV > 0 && MpiWrapper::commRank() == 0 )
         {
           std::ofstream outputFile( m_outputDir + "/" + regionNames[i] + ".csv" );
-          integer const useMass = m_solver->getReference< integer >( CompositionalMultiphaseBase::viewKeyStruct::useMassFlagString() );
-          string const massUnit = useMass ? "kg" : "mol";
+          string_view massUnit = units::getSymbol( m_solver->getMassUnit() );
           outputFile <<
             "Time [s],Min pressure [Pa],Average pressure [Pa],Max pressure [Pa],Min delta pressure [Pa],Max delta pressure [Pa]," <<
             "Min temperature [Pa],Average temperature [Pa],Max temperature [Pa],Total dynamic pore volume [rm^3]";
@@ -305,7 +305,7 @@ void CompositionalMultiphaseStatistics::computeRegionStatistics( real64 const ti
                                         subRegionImmobilePhaseMass.toView(),
                                         subRegionComponentMass.toView() );
 
-    ElementRegionBase & region = elemManager.getRegion( subRegion.getParent().getParent().getName() );
+    ElementRegionBase & region = elemManager.getRegion( ElementRegionBase::getParentRegion( subRegion ).getName() );
     RegionStatistics & regionStatistics = region.getReference< RegionStatistics >( viewKeyStruct::regionStatisticsString() );
 
     regionStatistics.averagePressure += subRegionAvgPresNumerator;
@@ -405,8 +405,7 @@ void CompositionalMultiphaseStatistics::computeRegionStatistics( real64 const ti
       mobilePhaseMass[ip] = regionStatistics.phaseMass[ip] - regionStatistics.immobilePhaseMass[ip];
     }
 
-    integer const useMass = m_solver->getReference< integer >( CompositionalMultiphaseBase::viewKeyStruct::useMassFlagString() );
-    string const massUnit = useMass ? "kg" : "mol";
+    string_view massUnit = units::getSymbol( m_solver->getMassUnit() );
 
     GEOS_LOG_LEVEL_RANK_0( 1, GEOS_FMT( "{}, {} (time {} s): Pressure (min, average, max): {}, {}, {} Pa",
                                         getName(), regionNames[i], time, regionStatistics.minPressure, regionStatistics.averagePressure, regionStatistics.maxPressure ) );

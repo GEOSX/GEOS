@@ -18,11 +18,11 @@ import shutil
 
 # Add python modules to be documented
 python_root = './coreComponents/python/modules'
-python_modules = ('geosx_mesh_tools_package',
-                  'geosx_xml_tools_package',
-                  'hdf5_wrapper_package',
-                  'pygeosx_tools_package',
-                  'timehistory_package')
+python_modules = ('geos-mesh-tools',
+                  'geos-xml-tools',
+                  'hdf5-wrapper',
+                  'pygeos-tools',
+                  'geos-timehistory')
 for m in python_modules:
     sys.path.insert(0, os.path.abspath(os.path.join(python_root, m)))
 
@@ -49,17 +49,24 @@ if read_the_docs_build:
     config_src = os.path.join(docs_path, "GeosxConfig.hpp")
     config_dst = os.path.join(common_path, "GeosxConfig.hpp")
 
-    input_dirs = ["coreComponents/common",
-                  "coreComponents/dataRepository",
-                  "coreComponents/fileIO",
-                  "coreComponents/linearAlgebra",
-                  "coreComponents/mesh",
-                  "coreComponents/managers",
-                  "coreComponents/finiteElement/kernelInterface",
-                  "coreComponents/mesh/MeshFields.hpp",
-                  "coreComponents/physicsSolvers/simplePDE/LaplaceFEMKernels.hpp",
-                  "coreComponents/physicsSolvers/solidMechanics",
-                  "coreComponents/finiteVolume"]
+    input_dirs = [
+        "coreComponents/common",
+        "coreComponents/dataRepository",
+        "coreComponents/fileIO",
+        "coreComponents/linearAlgebra",
+        "coreComponents/mesh",
+        "coreComponents/finiteElement/elementFormulations",
+        "coreComponents/finiteElement/kernelInterface",
+        "coreComponents/mesh/MeshFields.hpp",
+        "coreComponents/physicsSolvers",
+        "coreComponents/finiteVolume",
+        "coreComponents/functions",
+        "coreComponents/fieldSpecification",
+        "coreComponents/discretizationMethods",
+        "coreComponents/events",
+        "coreComponents/mainInterface"
+        ]
+        
 
     # Write correct ReadtheDocs path and input directories
     shutil.copy(doxyfile_src, doxyfile_dst)
@@ -72,16 +79,18 @@ if read_the_docs_build:
     if not os.path.exists(config_dst):
         os.symlink(config_src, config_dst)
 
+    print("********** Running Doxygen in ReadtheDocs **********")
     # Call doxygen
-    from subprocess import call
-    call(['doxygen', doxyfile_dst])
+    from subprocess import run
+    run(['doxygen', doxyfile_dst])
+    print("********** Finished Running Doxygen in ReadtheDocs **********")
 
 
 # -- Project information -----------------------------------------------------
 
-project = u'GEOSX'
-copyright = u'2018-2021 Lawrence Livermore National Security, The Board of Trustees of the Leland Stanford Junior University, TotalEnergies, and GEOSX Contributors.'
-author = u'GEOSX Contributors'
+project = u'GEOS'
+copyright = u'2016-2024 Lawrence Livermore National Security LLC, 2018-2024 Total, S.A, The Board of Trustees of the Leland Stanford Junior University, 2023-2024 Chevron, 2019- GEOS/GEOSX Contributors'
+author = u'GEOS/GEOSX Contributors'
 
 # The short X.Y version
 version = u''
@@ -112,7 +121,7 @@ extensions = [
     'sphinxcontrib.programoutput'
 ]
 
-plantuml = "/usr/bin/plantuml"
+plantuml = "/usr/bin/java -Djava.awt.headless=true -jar /tmp/plantuml.jar"
 plantuml_output_format = "svg_img"
 
 plot_html_show_source_link = True
@@ -142,7 +151,7 @@ language = 'en'
 # List of patterns, relative to source directory, that match files and
 # directories to ignore when looking for source files.
 # This pattern also affects html_static_path and html_extra_path .
-exclude_patterns = [u'_build', 'Thumbs.db', '.DS_Store', 'cmake/*']
+exclude_patterns = [u'_build', 'Thumbs.db', '.DS_Store', 'cmake/*', '**/blt/**']
 
 todo_include_todos = True
 
@@ -220,8 +229,8 @@ latex_elements = {
 # (source start file, target name, title,
 #  author, documentclass [howto, manual, or own class]).
 latex_documents = [
-    (master_doc, 'GEOSX.tex', u'GEOSX Documentation',
-     u'Randolph Settgast', 'manual'),
+    (master_doc, 'GEOS.tex', u'GEOS Documentation',
+     u'GEOS/GEOSX Developers', 'manual'),
 ]
 
 
@@ -230,7 +239,7 @@ latex_documents = [
 # One entry per manual page. List of tuples
 # (source start file, name, description, authors, manual section).
 man_pages = [
-    (master_doc, 'geosx', u'GEOSX Documentation',
+    (master_doc, 'geos', u'GEOS Documentation',
      [author], 1)
 ]
 
@@ -241,8 +250,8 @@ man_pages = [
 # (source start file, target name, title, author,
 #  dir menu entry, description, category)
 texinfo_documents = [
-    (master_doc, 'GEOSX', u'GEOSX Documentation',
-     author, 'GEOSX', 'One line description of project.',
+    (master_doc, 'GEOS', u'GEOS Documentation',
+     author, 'GEOS', 'GEOS simulation framework.',
      'Miscellaneous'),
 ]
 

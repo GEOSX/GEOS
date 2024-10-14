@@ -2,10 +2,11 @@
  * ------------------------------------------------------------------------------------------------------------
  * SPDX-License-Identifier: LGPL-2.1-only
  *
- * Copyright (c) 2018-2020 Lawrence Livermore National Security LLC
- * Copyright (c) 2018-2020 The Board of Trustees of the Leland Stanford Junior University
- * Copyright (c) 2018-2020 TotalEnergies
- * Copyright (c) 2019-     GEOSX Contributors
+ * Copyright (c) 2016-2024 Lawrence Livermore National Security LLC
+ * Copyright (c) 2018-2024 Total, S.A
+ * Copyright (c) 2018-2024 The Board of Trustees of the Leland Stanford Junior University
+ * Copyright (c) 2023-2024 Chevron
+ * Copyright (c) 2019-     GEOS/GEOSX Contributors
  * All rights reserved
  *
  * See top level LICENSE, COPYRIGHT, CONTRIBUTORS, NOTICE, and ACKNOWLEDGEMENTS files for details.
@@ -37,54 +38,21 @@ namespace geos
 using namespace dataRepository;
 using namespace constitutive;
 
-namespace
-{
-
-// This is meant to be specialized to work, see below
-template< typename COMPOSITIONAL_RESERVOIR_SOLVER > class
-  CompositionalCatalogNames {};
-
-// Class specialization for a RESERVOIR_SOLVER set to CompositionalMultiphaseFlow
-template<> class CompositionalCatalogNames< CompositionalMultiphaseBase >
-{
-public:
-  // TODO: find a way to use the catalog name here
-  static string name() { return "CompositionalMultiphaseReservoir"; }
-};
-// Class specialization for a RESERVOIR_SOLVER set to MultiphasePoromechanics
-template<> class CompositionalCatalogNames< MultiphasePoromechanics< CompositionalMultiphaseBase > >
-{
-public:
-  static string name() { return MultiphasePoromechanics< CompositionalMultiphaseBase >::catalogName()+"Reservoir"; }
-};
-
-}
-
-// provide a definition for catalogName()
-template< typename COMPOSITIONAL_RESERVOIR_SOLVER >
-string
-CompositionalMultiphaseReservoirAndWells< COMPOSITIONAL_RESERVOIR_SOLVER >::
-catalogName()
-{
-  return CompositionalCatalogNames< COMPOSITIONAL_RESERVOIR_SOLVER >::name();
-}
-
-
-template< typename COMPOSITIONAL_RESERVOIR_SOLVER >
-CompositionalMultiphaseReservoirAndWells< COMPOSITIONAL_RESERVOIR_SOLVER >::
+template< typename RESERVOIR_SOLVER >
+CompositionalMultiphaseReservoirAndWells< RESERVOIR_SOLVER >::
 CompositionalMultiphaseReservoirAndWells( const string & name,
                                           Group * const parent )
   : Base( name, parent )
 {}
 
-template< typename COMPOSITIONAL_RESERVOIR_SOLVER >
-CompositionalMultiphaseReservoirAndWells< COMPOSITIONAL_RESERVOIR_SOLVER >::
+template< typename RESERVOIR_SOLVER >
+CompositionalMultiphaseReservoirAndWells< RESERVOIR_SOLVER >::
 ~CompositionalMultiphaseReservoirAndWells()
 {}
 
 template<>
 CompositionalMultiphaseBase *
-CompositionalMultiphaseReservoirAndWells< CompositionalMultiphaseBase >::
+CompositionalMultiphaseReservoirAndWells<>::
 flowSolver() const
 {
   return this->reservoirSolver();
@@ -92,7 +60,7 @@ flowSolver() const
 
 template<>
 CompositionalMultiphaseBase *
-CompositionalMultiphaseReservoirAndWells< MultiphasePoromechanics< CompositionalMultiphaseBase > >::
+CompositionalMultiphaseReservoirAndWells< MultiphasePoromechanics<> >::
 flowSolver() const
 {
   return this->reservoirSolver()->flowSolver();
@@ -100,37 +68,41 @@ flowSolver() const
 
 template<>
 void
-CompositionalMultiphaseReservoirAndWells< CompositionalMultiphaseBase >::
+CompositionalMultiphaseReservoirAndWells<>::
 setMGRStrategy()
 {
-  if( flowSolver()->getLinearSolverParameters().mgr.strategy == LinearSolverParameters::MGR::StrategyType::compositionalMultiphaseFVM )
+  if( flowSolver()->getLinearSolverParameters().mgr.strategy == LinearSolverParameters::MGR::StrategyType::compositionalMultiphaseHybridFVM )
   {
-    m_linearSolverParameters.get().mgr.strategy = LinearSolverParameters::MGR::StrategyType::compositionalMultiphaseReservoirFVM;
+    // add Reservoir
+    m_linearSolverParameters.get().mgr.strategy = LinearSolverParameters::MGR::StrategyType::compositionalMultiphaseReservoirHybridFVM;
   }
   else
   {
-    m_linearSolverParameters.get().mgr.strategy = LinearSolverParameters::MGR::StrategyType::compositionalMultiphaseReservoirHybridFVM;
+    // add Reservoir
+    m_linearSolverParameters.get().mgr.strategy = LinearSolverParameters::MGR::StrategyType::compositionalMultiphaseReservoirFVM;
   }
 }
 
 template<>
 void
-CompositionalMultiphaseReservoirAndWells< MultiphasePoromechanics< CompositionalMultiphaseBase > >::
+CompositionalMultiphaseReservoirAndWells< MultiphasePoromechanics<> >::
 setMGRStrategy()
 {
+  // flow solver here is indeed flow solver, not poromechanics solver
   if( flowSolver()->getLinearSolverParameters().mgr.strategy == LinearSolverParameters::MGR::StrategyType::compositionalMultiphaseHybridFVM )
   {
-    GEOS_LOG_RANK_0( "The MGR strategy for hybrid FVM is not implemented" );
+    GEOS_LOG_RANK_0( "The poromechanics MGR strategy for hybrid FVM is not implemented" );
   }
   else
   {
+    // add Reservoir
     m_linearSolverParameters.get().mgr.strategy = LinearSolverParameters::MGR::StrategyType::multiphasePoromechanicsReservoirFVM;
   }
 }
 
-template< typename COMPOSITIONAL_RESERVOIR_SOLVER >
+template< typename RESERVOIR_SOLVER >
 void
-CompositionalMultiphaseReservoirAndWells< COMPOSITIONAL_RESERVOIR_SOLVER >::
+CompositionalMultiphaseReservoirAndWells< RESERVOIR_SOLVER >::
 initializePreSubGroups()
 {
   Base::initializePreSubGroups();
@@ -147,18 +119,18 @@ initializePreSubGroups()
                  InputError );
 }
 
-template< typename COMPOSITIONAL_RESERVOIR_SOLVER >
+template< typename RESERVOIR_SOLVER >
 void
-CompositionalMultiphaseReservoirAndWells< COMPOSITIONAL_RESERVOIR_SOLVER >::
+CompositionalMultiphaseReservoirAndWells< RESERVOIR_SOLVER >::
 initializePostInitialConditionsPreSubGroups()
 {
   Base::initializePostInitialConditionsPreSubGroups();
   setMGRStrategy();
 }
 
-template< typename COMPOSITIONAL_RESERVOIR_SOLVER >
+template< typename RESERVOIR_SOLVER >
 void
-CompositionalMultiphaseReservoirAndWells< COMPOSITIONAL_RESERVOIR_SOLVER >::
+CompositionalMultiphaseReservoirAndWells< RESERVOIR_SOLVER >::
 addCouplingSparsityPattern( DomainPartition const & domain,
                             DofManager const & dofManager,
                             SparsityPatternView< globalIndex > const & pattern ) const
@@ -263,9 +235,9 @@ addCouplingSparsityPattern( DomainPartition const & domain,
   } );
 }
 
-template< typename COMPOSITIONAL_RESERVOIR_SOLVER >
+template< typename RESERVOIR_SOLVER >
 void
-CompositionalMultiphaseReservoirAndWells< COMPOSITIONAL_RESERVOIR_SOLVER >::
+CompositionalMultiphaseReservoirAndWells< RESERVOIR_SOLVER >::
 assembleCouplingTerms( real64 const time_n,
                        real64 const dt,
                        DomainPartition const & domain,
@@ -455,13 +427,13 @@ assembleCouplingTerms( real64 const time_n,
   } );
 }
 
-template class CompositionalMultiphaseReservoirAndWells< CompositionalMultiphaseBase >;
-template class CompositionalMultiphaseReservoirAndWells< MultiphasePoromechanics< CompositionalMultiphaseBase > >;
+template class CompositionalMultiphaseReservoirAndWells<>;
+template class CompositionalMultiphaseReservoirAndWells< MultiphasePoromechanics<> >;
 
 namespace
 {
-typedef CompositionalMultiphaseReservoirAndWells< CompositionalMultiphaseBase > CompositionalMultiphaseFlowAndWells;
-typedef CompositionalMultiphaseReservoirAndWells< MultiphasePoromechanics< CompositionalMultiphaseBase > > CompositionalMultiphasePoromechanicsAndWells;
+typedef CompositionalMultiphaseReservoirAndWells<> CompositionalMultiphaseFlowAndWells;
+typedef CompositionalMultiphaseReservoirAndWells< MultiphasePoromechanics<> > CompositionalMultiphasePoromechanicsAndWells;
 REGISTER_CATALOG_ENTRY( SolverBase, CompositionalMultiphaseFlowAndWells, string const &, Group * const )
 REGISTER_CATALOG_ENTRY( SolverBase, CompositionalMultiphasePoromechanicsAndWells, string const &, Group * const )
 }

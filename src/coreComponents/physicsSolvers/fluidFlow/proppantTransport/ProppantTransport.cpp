@@ -2,10 +2,11 @@
  * ------------------------------------------------------------------------------------------------------------
  * SPDX-License-Identifier: LGPL-2.1-only
  *
- * Copyright (c) 2018-2020 Lawrence Livermore National Security LLC
- * Copyright (c) 2018-2020 The Board of Trustees of the Leland Stanford Junior University
- * Copyright (c) 2018-2020 TotalEnergies
- * Copyright (c) 2019-     GEOSX Contributors
+ * Copyright (c) 2016-2024 Lawrence Livermore National Security LLC
+ * Copyright (c) 2018-2024 Total, S.A
+ * Copyright (c) 2018-2024 The Board of Trustees of the Leland Stanford Junior University
+ * Copyright (c) 2023-2024 Chevron
+ * Copyright (c) 2019-     GEOS/GEOSX Contributors
  * All rights reserved
  *
  * See top level LICENSE, COPYRIGHT, CONTRIBUTORS, NOTICE, and ACKNOWLEDGEMENTS files for details.
@@ -35,9 +36,11 @@
 #include "physicsSolvers/fluidFlow/FlowSolverBaseFields.hpp"
 #include "physicsSolvers/fluidFlow/proppantTransport/ProppantTransportFields.hpp"
 #include "physicsSolvers/fluidFlow/proppantTransport/ProppantTransportKernels.hpp"
+#include "mesh/MeshFields.hpp"
+
 
 /**
- * @namespace the geosx namespace that encapsulates the majority of the code
+ * @namespace the geos namespace that encapsulates the majority of the code
  */
 namespace geos
 {
@@ -80,9 +83,9 @@ ProppantTransport::ProppantTransport( const string & name,
 
 }
 
-void ProppantTransport::postProcessInput()
+void ProppantTransport::postInputInitialization()
 {
-  FlowSolverBase::postProcessInput();
+  FlowSolverBase::postInputInitialization();
 }
 
 void ProppantTransport::registerDataOnMesh( Group & meshBodies )
@@ -286,7 +289,7 @@ void ProppantTransport::updateProppantMobility( ObjectManagerBase & dataGroup )
   GEOS_MARK_FUNCTION;
 
   arrayView1d< real64 const > const conc = dataGroup.getField< fields::proppant::proppantConcentration >();
-  arrayView1d< real64 const > const aperture = dataGroup.getReference< array1d< real64 > >( FaceElementSubRegion::viewKeyStruct::elementApertureString() );
+  arrayView1d< real64 const > const aperture = dataGroup.getReference< array1d< real64 > >( fields::elementAperture::key() );
   arrayView1d< integer > const isProppantMobile = dataGroup.getField< fields::proppant::isProppantMobile >();
 
   real64 const minAperture = m_minAperture;
@@ -1054,7 +1057,7 @@ void ProppantTransport::updateProppantPackVolume( real64 const GEOS_UNUSED_PARAM
       elemManager.constructViewAccessor< array1d< real64 >, arrayView1d< real64 > >( fields::proppant::proppantLiftFlux::key() );
 
     ElementRegionManager::ElementViewAccessor< arrayView1d< real64 const > > const
-    aperture = elemManager.constructArrayViewAccessor< real64, 1 >( FaceElementSubRegion::viewKeyStruct::elementApertureString() );
+    aperture = elemManager.constructArrayViewAccessor< real64, 1 >( fields::elementAperture::key() );
 
     typename ProppantPackVolumeKernel::FlowAccessors flowAccessors( elemManager, getName() );
     typename ProppantPackVolumeKernel::SlurryFluidAccessors slurryFluidAccessors( elemManager, getName() );

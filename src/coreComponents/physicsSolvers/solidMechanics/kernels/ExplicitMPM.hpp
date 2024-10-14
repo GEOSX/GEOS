@@ -2,10 +2,11 @@
  * ------------------------------------------------------------------------------------------------------------
  * SPDX-License-Identifier: LGPL-2.1-only
  *
- * Copyright (c) 2018-2020 Lawrence Livermore National Security LLC
- * Copyright (c) 2018-2020 The Board of Trustees of the Leland Stanford Junior University
- * Copyright (c) 2018-2020 TotalEnergies
- * Copyright (c) 2019-     GEOSX Contributors
+ * Copyright (c) 2016-2024 Lawrence Livermore National Security LLC
+ * Copyright (c) 2018-2024 Total, S.A
+ * Copyright (c) 2018-2024 The Board of Trustees of the Leland Stanford Junior University
+ * Copyright (c) 2023-2024 Chevron
+ * Copyright (c) 2019-     GEOS/GEOSX Contributors
  * All rights reserved
  *
  * See top level LICENSE, COPYRIGHT, CONTRIBUTORS, NOTICE, and ACKNOWLEDGEMENTS files for details.
@@ -17,8 +18,8 @@
  * @file ExplicitMPM.hpp
  */
 
-#ifndef GEOSX_PHYSICSSOLVERS_CONTACT_EXPLICITMPM_HPP_
-#define GEOSX_PHYSICSSOLVERS_CONTACT_EXPLICITMPM_HPP_
+#ifndef GEOS_PHYSICSSOLVERS_CONTACT_EXPLICITMPM_HPP_
+#define GEOS_PHYSICSSOLVERS_CONTACT_EXPLICITMPM_HPP_
 
 #include "constitutive/solid/SolidUtilities.hpp"
 #include "physicsSolvers/solidMechanics/kernels/ExplicitFiniteStrain.hpp"
@@ -32,8 +33,8 @@ namespace solidMechanicsMPMKernels
 
 // A helper function to calculate polar decomposition. TODO: Previously this was an LvArray method, hopefully it will be again someday.
 GEOS_HOST_DEVICE
-void polarDecomposition( real64 (& R)[3][3],
-                         real64 const (&matrix)[3][3] )
+static inline void polarDecomposition( real64 (& R)[3][3],
+                                       real64 const (&matrix)[3][3] )
 {
   // Initialize
   LvArray::tensorOps::copy< 3, 3 >( R, matrix );
@@ -84,7 +85,7 @@ struct StateUpdateKernel
   /**
    * @brief Launch the kernel function doing constitutive updates
    * @tparam POLICY the type of policy used in the kernel launch
-   * @tparam CONTACT_WRAPPER the type of contact wrapper doing the constitutive updates
+   * @tparam CONSTITUTIVE_WRAPPER the type of consitutive wrapper doing the constitutive updates
    * @param[in] size the size of the subregion
    * @param[in] constitutiveWrapper the wrapper implementing the constitutive model
    * @param[in] deformationGradient the deformation gradient
@@ -111,7 +112,7 @@ struct StateUpdateKernel
 
       // Copy the beginning-of-step particle stress into the constitutive model's m_oldStress - this fixes the MPI sync issue on Lassen for
       // some reason
-      #if defined(GEOSX_USE_CUDA)
+      #if defined(GEOS_USE_CUDA)
       LvArray::tensorOps::copy< 6 >( oldStress[p][0], particleStress[p] );
       #endif
 
@@ -162,4 +163,4 @@ struct StateUpdateKernel
 } // namespace geos
 
 
-#endif /* GEOSX_PHYSICSSOLVERS_CONTACT_EXPLICITMPM_HPP_ */
+#endif /* GEOS_PHYSICSSOLVERS_CONTACT_EXPLICITMPM_HPP_ */

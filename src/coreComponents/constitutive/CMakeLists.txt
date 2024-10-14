@@ -17,10 +17,14 @@ set( constitutive_headers
      capillaryPressure/VanGenuchtenCapillaryPressure.hpp
      capillaryPressure/capillaryPressureSelector.hpp
      capillaryPressure/layouts.hpp
-     contact/ContactBase.hpp
-     contact/CoulombContact.hpp
-     contact/ContactSelector.hpp
+     contact/BartonBandis.hpp
+     contact/CoulombFriction.hpp
+     contact/FrictionSelector.hpp
+     contact/FrictionBase.hpp
      contact/FrictionlessContact.hpp
+     contact/HydraulicApertureBase.hpp
+     contact/HydraulicApertureRelationSelector.hpp
+     contact/HydraulicApertureTable.hpp
      diffusion/ConstantDiffusion.hpp
      diffusion/DiffusionBase.hpp
      diffusion/DiffusionFields.hpp
@@ -35,40 +39,50 @@ set( constitutive_headers
      fluid/multifluid/MultiFluidConstants.hpp
      fluid/multifluid/MultiFluidUtils.hpp
      fluid/multifluid/MultiFluidFields.hpp
-     fluid/multifluid/PVTDriver.hpp
-     fluid/multifluid/PVTDriverRunTest.hpp
      fluid/multifluid/blackOil/BlackOilFluidBase.hpp
      fluid/multifluid/blackOil/BlackOilFluid.hpp
      fluid/multifluid/blackOil/DeadOilFluid.hpp
      fluid/multifluid/blackOil/PVTOData.hpp
      fluid/multifluid/CO2Brine/CO2BrineFluid.hpp
      fluid/multifluid/CO2Brine/PhaseModel.hpp
-     fluid/multifluid/CO2Brine/functions/PhillipsBrineDensity.hpp
-     fluid/multifluid/CO2Brine/functions/PhillipsBrineViscosity.hpp
-     fluid/multifluid/CO2Brine/functions/EzrokhiBrineDensity.hpp
-     fluid/multifluid/CO2Brine/functions/EzrokhiBrineViscosity.hpp
-     fluid/multifluid/CO2Brine/functions/CO2Solubility.hpp
-     fluid/multifluid/CO2Brine/functions/FenghourCO2Viscosity.hpp
-     fluid/multifluid/CO2Brine/functions/FlashModelBase.hpp
-     fluid/multifluid/CO2Brine/functions/PVTFunctionBase.hpp
-     fluid/multifluid/CO2Brine/functions/NoOpPVTFunction.hpp
-     fluid/multifluid/CO2Brine/functions/PVTFunctionHelpers.hpp
-     fluid/multifluid/CO2Brine/functions/SpanWagnerCO2Density.hpp
      fluid/multifluid/CO2Brine/functions/BrineEnthalpy.hpp
      fluid/multifluid/CO2Brine/functions/CO2Enthalpy.hpp
      fluid/multifluid/CO2Brine/functions/CO2EOSSolver.hpp
+     fluid/multifluid/CO2Brine/functions/CO2Solubility.hpp
+     fluid/multifluid/CO2Brine/functions/CO2SolubilityDuanSun.hpp
+     fluid/multifluid/CO2Brine/functions/CO2SolubilitySpycherPruess.hpp
+     fluid/multifluid/CO2Brine/functions/EzrokhiBrineDensity.hpp
+     fluid/multifluid/CO2Brine/functions/EzrokhiBrineViscosity.hpp
+     fluid/multifluid/CO2Brine/functions/FenghourCO2Viscosity.hpp
+     fluid/multifluid/CO2Brine/functions/FlashModelBase.hpp
+     fluid/multifluid/CO2Brine/functions/NoOpPVTFunction.hpp
+     fluid/multifluid/CO2Brine/functions/PhillipsBrineDensity.hpp
+     fluid/multifluid/CO2Brine/functions/PhillipsBrineViscosity.hpp
      fluid/multifluid/CO2Brine/functions/PureWaterProperties.hpp
+     fluid/multifluid/CO2Brine/functions/PVTFunctionBase.hpp
+     fluid/multifluid/CO2Brine/functions/PVTFunctionHelpers.hpp
+     fluid/multifluid/CO2Brine/functions/SpanWagnerCO2Density.hpp
      fluid/multifluid/CO2Brine/functions/WaterDensity.hpp
      fluid/multifluid/compositional/functions/CompositionalProperties.hpp     
+     fluid/multifluid/compositional/functions/CompositionalPropertiesImpl.hpp     
      fluid/multifluid/compositional/functions/CubicEOSPhaseModel.hpp     
+     fluid/multifluid/compositional/functions/FugacityCalculator.hpp
      fluid/multifluid/compositional/functions/KValueInitialization.hpp
      fluid/multifluid/compositional/functions/NegativeTwoPhaseFlash.hpp
      fluid/multifluid/compositional/functions/RachfordRice.hpp
+     fluid/multifluid/compositional/functions/StabilityTest.hpp
      fluid/multifluid/compositional/models/ComponentProperties.hpp
      fluid/multifluid/compositional/models/CompositionalDensity.hpp
      fluid/multifluid/compositional/models/ConstantViscosity.hpp
+     fluid/multifluid/compositional/models/CriticalVolume.hpp
+     fluid/multifluid/compositional/models/EquationOfState.hpp
      fluid/multifluid/compositional/models/FunctionBase.hpp
+     fluid/multifluid/compositional/models/ImmiscibleWaterFlashModel.hpp
+     fluid/multifluid/compositional/models/ImmiscibleWaterParameters.hpp
+     fluid/multifluid/compositional/models/LohrenzBrayClarkViscosity.hpp
+     fluid/multifluid/compositional/models/LohrenzBrayClarkViscosityImpl.hpp
      fluid/multifluid/compositional/models/NegativeTwoPhaseFlashModel.hpp
+     fluid/multifluid/compositional/models/ModelParameters.hpp
      fluid/multifluid/compositional/models/NullModel.hpp
      fluid/multifluid/compositional/models/PhaseModel.hpp
      fluid/multifluid/compositional/CompositionalMultiphaseFluid.hpp
@@ -76,8 +90,6 @@ set( constitutive_headers
      fluid/multifluid/reactive/ReactiveBrineFluid.hpp
      fluid/multifluid/reactive/ReactiveMultiFluid.hpp
      fluid/multifluid/reactive/ReactiveMultiFluidFields.hpp
-     fluid/multifluid/reactive/ReactiveFluidDriver.hpp
-     fluid/multifluid/reactive/ReactiveFluidSelector.hpp
      fluid/multifluid/reactive/chemicalReactions/EquilibriumReactions.hpp
      fluid/multifluid/reactive/chemicalReactions/KineticReactions.hpp
      fluid/multifluid/reactive/chemicalReactions/ReactionsBase.hpp
@@ -99,11 +111,10 @@ set( constitutive_headers
      permeability/ParallelPlatesPermeability.hpp
      permeability/PermeabilityBase.hpp
      permeability/PermeabilityFields.hpp
+     permeability/PressurePermeability.hpp
      permeability/ProppantPermeability.hpp
      permeability/SlipDependentPermeability.hpp
      permeability/WillisRichardsPermeability.hpp
-     relativePermeability/RelpermDriver.hpp
-     relativePermeability/RelpermDriverRunTest.hpp
      relativePermeability/BrooksCoreyBakerRelativePermeability.hpp
      relativePermeability/BrooksCoreyStone2RelativePermeability.hpp
      relativePermeability/BrooksCoreyRelativePermeability.hpp
@@ -147,7 +158,6 @@ set( constitutive_headers
      solid/SolidModelDiscretizationOpsTransverseIsotropic.hpp
      solid/SolidModelDiscretizationOpsOrthotropic.hpp
      solid/CeramicDamage.hpp
-     solid/TriaxialDriver.hpp
      solid/porosity/PorosityFields.hpp
      solid/porosity/BiotPorosity.hpp
      solid/porosity/PorosityBase.hpp
@@ -159,7 +169,7 @@ set( constitutive_headers
      thermalConductivity/MultiPhaseThermalConductivityFields.hpp
      thermalConductivity/MultiPhaseThermalConductivitySelector.hpp
      thermalConductivity/MultiPhaseVolumeWeightedThermalConductivity.hpp
-     thermalConductivity/SinglePhaseConstantThermalConductivity.hpp
+     thermalConductivity/SinglePhaseThermalConductivity.hpp
      thermalConductivity/SinglePhaseThermalConductivityBase.hpp
      thermalConductivity/SinglePhaseThermalConductivityFields.hpp
      thermalConductivity/SinglePhaseThermalConductivitySelector.hpp
@@ -178,30 +188,29 @@ set( constitutive_sources
      capillaryPressure/TableCapillaryPressure.cpp
      capillaryPressure/TableCapillaryPressureHelpers.cpp
      capillaryPressure/VanGenuchtenCapillaryPressure.cpp
-     contact/ContactBase.cpp
-     contact/CoulombContact.cpp
+     contact/BartonBandis.cpp
+     contact/CoulombFriction.cpp
+     contact/FrictionBase.cpp
      contact/FrictionlessContact.cpp
+     contact/HydraulicApertureBase.cpp
+     contact/HydraulicApertureTable.cpp
      diffusion/ConstantDiffusion.cpp
      diffusion/DiffusionBase.cpp
      dispersion/DispersionBase.cpp
      dispersion/LinearIsotropicDispersion.cpp
      fluid/multifluid/MultiFluidBase.cpp
-     fluid/multifluid/PVTDriver.cpp
      fluid/multifluid/blackOil/BlackOilFluidBase.cpp
      fluid/multifluid/blackOil/BlackOilFluid.cpp
      fluid/multifluid/blackOil/DeadOilFluid.cpp
-     fluid/multifluid/blackOil/PVTDriverRunTestDeadOilFluid.cpp
      fluid/multifluid/blackOil/PVTOData.cpp
      fluid/multifluid/CO2Brine/CO2BrineFluid.cpp
-     fluid/multifluid/CO2Brine/PVTDriverRunTestCO2BrinePhillipsFluid.cpp
-     fluid/multifluid/CO2Brine/PVTDriverRunTestCO2BrinePhillipsThermalFluid.cpp
-     fluid/multifluid/CO2Brine/PVTDriverRunTestCO2BrineEzrokhiFluid.cpp
-     fluid/multifluid/CO2Brine/PVTDriverRunTestCO2BrineEzrokhiThermalFluid.cpp
      fluid/multifluid/CO2Brine/functions/PhillipsBrineDensity.cpp
      fluid/multifluid/CO2Brine/functions/PhillipsBrineViscosity.cpp
      fluid/multifluid/CO2Brine/functions/EzrokhiBrineDensity.cpp
      fluid/multifluid/CO2Brine/functions/EzrokhiBrineViscosity.cpp
      fluid/multifluid/CO2Brine/functions/CO2Solubility.cpp
+     fluid/multifluid/CO2Brine/functions/CO2SolubilityDuanSun.cpp
+     fluid/multifluid/CO2Brine/functions/CO2SolubilitySpycherPruess.cpp
      fluid/multifluid/CO2Brine/functions/FenghourCO2Viscosity.cpp
      fluid/multifluid/CO2Brine/functions/SpanWagnerCO2Density.cpp
      fluid/multifluid/CO2Brine/functions/PVTFunctionHelpers.cpp
@@ -210,16 +219,17 @@ set( constitutive_sources
      fluid/multifluid/CO2Brine/functions/CO2EOSSolver.cpp
      fluid/multifluid/CO2Brine/functions/PureWaterProperties.cpp
      fluid/multifluid/CO2Brine/functions/WaterDensity.cpp
-     fluid/multifluid/compositional/functions/CompositionalProperties.cpp
      fluid/multifluid/compositional/models/CompositionalDensity.cpp
      fluid/multifluid/compositional/models/ConstantViscosity.cpp
+     fluid/multifluid/compositional/models/CriticalVolume.cpp
+     fluid/multifluid/compositional/models/ImmiscibleWaterFlashModel.cpp
+     fluid/multifluid/compositional/models/ImmiscibleWaterParameters.cpp
+     fluid/multifluid/compositional/models/LohrenzBrayClarkViscosity.cpp
      fluid/multifluid/compositional/models/NegativeTwoPhaseFlashModel.cpp
      fluid/multifluid/compositional/CompositionalMultiphaseFluid.cpp
      fluid/multifluid/compositional/CompositionalMultiphaseFluidUpdates.cpp
-     fluid/multifluid/compositional/PVTDriverRunTestCompositionalMultiphaseFluid.cpp
      fluid/multifluid/reactive/ReactiveBrineFluid.cpp
      fluid/multifluid/reactive/ReactiveMultiFluid.cpp
-     fluid/multifluid/reactive/ReactiveFluidDriver.cpp
      fluid/multifluid/reactive/chemicalReactions/EquilibriumReactions.cpp
      fluid/multifluid/reactive/chemicalReactions/KineticReactions.cpp
      fluid/multifluid/reactive/chemicalReactions/ReactionsBase.cpp
@@ -235,6 +245,7 @@ set( constitutive_sources
      permeability/ExponentialDecayPermeability.cpp
      permeability/ParallelPlatesPermeability.cpp
      permeability/PermeabilityBase.cpp
+     permeability/PressurePermeability.cpp
      permeability/ProppantPermeability.cpp
      permeability/SlipDependentPermeability.cpp
      permeability/WillisRichardsPermeability.cpp
@@ -247,14 +258,6 @@ set( constitutive_sources
      relativePermeability/TableRelativePermeabilityHysteresis.cpp
      relativePermeability/VanGenuchtenBakerRelativePermeability.cpp
      relativePermeability/VanGenuchtenStone2RelativePermeability.cpp
-     relativePermeability/RelpermDriver.cpp
-     relativePermeability/RelpermDriverBrooksCoreyBakerRunTest.cpp
-        relativePermeability/RelpermDriverBrooksCoreyStone2RunTest.cpp
-     relativePermeability/RelpermDriverBrooksCoreyRunTest.cpp
-     relativePermeability/RelpermDriverVanGenuchtenBakerRunTest.cpp
-        relativePermeability/RelpermDriverVanGenuchtenStone2RunTest.cpp
-     relativePermeability/RelpermDriverTableRelativeRunTest.cpp
-     relativePermeability/RelpermDriverTableRelativeHysteresisRunTest.cpp
      solid/CompressibleSolid.cpp
      solid/CoupledSolidBase.cpp
      solid/ProppantSolid.cpp
@@ -275,7 +278,6 @@ set( constitutive_sources
      solid/SolidBase.cpp
      solid/SolidInternalEnergy.cpp
      solid/CeramicDamage.cpp
-     solid/TriaxialDriver.cpp
      solid/porosity/BiotPorosity.cpp
      solid/porosity/PorosityBase.cpp
      solid/porosity/PressurePorosity.cpp
@@ -283,11 +285,11 @@ set( constitutive_sources
      thermalConductivity/MultiPhaseConstantThermalConductivity.cpp
      thermalConductivity/MultiPhaseThermalConductivityBase.cpp
      thermalConductivity/MultiPhaseVolumeWeightedThermalConductivity.cpp
-     thermalConductivity/SinglePhaseConstantThermalConductivity.cpp
+     thermalConductivity/SinglePhaseThermalConductivity.cpp
      thermalConductivity/SinglePhaseThermalConductivityBase.cpp
    )
 
-set( dependencyList ${parallelDeps} events dataRepository functions denseLinearAlgebra )
+set( dependencyList ${parallelDeps} functions denseLinearAlgebra )
 
 if( ENABLE_PVTPackage )
     set( constitutive_headers
@@ -296,21 +298,28 @@ if( ENABLE_PVTPackage )
 
     set( constitutive_sources
          ${constitutive_sources}
-         fluid/multifluid/compositional/CompositionalMultiphaseFluidPVTPackage.cpp )
+         fluid/multifluid/compositional/CompositionalMultiphaseFluidPVTPackage.cpp
+          )
 
     add_subdirectory( PVTPackage )
 
     list( APPEND dependencyList PVTPackage )
 endif()
 
+geos_decorate_link_dependencies( LIST decoratedDependencies
+                                 DEPENDENCIES ${dependencyList} )
+
 blt_add_library( NAME       constitutive
                  SOURCES    ${constitutive_sources}
                  HEADERS    ${constitutive_headers}
-                 DEPENDS_ON ${dependencyList}
-                 OBJECT     ${GEOSX_BUILD_OBJ_LIBS}
+                 DEPENDS_ON ${decoratedDependencies}
+                 OBJECT     ${GEOS_BUILD_OBJ_LIBS}
+                 SHARED     ${GEOS_BUILD_SHARED_LIBS}
                )
 
 target_include_directories( constitutive PUBLIC ${CMAKE_SOURCE_DIR}/coreComponents )
+
+install( TARGETS constitutive LIBRARY DESTINATION ${CMAKE_INSTALL_PREFIX}/lib )
 
 if( GEOS_ENABLE_TESTS )
   add_subdirectory( unitTests )

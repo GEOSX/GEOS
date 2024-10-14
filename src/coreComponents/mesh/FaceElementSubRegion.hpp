@@ -2,10 +2,11 @@
  * ------------------------------------------------------------------------------------------------------------
  * SPDX-License-Identifier: LGPL-2.1-only
  *
- * Copyright (c) 2018-2020 Lawrence Livermore National Security LLC
- * Copyright (c) 2018-2020 The Board of Trustees of the Leland Stanford Junior University
- * Copyright (c) 2018-2020 TotalEnergies
- * Copyright (c) 2019-     GEOSX Contributors
+ * Copyright (c) 2016-2024 Lawrence Livermore National Security LLC
+ * Copyright (c) 2018-2024 Total, S.A
+ * Copyright (c) 2018-2024 The Board of Trustees of the Leland Stanford Junior University
+ * Copyright (c) 2023-2024 Chevron
+ * Copyright (c) 2019-     GEOS/GEOSX Contributors
  * All rights reserved
  *
  * See top level LICENSE, COPYRIGHT, CONTRIBUTORS, NOTICE, and ACKNOWLEDGEMENTS files for details.
@@ -134,6 +135,30 @@ public:
                                        std::set< localIndex > const & indices );
 
   /**
+   * @brief Function to flip the face normals of faces adjacent to the faceElements if they are not pointing in the direction of the
+   * fracture.
+   * @param faceManager The face manager group
+   * @param elemManager The element region manager
+   * @details We want to flip the normals of the faces neighboring the fracture element. To do so, we check
+   * if the vector connecting the face center and the element center of the neighboring 3d cell is in the same
+   * direction as the unit normal of the face. If they are not, we flip the normal because it should be pointing outward
+   * (i.e., towards the fracture element).
+   */
+  void fixNeighboringFacesNormals( FaceManager & faceManager,
+                                   ElementRegionManager const & elemManager );
+
+  /**
+   * @brief Function to flip the face map based on the gloal index of the nighboring elements
+   * @param faceManager The face manager group
+   * @param elemManager The element region manager
+   * @details In order to keep a consistent normal between multi processors ranks, we force the faces to be ordered
+   * based on the global numbering of the 3d elements attached to each face. The first face is always the one
+   * attached to the 3d cell with the smallest globalIndex.
+   */
+  void flipFaceMap( FaceManager & faceManager,
+                    ElementRegionManager const & elemManager );
+
+  /**
    * @brief Struct containing the keys to all face element views.
    * @struct viewKeyStruct
    */
@@ -152,7 +177,7 @@ public:
     /// @return String key to collocated nodes buckets.
     static constexpr char const * elem2dToCollocatedNodesBucketsString() { return "elem2dToCollocatedNodesBuckets"; }
 
-#if GEOSX_USE_SEPARATION_COEFFICIENT
+#if GEOS_USE_SEPARATION_COEFFICIENT
     /// Separation coefficient string.
     constexpr static char const * separationCoeffString() { return "separationCoeff"; }
     /// dSepCoeffdAper string.
@@ -200,7 +225,7 @@ public:
    */
   //virtual localIndex numNodesPerElement( localIndex const k ) const override { return m_toNodesRelation[k].size(); }
 
-#ifdef GEOSX_USE_SEPARATION_COEFFICIENT
+#ifdef GEOS_USE_SEPARATION_COEFFICIENT
   /**
    * @brief Get separation coefficient.
    * @return the separation coefficient
@@ -314,7 +339,7 @@ private:
    */
   ArrayOfArrays< array1d< globalIndex > > m_2dElemToCollocatedNodesBuckets;
 
-#ifdef GEOSX_USE_SEPARATION_COEFFICIENT
+#ifdef GEOS_USE_SEPARATION_COEFFICIENT
   /// Separation coefficient
   array1d< real64 > m_separationCoefficient;
 #endif

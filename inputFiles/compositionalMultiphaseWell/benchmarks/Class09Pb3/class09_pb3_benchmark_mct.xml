@@ -1,0 +1,111 @@
+<?xml version="1.0" ?>
+
+<Problem>
+  <Included>
+    <File name="./class09_pb3_drainageOnly_iterative_base.xml"/>
+  </Included>
+    <!-- <File name="./class09_pb3_hystRelperm_iterative_base.xml"/> -->
+    <!-- <File name="./class09_pb3_hystRelperm_direct_base.xml"/> -->
+    <!-- <File name="./class09_pb3_drainageOnly_iterative_base.xml"/> -->
+    <!-- <File name="./class09_pb3_drainageOnly_direct_base.xml"/> -->
+
+  <!-- SPHINX_MESH -->
+  <Mesh> 
+    <VTKMesh
+      name="mesh"
+      logLevel="5"  
+      file="../../../../../GEOSXDATA/DataSets/Class09_p3/Johansen_faces.vtu"
+      fieldsToImport="{ perm, poro }"
+      fieldNamesInGEOS="{ rockPerm_permeability, rockPorosity_referencePorosity }" >
+      <InternalWell
+        name="wellInjector1"
+        wellRegionName="wellRegion"
+        wellControlsName="MAX_MASS_INJ_TABLE"
+        logLevel="1"
+        polylineNodeCoords="{ { 5440.0, 3300.0, -2950.0 },
+                              { 5440.0, 3300.0, -3000.00 } }"
+        polylineSegmentConn="{ { 0, 1 } }"
+        radius="0.1"
+        numElementsPerSegment="5">
+        <Perforation
+          name="injector1_perf1"
+          distanceFromHead="45"/>
+        <Perforation
+          name="injector1_perf2"
+          distanceFromHead="35"/>
+        <Perforation
+          name="injector1_perf3"
+          distanceFromHead="25"/>
+        <Perforation
+          name="injector1_perf4"
+          distanceFromHead="15"/>
+        <Perforation
+          name="injector1_perf5"
+          distanceFromHead="5"/> 
+      </InternalWell>
+    </VTKMesh>
+  </Mesh>
+        <!-- SPHINX_MESH_END -->
+
+  <Tasks>
+    <!-- SPHINX_STATS -->
+    <CompositionalMultiphaseStatistics
+      name="compflowStatistics"
+      flowSolverName="compositionalMultiphaseFlow"
+      logLevel="1"
+      computeCFLNumbers="1"
+      computeRegionStatistics="1"/>
+    <!-- SPHINX_STATS_END -->
+  </Tasks>
+
+  <Outputs>
+    <VTK
+      name="simpleReservoirViz"/>
+    <Restart
+      name="restartOutput"/>
+  </Outputs>
+
+  <!-- max time 50 y -->
+  <Events
+    maxTime="1.5768e+09">
+
+    <PeriodicEvent
+      name="outputs"
+      timeFrequency="1e8"
+      targetExactTimestep="1"
+      target="/Outputs/simpleReservoirViz"/>
+
+    <PeriodicEvent
+      name="restarts"
+      timeFrequency="3.5e8"
+      targetExactTimestep="1"
+      target="/Outputs/restartOutput"/>
+
+    <!-- SPHINX_STAT_EV -->
+    <PeriodicEvent
+      name="statistics"
+      timeFrequency="1e8"
+      target="/Tasks/compflowStatistics"/>
+    <!-- SPHINX_STAT_EV_END -->
+
+    <PeriodicEvent
+      name="solverApplications1"
+      beginTime="0"
+      endTime="7.884e8"
+      maxEventDt="5e6"        
+      target="/Solvers/coupledFlowAndWells"/>
+    <PeriodicEvent
+      name="solverApplications2"
+      beginTime="7.884e8"
+      endTime="7.88405e8"
+      forceDt="1e4"        
+      target="/Solvers/coupledFlowAndWells"/>
+    <PeriodicEvent
+      name="solverApplications3"
+      beginTime="7.88405e8"
+      endTime="1.544e9"
+      maxEventDt="1e7"        
+      target="/Solvers/coupledFlowAndWells"/>
+
+  </Events>
+</Problem>

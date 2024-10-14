@@ -2,7 +2,7 @@
 
 <Problem>
   
-  <!-- SPHINX_SOLVER -->      
+  <!-- SPHINX_SOLVER -->
   <Solvers>
     <CompositionalMultiphaseFVM
       name="compflow"
@@ -60,19 +60,15 @@
   <ElementRegions>
     <CellElementRegion
       name="aquiferBottom"
-      cellBlocks="{ aquiferBottom00, aquiferBottom01, aquiferBottom02,
-                    aquiferBottom10,                  aquiferBottom12,
-                    aquiferBottom20, aquiferBottom21, aquiferBottom22,
-                    aquiferBottom30,                  aquiferBottom32,
-                    aquiferBottom40, aquiferBottom41, aquiferBottom42 }"
+      cellBlocks="{ aquiferBottom00, aquiferBottom10, aquiferBottom20, aquiferBottom30, aquiferBottom40,
+                    aquiferBottom01,                  aquiferBottom21,                  aquiferBottom41,
+                    aquiferBottom02, aquiferBottom12, aquiferBottom22, aquiferBottom32, aquiferBottom42 }"
       materialList="{ fluid, rock, relperm }"/>
     <CellElementRegion
       name="aquiferTop"
-      cellBlocks="{ aquiferTop00, aquiferTop01, aquiferTop02,
-                    aquiferTop10,               aquiferTop12,
-                    aquiferTop20, aquiferTop21, aquiferTop22,
-                    aquiferTop30,               aquiferTop32,
-                    aquiferTop40, aquiferTop41, aquiferTop42 }"
+      cellBlocks="{ aquiferTop00, aquiferTop10, aquiferTop20, aquiferTop30, aquiferTop40,
+                    aquiferTop01,               aquiferTop21,               aquiferTop41,
+                    aquiferTop02, aquiferTop12, aquiferTop22, aquiferTop32, aquiferTop42 }"
       materialList="{ fluid, rock, relperm }"/>
     <CellElementRegion
       name="injectionWell"
@@ -80,16 +76,14 @@
       materialList="{ fluid, rockWell, relperm }"/>
     <CellElementRegion
       name="leakyWell"
-      cellBlocks="{ aquiferTop11, aquitard11, aquiferBottom11 }"
+      cellBlocks="{ aquiferBottom11, aquitard11, aquiferTop11 }"
       materialList="{ fluid, rockWell, relperm }"/>
     <CellElementRegion
       name="barrier"
-      cellBlocks="{ aquitard00, aquitard01, aquitard02,
-                    aquitard10,             aquitard12,
-                    aquitard20, aquitard21, aquitard22,
-                    aquitard30, aquitard31, aquitard32,
-                    aquitard40, aquitard41, aquitard42,
-                    aquiferTop31 }"
+      cellBlocks="{ aquitard00, aquitard10, aquitard20, aquitard30, aquitard40,
+                    aquitard01,             aquitard21, aquitard31, aquitard41,
+                    aquitard02, aquitard12, aquitard22, aquitard32, aquitard42,
+                                                        aquiferTop31 }"
       materialList="{ }"/>
   </ElementRegions>
   <!-- SPHINX_ELEMENT_REGIONS_END -->    

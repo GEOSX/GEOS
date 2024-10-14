@@ -7,9 +7,8 @@
       name="poroSolver"
       targetRegions="{ Reservoir, Overburden, Underburden, Sideburden, Fracture }"
       initialDt="1000"
-      fracturesSolverName="fractureMechSolver"
       flowSolverName="flowSolver"
-      solidSolverName="matrixMechSolver"
+      solidSolverName="fractureMechSolver"
       logLevel="1"
       isThermal="1">
       <NonlinearSolverParameters
@@ -27,9 +26,9 @@
     <SolidMechanicsEmbeddedFractures
       name="fractureMechSolver"
       targetRegions="{ Reservoir, Overburden, Underburden, Sideburden, Fracture }"
-      solidSolverName="matrixMechSolver"
-      fractureRegionName="Fracture"
-      contactRelationName="fractureContact">
+      timeIntegrationOption="QuasiStatic"
+      discretization="FE1"
+      contactPenaltyStiffness="0.0e8">
       <NonlinearSolverParameters
         maxTimeStepCuts="1"
         newtonTol="1e-03"
@@ -37,12 +36,6 @@
       <LinearSolverParameters
         directParallel="0"/>
     </SolidMechanicsEmbeddedFractures>
-
-    <SolidMechanicsLagrangianSSLE
-      name="matrixMechSolver"
-      timeIntegrationOption="QuasiStatic"
-      discretization="FE1"
-      targetRegions="{ Reservoir, Overburden, Underburden, Sideburden }"/>
 
     <SinglePhaseFVM
       name="flowSolver"
@@ -73,7 +66,7 @@
       file="../../../GEOSDATA/DataSets/Egg/egg_withBurdens_small.vts"
       regionAttribute="elementRegionMarker"
       fieldsToImport="{ PERM }"
-      fieldNamesInGEOSX="{ rockPermeability_permeability }"/>
+      fieldNamesInGEOS="{ rockPermeability_permeability }"/>
   </Mesh>
 
   <Geometry>
@@ -227,7 +220,7 @@
 
     <SolidInternalEnergy
       name="rockInternalEnergy"
-      volumetricHeatCapacity="1.672e5"
+      referenceVolumetricHeatCapacity="1.672e5"
       referenceTemperature="0.0"
       referenceInternalEnergy="0.0"/>  
 
@@ -243,13 +236,13 @@
       specificHeatCapacity="1.672e2"
       referenceInternalEnergy="0.001"/> 
 
-    <SinglePhaseConstantThermalConductivity
+    <SinglePhaseThermalConductivity
       name="thermalCond"
-      thermalConductivityComponents="{ 10, 10, 10 }"/>   
+      defaultThermalConductivityComponents="{ 10, 10, 10 }"/>   
 
     <BiotPorosity
       name="rockPorosity"
-      grainBulkModulus="1.0e27"
+      defaultGrainBulkModulus="1.0e27"
       defaultReferencePorosity="0.2"/>
 
     <CompressibleSolidParallelPlatesPermeability
@@ -272,9 +265,11 @@
       name="fracturePerm"/>
 
     <FrictionlessContact
-      name="fractureContact"
-      penaltyStiffness="0.0e8"
-      apertureTableName="apertureTable"/>
+      name="fractureContact"/>
+
+    <HydraulicApertureTable
+      name="hApertureModel"
+      apertureTableName="apertureTable"/>   
   </Constitutive>
 
   <FieldSpecifications>

@@ -119,36 +119,14 @@ Mesh definition and well geometry
 In the presence of wells, the **Mesh** block of the XML input file includes two parts:
 
  - a sub-block **VTKMesh** defining the reservoir mesh (see :ref:`TutorialSinglePhaseFlowExternalMesh` for more on this),
- - a collection of sub-blocks **InternalWell** defining the geometry of the wells.
+ - a collection of sub-blocks defining the geometry of the wells.
 
 The reservoir mesh is imported from a ``.vtu`` file that contains the mesh geometry
 and also includes the permeability values in the x, y, and z directions.
 These quantities must be specified using the metric unit system, i.e., in meters
 for the well geometry and square meters for the permeability field.
-We note that the mesh file only contains the active cells, so there is no keyword
-needed in the XML file  to define them.
-
-Each well is defined internally (i.e., not imported from a file) in a separate **InternalWell**
-XML sub-block. An **InternalWell** sub-block must point to the reservoir mesh that the well perforates
-using the attribute ``meshName``, to the region corresponding to this well using the attribute
-``wellRegionName``, and to the control of this well using the attribute ``wellControl``.
-Each block **InternalWell** must point to the reservoir mesh
-(using the attribute ``meshName``), the corresponding well region (using
-the attribute ``wellRegionName``), and the corresponding well control
-(using the attribute ``wellControlName``).
-
-Each well is defined using a vertical polyline going through the seven layers of the
-mesh, with a perforation in each layer.
-The well placement implemented here follows the pattern of the original test case.
-The well geometry must be specified in meters.
-
-The location of the perforations is found internally using the linear distance along the wellbore
-from the top of the well, specified by the attribute ``distanceFromHead``.
-It is the responsibility of the user to make sure that there is a perforation in the bottom cell
-of the well mesh otherwise an error will be thrown and the simulation will terminate.
-For each perforation, the well transmissibility factors employed to compute the perforation rates are calculated
-internally using the Peaceman formulation.
-
+We note that the mesh file only contains active cells, so there is no keyword
+needed in the XML file to define them.
 
 .. image:: egg_model.png
    :width: 400px
@@ -161,6 +139,51 @@ internally using the Peaceman formulation.
 
 
 .. _Events_tag_dead_oil_egg_model:
+
+~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
+**InternalWell** sub-blocks
+~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
+
+Each well is defined internally (i.e., not imported from a file) in a separate **InternalWell**
+XML sub-block. An **InternalWell** sub-block must point to the region corresponding to this well using the attribute
+``wellRegionName``, and to the control of this well using the attribute ``wellControl``.
+
+Each well is defined using a vertical polyline going through the seven layers of the
+mesh with a perforation in each layer.
+The well placement implemented here follows the pattern of the original test case.
+The well geometry must be specified in meters.
+
+The location of the perforations is found internally using the linear distance along the wellbore
+from the top of the well specified by the attribute ``distanceFromHead``.
+It is the responsibility of the user to make sure that there is a perforation in the bottom cell
+of the well mesh otherwise an error will be thrown and the simulation will terminate.
+For each perforation, the well transmissibility factors employed to compute the perforation rates are calculated
+internally using the Peaceman formulation.
+
+~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
+**VTKWell** sub-blocks
+~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
+
+Each well is loaded from a file in a separate **VTKWell**
+XML sub-block. A **VTKWell** sub-block must point to the region corresponding to this well using the attribute
+``wellRegionName``, and to the control of this well using the attribute ``wellControl``.
+
+Each well is defined using a vertical VTK polyline going through the seven layers of the
+mesh with a perforation in each layer.
+The well placement implemented here follows the pattern of the original test case.
+The well geometry must be specified in meters.
+
+The location of perforations is found internally using the linear distance along the wellbore
+from the top of the well specified by the attribute ``distanceFromHead``.
+It is the responsibility of the user to make sure that there is a perforation in the bottom cell
+of the well mesh otherwise an error will be thrown and the simulation will terminate.
+For each perforation, the well transmissibility factors employed to compute the perforation rates are calculated
+internally using the Peaceman formulation.
+
+.. literalinclude:: ../../../../../inputFiles/compositionalMultiphaseWell/benchmarks/Egg/deadOilEggVTK_benchmark.xml
+  :language: xml
+  :start-after: <!-- SPHINX_TUT_DEAD_OIL_EGG_VTKWELL -->
+  :end-before: <!-- SPHINX_TUT_DEAD_OIL_EGG_VTKWELL_END -->
 
 ------------------------
 Events
@@ -181,11 +204,11 @@ by the attribute ``timeFrequency``.
 Here, we choose to output the results using the VTK format (see :ref:`TutorialSinglePhaseFlowExternalMesh`
 for a example that uses the Silo output file format).
 The ``target`` attribute must point to the **VTK** sub-block of the **Outputs**
-block (defined at the end of the XML file) by name (here, ``vtkOutput``).
+block defined at the end of the XML file by its user-specified name (here, ``vtkOutput``).
 
-We define the events involved in the collection and output of the well production rates following the procedure defined in :ref:`TasksManager`.
-The time history collection events trigger the collection of the well rates at the desired frequency, while the time history output events trigger the output of the HDF5 files containing the time series.
-These events point by name to the corresponding blocks of the **Tasks** and **Outputs** XML blocks, respectively. Here, these names are ``wellRateCollection1`` and ``timeHistoryOutput1``.
+We define the events involved in the collection and output of well production rates following the procedure defined in :ref:`TasksManager`.
+The time-history collection events trigger the collection of well rates at the desired frequency, while the time-history output events trigger the output of HDF5 files containing the time series.
+These events point by name to the corresponding blocks of the **Tasks** and **Outputs** XML blocks. Here, these names are ``wellRateCollection1`` and ``timeHistoryOutput1``.
 
 .. literalinclude:: ../../../../../inputFiles/compositionalMultiphaseWell/benchmarks/Egg/deadOilEgg_base_iterative.xml
   :language: xml
@@ -199,7 +222,7 @@ These events point by name to the corresponding blocks of the **Tasks** and **Ou
 Numerical methods
 ----------------------------------
 
-In the ``NumericalMethods`` XML block, we instruct GEOS to use a TPFA finite-volume
+In the ``NumericalMethods`` XML block, we instruct GEOS to use a TPFA (Two-Point Flux Approximation) finite-volume
 numerical scheme.
 This part is similar to the corresponding section of :ref:`TutorialDeadOilBottomLayersSPE10`, and has been adapted to match the specifications of the Egg model.
 
@@ -215,7 +238,7 @@ This part is similar to the corresponding section of :ref:`TutorialDeadOilBottom
 Reservoir and well regions
 -----------------------------------
 
-In this section of the input file, we follow the procedure already described in
+In this section of the input file, we follow the procedure described in
 :ref:`TutorialDeadOilBottomLayersSPE10` for the definition of the reservoir region with multiphase constitutive models.
 
 We associate a **CellElementRegion** named ``reservoir`` to the reservoir mesh.
@@ -421,7 +444,7 @@ We can load this file into Paraview directly and visualize results:
    :width: 45%
 
 We have instructed GEOS to output the time series of rates for each producer.
-The data contained in the corresponding hdf5 files can be extracted and plotted
+The data contained in the corresponding HDF5 files can be extracted and plotted
 as shown below.
 
 .. plot:: docs/sphinx/basicExamples/multiphaseFlowWithWells/multiphaseFlowWithWellsFigure.py

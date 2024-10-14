@@ -1,5 +1,4 @@
-import geos_ats
-from geos_ats.test_builder import TestDeck, RestartcheckParameters, generate_geos_tests
+from geos.ats.test_builder import TestDeck, RestartcheckParameters, generate_geos_tests
 
 restartcheck_params = {}
 restartcheck_params["atol"] = 1.0E-6
@@ -28,6 +27,22 @@ decks = [
         "Compositional multiphase flow test (1D displacement, 3-phase dead-oil, Brooks-Corey pairwise 2-phase relperm curves)",
         partitions=((1, 1, 1), (2, 1, 1), (3, 1, 1)),
         restart_step=109,
+        check_step=209,
+        restartcheck_params=RestartcheckParameters(**restartcheck_params)),
+    TestDeck(
+        name="deadoil_3ph_stone2_1d",
+        description=
+        "Compositional multiphase flow test (1D displacement, 3-phase dead-oil, Stone2 relperm curves)",
+        partitions=((1, 1, 1), (3, 1, 1)),
+        restart_step=109,
+        check_step=209,
+        restartcheck_params=RestartcheckParameters(**restartcheck_params)),
+    TestDeck(
+        name="deadoil_3ph_corey_1d_fractured",
+        description=
+        "Compositional multiphase flow test with EDFM (1D displacement, 3-phase dead-oil, Brooks-Corey pairwise 2-phase relperm curves)",
+        partitions=((1, 1, 1), (3, 1, 1)),
+        restart_step=0,
         check_step=209,
         restartcheck_params=RestartcheckParameters(**restartcheck_params)),
     TestDeck(
@@ -79,12 +94,28 @@ decks = [
         check_step=20,
         restartcheck_params=RestartcheckParameters(**restartcheck_params)),
     TestDeck(
+        name="co2_flux_dirichlet",
+        description=
+        "Compositional co2-brine flow test (2D co2 injection, 2-phase co2-brine, Table 2-phase relperm curves, Dirichlet boundary)",
+        partitions=((1, 1, 1), (2, 1, 3)),
+        restart_step=23,
+        check_step=46,
+        restartcheck_params=RestartcheckParameters(**restartcheck_params)),
+    TestDeck(
         name="deadoil_3ph_staircase_obl_3d",
         description=
         "Smoke test for a staircase deadoil test (3D displacement, 3-phase dead-oil, OBL)",
         partitions=((1, 1, 1), (2, 2, 2)),
         restart_step=28,
         check_step=38,
+        restartcheck_params=RestartcheckParameters(**restartcheck_params)),
+    TestDeck(
+        name="2ph_cap_1d_ihu",
+        description=
+        "Two-phase flow test for IHU (1D displacement, 2-phase, capillary pressure)",
+        partitions=((1, 1, 1), (3, 1, 1)),
+        restart_step=34,
+        check_step=60,
         restartcheck_params=RestartcheckParameters(**restartcheck_params)),
 ]
 

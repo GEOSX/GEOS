@@ -2,10 +2,11 @@
  * ------------------------------------------------------------------------------------------------------------
  * SPDX-License-Identifier: LGPL-2.1-only
  *
- * Copyright (c) 2018-2020 Lawrence Livermore National Security LLC
- * Copyright (c) 2018-2020 The Board of Trustees of the Leland Stanford Junior University
- * Copyright (c) 2018-2020 TotalEnergies
- * Copyright (c) 2019-     GEOSX Contributors
+ * Copyright (c) 2016-2024 Lawrence Livermore National Security LLC
+ * Copyright (c) 2018-2024 Total, S.A
+ * Copyright (c) 2018-2024 The Board of Trustees of the Leland Stanford Junior University
+ * Copyright (c) 2023-2024 Chevron
+ * Copyright (c) 2019-     GEOS/GEOSX Contributors
  * All rights reserved
  *
  * See top level LICENSE, COPYRIGHT, CONTRIBUTORS, NOTICE, and ACKNOWLEDGEMENTS files for details.
@@ -38,6 +39,7 @@ enum class UpwindingScheme : integer
 {
   PPU,    ///< PPU upwinding
   C1PPU,  ///< C1-PPU upwinding from https://doi.org/10.1016/j.advwatres.2017.07.028
+  IHU ///< IHU as in https://link.springer.com/content/pdf/10.1007/s10596-019-09835-6.pdf
 };
 
 /**
@@ -45,7 +47,8 @@ enum class UpwindingScheme : integer
  */
 ENUM_STRINGS( UpwindingScheme,
               "PPU",
-              "C1PPU" );
+              "C1PPU",
+              "IHU" );
 
 /**
  * @struct UpwindingParameters
@@ -54,7 +57,7 @@ ENUM_STRINGS( UpwindingScheme,
  */
 struct UpwindingParameters
 {
-  /// PPU or C1-PPU
+  /// PPU or C1-PPU or IHU
   UpwindingScheme upwindingScheme;
 
   /// C1-PPU smoothing tolerance
@@ -130,11 +133,9 @@ public:
    * @brief Add a new fracture stencil.
    * @param[in,out] mesh the mesh on which to add the fracture stencil
    * @param[in] faceElementRegionName the face element region name
-   * @param[in] initFields if true initialize physical fields, like pressure
    */
   virtual void addToFractureStencil( MeshLevel & mesh,
-                                     string const & faceElementRegionName,
-                                     bool const initFields ) const = 0;
+                                     string const & faceElementRegionName ) const = 0;
 
   /**
    * @brief Add a new embedded fracture stencil.

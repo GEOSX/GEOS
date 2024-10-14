@@ -2,10 +2,11 @@
  * ------------------------------------------------------------------------------------------------------------
  * SPDX-License-Identifier: LGPL-2.1-only
  *
- * Copyright (c) 2018-2020 Lawrence Livermore National Security LLC
- * Copyright (c) 2018-2020 The Board of Trustees of the Leland Stanford Junior University
- * Copyright (c) 2018-2020 TotalEnergies
- * Copyright (c) 2019-     GEOSX Contributors
+ * Copyright (c) 2016-2024 Lawrence Livermore National Security LLC
+ * Copyright (c) 2018-2024 Total, S.A
+ * Copyright (c) 2018-2024 The Board of Trustees of the Leland Stanford Junior University
+ * Copyright (c) 2023-2024 Chevron
+ * Copyright (c) 2019-     GEOS/GEOSX Contributors
  * All rights reserved
  *
  * See top level LICENSE, COPYRIGHT, CONTRIBUTORS, NOTICE, and ACKNOWLEDGEMENTS files for details.
@@ -19,7 +20,7 @@
 /// Source includes
 #include "schemaUtilities.hpp"
 
-#include "codingUtilities/StringUtilities.hpp"
+#include "common/format/StringUtilities.hpp"
 #include "common/DataTypes.hpp"
 #include "dataRepository/Group.hpp"
 #include "dataRepository/InputFlags.hpp"
@@ -76,9 +77,15 @@ string getSchemaTypeName( string_view rtTypeName )
 
   // Note: Some type names involving strings can vary on compiler and be ugly.  Convert these to "string"
   auto constexpr typeMergingRegex = "std_(__cxx11_basic_)?string(<\\s*char,\\s*std_char_traits<char>,\\s*std_allocator<char>\\s*>)?";
-  string const xmlSafeName = std::regex_replace( sanitizedName,
-                                                 std::regex( typeMergingRegex ),
-                                                 "string" );
+  string xmlSafeName = std::regex_replace( sanitizedName,
+                                           std::regex( typeMergingRegex ),
+                                           "string" );
+
+  // Replace '<', '>', spaces and ',' because the schema does not like them
+  xmlSafeName = std::regex_replace( xmlSafeName, std::regex( "<" ), "_lt_" );
+  xmlSafeName = std::regex_replace( xmlSafeName, std::regex( ">" ), "_gt_" );
+  xmlSafeName = std::regex_replace( xmlSafeName, std::regex( "," ), "_cm_" );
+  xmlSafeName = std::regex_replace( xmlSafeName, std::regex( " " ), "-" );
 
   return xmlSafeName;
 }

@@ -2,11 +2,12 @@
  * ------------------------------------------------------------------------------------------------------------
  * SPDX-License-Identifier: LGPL-2.1-only
  *
- * Copyright (c) 2018-2020 Lawrence Livermore National Security LLC
- * Copyright (c) 2018-2020 The Board of Trustees of the Leland Stanford Junior University
- * Copyright (c) 2018-2020 Total, S.A
- * Copyright (c) 2020-     GEOSX Contributors
- * All right reserved
+ * Copyright (c) 2016-2024 Lawrence Livermore National Security LLC
+ * Copyright (c) 2018-2024 Total, S.A
+ * Copyright (c) 2018-2024 The Board of Trustees of the Leland Stanford Junior University
+ * Copyright (c) 2023-2024 Chevron
+ * Copyright (c) 2019-     GEOS/GEOSX Contributors
+ * All rights reserved
  *
  * See top level LICENSE, COPYRIGHT, CONTRIBUTORS, NOTICE, and ACKNOWLEDGEMENTS files for details.
  * ------------------------------------------------------------------------------------------------------------
@@ -29,12 +30,13 @@ HDFFile::HDFFile( string const & fnm, bool deleteExisting, bool parallelAccess, 
   m_mpioFapl( parallelAccess ),
   m_comm( comm )
 {
-  int rnk = MpiWrapper::commRank( comm );
-#ifdef GEOSX_USE_MPI
+  int rnk = MpiWrapper::commRank( m_comm );
   if( m_mpioFapl )
   {
     m_faplId = H5Pcreate( H5P_FILE_ACCESS );
     H5Pset_fapl_mpio( m_faplId, m_comm, MPI_INFO_NULL );
+    H5Pset_all_coll_metadata_ops( m_faplId, 1 );
+    H5Pset_coll_metadata_write( m_faplId, 1 );
     m_filename = fnm + ".hdf5";
   }
   else
@@ -42,10 +44,6 @@ HDFFile::HDFFile( string const & fnm, bool deleteExisting, bool parallelAccess, 
     m_faplId = H5P_DEFAULT;
     m_filename = fnm + "." + std::to_string( rnk ) + ".hdf5";
   }
-#else
-  m_faplId = H5P_DEFAULT;
-  m_filename = fnm + ".hdf5";
-#endif
   // check if file already exists
   htri_t exists = 0;
   H5E_BEGIN_TRY
@@ -77,6 +75,7 @@ HDFFile::~HDFFile()
 {
   if( m_mpioFapl )
   {
+//    H5Fflush( m_fileId, H5F_SCOPE_GLOBAL );
     H5Pclose( m_faplId );
   }
   H5Fclose( m_fileId );

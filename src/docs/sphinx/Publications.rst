@@ -2,18 +2,75 @@
 Publications
 ###############################################################################
 
-Last updated 5-September-2023
+Last updated 26-August-2024
 
 Preprints and Early-Views
 =========================
 
+2024
+====
+
+.. list-table::
+   :widths: 100
+   :header-rows: 0
+
+   * - | **A benchmark study on reactive two-phase flow in porous media: Part II - results and discussion**
+       | E Ahusborde, B Amaziane, S de Hoop, M El Ossmani, E Flauraud, FP Hamon, M Kern, A Socié, D Su, KU Mayer, M Tóth, D Voskov
+       | Computational Geosciences
+       | `doi.org/10.1007/s10596-024-10269-y <https://doi.org/10.1007/s10596-024-10269-y>`_ 
+
+   * - | **Pressure-stabilized fixed-stress iterative solutions of compositional poromechanics**
+       | RM Aronson, N Castelletto, FP Hamon, JA White, HA Tchelepi
+       | Computer Methods in Applied Mechanics and Engineering
+       | `doi:10.1016/j.cma.2024.117008 <https://doi.org/10.1016/j.cma.2024.117008>`_
+
+   * - | **Managing reservoir dynamics when converting natural gas fields to underground hydrogen storage**
+       | JT Camargo, JA White, FP Hamon, V Fakeye, TA Buscheck, N Huerta
+       | International Journal of Hydrogen Energy
+       | `doi.org/10.1016/j.ijhydene.2023.09.165 <https://doi.org/10.1016/j.ijhydene.2023.09.165>`_ 
+
+   * - | **Constrained pressure-temperature residual (CPTR) preconditioner performance for large-scale thermal CO2 injection simulation**
+       | MA Cremon, J Franc, FP Hamon
+       | Computational Geosciences
+       | `doi.org/10.1007/s10596-024-10292-z <https://doi.org/10.1007/s10596-024-10292-z>`_ 
+
+   * - | **Surrogate model for geological CO2 storage and its use in hierarchical MCMC history matching**
+       | Y Han, FP Hamon, S Jiang, LJ Durlofsky
+       | Advances in Water Resources
+       | `doi:10.1016/j.advwatres.2024.104678 <https://doi.org/10.1016/j.advwatres.2024.104678>`_
+
+   * - | **Simulation of Multiphase Flow and Poromechanical Effects Around Injection Wells in CO2 Storage Sites**
+       | J Huang, F Hamon, M Cusini, T Gazzola, RR Settgast, JA White, H Gross
+       | Rock Mechanics and Rock Engineering
+       | `doi:10.1007/s00603-024-04051-w <https://doi.org/10.1007/s00603-024-04051-w>`_ 
+
+   * - | **Multilevel well modeling in aggregation-based nonlinear multigrid for multiphase flow in porous media**
+       | CS Lee, FP Hamon, N Castelletto, PS Vassilevski, JA White
+       | Journal of Computational Physics
+       | `doi:10.1016/j.jcp.2024.113163 <https://doi.org/10.1016/j.jcp.2024.113163>`_
+
+   * - | **Theory and analytical solutions to wellbore problems with hardening/softening Drucker-Prager models**
+       | T Nguyen-Sy, J Huang, H Gross
+       | International Journal of Rock Mechanics and Mining Sciences
+       | `doi:10.1016/j.ijrmms.2024.105878 <https://doi.org/10.1016/j.ijrmms.2024.105878>`_
+
 2023
 ====
 
-* - | **A phase-field model for hydraulic fracture nucleation and propagation in porous media**
-    | F Fei, A Costa, JE Dolbow, R Settgast, M Cusini
-    | International Journal for Numerical and Analytical Methods in Geomechanics
-    | `doi.org/10.1002/nag.3612 <https://doi.org/10.1002/nag.3612>`_
+.. list-table::
+   :widths: 100
+   :header-rows: 0
+
+   * - | **A phase-field model for hydraulic fracture nucleation and propagation in porous media**
+       | F Fei, A Costa, JE Dolbow, R Settgast, M Cusini
+       | International Journal for Numerical and Analytical Methods in Geomechanics
+       | `doi.org/10.1002/nag.3612 <https://doi.org/10.1002/nag.3612>`_
+
+   * - | **Validation and Application of a Three-Dimensional Model for Simulating Proppant Transport and Fracture Conductivity**
+       | J Huang, Y Hao, RR Settgast, JA White, K Mateen, H Gross
+       | Rock Mechanics and Rock Engineering
+       | `doi:10.1007/s00603-022-03092-3 <https://doi.org/10.1007/s00603-022-03092-3>`_ 
+
 
 2022
 ====
@@ -52,13 +109,8 @@ Preprints and Early-Views
        | Computers & Mathematics with Applications
        | `doi:10.1016/j.camwa.2021.11.015 <https://doi.org/10.1016/j.camwa.2021.11.015>`_ 
 
-   * - | **Validation and Application of a Three-Dimensional Model for Simulating Proppant Transport and Fracture Conductivity**
-       | J Huang, Y Hao, RR Settgast, JA White, K Mateen, H Gross
-       | Rock Mechanics and Rock Engineering
-       | `doi:10.1007/s00603-022-03092-3 <https://doi.org/10.1007/s00603-022-03092-3>`_ 
-
    * - | **An aggregation-based nonlinear multigrid solver for two-phase flow and transport in porous media**
-       | CS Lee, F Hamon, N Castelletto, PS Vassilevski, JA White
+       | CS Lee, FP Hamon, N Castelletto, PS Vassilevski, JA White
        | Computers & Mathematics with Applications
        | `doi:10.1016/j.camwa.2022.03.026 <https://doi.org/10.1016/j.camwa.2022.03.026>`_
 

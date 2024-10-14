@@ -11,7 +11,7 @@
       targetRegions="{ region }">
       <NonlinearSolverParameters
         newtonTol="1.0e-6"
-        newtonMaxIter="10"/>
+        newtonMaxIter="100"/>
       <LinearSolverParameters
         directParallel="0"/>
     </SinglePhaseFVM>
@@ -24,21 +24,21 @@
     </FiniteVolume>
   </NumericalMethods>
 
-  <ElementRegions>
-    <CellElementRegion
-      name="region"
-      cellBlocks="{ cb }"
-      materialList="{ fluid, rock, thermalCond }"/>
-  </ElementRegions>
-
   <Constitutive>
 
     <CompressibleSolidConstantPermeability
-      name="rock"
+      name="rock_linear"
       solidModelName="nullSolid"
       porosityModelName="rockPorosity"
       permeabilityModelName="rockPerm"
-      solidInternalEnergyModelName="rockInternalEnergy"/>
+      solidInternalEnergyModelName="rockInternalEnergy_linear"/>
+
+    <CompressibleSolidConstantPermeability
+      name="rock_temperatureDependentVolumetricHeatCapacity"
+      solidModelName="nullSolid"
+      porosityModelName="rockPorosity"
+      permeabilityModelName="rockPerm"
+      solidInternalEnergyModelName="rockInternalEnergy_nonLinear"/>
 
     <NullModel
       name="nullSolid"/>
@@ -49,13 +49,22 @@
       referencePressure="0.0"
       compressibility="3.0e-11"/>
 
-	<!-- SPHINX_SolidInternalEnergy -->
+	<!-- SPHINX_SolidInternalEnergy_linear -->
     <SolidInternalEnergy
-      name="rockInternalEnergy"
-      volumetricHeatCapacity="4.56e6"
+      name="rockInternalEnergy_linear"
+      referenceVolumetricHeatCapacity="1.0e6"
       referenceTemperature="0"
       referenceInternalEnergy="0"/>
-	<!-- SPHINX_SolidInternalEnergyEnd -->
+	<!-- SPHINX_SolidInternalEnergy_linearEnd -->
+
+    <!-- SPHINX_SolidInternalEnergy_nonLinear -->
+    <SolidInternalEnergy
+      name="rockInternalEnergy_nonLinear"
+      referenceVolumetricHeatCapacity="4.56e6"
+      dVolumetricHeatCapacity_dTemperature="1e6"
+      referenceTemperature="0"
+      referenceInternalEnergy="0"/>
+    <!-- SPHINX_SolidInternalEnergy_nonLinearEnd -->
 
     <ConstantPermeability
       name="rockPerm"
@@ -75,11 +84,21 @@
       referenceInternalEnergy="0.99"/>
 	<!-- SPHINX_ThermalCompressibleSinglePhaseFluidEnd -->
 
-	<!-- SPHINX_SinglePhaseConstantThermalConductivity -->
-    <SinglePhaseConstantThermalConductivity
-      name="thermalCond"
-      thermalConductivityComponents="{ 1.66, 1.66, 1.66 }"/>
-	<!-- SPHINX_SinglePhaseConstantThermalConductivityEnd -->    
+    <!-- SPHINX_SinglePhaseThermalConductivity_linear -->
+    <SinglePhaseThermalConductivity
+      name="thermalCond_linear"
+      defaultThermalConductivityComponents="{ 1.66, 1.66, 1.66 }"
+      thermalConductivityGradientComponents="{ 0, 0, 0 }"
+      referenceTemperature="0"/>
+    <!-- SPHINX_SinglePhaseThermalConductivity_linearEnd -->    
+
+	<!-- SPHINX_SinglePhaseThermalConductivity_nonLinear -->
+    <SinglePhaseThermalConductivity
+      name="thermalCond_nonLinear"
+      defaultThermalConductivityComponents="{ 1.5, 1.5, 1.5 }"
+      thermalConductivityGradientComponents="{ -12e-4, -12e-4, -12e-4 }"
+      referenceTemperature="20"/>
+	<!-- SPHINX_SinglePhaseThermalConductivity_nonLinearEnd -->    
 	
   </Constitutive>
 
@@ -116,21 +135,21 @@
       setNames="{ all }"
       objectPath="ElementRegions/region/cb"
       fieldName="temperature"
-      scale="0"/>
+      scale="100"/>
 
     <FieldSpecification
       name="sinkTemperature"
       setNames="{ rpos }"       
       objectPath="faceManager"
       fieldName="temperature"
-      scale="0"/>
+      scale="100"/>
 
     <FieldSpecification
       name="sourceTemperature"
       setNames="{ rneg }"     
       objectPath="faceManager"
       fieldName="temperature"
-      scale="100.0"/>
+      scale="-20.0"/>
 	<!-- SPHINX_FieldSpecificationImposedTemperatureEnd -->
 
   </FieldSpecifications>

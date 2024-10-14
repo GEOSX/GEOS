@@ -2,10 +2,11 @@
  * ------------------------------------------------------------------------------------------------------------
  * SPDX-License-Identifier: LGPL-2.1-only
  *
- * Copyright (c) 2018-2020 Lawrence Livermore National Security LLC
- * Copyright (c) 2018-2020 The Board of Trustees of the Leland Stanford Junior University
- * Copyright (c) 2018-2020 TotalEnergies
- * Copyright (c) 2019-     GEOSX Contributors
+ * Copyright (c) 2016-2024 Lawrence Livermore National Security LLC
+ * Copyright (c) 2018-2024 Total, S.A
+ * Copyright (c) 2018-2024 The Board of Trustees of the Leland Stanford Junior University
+ * Copyright (c) 2023-2024 Chevron
+ * Copyright (c) 2019-     GEOS/GEOSX Contributors
  * All rights reserved
  *
  * See top level LICENSE, COPYRIGHT, CONTRIBUTORS, NOTICE, and ACKNOWLEDGEMENTS files for details.
@@ -15,11 +16,11 @@
 // Source includes
 #include "Group.hpp"
 #include "ConduitRestart.hpp"
-#include "codingUtilities/StringUtilities.hpp"
+#include "common/format/StringUtilities.hpp"
 #include "codingUtilities/Utilities.hpp"
 #include "common/TimingMacros.hpp"
 #include "GroupContext.hpp"
-#if defined(GEOSX_USE_PYGEOSX)
+#if defined(GEOS_USE_PYGEOSX)
 #include "python/PyGroupType.hpp"
 #endif
 
@@ -242,16 +243,14 @@ void Group::processInputFile( xmlWrapper::xmlNode const & targetNode,
   }
 }
 
-void Group::postProcessInputRecursive()
+void Group::postInputInitializationRecursive()
 {
   for( auto const & subGroupIter : m_subGroups )
   {
-    subGroupIter.second->postProcessInputRecursive();
+    subGroupIter.second->postInputInitializationRecursive();
   }
-  postProcessInput();
+  postInputInitialization();
 }
-
-
 
 void Group::registerDataOnMeshRecursive( Group & meshBodies )
 {
@@ -262,7 +261,6 @@ void Group::registerDataOnMeshRecursive( Group & meshBodies )
   }
 }
 
-
 Group * Group::createChild( string const & childKey, string const & childName )
 {
   GEOS_ERROR_IF( !(CatalogInterface::hasKeyName( childKey )),
@@ -271,7 +269,6 @@ Group * Group::createChild( string const & childKey, string const & childName )
   return &registerGroup( childName,
                          CatalogInterface::factory( childKey, childName, this ) );
 }
-
 
 void Group::printDataHierarchy( integer const indent ) const
 {
@@ -644,9 +641,8 @@ void Group::postRestartInitializationRecursive()
 
 void Group::enableLogLevelInput()
 {
-  string const logLevelString = "logLevel";
-
-  registerWrapper( logLevelString, &m_logLevel ).
+  // TODO : Improve the Log Level description to clearly assign a usecase per log level (incoming PR).
+  registerWrapper( viewKeyStruct::logLevelString(), &m_logLevel ).
     setApplyDefaultValue( 0 ).
     setInputFlag( InputFlags::OPTIONAL ).
     setDescription( "Log level" );
@@ -710,7 +706,7 @@ localIndex Group::getSubGroupIndex( keyType const & key ) const
   return getSubGroups().getIndex( key );
 }
 
-#if defined(GEOSX_USE_PYGEOSX)
+#if defined(GEOS_USE_PYGEOSX)
 PyTypeObject * Group::getPythonType() const
 { return geos::python::getPyGroupType(); }
 #endif

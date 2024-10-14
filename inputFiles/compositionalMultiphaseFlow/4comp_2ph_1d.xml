@@ -251,7 +251,8 @@
 
   <Outputs>
     <VTK
-      name="vtkOutput"/>
+      name="vtkOutput"
+      plotFileRoot="4comp_2ph_1d"/>
 
     <Restart
       name="restartOutput"/>

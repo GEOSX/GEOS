@@ -458,11 +458,11 @@ class Geosx(CMakePackage, CudaPackage):
                 cfg.write(cmake_cache_option('ENABLE_CALIPER_HYPRE', True))
 
             if 'lai=trilinos' in spec:
-                cfg.write(cmake_cache_entry('GEOSX_LA_INTERFACE', 'Trilinos'))
+                cfg.write(cmake_cache_entry('GEOS_LA_INTERFACE', 'Trilinos'))
             if 'lai=hypre' in spec:
-                cfg.write(cmake_cache_entry('GEOSX_LA_INTERFACE', 'Hypre'))
+                cfg.write(cmake_cache_entry('GEOS_LA_INTERFACE', 'Hypre'))
             if 'lai=petsc' in spec:
-                cfg.write(cmake_cache_entry('GEOSX_LA_INTERFACE', 'Petsc'))
+                cfg.write(cmake_cache_entry('GEOS_LA_INTERFACE', 'Petsc'))
 
             cfg.write('#{0}\n'.format('-' * 80))
             cfg.write('# Python\n')

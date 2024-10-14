@@ -11,7 +11,6 @@
       surfaceGeneratorName="SurfaceGen"
       logLevel="1"
       targetRegions="{ Fracture }"
-      contactRelationName="fractureContact"
       maxNumResolves="2">
       <NonlinearSolverParameters
         newtonTol="1.0e-5"
@@ -26,7 +25,8 @@
       timeIntegrationOption="QuasiStatic"
       discretization="FE1"
       targetRegions="{ Domain, Fracture }"
-      contactRelationName="fractureContact"/>
+      contactRelationName="fractureContact"
+      contactPenaltyStiffness="1.0e0"/>
 
     <SinglePhaseFVM
       name="SinglePhaseFlow"
@@ -86,7 +86,7 @@
       name="Fracture"
       faceBlock="faceElementSubRegion"
       defaultAperture="0.02e-3"
-      materialList="{ water, rock, fractureFilling, fractureContact }"/>
+      materialList="{ water, fractureFilling, fractureContact, hApertureModel }"/>
   </ElementRegions>
   <!-- SPHINX_SNEDDON_REGIONS_END -->
 
@@ -126,9 +126,11 @@
       name="fracturePerm"/>
 
     <FrictionlessContact
-      name="fractureContact"
-      penaltyStiffness="1.0e0"
-      apertureTableName="apertureTable" />
+      name="fractureContact"/>
+
+    <HydraulicApertureTable
+      name="hApertureModel"
+      apertureTableName="apertureTable"/>    
   </Constitutive>
   <!-- SPHINX_SNEDDON_MATERIAL_END-->
 

@@ -11,7 +11,7 @@
     <SurfaceElementRegion
       name="Fracture"      
       defaultAperture="0.02e-3"
-      materialList="{ water, rock, fractureFilling, fractureContact }"/>
+      materialList="{ water, fractureFilling, fractureContact, hApertureModel }"/>
   </ElementRegions>
   <!-- SPHINX_ELEMENTREGIONS_END -->
 
@@ -40,7 +40,7 @@
 
     <BiotPorosity
       name="rockPorosity"
-      grainBulkModulus="1.2e11"
+      defaultGrainBulkModulus="1.2e11"
       defaultReferencePorosity="0.3"/>
 
     <ConstantPermeability
@@ -66,9 +66,11 @@
       name="fracturePerm"/>
 
     <FrictionlessContact
-      name="fractureContact"
-      penaltyStiffness="1.0e0"
-      apertureTableName="apertureTable"/>
+      name="fractureContact"/>
+
+    <HydraulicApertureTable
+      name="hApertureModel"
+      apertureTableName="apertureTable"/> 
   </Constitutive>
   <!-- SPHINX_MATERIAL_END -->
   
@@ -82,8 +84,7 @@
 
     <FiniteVolume>
       <TwoPointFluxApproximation
-        name="singlePhaseTPFA"
-        />
+        name="singlePhaseTPFA"/>
     </FiniteVolume>
   </NumericalMethods>
   <!-- SPHINX_NUMERICAL_END -->

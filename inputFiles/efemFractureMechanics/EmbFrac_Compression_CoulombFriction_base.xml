@@ -6,11 +6,11 @@
     <SolidMechanicsEmbeddedFractures
       name="mechSolve"
       targetRegions="{ Domain, Fracture }"
-      fractureRegionName="Fracture"
       initialDt="10"
-      solidSolverName="matrixSolver"
-      contactRelationName="fractureContact"
-      logLevel="1">
+      discretization="FE1"
+      timeIntegrationOption="QuasiStatic"
+      logLevel="1"
+      contactPenaltyStiffness="1.0e12">
       <NonlinearSolverParameters
         newtonTol="1.0e-6"
         newtonMaxIter="2"
@@ -20,13 +20,6 @@
         directParallel="0"
         logLevel="0"/>
     </SolidMechanicsEmbeddedFractures>
-
-    <SolidMechanicsLagrangianSSLE
-      name="matrixSolver"
-      timeIntegrationOption="QuasiStatic"
-      logLevel="1"
-      discretization="FE1"
-      targetRegions="{ Domain }"/>
 
     <EmbeddedSurfaceGenerator
       name="SurfaceGenerator"
@@ -56,7 +49,7 @@
       name="Fracture"
       faceBlock="embeddedSurfaceSubRegion"
       subRegionType="embeddedElement"
-      materialList="{ fractureContact }"
+      materialList="{ frictionLaw }"
       defaultAperture="1e-3"/>
   </ElementRegions>
 
@@ -68,12 +61,10 @@
       defaultShearModulus="1.0e10"/>
 
     <Coulomb
-      name="fractureContact"
-      penaltyStiffness="1.0e12"
+      name="frictionLaw"
       shearStiffness="1.0e8"
       cohesion ="0.0"
-      frictionCoefficient = "0.8"
-      apertureTableName="apertureTable"/>
+      frictionCoefficient = "0.8"/>
   </Constitutive>
 
   <Functions>
@@ -124,13 +115,6 @@
       scale="0.0"
       setNames="{ zneg, zpos }"/>   
   </FieldSpecifications>
-
-  <Functions>
-    <TableFunction
-      name="apertureTable"
-      coordinates="{ -1.0e-3, 0.0 }"
-      values="{ 1.0e-6, 1.0e-4 }"/>
-  </Functions>
   
   <Tasks>
     <PackCollection

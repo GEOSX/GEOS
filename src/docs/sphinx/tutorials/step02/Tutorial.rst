@@ -152,7 +152,7 @@ Here is the ``vtk`` file :
 .. literalinclude::
    ../../../../../inputFiles/singlePhaseFlow/vtk/cube_10x10x10_hex.vtk
    :caption: cube_10x10x10_hex.vtk
-   :lines: 1-20
+   :lines: 1-7
 
 GEOS can run different physical solvers on different regions of the mesh at different times.
 Here, to keep things simple, we run one solver (single-phase flow)

@@ -2,10 +2,11 @@
  * ------------------------------------------------------------------------------------------------------------
  * SPDX-License-Identifier: LGPL-2.1-only
  *
- * Copyright (c) 2018-2020 Lawrence Livermore National Security LLC
- * Copyright (c) 2018-2020 The Board of Trustees of the Leland Stanford Junior University
- * Copyright (c) 2018-2020 TotalEnergies
- * Copyright (c) 2019-     GEOSX Contributors
+ * Copyright (c) 2016-2024 Lawrence Livermore National Security LLC
+ * Copyright (c) 2018-2024 Total, S.A
+ * Copyright (c) 2018-2024 The Board of Trustees of the Leland Stanford Junior University
+ * Copyright (c) 2023-2024 Chevron
+ * Copyright (c) 2019-     GEOS/GEOSX Contributors
  * All rights reserved
  *
  * See top level LICENSE, COPYRIGHT, CONTRIBUTORS, NOTICE, and ACKNOWLEDGEMENTS files for details.
@@ -17,7 +18,8 @@
 #include "mesh/Perforation.hpp"
 #include "mesh/generators/LineBlockABC.hpp"
 #include "LvArray/src/genericTensorOps.hpp"
-
+#include "common/format/table/TableFormatter.hpp"
+#include "common/format/Format.hpp"
 namespace geos
 {
 using namespace dataRepository;
@@ -141,14 +143,15 @@ void WellGeneratorBase::generateWellGeometry( )
   // make sure that the perforation locations are valid
   checkPerforationLocationsValidity();
 
-  if( getLogLevel() >= 1 )
+  if( getLogLevel() >= 1 && MpiWrapper::commRank() == 0 )
   {
-    debugWellGeometry();
+    logInternalWell();
+    logPerforationTable();
   }
 
 }
 
-void WellGeneratorBase::postProcessInput()
+void WellGeneratorBase::postInputInitialization()
 {
   GEOS_THROW_IF( m_radius <= 0,
                  "Invalid " << viewKeyStruct::radiusString() << " in well " << getName(),
@@ -453,7 +456,7 @@ void WellGeneratorBase::checkPerforationLocationsValidity()
   // merge perforations to make sure that no well element is shared between two MPI domains
   // TODO: instead of merging perforations, split the well elements and do not change the physical location of the
   // perforation
-  int const mpiSize = MpiWrapper::commSize( MPI_COMM_GEOSX );
+  int const mpiSize = MpiWrapper::commSize( MPI_COMM_GEOS );
   if( mpiSize > 1 )
   {
     mergePerforations( elemToPerfMap );
@@ -521,62 +524,58 @@ void WellGeneratorBase::mergePerforations( array1d< array1d< localIndex > > cons
   }
 }
 
-void WellGeneratorBase::debugWellGeometry() const
+void WellGeneratorBase::logInternalWell() const
 {
-  if( MpiWrapper::commRank( MPI_COMM_GEOSX ) != 0 )
-  {
-    return;
-  }
-
-  std::cout << std::endl;
-  std::cout << "++++++++++++++++++++++++++" << std::endl;
-  std::cout << "WellGeneratorBase = " << getName() << std::endl;
-  std::cout << "MPI rank = " << MpiWrapper::commRank( MPI_COMM_GEOSX ) << std::endl << std::endl;
-  std::cout << "Number of well elements = " << m_numElems << std::endl;
-
+  TableData tableWellData;
   for( globalIndex iwelem = 0; iwelem < m_numElems; ++iwelem )
   {
-    std::cout << "Well element #" << iwelem << std::endl;
-    std::cout << "Coordinates of the element center: " << m_elemCenterCoords[iwelem] << std::endl;
-    if( m_nextElemId[iwelem] < 0 )
+    std::optional< globalIndex > nextElement;
+    std::optional< globalIndex > prevElement;
+
+    if( m_nextElemId[iwelem] >= 0 )
     {
-      std::cout << "No next well element" << std::endl;
+      nextElement =  m_nextElemId[iwelem];
     }
-    else
+
+    if( m_prevElemId[iwelem][0] >= 0 )
     {
-      std::cout << "Next well element # = " << m_nextElemId[iwelem] << std::endl;
+      prevElement =  m_prevElemId[iwelem][0];
     }
-    if( m_prevElemId[iwelem][0] < 0 )
-    {
-      std::cout << "No previous well element" << std::endl;
-    }
-    else
-    {
-      std::cout << "Previous well element #" << m_prevElemId[iwelem][0] << std::endl;
-    }
-    for( globalIndex inode = 0; inode < m_numNodesPerElem; ++inode )
-    {
-      if( inode == 0 )
-      {
-        std::cout << "First well node: #" << m_elemToNodesMap[iwelem][inode] << std::endl;
-      }
-      else
-      {
-        std::cout << "Second well node: #" << m_elemToNodesMap[iwelem][inode] << std::endl;
-      }
-    }
+
+    tableWellData.addRow( iwelem,
+                          m_elemCenterCoords[iwelem][0],
+                          m_elemCenterCoords[iwelem][1],
+                          m_elemCenterCoords[iwelem][2],
+                          prevElement,
+                          nextElement );
   }
 
-  std::cout << std::endl << "Number of perforations = " << m_numPerforations << std::endl;
+  string const wellTitle = GEOS_FMT( "Well '{}' Element Table", getName() );
+  TableLayout const tableWellLayout = TableLayout( {
+      TableLayout::ColumnParam{"Element no.", TableLayout::Alignment::right},
+      TableLayout::ColumnParam{"CoordX", TableLayout::Alignment::right},
+      TableLayout::ColumnParam{"CoordY", TableLayout::Alignment::right},
+      TableLayout::ColumnParam{"CoordZ", TableLayout::Alignment::right},
+      TableLayout::ColumnParam{"Prev\nElement", TableLayout::Alignment::right},
+      TableLayout::ColumnParam{"Next\nElement", TableLayout::Alignment::right},
+    }, wellTitle );
 
+  TableTextFormatter const tableFormatter( tableWellLayout );
+  GEOS_LOG_RANK_0( tableFormatter.toString( tableWellData ));
+}
+
+void WellGeneratorBase::logPerforationTable() const
+{
+  TableData tablePerfoData;
   for( globalIndex iperf = 0; iperf < m_numPerforations; ++iperf )
   {
-    std::cout << "Perforation #" << iperf << std::endl;
-    std::cout << "Coordinates of the perforation: " << m_perfCoords[iperf] << std::endl;
-    std::cout << "Is connected to well element #" << m_perfElemId[iperf] << std::endl;
+    tablePerfoData.addRow( iperf, m_perfCoords[iperf], m_perfElemId[iperf] );
   }
-  std::cout << std::endl;
 
+  TableLayout const tableLayoutPerfo ( {"Perforation no.", "Coordinates", "connected to"},
+                                       GEOS_FMT( "Well '{}' Perforation Table", getName() ) );
+  TableTextFormatter const tablePerfoLog( tableLayoutPerfo );
+  GEOS_LOG_RANK_0( tablePerfoLog.toString( tablePerfoData ));
 }
 
 }

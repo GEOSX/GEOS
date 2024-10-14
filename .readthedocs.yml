@@ -4,18 +4,24 @@
 version: 2
 
 build:
-  os: "ubuntu-20.04"
+  os: "ubuntu-22.04"
   apt_packages:
+  - curl
+  - graphviz
   - npm
-  - plantuml
+  - openjdk-21-jre-headless
   - texlive
   tools:
     nodejs: "16"
     python: "3.10"
   jobs:
+    pre_build:
+    - python3 scripts/SchemaToRSTDocumentation.py -s src/coreComponents/schema/schema.xsd -o src/docs/sphinx
     post_install:
     - npm install -g npm@9.8.1
     - npm install -g @mermaid-js/mermaid-cli@10.3.1
+    # If you change the `/tmp/plantuml.jar` path, be sure to also update where this path is used as well (e.g. in `conf.py`).
+    - curl -fsSL https://github.com/plantuml/plantuml/releases/download/v1.2024.3/plantuml-gplv2-1.2024.3.jar -o /tmp/plantuml.jar
 
 # Set requirements to build the docs
 python:
@@ -26,12 +32,14 @@ python:
 sphinx:
   configuration: src/conf.py
   builder: html
+  fail_on_warning: true
+  
 
 # Optionally build your docs in additional formats such as PDF and ePub
-formats: all
+formats:
+  - pdf
 
 submodules:
   include: 
   - src/coreComponents/constitutive/PVTPackage
-  - integratedTests
   recursive: true

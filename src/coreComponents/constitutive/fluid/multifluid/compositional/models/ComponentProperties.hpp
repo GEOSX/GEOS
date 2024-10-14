@@ -2,10 +2,11 @@
  * ------------------------------------------------------------------------------------------------------------
  * SPDX-License-Identifier: LGPL-2.1-only
  *
- * Copyright (c) 2018-2020 Lawrence Livermore National Security LLC
- * Copyright (c) 2018-2020 The Board of Trustees of the Leland Stanford Junior University
- * Copyright (c) 2018-2020 TotalEnergies
- * Copyright (c) 2019-     GEOSX Contributors
+ * Copyright (c) 2016-2024 Lawrence Livermore National Security LLC
+ * Copyright (c) 2018-2024 Total, S.A
+ * Copyright (c) 2018-2024 The Board of Trustees of the Leland Stanford Junior University
+ * Copyright (c) 2023-2024 Chevron
+ * Copyright (c) 2019-     GEOS/GEOSX Contributors
  * All rights reserved
  *
  * See top level LICENSE, COPYRIGHT, CONTRIBUTORS, NOTICE, and ACKNOWLEDGEMENTS files for details.
@@ -37,21 +38,9 @@ class ComponentProperties final
 {
 public:
   ComponentProperties( string_array const & componentNames,
-                       array1d< real64 > const & componentMolarWeight,
-                       array1d< real64 > const & componentCriticalPressure,
-                       array1d< real64 > const & componentCriticalTemperature,
-                       array1d< real64 > const & componentCriticalVolume,
-                       array1d< real64 > const & componentAcentricFactor,
-                       array1d< real64 > const & componentVolumeShift,
-                       array2d< real64 > const & componentBinaryCoeff ):
+                       array1d< real64 > const & componentMolarWeight ):
     m_componentNames ( componentNames ),
-    m_componentMolarWeight ( componentMolarWeight ),
-    m_componentCriticalPressure ( componentCriticalPressure ),
-    m_componentCriticalTemperature( componentCriticalTemperature ),
-    m_componentCriticalVolume( componentCriticalVolume ),
-    m_componentAcentricFactor( componentAcentricFactor ),
-    m_componentVolumeShift( componentVolumeShift ),
-    m_componentBinaryCoeff( componentBinaryCoeff )
+    m_componentMolarWeight ( componentMolarWeight )
   {}
 
   ~ComponentProperties() = default;
@@ -64,19 +53,27 @@ public:
    */
   integer getNumberOfComponents() const { return m_componentNames.size(); }
 
+  /**
+   * Data accessors
+   */
+  arrayView1d< string > const & getComponentName() const { return m_componentNames; }
+  arrayView1d< real64 > const & getComponentMolarWeight() const { return m_componentMolarWeight; }
+  arrayView1d< real64 > const & getComponentCriticalPressure() const { return m_componentCriticalPressure; }
+  arrayView1d< real64 > const & getComponentCriticalTemperature() const { return m_componentCriticalTemperature; }
+  arrayView1d< real64 > const & getComponentAcentricFactor() const { return m_componentAcentricFactor; }
+  arrayView1d< real64 > const & getComponentVolumeShift() const { return m_componentVolumeShift; }
+
   struct KernelWrapper
   {
     KernelWrapper( arrayView1d< real64 const > const & componentMolarWeight,
                    arrayView1d< real64 const > const & componentCriticalPressure,
                    arrayView1d< real64 const > const & componentCriticalTemperature,
-                   arrayView1d< real64 const > const & componentCriticalVolume,
                    arrayView1d< real64 const > const & componentAcentricFactor,
                    arrayView1d< real64 const > const & componentVolumeShift,
                    arrayView2d< real64 const > const & componentBinaryCoeff ):
       m_componentMolarWeight ( componentMolarWeight ),
       m_componentCriticalPressure ( componentCriticalPressure ),
       m_componentCriticalTemperature( componentCriticalTemperature ),
-      m_componentCriticalVolume( componentCriticalVolume ),
       m_componentAcentricFactor( componentAcentricFactor ),
       m_componentVolumeShift( componentVolumeShift ),
       m_componentBinaryCoeff( componentBinaryCoeff )
@@ -94,7 +91,6 @@ public:
       m_componentMolarWeight.move( space, touch );
       m_componentCriticalPressure.move( space, touch );
       m_componentCriticalTemperature.move( space, touch );
-      m_componentCriticalVolume.move( space, touch );
       m_componentAcentricFactor.move( space, touch );
       m_componentVolumeShift.move( space, touch );
       m_componentBinaryCoeff.move( space, touch );
@@ -104,7 +100,6 @@ public:
     arrayView1d< real64 const > m_componentMolarWeight;
     arrayView1d< real64 const > m_componentCriticalPressure;
     arrayView1d< real64 const > m_componentCriticalTemperature;
-    arrayView1d< real64 const > m_componentCriticalVolume;
     arrayView1d< real64 const > m_componentAcentricFactor;
     arrayView1d< real64 const > m_componentVolumeShift;
     arrayView2d< real64 const > m_componentBinaryCoeff;
@@ -119,22 +114,20 @@ public:
     return KernelWrapper( m_componentMolarWeight,
                           m_componentCriticalPressure,
                           m_componentCriticalTemperature,
-                          m_componentCriticalVolume,
                           m_componentAcentricFactor,
                           m_componentVolumeShift,
                           m_componentBinaryCoeff );
   }
 
-private:
+public:
   // Standard compositional input
   string_array const & m_componentNames;
   array1d< real64 > const & m_componentMolarWeight;
-  array1d< real64 > const & m_componentCriticalPressure;
-  array1d< real64 > const & m_componentCriticalTemperature;
-  array1d< real64 > const & m_componentCriticalVolume;
-  array1d< real64 > const & m_componentAcentricFactor;
-  array1d< real64 > const & m_componentVolumeShift;
-  array2d< real64 > const & m_componentBinaryCoeff;
+  array1d< real64 > m_componentCriticalPressure;
+  array1d< real64 > m_componentCriticalTemperature;
+  array1d< real64 > m_componentAcentricFactor;
+  array1d< real64 > m_componentVolumeShift;
+  array2d< real64 > m_componentBinaryCoeff;
 };
 
 } // namespace compositional

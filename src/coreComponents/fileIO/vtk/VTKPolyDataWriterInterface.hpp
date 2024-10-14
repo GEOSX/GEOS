@@ -2,10 +2,11 @@
  * ------------------------------------------------------------------------------------------------------------
  * SPDX-License-Identifier: LGPL-2.1-only
  *
- * Copyright (c) 2018-2020 Lawrence Livermore National Security LLC
- * Copyright (c) 2018-2020 The Board of Trustees of the Leland Stanford Junior University
- * Copyright (c) 2018-2020 TotalEnergies
- * Copyright (c) 2019-     GEOSX Contributors
+ * Copyright (c) 2016-2024 Lawrence Livermore National Security LLC
+ * Copyright (c) 2018-2024 Total, S.A
+ * Copyright (c) 2018-2024 The Board of Trustees of the Leland Stanford Junior University
+ * Copyright (c) 2023-2024 Chevron
+ * Copyright (c) 2019-     GEOS/GEOSX Contributors
  * All rights reserved
  *
  * See top level LICENSE, COPYRIGHT, CONTRIBUTORS, NOTICE, and ACKNOWLEDGEMENTS files for details.
@@ -40,6 +41,7 @@ class EmbeddedSurfaceNodeManager;
 class ElementRegionManager;
 class NodeManager;
 class ParticleManager;
+class FaceManager;
 
 namespace vtk
 {
@@ -91,6 +93,15 @@ public:
   void setWriteGhostCells( bool writeGhostCells )
   {
     m_writeGhostCells = writeGhostCells;
+  }
+
+  /**
+   * @brief Defines whether in the vtk output facelements should be 2D or 3D
+   * @param writeFaceElementsAs3D The boolean flag.
+   */
+  void setWriteFaceElementsAs3D( bool writeFaceElementsAs3D )
+  {
+    m_writeFaceElementsAs3D = writeFaceElementsAs3D;
   }
 
   /**
@@ -248,16 +259,17 @@ private:
    * @brief Writes the files containing the faces elements
    * @details There will be one file written per FaceElementRegion and per rank
    * @param[in] time the time-step
-   * @param[in] cycle the current cycle number
    * @param[in] elemManager the ElementRegionManager containing the FaceElementRegions to be output
    * @param[in] nodeManager the NodeManager containing the nodes of the domain to be output
-   * @param[in] meshLevelName the name of the MeshLevel containing the nodes and elements to be output
-   * @param[in] meshBodyName the name of the MeshBody containing the nodes and elements to be output
+   * @param[in] embSurfNodeManager the embedded surface node Manager.
+   * @param[in] faceManager the faceManager.
+   * @param[in] path the path to the output file.
    */
   void writeSurfaceElementRegions( real64 time,
                                    ElementRegionManager const & elemManager,
                                    NodeManager const & nodeManager,
                                    EmbeddedSurfaceNodeManager const & embSurfNodeManager,
+                                   FaceManager const & faceManager,
                                    string const & path ) const;
 
   /**
@@ -341,6 +353,9 @@ private:
 
   /// Region output type, could be CELL, WELL, SURFACE, or ALL
   VTKRegionTypes m_outputRegionType;
+
+  /// Defines whether to plot a faceElement as a 3D volumetric element or not.
+  bool m_writeFaceElementsAs3D;
 };
 
 } // namespace vtk

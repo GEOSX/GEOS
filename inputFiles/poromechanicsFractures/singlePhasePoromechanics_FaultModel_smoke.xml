@@ -1,0 +1,119 @@
+<Problem>
+  <Included>
+    <File name="./singlePhasePoromechanics_FaultModel_base.xml"/>
+  </Included>
+
+  <Solvers
+    gravityVector="{ 0.0, 0.0, -9.81 }">
+
+    <SinglePhasePoromechanicsConformingFractures
+      name="poroFractureSolver"
+      targetRegions="{ Region, Fault }" 
+      initialDt="1e-3"
+      flowSolverName="singlePhaseFlowSolver"
+      solidSolverName="fractureMechSolver"
+      logLevel="1">
+      <NonlinearSolverParameters
+        maxTimeStepCuts="1"
+        newtonTol="1e0"
+        newtonMaxIter="10"
+        maxAllowedResidualNorm="1e+15"/>
+      <LinearSolverParameters
+        solverType="direct"
+        krylovTol="1e-10"
+        preconditionerType="mgr"/> 
+    </SinglePhasePoromechanicsConformingFractures>
+
+    <SolidMechanicsLagrangeContact
+      name="fractureMechSolver"
+      stabilizationName="singlePhaseTPFA_stab"
+      logLevel="1"
+      targetRegions="{ Region, Fault }" 
+      timeIntegrationOption="QuasiStatic"
+      discretization="FE1"/>  
+
+    <SinglePhaseFVM 
+      name="singlePhaseFlowSolver"
+      logLevel="1"
+      discretization="singlePhaseTPFA"
+      targetRegions="{ Region, Fault}" />
+  </Solvers>
+
+  <Mesh>
+    <VTKMesh
+      name="mesh1"
+      useGlobalIds="1"
+      faceBlocks="{ fracture }"
+      file="verticalFault_ExternalMesh.vtm"/>
+  </Mesh>
+
+  <Geometry>
+    <Box
+      name="xposFace"
+      xMin="{ 5999.99,  -6000.01,  -4000.01 }"
+      xMax="{ 6000.01,   6000.01,      0.01 }"/>
+
+    <Box
+      name="xnegFace"
+      xMin="{-6000.01,  -6000.01,  -4000.01 }"
+      xMax="{-5999.99,   6000.01,      0.01 }"/>
+
+    <Box
+      name="yposFace"
+      xMin="{-6000.01,   5999.99,  -4000.01 }"
+      xMax="{ 6000.01,   6000.01,      0.01 }"/>
+
+    <Box
+      name="ynegFace"
+      xMin="{-6000.01,  -6000.01,  -4000.01 }"
+      xMax="{ 6000.01,  -5999.99,      0.01 }"/>
+
+    <Box
+      name="zposFace"
+      xMin="{-6000.01,  -6000.01,     -0.01 }"
+      xMax="{ 6000.01,   6000.01,      0.01 }"/>
+
+    <Box
+      name="znegFace"
+      xMin="{-6000.01,  -6000.01,  -4000.01 }"
+      xMax="{ 6000.01,   6000.01,  -3999.99 }"/>
+  </Geometry>
+
+  <Events
+    minTime="-1e11"
+    maxTime="3.0e7">
+
+    <!-- Initialization -->
+    <SoloEvent 
+      name="SinglePhasePoroelasticityPreEquilibrationStep" 
+      targetTime="-1e11" 
+      beginTime="-1e11" 
+      target="/Tasks/SinglePhasePoroelasticityPreEquilibrationStep"
+    />
+    <!-- Injection -->
+    <SoloEvent
+      name="outputPostEquilibrationStep1"
+      targetTime="0"
+      targetExactTimestep="1"
+      target="/Outputs/vtkOutput"/>
+
+    <PeriodicEvent
+      name="outputs"
+      beginTime="0.0"
+      endTime="3.0e7"
+      forceDt="3.0e7"
+      target="/Outputs/vtkOutput"/>
+
+    <PeriodicEvent
+      name="solverApplication"
+      endTime="3.0e7"
+      forceDt="3.0e7"
+      target="/Solvers/poroFractureSolver"/>
+
+    <PeriodicEvent
+      name="restarts"
+      beginTime="0.0"
+      endTime="3.0e7"
+      target="/Outputs/restartOutput"/>
+  </Events>
+</Problem>

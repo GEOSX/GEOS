@@ -15,7 +15,7 @@
       surfaceGeneratorName="SurfaceGen"
       logLevel="1"
       targetRegions="{ Domain, Fracture }"
-      contactRelationName="fractureContact"
+      isMatrixPoroelastic="1"
       maxNumResolves="5"
       initialDt="0.1">
       <NonlinearSolverParameters
@@ -30,7 +30,8 @@
       timeIntegrationOption="QuasiStatic"
       discretization="FE1"
       targetRegions="{ Domain, Fracture }"
-      contactRelationName="fractureContact">     
+      contactRelationName="fractureContact"
+      contactPenaltyStiffness="1.0e0">     
     </SolidMechanicsLagrangianSSLE>
 
     <SinglePhaseFVM

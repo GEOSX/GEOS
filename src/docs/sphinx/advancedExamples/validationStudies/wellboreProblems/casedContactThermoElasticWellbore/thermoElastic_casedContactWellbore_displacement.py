@@ -13,9 +13,9 @@ def main():
 
 	# Plot GEOSX results
 	hf = h5py.File(hdf5FilePath, 'r')
-	time = np.array( hf.get('totalDisplacement Time') )
-	center = np.array( hf.get('totalDisplacement ReferencePosition') )
-	displacement = np.array( hf.get('totalDisplacement') )
+	time = np.asarray( hf.get('totalDisplacement Time') )
+	center = np.asarray( hf.get('totalDisplacement ReferencePosition') )
+	displacement = np.asarray( hf.get('totalDisplacement') )
 	
 	nNodes = center.shape[1]
 	xCoord = center[0, 0:nNodes, 0]
@@ -49,7 +49,7 @@ def main():
 	plt.plot( displacement_radial_analytic_1e4s[:,0],
 		      displacement_radial_analytic_1e4s[:,1],
 		      'r-',
-		      label='Analytic, no debonding: t = 1e4 (s)')
+		      label='Analytic: t = 1e4 (s)')
 	
 	# Plot radial displacement at 1e5 (s)
 	plt.plot( rCoord,
@@ -60,7 +60,7 @@ def main():
 	plt.plot( displacement_radial_analytic_1e5s[:,0],
 		      displacement_radial_analytic_1e5s[:,1],
 		      'b-',
-		      label='Analytic, no debonding: t = 1e5 (s)')
+		      label='Analytic: t = 1e5 (s)')
 	
 	plt.grid()
 	plt.ylabel(r'Displacement [m]')

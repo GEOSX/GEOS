@@ -44,7 +44,6 @@
       surfaceGeneratorName="SurfaceGen"
       logLevel="1"
       targetRegions="{ Fracture }"
-      contactRelationName="fractureContact"
       maxNumResolves="2">
       <NonlinearSolverParameters
         newtonTol="1.0e-6"
@@ -59,7 +58,8 @@
       timeIntegrationOption="QuasiStatic"
       discretization="FE1"
       targetRegions="{ Domain, Fracture }"
-      contactRelationName="fractureContact"> 
+      contactRelationName="fractureContact"
+      contactPenaltyStiffness="0.0e12"> 
     </SolidMechanicsLagrangianSSLE>
 
     <SinglePhaseFVM
@@ -132,7 +132,7 @@
     <SurfaceElementRegion
       name="Fracture"
       defaultAperture="1.0e-4"
-      materialList="{ water, rock, fractureFilling, fractureContact }"/>
+      materialList="{ water, fractureFilling, fractureContact, hApertureModel }"/>
   </ElementRegions>
 
   <Constitutive>
@@ -167,9 +167,11 @@
       compressibility="0.0"/>
 
     <FrictionlessContact
-      name="fractureContact"
-      penaltyStiffness="0.0e8"
-      apertureTableName="apertureTable"/>
+      name="fractureContact"/>
+
+    <HydraulicApertureTable
+      name="hApertureModel"
+      apertureTableName="apertureTable"/>   
 
     <ParallelPlatesPermeability
       name="fracturePerm"/>
@@ -275,7 +277,7 @@
       name="bulk_modulus"
       initialCondition="1"
       setNames="{ all }"
-      objectPath="ElementRegions"
+      objectPath="ElementRegions/Domain"
       fieldName="rock_bulkModulus"
       functionName="bulk_modulus"
       scale="1.0"/>
@@ -284,7 +286,7 @@
       name="shear_modulus"
       initialCondition="1"
       setNames="{ all }"
-      objectPath="ElementRegions"
+      objectPath="ElementRegions/Domain"
       fieldName="rock_shearModulus"
       functionName="shear_modulus"
       scale="1.0"/>
@@ -293,7 +295,7 @@
       name="sigma_xx"
       initialCondition="1"
       setNames="{ all }"
-      objectPath="ElementRegions"
+      objectPath="ElementRegions/Domain"
       fieldName="rock_stress"
       component="0"
       functionName="sigma_xx"
@@ -303,7 +305,7 @@
       name="sigma_yy"
       initialCondition="1"
       setNames="{ all }"
-      objectPath="ElementRegions"
+      objectPath="ElementRegions/Domain"
       fieldName="rock_stress"
       component="1"
       functionName="sigma_yy"
@@ -313,7 +315,7 @@
       name="sigma_zz"
       initialCondition="1"
       setNames="{ all }"
-      objectPath="ElementRegions"
+      objectPath="ElementRegions/Domain"
       fieldName="rock_stress"
       component="2"
       functionName="sigma_zz"

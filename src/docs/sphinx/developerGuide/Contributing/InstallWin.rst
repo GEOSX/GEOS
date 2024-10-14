@@ -1,6 +1,6 @@
 .. _InstallWin:
 
-[Unsupported] Installing GEOS on Windows machines using Docker
+[Best effort] Installing GEOS on Windows machines using Docker
 =================================================================
 
 In this section, we will install GEOS on a Windows machine using a ``Docker`` container with a precompiled version of

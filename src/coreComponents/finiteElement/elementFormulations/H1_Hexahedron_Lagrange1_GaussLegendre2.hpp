@@ -2,10 +2,11 @@
  * ------------------------------------------------------------------------------------------------------------
  * SPDX-License-Identifier: LGPL-2.1-only
  *
- * Copyright (c) 2018-2020 Lawrence Livermore National Security LLC
- * Copyright (c) 2018-2020 The Board of Trustees of the Leland Stanford Junior University
- * Copyright (c) 2018-2020 TotalEnergies
- * Copyright (c) 2019-     GEOSX Contributors
+ * Copyright (c) 2016-2024 Lawrence Livermore National Security LLC
+ * Copyright (c) 2018-2024 Total, S.A
+ * Copyright (c) 2018-2024 The Board of Trustees of the Leland Stanford Junior University
+ * Copyright (c) 2023-2024 Chevron
+ * Copyright (c) 2019-     GEOS/GEOSX Contributors
  * All rights reserved
  *
  * See top level LICENSE, COPYRIGHT, CONTRIBUTORS, NOTICE, and ACKNOWLEDGEMENTS files for details.
@@ -75,6 +76,10 @@ class H1_Hexahedron_Lagrange1_GaussLegendre2 final : public FiniteElementBase
 public:
   /// The number of nodes/support points per element.
   constexpr static localIndex numNodes = LagrangeBasis1::TensorProduct3D::numSupportPoints;
+
+  /// The number of faces/support points for bubble functions per element.
+  constexpr static localIndex numFaces = LagrangeBasis1::TensorProduct3D::numSupportFaces;
+
   /// The maximum number of support points per element.
   constexpr static localIndex maxSupportPoints = numNodes;
 
@@ -88,6 +93,7 @@ public:
   USING_FINITEELEMENTBASE
   /** @endcond Doxygen_Suppress */
 
+  GEOS_HOST_DEVICE
   virtual ~H1_Hexahedron_Lagrange1_GaussLegendre2() override
   {}
 
@@ -210,6 +216,42 @@ public:
   }
 
   /**
+   * @brief Calculate face bubble functions values for each face at a
+   *   given point in the parent space.
+   * @param pointCoord coordinates of the given point.
+   * @param N An array to pass back the shape function values for each support
+   *   face.
+   */
+  GEOS_HOST_DEVICE
+  GEOS_FORCE_INLINE
+  static void calcFaceBubbleN( real64 const (&pointCoord)[3],
+                               real64 (& N)[numFaces] )
+  {
+    LagrangeBasis1::TensorProduct3D::valueFaceBubble( pointCoord, N );
+  }
+
+  /**
+   * @brief Calculate face bubble functions values for each face at a
+   *   quadrature point.
+   * @param q Index of the quadrature point.
+   * @param N An array to pass back the shape function values for each support
+   *   point.
+   */
+  GEOS_HOST_DEVICE
+  inline
+  static void calcFaceBubbleN( localIndex const q,
+                               real64 (& N)[numFaces] )
+  {
+    int qa, qb, qc;
+    LagrangeBasis1::TensorProduct3D::multiIndex( q, qa, qb, qc );
+    real64 const qCoords[3] = { quadratureFactor * LagrangeBasis1::parentSupportCoord( qa ),
+                                quadratureFactor * LagrangeBasis1::parentSupportCoord( qb ),
+                                quadratureFactor * LagrangeBasis1::parentSupportCoord( qc ) };
+
+    calcFaceBubbleN( qCoords, N );
+  }
+
+  /**
    * @brief Calculate the shape functions derivatives wrt the physical
    *   coordinates.
    * @param q Index of the quadrature point.
@@ -239,6 +281,20 @@ public:
                            real64 const (&X)[numNodes][3],
                            StackVariables const & stack,
                            real64 ( &gradN )[numNodes][3] );
+
+  /**
+   * @brief Calculate the bubble function derivatives wrt the physical
+   *   coordinates.
+   * @param q Index of the quadrature point.
+   * @param X Array containing the coordinates of the support points.
+   * @param gradN Array to contain the shape bubble function derivatives for all
+   *   support points at the coordinates of the quadrature point @p q.
+   * @return The determinant of the parent/physical transformation matrix.
+   */
+  GEOS_HOST_DEVICE
+  static real64 calcGradFaceBubbleN( localIndex const q,
+                                     real64 const (&X)[numNodes][3],
+                                     real64 ( &gradN )[numFaces][3] );
 
   /**
    * @brief Calculate the integration weights for a quadrature point.
@@ -571,6 +627,41 @@ real64 H1_Hexahedron_Lagrange1_GaussLegendre2::
              real64 ( & gradN )[numNodes][3] )
 {
   return calcGradN( q, X, gradN );
+}
+
+GEOS_HOST_DEVICE
+inline
+real64
+H1_Hexahedron_Lagrange1_GaussLegendre2::calcGradFaceBubbleN( localIndex const q,
+                                                             real64 const (&X)[numNodes][3],
+                                                             real64 (& gradN)[numFaces][3] )
+{
+  real64 J[3][3] = {{0}};
+
+
+  int qa, qb, qc;
+  LagrangeBasis1::TensorProduct3D::multiIndex( q, qa, qb, qc );
+
+  jacobianTransformation( qa, qb, qc, X, J );
+
+  real64 const detJ = LvArray::tensorOps::invert< 3 >( J );
+
+  real64 dNdXi[numFaces][3] = {{0}};
+
+  real64 const qCoords[3] = { quadratureFactor * LagrangeBasis1::parentSupportCoord( qa ),
+                              quadratureFactor * LagrangeBasis1::parentSupportCoord( qb ),
+                              quadratureFactor * LagrangeBasis1::parentSupportCoord( qc ) };
+
+  LagrangeBasis1::TensorProduct3D::gradientFaceBubble( qCoords, dNdXi );
+
+  for( int fi=0; fi<numFaces; ++fi )
+  {
+    gradN[fi][0] = dNdXi[fi][0] * J[0][0] + dNdXi[fi][1] * J[1][0] + dNdXi[fi][2] * J[2][0];
+    gradN[fi][1] = dNdXi[fi][0] * J[0][1] + dNdXi[fi][1] * J[1][1] + dNdXi[fi][2] * J[2][1];
+    gradN[fi][2] = dNdXi[fi][0] * J[0][2] + dNdXi[fi][1] * J[1][2] + dNdXi[fi][2] * J[2][2];
+  }
+
+  return detJ * weight;
 }
 
 //*************************************************************************************************

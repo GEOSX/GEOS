@@ -1,0 +1,128 @@
+<?xml version="1.0" ?>
+
+<Problem>
+  <Solvers
+    gravityVector="{ 0.0, 0.0, 0.0 }">
+    <SurfaceGenerator
+      name="SurfaceGen"
+      targetRegions="{ Region }"
+      rockToughness="1.0e6"
+      mpiCommOrder="1"/>
+  </Solvers>
+
+  <NumericalMethods>
+    <FiniteElements>
+      <FiniteElementSpace
+        name="FE1"
+        order="1"/>
+    </FiniteElements>
+  </NumericalMethods>
+
+  <ElementRegions>
+    <CellElementRegion
+      name="Region"
+      cellBlocks="{ 0_hexahedra, 1_hexahedra }"
+      materialList="{ rock }"/>
+
+    <SurfaceElementRegion
+      name="Fracture"
+      defaultAperture="1.0e-6"
+      materialList="{ frictionLaw }"/>
+  </ElementRegions>
+
+  <Constitutive>
+    <ElasticIsotropic
+      name="rock"
+      defaultDensity="2700"
+      defaultBulkModulus="16.66666666666666e3"
+      defaultShearModulus="1.0e4"/>
+
+    <Coulomb
+      name="frictionLaw"
+      cohesion="0.0"
+      frictionCoefficient="0.577350269"/>
+  </Constitutive>
+
+  <FieldSpecifications>
+    <FieldSpecification
+      name="frac"
+      initialCondition="1"
+      setNames="{ fracture }"
+      objectPath="faceManager"
+      fieldName="ruptureState"
+      scale="1"/>
+
+    <FieldSpecification
+      name="separableFace"
+      initialCondition="1"
+      setNames="{ core }"
+      objectPath="faceManager"
+      fieldName="isFaceSeparable"
+      scale="1"/>
+
+    <FieldSpecification
+      name="xconstraint"
+      objectPath="nodeManager"
+      fieldName="totalDisplacement"
+      component="0"
+      scale="0.0"
+      setNames="{ bottomPoint, topPoint }"/>
+
+    <FieldSpecification
+      name="yconstraint"
+      objectPath="nodeManager"
+      fieldName="totalDisplacement"
+      component="1"
+      scale="0.0"
+      setNames="{ leftPoint, rightPoint }"/>
+
+    <FieldSpecification
+      name="zconstraintFront"
+      objectPath="nodeManager"
+      fieldName="totalDisplacement"
+      component="2"
+      scale="0.0"
+      setNames="{ front }"/>
+
+    <FieldSpecification
+      name="zconstraintRear"
+      objectPath="nodeManager"
+      fieldName="totalDisplacement"
+      component="2"
+      scale="0.0"
+      setNames="{ rear }"/>
+
+    <Traction
+      name="xload1"
+      objectPath="faceManager"
+      direction="{ 1, 0, 0 }"
+      scale="-1.0e2"
+      functionName="ForceTimeFunction"
+      setNames="{ xmax }"/>
+
+    <Traction
+      name="xload2"
+      objectPath="faceManager"
+      direction="{ 1, 0, 0 }"
+      scale="+1.0e2"
+      functionName="ForceTimeFunction"
+      setNames="{ xmin }"/>
+  </FieldSpecifications>
+
+  <Functions>
+    <TableFunction
+      name="ForceTimeFunction"
+      inputVarNames="{ time }"
+      coordinates="{ 0.0, 2.0 }"
+      values="{ 0.0, 2.e0 }"/>
+  </Functions>
+
+  <Outputs>
+    <Silo
+      name="siloOutput"
+      plotLevel="3"/>
+
+    <Restart
+      name="restartOutput"/>
+  </Outputs>
+</Problem>
