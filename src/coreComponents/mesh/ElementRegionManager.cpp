@@ -28,6 +28,7 @@
 #include "mesh/utilities/MeshMapUtilities.hpp"
 #include "schema/schemaUtilities.hpp"
 #include "mesh/generators/LineBlockABC.hpp"
+#include "mesh/CellElementRegionSelector.hpp"
 
 namespace geos
 {
@@ -77,7 +78,6 @@ Group * ElementRegionManager::createChild( string const & childKey, string const
   Group & elementRegions = this->getGroup( ElementRegionManager::groupKeyStruct::elementRegionsGroup() );
   return &elementRegions.registerGroup( childName,
                                         CatalogInterface::factory( childKey, childName, &elementRegions ) );
-
 }
 
 void ElementRegionManager::expandObjectCatalogs()
@@ -120,12 +120,23 @@ void ElementRegionManager::setSchemaDeviations( xmlWrapper::xmlNode schemaRoot,
   }
 }
 
+
 void ElementRegionManager::generateMesh( CellBlockManagerABC const & cellBlockManager )
 {
-  this->forElementRegions< CellElementRegion >( [&]( CellElementRegion & elemRegion )
-  {
-    elemRegion.generateMesh( cellBlockManager.getCellBlocks() );
-  } );
+  { // cellBlocks loading
+    Group const & cellBlocks = cellBlockManager.getCellBlocks();
+    CellElementRegionSelector cellBlockSelector{ cellBlocks,
+                                                 cellBlockManager.getRegionAttributesCellBlocks() };
+    this->forElementRegions< CellElementRegion >( [&]( CellElementRegion & elemRegion )
+    {
+      elemRegion.setCellBlockNames( cellBlockSelector.buildCellBlocksSelection( elemRegion ) );
+      elemRegion.generateMesh( cellBlocks );
+    } );
+    // selecting all cellblocks is mandatory
+    cellBlockSelector.checkSelectionConsistency();
+  }
+
+
   this->forElementRegions< SurfaceElementRegion >( [&]( SurfaceElementRegion & elemRegion )
   {
     elemRegion.generateMesh( cellBlockManager.getFaceBlocks() );
@@ -151,7 +162,6 @@ void ElementRegionManager::generateMesh( CellBlockManagerABC const & cellBlockMa
                                                                            tmp,
                                                                            relation );
   } );
-
 }
 
 void ElementRegionManager::generateWells( CellBlockManagerABC const & cellBlockManager,

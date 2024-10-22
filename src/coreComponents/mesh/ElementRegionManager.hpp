@@ -144,7 +144,7 @@ public:
   }
 
   /**
-   * @brief Generate the mesh.
+   * @brief Generate the mesh. Produce an error if a required cellBlock doesn't exist in the source mesh.
    * @param [in,out] cellBlockManager Reference to the abstract cell block manager.
    */
   void generateMesh( CellBlockManagerABC const & cellBlockManager );
@@ -1237,8 +1237,6 @@ private:
    * @return reference to this object
    */
   ElementRegionManager & operator=( const ElementRegionManager & );
-
-
 };
 
 
