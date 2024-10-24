@@ -191,6 +191,7 @@ void SolverBase::registerDataOnMesh( Group & meshBodies )
 
 Group * SolverBase::createChild( string const & GEOS_UNUSED_PARAM( childKey ), string const & GEOS_UNUSED_PARAM( childName ) )
 {
+  // Unused as all children are created within the constructor
   return nullptr;
 }
 

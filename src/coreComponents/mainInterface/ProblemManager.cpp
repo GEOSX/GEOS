@@ -156,7 +156,10 @@ ProblemManager::~ProblemManager()
 
 
 Group * ProblemManager::createChild( string const & GEOS_UNUSED_PARAM( childKey ), string const & GEOS_UNUSED_PARAM( childName ) )
-{ return nullptr; }
+{
+  // Unused as all children are created within the constructor
+  return nullptr;
+}
 
 
 void ProblemManager::problemSetup()
