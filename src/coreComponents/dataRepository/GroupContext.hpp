@@ -57,7 +57,7 @@ protected:
    * @param group The reference to the Group related to this GroupContext.
    * @param objectName Target object name.
    */
-  GroupContext( Group & group, string const & objectName );
+  GroupContext( Group & group, string_view objectName );
 
   /// The reference to the Group related to this GroupContext.
   Group & m_group;

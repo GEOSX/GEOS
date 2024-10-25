@@ -17,6 +17,7 @@
 
 // Source includes
 #include "dataRepository/ObjectCatalog.hpp"
+#include "dataRepository/DataContext.hpp"
 #include "common/logger/Logger.hpp"
 #include "mainInterface/initialization.hpp"
 
@@ -67,7 +68,6 @@ public:
   }
   static string catalogName() { return "derived1"; }
   string getCatalogName() { return catalogName(); }
-
 };
 REGISTER_CATALOG_ENTRY( Base, Derived1, int &, double const & )
 //STOP_SPHINX
@@ -99,14 +99,17 @@ TEST( testObjectCatalog, testRegistration )
   GEOS_LOG( "EXECUTING MAIN" );
   int junk = 1;
   double junk2 = 3.14;
+  dataRepository::DataFileContext const context = dataRepository::DataFileContext( "Base Test Class", __FILE__, __LINE__ );
 
   // allocate a new Derived1 object
   std::unique_ptr< Base >
-  derived1 = Base::CatalogInterface::factory( "derived1", junk, junk2 );
+  derived1 = Base::CatalogInterface::factory( "derived1", context,
+                                              junk, junk2 );
 
   // allocate a new Derived2 object
   std::unique_ptr< Base >
-  derived2 = Base::CatalogInterface::factory( "derived2", junk, junk2 );
+  derived2 = Base::CatalogInterface::factory( "derived2", context,
+                                              junk, junk2 );
 
   EXPECT_STREQ( derived1->getCatalogName().c_str(),
                 Derived1::catalogName().c_str() );

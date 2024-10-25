@@ -25,7 +25,7 @@ namespace dataRepository
 {
 
 
-GroupContext::GroupContext( Group & group, string const & objectName ):
+GroupContext::GroupContext( Group & group, string_view objectName ):
   DataContext( objectName ),
   m_group( group )
 {}

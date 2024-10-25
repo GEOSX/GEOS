@@ -47,7 +47,7 @@ public:
    * @brief Construct a new DataContext object.
    * @param targetName the target object name
    */
-  DataContext( string const & targetName );
+  DataContext( string_view targetName );
 
   /**
    * @brief Destroy the DataContext object
@@ -95,12 +95,12 @@ protected:
      * @param filePath the input file path where the target is declared.
      * @param line the line in the file where the target is declared.
      */
-    ToStringInfo( string const & targetName, string const & filePath, size_t line );
+    ToStringInfo( string_view targetName, string_view filePath, size_t line );
     /**
      * @brief Construct a new ToStringInfo object from a DataContext that has no input file info.
      * @param targetName the target name.
      */
-    ToStringInfo( string const & targetName );
+    ToStringInfo( string_view targetName );
     /**
      * @return true if a location has been found to declare the target in an input file.
      */
@@ -141,6 +141,11 @@ public:
    */
   DataFileContext( xmlWrapper::xmlNode const & targetNode, xmlWrapper::xmlAttribute const & att,
                    xmlWrapper::xmlAttributePos const & attPos );
+
+  /**
+   * @brief Construct the file context of a Group from an cpp source file.
+   */
+  DataFileContext( string_view targetName, string_view file, size_t line );
 
   /**
    * @return the target object name followed by the the file and line declaring it.
