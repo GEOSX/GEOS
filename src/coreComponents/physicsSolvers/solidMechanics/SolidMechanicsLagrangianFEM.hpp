@@ -293,7 +293,7 @@ protected:
   real64 m_maxForce = 0.0;
   integer m_maxNumResolves;
   integer m_strainTheory;
-  MPI_iCommData m_iComm;
+//  MPI_iCommData m_iComm;
   bool m_isFixedStressPoromechanicsUpdate;
 
   /// Rigid body modes

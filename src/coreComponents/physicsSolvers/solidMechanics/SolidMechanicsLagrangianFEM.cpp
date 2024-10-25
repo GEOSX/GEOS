@@ -60,7 +60,6 @@ SolidMechanicsLagrangianFEM::SolidMechanicsLagrangianFEM( const string & name,
   m_maxForce( 0.0 ),
   m_maxNumResolves( 10 ),
   m_strainTheory( 0 ),
-  m_iComm( CommunicationTools::getInstance().getCommID() ),
   m_isFixedStressPoromechanicsUpdate( false )
 {
 
@@ -148,6 +147,8 @@ SolidMechanicsLagrangianFEM::~SolidMechanicsLagrangianFEM()
 
 void SolidMechanicsLagrangianFEM::registerDataOnMesh( Group & meshBodies )
 {
+  string const voightLabels[6] = { "XX", "YY", "ZZ", "YZ", "XZ", "XY" };
+
   forDiscretizationOnMeshTargets( meshBodies, [&] ( string const &,
                                                     MeshLevel & meshLevel,
                                                     arrayView1d< string const > const & regionNames )
@@ -159,7 +160,7 @@ void SolidMechanicsLagrangianFEM::registerDataOnMesh( Group & meshBodies )
     {
       setConstitutiveNamesCallSuper( subRegion );
 
-      subRegion.registerField< solidMechanics::strain >( getName() ).reference().resizeDimension< 1 >( 6 );
+      subRegion.registerField< solidMechanics::strain >( getName() ).setDimLabels( 1, voightLabels ).reference().resizeDimension< 1 >( 6 );
     } );
 
     NodeManager & nodes = meshLevel.getNodeManager();
@@ -570,6 +571,7 @@ real64 SolidMechanicsLagrangianFEM::explicitStep( real64 const & time_n,
     solidMechanics::arrayView2dLayoutIncrDisplacement const & uhat = nodes.getField< solidMechanics::incrementalDisplacement >();
     solidMechanics::arrayView2dLayoutAcceleration const & acc = nodes.getField< solidMechanics::acceleration >();
 
+    MPI_iCommData m_iComm;
     FieldIdentifiers fieldsToBeSync;
     fieldsToBeSync.addFields( FieldLocation::Node,
                               { solidMechanics::velocity::key(),

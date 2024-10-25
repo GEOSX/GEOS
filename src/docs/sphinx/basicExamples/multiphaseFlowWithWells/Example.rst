@@ -242,11 +242,8 @@ In this section of the input file, we follow the procedure described in
 :ref:`TutorialDeadOilBottomLayersSPE10` for the definition of the reservoir region with multiphase constitutive models.
 
 We associate a **CellElementRegion** named ``reservoir`` to the reservoir mesh.
-Since we have imported a mesh with one region consisting of hexahedral cells, we
-must set the attribute ``cellBlocks`` to ``hexahedra``.
-
-.. note::
-        If you use a name that is not ``hexahedra`` for this attribute, GEOS will throw an error at the beginning of the simulation.
+Since we have imported a mesh with only one region, we can set ``cellBlocks`` to ``{ * }``
+(we could also set ``cellBlocks`` to ``{ hexahedra }`` as the mesh has only hexahedral cells).
 
 We also associate a **WellElementRegion** to each well. As the **CellElementRegion**,
 it contains a ``materialList`` that must point (by name) to the constitutive models

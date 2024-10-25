@@ -152,6 +152,7 @@ private:
   struct viewKeyStruct : ReactiveMultiFluid::viewKeyStruct
   {
     static constexpr char const * phasePVTParaFilesString() { return "phasePVTParaFiles"; }
+    static constexpr char const * writeCSVFlagString() { return "writeCSV"; }
   };
 
 protected:
@@ -160,10 +161,16 @@ protected:
 
 private:
 
+  /**
+   * @brief Create a PVT Model and output them
+   */
   void createPVTModels();
 
   /// Names of the files defining the viscosity and density models
   path_array m_phasePVTParaFiles;
+
+  /// Output csv file containing informations about PVT
+  integer m_writeCSV;
 
   /// Brine constitutive models
   std::unique_ptr< PHASE > m_phase;

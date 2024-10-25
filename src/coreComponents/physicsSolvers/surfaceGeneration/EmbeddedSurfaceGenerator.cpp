@@ -36,7 +36,7 @@
 #include "mesh/simpleGeometricObjects/GeometricObjectManager.hpp"
 #include "mesh/simpleGeometricObjects/Rectangle.hpp"
 #include "physicsSolvers/fluidFlow/FlowSolverBaseFields.hpp"
-
+#include "physicsSolvers/surfaceGeneration/LogLevelsInfo.hpp"
 
 
 namespace geos
@@ -191,7 +191,7 @@ void EmbeddedSurfaceGenerator::initializePostSubGroups()
 
             if( added )
             {
-              GEOS_LOG_LEVEL_RANK_0( 2, GEOS_FMT( "{}: element {} is fractured", subRegion.getName(), cellIndex ) );
+              GEOS_LOG_LEVEL_INFO_RANK_0( logInfo::SurfaceGenerator, GEOS_FMT( "{}: element {} is fractured", subRegion.getName(), cellIndex ) );
 
               // Add the information to the CellElementSubRegion
               subRegion.addFracturedElement( cellIndex, localNumberOfSurfaceElems );
@@ -353,7 +353,7 @@ void EmbeddedSurfaceGenerator::setGlobalIndices( ElementRegionManager & elemMana
     totalNumberOfSurfaceElements += numberOfSurfaceElemsPerRank[rank];
   }
 
-  GEOS_LOG_LEVEL_RANK_0( 1, "Number of embedded surface elements: " << totalNumberOfSurfaceElements );
+  GEOS_LOG_LEVEL_INFO_RANK_0( logInfo::SurfaceGenerator, "Number of embedded surface elements: " << totalNumberOfSurfaceElements );
 
   arrayView1d< globalIndex > const & elemLocalToGlobal = embeddedSurfaceSubRegion.localToGlobalMap();
 

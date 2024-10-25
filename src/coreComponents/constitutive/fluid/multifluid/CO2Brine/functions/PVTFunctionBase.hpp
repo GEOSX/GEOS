@@ -113,17 +113,6 @@ public:
 
   virtual ~PVTFunctionBase() = default;
 
-  using CatalogInterface = dataRepository::CatalogInterface< PVTFunctionBase,
-                                                             string const &,
-                                                             array1d< string > const &,
-                                                             array1d< string > const &,
-                                                             array1d< real64 > const &,
-                                                             bool const >;
-  static typename CatalogInterface::CatalogType & getCatalog()
-  {
-    static CatalogInterface::CatalogType catalog;
-    return catalog;
-  }
 
   virtual string getCatalogName() const = 0;
 

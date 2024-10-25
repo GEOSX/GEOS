@@ -37,6 +37,8 @@ protected:
   /// Layout for a table
   TableLayout m_tableLayout;
 
+  TableFormatter() = default;
+
   /**
    * @brief Construct a new Table Formatter from a tableLayout
    * @param tableLayout Contain all column names and optionnaly the table title
@@ -55,6 +57,13 @@ protected:
 class TableCSVFormatter : public TableFormatter
 {
 public:
+
+  /**
+   * @brief Construct a new Table Formatter
+   */
+  TableCSVFormatter():
+    TableFormatter( TableLayout() )
+  {}
 
   /**
    * @brief Construct a new Table Formatter from a tableLayout
@@ -80,27 +89,46 @@ public:
   string dataToString( TableData const & tableData ) const;
 
   /**
-   * @brief Convert the TableData to a table string.
-   * @param tableData The TableData to convert.
-   * @return The table string representation of the TableData.
+   * @brief Convert a data source to a CSV string.
+   * @tparam DATASOURCE The source to convert
+   * @param tableData The data source to convert
+   * @return The CSV string representation of a data source.
    */
-  string toString( TableData const & tableData ) const;
+  template< typename DATASOURCE >
+  string toString( DATASOURCE const & tableData ) const;
 
 };
+
+/**
+ * @brief Convert the TableData to a CSV string.
+ * @param tableData The TableData to convert.
+ * @return The CSV string representation of the TableData.
+ */
+template<>
+string TableCSVFormatter::toString< TableData >( TableData const & tableData ) const;
+
 
 /**
  * @brief class for log formatting
  */
 class TableTextFormatter : public TableFormatter
 {
-
 public:
+
+
+  /**
+   * @brief Construct a new TableFormatter
+   */
+  TableTextFormatter():
+    TableFormatter( TableLayout() )
+  {}
 
   /**
    * @brief Construct a new TableFormatter from a tableLayout
    * @param tableLayout Contain all column names and optionnaly the table title
    */
   TableTextFormatter( TableLayout const & tableLayout );
+
 
   /**
    * @brief Destroy the Table Text Formatter object
@@ -113,11 +141,12 @@ public:
   string layoutToString() const;
 
   /**
-   * @brief Convert the TableData to a table string.
-   * @param tableData The TableData to convert.
+   * @brief Convert a data source to a table string.
+   * @param tableData The data source to convert.
    * @return The table string representation of the TableData.
    */
-  string toString( TableData const & tableData ) const;
+  template< typename DATASOURCE >
+  string toString( DATASOURCE const & tableData ) const;
 
 private:
 
@@ -126,7 +155,7 @@ private:
   ///  for the extremity of a row
   static constexpr char m_horizontalLine = '-';
 
-  /**F
+  /**
    * @brief Fill the vector (m_column) in tableData with values from rows stored in tableData.
    * @param columns Vector of columns to be filled.
    * @param tableData Vector containing all rows filled with values
@@ -217,6 +246,14 @@ private:
                           integer const nbRows,
                           TableLayout::Section const section ) const;
 };
+
+/**
+ * @brief Convert a TableData to a table string.
+ * @param tableData The TableData to convert.
+ * @return The table string representation of the TableData.
+ */
+template<>
+string TableTextFormatter::toString< TableData >( TableData const & tableData ) const;
 }
 
 #endif /* GEOS_COMMON_FORMAT_TABLE_TABLEFORMATTER_HPP */

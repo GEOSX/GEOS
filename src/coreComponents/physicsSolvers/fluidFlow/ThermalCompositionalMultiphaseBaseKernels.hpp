@@ -836,11 +836,11 @@ public:
 /**
  * @class ResidualNormKernel
  */
-class ResidualNormKernel : public solverBaseKernels::ResidualNormKernelBase< 2 >
+class ResidualNormKernel : public solverBaseKernels::ResidualNormKernelBase< 3 >
 {
 public:
 
-  using Base = ResidualNormKernelBase< 2 >;
+  using Base = ResidualNormKernelBase< 3 >;
   using Base::m_minNormalizer;
   using Base::m_rankOffset;
   using Base::m_localResidual;
@@ -913,7 +913,7 @@ public:
     real64 const valVol = LvArray::math::abs( m_localResidual[stack.localRow + m_numComponents] ) / volumeNormalizer;
     if( valVol > stack.localValue[0] )
     {
-      stack.localValue[0] = valVol;
+      stack.localValue[1] = valVol;
     }
 
     // step 3: energy residual
@@ -921,7 +921,7 @@ public:
     real64 const valEnergy = LvArray::math::abs( m_localResidual[stack.localRow + m_numComponents + 1] ) / energyNormalizer;
     if( valEnergy > stack.localValue[1] )
     {
-      stack.localValue[1] = valEnergy;
+      stack.localValue[2] = valEnergy;
     }
   }
 
@@ -945,13 +945,13 @@ public:
 
     real64 const valVol = m_localResidual[stack.localRow + m_numComponents] * m_totalDens_n[ei][0]; // we need a mass here, hence the
                                                                                                     // multiplication
-    stack.localValue[0] += valVol * valVol;
-    stack.localNormalizer[0] += massNormalizer;
+    stack.localValue[1] += valVol * valVol;
+    stack.localNormalizer[1] += massNormalizer;
 
     // step 3: energy residual
 
-    stack.localValue[1] += m_localResidual[stack.localRow + m_numComponents + 1] * m_localResidual[stack.localRow + m_numComponents + 1];
-    stack.localNormalizer[1] += energyNormalizer;
+    stack.localValue[2] += m_localResidual[stack.localRow + m_numComponents + 1] * m_localResidual[stack.localRow + m_numComponents + 1];
+    stack.localNormalizer[2] += energyNormalizer;
   }
 
 protected:
@@ -1015,8 +1015,8 @@ public:
                    constitutive::CoupledSolidBase const & solid,
                    constitutive::SolidInternalEnergy const & solidInternalEnergy,
                    real64 const minNormalizer,
-                   real64 (& residualNorm)[2],
-                   real64 (& residualNormalizer)[2] )
+                   real64 (& residualNorm)[3],
+                   real64 (& residualNormalizer)[3] )
   {
     arrayView1d< globalIndex const > const dofNumber = subRegion.getReference< array1d< globalIndex > >( dofKey );
     arrayView1d< integer const > const ghostRank = subRegion.ghostRank();

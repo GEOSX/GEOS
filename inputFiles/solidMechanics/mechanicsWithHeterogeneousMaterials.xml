@@ -63,7 +63,7 @@
   <ElementRegions>
     <CellElementRegion
       name="Region2"
-      cellBlocks="{ cb1 }"
+      cellBlocks="{ * }"
       materialList="{ rock }"/>
   </ElementRegions>
 

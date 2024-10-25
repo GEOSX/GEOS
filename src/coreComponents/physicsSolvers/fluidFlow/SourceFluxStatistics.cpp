@@ -31,7 +31,7 @@ SourceFluxStatsAggregator::SourceFluxStatsAggregator( const string & name,
                                                       Group * const parent ):
   Base( name, parent )
 {
-  getWrapper< integer >( Group::viewKeyStruct::logLevelString() ).
+  getWrapperBase( Group::viewKeyStruct::logLevelString() ).
     appendDescription( GEOS_FMT( "\n- Log Level 1 outputs the sum of all {0}(s) produced rate & mass,\n"
                                  "- Log Level 2 details values for each {0},\n"
                                  "- Log Level 3 details values for each region.",
