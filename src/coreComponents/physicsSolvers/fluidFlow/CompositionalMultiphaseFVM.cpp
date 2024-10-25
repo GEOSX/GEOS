@@ -478,9 +478,9 @@ real64 CompositionalMultiphaseFVM::scalingForSystemSolution( DomainPartition & d
   real64 minPresScalingFactor = 1.0, minCompDensScalingFactor = 1.0, minTempScalingFactor = 1.0;
 
 
-  std::vector< valueLocType > regionDeltaPresMaxLoc;
-  std::vector< valueLocType > regionDeltaTempMaxLoc;
-  std::vector< valueLocType > regionDeltaCompDensMaxLoc;
+  std::vector< valueAndLocationType > regionDeltaPresMaxLoc;
+  std::vector< valueAndLocationType > regionDeltaTempMaxLoc;
+  std::vector< valueAndLocationType > regionDeltaCompDensMaxLoc;
 
   forDiscretizationOnMeshTargets( domain.getMeshBodies(), [&]( string const &,
                                                                MeshLevel & mesh,
@@ -523,15 +523,15 @@ real64 CompositionalMultiphaseFVM::scalingForSystemSolution( DomainPartition & d
           scalingFactor = std::min( scalingFactor, subRegionData.localMinVal );
         }
 
-        regionDeltaPresMaxLoc.push_back( valueLocType( subRegionData.localMaxDeltaPres, localToGlobalMap[subRegionData.localMaxDeltaPresLoc] ) );
+        regionDeltaPresMaxLoc.push_back( valueAndLocationType( subRegionData.localMaxDeltaPres, localToGlobalMap[subRegionData.localMaxDeltaPresLoc] ) );
         minPresScalingFactor = std::min( minPresScalingFactor, subRegionData.localMinPresScalingFactor );
 
-        regionDeltaCompDensMaxLoc.push_back( valueLocType( subRegionData.localMaxDeltaCompDens, localToGlobalMap[subRegionData.localMaxDeltaCompDensLoc] ) );
+        regionDeltaCompDensMaxLoc.push_back( valueAndLocationType( subRegionData.localMaxDeltaCompDens, localToGlobalMap[subRegionData.localMaxDeltaCompDensLoc] ) );
         minCompDensScalingFactor = std::min( minCompDensScalingFactor, subRegionData.localMinCompDensScalingFactor );
 
         if( m_isThermal )
         {
-          regionDeltaTempMaxLoc.push_back( valueLocType( subRegionData.localMaxDeltaTemp, localToGlobalMap[subRegionData.localMaxDeltaTempLoc] ) );
+          regionDeltaTempMaxLoc.push_back( valueAndLocationType( subRegionData.localMaxDeltaTemp, localToGlobalMap[subRegionData.localMaxDeltaTempLoc] ) );
           minTempScalingFactor = std::min( minTempScalingFactor, subRegionData.localMinTempScalingFactor );
         }
       }
@@ -541,11 +541,11 @@ real64 CompositionalMultiphaseFVM::scalingForSystemSolution( DomainPartition & d
   auto [localDeltaPresMax, localPresMaxLoc] = *std::max_element( begin( regionDeltaPresMaxLoc ), end( regionDeltaPresMaxLoc ), []( auto & lhs, auto & rhs )   {
     return lhs.value   < rhs.value;
   } );
-  auto globalDeltaPresMax = MpiWrapper::maxValLoc( valueLocType( localDeltaPresMax, localPresMaxLoc ));
+  auto globalDeltaPresMax = MpiWrapper::maxValLoc( valueAndLocationType( localDeltaPresMax, localPresMaxLoc ));
   auto [ localDeltaCompDensMax, localCompDensMaxLoc ] = *std::max_element( begin( regionDeltaCompDensMaxLoc ), end( regionDeltaCompDensMaxLoc ), []( auto & lhs, auto & rhs )   {
     return lhs.value   < rhs.value;
   } );
-  auto globalDeltaCompDensMax = MpiWrapper::maxValLoc( valueLocType( localDeltaCompDensMax, localCompDensMaxLoc ));
+  auto globalDeltaCompDensMax = MpiWrapper::maxValLoc( valueAndLocationType( localDeltaCompDensMax, localCompDensMaxLoc ));
 
   scalingFactor = MpiWrapper::min( scalingFactor );
   minPresScalingFactor = MpiWrapper::min( minPresScalingFactor );
@@ -569,7 +569,7 @@ real64 CompositionalMultiphaseFVM::scalingForSystemSolution( DomainPartition & d
     auto [localDeltaTempMax, localDeltaTempMaxLoc  ] = *std::max_element( begin( regionDeltaTempMaxLoc ), end( regionDeltaTempMaxLoc ), []( auto & lhs, auto & rhs )   {
       return lhs.value   < rhs.value;
     } );
-    auto globalMaxDeltaTemp = MpiWrapper::maxValLoc( valueLocType( localDeltaTempMax, localDeltaTempMaxLoc ));
+    auto globalMaxDeltaTemp = MpiWrapper::maxValLoc( valueAndLocationType( localDeltaTempMax, localDeltaTempMaxLoc ));
 
     minTempScalingFactor = MpiWrapper::min( minTempScalingFactor );
     GEOS_LOG_LEVEL_INFO_RANK_0( logInfo::Solution,

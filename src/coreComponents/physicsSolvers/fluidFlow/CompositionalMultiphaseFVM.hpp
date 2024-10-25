@@ -177,15 +177,15 @@ public:
   /**
    * @brief Storage for value and element location, used to determine global max + location
    */
-  template< typename value_type, typename index_type >
-  struct valueLoc
+  template< typename VALUE_TYPE, typename INDEX_TYPE >
+  struct valueAndLocation
   {
-    valueLoc(){}
-    valueLoc( value_type val, index_type loc ): value( val ), location( loc ){}
-    value_type value;
-    index_type location;
+    valueAndLocation(){}
+    valueAndLocation( VALUE_TYPE val, INDEX_TYPE loc ): value( val ), location( loc ){}
+    VALUE_TYPE value;
+    INDEX_TYPE location;
   };
-  typedef valueLoc< real64, globalIndex > valueLocType;
+  typedef valueAndLocation< real64, globalIndex > valueAndLocationType;
 
 protected:
 
