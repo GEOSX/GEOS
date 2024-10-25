@@ -128,6 +128,7 @@ public:
       localKww{ { 0.0 } },
       localKwu{ { 0.0 } },
       localKuw{ { 0.0 } },
+      localEqMStress { 0.0 },
       localKwpm{ 0.0 },
       localKwpf( 0.0 ),
       wLocal(),
@@ -166,6 +167,9 @@ public:
 
     /// C-array storage for the element local Kuw matrix.
     real64 localKuw[numUdofs][numWdofs];
+
+    /// C-array storage for the element local EqM*effStress vector.
+    real64 localEqMStress[numWdofs];
 
     /// C-array storage for the element local Kwpm matrix.
     real64 localKwpm[numWdofs];
@@ -245,6 +249,9 @@ protected:
   arrayView2d< real64 const, nodes::INCR_DISPLACEMENT_USD > const m_deltaDisp;
 
   arrayView2d< real64 const > const m_w;
+
+  /// The effective stress at the current time
+  arrayView3d< real64 const, solid::STRESS_USD > m_effStress;
 
   /// The global degree of freedom number
   arrayView1d< globalIndex const > const m_matrixPresDofNumber;

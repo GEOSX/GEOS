@@ -71,6 +71,7 @@ SinglePhasePoromechanicsEFEM( NodeManager const & nodeManager,
   m_disp( nodeManager.getField< fields::solidMechanics::totalDisplacement >() ),
   m_deltaDisp( nodeManager.getField< fields::solidMechanics::incrementalDisplacement >() ),
   m_w( embeddedSurfSubRegion.getField< fields::contact::dispJump >() ),
+  m_effStress(inputConstitutiveType.getStress()),
   m_matrixPresDofNumber( elementSubRegion.template getReference< array1d< globalIndex > >( inputFlowDofKey ) ),
   m_fracturePresDofNumber( embeddedSurfSubRegion.template getReference< array1d< globalIndex > >( inputFlowDofKey ) ),
   m_wDofNumber( jumpDofNumber ),
@@ -188,6 +189,11 @@ quadraturePointKernel( localIndex const k,
                        FUNC && kernelOp ) const
 {
 
+  // The quarature kernal deals with the fracture force balance (eq. 29 in https://onlinelibrary.wiley.com/doi/epdf/10.1002/nag.3168)
+  // The total stress in matrix: sigma_tau = simga_eff_old + sigma_eff_incr - biot * p_m = sigma_eff_new - biot * p_m
+  // We can either use formulation: sigma_eff_old + stiffness_matrix * incremental_strain - biot * p_m or directly effective_stress_current - biot * p_m
+  // The latter one is adopted here.
+
   localIndex const embSurfIndex = m_cellsToEmbeddedSurfaces[k][0];
 
   // Get displacement: (i) basis functions (N), (ii) basis function
@@ -201,6 +207,15 @@ quadraturePointKernel( localIndex const k,
 
   // Gauss contribution to Kww, Kwu and Kuw blocks
   real64 Kww_gauss[3][3]{}, Kwu_gauss[3][nUdof]{}, Kuw_gauss[nUdof][3]{}, Kwpm_gauss[3]{};
+
+ // Gauss contirbution to eqMStress which is EqMatrix*effStress, all stresses are in Voigt notation
+  real64 eqMStress_gauss[3]{};
+  real64 effStress[6] = {m_effStress[k][q][0], 
+                         m_effStress[k][q][1], 
+                         m_effStress[k][q][2],
+                         m_effStress[k][q][3],
+                         m_effStress[k][q][4],
+                         m_effStress[k][q][5]};
 
   //  Compatibility, equilibrium and strain operators. The compatibility operator is constructed as
   //  a 3 x 6 because it is more convenient for construction purposes (reduces number of local var).
@@ -247,6 +262,8 @@ quadraturePointKernel( localIndex const k,
   LvArray::tensorOps::Rij_eq_AikBkj< 3, nUdof, 6 >( Kwu_gauss, matED, strainMatrix );
   // transp(B)DB
   LvArray::tensorOps::Rij_eq_AikBjk< nUdof, 3, 6 >( Kuw_gauss, matBD, compMatrix );
+  // EqMatrix * effStress
+  LvArray::tensorOps::Ri_eq_AijBj<3, 6> (eqMStress_gauss, eqMatrix, effStress);
 
   LvArray::tensorOps::fill< 3 >( Kwpm_gauss, 0 );
   for( int i=0; i < 3; ++i )
@@ -260,6 +277,7 @@ quadraturePointKernel( localIndex const k,
   LvArray::tensorOps::scaledAdd< 3, 3 >( stack.localKww, Kww_gauss, -detJ );
   LvArray::tensorOps::scaledAdd< 3, nUdof >( stack.localKwu, Kwu_gauss, -detJ );
   LvArray::tensorOps::scaledAdd< nUdof, 3 >( stack.localKuw, Kuw_gauss, -detJ );
+  LvArray::tensorOps::scaledAdd< 3 > (stack.localEqMStress, eqMStress_gauss, -detJ);
 
   /// TODO: should this be negative???
   // I had No neg coz the total stress = effective stress - porePressure
@@ -285,8 +303,9 @@ complete( localIndex const k,
 
   // Compute the local residuals
   LvArray::tensorOps::Ri_add_AijBj< 3, 3 >( stack.localJumpResidual, stack.localKww, stack.wLocal );
-  LvArray::tensorOps::Ri_add_AijBj< 3, nUdof >( stack.localJumpResidual, stack.localKwu, stack.dispLocal );
   LvArray::tensorOps::Ri_add_AijBj< nUdof, 3 >( stack.localDispResidual, stack.localKuw, stack.wLocal );
+  // add EqM * effStress into the residual of enrichment nodes
+  LvArray::tensorOps::add< 3 >( stack.localJumpResidual, stack.localEqMStress);
 
   // add pore pressure contribution
   LvArray::tensorOps::scaledAdd< 3 >( stack.localJumpResidual, stack.localKwpm, m_matrixPressure[ k ] );
