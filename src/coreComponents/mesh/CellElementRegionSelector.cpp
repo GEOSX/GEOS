@@ -66,9 +66,9 @@ CellElementRegionSelector::getMatchingCellblocks( CellElementRegion const & regi
                            "Available cellBlock list: {{ {} }}\nAvailable region attribute list: {{ {} }}",
                            region.getWrapperDataContext( ViewKeys::sourceCellBlockNamesString() ),
                            matchPattern,
-                           stringutilities::joinLamda( m_regionAttributesOwners, ", ",
+                           stringutilities::joinLambda( m_regionAttributesOwners, ", ",
                                                        []( auto pair ) { return pair->first; } ),
-                           stringutilities::joinLamda( m_cellBlocksOwners, ", ",
+                           stringutilities::joinLambda( m_cellBlocksOwners, ", ",
                                                        []( auto pair ) { return pair->first; } ) ),
                  InputError );
   return matchedCellBlocks;
@@ -85,7 +85,7 @@ CellElementRegionSelector::verifyRequestedCellBlocks( CellElementRegion const & 
                    GEOS_FMT( "{}: No cellBlock named '{}'.\nAvailable cellBlock list: {{ {} }}",
                              region.getWrapperDataContext( ViewKeys::sourceCellBlockNamesString() ),
                              requestedCellBlockName,
-                             stringutilities::joinLamda( m_cellBlocksOwners, ", ",
+                             stringutilities::joinLambda( m_cellBlocksOwners, ", ",
                                                          []( auto pair ) { return pair->first; } ) ),
                    InputError );
   }
@@ -161,7 +161,7 @@ void CellElementRegionSelector::checkSelectionConsistency() const
         multipleRefsErrors.push_back(
           GEOS_FMT( "The {} '{}' has been referenced in multiple {}:\n{}",
                     qualifierType, qualifier, CellElementRegion::catalogName(),
-                    stringutilities::joinLamda( owningRegions, '\n', getRegionStr ) ) );
+                    stringutilities::joinLambda( owningRegions, '\n', getRegionStr ) ) );
       }
     }
     GEOS_THROW_IF( !multipleRefsErrors.empty(), stringutilities::join( multipleRefsErrors, "\n\n" ), InputError );
