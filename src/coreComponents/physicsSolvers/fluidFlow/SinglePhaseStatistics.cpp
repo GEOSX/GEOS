@@ -25,6 +25,7 @@
 #include "physicsSolvers/fluidFlow/SinglePhaseBaseFields.hpp"
 #include "physicsSolvers/fluidFlow/SinglePhaseBaseKernels.hpp"
 #include "physicsSolvers/fluidFlow/FlowSolverBaseFields.hpp"
+#include "physicsSolvers/fluidFlow/LogLevelsInfo.hpp"
 
 namespace geos
 {
@@ -35,7 +36,9 @@ using namespace dataRepository;
 SinglePhaseStatistics::SinglePhaseStatistics( const string & name,
                                               Group * const parent ):
   Base( name, parent )
-{}
+{
+  addLogLevel< logInfo::Statistics >();
+}
 
 void SinglePhaseStatistics::registerDataOnMesh( Group & meshBodies )
 {
@@ -247,16 +250,23 @@ void SinglePhaseStatistics::computeRegionStatistics( real64 const time,
       GEOS_WARNING( GEOS_FMT( "{}, {}: Cannot compute average pressure & temperature because region pore volume is zero.", getName(), regionNames[i] ) );
     }
 
-    GEOS_LOG_LEVEL_RANK_0( 1, GEOS_FMT( "{}, {} (time {} s): Pressure (min, average, max): {}, {}, {} Pa",
-                                        getName(), regionNames[i], time, regionStatistics.minPressure, regionStatistics.averagePressure, regionStatistics.maxPressure ) );
-    GEOS_LOG_LEVEL_RANK_0( 1, GEOS_FMT( "{}, {} (time {} s): Delta pressure (min, max): {}, {} Pa",
-                                        getName(), regionNames[i], time, regionStatistics.minDeltaPressure, regionStatistics.maxDeltaPressure ) );
-    GEOS_LOG_LEVEL_RANK_0( 1, GEOS_FMT( "{}, {} (time {} s): Temperature (min, average, max): {}, {}, {} K",
-                                        getName(), regionNames[i], time, regionStatistics.minTemperature, regionStatistics.averageTemperature, regionStatistics.maxTemperature ) );
-    GEOS_LOG_LEVEL_RANK_0( 1, GEOS_FMT( "{}, {} (time {} s): Total dynamic pore volume: {} rm^3",
-                                        getName(), regionNames[i], time, regionStatistics.totalPoreVolume ) );
-    GEOS_LOG_LEVEL_RANK_0( 1, GEOS_FMT( "{}, {} (time {} s): Total fluid mass: {} kg",
-                                        getName(), regionNames[i], time, regionStatistics.totalMass ) );
+    string statPrefix = GEOS_FMT( "{}, {} (time {} s):", getName(), regionNames[i], time );
+    GEOS_LOG_LEVEL_INFO_RANK_0( logInfo::Statistics,
+                                GEOS_FMT( "{} Pressure (min, average, max): {}, {}, {} Pa",
+                                          statPrefix, regionStatistics.minPressure, regionStatistics.averagePressure, regionStatistics.maxPressure ) );
+    GEOS_LOG_LEVEL_INFO_RANK_0( logInfo::Statistics,
+                                GEOS_FMT( "{} Delta pressure (min, max): {}, {} Pa",
+                                          statPrefix, regionStatistics.minDeltaPressure, regionStatistics.maxDeltaPressure ) );
+    GEOS_LOG_LEVEL_INFO_RANK_0( logInfo::Statistics,
+                                GEOS_FMT( "{} Temperature (min, average, max): {}, {}, {} K",
+                                          statPrefix, regionStatistics.minTemperature, regionStatistics.averageTemperature,
+                                          regionStatistics.maxTemperature ) );
+    GEOS_LOG_LEVEL_INFO_RANK_0( logInfo::Statistics,
+                                GEOS_FMT( "{} Total dynamic pore volume: {} rm^3",
+                                          statPrefix, regionStatistics.totalPoreVolume ) );
+    GEOS_LOG_LEVEL_INFO_RANK_0( logInfo::Statistics,
+                                GEOS_FMT( "{} Total fluid mass: {} kg",
+                                          statPrefix, regionStatistics.totalMass ) );
 
     if( m_writeCSV > 0 && MpiWrapper::commRank() == 0 )
     {

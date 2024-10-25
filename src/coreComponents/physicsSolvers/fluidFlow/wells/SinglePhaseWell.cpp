@@ -35,6 +35,7 @@
 #include "physicsSolvers/fluidFlow/wells/SinglePhaseWellFields.hpp"
 #include "physicsSolvers/fluidFlow/wells/SinglePhaseWellKernels.hpp"
 #include "physicsSolvers/fluidFlow/wells/WellControls.hpp"
+#include "physicsSolvers/fluidFlow/wells/LogLevelsInfo.hpp"
 
 namespace geos
 {
@@ -49,6 +50,11 @@ SinglePhaseWell::SinglePhaseWell( const string & name,
 {
   m_numDofPerWellElement = 2;
   m_numDofPerResElement = 1;
+
+  this->registerWrapper( FlowSolverBase::viewKeyStruct::allowNegativePressureString(), &m_allowNegativePressure ).
+    setApplyDefaultValue( 1 ). // negative pressure is allowed by default
+    setInputFlag( InputFlags::OPTIONAL ).
+    setDescription( "Flag indicating if negative pressure is allowed" );
 }
 
 void SinglePhaseWell::registerDataOnMesh( Group & meshBodies )
@@ -187,7 +193,7 @@ void SinglePhaseWell::updateBHPForConstraint( WellElementSubRegion & subRegion )
 
   if( logLevel >= 2 )
   {
-    GEOS_LOG_RANK( GEOS_FMT( "{}: The BHP (at the specified reference elevation) is {} Pa",
+    GEOS_LOG_RANK( GEOS_FMT( "{}: The BHP (at the specified reference elevation) = {} Pa",
                              wellControlsName, currentBHP ) );
   }
 
@@ -283,10 +289,8 @@ void SinglePhaseWell::updateVolRateForConstraint( WellElementSubRegion & subRegi
 
       if( logLevel >= 2 && useSurfaceConditions )
       {
-        GEOS_LOG_RANK( GEOS_FMT( "{}: The total fluid density at surface conditions is {} kg/sm3. \n"
-                                 "The total rate is {} kg/s, which corresponds to a total surface volumetric rate of {} sm3/s",
-                                 wellControlsName, dens[iwelemRef][0],
-                                 connRate[iwelemRef], currentVolRate ) );
+        GEOS_LOG_RANK( GEOS_FMT( "{}: total fluid density at surface conditions = {} kg/sm3, total rate = {} kg/s, total surface volumetric rate = {} sm3/s",
+                                 wellControlsName, dens[iwelemRef][0], connRate[iwelemRef], currentVolRate ) );
       }
     } );
   } );
@@ -521,14 +525,12 @@ void SinglePhaseWell::assemblePressureRelations( real64 const & time_n,
         if( wellControls.getControl() == WellControls::Control::BHP )
         {
           wellControls.switchToTotalRateControl( wellControls.getTargetTotalRate( timeAtEndOfStep ) );
-          GEOS_LOG_LEVEL( 1, "Control switch for well " << subRegion.getName()
-                                                        << " from BHP constraint to rate constraint" );
+          GEOS_LOG_LEVEL_INFO_RANK_0( logInfo::WellControl, GEOS_FMT( "Control switch for well {} from BHP constraint to rate constraint", subRegion.getName()) );
         }
         else
         {
           wellControls.switchToBHPControl( wellControls.getTargetBHP( timeAtEndOfStep ) );
-          GEOS_LOG_LEVEL( 1, "Control switch for well " << subRegion.getName()
-                                                        << " from rate constraint to BHP constraint" );
+          GEOS_LOG_LEVEL_INFO_RANK_0( logInfo::WellControl, GEOS_FMT( "Control switch for well {} from rate constraint to BHP constraint", subRegion.getName()) );
         }
       }
 
@@ -826,8 +828,9 @@ bool SinglePhaseWell::checkSystemSolution( DomainPartition & domain,
 {
   GEOS_MARK_FUNCTION;
 
-  localIndex localCheck = 1;
   string const wellDofKey = dofManager.getKey( wellElementDofName() );
+  integer numNegativePressures = 0;
+  real64 minPressure = 0.0;
 
   forDiscretizationOnMeshTargets( domain.getMeshBodies(), [&] ( string const &,
                                                                 MeshLevel const & mesh,
@@ -841,33 +844,32 @@ bool SinglePhaseWell::checkSystemSolution( DomainPartition & domain,
                                                                    WellElementSubRegion const & subRegion )
 
     {
+      globalIndex const rankOffset = dofManager.rankOffset();
       // get the degree of freedom numbers on well elements
-      arrayView1d< globalIndex const > const & wellElemDofNumber =
+      arrayView1d< globalIndex const > const & dofNumber =
         subRegion.getReference< array1d< globalIndex > >( wellDofKey );
-      arrayView1d< integer const > const & wellElemGhostRank = subRegion.ghostRank();
+      arrayView1d< integer const > const & ghostRank = subRegion.ghostRank();
 
       // get a reference to the primary variables on well elements
-      arrayView1d< real64 const > const & wellElemPressure =
+      arrayView1d< real64 const > const & pres =
         subRegion.getField< fields::well::pressure >();
 
-      // here we can reuse the flow solver kernel checking that pressures are positive
-      localIndex const subRegionSolutionCheck =
-        singlePhaseWellKernels::
-          SolutionCheckKernel::launch< parallelDevicePolicy<> >( localSolution,
-                                                                 dofManager.rankOffset(),
-                                                                 wellElemDofNumber,
-                                                                 wellElemGhostRank,
-                                                                 wellElemPressure,
-                                                                 scalingFactor );
+      auto const statistics =
+        singlePhaseBaseKernels::SolutionCheckKernel::
+          launch< parallelDevicePolicy<> >( localSolution, rankOffset, dofNumber, ghostRank, pres, scalingFactor );
 
-      if( subRegionSolutionCheck == 0 )
-      {
-        localCheck = 0;
-      }
+      numNegativePressures += statistics.first;
+      minPressure = std::min( minPressure, statistics.second );
     } );
   } );
 
-  return MpiWrapper::min( localCheck );
+  numNegativePressures = MpiWrapper::sum( numNegativePressures );
+
+  if( numNegativePressures > 0 )
+    GEOS_LOG_LEVEL_RANK_0( 1, GEOS_FMT( "        {}: Number of negative pressure values: {}, minimum value: {} Pa",
+                                        getName(), numNegativePressures, fmt::format( "{:.{}f}", minPressure, 3 ) ) );
+
+  return (m_allowNegativePressure || numNegativePressures == 0) ?  1 : 0;
 }
 
 void

@@ -16,6 +16,7 @@ set( common_headers
      GEOS_RAJA_Interface.hpp
      GeosxMacros.hpp
      MemoryInfos.hpp
+     logger/Logger.hpp
      MpiWrapper.hpp
      Path.hpp
      Span.hpp

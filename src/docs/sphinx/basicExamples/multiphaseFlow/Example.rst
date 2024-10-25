@@ -82,7 +82,7 @@ Mesh
 -------
 
 In this simulation, we define a simple mesh generated internally using the **InternalMesh** generator, as
-illustrated in the previous examples.
+illustrated in the first tutorial (:ref:`TutorialSinglePhaseFlowWithInternalMesh`).
 The mesh dimensions and cell sizes are chosen to be those specified in the SPE10 test case, but are limited to the two bottom layers.
 The mesh description must be done in meters.
 
@@ -173,13 +173,12 @@ Reservoir region
 
 In the **ElementRegions** XML block, we define a **CellElementRegion** named ``reservoir`` corresponding to the
 reservoir mesh.
-The attribute ``cellBlocks`` is set to ``block`` to point this element region
-to the hexahedral mesh defined internally.
+``cellBlocks`` is set to ``{ * }`` to automatically target every cells of the mesh.
 
 The **CellElementRegion** must also point to the constitutive models that are used to update
 the dynamic rock and fluid properties in the cells of the reservoir mesh.
 The names ``fluid``, ``rock``, and ``relperm`` used for this in the ``materialList``
-correspond to the attribute ``name`` of the **Constitutive** block.
+correspond to the **Constitutive** blocks with the coresponding names.
 
 .. literalinclude:: ../../../../../inputFiles/compositionalMultiphaseFlow/benchmarks/SPE10/deadOilSpe10Layers84_85_base_iterative.xml
   :language: xml

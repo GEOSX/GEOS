@@ -260,6 +260,9 @@ protected:
                    real64 const & dt,
                    DomainPartition & domain ) override;
 
+  /// flag if negative pressure is allowed
+  integer m_allowNegativePressure;
+
 private:
 
   /**

@@ -769,6 +769,14 @@ CellBlock & CellBlockManager::registerCellBlock( string const & name )
   return this->getCellBlocks().registerGroup< CellBlock >( name );
 }
 
+CellBlock & CellBlockManager::registerCellBlock( string const & cellBlockName,
+                                                 integer regionAttribute )
+{
+  CellBlock & cb = this->getCellBlocks().registerGroup< CellBlock >( cellBlockName );
+  m_regionAttributesCellBlocks[ regionAttribute ].emplace( cellBlockName );
+  return cb;
+}
+
 FaceBlock & CellBlockManager::registerFaceBlock( string const & name )
 {
   return this->getFaceBlocks().registerGroup< FaceBlock >( name );
