@@ -50,7 +50,7 @@ decks = [
         partitions=((1, 1, 1), (2, 2, 2)),
         restart_step=100,
         check_step=200,
-        restartcheck_params=RestartcheckParameters(**restartcheck_params))
+        restartcheck_params=RestartcheckParameters(**restartcheck_params)),
     TestDeck(
         name="acous3D_Q1_srcTable_dtCFL_smoke.xml"
         description=
