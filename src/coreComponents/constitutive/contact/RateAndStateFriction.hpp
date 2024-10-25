@@ -98,13 +98,13 @@ public:
 
     /// Deleted move assignment operator
     KernelWrapper & operator=( KernelWrapper && ) =  delete;
-    
+
     GEOS_HOST_DEVICE
     real64 getACoefficient( localIndex const k ) const { return m_a[k]; }
-    
+
     GEOS_HOST_DEVICE
-    real64 getBCoefficient( localIndex const k ) const { return m_b[k]; }   
-    
+    real64 getBCoefficient( localIndex const k ) const { return m_b[k]; }
+
     GEOS_HOST_DEVICE
     real64 getDcCoefficient( localIndex const k ) const { return m_Dc[k]; }
 
@@ -132,18 +132,18 @@ public:
 
     GEOS_HOST_DEVICE
     inline real64 stateEvolution( localIndex const k,
-                                    real64 const slipRate,
-                                    real64 const stateVariable ) const;
+                                  real64 const slipRate,
+                                  real64 const stateVariable ) const;
 
     GEOS_HOST_DEVICE
     inline real64 dStateEvolution_dStateVariable( localIndex const k,
-                                                   real64 const slipRate,
-                                                   real64 const stateVariable ) const;
+                                                  real64 const slipRate,
+                                                  real64 const stateVariable ) const;
 
     GEOS_HOST_DEVICE
     inline real64 dStateEvolution_dSlipRate( localIndex const k,
-                                              real64 const slipRate,
-                                              real64 const stateVariable ) const;
+                                             real64 const slipRate,
+                                             real64 const stateVariable ) const;
 private:
     /// The friction coefficient
     arrayView1d< real64 > m_frictionCoefficient;
@@ -263,7 +263,7 @@ inline real64 RateAndStateFriction::KernelWrapper::frictionCoefficient( localInd
                                                                         real64 const slipRate,
                                                                         real64 const stateVariable ) const
 {
-  
+
   real64 const arg = ( slipRate / (2 * m_V0[k]) ) * LvArray::math::exp( stateVariable / m_a[k] );
   m_frictionCoefficient[k]  = m_a[k] * LvArray::math::asinh( arg );
 
@@ -275,7 +275,7 @@ inline real64 RateAndStateFriction::KernelWrapper::dFrictionCoefficient_dSlipRat
                                                                                    real64 const slipRate,
                                                                                    real64 const stateVariable ) const
 {
-  
+
   real64 const arg = ( slipRate / (2 * m_V0[k]) ) * LvArray::math::exp( stateVariable / m_a[k] );
 
   return ( m_a[k] * LvArray::math::exp( stateVariable / m_a[k] ) ) / (2 * m_V0[k] * LvArray::math::sqrt( 1 + arg * arg ));
@@ -293,9 +293,9 @@ inline real64 RateAndStateFriction::KernelWrapper::dFrictionCoefficient_dStateVa
 }
 
 GEOS_HOST_DEVICE
-inline real64 RateAndStateFriction::KernelWrapper::stateEvolution(  localIndex const k,
-                                                                    real64 const slipRate,
-                                                                    real64 const stateVariable ) const
+inline real64 RateAndStateFriction::KernelWrapper::stateEvolution( localIndex const k,
+                                                                   real64 const slipRate,
+                                                                   real64 const stateVariable ) const
 {
   real64 const mu = frictionCoefficient( k, slipRate, stateVariable );
 
@@ -303,9 +303,9 @@ inline real64 RateAndStateFriction::KernelWrapper::stateEvolution(  localIndex c
 }
 
 GEOS_HOST_DEVICE
-inline real64 RateAndStateFriction::KernelWrapper::dStateEvolution_dStateVariable(  localIndex const k,
-                                                                                    real64 const slipRate,
-                                                                                    real64 const stateVariable ) const
+inline real64 RateAndStateFriction::KernelWrapper::dStateEvolution_dStateVariable( localIndex const k,
+                                                                                   real64 const slipRate,
+                                                                                   real64 const stateVariable ) const
 {
   return -slipRate / m_Dc[k] * dFrictionCoefficient_dStateVariable( k, slipRate, stateVariable );
 }

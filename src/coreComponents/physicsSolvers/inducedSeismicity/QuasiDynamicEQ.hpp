@@ -52,8 +52,6 @@ public:
     constexpr static char const * frictionLawNameString() { return "frictionLawName"; }
     /// Friction law name string
     constexpr static char const * shearImpedanceString() { return "shearImpedance"; }
-    /// max number of Newton iterations string
-    constexpr static char const * maxNumberOfNewtonIterationsString() { return "maxNumberOfNewtonIterations"; }
     /// target slip increment
     constexpr static char const * targetSlipIncrementString() { return "targetSlipIncrement"; }
   };
@@ -86,9 +84,6 @@ private:
 
   /// stress solver name
   string m_stressSolverName;
-
-  /// max number of newton iterations for rate and state solver
-  integer m_maxNewtonIterations;
 
   /// shear impedance
   real64 m_shearImpedance;

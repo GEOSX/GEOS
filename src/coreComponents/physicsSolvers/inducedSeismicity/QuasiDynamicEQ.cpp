@@ -38,15 +38,9 @@ QuasiDynamicEQ::QuasiDynamicEQ( const string & name,
   SolverBase( name, parent ),
   m_stressSolver( nullptr ),
   m_stressSolverName( "SpringSlider" ),
-  m_maxNewtonIterations( 2 ),
   m_shearImpedance( 0.0 ),
   m_targetSlipIncrement( 1.0e-7 )
 {
-  this->registerWrapper( viewKeyStruct::maxNumberOfNewtonIterationsString(), &m_maxNewtonIterations ).
-    setInputFlag( InputFlags::OPTIONAL ).
-    setApplyDefaultValue( 10 ).
-    setDescription( "Maximum number of Newton iterations string." );
-
   this->registerWrapper( viewKeyStruct::shearImpedanceString(), &m_shearImpedance ).
     setInputFlag( InputFlags::REQUIRED ).
     setDescription( "Shear impedance." );
@@ -96,7 +90,7 @@ void QuasiDynamicEQ::registerDataOnMesh( Group & meshBodies )
       subRegion.registerField< rateAndState::stateVariable >( getName() );
       subRegion.registerField< rateAndState::stateVariable_n >( getName() );
       subRegion.registerField< rateAndState::slipRate >( getName() );
-      
+
       // Tangent (2-component) functions on fault
       string const labels2Comp[2] = {"tangent1", "tangent2" };
       subRegion.registerField< rateAndState::slipVelocity >( getName() ).
@@ -155,6 +149,8 @@ real64 QuasiDynamicEQ::solverStep( real64 const & time_n,
 
   /// 2. Solve for slip rate and state variable and, compute slip
   GEOS_LOG_LEVEL_RANK_0( 1, "Rate and State solver" );
+
+  integer const maxNewtonIter = m_nonlinearSolverParameters.m_maxIterNewton;
   forDiscretizationOnMeshTargets( domain.getMeshBodies(), [&]( string const &,
                                                                MeshLevel & mesh,
                                                                arrayView1d< string const > const & regionNames )
@@ -165,7 +161,7 @@ real64 QuasiDynamicEQ::solverStep( real64 const & time_n,
                                                                                 SurfaceElementSubRegion & subRegion )
     {
       // solve rate and state equations.
-      rateAndStateKernels::createAndLaunch< parallelDevicePolicy<> >( subRegion, viewKeyStruct::frictionLawNameString(), m_shearImpedance, m_maxNewtonIterations, time_n, dtStress );
+      rateAndStateKernels::createAndLaunch< parallelDevicePolicy<> >( subRegion, viewKeyStruct::frictionLawNameString(), m_shearImpedance, maxNewtonIter, time_n, dtStress );
       // save old state
       saveOldStateAndUpdateSlip( subRegion, dt );
     } );
@@ -220,9 +216,9 @@ real64 QuasiDynamicEQ::updateStresses( real64 const & time_n,
 
 
           traction[k][1] = traction[k][1] + springSliderParameters.tauRate * dt
-                                          - springSliderParameters.springStiffness * deltaSlip[k][0];
+                           - springSliderParameters.springStiffness * deltaSlip[k][0];
           traction[k][2] = traction[k][2] + springSliderParameters.tauRate * dt
-                                          - springSliderParameters.springStiffness * deltaSlip[k][1];
+                           - springSliderParameters.springStiffness * deltaSlip[k][1];
         } );
       } );
     } );

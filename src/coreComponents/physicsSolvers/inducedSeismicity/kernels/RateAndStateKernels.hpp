@@ -77,14 +77,14 @@ public:
     real64 const shearTractionMagnitude = LvArray::math::sqrt( m_traction[k][1] * m_traction[k][1] + m_traction[k][2] * m_traction[k][2] );
     // Eq 1: Scalar force balance for slipRate and shear traction magnitude
     stack.rhs[0] = shearTractionMagnitude - m_shearImpedance * m_slipRate[k]
-                                          - normalTraction * m_frictionLaw.frictionCoefficient( k, m_slipRate[k], m_stateVariable[k] );
+                   - normalTraction * m_frictionLaw.frictionCoefficient( k, m_slipRate[k], m_stateVariable[k] );
     real64 const dFriction[2] = { -normalTraction * m_frictionLaw.dFrictionCoefficient_dStateVariable( k, m_slipRate[k], m_stateVariable[k] ),
                                   -m_shearImpedance - normalTraction * m_frictionLaw.dFrictionCoefficient_dSlipRate( k, m_slipRate[k], m_stateVariable[k] ) };
 
     // Eq 2: slip law
     stack.rhs[1] = (m_stateVariable[k] - m_stateVariable_n[k]) / dt - m_frictionLaw.stateEvolution( k, m_slipRate[k], m_stateVariable[k] );
     real64 const dStateEvolutionLaw[2] = { 1 / dt - m_frictionLaw.dStateEvolution_dStateVariable( k, m_slipRate[k], m_stateVariable[k] ),
-                                           -m_frictionLaw.dStateEvolution_dSlipRate( k, m_slipRate[k], m_stateVariable[k] ) } ;
+                                           -m_frictionLaw.dStateEvolution_dSlipRate( k, m_slipRate[k], m_stateVariable[k] ) };
 
     // Assemble Jacobian matrix
     stack.jacobian[0][0] = dFriction[0];          // derivative of Eq 1 w.r.t. stateVariable
@@ -107,7 +107,7 @@ public:
   }
 
   GEOS_HOST_DEVICE
-  void projectSlipRate( localIndex const k) const
+  void projectSlipRate( localIndex const k ) const
   {
     // Project slip rate onto shear traction to get slip velocity components
     real64 const frictionForce = m_traction[k][0] * m_frictionLaw.frictionCoefficient( k, m_slipRate[k], m_stateVariable[k] );
@@ -196,8 +196,8 @@ createAndLaunch( SurfaceElementSubRegion & subRegion,
     GEOS_ERROR( " Failed to converge" );
   }
   forAll< POLICY >( subRegion.size(), [=] GEOS_HOST_DEVICE ( localIndex const k )
-    {
-      kernel.projectSlipRate( k );
+  {
+    kernel.projectSlipRate( k );
   } );
 }
 
