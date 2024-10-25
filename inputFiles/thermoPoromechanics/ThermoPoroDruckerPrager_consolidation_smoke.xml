@@ -1,0 +1,113 @@
+<?xml version="1.0" ?>
+
+<Problem>
+  <Included>
+    <File name="./ThermoPoroDruckerPrager_consolidation_base.xml" />
+  </Included>
+
+  <Mesh>
+    <InternalMesh
+      name="mesh1"
+      elementTypes="{ C3D8 }"
+      xCoords="{ 0, 1 }"
+      yCoords="{ 0, 7 }"
+      zCoords="{ 0, 1 }"
+      nx="{ 1 }"
+      ny="{ 14 }"
+      nz="{ 1 }"
+      cellBlockNames="{ cb1 }"/>
+  </Mesh>
+
+  <Events
+    maxTime="100001"> 
+
+    <PeriodicEvent
+      name="output"
+      timeFrequency="10000"
+      target="/Outputs/thermoPoroVTKOutput"/>
+
+    <PeriodicEvent
+      name="pressureHistoryCollection"
+      beginTime="10001"
+      endTime="100001"
+      targetExactTimestep="0"
+      timeFrequency="10000"
+      target="/Tasks/pressureCollection"/>
+    <PeriodicEvent
+      name="pressureTimeHistoryOutput"
+      beginTime="10001"
+      endTime="100001"
+      targetExactTimestep="0"      
+      timeFrequency="10000"
+      target="/Outputs/pressureHistoryOutput"/>
+    <PeriodicEvent
+      name="temperatureHistoryCollection"
+      beginTime="10001"
+      endTime="100001"
+      targetExactTimestep="0"      
+      timeFrequency="10000"
+      target="/Tasks/temperatureCollection"/>
+    <PeriodicEvent
+      name="temperatureTimeHistoryOutput"
+      beginTime="10001"
+      endTime="100001"
+      targetExactTimestep="0"      
+      timeFrequency="10000"
+      target="/Outputs/temperatureHistoryOutput"/>
+    <PeriodicEvent
+      name="displacementHistoryCollection"
+      beginTime="10001"
+      endTime="100001"
+      targetExactTimestep="0"      
+      timeFrequency="10000"
+      target="/Tasks/displacementCollection"/>
+    <PeriodicEvent
+      name="displacementTimeHistoryOutput"
+      beginTime="10001"
+      endTime="100001"
+      targetExactTimestep="0"      
+      timeFrequency="10000"
+      target="/Outputs/displacementHistoryOutput"/>
+    
+    <PeriodicEvent
+      name="solverApplication0"
+      endTime="1e-2"
+      forceDt="1e-2"
+      target="/Solvers/thermoPoroSolver"/>
+
+    <PeriodicEvent
+      name="solverApplication1"
+      beginTime="1e-2"
+      endTime="1"
+      forceDt="0.99"
+      target="/Solvers/thermoPoroSolver"/>
+
+    <PeriodicEvent
+      name="solverApplication2"
+      beginTime="1"
+      endTime="1001"
+      forceDt="2"
+      target="/Solvers/thermoPoroSolver"/>
+
+    <PeriodicEvent
+      name="solverApplication3"
+      beginTime="1001"
+      endTime="10001"
+      forceDt="100"
+      target="/Solvers/thermoPoroSolver"/>
+
+    <PeriodicEvent
+      name="solverApplication4"
+      beginTime="10001"
+      endTime="100001"
+      forceDt="1000"
+      target="/Solvers/thermoPoroSolver"/>
+
+    <PeriodicEvent
+      name="restarts"
+      timeFrequency="5e4"
+      target="/Outputs/restartOutput"/>
+    
+  </Events>
+
+</Problem>

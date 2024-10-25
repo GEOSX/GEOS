@@ -67,7 +67,7 @@
   </ElementRegions>
 
   <Constitutive>
-    <PorousModifiedCamClay
+    <PorousExtendedDruckerPrager
       name="rock"
       solidModelName="rockSolid"
       porosityModelName="rockPorosity"
@@ -75,18 +75,17 @@
       solidInternalEnergyModelName="rockInternalEnergy"
     />
 
-    <ModifiedCamClay 
+    <ExtendedDruckerPrager 
       name="rockSolid"
       defaultDensity="2700"
-      defaultRefPressure="-1.0"
-      defaultRefStrainVol="0"
-      defaultShearModulus="2500.0"
-      defaultPreConsolidationPressure="-15.0e6"
-      defaultCslSlope="1.2"
-      defaultRecompressionIndex="0.0001"
-      defaultVirginCompressionIndex="0.003"
-      defaultDrainedLinearTEC="3e-9"
-    />
+      defaultBulkModulus="0.5e9"
+      defaultShearModulus="0.3e9"
+      defaultCohesion="0.1e6"
+      defaultInitialFrictionAngle="15.27"
+      defaultResidualFrictionAngle="23.05"
+      defaultDilationRatio="1.0"
+      defaultHardening="0.01"
+      defaultDrainedLinearTEC="3e-7"/> 
 
     <!-- SPHINX_POROSITY -->    
     <BiotPorosity
