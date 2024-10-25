@@ -29,8 +29,9 @@ The xml input files for the case with LagrangianContact solver are located at:
 
 .. code-block:: console
 
-  inputFiles/lagrangianContactMechanics/Sneddon_contactMechanics_base.xml
-  inputFiles/lagrangianContactMechanics/Sneddon_contactMechanics_benchmark.xml
+  inputFiles/lagrangianContactMechanics/Sneddon_base.xml
+  inputFiles/lagrangianContactMechanics/Sneddon_benchmark.xml
+  inputFiles/lagrangianContactMechanics/ContactMechanics_Sneddon_benchmark.xml
 
 
 The xml input files for the case with HydroFracture solver are located at:
@@ -99,7 +100,7 @@ To setup a coupling between rock and fracture deformations in LagrangianContact 
 - The solver ``SurfaceGenerator`` defines the fracture region and rock toughness.
 
 
-.. literalinclude:: ../../../../../../../inputFiles/lagrangianContactMechanics/Sneddon_contactMechanics_benchmark.xml
+.. literalinclude:: ../../../../../../../inputFiles/lagrangianContactMechanics/ContactMechanics_Sneddon_benchmark.xml
   :language: xml
   :start-after: <!-- SPHINX_SNEDDON_SOLVER -->
   :end-before: <!-- SPHINX_SNEDDON_SOLVER_END -->
@@ -155,7 +156,7 @@ along the Z axes, 121 elements along the X axis and 921 elements along the Y axi
 The mesh for the case with LagrangianContact solver was also created using the internal mesh generator, as parametrized in the ``InternalMesh`` XML tag. The mesh discretizes the same compational domain (:math:`40\, m \, \times 40 \,  m \, \times 1 \, m`) with 300 x 300 x 2 eight-node brick elements in the x, y, and z directions respectively. 
 
 
-.. literalinclude:: ../../../../../../../inputFiles/lagrangianContactMechanics/Sneddon_contactMechanics_benchmark.xml
+.. literalinclude:: ../../../../../../../inputFiles/lagrangianContactMechanics/Sneddon_benchmark.xml
    :language: xml
    :start-after: <!-- SPHINX_SNEDDON_MESH -->
    :end-before: <!-- SPHINX_SNEDDON_MESH_END -->
@@ -209,7 +210,7 @@ The static fracture is defined by a nodeset occupying a small region within the 
 
 - The test case with LagrangianContact solver:
 
-.. literalinclude:: ../../../../../../../inputFiles/lagrangianContactMechanics/Sneddon_contactMechanics_base.xml
+.. literalinclude:: ../../../../../../../inputFiles/lagrangianContactMechanics/Sneddon_base.xml
   :language: xml
   :start-after: <!-- SPHINX_SNEDDON_GEOMETRY -->
   :end-before: <!-- SPHINX_SNEDDON_GEOMETRY_END -->
@@ -242,7 +243,7 @@ In this example, a task is specified to output fracture aperture (normal opening
 
 - The test case with LagrangianContact solver:
 
-.. literalinclude:: ../../../../../../../inputFiles/lagrangianContactMechanics/Sneddon_contactMechanics_base.xml
+.. literalinclude:: ../../../../../../../inputFiles/lagrangianContactMechanics/Sneddon_base.xml
   :language: xml
   :start-after: <!-- SPHINX_SNEDDON_TASK -->
   :end-before: <!-- SPHINX_SNEDDON_TASK_END -->
@@ -271,7 +272,7 @@ To run these three cases, use the following commands:
 
 ``path/to/geos -i inputFiles/efemFractureMechanics/Sneddon_embeddedFrac_verification.xml``
 
-``path/to/geos -i inputFiles/lagrangianContactMechanics/Sneddon_contactMechanics_benchmark.xml``
+``path/to/geos -i inputFiles/lagrangianContactMechanics/ContactMechanics_Sneddon_benchmark.xml``
 
 ``path/to/geos -i inputFiles/hydraulicFracturing/Sneddon_hydroFrac_benchmark.xml``
 

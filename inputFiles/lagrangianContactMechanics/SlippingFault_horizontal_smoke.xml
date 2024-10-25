@@ -3,38 +3,38 @@
 <Problem>
 
   <Included>
-    <File name="./ALM_stickFault_base.xml"/>
+    <File name="./SlippingFault_base.xml"/>
   </Included>
-
+  
   <Mesh>
     <InternalMesh
       name="mesh1"
       elementTypes="{ C3D8 }"
-      xCoords="{ -100, 0, 100 }"
-      yCoords="{ -100, 100 }"
-      zCoords="{  0, 200 }"
-      nx="{ 8, 8 }"
-      ny="{ 16 }"
-      nz="{ 16 }"
+      xCoords="{ -100, 100 }"
+      yCoords="{ -25, 0, 25 }"
+      zCoords="{ 0, 1 }"
+      nx="{ 40 }"
+      ny="{ 5, 5 }"
+      nz="{ 2 }"
       cellBlockNames="{ cb1 }"/>
   </Mesh>
 
   <Geometry>
     <Rectangle
       name="fracture"
-      normal="{1.0, 0.0, 0.0}"
+      normal="{0.0, 1.0, 0.0}"
       origin="{0.0, 0.0, 0.0}"
-      lengthVector="{0.0, 1.0, 0.0}"
+      lengthVector="{1.0, 0.0, 0.0}"
       widthVector="{0.0, 0.0, 1.0}"
-      dimensions="{ 500, 200 }"/>
+      dimensions="{ 180, 10 }"/>
 
     <Rectangle
       name="core"
-      normal="{1.0, 0.0, 0.0}"
+      normal="{0.0, 1.0, 0.0}"
       origin="{0.0, 0.0, 0.0}"
-      lengthVector="{0.0, 1.0, 0.0}"
+      lengthVector="{1.0, 0.0, 0.0}"
       widthVector="{0.0, 0.0, 1.0}"
-      dimensions="{ 180, 100 }"/>
+      dimensions="{ 180, 10 }"/>
     
   </Geometry>
 
@@ -61,7 +61,7 @@
       fieldName="totalDisplacement"
       component="0"
       scale="0.0"
-      setNames="{ xneg, xpos }"/>
+      setNames="{ yneg }"/>
 
     <FieldSpecification
       name="yconstraint"
@@ -69,7 +69,7 @@
       fieldName="totalDisplacement"
       component="1"
       scale="0.0"
-      setNames="{ xneg }"/>
+      setNames="{ yneg, ypos, xneg, xpos }"/>
 
     <FieldSpecification
       name="zconstraint"
@@ -77,34 +77,58 @@
       fieldName="totalDisplacement"
       component="2"
       scale="0.0"
-      setNames="{ xneg }"/>
+      setNames="{ zneg, zpos }"/>
 
-    <FieldSpecification
-      name="xnormal"
-      objectPath="nodeManager"
-      fieldName="totalDisplacement"
-      component="0"
-      scale="-0.00001"
-      setNames="{ xpos }"
-      functionName="dispFunction"/>
+    <FieldSpecification 
+      name="Sigmay"
+      initialCondition="1"
+      setNames="{ all }"
+      objectPath="ElementRegions/Region"
+      fieldName="rock_stress"
+      component="1"
+      scale="-4.25e6"/>
 
-    <FieldSpecification
-      name="ytan"
+    <!-- <Traction
+      name="normalLoad"
+      objectPath="faceManager"
+      tractionType="vector"
+      direction="{0,1,0}"
+      scale="-4.25e6"
+      setNames="{ ypos }"/>  -->
+
+    <!-- <Traction
+      name="shearLoad"
+      objectPath="faceManager"
+      tractionType="normal"
+      scale="2e6"
+      setNames="{ ypos }"
+      functionName="tractionFunction"/>  -->
+    
+    <!-- <FieldSpecification
+      name="normalLoad"
       objectPath="nodeManager"
       fieldName="totalDisplacement"
       component="1"
-      scale="-0.00001"
-      setNames="{ xpos }"
-      functionName="dispFunction"/>
+      scale="-0.00821"
+      setNames="{ ypos }"/> -->
 
+    <FieldSpecification
+      name="shearLoad"
+      objectPath="nodeManager"
+      fieldName="totalDisplacement"
+      component="0"
+      scale="0.01"
+      setNames="{ ypos }"
+      functionName="dispFunction"/>
   </FieldSpecifications>
+<!-- SPHINX_BC_END -->
 
   <Outputs>
     <VTK
       name="vtkOutput"
-      plotFileRoot="faultStick_vertical"/>
+      plotFileRoot="faultSlip_horizontal"/>
 
     <Restart
-      name="restartOutput"/>
-  </Outputs>
+      name="restartOutput"/>      
+    </Outputs>
 </Problem>

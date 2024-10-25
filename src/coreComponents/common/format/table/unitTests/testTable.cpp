@@ -55,7 +55,7 @@ TEST( testTable, tableEmptyRow )
              "|                                                                                                                                      value1  |  [30.21543]  |          3.0  |       54  |        0  |\n"
              "|                                                                                                                                              |              |               |           |           |\n"
              "|  Duis fringilla, ligula sed porta fringilla, ligula wisi commodo felis,ut adipiscing felis dui in enim. Suspendisse malesuada ultrices ante  |  [30.21543]  |  30.45465142  |   787442  |       10  |\n"
-             "-------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------\n\n"
+             "-------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------\n"
              );
 }
 
@@ -83,7 +83,7 @@ TEST( testTable, tableClassic )
              "|                                                                                          value1  |  [30.21543]  |          3.0  |       54  |        0  |\n"
              "|                                                                                                  |              |               |           |           |\n"
              "|                                                                                         value23  |  [30.21543]  |  30.45465142  |   787442  |       10  |\n"
-             "-----------------------------------------------------------------------------------------------------------------------------------------------------------\n\n"
+             "-----------------------------------------------------------------------------------------------------------------------------------------------------------\n"
              );
 }
 
@@ -112,7 +112,7 @@ TEST( testTable, tableColumnParamClassic )
              "-------------------------------------------------------------------------------------------\n"
              "|     value1     |          |  3.0                  |  3.0129877  |        2  |        1  |\n"
              "|      val1      |  v       |  [3.045,42.02,89.25]  |  3          |       10  |        3  |\n"
-             "-------------------------------------------------------------------------------------------\n\n"
+             "-------------------------------------------------------------------------------------------\n"
              );
 }
 
@@ -140,7 +140,7 @@ TEST( testTable, tableHiddenColumn )
              "----------------------------------------------------------------------------------------------------------------\n"
              "|          value1          |                    |               3.0               |  3.0129877                 |\n"
              "|           val1           |                 v  |       [3.045,42.02,89.25]       |  3                         |\n"
-             "----------------------------------------------------------------------------------------------------------------\n\n" );
+             "----------------------------------------------------------------------------------------------------------------\n" );
 }
 
 TEST( testTable, tableUniqueColumn )
@@ -162,7 +162,7 @@ TEST( testTable, tableUniqueColumn )
              "---------------------------------------------------------------------------------------------------------------\n"
              "|                                                   value1                                                    |\n"
              "|                                                    val1                                                     |\n"
-             "---------------------------------------------------------------------------------------------------------------\n\n" );
+             "---------------------------------------------------------------------------------------------------------------\n" );
 }
 
 TEST( testTable, tableEmptyTitle )
@@ -189,7 +189,7 @@ TEST( testTable, tableEmptyTitle )
              "-------------------------------------------------------------------------------------------\n"
              "|     value1     |          |          3.0          |  3.0129877  |  2        |     1     |\n"
              "|      val1      |       v  |  [3.045,42.02,89.25]  |  3          |  10       |     3     |\n"
-             "-------------------------------------------------------------------------------------------\n\n"
+             "-------------------------------------------------------------------------------------------\n"
              );
 }
 
@@ -210,9 +210,9 @@ TEST( testTable, table2DTable )
   //convert
   string const rowFmt = GEOS_FMT( "{} = {{}}", "Temperature" );
   string const columnFmt = GEOS_FMT( "{} = {{}}", "Pression" );
-  TableData2D::Conversion1D tableconverted = tableData.buildTableData( "Viscosity kg*s",
-                                                                       rowFmt,
-                                                                       columnFmt );
+  TableData2D::TableDataHolder tableconverted = tableData.buildTableData( "Viscosity kg*s",
+                                                                          rowFmt,
+                                                                          columnFmt );
 
   //format
   TableLayout const tableLayout( tableconverted.headerNames );
@@ -226,7 +226,7 @@ TEST( testTable, table2DTable )
              "|  Temperature = 300  |              0.03  |                  0.02  |\n"
              "|  Temperature = 350  |             0.035  |  0.023333333333333334  |\n"
              "|  Temperature = 400  |              0.04  |   0.02666666666666667  |\n"
-             "---------------------------------------------------------------------\n\n"
+             "---------------------------------------------------------------------\n"
              );
 }
 
@@ -248,9 +248,9 @@ TEST( testTable, table2DColumnMismatch )
     //convert
     string const rowFmt = GEOS_FMT( "{} = {{}}", "Temperature" );
     string const columnFmt = GEOS_FMT( "{} = {{}}", "Pression" );
-    TableData2D::Conversion1D tableConverted = tableData.buildTableData( "Viscosity kg*s",
-                                                                         rowFmt,
-                                                                         columnFmt );
+    TableData2D::TableDataHolder tableConverted = tableData.buildTableData( "Viscosity kg*s",
+                                                                            rowFmt,
+                                                                            columnFmt );
 
     //format
     TableLayout const tableLayout( tableConverted.headerNames );
@@ -266,7 +266,7 @@ TEST( testTable, table2DColumnMismatch )
                "|  Temperature = 300  |              0.03  |                 0.02  |\n"
                "|  Temperature = 350  |             0.035  |                       |\n"
                "|  Temperature = 400  |              0.04  |  0.02666666666666667  |\n"
-               "--------------------------------------------------------------------\n\n"
+               "--------------------------------------------------------------------\n"
                );
   }
 }
@@ -274,11 +274,10 @@ TEST( testTable, table2DColumnMismatch )
 TEST( testTable, layoutTable )
 {
   string filename = "fluid1_phaseModel1_PhillipsBrineDensity_table";
-  //2. format
+
   string log = GEOS_FMT( "The {} PVT table exceeding 500 rows.\nTo visualize the tables, go to the generated csv \n", filename );
   TableLayout const tableLayoutInfos( {TableLayout::ColumnParam{{log}, TableLayout::Alignment::left}}, filename );
 
-  //3. log
   TableTextFormatter const tableLog( tableLayoutInfos );
   EXPECT_EQ( tableLog.layoutToString(),
              "\n-------------------------------------------------------------------------------------\n"
@@ -322,7 +321,7 @@ TEST( testTable, tableSetMargin )
 // "------------------------------------------------------------\n"
 // "| value 1 |long value 1|   3.0034|3.0129877|       |      1|\n"
 // "| value 1 |long value 2|   100.45|4.0129877|      1|      2|\n"
-// "------------------------------------------------------------\n\n"
+// "------------------------------------------------------------\n"
 //              );
 // }
 }

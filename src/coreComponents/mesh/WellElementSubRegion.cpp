@@ -140,7 +140,7 @@ void collectElementNodes( SUBREGION_TYPE const & subRegion,
 }
 
 template< typename SUBREGION_TYPE >
-bool isPointInsideElement( SUBREGION_TYPE const & subRegion,
+bool isPointInsideElement( SUBREGION_TYPE const & GEOS_UNUSED_PARAM( subRegion ),
                            arrayView2d< real64 const, nodes::REFERENCE_POSITION_USD > const & GEOS_UNUSED_PARAM( referencePosition ),
                            localIndex const & GEOS_UNUSED_PARAM( eiLocal ),
                            ArrayOfArraysView< localIndex const > const & GEOS_UNUSED_PARAM( facesToNodes ),

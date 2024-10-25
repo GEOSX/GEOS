@@ -6,6 +6,7 @@ set( physicsSolvers_headers
      surfaceGeneration/ParallelTopologyChange.hpp
      surfaceGeneration/SurfaceGenerator.hpp
      surfaceGeneration/SurfaceGeneratorFields.hpp
+     surfaceGeneration/LogLevelsInfo.hpp
      surfaceGeneration/kernels/surfaceGenerationKernels.hpp
      surfaceGeneration/kernels/surfaceGenerationKernelsHelpers.hpp
      PARENT_SCOPE )

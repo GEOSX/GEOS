@@ -740,7 +740,7 @@ void SolidMechanicsEmbeddedFractures::updateState( DomainPartition & domain )
       constitutiveUpdatePassThru( frictionLaw, [&] ( auto & castedFrictionLaw )
       {
         using FrictionType = TYPEOFREF( castedFrictionLaw );
-        typename FrictionType::KernelWrapper frictionWrapper = castedFrictionLaw.createKernelWrapper();
+        typename FrictionType::KernelWrapper frictionWrapper = castedFrictionLaw.createKernelUpdates();
 
         solidMechanicsEFEMKernels::StateUpdateKernel::
           launch< parallelDevicePolicy<> >( subRegion.size(),
@@ -776,7 +776,7 @@ bool SolidMechanicsEmbeddedFractures::updateConfiguration( DomainPartition & dom
       constitutiveUpdatePassThru( frictionLaw, [&] ( auto & castedFrictionLaw )
       {
         using FrictionType = TYPEOFREF( castedFrictionLaw );
-        typename FrictionType::KernelWrapper frictionWrapper = castedFrictionLaw.createKernelWrapper();
+        typename FrictionType::KernelWrapper frictionWrapper = castedFrictionLaw.createKernelUpdates();
 
         RAJA::ReduceMin< parallelHostReduce, integer > checkActiveSetSub( 1 );
 

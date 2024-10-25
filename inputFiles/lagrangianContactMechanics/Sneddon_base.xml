@@ -27,18 +27,13 @@
         name="FE1"
         order="1"/>
     </FiniteElements>
-
-    <FiniteVolume>
-      <TwoPointFluxApproximation
-        name="TPFAstabilization"/>
-    </FiniteVolume>
   </NumericalMethods>
 
   <!-- SPHINX_SNEDDON_REGIONS-->
   <ElementRegions>
     <CellElementRegion
       name="Region"
-      cellBlocks="{ cb1 }"
+      cellBlocks="{ * }"
       materialList="{ rock }"/>
 
     <SurfaceElementRegion
@@ -114,7 +109,7 @@
       setNames="{ core }"/>
   </FieldSpecifications>
   <!-- SPHINX_SNEDDON_BC_END -->
-
+  
   <!-- SPHINX_SNEDDON_TASK -->
   <Tasks>
     <PackCollection

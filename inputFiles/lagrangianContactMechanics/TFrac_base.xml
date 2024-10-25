@@ -1,39 +1,41 @@
 <?xml version="1.0" ?>
 
 <Problem>
-<!-- SPHINX_SOLVER -->
-  <Solvers
-    gravityVector="{0.0, 0.0, 0.0}">
-    <SolidMechanicsLagrangeContact
-      name="lagrangiancontact"
-      timeIntegrationOption="QuasiStatic"
-      stabilizationName="TPFAstabilization"
-      logLevel="1"
-      discretization="FE1"
-      targetRegions="{ Region, Fracture }">
-      <NonlinearSolverParameters
-        newtonTol="1.0e-8"
-        logLevel="2"
-        newtonMaxIter="10"
-        maxNumConfigurationAttempts="10"
-        lineSearchAction="Require"
-        lineSearchMaxCuts="2"
-        maxTimeStepCuts="2"/>
-      <LinearSolverParameters
-        solverType="direct"
-        directParallel="0"
-        logLevel="0"/>
-    </SolidMechanicsLagrangeContact>
+  <!-- SPHINX_GEOMETRY -->
+  <Geometry>
+    <Rectangle
+      name="fracture1"
+      normal="{1.0, 0.0, 0.0}"
+      origin="{0.0, 0.0, 0.0}"
+      lengthVector="{0.0, 1.0, 0.0}"
+      widthVector="{0.0, 0.0, 1.0}"
+      dimensions="{ 100, 200 }"/>
 
-    <SurfaceGenerator
-      name="SurfaceGen"
-      logLevel="0"
-      fractureRegion="Fracture"
-      targetRegions="{ Region }"
-      rockToughness="1.0e6"
-      mpiCommOrder="1"/>
-  </Solvers>
-<!-- SPHINX_SOLVER_END -->
+    <Rectangle
+      name="core1"
+      normal="{1.0, 0.0, 0.0}"
+      origin="{0.0, 0.0, 0.0}"
+      lengthVector="{0.0, 1.0, 0.0}"
+      widthVector="{0.0, 0.0, 1.0}"
+      dimensions="{ 100, 200 }"/>
+
+    <Rectangle
+      name="fracture2"
+      normal="{0.0, 1.0, 0.0}"
+      origin="{0.0, 50.0, 0.0}"
+      lengthVector="{1.0, 0.0, 0.0}"
+      widthVector="{0.0, 0.0, 1.0}"
+      dimensions="{ 50, 200 }"/>
+
+    <Rectangle
+      name="core2"
+      normal="{0.0, 1.0, 0.0}"
+      origin="{0.0, 50.0, 0.0}"
+      lengthVector="{1.0, 0.0, 0.0}"
+      widthVector="{0.0, 0.0, 1.0}"
+      dimensions="{ 50, 200 }"/>    
+  </Geometry>
+  <!-- SPHINX_GEOMETRY_END -->
 
   <NumericalMethods>
     <FiniteElements>
@@ -41,17 +43,12 @@
         name="FE1"
         order="1"/>
     </FiniteElements>
-
-    <FiniteVolume>
-      <TwoPointFluxApproximation
-        name="TPFAstabilization"/>
-    </FiniteVolume>
   </NumericalMethods>
 
   <ElementRegions>
     <CellElementRegion
       name="Region"
-      cellBlocks="{ 0_hexahedra, 1_hexahedra }"
+      cellBlocks="{ * }"
       materialList="{ rock }"/>
 
     <SurfaceElementRegion
@@ -61,27 +58,27 @@
       materialList="{ frictionLaw }"/>
   </ElementRegions>
 
-<!-- SPHINX_MATERIAL -->
+  <!-- SPHINX_MATERIAL -->
   <Constitutive>
     <ElasticIsotropic
       name="rock"
       defaultDensity="2700"
-      defaultBulkModulus="16.66666666666666e9"
-      defaultShearModulus="1.0e10"/>
+      defaultBulkModulus="38.89e9"
+      defaultShearModulus="29.17e9"/>
 
     <Coulomb
       name="frictionLaw"
       cohesion="0.0"
       frictionCoefficient="0.577350269"/>
   </Constitutive>
-<!-- SPHINX_MATERIAL_END -->
+  <!-- SPHINX_MATERIAL_END -->
 
-<!-- SPHINX_BC -->
+  <!-- SPHINX_BC -->
   <FieldSpecifications>
     <FieldSpecification
       name="frac"
       initialCondition="1"
-      setNames="{ fracture }"
+      setNames="{ fracture1, fracture2 }"
       objectPath="faceManager"
       fieldName="ruptureState"
       scale="1"/>
@@ -89,7 +86,7 @@
     <FieldSpecification
       name="separableFace"
       initialCondition="1"
-      setNames="{ core }"
+      setNames="{ core1, core2 }"
       objectPath="faceManager"
       fieldName="isFaceSeparable"
       scale="1"/>
@@ -100,7 +97,7 @@
       fieldName="totalDisplacement"
       component="0"
       scale="0.0"
-      setNames="{ leftPoint, rightPoint }"/>
+      setNames="{ xpos, xneg }"/>
 
     <FieldSpecification
       name="yconstraint"
@@ -108,7 +105,7 @@
       fieldName="totalDisplacement"
       component="1"
       scale="0.0"
-      setNames="{ bottomPoint, topPoint }"/>
+      setNames="{ ypos, yneg }"/>
 
     <FieldSpecification
       name="zconstraint"
@@ -116,20 +113,28 @@
       fieldName="totalDisplacement"
       component="2"
       scale="0.0"
-      setNames="{ front, rear }"/>
+      setNames="{ zpos, zneg }"/>
+
+    <Traction
+      name="NormalTraction"
+      objectPath="faceManager"
+      tractionType="normal"
+      scale="-1.0e8"
+      functionName="ForceTimeFunction"
+      setNames="{ core1 }"/>
 
     <FieldSpecification 
-      name="Sigmax"
+      name="SigmaY"
       initialCondition="1"
       setNames="{ all }"
       objectPath="ElementRegions/Region"
       fieldName="rock_stress"
-      component="0"
+      component="1"
       scale="-1.0e8"/>
   </FieldSpecifications>
-<!-- SPHINX_BC_END -->
+  <!-- SPHINX_BC_END -->
 
-<!-- SPHINX_TASKS -->
+  <!-- SPHINX_TASKS -->
   <Tasks>
     <PackCollection
       name="tractionCollection"
@@ -139,9 +144,18 @@
     <PackCollection
       name="displacementJumpCollection"
       objectPath="ElementRegions/Fracture/faceElementSubRegion"
-      fieldName="displacementJump"/>   
-    </Tasks>
-<!-- SPHINX_TASKS_END -->
+      fieldName="displacementJump"/>
+  </Tasks>
+  <!-- SPHINX_TASKS_END -->
+
+  <Functions>
+    <TableFunction
+      name="ForceTimeFunction"
+      inputVarNames="{ time }"
+      coordinates="{ 0.0, 1.0 }"
+      values="{ 0.0, 1.e0 }"/>
+
+  </Functions>
 
   <Outputs>
     <VTK
@@ -150,16 +164,16 @@
       format="ascii"/>
 
     <TimeHistory
-      name="timeHistoryOutput"
+      name="tractionOutput"
       sources="{/Tasks/tractionCollection}"
       filename="traction_history" />
 
     <TimeHistory
-      name="timeHistoryOutput1"
+      name="displacementOutput"
       sources="{/Tasks/displacementJumpCollection}"
-      filename="displacementJump_history" /> 
+      filename="displacementJump_history" />
       
     <Restart
-      name="restartOutput"/>      
-    </Outputs>
+      name="restartOutput"/>  
+  </Outputs>
 </Problem>

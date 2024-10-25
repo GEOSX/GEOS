@@ -73,7 +73,7 @@ void CoulombFriction::allocateConstitutiveData( Group & parent,
 }
 
 
-CoulombFrictionUpdates CoulombFriction::createKernelWrapper() const
+CoulombFrictionUpdates CoulombFriction::createKernelUpdates() const
 {
   return CoulombFrictionUpdates( m_displacementJumpThreshold,
                                  m_shearStiffness,

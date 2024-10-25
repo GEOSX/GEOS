@@ -376,7 +376,6 @@ protected:
   std::vector< std::string > m_profilingLabels;
 
   TimeIntegrationOption m_timeIntegrationOption;
-  MPI_iCommData m_iComm;
 
   int m_prescribedBcTable;
   array1d< int > m_boundaryConditionTypes; // TODO: Surely there's a way to have just one variable here

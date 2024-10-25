@@ -98,6 +98,9 @@ void setupLvArray()
 #else
   LvArray::system::disableFloatingPointExceptions( FE_ALL_EXCEPT );
 #endif
+
+  /* Disable chai callbacks by default */
+  chai::ArrayManager::getInstance()->disableCallbacks();
 }
 
 ///////////////////////////////////////////////////////////////////////////////////////////////////////////////////////

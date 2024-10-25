@@ -3,25 +3,6 @@
 <Problem>
   <Solvers
     gravityVector="{ 0.0, 0.0, 0.0 }">
-    <SolidMechanicsLagrangeContact
-      name="lagrangiancontact"
-      stabilizationName="TPFAstabilization"
-      discretization="FE1"
-      targetRegions="{ Region, Fracture }"
-      timeIntegrationOption="QuasiStatic"
-      logLevel="1">
-      <NonlinearSolverParameters
-        newtonTol="1.0e-8"
-        logLevel="2"
-        newtonMaxIter="20"
-        lineSearchAction="Require"
-        lineSearchStartingIteration="2"
-        lineSearchMaxCuts="2"
-        lineSearchInterpolationType="Parabolic"/>
-      <LinearSolverParameters
-        directParallel="0"/>
-    </SolidMechanicsLagrangeContact>
-
     <SurfaceGenerator
       name="SurfaceGen"
       targetRegions="{ Region }"
@@ -35,17 +16,12 @@
         name="FE1"
         order="1"/>
     </FiniteElements>
-
-    <FiniteVolume>
-      <TwoPointFluxApproximation
-        name="TPFAstabilization"/>
-    </FiniteVolume>
   </NumericalMethods>
 
   <ElementRegions>
     <CellElementRegion
       name="Region"
-      cellBlocks="{ cb1 }"
+      cellBlocks="{ * }"
       materialList="{ rock }"/>
 
     <SurfaceElementRegion
