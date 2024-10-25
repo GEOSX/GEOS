@@ -5,7 +5,7 @@
  * Copyright (c) 2016-2024 Lawrence Livermore National Security LLC
  * Copyright (c) 2018-2024 Total, S.A
  * Copyright (c) 2018-2024 The Board of Trustees of the Leland Stanford Junior University
- * Copyright (c) 2018-2024 Chevron
+ * Copyright (c) 2023-2024 Chevron
  * Copyright (c) 2019-     GEOS/GEOSX Contributors
  * All rights reserved
  *
@@ -50,10 +50,6 @@ ENUM_STRINGS( StabilizationType,
               "Local" );
 }
 
-using namespace stabilization;
-using namespace fields;
-using namespace constitutive;
-using namespace dataRepository;
 
 template< typename FLOW_SOLVER, typename MECHANICS_SOLVER = SolidMechanicsLagrangianFEM >
 class PoromechanicsSolver : public CoupledSolver< FLOW_SOLVER, MECHANICS_SOLVER >
@@ -99,9 +95,9 @@ public:
     this->registerWrapper( viewKeyStruct::stabilizationTypeString(), &m_stabilizationType ).
       setInputFlag( dataRepository::InputFlags::OPTIONAL ).
       setDescription( "StabilizationType. Options are:\n" +
-                      toString( StabilizationType::None ) + "- Add no stabilization to mass equation \n" +
-                      toString( StabilizationType::Global ) + "- Add jump stabilization to all faces \n" +
-                      toString( StabilizationType::Local ) + "- Add jump stabilization on interior of macro elements" );
+                      toString( stabilization::StabilizationType::None ) + "- Add no stabilization to mass equation \n" +
+                      toString( stabilization::StabilizationType::Global ) + "- Add jump stabilization to all faces \n" +
+                      toString( stabilization::StabilizationType::Local ) + "- Add jump stabilization on interior of macro elements" );
 
     this->registerWrapper( viewKeyStruct::stabilizationRegionNamesString(), &m_stabilizationRegionNames ).
       setRTTypeName( rtTypes::CustomTypes::groupNameRefArray ).
@@ -129,12 +125,12 @@ public:
     if( dynamic_cast< SurfaceElementSubRegion * >( &subRegion ) )
     {
       subRegion.registerWrapper< string >( viewKeyStruct::hydraulicApertureRelationNameString() ).
-        setPlotLevel( PlotLevel::NOPLOT ).
-        setRestartFlags( RestartFlags::NO_WRITE ).
+        setPlotLevel( dataRepository::PlotLevel::NOPLOT ).
+        setRestartFlags( dataRepository::RestartFlags::NO_WRITE ).
         setSizedFromParent( 0 );
 
       string & hydraulicApertureModelName = subRegion.getReference< string >( viewKeyStruct::hydraulicApertureRelationNameString() );
-      hydraulicApertureModelName = SolverBase::getConstitutiveName< HydraulicApertureBase >( subRegion );
+      hydraulicApertureModelName = SolverBase::getConstitutiveName< constitutive::HydraulicApertureBase >( subRegion );
       GEOS_ERROR_IF( hydraulicApertureModelName.empty(), GEOS_FMT( "{}: HydraulicApertureBase model not found on subregion {}",
                                                                    this->getDataContext(), subRegion.getDataContext() ) );
     }
@@ -145,7 +141,7 @@ public:
   {
     Base::initializePreSubGroups();
 
-    GEOS_THROW_IF( m_stabilizationType == StabilizationType::Local,
+    GEOS_THROW_IF( m_stabilizationType == stabilization::StabilizationType::Local,
                    this->getWrapperDataContext( viewKeyStruct::stabilizationTypeString() ) <<
                    ": Local stabilization has been temporarily disabled",
                    InputError );
@@ -197,7 +193,7 @@ public:
       flowSolver()->enableFixedStressPoromechanicsUpdate();
     }
 
-    if( m_stabilizationType == StabilizationType::Global || m_stabilizationType == StabilizationType::Local )
+    if( m_stabilizationType == stabilization::StabilizationType::Global || m_stabilizationType == stabilization::StabilizationType::Local )
     {
       flowSolver()->enableJumpStabilization();
     }
@@ -230,7 +226,7 @@ public:
           subRegion.registerField< fields::poromechanics::bulkDensity >( this->getName() );
         }
 
-        if( m_stabilizationType == StabilizationType::Global || m_stabilizationType == StabilizationType::Local )
+        if( m_stabilizationType == stabilization::StabilizationType::Global || m_stabilizationType == stabilization::StabilizationType::Local )
         {
           subRegion.registerField< fields::flow::macroElementIndex >( this->getName());
           subRegion.registerField< fields::flow::elementStabConstant >( this->getName());
@@ -245,7 +241,7 @@ public:
   {
     flowSolver()->setKeepFlowVariablesConstantDuringInitStep( m_performStressInitialization );
 
-    if( this->m_stabilizationType == StabilizationType::Global || this->m_stabilizationType == StabilizationType::Local )
+    if( this->m_stabilizationType == stabilization::StabilizationType::Global || this->m_stabilizationType == stabilization::StabilizationType::Local )
     {
       this->updateStabilizationParameters( domain );
     }

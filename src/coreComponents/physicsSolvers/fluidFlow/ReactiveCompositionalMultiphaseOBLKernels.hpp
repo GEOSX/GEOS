@@ -5,7 +5,7 @@
  * Copyright (c) 2016-2024 Lawrence Livermore National Security LLC
  * Copyright (c) 2018-2024 Total, S.A
  * Copyright (c) 2018-2024 The Board of Trustees of the Leland Stanford Junior University
- * Copyright (c) 2018-2024 Chevron
+ * Copyright (c) 2023-2024 Chevron
  * Copyright (c) 2019-     GEOS/GEOSX Contributors
  * All rights reserved
  *
@@ -39,8 +39,6 @@ namespace geos
 
 namespace reactiveCompositionalMultiphaseOBLKernels
 {
-
-using namespace constitutive;
 
 static constexpr real64 minValueForDivision = 1e-10;
 
@@ -643,7 +641,7 @@ public:
                       fields::flow::OBLOperatorDerivatives >;
 
   using PermeabilityAccessors =
-    StencilMaterialAccessors< PermeabilityBase,
+    StencilMaterialAccessors< constitutive::PermeabilityBase,
                               fields::permeability::permeability,
                               fields::permeability::dPerm_dPressure >;
 

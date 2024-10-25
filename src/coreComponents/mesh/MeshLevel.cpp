@@ -5,7 +5,7 @@
  * Copyright (c) 2016-2024 Lawrence Livermore National Security LLC
  * Copyright (c) 2018-2024 Total, S.A
  * Copyright (c) 2018-2024 The Board of Trustees of the Leland Stanford Junior University
- * Copyright (c) 2018-2024 Chevron
+ * Copyright (c) 2023-2024 Chevron
  * Copyright (c) 2019-     GEOS/GEOSX Contributors
  * All rights reserved
  *
@@ -204,8 +204,8 @@ MeshLevel::MeshLevel( string const & name,
     // create element region with the same name as source element region "Region"
     CellElementRegion & region = *(dynamic_cast< CellElementRegion * >( m_elementManager->createChild( sourceRegion.getCatalogName(),
                                                                                                        sourceRegion.getName() ) ) );
-    // add cell block to the new element region with the same name as cell block name from source element region
-    region.addCellBlockNames( sourceRegion.getCellBlockNames() );
+    // set cell block to the new element region with the same name as cell block name from source element region
+    region.setCellBlockNames( sourceRegion.getCellBlockNames() );
 
     sourceRegion.forElementSubRegions< CellElementSubRegion >( [&]( CellElementSubRegion const & sourceSubRegion )
     {

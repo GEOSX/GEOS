@@ -5,7 +5,7 @@
  * Copyright (c) 2016-2024 Lawrence Livermore National Security LLC
  * Copyright (c) 2018-2024 Total, S.A
  * Copyright (c) 2018-2024 The Board of Trustees of the Leland Stanford Junior University
- * Copyright (c) 2018-2024 Chevron
+ * Copyright (c) 2023-2024 Chevron
  * Copyright (c) 2019-     GEOS/GEOSX Contributors
  * All rights reserved
  *
@@ -467,38 +467,6 @@ public:
     ResidualNormKernel::launchLinf< POLICY >( subRegion.size(), kernel, residualNorm );
   }
 
-};
-
-/******************************** SolutionCheckKernel ********************************/
-
-struct SolutionCheckKernel
-{
-  template< typename POLICY >
-  static localIndex
-  launch( arrayView1d< real64 const > const & localSolution,
-          globalIndex const rankOffset,
-          arrayView1d< globalIndex const > const & presDofNumber,
-          arrayView1d< integer const > const & ghostRank,
-          arrayView1d< real64 const > const & pres,
-          real64 const scalingFactor )
-  {
-    RAJA::ReduceMin< ReducePolicy< POLICY >, localIndex > minVal( 1 );
-
-    forAll< POLICY >( presDofNumber.size(), [=] GEOS_HOST_DEVICE ( localIndex const ei )
-    {
-      if( ghostRank[ei] < 0 && presDofNumber[ei] >= 0 )
-      {
-        localIndex const lid = presDofNumber[ei] - rankOffset;
-        real64 const newPres = pres[ei] + scalingFactor * localSolution[lid];
-
-        if( newPres < 0.0 )
-        {
-          minVal.min( 0 );
-        }
-      }
-    } );
-    return minVal.get();
-  }
 };
 
 } // end namespace singlePhaseWellKernels

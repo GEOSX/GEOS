@@ -5,7 +5,7 @@
  * Copyright (c) 2016-2024 Lawrence Livermore National Security LLC
  * Copyright (c) 2018-2024 Total, S.A
  * Copyright (c) 2018-2024 The Board of Trustees of the Leland Stanford Junior University
- * Copyright (c) 2018-2024 Chevron
+ * Copyright (c) 2023-2024 Chevron
  * Copyright (c) 2019-     GEOS/GEOSX Contributors
  * All rights reserved
  *
@@ -121,7 +121,7 @@ void CommunicationTools::assignGlobalIndices( ObjectManagerBase & manager,
 
   integer const numNeighbors = LvArray::integerConversion< integer >( neighbors.size() );
 
-  MPI_iCommData commData( getCommID() );
+  MPI_iCommData commData;
   commData.resize( numNeighbors );
 
   array1d< int > receiveBufferSizes( numNeighbors );
@@ -340,11 +340,11 @@ CommunicationTools::assignNewGlobalIndices( ElementRegionManager & elementManage
  * @return The data received from all the @p neighbors. Data at index @p i coming from neighbor at index @p i in the list of @p neighbors.
  */
 template< class DATA_PROVIDER >
-array1d< array1d< globalIndex > > exchange( int commId,
-                                            std::vector< NeighborCommunicator > & neighbors,
+array1d< array1d< globalIndex > > exchange( std::vector< NeighborCommunicator > & neighbors,
                                             DATA_PROVIDER const & data )
 {
-  MPI_iCommData commData( commId );
+  MPI_iCommData commData;
+  int commId = commData.commID();
   integer const numNeighbors = LvArray::integerConversion< integer >( neighbors.size() );
   commData.resize( numNeighbors );
   for( integer i = 0; i < numNeighbors; ++i )
@@ -391,7 +391,7 @@ CommunicationTools::buildNeighborPartitionBoundaryObjects( ObjectManagerBase & m
   {
     return std::cref( globalPartitionBoundaryObjectsIndices );
   };
-  array1d< array1d< globalIndex > > const neighborPartitionBoundaryObjects = exchange( getCommID(), allNeighbors, data );
+  array1d< array1d< globalIndex > > const neighborPartitionBoundaryObjects = exchange( allNeighbors, data );
 
   integer const numNeighbors = LvArray::integerConversion< integer >( allNeighbors.size() );
   for( integer i = 0; i < numNeighbors; ++i )
@@ -566,7 +566,7 @@ void CommunicationTools::findMatchedPartitionBoundaryNodes( NodeManager & nodeMa
   {
     return req.at( allNeighbors[i].neighborRank() );
   };
-  array1d< array1d< globalIndex > > const nodesRequestedByNeighbors = exchange( getCommID(), allNeighbors, data );
+  array1d< array1d< globalIndex > > const nodesRequestedByNeighbors = exchange( allNeighbors, data );
 
   // Then we store the requested nodes for each receiver.
   for( integer i = 0; i < numNeighbors; ++i )
@@ -804,7 +804,7 @@ void CommunicationTools::setupGhosts( MeshLevel & meshLevel,
                                       bool const unorderedComms )
 {
   GEOS_MARK_FUNCTION;
-  MPI_iCommData commData( getCommID() );
+  MPI_iCommData commData;
   commData.resize( neighbors.size() );
 
   NodeManager & nodeManager = meshLevel.getNodeManager();
@@ -1092,7 +1092,7 @@ void CommunicationTools::synchronizeFields( FieldIdentifiers const & fieldsToBeS
                                             std::vector< NeighborCommunicator > & neighbors,
                                             bool onDevice )
 {
-  MPI_iCommData icomm( getCommID() );
+  MPI_iCommData icomm;
   icomm.resize( neighbors.size() );
   synchronizePackSendRecvSizes( fieldsToBeSync, mesh, neighbors, icomm, onDevice );
   synchronizePackSendRecv( fieldsToBeSync, mesh, neighbors, icomm, onDevice );

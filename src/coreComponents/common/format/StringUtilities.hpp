@@ -5,7 +5,7 @@
  * Copyright (c) 2016-2024 Lawrence Livermore National Security LLC
  * Copyright (c) 2018-2024 Total, S.A
  * Copyright (c) 2018-2024 The Board of Trustees of the Leland Stanford Junior University
- * Copyright (c) 2018-2024 Chevron
+ * Copyright (c) 2023-2024 Chevron
  * Copyright (c) 2019-     GEOS/GEOSX Contributors
  * All rights reserved
  *
@@ -39,11 +39,11 @@ string toLower( string const & input );
 
 /**
  * @brief Join strings or other printable objects with a delimiter.
- * @tparam IT   type of iterator into the range of objects to join
- * @tparam S    type of delimiter, usually char, char const * or string
- * @param first iterator to start of the range
- * @param last  iterator past-the-end of the range
- * @param delim delimiter used to glue together strings
+ * @tparam IT    type of iterator into the range of objects to join
+ * @tparam S     type of delimiter, usually char, char const * or string
+ * @param first  iterator to start of the range
+ * @param last   iterator past-the-end of the range
+ * @param delim  delimiter used to glue together strings
  * @return a string containing input values concatenated with a delimiter
  */
 template< typename IT, typename S = char >
@@ -66,14 +66,57 @@ string join( IT first, IT last, S const & delim = S() )
  * @brief Join strings or other printable objects with a delimiter.
  * @tparam CONTAINER type of container to join
  * @tparam S the type of delimiter, usually char, char const * or string
- * @param cont the container to join
+ * @param container the container to join
  * @param delim delimiter used to glue together strings
  * @return a string containing input values concatenated with a delimiter
  */
 template< typename CONTAINER, typename S = char >
-string join( CONTAINER const & cont, S const & delim = S() )
+string join( CONTAINER const & container, S const & delim = S() )
 {
-  return join( std::begin( cont ), std::end( cont ), delim );
+  return join( std::begin( container ), std::end( container ), delim );
+}
+
+/**
+ * @brief Join strings or other printable objects returned by a formatter functor.
+ * @tparam IT                type of iterator into the range of objects to join
+ * @tparam S                 type of delimiter, usually char, char const * or string
+ * @tparam LAMBDA            type of formatter functor, usually `[]( auto it ) -> string`
+ * @param formattingFunc     formatter function to get a formattable value from a IT iterator
+ * @param first              iterator to start of the range
+ * @param last               iterator past-the-end of the range
+ * @param delim              delimiter used to glue together strings
+ * @return a string containing input values concatenated with a delimiter
+ */
+template< typename IT, typename S, typename LAMBDA >
+string joinLamda( IT first, IT last, S const & delim, LAMBDA formattingFunc )
+{
+  if( first == last )
+  {
+    return {};
+  }
+  std::ostringstream oss;
+  oss << formattingFunc( first );
+  while( ++first != last )
+  {
+    oss << delim << formattingFunc( first );
+  }
+  return oss.str();
+}
+
+/**
+ * @brief Join strings or other printable objects returned by a formatter functor.
+ * @tparam CONTAINER         type of container to join
+ * @tparam S                 type of delimiter, usually char, char const * or string
+ * @tparam LAMBDA            type of formatter functor, usually `[]( auto it ) -> string`
+ * @param formattingFunc     formatter function to get a formattable value from an iterator of the container
+ * @param container          container to join
+ * @param delim              delimiter used to glue together strings
+ * @return a string containing input values concatenated with a delimiter
+ */
+template< typename CONTAINER, typename S, typename LAMBDA >
+string joinLamda( CONTAINER const & container, S const & delim, LAMBDA formattingFunc )
+{
+  return joinLamda( std::begin( container ), std::end( container ), delim, formattingFunc );
 }
 
 /**
@@ -181,8 +224,8 @@ string_view trimSpaces( string_view str );
  * @param[in] strToRemove the string to search for in the line
  * @return the new (truncated) string
  */
-string removeStringAndFollowingContent( string const & str,
-                                        string const & strToRemove );
+string removeStringAndFollowingContent( string_view str,
+                                        string_view strToRemove );
 
 /**
  * @brief Take a string, and return a array1d with the cast values

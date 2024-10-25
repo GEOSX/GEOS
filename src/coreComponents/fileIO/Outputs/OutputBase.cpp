@@ -5,7 +5,7 @@
  * Copyright (c) 2016-2024 Lawrence Livermore National Security LLC
  * Copyright (c) 2018-2024 Total, S.A
  * Copyright (c) 2018-2024 The Board of Trustees of the Leland Stanford Junior University
- * Copyright (c) 2018-2024 Chevron
+ * Copyright (c) 2023-2024 Chevron
  * Copyright (c) 2019-     GEOS/GEOSX Contributors
  * All rights reserved
  *
@@ -19,13 +19,11 @@
 
 #include "OutputBase.hpp"
 #include "common/MpiWrapper.hpp"
+#include "functions/FunctionBase.hpp"
 
 
 namespace geos
 {
-string OutputBase::m_outputDirectory;
-string OutputBase::m_fileNameRoot;
-
 using namespace dataRepository;
 
 OutputBase::OutputBase( string const & name,
@@ -64,14 +62,33 @@ void OutputBase::initializePreSubGroups()
   // SetupDirectoryStructure();
 }
 
+
+
+string const & OutputBase::getOutputDirectory()
+{
+  static string m_outputDirectory;
+  return m_outputDirectory;
+}
+
 void OutputBase::setOutputDirectory( string const & outputDir )
 {
-  m_outputDirectory = outputDir;
+  string & outputDirectory = const_cast< string & >( getOutputDirectory() );
+  outputDirectory = outputDir;
+  FunctionBase::setOutputDirectory( outputDirectory );
+}
+
+
+
+string const & OutputBase::getFileNameRoot()
+{
+  static string m_fileNameRoot;
+  return m_fileNameRoot;
 }
 
 void OutputBase::setFileNameRoot( string const & root )
 {
-  m_fileNameRoot = root;
+  string & fileRootName = const_cast< string & >( getFileNameRoot() );
+  fileRootName = root;
 }
 
 

@@ -5,7 +5,7 @@
  * Copyright (c) 2016-2024 Lawrence Livermore National Security LLC
  * Copyright (c) 2018-2024 Total, S.A
  * Copyright (c) 2018-2024 The Board of Trustees of the Leland Stanford Junior University
- * Copyright (c) 2018-2024 Chevron
+ * Copyright (c) 2023-2024 Chevron
  * Copyright (c) 2019-     GEOS/GEOSX Contributors
  * All rights reserved
  *
@@ -55,6 +55,16 @@ ObjectManagerBase::ObjectManagerBase( string const & name,
     setPlotLevel( PlotLevel::LEVEL_0 );
 
   registerWrapper< array1d< integer > >( viewKeyStruct::domainBoundaryIndicatorString(), &m_domainBoundaryIndicator );
+
+  registerWrapper( viewKeyStruct::localMaxGlobalIndexString(), &m_localMaxGlobalIndex ).
+    setApplyDefaultValue( -1 ).
+    setRestartFlags( RestartFlags::WRITE_AND_READ ).
+    setPlotLevel( PlotLevel::NOPLOT );
+
+  registerWrapper( viewKeyStruct::maxGlobalIndexString(), &m_maxGlobalIndex ).
+    setApplyDefaultValue( -1 ).
+    setRestartFlags( RestartFlags::WRITE_AND_READ ).
+    setPlotLevel( PlotLevel::NOPLOT );
 
   m_sets.registerWrapper< SortedArray< localIndex > >( this->m_ObjectManagerBaseViewKeys.externalSet );
 

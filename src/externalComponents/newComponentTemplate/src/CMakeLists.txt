@@ -9,11 +9,7 @@ set( componentSources NewComponent.cpp )
 unset( dependencyList )
 
 # Specify dependencies
-if ( GEOS_BUILD_SHARED_LIBS )
-  list( APPEND dependencyList geosx_core)
-else()
-  list( APPEND dependencyList ${geosx_core_libs} )
-endif()
+list( APPEND dependencyList geosx_core)
 
 message("adding newComponentTemplate library")
 

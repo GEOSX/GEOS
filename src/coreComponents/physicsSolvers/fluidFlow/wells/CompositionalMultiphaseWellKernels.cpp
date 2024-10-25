@@ -5,7 +5,7 @@
  * Copyright (c) 2016-2024 Lawrence Livermore National Security LLC
  * Copyright (c) 2018-2024 Total, S.A
  * Copyright (c) 2018-2024 The Board of Trustees of the Leland Stanford Junior University
- * Copyright (c) 2018-2024 Chevron
+ * Copyright (c) 2023-2024 Chevron
  * Copyright (c) 2019-     GEOS/GEOSX Contributors
  * All rights reserved
  *
@@ -26,6 +26,7 @@
 namespace geos
 {
 
+using namespace constitutive;
 namespace compositionalMultiphaseWellKernels
 {
 
@@ -305,7 +306,6 @@ PressureRelationKernel::
           globalIndex const rankOffset,
           bool const isLocallyOwned,
           localIndex const iwelemControl,
-          bool const isThermal,
           integer const targetPhaseIndex,
           WellControls const & wellControls,
           real64 const & timeAtEndOfStep,
@@ -319,7 +319,6 @@ PressureRelationKernel::
           CRSMatrixView< real64, globalIndex const > const & localMatrix,
           arrayView1d< real64 > const & localRhs )
 {
-  GEOS_UNUSED_VAR( isThermal );
   using COFFSET_WJ = compositionalMultiphaseWellKernels::ColOffset_WellJac< NC, IS_THERMAL >;
   // static well control data
   bool const isProducer = wellControls.isProducer();
@@ -449,7 +448,6 @@ PressureRelationKernel::
                               globalIndex const rankOffset, \
                               bool const isLocallyOwned, \
                               localIndex const iwelemControl, \
-                              bool const isThermal, \
                               integer const targetPhaseIndex, \
                               WellControls const & wellControls, \
                               real64 const & timeAtEndOfStep, \

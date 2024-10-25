@@ -5,7 +5,7 @@
  * Copyright (c) 2016-2024 Lawrence Livermore National Security LLC
  * Copyright (c) 2018-2024 Total, S.A
  * Copyright (c) 2018-2024 The Board of Trustees of the Leland Stanford Junior University
- * Copyright (c) 2018-2024 Chevron
+ * Copyright (c) 2023-2024 Chevron
  * Copyright (c) 2019-     GEOS/GEOSX Contributors
  * All rights reserved
  *
@@ -27,6 +27,8 @@
 #include "RestartFlags.hpp"
 #include "Wrapper.hpp"
 #include "xmlWrapper.hpp"
+#include "LogLevelsInfo.hpp"
+#include "LogLevelsRegistry.hpp"
 
 
 #include <iostream>
@@ -143,7 +145,7 @@ public:
   using CatalogInterface = dataRepository::CatalogInterface< Group, string const &, Group * const >;
 
   /**
-   * @brief Get the singleton catalog for this class.
+   * @brief Get the singleton catalog for this Group.
    * @return reference to the catalog object
    */
   static CatalogInterface::CatalogType & getCatalog();
@@ -864,6 +866,16 @@ public:
   //END_SPHINX_INCLUDE_REGISTER_WRAPPER
 
   /**
+   * @brief Append a levelCondition and a log description to the description of the wrapped object given a log info struct.
+   * Must be called in constructor.
+   * @tparam LOG_LEVEL_INFO The log documentation to add.
+   * @return void if the trait is verified.
+   */
+  template< typename LOG_LEVEL_INFO >
+  std::enable_if_t< geos::is_log_level_info< LOG_LEVEL_INFO >, void >
+  addLogLevel();
+
+  /**
    * @name Schema generation methods
    */
   ///@{
@@ -1478,7 +1490,9 @@ public:
    */
   void loadFromConduit();
 
-  /// Enable verbosity input for object
+  /**
+   * @deprecated will be remove and replace by addLogLevel
+   */
   void enableLogLevelInput();
 
   /**
@@ -1615,6 +1629,8 @@ private:
 
   /// Verbosity flag for group logs
   integer m_logLevel;
+
+
   //END_SPHINX_INCLUDE_02
 
   /// Restart flag for this group... and subsequently all wrappers in this group.
@@ -1625,6 +1641,9 @@ private:
 
   /// Reference to the conduit::Node that mirrors this group
   conduit::Node & m_conduitNode;
+
+  // Keep track of log levels & descriptions
+  std::unique_ptr< LogLevelsRegistry > m_logLevelsRegistry;
 
   /// A DataContext object used to provide contextual information on this Group,
   /// if it is created from an input XML file, the line or offset in that file.
@@ -1710,6 +1729,24 @@ Wrapper< T > & Group::registerWrapper( string const & name,
     rval.resize( size());
   }
   return rval;
+}
+
+template< typename LOG_LEVEL_INFO >
+std::enable_if_t< geos::is_log_level_info< LOG_LEVEL_INFO >, void >
+Group::addLogLevel()
+{
+  GEOS_ERROR_IF( m_logLevelsRegistry == nullptr, "You cannot call addLogLevel after schema generation" );
+
+  Wrapper< integer > * wrapper = getWrapperPointer< integer >( viewKeyStruct::logLevelString() );
+  if( wrapper == nullptr )
+  {
+    wrapper = &registerWrapper( viewKeyStruct::logLevelString(), &m_logLevel );
+    wrapper->setApplyDefaultValue( 0 );
+    wrapper->setInputFlag( InputFlags::OPTIONAL );
+  }
+  m_logLevelsRegistry->addEntry( LOG_LEVEL_INFO::getMinLogLevel(),
+                                 LOG_LEVEL_INFO::getDescription() );
+  wrapper->setDescription( m_logLevelsRegistry->buildLogLevelDescription());
 }
 
 } /* end namespace dataRepository */

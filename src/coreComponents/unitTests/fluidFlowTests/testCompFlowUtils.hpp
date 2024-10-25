@@ -5,7 +5,7 @@
  * Copyright (c) 2016-2024 Lawrence Livermore National Security LLC
  * Copyright (c) 2018-2024 Total, S.A
  * Copyright (c) 2018-2024 The Board of Trustees of the Leland Stanford Junior University
- * Copyright (c) 2018-2024 Chevron
+ * Copyright (c) 2023-2024 Chevron
  * Copyright (c) 2019-     GEOS/GEOSX Contributors
  * All rights reserved
  *
@@ -32,9 +32,6 @@ namespace geos
 
 namespace testing
 {
-
-using namespace geos::constitutive;
-using namespace geos::constitutive::multifluid;
 
 inline
 void fillNumericalJacobian( arrayView1d< real64 const > const & residual,
@@ -127,7 +124,7 @@ void testCompositionNumericalDerivatives( CompositionalMultiphaseFVM & solver,
       SCOPED_TRACE( subRegion.getParent().getParent().getName() + "/" + subRegion.getName() );
 
       string const & fluidName = subRegion.getReference< string >( CompositionalMultiphaseBase::viewKeyStruct::fluidNamesString() );
-      MultiFluidBase const & fluid = subRegion.getConstitutiveModel< MultiFluidBase >( fluidName );
+      constitutive::MultiFluidBase const & fluid = subRegion.getConstitutiveModel< constitutive::MultiFluidBase >( fluidName );
       arrayView1d< string const > const & components = fluid.componentNames();
 
       arrayView2d< real64, compflow::USD_COMP > const compDens =
@@ -194,7 +191,7 @@ void testPhaseVolumeFractionNumericalDerivatives( CompositionalMultiphaseFVM & s
                                                   real64 const perturbParameter,
                                                   real64 const relTol )
 {
-  using Deriv = multifluid::DerivativeOffset;
+  using Deriv = constitutive::multifluid::DerivativeOffset;
 
   integer const numComp = solver.numFluidComponents();
   integer const numPhase = solver.numFluidPhases();
@@ -212,7 +209,7 @@ void testPhaseVolumeFractionNumericalDerivatives( CompositionalMultiphaseFVM & s
       SCOPED_TRACE( subRegion.getParent().getParent().getName() + "/" + subRegion.getName() );
 
       string const & fluidName = subRegion.getReference< string >( CompositionalMultiphaseFVM::viewKeyStruct::fluidNamesString() );
-      MultiFluidBase const & fluid = subRegion.getConstitutiveModel< MultiFluidBase >( fluidName );
+      constitutive::MultiFluidBase const & fluid = subRegion.getConstitutiveModel< constitutive::MultiFluidBase >( fluidName );
       arrayView1d< string const > const & components = fluid.componentNames();
       arrayView1d< string const > const & phases = fluid.phaseNames();
 
@@ -359,7 +356,7 @@ void testPhaseMobilityNumericalDerivatives( CompositionalMultiphaseFVM & solver,
                                             real64 const perturbParameter,
                                             real64 const relTol )
 {
-  using Deriv = multifluid::DerivativeOffset;
+  using Deriv = constitutive::multifluid::DerivativeOffset;
 
   integer const numComp = solver.numFluidComponents();
   integer const numPhase = solver.numFluidPhases();
@@ -377,7 +374,7 @@ void testPhaseMobilityNumericalDerivatives( CompositionalMultiphaseFVM & solver,
       SCOPED_TRACE( subRegion.getParent().getParent().getName() + "/" + subRegion.getName() );
 
       string const & fluidName = subRegion.getReference< string >( CompositionalMultiphaseFVM::viewKeyStruct::fluidNamesString() );
-      MultiFluidBase const & fluid = subRegion.getConstitutiveModel< MultiFluidBase >( fluidName );
+      constitutive::MultiFluidBase const & fluid = subRegion.getConstitutiveModel< constitutive::MultiFluidBase >( fluidName );
       arrayView1d< string const > const & components = fluid.componentNames();
       arrayView1d< string const > const & phases = fluid.phaseNames();
 

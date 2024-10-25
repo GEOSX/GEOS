@@ -32,7 +32,7 @@ block.
 
 The following attributes are supported:
 
-.. include:: /coreComponents/schema/docs/CarmanKozenyPermeability.rst
+.. include:: /docs/sphinx/datastructure/CarmanKozenyPermeability.rst
 
 
 

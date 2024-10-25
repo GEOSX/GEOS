@@ -9,11 +9,11 @@ curvecheck_params["curves"] = "seismicityRate"
 
 decks = [
     TestDeck(
-        name="SeismicityRate_poromechanics_1d_smoke",
+        name="SeismicityRate_poromechanics_smoke",
         description="",
-        partitions=((1, 1, 1), (2, 1, 1)),
-        restart_step=40,
-        check_step=90,
+        partitions=((1, 1, 1), (2, 2, 2)),
+        restart_step=20,
+        check_step=30,
         restartcheck_params=RestartcheckParameters(atol=1e-4, rtol=1e-3)),
      TestDeck(
         name="SeismicityRate_analytical_verification_smoke",

@@ -5,7 +5,7 @@
  * Copyright (c) 2016-2024 Lawrence Livermore National Security LLC
  * Copyright (c) 2018-2024 Total, S.A
  * Copyright (c) 2018-2024 The Board of Trustees of the Leland Stanford Junior University
- * Copyright (c) 2018-2024 Chevron
+ * Copyright (c) 2023-2024 Chevron
  * Copyright (c) 2019-     GEOS/GEOSX Contributors
  * All rights reserved
  *
@@ -45,6 +45,7 @@
 #include "physicsSolvers/fluidFlow/wells/SinglePhaseWellKernels.hpp"
 #include "physicsSolvers/fluidFlow/wells/WellSolverBaseFields.hpp"
 #include "physicsSolvers/fluidFlow/wells/WellControls.hpp"
+#include "physicsSolvers/fluidFlow/wells/LogLevelsInfo.hpp"
 
 #include "physicsSolvers/fluidFlow/wells/WellFields.hpp"
 
@@ -91,7 +92,7 @@ CompositionalMultiphaseWell::CompositionalMultiphaseWell( const string & name,
   this->registerWrapper( viewKeyStruct::maxRelativeCompDensChangeString(), &m_maxRelativeCompDensChange ).
     setSizedFromParent( 0 ).
     setInputFlag( InputFlags::OPTIONAL ).
-    setApplyDefaultValue( LvArray::NumericLimits< real64 >::max ). // disabled by default
+    setApplyDefaultValue( LvArray::NumericLimits< real64 >::max/1.0e100 ). // disabled by default
     setDescription( "Maximum (relative) change in a component density between two Newton iterations" );
 
   this->registerWrapper( viewKeyStruct::maxRelativePresChangeString(), &m_maxRelativePresChange ).
@@ -622,7 +623,7 @@ void CompositionalMultiphaseWell::updateBHPForConstraint( WellElementSubRegion &
 
   if( logLevel >= 2 )
   {
-    GEOS_LOG_RANK( GEOS_FMT( "{}: BHP (at the specified reference elevation): {} Pa",
+    GEOS_LOG_RANK( GEOS_FMT( "{}: BHP (at the specified reference elevation) = {} Pa",
                              wellControlsName, currentBHP ) );
   }
 
@@ -785,10 +786,8 @@ void CompositionalMultiphaseWell::updateVolRatesForConstraint( WellElementSubReg
 
         if( logLevel >= 2 && useSurfaceConditions )
         {
-          GEOS_LOG_RANK( GEOS_FMT( "{}: The total fluid density at surface conditions is {} {}/sm3. \n"
-                                   "The total rate is {} {}/s, which corresponds to a total surface volumetric rate of {} sm3/s",
-                                   wellControlsName, totalDens[iwelemRef][0], massUnit,
-                                   currentTotalRate, massUnit, currentTotalVolRate ) );
+          GEOS_LOG_RANK( GEOS_FMT( "{}: total fluid density at surface conditions = {} {}/sm3, total rate = {} {}/s, total surface volumetric rate = {} sm3/s",
+                                   wellControlsName, totalDens[iwelemRef][0], massUnit, currentTotalRate, massUnit, currentTotalVolRate ) );
         }
 
         // Step 3: update the phase volume rate
@@ -831,8 +830,7 @@ void CompositionalMultiphaseWell::updateVolRatesForConstraint( WellElementSubReg
 
           if( logLevel >= 2 && useSurfaceConditions )
           {
-            GEOS_LOG_RANK( GEOS_FMT( "{}: The density of phase {} at surface conditions is {} {}/sm3. \n"
-                                     "The phase surface volumetric rate is {} sm3/s",
+            GEOS_LOG_RANK( GEOS_FMT( "{}: density of phase {} at surface conditions = {} {}/sm3, phase surface volumetric rate = {} sm3/s",
                                      wellControlsName, ip, phaseDens[iwelemRef][0][ip], massUnit, currentPhaseVolRate[ip] ) );
           }
         }
@@ -1516,8 +1514,8 @@ CompositionalMultiphaseWell::checkSystemSolution( DomainPartition & domain,
 
         if( !subRegionData.localMinVal )
         {
-          GEOS_LOG_LEVEL( 1, "Solution is invalid in well " << subRegion.getName()
-                                                            << " (either a negative pressure or a negative component density was found)." );
+          GEOS_LOG_LEVEL_INFO_RANK_0( logInfo::Solution,
+                                      GEOS_FMT( "Solution is invalid in well {} (either a negative pressure or a negative component density was found)", subRegion.getName()) );
         }
 
         localCheck = std::min( localCheck, subRegionData.localMinVal );
@@ -1872,9 +1870,9 @@ void CompositionalMultiphaseWell::assemblePressureRelations( real64 const & time
 {
   GEOS_MARK_FUNCTION;
 
-  forDiscretizationOnMeshTargets( domain.getMeshBodies(), [&] ( string const &,
-                                                                MeshLevel const & mesh,
-                                                                arrayView1d< string const > const & regionNames )
+  forDiscretizationOnMeshTargets ( domain.getMeshBodies(), [&] ( string const &,
+                                                                 MeshLevel const & mesh,
+                                                                 arrayView1d< string const > const & regionNames )
   {
 
     ElementRegionManager const & elemManager = mesh.getElemManager();
@@ -1912,12 +1910,12 @@ void CompositionalMultiphaseWell::assemblePressureRelations( real64 const & time
 
         bool controlHasSwitched = false;
         isothermalCompositionalMultiphaseBaseKernels::
-          KernelLaunchSelectorCompTherm< PressureRelationKernel >( numFluidComponents(), isThermal,
+          KernelLaunchSelectorCompTherm< PressureRelationKernel >( numFluidComponents(),
+                                                                   isThermal,
                                                                    subRegion.size(),
                                                                    dofManager.rankOffset(),
                                                                    subRegion.isLocallyOwned(),
                                                                    subRegion.getTopWellElementIndex(),
-                                                                   isThermal,
                                                                    m_targetPhaseIndex,
                                                                    wellControls,
                                                                    time_n + dt, // controls evaluated with BHP/rate of the end of step
@@ -1943,24 +1941,25 @@ void CompositionalMultiphaseWell::assemblePressureRelations( real64 const & time
             if( wellControls.isProducer() )
             {
               wellControls.switchToPhaseRateControl( wellControls.getTargetPhaseRate( timeAtEndOfStep ) );
-              GEOS_LOG_LEVEL( 1, "Control switch for well " << subRegion.getName()
-                                                            << " from BHP constraint to phase volumetric rate constraint" );
+              GEOS_LOG_LEVEL_INFO_RANK_0( logInfo::WellControl,
+                                          GEOS_FMT( "Control switch for well {} from BHP constraint to phase volumetric rate constraint", subRegion.getName() ) );
             }
             else
             {
               wellControls.switchToTotalRateControl( wellControls.getTargetTotalRate( timeAtEndOfStep ) );
-              GEOS_LOG_LEVEL( 1, "Control switch for well " << subRegion.getName()
-                                                            << " from BHP constraint to total volumetric rate constraint" );
+              GEOS_LOG_LEVEL_INFO_RANK_0( logInfo::WellControl,
+                                          GEOS_FMT( "Control switch for well {} from BHP constraint to total volumetric rate constraint", subRegion.getName()) );
             }
           }
           else
           {
             wellControls.switchToBHPControl( wellControls.getTargetBHP( timeAtEndOfStep ) );
-            GEOS_LOG_LEVEL( 1, "Control switch for well " << subRegion.getName()
-                                                          << " from rate constraint to BHP constraint" );
+            GEOS_LOG_LEVEL_INFO_RANK_0( logInfo::WellControl,
+                                        GEOS_FMT( "Control switch for well {} from rate constraint to BHP constraint", subRegion.getName() ) );
           }
         }
       }
+
     } );
   } );
 }
@@ -2241,4 +2240,4 @@ void CompositionalMultiphaseWell::printRates( real64 const & time_n,
 }
 
 REGISTER_CATALOG_ENTRY( SolverBase, CompositionalMultiphaseWell, string const &, Group * const )
-} // namespace geos
+}     // namespace geos

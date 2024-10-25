@@ -5,7 +5,7 @@
  * Copyright (c) 2016-2024 Lawrence Livermore National Security LLC
  * Copyright (c) 2018-2024 Total, S.A
  * Copyright (c) 2018-2024 The Board of Trustees of the Leland Stanford Junior University
- * Copyright (c) 2018-2024 Chevron
+ * Copyright (c) 2023-2024 Chevron
  * Copyright (c) 2019-     GEOS/GEOSX Contributors
  * All rights reserved
  *
@@ -44,8 +44,6 @@ namespace geos
 
 namespace compositionalMultiphaseWellKernels
 {
-
-using namespace constitutive;
 
 static constexpr real64 minDensForDivision = 1e-10;
 
@@ -173,7 +171,7 @@ struct ControlEquationHelper
 
 struct PressureRelationKernel
 {
-  using Deriv = multifluid::DerivativeOffset;
+  using Deriv = constitutive::multifluid::DerivativeOffset;
   using TAG = compositionalMultiphaseWellKernels::ElemTag;
   using ROFFSET = compositionalMultiphaseWellKernels::RowOffset;
   using COFFSET = compositionalMultiphaseWellKernels::ColOffset;
@@ -199,7 +197,6 @@ struct PressureRelationKernel
           globalIndex const rankOffset,
           bool const isLocallyOwned,
           localIndex const iwelemControl,
-          bool const isThermal,
           integer const targetPhaseIndex,
           WellControls const & wellControls,
           real64 const & timeAtEndOfStep,
@@ -261,7 +258,7 @@ struct PresTempCompFracInitializationKernel
                       fields::flow::phaseVolumeFraction >;
 
   using MultiFluidAccessors =
-    StencilMaterialAccessors< MultiFluidBase,
+    StencilMaterialAccessors< constitutive::MultiFluidBase,
                               fields::multifluid::phaseMassDensity >;
 
 
@@ -287,7 +284,7 @@ struct PresTempCompFracInitializationKernel
           ElementViewConst< arrayView1d< real64 const > > const & resTemp,
           ElementViewConst< arrayView2d< real64 const, compflow::USD_COMP > > const & resCompDens,
           ElementViewConst< arrayView2d< real64 const, compflow::USD_PHASE > > const & resPhaseVolFrac,
-          ElementViewConst< arrayView3d< real64 const, multifluid::USD_PHASE > > const & resPhaseMassDens,
+          ElementViewConst< arrayView3d< real64 const, constitutive::multifluid::USD_PHASE > > const & resPhaseMassDens,
           arrayView1d< localIndex const > const & resElementRegion,
           arrayView1d< localIndex const > const & resElementSubRegion,
           arrayView1d< localIndex const > const & resElementIndex,
@@ -308,7 +305,7 @@ struct CompDensInitializationKernel
   launch( localIndex const subRegionSize,
           integer const numComponents,
           arrayView2d< real64 const, compflow::USD_COMP > const & wellElemCompFrac,
-          arrayView2d< real64 const, multifluid::USD_FLUID > const & wellElemTotalDens,
+          arrayView2d< real64 const, constitutive::multifluid::USD_FLUID > const & wellElemTotalDens,
           arrayView2d< real64, compflow::USD_COMP > const & wellElemCompDens );
 
 };
@@ -323,8 +320,8 @@ struct RateInitializationKernel
           integer const targetPhaseIndex,
           WellControls const & wellControls,
           real64 const & currentTime,
-          arrayView3d< real64 const, multifluid::USD_PHASE > const & phaseDens,
-          arrayView2d< real64 const, multifluid::USD_FLUID > const & totalDens,
+          arrayView3d< real64 const, constitutive::multifluid::USD_PHASE > const & phaseDens,
+          arrayView2d< real64 const, constitutive::multifluid::USD_FLUID > const & totalDens,
           arrayView1d< real64 > const & connRate );
 
 };
@@ -355,7 +352,7 @@ public:
    * @param[in] fluid the fluid model
    */
   TotalMassDensityKernel( ObjectManagerBase & subRegion,
-                          MultiFluidBase const & fluid )
+                          constitutive::MultiFluidBase const & fluid )
     : Base(),
     m_phaseVolFrac( subRegion.getField< fields::well::phaseVolumeFraction >() ),
     m_dPhaseVolFrac( subRegion.getField< fields::well::dPhaseVolumeFraction >() ),
@@ -378,14 +375,13 @@ public:
   void compute( localIndex const ei,
                 FUNC && totalMassDensityKernelOp = NoOpFunc{} ) const
   {
-    using Deriv = multifluid::DerivativeOffset;
+    using Deriv = constitutive::multifluid::DerivativeOffset;
 
     arraySlice1d< real64 const, compflow::USD_PHASE - 1 > phaseVolFrac = m_phaseVolFrac[ei];
     arraySlice2d< real64 const, compflow::USD_PHASE_DC - 1 > dPhaseVolFrac = m_dPhaseVolFrac[ei];
     arraySlice2d< real64 const, compflow::USD_COMP_DC - 1 > dCompFrac_dCompDens = m_dCompFrac_dCompDens[ei];
-    arraySlice1d< real64 const, multifluid::USD_PHASE - 2 > phaseMassDens = m_phaseMassDens[ei][0];
-    arraySlice2d< real64 const, multifluid::USD_PHASE_DC - 2 > dPhaseMassDens = m_dPhaseMassDens[ei][0];
-
+    arraySlice1d< real64 const, constitutive::multifluid::USD_PHASE - 2 > phaseMassDens = m_phaseMassDens[ei][0];
+    arraySlice2d< real64 const, constitutive::multifluid::USD_PHASE_DC - 2 > dPhaseMassDens = m_dPhaseMassDens[ei][0];
     real64 & totalMassDens = m_totalMassDens[ei];
     arraySlice1d< real64, compflow::USD_FLUID_DC - 1 > dTotalMassDens = m_dTotalMassDens[ei];
 
@@ -426,8 +422,8 @@ protected:
   arrayView3d< real64 const, compflow::USD_COMP_DC > m_dCompFrac_dCompDens;
 
   /// Views on phase mass densities
-  arrayView3d< real64 const, multifluid::USD_PHASE > m_phaseMassDens;
-  arrayView4d< real64 const, multifluid::USD_PHASE_DC > m_dPhaseMassDens;
+  arrayView3d< real64 const, constitutive::multifluid::USD_PHASE > m_phaseMassDens;
+  arrayView4d< real64 const, constitutive::multifluid::USD_PHASE_DC > m_dPhaseMassDens;
 
   // outputs
 
@@ -458,7 +454,7 @@ public:
   createAndLaunch( integer const numComp,
                    integer const numPhase,
                    ObjectManagerBase & subRegion,
-                   MultiFluidBase const & fluid )
+                   constitutive::MultiFluidBase const & fluid )
   {
     if( numPhase == 2 )
     {
@@ -505,7 +501,7 @@ public:
                       integer const numDof,
                       integer const targetPhaseIndex,
                       WellElementSubRegion const & subRegion,
-                      MultiFluidBase const & fluid,
+                      constitutive::MultiFluidBase const & fluid,
                       WellControls const & wellControls,
                       real64 const timeAtEndOfStep,
                       real64 const dt,
@@ -681,8 +677,8 @@ protected:
   arrayView1d< real64 const > const m_volume;
 
   /// View on phase/total density at the previous converged time step
-  arrayView3d< real64 const, multifluid::USD_PHASE > const m_phaseDens_n;
-  arrayView2d< real64 const, multifluid::USD_FLUID > const m_totalDens_n;
+  arrayView3d< real64 const, constitutive::multifluid::USD_PHASE > const m_phaseDens_n;
+  arrayView2d< real64 const, constitutive::multifluid::USD_FLUID > const m_totalDens_n;
 
 };
 
@@ -718,7 +714,7 @@ public:
                    string const & dofKey,
                    arrayView1d< real64 const > const & localResidual,
                    WellElementSubRegion const & subRegion,
-                   MultiFluidBase const & fluid,
+                   constitutive::MultiFluidBase const & fluid,
                    WellControls const & wellControls,
                    real64 const timeAtEndOfStep,
                    real64 const dt,
@@ -851,7 +847,7 @@ public:
 
   // Well jacobian column and row indicies
   // tjb  - change NUM_DOF to IS_THERMAL
-  using FLUID_PROP_COFFSET = multifluid::DerivativeOffsetC< NUM_COMP, IS_THERMAL >;
+  using FLUID_PROP_COFFSET = constitutive::multifluid::DerivativeOffsetC< NUM_COMP, IS_THERMAL >;
   using WJ_COFFSET = compositionalMultiphaseWellKernels::ColOffset_WellJac< NUM_COMP, IS_THERMAL >;
   using WJ_ROFFSET = compositionalMultiphaseWellKernels::RowOffset_WellJac< NUM_COMP, IS_THERMAL >;
   /// Compile time value for the number of components
@@ -880,7 +876,7 @@ public:
                               globalIndex const rankOffset,
                               string const dofKey,
                               WellElementSubRegion const & subRegion,
-                              MultiFluidBase const & fluid,
+                              constitutive::MultiFluidBase const & fluid,
                               CRSMatrixView< real64, globalIndex const > const & localMatrix,
                               arrayView1d< real64 > const & localRhs,
                               BitFlags< isothermalCompositionalMultiphaseBaseKernels::ElementBasedAssemblyKernelFlags > const kernelFlags )
@@ -1011,7 +1007,7 @@ public:
                             FUNC && phaseAmountKernelOp = NoOpFunc{} ) const
   {
 
-    using Deriv = multifluid::DerivativeOffset;
+    using Deriv = constitutive::multifluid::DerivativeOffset;
 
     // construct the slices for variables accessed multiple times
     arraySlice2d< real64 const, compflow::USD_COMP_DC - 1 > dCompFrac_dCompDens = m_dCompFrac_dCompDens[ei];
@@ -1020,13 +1016,13 @@ public:
     arraySlice1d< real64 const, compflow::USD_PHASE - 1 > phaseVolFrac = m_phaseVolFrac[ei];
     arraySlice2d< real64 const, compflow::USD_PHASE_DC - 1 > dPhaseVolFrac = m_dPhaseVolFrac[ei];
 
-    arraySlice1d< real64 const, multifluid::USD_PHASE - 2 > phaseDens_n = m_phaseDens_n[ei][0];
-    arraySlice1d< real64 const, multifluid::USD_PHASE - 2 > phaseDens = m_phaseDens[ei][0];
-    arraySlice2d< real64 const, multifluid::USD_PHASE_DC - 2 > dPhaseDens = m_dPhaseDens[ei][0];
+    arraySlice1d< real64 const, constitutive::multifluid::USD_PHASE - 2 > phaseDens_n = m_phaseDens_n[ei][0];
+    arraySlice1d< real64 const, constitutive::multifluid::USD_PHASE - 2 > phaseDens = m_phaseDens[ei][0];
+    arraySlice2d< real64 const, constitutive::multifluid::USD_PHASE_DC - 2 > dPhaseDens = m_dPhaseDens[ei][0];
 
-    arraySlice2d< real64 const, multifluid::USD_PHASE_COMP - 2 > phaseCompFrac_n = m_phaseCompFrac_n[ei][0];
-    arraySlice2d< real64 const, multifluid::USD_PHASE_COMP - 2 > phaseCompFrac = m_phaseCompFrac[ei][0];
-    arraySlice3d< real64 const, multifluid::USD_PHASE_COMP_DC - 2 > dPhaseCompFrac = m_dPhaseCompFrac[ei][0];
+    arraySlice2d< real64 const, constitutive::multifluid::USD_PHASE_COMP - 2 > phaseCompFrac_n = m_phaseCompFrac_n[ei][0];
+    arraySlice2d< real64 const, constitutive::multifluid::USD_PHASE_COMP - 2 > phaseCompFrac = m_phaseCompFrac[ei][0];
+    arraySlice3d< real64 const, constitutive::multifluid::USD_PHASE_COMP_DC - 2 > dPhaseCompFrac = m_dPhaseCompFrac[ei][0];
 
     // temporary work arrays
     real64 dPhaseAmount[FLUID_PROP_COFFSET::nDer]{};
@@ -1127,7 +1123,7 @@ public:
   void computeVolumeBalance( localIndex const ei,
                              StackVariables & stack ) const
   {
-    using Deriv = multifluid::DerivativeOffset;
+    using Deriv = constitutive::multifluid::DerivativeOffset;
 
     arraySlice1d< real64 const, compflow::USD_PHASE - 1 > phaseVolFrac = m_phaseVolFrac[ei];
     arraySlice2d< real64 const, compflow::USD_PHASE_DC - 1 > dPhaseVolFrac = m_dPhaseVolFrac[ei];
@@ -1287,14 +1283,14 @@ protected:
   arrayView3d< real64 const, compflow::USD_PHASE_DC > const m_dPhaseVolFrac;
 
   /// Views on the phase densities
-  arrayView3d< real64 const, multifluid::USD_PHASE > const m_phaseDens_n;
-  arrayView3d< real64 const, multifluid::USD_PHASE > const m_phaseDens;
-  arrayView4d< real64 const, multifluid::USD_PHASE_DC > const m_dPhaseDens;
+  arrayView3d< real64 const, constitutive::multifluid::USD_PHASE > const m_phaseDens_n;
+  arrayView3d< real64 const, constitutive::multifluid::USD_PHASE > const m_phaseDens;
+  arrayView4d< real64 const, constitutive::multifluid::USD_PHASE_DC > const m_dPhaseDens;
 
   /// Views on the phase component fraction
-  arrayView4d< real64 const, multifluid::USD_PHASE_COMP > const m_phaseCompFrac_n;
-  arrayView4d< real64 const, multifluid::USD_PHASE_COMP > const m_phaseCompFrac;
-  arrayView5d< real64 const, multifluid::USD_PHASE_COMP_DC > const m_dPhaseCompFrac;
+  arrayView4d< real64 const, constitutive::multifluid::USD_PHASE_COMP > const m_phaseCompFrac_n;
+  arrayView4d< real64 const, constitutive::multifluid::USD_PHASE_COMP > const m_phaseCompFrac;
+  arrayView5d< real64 const, constitutive::multifluid::USD_PHASE_COMP_DC > const m_dPhaseCompFrac;
 
   // Views on component densities
   arrayView2d< real64 const, compflow::USD_COMP > m_compDens;
@@ -1336,7 +1332,7 @@ public:
                    integer const useTotalMassEquation,
                    string const dofKey,
                    WellElementSubRegion const & subRegion,
-                   MultiFluidBase const & fluid,
+                   constitutive::MultiFluidBase const & fluid,
                    CRSMatrixView< real64, globalIndex const > const & localMatrix,
                    arrayView1d< real64 > const & localRhs )
   {
@@ -1374,11 +1370,11 @@ public:
   using ROFFSET = compositionalMultiphaseWellKernels::RowOffset;
   using TAG = compositionalMultiphaseWellKernels::ElemTag;
 
-  using FLUID_PROP_COFFSET = multifluid::DerivativeOffsetC< NC, IS_THERMAL >;
+  using FLUID_PROP_COFFSET = constitutive::multifluid::DerivativeOffsetC< NC, IS_THERMAL >;
   using WJ_COFFSET = compositionalMultiphaseWellKernels::ColOffset_WellJac< NC, IS_THERMAL >;
   using WJ_ROFFSET = compositionalMultiphaseWellKernels::RowOffset_WellJac< NC, IS_THERMAL >;
 
-  using CP_Deriv = multifluid::DerivativeOffsetC< NC, IS_THERMAL >;
+  using CP_Deriv = constitutive::multifluid::DerivativeOffsetC< NC, IS_THERMAL >;
   /// Compile time value for the number of components
   static constexpr integer numComp = NC;
 

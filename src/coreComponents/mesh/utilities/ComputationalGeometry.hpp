@@ -5,7 +5,7 @@
  * Copyright (c) 2016-2024 Lawrence Livermore National Security LLC
  * Copyright (c) 2018-2024 Total, S.A
  * Copyright (c) 2018-2024 The Board of Trustees of the Leland Stanford Junior University
- * Copyright (c) 2018-2024 Chevron
+ * Copyright (c) 2023-2024 Chevron
  * Copyright (c) 2019-     GEOS/GEOSX Contributors
  * All rights reserved
  *
@@ -35,7 +35,7 @@ namespace computationalGeometry
 {
 
 /// Machine epsilon for double-precision calculations
-constexpr real64 machinePrecision = std::numeric_limits< real64 >::epsilon();
+constexpr real64 machinePrecision = LvArray::NumericLimits< real64 >::epsilon;
 
 /**
  * @brief Calculate the intersection between a line and a plane.
@@ -551,7 +551,7 @@ int findVertexRefElement( arraySlice1d< localIndex const > const & nodeElements,
                           arrayView1d< globalIndex const > const & elementGlobalIndex )
 {
   localIndex minElement = -1;
-  globalIndex minElementGID = std::numeric_limits< globalIndex >::max();
+  globalIndex minElementGID = LvArray::NumericLimits< globalIndex >::max;
   for( int i = 0; i < nodeElements.size(); i++ )
   {
     localIndex e = nodeElements( i );
@@ -579,7 +579,7 @@ int findEdgeRefElement( arraySlice1d< localIndex const > const & nodeElements1,
                         arrayView1d< globalIndex const > const & elementGlobalIndex )
 {
   localIndex minElement = -1;
-  globalIndex minElementGID = std::numeric_limits< globalIndex >::max();
+  globalIndex minElementGID = LvArray::NumericLimits< globalIndex >::max;
   for( int i = 0; i < nodeElements1.size(); i++ )
   {
     localIndex e1 = nodeElements1( i );
@@ -616,7 +616,7 @@ int findTriangleRefElement( arraySlice1d< localIndex const > const & nodeElement
                             arrayView1d< globalIndex const > const & elementGlobalIndex )
 {
   localIndex minElement = -1;
-  globalIndex minElementGID = std::numeric_limits< globalIndex >::max();
+  globalIndex minElementGID = LvArray::NumericLimits< globalIndex >::max;
   for( int i = 0; i < nodeElements1.size(); i++ )
   {
     localIndex e1 = nodeElements1( i );
@@ -674,7 +674,7 @@ bool computeWindingNumber( localIndex element,
     // triangulate the face. The triangulation must be done in a consistent way across ranks.
     // This can be achieved by always picking the vertex with the lowest global index as root.
     localIndex const faceIndex = faceIndices[kf];
-    globalIndex minGlobalId = std::numeric_limits< globalIndex >::max();
+    globalIndex minGlobalId = LvArray::NumericLimits< globalIndex >::max;
     localIndex minVertex = -1;
     localIndex numFaceVertices = facesToNodes[faceIndex].size();
     for( localIndex v = 0; v < numFaceVertices; v++ )

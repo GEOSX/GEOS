@@ -5,7 +5,7 @@
  * Copyright (c) 2016-2024 Lawrence Livermore National Security LLC
  * Copyright (c) 2018-2024 Total, S.A
  * Copyright (c) 2018-2024 The Board of Trustees of the Leland Stanford Junior University
- * Copyright (c) 2018-2024 Chevron
+ * Copyright (c) 2023-2024 Chevron
  * Copyright (c) 2019-     GEOS/GEOSX Contributors
  * All rights reserved
  *
@@ -27,7 +27,6 @@
 
 namespace geos
 {
-using namespace fields;
 
 /// Namespace to contain the acoustic wave kernels.
 namespace acousticVTIWaveEquationSEMKernels
@@ -442,13 +441,13 @@ public:
           finiteElementSpace,
           inputConstitutiveType ),
     m_nodeCoords( nodeManager.getField< fields::referencePosition32 >() ),
-    m_p_n( nodeManager.getField< acousticvtifields::Pressure_p_n >() ),
-    m_q_n( nodeManager.getField< acousticvtifields::Pressure_q_n >() ),
-    m_stiffnessVector_p( nodeManager.getField< acousticvtifields::StiffnessVector_p >() ),
-    m_stiffnessVector_q( nodeManager.getField< acousticvtifields::StiffnessVector_q >() ),
-    m_epsilon( elementSubRegion.template getField< acousticvtifields::Epsilon >() ),
-    m_delta( elementSubRegion.template getField< acousticvtifields::Delta >() ),
-    m_vti_f( elementSubRegion.template getField< acousticvtifields::F >() ),
+    m_p_n( nodeManager.getField< fields::acousticvtifields::Pressure_p_n >() ),
+    m_q_n( nodeManager.getField< fields::acousticvtifields::Pressure_q_n >() ),
+    m_stiffnessVector_p( nodeManager.getField< fields::acousticvtifields::StiffnessVector_p >() ),
+    m_stiffnessVector_q( nodeManager.getField< fields::acousticvtifields::StiffnessVector_q >() ),
+    m_epsilon( elementSubRegion.template getField< fields::acousticvtifields::Epsilon >() ),
+    m_delta( elementSubRegion.template getField< fields::acousticvtifields::Delta >() ),
+    m_vti_f( elementSubRegion.template getField< fields::acousticvtifields::F >() ),
     m_dt( dt )
   {
     GEOS_UNUSED_VAR( edgeManager );

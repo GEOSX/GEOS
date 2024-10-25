@@ -5,7 +5,7 @@
  * Copyright (c) 2016-2024 Lawrence Livermore National Security LLC
  * Copyright (c) 2018-2024 Total, S.A
  * Copyright (c) 2018-2024 The Board of Trustees of the Leland Stanford Junior University
- * Copyright (c) 2018-2024 Chevron
+ * Copyright (c) 2023-2024 Chevron
  * Copyright (c) 2019-     GEOS/GEOSX Contributors
  * All rights reserved
  *
@@ -460,13 +460,13 @@ struct PreComputeSourcesAndReceivers
                                      sourceCoordinates[isrc][1],
                                      sourceCoordinates[isrc][2] };
 
-          real64 xLocal[numNodesPerElem][3];
+          real64 xLocal[8][3];
 
-          for( localIndex a=0; a< numNodesPerElem; ++a )
+          for( localIndex a = 0; a < 8; ++a )
           {
-            for( localIndex i=0; i<3; ++i )
+            for( localIndex i = 0; i < 3; ++i )
             {
-              xLocal[a][i] = baseNodeCoords( elemsToNodes( k, a ), i );
+              xLocal[a][i] = baseNodeCoords( baseElemsToNodes( k, a ), i );
             }
           }
 
@@ -496,7 +496,7 @@ struct PreComputeSourcesAndReceivers
             real64 N[numNodesPerElem];
             real64 gradN[numNodesPerElem][3];
             FE_TYPE::calcN( coordsOnRefElem, N );
-            FE_TYPE::calcGradN( coordsOnRefElem, xLocal, gradN );
+            FE_TYPE::calcGradNWithCorners( coordsOnRefElem, xLocal, gradN );
             R2SymTensor moment = sourceMoment;
             for( localIndex q=0; q< numNodesPerElem; ++q )
             {
@@ -593,13 +593,13 @@ struct PreComputeSourcesAndReceivers
           if( sampleFound && elemGhostRank[k] < 0 )
           {
             real64 coordsOnRefElem[3]{};
-            real64 xLocal[numNodesPerElem][3];
+            real64 xLocal[8][3];
 
-            for( localIndex a=0; a< numNodesPerElem; ++a )
+            for( localIndex a = 0; a < 8; ++a )
             {
-              for( localIndex i=0; i<3; ++i )
+              for( localIndex i=0; i < 3; ++i )
               {
-                xLocal[a][i] = baseNodeCoords( elemsToNodes( k, a ), i );
+                xLocal[a][i] = baseNodeCoords( baseElemsToNodes( k, a ), i );
               }
             }
 
@@ -610,7 +610,7 @@ struct PreComputeSourcesAndReceivers
             real64 N[numNodesPerElem];
             real64 gradN[numNodesPerElem][3];
             FE_TYPE::calcN( coordsOnRefElem, N );
-            FE_TYPE::calcGradN( coordsOnRefElem, xLocal, gradN );
+            FE_TYPE::calcGradNWithCorners( coordsOnRefElem, xLocal, gradN );
             for( localIndex a = 0; a < numNodesPerElem; ++a )
             {
               receiverNodeIds[ircv][iSample * numNodesPerElem + a] = elemsToNodes( k,

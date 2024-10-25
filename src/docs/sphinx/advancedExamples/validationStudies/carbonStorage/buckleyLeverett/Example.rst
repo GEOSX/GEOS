@@ -154,9 +154,9 @@ Either the entire field or specified named sets of indices in the field can be c
 In this example, ``phaseVolumeFractionCollection`` is specified to output the time history of phase saturations ``fieldName="phaseVolumeFraction"`` across the computational domain.
 
 .. literalinclude:: ../../../../../../../inputFiles/compositionalMultiphaseFlow/benchmarks/buckleyLeverettProblem/buckleyLeverett_base.xml
-    :language: xml
-    :start-after: <!-- SPHINX_TASKS -->
-    :end-before: <!-- SPHINX_TASKS_END -->
+   :language: xml
+   :start-after: <!-- SPHINX_TASKS -->
+   :end-before: <!-- SPHINX_TASKS_END -->
 
 This task is triggered using the ``Event`` manager with a ``PeriodicEvent`` defined for the recurring tasks. 
 GEOS writes one file named after the string defined in the ``filename`` keyword, formatted as a HDF5 file (saturationHistory.hdf5). The TimeHistory file contains the collected time history information from the specified time history collector.

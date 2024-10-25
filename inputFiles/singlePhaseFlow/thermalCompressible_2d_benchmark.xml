@@ -8,8 +8,8 @@
   <ElementRegions>
     <CellElementRegion
       name="region"
-      cellBlocks="{ cb }"
-      materialList="{ fluid, rock_linear, thermalCond }"/>
+      cellBlocks="{ * }"
+      materialList="{ fluid, rock_linear, thermalCond_linear }"/>
   </ElementRegions>
 
   <Mesh>

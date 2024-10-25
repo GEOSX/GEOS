@@ -68,9 +68,7 @@ The parameters used in the simulation are summarized in the following table.
 
 The validation of GEOS results against analytical results is shown in the figure below:
 
-.. plot:: docs/sphinx/advancedExamples/validationStudies/wellboreProblems/dpWellbore/dpWellbore_plot.py
-
-.. _edpWellboreVerificationFig:
+.. _dpWellboreVerificationFig:
 .. figure:: dpWellboreVerification.png
    :align: center
    :width: 1000

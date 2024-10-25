@@ -1,0 +1,59 @@
+<?xml version="1.0" ?>
+
+<Problem>
+<!-- SPHINX_SOLVER -->
+  <Solvers
+    gravityVector="{0.0, 0.0, 0.0}">
+    <SurfaceGenerator
+      name="SurfaceGen"
+      logLevel="0"
+      fractureRegion="Fracture"
+      targetRegions="{ Region }"
+      rockToughness="1.0e6"
+      mpiCommOrder="1"/>
+  </Solvers>
+
+  <NumericalMethods>
+    <FiniteElements>
+      <FiniteElementSpace
+        name="FE1"
+        order="1"/>
+    </FiniteElements>
+  </NumericalMethods>
+
+  <ElementRegions>
+    <CellElementRegion
+      name="Region"
+      cellBlocks="{ cb1 }"
+      materialList="{ rock }"/>
+
+    <SurfaceElementRegion
+      name="Fracture"
+      faceBlock="faceElementSubRegion"
+      defaultAperture="1.0e-6"
+      materialList="{ frictionLaw, rock }"/>
+  </ElementRegions>
+
+<!-- SPHINX_MATERIAL -->
+  <Constitutive>
+    <ElasticIsotropic
+      name="rock"
+      defaultDensity="2700"
+      defaultBulkModulus="2e10"
+      defaultShearModulus="9e9"/>
+
+    <Coulomb
+      name="frictionLaw"
+      cohesion="0.0"
+      frictionCoefficient="0.1"/>
+  </Constitutive>
+
+  <Functions>
+    <TableFunction
+      name="dispFunction"
+      inputVarNames="{ time }"
+      coordinates="{ 0.0, 1.0 }"
+      values="{ 0.0, 1.0 }"/>
+  </Functions>
+
+</Problem>

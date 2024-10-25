@@ -5,7 +5,7 @@
  * Copyright (c) 2016-2024 Lawrence Livermore National Security LLC
  * Copyright (c) 2018-2024 Total, S.A
  * Copyright (c) 2018-2024 The Board of Trustees of the Leland Stanford Junior University
- * Copyright (c) 2018-2024 Chevron
+ * Copyright (c) 2023-2024 Chevron
  * Copyright (c) 2019-     GEOS/GEOSX Contributors
  * All rights reserved
  *
@@ -21,6 +21,7 @@
 #include "CompositionalMultiphaseReservoirAndWells.hpp"
 
 #include "common/TimingMacros.hpp"
+#include "dataRepository/LogLevelsInfo.hpp"
 #include "constitutive/fluid/multifluid/MultiFluidBase.hpp"
 #include "mesh/PerforationFields.hpp"
 #include "physicsSolvers/multiphysics/CoupledReservoirAndWellKernels.hpp"
@@ -31,6 +32,7 @@
 #include "physicsSolvers/fluidFlow/wells/CompositionalMultiphaseWellFields.hpp"
 #include "physicsSolvers/fluidFlow/wells/CompositionalMultiphaseWellKernels.hpp"
 #include "physicsSolvers/fluidFlow/wells/WellControls.hpp"
+#include "physicsSolvers/fluidFlow/wells/LogLevelsInfo.hpp"
 #include "physicsSolvers/multiphysics/MultiphasePoromechanics.hpp"
 
 
@@ -45,7 +47,9 @@ CompositionalMultiphaseReservoirAndWells< RESERVOIR_SOLVER >::
 CompositionalMultiphaseReservoirAndWells( const string & name,
                                           Group * const parent )
   : Base( name, parent )
-{}
+{
+  Base::template addLogLevel< logInfo::Crossflow >();
+}
 
 template< typename RESERVOIR_SOLVER >
 CompositionalMultiphaseReservoirAndWells< RESERVOIR_SOLVER >::
@@ -98,7 +102,7 @@ setMGRStrategy()
   // flow solver here is indeed flow solver, not poromechanics solver
   if( flowSolver()->getLinearSolverParameters().mgr.strategy == LinearSolverParameters::MGR::StrategyType::compositionalMultiphaseHybridFVM )
   {
-    GEOS_LOG_RANK_0( "The poromechanics MGR strategy for hybrid FVM is not implemented" );
+    GEOS_ERROR( "The poromechanics MGR strategy for hybrid FVM is not implemented" );
   }
   else
   {
@@ -345,10 +349,10 @@ assembleCouplingTerms( real64 const time_n,
         globalIndex const totalNumCrossflowPerforations = MpiWrapper::sum( numCrossflowPerforations );
         if( totalNumCrossflowPerforations > 0 )
         {
-          GEOS_LOG_LEVEL_RANK_0( 1, GEOS_FMT( "CompositionalMultiphaseReservoir '{}': Warning! Crossflow detected at {} perforations in well {}"
-                                              "To disable crossflow for injectors, you can use the field '{}' in the WellControls '{}' section",
-                                              this->getName(), totalNumCrossflowPerforations, subRegion.getName(),
-                                              WellControls::viewKeyStruct::enableCrossflowString(), wellControls.getName() ) );
+          GEOS_LOG_LEVEL_INFO_RANK_0( logInfo::Crossflow, GEOS_FMT( "CompositionalMultiphaseReservoir '{}': Warning! Crossflow detected at {} perforations in well {}"
+                                                                    "To disable crossflow for injectors, you can use the field '{}' in the WellControls '{}' section",
+                                                                    this->getName(), totalNumCrossflowPerforations, subRegion.getName(),
+                                                                    WellControls::viewKeyStruct::enableCrossflowString(), wellControls.getName() ));
         }
       }
 

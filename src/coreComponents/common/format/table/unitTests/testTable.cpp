@@ -5,7 +5,7 @@
  * Copyright (c) 2016-2024 Lawrence Livermore National Security LLC
  * Copyright (c) 2018-2024 Total, S.A
  * Copyright (c) 2018-2024 The Board of Trustees of the Leland Stanford Junior University
- * Copyright (c) 2018-2024 Chevron
+ * Copyright (c) 2023-2024 Chevron
  * Copyright (c) 2019-     GEOS/GEOSX Contributors
  * All rights reserved
  *
@@ -210,9 +210,9 @@ TEST( testTable, table2DTable )
   //convert
   string const rowFmt = GEOS_FMT( "{} = {{}}", "Temperature" );
   string const columnFmt = GEOS_FMT( "{} = {{}}", "Pression" );
-  TableData2D::Conversion1D tableconverted = tableData.buildTableData( "Viscosity kg*s",
-                                                                       rowFmt,
-                                                                       columnFmt );
+  TableData2D::TableDataHolder tableconverted = tableData.buildTableData( "Viscosity kg*s",
+                                                                          rowFmt,
+                                                                          columnFmt );
 
   //format
   TableLayout const tableLayout( tableconverted.headerNames );
@@ -248,9 +248,9 @@ TEST( testTable, table2DColumnMismatch )
     //convert
     string const rowFmt = GEOS_FMT( "{} = {{}}", "Temperature" );
     string const columnFmt = GEOS_FMT( "{} = {{}}", "Pression" );
-    TableData2D::Conversion1D tableConverted = tableData.buildTableData( "Viscosity kg*s",
-                                                                         rowFmt,
-                                                                         columnFmt );
+    TableData2D::TableDataHolder tableConverted = tableData.buildTableData( "Viscosity kg*s",
+                                                                            rowFmt,
+                                                                            columnFmt );
 
     //format
     TableLayout const tableLayout( tableConverted.headerNames );
@@ -274,11 +274,10 @@ TEST( testTable, table2DColumnMismatch )
 TEST( testTable, layoutTable )
 {
   string filename = "fluid1_phaseModel1_PhillipsBrineDensity_table";
-  //2. format
+
   string log = GEOS_FMT( "The {} PVT table exceeding 500 rows.\nTo visualize the tables, go to the generated csv \n", filename );
   TableLayout const tableLayoutInfos( {TableLayout::ColumnParam{{log}, TableLayout::Alignment::left}}, filename );
 
-  //3. log
   TableTextFormatter const tableLog( tableLayoutInfos );
   EXPECT_EQ( tableLog.layoutToString(),
              "\n-------------------------------------------------------------------------------------\n"

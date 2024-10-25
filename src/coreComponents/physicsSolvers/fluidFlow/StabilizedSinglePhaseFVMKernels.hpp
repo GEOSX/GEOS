@@ -5,7 +5,7 @@
  * Copyright (c) 2016-2024 Lawrence Livermore National Security LLC
  * Copyright (c) 2018-2024 Total, S.A
  * Copyright (c) 2018-2024 The Board of Trustees of the Leland Stanford Junior University
- * Copyright (c) 2018-2024 Chevron
+ * Copyright (c) 2023-2024 Chevron
  * Copyright (c) 2019-     GEOS/GEOSX Contributors
  * All rights reserved
  *
@@ -27,8 +27,6 @@ namespace geos
 
 namespace stabilizedSinglePhaseFVMKernels
 {
-
-using namespace constitutive;
 
 
 /******************************** FaceBasedAssemblyKernel ********************************/
@@ -59,7 +57,7 @@ public:
                       fields::flow::pressure_n >;
 
   using StabSinglePhaseFluidAccessors =
-    StencilMaterialAccessors< SingleFluidBase,
+    StencilMaterialAccessors< constitutive::SingleFluidBase,
                               fields::singlefluid::density_n >;
 
   using AbstractBase::m_dt;

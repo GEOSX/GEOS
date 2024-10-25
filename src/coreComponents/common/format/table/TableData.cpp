@@ -5,7 +5,7 @@
  * Copyright (c) 2016-2024 Lawrence Livermore National Security LLC
  * Copyright (c) 2018-2024 Total, S.A
  * Copyright (c) 2018-2024 The Board of Trustees of the Leland Stanford Junior University
- * Copyright (c) 2018-2024 Chevron
+ * Copyright (c) 2023-2024 Chevron
  * Copyright (c) 2019-     GEOS/GEOSX Contributors
  * All rights reserved
  *
@@ -51,11 +51,42 @@ std::vector< string > const & TableData::getErrorMsgs() const
   return m_errorsMsg;
 }
 
-TableData2D::Conversion1D TableData2D::buildTableData( string_view targetUnit,
-                                                       string_view rowFmt,
-                                                       string_view columnFmt ) const
+void TableData2D::collectTableValues( arraySlice1d< real64 const > rowAxisValues,
+                                      arraySlice1d< real64 const > columnAxisValues,
+                                      arrayView1d< real64 const > values )
 {
-  TableData2D::Conversion1D tableData1D;
+  integer const nX = rowAxisValues.size();
+  integer const nY = columnAxisValues.size();
+
+  for( integer i = 0; i < nX; i++ )
+  {
+    for( integer y = 0; y < nY; y++ )
+    {
+      addCell( rowAxisValues[i], columnAxisValues[y], values[ y*nX + i ] );
+    }
+  }
+}
+
+TableData2D::TableDataHolder TableData2D::convertTable2D( arrayView1d< real64 const > const values,
+                                                          units::Unit const valueUnit,
+                                                          ArrayOfArraysView< real64 const > const coordinates,
+                                                          string_view rowAxisDescription,
+                                                          string_view columnAxisDescription )
+{
+  string const rowFmt = GEOS_FMT( "{} = {{}}", rowAxisDescription );
+  string const columnFmt = GEOS_FMT( "{} = {{}}", columnAxisDescription );
+
+  collectTableValues( coordinates[0], coordinates[1], values );
+  return buildTableData( string( units::getDescription( valueUnit )),
+                         rowFmt,
+                         columnFmt );
+}
+
+TableData2D::TableDataHolder TableData2D::buildTableData( string_view targetUnit,
+                                                          string_view rowFmt,
+                                                          string_view columnFmt ) const
+{
+  TableData2D::TableDataHolder tableData1D;
   std::vector< size_t > rowsLength;
 
   tableData1D.headerNames.push_back( string( targetUnit ) );

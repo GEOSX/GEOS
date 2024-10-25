@@ -5,7 +5,7 @@
  * Copyright (c) 2016-2024 Lawrence Livermore National Security LLC
  * Copyright (c) 2018-2024 Total, S.A
  * Copyright (c) 2018-2024 The Board of Trustees of the Leland Stanford Junior University
- * Copyright (c) 2018-2024 Chevron
+ * Copyright (c) 2023-2024 Chevron
  * Copyright (c) 2019-     GEOS/GEOSX Contributors
  * All rights reserved
  *
@@ -26,6 +26,7 @@
 #include "fieldSpecification/PerfectlyMatchedLayer.hpp"
 #include "mainInterface/ProblemManager.hpp"
 #include "mesh/ElementType.hpp"
+#include "mesh/DomainPartition.hpp"
 #include "mesh/mpiCommunications/CommunicationTools.hpp"
 #include "physicsSolvers/wavePropagation/shared/WaveSolverUtils.hpp"
 #include "physicsSolvers/wavePropagation/sem/acoustic/shared/AcousticTimeSchemeSEMKernel.hpp"
@@ -210,7 +211,18 @@ void AcousticWaveEquationSEM::precomputeSourceAndReceiverTerm( MeshLevel & baseM
           m_rickerOrder );
       }
     } );
+    elementSubRegion.faceList().freeOnDevice();
+    baseMesh.getElemManager().getRegion( er ).getSubRegion< CellElementSubRegion >( esr ).nodeList().freeOnDevice();
+    elementSubRegion.getElementCenter().freeOnDevice();
+    elementSubRegion.ghostRank().freeOnDevice();
+    elementSubRegion.localToGlobalMap().freeOnDevice();
   } );
+  baseMesh.getNodeManager().localToGlobalMap().freeOnDevice();
+  baseMesh.getNodeManager().elementList().toView().freeOnDevice();
+  baseMesh.getFaceManager().nodeList().toView().freeOnDevice();
+  baseMesh.getNodeManager().referencePosition().freeOnDevice();
+  facesToNodes.freeOnDevice();
+  nodesToElements.freeOnDevice();
 }
 
 void AcousticWaveEquationSEM::addSourceToRightHandSide( integer const & cycleNumber, arrayView1d< real32 > const rhs )
@@ -790,13 +802,13 @@ real64 AcousticWaveEquationSEM::explicitStepForward( real64 const & time_n,
       if( m_enableLifo )
       {
         // Need to tell LvArray data is on GPU to avoir HtoD copy
-        p_dt2.move( MemorySpace::cuda, false );
+        p_dt2.move( LvArray::MemorySpace::cuda, false );
         m_lifo->pushAsync( p_dt2 );
       }
       else
       {
         GEOS_MARK_SCOPE ( DirectWrite );
-        p_dt2.move( MemorySpace::host, false );
+        p_dt2.move( LvArray::MemorySpace::host, false );
         int const rank = MpiWrapper::commRank( MPI_COMM_GEOS );
         std::string fileName = GEOS_FMT( "lifo/rank_{:05}/pressuredt2_{:06}_{:08}.dat", rank, m_shotIndex, cycleNumber );
         int lastDirSeparator = fileName.find_last_of( "/\\" );
@@ -873,7 +885,7 @@ real64 AcousticWaveEquationSEM::explicitStepBackward( real64 const & time_n,
                        getDataContext() << ": Could not open file "<< fileName << " for reading",
                        InputError );
 
-        p_dt2.move( MemorySpace::host, true );
+        p_dt2.move( LvArray::MemorySpace::host, true );
         wf.read( (char *)&p_dt2[0], p_dt2.size()*sizeof( real32 ) );
         wf.close( );
         remove( fileName.c_str() );
@@ -1066,6 +1078,7 @@ void AcousticWaveEquationSEM::synchronizeUnknowns( real64 const & time_n,
         acousticfields::AuxiliaryVar1PML::key(),
         acousticfields::AuxiliaryVar4PML::key() } );
   }
+
 
   CommunicationTools & syncFields = CommunicationTools::getInstance();
   syncFields.synchronizeFields( fieldsToBeSync,

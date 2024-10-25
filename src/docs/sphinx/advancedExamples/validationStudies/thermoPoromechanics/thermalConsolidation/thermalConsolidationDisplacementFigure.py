@@ -15,11 +15,11 @@ def main():
     # Read simulation output from HDF5 file
     hf = h5py.File(hdf5FilePathDisplacement, 'r')
     timeDisplacement = hf.get('totalDisplacement Time')
-    timeDisplacement = np.array(timeDisplacement)
+    timeDisplacement = np.asarray(timeDisplacement)
     centerDisplacement = hf.get('totalDisplacement ReferencePosition')
-    centerDisplacement = np.array(centerDisplacement)
+    centerDisplacement = np.asarray(centerDisplacement)
     displacement = hf.get('totalDisplacement')
-    displacement = np.array(displacement)
+    displacement = np.asarray(displacement)
 
     time = 1
     posVertex1 = -1

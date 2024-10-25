@@ -5,7 +5,7 @@
  * Copyright (c) 2016-2024 Lawrence Livermore National Security LLC
  * Copyright (c) 2018-2024 Total, S.A
  * Copyright (c) 2018-2024 The Board of Trustees of the Leland Stanford Junior University
- * Copyright (c) 2018-2024 Chevron
+ * Copyright (c) 2023-2024 Chevron
  * Copyright (c) 2019-     GEOS/GEOSX Contributors
  * All rights reserved
  *
@@ -25,6 +25,7 @@
 #include "physicsSolvers/solidMechanics/SolidMechanicsLagrangianFEM.hpp"
 #include "fileIO/Outputs/OutputBase.hpp"
 #include "mesh/DomainPartition.hpp"
+#include "physicsSolvers/solidMechanics/LogLevelsInfo.hpp"
 
 namespace geos
 {
@@ -36,7 +37,9 @@ using namespace fields;
 SolidMechanicsStatistics::SolidMechanicsStatistics( const string & name,
                                                     Group * const parent ):
   Base( name, parent )
-{}
+{
+  addLogLevel< logInfo::Statistics >();
+}
 
 void SolidMechanicsStatistics::registerDataOnMesh( Group & meshBodies )
 {
@@ -152,12 +155,12 @@ void SolidMechanicsStatistics::computeNodeStatistics( MeshLevel & mesh, real64 c
                          MpiWrapper::getMpiOp( MpiWrapper::Reduction::Min ),
                          MPI_COMM_GEOS );
 
-  GEOS_LOG_LEVEL_RANK_0( 1, GEOS_FMT( "{} (time {} s): Min displacement (X, Y, Z): {}, {}, {} m",
-                                      getName(), time, nodeStatistics.minDisplacement[0],
-                                      nodeStatistics.minDisplacement[1], nodeStatistics.minDisplacement[2] ) );
-  GEOS_LOG_LEVEL_RANK_0( 1, GEOS_FMT( "{} (time {} s): Max displacement (X, Y, Z): {}, {}, {} m",
-                                      getName(), time, nodeStatistics.maxDisplacement[0],
-                                      nodeStatistics.maxDisplacement[1], nodeStatistics.maxDisplacement[2] ) );
+  GEOS_LOG_LEVEL_INFO_RANK_0( logInfo::Statistics, GEOS_FMT( "{} (time {} s): Min displacement (X, Y, Z): {}, {}, {} m",
+                                                             getName(), time, nodeStatistics.minDisplacement[0],
+                                                             nodeStatistics.minDisplacement[1], nodeStatistics.minDisplacement[2] ) );
+  GEOS_LOG_LEVEL_INFO_RANK_0( logInfo::Statistics, GEOS_FMT( "{} (time {} s): Max displacement (X, Y, Z): {}, {}, {} m",
+                                                             getName(), time, nodeStatistics.maxDisplacement[0],
+                                                             nodeStatistics.maxDisplacement[1], nodeStatistics.maxDisplacement[2] ) );
 
   if( m_writeCSV > 0 && MpiWrapper::commRank() == 0 )
   {

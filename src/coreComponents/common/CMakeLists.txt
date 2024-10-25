@@ -16,6 +16,7 @@ set( common_headers
      GEOS_RAJA_Interface.hpp
      GeosxMacros.hpp
      MemoryInfos.hpp
+     logger/Logger.hpp
      MpiWrapper.hpp
      Path.hpp
      Span.hpp
@@ -102,17 +103,18 @@ if( ENABLE_CALIPER )
   endif()
 endif()
 
-set( dependencyList ${dependencyList} )
-
 blt_add_library( NAME       common
                  SOURCES    ${common_sources}
                  HEADERS    ${common_headers}
                  DEPENDS_ON ${dependencyList}
                  OBJECT     ${GEOS_BUILD_OBJ_LIBS}
+                 SHARED     ${GEOS_BUILD_SHARED_LIBS}
                )
 
 target_include_directories( common PUBLIC ${CMAKE_BINARY_DIR}/include )
 target_include_directories( common PUBLIC ${CMAKE_SOURCE_DIR}/coreComponents )
+
+install( TARGETS common LIBRARY DESTINATION ${CMAKE_INSTALL_PREFIX}/lib )
 
 if( GEOS_ENABLE_TESTS )
   add_subdirectory( unitTests )

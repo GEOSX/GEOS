@@ -5,7 +5,7 @@
  * Copyright (c) 2016-2024 Lawrence Livermore National Security LLC
  * Copyright (c) 2018-2024 Total, S.A
  * Copyright (c) 2018-2024 The Board of Trustees of the Leland Stanford Junior University
- * Copyright (c) 2018-2024 Chevron
+ * Copyright (c) 2023-2024 Chevron
  * Copyright (c) 2019-     GEOS/GEOSX Contributors
  * All rights reserved
  *
@@ -67,9 +67,14 @@ public:
   static std::unique_ptr< TestFluid< NC > > create( std::array< integer, NC > const & components )
   {
     std::unique_ptr< TestFluid< NC > > testFluid( new TestFluid() );
-    for( integer ic = 0; ic < NC; ++ic )
+    const std::unordered_map< integer, string > componentNames = {
+      {Fluid::H2O, "H2O"}, {Fluid::CO2, "CO2"}, {Fluid::N2, "N2"}, {Fluid::H2S, "H2S"},
+      {Fluid::C1, "CH4"}, {Fluid::C2, "C2H6"}, {Fluid::C3, "C3H8"}, {Fluid::C4, "C4H10"},
+      {Fluid::C5, "C5H12"}, {Fluid::C8, "C8H18"}, {Fluid::C10, "C10+"},
+    };
+    for( integer const ic : components )
     {
-      testFluid->componentNames.emplace_back( GEOS_FMT( "COMP{}", ic+1 ));
+      testFluid->componentNames.emplace_back( componentNames.at( ic ) );
     }
     createArray( testFluid->criticalPressure, components, Fluid::Pc, Fluid::data );
     createArray( testFluid->criticalTemperature, components, Fluid::Tc, Fluid::data );

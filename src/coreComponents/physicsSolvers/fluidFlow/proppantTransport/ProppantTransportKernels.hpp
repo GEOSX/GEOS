@@ -5,7 +5,7 @@
  * Copyright (c) 2016-2024 Lawrence Livermore National Security LLC
  * Copyright (c) 2018-2024 Total, S.A
  * Copyright (c) 2018-2024 The Board of Trustees of the Leland Stanford Junior University
- * Copyright (c) 2018-2024 Chevron
+ * Copyright (c) 2023-2024 Chevron
  * Copyright (c) 2019-     GEOS/GEOSX Contributors
  * All rights reserved
  *
@@ -40,8 +40,6 @@ namespace geos
 
 namespace proppantTransportKernels
 {
-using namespace constitutive;
-
 /******************************** FluidUpdateKernel ********************************/
 
 struct FluidUpdateKernel
@@ -191,7 +189,7 @@ struct FluxKernel
                       fields::elementAperture >;
 
   using ParticleFluidAccessors =
-    StencilMaterialAccessors< ParticleFluidBase,
+    StencilMaterialAccessors< constitutive::ParticleFluidBase,
                               fields::particlefluid::settlingFactor,
                               fields::particlefluid::dSettlingFactor_dPressure,
                               fields::particlefluid::dSettlingFactor_dProppantConcentration,
@@ -200,7 +198,7 @@ struct FluxKernel
                               fields::particlefluid::dCollisionFactor_dProppantConcentration >;
 
   using SlurryFluidAccessors =
-    StencilMaterialAccessors< SlurryFluidBase,
+    StencilMaterialAccessors< constitutive::SlurryFluidBase,
                               fields::singlefluid::density,
                               fields::singlefluid::dDensity_dPressure,
                               fields::slurryfluid::dDensity_dProppantConcentration,
@@ -217,12 +215,12 @@ struct FluxKernel
                               fields::slurryfluid::dFluidDensity_dComponentConcentration >;
 
   using CellBasedFluxSlurryFluidAccessors =
-    StencilMaterialAccessors< SlurryFluidBase,
+    StencilMaterialAccessors< constitutive::SlurryFluidBase,
                               fields::singlefluid::density,
                               fields::singlefluid::viscosity >;
 
   using PermeabilityAccessors =
-    StencilMaterialAccessors< PermeabilityBase,
+    StencilMaterialAccessors< constitutive::PermeabilityBase,
                               fields::permeability::permeability,
                               fields::permeability::permeabilityMultiplier >;
 
@@ -362,10 +360,10 @@ struct ProppantPackVolumeKernel
                       fields::proppant::isProppantBoundary >;
 
   using ParticleFluidAccessors =
-    StencilMaterialAccessors< ParticleFluidBase, fields::particlefluid::settlingFactor >;
+    StencilMaterialAccessors< constitutive::ParticleFluidBase, fields::particlefluid::settlingFactor >;
 
   using SlurryFluidAccessors =
-    StencilMaterialAccessors< SlurryFluidBase,
+    StencilMaterialAccessors< constitutive::SlurryFluidBase,
                               fields::singlefluid::density,
                               fields::slurryfluid::fluidDensity,
                               fields::slurryfluid::fluidViscosity >;
