@@ -265,7 +265,7 @@ protected:
 
   /// The finite element space/discretization object for the element type in
   /// the SUBREGION_TYPE.
-  FE_TYPE const & m_finiteElementSpace;
+  FE_TYPE const m_finiteElementSpace;
 };
 
 /**

@@ -30,7 +30,8 @@ namespace constitutive
 ConstitutiveBase::ConstitutiveBase( string const & name,
                                     Group * const parent ):
   Group( name, parent ),
-  m_numQuadraturePoints( 1 )
+  m_numQuadraturePoints( 1 ),
+  m_isClone( false )
 {
   setInputFlags( InputFlags::OPTIONAL_NONUNIQUE );
 }
@@ -72,6 +73,11 @@ void ConstitutiveBase::allocateConstitutiveData( dataRepository::Group & parent,
   this->resize( parent.size() );
 }
 
+void ConstitutiveBase::setIsClone( bool const newState )
+{
+  m_isClone = newState;
+}
+
 std::unique_ptr< ConstitutiveBase >
 ConstitutiveBase::deliverClone( string const & name,
                                 Group * const parent ) const
@@ -83,6 +89,8 @@ ConstitutiveBase::deliverClone( string const & name,
   {
     wrapper.copyWrapper( this->getWrapperBase( wrapper.getName() ) );
   } );
+
+  newModel->setIsClone( true );
 
   return newModel;
 }

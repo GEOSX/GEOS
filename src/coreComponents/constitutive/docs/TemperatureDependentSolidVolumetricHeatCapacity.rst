@@ -35,7 +35,7 @@ block.
 
 The following attributes are supported:
 
-.. include:: /coreComponents/schema/docs/SolidInternalEnergy.rst
+.. include:: /docs/sphinx/datastructure/SolidInternalEnergy.rst
 
 
 

@@ -145,36 +145,39 @@ struct StressComputation
       {
 
         //Volume integral
-        m_finiteElement.template computeFirstOrderStiffnessTermX( q, xLocal, [&] ( int i, int j, real32 dfx1, real32 dfx2, real32 dfx3 )
+        m_finiteElement.template computeFirstOrderStiffnessTermX( q, xLocal, [&] ( int const i, int const j, real32 const dfx1, real32 const dfx2, real32 const dfx3 )
         {
-          auxx[j]+= dfx1*ux_np1[elemsToNodes[k][i]];
-          auyy[j]+= dfx2*uy_np1[elemsToNodes[k][i]];
-          auzz[j]+= dfx3*uz_np1[elemsToNodes[k][i]];
-          auxy[j]+= dfx1*uy_np1[elemsToNodes[k][i]]+dfx2*ux_np1[elemsToNodes[k][i]];
-          auxz[j]+= dfx1*uz_np1[elemsToNodes[k][i]]+dfx3*ux_np1[elemsToNodes[k][i]];
-          auyz[j]+= dfx2*uz_np1[elemsToNodes[k][i]]+dfx3*uy_np1[elemsToNodes[k][i]];
+          localIndex const nodeIndex = elemsToNodes[k][i];
+          auxx[j] = auxx[j] + dfx1*ux_np1[nodeIndex];
+          auyy[j] = auyy[j] + dfx2*uy_np1[nodeIndex];
+          auzz[j] = auzz[j] + dfx3*uz_np1[nodeIndex];
+          auxy[j] = auxy[j] + dfx1*uy_np1[nodeIndex]+dfx2*ux_np1[nodeIndex];
+          auxz[j] = auxz[j] + dfx1*uz_np1[nodeIndex]+dfx3*ux_np1[nodeIndex];
+          auyz[j] = auyz[j] + dfx2*uz_np1[nodeIndex]+dfx3*uy_np1[nodeIndex];
 
         } );
 
-        m_finiteElement.template computeFirstOrderStiffnessTermY( q, xLocal, [&] ( int i, int j, real32 dfy1, real32 dfy2, real32 dfy3 )
+        m_finiteElement.template computeFirstOrderStiffnessTermY( q, xLocal, [&] ( int const i, int const j, real32 const dfy1, real32 const dfy2, real32 const dfy3 )
         {
-          auxx[j]+= dfy1*ux_np1[elemsToNodes[k][i]];
-          auyy[j]+= dfy2*uy_np1[elemsToNodes[k][i]];
-          auzz[j]+= dfy3*uz_np1[elemsToNodes[k][i]];
-          auxy[j]+= dfy1*uy_np1[elemsToNodes[k][i]]+dfy2*ux_np1[elemsToNodes[k][i]];
-          auxz[j]+= dfy1*uz_np1[elemsToNodes[k][i]]+dfy3*ux_np1[elemsToNodes[k][i]];
-          auyz[j]+= dfy2*uz_np1[elemsToNodes[k][i]]+dfy3*uy_np1[elemsToNodes[k][i]];
+          localIndex const nodeIndex = elemsToNodes[k][i];
+          auxx[j] = auxx[j] + dfy1*ux_np1[nodeIndex];
+          auyy[j] = auyy[j] + dfy2*uy_np1[nodeIndex];
+          auzz[j] = auzz[j] + dfy3*uz_np1[nodeIndex];
+          auxy[j] = auxy[j] + dfy1*uy_np1[nodeIndex]+dfy2*ux_np1[nodeIndex];
+          auxz[j] = auxz[j] + dfy1*uz_np1[nodeIndex]+dfy3*ux_np1[nodeIndex];
+          auyz[j] = auyz[j] + dfy2*uz_np1[nodeIndex]+dfy3*uy_np1[nodeIndex];
 
         } );
 
-        m_finiteElement.template computeFirstOrderStiffnessTermZ( q, xLocal, [&] ( int i, int j, real32 dfz1, real32 dfz2, real32 dfz3 )
+        m_finiteElement.template computeFirstOrderStiffnessTermZ( q, xLocal, [&] ( int const i, int const j, real32 const dfz1, real32 const dfz2, real32 const dfz3 )
         {
-          auxx[j]+= dfz1*ux_np1[elemsToNodes[k][i]];
-          auyy[j]+= dfz2*uy_np1[elemsToNodes[k][i]];
-          auzz[j]+= dfz3*uz_np1[elemsToNodes[k][i]];
-          auxy[j]+= dfz1*uy_np1[elemsToNodes[k][i]]+dfz2*ux_np1[elemsToNodes[k][i]];
-          auxz[j]+= dfz1*uz_np1[elemsToNodes[k][i]]+dfz3*ux_np1[elemsToNodes[k][i]];
-          auyz[j]+= dfz2*uz_np1[elemsToNodes[k][i]]+dfz3*uy_np1[elemsToNodes[k][i]];
+          localIndex const nodeIndex = elemsToNodes[k][i];
+          auxx[j] = auxx[j] + dfz1*ux_np1[nodeIndex];
+          auyy[j] = auyy[j] + dfz2*uy_np1[nodeIndex];
+          auzz[j] = auzz[j] + dfz3*uz_np1[nodeIndex];
+          auxy[j] = auxy[j] + dfz1*uy_np1[nodeIndex]+dfz2*ux_np1[nodeIndex];
+          auxz[j] = auxz[j] + dfz1*uz_np1[nodeIndex]+dfz3*ux_np1[nodeIndex];
+          auyz[j] = auyz[j] + dfz2*uz_np1[nodeIndex]+dfz3*uy_np1[nodeIndex];
 
         } );
 

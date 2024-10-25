@@ -105,26 +105,26 @@ def main():
     geosDir = args.geosDir
     hdf5File1Path = outputDir + "/traction_history.hdf5"
     hdf5File2Path = outputDir + "/displacementJump_history.hdf5"
-    xmlFilePath = geosDir + "/inputFiles/lagrangianContactMechanics/ContactMechanics_TFrac_base.xml"
+    xmlFilePath = geosDir + "/inputFiles/lagrangianContactMechanics/TFrac_base.xml"
 
     # Read HDF5
     # Global Coordinate of Fracture Element Center
     hf = h5py.File(hdf5File1Path, 'r')
     xl = hf.get('traction elementCenter')
-    xl = np.array(xl)
+    xl = np.asarray(xl)
     xcord = xl[0, :, 0]
     ycord = xl[0, :, 1]
     zcord = xl[0, :, 2]
 
     # Local Normal Traction
     trac = hf.get('traction')
-    trac = np.array(trac)
+    trac = np.asarray(trac)
     normalTraction = trac[-1, :, 0]
 
     # Local Shear Displacement
     hf = h5py.File(hdf5File2Path, 'r')
     jump = hf.get('displacementJump')
-    jump = np.array(jump)
+    jump = np.asarray(jump)
     displacementJump = jump[-1, :, 1]
     aperture = jump[-1, :, 0]
 

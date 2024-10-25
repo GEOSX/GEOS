@@ -1,4 +1,5 @@
 .. _Contributing:
+
 ###############################################################################
 Contributing
 ###############################################################################
@@ -28,4 +29,4 @@ Contributing
 
    InstallWin.rst
 
-   WorkingInteractivelyOnCI.rst
+   WorkInteractivelyOnCI.rst

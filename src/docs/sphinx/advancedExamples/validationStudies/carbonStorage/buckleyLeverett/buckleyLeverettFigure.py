@@ -153,11 +153,11 @@ def main():
     # Read simulation output from HDF5 file
     hf = h5py.File(hdf5FilePath, 'r')
     time = hf.get('phaseVolumeFraction Time')
-    time = np.array(time)
+    time = np.asarray(time)
     center = hf.get('phaseVolumeFraction elementCenter')
-    center = np.array(center)
+    center = np.asarray(center)
     phaseVolFracFromGEOSX = hf.get('phaseVolumeFraction')
-    phaseVolFracFromGEOSX = np.array(phaseVolFracFromGEOSX)
+    phaseVolFracFromGEOSX = np.asarray(phaseVolFracFromGEOSX)
 
     n = 100000    # sampling value, will decide the accuracy of front detection in the BL analytical solution
     minDiff = 1e99

@@ -13,11 +13,15 @@ In this example, a single fracture is simulated using a Lagrange contact model i
 
 **Input file**
 
-Everything required is contained within two GEOS input files and one mesh file located at:
+Everything required is contained within these GEOS input files and one mesh file located at:
 
 .. code-block:: console
 
-  inputFiles/lagrangianContactMechanics/ContactMechanics_SingleFracCompression_base.xml
+  inputFiles/lagrangianContactMechanics/SingleFracCompression_base.xml
+
+.. code-block:: console
+
+  inputFiles/lagrangianContactMechanics/SingleFracCompression_benchmark.xml
 
 .. code-block:: console
 
@@ -79,7 +83,7 @@ The syntax to import external meshes is simple: in the XML file,
 the mesh file ``crackInPlane_benchmark.vtu`` is included with its relative or absolute path to the location of the GEOS XML file and a user-specified label (here ``CubeHex``) is given to the mesh object. This unstructured mesh contains quadrilaterals elements and interface elements. Refinement is performed to conform with the fracture geometry specified in the ``Geometry`` section.
 
 
-.. literalinclude:: ../../../../../../../inputFiles/lagrangianContactMechanics/ContactMechanics_SingleFracCompression_benchmark.xml
+.. literalinclude:: ../../../../../../../inputFiles/lagrangianContactMechanics/SingleFracCompression_benchmark.xml
     :language: xml
     :start-after: <!-- SPHINX_MESH -->
     :end-before: <!-- SPHINX_MESH_END -->
@@ -110,7 +114,7 @@ To setup a coupling between rock and fracture deformations, we define three diff
 - The solver ``SurfaceGenerator`` defines the fracture region and rock toughness.
 
 
-.. literalinclude:: ../../../../../../../inputFiles/lagrangianContactMechanics/ContactMechanics_SingleFracCompression_base.xml
+.. literalinclude:: ../../../../../../../inputFiles/lagrangianContactMechanics/ContactMechanics_SingleFracCompression_benchmark.xml
   :language: xml
   :start-after: <!-- SPHINX_SOLVER -->
   :end-before: <!-- SPHINX_SOLVER_END -->
@@ -124,7 +128,7 @@ For this specific problem, we simulate the elastic deformation and fracture slip
 
 Fracture surface slippage is assumed to be governed by the Coulomb failure criterion. The contact constitutive behavior is named ``fractureMaterial`` in the ``Coulomb`` block, where cohesion ``cohesion="0.0"`` and friction coefficient ``frictionCoefficient="0.577350269"`` are specified. 
 
-.. literalinclude:: ../../../../../../../inputFiles/lagrangianContactMechanics/ContactMechanics_SingleFracCompression_base.xml
+.. literalinclude:: ../../../../../../../inputFiles/lagrangianContactMechanics/SingleFracCompression_base.xml
     :language: xml
     :start-after: <!-- SPHINX_MATERIAL -->
     :end-before: <!-- SPHINX_MATERIAL_END -->
@@ -145,7 +149,7 @@ In the ``Tasks`` section, ``PackCollection`` tasks are defined to collect time h
 Either the entire field or specified named sets of indices in the field can be collected. 
 In this example, ``tractionCollection`` and ``displacementJumpCollection`` tasks are specified to output the local traction ``fieldName="traction"`` and relative displacement ``fieldName="displacementJump"`` on the fracture surface.
 
-.. literalinclude:: ../../../../../../../inputFiles/lagrangianContactMechanics/ContactMechanics_SingleFracCompression_base.xml
+.. literalinclude:: ../../../../../../../inputFiles/lagrangianContactMechanics/SingleFracCompression_base.xml
     :language: xml
     :start-after: <!-- SPHINX_TASKS -->
     :end-before: <!-- SPHINX_TASKS_END -->
@@ -170,7 +174,7 @@ The remaining parts of the outer boundaries are subjected to roller constraints.
 These boundary conditions are set up through the ``FieldSpecifications`` section.
 
 
-.. literalinclude:: ../../../../../../../inputFiles/lagrangianContactMechanics/ContactMechanics_SingleFracCompression_base.xml
+.. literalinclude:: ../../../../../../../inputFiles/lagrangianContactMechanics/SingleFracCompression_base.xml
     :language: xml
     :start-after: <!-- SPHINX_BC -->
     :end-before: <!-- SPHINX_BC_END -->

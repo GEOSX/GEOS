@@ -25,8 +25,6 @@
 #include "common/format/StringUtilities.hpp"
 #include "common/DataTypes.hpp"
 #include "common/TimingMacros.hpp"
-#include "mesh/ObjectManagerBase.hpp"
-#include "mesh/DomainPartition.hpp"
 
 namespace geos
 {

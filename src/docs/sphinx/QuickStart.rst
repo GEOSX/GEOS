@@ -303,7 +303,7 @@ Compiling GEOS
 Once the TPLs have been compiler, the next step is to compile the main code. The ``config-build.py`` script is used to configure the build directory. Before running the configuration script, ensure that the path to the TPLs is correctly set in the host configuration file by setting
 
 .. code-block:: sh
-   
+
    set(GEOS_TPL_DIR "/path/to/your/TPL/installation/dir" CACHE PATH "")
 
 If you have followed these instructions, the TPLs are installed at the default location, i.e. ``/path/to/your/TPL/thirdPartyLibs/install-your-platform-release``.
@@ -320,7 +320,7 @@ An alternative is to set the path ``GEOS_TPL_DIR`` via a cmake command line opti
    python scripts/config-build.py -hc host-configs/your-platform.cmake -bt Release -D GEOS_TPL_DIR=/full/path/to/thirdPartyLibs
 
 .. note::
-   
+
    We highly recommend using full paths, rather than relative paths, whenever possible.
 
 Once the configuration process is completed, we proceed with the compilation of the main code and the instalation of geos.  

@@ -18,9 +18,9 @@ def main():
 
 	for filePath in hdf5FilePath:
 		hf = h5py.File(filePath, 'r')
-		time = np.array( hf.get('temperature Time') )
-		center = np.array( hf.get('temperature elementCenter') )
-		temperature = np.array( hf.get('temperature') )
+		time = np.asarray( hf.get('temperature Time') )
+		center = np.asarray( hf.get('temperature elementCenter') )
+		temperature = np.asarray( hf.get('temperature') )
 
 		nElements = center.shape[1]
 		xCoord = center[0, 0:nElements, 0]

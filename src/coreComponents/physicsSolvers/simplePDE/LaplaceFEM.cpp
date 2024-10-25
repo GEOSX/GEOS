@@ -17,6 +17,8 @@
  * @file LaplaceFEM.cpp
  */
 
+#include "mesh/DomainPartition.hpp"
+
 // Source includes
 #include "LaplaceFEM.hpp"
 #include "LaplaceFEMKernels.hpp"

@@ -83,7 +83,7 @@ def main():
     # Read HDF5
     hf = h5py.File(hdf5File1Path, 'r')
     jump = hf.get('displacementJump')
-    jump = np.array(jump)
+    jump = np.asarray(jump)
     aperture_EmbeddeFrac = jump[0, :, 0]
     x = hf.get('displacementJump elementCenter')
     loc_EmbeddeFrac = x[0, :, 1]
@@ -94,7 +94,7 @@ def main():
     # Read HDF5
     hf = h5py.File(hdf5File2Path, 'r')
     jump = hf.get('displacementJump')
-    jump = np.array(jump)
+    jump = np.asarray(jump)
     aperture_Contact = jump[0, :, 0]
     x = hf.get('displacementJump elementCenter')
     loc_Contact = x[0, :, 1]
@@ -105,7 +105,7 @@ def main():
     # Read HDF5
     hf = h5py.File(hdf5File3Path, 'r')
     jump = hf.get('elementAperture')
-    jump = np.array(jump)
+    jump = np.asarray(jump)
     aperture_HydroFrac = jump[0, :]
     x = hf.get('elementAperture elementCenter')
     loc_HydroFrac = x[0, :, 1]

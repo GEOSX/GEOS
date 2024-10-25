@@ -50,7 +50,7 @@
   <ElementRegions>
     <CellElementRegion
       name="rock"
-      cellBlocks="{ rock }"
+      cellBlocks="{ * }"
       materialList="{ fluid, rock, rockThermalCond }"/>
   </ElementRegions>
 
@@ -161,6 +161,7 @@
       setNames="{ zneg, zpos }"/>
     <!-- SPHINX_PlaneStrainAxisymmetryBCEnd -->
 
+    <!-- SPHINX_StressInit -->
     <FieldSpecification
       name="initialSigma_x_rock"
       initialCondition="1"
@@ -185,6 +186,7 @@
       fieldName="rockSolid_stress"
       component="2"
       scale="0"/>
+    <!-- SPHINX_StressInitEnd -->
 
     <!-- SPHINX_PorePressureBC -->
     <FieldSpecification

@@ -47,7 +47,7 @@ set( linearAlgebra_sources
      solvers/SeparateComponentPreconditioner.cpp
      utilities/ReverseCutHillMcKeeOrdering.cpp )
 
-set( dependencyList ${parallelDeps} mesh denseLinearAlgebra )
+set( dependencyList ${parallelDeps} mesh denseLinearAlgebra finiteVolume )
 set( tplDependencyList "" )
 
 list( APPEND linearAlgebra_headers interfaces/direct/SuiteSparse.hpp )

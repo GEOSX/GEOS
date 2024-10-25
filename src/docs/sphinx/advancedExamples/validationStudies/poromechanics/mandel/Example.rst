@@ -30,7 +30,7 @@ Description of the case
 
 We simulate the consolidation of a poroelastic slab between two rigid and impermeable plates subjected to a constant normal force. The slab is assumed to be fully saturated, homogeneous, isotropic, and infinitely long in the y-direction. We apply a uniform compressive load in the vertical direction. This force leads to a change of pore pressure and mechanical deformations of the sample, evolving with time due to fluid diffusion and coupling effects. The numerical model represents a plane strain deformation and lateral drainage without confinement, showing only a quarter of the computational domain in the x-z plane (the rest follows by symmetry).
 
-.. _problemSketchFig:
+.. _mandelProblemSketchFig:
 .. figure:: sketch.png
    :align: center
    :width: 500
@@ -119,7 +119,7 @@ As demonstrated in this example, to setup a poromechanical coupling, we need to 
 
 - the mechanics solver, a solver of type ``SolidMechanicsLagrangianSSLE`` called here ``lagsolve`` (more information here: :ref:`SolidMechanicsLagrangianFEM`),
 
-.. literalinclude:: ../../../../../../../inputFiles/poromechanics/PoroElastic_Mandel_base.xml
+.. literalinclude:: ../../../../../../../inputFiles/poromechanics/PoroElastic_Mandel_smoke_sequential.xml
   :language: xml
   :start-after: <!-- SPHINX_MECHANICALSOLVER -->
   :end-before: <!-- SPHINX_MECHANICALSOLVER_END -->
@@ -127,7 +127,7 @@ As demonstrated in this example, to setup a poromechanical coupling, we need to 
 
 - the single-phase flow solver, a solver of type ``SinglePhaseFVM`` called here ``SinglePhaseFlow`` (more information on these solvers at :ref:`SinglePhaseFlow`),
 
-.. literalinclude:: ../../../../../../../inputFiles/poromechanics/PoroElastic_Mandel_base.xml
+.. literalinclude:: ../../../../../../../inputFiles/poromechanics/PoroElastic_Mandel_smoke_sequential.xml
   :language: xml
   :start-after: <!-- SPHINX_SINGLEPHASEFVM -->
   :end-before: <!-- SPHINX_SINGLEPHASEFVM_END -->
@@ -135,7 +135,7 @@ As demonstrated in this example, to setup a poromechanical coupling, we need to 
 
 - the coupling solver (``SinglePhasePoromechanics``) that will bind the two single-physics solvers above, which is named as ``poroSolve`` (more information at :ref:`PoroelasticSolver`).
 
-.. literalinclude:: ../../../../../../../inputFiles/poromechanics/PoroElastic_Mandel_base.xml
+.. literalinclude:: ../../../../../../../inputFiles/poromechanics/PoroElastic_Mandel_smoke_sequential.xml
   :language: xml
   :start-after: <!-- SPHINX_POROMECHANICSSOLVER -->
   :end-before: <!-- SPHINX_POROMECHANICSSOLVER_END -->

@@ -62,21 +62,21 @@ def main():
     # Global Coordinate of Element Center
     hf = hdf5_wrapper.hdf5_wrapper(hdf5File)
     xl = hf['pressure elementCenter']
-    xl = np.array(xl)
+    xl = np.asarray(xl)
     xcord = xl[-1, :, 0]
     ycord = xl[-1, :, 1]
     zcord = xl[-1, :, 2]
     tl = hf['pressure Time']
-    tl = np.array(tl)
+    tl = np.asarray(tl)
     # Load pressure
     fpre = hf['pressure']
-    fpre = np.array(fpre)
+    fpre = np.asarray(fpre)
     # Load elementAperture
     aper = hf['elementAperture']
-    aper = np.array(aper)
+    aper = np.asarray(aper)
     # Load elementArea
     area = hf['elementArea']
-    area = np.array(area)
+    area = np.asarray(area)
 
     # Find injection location
     ind = np.argmin(ycord)

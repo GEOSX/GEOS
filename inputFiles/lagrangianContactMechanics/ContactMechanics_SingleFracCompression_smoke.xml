@@ -3,75 +3,41 @@
 <Problem>
 
   <Included>
-    <File name="./ContactMechanics_SingleFracCompression_base.xml"/>
+    <File name="./SingleFracCompression_smoke.xml"/>
   </Included>
 
-<!-- SPHINX_MESH -->
-  <Mesh>
-    <VTKMesh
-      name="CubeHex"
-      file="crackInPlane_smoke.vtu"/>
-  </Mesh>
+<!-- SPHINX_SOLVER -->
+  <Solvers
+    gravityVector="{0.0, 0.0, 0.0}">
+    <SolidMechanicsLagrangeContact
+      name="lagrangiancontact"
+      timeIntegrationOption="QuasiStatic"
+      stabilizationName="TPFAstabilization"
+      logLevel="1"
+      discretization="FE1"
+      targetRegions="{ Region, Fracture }">
+      <NonlinearSolverParameters
+        newtonTol="1.0e-8"
+        logLevel="2"
+        newtonMaxIter="10"
+        maxNumConfigurationAttempts="10"
+        lineSearchAction="Require"
+        lineSearchMaxCuts="2"
+        maxTimeStepCuts="2"/>
+      <LinearSolverParameters
+        solverType="direct"
+        directParallel="0"
+        logLevel="0"/>
+    </SolidMechanicsLagrangeContact>
+  </Solvers>
+<!-- SPHINX_SOLVER_END -->
 
-  <Geometry>
-    <Rectangle
-      name="fracture"
-      normal="{ -0.342020143325669, 0.939692620785908, 0.0 }"
-      origin="{ 0.0, 0.0, 0.0 }"
-      lengthVector="{ 0.939692620785908, 0.342020143325669, 0.0 }"
-      widthVector="{ 0.0, 0.0, 1.0 }"
-      dimensions="{ 2, 10 }"/>
-
-    <Rectangle
-      name="core"
-      normal="{ -0.342020143325669, 0.939692620785908, 0.0 }"
-      origin="{ 0.0, 0.0, 0.0 }"
-      lengthVector="{ 0.939692620785908, 0.342020143325669, 0.0 }"
-      widthVector="{ 0.0, 0.0, 1.0 }"
-      dimensions="{ 2, 10 }"/>
-
-    <Box
-      name="rightPoint"
-      xMin="{ 4.9, -5.1, -0.01 }"
-      xMax="{ 5.1, 5.1, 0.16 }"/>
-
-    <Box
-      name="leftPoint"
-      xMin="{ -5.1, -5.1, -0.01 }"
-      xMax="{ -4.9, 5.1, 0.16 }"/>
-
-    <Box
-      name="topPoint"
-      xMin="{ -5.1, 4.9, -0.01 }"
-      xMax="{ 5.1, 5.1, 0.16 }"/>
-
-    <Box
-      name="bottomPoint"
-      xMin="{ -5.1, -5.1, -0.01 }"
-      xMax="{ 5.1, -4.9, 0.16 }"/>
-
-    <Box
-      name="front"
-      xMin="{ -5.1, -5.1, -0.01 }"
-      xMax="{ 5.1, 5.1, 0.01 }"/>
-
-    <Box
-      name="rear"
-      xMin="{ -5.1, -5.1, 0.14 }"
-      xMax="{ 5.1, 5.1, 0.16 }"/>
-
-    <Box
-      name="xmin"
-      xMin="{ -5.1, -5.1, -0.01 }"
-      xMax="{ -4.9, 5.1, 0.16 }"/>
-
-    <Box
-      name="xmax"
-      xMin="{ 4.9, -5.1, -0.01 }"
-      xMax="{ 5.1, 5.1, 0.16 }"/>
-  </Geometry>
-
-<!-- SPHINX_MESH_END -->
+  <NumericalMethods>
+    <FiniteVolume>
+      <TwoPointFluxApproximation
+        name="TPFAstabilization"/>
+    </FiniteVolume>
+  </NumericalMethods>
 
   <Events
     maxTime="1.0">

@@ -30,7 +30,7 @@ regions (Top and Bottom) (:numref:`modelMeshDevFig`).
 
 DomainPartition
 ===============
-In :numref:`MeshObjectInstantiationHierarchy` the top level object ``DomainPartition`` represents
+In :numref:`diagMeshDevFig` the top level object ``DomainPartition`` represents
 a partition of the decomposed physical domain.
 At this time there is a unique ``DomainPartition`` for every MPI rank.
 

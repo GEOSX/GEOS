@@ -103,7 +103,7 @@ def getParametersFromXML(xmlFilePath):
 
     porosity = float(tree.find('Constitutive/BiotPorosity').get('defaultReferencePorosity'))
 
-    skeletonBulkModulus = float(tree.find('Constitutive/BiotPorosity').get('grainBulkModulus'))
+    skeletonBulkModulus = float(tree.find('Constitutive/BiotPorosity').get('defaultGrainBulkModulus'))
     fluidCompressibility = float(tree.find('Constitutive/CompressibleSinglePhaseFluid').get('compressibility'))
 
     bBiot = 1.0 - bulkModulus / skeletonBulkModulus

@@ -28,7 +28,7 @@ The SILO output is defined through the ``<Silo>`` XML node (subnode of ``<Output
   
 The parameter options are listed in the following table:
 
-.. include:: /coreComponents/schema/docs/Silo.rst
+.. include:: /docs/sphinx/datastructure/Silo.rst
 
 
 VTK Output
@@ -44,7 +44,7 @@ The VTK output is defined through the ``<VTK>`` XML node (subnode of ``<Outputs>
 
 The parameter options are listed in the following table:
 
-.. include:: /coreComponents/schema/docs/VTK.rst
+.. include:: /docs/sphinx/datastructure/VTK.rst
 
 TimeHistory Output
 ==================
@@ -59,7 +59,7 @@ The TimeHistory output is defined through the ``<TimeHistory>`` XML node (subnod
 
 The parameter options are listed in the following table:
 
-.. include:: /coreComponents/schema/docs/TimeHistory.rst
+.. include:: /docs/sphinx/datastructure/TimeHistory.rst
 
 In order to properly collect and output time history information the following steps must be accomplished:
 

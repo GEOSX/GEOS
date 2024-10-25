@@ -17,8 +17,6 @@
 
 #include "common/MpiWrapper.hpp"
 #include "fieldSpecification/FieldSpecificationManager.hpp"
-#include "mesh/DomainPartition.hpp"
-
 
 namespace geos
 {

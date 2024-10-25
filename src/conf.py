@@ -79,9 +79,11 @@ if read_the_docs_build:
     if not os.path.exists(config_dst):
         os.symlink(config_src, config_dst)
 
+    print("********** Running Doxygen in ReadtheDocs **********")
     # Call doxygen
-    from subprocess import call
-    call(['doxygen', doxyfile_dst])
+    from subprocess import run
+    run(['doxygen', doxyfile_dst])
+    print("********** Finished Running Doxygen in ReadtheDocs **********")
 
 
 # -- Project information -----------------------------------------------------
@@ -149,7 +151,7 @@ language = 'en'
 # List of patterns, relative to source directory, that match files and
 # directories to ignore when looking for source files.
 # This pattern also affects html_static_path and html_extra_path .
-exclude_patterns = [u'_build', 'Thumbs.db', '.DS_Store', 'cmake/*']
+exclude_patterns = [u'_build', 'Thumbs.db', '.DS_Store', 'cmake/*', '**/blt/**']
 
 todo_include_todos = True
 

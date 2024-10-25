@@ -66,7 +66,7 @@ Summary
 
 The following table summarizes the available input parameters for the linear solver.
 
-.. include:: ../../schema/docs/LinearSolverParameters.rst
+.. include:: /docs/sphinx/datastructure/LinearSolverParameters.rst
 
 ***************************
 Preconditioner descriptions

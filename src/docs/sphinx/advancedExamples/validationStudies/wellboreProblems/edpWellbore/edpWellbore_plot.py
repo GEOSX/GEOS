@@ -98,14 +98,14 @@ def main():
     # Get stress, time and element center from GEOSX results
     stress_field_name = 'rock_stress'
     hf_stress = h5py.File(outputDir + '/stressHistory_rock.hdf5', 'r')
-    time = np.array( hf_stress.get(stress_field_name + ' Time') )
-    center = np.array( hf_stress.get(stress_field_name + ' elementCenter') )
-    stress = np.array( hf_stress.get(stress_field_name) )
+    time = np.asarray( hf_stress.get(stress_field_name + ' Time') )
+    center = np.asarray( hf_stress.get(stress_field_name + ' elementCenter') )
+    stress = np.asarray( hf_stress.get(stress_field_name) )
     
     # Get the deformed wellbore radius
     hf_disp = h5py.File(outputDir + "/displacementHistory.hdf5", 'r')
-    displacement = np.array( hf_disp.get('totalDisplacement') )
-    node_position = np.array( hf_disp.get('totalDisplacement ReferencePosition') )
+    displacement = np.asarray( hf_disp.get('totalDisplacement') )
+    node_position = np.asarray( hf_disp.get('totalDisplacement ReferencePosition') )
     da = displacement[:, 0, 0]
     a = a0 + da
     

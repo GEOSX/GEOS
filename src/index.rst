@@ -166,7 +166,7 @@ Table of Contents
 
    docs/sphinx/buildGuide/Index
 
-   docs/sphinx/CompleteXMLSchema
+   docs/sphinx/datastructure/CompleteXMLSchema
 
    docs/sphinx/Contributors
 

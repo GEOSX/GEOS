@@ -41,16 +41,16 @@ def main():
     # Get solid stress, time and element center from GEOSX results
     stress_field_name = 'rockSolid_stress'
     hf_stress = h5py.File(outputDir + '/stressHistory_rock.hdf5', 'r')
-    time = np.array( hf_stress.get(stress_field_name + ' Time') )
-    center = np.array( hf_stress.get(stress_field_name + ' elementCenter') )
-    stress = np.array( hf_stress.get(stress_field_name) )
+    time = np.asarray( hf_stress.get(stress_field_name + ' Time') )
+    center = np.asarray( hf_stress.get(stress_field_name + ' elementCenter') )
+    stress = np.asarray( hf_stress.get(stress_field_name) )
 
     # Get temperature and pore pressure for computing the total stress
     hf_temperature = h5py.File(outputDir + '/temperatureHistory_rock.hdf5', 'r')
-    temperature = np.array( hf_temperature.get('temperature') )
+    temperature = np.asarray( hf_temperature.get('temperature') )
 
     hf_pressure = h5py.File(outputDir + '/pressureHistory_rock.hdf5', 'r')
-    pressure = np.array( hf_pressure.get('pressure') )
+    pressure = np.asarray( hf_pressure.get('pressure') )
 
     # Compute total stress
     stress_xx_total = stress[:,:,0] - BiotCoefficient * pressure - 3 * bulkModulus * thermalExpansionCoefficients * temperature

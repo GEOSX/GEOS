@@ -27,6 +27,7 @@
 #include "fieldSpecification/PerfectlyMatchedLayer.hpp"
 #include "mainInterface/ProblemManager.hpp"
 #include "mesh/mpiCommunications/CommunicationTools.hpp"
+#include "mesh/DomainPartition.hpp"
 #include "WaveSolverUtils.hpp"
 #include "events/EventManager.hpp"
 

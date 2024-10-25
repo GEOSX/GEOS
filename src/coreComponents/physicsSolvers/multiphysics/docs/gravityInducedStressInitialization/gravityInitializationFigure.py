@@ -60,8 +60,8 @@ def main():
     parser.add_argument('--geosDir', help='Path to the GEOS repository ', default='../../../../../..')
     parser.add_argument('--outputDir', help='Path to output directory', default='.')
 
-  # Parse the command-line arguments
-  args = parser.parse_args()
+    # Parse the command-line arguments
+    args = parser.parse_args()
 
     # File path
     outputDir = args.outputDir

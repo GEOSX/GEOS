@@ -2,7 +2,7 @@
 
 <Problem>
   <Included>
-    <File name="./ContactMechanics_TFrac_base.xml"/>
+    <File name="./TFrac_smoke.xml"/>
   </Included>
 
   <Solvers
@@ -28,32 +28,15 @@
      directParallel="0"
      logLevel="0"/>
  </SolidMechanicsLagrangeContact>
-
- <SurfaceGenerator
-   name="SurfaceGen"
-   logLevel="0"
-   fractureRegion="Fracture"
-   targetRegions="{ Region }"
-   rockToughness="1.0e6"
-   mpiCommOrder="1"/>
-<!-- SPHINX_SOLVER_END -->
 </Solvers>
 
-  <!-- SPHINX_MESH -->
-  <Mesh>
-    <InternalMesh
-      name="mesh1"
-      elementTypes="{ C3D8 }"
-      xCoords="{ -1000, -100, 100, 1000 }"
-      yCoords="{ -1000, -100, 100, 1000 }"
-      zCoords="{ 0, 100 }"
-      nx="{ 20, 20, 20 }"
-      ny="{ 20, 20, 20 }"
-      nz="{ 2 }"
-      cellBlockNames="{ cb1 }"/>
-  </Mesh>
-  <!-- SPHINX_MESH_END -->
- 
+  <NumericalMethods>
+    <FiniteVolume>
+      <TwoPointFluxApproximation
+        name="TPFAstabilization"/>
+    </FiniteVolume>
+  </NumericalMethods>
+
   <Events
     maxTime="0.2">
     <SoloEvent
