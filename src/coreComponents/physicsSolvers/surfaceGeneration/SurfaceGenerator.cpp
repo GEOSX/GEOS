@@ -727,7 +727,7 @@ int SurfaceGenerator::separationDriver( DomainPartition & domain,
       for( localIndex kfe=0; kfe<subRegion.size(); ++kfe )
       {
         localIndex const numNodesInFace = faceToNodeMap.sizeOfArray( faceMap[ kfe ][ 0 ] );
-        
+
         nodeMap.resizeArray( kfe, 2*numNodesInFace );
         for( localIndex a = 0; a < numNodesInFace; ++a )
         {
