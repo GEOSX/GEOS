@@ -163,11 +163,9 @@ real64 QuasiDynamicEQ::solverStep( real64 const & time_n,
       // solve rate and state equations.
       rateAndStateKernels::createAndLaunch< parallelDevicePolicy<> >( subRegion, viewKeyStruct::frictionLawNameString(), m_shearImpedance, maxNewtonIter, time_n, dtStress );
       // save old state
-      saveOldStateAndUpdateSlip( subRegion, dt );
+      saveOldStateAndUpdateSlip( subRegion, dtStress );
     } );
   } );
-
-  // m_nextDt = setNextDt( dtStress, domain );
 
   // return time step size achieved by stress solver
   return dtStress;
