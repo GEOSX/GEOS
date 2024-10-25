@@ -52,7 +52,7 @@ decks = [
         check_step=200,
         restartcheck_params=RestartcheckParameters(**restartcheck_params)),
     TestDeck(
-        name="acous3D_Q1_srcTable_dtCFL_smoke.xml",
+        name="acous3D_Q1_srcTable_dtCFL_smoke",
         description=
         'Acoustic wave solver, first-order FE, source tables and automatic CFL limit',
         partitions=((1, 1, 1), (2, 2, 2)),
