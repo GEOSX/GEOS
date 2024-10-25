@@ -49,7 +49,8 @@ Group * FiniteVolumeManager::createChild( string const & childKey, string const 
   }
   else
   {
-    std::unique_ptr< FluxApproximationBase > approx = FluxApproximationBase::CatalogInterface::factory( childKey, childName, this );
+    std::unique_ptr< FluxApproximationBase > approx = FluxApproximationBase::CatalogInterface::factory( childKey, getDataContext(),
+                                                                                                        childName, this );
     return &this->registerGroup< FluxApproximationBase >( childName, std::move( approx ));
   }
 }

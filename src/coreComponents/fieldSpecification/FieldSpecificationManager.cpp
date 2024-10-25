@@ -51,7 +51,8 @@ FieldSpecificationManager & FieldSpecificationManager::getInstance()
 
 Group * FieldSpecificationManager::createChild( string const & childKey, string const & childName )
 {
-  std::unique_ptr< FieldSpecificationBase > bc = FieldSpecificationBase::CatalogInterface::factory( childKey, childName, this );
+  std::unique_ptr< FieldSpecificationBase > bc = FieldSpecificationBase::CatalogInterface::factory( childKey, getDataContext(),
+                                                                                                    childName, this );
   return &this->registerGroup( childName, std::move( bc ) );
 }
 

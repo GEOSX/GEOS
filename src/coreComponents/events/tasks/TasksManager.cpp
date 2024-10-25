@@ -38,7 +38,8 @@ TasksManager::~TasksManager()
 
 Group * TasksManager::createChild( string const & childKey, string const & childName )
 {
-  std::unique_ptr< TaskBase > task = TaskBase::CatalogInterface::factory( childKey, childName, this );
+  std::unique_ptr< TaskBase > task = TaskBase::CatalogInterface::factory( childKey, getDataContext(),
+                                                                          childName, this );
   return &this->registerGroup< TaskBase >( childName, std::move( task ) );
 }
 

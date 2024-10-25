@@ -54,7 +54,8 @@ Group * FunctionManager::createChild( string const & functionCatalogKey,
                                       string const & functionName )
 {
   GEOS_LOG_RANK_0( "   " << functionCatalogKey << ": " << functionName );
-  std::unique_ptr< FunctionBase > function = FunctionBase::CatalogInterface::factory( functionCatalogKey, functionName, this );
+  std::unique_ptr< FunctionBase > function = FunctionBase::CatalogInterface::factory( functionCatalogKey, getDataContext(),
+                                                                                      functionName, this );
   return &this->registerGroup< FunctionBase >( functionName, std::move( function ) );
 }
 

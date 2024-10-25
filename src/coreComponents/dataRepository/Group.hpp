@@ -263,7 +263,8 @@ public:
   template< typename T = Group, typename TBASE = Group >
   T & registerGroup( string const & name, string const & catalogName )
   {
-    std::unique_ptr< TBASE > newGroup = TBASE::CatalogInterface::Factory( catalogName, name, this );
+    std::unique_ptr< TBASE > newGroup = TBASE::CatalogInterface::Factory( catalogName, getDataContext(),
+                                                                          name, this );
     return registerGroup< T >( name, std::move( newGroup ) );
   }
 

@@ -92,7 +92,8 @@ Group * ParticleManager::createChild( string const & childKey, string const & ch
 
   Group & particleRegions = this->getGroup( ParticleManager::groupKeyStruct::particleRegionsGroup() );
   return &particleRegions.registerGroup( childName,
-                                         CatalogInterface::factory( childKey, childName, &particleRegions ) );
+                                         CatalogInterface::factory( childKey, getDataContext(),
+                                                                    childName, &particleRegions ) );
 
 }
 

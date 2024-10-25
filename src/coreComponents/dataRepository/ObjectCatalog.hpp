@@ -30,6 +30,7 @@
 #include "common/logger/Logger.hpp"
 #include "common/format/StringUtilities.hpp"
 #include "LvArray/src/system.hpp"
+#include "DataContext.hpp"
 
 #include <iostream>
 #include <list>
@@ -178,31 +179,31 @@ public:
    */
   //START_SPHINX_2
   static std::unique_ptr< BASETYPE > factory( std::string const & objectTypeName,
+                                              DataContext const & context,
                                               ARGS... args )
   {
-    // We stop the simulation if the product is not found
-    if( !hasKeyName( objectTypeName ) )
-    {
-      std::list< typename CatalogType::key_type > keys = getKeys();
-      string const tmp = stringutilities::join( keys.cbegin(), keys.cend(), ",\n" );
-
-      string errorMsg = "Could not find keyword \"" + objectTypeName + "\" in this context. ";
-      errorMsg += "Please be sure that all your keywords are properly spelled or that input file parameters have not changed.\n";
-      errorMsg += "All available keys are: [\n" + tmp + "\n]";
-      GEOS_ERROR( errorMsg );
-    }
+    // We stop the simulation if the type to create is not found
+    GEOS_ERROR_IF( !hasKeyName( objectTypeName ), unknownTypeError( objectTypeName, context, getKeys() ) );
 
     // We also stop the simulation if the builder is not here.
     CatalogInterface< BASETYPE, ARGS... > const * builder = getCatalog().at( objectTypeName ).get();
-    if( builder == nullptr )
-    {
-      const string errorMsg = "\"" + objectTypeName + "\" could be found. But the builder is invalid.\n";
-      GEOS_ERROR( errorMsg );
-    }
+    GEOS_ERROR_IF( builder == nullptr,
+                   GEOS_FMT( "Type \"{}\" is valid in {}, but the builder is invalid.",
+                             objectTypeName, context ) );
 
     return builder->allocate( args ... );
   }
   //STOP_SPHINX
+
+  template< typename KEYS_CONTAINER_T >
+  static string unknownTypeError( std::string const & objectTypeName, DataContext const & context,
+                                  KEYS_CONTAINER_T const & allowedKeys )
+  {
+    return GEOS_FMT( "The tag \"{}\" is invalid within {}. Please verify the keywords spelling and that "
+                     "input file parameters have not changed.\n"
+                     "All available tags are: {}\n",
+                     objectTypeName, context, stringutilities::join( allowedKeys, ", " ) );
+  }
 
   /**
    * @brief Downcast base type reference to derived type
@@ -303,7 +304,7 @@ public:
    */
   CatalogEntry & operator=( CatalogEntry && source )
   {
-    CatalogInterface< BASETYPE, ARGS... >::operator=( std::move(source));
+    CatalogInterface< BASETYPE, ARGS... >::operator=( std::move( source ));
   }
 
   /**
@@ -312,7 +313,7 @@ public:
    * @return a unique_ptr<BASETYPE> to the newly allocated class.
    */
   //START_SPHINX_4
-  virtual std::unique_ptr< BASETYPE > allocate( ARGS... args ) const override
+  virtual std::unique_ptr< BASETYPE > allocate( ARGS ... args ) const override
   {
 #if OBJECTCATALOGVERBOSE > 0
     GEOS_LOG( "Creating type " << LvArray::system::demangle( typeid(TYPE).name())
@@ -589,7 +590,7 @@ public:
    */
   CatalogEntry & operator=( CatalogEntry && source )
   {
-    CatalogInterface< BASETYPE >::operator=( std::move(source));
+    CatalogInterface< BASETYPE >::operator=( std::move( source ));
   }
 
   /**

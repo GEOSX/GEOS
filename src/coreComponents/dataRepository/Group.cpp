@@ -270,7 +270,8 @@ Group * Group::createChild( string const & childKey, string const & childName )
                  "KeyName ("<<childKey<<") not found in Group::Catalog" );
   GEOS_LOG_RANK_0( "Adding Object " << childKey<<" named "<< childName<<" from Group::Catalog." );
   return &registerGroup( childName,
-                         CatalogInterface::factory( childKey, childName, this ) );
+                         CatalogInterface::factory( childKey, getDataContext(),
+                                                    childName, this ) );
 }
 
 void Group::printDataHierarchy( integer const indent ) const

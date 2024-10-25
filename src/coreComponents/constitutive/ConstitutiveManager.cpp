@@ -43,7 +43,8 @@ ConstitutiveManager::~ConstitutiveManager()
 
 Group * ConstitutiveManager::createChild( string const & childKey, string const & childName )
 {
-  std::unique_ptr< ConstitutiveBase > material = ConstitutiveBase::CatalogInterface::factory( childKey, childName, this );
+  std::unique_ptr< ConstitutiveBase > material = ConstitutiveBase::CatalogInterface::factory( childKey, getDataContext(),
+                                                                                              childName, this );
   return &registerGroup< ConstitutiveBase >( childName, std::move( material ) );
 }
 
