@@ -204,8 +204,6 @@ void AcousticWaveEquationSEM::precomputeSourceAndReceiverTerm( MeshLevel & baseM
   baseMesh.getNodeManager().elementList().toView().freeOnDevice();
   baseMesh.getFaceManager().nodeList().toView().freeOnDevice();
   baseMesh.getNodeManager().referencePosition().freeOnDevice();
-  m_sourceCoordinates.freeOnDevice();
-  m_receiverCoordinates.freeOnDevice();
   facesToNodes.freeOnDevice();
   nodesToElements.freeOnDevice();
 }
@@ -1179,6 +1177,7 @@ void AcousticWaveEquationSEM::synchronizeUnknowns( real64 const & time_n,
         acousticfields::AuxiliaryVar1PML::key(),
         acousticfields::AuxiliaryVar4PML::key() } );
   }
+
 
   CommunicationTools & syncFields = CommunicationTools::getInstance();
   syncFields.synchronizeFields( fieldsToBeSync,
