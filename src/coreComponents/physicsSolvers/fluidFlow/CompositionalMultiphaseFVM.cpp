@@ -552,10 +552,17 @@ real64 CompositionalMultiphaseFVM::scalingForSystemSolution( DomainPartition & d
   minCompDensScalingFactor = MpiWrapper::min( minCompDensScalingFactor );
 
   string const massUnit = m_useMass ? "kg/m3" : "mol/m3";
-  GEOS_LOG_LEVEL_RANK_0( logInfo::Solution, GEOS_FMT( "        {}: Max pressure change = {} Pa (before scaling) at cell {}",
-                                                      getName(), GEOS_FMT( "{:.{}f}", globalDeltaPresMax.value, 3 ), globalDeltaPresMax.location ) );
-  GEOS_LOG_LEVEL_RANK_0( logInfo::Solution, GEOS_FMT( "        {}: Max component density change = {} {} (before scaling) at cell {}",
-                                                      getName(), GEOS_FMT( "{:.{}f}", globalDeltaCompDensMax.value, 3 ), massUnit, globalDeltaCompDensMax.location ) );
+  GEOS_LOG_LEVEL_INFO_RANK_0( logInfo::Solution,
+                              GEOS_FMT( "        {}: Max pressure change = {:.3f} Pa (before scaling) at cell {}",
+                                        getName(),
+                                        globalDeltaPresMax.value,
+                                        globalDeltaPresMax.location ) );
+  GEOS_LOG_LEVEL_INFO_RANK_0( logInfo::Solution,
+                              GEOS_FMT( "        {}: Max component density change = {:.3f} {:.3f} (before scaling) at cell {}",
+                                        getName(),
+                                        globalDeltaCompDensMax.value,
+                                        massUnit,
+                                        globalDeltaCompDensMax.location ) );
 
   if( m_isThermal )
   {
@@ -565,8 +572,11 @@ real64 CompositionalMultiphaseFVM::scalingForSystemSolution( DomainPartition & d
     auto globalMaxDeltaTemp = MpiWrapper::maxValLoc( valueLocType( localDeltaTempMax, localDeltaTempMaxLoc ));
 
     minTempScalingFactor = MpiWrapper::min( minTempScalingFactor );
-    GEOS_LOG_LEVEL_RANK_0( logInfo::Solution, GEOS_FMT( "        {}: Max temperature change = {} K (before scaling) at cell maxRegionDeltaTempLoc {}",
-                                                        getName(), GEOS_FMT( "{:.{}f}", globalMaxDeltaTemp.value, 3 ), globalMaxDeltaTemp.location ) );
+    GEOS_LOG_LEVEL_INFO_RANK_0( logInfo::Solution,
+                                GEOS_FMT( "        {}: Max temperature change = {:.3f} K (before scaling) at cell maxRegionDeltaTempLoc {}",
+                                          getName(),
+                                          globalMaxDeltaTemp.value,
+                                          globalMaxDeltaTemp.location ) );
   }
 
   if( m_scalingType == ScalingType::Local )

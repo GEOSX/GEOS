@@ -612,11 +612,11 @@ public:
 
   /**
    * @brief Convenience function for MPI_Gather using a MPI_MAX operation on struct of value and location
-   * @brief Max is performed on value and location (global indice)
+   * @brief Max is performed on value and location (global index) is returned
    * @param[in] struct to send into the max gather.
    * @return struct with max val and location
    */
-  template< typename valLoc_type > static valLoc_type maxValLoc( valLoc_type l_valLoc, MPI_Comm comm = MPI_COMM_GEOS );
+  template< typename T > static T maxValLoc( T localValueLocation, MPI_Comm comm = MPI_COMM_GEOS );
 
 };
 
@@ -1126,47 +1126,31 @@ void MpiWrapper::reduce( Span< T const > const src, Span< T > const dst, Reducti
 }
 
 // Mpi helper function to return  struct containing the max value and location across ranks
-template< typename valLoc_type >
-valLoc_type
-MpiWrapper::maxValLoc( valLoc_type l_valLoc, MPI_Comm comm )
+template< typename T >
+T MpiWrapper::maxValLoc( T localValueLocation, MPI_Comm comm )
 {
-  // Force struct to have only 2 data members
-  GEOS_ASSERT_EQ((sizeof(valLoc_type::value)+sizeof(valLoc_type::location)), sizeof(valLoc_type));
-  // Ensure members are not pointers
-  if constexpr ( std::is_pointer_v< decltype(&valLoc_type::value) >) {
-    GEOS_ERROR_IF( false, "Attempting to use pointer for maxValLoc comparison" );
-  }
-  if constexpr ( std::is_pointer_v< decltype(&valLoc_type::location) >) {
-    GEOS_ERROR_IF( false, "Attempting to use pointer for maxValLoc comparison" );
-  }
-  //These generate compile error
-  //GEOS_ERROR_IF(constexpr (std::is_pointer_v<decltype(&valLoc_type::value)>),"Attempting to use pointer for maxValLoc comparison" );
-  //GEOS_ERROR_IF(constexpr (std::is_pointer_v<decltype(&valLoc_type::location)>),"Attempting to use pointer for maxValLoc comparison" );
+  // Ensure T is trivially copyable
+  static_assert( std::is_trivially_copyable< T >::value, "maxValLoc requires a trivially copyable type" );
 
-  // Serialize to char
-  unsigned char *sendbuf = new unsigned char[sizeof(valLoc_type)];
-  std::memcpy( sendbuf, &l_valLoc, sizeof(valLoc_type));
+  // T to have only 2 data members named value and location
+  static_assert( (sizeof(T::value)+sizeof(T::location)) == sizeof(T) );
 
-  // recieve buffer
+  // Ensure T has value and location members are scalars
+  static_assert( std::is_scalar_v< decltype(T::value) > || std::is_scalar_v< decltype(T::location) >, "members of struct should be scalar" );
+  static_assert( !std::is_pointer_v< decltype(T::value) > && !std::is_pointer_v< decltype(T::location) >, "members of struct should not be pointers" );
+
+  // receive "buffer"
   int const numProcs =  commSize( comm );
-  unsigned char *recvbuf = new unsigned char[numProcs*sizeof(valLoc_type)];
+  std::vector< T > recvValLoc( numProcs );
 
-  MPI_Allgather( sendbuf, sizeof(valLoc_type), MPI_BYTE, recvbuf, sizeof(valLoc_type), MPI_BYTE, comm );
+  MPI_Allgather( &localValueLocation, sizeof(T), MPI_BYTE, recvValLoc.data(), sizeof(T), MPI_BYTE, comm );
 
-  // Unpack buffer and find max
-  std::vector< valLoc_type > g_valLoc( numProcs );
-  for( int i = 0; i< numProcs; i++ )
-  {
-    std::memcpy( &g_valLoc[i], &recvbuf[sizeof(valLoc_type)*i], sizeof(valLoc_type));
-  }
-  valLoc_type maxValLoc= *max_element( begin( g_valLoc ), end( g_valLoc ), []( auto & lhs, auto & rhs ) -> integer {return lhs.value  <  rhs.value; } );
-
-  delete[] sendbuf;
-  delete[] recvbuf;
+  T maxValLoc= *std::max_element( recvValLoc.begin(),
+                                  recvValLoc.end(),
+                                  []( auto & lhs, auto & rhs ) -> bool {return lhs.value  <  rhs.value; } );
 
   return maxValLoc;
 }
-
 } /* namespace geos */
 
 #endif /* GEOS_COMMON_MPIWRAPPER_HPP_ */
