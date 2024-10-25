@@ -57,17 +57,10 @@ WellSolverBase::WellSolverBase( string const & name,
 
 Group * WellSolverBase::createChild( string const & childKey, string const & childName )
 {
-  Group * rval = nullptr;
-
-  if( childKey == keys::wellControls )
-  {
-    rval = &registerGroup< WellControls >( childName );
-  }
-  else
-  {
-    SolverBase::createChild( childKey, childName );
-  }
-  return rval;
+  const auto childTypes = { keys::wellControls };
+  GEOS_ERROR_IF( childKey != keys::wellControls,
+                 CatalogInterface::unknownTypeError( getCatalogName(), getDataContext(), childTypes ) );
+  return &registerGroup< WellControls >( childName );
 }
 
 void WellSolverBase::expandObjectCatalogs()
