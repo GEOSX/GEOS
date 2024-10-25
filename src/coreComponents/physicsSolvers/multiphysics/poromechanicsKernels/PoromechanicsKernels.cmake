@@ -113,10 +113,20 @@ endif( )
 
 set( kernelNames ThermoPoromechanicsKernels )
 set( subregionList CellElementSubRegion )
-set( porousSolidDispatch PorousSolid<DruckerPrager>
-                         PorousSolid<DruckerPragerExtended>
+set( porousSolidDispatch PorousSolid<DruckerPragerExtended>
+                         PorousSolid<ModifiedCamClay>
+                         PorousSolid<DelftEgg>
+                         PorousSolid<DruckerPrager>
                          PorousSolid<ElasticIsotropic>
-                         PorousSolid<ModifiedCamClay> )
+                         PorousSolid<ElasticTransverseIsotropic>
+                         PorousSolid<ElasticIsotropicPressureDependent>
+                         PorousSolid<ElasticOrthotropic>
+                         PorousSolid<DamageSpectral<ElasticIsotropic>>
+                         PorousSolid<DamageVolDev<ElasticIsotropic>>
+                         PorousSolid<Damage<ElasticIsotropic>> 
+                         PorousSolid<DuvautLionsSolid<DruckerPrager>>
+                         PorousSolid<DuvautLionsSolid<DruckerPragerExtended>>
+                         PorousSolid<DuvautLionsSolid<ModifiedCamClay>> )
 
 set( finiteElementDispatch H1_Hexahedron_Lagrange1_GaussLegendre2
                            H1_Wedge_Lagrange1_Gauss6
