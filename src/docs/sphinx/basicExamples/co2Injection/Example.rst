@@ -134,8 +134,9 @@ The **TwoPointFluxApproximation** is chosen for the fluid equation discretizatio
 Element regions
 ---------------
 
-We define a **CellElementRegion** pointing to the cell block defining the reservoir mesh, and a **WellElementRegion** for the well.
+We define a **CellElementRegion** pointing to all reservoir mesh cells, and a **WellElementRegion** for the well.
 The two regions contain a list of constitutive model names.
+The keyword "all" is used here to automatically select all cells of the mesh.
 
 .. literalinclude:: ../../../../../inputFiles/compositionalMultiphaseWell/simpleCo2InjTutorial_base.xml
   :language: xml

@@ -35,8 +35,8 @@ namespace xmlWrapper
 void validateString( string const & value, Regex const & regex )
 {
   std::smatch m;
-  bool inputValidated = std::regex_search( value, m, std::regex( regex.m_regexStr ) );
-  if( !inputValidated || m.length() != ptrdiff_t( value.length() ) )
+  bool inputValidated = std::regex_match( value, m, std::regex( regex.m_regexStr ) );
+  if( !inputValidated )
   {
     ptrdiff_t errorId = ( m.size()>0 && m.position( 0 )==0 ) ? m.length() : 0;
     GEOS_THROW( GEOS_FMT( "Input string validation failed at:\n"
