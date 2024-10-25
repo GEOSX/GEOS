@@ -27,6 +27,7 @@
 #include "physicsSolvers/fluidFlow/FlowSolverBaseFields.hpp"
 #include "physicsSolvers/fluidFlow/wells/WellControls.hpp"
 #include "physicsSolvers/fluidFlow/wells/WellSolverBaseFields.hpp"
+#include "physicsSolvers/fluidFlow/wells/LogLevelsInfo.hpp"
 #include "fileIO/Outputs/OutputBase.hpp"
 
 namespace geos
@@ -49,6 +50,9 @@ WellSolverBase::WellSolverBase( string const & name,
     setApplyDefaultValue( 0 ).
     setInputFlag( dataRepository::InputFlags::OPTIONAL ).
     setDescription( "Write rates into a CSV file" );
+
+  addLogLevel< logInfo::WellControl >();
+  addLogLevel< logInfo::Crossflow >();
 }
 
 Group * WellSolverBase::createChild( string const & childKey, string const & childName )

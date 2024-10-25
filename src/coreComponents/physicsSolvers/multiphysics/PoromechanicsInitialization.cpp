@@ -19,17 +19,18 @@
 
 #include "PoromechanicsInitialization.hpp"
 
+#include "events/tasks/TasksManager.hpp"
 #include "physicsSolvers/PhysicsSolverManager.hpp"
+#include "physicsSolvers/fluidFlow/SinglePhaseBase.hpp"
+#include "physicsSolvers/solidMechanics/SolidMechanicsStatistics.hpp"
 #include "physicsSolvers/multiphysics/MultiphasePoromechanics.hpp"
 #include "physicsSolvers/multiphysics/SinglePhasePoromechanics.hpp"
 #include "physicsSolvers/multiphysics/SinglePhasePoromechanicsConformingFractures.hpp"
 #include "physicsSolvers/multiphysics/SinglePhasePoromechanicsEmbeddedFractures.hpp"
 #include "physicsSolvers/multiphysics/HydrofractureSolver.hpp"
-#include "physicsSolvers/fluidFlow/SinglePhaseBase.hpp"
 #include "physicsSolvers/multiphysics/SinglePhaseReservoirAndWells.hpp"
 #include "physicsSolvers/multiphysics/CompositionalMultiphaseReservoirAndWells.hpp"
-#include "physicsSolvers/solidMechanics/SolidMechanicsStatistics.hpp"
-#include "events/tasks/TasksManager.hpp"
+#include "physicsSolvers/multiphysics/LogLevelsInfo.hpp"
 
 namespace geos
 {
@@ -57,6 +58,8 @@ PoromechanicsInitialization( const string & name,
     setInputFlag( InputFlags::OPTIONAL ).
     setApplyDefaultValue( "" ).
     setDescription( "Name of the solid mechanics statistics" );
+
+  addLogLevel< logInfo::Initialization >();
 }
 
 template< typename POROMECHANICS_SOLVER >
@@ -107,16 +110,16 @@ execute( real64 const time_n,
          real64 const eventProgress,
          DomainPartition & domain )
 {
-  GEOS_LOG_LEVEL_RANK_0( 1, GEOS_FMT( "Task `{}`: at time {}s, physics solver `{}` is set to perform stress initialization during the next time step(s)",
-                                      getName(), time_n, m_poromechanicsSolverName ) );
+  GEOS_LOG_LEVEL_INFO_RANK_0( logInfo::Initialization, GEOS_FMT( "Task `{}`: at time {}s, physics solver `{}` is set to perform stress initialization during the next time step(s)",
+                                                                 getName(), time_n, m_poromechanicsSolverName ) );
   m_poromechanicsSolver->setStressInitialization( true );
 
   m_solidMechanicsStateResetTask.execute( time_n, dt, cycleNumber, eventCounter, eventProgress, domain );
 
   m_poromechanicsSolver->execute( time_n, dt, cycleNumber, eventCounter, eventProgress, domain );
 
-  GEOS_LOG_LEVEL_RANK_0( 1, GEOS_FMT( "Task `{}`: at time {}s, physics solver `{}` has completed stress initialization",
-                                      getName(), time_n + dt, m_poromechanicsSolverName ) );
+  GEOS_LOG_LEVEL_INFO_RANK_0( logInfo::Initialization, GEOS_FMT( "Task `{}`: at time {}s, physics solver `{}` has completed stress initialization",
+                                                                 getName(), time_n + dt, m_poromechanicsSolverName ) );
   m_poromechanicsSolver->setStressInitialization( false );
 
   if( m_solidMechanicsStatistics != nullptr )

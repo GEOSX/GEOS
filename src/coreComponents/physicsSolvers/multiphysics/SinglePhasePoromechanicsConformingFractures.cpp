@@ -19,6 +19,7 @@
 
 #include "SinglePhasePoromechanicsConformingFractures.hpp"
 
+#include "dataRepository/LogLevelsInfo.hpp"
 #include "constitutive/solid/PorousSolid.hpp"
 #include "constitutive/fluid/singlefluid/SingleFluidBase.hpp"
 #include "linearAlgebra/solvers/BlockPreconditioner.hpp"
@@ -89,11 +90,6 @@ void SinglePhasePoromechanicsConformingFractures< FLOW_SOLVER >::setupSystem( Do
   dofManager.setDomain( domain );
   this->setupDofs( domain, dofManager );
   dofManager.reorderByRank();
-
-  if( this->getLogLevel() > 2 )
-  {
-    dofManager.printFieldInfo();
-  }
 
   /// 2. Add coupling terms not added by the DofManager.
   localIndex const numLocalRows = dofManager.numLocalDofs();
