@@ -36,16 +36,16 @@ namespace finiteElement
  * Gaussian quadrature rules. Available functions are tailored for
  * Discontinuous Galerkin (DG) applications.
  */
-template< int k >
+template< int n >
 class BB_Tetrahedron final : public FiniteElementBase
 {
 public:
 
   /// The number of shape functions per element.
-  constexpr static localIndex numNodes = ( k + 1 ) * ( k + 2 ) * ( k + 3 ) / 6;
+  constexpr static localIndex numNodes = ( n + 1 ) * ( n + 2 ) * ( n + 3 ) / 6;
 
   /// The number of shape functions per face
-  constexpr static localIndex numNodesPerFace = ( k + 1 ) * ( k + 2 ) / 2;
+  constexpr static localIndex numNodesPerFace = ( n + 1 ) * ( n + 2 ) / 2;
 
   /// The maximum number of support points per element.
   constexpr static localIndex maxSupportPoints = numNodes;
@@ -172,16 +172,16 @@ public:
     int prev;
     int c;
     int limits[ 4 ] = { 1, 1, 1, 1 };
-    for( int kp = 1; kp <= k; kp++)
+    for( int np = 1; np <= n; np++)
     {
-      prev = kp * ( kp + 1 ) * ( kp + 2 ) / 6 - 1; 
-      c = ( kp + 1 ) * ( kp + 2 ) * ( kp + 3 ) / 6 - 1; 
+      prev = np * ( np + 1 ) * ( np + 2 ) / 6 - 1; 
+      c = ( np + 1 ) * ( np + 2 ) * ( np + 3 ) / 6 - 1; 
       for( int i = 0; i < 4; i++ )
       {
-        int denominator = i == 0 ? kp : 1;
+        int denominator = i == 0 ? np : 1;
         int offset = 0;
-        int c1 = kp - 1;
-        int c2 = i + kp - 2;
+        int c1 = np - 1;
+        int c2 = i + np - 2;
         int repetitionCount = i == 0 ? 1 : limits[ i - 1 ];
         for( int j = 0; j < limits[ i ] ; j++ )
         {
@@ -193,7 +193,7 @@ public:
             c1--;
             c2--;
           }
-          N[ c-- ] = N[ prev - j ] * lambda[3 - i] * ( kp + 3 ) / denominator;
+          N[ c-- ] = N[ prev - j ] * lambda[3 - i] * ( np + 3 ) / denominator;
         }
       }
       for( int i = 1; i < 4; i++ )
@@ -296,16 +296,16 @@ public:
     int prev;
     int c;
     int limits[ 4 ] = { 1, 1, 1, 1 };
-    for( int kp = 1; kp <= k; kp++)
+    for( int np = 1; np <= n; np++)
     {
-      prev = kp * ( kp + 1 ) * ( kp + 2 ) / 6 - 1; 
-      c = ( kp + 1 ) * ( kp + 2 ) * ( kp + 3 ) / 6 - 1; 
+      prev = np * ( np + 1 ) * ( np + 2 ) / 6 - 1; 
+      c = ( np + 1 ) * ( np + 2 ) * ( np + 3 ) / 6 - 1; 
       for( int i = 0; i < 4; i++ )
       {
-        int denominator = i == 0 ? kp : 1;
+        int denominator = i == 0 ? np : 1;
         int offset = 0;
-        int c1 = kp - 1;
-        int c2 = i + kp - 2;
+        int c1 = np - 1;
+        int c2 = i + np - 2;
         int repetitionCount = i == 0 ? 1 : limits[ i - 1 ];
         for( int j = 0; j < limits[ i ] ; j++ )
         {
@@ -317,12 +317,12 @@ public:
             c1--;
             c2--;
           }
-          gradN[ c ][ 0 ] = gradN[ prev - j ][ 0 ] * lambda[ 3 - i ] * ( kp + 3 ) / denominator;
-          gradN[ c ][ 1 ] = gradN[ prev - j ][ 1 ] * lambda[ 3 - i ] * ( kp + 3 ) / denominator;
-          gradN[ c ][ 2 ] = gradN[ prev - j ][ 2 ] * lambda[ 3 - i ] * ( kp + 3 ) / denominator;
-          gradN[ c ][ 3 ] = gradN[ prev - j ][ 3 ] * lambda[ 3 - i ] * ( kp + 3 ) / denominator;
-          gradN[ c ][ 3 - i ] += N[ prev - j ] * ( kp + 3 ) / denominator;
-          N[ c-- ] = N[ prev - j ] * lambda[ 3 - i ] * ( kp + 3 ) / denominator;
+          gradN[ c ][ 0 ] = gradN[ prev - j ][ 0 ] * lambda[ 3 - i ] * ( np + 3 ) / denominator;
+          gradN[ c ][ 1 ] = gradN[ prev - j ][ 1 ] * lambda[ 3 - i ] * ( np + 3 ) / denominator;
+          gradN[ c ][ 2 ] = gradN[ prev - j ][ 2 ] * lambda[ 3 - i ] * ( np + 3 ) / denominator;
+          gradN[ c ][ 3 ] = gradN[ prev - j ][ 3 ] * lambda[ 3 - i ] * ( np + 3 ) / denominator;
+          gradN[ c ][ 3 - i ] += N[ prev - j ] * ( np + 3 ) / denominator;
+          N[ c-- ] = N[ prev - j ] * lambda[ 3 - i ] * ( np + 3 ) / denominator;
         }
       }
       for( int i = 1; i < 4; i++ )
@@ -424,16 +424,16 @@ public:
     int prev;
     int c;
     int limits[ 3 ] = { 1, 1, 1 };
-    for( int kp = 1; kp <= k; kp++)
+    for( int np = 1; np <= n; np++)
     {
-      prev = kp * ( kp + 1 ) / 2 - 1; 
-      c = ( kp + 1 ) * ( kp + 2 ) / 2 - 1; 
+      prev = np * ( np + 1 ) / 2 - 1; 
+      c = ( np + 1 ) * ( np + 2 ) / 2 - 1; 
       for( int i = 0; i < 3; i++ )
       {
-        int denominator = i == 0 ? kp : 1;
+        int denominator = i == 0 ? np : 1;
         int offset = 0;
-        int c1 = kp - 1;
-        int c2 = i + kp - 2;
+        int c1 = np - 1;
+        int c2 = i + np - 2;
         int repetitionCount = i == 0 ? 1 : limits[ i - 1 ];
         for( int j = 0; j < limits[ i ] ; j++ )
         {
@@ -445,7 +445,7 @@ public:
             c1--;
             c2--;
           }
-          N[ c-- ] = N[ prev - j ] * lambda[2 - i] * ( kp + 2 ) / denominator;
+          N[ c-- ] = N[ prev - j ] * lambda[2 - i] * ( np + 2 ) / denominator;
         }
       }
       for( int i = 1; i < 3; i++ )
@@ -474,16 +474,16 @@ public:
     int prev;
     int c;
     int limits[ 3 ] = { 1, 1, 1 };
-    for( int kp = 1; kp <= k; kp++)
+    for( int np = 1; np <= n; np++)
     {
-      prev = kp * ( kp + 1 ) / 2 - 1; 
-      c = ( kp + 1 ) * ( kp + 2 ) / 2 - 1; 
+      prev = np * ( np + 1 ) / 2 - 1; 
+      c = ( np + 1 ) * ( np + 2 ) / 2 - 1; 
       for( int i = 0; i < 3; i++ )
       {
-        int denominator = i == 0 ? kp : 1;
+        int denominator = i == 0 ? np : 1;
         int offset = 0;
-        int c1 = kp - 1;
-        int c2 = i + kp - 2;
+        int c1 = np - 1;
+        int c2 = i + np - 2;
         int repetitionCount = i == 0 ? 1 : limits[ i - 1 ];
         for( int j = 0; j < limits[ i ] ; j++ )
         {
@@ -495,11 +495,11 @@ public:
             c1--;
             c2--;
           }
-          gradN[ c ][ 0 ] = gradN[ prev - j ][ 0 ] * lambda[ 2 - i ] * ( kp + 2 )/ denominator;
-          gradN[ c ][ 1 ] = gradN[ prev - j ][ 1 ] * lambda[ 2 - i ] * ( kp + 2 )/ denominator;
-          gradN[ c ][ 2 ] = gradN[ prev - j ][ 2 ] * lambda[ 2 - i ] * ( kp + 2 )/ denominator;
-          gradN[ c ][ 2 - i ] += N[ prev - j ] * ( kp + 2 ) / denominator;
-          N[ c-- ] = N[ prev - j ] * lambda[ 2 - i ] * ( kp + 2 ) / denominator;
+          gradN[ c ][ 0 ] = gradN[ prev - j ][ 0 ] * lambda[ 2 - i ] * ( np + 2 )/ denominator;
+          gradN[ c ][ 1 ] = gradN[ prev - j ][ 1 ] * lambda[ 2 - i ] * ( np + 2 )/ denominator;
+          gradN[ c ][ 2 ] = gradN[ prev - j ][ 2 ] * lambda[ 2 - i ] * ( np + 2 )/ denominator;
+          gradN[ c ][ 2 - i ] += N[ prev - j ] * ( np + 2 ) / denominator;
+          N[ c-- ] = N[ prev - j ] * lambda[ 2 - i ] * ( np + 2 ) / denominator;
         }
       }
       for( int i = 1; i < 3; i++ )
@@ -508,21 +508,6 @@ public:
       }
     } 
   }
-
-  /**
-   * @brief Calculate the shape functions derivatives wrt the physical
-   *   coordinates at a single point.
-   * @param[in] coords The parent coordinates at which to evaluate the shape function value
-   * @param[in] X Array containing the coordinates of the support points.
-   * @param[out] gradN Array to contain the shape function derivatives for all
-   *   support points at the coordinates of the quadrature point @p q.
-   * @return The determinant of the parent/physical transformation matrix.
-   */
-  GEOS_HOST_DEVICE
-  GEOS_FORCE_INLINE
-  static real64 calcGradN( real64 const (&coords)[3],
-                           real64 const (&X)[numNodes][3],
-                           real64 ( &gradN )[numNodes][3] );
 
   /**
    * @brief Calculate the shape functions derivatives wrt the physical
@@ -538,8 +523,11 @@ public:
   GEOS_FORCE_INLINE
   static real64 calcGradN( localIndex const q,
                            real64 const (&X)[numNodes][3],
-                           StackVariables const & stack,
-                           real64 ( &gradN )[numNodes][3] );
+                           StackVariables const & GEOS_UNUSED_PARAM( stack ),
+                           real64 ( &gradN )[numNodes][3] )
+  {
+    return calcGradN( q, X, gradN );
+  }
 
   /**
    * @brief Calculate the integration weights for a quadrature point.
@@ -772,11 +760,9 @@ public:
    * @return the superposition integral over the barycentric coordinates
    */
   
-   constexpr static real64 computeSuperpositionIntegral(
-       const int i1, const int j1, const int k1, const int l1, 
-       const int i2, const int j2, const int k2, const int l2 )
+   constexpr static real64 computeSuperpositionIntegral( const int i1, const int j1, const int k1, const int l1, 
+                                                         const int i2, const int j2, const int k2, const int l2 )
    {
-     std::cout << "test: " << integralTerm(i1+i2, i1, i2) << " " << integralTerm(j1+j2, j1, j2) << " " << integralTerm(k1+k2, k1, k2) << " " <<  integralTerm(l1+l2, l1, l2) << " " << integralTerm(i1+j1+k1+l1+i2+j2+k2+l2+3, i1+j1+k1+l1+3, i2+j2+k2+l2+3) << std::endl;
      return (integralTerm(i1+i2, i1, i2)*
              integralTerm(j1+j2, j1, j2)*
              integralTerm(k1+k2, k1, k2)*
@@ -1063,172 +1049,10 @@ public:
                                                     real64 const ( &invJ )[3][3],
                                                     real64 ( &gradN )[numNodes][3] );
 
-
-private:
-  /// The length of one dimension of the parent element.
-  constexpr static real64 parentLength = GL_BASIS::parentSupportCoord( 1 ) - GL_BASIS::parentSupportCoord( 0 );
-
-  /// The volume of the element in the parent configuration.
-  constexpr static real64 parentVolume = parentLength*parentLength*parentLength;
-  /**
-   * @brief Applies a function inside a generic loop in over the tensor product
-   *   indices.
-   * @tparam FUNC The type of function to call within the support loop.
-   * @tparam PARAMS The parameter pack types to pass through to @p FUNC.
-   * @param coords The parent coordinates at which to evaluate the shape function value
-   * @param func The function to call within the support loop.
-   * @param params The parameters to pass to @p func.
-   */
-  template< typename FUNC, typename ... PARAMS >
-  GEOS_HOST_DEVICE
-  GEOS_FORCE_INLINE
-  static void supportLoop( real64 const (&coords)[3],
-                           FUNC && func,
-                           PARAMS &&... params );
-  /**
-   * @brief Applies a function inside a generic loop in over the tensor product
-   *   indices.
-   * @tparam FUNC The type of function to call within the support loop.
-   * @tparam PARAMS The parameter pack types to pass through to @p FUNC.
-   * @param q The quadrature node at which to evaluate the shape function value
-   * @param func The function to call within the support loop.
-   * @param params The parameters to pass to @p func.
-   */
-  template< typename FUNC, typename ... PARAMS >
-  GEOS_HOST_DEVICE
-  GEOS_FORCE_INLINE
-  static void supportLoop( localIndex const q,
-                           FUNC && func,
-                           PARAMS &&... params );
-
 };
 
 /// @cond Doxygen_Suppress
 
-
-template< typename GL_BASIS >
-template< typename FUNC, typename ... PARAMS >
-GEOS_HOST_DEVICE
-GEOS_FORCE_INLINE
-void
-BB_Tetrahedron< GL_BASIS >::supportLoop( real64 const (&coords)[3],
-                                                              FUNC && func,
-                                                              PARAMS &&... params )
-{
-  for( int c=0; c<num1dNodes; ++c )
-  {
-    for( int b=0; b<num1dNodes; ++b )
-    {
-      for( int a=0; a<num1dNodes; ++a )
-      {
-        real64 const dNdXi[3] = { GL_BASIS::gradient( a, coords[0] )*
-                                  GL_BASIS::value( b, coords[1] )*
-                                  GL_BASIS::value( c, coords[2] ),
-                                  GL_BASIS::value( a, coords[0] )*
-                                  GL_BASIS::gradient( b, coords[1] )*
-                                  GL_BASIS::value( c, coords[2] ),
-                                  GL_BASIS::value( a, coords[0] )*
-                                  GL_BASIS::value( b, coords[1] )*
-                                  GL_BASIS::gradient( c, coords[2] )};
-
-        localIndex const nodeIndex = GL_BASIS::TensorProduct3D::linearIndex( a, b, c );
-
-        func( dNdXi, nodeIndex, std::forward< PARAMS >( params )... );
-      }
-    }
-  }
-}
-
-template< typename GL_BASIS >
-template< typename FUNC, typename ... PARAMS >
-GEOS_HOST_DEVICE
-GEOS_FORCE_INLINE
-void
-BB_Tetrahedron< GL_BASIS >::supportLoop( localIndex const q,
-                                                              FUNC && func,
-                                                              PARAMS &&... params )
-{
-  int qa, qb, qc;
-  GL_BASIS::TensorProduct3D::multiIndex( q, qa, qb, qc );
-  for( int c=0; c<num1dNodes; ++c )
-  {
-    for( int b=0; b<num1dNodes; ++b )
-    {
-      for( int a=0; a<num1dNodes; ++a )
-      {
-        real64 const dNdXi[3] = { (b == qb && c == qc ) ? basisGradientAt( a, qa ) : 0,
-                                  (a == qa && c == qc ) ? basisGradientAt( b, qb ) : 0,
-                                  (a == qa && b == qb ) ? basisGradientAt( c, qc ) : 0 };
-
-        localIndex const nodeIndex = GL_BASIS::TensorProduct3D::linearIndex( a, b, c );
-
-        func( dNdXi, nodeIndex, std::forward< PARAMS >( params )... );
-      }
-    }
-  }
-}
-
-//*************************************************************************************************
-
-template< typename GL_BASIS >
-GEOS_HOST_DEVICE
-GEOS_FORCE_INLINE
-real64
-BB_Tetrahedron< GL_BASIS >::calcGradN( localIndex const q,
-                                                            real64 const (&X)[numNodes][3],
-                                                            real64 (& gradN)[numNodes][3] )
-{
-  int qa, qb, qc;
-  GL_BASIS::TensorProduct3D::multiIndex( q, qa, qb, qc );
-  real64 Xmesh[8][3] = {{0}};
-  for( int k = 0; k < 8; k++ )
-  {
-    const localIndex nodeIndex = meshIndexToLinearIndex3D( k );
-    for( int i = 0; i < 3; i++ )
-    {
-      Xmesh[ k ][ i ] = X[ nodeIndex ][ i ];
-    }
-  }
-  real64 J[3][3] = {{0}};
-
-  jacobianTransformation( qa, qb, qc, Xmesh, J );
-
-  real64 const detJ = LvArray::tensorOps::invert< 3 >( J );
-
-  applyTransformationToParentGradients( q, J, gradN );
-
-  return detJ;
-}
-//*************************************************************************************************
-template< typename GL_BASIS >
-GEOS_HOST_DEVICE
-GEOS_FORCE_INLINE
-real64
-BB_Tetrahedron< GL_BASIS >::calcGradN( real64 const (&coords)[3],
-                                                            real64 const (&X)[numNodes][3],
-                                                            real64 (& gradN)[numNodes][3] )
-{
-  real64 J[3][3] = {{0}};
-
-  jacobianTransformation( coords, X, J );
-
-  real64 const detJ = LvArray::tensorOps::invert< 3 >( J );
-
-  applyTransformationToParentGradients( coords, J, gradN );
-
-  return detJ;
-}
-template< typename GL_BASIS >
-GEOS_HOST_DEVICE
-GEOS_FORCE_INLINE
-real64 BB_Tetrahedron< GL_BASIS >::
-calcGradN( localIndex const q,
-           real64 const (&X)[numNodes][3],
-           StackVariables const & GEOS_UNUSED_PARAM( stack ),
-           real64 ( & gradN )[numNodes][3] )
-{
-  return calcGradN( q, X, gradN );
-}
 
 //*************************************************************************************************
 #if __GNUC__
@@ -1360,61 +1184,142 @@ jacobianTransformation2d( int const qa,
   }
 }
 
+/**
+ * @brief Computes the reference mass matrix, i.e., the superposition matrix of the shape functions
+ *   in barycentric coordinates. The real-world mass matrix can be obtained by using the multiplying
+ *   this matrix by the determinant of the Jacobian. 
+ *   
+ * @param[out] m The mass matrix 
+ */
 template< typename GL_BASIS >
 GEOS_HOST_DEVICE
 GEOS_FORCE_INLINE
-real64
-BB_Tetrahedron< GL_BASIS >::
-computeMassTerm( localIndex const q,
-                 real64 const (&X)[8][3] )
-
-template< typename GL_BASIS >
-GEOS_HOST_DEVICE
-GEOS_FORCE_INLINE
-real64
-BB_Tetrahedron< GL_BASIS >::
-computeDampingTerm( localIndex const q,
-                    real64 const (&X)[4][3] )
-{
-  int qa, qb;
-  GL_BASIS::TensorProduct2D::multiIndex( q, qa, qb );
-  const real64 w2D = GL_BASIS::weight( qa )*GL_BASIS::weight( qb );
-  real64 B[3];
-  real64 J[3][2] = {{0}};
-  jacobianTransformation2d( qa, qb, X, J );
-  // compute J^T.J, using Voigt notation for B
-  B[0] = J[0][0]*J[0][0]+J[1][0]*J[1][0]+J[2][0]*J[2][0];
-  B[1] = J[0][1]*J[0][1]+J[1][1]*J[1][1]+J[2][1]*J[2][1];
-  B[2] = J[0][0]*J[0][1]+J[1][0]*J[1][1]+J[2][0]*J[2][1];
-  return sqrt( LvArray::math::abs( LvArray::tensorOps::symDeterminant< 2 >( B ) ) )*w2D;
-}
-
-template< typename GL_BASIS >
-GEOS_HOST_DEVICE
-GEOS_FORCE_INLINE
+static
 void
 BB_Tetrahedron< GL_BASIS >::
-computeBMatrix( int const qa,
-                int const qb,
-                int const qc,
-                real64 const (&X)[8][3],
-                real64 (& J)[3][3],
-                real64 (& B)[6] )
+computeReferenceMassMatrix( real64 (& m)[numNodes][numNodes] )
 {
-  jacobianTransformation( qa, qb, qc, X, J );
-  real64 const detJ = LvArray::tensorOps::determinant< 3 >( J );
-
-  // compute J^T.J/det(J), using Voigt notation for B
-  B[0] = (J[0][0]*J[0][0]+J[1][0]*J[1][0]+J[2][0]*J[2][0])/detJ;
-  B[1] = (J[0][1]*J[0][1]+J[1][1]*J[1][1]+J[2][1]*J[2][1])/detJ;
-  B[2] = (J[0][2]*J[0][2]+J[1][2]*J[1][2]+J[2][2]*J[2][2])/detJ;
-  B[3] = (J[0][1]*J[0][2]+J[1][1]*J[1][2]+J[2][1]*J[2][2])/detJ;
-  B[4] = (J[0][0]*J[0][2]+J[1][0]*J[1][2]+J[2][0]*J[2][2])/detJ;
-  B[5] = (J[0][0]*J[0][1]+J[1][0]*J[1][1]+J[2][0]*J[2][1])/detJ;
-
-  // compute detJ*J^{-1}J^{-T}
-  LvArray::tensorOps::symInvert< 3 >( B );
+  int c1 = 0;
+  for( int i1 = n; i1 >= 0; i1--)
+  {
+    for( int j1 = n - i1; j1 >= 0; j1--)
+    {
+      for( int k1 = n - i1 - j1; k1 >= 0; k1--)
+      {
+        int l1 = n - i1 - j1 - k1;
+        int c2 = 0;
+        for( int i2 = n; i2 >= 0; i2--)
+        {
+          for( int j2 = n - i2; j2 >= 0; j2--)
+          {
+            for( int k2 = n - i2 - j2; k2 >= 0; k2--)
+            {
+              int l2 = n - i2 - j2 - k2;
+              m[ c1 ][ c2 ] = computeSuperpositionIntegral( i1, j1, k1, l1, i2, j2, k2, l2 ); 
+              c2++;
+            }
+          }
+        }
+        c1++;
+      }
+    }
+  }
 }
+
+/**
+ * @brief Computes the reference stiffness matrix, i.e., the superposition matrix of the dot product
+ *   of derivatives of shape functions in barycentric coordinates. The real-world mass matrix can be obtained by multiplying
+ *   this matrix by the determinant of the Jacobian. 
+ *   
+ * @param[out] m The mass matrix 
+ */
+template< typename GL_BASIS >
+GEOS_HOST_DEVICE
+GEOS_FORCE_INLINE
+static
+void
+BB_Tetrahedron< GL_BASIS >::
+computeReferenceFirstDerivativeMatrix( real64 (& k)[numNodes][numNodes] )
+{
+  int c1 = 0;
+  for( int i1 = n; i1 >= 0; i1--)
+  {
+    for( int j1 = n - i1; j1 >= 0; j1--)
+    {
+      for( int k1 = n - i1 - j1; k1 >= 0; k1--)
+      {
+        int l1 = n - i1 - j1 - k1;
+        int c2 = 0;
+        for( int i2 = n; i2 >= 0; i2--)
+        {
+          for( int j2 = n - i2; j2 >= 0; j2--)
+          {
+            for( int k2 = n - i2 - j2; k2 >= 0; k2--)
+            {
+              int l2 = n - i2 - j2 - k2;
+              m[ c1 ][ c2 ] = computeSuperpositionIntegral( i1, j1, k1, l1, i2, j2, k2, l2 ); 
+              c2++;
+            }
+          }
+        }
+        c1++;
+      }
+    }
+  }
+}
+                            
+/**
+ * @brief Computes the reference stiffness matrix, i.e., the superposition matrix of the dot product
+ *   of derivatives of shape functions in barycentric coordinates. The real-world mass matrix can be obtained by multiplying
+ *   this matrix by the determinant of the Jacobian. 
+ *   
+ * @param[out] m The mass matrix 
+ */
+template< typename GL_BASIS >
+GEOS_HOST_DEVICE
+GEOS_FORCE_INLINE
+static
+void
+BB_Tetrahedron< GL_BASIS >::
+computeReferenceSecondDerivativeMatrix( real64 (& k)[numNodes][numNodes] )
+{
+  int c1 = 0;
+  for( int i1 = n; i1 >= 0; i1--)
+  {
+    for( int j1 = n - i1; j1 >= 0; j1--)
+    {
+      for( int k1 = n - i1 - j1; k1 >= 0; k1--)
+      {
+        int l1 = n - i1 - j1 - k1;
+        int c2 = 0;
+        for( int i2 = n; i2 >= 0; i2--)
+        {
+          for( int j2 = n - i2; j2 >= 0; j2--)
+          {
+            for( int k2 = n - i2 - j2; k2 >= 0; k2--)
+            {
+              int l2 = n - i2 - j2 - k2;
+              m[ c1 ][ c2 ] = computeSuperpositionIntegral( i1, j1, k1, l1, i2, j2, k2, l2 ); 
+              c2++;
+            }
+          }
+        }
+        c1++;
+      }
+    }
+  }
+}
+
+template< typename GL_BASIS >
+GEOS_HOST_DEVICE
+GEOS_FORCE_INLINE
+real64
+BB_Tetrahedron< GL_BASIS >::
+computeReferenceDampingMatrix( localIndex const q,
+                    real64 const (&X)[4][3] )
+{
+}
+
 
 template< typename GL_BASIS >
 GEOS_HOST_DEVICE
