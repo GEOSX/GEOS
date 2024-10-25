@@ -1060,7 +1060,7 @@ void ImmiscibleMultiphaseFlow::applySourceFluxBC( real64 const time,
       real64 const sizeScalingFactor = bcAllSetsSize[bcNameToBcId.at( fs.getName())];
       integer const fluidPhaseId = fs.getComponent();
       integer const numFluidPhases = m_numPhases;
-      integer const useTotalMassEquation = 0;
+      integer useTotalMassEquation = 0;
       forAll< parallelDevicePolicy<> >( targetSet.size(), [sizeScalingFactor,
                                                            targetSet,
                                                            rankOffset,
