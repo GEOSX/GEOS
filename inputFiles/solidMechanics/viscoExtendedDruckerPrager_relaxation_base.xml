@@ -38,8 +38,7 @@
   <ElementRegions>
     <CellElementRegion
       name="Domain"
-      cellBlocks="{ cb-0_0_0,  cb-1_0_0,  cb-0_1_0,  cb-1_1_0, 
-                    cb-0_0_1,  cb-1_0_1,  cb-0_1_1,  cb-1_1_1 }"
+      cellBlocks="{ * }"
       materialList="{ rock }"/>
   </ElementRegions>
 <!-- SPHINX_ELEMENTREGIONS_END -->
