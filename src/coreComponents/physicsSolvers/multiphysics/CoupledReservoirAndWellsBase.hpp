@@ -364,8 +364,8 @@ private:
           forAll< serialPolicy >( perforationData.size(), [=] ( localIndex const iperf )
           {
             GEOS_UNUSED_VAR( iperf ); // unused if geos_error_if is nulld
-            GEOS_LOG_RANK( GEOS_FMT( "Perforation at ({},{},{}); perforated element center: ({},{},{}); transmissibility: {} [{}]",
-                                     perfLocation[iperf][0], perfLocation[iperf][1], perfLocation[iperf][2],
+            GEOS_LOG_RANK( GEOS_FMT( "{}: perforation at ({},{},{}), perforated element center = ({},{},{}), transmissibility = {} [{}]",
+                                     this->getName(), perfLocation[iperf][0], perfLocation[iperf][1], perfLocation[iperf][2],
                                      elemCenter[resElemRegion[iperf]][resElemSubRegion[iperf]][resElemIndex[iperf]][0],
                                      elemCenter[resElemRegion[iperf]][resElemSubRegion[iperf]][resElemIndex[iperf]][1],
                                      elemCenter[resElemRegion[iperf]][resElemSubRegion[iperf]][resElemIndex[iperf]][2],
