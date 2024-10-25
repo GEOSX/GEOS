@@ -78,7 +78,7 @@ auto const & getUserAvailableKeys() {
 
 Group * ElementRegionManager::createChild( string const & childKey, string const & childName )
 {
-  GEOS_ERROR_IF( !getUserAvailableKeys().count( childKey ) == 0,
+  GEOS_ERROR_IF( getUserAvailableKeys().count( childKey ) == 0,
                  CatalogInterface::unknownTypeError( childKey, getDataContext(), getUserAvailableKeys() ) );
   GEOS_LOG_RANK_0( "Adding Object " << childKey<<" named "<< childName<<" from ObjectManager::Catalog." );
 
