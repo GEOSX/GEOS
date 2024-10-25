@@ -53,7 +53,7 @@ public:
 
   /**
    * @brief Get the type of element in this subregion.
-   * @return a string specifying the type of element in this subregion
+   * @return the type of element in this subregion
    *
    * See class FiniteElementBase for possible element type.
    */

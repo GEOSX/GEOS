@@ -72,7 +72,7 @@
   <ElementRegions>
     <CellElementRegion
       name="Region"
-      cellBlocks="{ cb }"
+      cellBlocks="{ * }"
       materialList="{ nullModel }"/>
   </ElementRegions>
 
