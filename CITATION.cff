@@ -1,5 +1,6 @@
 cff-version: 1.2.0
-message: "Publications that present GEOSX simulations and/or results should cite as follows:"
+message: If you use this software, please cite this repository and our article in the
+  Journal of Open Source Software.
 authors:
 - family-names: "Settgast"
   given-names: "Randolph Richard"
@@ -166,3 +167,167 @@ version: 1.1.0
 doi: "10.5281/zenodo.7151031"
 date-released: 2024-09-14
 url: "https://github.com/GEOS-DEV/GEOS"
+preferred-citation:
+  authors:
+  - family-names: Settgast
+    given-names: Randolph R.
+    orcid: "https://orcid.org/0000-0002-2536-7867"
+  - family-names: Aronson
+    given-names: Ryan M.
+    orcid: "https://orcid.org/0009-0004-0785-5084"
+  - family-names: Besset
+    given-names: Julien R.
+  - family-names: Borio
+    given-names: Andrea
+    orcid: "https://orcid.org/0000-0003-2016-5403"
+  - family-names: Bui
+    given-names: Quan M.
+    orcid: "https://orcid.org/0000-0003-2648-0586"
+  - family-names: Byer
+    given-names: Thomas J.
+  - family-names: Castelletto
+    given-names: Nicola
+    orcid: "https://orcid.org/0000-0001-6816-6769"
+  - family-names: Citrain
+    given-names: Aurélien
+    orcid: "https://orcid.org/0009-0006-3742-1425"
+  - family-names: Corbett
+    given-names: Benjamin C.
+    orcid: "https://orcid.org/0009-0008-7108-9651"
+  - family-names: Corbett
+    given-names: James
+  - family-names: Cordier
+    given-names: Philippe
+    orcid: "https://orcid.org/0000-0002-6439-9263"
+  - family-names: Cremon
+    given-names: Matthias A.
+    orcid: "https://orcid.org/0000-0001-7458-6401"
+  - family-names: Crook
+    given-names: Cameron M.
+    orcid: "https://orcid.org/0000-0002-5366-6418"
+  - family-names: Cusini
+    given-names: Matteo
+    orcid: "https://orcid.org/0000-0002-6024-861X"
+  - family-names: Fei
+    given-names: Fan
+    orcid: "https://orcid.org/0000-0001-7273-4458"
+  - family-names: Frambati
+    given-names: Stefano
+    orcid: "https://orcid.org/0000-0003-0683-1203"
+  - family-names: Franc
+    given-names: Jacques
+    orcid: "https://orcid.org/0000-0002-8833-9425"
+  - family-names: Franceschini
+    given-names: Andrea
+    orcid: "https://orcid.org/0000-0003-4395-5125"
+  - family-names: Frigo
+    given-names: Matteo
+    orcid: "https://orcid.org/0000-0001-8150-1090"
+  - family-names: Fu
+    given-names: Pengcheng
+    orcid: "https://orcid.org/0000-0002-7408-3350"
+  - family-names: Gazzola
+    given-names: Thomas
+    orcid: "https://orcid.org/0000-0002-6103-4605"
+  - family-names: Gross
+    given-names: Herve
+    orcid: "https://orcid.org/0000-0002-1747-2018"
+  - family-names: Hamon
+    given-names: Francois
+    orcid: "https://orcid.org/0000-0001-8229-963X"
+  - family-names: Han
+    given-names: Brian M.
+    orcid: "https://orcid.org/0009-0002-8549-7644"
+  - family-names: Hao
+    given-names: Yue
+    orcid: "https://orcid.org/0000-0002-4543-8618"
+  - family-names: Hasanzade
+    given-names: Rasim
+  - family-names: Homel
+    given-names: Michael
+    orcid: "https://orcid.org/0000-0002-0399-0092"
+  - family-names: Huang
+    given-names: Jian
+    orcid: "https://orcid.org/0000-0002-5380-2563"
+  - family-names: Jin
+    given-names: Tao
+    orcid: "https://orcid.org/0000-0001-6658-8941"
+  - family-names: Ju
+    given-names: Isaac
+    orcid: "https://orcid.org/0000-0003-4110-7472"
+  - family-names: Kachuma
+    given-names: Dickson
+  - family-names: Karimi-Fard
+    given-names: Mohammad
+    orcid: "https://orcid.org/0000-0001-5707-165X"
+  - family-names: Kim
+    given-names: Taeho
+  - family-names: Klevtsov
+    given-names: Sergey
+    orcid: "https://orcid.org/0000-0001-9044-1827"
+  - family-names: Lapene
+    given-names: Alexandre
+  - family-names: Magri
+    given-names: Victor A. P.
+    orcid: "https://orcid.org/0000-0002-3389-523X"
+  - family-names: Mazuyer
+    given-names: Antoine
+    orcid: "https://orcid.org/0000-0002-0329-3385"
+  - family-names: N'diaye
+    given-names: Mamadou
+  - family-names: Osei-Kuffuor
+    given-names: Daniel
+    orcid: "https://orcid.org/0000-0002-6111-6205"
+  - family-names: Povolny
+    given-names: Stefan
+  - family-names: Ren
+    given-names: Guotong
+    orcid: "https://orcid.org/0000-0002-5821-9158"
+  - family-names: Semnani
+    given-names: Shabnam J.
+  - family-names: Sherman
+    given-names: Chris S.
+    orcid: "https://orcid.org/0000-0003-3550-0657"
+  - family-names: Rey
+    given-names: Melvin
+  - family-names: Tchelepi
+    given-names: Hamdi A.
+    orcid: "https://orcid.org/0000-0002-3084-6635"
+  - family-names: Tobin
+    given-names: William R.
+    orcid: "https://orcid.org/0009-0001-3960-6064"
+  - family-names: Tomin
+    given-names: Pavel
+    orcid: "https://orcid.org/0000-0003-4862-4288"
+  - family-names: Untereiner
+    given-names: Lionel
+    orcid: "https://orcid.org/0000-0002-8025-2616"
+  - family-names: Vargas
+    given-names: Arturo
+    orcid: "https://orcid.org/0000-0001-8001-5517"
+  - family-names: Waziri
+    given-names: Sohail
+  - family-names: Wen
+    given-names: Xianhuan
+    orcid: "https://orcid.org/0000-0002-6055-4553"
+  - family-names: White
+    given-names: Joshua A.
+    orcid: "https://orcid.org/0000-0003-3491-142X"
+  - family-names: Wu
+    given-names: Hui
+    orcid: "https://orcid.org/0000-0002-9575-3886"
+  date-published: 2024-10-10
+  doi: 10.21105/joss.06973
+  issn: 2475-9066
+  issue: 102
+  journal: Journal of Open Source Software
+  publisher:
+    name: Open Journals
+  start: 6973
+  title: "GEOS: A performance portable multi-physics simulation
+    framework for subsurface applications"
+  type: article
+  url: "https://joss.theoj.org/papers/10.21105/joss.06973"
+  volume: 9
+title: "GEOS: A performance portable multi-physics simulation framework
+  for subsurface applications"

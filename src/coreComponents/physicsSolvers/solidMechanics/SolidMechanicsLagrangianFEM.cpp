@@ -59,7 +59,6 @@ SolidMechanicsLagrangianFEM::SolidMechanicsLagrangianFEM( const string & name,
   m_maxForce( 0.0 ),
   m_maxNumResolves( 10 ),
   m_strainTheory( 0 ),
-  m_iComm( CommunicationTools::getInstance().getCommID() ),
   m_isFixedStressPoromechanicsUpdate( false )
 {
 
@@ -572,6 +571,7 @@ real64 SolidMechanicsLagrangianFEM::explicitStep( real64 const & time_n,
     solidMechanics::arrayView2dLayoutIncrDisplacement const & uhat = nodes.getField< solidMechanics::incrementalDisplacement >();
     solidMechanics::arrayView2dLayoutAcceleration const & acc = nodes.getField< solidMechanics::acceleration >();
 
+    MPI_iCommData m_iComm;
     FieldIdentifiers fieldsToBeSync;
     fieldsToBeSync.addFields( FieldLocation::Node,
                               { solidMechanics::velocity::key(),

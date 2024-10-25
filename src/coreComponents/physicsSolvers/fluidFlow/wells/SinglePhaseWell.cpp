@@ -50,6 +50,11 @@ SinglePhaseWell::SinglePhaseWell( const string & name,
 {
   m_numDofPerWellElement = 2;
   m_numDofPerResElement = 1;
+
+  this->registerWrapper( FlowSolverBase::viewKeyStruct::allowNegativePressureString(), &m_allowNegativePressure ).
+    setApplyDefaultValue( 1 ). // negative pressure is allowed by default
+    setInputFlag( InputFlags::OPTIONAL ).
+    setDescription( "Flag indicating if negative pressure is allowed" );
 }
 
 void SinglePhaseWell::registerDataOnMesh( Group & meshBodies )
@@ -823,8 +828,9 @@ bool SinglePhaseWell::checkSystemSolution( DomainPartition & domain,
 {
   GEOS_MARK_FUNCTION;
 
-  localIndex localCheck = 1;
   string const wellDofKey = dofManager.getKey( wellElementDofName() );
+  integer numNegativePressures = 0;
+  real64 minPressure = 0.0;
 
   forDiscretizationOnMeshTargets( domain.getMeshBodies(), [&] ( string const &,
                                                                 MeshLevel const & mesh,
@@ -838,33 +844,32 @@ bool SinglePhaseWell::checkSystemSolution( DomainPartition & domain,
                                                                    WellElementSubRegion const & subRegion )
 
     {
+      globalIndex const rankOffset = dofManager.rankOffset();
       // get the degree of freedom numbers on well elements
-      arrayView1d< globalIndex const > const & wellElemDofNumber =
+      arrayView1d< globalIndex const > const & dofNumber =
         subRegion.getReference< array1d< globalIndex > >( wellDofKey );
-      arrayView1d< integer const > const & wellElemGhostRank = subRegion.ghostRank();
+      arrayView1d< integer const > const & ghostRank = subRegion.ghostRank();
 
       // get a reference to the primary variables on well elements
-      arrayView1d< real64 const > const & wellElemPressure =
+      arrayView1d< real64 const > const & pres =
         subRegion.getField< fields::well::pressure >();
 
-      // here we can reuse the flow solver kernel checking that pressures are positive
-      localIndex const subRegionSolutionCheck =
-        singlePhaseWellKernels::
-          SolutionCheckKernel::launch< parallelDevicePolicy<> >( localSolution,
-                                                                 dofManager.rankOffset(),
-                                                                 wellElemDofNumber,
-                                                                 wellElemGhostRank,
-                                                                 wellElemPressure,
-                                                                 scalingFactor );
+      auto const statistics =
+        singlePhaseBaseKernels::SolutionCheckKernel::
+          launch< parallelDevicePolicy<> >( localSolution, rankOffset, dofNumber, ghostRank, pres, scalingFactor );
 
-      if( subRegionSolutionCheck == 0 )
-      {
-        localCheck = 0;
-      }
+      numNegativePressures += statistics.first;
+      minPressure = std::min( minPressure, statistics.second );
     } );
   } );
 
-  return MpiWrapper::min( localCheck );
+  numNegativePressures = MpiWrapper::sum( numNegativePressures );
+
+  if( numNegativePressures > 0 )
+    GEOS_LOG_LEVEL_RANK_0( 1, GEOS_FMT( "        {}: Number of negative pressure values: {}, minimum value: {} Pa",
+                                        getName(), numNegativePressures, fmt::format( "{:.{}f}", minPressure, 3 ) ) );
+
+  return (m_allowNegativePressure || numNegativePressures == 0) ?  1 : 0;
 }
 
 void
