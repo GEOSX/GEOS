@@ -14,13 +14,14 @@
  */
 
 #include "MPI_iCommData.hpp"
+#include "CommunicationTools.hpp"
 
 namespace geos
 {
 
-MPI_iCommData::MPI_iCommData( int const inputCommID ):
+MPI_iCommData::MPI_iCommData():
   m_size( 0 ),
-  m_commID( inputCommID ),      // CommunicationTools::getInstance().getCommID() ),
+  m_commID( CommunicationTools::getInstance().getCommID() ),
   m_mpiSendBufferRequest(),
   m_mpiRecvBufferRequest(),
   m_mpiSendBufferStatus(),
