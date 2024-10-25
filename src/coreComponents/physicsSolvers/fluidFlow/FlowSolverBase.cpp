@@ -882,13 +882,13 @@ void FlowSolverBase::updateStencilWeights( DomainPartition & domain ) const
 bool FlowSolverBase::checkSequentialSolutionIncrements( DomainPartition & GEOS_UNUSED_PARAM( domain ) ) const
 {
 
-  GEOS_LOG_LEVEL_RANK_0( 1, GEOS_FMT( "    {}: Max pressure change during outer iteration: {} Pa",
-                                      getName(), fmt::format( "{:.{}f}", m_sequentialPresChange, 3 ) ) );
+  GEOS_LOG_LEVEL_INFO_RANK_0( logInfo::Convergence, GEOS_FMT( "    {}: Max pressure change during outer iteration: {} Pa",
+                                                              getName(), fmt::format( "{:.{}f}", m_sequentialPresChange, 3 ) ) );
 
   if( m_isThermal )
   {
-    GEOS_LOG_LEVEL_RANK_0( 1, GEOS_FMT( "    {}: Max temperature change during outer iteration: {} K",
-                                        getName(), fmt::format( "{:.{}f}", m_sequentialTempChange, 3 ) ) );
+    GEOS_LOG_LEVEL_INFO_RANK_0( logInfo::Convergence, GEOS_FMT( "    {}: Max temperature change during outer iteration: {} K",
+                                                                getName(), fmt::format( "{:.{}f}", m_sequentialTempChange, 3 ) ) );
   }
 
   return (m_sequentialPresChange < m_maxSequentialPresChange) && (m_sequentialTempChange < m_maxSequentialTempChange);

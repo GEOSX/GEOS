@@ -41,6 +41,7 @@ public:
   using Base::m_stabilizationType;
   using Base::m_stabilizationRegionNames;
   using Base::m_stabilizationMultiplier;
+  using Base::getLogLevel;
 
   /**
    * @brief main constructor for MultiphasePoromechanics Objects

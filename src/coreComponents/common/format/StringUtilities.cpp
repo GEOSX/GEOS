@@ -57,10 +57,10 @@ string_view trimSpaces( string_view str )
 }
 
 
-string removeStringAndFollowingContent( string const & str,
-                                        string const & strToRemove )
+string removeStringAndFollowingContent( string_view const str,
+                                        string_view const strToRemove )
 {
-  string newStr = str;
+  string_view newStr = str;
 
   // check if the line contains the string to remove
   std::size_t const pos = newStr.find( strToRemove );
@@ -70,7 +70,7 @@ string removeStringAndFollowingContent( string const & str,
     // remove the character and everything afterwards
     newStr = newStr.substr( 0, pos );
   }
-  return newStr;
+  return string( newStr );
 }
 
 // put definition here so we can control the allowable values of T and

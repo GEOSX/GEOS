@@ -303,7 +303,6 @@ protected:
   real64 m_maxForce = 0.0;
   integer m_maxNumResolves;
   integer m_strainTheory;
-  MPI_iCommData m_iComm;
 
   /// Flag to indicate that the solver is running in fixed stress (sequential) mode
   bool m_isFixedStressPoromechanicsUpdate;
