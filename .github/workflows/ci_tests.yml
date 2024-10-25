@@ -250,6 +250,8 @@ jobs:
       ENABLE_TRILINOS: OFF
       GCP_BUCKET: geosx/ubuntu22.04-gcc11
       RUNS_ON: Runner_4core_16GB
+      REQUIRED_LABEL: "ci: run code coverage"
+
 
   # mac_builds:
   #   needs:

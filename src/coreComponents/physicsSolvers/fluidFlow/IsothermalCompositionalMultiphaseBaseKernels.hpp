@@ -1788,11 +1788,11 @@ public:
 /**
  * @class ResidualNormKernel
  */
-class ResidualNormKernel : public solverBaseKernels::ResidualNormKernelBase< 1 >
+class ResidualNormKernel : public solverBaseKernels::ResidualNormKernelBase< 2 >
 {
 public:
 
-  using Base = solverBaseKernels::ResidualNormKernelBase< 1 >;
+  using Base = solverBaseKernels::ResidualNormKernelBase< 2 >;
   using Base::m_minNormalizer;
   using Base::m_rankOffset;
   using Base::m_localResidual;
@@ -1840,9 +1840,9 @@ public:
     // step 2: volume residual
 
     real64 const valVol = LvArray::math::abs( m_localResidual[stack.localRow + m_numComponents] ) / volumeNormalizer;
-    if( valVol > stack.localValue[0] )
+    if( valVol > stack.localValue[1] )
     {
-      stack.localValue[0] = valVol;
+      stack.localValue[1] = valVol;
     }
   }
 
@@ -1866,8 +1866,8 @@ public:
 
     real64 const val = m_localResidual[stack.localRow + m_numComponents] * m_totalDens_n[ei][0]; // we need a mass here, hence the
                                                                                                  // multiplication
-    stack.localValue[0] += val * val;
-    stack.localNormalizer[0] += massNormalizer;
+    stack.localValue[1] += val * val;
+    stack.localNormalizer[1] += massNormalizer;
   }
 
 
@@ -1919,8 +1919,8 @@ public:
                    constitutive::MultiFluidBase const & fluid,
                    constitutive::CoupledSolidBase const & solid,
                    real64 const minNormalizer,
-                   real64 (& residualNorm)[1],
-                   real64 (& residualNormalizer)[1] )
+                   real64 (& residualNorm)[2],
+                   real64 (& residualNormalizer)[2] )
   {
     arrayView1d< globalIndex const > const dofNumber = subRegion.getReference< array1d< globalIndex > >( dofKey );
     arrayView1d< integer const > const ghostRank = subRegion.ghostRank();

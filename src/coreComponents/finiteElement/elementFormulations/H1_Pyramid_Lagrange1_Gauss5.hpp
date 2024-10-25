@@ -77,6 +77,7 @@ public:
   /// The number of sampling points per element.
   constexpr static int numSamplingPoints = numSamplingPointsPerDirection * numSamplingPointsPerDirection * numSamplingPointsPerDirection;
 
+  GEOS_HOST_DEVICE
   virtual ~H1_Pyramid_Lagrange1_Gauss5() override
   {}
 

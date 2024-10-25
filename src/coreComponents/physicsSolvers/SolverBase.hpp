@@ -30,6 +30,7 @@
 #include "physicsSolvers/NonlinearSolverParameters.hpp"
 #include "physicsSolvers/LinearSolverParameters.hpp"
 #include "physicsSolvers/SolverStatistics.hpp"
+#include "physicsSolvers/LogLevelsInfo.hpp"
 
 #include <limits>
 
@@ -934,12 +935,12 @@ protected:
    *
    * @param newNewtonNorm Residual norm at current iteration
    * @param oldNewtonNorm Residual norm at previous iteration
-   * @param weakestTol Weakest tolerance allowed (default 1e-3).
+   * @param krylovParams Linear solver parameters
    * @return Adaptive tolerance recommendation
    */
-  static real64 eisenstatWalker( real64 const newNewtonNorm,
-                                 real64 const oldNewtonNorm,
-                                 real64 const weakestTol );
+  real64 eisenstatWalker( real64 const newNewtonNorm,
+                          real64 const oldNewtonNorm,
+                          LinearSolverParameters::Krylov const & krylovParams );
 
   /**
    * @brief Get the Constitutive Name object

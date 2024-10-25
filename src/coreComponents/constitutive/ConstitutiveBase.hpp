@@ -113,6 +113,11 @@ public:
 
   localIndex numQuadraturePoints() const { return m_numQuadraturePoints; }
 
+  /**
+   * @return true if the instance has been produced with deliverClone()
+   */
+  bool isClone()  const { return m_isClone; }
+
   virtual std::vector< string > getSubRelationNames() const { return {}; }
 
   /**
@@ -162,7 +167,16 @@ public:
 
 private:
 
+  /**
+   * @brief Set a isClone state boolean
+   * @param newState The state of the new constitutive model
+   */
+  void setIsClone( bool const newState );
+
   localIndex m_numQuadraturePoints;
+
+  /// Indicate if this constitutive model a clone
+  bool m_isClone;
 };
 
 }
