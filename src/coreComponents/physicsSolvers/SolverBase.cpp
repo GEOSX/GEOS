@@ -1067,7 +1067,7 @@ bool SolverBase::solveNonlinearSystem( real64 const & time_n,
       if( !checkSystemSolution( domain, m_dofManager, m_solution.values(), scaleFactor ) )
       {
         // TODO try chopping (similar to line search)
-        GEOS_LOG_RANK_0( "    Solution check failed. Newton loop terminated." );
+        GEOS_LOG_RANK_0( GEOS_FMT( "    {}: Solution check failed. Newton loop terminated.", getName()) );
         break;
       }
 

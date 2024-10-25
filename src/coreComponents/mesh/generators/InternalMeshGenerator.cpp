@@ -96,7 +96,8 @@ InternalMeshGenerator::InternalMeshGenerator( string const & name, Group * const
   registerWrapper( viewKeyStruct::elementTypesString(), &m_elementType ).
     setInputFlag( InputFlags::REQUIRED ).
     setSizedFromParent( 0 ).
-    setDescription( "Element types of each mesh block" );
+    setDescription( GEOS_FMT( "Element types of each mesh block. Use \"C3D8\" for linear brick element. Possible values are: {}.",
+                              stringutilities::join( EnumStrings< ElementType >::get(), ", " ) ) );
 
   registerWrapper( viewKeyStruct::trianglePatternString(), &m_trianglePattern ).
     setApplyDefaultValue( 0 ).

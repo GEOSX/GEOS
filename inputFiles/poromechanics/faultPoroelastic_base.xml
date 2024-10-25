@@ -5,7 +5,7 @@
   <ElementRegions>
     <CellElementRegion
       name="Domain"
-      cellBlocks="{ 94_hexahedra, 95_hexahedra, 96_hexahedra, 97_hexahedra }"
+      cellBlocks="{ * }"
       materialList="{ water, porousRock }"/>  
   </ElementRegions> 
   <!-- SPHINX_ELEMENTREGIONS_END -->

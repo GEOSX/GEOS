@@ -799,13 +799,12 @@ void SinglePhasePoromechanicsConformingFractures< FLOW_SOLVER >::updateHydraulic
 }
 
 template class SinglePhasePoromechanicsConformingFractures<>;
-//template class SinglePhasePoromechanicsConformingFractures< SinglePhaseReservoirAndWells<> >;
+template class SinglePhasePoromechanicsConformingFractures< SinglePhaseReservoirAndWells<> >;
 
 namespace
 {
-//typedef SinglePhasePoromechanicsConformingFractures< SinglePhaseReservoirAndWells<> >
-// SinglePhaseReservoirPoromechanicsConformingFractures;
-//REGISTER_CATALOG_ENTRY( SolverBase, SinglePhaseReservoirPoromechanicsConformingFractures, string const &, Group * const )
+typedef SinglePhasePoromechanicsConformingFractures< SinglePhaseReservoirAndWells<> > SinglePhaseReservoirPoromechanicsConformingFractures;
+REGISTER_CATALOG_ENTRY( SolverBase, SinglePhaseReservoirPoromechanicsConformingFractures, string const &, Group * const )
 typedef SinglePhasePoromechanicsConformingFractures<> SinglePhasePoromechanicsConformingFractures;
 REGISTER_CATALOG_ENTRY( SolverBase, SinglePhasePoromechanicsConformingFractures, string const &, Group * const )
 }
