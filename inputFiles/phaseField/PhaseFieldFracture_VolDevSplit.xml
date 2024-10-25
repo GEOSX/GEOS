@@ -116,7 +116,7 @@
   <ElementRegions>
     <CellElementRegion
       name="Region1"
-      cellBlocks="{ hexahedra }"
+      cellBlocks="{ * }"
       materialList="{ shale }"/>
   </ElementRegions>
 
