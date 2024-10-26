@@ -81,6 +81,7 @@ SinglePhasePoromechanicsEFEM( NodeManager const & nodeManager,
   m_dFluidDensity_dPressure( embeddedSurfSubRegion.template getConstitutiveModel< constitutive::SingleFluidBase >( elementSubRegion.template getReference< string >(
                                                                                                                      fluidModelKey ) ).dDensity_dPressure() ),
   m_matrixPressure( elementSubRegion.template getField< fields::flow::pressure >() ),
+  m_fracturePressure( embeddedSurfSubRegion.template getField< fields::flow::pressure >() ),
   m_porosity_n( inputConstitutiveType.getPorosity_n() ),
   m_tractionVec( embeddedSurfSubRegion.getField< fields::contact::traction >() ),
   m_dTraction_dJump( embeddedSurfSubRegion.getField< fields::contact::dTraction_dJump >() ),
@@ -312,14 +313,16 @@ complete( localIndex const k,
 
   localIndex const embSurfIndex = m_cellsToEmbeddedSurfaces[k][0];
 
-  // Add traction contribution tranction
-  /// FIX: effective traction treatment: add fracture pressure here
+  // Add total traction contribution from penalty force and fracture pressure  
+  // total traction is T_total = -k * dispJump + pf (where dispJump < 0)
+  // -1 is because k*dispJump was saved in tractionVec
   LvArray::tensorOps::scaledAdd< 3 >( stack.localJumpResidual, stack.tractionVec, -1 );
   LvArray::tensorOps::scaledAdd< 3, 3 >( stack.localKww, stack.dTractiondw, -1 );
-
-  // JumpFractureFlowJacobian
-  /// FIX: effective traction treatment: remove m_dTraction_dPressure but add pressure 
-  real64 const localJumpFracPressureJacobian = -m_dTraction_dPressure[embSurfIndex] * m_surfaceArea[embSurfIndex];
+  
+  // fracture pressure only affects normal direction
+  stack.localJumpResidual[0] += m_fracturePressure[embSurfIndex] * m_surfaceArea[embSurfIndex];
+  // fracture force balance residual w.r.t. fracture pressure 
+  real64 const localJumpFracPressureJacobian = m_surfaceArea[embSurfIndex];
 
   // Mass balance accumulation
   real64 const newVolume = m_elementVolume( embSurfIndex ) + m_deltaVolume( embSurfIndex );

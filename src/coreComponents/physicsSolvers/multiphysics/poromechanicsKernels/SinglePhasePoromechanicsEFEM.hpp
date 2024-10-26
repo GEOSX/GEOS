@@ -269,6 +269,9 @@ protected:
   /// The rank-global fluid pressure array.
   arrayView1d< real64 const > const m_matrixPressure;
 
+  /// The rank-global fluid pressure array.
+  arrayView1d< real64 const > const m_fracturePressure;
+
   /// The rank-global delta-fluid pressure array.
   arrayView2d< real64 const > const m_porosity_n;
 
@@ -366,11 +369,6 @@ struct StateUpdateKernel
                                                                       dHydraulicAperture_dNormalTraction );
 
       deltaVolume[k] = hydraulicAperture[k] * area[k] - volume[k];
-
-      // traction on the fracture to include the pressure contribution
-      /// FIX: effective traction treatment
-      fractureTraction[k][0] -= pressure[k];
-      dFractureTraction_dPressure[k] = -1.0;
 
       real64 const jump[3] = LVARRAY_TENSOROPS_INIT_LOCAL_3 ( dispJump[k] );
       real64 const traction[3] = LVARRAY_TENSOROPS_INIT_LOCAL_3 ( fractureTraction[k] );
