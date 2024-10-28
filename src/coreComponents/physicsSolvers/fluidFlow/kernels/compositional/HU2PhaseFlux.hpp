@@ -708,7 +708,7 @@ protected:
       }
     }
 
-    // get average density
+    // get average density TODO change after #3337 is merged
 
     real64 densMean{};
     real64 dDensMean_dP[numFluxSupportPoints]{};
