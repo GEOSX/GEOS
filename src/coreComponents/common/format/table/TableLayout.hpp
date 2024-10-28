@@ -325,9 +325,7 @@ private:
 
   /**
    * @brief Recursively processes a variable number of arguments and adds them to the table data.
-   * @tparam T The first argument
    * @tparam Ts The remaining arguments
-   * @param arg The first argument to be processed
    * @param args The remaining arguments to be processed
    */
   template< typename ... Ts >
