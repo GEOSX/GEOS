@@ -58,7 +58,7 @@ SolidMechanicsMPM::SolidMechanicsMPM( const string & name,
   SolverBase( name, parent ),
   m_solverProfiling( 0 ),
   m_timeIntegrationOption( TimeIntegrationOption::ExplicitDynamic ),
-  m_iComm( CommunicationTools::getInstance().getCommID() ),
+//  m_iComm( CommunicationTools::getInstance().getCommID() ),
   m_prescribedBcTable( 0 ),
   m_boundaryConditionTypes(),
   m_bcTable(),
@@ -940,6 +940,7 @@ real64 SolidMechanicsMPM::explicitStep( real64 const & time_n,
   MeshLevel & mesh = grid.getBaseDiscretization();
   NodeManager & nodeManager = mesh.getNodeManager();
 
+  MPI_iCommData m_iComm;
   m_iComm.resize( domain.getNeighbors().size() );
 
 
@@ -1257,6 +1258,9 @@ void SolidMechanicsMPM::syncGridFields( std::vector< std::string > const & field
   FieldIdentifiers fieldsToBeSynced;
   fieldsToBeSynced.addFields( FieldLocation::Node, fieldNames );
   std::vector< NeighborCommunicator > & neighbors = domain.getNeighbors();
+
+  MPI_iCommData m_iComm;
+  m_iComm.resize( neighbors.size() );
 
   // (2) Swap send and receive indices so we can sum from ghost to master
   for( size_t n=0; n<neighbors.size(); n++ )
