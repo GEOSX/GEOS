@@ -5,6 +5,7 @@ set( physicsSolvers_headers
      contact/ContactFields.hpp
      contact/SolidMechanicsEmbeddedFractures.hpp
      contact/SolidMechanicsLagrangeContact.hpp
+     contact/SolidMechanicsLagrangeContactBubbleStab.hpp
      contact/SolidMechanicsAugmentedLagrangianContact.hpp
      contact/kernels/SolidMechanicsEFEMKernelsBase.hpp
      contact/kernels/SolidMechanicsEFEMKernels.hpp
@@ -14,7 +15,8 @@ set( physicsSolvers_headers
      contact/kernels/SolidMechanicsALMKernels.hpp
      contact/kernels/SolidMechanicsALMKernelsHelper.hpp
      contact/kernels/SolidMechanicsALMJumpUpdateKernels.hpp
-     contact/kernels/SolidMechanicsALMBubbleKernels.hpp 
+     contact/kernels/SolidMechanicsALMBubbleKernels.hpp
+     contact/kernels/SolidMechanicsLagrangeContactKernels.hpp 
      contact/LogLevelsInfo.hpp
      PARENT_SCOPE )
 
@@ -25,5 +27,6 @@ set( physicsSolvers_sources
      contact/ContactSolverBase.cpp
      contact/SolidMechanicsEmbeddedFractures.cpp
      contact/SolidMechanicsLagrangeContact.cpp
+     contact/SolidMechanicsLagrangeContactBubbleStab.cpp
      contact/SolidMechanicsAugmentedLagrangianContact.cpp
      PARENT_SCOPE )

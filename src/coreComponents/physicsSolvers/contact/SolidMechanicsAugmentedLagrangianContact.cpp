@@ -20,6 +20,7 @@
 #include "mesh/DomainPartition.hpp"
 #include "SolidMechanicsAugmentedLagrangianContact.hpp"
 
+#include "physicsSolvers/contact/kernels/RotationMatrixKernel.hpp"
 #include "physicsSolvers/contact/kernels/SolidMechanicsALMKernels.hpp"
 #include "physicsSolvers/contact/kernels/SolidMechanicsALMSimultaneousKernels.hpp"
 #include "physicsSolvers/contact/kernels/SolidMechanicsALMJumpUpdateKernels.hpp"
@@ -85,22 +86,6 @@ void SolidMechanicsAugmentedLagrangianContact::registerDataOnMesh( dataRepositor
       // Register the rotation matrix
       subRegion.registerField< contact::rotationMatrix >( this->getName() ).
         reference().resizeDimension< 1, 2 >( 3, 3 );
-
-      // Register the traction field
-      subRegion.registerField< contact::traction >( this->getName() ).
-        reference().resizeDimension< 1 >( 3 );
-
-      // Register the displacement jump
-      subRegion.registerField< contact::dispJump >( this->getName() ).
-        reference().resizeDimension< 1 >( 3 );
-
-      // Register the delta displacement jump
-      subRegion.registerField< contact::deltaDispJump >( this->getName() ).
-        reference().resizeDimension< 1 >( 3 );
-
-      // Register the displacement jump old
-      subRegion.registerField< contact::oldDispJump >( this->getName() ).
-        reference().resizeDimension< 1 >( 3 );
 
       // Register the penalty coefficients for the iterative procedure
       subRegion.registerField< contact::iterativePenalty >( this->getName() ).
@@ -254,7 +239,7 @@ void SolidMechanicsAugmentedLagrangianContact::implicitStepSetup( real64 const &
     rotationMatrix = subRegion.getField< fields::contact::rotationMatrix >().toView();
 
     // Compute rotation matrices
-    solidMechanicsALMKernels::ComputeRotationMatricesKernel::
+    rotationMatrixKernel::ComputeRotationMatricesKernel::
       launch< parallelDevicePolicy<> >( subRegion.size(),
                                         faceNormal,
                                         elemsToFaces,

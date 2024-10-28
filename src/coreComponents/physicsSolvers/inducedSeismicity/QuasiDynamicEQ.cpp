@@ -54,7 +54,7 @@ QuasiDynamicEQ::QuasiDynamicEQ( const string & name,
     setApplyDefaultValue( 1.0e-7 ).
     setDescription( "Target slip incrmeent for timestep size selction" );
 
-    /// just a Test.
+  /// just a Test.
 }
 
 void QuasiDynamicEQ::postInputInitialization()
