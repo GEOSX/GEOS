@@ -63,7 +63,6 @@ struct PPUPhaseFlux
    * @param dPhaseMassDens derivative of phase mass density wrt pressure, temperature, comp fraction
    * @param phaseCapPressure phase capillary pressure
    * @param dPhaseCapPressure_dPhaseVolFrac derivative of phase capillary pressure wrt phase volume fraction
-   * @param k_up uptream index for this phase
    * @param potGrad potential gradient for this phase
    * @param phaseFlux phase flux
    * @param dPhaseFlux_dP derivative of phase flux wrt pressure

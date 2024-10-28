@@ -43,10 +43,8 @@ using Deriv = constitutive::multifluid::DerivativeOffset;
 struct HU2PhaseFlux
 {
 
-  using UPWIND_SCHEME = HybridUpwind;
-
   /**
-   * @brief Form the Implicit Hybrid Upwind from pressure gradient and gravitational head
+   * @brief Simplified 2-phase version of hybrid upwinding
    * @tparam numComp number of components
    * @tparam numFluxSupportPoints number of flux support points
    * @param numPhase number of phases
@@ -67,7 +65,6 @@ struct HU2PhaseFlux
    * @param dPhaseMassDens derivative of phase mass density wrt pressure, temperature, comp fraction
    * @param phaseCapPressure phase capillary pressure
    * @param dPhaseCapPressure_dPhaseVolFrac derivative of phase capillary pressure wrt phase volume fraction
-   * @param k_up uptream index for this phase
    * @param potGrad potential gradient for this phase
    * @param phaseFlux phase flux
    * @param dPhaseFlux_dP derivative of phase flux wrt pressure
