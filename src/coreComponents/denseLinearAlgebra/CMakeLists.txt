@@ -14,7 +14,7 @@
 #[[
 Package: denseLinearAlgebra
 
-Contains interfaces for linear algebra BLAS and LAPACK packages.
+Contains dense linear algebra functions and interfaces to BLAS and LAPACK packages.
 #]]
 
 #
