@@ -132,13 +132,13 @@
   <Functions>
     <TableFunction name="initial_co2"
                    inputVarNames="{elementCenter}"
-                   coordinates="{0.0, 4., 5., 10.}"
-                   values="{1.0, 1.0, 0.0, 0.0}"
+                   coordinates="{0.0, 10.}"
+                   values="{1.0, 0.0}"
     />
     <TableFunction name="initial_water"
                    inputVarNames="{elementCenter}"
-                   coordinates="{0.0, 4., 5., 10.}"
-                   values="{0.0, 0.0, 1.0, 1.0}"
+                   coordinates="{0.0, 10.}"
+                   values="{0.0, 1.0}"
     />
   </Functions>
 
