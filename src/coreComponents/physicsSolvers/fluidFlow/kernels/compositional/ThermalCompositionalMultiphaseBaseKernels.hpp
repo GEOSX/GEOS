@@ -909,7 +909,7 @@ public:
     // step 2: volume residual
 
     real64 const valVol = LvArray::math::abs( m_localResidual[stack.localRow + m_numComponents] ) / volumeNormalizer;
-    if( valVol > stack.localValue[0] )
+    if( valVol > stack.localValue[1] )
     {
       stack.localValue[1] = valVol;
     }
@@ -917,7 +917,7 @@ public:
     // step 3: energy residual
 
     real64 const valEnergy = LvArray::math::abs( m_localResidual[stack.localRow + m_numComponents + 1] ) / energyNormalizer;
-    if( valEnergy > stack.localValue[1] )
+    if( valEnergy > stack.localValue[2] )
     {
       stack.localValue[2] = valEnergy;
     }
