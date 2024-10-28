@@ -337,8 +337,7 @@ struct StateUpdateKernel
    * @param[out] deltaVolume the change in volume
    * @param[out] aperture the aperture
    * @param[out] hydraulicAperture the effecture aperture
-   * @param[out] fractureTraction the fracture traction
-   * @param[out] dFractureTraction_dPressure the derivative of the fracture traction wrt pressure
+   * @param[out] fractureContactTraction the fracture contact traction 
    */
   template< typename POLICY, typename POROUS_WRAPPER, typename CONTACT_WRAPPER >
   static void
@@ -353,8 +352,7 @@ struct StateUpdateKernel
           arrayView1d< real64 > const & aperture,
           arrayView1d< real64 const > const & oldHydraulicAperture,
           arrayView1d< real64 > const & hydraulicAperture,
-          arrayView2d< real64 > const & fractureTraction,
-          arrayView1d< real64 > const & dFractureTraction_dPressure )
+          arrayView2d< real64 > const & fractureContactTraction )
   {
     forAll< POLICY >( size, [=] GEOS_HOST_DEVICE ( localIndex const k )
     {
@@ -364,19 +362,21 @@ struct StateUpdateKernel
       real64 dHydraulicAperture_dNormalJump = 0.0;
       real64 dHydraulicAperture_dNormalTraction = 0.0;
       hydraulicAperture[k] = contactWrapper.computeHydraulicAperture( aperture[k],
-                                                                      fractureTraction[k][0],
+                                                                      fractureContactTraction[k][0],
                                                                       dHydraulicAperture_dNormalJump,
                                                                       dHydraulicAperture_dNormalTraction );
 
       deltaVolume[k] = hydraulicAperture[k] * area[k] - volume[k];
 
       real64 const jump[3] = LVARRAY_TENSOROPS_INIT_LOCAL_3 ( dispJump[k] );
-      real64 const traction[3] = LVARRAY_TENSOROPS_INIT_LOCAL_3 ( fractureTraction[k] );
+      real64 const contactTraction[3] = LVARRAY_TENSOROPS_INIT_LOCAL_3 ( fractureContactTraction[k] );
 
+      // all perm update models below should need contact traction instead of total traction 
+      // (total traction is combined forces of fluid pressure and contact traction)
       porousMaterialWrapper.updateStateFromPressureApertureJumpAndTraction( k, 0, pressure[k],
                                                                             oldHydraulicAperture[k], hydraulicAperture[k],
                                                                             dHydraulicAperture_dNormalJump,
-                                                                            jump, traction );
+                                                                            jump, contactTraction );
 
     } );
   }
