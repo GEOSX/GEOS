@@ -41,7 +41,8 @@ WellSolverBase::WellSolverBase( string const & name,
   : SolverBase( name, parent ),
   m_numDofPerWellElement( 0 ),
   m_numDofPerResElement( 0 ),
-  m_ratesOutputDir( joinPath( OutputBase::getOutputDirectory(), name + "_rates" ) )
+  m_ratesOutputDir( joinPath( OutputBase::getOutputDirectory(), name + "_rates" ) ),
+  m_keepVariablesConstantDuringInitStep( 0 )
 {
   this->getWrapper< string >( viewKeyStruct::discretizationString() ).
     setInputFlag( InputFlags::FALSE );
