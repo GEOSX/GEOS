@@ -3,18 +3,18 @@ set( physicsSolvers_headers
      ${physicsSolvers_headers}
      contact/ContactSolverBase.hpp
      contact/ContactFields.hpp
-     contact/SolidMechanicsEFEMKernelsBase.hpp
-     contact/SolidMechanicsEFEMKernels.hpp
-     contact/SolidMechanicsEFEMStaticCondensationKernels.hpp
-     contact/SolidMechanicsEFEMKernelsHelper.hpp
      contact/SolidMechanicsEmbeddedFractures.hpp
      contact/SolidMechanicsLagrangeContact.hpp
      contact/SolidMechanicsAugmentedLagrangianContact.hpp
-     contact/SolidMechanicsALMKernelsBase.hpp
-     contact/SolidMechanicsALMKernels.hpp
-     contact/SolidMechanicsALMKernelsHelper.hpp
-     contact/SolidMechanicsALMJumpUpdateKernels.hpp
-     contact/SolidMechanicsALMBubbleKernels.hpp 
+     contact/kernels/SolidMechanicsEFEMKernelsBase.hpp
+     contact/kernels/SolidMechanicsEFEMKernels.hpp
+     contact/kernels/SolidMechanicsEFEMStaticCondensationKernels.hpp
+     contact/kernels/SolidMechanicsEFEMKernelsHelper.hpp
+     contact/kernels/SolidMechanicsALMKernelsBase.hpp
+     contact/kernels/SolidMechanicsALMKernels.hpp
+     contact/kernels/SolidMechanicsALMKernelsHelper.hpp
+     contact/kernels/SolidMechanicsALMJumpUpdateKernels.hpp
+     contact/kernels/SolidMechanicsALMBubbleKernels.hpp 
      contact/LogLevelsInfo.hpp
      PARENT_SCOPE )
 

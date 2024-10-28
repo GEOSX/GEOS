@@ -20,10 +20,10 @@
 #include "mesh/DomainPartition.hpp"
 #include "SolidMechanicsAugmentedLagrangianContact.hpp"
 
-#include "physicsSolvers/contact/SolidMechanicsALMKernels.hpp"
-#include "physicsSolvers/contact/SolidMechanicsALMSimultaneousKernels.hpp"
-#include "physicsSolvers/contact/SolidMechanicsALMJumpUpdateKernels.hpp"
-#include "physicsSolvers/contact/SolidMechanicsALMBubbleKernels.hpp"
+#include "physicsSolvers/contact/kernels/SolidMechanicsALMKernels.hpp"
+#include "physicsSolvers/contact/kernels/SolidMechanicsALMSimultaneousKernels.hpp"
+#include "physicsSolvers/contact/kernels/SolidMechanicsALMJumpUpdateKernels.hpp"
+#include "physicsSolvers/contact/kernels/SolidMechanicsALMBubbleKernels.hpp"
 #include "physicsSolvers/contact/LogLevelsInfo.hpp"
 
 #include "constitutive/ConstitutiveManager.hpp"
