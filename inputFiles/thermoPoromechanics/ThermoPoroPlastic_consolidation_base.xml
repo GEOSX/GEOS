@@ -2,9 +2,8 @@
 
 <Problem>
   <Solvers
-  gravityVector="{ 0.0, 0.0, 0.0 }">
-  
-  <!-- SPHINX_POROMECHANICSSOLVER -->    
+  gravityVector="{ 0.0, 0.0, 0.0 }">  
+ 
   <SinglePhasePoromechanics
     name="thermoPoroSolver"
     solidSolverName="solidMechSolver"
@@ -18,16 +17,14 @@
     <LinearSolverParameters
       directParallel="0"/>
   </SinglePhasePoromechanics>
-  <!-- SPHINX_POROMECHANICSSOLVER_END -->
-  <!-- SPHINX_MECHANICALSOLVER -->    
+  
   <SolidMechanicsLagrangianSSLE
     name="solidMechSolver"
     timeIntegrationOption="QuasiStatic"
     logLevel="1"
     discretization="FE1"
     targetRegions="{ Domain }"/>
-  <!-- SPHINX_MECHANICALSOLVER_END -->
-  <!-- SPHINX_SINGLEPHASEFVM -->    
+
   <SinglePhaseFVM
     name="flowSolver"
     logLevel="1"
@@ -41,8 +38,7 @@
       newtonTol="1.0e-6"/>
     <LinearSolverParameters
       directParallel="0"/>
-  </SinglePhaseFVM>
-  <!-- SPHINX_SINGLEPHASEFVM_END -->    
+  </SinglePhaseFVM>   
  </Solvers>
 
   <NumericalMethods>
@@ -65,9 +61,7 @@
       materialList="{ rock, water, thermalCond }"/>
   </ElementRegions>
 
-  <FieldSpecifications>
-
-    <!-- SPHINX_IC -->        
+  <FieldSpecifications>      
     <FieldSpecification
       name="initialPressure"
       initialCondition="1"
@@ -108,9 +102,7 @@
       fieldName="rockSolid_stress"
       component="2"
       scale="-2.457"/>
-    <!-- SPHINX_IC_END -->            
-
-    <!-- SPHINX_ZERO_DISPLACEMENT_BC -->    
+  
     <FieldSpecification
       name="xconstraint"
       fieldName="totalDisplacement"
@@ -131,9 +123,7 @@
       component="2"
       objectPath="nodeManager"
       setNames="{ zneg, zpos }"/>
-    <!-- SPHINX_ZERO_DISPLACEMENT_BC_END -->        
-
-    <!-- SPHINX_TOP_SURFACE_BC -->
+      
     <Traction
       name="traction"
       objectPath="faceManager"
@@ -154,9 +144,7 @@
       objectPath="faceManager"
       fieldName="temperature"
       scale="323.0"
-      setNames="{ ypos }"/>
-    <!-- SPHINX_TOP_SURFACE_BC_END -->
-    
+      setNames="{ ypos }"/>    
   </FieldSpecifications>
 
   <Functions>
