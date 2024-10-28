@@ -88,7 +88,7 @@ char const *xmlInput =
     <CellElementRegion
       name="Domain"
       cellBlocks="{ block1 }"
-      materialList="{ fluid, rock, relperm }"/>
+      materialList="{ fluid, rock, relperm, capPressure }"/>
   </ElementRegions>
 
 
@@ -113,7 +113,7 @@ char const *xmlInput =
 
 
   <Constitutive>
- <TwoPhaseFluid
+    <TwoPhaseFluid
            name="fluid"
            phaseNames="{water22, gas22}"
            densityTableNames="{densityTablePhase1, densityTablePhase2}"    
@@ -123,28 +123,35 @@ char const *xmlInput =
       name="rock"
       solidModelName="nullSolid"
       porosityModelName="rockPorosity"
-      permeabilityModelName="rockPerm"/>
+      permeabilityModelName="rockPerm" />
 
     <NullModel
-      name="nullSolid"/>
+      name="nullSolid" />
 
     <PressurePorosity
       name="rockPorosity"
       defaultReferencePorosity="1.0"
       referencePressure="0.0"
-      compressibility="0.0"/>
+      compressibility="0.0" />
 
     <ConstantPermeability
       name="rockPerm"
       permeabilityComponents="{ 1.0, 1.0, 1.0 }"/>
 
-    <!-- should probably double check that the phases are defined in the correct order -->
     <BrooksCoreyRelativePermeability
       name="relperm"
       phaseNames="{ water, oil }"
       phaseMinVolumeFraction="{ 0.0, 0.0 }"
       phaseRelPermExponent="{ 1.0, 1.0 }"
-      phaseRelPermMaxValue="{ 1.0, 1.0 }"/>
+      phaseRelPermMaxValue="{ 1.0, 1.0 }" />
+
+    <BrooksCoreyCapillaryPressure
+      name="capPressure"
+      phaseNames="{ water, gas }"
+      phaseMinVolumeFraction="{ 0.0, 0.0 }"
+      phaseCapPressureExponentInv="{ 4 , 1 }"
+      phaseEntryPressure="{ 0.75, 0 }"
+      capPressureEpsilon="1e-8" />      
   </Constitutive>
 
   <FieldSpecifications>
@@ -406,7 +413,7 @@ real64 constexpr ImmiscibleMultiphaseFlowTest::dt;
 real64 constexpr ImmiscibleMultiphaseFlowTest::eps;
 
 
-TEST_F( ImmiscibleMultiphaseFlowTest, jacobianNumericalCheck_flux )
+TEST_F( ImmiscibleMultiphaseFlowTest, jacobianNumericalCheck_fluxTerm )
 {
   real64 const perturb = 0.000001;
   real64 const tol = 1e-2; // 1% error margin
@@ -422,7 +429,7 @@ TEST_F( ImmiscibleMultiphaseFlowTest, jacobianNumericalCheck_flux )
 }
 
 
-TEST_F( ImmiscibleMultiphaseFlowTest, jacobianNumericalCheck_accumulationVolumeBalance )
+TEST_F( ImmiscibleMultiphaseFlowTest, jacobianNumericalCheck_accumulationTerm )
 {
   real64 const perturb = sqrt( eps );
   real64 const tol = 1e-2; // 1% error margin
@@ -434,6 +441,22 @@ TEST_F( ImmiscibleMultiphaseFlowTest, jacobianNumericalCheck_accumulationVolumeB
                                arrayView1d< real64 > const & localRhs )
   {
     solver->assembleAccumulationTerm( domain, solver->getDofManager(), localMatrix, localRhs );
+  } );
+}
+
+
+TEST_F( ImmiscibleMultiphaseFlowTest, jacobianNumericalCheck_full )
+{
+  real64 const perturb = 0.000001;
+  real64 const tol = 1e-2; // 1% error margin
+
+  DomainPartition & domain = state.getProblemManager().getDomainPartition();
+
+  testNumericalJacobian( *solver, domain, perturb, tol,
+                         [&] ( CRSMatrixView< real64, globalIndex const > const & localMatrix,
+                               arrayView1d< real64 > const & localRhs )
+  {
+    solver->assembleSystem( time, dt, domain, solver->getDofManager(), localMatrix, localRhs );
   } );
 }
 

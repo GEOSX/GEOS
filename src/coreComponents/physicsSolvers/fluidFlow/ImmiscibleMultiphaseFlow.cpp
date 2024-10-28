@@ -185,7 +185,7 @@ void ImmiscibleMultiphaseFlow::setConstitutiveNames( ElementSubRegionBase & subR
 void ImmiscibleMultiphaseFlow::initializePreSubGroups()
 {
   m_linearSolverParameters.get().mgr.strategy = LinearSolverParameters::MGR::StrategyType::immiscibleMultiphaseFVM;
-  
+
   FlowSolverBase::initializePreSubGroups();
 
   DomainPartition & domain = this->getGroupByPath< DomainPartition >( "/Problem/domain" );
@@ -763,7 +763,7 @@ void ImmiscibleMultiphaseFlow::applyBoundaryConditions( real64 const time_n,
 
 // apply flux boundary conditions
   applySourceFluxBC( time_n, dt, dofManager, domain, localMatrix.toViewConstSizes(), localRhs.toView() );
-    
+
   //   for( localIndex row = 0; row < localMatrix.toViewConstSizes().numRows(); ++row )
   // {
   //   std::cout << "row " << row << std::endl;
@@ -948,11 +948,11 @@ void ImmiscibleMultiphaseFlow::applyDirichletBC( real64 const time_n,
 }
 
 void ImmiscibleMultiphaseFlow::applySourceFluxBC( real64 const time,
-                                                     real64 const dt,
-                                                     DofManager const & dofManager,
-                                                     DomainPartition & domain,
-                                                     CRSMatrixView< real64, globalIndex const > const & localMatrix,
-                                                     arrayView1d< real64 > const & localRhs ) const
+                                                  real64 const dt,
+                                                  DofManager const & dofManager,
+                                                  DomainPartition & domain,
+                                                  CRSMatrixView< real64, globalIndex const > const & localMatrix,
+                                                  arrayView1d< real64 > const & localRhs ) const
 {
   GEOS_MARK_FUNCTION;
 
@@ -999,10 +999,10 @@ void ImmiscibleMultiphaseFlow::applySourceFluxBC( real64 const time,
                                                     mesh,
                                                     SourceFluxBoundaryCondition::catalogName(),
                                                     [&]( SourceFluxBoundaryCondition const & fs,
-                                                                    string const & setName,
-                                                                    SortedArrayView< localIndex const > const & targetSet,
-                                                                    ElementSubRegionBase & subRegion,
-                                                                    string const & )
+                                                         string const & setName,
+                                                         SortedArrayView< localIndex const > const & targetSet,
+                                                         ElementSubRegionBase & subRegion,
+                                                         string const & )
     {
       if( fs.getLogLevel() >= 1 && m_nonlinearSolverParameters.m_numNewtonIterations == 0 )
       {
