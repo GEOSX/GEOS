@@ -174,7 +174,7 @@ public:
    * @brief get the current solid effective stress
    * return a constant arrayView3d to effective stress in Voigt form
    */
-  arrayView3d< real64 const, solid::STRESS_USD > const getStress() const
+  arrayView3d< real64 const, solid::STRESS_USD > const getEffectiveStress() const
   {
     return getBaseSolidModel().getStress();
   }

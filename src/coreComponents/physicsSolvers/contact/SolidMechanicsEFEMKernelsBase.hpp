@@ -256,12 +256,6 @@ public:
 
     // Gauss contirbution to eqMStress which is EqMatrix*effStress, all stresses are in Voigt notation
     real64 eqMStress_gauss[3]{};
-    real64 effStress[6] = {m_effStress[k][q][0], 
-                         m_effStress[k][q][1], 
-                         m_effStress[k][q][2],
-                         m_effStress[k][q][3],
-                         m_effStress[k][q][4],
-                         m_effStress[k][q][5]};
 
     //  Compatibility, equilibrium and strain operators. The compatibility operator is constructed as
     //  a 3 x 6 because it is more convenient for construction purposes (reduces number of local var).
@@ -307,7 +301,7 @@ public:
     // transp(B)DB
     LvArray::tensorOps::Rij_eq_AikBjk< nUdof, 3, 6 >( Kuw_gauss, matBD, compMatrix );
     // EqMatrix * effStress
-    LvArray::tensorOps::Ri_eq_AijBj<3, 6> (eqMStress_gauss, eqMatrix, effStress);
+    LvArray::tensorOps::Ri_eq_AijBj<3, 6> (eqMStress_gauss, eqMatrix, m_effStress[k][q]);
 
     /// FIX: add old Equilibrium operator times oldStress (in Voigt notation)
 
