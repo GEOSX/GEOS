@@ -2,8 +2,72 @@
 
 <Problem>
   <Included>
-    <File name="./ThermoPoroMCC_consolidation_base.xml" />
+    <File name="./ThermoPoroPlastic_consolidation_base.xml" />
   </Included>
+
+  <Constitutive>
+    <PorousModifiedCamClay
+      name="rock"
+      solidModelName="rockSolid"
+      porosityModelName="rockPorosity"
+      permeabilityModelName="rockPerm"
+      solidInternalEnergyModelName="rockInternalEnergy"
+    />
+
+    <ModifiedCamClay 
+      name="rockSolid"
+      defaultDensity="2700"
+      defaultRefPressure="-1.0"
+      defaultRefStrainVol="0"
+      defaultShearModulus="2500.0"
+      defaultPreConsolidationPressure="-15.0e6"
+      defaultCslSlope="1.2"
+      defaultRecompressionIndex="0.0001"
+      defaultVirginCompressionIndex="0.003"
+      defaultDrainedLinearTEC="3e-9"
+    />
+
+    <!-- SPHINX_POROSITY -->    
+    <BiotPorosity
+      name="rockPorosity"
+      defaultGrainBulkModulus="1.0e27"
+      defaultReferencePorosity="0.2"
+      defaultPorosityTEC="3e-7"/>
+    <!-- SPHINX_POROSITY_END -->        
+
+    <!-- SPHINX_INTERNAL_ENERGY -->            
+    <SolidInternalEnergy
+      name="rockInternalEnergy"
+      referenceVolumetricHeatCapacity="1.672e5"
+      referenceTemperature="0.0"
+      referenceInternalEnergy="0.0"/>
+    <!-- SPHINX_INTERNAL_ENERGY_END -->        
+    
+    <!-- SPHINX_FLUID -->                
+    <ThermalCompressibleSinglePhaseFluid
+      name="water"
+      defaultDensity="1000"
+      defaultViscosity="1e-3"
+      referencePressure="0.0"
+      referenceTemperature="0.0"
+      compressibility="0.0"
+      thermalExpansionCoeff="0.0"
+      viscosibility="0.0"
+      specificHeatCapacity="1.672e2"
+      referenceInternalEnergy="0.001"/>
+    <!-- SPHINX_FLUID_END -->                
+
+    <!-- SPHINX_PERMEABILITY_CONDUCTIVITY -->    
+    <ConstantPermeability
+      name="rockPerm"
+      permeabilityComponents="{ 4.0e-9, 4.0e-9, 4.0e-9 }"/>
+    
+    <SinglePhaseThermalConductivity
+      name="thermalCond"
+      defaultThermalConductivityComponents="{ 836, 836, 836 }"/>
+    <!-- SPHINX_PERMEABILITY_CONDUCTIVITY_END -->
+    
+  </Constitutive>
 
   <Mesh>
     <InternalMesh

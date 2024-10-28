@@ -2,8 +2,69 @@
 
 <Problem>
   <Included>
-    <File name="./ThermoPoroDruckerPrager_consolidation_base.xml" />
+    <File name="./ThermoPoroPlastic_consolidation_base.xml" />
   </Included>
+
+  <Constitutive>
+    <PorousDruckerPrager
+      name="rock"
+      solidModelName="rockSolid"
+      porosityModelName="rockPorosity"
+      permeabilityModelName="rockPerm"
+      solidInternalEnergyModelName="rockInternalEnergy"
+    />
+
+    <DruckerPrager 
+      name="rockSolid"
+      defaultDensity="2700"
+      defaultBulkModulus="0.5e9"
+      defaultShearModulus="0.3e9"
+      defaultCohesion="0.1e6"
+      defaultFrictionAngle="15.27"
+      defaultDilationAngle="15.0"
+      defaultHardeningRate="10.0e6"
+      defaultDrainedLinearTEC="3e-7"/> 
+
+    <!-- SPHINX_POROSITY -->    
+    <BiotPorosity
+      name="rockPorosity"
+      defaultGrainBulkModulus="1.0e27"
+      defaultReferencePorosity="0.2"
+      defaultPorosityTEC="3e-7"/>
+    <!-- SPHINX_POROSITY_END -->        
+
+    <!-- SPHINX_INTERNAL_ENERGY -->            
+    <SolidInternalEnergy
+      name="rockInternalEnergy"
+      referenceVolumetricHeatCapacity="1.672e5"
+      referenceTemperature="0.0"
+      referenceInternalEnergy="0.0"/>
+    <!-- SPHINX_INTERNAL_ENERGY_END -->        
+    
+    <!-- SPHINX_FLUID -->                
+    <ThermalCompressibleSinglePhaseFluid
+      name="water"
+      defaultDensity="1000"
+      defaultViscosity="1e-3"
+      referencePressure="0.0"
+      referenceTemperature="0.0"
+      compressibility="0.0"
+      thermalExpansionCoeff="0.0"
+      viscosibility="0.0"
+      specificHeatCapacity="1.672e2"
+      referenceInternalEnergy="0.001"/>
+    <!-- SPHINX_FLUID_END -->                
+
+    <!-- SPHINX_PERMEABILITY_CONDUCTIVITY -->    
+    <ConstantPermeability
+      name="rockPerm"
+      permeabilityComponents="{ 4.0e-9, 4.0e-9, 4.0e-9 }"/>
+    
+    <SinglePhaseThermalConductivity
+      name="thermalCond"
+      defaultThermalConductivityComponents="{ 836, 836, 836 }"/>
+    <!-- SPHINX_PERMEABILITY_CONDUCTIVITY_END -->  
+  </Constitutive>
 
   <Mesh>
     <InternalMesh
