@@ -46,7 +46,7 @@ void invokePhaseDispatchLambda ( S val, T numPhases, LAMBDA && lambda )
   {
     GEOS_ERROR( "Unsupported state: " << numPhases );
   }
-};
+}
 
 template< typename S, typename T, typename LAMBDA >
 void invokeThermalDispatchLambda ( S val, T isThermal, LAMBDA && lambda )
@@ -65,7 +65,7 @@ void invokeThermalDispatchLambda ( S val, T isThermal, LAMBDA && lambda )
   {
     GEOS_ERROR( "Unsupported state: " << isThermal );
   }
-};
+}
 
 template< typename T, typename LAMBDA >
 void kernelLaunchSelectorThermalSwitch( T value, LAMBDA && lambda )
