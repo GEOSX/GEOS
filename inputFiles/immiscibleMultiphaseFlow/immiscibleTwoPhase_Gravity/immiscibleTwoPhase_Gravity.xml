@@ -1,0 +1,195 @@
+<?xml version="1.0"?>
+
+<Problem>
+  <Solvers
+    gravityVector="{ 0.0, 0.0, -10 }">
+    <ImmiscibleMultiphaseFlow
+      name="FlowSolver"
+      discretization="TPFA"
+      targetRegions="{ Domain }"
+      writeLinearSystem="0"
+      temperature="300"
+      initialDt="0.001">
+      <NonlinearSolverParameters
+        newtonTol="1.0e-6"
+        lineSearchAction="None"
+        newtonMaxIter="10" />
+      <LinearSolverParameters
+        directParallel="0" />
+    </ImmiscibleMultiphaseFlow>
+  </Solvers>
+
+  <Mesh>
+    <InternalMesh
+      name="mesh1"
+      elementTypes="{ C3D8 }"
+      xCoords="{ 0, 1 }"
+      yCoords="{ 0, 1 }"
+      zCoords="{ 0, 10 }"
+      nx="{ 1 }"
+      ny="{ 1 }"
+      nz="{ 10 }"
+      cellBlockNames="{ block1 }" />
+  </Mesh>
+  
+  <Geometry>
+    <Box
+      name="sink"
+      xMin="{ -0.01, -0.01, -0.01 }"
+      xMax="{ 1.01, 1.01, 1.01 }" />
+  </Geometry>
+
+  <Events
+    maxTime="0.4">
+    <PeriodicEvent
+      name="outputs"
+      timeFrequency="0.01"
+      target="/Outputs/vtkOutput" />
+
+    <PeriodicEvent
+      name="solverApplications"
+      target="/Solvers/FlowSolver" />
+  </Events>
+
+  <NumericalMethods>
+    <FiniteVolume>
+      <TwoPointFluxApproximation
+        name="TPFA" />
+    </FiniteVolume>
+  </NumericalMethods>
+
+  <ElementRegions>
+    <CellElementRegion
+      name="Domain"
+      cellBlocks="{ block1 }"
+      materialList="{ fluid, rock, relperm }" />
+  </ElementRegions>
+
+  <Functions>
+    <TableFunction
+      name="densityTablePhase1"
+      coordinates="{ 0.0}"
+      values="{ 10 }" />
+
+    <TableFunction
+      name="densityTablePhase2"
+      coordinates="{ 0.0 }"
+      values="{ 1 }" />
+
+    <TableFunction
+      name="viscosityTablePhase1"
+      coordinates="{ 0.0 }"
+      values="{ 1.0 }" />
+
+    <TableFunction
+      name="viscosityTablePhase2"
+      coordinates="{ 0.0 }"
+      values="{ 1.0 }" />
+
+    <TableFunction
+      name="saturationTable1"
+      inputVarNames="{ elementCenter }"
+      coordinateFiles="{ x.txt, y.txt, z.txt }"
+      voxelFile="initialSaturation1.txt"
+      interpolation="nearest" />
+
+    <TableFunction
+      name="saturationTable2"
+      inputVarNames="{ elementCenter }"
+      coordinateFiles="{ x.txt, y.txt, z.txt }"
+      voxelFile="initialSaturation2.txt"
+      interpolation="nearest" />
+    
+    <TableFunction
+      name="pressureTable"
+      inputVarNames="{ elementCenter }"
+      coordinateFiles="{ x.txt, y.txt, z.txt }"
+      voxelFile="initialPressure.txt"
+      interpolation="nearest" />
+  </Functions>
+
+  <Constitutive>
+    <TwoPhaseFluid
+      name="fluid"
+      phaseNames="{ water, gas }"
+      densityTableNames="{ densityTablePhase1, densityTablePhase2 }"
+      viscosityTableNames="{ viscosityTablePhase1, viscosityTablePhase2 }" />
+
+    <CompressibleSolidConstantPermeability
+      name="rock"
+      solidModelName="nullSolid"
+      porosityModelName="rockPorosity"
+      permeabilityModelName="rockPerm" />
+
+    <NullModel
+      name="nullSolid" />
+
+    <PressurePorosity
+      name="rockPorosity"
+      defaultReferencePorosity="1.0"
+      referencePressure="0.0"
+      compressibility="0.0" />
+
+    <ConstantPermeability
+      name="rockPerm"
+      permeabilityComponents="{ 1, 1, 1 }" />
+
+    <BrooksCoreyRelativePermeability
+      name="relperm"
+      phaseNames="{ water, oil }"
+      phaseMinVolumeFraction="{ 0.0, 0.0 }"
+      phaseRelPermExponent="{ 1.0, 1.0 }"
+      phaseRelPermMaxValue="{ 1.0, 1.0 }" />
+  </Constitutive>
+
+  <FieldSpecifications>
+    <FieldSpecification
+      name="Porosity"
+      initialCondition="1"
+      setNames="{ all }"
+      objectPath="ElementRegions/Domain/block1"
+      fieldName="rockPorosity_referencePorosity"
+      scale="1.0" />
+
+    <FieldSpecification
+      name="initialPressure"
+      initialCondition="1"
+      setNames="{ all }"
+      objectPath="ElementRegions/Domain/block1"
+      fieldName="pressure"
+      scale="1.0"
+      functionName="pressureTable" />
+
+    <FieldSpecification
+      name="initialSat1"
+      initialCondition="1"
+      setNames="{ all }"
+      objectPath="ElementRegions/Domain/block1"
+      fieldName="phaseVolumeFraction"
+      component="0"
+      scale="1.0"
+      functionName="saturationTable1" />
+
+    <FieldSpecification
+      name="initialSat2"
+      initialCondition="1"
+      setNames="{ all }"
+      objectPath="ElementRegions/Domain/block1"
+      fieldName="phaseVolumeFraction"
+      component="1"
+      scale="1.0"
+      functionName="saturationTable2" />
+
+    <FieldSpecification
+      name="sinkTermP"
+      objectPath="ElementRegions/Domain/block1"
+      fieldName="pressure"
+      scale="500.0"
+      setNames="{ sink }" />
+  </FieldSpecifications>
+
+  <Outputs>
+    <VTK
+      name="vtkOutput" />
+  </Outputs>
+</Problem>

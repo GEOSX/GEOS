@@ -1,0 +1,62 @@
+
+<?xml version="1.0" ?>
+
+<Problem>
+  <Included>
+    <File name="./buckleyLeverett_base.xml"/>
+  </Included>
+
+  <!-- SPHINX_MESH -->
+  <Mesh>
+    <InternalMesh
+      name="mesh"
+      elementTypes="{ C3D8 }"
+      xCoords="{ 0, 0.1 }"
+      yCoords="{ 0, 0.00202683 }"
+      zCoords="{ 0, 1 }"
+      nx="{ 1000 }"
+      ny="{ 1 }"
+      nz="{ 1 }"
+      cellBlockNames="{ cellBlock }"/>
+  </Mesh>
+  <!-- SPHINX_MESH_END -->
+
+  <Geometry>
+    <Box
+      name="source"
+      xMin="{-0.00001, -0.00001, -0.00001}"
+      xMax="{ 0.00011, 1.00001, 1.00001}"/>
+
+    <Box
+      name="sink"
+      xMin="{ .09989, -0.00001, -0.00001}"
+      xMax="{ 0.10001, 1.00001, 1.00001}"/>
+  </Geometry>
+
+  <Events
+    maxTime="70.1">
+    
+    <PeriodicEvent
+      name="outputs"
+      timeFrequency="1"
+      targetExactTimestep="1"
+      target="/Outputs/vtkOutput"/>
+
+    <PeriodicEvent
+      name="timeHistoryOutput"
+      timeFrequency="10"
+      targetExactTimestep="1"
+      target="/Outputs/timeHistoryOutput" />
+
+    <PeriodicEvent
+      name="timeHistoryCollection"
+      timeFrequency="10"
+      targetExactTimestep="1"
+      target="/Tasks/phaseVolumeFractionCollection" />
+
+    <PeriodicEvent
+      name="solverApplications"
+      maxEventDt="0.01"
+      target="/Solvers/FlowSolver"/>    
+  </Events>
+</Problem>
