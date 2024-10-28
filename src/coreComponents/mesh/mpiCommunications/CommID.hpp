@@ -44,14 +44,15 @@ public:
    */
   ~CommID();
 
-  /// default copy constructor
-  CommID( CommID const & ) = default;
 
   /**
    * Move constructor
    * @param src The source to move data from.
    */
   CommID( CommID && src );
+
+  /// deleted default copy constructor
+  CommID( CommID const & ) = delete;
 
   /// deleted copy assignment operator
   CommID & operator=( CommID const & ) = delete;
