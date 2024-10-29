@@ -536,6 +536,7 @@ public:
     {
       real32 const localIncrement_p = val*(-1-2*m_epsilon[k])*m_p_n[m_elemsToNodes[k][j]];
       stack.stiffnessVectorLocal_p[ i ] += localIncrement_p * stack.factor;
+
       real32 const localIncrement_q = val*((-2*m_delta[k]-m_vti_f[k])*m_p_n[m_elemsToNodes[k][j]] +(m_vti_f[k]-1)*m_q_n[m_elemsToNodes[k][j]]);
       stack.stiffnessVectorLocal_q[ i ] += localIncrement_q * stack.factor;
     } );

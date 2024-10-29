@@ -226,8 +226,6 @@ void AcousticVTIWaveEquationSEM::precomputeSourceAndReceiverTerm( MeshLevel & ba
   baseMesh.getNodeManager().elementList().toView().freeOnDevice();
   baseMesh.getFaceManager().nodeList().toView().freeOnDevice();
   baseMesh.getNodeManager().referencePosition().freeOnDevice();
-  m_sourceCoordinates.freeOnDevice();
-  m_receiverCoordinates.freeOnDevice();
   facesToNodes.freeOnDevice();
   nodesToElements.freeOnDevice();
 }
