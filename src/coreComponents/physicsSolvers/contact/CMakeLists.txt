@@ -7,6 +7,7 @@ set( physicsSolvers_headers
      contact/SolidMechanicsLagrangeContact.hpp
      contact/SolidMechanicsLagrangeContactBubbleStab.hpp
      contact/SolidMechanicsAugmentedLagrangianContact.hpp
+     contact/kernels/SolidMechanicsConformingContactKernelsBase.hpp
      contact/kernels/SolidMechanicsEFEMKernelsBase.hpp
      contact/kernels/SolidMechanicsEFEMKernels.hpp
      contact/kernels/SolidMechanicsEFEMStaticCondensationKernels.hpp

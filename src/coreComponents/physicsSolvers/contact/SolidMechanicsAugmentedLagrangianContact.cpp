@@ -20,7 +20,7 @@
 #include "mesh/DomainPartition.hpp"
 #include "SolidMechanicsAugmentedLagrangianContact.hpp"
 
-#include "physicsSolvers/contact/kernels/RotationMatrixKernel.hpp"
+#include "physicsSolvers/contact/kernels/SolidMechanicsConformingContactKernelsBase.hpp"
 #include "physicsSolvers/contact/kernels/SolidMechanicsALMKernels.hpp"
 #include "physicsSolvers/contact/kernels/SolidMechanicsALMSimultaneousKernels.hpp"
 #include "physicsSolvers/contact/kernels/SolidMechanicsALMJumpUpdateKernels.hpp"
@@ -239,7 +239,7 @@ void SolidMechanicsAugmentedLagrangianContact::implicitStepSetup( real64 const &
     rotationMatrix = subRegion.getField< fields::contact::rotationMatrix >().toView();
 
     // Compute rotation matrices
-    rotationMatrixKernel::ComputeRotationMatricesKernel::
+    solidMechanicsConformingContactKernels::ComputeRotationMatricesKernel::
       launch< parallelDevicePolicy<> >( subRegion.size(),
                                         faceNormal,
                                         elemsToFaces,

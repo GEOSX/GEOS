@@ -19,7 +19,7 @@
  */
 #include "SolidMechanicsLagrangeContactBubbleStab.hpp"
 
-#include "physicsSolvers/contact/kernels/RotationMatrixKernel.hpp"
+#include "physicsSolvers/contact/kernels/SolidMechanicsConformingContactKernelsBase.hpp"
 #include "physicsSolvers/contact/kernels/SolidMechanicsLagrangeContactKernels.hpp"
 #include "physicsSolvers/contact/kernels/SolidMechanicsALMSimultaneousKernels.hpp"
 #include "physicsSolvers/contact/kernels/SolidMechanicsALMJumpUpdateKernels.hpp"
@@ -213,7 +213,7 @@ void SolidMechanicsLagrangeContactBubbleStab::implicitStepSetup( real64 const & 
       subRegion.getField< fields::contact::rotationMatrix >().toView();
 
     // Compute rotation matrices
-    rotationMatrixKernel::ComputeRotationMatricesKernel::launch< parallelDevicePolicy<> >( subRegion.size(),
+    solidMechanicsConformingContactKernels::ComputeRotationMatricesKernel::launch< parallelDevicePolicy<> >( subRegion.size(),
                                                                                            faceNormal,
                                                                                            elemsToFaces,
                                                                                            rotationMatrix );
