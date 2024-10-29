@@ -30,7 +30,7 @@ namespace geos
 
 class ParticleManager;
 class SpatialPartition;
-
+  
 /**
  * @class ParticleMeshGenerator
  * @brief The ParticleMeshGenerator class is a class handling import of particle data from an externel particle file.
@@ -53,6 +53,9 @@ public:
     VelocityX,
     VelocityY,
     VelocityZ,
+    AccelerationX,
+    AccelerationY,
+    AccelerationZ,    
     MaterialType,
     ParticleType,
     ContactGroup,
@@ -149,6 +152,9 @@ ENUM_STRINGS( ParticleMeshGenerator::ParticleColumnHeaders,
               "VelocityX",
               "VelocityY",
               "VelocityZ",
+              "AccelerationX",
+              "AccelerationY",
+              "AccelerationZ",  
               "MaterialType",
               "ParticleType",
               "ContactGroup",
@@ -177,7 +183,8 @@ ENUM_STRINGS( ParticleMeshGenerator::ParticleColumnHeaders,
               "SurfacePositionZ",
               "SurfaceTractionX",
               "SurfaceTractionY",
-              "SurfaceTractionZ" );
+              "SurfaceTractionZ",
+              "COUNT" );
 
 } /* namespace geos */
 

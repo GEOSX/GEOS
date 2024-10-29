@@ -109,7 +109,17 @@ public:
    * @param particleVelocity The input list of velocities
    */
   void setParticleVelocity( array2d< real64 > const particleVelocity )
-  { m_particleVelocity = particleVelocity; }
+  { m_particleVelocity = particleVelocity; }  
+
+  array2d< real64 > getParticleAcceleration() const override
+  { return m_particleAcceleration; }  
+
+  /**
+   * @brief Set the list of particle velocities in this subregion.
+   * @param particleAcceleration The input list of velocities
+   */
+  void setParticleAcceleration( array2d< real64 > const particleAcceleration )
+  { m_particleAcceleration = particleAcceleration; }  
 
   array2d< real64 > getParticleInitialMaterialDirection() const override
   { return m_particleInitialMaterialDirection; }
@@ -339,6 +349,9 @@ private:
 
   /// Member level field for the particle velocity.
   array2d< real64 > m_particleVelocity;
+
+  /// Member level field for the particle acceleration.
+  array2d< real64 > m_particleAcceleration;  
 
   /// Member level field for the particle initial material direction.
   array2d< real64 > m_particleInitialMaterialDirection;

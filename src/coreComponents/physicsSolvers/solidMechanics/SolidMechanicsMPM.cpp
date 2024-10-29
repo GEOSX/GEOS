@@ -1266,6 +1266,7 @@ void SolidMechanicsMPM::registerDataOnMesh( Group & meshBodies )
         subRegion.registerField< particleSPHJacobian >( getName() );
         subRegion.registerField< particleCohesiveZoneFlag >( getName() );
         subRegion.registerField< particleCopyFlag >( getName() );
+        // subRegion.registerField< particleDistanceToCrackTip >( );
 
         // Double-indexed fields (vectors and symmetric tensors stored in Voigt notation)
         subRegion.registerField< particleBodyForce >( getName() ).reference().resizeDimension< 1 >( 3 );
@@ -1281,7 +1282,8 @@ void SolidMechanicsMPM::registerDataOnMesh( Group & meshBodies )
         subRegion.registerField< particleCohesiveForce >( getName() ).reference().resizeDimension< 1 >( 3 );
         subRegion.registerField< particleReferenceMappedNodes >( getName() ).reference().resizeDimension< 1 >( 8 * subRegion.numberOfVerticesPerParticle() );
         subRegion.registerField< particleReferenceShapeFunctionValues >( getName() ).reference().resizeDimension< 1 >( 8 * subRegion.numberOfVerticesPerParticle() );
-        subRegion.registerField< particleCohesiveFieldMapping >( getName() ).reference().resizeDimension< 1 >( 8 * subRegion.numberOfVerticesPerParticle() );
+        subRegion.registerField< particleCohesiveFieldMapping >( getName() ).reference().resizeDimension< 1 >( 8 * subRegion.numberOfVerticesPerParticle() );    
+        // subRegion.registerField< particleAcceleration >( );
 
         // Triple-indexed fields (vectors of vectors, non-symmetric tensors)
         subRegion.registerField< particleReferenceRVectors >( getName() ).reference().resizeDimension< 1, 2 >( 3, 3 );
@@ -8748,6 +8750,7 @@ void SolidMechanicsMPM::performXPICUpdate( real64 dt,
     // Registered by subregion
     arrayView2d< real64 > const particlePosition = subRegion.getParticleCenter();
     arrayView2d< real64 > const particleVelocity = subRegion.getParticleVelocity();
+    arrayView2d< real64 > const particleAcceleration = subRegion.getParticleAcceleration();
     arrayView1d< int const > const particleGroup = subRegion.getParticleGroup();
     arrayView2d< real64 const > const particleSurfaceNormal = subRegion.getParticleSurfaceNormal();
 
@@ -8768,9 +8771,15 @@ void SolidMechanicsMPM::performXPICUpdate( real64 dt,
     {
       localIndex const p = activeParticleIndices[pp];
 
+      // Temporary variable to store old velocity
+      real64 oldParticleVelocity[3] = {0.0, 0.0, 0.0};  // Initialize to zeros
+
       // Zero velocity gradient
       for( int i=0; i < numDims; i++ )
       {
+        oldParticleVelocity[i] = particleVelocity[p][i];   // set oldParticleVelocity to particleVelocity
+        particleAcceleration[p][i] = 0.0;
+
         particlePosition[p][i] -= particleVelocity[p][i] * dt / 2.0;
         particleVelocity[p][i] = 0.0;
         for( int j=0; j < numDims; j++ )
@@ -8805,6 +8814,7 @@ void SolidMechanicsMPM::performXPICUpdate( real64 dt,
           // particlePosition[p][i] += S * ( gVPlus * dt  - ( (1 + m ) * gA * dt + m * ( vStar[mappedNode][fieldIndex][i] - gVPlus ) ) * dt / 2.0 );
 
           particleVelocity[p][i] += S * ( m * ( gVPlus - vStar[mappedNode][fieldIndex][i] ) + ( 1 - m ) * gA * dt );
+          particleAcceleration[p][i] += ( particleVelocity[p][i] - oldParticleVelocity[i] ) / dt;
 
           // CC: What about update to velocity gradient?
           // Currently copy this from FLIP udpate with change from gridVelocity to vStar

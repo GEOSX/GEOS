@@ -60,6 +60,7 @@ void ParticleSubRegion::copyFromParticleBlock( ParticleBlockABC & particleBlock 
   m_particleStrengthScale = particleBlock.getParticleStrengthScale();
   m_particleCenter = particleBlock.getParticleCenter();
   m_particleVelocity = particleBlock.getParticleVelocity();
+  m_particleAcceleration = particleBlock.getParticleAcceleration();
   m_particleMaterialDirection = particleBlock.getParticleMaterialDirection();
   m_particleVolume = particleBlock.getParticleVolume();
   m_particleRVectors = particleBlock.getParticleRVectors();

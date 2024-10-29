@@ -98,6 +98,12 @@ public:
   virtual array2d< real64 > getParticleVelocity() const = 0;
 
   /**
+   * @brief Get the list of particle accelerations in this subregion.
+   * @return the list of particle accelerations in this subregion.
+   */
+  virtual array2d< real64 > getParticleAcceleration()) const = 0;  
+
+  /**
    * @brief Get the list of particle material directions in this subregion.
    * @return the list of particle material directions in this subregion.
    */

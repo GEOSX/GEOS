@@ -50,6 +50,9 @@ public:
     VelocityX,
     VelocityY,
     VelocityZ,
+    AccelerationX,
+    AccelerationY,
+    AccelerationZ,
     MaterialType,
     ContactGroup,
     SurfaceFlag,
@@ -69,7 +72,8 @@ public:
     MaterialDirectionZ,
     SurfaceNormalX,
     SurfaceNormalY,
-    SurfaceNormalZ
+    SurfaceNormalZ,
+    COUNT   // holds the number of particle column header options e.g. 30 for [0-29]
   };
 
   /**
@@ -152,10 +156,16 @@ ENUM_STRINGS( ParticleMeshGenerator::ParticleColumnHeaders,
               "VelocityX",
               "VelocityY",
               "VelocityZ",
+              "AccelerationX",
+              "AccelerationY",
+              "AccelerationZ",  
               "MaterialType",
+              "ParticleType",
               "ContactGroup",
               "SurfaceFlag",
               "Damage",
+              "Porosity",
+              "Temperature",
               "StrengthScale",
               "RVectorXX",
               "RVectorXY",
@@ -171,7 +181,14 @@ ENUM_STRINGS( ParticleMeshGenerator::ParticleColumnHeaders,
               "MaterialDirectionZ",
               "SurfaceNormalX",
               "SurfaceNormalY",
-              "SurfaceNormalZ" );
+              "SurfaceNormalZ",
+              "SurfacePositionX",
+              "SurfacePositionY",
+              "SurfacePositionZ",
+              "SurfaceTractionX",
+              "SurfaceTractionY",
+              "SurfaceTractionZ",
+              "COUNT" );
 
 } /* namespace geos */
 

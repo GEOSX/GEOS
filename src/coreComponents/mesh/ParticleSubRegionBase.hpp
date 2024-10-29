@@ -224,6 +224,19 @@ public:
   { return m_particleVelocity; }
 
   /**
+   * @brief Get the acceleration of each particle in this subregion.
+   * @return an arrayView1d of const particle accelerations
+   */
+  arrayView2d< real64 const > getParticleAcceleration() const
+  { return m_particleAcceleration; }
+
+  /**
+   * @copydoc getParticleAcceleration() const
+   */
+  arrayView2d< real64 > getParticleAcceleration()
+  { return m_particleAcceleration; }  
+
+  /**
    * @brief Get the material direction of each particle in this subregion.
    * @return an arrayView1d of const particle material direction
    */
@@ -430,6 +443,9 @@ public:
     /// @return String key for the member level field for the particle velocity.
     static constexpr char const * particleVelocityString() { return "particleVelocity"; }
 
+    /// @return String key for the member level field for the particle acceleration.
+    static constexpr char const * particleAccelerationString() { return "particleAcceleration"; }    
+
     /// @return String key for the member level field for the particle material direction.
     static constexpr char const * particleMaterialDirectionString() { return "particleMaterialDirection"; }
 
@@ -554,6 +570,9 @@ protected:
 
   /// Member level field for the particle velocity.
   array2d< real64 > m_particleVelocity;
+
+  /// Member level field for the particle acceleration.
+  array2d< real64 > m_particleAcceleration;
 
   /// Member level field for the particle material direction.
   array2d< real64 > m_particleMaterialDirection;

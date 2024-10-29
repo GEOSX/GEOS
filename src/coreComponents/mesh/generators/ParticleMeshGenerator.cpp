@@ -193,8 +193,8 @@ void ParticleMeshGenerator::generateMesh( DomainPartition & domain )
 
       // Reformat particle data and apply defaults to fields not specified
       std::vector< double > lineDataInside;
-      // CC: TODO: Can you get the number of options from the enum directly?
-      for(int c = 0; c < 27; c++)
+      // CC: TODO: Can you get the number of options from the enum directly? maybe JA
+      for(int c = 0; c < static_cast<int>(ParticleColumnHeaders::COUNT); c++)
       {
         if( columnHeaderMap.find( c ) != columnHeaderMap.end() )
         {
@@ -221,6 +221,15 @@ void ParticleMeshGenerator::generateMesh( DomainPartition & domain )
           case ParticleColumnHeaders::SurfaceNormalY:
           case ParticleColumnHeaders::SurfaceNormalZ:
           case ParticleColumnHeaders::Damage:
+            defaultValue = 0.0;
+            break;
+          case ParticleColumnHeaders::AccelerationX:
+            defaultValue = 0.0;
+            break;
+          case ParticleColumnHeaders::AccelerationY:
+            defaultValue = 0.0;
+            break;
+          case ParticleColumnHeaders::AccelerationZ:
             defaultValue = 0.0;
             break;
           default:
@@ -276,6 +285,7 @@ void ParticleMeshGenerator::generateMesh( DomainPartition & domain )
     array1d< globalIndex > particleID( npInBlock );
     array2d< real64 > particleCenter( npInBlock, 3 );
     array2d< real64 > particleVelocity( npInBlock, 3 );
+    array2d< real64 > particleAcceleration( npInBlock, 3 );
     array2d< real64 > particleMaterialDirection( npInBlock, 3 );
     array1d< int > particleGroup( npInBlock );
     array1d< int > particleSurfaceFlag( npInBlock );
@@ -303,6 +313,11 @@ void ParticleMeshGenerator::generateMesh( DomainPartition & domain )
       particleVelocity[index][1] = particleData[particleType][i][5];
       particleVelocity[index][2] = particleData[particleType][i][6];
 
+      // Acceleration
+      particleAcceleration[i][0] = particleData[b][i][static_cast< int >( ParticleColumnHeaders::AccelerationX )];
+      particleAcceleration[i][1] = particleData[b][i][static_cast< int >( ParticleColumnHeaders::AccelerationY )];
+      particleAcceleration[i][2] = particleData[b][i][static_cast< int >( ParticleColumnHeaders::AccelerationZ )];
+  
       // Material (set above) is [7]
 
       // Group
@@ -377,6 +392,7 @@ void ParticleMeshGenerator::generateMesh( DomainPartition & domain )
     particleBlock.setParticleID( particleID );
     particleBlock.setParticleCenter( particleCenter );
     particleBlock.setParticleVelocity( particleVelocity );
+    particleBlock.setParticleAcceleration( particleAcceleration );
     particleBlock.setParticleInitialMaterialDirection( particleMaterialDirection );
     particleBlock.setParticleMaterialDirection( particleMaterialDirection );
     particleBlock.setParticleGroup( particleGroup );
