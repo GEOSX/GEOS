@@ -1,0 +1,366 @@
+<?xml version="1.0" ?>
+
+<Problem>
+  <Solvers
+    gravityVector="{ 0.0, 0.0, 0.0 }">
+    <SinglePhasePoromechanicsEmbeddedFractures
+      name="poroSolver"
+      targetRegions="{ Reservoir, Overburden, Underburden, Sideburden, Fracture }"
+      initialDt="1000"
+      flowSolverName="flowSolver"
+      solidSolverName="fractureMechSolver"
+      logLevel="1"
+      isThermal="1">
+      <NonlinearSolverParameters
+        maxTimeStepCuts="1"
+        newtonTol="1e-03"
+        newtonMaxIter="10"
+        maxAllowedResidualNorm="1e+15"/>
+      <LinearSolverParameters
+        directParallel="1"
+        solverType="direct"
+        preconditionerType="mgr"
+        logLevel="1"/>
+    </SinglePhasePoromechanicsEmbeddedFractures>
+
+    <SolidMechanicsEmbeddedFractures
+      name="fractureMechSolver"
+      targetRegions="{ Reservoir, Overburden, Underburden, Sideburden, Fracture }"
+      timeIntegrationOption="QuasiStatic"
+      discretization="FE1">
+      <NonlinearSolverParameters
+        maxTimeStepCuts="1"
+        newtonTol="1e-03"
+        newtonMaxIter="10"/>
+      <LinearSolverParameters
+        directParallel="0"/>
+    </SolidMechanicsEmbeddedFractures>
+
+    <SinglePhaseFVM
+      name="flowSolver"
+      discretization="singlePhaseTPFA"
+      targetRegions="{ Reservoir, Overburden, Underburden, Sideburden, Fracture }"
+      isThermal="1">
+      <NonlinearSolverParameters
+        maxTimeStepCuts="1"
+        newtonTol="1e-03"
+        newtonMaxIter="10"/>
+      <LinearSolverParameters
+        directParallel="1"/>
+    </SinglePhaseFVM>
+
+    <EmbeddedSurfaceGenerator
+      name="SurfaceGenerator"      
+      targetRegions="{ Reservoir, Overburden, Underburden, Sideburden, Fracture }"
+      targetObjects="{ Fracture1, Fracture2, Fracture3, Fracture4, Fracture5 }"
+      fractureRegion="Fracture"
+      logLevel="1"
+      discretization="FE1"
+      mpiCommOrder="1"/>
+  </Solvers>
+
+  <Mesh>
+    <VTKMesh
+      name="mesh"
+      file="../../../GEOSDATA/DataSets/Egg/egg_withBurdens_small.vts"
+      regionAttribute="elementRegionMarker"
+      fieldsToImport="{ PERM }"
+      fieldNamesInGEOSX="{ rockPermeability_permeability }"/>
+  </Mesh>
+
+  <Geometry>
+    
+    <Box xMax="{500.0, 500.0, 1.0}" 
+         xMin="{0.0, 0.0, -500.0}" 
+         name="bottom" />
+    
+    <Box xMax="{500.0, 1.0, 500.0}" 
+         xMin="{0.0,   0.0, -500.0}" 
+         name="front" />
+
+    <Box xMax="{1.0, 500.0, 500.0}" 
+         xMin="{-1.0, 0.0, -500.0}" 
+         name="left" />
+         
+    <Box xMax="{500.0, 481.0, 500.0}" 
+         xMin="{0.0,   479.0, -500.0}" 
+         name="back" />
+
+    <Box xMax="{481.0, 500.0, 500.0}" 
+         xMin="{479.0, 0.0, -500.0}" 
+         name="right" />     
+
+    <Rectangle
+      name="Fracture1"
+      origin="{ 110, 340, 40 }"
+      normal="{ -0.707, 0.707, 0 }"
+      lengthVector="{ 0.707, 0.707, 0 }"
+      widthVector="{ 0, 0, 1 }"
+      dimensions="{ 80, 60 }"/>
+    <Rectangle
+      name="Fracture2"
+      origin="{ 140, 280, 35 }"
+      normal="{ 1, -1, 1 }"
+      lengthVector="{ 0.3333, 0.6666, 0.3333 }"
+      widthVector="{ -0.5, 0, 0.5 }"
+      dimensions="{ 120, 30 }"/>
+
+    <Rectangle
+      name="Fracture3"
+      origin="{ 160, 220, 1.5 }"
+      normal="{ 1, -1, 1 }"
+      lengthVector="{ 0.3333, 0.6666, 0.3333 }"
+      widthVector="{ -0.5, 0, 0.5 }"
+      dimensions="{ 160, 200 }"/>
+
+    <Rectangle
+      name="Fracture4"
+      origin="{ 200, 180, 40 }"
+      normal="{ -0.707, 0.707, 0 }"
+      lengthVector="{ 0.707, 0.707, 0 }"
+      widthVector="{ 0, 0, 1 }"
+      dimensions="{ 180, 55 }"/>
+
+    <Rectangle
+      name="Fracture5"
+      origin="{ 350, 195, 40 }"
+      normal="{ -0.5, 0, 0.5 }"
+      widthVector="{ 1, -1, 1 }"
+      lengthVector="{ 0.3333, 0.6666, 0.3333 }"
+      dimensions="{ 140, 40 }"/>
+      
+    <!-- <Rectangle
+      name="Fracture5"
+      origin="{ 220, 100, 40 }"
+      normal="{ 1, -1, 1 }"
+      lengthVector="{ 0.3333, 0.6666, 0.3333 }"
+      widthVector="{ -0.5, 0, 0.5 }"
+      dimensions="{ 120, 30 }"/> -->       
+  </Geometry>
+
+  <Events
+    maxTime="1500000">
+    <SoloEvent
+      name="preFracture"
+      target="/Solvers/SurfaceGenerator"/>
+
+    <SoloEvent
+      name="FracGenerationoutputs"
+      target="/Outputs/vtkOutput"/>  
+
+    <PeriodicEvent
+      name="solverApplications"
+      target="/Solvers/poroSolver"/>
+
+    <PeriodicEvent
+      name="outputs"
+      cycleFrequency="1"
+      target="/Outputs/vtkOutput"/>
+  </Events>
+
+  <NumericalMethods>
+    <FiniteElements>
+      <FiniteElementSpace
+        name="FE1"
+        order="1"/>
+    </FiniteElements>
+
+    <FiniteVolume>
+      <TwoPointFluxApproximation
+        name="singlePhaseTPFA"/>
+    </FiniteVolume>
+  </NumericalMethods>
+
+  <ElementRegions>
+    <CellElementRegion
+      name="Reservoir"
+      cellBlocks="{ 1_hexahedra }"
+      materialList="{ porousRock, water, thermalCond }"/>
+
+    <CellElementRegion
+      name="Overburden"
+      cellBlocks="{ 3_hexahedra }"
+      materialList="{ porousRock, water, thermalCond }"/> 
+    
+    <CellElementRegion
+      name="Underburden"
+      cellBlocks="{ 2_hexahedra }"
+      materialList="{ porousRock, water, thermalCond }"/>
+      
+    <CellElementRegion
+      name="Sideburden"
+      cellBlocks="{ 0_hexahedra }"
+      materialList="{ porousRock, water, thermalCond }"/>  
+
+    <SurfaceElementRegion
+      name="Fracture"
+      subRegionType="embeddedElement"
+      materialList="{ water, fractureFilling, fractureContact, thermalCond }"
+      defaultAperture="1e-3"/>
+  </ElementRegions>
+
+  <Constitutive>
+    <PorousElasticIsotropic
+      name="porousRock"
+      solidModelName="rock"
+      porosityModelName="rockPorosity"
+      permeabilityModelName="rockPermeability"
+      solidInternalEnergyModelName="rockInternalEnergy"/>
+
+    <ElasticIsotropic
+      name="rock"
+      defaultDensity="1"
+      defaultBulkModulus="25e9"
+      defaultShearModulus="15e9"/>
+
+    <ConstantPermeability
+      name="rockPermeability"
+      permeabilityComponents="{ 1.0e-12, 1.0e-12, 1.0e-12 }"/>
+
+    <SolidInternalEnergy
+      name="rockInternalEnergy"
+      referenceVolumetricHeatCapacity="1.672e5"
+      referenceTemperature="0.0"
+      referenceInternalEnergy="0.0"/>  
+
+    <ThermalCompressibleSinglePhaseFluid
+      name="water"
+      defaultDensity="1000"
+      defaultViscosity="1e-3"
+      referencePressure="1e5"
+      referenceTemperature="0.0"
+      compressibility="1.0e-10"
+      thermalExpansionCoeff="0.0"
+      viscosibility="0.0"
+      specificHeatCapacity="1.672e2"
+      referenceInternalEnergy="0.001"/> 
+
+    <SinglePhaseConstantThermalConductivity
+      name="thermalCond"
+      thermalConductivityComponents="{ 10, 10, 10 }"/>   
+
+    <BiotPorosity
+      name="rockPorosity"
+      defaultGrainBulkModulus="1.0e27"
+      defaultReferencePorosity="0.2"/>
+
+    <CompressibleSolidParallelPlatesPermeability
+      name="fractureFilling"
+      solidModelName="nullSolid"
+      porosityModelName="fracturePorosity"
+      permeabilityModelName="fracturePerm"
+      solidInternalEnergyModelName="rockInternalEnergy"/>
+
+    <NullModel
+      name="nullSolid"/>
+
+    <PressurePorosity
+      name="fracturePorosity"
+      defaultReferencePorosity="1.00"
+      referencePressure="0.0"
+      compressibility="0.0"/>
+
+    <ParallelPlatesPermeability
+      name="fracturePerm"/>
+
+    <FrictionlessContact
+      name="fractureContact"
+      penaltyStiffness="0.0e8"
+      apertureTableName="apertureTable"/>
+  </Constitutive>
+
+  <FieldSpecifications>
+    <FieldSpecification
+      name="fracPorosity"
+      initialCondition="1"
+      setNames="{ all }"
+      objectPath="ElementRegions/Fracture"
+      fieldName="fracturePorosity_porosity"
+      scale="1.00"/>
+
+    <FieldSpecification
+      name="sideBurdenPerm"
+      initialCondition="1"
+      setNames="{ all }"
+      objectPath="ElementRegions/Sideburden"
+      fieldName="rockPermeability_permeability"
+      scale="1.00e-14"/>
+
+    <FieldSpecification
+      name="overBurdenPerm"
+      initialCondition="1"
+      setNames="{ all }"
+      objectPath="ElementRegions/Overburden"
+      fieldName="rockPermeability_permeability"
+      scale="1.00e-14"/>
+      
+    <FieldSpecification
+      name="underBurdenPerm"
+      initialCondition="1"
+      setNames="{ all }"
+      objectPath="ElementRegions/Underburden"
+      fieldName="rockPermeability_permeability"
+      scale="1.00e-14"/>
+
+    <FieldSpecification
+      name="initialPressure"
+      initialCondition="1"
+      setNames="{ all }"
+      objectPath="ElementRegions"
+      fieldName="pressure"
+      scale = "0.0"/>
+
+    <FieldSpecification
+      name="initialPressureFracture"
+      setNames="{ all }"
+      objectPath="ElementRegions/Fracture/FractureSubRegion"
+      fieldName="pressure"
+      scale="1.0e6"/>
+
+    <FieldSpecification
+      name="initialTemperatureFracture"
+      setNames="{ all }"
+      objectPath="ElementRegions/Fracture/FractureSubRegion"
+      fieldName="temperature"
+      scale="100"/>  
+
+    <FieldSpecification
+      name="xConstraint"
+      objectPath="nodeManager"
+      fieldName="totalDisplacement"
+      component="0"
+      scale="0.0"
+      setNames="{ left, right }"/>
+
+    <FieldSpecification
+      name="yConstraint"
+      objectPath="nodeManager"
+      fieldName="totalDisplacement"
+      component="1"
+      scale="0.0"
+      setNames="{ front, back }"/>
+
+    <FieldSpecification
+      name="zConstraint"
+      objectPath="nodeManager"
+      fieldName="totalDisplacement"
+      component="2"
+      scale="0.0"
+      setNames="{ bottom }"/>
+  </FieldSpecifications>
+
+  <Functions>
+    <TableFunction
+      name="apertureTable"
+      coordinates="{ -1.0e-3, 0.0 }"
+      values="{ 1.0e-6, 1.0e-3 }"/>
+  </Functions>
+  
+  <Outputs>
+    <VTK
+      name="vtkOutput"
+      plotFileRoot="eggModel_embeddedFracs"
+      plotLevel="2"
+      format="binary"/>
+  </Outputs>
+</Problem>

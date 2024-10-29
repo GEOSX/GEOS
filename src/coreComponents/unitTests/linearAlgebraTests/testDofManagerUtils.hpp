@@ -2,10 +2,11 @@
  * ------------------------------------------------------------------------------------------------------------
  * SPDX-License-Identifier: LGPL-2.1-only
  *
- * Copyright (c) 2018-2020 Lawrence Livermore National Security LLC
- * Copyright (c) 2018-2020 The Board of Trustees of the Leland Stanford Junior University
- * Copyright (c) 2018-2020 TotalEnergies
- * Copyright (c) 2019-     GEOSX Contributors
+ * Copyright (c) 2016-2024 Lawrence Livermore National Security LLC
+ * Copyright (c) 2018-2024 Total, S.A
+ * Copyright (c) 2018-2024 The Board of Trustees of the Leland Stanford Junior University
+ * Copyright (c) 2018-2024 Chevron
+ * Copyright (c) 2019-     GEOS/GEOSX Contributors
  * All rights reserved
  *
  * See top level LICENSE, COPYRIGHT, CONTRIBUTORS, NOTICE, and ACKNOWLEDGEMENTS files for details.
@@ -38,7 +39,7 @@ namespace testing
 void setupProblemFromXML( ProblemManager * const problemManager, char const * const xmlInput )
 {
   xmlWrapper::xmlDocument xmlDocument;
-  xmlWrapper::xmlResult xmlResult = xmlDocument.load_buffer( xmlInput, strlen( xmlInput ) );
+  xmlWrapper::xmlResult xmlResult = xmlDocument.loadString( xmlInput );
   if( !xmlResult )
   {
     GEOS_LOG_RANK_0( "XML parsed with errors!" );
@@ -52,8 +53,8 @@ void setupProblemFromXML( ProblemManager * const problemManager, char const * co
   commandLine.registerWrapper< integer >( problemManager->viewKeys.xPartitionsOverride.key() ).
     setApplyDefaultValue( mpiSize );
 
-  xmlWrapper::xmlNode xmlProblemNode = xmlDocument.child( dataRepository::keys::ProblemManager );
-  problemManager->processInputFileRecursive( xmlProblemNode );
+  xmlWrapper::xmlNode xmlProblemNode = xmlDocument.getChild( dataRepository::keys::ProblemManager );
+  problemManager->processInputFileRecursive( xmlDocument, xmlProblemNode );
 
   // Open mesh levels
   DomainPartition & domain = problemManager->getDomainPartition();
@@ -62,8 +63,8 @@ void setupProblemFromXML( ProblemManager * const problemManager, char const * co
 
   ElementRegionManager & elementManager = domain.getMeshBody( 0 ).getBaseDiscretization().getElemManager();
   xmlWrapper::xmlNode topLevelNode = xmlProblemNode.child( elementManager.getName().c_str() );
-  elementManager.processInputFileRecursive( topLevelNode );
-  elementManager.postProcessInputRecursive();
+  elementManager.processInputFileRecursive( xmlDocument, topLevelNode );
+  elementManager.postInputInitializationRecursive();
 
   problemManager->problemSetup();
   problemManager->applyInitialConditions();

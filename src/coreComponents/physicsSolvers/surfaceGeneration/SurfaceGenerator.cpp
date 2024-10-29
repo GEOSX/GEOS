@@ -2,10 +2,11 @@
  * ------------------------------------------------------------------------------------------------------------
  * SPDX-License-Identifier: LGPL-2.1-only
  *
- * Copyright (c) 2018-2020 Lawrence Livermore National Security LLC
- * Copyright (c) 2018-2020 The Board of Trustees of the Leland Stanford Junior University
- * Copyright (c) 2018-2020 TotalEnergies
- * Copyright (c) 2019-     GEOSX Contributors
+ * Copyright (c) 2016-2024 Lawrence Livermore National Security LLC
+ * Copyright (c) 2018-2024 Total, S.A
+ * Copyright (c) 2018-2024 The Board of Trustees of the Leland Stanford Junior University
+ * Copyright (c) 2018-2024 Chevron
+ * Copyright (c) 2019-     GEOS/GEOSX Contributors
  * All rights reserved
  *
  * See top level LICENSE, COPYRIGHT, CONTRIBUTORS, NOTICE, and ACKNOWLEDGEMENTS files for details.
@@ -18,7 +19,6 @@
 
 #include "SurfaceGenerator.hpp"
 #include "ParallelTopologyChange.hpp"
-
 
 #include "mesh/mpiCommunications/CommunicationTools.hpp"
 #include "mesh/mpiCommunications/NeighborCommunicator.hpp"
@@ -33,6 +33,7 @@
 #include "physicsSolvers/solidMechanics/kernels/SolidMechanicsLagrangianFEMKernels.hpp"
 #include "physicsSolvers/surfaceGeneration/SurfaceGeneratorFields.hpp"
 #include "physicsSolvers/fluidFlow/FlowSolverBaseFields.hpp"
+#include "kernels/surfaceGenerationKernels.hpp"
 
 
 #include <algorithm>
@@ -176,7 +177,8 @@ SurfaceGenerator::SurfaceGenerator( const string & name,
   SolverBase( name, parent ),
   m_failCriterion( 1 ),
 //  m_maxTurnAngle(91.0),
-  m_nodeBasedSIF( 0 ),
+  m_nodeBasedSIF( 1 ),
+  m_isPoroelastic( 0 ),
   m_rockToughness( 1.0e99 ),
   m_mpiCommOrder( 0 )
 {
@@ -191,11 +193,16 @@ SurfaceGenerator::SurfaceGenerator( const string & name,
     setInputFlag( InputFlags::OPTIONAL ).
     setDescription( "Flag for choosing between node or edge based criteria: 1 for node based criterion" );
 
+  registerWrapper( viewKeyStruct::isPoroelasticString(), &m_isPoroelastic ).
+    setInputFlag( InputFlags::OPTIONAL ).
+    setDescription( "Flag that defines whether the material is poroelastic or not." );
+
   registerWrapper( viewKeyStruct::mpiCommOrderString(), &m_mpiCommOrder ).
     setInputFlag( InputFlags::OPTIONAL ).
     setDescription( "Flag to enable MPI consistent communication ordering" );
 
   registerWrapper( viewKeyStruct::fractureRegionNameString(), &m_fractureRegionName ).
+    setRTTypeName( rtTypes::CustomTypes::groupNameRef ).
     setInputFlag( dataRepository::InputFlags::OPTIONAL ).
     setApplyDefaultValue( "Fracture" );
 
@@ -213,6 +220,23 @@ SurfaceGenerator::SurfaceGenerator( const string & name,
 
   this->getWrapper< string >( viewKeyStruct::discretizationString() ).
     setInputFlag( InputFlags::FALSE );
+}
+
+void SurfaceGenerator::postInputInitialization()
+{
+  static const std::set< integer > binaryOptions = { 0, 1 };
+
+  GEOS_ERROR_IF( binaryOptions.count( m_isPoroelastic ) == 0,
+                 getWrapperDataContext( viewKeyStruct::isPoroelasticString() ) <<
+                 ": option can be either 0 (false) or 1 (true)" );
+
+  GEOS_ERROR_IF( binaryOptions.count( m_nodeBasedSIF ) == 0,
+                 getWrapperDataContext( viewKeyStruct::nodeBasedSIFString() ) <<
+                 ": option can be either 0 (false) or 1 (true)" );
+
+  GEOS_ERROR_IF( binaryOptions.count( m_mpiCommOrder ) == 0,
+                 getWrapperDataContext( viewKeyStruct::mpiCommOrderString() ) <<
+                 ": option can be either 0 (false) or 1 (true)" );
 }
 
 SurfaceGenerator::~SurfaceGenerator()
@@ -415,9 +439,9 @@ void SurfaceGenerator::postRestartInitialization()
     SurfaceElementRegion & fractureRegion = elemManager.getRegion< SurfaceElementRegion >( this->m_fractureRegionName );
     FaceElementSubRegion & fractureSubRegion = fractureRegion.getSubRegion< FaceElementSubRegion >( 0 );
 
-    for( localIndex fce = 0; fce < fractureSubRegion.m_fractureConnectorEdgesToFaceElements.size(); ++fce )
+    for( localIndex fce = 0; fce < fractureSubRegion.m_2dFaceTo2dElems.size(); ++fce )
     {
-      fractureSubRegion.m_recalculateFractureConnectorEdges.insert( fce );
+      fractureSubRegion.m_recalculateConnectionsFor2dFaces.insert( fce );
     }
 
     for( localIndex fe = 0; fe < fractureSubRegion.size(); ++fe )
@@ -430,11 +454,11 @@ void SurfaceGenerator::postRestartInitialization()
       FluxApproximationBase * const fluxApprox = fvManager.getGroupPointer< FluxApproximationBase >( a );
       if( fluxApprox!=nullptr )
       {
-        fluxApprox->addToFractureStencil( meshLevel, this->m_fractureRegionName, false );
+        fluxApprox->addToFractureStencil( meshLevel, this->m_fractureRegionName );
       }
     }
 
-    fractureSubRegion.m_recalculateFractureConnectorEdges.clear();
+    fractureSubRegion.m_recalculateConnectionsFor2dFaces.clear();
     fractureSubRegion.m_newFaceElements.clear();
   } );
 }
@@ -451,8 +475,9 @@ real64 SurfaceGenerator::solverStep( real64 const & time_n,
                                                                 MeshLevel & meshLevel,
                                                                 arrayView1d< string const > const & )
   {
-    SpatialPartition & partition = dynamicCast< SpatialPartition & >( domain.getReference< PartitionBase >( dataRepository::keys::partitionManager ) );
-
+    // SpatialPartition & partition = dynamicCast< SpatialPartition & >( domain.getReference< PartitionBase >( dataRepository::keys::partitionManager ) );
+      SpatialPartition & partition = dynamic_cast< SpatialPartition & >( domain.getGroup( domain.groupKeys.partitionManager ) );
+    
     rval = separationDriver( domain,
                              meshLevel,
                              domain.getNeighbors(),
@@ -485,13 +510,11 @@ real64 SurfaceGenerator::solverStep( real64 const & time_n,
       FluxApproximationBase * const fluxApprox = fvManager.getGroupPointer< FluxApproximationBase >( a );
       if( fluxApprox!=nullptr )
       {
-        fluxApprox->addToFractureStencil( meshLevel, this->m_fractureRegionName, true );
+        fluxApprox->addToFractureStencil( meshLevel, this->m_fractureRegionName );
       }
     }
 
     FaceElementSubRegion & fractureSubRegion = fractureRegion.getUniqueSubRegion< FaceElementSubRegion >();
-    fractureSubRegion.m_recalculateFractureConnectorEdges.clear();
-    fractureSubRegion.m_newFaceElements.clear();
 
     // Recreate geometric sets
     meshLevel.getNodeManager().buildGeometricSets( GeometricObjectManager::getInstance() );
@@ -522,6 +545,14 @@ real64 SurfaceGenerator::solverStep( real64 const & time_n,
       {
         gravityCoef[ ei ] = LvArray::tensorOps::AiBi< 3 >( elemCenter[ ei ], gravVector );
       } );
+    }
+
+    string const permModelName = getConstitutiveName< PermeabilityBase >( fractureSubRegion );
+    if( !permModelName.empty() )
+    {
+      // if a permeability model exists we need to set the intial value to something meaningful
+      PermeabilityBase & permModel = getConstitutiveModel< PermeabilityBase >( fractureSubRegion, permModelName );
+      permModel.initializeState();
     }
 
   } );
@@ -634,7 +665,7 @@ int SurfaceGenerator::separationDriver( DomainPartition & domain,
       }
     }
 
-#ifdef GEOSX_USE_MPI
+#ifdef GEOS_USE_MPI
 
     modifiedObjects.clearNewFromModified();
 
@@ -687,7 +718,7 @@ int SurfaceGenerator::separationDriver( DomainPartition & domain,
     elementManager.forElementSubRegions< FaceElementSubRegion >( [&]( FaceElementSubRegion & subRegion )
     {
       FaceElementSubRegion::NodeMapType & nodeMap = subRegion.nodeList();
-      FaceElementSubRegion::FaceMapType & faceMap = subRegion.faceList();
+      ArrayOfArraysView< localIndex const > const faceMap = subRegion.faceList().toViewConst();
 
       for( localIndex kfe=0; kfe<subRegion.size(); ++kfe )
       {
@@ -696,13 +727,11 @@ int SurfaceGenerator::separationDriver( DomainPartition & domain,
         localIndex const numNodesInFace = faceToNodeMap.sizeOfArray( faceMap[ kfe ][ 0 ] );
         for( localIndex a = 0; a < numNodesInFace; ++a )
         {
-          localIndex const aa = a < 2 ? a : numNodesInFace - a + 1;
-          localIndex const bb = aa == 0 ? aa : numNodesInFace - aa;
 
           // TODO HACK need to generalize to something other than quads
           //wu40: I temporarily make it work for tet mesh. Need further check with Randy.
-          nodeMap[ kfe ][ a ]   = faceToNodeMap( faceMap[ kfe ][ 0 ], aa );
-          nodeMap[ kfe ][ a + numNodesInFace ] = faceToNodeMap( faceMap[ kfe ][ 1 ], bb );
+          nodeMap[ kfe ][ a ]   = faceToNodeMap( faceMap[ kfe ][ 0 ], a );
+          nodeMap[ kfe ][ a + numNodesInFace ] = faceToNodeMap( faceMap[ kfe ][ 1 ], a );
         }
 
         if( numNodesInFace == 3 )
@@ -762,7 +791,7 @@ void SurfaceGenerator::synchronizeTipSets ( FaceManager & faceManager,
   {
     localIndex const parentNodeIndex = parentNodeIndices[nodeIndex];
 
-    GEOS_ERROR_IF( parentNodeIndex == -1, "parentNodeIndex should not be -1" );
+    GEOS_ERROR_IF( parentNodeIndex == -1, getDataContext() << ": parentNodeIndex should not be -1" );
 
     m_tipNodes.remove( parentNodeIndex );
   }
@@ -787,7 +816,7 @@ void SurfaceGenerator::synchronizeTipSets ( FaceManager & faceManager,
   {
     localIndex const parentEdgeIndex = parentEdgeIndices[edgeIndex];
 
-    GEOS_ERROR_IF( parentEdgeIndex == -1, "parentEdgeIndex should not be -1" );
+    GEOS_ERROR_IF( parentEdgeIndex == -1, getDataContext() << ": parentEdgeIndex should not be -1" );
 
     m_tipEdges.remove( parentEdgeIndex );
     for( localIndex const faceIndex : edgeToFaceMap[ parentEdgeIndex ] )
@@ -820,7 +849,7 @@ void SurfaceGenerator::synchronizeTipSets ( FaceManager & faceManager,
   for( localIndex const faceIndex : receivedObjects.newFaces )
   {
     localIndex const parentFaceIndex = parentFaceIndices[faceIndex];
-    GEOS_ERROR_IF( parentFaceIndex == -1, "parentFaceIndex should not be -1" );
+    GEOS_ERROR_IF( parentFaceIndex == -1, getDataContext() << ": parentFaceIndex should not be -1" );
 
     m_trailingFaces.insert( parentFaceIndex );
     m_tipFaces.remove( parentFaceIndex );
@@ -1070,7 +1099,7 @@ bool SurfaceGenerator::findFracturePlanes( localIndex const nodeID,
 
     if( edge[0] == INT_MAX || edge[1] == INT_MAX )
     {
-      GEOS_ERROR( "SurfaceGenerator::FindFracturePlanes: invalid edge." );
+      GEOS_ERROR( getDataContext() << ": invalid edge (SurfaceGenerator::findFracturePlanes)." );
     }
 
 
@@ -1215,15 +1244,11 @@ bool SurfaceGenerator::findFracturePlanes( localIndex const nodeID,
         // NOT be included in the path!!!
         if( nextEdge!=startingEdge && !(isEdgeExternal[nextEdge]==1 && startingEdgeExternal ) )
         {
-          std::cout<<std::endl;
-
-
-          std::cout<<"  NodeID, ParentID = "<<nodeID<<", "<<parentNodeIndex<<std::endl;
-          std::cout<<"  Starting Edge/Face = "<<startingEdge<<", "<<startingFace<<std::endl;
-          std::cout<<"  Face Separation Path = " << facePath << std::endl;
-          std::cout<<"  Edge Separation Path = " << facePath << std::endl;
-
-          GEOS_ERROR( "crap" );
+          GEOS_ERROR( getDataContext() << ": Crap !" <<
+                      "  NodeID, ParentID = " << nodeID << ", " << parentNodeIndex << '\n' <<
+                      "  Starting Edge/Face = " << startingEdge << ", " << startingFace << '\n' <<
+                      "  Face Separation Path = " << facePath << '\n' <<
+                      "  Edge Separation Path = " << edgePath << '\n' );
         }
 
         // add faces in the path to separationPathFaces
@@ -1335,7 +1360,7 @@ bool SurfaceGenerator::findFracturePlanes( localIndex const nodeID,
             }
             if( pathFound == false )
             {
-              GEOS_ERROR( "SurfaceGenerator::FindFracturePlanes: couldn't find the next face in the rupture path" );
+              GEOS_ERROR( getDataContext() << ": couldn't find the next face in the rupture path (SurfaceGenerator::findFracturePlanes" );
             }
           }
 
@@ -1354,7 +1379,7 @@ bool SurfaceGenerator::findFracturePlanes( localIndex const nodeID,
         }
         else
         {
-          GEOS_ERROR( "SurfaceGenerator::next edge in separation path is apparently  connected to less than 2 ruptured face" );
+          GEOS_ERROR( getDataContext() << ": next edge in separation path is apparently  connected to less than 2 ruptured face (SurfaceGenerator::findFracturePlanes" );
         }
 
       }
@@ -1382,7 +1407,7 @@ bool SurfaceGenerator::findFracturePlanes( localIndex const nodeID,
 
     if( edge[0] == INT_MAX || edge[1] == INT_MAX )
     {
-      GEOS_ERROR( "SurfaceGenerator::FindFracturePlanes: invalid edge." );
+      GEOS_ERROR( getDataContext() << ": invalid edge. (SurfaceGenerator::findFracturePlanes" );
     }
 
 
@@ -1700,15 +1725,14 @@ void SurfaceGenerator::performFracture( const localIndex nodeID,
 
   // Split the node into two, using the original index, and a new one.
   localIndex newNodeIndex;
-  if( getLogLevel() )
+  if( getLogLevel() > 0 )
   {
-    GEOS_LOG_RANK( "" );
-    std::cout<<"Splitting node "<<nodeID<<" along separation plane faces: ";
+    std::ostringstream s;
     for( std::set< localIndex >::const_iterator i=separationPathFaces.begin(); i!=separationPathFaces.end(); ++i )
     {
-      std::cout<<*i<<", ";
+      s << *i << " ";
     }
-    std::cout<<std::endl;
+    GEOS_LOG_RANK( GEOS_FMT( "Splitting node {} along separation plane faces: {}", nodeID, s.str() ) );
   }
 
 
@@ -1748,8 +1772,10 @@ void SurfaceGenerator::performFracture( const localIndex nodeID,
 //  usedFacesNew = usedFaces[nodeID];
 
 
-  if( getLogLevel() )
-    std::cout<<"Done splitting node "<<nodeID<<" into nodes "<<nodeID<<" and "<<newNodeIndex<<std::endl;
+  if( getLogLevel() > 0 )
+  {
+    GEOS_LOG_RANK( GEOS_FMT( "Done splitting node {} into nodes {} and {}", nodeID, nodeID, newNodeIndex ) );
+  }
 
   // split edges
   map< localIndex, localIndex > splitEdges;
@@ -1770,10 +1796,9 @@ void SurfaceGenerator::performFracture( const localIndex nodeID,
 
       edgeToFaceMap.clearSet( newEdgeIndex );
 
-      if( getLogLevel() )
+      if( getLogLevel() > 0 )
       {
-        GEOS_LOG_RANK( "" );
-        std::cout<<"  Split edge "<<parentEdgeIndex<<" into edges "<<parentEdgeIndex<<" and "<<newEdgeIndex<<std::endl;
+        GEOS_LOG_RANK( GEOS_FMT ( "Split edge {} into edges {} and {}", parentEdgeIndex, parentEdgeIndex, newEdgeIndex ) );
       }
 
       splitEdges[parentEdgeIndex] = newEdgeIndex;
@@ -1831,10 +1856,9 @@ void SurfaceGenerator::performFracture( const localIndex nodeID,
       if( faceManager.splitObject( faceIndex, rank, newFaceIndex ) )
       {
 
-        if( getLogLevel() )
+        if( getLogLevel() > 0 )
         {
-          GEOS_LOG_RANK( "" );
-          std::cout<<"  Split face "<<faceIndex<<" into faces "<<faceIndex<<" and "<<newFaceIndex<<std::endl;
+          GEOS_LOG_RANK( GEOS_FMT ( "Split face {} into faces {} and {}", faceIndex, faceIndex, newFaceIndex ) );
         }
 
         splitFaces[faceIndex] = newFaceIndex;
@@ -2863,14 +2887,6 @@ void SurfaceGenerator::calculateNodeAndFaceSif( DomainPartition const & domain,
     elementManager.constructFullMaterialViewAccessor< array3d< real64, solid::STRESS_PERMUTATION >,
                                                       arrayView3d< real64 const, solid::STRESS_USD > >( SolidBase::viewKeyStruct::stressString(),
                                                                                                         constitutiveManager );
-
-
-  ElementRegionManager::ElementViewAccessor< arrayView4d< real64 const > > const
-  dNdX = elementManager.constructViewAccessor< array4d< real64 >, arrayView4d< real64 const > >( keys::dNdX );
-
-  ElementRegionManager::ElementViewAccessor< arrayView2d< real64 const > > const
-  detJ = elementManager.constructViewAccessor< array2d< real64 >, arrayView2d< real64 const > >( keys::detJ );
-
   nodeManager.getField< fields::solidMechanics::totalDisplacement >().move( hostMemorySpace, false );
 
   forDiscretizationOnMeshTargets( domain.getMeshBodies(), [&]( string const &,
@@ -2890,322 +2906,313 @@ void SurfaceGenerator::calculateNodeAndFaceSif( DomainPartition const & domain,
     displacement.move( hostMemorySpace, false );
   } );
 
-  for( localIndex const trailingFaceIndex : m_trailingFaces )
-//  RAJA::forall< parallelHostPolicy >( RAJA::TypedRangeSegment< localIndex >( 0, m_trailingFaces.size() ),
-//                                      [=] GEOS_HOST_DEVICE ( localIndex const trailingFacesCounter )
+  // auto nodalForceKernel = surfaceGenerationKernels::createKernel( elementManager, constitutiveManager,
+  //                                                                 viewKeyStruct::solidMaterialNameString(), false );
+
+  surfaceGenerationKernels::kernelSelector( elementManager,
+                                            constitutiveManager,
+                                            viewKeyStruct::solidMaterialNameString(),
+                                            m_isPoroelastic, [&] ( auto nodalForceKernel )
   {
-//    localIndex const trailingFaceIndex = m_trailingFaces[ trailingFacesCounter ];
-
-    real64 const faceNormalVector[3] = LVARRAY_TENSOROPS_INIT_LOCAL_3( faceNormal[trailingFaceIndex] );
-    //TODO: check if a ghost face still has the correct attributes such as normal vector, face center, face index.
-    localIndex_array unpinchedNodeID;
-    localIndex_array pinchedNodeID;
-    localIndex_array tipEdgesID;
-
-    for( localIndex const nodeIndex : faceToNodeMap[ trailingFaceIndex ] )
+    for( localIndex const trailingFaceIndex : m_trailingFaces )
     {
-      if( m_tipNodes.contains( nodeIndex ))
-      {
-        pinchedNodeID.emplace_back( nodeIndex );
-      }
-      else
-      {
-        unpinchedNodeID.emplace_back( nodeIndex );
-      }
-    }
+      //  RAJA::forall< parallelHostPolicy >( RAJA::TypedRangeSegment< localIndex >( 0, m_trailingFaces.size() ), [=] GEOS_HOST_DEVICE (
+      // localIndex const trailingFacesCounter )
+      //    localIndex const trailingFaceIndex = m_trailingFaces[ trailingFacesCounter ];
+      /// TODO: check if a ghost face still has the correct attributes such as normal vector, face center, face index.
 
-    for( localIndex const edgeIndex : faceToEdgeMap[ trailingFaceIndex ] )
-    {
-      if( m_tipEdges.contains( edgeIndex ))
-      {
-        tipEdgesID.emplace_back( edgeIndex );
-      }
-    }
+      real64 const faceNormalVector[3] = LVARRAY_TENSOROPS_INIT_LOCAL_3( faceNormal[trailingFaceIndex] );
+      localIndex_array unpinchedNodeID;
+      localIndex_array pinchedNodeID;
+      localIndex_array tipEdgesID;
 
-    if( tipEdgesID.size() >= 1 )
-    {
-      for( localIndex const nodeIndex : pinchedNodeID )
+      for( localIndex const nodeIndex : faceToNodeMap[ trailingFaceIndex ] )
       {
-        if( isNodeGhost[nodeIndex] < 0 )
+        if( m_tipNodes.contains( nodeIndex ))
         {
-          real64 nodeDisconnectForce[3] = { 0 };
-          real64 const nodePosition[3] = LVARRAY_TENSOROPS_INIT_LOCAL_3( X[nodeIndex] );
-          localIndex tralingNodeID = std::numeric_limits< localIndex >::max();
-          localIndex nElemEachSide[2];
-          nElemEachSide[0] = 0;
-          nElemEachSide[1] = 0;
+          pinchedNodeID.emplace_back( nodeIndex );
+        }
+        else
+        {
+          unpinchedNodeID.emplace_back( nodeIndex );
+        }
+      }
 
-          for( localIndex k=0; k<nodeToRegionMap.sizeOfArray( nodeIndex ); ++k )
+      for( localIndex const edgeIndex : faceToEdgeMap[ trailingFaceIndex ] )
+      {
+        if( m_tipEdges.contains( edgeIndex ))
+        {
+          tipEdgesID.emplace_back( edgeIndex );
+        }
+      }
+
+      if( unpinchedNodeID.size() < 2 || (unpinchedNodeID.size() == 2 && tipEdgesID.size() < 2) )
+      {
+        for( localIndex const nodeIndex : pinchedNodeID )
+        {
+          if( isNodeGhost[nodeIndex] < 0 )
           {
-            localIndex const er  = nodeToRegionMap[nodeIndex][k];
-            localIndex const esr = nodeToSubRegionMap[nodeIndex][k];
-            localIndex const ei  = nodeToElementMap[nodeIndex][k];
+            real64 nodeDisconnectForce[3] = { 0 };
+            real64 const nodePosition[3] = LVARRAY_TENSOROPS_INIT_LOCAL_3( X[nodeIndex] );
+            localIndex tralingNodeID = std::numeric_limits< localIndex >::max();
+            localIndex nElemEachSide[2];
+            nElemEachSide[0] = 0;
+            nElemEachSide[1] = 0;
 
-            CellElementSubRegion const & elementSubRegion = elementManager.getRegion( er ).getSubRegion< CellElementSubRegion >( esr );
-
-            arrayView2d< localIndex const, cells::NODE_MAP_USD > const & elementsToNodes = elementSubRegion.nodeList();
-            arrayView2d< real64 const > const & elementCenter = elementSubRegion.getElementCenter().toViewConst();
-            real64 K = bulkModulus[er][esr][m_solidMaterialFullIndex[er]][ei];
-            real64 G = shearModulus[er][esr][m_solidMaterialFullIndex[er]][ei];
-            real64 YoungModulus = 9 * K * G / ( 3 * K + G );
-            real64 poissonRatio = ( 3 * K - 2 * G ) / ( 2 * ( 3 * K + G ) );
-
-            localIndex const numQuadraturePoints = detJ[er][esr].size( 1 );
-
-            for( localIndex n=0; n<elementsToNodes.size( 1 ); ++n )
-            {
-              if( elementsToNodes( ei, n ) == nodeIndex )
-              {
-                real64 temp[ 3 ] = {0};
-                real64 xEle[ 3 ]  = LVARRAY_TENSOROPS_INIT_LOCAL_3 ( elementCenter[ei] );
-
-                solidMechanicsLagrangianFEMKernels::ExplicitKernel::
-                  calculateSingleNodalForce( ei,
-                                             n,
-                                             numQuadraturePoints,
-                                             dNdX[er][esr],
-                                             detJ[er][esr],
-                                             stress[er][esr][m_solidMaterialFullIndex[er]],
-                                             temp );
-
-                //wu40: the nodal force need to be weighted by Young's modulus and possion's ratio.
-                LvArray::tensorOps::scale< 3 >( temp, YoungModulus );
-                LvArray::tensorOps::scale< 3 >( temp, 1.0 / (1 - poissonRatio * poissonRatio) );
-
-                LvArray::tensorOps::subtract< 3 >( xEle, nodePosition );
-                if( LvArray::tensorOps::AiBi< 3 >( xEle, faceNormalVector ) > 0 ) //TODO: check the sign.
-                {
-                  nElemEachSide[0] += 1;
-                  LvArray::tensorOps::add< 3 >( nodeDisconnectForce, temp );
-                }
-                else
-                {
-                  nElemEachSide[1] +=1;
-                  LvArray::tensorOps::subtract< 3 >( nodeDisconnectForce, temp );
-                }
-              }
-            }
-          }
-
-          if( nElemEachSide[0]>=1 && nElemEachSide[1]>=1 )
-          {
-            LvArray::tensorOps::scale< 3 >( nodeDisconnectForce, 0.5 );
-          }
-
-          //Find the trailing node according to the node index and face index
-          if( unpinchedNodeID.size() == 0 ) //Tet mesh under three nodes pinched scenario. Need to find the other
-                                            // trailing face that containing the trailing node.
-          {
-            for( localIndex const edgeIndex: faceToEdgeMap[ trailingFaceIndex ] )
-            {
-              for( localIndex const faceIndex: edgeToFaceMap[ edgeIndex ] )
-              {
-                if( faceIndex != trailingFaceIndex && m_tipFaces.contains( faceIndex ))
-                {
-                  for( localIndex const iNode: faceToNodeMap[ faceIndex ] )
-                  {
-                    if( !m_tipNodes.contains( iNode ))
-                    {
-                      tralingNodeID = iNode;
-                    }
-                  }
-                }
-              }
-            }
-
-            if( tralingNodeID == std::numeric_limits< localIndex >::max())
-            {
-              GEOS_ERROR( "Error. The triangular trailing face has three tip nodes but cannot find the other trailing face containing the trailing node." );
-            }
-          }
-          else if( unpinchedNodeID.size() == 1 )
-          {
-            tralingNodeID = unpinchedNodeID[0];
-          }
-          else if( unpinchedNodeID.size() == 2 )
-          {
-            for( localIndex const edgeIndex : nodeToEdgeMap[ nodeIndex ] )
-            {
-              auto const faceToEdgeMapIterator = faceToEdgeMap[ trailingFaceIndex ];
-              if( std::find( faceToEdgeMapIterator.begin(), faceToEdgeMapIterator.end(), edgeIndex ) != faceToEdgeMapIterator.end() &&
-                  !m_tipEdges.contains( edgeIndex ) )
-              {
-                tralingNodeID = edgeToNodeMap[edgeIndex][0] == nodeIndex ? edgeToNodeMap[edgeIndex][1] : edgeToNodeMap[edgeIndex][0];
-              }
-            }
-          }
-
-          //Calculate SIF for the node.
-          real64 tipNodeSIF;
-          real64 tipNodeForce[3];
-          real64 trailingNodeDisp[3];
-          localIndex theOtherTrailingNodeID;
-
-          if( childNodeIndices[tralingNodeID] == -1 )
-          {
-            theOtherTrailingNodeID = parentNodeIndices[tralingNodeID];
-          }
-          else
-          {
-            theOtherTrailingNodeID = childNodeIndices[tralingNodeID];
-          }
-
-          LvArray::tensorOps::copy< 3 >( trailingNodeDisp, displacement[theOtherTrailingNodeID] );
-          LvArray::tensorOps::subtract< 3 >( trailingNodeDisp, displacement[tralingNodeID] );
-
-          //Calculate average young's modulus and poisson ratio for fext.
-          real64 fExternal[2][3];
-          for( localIndex i=0; i<2; ++i )
-          {
-            real64 averageYoungModulus( 0 ), averagePoissonRatio( 0 );
-            localIndex nodeID = i == 0 ? tralingNodeID : theOtherTrailingNodeID;
-            for( localIndex k=0; k<nodeToRegionMap.sizeOfArray( nodeID ); ++k )
+            for( localIndex k=0; k<nodeToRegionMap.sizeOfArray( nodeIndex ); ++k )
             {
               localIndex const er  = nodeToRegionMap[nodeIndex][k];
               localIndex const esr = nodeToSubRegionMap[nodeIndex][k];
               localIndex const ei  = nodeToElementMap[nodeIndex][k];
 
-              real64 K = bulkModulus[er][esr][m_solidMaterialFullIndex[er]][ei];
-              real64 G = shearModulus[er][esr][m_solidMaterialFullIndex[er]][ei];
-              averageYoungModulus += 9 * K * G / ( 3 * K + G );
-              averagePoissonRatio += ( 3 * K - 2 * G ) / ( 2 * ( 3 * K + G ) );
+              CellElementSubRegion const & elementSubRegion = elementManager.getRegion( er ).getSubRegion< CellElementSubRegion >( esr );
+
+              arrayView2d< localIndex const, cells::NODE_MAP_USD > const & elementsToNodes = elementSubRegion.nodeList();
+              arrayView2d< real64 const > const & elementCenter = elementSubRegion.getElementCenter().toViewConst();
+
+              for( localIndex n=0; n<elementsToNodes.size( 1 ); ++n )
+              {
+                if( elementsToNodes( ei, n ) == nodeIndex )
+                {
+                  real64 nodalForce[ 3 ] = {0};
+                  real64 xEle[ 3 ]  = LVARRAY_TENSOROPS_INIT_LOCAL_3 ( elementCenter[ei] );
+
+                  nodalForceKernel.calculateSingleNodalForce( er, esr, ei, n, nodalForce );
+
+                  LvArray::tensorOps::subtract< 3 >( xEle, nodePosition );
+                  if( LvArray::tensorOps::AiBi< 3 >( xEle, faceNormalVector ) > 0 ) //TODO: check the sign.
+                  {
+                    nElemEachSide[0] += 1;
+                    LvArray::tensorOps::add< 3 >( nodeDisconnectForce, nodalForce );
+                  }
+                  else
+                  {
+                    nElemEachSide[1] +=1;
+                    LvArray::tensorOps::subtract< 3 >( nodeDisconnectForce, nodalForce );
+                  }
+                }
+              }
             }
 
-            averageYoungModulus /= nodeToRegionMap.sizeOfArray( nodeID );
-            averagePoissonRatio /= nodeToRegionMap.sizeOfArray( nodeID );
+            if( nElemEachSide[0]>=1 && nElemEachSide[1]>=1 )
+            {
+              LvArray::tensorOps::scale< 3 >( nodeDisconnectForce, 0.5 );
+            }
 
-            LvArray::tensorOps::copy< 3 >( fExternal[i], fext[nodeID] );
-            LvArray::tensorOps::scale< 3 >( fExternal[i], averageYoungModulus / (1 - averagePoissonRatio * averagePoissonRatio) );
-          }
+            //Find the trailing node according to the node index and face index
+            if( unpinchedNodeID.size() == 0 ) //Tet mesh under three nodes pinched scenario. Need to find the other
+                                              // trailing face that containing the trailing node.
+            {
+              for( localIndex const edgeIndex: faceToEdgeMap[ trailingFaceIndex ] )
+              {
+                for( localIndex const faceIndex: edgeToFaceMap[ edgeIndex ] )
+                {
+                  if( faceIndex != trailingFaceIndex && m_tipFaces.contains( faceIndex ))
+                  {
+                    for( localIndex const iNode: faceToNodeMap[ faceIndex ] )
+                    {
+                      if( !m_tipNodes.contains( iNode ))
+                      {
+                        tralingNodeID = iNode;
+                      }
+                    }
+                  }
+                }
+              }
 
-          //TODO: The sign of fext here is opposite to the sign of fFaceA in function "CalculateEdgeSIF".
-          tipNodeForce[0] = nodeDisconnectForce[0] - ( fExternal[0][0] - fExternal[1][0] ) / 2.0;
-          tipNodeForce[1] = nodeDisconnectForce[1] - ( fExternal[0][1] - fExternal[1][1] ) / 2.0;
-          tipNodeForce[2] = nodeDisconnectForce[2] - ( fExternal[0][2] - fExternal[1][2] ) / 2.0;
+              if( tralingNodeID == std::numeric_limits< localIndex >::max())
+              {
+                GEOS_ERROR( getDataContext() << ": The triangular trailing face has three tip nodes but cannot find the other trailing face containing the trailing node." );
+              }
+            }
+            else if( unpinchedNodeID.size() == 1 )
+            {
+              tralingNodeID = unpinchedNodeID[0];
+            }
+            else if( unpinchedNodeID.size() == 2 )
+            {
+              for( localIndex const edgeIndex : nodeToEdgeMap[ nodeIndex ] )
+              {
+                auto const faceToEdgeMapIterator = faceToEdgeMap[ trailingFaceIndex ];
+                if( std::find( faceToEdgeMapIterator.begin(), faceToEdgeMapIterator.end(), edgeIndex ) != faceToEdgeMapIterator.end() &&
+                    !m_tipEdges.contains( edgeIndex ) )
+                {
+                  tralingNodeID = edgeToNodeMap[edgeIndex][0] == nodeIndex ? edgeToNodeMap[edgeIndex][1] : edgeToNodeMap[edgeIndex][0];
+                }
+              }
+            }
+
+            //Calculate SIF for the node.
+            real64 tipNodeSIF;
+            real64 tipNodeForce[3];
+            real64 trailingNodeDisp[3];
+            localIndex theOtherTrailingNodeID;
+
+            if( childNodeIndices[tralingNodeID] == -1 )
+            {
+              theOtherTrailingNodeID = parentNodeIndices[tralingNodeID];
+            }
+            else
+            {
+              theOtherTrailingNodeID = childNodeIndices[tralingNodeID];
+            }
+
+            LvArray::tensorOps::copy< 3 >( trailingNodeDisp, displacement[theOtherTrailingNodeID] );
+            LvArray::tensorOps::subtract< 3 >( trailingNodeDisp, displacement[tralingNodeID] );
+
+            //Calculate average young's modulus and poisson ratio for fext.
+            real64 fExternal[2][3];
+            for( localIndex i=0; i<2; ++i )
+            {
+              real64 averageYoungModulus( 0 ), averagePoissonRatio( 0 );
+              localIndex nodeID = i == 0 ? tralingNodeID : theOtherTrailingNodeID;
+              for( localIndex k=0; k<nodeToRegionMap.sizeOfArray( nodeID ); ++k )
+              {
+                localIndex const er  = nodeToRegionMap[nodeIndex][k];
+                localIndex const esr = nodeToSubRegionMap[nodeIndex][k];
+                localIndex const ei  = nodeToElementMap[nodeIndex][k];
+
+                real64 K = bulkModulus[er][esr][m_solidMaterialFullIndex[er]][ei];
+                real64 G = shearModulus[er][esr][m_solidMaterialFullIndex[er]][ei];
+                averageYoungModulus += 9 * K * G / ( 3 * K + G );
+                averagePoissonRatio += ( 3 * K - 2 * G ) / ( 2 * ( 3 * K + G ) );
+              }
+
+              averageYoungModulus /= nodeToRegionMap.sizeOfArray( nodeID );
+              averagePoissonRatio /= nodeToRegionMap.sizeOfArray( nodeID );
+
+              LvArray::tensorOps::copy< 3 >( fExternal[i], fext[nodeID] );
+              LvArray::tensorOps::scale< 3 >( fExternal[i], averageYoungModulus / (1 - averagePoissonRatio * averagePoissonRatio) );
+            }
+
+            //TODO: The sign of fext here is opposite to the sign of fFaceA in function "CalculateEdgeSIF".
+            tipNodeForce[0] = nodeDisconnectForce[0] - ( fExternal[0][0] - fExternal[1][0] ) / 2.0;
+            tipNodeForce[1] = nodeDisconnectForce[1] - ( fExternal[0][1] - fExternal[1][1] ) / 2.0;
+            tipNodeForce[2] = nodeDisconnectForce[2] - ( fExternal[0][2] - fExternal[1][2] ) / 2.0;
 
 //          tipNodeForce[0] = nodeDisconnectForce[0];
 //          tipNodeForce[1] = nodeDisconnectForce[1];
 //          tipNodeForce[2] = nodeDisconnectForce[2];
 
-          real64 tipArea;
-          tipArea = faceArea( trailingFaceIndex );
-          if( faceToNodeMap.sizeOfArray( trailingFaceIndex ) == 3 )
-          {
-            tipArea *= 2.0;
-          }
-
-          tipNodeSIF = pow( (fabs( tipNodeForce[0] * trailingNodeDisp[0] / 2.0 / tipArea ) + fabs( tipNodeForce[1] * trailingNodeDisp[1] / 2.0 / tipArea )
-                             + fabs( tipNodeForce[2] * trailingNodeDisp[2] / 2.0 / tipArea )), 0.5 );
-
-          if( LvArray::tensorOps::AiBi< 3 >( trailingNodeDisp, faceNormalVector ) < 0.0 )  //In case the aperture is negative with the
-                                                                                           // presence of confining stress.
-          {
-            tipNodeSIF *= -1;
-          }
-
-          SIFNode_All[nodeIndex].emplace_back( tipNodeSIF );
-
-
-          //Calculate SIF on tip faces connected to this trailing face and the tip node.
-          for( localIndex const edgeIndex: tipEdgesID )
-          {
-            if( edgeToNodeMap[edgeIndex][0] == nodeIndex || edgeToNodeMap[edgeIndex][1] == nodeIndex )
+            real64 tipArea = faceArea( trailingFaceIndex );
+            if( faceToNodeMap.sizeOfArray( trailingFaceIndex ) == 3 )
             {
-              real64 SIF_I = 0, SIF_II = 0, /*SIF_III,*/ SIF_Face;
-              real64 vecTipNorm[3], vecTip[3], tipForce[3], tipOpening[3];
+              tipArea *= 2.0;
+            }
 
-              LvArray::tensorOps::copy< 3 >( vecTipNorm, faceNormal[trailingFaceIndex] );
-              LvArray::tensorOps::subtract< 3 >( vecTipNorm, faceNormal[childFaceIndices[trailingFaceIndex]] );
-              LvArray::tensorOps::normalize< 3 >( vecTipNorm );
+            tipNodeSIF = pow( (fabs( tipNodeForce[0] * trailingNodeDisp[0] / 2.0 / tipArea ) + fabs( tipNodeForce[1] * trailingNodeDisp[1] / 2.0 / tipArea )
+                               + fabs( tipNodeForce[2] * trailingNodeDisp[2] / 2.0 / tipArea )), 0.5 );
 
-              real64 vecEdge[3];
-              edgeManager.calculateLength( edgeIndex, X, vecEdge );
-              LvArray::tensorOps::normalize< 3 >( vecEdge );
+            if( LvArray::tensorOps::AiBi< 3 >( trailingNodeDisp, faceNormalVector ) < 0.0 ) //In case the aperture is negative with the
+                                                                                            // presence of confining stress.
+            {
+              tipNodeSIF *= -1;
+            }
 
-              LvArray::tensorOps::crossProduct( vecTip, vecTipNorm, vecEdge );
-              LvArray::tensorOps::normalize< 3 >( vecTip );
-              real64 v0[3];
-              edgeManager.calculateCenter( edgeIndex, X, v0 );
-              LvArray::tensorOps::subtract< 3 >( v0, faceCenter[ trailingFaceIndex ] );
+            SIFNode_All[nodeIndex].emplace_back( tipNodeSIF );
 
-              if( LvArray::tensorOps::AiBi< 3 >( v0, vecTip ) < 0 )
-                LvArray::tensorOps::scale< 3 >( vecTip, -1.0 );
 
-              tipForce[0] = LvArray::tensorOps::AiBi< 3 >( nodeDisconnectForce, vecTipNorm ) -
-                            ( LvArray::tensorOps::AiBi< 3 >( fExternal[0], vecTipNorm ) - LvArray::tensorOps::AiBi< 3 >( fExternal[1], vecTipNorm ) ) / 2.0;
-              tipForce[1] = LvArray::tensorOps::AiBi< 3 >( nodeDisconnectForce, vecTip ) -
-                            ( LvArray::tensorOps::AiBi< 3 >( fExternal[0], vecTip ) - LvArray::tensorOps::AiBi< 3 >( fExternal[1], vecTip ) ) / 2.0;
-              tipForce[2] = LvArray::tensorOps::AiBi< 3 >( nodeDisconnectForce, vecEdge ) -
-                            ( LvArray::tensorOps::AiBi< 3 >( fExternal[0], vecEdge ) - LvArray::tensorOps::AiBi< 3 >( fExternal[1], vecEdge ) ) / 2.0;
+            //Calculate SIF on tip faces connected to this trailing face and the tip node.
+            for( localIndex const edgeIndex: tipEdgesID )
+            {
+              if( edgeToNodeMap[edgeIndex][0] == nodeIndex || edgeToNodeMap[edgeIndex][1] == nodeIndex )
+              {
+                real64 SIF_I = 0, SIF_II = 0, /*SIF_III,*/ SIF_Face;
+                real64 vecTipNorm[3], vecTip[3], tipForce[3], tipOpening[3];
+
+                LvArray::tensorOps::copy< 3 >( vecTipNorm, faceNormal[trailingFaceIndex] );
+                LvArray::tensorOps::subtract< 3 >( vecTipNorm, faceNormal[childFaceIndices[trailingFaceIndex]] );
+                LvArray::tensorOps::normalize< 3 >( vecTipNorm );
+
+                real64 vecEdge[3];
+                edgeManager.calculateLength( edgeIndex, X, vecEdge );
+                LvArray::tensorOps::normalize< 3 >( vecEdge );
+
+                LvArray::tensorOps::crossProduct( vecTip, vecTipNorm, vecEdge );
+                LvArray::tensorOps::normalize< 3 >( vecTip );
+                real64 v0[3];
+                edgeManager.calculateCenter( edgeIndex, X, v0 );
+                LvArray::tensorOps::subtract< 3 >( v0, faceCenter[ trailingFaceIndex ] );
+
+                if( LvArray::tensorOps::AiBi< 3 >( v0, vecTip ) < 0 )
+                  LvArray::tensorOps::scale< 3 >( vecTip, -1.0 );
+
+                tipForce[0] = LvArray::tensorOps::AiBi< 3 >( nodeDisconnectForce, vecTipNorm ) -
+                              ( LvArray::tensorOps::AiBi< 3 >( fExternal[0], vecTipNorm ) - LvArray::tensorOps::AiBi< 3 >( fExternal[1], vecTipNorm ) ) / 2.0;
+                tipForce[1] = LvArray::tensorOps::AiBi< 3 >( nodeDisconnectForce, vecTip ) -
+                              ( LvArray::tensorOps::AiBi< 3 >( fExternal[0], vecTip ) - LvArray::tensorOps::AiBi< 3 >( fExternal[1], vecTip ) ) / 2.0;
+                tipForce[2] = LvArray::tensorOps::AiBi< 3 >( nodeDisconnectForce, vecEdge ) -
+                              ( LvArray::tensorOps::AiBi< 3 >( fExternal[0], vecEdge ) - LvArray::tensorOps::AiBi< 3 >( fExternal[1], vecEdge ) ) / 2.0;
 
 //              tipForce[0] = LvArray::tensorOps::AiBi< 3 >( nodeDisconnectForce, vecTipNorm );
 //              tipForce[1] = LvArray::tensorOps::AiBi< 3 >( nodeDisconnectForce, vecTip );
 //              tipForce[2] = LvArray::tensorOps::AiBi< 3 >( nodeDisconnectForce, vecEdge );
 
-              tipOpening[0] = LvArray::tensorOps::AiBi< 3 >( trailingNodeDisp, vecTipNorm );
-              tipOpening[1] = LvArray::tensorOps::AiBi< 3 >( trailingNodeDisp, vecTip );
-              tipOpening[2] = LvArray::tensorOps::AiBi< 3 >( trailingNodeDisp, vecEdge );
+                tipOpening[0] = LvArray::tensorOps::AiBi< 3 >( trailingNodeDisp, vecTipNorm );
+                tipOpening[1] = LvArray::tensorOps::AiBi< 3 >( trailingNodeDisp, vecTip );
+                tipOpening[2] = LvArray::tensorOps::AiBi< 3 >( trailingNodeDisp, vecEdge );
 
 //              if( tipForce[0] > 0.0 )
-              {
-                SIF_I = pow( fabs( tipForce[0] * tipOpening[0] / 2.0 / tipArea ), 0.5 );
-                SIF_II = pow( fabs( tipForce[1] * tipOpening[1] / 2.0 / tipArea ), 0.5 );
-//              SIF_III = pow( fabs( tipForce[2] * tipOpening[2] / 2.0 / tipArea ), 0.5 );
-              }
-
-              if( tipOpening[0] < 0 )
-              {
-                SIF_I *= -1.0;
-              }
-
-              if( tipForce[1] < 0.0 )
-              {
-                SIF_II *= -1.0;
-              }
-
-              for( localIndex const faceIndex: edgeToFaceMap[ edgeIndex ] )
-              {
-                if( m_tipFaces.contains( faceIndex ))
                 {
-                  real64 vecFace[ 3 ];
-                  real64 fc[3] = LVARRAY_TENSOROPS_INIT_LOCAL_3 ( faceCenter[faceIndex] );
+                  SIF_I = pow( fabs( tipForce[0] * tipOpening[0] / 2.0 / tipArea ), 0.5 );
+                  SIF_II = pow( fabs( tipForce[1] * tipOpening[1] / 2.0 / tipArea ), 0.5 );
+//              SIF_III = pow( fabs( tipForce[2] * tipOpening[2] / 2.0 / tipArea ), 0.5 );
+                }
 
-                  //Get the vector in the face and normal to the edge.
-                  real64 udist;
+                if( tipOpening[0] < 0 )
+                {
+                  SIF_I *= -1.0;
+                }
 
-                  real64 x0_x1[ 3 ] = LVARRAY_TENSOROPS_INIT_LOCAL_3( X[edgeToNodeMap[edgeIndex][0]] );
-                  real64 x0_fc[ 3 ] = LVARRAY_TENSOROPS_INIT_LOCAL_3( fc );
+                if( tipForce[1] < 0.0 )
+                {
+                  SIF_II *= -1.0;
+                }
 
-                  LvArray::tensorOps::subtract< 3 >( x0_x1, X[edgeToNodeMap[edgeIndex][1]] );
-                  LvArray::tensorOps::normalize< 3 >( x0_x1 );
-                  LvArray::tensorOps::subtract< 3 >( x0_fc, X[edgeToNodeMap[edgeIndex][1]] );
-                  udist = LvArray::tensorOps::AiBi< 3 >( x0_x1, x0_fc );
+                for( localIndex const faceIndex: edgeToFaceMap[ edgeIndex ] )
+                {
+                  if( m_tipFaces.contains( faceIndex ))
+                  {
+                    real64 vecFace[ 3 ];
+                    real64 fc[3] = LVARRAY_TENSOROPS_INIT_LOCAL_3 ( faceCenter[faceIndex] );
 
-                  real64 ptPrj[ 3 ] = LVARRAY_TENSOROPS_INIT_LOCAL_3 ( x0_x1 );
-                  LvArray::tensorOps::scale< 3 >( ptPrj, udist );
-                  LvArray::tensorOps::add< 3 >( ptPrj, X[edgeToNodeMap[edgeIndex][1]] );
-                  LvArray::tensorOps::copy< 3 >( vecFace, fc );
-                  LvArray::tensorOps::subtract< 3 >( vecFace, ptPrj );
-                  LvArray::tensorOps::normalize< 3 >( vecFace );
+                    //Get the vector in the face and normal to the edge.
+                    real64 udist;
+
+                    real64 x0_x1[ 3 ] = LVARRAY_TENSOROPS_INIT_LOCAL_3( X[edgeToNodeMap[edgeIndex][0]] );
+                    real64 x0_fc[ 3 ] = LVARRAY_TENSOROPS_INIT_LOCAL_3( fc );
+
+                    LvArray::tensorOps::subtract< 3 >( x0_x1, X[edgeToNodeMap[edgeIndex][1]] );
+                    LvArray::tensorOps::normalize< 3 >( x0_x1 );
+                    LvArray::tensorOps::subtract< 3 >( x0_fc, X[edgeToNodeMap[edgeIndex][1]] );
+                    udist = LvArray::tensorOps::AiBi< 3 >( x0_x1, x0_fc );
+
+                    real64 ptPrj[ 3 ] = LVARRAY_TENSOROPS_INIT_LOCAL_3 ( x0_x1 );
+                    LvArray::tensorOps::scale< 3 >( ptPrj, udist );
+                    LvArray::tensorOps::add< 3 >( ptPrj, X[edgeToNodeMap[edgeIndex][1]] );
+                    LvArray::tensorOps::copy< 3 >( vecFace, fc );
+                    LvArray::tensorOps::subtract< 3 >( vecFace, ptPrj );
+                    LvArray::tensorOps::normalize< 3 >( vecFace );
 
 //                  if( LvArray::tensorOps::AiBi< 3 >( vecTip, vecFace ) > cos( m_maxTurnAngle ))
-                  {
-                    // We multiply this by 0.9999999 to avoid an exception caused by acos a number slightly larger than
-                    // 1.
-                    real64 thetaFace = acos( LvArray::tensorOps::AiBi< 3 >( vecTip, vecFace )*0.999999 );
-
-                    real64 tipCrossFace[ 3 ];
-                    LvArray::tensorOps::crossProduct( tipCrossFace, vecTip, vecEdge );
-
-                    if( LvArray::tensorOps::AiBi< 3 >( tipCrossFace, vecEdge ) < 0.0 )
                     {
-                      thetaFace *= -1.0;
+                      // We multiply this by 0.9999999 to avoid an exception caused by acos a number slightly larger than
+                      // 1.
+                      real64 thetaFace = acos( LvArray::tensorOps::AiBi< 3 >( vecTip, vecFace )*0.999999 );
+
+                      real64 tipCrossFace[ 3 ];
+                      LvArray::tensorOps::crossProduct( tipCrossFace, vecTip, vecEdge );
+
+                      if( LvArray::tensorOps::AiBi< 3 >( tipCrossFace, vecEdge ) < 0.0 )
+                      {
+                        thetaFace *= -1.0;
+                      }
+
+                      SIF_Face = cos( thetaFace / 2.0 ) *
+                                 ( SIF_I * cos( thetaFace / 2.0 ) * cos( thetaFace / 2.0 ) - 1.5 * SIF_II * sin( thetaFace ) );
+
+                      SIFonFace_All[faceIndex].emplace_back( SIF_Face );
                     }
-
-                    SIF_Face = cos( thetaFace / 2.0 ) *
-                               ( SIF_I * cos( thetaFace / 2.0 ) * cos( thetaFace / 2.0 ) - 1.5 * SIF_II * sin( thetaFace ) );
-
-                    SIFonFace_All[faceIndex].emplace_back( SIF_Face );
                   }
                 }
               }
@@ -3214,7 +3221,7 @@ void SurfaceGenerator::calculateNodeAndFaceSif( DomainPartition const & domain,
         }
       }
     }
-  }
+  } );
 
   //wu40: the tip node may be included in multiple trailing faces and SIF of the node/face will be calculated multiple
   // times. We chose the smaller node SIF and the larger face SIF.
@@ -3222,7 +3229,10 @@ void SurfaceGenerator::calculateNodeAndFaceSif( DomainPartition const & domain,
   {
     if( isNodeGhost[nodeIndex] < 0 )
     {
-      SIFNode[nodeIndex] = *min_element( SIFNode_All[nodeIndex].begin(), SIFNode_All[nodeIndex].end());
+      if( SIFNode_All[nodeIndex].size() >= 1 )
+      {
+        SIFNode[nodeIndex] = *min_element( SIFNode_All[nodeIndex].begin(), SIFNode_All[nodeIndex].end());
+      }
 
       for( localIndex const edgeIndex: m_tipEdges )
       {
@@ -3232,7 +3242,10 @@ void SurfaceGenerator::calculateNodeAndFaceSif( DomainPartition const & domain,
           {
             if( m_tipFaces.contains( faceIndex ))
             {
-              SIFonFace[faceIndex] = *max_element( SIFonFace_All[faceIndex].begin(), SIFonFace_All[faceIndex].end());
+              if( SIFonFace_All[faceIndex].size() >= 1 )
+              {
+                SIFonFace[faceIndex] = *max_element( SIFonFace_All[faceIndex].begin(), SIFonFace_All[faceIndex].end());
+              }
             }
           }
         }
@@ -3297,7 +3310,8 @@ real64 SurfaceGenerator::calculateEdgeSif( DomainPartition const & domain,
   }
   else
   {
-    GEOS_ERROR( GEOS_FMT( "Error! Edge {} has two external faces, but the parent-child relationship is wrong.", edgeID ) );
+    GEOS_ERROR( GEOS_FMT( "{}: Edge {} has two external faces, but the parent-child relationship is wrong.",
+                          getDataContext(), edgeID ) );
   }
 
   trailFaceID = faceParentIndex[faceInvolved[0]]==-1 ? faceInvolved[0] : faceParentIndex[faceInvolved[0]];
@@ -3374,7 +3388,7 @@ real64 SurfaceGenerator::calculateEdgeSif( DomainPartition const & domain,
 
     if( numSharedNodes == 4 )
     {
-      GEOS_ERROR( "Error.  The fracture face has four shared nodes with its child.  This should not happen." );
+      GEOS_ERROR( getDataContext() << ": The fracture face has four shared nodes with its child. This should not happen." );
     }
     else if( numSharedNodes == 3 )
     {
@@ -3383,7 +3397,7 @@ real64 SurfaceGenerator::calculateEdgeSif( DomainPartition const & domain,
       //wu40: I think the following check is not necessary.
       if( lNodeFaceA.size() != 1 || lNodeFaceAp.size() != 1 )
       {
-        GEOS_ERROR( "Error. These two faces share three nodes but the number of remaining nodes is not one.  Something is wrong" );
+        GEOS_ERROR( getDataContext() << ": these two faces share three nodes but the number of remaining nodes is not one." );
       }
       else
       {
@@ -3422,7 +3436,7 @@ real64 SurfaceGenerator::calculateEdgeSif( DomainPartition const & domain,
     }
 
     if( convexCorner == std::numeric_limits< localIndex >::max())
-      GEOS_ERROR( "Error.  This is a three-node-pinched edge but I cannot find the convex corner" );
+      GEOS_ERROR( getDataContext() << ": This is a three-node-pinched edge but I cannot find the convex corner" );
 
   }
 
@@ -3492,7 +3506,7 @@ real64 SurfaceGenerator::calculateEdgeSif( DomainPartition const & domain,
 
       if( trailingNodes.size() > 2 || trailingNodes.size() == 0 )
       {
-        GEOS_ERROR( "Fatal error in finding nodes behind tip edge." );
+        GEOS_ERROR( getDataContext() << ": Fatal error in finding nodes behind tip edge." );
       }
       else if( trailingNodes.size() == 1 )  // Need some work to find the other node
       {
@@ -3768,10 +3782,10 @@ int SurfaceGenerator::calculateElementForcesOnEdge( DomainPartition const & doma
 
       if(( udist <= edgeLength && udist > 0.0 ) || threeNodesPinched )
       {
-        real64 K = bulkModulus[er][esr][m_solidMaterialFullIndex[er]][ei];
-        real64 G = shearModulus[er][esr][m_solidMaterialFullIndex[er]][ei];
-        real64 YoungModulus = 9 * K * G / ( 3 * K + G );
-        real64 poissonRatio = ( 3 * K - 2 * G ) / ( 2 * ( 3 * K + G ) );
+        real64 const K  = bulkModulus[er][esr][m_solidMaterialFullIndex[er]][ei];
+        real64 const G = shearModulus[er][esr][m_solidMaterialFullIndex[er]][ei];
+        real64 const YoungModulus = 9 * K * G / ( 3 * K + G );
+        real64 const poissonRatio = ( 3 * K - 2 * G ) / ( 2 * ( 3 * K + G ) );
 
         arrayView2d< localIndex const, cells::NODE_MAP_USD > const & elementsToNodes = elementSubRegion.nodeList();
         for( localIndex n=0; n<elementsToNodes.size( 1 ); ++n )
@@ -4507,7 +4521,7 @@ SurfaceGenerator::calculateRuptureRate( SurfaceElementRegion & faceElementRegion
   FaceElementSubRegion & subRegion = faceElementRegion.getSubRegion< FaceElementSubRegion >( 0 );
 
   ArrayOfArraysView< localIndex const > const &
-  fractureConnectorEdgesToFaceElements = subRegion.m_fractureConnectorEdgesToFaceElements.toViewConst();
+  fractureConnectorEdgesToFaceElements = subRegion.m_2dFaceTo2dElems.toViewConst();
 
   arrayView1d< real64 > const & ruptureTime = subRegion.getField< fields::ruptureTime >();
   arrayView1d< real64 > const & ruptureRate = subRegion.getField< surfaceGeneration::ruptureRate >();

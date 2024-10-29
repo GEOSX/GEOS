@@ -2,10 +2,11 @@
  * ------------------------------------------------------------------------------------------------------------
  * SPDX-License-Identifier: LGPL-2.1-only
  *
- * Copyright (c) 2018-2020 Lawrence Livermore National Security LLC
- * Copyright (c) 2018-2020 The Board of Trustees of the Leland Stanford Junior University
- * Copyright (c) 2018-2020 TotalEnergies
- * Copyright (c) 2019-     GEOSX Contributors
+ * Copyright (c) 2016-2024 Lawrence Livermore National Security LLC
+ * Copyright (c) 2018-2024 Total, S.A
+ * Copyright (c) 2018-2024 The Board of Trustees of the Leland Stanford Junior University
+ * Copyright (c) 2018-2024 Chevron
+ * Copyright (c) 2019-     GEOS/GEOSX Contributors
  * All rights reserved
  *
  * See top level LICENSE, COPYRIGHT, CONTRIBUTORS, NOTICE, and ACKNOWLEDGEMENTS files for details.
@@ -38,6 +39,7 @@ JFunctionCapillaryPressure::JFunctionCapillaryPressure( std::string const & name
   m_nonWettingIntermediateSurfaceTension( -1 )
 {
   registerWrapper( viewKeyStruct::wettingNonWettingJFuncTableNameString(), &m_wettingNonWettingJFuncTableName ).
+    setRTTypeName( rtTypes::CustomTypes::groupNameRef ).
     setInputFlag( InputFlags::OPTIONAL ).
     setDescription( "J-function table (dimensionless) for the pair (wetting phase, non-wetting phase)\n"
                     "Note that this input is only used for two-phase flow.\n"
@@ -48,6 +50,7 @@ JFunctionCapillaryPressure::JFunctionCapillaryPressure( std::string const & name
                     " to specify the table names." );
 
   registerWrapper( viewKeyStruct::wettingIntermediateJFuncTableNameString(), &m_wettingIntermediateJFuncTableName ).
+    setRTTypeName( rtTypes::CustomTypes::groupNameRef ).
     setInputFlag( InputFlags::OPTIONAL ).
     setDescription( "J-function table (dimensionless) for the pair (wetting phase, intermediate phase)\n"
                     "Note that this input is only used for three-phase flow.\n"
@@ -56,6 +59,7 @@ JFunctionCapillaryPressure::JFunctionCapillaryPressure( std::string const & name
                     " to specify the table names." );
 
   registerWrapper( viewKeyStruct::nonWettingIntermediateJFuncTableNameString(), &m_nonWettingIntermediateJFuncTableName ).
+    setRTTypeName( rtTypes::CustomTypes::groupNameRef ).
     setInputFlag( InputFlags::OPTIONAL ).
     setDescription( "J-function table (dimensionless) for the pair (non-wetting phase, intermediate phase)\n"
                     "Note that this input is only used for three-phase flow.\n"
@@ -117,9 +121,9 @@ JFunctionCapillaryPressure::JFunctionCapillaryPressure( std::string const & name
     setRestartFlags( RestartFlags::NO_WRITE );
 }
 
-void JFunctionCapillaryPressure::postProcessInput()
+void JFunctionCapillaryPressure::postInputInitialization()
 {
-  CapillaryPressureBase::postProcessInput();
+  CapillaryPressureBase::postInputInitialization();
 
   integer const numPhases = m_phaseNames.size();
   GEOS_THROW_IF( numPhases != 2 && numPhases != 3,
@@ -247,7 +251,19 @@ void JFunctionCapillaryPressure::saveConvergedRockState( arrayView2d< real64 con
       permeability = convergedPermeability[ei][0][2];
     }
 
-    real64 const porosityOverPermeability = pow( convergedPorosity[ei][0], porosityExponent ) / pow( permeability, permeabilityExponent );
+    // here we compute an average of the porosity over quadrature points
+    // this average is exact for tets, regular pyramids/wedges/hexes, or for VEM
+    real64 porosityAveragedOverQuadraturePoints = 0;
+    for( integer i = 0; i < convergedPorosity.size( 1 ); ++i )
+    {
+      porosityAveragedOverQuadraturePoints += convergedPorosity[ei][i];
+    }
+    porosityAveragedOverQuadraturePoints /= convergedPorosity.size( 1 );
+    porosityAveragedOverQuadraturePoints =
+      LvArray::math::max( porosityAveragedOverQuadraturePoints, LvArray::NumericLimits< real64 >::epsilon );
+
+    real64 const porosityOverPermeability = pow( porosityAveragedOverQuadraturePoints, porosityExponent )
+                                            / pow( permeability, permeabilityExponent );
 
     // units:
     // ------

@@ -121,15 +121,18 @@ with the following code.
                   nx="{5, 5}"
                   ny="{5, 5}"
                   nz="{3, 3, 3, 3}"
-                  cellBlockNames="{b00,b01,b02,b03,b04,b05,b06,b07,b08,b09,b10,b11,b12,b13,b14,b15}"/>
+                  cellBlockNames="{cb-0_0_0, cb-1_0_0, cb-0_1_0, cb-1_1_0,
+                                   cb-0_0_1, cb-1_0_1, cb-0_1_1, cb-1_1_1,
+                                   cb-0_0_2, cb-1_0_2, cb-0_1_2, cb-1_1_2,
+                                   cb-0_0_3, cb-1_0_3, cb-0_1_3, cb-1_1_3}"/>
   </Mesh>
 
   <ElementRegions>
      <CellElementRegion name="Channel"
-                    cellBlocks="{b08,b00,b01,b05,b06,b14,b15,b11}"
+                    cellBlocks="{cb-1_0_0, cb-0_0_0, cb-0_0_1, cb-0_1_1, cb-0_1_2, cb-1_1_2, cb-1_1_3, cb-1_0_3}"
                     materialList="{fluid1, rock, relperm}"/>
      <CellElementRegion name="Barrier"
-                    cellBlocks="{b04,b12,b13,b09,b10,b02,b03,b07}"
+                    cellBlocks="{cb-0_1_0, cb-1_1_0, cb-1_1_1, cb-1_0_1, cb-1_0_2, cb-0_0_2, cb-0_0_3, cb-0_1_3}"
                     materialList="{}"/>
   </ElementRegions>
 
@@ -139,6 +142,7 @@ Thus, the generated mesh will be :
    :align: center
    :width: 500
 
+Note that ``CellBlocks`` are ordered following the natural IJK logic, with indices increasing first in I (x-direction), then in J (y-direction) and last in K (z-direction).
 
 .. _ExternalMeshUsage:
 

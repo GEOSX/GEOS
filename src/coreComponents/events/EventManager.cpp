@@ -2,10 +2,11 @@
  * ------------------------------------------------------------------------------------------------------------
  * SPDX-License-Identifier: LGPL-2.1-only
  *
- * Copyright (c) 2018-2020 Lawrence Livermore National Security LLC
- * Copyright (c) 2018-2020 The Board of Trustees of the Leland Stanford Junior University
- * Copyright (c) 2018-2020 TotalEnergies
- * Copyright (c) 2019-     GEOSX Contributors
+ * Copyright (c) 2016-2024 Lawrence Livermore National Security LLC
+ * Copyright (c) 2018-2024 Total, S.A
+ * Copyright (c) 2018-2024 The Board of Trustees of the Leland Stanford Junior University
+ * Copyright (c) 2018-2024 Chevron
+ * Copyright (c) 2019-     GEOS/GEOSX Contributors
  * All rights reserved
  *
  * See top level LICENSE, COPYRIGHT, CONTRIBUTORS, NOTICE, and ACKNOWLEDGEMENTS files for details.
@@ -21,6 +22,7 @@
 #include "common/TimingMacros.hpp"
 #include "events/EventBase.hpp"
 #include "mesh/mpiCommunications/CommunicationTools.hpp"
+#include "common/Units.hpp"
 
 namespace geos
 {
@@ -38,6 +40,7 @@ EventManager::EventManager( string const & name,
   m_dt(),
   m_cycle(),
   m_currentSubEvent(),
+  // TODO: default to TimeOutputFormat::full?
   m_timeOutputFormat( TimeOutputFormat::seconds )
 {
   setInputFlags( InputFlags::REQUIRED );
@@ -51,14 +54,14 @@ EventManager::EventManager( string const & name,
     setDescription( "Start simulation time for the global event loop." );
 
   registerWrapper( viewKeyStruct::maxTimeString(), &m_maxTime ).
-    setApplyDefaultValue( std::numeric_limits< real64 >::max()).
+    setApplyDefaultValue( std::numeric_limits< real64 >::max() ).
     setInputFlag( InputFlags::OPTIONAL ).
-    setDescription( "Maximum simulation time for the global event loop." );
+    setDescription( "Maximum simulation time for the global event loop. Disabled by default." );
 
   registerWrapper( viewKeyStruct::maxCycleString(), &m_maxCycle ).
-    setApplyDefaultValue( std::numeric_limits< integer >::max()).
+    setApplyDefaultValue( std::numeric_limits< integer >::max() ).
     setInputFlag( InputFlags::OPTIONAL ).
-    setDescription( "Maximum simulation cycle for the global event loop." );
+    setDescription( "Maximum simulation cycle for the global event loop. Disabled by default." );
 
   registerWrapper( viewKeyStruct::timeString(), &m_time ).
     setRestartFlags( RestartFlags::WRITE_AND_READ ).
@@ -85,7 +88,6 @@ EventManager::EventManager( string const & name,
 
 EventManager::~EventManager()
 {}
-
 
 
 Group * EventManager::createChild( string const & childKey, string const & childName )
@@ -160,7 +162,7 @@ bool EventManager::run( DomainPartition & domain )
       }
       m_currentSubEvent = 0;
 
-#ifdef GEOSX_USE_MPI
+#ifdef GEOS_USE_MPI
       // Find the min dt across processes
       real64 dt_global;
       MPI_Allreduce( &m_dt, &dt_global, 1, MPI_DOUBLE, MPI_MIN, MPI_COMM_GEOSX );
@@ -179,9 +181,8 @@ bool EventManager::run( DomainPartition & domain )
       subEvent->checkEvents( m_time, m_dt, m_cycle, domain );
 
       // Print debug information for logLevel >= 1
-      GEOS_LOG_LEVEL_RANK_0( 1,
-                             "     Event: " << m_currentSubEvent << " (" << subEvent->getName() << "), dt_request=" << subEvent->getCurrentEventDtRequest() << ", forecast=" <<
-                             subEvent->getForecast() );
+      GEOS_LOG_LEVEL_RANK_0( 1, GEOS_FMT( "Event: {} ({}), dt_request={}, forecast={}",
+                                          m_currentSubEvent, subEvent->getName(), subEvent->getCurrentEventDtRequest(), subEvent->getForecast() ) );
 
       // Execute, signal events
       bool earlyReturn = false;
@@ -212,6 +213,16 @@ bool EventManager::run( DomainPartition & domain )
     m_currentSubEvent = 0;
   }
 
+  // Add note to output file if job exits before maxTime
+  if( m_time < m_maxTime )
+  {
+    GEOS_LOG_RANK_0( "Job exited early" );
+  }
+  else
+  {
+    GEOS_LOG_RANK_0( "Job complete" );
+  }
+
   // Cleanup
   GEOS_LOG_RANK_0( "Cleaning up events" );
 
@@ -225,39 +236,67 @@ bool EventManager::run( DomainPartition & domain )
 
 void EventManager::outputTime() const
 {
+  const bool isTimeLimited = m_maxTime < std::numeric_limits< real64 >::max();
+  const bool isCycleLimited = m_maxCycle < std::numeric_limits< integer >::max();
+  units::TimeFormatInfo const timeInfo = units::TimeFormatInfo::fromSeconds( m_time );
+  units::TimeFormatInfo const maxTimeInfo = units::TimeFormatInfo::fromSeconds( m_maxTime );
+
+  const auto timeCompletionUnfoldedString = [&]() -> std::string {
+    return GEOS_FMT( " out of {} ({:.0f}% completed)",
+                     maxTimeInfo.toUnfoldedString(),
+                     100.0 * (m_time - m_minTime) / ( m_maxTime - m_minTime ) );
+  };
+  const auto timeCompletionSecondsString = [&]() -> std::string {
+    return GEOS_FMT( " / {}", maxTimeInfo.toSecondsString() );
+  };
+  const auto cycleCompletionString = [&]() -> std::string {
+    return GEOS_FMT( " out of {} ({:.0f}% completed)",
+                     m_maxCycle, ( 100.0 * m_cycle ) / m_maxCycle );
+  };
+
+  // The formating here is a work in progress.
+  GEOS_LOG_RANK_0( "\n------------------------- TIMESTEP START -------------------------" );
+  GEOS_LOG_RANK_0( GEOS_FMT( "    - Time:       {}{}",
+                             timeInfo.toUnfoldedString(),
+                             isTimeLimited ? timeCompletionUnfoldedString() : "" ) );
+  GEOS_LOG_RANK_0( GEOS_FMT( "                  ({}{})",
+                             timeInfo.toSecondsString(),
+                             isTimeLimited ? timeCompletionSecondsString() : "" ) );
+  GEOS_LOG_RANK_0( GEOS_FMT( "    - Delta Time: {}", units::TimeFormatInfo::fromSeconds( m_dt ) ) );
+  GEOS_LOG_RANK_0( GEOS_FMT( "    - Cycle:      {}{}",
+                             m_cycle,
+                             isCycleLimited ? cycleCompletionString() : "" ) );
+  GEOS_LOG_RANK_0( "--------------------------------------------------------------------\n" );
+
+  // We are keeping the old outputs to keep compatibility with current log reading scripts.
   if( m_timeOutputFormat==TimeOutputFormat::full )
   {
-    integer const yearsOut   =   m_time / YEAR;
-    integer const daysOut    =  (m_time - yearsOut * YEAR) / DAY;
-    integer const hoursOut   =  (m_time - yearsOut * YEAR - daysOut * DAY) / HOUR;
-    integer const minutesOut =  (m_time - yearsOut * YEAR - daysOut * DAY - hoursOut * HOUR) / MINUTE;
-    integer const secondsOut =   m_time - yearsOut * YEAR - daysOut * DAY - hoursOut * HOUR - minutesOut * MINUTE;
-
-    GEOS_LOG_RANK_0( GEOS_FMT( "Time: {} years, {} days, {} hrs, {} min, {} s, dt: {} s, Cycle: {}", yearsOut, daysOut, hoursOut, minutesOut, secondsOut, m_dt, m_cycle ) );
+    GEOS_LOG_RANK_0( GEOS_FMT( "Time: {} years, {} days, {} hrs, {} min, {} s, dt: {} s, Cycle: {}\n",
+                               timeInfo.m_years, timeInfo.m_days, timeInfo.m_hours, timeInfo.m_minutes, timeInfo.m_seconds, m_dt, m_cycle ) );
   }
   else if( m_timeOutputFormat==TimeOutputFormat::years )
   {
-    real64 const yearsOut = m_time / YEAR;
-    GEOS_LOG_RANK_0( GEOS_FMT( "Time: {:.2f} years, dt: {} s, Cycle: {}", yearsOut, m_dt, m_cycle ) );
+    real64 const yearsOut = m_time / units::YearSeconds;
+    GEOS_LOG_RANK_0( GEOS_FMT( "Time: {:.2f} years, dt: {} s, Cycle: {}\n", yearsOut, m_dt, m_cycle ) );
   }
   else if( m_timeOutputFormat==TimeOutputFormat::days )
   {
-    real64 const daysOut = m_time / DAY;
-    GEOS_LOG_RANK_0( GEOS_FMT( "Time: {:.2f} days, dt: {} s, Cycle: {}", daysOut, m_dt, m_cycle ) );
+    real64 const daysOut = m_time / units::DaySeconds;
+    GEOS_LOG_RANK_0( GEOS_FMT( "Time: {:.2f} days, dt: {} s, Cycle: {}\n", daysOut, m_dt, m_cycle ) );
   }
   else if( m_timeOutputFormat==TimeOutputFormat::hours )
   {
-    real64 const hoursOut = m_time / HOUR;
-    GEOS_LOG_RANK_0( GEOS_FMT( "Time: {:.2f} hrs, dt: {} s, Cycle: {}", hoursOut, m_dt, m_cycle ) );
+    real64 const hoursOut = m_time / units::HourSeconds;
+    GEOS_LOG_RANK_0( GEOS_FMT( "Time: {:.2f} hrs, dt: {} s, Cycle: {}\n", hoursOut, m_dt, m_cycle ) );
   }
   else if( m_timeOutputFormat==TimeOutputFormat::minutes )
   {
-    real64 const minutesOut = m_time / MINUTE;
-    GEOS_LOG_RANK_0( GEOS_FMT( "Time: {:.2f} min, dt: {} s, Cycle: {}", minutesOut, m_dt, m_cycle ) );
+    real64 const minutesOut = m_time / units::MinuteSeconds;
+    GEOS_LOG_RANK_0( GEOS_FMT( "Time: {:.2f} min, dt: {} s, Cycle: {}\n", minutesOut, m_dt, m_cycle ) );
   }
   else if( m_timeOutputFormat == TimeOutputFormat::seconds )
   {
-    GEOS_LOG_RANK_0( GEOS_FMT( "Time: {:4.2e} s, dt: {} s, Cycle: {}", m_time, m_dt, m_cycle ) );
+    GEOS_LOG_RANK_0( GEOS_FMT( "Time: {:4.5e} s, dt: {} s, Cycle: {}", m_time, m_dt, m_cycle ) );
   }
   else
   {

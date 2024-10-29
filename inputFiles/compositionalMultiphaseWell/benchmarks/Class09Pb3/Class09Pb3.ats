@@ -1,0 +1,18 @@
+from geos.ats.test_builder import TestDeck, RestartcheckParameters, generate_geos_tests
+
+restartcheck_params = {}
+restartcheck_params["atol"] = 1.0E-6
+restartcheck_params["rtol"] = 1.0E-5
+
+decks = [
+    TestDeck(
+        name="class09_pb3_smoke_3d",
+        description=
+        "Smoke test for the Johansen model (3D displacement, structured mesh, CO2-brine)",
+        partitions=[(1, 1, 1), (2, 2, 2)],
+        restart_step=5,
+        check_step=10,
+        restartcheck_params=RestartcheckParameters(**restartcheck_params)),
+]
+
+generate_geos_tests(decks)

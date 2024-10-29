@@ -2,10 +2,11 @@
  * ------------------------------------------------------------------------------------------------------------
  * SPDX-License-Identifier: LGPL-2.1-only
  *
- * Copyright (c) 2018-2020 Lawrence Livermore National Security LLC
- * Copyright (c) 2018-2020 The Board of Trustees of the Leland Stanford Junior University
- * Copyright (c) 2018-2020 TotalEnergies
- * Copyright (c) 2019-     GEOSX Contributors
+ * Copyright (c) 2016-2024 Lawrence Livermore National Security LLC
+ * Copyright (c) 2018-2024 Total, S.A
+ * Copyright (c) 2018-2024 The Board of Trustees of the Leland Stanford Junior University
+ * Copyright (c) 2018-2024 Chevron
+ * Copyright (c) 2019-     GEOS/GEOSX Contributors
  * All rights reserved
  *
  * See top level LICENSE, COPYRIGHT, CONTRIBUTORS, NOTICE, and ACKNOWLEDGEMENTS files for details.
@@ -180,6 +181,12 @@ private:
                          MeshLevel & meshLevel,
                          FUNC && func ) const;
 
+  template< typename OBJECT_TYPE,
+            typename FUNC >
+  void forObjectsInPath( std::pair< string const, std::map< string, std::vector< string > > > const & levelPair,
+                         MeshLevel const & meshLevel,
+                         FUNC && func ) const;
+
   /**
    * @brief A logical check for whether or not the m_objecType is consistent
    *  with a specific OBJECT_TYPE
@@ -270,37 +277,49 @@ void MeshObjectPath::forObjectsInPath( std::pair< string const, std::map< string
                                        MeshLevel & meshLevel,
                                        FUNC && func ) const
 {
+  forObjectsInPath< OBJECT_TYPE >( levelPair, const_cast< MeshLevel const & >( meshLevel ), [&]( OBJECT_TYPE const & object )
+  {
+    func( const_cast< OBJECT_TYPE & >(object) );
+  } );
+}
+
+template< typename OBJECT_TYPE,
+          typename FUNC >
+void MeshObjectPath::forObjectsInPath( std::pair< string const, std::map< string, std::vector< string > > > const & levelPair,
+                                       MeshLevel const & meshLevel,
+                                       FUNC && func ) const
+{
   if( m_objectType == ObjectTypes::nodes )
   {
-    func( dynamic_cast< OBJECT_TYPE & >(meshLevel.getNodeManager() ) );
+    func( dynamic_cast< OBJECT_TYPE const & >(meshLevel.getNodeManager() ) );
   }
   else if( m_objectType == ObjectTypes::edges )
   {
-    func( dynamic_cast< OBJECT_TYPE & >(meshLevel.getEdgeManager()) );
+    func( dynamic_cast< OBJECT_TYPE const & >(meshLevel.getEdgeManager()) );
   }
   else if( m_objectType == ObjectTypes::faces )
   {
-    func( dynamic_cast< OBJECT_TYPE & >(meshLevel.getFaceManager()) );
+    func( dynamic_cast< OBJECT_TYPE const & >(meshLevel.getFaceManager()) );
   }
   else if( m_objectType == ObjectTypes::elems )
   {
-    ElementRegionManager & elemRegionMan = meshLevel.getElemManager();
+    ElementRegionManager const & elemRegionMan = meshLevel.getElemManager();
     for( auto & elemRegionPair : levelPair.second )
     {
-      ElementRegionBase & elemRegion = elemRegionMan.getRegion( elemRegionPair.first );
+      ElementRegionBase const & elemRegion = elemRegionMan.getRegion( elemRegionPair.first );
       if( std::is_base_of< ElementRegionBase, OBJECT_TYPE >::value )
       {
-        func( dynamic_cast< OBJECT_TYPE & >(elemRegion) );
+        func( dynamic_cast< OBJECT_TYPE const & >(elemRegion) );
       }
       else
       {
         for( auto & elemSubRegionName : elemRegionPair.second )
         {
-          ElementSubRegionBase & subRegion = elemRegion.getSubRegion( elemSubRegionName );
+          ElementSubRegionBase const & subRegion = elemRegion.getSubRegion( elemSubRegionName );
           if( std::is_base_of< ElementSubRegionBase, OBJECT_TYPE >::value ||
               std::is_same< dataRepository::Group, OBJECT_TYPE >::value )
           {
-            func( dynamic_cast< OBJECT_TYPE & >(subRegion) );
+            func( dynamic_cast< OBJECT_TYPE const & >(subRegion) );
           }
           else
           {
@@ -335,7 +354,6 @@ void MeshObjectPath::forObjectsInPath( dataRepository::Group const & meshBodies,
     for( auto const & meshLevelPair : meshBodyPair.second )
     {
       MeshLevel const & meshLevel = meshBody.getMeshLevel( meshLevelPair.first );
-
       forObjectsInPath< OBJECT_TYPE, FUNC >( meshLevelPair, meshLevel, std::forward< FUNC >( func ));
     }
   }

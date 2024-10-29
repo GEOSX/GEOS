@@ -2,10 +2,11 @@
  * ------------------------------------------------------------------------------------------------------------
  * SPDX-License-Identifier: LGPL-2.1-only
  *
- * Copyright (c) 2018-2020 Lawrence Livermore National Security LLC
- * Copyright (c) 2018-2020 The Board of Trustees of the Leland Stanford Junior University
- * Copyright (c) 2018-2020 TotalEnergies
- * Copyright (c) 2019-     GEOSX Contributors
+ * Copyright (c) 2016-2024 Lawrence Livermore National Security LLC
+ * Copyright (c) 2018-2024 Total, S.A
+ * Copyright (c) 2018-2024 The Board of Trustees of the Leland Stanford Junior University
+ * Copyright (c) 2018-2024 Chevron
+ * Copyright (c) 2019-     GEOS/GEOSX Contributors
  * All rights reserved
  *
  * See top level LICENSE, COPYRIGHT, CONTRIBUTORS, NOTICE, and ACKNOWLEDGEMENTS files for details.
@@ -34,11 +35,13 @@ FluxApproximationBase::FluxApproximationBase( string const & name, Group * const
 {
   setInputFlags( InputFlags::OPTIONAL_NONUNIQUE );
 
-  registerWrapper( viewKeyStruct::fieldNameString(), &m_fieldName ).
+  registerWrapper( viewKeyStruct::fieldNameString(), &m_fieldNames ).
+    setRTTypeName( rtTypes::CustomTypes::groupNameRefArray ).
     setInputFlag( InputFlags::FALSE ).
-    setDescription( "Name of primary solution field" );
+    setDescription( "Name of primary solution field" ).setSizedFromParent( 0 );
 
   registerWrapper( viewKeyStruct::coeffNameString(), &m_coeffName ).
+    setRTTypeName( rtTypes::CustomTypes::groupNameRef ).
     setInputFlag( InputFlags::FALSE ).
     setDescription( "Name of coefficient field" );
 
@@ -50,6 +53,13 @@ FluxApproximationBase::FluxApproximationBase( string const & name, Group * const
     setInputFlag( InputFlags::OPTIONAL ).
     setApplyDefaultValue( 1.0e-8 ).
     setDescription( "Relative tolerance for area calculations." );
+
+  registerWrapper( viewKeyStruct::upwindingSchemeString(), &m_upwindingParams.upwindingScheme ).
+    setInputFlag( dataRepository::InputFlags::OPTIONAL ).
+    setApplyDefaultValue( UpwindingScheme::PPU ).
+    setDescription( "Type of upwinding scheme. "
+                    "Valid options:\n* " + EnumStrings< UpwindingScheme >::concat( "\n* " ) );
+
 }
 
 FluxApproximationBase::CatalogInterface::CatalogType &
@@ -112,30 +122,43 @@ void FluxApproximationBase::initializePostInitialConditionsPreSubGroups()
     m_lengthScale = meshBody.getGlobalLengthScale();
     meshBody.forMeshLevels( [&]( MeshLevel & mesh )
     {
-
       if( !(mesh.isShallowCopy() ) )
       {
         // Group structure: mesh1/finiteVolumeStencils/myTPFA
+
+        // Compute the main cell-based stencil
+        computeCellStencil( mesh );
+
+        // Compute the fracture related stencils (within the fracture itself,
+        // but between the fracture and the matrix as well).
+        computeFractureStencil( mesh );
 
         Group & stencilParentGroup = mesh.getGroup( groupKeyStruct::stencilMeshGroupString() );
         Group & stencilGroup = stencilParentGroup.getGroup( getName() );
         // For each face-based Dirichlet boundary condition on target field, create a boundary stencil
         // TODO: Apply() should take a MeshLevel directly
-        fsManager.apply< FaceManager >( 0.0, // time = 0
-                                        mesh,
-                                        m_fieldName,
-                                        [&] ( FieldSpecificationBase const &,
-                                              string const & setName,
-                                              SortedArrayView< localIndex const > const &,
-                                              FaceManager const &,
-                                              string const & )
+        for( auto const & fieldName : m_fieldNames )
         {
-          registerBoundaryStencil( stencilGroup, setName );
-        } );
 
+          fsManager.apply< FaceManager >( 0.0, // time = 0
+                                          mesh,
+                                          fieldName,
+                                          [&] ( FieldSpecificationBase const &,
+                                                string const & setName,
+                                                SortedArrayView< localIndex const > const & faceSet,
+                                                FaceManager const &,
+                                                string const & )
+          {
+            if( !stencilGroup.hasWrapper( setName ) )
+            {
+              registerBoundaryStencil( stencilGroup, setName );
+              computeBoundaryStencil( mesh, setName, faceSet );
+            }
+          } );
+        }
         // For each aquifer boundary condition, create a boundary stencil
         fsManager.apply< FaceManager,
-                         AquiferBoundaryCondition >( 0.0, // time = 0
+                         AquiferBoundaryCondition >( 0.0,   // time = 0
                                                      mesh,
                                                      AquiferBoundaryCondition::catalogName(),
                                                      [&] ( AquiferBoundaryCondition const &,
@@ -146,27 +169,6 @@ void FluxApproximationBase::initializePostInitialConditionsPreSubGroups()
         {
           registerAquiferStencil( stencilGroup, setName );
         } );
-
-        // Compute the main cell-based stencil
-        computeCellStencil( mesh );
-
-        // Compute the fracture related stencils (within the fracture itself,
-        // but between the fracture and the matrix as well).
-        computeFractureStencil( mesh );
-
-        // For each face-based boundary condition on target field, compute the boundary stencil weights
-        fsManager.apply< FaceManager >( 0.0,
-                                        mesh,
-                                        m_fieldName,
-                                        [&] ( FieldSpecificationBase const &,
-                                              string const & setName,
-                                              SortedArrayView< localIndex const > const & faceSet,
-                                              FaceManager const &,
-                                              string const & )
-        {
-          computeBoundaryStencil( mesh, setName, faceSet );
-        } );
-
         // Compute the aquifer stencil weights
         computeAquiferStencil( domain, mesh );
       }
@@ -174,9 +176,9 @@ void FluxApproximationBase::initializePostInitialConditionsPreSubGroups()
   } );
 }
 
-void FluxApproximationBase::setFieldName( string const & name )
+void FluxApproximationBase::addFieldName( string const & name )
 {
-  m_fieldName = name;
+  m_fieldNames.emplace_back( name );
 }
 
 void FluxApproximationBase::setCoeffName( string const & name )

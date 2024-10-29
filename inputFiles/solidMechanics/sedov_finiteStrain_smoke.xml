@@ -43,7 +43,17 @@
       name="solverApplications"
       forceDt="1.0e-5"
       target="/Solvers/lagsolve"/>
+
+    <PeriodicEvent
+      name="timeHistoryCollection"
+      target="/Tasks/velocityCollection"/>
       
+    <PeriodicEvent
+      name="timeHistoryOutput"
+      timeFrequency="5.0e-4"
+      targetExactTimestep="0"
+      target="/Outputs/timeHistoryOutput"/>
+
     <PeriodicEvent
       name="restarts"
       timeFrequency="5.0e-4"

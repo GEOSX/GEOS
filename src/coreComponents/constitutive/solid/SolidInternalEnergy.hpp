@@ -2,10 +2,11 @@
  * ------------------------------------------------------------------------------------------------------------
  * SPDX-License-Identifier: LGPL-2.1-only
  *
- * Copyright (c) 2018-2020 Lawrence Livermore National Security LLC
- * Copyright (c) 2018-2020 The Board of Trustees of the Leland Stanford Junior University
- * Copyright (c) 2018-2020 TotalEnergies
- * Copyright (c) 2019-     GEOSX Contributors
+ * Copyright (c) 2016-2024 Lawrence Livermore National Security LLC
+ * Copyright (c) 2018-2024 Total, S.A
+ * Copyright (c) 2018-2024 The Board of Trustees of the Leland Stanford Junior University
+ * Copyright (c) 2018-2024 Chevron
+ * Copyright (c) 2019-     GEOS/GEOSX Contributors
  * All rights reserved
  *
  * See top level LICENSE, COPYRIGHT, CONTRIBUTORS, NOTICE, and ACKNOWLEDGEMENTS files for details.
@@ -35,12 +36,14 @@ public:
 
   SolidInternalEnergyUpdates( arrayView2d< real64 > const & internalEnergy,
                               arrayView2d< real64 > const & dInternalEnergy_dTemperature,
-                              real64 const & volumetricHeatCapacity,
+                              real64 const & referenceVolumetricHeatCapacity,
+                              real64 const & dVolumetricHeatCapacity_dTemperature,
                               real64 const & referenceTemperature,
                               real64 const & referenceInternalEnergy ):
     m_internalEnergy( internalEnergy ),
     m_dInternalEnergy_dTemperature( dInternalEnergy_dTemperature ),
-    m_volumetricHeatCapacity( volumetricHeatCapacity ),
+    m_referenceVolumetricHeatCapacity( referenceVolumetricHeatCapacity ),
+    m_dVolumetricHeatCapacity_dTemperature( dVolumetricHeatCapacity_dTemperature ),
     m_referenceTemperature( referenceTemperature ),
     m_referenceInternalEnergy( referenceInternalEnergy )
   {}
@@ -59,8 +62,10 @@ public:
                 real64 & internalEnergy,
                 real64 & dInternalEnergy_dTemperature ) const
   {
-    internalEnergy = m_referenceInternalEnergy + m_volumetricHeatCapacity * ( temperature - m_referenceTemperature );
-    dInternalEnergy_dTemperature =  m_volumetricHeatCapacity;
+    real64 volumetricHeatCapacity = m_referenceVolumetricHeatCapacity + m_dVolumetricHeatCapacity_dTemperature * ( temperature - m_referenceTemperature );
+
+    internalEnergy = m_referenceInternalEnergy + volumetricHeatCapacity * ( temperature - m_referenceTemperature );
+    dInternalEnergy_dTemperature =  volumetricHeatCapacity + m_dVolumetricHeatCapacity_dTemperature * ( temperature - m_referenceTemperature );
   }
 
 private:
@@ -71,13 +76,16 @@ private:
   /// Derivative of the solid internal energy w.r.t. the temperature
   arrayView2d< real64 > m_dInternalEnergy_dTemperature;
 
-  /// Solid volumetric heat capacity
-  real64 m_volumetricHeatCapacity;
+  /// Solid volumetric heat capacity at the reference tempearture
+  real64 m_referenceVolumetricHeatCapacity;
+
+  /// Derivative of the solid volumetric heat capacity w.r.t. the temperature
+  real64 m_dVolumetricHeatCapacity_dTemperature;
 
   /// Reference temperature
   real64 m_referenceTemperature;
 
-  /// Reference internal energy
+  /// Internal energy at the reference temperature
   real64 m_referenceInternalEnergy;
 };
 
@@ -99,7 +107,8 @@ public:
     static constexpr char const * internalEnergyString() { return "internalEnergy"; }
     static constexpr char const * oldInternalEnergyString() { return "internalEnergy_n"; }
     static constexpr char const * dInternalEnergy_dTemperatureString() { return "dInternalEnergy_dTemperature"; }
-    static constexpr char const * volumetricHeatCapacityString() { return "volumetricHeatCapacity"; }
+    static constexpr char const * referenceVolumetricHeatCapacityString() { return "referenceVolumetricHeatCapacity"; }
+    static constexpr char const * dVolumetricHeatCapacity_dTemperatureString() { return "dVolumetricHeatCapacity_dTemperature"; }
     static constexpr char const * referenceTemperatureString() { return "referenceTemperature"; }
     static constexpr char const * referenceInternalEnergyString() { return "referenceInternalEnergy"; }
   } viewKeys;
@@ -114,7 +123,8 @@ public:
   {
     return KernelWrapper( m_internalEnergy,
                           m_dInternalEnergy_dTemperature,
-                          m_volumetricHeatCapacity,
+                          m_referenceVolumetricHeatCapacity,
+                          m_dVolumetricHeatCapacity_dTemperature,
                           m_referenceTemperature,
                           m_referenceInternalEnergy );
   }
@@ -152,8 +162,11 @@ private:
   /// Derivative of the solid internal energy w.r.t. the temperature
   array2d< real64 > m_dInternalEnergy_dTemperature;
 
-  /// Solid volumetric heat capacity
-  real64 m_volumetricHeatCapacity;
+  /// Solid volumetric heat capacity at the reference temperature
+  real64 m_referenceVolumetricHeatCapacity;
+
+  /// Derivative of the solid volumetric heat capacity w.r.t. the temperature
+  real64 m_dVolumetricHeatCapacity_dTemperature;
 
   /// Reference temperature
   real64 m_referenceTemperature;

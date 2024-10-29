@@ -2,10 +2,11 @@
  * ------------------------------------------------------------------------------------------------------------
  * SPDX-License-Identifier: LGPL-2.1-only
  *
- * Copyright (c) 2018-2020 Lawrence Livermore National Security LLC
- * Copyright (c) 2018-2020 The Board of Trustees of the Leland Stanford Junior University
- * Copyright (c) 2018-2020 TotalEnergies
- * Copyright (c) 2019-     GEOSX Contributors
+ * Copyright (c) 2016-2024 Lawrence Livermore National Security LLC
+ * Copyright (c) 2018-2024 Total, S.A
+ * Copyright (c) 2018-2024 The Board of Trustees of the Leland Stanford Junior University
+ * Copyright (c) 2018-2024 Chevron
+ * Copyright (c) 2019-     GEOS/GEOSX Contributors
  * All rights reserved
  *
  * See top level LICENSE, COPYRIGHT, CONTRIBUTORS, NOTICE, and ACKNOWLEDGEMENTS files for details.
@@ -18,6 +19,8 @@
 
 #ifndef GEOS_CODINGUTILITIES_UNITTESTUTILITIES_HPP_
 #define GEOS_CODINGUTILITIES_UNITTESTUTILITIES_HPP_
+
+#include "common/GEOS_RAJA_Interface.hpp"
 
 #include "common/DataTypes.hpp"
 
@@ -80,40 +83,40 @@ T expected( T expectedSerial,
 constexpr real64 DEFAULT_ABS_TOL = 1E-12;
 constexpr real64 DEFAULT_REL_TOL = std::numeric_limits< real64 >::epsilon();
 
-::testing::AssertionResult checkRelativeErrorFormat( const char *, const char *, const char *, const char *,
-                                                     real64 const v1, real64 const v2, real64 const relTol, real64 const absTol )
+inline ::testing::AssertionResult checkRelativeErrorFormat( const char *, const char *, const char *, const char *,
+                                                            real64 const v1, real64 const v2, real64 const relTol, real64 const absTol )
 {
   real64 const delta = std::abs( v1 - v2 );
   real64 const value = std::max( std::abs( v1 ), std::abs( v2 ) );
-  if( delta > absTol && delta > relTol * value )
+  if( delta > absTol && delta > relTol * (value + 1.0) )
   {
     return ::testing::AssertionFailure() << std::scientific << std::setprecision( 5 )
-                                         << " relative error: " << delta / value
+                                         << " error norm: " << delta / (value + 1.0)
                                          << " (" << v1 << " vs " << v2 << "),"
-                                         << " exceeds " << relTol <<". "
+                                         << " exceeds " << relTol << ". "
                                          << " absolute error: " << delta << " exeeds "
-                                         << absTol <<std::endl;
+                                         << absTol << std::endl;
   }
   return ::testing::AssertionSuccess();
 }
 
-::testing::AssertionResult checkRelativeErrorFormat( char const * a, char const * b, char const * c,
-                                                     real64 const v1, real64 const v2, real64 const relTol )
+inline ::testing::AssertionResult checkRelativeErrorFormat( char const * a, char const * b, char const * c,
+                                                            real64 const v1, real64 const v2, real64 const relTol )
 { return checkRelativeErrorFormat( a, b, c, "DEFAULT_ABS_TOL", v1, v2, relTol, DEFAULT_ABS_TOL ); }
 
-void checkRelativeError( real64 const v1, real64 const v2, real64 const relTol )
+inline void checkRelativeError( real64 const v1, real64 const v2, real64 const relTol )
 { EXPECT_PRED_FORMAT3( checkRelativeErrorFormat, v1, v2, relTol ); }
 
-void checkRelativeError( real64 const v1, real64 const v2, real64 const relTol, real64 const absTol )
+inline void checkRelativeError( real64 const v1, real64 const v2, real64 const relTol, real64 const absTol )
 { EXPECT_PRED_FORMAT4( checkRelativeErrorFormat, v1, v2, relTol, absTol ); }
 
-void checkRelativeError( real64 const v1, real64 const v2, real64 const relTol, string const & name )
+inline void checkRelativeError( real64 const v1, real64 const v2, real64 const relTol, string const & name )
 {
   SCOPED_TRACE( name );
   EXPECT_PRED_FORMAT3( checkRelativeErrorFormat, v1, v2, relTol );
 }
 
-void checkRelativeError( real64 const v1, real64 const v2, real64 const relTol, real64 const absTol, string const & name )
+inline void checkRelativeError( real64 const v1, real64 const v2, real64 const relTol, real64 const absTol, string const & name )
 {
   SCOPED_TRACE( name );
   EXPECT_PRED_FORMAT4( checkRelativeErrorFormat, v1, v2, relTol, absTol );

@@ -1,0 +1,7 @@
+set( HOMEBREW_DIR $ENV{HOMEBREW_DIR} )
+set( CONFIG_NAME $ENV{GEOS_CONFIG_NAME} ) 
+
+set(Python3_ROOT_DIR $ENV{GEOS_PYTHON_DIR} CACHE PATH "")
+set(Python3_EXECUTABLE ${Python3_ROOT_DIR}/bin/python3 CACHE PATH "")
+
+include(${CMAKE_CURRENT_LIST_DIR}/macOS_base.cmake)

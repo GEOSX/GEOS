@@ -6,7 +6,7 @@
       name="testCO2"
       relperm="relperm"
       steps="100" 
-      output="out_alt.txt"
+      output="out_baker.txt"
       logLevel="1" />  
   </Tasks>
 
@@ -16,16 +16,14 @@
   </Events>
 
   <Constitutive>
-
     <BrooksCoreyBakerRelativePermeability
-      name="relperm"
-      phaseNames="{ oil, gas, water }"
-      phaseMinVolumeFraction="{ 0.05, 0.05, 0.05 }"
-      waterOilRelPermExponent="{ 2, 2. }"
-      waterOilRelPermMaxValue="{ 1, 1. }"
-      gasOilRelPermExponent="{ 1, 1 }"
-      gasOilRelPermMaxValue="{ 1, 1 }"/>
-
+            name="relperm"
+            phaseNames="{ oil, gas, water}"
+            phaseMinVolumeFraction="{ 0.1, 0.05, 0.2 }"
+            waterOilRelPermExponent="{ 2.0, 2.0 }"
+            waterOilRelPermMaxValue="{ 1.0, 1.0 }"
+            gasOilRelPermExponent="{ 2.0, 2.0 }"
+            gasOilRelPermMaxValue="{ 0.8, 0.4 }"/>
 
   </Constitutive>
 

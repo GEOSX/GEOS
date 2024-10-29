@@ -2,10 +2,11 @@
  * ------------------------------------------------------------------------------------------------------------
  * SPDX-License-Identifier: LGPL-2.1-only
  *
- * Copyright (c) 2018-2020 Lawrence Livermore National Security LLC
- * Copyright (c) 2018-2020 The Board of Trustees of the Leland Stanford Junior University
- * Copyright (c) 2018-2020 TotalEnergies
- * Copyright (c) 2019-     GEOSX Contributors
+ * Copyright (c) 2016-2024 Lawrence Livermore National Security LLC
+ * Copyright (c) 2018-2024 Total, S.A
+ * Copyright (c) 2018-2024 The Board of Trustees of the Leland Stanford Junior University
+ * Copyright (c) 2018-2024 Chevron
+ * Copyright (c) 2019-     GEOS/GEOSX Contributors
  * All rights reserved
  *
  * See top level LICENSE, COPYRIGHT, CONTRIBUTORS, NOTICE, and ACKNOWLEDGEMENTS files for details.
@@ -20,7 +21,7 @@
 #ifndef GEOS_MAININTERFACE_PROBLEMMANAGER_HPP_
 #define GEOS_MAININTERFACE_PROBLEMMANAGER_HPP_
 
-#include "events/EventManager.hpp"
+#include "dataRepository/Group.hpp"
 
 namespace geos
 {
@@ -34,6 +35,8 @@ namespace constitutive
 {
 class ConstitutiveManager;
 }
+class EventManager;
+class TasksManager;
 class FunctionManager;
 class FieldSpecificationManager;
 struct CommandLineOptions;
@@ -42,7 +45,7 @@ class ParticleBlockManagerABC;
 
 /**
  * @class ProblemManager
- * @brief This is the class handling the operation flow of the problem being ran in GEOSX
+ * @brief This is the class handling the operation flow of the problem being ran in GEOS
  */
 class ProblemManager : public dataRepository::Group
 {
@@ -120,10 +123,11 @@ public:
   void parseInputString( string const & xmlString );
 
   /**
-   * @brief Parses the input xml document
+   * @brief Parses the input xml document. Also add the includes content to the xmlDocument when
+   * `Include` nodes are encountered.
    * @param xmlDocument The parsed xml document handle
    */
-  void parseXMLDocument( xmlWrapper::xmlDocument const & xmlDocument );
+  void parseXMLDocument( xmlWrapper::xmlDocument & xmlDocument );
 
   /**
    * @brief Generates numerical meshes used throughout the code
@@ -307,19 +311,25 @@ public:
     return *m_fieldSpecificationManager;
   }
 
-
   /**
-   * @brief Returns the const EventManager.
-   * @return The const EventManager.
+   * @brief Returns the EventManager.
+   * @return The EventManager.
    */
   EventManager & getEventManager()
   {return *m_eventManager;}
+
+  /**
+   * @brief Returns the TasksManager.
+   * @return The TasksManager.
+   */
+  TasksManager & getTasksManager()
+  {return *m_tasksManager;}
 
 protected:
   /**
    * @brief Post process the command line input
    */
-  virtual void postProcessInput() override final;
+  virtual void postInputInitialization() override final;
 
 private:
 
@@ -340,7 +350,7 @@ private:
   getDiscretizations() const;
 
   void generateMeshLevel( MeshLevel & meshLevel,
-                          CellBlockManagerABC & cellBlockManager,
+                          CellBlockManagerABC const & cellBlockManager,
                           Group const * const discretization,
                           arrayView1d< string const > const & targetRegions );
 
@@ -365,6 +375,9 @@ private:
 
   /// The EventManager
   EventManager * m_eventManager;
+
+  /// The TasksManager
+  TasksManager * m_tasksManager;
 
   /// The FunctionManager
   FunctionManager * m_functionManager;

@@ -7,9 +7,8 @@
       name="poroSolver"
       targetRegions="{ Reservoir, Overburden, Underburden, Sideburden, Fracture }"
       initialDt="1e-3"
-      fracturesSolverName="fractureMechSolver"
       flowSolverName="flowSolver"
-      solidSolverName="matrixMechSolver"
+      solidSolverName="fractureMechSolver"
       logLevel="1">
       <NonlinearSolverParameters
         maxTimeStepCuts="1"
@@ -25,9 +24,8 @@
     <SolidMechanicsEmbeddedFractures
       name="fractureMechSolver"
       targetRegions="{ Reservoir, Overburden, Underburden, Sideburden, Fracture }"
-      solidSolverName="matrixMechSolver"
-      fractureRegionName="Fracture"
-      contactRelationName="fractureContact">
+      timeIntegrationOption="QuasiStatic"
+      discretization="FE1">
       <NonlinearSolverParameters
         maxTimeStepCuts="1"
         newtonTol="1e-03"
@@ -35,12 +33,6 @@
       <LinearSolverParameters
         directParallel="0"/>
     </SolidMechanicsEmbeddedFractures>
-
-    <SolidMechanicsLagrangianSSLE
-      name="matrixMechSolver"
-      timeIntegrationOption="QuasiStatic"
-      discretization="FE1"
-      targetRegions="{ Reservoir, Overburden, Underburden, Sideburden }"/>
 
     <SinglePhaseFVM
       name="flowSolver"
@@ -58,6 +50,7 @@
       name="SurfaceGenerator"      
       targetRegions="{ Reservoir, Overburden, Underburden, Sideburden, Fracture }"
       fractureRegion="Fracture"
+      targetObjects="{ FracturePlane1, FracturePlane2, FracturePlane3, FracturePlane4, FracturePlane5 }"
       logLevel="1"
       discretization="FE1"
       mpiCommOrder="1"/>
@@ -66,7 +59,7 @@
   <Mesh>
     <VTKMesh
       name="mesh"
-      file="../../../../GEOSXDATA/DataSets/Egg/egg_extended_2.vts"
+      file="../../../GEOSDATA/DataSets/Egg/egg_withBurdens_large.vts"
       regionAttribute="regionAttribute"
       fieldsToImport="{ PERM }"
       fieldNamesInGEOSX="{ rockPermeability_permeability }"/>
@@ -94,14 +87,14 @@
          xMin="{1181, 0.0, -800.0}" 
          name="right" />     
 
-    <BoundedPlane
+    <Rectangle
       name="Fracture1"
       origin="{ 110, 340, 40 }"
       normal="{ -0.707, 0.707, 0 }"
       lengthVector="{ 0.707, 0.707, 0 }"
       widthVector="{ 0, 0, 1 }"
       dimensions="{ 80, 60 }"/>
-    <BoundedPlane
+    <Rectangle
       name="Fracture2"
       origin="{ 140, 280, 35 }"
       normal="{ 1, -1, 1 }"
@@ -109,7 +102,7 @@
       widthVector="{ -0.5, 0, 0.5 }"
       dimensions="{ 120, 30 }"/>
 
-    <BoundedPlane
+    <Rectangle
       name="Fracture3"
       origin="{ 160, 220, 1.5 }"
       normal="{ 1, -1, 1 }"
@@ -117,7 +110,7 @@
       widthVector="{ -0.5, 0, 0.5 }"
       dimensions="{ 160, 200 }"/>
 
-    <BoundedPlane
+    <Rectangle
       name="Fracture4"
       origin="{ 200, 180, 40 }"
       normal="{ -0.707, 0.707, 0 }"
@@ -125,7 +118,7 @@
       widthVector="{ 0, 0, 1 }"
       dimensions="{ 180, 55 }"/>
 
-    <BoundedPlane
+    <Rectangle
       name="Fracture5"
       origin="{ 350, 195, 40 }"
       normal="{ -0.5, 0, 0.5 }"
@@ -133,7 +126,7 @@
       lengthVector="{ 0.3333, 0.6666, 0.3333 }"
       dimensions="{ 140, 40 }"/>
       
-    <!-- <BoundedPlane
+    <!-- <Rectangle
       name="Fracture5"
       origin="{ 220, 100, 40 }"
       normal="{ 1, -1, 1 }"
@@ -232,7 +225,7 @@
 
     <BiotPorosity
       name="rockPorosity"
-      grainBulkModulus="1.0e27"
+      defaultGrainBulkModulus="1.0e27"
       defaultReferencePorosity="0.2"/>
 
     <CompressibleSolidParallelPlatesPermeability

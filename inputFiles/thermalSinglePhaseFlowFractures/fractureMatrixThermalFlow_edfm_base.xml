@@ -1,0 +1,58 @@
+<?xml version="1.0" ?>
+
+<Problem>
+  <Included>
+    <File
+      name="fractureMatrixThermalFlow_base.xml"/>
+  </Included>
+
+  <Solvers
+    gravityVector="{ 0.0, 0.0, -9.81 }">
+    <SinglePhaseFVM
+      name="SinglePhaseFlow"
+      logLevel="1"
+      isThermal="1"
+      discretization="singlePhaseTPFA"
+      targetRegions="{ RockMatrix, Fracture }">
+      <NonlinearSolverParameters
+        newtonTol="1.0e-6"
+        newtonMaxIter="8"
+        maxAllowedResidualNorm="1e15"/>
+      <LinearSolverParameters
+        directParallel="0"/>
+    </SinglePhaseFVM>
+
+    <EmbeddedSurfaceGenerator
+      name="SurfaceGenerator"
+      logLevel="1"
+      discretization="FE1"
+      targetRegions="{ RockMatrix, Fracture }"
+      targetObjects="{ FracturePlane }"
+      fractureRegion="Fracture"
+      mpiCommOrder="1"/>
+  </Solvers>
+
+  <ElementRegions>
+    <CellElementRegion
+      name="RockMatrix"
+      cellBlocks="{ cb1 }"
+      materialList="{ water, rock, thermalCond }"/>
+
+    <SurfaceElementRegion
+      name="Fracture"
+      defaultAperture="5.e-3"
+      materialList="{ water, fractureFilling, thermalCond }"
+      subRegionType="embeddedElement"/>
+  </ElementRegions>
+
+  <Outputs>
+    <VTK
+      name="vtkOutput"
+      plotFileRoot="fracMatThermalFlow_edfm_vertical"
+      plotLevel="2"
+      format="binary"/>
+
+    <Restart
+      name="sidreRestart"/>
+  </Outputs>
+</Problem>

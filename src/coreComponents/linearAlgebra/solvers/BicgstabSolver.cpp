@@ -2,10 +2,11 @@
  * ------------------------------------------------------------------------------------------------------------
  * SPDX-License-Identifier: LGPL-2.1-only
  *
- * Copyright (c) 2018-2020 Lawrence Livermore National Security LLC
- * Copyright (c) 2018-2020 The Board of Trustees of the Leland Stanford Junior University
- * Copyright (c) 2018-2020 TotalEnergies
- * Copyright (c) 2019-     GEOSX Contributors
+ * Copyright (c) 2016-2024 Lawrence Livermore National Security LLC
+ * Copyright (c) 2018-2024 Total, S.A
+ * Copyright (c) 2018-2024 The Board of Trustees of the Leland Stanford Junior University
+ * Copyright (c) 2018-2024 Chevron
+ * Copyright (c) 2019-     GEOS/GEOSX Contributors
  * All rights reserved
  *
  * See top level LICENSE, COPYRIGHT, CONTRIBUTORS, NOTICE, and ACKNOWLEDGEMENTS files for details.
@@ -91,8 +92,8 @@ void BicgstabSolver< VECTOR >::solve( Vector const & b,
     // Compute r0.rk
     real64 const rho = r.dot( r0 );
 
-    GEOSX_KRYLOV_BREAKDOWN_IF_ZERO( rho_old )
-    GEOSX_KRYLOV_BREAKDOWN_IF_ZERO( omega )
+    GEOS_KRYLOV_BREAKDOWN_IF_ZERO( rho_old )
+    GEOS_KRYLOV_BREAKDOWN_IF_ZERO( omega )
 
     // Compute beta
     real64 const beta = rho / rho_old * alpha / omega;
@@ -107,7 +108,7 @@ void BicgstabSolver< VECTOR >::solve( Vector const & b,
 
     // Compute alpha
     real64 const vr0 = v.dot( r0 );
-    GEOSX_KRYLOV_BREAKDOWN_IF_ZERO( vr0 )
+    GEOS_KRYLOV_BREAKDOWN_IF_ZERO( vr0 )
     alpha = rho / vr0;
 
     // compute x = x + alpha*y
@@ -125,7 +126,7 @@ void BicgstabSolver< VECTOR >::solve( Vector const & b,
 
     // Update omega
     real64 const t2 = t.dot( t );
-    GEOSX_KRYLOV_BREAKDOWN_IF_ZERO( t2 )
+    GEOS_KRYLOV_BREAKDOWN_IF_ZERO( t2 )
     omega = t.dot( s ) / t2;
 
     // Update x = x + omega*z
@@ -147,17 +148,17 @@ void BicgstabSolver< VECTOR >::solve( Vector const & b,
 // -----------------------
 // Explicit Instantiations
 // -----------------------
-#ifdef GEOSX_USE_TRILINOS
+#ifdef GEOS_USE_TRILINOS
 template class BicgstabSolver< TrilinosInterface::ParallelVector >;
 template class BicgstabSolver< BlockVectorView< TrilinosInterface::ParallelVector > >;
 #endif
 
-#ifdef GEOSX_USE_HYPRE
+#ifdef GEOS_USE_HYPRE
 template class BicgstabSolver< HypreInterface::ParallelVector >;
 template class BicgstabSolver< BlockVectorView< HypreInterface::ParallelVector > >;
 #endif
 
-#ifdef GEOSX_USE_PETSC
+#ifdef GEOS_USE_PETSC
 template class BicgstabSolver< PetscInterface::ParallelVector >;
 template class BicgstabSolver< BlockVectorView< PetscInterface::ParallelVector > >;
 #endif

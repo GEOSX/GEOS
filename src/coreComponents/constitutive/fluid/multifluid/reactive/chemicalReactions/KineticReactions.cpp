@@ -2,10 +2,11 @@
  * ------------------------------------------------------------------------------------------------------------
  * SPDX-License-Identifier: LGPL-2.1-only
  *
- * Copyright (c) 2018-2020 Lawrence Livermore National Security LLC
- * Copyright (c) 2018-2020 The Board of Trustees of the Leland Stanford Junior University
- * Copyright (c) 2018-2020 TotalEnergies
- * Copyright (c) 2019-     GEOSX Contributors
+ * Copyright (c) 2016-2024 Lawrence Livermore National Security LLC
+ * Copyright (c) 2018-2024 Total, S.A
+ * Copyright (c) 2018-2024 The Board of Trustees of the Leland Stanford Junior University
+ * Copyright (c) 2018-2024 Chevron
+ * Copyright (c) 2019-     GEOS/GEOSX Contributors
  * All rights reserved
  *
  * See top level LICENSE, COPYRIGHT, CONTRIBUTORS, NOTICE, and ACKNOWLEDGEMENTS files for details.
@@ -18,6 +19,7 @@
 
 #include "constitutive/fluid/multifluid/reactive/chemicalReactions/KineticReactions.hpp"
 #include "functions/FunctionManager.hpp"
+#include "common/Units.hpp"
 
 namespace geos
 {
@@ -194,7 +196,7 @@ void KineticReactions::KernelWrapper::computeReactionRates( real64 const & tempe
    //   // dissolving/precipitating. Not sure why porosity is included.
    //   real64 S = surfaceArea0[ir] * pow( volumeFraction[ir] / volumeFraction0[ir], 2.0/3.0 ) * pow( porosity / porosity0, 2.0/3.0 );
    //   // computing the rate at the correct temperature. Looks like EQ36 database has it at 298.15 K
-   //   real64 rateTemp = exp( -kineticReaction.E / RConst * (1.0 / (temperature + 273.15) - 1.0 / 298.15));
+   //   real64 rateTemp = exp( -kineticReaction.E / RConst * (1.0 / units::convertCToK( temperature ) - 1.0 / 298.15));
    //   real64 SS = (pow( 10.0, SIndex ) - 1.0);
    //   kineticReactionRate[ir] = S * kineticReaction.rateConst * rateTemp * SS;
    //}

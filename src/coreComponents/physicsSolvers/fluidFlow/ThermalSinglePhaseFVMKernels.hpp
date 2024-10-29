@@ -2,10 +2,11 @@
  * ------------------------------------------------------------------------------------------------------------
  * SPDX-License-Identifier: LGPL-2.1-only
  *
- * Copyright (c) 2018-2020 Lawrence Livermore National Security LLC
- * Copyright (c) 2018-2020 The Board of Trustees of the Leland Stanford Junior University
- * Copyright (c) 2018-2020 TotalEnergies
- * Copyright (c) 2019-     GEOSX Contributors
+ * Copyright (c) 2016-2024 Lawrence Livermore National Security LLC
+ * Copyright (c) 2018-2024 Total, S.A
+ * Copyright (c) 2018-2024 The Board of Trustees of the Leland Stanford Junior University
+ * Copyright (c) 2018-2024 Chevron
+ * Copyright (c) 2019-     GEOS/GEOSX Contributors
  * All rights reserved
  *
  * See top level LICENSE, COPYRIGHT, CONTRIBUTORS, NOTICE, and ACKNOWLEDGEMENTS files for details.
@@ -39,8 +40,8 @@ using namespace constitutive;
  * @tparam STENCILWRAPPER the type of the stencil wrapper
  * @brief Define the interface for the assembly kernel in charge of flux terms
  */
-template< integer NUM_DOF, typename STENCILWRAPPER >
-class FaceBasedAssemblyKernel : public singlePhaseFVMKernels::FaceBasedAssemblyKernel< NUM_DOF, STENCILWRAPPER >
+template< integer NUM_EQN, integer NUM_DOF, typename STENCILWRAPPER >
+class FaceBasedAssemblyKernel : public singlePhaseFVMKernels::FaceBasedAssemblyKernel< NUM_EQN, NUM_DOF, STENCILWRAPPER >
 {
 public:
 
@@ -66,7 +67,7 @@ public:
   using AbstractBase::m_mob;
   using AbstractBase::m_dens;
 
-  using Base = singlePhaseFVMKernels::FaceBasedAssemblyKernel< NUM_DOF, STENCILWRAPPER >;
+  using Base = singlePhaseFVMKernels::FaceBasedAssemblyKernel< NUM_EQN, NUM_DOF, STENCILWRAPPER >;
   using Base::numDof;
   using Base::numEqn;
   using Base::maxNumElems;
@@ -455,12 +456,13 @@ public:
                    arrayView1d< real64 > const & localRhs )
   {
     integer constexpr NUM_DOF = 2;
+    integer constexpr NUM_EQN = 2;
 
     ElementRegionManager::ElementViewAccessor< arrayView1d< globalIndex const > > dofNumberAccessor =
       elemManager.constructArrayViewAccessor< globalIndex, 1 >( dofKey );
     dofNumberAccessor.setName( solverName + "/accessors/" + dofKey );
 
-    using KernelType = FaceBasedAssemblyKernel< NUM_DOF, STENCILWRAPPER >;
+    using KernelType = FaceBasedAssemblyKernel< NUM_EQN, NUM_DOF, STENCILWRAPPER >;
     typename KernelType::SinglePhaseFlowAccessors flowAccessors( elemManager, solverName );
     typename KernelType::ThermalSinglePhaseFlowAccessors thermalFlowAccessors( elemManager, solverName );
     typename KernelType::SinglePhaseFluidAccessors fluidAccessors( elemManager, solverName );
@@ -483,8 +485,8 @@ public:
  * @tparam FLUIDWRAPPER the type of the fluid wrapper
  * @brief Define the interface for the assembly kernel in charge of Dirichlet face flux terms
  */
-template< integer NUM_DOF, typename FLUIDWRAPPER >
-class DirichletFaceBasedAssemblyKernel : public singlePhaseFVMKernels::DirichletFaceBasedAssemblyKernel< NUM_DOF, FLUIDWRAPPER >
+template< integer NUM_EQN, integer NUM_DOF, typename FLUIDWRAPPER >
+class DirichletFaceBasedAssemblyKernel : public singlePhaseFVMKernels::DirichletFaceBasedAssemblyKernel< NUM_EQN, NUM_DOF, FLUIDWRAPPER >
 {
 public:
 
@@ -516,7 +518,7 @@ public:
   using AbstractBase::m_localMatrix;
   using AbstractBase::m_localRhs;
 
-  using Base = singlePhaseFVMKernels::DirichletFaceBasedAssemblyKernel< NUM_DOF, FLUIDWRAPPER >;
+  using Base = singlePhaseFVMKernels::DirichletFaceBasedAssemblyKernel< NUM_EQN, NUM_DOF, FLUIDWRAPPER >;
   using Base::numDof;
   using Base::numEqn;
   using Base::m_stencilWrapper;
@@ -787,8 +789,9 @@ public:
       typename FluidType::KernelWrapper fluidWrapper = fluid.createKernelWrapper();
 
       integer constexpr NUM_DOF = 2;
+      integer constexpr NUM_EQN = 2;
 
-      using kernelType = DirichletFaceBasedAssemblyKernel< NUM_DOF, typename FluidType::KernelWrapper >;
+      using kernelType = DirichletFaceBasedAssemblyKernel< NUM_EQN, NUM_DOF, typename FluidType::KernelWrapper >;
 
       ElementRegionManager::ElementViewAccessor< arrayView1d< globalIndex const > > dofNumberAccessor =
         elemManager.constructArrayViewAccessor< globalIndex, 1 >( dofKey );

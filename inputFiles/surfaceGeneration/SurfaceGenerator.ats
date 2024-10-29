@@ -1,0 +1,44 @@
+from geos.ats.test_builder import TestDeck, RestartcheckParameters, generate_geos_tests
+
+restartcheck_params = {}
+restartcheck_params["atol"] = 1.0E-5
+restartcheck_params["rtol"] = 2.0E-10
+
+partitions = ((1, 1, 1), (2, 2, 2))
+
+decks = [
+    TestDeck(
+        name="SurfaceGenerator",
+        description=
+        "Test the basic surface generator problem and restart capabilities.",
+        partitions=partitions,
+        restart_step=2,
+        check_step=3,
+        restartcheck_params=RestartcheckParameters(**restartcheck_params)),
+    TestDeck(
+        name="DryFrac_StaticPenny_PrismElem",
+        description=
+        "Testing the SIF calculation (node-based) for a penny-shaped fracture",
+        partitions=partitions,
+        restart_step=0,
+        check_step=2,
+        restartcheck_params=RestartcheckParameters(**restartcheck_params)),
+    TestDeck(
+        name="DryFrac_ThreeNodesPinched_HorizontalFrac",
+        description=
+        "Testing the SIF calculation (node-based) under three nodes pinched scenario (fracture plane parallel to model boundary)",
+        partitions=partitions,
+        restart_step=0,
+        check_step=2,
+        restartcheck_params=RestartcheckParameters(**restartcheck_params)),
+    TestDeck(
+        name="DryFrac_ThreeNodesPinched_SlantFrac",
+        description=
+        "Testing the SIF calculation (node-based) under three nodes pinched scenario (fracture plane for an angle of 45 degree with model boundary)",
+        partitions=partitions,
+        restart_step=0,
+        check_step=2,
+        restartcheck_params=RestartcheckParameters(**restartcheck_params))
+]
+
+generate_geos_tests(decks)

@@ -2,11 +2,12 @@
  * ------------------------------------------------------------------------------------------------------------
  * SPDX-License-Identifier: LGPL-2.1-only
  *
- * Copyright (c) 2018-2019 Lawrence Livermore National Security LLC
- * Copyright (c) 2018-2019 The Board of Trustees of the Leland Stanford Junior University
- * Copyright (c) 2018-2019 TotalEnergies
- * Copyright (c) 2019-     GEOSX Contributors
- * All right reserved
+ * Copyright (c) 2016-2024 Lawrence Livermore National Security LLC
+ * Copyright (c) 2018-2024 Total, S.A
+ * Copyright (c) 2018-2024 The Board of Trustees of the Leland Stanford Junior University
+ * Copyright (c) 2018-2024 Chevron
+ * Copyright (c) 2019-     GEOS/GEOSX Contributors
+ * All rights reserved
  *
  * See top level LICENSE, COPYRIGHT, CONTRIBUTORS, NOTICE, and ACKNOWLEDGEMENTS files for details.
  * ------------------------------------------------------------------------------------------------------------
@@ -54,8 +55,15 @@ public:
                            arrayView1d< real64 const > const & thermalExpansionCoefficient,
                            arrayView3d< real64, solid::STRESS_USD > const & newStress,
                            arrayView3d< real64, solid::STRESS_USD > const & oldStress,
+                           arrayView2d< real64 > const & density,
+                           arrayView2d< real64 > const & wavespeed,
                            const bool & disableInelasticity ):
-    SolidBaseUpdates( newStress, oldStress, thermalExpansionCoefficient, disableInelasticity ),
+    SolidBaseUpdates( newStress, 
+                      oldStress,
+                      density,
+                      wavespeed,
+                      thermalExpansionCoefficient,
+                      disableInelasticity ),
     m_bulkModulus( bulkModulus ),
     m_shearModulus( shearModulus )
   {}
@@ -85,26 +93,35 @@ public:
   virtual void smallStrainNoStateUpdate_StressOnly( localIndex const k,
                                                     localIndex const q,
                                                     real64 const ( &totalStrain )[6],
-                                                    real64 ( &stress )[6] ) const override final;
+                                                    real64 ( &stress )[6] ) const override;
 
   GEOS_HOST_DEVICE
   virtual void smallStrainNoStateUpdate( localIndex const k,
                                          localIndex const q,
                                          real64 const ( &totalStrain )[6],
                                          real64 ( &stress )[6],
-                                         real64 ( &stiffness )[6][6] ) const override final;
+                                         real64 ( &stiffness )[6][6] ) const override;
 
   GEOS_HOST_DEVICE
   virtual void smallStrainNoStateUpdate( localIndex const k,
                                          localIndex const q,
                                          real64 const ( &totalStrain )[6],
                                          real64 ( &stress )[6],
-                                         DiscretizationOps & stiffness ) const final;
+                                         DiscretizationOps & stiffness ) const;
 
   GEOS_HOST_DEVICE
   virtual void smallStrainUpdate_StressOnly( localIndex const k,
                                              localIndex const q,
                                              real64 const & timeIncrement,
+                                             real64 const ( &strainIncrement )[6],
+                                             real64 ( &stress )[6] ) const override;
+
+  GEOS_HOST_DEVICE
+  virtual void smallStrainUpdate_StressOnly( localIndex const k,
+                                             localIndex const q,
+                                             real64 const & timeIncrement,
+                                             real64 const ( & beginningRotation )[3][3],
+                                             real64 const ( & endRotation )[3][3],
                                              real64 const ( &strainIncrement )[6],
                                              real64 ( &stress )[6] ) const override;
 
@@ -132,7 +149,7 @@ public:
   GEOS_HOST_DEVICE
   virtual void getElasticStrain( localIndex const k,
                                  localIndex const q,
-                                 real64 ( &elasticStrain )[6] ) const override final;
+                                 real64 ( &elasticStrain )[6] ) const override;
 
   GEOS_HOST_DEVICE
   virtual real64 getBulkModulus( localIndex const k ) const override final
@@ -152,21 +169,19 @@ public:
                                    real64 beta ) const override;
 
   // TODO: confirm hyper stress/strain measures before activatiing
-
-  /*
-     GEOS_HOST_DEVICE
-     virtual void hyperUpdate( localIndex const k,
+  // CC: need hyperelastic model for hyperelasticMMS constitutive model in MPM
+  GEOS_HOST_DEVICE
+  virtual void hyperUpdate( localIndex const k,
                             localIndex const q,
                             real64 const ( & FminusI )[3][3],
                             real64 ( & stress )[6] ) const override final;
 
-     GEOS_HOST_DEVICE
-     virtual void hyperUpdate( localIndex const k,
+  GEOS_HOST_DEVICE
+  virtual void hyperUpdate( localIndex const k,
                             localIndex const q,
                             real64 const ( & FminusI )[3][3],
                             real64 ( & stress )[6],
                             real64 ( & stiffness )[6][6] ) const override final;
-   */
 
 protected:
 
@@ -288,8 +303,30 @@ void ElasticIsotropicUpdates::smallStrainUpdate_StressOnly( localIndex const k,
 {
   GEOS_UNUSED_VAR( timeIncrement );
   smallStrainNoStateUpdate_StressOnly( k, q, strainIncrement, stress ); // stress  = incrementalStress
+  m_wavespeed[k][0] = sqrt(( m_bulkModulus[k] + (4.0/3.0) * m_shearModulus[k] ) / m_density[k][0]);
   LvArray::tensorOps::add< 6 >( stress, m_oldStress[k][q] );            // stress += m_oldStress
   saveStress( k, q, stress );                                           // m_newStress = stress
+}
+
+
+GEOS_HOST_DEVICE
+inline
+void ElasticIsotropicUpdates::smallStrainUpdate_StressOnly( localIndex const k,
+                                            localIndex const q,
+                                            real64 const & timeIncrement,
+                                            real64 const ( & beginningRotation )[3][3],
+                                            real64 const ( & endRotation )[3][3],
+                                            real64 const ( & strainIncrement )[6],
+                                            real64 ( & stress )[6] ) const
+{
+  GEOS_UNUSED_VAR( beginningRotation );
+  GEOS_UNUSED_VAR( endRotation );
+
+  smallStrainUpdate_StressOnly( k,
+                                q,
+                                timeIncrement,
+                                strainIncrement,
+                                stress );
 }
 
 
@@ -302,7 +339,11 @@ void ElasticIsotropicUpdates::smallStrainUpdate( localIndex const k,
                                                  real64 ( & stress )[6],
                                                  real64 ( & stiffness )[6][6] ) const
 {
-  smallStrainUpdate_StressOnly( k, q, timeIncrement, strainIncrement, stress );
+  smallStrainUpdate_StressOnly( k, 
+                                q, 
+                                timeIncrement,
+                                strainIncrement, 
+                                stress );
   getElasticStiffness( k, q, stiffness );
 }
 
@@ -316,7 +357,11 @@ void ElasticIsotropicUpdates::smallStrainUpdate( localIndex const k,
                                                  real64 ( & stress )[6],
                                                  DiscretizationOps & stiffness ) const
 {
-  smallStrainUpdate_StressOnly( k, q, timeIncrement, strainIncrement, stress );
+  smallStrainUpdate_StressOnly( k,
+                                q, 
+                                timeIncrement,
+                                strainIncrement, 
+                                stress );
   stiffness.m_bulkModulus = m_bulkModulus[k];
   stiffness.m_shearModulus = m_shearModulus[k];
 }
@@ -332,6 +377,39 @@ void ElasticIsotropicUpdates::viscousStateUpdate( localIndex const k,
   GEOS_UNUSED_VAR( beta );
 }
 
+// CC: place filler for MPM hyperelasticMMS model
+// There is a commented out implementation below from another person
+GEOS_HOST_DEVICE
+GEOS_FORCE_INLINE
+void ElasticIsotropicUpdates::hyperUpdate( localIndex const k,
+                          localIndex const q,
+                          real64 const ( & FminusI )[3][3],
+                          real64 ( & stress )[6] ) const
+{
+  GEOS_UNUSED_VAR( k );
+  GEOS_UNUSED_VAR( q );
+  GEOS_UNUSED_VAR( FminusI );
+  GEOS_UNUSED_VAR( stress );
+  GEOS_ERROR( "hyperUpdate() not implemented for this model" );
+}
+
+// CC: place filler for MPM hyperelasticMMS model
+// There is a commented out implementation below from another person
+GEOS_HOST_DEVICE
+GEOS_FORCE_INLINE
+void ElasticIsotropicUpdates::hyperUpdate( localIndex const k,
+                          localIndex const q,
+                          real64 const ( & FminusI )[3][3],
+                          real64 ( & stress )[6],
+                          real64 ( & stiffness )[6][6] ) const
+{
+  GEOS_UNUSED_VAR( k );
+  GEOS_UNUSED_VAR( q );
+  GEOS_UNUSED_VAR( FminusI );
+  GEOS_UNUSED_VAR( stress );
+  GEOS_UNUSED_VAR( stiffness );
+  GEOS_ERROR( "hyperUpdate() not implemented for this model" );
+}
 
 // TODO: need to confirm stress / strain measures before activating hyper inferface
 /*
@@ -402,7 +480,8 @@ public:
    * @param[in] name name of the instance in the catalog
    * @param[in] parent the group which contains this instance
    */
-  ElasticIsotropic( string const & name, Group * const parent );
+  ElasticIsotropic( string const & name, 
+                    Group * const parent );
 
   /**
    * Default Destructor
@@ -487,6 +566,7 @@ public:
   {
     return m_bulkModulus;
   }
+  
   GEOS_HOST_DEVICE
   virtual arrayView1d< real64 const > getShearModulus() const override final
   {
@@ -508,6 +588,8 @@ public:
                                       m_thermalExpansionCoefficient,
                                       m_newStress,
                                       m_oldStress,
+                                      m_density,
+                                      m_wavespeed,
                                       m_disableInelasticity );
     }
     else // for "no state" updates, pass empty views to avoid transfer of stress data to device
@@ -517,6 +599,8 @@ public:
                                       m_thermalExpansionCoefficient,
                                       arrayView3d< real64, solid::STRESS_USD >(),
                                       arrayView3d< real64, solid::STRESS_USD >(),
+                                      m_density,
+                                      m_wavespeed,
                                       m_disableInelasticity );
     }
   }
@@ -538,13 +622,15 @@ public:
                           m_thermalExpansionCoefficient,
                           m_newStress,
                           m_oldStress,
+                          m_density,
+                          m_wavespeed,
                           m_disableInelasticity );
   }
 
 protected:
 
   /// Post-process XML data
-  virtual void postProcessInput() override;
+  virtual void postInputInitialization() override;
 
   /// The default value of the bulk modulus for any new allocations.
   real64 m_defaultBulkModulus;

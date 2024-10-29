@@ -6,10 +6,9 @@
     <SolidMechanicsEmbeddedFractures
       name="mechSolve"
       targetRegions="{ Domain, Fracture }"
-      fractureRegionName="Fracture"
       initialDt="10"
-      solidSolverName="matrixSolver"
-      contactRelationName="fractureContact"
+      discretization="FE1"
+      timeIntegrationOption="QuasiStatic"
       logLevel="1">
       <NonlinearSolverParameters
         newtonTol="1.0e-6"
@@ -21,17 +20,11 @@
         logLevel="0"/>
     </SolidMechanicsEmbeddedFractures>
 
-    <SolidMechanicsLagrangianSSLE
-      name="matrixSolver"
-      timeIntegrationOption="QuasiStatic"
-      logLevel="1"
-      discretization="FE1"
-      targetRegions="{ Domain }"/>
-
     <EmbeddedSurfaceGenerator
       name="SurfaceGenerator"
       discretization="FE1"
       targetRegions="{ Domain, Fracture }"
+      targetObjects="{ FracturePlane }"
       fractureRegion="Fracture"
       logLevel="1"
       mpiCommOrder="1"/>

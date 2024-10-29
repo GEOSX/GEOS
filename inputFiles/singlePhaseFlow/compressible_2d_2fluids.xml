@@ -25,7 +25,7 @@
       nx="{ 5, 5 }"
       ny="{ 3 }"
       nz="{ 1 }"
-      cellBlockNames="{ block1, block2 }"/>
+      cellBlockNames="{ cb-0_0_0, cb-1_0_0 }"/>
   </Mesh>
 
   <Geometry>
@@ -85,12 +85,12 @@
   <ElementRegions>
     <CellElementRegion
       name="Region1"
-      cellBlocks="{ block1 }"
+      cellBlocks="{ cb-0_0_0 }"
       materialList="{ fluid1, rock }"/>
 
     <CellElementRegion
       name="Region2"
-      cellBlocks="{ block2 }"
+      cellBlocks="{ cb-1_0_0 }"
       materialList="{ fluid2, rock }"/>
   </ElementRegions>
 

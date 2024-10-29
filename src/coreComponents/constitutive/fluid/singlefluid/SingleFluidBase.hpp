@@ -2,10 +2,11 @@
  * ------------------------------------------------------------------------------------------------------------
  * SPDX-License-Identifier: LGPL-2.1-only
  *
- * Copyright (c) 2018-2020 Lawrence Livermore National Security LLC
- * Copyright (c) 2018-2020 The Board of Trustees of the Leland Stanford Junior University
- * Copyright (c) 2018-2020 TotalEnergies
- * Copyright (c) 2019-     GEOSX Contributors
+ * Copyright (c) 2016-2024 Lawrence Livermore National Security LLC
+ * Copyright (c) 2018-2024 Total, S.A
+ * Copyright (c) 2018-2024 The Board of Trustees of the Leland Stanford Junior University
+ * Copyright (c) 2018-2024 Chevron
+ * Copyright (c) 2019-     GEOS/GEOSX Contributors
  * All rights reserved
  *
  * See top level LICENSE, COPYRIGHT, CONTRIBUTORS, NOTICE, and ACKNOWLEDGEMENTS files for details.
@@ -103,20 +104,35 @@ protected:
   arrayView2d< real64 > m_dVisc_dPres;
 
 //END_SPHINX_INCLUDE_01
-//START_SPHINX_INCLUDE_02
-private:
 
+public:
   /**
-   * @brief Compute fluid properties at a single point.
+   * @brief Compute function to update properties in a cell without returning derivatives.
+   * @details This delegates the call to the fluid wrapper using the value and derivative function.
+   *          This is used for initialisation and boundary conditions.
+   * @param[in] fluidWrapper the actual fluid kernel
    * @param[in]  pressure the target pressure value
    * @param[out] density fluid density
    * @param[out] viscosity fluid viscosity
    */
+  template< typename FLUIDWRAPPER >
   GEOS_HOST_DEVICE
-  virtual void compute( real64 const pressure,
-                        real64 & density,
-                        real64 & viscosity ) const = 0;
+  static void computeValues( FLUIDWRAPPER const fluidWrapper,
+                             real64 const pressure,
+                             real64 & density,
+                             real64 & viscosity )
+  {
+    real64 dDensity_dPressure = 0.0;
+    real64 dViscosity_dPressure = 0.0;
+    fluidWrapper.compute( pressure,
+                          density,
+                          dDensity_dPressure,
+                          viscosity,
+                          dViscosity_dPressure );
+  }
 
+//START_SPHINX_INCLUDE_02
+private:
   /**
    * @brief Compute fluid properties and derivatives at a single point.
    * @param[in]  pressure the target pressure value
@@ -262,7 +278,7 @@ public:
 
 protected:
 
-  virtual void postProcessInput() override;
+  virtual void postInputInitialization() override;
 
   //START_SPHINX_INCLUDE_00
   array2d< real64 > m_density;

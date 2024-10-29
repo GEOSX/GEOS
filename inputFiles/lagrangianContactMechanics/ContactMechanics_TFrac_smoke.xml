@@ -5,6 +5,40 @@
     <File name="./ContactMechanics_TFrac_base.xml"/>
   </Included>
 
+  <Solvers
+    gravityVector="{0.0, 0.0, 0.0}">
+   <!-- SPHINX_SOLVER -->
+   <SolidMechanicsLagrangeContact
+   name="lagrangiancontact"
+   timeIntegrationOption="QuasiStatic"
+   stabilizationName="TPFAstabilization"
+   logLevel="1"
+   discretization="FE1"
+   targetRegions="{ Region, Fracture }">
+   <NonlinearSolverParameters
+     newtonTol="1.0e-8"
+     logLevel="2"
+     maxNumConfigurationAttempts="10"
+     newtonMaxIter="10"
+     lineSearchAction="Require"
+     lineSearchMaxCuts="2"
+     maxTimeStepCuts="2"/>
+   <LinearSolverParameters
+     solverType="direct"
+     directParallel="0"
+     logLevel="0"/>
+ </SolidMechanicsLagrangeContact>
+
+ <SurfaceGenerator
+   name="SurfaceGen"
+   logLevel="0"
+   fractureRegion="Fracture"
+   targetRegions="{ Region }"
+   rockToughness="1.0e6"
+   mpiCommOrder="1"/>
+<!-- SPHINX_SOLVER_END -->
+</Solvers>
+
   <!-- SPHINX_MESH -->
   <Mesh>
     <InternalMesh
@@ -12,10 +46,10 @@
       elementTypes="{ C3D8 }"
       xCoords="{ -1000, -100, 100, 1000 }"
       yCoords="{ -1000, -100, 100, 1000 }"
-      zCoords="{ 0, 1 }"
-      nx="{ 5, 52, 5 }"
-      ny="{ 5, 52, 5 }"
-      nz="{ 1 }"
+      zCoords="{ 0, 100 }"
+      nx="{ 20, 20, 20 }"
+      ny="{ 20, 20, 20 }"
+      nz="{ 2 }"
       cellBlockNames="{ cb1 }"/>
   </Mesh>
   <!-- SPHINX_MESH_END -->

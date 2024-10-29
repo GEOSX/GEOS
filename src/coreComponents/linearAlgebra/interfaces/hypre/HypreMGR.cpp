@@ -2,10 +2,11 @@
  * ------------------------------------------------------------------------------------------------------------
  * SPDX-License-Identifier: LGPL-2.1-only
  *
- * Copyright (c) 2018-2020 Lawrence Livermore National Security LLC
- * Copyright (c) 2018-2020 The Board of Trustees of the Leland Stanford Junior University
- * Copyright (c) 2018-2020 TotalEnergies
- * Copyright (c) 2019-     GEOSX Contributors
+ * Copyright (c) 2016-2024 Lawrence Livermore National Security LLC
+ * Copyright (c) 2018-2024 Total, S.A
+ * Copyright (c) 2018-2024 The Board of Trustees of the Leland Stanford Junior University
+ * Copyright (c) 2018-2024 Chevron
+ * Copyright (c) 2019-     GEOS/GEOSX Contributors
  * All rights reserved
  *
  * See top level LICENSE, COPYRIGHT, CONTRIBUTORS, NOTICE, and ACKNOWLEDGEMENTS files for details.
@@ -32,12 +33,14 @@
 #include "linearAlgebra/interfaces/hypre/mgrStrategies/SinglePhaseHybridFVM.hpp"
 #include "linearAlgebra/interfaces/hypre/mgrStrategies/SinglePhasePoromechanics.hpp"
 #include "linearAlgebra/interfaces/hypre/mgrStrategies/SinglePhasePoromechanicsEmbeddedFractures.hpp"
+#include "linearAlgebra/interfaces/hypre/mgrStrategies/SinglePhasePoromechanicsConformingFractures.hpp"
 #include "linearAlgebra/interfaces/hypre/mgrStrategies/SinglePhasePoromechanicsReservoirFVM.hpp"
 #include "linearAlgebra/interfaces/hypre/mgrStrategies/SinglePhaseReservoirFVM.hpp"
 #include "linearAlgebra/interfaces/hypre/mgrStrategies/SinglePhaseReservoirHybridFVM.hpp"
 #include "linearAlgebra/interfaces/hypre/mgrStrategies/ThermalCompositionalMultiphaseFVM.hpp"
 #include "linearAlgebra/interfaces/hypre/mgrStrategies/ThermalSinglePhasePoromechanics.hpp"
 #include "linearAlgebra/interfaces/hypre/mgrStrategies/ThermalMultiphasePoromechanics.hpp"
+#include "linearAlgebra/interfaces/hypre/mgrStrategies/SolidMechanicsEmbeddedFractures.hpp"
 
 #include "LvArray/src/output.hpp"
 
@@ -56,7 +59,13 @@ void hypre::mgr::createMGR( LinearSolverParameters const & params,
   // Hypre's parameters to use MGR as a preconditioner
   GEOS_LAI_CHECK_ERROR( HYPRE_MGRSetTol( precond.ptr, 0.0 ) );
   GEOS_LAI_CHECK_ERROR( HYPRE_MGRSetMaxIter( precond.ptr, 1 ) );
-  HYPRE_Int logLevel = LvArray::math::min( LvArray::integerConversion< HYPRE_Int >( params.logLevel - 1 ), LvArray::integerConversion< HYPRE_Int >( 0 ) );
+
+  // Disabling Option 2 (0x2): In this context, we use MGR as a preconditioner for a Krylov method (e.g., GMRES),
+  // and our interest lies in the Krylov method's convergence history, not MGR's. Hence, we turn off the second bit
+  // (0x2) of logLevel. For detailed logLevel codes, see HYPRE_MGRSetPrintLevel documentation. Additionally,
+  // we subtract one from the input logLevel value because "1" is reserved in GEOS for setup and solve time logging.
+  HYPRE_Int logLevel = LvArray::math::max( LvArray::integerConversion< HYPRE_Int >( params.logLevel - 1 ), LvArray::integerConversion< HYPRE_Int >( 0 ) );
+  logLevel &= ~0x2;
   GEOS_LAI_CHECK_ERROR( HYPRE_MGRSetPrintLevel( precond.ptr, logLevel ) );
 
   array1d< int > const numComponentsPerField = dofManager->numComponentsPerField();
@@ -64,11 +73,11 @@ void hypre::mgr::createMGR( LinearSolverParameters const & params,
 
   if( params.logLevel >= 1 )
   {
-    GEOS_LOG_RANK_0( numComponentsPerField );
+    GEOS_LOG_RANK_0( GEOS_FMT( "        MGR preconditioner: numComponentsPerField = {}", numComponentsPerField ) );
   }
-  if( params.logLevel >= 4 )
+  if( params.logLevel >= 1024 )
   {
-    GEOS_LOG_RANK_VAR( mgrData.pointMarkers );
+    GEOS_LOG_RANK( GEOS_FMT( "        MGR preconditioner: pointMarkers = {}", mgrData.pointMarkers ) );
   }
 
   switch( params.mgr.strategy )
@@ -153,6 +162,11 @@ void hypre::mgr::createMGR( LinearSolverParameters const & params,
       setStrategy< SinglePhasePoromechanicsEmbeddedFractures >( params.mgr, numComponentsPerField, precond, mgrData );
       break;
     }
+    case LinearSolverParameters::MGR::StrategyType::singlePhasePoromechanicsConformingFractures:
+    {
+      setStrategy< SinglePhasePoromechanicsConformingFractures >( params.mgr, numComponentsPerField, precond, mgrData );
+      break;
+    }
     case LinearSolverParameters::MGR::StrategyType::singlePhasePoromechanicsReservoirFVM:
     {
       setStrategy< SinglePhasePoromechanicsReservoirFVM >( params.mgr, numComponentsPerField, precond, mgrData );
@@ -166,6 +180,11 @@ void hypre::mgr::createMGR( LinearSolverParameters const & params,
     case LinearSolverParameters::MGR::StrategyType::singlePhaseReservoirHybridFVM:
     {
       setStrategy< SinglePhaseReservoirHybridFVM >( params.mgr, numComponentsPerField, precond, mgrData );
+      break;
+    }
+    case LinearSolverParameters::MGR::StrategyType::solidMechanicsEmbeddedFractures:
+    {
+      setStrategy< SolidMechanicsEmbeddedFractures >( params.mgr, numComponentsPerField, precond, mgrData );
       break;
     }
     default:

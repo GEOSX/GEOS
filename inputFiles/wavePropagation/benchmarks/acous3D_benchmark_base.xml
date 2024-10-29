@@ -84,7 +84,7 @@
       name="initialPressure"
       initialCondition="1"
       setNames="{ all }"
-      objectPath="nodeManager"
+      objectPath="mesh/FE1/nodeManager"
       fieldName="pressure_n"
       scale="0.0"/>
 
@@ -92,7 +92,7 @@
       name="initialPressure_nm1"
       initialCondition="1"
       setNames="{ all }"
-      objectPath="nodeManager"
+      objectPath="mesh/FE1/nodeManager"
       fieldName="pressure_nm1"
       scale="0.0"/>
 
@@ -100,8 +100,8 @@
     <FieldSpecification
       name="cellVelocity"
       initialCondition="1"
-      objectPath="ElementRegions/Region/cb"
-      fieldName="mediumVelocity"
+      objectPath="mesh/FE1/ElementRegions/Region/cb"
+      fieldName="acousticVelocity"
       scale="1500"
       setNames="{ all }"/>
 

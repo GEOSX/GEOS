@@ -2,11 +2,12 @@
  * ------------------------------------------------------------------------------------------------------------
  * SPDX-License-Identifier: LGPL-2.1-only
  *
- * Copyright (c) 2018-2019 Lawrence Livermore National Security LLC
- * Copyright (c) 2018-2019 The Board of Trustees of the Leland Stanford Junior University
- * Copyright (c) 2018-2019 TotalEnergies
- * Copyright (c) 2019-     GEOSX Contributors
- * All right reserved
+ * Copyright (c) 2016-2024 Lawrence Livermore National Security LLC
+ * Copyright (c) 2018-2024 Total, S.A
+ * Copyright (c) 2018-2024 The Board of Trustees of the Leland Stanford Junior University
+ * Copyright (c) 2018-2024 Chevron
+ * Copyright (c) 2019-     GEOS/GEOSX Contributors
+ * All rights reserved
  *
  * See top level LICENSE, COPYRIGHT, CONTRIBUTORS, NOTICE, and ACKNOWLEDGEMENTS files for details.
  * ------------------------------------------------------------------------------------------------------------
@@ -68,8 +69,17 @@ public:
                    arrayView1d< real64 const > const & thermalExpansionCoefficient,
                    arrayView3d< real64, solid::STRESS_USD > const & newStress,
                    arrayView3d< real64, solid::STRESS_USD > const & oldStress,
+                   arrayView2d< real64 > const & density,
+                   arrayView2d< real64 > const & wavespeed,
                    const bool & disableInelasticity ):
-    ElasticIsotropicUpdates( bulkModulus, shearModulus, thermalExpansionCoefficient, newStress, oldStress, disableInelasticity ),
+    ElasticIsotropicUpdates( bulkModulus,
+                             shearModulus,
+                             thermalExpansionCoefficient,
+                             newStress,
+                             oldStress,
+                             density,
+                             wavespeed,
+                             disableInelasticity ),
     m_recompressionIndex( recompressionIndex ),
     m_virginCompressionIndex( virginCompressionIndex ),
     m_cslSlope( cslSlope ),
@@ -553,6 +563,8 @@ public:
                             m_thermalExpansionCoefficient,
                             m_newStress,
                             m_oldStress,
+                            m_density,
+                            m_wavespeed,
                             m_disableInelasticity );
   }
 
@@ -578,12 +590,14 @@ public:
                           m_thermalExpansionCoefficient,
                           m_newStress,
                           m_oldStress,
+                          m_density,
+                          m_wavespeed,
                           m_disableInelasticity );
   }
 
 
 protected:
-  virtual void postProcessInput() override;
+  virtual void postInputInitialization() override;
 
   /// Material parameter: The default value of the recompression index
   real64 m_defaultRecompressionIndex;

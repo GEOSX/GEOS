@@ -7,30 +7,22 @@
       name="poroSolver"
       targetRegions="{ Domain, Fracture }"
       initialDt="1e-3"
-      fracturesSolverName="fractureMechSolver"
       flowSolverName="flowSolver"
-      solidSolverName="matrixMechSolver"
+      solidSolverName="fractureMechSolver"
       logLevel="1">
       <NonlinearSolverParameters
-        newtonTol="1.0e-5"
+        newtonTol="1.0e-3"
         newtonMaxIter="10"
-        maxTimeStepCuts="1"/>
+        maxTimeStepCuts="5"/>
       <LinearSolverParameters
         directParallel="0"/>
     </SinglePhasePoromechanicsEmbeddedFractures>
 
     <SolidMechanicsEmbeddedFractures
       name="fractureMechSolver"
-      targetRegions="{ Domain }"
-      solidSolverName="matrixMechSolver"
-      fractureRegionName="Fracture"
-      contactRelationName="fractureContact"/>
-
-    <SolidMechanicsLagrangianSSLE
-      name="matrixMechSolver"
+      targetRegions="{ Domain, Fracture }"
       timeIntegrationOption="QuasiStatic"
-      discretization="FE1"
-      targetRegions="{ Domain }"/>
+      discretization="FE1"/>
 
     <SinglePhaseFVM
       name="flowSolver"
@@ -41,6 +33,7 @@
       name="SurfaceGenerator"
       discretization="FE1"
       targetRegions="{ Domain, Fracture }"
+      targetObjects="{ FracturePlane }"
       fractureRegion="Fracture"
       logLevel="2"
       mpiCommOrder="1"/>
@@ -60,7 +53,7 @@
   </Mesh>
 
   <Geometry>
-    <BoundedPlane
+    <Rectangle
       name="FracturePlane"
       normal="{-0.342020143325669, 0.939692620785908, 0.0}"
       origin="{0.0, 0.0, 0.5}"
@@ -117,7 +110,7 @@
       name="solverApplication2"
       beginTime="5.0e-03"
       endTime="0.05"
-      forceDt="5.0e-03"
+      forceDt="5.0e-04"
       target="/Solvers/poroSolver"/>
 
     <PeriodicEvent
@@ -210,7 +203,7 @@
 
     <BiotPorosity
       name="rockPorosity"
-      grainBulkModulus="1.0e27"
+      defaultGrainBulkModulus="1.0e27"
       defaultReferencePorosity="0.2"/>
 
     <CompressibleSolidSlipDependentPermeability
@@ -333,7 +326,7 @@
     <PackCollection
       name="tractionCollection"
       objectPath="ElementRegions/Fracture/embeddedSurfaceSubRegion"
-      fieldName="fractureTraction"/>
+      fieldName="traction"/>
 
     <PackCollection
       name="displacementJumpCollection"

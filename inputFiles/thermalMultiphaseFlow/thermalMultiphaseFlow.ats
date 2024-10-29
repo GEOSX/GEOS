@@ -1,0 +1,26 @@
+from geos.ats.test_builder import TestDeck, RestartcheckParameters, generate_geos_tests
+
+restartcheck_params = {}
+restartcheck_params['atol'] = 1e-06
+restartcheck_params['rtol'] = 1e-05
+
+decks = [
+    TestDeck(
+        name="co2_thermal_2d",
+        description=
+        'Thermal compositional co2-brine flow test (2D co2 injection, 2-phase co2-brine, Brooks-Corey relperm curves, thermal)',
+        partitions=((1, 1, 1), (2, 2, 1)),
+        restart_step=9,
+        check_step=11,
+        restartcheck_params=RestartcheckParameters(**restartcheck_params)),
+    TestDeck(
+        name="co2_thermal_obl_3d",
+        description=
+        'Smoke test for a co2-brine test (3D displacement, 2-phase co2-brine, thermal, OBL)',
+        partitions=((1, 1, 1), (2, 2, 2)),
+        restart_step=14,
+        check_step=19,
+        restartcheck_params=RestartcheckParameters(**restartcheck_params))
+]
+
+generate_geos_tests(decks)

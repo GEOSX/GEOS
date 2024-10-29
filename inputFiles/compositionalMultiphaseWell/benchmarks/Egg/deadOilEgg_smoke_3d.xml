@@ -19,405 +19,394 @@
       nx="{ 10 }"
       ny="{ 10 }"
       nz="{ 7 }"
-      cellBlockNames="{ DEFAULT_HEX }"/>
+      cellBlockNames="{ DEFAULT_HEX }" >
 
-    <InternalWell
-      name="wellProducer1"
-      wellRegionName="wellRegion1"
-      wellControlsName="wellControls1"
-      meshName="mesh"
-      polylineNodeCoords="{ { 124, 340, 28 },
-                            { 124, 340, 0 } }"
-      polylineSegmentConn="{ { 0, 1 } }"
-      radius="0.1"
-      numElementsPerSegment="7">
-      <Perforation
-        name="producer1_perf1"
-        distanceFromHead="2"/>
-      <Perforation
-        name="producer1_perf2"
-        distanceFromHead="6"/>
-      <Perforation
-        name="producer1_perf3"
-        distanceFromHead="10"/>
-      <Perforation
-        name="producer1_perf4"
-        distanceFromHead="14"/>
-      <Perforation
-        name="producer1_perf5"
-        distanceFromHead="18"/>
-      <Perforation
-        name="producer1_perf6"
-        distanceFromHead="22"/>
-      <Perforation
-        name="producer1_perf7"
-        distanceFromHead="26"/>
-    </InternalWell>
+      <InternalWell
+        name="wellProducer1"
+        wellRegionName="wellRegion1"
+        wellControlsName="wellControls1"
+        polylineNodeCoords="{ { 124, 340, 28 },
+                              { 124, 340, 0 } }"
+        polylineSegmentConn="{ { 0, 1 } }"
+        radius="0.1"
+        numElementsPerSegment="7">
+        <Perforation
+          name="producer1_perf1"
+          distanceFromHead="2"/>
+        <Perforation
+          name="producer1_perf2"
+          distanceFromHead="6"/>
+        <Perforation
+          name="producer1_perf3"
+          distanceFromHead="10"/>
+        <Perforation
+          name="producer1_perf4"
+          distanceFromHead="14"/>
+        <Perforation
+          name="producer1_perf5"
+          distanceFromHead="18"/>
+        <Perforation
+          name="producer1_perf6"
+          distanceFromHead="22"/>
+        <Perforation
+          name="producer1_perf7"
+          distanceFromHead="26"/>
+      </InternalWell>
 
-    <InternalWell
-      name="wellProducer2"
-      wellRegionName="wellRegion2"
-      wellControlsName="wellControls2"
-      meshName="mesh"
-      polylineNodeCoords="{ { 276, 316, 28 },
-                            { 276, 316, 0 } }"
-      polylineSegmentConn="{ { 0, 1 } }"
-      radius="0.1"
-      numElementsPerSegment="7">
-      <Perforation
-        name="producer2_perf1"
-        distanceFromHead="2"/>
-      <Perforation
-        name="producer2_perf2"
-        distanceFromHead="6"/>
-      <Perforation
-        name="producer2_perf3"
-        distanceFromHead="10"/>
-      <Perforation
-        name="producer2_perf4"
-        distanceFromHead="14"/>
-      <Perforation
-        name="producer2_perf5"
-        distanceFromHead="18"/>
-      <Perforation
-        name="producer2_perf6"
-        distanceFromHead="22"/>
-      <Perforation
-        name="producer2_perf7"
-        distanceFromHead="26"/>
-    </InternalWell>
+      <InternalWell
+        name="wellProducer2"
+        wellRegionName="wellRegion2"
+        wellControlsName="wellControls2"
+        polylineNodeCoords="{ { 276, 316, 28 },
+                              { 276, 316, 0 } }"
+        polylineSegmentConn="{ { 0, 1 } }"
+        radius="0.1"
+        numElementsPerSegment="7">
+        <Perforation
+          name="producer2_perf1"
+          distanceFromHead="2"/>
+        <Perforation
+          name="producer2_perf2"
+          distanceFromHead="6"/>
+        <Perforation
+          name="producer2_perf3"
+          distanceFromHead="10"/>
+        <Perforation
+          name="producer2_perf4"
+          distanceFromHead="14"/>
+        <Perforation
+          name="producer2_perf5"
+          distanceFromHead="18"/>
+        <Perforation
+          name="producer2_perf6"
+          distanceFromHead="22"/>
+        <Perforation
+          name="producer2_perf7"
+          distanceFromHead="26"/>
+      </InternalWell>
 
-    <!-- SPHINX_TUT_DEAD_OIL_EGG_MESH_END -->
+      <!-- SPHINX_TUT_DEAD_OIL_EGG_MESH_END -->
 
-    <InternalWell
-      name="wellProducer3"
-      wellRegionName="wellRegion3"
-      wellControlsName="wellControls3"
-      meshName="mesh"
-      polylineNodeCoords="{ { 180, 124, 28 },
-                            { 180, 124, 0 } }"
-      polylineSegmentConn="{ { 0, 1 } }"
-      radius="0.1"
-      numElementsPerSegment="7">
-      <Perforation
-        name="producer3_perf1"
-        distanceFromHead="2"/>
-      <Perforation
-        name="producer3_perf2"
-        distanceFromHead="6"/>
-      <Perforation
-        name="producer3_perf3"
-        distanceFromHead="10"/>
-      <Perforation
-        name="producer3_perf4"
-        distanceFromHead="14"/>
-      <Perforation
-        name="producer3_perf5"
-        distanceFromHead="18"/>
-      <Perforation
-        name="producer3_perf6"
-        distanceFromHead="22"/>
-      <Perforation
-        name="producer3_perf7"
-        distanceFromHead="26"/>
-    </InternalWell>
+      <InternalWell
+        name="wellProducer3"
+        wellRegionName="wellRegion3"
+        wellControlsName="wellControls3"
+        polylineNodeCoords="{ { 180, 124, 28 },
+                              { 180, 124, 0 } }"
+        polylineSegmentConn="{ { 0, 1 } }"
+        radius="0.1"
+        numElementsPerSegment="7">
+        <Perforation
+          name="producer3_perf1"
+          distanceFromHead="2"/>
+        <Perforation
+          name="producer3_perf2"
+          distanceFromHead="6"/>
+        <Perforation
+          name="producer3_perf3"
+          distanceFromHead="10"/>
+        <Perforation
+          name="producer3_perf4"
+          distanceFromHead="14"/>
+        <Perforation
+          name="producer3_perf5"
+          distanceFromHead="18"/>
+        <Perforation
+          name="producer3_perf6"
+          distanceFromHead="22"/>
+        <Perforation
+          name="producer3_perf7"
+          distanceFromHead="26"/>
+      </InternalWell>
 
-    <InternalWell
-      name="wellProducer4"
-      wellRegionName="wellRegion4"
-      wellControlsName="wellControls4"
-      meshName="mesh"
-      polylineNodeCoords="{ { 340, 140, 28 },
-                            { 340, 140, 0 } }"
-      polylineSegmentConn="{ { 0, 1 } }"
-      radius="0.1"
-      numElementsPerSegment="7">
-      <Perforation
-        name="producer4_perf1"
-        distanceFromHead="2"/>
-      <Perforation
-        name="producer4_perf2"
-        distanceFromHead="6"/>
-      <Perforation
-        name="producer4_perf3"
-        distanceFromHead="10"/>
-      <Perforation
-        name="producer4_perf4"
-        distanceFromHead="14"/>
-      <Perforation
-        name="producer4_perf5"
-        distanceFromHead="18"/>
-      <Perforation
-        name="producer4_perf6"
-        distanceFromHead="22"/>
-      <Perforation
-        name="producer4_perf7"
-        distanceFromHead="26"/>
-    </InternalWell>
+      <InternalWell
+        name="wellProducer4"
+        wellRegionName="wellRegion4"
+        wellControlsName="wellControls4"
+        polylineNodeCoords="{ { 340, 140, 28 },
+                              { 340, 140, 0 } }"
+        polylineSegmentConn="{ { 0, 1 } }"
+        radius="0.1"
+        numElementsPerSegment="7">
+        <Perforation
+          name="producer4_perf1"
+          distanceFromHead="2"/>
+        <Perforation
+          name="producer4_perf2"
+          distanceFromHead="6"/>
+        <Perforation
+          name="producer4_perf3"
+          distanceFromHead="10"/>
+        <Perforation
+          name="producer4_perf4"
+          distanceFromHead="14"/>
+        <Perforation
+          name="producer4_perf5"
+          distanceFromHead="18"/>
+        <Perforation
+          name="producer4_perf6"
+          distanceFromHead="22"/>
+        <Perforation
+          name="producer4_perf7"
+          distanceFromHead="26"/>
+      </InternalWell>
 
-    <InternalWell
-      name="wellInjector1"
-      wellRegionName="wellRegion5"
-      wellControlsName="wellControls5"
-      meshName="mesh"
-      polylineNodeCoords="{ { 36, 452, 32 },
-                            { 36, 452, 0 } }"
-      polylineSegmentConn="{ { 0, 1 } }"
-      radius="0.1"
-      numElementsPerSegment="8">
-      <Perforation
-        name="injector1_perf1"
-        distanceFromHead="6"/>
-      <Perforation
-        name="injector1_perf2"
-        distanceFromHead="10"/>
-      <Perforation
-        name="injector1_perf3"
-        distanceFromHead="14"/>
-      <Perforation
-        name="injector1_perf4"
-        distanceFromHead="18"/>
-      <Perforation
-        name="injector1_perf5"
-        distanceFromHead="22"/>
-      <Perforation
-        name="injector1_perf6"
-        distanceFromHead="26"/>
-      <Perforation
-        name="injector1_perf7"
-        distanceFromHead="30"/>
-    </InternalWell>
+      <InternalWell
+        name="wellInjector1"
+        wellRegionName="wellRegion5"
+        wellControlsName="wellControls5"
+        polylineNodeCoords="{ { 36, 452, 32 },
+                              { 36, 452, 0 } }"
+        polylineSegmentConn="{ { 0, 1 } }"
+        radius="0.1"
+        numElementsPerSegment="8">
+        <Perforation
+          name="injector1_perf1"
+          distanceFromHead="6"/>
+        <Perforation
+          name="injector1_perf2"
+          distanceFromHead="10"/>
+        <Perforation
+          name="injector1_perf3"
+          distanceFromHead="14"/>
+        <Perforation
+          name="injector1_perf4"
+          distanceFromHead="18"/>
+        <Perforation
+          name="injector1_perf5"
+          distanceFromHead="22"/>
+        <Perforation
+          name="injector1_perf6"
+          distanceFromHead="26"/>
+        <Perforation
+          name="injector1_perf7"
+          distanceFromHead="30"/>
+      </InternalWell>
 
-    <InternalWell
-      name="wellInjector2"
-      wellRegionName="wellRegion6"
-      wellControlsName="wellControls6"
-      meshName="mesh"
-      polylineNodeCoords="{ { 236, 420, 32 },
-                            { 236, 420, 0 } }"
-      polylineSegmentConn="{ { 0, 1 } }"
-      radius="0.1"
-      numElementsPerSegment="8">
-      <Perforation
-        name="injector2_perf1"
-        distanceFromHead="6"/>
-      <Perforation
-        name="injector2_perf2"
-        distanceFromHead="10"/>
-      <Perforation
-        name="injector2_perf3"
-        distanceFromHead="14"/>
-      <Perforation
-        name="injector2_perf4"
-        distanceFromHead="18"/>
-      <Perforation
-        name="injector2_perf5"
-        distanceFromHead="22"/>
-      <Perforation
-        name="injector2_perf6"
-        distanceFromHead="26"/>
-      <Perforation
-        name="injector2_perf7"
-        distanceFromHead="30"/>
-    </InternalWell>
+      <InternalWell
+        name="wellInjector2"
+        wellRegionName="wellRegion6"
+        wellControlsName="wellControls6"
+        polylineNodeCoords="{ { 236, 420, 32 },
+                              { 236, 420, 0 } }"
+        polylineSegmentConn="{ { 0, 1 } }"
+        radius="0.1"
+        numElementsPerSegment="8">
+        <Perforation
+          name="injector2_perf1"
+          distanceFromHead="6"/>
+        <Perforation
+          name="injector2_perf2"
+          distanceFromHead="10"/>
+        <Perforation
+          name="injector2_perf3"
+          distanceFromHead="14"/>
+        <Perforation
+          name="injector2_perf4"
+          distanceFromHead="18"/>
+        <Perforation
+          name="injector2_perf5"
+          distanceFromHead="22"/>
+        <Perforation
+          name="injector2_perf6"
+          distanceFromHead="26"/>
+        <Perforation
+          name="injector2_perf7"
+          distanceFromHead="30"/>
+      </InternalWell>
 
-    <InternalWell
-      name="wellInjector3"
-      wellRegionName="wellRegion7"
-      wellControlsName="wellControls7"
-      meshName="mesh"
-      polylineNodeCoords="{ { 12, 276, 32 },
-                            { 12, 276, 0 } }"
-      polylineSegmentConn="{ { 0, 1 } }"
-      radius="0.1"
-      numElementsPerSegment="8">
-      <Perforation
-        name="injector3_perf1"
-        distanceFromHead="6"/>
-      <Perforation
-        name="injector3_perf2"
-        distanceFromHead="10"/>
-      <Perforation
-        name="injector3_perf3"
-        distanceFromHead="14"/>
-      <Perforation
-        name="injector3_perf4"
-        distanceFromHead="18"/>
-      <Perforation
-        name="injector3_perf5"
-        distanceFromHead="22"/>
-      <Perforation
-        name="injector3_perf6"
-        distanceFromHead="26"/>
-      <Perforation
-        name="injector3_perf7"
-        distanceFromHead="30"/>
-    </InternalWell>
+      <InternalWell
+        name="wellInjector3"
+        wellRegionName="wellRegion7"
+        wellControlsName="wellControls7"
+        polylineNodeCoords="{ { 12, 276, 32 },
+                              { 12, 276, 0 } }"
+        polylineSegmentConn="{ { 0, 1 } }"
+        radius="0.1"
+        numElementsPerSegment="8">
+        <Perforation
+          name="injector3_perf1"
+          distanceFromHead="6"/>
+        <Perforation
+          name="injector3_perf2"
+          distanceFromHead="10"/>
+        <Perforation
+          name="injector3_perf3"
+          distanceFromHead="14"/>
+        <Perforation
+          name="injector3_perf4"
+          distanceFromHead="18"/>
+        <Perforation
+          name="injector3_perf5"
+          distanceFromHead="22"/>
+        <Perforation
+          name="injector3_perf6"
+          distanceFromHead="26"/>
+        <Perforation
+          name="injector3_perf7"
+          distanceFromHead="30"/>
+      </InternalWell>
 
-    <InternalWell
-      name="wellInjector4"
-      wellRegionName="wellRegion8"
-      wellControlsName="wellControls8"
-      meshName="mesh"
-      polylineNodeCoords="{ { 212, 228, 32 },
-                            { 212, 228, 0 } }"
-      polylineSegmentConn="{ { 0, 1 } }"
-      radius="0.1"
-      numElementsPerSegment="8">
-      <Perforation
-        name="injector4_perf1"
-        distanceFromHead="6"/>
-      <Perforation
-        name="injector4_perf2"
-        distanceFromHead="10"/>
-      <Perforation
-        name="injector4_perf3"
-        distanceFromHead="14"/>
-      <Perforation
-        name="injector4_perf4"
-        distanceFromHead="18"/>
-      <Perforation
-        name="injector4_perf5"
-        distanceFromHead="22"/>
-      <Perforation
-        name="injector4_perf6"
-        distanceFromHead="26"/>
-      <Perforation
-        name="injector4_perf7"
-        distanceFromHead="30"/>
-    </InternalWell>
+      <InternalWell
+        name="wellInjector4"
+        wellRegionName="wellRegion8"
+        wellControlsName="wellControls8"
+        polylineNodeCoords="{ { 212, 228, 32 },
+                              { 212, 228, 0 } }"
+        polylineSegmentConn="{ { 0, 1 } }"
+        radius="0.1"
+        numElementsPerSegment="8">
+        <Perforation
+          name="injector4_perf1"
+          distanceFromHead="6"/>
+        <Perforation
+          name="injector4_perf2"
+          distanceFromHead="10"/>
+        <Perforation
+          name="injector4_perf3"
+          distanceFromHead="14"/>
+        <Perforation
+          name="injector4_perf4"
+          distanceFromHead="18"/>
+        <Perforation
+          name="injector4_perf5"
+          distanceFromHead="22"/>
+        <Perforation
+          name="injector4_perf6"
+          distanceFromHead="26"/>
+        <Perforation
+          name="injector4_perf7"
+          distanceFromHead="30"/>
+      </InternalWell>
 
-    <InternalWell
-      name="wellInjector5"
-      wellRegionName="wellRegion9"
-      wellControlsName="wellControls9"
-      meshName="mesh"
-      polylineNodeCoords="{ { 396, 276, 32 },
-                            { 396, 276, 0 } }"
-      polylineSegmentConn="{ { 0, 1 } }"
-      radius="0.1"
-      numElementsPerSegment="8">
-      <Perforation
-        name="injector5_perf1"
-        distanceFromHead="6"/>
-      <Perforation
-        name="injector5_perf2"
-        distanceFromHead="10"/>
-      <Perforation
-        name="injector5_perf3"
-        distanceFromHead="14"/>
-      <Perforation
-        name="injector5_perf4"
-        distanceFromHead="18"/>
-      <Perforation
-        name="injector5_perf5"
-        distanceFromHead="22"/>
-      <Perforation
-        name="injector5_perf6"
-        distanceFromHead="26"/>
-      <Perforation
-        name="injector5_perf7"
-        distanceFromHead="30"/>
-    </InternalWell>
+      <InternalWell
+        name="wellInjector5"
+        wellRegionName="wellRegion9"
+        wellControlsName="wellControls9"
+        polylineNodeCoords="{ { 396, 276, 32 },
+                              { 396, 276, 0 } }"
+        polylineSegmentConn="{ { 0, 1 } }"
+        radius="0.1"
+        numElementsPerSegment="8">
+        <Perforation
+          name="injector5_perf1"
+          distanceFromHead="6"/>
+        <Perforation
+          name="injector5_perf2"
+          distanceFromHead="10"/>
+        <Perforation
+          name="injector5_perf3"
+          distanceFromHead="14"/>
+        <Perforation
+          name="injector5_perf4"
+          distanceFromHead="18"/>
+        <Perforation
+          name="injector5_perf5"
+          distanceFromHead="22"/>
+        <Perforation
+          name="injector5_perf6"
+          distanceFromHead="26"/>
+        <Perforation
+          name="injector5_perf7"
+          distanceFromHead="30"/>
+      </InternalWell>
 
-    <InternalWell
-      name="wellInjector6"
-      wellRegionName="wellRegion10"
-      wellControlsName="wellControls10"
-      meshName="mesh"
-      polylineNodeCoords="{ { 60, 68, 32 },
-                            { 60, 68, 0 } }"
-      polylineSegmentConn="{ { 0, 1 } }"
-      radius="0.1"
-      numElementsPerSegment="8">
-      <Perforation
-        name="injector6_perf1"
-        distanceFromHead="6"/>
-      <Perforation
-        name="injector6_perf2"
-        distanceFromHead="10"/>
-      <Perforation
-        name="injector6_perf3"
-        distanceFromHead="14"/>
-      <Perforation
-        name="injector6_perf4"
-        distanceFromHead="18"/>
-      <Perforation
-        name="injector6_perf5"
-        distanceFromHead="22"/>
-      <Perforation
-        name="injector6_perf6"
-        distanceFromHead="26"/>
-      <Perforation
-        name="injector6_perf7"
-        distanceFromHead="30"/>
-    </InternalWell>
+      <InternalWell
+        name="wellInjector6"
+        wellRegionName="wellRegion10"
+        wellControlsName="wellControls10"
+        polylineNodeCoords="{ { 60, 68, 32 },
+                              { 60, 68, 0 } }"
+        polylineSegmentConn="{ { 0, 1 } }"
+        radius="0.1"
+        numElementsPerSegment="8">
+        <Perforation
+          name="injector6_perf1"
+          distanceFromHead="6"/>
+        <Perforation
+          name="injector6_perf2"
+          distanceFromHead="10"/>
+        <Perforation
+          name="injector6_perf3"
+          distanceFromHead="14"/>
+        <Perforation
+          name="injector6_perf4"
+          distanceFromHead="18"/>
+        <Perforation
+          name="injector6_perf5"
+          distanceFromHead="22"/>
+        <Perforation
+          name="injector6_perf6"
+          distanceFromHead="26"/>
+        <Perforation
+          name="injector6_perf7"
+          distanceFromHead="30"/>
+      </InternalWell>
 
-    <InternalWell
-      name="wellInjector7"
-      wellRegionName="wellRegion11"
-      wellControlsName="wellControls11"
-      meshName="mesh"
-      polylineNodeCoords="{ { 252, 12, 32 },
-                            { 252, 12, 0 } }"
-      polylineSegmentConn="{ { 0, 1 } }"
-      radius="0.1"
-      numElementsPerSegment="8">
-      <Perforation
-        name="injector7_perf1"
-        distanceFromHead="6"/>
-      <Perforation
-        name="injector7_perf2"
-        distanceFromHead="10"/>
-      <Perforation
-        name="injector7_perf3"
-        distanceFromHead="14"/>
-      <Perforation
-        name="injector7_perf4"
-        distanceFromHead="18"/>
-      <Perforation
-        name="injector7_perf5"
-        distanceFromHead="22"/>
-      <Perforation
-        name="injector7_perf6"
-        distanceFromHead="26"/>
-      <Perforation
-        name="injector7_perf7"
-        distanceFromHead="30"/>
-    </InternalWell>
+      <InternalWell
+        name="wellInjector7"
+        wellRegionName="wellRegion11"
+        wellControlsName="wellControls11"
+        polylineNodeCoords="{ { 252, 12, 32 },
+                              { 252, 12, 0 } }"
+        polylineSegmentConn="{ { 0, 1 } }"
+        radius="0.1"
+        numElementsPerSegment="8">
+        <Perforation
+          name="injector7_perf1"
+          distanceFromHead="6"/>
+        <Perforation
+          name="injector7_perf2"
+          distanceFromHead="10"/>
+        <Perforation
+          name="injector7_perf3"
+          distanceFromHead="14"/>
+        <Perforation
+          name="injector7_perf4"
+          distanceFromHead="18"/>
+        <Perforation
+          name="injector7_perf5"
+          distanceFromHead="22"/>
+        <Perforation
+          name="injector7_perf6"
+          distanceFromHead="26"/>
+        <Perforation
+          name="injector7_perf7"
+          distanceFromHead="30"/>
+      </InternalWell>
 
-    <InternalWell
-      name="wellInjector8"
-      wellRegionName="wellRegion12"
-      wellControlsName="wellControls12"
-      meshName="mesh"
-      polylineNodeCoords="{ { 452, 44, 32 },
-                            { 452, 44, 0 } }"
-      polylineSegmentConn="{ { 0, 1 } }"
-      radius="0.1"
-      numElementsPerSegment="8">
-      <Perforation
-        name="injector8_perf1"
-        distanceFromHead="6"/>
-      <Perforation
-        name="injector8_perf2"
-        distanceFromHead="10"/>
-      <Perforation
-        name="injector8_perf3"
-        distanceFromHead="14"/>
-      <Perforation
-        name="injector8_perf4"
-        distanceFromHead="18"/>
-      <Perforation
-        name="injector8_perf5"
-        distanceFromHead="22"/>
-      <Perforation
-        name="injector8_perf6"
-        distanceFromHead="26"/>
-      <Perforation
-        name="injector8_perf7"
-        distanceFromHead="30"/>
-    </InternalWell>
+      <InternalWell
+        name="wellInjector8"
+        wellRegionName="wellRegion12"
+        wellControlsName="wellControls12"
+        polylineNodeCoords="{ { 452, 44, 32 },
+                              { 452, 44, 0 } }"
+        polylineSegmentConn="{ { 0, 1 } }"
+        radius="0.1"
+        numElementsPerSegment="8">
+        <Perforation
+          name="injector8_perf1"
+          distanceFromHead="6"/>
+        <Perforation
+          name="injector8_perf2"
+          distanceFromHead="10"/>
+        <Perforation
+          name="injector8_perf3"
+          distanceFromHead="14"/>
+        <Perforation
+          name="injector8_perf4"
+          distanceFromHead="18"/>
+        <Perforation
+          name="injector8_perf5"
+          distanceFromHead="22"/>
+        <Perforation
+          name="injector8_perf6"
+          distanceFromHead="26"/>
+        <Perforation
+          name="injector8_perf7"
+          distanceFromHead="30"/>
+      </InternalWell>
+    </InternalMesh>
   </Mesh>
 
 </Problem>

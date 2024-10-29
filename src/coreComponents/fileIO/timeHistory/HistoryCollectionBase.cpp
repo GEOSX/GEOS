@@ -2,10 +2,11 @@
  * ------------------------------------------------------------------------------------------------------------
  * SPDX-License-Identifier: LGPL-2.1-only
  *
- * Copyright (c) 2018-2020 Lawrence Livermore National Security LLC
- * Copyright (c) 2018-2020 The Board of Trustees of the Leland Stanford Junior University
- * Copyright (c) 2018-2020 TotalEnergies
- * Copyright (c) 2020-     GEOSX Contributors
+ * Copyright (c) 2016-2024 Lawrence Livermore National Security LLC
+ * Copyright (c) 2018-2024 Total, S.A
+ * Copyright (c) 2018-2024 The Board of Trustees of the Leland Stanford Junior University
+ * Copyright (c) 2018-2024 Chevron
+ * Copyright (c) 2019-     GEOS/GEOSX Contributors
  * All rights reserved
  *
  * See top level LICENSE, COPYRIGHT, CONTRIBUTORS, NOTICE, and ACKNOWLEDGEMENTS files for details.
@@ -120,9 +121,10 @@ dataRepository::Group const * HistoryCollectionBase::getTargetObject( DomainPart
           }
         } );
 
-        GEOS_ERROR_IF( !bodyFound,
+        GEOS_THROW_IF( !bodyFound,
                        GEOS_FMT( "MeshBody ({}) is specified, but not found.",
-                                 targetTokens[0] ) );
+                                 targetTokens[0] ),
+                       std::domain_error );
       }
 
       string const meshBodyName = targetTokens[0];
@@ -149,9 +151,10 @@ dataRepository::Group const * HistoryCollectionBase::getTargetObject( DomainPart
             }
           } );
 
-          GEOS_ERROR_IF( !levelFound,
+          GEOS_THROW_IF( !levelFound,
                          GEOS_FMT( "MeshLevel ({}) is specified, but not found.",
-                                   targetTokens[1] ) );
+                                   targetTokens[1] ),
+                         std::domain_error );
         }
       }
       else if( !meshBody.getMeshLevels().hasGroup< MeshLevel >( targetTokens[1] ) )
@@ -198,9 +201,9 @@ dataRepository::Group const * HistoryCollectionBase::getTargetObject( DomainPart
       return targetGroup;
     }
   }
-  catch( std::domain_error const & e )
+  catch( std::exception const & e )
   {
-    throw InputError( e, getName() + " has a wrong objectPath: " + objectPath + "\n" );
+    throw InputError( e, getDataContext().toString() + " has a wrong objectPath: " + objectPath + "\n" );
   }
 }
 

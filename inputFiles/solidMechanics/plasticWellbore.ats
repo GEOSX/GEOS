@@ -1,0 +1,32 @@
+from geos.ats.test_builder import TestDeck, RestartcheckParameters, generate_geos_tests
+
+restartcheck_params = {}
+restartcheck_params['atol'] = 1e-06
+restartcheck_params['rtol'] = 0.0001
+
+decks = [
+    TestDeck(
+        name="ModifiedCamClayWellbore_smoke",
+        description='test of wellbore mesh generation and simple loading',
+        partitions=((1, 1, 1), (2, 2, 1)),
+        restart_step=1,
+        check_step=1,
+        restartcheck_params=RestartcheckParameters(**restartcheck_params)),
+    TestDeck(
+        name="ExtendedDruckerPragerWellbore_smoke",
+        description=
+        'test of wellbore with ExtendedDruckerPrager material and simple loading',
+        partitions=((1, 1, 1), (2, 2, 1)),
+        restart_step=1,
+        check_step=1,
+        restartcheck_params=RestartcheckParameters(**restartcheck_params)),
+    TestDeck(name="DruckerPragerWellbore_smoke",
+             description=
+             'test of wellbore with DruckerPrager material and simple loading',
+             partitions=((1, 1, 1), (2, 2, 1)),
+             restart_step=1,
+             check_step=1,
+             restartcheck_params=RestartcheckParameters(**restartcheck_params))
+]
+
+generate_geos_tests(decks)

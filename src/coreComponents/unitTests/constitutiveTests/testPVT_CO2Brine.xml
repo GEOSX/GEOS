@@ -1,0 +1,153 @@
+<?xml version="1.0" ?>
+
+<Problem>
+  <Tasks>
+    <PVTDriver
+      name="testCo2BrinePhillipsMixtureA"
+      fluid="co2BrinePhillipsMixture"
+      feedComposition="{ 0.1, 0.9 }"
+      pressureControl="pressureFunction"
+      temperatureControl="temperatureFunction"
+      steps="20"
+      outputCompressibility="1"
+      outputPhaseComposition="1"
+      baseline="testPVT_CO2Brine_testCo2BrinePhillipsMixtureA.txt"
+      logLevel="1" />
+    <PVTDriver
+      name="testCo2BrinePhillipsMixtureB"
+      fluid="co2BrinePhillipsMixture"
+      feedComposition="{ 0.3, 0.7 }"
+      pressureControl="pressureFunction"
+      temperatureControl="temperatureFunction"
+      steps="20"
+      outputCompressibility="1"
+      outputPhaseComposition="1"
+      baseline="testPVT_CO2Brine_testCo2BrinePhillipsMixtureB.txt"
+      logLevel="1" />
+    <PVTDriver
+      name="testCo2BrineEzrokhiMixtureA"
+      fluid="co2BrineEzrokhiMixture"
+      feedComposition="{ 0.1, 0.9 }"
+      pressureControl="pressureFunction"
+      temperatureControl="temperatureFunction"
+      steps="20"
+      outputCompressibility="1"
+      outputPhaseComposition="1"
+      baseline="testPVT_CO2Brine_testCo2BrineEzrokhiMixtureA.txt"
+      logLevel="1" />
+    <PVTDriver
+      name="testCo2BrineEzrokhiMixtureB"
+      fluid="co2BrineEzrokhiMixture"
+      feedComposition="{ 0.3, 0.7 }"
+      pressureControl="pressureFunction"
+      temperatureControl="temperatureFunction"
+      steps="20"
+      outputCompressibility="1"
+      outputPhaseComposition="1"
+      baseline="testPVT_CO2Brine_testCo2BrineEzrokhiMixtureB.txt"
+      logLevel="1" />
+    <PVTDriver
+      name="testCo2SpycherPruessBrinePhillipsMixtureA"
+      fluid="co2BrinePhillipsMixtureSpycherPruess"
+      feedComposition="{ 0.1, 0.9 }"
+      pressureControl="pressureFunction"
+      temperatureControl="temperatureFunction"
+      steps="20"
+      outputCompressibility="1"
+      outputPhaseComposition="1"
+      baseline="testPVT_CO2Brine_testCo2SpycherPruessBrinePhillipsMixtureA.txt"
+      logLevel="1" />
+    <PVTDriver
+      name="testCo2SpycherPruessBrinePhillipsMixtureB"
+      fluid="co2BrinePhillipsMixtureSpycherPruess"
+      feedComposition="{ 0.3, 0.7 }"
+      pressureControl="pressureFunction"
+      temperatureControl="temperatureFunction"
+      steps="20"
+      outputCompressibility="1"
+      outputPhaseComposition="1"
+      baseline="testPVT_CO2Brine_testCo2SpycherPruessBrinePhillipsMixtureB.txt"
+      logLevel="1" />
+  </Tasks>
+
+  <Events
+    maxTime="1">
+    <SoloEvent
+      name="eventCo2BrinePhillipsMixtureA"
+      target="/Tasks/testCo2BrinePhillipsMixtureA" />
+    <SoloEvent
+      name="eventCo2BrinePhillipsMixtureB"
+      target="/Tasks/testCo2BrinePhillipsMixtureB" />
+    <SoloEvent
+      name="eventCo2BrineEzrokhiMixtureA"
+      target="/Tasks/testCo2BrineEzrokhiMixtureA" />
+    <SoloEvent
+      name="eventCo2BrineEzrokhiMixtureB"
+      target="/Tasks/testCo2BrineEzrokhiMixtureB" />
+    <SoloEvent
+      name="eventCo2SpycherPruessBrinePhillipsMixtureA"
+      target="/Tasks/testCo2SpycherPruessBrinePhillipsMixtureA" />
+    <SoloEvent
+      name="eventCo2SpycherPruessBrinePhillipsMixtureB"
+      target="/Tasks/testCo2SpycherPruessBrinePhillipsMixtureB" />
+  </Events>
+
+  <Constitutive>
+    <CO2BrinePhillipsFluid
+      name="co2BrinePhillipsMixture"
+      phaseNames="{ gas, water }"
+      componentNames="{ co2, water }"
+      componentMolarWeight="{ 44e-3, 18e-3 }"
+      phasePVTParaFiles="{ testPVT_data/carbonDioxidePVT.txt, testPVT_data/brinePVT.txt }"
+      flashModelParaFile="testPVT_data/carbonDioxideFlash.txt" />
+    <CO2BrineEzrokhiFluid
+      name="co2BrineEzrokhiMixture"
+      phaseNames="{ gas, water }"
+      componentNames="{ co2, water }"
+      componentMolarWeight="{ 44e-3, 18e-3 }"
+      phasePVTParaFiles="{ testPVT_data/carbonDioxidePVT.txt, testPVT_data/brinePVTEzrokhi.txt }"
+      flashModelParaFile="testPVT_data/carbonDioxideFlash.txt" />
+    <CO2BrinePhillipsFluid
+      name="co2BrinePhillipsMixtureSpycherPruess"
+      phaseNames="{ gas, water }"
+      componentNames="{ co2, water }"
+      componentMolarWeight="{ 44e-3, 18e-3 }"
+      phasePVTParaFiles="{ testPVT_data/carbonDioxidePVT.txt, testPVT_data/brinePVT.txt }"
+      flashModelParaFile="testPVT_data/carbonDioxideSpycherPruessFlash.txt" />
+  </Constitutive>
+
+  <Functions>
+    <TableFunction
+      name="pressureFunction"
+      inputVarNames="{ time }"
+      coordinates="{ 0.0, 0.45, 0.55, 1.0 }"
+      values="{ 1e6, 50e6, 10e6, 10e6 }" />
+
+    <TableFunction
+      name="temperatureFunction"
+      inputVarNames="{ time }"
+      coordinates="{ 0.0, 0.45, 0.55, 1.0 }"
+      values="{ 350.0, 350.0, 258, 380 }" />
+  </Functions>
+
+  <!-- Mesh is not used, but GEOSX throws an error without one.  Will resolve soon-->
+  <Mesh>
+    <InternalMesh
+      name="mesh1"
+      elementTypes="{ C3D8 }"
+      xCoords="{ 0, 1 }"
+      yCoords="{ 0, 1 }"
+      zCoords="{ 0, 1 }"
+      nx="{ 1 }"
+      ny="{ 1 }"
+      nz="{ 1 }"
+      cellBlockNames="{ cellBlock01 }" />
+  </Mesh>
+
+  <ElementRegions>
+    <CellElementRegion
+      name="dummy"
+      cellBlocks="{ cellBlock01 }"
+      materialList="{ dummy }" />
+  </ElementRegions>
+</Problem>

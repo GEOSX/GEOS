@@ -2,10 +2,11 @@
  * ------------------------------------------------------------------------------------------------------------
  * SPDX-License-Identifier: LGPL-2.1-only
  *
- * Copyright (c) 2018-2020 Lawrence Livermore National Security LLC
- * Copyright (c) 2018-2020 The Board of Trustees of the Leland Stanford Junior University
- * Copyright (c) 2018-2020 TotalEnergies
- * Copyright (c) 2019-     GEOSX Contributors
+ * Copyright (c) 2016-2024 Lawrence Livermore National Security LLC
+ * Copyright (c) 2018-2024 Total, S.A
+ * Copyright (c) 2018-2024 The Board of Trustees of the Leland Stanford Junior University
+ * Copyright (c) 2018-2024 Chevron
+ * Copyright (c) 2019-     GEOS/GEOSX Contributors
  * All rights reserved
  *
  * See top level LICENSE, COPYRIGHT, CONTRIBUTORS, NOTICE, and ACKNOWLEDGEMENTS files for details.
@@ -108,6 +109,7 @@ private:
   real64 m_volFracScale;
 };
 
+//template< class INTERPOLATOR>
 class BrooksCoreyBakerRelativePermeability : public RelativePermeabilityBase
 {
 public:
@@ -142,7 +144,7 @@ public:
 
 protected:
 
-  virtual void postProcessInput() override;
+  virtual void postInputInitialization() override;
 
   array1d< real64 > m_phaseMinVolumeFraction;
 
@@ -272,6 +274,22 @@ BrooksCoreyBakerRelativePermeabilityUpdate::
                                           dOilRelPerm_go_dOilVolFrac,
                                           phaseRelPerm[ipOil],
                                           dPhaseRelPerm_dPhaseVolFrac[ipOil] );
+//    relpermInterpolators::Stone2::compute(shiftedWaterVolFrac,
+//                                          phaseVolFraction[ipGas],
+//                                          m_phaseOrder,
+//                                          m_waterOilRelPermMaxValue[ipOil],
+//                                          oilRelPerm_wo,
+//                                          dOilRelPerm_wo_dOilVolFrac,
+//                                          oilRelPerm_go,
+//                                          dOilRelPerm_go_dOilVolFrac,
+//                                          phaseRelPerm[ipWater],
+//                                          dPhaseRelPerm_dPhaseVolFrac[ipWater][ipWater],
+//                                          phaseRelPerm[ipGas],
+//                                          dPhaseRelPerm_dPhaseVolFrac[ipGas][ipGas],
+//                                          phaseRelPerm[ipOil],
+//                                          dPhaseRelPerm_dPhaseVolFrac[ipOil] );
+//    INTERPOLATOR::compute(...);
+
   }
 
   // update trapped phase volume fraction

@@ -18,7 +18,7 @@ def main():
 
 	regions = [ 'casing', 'cement', 'rock' ]
 
-	# Plot GEOSX results
+	# Plot GEOS results
 	hasLabel = True
 
 	plt.figure(figsize=(10,7))
@@ -40,7 +40,7 @@ def main():
 		temperature = np.array( hf_temperature.get('temperature') )
 
 		# Compute total stress: 
-		# With the actual version of GEOSX, the output stress need to be combined with the temperature contribution to obtain the total tress as follows: 
+		# With the actual version of GEOS, the output stress need to be combined with the temperature contribution to obtain the total tress as follows: 
 		stress_xx_total = stress[:,:,0] - 3 * bulkModuli[idx] * thermalExpansionCoefficients[idx] * temperature
 		stress_yy_total = stress[:,:,1] - 3 * bulkModuli[idx] * thermalExpansionCoefficients[idx] * temperature
 		stress_zz_total = stress[:,:,2] - 3 * bulkModuli[idx] * thermalExpansionCoefficients[idx] * temperature
@@ -83,12 +83,12 @@ def main():
 			plt.plot( rCoord,
 					  stress_rr_total[9, :],  # t=1e4 seconds corresponds to the 9th time step      
 					  'r+',
-					  label='GEOSX: t = 1e4 (s)')
+					  label='GEOS: t = 1e4 (s)')
 
 			plt.plot( rCoord,
 					  stress_rr_total[99, :],  # t=1e5 seconds corresponds to the 99th time step      
 					  'b+',
-					  label='GEOSX: t = 1e5 (s)')
+					  label='GEOS: t = 1e5 (s)')
 
 			hasLabel = False
 		else:
@@ -149,7 +149,7 @@ def main():
 	plt.ylabel('Hoop stress [Pa]')
 	plt.xlabel('Radial coordinate [m]')
 	plt.xlim(0.15,0.4)
-	plt.show()
+	plt.savefig('stress.png')
 	
 if __name__ == "__main__":
 	main()

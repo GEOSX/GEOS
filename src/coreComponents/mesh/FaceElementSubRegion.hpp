@@ -2,10 +2,11 @@
  * ------------------------------------------------------------------------------------------------------------
  * SPDX-License-Identifier: LGPL-2.1-only
  *
- * Copyright (c) 2018-2020 Lawrence Livermore National Security LLC
- * Copyright (c) 2018-2020 The Board of Trustees of the Leland Stanford Junior University
- * Copyright (c) 2018-2020 TotalEnergies
- * Copyright (c) 2019-     GEOSX Contributors
+ * Copyright (c) 2016-2024 Lawrence Livermore National Security LLC
+ * Copyright (c) 2018-2024 Total, S.A
+ * Copyright (c) 2018-2024 The Board of Trustees of the Leland Stanford Junior University
+ * Copyright (c) 2018-2024 Chevron
+ * Copyright (c) 2019-     GEOS/GEOSX Contributors
  * All rights reserved
  *
  * See top level LICENSE, COPYRIGHT, CONTRIBUTORS, NOTICE, and ACKNOWLEDGEMENTS files for details.
@@ -38,7 +39,7 @@ class FaceElementSubRegion : public SurfaceElementSubRegion
 public:
 
   /// Face element to faces map type
-  using FaceMapType = InterObjectRelation< array2d< localIndex > >;
+  using FaceMapType = InterObjectRelation< ArrayOfArrays< localIndex > >;
 
   /**
    * @name Static factory catalog functions
@@ -111,6 +112,18 @@ public:
 
   virtual void fixUpDownMaps( bool const clearIfUnmapped ) override;
 
+  /**
+   * @brief Fixes the mappings between the @p FaceElementSubRegion and regions next to it (e.g., matrix regions).
+   * @param nodeManager The node manager
+   * @param edgeManager The edge manager
+   * @param faceManager The face manager
+   * @param elemManager The element manager
+   */
+  void fixSecondaryMappings( NodeManager const & nodeManager,
+                             EdgeManager const & edgeManager,
+                             FaceManager const & faceManager,
+                             ElementRegionManager const & elemManager );
+
   ///@}
 
   /**
@@ -120,6 +133,30 @@ public:
    */
   void inheritGhostRankFromParentFace( FaceManager const & faceManager,
                                        std::set< localIndex > const & indices );
+
+  /**
+   * @brief Function to flip the face normals of faces adjacent to the faceElements if they are not pointing in the direction of the
+   * fracture.
+   * @param faceManager The face manager group
+   * @param elemManager The element region manager
+   * @details We want to flip the normals of the faces neighboring the fracture element. To do so, we check
+   * if the vector connecting the face center and the element center of the neighboring 3d cell is in the same
+   * direction as the unit normal of the face. If they are not, we flip the normal because it should be pointing outward
+   * (i.e., towards the fracture element).
+   */
+  void fixNeighboringFacesNormals( FaceManager & faceManager,
+                                   ElementRegionManager const & elemManager );
+
+  /**
+   * @brief Function to flip the face map based on the gloal index of the nighboring elements
+   * @param faceManager The face manager group
+   * @param elemManager The element region manager
+   * @details In order to keep a consistent normal between multi processors ranks, we force the faces to be ordered
+   * based on the global numbering of the 3d elements attached to each face. The first face is always the one
+   * attached to the 3d cell with the smallest globalIndex.
+   */
+  void flipFaceMap( FaceManager & faceManager,
+                    ElementRegionManager const & elemManager );
 
   /**
    * @brief Struct containing the keys to all face element views.
@@ -137,8 +174,10 @@ public:
     static constexpr char const * fractureConnectorEdgesToEdgesString() { return "fractureConnectorsToEdges"; }
     /// @return String key to the map of fracture connector local indices face element local indices.
     static constexpr char const * fractureConnectorsEdgesToFaceElementsIndexString() { return "fractureConnectorsToElementIndex"; }
+    /// @return String key to collocated nodes buckets.
+    static constexpr char const * elem2dToCollocatedNodesBucketsString() { return "elem2dToCollocatedNodesBuckets"; }
 
-#if GEOSX_USE_SEPARATION_COEFFICIENT
+#if GEOS_USE_SEPARATION_COEFFICIENT
     /// Separation coefficient string.
     constexpr static char const * separationCoeffString() { return "separationCoeff"; }
     /// dSepCoeffdAper string.
@@ -186,7 +225,7 @@ public:
    */
   //virtual localIndex numNodesPerElement( localIndex const k ) const override { return m_toNodesRelation[k].size(); }
 
-#ifdef GEOSX_USE_SEPARATION_COEFFICIENT
+#ifdef GEOS_USE_SEPARATION_COEFFICIENT
   /**
    * @brief Get separation coefficient.
    * @return the separation coefficient
@@ -210,16 +249,22 @@ public:
   SortedArray< localIndex > m_newFaceElements;
 
   /// map from the edges to the fracture connectors index (edges that are fracture connectors)
-  SortedArray< localIndex > m_recalculateFractureConnectorEdges;
+  SortedArray< localIndex > m_recalculateConnectionsFor2dFaces;
 
   /// A map of edge local indices to the fracture connector local indices.
-  map< localIndex, localIndex > m_edgesToFractureConnectorsEdges;
+  map< localIndex, localIndex > m_edgesTo2dFaces;
 
   /// A map of fracture connector local indices to edge local indices.
-  array1d< localIndex > m_fractureConnectorsEdgesToEdges;
+  array1d< localIndex > m_2dFaceToEdge;
 
   /// A map of fracture connector local indices face element local indices.
-  ArrayOfArrays< localIndex > m_fractureConnectorEdgesToFaceElements;
+  ArrayOfArrays< localIndex > m_2dFaceTo2dElems;
+
+  /**
+   * @brief Computes and returns all the buckets of collocated nodes.
+   * @return The buckets are returned in no particular order.
+   */
+  std::set< std::set< globalIndex > > getCollocatedNodes() const;
 
   /**
    * @brief @return The array of shape function derivatives.
@@ -245,6 +290,27 @@ public:
   arrayView2d< real64 const > detJ() const
   { return m_detJ; }
 
+  using ElementSubRegionBase::getElementType;
+
+  /**
+   * @brief Returns the type of element @p ei.
+   * @param ei The local index of the element.
+   * @return The type.
+   * This is a first attempt to reflect this in the interface. Use with great care.
+   */
+  ElementType getElementType( localIndex ei ) const;
+
+  /**
+   * @brief Returns the 2d element to node to collocated nodes bucket mapping.
+   * @return A const view to the data.
+   * @note The 2d element is local to the @p FaceElementSubRegion,
+   * the node is local to the 2d element and the collocated nodes are global.
+   */
+  ArrayOfArraysView< array1d< globalIndex > const > get2dElemToCollocatedNodesBuckets() const
+  {
+    return m_2dElemToCollocatedNodesBuckets.toViewConst();
+  }
+
 private:
 
   /**
@@ -267,7 +333,13 @@ private:
   /// Element-to-face relation
   FaceMapType m_toFacesRelation;
 
-#ifdef GEOSX_USE_SEPARATION_COEFFICIENT
+  /**
+   * @brief The collocated nodes buckets.
+   * @see FaceElementSubRegion::get2dElemToCollocatedNodesBuckets
+   */
+  ArrayOfArrays< array1d< globalIndex > > m_2dElemToCollocatedNodesBuckets;
+
+#ifdef GEOS_USE_SEPARATION_COEFFICIENT
   /// Separation coefficient
   array1d< real64 > m_separationCoefficient;
 #endif

@@ -8,6 +8,8 @@
       discretization="fluidTPFA"
       temperature="368.15"
       useMass="1"
+      useTotalMassEquation="0"
+      useSimpleAccumulation="1"
       targetRegions="{ region }">
       <NonlinearSolverParameters
         newtonTol="1.0e-5"
@@ -117,6 +119,7 @@
   <Constitutive>
     <CO2BrinePhillipsFluid
       name="fluid"
+      logLevel="1"
       phaseNames="{ gas, water }"
       componentNames="{ co2, water }"
       componentMolarWeight="{ 44e-3, 18e-3 }"
@@ -310,7 +313,8 @@
   
   <Outputs>
     <VTK
-      name="vtkOutput"/>
+      name="vtkOutput"
+      plotFileRoot="co2_flux_3d"/>
 
     <Restart
       name="sidreRestart"/>

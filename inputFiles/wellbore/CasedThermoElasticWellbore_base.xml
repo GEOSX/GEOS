@@ -11,7 +11,7 @@
       targetRegions="{ casing, cement, rock }">
       <NonlinearSolverParameters
         couplingType="FullyImplicit"
-	maxAllowedResidualNorm="1e19"
+        maxAllowedResidualNorm="1e19"
         newtonMaxIter="100"/>
       <LinearSolverParameters
         directParallel="0"/>
@@ -94,35 +94,35 @@
     <BiotPorosity
       name="casingPorosity"
       defaultReferencePorosity="1e-6"
-      grainBulkModulus="159.4202899e9"/>
+      defaultGrainBulkModulus="159.4202899e9"/>
 
     <BiotPorosity
       name="cementPorosity"
       defaultReferencePorosity="1e-6"
-      grainBulkModulus="2.298850575e9"/>
+      defaultGrainBulkModulus="2.298850575e9"/>
 
     <BiotPorosity
       name="rockPorosity"
       defaultReferencePorosity="1e-6"
-      grainBulkModulus="5.535714286e9"/>
+      defaultGrainBulkModulus="5.535714286e9"/>
     <!-- SPHINX_PoroElasticPropertiesEnd -->
 
     <!-- SPHINX_HeatCapacityProperties -->
     <SolidInternalEnergy
       name="casingInternalEnergy"
-      volumetricHeatCapacity="1.375e6"
+      referenceVolumetricHeatCapacity="1.375e6"
       referenceTemperature="0"
       referenceInternalEnergy="0"/>
 
     <SolidInternalEnergy
       name="cementInternalEnergy"
-      volumetricHeatCapacity="4.2e6"
+      referenceVolumetricHeatCapacity="4.2e6"
       referenceTemperature="0"
       referenceInternalEnergy="0"/>
 
     <SolidInternalEnergy
       name="rockInternalEnergy"
-      volumetricHeatCapacity="4.56e6"
+      referenceVolumetricHeatCapacity="4.56e6"
       referenceTemperature="0"
       referenceInternalEnergy="0"/>
     <!-- SPHINX_HeatCapacityPropertiesEnd -->
@@ -165,7 +165,7 @@
       compressibility="5e-10"
       thermalExpansionCoeff="1e-10"
       viscosibility="0.0"
-      volumetricHeatCapacity="1"
+      specificHeatCapacity="1"
       referenceInternalEnergy="1"/>
     <!-- SPHINX_FluidPropertiesEnd -->
 
@@ -175,21 +175,21 @@
       defaultDensity="7500"
       defaultBulkModulus="159.4202899e9"
       defaultShearModulus="86.61417323e9"
-      defaultThermalExpansionCoefficient="1.2e-5"/>
+      defaultDrainedLinearTEC="1.2e-5"/>
 
     <ElasticIsotropic
       name="cementSolid"
       defaultDensity="2700"
       defaultBulkModulus="2.298850575e9"
       defaultShearModulus="1.652892562e9"
-      defaultThermalExpansionCoefficient="2.0e-5"/>
+      defaultDrainedLinearTEC="2.0e-5"/>
 
     <ElasticIsotropic
       name="rockSolid"
       defaultDensity="2700"
       defaultBulkModulus="5.535714286e9"
       defaultShearModulus="3.81147541e9"
-      defaultThermalExpansionCoefficient="2.0e-5"/>
+      defaultDrainedLinearTEC="2.0e-5"/>
     <!-- SPHINX_ThermoElasticPropertiesEnd -->
     
   </Constitutive>
@@ -419,21 +419,6 @@
   <Outputs>
     <!-- SPHINX_TemperatureTimeHistory -->
     <TimeHistory
-      name="stressHistoryOutput_casing"
-      sources="{ /Tasks/stressCollection_casing }"
-      filename="stressHistory_casing"/>
-    <TimeHistory
-      name="stressHistoryOutput_cement"
-      sources="{ /Tasks/stressCollection_cement }"
-      filename="stressHistory_cement"/>
-    <TimeHistory
-      name="stressHistoryOutput_rock"
-      sources="{ /Tasks/stressCollection_rock }"
-      filename="stressHistory_rock"/>
-    <!-- SPHINX_TemperatureTimeHistoryEnd -->
-
-    <!-- SPHINX_SolidStressTimeHistory -->
-    <TimeHistory
       name="temperatureHistoryOutput_casing"
       sources="{ /Tasks/temperatureCollection_casing }"
       filename="temperatureHistory_casing"/>
@@ -445,6 +430,21 @@
       name="temperatureHistoryOutput_rock"
       sources="{ /Tasks/temperatureCollection_rock }"
       filename="temperatureHistory_rock"/>
+    <!-- SPHINX_TemperatureTimeHistoryEnd -->
+
+    <!-- SPHINX_SolidStressTimeHistory -->
+    <TimeHistory
+      name="stressHistoryOutput_casing"
+      sources="{ /Tasks/stressCollection_casing }"
+      filename="stressHistory_casing"/>
+    <TimeHistory
+      name="stressHistoryOutput_cement"
+      sources="{ /Tasks/stressCollection_cement }"
+      filename="stressHistory_cement"/>
+    <TimeHistory
+      name="stressHistoryOutput_rock"
+      sources="{ /Tasks/stressCollection_rock }"
+      filename="stressHistory_rock"/>
     <!-- SPHINX_SolidStressTimeHistoryEnd -->
 
     <!-- SPHINX_DisplacementTimeHistory -->

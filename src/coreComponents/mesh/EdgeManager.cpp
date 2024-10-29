@@ -2,10 +2,11 @@
  * ------------------------------------------------------------------------------------------------------------
  * SPDX-License-Identifier: LGPL-2.1-only
  *
- * Copyright (c) 2018-2020 Lawrence Livermore National Security LLC
- * Copyright (c) 2018-2020 The Board of Trustees of the Leland Stanford Junior University
- * Copyright (c) 2018-2020 TotalEnergies
- * Copyright (c) 2019-     GEOSX Contributors
+ * Copyright (c) 2016-2024 Lawrence Livermore National Security LLC
+ * Copyright (c) 2018-2024 Total, S.A
+ * Copyright (c) 2018-2024 The Board of Trustees of the Leland Stanford Junior University
+ * Copyright (c) 2018-2024 Chevron
+ * Copyright (c) 2019-     GEOS/GEOSX Contributors
  * All rights reserved
  *
  * See top level LICENSE, COPYRIGHT, CONTRIBUTORS, NOTICE, and ACKNOWLEDGEMENTS files for details.
@@ -21,7 +22,6 @@
 #include "BufferOps.hpp"
 #include "NodeManager.hpp"
 #include "FaceManager.hpp"
-#include "codingUtilities/Utilities.hpp"
 #include "common/TimingMacros.hpp"
 #include "common/GEOS_RAJA_Interface.hpp"
 
@@ -93,10 +93,10 @@ void EdgeManager::buildEdges( localIndex const numNodes,
   resize( numEdges );
 }
 
-void EdgeManager::setGeometricalRelations( CellBlockManagerABC const & cellBlockManager, bool baseMeshLevel )
+void EdgeManager::setGeometricalRelations( CellBlockManagerABC const & cellBlockManager, bool isBaseMeshLevel )
 {
   GEOS_MARK_FUNCTION;
-  if( baseMeshLevel )
+  if( isBaseMeshLevel )
   {
     resize( cellBlockManager.numEdges() );
   }
@@ -122,13 +122,13 @@ void EdgeManager::setDomainBoundaryObjects( FaceManager const & faceManager )
   arrayView1d< integer > const isEdgeOnDomainBoundary = this->getDomainBoundaryIndicator();
   isEdgeOnDomainBoundary.zero();
 
-  ArrayOfArraysView< localIndex const > const faceToEdgeMap = faceManager.edgeList().toViewConst();
+  ArrayOfArraysView< localIndex const > const faceToEdges = faceManager.edgeList().toViewConst();
 
   forAll< parallelHostPolicy >( faceManager.size(), [=]( localIndex const faceIndex )
   {
     if( isFaceOnDomainBoundary[faceIndex] == 1 )
     {
-      for( localIndex const edgeIndex : faceToEdgeMap[faceIndex] )
+      for( localIndex const edgeIndex : faceToEdges[faceIndex] )
       {
         isEdgeOnDomainBoundary[edgeIndex] = 1;
       }

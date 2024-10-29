@@ -15,6 +15,7 @@
       targetRegions="{ Domain, Fracture }"
       initialDt="1e4">
       <NonlinearSolverParameters
+        lineSearchAction="None"
         newtonTol="1.0e-6"
         newtonMaxIter="15"
         maxTimeStepCuts="2"
@@ -28,8 +29,9 @@
     <EmbeddedSurfaceGenerator
       name="SurfaceGenerator"
       logLevel="1"
-      discretization="fluidTPFA"
+      discretization="FE1"
       targetRegions="{ Domain, Fracture }"
+      targetObjects="{ FracturePlane }"
       fractureRegion="Fracture"
       mpiCommOrder="1"/>
   </Solvers>
@@ -58,7 +60,7 @@
       xMin="{ 9.99, 9.99, -0.01 }"
       xMax="{ 11.01, 11.01, 1.01 }"/>
 
-    <BoundedPlane
+    <Rectangle
       name="FracturePlane"
       normal="{ 0, 1, 0 }"
       origin="{ 1.5, 5.5, 0.5 }"
@@ -97,6 +99,11 @@
         name="fluidTPFA"
         usePEDFM="1"/>
     </FiniteVolume>
+    <FiniteElements>
+    <FiniteElementSpace
+        name="FE1"
+        order="1"/>
+    </FiniteElements>
   </NumericalMethods>
 
   <ElementRegions>

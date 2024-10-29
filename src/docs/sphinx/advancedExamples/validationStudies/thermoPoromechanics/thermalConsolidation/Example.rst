@@ -20,7 +20,7 @@ This example uses no external input files and everything required is contained w
 
 .. code-block:: console
 
-  inputFiles/thermoPoromechanics/ThermoPoroElastic_consolidation_benchmark.xml
+  inputFiles/thermoPoromechanics/ThermoPoroElastic_consolidation_benchmark_fim.xml
 
 ---------------------------------------------------
 Description of the case

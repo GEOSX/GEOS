@@ -22,6 +22,16 @@
       target="/Outputs/siloOutput"/>
 
     <PeriodicEvent
+      name="timeHistoryCollection"
+      timeFrequency="1.0"
+      target="/Tasks/displacementCollection"/>
+
+    <PeriodicEvent
+      name="timeHistoryOutput"
+      timeFrequency="10.0"
+      target="/Outputs/timeHistoryOutput"/>
+
+    <PeriodicEvent
       name="restarts"
       timeFrequency="1e99"
       targetExactTimestep="0"
@@ -102,5 +112,25 @@
 
     <Restart
       name="restartOutput"/>
+
+    <TimeHistory
+      name="timeHistoryOutput"
+      sources="{ /Tasks/displacementCollection }"
+      filename="displacement_history"/>
   </Outputs>
+
+  <Geometry>
+    <Box
+      name="trace"
+      xMin="{ -0.1, 3.9, -0.1 }"
+      xMax="{ 80.1, 4.1, 0.1 }"/>
+  </Geometry>
+
+  <Tasks>
+    <PackCollection
+      name="displacementCollection"
+      objectPath="nodeManager"
+      setNames="{ trace }"
+      fieldName="totalDisplacement"/>
+  </Tasks>
 </Problem>

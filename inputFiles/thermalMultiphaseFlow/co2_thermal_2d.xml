@@ -84,7 +84,7 @@
     <CellElementRegion
       name="region"
       cellBlocks="{ cb }"
-      materialList="{ fluid, rock, relperm, thermalCond }"/>
+      materialList="{ fluid, rock, relperm, thermalCond, diffusion }"/>
   </ElementRegions>
 
   <Constitutive>
@@ -104,7 +104,7 @@
       compressibility="1.0e-9"/>
     <SolidInternalEnergy
       name="rockInternalEnergy"
-      volumetricHeatCapacity="1.95e6"
+      referenceVolumetricHeatCapacity="1.95e6"
       referenceTemperature="368.15"
       referenceInternalEnergy="0"/>
     <ConstantPermeability
@@ -113,6 +113,7 @@
 
     <CO2BrinePhillipsThermalFluid
       name="fluid"
+      logLevel="1"
       phaseNames="{ gas, water }"
       componentNames="{ co2, water }"
       componentMolarWeight="{ 44e-3, 18e-3 }"
@@ -130,6 +131,12 @@
       name="thermalCond"
       phaseNames="{ gas, water }"
       thermalConductivityComponents="{ 0.6, 0.6, 0.6 }"/>
+
+    <ConstantDiffusion
+      name="diffusion"
+      phaseNames="{ gas, water }"
+      defaultPhaseDiffusivityMultipliers="{ 20, 1 }"
+      diffusivityComponents="{ 1e-9, 1e-9, 1e-9 }"/>
     
   </Constitutive>
 

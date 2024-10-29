@@ -64,7 +64,7 @@ The following figure shows the mesh used in this problem.
    Generated mesh
 
 This mesh was created using the internal mesh generator as parametrized in the ``InternalMesh`` XML tag. 
-The mesh contains 300 x 300 x 1 eight-node brick elements in the x, y, and z directions respectively. 
+The mesh contains 300 x 300 x 2 eight-node brick elements in the x, y, and z directions respectively. 
 Such eight-node hexahedral elements are defined as ``C3D8`` elementTypes, and their collection forms a mesh
 with one group of cell blocks named here ``cb1``. 
 
@@ -109,7 +109,7 @@ To setup a coupling between rock and fracture deformations, we define three diff
 - The solver ``SurfaceGenerator`` defines the fracture region and rock toughness.
 
 
-.. literalinclude:: ../../../../../../../inputFiles/lagrangianContactMechanics/ContactMechanics_TFrac_base.xml
+.. literalinclude:: ../../../../../../../inputFiles/lagrangianContactMechanics/ContactMechanics_TFrac_benchmark.xml
   :language: xml
   :start-after: <!-- SPHINX_SOLVER -->
   :end-before: <!-- SPHINX_SOLVER_END -->

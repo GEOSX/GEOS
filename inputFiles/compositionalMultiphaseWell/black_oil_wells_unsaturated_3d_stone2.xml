@@ -1,0 +1,260 @@
+<?xml version="1.0" ?>
+
+<Problem>
+    <Solvers>
+
+        <CompositionalMultiphaseReservoir
+                name="reservoirSystem"
+                wellSolverName="compositionalMultiphaseWell"
+                flowSolverName="compositionalMultiphaseFlow"
+                logLevel="1"
+                initialDt="86400"
+                targetRegions="{ region, wellRegion1, wellRegion2 }">
+            <NonlinearSolverParameters
+                    maxTimeStepCuts="5"
+                    newtonTol="1e-8"
+                    newtonMaxIter="20"/>
+            <LinearSolverParameters
+                    directParallel="0"/>
+        </CompositionalMultiphaseReservoir>
+
+        <CompositionalMultiphaseHybridFVM
+                name="compositionalMultiphaseFlow"
+                logLevel="1"
+                discretization="fluidHM"
+                targetRelativePressureChangeInTimeStep="1"
+                targetPhaseVolFractionChangeInTimeStep="1"
+                targetRegions="{ region }"
+                temperature="297.15"
+                useMass="1"/>
+        <CompositionalMultiphaseWell
+                name="compositionalMultiphaseWell"
+                logLevel="1"
+                targetRegions="{ wellRegion1, wellRegion2 }"
+                maxRelativePressureChange="0.1"
+                maxCompFractionChange="0.1"
+                useMass="1">
+            <WellControls
+                    name="wellControls1"
+                    type="producer"
+                    control="BHP"
+                    referenceElevation="9"
+                    targetBHP="1.2e+7"
+                    targetPhaseRate="5e-2"
+                    targetPhaseName="oil"/>
+            <WellControls
+                    name="wellControls2"
+                    type="injector"
+                    control="BHP"
+                    referenceElevation="9"
+                    targetBHP="2e+7"
+                    targetTotalRate="5e-2"
+                    injectionTemperature="297.15"
+                    injectionStream="{ 0.000, 0.000, 1. }"/>
+        </CompositionalMultiphaseWell>
+    </Solvers>
+
+    <Mesh>
+
+        <InternalMesh
+                name="mesh"
+                elementTypes="{ C3D8 }"
+                xCoords="{ 0, 200 }"
+                yCoords="{ 0, 200 }"
+                zCoords="{ 0, 10 }"
+                nx="{ 4 }"
+                ny="{ 4 }"
+                nz="{ 2 }"
+                cellBlockNames="{ cb }">
+
+            <InternalWell
+                    name="wellProducer"
+                    wellRegionName="wellRegion1"
+                    wellControlsName="wellControls1"
+                    polylineNodeCoords="{ { 5.0, 5.0, 2.0 },
+                                { 5.0, 5.0, 0.0 } }"
+                    polylineSegmentConn="{ { 0, 1 } }"
+                    radius="0.1"
+                    numElementsPerSegment="1">
+                <Perforation
+                        name="producerPerf1"
+                        distanceFromHead="1.00"/>
+            </InternalWell>
+            <InternalWell
+                    name="wellInjector"
+                    wellRegionName="wellRegion2"
+                    wellControlsName="wellControls2"
+                    polylineNodeCoords="{ { 195.0, 195.0, 2.0 },
+                                { 195.0, 195.0, 0.0 } }"
+                    polylineSegmentConn="{ { 0, 1 } }"
+                    radius="0.1"
+                    numElementsPerSegment="1">
+                <Perforation
+                        name="injectorPerf1"
+                        distanceFromHead="1.00"/>
+            </InternalWell>
+        </InternalMesh>
+    </Mesh>
+
+    <Events
+            maxTime="3153600">
+
+        <PeriodicEvent
+                name="outputs"
+                timeFrequency="3153600"
+                targetExactTimestep="1"
+                target="/Outputs/vtkOutput"/>
+
+        <PeriodicEvent
+                name="timeHistoryOutput"
+                timeFrequency="3153600"
+                targetExactTimestep="1"
+                target="/Outputs/timeHistoryOutput"/>
+
+        <PeriodicEvent
+                name="restarts"
+                timeFrequency="1576800"
+                targetExactTimestep="1"
+                target="/Outputs/restartOutput"/>
+
+        <PeriodicEvent
+                name="solverApplications"
+                maxEventDt="315360"
+                target="/Solvers/reservoirSystem"/>
+
+        <PeriodicEvent
+                name="statistics"
+                timeFrequency="3153600"
+                target="/Tasks/compositionalMultiphaseFlowStatistics"/>
+
+        <PeriodicEvent
+                name="timeHistoryCollection"
+                timeFrequency="315360"
+                targetExactTimestep="1"
+                target="/Tasks/wellRateCollection"/>
+
+    </Events>
+
+    <NumericalMethods>
+        <FiniteVolume>
+            <HybridMimeticDiscretization
+                    name="fluidHM"
+                    innerProductType="TPFA"/>
+        </FiniteVolume>
+    </NumericalMethods>
+
+    <ElementRegions>
+        <CellElementRegion
+                name="region"
+                cellBlocks="{ cb }"
+                materialList="{ fluid, rock, relperm }"/>
+        <WellElementRegion
+                name="wellRegion1"
+                materialList="{ fluid, relperm }"/>
+        <WellElementRegion
+                name="wellRegion2"
+                materialList="{ fluid, relperm }"/>
+    </ElementRegions>
+
+    <Constitutive>
+        <BlackOilFluid
+                name="fluid"
+                phaseNames="{ oil, gas, water }"
+                surfaceDensities="{ 800.907131537, 0.856234902739, 1020.3440 }"
+                componentMolarWeight="{ 120e-3, 25e-3, 18e-3 }"
+                tableFiles="{ pvto_bo.txt, pvtg_norv_bo.txt, pvtw_bo.txt }"/>
+
+        <CompressibleSolidConstantPermeability
+                name="rock"
+                solidModelName="nullSolid"
+                porosityModelName="rockPorosity"
+                permeabilityModelName="rockPerm"/>
+
+        <NullModel
+                name="nullSolid"/>
+
+        <PressurePorosity
+                name="rockPorosity"
+                defaultReferencePorosity="0.2"
+                referencePressure="4.1369e7"
+                compressibility="1.0e-9"/>
+
+        <BrooksCoreyStone2RelativePermeability
+                name="relperm"
+                phaseNames="{ oil, gas, water }"
+                phaseMinVolumeFraction="{ 0.1, 0.05, 0.2}"
+                waterOilRelPermExponent="{ 2.0, 2.0}"
+                gasOilRelPermExponent="{ 2.0, 2.0 }"
+                waterOilRelPermMaxValue="{ 1.0, 1.0 }"
+                gasOilRelPermMaxValue="{ 0.8, 0.4 }"/>
+
+        <ConstantPermeability
+                name="rockPerm"
+                permeabilityComponents="{ 1.0e-14, 1.0e-14, 1.0e-14 }"/>
+
+    </Constitutive>
+
+    <FieldSpecifications>
+
+        <FieldSpecification
+                name="initialPressure"
+                initialCondition="1"
+                setNames="{ all }"
+                objectPath="ElementRegions/region/cb"
+                fieldName="pressure"
+                scale="1.5e+7"/>
+        <FieldSpecification
+                name="initialComposition_oil"
+                initialCondition="1"
+                setNames="{ all }"
+                objectPath="ElementRegions/region/cb"
+                fieldName="globalCompFraction"
+                component="0"
+                scale="0.89999"/>
+        <FieldSpecification
+                name="initialComposition_gas"
+                initialCondition="1"
+                setNames="{ all }"
+                objectPath="ElementRegions/region/cb"
+                fieldName="globalCompFraction"
+                component="1"
+                scale="0.1"/>
+        <FieldSpecification
+                name="initialComposition_water"
+                initialCondition="1"
+                setNames="{ all }"
+                objectPath="ElementRegions/region/cb"
+                fieldName="globalCompFraction"
+                component="2"
+                scale="0.00001"/>
+    </FieldSpecifications>
+
+    <Tasks>
+        <CompositionalMultiphaseStatistics
+                name="compositionalMultiphaseFlowStatistics"
+                flowSolverName="compositionalMultiphaseFlow"
+                logLevel="1"
+                computeCFLNumbers="0"
+                computeRegionStatistics="1"/>
+
+        <PackCollection
+                name="wellRateCollection"
+                objectPath="ElementRegions/wellRegion1/wellRegion1UniqueSubRegion"
+                fieldName="wellElementMixtureConnectionRate"/>
+    </Tasks>
+
+    <Outputs>
+        <VTK
+                name="vtkOutput"/>
+
+        <TimeHistory
+                name="timeHistoryOutput"
+                sources="{ /Tasks/wellRateCollection }"
+                filename="wellRateHistory"/>
+
+        <Restart
+                name="restartOutput"/>
+
+    </Outputs>
+
+</Problem>

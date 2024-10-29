@@ -1,9 +1,7 @@
 
-set( python_headers pygeosx.hpp
-		    )
+set( python_headers pygeosx.hpp )
 
-set( python_sources pygeosx.cpp
-		    )
+set( python_sources pygeosx.cpp )
 
 set( dependencyList ${extraComponentsLinkList} ${externalComponentsLinkList} Python3::Python )
 
@@ -33,7 +31,7 @@ geosx_add_code_checks( PREFIX pygeosx )
 
 install(TARGETS pygeosx LIBRARY DESTINATION lib)
 
-if(GEOSX_ENABLE_TESTS)
+if( GEOS_ENABLE_TESTS )
   add_subdirectory( unitTests )
 endif( )
 

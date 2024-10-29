@@ -2,10 +2,11 @@
  * ------------------------------------------------------------------------------------------------------------
  * SPDX-License-Identifier: LGPL-2.1-only
  *
- * Copyright (c) 2018-2020 Lawrence Livermore National Security LLC
- * Copyright (c) 2018-2020 The Board of Trustees of the Leland Stanford Junior University
- * Copyright (c) 2018-2020 TotalEnergies
- * Copyright (c) 2019-     GEOSX Contributors
+ * Copyright (c) 2016-2024 Lawrence Livermore National Security LLC
+ * Copyright (c) 2018-2024 Total, S.A
+ * Copyright (c) 2018-2024 The Board of Trustees of the Leland Stanford Junior University
+ * Copyright (c) 2018-2024 Chevron
+ * Copyright (c) 2019-     GEOS/GEOSX Contributors
  * All rights reserved
  *
  * See top level LICENSE, COPYRIGHT, CONTRIBUTORS, NOTICE, and ACKNOWLEDGEMENTS files for details.
@@ -21,11 +22,11 @@
 
 #include "codingUtilities/EnumStrings.hpp"
 #include "mesh/generators/MeshGeneratorBase.hpp"
+#include "mesh/generators/CellBlockManager.hpp"
 
 namespace geos
 {
 
-class SpatialPartition;
 
 /**
  * @class InternalMeshGenerator
@@ -50,7 +51,6 @@ public:
    */
   static string catalogName() { return "InternalMesh"; }
 
-  virtual void generateMesh( DomainPartition & domain ) override;
 
   void importFieldOnArray( Block block,
                            string const & blockName,
@@ -78,25 +78,21 @@ public:
    * @param partition The partitioning object
    * @param numNodes The number of nodes in each coordinate direction.
    */
-  virtual void reduceNumNodesForPeriodicBoundary( SpatialPartition & partition,
+  virtual void reduceNumNodesForPeriodicBoundary( PartitionDescriptor & partition,
                                                   integer (& numNodes) [3] )
   {
     GEOS_UNUSED_VAR( partition, numNodes );
   };
 
   /**
-   * @brief Alter the directional indices for when the ending index should be
-   *   set to the beginning of the index as is the case with periodic
-   *   boundaries.
-   * @param partition The partitioning object
-   * @param index The indices to be evaluated for periodic indexing.
-   *   merging.
+   * @brief Alter the directional indices for when the ending index should be set
+   * to the beginning of the index as is the case with periodic boundaries.
+   * @param index The indices to be evaluated for periodic indexing merging.
    */
   virtual void
-  setNodeGlobalIndicesOnPeriodicBoundary( SpatialPartition & partition,
-                                          int (& index)[3] )
+  setNodeGlobalIndicesOnPeriodicBoundary( int (& index)[3] )
   {
-    GEOS_UNUSED_VAR( partition, index );
+    GEOS_UNUSED_VAR( index );
   }
 
   /**
@@ -159,10 +155,11 @@ protected:
     constexpr static char const * trianglePatternString() { return "trianglePattern"; }
     constexpr static char const * meshTypeString() { return "meshType"; }
     constexpr static char const * positionToleranceString() { return "positionTolerance"; }
+    constexpr static char const * periodicString() { return "periodic"; }
   };
   /// @endcond
 
-  void postProcessInput() override;
+  void postInputInitialization() override;
 
   /// Mesh number of dimension
   int m_dim;
@@ -209,6 +206,9 @@ private:
 
   /// Array of number of element per box
   array1d< integer > m_numElePerBox;
+
+  // Array of periodic flags for each direction
+  array1d< int > m_periodic;
 
   /**
    * @brief Member variable for triangle pattern seletion.
@@ -261,7 +261,7 @@ private:
   /// Skew center for skew mesh generation
   real64 m_skewCenter[3] = { 0, 0, 0 };
 
-
+  virtual void fillCellBlockManager( CellBlockManager & cellBlockManager, array1d< int > const & partition ) override;
 
   /**
    * @brief Convert ndim node spatialized index to node global index.
@@ -269,7 +269,7 @@ private:
    */
   inline globalIndex nodeGlobalIndex( int const index[3] )
   {
-    return index[0]*(m_numElemsTotal[1]+1)*(m_numElemsTotal[2]+1) + index[1]*(m_numElemsTotal[2]+1) + index[2];
+    return index[0] + index[1]*(m_numElemsTotal[0]+1) + index[2]*(m_numElemsTotal[0]+1)*(m_numElemsTotal[1]+1);
   }
 
   /**
@@ -278,7 +278,7 @@ private:
    */
   inline globalIndex elemGlobalIndex( int const index[3] )
   {
-    return index[0]*m_numElemsTotal[1]*m_numElemsTotal[2] + index[1]*m_numElemsTotal[2] + index[2];
+    return index[0] + index[1]*m_numElemsTotal[0] + index[2]*m_numElemsTotal[0]*m_numElemsTotal[1];
   }
 
   /**
@@ -343,7 +343,11 @@ private:
           // Verify that the bias is non-zero and applied to more than one block:
           if( ( !isZero( m_nElemBias[i][block] ) ) && (m_nElems[i][block]>1))
           {
-            GEOS_ERROR_IF( fabs( m_nElemBias[i][block] ) >= 1, "Mesh bias must between -1 and 1!" );
+            GEOS_ERROR_IF( fabs( m_nElemBias[i][block] ) >= 1,
+                           getWrapperDataContext( i == 0 ? viewKeyStruct::xBiasString() :
+                                                  i == 1 ? viewKeyStruct::yBiasString() :
+                                                  viewKeyStruct::zBiasString() ) <<
+                           ", block index = " << block << " : Mesh bias must between -1 and 1!" );
 
             real64 len = max -  min;
             real64 xmean = len / m_nElems[i][block];
@@ -376,10 +380,6 @@ private:
       X[i] = m_min[i] + (m_max[i]-m_min[i]) * ( ( k[i] + 0.5 ) / m_numElemsTotal[i] );
     }
   }
-
-public:
-
-
 };
 
 } /* namespace geos */

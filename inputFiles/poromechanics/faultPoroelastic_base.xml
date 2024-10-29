@@ -55,7 +55,7 @@
 
     <BiotPorosity
       name="rockPorosity"
-      grainBulkModulus="7.12e10"
+      defaultGrainBulkModulus="7.12e10"
       defaultReferencePorosity="0.3"
     />  
   

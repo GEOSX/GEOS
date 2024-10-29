@@ -2,10 +2,11 @@
  * ------------------------------------------------------------------------------------------------------------
  * SPDX-License-Identifier: LGPL-2.1-only
  *
- * Copyright (c) 2018-2020 Lawrence Livermore National Security LLC
- * Copyright (c) 2018-2020 The Board of Trustees of the Leland Stanford Junior University
- * Copyright (c) 2018-2020 TotalEnergies
- * Copyright (c) 2019-     GEOSX Contributors
+ * Copyright (c) 2016-2024 Lawrence Livermore National Security LLC
+ * Copyright (c) 2018-2024 Total, S.A
+ * Copyright (c) 2018-2024 The Board of Trustees of the Leland Stanford Junior University
+ * Copyright (c) 2018-2024 Chevron
+ * Copyright (c) 2019-     GEOS/GEOSX Contributors
  * All rights reserved
  *
  * See top level LICENSE, COPYRIGHT, CONTRIBUTORS, NOTICE, and ACKNOWLEDGEMENTS files for details.
@@ -53,7 +54,15 @@ DECLARE_FIELD( globalCompDensity_n,
                0,
                NOPLOT,
                NO_WRITE,
-               "Global component density updates at the previous converged time step " );
+               "Global component density updates at the previous converged time step" );
+
+DECLARE_FIELD( globalCompDensity_k,
+               "globalCompDensity_k",
+               array2dLayoutComp,
+               0,
+               NOPLOT,
+               NO_WRITE,
+               "Global component density updates at the previous sequential iteration" );
 
 DECLARE_FIELD( globalCompFraction,
                "globalCompFraction",
@@ -111,6 +120,7 @@ DECLARE_FIELD( dPhaseMobility,
                NO_WRITE,
                "Derivative of phase volume fraction with respect to pressure, temperature, global component density" );
 
+// this is needed for time step selector
 DECLARE_FIELD( phaseVolumeFraction_n,
                "phaseVolumeFraction_n",
                array2dLayoutPhase,
@@ -118,14 +128,6 @@ DECLARE_FIELD( phaseVolumeFraction_n,
                NOPLOT,
                WRITE_AND_READ,
                "Phase volume fraction at the previous converged time step" );
-
-DECLARE_FIELD( phaseMobility_n,
-               "phaseMobility_n",
-               array2dLayoutPhase,
-               0,
-               NOPLOT,
-               WRITE_AND_READ,
-               "Phase mobility at the previous converged time step" );
 
 DECLARE_FIELD( phaseOutflux,
                "phaseOutflux",
@@ -158,6 +160,30 @@ DECLARE_FIELD( componentCFLNumber,
                LEVEL_0,
                NO_WRITE,
                "Component CFL number" );
+
+DECLARE_FIELD( globalCompDensityScalingFactor,
+               "globalCompDensityScalingFactor",
+               array1d< real64 >,
+               1,
+               NOPLOT,
+               NO_WRITE,
+               "Scaling factors for global component densities" );
+
+DECLARE_FIELD( compAmount,
+               "compAmount",
+               array2dLayoutComp,
+               0,
+               LEVEL_0,
+               WRITE_AND_READ,
+               "Component amount" );
+
+DECLARE_FIELD( compAmount_n,
+               "compAmount_n",
+               array2dLayoutComp,
+               0,
+               LEVEL_0,
+               WRITE_AND_READ,
+               "Component amount at the previous converged time step" );
 
 }
 

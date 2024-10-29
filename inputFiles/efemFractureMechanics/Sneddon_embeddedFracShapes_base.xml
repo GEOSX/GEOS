@@ -1,0 +1,167 @@
+<?xml version="1.0" ?>
+
+<Problem>
+  <Solvers
+    gravityVector="{0.0, 0.0, 0.0}">
+  <!-- SPHINX_SNEDDON_SOLVER -->
+    <SolidMechanicsEmbeddedFractures
+      name="mechSolve"
+      targetRegions="{ Domain, Fracture }"
+      initialDt="10"
+      timeIntegrationOption="QuasiStatic"
+      discretization="FE1"
+      logLevel="1">
+      <NonlinearSolverParameters
+        newtonTol="1.0e-6"
+        newtonMaxIter="2"
+        maxTimeStepCuts="1"/>
+      <LinearSolverParameters
+        solverType="direct"
+        directParallel="0"
+        logLevel="0"/>
+    </SolidMechanicsEmbeddedFractures>
+
+    <EmbeddedSurfaceGenerator
+      name="SurfaceGenerator"
+      discretization="FE1"
+      targetRegions="{ Domain, Fracture }"
+      targetObjects="{ FracturePlane }"
+      fractureRegion="Fracture"
+      logLevel="1"
+      mpiCommOrder="1"/>
+  </Solvers>
+  <!-- SPHINX_SNEDDON_SOLVER_END -->
+
+  <!-- SPHINX_SNEDDON_GEOMETRY -->
+  <Geometry>
+    <CustomPolarObject
+      name="FracturePlane"
+      normal="{1.0, 0.0, 0.0}"
+      center="{0.0, 0.0, 0.0}"
+      coefficients="{1.0, 0.0, 1.0, 2.0}"
+      lengthVector="{0.0, 1.0, 0.0}"
+      widthVector="{0.0, 0.0, 1.0}"/>
+    <!-- <Disc
+      name="FracturePlane2"
+      normal="{1.0, 0.0, 0.0}"
+      center="{2.0, 0.0, 0.0}"
+      lengthVector="{0.0, 1.0, 0.0}"
+      widthVector="{0.0, 0.0, 1.0}"
+      radius="2.0"/>   -->
+  </Geometry>
+  <!-- SPHINX_SNEDDON_GEOMETRY_END -->  
+
+  <NumericalMethods>
+    <FiniteElements>
+      <FiniteElementSpace
+        name="FE1"
+        order="1"/>
+    </FiniteElements>
+  </NumericalMethods>
+
+  <!-- SPHINX_SNEDDON_REGIONS-->
+  <ElementRegions>
+    <CellElementRegion
+      name="Domain"
+      cellBlocks="{ cb1 }"
+      materialList="{ rock }"/>
+
+    <SurfaceElementRegion
+      name="Fracture"
+      faceBlock="embeddedSurfaceSubRegion"
+      subRegionType="embeddedElement"
+      materialList="{ fractureContact }"
+      defaultAperture="1e-3"/>
+  </ElementRegions>
+  <!-- SPHINX_SNEDDON_REGIONS_END -->
+  
+
+  <!-- SPHINX_SNEDDON_MATERIAL-->
+  <Constitutive>
+    <ElasticIsotropic
+      name="rock"
+      defaultDensity="2700"
+      defaultBulkModulus="16.66666666666666e9"
+      defaultShearModulus="1.0e10"/>
+
+    <FrictionlessContact
+      name="fractureContact"
+      penaltyStiffness="0.0e8"
+      apertureTableName="apertureTable"/>
+  </Constitutive>
+  <!-- SPHINX_SNEDDON_MATERIAL_END-->
+
+  <Functions>
+    <TableFunction
+      name="apertureTable"
+      coordinates="{ -1.0e-3, 0.0 }"
+      values="{ 0.002e-3, 0.02e-3 }"/>
+  </Functions>
+
+  <!-- SPHINX_SNEDDON_BC -->
+  <FieldSpecifications>
+    <FieldSpecification
+      name="xnegconstraint"
+      objectPath="nodeManager"
+      fieldName="totalDisplacement"
+      component="0"
+      scale="0.0"
+      setNames="{ xneg, xpos }"/>
+
+    <FieldSpecification
+      name="yposconstraint"
+      objectPath="nodeManager"
+      fieldName="totalDisplacement"
+      component="1"
+      scale="0.0"
+      setNames="{ yneg, ypos }"/>
+
+    <FieldSpecification
+      name="zconstraint"
+      objectPath="nodeManager"
+      fieldName="totalDisplacement"
+      component="2"
+      scale="0.0"
+      setNames="{ zneg, zpos }"/>
+      
+    <FieldSpecification
+      name="Traction"
+      setNames="{ all }"
+      objectPath="ElementRegions/Fracture"
+      fieldName="traction"
+      component="0"
+      scale="-2.0e6"/>      
+  </FieldSpecifications>
+  <!-- SPHINX_SNEDDON_BC_END -->
+
+  <Functions>
+    <TableFunction
+      name="apertureTable"
+      coordinates="{ -1.0e-3, 0.0 }"
+      values="{ 1.0e-6, 1.0e-4 }"/>
+  </Functions>
+  
+  <!-- SPHINX_SNEDDON_TASK -->
+  <Tasks>
+    <PackCollection
+      name="displacementJumpCollection"
+      objectPath="ElementRegions/Fracture/embeddedSurfaceSubRegion"
+      fieldName="displacementJump"/>   
+  </Tasks>
+  <!-- SPHINX_SNEDDON_TASK_END -->
+
+  <Outputs>
+    <VTK
+      name="vtkOutput"
+      plotLevel="2"
+      format="ascii"/>
+      
+    <TimeHistory
+      name="timeHistoryOutput"
+      sources="{/Tasks/displacementJumpCollection}"
+      filename="displacementJump_embeddedFrac" />
+      
+     <Restart
+      name="restartOutput"/> 
+  </Outputs>
+</Problem>

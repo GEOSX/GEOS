@@ -2,10 +2,11 @@
  * ------------------------------------------------------------------------------------------------------------
  * SPDX-License-Identifier: LGPL-2.1-only
  *
- * Copyright (c) 2018-2020 Lawrence Livermore National Security LLC
- * Copyright (c) 2018-2020 The Board of Trustees of the Leland Stanford Junior University
- * Copyright (c) 2018-2020 TotalEnergies
- * Copyright (c) 2019-     GEOSX Contributors
+ * Copyright (c) 2016-2024 Lawrence Livermore National Security LLC
+ * Copyright (c) 2018-2024 Total, S.A
+ * Copyright (c) 2018-2024 The Board of Trustees of the Leland Stanford Junior University
+ * Copyright (c) 2018-2024 Chevron
+ * Copyright (c) 2019-     GEOS/GEOSX Contributors
  * All rights reserved
  *
  * See top level LICENSE, COPYRIGHT, CONTRIBUTORS, NOTICE, and ACKNOWLEDGEMENTS files for details.
@@ -60,6 +61,7 @@ public:
 
   virtual string getCatalogName() const override { return catalogName(); }
 
+
   /// Type of kernel wrapper for in-kernel update
   class KernelWrapper final : public RelativePermeabilityBaseUpdate
   {
@@ -67,8 +69,10 @@ public:
 
     KernelWrapper( arrayView1d< TableFunction::KernelWrapper const > const & relPermKernelWrappers,
                    arrayView1d< real64 const > const & phaseMinVolumeFraction,
+                   real64 const & waterOilPhaseMaxVolumeFraction,
                    arrayView1d< integer const > const & phaseTypes,
                    arrayView1d< integer const > const & phaseOrder,
+                   ThreePhaseInterpolator const & threePhaseInterpolator,
                    arrayView3d< real64, relperm::USD_RELPERM > const & phaseRelPerm,
                    arrayView4d< real64, relperm::USD_RELPERM_DS > const & dPhaseRelPerm_dPhaseVolFrac,
                    arrayView3d< real64, relperm::USD_RELPERM > const & phaseTrappedVolFrac );
@@ -102,8 +106,6 @@ public:
 
 private:
 
-    arrayView1d< real64 const > m_phaseMinVolumeFraction;
-
     /// Kernel wrappers for relative permeabilities in the following order:
     /// Two-phase flow:
     ///  0- wetting-phase
@@ -115,6 +117,12 @@ private:
     ///  3- intermediate phase (non-wetting-intermediate data)
     arrayView1d< TableFunction::KernelWrapper const > m_relPermKernelWrappers;
 
+    /// Minimum volume fraction for each phase (deduced from the table)
+    arrayView1d< real64 const > m_phaseMinVolumeFraction;
+
+    real64 const m_waterOilRelPermMaxValue;
+
+    ThreePhaseInterpolator const m_threePhaseInterpolator;
   };
 
   /**
@@ -127,16 +135,18 @@ private:
   {
     static constexpr char const * relPermKernelWrappersString() { return "relPermWrappers"; }
     static constexpr char const * phaseMinVolumeFractionString() { return "phaseMinVolumeFraction"; }
+    static constexpr char const * waterOilMaxRelPermString() { return "waterOilMaxRelPerm"; }
     static constexpr char const * wettingNonWettingRelPermTableNamesString() { return "wettingNonWettingRelPermTableNames"; }
     static constexpr char const * wettingIntermediateRelPermTableNamesString() { return "wettingIntermediateRelPermTableNames"; }
     static constexpr char const * nonWettingIntermediateRelPermTableNamesString() { return "nonWettingIntermediateRelPermTableNames"; }
+    static constexpr char const * threePhaseInterpolatorString() { return "threePhaseInterpolator"; }
   };
 
   arrayView1d< real64 const > getPhaseMinVolumeFraction() const override { return m_phaseMinVolumeFraction; };
 
 private:
 
-  virtual void postProcessInput() override;
+  virtual void postInputInitialization() override;
 
   virtual void initializePreSubGroups() override;
 
@@ -167,6 +177,10 @@ private:
 
   /// Min phase volume fractions (deduced from the tables). With Baker, only the water phase entry is used
   array1d< real64 > m_phaseMinVolumeFraction;
+
+  real64 m_waterOilMaxRelPerm;
+
+  ThreePhaseInterpolator m_threePhaseInterpolator;
 
 };
 
@@ -209,7 +223,6 @@ TableRelativePermeability::KernelWrapper::
   real64 dInterRelPerm_wi_dInterVolFrac = 0; // derivative w.r.t to So
   real64 interRelPerm_nwi = 0; // oil rel perm using two-phase gas-oil data
   real64 dInterRelPerm_nwi_dInterVolFrac = 0; // derivative w.r.t to So
-
   using TPT = TableRelativePermeability::ThreePhasePairPhaseType;
 
   // 1) Wetting and intermediate phase relative permeabilities using two-phase wetting-intermediate data
@@ -242,16 +255,39 @@ TableRelativePermeability::KernelWrapper::
   // use saturation-weighted interpolation
   real64 const shiftedWettingVolFrac = (phaseVolFraction[ipWetting] - m_phaseMinVolumeFraction[ipWetting]);
 
-  // TODO: add template to choose the interpolator from the XML file
-  relpermInterpolators::Baker::compute( shiftedWettingVolFrac,
-                                        phaseVolFraction[ipNonWetting],
-                                        m_phaseOrder,
-                                        interRelPerm_wi,
-                                        dInterRelPerm_wi_dInterVolFrac,
-                                        interRelPerm_nwi,
-                                        dInterRelPerm_nwi_dInterVolFrac,
-                                        phaseRelPerm[ipInter],
-                                        dPhaseRelPerm_dPhaseVolFrac[ipInter] );
+  if( m_threePhaseInterpolator == ThreePhaseInterpolator::BAKER )
+  {
+    relpermInterpolators::Baker::compute( shiftedWettingVolFrac,
+                                          phaseVolFraction[ipNonWetting],
+                                          m_phaseOrder,
+                                          interRelPerm_wi,
+                                          dInterRelPerm_wi_dInterVolFrac,
+                                          interRelPerm_nwi,
+                                          dInterRelPerm_nwi_dInterVolFrac,
+                                          phaseRelPerm[ipInter],
+                                          dPhaseRelPerm_dPhaseVolFrac[ipInter] );
+
+  }
+  else// if( m_threePhaseInterpolator == ThreePhaseInterpolator::STONEII )
+  {
+    relpermInterpolators::Stone2::compute( shiftedWettingVolFrac,
+                                           phaseVolFraction[ipNonWetting],
+                                           m_phaseOrder,
+                                           m_waterOilRelPermMaxValue,
+                                           interRelPerm_wi,
+                                           dInterRelPerm_wi_dInterVolFrac,
+                                           interRelPerm_nwi,
+                                           dInterRelPerm_nwi_dInterVolFrac,
+                                           phaseRelPerm[ipWetting],
+                                           dPhaseRelPerm_dPhaseVolFrac[ipWetting][ipWetting],
+                                           phaseRelPerm[ipNonWetting],
+                                           dPhaseRelPerm_dPhaseVolFrac[ipNonWetting][ipNonWetting],
+                                           phaseRelPerm[ipInter],
+                                           dPhaseRelPerm_dPhaseVolFrac[ipInter] );
+  }
+
+
+
 }
 
 

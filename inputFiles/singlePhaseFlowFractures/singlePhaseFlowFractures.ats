@@ -1,0 +1,84 @@
+from geos.ats.test_builder import TestDeck, RestartcheckParameters, generate_geos_tests
+
+restartcheck_params = {}
+restartcheck_params['atol'] = 1e-10
+restartcheck_params['rtol'] = 4e-09
+
+decks = [
+    TestDeck(
+        name="fractureFlow_conforming_2d",
+        description=
+        'Single phase flow test (2D, compressible, fracture flow, conforming)',
+        partitions=((1, 1, 1), (2, 1, 1), (4, 1, 1)),
+        restart_step=5,
+        check_step=10,
+        restartcheck_params=RestartcheckParameters(**restartcheck_params)),
+    TestDeck(
+        name="fractureJunctionFlow_conforming_2d",
+        description=
+        'Single phase flow test (2D, compressible, intersecting fracture flow, conforming)',
+        partitions=((1, 1, 1), ),
+        restart_step=25,
+        check_step=50,
+        restartcheck_params=RestartcheckParameters(**restartcheck_params)),
+    TestDeck(
+        name="fractureMatrixFlow_conforming_2d",
+        description=
+        'Single phase flow test (2D, compressible, fracture/matrix flow)',
+        partitions=((1, 1, 1), (2, 2, 1), (3, 3, 1)),
+        restart_step=25,
+        check_step=50,
+        restartcheck_params=RestartcheckParameters(**restartcheck_params)),
+    TestDeck(
+        name="fractureMatrixFlow_edfm_horizontalFrac_smoke",
+        description=
+        'Single phase flow test (3D, incompressible, fracture/matrix flow, EDFM)',
+        partitions=((1, 1, 1), (2, 2, 1)),
+        restart_step=0,
+        check_step=1,
+        restartcheck_params=RestartcheckParameters(**restartcheck_params)),
+    TestDeck(
+        name="fractureMatrixFlow_edfm_inclinedFrac_smoke",
+        description=
+        'Single phase flow test (3D, incompressible, fracture/matrix flow, EDFM)',
+        partitions=((1, 1, 1), (2, 2, 1)),
+        restart_step=0,
+        check_step=1,
+        restartcheck_params=RestartcheckParameters(**restartcheck_params)),
+    TestDeck(
+        name="fractureMatrixFlow_pedfm_impermeableFracture_smoke",
+        description='SinglePhase flow with pedfm',
+        partitions=((1, 1, 1), (2, 2, 1)),
+        restart_step=0,
+        check_step=1,
+        restartcheck_params=RestartcheckParameters(**restartcheck_params)),
+    TestDeck(
+        name="fractureMatrixFlowWithGravity_edfm_verticalFrac_smoke",
+        description='SinglePhase flow with edfm frac with gravity',
+        partitions=((1, 1, 1), (1, 2, 1)),
+        restart_step=0,
+        check_step=1,
+        restartcheck_params=RestartcheckParameters(**restartcheck_params)),
+    TestDeck(
+        name="fractureMatrixFlowWithGravity_conforming_2d_smoke",
+        description='SinglePhase flow with conforming frac with gravity',
+        partitions=((1, 1, 1), (2, 2, 1)),
+        restart_step=0,
+        check_step=1,
+        restartcheck_params=RestartcheckParameters(**restartcheck_params)),
+    TestDeck(
+        name="fractureFlowWithGravity_conforming_2d_smoke",
+        description='SinglePhase flow in conforming frac with gravity',
+        partitions=((1, 1, 1), (1, 2, 1)),
+        restart_step=0,
+        check_step=1,
+        restartcheck_params=RestartcheckParameters(**restartcheck_params)),
+    TestDeck(name="impermeableFault_conforming_smoke",
+             description='impermeable conforming fault',
+             partitions=((1, 1, 1), (2, 2, 1)),
+             restart_step=0,
+             check_step=1,
+             restartcheck_params=RestartcheckParameters(**restartcheck_params))
+]
+
+generate_geos_tests(decks)

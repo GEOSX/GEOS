@@ -2,10 +2,11 @@
  * ------------------------------------------------------------------------------------------------------------
  * SPDX-License-Identifier: LGPL-2.1-only
  *
- * Copyright (c) 2018-2020 Lawrence Livermore National Security LLC
- * Copyright (c) 2018-2020 The Board of Trustees of the Leland Stanford Junior University
- * Copyright (c) 2018-2020 TotalEnergies
- * Copyright (c) 2019-     GEOSX Contributors
+ * Copyright (c) 2016-2024 Lawrence Livermore National Security LLC
+ * Copyright (c) 2018-2024 Total, S.A
+ * Copyright (c) 2018-2024 The Board of Trustees of the Leland Stanford Junior University
+ * Copyright (c) 2018-2024 Chevron
+ * Copyright (c) 2019-     GEOS/GEOSX Contributors
  * All rights reserved
  *
  * See top level LICENSE, COPYRIGHT, CONTRIBUTORS, NOTICE, and ACKNOWLEDGEMENTS files for details.
@@ -175,9 +176,9 @@ ElasticOrthotropic::ElasticOrthotropic( string const & name, Group * const paren
 ElasticOrthotropic::~ElasticOrthotropic()
 {}
 
-void ElasticOrthotropic::postProcessInput()
+void ElasticOrthotropic::postInputInitialization()
 {
-  SolidBase::postProcessInput();
+  SolidBase::postInputInitialization();
 
   real64 & c11 = getReference< real64 >( viewKeyStruct::defaultC11String() );
   real64 & c12 = getReference< real64 >( viewKeyStruct::defaultC12String() );
@@ -224,12 +225,12 @@ void ElasticOrthotropic::postProcessInput()
     }
     else
     {
-      GEOS_ERROR( "Invalid specification for default elastic constants." );
+      GEOS_ERROR( getFullName() << ": Invalid specification for default elastic constants." );
     }
   }
   else if( c11 <= 0.0 || c22 <= 0.0 || c33 <= 0.0 || c44 <= 0.0 || c55 <= 0.0 || c66 <= 0.0 )
   {
-    GEOS_ERROR( "Invalid specification for default elastic stiffnesses." );
+    GEOS_ERROR( getFullName() << ": Invalid specification for default elastic stiffnesses." );
   }
 
   this->getWrapper< array1d< real64 > >( viewKeyStruct::c11String() ).

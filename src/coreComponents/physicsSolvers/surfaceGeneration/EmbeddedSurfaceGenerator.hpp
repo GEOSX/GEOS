@@ -2,10 +2,11 @@
  * ------------------------------------------------------------------------------------------------------------
  * SPDX-License-Identifier: LGPL-2.1-only
  *
- * Copyright (c) 2018-2020 Lawrence Livermore National Security LLC
- * Copyright (c) 2018-2020 The Board of Trustees of the Leland Stanford Junior University
- * Copyright (c) 2018-2020 TotalEnergies
- * Copyright (c) 2019-     GEOSX Contributors
+ * Copyright (c) 2016-2024 Lawrence Livermore National Security LLC
+ * Copyright (c) 2018-2024 Total, S.A
+ * Copyright (c) 2018-2024 The Board of Trustees of the Leland Stanford Junior University
+ * Copyright (c) 2018-2024 Chevron
+ * Copyright (c) 2019-     GEOS/GEOSX Contributors
  * All rights reserved
  *
  * See top level LICENSE, COPYRIGHT, CONTRIBUTORS, NOTICE, and ACKNOWLEDGEMENTS files for details.
@@ -59,6 +60,10 @@ public:
 
 
   static string catalogName() { return "EmbeddedSurfaceGenerator"; }
+  /**
+   * @copydoc SolverBase::getCatalogName()
+   */
+  string getCatalogName() const override { return catalogName(); }
 
   virtual void registerDataOnMesh( Group & MeshBody ) override final;
 
@@ -94,6 +99,11 @@ protected:
 
   virtual void initializePostInitialConditionsPreSubGroups() override final;
 
+  virtual void postRestartInitialization() override final
+  {
+    GEOS_ERROR( "Restarting is not supported for cases involving EmbeddedSurfaceGenerator" );
+  }
+
 private:
 
   void addToFractureStencil( DomainPartition & domain );
@@ -112,6 +122,7 @@ private:
   {
     constexpr static char const * solidMaterialNameString() {return "solidMaterialNames"; }
     constexpr static char const * fractureRegionNameString() {return "fractureRegion"; }
+    constexpr static char const * targetObjectsNameString() {return "targetObjects"; }
     constexpr static char const * mpiCommOrderString() { return "mpiCommOrder"; }
 
     //TODO: rock toughness should be a material parameter, and we need to make rock toughness to KIC a constitutive
@@ -121,6 +132,8 @@ private:
 
   // fracture region name
   string m_fractureRegionName;
+  // target geometric objects to turn into fractures
+  array1d< string > m_targetObjectsName;
   // Flag for consistent communication ordering
   int m_mpiCommOrder;
 };

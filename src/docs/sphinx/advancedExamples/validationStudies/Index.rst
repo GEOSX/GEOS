@@ -16,6 +16,8 @@ Validation and Verification Studies
    wellboreProblems/Index
 
    viscoplasticity/Index
+
+   poromechanics/Index
   
    thermoPoromechanics/Index
 

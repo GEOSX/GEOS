@@ -2,10 +2,11 @@
  * ------------------------------------------------------------------------------------------------------------
  * SPDX-License-Identifier: LGPL-2.1-only
  *
- * Copyright (c) 2018-2020 Lawrence Livermore National Security LLC
- * Copyright (c) 2018-2020 The Board of Trustees of the Leland Stanford Junior University
- * Copyright (c) 2018-2020 TotalEnergies
- * Copyright (c) 2019-     GEOSX Contributors
+ * Copyright (c) 2016-2024 Lawrence Livermore National Security LLC
+ * Copyright (c) 2018-2024 Total, S.A
+ * Copyright (c) 2018-2024 The Board of Trustees of the Leland Stanford Junior University
+ * Copyright (c) 2018-2024 Chevron
+ * Copyright (c) 2019-     GEOS/GEOSX Contributors
  * All rights reserved
  *
  * See top level LICENSE, COPYRIGHT, CONTRIBUTORS, NOTICE, and ACKNOWLEDGEMENTS files for details.
@@ -58,6 +59,7 @@ ContactBase::ContactBase( string const & name,
 
 
   registerWrapper( viewKeyStruct::apertureTableNameString(), &m_apertureTableName ).
+    setRTTypeName( rtTypes::CustomTypes::groupNameRef ).
     setInputFlag( InputFlags::REQUIRED ).
     setDescription( "Name of the aperture table" );
 }
@@ -66,11 +68,11 @@ ContactBase::~ContactBase()
 {}
 
 
-void ContactBase::postProcessInput()
+void ContactBase::postInputInitialization()
 {
 
   GEOS_THROW_IF( m_apertureTableName.empty(),
-                 getCatalogName() << " " << getName() << ": the aperture table name " << m_apertureTableName << " is empty", InputError );
+                 getFullName() << ": the aperture table name " << m_apertureTableName << " is empty", InputError );
 
 }
 
@@ -86,7 +88,7 @@ void ContactBase::allocateConstitutiveData( Group & parent,
   FunctionManager & functionManager = FunctionManager::getInstance();
 
   GEOS_THROW_IF( !functionManager.hasGroup( m_apertureTableName ),
-                 getCatalogName() << " " << getName() << ": the aperture table named " << m_apertureTableName << " could not be found",
+                 getFullName() << ": the aperture table named " << m_apertureTableName << " could not be found",
                  InputError );
 
   TableFunction & apertureTable = functionManager.getGroup< TableFunction >( m_apertureTableName );
@@ -104,6 +106,12 @@ void ContactBase::allocateConstitutiveData( Group & parent,
   // this check is necessary to ensure that the coordinates are strictly increasing
   if( apertureTransition > apertureValues[apertureValues.size()-1] )
   {
+    GEOS_LOG_RANK_0( GEOS_FMT ( "Adding aperture transition for table {}:", m_apertureTableName ) );
+    std::ostringstream s_orig;
+    for( localIndex i = 0; i < apertureValues.size(); i++ )
+      s_orig << "[ " << apertureValues[i] << ", " << hydraulicApertureValues[i] << " ] ";
+    GEOS_LOG_RANK_0( GEOS_FMT ( "    Original table = {}", s_orig.str()));
+
     coords.emplaceBack( 0, apertureTransition );
     hydraulicApertureValues.emplace_back( apertureTransition );
     // if the aperture transition is larger than 0, we keep enlarging the table
@@ -114,6 +122,11 @@ void ContactBase::allocateConstitutiveData( Group & parent,
       hydraulicApertureValues.emplace_back( apertureTransition*10e9 );
       apertureTable.reInitializeFunction();
     }
+
+    std::ostringstream s_mod;
+    for( localIndex i = 0; i < apertureValues.size(); i++ )
+      s_mod << "[ " << apertureValues[i] << ", " << hydraulicApertureValues[i] << " ] ";
+    GEOS_LOG_RANK_0( GEOS_FMT ( "    Modified table = {}", s_mod.str()));
   }
 
   m_apertureTable = &apertureTable;
@@ -126,25 +139,25 @@ void ContactBase::validateApertureTable( TableFunction const & apertureTable ) c
   arrayView1d< real64 const > const & hydraulicApertureValues = apertureTable.getValues();
 
   GEOS_THROW_IF( coords.size() > 1,
-                 getCatalogName() << " " << getName() << ": Aperture limiter table cannot be greater than a 1D table.",
+                 getFullName() << ": Aperture limiter table cannot be greater than a 1D table.",
                  InputError );
 
   arraySlice1d< real64 const > apertureValues = coords[0];
   localIndex const size = apertureValues.size();
 
   GEOS_THROW_IF( coords( 0, size-1 ) > 0.0 || coords( 0, size-1 ) < 0.0,
-                 getCatalogName() << " " << getName() << ": Invalid aperture limiter table. Last coordinate must be zero!",
+                 getFullName() << ": Invalid aperture limiter table. Last coordinate must be zero!",
                  InputError );
 
   GEOS_THROW_IF( apertureValues.size() < 2,
-                 getCatalogName() << " " << getName() << ": Invalid aperture limiter table. Must have more than two points specified",
+                 getFullName() << ": Invalid aperture limiter table. Must have more than two points specified",
                  InputError );
 
   localIndex const n = apertureValues.size()-1;
   real64 const slope = ( hydraulicApertureValues[n] - hydraulicApertureValues[n-1] ) / ( apertureValues[n] - apertureValues[n-1] );
 
   GEOS_THROW_IF( slope >= 1.0,
-                 getCatalogName() << " " << getName() << ": Invalid aperture table. The slope of the last two points >= 1 is invalid.",
+                 getFullName() << ": Invalid aperture table. The slope of the last two points >= 1 is invalid.",
                  InputError );
 }
 

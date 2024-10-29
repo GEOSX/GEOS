@@ -2,10 +2,11 @@
  * ------------------------------------------------------------------------------------------------------------
  * SPDX-License-Identifier: LGPL-2.1-only
  *
- * Copyright (c) 2018-2020 Lawrence Livermore National Security LLC
- * Copyright (c) 2018-2020 The Board of Trustees of the Leland Stanford Junior University
- * Copyright (c) 2018-2020 TotalEnergies
- * Copyright (c) 2019-     GEOSX Contributors
+ * Copyright (c) 2016-2024 Lawrence Livermore National Security LLC
+ * Copyright (c) 2018-2024 Total, S.A
+ * Copyright (c) 2018-2024 The Board of Trustees of the Leland Stanford Junior University
+ * Copyright (c) 2018-2024 Chevron
+ * Copyright (c) 2019-     GEOS/GEOSX Contributors
  * All rights reserved
  *
  * See top level LICENSE, COPYRIGHT, CONTRIBUTORS, NOTICE, and ACKNOWLEDGEMENTS files for details.
@@ -61,15 +62,9 @@ public:
   virtual ~FunctionBase() override = default;
 
   /**
-   * @brief Static Factory Catalog Functions
-   * @return the catalog name
-   */
-  static string catalogName() { return "FunctionBase"; }
-
-  /**
    * @brief Function initialization
    */
-  virtual void initializeFunction(){}
+  virtual void initializeFunction() = 0;
 
   /**
    * @brief Test to see if the function is a 1D function of time
@@ -148,7 +143,7 @@ protected:
                   SortedArrayView< localIndex const > const & set,
                   arrayView1d< real64 > const & result ) const;
 
-  virtual void postProcessInput() override { initializeFunction(); }
+  virtual void postInputInitialization() override { initializeFunction(); }
 
 };
 
@@ -178,10 +173,10 @@ void FunctionBase::evaluateT( dataRepository::Group const & group,
       dataRepository::WrapperBase const & wrapper = group.getWrapperBase( varName );
       varSize[varIndex] = wrapper.numArrayComp();
 
-      using Types = types::ArrayTypes< types::TypeList< real64 >, types::DimsUpTo< 2 > >;
-      types::dispatch( Types{}, wrapper.getTypeId(), true, [&]( auto array )
+      using Types = types::ListofTypeList< types::ArrayTypes< types::TypeList< real64 >, types::DimsUpTo< 2 > > >;
+      types::dispatch( Types{}, [&]( auto tupleOfTypes )
       {
-        using ArrayType = decltype( array );
+        using ArrayType = camp::first< decltype( tupleOfTypes ) >;
         auto const view = dataRepository::Wrapper< ArrayType >::cast( wrapper ).reference().toViewConst();
         view.move( hostMemorySpace, false );
         for( int dim = 0; dim < ArrayType::NDIM; ++dim )
@@ -189,16 +184,18 @@ void FunctionBase::evaluateT( dataRepository::Group const & group,
           varStride[varIndex][dim] = view.strides()[dim];
         }
         inputPtrs[varIndex] = view.data();
-      } );
+      }, wrapper );
     }
     totalVarSize += varSize[varIndex];
   }
 
   // Make sure the inputs do not exceed the maximum length
-  GEOS_ERROR_IF_GT_MSG( totalVarSize, MAX_VARS, "Function input size exceeded" );
+  GEOS_ERROR_IF_GT_MSG( totalVarSize, MAX_VARS,
+                        getDataContext() << ": Function input size exceeded" );
 
   // Make sure the result / set size match
-  GEOS_ERROR_IF_NE_MSG( result.size(), set.size(), "To apply a function to a set, the size of the result and set must match" );
+  GEOS_ERROR_IF_NE_MSG( result.size(), set.size(),
+                        getDataContext() << ": To apply a function to a set, the size of the result and set must match" );
 
   forAll< POLICY >( set.size(), [=]( localIndex const i )
   {

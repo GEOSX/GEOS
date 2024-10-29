@@ -1,0 +1,54 @@
+from geos.ats.test_builder import TestDeck, RestartcheckParameters, generate_geos_tests
+
+restartcheck_params = {}
+restartcheck_params['atol'] = 1e-06
+restartcheck_params['rtol'] = 1e-06
+
+decks = [
+    TestDeck(
+        name="PhaseFieldFracture_DamageOnly",
+        description='Testing the Damage Solver of Phase Field Fracture',
+        partitions=((1, 1, 1), (2, 2, 2)),
+        restart_step=1,
+        check_step=2,
+        restartcheck_params=RestartcheckParameters(**restartcheck_params)),
+    TestDeck(
+        name="PhaseFieldFracture_DamageAndLoad",
+        description=
+        'Testing the coupling of Mechanics and Damage for PF Fracture',
+        partitions=((1, 1, 1), (2, 2, 2)),
+        restart_step=65,
+        check_step=130,
+        restartcheck_params=RestartcheckParameters(**restartcheck_params)),
+    TestDeck(
+        name="PhaseFieldFracture_CohesiveModel",
+        description='Testing the cohesive model for PF Fracture',
+        partitions=((1, 1, 1), (1, 1, 2)),
+        restart_step=5,
+        check_step=10,
+        restartcheck_params=RestartcheckParameters(**restartcheck_params)),
+    TestDeck(
+        name="PhaseFieldFracture_SpectralSplit",
+        description=
+        'Testing the spectral split of the stress tensor in PF Fracture',
+        partitions=((1, 1, 1), (2, 2, 1)),
+        restart_step=15,
+        check_step=30,
+        restartcheck_params=RestartcheckParameters(**restartcheck_params)),
+    TestDeck(
+        name="PhaseFieldFracture_VolDevSplit",
+        description=
+        'Testing the volumetric-deviatoric split of the stress tensor in PF Fracture',
+        partitions=((1, 1, 1), (2, 2, 1)),
+        restart_step=15,
+        check_step=30,
+        restartcheck_params=RestartcheckParameters(**restartcheck_params)),
+    TestDeck(name="PhaseFieldFracture_Nucleation_smoke",
+             description='Testing the nucleation model for PF Fracture',
+             partitions=((1, 1, 1), (2, 2, 1)),
+             restart_step=65,
+             check_step=130,
+             restartcheck_params=RestartcheckParameters(**restartcheck_params))
+]
+
+generate_geos_tests(decks)

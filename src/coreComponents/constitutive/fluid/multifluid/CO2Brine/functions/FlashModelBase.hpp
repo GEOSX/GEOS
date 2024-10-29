@@ -2,10 +2,11 @@
  * ------------------------------------------------------------------------------------------------------------
  * SPDX-License-Identifier: LGPL-2.1-only
  *
- * Copyright (c) 2018-2020 Lawrence Livermore National Security LLC
- * Copyright (c) 2018-2020 The Board of Trustees of the Leland Stanford Junior University
- * Copyright (c) 2018-2020 TotalEnergies
- * Copyright (c) 2019-     GEOSX Contributors
+ * Copyright (c) 2016-2024 Lawrence Livermore National Security LLC
+ * Copyright (c) 2018-2024 Total, S.A
+ * Copyright (c) 2018-2024 The Board of Trustees of the Leland Stanford Junior University
+ * Copyright (c) 2018-2024 Chevron
+ * Copyright (c) 2019-     GEOS/GEOSX Contributors
  * All rights reserved
  *
  * See top level LICENSE, COPYRIGHT, CONTRIBUTORS, NOTICE, and ACKNOWLEDGEMENTS files for details.
@@ -82,7 +83,8 @@ public:
                                                              string_array const &,
                                                              string_array const &,
                                                              string_array const &,
-                                                             array1d< real64 > const & >;
+                                                             array1d< real64 > const &,
+                                                             bool const >;
   static typename CatalogInterface::CatalogType & getCatalog()
   {
     static CatalogInterface::CatalogType catalog;
@@ -90,6 +92,14 @@ public:
   }
 
   virtual string getCatalogName() const = 0;
+
+  /**
+   * @brief Check if the input values are in the expected pressure & temperature tables bounds
+   * @param pressure input pressure to check
+   * @param temperature input temperature to check
+   * @throw a SimulationError if one of the input values is out of bound.
+   */
+  virtual void checkTablesParameters( real64 pressure, real64 temperature ) const = 0;
 
   string const & flashModelName() const { return m_modelName; }
 

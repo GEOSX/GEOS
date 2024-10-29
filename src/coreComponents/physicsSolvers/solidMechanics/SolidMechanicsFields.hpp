@@ -2,10 +2,11 @@
  * ------------------------------------------------------------------------------------------------------------
  * SPDX-License-Identifier: LGPL-2.1-only
  *
- * Copyright (c) 2018-2020 Lawrence Livermore National Security LLC
- * Copyright (c) 2018-2020 The Board of Trustees of the Leland Stanford Junior University
- * Copyright (c) 2018-2020 TotalEnergies
- * Copyright (c) 2019-     GEOSX Contributors
+ * Copyright (c) 2016-2024 Lawrence Livermore National Security LLC
+ * Copyright (c) 2018-2024 Total, S.A
+ * Copyright (c) 2018-2024 The Board of Trustees of the Leland Stanford Junior University
+ * Copyright (c) 2018-2024 Chevron
+ * Copyright (c) 2019-     GEOS/GEOSX Contributors
  * All rights reserved
  *
  * See top level LICENSE, COPYRIGHT, CONTRIBUTORS, NOTICE, and ACKNOWLEDGEMENTS files for details.
@@ -41,6 +42,10 @@ using array2dLayoutIncrDisplacement = array2d< real64, nodes::INCR_DISPLACEMENT_
 using arrayView2dLayoutIncrDisplacement = arrayView2d< real64, nodes::INCR_DISPLACEMENT_USD >;
 using arrayViewConst2dLayoutIncrDisplacement = arrayView2d< real64 const, nodes::INCR_DISPLACEMENT_USD >;
 
+using array2dLayoutStrain = array2d< real64, cells::STRAIN_PERM >;
+using arrayView2dLayoutStrain = arrayView2d< real64, cells::STRAIN_USD >;
+using arrayViewConst2dLayoutStrain = arrayView2d< real64 const, cells::STRAIN_USD >;
+
 using array2dLayoutVelocity = array2d< real64, nodes::VELOCITY_PERM >;
 using arrayView2dLayoutVelocity = arrayView2d< real64, nodes::VELOCITY_USD >;
 using arrayViewConst2dLayoutVelocity = arrayView2d< real64 const, nodes::VELOCITY_USD >;
@@ -58,6 +63,14 @@ DECLARE_FIELD( totalDisplacement,
                WRITE_AND_READ,
                "Total displacements at the nodes" );
 
+DECLARE_FIELD( totalBubbleDisplacement,
+               "totalBubbleDisplacement",
+               array2d< real64 >,
+               0,
+               LEVEL_0,
+               WRITE_AND_READ,
+               "Total bubble displacements at the faces" );
+
 DECLARE_FIELD( incrementalDisplacement,
                "incrementalDisplacement",
                array2dLayoutIncrDisplacement,
@@ -65,6 +78,22 @@ DECLARE_FIELD( incrementalDisplacement,
                LEVEL_3,
                WRITE_AND_READ,
                "Incremental displacements for the current time step on the nodes" );
+
+DECLARE_FIELD( strain,
+               "strain",
+               array2dLayoutStrain,
+               0,
+               LEVEL_0,
+               WRITE_AND_READ,
+               "Average strain in cell" );
+
+DECLARE_FIELD( incrementalBubbleDisplacement,
+               "incrementalBubbleDisplacement",
+               array2d< real64 >,
+               0,
+               LEVEL_3,
+               WRITE_AND_READ,
+               "Incremental bubble displacements for the current time step on the nodes" );
 
 DECLARE_FIELD( velocity,
                "velocity",

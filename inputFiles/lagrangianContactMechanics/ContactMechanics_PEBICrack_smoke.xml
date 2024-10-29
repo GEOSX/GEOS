@@ -1,0 +1,54 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<Problem>
+
+  <Included>
+    <File name="./ContactMechanics_PEBICrack_base.xml"/>
+  </Included>
+
+    <Solvers gravityVector="{0.0, 0.0, 0.0}">
+        <SolidMechanicsLagrangeContact name="lagrangiancontact"
+            logLevel="1"
+            discretization="FE1"
+            timeIntegrationOption="QuasiStatic"
+            stabilizationName="TPFAstabilization"
+             targetRegions="{ Region, Fracture }" >
+
+        <NonlinearSolverParameters 
+            newtonTol="1e-08" 
+            logLevel="2" 
+            newtonMaxIter="10" 
+            maxNumConfigurationAttempts="10" 
+            lineSearchAction="Require" 
+            lineSearchMaxCuts="2" 
+            maxTimeStepCuts="2"/>
+
+        <LinearSolverParameters 
+            solverType="direct" 
+            directParallel="0" 
+            logLevel="0"/>
+
+        </SolidMechanicsLagrangeContact>
+        
+    </Solvers>
+    
+    
+  <Mesh>
+    <VTKMesh
+      name="mesh"
+      useGlobalIds="1"
+      faceBlocks="{fracture}"
+      file="contact_vem.vtm"/>
+  </Mesh>
+
+
+    <Events maxTime="10">
+
+        <PeriodicEvent name="solverApplications" target="/Solvers/lagrangiancontact" beginTime="0" endTime="10" forceDt="1.0"/>
+        <PeriodicEvent name="outputs" timeFrequency="1" targetExactTimestep="0" target="/Outputs/vtkOutput"/>
+         <PeriodicEvent
+          name="restarts"
+          timeFrequency="5.0"
+          targetExactTimestep="0"
+          target="/Outputs/restartOutput"/>
+    </Events>
+</Problem>

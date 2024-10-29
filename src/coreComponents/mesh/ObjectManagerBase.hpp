@@ -2,10 +2,11 @@
  * ------------------------------------------------------------------------------------------------------------
  * SPDX-License-Identifier: LGPL-2.1-only
  *
- * Copyright (c) 2018-2020 Lawrence Livermore National Security LLC
- * Copyright (c) 2018-2020 The Board of Trustees of the Leland Stanford Junior University
- * Copyright (c) 2018-2020 TotalEnergies
- * Copyright (c) 2019-     GEOSX Contributors
+ * Copyright (c) 2016-2024 Lawrence Livermore National Security LLC
+ * Copyright (c) 2018-2024 Total, S.A
+ * Copyright (c) 2018-2024 The Board of Trustees of the Leland Stanford Junior University
+ * Copyright (c) 2018-2024 Chevron
+ * Copyright (c) 2019-     GEOS/GEOSX Contributors
  * All rights reserved
  *
  * See top level LICENSE, COPYRIGHT, CONTRIBUTORS, NOTICE, and ACKNOWLEDGEMENTS files for details.
@@ -908,8 +909,9 @@ public:
 
   /**
    * @brief Get the domain boundary indicator
-   * @return The information in an array of integers, mainly treated as booleans
-   *         (1 meaning the "index" is on the boundary).
+   * @return The information in an array of integers, mainly treated as booleans.
+   * @note Domain boundary is to be understood as the boundary of the domain <em>on the current rank</em>,
+   * not the whole physical domain which spans all the ranks.
    */
   array1d< integer > & getDomainBoundaryIndicator()
   {
@@ -976,13 +978,11 @@ void ObjectManagerBase::fixUpDownMaps( TYPE_RELATION & relation,
 
   bool allValuesMapped = true;
   unordered_map< globalIndex, localIndex > const & globalToLocal = relation.relatedObjectGlobalToLocal();
-  for( map< localIndex, array1d< globalIndex > >::iterator iter = unmappedIndices.begin();
-       iter != unmappedIndices.end();
-       ++iter )
+  for( auto & unmappedIndex: unmappedIndices )
   {
-    localIndex const li = iter->first;
-    array1d< globalIndex > const & globalIndices = iter->second;
-    for( localIndex a=0; a<globalIndices.size(); ++a )
+    localIndex const li = unmappedIndex.first;
+    array1d< globalIndex > const & globalIndices = unmappedIndex.second;
+    for( localIndex a = 0; a < globalIndices.size(); ++a )
     {
       if( globalIndices[a] != unmappedLocalIndexValue )
       {
@@ -995,7 +995,7 @@ void ObjectManagerBase::fixUpDownMaps( TYPE_RELATION & relation,
           allValuesMapped = false;
         }
       }
-      GEOS_ERROR_IF( relation[li][a]==unmappedLocalIndexValue, "Index not set" );
+      GEOS_ERROR_IF( relation[li][a] == unmappedLocalIndexValue, "Index not set" );
     }
   }
   GEOS_ERROR_IF( !allValuesMapped, "some values of unmappedIndices were not used" );

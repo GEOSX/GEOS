@@ -1,13 +1,14 @@
-#
 # Specify list of tests
-#
-
 set( gtest_geosx_tests
-     testDamage.cpp
-     testRelPerm.cpp
-     testRelPermHysteresis.cpp
      testCapillaryPressure.cpp
-   )
+     testCO2BrinePVTModels.cpp
+     testCO2SpycherPruessModels.cpp
+     testDamage.cpp
+     testMultiFluidCO2Brine.cpp
+     testMultiFluidDeadOil.cpp
+     testMultiFluidLiveOil.cpp
+     testRelPerm.cpp
+     testRelPermHysteresis.cpp )
 
 set( gtest_triaxial_xmls
      testTriaxial_druckerPragerExtended.xml
@@ -19,11 +20,13 @@ set( gtest_triaxial_xmls
      testTriaxial_delftEggLoadPathDryUseLinear.xml
      testTriaxial_delftEggLoadPathWetUseLinear.xml
      testTriaxial_delftEggCase1.xml
-     testTriaxial_delftEggCase2.xml
-   )
+     testTriaxial_delftEggCase2.xml )
 
 set( gtest_pvt_xmls
      testPVT.xml
+     testPVT_CO2Brine.xml
+     testPVT_CO2BrineTables.xml
+     testPVT_PhaseComposition.xml
    )
 
 set( gtest_reactivefluid_xmls
@@ -31,85 +34,81 @@ set( gtest_reactivefluid_xmls
 
 set( dependencyList ${parallelDeps} gtest )
 
-if ( GEOSX_BUILD_SHARED_LIBS )
-  set (dependencyList ${dependencyList} geosx_core )
+if ( GEOS_BUILD_SHARED_LIBS )
+  list( APPEND dependencyList geosx_core HDF5::HDF5 )
 else()
-  set (dependencyList ${dependencyList} ${geosx_core_libs} )
+  list( APPEND dependencyList ${geosx_core_libs} HDF5::HDF5 )
+  list( APPEND dependencyList ${geosx_core_libs} HDF5::HDF5 )
 endif()
 
 if( ENABLE_PVTPackage )
     list( APPEND gtest_geosx_tests
-          testMultiFluid.cpp
-          testCO2BrinePVTModels.cpp )
-
-    set( dependencyList ${dependencyList} PVTPackage )
+          testMultiFluidCompositionalMultiphasePVTPackage.cpp )
+    list( APPEND dependencyList PVTPackage )
 endif()
 
-#
+if (TARGET pugixml::pugixml)
+  list( APPEND dependencyList pugixml::pugixml )
+endif()
+
+if (TARGET pugixml)
+  list( APPEND dependencyList pugixml )
+endif()
+
+if (TARGET fmt::fmt-header-only)
+  list( APPEND dependencyList fmt::fmt-header-only )
+endif()
+
+if (TARGET fmt)
+  list( APPEND dependencyList fmt )
+endif()
+
 # Add gtest C++ based tests
-#
 foreach(test ${gtest_geosx_tests})
     get_filename_component( test_name ${test} NAME_WE )
     blt_add_executable( NAME ${test_name}
-            SOURCES ${test}
-            OUTPUT_DIR ${TEST_OUTPUT_DIRECTORY}
-            DEPENDS_ON ${dependencyList}
-            )
+                        SOURCES ${test}
+                        OUTPUT_DIR ${TEST_OUTPUT_DIRECTORY}
+                        DEPENDS_ON ${dependencyList} )
 
-    blt_add_test( NAME ${test_name}
-                  COMMAND ${test_name}
-                )
+    geos_add_test( NAME ${test_name}
+                   COMMAND ${test_name} )
 
 endforeach()
 
-#
 # Add triaxial xml based tests
-#
-
 blt_add_executable( NAME testTriaxial
                     SOURCES testTriaxial.cpp
                     OUTPUT_DIR ${TEST_OUTPUT_DIRECTORY}
-                    DEPENDS_ON ${dependencyList} "-lz"
-                  )
+                    DEPENDS_ON ${dependencyList} "-lz" )
 
 foreach(test ${gtest_triaxial_xmls})
     get_filename_component( test_name ${test} NAME_WE )
-    blt_add_test( NAME ${test_name}
-                  COMMAND testTriaxial -i ${CMAKE_CURRENT_LIST_DIR}/${test}
-                  )
+    geos_add_test( NAME ${test_name}
+                   COMMAND testTriaxial -i ${CMAKE_CURRENT_LIST_DIR}/${test} )
 endforeach()
 
-#
 # Add pvtdriver xml based tests
-#
-
 blt_add_executable( NAME testPVT
                     SOURCES testPVT.cpp
                     OUTPUT_DIR ${TEST_OUTPUT_DIRECTORY}
-                    DEPENDS_ON ${dependencyList} "-lz"
-                  )
+                    DEPENDS_ON ${dependencyList} "-lz" )
 
 foreach(test ${gtest_pvt_xmls})
     get_filename_component( test_name ${test} NAME_WE )
-    blt_add_test( NAME ${test_name}
-                  COMMAND testPVT -i ${CMAKE_CURRENT_LIST_DIR}/${test}
-                  )
+    geos_add_test( NAME ${test_name}
+                   COMMAND testPVT -i ${CMAKE_CURRENT_LIST_DIR}/${test} )
 endforeach()
 
 
-#
 # Add reactivefluiddriver xml based tests
-#
-
 blt_add_executable( NAME testReactiveFluid
                     SOURCES testReactiveFluid.cpp
                     OUTPUT_DIR ${TEST_OUTPUT_DIRECTORY}
-                    DEPENDS_ON ${dependencyList} "-lz"
-                  )
+                    DEPENDS_ON ${dependencyList} "-lz" )
 
 foreach(test ${gtest_reactivefluid_xmls})
     get_filename_component( test_name ${test} NAME_WE )
-    blt_add_test( NAME ${test_name}
-                  COMMAND testReactiveFluid -i ${CMAKE_CURRENT_LIST_DIR}/${test}
-                  )
+    geos_add_test( NAME ${test_name}
+                   COMMAND testReactiveFluid -i ${CMAKE_CURRENT_LIST_DIR}/${test} )
 endforeach()

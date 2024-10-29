@@ -2,10 +2,11 @@
  * ------------------------------------------------------------------------------------------------------------
  * SPDX-License-Identifier: LGPL-2.1-only
  *
- * Copyright (c) 2018-2020 Lawrence Livermore National Security LLC
- * Copyright (c) 2018-2020 The Board of Trustees of the Leland Stanford Junior University
- * Copyright (c) 2018-2020 TotalEnergies
- * Copyright (c) 2019-     GEOSX Contributors
+ * Copyright (c) 2016-2024 Lawrence Livermore National Security LLC
+ * Copyright (c) 2018-2024 Total, S.A
+ * Copyright (c) 2018-2024 The Board of Trustees of the Leland Stanford Junior University
+ * Copyright (c) 2018-2024 Chevron
+ * Copyright (c) 2019-     GEOS/GEOSX Contributors
  * All rights reserved
  *
  * See top level LICENSE, COPYRIGHT, CONTRIBUTORS, NOTICE, and ACKNOWLEDGEMENTS files for details.
@@ -35,7 +36,9 @@ WellElementSubRegion::WellElementSubRegion( string const & name, Group * const p
 {
   m_elementType = ElementType::Line;
 
-  registerWrapper( viewKeyStruct::wellControlsString(), &m_wellControlsName );
+  registerWrapper( viewKeyStruct::wellControlsString(), &m_wellControlsName ).
+    setRTTypeName( rtTypes::CustomTypes::groupNameRef );
+
   registerWrapper( viewKeyStruct::wellNodeListString(), &m_toNodesRelation );
   registerWrapper( viewKeyStruct::nextWellElementIndexString(), &m_nextWellElementIndex );
   registerWrapper( viewKeyStruct::nextWellElementIndexGlobalString(), &m_nextWellElementIndexGlobal );
@@ -63,29 +66,29 @@ namespace
 /**
  * @brief Now that the well elements are assigned, collect the nodes and tag the boundary nodes between ranks
           The function WellElementSubRegion::AssignUnownedElements must have been called before this function
- * @param[in] wellGeometry the InternalWellGenerator containing the global well topology
+ * @param[in] lineBlock the LineBlockABC containing the global well topology
  * @param[in] localElems set of local well elems. At this point all the well elems have been assigned
  * @param[out] localNodes set of local well nodes (includes boundary nodes)
  * @param[out] boundaryNodes set of local well nodes that are at the boundary between this rank
                and another rank
  */
-void collectLocalAndBoundaryNodes( InternalWellGenerator const & wellGeometry,
+void collectLocalAndBoundaryNodes( LineBlockABC const & lineBlock,
                                    SortedArray< globalIndex >      const & localElems,
                                    SortedArray< globalIndex > & localNodes,
                                    SortedArray< globalIndex > & boundaryNodes )
 {
   // get the well connectivity
-  arrayView1d< globalIndex const >                      const & nextElemIdGlobal  = wellGeometry.getNextElemIndex();
-  arrayView1d< arrayView1d< globalIndex const > const > const & prevElemIdsGlobal = wellGeometry.getPrevElemIndices();
-  arrayView2d< globalIndex const >                      const & elemToNodesGlobal = wellGeometry.getElemToNodesMap();
+  arrayView1d< globalIndex const >                      const & nextElemIdGlobal  = lineBlock.getNextElemIndex();
+  arrayView1d< arrayView1d< globalIndex const > const > const & prevElemIdsGlobal = lineBlock.getPrevElemIndices();
+  arrayView2d< globalIndex const >                      const & elemToNodesGlobal = lineBlock.getElemToNodesMap();
 
   // loop over the local elements and collect the local and boundary nodes
   for( globalIndex currGlobal : localElems )
   {
 
     // if the element is local, its two nodes are also local
-    globalIndex const inodeTopGlobal    = elemToNodesGlobal[currGlobal][InternalWellGenerator::NodeLocation::TOP];
-    globalIndex const inodeBottomGlobal = elemToNodesGlobal[currGlobal][InternalWellGenerator::NodeLocation::BOTTOM];
+    globalIndex const inodeTopGlobal    = elemToNodesGlobal[currGlobal][LineBlockABC::NodeLocation::TOP];
+    globalIndex const inodeBottomGlobal = elemToNodesGlobal[currGlobal][LineBlockABC::NodeLocation::BOTTOM];
     localNodes.insert( inodeTopGlobal );
     localNodes.insert( inodeBottomGlobal );
 
@@ -343,7 +346,7 @@ bool searchLocalElements( MeshLevel const & mesh,
 }
 
 void WellElementSubRegion::generate( MeshLevel & mesh,
-                                     InternalWellGenerator const & wellGeometry,
+                                     LineBlockABC const & lineBlock,
                                      arrayView1d< integer > & elemStatusGlobal,
                                      globalIndex nodeOffsetGlobal,
                                      globalIndex elemOffsetGlobal )
@@ -364,13 +367,12 @@ void WellElementSubRegion::generate( MeshLevel & mesh,
   SortedArray< globalIndex > & unownedElems = elemSetsByStatus[WellElemStatus::UNOWNED];
 
   // here we make sure that there are no shared elements
-  // this is enforced in the InternalWellGenerator that currently merges two perforations
+  // this is enforced in the LineBlockABC that currently merges two perforations
   // if they belong to the same well element. This is a temporary solution.
   // TODO: split the well elements that contain multiple perforations, so that no element is shared
   GEOS_THROW_IF( sharedElems.size() > 0,
-                 "Well " << wellGeometry.getName() << " contains shared well elements",
+                 "Well " << lineBlock.getDataContext() << " contains shared well elements",
                  InputError );
-
 
   // In Steps 1 and 2 we determine the local objects on this rank (elems and nodes)
   // Once this is done, in Steps 3, 4, and 5, we update the nodeManager and wellElementSubRegion (size, maps)
@@ -383,7 +385,7 @@ void WellElementSubRegion::generate( MeshLevel & mesh,
   //      ie., if the center of the well element falls in the domain owned by rank k
   //      then the well element is assigned to rank k
   assignUnownedElementsInReservoir( mesh,
-                                    wellGeometry,
+                                    lineBlock,
                                     unownedElems,
                                     localElems,
                                     elemStatusGlobal );
@@ -394,7 +396,7 @@ void WellElementSubRegion::generate( MeshLevel & mesh,
   //      In this function we also check that the resulting well partitioning is valid, that is,
   //      we make sure that if two ranks are neighbors in the well, that are also neighbors in the
   //      reservoir mesh
-  checkPartitioningValidity( wellGeometry,
+  checkPartitioningValidity( lineBlock,
                              localElems,
                              elemStatusGlobal );
 
@@ -404,7 +406,7 @@ void WellElementSubRegion::generate( MeshLevel & mesh,
   // 2) collect the local nodes and tag the boundary nodes using element info
   // now that all the elements have been assigned, we collected the local nodes
   // and tag the boundary nodes (i.e., the nodes in contact with both local and remote elems)
-  collectLocalAndBoundaryNodes( wellGeometry,
+  collectLocalAndBoundaryNodes( lineBlock,
                                 localElems,
                                 localNodes,
                                 boundaryNodes );
@@ -413,7 +415,7 @@ void WellElementSubRegion::generate( MeshLevel & mesh,
   // this is necessary to later use the node matching procedure
   // to place ghosts in DomainPartition::SetupCommunications
   updateNodeManagerSize( mesh,
-                         wellGeometry,
+                         lineBlock,
                          localNodes,
                          boundaryNodes,
                          nodeOffsetGlobal );
@@ -421,7 +423,7 @@ void WellElementSubRegion::generate( MeshLevel & mesh,
   // 4) resize the well element subregion
   // and construct local to global, global to local, maps, etc
   constructSubRegionLocalElementMaps( mesh,
-                                      wellGeometry,
+                                      lineBlock,
                                       localElems,
                                       nodeOffsetGlobal,
                                       elemOffsetGlobal );
@@ -435,13 +437,13 @@ void WellElementSubRegion::generate( MeshLevel & mesh,
 
 
 void WellElementSubRegion::assignUnownedElementsInReservoir( MeshLevel & mesh,
-                                                             InternalWellGenerator const & wellGeometry,
+                                                             LineBlockABC const & lineBlock,
                                                              SortedArray< globalIndex >      const & unownedElems,
                                                              SortedArray< globalIndex > & localElems,
                                                              arrayView1d< integer > & elemStatusGlobal ) const
 {
   // get the well and reservoir element coordinates
-  arrayView2d< real64 const > const & wellElemCoordsGlobal = wellGeometry.getElemCoords();
+  arrayView2d< real64 const > const & wellElemCoordsGlobal = lineBlock.getElemCoords();
 
   // assign the well elements based on location wrt the reservoir elements
   // if the center of the well element falls in the domain owned by rank k
@@ -488,15 +490,15 @@ void WellElementSubRegion::assignUnownedElementsInReservoir( MeshLevel & mesh,
 }
 
 
-void WellElementSubRegion::checkPartitioningValidity( InternalWellGenerator const & wellGeometry,
+void WellElementSubRegion::checkPartitioningValidity( LineBlockABC const & lineBlock,
                                                       SortedArray< globalIndex > & localElems,
                                                       arrayView1d< integer > & elemStatusGlobal ) const
 {
-  arrayView1d< arrayView1d< globalIndex const > const > const & prevElemIdsGlobal = wellGeometry.getPrevElemIndices();
+  arrayView1d< arrayView1d< globalIndex const > const > const & prevElemIdsGlobal = lineBlock.getPrevElemIndices();
 
   // we are going to make sure that the partitioning is good,
   // well element per well element, starting from the bottom of the well
-  for( globalIndex iwelemGlobal = wellGeometry.getNumElements()-1; iwelemGlobal >= 0; --iwelemGlobal )
+  for( globalIndex iwelemGlobal = lineBlock.numElements()-1; iwelemGlobal >= 0; --iwelemGlobal )
   {
 
     // communicate the status of this element
@@ -520,7 +522,7 @@ void WellElementSubRegion::checkPartitioningValidity( InternalWellGenerator cons
       globalIndex const prevGlobal  = prevElemIdsGlobal[iwelemGlobal][numBranches-1];
 
       GEOS_THROW_IF( prevGlobal <= iwelemGlobal || prevGlobal < 0,
-                     "The structure of well " << wellGeometry.getName() << " is invalid. " <<
+                     "The structure of well " << lineBlock.getDataContext() << " is invalid. " <<
                      " The main reason for this error is that there may be no perforation" <<
                      " in the bottom well element of the well, which is required to have" <<
                      " a well-posed problem.",
@@ -584,7 +586,7 @@ void WellElementSubRegion::checkPartitioningValidity( InternalWellGenerator cons
 }
 
 void WellElementSubRegion::updateNodeManagerSize( MeshLevel & mesh,
-                                                  InternalWellGenerator const & wellGeometry,
+                                                  LineBlockABC const & lineBlock,
                                                   SortedArray< globalIndex >      const & localNodes,
                                                   SortedArray< globalIndex >      const & boundaryNodes,
                                                   globalIndex nodeOffsetGlobal )
@@ -602,7 +604,7 @@ void WellElementSubRegion::updateNodeManagerSize( MeshLevel & mesh,
 
   arrayView1d< globalIndex > const & nodeLocalToGlobal = nodeManager.localToGlobalMap();
 
-  arrayView2d< real64 const > const & nodeCoordsGlobal = wellGeometry.getNodeCoords();
+  arrayView2d< real64 const > const & nodeCoordsGlobal = lineBlock.getNodeCoords();
 
   // local *well* index
   localIndex iwellNodeLocal = 0;
@@ -638,16 +640,16 @@ void WellElementSubRegion::updateNodeManagerSize( MeshLevel & mesh,
 }
 
 void WellElementSubRegion::constructSubRegionLocalElementMaps( MeshLevel & mesh,
-                                                               InternalWellGenerator const & wellGeometry,
+                                                               LineBlockABC const & lineBlock,
                                                                SortedArray< globalIndex > const & localElems,
                                                                globalIndex nodeOffsetGlobal,
                                                                globalIndex elemOffsetGlobal )
 {
   // get the well geometry
-  arrayView1d< globalIndex const > const & nextElemIdGlobal  = wellGeometry.getNextElemIndex();
-  arrayView2d< real64 const >      const & elemCoordsGlobal  = wellGeometry.getElemCoords();
-  arrayView2d< globalIndex const > const & elemToNodesGlobal = wellGeometry.getElemToNodesMap();
-  arrayView1d< real64 const >      const & elemVolumeGlobal  = wellGeometry.getElemVolume();
+  arrayView1d< globalIndex const > const & nextElemIdGlobal  = lineBlock.getNextElemIndex();
+  arrayView2d< real64 const >      const & elemCoordsGlobal  = lineBlock.getElemCoords();
+  arrayView2d< globalIndex const > const & elemToNodesGlobal = lineBlock.getElemToNodesMap();
+  arrayView1d< real64 const >      const & elemVolumeGlobal  = lineBlock.getElemVolume();
 
   NodeManager const & nodeManager = mesh.getNodeManager();
 
@@ -696,20 +698,20 @@ void WellElementSubRegion::constructSubRegionLocalElementMaps( MeshLevel & mesh,
     LvArray::tensorOps::copy< 3 >( m_elementCenter[ iwelemLocal ], elemCoordsGlobal[ iwelemGlobal ] );
 
     m_elementVolume[iwelemLocal] = elemVolumeGlobal[iwelemGlobal];
-    m_radius[iwelemLocal] = wellGeometry.getElementRadius();
+    m_radius[iwelemLocal] = lineBlock.getElementRadius();
 
     // update local well elem to node map (note: nodes are in nodeManager ordering)
 
     // first get the global node indices in nodeManager ordering
-    globalIndex const inodeTopGlobal    = nodeOffsetGlobal + elemToNodesGlobal[iwelemGlobal][InternalWellGenerator::NodeLocation::TOP];
-    globalIndex const inodeBottomGlobal = nodeOffsetGlobal + elemToNodesGlobal[iwelemGlobal][InternalWellGenerator::NodeLocation::BOTTOM];
+    globalIndex const inodeTopGlobal    = nodeOffsetGlobal + elemToNodesGlobal[iwelemGlobal][LineBlockABC::NodeLocation::TOP];
+    globalIndex const inodeBottomGlobal = nodeOffsetGlobal + elemToNodesGlobal[iwelemGlobal][LineBlockABC::NodeLocation::BOTTOM];
 
     // then get the local node indices in nodeManager ordering
     localIndex const inodeTopLocal    = nodeManager.globalToLocalMap( inodeTopGlobal );
     localIndex const inodeBottomLocal = nodeManager.globalToLocalMap( inodeBottomGlobal );
 
-    m_toNodesRelation[iwelemLocal][InternalWellGenerator::NodeLocation::TOP]    = inodeTopLocal;
-    m_toNodesRelation[iwelemLocal][InternalWellGenerator::NodeLocation::BOTTOM] = inodeBottomLocal;
+    m_toNodesRelation[iwelemLocal][LineBlockABC::NodeLocation::TOP]    = inodeTopLocal;
+    m_toNodesRelation[iwelemLocal][LineBlockABC::NodeLocation::BOTTOM] = inodeBottomLocal;
   }
 
 }
@@ -752,10 +754,11 @@ void WellElementSubRegion::updateNodeManagerNodeToElementMap( MeshLevel & mesh )
 }
 
 void WellElementSubRegion::connectPerforationsToMeshElements( MeshLevel & mesh,
-                                                              InternalWellGenerator const & wellGeometry )
+                                                              LineBlockABC const & lineBlock )
 {
-  arrayView2d< real64 const > const perfCoordsGlobal = wellGeometry.getPerfCoords();
-  arrayView1d< real64 const > const perfWellTransmissibilityGlobal = wellGeometry.getPerfTransmissibility();
+  arrayView2d< real64 const > const perfCoordsGlobal = lineBlock.getPerfCoords();
+  arrayView1d< real64 const > const perfWellTransmissibilityGlobal = lineBlock.getPerfTransmissibility();
+  arrayView1d< real64 const > const perfWellSkinFactorGlobal = lineBlock.getPerfSkinFactor();
 
   m_perforationData.resize( perfCoordsGlobal.size( 0 ) );
   localIndex iperfLocal = 0;
@@ -802,6 +805,7 @@ void WellElementSubRegion::connectPerforationsToMeshElements( MeshLevel & mesh,
 
       // construct the local wellTransmissibility and location maps
       m_perforationData.getWellTransmissibility()[iperfLocal] = perfWellTransmissibilityGlobal[iperfGlobal];
+      m_perforationData.getWellSkinFactor()[iperfLocal] = perfWellSkinFactorGlobal[iperfGlobal];
       LvArray::tensorOps::copy< 3 >( perfLocation[iperfLocal], location );
 
       // increment the local to global map

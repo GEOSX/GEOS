@@ -34,7 +34,6 @@ srun -n 4 /usr/workspace/homel1/GEOS/build-quartz-gcc@12-release/bin/geosx -i mp
   </ElementRegions>
 
   <ParticleRegions>
-    
       <ParticleRegion
         name="ParticleRegion1"
         meshBody="particles"
@@ -53,31 +52,22 @@ srun -n 4 /usr/workspace/homel1/GEOS/build-quartz-gcc@12-release/bin/geosx -i mp
       name="mpmsolve"
       discretization="FE1"
       targetRegions="{ backgroundGrid/CellRegion1, particles/ParticleRegion1, particles/ParticleRegion2 }"
-      
-timeIntegrationOption="ExplicitDynamic"
-cflFactor="0.5"
-initialDt="1e-16"
-
-prescribedBcTable="0"
-prescribedBoundaryFTable="1"
-fTableInterpType="2"
-
-solverProfiling="0"
-
-boxAverageHistory="0"
-reactionHistory="0"
-
-planeStrain="1"
-
-damageFieldPartitioning="1"
-
-neighborRadius="-1.01"
-needsNeighborList="1"
-useDamageAsSurfaceFlag="1"
-
-boundaryConditionTypes="{ 1, 0, 2, 2, 1, 1 }"    
-
-      fTablePath="FTable.dat"/>
+      timeIntegrationOption="ExplicitDynamic"
+      cflFactor="0.5"
+      initialDt="1e-16"
+      prescribedBcTable="0"
+      prescribedBoundaryFTable="1"
+      fTableInterpType="2"
+      solverProfiling="0"
+      boxAverageHistory="0"
+      reactionHistory="0"
+      planeStrain="1"
+      damageFieldPartitioning="1"
+      neighborRadius="-1.01"
+      needsNeighborList="1"
+      useDamageAsSurfaceFlag="1"
+      boundaryConditionTypes="{ 1, 0, 2, 2, 1, 1 }"    
+      fTable="{{ 0, 1, 1, 1 }, { 0.1, 1, 0.95, 1 }}"/>
   </Solvers>
 
   <Constitutive>
@@ -86,19 +76,16 @@ boundaryConditionTypes="{ 1, 0, 2, 2, 1, 1 }"
       defaultDensity="1000"
       defaultBulkModulus="1.0e9"
       defaultShearModulus="1.0e9"/>
-    
-<ElasticIsotropic
-	name="stiff"
-	defaultDensity="1000"
-	defaultBulkModulus="10.0e9"
-	defaultShearModulus="10.0e9"/>
-<ElasticIsotropic
-	name="compliant"
-	defaultDensity="1000"
-	defaultBulkModulus="10.0e8"
-	defaultShearModulus="10.0e8"/>
-
-    
+    <ElasticIsotropic
+      name="stiff"
+      defaultDensity="1000"
+      defaultBulkModulus="10.0e9"
+      defaultShearModulus="10.0e9"/>
+    <ElasticIsotropic
+      name="compliant"
+      defaultDensity="1000"
+      defaultBulkModulus="10.0e8"
+      defaultShearModulus="10.0e8"/>
   </Constitutive>
 
   <Events

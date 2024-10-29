@@ -2,11 +2,12 @@
  * ------------------------------------------------------------------------------------------------------------
  * SPDX-License-Identifier: LGPL-2.1-only
  *
- * Copyright (c) 2018-2019 Lawrence Livermore National Security LLC
- * Copyright (c) 2018-2019 The Board of Trustees of the Leland Stanford Junior University
- * Copyright (c) 2018-2019 TotalEnergies
- * Copyright (c) 2019-     GEOSX Contributors
- * All right reserved
+ * Copyright (c) 2016-2024 Lawrence Livermore National Security LLC
+ * Copyright (c) 2018-2024 Total, S.A
+ * Copyright (c) 2018-2024 The Board of Trustees of the Leland Stanford Junior University
+ * Copyright (c) 2018-2024 Chevron
+ * Copyright (c) 2019-     GEOS/GEOSX Contributors
+ * All rights reserved
  *
  * See top level LICENSE, COPYRIGHT, CONTRIBUTORS, NOTICE, and ACKNOWLEDGEMENTS files for details.
  * ------------------------------------------------------------------------------------------------------------
@@ -74,11 +75,13 @@ private:
     static constexpr char const * fieldNameString() { return "fieldName"; }
     static constexpr char const * setNamesString() { return "setNames"; }
     static constexpr char const * onlyOnSetChangeString() { return "onlyOnSetChange"; }
+    static constexpr char const * disableCoordCollectionString() { return "disableCoordCollection"; }
 
     dataRepository::ViewKey objectPath = { "objectPath" };
     dataRepository::ViewKey fieldName = { "fieldName" };
     dataRepository::ViewKey setNames = { "setNames" };
     dataRepository::ViewKey onlyOnSetChange = { "onlyOnSetChange" };
+    dataRepository::ViewKey disableCoordCollection = { "disableCoordCollection" };
   } viewKeys;
   /// @endcond
 
@@ -125,7 +128,7 @@ private:
   localIndex m_onlyOnSetChange;
   /// Whether to create coordinate meta-collectors if collected objects are mesh objects (set to true for coordinate meta-collectors to
   /// avoid init recursion)
-  bool m_disableCoordCollection;
+  integer m_disableCoordCollection;
   /// Whether initializePostSubGroups has been called, since we only wan't to execute it once
   ///  It is called explicitly by the output to ensure this is in a valid state to collect info from to perform setup
   ///  It is also called by the normal initialization process

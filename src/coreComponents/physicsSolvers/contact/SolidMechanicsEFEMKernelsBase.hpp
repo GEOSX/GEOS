@@ -2,10 +2,11 @@
  * ------------------------------------------------------------------------------------------------------------
  * SPDX-License-Identifier: LGPL-2.1-only
  *
- * Copyright (c) 2018-2020 Lawrence Livermore National Security LLC
- * Copyright (c) 2018-2020 The Board of Trustees of the Leland Stanford Junior University
- * Copyright (c) 2018-2020 Total, S.A
- * Copyright (c) 2019-     GEOSX Contributors
+ * Copyright (c) 2016-2024 Lawrence Livermore National Security LLC
+ * Copyright (c) 2018-2024 Total, S.A
+ * Copyright (c) 2018-2024 The Board of Trustees of the Leland Stanford Junior University
+ * Copyright (c) 2018-2024 Chevron
+ * Copyright (c) 2019-     GEOS/GEOSX Contributors
  * All rights reserved
  *
  * See top level LICENSE, COPYRIGHT, CONTRIBUTORS, NOTICE, and ACKNOWLEDGEMENTS files for details.
@@ -70,6 +71,7 @@ public:
   using Base::m_X;
   using Base::m_disp;
   using Base::m_uhat;
+  using Base::m_dt;
 
 
   /**
@@ -89,6 +91,7 @@ public:
                    globalIndex const rankOffset,
                    CRSMatrixView< real64, globalIndex const > const inputMatrix,
                    arrayView1d< real64 > const inputRhs,
+                   real64 const inputDt,
                    real64 const (&inputGravityVector)[3] ):
     Base( nodeManager,
           edgeManager,
@@ -101,6 +104,7 @@ public:
           rankOffset,
           inputMatrix,
           inputRhs,
+          inputDt,
           inputGravityVector ),
     m_w( embeddedSurfSubRegion.getField< fields::contact::dispJump >().toView() ),
     m_tractionVec( embeddedSurfSubRegion.getField< fields::contact::traction >().toViewConst() ),

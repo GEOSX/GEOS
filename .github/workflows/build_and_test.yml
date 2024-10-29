@@ -1,0 +1,329 @@
+name: Build and Test Configuration
+on:
+  workflow_call:
+    inputs:
+      BUILD_AND_TEST_CLI_ARGS:
+        required: false
+        type: string
+      BUILD_TYPE:
+        required: false
+        type: string
+        default: build
+      DOCKER_CERTS_UPDATE_COMMAND:
+        required: false
+        type: string
+      CMAKE_BUILD_TYPE:
+        required: true
+        type: string
+      CODE_COVERAGE:
+        required: false
+        type: boolean
+        default: false
+      DOCKER_CERTS_DIR:
+        required: false
+        type: string
+        default: ''
+      DOCKER_IMAGE_TAG:
+        required: true
+        type: string
+      DOCKER_REPOSITORY:
+        required: true
+        type: string
+      DOCKER_RUN_ARGS:
+        required: false
+        type: string
+      ENABLE_HYPRE:
+        required: false
+        type: string
+      ENABLE_HYPRE_DEVICE:
+        required: false
+        type: string
+      ENABLE_TRILINOS:
+        required: false
+        type: string
+      GCP_BUCKET:
+        required: false
+        type: string
+      HOST_CONFIG:
+        required: false
+        type: string
+      NPROC:
+        required: false
+        type: string
+        default: ''
+      RUNS_ON:
+        required: true
+        type: string
+      USE_SCCACHE:
+        required: false
+        type: boolean
+        default: true
+      REQUIRED_LABEL:
+        required: false
+        type: string
+      LOCAL_BASELINE_DIR:
+        required: false
+        type: string  
+    secrets:
+      GOOGLE_CLOUD_GCP:
+        required: false
+jobs:
+  build_test_deploy:
+    runs-on: ${{ inputs.RUNS_ON }}
+    steps:
+    - name: does_pr_have_necessary_labels
+      if: ${{inputs.REQUIRED_LABEL && github.event_name == 'pull_request'}}
+      run: | 
+        pr_json=$(curl -H "Accept: application/vnd.github+json" https://api.github.com/repos/${{ github.repository }}/pulls/${{ github.event.number }})
+        LABELS=$(echo ${pr_json} | jq -crM '[.labels[].name]')
+        echo " the labels are ${LABELS}"
+        echo " the required label is ${{inputs.REQUIRED_LABEL}}"
+        if [[ "${LABELS}" != *"${{inputs.REQUIRED_LABEL}}"* ]]; then
+          exit 1
+        fi
+      
+    - name: 'Cleanup build folder'
+      run: |
+        pwd
+        echo "cleaning ${GITHUB_WORKSPACE}"
+        ls -la ./
+        rm -rf ./* ./.*|| true
+        echo "expecting ${GITHUB_WORKSPACE} to be empty"
+        ls -la ./
+
+    - name: Checkout Repository
+      uses: actions/checkout@v4.1.7
+      with:
+        submodules: true
+        lfs: ${{ inputs.BUILD_TYPE == 'integrated_tests' }}
+        fetch-depth: 1
+
+    - id: 'auth'
+      if: ${{ inputs.GCP_BUCKET || inputs.USE_SCCACHE }}
+      uses: 'google-github-actions/auth@v2.1.3'
+      with:
+        credentials_json: '${{ secrets.GOOGLE_CLOUD_GCP }}'
+        create_credentials_file: true
+
+    - name: 'Set up Cloud SDK'
+      if: inputs.GCP_BUCKET
+      uses: 'google-github-actions/setup-gcloud@v2.1.0'
+      with:
+        version: '>= 363.0.0'
+
+    - name: Print environment
+      run: printenv
+
+    - name: Build, test, deploy.
+      run: |
+        # Those two bash arrays will be populated depending on the required options,
+        # and expended as CLI arguments for the docker and scripts calls.
+        docker_args=()
+        script_args=()
+
+        if [[ -n "${{ inputs.DOCKER_CERTS_DIR }}" ]]; then
+          DOCKER_CERTS_DIR=${{ inputs.DOCKER_CERTS_DIR }}
+          docker_args+=(-e DOCKER_CERTS_DIR=${DOCKER_CERTS_DIR})
+        fi
+
+        if [[ -n "${{ inputs.DOCKER_CERTS_UPDATE_COMMAND }}" ]]; then
+          DOCKER_CERTS_UPDATE_COMMAND=${{ inputs.DOCKER_CERTS_UPDATE_COMMAND }}
+          docker_args+=(-e DOCKER_CERTS_UPDATE_COMMAND=${DOCKER_CERTS_UPDATE_COMMAND})
+        fi
+
+        if [[ -n "${{ inputs.NPROC }}" ]]; then
+          NPROC=${{ inputs.NPROC }}
+          script_args+=(--nproc ${NPROC})
+        fi
+
+        docker_args+=(${{ inputs.DOCKER_RUN_ARGS }})
+
+        COMMIT=${{ github.event.pull_request.head.sha }}
+        SHORT_COMMIT=${COMMIT:0:7}
+        script_args+=(--install-dir-basename GEOS-${SHORT_COMMIT})
+
+        # All the data exchanged with the docker container is eventually meant to be sent to the cloud. 
+        if [[ ! -z "${{ inputs.GCP_BUCKET }}" ]]; then
+          if [ "${{ inputs.BUILD_TYPE }}" = "build" ]; then
+            DATA_BASENAME=GEOS-and-TPL-${SHORT_COMMIT}.tar.gz
+          elif [ "${{ inputs.BUILD_TYPE }}" = "integrated_tests" ]; then
+            DATA_BASENAME=integratedTests-pr${{ github.event.number }}-${{ github.run_number }}-${SHORT_COMMIT}.tar.gz
+            script_args+=(--run-integrated-tests)
+          fi
+          
+          script_args+=(--data-basename ${DATA_BASENAME})
+
+          DATA_EXCHANGE_DIR=${GITHUB_WORKSPACE}/geos-exchange  # Exchange folder outside of the container
+          if [ ! -d "${DATA_EXCHANGE_DIR}" ]; then
+            mkdir -p ${DATA_EXCHANGE_DIR}
+          fi
+          DATA_EXCHANGE_MOUNT_POINT=/tmp/exchange  # Exchange folder inside of the container
+          docker_args+=(--volume=${DATA_EXCHANGE_DIR}:${DATA_EXCHANGE_MOUNT_POINT})
+          script_args+=(--exchange-dir ${DATA_EXCHANGE_MOUNT_POINT})
+        fi
+        
+        HOST_CONFIG=${{ inputs.HOST_CONFIG }}
+        script_args+=(${HOST_CONFIG:+"--host-config ${HOST_CONFIG}"})
+
+        if ${{ inputs.USE_SCCACHE }} == 'true'; then
+          script_args+=(--sccache-credentials $(basename ${GOOGLE_GHA_CREDS_PATH}))
+        fi
+
+        # We need to know where the code folder is mounted inside the container so we can run the script at the proper location!
+        # Since this information is repeated twice, we use a variable.
+        GITHUB_WORKSPACE_MOUNT_POINT=/tmp/geos
+        docker_args+=(--volume=${GITHUB_WORKSPACE}:${GITHUB_WORKSPACE_MOUNT_POINT})
+        script_args+=(--repository ${GITHUB_WORKSPACE_MOUNT_POINT})
+        
+        # The linear algebra environment variables (ENABLE_HYPRE, ENABLE_HYPRE_DEVICE & ENABLE_TRILINOS)
+        # could be passed as scripts parameters as well, but a specific care must be taken to be sure
+        # there's no conflict with the host-config files.
+        ENABLE_HYPRE=${{ inputs.ENABLE_HYPRE }}
+        ENABLE_HYPRE_DEVICE=${{ inputs.ENABLE_HYPRE_DEVICE }}
+        ENABLE_TRILINOS=${{ inputs.ENABLE_TRILINOS }}
+        docker_args+=(-e ENABLE_HYPRE=${ENABLE_HYPRE:-OFF})
+        docker_args+=(-e ENABLE_HYPRE_DEVICE=${ENABLE_HYPRE_DEVICE:-CPU})
+        docker_args+=(-e ENABLE_TRILINOS=${ENABLE_TRILINOS:-ON})
+
+        docker_args+=(--cap-add=SYS_PTRACE --rm)
+
+        script_args+=(--cmake-build-type ${{ inputs.CMAKE_BUILD_TYPE }})
+        script_args+=(${{ inputs.BUILD_AND_TEST_CLI_ARGS }})
+
+
+        DOCKER_REPOSITORY=${{ inputs.DOCKER_REPOSITORY }}
+        SPLIT_DOCKER_REPOSITORY=(${DOCKER_REPOSITORY//// })
+        CONTAINER_NAME=geosx_build_${SPLIT_DOCKER_REPOSITORY[1]}_${GITHUB_SHA:0:7}
+        echo "CONTAINER_NAME: ${CONTAINER_NAME}"
+        if [ "$(docker ps -aq -f name=${CONTAINER_NAME})" ]; then
+          docker rm -f ${CONTAINER_NAME}
+        fi
+        docker_args+=(--name ${CONTAINER_NAME})
+
+
+        if ${{ inputs.CODE_COVERAGE }} == 'true'; then
+          script_args+=(--code-coverage)
+        fi
+
+        if [[ -n "${{ inputs.LOCAL_BASELINE_DIR }}" ]]; then
+          # Extract the 'baseline' value 
+           
+          # Define the path to the YAML file
+          YAML_FILE_PATH="${GITHUB_WORKSPACE}/.integrated_tests.yaml"
+          
+          # Verify the YAML file path
+          if [[ ! -f "${YAML_FILE_PATH}" ]]; then
+            echo "Error: File $YAML_FILE_PATH does not exist."
+          else
+            echo "Found integratedTests file: $YAML_FILE_PATH."
+          fi
+
+          # Extract the baseline field 
+          BASELINE_FULL_PATH=$(grep -A 2 'baselines:' "${YAML_FILE_PATH}" | grep 'baseline:' | awk '{print $2}')
+
+          # Remove the 'integratedTests/' prefix
+          BASELINE_TAG=${BASELINE_FULL_PATH#integratedTests/}
+          echo "Baseline: ${BASELINE_TAG}"
+
+          # Extract the folder name
+          PR_NUMBER=$(echo "$BASELINE_TAG" | grep -o 'pr[0-9]*')
+          PR_BASELINE_FOLDER_NAME=baselines_${PR_NUMBER}
+          echo "Baseline folder name: ${PR_BASELINE_FOLDER_NAME}"
+
+          CURRENT_BASELINE_DIR=${{ inputs.LOCAL_BASELINE_DIR }}/${PR_BASELINE_FOLDER_NAME}
+          echo "Current baseline dir: ${CURRENT_BASELINE_DIR}"
+
+          if [ -d ${CURRENT_BASELINE_DIR} ];then
+            echo "Current baseline dir found."
+            ls -l ${CURRENT_BASELINE_DIR}
+                    
+            # We defined a mount point and mount it read-only inside the container.
+            CURRENT_BASELINE_DIR_MOUNT=/tmp/geos/baselines
+            docker_args+=(--volume=${CURRENT_BASELINE_DIR}:${CURRENT_BASELINE_DIR_MOUNT}:ro)
+          else
+            echo "Current baselines directory (${CURRENT_BASELINE_DIR}) not found"
+          fi
+        fi
+
+        echo running "docker run \
+          ${docker_args[@]} \
+          -h=`hostname` \
+          ${{ inputs.DOCKER_REPOSITORY }}:${{ inputs.DOCKER_IMAGE_TAG }} \
+          ${GITHUB_WORKSPACE_MOUNT_POINT}/scripts/ci_build_and_test_in_container.sh \
+          ${script_args[@]}"
+
+        # In case of integrated tests run, we still want to send the results to the cloud for inspection.
+        # While for standard build (if even possible), pushing a failed build would be pointless.
+        # GHA set `-e` to bash scripts by default to fail asap,
+        # but for this precise call, we want to deal with it more precisely
+        set +e
+        docker run \
+          ${docker_args[@]} \
+          -h=`hostname` \
+          ${{ inputs.DOCKER_REPOSITORY }}:${{ inputs.DOCKER_IMAGE_TAG }} \
+          ${GITHUB_WORKSPACE_MOUNT_POINT}/scripts/ci_build_and_test_in_container.sh \
+          ${script_args[@]}
+        EXIT_STATUS=$?
+        echo "Received exit status ${EXIT_STATUS} from the build process."
+        set -e
+        
+        # Send to the bucket and print the download link when it makes sense.
+        if [[ ! -z "${{ inputs.GCP_BUCKET }}" ]]; then
+          if [[ "${{ inputs.BUILD_TYPE }}" = "integrated_tests" || ${EXIT_STATUS} -eq 0 ]]; then
+            if [ -f ${DATA_EXCHANGE_DIR}/${DATA_BASENAME} ]; then
+              CLOUDSDK_PYTHON=python3 gsutil cp -a public-read ${DATA_EXCHANGE_DIR}/${DATA_BASENAME} gs://${{ inputs.GCP_BUCKET }}/
+              echo "Download the bundle at https://storage.googleapis.com/${{ inputs.GCP_BUCKET }}/${DATA_BASENAME}"
+            fi
+
+            if [ -f ${DATA_EXCHANGE_DIR}/test_logs_${DATA_BASENAME} ]; then
+              CLOUDSDK_PYTHON=python3 gsutil cp -a public-read ${DATA_EXCHANGE_DIR}/test_logs_${DATA_BASENAME} gs://${{ inputs.GCP_BUCKET }}/
+              echo "Download integrated test logs here: https://storage.googleapis.com/${{ inputs.GCP_BUCKET }}/test_logs_${DATA_BASENAME}"
+            fi
+
+            if [ -f ${DATA_EXCHANGE_DIR}/baseline_${DATA_BASENAME} ];then
+
+              if [[ -n "${{ inputs.LOCAL_BASELINE_DIR }}" ]]; then
+                # 1. We copy the baselines to a local directory to store them 
+                
+                # 1.a Create the new target directory to store the new baselines
+                THIS_PR_NUMBER=pr${{ github.event.number }}
+                NEW_PR_BASELINE_FOLDER_NAME=baselines_${THIS_PR_NUMBER}
+                TARGET_DIR="${{ inputs.LOCAL_BASELINE_DIR }}/${NEW_PR_BASELINE_FOLDER_NAME}"
+                echo "Create folder ${TARGET_DIR}"
+                mkdir -p "${TARGET_DIR}"
+          
+                # 1.b We copy the new baselines to the new target directory
+                SOURCE_FILE="${DATA_EXCHANGE_DIR}/baseline_${DATA_BASENAME}"
+                echo "Copy ${SOURCE_FILE} to ${TARGET_DIR}"
+                cp "${SOURCE_FILE}" "${TARGET_DIR}"
+              fi
+                
+              # 2. We push the baselines to the cloud
+              CLOUDSDK_PYTHON=python3 gsutil cp -a public-read ${DATA_EXCHANGE_DIR}/baseline_${DATA_BASENAME} gs://${{ inputs.GCP_BUCKET }}/
+              echo "Download test baselines here: https://storage.googleapis.com/${{ inputs.GCP_BUCKET }}/baseline_${DATA_BASENAME}"
+              echo "New baseline ID: baseline_${DATA_BASENAME::-7}"
+            else
+              echo "Baselines ${DATA_EXCHANGE_DIR}/baseline_${DATA_BASENAME} were not uploaded. Likeyly because no rebaseline was necessary."
+            fi
+          fi
+        fi
+
+        exit ${EXIT_STATUS}
+
+    - name: Upload coverage to Codecov
+      if: inputs.CODE_COVERAGE
+      uses: codecov/codecov-action@v4.5.0
+      with:
+        files: ${GITHUB_WORKSPACE}/geos_coverage.info.cleaned
+        fail_ci_if_error: true
+      env:
+        CODECOV_TOKEN: ${{ secrets.CODECOV_TOKEN }}
+
+    - name: 'Cleanup build folder'
+      run: |
+        pwd
+        echo "cleaning ${GITHUB_WORKSPACE}"
+        ls -la ./
+        rm -rf ./* ./.*|| true
+        echo "expecting ${GITHUB_WORKSPACE} to be empty"
+        ls -la ./

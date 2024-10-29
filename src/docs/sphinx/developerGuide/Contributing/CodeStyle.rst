@@ -4,7 +4,7 @@ Code style
 
 Introduction
 ============
-GEOS is written in standard c++14. In general, target platforms are:
+GEOS is written in standard c++17. In general, target platforms are:
 
 - Linux
 - Mac OS X

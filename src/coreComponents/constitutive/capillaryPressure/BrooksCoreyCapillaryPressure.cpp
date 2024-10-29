@@ -2,10 +2,11 @@
  * ------------------------------------------------------------------------------------------------------------
  * SPDX-License-Identifier: LGPL-2.1-only
  *
- * Copyright (c) 2018-2020 Lawrence Livermore National Security LLC
- * Copyright (c) 2018-2020 The Board of Trustees of the Leland Stanford Junior University
- * Copyright (c) 2018-2020 TotalEnergies
- * Copyright (c) 2019-     GEOSX Contributors
+ * Copyright (c) 2016-2024 Lawrence Livermore National Security LLC
+ * Copyright (c) 2018-2024 Total, S.A
+ * Copyright (c) 2018-2024 The Board of Trustees of the Leland Stanford Junior University
+ * Copyright (c) 2018-2024 Chevron
+ * Copyright (c) 2019-     GEOS/GEOSX Contributors
  * All rights reserved
  *
  * See top level LICENSE, COPYRIGHT, CONTRIBUTORS, NOTICE, and ACKNOWLEDGEMENTS files for details.
@@ -56,9 +57,9 @@ BrooksCoreyCapillaryPressure::BrooksCoreyCapillaryPressure( string const & name,
     setDescription( "Factor used to scale the phase capillary pressure, defined as: one minus the sum of the phase minimum volume fractions." );
 }
 
-void BrooksCoreyCapillaryPressure::postProcessInput()
+void BrooksCoreyCapillaryPressure::postInputInitialization()
 {
-  CapillaryPressureBase::postProcessInput();
+  CapillaryPressureBase::postInputInitialization();
 
   auto const checkInputSize = [&]( auto const & array, auto const & attribute )
   {
@@ -88,7 +89,7 @@ void BrooksCoreyCapillaryPressure::postProcessInput()
 
     if( m_phaseTypes[ip] != CapillaryPressureBase::REFERENCE_PHASE )
     {
-      GEOS_THROW_IF_LT_MSG( m_phaseCapPressureExponentInv[ip], 1.0,
+      GEOS_THROW_IF_LE_MSG( m_phaseCapPressureExponentInv[ip], 0.0,
                             errorMsg( viewKeyStruct::phaseCapPressureExponentInvString() ),
                             InputError );
       GEOS_THROW_IF_LT_MSG( m_phaseEntryPressure[ip], 0.0,

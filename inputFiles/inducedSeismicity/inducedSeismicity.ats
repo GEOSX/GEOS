@@ -1,0 +1,26 @@
+import os
+from geos.ats.test_builder import TestDeck, RestartcheckParameters, generate_geos_tests, CurveCheckParameters
+
+curvecheck_params = {}
+curvecheck_params["filename"] = "seismicityRate.hdf5"
+curvecheck_params["tolerance"] = [1e-3]
+curvecheck_params["script_instructions"] = [ ["./scripts/SeismicityRate_curveChecks.py", "curve_check_solution", "seismicityRate"] ]
+curvecheck_params["curves"] = "seismicityRate"
+
+decks = [
+    TestDeck(
+        name="SeismicityRate_poromechanics_1d_smoke",
+        description="",
+        partitions=((1, 1, 1), (2, 1, 1)),
+        restart_step=40,
+        check_step=90,
+        restartcheck_params=RestartcheckParameters(atol=1e-4, rtol=1e-3)),
+     TestDeck(
+        name="SeismicityRate_analytical_verification_smoke",
+        description="Prescribed logarithmic stressing history",
+        partitions=((1, 1, 1), ),
+        restart_step=0,
+        check_step=100,
+        curvecheck_params=CurveCheckParameters(**curvecheck_params))
+        ]
+generate_geos_tests(decks)

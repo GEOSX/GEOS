@@ -24,7 +24,7 @@
     <SurfaceElementRegion
       name="Fracture"
       defaultAperture="1.0e-4"
-      materialList="{ water, rock, fractureFilling, fractureContact }"/>
+      materialList="{ water, fractureFilling, fractureContact }"/>
   </ElementRegions>
 
   <Constitutive>

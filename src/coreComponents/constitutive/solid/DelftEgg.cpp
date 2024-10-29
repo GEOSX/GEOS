@@ -2,11 +2,12 @@
  * ------------------------------------------------------------------------------------------------------------
  * SPDX-License-Identifier: LGPL-2.1-only
  *
- * Copyright (c) 2018-2019 Lawrence Livermore National Security LLC
- * Copyright (c) 2018-2019 The Board of Trustees of the Leland Stanford Junior University
- * Copyright (c) 2018-2019 TotalEnergies
- * Copyright (c) 2019-     GEOSX Contributors
- * All right reserved
+ * Copyright (c) 2016-2024 Lawrence Livermore National Security LLC
+ * Copyright (c) 2018-2024 Total, S.A
+ * Copyright (c) 2018-2024 The Board of Trustees of the Leland Stanford Junior University
+ * Copyright (c) 2018-2024 Chevron
+ * Copyright (c) 2019-     GEOS/GEOSX Contributors
+ * All rights reserved
  *
  * See top level LICENSE, COPYRIGHT, CONTRIBUTORS, NOTICE, and ACKNOWLEDGEMENTS files for details.
  * ------------------------------------------------------------------------------------------------------------
@@ -108,14 +109,18 @@ void DelftEgg::allocateConstitutiveData( Group & parent,
 }
 
 
-void DelftEgg::postProcessInput()
+void DelftEgg::postInputInitialization()
 {
-  ElasticIsotropic::postProcessInput();
+  ElasticIsotropic::postInputInitialization();
 
-  GEOS_THROW_IF( m_defaultCslSlope <= 0, "Non-positive slope of critical state line detected", InputError );
-  GEOS_THROW_IF( m_defaultShapeParameter < 1., "Shape parameter for yield surface must be greater than or equal to one", InputError );
-  GEOS_THROW_IF( m_defaultVirginCompressionIndex <= 0, "Non-positive virgin compression index detected", InputError );
-  GEOS_THROW_IF( m_defaultVirginCompressionIndex <= m_defaultRecompressionIndex, "Recompression index should exceed virgin recompression index", InputError );
+  GEOS_THROW_IF( m_defaultCslSlope <= 0,
+                 getFullName() << ": Non-positive slope of critical state line detected", InputError );
+  GEOS_THROW_IF( m_defaultShapeParameter < 1.,
+                 getFullName() << ": Shape parameter for yield surface must be greater than or equal to one", InputError );
+  GEOS_THROW_IF( m_defaultVirginCompressionIndex <= 0,
+                 getFullName() << ": Non-positive virgin compression index detected", InputError );
+  GEOS_THROW_IF( m_defaultVirginCompressionIndex <= m_defaultRecompressionIndex,
+                 getFullName() << ": Recompression index should exceed virgin recompression index", InputError );
 
   // set results as array default values
 

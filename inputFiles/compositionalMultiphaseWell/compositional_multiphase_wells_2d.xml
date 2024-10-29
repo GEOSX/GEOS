@@ -68,71 +68,69 @@
       nx="{ 20 }"
       ny="{ 20 }"
       nz="{ 1 }"
-      cellBlockNames="{ cb1 }"/>
+      cellBlockNames="{ cb1 }">
 
-    <InternalWell
-      name="well_producer1"
-      wellRegionName="wellRegion1"
-      wellControlsName="wellControls1"
-      meshName="mesh1"
-      polylineNodeCoords="{ { 0.5, 0.5, 0.5 },
-                            { 7.5, 0.5, 0.35 },
-                            { 14.5, 0.5, 0.2 } }"
-      polylineSegmentConn="{ { 0, 1 },
-                             { 1, 2 } }"
-      radius="0.1"
-      numElementsPerSegment="20">
-      <Perforation
-        name="producer1_perf1"
-        distanceFromHead="14"/>
-      <Perforation
-        name="producer1_perf2"
-        distanceFromHead="11"/>
-      <Perforation
-        name="producer1_perf3"
-        distanceFromHead="8"/>
-    </InternalWell>
+      <InternalWell
+        name="well_producer1"
+        wellRegionName="wellRegion1"
+        wellControlsName="wellControls1"
+        polylineNodeCoords="{ { 0.5, 0.5, 0.5 },
+                              { 7.5, 0.5, 0.35 },
+                              { 14.5, 0.5, 0.2 } }"
+        polylineSegmentConn="{ { 0, 1 },
+                               { 1, 2 } }"
+        radius="0.1"
+        numElementsPerSegment="20">
+        <Perforation
+          name="producer1_perf1"
+          distanceFromHead="14"/>
+        <Perforation
+          name="producer1_perf2"
+          distanceFromHead="11"/>
+        <Perforation
+          name="producer1_perf3"
+          distanceFromHead="8"/>
+      </InternalWell>
 
-    <InternalWell
-      name="well_producer2"
-      wellRegionName="wellRegion2"
-      wellControlsName="wellControls2"
-      meshName="mesh1"
-      polylineNodeCoords="{ { 14.5, 14.5, 0.5 },
-                            { 7.5, 14.5, 0.35 },
-                            { 0.5, 14.5, 0.2 } }"
-      polylineSegmentConn="{ { 0, 1 },
-                             { 1, 2 } }"
-      radius="0.1"
-      numElementsPerSegment="17">
-      <Perforation
-        name="producer2_perf1"
-        distanceFromHead="14."/>
-      <Perforation
-        name="producer2_perf2"
-        distanceFromHead="10"/>
-      <Perforation
-        name="producer2_perf3"
-        distanceFromHead="6"/>
-    </InternalWell>
+      <InternalWell
+        name="well_producer2"
+        wellRegionName="wellRegion2"
+        wellControlsName="wellControls2"
+        polylineNodeCoords="{ { 14.5, 14.5, 0.5 },
+                              { 7.5, 14.5, 0.35 },
+                              { 0.5, 14.5, 0.2 } }"
+        polylineSegmentConn="{ { 0, 1 },
+                               { 1, 2 } }"
+        radius="0.1"
+        numElementsPerSegment="17">
+        <Perforation
+          name="producer2_perf1"
+          distanceFromHead="14."/>
+        <Perforation
+          name="producer2_perf2"
+          distanceFromHead="10"/>
+        <Perforation
+          name="producer2_perf3"
+          distanceFromHead="6"/>
+      </InternalWell>
 
-    <InternalWell
-      name="well_injector1"
-      wellRegionName="wellRegion3"
-      wellControlsName="wellControls3"
-      meshName="mesh1"
-      polylineNodeCoords="{ { 0.5, 0.5, 0.5 },
-                            { 14.5, 14.5, 0.2 } }"
-      polylineSegmentConn="{ { 0, 1 } }"
-      radius="0.1"
-      numElementsPerSegment="30">
-      <Perforation
-        name="injector1_perf1"
-        distanceFromHead="19.5"/>
-      <Perforation
-        name="injector1_perf2"
-        distanceFromHead="10.45"/>
-    </InternalWell>
+      <InternalWell
+        name="well_injector1"
+        wellRegionName="wellRegion3"
+        wellControlsName="wellControls3"
+        polylineNodeCoords="{ { 0.5, 0.5, 0.5 },
+                              { 14.5, 14.5, 0.2 } }"
+        polylineSegmentConn="{ { 0, 1 } }"
+        radius="0.1"
+        numElementsPerSegment="30">
+        <Perforation
+          name="injector1_perf1"
+          distanceFromHead="19.5"/>
+        <Perforation
+          name="injector1_perf2"
+          distanceFromHead="10.45"/>
+      </InternalWell>
+    </InternalMesh>
   </Mesh>
 
   <Events

@@ -16,22 +16,22 @@
       nx="{ 50 }"
       ny="{ 1 }"
       nz="{ 150 }"
-      cellBlockNames="{ cellBlock }"/>
+      cellBlockNames="{ cellBlock }">
 
-    <InternalWell
-      name="wellInjector1"
-      wellRegionName="wellRegion"
-      wellControlsName="wellControls"
-      meshName="cartesianMesh"
-      polylineNodeCoords="{ { 500.0, 500.0, 6650.00 },
-                            { 500.0, 500.0, 6600.00 } }"
-      polylineSegmentConn="{ { 0, 1 } }"
-      radius="0.1"
-      numElementsPerSegment="2">
-      <Perforation
-        name="injector1_perf1"
-        distanceFromHead="45"/>
-    </InternalWell>
+      <InternalWell
+        name="wellInjector1"
+        wellRegionName="wellRegion"
+        wellControlsName="wellControls"
+        polylineNodeCoords="{ { 525.0, 525.0, 6650.00 },
+                              { 525.0, 525.0, 6600.00 } }"
+        polylineSegmentConn="{ { 0, 1 } }"
+        radius="0.1"
+        numElementsPerSegment="2">
+        <Perforation
+          name="injector1_perf1"
+          distanceFromHead="45"/>
+      </InternalWell>
+   </InternalMesh>
   </Mesh>
   <!-- SPHINX_FIELD_CASE_Co2_MESH_END --> 
  

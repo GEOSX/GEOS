@@ -2,10 +2,11 @@
  * ------------------------------------------------------------------------------------------------------------
  * SPDX-License-Identifier: LGPL-2.1-only
  *
- * Copyright (c) 2018-2020 Lawrence Livermore National Security LLC
- * Copyright (c) 2018-2020 The Board of Trustees of the Leland Stanford Junior University
- * Copyright (c) 2018-2020 TotalEnergies
- * Copyright (c) 2019-     GEOSX Contributors
+ * Copyright (c) 2016-2024 Lawrence Livermore National Security LLC
+ * Copyright (c) 2018-2024 Total, S.A
+ * Copyright (c) 2018-2024 The Board of Trustees of the Leland Stanford Junior University
+ * Copyright (c) 2018-2024 Chevron
+ * Copyright (c) 2019-     GEOS/GEOSX Contributors
  * All rights reserved
  *
  * See top level LICENSE, COPYRIGHT, CONTRIBUTORS, NOTICE, and ACKNOWLEDGEMENTS files for details.
@@ -177,6 +178,40 @@ real64 ComputeSurfaceArea( arrayView2d< real64 const > const & points,
   }
 
   return surfaceArea * 0.5;
+}
+
+/**
+ * @brief Calculate the diameter of a set of points in a given dimension.
+ * @tparam DIMENSION The dimensionality of the points.
+ * @tparam POINT_COORDS_TYPE The type of the container holding the point coordinates.
+ * @param[in] points The container holding the coordinates of the points.
+ * @param[in] numPoints The number of points in the container.
+ * @return The diameter of the set of points.
+ */
+template< localIndex DIMENSION, typename POINT_COORDS_TYPE >
+GEOS_HOST_DEVICE
+GEOS_FORCE_INLINE
+real64 computeDiameter( POINT_COORDS_TYPE points,
+                        localIndex const & numPoints )
+{
+  real64 diameter = 0;
+  for( localIndex numPoint = 0; numPoint < numPoints; ++numPoint )
+  {
+    for( localIndex numOthPoint = 0; numOthPoint < numPoint; ++numOthPoint )
+    {
+      real64 candidateDiameter = 0.0;
+      for( localIndex i = 0; i < DIMENSION; ++i )
+      {
+        real64 coordDiff = points[numPoint][i] - points[numOthPoint][i];
+        candidateDiameter += coordDiff * coordDiff;
+      }
+      if( diameter < candidateDiameter )
+      {
+        diameter = candidateDiameter;
+      }
+    }
+  }
+  return LvArray::math::sqrt< real64 >( diameter );
 }
 
 /**
@@ -422,7 +457,7 @@ void getBoundingBox( localIndex const elemIndex,
                          LvArray::NumericLimits< real64 >::max };
 
   // boxDims is used to hold the max coordinates.
-  LvArray::tensorOps::fill< 3 >( boxDims, LvArray::NumericLimits< real64 >::min );
+  LvArray::tensorOps::fill< 3 >( boxDims, LvArray::NumericLimits< real64 >::lowest );
 
   // loop over all the vertices of the element to get the min and max coords
   for( localIndex a = 0; a < pointIndices.size( 1 ); ++a )

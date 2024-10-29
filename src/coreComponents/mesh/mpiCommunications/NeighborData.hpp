@@ -2,10 +2,11 @@
  * ------------------------------------------------------------------------------------------------------------
  * SPDX-License-Identifier: LGPL-2.1-only
  *
- * Copyright (c) 2018-2020 Lawrence Livermore National Security LLC
- * Copyright (c) 2018-2020 The Board of Trustees of the Leland Stanford Junior University
- * Copyright (c) 2018-2020 TotalEnergies
- * Copyright (c) 2019-     GEOSX Contributors
+ * Copyright (c) 2016-2024 Lawrence Livermore National Security LLC
+ * Copyright (c) 2018-2024 Total, S.A
+ * Copyright (c) 2018-2024 The Board of Trustees of the Leland Stanford Junior University
+ * Copyright (c) 2018-2024 Chevron
+ * Copyright (c) 2019-     GEOS/GEOSX Contributors
  * All rights reserved
  *
  * See top level LICENSE, COPYRIGHT, CONTRIBUTORS, NOTICE, and ACKNOWLEDGEMENTS files for details.
@@ -59,7 +60,14 @@ public:
   { return !m_ghostsToSend.empty() || !m_ghostsToReceive.empty(); }
 
   /**
-   * @brief @return An array containing the indices of the objects on the domain boundary with the neighbor.
+   * @brief The local indices to the boundary objects that need to be exchanged with the neighbor.
+   * @return A mutable array.
+   * @details This does not strictly only include the objects at the exact boundary.
+   * Mainly for the case of conformal fractures, objects that are collocated but different,
+   * still at the boundary, can be included.
+   * For example, if the mesh is split along a fracture, the nodes on the two sides of the fracture
+   * do not share the same index, but they still need to be exchanged
+   * for the fracture to have its two neighboring elements.
    */
   array1d< localIndex > & matchedPartitionBoundary()
   { return m_matchedPartitionBoundary; }
@@ -110,7 +118,7 @@ public:
   { return m_nonLocalGhosts; }
 
 private:
-  /// Array containing the indices of the objects on the bomain boundary with the neighbor.
+  /// Array containing the indices of the objects on the domain boundary with the neighbor.
   array1d< localIndex > m_matchedPartitionBoundary;
 
   /// Array containing the indices of the objects to send to the neighbor.

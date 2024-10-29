@@ -2,10 +2,11 @@
  * ------------------------------------------------------------------------------------------------------------
  * SPDX-License-Identifier: LGPL-2.1-only
  *
- * Copyright (c) 2018-2020 Lawrence Livermore National Security LLC
- * Copyright (c) 2018-2020 The Board of Trustees of the Leland Stanford Junior University
- * Copyright (c) 2018-2020 TotalEnergies
- * Copyright (c) 2019-     GEOSX Contributors
+ * Copyright (c) 2016-2024 Lawrence Livermore National Security LLC
+ * Copyright (c) 2018-2024 Total, S.A
+ * Copyright (c) 2018-2024 The Board of Trustees of the Leland Stanford Junior University
+ * Copyright (c) 2018-2024 Chevron
+ * Copyright (c) 2019-     GEOS/GEOSX Contributors
  * All rights reserved
  *
  * See top level LICENSE, COPYRIGHT, CONTRIBUTORS, NOTICE, and ACKNOWLEDGEMENTS files for details.
@@ -24,7 +25,7 @@
 #include "linearAlgebra/interfaces/hypre/HypreSolver.hpp"
 #include "linearAlgebra/interfaces/hypre/HypreUtils.hpp"
 
-#if defined(GEOSX_USE_SUPERLU_DIST)
+#if defined(GEOS_USE_SUPERLU_DIST)
 #include "linearAlgebra/interfaces/direct/SuperLUDist.hpp"
 #endif
 
@@ -41,22 +42,12 @@ void HypreInterface::initialize()
 {
   HYPRE_Init();
 #if GEOS_USE_HYPRE_DEVICE == GEOS_USE_HYPRE_CUDA || GEOS_USE_HYPRE_DEVICE == GEOS_USE_HYPRE_HIP
-  hypre_HandleDefaultExecPolicy( hypre_handle() ) = HYPRE_EXEC_DEVICE;
-  hypre_HandleSpgemmUseVendor( hypre_handle() ) = 0;
+  HYPRE_SetExecutionPolicy( HYPRE_EXEC_DEVICE );
+  HYPRE_SetSpGemmUseVendor( 0 );
+  HYPRE_DeviceInitialize();
 #endif
   HYPRE_SetMemoryLocation( hypre::memoryLocation );
-
-  // Hypre version info
-#if defined(HYPRE_DEVELOP_STRING)
-#if defined(HYPRE_BRANCH_NAME)
-  GEOS_LOG_RANK_0( "  - hypre development version: " << HYPRE_DEVELOP_STRING <<
-                   " (" << HYPRE_BRANCH_NAME << ")" );
-#else
-  GEOS_LOG_RANK_0( "  - hypre development version: " << HYPRE_DEVELOP_STRING );
-#endif
-#elif defined(HYPRE_RELEASE_VERSION)
-  GEOS_LOG_RANK_0( "  - hypre release version: " << HYPRE_RELEASE_VERSION );
-#endif
+  HYPRE_SetPrintErrorMode( 1 );
 }
 
 void HypreInterface::finalize()
@@ -71,7 +62,7 @@ HypreInterface::createSolver( LinearSolverParameters params )
   {
     if( params.direct.parallel )
     {
-#if defined(GEOSX_USE_SUPERLU_DIST)
+#if defined(GEOS_USE_SUPERLU_DIST)
       return std::make_unique< SuperLUDist< HypreInterface > >( std::move( params ) );
 #else
       GEOS_ERROR( "GEOSX is configured without support for SuperLU_dist." );

@@ -1,6 +1,4 @@
-#
 # Specify all headers
-#
 set( fileIO_headers
      Outputs/BlueprintOutput.hpp
      Outputs/OutputBase.hpp
@@ -8,18 +6,18 @@ set( fileIO_headers
      Outputs/OutputUtilities.hpp
      Outputs/PythonOutput.hpp
      Outputs/RestartOutput.hpp
+     Table/TableLayout.hpp
+     Table/TableFormatter.hpp
+     Table/TableData.hpp
      Outputs/TimeHistoryOutput.hpp
      timeHistory/HDFFile.hpp
      timeHistory/HistoryCollectionBase.hpp
      timeHistory/BufferedHistoryIO.hpp
      timeHistory/PackCollection.hpp
      timeHistory/HDFHistoryIO.hpp
-     timeHistory/HistoryCollection.hpp
-   )
+     timeHistory/HistoryCollection.hpp )
 
-#
 # Specify all sources
-#
 set( fileIO_sources
      Outputs/BlueprintOutput.cpp
      Outputs/OutputBase.cpp
@@ -27,38 +25,38 @@ set( fileIO_sources
      Outputs/OutputUtilities.cpp
      Outputs/PythonOutput.cpp
      Outputs/RestartOutput.cpp
+     Table/TableLayout.cpp
+     Table/TableFormatter.cpp
+     Table/TableData.cpp
      Outputs/TimeHistoryOutput.cpp
      timeHistory/HDFFile.cpp
      timeHistory/HistoryCollectionBase.cpp
      timeHistory/PackCollection.cpp
-     timeHistory/HDFHistoryIO.cpp
-   )
+     timeHistory/HDFHistoryIO.cpp )
 
-set( dependencyList ${parallelDeps} mesh constitutive hdf5 )
+set( dependencyList ${parallelDeps} mesh constitutive HDF5::HDF5 )
 if( ENABLE_PYGEOSX )
   list( APPEND fileIO_headers
         python/PyHistoryCollectionType.hpp
         python/PyHistoryOutputType.hpp
-        python/PyVTKOutputType.hpp
-	      )
+        python/PyVTKOutputType.hpp )
   list( APPEND fileIO_sources
         python/PyHistoryCollection.cpp
         python/PyHistoryOutput.cpp
-        python/PyVTKOutput.cpp
-        )
+        python/PyVTKOutput.cpp )
   list( APPEND dependencyList Python3::Python pylvarray )
 endif()
 
 
 if( ENABLE_MPI )
   add_subdirectory( coupling/hdf5_interface )
-  set( dependencyList ${dependencyList} mpi hdf5_interface )
+  list( APPEND dependencyList mpi hdf5_interface HDF5::HDF5 )
   list( APPEND fileIO_headers coupling/ChomboCoupler.hpp Outputs/ChomboIO.hpp )
   list( APPEND fileIO_sources coupling/ChomboCoupler.cpp Outputs/ChomboIO.cpp )
 endif()
 
 if( ENABLE_SILO )
-  set( dependencyList ${dependencyList} silo )
+  list( APPEND dependencyList silo HDF5::HDF5)
   list( APPEND fileIO_headers 
                silo/SiloFile.hpp 
                Outputs/SiloOutput.hpp )
@@ -83,19 +81,22 @@ if( ENABLE_VTK )
     list( APPEND dependencyList VTK::IOLegacy VTK::IOXML )
 endif()
 
-if( ENABLE_CUDA_NVTOOLSEXT )
-  set( dependencyList ${dependencyList} CUDA::nvToolsExt )
+if( ENABLE_CUDA AND ENABLE_CUDA_NVTOOLSEXT )
+  list( APPEND dependencyList CUDA::nvToolsExt )
 endif()
 
 blt_add_library( NAME       fileIO
                  SOURCES    ${fileIO_sources}
                  HEADERS    ${fileIO_headers}
                  DEPENDS_ON ${dependencyList}
-                 OBJECT     ${GEOSX_BUILD_OBJ_LIBS}
-               )
+                 OBJECT     ${GEOS_BUILD_OBJ_LIBS} )
 
 
 target_include_directories( fileIO PUBLIC ${CMAKE_SOURCE_DIR}/coreComponents )
 
-geosx_add_code_checks(PREFIX fileIO )
+if( GEOS_ENABLE_TESTS )
+  add_subdirectory( Table/unitTests )
+endif()
+
+
 

@@ -258,7 +258,7 @@ the HDF5 output is postprocessed and temporal evolution of fracture characterisc
            8  6.07e+05 0.0006163     13.73
           10  6.32e+05 0.0006827     14.45
 
-Note: GEOS python tools ``geosx_xml_tools`` should be installed to run the query script (See :ref:`PythonToolsSetup` for details). 
+Note: GEOS python tools ``geosx_xml_tools`` should be installed to run the query script (See `Python Tools Setup <https://geosx-geosx.readthedocs-hosted.com/projects/geosx-geospythonpackages/en/latest/>`_ for details). 
  
 Next, the figure below compares the asymptotic solutions (curves) and the GEOS simulation results (markers) for this analysis, which is generated using the visualization script: 
 

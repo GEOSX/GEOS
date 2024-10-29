@@ -1,0 +1,236 @@
+<?xml version="1.0" ?>
+<Problem>
+
+  <!-- hexahedral mesh generated internally by GEOSX -->
+  <Mesh>
+    <InternalMesh
+      name="mesh"
+      elementTypes="{ C3D8 }"
+      xCoords="{ 0,101}"
+      yCoords="{ 0,101 }"
+      zCoords="{ 0,101 }"
+      nx="{ 5 }"
+      ny="{ 5 }"
+      nz="{ 5 }"
+      cellBlockNames="{ cb }"/>
+  </Mesh>
+
+  <Geometry>
+    <Box
+      name="zpos"
+      xMin="{ -0.1, -0.1, 100.9}"
+      xMax="{ 101.1, 101.1, 101.1}"/>
+    <Box
+      name="zneg"
+      xMin="{ -0.1, -0.1, -0.1}"
+      xMax="{ 101.1, 101.1, 0.1}"/>
+    <Box
+      name="xpos"
+      xMin="{ 100.9, -0.1, -0.1}"
+      xMax="{ 101.1, 101.1, 101.1}"/>
+    <Box
+      name="xneg"
+      xMin="{ -0.1, -0.1, -0.1}"
+      xMax="{ 0.1, 101.1, 101.1}"/>
+    <Box
+      name="ypos"
+      xMin="{ -0.1, 100.9, -0.1}"
+      xMax="{ 101.1, 101.1, 101.1}"/>
+    <Box
+      name="yneg"
+      xMin="{ -0.1, -0.1, -0.1}"
+      xMax="{ 101.1, 0.1, 101.1}"/>
+  </Geometry>
+
+    <!-- The free surface condition the domain -->
+  <FieldSpecifications>
+    <FieldSpecification
+      name="zposFreeSurface"
+      objectPath="faceManager"
+      fieldName="FreeSurface"
+      scale="0.0"
+      setNames="{ zpos }"/>
+    <FieldSpecification
+      name="znegBottomSurface"
+      objectPath="faceManager"
+      fieldName="BottomSurface"
+      scale="0.0"
+      setNames="{ zneg }"/>
+    <FieldSpecification
+      name="LateralFreeSurface"
+      objectPath="faceManager"
+      fieldName="LateralSurface"
+      scale="0.0"
+      setNames="{ xpos, xneg, ypos, yneg }"/>
+    <FieldSpecification
+      name="Epsilon"
+      initialCondition="1"
+      objectPath="ElementRegions/Region/cb"
+      fieldName="epsilon"
+      scale="0.24"
+      setNames="{ all }"/>
+    <FieldSpecification
+      name="Delta"
+      initialCondition="1"
+      objectPath="ElementRegions/Region/cb"
+      fieldName="delta"
+      scale="0.1"
+      setNames="{ all }"/>
+    <FieldSpecification
+      name="f"
+      initialCondition="1"
+      objectPath="ElementRegions/Region/cb"
+      fieldName="f"
+      scale="1.0"
+      setNames="{ all }"/>
+    </FieldSpecifications>
+  <Solvers>
+    <!-- define the solver -->
+    <!-- define the source coordinates -->
+    <!-- define the time source frequency -->
+    <!-- define the receiver coordinates -->
+    <AcousticVTISEM
+      name="acousticSolver"
+      cflFactor="0.25"
+      discretization="FE1"
+      targetRegions="{ Region }"
+      sourceCoordinates="{ { 55, 55, 55 },
+			   { 10, 10, 14 } }"
+      timeSourceFrequency="5.0"
+      receiverCoordinates="{ { 5, 5, 11 },
+                             { 5, 50, 11 },
+                             { 5, 95, 11 } }"/>
+  </Solvers>
+
+  <NumericalMethods>
+    <FiniteElements>
+      <FiniteElementSpace
+        name="FE1"
+        order="1"
+        formulation="SEM"/>
+    </FiniteElements>
+  </NumericalMethods>
+
+  <ElementRegions>
+    <CellElementRegion
+      name="Region"
+      cellBlocks="{ cb }"
+      materialList="{ nullModel }"/>
+  </ElementRegions>
+
+  <Constitutive>
+    <NullModel
+      name="nullModel"/>
+  </Constitutive>
+ 
+  <FieldSpecifications>
+    <!-- 1) The initial pressure field -->
+    <FieldSpecification
+      name="initialPressure_n"
+      initialCondition="1"
+      setNames="{ all }"
+      objectPath="nodeManager"
+      fieldName="pressure_p_n"
+      scale="0.0"/>
+
+    <FieldSpecification
+      name="initialPressure_p_nm1"
+      initialCondition="1"
+      setNames="{ all }"
+      objectPath="nodeManager"
+      fieldName="pressure_p_nm1"
+      scale="0.0"/>
+
+    <FieldSpecification
+      name="initialPressure_q_n"
+      initialCondition="1"
+      setNames="{ all }"
+      objectPath="nodeManager"
+      fieldName="pressure_q_n"
+      scale="0.0"/>
+
+    <FieldSpecification
+      name="initialPressure_q_nm1"
+      initialCondition="1"
+      setNames="{ all }"
+      objectPath="nodeManager"
+      fieldName="pressure_q_nm1"
+      scale="0.0"/>
+
+    <!-- 2) The velocity in the domain -->
+    <FieldSpecification
+      name="cellVelocity"
+      initialCondition="1"
+      objectPath="ElementRegions/Region/cb"
+      fieldName="acousticVelocity"
+      scale="1500"
+      setNames="{ all }"/>
+
+    <!-- 3) The free surface condition the domain -->
+    <FieldSpecification
+      name="zposFreeSurface"
+      objectPath="faceManager"
+      fieldName="FreeSurface"
+      scale="0.0"
+      setNames="{ zpos }"/>
+  </FieldSpecifications>
+
+  <Events
+    maxTime="0.20">
+    <!-- trigger the application of the solver -->
+    <!-- control the timestepping here with forceDt -->
+    <PeriodicEvent
+      name="solverApplications"
+      forceDt="0.001"
+      target="/Solvers/acousticSolver"/>
+
+    <!-- generate an output that can be read from VTK -->
+    <PeriodicEvent
+      name="vtk"
+      timeFrequency="0.001"
+      targetExactTimestep="0"
+      target="/Outputs/vtkOutput"/>
+
+    <!-- two events to output pressure in an hdf5 file -->
+    <PeriodicEvent
+      name="timeHistoryCollection"
+      timeFrequency="0.001"
+      target="/Tasks/pressureCollection"/>
+
+    <PeriodicEvent
+      name="timeHistoryOutput"
+      timeFrequency="0.001"
+      targetExactTimestep="0"
+      target="/Outputs/timeHistoryOutput"/>
+
+    <PeriodicEvent
+      name="restarts"
+      timeFrequency="0.10"
+      targetExactTimestep="0"
+      target="/Outputs/restartOutput"/>
+  </Events>
+
+  <!-- collect the pressure values at the nodes -->
+  <Tasks>
+    <PackCollection
+      name="pressureCollection"
+      objectPath="/Problem/domain/MeshBodies/mesh/meshLevels/FE1/nodeManager"
+      fieldName="pressure_p_np1"/>
+  </Tasks>
+
+  <Outputs>
+    <!-- output all the mesh values registered with a plot level LEVEL_0, LEVEL_1, LEVEL_2, LEVEL_3   -->
+    <VTK
+      name="vtkOutput"
+      plotLevel="3"/>
+
+    <!-- output the pressure values to a file named pressure_history.hdf5  -->
+    <TimeHistory
+      name="timeHistoryOutput"
+      sources="{ /Tasks/pressureCollection }"
+      filename="pressure_history"/>
+
+    <Restart
+      name="restartOutput"/>
+  </Outputs>
+</Problem>

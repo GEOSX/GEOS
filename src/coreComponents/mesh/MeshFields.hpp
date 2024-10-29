@@ -2,10 +2,11 @@
  * ------------------------------------------------------------------------------------------------------------
  * SPDX-License-Identifier: LGPL-2.1-only
  *
- * Copyright (c) 2018-2020 Lawrence Livermore National Security LLC
- * Copyright (c) 2018-2020 The Board of Trustees of the Leland Stanford Junior University
- * Copyright (c) 2018-2020 TotalEnergies
- * Copyright (c) 2019-     GEOSX Contributors
+ * Copyright (c) 2016-2024 Lawrence Livermore National Security LLC
+ * Copyright (c) 2018-2024 Total, S.A
+ * Copyright (c) 2018-2024 The Board of Trustees of the Leland Stanford Junior University
+ * Copyright (c) 2018-2024 Chevron
+ * Copyright (c) 2019-     GEOS/GEOSX Contributors
  * All rights reserved
  *
  * See top level LICENSE, COPYRIGHT, CONTRIBUTORS, NOTICE, and ACKNOWLEDGEMENTS files for details.
@@ -114,6 +115,14 @@ DECLARE_FIELD( elementAperture,
                WRITE_AND_READ,
                "Element aperture." );
 
+DECLARE_FIELD( elementArea,
+               "elementArea",
+               array1d< real64 >,
+               0,
+               LEVEL_0,
+               WRITE_AND_READ,
+               "Element area." );
+
 DECLARE_FIELD( parentIndex,
                "parentIndex",
                array1d< localIndex >,
@@ -145,6 +154,30 @@ DECLARE_FIELD( ruptureTime,
                LEVEL_0,
                WRITE_AND_READ,
                "Time that the object was ruptured/split." );
+
+DECLARE_FIELD( normalVector,
+               "normalVector",
+               array2d< real64 >,
+               0.0,
+               LEVEL_0,
+               WRITE_AND_READ,
+               "Unit normal vector to the surface." );
+
+DECLARE_FIELD( tangentVector1,
+               "tangentVector1",
+               array2d< real64 >,
+               0.0,
+               LEVEL_0,
+               WRITE_AND_READ,
+               "Unit vector in the first tangent direction to the surface." );
+
+DECLARE_FIELD( tangentVector2,
+               "tangentVector2",
+               array2d< real64 >,
+               0.0,
+               LEVEL_0,
+               WRITE_AND_READ,
+               "Unit vector in the second tangent direction to the surface." );
 
 
 } // namespace fields

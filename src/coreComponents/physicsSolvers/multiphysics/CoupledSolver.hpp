@@ -2,10 +2,11 @@
  * ------------------------------------------------------------------------------------------------------------
  * SPDX-License-Identifier: LGPL-2.1-only
  *
- * Copyright (c) 2018-2020 Lawrence Livermore National Security LLC
- * Copyright (c) 2018-2020 The Board of Trustees of the Leland Stanford Junior University
- * Copyright (c) 2018-2020 TotalEnergies
- * Copyright (c) 2019-     GEOSX Contributors
+ * Copyright (c) 2016-2024 Lawrence Livermore National Security LLC
+ * Copyright (c) 2018-2024 Total, S.A
+ * Copyright (c) 2018-2024 The Board of Trustees of the Leland Stanford Junior University
+ * Copyright (c) 2018-2024 Chevron
+ * Copyright (c) 2019-     GEOS/GEOSX Contributors
  * All rights reserved
  *
  * See top level LICENSE, COPYRIGHT, CONTRIBUTORS, NOTICE, and ACKNOWLEDGEMENTS files for details.
@@ -47,6 +48,7 @@ public:
       using SolverType = TYPEOFPTR( solver );
       string const key = SolverType::coupledSolverAttributePrefix() + "SolverName";
       registerWrapper( key, &m_names[idx()] ).
+        setRTTypeName( rtTypes::CustomTypes::groupNameRef ).
         setInputFlag( dataRepository::InputFlags::REQUIRED ).
         setDescription( "Name of the " + SolverType::coupledSolverAttributePrefix() + " solver used by the coupled solver" );
     } );
@@ -78,11 +80,15 @@ public:
     {
       using SolverPtr = TYPEOFREF( solver );
       using SolverType = TYPEOFPTR( SolverPtr {} );
-      solver = this->getParent().template getGroupPointer< SolverType >( m_names[idx()] );
+      auto const & solverName = m_names[idx()];
+      auto const & solverType = LvArray::system::demangleType< SolverType >();
+      solver = this->getParent().template getGroupPointer< SolverType >( solverName );
       GEOS_THROW_IF( solver == nullptr,
-                     GEOS_FMT( "Could not find solver '{}' of type {}",
-                               m_names[idx()], LvArray::system::demangleType< SolverType >() ),
+                     GEOS_FMT( "{}: Could not find solver '{}' of type {}",
+                               getDataContext(),
+                               solverName, solverType ),
                      InputError );
+      GEOS_LOG_LEVEL_RANK_0( 1, GEOS_FMT( "{}: found {} solver named {}", getName(), solver->getCatalogName(), solverName ) );
     } );
   }
 
@@ -156,6 +162,7 @@ public:
     } );
   }
 
+  // general version of assembleSystem function, keep in mind many solvers will override it
   virtual void
   assembleSystem( real64 const time_n,
                   real64 const dt,
@@ -166,18 +173,13 @@ public:
   {
     /// Fully-coupled assembly.
 
-    // 1. we sync the nonlinear convergence history. The coupled solver parameters are the one being
-    // used. We want to propagate the info to subsolvers. It can be important for solvers that
-    // have special treatment for specific iterations.
-    synchronizeNonLinearParameters();
-
-    // 2. Assemble matrix blocks of each individual solver
+    // 1. Assemble matrix blocks of each individual solver
     forEachArgInTuple( m_solvers, [&]( auto & solver, auto )
     {
       solver->assembleSystem( time_n, dt, domain, dofManager, localMatrix, localRhs );
     } );
 
-    // 3. Assemble coupling blocks
+    // 2. Assemble coupling blocks
     assembleCouplingTerms( time_n, dt, domain, dofManager, localMatrix, localRhs );
   }
 
@@ -185,11 +187,12 @@ public:
   applySystemSolution( DofManager const & dofManager,
                        arrayView1d< real64 const > const & localSolution,
                        real64 const scalingFactor,
+                       real64 const dt,
                        DomainPartition & domain ) override
   {
     forEachArgInTuple( m_solvers, [&]( auto & solver, auto )
     {
-      solver->applySystemSolution( dofManager, localSolution, scalingFactor, domain );
+      solver->applySystemSolution( dofManager, localSolution, scalingFactor, dt, domain );
     } );
   }
 
@@ -231,7 +234,7 @@ public:
     }
     else
     {
-      GEOS_ERROR( "Invalid coupling type option." );
+      GEOS_ERROR( getDataContext() << ": Invalid coupling type option." );
       return 0;
     }
 
@@ -270,7 +273,7 @@ public:
   }
 
   virtual bool
-  checkSystemSolution( DomainPartition const & domain,
+  checkSystemSolution( DomainPartition & domain,
                        DofManager const & dofManager,
                        arrayView1d< real64 const > const & localSolution,
                        real64 const scalingFactor ) override
@@ -285,7 +288,7 @@ public:
   }
 
   virtual real64
-  scalingForSystemSolution( DomainPartition const & domain,
+  scalingForSystemSolution( DomainPartition & domain,
                             DofManager const & dofManager,
                             arrayView1d< real64 const > const & localSolution ) override
   {
@@ -312,8 +315,78 @@ public:
     return nextDt;
   }
 
+  virtual real64 setNextDtBasedOnNewtonIter( real64 const & currentDt ) override
+  {
+    real64 nextDt = SolverBase::setNextDtBasedOnNewtonIter( currentDt );
+    forEachArgInTuple( m_solvers, [&]( auto & solver, auto )
+    {
+      real64 const singlePhysicsNextDt =
+        solver->setNextDtBasedOnNewtonIter( currentDt );
+      nextDt = LvArray::math::min( singlePhysicsNextDt, nextDt );
+    } );
+    return nextDt;
+  }
+
+  virtual void cleanup( real64 const time_n,
+                        integer const cycleNumber,
+                        integer const eventCounter,
+                        real64 const eventProgress,
+                        DomainPartition & domain ) override
+  {
+    forEachArgInTuple( m_solvers, [&]( auto & solver, auto )
+    {
+      solver->cleanup( time_n, cycleNumber, eventCounter, eventProgress, domain );
+    } );
+    SolverBase::cleanup( time_n, cycleNumber, eventCounter, eventProgress, domain );
+  }
 
   /**@}*/
+
+  virtual bool checkSequentialSolutionIncrements( DomainPartition & domain ) const override
+  {
+    bool isConverged = true;
+    forEachArgInTuple( m_solvers, [&]( auto & solver, auto )
+    {
+      isConverged &= solver->checkSequentialSolutionIncrements( domain );
+    } );
+    return isConverged;
+  }
+
+  virtual bool updateConfiguration( DomainPartition & domain ) override
+  {
+    bool result = true;
+    forEachArgInTuple( m_solvers, [&]( auto & solver, auto )
+    {
+      result &= solver->updateConfiguration( domain );
+    } );
+    return result;
+  }
+
+  virtual void outputConfigurationStatistics( DomainPartition const & domain ) const override
+  {
+    forEachArgInTuple( m_solvers, [&]( auto & solver, auto )
+    {
+      solver->outputConfigurationStatistics( domain );
+    } );
+  }
+
+  virtual void resetConfigurationToBeginningOfStep( DomainPartition & domain ) override
+  {
+    forEachArgInTuple( m_solvers, [&]( auto & solver, auto )
+    {
+      solver->resetConfigurationToBeginningOfStep( domain );
+    } );
+  }
+
+  virtual bool resetConfigurationToDefault( DomainPartition & domain ) const override
+  {
+    bool result = true;
+    forEachArgInTuple( m_solvers, [&]( auto & solver, auto )
+    {
+      result &= solver->resetConfigurationToDefault( domain );
+    } );
+    return result;
+  }
 
 protected:
 
@@ -351,16 +424,10 @@ protected:
   {
     GEOS_MARK_FUNCTION;
 
-    real64 dtReturn = dt;
-
-    real64 dtReturnTemporary;
-
+    // Only build the sparsity pattern if the mesh has changed
     Timestamp const meshModificationTimestamp = getMeshModificationTimestamp( domain );
-
     forEachArgInTuple( m_solvers, [&]( auto & solver, auto )
     {
-
-      // Only build the sparsity pattern if the mesh has changed
       if( meshModificationTimestamp > solver->getSystemSetupTimestamp() )
       {
         solver->setupSystem( domain,
@@ -370,69 +437,127 @@ protected:
                              solver->getSystemSolution() );
         solver->setSystemSetupTimestamp( meshModificationTimestamp );
       }
-
-      solver->implicitStepSetup( time_n, dt, domain );
-
     } );
 
+    implicitStepSetup( time_n, dt, domain );
+
     NonlinearSolverParameters & solverParams = getNonlinearSolverParameters();
-    integer & iter = solverParams.m_numNewtonIterations;
-    iter = 0;
+    integer const maxNumberDtCuts = solverParams.m_maxTimeStepCuts;
+    real64 const dtCutFactor = solverParams.m_timeStepCutFactor;
+    integer & dtAttempt = solverParams.m_numTimeStepAttempts;
+
     bool isConverged = false;
-    /// Sequential coupling loop
-    while( iter < solverParams.m_maxIterNewton )
+    // dt may be cut during the course of this step, so we are keeping a local
+    // value to track the achieved dt for this step.
+    real64 stepDt = dt;
+
+    // outer loop attempts to apply full timestep, and managed the cutting of the timestep if
+    // required.
+    for( dtAttempt = 0; dtAttempt < maxNumberDtCuts; ++dtAttempt )
     {
-      if( iter == 0 )
+      // TODO configuration loop
+
+      // Reset the states of all solvers if any of them had to restart
+      forEachArgInTuple( m_solvers, [&]( auto & solver, auto )
       {
-        // Reset the states of all solvers if any of them had to restart
-        forEachArgInTuple( m_solvers, [&]( auto & solver, auto )
+        solver->resetStateToBeginningOfStep( domain );
+        solver->getSolverStatistics().initializeTimeStepStatistics();     // initialize counters for subsolvers
+      } );
+      resetStateToBeginningOfStep( domain );
+
+      integer & iter = solverParams.m_numNewtonIterations;
+
+      /// Sequential coupling loop
+      for( iter = 0; iter < solverParams.m_maxIterNewton; iter++ )
+      {
+        // Increment the solver statistics for reporting purposes
+        // Pass a "0" as argument (0 linear iteration) to skip the output of linear iteration stats at the end
+        m_solverStatistics.logNonlinearIteration( 0 );
+
+        startSequentialIteration( iter, domain );
+
+        // Solve the subproblems nonlinearly
+        forEachArgInTuple( m_solvers, [&]( auto & solver, auto idx )
         {
-          solver->resetStateToBeginningOfStep( domain );
-        } );
-        resetStateToBeginningOfStep( domain );
-      }
-
-      // Increment the solver statistics for reporting purposes
-      // Pass a "0" as argument (0 linear iteration) to skip the output of linear iteration stats at the end
-      m_solverStatistics.logNonlinearIteration( 0 );
-
-      // Solve the subproblems nonlinearly
-      forEachArgInTuple( m_solvers, [&]( auto & solver, auto idx )
-      {
-        GEOS_LOG_LEVEL_RANK_0( 1, GEOS_FMT( "  Iteration {:2}: {}", iter+1, solver->getName() ) );
-        dtReturnTemporary = solver->nonlinearImplicitStep( time_n,
-                                                           dtReturn,
+          GEOS_LOG_LEVEL_RANK_0( 1, GEOS_FMT( "  Iteration {:2}: {}", iter + 1, solver->getName() ) );
+          real64 solverDt = solver->nonlinearImplicitStep( time_n,
+                                                           stepDt,
                                                            cycleNumber,
                                                            domain );
 
-        mapSolutionBetweenSolvers( domain, idx() );
+          // save fields (e.g. pressure and temperature) after inner solve
+          solver->saveSequentialIterationState( domain );
 
-        if( dtReturnTemporary < dtReturn )
+          mapSolutionBetweenSolvers( domain, idx() );
+
+          if( solverDt < stepDt ) // subsolver had to cut the time step
+          {
+            iter = 0; // restart outer loop
+            stepDt = solverDt; // sync time step
+          }
+        } );
+
+        // Check convergence of the outer loop
+        isConverged = checkSequentialConvergence( iter,
+                                                  time_n,
+                                                  stepDt,
+                                                  domain );
+
+        if( isConverged )
         {
-          iter = 0;
-          dtReturn = dtReturnTemporary;
+          // we still want to count current iteration
+          ++iter;
+          // exit outer loop
+          break;
         }
-      } );
-
-      // Check convergence of the outer loop
-      isConverged = checkSequentialConvergence( iter,
-                                                time_n,
-                                                dtReturn,
-                                                domain );
+        else
+        {
+          finishSequentialIteration( iter, domain );
+        }
+      }
 
       if( isConverged )
       {
+        // Save time step statistics for the subsolvers
+        forEachArgInTuple( m_solvers, [&]( auto & solver, auto )
+        {
+          solver->getSolverStatistics().saveTimeStepStatistics();
+        } );
+        // get out of the time loop
         break;
       }
-      // Add convergence check:
-      ++iter;
+      else
+      {
+        // cut timestep, go back to beginning of step and restart the Newton loop
+        stepDt *= dtCutFactor;
+        GEOS_LOG_LEVEL_RANK_0 ( 1, GEOS_FMT( "New dt = {}", stepDt ) );
+
+        // notify the solver statistics counter that this is a time step cut
+        m_solverStatistics.logTimeStepCut();
+        forEachArgInTuple( m_solvers, [&]( auto & solver, auto )
+        {
+          solver->getSolverStatistics().logTimeStepCut();
+        } );
+      }
     }
 
-    GEOS_ERROR_IF( !isConverged, getName() << "::sequentiallyCoupledSolverStep did not converge!" );
+    if( !isConverged )
+    {
+      GEOS_LOG_RANK_0( "Convergence not achieved." );
 
-    implicitStepComplete( time_n, dt, domain );
+      if( m_nonlinearSolverParameters.m_allowNonConverged > 0 )
+      {
+        GEOS_LOG_RANK_0( "The accepted solution may be inaccurate." );
+      }
+      else
+      {
+        GEOS_ERROR( "Nonconverged solutions not allowed. Terminating..." );
+      }
+    }
 
-    return dtReturn;
+    implicitStepComplete( time_n, stepDt, domain );
+
+    return stepDt;
   }
 
   /**
@@ -441,28 +566,30 @@ protected:
    * @param domain the domain partition
    * @param solverType the index of the solver withing this coupled solver.
    */
-  virtual void mapSolutionBetweenSolvers( DomainPartition & domain, integer const solverType )
+  virtual void mapSolutionBetweenSolvers( DomainPartition & domain,
+                                          integer const solverType )
   {
     GEOS_UNUSED_VAR( domain, solverType );
   }
 
-  bool checkSequentialConvergence( int const & iter,
-                                   real64 const & time_n,
-                                   real64 const & dt,
-                                   DomainPartition & domain ) const
+  virtual bool checkSequentialConvergence( int const & iter,
+                                           real64 const & time_n,
+                                           real64 const & dt,
+                                           DomainPartition & domain )
   {
     NonlinearSolverParameters const & params = getNonlinearSolverParameters();
     bool isConverged = true;
 
     if( params.m_subcyclingOption == 0 )
     {
-      GEOS_LOG_LEVEL_RANK_0( 1, "***** Single Pass solver, no subcycling *****\n" );
+      GEOS_LOG_LEVEL_RANK_0( 1, "***** Single Pass solver, no subcycling *****" );
     }
     else
     {
+      GEOS_LOG_LEVEL_RANK_0( 1, GEOS_FMT( "  Iteration {:2}: outer-loop convergence check", iter + 1 ) );
+
       if( params.sequentialConvergenceCriterion() == NonlinearSolverParameters::SequentialConvergenceCriterion::ResidualNorm )
       {
-        GEOS_LOG_LEVEL_RANK_0( 1, GEOS_FMT( "  Iteration {:2}: outer-loop convergence check", iter+1 ) );
         real64 residualNorm = 0;
 
         // loop over all the single-physics solvers
@@ -500,12 +627,13 @@ protected:
 
         // finally, we perform the convergence check on the multiphysics residual
         residualNorm = sqrt( residualNorm );
-        GEOS_LOG_LEVEL_RANK_0( 1, GEOS_FMT( "    ( R ) = ( {:4.2e} ) ; ", residualNorm ) );
+        GEOS_LOG_LEVEL_RANK_0( 1, GEOS_FMT( "        ( R ) = ( {:4.2e} )", residualNorm ) );
         isConverged = ( residualNorm < params.m_newtonTol );
 
       }
       else if( params.sequentialConvergenceCriterion() == NonlinearSolverParameters::SequentialConvergenceCriterion::NumberOfNonlinearIterations )
       {
+        // TODO also make recursive?
         forEachArgInTuple( m_solvers, [&]( auto & solver, auto )
         {
           NonlinearSolverParameters const & singlePhysicsParams = solver->getNonlinearSolverParameters();
@@ -515,44 +643,76 @@ protected:
           }
         } );
       }
+      else if( params.sequentialConvergenceCriterion() == NonlinearSolverParameters::SequentialConvergenceCriterion::SolutionIncrements )
+      {
+        isConverged = checkSequentialSolutionIncrements( domain );
+      }
       else
       {
-        GEOS_ERROR( "Invalid sequential convergence criterion." );
+        GEOS_ERROR( getDataContext() << ": Invalid sequential convergence criterion." );
       }
 
       if( isConverged )
       {
-        GEOS_LOG_LEVEL_RANK_0( 1, "***** The iterative coupling has converged in " << iter + 1 << " iteration(s)! *****\n" );
+        GEOS_LOG_LEVEL_RANK_0( 1, GEOS_FMT( "***** The iterative coupling has converged in {} iteration(s) *****", iter + 1 ) );
       }
     }
     return isConverged;
   }
 
   virtual void
-  postProcessInput() override
+  postInputInitialization() override
   {
     setSubSolvers();
 
     bool const isSequential = getNonlinearSolverParameters().couplingType() == NonlinearSolverParameters::CouplingType::Sequential;
     bool const usesLineSearch = getNonlinearSolverParameters().m_lineSearchAction != NonlinearSolverParameters::LineSearchAction::None;
     GEOS_THROW_IF( isSequential && usesLineSearch,
-                   GEOS_FMT( "`{}`: line search is not supported by the coupled solver when {} is set to `{}`. Please set {} to `{}` to remove this error",
-                             getName(),
+                   GEOS_FMT( "{}: line search is not supported by the coupled solver when {} is set to `{}`. Please set {} to `{}` to remove this error",
+                             getWrapperDataContext( NonlinearSolverParameters::viewKeysStruct::couplingTypeString() ),
                              NonlinearSolverParameters::viewKeysStruct::couplingTypeString(),
                              EnumStrings< NonlinearSolverParameters::CouplingType >::toString( NonlinearSolverParameters::CouplingType::Sequential ),
                              NonlinearSolverParameters::viewKeysStruct::lineSearchActionString(),
                              EnumStrings< NonlinearSolverParameters::LineSearchAction >::toString( NonlinearSolverParameters::LineSearchAction::None ) ),
                    InputError );
+
+    if( !isSequential )
+    {
+      synchronizeNonlinearSolverParameters();
+    }
+
+    if( m_nonlinearSolverParameters.m_nonlinearAccelerationType != NonlinearSolverParameters::NonlinearAccelerationType::None )
+      validateNonlinearAcceleration();
   }
 
-  void
-  synchronizeNonLinearParameters()
+  virtual void validateNonlinearAcceleration()
+  {
+    GEOS_THROW ( GEOS_FMT( "{}: Nonlinear acceleration {} is not supported by {} solver '{}'",
+                           getWrapperDataContext( NonlinearSolverParameters::viewKeysStruct::nonlinearAccelerationTypeString() ),
+                           EnumStrings< NonlinearSolverParameters::NonlinearAccelerationType >::toString( m_nonlinearSolverParameters.m_nonlinearAccelerationType ),
+                           getCatalogName(), getName()),
+                 InputError );
+  }
+
+  virtual void
+  synchronizeNonlinearSolverParameters() override
   {
     forEachArgInTuple( m_solvers, [&]( auto & solver, auto )
     {
-      solver->getNonlinearSolverParameters().m_numNewtonIterations =
-        m_nonlinearSolverParameters.m_numNewtonIterations;
+      solver->getNonlinearSolverParameters() = getNonlinearSolverParameters();
     } );
+  }
+
+  virtual void startSequentialIteration( integer const & iter,
+                                         DomainPartition & domain )
+  {
+    GEOS_UNUSED_VAR( iter, domain );
+  }
+
+  virtual void finishSequentialIteration( integer const & iter,
+                                          DomainPartition & domain )
+  {
+    GEOS_UNUSED_VAR( iter, domain );
   }
 
 protected:

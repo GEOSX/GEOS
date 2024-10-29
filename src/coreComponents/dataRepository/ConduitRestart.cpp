@@ -2,10 +2,11 @@
  * ------------------------------------------------------------------------------------------------------------
  * SPDX-License-Identifier: LGPL-2.1-only
  *
- * Copyright (c) 2018-2020 Lawrence Livermore National Security LLC
- * Copyright (c) 2018-2020 The Board of Trustees of the Leland Stanford Junior University
- * Copyright (c) 2018-2020 TotalEnergies
- * Copyright (c) 2019-     GEOSX Contributors
+ * Copyright (c) 2016-2024 Lawrence Livermore National Security LLC
+ * Copyright (c) 2018-2024 Total, S.A
+ * Copyright (c) 2018-2024 The Board of Trustees of the Leland Stanford Junior University
+ * Copyright (c) 2018-2024 Chevron
+ * Copyright (c) 2019-     GEOS/GEOSX Contributors
  * All rights reserved
  *
  * See top level LICENSE, COPYRIGHT, CONTRIBUTORS, NOTICE, and ACKNOWLEDGEMENTS files for details.
@@ -64,7 +65,7 @@ string readRootNode( string const & rootPath )
     conduit::Node node;
     conduit::relay::io::load( rootPath + ".root", "hdf5", node );
 
-    int const nFiles = node.child( "number_of_files" ).value();
+    int const nFiles = node.fetch_existing( "number_of_files" ).value();
     GEOS_THROW_IF_NE( nFiles, MpiWrapper::commSize(), InputError );
 
     string const filePattern = node.fetch_existing( "file_pattern" ).as_string();

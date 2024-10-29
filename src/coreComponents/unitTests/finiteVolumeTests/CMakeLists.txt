@@ -1,29 +1,23 @@
-#
 # Specify list of tests
-#
-
 set( gtest_geosx_tests
-     testMimeticInnerProducts.cpp
-   )
+     testMimeticInnerProducts.cpp )
 
 set( dependencyList ${parallelDeps} gtest )
 
-if ( GEOSX_BUILD_SHARED_LIBS )
-  set (dependencyList ${dependencyList} geosx_core )
+if ( GEOS_BUILD_SHARED_LIBS )
+  list( APPEND dependencyList geosx_core HDF5::HDF5 )
 else()
-  set (dependencyList ${dependencyList} ${geosx_core_libs} )
+  list( APPEND dependencyList ${geosx_core_libs} HDF5::HDF5 )
+  list( APPEND dependencyList ${geosx_core_libs} HDF5::HDF5 )
 endif()
 
-#
 # Add gtest C++ based tests
-#
 foreach(test ${gtest_geosx_tests})
     get_filename_component( test_name ${test} NAME_WE )
     blt_add_executable( NAME ${test_name}
-            SOURCES ${test}
-            OUTPUT_DIR ${TEST_OUTPUT_DIRECTORY}
-            DEPENDS_ON ${dependencyList}
-            )
+                        SOURCES ${test}
+                        OUTPUT_DIR ${TEST_OUTPUT_DIRECTORY}
+                        DEPENDS_ON ${dependencyList} )
 
     # Guard to prevent GCC (version 8) from giving warnings due
     # to some sort of possible conversion from int to long unsigned.
@@ -34,8 +28,7 @@ foreach(test ${gtest_geosx_tests})
       endif()
     endif()
 
-    blt_add_test( NAME ${test_name}
-            COMMAND ${test_name}
-            )
+    geos_add_test( NAME ${test_name}
+                   COMMAND ${test_name} )
 
 endforeach()

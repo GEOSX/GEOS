@@ -2,10 +2,11 @@
  * ------------------------------------------------------------------------------------------------------------
  * SPDX-License-Identifier: LGPL-2.1-only
  *
- * Copyright (c) 2018-2020 Lawrence Livermore National Security LLC
- * Copyright (c) 2018-2020 The Board of Trustees of the Leland Stanford Junior University
- * Copyright (c) 2018-2020 TotalEnergies
- * Copyright (c) 2019-     GEOSX Contributors
+ * Copyright (c) 2016-2024 Lawrence Livermore National Security LLC
+ * Copyright (c) 2018-2024 Total, S.A
+ * Copyright (c) 2018-2024 The Board of Trustees of the Leland Stanford Junior University
+ * Copyright (c) 2018-2024 Chevron
+ * Copyright (c) 2019-     GEOS/GEOSX Contributors
  * All rights reserved
  *
  * See top level LICENSE, COPYRIGHT, CONTRIBUTORS, NOTICE, and ACKNOWLEDGEMENTS files for details.
@@ -33,7 +34,7 @@
 #include "common/Span.hpp"
 #include "codingUtilities/traits.hpp"
 
-#if defined(GEOSX_USE_PYGEOSX)
+#if defined(GEOS_USE_PYGEOSX)
 #include "LvArray/src/python/python.hpp"
 #endif
 
@@ -228,7 +229,7 @@ byteSizeOfElement()
 template< typename T >
 inline size_t
 byteSize( T const & value )
-{ return size( value ) * byteSizeOfElement< T >(); }
+{ return wrapperHelpers::size( value ) * byteSizeOfElement< T >(); }
 
 
 template< typename T >
@@ -259,7 +260,7 @@ capacity( T const & value )
 template< typename T >
 std::enable_if_t< !traits::HasMemberFunction_capacity< T const >, localIndex >
 capacity( T const & value )
-{ return size( value ); }
+{ return wrapperHelpers::size( value ); }
 
 
 
@@ -825,7 +826,7 @@ UnpackDataByIndexDevice( buffer_unit_type const * &, T const &, IDX &, parallelD
   return 0;
 }
 
-#if defined(GEOSX_USE_PYGEOSX)
+#if defined(GEOS_USE_PYGEOSX)
 
 template< typename T >
 inline std::enable_if_t< LvArray::python::CanCreate< T >, PyObject * >

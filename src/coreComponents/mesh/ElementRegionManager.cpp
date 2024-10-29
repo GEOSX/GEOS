@@ -2,10 +2,11 @@
  * ------------------------------------------------------------------------------------------------------------
  * SPDX-License-Identifier: LGPL-2.1-only
  *
- * Copyright (c) 2018-2020 Lawrence Livermore National Security LLC
- * Copyright (c) 2018-2020 The Board of Trustees of the Leland Stanford Junior University
- * Copyright (c) 2018-2020 TotalEnergies
- * Copyright (c) 2019-     GEOSX Contributors
+ * Copyright (c) 2016-2024 Lawrence Livermore National Security LLC
+ * Copyright (c) 2018-2024 Total, S.A
+ * Copyright (c) 2018-2024 The Board of Trustees of the Leland Stanford Junior University
+ * Copyright (c) 2018-2024 Chevron
+ * Copyright (c) 2019-     GEOS/GEOSX Contributors
  * All rights reserved
  *
  * See top level LICENSE, COPYRIGHT, CONTRIBUTORS, NOTICE, and ACKNOWLEDGEMENTS files for details.
@@ -22,9 +23,11 @@
 #include "SurfaceElementRegion.hpp"
 #include "FaceManager.hpp"
 #include "constitutive/ConstitutiveManager.hpp"
-#include "mesh/MeshManager.hpp"
+#include "mesh/NodeManager.hpp"
+#include "mesh/MeshLevel.hpp"
 #include "mesh/utilities/MeshMapUtilities.hpp"
 #include "schema/schemaUtilities.hpp"
+#include "mesh/generators/LineBlockABC.hpp"
 
 namespace geos
 {
@@ -117,7 +120,7 @@ void ElementRegionManager::setSchemaDeviations( xmlWrapper::xmlNode schemaRoot,
   }
 }
 
-void ElementRegionManager::generateMesh( CellBlockManagerABC & cellBlockManager )
+void ElementRegionManager::generateMesh( CellBlockManagerABC const & cellBlockManager )
 {
   this->forElementRegions< CellElementRegion >( [&]( CellElementRegion & elemRegion )
   {
@@ -141,9 +144,9 @@ void ElementRegionManager::generateMesh( CellBlockManagerABC & cellBlockManager 
     // that will be transformed into element subregion information.
     // This is why we copy the information into a temporary,
     // which frees space for the final information (of same size).
-    FixedToManyElementRelation & relation = subRegion.getToCellRelation();
-    ToCellRelation< array2d< localIndex > > const tmp( relation.m_toElementSubRegion,
-                                                       relation.m_toElementIndex );
+    OrderedVariableToManyElementRelation & relation = subRegion.getToCellRelation();
+    ToCellRelation< ArrayOfArrays< localIndex > > const tmp( relation.m_toElementSubRegion,
+                                                             relation.m_toElementIndex );
     meshMapUtilities::transformCellBlockToRegionMap< parallelHostPolicy >( blockToSubRegion.toViewConst(),
                                                                            tmp,
                                                                            relation );
@@ -151,7 +154,7 @@ void ElementRegionManager::generateMesh( CellBlockManagerABC & cellBlockManager 
 
 }
 
-void ElementRegionManager::generateWells( MeshManager & meshManager,
+void ElementRegionManager::generateWells( CellBlockManagerABC const & cellBlockManager,
                                           MeshLevel & meshLevel )
 {
   NodeManager & nodeManager = meshLevel.getNodeManager();
@@ -170,18 +173,17 @@ void ElementRegionManager::generateWells( MeshManager & meshManager,
   {
 
     // get the global well geometry from the well generator
-    string const generatorName = wellRegion.getWellGeneratorName();
-    InternalWellGenerator const & wellGeometry =
-      meshManager.getGroup< InternalWellGenerator >( generatorName );
-
+    LineBlockABC const & lineBlock = cellBlockManager.getLineBlock( wellRegion.getName() );
+    wellRegion.setWellGeneratorName( lineBlock.getWellGeneratorName() );
+    wellRegion.setWellControlsName( lineBlock.getWellControlsName() );
     // generate the local data (well elements, nodes, perforations) on this well
     // note: each MPI rank knows the global info on the entire well (constructed earlier in InternalWellGenerator)
     // so we only need node and element offsets to construct the local-to-global maps in each wellElemSubRegion
-    wellRegion.generateWell( meshLevel, wellGeometry, nodeOffsetGlobal + wellNodeCount, elemOffsetGlobal + wellElemCount );
+    wellRegion.generateWell( meshLevel, lineBlock, nodeOffsetGlobal + wellNodeCount, elemOffsetGlobal + wellElemCount );
 
     // increment counters with global number of nodes and elements
-    wellElemCount += wellGeometry.getNumElements();
-    wellNodeCount += wellGeometry.getNumNodes();
+    wellElemCount += lineBlock.numElements();
+    wellNodeCount += lineBlock.numNodes();
 
     string const & subRegionName = wellRegion.getSubRegionName();
     WellElementSubRegion &
@@ -190,8 +192,9 @@ void ElementRegionManager::generateWells( MeshManager & meshManager,
 
     globalIndex const numWellElemsGlobal = MpiWrapper::sum( subRegion.size() );
 
-    GEOS_ERROR_IF( numWellElemsGlobal != wellGeometry.getNumElements(),
-                   "Invalid partitioning in well " << subRegionName );
+    GEOS_ERROR_IF( numWellElemsGlobal != lineBlock.numElements(),
+                   "Invalid partitioning in well " << lineBlock.getDataContext() <<
+                   ", subregion " << subRegion.getDataContext() );
 
   } );
 
@@ -664,11 +667,14 @@ ElementRegionManager::getCellBlockToSubRegionMap( CellBlockManagerABC const & ce
                                                                        ElementRegionBase const & region,
                                                                        CellElementSubRegion const & subRegion )
   {
+    GEOS_UNUSED_VAR( region ); // unused if geos_error_if is nulld
     localIndex const blockIndex = cellBlocks.getIndex( subRegion.getName() );
     GEOS_ERROR_IF( blockIndex == Group::subGroupMap::KeyIndex::invalid_index,
-                   GEOS_FMT( "Cell block not found for subregion {}/{}", region.getName(), subRegion.getName() ) );
+                   GEOS_FMT( "{}, subregion {}: Cell block not found at index {}.",
+                             region.getDataContext().toString(), subRegion.getName(), blockIndex ) );
     GEOS_ERROR_IF( blockMap( blockIndex, 1 ) != -1,
-                   GEOS_FMT( "Cell block {} mapped to more than one subregion", subRegion.getName() ) );
+                   GEOS_FMT( "{}, subregion {}: Cell block at index {} is mapped to more than one subregion.",
+                             region.getDataContext().toString(), subRegion.getName(), blockIndex ) );
 
     blockMap( blockIndex, 0 ) = er;
     blockMap( blockIndex, 1 ) = esr;

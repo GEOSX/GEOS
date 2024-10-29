@@ -2,11 +2,12 @@
  * ------------------------------------------------------------------------------------------------------------
  * SPDX-License-Identifier: LGPL-2.1-only
  *
- * Copyright (c) 2018-2019 Lawrence Livermore National Security LLC
- * Copyright (c) 2018-2019 The Board of Trustees of the Leland Stanford Junior University
- * Copyright (c) 2018-2019 TotalEnergies
- * Copyright (c) 2019-     GEOSX Contributors
- * All right reserved
+ * Copyright (c) 2016-2024 Lawrence Livermore National Security LLC
+ * Copyright (c) 2018-2024 Total, S.A
+ * Copyright (c) 2018-2024 The Board of Trustees of the Leland Stanford Junior University
+ * Copyright (c) 2018-2024 Chevron
+ * Copyright (c) 2019-     GEOS/GEOSX Contributors
+ * All rights reserved
  *
  * See top level LICENSE, COPYRIGHT, CONTRIBUTORS, NOTICE, and ACKNOWLEDGEMENTS files for details.
  * ------------------------------------------------------------------------------------------------------------
@@ -18,11 +19,12 @@
 #include "mainInterface/ProblemManager.hpp"
 #include "mainInterface/initialization.hpp"
 #include "mesh/mpiCommunications/CommunicationTools.hpp"
+#include "common/Timer.hpp"
 
 // TPL includes
 #include <conduit.hpp>
 
-#if defined( GEOSX_USE_CALIPER )
+#if defined( GEOS_USE_CALIPER )
   #include <caliper/cali-manager.h>
 #endif
 
@@ -42,35 +44,6 @@ GeosxState & getGlobalState()
 
   return *currentGlobalState;
 }
-
-
-/**
- * @class Timer
- * @brief Object that times the duration of its existence.
- */
-class Timer
-{
-public:
-
-  /**
-   * @brief Constructor. The time the object is alive is added to @p duration.
-   * @param duration A reference to the duration to add to.
-   */
-  Timer( std::chrono::system_clock::duration & duration ):
-    m_start( std::chrono::system_clock::now() ),
-    m_duration( duration )
-  {}
-
-  /// Destructor. Adds to the referenced duration.
-  ~Timer()
-  { m_duration += std::chrono::system_clock::now() - m_start; }
-
-private:
-  /// The time at which this object was constructed.
-  std::chrono::system_clock::time_point const m_start;
-  /// A reference to the duration to add to.
-  std::chrono::system_clock::duration & m_duration;
-};
 
 //////////////////////////////////////////////////////////////////////////////////////////////////////////////////
 string durationToString( std::chrono::system_clock::duration const duration )
@@ -111,7 +84,7 @@ GeosxState::GeosxState( std::unique_ptr< CommandLineOptions > && commandLineOpti
   m_rootNode( std::make_unique< conduit::Node >() ),
   m_problemManager( nullptr ),
   m_commTools( std::make_unique< CommunicationTools >() ),
-#if defined( GEOSX_USE_CALIPER )
+#if defined( GEOS_USE_CALIPER )
   m_caliperManager( std::make_unique< cali::ConfigManager >() ),
 #endif
   m_initTime(),
@@ -119,7 +92,7 @@ GeosxState::GeosxState( std::unique_ptr< CommandLineOptions > && commandLineOpti
 {
   Timer timer( m_initTime );
 
-#if defined( GEOSX_USE_CALIPER )
+#if defined( GEOS_USE_CALIPER )
   setupCaliper( *m_caliperManager, getCommandLineOptions() );
 #endif
 
@@ -139,7 +112,7 @@ GeosxState::GeosxState( std::unique_ptr< CommandLineOptions > && commandLineOpti
 //////////////////////////////////////////////////////////////////////////////////////////////////////////////////
 GeosxState::~GeosxState()
 {
-#if defined( GEOSX_USE_CALIPER )
+#if defined( GEOS_USE_CALIPER )
   m_caliperManager->flush();
 #endif
 

@@ -1,7 +1,4 @@
-#
 # Specify list of tests
-#
-
 set(testSources
     testFiniteElementBase.cpp
     testH1_QuadrilateralFace_Lagrange1_GaussLegendre2.cpp
@@ -11,18 +8,15 @@ set(testSources
     testH1_Pyramid_Lagrange1_Gauss5.cpp
     testH1_TriangleFace_Lagrange1_Gauss1.cpp
     testQ3_Hexahedron_Lagrange_GaussLobatto.cpp
-    testQ5_Hexahedron_Lagrange_GaussLobatto.cpp
-   )
+    testQ5_Hexahedron_Lagrange_GaussLobatto.cpp )
 
 set( dependencyList gtest finiteElement ${parallelDeps} )
 
-if( ENABLE_CUDA_NVTOOLSEXT )
-  set( dependencyList ${dependencyList} CUDA::nvToolsExt )
+if( ENABLE_CUDA AND ENABLE_CUDA_NVTOOLSEXT )
+  list( APPEND dependencyList CUDA::nvToolsExt )
 endif()
 
-#
 # Add gtest C++ based tests
-#
 foreach(test ${testSources})
     get_filename_component( test_name ${test} NAME_WE )
     blt_add_executable( NAME ${test_name}
@@ -30,9 +24,8 @@ foreach(test ${testSources})
                         OUTPUT_DIR ${TEST_OUTPUT_DIRECTORY}
                         DEPENDS_ON ${dependencyList} )
 
-    blt_add_test( NAME ${test_name}
-                  COMMAND ${test_name}
-                  )
+    geos_add_test( NAME ${test_name}
+                   COMMAND ${test_name} )
 
     if( ( NOT ${ENABLE_CUDA} ) AND ( CMAKE_CXX_COMPILER_ID STREQUAL "Clang" ) )
         set_target_properties(${test_name} PROPERTIES COMPILE_FLAGS "-Wno-everything")
@@ -41,6 +34,6 @@ foreach(test ${testSources})
 endforeach()
 
 if ( ENABLE_CUDA )
-#blt_add_target_compile_flags( TO testShapeFunctionKernel
-#                              FLAGS "--maxrregcount=64")
+# blt_add_target_compile_flags( TO testShapeFunctionKernel
+#                               FLAGS "--maxrregcount=64")
 endif()

@@ -2,10 +2,11 @@
  * ------------------------------------------------------------------------------------------------------------
  * SPDX-License-Identifier: LGPL-2.1-only
  *
- * Copyright (c) 2018-2020 Lawrence Livermore National Security LLC
- * Copyright (c) 2018-2020 The Board of Trustees of the Leland Stanford Junior University
- * Copyright (c) 2018-2020 Total, S.A
- * Copyright (c) 2019-     GEOSX Contributors
+ * Copyright (c) 2016-2024 Lawrence Livermore National Security LLC
+ * Copyright (c) 2018-2024 Total, S.A
+ * Copyright (c) 2018-2024 The Board of Trustees of the Leland Stanford Junior University
+ * Copyright (c) 2018-2024 Chevron
+ * Copyright (c) 2019-     GEOS/GEOSX Contributors
  * All rights reserved
  *
  * See top level LICENSE, COPYRIGHT, CONTRIBUTORS, NOTICE, and ACKNOWLEDGEMENTS files for details.
@@ -19,21 +20,19 @@
 #ifndef GEOS_VTK_MESH_GENERATORS_VTKMESHGENERATORTOOLS_HPP_
 #define GEOS_VTK_MESH_GENERATORS_VTKMESHGENERATORTOOLS_HPP_
 
+#include <vtkPartitionedDataSet.h>
 #include <vtkSmartPointer.h>
 #include <vtkUnstructuredGrid.h>
-#include <vtkPartitionedDataSet.h>
 
 #include <mpi.h>
 
-// NOTE: do NOT include anything from GEOSX here.
+// NOTE: do NOT include anything from GEOS here.
 // In particular, nothing that directly or transitively includes "common/Format.hpp".
-// The reason is "diy2" library includes an older version of {fmt} than the one used by GEOSX.
+// The reason is "diy2" library includes an older version of {fmt} than the one used by GEOS.
 // Collision of includes leads to all kinds of impossible to fix compilation errors.
 // Thankfully, no link errors, owing to namespace versioning employed by {fmt}.
 
-namespace geos
-{
-namespace vtk
+namespace geos::vtk
 {
 
 /**
@@ -59,7 +58,6 @@ redistribute( vtkPartitionedDataSet & localParts, MPI_Comm mpiComm );
 std::vector< vtkBoundingBox >
 exchangeBoundingBoxes( vtkDataSet & dataSet, MPI_Comm mpiComm );
 
-} // namespace vtk
-} // namespace geos
+} // namespace geos::vtk
 
 #endif //GEOS_VTK_MESH_GENERATORS_VTKMESHGENERATORTOOLS_HPP_

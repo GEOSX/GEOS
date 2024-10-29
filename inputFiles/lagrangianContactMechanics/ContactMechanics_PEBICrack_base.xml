@@ -1,0 +1,60 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<Problem>
+
+    <NumericalMethods>
+        <FiniteElements>
+            <FiniteElementSpace name="FE1" order="1"/>
+        </FiniteElements>
+        <FiniteVolume>
+            <TwoPointFluxApproximation name="TPFAstabilization"/>
+        </FiniteVolume>
+    </NumericalMethods>
+    
+
+    <ElementRegions>
+        <CellElementRegion name="Region" cellBlocks="{ hexahedra, pentagonalPrisms, hexagonalPrisms }" materialList="{ rock }"/>
+        <SurfaceElementRegion name="Fracture" faceBlock="fracture" defaultAperture="0" materialList="{ fractureMaterial }"/>
+    </ElementRegions>
+
+    <Geometry>
+        <Box name="core" xMin="{ -0.1, -0.1, 0.9}" xMax="{ 1.1,  1.1,  1.1}"/>
+        <Box name="top" xMin="{ -0.1, -0.1, 1.9}" xMax="{ 1.1,  1.1,  2.1}"/>
+        <Box name="bottom" xMin="{ -0.1, -0.1, -0.1}" xMax="{ 1.1,  1.1,  0.1}"/>
+        <Box name="xz_plane" xMin="{ -0.1, -0.1, -0.1}" xMax="{ 1.1,  0.1,  2.1}"/>
+        <Box name="yz_plane" xMin="{ -0.1, -0.1, -0.1}" xMax="{ 0.1,  1.1,  2.1}"/>
+    </Geometry>
+
+    <Constitutive>
+        <ElasticIsotropic name="rock" defaultDensity="2700" defaultBulkModulus="3333e6" defaultShearModulus="2000e6"/>
+        <Coulomb name="fractureMaterial" cohesion="0" frictionCoefficient="0.1" apertureTableName="apertureTable"/>
+    </Constitutive>
+
+    <Functions>
+        <TableFunction name="apertureTable" coordinates="{ -1.0e-3, 0.0 }" values="{ 0.002e-3, 0.02e-3 }"/>
+    </Functions>
+
+    <FieldSpecifications>
+
+        <FieldSpecification name="roller_z" setNames="{ bottom }" objectPath="nodeManager" fieldName="totalDisplacement" scale="0" component="2"/>
+        <FieldSpecification name="roller_y" setNames="{ xz_plane }" objectPath="nodeManager" fieldName="totalDisplacement" scale="0" component="1"/>
+        <FieldSpecification name="roller_x" setNames="{ yz_plane }" objectPath="nodeManager" fieldName="totalDisplacement" scale="0" component="0"/>
+        <Traction name="NormalTraction" objectPath="faceManager" tractionType="normal" scale="-1000000" setNames="{ top }" functionName="timeFunction"/>
+        
+    </FieldSpecifications>
+
+    <Functions>
+        <TableFunction
+          name="timeFunction"
+          inputVarNames="{ time }"
+          coordinates="{ 1.0, 10.0 }"
+          values="{ 1.0, 10.0 }"/>
+    </Functions>
+
+    <Tasks></Tasks>
+    <Outputs>
+        <VTK name="vtkOutput" plotLevel="2" format="ascii" outputRegionType="cell"/>
+        <Restart name="restartOutput"/>
+        
+    </Outputs>
+
+</Problem>

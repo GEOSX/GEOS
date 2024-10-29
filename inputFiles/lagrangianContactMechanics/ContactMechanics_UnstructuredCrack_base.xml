@@ -3,15 +3,13 @@
 <Problem>
   <Solvers
     gravityVector="{ 0.0, 0.0, 0.0 }">
-    <LagrangianContact
+    <SolidMechanicsLagrangeContact
       name="lagrangiancontact"
-      solidSolverName="lagsolve"
+      timeIntegrationOption="QuasiStatic"
       stabilizationName="TPFAstabilization"
       logLevel="1"
       discretization="FE1"
-      targetRegions="{ Region, Fracture }"
-      contactRelationName="fractureMaterial"
-      fractureRegionName="Fracture">
+      targetRegions="{ Region, Fracture }">
       <NonlinearSolverParameters
         newtonTol="1.0e-8"
         logLevel="2"
@@ -20,19 +18,7 @@
         lineSearchMaxCuts="2"/>
       <LinearSolverParameters
         directParallel="0"/>
-    </LagrangianContact>
-
-    <SolidMechanicsLagrangianSSLE
-      name="lagsolve"
-      timeIntegrationOption="QuasiStatic"
-      discretization="FE1"
-      targetRegions="{ Region }"
-      >
-      <NonlinearSolverParameters
-        newtonTol="1.0e-6"/>
-      <LinearSolverParameters
-        krylovTol="1.0e-10"/>
-    </SolidMechanicsLagrangianSSLE>
+    </SolidMechanicsLagrangeContact>
 
     <SurfaceGenerator
       name="SurfaceGen"

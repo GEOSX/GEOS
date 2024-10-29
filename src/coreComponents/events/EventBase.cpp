@@ -2,10 +2,11 @@
  * ------------------------------------------------------------------------------------------------------------
  * SPDX-License-Identifier: LGPL-2.1-only
  *
- * Copyright (c) 2018-2020 Lawrence Livermore National Security LLC
- * Copyright (c) 2018-2020 The Board of Trustees of the Leland Stanford Junior University
- * Copyright (c) 2018-2020 TotalEnergies
- * Copyright (c) 2019-     GEOSX Contributors
+ * Copyright (c) 2016-2024 Lawrence Livermore National Security LLC
+ * Copyright (c) 2018-2024 Total, S.A
+ * Copyright (c) 2018-2024 The Board of Trustees of the Leland Stanford Junior University
+ * Copyright (c) 2018-2024 Chevron
+ * Copyright (c) 2019-     GEOS/GEOSX Contributors
  * All rights reserved
  *
  * See top level LICENSE, COPYRIGHT, CONTRIBUTORS, NOTICE, and ACKNOWLEDGEMENTS files for details.
@@ -56,6 +57,7 @@ EventBase::EventBase( const string & name,
   enableLogLevelInput();
 
   registerWrapper( viewKeyStruct::eventTargetString(), &m_eventTarget ).
+    setRTTypeName( rtTypes::CustomTypes::groupNameRef ).
     setInputFlag( InputFlags::OPTIONAL ).
     setDescription( "Name of the object to be executed when the event criteria are met." );
 
@@ -144,7 +146,15 @@ void EventBase::getTargetReferences()
 {
   if( !m_eventTarget.empty())
   {
-    m_target = &this->getGroupByPath< ExecutableGroup >( m_eventTarget );
+    try
+    {
+      m_target = &this->getGroupByPath< ExecutableGroup >( m_eventTarget );
+    }
+    catch( std::exception const & e )
+    {
+      throw InputError( e, GEOS_FMT( "Error while reading {}:\n",
+                                     getWrapperDataContext( viewKeyStruct::eventTargetString() ) ) );
+    }
   }
 
   this->forSubGroups< EventBase >( []( EventBase & subEvent )

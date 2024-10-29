@@ -1,12 +1,14 @@
 
 
-============ ==== ================================= 
-Name         Type Description                       
-============ ==== ================================= 
-BoundedPlane node :ref:`DATASTRUCTURE_BoundedPlane` 
-Box          node :ref:`DATASTRUCTURE_Box`          
-Cylinder     node :ref:`DATASTRUCTURE_Cylinder`     
-ThickPlane   node :ref:`DATASTRUCTURE_ThickPlane`   
-============ ==== ================================= 
+================= ==== ====================================== 
+Name              Type Description                            
+================= ==== ====================================== 
+Box               node :ref:`DATASTRUCTURE_Box`               
+CustomPolarObject node :ref:`DATASTRUCTURE_CustomPolarObject` 
+Cylinder          node :ref:`DATASTRUCTURE_Cylinder`          
+Disc              node :ref:`DATASTRUCTURE_Disc`              
+Rectangle         node :ref:`DATASTRUCTURE_Rectangle`         
+ThickPlane        node :ref:`DATASTRUCTURE_ThickPlane`        
+================= ==== ====================================== 
 
 

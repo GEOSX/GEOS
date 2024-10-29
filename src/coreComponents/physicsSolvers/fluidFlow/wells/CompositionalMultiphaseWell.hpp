@@ -2,10 +2,11 @@
  * ------------------------------------------------------------------------------------------------------------
  * SPDX-License-Identifier: LGPL-2.1-only
  *
- * Copyright (c) 2018-2020 Lawrence Livermore National Security LLC
- * Copyright (c) 2018-2020 The Board of Trustees of the Leland Stanford Junior University
- * Copyright (c) 2018-2020 TotalEnergies
- * Copyright (c) 2019-     GEOSX Contributors
+ * Copyright (c) 2016-2024 Lawrence Livermore National Security LLC
+ * Copyright (c) 2018-2024 Total, S.A
+ * Copyright (c) 2018-2024 The Board of Trustees of the Leland Stanford Junior University
+ * Copyright (c) 2018-2024 Chevron
+ * Copyright (c) 2019-     GEOS/GEOSX Contributors
  * All rights reserved
  *
  * See top level LICENSE, COPYRIGHT, CONTRIBUTORS, NOTICE, and ACKNOWLEDGEMENTS files for details.
@@ -19,10 +20,7 @@
 #ifndef GEOS_PHYSICSSOLVERS_FLUIDFLOW_WELLS_COMPOSITIONALMULTIPHASEWELL_HPP_
 #define GEOS_PHYSICSSOLVERS_FLUIDFLOW_WELLS_COMPOSITIONALMULTIPHASEWELL_HPP_
 
-#include "constitutive/fluid/multifluid/Layouts.hpp"
-#include "constitutive/relativePermeability/layouts.hpp"
 #include "physicsSolvers/fluidFlow/wells/WellSolverBase.hpp"
-#include "physicsSolvers/fluidFlow/CompositionalMultiphaseBaseFields.hpp"
 #include "physicsSolvers/fluidFlow/CompositionalMultiphaseBase.hpp"
 
 namespace geos
@@ -76,6 +74,10 @@ public:
    * @return string that contains the catalog name to generate a new NodeManager object through the object catalog.
    */
   static string catalogName() { return "CompositionalMultiphaseWell"; }
+  /**
+   * @copydoc SolverBase::getCatalogName()
+   */
+  string getCatalogName() const override { return catalogName(); }
 
   virtual void registerDataOnMesh( Group & meshBodies ) override;
 
@@ -96,12 +98,12 @@ public:
                          arrayView1d< real64 const > const & localRhs ) override;
 
   virtual real64
-  scalingForSystemSolution( DomainPartition const & domain,
+  scalingForSystemSolution( DomainPartition & domain,
                             DofManager const & dofManager,
                             arrayView1d< real64 const > const & localSolution ) override;
 
   virtual bool
-  checkSystemSolution( DomainPartition const & domain,
+  checkSystemSolution( DomainPartition & domain,
                        DofManager const & dofManager,
                        arrayView1d< real64 const > const & localSolution,
                        real64 const scalingFactor ) override;
@@ -110,6 +112,7 @@ public:
   applySystemSolution( DofManager const & dofManager,
                        arrayView1d< real64 const > const & localSolution,
                        real64 const scalingFactor,
+                       real64 const dt,
                        DomainPartition & domain ) override;
 
   virtual void
@@ -128,10 +131,10 @@ public:
   /**@}*/
 
   /**
-   * @brief Recompute component fractions from primary variables (component densities)
+   * @brief Recompute global component fractions from primary variables (component densities)
    * @param subRegion the well subregion containing all the primary and dependent fields
    */
-  void updateComponentFraction( WellElementSubRegion & subRegion ) const;
+  void updateGlobalComponentFraction( WellElementSubRegion & subRegion ) const;
 
   /**
    * @brief Recompute the volumetric rates that are used in the well constraints
@@ -196,8 +199,7 @@ public:
    * @param matrix the system matrix
    * @param rhs the system right-hand side vector
    */
-  virtual void assembleFluxTerms( real64 const time_n,
-                                  real64 const dt,
+  virtual void assembleFluxTerms( real64 const dt,
                                   DomainPartition const & domain,
                                   DofManager const & dofManager,
                                   CRSMatrixView< real64, globalIndex const > const & localMatrix,
@@ -275,16 +277,23 @@ public:
 
     static constexpr char const * useMassFlagString() { return CompositionalMultiphaseBase::viewKeyStruct::useMassFlagString(); }
 
+    static constexpr char const * useTotalMassEquationString() { return CompositionalMultiphaseBase::viewKeyStruct::useTotalMassEquationString(); }
+
     static constexpr char const * relPermNamesString() { return CompositionalMultiphaseBase::viewKeyStruct::relPermNamesString(); }
 
     static constexpr char const * maxCompFracChangeString() { return CompositionalMultiphaseBase::viewKeyStruct::maxCompFracChangeString(); }
 
     static constexpr char const * maxRelativePresChangeString() { return "maxRelativePressureChange"; }
 
+    static constexpr char const * maxAbsolutePresChangeString() { return "maxAbsolutePressureChange"; }
+
+    static constexpr char const * maxRelativeCompDensChangeString() { return "maxRelativeCompDensChange"; }
+
     static constexpr char const * allowLocalCompDensChoppingString() { return CompositionalMultiphaseBase::viewKeyStruct::allowLocalCompDensChoppingString(); }
 
     // control data (not registered on the mesh)
 
+    static constexpr char const * massDensityString() { return "massDensity";}
     static constexpr char const * currentBHPString() { return "currentBHP"; }
 
     static constexpr char const * dCurrentBHP_dPresString() { return "dCurrentBHP_dPres"; }
@@ -311,9 +320,7 @@ public:
 
 protected:
 
-
-
-  virtual void postProcessInput() override;
+  virtual void postInputInitialization() override;
 
   virtual void initializePostSubGroups() override;
 
@@ -330,6 +337,13 @@ protected:
   void validateConstitutiveModels( DomainPartition const & domain ) const;
 
   /**
+   * @brief Checks if the WellControls parameters are within the fluid tables ranges
+   * @param fluid the fluid to check
+   */
+  void validateWellControlsForFluid( WellControls const & wellControls,
+                                     constitutive::MultiFluidBase const & fluid ) const;
+
+  /**
    * @brief Checks injection streams for validity (compositions sum to one)
    * @param subRegion the well subRegion
    */
@@ -341,9 +355,13 @@ protected:
    * @param dt the time step dt
    * @param subRegion the well subRegion
    */
-  void validateWellConstraints( real64 const & time_n,
-                                real64 const & dt,
-                                WellElementSubRegion const & subRegion );
+  virtual void validateWellConstraints( real64 const & time_n,
+                                        real64 const & dt,
+                                        WellElementSubRegion const & subRegion ) override;
+
+  void printRates( real64 const & time_n,
+                   real64 const & dt,
+                   DomainPartition & domain ) override;
 
 private:
 
@@ -364,6 +382,9 @@ private:
   /// flag indicating whether mass or molar formulation should be used
   integer m_useMass;
 
+  /// flag indicating whether total mass equation should be used
+  integer m_useTotalMassEquation;
+
   /// list of relative permeability model names per target region
   array1d< string > m_relPermModelNames;
 
@@ -372,6 +393,12 @@ private:
 
   /// maximum (relative) change in pressure between two Newton iterations
   real64 m_maxRelativePresChange;
+
+  /// maximum (absolute) change in pressure between two Newton iterations
+  real64 m_maxAbsolutePresChange;
+
+  /// maximum (relative) change in component density between two Newton iterations
+  real64 m_maxRelativeCompDensChange;
 
   /// minimum value of the scaling factor obtained by enforcing maxCompFracChange
   real64 m_minScalingFactor;

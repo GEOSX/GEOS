@@ -1,0 +1,202 @@
+import copy
+from geos.ats.test_builder import generate_geos_tests, RestartcheckParameters, CurveCheckParameters, TestDeck
+
+# Define cases
+kgd_viscosity_dominated = {
+    "name": "kgdViscosityDominated_smoke",
+    "description": "KGD fracture in viscosity-dominated regime",
+    "partitions": ((1, 1, 1), (2, 3, 1)),
+    "restart_step": 0,
+    "check_step": 1,
+    "tolerance": [2.3e-5, 27000.0],
+    "aperture_curve_method": "kgd_viscosity_dominated_aperture_curve",
+    "pressure_curve_method": "kgd_viscosity_dominated_pressure_curve"
+}
+
+kgd_viscosity_dominated_poroelastic = {
+    "name": "kgdViscosityDominated_poroelastic_smoke",
+    "description":
+    "KGD fracture in viscosity-dominated regime in a poroelastic solid",
+    "partitions": ((1, 1, 1), (2, 3, 1)),
+    "restart_step": 0,
+    "check_step": 1
+}
+
+kgd_toughness_dominated = {
+    "name": "kgdToughnessDominated_smoke",
+    "description": "KGD fracture in toughness-dominated regime",
+    "partitions": ((1, 1, 1), (2, 3, 1)),
+    "restart_step": 0,
+    "check_step": 1,
+    "tolerance": [1e-5, 21000.0],
+    "aperture_curve_method": "kgd_toughness_dominated_aperture_curve",
+    "pressure_curve_method": "kgd_toughness_dominated_pressure_curve"
+}
+
+kgd_toughness_dominated_poroelastic = {
+    "name": "kgdToughnessDominated_poroelastic_smoke",
+    "description":
+    "KGD fracture in toughness-dominated regime in a poroelastic solid",
+    "partitions": ((1, 1, 1), (2, 3, 1)),
+    "restart_step": 0,
+    "check_step": 1
+}
+
+kgd_validation = {
+    "name": "kgdValidation_smoke",
+    "description": "Validation example based on Rubin's experiment",
+    "partitions": ((1, 1, 1), (2, 2, 1)),
+    "restart_step": 0,
+    "check_step": 1
+}
+
+kgd_node_based_C3D6 = {
+    "name": "kgdNodeBased_C3D6_smoke",
+    "description":
+    "KGD hydrofracturing (node-based) problem with C3D6 element type",
+    "partitions": ((1, 1, 1), (3, 3, 1)),
+    "restart_step": 0,
+    "check_step": 1
+}
+
+kgd_edge_based_C3D6 = {
+    "name": "kgdEdgeBased_C3D6_smoke",
+    "description":
+    "KGD hydrofracturing (edge-based) problem with C3D6 element type",
+    "partitions": ((1, 1, 1), (3, 3, 1)),
+    "restart_step": 0,
+    "check_step": 1
+}
+
+heterogeneous_fracture = {
+    "name": "heterogeneousInSitu_smoke",
+    "description": "Single fracture within a heterogeneous reservoir",
+    "partitions": ((1, 1, 1), (2, 2, 1)),
+    "restart_step": 0,
+    "check_step": 4
+}
+
+penny_shaped_toughness_dominated = {
+    "name": "pennyShapedToughnessDominated_smoke",
+    "description": "Penny Shaped fracture in Toughness-dominated regime",
+    "partitions": ((1, 1, 1), (1, 3, 2)),
+    "restart_step": 0,
+    "check_step": 5,
+    "tolerance": [3.4e-6, 1e5],
+    "aperture_curve_method": "penny_shaped_toughness_dominated_aperture_curve",
+    "pressure_curve_method": "penny_shaped_toughness_dominated_pressure_curve"
+}
+
+penny_shaped_toughness_dominated_poroelastic = {
+    "name": "pennyShapedToughnessDominated_poroelastic_smoke",
+    "description":
+    "Penny Shaped fracture in Toughness-dominated regime in a poroelastic solid",
+    "partitions": ((1, 1, 1), (1, 3, 2)),
+    "restart_step": 0,
+    "check_step": 5
+}
+
+penny_shaped_viscosity_dominated = {
+    "name": "pennyShapedViscosityDominated_smoke",
+    "description": "Penny Shaped fracture in Viscosity-dominated regime",
+    "partitions": ((1, 1, 1), (1, 2, 2)),
+    "restart_step": 0,
+    "check_step": 5,
+    "tolerance": [2.7e-3, 3e6],
+    "aperture_curve_method": "penny_shaped_viscosity_dominated_aperture_curve",
+    "pressure_curve_method": "penny_shaped_viscosity_dominated_pressure_curve"
+}
+
+penny_shaped_viscosity_dominated_poroelastic = {
+    "name": "pennyShapedViscosityDominated_poroelastic_smoke",
+    "description":
+    "Penny Shaped fracture in Viscosity-dominated regime in a poroelastic solid",
+    "partitions": ((1, 1, 1), (1, 3, 2)),
+    "restart_step": 0,
+    "check_step": 5
+}
+
+pkn_viscosity_dominated = {
+    "name": "pknViscosityDominated_smoke",
+    "description": "PKN fracture in Viscosity-dominated regime",
+    "partitions": ((1, 1, 1), (1, 2, 2)),
+    "restart_step": 0,
+    "check_step": 5,
+    "tolerance": [1.8e-5, 2e5],
+    "aperture_curve_method": "pkn_viscosity_dominated_aperture_curve",
+    "pressure_curve_method": "pkn_viscosity_dominated_pressure_curve"
+}
+
+pkn_viscosity_dominated_poroelastic = {
+    "name": "pknViscosityDominated_poroelastic_smoke",
+    "description":
+    "PKN fracture in Viscosity-dominated regime in a poroelastic solid",
+    "partitions": ((1, 1, 1), (1, 2, 2)),
+    "restart_step": 0,
+    "check_step": 5
+}
+
+sneddon = {
+    "name": "Sneddon_hydroFrac_smoke",
+    "description": "Sneddon type problem using a conforming discretization",
+    "partitions": ((1, 1, 1), (2, 2, 1)),
+    "restart_step": 1,
+    "check_step": 5
+}
+
+walsh_quarter_no_chombo = {
+    "name": "walshQuarterNoChombo_smoke",
+    "description": "Sneddon type problem using a conforming discretization",
+    "partitions": ((1, 1, 1), (2, 2, 2)),
+    "restart_step": 5,
+    "check_step": 5
+}
+
+decks = (kgd_viscosity_dominated, kgd_viscosity_dominated_poroelastic,
+         kgd_toughness_dominated, kgd_toughness_dominated_poroelastic,
+         kgd_validation, kgd_edge_based_C3D6, kgd_node_based_C3D6,
+         heterogeneous_fracture, penny_shaped_toughness_dominated,
+         penny_shaped_toughness_dominated_poroelastic,
+         penny_shaped_viscosity_dominated,
+         penny_shaped_viscosity_dominated_poroelastic, pkn_viscosity_dominated,
+         pkn_viscosity_dominated_poroelastic, sneddon, walsh_quarter_no_chombo)
+
+# Check parameters
+restartcheck_params = RestartcheckParameters(atol=2.0E-4, rtol=1.0E-7)
+
+curvecheck_params_base = {}
+curvecheck_params_base["filename"] = "hydrofracture_source_curves.hdf5"
+curvecheck_params_base["tolerance"] = [1e-10, 1e-10]
+curvecheck_params_base["script_instructions"] = [[
+    "./scripts/hydrofractureCurveChecks.py", "tbd", "hydraulicAperture",
+    "source"
+], ["./scripts/hydrofractureCurveChecks.py", "tbd", "pressure", "source"]]
+curvecheck_params_base["curves"] = [["hydraulicAperture", "source"],
+                                    ["pressure", "source"]]
+
+deck_instances = []
+for deck in decks:
+    if ("aperture_curve_method" in deck) and ("pressure_curve_method" in deck):
+        curvecheck_params = copy.deepcopy(curvecheck_params_base)
+        curvecheck_params["script_instructions"][0][1] = deck[
+            "aperture_curve_method"]
+        curvecheck_params["script_instructions"][1][1] = deck[
+            "pressure_curve_method"]
+
+    if ("tolerance" in deck):
+        curvecheck_params["tolerance"] = deck["tolerance"]
+        curvecheck_params = CurveCheckParameters(**curvecheck_params)
+    else:
+        curvecheck_params = None
+
+    deck_instance = TestDeck(name=deck["name"],
+                             description=deck["description"],
+                             partitions=deck["partitions"],
+                             restart_step=deck["restart_step"],
+                             check_step=deck["check_step"],
+                             restartcheck_params=restartcheck_params,
+                             curvecheck_params=curvecheck_params)
+
+    deck_instances.append(deck_instance)
+
+generate_geos_tests(deck_instances)

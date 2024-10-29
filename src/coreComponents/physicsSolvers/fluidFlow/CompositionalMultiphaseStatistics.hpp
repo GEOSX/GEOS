@@ -2,10 +2,11 @@
  * ------------------------------------------------------------------------------------------------------------
  * SPDX-License-Identifier: LGPL-2.1-only
  *
- * Copyright (c) 2018-2020 Lawrence Livermore National Security LLC
- * Copyright (c) 2018-2020 The Board of Trustees of the Leland Stanford Junior University
- * Copyright (c) 2018-2020 TotalEnergies
- * Copyright (c) 2019-     GEOSX Contributors
+ * Copyright (c) 2016-2024 Lawrence Livermore National Security LLC
+ * Copyright (c) 2018-2024 Total, S.A
+ * Copyright (c) 2018-2024 The Board of Trustees of the Leland Stanford Junior University
+ * Copyright (c) 2018-2024 Chevron
+ * Copyright (c) 2019-     GEOS/GEOSX Contributors
  * All rights reserved
  *
  * See top level LICENSE, COPYRIGHT, CONTRIBUTORS, NOTICE, and ACKNOWLEDGEMENTS files for details.
@@ -115,29 +116,33 @@ private:
     array1d< real64 > trappedPhaseMass;
     /// immobile region phase mass
     array1d< real64 > immobilePhaseMass;
-    /// dissolved region component mass
-    array2d< real64 > dissolvedComponentMass;
+    /// region component mass
+    array2d< real64 > componentMass;
 
 
   };
 
   /**
    * @brief Compute some statistics on the reservoir (average field pressure, etc)
+   * @param[in] time current time
    * @param[in] mesh the mesh level object
    * @param[in] regionNames the array of target region names
    */
-  void computeRegionStatistics( MeshLevel & mesh,
+  void computeRegionStatistics( real64 const time,
+                                MeshLevel & mesh,
                                 arrayView1d< string const > const & regionNames ) const;
 
   /**
    * @brief Compute CFL numbers
+   * @param[in] time current time
    * @param[in] dt the time step size
    * @param[in] domain the domain partition
    */
-  void computeCFLNumbers( real64 const & dt,
+  void computeCFLNumbers( real64 const time,
+                          real64 const dt,
                           DomainPartition & domain ) const;
 
-  void postProcessInput() override;
+  void postInputInitialization() override;
 
   void registerDataOnMesh( Group & meshBodies ) override;
 

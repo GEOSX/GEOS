@@ -1,18 +1,20 @@
-#ifndef GEOS_DATAREPOSITORY_OBJECTCATALOG_HPP_
-#define GEOS_DATAREPOSITORY_OBJECTCATALOG_HPP_
 /*
  * ------------------------------------------------------------------------------------------------------------
  * SPDX-License-Identifier: LGPL-2.1-only
  *
- * Copyright (c) 2018-2020 Lawrence Livermore National Security LLC
- * Copyright (c) 2018-2020 The Board of Trustees of the Leland Stanford Junior University
- * Copyright (c) 2018-2020 TotalEnergies
- * Copyright (c) 2019-     GEOSX Contributors
+ * Copyright (c) 2016-2024 Lawrence Livermore National Security LLC
+ * Copyright (c) 2018-2024 Total, S.A
+ * Copyright (c) 2018-2024 The Board of Trustees of the Leland Stanford Junior University
+ * Copyright (c) 2018-2024 Chevron
+ * Copyright (c) 2019-     GEOS/GEOSX Contributors
  * All rights reserved
  *
  * See top level LICENSE, COPYRIGHT, CONTRIBUTORS, NOTICE, and ACKNOWLEDGEMENTS files for details.
  * ------------------------------------------------------------------------------------------------------------
  */
+
+#ifndef GEOS_DATAREPOSITORY_OBJECTCATALOG_HPP_
+#define GEOS_DATAREPOSITORY_OBJECTCATALOG_HPP_
 
 /**
  * @file ObjectCatalog.hpp
@@ -697,12 +699,12 @@ public:
  * generation of a CatalogEntry<BaseType,ClassName,...> prior to main().
  */
 #define REGISTER_CATALOG_ENTRY( BaseType, DerivedType, ... ) \
-  namespace { geos::dataRepository::CatalogEntryConstructor< BaseType, DerivedType, __VA_ARGS__ > catEntry_ ## DerivedType; }
+  namespace { GEOS_MAYBE_UNUSED geos::dataRepository::CatalogEntryConstructor< BaseType, DerivedType, __VA_ARGS__ > catEntry_ ## DerivedType; }
 
 /**
  * @brief Same as REGISTER_CATALOG_ENTRY, but for classes with no-argument constructors.
  */
 #define REGISTER_CATALOG_ENTRY0( BaseType, DerivedType ) \
-  namespace { geos::dataRepository::CatalogEntryConstructor< BaseType, DerivedType > catEntry_ ## DerivedType; }
+  namespace { GEOS_MAYBE_UNUSED geos::dataRepository::CatalogEntryConstructor< BaseType, DerivedType > catEntry_ ## DerivedType; }
 
 #endif /* GEOS_DATAREPOSITORY_OBJECTCATALOG_HPP_ */

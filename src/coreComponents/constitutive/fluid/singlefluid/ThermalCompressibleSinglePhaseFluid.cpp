@@ -2,10 +2,11 @@
  * ------------------------------------------------------------------------------------------------------------
  * SPDX-License-Identifier: LGPL-2.1-only
  *
- * Copyright (c) 2018-2020 Lawrence Livermore National Security LLC
- * Copyright (c) 2018-2020 The Board of Trustees of the Leland Stanford Junior University
- * Copyright (c) 2018-2020 TotalEnergies
- * Copyright (c) 2019-     GEOSX Contributors
+ * Copyright (c) 2016-2024 Lawrence Livermore National Security LLC
+ * Copyright (c) 2018-2024 Total, S.A
+ * Copyright (c) 2018-2024 The Board of Trustees of the Leland Stanford Junior University
+ * Copyright (c) 2018-2024 Chevron
+ * Copyright (c) 2019-     GEOS/GEOSX Contributors
  * All rights reserved
  *
  * See top level LICENSE, COPYRIGHT, CONTRIBUTORS, NOTICE, and ACKNOWLEDGEMENTS files for details.
@@ -39,10 +40,10 @@ ThermalCompressibleSinglePhaseFluid::ThermalCompressibleSinglePhaseFluid( string
     setInputFlag( InputFlags::OPTIONAL ).
     setDescription( "Fluid thermal expansion coefficient. Unit: 1/K" );
 
-  registerWrapper( viewKeyStruct::volumetricHeatCapacityString(), &m_volumetricHeatCapacity ).
+  registerWrapper( viewKeyStruct::specificHeatCapacityString(), &m_specificHeatCapacity ).
     setApplyDefaultValue( 0.0 ).
     setInputFlag( InputFlags::OPTIONAL ).
-    setDescription( "Fluid volumetric heat capacity. Unit: J/kg/K" );
+    setDescription( "Fluid heat capacity. Unit: J/kg/K" );
 
   registerWrapper( viewKeyStruct::referenceTemperatureString(), &m_referenceTemperature ).
     setApplyDefaultValue( 0.0 ).
@@ -71,9 +72,9 @@ void ThermalCompressibleSinglePhaseFluid::allocateConstitutiveData( dataReposito
   m_internalEnergy.setValues< serialPolicy >( m_referenceInternalEnergy );
 }
 
-void ThermalCompressibleSinglePhaseFluid::postProcessInput()
+void ThermalCompressibleSinglePhaseFluid::postInputInitialization()
 {
-  CompressibleSinglePhaseFluid::postProcessInput();
+  CompressibleSinglePhaseFluid::postInputInitialization();
 
   auto const checkNonnegative = [&]( real64 const value, auto const & attribute )
   {
@@ -83,7 +84,7 @@ void ThermalCompressibleSinglePhaseFluid::postProcessInput()
   };
 
   checkNonnegative( m_thermalExpansionCoeff, viewKeyStruct::thermalExpansionCoeffString() );
-  checkNonnegative( m_volumetricHeatCapacity, viewKeyStruct::volumetricHeatCapacityString() );
+  checkNonnegative( m_specificHeatCapacity, viewKeyStruct::specificHeatCapacityString() );
   checkNonnegative( m_referenceInternalEnergy, viewKeyStruct::referenceInternalEnergyString() );
 
   // Due to the way update wrapper is currently implemented, we can only support one model type
@@ -101,7 +102,7 @@ ThermalCompressibleSinglePhaseFluid::createKernelWrapper()
 {
   return KernelWrapper( KernelWrapper::DensRelationType( m_referencePressure, m_referenceTemperature, m_referenceDensity, m_compressibility, -m_thermalExpansionCoeff ),
                         KernelWrapper::ViscRelationType( m_referencePressure, m_referenceViscosity, m_viscosibility ),
-                        KernelWrapper::IntEnergyRelationType( m_referenceTemperature, m_referenceInternalEnergy, m_volumetricHeatCapacity/m_referenceInternalEnergy ),
+                        KernelWrapper::IntEnergyRelationType( m_referenceTemperature, m_referenceInternalEnergy, m_specificHeatCapacity/m_referenceInternalEnergy ),
                         m_density,
                         m_dDensity_dPressure,
                         m_dDensity_dTemperature,

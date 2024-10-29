@@ -15,12 +15,12 @@
       zCoords="{ 0, 1 }"
       nx="{ 40 }"
       ny="{ 5, 5 }"
-      nz="{ 1 }"
+      nz="{ 2 }"
       cellBlockNames="{ cb1 }"/>
   </Mesh>
 
   <Geometry>
-    <BoundedPlane
+    <Rectangle
       name="fracture"
       normal="{0.0, 1.0, 0.0}"
       origin="{0.0, 0.0, 0.0}"
@@ -28,7 +28,7 @@
       widthVector="{0.0, 0.0, 1.0}"
       dimensions="{ 180, 10 }"/>
 
-    <BoundedPlane
+    <Rectangle
       name="core"
       normal="{0.0, 1.0, 0.0}"
       origin="{0.0, 0.0, 0.0}"

@@ -77,7 +77,7 @@ a simpler constitutive update may be formulated in terms of the total strain:
    \bm{\sigma^{n+1}} = \bm{\sigma}(\bm{\epsilon^{n+1}}).
 
 GEOS will use this latter form in specific, highly-optimized solvers when we know in advance that a
-linear elastic model is being applied.  The more general interface is the
+linear elastic model is being applied.  The more general interface is
 the default, however, as it can accommodate a much wider range of constitutive behavior within a common
 interface.
 
@@ -112,7 +112,7 @@ components as
    \bm{d} = \frac{1}{2} \left( \nabla \bm{v} + \bm{v} \nabla \right ) \qquad \text{and} \qquad 
    \bm{w} = \frac{1}{2} \left( \nabla \bm{v} - \bm{v} \nabla \right ),
 
-where :math:`\bm{d}` is the rate of deformation tensor and :math:`\bm{w}` is the spin tensor. 
+where :math:`\bm{d}` is the deformation rate tensor and :math:`\bm{w}` is the spin tensor. 
 A hypo-material model can be written in rate form as
 
 .. math::
@@ -123,11 +123,11 @@ tensor, :math:`\bm{c}` is the tangent stiffness tensor,
 and :math:`\bm{d}^e` is the elastic component of the deformation rate.
 We see that the structure is similar to the rate form in the small strain regime, 
 except the rate of Cauchy stress is replaced with an objective rate of Kirchoff stress, 
-and the linearized strain rate is replaced with the rate of deformation tensor.  
+and the linearized strain rate is replaced with the deformation rate tensor.  
  
 The key difference separating most hypo-models is the choice of the objective stress rate. 
 In GEOS, we adopt the incrementally objective integration algorithm proposed by 
-`Hughes & Winget (1980) <https://onlinelibrary.wiley.com/doi/abs/10.1002/nme.1620151210>`__.
+`Hughes and Winget (1980) <https://onlinelibrary.wiley.com/doi/abs/10.1002/nme.1620151210>`__.
 This method relies on the concept of an incrementally rotating frame of reference in order
 to preserve objectivity of the stress rate. In particular, the stress update sequence is
 

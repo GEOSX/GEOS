@@ -2,10 +2,11 @@
  * ------------------------------------------------------------------------------------------------------------
  * SPDX-License-Identifier: LGPL-2.1-only
  *
- * Copyright (c) 2018-2020 Lawrence Livermore National Security LLC
- * Copyright (c) 2018-2020 The Board of Trustees of the Leland Stanford Junior University
- * Copyright (c) 2018-2020 TotalEnergies
- * Copyright (c) 2019-     GEOSX Contributors
+ * Copyright (c) 2016-2024 Lawrence Livermore National Security LLC
+ * Copyright (c) 2018-2024 Total, S.A
+ * Copyright (c) 2018-2024 The Board of Trustees of the Leland Stanford Junior University
+ * Copyright (c) 2018-2024 Chevron
+ * Copyright (c) 2019-     GEOS/GEOSX Contributors
  * All rights reserved
  *
  * See top level LICENSE, COPYRIGHT, CONTRIBUTORS, NOTICE, and ACKNOWLEDGEMENTS files for details.
@@ -44,20 +45,6 @@ public:
   class KernelWrapper final : public BlackOilFluidBase::KernelWrapper
   {
 public:
-
-    GEOS_HOST_DEVICE
-    virtual void compute( real64 const pressure,
-                          real64 const temperature,
-                          arraySlice1d< real64 const, compflow::USD_COMP - 1 > const & composition,
-                          arraySlice1d< real64, multifluid::USD_PHASE - 2 > const & phaseFraction,
-                          arraySlice1d< real64, multifluid::USD_PHASE - 2 > const & phaseDensity,
-                          arraySlice1d< real64, multifluid::USD_PHASE - 2 > const & phaseMassDensity,
-                          arraySlice1d< real64, multifluid::USD_PHASE - 2 > const & phaseViscosity,
-                          arraySlice1d< real64, multifluid::USD_PHASE - 2 > const & phaseEnthalpy,
-                          arraySlice1d< real64, multifluid::USD_PHASE - 2 > const & phaseInternalEnergy,
-                          arraySlice2d< real64, multifluid::USD_PHASE_COMP-2 > const & phaseCompFraction,
-                          real64 & totalDensity ) const override;
-
     GEOS_HOST_DEVICE
     virtual void compute( real64 const pressure,
                           real64 const temperature,
@@ -119,15 +106,6 @@ private:
                    FluidProp::ViewType totalDensity );
 
     /**
-     * @brief Utility function to compute mass densities as a function of pressure (no derivatives)
-     * @param[in] pressure pressure in the cell
-     * @param[out] phaseMassDens the phase mass densities in the cell
-     */
-    GEOS_HOST_DEVICE
-    void computeDensities( real64 const pressure,
-                           arraySlice1d< real64, multifluid::USD_PHASE - 2 > const & phaseMassDens ) const;
-
-    /**
      * @brief Utility function to compute mass densities as a function of pressure (keeping derivatives)
      * @param[in] pressure pressure in the cell
      * @param[out] phaseMassDens the phase mass densities in the cell (+ derivatives)
@@ -135,15 +113,6 @@ private:
     GEOS_HOST_DEVICE
     void computeDensities( real64 const pressure,
                            PhaseProp::SliceType const & phaseMassDens ) const;
-
-    /**
-     * @brief Utility function to compute viscosities as a function of pressure (no derivatives)
-     * @param[in] pressure pressure in the cell
-     * @param[out] phaseVisc the phase viscosities in the cell
-     */
-    GEOS_HOST_DEVICE
-    void computeViscosities( real64 const pressure,
-                             arraySlice1d< real64, multifluid::USD_PHASE - 2 > const & phaseVisc ) const;
 
     /**
      * @brief Utility function to compute viscosities as a function of pressure (keeping derivatives)
@@ -175,40 +144,6 @@ private:
   virtual void readInputDataFromPVTFiles() override;
 
 };
-
-GEOS_HOST_DEVICE
-GEOS_FORCE_INLINE
-void
-DeadOilFluid::KernelWrapper::
-  computeDensities( real64 const pressure,
-                    arraySlice1d< real64, multifluid::USD_PHASE - 2 > const & phaseMassDens ) const
-{
-  // 1. Hydrocarbon phases: look up in the formation vol factor tables
-
-  for( integer iph = 0; iph < m_hydrocarbonPhaseOrder.size(); ++iph )
-  {
-    // get the phase index
-    integer const ip = m_hydrocarbonPhaseOrder[iph];
-    // interpolate in the table to get the phase formation vol factor, and discard the derivative
-    real64 const fvf = m_formationVolFactorTables[iph].compute( &pressure );
-
-    // we are ready to update the densities
-    phaseMassDens[ip] = m_surfacePhaseMassDensity[ip] / fvf;
-  }
-
-  // 2. Water phase: use the constant formation volume factor and compressibility provided by the user
-
-  using PT = DeadOilFluid::PhaseType;
-  integer const ipWater = m_phaseOrder[PT::WATER];
-
-  // if water is present
-  if( ipWater >= 0 )
-  {
-    // note: double check, but I think std::exp is allowed in kernel
-    real64 const denom = m_waterParams.formationVolFactor * std::exp( -m_waterParams.compressibility * ( pressure - m_waterParams.referencePressure ) );
-    phaseMassDens[ipWater] = m_surfacePhaseMassDensity[ipWater] / denom;
-  }
-}
 
 GEOS_HOST_DEVICE
 GEOS_FORCE_INLINE
@@ -261,36 +196,6 @@ GEOS_FORCE_INLINE
 void
 DeadOilFluid::KernelWrapper::
   computeViscosities( real64 const pressure,
-                      arraySlice1d< real64, multifluid::USD_PHASE - 2 > const & phaseVisc ) const
-{
-  // 1. Hydrocarbon phases: look up in the viscosity tables
-
-  for( integer iph = 0; iph < m_hydrocarbonPhaseOrder.size(); ++iph )
-  {
-    // get the phase index
-    integer const ip = m_hydrocarbonPhaseOrder[iph];
-    // interpolate in the table to get the phase viscosity, and discard the derivative
-    phaseVisc[ip] = m_viscosityTables[iph].compute( &pressure );
-  }
-
-  // 2. Water phase: use the constant viscosity provided by the user
-
-  using PT = DeadOilFluid::PhaseType;
-  integer const ipWater = m_phaseOrder[PT::WATER];
-
-  // if water is present
-  if( ipWater >= 0 )
-  {
-    // just assign the viscosity value
-    phaseVisc[ipWater] = m_waterParams.viscosity;
-  }
-}
-
-GEOS_HOST_DEVICE
-GEOS_FORCE_INLINE
-void
-DeadOilFluid::KernelWrapper::
-  computeViscosities( real64 const pressure,
                       PhaseProp::SliceType const & phaseVisc ) const
 {
   using Deriv = multifluid::DerivativeOffset;
@@ -321,57 +226,6 @@ DeadOilFluid::KernelWrapper::
     phaseVisc.value[ipWater] = m_waterParams.viscosity;
     phaseVisc.derivs[ipWater][Deriv::dP] = 0.0;
   }
-}
-
-GEOS_HOST_DEVICE
-GEOS_FORCE_INLINE
-void
-DeadOilFluid::KernelWrapper::
-  compute( real64 const pressure,
-           real64 const temperature,
-           arraySlice1d< real64 const, compflow::USD_COMP - 1 > const & composition,
-           arraySlice1d< real64, multifluid::USD_PHASE - 2 > const & phaseFraction,
-           arraySlice1d< real64, multifluid::USD_PHASE - 2 > const & phaseDensity,
-           arraySlice1d< real64, multifluid::USD_PHASE - 2 > const & phaseMassDensity,
-           arraySlice1d< real64, multifluid::USD_PHASE - 2 > const & phaseViscosity,
-           arraySlice1d< real64, multifluid::USD_PHASE - 2 > const & phaseEnthalpy,
-           arraySlice1d< real64, multifluid::USD_PHASE - 2 > const & phaseInternalEnergy,
-           arraySlice2d< real64, multifluid::USD_PHASE_COMP - 2 > const & phaseCompFraction,
-           real64 & totalDensity ) const
-{
-  GEOS_UNUSED_VAR( temperature, phaseEnthalpy, phaseInternalEnergy );
-
-  integer constexpr maxNumComp = 3;
-  integer constexpr maxNumPhase = 3;
-  integer const nComps = numComponents();
-  integer const nPhases = numPhases();
-
-  // 1. Read viscosities and formation volume factors from tables, update mass densities
-  computeViscosities( pressure, phaseViscosity );
-  computeDensities( pressure, phaseMassDensity );
-
-  // 2. Update phaseDens (mass density if useMass == 1, molar density otherwise)
-  for( integer ip = 0; ip < nPhases; ++ip )
-  {
-    real64 const mult = m_useMass ? 1.0 : 1.0 / m_componentMolarWeight[ip];
-    phaseDensity[ip] = phaseMassDensity[ip] * mult;
-  }
-
-  // 3. Update remaining variables: phaseFrac, phaseCompFrac using Dead-Oil assumptions
-  for( integer ip = 0; ip < nPhases; ++ip )
-  {
-    phaseFraction[ip] = composition[ip];
-    for( integer ic = 0; ic < nComps; ++ic )
-    {
-      phaseCompFraction[ip][ic] = (ip == ic) ? 1.0 : 0.0;
-    }
-  }
-
-  // 4. Compute total fluid mass/molar density
-  computeTotalDensity< maxNumComp, maxNumPhase >( phaseFraction,
-                                                  phaseDensity,
-                                                  totalDensity );
-
 }
 
 GEOS_HOST_DEVICE

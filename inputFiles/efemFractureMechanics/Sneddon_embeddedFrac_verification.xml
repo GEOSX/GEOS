@@ -1,0 +1,100 @@
+<?xml version="1.0" ?>
+
+<Problem>
+ <Included>
+    <File
+      name="./Sneddon_embeddedFrac_base.xml"/>
+  </Included>
+
+  <Solvers
+    gravityVector="{0.0, 0.0, 0.0}">
+  <!-- SPHINX_SNEDDON_SOLVER -->
+    <SolidMechanicsEmbeddedFractures
+      name="mechSolve"
+      targetRegions="{ Domain, Fracture }"
+      initialDt="10"
+      timeIntegrationOption="QuasiStatic"
+      discretization="FE1"
+      logLevel="1">
+      <NonlinearSolverParameters
+        newtonTol="1.0e-6"
+        newtonMaxIter="2"
+        maxTimeStepCuts="1"/>
+      <LinearSolverParameters
+        solverType="gmres"
+        preconditionerType="mgr"
+        logLevel="0"/>
+    </SolidMechanicsEmbeddedFractures>
+
+    <EmbeddedSurfaceGenerator
+      name="SurfaceGenerator"
+      discretization="FE1"
+      targetRegions="{ Domain, Fracture }"
+      fractureRegion="Fracture"
+      targetObjects="{ FracturePlane }"
+      logLevel="1"
+      mpiCommOrder="1"/>
+  </Solvers>
+  <!-- SPHINX_SNEDDON_SOLVER_END -->
+
+  <!-- SPHINX_SNEDDON_MESH -->
+  <Mesh>  
+    <InternalMesh
+      name="mesh1"
+      elementTypes="{ C3D8 }"
+      xCoords="{ -20, -4, 4, 20 }"
+      yCoords="{ -20, -4, 4, 20 }"
+      zCoords="{ 0, 1 }"
+      nx="{ 10, 101, 10 }"
+      ny="{ 10, 901, 10 }"
+      nz="{ 1 }"
+      cellBlockNames="{ cb1 }"/> 
+  </Mesh>
+  <!-- SPHINX_SNEDDON_MESH_END --> 
+
+  <!-- SPHINX_SNEDDON_GEOMETRY -->
+  <Geometry>
+    <Rectangle
+      name="FracturePlane"
+      normal="{1.0, 0.0, 0.0}"
+      origin="{0.0, 0.0, 0.0}"
+      lengthVector="{0.0, 1.0, 0.0}"
+      widthVector="{0.0, 0.0, 1.0}"
+      dimensions="{ 2, 10 }"/>
+  </Geometry>
+  <!-- SPHINX_SNEDDON_GEOMETRY_END -->   
+  
+  <!-- SPHINX_SNEDDON_EVENTS -->
+  <Events
+    maxTime="1.0">
+    <SoloEvent
+      name="preFracture"
+      target="/Solvers/SurfaceGenerator"/>
+
+    <PeriodicEvent
+      name="solverApplications"
+      beginTime="0.0"
+      endTime="1.0"
+      forceDt="1.0"
+      target="/Solvers/mechSolve"/>
+
+    <PeriodicEvent
+      name="outputs"
+      targetExactTimestep="0"
+      target="/Outputs/vtkOutput"/>
+
+    <PeriodicEvent
+      name="timeHistoryCollection"
+      timeFrequency="1.0"
+      targetExactTimestep="0"
+      target="/Tasks/displacementJumpCollection" />
+
+    <PeriodicEvent
+      name="timeHistoryOutput"
+      timeFrequency="1.0"
+      targetExactTimestep="0"
+      target="/Outputs/timeHistoryOutput"/>    
+  </Events>
+  <!-- SPHINX_SNEDDON_EVENTS_END -->
+ 
+</Problem>

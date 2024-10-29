@@ -2,10 +2,11 @@
  * ------------------------------------------------------------------------------------------------------------
  * SPDX-License-Identifier: LGPL-2.1-only
  *
- * Copyright (c) 2018-2020 Lawrence Livermore National Security LLC
- * Copyright (c) 2018-2020 The Board of Trustees of the Leland Stanford Junior University
- * Copyright (c) 2018-2020 TotalEnergies
- * Copyright (c) 2019-     GEOSX Contributors
+ * Copyright (c) 2016-2024 Lawrence Livermore National Security LLC
+ * Copyright (c) 2018-2024 Total, S.A
+ * Copyright (c) 2018-2024 The Board of Trustees of the Leland Stanford Junior University
+ * Copyright (c) 2018-2024 Chevron
+ * Copyright (c) 2019-     GEOS/GEOSX Contributors
  * All rights reserved
  *
  * See top level LICENSE, COPYRIGHT, CONTRIBUTORS, NOTICE, and ACKNOWLEDGEMENTS files for details.
@@ -116,7 +117,11 @@ struct LinearSolverParameters
   {
     real64 relTolerance = 1e-6;       ///< Relative convergence tolerance for iterative solvers
     integer maxIterations = 200;      ///< Max iterations before declaring convergence failure
-    integer maxRestart = 200;         ///< Max number of vectors in Krylov basis before restarting
+#if GEOS_USE_HYPRE_DEVICE == GEOS_USE_HYPRE_CUDA || GEOS_USE_HYPRE_DEVICE == GEOS_USE_HYPRE_HIP
+    integer maxRestart = 50;          ///< Max number of vectors in Krylov basis before restarting (GPUs)
+#else
+    integer maxRestart = 200;         ///< Max number of vectors in Krylov basis before restarting (CPUs)
+#endif
     integer useAdaptiveTol = false;   ///< Use Eisenstat-Walker adaptive tolerance
     real64 weakestTol = 1e-3;         ///< Weakest allowed tolerance when using adaptive method
   }
@@ -227,12 +232,12 @@ struct LinearSolverParameters
       rigidBodyModes      ///< Rigid body modes
     };
 
-#if defined(GEOSX_USE_HYPRE_CUDA) || defined(GEOSX_USE_HYPRE_HIP)
-    CoarseningType coarseningType = CoarseningType::PMIS;           ///< Coarsening algorithm
-    SmootherType smootherType = SmootherType::l1jacobi;             ///< Smoother type
+#if GEOS_USE_HYPRE_DEVICE == GEOS_USE_HYPRE_CUDA || GEOS_USE_HYPRE_DEVICE == GEOS_USE_HYPRE_HIP
+    CoarseningType coarseningType = CoarseningType::PMIS;           ///< Coarsening algorithm (GPUs)
+    SmootherType smootherType = SmootherType::l1jacobi;             ///< Smoother type (GPUs)
 #else
-    CoarseningType coarseningType = CoarseningType::HMIS;           ///< Coarsening algorithm
-    SmootherType smootherType = SmootherType::l1sgs;                ///< Smoother type
+    CoarseningType coarseningType = CoarseningType::HMIS;           ///< Coarsening algorithm (CPUs)
+    SmootherType smootherType = SmootherType::l1sgs;                ///< Smoother type (CPUs)
 #endif
 
     integer maxLevels = 20;                                         ///< Maximum number of coarsening levels
@@ -246,6 +251,7 @@ struct LinearSolverParameters
     integer aggressiveNumPaths = 1;                                 ///< Number of paths agg. coarsening.
     integer aggressiveNumLevels = 0;                                ///< Number of levels for aggressive coarsening.
     AggInterpType aggressiveInterpType = AggInterpType::multipass;  ///< Interp. type for agg. coarsening.
+    integer aggressiveInterpMaxNonZeros = 16;                       ///< Aggressive Interpolation - Max. nonzeros/row.
     PreOrPost preOrPostSmoothing = PreOrPost::both;                 ///< Pre and/or post smoothing
     real64 threshold = 0.0;                                         ///< Threshold for "strong connections" (for classical
                                                                     ///< and smoothed-aggregation AMG)
@@ -262,27 +268,28 @@ struct LinearSolverParameters
      */
     enum class StrategyType : integer
     {
-      invalid,                                   ///< default value, to ensure solver sets something
-      singlePhaseReservoirFVM,                   ///< finite volume single-phase flow with wells
-      singlePhaseHybridFVM,                      ///< hybrid finite volume single-phase flow
-      singlePhaseReservoirHybridFVM,             ///< hybrid finite volume single-phase flow with wells
-      singlePhasePoromechanics,                  ///< single phase poromechanics with finite volume single phase flow
-      thermalSinglePhasePoromechanics,           ///< thermal single phase poromechanics with finite volume single phase flow
-      hybridSinglePhasePoromechanics,            ///< single phase poromechanics with hybrid finite volume single phase flow
-      singlePhasePoromechanicsEmbeddedFractures, ///< single phase poromechanics with finite volume single phase flow and embedded fractures
-      singlePhasePoromechanicsReservoirFVM,      ///< single phase poromechanics with finite volume single phase flow with wells
-      compositionalMultiphaseFVM,                ///< finite volume compositional multiphase flow
-      compositionalMultiphaseHybridFVM,          ///< hybrid finite volume compositional multiphase flow
-      compositionalMultiphaseReservoirFVM,       ///< finite volume compositional multiphase flow with wells
-      compositionalMultiphaseReservoirHybridFVM, ///< hybrid finite volume compositional multiphase flow with wells
-      reactiveCompositionalMultiphaseOBL,        ///< finite volume reactive compositional flow with OBL
-      thermalCompositionalMultiphaseFVM,         ///< finite volume thermal compositional multiphase flow
-      multiphasePoromechanics,                   ///< multiphase poromechanics with finite volume compositional multiphase flow
-      multiphasePoromechanicsReservoirFVM,       ///< multiphase poromechanics with finite volume compositional multiphase flow with wells
-      thermalMultiphasePoromechanics,            ///< thermal multiphase poromechanics with finite volume compositional multiphase flow
-      hydrofracture,                             ///< hydrofracture
-      lagrangianContactMechanics,                ///< Lagrangian contact mechanics
-      solidMechanicsEmbeddedFractures            ///< Embedded fractures mechanics
+      invalid,                                     ///< default value, to ensure solver sets something
+      singlePhaseReservoirFVM,                     ///< finite volume single-phase flow with wells
+      singlePhaseHybridFVM,                        ///< hybrid finite volume single-phase flow
+      singlePhaseReservoirHybridFVM,               ///< hybrid finite volume single-phase flow with wells
+      singlePhasePoromechanics,                    ///< single phase poromechanics with finite volume single phase flow
+      thermalSinglePhasePoromechanics,             ///< thermal single phase poromechanics with finite volume single phase flow
+      hybridSinglePhasePoromechanics,              ///< single phase poromechanics with hybrid finite volume single phase flow
+      singlePhasePoromechanicsEmbeddedFractures,   ///< single phase poromechanics with FV embedded fractures
+      singlePhasePoromechanicsConformingFractures, ///< single phase poromechanics with FV conforming  fractures
+      singlePhasePoromechanicsReservoirFVM,        ///< single phase poromechanics with finite volume single phase flow with wells
+      compositionalMultiphaseFVM,                  ///< finite volume compositional multiphase flow
+      compositionalMultiphaseHybridFVM,            ///< hybrid finite volume compositional multiphase flow
+      compositionalMultiphaseReservoirFVM,         ///< finite volume compositional multiphase flow with wells
+      compositionalMultiphaseReservoirHybridFVM,   ///< hybrid finite volume compositional multiphase flow with wells
+      reactiveCompositionalMultiphaseOBL,          ///< finite volume reactive compositional flow with OBL
+      thermalCompositionalMultiphaseFVM,           ///< finite volume thermal compositional multiphase flow
+      multiphasePoromechanics,                     ///< multiphase poromechanics with finite volume compositional multiphase flow
+      multiphasePoromechanicsReservoirFVM,         ///< multiphase poromechanics with finite volume compositional multiphase flow with wells
+      thermalMultiphasePoromechanics,              ///< thermal multiphase poromechanics with finite volume compositional multiphase flow
+      hydrofracture,                               ///< hydrofracture
+      lagrangianContactMechanics,                  ///< Lagrangian contact mechanics
+      solidMechanicsEmbeddedFractures              ///< Embedded fractures mechanics
     };
 
     StrategyType strategy = StrategyType::invalid; ///< Predefined MGR solution strategy (solver specific)
@@ -361,6 +368,7 @@ ENUM_STRINGS( LinearSolverParameters::MGR::StrategyType,
               "thermalSinglePhasePoromechanics",
               "hybridSinglePhasePoromechanics",
               "singlePhasePoromechanicsEmbeddedFractures",
+              "singlePhasePoromechanicsConformingFractures",
               "singlePhasePoromechanicsReservoirFVM",
               "compositionalMultiphaseFVM",
               "compositionalMultiphaseHybridFVM",

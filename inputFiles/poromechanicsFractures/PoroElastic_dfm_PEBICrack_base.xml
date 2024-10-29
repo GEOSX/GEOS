@@ -1,0 +1,264 @@
+<?xml version="1.0" ?>
+
+<Problem>
+  
+  <ElementRegions>
+    <CellElementRegion
+      name="Region"
+      cellBlocks="{ wedges, hexahedra, pentagonalPrisms, hexagonalPrisms, heptagonalPrisms, octagonalPrisms, nonagonalPrisms }"
+      materialList="{ water, porousRock }"/>  
+
+    <SurfaceElementRegion
+      name="Fault"
+      faceBlock="fracture"
+      materialList="{ water, faultFilling, fractureContact }"
+      defaultAperture="1e-3"/>
+  </ElementRegions> 
+
+  <Geometry>
+    <Box
+      name="xposFace"
+      xMin="{ 2249.99,  -2250.01,    -0.01 }"
+      xMax="{ 2250.01,   2250.01,   500.01 }"/>
+
+    <Box
+      name="xnegFace"
+      xMin="{ -2250.01,  -2250.01,   -0.01 }"
+      xMax="{ -2249.99,   2250.01,  500.01 }"/>
+
+    <Box
+      name="yposFace"
+      xMin="{ -2250.01,   2249.99,   -0.01 }"
+      xMax="{  2250.01,   2250.01,  500.01 }"/>
+
+    <Box
+      name="ynegFace"
+      xMin="{ -2250.01,  -2250.01,   -0.01 }"
+      xMax="{  2250.01,  -2249.99,  500.01 }"/>
+
+    <Box
+      name="zposFace"
+      xMin="{ -2250.01,  -2250.01,  499.99 }"
+      xMax="{  2250.01,   2250.01,  500.01 }"/>
+
+    <Box
+      name="znegFace"
+      xMin="{ -2250.01,  -2250.01,   -0.01 }"
+      xMax="{  2250.01,   2250.01,    0.01 }"/>
+
+    <Box
+      name="leftReservoir"
+      xMin="{ -2250.01,  -150.01,   -0.01 }"
+      xMax="{     0.01,    75.01,  500.01 }"/>
+
+    <Box
+      name="rightReservoir"
+      xMin="{    -0.01,   -75.01,   -0.01 }"
+      xMax="{  2250.01,   150.01,  500.01 }"/>
+  </Geometry>
+
+  <NumericalMethods>
+    <FiniteVolume>
+       <TwoPointFluxApproximation
+        name="singlePhaseTPFA"/>
+      <TwoPointFluxApproximation
+        name="singlePhaseTPFA_stab"/>  
+    </FiniteVolume>
+    <FiniteElements>
+      <FiniteElementSpace
+        name="FE1"
+        order="1"/>
+    </FiniteElements>
+  </NumericalMethods>
+
+  <Constitutive>
+    <!--porousRock-->
+    <PorousElasticIsotropic
+      name="porousRock"
+      solidModelName="rock"
+      porosityModelName="rockPorosity"
+      permeabilityModelName="rockPerm"/>
+    <ElasticIsotropic
+      name="rock"
+      defaultDensity="2650.0"
+      defaultYoungModulus="14.95e9"
+      defaultPoissonRatio="0.15"/>
+
+    <CompressibleSinglePhaseFluid 
+      name="water"
+      defaultDensity="1020"
+      defaultViscosity="0.001"
+      referencePressure="35e6"
+      referenceDensity="1020"
+      compressibility="1.e-20"
+      referenceViscosity="0.001"
+      viscosibility="0.0"/>
+    <BiotPorosity
+      name="rockPorosity"
+      defaultGrainBulkModulus="7.1190476190476195e10"
+      defaultReferencePorosity="0.15"/>
+    <ConstantPermeability
+      name="rockPerm"
+      permeabilityComponents="{1.0e-18, 1.0e-18, 1.0e-18}"/>
+      
+      <!-- Material inside the fault -->
+    <CompressibleSolidParallelPlatesPermeability
+      name="faultFilling"
+      solidModelName="nullSolid"
+      porosityModelName="fracturePorosity"
+      permeabilityModelName="fracturePerm"/>
+
+    <PressurePorosity
+      name="fracturePorosity"
+      defaultReferencePorosity="1.00"
+      referencePressure="0e6"
+      compressibility="0.0"/>
+
+    <ParallelPlatesPermeability
+      name="fracturePerm"/>
+
+    <Coulomb
+      name="fractureContact"
+      cohesion="40.0e6"
+      frictionCoefficient="0.01"
+      apertureTableName="apertureTable"/>
+
+    <NullModel
+      name="nullSolid"/>
+
+  </Constitutive>
+
+  <FieldSpecifications>
+
+    <FieldSpecification
+      name="fracPorosity"
+      initialCondition="1"
+      setNames="{ all }"
+      objectPath="ElementRegions/Fault"
+      fieldName="fracturePorosity_porosity"
+      scale="1.00"/>
+
+    <FieldSpecification
+      name="prescribedFaultPressure"
+      setNames="{ all }"
+      objectPath="ElementRegions/Fault"
+      fieldName="pressure"
+      scale="35.0e6"/>
+
+    <FieldSpecification
+      name="xconstraint"
+      component="0"
+      setNames="{ xnegFace, xposFace }"
+      objectPath="nodeManager"
+      fieldName="totalDisplacement"
+      scale="0.0"/>
+
+    <FieldSpecification
+      name="yconstraint"
+      component="1"
+      setNames="{ ynegFace }"
+      objectPath="nodeManager"
+      fieldName="totalDisplacement"
+      scale="0.0"/>
+
+    <FieldSpecification
+      name="zconstraint"
+      objectPath="nodeManager"
+      fieldName="totalDisplacement"
+      component="2"
+      scale="0.0"
+      setNames="{zposFace, znegFace}"/>
+    
+    <FieldSpecification
+      name="initialPressure"
+      initialCondition="0"
+      setNames="{ all }"
+      objectPath="ElementRegions/Region"
+      fieldName="pressure"
+      scale="35.0e6"/>  
+
+    <FieldSpecification 
+      name="initialStress1"
+      initialCondition="1"
+      setNames="{ all }"
+      objectPath="ElementRegions/Region"
+      fieldName="rock_stress"
+      component="0"
+      scale="-28.499545e6"/>
+      
+    <FieldSpecification 
+      name="initialStress2"
+      initialCondition="1"
+      setNames="{ all }"
+      objectPath="ElementRegions/Region"
+      fieldName="rock_stress"
+      component="1"
+      scale="-38.499545e6"/>
+      
+    <FieldSpecification 
+      name="initialStress3"
+      initialCondition="1"
+      setNames="{ all }"
+      objectPath="ElementRegions/Region"
+      fieldName="rock_stress"
+      component="2"
+      scale="-28.499545e6"/>   
+
+    <Traction
+      name="tractionTop"
+      objectPath="faceManager"
+      tractionType="normal"
+      scale="-70.0e6"      
+      setNames="{ yposFace }"/>
+
+    <FieldSpecification
+      name="reservoirPressure"
+      initialCondition="0"
+      setNames="{ leftReservoir, rightReservoir }"
+      objectPath="ElementRegions/Region"
+      fieldName="pressure"      
+      scale="10.0e6"/>
+  </FieldSpecifications>
+
+  <Functions>
+    <TableFunction
+      name="apertureTable"
+      coordinates="{ -1.0e-3, 0.0 }"
+      values="{ 1.0e-3, 1.0e-3 }"/>
+  </Functions>
+
+  <Tasks>
+    <PackCollection
+      name="tractionCollection"
+      objectPath="ElementRegions/Fault/fracture"
+      fieldName="traction"/>
+
+    <PackCollection
+      name="displacementJumpCollection"
+      objectPath="ElementRegions/Fault/fracture"
+      fieldName="displacementJump"/>   
+    </Tasks>
+
+  <Outputs>
+    <VTK 
+      name="vtkOutput"
+      parallelThreads="1"
+      plotFileRoot="verticalFault_res5"/>
+
+    <TimeHistory
+      name="tractionOutput"
+      sources="{/Tasks/tractionCollection}"
+      filename="traction_history" />
+
+    <TimeHistory
+      name="displacementJumpOutput"
+      sources="{/Tasks/displacementJumpCollection}"
+      filename="displacementJump_history" /> 
+
+    <Restart
+      name="restartOutput"/>
+
+  </Outputs>
+
+
+</Problem>

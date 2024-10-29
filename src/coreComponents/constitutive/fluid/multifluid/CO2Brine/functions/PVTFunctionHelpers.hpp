@@ -2,10 +2,11 @@
  * ------------------------------------------------------------------------------------------------------------
  * SPDX-License-Identifier: LGPL-2.1-only
  *
- * Copyright (c) 2018-2020 Lawrence Livermore National Security LLC
- * Copyright (c) 2018-2020 The Board of Trustees of the Leland Stanford Junior University
- * Copyright (c) 2018-2020 TotalEnergies
- * Copyright (c) 2019-     GEOSX Contributors
+ * Copyright (c) 2016-2024 Lawrence Livermore National Security LLC
+ * Copyright (c) 2018-2024 Total, S.A
+ * Copyright (c) 2018-2024 The Board of Trustees of the Leland Stanford Junior University
+ * Copyright (c) 2018-2024 Chevron
+ * Copyright (c) 2019-     GEOS/GEOSX Contributors
  * All rights reserved
  *
  * See top level LICENSE, COPYRIGHT, CONTRIBUTORS, NOTICE, and ACKNOWLEDGEMENTS files for details.
@@ -17,6 +18,9 @@
  */
 
 #include "common/DataTypes.hpp"
+#include "common/Units.hpp"
+
+#include "codingUtilities/StringUtilities.hpp"
 
 #ifndef GEOS_CONSTITUTIVE_FLUID_MULTIFLUID_CO2BRINE_FUNCTIONS_PVTFUNCTIONHELPERS_HPP_
 #define GEOS_CONSTITUTIVE_FLUID_MULTIFLUID_CO2BRINE_FUNCTIONS_PVTFUNCTIONHELPERS_HPP_
@@ -121,8 +125,8 @@ public:
   localIndex nPressures() const { return coords[coordType::PRES].size(); }
   localIndex nTemperatures() const { return coords[coordType::TEMP].size(); }
 
-  void appendPressure( const real64 & pres ) { coords[coordType::PRES].emplace_back( pres ); }
-  void appendTemperature( const real64 & temp ) { coords[coordType::TEMP].emplace_back( temp ); }
+  PTTableCoordinates & appendPressure( const real64 & pres ) { coords[coordType::PRES].emplace_back( pres ); return *this; }
+  PTTableCoordinates & appendTemperature( const real64 & temp ) { coords[coordType::TEMP].emplace_back( temp ); return *this; }
 
   real64 const & getPressure( localIndex i ) const { return coords[coordType::PRES][i]; }
   real64 const & getTemperature( localIndex i ) const { return coords[coordType::TEMP][i]; }
@@ -131,6 +135,9 @@ public:
   array1d< real64 > const & getTemperatures(  ) const { return coords[coordType::TEMP]; }
 
   array1d< array1d< real64 > > const & getCoords() const { return coords; }
+
+  static const inline std::vector< units::Unit > coordsUnits =
+  { units::Pressure, units::TemperatureInC };
 
 private:
 
@@ -195,15 +202,15 @@ initializePropertyTable( string_array const & inputParameters,
     GEOS_THROW_IF( PStart >= PEnd, "PStart must be strictly smaller than PEnd",
                    InputError );
 
-    constexpr real64 T_K = 273.15;
-
-    real64 const TStart = stod( inputParameters[5] ) - T_K;
-    real64 const TEnd = stod( inputParameters[6] )- T_K;
+    real64 const TStart = units::convertKToC( stod( inputParameters[5] ) );
+    real64 const TEnd = units::convertKToC( stod( inputParameters[6] ) );
     real64 const dT = stod( inputParameters[7] );
 
-    GEOS_THROW_IF( TStart < 10, "Temperature must be in Kelvin and must be larger than 283.15 K",
+    real64 const minT = 10;
+    real64 const maxT = 350;
+    GEOS_THROW_IF( TStart < minT, "Temperature must be in Kelvin and must be larger than " << minT << " K",
                    InputError );
-    GEOS_THROW_IF( TEnd > 350, "Temperature must be in Kelvin and must be smaller than 623.15 K",
+    GEOS_THROW_IF( TEnd > maxT, "Temperature must be in Kelvin and must be smaller than " << maxT << " K",
                    InputError );
     GEOS_THROW_IF( TStart >= TEnd, "TStart must be strictly smaller than TEnd",
                    InputError );

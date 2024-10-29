@@ -2,10 +2,11 @@
  * ------------------------------------------------------------------------------------------------------------
  * SPDX-License-Identifier: LGPL-2.1-only
  *
- * Copyright (c) 2018-2020 Lawrence Livermore National Security LLC
- * Copyright (c) 2018-2020 The Board of Trustees of the Leland Stanford Junior University
- * Copyright (c) 2018-2020 TotalEnergies
- * Copyright (c) 2019-     GEOSX Contributors
+ * Copyright (c) 2016-2024 Lawrence Livermore National Security LLC
+ * Copyright (c) 2018-2024 Total, S.A
+ * Copyright (c) 2018-2024 The Board of Trustees of the Leland Stanford Junior University
+ * Copyright (c) 2018-2024 Chevron
+ * Copyright (c) 2019-     GEOS/GEOSX Contributors
  * All rights reserved
  *
  * See top level LICENSE, COPYRIGHT, CONTRIBUTORS, NOTICE, and ACKNOWLEDGEMENTS files for details.
@@ -24,8 +25,9 @@
 #include "xmlWrapper.hpp"
 #include "RestartFlags.hpp"
 #include "HistoryDataSpec.hpp"
+#include "DataContext.hpp"
 
-#if defined(GEOSX_USE_PYGEOSX)
+#if defined(GEOS_USE_PYGEOSX)
 #include "LvArray/src/python/python.hpp"
 #endif
 
@@ -63,9 +65,11 @@ public:
    * @brief Constructor.
    * @param[in] name name of the object
    * @param[in] parent pointer to Group that holds this WrapperBase
+   * @param[in] rtTypeName the name of the rtType to use (given by rtType::CustomTypes or rtType::getTypeName())
    */
   explicit WrapperBase( string const & name,
-                        Group & parent );
+                        Group & parent,
+                        string const & rtTypeName );
 
   /// @cond DO_NOT_DOCUMENT
   WrapperBase() = delete;
@@ -163,10 +167,27 @@ public:
   virtual void move( LvArray::MemorySpace const space, bool const touch ) const = 0;
 
   /**
-   * @brief Calls TypeRegex< T >::get().
    * @return regex used to validate inputs of wrapped type
    */
-  virtual string typeRegex() const = 0;
+  virtual Regex const & getTypeRegex() const = 0;
+
+  /**
+   * @return the rtTypeName used when parsing an input value to the wrapped object.
+   */
+  string const & getRTTypeName() const
+  { return m_rtTypeName; }
+
+  /**
+   * @brief override the rtType to use when parsing an input value to the wrapped object. It can be
+   * useful to change the used regex to validate the input value.
+   * @param rtTypeName the name of the rtType to use (given by rtType::CustomTypes or rtType::getTypeName())
+   * @return the reference to this Wrapper
+   */
+  WrapperBase & setRTTypeName( string_view rtTypeName )
+  {
+    m_rtTypeName = rtTypeName;
+    return *this;
+  }
 
   ///@}
 
@@ -185,9 +206,11 @@ public:
   /**
    * @brief Initialize the wrapper from the input xml node.
    * @param targetNode the xml node to initialize from.
-   * @return True iff the wrapper initialized itself from the file.
+   * @param nodePos the target node position, typically obtained with xmlDocument::getNodePosition().
+   * @return True if the wrapper initialized itself from the file.
    */
-  virtual bool processInputFile( xmlWrapper::xmlNode const & targetNode ) = 0;
+  virtual bool processInputFile( xmlWrapper::xmlNode const & targetNode,
+                                 xmlWrapper::xmlNodePos const & nodePos ) = 0;
 
   /**
    * @brief Push the data in the wrapper into a Conduit blueprint field.
@@ -421,6 +444,25 @@ public:
   string getPath() const;
 
   /**
+   * @return DataContext object that that stores contextual information on this group that can be
+   * used in output messages.
+   */
+  DataContext const & getDataContext() const
+  { return *m_dataContext; }
+
+  /**
+   * @return the group that contains this Wrapper.
+   */
+  Group & getParent()
+  { return *m_parent; }
+
+  /**
+   * @copydoc getParent()
+   */
+  Group const & getParent() const
+  { return *m_parent; }
+
+  /**
    * @brief Set the InputFlag of the wrapper.
    * @param input the new InputFlags value
    * @return a pointer to this wrapper
@@ -464,6 +506,17 @@ public:
   WrapperBase & setDescription( string const & description )
   {
     m_description = description;
+    return *this;
+  }
+
+  /**
+   * @brief Add up more text to the existing description string of the wrapper.
+   * @param description the description to add to the end of the previous one.
+   * @return a pointer to this wrapper
+   */
+  WrapperBase & appendDescription( string const & description )
+  {
+    m_description += description;
     return *this;
   }
 
@@ -601,7 +654,7 @@ public:
 //  static int TV_ttf_display_type( const WrapperBase * wrapper);
 #endif
 
-#if defined(GEOSX_USE_PYGEOSX)
+#if defined(GEOS_USE_PYGEOSX)
   /**
    * @brief Return a Python object representing the wrapped object.
    * @return A Python object representing the wrapped object.
@@ -619,6 +672,14 @@ protected:
   }
 
   /// @endcond
+
+  /**
+   * @brief Sets the m_dataContext to a DataFileContext by retrieving the attribute file line.
+   * @param targetNode the node containing this wrapper source attribute.
+   * @param nodePos the xml node position of the node
+   */
+  void createDataContext( xmlWrapper::xmlNode const & targetNode,
+                          xmlWrapper::xmlNodePos const & nodePos );
 
 protected:
 
@@ -646,11 +707,17 @@ protected:
   /// A string description of the wrapped object
   string m_description;
 
+  /// A string regex to validate the input values string to parse for the wrapped object
+  string m_rtTypeName;
+
   /// A vector of the names of the objects that created this Wrapper.
   std::set< string > m_registeringObjects;
 
   /// A reference to the corresponding conduit::Node.
   conduit::Node & m_conduitNode;
+
+  /// A DataContext object that can helps to contextualize this Group.
+  std::unique_ptr< DataContext > m_dataContext;
 
 private:
 

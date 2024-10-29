@@ -10,7 +10,7 @@ densityModelType   geos_constitutive_ExponentApproximationType linear   | Type o
                                                                         | * exponential                                                                 
                                                                         | * linear                                                                      
                                                                         | * quadratic                                                                   
-name               string                                      required A name is required for any non-unique nodes                                   
+name               groupName                                   required A name is required for any non-unique nodes                                   
 referenceDensity   real64                                      1000     Reference fluid density                                                       
 referencePressure  real64                                      0        Reference pressure                                                            
 referenceViscosity real64                                      0.001    Reference fluid viscosity                                                     

@@ -1,0 +1,85 @@
+<?xml version="1.0" ?>
+
+<Problem>
+
+  <Included>
+    <File
+      name="./Sneddon_embeddedFrac_base.xml"/>
+  </Included>
+
+  <Solvers
+    gravityVector="{ 0.0, 0.0, 0.0 }">
+    <SolidMechanicsEmbeddedFractures
+      name="mechSolve"
+      targetRegions="{ Domain, Fracture }"
+      initialDt="10"
+      timeIntegrationOption="QuasiStatic"
+      discretization="FE1"
+      logLevel="1"
+      useStaticCondensation="1">
+      <NonlinearSolverParameters
+        newtonTol="1.0e-5"
+        newtonMaxIter="2"
+        maxTimeStepCuts="1"/>
+      <LinearSolverParameters
+        directParallel="0"
+        solverType="direct"
+        logLevel="0"/>
+    </SolidMechanicsEmbeddedFractures>
+
+    <EmbeddedSurfaceGenerator
+      name="SurfaceGenerator"
+      discretization="FE1"
+      targetRegions="{ Domain, Fracture }"
+      fractureRegion="Fracture"
+      targetObjects="{ FracturePlane }"
+      logLevel="1"
+      mpiCommOrder="1"/>
+  </Solvers>
+
+  <Mesh>
+    <InternalMesh
+      name="mesh1"
+      elementTypes="{ C3D8 }"
+      xCoords="{ 0, 3 }"
+      yCoords="{ 0, 3 }"
+      zCoords="{ 0, 3 }"
+      nx="{ 11 }"
+      ny="{ 11 }"
+      nz="{ 1 }"
+      cellBlockNames="{ cb1 }"/>
+  </Mesh>
+
+  <Geometry>
+    <Rectangle
+      name="FracturePlane"
+      normal="{ 0, 1, 0 }"
+      origin="{ 20, 20, 0.5 }"
+      lengthVector="{ 1, 0, 0 }"
+      widthVector="{ 0, 0, 1 }"
+      dimensions="{ 2, 2 }"/>
+  </Geometry>
+
+  <Events
+    maxTime="10">
+    <SoloEvent
+      name="preFracture"
+      target="/Solvers/SurfaceGenerator"/>
+
+    <PeriodicEvent
+      name="solverApplications"
+      forceDt="10"
+      target="/Solvers/mechSolve"/>
+
+    <PeriodicEvent
+      name="outputs"
+      cycleFrequency="10"
+      target="/Outputs/vtkOutput"/>
+
+    <PeriodicEvent
+      name="restarts"
+      timeFrequency="10"
+      target="/Outputs/restartOutput"/>
+  </Events>
+  
+</Problem>

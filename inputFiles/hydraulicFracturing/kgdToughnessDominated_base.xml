@@ -9,10 +9,11 @@
       solidSolverName="lagsolve"
       flowSolverName="SinglePhaseFlow"
       surfaceGeneratorName="SurfaceGen"
-            logLevel="1"
+      logLevel="1"
       targetRegions="{ Fracture }"
       contactRelationName="fractureContact"
-      maxNumResolves="2">
+      maxNumResolves="2"
+      useQuasiNewton="1">
     <!-- Sphinx_Solvers_Hydrofracture_End -->
 
       <NonlinearSolverParameters
@@ -71,7 +72,7 @@
     <SurfaceElementRegion
       name="Fracture"
       defaultAperture="0.02e-3"
-      materialList="{ water, rock, fractureFilling, fractureContact }"/>
+      materialList="{ water, fractureFilling, fractureContact }"/>
   </ElementRegions>
 
   <Constitutive>
@@ -209,6 +210,19 @@
       name="areaCollection"
       objectPath="ElementRegions/Fracture/FractureSubRegion"
       fieldName="elementArea"/> 
+
+    <!-- Collect aperture, pressure at the source for curve checks -->
+    <PackCollection
+      name="sourcePressureCollection"
+      objectPath="ElementRegions/Fracture/FractureSubRegion"
+      fieldName="pressure"
+      setNames="{ source }"/>
+
+    <PackCollection
+      name="sourceHydraulicApertureCollection"
+      objectPath="ElementRegions/Fracture/FractureSubRegion"
+      fieldName="hydraulicAperture"
+      setNames="{ source }"/>
   </Tasks>
   <!-- SPHINX_TASKS_END -->
 
@@ -222,7 +236,12 @@
     <TimeHistory
       name="timeHistoryOutput"
       sources="{/Tasks/pressureCollection, /Tasks/apertureCollection, /Tasks/hydraulicApertureCollection, /Tasks/areaCollection}"
-      filename="kgdToughnessDominated_output" />  
+      filename="kgdToughnessDominated_output" />
+
+    <TimeHistory
+      name="curveOutput"
+      sources="{/Tasks/sourcePressureCollection, /Tasks/sourceHydraulicApertureCollection}"
+      filename="hydrofracture_source_curves" />
 
     <Restart
       name="restartOutput"/>

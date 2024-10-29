@@ -1,3 +1,18 @@
+/*
+ * ------------------------------------------------------------------------------------------------------------
+ * SPDX-License-Identifier: LGPL-2.1-only
+ *
+ * Copyright (c) 2016-2024 Lawrence Livermore National Security LLC
+ * Copyright (c) 2018-2024 Total, S.A
+ * Copyright (c) 2018-2024 The Board of Trustees of the Leland Stanford Junior University
+ * Copyright (c) 2018-2024 Chevron 
+ * Copyright (c) 2019-     GEOS/GEOSX Contributors
+ * All rights reserved
+ *
+ * See top level LICENSE, COPYRIGHT, CONTRIBUTORS, NOTICE, and ACKNOWLEDGEMENTS files for details.
+ * ------------------------------------------------------------------------------------------------------------
+ */
+
 /**
  * @file GeosxConfig.hpp
  *
@@ -9,28 +24,28 @@
 #define GEOS_COMMON_CONFIG_HPP
 
 /// Enables floating point exceptions
-#cmakedefine GEOSX_USE_FPE
+#cmakedefine GEOS_USE_FPE
 
 /// Enables bounds check in LvArray classes (CMake option ARRAY_BOUNDS_CHECK)
-#cmakedefine GEOSX_USE_ARRAY_BOUNDS_CHECK
+#cmakedefine GEOS_USE_ARRAY_BOUNDS_CHECK
 
 /// Enables use of Caliper (CMake option ENABLE_CALIPER)
-#cmakedefine GEOSX_USE_CALIPER
+#cmakedefine GEOS_USE_CALIPER
 
 /// Enables use of Caliper (CMake option ENABLE_ADIAK)
-#cmakedefine GEOSX_USE_ADIAK
+#cmakedefine GEOS_USE_ADIAK
 
 /// Enables use of CHAI (CMake option ENABLE_CHAI)
-#cmakedefine GEOSX_USE_CHAI
+#cmakedefine GEOS_USE_CHAI
 
 /// Enables use of Mathpresso library (CMake option ENABLE_MATHPRESSO)
-#cmakedefine GEOSX_USE_MATHPRESSO
+#cmakedefine GEOS_USE_MATHPRESSO
 
 /// Enables use of MPI (CMake option ENABLE_MPI)
-#cmakedefine GEOSX_USE_MPI
+#cmakedefine GEOS_USE_MPI
 
 /// Enables use of OpenMP (CMake option ENABLE_OPENMP)
-#cmakedefine GEOSX_USE_OPENMP
+#cmakedefine GEOS_USE_OPENMP
 
 /// Enables use of CUDA (CMake option ENABLE_CUDA)
 #cmakedefine GEOS_USE_CUDA
@@ -41,38 +56,32 @@
 /// Enables use of HIP (CMake option ENABLE_HIP)
 #cmakedefine GEOS_USE_HIP
 
+/// Workaround for FMT compilation issue on some NVCC/PowerPC machines (CMake option ENABLE_FMT_CONST_FORMATTER_WORKAROUND)
+#cmakedefine GEOS_USE_FMT_CONST_FORMATTER_WORKAROUND
+
 /// Enables use of PVTPackage (CMake option ENABLE_PVTPackage)
-#cmakedefine GEOSX_USE_PVTPackage
+#cmakedefine GEOS_USE_PVTPackage
 
 /// Enables use of Python (CMake option ENABLE_PYTHON)
-#cmakedefine GEOSX_USE_PYGEOSX
+#cmakedefine GEOS_USE_PYGEOSX
 
 /// Enables use of RAJA (CMake option ENABLE_RAJA)
-#cmakedefine GEOSX_USE_RAJA
+#cmakedefine GEOS_USE_RAJA
 
 /// Enables use of sys/time.h based timers (CMake option ENABLE_TIMERS)
-#cmakedefine GEOSX_USE_TIMERS
+#cmakedefine GEOS_USE_TIMERS
 
 /// Enables use of additional debugging interface for TotalView (Cmake option ENABLE_TOTALVIEW_OUTPUT)
-#cmakedefine GEOSX_USE_TOTALVIEW_OUTPUT
+#cmakedefine GEOS_USE_TOTALVIEW_OUTPUT
 
 /// Enables use of Intel MKL (CMake option ENABLE_MKL)
-#cmakedefine GEOSX_USE_MKL
+#cmakedefine GEOS_USE_MKL
 
 /// Enables use of Trilinos library (CMake option ENABLE_TRILINOS)
-#cmakedefine GEOSX_USE_TRILINOS
+#cmakedefine GEOS_USE_TRILINOS
 
 /// Enables use of Hypre library (CMake option ENABLE_HYPRE)
-#cmakedefine GEOSX_USE_HYPRE
-
-#if defined( GEOSX_USE_HYPRE )
-  /// Parsed hypre version information
-  #define HYPRE_VERSION_MAJOR @HYPRE_VERSION_MAJOR@
-  /// Parsed hypre version information
-  #define HYPRE_VERSION_MINOR @HYPRE_VERSION_MINOR@
-  /// Parsed hypre version information
-  #define HYPRE_VERSION_PATCH @HYPRE_VERSION_PATCH@
-#endif
+#cmakedefine GEOS_USE_HYPRE
 
 /// Denotes HYPRE using CPU
 #define GEOS_USE_HYPRE_CPU 0
@@ -84,46 +93,46 @@
 #cmakedefine GEOS_USE_HYPRE_DEVICE @GEOS_USE_HYPRE_DEVICE@
 
 /// Enables use of SuperLU_dist library through HYPRE (CMake option ENABLE_SUPERLU_DIST)
-#cmakedefine GEOSX_USE_SUPERLU_DIST
+#cmakedefine GEOS_USE_SUPERLU_DIST
 
 /// Enables use of PETSc library (CMake option ENABLE_PETSC)
-#cmakedefine GEOSX_USE_PETSC
+#cmakedefine GEOS_USE_PETSC
 
 /// Enables use of Scotch library (CMake option ENABLE_SCOTCH)
-#cmakedefine GEOSX_USE_SCOTCH
+#cmakedefine GEOS_USE_SCOTCH
 
-/// Choice of global linear algebra interface (CMake option GEOSX_LA_INTERFACE)
-#cmakedefine GEOSX_LA_INTERFACE @GEOSX_LA_INTERFACE@
+/// Choice of global linear algebra interface (CMake option GEOS_LA_INTERFACE)
+#cmakedefine GEOS_LA_INTERFACE @GEOS_LA_INTERFACE@
 /// Macro defined when Trilinos interface is selected
-#cmakedefine GEOSX_LA_INTERFACE_TRILINOS
+#cmakedefine GEOS_LA_INTERFACE_TRILINOS
 /// Macro defined when Hypre interface is selected
-#cmakedefine GEOSX_LA_INTERFACE_HYPRE
+#cmakedefine GEOS_LA_INTERFACE_HYPRE
 /// Macro defined when PETSc interface is selected
-#cmakedefine GEOSX_LA_INTERFACE_PETSC
+#cmakedefine GEOS_LA_INTERFACE_PETSC
 
 /// Platform-dependent mangling of fortran function names (CMake option FORTRAN_MANGLE_NO_UNDERSCORE)
 #cmakedefine FORTRAN_MANGLE_NO_UNDERSCORE
 
 /// USE OF SEPARATION COEFFICIENT IN FRACTURE FLOW
-#cmakedefine GEOSX_USE_SEPARATION_COEFFICIENT
+#cmakedefine GEOS_USE_SEPARATION_COEFFICIENT
 
 /// CMake option CMAKE_BUILD_TYPE
-#cmakedefine GEOSX_CMAKE_BUILD_TYPE @GEOSX_CMAKE_BUILD_TYPE@
+#cmakedefine GEOS_CMAKE_BUILD_TYPE @GEOS_CMAKE_BUILD_TYPE@
 
 /// The type that localIndex will be aliased to.
-#define GEOSX_LOCALINDEX_TYPE @GEOSX_LOCALINDEX_TYPE@
+#define GEOS_LOCALINDEX_TYPE @GEOS_LOCALINDEX_TYPE@
 
 /// An integer flag representing the type that localIndex will be aliased to.
-#define GEOSX_LOCALINDEX_TYPE_FLAG @GEOSX_LOCALINDEX_TYPE_FLAG@
+#define GEOS_LOCALINDEX_TYPE_FLAG @GEOS_LOCALINDEX_TYPE_FLAG@
 
 /// The type that globalIndex will be aliased to.
-#define GEOSX_GLOBALINDEX_TYPE @GEOSX_GLOBALINDEX_TYPE@
+#define GEOS_GLOBALINDEX_TYPE @GEOS_GLOBALINDEX_TYPE@
 
 /// An integer flag representing the type that globalIndex will be aliased to.
-#define GEOSX_GLOBALINDEX_TYPE_FLAG @GEOSX_GLOBALINDEX_TYPE_FLAG@
+#define GEOS_GLOBALINDEX_TYPE_FLAG @GEOS_GLOBALINDEX_TYPE_FLAG@
 
 /// The default block size for GEOSX on this platform
-#cmakedefine GEOSX_BLOCK_SIZE @GEOSX_BLOCK_SIZE@
+#cmakedefine GEOS_BLOCK_SIZE @GEOS_BLOCK_SIZE@
 
 /// Version information for HDF5
 #cmakedefine HDF5_VERSION @HDF5_VERSION@
@@ -147,10 +156,10 @@
 #cmakedefine caliper_VERSION @caliper_VERSION@
 
 /// Version information for Metis
-#cmakedefine METIS_VERSION @METIS_VERSION@
+#cmakedefine metis_VERSION @metis_VERSION@
 
 /// Version information for ParMetis
-#cmakedefine PARAMETIS_VERSION @PARAMETIS_VERSION@
+#cmakedefine parmetis_VERSION @parmetis_VERSION@
 
 /// Version information for scotch
 #cmakedefine scotch_VERSION @scotch_VERSION@
@@ -160,6 +169,15 @@
 
 /// Version information for suitesparse
 #cmakedefine suitesparse_VERSION @suitesparse_VERSION@
+
+/// Version information for hypre
+#cmakedefine hypre_VERSION @hypre_VERSION@
+
+/// Version information for trilinos
+#cmakedefine trilinos_VERSION @trilinos_VERSION@
+
+/// Version information for petsc
+#cmakedefine petsc_VERSION @petsc_VERSION@
 
 /// Version information for VTK
 #cmakedefine VTK_VERSION @VTK_VERSION@

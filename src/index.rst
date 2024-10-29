@@ -1,7 +1,6 @@
+########################
 GEOS Documentation
-=================================
-
-Welcome to our documentation pages!
+########################
 
 GEOS is a code framework focused on enabling streamlined development of
 physics simulations on high performance computing platforms.  Our documentation
@@ -26,6 +25,112 @@ High quality documentation is a critical component of a successful code.  If
 you have suggestions for improving the guides below, please post an issue on our
 `issue tracker <https://github.com/GEOS-DEV/GEOS/issues>`_.
 
+
+
+.. grid:: 2
+    :gutter: 4
+
+    .. grid-item-card::
+
+        Quick Start Guide
+        ^^^^^^^^^^^^^^^^^^^
+
+        New to GEOS?  We will walk you through downloading the source, compiling the code, and testing the installation.
+
+        +++
+
+        .. button-ref:: QuickStart
+            :expand:
+            :color: info
+            :click-parent:
+
+            To the Quick Start
+
+    .. grid-item-card::
+
+        Tutorials
+        ^^^^^^^^^^
+
+        Working tutorials that show how to run some common problems. After going through these examples, you should have a good understanding of how to set up and solve your own models.
+
+        +++
+
+        .. button-ref:: Tutorials
+            :expand:
+            :color: info
+            :click-parent:
+
+            To the Tutorials
+
+    .. grid-item-card::
+
+        Basic Examples
+        ^^^^^^^^^^^^^^^
+
+        Example problems that are organized around physical processes (fluid flow, mechanics, etc.).
+
+        +++
+
+        .. button-ref:: BasicExamples
+            :expand:
+            :color: info
+            :click-parent:
+
+            To the Basic Examples
+
+    .. grid-item-card::
+
+        Advanced Examples
+        ^^^^^^^^^^^^^^^^^^^
+
+        Example problems that demonstrate additional physical models, constitutive models, advanced features, etc.
+
+        +++
+
+        .. button-ref:: AdvancedExamples
+            :expand:
+            :color: info
+            :click-parent:
+
+            To the Advanced Examples
+
+    .. grid-item-card::
+
+        User Guide
+        ^^^^^^^^^^^^^^^^^^^
+
+        Detailed instructions on how to construct input files, configure problems, manage outputs, etc.
+
+        +++
+
+        .. button-ref:: UserGuide
+            :expand:
+            :color: info
+            :click-parent:
+
+            To the User Guide
+
+    .. grid-item-card::
+
+        Python Tools
+        ^^^^^^^^^^^^^^^^^^^
+
+        Documentation for the python packages distributed alongside GEOS used to manage xml files, condition numerical meshes, read outputs, etc.
+
+        +++
+
+        .. button-link:: https://geosx-geosx.readthedocs-hosted.com/projects/geosx-geospythonpackages/en/latest/
+            :expand:
+            :color: info
+            :click-parent:
+
+            To the Python Tools Documentation
+
+
+********************
+Table of Contents
+********************
+
 .. toctree::
    :maxdepth: 2
 
@@ -43,8 +148,6 @@ you have suggestions for improving the guides below, please post an issue on our
 
    docs/sphinx/Doxygen
 
-   docs/sphinx/pythonTools/pythonAPI
-
    docs/sphinx/buildGuide/Index
 
    docs/sphinx/CompleteXMLSchema
@@ -55,8 +158,9 @@ you have suggestions for improving the guides below, please post an issue on our
 
    docs/sphinx/Acknowledgements
 
+*********************
 Indices and tables
-==================
+*********************
 
 * :ref:`genindex`
 * :ref:`modindex`

@@ -6,19 +6,60 @@
       name="./Sneddon_embeddedFrac_base.xml"/>
   </Included>
 
+  <Solvers
+    gravityVector="{0.0, 0.0, 0.0}">
+  <!-- SPHINX_SNEDDON_SOLVER -->
+    <SolidMechanicsEmbeddedFractures
+      name="mechSolve"
+      targetRegions="{ Domain, Fracture }"
+      initialDt="10"
+      timeIntegrationOption="QuasiStatic"
+      discretization="FE1"
+      logLevel="1">
+      <NonlinearSolverParameters
+        newtonTol="1.0e-6"
+        newtonMaxIter="2"
+        maxTimeStepCuts="1"/>
+      <LinearSolverParameters
+        solverType="direct"
+        directParallel="0"
+        logLevel="0"/>
+    </SolidMechanicsEmbeddedFractures>
+
+    <EmbeddedSurfaceGenerator
+      name="SurfaceGenerator"
+      discretization="FE1"
+      targetRegions="{ Domain, Fracture }"
+      fractureRegion="Fracture"
+      targetObjects="{ FracturePlane }"
+      logLevel="1"
+      mpiCommOrder="1"/>
+  </Solvers>
+  <!-- SPHINX_SNEDDON_SOLVER_END -->
+
   <!-- SPHINX_SNEDDON_MESH -->
-  <Mesh>  
-    <InternalMesh
-      name="mesh1"
-      elementTypes="{ C3D8 }"
-      xCoords="{ -20, -4, 4, 20 }"
-      yCoords="{ -20, -4, 4, 20 }"
-      zCoords="{ 0, 1 }"
-      nx="{ 10, 11, 10 }"
-      ny="{ 10, 31, 10 }"
-      nz="{ 1 }"
-      cellBlockNames="{ cb1 }"/> 
+  <Mesh>
+      <InternalMesh
+        name="mesh1"
+        elementTypes="{ C3D8 }"
+        xCoords="{ 0, 16, 19, 21, 24, 40 }"
+        yCoords="{ 0, 16, 24, 40 }"
+        zCoords="{ 0, 1 }"
+        nx="{ 1, 1, 5, 1, 1 }"
+        ny="{ 1, 5, 1 }"
+        nz="{ 1 }"
+        cellBlockNames="{ cb1 }"/>
   </Mesh>
+
+  <Geometry>
+    <Rectangle
+      name="FracturePlane"
+      normal="{ 0, 1, 0 }"
+      origin="{ 20, 20, 0.5 }"
+      lengthVector="{ 1, 0, 0 }"
+      widthVector="{ 0, 0, 1 }"
+      dimensions="{ 2, 2 }"/>
+  </Geometry>
   <!-- SPHINX_SNEDDON_MESH_END -->  
   
   <!-- SPHINX_SNEDDON_EVENTS -->
@@ -50,7 +91,7 @@
       name="timeHistoryOutput"
       timeFrequency="1.0"
       targetExactTimestep="0"
-      target="/Outputs/timeHistoryOutput"/> 
+      target="/Outputs/timeHistoryOutput"/>
       
     <PeriodicEvent
       name="restarts"

@@ -2,11 +2,12 @@
  * ------------------------------------------------------------------------------------------------------------
  * SPDX-License-Identifier: LGPL-2.1-only
  *
- * Copyright (c) 2018-2019 Lawrence Livermore National Security LLC
- * Copyright (c) 2018-2019 The Board of Trustees of the Leland Stanford Junior University
- * Copyright (c) 2018-2019 Total, S.A
- * Copyright (c) 2019-     GEOSX Contributors
- * All right reserved
+ * Copyright (c) 2016-2024 Lawrence Livermore National Security LLC
+ * Copyright (c) 2018-2024 Total, S.A
+ * Copyright (c) 2018-2024 The Board of Trustees of the Leland Stanford Junior University
+ * Copyright (c) 2018-2024 Chevron
+ * Copyright (c) 2019-     GEOS/GEOSX Contributors
+ * All rights reserved
  *
  * See top level LICENSE, COPYRIGHT, CONTRIBUTORS, NOTICE, and ACKNOWLEDGEMENTS files for details.
  * ------------------------------------------------------------------------------------------------------------
@@ -86,8 +87,7 @@ void testModifiedCamClayDriver()
     "</Constitutive>";
 
   xmlWrapper::xmlDocument xmlDocument;
-  xmlWrapper::xmlResult xmlResult = xmlDocument.load_buffer( inputStream.c_str(),
-                                                             inputStream.size() );
+  xmlWrapper::xmlResult xmlResult = xmlDocument.loadString( inputStream );
   if( !xmlResult )
   {
     GEOS_LOG_RANK_0( "XML parsed with errors!" );
@@ -95,9 +95,9 @@ void testModifiedCamClayDriver()
     GEOS_LOG_RANK_0( "Error offset: " << xmlResult.offset );
   }
 
-  xmlWrapper::xmlNode xmlConstitutiveNode = xmlDocument.child( "Constitutive" );
-  constitutiveManager.processInputFileRecursive( xmlConstitutiveNode );
-  constitutiveManager.postProcessInputRecursive();
+  xmlWrapper::xmlNode xmlConstitutiveNode = xmlDocument.getChild( "Constitutive" );
+  constitutiveManager.processInputFileRecursive( xmlDocument, xmlConstitutiveNode );
+  constitutiveManager.postInputInitializationRecursive();
 
   localIndex constexpr numElem = 2;
   localIndex constexpr numQuad = 4;
@@ -137,7 +137,7 @@ void testModifiedCamClayDriver()
 
   for( localIndex loadstep=0; loadstep < 500; ++loadstep )
   {
-    forAll< parallelDevicePolicy<> >( 1, [=] GEOS_HOST_DEVICE ( localIndex const k )
+    forAll< POLICY >( 1, [=] GEOS_HOST_DEVICE ( localIndex const k )
     {
       real64 stressLocal[6] = {0};
       real64 stiffnessLocal[6][6] = {{0}};

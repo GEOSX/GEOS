@@ -2,10 +2,11 @@
  * ------------------------------------------------------------------------------------------------------------
  * SPDX-License-Identifier: LGPL-2.1-only
  *
- * Copyright (c) 2018-2020 Lawrence Livermore National Security LLC
- * Copyright (c) 2018-2020 The Board of Trustees of the Leland Stanford Junior University
- * Copyright (c) 2018-2020 TotalEnergies
- * Copyright (c) 2019-     GEOSX Contributors
+ * Copyright (c) 2016-2024 Lawrence Livermore National Security LLC
+ * Copyright (c) 2018-2024 Total, S.A
+ * Copyright (c) 2018-2024 The Board of Trustees of the Leland Stanford Junior University
+ * Copyright (c) 2018-2024 Chevron
+ * Copyright (c) 2019-     GEOS/GEOSX Contributors
  * All rights reserved
  *
  * See top level LICENSE, COPYRIGHT, CONTRIBUTORS, NOTICE, and ACKNOWLEDGEMENTS files for details.
@@ -73,24 +74,24 @@ void ProppantSlurryFluid::allocateConstitutiveData( dataRepository::Group & pare
 }
 
 
-void ProppantSlurryFluid::postProcessInput()
+void ProppantSlurryFluid::postInputInitialization()
 {
-  SlurryFluidBase::postProcessInput();
+  SlurryFluidBase::postInputInitialization();
 
   GEOS_ERROR_IF_LT_MSG( m_compressibility, 0.0,
-                        getName() << ": invalid value of " << viewKeyStruct::compressibilityString() );
+                        getFullName() << ": invalid value of " << viewKeyStruct::compressibilityString() );
 
   GEOS_ERROR_IF_LE_MSG( m_referenceDensity, 0.0,
-                        getName() << ": invalid value of " << viewKeyStruct::referenceDensityString() );
+                        getFullName() << ": invalid value of " << viewKeyStruct::referenceDensityString() );
 
   GEOS_ERROR_IF_LT_MSG( m_referenceViscosity, 0.0,
-                        getName() << ": invalid value of " << viewKeyStruct::referenceViscosityString() );
+                        getFullName() << ": invalid value of " << viewKeyStruct::referenceViscosityString() );
 
   GEOS_ERROR_IF_LE_MSG( m_maxProppantConcentration, 0.0,
-                        getName() << ": invalid value of " << viewKeyStruct::maxProppantConcentrationString() );
+                        getFullName() << ": invalid value of " << viewKeyStruct::maxProppantConcentrationString() );
 
   GEOS_ERROR_IF_GT_MSG( m_maxProppantConcentration, 1.0,
-                        getName() << ": invalid value of " << viewKeyStruct::maxProppantConcentrationString() );
+                        getFullName() << ": invalid value of " << viewKeyStruct::maxProppantConcentrationString() );
 }
 
 ProppantSlurryFluid::KernelWrapper

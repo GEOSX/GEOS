@@ -8,6 +8,7 @@
       timeIntegrationOption="QuasiStatic"
       discretization="FE1"
       targetRegions="{ Region2 }"
+      surfaceGeneratorName="SurfaceGen"
       >
       <NonlinearSolverParameters
         newtonTol="1.0e-3"

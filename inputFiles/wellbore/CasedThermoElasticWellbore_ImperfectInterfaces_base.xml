@@ -1,0 +1,555 @@
+<?xml version="1.0" ?>
+
+<Problem>
+  <Solvers>
+    <!-- SPHINX_ContactTHMSolver -->
+    <SinglePhasePoromechanicsConformingFractures
+      name="fractureThermoPoroElasticSolver"
+      targetRegions="{ casing, cement, rock, Fracture }"
+      initialDt="1e-3"
+      flowSolverName="flowSolver"
+      solidSolverName="lagrangiancontact"
+      logLevel="1"
+      isThermal="1">
+      <NonlinearSolverParameters
+        newtonTol="1.0e-5"
+        newtonMaxIter="10"
+        maxTimeStepCuts="4"/>
+      <LinearSolverParameters
+        directParallel="0"
+        solverType="direct"/>
+    </SinglePhasePoromechanicsConformingFractures>
+    <!-- SPHINX_ContactTHMSolverEnd -->
+
+    <SolidMechanicsLagrangeContact
+      name="lagrangiancontact"
+      timeIntegrationOption="QuasiStatic"
+      stabilizationName="contactStabilization"
+      discretization="FE1"
+      targetRegions="{ casing, cement, rock, Fracture }"
+      logLevel="1">
+      <NonlinearSolverParameters
+        newtonTol="1.0e-6"
+        logLevel="2"
+        newtonMaxIter="10"/>
+      <LinearSolverParameters
+        directParallel="0"/>
+    </SolidMechanicsLagrangeContact>
+
+
+    <SinglePhaseFVM
+      name="flowSolver"
+      logLevel="1"
+      discretization="tpfaFlow"
+      temperature="0"
+      isThermal="1"
+      targetRegions="{ casing, cement, rock, Fracture }">
+      <NonlinearSolverParameters
+	    normType="L2"/>
+    </SinglePhaseFVM>
+
+    <!-- SPHINX_SolversSurfaceGenerator -->
+    <SurfaceGenerator
+      name="SurfaceGen"
+      fractureRegion="Fracture"
+      targetRegions="{ casing, cement, rock }"
+      rockToughness="1.0e6"
+      mpiCommOrder="1"/>
+    <!-- SPHINX_SolversSurfaceGeneratorEnd -->
+  </Solvers>
+
+  <NumericalMethods>
+    <FiniteElements>
+      <FiniteElementSpace
+        name="FE1"
+        order="1"/>
+    </FiniteElements>
+
+    <FiniteVolume>
+    <TwoPointFluxApproximation
+        name="tpfaFlow"/>
+    <TwoPointFluxApproximation
+        name="contactStabilization"/>    
+    </FiniteVolume>
+  </NumericalMethods>
+
+  <ElementRegions>
+    <!-- SPHINX_SurfaceElementRegion -->   
+    <SurfaceElementRegion
+      name="Fracture"
+      faceBlock="faceElementSubRegion"
+      materialList="{ fluid, fractureFilling, fractureContact, contactThermalCond }"
+      defaultAperture="5.0e-4"/>
+    <!-- SPHINX_SurfaceElementRegionEnd -->  
+
+    <CellElementRegion
+      name="casing"
+      cellBlocks="{ casing }"
+      materialList="{ fluid, casing, casingThermalCond }"/>
+
+    <CellElementRegion
+      name="cement"
+      cellBlocks="{ cement }"
+      materialList="{ fluid, cement, cementThermalCond }"/>
+
+    <CellElementRegion
+      name="rock"
+      cellBlocks="{ rock }"
+      materialList="{ fluid, rock, rockThermalCond }"/>
+  </ElementRegions>
+
+  <Constitutive>
+    <Coulomb
+      name="fractureContact"
+      cohesion="0"
+      frictionCoefficient="0.5"
+      penaltyStiffness="1.0e8"
+      apertureTableName="apertureTable"/>
+
+    <!-- SPHINX_ContactFlowProperties -->
+    <CompressibleSolidParallelPlatesPermeability
+      name="fractureFilling"
+      solidModelName="nullSolid"
+      porosityModelName="fracturePorosity"
+      permeabilityModelName="fracturePerm"
+      solidInternalEnergyModelName="rockInternalEnergy"/>
+
+    <NullModel
+      name="nullSolid"/>
+
+    <PressurePorosity
+      name="fracturePorosity"
+      defaultReferencePorosity="1.00"
+      referencePressure="0.0"
+      compressibility="0.0"/>
+
+    <ParallelPlatesPermeability
+      name="fracturePerm"/>
+    <!-- SPHINX_ContactFlowPropertiesEnd -->
+
+    <PorousElasticIsotropic
+      name="casing"
+      solidModelName="casingSolid"
+      porosityModelName="casingPorosity"
+      permeabilityModelName="casingPerm"
+      solidInternalEnergyModelName="casingInternalEnergy"/>
+
+    <PorousElasticIsotropic
+      name="cement"
+      solidModelName="cementSolid"
+      porosityModelName="cementPorosity"
+      permeabilityModelName="cementPerm"
+      solidInternalEnergyModelName="cementInternalEnergy"/>
+
+    <PorousElasticIsotropic
+      name="rock"
+      solidModelName="rockSolid"
+      porosityModelName="rockPorosity"
+      permeabilityModelName="rockPerm"
+      solidInternalEnergyModelName="rockInternalEnergy"/>
+
+    <!-- SPHINX_PoroElasticProperties -->
+    <BiotPorosity
+      name="casingPorosity"
+      defaultReferencePorosity="1e-6"
+      defaultGrainBulkModulus="159.4202899e9"/>
+
+    <BiotPorosity
+      name="cementPorosity"
+      defaultReferencePorosity="1e-6"
+      defaultGrainBulkModulus="2.298850575e9"/>
+
+    <BiotPorosity
+      name="rockPorosity"
+      defaultReferencePorosity="1e-6"
+      defaultGrainBulkModulus="5.535714286e9"/>
+    <!-- SPHINX_PoroElasticPropertiesEnd -->
+
+    <!-- SPHINX_HeatCapacityProperties -->
+    <SolidInternalEnergy
+      name="casingInternalEnergy"
+      referenceVolumetricHeatCapacity="1.375e6"
+      referenceTemperature="0"
+      referenceInternalEnergy="0"/>
+
+    <SolidInternalEnergy
+      name="cementInternalEnergy"
+      referenceVolumetricHeatCapacity="4.2e6"
+      referenceTemperature="0"
+      referenceInternalEnergy="0"/>
+
+    <SolidInternalEnergy
+      name="rockInternalEnergy"
+      referenceVolumetricHeatCapacity="4.56e6"
+      referenceTemperature="0"
+      referenceInternalEnergy="0"/>
+    <!-- SPHINX_HeatCapacityPropertiesEnd -->
+
+    <!-- SPHINX_PermeabilityProperties -->
+    <ConstantPermeability
+      name="casingPerm"
+      permeabilityComponents="{ 1.0e-100, 1.0e-100, 1.0e-100 }"/>
+
+    <ConstantPermeability
+      name="cementPerm"
+      permeabilityComponents="{ 1.0e-100, 1.0e-100, 1.0e-100 }"/>
+
+    <ConstantPermeability
+      name="rockPerm"
+      permeabilityComponents="{ 1.0e-100, 1.0e-100, 1.0e-100 }"/>
+    <!-- SPHINX_PermeabilityPropertiesEnd -->
+
+    
+    <SinglePhaseConstantThermalConductivity
+      name="casingThermalCond"
+      thermalConductivityComponents="{ 15, 15, 15 }"/>
+
+    <SinglePhaseConstantThermalConductivity
+      name="cementThermalCond"
+      thermalConductivityComponents="{ 1.0, 1.0, 1.0 }"/>
+
+    <SinglePhaseConstantThermalConductivity
+      name="rockThermalCond"
+      thermalConductivityComponents="{ 1.66, 1.66, 1.66 }"/>
+
+    <!-- SPHINX_ContactThermalProperties -->
+    <SinglePhaseConstantThermalConductivity
+      name="contactThermalCond"
+      thermalConductivityComponents="{ 1.0, 1.0, 1.0 }"/>
+    <!-- SPHINX_ContactThermalPropertiesEnd -->
+
+    <!-- SPHINX_FluidProperties -->
+    <ThermalCompressibleSinglePhaseFluid
+      name="fluid"
+      defaultDensity="1000"
+      defaultViscosity="1e-3"
+      referencePressure="0.0"
+      referenceTemperature="20.0"
+      compressibility="5e-10"
+      thermalExpansionCoeff="1e-10"
+      viscosibility="0.0"
+      specificHeatCapacity="1"
+      referenceInternalEnergy="1"/>
+    <!-- SPHINX_FluidPropertiesEnd -->
+
+	<!-- SPHINX_ThermoElasticProperties -->
+    <ElasticIsotropic
+      name="casingSolid"
+      defaultDensity="7500"
+      defaultBulkModulus="159.4202899e9"
+      defaultShearModulus="86.61417323e9"
+      defaultDrainedLinearTEC="1.2e-5"/>
+
+    <ElasticIsotropic
+      name="cementSolid"
+      defaultDensity="2700"
+      defaultBulkModulus="2.298850575e9"
+      defaultShearModulus="1.652892562e9"
+      defaultDrainedLinearTEC="2.0e-5"/>
+
+    <ElasticIsotropic
+      name="rockSolid"
+      defaultDensity="2700"
+      defaultBulkModulus="5.535714286e9"
+      defaultShearModulus="3.81147541e9"
+      defaultDrainedLinearTEC="2.0e-5"/>
+    <!-- SPHINX_ThermoElasticPropertiesEnd -->
+    
+  </Constitutive>
+
+  <FieldSpecifications>
+   <!-- SPHINX_ContactBoundaryConditions -->
+   <FieldSpecification
+      name="frac"
+      initialCondition="1"
+      setNames="{ casingCementInterface, cementRockInterface }"
+      objectPath="faceManager"
+      fieldName="ruptureState"
+      scale="1"/>
+
+    <FieldSpecification
+      name="separableFace"
+      initialCondition="1"
+      setNames="{ casingCementInterface, cementRockInterface }"
+      objectPath="faceManager"
+      fieldName="isFaceSeparable"
+      scale="1"/>
+    <!-- SPHINX_ContactBoundaryConditionsEnd -->
+
+    <!-- SPHINX_FixedFarFieldBC -->
+    <FieldSpecification
+      name="rPosConstraint_x"
+      objectPath="nodeManager"
+      fieldName="totalDisplacement"
+      component="0"
+      scale="0.0"
+      setNames="{ rpos }"/>
+
+    <FieldSpecification
+      name="rPosConstraint_y"
+      objectPath="nodeManager"
+      fieldName="totalDisplacement"
+      component="1"
+      scale="0.0"
+      setNames="{ rpos }"/>
+    <!-- SPHINX_FixedFarFieldBCEnd -->
+
+    <!-- SPHINX_PlaneStrainAxisymmetryBC -->
+    <FieldSpecification
+      name="tNegConstraint"
+      objectPath="nodeManager"
+      fieldName="totalDisplacement"
+      component="1"
+      scale="0.0"
+      setNames="{ tneg }"/>
+
+   <FieldSpecification
+      name="tPosConstraint"
+      objectPath="nodeManager"
+      fieldName="totalDisplacement"
+      component="0"
+      scale="0.0"
+      setNames="{ tpos }"/>
+
+    <FieldSpecification
+      name="zconstraint"
+      objectPath="nodeManager"
+      fieldName="totalDisplacement"
+      component="2"
+      scale="0.0"
+      setNames="{ zneg, zpos }"/>
+    <!-- SPHINX_PlaneStrainAxisymmetryBCEnd -->
+
+    <!-- SPHINX_StressCasingInit -->
+    <FieldSpecification
+      name="initialSigma_x_casing"
+      initialCondition="1"
+      setNames="{ all }"
+      objectPath="ElementRegions/casing/casing"
+      fieldName="casingSolid_stress"
+      component="0"
+      scale="573913043.5"/>
+    <FieldSpecification
+      name="initialSigma_y_casing"
+      initialCondition="1"
+      setNames="{ all }"
+      objectPath="ElementRegions/casing/casing"
+      fieldName="casingSolid_stress"
+      component="1"
+      scale="573913043.5"/>
+    <FieldSpecification
+      name="initialSigma_z_casing"
+      initialCondition="1"
+      setNames="{ all }"
+      objectPath="ElementRegions/casing/casing"
+      fieldName="casingSolid_stress"
+      component="2"
+      scale="573913043.5"/>
+    <!-- SPHINX_StressCasingInit -->
+
+    <FieldSpecification
+      name="initialSigma_x_cement"
+      initialCondition="1"
+      setNames="{ all }"
+      objectPath="ElementRegions/cement/cement"
+      fieldName="cementSolid_stress"
+      component="0"
+      scale="13793103.45"/>
+    <FieldSpecification
+      name="initialSigma_y_cement"
+      initialCondition="1"
+      setNames="{ all }"
+      objectPath="ElementRegions/cement/cement"
+      fieldName="cementSolid_stress"
+      component="1"
+      scale="13793103.45"/>
+    <FieldSpecification
+      name="initialSigma_z_cement"
+      initialCondition="1"
+      setNames="{ all }"
+      objectPath="ElementRegions/cement/cement"
+      fieldName="cementSolid_stress"
+      component="2"
+      scale="13793103.45"/>
+
+    <FieldSpecification
+      name="initialSigma_x_rock"
+      initialCondition="1"
+      setNames="{ all }"
+      objectPath="ElementRegions/rock/rock"
+      fieldName="rockSolid_stress"
+      component="0"
+      scale="33214285.71"/>
+    <FieldSpecification
+      name="initialSigma_y_rock"
+      initialCondition="1"
+      setNames="{ all }"
+      objectPath="ElementRegions/rock/rock"
+      fieldName="rockSolid_stress"
+      component="1"
+      scale="33214285.71"/>
+    <FieldSpecification
+      name="initialSigma_z_rock"
+      initialCondition="1"
+      setNames="{ all }"
+      objectPath="ElementRegions/rock/rock"
+      fieldName="rockSolid_stress"
+      component="2"
+      scale="33214285.71"/>
+
+    <!-- SPHINX_ZeroPorePressureBC -->
+    <FieldSpecification
+      name="zeroPressure"
+      setNames="{ all }"
+      objectPath="ElementRegions"
+      fieldName="pressure"
+      scale="0e6"/>
+
+    <FieldSpecification
+      name="sourcePressure"
+      setNames="{ rneg }"     
+      objectPath="faceManager"
+      fieldName="pressure"
+      scale="0"/>
+
+    <FieldSpecification
+      name="sinkPressure"
+      setNames="{ rpos }"     
+      objectPath="faceManager"
+      fieldName="pressure"
+      scale="0"/>
+    <!-- SPHINX_ZeroPorePressureBCEnd -->
+
+    <!-- SPHINX_TemperatureBC -->
+    <FieldSpecification
+      name="initialTemperature"
+      initialCondition="1"
+      setNames="{ all }"
+      objectPath="ElementRegions"
+      fieldName="temperature"
+      scale="100"/>
+
+    <FieldSpecification
+      name="farfieldTemperature"
+      setNames="{ rpos }"       
+      objectPath="faceManager"
+      fieldName="temperature"
+      scale="100"/>
+
+    <FieldSpecification
+      name="innerTemperature"
+      setNames="{ rneg }"     
+      objectPath="faceManager"
+      fieldName="temperature"
+      scale="-20.0"/>
+    <!-- SPHINX_TemperatureBCEnd -->
+
+    <!-- SPHINX_ZeroInnerTractionBC -->
+    <Traction
+      name="innerPressure"
+      objectPath="faceManager"
+      tractionType="normal"
+      scale="0.0e6"
+      setNames="{ rneg }"/>
+    <!-- SPHINX_ZeroInnerTractionBCEnd -->
+
+  </FieldSpecifications>
+
+  <!-- SPHINX_TableFunction -->
+  <Functions>
+    <TableFunction
+      name="ForceTimeFunction"
+      inputVarNames="{ time }"
+      coordinates="{ 0.0, 0.5, 2.0 }"
+      values="{ 0.0, -1.0, 1.0 }"/>
+    <TableFunction
+      name="apertureTable"
+      coordinates="{ -1.0e-3, 0.0 }"
+      values="{ 1e-4, 1e-3 }"/> 
+  </Functions>
+  <!-- SPHINX_TableFunctionEnd -->
+
+  <Tasks>
+
+    <!-- SPHINX_TemperatureCollection -->
+    <PackCollection
+      name="temperatureCollection_casing"
+      objectPath="ElementRegions/casing/casing"
+      fieldName="temperature"/>
+    <PackCollection
+      name="temperatureCollection_cement"
+      objectPath="ElementRegions/cement/cement"
+      fieldName="temperature"/>
+    <PackCollection
+      name="temperatureCollection_rock"
+      objectPath="ElementRegions/rock/rock"
+      fieldName="temperature"/>
+    <!-- SPHINX_TemperatureCollectionEnd -->
+
+    <PackCollection
+      name="stressCollection_casing"
+      objectPath="ElementRegions/casing/casing"
+      fieldName="casingSolid_stress"/>
+    <PackCollection
+      name="stressCollection_cement"
+      objectPath="ElementRegions/cement/cement"
+      fieldName="cementSolid_stress"/>
+    <PackCollection
+      name="stressCollection_rock"
+      objectPath="ElementRegions/rock/rock"
+      fieldName="rockSolid_stress"/>
+
+    <PackCollection
+      name="displacementCollection"
+      objectPath="nodeManager"
+      fieldName="totalDisplacement"/>
+
+    <PackCollection
+      name="displacementJumpCollection"
+      objectPath="ElementRegions/Fracture/faceElementSubRegion"
+      fieldName="displacementJump"/>
+    
+  </Tasks>
+
+  <Outputs>
+    <TimeHistory
+      name="temperatureHistoryOutput_casing"
+      sources="{ /Tasks/temperatureCollection_casing }"
+      filename="temperatureHistory_casing"/>
+    <TimeHistory
+      name="temperatureHistoryOutput_cement"
+      sources="{ /Tasks/temperatureCollection_cement }"
+      filename="temperatureHistory_cement"/>
+    <TimeHistory
+      name="temperatureHistoryOutput_rock"
+      sources="{ /Tasks/temperatureCollection_rock }"
+      filename="temperatureHistory_rock"/>
+
+    <TimeHistory
+      name="stressHistoryOutput_casing"
+      sources="{ /Tasks/stressCollection_casing }"
+      filename="stressHistory_casing"/>
+    <TimeHistory
+      name="stressHistoryOutput_cement"
+      sources="{ /Tasks/stressCollection_cement }"
+      filename="stressHistory_cement"/>
+    <TimeHistory
+      name="stressHistoryOutput_rock"
+      sources="{ /Tasks/stressCollection_rock }"
+      filename="stressHistory_rock"/>
+
+    <TimeHistory
+      name="displacementHistoryOutput"
+      sources="{ /Tasks/displacementCollection }"
+      filename="displacementHistory"/>
+
+    <TimeHistory
+      name="displacementJumpHistoryOutput"
+      sources="{ /Tasks/displacementJumpCollection }"
+      filename="displacementJumpHistory"/>
+
+    <VTK name="vtkOutput"/>
+    <Restart
+      name="restartOutput"/>
+  </Outputs>
+</Problem>

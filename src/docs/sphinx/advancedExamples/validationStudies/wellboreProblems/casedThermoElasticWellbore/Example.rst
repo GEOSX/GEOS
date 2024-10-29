@@ -9,7 +9,7 @@ Cased ThermoElastic Wellbore Problem
 Problem description
 ------------------------------------------------------------------
 
-This example uses the thermal option of the ``SinglePhasePoromechanics`` solver to handle a cased wellbore problem subjected to a uniform temperature change on the inner surface of the casing. The completed wellbore is composed of a steel casing, a cement sheath and rock formation. Isotropic linear thermoelastic behavior is assumed for all the three materials. No separation or thermal barrier is allowed for the casing-cement and cement-rock contact interfaces. Plane strain condition is also assumed.
+This example uses the thermal option of the ``SinglePhasePoromechanics`` solver to handle a cased wellbore problem subject to a uniform temperature change on the inner surface of the casing. The wellbore is composed of a steel casing, a cement sheath and rock formation. Isotropic linear thermoelastic behavior is assumed for all three materials. No separation or thermal barrier is allowed for the casing-cement and cement-rock contact interfaces. Plane strain condition is assumed.
 
 .. _problemSketchCasedThermalElasticWellboreFig:
 .. figure:: sketch.png
@@ -25,7 +25,7 @@ Solution to this axisymmetric problem can be obtained in the cylindrical coordin
 **Input file**
 
 This benchmark example uses no external input files and everything required is
-contained within two GEOS xml files that are located at:
+contained within two GEOS XML files located at:
 
 .. code-block:: console
 
@@ -96,14 +96,14 @@ and
   :start-after: <!-- SPHINX_HeatCapacityProperties -->
   :end-before: <!-- SPHINX_HeatCapacityPropertiesEnd -->
 
-An ultra low permeability is defined for the three layers to simulate a thermoelastic problem without the impact of fluid flow.
+An ultra-low permeability is defined for the three layers to simulate a thermoelastic problem without the impact of fluid flow.
 
 .. literalinclude:: ../../../../../../../inputFiles/wellbore/CasedThermoElasticWellbore_base.xml
   :language: xml
   :start-after: <!-- SPHINX_PermeabilityProperties -->
   :end-before: <!-- SPHINX_PermeabilityPropertiesEnd -->
 
-Also, a negligible volumetric heat capacity is defined for fluid to completely ignore the thermal convection effect such that only thermal transfer via the diffusion phenomenon is considered.
+Also, a negligible volumetric heat capacity is defined for the fluid to completely ignore the thermal convection effect such that only thermal transfers via the diffusion phenomenon are considered.
 
 .. literalinclude:: ../../../../../../../inputFiles/wellbore/CasedThermoElasticWellbore_base.xml
   :language: xml
@@ -214,13 +214,37 @@ A good agreement between the GEOS results and analytical results for temperature
 
 .. plot:: docs/sphinx/advancedExamples/validationStudies/wellboreProblems/casedThermoElasticWellbore/thermoElastic_casedWellbore_temperature.py
 
+.. _problemCasedThermoElasticWellbore_Temperature_Fig:
+.. figure:: temperature.png
+   :align: center
+   :width: 800
+   :figclass: align-center
+
+   Validation of the temperature.
+
 and the validation for the radial displacement around the cased wellbore is shown below:
 
 .. plot:: docs/sphinx/advancedExamples/validationStudies/wellboreProblems/casedThermoElasticWellbore/thermoElastic_casedWellbore_displacement.py
 
+.. _problemCasedThermoElasticWellbore_Displacement_Fig:
+.. figure:: displacement.png
+   :align: center
+   :width: 800
+   :figclass: align-center
+
+   Validation of the displacement.
+
 The validations of the total radial and hoop stress (tangent stress) components computed by GEOS against reference results are shown in the figure below:
 
 .. plot:: docs/sphinx/advancedExamples/validationStudies/wellboreProblems/casedThermoElasticWellbore/thermoElastic_casedWellbore_stress.py
+
+.. _problemCasedThermoElasticWellbore_Stresses_Fig:
+.. figure:: stress.png
+   :align: center
+   :width: 800
+   :figclass: align-center
+
+   Validation of the stresses.
 
 ------------------------------------------------------------------
 To go further

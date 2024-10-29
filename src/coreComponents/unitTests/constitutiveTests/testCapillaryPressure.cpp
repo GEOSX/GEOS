@@ -2,10 +2,11 @@
  * ------------------------------------------------------------------------------------------------------------
  * SPDX-License-Identifier: LGPL-2.1-only
  *
- * Copyright (c) 2018-2020 Lawrence Livermore National Security LLC
- * Copyright (c) 2018-2020 The Board of Trustees of the Leland Stanford Junior University
- * Copyright (c) 2018-2020 TotalEnergies
- * Copyright (c) 2019-     GEOSX Contributors
+ * Copyright (c) 2016-2024 Lawrence Livermore National Security LLC
+ * Copyright (c) 2018-2024 Total, S.A
+ * Copyright (c) 2018-2024 The Board of Trustees of the Leland Stanford Junior University
+ * Copyright (c) 2018-2024 Chevron
+ * Copyright (c) 2019-     GEOS/GEOSX Contributors
  * All rights reserved
  *
  * See top level LICENSE, COPYRIGHT, CONTRIBUTORS, NOTICE, and ACKNOWLEDGEMENTS files for details.
@@ -49,7 +50,7 @@ CapillaryPressureBase & makeBrooksCoreyCapPressureTwoPhase( string const & name,
   real64 & capPressureEpsilon = capPressure.getReference< real64 >( BrooksCoreyCapillaryPressure::viewKeyStruct::capPressureEpsilonString() );
   capPressureEpsilon = 1e-4;
 
-  capPressure.postProcessInputRecursive();
+  capPressure.postInputInitializationRecursive();
   return capPressure;
 }
 
@@ -78,7 +79,7 @@ CapillaryPressureBase & makeBrooksCoreyCapPressureThreePhase( string const & nam
   real64 & capPressureEpsilon = capPressure.getReference< real64 >( BrooksCoreyCapillaryPressure::viewKeyStruct::capPressureEpsilonString() );
   capPressureEpsilon = 1e-7;
 
-  capPressure.postProcessInputRecursive();
+  capPressure.postInputInitializationRecursive();
   return capPressure;
 }
 
@@ -108,7 +109,7 @@ CapillaryPressureBase & makeVanGenuchtenCapPressureTwoPhase( string const & name
   real64 & capPressureEpsilon = capPressure.getReference< real64 >( VanGenuchtenCapillaryPressure::viewKeyStruct::capPressureEpsilonString() );
   capPressureEpsilon = 1e-4;
 
-  capPressure.postProcessInputRecursive();
+  capPressure.postInputInitializationRecursive();
   return capPressure;
 }
 
@@ -137,7 +138,7 @@ CapillaryPressureBase & makeVanGenuchtenCapPressureThreePhase( string const & na
   real64 & capPressureEpsilon = capPressure.getReference< real64 >( VanGenuchtenCapillaryPressure::viewKeyStruct::capPressureEpsilonString() );
   capPressureEpsilon = 1e-4;
 
-  capPressure.postProcessInputRecursive();
+  capPressure.postInputInitializationRecursive();
   return capPressure;
 }
 
@@ -170,8 +171,8 @@ CapillaryPressureBase & makeTableCapPressureTwoPhase( string const & name, Group
   values[5] = 3204.28;
 
   TableFunction & table_w = dynamicCast< TableFunction & >( *functionManager.createChild( "TableFunction", "water_pc" ) );
-  table_w.setTableCoordinates( coordinates );
-  table_w.setTableValues( values );
+  table_w.setTableCoordinates( coordinates, { units::Dimensionless } );
+  table_w.setTableValues( values, units::Pressure );
   table_w.reInitializeFunction();
 
   table_w.setInterpolationMethod( TableFunction::InterpolationType::Linear );
@@ -187,7 +188,7 @@ CapillaryPressureBase & makeTableCapPressureTwoPhase( string const & name, Group
   auto & waterTableName = capPressure.getReference< string >( TableCapillaryPressure::viewKeyStruct::wettingNonWettingCapPresTableNameString() );
   waterTableName = "water_pc";
 
-  capPressure.postProcessInputRecursive();
+  capPressure.postInputInitializationRecursive();
   capPressure.initialize(); // to test all the checks
   return capPressure;
 }
@@ -223,8 +224,8 @@ CapillaryPressureBase & makeTableCapPressureThreePhase( string const & name, Gro
   values_w[5] = 3294.76;
 
   TableFunction & table_ow_w = dynamicCast< TableFunction & >( *functionManager.createChild( "TableFunction", "water_ow_pc" ) );
-  table_ow_w.setTableCoordinates( coordinates_w );
-  table_ow_w.setTableValues( values_w );
+  table_ow_w.setTableCoordinates( coordinates_w, { units::Dimensionless } );
+  table_ow_w.setTableValues( values_w, units::Pressure );
   table_ow_w.reInitializeFunction();
 
   table_ow_w.setInterpolationMethod( TableFunction::InterpolationType::Linear );
@@ -250,8 +251,8 @@ CapillaryPressureBase & makeTableCapPressureThreePhase( string const & name, Gro
   values_g[5] = 26889.6;
 
   TableFunction & table_og_g = dynamicCast< TableFunction & >( *functionManager.createChild( "TableFunction", "gas_og_pc" ) );
-  table_og_g.setTableCoordinates( coordinates_g );
-  table_og_g.setTableValues( values_g );
+  table_og_g.setTableCoordinates( coordinates_g, { units::Dimensionless } );
+  table_og_g.setTableValues( values_g, units::Pressure );
   table_og_g.reInitializeFunction();
 
   table_og_g.setInterpolationMethod( TableFunction::InterpolationType::Linear );
@@ -270,7 +271,7 @@ CapillaryPressureBase & makeTableCapPressureThreePhase( string const & name, Gro
   auto & gasTableName = capPressure.getReference< string >( TableCapillaryPressure::viewKeyStruct::nonWettingIntermediateCapPresTableNameString() );
   gasTableName = "gas_og_pc";
 
-  capPressure.postProcessInputRecursive();
+  capPressure.postInputInitializationRecursive();
   capPressure.initialize(); // to test all the checks
   return capPressure;
 }
@@ -314,8 +315,8 @@ CapillaryPressureBase & makeJFunctionCapPressureTwoPhase( string const & name, G
 
 
   TableFunction & table_w = dynamicCast< TableFunction & >( *functionManager.createChild( "TableFunction", "water_jFunction" ) );
-  table_w.setTableCoordinates( coordinates );
-  table_w.setTableValues( values );
+  table_w.setTableCoordinates( coordinates, { units::Dimensionless } );
+  table_w.setTableValues( values, units::Dimensionless );
   table_w.reInitializeFunction();
 
   table_w.setInterpolationMethod( TableFunction::InterpolationType::Linear );
@@ -338,7 +339,7 @@ CapillaryPressureBase & makeJFunctionCapPressureTwoPhase( string const & name, G
     capPressure.getReference< JFunctionCapillaryPressure::PermeabilityDirection >( JFunctionCapillaryPressure::viewKeyStruct::permeabilityDirectionString() );
   permeabilityDirection = JFunctionCapillaryPressure::PermeabilityDirection::XY;
 
-  capPressure.postProcessInputRecursive();
+  capPressure.postInputInitializationRecursive();
   capPressure.initialize(); // to test all the checks
 
   return capPressure;
@@ -375,8 +376,8 @@ CapillaryPressureBase & makeJFunctionCapPressureThreePhase( string const & name,
   values_w[5] = 0.00603;
 
   TableFunction & table_ow_w = dynamicCast< TableFunction & >( *functionManager.createChild( "TableFunction", "water_ow_jFunction" ) );
-  table_ow_w.setTableCoordinates( coordinates_w );
-  table_ow_w.setTableValues( values_w );
+  table_ow_w.setTableCoordinates( coordinates_w, { units::Dimensionless } );
+  table_ow_w.setTableValues( values_w, units::Dimensionless );
   table_ow_w.reInitializeFunction();
 
   table_ow_w.setInterpolationMethod( TableFunction::InterpolationType::Linear );
@@ -402,8 +403,8 @@ CapillaryPressureBase & makeJFunctionCapPressureThreePhase( string const & name,
   values_g[5] = 0.27203;
 
   TableFunction & table_og_g = dynamicCast< TableFunction & >( *functionManager.createChild( "TableFunction", "gas_og_jFunction" ) );
-  table_og_g.setTableCoordinates( coordinates_g );
-  table_og_g.setTableValues( values_g );
+  table_og_g.setTableCoordinates( coordinates_g, { units::Dimensionless } );
+  table_og_g.setTableValues( values_g, units::Dimensionless );
   table_og_g.reInitializeFunction();
 
   table_og_g.setInterpolationMethod( TableFunction::InterpolationType::Linear );
@@ -432,7 +433,7 @@ CapillaryPressureBase & makeJFunctionCapPressureThreePhase( string const & name,
     capPressure.getReference< JFunctionCapillaryPressure::PermeabilityDirection >( JFunctionCapillaryPressure::viewKeyStruct::permeabilityDirectionString() );
   permeabilityDirection = JFunctionCapillaryPressure::PermeabilityDirection::Z;
 
-  capPressure.postProcessInputRecursive();
+  capPressure.postInputInitializationRecursive();
   capPressure.initialize(); // to test all the checks
   return capPressure;
 }

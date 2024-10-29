@@ -1,0 +1,20 @@
+from geos.ats.test_builder import TestDeck, RestartcheckParameters, generate_geos_tests
+
+restartcheck_params = {}
+restartcheck_params["atol"] = 1.0E-6
+restartcheck_params["rtol"] = 1.0E-5
+
+decks = [
+    TestDeck(
+        name="deadOilEgg_smoke_3d",
+        description=
+        "Smoke test for the Egg model (3D displacement, structured mesh, 2-phase dead-oil, many wells)",
+        partitions=[
+            (1, 1, 1),
+        ],
+        restart_step=20,
+        check_step=35,
+        restartcheck_params=RestartcheckParameters(**restartcheck_params)),
+]
+
+generate_geos_tests(decks)

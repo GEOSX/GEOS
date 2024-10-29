@@ -28,8 +28,9 @@
     <EmbeddedSurfaceGenerator
       name="SurfaceGenerator"
       logLevel="1"
-      discretization="fluidTPFA"
+      discretization="FE1"
       targetRegions="{ Domain, Fracture }"
+      targetObjects="{ FracturePlane }"
       fractureRegion="Fracture"
       mpiCommOrder="1"/>
   </Solvers>
@@ -58,7 +59,7 @@
       xMin="{ 3.99, 3.99, -0.01 }"
       xMax="{ 5.01, 5.01, 1.01 }"/>
 
-    <BoundedPlane
+    <Rectangle
       name="FracturePlane"
       normal="{ 0, 1, 0 }"
       origin="{ 2.5, 1.5, 0.5 }"
@@ -96,6 +97,11 @@
       <TwoPointFluxApproximation
         name="fluidTPFA"/>
     </FiniteVolume>
+    <FiniteElements>
+    <FiniteElementSpace
+        name="FE1"
+        order="1"/>
+    </FiniteElements>
   </NumericalMethods>
 
   <ElementRegions>

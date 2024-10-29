@@ -2,10 +2,11 @@
  * ------------------------------------------------------------------------------------------------------------
  * SPDX-License-Identifier: LGPL-2.1-only
  *
- * Copyright (c) 2018-2020 Lawrence Livermore National Security LLC
- * Copyright (c) 2018-2020 The Board of Trustees of the Leland Stanford Junior University
- * Copyright (c) 2018-2020 TotalEnergies
- * Copyright (c) 2019-     GEOSX Contributors
+ * Copyright (c) 2016-2024 Lawrence Livermore National Security LLC
+ * Copyright (c) 2018-2024 Total, S.A
+ * Copyright (c) 2018-2024 The Board of Trustees of the Leland Stanford Junior University
+ * Copyright (c) 2018-2024 Chevron
+ * Copyright (c) 2019-     GEOS/GEOSX Contributors
  * All rights reserved
  *
  * See top level LICENSE, COPYRIGHT, CONTRIBUTORS, NOTICE, and ACKNOWLEDGEMENTS files for details.
@@ -45,18 +46,16 @@ public:
   /// Compile time value for the number of norms to compute
   static constexpr integer numNorm = NUM_NORM;
 
-  /// Const value used to make sure that normalizers are never zero
-  static constexpr real64 minNormalizer = 1e-12;
-
-
   ResidualNormKernelBase( globalIndex const rankOffset,
                           arrayView1d< real64 const > const & localResidual,
                           arrayView1d< globalIndex const > const & dofNumber,
-                          arrayView1d< localIndex const > const & ghostRank ):
+                          arrayView1d< localIndex const > const & ghostRank,
+                          real64 const minNormalizer ):
     m_rankOffset( rankOffset ),
     m_localResidual( localResidual ),
     m_dofNumber( dofNumber ),
-    m_ghostRank( ghostRank )
+    m_ghostRank( ghostRank ),
+    m_minNormalizer( minNormalizer )
   {}
 
   /**
@@ -232,6 +231,9 @@ protected:
 
   /// View on the ghost ranks
   arrayView1d< integer const > const m_ghostRank;
+
+  /// Value used to make sure that normalizers are never zero
+  real64 const m_minNormalizer;
 
 };
 

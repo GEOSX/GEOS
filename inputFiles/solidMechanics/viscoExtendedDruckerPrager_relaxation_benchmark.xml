@@ -1,0 +1,56 @@
+<?xml version="1.0" ?>
+
+<Problem>
+  <Included>
+    <File name="./viscoExtendedDruckerPrager_relaxation_base.xml"/>
+  </Included> 
+
+<!-- SPHINX_MESH -->
+  <Mesh>
+    <InternalMesh
+      name="mesh"
+      elementTypes="{ C3D8 }"
+      xCoords="{ 0, 0.9, 1.0 }"
+      yCoords="{ 0, 0.9, 1.0 }"
+      zCoords="{ 0, 0.9, 1.0 }"
+      nx="{ 9, 1 }"
+      ny="{ 9, 1 }"
+      nz="{ 9, 1 }"
+      cellBlockNames="{ cb-0_0_0,  cb-1_0_0,  cb-0_1_0,  cb-1_1_0, 
+                        cb-0_0_1,  cb-1_0_1,  cb-0_1_1,  cb-1_1_1 }"/>
+  </Mesh>
+<!-- SPHINX_MESH_END -->
+
+  <Events
+    maxTime="172800.0">
+    <PeriodicEvent 
+      name="outputs"
+      timeFrequency="1000.0"
+      targetExactTimestep="1"
+      target="/Outputs/vtkOutput" />
+
+    <PeriodicEvent
+      name="stressCollection"
+      target="/Tasks/stressCollection" />
+
+    <PeriodicEvent
+      name="stressOutput"
+      targetExactTimestep="0"
+      target="/Outputs/stressOutput"/>
+
+    <PeriodicEvent
+      name="displacementCollection" 
+      target="/Tasks/displacementCollection" />
+
+    <PeriodicEvent
+      name="displacementOutput"
+      targetExactTimestep="0" 
+      target="/Outputs/displacementOutput" /> 
+
+    <PeriodicEvent
+      name="solverApplications"
+      beginTime="0"
+      forceDt="1000.0"
+      target="/Solvers/mechanicsSolver"/>
+  </Events>
+</Problem>

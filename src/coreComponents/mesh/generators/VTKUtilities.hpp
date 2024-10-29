@@ -2,10 +2,11 @@
  * ------------------------------------------------------------------------------------------------------------
  * SPDX-License-Identifier: LGPL-2.1-only
  *
- * Copyright (c) 2018-2020 Lawrence Livermore National Security LLC
- * Copyright (c) 2018-2020 The Board of Trustees of the Leland Stanford Junior University
- * Copyright (c) 2018-2020 Total, S.A
- * Copyright (c) 2019-     GEOSX Contributors
+ * Copyright (c) 2016-2024 Lawrence Livermore National Security LLC
+ * Copyright (c) 2018-2024 Total, S.A
+ * Copyright (c) 2018-2024 The Board of Trustees of the Leland Stanford Junior University
+ * Copyright (c) 2018-2024 Chevron
+ * Copyright (c) 2019-     GEOS/GEOSX Contributors
  * All rights reserved
  *
  * See top level LICENSE, COPYRIGHT, CONTRIBUTORS, NOTICE, and ACKNOWLEDGEMENTS files for details.
@@ -19,15 +20,14 @@
 #ifndef GEOS_MESH_GENERATORS_VTKUTILITIES_HPP
 #define GEOS_MESH_GENERATORS_VTKUTILITIES_HPP
 
-#include "common/DataTypes.hpp"
-#include "common/DataLayouts.hpp"
-#include "common/MpiWrapper.hpp"
-#include "mesh/DomainPartition.hpp"
-#include "mesh/generators/CellBlockManager.hpp"
+#include "CellBlockManager.hpp"
 
-#include <vtkSmartPointer.h>
+#include "common/DataTypes.hpp"
+#include "common/MpiWrapper.hpp"
+
 #include <vtkDataSet.h>
 #include <vtkMultiProcessController.h>
+#include <vtkSmartPointer.h>
 
 #include <numeric>
 #include <unordered_set>
@@ -69,13 +69,76 @@ using CellMapType = std::map< ElementType, std::unordered_map< int, std::vector<
 vtkSmartPointer< vtkMultiProcessController > getController();
 
 /**
+ * @brief Gathers all the vtk meshes together.
+ */
+class AllMeshes
+{
+public:
+  AllMeshes() = default;
+
+  /**
+   * @brief Builds the compound from values.
+   * @param main The main 3d mesh (the matrix).
+   * @param faceBlocks The fractures meshes.
+   */
+  AllMeshes( vtkSmartPointer< vtkDataSet > const & main,
+             std::map< string, vtkSmartPointer< vtkDataSet > > const & faceBlocks )
+    : m_main( main ),
+    m_faceBlocks( faceBlocks )
+  { }
+
+  /**
+   * @return the main 3d mesh for the simulation.
+   */
+  vtkSmartPointer< vtkDataSet > getMainMesh()
+  {
+    return m_main;
+  }
+
+  /**
+   * @return a mapping linking the name of each face block to its mesh.
+   */
+  std::map< string, vtkSmartPointer< vtkDataSet > > & getFaceBlocks()
+  {
+    return m_faceBlocks;
+  }
+
+  /**
+   * @brief Defines the main 3d mesh for the simulation.
+   * @param main The new 3d mesh.
+   */
+  void setMainMesh( vtkSmartPointer< vtkDataSet > main )
+  {
+    m_main = main;
+  }
+
+  /**
+   * @brief Defines the face blocks/fractures.
+   * @param faceBlocks A map which connects each name of the face block to its mesh.
+   */
+  void setFaceBlocks( std::map< string, vtkSmartPointer< vtkDataSet > > const & faceBlocks )
+  {
+    m_faceBlocks = faceBlocks;
+  }
+
+private:
+  /// The main 3d mesh (namely the matrix).
+  vtkSmartPointer< vtkDataSet > m_main;
+
+  /// The face meshes (namely the fractures).
+  std::map< string, vtkSmartPointer< vtkDataSet > > m_faceBlocks;
+};
+
+/**
  * @brief Load the VTK file into the VTK data structure
  * @param[in] filePath the Path of the file to load
- * @param[in] blockName The name of the block to import (will be considered for multi-block files only).
- * @return a vtk mesh
+ * @param[in] mainBlockName The name of the block to import (will be considered for multi-block files only).
+ * @param[in] faceBlockNames The names of the face blocks to import  (will be considered for multi-block files only).
+ * @return The compound of the main mesh and the face block meshes.
  */
-vtkSmartPointer< vtkDataSet > loadMesh( Path const & filePath,
-                                        const string & blockName = "" );
+AllMeshes loadAllMeshes( Path const & filePath,
+                         string const & mainBlockName,
+                         array1d< string > const & faceBlockNames );
 
 /**
  * @brief Compute the rank neighbor candidate list.
@@ -87,19 +150,23 @@ findNeighborRanks( std::vector< vtkBoundingBox > boundingBoxes );
 
 /**
  * @brief Generate global point/cell IDs and redistribute the mesh among MPI ranks.
+ * @param[in] logLevel the log level
  * @param[in] loadedMesh the mesh that was loaded on one or several MPI ranks
+ * @param[in] namesToFractures the fracture meshes
  * @param[in] comm the MPI communicator
  * @param[in] method the partitionning method
  * @param[in] partitionRefinement number of graph partitioning refinement cycles
  * @param[in] useGlobalIds controls whether global id arrays from the vtk input should be used
  * @return the vtk grid redistributed
  */
-vtkSmartPointer< vtkDataSet >
-redistributeMesh( vtkDataSet & loadedMesh,
-                  MPI_Comm const comm,
-                  PartitionMethod const method,
-                  int const partitionRefinement,
-                  int const useGlobalIds );
+AllMeshes
+redistributeMeshes( integer const logLevel,
+                    vtkSmartPointer< vtkDataSet > loadedMesh,
+                    std::map< string, vtkSmartPointer< vtkDataSet > > & namesToFractures,
+                    MPI_Comm const comm,
+                    PartitionMethod const method,
+                    int const partitionRefinement,
+                    int const useGlobalIds );
 
 /**
  * @brief Collect lists of VTK cell indices organized by type and attribute value.
@@ -122,16 +189,6 @@ CellMapType buildCellMap( vtkDataSet & mesh,
 void printMeshStatistics( vtkDataSet & mesh,
                           CellMapType const & cellMap,
                           MPI_Comm const comm );
-
-/**
- * @brief Collect the data to be imported.
- * @param[in] mesh an input mesh
- * @param[in] srcFieldNames an array of field names
- * @return A list of pointers to VTK data arrays.
- */
-std::vector< vtkDataArray * >
-findArraysForImport( vtkDataSet & mesh,
-                     arrayView1d< string const > const & srcFieldNames );
 
 /**
  * @brief Collect the data to be imported.

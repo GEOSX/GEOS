@@ -2,10 +2,11 @@
  * ------------------------------------------------------------------------------------------------------------
  * SPDX-License-Identifier: LGPL-2.1-only
  *
- * Copyright (c) 2018-2020 Lawrence Livermore National Security LLC
- * Copyright (c) 2018-2020 The Board of Trustees of the Leland Stanford Junior University
- * Copyright (c) 2018-2020 TotalEnergies
- * Copyright (c) 2019-     GEOSX Contributors
+ * Copyright (c) 2016-2024 Lawrence Livermore National Security LLC
+ * Copyright (c) 2018-2024 Total, S.A
+ * Copyright (c) 2018-2024 The Board of Trustees of the Leland Stanford Junior University
+ * Copyright (c) 2018-2024 Chevron
+ * Copyright (c) 2019-     GEOS/GEOSX Contributors
  * All rights reserved
  *
  * See top level LICENSE, COPYRIGHT, CONTRIBUTORS, NOTICE, and ACKNOWLEDGEMENTS files for details.
@@ -32,7 +33,7 @@ namespace geos
  * @class SurfaceElementSubRegion
  *
  * The SurfaceElementSubRegion class contains the functionality to support the concept of a
- * surface element that can be either and embedded surface element or a face element.
+ * surface element that can be either and surface element or a face element.
  */
 class SurfaceElementSubRegion : public ElementSubRegionBase
 {
@@ -157,17 +158,17 @@ public:
    * @brief Get the surface element to cells map.
    * @return The surface element to cells map
    */
-  FixedToManyElementRelation & getToCellRelation()
+  OrderedVariableToManyElementRelation & getToCellRelation()
   {
-    return m_surfaceElementsToCells;
+    return m_2dElemToElems;
   }
 
   /**
    * @copydoc getToCellRelation()
    */
-  FixedToManyElementRelation const & getToCellRelation() const
+  OrderedVariableToManyElementRelation const & getToCellRelation() const
   {
-    return m_surfaceElementsToCells;
+    return m_2dElemToElems;
   }
 
   ///@}
@@ -201,10 +202,68 @@ public:
    */
   arrayView1d< real64 const > getElementArea() const { return m_elementArea; }
 
+  /**
+   * @brief Const accessor to the normal vectors.
+   * @return a const view to the array of normal vectors.
+   */
+  arrayView2d< real64 const > getNormalVector() const { return m_normalVector; }
+
+  /**
+   * @brief Non const accessor to the normal vectors.
+   * @return a non const view to the array of normal vectors.
+   */
+  arrayView2d< real64 > getNormalVector() { return m_normalVector; }
+
+  /**
+   * @brief Get normal vector of a specific surface element.
+   * @param k index of the surface element
+   * @return the normal vector of a specific surface element
+   */
+  arraySlice1d< real64 const > getNormalVector( localIndex k ) const { return m_normalVector[k]; }
+
+  /**
+   * @brief Get an array of the first tangent vector of the surface elements.
+   * @return an array of the first tangent vector of the surface elements
+   */
+  arrayView2d< real64 const > getTangentVector1() const { return m_tangentVector1; }
+
+  /**
+   * @brief Get an array of the first tangent vector of the surface elements.
+   * @return a non const view to the array of the first tangent vector of the surface elements
+   */
+  arrayView2d< real64 > getTangentVector1() { return m_tangentVector1; }
+
+  /**
+   * @brief Get the first tangent vector of a specific surface element.
+   * @param k index of the surface element
+   * @return the first tangent vector of a specific surface element
+   */
+  arraySlice1d< real64 const > getTangentVector1( localIndex const k ) const { return m_tangentVector1[k]; }
+
+  /**
+   * @brief Get an array of the second tangent vector of the surface elements.
+   * @return aconst view to the array of the second tangent vector of the surface elements
+   */
+  arrayView2d< real64 const > getTangentVector2() const { return m_tangentVector2.toViewConst(); }
+
+  /**
+   * @brief Get an array of the first tangent vector of the surface elements.
+   * @return a non const view to the array of the second tangent vector of the surface elements
+   */
+  arrayView2d< real64 > getTangentVector2() { return m_tangentVector2; }
+
+  /**
+   * @brief Get the second tangent vector of a specific surface element.
+   * @param k index of the surface element
+   * @return the second tangent vector of a specific surface element
+   */
+  arraySlice1d< real64 const > getTangentVector2( localIndex const k ) const { return m_tangentVector2[k];}
+
+
   ///@}
 
   /**
-   * @brief Struct containing the keys to all embedded surface element views.
+   * @brief Struct containing the keys to all surface element views.
    * @struct viewKeyStruct
    */
   struct viewKeyStruct : ElementSubRegionBase::viewKeyStruct
@@ -218,24 +277,17 @@ public:
     /// @return Face element to cell indices map string.
     static constexpr char const * surfaceElementsToCellIndexString() { return "fractureElementsToCellIndices"; }
 
-
-    /// @return Embedded surface element aperture string
-    static constexpr char const * elementApertureString() { return "elementAperture"; }
-
-    /// @return Embedded surface element surface are string
-    static constexpr char const * elementAreaString() { return "elementArea"; }
-
     /// @return Mass creation string.
     constexpr static char const * creationMassString() { return "creationMass"; }
 
-    /// @return embedded surface element to parent plane string.
+    /// @return surface element to parent plane string.
     constexpr static char const * surfaceElementToParentPlaneString() { return "surfaceElementToParentPlane"; }
   };
 
 protected:
 
   /// Map between the surface elements and the cells
-  FixedToManyElementRelation m_surfaceElementsToCells;
+  OrderedVariableToManyElementRelation m_2dElemToElems;
 
   /// Unmapped surface elements to nodes map
   map< localIndex, array1d< globalIndex > > m_unmappedGlobalIndicesInToNodes;
@@ -251,6 +303,15 @@ protected:
 
   /// Member level field for the element center
   array1d< real64 > m_elementArea;
+
+  /// Normal vector to the surface element
+  array2d< real64 > m_normalVector;
+
+  /// Unit vector indicating the first tangential direction
+  array2d< real64 > m_tangentVector1;
+
+  /// Unit vector indicating the second tangential direction
+  array2d< real64 > m_tangentVector2;
 
 };
 

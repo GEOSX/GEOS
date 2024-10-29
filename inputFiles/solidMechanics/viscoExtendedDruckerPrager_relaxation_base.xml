@@ -1,0 +1,193 @@
+<?xml version="1.0" ?>
+
+<Problem>
+<!-- SPHINX_MECHANICSSOLVER -->
+  <Solvers
+    gravityVector="{ 0.0, 0.0, 0.0 }">
+    <SolidMechanics_LagrangianFEM
+      name="mechanicsSolver"
+      timeIntegrationOption="QuasiStatic"
+      logLevel="1"
+      discretization="FE1"
+      targetRegions="{ Domain }">
+      <NonlinearSolverParameters
+        newtonTol="1.0e-5"
+        newtonMaxIter="15"/>
+      <LinearSolverParameters
+        solverType="direct"/>
+    </SolidMechanics_LagrangianFEM>
+  </Solvers>
+<!-- SPHINX_MECHANICSSOLVER_END -->
+
+  <NumericalMethods>
+    <FiniteElements>
+      <FiniteElementSpace
+        name="FE1"
+        order="1"/>
+    </FiniteElements>
+  </NumericalMethods>
+
+  <Geometry>
+    <Box
+      name="topPoint"
+      xMin="{0.89, 0.89, 0.99}"
+      xMax="{1.01, 1.01, 1.01}"/>
+  </Geometry>
+
+<!-- SPHINX_ELEMENTREGIONS -->
+  <ElementRegions>
+    <CellElementRegion
+      name="Domain"
+      cellBlocks="{ cb-0_0_0,  cb-1_0_0,  cb-0_1_0,  cb-1_1_0, 
+                    cb-0_0_1,  cb-1_0_1,  cb-0_1_1,  cb-1_1_1 }"
+      materialList="{ rock }"/>
+  </ElementRegions>
+<!-- SPHINX_ELEMENTREGIONS_END -->
+
+<!-- SPHINX_MATERIAL -->
+  <Constitutive>
+    <ViscoExtendedDruckerPrager 
+      name="rock"
+      defaultDensity="2700"
+      defaultBulkModulus="10.0e9"
+      defaultShearModulus="6.0e9"
+      defaultCohesion="0.1e6"
+      defaultInitialFrictionAngle="15.0"
+      defaultResidualFrictionAngle="20.0"
+      defaultDilationRatio="0.5"
+      defaultHardening="0.0005"
+      relaxationTime="5000.0"
+    />  
+  </Constitutive>
+<!-- SPHINX_MATERIAL_END -->
+
+<!-- SPHINX_BC --> 
+  <FieldSpecifications>
+    <FieldSpecification
+      name="xconstraint"
+      objectPath="nodeManager"
+      fieldName="totalDisplacement"
+      component="0"
+      scale="0.0"
+      setNames="{ xneg }"/>
+
+    <FieldSpecification
+      name="yconstraint"
+      objectPath="nodeManager"
+      fieldName="totalDisplacement"
+      component="1"
+      scale="0.0"
+      setNames="{ yneg }"/>
+
+    <FieldSpecification
+      name="zconstraint"
+      objectPath="nodeManager"
+      fieldName="totalDisplacement"
+      component="2"
+      scale="0.0"
+      setNames="{ zneg }"/>
+
+    <FieldSpecification 
+      name="stressXX"
+      initialCondition="1"
+      setNames="{all}"
+      objectPath="ElementRegions/Domain"
+      fieldName="rock_stress"
+      component="0"
+      scale="-10.0e6"
+    />
+
+    <FieldSpecification 
+      name="stressYY"
+      initialCondition="1"
+      setNames="{all}"
+      objectPath="ElementRegions/Domain"
+      fieldName="rock_stress"
+      component="1"
+      scale="-10.0e6"
+    />
+
+    <FieldSpecification 
+      name="stressZZ"
+      initialCondition="1"
+      setNames="{all}"
+      objectPath="ElementRegions/Domain"
+      fieldName="rock_stress"
+      component="2"
+      scale="-10.0e6"
+    />
+
+    <Traction 
+      name="xconfinement"
+      setNames="{ xpos }"
+      objectPath="faceManager"
+      scale="-10.0e6"
+      tractionType="normal"     
+    />
+
+    <Traction 
+      name="yconfinement"
+      setNames="{ ypos }"
+      objectPath="faceManager"
+      scale="-10.0e6"
+      tractionType="normal"     
+    />
+
+    <FieldSpecification
+      name="axialload"
+      objectPath="nodeManager"
+      fieldName="totalDisplacement"
+      component="2"
+      scale="-0.001"
+      functionName="timeFunction"
+      setNames="{ zpos }"/>
+  </FieldSpecifications>
+<!-- SPHINX_BC_END -->
+
+  <Functions>
+    <TableFunction
+      name="timeFunction"
+      inputVarNames="{ time }"
+      coordinates="{ 0.0, 43200, 172800 }"
+      values="{ 0.0, 1.0, 1.0 }"/>
+  </Functions>
+
+<!-- SPHINX_TASKS -->
+  <Tasks>
+    <PackCollection
+      name="stressCollection"
+      objectPath="ElementRegions/Domain/cb-1_1_1"
+      fieldName="rock_stress"/> 
+
+    <PackCollection
+      name="displacementCollection"
+      objectPath="nodeManager"
+      fieldName="totalDisplacement"
+      setNames="{ topPoint }"/> 
+  </Tasks>
+<!-- SPHINX_TASKS_END -->
+
+<!-- SPHINX_OUTPUT -->
+  <Outputs>
+    <VTK 
+      name="vtkOutput"    
+    />
+
+    <TimeHistory
+      name="stressOutput"
+      sources="{/Tasks/stressCollection}"
+      filename="stress_history" 
+    />
+      
+    <TimeHistory
+      name="displacementOutput"
+      sources="{/Tasks/displacementCollection}"
+      filename="displacement_history" 
+    />
+
+    <Restart
+      name="restartOutput"
+    />  
+  </Outputs>  
+<!-- SPHINX_OUTPUT_END -->
+</Problem>

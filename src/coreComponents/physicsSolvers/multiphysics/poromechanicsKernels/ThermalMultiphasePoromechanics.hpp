@@ -2,10 +2,11 @@
  * ------------------------------------------------------------------------------------------------------------
  * SPDX-License-Identifier: LGPL-2.1-only
  *
- * Copyright (c) 2018-2020 Lawrence Livermore National Security LLC
- * Copyright (c) 2018-2020 The Board of Trustees of the Leland Stanford Junior University
- * Copyright (c) 2018-2020 TotalEnergies
- * Copyright (c) 2019-     GEOSX Contributors
+ * Copyright (c) 2016-2024 Lawrence Livermore National Security LLC
+ * Copyright (c) 2018-2024 Total, S.A
+ * Copyright (c) 2018-2024 The Board of Trustees of the Leland Stanford Junior University
+ * Copyright (c) 2018-2024 Chevron
+ * Copyright (c) 2019-     GEOS/GEOSX Contributors
  * All rights reserved
  *
  * See top level LICENSE, COPYRIGHT, CONTRIBUTORS, NOTICE, and ACKNOWLEDGEMENTS files for details.
@@ -75,6 +76,8 @@ public:
   using Base::m_pressure_n;
   using Base::m_numComponents;
   using Base::m_numPhases;
+  using Base::m_useTotalMassEquation;
+  using Base::m_performStressInitialization;
   using Base::m_solidDensity;
   using Base::m_fluidPhaseMassDensity;
   using Base::m_dFluidPhaseMassDensity;
@@ -85,6 +88,7 @@ public:
   using Base::m_fluidPhaseCompFrac;
   using Base::m_dFluidPhaseCompFrac;
   using Base::m_dGlobalCompFraction_dGlobalCompDensity;
+  using Base::m_dt;
 
   /**
    * @brief Constructor
@@ -102,10 +106,13 @@ public:
                                   globalIndex const rankOffset,
                                   CRSMatrixView< real64, globalIndex const > const inputMatrix,
                                   arrayView1d< real64 > const inputRhs,
+                                  real64 const inputDt,
                                   real64 const (&gravityVector)[3],
                                   string const inputFlowDofKey,
                                   localIndex const numComponents,
                                   localIndex const numPhases,
+                                  integer const useTotalMassEquation,
+                                  integer const performStressInitialization,
                                   string const fluidModelKey );
 
   /**
@@ -331,10 +338,13 @@ using ThermalMultiphasePoromechanicsKernelFactory =
                                 globalIndex const,
                                 CRSMatrixView< real64, globalIndex const > const,
                                 arrayView1d< real64 > const,
+                                real64 const,
                                 real64 const (&)[3],
                                 string const,
                                 localIndex const,
                                 localIndex const,
+                                integer const,
+                                integer const,
                                 string const >;
 
 } // namespace thermalporomechanicsKernels

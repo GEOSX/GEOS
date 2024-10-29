@@ -1,0 +1,208 @@
+<?xml version="1.0" ?>
+
+<Problem>
+  <Included>
+    <File
+      name="./pknViscosityDominated_poroelastic_base.xml"/>
+  </Included>
+
+  <Solvers
+    gravityVector="{ 0.0, 0.0, -0.0 }">
+  <!-- SPHINX_HYDROFRACSOLVER -->
+    <Hydrofracture
+      name="hydrofracture"
+      solidSolverName="lagsolve"
+      flowSolverName="SinglePhaseFlow"
+      surfaceGeneratorName="SurfaceGen"
+      logLevel="1"
+      targetRegions="{ Domain, Fracture }"
+      isMatrixPoroelastic="1"
+      contactRelationName="fractureContact"
+      maxNumResolves="5"
+      initialDt="0.1">
+      <NonlinearSolverParameters
+        newtonTol="1.0e-4"
+        newtonMaxIter="10"
+        maxTimeStepCuts="5"/>
+      <LinearSolverParameters
+        solverType="gmres"
+        preconditionerType="mgr"
+        logLevel="1"
+        krylovAdaptiveTol="1"/>
+    </Hydrofracture>
+  <!-- SPHINX_HYDROFRACSOLVER_END -->
+
+  <!-- SPHINX_MECHANICALSOLVER -->
+    <SolidMechanicsLagrangianSSLE
+      name="lagsolve"
+      timeIntegrationOption="QuasiStatic"
+      discretization="FE1"
+      targetRegions="{ Domain, Fracture }"
+      contactRelationName="fractureContact">
+      <NonlinearSolverParameters
+        newtonTol="1.0e-6"/>
+      <LinearSolverParameters
+        solverType="gmres"
+        krylovTol="1.0e-10"/>    
+    </SolidMechanicsLagrangianSSLE>
+  <!-- SPHINX_MECHANICALSOLVER_END -->
+
+  <!-- SPHINX_SINGLEPHASEFVM -->
+    <SinglePhaseFVM
+      name="SinglePhaseFlow"
+      discretization="singlePhaseTPFA"
+      targetRegions="{ Domain, Fracture }">
+      <NonlinearSolverParameters
+        newtonTol="1.0e-5"
+        newtonMaxIter="10"/>
+      <LinearSolverParameters
+        solverType="gmres"
+        krylovTol="1.0e-12"/>     
+    </SinglePhaseFVM>
+  <!-- SPHINX_SINGLEPHASEFVM_END -->
+
+  <!-- SPHINX_SURFACEGENERATOR -->
+    <SurfaceGenerator
+      name="SurfaceGen"
+      targetRegions="{ Domain }"
+      nodeBasedSIF="1"      
+      rockToughness="0.1e6"
+      mpiCommOrder="1"/>
+  <!-- SPHINX_SURFACEGENERATOR_END -->
+  </Solvers>
+
+  <!-- SPHINX_MESH -->
+  <Mesh>
+    <InternalMesh
+      name="mesh1"
+      elementTypes="{ C3D8 }"
+      xCoords="{ 0, 150, 200, 400 }"
+      yCoords="{ 0, 150, 200, 400 }"
+      zCoords="{ -400, -100, -20, 20, 100, 400 }"
+      nx="{ 75, 10, 20 }"
+      ny="{ 75, 10, 20 }"
+      nz="{ 10, 10, 20, 10, 10 }"
+      cellBlockNames="{ cb1 }"/> 
+  </Mesh>
+  <!-- SPHINX_MESH_END -->
+ 
+  <Geometry> 
+  <!-- SPHINX_INITIALFRAC -->
+    <Box
+      name="fracture"
+      xMin="{ -4.1, -4.1, -0.1 }"
+      xMax="{ 2.1, 6.1, 0.1 }"/>
+  <!-- SPHINX_INITIALFRAC_END -->
+
+  <!-- SPHINX_INJSOURCE -->
+    <Box
+      name="source"
+      xMin="{ -2.1, -2.1, -0.1 }"
+      xMax="{ 2.1, 6.1, 0.1 }"/>
+  <!-- SPHINX_INJSOURCE_END -->
+
+  <!-- SPHINX_FRACPLANE -->
+    <Box
+      name="core"
+      xMin="{ -500.1, -500.1, -0.1 }"
+      xMax="{ 500.1, 10.1, 0.1 }"/>
+  <!-- SPHINX_FRACPLANE_END -->
+  </Geometry>
+
+  <Events
+    maxTime="200.1"> 
+    <SoloEvent
+      name="preFracture"
+      target="/Solvers/SurfaceGen"/>
+
+    <PeriodicEvent
+      name="outputs"
+      beginTime="2.0"
+      timeFrequency="2.0"
+      targetExactTimestep="0"
+      target="/Outputs/vtkOutput"/>
+
+    <PeriodicEvent
+      name="timeHistoryCollection0"
+      beginTime="2.0"
+      timeFrequency="2.0"
+      targetExactTimestep="0"
+      target="/Tasks/pressureCollection" />
+
+    <PeriodicEvent
+      name="timeHistoryCollection1"
+      beginTime="2.0"
+      timeFrequency="2.0"
+      targetExactTimestep="0"
+      target="/Tasks/apertureCollection" />
+
+    <PeriodicEvent
+      name="timeHistoryCollection2"
+      beginTime="2.0"
+      timeFrequency="2.0"
+      targetExactTimestep="0"
+      target="/Tasks/hydraulicApertureCollection" /> 
+
+    <PeriodicEvent
+      name="timeHistoryCollection3"
+      beginTime="2.0"
+      timeFrequency="2.0"
+      targetExactTimestep="0"
+      target="/Tasks/areaCollection" />      
+
+    <PeriodicEvent
+      name="timeHistoryOutput"
+      beginTime="2.0"
+      timeFrequency="2.0"
+      targetExactTimestep="0"
+      target="/Outputs/timeHistoryOutput"/> 
+ 
+    <PeriodicEvent
+      name="solverApplications1"
+      beginTime="0.0"
+      endTime="1.0"
+      forceDt="0.2000000000001"
+      target="/Solvers/hydrofracture"/>
+
+    <PeriodicEvent
+      name="solverApplications2"
+      beginTime="1.0"
+      endTime="3.0"
+      forceDt="0.5"
+      target="/Solvers/hydrofracture"/>
+
+    <PeriodicEvent
+      name="solverApplications3"
+      beginTime="3.0"
+      endTime="8.0"
+      forceDt="1.0"
+      target="/Solvers/hydrofracture"/>
+
+    <PeriodicEvent
+      name="solverApplications4"
+      beginTime="8.0"
+      endTime="20.0"
+      forceDt="2.0"
+      target="/Solvers/hydrofracture"/>
+
+    <PeriodicEvent
+      name="solverApplications5"
+      beginTime="20.0"
+      endTime="60.0"
+      forceDt="4.0"
+      target="/Solvers/hydrofracture"/>
+
+    <PeriodicEvent
+      name="solverApplications6"
+      beginTime="60.0"
+      endTime="100.0"
+      forceDt="8.0"
+      target="/Solvers/hydrofracture"/>
+
+    <PeriodicEvent
+      name="solverApplications7"
+      beginTime="100.0"
+      forceDt="10.0"
+      target="/Solvers/hydrofracture"/>
+  </Events> 
+</Problem>

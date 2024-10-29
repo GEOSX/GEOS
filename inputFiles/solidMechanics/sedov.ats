@@ -1,0 +1,30 @@
+# Integrated Test Docs Begin Parameters
+from geos.ats.test_builder import generate_geos_tests, RestartcheckParameters, TestDeck, CurveCheckParameters
+
+restartcheck_params = {}
+restartcheck_params["atol"] = 2.0E-10
+restartcheck_params["rtol"] = 2.0E-13
+
+curvecheck_params = {}
+curvecheck_params['filename'] = 'veloc_history.hdf5'
+curvecheck_params['tolerance'] = 1e-10
+curvecheck_params['time_units'] = 'milliseconds'
+curvecheck_params['curves'] = [['velocity', 'source']]
+# Integrated Test Docs End Parameters
+
+# Integrated Test Docs Begin Test Loop
+partitions = ((1, 1, 1), (2, 2, 2), (3, 3, 3))
+
+decks = [
+    TestDeck(
+        name="sedov_finiteStrain_smoke",
+        description="Test the basic sedov problem and restart capabilities",
+        partitions=partitions,
+        restart_step=50,
+        check_step=100,
+        restartcheck_params=RestartcheckParameters(**restartcheck_params),
+        curvecheck_params=CurveCheckParameters(**curvecheck_params))
+]
+
+generate_geos_tests(decks)
+# Integrated Test Docs End Test Loop

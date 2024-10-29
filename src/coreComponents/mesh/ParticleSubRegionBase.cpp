@@ -2,10 +2,11 @@
  * ------------------------------------------------------------------------------------------------------------
  * SPDX-License-Identifier: LGPL-2.1-only
  *
- * Copyright (c) 2018-2020 Lawrence Livermore National Security LLC
- * Copyright (c) 2018-2020 The Board of Trustees of the Leland Stanford Junior University
- * Copyright (c) 2018-2020 TotalEnergies
- * Copyright (c) 2019-     GEOSX Contributors
+ * Copyright (c) 2016-2024 Lawrence Livermore National Security LLC
+ * Copyright (c) 2018-2024 Total, S.A
+ * Copyright (c) 2018-2024 The Board of Trustees of the Leland Stanford Junior University
+ * Copyright (c) 2018-2024 Chevron
+ * Copyright (c) 2019-     GEOS/GEOSX Contributors
  * All rights reserved
  *
  * See top level LICENSE, COPYRIGHT, CONTRIBUTORS, NOTICE, and ACKNOWLEDGEMENTS files for details.
@@ -18,6 +19,9 @@
 
 #include "ParticleSubRegionBase.hpp"
 #include "constitutive/ConstitutiveManager.hpp"
+
+// CC: TODO check if this is needed
+#include "physicsSolvers/solidMechanics/MPMSolverFields.hpp"
 
 namespace geos
 {
@@ -34,13 +38,18 @@ ParticleSubRegionBase::ParticleSubRegionBase( string const & name, Group * const
   m_particleGroup(),
   m_particleSurfaceFlag(),
   m_particleDamage(),
+  m_particlePorosity(),
+  m_particleTemperature(),
   m_particleStrengthScale(),
   m_particleCenter(),
   m_particleVelocity(),
   m_particleMaterialDirection(),
   m_particleVolume(),
   m_particleType(),
-  m_particleRVectors()
+  m_particleRVectors(),
+  m_particleSurfaceNormal(),
+  m_particleSurfacePosition(),
+  m_particleSurfaceTraction()
 {
   registerGroup( groupKeyStruct::constitutiveModelsString(), &m_constitutiveModels ).
     setSizedFromParent( 1 );
@@ -60,11 +69,17 @@ ParticleSubRegionBase::ParticleSubRegionBase( string const & name, Group * const
   registerWrapper( viewKeyStruct::particleDamageString(), &m_particleDamage ).
     setPlotLevel( PlotLevel::LEVEL_1 );
 
+  registerWrapper( viewKeyStruct::particlePorosityString(), &m_particlePorosity ).
+    setPlotLevel( PlotLevel::LEVEL_1 );
+
+  registerWrapper( viewKeyStruct::particleTemperatureString(), &m_particleTemperature ).
+    setPlotLevel( PlotLevel::LEVEL_1 );
+
   registerWrapper( viewKeyStruct::particleStrengthScaleString(), &m_particleStrengthScale ).
     setPlotLevel( PlotLevel::LEVEL_1 );
 
   registerWrapper( viewKeyStruct::particleCenterString(), &m_particleCenter ).
-    setPlotLevel( PlotLevel::NOPLOT ).
+    setPlotLevel( PlotLevel::LEVEL_1 ).
     reference().resizeDimension< 1 >( 3 );
 
   registerWrapper( viewKeyStruct::particleVelocityString(), &m_particleVelocity ).
@@ -81,6 +96,18 @@ ParticleSubRegionBase::ParticleSubRegionBase( string const & name, Group * const
   registerWrapper( viewKeyStruct::particleRVectorsString(), &m_particleRVectors ).
     setPlotLevel( PlotLevel::NOPLOT ).
     reference().resizeDimension< 1, 2 >( 3, 3 );
+
+  registerWrapper( viewKeyStruct::particleSurfaceNormalString(), &m_particleSurfaceNormal ).
+    setPlotLevel( PlotLevel::LEVEL_1 ).
+    reference().resizeDimension< 1 >( 3 );
+
+  registerWrapper( viewKeyStruct::particleSurfacePositionString(), &m_particleSurfacePosition ).
+    setPlotLevel( PlotLevel::LEVEL_1 ).
+    reference().resizeDimension< 1 >( 3 );
+
+  registerWrapper( viewKeyStruct::particleSurfaceTractionString(), &m_particleSurfaceTraction ).
+    setPlotLevel( PlotLevel::LEVEL_1 ).
+    reference().resizeDimension< 1 >( 3 );
 }
 
 ParticleSubRegionBase::~ParticleSubRegionBase()
@@ -150,13 +177,22 @@ void ParticleSubRegionBase::setActiveParticleIndices()
 {
   m_activeParticleIndices.move( LvArray::MemorySpace::host ); // TODO: Is this needed?
   m_activeParticleIndices.clear();
+
+  m_inactiveParticleIndices.move( LvArray::MemorySpace::host ); // TODO: Is this needed?
+  m_inactiveParticleIndices.clear();
+
   arrayView1d< int const > const particleRank = m_particleRank.toViewConst();
-  forAll< serialPolicy >( this->size(), [&, particleRank] GEOS_HOST ( localIndex const p ) // This must be on host since we're dealing with
-                                                                                           // a sorted array. Parallelize with atomics?
+  arrayView1d< int const > const particleDeleteFlag = this->getField< fields::mpm::particleDeleteFlag >();
+  forAll< serialPolicy >( this->size(), [&, particleRank, particleDeleteFlag] GEOS_HOST ( localIndex const p ) // This must be on host since we're dealing with
+                                                                                                               // a sorted array. Parallelize with atomics?
     {
-      if( particleRank[p] == MpiWrapper::commRank( MPI_COMM_GEOSX ) )
+      if( particleRank[p] == MpiWrapper::commRank( MPI_COMM_GEOSX ) && particleDeleteFlag[p] != 1 )
       {
         m_activeParticleIndices.insert( p );
+      }
+      else
+      {
+        m_inactiveParticleIndices.insert( p );
       }
     } );
 }

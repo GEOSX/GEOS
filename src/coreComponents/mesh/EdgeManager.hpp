@@ -2,10 +2,11 @@
  * ------------------------------------------------------------------------------------------------------------
  * SPDX-License-Identifier: LGPL-2.1-only
  *
- * Copyright (c) 2018-2020 Lawrence Livermore National Security LLC
- * Copyright (c) 2018-2020 The Board of Trustees of the Leland Stanford Junior University
- * Copyright (c) 2018-2020 TotalEnergies
- * Copyright (c) 2019-     GEOSX Contributors
+ * Copyright (c) 2016-2024 Lawrence Livermore National Security LLC
+ * Copyright (c) 2018-2024 Total, S.A
+ * Copyright (c) 2018-2024 The Board of Trustees of the Leland Stanford Junior University
+ * Copyright (c) 2018-2024 Chevron
+ * Copyright (c) 2019-     GEOS/GEOSX Contributors
  * All rights reserved
  *
  * See top level LICENSE, COPYRIGHT, CONTRIBUTORS, NOTICE, and ACKNOWLEDGEMENTS files for details.
@@ -103,9 +104,9 @@ public:
 
   /**
    * @brief Set the node of the domain boundary object.
-   * @param[in] faceIndex The reference of the face manager.
+   * @param[in] faceManager The reference of the face manager.
    */
-  void setDomainBoundaryObjects( FaceManager const & faceIndex );
+  void setDomainBoundaryObjects( FaceManager const & faceManager );
 
   /**
    * @brief Set external edges.
@@ -123,9 +124,9 @@ public:
   /**
    * @brief Copies the edges to (nodes|faces) mappings from @p cellBlockManager.
    * @param[in] cellBlockManager Provides the mappings.
-   * @param[in] baseMeshLevel flag that indicates if we are operating on the base mesh level or on another mesh level
+   * @param[in] isBaseMeshLevel flag that indicates if we are operating on the base mesh level or on another mesh level
    */
-  void setGeometricalRelations( CellBlockManagerABC const & cellBlockManager, bool baseMeshLevel );
+  void setGeometricalRelations( CellBlockManagerABC const & cellBlockManager, bool isBaseMeshLevel );
 
   /**
    * @brief Link the current manager to other managers.

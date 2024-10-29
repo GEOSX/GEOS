@@ -2,10 +2,11 @@
  * ------------------------------------------------------------------------------------------------------------
  * SPDX-License-Identifier: LGPL-2.1-only
  *
- * Copyright (c) 2018-2020 Lawrence Livermore National Security LLC
- * Copyright (c) 2018-2020 The Board of Trustees of the Leland Stanford Junior University
- * Copyright (c) 2018-2020 TotalEnergies
- * Copyright (c) 2019-     GEOSX Contributors
+ * Copyright (c) 2016-2024 Lawrence Livermore National Security LLC
+ * Copyright (c) 2018-2024 Total, S.A
+ * Copyright (c) 2018-2024 The Board of Trustees of the Leland Stanford Junior University
+ * Copyright (c) 2018-2024 Chevron
+ * Copyright (c) 2019-     GEOS/GEOSX Contributors
  * All rights reserved
  *
  * See top level LICENSE, COPYRIGHT, CONTRIBUTORS, NOTICE, and ACKNOWLEDGEMENTS files for details.
@@ -20,6 +21,7 @@
 
 #include "SurfaceElementSubRegion.hpp"
 #include "ElementRegionManager.hpp"
+#include "MeshFields.hpp"
 
 namespace geos
 {
@@ -29,12 +31,15 @@ using namespace dataRepository;
 SurfaceElementSubRegion::SurfaceElementSubRegion( string const & name,
                                                   dataRepository::Group * const parent ):
   ElementSubRegionBase( name, parent ),
-  m_surfaceElementsToCells(),
+  m_2dElemToElems(),
   m_unmappedGlobalIndicesInToNodes(),
   m_toNodesRelation(),
   m_toEdgesRelation(),
   m_elementAperture(),
-  m_elementArea()
+  m_elementArea(),
+  m_normalVector(),
+  m_tangentVector1(),
+  m_tangentVector2()
 {
   registerWrapper( viewKeyStruct::nodeListString(), &m_toNodesRelation ).
     setDescription( "Map to the nodes attached to each SurfaceElement." );
@@ -42,35 +47,35 @@ SurfaceElementSubRegion::SurfaceElementSubRegion( string const & name,
   registerWrapper( viewKeyStruct::edgeListString(), &m_toEdgesRelation ).
     setDescription( "Map to the edges attached to each SurfaceElement." );
 
-  registerWrapper( viewKeyStruct::surfaceElementsToCellRegionsString(), &m_surfaceElementsToCells.m_toElementRegion ).
-    setApplyDefaultValue( -1 ).
+  registerWrapper( viewKeyStruct::surfaceElementsToCellRegionsString(), &m_2dElemToElems.m_toElementRegion ).
     setPlotLevel( PlotLevel::NOPLOT ).
     setDescription( "A map of face element local indices to the cell local indices" );
 
-  registerWrapper( viewKeyStruct::surfaceElementsToCellSubRegionsString(), &m_surfaceElementsToCells.m_toElementSubRegion ).
-    setApplyDefaultValue( -1 ).
+  registerWrapper( viewKeyStruct::surfaceElementsToCellSubRegionsString(), &m_2dElemToElems.m_toElementSubRegion ).
     setPlotLevel( PlotLevel::NOPLOT ).
     setDescription( "A map of face element local indices to the cell local indices" );
 
-  registerWrapper( viewKeyStruct::surfaceElementsToCellIndexString(), &m_surfaceElementsToCells.m_toElementIndex ).
-    setApplyDefaultValue( -1 ).
+  registerWrapper( viewKeyStruct::surfaceElementsToCellIndexString(), &m_2dElemToElems.m_toElementIndex ).
     setPlotLevel( PlotLevel::NOPLOT ).
     setDescription( "A map of face element local indices to the cell local indices" );
-
-  registerWrapper( viewKeyStruct::elementApertureString(), &m_elementAperture ).
-    setApplyDefaultValue( 1.0e-5 ).
-    setPlotLevel( dataRepository::PlotLevel::LEVEL_0 ).
-    setDescription( "The aperture of each SurfaceElement." );
-
-  registerWrapper( viewKeyStruct::elementAreaString(), &m_elementArea ).
-    setApplyDefaultValue( -1.0 ).
-    setPlotLevel( dataRepository::PlotLevel::LEVEL_2 ).
-    setDescription( "The area of each SurfaceElement." );
 
   registerWrapper< real64_array >( viewKeyStruct::creationMassString() ).
     setApplyDefaultValue( 0.0 ).
     setPlotLevel( dataRepository::PlotLevel::LEVEL_1 ).
     setDescription( "The amount of remaining mass that was introduced when the SurfaceElement was created." );
+
+  registerField( fields::elementAperture{}, &m_elementAperture );
+
+  registerField( fields::elementArea{}, &m_elementArea );
+
+  registerField( fields::normalVector{}, &m_normalVector ).
+    reference().resizeDimension< 1 >( 3 );
+
+  registerField( fields::tangentVector1{}, &m_tangentVector1 ).
+    reference().resizeDimension< 1 >( 3 );
+
+  registerField( fields::tangentVector2{}, &m_tangentVector2 ).
+    reference().resizeDimension< 1 >( 3 );
 
   excludeWrappersFromPacking( { viewKeyStruct::nodeListString(),
                                 viewKeyStruct::edgeListString(),
@@ -79,12 +84,11 @@ SurfaceElementSubRegion::SurfaceElementSubRegion( string const & name,
                                 viewKeyStruct::surfaceElementsToCellIndexString() } );
 
   // TODO there has to be a cleaner way than this.
-  m_surfaceElementsToCells.setElementRegionManager( dynamicCast< ElementRegionManager & >( getParent().getParent().getParent().getParent() ) );
+  m_2dElemToElems.setElementRegionManager( dynamicCast< ElementRegionManager & >( getParent().getParent().getParent().getParent() ) );
 
 }
 
 SurfaceElementSubRegion::~SurfaceElementSubRegion()
 {}
-
 
 } /* namespace geos */

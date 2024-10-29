@@ -9,7 +9,7 @@
   <Mesh>
     <VTKMesh
         name="mesh"
-        file="../../../GEOSXDATA/DataSets/mandelMeshes/mandel_prism6_0430_cells.vtu"/>
+        file="../../../GEOSDATA/DataSets/mandelMeshes/mandel_prism6_0430_cells.vtu"/>
   </Mesh>
   <!-- SPHINX_MESH_END -->
 

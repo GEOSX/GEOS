@@ -2,11 +2,12 @@
  * ------------------------------------------------------------------------------------------------------------
  * SPDX-License-Identifier: LGPL-2.1-only
  *
- * Copyright (c) 2018-2019 Lawrence Livermore National Security LLC
- * Copyright (c) 2018-2019 The Board of Trustees of the Leland Stanford Junior University
- * Copyright (c) 2018-2019 TotalEnergies
- * Copyright (c) 2019-     GEOSX Contributors
- * All right reserved
+ * Copyright (c) 2016-2024 Lawrence Livermore National Security LLC
+ * Copyright (c) 2018-2024 Total, S.A
+ * Copyright (c) 2018-2024 The Board of Trustees of the Leland Stanford Junior University
+ * Copyright (c) 2018-2024 Chevron
+ * Copyright (c) 2019-     GEOS/GEOSX Contributors
+ * All rights reserved
  *
  * See top level LICENSE, COPYRIGHT, CONTRIBUTORS, NOTICE, and ACKNOWLEDGEMENTS files for details.
  * ------------------------------------------------------------------------------------------------------------
@@ -28,6 +29,50 @@ namespace constitutive
 /// @namespace Namespace to collect common property conversion functions (elastic, poroelastic, etc.)
 namespace conversions
 {
+
+///@namespace Lame constants as input
+namespace lameConstants
+{
+/**
+ * @brief Compute Young's modulus
+ * @param[in] lambda first Lame constant
+ * @param[in] G shear modulus
+ * @return Young's modulus
+ */
+GEOS_HOST_DEVICE
+inline
+real64 toYoungMod( real64 const & lambda, real64 const & G )
+{
+  return G * ( 2 * G  + 3 * lambda ) / ( lambda  + G );
+}
+
+/**
+ * @brief Compute Poisson's ratio
+ * @param[in] lambda first Lame constant
+ * @param[in] G shear modulus
+ * @return Poisson's ratio
+ */
+GEOS_HOST_DEVICE
+inline
+real64 toPoissonRatio( real64 const & lambda, real64 const & G )
+{
+  return lambda / ( 2 * ( lambda + G ) );
+}
+
+/**
+ * @brief Compute Poisson's ratio
+ * @param[in] lambda first Lame constant
+ * @param[in] G shear modulus
+ * @return bulk modulus
+ */
+GEOS_HOST_DEVICE
+inline
+real64 toBulkMod( real64 const & lambda, real64 const & G )
+{
+  return lambda + 2 * G / 3;
+}
+
+}
 
 /// @namespace Bulk modulus and shear modulus as input
 namespace bulkModAndShearMod
@@ -88,7 +133,7 @@ GEOS_HOST_DEVICE
 inline
 real64 toBulkMod( real64 const & E, real64 const & nu )
 {
-  return E / (3 * ( 1 - 2*nu ) );
+  return E / (3 * ( 1 - 2 * nu ) );
 }
 
 /**
@@ -101,7 +146,20 @@ GEOS_HOST_DEVICE
 inline
 real64 toShearMod( real64 const & E, real64 const & nu )
 {
-  return E / (2 * ( 1 + nu ) );
+  return E / ( 2 * ( 1 + nu ) );
+}
+
+/**
+ * @brief Compute first Lame constant
+ * @param[in] E Young's modulus
+ * @param[in] nu Poisson's ratio
+ * @return First Lame constant
+ */
+GEOS_HOST_DEVICE
+inline
+real64 toFirstLame( real64 const & E, real64 const & nu )
+{
+  return E * nu / ( (1 + nu) * (1 - 2 * nu) );
 }
 
 } /* namespace youngModAndPoissonRatio*/
@@ -136,6 +194,19 @@ real64 toYoungMod( real64 const & G, real64 const & nu )
   return 2 * G * ( 1 + nu );
 }
 
+/**
+ * @brief Compute first Lame constant
+ * @param[in] G Shear modulus
+ * @param[in] nu Poisson's ratio
+ * @return First Lame constant
+ */
+GEOS_HOST_DEVICE
+inline
+real64 toFirstLame( real64 const & G, real64 const & nu )
+{
+  return G * nu / ( 1 - 2 * nu );
+}
+
 } /* namespace shearModAndPoissonRatio*/
 
 /// @namespace Bulk modulus and Poisson's ratio as input
@@ -166,6 +237,19 @@ inline
 real64 toShearMod( real64 const & K, real64 const & nu )
 {
   return 3 * K * ( 1 - 2 * nu) / ( 2 * ( 1 + nu ) );
+}
+
+/**
+ * @brief Compute first Lame constant
+ * @param[in] K Bulk modulus
+ * @param[in] nu Poisson's ratio
+ * @return First Lame constant
+ */
+GEOS_HOST_DEVICE
+inline
+real64 toFirstLame( real64 const & K, real64 const & nu )
+{
+  return 3 * K * nu / ( 1 + nu );
 }
 
 } /* namespace bulkModAndPoissonRatio */
@@ -200,6 +284,19 @@ real64 toPoissonRatio( real64 const & K, real64 const & E )
   return ( 3 * K - E ) / ( 6 * K);
 }
 
+/**
+ * @brief Compute first Lame constant
+ * @param[in] K Bulk modulus
+ * @param[in] E Young's modulus
+ * @return First Lame constant
+ */
+GEOS_HOST_DEVICE
+inline
+real64 toFirstLame( real64 const & K, real64 const & E )
+{
+  return 3 * K * ( 3 * K - E ) / ( 9 * K - E );
+}
+
 } /* namespace bulkModAndYoungMod */
 
 /// @namespace Shear modulus and Young's modulus
@@ -231,7 +328,152 @@ real64 toBulkMod( real64 const & G, real64 const & E )
   return E * G / ( 3 * ( 3 * G - E ) );
 }
 
+/**
+ * @brief Compute first Lame constant
+ * @param[in] G Shear modulus
+ * @param[in] E Young's modulus
+ * @return First Lame constant
+ */
+GEOS_HOST_DEVICE
+inline
+real64 toFirstLame( real64 const & G, real64 const & E )
+{
+  return  G * ( E - 2 * G) / ( 3 * G - E);
+}
+
 } /* namespace shearModAndYoungMod*/
+
+/// @namespace First Lame constant and Young's modulus
+namespace firstLameAndYoungMod
+{
+/**
+ * @brief Compute shear modulus
+ * @param[in] lambda first Lame constant
+ * @param[in] E Young's modulus
+ * @return shear modulus
+ */
+GEOS_HOST_DEVICE
+inline
+real64 toShearMod( real64 const & lambda, real64 const & E )
+{
+  return 0.25 * (E-3*lambda + std::sqrt(E * E + 9 * lambda * lambda + 2 * E * lambda));
+}
+
+/**
+ * @brief Compute bulk modulus
+ * @param[in] lambda first Lame constant
+ * @param[in] E Young's modulus
+ * @return bulk modulus
+ */
+GEOS_HOST_DEVICE
+inline
+real64 toBulkMod( real64 const & lambda, real64 const & E )
+{
+  return (E+3*lambda + std::sqrt(E * E + 9 * lambda * lambda + 2 * E * lambda))/6;
+}
+
+/**
+ * @brief Compute bulk modulus
+ * @param[in] lambda first Lame constant
+ * @param[in] E Young's modulus
+ * @return Poisson's ratio
+ */
+GEOS_HOST_DEVICE
+inline
+real64 toPoissonRatio( real64 const & lambda, real64 const & E )
+{
+  return 2*lambda / (E+lambda + std::sqrt(E * E + 9 * lambda * lambda + 2 * E * lambda));
+}
+
+}
+
+/// @namespace First Lame constant and bulk modulus
+namespace firstLameAndBulkMod
+{
+/**
+ * @brief Compute Young's modulus
+ * @param[in] lambda first Lame constant
+ * @param[in] K bulk modulus
+ * @return Young's modulus
+ */
+GEOS_HOST_DEVICE
+inline
+real64 toYoungMod( real64 const & lambda, real64 const & K )
+{
+  return 9 * K * ( K - lambda ) / ( 3 * K - lambda );
+}
+
+/**
+ * @brief Compute shear modulus
+ * @param[in] lambda first Lame constant
+ * @param[in] K bulk modulus
+ * @return shear modulus
+ */
+GEOS_HOST_DEVICE
+inline
+real64 toShearMod( real64 const & lambda, real64 const & K )
+{
+  return 1.5 * ( K - lambda);
+}
+
+/**
+ * @brief Compute bulk modulus
+ * @param[in] lambda first Lame constant
+ * @param[in] K bulk modulus
+ * @return Poisson's ratio
+ */
+GEOS_HOST_DEVICE
+inline
+real64 toPoissonRatio( real64 const & lambda, real64 const & K )
+{
+  return lambda / ( 3 * K - lambda );
+}
+
+}
+
+/// @namespace First Lame constant and Poisson's ratio
+namespace firstLameAndPoissonRatio
+{
+/**
+ * @brief Compute Young's modulus
+ * @param[in] lambda first Lame constant
+ * @param[in] nu Poisson's ratio
+ * @return Young's modulus
+ */
+GEOS_HOST_DEVICE
+inline
+real64 toYoungMod( real64 const & lambda, real64 const & nu )
+{
+  return lambda / nu * (1 + nu) * ( 1 - 2 * nu);
+}
+
+/**
+ * @brief Compute shear modulus
+ * @param[in] lambda first Lame constant
+ * @param[in] nu Poisson's ratio
+ * @return shear modulus
+ */
+GEOS_HOST_DEVICE
+inline
+real64 toShearMod( real64 const & lambda, real64 const & nu )
+{
+  return lambda / ( 2 * nu ) * ( 1 - 2 * nu );
+}
+
+/**
+ * @brief Compute bulk modulus
+ * @param[in] lambda first Lame constant
+ * @param[in] nu Poisson's ratio
+ * @return bulk modulus
+ */
+GEOS_HOST_DEVICE
+inline
+real64 toBulkMod( real64 const & lambda, real64 const & nu )
+{
+  return lambda / ( 3 * nu ) * ( 1 + nu );
+}
+
+}
 
 } /* namespace conversions */
 

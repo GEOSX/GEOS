@@ -10,8 +10,7 @@
       targetRegions="{ Region2, Fracture }">
       <NonlinearSolverParameters
         newtonTol="1.0e-2"
-        newtonMaxIter="8"
-        allowNonConverged="1"/>
+        newtonMaxIter="8"/>
       <LinearSolverParameters
         directParallel="0"/>
     </SinglePhaseFVM>

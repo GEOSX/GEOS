@@ -1,0 +1,94 @@
+<?xml version="1.0" ?>
+
+<Problem>
+  <Included>
+    <File name="./PoroElastic_Mandel_base.xml"/>
+  </Included>  
+
+  <Solvers
+    gravityVector="{ 0.0, 0.0, 0.0 }">
+    <!-- SPHINX_POROMECHANICSSOLVER -->
+    <SinglePhasePoromechanics
+      name="poroSolve"
+      solidSolverName="lagsolve"
+      flowSolverName="SinglePhaseFlow"
+      logLevel="1"
+      targetRegions="{ Domain }">
+      <NonlinearSolverParameters
+        newtonMaxIter="2"
+        newtonTol="1.0e-2"
+        maxTimeStepCuts="1"
+        lineSearchMaxCuts="0"/>
+      <LinearSolverParameters
+        directParallel="0"/>
+    </SinglePhasePoromechanics>
+    <!-- SPHINX_POROMECHANICSSOLVER_END -->
+
+    <!-- SPHINX_MECHANICALSOLVER -->
+    <SolidMechanicsLagrangianSSLE
+      name="lagsolve"
+      timeIntegrationOption="QuasiStatic"
+      logLevel="1"
+      discretization="FE1"
+      targetRegions="{ Domain }"/>
+    <!-- SPHINX_MECHANICALSOLVER_END -->
+
+    <!-- SPHINX_SINGLEPHASEFVM -->
+    <SinglePhaseFVM
+      name="SinglePhaseFlow"
+      logLevel="1"
+      discretization="singlePhaseTPFA"
+      targetRegions="{ Domain }"/>
+    <!-- SPHINX_SINGLEPHASEFVM_END -->
+  </Solvers>
+  
+  <!-- SPHINX_MESH -->
+  <Mesh>
+    <InternalMesh
+      name="mesh1"
+      elementTypes="{ C3D8 }"
+      xCoords="{ 0.0, 1.0 }"
+      yCoords="{ 0.0, 0.1 }"
+      zCoords="{ 0.0, 1.0 }"
+      nx="{ 20 }"
+      ny="{ 1 }"
+      nz="{ 20 }"
+      cellBlockNames="{ cb1 }"/>
+  </Mesh>
+  <!-- SPHINX_MESH_END -->
+
+  <Events
+    maxTime="10.0">
+  
+    <PeriodicEvent
+      name="outputs"
+      timeFrequency="5.0e-01"
+      target="/Outputs/vtkOutput"/>
+
+    <PeriodicEvent
+      name="solverApplication0"
+      beginTime="0.0"
+      endTime="10.0"
+      forceDt="0.025"
+      target="/Solvers/poroSolve"/> 
+
+    <PeriodicEvent
+      name="pressureCollection" 
+      target="/Tasks/pressureCollection"/>
+
+    <PeriodicEvent
+      name="pressureOutput"
+      targetExactTimestep="0"
+      target="/Outputs/pressureHistoryOutput"/>
+
+    <PeriodicEvent
+      name="displacementCollection" 
+      target="/Tasks/displacementCollection" />
+
+    <PeriodicEvent
+      name="displacementOutput"
+      targetExactTimestep="0" 
+      target="/Outputs/displacementHistoryOutput" />   
+  </Events>
+ 
+</Problem>

@@ -16,7 +16,7 @@ Key concepts are locations and connectors.
 Locations, that can be elements, faces, edges or nodes, represent where the DoF is assigned.
 For example, a DoF for pressure in a two-point flux approximation will be on a cell (i.e. element), while a displacement DoF for structural equations will be on a node.
 The counterparts of locations are connectors, that are the geometrical entities
-that link together different DoFs are create the sparsity pattern.
+that link together different DoFs that create the sparsity pattern.
 Connectors can be elements, faces, edges, nodes or none.
 Using the same example as before, connectors will be faces and cells, respectively.
 The case of a mass matrix, where every element is linked only to itself, is an example when there are no connectors, i.e. these have to be set to none.
@@ -148,7 +148,7 @@ Unknowns are pressure, located on the element center, and displacements (*x* and
 For fluxes, a two-point flux approximation (TPFA) is used.
 The representation of the sparsity pattern of the :math:`\mathsf{C_L}` matrix (connectors/locations) for the simple mesh, shown in :numref:`meshDofManagerFig`, is
 reported in :numref:`CLDofManagerFig`.
-It can be notices that the two unknowns for the displacements *x* and *y* are grouped together.
+It can be noticed that the two unknowns for the displacements *x* and *y* are grouped together.
 Elements are the connectivity for DoF on nodes (Finite Element Method for displacements) and on elements (pressures).
 Faces are the connectivity for DoF on elements (Finite Volume Method for pressure), being the flux computation based on the pressure on the two adjacent elements.
 

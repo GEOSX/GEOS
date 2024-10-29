@@ -1,4 +1,0 @@
-vtk >= 9.1
-networkx >= 2.4
-tqdm
-numpy

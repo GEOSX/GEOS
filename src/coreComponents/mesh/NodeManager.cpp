@@ -2,10 +2,11 @@
  * ------------------------------------------------------------------------------------------------------------
  * SPDX-License-Identifier: LGPL-2.1-only
  *
- * Copyright (c) 2018-2020 Lawrence Livermore National Security LLC
- * Copyright (c) 2018-2020 The Board of Trustees of the Leland Stanford Junior University
- * Copyright (c) 2018-2020 TotalEnergies
- * Copyright (c) 2019-     GEOSX Contributors
+ * Copyright (c) 2016-2024 Lawrence Livermore National Security LLC
+ * Copyright (c) 2018-2024 Total, S.A
+ * Copyright (c) 2018-2024 The Board of Trustees of the Leland Stanford Junior University
+ * Copyright (c) 2018-2024 Chevron
+ * Copyright (c) 2019-     GEOS/GEOSX Contributors
  * All rights reserved
  *
  * See top level LICENSE, COPYRIGHT, CONTRIBUTORS, NOTICE, and ACKNOWLEDGEMENTS files for details.
@@ -25,6 +26,8 @@
 #include "mesh/FaceManager.hpp"
 #include "mesh/ToElementRelation.hpp"
 #include "mesh/utilities/MeshMapUtilities.hpp"
+
+#include "common/MpiWrapper.hpp"
 
 namespace geos
 {
@@ -110,19 +113,34 @@ void NodeManager::buildGeometricSets( GeometricObjectManager const & geometries 
   } );
 }
 
-void NodeManager::setDomainBoundaryObjects( FaceManager const & faceManager )
+void NodeManager::setDomainBoundaryObjects( FaceManager const & faceManager,
+                                            EdgeManager const & edgeManager )
 {
   arrayView1d< integer const > const isFaceOnDomainBoundary = faceManager.getDomainBoundaryIndicator();
+  arrayView1d< integer const > const isEdgeOnDomainBoundary = edgeManager.getDomainBoundaryIndicator();
   arrayView1d< integer > const isNodeOnDomainBoundary = getDomainBoundaryIndicator();
   isNodeOnDomainBoundary.zero();
 
-  ArrayOfArraysView< localIndex const > const faceToNodes = faceManager.nodeList().toViewConst();
+  // Nodes of faces and edges must share the same "boundary status".
 
+  ArrayOfArraysView< localIndex const > const faceToNodes = faceManager.nodeList().toViewConst();
   forAll< parallelHostPolicy >( faceManager.size(), [=]( localIndex const faceIndex )
   {
     if( isFaceOnDomainBoundary[faceIndex] == 1 )
     {
-      for( localIndex const nodeIndex : faceToNodes[faceIndex] )
+      for( localIndex const & nodeIndex : faceToNodes[faceIndex] )
+      {
+        isNodeOnDomainBoundary[nodeIndex] = 1;
+      }
+    }
+  } );
+
+  auto const & edgeToNodes = edgeManager.nodeList().toViewConst();
+  forAll< parallelHostPolicy >( edgeManager.size(), [=]( localIndex const edgeIndex )
+  {
+    if( isEdgeOnDomainBoundary[edgeIndex] == 1 )
+    {
+      for( localIndex const & nodeIndex : edgeToNodes[edgeIndex] )
       {
         isNodeOnDomainBoundary[nodeIndex] = 1;
       }
@@ -132,10 +150,10 @@ void NodeManager::setDomainBoundaryObjects( FaceManager const & faceManager )
 
 void NodeManager::setGeometricalRelations( CellBlockManagerABC const & cellBlockManager,
                                            ElementRegionManager const & elemRegionManager,
-                                           bool baseMeshLevel )
+                                           bool isBaseMeshLevel )
 {
   GEOS_MARK_FUNCTION;
-  if( baseMeshLevel )
+  if( isBaseMeshLevel )
   {
     resize( cellBlockManager.numNodes() );
   }
@@ -152,16 +170,40 @@ void NodeManager::setGeometricalRelations( CellBlockManagerABC const & cellBlock
   meshMapUtilities::transformCellBlockToRegionMap< parallelHostPolicy >( blockToSubRegion.toViewConst(),
                                                                          toCellBlock,
                                                                          m_toElements );
+
+  auto const connectNodesTo2dElements = [&]( localIndex er,
+                                             SurfaceElementRegion const & region )
+  {
+    if( region.subRegionType() != SurfaceElementRegion::SurfaceSubRegionType::faceElement )
+    {
+      return;
+    }
+
+    FaceElementSubRegion const & subRegion = region.getUniqueSubRegion< FaceElementSubRegion >();
+    int const esr = 0;  // Since there's only on unique subregion, the index is always 0.
+    auto const & elem2dToNodes = subRegion.nodeList();
+    for( int ei = 0; ei < elem2dToNodes.size(); ++ei )
+    {
+      for( auto const ni: elem2dToNodes[ei] )
+      {
+        m_toElements.m_toElementRegion.emplaceBack( ni, er );
+        m_toElements.m_toElementSubRegion.emplaceBack( ni, esr );
+        m_toElements.m_toElementIndex.emplaceBack( ni, ei );
+      }
+    }
+  };
+  // Connecting all the 3d elements (information is already in the m_toElements mappings) and all the 2d elements.
+  elemRegionManager.forElementRegionsComplete< SurfaceElementRegion >( connectNodesTo2dElements );
 }
 
 void NodeManager::setupRelatedObjectsInRelations( EdgeManager const & edgeManager,
                                                   FaceManager const & faceManager,
-                                                  ElementRegionManager const & elementRegionManager )
+                                                  ElementRegionManager const & elemRegionManager )
 {
   m_toEdgesRelation.setRelatedObject( edgeManager );
   m_toFacesRelation.setRelatedObject( faceManager );
 
-  m_toElements.setElementRegionManager( elementRegionManager );
+  m_toElements.setElementRegionManager( elemRegionManager );
 }
 
 

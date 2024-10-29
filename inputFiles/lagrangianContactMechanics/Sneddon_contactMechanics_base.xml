@@ -1,60 +1,9 @@
 <?xml version="1.0" ?>
 
 <Problem>
-  <Solvers
-    gravityVector="{0.0, 0.0, 0.0}">
-  <!-- SPHINX_SNEDDON_SOLVER -->
-    <LagrangianContact
-      name="lagrangiancontact"
-      solidSolverName="lagsolve"
-      stabilizationName="TPFAstabilization"
-      logLevel="1"
-      discretization="FE1"
-      targetRegions="{ Region, Fracture }"
-      contactRelationName="fractureMaterial"
-      fractureRegionName="Fracture">
-      <NonlinearSolverParameters
-        newtonTol="1.0e-8"
-        logLevel="2"
-        newtonMaxIter="10"
-        maxNumConfigurationAttempts="10"
-        lineSearchAction="Require"
-        lineSearchMaxCuts="2"
-        maxTimeStepCuts="2"/>
-      <LinearSolverParameters
-        solverType="direct"
-        directParallel="0"
-        logLevel="0"/>
-    </LagrangianContact>
-
-    <SolidMechanicsLagrangianSSLE
-      name="lagsolve"
-      timeIntegrationOption="QuasiStatic"
-      logLevel="0"
-      discretization="FE1"
-      targetRegions="{ Region }"
-      >
-      <NonlinearSolverParameters
-        newtonTol="1.0e-6"
-        newtonMaxIter="5"/>
-      <LinearSolverParameters
-        krylovTol="1.0e-10"
-        logLevel="0"/>
-    </SolidMechanicsLagrangianSSLE>
-
-    <SurfaceGenerator
-      name="SurfaceGen"
-      logLevel="0"
-      fractureRegion="Fracture"
-      targetRegions="{ Region }"
-      rockToughness="1.0e6"
-      mpiCommOrder="1"/>
-  </Solvers>
-  <!-- SPHINX_SNEDDON_SOLVER_END -->
-
   <!-- SPHINX_SNEDDON_GEOMETRY -->
   <Geometry>
-    <BoundedPlane
+    <Rectangle
       name="fracture"
       normal="{1.0, 0.0, 0.0}"
       origin="{0.0, 0.0, 0.0}"
@@ -62,7 +11,7 @@
       widthVector="{0.0, 0.0, 1.0}"
       dimensions="{ 2, 10 }"/>
 
-    <BoundedPlane
+    <Rectangle
       name="core"
       normal="{1.0, 0.0, 0.0}"
       origin="{0.0, 0.0, 0.0}"

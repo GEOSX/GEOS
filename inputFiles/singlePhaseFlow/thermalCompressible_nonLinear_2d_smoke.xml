@@ -1,0 +1,50 @@
+<?xml version="1.0" ?>
+
+<Problem>
+  <Included>
+    <File name="./thermalCompressible_2d_base.xml" />
+  </Included>
+
+  <ElementRegions>
+    <CellElementRegion
+      name="region"
+      cellBlocks="{ cb }"
+      materialList="{ fluid, rock_nonLinear, thermalCond }"/>
+  </ElementRegions>
+
+  <Mesh>
+    <InternalWellbore
+      name="mesh1"
+      elementTypes="{ C3D8 }"
+      radius="{ 0.1, 0.106, 0.133, 1.0 }"
+      theta="{ 0, 90 }"
+      zCoords="{ 0, 0.1 }"
+      nr="{ 3, 10, 50 }"
+      nt="{ 8 }"
+      nz="{ 1 }"
+      trajectory="{ { 0.0, 0.0, 0.0 },
+                    { 0.0, 0.0, 0.1 } }"
+      autoSpaceRadialElems="{ 0, 0, 1 }"
+      cellBlockNames="{ cb }"
+      />
+  </Mesh>
+
+  <Events
+    maxTime="3e3">
+    <PeriodicEvent
+      name="outputs"
+      timeFrequency="1e3"
+      target="/Outputs/vtkOutput"/>
+
+    <PeriodicEvent
+      name="solverApplications"
+      maxEventDt="1e3"
+      target="/Solvers/singleFlow"/>
+
+    <PeriodicEvent
+      name="restarts"
+      timeFrequency="1e3"
+      target="/Outputs/restartOutput"/>
+  </Events>
+
+</Problem>

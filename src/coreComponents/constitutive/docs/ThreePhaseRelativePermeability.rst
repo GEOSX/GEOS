@@ -37,6 +37,13 @@ by `Baker <http://dx.doi.org/10.2118/17369-MS>`__. Specifically, we compute:
 This procedure provides a simple but effective formula avoiding
 the problems associated with the other interpolation methods (negative values).
 
+Another option can be triggered using `threePhaseInterpolator` to set interpolation model to be STONEII described by:
+
+.. math::
+    k_ro = k_rocw ((k_row/k_rocw + k_rw)(k_rog/k_rocw + k_rg) - k_rw - k_rg)
+
+...
+
 Parameters
 ======================
 

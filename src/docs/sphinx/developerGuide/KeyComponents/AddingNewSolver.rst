@@ -359,6 +359,6 @@ After assembling both declarations and implementations for our new solver, the f
  - add declarations to parent CMakeLists.txt (here add to ``physicsSolvers_headers`` );
  - add implementations to parent CMakeLists.txt (here add to ``physicsSolvers_sources``);
  - check that Doxygen comments are properly set in our solver class;
- - uncrustify it to match the code style;
+ - uncrustify it to match the code style by going to the build folder and running the command: make uncrustify_style;
  - write unit tests for each new features in the solver class;
  - write an integratedTests for the solver class.

@@ -1,0 +1,60 @@
+<?xml version="1.0" ?>
+
+<Problem>
+  <Included>
+    <File name="./kgdToughnessDominated_poroelastic_base.xml"/>
+  </Included>
+  
+  <Mesh>
+    <InternalMesh 
+      name="mesh1"
+      elementTypes="{C3D8}"
+      xCoords="{ -100, 0, 100 }"
+      yCoords="{ 0, 50 }"
+      zCoords="{ 0, 1 }"
+      nx="{ 3, 3 }"
+      ny="{ 5 }"
+      nz="{ 2 }"
+	  xBias="{ 0.5, -0.5 }"
+      cellBlockNames="{cb1}"/>
+  </Mesh>
+
+  <Geometry>
+    <Box
+      name="fracture"
+      xMin="{ -0.01, -0.01, -0.01 }"
+      xMax="{  0.01,  10.01,  1.01 }"/>
+
+    <Box
+      name="source"
+      xMin="{ -0.01, -0.01, -0.01 }"
+      xMax="{  0.01,  10.01,  1.01 }"/>
+
+    <Box
+      name="core"
+      xMin="{ -0.01, -0.01, -0.01 }"
+      xMax="{  0.01, 50.01,  1.01 }"/>
+  </Geometry>
+
+  <Events
+    maxTime="100.0">
+ 
+    <SoloEvent
+      name="preFracture"
+      target="/Solvers/SurfaceGen"/>
+
+    <PeriodicEvent
+      name="solverApplications0"
+      beginTime="0.0"
+      endTime="10.0"
+      forceDt="0.25"
+      target="/Solvers/hydrofracture"/>
+
+    <PeriodicEvent
+      name="restarts"
+      timeFrequency="5.0"
+      targetExactTimestep="0"
+      target="/Outputs/restartOutput"/>
+  </Events>
+
+</Problem>

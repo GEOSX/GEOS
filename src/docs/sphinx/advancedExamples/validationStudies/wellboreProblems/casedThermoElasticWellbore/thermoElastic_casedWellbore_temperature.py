@@ -13,7 +13,7 @@ def main():
 		             "temperatureHistory_cement.hdf5",
 		             "temperatureHistory_rock.hdf5" ]
 
-	# Plot GEOSX results
+	# Plot GEOS results
 	hasLabel = True
 
 	for filePath in hdf5FilePath:
@@ -31,12 +31,12 @@ def main():
 			plt.plot( rCoord,
 					  temperature[9, 0:nElements],        
 					  'r+',
-					  label='GEOSX: t = 1e4 (s)')
+					  label='GEOS: t = 1e4 (s)')
 
 			plt.plot( rCoord,
 					  temperature[99, 0:nElements],        
 					  'b+',
-					  label='GEOSX: t = 1e5 (s)')
+					  label='GEOS: t = 1e5 (s)')
 
 			hasLabel = False
 		else:
@@ -67,7 +67,7 @@ def main():
 	plt.xlim(0.15,0.4)
 
 	plt.legend(loc='lower right')
-	plt.show()
+	plt.savefig('temperature.png')
 
 if __name__ == "__main__":
 	main()

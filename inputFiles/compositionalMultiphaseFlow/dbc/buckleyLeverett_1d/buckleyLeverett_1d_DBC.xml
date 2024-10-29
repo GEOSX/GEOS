@@ -1,0 +1,229 @@
+<?xml version="1.0" ?>
+
+<Problem>
+  <!-- SPHINX_SOLVER -->
+  <Solvers>
+    <CompositionalMultiphaseFVM
+      name="buckleyLeverett_1d_DBC"
+      logLevel="1"
+      discretization="fluidTPFA"
+      temperature="300"
+      initialDt="10000"
+      useMass="1"
+      targetPhaseVolFractionChangeInTimeStep="1.0"
+      targetRelativePressureChangeInTimeStep="1.0"
+      targetRegions="{ region }"
+      useDBC="1"
+      continuationDBC="1"
+      omegaDBC="1"
+      miscibleDBC="0"
+      kappaminDBC="1e-20"
+      contMultiplierDBC="0.5">
+      <NonlinearSolverParameters
+        newtonTol="1.0e-6"
+        newtonMaxIter="1000"
+        maxTimeStepCuts="2000"
+        lineSearchAction="None"
+        timeStepDecreaseFactor="1"
+        timeStepIncreaseFactor="2"/>
+      <LinearSolverParameters
+        solverType="direct"
+        directParallel="0"  
+        logLevel="0"/>
+    </CompositionalMultiphaseFVM>
+  </Solvers>
+  <!-- SPHINX_SOLVER_END -->
+ 
+  <!-- SPHINX_NUMERICAL -->
+  <NumericalMethods>
+    <FiniteVolume>
+      <TwoPointFluxApproximation
+        name="fluidTPFA"/>
+    </FiniteVolume>
+  </NumericalMethods>
+  <!-- SPHINX_NUMERICAL_END -->
+
+  <!-- SPHINX_ELEMENTREGIONS -->
+  <ElementRegions>
+    <CellElementRegion
+      name="region"
+      cellBlocks="{ cellBlock }"
+      materialList="{ fluid, rock, relperm }"/>
+  </ElementRegions>
+  <!-- SPHINX_ELEMENTREGIONS_END -->
+
+  <!-- SPHINX_MATERIAL -->
+  <Constitutive>
+    <CompressibleSolidConstantPermeability
+      name="rock"
+      solidModelName="nullSolid"
+      porosityModelName="rockPorosity"
+      permeabilityModelName="rockPerm"/>
+
+    <NullModel
+      name="nullSolid"/>
+
+    <PressurePorosity
+      name="rockPorosity"
+      defaultReferencePorosity="0.2"
+      referencePressure="1e7"
+      compressibility="1.0e-15"/>
+
+    <ConstantPermeability
+      name="rockPerm"
+      permeabilityComponents="{ 9.0e-13, 9.0e-13, 9.0e-13}"/>   
+
+    <BrooksCoreyRelativePermeability
+      name="relperm"
+      phaseNames="{ gas, water }"
+      phaseMinVolumeFraction="{ 0.0, 0.0 }"
+      phaseRelPermExponent="{ 3.5, 3.5 }"
+      phaseRelPermMaxValue="{ 1.0, 1.0 }"/>
+    
+    <DeadOilFluid
+      name="fluid"
+      phaseNames="{ gas, water }"
+      surfaceDensities="{ 280.0, 992.0 }"
+      componentMolarWeight="{ 44e-3, 18e-3 }"
+      tableFiles="{ buckleyLeverett_table/pvdg.txt, buckleyLeverett_table/pvtw.txt }"/>
+  </Constitutive>
+  <!-- SPHINX_MATERIAL_END -->
+
+  <!-- SPHINX_BC --> 
+  <FieldSpecifications>
+    <FieldSpecification
+      name="initialPressure"
+      initialCondition="1"
+      setNames="{ all }"
+      objectPath="ElementRegions"
+      fieldName="pressure"
+      scale="1e7"/>
+
+    <FieldSpecification
+      name="initialComposition_gas"
+      initialCondition="1"
+      setNames="{ all }"
+      objectPath="ElementRegions"
+      fieldName="globalCompFraction"
+      component="0"
+      scale="0.001"/>
+
+    <FieldSpecification
+      name="initialComposition_water"
+      initialCondition="1"
+      setNames="{ all }"
+      objectPath="ElementRegions"
+      fieldName="globalCompFraction"
+      component="1"
+      scale="0.999"/>
+
+    <SourceFlux
+      name="sourceTerm"
+      objectPath="ElementRegions"
+      scale="-0.00007"
+      component="0"
+      setNames="{ source }"/>
+
+    <FieldSpecification
+      name="sinkTermPressure"
+      objectPath="faceManager"
+      fieldName="pressure"
+      scale="1e7"
+      setNames="{ sink }"/>
+
+    <FieldSpecification
+      name="sinkTermTemperature"
+      objectPath="faceManager"
+      fieldName="temperature"
+      scale="300"
+      setNames="{ sink }"/>
+
+    <FieldSpecification
+      name="sinkTermComposition_gas"
+      setNames="{ sink }"
+      objectPath="faceManager"
+      fieldName="globalCompFraction"
+      component="0"
+      scale="0.001"/>
+
+    <FieldSpecification
+      name="sinkTermComposition_water"
+      setNames="{ sink }"
+      objectPath="faceManager"
+      fieldName="globalCompFraction"
+      component="1"
+      scale="0.999"/>    
+  </FieldSpecifications>
+  <!-- SPHINX_BC_END -->
+
+  <!-- SPHINX_OUTPUT -->  
+  <Outputs>
+    <VTK
+      name="vtkOutput"/>
+
+    <Restart
+      name="restartOutput"/> 
+  </Outputs>
+  <!-- SPHINX_OUTPUT_END -->
+
+  <!-- SPHINX_TASKS --> 
+  <Tasks>
+     <CompositionalMultiphaseStatistics
+      name="compflowstats"
+      flowSolverName="buckleyLeverett_1d_DBC"
+      logLevel="1"
+      computeCFLNumbers="1"/> 
+      <!-- computeRegionStatistics="1" -->
+  </Tasks>
+  
+  <!-- SPHINX_TASKS_END -->   
+
+  <!-- SPHINX_MESH -->
+  <Mesh>
+    <InternalMesh
+      name="mesh"
+      elementTypes="{ C3D8 }"
+      xCoords="{ 0, 10 }"
+      yCoords="{ 0, 1 }"
+      zCoords="{ 0, 1 }"
+      nx="{ 1000 }"
+      ny="{ 1 }"
+      nz="{ 1 }"
+      cellBlockNames="{ cellBlock }"/>
+  </Mesh>
+  <!-- SPHINX_MESH_END -->
+
+  <Geometry>
+    <Box
+      name="source"
+      xMin="{-0.001, -0.00001, -0.00001}"
+      xMax="{ 0.011, 1.00001, 1.00001}"/>
+
+    <Box
+      name="sink"
+      xMin="{ 9.999, -0.00001, -0.00001}"
+      xMax="{ 10.001, 1.00001, 1.00001}"/>
+  </Geometry>
+
+  <Events
+    maxTime="3.2e6">
+
+    <PeriodicEvent
+      name="restarts"
+      timeFrequency="3.2e6" 
+      target="/Outputs/restartOutput"/>  
+
+    <PeriodicEvent
+      name="solverApplications"
+      maxEventDt="160000"  
+      target="/Solvers/buckleyLeverett_1d_DBC"/>  
+
+    <PeriodicEvent
+      name="statistics"
+      cycleFrequency="1"
+      target="/Tasks/compflowstats"/>
+  </Events>
+
+  
+
+</Problem>

@@ -333,6 +333,22 @@ Once you are satisfied with your work on the branch, you may promote the PR out 
 draft status, which will allow our integrated testing suite to execute on the PR branch
 to ensure all tests are passing prior to merging.
 
+.. note::
+   The title of a PR has to follow the `conventional commit specification <https://www.conventionalcommits.org/en/v1.0.0/>`_.
+   The allowed prefixes are:
+
+   - feat: A new feature
+   - fix: A bug fix,
+   - docs: Documentation only changes,
+   - style: Changes that do not affect the meaning of the code (white-space, formatting, missing semi-colons, etc),
+   - refactor: A code change that neither fixes a bug nor adds a feature,
+   - perf: A code change that improves performance,
+   - test: Adding missing tests or correcting existing tests,
+   - build: Changes that affect the build system or external dependencies (example scopes: cmake),
+   - ci: Changes to our CI configuration files and scripts (example scopes: github),
+   - chore: Other changes that don't modify src or test files,
+   - revert: Reverts a previous commit,
+
 Once the tests are passing -- or in some cases immediately -- add the `flag: ready for review`
 label to the PR, and be sure to tag any relevant developers to review the PR. The PR
 *must* be approved by reviewers in order to be merged.
@@ -402,7 +418,7 @@ Resolving Submodule Changes in Primary Branch PRs
 When you conduct work on a submodule during work on a primary GEOS
 branch with an open PR, the merging procedure requires that the submodule referenced
 by the GEOS PR branch be consistent with the submodule in the main branch of the project.
-This is checked and enforced via TravisCI.
+This is checked and enforced via our CI.
 
 Thus, in order to merge a PR that includes modifications to submodules, the various PRs for
 each repository should be staged and finalized, to the point they are all ready to be merged,

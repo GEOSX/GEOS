@@ -199,7 +199,8 @@
 
   <Outputs>
     <VTK
-      name="vtkOutput"/>
+      name="vtkOutput"
+      plotFileRoot="co2_hybrid_1d"/>
 
     <Restart
       name="sidreRestart"/>

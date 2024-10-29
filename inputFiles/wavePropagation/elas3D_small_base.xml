@@ -154,7 +154,7 @@
       name="cellVelocityVp"
       initialCondition="1"
       objectPath="ElementRegions/Region/cb"
-      fieldName="mediumVelocityVp"
+      fieldName="elasticVelocityVp"
       scale="1500"
       setNames="{ all }"/>
 
@@ -162,7 +162,7 @@
       name="cellVelocityVs"
       initialCondition="1"
       objectPath="ElementRegions/Region/cb"
-      fieldName="mediumVelocityVs"
+      fieldName="elasticVelocityVs"
       scale="1060"
       setNames="{ all }"/>
 
@@ -170,7 +170,7 @@
       name="cellDensity"
       initialCondition="1"
       objectPath="ElementRegions/Region/cb"
-      fieldName="mediumDensity"
+      fieldName="elasticDensity"
       scale="1"
       setNames="{ all }"/>
 
@@ -198,6 +198,7 @@
     <!-- output all the mesh values registered with a plot level LEVEL_0, LEVEL_1, LEVEL_2, LEVEL_3   -->
     <VTK
       name="vtkOutput"
+      levelNames="{ FE1 }"
       plotLevel="3"/>
 
     <!-- output the pressure values to a file named pressure_history.hdf5  -->

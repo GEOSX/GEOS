@@ -2,10 +2,11 @@
  * ------------------------------------------------------------------------------------------------------------
  * SPDX-License-Identifier: LGPL-2.1-only
  *
- * Copyright (c) 2018-2020 Lawrence Livermore National Security LLC
- * Copyright (c) 2018-2020 The Board of Trustees of the Leland Stanford Junior University
- * Copyright (c) 2018-2020 TotalEnergies
- * Copyright (c) 2019-     GEOSX Contributors
+ * Copyright (c) 2016-2024 Lawrence Livermore National Security LLC
+ * Copyright (c) 2018-2024 Total, S.A
+ * Copyright (c) 2018-2024 The Board of Trustees of the Leland Stanford Junior University
+ * Copyright (c) 2018-2024 Chevron
+ * Copyright (c) 2019-     GEOS/GEOSX Contributors
  * All rights reserved
  *
  * See top level LICENSE, COPYRIGHT, CONTRIBUTORS, NOTICE, and ACKNOWLEDGEMENTS files for details.
@@ -16,8 +17,8 @@
  * @file ParticleSubRegionBase.hpp
  */
 
-#ifndef GEOSX_MESH_PARTICLESUBREGIONBASE_HPP_
-#define GEOSX_MESH_PARTICLESUBREGIONBASE_HPP_
+#ifndef GEOS_MESH_PARTICLESUBREGIONBASE_HPP_
+#define GEOS_MESH_PARTICLESUBREGIONBASE_HPP_
 
 #include "mesh/ParticleType.hpp"
 #include "mesh/ObjectManagerBase.hpp"
@@ -136,6 +137,31 @@ public:
   arrayView1d< real64 > getParticleDamage()
   { return m_particleDamage; }
 
+  /**
+   * @brief Get the porosity of each particle in this subregion.
+   * @return an arrayView1d of const particle porosity
+   */
+  arrayView1d< real64 const > getParticlePorosity() const
+  { return m_particlePorosity; }
+
+  /**
+   * @copydoc getParticlePorosity() const
+   */
+  arrayView1d< real64 > getParticlePorosity()
+  { return m_particlePorosity; }
+
+    /**
+   * @brief Get the temperature of each particle in this subregion.
+   * @return an arrayView1d of const particle temperature
+   */
+  arrayView1d< real64 const > getParticleTemperature() const
+  { return m_particleTemperature; }
+
+  /**
+   * @copydoc getParticleTemperature() const
+   */
+  arrayView1d< real64 > getParticleTemperature()
+  { return m_particleTemperature; }
 
   /**
    * @brief Get the strength scale of each particle in this subregion.
@@ -235,6 +261,45 @@ public:
    */
   arrayView3d< real64 > getParticleRVectors()
   { return m_particleRVectors; }
+
+  /**
+   * @brief Get the surface normal of each particle in this subregion.
+   * @return an arrayView1d of const particle surface normal
+   */
+  arrayView2d< real64 const > getParticleSurfaceNormal() const
+  { return m_particleSurfaceNormal; }
+
+  /**
+   * @copydoc getParticleSurfaceNormal() const
+   */
+  arrayView2d< real64 > getParticleSurfaceNormal()
+  { return m_particleSurfaceNormal; }
+
+  /**
+   * @brief Get the surface position of each particle in this subregion.
+   * @return an arrayView1d of const particle surface position
+   */
+  arrayView2d< real64 const > getParticleSurfacePosition() const
+  { return m_particleSurfacePosition; }
+
+  /**
+   * @copydoc getParticleSurfacePosition() const
+   */
+  arrayView2d< real64 > getParticleSurfacePosition()
+  { return m_particleSurfacePosition; }
+
+  /**
+   * @brief Get the surface traction of each particle in this subregion.
+   * @return an arrayView1d of const particle surface traction
+   */
+  arrayView2d< real64 const > getParticleSurfaceTraction() const
+  { return m_particleSurfaceTraction; }
+
+  /**
+   * @copydoc getParticleSurfaceTraction() const
+   */
+  arrayView2d< real64 > getParticleSurfaceTraction()
+  { return m_particleSurfaceTraction; }
 
   /**
    * @brief Get the group in which the constitutive models of this subregion are registered.
@@ -347,6 +412,12 @@ public:
     /// @return String key for the member level field for the particle damage.
     static constexpr char const * particleDamageString() { return "particleDamage"; }
 
+    /// @return String key for the member level field for the particle porosity.
+    static constexpr char const * particlePorosityString() { return "particlePorosity"; }
+
+        /// @return String key for the member level field for the particle temperature.
+    static constexpr char const * particleTemperatureString() { return "particleTemperature"; }
+
     /// @return String key for the member level field for the particle strength scale.
     static constexpr char const * particleStrengthScaleString() { return "particleStrengthScale"; }
 
@@ -367,6 +438,15 @@ public:
 
     /// @return String key for the member level field for the particle volume.
     static constexpr char const * particleRVectorsString() { return "particleRVectors"; }
+  
+    /// @return String key for the member level field for the particle surface normal.
+    static constexpr char const * particleSurfaceNormalString() { return "particleSurfaceNormal"; }
+
+    /// @return String key for the member level field for the particle surface position.
+    static constexpr char const * particleSurfacePositionString() { return "particleSurfacePosition"; }
+  
+    /// @return String key for the member level field for the particle surface traction.
+    static constexpr char const * particleSurfaceTractionString() { return "particleSurfaceTraction"; }
   };
 
   /**
@@ -415,9 +495,18 @@ public:
    * @brief Returns the local indices of all non-ghost particles
    * @return the local indices of all non-ghost particles
    */
-  SortedArrayView< localIndex const > const activeParticleIndices()
+  SortedArrayView< localIndex const > const activeParticleIndices() const
   {
     return m_activeParticleIndices.toView();
+  }
+
+  /**
+   * @brief Returns the local indices of all ghost particles
+   * @return the local indices of all ghost particles
+   */
+  SortedArrayView< localIndex const > const inactiveParticleIndices() const
+  {
+    return m_inactiveParticleIndices.toView();
   }
 
   /**
@@ -451,6 +540,12 @@ protected:
   /// Member level field for the particle damage.
   array1d< real64 > m_particleDamage;
 
+  /// Member level field for the particle porosity.
+  array1d< real64 > m_particlePorosity;
+
+  /// Member level field for the particle temperature.
+  array1d< real64 > m_particleTemperature;
+
   /// Member level field for the particle strength scale.
   array1d< real64 > m_particleStrengthScale;
 
@@ -472,8 +567,20 @@ protected:
   /// current half-R-vectors (center to face)
   array3d< real64 > m_particleRVectors;
 
+  /// Member level field for the particle surface normal.
+  array2d< real64 > m_particleSurfaceNormal;
+
+  /// Member level field for the particle surface position.
+  array2d< real64 > m_particleSurfacePosition;
+
+  /// Member level field for the particle surface traction.
+  array2d< real64 > m_particleSurfaceTraction;
+
   /// Indices of particles that are not ghosts
   SortedArray< localIndex > m_activeParticleIndices;
+
+  /// Indices of ghost particles
+  SortedArray< localIndex > m_inactiveParticleIndices;
 
   /// Neighbor list
   OrderedVariableToManyParticleRelation m_neighborList;
@@ -483,4 +590,4 @@ protected:
 
 } /* namespace geos */
 
-#endif /* GEOSX_MESH_PARTICLESUBREGIONBASE_HPP_ */
+#endif /* GEOS_MESH_PARTICLESUBREGIONBASE_HPP_ */

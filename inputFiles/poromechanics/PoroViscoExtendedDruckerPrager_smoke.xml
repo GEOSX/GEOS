@@ -1,0 +1,52 @@
+<?xml version="1.0" ?>
+
+<Problem>
+<Included>
+  <File name="./PoroViscoExtendedDruckerPrager_base.xml"/>
+</Included>
+
+<!-- SPHINX_WELLBORE_MESH -->
+<Mesh>
+  <InternalWellbore
+    name="mesh1"
+    elementTypes="{ C3D8 }"
+    radius="{ 0.1, 5.0 }"
+    theta="{ 0, 180 }"
+    zCoords="{ -1, 1 }"
+    nr="{ 4 }"
+    nt="{ 4 }"
+    nz="{ 1 }"
+    trajectory="{ { 0.0, 0.0, -1.0 },
+                  { 0.0, 0.0,  1.0 } }"
+    autoSpaceRadialElems="{ 1 }"
+    useCartesianOuterBoundary="0"
+    cellBlockNames="{ cb1 }"/>
+</Mesh> 
+<!-- SPHINX_WELLBORE_MESH_END -->
+
+<!-- SPHINX_WELLBORE_EXECUTION -->
+<Events maxTime="80">
+
+<PeriodicEvent 
+  name="outputs"
+  timeFrequency="80"
+  targetExactTimestep="1"
+  target="/Outputs/vtkOutput"
+/>
+
+<PeriodicEvent
+  name="restarts"
+  timeFrequency="20.0"
+  targetExactTimestep="0"
+  target="/Outputs/restartOutput"
+/>
+
+<PeriodicEvent 
+  name="solverApplication0"
+  forceDt="10"
+  target="/Solvers/PoromechanicsSolver"
+/>
+</Events>
+<!-- SPHINX_WELLBORE_EXECUTION_END -->
+
+</Problem>

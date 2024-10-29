@@ -2,10 +2,11 @@
  * ------------------------------------------------------------------------------------------------------------
  * SPDX-License-Identifier: LGPL-2.1-only
  *
- * Copyright (c) 2018-2020 Lawrence Livermore National Security LLC
- * Copyright (c) 2018-2020 The Board of Trustees of the Leland Stanford Junior University
- * Copyright (c) 2018-2020 TotalEnergies
- * Copyright (c) 2019-     GEOSX Contributors
+ * Copyright (c) 2016-2024 Lawrence Livermore National Security LLC
+ * Copyright (c) 2018-2024 Total, S.A
+ * Copyright (c) 2018-2024 The Board of Trustees of the Leland Stanford Junior University
+ * Copyright (c) 2018-2024 Chevron
+ * Copyright (c) 2019-     GEOS/GEOSX Contributors
  * All rights reserved
  *
  * See top level LICENSE, COPYRIGHT, CONTRIBUTORS, NOTICE, and ACKNOWLEDGEMENTS files for details.
@@ -164,8 +165,15 @@ CONTAINER< string > tokenizeBySpaces( string const & str )
  * @param[in] charsToRemove the list of characters to remove
  * @return the trimmed string
  */
-string trim( string const & str,
-             string const & charsToRemove );
+string_view trim( string_view str,
+                  string_view charsToRemove );
+
+/**
+ * @brief Trim the string so it does not starts nor ends with any whitespaces
+ * @param[in] str the string to trim
+ * @return the trimmed string
+ */
+string_view trimSpaces( string_view str );
 
 /**
  * @brief Search for a string in the line, and return the line truncated before the string
@@ -224,6 +232,49 @@ constexpr size_t cstrlen( char const * const str )
   {
     return 0;
   }
+}
+
+/**
+ * @return true if the string starts with the prefix.
+ * @param str The string to compare
+ * @param prefix A prefix we want to know if the string starts with.
+ */
+constexpr bool startsWith( std::string_view str, std::string_view prefix )
+{
+  return str.size() >= prefix.size() &&
+         str.compare( 0, prefix.size(), prefix ) == 0;
+}
+
+/**
+ * @return true if the string ends with the suffix.
+ * @param str The string to compare
+ * @param suffix A suffix we want to know if the string ends with.
+ */
+constexpr bool endsWith( std::string_view str, std::string_view suffix )
+{
+  return str.size() >= suffix.size() &&
+         str.compare( str.size()-suffix.size(), suffix.size(), suffix ) == 0;
+}
+
+/**
+ * @brief Overloading operator (<<) for std::optional<T>.
+ *
+ * This function displays the value contained in a std::optional<T> object if one exists.
+ * Otherwise, it produces no output.
+ *
+ * @tparam T The type of the value contained std::optional.
+ * @param os An output stream (for example, std::cout).
+ * @param optValue std::optional<T> value to display.
+ * @return The output stream
+ */
+template< typename T >
+std::ostream & operator<<( std::ostream & os, std::optional< T > const & optValue )
+{
+  if( optValue )
+  {
+    os << optValue.value();
+  }
+  return os;
 }
 
 } // namespace stringutilities

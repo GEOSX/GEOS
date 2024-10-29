@@ -3,6 +3,10 @@
 <Problem>
   <Included>
     <File
+      name="./PoroElastic_conformingFracture_2d_faultSlip_solvers.xml"/>
+  </Included> 
+  <Included>
+    <File
       name="./PoroElastic_conformingFracture_2d_faultSlip_base.xml"/>
   </Included> 
 

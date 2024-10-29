@@ -2,10 +2,11 @@
  * ------------------------------------------------------------------------------------------------------------
  * SPDX-License-Identifier: LGPL-2.1-only
  *
- * Copyright (c) 2018-2020 Lawrence Livermore National Security LLC
- * Copyright (c) 2018-2020 The Board of Trustees of the Leland Stanford Junior University
- * Copyright (c) 2018-2020 TotalEnergies
- * Copyright (c) 2019-     GEOSX Contributors
+ * Copyright (c) 2016-2024 Lawrence Livermore National Security LLC
+ * Copyright (c) 2018-2024 Total, S.A
+ * Copyright (c) 2018-2024 The Board of Trustees of the Leland Stanford Junior University
+ * Copyright (c) 2018-2024 Chevron
+ * Copyright (c) 2019-     GEOS/GEOSX Contributors
  * All rights reserved
  *
  * See top level LICENSE, COPYRIGHT, CONTRIBUTORS, NOTICE, and ACKNOWLEDGEMENTS files for details.
@@ -79,27 +80,33 @@ ParticleFluid::ParticleFluid( string const & name, Group * const parent ):
 
 ParticleFluid::~ParticleFluid() = default;
 
-void ParticleFluid::postProcessInput()
+void ParticleFluid::postInputInitialization()
 {
-  ParticleFluidBase::postProcessInput();
+  ParticleFluidBase::postInputInitialization();
 
   GEOS_ERROR_IF( m_proppantDensity < 500.0,
-                 "Invalid proppantDensity in ParticleFluid, which must >= 500.0 " );
+                 "Invalid proppantDensity in ParticleFluid "
+                 << getDataContext() << ", which must >= 500.0 " );
 
   GEOS_ERROR_IF( m_proppantDiameter < 10e-6,
-                 "Invalid proppantDiameter in ParticleFluid, which must >= 10e-6 " );
+                 "Invalid proppantDiameter in ParticleFluid "
+                 << getDataContext() << ", which must >= 10e-6 " );
 
   GEOS_ERROR_IF( m_hinderedSettlingCoefficient< 0.0 || m_hinderedSettlingCoefficient > 10.0,
-                 "Invalid hinderedSettlingCoefficient in ParticleFluid, which must between 0 and 10 " );
+                 "Invalid hinderedSettlingCoefficient in ParticleFluid "
+                 << getDataContext() << ", which must between 0 and 10 " );
 
   GEOS_ERROR_IF( m_collisionAlpha < 1.0,
-                 "Invalid collisionAlpha in ParticleFluid, which must >= 1 " );
+                 "Invalid collisionAlpha in ParticleFluid "
+                 << getDataContext() << ", which must >= 1 " );
 
   GEOS_ERROR_IF( m_collisionBeta < 0.0,
-                 "Invalid collisionBeta in ParticleFluid, which must >= 0" );
+                 "Invalid collisionBeta in ParticleFluid "
+                 << getDataContext() << ", which must >= 0" );
 
   GEOS_ERROR_IF( m_slipConcentration > 0.3,
-                 "Invalid slipConcentration in ParticleFluid, which must <= 0.3" );
+                 "Invalid slipConcentration in ParticleFluid "
+                 << getDataContext() << ", which must <= 0.3" );
 
   m_packPermeabilityCoef = pow( m_sphericity * m_proppantDiameter, 2.0 ) / 180.0;
 }

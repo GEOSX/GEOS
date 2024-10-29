@@ -2,10 +2,11 @@
  * ------------------------------------------------------------------------------------------------------------
  * SPDX-License-Identifier: LGPL-2.1-only
  *
- * Copyright (c) 2018-2020 Lawrence Livermore National Security LLC
- * Copyright (c) 2018-2020 The Board of Trustees of the Leland Stanford Junior University
- * Copyright (c) 2018-2020 TotalEnergies
- * Copyright (c) 2019-     GEOSX Contributors
+ * Copyright (c) 2016-2024 Lawrence Livermore National Security LLC
+ * Copyright (c) 2018-2024 Total, S.A
+ * Copyright (c) 2018-2024 The Board of Trustees of the Leland Stanford Junior University
+ * Copyright (c) 2018-2024 Chevron
+ * Copyright (c) 2019-     GEOS/GEOSX Contributors
  * All rights reserved
  *
  * See top level LICENSE, COPYRIGHT, CONTRIBUTORS, NOTICE, and ACKNOWLEDGEMENTS files for details.
@@ -77,7 +78,7 @@ void createHypreGMRES( LinearSolverParameters const & params,
   GEOS_LAI_CHECK_ERROR( HYPRE_ParCSRGMRESSetTol( solver.ptr, params.krylov.relTolerance ) );
 
   // Default for now
-  HYPRE_Int logLevel = (params.logLevel >= 3) ? 1 : 0;
+  HYPRE_Int logLevel = (params.logLevel >= 3) ? 2 : 0;
 
   GEOS_LAI_CHECK_ERROR( HYPRE_ParCSRGMRESSetPrintLevel( solver.ptr, logLevel ) ); // print iteration info
   GEOS_LAI_CHECK_ERROR( HYPRE_ParCSRGMRESSetLogging( solver.ptr, 1 ) ); /* needed to get run info later */
@@ -275,7 +276,7 @@ void HypreSolver::solve( HypreVector const & rhs,
 
   if( m_params.logLevel >= 1 )
   {
-    GEOS_LOG_RANK_0( "\t\tLinear Solver | " << m_result.status <<
+    GEOS_LOG_RANK_0( "        Linear Solver | " << m_result.status <<
                      " | Iterations: " << m_result.numIterations <<
                      " | Final Rel Res: " << m_result.residualReduction <<
                      " | Make Restrictor Time: " << m_makeRestrictorTime <<
@@ -297,4 +298,4 @@ void HypreSolver::clear()
   m_solver.reset();
 }
 
-} // end geosx namespace
+} // end geos namespace

@@ -71,7 +71,7 @@ def getFracturePressureFromXML(xmlFilePath):
 def getFractureGeometryFromXML(xmlFilePath):
     tree = ElementTree.parse(xmlFilePath)
 
-    param = tree.findall('Geometry/BoundedPlane')
+    param = tree.findall('Geometry/Rectangle')
 
     for elem in param:
         if elem.get("name") == "fracture1":

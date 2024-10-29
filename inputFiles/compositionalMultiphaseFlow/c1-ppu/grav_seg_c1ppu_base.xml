@@ -1,0 +1,171 @@
+<?xml version="1.0" ?>
+
+<Problem>
+  <!-- SPHINX_SOLVER -->
+  <Solvers
+    gravityVector="{ 0.0, 0.0, -9.81 }">
+    <CompositionalMultiphaseFVM
+      name="compflow"
+      logLevel="1"
+      discretization="fluidTPFA"
+      temperature="300"
+      initialDt="1000"
+      useMass="1"
+      targetPhaseVolFractionChangeInTimeStep="0.5"
+      targetRelativePressureChangeInTimeStep="0.5"
+      solutionChangeScalingFactor="0"
+      targetRegions="{ region }">
+      <NonlinearSolverParameters
+        newtonTol="1.0e-4"
+        newtonMaxIter="10"
+        maxTimeStepCuts="1000"
+        maxSubSteps="1000"
+        lineSearchAction="None"/>
+      <LinearSolverParameters
+        solverType="direct"
+        directParallel="0"  
+        logLevel="0"/>
+    </CompositionalMultiphaseFVM>
+  </Solvers>
+  <!-- SPHINX_SOLVER_END -->
+ 
+  <!-- SPHINX_NUMERICAL -->
+  <NumericalMethods>
+    <FiniteVolume>
+      <TwoPointFluxApproximation
+        name="fluidTPFA"
+        upwindingScheme="C1PPU"/>
+        <!-- epsC1PPU="1e-8" -->
+    </FiniteVolume>
+  </NumericalMethods>
+  <!-- SPHINX_NUMERICAL_END -->
+
+  <!-- SPHINX_ELEMENTREGIONS -->
+  <ElementRegions>
+    <CellElementRegion
+      name="region"
+      cellBlocks="{ cellBlock }"
+      materialList="{ fluid, rock, relperm }"/>
+  </ElementRegions>
+  <!-- SPHINX_ELEMENTREGIONS_END -->
+
+  <!-- SPHINX_MATERIAL -->
+  <Constitutive>
+    <CompressibleSolidConstantPermeability
+      name="rock"
+      solidModelName="nullSolid"
+      porosityModelName="rockPorosity"
+      permeabilityModelName="rockPerm"/>
+
+    <NullModel
+      name="nullSolid"/>
+
+    <PressurePorosity
+      name="rockPorosity"
+      defaultReferencePorosity="0.2"
+      referencePressure="1e7"
+      compressibility="1.0e-10"/>
+
+    <ConstantPermeability
+      name="rockPerm"
+      permeabilityComponents="{ 9.0e-13, 9.0e-13, 9.0e-13}"/>   
+
+    <TableRelativePermeabilityHysteresis
+      name="relperm"
+      phaseNames="{ water, gas }"
+      drainageWettingNonWettingRelPermTableNames="{ drainageWaterRelativePermeabilityTable,
+                                                    drainageGasRelativePermeabilityTable }"
+      imbibitionNonWettingRelPermTableName="imbibitionGasRelativePermeabilityTable"      
+      imbibitionWettingRelPermTableName="imbibitionWaterRelativePermeabilityTable"/>
+    
+    <DeadOilFluid
+      name="fluid"
+      phaseNames="{ water, gas }"
+      surfaceDensities="{ 992.0, 100.0 }"
+      componentMolarWeight="{ 18e-3, 44e-3 }"
+      tableFiles="{ tables/pvtw.txt, tables/pvdg.txt }"/>
+  </Constitutive>
+  <!-- SPHINX_MATERIAL_END -->
+
+  <!-- SPHINX_BC --> 
+  <FieldSpecifications>
+    <FieldSpecification
+      name="initialPressure"
+      initialCondition="1"
+      setNames="{ all }"
+      objectPath="ElementRegions/region/cellBlock"
+      fieldName="pressure"
+      scale="1e7"/>
+
+    <FieldSpecification
+      name="leftInitialComposition_gas"
+      initialCondition="1"
+      setNames="{ left_half }"
+      objectPath="ElementRegions/region/cellBlock"
+      fieldName="globalCompFraction"
+      component="0"
+      scale="0.001"/>
+    <FieldSpecification
+      name="leftInitialComposition_water"
+      initialCondition="1"
+      setNames="{ left_half }"
+      objectPath="ElementRegions/region/cellBlock"
+      fieldName="globalCompFraction"
+      component="1"
+      scale="0.999"/>
+
+    <FieldSpecification
+      name="rightInitialComposition_gas"
+      initialCondition="1"
+      setNames="{ right_half }"
+      objectPath="ElementRegions/region/cellBlock"
+      fieldName="globalCompFraction"
+      component="0"
+      scale="0.999"/>
+    <FieldSpecification
+      name="rightInitialComposition_water"
+      initialCondition="1"
+      setNames="{ right_half }"
+      objectPath="ElementRegions/region/cellBlock"
+      fieldName="globalCompFraction"
+      component="1"
+      scale="0.001"/>
+  </FieldSpecifications>
+  <!-- SPHINX_BC_END -->
+  
+  <!-- SPHINX_TASKS --> 
+  <Tasks>
+    <PackCollection
+      name="phaseVolumeFractionCollection"
+      objectPath="ElementRegions/region/cellBlock"
+      fieldName="phaseVolumeFraction"/>
+  </Tasks>
+  <!-- SPHINX_TASKS_END -->   
+
+  <!-- SPHINX_MESH -->
+  <Mesh>
+    <InternalMesh
+      name="mesh"
+      elementTypes="{ C3D8 }"
+      xCoords="{ 0.0, 1.0 }"
+      yCoords="{ 0.0, 1.0 }"
+      zCoords="{ 0.0, 10.0 }"
+      nx="{ 1 }"
+      ny="{ 1 }"
+      nz="{ 100 }"
+      cellBlockNames="{ cellBlock }"/>
+  </Mesh>
+  <!-- SPHINX_MESH_END -->
+
+  <Geometry>
+    <Box
+      name="left_half"
+      xMin="{-0.1, -0.1, -0.1}"
+      xMax="{1.1, 1.1, 5.0}"/>
+    <Box
+      name="right_half"
+      xMin="{ -0.1, -0.1, 5.0}"
+      xMax="{ 1.1, 1.1, 10.1}"/>
+  </Geometry>
+
+</Problem>

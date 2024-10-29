@@ -2,10 +2,11 @@
  * ------------------------------------------------------------------------------------------------------------
  * SPDX-License-Identifier: LGPL-2.1-only
  *
- * Copyright (c) 2018-2020 Lawrence Livermore National Security LLC
- * Copyright (c) 2018-2020 The Board of Trustees of the Leland Stanford Junior University
- * Copyright (c) 2018-2020 TotalEnergies
- * Copyright (c) 2019-     GEOSX Contributors
+ * Copyright (c) 2016-2024 Lawrence Livermore National Security LLC
+ * Copyright (c) 2018-2024 Total, S.A
+ * Copyright (c) 2018-2024 The Board of Trustees of the Leland Stanford Junior University
+ * Copyright (c) 2018-2024 Chevron
+ * Copyright (c) 2019-     GEOS/GEOSX Contributors
  * All rights reserved
  *
  * See top level LICENSE, COPYRIGHT, CONTRIBUTORS, NOTICE, and ACKNOWLEDGEMENTS files for details.
@@ -43,13 +44,21 @@ using namespace constitutive;
 class TriaxialDriver : public TaskBase
 {
 public:
+
+  enum class Mode
+  {
+    MixedControl,
+    StrainControl,
+    StressControl,
+  };
+
   TriaxialDriver( const string & name,
                   Group * const parent );
   ~TriaxialDriver() override;
 
   static string catalogName() { return "TriaxialDriver"; }
 
-  void postProcessInput() override;
+  void postInputInitialization() override;
 
   virtual bool execute( real64 const GEOS_UNUSED_PARAM( time_n ),
                         real64 const GEOS_UNUSED_PARAM( dt ),
@@ -116,7 +125,7 @@ private:
 
   integer m_numSteps;          ///< Number of load steps
   string m_solidMaterialName;  ///< Material identifier
-  string m_mode;               ///< Test mode: strainControl, stressControl, mixedControl
+  Mode m_mode;                 ///< Test mode: strainControl, stressControl, mixedControl
   string m_axialFunctionName;  ///< Time-dependent function controlling axial stress or strain (depends on test mode)
   string m_radialFunctionName; ///< Time-dependent function controlling radial stress or strain (depends on test mode)
   real64 m_initialStress;      ///< Initial stress value (scalar used to set an isotropic stress state)
@@ -132,6 +141,12 @@ private:
   static constexpr real64 m_newtonTol = 1e-6;   ///< Newton tolerance for mixed-control tests
   static constexpr real64 m_baselineTol = 1e-3; ///< Comparison tolerance for baseline results
 };
+
+/// Declare strings associated with enumeration values.
+ENUM_STRINGS( TriaxialDriver::Mode,
+              "mixedControl",
+              "strainControl",
+              "stressControl" );
 
 } /* namespace geos */
 

@@ -2,10 +2,11 @@
  * ------------------------------------------------------------------------------------------------------------
  * SPDX-License-Identifier: LGPL-2.1-only
  *
- * Copyright (c) 2018-2020 Lawrence Livermore National Security LLC
- * Copyright (c) 2018-2020 The Board of Trustees of the Leland Stanford Junior University
- * Copyright (c) 2018-2020 TotalEnergies
- * Copyright (c) 2019-     GEOSX Contributors
+ * Copyright (c) 2016-2024 Lawrence Livermore National Security LLC
+ * Copyright (c) 2018-2024 Total, S.A
+ * Copyright (c) 2018-2024 The Board of Trustees of the Leland Stanford Junior University
+ * Copyright (c) 2018-2024 Chevron
+ * Copyright (c) 2019-     GEOS/GEOSX Contributors
  * All rights reserved
  *
  * See top level LICENSE, COPYRIGHT, CONTRIBUTORS, NOTICE, and ACKNOWLEDGEMENTS files for details.
@@ -45,7 +46,7 @@ RelativePermeabilityBase & makeBrooksCoreyRelPerm( string const & name, Group & 
   phaseRelPermMaxVal.resize( 2 );
   phaseRelPermMaxVal[0] = 0.8; phaseRelPermMaxVal[1] = 0.9;
 
-  relPerm.postProcessInputRecursive();
+  relPerm.postInputInitializationRecursive();
   return relPerm;
 }
 
@@ -70,7 +71,7 @@ RelativePermeabilityBase & makeBrooksCoreyBakerRelPermTwoPhase( string const & n
   waterOilRelPermMaxVal.resize( 2 );
   waterOilRelPermMaxVal[0] = 0.8; waterOilRelPermMaxVal[1] = 0.75;
 
-  relPerm.postProcessInputRecursive();
+  relPerm.postInputInitializationRecursive();
   return relPerm;
 }
 
@@ -103,7 +104,40 @@ RelativePermeabilityBase & makeBrooksCoreyBakerRelPermThreePhase( string const &
   gasOilRelPermMaxVal.resize( 2 );
   gasOilRelPermMaxVal[0] = 0.8; gasOilRelPermMaxVal[1] = 0.95;
 
-  relPerm.postProcessInputRecursive();
+  relPerm.postInputInitializationRecursive();
+  return relPerm;
+}
+
+RelativePermeabilityBase & makeBrooksCoreyStone2RelPermThreePhase( string const & name, Group & parent )
+{
+  BrooksCoreyStone2RelativePermeability & relPerm = parent.registerGroup< BrooksCoreyStone2RelativePermeability >( name );
+
+  string_array & phaseNames = relPerm.getReference< string_array >( RelativePermeabilityBase::viewKeyStruct::phaseNamesString() );
+  phaseNames.resize( 3 );
+  phaseNames[0] = "oil"; phaseNames[1] = "gas"; phaseNames[2] = "water";
+
+  array1d< real64 > & phaseMinSat = relPerm.getReference< array1d< real64 > >( BrooksCoreyStone2RelativePermeability::viewKeyStruct::phaseMinVolumeFractionString() );
+  phaseMinSat.resize( 3 );
+  phaseMinSat[0] = 0.03; phaseMinSat[1] = 0.01; phaseMinSat[2] = 0.025;
+
+  array1d< real64 > & waterOilRelPermExp = relPerm.getReference< array1d< real64 > >( BrooksCoreyStone2RelativePermeability::viewKeyStruct::waterOilRelPermExponentString() );
+  waterOilRelPermExp.resize( 2 );
+  waterOilRelPermExp[0] = 2.4; waterOilRelPermExp[1] = 1.5;
+
+  array1d< real64 > & waterOilRelPermMaxVal =
+    relPerm.getReference< array1d< real64 > >( BrooksCoreyStone2RelativePermeability::viewKeyStruct::waterOilRelPermMaxValueString() );
+  waterOilRelPermMaxVal.resize( 2 );
+  waterOilRelPermMaxVal[0] = 0.9; waterOilRelPermMaxVal[1] = 0.65;
+
+  array1d< real64 > & gasOilRelPermExp = relPerm.getReference< array1d< real64 > >( BrooksCoreyStone2RelativePermeability::viewKeyStruct::gasOilRelPermExponentString() );
+  gasOilRelPermExp.resize( 2 );
+  gasOilRelPermExp[0] = 1.9; gasOilRelPermExp[1] = 3.95;
+
+  array1d< real64 > & gasOilRelPermMaxVal = relPerm.getReference< array1d< real64 > >( BrooksCoreyStone2RelativePermeability::viewKeyStruct::gasOilRelPermMaxValueString() );
+  gasOilRelPermMaxVal.resize( 2 );
+  gasOilRelPermMaxVal[0] = 0.8; gasOilRelPermMaxVal[1] = 0.95;
+
+  relPerm.postInputInitializationRecursive();
   return relPerm;
 }
 
@@ -128,7 +162,7 @@ RelativePermeabilityBase & makeVanGenuchtenBakerRelPermTwoPhase( string const & 
   gasOilRelPermMaxVal.resize( 2 );
   gasOilRelPermMaxVal[0] = 0.5; gasOilRelPermMaxVal[1] = 0.75;
 
-  relPerm.postProcessInputRecursive();
+  relPerm.postInputInitializationRecursive();
   return relPerm;
 }
 
@@ -163,7 +197,42 @@ RelativePermeabilityBase & makeVanGenuchtenBakerRelPermThreePhase( string const 
   gasOilRelPermMaxVal.resize( 2 );
   gasOilRelPermMaxVal[0] = 0.8; gasOilRelPermMaxVal[1] = 0.75;
 
-  relPerm.postProcessInputRecursive();
+  relPerm.postInputInitializationRecursive();
+  return relPerm;
+}
+
+RelativePermeabilityBase & makeVanGenuchtenStone2RelPermThreePhase( string const & name, Group & parent )
+{
+  VanGenuchtenStone2RelativePermeability & relPerm = parent.registerGroup< VanGenuchtenStone2RelativePermeability >( name );
+
+  string_array & phaseNames = relPerm.getReference< string_array >( RelativePermeabilityBase::viewKeyStruct::phaseNamesString() );
+  phaseNames.resize( 3 );
+  phaseNames[0] = "oil"; phaseNames[1] = "gas"; phaseNames[2] = "water";
+
+  array1d< real64 > & phaseMinSat = relPerm.getReference< array1d< real64 > >( VanGenuchtenStone2RelativePermeability::viewKeyStruct::phaseMinVolumeFractionString() );
+  phaseMinSat.resize( 3 );
+  phaseMinSat[0] = 0.03; phaseMinSat[1] = 0.01; phaseMinSat[2] = 0.025;
+
+  array1d< real64 > & waterOilRelPermExpInv = relPerm.getReference< array1d< real64 > >(
+    VanGenuchtenStone2RelativePermeability::viewKeyStruct::waterOilRelPermExponentInvString() );
+  waterOilRelPermExpInv.resize( 2 );
+  waterOilRelPermExpInv[0] = 2.4; waterOilRelPermExpInv[1] = 2.5;
+
+  array1d< real64 > & waterOilRelPermMaxVal =
+    relPerm.getReference< array1d< real64 > >( VanGenuchtenStone2RelativePermeability::viewKeyStruct::waterOilRelPermMaxValueString() );
+  waterOilRelPermMaxVal.resize( 2 );
+  waterOilRelPermMaxVal[0] = 0.9; waterOilRelPermMaxVal[1] = 0.75;
+
+  array1d< real64 > & gasOilRelPermExpInv =
+    relPerm.getReference< array1d< real64 > >( VanGenuchtenStone2RelativePermeability::viewKeyStruct::gasOilRelPermExponentInvString() );
+  gasOilRelPermExpInv.resize( 2 );
+  gasOilRelPermExpInv[0] = 1.9; gasOilRelPermExpInv[1] = 3.95;
+
+  array1d< real64 > & gasOilRelPermMaxVal = relPerm.getReference< array1d< real64 > >( BrooksCoreyStone2RelativePermeability::viewKeyStruct::gasOilRelPermMaxValueString() );
+  gasOilRelPermMaxVal.resize( 2 );
+  gasOilRelPermMaxVal[0] = 0.8; gasOilRelPermMaxVal[1] = 0.75;
+
+  relPerm.postInputInitializationRecursive();
   return relPerm;
 }
 
@@ -372,7 +441,7 @@ RelativePermeabilityBase & makeTableRelPermTwoPhase( string const & name, Group 
   waterOilTableNames.resize( 2 );
   waterOilTableNames[0] = "water_swg"; waterOilTableNames[1] = "gas_swg";
 
-  relPerm.postProcessInputRecursive();
+  relPerm.postInputInitializationRecursive();
   relPerm.initialize(); // to test all the checks
   return relPerm;
 }
@@ -682,7 +751,7 @@ RelativePermeabilityBase & makeTableRelPermHysteresisTwoPhase( string const & na
   auto & imbibitionGasTableName = relPerm.getReference< string >( keys::imbibitionNonWettingRelPermTableNameString() );
   imbibitionGasTableName = "imbibitionGas_swg";
 
-  relPerm.postProcessInputRecursive();
+  relPerm.postInputInitializationRecursive();
   relPerm.initialize(); // to test all the checks
   return relPerm;
 }
@@ -748,6 +817,10 @@ RelativePermeabilityBase & makeTableRelPermThreePhase( string const & name, Grou
 
   auto & relPerm = parent.registerGroup< TableRelativePermeability >( name );
 
+  auto & interpolatorFlag  = relPerm.getReference< ThreePhaseInterpolator >(
+    TableRelativePermeability::viewKeyStruct::threePhaseInterpolatorString() );
+  interpolatorFlag = ThreePhaseInterpolator::STONEII;
+
   auto & phaseNames = relPerm.getReference< string_array >( RelativePermeabilityBase::viewKeyStruct::phaseNamesString() );
   phaseNames.resize( 3 );
   phaseNames[0] = "oil"; phaseNames[1] = "water"; phaseNames[2] = "gas";
@@ -760,7 +833,7 @@ RelativePermeabilityBase & makeTableRelPermThreePhase( string const & name, Grou
   gasOilTableNames.resize( 2 );
   gasOilTableNames[0] = "gas_sgof"; gasOilTableNames[1] = "oil_sgof";
 
-  relPerm.postProcessInputRecursive();
+  relPerm.postInputInitializationRecursive();
   relPerm.initialize(); // to test all the checks
   return relPerm;
 }
@@ -859,6 +932,32 @@ TEST_F( RelPermTest, numericalDerivatives_BrooksCoreyBakerRelPermThreePhase )
   }
 }
 
+TEST_F( RelPermTest, numericalDerivatives_BrooksCoreyStone2RelPermThreePhase )
+{
+  initialize( makeBrooksCoreyStone2RelPermThreePhase( "relPerm", m_parent ) );
+
+  real64 const eps = std::sqrt( std::numeric_limits< real64 >::epsilon() );
+  real64 const tol = 1e-4;
+
+  real64 const startSat = 0.3;
+  real64 const endSat   = 0.7;
+  real64 const dS = 1e-1;
+  real64 const alpha = 0.4;
+
+  array1d< real64 > sat( 3 );
+
+  sat[0] = startSat;
+  sat[1] = alpha*(1.0-sat[0]);
+  sat[2] = (1-alpha)*(1.0-sat[0]);
+
+  while( sat[0] <= endSat )
+  {
+    test( sat, eps, tol );
+    sat[0] += dS;
+    sat[1] = alpha *(1-sat[0]);
+    sat[2] = (1-alpha) *(1-sat[0]);
+  }
+}
 
 TEST_F( RelPermTest, numericalDerivatives_VanGenuchtenBakerRelPermTwoPhase )
 {
@@ -997,7 +1096,6 @@ TEST_F( RelPermTest, numericalDerivatives_TableRelPermHysteresisTwoPhase )
     sat[1] = 1-sat[0];
   }
 }
-
 
 int main( int argc, char * * argv )
 {

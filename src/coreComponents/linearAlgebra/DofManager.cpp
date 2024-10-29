@@ -2,10 +2,11 @@
  * ------------------------------------------------------------------------------------------------------------
  * SPDX-License-Identifier: LGPL-2.1-only
  *
- * Copyright (c) 2018-2020 Lawrence Livermore National Security LLC
- * Copyright (c) 2018-2020 The Board of Trustees of the Leland Stanford Junior University
- * Copyright (c) 2018-2020 TotalEnergies
- * Copyright (c) 2019-     GEOSX Contributors
+ * Copyright (c) 2016-2024 Lawrence Livermore National Security LLC
+ * Copyright (c) 2018-2024 Total, S.A
+ * Copyright (c) 2018-2024 The Board of Trustees of the Leland Stanford Junior University
+ * Copyright (c) 2018-2024 Chevron
+ * Copyright (c) 2019-     GEOS/GEOSX Contributors
  * All rights reserved
  *
  * See top level LICENSE, COPYRIGHT, CONTRIBUTORS, NOTICE, and ACKNOWLEDGEMENTS files for details.
@@ -22,6 +23,7 @@
 #include "common/TypeDispatch.hpp"
 #include "finiteVolume/FluxApproximationBase.hpp"
 #include "linearAlgebra/interfaces/InterfaceTypes.hpp"
+#include "linearAlgebra/utilities/ReverseCutHillMcKeeOrdering.hpp"
 #include "mesh/mpiCommunications/CommunicationTools.hpp"
 #include "mesh/DomainPartition.hpp"
 #include "mesh/ElementRegionManager.hpp"
@@ -173,9 +175,114 @@ void forMeshSupport( std::vector< DofManager::FieldSupport > const & support,
   }
 }
 
+void fillTrivialPermutation( arrayView1d< localIndex > const permutation )
+{
+  forAll< parallelHostPolicy >( permutation.size(), [&]( localIndex const i )
+  {
+    permutation[i] = i;
+  } );
+}
+
 } // namespace
 
-void DofManager::createIndexArray( FieldDescription const & field )
+array1d< localIndex > DofManager::computePermutation( FieldDescription & field )
+{
+  localIndex const fieldIndex = getFieldIndex( field.name );
+
+  // step 1: save the number of components, and then set it to 1 temporarily
+  //         do not forget to restore at the end
+  //         we set the number of components to 1 to compute the reordering on a smaller matrix
+
+  localIndex const numComps = field.numComponents;
+  CompMask const globallyCoupledComps = field.globallyCoupledComponents;
+  field.numComponents = 1;
+  field.globallyCoupledComponents = CompMask( 1, true );
+
+  // step 2: compute field dimensions (local dofs, global dofs, etc)
+  //         this is needed to make sure that the sparsity pattern function work properly
+  //         in particular, this function defines the rankOffset (computed with number of components = 1)
+
+  computeFieldDimensions( fieldIndex );
+
+  // the number of local dofs is available at this point, we allocate space for the permutation
+  array1d< localIndex > permutation( numLocalDofs( field.name ) );
+
+  // if no reordering is requesting, we just return the identity permutation
+  if( field.reorderingType == LocalReorderingType::None )
+  {
+    fillTrivialPermutation( permutation );
+  }
+  else
+  {
+    fillTrivialPermutation( permutation );
+    computePermutation( field, permutation );
+  }
+
+  // reset the number of components
+  field.numComponents = numComps;
+  field.globallyCoupledComponents = globallyCoupledComps;
+  // reset the offsets, since they will be recomputed with the proper number of components
+  // this is important to get the right reordering for multiphysics problems
+  field.numLocalDof  = 0;
+  field.rankOffset   = 0;
+  field.numGlobalDof = 0;
+  field.globalOffset = 0;
+  field.blockOffset = 0;
+
+  return permutation;
+}
+
+void DofManager::computePermutation( FieldDescription const & field,
+                                     arrayView1d< localIndex > const permutation )
+{
+  localIndex const fieldIndex = getFieldIndex( field.name );
+
+  // step 3: allocate and fill the dofNumber array
+  //         this is needed to have dofNumber computed with numComps = 1
+  //         note that the dofNumbers will be recomputed once we have obtained the permutation
+
+  createIndexArray( field, permutation.toViewConst() );
+
+  // step 4: compute the local sparsity pattern for this field
+
+  SparsityPattern< globalIndex > pattern;
+  array1d< localIndex > rowSizes( numLocalDofs( field.name ) );
+  // in a first pass, count the row lengths to allocate enough space
+  countRowLengthsOneBlock( rowSizes, fieldIndex, fieldIndex );
+
+  // resize the sparsity pattern now that we know the row sizes
+  pattern.resizeFromRowCapacities< parallelHostPolicy >( numLocalDofs( field.name ),
+                                                         numGlobalDofs( field.name ),
+                                                         rowSizes.data() );
+
+  // compute the sparsity pattern
+  setSparsityPatternOneBlock( pattern.toView(), fieldIndex, fieldIndex );
+
+  // step 5: call the reordering function
+  //         the goal of this step is to fill the permutation array
+
+  localIndex const * const offsets = pattern.getOffsets();
+  globalIndex const * const columns = pattern.getColumns();
+  array1d< localIndex > reversePermutation( permutation.size() );
+
+  if( field.reorderingType == LocalReorderingType::ReverseCutHillMcKee )
+  {
+    reverseCutHillMcKeeOrdering::
+      computePermutation( offsets, columns, rankOffset(), reversePermutation );
+  }
+  else
+  {
+    GEOS_ERROR( "This local ordering type is not supported yet" );
+  }
+
+  forAll< parallelHostPolicy >( permutation.size(), [&]( localIndex const i )
+  {
+    permutation[reversePermutation[i]] = i;
+  } );
+}
+
+void DofManager::createIndexArray( FieldDescription const & field,
+                                   arrayView1d< localIndex const > const permutation )
 {
   LocationSwitch( field.location, [&]( auto const loc )
   {
@@ -203,7 +310,7 @@ void DofManager::createIndexArray( FieldDescription const & field )
       // populate index array using a sequential counter
       forMeshLocation< LOC, false, serialPolicy >( mesh, regions, [&]( auto const locIdx )
       {
-        helper::reference( indexArray, locIdx ) = field.rankOffset + field.numComponents * index++;
+        helper::reference( indexArray, locIdx ) = field.rankOffset + field.numComponents * permutation[index++];
       } );
 
       // synchronize across ranks
@@ -367,6 +474,13 @@ void DofManager::addField( string const & fieldName,
   addField( fieldName, location, components, support );
 }
 
+void DofManager::setLocalReorderingType( string const & fieldName,
+                                         LocalReorderingType const reorderingType )
+{
+  FieldDescription & field = m_fields[getFieldIndex( fieldName )];
+  field.reorderingType = reorderingType;
+}
+
 void DofManager::disableGlobalCouplingForEquation( string const & fieldName,
                                                    integer const c )
 {
@@ -407,6 +521,7 @@ processCouplingRegionList( std::set< string > inputList,
     // Check that both fields exist on all regions in the list
     auto const checkSupport = [&regions]( std::set< string > const & fieldRegions, string const & fieldName )
     {
+      GEOS_UNUSED_VAR( fieldName ); // unused if geos_error_if is nulld
       // Both regions lists are sorted at this point
       GEOS_ERROR_IF( !std::includes( fieldRegions.begin(), fieldRegions.end(), regions.begin(), regions.end() ),
                      GEOS_FMT( "Coupling domain is not a subset of {}'s support:\nCoupling: {}\nField: {}",
@@ -459,6 +574,7 @@ processCouplingRegionList( std::vector< DofManager::FieldSupport > inputList,
     // Check that each input entry is included in both row and col field supports
     auto const checkSupport = [&regions]( std::vector< DofManager::FieldSupport > const & fieldRegions, string const & fieldName )
     {
+      GEOS_UNUSED_VAR( fieldName ); // unused if geos_error_if is nulled
       for( DofManager::FieldSupport const & r : regions )
       {
         auto const comp = [&r]( auto const & f ){ return RegionComp< std::equal_to<> >{} ( r, f ); };
@@ -1153,7 +1269,8 @@ namespace
 {
 
 template< typename FIELD_OP, typename POLICY, typename FIELD_VIEW >
-void vectorToFieldKernel( arrayView1d< real64 const > const & localVector,
+void vectorToFieldKernel( ObjectManagerBase & GEOS_UNUSED_PARAM( manager ),
+                          arrayView1d< real64 const > const & localVector,
                           FIELD_VIEW const & field,
                           arrayView1d< globalIndex const > const & dofNumber,
                           arrayView1d< integer const > const & ghostRank,
@@ -1180,12 +1297,43 @@ void vectorToFieldKernel( arrayView1d< real64 const > const & localVector,
   } );
 }
 
-template< typename FIELD_OP, typename POLICY >
+template< typename FIELD_OP, typename POLICY, typename FIELD_VIEW >
+void vectorToFieldKernel( ObjectManagerBase & manager,
+                          arrayView1d< real64 const > const & localVector,
+                          FIELD_VIEW const & field,
+                          arrayView1d< globalIndex const > const & dofNumber,
+                          arrayView1d< integer const > const & ghostRank,
+                          string const & scalingFactorName,
+                          localIndex const dofOffset,
+                          DofManager::CompMask const mask )
+{
+  arrayView1d< real64 const > const & scalingFactor = manager.getReference< array1d< real64 > >( scalingFactorName );
+
+  forAll< POLICY >( dofNumber.size(), [=] GEOS_HOST_DEVICE ( localIndex const i )
+  {
+    if( ghostRank[i] < 0 && dofNumber[i] >= 0 )
+    {
+      localIndex const lid = dofNumber[i] - dofOffset;
+      GEOS_ASSERT_GE( lid, 0 );
+
+      integer fieldComp = 0;
+      for( integer const vecComp : mask )
+      {
+        FIELD_OP::template SpecifyFieldValue( field,
+                                              i,
+                                              fieldComp++,
+                                              scalingFactor[i] * localVector[lid + vecComp] );
+      }
+    }
+  } );
+}
+
+template< typename FIELD_OP, typename POLICY, typename SCALING_FACTOR_TYPE >
 void vectorToFieldImpl( arrayView1d< real64 const > const & localVector,
                         ObjectManagerBase & manager,
                         string const & dofKey,
                         string const & fieldName,
-                        real64 const scalingFactor,
+                        SCALING_FACTOR_TYPE const & scalingFactor,
                         localIndex const dofOffset,
                         DofManager::CompMask const mask )
 {
@@ -1196,19 +1344,20 @@ void vectorToFieldImpl( arrayView1d< real64 const > const & localVector,
 
   // Restrict primary solution fields to 1-2D real arrays,
   // because applying component index is not well defined for 3D and higher
-  using FieldTypes = types::ArrayTypes< types::RealTypes, types::DimsUpTo< 2 > >;
-  types::dispatch( FieldTypes{}, wrapper.getTypeId(), true, [&]( auto array )
+  using FieldTypes = types::ListofTypeList< types::ArrayTypes< types::RealTypes, types::DimsUpTo< 2 > > >;
+  types::dispatch( FieldTypes{}, [&]( auto tupleOfTypes )
   {
-    using ArrayType = decltype( array );
+    using ArrayType = camp::first< decltype( tupleOfTypes ) >;
     Wrapper< ArrayType > & wrapperT = Wrapper< ArrayType >::cast( wrapper );
-    vectorToFieldKernel< FIELD_OP, POLICY >( localVector,
+    vectorToFieldKernel< FIELD_OP, POLICY >( manager,
+                                             localVector,
                                              wrapperT.reference().toView(),
                                              dofNumber,
                                              ghostRank,
                                              scalingFactor,
                                              dofOffset,
                                              mask );
-  } );
+  }, wrapper );
 }
 
 template< typename FIELD_OP, typename POLICY, typename FIELD_VIEW >
@@ -1239,12 +1388,12 @@ void fieldToVectorKernel( arrayView1d< real64 > const & localVector,
   } );
 }
 
-template< typename FIELD_OP, typename POLICY >
+template< typename FIELD_OP, typename POLICY, typename SCALING_FACTOR_TYPE >
 void fieldToVectorImpl( arrayView1d< real64 > const & localVector,
                         ObjectManagerBase const & manager,
                         string const & dofKey,
                         string const & fieldName,
-                        real64 const scalingFactor,
+                        SCALING_FACTOR_TYPE const & scalingFactor,
                         localIndex const dofOffset,
                         DofManager::CompMask const mask )
 {
@@ -1255,10 +1404,10 @@ void fieldToVectorImpl( arrayView1d< real64 > const & localVector,
 
   // Restrict primary solution fields to 1-2D real arrays,
   // because applying component index is not well defined for 3D and higher
-  using FieldTypes = types::ArrayTypes< types::RealTypes, types::DimsUpTo< 2 > >;
-  types::dispatch( FieldTypes{}, wrapper.getTypeId(), true, [&]( auto array )
+  using FieldTypes = types::ListofTypeList< types::ArrayTypes< types::RealTypes, types::DimsUpTo< 2 > > >;
+  types::dispatch( FieldTypes{}, [&]( auto tupleOfTypes )
   {
-    using ArrayType = decltype( array );
+    using ArrayType = camp::first< decltype( tupleOfTypes ) >;
     Wrapper< ArrayType > const & wrapperT = Wrapper< ArrayType >::cast( wrapper );
     fieldToVectorKernel< FIELD_OP, POLICY >( localVector,
                                              wrapperT.reference(),
@@ -1267,16 +1416,16 @@ void fieldToVectorImpl( arrayView1d< real64 > const & localVector,
                                              scalingFactor,
                                              dofOffset,
                                              mask );
-  } );
+  }, wrapper );
 }
 
 } // namespace
 
-template< typename FIELD_OP, typename POLICY >
+template< typename FIELD_OP, typename POLICY, typename SCALING_FACTOR_TYPE >
 void DofManager::vectorToField( arrayView1d< real64 const > const & localVector,
                                 string const & srcFieldName,
                                 string const & dstFieldName,
-                                real64 const scalingFactor,
+                                SCALING_FACTOR_TYPE const & scalingFactor,
                                 CompMask mask ) const
 {
   FieldDescription const & field = m_fields[getFieldIndex( srcFieldName )];
@@ -1324,10 +1473,11 @@ void DofManager::copyVectorToField( arrayView1d< real64 const > const & localVec
                                                                     mask );
 }
 
+template< typename SCALING_FACTOR_TYPE >
 void DofManager::addVectorToField( arrayView1d< real64 const > const & localVector,
                                    string const & srcFieldName,
                                    string const & dstFieldName,
-                                   real64 const scalingFactor,
+                                   SCALING_FACTOR_TYPE const & scalingFactor,
                                    CompMask const mask ) const
 {
   vectorToField< FieldSpecificationAdd, parallelDevicePolicy<> >( localVector,
@@ -1336,6 +1486,16 @@ void DofManager::addVectorToField( arrayView1d< real64 const > const & localVect
                                                                   scalingFactor,
                                                                   mask );
 }
+template void DofManager::addVectorToField< real64 >( arrayView1d< real64 const > const & localVector,
+                                                      string const & srcFieldName,
+                                                      string const & dstFieldName,
+                                                      real64 const & scalingFactor,
+                                                      CompMask const mask ) const;
+template void DofManager::addVectorToField< char const * >( arrayView1d< real64 const > const & localVector,
+                                                            string const & srcFieldName,
+                                                            string const & dstFieldName,
+                                                            char const * const & scalingFactor,
+                                                            CompMask const mask ) const;
 
 template< typename FIELD_OP, typename POLICY >
 void DofManager::fieldToVector( arrayView1d< real64 > const & localVector,
@@ -1406,11 +1566,22 @@ void DofManager::reorderByRank()
 {
   GEOS_LAI_ASSERT( !m_reordered );
 
+  std::map< string, array1d< localIndex > > permutations;
+
+  // First loop: compute the local permutation
   for( FieldDescription & field : m_fields )
   {
+    // compute local permutation of dofs, if needed
+    permutations[ field.name ] = computePermutation( field );
+  }
+
+  // Second loop: compute the dof number array
+  for( FieldDescription & field : m_fields )
+  {
+    // compute field dimensions (local dofs, global dofs, etc)
     computeFieldDimensions( static_cast< localIndex >( getFieldIndex( field.name ) ) );
     // allocate and fill index array
-    createIndexArray( field );
+    createIndexArray( field, permutations.at( field.name ).toViewConst() );
   }
 
   // update field offsets to account for renumbering
@@ -1707,15 +1878,15 @@ void DofManager::printFieldInfo( std::ostream & os ) const
                                             bool const transpose, \
                                             LAI::ParallelMatrix & restrictor ) const;
 
-#ifdef GEOSX_USE_TRILINOS
+#ifdef GEOS_USE_TRILINOS
 MAKE_DOFMANAGER_METHOD_INST( TrilinosInterface )
 #endif
 
-#ifdef GEOSX_USE_HYPRE
+#ifdef GEOS_USE_HYPRE
 MAKE_DOFMANAGER_METHOD_INST( HypreInterface )
 #endif
 
-#ifdef GEOSX_USE_PETSC
+#ifdef GEOS_USE_PETSC
 MAKE_DOFMANAGER_METHOD_INST( PetscInterface )
 #endif
 

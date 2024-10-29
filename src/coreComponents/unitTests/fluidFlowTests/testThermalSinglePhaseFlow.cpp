@@ -2,10 +2,11 @@
  * ------------------------------------------------------------------------------------------------------------
  * SPDX-License-Identifier: LGPL-2.1-only
  *
- * Copyright (c) 2018-2020 Lawrence Livermore National Security LLC
- * Copyright (c) 2018-2020 The Board of Trustees of the Leland Stanford Junior University
- * Copyright (c) 2018-2020 TotalEnergies
- * Copyright (c) 2019-     GEOSX Contributors
+ * Copyright (c) 2016-2024 Lawrence Livermore National Security LLC
+ * Copyright (c) 2018-2024 Total, S.A
+ * Copyright (c) 2018-2024 The Board of Trustees of the Leland Stanford Junior University
+ * Copyright (c) 2018-2024 Chevron
+ * Copyright (c) 2019-     GEOS/GEOSX Contributors
  * All rights reserved
  *
  * See top level LICENSE, COPYRIGHT, CONTRIBUTORS, NOTICE, and ACKNOWLEDGEMENTS files for details.
@@ -94,7 +95,7 @@ char const * xmlInput =
                         referencePressure="0.0"
                         compressibility="1.0e-9" />
       <SolidInternalEnergy name="rockInternalEnergy"
-                           volumetricHeatCapacity="1.95e6"
+                           referenceVolumetricHeatCapacity="1.95e6"
                            referenceTemperature="368.15"
                            referenceInternalEnergy="0" />
       <ConstantPermeability name="rockPerm"
@@ -107,7 +108,7 @@ char const * xmlInput =
                                            compressibility="5e-10"
                                            thermalExpansionCoeff="7e-4"
                                            viscosibility="0.0"
-                                           volumetricHeatCapacity="4.5e3" />
+                                           specificHeatCapacity="4.5e3" />
       <SinglePhaseConstantThermalConductivity name="thermalCond"
                                               thermalConductivityComponents="{ 0.6, 0.6, 0.6 }" />
     </Constitutive>
@@ -150,7 +151,7 @@ char const * xmlInput =
 // Sphinx end before input XML
 
 template< typename LAMBDA >
-void testNumericalJacobian( SinglePhaseFVM< SinglePhaseBase > & solver,
+void testNumericalJacobian( SinglePhaseFVM<> & solver,
                             DomainPartition & domain,
                             real64 const perturbParameter,
                             real64 const relTol,
@@ -211,7 +212,7 @@ protected:
   {
 
     setupProblemFromXML( state.getProblemManager(), xmlInput );
-    solver = &state.getProblemManager().getPhysicsSolverManager().getGroup< SinglePhaseFVM< SinglePhaseBase > >( "singleflow" );
+    solver = &state.getProblemManager().getPhysicsSolverManager().getGroup< SinglePhaseFVM<> >( "singleflow" );
 
     DomainPartition & domain = state.getProblemManager().getDomainPartition();
 
@@ -229,7 +230,7 @@ protected:
   static real64 constexpr eps = std::numeric_limits< real64 >::epsilon();
 
   GeosxState state;
-  SinglePhaseFVM< SinglePhaseBase > * solver;
+  SinglePhaseFVM<> * solver;
 };
 
 real64 constexpr ThermalSinglePhaseFlowTest::time;
@@ -258,7 +259,7 @@ TEST_F( ThermalSinglePhaseFlowTest, jacobianNumericalCheck_flux )
                                arrayView1d< real64 > const & localRhs )
   {
     // The first input parameter denotes t_n, which is unused. Just input something here.
-    solver->assembleFluxTerms( 0.0, dt, domain, solver->getDofManager(), localMatrix, localRhs );
+    solver->assembleFluxTerms( dt, domain, solver->getDofManager(), localMatrix, localRhs );
   } );
 }
 

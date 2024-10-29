@@ -1,0 +1,34 @@
+from geos.ats.test_builder import TestDeck, RestartcheckParameters, generate_geos_tests
+
+restartcheck_params = {}
+restartcheck_params['atol'] = 1e-06
+restartcheck_params['rtol'] = 1e-05
+
+decks = [
+    TestDeck(
+        name="thermalCompressible_2d_smoke",
+        description=
+        'Pure thermal convection problem (2D, compressible, Dirichlet BC, thermal)',
+        partitions=((1, 1, 1), (2, 2, 1)),
+        restart_step=5,
+        check_step=10,
+        restartcheck_params=RestartcheckParameters(**restartcheck_params)),
+    TestDeck(
+        name="3D_10x10x10_thermalCompressible_smoke",
+        description=
+        'Thermal single phase flow test (3D, compressible, Dirichlet BC, thermal)',
+        partitions=((1, 1, 1), (2, 2, 2)),
+        restart_step=6,
+        check_step=20,
+        restartcheck_params=RestartcheckParameters(**restartcheck_params)),
+    TestDeck(
+        name="thermalCompressible_nonLinear_2d_smoke",
+        description=
+        'non-linear thermal diffusion around a wellbore)',
+        partitions=((1, 1, 1), (2, 2, 1)),
+        restart_step=1,
+        check_step=2,
+        restartcheck_params=RestartcheckParameters(**restartcheck_params))
+]
+
+generate_geos_tests(decks)

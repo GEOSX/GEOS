@@ -2,10 +2,11 @@
  * ------------------------------------------------------------------------------------------------------------
  * SPDX-License-Identifier: LGPL-2.1-only
  *
- * Copyright (c) 2018-2020 Lawrence Livermore National Security LLC
- * Copyright (c) 2018-2020 The Board of Trustees of the Leland Stanford Junior University
- * Copyright (c) 2018-2020 TotalEnergies
- * Copyright (c) 2019-     GEOSX Contributors
+ * Copyright (c) 2016-2024 Lawrence Livermore National Security LLC
+ * Copyright (c) 2018-2024 Total, S.A
+ * Copyright (c) 2018-2024 The Board of Trustees of the Leland Stanford Junior University
+ * Copyright (c) 2018-2024 Chevron
+ * Copyright (c) 2019-     GEOS/GEOSX Contributors
  * All rights reserved
  *
  * See top level LICENSE, COPYRIGHT, CONTRIBUTORS, NOTICE, and ACKNOWLEDGEMENTS files for details.
@@ -30,6 +31,7 @@ namespace geos
  * \class BlasLapackLA
  * \brief This class contains a collection of BLAS and LAPACK linear
  *        algebra operations for GEOSX array1d and array2d
+ * \warning These methods are currently not supported on GPUs
  */
 struct BlasLapackLA
 {
@@ -454,18 +456,88 @@ struct BlasLapackLA
    * @param [in]  rhs GEOSX array1d.
    * @param [out] solution GEOSX array1d.
    */
+  static void solveLinearSystem( MatColMajor< real64 const > const & A,
+                                 Vec< real64 const > const & rhs,
+                                 Vec< real64 > const & solution );
+
+  /**
+   * @copydoc solveLinearSystem( MatColMajor<real64 const> const &, Vec< real64 const > const &, Vec< real64 const > const & )
+   */
   static void solveLinearSystem( MatRowMajor< real64 const > const & A,
                                  Vec< real64 const > const & rhs,
                                  Vec< real64 > const & solution );
 
   /**
-   * @copydoc solveLinearSystem( MatRowMajor<real64 const> const &, Vec< real64 const > const &, Vec< real64 const > const & )
+   * @brief Solves the linear system ;
+   * \p A  \p solution = \p rhs.
    *
-   * @note this function first applies a matrix permutation and then calls the row major version of the function.
+   * @details The method is intended for the solution of a small dense linear system.
+   * This solves the system in-place without allocating extra memory for the matrix or the solution. This means
+   * that at on exit the matrix is modified replaced by the LU factors and the right hand side vector is
+   * replaced by the solution.
+   * It employs lapack method dgetr.
+   *
+   * @param [in/out]  A GEOSX array2d. The matrix. On exit this will be replaced by the factorisation of A
+   * @param [in/out]  rhs GEOSX array1d. The right hand side. On exit this will be the solution
+   */
+  static void solveLinearSystem( MatColMajor< real64 > const & A,
+                                 Vec< real64 > const & rhs );
+
+  /**
+   * @copydoc solveLinearSystem( MatColMajor< real64 > const &, Vec< real64 > const & )
+   */
+  static void solveLinearSystem( MatRowMajor< real64 > const & A,
+                                 Vec< real64 > const & rhs );
+
+  /**
+   * @brief Solves the linear system ;
+   * \p A  \p solution = \p rhs.
+   *
+   * @details The method is intended for the solution of a small dense linear system in which A is an NxN matrix, the
+   * right-hand-side and the solution are matrices of size NxM.
+   * It employs lapack method dgetr.
+   *
+   * @param [in]  A GEOSX array2d.
+   * @param [in]  rhs GEOSX array2d.
+   * @param [out] solution GEOSX array2d.
    */
   static void solveLinearSystem( MatColMajor< real64 const > const & A,
-                                 Vec< real64 const > const & rhs,
-                                 Vec< real64 > const & solution );
+                                 MatColMajor< real64 const > const & rhs,
+                                 MatColMajor< real64 > const & solution );
+
+  /**
+   * @copydoc solveLinearSystem( MatColMajor< real64 const > const &, MatColMajor< real64 const > const &, MatColMajor< const > const & )
+   *
+   * @note this function will allocate space to reorder the solution into column major form.
+   */
+  static void solveLinearSystem( MatRowMajor< real64 const > const & A,
+                                 MatRowMajor< real64 const > const & rhs,
+                                 MatRowMajor< real64 > const & solution );
+
+  /**
+   * @brief Solves the linear system ;
+   * \p A  \p solution = \p rhs.
+   *
+   * @details The method is intended for the solution of a small dense linear system in which A is an NxN matrix, the
+   * right-hand-side and the solution are matrices of size NxM.
+   * This solves the system in-place without allocating extra memory for the matrix or the solution. This means
+   * that at on exit the matrix is modified replaced by the LU factors and the right hand side vector is
+   * replaced by the solution.
+   * It employs lapack method dgetr.
+   *
+   * @param [in/out]  A GEOSX array2d. The matrix. On exit this will be replaced by the factorisation of A
+   * @param [in/out]  rhs GEOSX array1d. The right hand side. On exit this will be the solution
+   */
+  static void solveLinearSystem( MatColMajor< real64 > const & A,
+                                 MatColMajor< real64 > const & rhs );
+
+  /**
+   * @copydoc solveLinearSystem( MatColMajor< real64 > const &, MatRowMajor< real64 > const & )
+   *
+   * @note this function will allocate space to reorder the solution into column major form.
+   */
+  static void solveLinearSystem( MatRowMajor< real64 > const & A,
+                                 MatRowMajor< real64 > const & rhs );
 
   /**
    * @brief Vector copy;
@@ -596,6 +668,23 @@ struct BlasLapackLA
   static void matrixEigenvalues( MatColMajor< real64 const > const & A,
                                  Vec< std::complex< real64 > > const & lambda );
 
+  /**
+   * @brief Computes the least squares solution of B - AX
+   *
+   * @param [in]    A GEOSX array2d.
+   * @param [in]    B GEOSX array1d.
+   * @param [out]   X GEOSX array1d.
+   */
+  static void matrixLeastSquaresSolutionSolve( MatRowMajor< real64 const > const & A,
+                                               Vec< real64 const > const & B,
+                                               Vec< real64 > const & X );
+
+  /**
+   * @copydoc matrixLeastSquaresSolutionSolve
+   */
+  static void matrixLeastSquaresSolutionSolve( MatColMajor< real64 const > const & A,
+                                               Vec< real64 const > const & B,
+                                               Vec< real64 > const & X );
 };
 
 }

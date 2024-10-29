@@ -2,10 +2,11 @@
  * ------------------------------------------------------------------------------------------------------------
  * SPDX-License-Identifier: LGPL-2.1-only
  *
- * Copyright (c) 2018-2020 Lawrence Livermore National Security LLC
- * Copyright (c) 2018-2020 The Board of Trustees of the Leland Stanford Junior University
- * Copyright (c) 2018-2020 TotalEnergies
- * Copyright (c) 2019-     GEOSX Contributors
+ * Copyright (c) 2016-2024 Lawrence Livermore National Security LLC
+ * Copyright (c) 2018-2024 Total, S.A
+ * Copyright (c) 2018-2024 The Board of Trustees of the Leland Stanford Junior University
+ * Copyright (c) 2018-2024 Chevron
+ * Copyright (c) 2019-     GEOS/GEOSX Contributors
  * All rights reserved
  *
  * See top level LICENSE, COPYRIGHT, CONTRIBUTORS, NOTICE, and ACKNOWLEDGEMENTS files for details.
@@ -32,6 +33,7 @@ TriaxialDriver::TriaxialDriver( const string & name,
   enableLogLevelInput();
 
   registerWrapper( viewKeyStruct::solidMaterialNameString(), &m_solidMaterialName ).
+    setRTTypeName( rtTypes::CustomTypes::groupNameRef ).
     setInputFlag( InputFlags::REQUIRED ).
     setDescription( "Solid material to test" );
 
@@ -40,10 +42,12 @@ TriaxialDriver::TriaxialDriver( const string & name,
     setDescription( "Test mode [stressControl, strainControl, mixedControl]" );
 
   registerWrapper( viewKeyStruct::axialFunctionString(), &m_axialFunctionName ).
+    setRTTypeName( rtTypes::CustomTypes::groupNameRef ).
     setInputFlag( InputFlags::REQUIRED ).
     setDescription( "Function controlling axial stress or strain (depending on test mode)" );
 
   registerWrapper( viewKeyStruct::radialFunctionString(), &m_radialFunctionName ).
+    setRTTypeName( rtTypes::CustomTypes::groupNameRef ).
     setInputFlag( InputFlags::REQUIRED ).
     setDescription( "Function controlling radial stress or strain (depending on test mode)" );
 
@@ -71,12 +75,8 @@ TriaxialDriver::~TriaxialDriver()
 {}
 
 
-void TriaxialDriver::postProcessInput()
+void TriaxialDriver::postInputInitialization()
 {
-
-  GEOS_THROW_IF( m_mode != "stressControl" && m_mode != "strainControl" && m_mode != "mixedControl",
-                 "Test mode \'" << m_mode << "\' not recognized.",
-                 InputError );
 
   // initialize table functions
 
@@ -123,23 +123,25 @@ void TriaxialDriver::postProcessInput()
     real64 axi = axialFunction.evaluate( &m_table( n, TIME ) );
     real64 rad = radialFunction.evaluate( &m_table( n, TIME ) );
 
-    if( m_mode == "mixedControl" )
+    switch( m_mode )
     {
-      m_table( n, EPS0 ) = axi;
-      m_table( n, SIG1 ) = rad;
-      m_table( n, SIG2 ) = rad;
-    }
-    else if( m_mode == "strainControl" )
-    {
-      m_table( n, EPS0 ) = axi;
-      m_table( n, EPS1 ) = rad;
-      m_table( n, EPS2 ) = rad;
-    }
-    else if( m_mode == "stressControl" )
-    {
-      m_table( n, SIG0 ) = axi;
-      m_table( n, SIG1 ) = rad;
-      m_table( n, SIG2 ) = rad;
+      case Mode::MixedControl:
+        m_table( n, EPS0 ) = axi;
+        m_table( n, SIG1 ) = rad;
+        m_table( n, SIG2 ) = rad;
+        break;
+
+      case Mode::StrainControl:
+        m_table( n, EPS0 ) = axi;
+        m_table( n, EPS1 ) = rad;
+        m_table( n, EPS2 ) = rad;
+        break;
+
+      case Mode::StressControl:
+        m_table( n, SIG0 ) = axi;
+        m_table( n, SIG1 ) = rad;
+        m_table( n, SIG2 ) = rad;
+        break;
     }
   }
 
@@ -147,11 +149,11 @@ void TriaxialDriver::postProcessInput()
   // may overwrite it.
 
   GEOS_THROW_IF( !isEqual( m_initialStress, m_table( 0, SIG0 ), 1e-6 ),
-                 "Initial stress values indicated by initialStress and axialFunction(time=0) appear inconsistent",
+                 getDataContext() << ": Initial stress values indicated by initialStress and axialFunction(time=0) appear inconsistent",
                  InputError );
 
   GEOS_THROW_IF( !isEqual( m_initialStress, m_table( 0, SIG1 ), 1e-6 ),
-                 "Initial stress values indicated by initialStress and radialFunction(time=0) appear inconsistent",
+                 getDataContext() << ": Initial stress values indicated by initialStress and radialFunction(time=0) appear inconsistent",
                  InputError );
 }
 
@@ -443,17 +445,19 @@ bool TriaxialDriver::execute( real64 const GEOS_UNUSED_PARAM( time_n ),
   {
     using SOLID_TYPE = TYPEOFREF( selectedSolid );
 
-    if( m_mode == "mixedControl" )
+    switch( m_mode )
     {
-      runMixedControlTest< SOLID_TYPE >( selectedSolid, m_table );
-    }
-    else if( m_mode == "strainControl" )
-    {
-      runStrainControlTest< SOLID_TYPE >( selectedSolid, m_table );
-    }
-    else if( m_mode == "stressControl" )
-    {
-      runStressControlTest< SOLID_TYPE >( selectedSolid, m_table );
+      case Mode::MixedControl:
+        runMixedControlTest< SOLID_TYPE >( selectedSolid, m_table );
+        break;
+
+      case Mode::StrainControl:
+        runStrainControlTest< SOLID_TYPE >( selectedSolid, m_table );
+        break;
+
+      case Mode::StressControl:
+        runStressControlTest< SOLID_TYPE >( selectedSolid, m_table );
+        break;
     }
   } );
 

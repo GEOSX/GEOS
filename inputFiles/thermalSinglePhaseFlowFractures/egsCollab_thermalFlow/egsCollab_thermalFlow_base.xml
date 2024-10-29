@@ -1,0 +1,110 @@
+<?xml version="1.0" ?>
+
+<Problem>
+  <NumericalMethods>
+    <FiniteVolume>
+      <TwoPointFluxApproximation
+        name="singlePhaseTPFA"/>
+    </FiniteVolume>
+     <FiniteElements>
+      <FiniteElementSpace
+        name="FE1"
+        order="1"/>
+    </FiniteElements>
+  </NumericalMethods>
+
+  <Geometry>
+    <Box
+    name="bottomBoundary"
+    xMin="{ -0.01, -0.01, -0.01 }"
+    xMax="{ 200, 200, 0.75 }"/>
+    <Cylinder
+    name="Drift"
+    firstFaceCenter="{ 80.0, -0.1, 61 }"
+    secondFaceCenter="{ 80.0, 75.1, 61 }"
+    outerRadius="2"/>
+    <Rectangle
+    name="FracturePlane"
+    normal="{ 0.3569123763, 0.9123044601, 0.2007837838 }"
+    origin="{ 100.0000000000, 37.5000000000, 30.0000000000 }"
+    lengthVector="{ -0.4902994003, 0.0000000000, 0.8715540706 }"
+    widthVector="{ 0.7951226658, -0.4095126032, 0.4473023297 }"
+    dimensions="{ 100, 80 }"/>
+    <Cylinder
+    name="TU_injector"
+    firstFaceCenter="{ 107.45351957440417, -0.1, 58.464408823253335 }"
+    secondFaceCenter="{ 107.45351957440417, 75.1, 58.464408823253335 }"
+    outerRadius="1"/>
+    <Cylinder
+    name="TC_producer"
+    firstFaceCenter="{ 104.77410040804922, -0.1, 50.01857494034373 }"
+    secondFaceCenter="{ 104.77410040804922, 75.1, 50.01857494034373 }"
+    outerRadius="1"/>
+    <Cylinder
+    name="TN_producer"
+    firstFaceCenter="{ 97.2945516765, -0.1, 54.0841179035 }"
+    secondFaceCenter="{ 97.2945516765, 75.1, 54.0841179035 }"
+    outerRadius="1"/>
+  </Geometry>
+
+ <Constitutive>
+     <ThermalCompressibleSinglePhaseFluid
+       name="water"
+       defaultDensity="1000"
+       defaultViscosity="0.001"
+       referencePressure="1.0e6"
+       referenceTemperature="0.0"
+       compressibility="1.0e-10"
+       thermalExpansionCoeff="0.0"
+       viscosibility="0.0"
+       specificHeatCapacity="4.2e6"
+       referenceInternalEnergy="0.99"/>
+
+     <SinglePhaseConstantThermalConductivity
+       name="thermalCond"
+       thermalConductivityComponents="{ 3.81, 3.81, 3.81 }"/>  
+
+     <CompressibleSolidParallelPlatesPermeability
+       name="fractureFilling"
+       solidModelName="nullSolid"
+       porosityModelName="fracturePorosity"
+       permeabilityModelName="fracturePerm"
+       solidInternalEnergyModelName="rockInternalEnergy"/>
+
+     <CompressibleSolidConstantPermeability
+       name="rock"
+       solidModelName="nullSolid"
+       porosityModelName="rockPorosity"
+       permeabilityModelName="rockPerm"
+       solidInternalEnergyModelName="rockInternalEnergy"/>
+
+     <SolidInternalEnergy
+       name="rockInternalEnergy"
+       referenceVolumetricHeatCapacity="2.3345e6"
+       referenceTemperature="0"
+       referenceInternalEnergy="0"/>  
+
+     <NullModel
+       name="nullSolid"/>
+
+     <PressurePorosity
+       name="rockPorosity"
+       defaultReferencePorosity="0.01"
+       referencePressure="0.0"
+       compressibility="0.0"/>
+
+     <ConstantPermeability
+       name="rockPerm"
+       permeabilityComponents="{ 1.0e-20, 1.0e-20, 1.0e-20 }"/>
+
+     <PressurePorosity
+       name="fracturePorosity"
+       defaultReferencePorosity="1.00"
+       referencePressure="0.0"
+       compressibility="0.0"/>
+
+     <ParallelPlatesPermeability
+       name="fracturePerm"/>
+
+   </Constitutive>
+</Problem>

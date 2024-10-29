@@ -1,0 +1,134 @@
+<?xml version="1.0" ?>
+
+<Problem>
+
+  <Included>
+  <File
+  name = "./egsCollab_thermalFlow_base.xml"/>
+  </Included>
+
+   <ElementRegions>
+    <CellElementRegion
+      name="matrix"
+      cellBlocks="{ cb }"
+      materialList="{ water, rock, thermalCond }"/>
+
+    <!-- <SurfaceElementRegion
+      name="fracture"
+      subRegionType="embeddedElement"
+      materialList="{ water, fractureContact, fractureFilling, thermalCond }"
+      defaultAperture="1e-3"/>   -->
+  </ElementRegions>
+  <Events
+     maxTime="7.884e10">
+     <PeriodicEvent
+       name="solverApplications0"
+       forceDt="0.01"
+       beginTime="0.00"
+       endTime="0.01"
+       target="/Solvers/singleFlow"/>
+
+     <PeriodicEvent
+       name="solverApplications1"
+       forceDt="7.884e9"
+       target="/Solvers/singleFlow"/>
+
+     <PeriodicEvent
+       name="outputs"
+       cycleFrequency="1"
+       target="/Outputs/vtkOutput"/>
+   </Events>
+
+  <Functions>
+    <TableFunction
+      name="temperatureField"
+      inputVarNames="{ elementCenter }"
+      coordinateFiles="{ bc_data/xlin.geos, bc_data/ylin.geos, bc_data/zlin.geos }"
+      voxelFile="bc_data/temp.geos"
+      interpolation="linear"/>
+
+    <TableFunction
+      name="pressureField"
+      inputVarNames="{ elementCenter }"
+      coordinateFiles="{ bc_data/xlin.geos, bc_data/ylin.geos, bc_data/zlin.geos }"
+      voxelFile="bc_data/pressure.geos"
+      interpolation="linear"/>
+
+    <TableFunction
+      name="apertureTable"
+      coordinates="{ -1.0e-3, 0.0 }"
+      values="{ 1.0e-6, 1.0e-4 }"/>        
+  </Functions>
+
+  <FieldSpecifications>
+    <FieldSpecification
+       name="matrixPorosity"
+       initialCondition="1"
+       setNames="{ all }"
+       objectPath="ElementRegions/matrix"
+       fieldName="rockPorosity_referencePorosity"
+       scale="0.01"/>
+
+    <!-- <FieldSpecification
+       name="fracPorosity"
+       initialCondition="1"
+       setNames="{ all }"
+       objectPath="ElementRegions/fracture"
+       fieldName="fracturePorosity_referencePorosity"
+       scale="1.0"/>    -->
+
+    <FieldSpecification
+      name="initialPressure"
+      initialCondition="1"
+      setNames="{ all }"
+      objectPath="ElementRegions"
+      fieldName="pressure"
+      functionName="pressureField"
+      scale="1"/>
+
+    <FieldSpecification
+      name="initialTemperature"
+      initialCondition="1"
+      setNames="{ all }"
+      objectPath="ElementRegions"
+      fieldName="temperature"
+      functionName="temperatureField"
+      scale="1"/>
+
+    <FieldSpecification
+      name="topPressure"
+      objectPath="faceManager"
+      fieldName="pressure"
+      scale="2e6"
+      setNames="{ zpos }"
+      logLevel="0"/>
+
+    <FieldSpecification
+      name="topTemperature"
+      objectPath="faceManager"
+      fieldName="temperature"
+      scale="296.0153"
+      setNames="{ zpos }"
+      logLevel="0"/>   
+
+    <FieldSpecification
+      name="botTemperature"
+      objectPath="ElementRegions/matrix"
+      fieldName="temperature"
+      scale="303.012"
+      setNames="{ bottomBoundary }"/> 
+      
+    <FieldSpecification
+      name="DriftTemperature"
+      objectPath="ElementRegions/matrix"
+      fieldName="temperature"
+      scale="291.65"
+      setNames="{ Drift }"/>    
+  </FieldSpecifications>
+
+  <Outputs>
+    <VTK
+      name="vtkOutput"
+      plotFileRoot="thermalFlowFrac_collab_initialCond"/>
+  </Outputs>
+</Problem>

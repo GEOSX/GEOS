@@ -2,10 +2,11 @@
  * ------------------------------------------------------------------------------------------------------------
  * SPDX-License-Identifier: LGPL-2.1-only
  *
- * Copyright (c) 2018-2020 Lawrence Livermore National Security LLC
- * Copyright (c) 2018-2020 The Board of Trustees of the Leland Stanford Junior University
- * Copyright (c) 2018-2020 TotalEnergies
- * Copyright (c) 2019-     GEOSX Contributors
+ * Copyright (c) 2016-2024 Lawrence Livermore National Security LLC
+ * Copyright (c) 2018-2024 Total, S.A
+ * Copyright (c) 2018-2024 The Board of Trustees of the Leland Stanford Junior University
+ * Copyright (c) 2018-2024 Chevron
+ * Copyright (c) 2019-     GEOS/GEOSX Contributors
  * All rights reserved
  *
  * See top level LICENSE, COPYRIGHT, CONTRIBUTORS, NOTICE, and ACKNOWLEDGEMENTS files for details.
@@ -18,6 +19,7 @@
 
 #include "Group.hpp"
 #include "RestartFlags.hpp"
+#include "WrapperContext.hpp"
 
 
 namespace geos
@@ -27,7 +29,8 @@ namespace dataRepository
 
 
 WrapperBase::WrapperBase( string const & name,
-                          Group & parent ):
+                          Group & parent,
+                          string const & rtTypeName ):
   m_name( name ),
   m_parent( &parent ),
   m_sizedFromParent( 1 ),
@@ -36,8 +39,10 @@ WrapperBase::WrapperBase( string const & name,
   m_inputFlag( InputFlags::INVALID ),
   m_successfulReadFromInput( false ),
   m_description(),
+  m_rtTypeName( rtTypeName ),
   m_registeringObjects(),
-  m_conduitNode( parent.getConduitNode()[ name ] )
+  m_conduitNode( parent.getConduitNode()[ name ] ),
+  m_dataContext( std::make_unique< WrapperContext >( *this ) )
 {}
 
 
@@ -56,11 +61,12 @@ void WrapperBase::copyWrapperAttributes( WrapperBase const & source )
   m_plotLevel  = source.m_plotLevel;
   m_inputFlag = source.m_inputFlag;
   m_description = source.m_description;
+  m_rtTypeName = source.m_rtTypeName;
 }
 
 string WrapperBase::getPath() const
 {
-  // In the Conduit node heirarchy everything begins with 'Problem', we should change it so that
+  // In the Conduit node hierarchy everything begins with 'Problem', we should change it so that
   // the ProblemManager actually uses the root Conduit Node but that will require a full rebaseline.
   string const noProblem = m_conduitNode.path().substr( std::strlen( dataRepository::keys::ProblemManager ) - 1 );
   return noProblem.empty() ? "/" : noProblem;
@@ -103,6 +109,17 @@ int WrapperBase::setTotalviewDisplay() const
   return 0;
 }
 #endif
+
+void WrapperBase::createDataContext( xmlWrapper::xmlNode const & targetNode,
+                                     xmlWrapper::xmlNodePos const & nodePos )
+{
+  xmlWrapper::xmlAttribute att = targetNode.attribute( m_name.c_str() );
+  xmlWrapper::xmlAttributePos attPos = nodePos.getAttributeLine( m_name );
+  if( nodePos.isFound() && attPos.isFound() && !att.empty() )
+  {
+    m_dataContext = std::make_unique< DataFileContext >( targetNode, att, attPos );
+  }
+}
 
 
 }

@@ -1,0 +1,17 @@
+<?xml version="1.0" ?>
+
+<Problem>
+
+  <Included>
+    <File
+      name="./elasticHollowCylinder_base.xml"/>
+  </Included>
+
+  <ElementRegions>
+    <CellElementRegion
+      name="Region1"
+      cellBlocks="{ cb1 }"
+      materialList="{ isotropicMaterial }"/>
+  </ElementRegions>
+
+</Problem>

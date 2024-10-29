@@ -2,10 +2,11 @@
  * ------------------------------------------------------------------------------------------------------------
  * SPDX-License-Identifier: LGPL-2.1-only
  *
- * Copyright (c) 2018-2020 Lawrence Livermore National Security LLC
- * Copyright (c) 2018-2020 The Board of Trustees of the Leland Stanford Junior University
- * Copyright (c) 2018-2020 TotalEnergies
- * Copyright (c) 2019-     GEOSX Contributors
+ * Copyright (c) 2016-2024 Lawrence Livermore National Security LLC
+ * Copyright (c) 2018-2024 Total, S.A
+ * Copyright (c) 2018-2024 The Board of Trustees of the Leland Stanford Junior University
+ * Copyright (c) 2018-2024 Chevron
+ * Copyright (c) 2019-     GEOS/GEOSX Contributors
  * All rights reserved
  *
  * See top level LICENSE, COPYRIGHT, CONTRIBUTORS, NOTICE, and ACKNOWLEDGEMENTS files for details.
@@ -19,6 +20,7 @@
 
 #include "constitutive/fluid/multifluid/MultiFluidFields.hpp"
 #include "constitutive/fluid/multifluid/CO2Brine/functions/PVTFunctionHelpers.hpp"
+#include "common/Units.hpp"
 
 namespace geos
 {
@@ -110,9 +112,9 @@ integer ReactiveBrineFluid< PHASE > ::getWaterPhaseIndex() const
 
 
 template< typename PHASE >
-void ReactiveBrineFluid< PHASE > ::postProcessInput()
+void ReactiveBrineFluid< PHASE > ::postInputInitialization()
 {
-  ReactiveMultiFluid::postProcessInput();
+  ReactiveMultiFluid::postInputInitialization();
 
   GEOS_THROW_IF_NE_MSG( numFluidPhases(), 1,
                         GEOS_FMT( "{}: invalid number of phases", getFullName() ),
@@ -192,7 +194,31 @@ void ReactiveBrineFluid< PHASE > ::createPVTModels()
                  InputError );
 
   // then, we are ready to instantiate the phase models
-  m_phase = std::make_unique< PHASE >( getName() + "_phaseModel1", phase1InputParams, m_componentNames, m_componentMolarWeight );
+  m_phase = std::make_unique< PHASE >( getName() + "_phaseModel1", phase1InputParams, m_componentNames, m_componentMolarWeight,
+                                       getLogLevel() > 0 && logger::internal::rank==0 );
+}
+
+template< typename PHASE >
+void ReactiveBrineFluid< PHASE >::checkTablesParameters( real64 const pressure,
+                                                         real64 const temperature ) const
+{
+  if( !m_checkPVTTablesRanges )
+  {
+    return;
+  }
+
+  real64 const temperatureInCelsius = units::convertKToC( temperature );
+  try
+  {
+    m_phase->density.checkTablesParameters( pressure, temperatureInCelsius );
+    m_phase->viscosity.checkTablesParameters( pressure, temperatureInCelsius );
+    m_phase->enthalpy.checkTablesParameters( pressure, temperatureInCelsius );
+  } catch( SimulationError const & ex )
+  {
+    string const errorMsg = GEOS_FMT( "Table input error (in table from {}).\n",
+                                      stringutilities::join( m_phasePVTParaFiles ) );
+    throw SimulationError( ex, errorMsg );
+  }
 }
 
 template< typename PHASE >

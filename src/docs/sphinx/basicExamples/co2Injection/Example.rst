@@ -181,12 +181,12 @@ The *pvtgas.txt* and *pvtliquid.txt* files define the models used to compute the
 
 .. code:: 
 
-        DensityFun SpanWagnerCO2Density 1e6 1.5e7 5e4 94 96 1
-        ViscosityFun FenghourCO2Viscosity 1e6 1.5e7 5e4 94 96 
+        DensityFun SpanWagnerCO2Density 1.0e5 7.5e7 1e5 285.15 395.15 5
+        ViscosityFun FenghourCO2Viscosity 1.0e5 7.5e7 1e5 285.15 395.15 5 
 
 .. code::
   
-        DensityFun PhillipsBrineDensity 1e6 1.5e7 5e4 94 96 1 0
+        DensityFun PhillipsBrineDensity 1.0e5 7.5e7 1e5 285.15 395.15 5 0
         ViscosityFun PhillipsBrineViscosity 0
 
 In these files, the first keyword of each line is an identifier for the model type (either a density or a viscosity model).
@@ -217,6 +217,10 @@ Here, these fields are homogeneous, except for the permeability field that is ta
         a **Constitutive** law. These permeability values will overwrite the values already set in the **Constitutive** block. 
 
 .. _Outputs_tag_co2_field_case:
+
+.. warning::
+  This XML file example does not take into account elevation when imposing the intial pressure with ``initialPressure``. 
+  Consider using a "HydrostraticEquilibrium" for a closer answer to modeled physical processes.
 
 ------
 Output
@@ -260,24 +264,24 @@ The simulation can be launched with 4 cores using MPI-parallelism:
 
 .. code-block:: console
 
-  mpirun -np 4 geosx -i SimpleCo2InjTutorial.xml -x 1 -y 1 -z 4
+  mpirun -np 4 geosx -i simpleCo2InjTutorial.xml -x 1 -y 1 -z 4
 
-A restart from a checkpoint file `SimpleCo2InjTutorial_restart_000000024.root` is always available thanks to the following command line :
+A restart from a checkpoint file `simpleCo2InjTutorial_restart_000000024.root` is always available thanks to the following command line :
 
 .. code-block:: console
 
-  mpirun -np 4 geosx -i SimpleCo2InjTutorial.xml -r SimpleCo2InjTutorial_restart_000000024 -x 1 -y 1 -z 4
+  mpirun -np 4 geosx -i simpleCo2InjTutorial.xml -r simpleCo2InjTutorial_restart_000000024 -x 1 -y 1 -z 4
 
 The output then shows the loading of HDF5 restart files by each core. 
 
 .. code-block:: console
 
-        Loading restart file SimpleCo2InjTutorial_restart_000000024
-        Rank 0: rankFilePattern = SimpleCo2InjTutorial_restart_000000024/rank_%07d.hdf5
-        Rank 0: Reading in restart file at SimpleCo2InjTutorial_restart_000000024/rank_0000000.hdf5
-        Rank 1: Reading in restart file at SimpleCo2InjTutorial_restart_000000024/rank_0000001.hdf5
-        Rank 3: Reading in restart file at SimpleCo2InjTutorial_restart_000000024/rank_0000003.hdf5
-        Rank 2: Reading in restart file at SimpleCo2InjTutorial_restart_000000024/rank_0000002.hdf5
+        Loading restart file simpleCo2InjTutorial_restart_000000024
+        Rank 0: rankFilePattern = simpleCo2InjTutorial_restart_000000024/rank_%07d.hdf5
+        Rank 0: Reading in restart file at simpleCo2InjTutorial_restart_000000024/rank_0000000.hdf5
+        Rank 1: Reading in restart file at simpleCo2InjTutorial_restart_000000024/rank_0000001.hdf5
+        Rank 3: Reading in restart file at simpleCo2InjTutorial_restart_000000024/rank_0000003.hdf5
+        Rank 2: Reading in restart file at simpleCo2InjTutorial_restart_000000024/rank_0000002.hdf5
 
 and the simulation restarts from this point in time. 	
 

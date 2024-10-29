@@ -2,10 +2,11 @@
  * ------------------------------------------------------------------------------------------------------------
  * SPDX-License-Identifier: LGPL-2.1-only
  *
- * Copyright (c) 2018-2020 Lawrence Livermore National Security LLC
- * Copyright (c) 2018-2020 The Board of Trustees of the Leland Stanford Junior University
- * Copyright (c) 2018-2020 TotalEnergies
- * Copyright (c) 2019-     GEOSX Contributors
+ * Copyright (c) 2016-2024 Lawrence Livermore National Security LLC
+ * Copyright (c) 2018-2024 Total, S.A
+ * Copyright (c) 2018-2024 The Board of Trustees of the Leland Stanford Junior University
+ * Copyright (c) 2018-2024 Chevron
+ * Copyright (c) 2019-     GEOS/GEOSX Contributors
  * All rights reserved
  *
  * See top level LICENSE, COPYRIGHT, CONTRIBUTORS, NOTICE, and ACKNOWLEDGEMENTS files for details.
@@ -47,14 +48,6 @@ public:
     m_coef1( coef1 )
   {}
 
-  template< int USD1 >
-  GEOS_HOST_DEVICE
-  void compute( real64 const & pressure,
-                real64 const & temperature,
-                arraySlice1d< real64 const, USD1 > const & phaseComposition,
-                real64 & value,
-                bool useMass ) const;
-
   template< int USD1, int USD2, int USD3 >
   GEOS_HOST_DEVICE
   void compute( real64 const & pressure,
@@ -90,13 +83,19 @@ public:
   PhillipsBrineViscosity( string const & name,
                           string_array const & inputPara,
                           string_array const & componentNames,
-                          array1d< real64 > const & componentMolarWeight );
+                          array1d< real64 > const & componentMolarWeight,
+                          bool const printTable );
 
   virtual ~PhillipsBrineViscosity() override = default;
 
   static string catalogName() { return "PhillipsBrineViscosity"; }
 
   virtual string getCatalogName() const override final { return catalogName(); }
+
+  /**
+   * @copydoc PVTFunctionBase::checkTablesParameters( real64 pressure, real64 temperature )
+   */
+  void checkTablesParameters( real64 pressure, real64 temperature ) const override final;
 
   virtual PVTFunctionType functionType() const override
   {
@@ -124,24 +123,6 @@ private:
   real64 m_coef1;
 
 };
-
-template< int USD1 >
-GEOS_HOST_DEVICE
-GEOS_FORCE_INLINE
-void PhillipsBrineViscosityUpdate::compute( real64 const & pressure,
-                                            real64 const & temperature,
-                                            arraySlice1d< real64 const, USD1 > const & phaseComposition,
-                                            real64 & value,
-                                            bool useMass ) const
-{
-  GEOS_UNUSED_VAR( pressure, phaseComposition, useMass );
-
-  // compute the viscosity of pure water as a function of temperature
-  real64 const pureWaterVisc = m_waterViscosityTable.compute( &temperature );
-
-  // then compute the brine viscosity, accounting for the presence of salt
-  value = pureWaterVisc * ( m_coef0 + m_coef1 * temperature );
-}
 
 template< int USD1, int USD2, int USD3 >
 GEOS_HOST_DEVICE

@@ -2,10 +2,11 @@
  * ------------------------------------------------------------------------------------------------------------
  * SPDX-License-Identifier: LGPL-2.1-only
  *
- * Copyright (c) 2018-2020 Lawrence Livermore National Security LLC
- * Copyright (c) 2018-2020 The Board of Trustees of the Leland Stanford Junior University
- * Copyright (c) 2018-2020 TotalEnergies
- * Copyright (c) 2019-     GEOSX Contributors
+ * Copyright (c) 2016-2024 Lawrence Livermore National Security LLC
+ * Copyright (c) 2018-2024 Total, S.A
+ * Copyright (c) 2018-2024 The Board of Trustees of the Leland Stanford Junior University
+ * Copyright (c) 2018-2024 Chevron
+ * Copyright (c) 2019-     GEOS/GEOSX Contributors
  * All rights reserved
  *
  * See top level LICENSE, COPYRIGHT, CONTRIBUTORS, NOTICE, and ACKNOWLEDGEMENTS files for details.
@@ -19,9 +20,12 @@
 #ifndef GEOS_MESH_CELLBLOCKMANAGER_H_
 #define GEOS_MESH_CELLBLOCKMANAGER_H_
 
-#include "mesh/generators/CellBlockManagerABC.hpp"
 #include "mesh/generators/CellBlock.hpp"
 #include "mesh/generators/FaceBlock.hpp"
+#include "mesh/generators/InternalWellGenerator.hpp"
+#include "mesh/generators/LineBlock.hpp"
+#include "mesh/generators/LineBlockABC.hpp"
+#include "mesh/generators/CellBlockManagerABC.hpp"
 
 namespace geos
 {
@@ -100,11 +104,12 @@ public:
 
   /**
    * @brief Defines the number of nodes and resizes some underlying arrays appropriately.
-   * @param[in] numNodes The number of nodes.
+   * @param[in] numNodes The number of nodes on the MPI rank (that is per domain).
+   * Nodes are not duplicated along subregion interfaces.
    *
    * The nodes coordinates and nodes local to global mappings get resized to @p numNodes.
    */
-  void setNumNodes( localIndex numNodes ); // TODO Improve doc. Is it per domain, are there duplicated nodes because of subregions?
+  void setNumNodes( localIndex numNodes );
 
   void generateHighOrderMaps( localIndex const order,
                               globalIndex const maxVertexGlobalID,
@@ -152,7 +157,11 @@ public:
 
   Group & getCellBlocks() override;
 
+  Group const & getFaceBlocks() const override;
+
   Group & getFaceBlocks() override;
+
+  LineBlockABC const & getLineBlock( string name ) const override;
 
   /**
    * @brief Registers and returns a cell block of name @p name.
@@ -169,6 +178,12 @@ public:
   FaceBlock & registerFaceBlock( string const & name );
 
   /**
+   * @brief Registers and returns a line block of name @p name.
+   * @param name The name of the created line block.
+   * @return A reference to the new line block. The CellBlockManager owns this new instance.
+   */
+  LineBlock & registerLineBlock( string const & name );
+  /**
    * @brief Launch kernel function over all the sub-regions
    * @tparam LAMBDA type of the user-provided function
    * @param lambda kernel function
@@ -178,6 +193,14 @@ public:
   {
     this->getGroup( viewKeyStruct::cellBlocks() ).forSubGroups< CellBlock >( lambda );
   }
+
+  real64 getGlobalLength() const override { return m_globalLength; }
+
+  /**
+   * @brief Setter for the global length
+   * @param globalLength the global length
+   */
+  void setGlobalLength( real64 globalLength ) { m_globalLength = globalLength; }
 
 private:
 
@@ -190,7 +213,19 @@ private:
     /// Face blocks key
     static constexpr char const * faceBlocks()
     { return "faceBlocks"; }
+
+    /// Line blocks key
+    static constexpr char const * lineBlocks()
+    { return "lineBlocks"; }
   };
+
+  /**
+   * @brief Returns a group containing the well blocks as @p LineBlockABC instances.
+   * @return Mutable reference to the well blocks group.
+   *
+   * @note It should probably be better not to expose a non-const accessor here.
+   */
+  Group & getLineBlocks();
 
   /**
    * @brief Get cell block at index @p blockIndex.
@@ -235,6 +270,8 @@ private:
   array1d< globalIndex > m_nodeLocalToGlobal;
 
   std::map< string, SortedArray< localIndex > > m_nodeSets;
+
+  real64 m_globalLength;
 
   localIndex m_numNodes;
   localIndex m_numFaces;

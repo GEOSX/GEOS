@@ -2,10 +2,11 @@
  * ------------------------------------------------------------------------------------------------------------
  * SPDX-License-Identifier: LGPL-2.1-only
  *
- * Copyright (c) 2018-2020 Lawrence Livermore National Security LLC
- * Copyright (c) 2018-2020 The Board of Trustees of the Leland Stanford Junior University
- * Copyright (c) 2018-2020 TotalEnergies
- * Copyright (c) 2019-     GEOSX Contributors
+ * Copyright (c) 2016-2024 Lawrence Livermore National Security LLC
+ * Copyright (c) 2018-2024 Total, S.A
+ * Copyright (c) 2018-2024 The Board of Trustees of the Leland Stanford Junior University
+ * Copyright (c) 2018-2024 Chevron
+ * Copyright (c) 2019-     GEOS/GEOSX Contributors
  * All rights reserved
  *
  * See top level LICENSE, COPYRIGHT, CONTRIBUTORS, NOTICE, and ACKNOWLEDGEMENTS files for details.
@@ -75,48 +76,48 @@ PerfectlyMatchedLayer::PerfectlyMatchedLayer( string const & name, Group * const
 
 }
 
-void PerfectlyMatchedLayer::postProcessInput()
+void PerfectlyMatchedLayer::postInputInitialization()
 {
   GEOS_THROW_IF( (m_xMax[0]<m_xMin[0] || m_xMax[1]<m_xMin[1] || m_xMax[2]<m_xMin[2]),
-                 getCatalogName() << " " << getName() << " "
+                 getCatalogName() << " " << getDataContext() << " "
                                   << viewKeyStruct::xMinString()
                                   << " must be smaller than "
                                   << viewKeyStruct::xMaxString(),
                  InputError );
 
   GEOS_THROW_IF( (m_reflectivity<=0 || m_reflectivity>1),
-                 getCatalogName() << " " << getName() << " "
+                 getCatalogName() << " " << getDataContext() << " "
                                   << viewKeyStruct::reflectivityString()
                                   << " must satisfy 0 < reflectivity <= 1",
                  InputError );
 
   GEOS_LOG_RANK_0_IF( (m_xMin[0]<smallestXMin || m_xMin[1]<smallestXMin || m_xMin[2]<smallestXMin),
-                      getCatalogName() << " " << getName() << " "
+                      getCatalogName() << " " << getDataContext() << " "
                                        << viewKeyStruct::xMinString()
                                        << " will be computed internally" );
 
   GEOS_LOG_RANK_0_IF( (m_xMax[0]>largestXMax || m_xMax[1]>largestXMax || m_xMax[2]>largestXMax),
-                      getCatalogName() << " " << getName() << " "
+                      getCatalogName() << " " << getDataContext() << " "
                                        << viewKeyStruct::xMaxString()
                                        << " will be computed internally" );
 
   GEOS_LOG_RANK_0_IF( (m_thicknessMinXYZ[0]<0 || m_thicknessMinXYZ[1]<0 || m_thicknessMinXYZ[2]<0),
-                      getCatalogName() << " " << getName() << " "
+                      getCatalogName() << " " << getDataContext() << " "
                                        << viewKeyStruct::thicknessMinXYZString()
                                        << " will be computed internally" );
 
   GEOS_LOG_RANK_0_IF( (m_thicknessMaxXYZ[0]<0 || m_thicknessMaxXYZ[1]<0 || m_thicknessMaxXYZ[2]<0),
-                      getCatalogName() << " " << getName() << " "
+                      getCatalogName() << " " << getDataContext() << " "
                                        << viewKeyStruct::thicknessMaxXYZString()
                                        << " will be computed internally" );
 
   GEOS_LOG_RANK_0_IF( (m_waveSpeedMinXYZ[0]<0 || m_waveSpeedMinXYZ[1]<0 || m_waveSpeedMinXYZ[2]<0),
-                      getCatalogName() << " " << getName() << " "
+                      getCatalogName() << " " << getDataContext() << " "
                                        << viewKeyStruct::waveSpeedMinXYZString()
                                        << " will be computed internally" );
 
   GEOS_LOG_RANK_0_IF( (m_waveSpeedMaxXYZ[0]<0 || m_waveSpeedMaxXYZ[1]<0 || m_waveSpeedMaxXYZ[2]<0),
-                      getCatalogName() << " " << getName() << " "
+                      getCatalogName() << " " << getDataContext() << " "
                                        << viewKeyStruct::waveSpeedMaxXYZString()
                                        << " will be computed internally" );
 }

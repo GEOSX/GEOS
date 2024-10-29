@@ -2,10 +2,11 @@
  * ------------------------------------------------------------------------------------------------------------
  * SPDX-License-Identifier: LGPL-2.1-only
  *
- * Copyright (c) 2018-2020 Lawrence Livermore National Security LLC
- * Copyright (c) 2018-2020 The Board of Trustees of the Leland Stanford Junior University
- * Copyright (c) 2018-2020 TotalEnergies
- * Copyright (c) 2019-     GEOSX Contributors
+ * Copyright (c) 2016-2024 Lawrence Livermore National Security LLC
+ * Copyright (c) 2018-2024 Total, S.A
+ * Copyright (c) 2018-2024 The Board of Trustees of the Leland Stanford Junior University
+ * Copyright (c) 2018-2024 Chevron
+ * Copyright (c) 2019-     GEOS/GEOSX Contributors
  * All rights reserved
  *
  * See top level LICENSE, COPYRIGHT, CONTRIBUTORS, NOTICE, and ACKNOWLEDGEMENTS files for details.
@@ -22,6 +23,7 @@
 #include "common/DataLayouts.hpp"
 #include "constitutive/ConstitutiveBase.hpp"
 #include "constitutive/fluid/multifluid/Layouts.hpp"
+#include "constitutive/fluid/multifluid/MultiFluidConstants.hpp"
 #include "constitutive/fluid/multifluid/MultiFluidUtils.hpp"
 
 namespace geos
@@ -46,14 +48,14 @@ public:
    *
    * @note This puts an upper bound on memory use, allowing to optimize code better
    */
-  static constexpr integer MAX_NUM_COMPONENTS = 16;
+  static constexpr integer MAX_NUM_COMPONENTS = MultiFluidConstants::MAX_NUM_COMPONENTS;
 
   /**
    * @brief Maximum supported number of fluid phases
    *
    * @note This puts an upper bound on memory use, allowing to optimize code better
    */
-  static constexpr integer MAX_NUM_PHASES = 4;
+  static constexpr integer MAX_NUM_PHASES = MultiFluidConstants::MAX_NUM_PHASES;
 
   /**
    * @return number of fluid components (species) in the model
@@ -186,20 +188,31 @@ public:
    */
   virtual void saveConvergedState() const override;
 
+  /**
+   * @brief If m_checkPVTTablesRanges, Check if the input values are in the expected PVT tables bounds
+   * @param pressure input pressure to check
+   * @param temperature input temperature to check (in K)
+   * @throw a SimulationError if one of the input values is out of bound.
+   */
+  virtual void checkTablesParameters( real64 pressure, real64 temperature ) const = 0;
+
   struct viewKeyStruct : ConstitutiveBase::viewKeyStruct
   {
     static constexpr char const * componentNamesString() { return "componentNames"; }
     static constexpr char const * componentMolarWeightString() { return "componentMolarWeight"; }
     static constexpr char const * phaseNamesString() { return "phaseNames"; }
     static constexpr char const * useMassString() { return "useMass"; }
+    static constexpr char const * checkPVTTablesRangesString() { return "checkPVTTablesRanges"; }
   };
 
-protected:
+
+public:
 
   using PhaseProp = MultiFluidVar< real64, 3, multifluid::LAYOUT_PHASE, multifluid::LAYOUT_PHASE_DC >;
   using PhaseComp = MultiFluidVar< real64, 4, multifluid::LAYOUT_PHASE_COMP, multifluid::LAYOUT_PHASE_COMP_DC >;
   using FluidProp = MultiFluidVar< real64, 2, multifluid::LAYOUT_FLUID, multifluid::LAYOUT_FLUID_DC >;
 
+public:
   class KernelWrapper
   {
 public:
@@ -267,6 +280,38 @@ public:
 
     GEOS_HOST_DEVICE arrayView3d< real64 const, multifluid::USD_PHASE > phaseInternalEnergy() const
     { return m_phaseInternalEnergy.value; }
+
+    /**
+     * @brief Compute function to update properties in a cell without returning derivatives.
+     * @details This delegates the call to the fluid wrapper using the value and derivative function.
+     *          This is used for initialisation and boundary conditions.
+     * @param[in] fluidWrapper the actual fluid kernel
+     * @param[in] pressure pressure in the cell
+     * @param[in] temperature temperature in the cell
+     * @param[in] composition mass/molar component fractions in the cell
+     * @param[out] phaseFraction phase fractions in the cell
+     * @param[out] phaseDensity phase mass/molar density in the cell
+     * @param[out] phaseMassDensity phase mass density in the cell
+     * @param[out] phaseViscosity phase viscosity in the cell
+     * @param[out] phaseEnthalpy phase enthalpy in the cell
+     * @param[out] phaseInternalEnergy phase internal energy in the cell
+     * @param[out] phaseCompFraction phase component fraction in the cell
+     * @param[out] totalDensity total mass/molar density in the cell
+     */
+    template< typename FLUIDWRAPPER >
+    GEOS_HOST_DEVICE
+    static void computeValues( FLUIDWRAPPER const fluidWrapper,
+                               real64 const pressure,
+                               real64 const temperature,
+                               arraySlice1d< real64 const, compflow::USD_COMP - 1 > const & composition,
+                               arraySlice1d< real64, multifluid::USD_PHASE - 2 > const & phaseFraction,
+                               arraySlice1d< real64, multifluid::USD_PHASE - 2 > const & phaseDensity,
+                               arraySlice1d< real64, multifluid::USD_PHASE - 2 > const & phaseMassDensity,
+                               arraySlice1d< real64, multifluid::USD_PHASE - 2 > const & phaseViscosity,
+                               arraySlice1d< real64, multifluid::USD_PHASE - 2 > const & phaseEnthalpy,
+                               arraySlice1d< real64, multifluid::USD_PHASE - 2 > const & phaseInternalEnergy,
+                               arraySlice2d< real64, multifluid::USD_PHASE_COMP-2 > const & phaseCompFraction,
+                               real64 & totalDensity );
 
 protected:
 
@@ -453,6 +498,46 @@ protected:
     PhaseComp::ViewType m_phaseCompFraction;
     FluidProp::ViewType m_totalDensity;
 
+public:
+    /**
+     * @brief Calculate the total fluid compressibility
+     * @param i Element index
+     * @param q Quadrature node index
+     * @return The total fluid compressibility
+     */
+    GEOS_HOST_DEVICE
+    real64 totalCompressibility( integer const i, integer const q ) const
+    {
+      real64 const totalFluidDensity = totalDensity()( i, q );
+      real64 const dTotalFluidDensity_dP = m_totalDensity.derivs( i, q, multifluid::DerivativeOffset::dP );
+      return 0.0 < totalFluidDensity ? dTotalFluidDensity_dP / totalFluidDensity : 0.0;
+    }
+
+    /**
+     * @brief Extract the phase mole fractions for a phase
+     * @param i Element index
+     * @param q Quadrature node index
+     * @param p Phase index
+     * @param[out] moleFractions The calculated mole fractions
+     */
+    template< typename OUT_ARRAY >
+    GEOS_HOST_DEVICE
+    void phaseCompMoleFraction( integer const i,
+                                integer const q,
+                                integer const p,
+                                OUT_ARRAY && moleFractions ) const
+    {
+      integer const numComponents = m_componentMolarWeight.size( 0 );
+      for( integer ic = 0; ic < numComponents; ++ic )
+      {
+        moleFractions[ic] = m_phaseCompFraction.value( i, q, p, ic );
+      }
+      detail::convertToMoleFractions( numComponents,
+                                      m_componentMolarWeight,
+                                      moleFractions,
+                                      moleFractions );
+    }
+
 private:
 
     /**
@@ -505,34 +590,6 @@ private:
                                              arraySlice2d< real64, multifluid::USD_PHASE_DC - 2 > const dPhaseVisc,
                                              arraySlice2d< real64, multifluid::USD_PHASE_DC - 2 > const dPhaseEnthalpy,
                                              arraySlice2d< real64, multifluid::USD_PHASE_DC - 2 > const dPhaseInternalEnergy ) const;
-
-
-    /**
-     * @brief Main compute function to update properties in a cell without returning derivatives (used at initialization)
-     * @param[in] pressure pressure in the cell
-     * @param[in] temperature temperature in the cell
-     * @param[in] composition mass/molar component fractions in the cell
-     * @param[out] phaseFraction phase fractions in the cell
-     * @param[out] phaseDensity phase mass/molar density in the cell
-     * @param[out] phaseMassDensity phase mass density in the cell
-     * @param[out] phaseViscosity phase viscosity in the cell
-     * @param[out] phaseEnthalpy phase enthalpy in the cell
-     * @param[out] phaseInternalEnergy phase internal energy in the cell
-     * @param[out] phaseCompFraction phase component fraction in the cell
-     * @param[out] totalDensity total mass/molar density in the cell
-     */
-    GEOS_HOST_DEVICE
-    virtual void compute( real64 const pressure,
-                          real64 const temperature,
-                          arraySlice1d< real64 const, compflow::USD_COMP - 1 > const & composition,
-                          arraySlice1d< real64, multifluid::USD_PHASE - 2 > const & phaseFraction,
-                          arraySlice1d< real64, multifluid::USD_PHASE - 2 > const & phaseDensity,
-                          arraySlice1d< real64, multifluid::USD_PHASE - 2 > const & phaseMassDensity,
-                          arraySlice1d< real64, multifluid::USD_PHASE - 2 > const & phaseViscosity,
-                          arraySlice1d< real64, multifluid::USD_PHASE - 2 > const & phaseEnthalpy,
-                          arraySlice1d< real64, multifluid::USD_PHASE - 2 > const & phaseInternalEnergy,
-                          arraySlice2d< real64, multifluid::USD_PHASE_COMP-2 > const & phaseCompFraction,
-                          real64 & totalDensity ) const = 0;
 
     /**
      * @brief Main compute function to update properties in a cell with derivatives (used in Newton iterations)
@@ -595,10 +652,13 @@ protected:
    */
   virtual void resizeFields( localIndex const size, localIndex const numPts );
 
-  virtual void postProcessInput() override;
+  virtual void postInputInitialization() override;
 
   // flag indicating whether input/output component fractions are treated as mass fractions
   int m_useMass;
+
+  /// Enable an error when checkTableParameters() is called and the input pressure or temperature of the PVT tables is out of range
+  integer m_checkPVTTablesRanges;
 
   // general fluid composition information
 
@@ -626,6 +686,59 @@ protected:
   array2d< real64, multifluid::LAYOUT_FLUID > m_totalDensity_n;
 
 };
+
+template< typename FLUIDWRAPPER >
+GEOS_HOST_DEVICE
+void
+MultiFluidBase::KernelWrapper::computeValues( FLUIDWRAPPER const fluidWrapper,
+                                              real64 const pressure,
+                                              real64 const temperature,
+                                              arraySlice1d< real64 const, compflow::USD_COMP - 1 > const & composition,
+                                              arraySlice1d< real64, multifluid::USD_PHASE - 2 > const & phaseFraction,
+                                              arraySlice1d< real64, multifluid::USD_PHASE - 2 > const & phaseDensity,
+                                              arraySlice1d< real64, multifluid::USD_PHASE - 2 > const & phaseMassDensity,
+                                              arraySlice1d< real64, multifluid::USD_PHASE - 2 > const & phaseViscosity,
+                                              arraySlice1d< real64, multifluid::USD_PHASE - 2 > const & phaseEnthalpy,
+                                              arraySlice1d< real64, multifluid::USD_PHASE - 2 > const & phaseInternalEnergy,
+                                              arraySlice2d< real64, multifluid::USD_PHASE_COMP-2 > const & phaseCompFraction,
+                                              real64 & totalDensity )
+{
+  integer constexpr maxNumPhase = MAX_NUM_PHASES;
+  integer constexpr maxNumComp = MAX_NUM_COMPONENTS;
+  integer constexpr maxNumDof = MAX_NUM_COMPONENTS + 2;
+  integer const numPhase = fluidWrapper.numPhases();
+  integer const numComp = fluidWrapper.numComponents();
+
+  // Allocate data for derivatives. All properties of the same type will use the same memory
+  // space for the derivatives. The derivatives returned will clearly be garbage but the values
+  // should be correct.
+  StackArray< real64, 4, maxNumDof * maxNumPhase, multifluid::LAYOUT_PHASE_DC > dPhaseProp( 1, 1, numPhase, numComp+2 );
+  StackArray< real64, 5, maxNumDof * maxNumComp * maxNumPhase, multifluid::LAYOUT_PHASE_COMP_DC > dPhaseComp( 1, 1, numPhase, numComp, numComp+2 );
+  StackArray< real64, 3, maxNumDof, multifluid::LAYOUT_FLUID_DC > dFluidProp( 1, 1, numComp+2 );
+
+  // Wrap the output in multi variable objects
+  PhaseProp::SliceType phaseFractionWrapper { phaseFraction, dPhaseProp[0][0] };
+  PhaseProp::SliceType phaseDensityWrapper { phaseDensity, dPhaseProp[0][0] };
+  PhaseProp::SliceType phaseMassDensityWrapper { phaseMassDensity, dPhaseProp[0][0] };
+  PhaseProp::SliceType phaseViscosityWrapper { phaseViscosity, dPhaseProp[0][0] };
+  PhaseProp::SliceType phaseEnthalpyWrapper { phaseEnthalpy, dPhaseProp[0][0] };
+  PhaseProp::SliceType phaseInternalEnergyWrapper { phaseInternalEnergy, dPhaseProp[0][0] };
+  PhaseComp::SliceType phaseCompFractionWrapper { phaseCompFraction, dPhaseComp[0][0] };
+  FluidProp::SliceType totalDensityWrapper { totalDensity, dFluidProp[0][0] };
+
+  // Pass on to fluid kernel
+  fluidWrapper.compute( pressure,
+                        temperature,
+                        composition,
+                        phaseFractionWrapper,
+                        phaseDensityWrapper,
+                        phaseMassDensityWrapper,
+                        phaseViscosityWrapper,
+                        phaseEnthalpyWrapper,
+                        phaseInternalEnergyWrapper,
+                        phaseCompFractionWrapper,
+                        totalDensityWrapper );
+}
 
 template< integer maxNumComp, typename OUT_ARRAY >
 GEOS_HOST_DEVICE
@@ -935,6 +1048,7 @@ MultiFluidBase::KernelWrapper::
 {
   integer const numPhase = numPhases();
   integer const numComp = numComponents();
+  integer const numDOF = numComp + 2;
   for( integer ip = 0; ip < numPhase; ++ip )
   {
 
@@ -947,7 +1061,7 @@ MultiFluidBase::KernelWrapper::
     real64 const densInv = 1.0 / phaseMassDens.value[ip];
     real64 const densInvSquared = densInv * densInv;
     phaseInternalEnergy.value[ip] = phaseEnthalpy.value[ip] - pressure * densInv;
-    for( integer idof = 0; idof < numComp; ++idof )
+    for( integer idof = 0; idof < numDOF; ++idof )
     {
       phaseInternalEnergy.derivs[ip][idof] = phaseEnthalpy.derivs[ip][idof] + pressure * phaseMassDens.derivs[ip][idof] * densInvSquared;
     }

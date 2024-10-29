@@ -10,16 +10,18 @@
       temperature="300"
       useMass="0"
       targetRegions="{ Domain, Fracture }"
-      targetRelativePressureChangeInTimeStep="1"
+      targetRelativePressureChangeInTimeStep="1000"
       targetPhaseVolFractionChangeInTimeStep="1"
       maxCompFractionChange="1"
-      maxRelativePressureChange="1"
-      initialDt="1e4">
+      maxRelativePressureChange="1000"
+      scalingType="Local"
+      initialDt="1e2">
       <NonlinearSolverParameters
-        newtonTol="1.0e-6"
+        newtonTol="1.0e-5"
         newtonMaxIter="15"
         maxTimeStepCuts="2"
-        lineSearchMaxCuts="2"/>
+        lineSearchMaxCuts="2"
+        lineSearchAction="None"/>
       <LinearSolverParameters
         solverType="direct"
         directParallel="0"
@@ -31,6 +33,7 @@
       logLevel="1"
       discretization="FE1"
       targetRegions="{ Domain, Fracture }"
+      targetObjects="{ FracturePlane }"
       fractureRegion="Fracture"
       mpiCommOrder="1"/>
   </Solvers>
@@ -61,20 +64,20 @@
   </NumericalMethods>
 
   <Events
-    maxTime="5e5">
+    maxTime="1e5">
     <SoloEvent
       name="preFracture"
       target="/Solvers/SurfaceGenerator"/>
 
     <PeriodicEvent
       name="outputs"
-      timeFrequency="1e5"
+      timeFrequency="1e4"
       targetExactTimestep="1"
       target="/Outputs/vtkOutput"/>
 
     <PeriodicEvent
       name="restarts"
-      timeFrequency="2e5"
+      timeFrequency="0.5e5"
       targetExactTimestep="0"
       target="/Outputs/sidreRestart"/>
 

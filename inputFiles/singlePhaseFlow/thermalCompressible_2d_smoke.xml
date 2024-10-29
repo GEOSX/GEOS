@@ -5,7 +5,14 @@
     <File name="./thermalCompressible_2d_base.xml" />
   </Included>
 
-   <Mesh>
+  <ElementRegions>
+    <CellElementRegion
+      name="region"
+      cellBlocks="{ cb }"
+      materialList="{ fluid, rock_nonLinear, thermalCond }"/>
+  </ElementRegions>
+
+  <Mesh>
     <InternalWellbore
       name="mesh1"
       elementTypes="{ C3D8 }"

@@ -13,6 +13,12 @@ physics solvers to be included in the simulation.
 
    solidMechanics/docs/SolidMechanics
 
+<<<<<<< HEAD
+   solidMechanics/docs/MaterialPointMethod
+=======
+   contact/docs/ContactMechanics
+>>>>>>> develop
+
    fluidFlow/docs/SinglePhaseFlow
 
    fluidFlow/docs/CompositionalMultiphaseFlow

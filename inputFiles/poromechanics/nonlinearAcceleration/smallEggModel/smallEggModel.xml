@@ -1,0 +1,296 @@
+<?xml version="1.0" ?>
+
+<Problem>
+  <Solvers
+    gravityVector="{ 0.0, 0.0, 0.0 }">
+    <SinglePhasePoromechanics
+      name="poroSolver"
+      targetRegions="{ Reservoir, Overburden, Underburden, Sideburden }"
+      flowSolverName="flowSolver"
+      solidSolverName="matrixMechSolver"
+      logLevel="1">
+      <NonlinearSolverParameters
+        maxTimeStepCuts="1"
+        newtonTol="3e-06"
+        newtonMaxIter="200"
+        couplingType="Sequential"
+        lineSearchAction="None"
+        subcycling="1"
+        nonlinearAccelerationType="Aitken"/>
+      <LinearSolverParameters
+        solverType="fgmres"
+        preconditionerType="mgr"
+        krylovTol="1e-6"
+        krylovMaxIter="200"
+        krylovAdaptiveTol="1"
+        krylovWeakestTol="1e-2"
+        logLevel="1"/>
+    </SinglePhasePoromechanics>
+
+    <SolidMechanicsLagrangianSSLE
+      name="matrixMechSolver"
+      timeIntegrationOption="QuasiStatic"
+      logLevel="1"
+      discretization="FE1"
+      targetRegions="{ Reservoir, Overburden, Underburden, Sideburden }">
+      <NonlinearSolverParameters
+        newtonTol="1.0e-6"
+        newtonMaxIter="20"/>
+      <LinearSolverParameters
+        solverType="gmres"
+        preconditionerType="amg"
+        krylovTol="1.0e-6"
+        krylovMaxIter="100"
+        logLevel="1"/>
+    </SolidMechanicsLagrangianSSLE>
+
+    <SinglePhaseFVM
+      name="flowSolver"
+      logLevel="1"
+      discretization="singlePhaseTPFA"
+      targetRegions="{ Reservoir, Overburden, Underburden, Sideburden }"
+      temperature="380.372">
+      <NonlinearSolverParameters
+        newtonTol="1.0e-6"
+        newtonMaxIter="20"/>
+      <LinearSolverParameters
+        solverType="gmres"
+        preconditionerType="amg"
+        krylovTol="1.0e-6"
+        krylovMaxIter="100"
+        logLevel="1"/>
+    </SinglePhaseFVM>
+
+  </Solvers>
+
+  <Mesh>
+    <VTKMesh
+      name="mesh"
+      file="../../../GEOSDATA/DataSets/Egg/egg_withBurdens_small.vts"
+      regionAttribute="elementRegionMarker"
+      fieldsToImport="{ PERM }"
+      fieldNamesInGEOSX="{ rockPermeability_permeability }"/>
+  </Mesh>
+
+  <Geometry>
+    
+    <Box xMax="{500.0, 500.0, 1.0}" 
+         xMin="{0.0, 0.0, -500.0}" 
+         name="bottom" />
+    
+    <Box xMax="{500.0, 1.0, 500.0}" 
+         xMin="{0.0,   0.0, -500.0}" 
+         name="front" />
+
+    <Box xMax="{1.0, 500.0, 500.0}" 
+         xMin="{-1.0, 0.0, -500.0}" 
+         name="left" />
+         
+    <Box xMax="{500.0, 481.0, 500.0}" 
+         xMin="{0.0,   479.0, -500.0}" 
+         name="back" />
+
+    <Box xMax="{481.0, 500.0, 500.0}" 
+         xMin="{479.0, 0.0, -500.0}" 
+         name="right" />  
+
+    <Box
+      name="sourceWell"
+      xMin="{ 231, 231, 51 }"
+      xMax="{ 241, 241, 57 }"/>   
+           
+  </Geometry>
+
+  <Tasks>
+    <SinglePhaseStatistics
+      name="FLOW.STATISTICS"
+      flowSolverName="flowSolver"
+      logLevel="1" />
+    <SolidMechanicsStatistics
+      name="SOLID.STATISTICS"
+      solidSolverName="matrixMechSolver"
+      logLevel="1" />
+    </Tasks>
+
+  <Events
+    maxTime="5e6">
+
+    <PeriodicEvent
+      name="solverApplications"
+      forceDt="1e6"
+      target="/Solvers/poroSolver"/>
+
+    <PeriodicEvent
+      name="outputs"
+      cycleFrequency="1"
+      target="/Outputs/vtkOutput"/>
+
+    <PeriodicEvent
+      name="STATISTICS"
+      timeFrequency="1e6">
+      <PeriodicEvent
+        name="FLOW"
+        target="/Tasks/FLOW.STATISTICS" />
+      <PeriodicEvent
+        name="SOLID"
+        target="/Tasks/SOLID.STATISTICS" />
+    </PeriodicEvent>
+
+  </Events>
+
+  <NumericalMethods>
+    <FiniteElements>
+      <FiniteElementSpace
+        name="FE1"
+        order="1"/>
+    </FiniteElements>
+
+    <FiniteVolume>
+      <TwoPointFluxApproximation
+        name="singlePhaseTPFA"/>
+    </FiniteVolume>
+  </NumericalMethods>
+
+  <ElementRegions>
+    <CellElementRegion
+      name="Reservoir"
+      cellBlocks="{ 1_hexahedra }"
+      materialList="{ porousRock, water }"/>
+
+    <CellElementRegion
+      name="Overburden"
+      cellBlocks="{ 3_hexahedra }"
+      materialList="{ porousRock, water }"/> 
+    
+    <CellElementRegion
+      name="Underburden"
+      cellBlocks="{ 2_hexahedra }"
+      materialList="{ porousRock, water }"/>
+      
+    <CellElementRegion
+      name="Sideburden"
+      cellBlocks="{ 0_hexahedra }"
+      materialList="{ porousRock, water }"/>  
+
+  </ElementRegions>
+
+  <Constitutive>
+    <PorousElasticIsotropic
+      name="porousRock"
+      solidModelName="rock"
+      porosityModelName="rockPorosity"
+      permeabilityModelName="rockPermeability"/>
+
+    <ElasticIsotropic
+      name="rock"
+      defaultDensity="1"
+      defaultBulkModulus="25e7"
+      defaultPoissonRatio="0.25"/>
+
+    <ConstantPermeability
+      name="rockPermeability"
+      permeabilityComponents="{ 1.0e-12, 1.0e-12, 1.0e-12 }"/>
+
+    <CompressibleSinglePhaseFluid
+      name="water"
+      defaultDensity="1000"
+      defaultViscosity="1.0e-3"
+      referencePressure="1e5"
+      compressibility="1.0e-10"
+      referenceViscosity="1e-3"
+      viscosibility="0.0"/>
+
+    <BiotPorosity
+      name="rockPorosity"
+      defaultGrainBulkModulus="1.0e27"
+      defaultReferencePorosity="0.2"/>
+
+  </Constitutive>
+
+  <FieldSpecifications>
+
+    <FieldSpecification
+      name="sideBurdenPerm"
+      initialCondition="1"
+      setNames="{ all }"
+      objectPath="ElementRegions/Sideburden"
+      fieldName="rockPermeability_permeability"
+      scale="1.00e-14"/>
+
+    <FieldSpecification
+      name="overBurdenPerm"
+      initialCondition="1"
+      setNames="{ all }"
+      objectPath="ElementRegions/Overburden"
+      fieldName="rockPermeability_permeability"
+      scale="1.00e-14"/>
+      
+    <FieldSpecification
+      name="underBurdenPerm"
+      initialCondition="1"
+      setNames="{ all }"
+      objectPath="ElementRegions/Underburden"
+      fieldName="rockPermeability_permeability"
+      scale="1.00e-14"/>
+
+    <FieldSpecification
+      name="initialPressure"
+      initialCondition="1"
+      setNames="{ all }"
+      objectPath="ElementRegions"
+      fieldName="pressure"
+      scale = "27578933.04"/>
+
+    <FieldSpecification
+      name="xConstraint"
+      objectPath="nodeManager"
+      fieldName="totalDisplacement"
+      component="0"
+      scale="0.0"
+      setNames="{ left, right }"/>
+
+    <FieldSpecification
+      name="yConstraint"
+      objectPath="nodeManager"
+      fieldName="totalDisplacement"
+      component="1"
+      scale="0.0"
+      setNames="{ front, back }"/>
+
+    <FieldSpecification
+      name="zConstraint"
+      objectPath="nodeManager"
+      fieldName="totalDisplacement"
+      component="2"
+      scale="0.0"
+      setNames="{ bottom }"/>
+
+    <SourceFlux
+      name="sourceTerm"
+      objectPath="ElementRegions/Reservoir"
+      scale="-1"
+      component="0"
+      functionName="sourceWellFunction"
+      setNames="{ sourceWell }"/>
+
+  </FieldSpecifications>
+
+  <Functions>
+
+    <TableFunction                                                                                                                                                               
+      name="sourceWellFunction"                                                                                                                                                         
+      inputVarNames="{ time }"                                                                                                                                                   
+      interpolation="lower"                                                                                                                                                      
+      coordinates="{ -1e11, 0, 1e11 }"                                                                                                                                           
+      values="{ -1, 1, 1 }"/> 
+
+  </Functions>
+  
+  <Outputs>
+    <VTK
+      name="vtkOutput"
+      plotFileRoot="SC_vtk"
+      plotLevel="2"
+      format="binary"/>
+  </Outputs>
+</Problem>

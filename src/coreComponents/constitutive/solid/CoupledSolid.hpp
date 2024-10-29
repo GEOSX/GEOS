@@ -2,10 +2,11 @@
  * ------------------------------------------------------------------------------------------------------------
  * SPDX-License-Identifier: LGPL-2.1-only
  *
- * Copyright (c) 2018-2020 Lawrence Livermore National Security LLC
- * Copyright (c) 2018-2020 The Board of Trustees of the Leland Stanford Junior University
- * Copyright (c) 2018-2020 TotalEnergies
- * Copyright (c) 2019-     GEOSX Contributors
+ * Copyright (c) 2016-2024 Lawrence Livermore National Security LLC
+ * Copyright (c) 2018-2024 Total, S.A
+ * Copyright (c) 2018-2024 The Board of Trustees of the Leland Stanford Junior University
+ * Copyright (c) 2018-2024 Chevron
+ * Copyright (c) 2019-     GEOS/GEOSX Contributors
  * All rights reserved
  *
  * See top level LICENSE, COPYRIGHT, CONTRIBUTORS, NOTICE, and ACKNOWLEDGEMENTS files for details.
@@ -84,11 +85,15 @@ public:
   virtual void updateStateFromPressureAndTemperature( localIndex const k,
                                                       localIndex const q,
                                                       real64 const & pressure,
+                                                      real64 const & pressure_k,
                                                       real64 const & pressure_n,
                                                       real64 const & temperature,
+                                                      real64 const & temperature_k,
                                                       real64 const & temperature_n ) const
   {
-    GEOS_UNUSED_VAR( k, q, pressure, pressure_n, temperature, temperature_n );
+    GEOS_UNUSED_VAR( k, q,
+                     pressure, pressure_k, pressure_n,
+                     temperature, temperature_k, temperature_n );
   }
 
   GEOS_HOST_DEVICE
@@ -184,23 +189,23 @@ void CoupledSolid< SOLID_TYPE, PORO_TYPE, PERM_TYPE >::initializePreSubGroups()
 {
   if( PORO_TYPE::catalogName() != getPorosityModel().getCatalogName() )
   {
-    GEOS_ERROR( " The coupled solid "<< this->getName()<<
-                " expects a porosity model of type "<<PORO_TYPE::catalogName()<<
-                " but the specified porosity model \""<<m_porosityModelName<<
+    GEOS_ERROR( " The coupled solid " << getDataContext() <<
+                " expects a porosity model of type " << PORO_TYPE::catalogName() <<
+                " but the specified porosity model \"" << m_porosityModelName <<
                 "\" is of type " << getPorosityModel().getCatalogName() );
   }
   if( PERM_TYPE::catalogName() != getPermModel().getCatalogName() )
   {
-    GEOS_ERROR( " The coupled solid "<<this->getName()<<
-                " expects a permeability model of type "<<PERM_TYPE::catalogName()<<
-                " but the specified permeability model \""<<m_permeabilityModelName<<
+    GEOS_ERROR( " The coupled solid " << getDataContext() <<
+                " expects a permeability model of type " << PERM_TYPE::catalogName() <<
+                " but the specified permeability model \"" << m_permeabilityModelName <<
                 "\" is of type " << getPermModel().getCatalogName() );
   }
   if( SOLID_TYPE::catalogName() != getSolidModel().getCatalogName() )
   {
-    GEOS_ERROR( " The coupled solid "<<this->getName()<<
-                " expects a solid model of type "<<SOLID_TYPE::catalogName()<<
-                " but the specified solid model \""<<this->m_solidModelName<<
+    GEOS_ERROR( " The coupled solid " << getDataContext() <<
+                " expects a solid model of type " << SOLID_TYPE::catalogName() <<
+                " but the specified solid model \"" << m_solidModelName <<
                 "\" is of type" << getSolidModel().getCatalogName() );
   }
 }

@@ -2,10 +2,11 @@
  * ------------------------------------------------------------------------------------------------------------
  * SPDX-License-Identifier: LGPL-2.1-only
  *
- * Copyright (c) 2018-2020 Lawrence Livermore National Security LLC
- * Copyright (c) 2018-2020 The Board of Trustees of the Leland Stanford Junior University
- * Copyright (c) 2018-2020 TotalEnergies
- * Copyright (c) 2019-     GEOSX Contributors
+ * Copyright (c) 2016-2024 Lawrence Livermore National Security LLC
+ * Copyright (c) 2018-2024 Total, S.A
+ * Copyright (c) 2018-2024 The Board of Trustees of the Leland Stanford Junior University
+ * Copyright (c) 2018-2024 Chevron
+ * Copyright (c) 2019-     GEOS/GEOSX Contributors
  * All rights reserved
  *
  * See top level LICENSE, COPYRIGHT, CONTRIBUTORS, NOTICE, and ACKNOWLEDGEMENTS files for details.
@@ -40,7 +41,7 @@ namespace timingHelpers
 }
 
 
-#if defined( GEOS_USE_CUDA_NVTOOLSEXT )
+#if defined( GEOS_USE_CUDA ) && defined( GEOS_USE_CUDA_NVTOOLSEXT )
 
 #include "nvToolsExt.h"
 
@@ -88,7 +89,7 @@ namespace timingHelpers
 #endif /* USE_CUDA */
 
 
-#ifdef GEOSX_USE_CALIPER
+#ifdef GEOS_USE_CALIPER
 #include <caliper/cali.h>
 #include <sys/time.h>
 #include <string>
@@ -112,7 +113,7 @@ namespace timingHelpers
 /// Mark the end of function, only useful when you don't want to or can't mark the whole function.
 #define GEOS_CALIPER_MARK_FUNCTION_END CALI_MARK_FUNCTION_END
 
-#else // GEOSX_USE_CALIPER
+#else // GEOS_USE_CALIPER
 
 /// @cond DO_NOT_DOCUMENT
 #define GEOS_CALIPER_MARK_SCOPE(name)
@@ -125,7 +126,7 @@ namespace timingHelpers
 #define GEOS_CALIPER_MARK_FUNCTION_END
 /// @endcond
 
-#endif // GEOSX_USE_CALIPER
+#endif // GEOS_USE_CALIPER
 
 /// Mark scope with both Caliper and NVTX if enabled
 #define GEOS_MARK_SCOPE(name) GEOS_CALIPER_MARK_SCOPE(name); GEOS_NVTX_MARK_SCOPE(name)
@@ -141,7 +142,7 @@ namespace timingHelpers
 #define GEOS_MARK_END(name) GEOS_CALIPER_MARK_END(name)
 
 /// Get current time of day as a floating point number of seconds in a variable @p time.
-#ifdef GEOSX_USE_TIMERS
+#ifdef GEOS_USE_TIMERS
 #define GEOS_GET_TIME( time )                                                 \
   real64 time;                                                                 \
   do                                                                           \

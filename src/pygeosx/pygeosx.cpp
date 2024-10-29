@@ -2,16 +2,16 @@
  * ------------------------------------------------------------------------------------------------------------
  * SPDX-License-Identifier: LGPL-2.1-only
  *
- * Copyright (c) 2018-2019 Lawrence Livermore National Security LLC
- * Copyright (c) 2018-2019 The Board of Trustees of the Leland Stanford Junior University
- * Copyright (c) 2018-2019 TotalEnergies
- * Copyright (c) 2019-     GEOSX Contributors
- * All right reserved
+ * Copyright (c) 2016-2024 Lawrence Livermore National Security LLC
+ * Copyright (c) 2018-2024 Total, S.A
+ * Copyright (c) 2018-2024 The Board of Trustees of the Leland Stanford Junior University
+ * Copyright (c) 2018-2024 Chevron 
+ * Copyright (c) 2019-     GEOS/GEOSX Contributors
+ * All rights reserved
  *
  * See top level LICENSE, COPYRIGHT, CONTRIBUTORS, NOTICE, and ACKNOWLEDGEMENTS files for details.
  * ------------------------------------------------------------------------------------------------------------
  */
-
 
 // Python.h must be included first.
 #define PY_SSIZE_T_CLEAN
@@ -232,6 +232,27 @@ PyObject * run( PyObject * self, PyObject * args ) noexcept
   return PyLong_FromLong( static_cast< int >( g_state->getState() ) );
 }
 
+static constexpr char const * getStateDocString =
+  "getState()\n"
+  "--\n\n"
+  "_______\n"
+  "int\n"
+  "    Return the state of GEOS. 0 : UNINITIALIZED, 1 : INITIALIZED, 2 : READY_TO_RUN, 3 : COMPLETED";
+
+PyObject * getState( PyObject * self, PyObject * args ) noexcept
+{
+  GEOS_UNUSED_VAR( self, args );
+
+  if( g_state == nullptr )
+  {
+    return PyLong_FromLong( 0 );
+  }
+  else
+  {
+    return PyLong_FromLong( static_cast< int >( g_state->getState() ) );
+  }
+}
+
 static constexpr char const * finalizeDocString =
   "_finalize()\n"
   "--\n\n"
@@ -327,6 +348,7 @@ static PyMethodDef pygeosxFuncs[] = {
   { "reinit", geos::reinit, METH_VARARGS, geos::reinitDocString },
   { "apply_initial_conditions", geos::applyInitialConditions, METH_NOARGS, geos::applyInitialConditionsDocString },
   { "run", geos::run, METH_NOARGS, geos::runDocString },
+  { "getState", geos::getState, METH_NOARGS, geos::getStateDocString },
   { "_finalize", geos::finalize, METH_NOARGS, geos::finalizeDocString },
   { nullptr, nullptr, 0, nullptr }        /* Sentinel */
 };

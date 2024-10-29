@@ -1,0 +1,40 @@
+<?xml version="1.0" ?>
+
+<Problem>
+
+  <Included>
+    <File name="./PoroElastic_deadoil_3ph_baker_2d_base.xml" />
+  </Included>
+  
+  <Solvers
+    gravityVector="{ 0.0, 0.0, 0.0 }">
+    <MultiphasePoromechanics
+      name="MultiphasePoroelasticitySolver"
+      solidSolverName="LinearElasticitySolver"
+      flowSolverName="TwoPhaseFlowSolver"
+      logLevel="1"
+      targetRegions="{ Domain }">
+      <NonlinearSolverParameters
+        newtonTol="1.0e-9"
+        newtonMaxIter="15"
+        lineSearchMaxCuts="2"/>
+      <LinearSolverParameters
+        directParallel="0"/>
+    </MultiphasePoromechanics>
+
+    <SolidMechanicsLagrangianSSLE
+      name="LinearElasticitySolver"
+      timeIntegrationOption="QuasiStatic"
+      logLevel="1"
+      discretization="FE1"
+      targetRegions="{ Domain }"/>
+
+    <CompositionalMultiphaseFVM
+      name="TwoPhaseFlowSolver"
+      logLevel="1"
+      discretization="fluidTPFA"
+      targetRegions="{ Domain }"
+      temperature="300"/>
+  </Solvers>
+
+</Problem>

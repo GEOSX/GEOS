@@ -1,89 +1,39 @@
 <?xml version="1.0" ?>
 
 <Problem>
-  <Solvers
-    gravityVector="{0.0, 0.0, 0.0}">
-  <!-- SPHINX_SOLVER -->
-    <LagrangianContact
-      name="lagrangiancontact"
-      solidSolverName="lagsolve"
-      stabilizationName="TPFAstabilization"
-      logLevel="1"
-      discretization="FE1"
-      targetRegions="{ Region, Fracture }"
-      contactRelationName="fractureMaterial"
-      fractureRegionName="Fracture">
-      <NonlinearSolverParameters
-        newtonTol="1.0e-8"
-        logLevel="2"
-        maxNumConfigurationAttempts="10"
-        newtonMaxIter="10"
-        lineSearchAction="Require"
-        lineSearchMaxCuts="2"
-        maxTimeStepCuts="2"/>
-      <LinearSolverParameters
-        solverType="direct"
-        directParallel="0"
-        logLevel="0"/>
-    </LagrangianContact>
-
-    <SolidMechanics_LagrangianFEM
-      name="lagsolve"
-      timeIntegrationOption="QuasiStatic"
-      logLevel="0"
-      discretization="FE1"
-      targetRegions="{ Region }">
-      <NonlinearSolverParameters
-        newtonTol="1.0e-6"
-        newtonMaxIter="5"/>
-      <LinearSolverParameters
-        krylovTol="1.0e-10"
-        logLevel="0"/>
-    </SolidMechanics_LagrangianFEM>
-
-    <SurfaceGenerator
-      name="SurfaceGen"
-      logLevel="0"
-      fractureRegion="Fracture"
-      targetRegions="{ Region }"
-      rockToughness="1.0e6"
-      mpiCommOrder="1"/>
-  <!-- SPHINX_SOLVER_END -->
-  </Solvers>
-
   <!-- SPHINX_GEOMETRY -->
   <Geometry>
-    <BoundedPlane
+    <Rectangle
       name="fracture1"
       normal="{1.0, 0.0, 0.0}"
       origin="{0.0, 0.0, 0.0}"
       lengthVector="{0.0, 1.0, 0.0}"
       widthVector="{0.0, 0.0, 1.0}"
-      dimensions="{ 100, 10 }"/>
+      dimensions="{ 100, 200 }"/>
 
-    <BoundedPlane
+    <Rectangle
       name="core1"
       normal="{1.0, 0.0, 0.0}"
       origin="{0.0, 0.0, 0.0}"
       lengthVector="{0.0, 1.0, 0.0}"
       widthVector="{0.0, 0.0, 1.0}"
-      dimensions="{ 100, 10 }"/>
+      dimensions="{ 100, 200 }"/>
 
-    <BoundedPlane
+    <Rectangle
       name="fracture2"
       normal="{0.0, 1.0, 0.0}"
       origin="{0.0, 50.0, 0.0}"
       lengthVector="{1.0, 0.0, 0.0}"
       widthVector="{0.0, 0.0, 1.0}"
-      dimensions="{ 50, 10 }"/>
+      dimensions="{ 50, 200 }"/>
 
-    <BoundedPlane
+    <Rectangle
       name="core2"
       normal="{0.0, 1.0, 0.0}"
       origin="{0.0, 50.0, 0.0}"
       lengthVector="{1.0, 0.0, 0.0}"
       widthVector="{0.0, 0.0, 1.0}"
-      dimensions="{ 50, 10 }"/>    
+      dimensions="{ 50, 200 }"/>    
   </Geometry>
   <!-- SPHINX_GEOMETRY_END -->
 

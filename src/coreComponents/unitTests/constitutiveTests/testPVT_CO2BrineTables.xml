@@ -1,0 +1,102 @@
+<?xml version="1.0" ?>
+
+<Problem>
+  <Tasks>
+    <PVTDriver
+      name="testCo2BrinePhillipsMixtureA"
+      fluid="co2BrinePhillipsMixtureA"
+      feedComposition="{ 0.5, 0.5 }"
+      pressureControl="pressureFunction"
+      temperatureControl="temperatureFunction"
+      steps="20"
+      outputCompressibility="1"
+      outputPhaseComposition="1"
+      baseline="testPVT_CO2BrineTables_testCo2BrinePhillipsMixtureA.txt"
+      logLevel="1" />
+    <PVTDriver
+      name="testCo2BrinePhillipsMixtureB"
+      fluid="co2BrinePhillipsMixtureB"
+      feedComposition="{ 0.5, 0.5 }"
+      pressureControl="pressureFunction"
+      temperatureControl="temperatureFunction"
+      steps="20"
+      outputCompressibility="1"
+      outputPhaseComposition="1"
+      baseline="testPVT_CO2BrineTables_testCo2BrinePhillipsMixtureB.txt"
+      logLevel="1" />
+  </Tasks>
+
+  <Events
+    maxTime="1">
+    <SoloEvent
+      name="eventCo2BrinePhillipsMixtureA"
+      target="/Tasks/testCo2BrinePhillipsMixtureA" />
+    <SoloEvent
+      name="eventCo2BrinePhillipsMixtureB"
+      target="/Tasks/testCo2BrinePhillipsMixtureB" />
+  </Events>
+
+  <Constitutive>
+    <CO2BrinePhillipsFluid
+      name="co2BrinePhillipsMixtureA"
+      phaseNames="{ gas, water }"
+      componentNames="{ co2, water }"
+      componentMolarWeight="{ 44e-3, 18e-3 }"
+      phasePVTParaFiles="{ testPVT_data/carbonDioxidePVT.txt, testPVT_data/brinePVT.txt }"
+      solubilityTableNames="{ co2Solubility }" />
+    <CO2BrinePhillipsFluid
+      name="co2BrinePhillipsMixtureB"
+      phaseNames="{ gas, water }"
+      componentNames="{ co2, water }"
+      componentMolarWeight="{ 44e-3, 18e-3 }"
+      phasePVTParaFiles="{ testPVT_data/carbonDioxidePVT.txt, testPVT_data/brinePVT.txt }"
+      solubilityTableNames="{ co2Solubility, h20Vapourisation }" />
+  </Constitutive>
+
+  <Functions>
+    <TableFunction
+      name="pressureFunction"
+      inputVarNames="{ time }"
+      coordinates="{ 0.0, 0.45, 0.55, 1.0 }"
+      values="{ 1e6, 50e6, 10e6, 10e6 }" />
+
+    <TableFunction
+      name="temperatureFunction"
+      inputVarNames="{ time }"
+      coordinates="{ 0.0, 0.45, 0.55, 1.0 }"
+      values="{ 350.0, 350.0, 258, 380 }" />
+
+    <TableFunction
+      name="co2Solubility"
+      inputVarNames="{ pressure, temperature }"
+      coordinateFiles="{ testPVT_data/pres.txt, testPVT_data/temp.txt }"
+      voxelFile="testPVT_data/co2Solubility.txt" />
+
+    <TableFunction
+      name="h20Vapourisation"
+      inputVarNames="{ pressure, temperature }"
+      coordinateFiles="{ testPVT_data/pres.txt, testPVT_data/temp.txt }"
+      voxelFile="testPVT_data/h20Vapourisation.txt" />
+  </Functions>
+
+  <!-- Mesh is not used, but GEOSX throws an error without one.  Will resolve soon-->
+  <Mesh>
+    <InternalMesh
+      name="mesh1"
+      elementTypes="{ C3D8 }"
+      xCoords="{ 0, 1 }"
+      yCoords="{ 0, 1 }"
+      zCoords="{ 0, 1 }"
+      nx="{ 1 }"
+      ny="{ 1 }"
+      nz="{ 1 }"
+      cellBlockNames="{ cellBlock01 }" />
+  </Mesh>
+
+  <ElementRegions>
+    <CellElementRegion
+      name="dummy"
+      cellBlocks="{ cellBlock01 }"
+      materialList="{ dummy }" />
+  </ElementRegions>
+</Problem>

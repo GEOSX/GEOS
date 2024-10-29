@@ -102,13 +102,6 @@ A good agreement between the GEOS results and analytical results is shown in the
 
 .. plot:: docs/sphinx/advancedExamples/validationStudies/wellboreProblems/pureThermalDiffusion/pureThermalDiffusionAroundWellbore.py
 
-.. _resultsThermalDiffusionWellboreFig:
-.. figure:: radialThermalDiffusionResults.png
-   :align: center
-   :width: 500
-   :figclass: align-center
-
-   Radial thermal diffusion around a wellbore: a validation against analytical results 
 
 ------------------------------------------------------------------
 To go further

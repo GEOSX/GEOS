@@ -2,10 +2,11 @@
  * ------------------------------------------------------------------------------------------------------------
  * SPDX-License-Identifier: LGPL-2.1-only
  *
- * Copyright (c) 2018-2020 Lawrence Livermore National Security LLC
- * Copyright (c) 2018-2020 The Board of Trustees of the Leland Stanford Junior University
- * Copyright (c) 2018-2020 TotalEnergies
- * Copyright (c) 2019-     GEOSX Contributors
+ * Copyright (c) 2016-2024 Lawrence Livermore National Security LLC
+ * Copyright (c) 2018-2024 Total, S.A
+ * Copyright (c) 2018-2024 The Board of Trustees of the Leland Stanford Junior University
+ * Copyright (c) 2018-2024 Chevron
+ * Copyright (c) 2019-     GEOS/GEOSX Contributors
  * All rights reserved
  *
  * See top level LICENSE, COPYRIGHT, CONTRIBUTORS, NOTICE, and ACKNOWLEDGEMENTS files for details.
@@ -46,7 +47,7 @@
 
 
 
-#if !defined(GEOSX_USE_MPI)
+#if !defined(GEOS_USE_MPI)
 int MPI_Comm_size( MPI_Comm, int * size ) { *size=1; return 0; }
 int MPI_Comm_rank( MPI_Comm, int * rank ) { *rank=1; return 0; }
 
@@ -281,7 +282,7 @@ void SiloFile::makeSiloDirectories()
 {
 
   int rank=0;
-#ifdef GEOSX_USE_MPI
+#ifdef GEOS_USE_MPI
   MPI_Comm_rank( MPI_COMM_GEOSX, &rank );
 #endif
 
@@ -298,7 +299,7 @@ void SiloFile::initialize( int const MPI_PARAM( numGroups ) )
 {
   makeSiloDirectories();
 
-#ifdef GEOSX_USE_MPI
+#ifdef GEOS_USE_MPI
   // Ensure all procs agree on numGroups, driver and file_ext
   m_numGroups = numGroups;
 #else
@@ -346,7 +347,7 @@ void SiloFile::waitForBatonWrite( int const domainNumber,
 {
 
   int rank = 0;
-#ifdef GEOSX_USE_MPI
+#ifdef GEOS_USE_MPI
   MPI_Comm_rank( MPI_COMM_GEOSX, &rank );
 #endif
   int const groupRank = PMPIO_GroupRank( m_baton, rank );
@@ -380,7 +381,7 @@ void SiloFile::waitForBaton( int const domainNumber, string const & restartFileN
 {
 
   int rank = 0;
-#ifdef GEOSX_USE_MPI
+#ifdef GEOS_USE_MPI
   MPI_Comm_rank( MPI_COMM_GEOSX, &rank );
 #endif
   int const groupRank = PMPIO_GroupRank( m_baton, rank );
@@ -414,7 +415,7 @@ void SiloFile::handOffBaton()
   PMPIO_HandOffBaton( m_baton, m_dbFilePtr );
 
   int rank = 0;
-#ifdef GEOSX_USE_MPI
+#ifdef GEOS_USE_MPI
   MPI_Comm_rank( MPI_COMM_GEOSX, &rank );
 #endif
   if( rank==0 )
@@ -576,7 +577,7 @@ void SiloFile::writeMeshObject( string const & meshName,
 
   // write multimesh object
   int rank = 0;
-#ifdef GEOSX_USE_MPI
+#ifdef GEOS_USE_MPI
   MPI_Comm_rank( MPI_COMM_GEOSX, &rank );
 #endif
   if( rank == 0 )
@@ -651,7 +652,7 @@ void SiloFile::writeBeamMesh( string const & meshName,
   //----write multimesh object
   {
     int rank = 0;
-  #ifdef GEOSX_USE_MPI
+  #ifdef GEOS_USE_MPI
     MPI_Comm_rank( MPI_COMM_GEOSX, &rank );
   #endif
     if( rank == 0 )
@@ -684,7 +685,7 @@ void SiloFile::writePointMesh( string const & meshName,
   //----write multimesh object
   {
     int rank = 0;
-  #ifdef GEOSX_USE_MPI
+  #ifdef GEOS_USE_MPI
     MPI_Comm_rank( MPI_COMM_GEOSX, &rank );
   #endif
     if( rank == 0 )
@@ -812,7 +813,7 @@ void SiloFile::writeMaterialMapsFullStorage( ElementRegionBase const & elemRegio
     }
     // write multimesh object
     int rank = 0;
-  #ifdef GEOSX_USE_MPI
+  #ifdef GEOS_USE_MPI
     MPI_Comm_rank( MPI_COMM_GEOSX, &rank );
   #endif
     if( rank == 0 )
@@ -1243,15 +1244,15 @@ void SiloFile::writeElementRegionSilo( ElementRegionBase const & elemRegion,
         string const & fieldName = wrapper.getName();
         viewPointers[esr][fieldName] = &wrapper;
 
-        types::dispatch( types::StandardArrays{}, wrapper.getTypeId(), true, [&]( auto array )
+        types::dispatch( types::ListofTypeList< types::StandardArrays >{}, [&]( auto tupleOfTypes )
         {
-          using ArrayType = decltype( array );
+          using ArrayType = camp::first< decltype( tupleOfTypes ) >;
           Wrapper< ArrayType > const & sourceWrapper = Wrapper< ArrayType >::cast( wrapper );
           Wrapper< ArrayType > & newWrapper = fakeGroup.registerWrapper< ArrayType >( fieldName );
 
           newWrapper.setPlotLevel( PlotLevel::LEVEL_0 );
           newWrapper.reference().resize( ArrayType::NDIM, sourceWrapper.reference().dims() );
-        } );
+        }, wrapper );
       }
     }
   } );
@@ -1263,9 +1264,9 @@ void SiloFile::writeElementRegionSilo( ElementRegionBase const & elemRegion,
     WrapperBase & wrapper = *wrapperIter.second;
     string const & fieldName = wrapper.getName();
 
-    types::dispatch( types::StandardArrays{}, wrapper.getTypeId(), true, [&]( auto array )
+    types::dispatch( types::ListofTypeList< types::StandardArrays >{}, [&]( auto tupleOfTypes )
     {
-      using ArrayType = decltype( array );
+      using ArrayType = camp::first< decltype( tupleOfTypes ) >;
       Wrapper< ArrayType > & wrapperT = Wrapper< ArrayType >::cast( wrapper );
       ArrayType & targetArray = wrapperT.reference();
 
@@ -1294,7 +1295,7 @@ void SiloFile::writeElementRegionSilo( ElementRegionBase const & elemRegion,
           counter += subRegion.size();
         }
       } );
-    } );
+    }, wrapper );
   }
 
   writeGroupSilo( fakeGroup,
@@ -1969,7 +1970,7 @@ void SiloFile::writePolygonMeshObject( const string & meshName,
 
   // write multimesh object
   int rank = 0;
-#ifdef GEOSX_USE_MPI
+#ifdef GEOS_USE_MPI
   MPI_Comm_rank( MPI_COMM_WORLD, &rank );
 #endif
   if( rank == 0 )
@@ -2110,7 +2111,7 @@ void SiloFile::writeMultiXXXX( const DBObjectType type,
   (void)centering;
 
   int size = 1;
-#ifdef GEOSX_USE_MPI
+#ifdef GEOS_USE_MPI
   MPI_Comm_size( MPI_COMM_GEOSX, &size );
 #endif
 
@@ -2258,7 +2259,7 @@ void SiloFile::writeDataField( string const & meshName,
 
   // write multimesh object
   int rank = 0;
-#ifdef GEOSX_USE_MPI
+#ifdef GEOS_USE_MPI
   MPI_Comm_rank( MPI_COMM_GEOSX, &rank );
 #endif
   if( rank == 0 )
@@ -2527,7 +2528,7 @@ void SiloFile::writeDataField( string const & meshName,
 
   // write multimesh object
   int rank = 0;
-#ifdef GEOSX_USE_MPI
+#ifdef GEOS_USE_MPI
   MPI_Comm_rank( MPI_COMM_GEOSX, &rank );
 #endif
   if( rank == 0 )
@@ -2815,7 +2816,7 @@ void SiloFile::writeMaterialDataField( string const & meshName,
 
   // write multimesh object
   int rank = 0;
-#ifdef GEOSX_USE_MPI
+#ifdef GEOS_USE_MPI
   MPI_Comm_rank( MPI_COMM_GEOSX, &rank );
 #endif
   if( rank == 0 )

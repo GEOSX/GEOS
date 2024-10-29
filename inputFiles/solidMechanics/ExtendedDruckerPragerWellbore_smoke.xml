@@ -11,7 +11,7 @@
       name="mesh1"
       elementTypes="{ C3D8 }"
       radius="{ 0.1, 5.0 }"
-      theta="{ 0, 180 }"
+      theta="{ 0, 90 }"
       zCoords="{ -1, 1 }"
       nr="{ 4 }"
       nt="{ 4 }"
@@ -19,7 +19,6 @@
       trajectory="{ { 0.0, 0.0, -1.0 },
                     { 0.0, 0.0, 1.0 } }"
       autoSpaceRadialElems="{ 1 }"
-      useCartesianOuterBoundary="0"
       cellBlockNames="{ cb1 }"/>
   </Mesh>
 
@@ -36,7 +35,7 @@
 
     <PeriodicEvent
       name="outputs"
-      target="/Outputs/siloOutput"/>
+      target="/Outputs/vtkOutput"/>
 
    <PeriodicEvent
       name="restarts"

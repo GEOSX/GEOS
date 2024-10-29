@@ -25,7 +25,7 @@ parser.add_argument('-d',
                     default='integratedTests',
                     help='directory to search recursively for files with specified extension')
 
-parser.add_argument('-ext', '--extension', type=str, default='.data', help='extension of files to filter')
+parser.add_argument('-ext', '--extension', type=str, default='.log', help='extension of files to filter')
 
 parser.add_argument('-tl',
                     '--numTrailingLines',

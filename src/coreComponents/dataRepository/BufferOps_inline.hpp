@@ -2,10 +2,11 @@
  * ------------------------------------------------------------------------------------------------------------
  * SPDX-License-Identifier: LGPL-2.1-only
  *
- * Copyright (c) 2018-2020 Lawrence Livermore National Security LLC
- * Copyright (c) 2018-2020 The Board of Trustees of the Leland Stanford Junior University
- * Copyright (c) 2018-2020 TotalEnergies
- * Copyright (c) 2019-     GEOSX Contributors
+ * Copyright (c) 2016-2024 Lawrence Livermore National Security LLC
+ * Copyright (c) 2018-2024 Total, S.A
+ * Copyright (c) 2018-2024 The Board of Trustees of the Leland Stanford Junior University
+ * Copyright (c) 2018-2024 Chevron
+ * Copyright (c) 2019-     GEOS/GEOSX Contributors
  * All rights reserved
  *
  * See top level LICENSE, COPYRIGHT, CONTRIBUTORS, NOTICE, and ACKNOWLEDGEMENTS files for details.
@@ -400,6 +401,27 @@ localIndex Unpack( buffer_unit_type const * & buffer,
   return sizeOfUnpackedChars;
 }
 
+inline
+localIndex
+Unpack( buffer_unit_type const * & buffer,
+        ArrayOfArrays< array1d< globalIndex > > & var,
+        localIndex const subArrayIndex )
+{
+  localIndex length;
+  localIndex sizeOfUnpackedChars = bufferOps::Unpack( buffer, length );
+
+  var.resizeArray( subArrayIndex, length );
+
+  for( localIndex a = 0; a < length; ++a )
+  {
+    array1d< globalIndex > & tmp = var( subArrayIndex, a );
+    sizeOfUnpackedChars += bufferOps::Unpack( buffer, tmp );
+  }
+
+  return sizeOfUnpackedChars;
+}
+
+
 template< typename T >
 localIndex Unpack( buffer_unit_type const * & buffer,
                    ArrayOfSets< T > & var )
@@ -621,7 +643,7 @@ localIndex Unpack( buffer_unit_type const * & buffer,
   return sizeOfUnpackedChars;
 }
 
-#ifdef GEOSX_USE_ARRAY_BOUNDS_CHECK
+#ifdef GEOS_USE_ARRAY_BOUNDS_CHECK
 
 template< bool DO_PACKING, typename T, typename INDEX_TYPE >
 typename std::enable_if< !std::is_trivial< T >::value, localIndex >::type
@@ -720,7 +742,7 @@ Unpack( buffer_unit_type const * & buffer,
   return sizeOfUnpackedChars;
 }
 
-#endif /* GEOSX_USE_ARRAY_BOUNDS_CHECK */
+#endif /* GEOS_USE_ARRAY_BOUNDS_CHECK */
 
 template< bool DO_PACKING, int USD >
 localIndex Pack( buffer_unit_type * & buffer,
@@ -899,11 +921,11 @@ localIndex Pack( buffer_unit_type * & buffer,
     {
       if( var[a] != unmappedLocalIndexValue )
       {
-        buffer_GI[ a ] = localToGlobalMap[var[a]];
+        buffer_GI[a] = localToGlobalMap[var[a]];
       }
       else
       {
-        buffer_GI[ a ] = unmappedGlobalIndices[a];
+        buffer_GI[a] = unmappedGlobalIndices[a];
       }
     }
 
@@ -1090,6 +1112,29 @@ Pack( buffer_unit_type * & buffer,
       sizeOfPackedChars += Pack< DO_PACKING >( buffer,
                                                globalIndex( -1 ) );
     }
+  }
+
+  return sizeOfPackedChars;
+}
+
+template< bool DO_PACKING >
+localIndex
+Pack( buffer_unit_type * & buffer,
+      ArrayOfArraysView< array1d< globalIndex > const > const & var,
+      arrayView1d< localIndex const > const & indices,
+      arrayView1d< globalIndex const > const & localToGlobalMap )
+{
+  localIndex sizeOfPackedChars = 0;
+
+  sizeOfPackedChars += bufferOps::Pack< DO_PACKING >( buffer, indices.size() );
+  for( localIndex a = 0; a < indices.size(); ++a )
+  {
+    localIndex const li = indices[a];
+    sizeOfPackedChars += bufferOps::Pack< DO_PACKING >( buffer, localToGlobalMap[li] );
+
+    sizeOfPackedChars += bufferOps::PackArray< DO_PACKING >( buffer,
+                                                             var[li],
+                                                             var.sizeOfArray( li ) );
   }
 
   return sizeOfPackedChars;
@@ -1354,6 +1399,52 @@ Unpack( buffer_unit_type const * & buffer,
   }
   return sizeOfUnpackedChars;
 }
+
+template< typename SORTED0 >
+inline
+localIndex
+Unpack( buffer_unit_type const * & buffer,
+        ArrayOfArrays< array1d< globalIndex > > & var,
+        array1d< localIndex > & indices,
+        mapBase< globalIndex, localIndex, SORTED0 > const & globalToLocalMap )
+{
+  localIndex numIndicesUnpacked;
+  localIndex const sizeOfIndicesPassedIn = indices.size();
+
+  localIndex sizeOfUnpackedChars = bufferOps::Unpack( buffer, numIndicesUnpacked );
+
+  GEOS_ERROR_IF( sizeOfIndicesPassedIn != 0 && numIndicesUnpacked != indices.size(),
+                 "number of unpacked indices(" << numIndicesUnpacked << ") does not equal size of "
+                                                                        "indices passed into Unpack function(" << sizeOfIndicesPassedIn );
+
+  indices.resize( numIndicesUnpacked );
+  array1d< globalIndex > unmappedIndices;
+
+  for( localIndex a=0; a<indices.size(); ++a )
+  {
+    globalIndex gi;
+    sizeOfUnpackedChars += bufferOps::Unpack( buffer, gi );
+
+    localIndex & li = indices[a];
+    if( sizeOfIndicesPassedIn > 0 )
+    {
+      GEOS_ERROR_IF( li != globalToLocalMap.at( gi ),
+                     "global index " << gi << " unpacked from buffer does not equal the lookup "
+                                     << li << " for localIndex " << li << " on this rank" );
+    }
+    else
+    {
+      li = globalToLocalMap.at( gi );
+    }
+
+    unmappedIndices.resize( 0 );
+    sizeOfUnpackedChars += Unpack( buffer,
+                                   var,
+                                   li );
+  }
+  return sizeOfUnpackedChars;
+}
+
 
 template< bool DO_PACKING, typename SORTED >
 localIndex

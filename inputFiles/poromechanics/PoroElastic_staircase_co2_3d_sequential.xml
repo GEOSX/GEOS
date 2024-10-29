@@ -1,0 +1,159 @@
+<?xml version="1.0" ?>
+
+<Problem>
+
+  <Included>
+    <File name="./PoroElastic_staircase_co2_3d_base.xml"/>
+  </Included>  
+
+  <Solvers>
+
+    <CompositionalMultiphaseReservoirPoromechanics
+      name="reservoirSystem"
+      solidSolverName="linearElasticity"
+      reservoirAndWellsSolverName="reservoirAndWells"
+      logLevel="1"
+      targetRegions="{ channel }">
+      <NonlinearSolverParameters
+        couplingType="Sequential"
+        subcycling="1"
+        newtonTol="1.0e-8"
+        lineSearchAction="None"
+        newtonMaxIter="100"/>
+      <LinearSolverParameters
+        directParallel="0"/>
+    </CompositionalMultiphaseReservoirPoromechanics>
+    
+    <SolidMechanicsLagrangianSSLE
+      name="linearElasticity"
+      timeIntegrationOption="QuasiStatic"
+      logLevel="1"
+      discretization="FE1"
+      targetRegions="{ channel, barrier  }"/>
+
+    <CompositionalMultiphaseReservoir
+      name="reservoirAndWells"
+      flowSolverName="twoPhaseFlow"
+      wellSolverName="compositionalMultiphaseWell"
+      logLevel="1"
+      targetRegions="{ channel, wellRegion1, wellRegion2 }">
+      <NonlinearSolverParameters
+        newtonTol="1.0e-8"
+        lineSearchAction="None"
+        newtonMaxIter="40"/>
+      <LinearSolverParameters
+        directParallel="0"/>
+    </CompositionalMultiphaseReservoir>
+
+    <CompositionalMultiphaseFVM
+      name="twoPhaseFlow"
+      logLevel="1"
+      discretization="fluidTPFA"
+      targetRelativePressureChangeInTimeStep="1"
+      targetPhaseVolFractionChangeInTimeStep="1"
+      targetRegions="{ channel  }"
+      temperature="300"
+      useMass="1"/>
+
+    <CompositionalMultiphaseWell
+      name="compositionalMultiphaseWell"
+      logLevel="1"
+      targetRegions="{ wellRegion1, wellRegion2 }"
+      maxCompFractionChange="0.2"
+      useMass="1">
+      <WellControls
+        name="wellControls1"
+        logLevel="1"  
+        type="producer"
+        control="BHP"
+        referenceElevation="62.5"
+        targetBHP="9e6"
+        targetPhaseRateTableName="producerPhaseRateTable"
+        targetPhaseName="water"/>
+      <WellControls
+        name="wellControls2"
+        logLevel="1"      
+        type="injector"
+        control="totalVolRate"
+        referenceElevation="250"
+        targetBHP="1.5e7"
+        targetTotalRateTableName="injectorTotalRateTable"
+        useSurfaceConditions="1"
+        surfacePressure="101325"
+        surfaceTemperature="288.71"
+        injectionTemperature="355"
+        injectionStream="{ 1.0, 0.0 }"/>
+    </CompositionalMultiphaseWell>
+    
+  </Solvers>
+
+  <Events
+    minTime="-1e11"  
+    maxTime="1e7">
+    
+    <PeriodicEvent
+      name="outputs"
+      timeFrequency="1e6"
+      target="/Outputs/vtkOutput_seq"/>
+
+    <SoloEvent
+      name="multiphasePoroelasticityEquilibrationStep"
+      targetTime="-1e11"
+      beginTime="-1e11"
+      target="/Tasks/multiphasePoroelasticityEquilibrationStep"/>
+
+    <PeriodicEvent
+      name="solverApplications1"
+      endTime="1e3"
+      target="/Solvers/reservoirSystem"/>
+    <PeriodicEvent
+      name="solverApplications2"
+      beginTime="1e3"
+      maxEventDt="1e6"
+      target="/Solvers/reservoirSystem"/>
+
+    <PeriodicEvent
+      name="linearElasticityStatistics"
+      timeFrequency="1e6"
+      target="/Tasks/linearElasticityStatistics"/>
+    <PeriodicEvent
+      name="twoPhaseFlowStatistics"
+      timeFrequency="1e6"
+      target="/Tasks/twoPhaseFlowStatistics"/>
+    
+    <PeriodicEvent
+      name="restarts"
+      timeFrequency="5e6"
+      target="/Outputs/restartOutput"/>
+  </Events>
+
+  <Outputs>
+    <VTK
+      name="vtkOutput_seq"
+      fieldNames="{ initialPressure, skeletonChannel_density }"/>
+    <Restart
+      name="restartOutput"/>
+  </Outputs>
+
+  <Tasks>
+    
+    <SolidMechanicsStatistics
+      name="linearElasticityStatistics"
+      solidSolverName="linearElasticity"
+      logLevel="1"/>
+    <CompositionalMultiphaseStatistics
+      name="twoPhaseFlowStatistics"
+      flowSolverName="twoPhaseFlow"
+      logLevel="1"
+      computeCFLNumbers="1"
+      computeRegionStatistics="1"/>
+
+    <CompositionalMultiphaseReservoirPoromechanicsInitialization
+      logLevel="1"      
+      name="multiphasePoroelasticityEquilibrationStep"
+      poromechanicsSolverName="reservoirSystem"
+      solidMechanicsStatisticsName="linearElasticityStatistics"/>
+    
+  </Tasks>
+  
+</Problem>

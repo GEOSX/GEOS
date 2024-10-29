@@ -2,10 +2,11 @@
  * ------------------------------------------------------------------------------------------------------------
  * SPDX-License-Identifier: LGPL-2.1-only
  *
- * Copyright (c) 2018-2020 Lawrence Livermore National Security LLC
- * Copyright (c) 2018-2020 The Board of Trustees of the Leland Stanford Junior University
- * Copyright (c) 2018-2020 TotalEnergies
- * Copyright (c) 2019-     GEOSX Contributors
+ * Copyright (c) 2016-2024 Lawrence Livermore National Security LLC
+ * Copyright (c) 2018-2024 Total, S.A
+ * Copyright (c) 2018-2024 The Board of Trustees of the Leland Stanford Junior University
+ * Copyright (c) 2018-2024 Chevron
+ * Copyright (c) 2019-     GEOS/GEOSX Contributors
  * All rights reserved
  *
  * See top level LICENSE, COPYRIGHT, CONTRIBUTORS, NOTICE, and ACKNOWLEDGEMENTS files for details.
@@ -17,8 +18,8 @@
  * @file ExplicitMPM.hpp
  */
 
-#ifndef GEOSX_PHYSICSSOLVERS_CONTACT_EXPLICITMPM_HPP_
-#define GEOSX_PHYSICSSOLVERS_CONTACT_EXPLICITMPM_HPP_
+#ifndef GEOS_PHYSICSSOLVERS_CONTACT_EXPLICITMPM_HPP_
+#define GEOS_PHYSICSSOLVERS_CONTACT_EXPLICITMPM_HPP_
 
 #include "constitutive/solid/SolidUtilities.hpp"
 #include "physicsSolvers/solidMechanics/kernels/ExplicitFiniteStrain.hpp"
@@ -30,10 +31,13 @@ namespace geos
 namespace solidMechanicsMPMKernels
 {
 
+using namespace constitutive;
+
+// CC: TODO should be moved to some other header that can be included in the SolidMechanicsMPM solver too, for now there is a copied separate function there for specific tasks
 // A helper function to calculate polar decomposition. TODO: Previously this was an LvArray method, hopefully it will be again someday.
 GEOS_HOST_DEVICE
-void polarDecomposition( real64 (& R)[3][3],
-                         real64 const (&matrix)[3][3] )
+static inline void polarDecomposition( real64 (& R)[3][3],
+                                       real64 const (&matrix)[3][3] )
 {
   // Initialize
   LvArray::tensorOps::copy< 3, 3 >( R, matrix );
@@ -95,6 +99,7 @@ struct StateUpdateKernel
   static void launch( SortedArrayView< localIndex const > const indices,
                       CONSTITUTIVE_WRAPPER const & constitutiveWrapper,
                       real64 dt,
+                      int hyperelasticUpdate,
                       arrayView3d< real64 const > const deformationGradient,
                       arrayView3d< real64 const > const fDot,
                       arrayView3d< real64 const > const velocityGradient,
@@ -111,42 +116,65 @@ struct StateUpdateKernel
 
       // Copy the beginning-of-step particle stress into the constitutive model's m_oldStress - this fixes the MPI sync issue on Lassen for
       // some reason
-      #if defined(GEOSX_USE_CUDA)
+      #if defined(GEOS_USE_CUDA)
       LvArray::tensorOps::copy< 6 >( oldStress[p][0], particleStress[p] );
       #endif
 
-      // Determine the strain increment in Voigt notation
-      real64 strainIncrement[6];
-      strainIncrement[0] = velocityGradient[p][0][0] * dt;
-      strainIncrement[1] = velocityGradient[p][1][1] * dt;
-      strainIncrement[2] = velocityGradient[p][2][2] * dt;
-      strainIncrement[3] = (velocityGradient[p][1][2] + velocityGradient[p][2][1]) * dt;
-      strainIncrement[4] = (velocityGradient[p][0][2] + velocityGradient[p][2][0]) * dt;
-      strainIncrement[5] = (velocityGradient[p][0][1] + velocityGradient[p][1][0]) * dt;
-
-      // Get old F by incrementing backwards
-      real64 fOld[3][3] = { {0} };
-      real64 fNew[3][3] = { {0} };
-      LvArray::tensorOps::copy< 3, 3 >( fNew, deformationGradient[p] );
-      LvArray::tensorOps::copy< 3, 3 >( fOld, deformationGradient[p] );
-      LvArray::tensorOps::scaledAdd< 3, 3 >( fOld, fDot[p], -dt );
-
-      // Polar decompositions
-      real64 rotBeginning[3][3] = { {0} };
-      real64 rotEnd[3][3] = { {0} };
-      polarDecomposition( rotBeginning, fOld );
-      polarDecomposition( rotEnd, fNew );
-
-      // Call stress update
       real64 stress[6] = { 0 };
-      constitutive::SolidUtilities::hypoUpdate2_StressOnly( constitutiveWrapper,  // the constitutive model
-                                                            p,                    // particle local index
-                                                            0,                    // particles have 1 quadrature point
-                                                            dt,                   // time step size
-                                                            strainIncrement,      // particle strain increment
-                                                            rotBeginning,         // beginning-of-step rotation matrix
-                                                            rotEnd,               // end-of-step rotation matrix
-                                                            stress );             // final updated stress
+      //CC: debug hardcoded hyperelastic model for now
+      if( hyperelasticUpdate == 1 )
+      // if ( constitutiveWrapper.m_disableInelasticity ) // CC: Shouldn't there be a flag for hyperelastic models? otherwise we have to manually add their name here everything we add them
+                                                                    // Some models we might want hyperelastic updates when plasticity or damage are turned off 
+      { //Hyperelastic stress update
+        // Don't believe we need to perform unrotation and rotation here (yes...unrotation...)
+        // Think we can update stress directly by calling constitutive model
+        // Hyperelastic models in GEOSX currently use FminusI as input argument
+        real64 FminusI[3][3] = { {0} };
+        LvArray::tensorOps::copy< 3, 3 >( FminusI, deformationGradient[p] );
+        for(int i =0; i < 3; i++)
+        {
+          --FminusI[i][i];
+        }
+        
+       constitutiveWrapper.hyperUpdate( p,       // particle local index
+                                        0,       // particles have 1 quadrature point
+                                        FminusI, // particle strain increment
+                                        stress );
+      }
+      else //Hypoeleastic stress update
+      {
+        // Determine the strain increment in Voigt notation
+        real64 strainIncrement[6];
+        strainIncrement[0] = velocityGradient[p][0][0] * dt;
+        strainIncrement[1] = velocityGradient[p][1][1] * dt;
+        strainIncrement[2] = velocityGradient[p][2][2] * dt;
+        strainIncrement[3] = (velocityGradient[p][1][2] + velocityGradient[p][2][1]) * dt;
+        strainIncrement[4] = (velocityGradient[p][0][2] + velocityGradient[p][2][0]) * dt;
+        strainIncrement[5] = (velocityGradient[p][0][1] + velocityGradient[p][1][0]) * dt;
+
+        // Get old F by incrementing backwards
+        real64 fOld[3][3] = { {0} };
+        real64 fNew[3][3] = { {0} };
+        LvArray::tensorOps::copy< 3, 3 >( fNew, deformationGradient[p] );
+        LvArray::tensorOps::copy< 3, 3 >( fOld, deformationGradient[p] );
+        LvArray::tensorOps::scaledAdd< 3, 3 >( fOld, fDot[p], -dt );
+
+        // Polar decompositions
+        real64 rotBeginning[3][3] = { {0} };
+        real64 rotEnd[3][3] = { {0} };
+        polarDecomposition( rotBeginning, fOld );
+        polarDecomposition( rotEnd, fNew );
+
+        // Call stress update
+        constitutive::SolidUtilities::hypoUpdate2_StressOnly( constitutiveWrapper,  // the constitutive model
+                                                              p,                    // particle local index
+                                                              0,                    // particles have 1 quadrature point
+                                                              dt,                   // time step size
+                                                              strainIncrement,      // particle strain increment
+                                                              rotBeginning,         // beginning-of-step rotation matrix
+                                                              rotEnd,               // end-of-step rotation matrix
+                                                              stress );             // final updated stress
+      }
 
       // Copy the updated stress into particleStress
       LvArray::tensorOps::copy< 6 >( particleStress[p], stress );
@@ -162,4 +190,4 @@ struct StateUpdateKernel
 } // namespace geos
 
 
-#endif /* GEOSX_PHYSICSSOLVERS_CONTACT_EXPLICITMPM_HPP_ */
+#endif /* GEOS_PHYSICSSOLVERS_CONTACT_EXPLICITMPM_HPP_ */

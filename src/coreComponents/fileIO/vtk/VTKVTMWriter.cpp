@@ -2,10 +2,11 @@
  * ------------------------------------------------------------------------------------------------------------
  * SPDX-License-Identifier: LGPL-2.1-only
  *
- * Copyright (c) 2018-2020 Lawrence Livermore National Security LLC
- * Copyright (c) 2018-2020 The Board of Trustees of the Leland Stanford Junior University
- * Copyright (c) 2018-2020 TotalEnergies
- * Copyright (c) 2019-     GEOSX Contributors
+ * Copyright (c) 2016-2024 Lawrence Livermore National Security LLC
+ * Copyright (c) 2018-2024 Total, S.A
+ * Copyright (c) 2018-2024 The Board of Trustees of the Leland Stanford Junior University
+ * Copyright (c) 2018-2024 Chevron
+ * Copyright (c) 2019-     GEOS/GEOSX Contributors
  * All rights reserved
  *
  * See top level LICENSE, COPYRIGHT, CONTRIBUTORS, NOTICE, and ACKNOWLEDGEMENTS files for details.
@@ -26,11 +27,11 @@ VTKVTMWriter::VTKVTMWriter( string filePath )
   : m_filePath( std::move( filePath ) )
 {
   // Declaration of XML version
-  auto declarationNode = m_document.append_child( pugi::node_declaration );
+  auto declarationNode = m_document.appendChild( xmlWrapper::xmlNodeType::node_declaration );
   declarationNode.append_attribute( "version" ) = "1.0";
 
   // Declaration of the node VTKFile
-  auto vtkFileNode = m_document.append_child( "VTKFile" );
+  auto vtkFileNode = m_document.appendChild( "VTKFile" );
   vtkFileNode.append_attribute( "type" ) = "vtkMultiBlockDataSet";
   vtkFileNode.append_attribute( "version" ) = "1.0";
 
@@ -39,7 +40,7 @@ VTKVTMWriter::VTKVTMWriter( string filePath )
 
 void VTKVTMWriter::write() const
 {
-  m_document.save_file( m_filePath.c_str() );
+  m_document.saveFile( m_filePath );
 }
 
 void VTKVTMWriter::addDataSet( std::vector< string > const & blockPath,

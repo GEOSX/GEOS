@@ -16,7 +16,8 @@ set( codingUtilities_headers
 #
 set( codingUtilities_sources
      Parsing.cpp
-     StringUtilities.cpp )
+     StringUtilities.cpp
+     )
 
 set( dependencyList ${parallelDeps} common fast_float )
 
@@ -24,7 +25,7 @@ blt_add_library( NAME       codingUtilities
                  SOURCES    ${codingUtilities_sources}
                  HEADERS    ${codingUtilities_headers}
                  DEPENDS_ON ${dependencyList}
-                 OBJECT     ${GEOSX_BUILD_OBJ_LIBS}
+                 OBJECT     ${GEOS_BUILD_OBJ_LIBS}
                )
 
 # Avoid compiling with nvcc which sometimes crashes on fast_float
@@ -32,9 +33,7 @@ set_source_files_properties( Parsing.cpp PROPERTIES LANGUAGE CXX )
 
 target_include_directories( codingUtilities PUBLIC ${CMAKE_SOURCE_DIR}/coreComponents )
 
-geosx_add_code_checks(PREFIX codingUtilities )
 
-
-if( GEOSX_ENABLE_TESTS )
+if( GEOS_ENABLE_TESTS )
   add_subdirectory(tests)
 endif( )

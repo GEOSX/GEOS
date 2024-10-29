@@ -2,10 +2,11 @@
  * ------------------------------------------------------------------------------------------------------------
  * SPDX-License-Identifier: LGPL-2.1-only
  *
- * Copyright (c) 2018-2020 Lawrence Livermore National Security LLC
- * Copyright (c) 2018-2020 The Board of Trustees of the Leland Stanford Junior University
- * Copyright (c) 2018-2020 TotalEnergies
- * Copyright (c) 2019-     GEOSX Contributors
+ * Copyright (c) 2016-2024 Lawrence Livermore National Security LLC
+ * Copyright (c) 2018-2024 Total, S.A
+ * Copyright (c) 2018-2024 The Board of Trustees of the Leland Stanford Junior University
+ * Copyright (c) 2018-2024 Chevron
+ * Copyright (c) 2019-     GEOS/GEOSX Contributors
  * All rights reserved
  *
  * See top level LICENSE, COPYRIGHT, CONTRIBUTORS, NOTICE, and ACKNOWLEDGEMENTS files for details.
@@ -22,6 +23,7 @@
 #include "codingUtilities/StringUtilities.hpp"
 #include "common/DataTypes.hpp"
 #include "LvArray/src/limits.hpp"
+#include "common/GEOS_RAJA_Interface.hpp"
 
 namespace geos
 {
@@ -200,9 +202,37 @@ VAL findOption( mapBase< KEY, VAL, SORTED > const & map,
   auto const iter = map.find( option );
   GEOS_THROW_IF( iter == map.end(),
                  GEOS_FMT( "{}: unsupported option '{}' for {}.\nSupported options are: {}",
-                           contextName, option, optionName, stringutilities::join( mapKeys( map ), ", " ) ),
+                           contextName,
+                           const_cast< typename std::remove_const< KEY & >::type >( option ),
+                           optionName,
+                           stringutilities::join( mapKeys( map ), ", " ) ),
                  InputError );
   return iter->second;
+}
+
+namespace
+{
+
+/**
+ * @brief Apply functor @p transformer onto the map elements and store the results into a container of type @p C.
+ * @tparam MAP Type of the considered map.
+ * @tparam C Type of the container holding the keys.
+ * @tparam TRANSFORMER Type of the unary functor.
+ * @param[in] map The map from which keys will be extracted.
+ * @param transformer Which unary functor to apply to the @p map elements.
+ * @return The container with the results for the @p transformer application.
+ */
+template< template< typename ... > class C, typename MAP, typename TRANSFORMER >
+auto mapTransformer( MAP const & map,
+                     TRANSFORMER const & transformer )
+{
+  using v = std::invoke_result_t< TRANSFORMER, typename MAP::const_reference >;
+  C< v > result;
+  auto inserter = std::inserter( result, result.end() );
+  std::transform( map.begin(), map.end(), inserter, transformer );
+  return result;
+}
+
 }
 
 /**
@@ -215,11 +245,24 @@ VAL findOption( mapBase< KEY, VAL, SORTED > const & map,
 template< template< typename ... > class C = std::vector, typename MAP >
 C< typename MAP::key_type > mapKeys( MAP const & map )
 {
-  C< typename MAP::key_type > keys;
-  auto transformer = []( auto const & p ) { return p.first; };
-  auto inserter = std::inserter( keys, keys.end() );
-  std::transform( map.begin(), map.end(), inserter, transformer );
-  return keys;
+  auto transformer = []( auto const & p ) -> typename MAP::key_type
+  { return p.first; };
+  return mapTransformer< C >( map, transformer );
+}
+
+/**
+ * @brief Extract the values from the given map.
+ * @tparam MAP Type of the considered map.
+ * @tparam C Type of the container holding the values.
+ * @param[in] map The map from which values will be extracted.
+ * @return The container with the values.
+ */
+template< template< typename ... > class C = std::vector, typename MAP >
+C< typename MAP::mapped_type > mapValues( MAP const & map )
+{
+  auto transformer = []( typename MAP::const_reference p ) -> typename MAP::mapped_type
+  { return p.second; };
+  return mapTransformer< C >( map, transformer );
 }
 
 namespace internal
@@ -389,6 +432,76 @@ struct NoOpFunc
   operator()( Ts && ... ) const {}
 };
 
+template< typename FLAGS_ENUM >
+struct BitFlags
+{
+  GEOS_HOST_DEVICE
+  void set( FLAGS_ENUM flag )
+  {
+    m_FlagValue |= (integer)flag;
+  }
+
+  GEOS_HOST_DEVICE
+  bool isSet( FLAGS_ENUM flag ) const
+  {
+    return (m_FlagValue & (integer)flag) == (integer)flag;
+  }
+
+private:
+
+  using FlagsType = std::underlying_type_t< FLAGS_ENUM >;
+  FlagsType m_FlagValue{};
+
+};
+
+// Temporary functions (axpy, scale, dot) used in Aitken's acceleration. Will be removed once the nonlinear
+// acceleration implementation scheme will use LAI vectors. See issue #2891
+// (https://github.com/GEOS-DEV/GEOS/issues/2891)
+
+template< typename VECTOR_TYPE, typename SCALAR_TYPE >
+VECTOR_TYPE axpy( VECTOR_TYPE const & vec1,
+                  VECTOR_TYPE const & vec2,
+                  SCALAR_TYPE const alpha )
+{
+  GEOS_ASSERT( vec1.size() == vec2.size() );
+  const localIndex N = vec1.size();
+  VECTOR_TYPE result( N );
+  RAJA::forall< parallelHostPolicy >( RAJA::TypedRangeSegment< localIndex >( 0, N ),
+                                      [&] GEOS_HOST ( localIndex const i )
+    {
+      result[i] = vec1[i] + alpha * vec2[i];
+    } );
+  return result;
+}
+
+template< typename VECTOR_TYPE, typename SCALAR_TYPE >
+VECTOR_TYPE scale( VECTOR_TYPE const & vec,
+                   SCALAR_TYPE const scalarMult )
+{
+  const localIndex N = vec.size();
+  VECTOR_TYPE result( N );
+  RAJA::forall< parallelHostPolicy >( RAJA::TypedRangeSegment< localIndex >( 0, N ),
+                                      [&] GEOS_HOST ( localIndex const i )
+    {
+      result[i] = scalarMult * vec[i];
+    } );
+  return result;
+}
+
+template< typename VECTOR_TYPE >
+real64 dot( VECTOR_TYPE const & vec1,
+            VECTOR_TYPE const & vec2 )
+{
+  GEOS_ASSERT( vec1.size() == vec2.size());
+  RAJA::ReduceSum< parallelHostReduce, real64 > result( 0.0 );
+  const localIndex N = vec1.size();
+  RAJA::forall< parallelHostPolicy >( RAJA::TypedRangeSegment< localIndex >( 0, N ),
+                                      [&] GEOS_HOST ( localIndex const i )
+    {
+      result += vec1[i] * vec2[i];
+    } );
+  return result.get();
+}
 
 } // namespace geos
 

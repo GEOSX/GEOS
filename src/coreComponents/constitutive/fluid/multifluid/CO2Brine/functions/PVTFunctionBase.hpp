@@ -2,10 +2,11 @@
  * ------------------------------------------------------------------------------------------------------------
  * SPDX-License-Identifier: LGPL-2.1-only
  *
- * Copyright (c) 2018-2020 Lawrence Livermore National Security LLC
- * Copyright (c) 2018-2020 The Board of Trustees of the Leland Stanford Junior University
- * Copyright (c) 2018-2020 TotalEnergies
- * Copyright (c) 2019-     GEOSX Contributors
+ * Copyright (c) 2016-2024 Lawrence Livermore National Security LLC
+ * Copyright (c) 2018-2024 Total, S.A
+ * Copyright (c) 2018-2024 The Board of Trustees of the Leland Stanford Junior University
+ * Copyright (c) 2018-2024 Chevron
+ * Copyright (c) 2019-     GEOS/GEOSX Contributors
  * All rights reserved
  *
  * See top level LICENSE, COPYRIGHT, CONTRIBUTORS, NOTICE, and ACKNOWLEDGEMENTS files for details.
@@ -54,6 +55,43 @@ public:
 
 protected:
 
+  template< int USD >
+  GEOS_HOST_DEVICE
+  real64 computePhaseMolarWeight( arraySlice1d< real64 const, USD > const & phaseComposition ) const
+  {
+    integer const numComp = phaseComposition.size();
+    real64 MT = 0.0;
+    for( integer i = 0; i < numComp; i++ )
+    {
+      MT += phaseComposition[i] * m_componentMolarWeight[i];
+    }
+    return MT;
+  }
+
+  template< int USD1, int USD2, int USD3 >
+  GEOS_HOST_DEVICE
+  void divideByPhaseMolarWeight( arraySlice1d< real64 const, USD1 > const & phaseComposition,
+                                 arraySlice2d< real64 const, USD2 > const & dPhaseComposition,
+                                 real64 & value, arraySlice1d< real64, USD3 > const & dValue ) const
+  {
+    integer const numComp = phaseComposition.size();
+    integer const numDerivs = dValue.size();
+
+    real64 const MT = computePhaseMolarWeight( phaseComposition );
+
+    value /= MT;
+
+    for( int der = 0; der < numDerivs; der++ )
+    {
+      real64 dMT = 0.0;
+      for( int ic = 0; ic < numComp; ic++ )
+      {
+        dMT += dPhaseComposition[ic][der] * m_componentMolarWeight[ic];
+      }
+      dValue[der] = ( dValue[der] - value * dMT ) / MT; // value is already divided by MT
+    }
+  }
+
   /// Array storing the component molar weights
   arrayView1d< real64 const > m_componentMolarWeight;
 
@@ -79,7 +117,8 @@ public:
                                                              string const &,
                                                              array1d< string > const &,
                                                              array1d< string > const &,
-                                                             array1d< real64 > const & >;
+                                                             array1d< real64 > const &,
+                                                             bool const >;
   static typename CatalogInterface::CatalogType & getCatalog()
   {
     static CatalogInterface::CatalogType catalog;
@@ -91,6 +130,14 @@ public:
   string const & functionName() const { return m_functionName; }
 
   virtual PVTFunctionType functionType() const = 0;
+
+  /**
+   * @brief Check if the input values are in the expected pressure & temperature tables bounds
+   * @param pressure input pressure to check
+   * @param temperature input temperature to check (in C)
+   * @throw a SimulationError if one of the input values is out of bound.
+   */
+  virtual void checkTablesParameters( real64 pressure, real64 temperature ) const = 0;
 
 protected:
 

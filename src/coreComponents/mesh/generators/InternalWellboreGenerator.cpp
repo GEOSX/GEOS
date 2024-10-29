@@ -2,10 +2,11 @@
  * ------------------------------------------------------------------------------------------------------------
  * SPDX-License-Identifier: LGPL-2.1-only
  *
- * Copyright (c) 2018-2020 Lawrence Livermore National Security LLC
- * Copyright (c) 2018-2020 The Board of Trustees of the Leland Stanford Junior University
- * Copyright (c) 2018-2020 TotalEnergies
- * Copyright (c) 2019-     GEOSX Contributors
+ * Copyright (c) 2016-2024 Lawrence Livermore National Security LLC
+ * Copyright (c) 2018-2024 Total, S.A
+ * Copyright (c) 2018-2024 The Board of Trustees of the Leland Stanford Junior University
+ * Copyright (c) 2018-2024 Chevron
+ * Copyright (c) 2019-     GEOS/GEOSX Contributors
  * All rights reserved
  *
  * See top level LICENSE, COPYRIGHT, CONTRIBUTORS, NOTICE, and ACKNOWLEDGEMENTS files for details.
@@ -18,8 +19,7 @@
 
 #include "InternalWellboreGenerator.hpp"
 
-#include "mesh/DomainPartition.hpp"
-#include "mesh/mpiCommunications/SpatialPartition.hpp"
+#include "LvArray/src/tensorOps.hpp"
 
 namespace geos
 {
@@ -112,21 +112,22 @@ InternalWellboreGenerator::InternalWellboreGenerator( string const & name,
 
 }
 
-void InternalWellboreGenerator::postProcessInput()
+void InternalWellboreGenerator::postInputInitialization()
 {
 
   GEOS_ERROR_IF( m_nElems[1].size() > 1,
-                 "Only one block in the theta direction is currently supported. "
-                 "This is specified by the nt keyword in InternalWellbore" );
+                 getWrapperDataContext( viewKeyStruct::yElemsString() ) <<
+                 ": Only one block in the theta direction is currently supported. " );
 
   GEOS_ERROR_IF( m_nElems[2].size() > 1,
-                 "Only one block in the z direction is currently supported. "
-                 "This is specified by the nz keyword in InternalWellbore" );
+                 getWrapperDataContext( viewKeyStruct::yElemsString() ) <<
+                 ": Only one block in the z direction is currently supported. " );
 
 
 
   GEOS_ERROR_IF( m_trajectory.size( 0 ) != 2 || m_trajectory.size( 1 ) != 3,
-                 "Input for trajectory should be specified in the form of "
+                 getWrapperDataContext( viewKeyStruct::trajectoryString() ) <<
+                 ": Input for trajectory should be specified in the form of "
                  "{ { xbottom, ybottom, zbottom }, { xtop, ytop, ztop } }." );
 
   // Project trajectory to bottom and top of the wellbore
@@ -298,32 +299,28 @@ void InternalWellboreGenerator::postProcessInput()
     }
   }
 
-  InternalMeshGenerator::postProcessInput();
+  InternalMeshGenerator::postInputInitialization();
 }
 
-void InternalWellboreGenerator::reduceNumNodesForPeriodicBoundary( SpatialPartition & partition,
+void InternalWellboreGenerator::reduceNumNodesForPeriodicBoundary( PartitionDescriptor & partition,
                                                                    integer ( & numNodesInDir )[3] )
 {
   if( m_isFullAnnulus )
   {
-    if( partition.m_Partitions[1] == 1 )
+    if( partition.getPartitions()[1] == 1 )
     {
       numNodesInDir[1] -= 1;
     }
-    else if( partition.m_Partitions[1] > 1 )
+    else if( partition.getPartitions()[1] > 1 )
     {
-      partition.m_Periodic[1] = 1;
+      partition.setPeriodic( 1, 1 );
     }
   }
 
 }
 
-void InternalWellboreGenerator::
-  setNodeGlobalIndicesOnPeriodicBoundary( SpatialPartition & partition,
-                                          int ( & globalIJK )[3] )
+void InternalWellboreGenerator::setNodeGlobalIndicesOnPeriodicBoundary( int ( & globalIJK )[3] )
 {
-
-  GEOS_UNUSED_VAR( partition );
   if( m_isFullAnnulus )
   {
     if( globalIJK[1] == m_nElems[1].back() + 1 )

@@ -3,36 +3,24 @@
 <Problem>
   <Solvers
     gravityVector="{ 0.0, 0.0, 0.0 }">
-    <LagrangianContact
+    <SolidMechanicsLagrangeContact
       name="lagrangiancontact"
-      solidSolverName="lagsolve"
       stabilizationName="TPFAstabilization"
       discretization="FE1"
       targetRegions="{ Region, Fracture }"
-      contactRelationName="fractureMaterial"
-      fractureRegionName="Fracture"
+      timeIntegrationOption="QuasiStatic"
       logLevel="1">
       <NonlinearSolverParameters
         newtonTol="1.0e-8"
         logLevel="2"
-        newtonMaxIter="10"
+        newtonMaxIter="20"
         lineSearchAction="Require"
+        lineSearchStartingIteration="2"
         lineSearchMaxCuts="2"
         lineSearchInterpolationType="Parabolic"/>
       <LinearSolverParameters
         directParallel="0"/>
-    </LagrangianContact>
-
-    <SolidMechanicsLagrangianSSLE
-      name="lagsolve"
-      timeIntegrationOption="QuasiStatic"
-      discretization="FE1"
-      targetRegions="{ Region }">
-      <NonlinearSolverParameters
-        newtonTol="1.0e-6"/>
-      <LinearSolverParameters
-        krylovTol="1.0e-10"/>
-    </SolidMechanicsLagrangianSSLE>
+    </SolidMechanicsLagrangeContact>
 
     <SurfaceGenerator
       name="SurfaceGen"

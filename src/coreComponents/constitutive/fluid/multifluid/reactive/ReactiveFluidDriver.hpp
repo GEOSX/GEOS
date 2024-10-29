@@ -2,10 +2,11 @@
  * ------------------------------------------------------------------------------------------------------------
  * SPDX-License-Identifier: LGPL-2.1-only
  *
- * Copyright (c) 2018-2020 Lawrence Livermore National Security LLC
- * Copyright (c) 2018-2020 The Board of Trustees of the Leland Stanford Junior University
- * Copyright (c) 2018-2020 TotalEnergies
- * Copyright (c) 2019-     GEOSX Contributors
+ * Copyright (c) 2016-2024 Lawrence Livermore National Security LLC
+ * Copyright (c) 2018-2024 Total, S.A
+ * Copyright (c) 2018-2024 The Board of Trustees of the Leland Stanford Junior University
+ * Copyright (c) 2018-2024 Chevron
+ * Copyright (c) 2019-     GEOS/GEOSX Contributors
  * All rights reserved
  *
  * See top level LICENSE, COPYRIGHT, CONTRIBUTORS, NOTICE, and ACKNOWLEDGEMENTS files for details.
@@ -22,6 +23,7 @@
 #include "common/MpiWrapper.hpp"
 #include "constitutive/ConstitutiveManager.hpp"
 #include "constitutive/fluid/multifluid/reactive/ReactiveFluidSelector.hpp"
+#include "constitutive/fluid/multifluid/MultiFluidConstants.hpp"
 #include "events/tasks/TaskBase.hpp"
 #include "functions/FunctionManager.hpp"
 #include "functions/TableFunction.hpp"
@@ -48,7 +50,7 @@ public:
 
   static string catalogName() { return "ReactiveFluidDriver"; }
 
-  void postProcessInput() override;
+  void postInputInitialization() override;
 
   virtual bool execute( real64 const GEOS_UNUSED_PARAM( time_n ),
                         real64 const GEOS_UNUSED_PARAM( dt ),
@@ -112,7 +114,7 @@ private:
 
   enum columnKeys { TIME, PRES, TEMP }; ///< Enumeration of "input" column keys for readability
 
-  static constexpr real64 m_baselineTol = 1e-3; ///< Comparison tolerance for baseline results
+  static constexpr real64 m_baselineTol = MultiFluidConstants::baselineTolerance; ///< Comparison tolerance for baseline results
 };
 
 } /* namespace geos */

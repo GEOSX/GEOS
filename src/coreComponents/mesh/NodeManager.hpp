@@ -2,10 +2,11 @@
  * ------------------------------------------------------------------------------------------------------------
  * SPDX-License-Identifier: LGPL-2.1-only
  *
- * Copyright (c) 2018-2020 Lawrence Livermore National Security LLC
- * Copyright (c) 2018-2020 The Board of Trustees of the Leland Stanford Junior University
- * Copyright (c) 2018-2020 TotalEnergies
- * Copyright (c) 2019-     GEOSX Contributors
+ * Copyright (c) 2016-2024 Lawrence Livermore National Security LLC
+ * Copyright (c) 2018-2024 Total, S.A
+ * Copyright (c) 2018-2024 The Board of Trustees of the Leland Stanford Junior University
+ * Copyright (c) 2018-2024 Chevron
+ * Copyright (c) 2019-     GEOS/GEOSX Contributors
  * All rights reserved
  *
  * See top level LICENSE, COPYRIGHT, CONTRIBUTORS, NOTICE, and ACKNOWLEDGEMENTS files for details.
@@ -148,30 +149,32 @@ public:
 
   /**
    * @brief Builds the node-on-domain-boundary indicator.
-   * @param[in] faceIndex The computation is based on the face-on-domain-boundary indicator.
+   * @param[in] faceManager The computation is based on the face-on-domain-boundary indicator.
+   * @param[in] edgeManager The edge manager.
    * @see ObjectManagerBase::getDomainBoundaryIndicator()
    */
-  void setDomainBoundaryObjects( FaceManager const & faceIndex );
+  void setDomainBoundaryObjects( FaceManager const & faceManager,
+                                 EdgeManager const & edgeManager );
 
   /**
    * @brief Copies the nodes positions and the nodes to (edges|faces|elements) mappings from @p cellBlockManager.
    * @param[in] cellBlockManager Will provide the mappings.
    * @param[in] elemRegionManager element region manager, needed to map blocks to subregion
-   * @param[in] baseMeshLevel flag that indicates if we are operating on the base mesh level or on another mesh level
+   * @param[in] isBaseMeshLevel flag that indicates if we are operating on the base mesh level or on another mesh level
    */
   void setGeometricalRelations( CellBlockManagerABC const & cellBlockManager,
                                 ElementRegionManager const & elemRegionManager,
-                                bool baseMeshLevel );
+                                bool isBaseMeshLevel );
 
   /**
    * @brief Link the current manager to other managers.
    * @param edgeManager The edge manager instance.
    * @param faceManager The face manager instance.
-   * @param elementRegionManager The element region manager instance.
+   * @param elemRegionManager The element region manager instance.
    */
   void setupRelatedObjectsInRelations( EdgeManager const & edgeManager,
                                        FaceManager const & faceManager,
-                                       ElementRegionManager const & elementRegionManager );
+                                       ElementRegionManager const & elemRegionManager );
 
   /**
    * @brief Compress all NodeManager member arrays so that the values of each array are contiguous with no extra capacity inbetween.

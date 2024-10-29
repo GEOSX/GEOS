@@ -2,10 +2,11 @@
  * ------------------------------------------------------------------------------------------------------------
  * SPDX-License-Identifier: LGPL-2.1-only
  *
- * Copyright (c) 2018-2020 Lawrence Livermore National Security LLC
- * Copyright (c) 2018-2020 The Board of Trustees of the Leland Stanford Junior University
- * Copyright (c) 2018-2020 TotalEnergies
- * Copyright (c) 2019-     GEOSX Contributors
+ * Copyright (c) 2016-2024 Lawrence Livermore National Security LLC
+ * Copyright (c) 2018-2024 Total, S.A
+ * Copyright (c) 2018-2024 The Board of Trustees of the Leland Stanford Junior University
+ * Copyright (c) 2018-2024 Chevron
+ * Copyright (c) 2019-     GEOS/GEOSX Contributors
  * All rights reserved
  *
  * See top level LICENSE, COPYRIGHT, CONTRIBUTORS, NOTICE, and ACKNOWLEDGEMENTS files for details.
@@ -67,8 +68,15 @@ public:
                              arrayView1d< real64 const > const & thermalExpansionCoefficient,
                              arrayView3d< real64, solid::STRESS_USD > const & newStress,
                              arrayView3d< real64, solid::STRESS_USD > const & oldStress,
+                             arrayView2d< real64 > const & density,
+                             arrayView2d< real64 > const & wavespeed,
                              bool const & disableInelasticity ):
-    SolidBaseUpdates( newStress, oldStress, thermalExpansionCoefficient, disableInelasticity ),
+    SolidBaseUpdates( newStress,
+                      oldStress,
+                      density,
+                      wavespeed,
+                      thermalExpansionCoefficient,
+                      disableInelasticity ),
     m_c11( c11 ),
     m_c12( c12 ),
     m_c13( c13 ),
@@ -151,6 +159,15 @@ public:
   GEOS_HOST_DEVICE
   virtual void getElasticStiffness( localIndex const k, localIndex const q, real64 ( &stiffness )[6][6] ) const override final;
 
+  /**
+   * @brief Getter for apparent shear modulus.
+   * @return reference to shear modulus that will be used for computing stabilization scalling parameter.
+   */
+  GEOS_HOST_DEVICE
+  virtual real64 getShearModulus( localIndex const k ) const override final
+  {
+    return LvArray::math::max( LvArray::math::max( m_c44[k], m_c55[k] ), m_c66[k] );
+  }
 
 private:
   /// A reference to the ArrayView holding c11 for each element.
@@ -689,6 +706,8 @@ public:
                                       m_thermalExpansionCoefficient,
                                       m_newStress,
                                       m_oldStress,
+                                      m_density,
+                                      m_wavespeed,
                                       m_disableInelasticity );
   }
 
@@ -716,11 +735,13 @@ public:
                           m_thermalExpansionCoefficient,
                           m_newStress,
                           m_oldStress,
+                          m_density,
+                          m_wavespeed,
                           m_disableInelasticity );
   }
 
 protected:
-  virtual void postProcessInput() override;
+  virtual void postInputInitialization() override;
 
   /// The default value of the Young's modulus E1 for any new
   /// allocations.

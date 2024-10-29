@@ -2,10 +2,11 @@
  * ------------------------------------------------------------------------------------------------------------
  * SPDX-License-Identifier: LGPL-2.1-only
  *
- * Copyright (c) 2018-2020 Lawrence Livermore National Security LLC
- * Copyright (c) 2018-2020 The Board of Trustees of the Leland Stanford Junior University
- * Copyright (c) 2018-2020 TotalEnergies
- * Copyright (c) 2019-     GEOSX Contributors
+ * Copyright (c) 2016-2024 Lawrence Livermore National Security LLC
+ * Copyright (c) 2018-2024 Total, S.A
+ * Copyright (c) 2018-2024 The Board of Trustees of the Leland Stanford Junior University
+ * Copyright (c) 2018-2024 Chevron
+ * Copyright (c) 2019-     GEOS/GEOSX Contributors
  * All rights reserved
  *
  * See top level LICENSE, COPYRIGHT, CONTRIBUTORS, NOTICE, and ACKNOWLEDGEMENTS files for details.
@@ -216,7 +217,8 @@ void testNumericalDerivatives( FLASH_WRAPPER const & flashModelWrapper,
                                real64 const temperature,
                                arraySlice1d< real64 const > const & compFraction,
                                real64 const perturbParameter,
-                               real64 const relTol )
+                               real64 const relTol,
+                               real64 const absTol = std::numeric_limits< real64 >::epsilon() )
 {
   using namespace multifluid;
   using Deriv = multifluid::DerivativeOffset;
@@ -312,12 +314,12 @@ void testNumericalDerivatives( FLASH_WRAPPER const & flashModelWrapper,
     {
       checkRelativeError( (perturbedPhaseFracAndDeriv.value[j]-phaseFracAndDeriv.value[j])/dC,
                           phaseFracAndDeriv.derivs[j][Deriv::dC+i],
-                          relTol );
+                          relTol, absTol );
       for( integer k = 0; k < numComp; ++k )
       {
         checkRelativeError( (perturbedPhaseCompFracAndDeriv.value[j][k]-phaseCompFracAndDeriv.value[j][k])/dC,
                             phaseCompFracAndDeriv.derivs[j][k][Deriv::dC+i],
-                            relTol );
+                            relTol, absTol );
       }
     }
   }
@@ -364,7 +366,8 @@ std::unique_ptr< MODEL > makePVTFunction( string const & filename,
       pvtFunction = std::make_unique< MODEL >( strs[1],
                                                strs,
                                                componentNames,
-                                               componentMolarWeight );
+                                               componentMolarWeight,
+                                               true ); // print PVT tables
     }
   }
   GEOS_ERROR_IF( pvtFunction == nullptr,
@@ -405,7 +408,8 @@ std::unique_ptr< MODEL > makeFlashModel( string const & filename,
                                               strs,
                                               phaseNames,
                                               componentNames,
-                                              componentMolarWeight );
+                                              componentMolarWeight,
+                                              true ); // print PVT tables
     }
   }
   GEOS_ERROR_IF( flashModel == nullptr,
@@ -744,7 +748,6 @@ TEST_F( EzrokhiBrineDensityTest, brineCO2DensityMolarValuesAndDeriv )
   }
 }
 
-
 class SpanWagnerCO2DensityTest : public ::testing::Test
 {
 public:
@@ -844,7 +847,6 @@ TEST_F( SpanWagnerCO2DensityTest, spanWagnerCO2DensityMolarValuesAndDeriv )
   }
 }
 
-
 class CO2SolubilityTest : public ::testing::Test
 {
 public:
@@ -876,8 +878,9 @@ TEST_F( CO2SolubilityTest, co2SolubilityValuesAndDeriv )
   real64 const deltaComp = 0.2;
 
   real64 const eps = sqrt( std::numeric_limits< real64 >::epsilon());
-  real64 const relTolPrevImpl = 5e-4;
-  real64 const relTolDeriv = 5e-5;
+  real64 constexpr relTolPrevImpl = 5e-4;
+  real64 constexpr relTolDeriv = 5e-5;
+  real64 constexpr absTolDeriv = 1.0e-7;
 
   real64 const savedGasPhaseFrac[] = { 0.298158785, 0.298183347, 0.2982033821, 0.295950309, 0.2959791448, 0.2960026365, 0.2926988393,
                                        0.292724834, 0.2927459702, 0.499837295, 0.499854799, 0.4998690769, 0.4982634386, 0.4982839883,
@@ -901,7 +904,7 @@ TEST_F( CO2SolubilityTest, co2SolubilityValuesAndDeriv )
         testValuesAgainstPreviousImplementation( flashModelWrapper,
                                                  P[iPres], TC[iTemp], comp,
                                                  savedGasPhaseFrac[counter], savedWaterPhaseGasComp[counter], relTolPrevImpl );
-        testNumericalDerivatives( flashModelWrapper, P[iPres], TC[iTemp], comp, eps, relTolDeriv );
+        testNumericalDerivatives( flashModelWrapper, P[iPres], TC[iTemp], comp, eps, relTolDeriv, absTolDeriv );
         counter++;
       }
     }
@@ -945,12 +948,10 @@ TEST_F( BrineEnthalpyTest, BrineEnthalpyMassValuesAndDeriv )
 
 
   BrineEnthalpy::KernelWrapper pvtFunctionWrapper = pvtFunction->createKernelWrapper();
-  real64 const savedValues[] =   {    279338.177769, 281327.917595, 282984.982790, 273523.601187, 275547.730627,
-                                      277232.967486, 259305.594861, 261448.359022, 263229.980673, 207243.035969,
-                                      208857.558651, 210202.000531, 197603.080058, 199274.617099, 200665.764632,
-                                      174031.122202, 175899.343122, 177450.286494, 135147.894170, 136387.199707,
-                                      137419.018273, 121682.558928, 123001.503570, 124098.561778, 88756.649542,
-                                      90350.327221, 91670.592316 };
+  real64 const savedValues[] =
+  { 433114, 435103, 436760, 427299, 429323, 431008, 413081, 415224, 417005, 462186, 463801, 465145, 452546,
+    454218, 455609, 428974, 430843, 432394, 491259, 492499, 493530, 477794, 479113, 480210, 444868, 446462, 447782 };
+
   integer counter = 0;
   for( integer iComp = 0; iComp < 3; ++iComp )
   {
@@ -982,14 +983,12 @@ TEST_F( BrineEnthalpyTest, BrineEnthalpyMolarValuesAndDeriv )
   real64 const eps = sqrt( std::numeric_limits< real64 >::epsilon());
   real64 const relTol = 5e-5;
 
-
-
   BrineEnthalpy::KernelWrapper pvtFunctionWrapper = pvtFunction->createKernelWrapper();
-  real64 const savedValues[] =  {  15234891.499346, 15338606.577025, 15424985.891636, 15102742.031582, 15207238.691387, 15294258.271084,
-                                   14779605.524173, 14886798.427634, 14976008.570783, 11042832.057960, 11121210.933610, 11186485.534383,
-                                   10823742.150877, 10903416.807419, 10969752.900309, 10288015.835964, 10372160.580672, 10442128.397178,
-                                   6850772.616574, 6903815.290194, 6947985.177129, 6544742.270173, 6599594.923452, 6645247.529535,
-                                   5796426.147754, 5857522.733710, 5908248.223573};
+  real64 const savedValues[] =
+  { 1.87298e+07, 1.88335e+07, 1.89199e+07, 1.85976e+07, 1.87021e+07, 1.87892e+07, 1.82745e+07, 1.83817e+07, 1.84709e+07,
+    1.6837e+07, 1.69154e+07, 1.69807e+07, 1.66179e+07, 1.66976e+07, 1.67639e+07, 1.60822e+07, 1.61663e+07, 1.62363e+07,
+    1.49442e+07, 1.49973e+07, 1.50414e+07, 1.46382e+07, 1.4693e+07, 1.47387e+07, 1.38899e+07, 1.3951e+07, 1.40017e+07 };
+
   integer counter = 0;
   for( integer iComp = 0; iComp < 3; ++iComp )
   {
@@ -1007,7 +1006,6 @@ TEST_F( BrineEnthalpyTest, BrineEnthalpyMolarValuesAndDeriv )
     comp[1] = 1 - comp[0];
   }
 }
-
 
 class CO2EnthalpyTest : public ::testing::Test
 {
@@ -1044,13 +1042,10 @@ TEST_F( CO2EnthalpyTest, CO2EnthalpyMassValuesAndDeriv )
   real64 const eps = sqrt( std::numeric_limits< real64 >::epsilon());
   real64 const relTol = 5e-5;
 
-
-
   CO2Enthalpy::KernelWrapper pvtFunctionWrapper = pvtFunction->createKernelWrapper();
-  real64 const savedValues[] =   {     28447.084306, 29131.068469, 29700.204529, 9320.187656, 10117.295548, 10779.101555, -37449.569995,
-                                       -36262.216311, -35283.355068, 28447.084306, 29131.068469, 29700.204529, 9320.187656, 10117.295548,
-                                       10779.101555, -37449.569995, -36262.216311, -35283.355068, 28447.084306, 29131.068469, 29700.204529,
-                                       9320.187656, 10117.295548, 10779.101555, -37449.569995, -36262.216311, -35283.355068};
+  real64 const savedValues[] =
+  { 534287, 534971, 535540, 515160, 515957, 516619, 468390, 469578, 470557, 534287, 534971, 535540, 515160, 515957,
+    516619, 468390, 469578, 470557, 534287, 534971, 535540, 515160, 515957, 516619, 468390, 469578, 470557 };
 
   integer counter = 0;
   for( integer iComp = 0; iComp < 3; ++iComp )
@@ -1083,14 +1078,14 @@ TEST_F( CO2EnthalpyTest, CO2EnthalpyMolarValuesAndDeriv )
   real64 const eps = sqrt( std::numeric_limits< real64 >::epsilon());
   real64 const relTol = 5e-5;
 
-
-
   CO2Enthalpy::KernelWrapper pvtFunctionWrapper = pvtFunction->createKernelWrapper();
-  real64 const savedValues[] =   {    646524.643323, 662069.737939, 675004.648394, 211822.446731, 229938.535180, 244979.580788,
-                                      -851126.590796, -824141.279795, -801894.433361, 646524.643323, 662069.737939, 675004.648394,
-                                      211822.446731, 229938.535180, 244979.580788, -851126.590796, -824141.279795, -801894.433361,
-                                      646524.643323, 662069.737939, 675004.648394, 211822.446731, 229938.535180, 244979.580788,
-                                      -851126.590796, -824141.279795, -801894.433361 };
+  real64 const savedValues[] =
+  { 12142888.279686311, 12158433.374301625, 12171368.284757353, 11708186.083185773, 11726302.171616826, 11741343.217216015,
+    10645237.045567034, 10672222.35656886, 10694469.203002082, 12142888.279686311, 12158433.374301625, 12171368.284757353,
+    11708186.083185773, 11726302.171616826, 11741343.217216015, 10645237.045567034, 10672222.35656886, 10694469.203002082,
+    12142888.279686311, 12158433.374301625, 12171368.284757353, 11708186.083185773, 11726302.171616826, 11741343.217216015,
+    10645237.045567034, 10672222.35656886, 10694469.203002082 };
+
   integer counter = 0;
   for( integer iComp = 0; iComp < 3; ++iComp )
   {
@@ -1108,7 +1103,6 @@ TEST_F( CO2EnthalpyTest, CO2EnthalpyMolarValuesAndDeriv )
     comp[1] = 1 - comp[0];
   }
 }
-
 
 int main( int argc, char * * argv )
 {

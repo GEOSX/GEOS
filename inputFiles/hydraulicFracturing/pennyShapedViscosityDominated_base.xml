@@ -11,7 +11,7 @@
     <SurfaceElementRegion
       name="Fracture"
       defaultAperture="0.02e-3"
-      materialList="{ water, rock, fractureFilling, fractureContact }"/>
+      materialList="{ water, fractureFilling, fractureContact }"/>
   </ElementRegions>
   <!-- SPHINX_ELEMENTREGIONS_END -->
 
@@ -159,7 +159,20 @@
     <PackCollection
       name="areaCollection"
       objectPath="ElementRegions/Fracture/FractureSubRegion"
-      fieldName="elementArea"/> 
+      fieldName="elementArea"/>
+
+    <!-- Collect aperture, pressure at the source for curve checks -->
+    <PackCollection
+      name="sourcePressureCollection"
+      objectPath="ElementRegions/Fracture/FractureSubRegion"
+      fieldName="pressure"
+      setNames="{ source }"/>
+
+    <PackCollection
+      name="sourceHydraulicApertureCollection"
+      objectPath="ElementRegions/Fracture/FractureSubRegion"
+      fieldName="hydraulicAperture"
+      setNames="{ source }"/>
   </Tasks>
   <!-- SPHINX_TASKS_END -->
 
@@ -175,6 +188,10 @@
       name="timeHistoryOutput"
       sources="{/Tasks/pressureCollection, /Tasks/apertureCollection, /Tasks/hydraulicApertureCollection, /Tasks/areaCollection}"
       filename="pennyShapedViscosityDominated_output" />  
+    <TimeHistory
+      name="curveOutput"
+      sources="{/Tasks/sourcePressureCollection, /Tasks/sourceHydraulicApertureCollection}"
+      filename="hydrofracture_source_curves" />
 
     <Restart
       name="restartOutput"/>

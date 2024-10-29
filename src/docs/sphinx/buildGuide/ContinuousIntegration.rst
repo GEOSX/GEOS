@@ -9,21 +9,10 @@ Everytime a pull is requested in the TPL repository, docker images are generated
 The repository names (`ubuntu18.04-gcc8 <https://hub.docker.com/r/geosx/ubuntu18.04-gcc8>`_,
 `centos7.7.1908-clang9.0.0 <https://hub.docker.com/r/geosx/centos7.5.1804-clang6.0.1>`_, `centos7.6.1810-gcc8.3.1-cuda10.1.243 <https://hub.docker.com/r/geosx/centos7.6.1810-gcc8.3.1-cuda10.1.243>`_ etc.)
 obviously reflect the OS and the compiler flavour used.
-For each image, the unique ``${TRAVIS_PULL_REQUEST}-${TRAVIS_BUILD_NUMBER}`` tag is used so we can connect the related code source in a rather convenient way.
+For each image, the unique tag ``${PULL_REQUEST_NUMBER}-${BUILD_NUMBER}`` (defined as ``${{ github.event.number }}-${{ github.run_number }}`` in github actions) is used so we can connect the related code source in a rather convenient way.
 Each docker contains the ``org.opencontainers.image.created`` and ``org.opencontainers.image.revision`` labels to provide additional information.
 
-For the OSX builds, we construct a tarball of the TPLs and save them in a remote cloud storage.
-There is currently only one mac osx tested environment (xcode 11.2) and the same ``${TRAVIS_PULL_REQUEST}-${TRAVIS_BUILD_NUMBER}`` pattern is used as an identifier for the build.
-An important counterpart to using a tarball and not a docker image is that the tarball does not provide the whole system the precompiled binaries rely on.
-Problems may arise since we use the rolling release `Homebrew <https://brew.sh/>`_ (to install open-mpi in particular).
-To circumvent this potential issue, the brew version is fixed to a specific commit (see BREW_HASH variable in `third party's .travis.yml <https://github.com/GEOS-DEV/thirdPartyLibs/blob/master/.travis.yml>`_)
-and stored as a metainformation of the tarball blob inside the cloud storage.
-It is therefore possible for GEOS to recover this informatiom and build against the same revision of brew packages.
-Note that the ``TRAVIS_PULL_REQUEST``, ``TRAVIS_BUILD_NUMBER`` and ``TRAVIS_COMMIT`` are also stored as metainformation in the same way
-(have a look at the OSX build section of `GEOS's .travis.yml <https://github.com/GEOS-DEV/GEOS/blob/develop/.travis.yml>`_ to see how to retrieve these informations).
-
-There thus is only one unique identifier for both dockers and mac osx builds for one TPL code base.
-It is necessary to define the global environment ``GEOSX_TPL_TAG`` (`e.g.` something like ``82-254``) to build against one selected version of the TPL.
+It is necessary to set ``build.args.GEOS_TPL_TAG`` (`e.g.` something like ``235-52``) in the `.devcontainer/devcontainer.json <https://github.com/GEOS-DEV/GEOS/blob/develop/.devcontainer/devcontainer.json>`_ file, to build against one selected version of the TPL.
 
 It must be mentioned that one and only one version of the compiled TPL tarball is stored per pull request (older ones are removed automatically).
 Therefore, a client building against a work in progress PR may experience a 404 error sooner or later.

@@ -2,10 +2,11 @@
  * ------------------------------------------------------------------------------------------------------------
  * SPDX-License-Identifier: LGPL-2.1-only
  *
- * Copyright (c) 2018-2020 Lawrence Livermore National Security LLC
- * Copyright (c) 2018-2020 The Board of Trustees of the Leland Stanford Junior University
- * Copyright (c) 2018-2020 TotalEnergies
- * Copyright (c) 2019-     GEOSX Contributors
+ * Copyright (c) 2016-2024 Lawrence Livermore National Security LLC
+ * Copyright (c) 2018-2024 Total, S.A
+ * Copyright (c) 2018-2024 The Board of Trustees of the Leland Stanford Junior University
+ * Copyright (c) 2018-2024 Chevron
+ * Copyright (c) 2019-     GEOS/GEOSX Contributors
  * All rights reserved
  *
  * See top level LICENSE, COPYRIGHT, CONTRIBUTORS, NOTICE, and ACKNOWLEDGEMENTS files for details.
@@ -314,7 +315,7 @@ class ResidualNormKernel : public solverBaseKernels::ResidualNormKernelBase< 1 >
 public:
 
   using Base = solverBaseKernels::ResidualNormKernelBase< 1 >;
-  using Base::minNormalizer;
+  using Base::m_minNormalizer;
   using Base::m_rankOffset;
   using Base::m_localResidual;
   using Base::m_dofNumber;
@@ -326,12 +327,14 @@ public:
                       WellElementSubRegion const & subRegion,
                       constitutive::SingleFluidBase const & fluid,
                       WellControls const & wellControls,
-                      real64 const & timeAtEndOfStep,
-                      real64 const & dt )
+                      real64 const timeAtEndOfStep,
+                      real64 const dt,
+                      real64 const minNormalizer )
     : Base( rankOffset,
             localResidual,
             dofNumber,
-            ghostRank ),
+            ghostRank,
+            minNormalizer ),
     m_dt( dt ),
     m_isLocallyOwned( subRegion.isLocallyOwned() ),
     m_iwelemControl( subRegion.getTopWellElementIndex() ),
@@ -362,7 +365,7 @@ public:
           else if( m_currentControl == WellControls::Control::TOTALVOLRATE )
           {
             // this residual entry is in volume / time units
-            normalizer = LvArray::math::max( LvArray::math::abs( m_targetRate ), minNormalizer );
+            normalizer = LvArray::math::max( LvArray::math::abs( m_targetRate ), m_minNormalizer );
           }
         }
         // for the pressure difference equation, always normalize by the BHP
@@ -447,19 +450,20 @@ public:
   template< typename POLICY >
   static void
   createAndLaunch( globalIndex const rankOffset,
-                   string const dofKey,
+                   string const & dofKey,
                    arrayView1d< real64 const > const & localResidual,
                    WellElementSubRegion const & subRegion,
                    constitutive::SingleFluidBase const & fluid,
                    WellControls const & wellControls,
-                   real64 const & timeAtEndOfStep,
-                   real64 const & dt,
+                   real64 const timeAtEndOfStep,
+                   real64 const dt,
+                   real64 const minNormalizer,
                    real64 (& residualNorm)[1] )
   {
     arrayView1d< globalIndex const > const dofNumber = subRegion.getReference< array1d< globalIndex > >( dofKey );
     arrayView1d< integer const > const ghostRank = subRegion.ghostRank();
 
-    ResidualNormKernel kernel( rankOffset, localResidual, dofNumber, ghostRank, subRegion, fluid, wellControls, timeAtEndOfStep, dt );
+    ResidualNormKernel kernel( rankOffset, localResidual, dofNumber, ghostRank, subRegion, fluid, wellControls, timeAtEndOfStep, dt, minNormalizer );
     ResidualNormKernel::launchLinf< POLICY >( subRegion.size(), kernel, residualNorm );
   }
 

@@ -2,10 +2,11 @@
  * ------------------------------------------------------------------------------------------------------------
  * SPDX-License-Identifier: LGPL-2.1-only
  *
- * Copyright (c) 2018-2020 Lawrence Livermore National Security LLC
- * Copyright (c) 2018-2020 The Board of Trustees of the Leland Stanford Junior University
- * Copyright (c) 2018-2020 TotalEnergies
- * Copyright (c) 2019-     GEOSX Contributors
+ * Copyright (c) 2016-2024 Lawrence Livermore National Security LLC
+ * Copyright (c) 2018-2024 Total, S.A
+ * Copyright (c) 2018-2024 The Board of Trustees of the Leland Stanford Junior University
+ * Copyright (c) 2018-2024 Chevron
+ * Copyright (c) 2019-     GEOS/GEOSX Contributors
  * All rights reserved
  *
  * See top level LICENSE, COPYRIGHT, CONTRIBUTORS, NOTICE, and ACKNOWLEDGEMENTS files for details.
@@ -84,6 +85,7 @@ public:
   using Base::m_constitutiveUpdate;
   using Base::m_finiteElementSpace;
   using Base::m_meshData;
+  using Base::m_dt;
 
   /**
    * @brief Constructor
@@ -101,6 +103,7 @@ public:
                                   globalIndex const rankOffset,
                                   CRSMatrixView< real64, globalIndex const > const inputMatrix,
                                   arrayView1d< real64 > const inputRhs,
+                                  real64 const inputDt,
                                   real64 const (&inputGravityVector)[3] );
 
   //*****************************************************************************
@@ -260,6 +263,7 @@ using QuasiStaticFactory = finiteElement::KernelFactory< ImplicitSmallStrainQuas
                                                          globalIndex,
                                                          CRSMatrixView< real64, globalIndex const > const,
                                                          arrayView1d< real64 > const,
+                                                         real64 const,
                                                          real64 const (&)[3] >;
 
 } // namespace solidMechanicsLagrangianFEMKernels

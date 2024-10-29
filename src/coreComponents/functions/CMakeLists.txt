@@ -27,19 +27,21 @@ if( ENABLE_MATHPRESSO )
 endif()
 
 
-set( dependencyList ${parallelDeps} codingUtilities dataRepository )
+set( dependencyList ${parallelDeps} codingUtilities dataRepository fileIO )
 
 if( ENABLE_MATHPRESSO )
-   set( dependencyList ${dependencyList} mathpresso )
+   list( APPEND dependencyList mathpresso )
 endif()
 
 blt_add_library( NAME       functions
                  SOURCES    ${functions_sources}
                  HEADERS    ${functions_headers}
                  DEPENDS_ON ${dependencyList}
-                 OBJECT     ${GEOSX_BUILD_OBJ_LIBS}
+                 OBJECT     ${GEOS_BUILD_OBJ_LIBS}
                )
 
 target_include_directories( functions PUBLIC ${CMAKE_SOURCE_DIR}/coreComponents )
 
-geosx_add_code_checks( PREFIX functions )
+if( GEOS_ENABLE_TESTS )
+  add_subdirectory( unitTests )
+endif()

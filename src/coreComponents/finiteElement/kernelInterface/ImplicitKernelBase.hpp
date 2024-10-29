@@ -2,10 +2,11 @@
  * ------------------------------------------------------------------------------------------------------------
  * SPDX-License-Identifier: LGPL-2.1-only
  *
- * Copyright (c) 2018-2020 Lawrence Livermore National Security LLC
- * Copyright (c) 2018-2020 The Board of Trustees of the Leland Stanford Junior University
- * Copyright (c) 2018-2020 TotalEnergies
- * Copyright (c) 2019-     GEOSX Contributors
+ * Copyright (c) 2016-2024 Lawrence Livermore National Security LLC
+ * Copyright (c) 2018-2024 Total, S.A
+ * Copyright (c) 2018-2024 The Board of Trustees of the Leland Stanford Junior University
+ * Copyright (c) 2018-2024 Chevron
+ * Copyright (c) 2019-     GEOS/GEOSX Contributors
  * All rights reserved
  *
  * See top level LICENSE, COPYRIGHT, CONTRIBUTORS, NOTICE, and ACKNOWLEDGEMENTS files for details.
@@ -79,6 +80,7 @@ public:
    * @param rankOffset dof index offset of current rank
    * @param inputMatrix Reference to the Jacobian matrix.
    * @param inputRhs Reference to the RHS vector.
+   * @param inputDt The timestep for the physics update.
    * @copydoc geos::finiteElement::KernelBase::KernelBase
    */
   ImplicitKernelBase( NodeManager const & nodeManager,
@@ -91,14 +93,16 @@ public:
                       arrayView1d< globalIndex const > const & inputDofNumber,
                       globalIndex const rankOffset,
                       CRSMatrixView< real64, globalIndex const > const & inputMatrix,
-                      arrayView1d< real64 > const & inputRhs ):
+                      arrayView1d< real64 > const & inputRhs,
+                      real64 const inputDt ):
     Base( elementSubRegion,
           finiteElementSpace,
           inputConstitutiveType ),
     m_dofNumber( inputDofNumber ),
     m_dofRankOffset( rankOffset ),
     m_matrix( inputMatrix ),
-    m_rhs( inputRhs )
+    m_rhs( inputRhs ),
+    m_dt( inputDt )
   {
     FiniteElementBase::initialize< FE_TYPE >( nodeManager,
                                               edgeManager,
@@ -219,6 +223,9 @@ protected:
 
   /// Data structure containing mesh data used to setup the finite element
   typename FE_TYPE::template MeshData< SUBREGION_TYPE > m_meshData;
+
+  /// time increment
+  real64 const m_dt; ///TODO: Consider moving to finite element kernel base?
 
 };
 

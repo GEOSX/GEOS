@@ -22,7 +22,8 @@
       <NonlinearSolverParameters
         newtonTol="1.0e-4"
         newtonMaxIter="10"
-        maxTimeStepCuts="5"/>
+        maxTimeStepCuts="5"
+        maxAllowedResidualNorm="1e+15"/>
       <LinearSolverParameters
         solverType="gmres"
         preconditionerType="mgr"

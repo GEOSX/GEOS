@@ -2,10 +2,11 @@
  * ------------------------------------------------------------------------------------------------------------
  * SPDX-License-Identifier: LGPL-2.1-only
  *
- * Copyright (c) 2018-2020 Lawrence Livermore National Security LLC
- * Copyright (c) 2018-2020 The Board of Trustees of the Leland Stanford Junior University
- * Copyright (c) 2018-2020 TotalEnergies
- * Copyright (c) 2019-     GEOSX Contributors
+ * Copyright (c) 2016-2024 Lawrence Livermore National Security LLC
+ * Copyright (c) 2018-2024 Total, S.A
+ * Copyright (c) 2018-2024 The Board of Trustees of the Leland Stanford Junior University
+ * Copyright (c) 2018-2024 Chevron
+ * Copyright (c) 2019-     GEOS/GEOSX Contributors
  * All rights reserved
  *
  * See top level LICENSE, COPYRIGHT, CONTRIBUTORS, NOTICE, and ACKNOWLEDGEMENTS files for details.
@@ -56,15 +57,18 @@ PeriodicEvent::PeriodicEvent( const string & name,
     "If this option is set, the event will reduce its timestep requests to match the specified timeFrequency perfectly: dt_request = min(dt_request, t_last + time_frequency - time))." );
 
   registerWrapper( viewKeyStruct::functionNameString(), &m_functionName ).
+    setRTTypeName( rtTypes::CustomTypes::groupNameRef ).
     setInputFlag( InputFlags::OPTIONAL ).
     setDescription( "Name of an optional function to evaluate when the time/cycle criteria are met."
                     "If the result is greater than the specified eventThreshold, the function will continue to execute." );
 
   registerWrapper( viewKeyStruct::functionInputObjectString(), &m_functionInputObject ).
+    setRTTypeName( rtTypes::CustomTypes::groupNameRef ).
     setInputFlag( InputFlags::OPTIONAL ).
     setDescription( "If the optional function requires an object as an input, specify its path here." );
 
   registerWrapper( viewKeyStruct::functionInputSetnameString(), &m_functionInputSetname ).
+    setRTTypeName( rtTypes::CustomTypes::groupNameRef ).
     setInputFlag( InputFlags::OPTIONAL ).
     setDescription( "If the optional function is applied to an object, specify the setname to evaluate (default = everything)." );
 
@@ -168,10 +172,30 @@ void PeriodicEvent::checkOptionalFunctionThreshold( real64 const time,
 
     // Because the function applied to an object may differ by rank, synchronize
     // (Note: this shouldn't occur very often, since it is only called if the base forecast <= 0)
-#ifdef GEOSX_USE_MPI
+#ifdef GEOS_USE_MPI
     real64 result_global;
-    MPI_Allreduce( &result, &result_global, 1, MPI_DOUBLE, MPI_MAX, MPI_COMM_WORLD );
-    result = result_global;
+    switch( m_functionStatOption )
+    {
+      case 0:
+      {
+        MPI_Allreduce( &result, &result_global, 1, MPI_DOUBLE, MPI_MIN, MPI_COMM_WORLD );
+        result = result_global;
+        break;
+      }
+      case 1:
+      {
+        int nprocs;
+        MPI_Comm_size( MPI_COMM_WORLD, &nprocs );
+        MPI_Allreduce( &result, &result_global, 1, MPI_DOUBLE, MPI_SUM, MPI_COMM_WORLD );
+        result = result_global / nprocs;
+        break;
+      }
+      case 2:
+      {
+        MPI_Allreduce( &result, &result_global, 1, MPI_DOUBLE, MPI_MAX, MPI_COMM_WORLD );
+        result = result_global;
+      }
+    }
 #endif
   }
 
@@ -218,7 +242,7 @@ void PeriodicEvent::cleanup( real64 const time_n,
                              DomainPartition & domain )
 {
   // Only call the cleanup method of the target/children if it is within its application time
-  if( isActive( time_n ) )
+  if( isReadyForCleanup( time_n ) )
   {
     ExecutableGroup * target = getEventTarget();
     if( target != nullptr )
@@ -237,17 +261,27 @@ void PeriodicEvent::cleanup( real64 const time_n,
 
 void PeriodicEvent::validate() const
 {
+  ExecutableGroup const * target = getEventTarget();
+  if( target == nullptr )
+  {
+    return;
+  }
+
   GEOS_THROW_IF( m_timeFrequency > 0 &&
-                 getEventTarget()->getTimesteppingBehavior() == ExecutableGroup::TimesteppingBehavior::DeterminesTimeStepSize,
-                 GEOS_FMT(
-                   "`{}`: This event targets an object that automatically selects the time step size. Therefore, `{}` cannot be used here. However, forcing a constant time step size can still be achived with `{}`.",
-                   getName(), viewKeyStruct::timeFrequencyString(), EventBase::viewKeyStruct::forceDtString() ),
+                 target->getTimesteppingBehavior() == ExecutableGroup::TimesteppingBehavior::DeterminesTimeStepSize,
+                 GEOS_FMT( "`{}`: This event targets an object that automatically selects the time "
+                           "step size. Therefore, `{}` cannot be used here. However, forcing a "
+                           "constant time step size can still be achived with `{}`.",
+                           getDataContext(), viewKeyStruct::timeFrequencyString(),
+                           EventBase::viewKeyStruct::forceDtString() ),
                  InputError );
   GEOS_THROW_IF( m_cycleFrequency != 1 &&
-                 getEventTarget()->getTimesteppingBehavior() == ExecutableGroup::TimesteppingBehavior::DeterminesTimeStepSize,
-                 GEOS_FMT(
-                   "`{}`: This event targets an object that automatically selects the time step size. Therefore, `{}` cannot be used here. However, forcing a constant time step size can still be achived with `{}`.",
-                   getName(), viewKeyStruct::cycleFrequencyString(), EventBase::viewKeyStruct::forceDtString() ),
+                 target->getTimesteppingBehavior() == ExecutableGroup::TimesteppingBehavior::DeterminesTimeStepSize,
+                 GEOS_FMT( "`{}`: This event targets an object that automatically selects the time "
+                           "step size. Therefore, `{}` cannot be used here. However, forcing a "
+                           "constant time step size can still be achived with `{}`.",
+                           getDataContext(), viewKeyStruct::cycleFrequencyString(),
+                           EventBase::viewKeyStruct::forceDtString() ),
                  InputError );
 }
 

@@ -1,18 +1,19 @@
 set( serial_tests
-     BlasLapack )
+     testBlasLapack.cpp
+     testSolveLinearSystem.cpp )
 
 set( dependencyList gtest denseLinearAlgebra )
 
 if ( ENABLE_CUDA )
-  set( dependencyList ${dependencyList} cuda )
+  list( APPEND dependencyList cuda )
 endif()
 
-foreach(test_name ${serial_tests})
-  set( exec_name test${test_name} )
-  blt_add_executable( NAME ${exec_name}
-                      SOURCES ${exec_name}.cpp
+foreach(test ${serial_tests})
+  get_filename_component( test_name ${test} NAME_WE )
+  blt_add_executable( NAME ${test_name}
+                      SOURCES ${test}
                       OUTPUT_DIR ${TEST_OUTPUT_DIRECTORY}
                       DEPENDS_ON ${dependencyList} )
-  blt_add_test( NAME testDenseLinearAlgebra_${test_name}
-                COMMAND ${exec_name} )
+  geos_add_test( NAME ${test_name}
+                 COMMAND ${test_name} )
 endforeach()

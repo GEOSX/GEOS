@@ -12,7 +12,7 @@
       targetRegions="{ region, wellRegion1, wellRegion2 }">
       <NonlinearSolverParameters
         maxTimeStepCuts="5"
-        newtonTol="1e-7"  
+        newtonTol="1e-8"  
         newtonMaxIter="20"/>
       <LinearSolverParameters 
         directParallel="0"/> 
@@ -65,36 +65,35 @@
       nx="{ 4 }"
       ny="{ 4 }"
       nz="{ 2 }"
-      cellBlockNames="{ cb }"/>
+      cellBlockNames="{ cb }">
 
-    <InternalWell
-      name="wellProducer"
-      wellRegionName="wellRegion1"
-      wellControlsName="wellControls1"
-      meshName="mesh"
-      polylineNodeCoords="{ { 5.0, 5.0, 2.0 },
-                            { 5.0, 5.0, 0.0 } }"
-      polylineSegmentConn="{ { 0, 1 } }"
-      radius="0.1"
-      numElementsPerSegment="1">
-      <Perforation
-        name="producerPerf1"
-        distanceFromHead="1.00"/>
-    </InternalWell>
-    <InternalWell
-      name="wellInjector"
-      wellRegionName="wellRegion2"
-      wellControlsName="wellControls2"
-      meshName="mesh"
-      polylineNodeCoords="{ { 195.0, 195.0, 2.0 },
-                            { 195.0, 195.0, 0.0 } }"
-      polylineSegmentConn="{ { 0, 1 } }"
-      radius="0.1"
-      numElementsPerSegment="1">
-      <Perforation
-        name="injectorPerf1"
-        distanceFromHead="1.00"/>
-    </InternalWell>
+      <InternalWell
+        name="wellProducer"
+        wellRegionName="wellRegion1"
+        wellControlsName="wellControls1"
+        polylineNodeCoords="{ { 5.0, 5.0, 2.0 },
+                              { 5.0, 5.0, 0.0 } }"
+        polylineSegmentConn="{ { 0, 1 } }"
+        radius="0.1"
+        numElementsPerSegment="1">
+        <Perforation
+          name="producerPerf1"
+          distanceFromHead="1.00"/>
+      </InternalWell>
+      <InternalWell
+        name="wellInjector"
+        wellRegionName="wellRegion2"
+        wellControlsName="wellControls2"
+        polylineNodeCoords="{ { 195.0, 195.0, 2.0 },
+                              { 195.0, 195.0, 0.0 } }"
+        polylineSegmentConn="{ { 0, 1 } }"
+        radius="0.1"
+        numElementsPerSegment="1">
+        <Perforation
+          name="injectorPerf1"
+          distanceFromHead="1.00"/>
+      </InternalWell>
+    </InternalMesh>
   </Mesh>
 
   <Events 

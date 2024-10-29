@@ -7,6 +7,8 @@
       logLevel="1"
       discretization="fluidTPFA"
       targetRegions="{ Region1 }"
+      initialDt="1e5"
+      targetFlowCFL="2"
       temperature="297.15">
       <NonlinearSolverParameters
         newtonTol="1.0e-6"
@@ -45,26 +47,12 @@
     maxTime="2e7">
     <PeriodicEvent
       name="outputs"
-      timeFrequency="1e6"
-      target="/Outputs/siloOutput"/>
+      timeFrequency="5e6"
+      target="/Outputs/vtkOutput"/>
 
     <PeriodicEvent
       name="solverApplications1"
-      forceDt="1e3"
-      endTime="1e4"
-      target="/Solvers/compflow"/>
-
-    <PeriodicEvent
-      name="solverApplications2"
-      forceDt="1e4"
-      beginTime="1e4"
-      endTime="1e5"
-      target="/Solvers/compflow"/>
-
-    <PeriodicEvent
-      name="solverApplications3"
-      forceDt="1e5"
-      beginTime="1e5"
+      endTime="2e7"
       target="/Solvers/compflow"/>
 
     <PeriodicEvent
@@ -262,8 +250,9 @@
   </FieldSpecifications>
 
   <Outputs>
-    <Silo
-      name="siloOutput"/>
+    <VTK
+      name="vtkOutput"
+      plotFileRoot="4comp_2ph_1d"/>
 
     <Restart
       name="restartOutput"/>

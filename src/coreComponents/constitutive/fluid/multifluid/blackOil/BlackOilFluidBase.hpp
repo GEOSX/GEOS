@@ -2,10 +2,11 @@
  * ------------------------------------------------------------------------------------------------------------
  * SPDX-License-Identifier: LGPL-2.1-only
  *
- * Copyright (c) 2018-2020 Lawrence Livermore National Security LLC
- * Copyright (c) 2018-2020 The Board of Trustees of the Leland Stanford Junior University
- * Copyright (c) 2018-2020 TotalEnergies
- * Copyright (c) 2019-     GEOSX Contributors
+ * Copyright (c) 2016-2024 Lawrence Livermore National Security LLC
+ * Copyright (c) 2018-2024 Total, S.A
+ * Copyright (c) 2018-2024 The Board of Trustees of the Leland Stanford Junior University
+ * Copyright (c) 2018-2024 Chevron
+ * Copyright (c) 2019-     GEOS/GEOSX Contributors
  * All rights reserved
  *
  * See top level LICENSE, COPYRIGHT, CONTRIBUTORS, NOTICE, and ACKNOWLEDGEMENTS files for details.
@@ -48,6 +49,11 @@ public:
   };
 
   BlackOilFluidBase( string const & name, Group * const parent );
+
+  /**
+   * @copydoc MultiFluidBase::checkTablesParameters( real64 pressure, real64 temperature )
+   */
+  virtual void checkTablesParameters( real64 pressure, real64 temperature ) const override final;
 
   struct viewKeyStruct : MultiFluidBase::viewKeyStruct
   {
@@ -123,7 +129,7 @@ protected:
 
   virtual integer getWaterPhaseIndex() const override final;
 
-  virtual void postProcessInput() override;
+  virtual void postInputInitialization() override;
 
   virtual void initializePostSubGroups() override;
 
@@ -202,10 +208,16 @@ protected:
   array1d< integer > m_hydrocarbonPhaseOrder;
 
   /// Table kernel wrappers to interpolate in the oil and gas (B vs p) tables
-  array1d< TableFunction::KernelWrapper > m_formationVolFactorTables;
+  array1d< TableFunction const * > m_formationVolFactorTables;
+
+  /// Table kernel wrappers of m_formationVolFactorTables
+  array1d< TableFunction::KernelWrapper > m_formationVolFactorTableKernels;
 
   /// Table kernel wrappers to interpolate in the oil and gas (\mu vs p) tables
-  array1d< TableFunction::KernelWrapper > m_viscosityTables;
+  array1d< TableFunction const * > m_viscosityTables;
+
+  /// Table kernel wrappers of m_viscosityTables
+  array1d< TableFunction::KernelWrapper > m_viscosityTableKernels;
 
 };
 

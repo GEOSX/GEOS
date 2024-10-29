@@ -26,3 +26,5 @@ Contributing
    UsingDocker.rst
 
    InstallWin.rst
+
+   WorkingInteractivelyOnCI.rst

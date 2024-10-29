@@ -1,0 +1,155 @@
+<?xml version="1.0" ?>
+
+<Problem>
+  <Tasks>
+    <PVTDriver
+      name="testHydrocarbonMixture"
+      fluid="hydrocarbonMixture"
+      feedComposition="{ 0.05, 0.55, 0.25, 0.15 }"
+      pressureControl="pressureFunction"
+      temperatureControl="temperatureFunction"
+      steps="49"
+      outputCompressibility="1"
+      outputPhaseComposition="1"
+      baseline="testPVT_hydrocarbonMixture.txt"
+      logLevel="1"/>
+
+    <PVTDriver
+      name="testDeadOilA"
+      fluid="deadOilA"
+      feedComposition="{ 0.55, 0.45 }"
+      pressureControl="pressureFunction"
+      temperatureControl="temperatureFunction"
+      steps="49"
+      outputPhaseComposition="1"
+      baseline="testPVT_deadOilA.txt"
+      logLevel="1"/>      
+
+    <PVTDriver
+      name="testDeadOilB"
+      fluid="deadOilB"
+      feedComposition="{ 0.55, 0.25, 0.20 }"
+      pressureControl="pressureFunction"
+      temperatureControl="temperatureFunction"
+      steps="49"
+      outputCompressibility="1"
+      outputPhaseComposition="1"
+      baseline="testPVT_deadOilB.txt"
+      logLevel="1"/>      
+
+    <PVTDriver
+      name="testLiveBlackOil"
+      fluid="liveBlackOil"
+      feedComposition="{ 0.40, 0.30, 0.30 }"
+      pressureControl="pressureFunction"
+      temperatureControl="temperatureFunction"
+      steps="49"
+      outputCompressibility="1"
+      outputPhaseComposition="1"
+      baseline="testPVT_liveBlackOil.txt"
+      logLevel="1"/>      
+  </Tasks>
+
+  <Events
+    maxTime="1">
+    <SoloEvent
+      name="eventHydrocarbonMixture"
+      target="/Tasks/testHydrocarbonMixture"/>
+
+    <SoloEvent
+      name="eventDeadOilA"
+      target="/Tasks/testDeadOilA"/>
+
+    <SoloEvent
+      name="eventDeadOilB"
+      target="/Tasks/testDeadOilB"/>
+
+    <SoloEvent
+      name="eventLiveBlackOil"
+      target="/Tasks/testLiveBlackOil"/>
+  </Events>
+
+  <Constitutive>
+    <CompositionalMultiphaseFluid
+      name="hydrocarbonMixture"
+      phaseNames="{ oil, gas }"
+      equationsOfState="{ PR, PR }"
+      componentNames="{ N2, C1, C10, H2O }"
+      componentCriticalPressure="{ 34e5, 46.6e5, 25.3e5, 220.5e5 }"
+      componentCriticalTemperature="{ 126.2, 191.15, 622.0, 647.0 }"
+      componentAcentricFactor="{ 0.04, 0.011, 0.443, 0.344 }"
+      componentMolarWeight="{ 28e-3, 16e-3, 134e-3, 18e-3 }"
+      componentVolumeShift="{ 0, 0, 0, 0 }"/>
+
+    <DeadOilFluid
+      name="deadOilA"
+      phaseNames="{ oil, water }"
+      surfaceDensities="{ 479.0, 1045.0 }"
+      componentMolarWeight="{ 114e-3, 18e-3 }"
+      hydrocarbonFormationVolFactorTableNames="{ deadOilBo }"
+      hydrocarbonViscosityTableNames="{ deadOilViscosity }"
+      waterReferencePressure="1e7"
+      waterFormationVolumeFactor="1.0"
+      waterCompressibility="1e-15"
+      waterViscosity="2.535e-4" />
+
+    <DeadOilFluid
+      name="deadOilB"
+      phaseNames="{ oil, gas, water }"
+      surfaceDensities="{ 800.0, 0.9907, 1022.0 }"
+      componentMolarWeight="{ 114e-3, 16e-3, 18e-3 }"
+      tableFiles="{ testPVT_data/deadOilPVDO.txt, testPVT_data/dryGasPVDG.txt, testPVT_data/watPVT.txt }"/>
+
+    <BlackOilFluid
+      name="liveBlackOil"
+      phaseNames="{ oil, gas, water }"
+      surfaceDensities="{ 800.0, 0.9907, 1022.0 }"
+      componentMolarWeight="{ 114e-3, 16e-3, 18e-3 }"
+      tableFiles="{ testPVT_data/liveOilPVTO.txt, testPVT_data/liveOilPVDG.txt, testPVT_data/watPVT.txt }"/>
+  </Constitutive>
+
+  <Functions>
+    <TableFunction
+      name="pressureFunction"
+      inputVarNames="{ time }"
+      coordinates="{ 0.0, 1.0 }"
+      values="{ 1e6, 50e6 }"/>
+
+    <TableFunction
+      name="temperatureFunction"
+      inputVarNames="{ time }"
+      coordinates="{ 0.0, 1.0 }"
+      values="{ 350, 350 }"/>
+
+    <TableFunction
+      name="deadOilBo"
+      coordinates="{ 2.0e6, 5.0e6, 10.0e6, 20.0e6, 30.0e6, 40.0e6, 50.0e6 }"
+      values="{ 1.09, 1.08, 1.07, 1.05, 1.04, 1.03, 1.02 }"/>
+
+    <TableFunction
+      name="deadOilViscosity"
+      coordinates="{ 2.0e6, 5.0e6, 10.0e6, 20.0e6, 30.0e6, 40.0e6, 50.0e6 }"
+      values="{  4.490e-04, 5.100e-04, 5.940e-04, 6.950e-04, 8.300e-04, 9.100e-04, 9.750e-04 }"/>
+  </Functions>
+
+  <!-- Mesh is not used, but GEOSX throws an error without one.  Will resolve soon-->
+  <Mesh>
+    <InternalMesh
+      name="mesh1"
+      elementTypes="{ C3D8 }"
+      xCoords="{ 0, 1 }"
+      yCoords="{ 0, 1 }"
+      zCoords="{ 0, 1 }"
+      nx="{ 1 }"
+      ny="{ 1 }"
+      nz="{ 1 }"
+      cellBlockNames="{ cellBlock01 }"/>
+  </Mesh>
+
+  <ElementRegions>
+    <CellElementRegion
+      name="dummy"
+      cellBlocks="{ cellBlock01 }"
+      materialList="{ dummy }"/>
+  </ElementRegions>
+</Problem>

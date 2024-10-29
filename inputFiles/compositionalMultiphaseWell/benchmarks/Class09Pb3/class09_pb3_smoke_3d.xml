@@ -16,34 +16,34 @@
       nx="{ 5 }"
       ny="{ 5 }"
       nz="{ 5 }"
-      cellBlockNames="{ 1_hexahedra }"/>
-    <InternalWell
-      name="wellInjector1"
-      wellRegionName="wellRegion"
-      wellControlsName="wellControls"
-      logLevel="1"
-      meshName="mesh"
-      polylineNodeCoords="{ { 5440.0, 3300.0, -2950.0 },
-                            { 5440.0, 3300.0, -3000.00 } }"
-      polylineSegmentConn="{ { 0, 1 } }"
-      radius="0.1"
-      numElementsPerSegment="5">
-      <Perforation
-        name="injector1_perf1"
-        distanceFromHead="45"/>
-      <Perforation
-        name="injector1_perf2"
-        distanceFromHead="35"/>
-      <Perforation
-        name="injector1_perf3"
-        distanceFromHead="25"/>
-      <Perforation
-        name="injector1_perf4"
-        distanceFromHead="15"/>
-      <Perforation
-        name="injector1_perf5"
-        distanceFromHead="5"/> 
-    </InternalWell>
+      cellBlockNames="{ 1_hexahedra }">
+      <InternalWell
+        name="wellInjector1"
+        wellRegionName="wellRegion"
+        wellControlsName="wellControls"
+        logLevel="1"
+        polylineNodeCoords="{ { 5440.0, 3300.0, -2950.0 },
+                              { 5440.0, 3300.0, -3000.00 } }"
+        polylineSegmentConn="{ { 0, 1 } }"
+        radius="0.1"
+        numElementsPerSegment="5">
+        <Perforation
+          name="injector1_perf1"
+          distanceFromHead="45"/>
+        <Perforation
+          name="injector1_perf2"
+          distanceFromHead="35"/>
+        <Perforation
+          name="injector1_perf3"
+          distanceFromHead="25"/>
+        <Perforation
+          name="injector1_perf4"
+          distanceFromHead="15"/>
+        <Perforation
+          name="injector1_perf5"
+          distanceFromHead="5"/>
+      </InternalWell>
+    </InternalMesh>
   </Mesh>
   <!-- SPHINX_MESH_END -->
 

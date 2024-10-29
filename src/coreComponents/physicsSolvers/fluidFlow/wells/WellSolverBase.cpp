@@ -2,10 +2,11 @@
  * ------------------------------------------------------------------------------------------------------------
  * SPDX-License-Identifier: LGPL-2.1-only
  *
- * Copyright (c) 2018-2020 Lawrence Livermore National Security LLC
- * Copyright (c) 2018-2020 The Board of Trustees of the Leland Stanford Junior University
- * Copyright (c) 2018-2020 TotalEnergies
- * Copyright (c) 2019-     GEOSX Contributors
+ * Copyright (c) 2016-2024 Lawrence Livermore National Security LLC
+ * Copyright (c) 2018-2024 Total, S.A
+ * Copyright (c) 2018-2024 The Board of Trustees of the Leland Stanford Junior University
+ * Copyright (c) 2018-2024 Chevron
+ * Copyright (c) 2019-     GEOS/GEOSX Contributors
  * All rights reserved
  *
  * See top level LICENSE, COPYRIGHT, CONTRIBUTORS, NOTICE, and ACKNOWLEDGEMENTS files for details.
@@ -26,6 +27,7 @@
 #include "physicsSolvers/fluidFlow/FlowSolverBaseFields.hpp"
 #include "physicsSolvers/fluidFlow/wells/WellControls.hpp"
 #include "physicsSolvers/fluidFlow/wells/WellSolverBaseFields.hpp"
+#include "fileIO/Outputs/OutputBase.hpp"
 
 namespace geos
 {
@@ -37,10 +39,16 @@ WellSolverBase::WellSolverBase( string const & name,
                                 Group * const parent )
   : SolverBase( name, parent ),
   m_numDofPerWellElement( 0 ),
-  m_numDofPerResElement( 0 )
+  m_numDofPerResElement( 0 ),
+  m_ratesOutputDir( joinPath( OutputBase::getOutputDirectory(), name + "_rates" ) )
 {
   this->getWrapper< string >( viewKeyStruct::discretizationString() ).
     setInputFlag( InputFlags::FALSE );
+
+  this->registerWrapper( viewKeyStruct::writeCSVFlagString(), &m_writeCSV ).
+    setApplyDefaultValue( 0 ).
+    setInputFlag( dataRepository::InputFlags::OPTIONAL ).
+    setDescription( "Write rates into a CSV file" );
 }
 
 Group * WellSolverBase::createChild( string const & childKey, string const & childName )
@@ -66,16 +74,27 @@ void WellSolverBase::expandObjectCatalogs()
 
 WellSolverBase::~WellSolverBase() = default;
 
-void WellSolverBase::postProcessInput()
+void WellSolverBase::postInputInitialization()
 {
-  SolverBase::postProcessInput();
+  SolverBase::postInputInitialization();
+
+  // create dir for rates output
+  if( m_writeCSV > 0 )
+  {
+    if( MpiWrapper::commRank() == 0 )
+    {
+      makeDirsForPath( m_ratesOutputDir );
+    }
+    // wait till the dir is created by rank 0
+    MPI_Barrier( MPI_COMM_WORLD );
+  }
 }
 
 void WellSolverBase::registerDataOnMesh( Group & meshBodies )
 {
   SolverBase::registerDataOnMesh( meshBodies );
 
-
+  // loop over the wells
   forDiscretizationOnMeshTargets( meshBodies, [&] ( string const &,
                                                     MeshLevel & meshLevel,
                                                     arrayView1d< string const > const & regionNames )
@@ -86,6 +105,11 @@ void WellSolverBase::registerDataOnMesh( Group & meshBodies )
                                                                        [&]( localIndex const,
                                                                             WellElementSubRegion & subRegion )
     {
+      subRegion.registerField< fields::well::pressure >( getName() );
+      subRegion.registerField< fields::well::pressure_n >( getName() );
+
+      subRegion.registerField< fields::well::temperature >( getName() );
+      subRegion.registerField< fields::well::temperature_n >( getName() );
 
       subRegion.registerField< fields::well::gravityCoefficient >( getName() );
 
@@ -96,6 +120,23 @@ void WellSolverBase::registerDataOnMesh( Group & meshBodies )
 
       PerforationData * const perforationData = subRegion.getPerforationData();
       perforationData->registerField< fields::well::gravityCoefficient >( getName() );
+    } );
+  } );
+}
+
+void WellSolverBase::initializePostSubGroups()
+{
+  DomainPartition & domain = this->getGroupByPath< DomainPartition >( "/Problem/domain" );
+  forDiscretizationOnMeshTargets( domain.getMeshBodies(), [&] ( string const &,
+                                                                MeshLevel & mesh,
+                                                                arrayView1d< string const > const & regionNames )
+  {
+    ElementRegionManager & elemManager = mesh.getElemManager();
+    elemManager.forElementSubRegions< WellElementSubRegion >( regionNames,
+                                                              [&]( localIndex const,
+                                                                   WellElementSubRegion & subRegion )
+    {
+      validateWellConstraints( 0, 0, subRegion );
     } );
   } );
 }
@@ -161,7 +202,7 @@ void WellSolverBase::assembleSystem( real64 const time,
   assembleAccumulationTerms( domain, dofManager, localMatrix, localRhs );
 
   // then assemble the flux terms in the mass balance equations
-  assembleFluxTerms( time, dt, domain, dofManager, localMatrix, localRhs );
+  assembleFluxTerms( dt, domain, dofManager, localMatrix, localRhs );
 
   // then assemble the volume balance equations
   assembleVolumeBalanceTerms( domain, dofManager, localMatrix, localRhs );
@@ -178,6 +219,7 @@ void WellSolverBase::assembleSystem( real64 const time,
 
 void WellSolverBase::updateState( DomainPartition & domain )
 {
+  GEOS_MARK_FUNCTION;
 
   forDiscretizationOnMeshTargets( domain.getMeshBodies(), [&] ( string const &,
                                                                 MeshLevel & mesh,

@@ -142,8 +142,8 @@ The **Events** tag is associated with the ``maxTime`` keyword defining the maxim
 If this time is ever reached or exceeded, the simulation ends.
 
 Two ``PeriodicEvent`` are defined.
-- The first one, ``solverApplications``, is associated with the solver. The  ``forceDt`` keyword means that there will always be time-steps of 23 days (2 000 000 seconds).
-- The second, ``outputs``, is associated with the output. The ``timeFrequency`` keyword means that it will be executed every 116 days (10 000 000 seconds).
+- The first one, ``solverApplications``, is associated with the solver. The  ``forceDt`` keyword means that there will always be time-steps of 10e6 seconds.
+- The second, ``outputs``, is associated with the output. The ``timeFrequency`` keyword means that it will be executed every 10e6 seconds.
 
 
 .. _NumericalMethods_tag_field_case:

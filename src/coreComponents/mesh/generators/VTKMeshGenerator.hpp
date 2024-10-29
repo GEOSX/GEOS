@@ -2,10 +2,11 @@
  * ------------------------------------------------------------------------------------------------------------
  * SPDX-License-Identifier: LGPL-2.1-only
  *
- * Copyright (c) 2018-2020 Lawrence Livermore National Security LLC
- * Copyright (c) 2018-2020 The Board of Trustees of the Leland Stanford Junior University
- * Copyright (c) 2018-2020 Total, S.A
- * Copyright (c) 2019-     GEOSX Contributors
+ * Copyright (c) 2016-2024 Lawrence Livermore National Security LLC
+ * Copyright (c) 2018-2024 Total, S.A
+ * Copyright (c) 2018-2024 The Board of Trustees of the Leland Stanford Junior University
+ * Copyright (c) 2018-2024 Chevron
+ * Copyright (c) 2019-     GEOS/GEOSX Contributors
  * All rights reserved
  *
  * See top level LICENSE, COPYRIGHT, CONTRIBUTORS, NOTICE, and ACKNOWLEDGEMENTS files for details.
@@ -51,7 +52,8 @@ public:
 
   /**
    * @brief Generate the mesh using the VTK library.
-   * @param[in] domain the DomainPartition to be written
+   * @param[inout] cellBlockManager the CellBlockManager that will receive the meshing information
+   * @param[in] partition the number of domain in each direction (x,y,z) for InternalMesh only, not used here
    * @details This method leverages the VTK library to load the meshes.
    * The supported formats are the official VTK ones dedicated to
    * unstructured grids (.vtu, .pvtu and .vtk) and structured grids (.vts, .vti and .pvts).
@@ -85,7 +87,7 @@ public:
    * surfaces of interest, with triangles and/or quads holding an attribute value
    * of 1, 2 or 3, three node sets named "1", "2" and "3" will be instantiated by this method
    */
-  virtual void generateMesh( DomainPartition & domain ) override;
+  virtual void fillCellBlockManager( CellBlockManager & cellBlockManager, array1d< int > const & partition ) override;
 
   void importFieldOnArray( Block block,
                            string const & blockName,

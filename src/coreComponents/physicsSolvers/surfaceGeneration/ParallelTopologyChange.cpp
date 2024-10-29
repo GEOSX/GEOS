@@ -1,3 +1,18 @@
+/*
+ * ------------------------------------------------------------------------------------------------------------
+ * SPDX-License-Identifier: LGPL-2.1-only
+ *
+ * Copyright (c) 2016-2024 Lawrence Livermore National Security LLC
+ * Copyright (c) 2018-2024 Total, S.A
+ * Copyright (c) 2018-2024 The Board of Trustees of the Leland Stanford Junior University
+ * Copyright (c) 2018-2024 Chevron
+ * Copyright (c) 2019-     GEOS/GEOSX Contributors
+ * All rights reserved
+ *
+ * See top level LICENSE, COPYRIGHT, CONTRIBUTORS, NOTICE, and ACKNOWLEDGEMENTS files for details.
+ * ------------------------------------------------------------------------------------------------------------
+ */
+
 /**
  * @file ParallelTopologyChange.cpp
  */
@@ -492,7 +507,7 @@ void packNewModifiedObjectsToGhosts( NeighborCommunicator * const neighbor,
     elemRegion.forElementSubRegionsIndex< FaceElementSubRegion >( [&]( localIndex const esr,
                                                                        FaceElementSubRegion & subRegion )
     {
-      FaceElementSubRegion::FaceMapType const & faceList = subRegion.faceList();
+      ArrayOfArraysView< localIndex const > const faceList = subRegion.faceList().toViewConst();
       localIndex_array & elemGhostsToSend = subRegion.getNeighborData( neighbor->neighborRank() ).ghostsToSend();
       elemGhostsToSend.move( hostMemorySpace );
       for( localIndex const & k : receivedObjects.newElements.at( {er, esr} ) )
@@ -736,9 +751,9 @@ void unpackNewModToGhosts( NeighborCommunicator * const neighbor,
 void updateConnectorsToFaceElems( std::set< localIndex > const & newFaceElements,
                                   FaceElementSubRegion & faceElemSubRegion )
 {
-  ArrayOfArrays< localIndex > & connectorToElem = faceElemSubRegion.m_fractureConnectorEdgesToFaceElements;
-  map< localIndex, localIndex > & edgesToConnectorEdges = faceElemSubRegion.m_edgesToFractureConnectorsEdges;
-  array1d< localIndex > & connectorEdgesToEdges = faceElemSubRegion.m_fractureConnectorsEdgesToEdges;
+  ArrayOfArrays< localIndex > & connectorToElem = faceElemSubRegion.m_2dFaceTo2dElems;
+  map< localIndex, localIndex > & edgesToConnectorEdges = faceElemSubRegion.m_edgesTo2dFaces;
+  array1d< localIndex > & connectorEdgesToEdges = faceElemSubRegion.m_2dFaceToEdge;
 
   ArrayOfArraysView< localIndex const > const facesToEdges = faceElemSubRegion.edgeList().toViewConst();
 
@@ -771,7 +786,7 @@ void updateConnectorsToFaceElems( std::set< localIndex > const & newFaceElements
       {
         connectorToElem.resizeArray( connectorIndex, numExistingCells+1 );
         connectorToElem[connectorIndex][ numExistingCells ] = kfe;
-        faceElemSubRegion.m_recalculateFractureConnectorEdges.insert( connectorIndex );
+        faceElemSubRegion.m_recalculateConnectionsFor2dFaces.insert( connectorIndex );
       }
     }
   }

@@ -2,11 +2,12 @@
  * ------------------------------------------------------------------------------------------------------------
  * SPDX-License-Identifier: LGPL-2.1-only
  *
- * Copyright (c) 2018-2019 Lawrence Livermore National Security LLC
- * Copyright (c) 2018-2019 The Board of Trustees of the Leland Stanford Junior University
- * Copyright (c) 2018-2019 TotalEnergies
- * Copyright (c) 2019-     GEOSX Contributors
- * All right reserved
+ * Copyright (c) 2016-2024 Lawrence Livermore National Security LLC
+ * Copyright (c) 2018-2024 Total, S.A
+ * Copyright (c) 2018-2024 The Board of Trustees of the Leland Stanford Junior University
+ * Copyright (c) 2018-2024 Chevron
+ * Copyright (c) 2019-     GEOS/GEOSX Contributors
+ * All rights reserved
  *
  * See top level LICENSE, COPYRIGHT, CONTRIBUTORS, NOTICE, and ACKNOWLEDGEMENTS files for details.
  * ------------------------------------------------------------------------------------------------------------
@@ -44,7 +45,8 @@ public:
   template< typename SUBREGION_TYPE >
   using InputCellToNodeMap = traits::ViewTypeConst< typename SUBREGION_TYPE::NodeMapType >;
   /// Type of MeshData::cellToFaceMap.
-  using InputCellToFaceMap = arrayView2d< localIndex const >;
+  template< typename SUBREGION_TYPE >
+  using InputCellToFaceMap = traits::ViewTypeConst< typename SUBREGION_TYPE::FaceMapType >;
   /// Type of MeshData::faceToNodeMap.
   using InputFaceToNodeMap = ArrayOfArraysView< localIndex const >;
   /// Type of MeshData::faceToEdgeMap.
@@ -114,7 +116,7 @@ public:
     /// View to the cell-to-node map in the sub-region.
     InputCellToNodeMap< SUBREGION_TYPE > cellToNodeMap;
     /// View to the cell-to-face map in the sub-region.
-    InputCellToFaceMap cellToFaceMap;
+    InputCellToFaceMap< SUBREGION_TYPE > cellToFaceMap;
     /// View to the face-to-node map in the sub-region.
     InputFaceToNodeMap faceToNodeMap;
     /// View to the face-to-edge map in the sub-region.
@@ -535,7 +537,7 @@ private:
     computeProjectors( localIndex const & cellIndex,
                        InputNodeCoords const & nodesCoords,
                        InputCellToNodeMap< SUBREGION_TYPE > const & cellToNodeMap,
-                       InputCellToFaceMap const & elementToFaceMap,
+                       InputCellToFaceMap< SUBREGION_TYPE > const & elementToFaceMap,
                        InputFaceToNodeMap const & faceToNodeMap,
                        InputFaceToEdgeMap const & faceToEdgeMap,
                        InputEdgeToNodeMap const & edgeToNodeMap,

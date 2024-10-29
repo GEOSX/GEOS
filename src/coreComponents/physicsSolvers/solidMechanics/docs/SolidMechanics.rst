@@ -118,7 +118,7 @@ step acceleration.
    u^{n+1} &= \tilde{u}^{n+1} + \beta a^{n+1} \Delta t^2 \\
    v^{n+1} &= \tilde{v}^{n+1} + \gamma a^{n+1} \Delta t
 
-The acceleration and velocity may now be expressed in terms of displacement, and ultimatly in terms
+The acceleration and velocity may now be expressed in terms of displacement, and ultimately in terms
 of the incremental displacement.
 
 .. math::

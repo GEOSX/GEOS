@@ -20,6 +20,7 @@
       logLevel="1"
       discretization="FE1"
       targetRegions="{ Domain, Fracture }"
+      targetObjects="{ FracturePlane }"
       fractureRegion="Fracture"
       mpiCommOrder="1"/>
   </Solvers>
@@ -38,7 +39,7 @@
   </Mesh>
 
   <Geometry>
-    <BoundedPlane
+    <Rectangle
       name="FracturePlane"
       normal="{ 1, 0, 0 }"
       origin="{ 0, 500, 0 }"
@@ -132,7 +133,7 @@
       name="rockPorosity"
       defaultReferencePorosity="0.05"
       referencePressure="0.0"
-      compressibility="0.0e-9"/>
+      compressibility="1.0e-9"/>
 
     <ConstantPermeability
       name="rockPerm"

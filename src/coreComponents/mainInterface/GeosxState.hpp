@@ -2,11 +2,12 @@
  * ------------------------------------------------------------------------------------------------------------
  * SPDX-License-Identifier: LGPL-2.1-only
  *
- * Copyright (c) 2018-2019 Lawrence Livermore National Security LLC
- * Copyright (c) 2018-2019 The Board of Trustees of the Leland Stanford Junior University
- * Copyright (c) 2018-2019 TotalEnergies
- * Copyright (c) 2019-     GEOSX Contributors
- * All right reserved
+ * Copyright (c) 2016-2024 Lawrence Livermore National Security LLC
+ * Copyright (c) 2018-2024 Total, S.A
+ * Copyright (c) 2018-2024 The Board of Trustees of the Leland Stanford Junior University
+ * Copyright (c) 2018-2024 Chevron
+ * Copyright (c) 2019-     GEOS/GEOSX Contributors
+ * All rights reserved
  *
  * See top level LICENSE, COPYRIGHT, CONTRIBUTORS, NOTICE, and ACKNOWLEDGEMENTS files for details.
  * ------------------------------------------------------------------------------------------------------------
@@ -24,7 +25,6 @@
 
 // System includes
 #include <functional>
-#include <chrono>
 #include <memory>
 
 // Forward declaration of conduit::Node.
@@ -33,7 +33,7 @@ namespace conduit
 class Node;
 }
 
-#if defined( GEOSX_USE_CALIPER )
+#if defined( GEOS_USE_CALIPER )
 //Forward declaration of cali::ConfigManager.
 namespace cali
 {
@@ -235,7 +235,7 @@ private:
   /// The CommunicationTools.
   std::unique_ptr< CommunicationTools > m_commTools;
 
-#if defined( GEOSX_USE_CALIPER )
+#if defined( GEOS_USE_CALIPER )
   /// The Caliper ConfigManager.
   std::unique_ptr< cali::ConfigManager > m_caliperManager;
 #endif

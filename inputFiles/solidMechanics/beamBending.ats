@@ -1,0 +1,37 @@
+from geos.ats.test_builder import RestartcheckParameters, CurveCheckParameters, TestDeck, generate_geos_tests
+
+restartcheck_params = RestartcheckParameters(atol=1.0E-3, rtol=1.0E-7)
+
+curvecheck_params = CurveCheckParameters(
+    filename='displacement_history.hdf5',
+    tolerance=[0.0002],
+    script_instructions=[[
+        './beamBending_curve.py', 'curve', 'totalDisplacement', 'trace'
+    ]],
+    curves=[['totalDisplacement', 'trace']])
+
+partitions = ((1, 1, 1), (2, 2, 2))
+
+decks = [
+    TestDeck(name="beamBending_smoke",
+             description="Tests beam bending.",
+             partitions=partitions,
+             restart_step=0,
+             check_step=1,
+             restartcheck_params=restartcheck_params,
+             curvecheck_params=curvecheck_params),
+    TestDeck(name="beamBending_vem_smoke",
+             description="Tests beam bending applying Virtual Elements.",
+             partitions=partitions,
+             restart_step=0,
+             check_step=1,
+             restartcheck_params=restartcheck_params),
+    TestDeck(name="beamBending_hybridHexPrism_smoke",
+             description="Tests beam bending on general polyhedral mesh.",
+             partitions=partitions,
+             restart_step=0,
+             check_step=1,
+             restartcheck_params=restartcheck_params)
+]
+
+generate_geos_tests(decks)

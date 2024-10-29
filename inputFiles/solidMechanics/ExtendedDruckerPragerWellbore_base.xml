@@ -6,8 +6,8 @@
     <TableFunction
       name="timeFunction"
       inputVarNames="{ time }"
-      coordinates="{ 0.0, 1.0 }"
-      values="{ 1.0, 0.1778 }"/>
+      coordinates="{ 0.0, 1.0, 1e99 }"
+      values="{ -11.25e6, -2.0e6, -2.0e6 }"/>
   </Functions>
 
   <!-- SPHINX_DP_WELLBORE_TABLE_END -->
@@ -17,13 +17,14 @@
     <ExtendedDruckerPrager
       name="rock"
       defaultDensity="2700"
-      defaultBulkModulus="5.0e8"
-      defaultShearModulus="3.0e8"
+      defaultBulkModulus="0.5e9"
+      defaultShearModulus="0.3e9"
       defaultCohesion="0.0"
       defaultInitialFrictionAngle="15.27"
       defaultResidualFrictionAngle="23.05"
       defaultDilationRatio="1.0"
       defaultHardening="0.01"/>
+
   </Constitutive>
 
   <!-- SPHINX_DP_WELLBORE_MATERIAL_END -->
@@ -44,7 +45,7 @@
       objectPath="ElementRegions/Omega/cb1"
       fieldName="rock_stress"
       component="0"
-      scale="-11250000.0"/>
+      scale="-11.25e6"/>
 
     <FieldSpecification
       name="stressYY"
@@ -53,7 +54,7 @@
       objectPath="ElementRegions/Omega/cb1"
       fieldName="rock_stress"
       component="1"
-      scale="-11250000.0"/>
+      scale="-11.25e6"/>
 
     <FieldSpecification
       name="stressZZ"
@@ -62,13 +63,13 @@
       objectPath="ElementRegions/Omega/cb1"
       fieldName="rock_stress"
       component="2"
-      scale="-15000000.0"/>
+      scale="-15.0e6"/>
 
     <Traction
       name="ExternalLoad"
       setNames="{ rneg }"
       objectPath="faceManager"
-      scale="-11.25e6"
+      scale="1.0"
       tractionType="normal"
       functionName="timeFunction"/>
 
@@ -78,7 +79,7 @@
       fieldName="totalDisplacement"
       component="0"
       scale="0.0"
-      setNames="{ xneg, xpos }"/>
+      setNames="{ tpos, rpos }"/>
 
     <FieldSpecification
       name="yconstraint"
@@ -86,7 +87,7 @@
       fieldName="totalDisplacement"
       component="1"
       scale="0.0"
-      setNames="{ tneg, tpos, ypos }"/>
+      setNames="{ tneg, rpos }"/>
 
     <FieldSpecification
       name="zconstraint"
@@ -98,16 +99,47 @@
   </FieldSpecifications>
 
   <!-- SPHINX_DP_WELLBORE_BC_END -->
-  <!--Output-->
-  <Outputs>
-    <Silo 
-      name="siloOutput"
-      parallelThreads="1"
-      plotFileRoot="plot"
-    />
+
+  <Tasks>
+
+    <!-- SPHINX_StressCollection -->
+    <PackCollection
+      name="stressCollection_rock"
+      objectPath="ElementRegions/Omega/cb1"
+      fieldName="rock_stress"/>
+    <!-- SPHINX_StressCollectionEnd -->
+
+    <!-- SPHINX_DisplacementCollection -->
+    <PackCollection
+      name="displacementCollection"
+      objectPath="nodeManager"
+      fieldName="totalDisplacement"/>
+    <!-- SPHINX_DisplacementCollectionEnd -->
+
+  </Tasks>
+
+<Outputs>
+    
+    <!-- SPHINX_StressTimeHistory -->
+    <TimeHistory
+      name="stressHistoryOutput_rock"
+      sources="{ /Tasks/stressCollection_rock }"
+      filename="stressHistory_rock"/>
+    <!-- SPHINX_StressTimeHistoryEnd -->
+
+    <!-- SPHINX_DisplacementTimeHistory -->
+    <TimeHistory
+      name="displacementHistoryOutput"
+      sources="{ /Tasks/displacementCollection }"
+      filename="displacementHistory"/>
+    <!-- SPHINX_DisplacementTimeHistoryEnd -->
+
+    <VTK
+      name="vtkOutput"/>
+
     <Restart
       name="restartOutput"/>
-  </Outputs>
+  </Outputs>  
 
   <!-- SPHINX_DP_WELLBORE_SOLVER -->
   <Solvers

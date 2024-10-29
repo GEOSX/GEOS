@@ -2,10 +2,11 @@
  * ------------------------------------------------------------------------------------------------------------
  * SPDX-License-Identifier: LGPL-2.1-only
  *
- * Copyright (c) 2018-2020 Lawrence Livermore National Security LLC
- * Copyright (c) 2018-2020 The Board of Trustees of the Leland Stanford Junior University
- * Copyright (c) 2018-2020 Total, S.A
- * Copyright (c) 2019-     GEOSX Contributors
+ * Copyright (c) 2016-2024 Lawrence Livermore National Security LLC
+ * Copyright (c) 2018-2024 Total, S.A
+ * Copyright (c) 2018-2024 The Board of Trustees of the Leland Stanford Junior University
+ * Copyright (c) 2018-2024 Chevron
+ * Copyright (c) 2019-     GEOS/GEOSX Contributors
  * All rights reserved
  *
  * See top level LICENSE, COPYRIGHT, CONTRIBUTORS, NOTICE, and ACKNOWLEDGEMENTS files for details.
@@ -44,6 +45,13 @@ meshToDual( ArrayOfArraysView< idx_t const, idx_t > const & elemToNodes,
             int const minCommonNodes )
 {
   idx_t const numElems = elemToNodes.size();
+
+  // `parmetis` awaits the arrays to be allocated as two continuous arrays: one for values, the other for offsets.
+  // Our `ArrayOfArrays` allows to reserve some extra space for further element insertion,
+  // but this is not compatible with what `parmetis` requires.
+  GEOS_ASSERT_EQ_MSG( std::accumulate( elemToNodes.getSizes(), elemToNodes.getSizes() + numElems, 0 ),
+                      elemToNodes.valueCapacity(),
+                      "Internal error. The element to nodes mapping must be strictly allocated for compatibility with a third party library." );
 
   idx_t numflag = 0;
   idx_t ncommonnodes = minCommonNodes;

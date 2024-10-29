@@ -2,10 +2,11 @@
  * ------------------------------------------------------------------------------------------------------------
  * SPDX-License-Identifier: LGPL-2.1-only
  *
- * Copyright (c) 2018-2020 Lawrence Livermore National Security LLC
- * Copyright (c) 2018-2020 The Board of Trustees of the Leland Stanford Junior University
- * Copyright (c) 2018-2020 TotalEnergies
- * Copyright (c) 2019-     GEOSX Contributors
+ * Copyright (c) 2016-2024 Lawrence Livermore National Security LLC
+ * Copyright (c) 2018-2024 Total, S.A
+ * Copyright (c) 2018-2024 The Board of Trustees of the Leland Stanford Junior University
+ * Copyright (c) 2018-2024 Chevron
+ * Copyright (c) 2019-     GEOS/GEOSX Contributors
  * All rights reserved
  *
  * See top level LICENSE, COPYRIGHT, CONTRIBUTORS, NOTICE, and ACKNOWLEDGEMENTS files for details.
@@ -30,14 +31,14 @@ namespace geos
 {
 
 class SiloFile;
-namespace dataRepository
-{
-namespace keys
-{
-/// @return PartitionManager string key
-string const partitionManager( "partitionManager" );
-}
-}
+// namespace dataRepository
+// {
+// namespace keys
+// {
+// /// @return PartitionManager string key
+// string const partitionManager( "partitionManager" );
+// }
+// }
 
 class ObjectManagerBase;
 class PartitionBase;
@@ -135,6 +136,8 @@ public:
     dataRepository::GroupKey constitutiveManager = { constitutiveManagerString() };
     /// View key to the Group holding the CommunicationManager
     dataRepository::GroupKey communicationManager = { "communicationManager" };
+    /// View key to the Group holding the partitionManager
+    dataRepository::GroupKey partitionManager = { "partitionManager" };
   }
   /// groupKey struct for the DomainPartition class
   groupKeys;
@@ -253,21 +256,6 @@ public:
     getMeshBodies().forSubGroupsIndex< MeshBody >( std::forward< FUNCTION >( function ) );
   }
 
-
-  /**
-   * @brief Get the metis neighbors indices.  @see DomainPartition#m_metisNeighborList
-   * @return Container of global indices.
-   */
-  std::set< int > & getMetisNeighborList()
-  { return m_metisNeighborList; }
-
-  /**
-   * @brief Get the metis neighbors indices, const version. @see DomainPartition#m_metisNeighborList
-   * @return Container of global indices.
-   */
-  std::set< int > const & getMetisNeighborList() const
-  { return m_metisNeighborList; }
-
   /**
    * @brief Get the neighbor communicators. @see DomainPartition#m_neighbors.
    * @return Container of communicators.
@@ -285,13 +273,10 @@ public:
 private:
 
   /**
-   * @brief Contains the global indices of the metis neighbors in case `metis` is used. Empty otherwise.
-   */
-  std::set< int > m_metisNeighborList;
-  /**
    * @brief Contains all the communicators from this DomainPartition to its neighbors.
    */
-  std::vector< NeighborCommunicator > m_neighbors;
+  std::vector< NeighborCommunicator > m_neighbors; 
+
 };
 
 } /* namespace geos */

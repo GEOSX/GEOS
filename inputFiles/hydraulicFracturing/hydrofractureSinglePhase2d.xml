@@ -5,6 +5,7 @@
     gravityVector="{ 0.0, 0.0, 0.0 }">
     <Hydrofracture
       name="hydrofracture"
+      logLevel="1"
       solidSolverName="lagsolve"
       flowSolverName="SinglePhaseFlow"
       surfaceGeneratorName="SurfaceGen"
@@ -18,6 +19,7 @@
 
     <SolidMechanicsLagrangianSSLE
       name="lagsolve"
+      logLevel="1"
       timeIntegrationOption="QuasiStatic"
       discretization="FE1"
       targetRegions="{ Domain, Fracture }"
@@ -25,6 +27,7 @@
 
     <SinglePhaseFVM
       name="SinglePhaseFlow"
+      logLevel="1"
       discretization="singlePhaseTPFA"
       targetRegions="{ Fracture }"/>
 
@@ -118,7 +121,7 @@
 
     <SurfaceElementRegion
       name="Fracture"
-      materialList="{ water, rock, fractureFilling }"
+      materialList="{ water, fractureFilling, fractureContact }"
       defaultAperture="1e-4"/>
   </ElementRegions>
 

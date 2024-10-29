@@ -5,17 +5,18 @@
     <File name="./kgdViscosityDominated_base.xml"/>
   </Included>
   
-  <Mesh>
+<Mesh>
     <InternalMesh 
       name="mesh1"
       elementTypes="{C3D8}"
-      xCoords="{ -100, 0, 100 }"
-      yCoords="{ 0, 50 }"
+      xCoords="{ -50, 0, 50 }"
+      yCoords="{ 0, 20, 50 }"
       zCoords="{ 0, 1 }"
-      nx="{ 3, 3 }"
-      ny="{ 5 }"
-      nz="{ 2 }"
-	  xBias="{ 0.5, -0.5 }"
+      nx="{ 10, 10 }"
+      ny="{ 40, 10 }"
+      nz="{ 1 }"
+      xBias="{ 0.6, -0.6 }"
+      yBias="{ 0.0, -0.6 }"
       cellBlockNames="{cb1}"/>
   </Mesh>
 
@@ -23,21 +24,21 @@
     <Box
       name="fracture"
       xMin="{ -0.01, -0.01, -0.01 }"
-      xMax="{  0.01,  10.01,  1.01 }"/>
+      xMax="{  0.01,  1.01,  1.01 }"/>
 
     <Box
       name="source"
       xMin="{ -0.01, -0.01, -0.01 }"
-      xMax="{  0.01,  10.01,  1.01 }"/>
+      xMax="{  0.01,  0.51,  1.01 }"/>
 
     <Box
       name="core"
       xMin="{ -0.01, -0.01, -0.01 }"
-      xMax="{  0.01, 50.01,  1.01 }"/>
+      xMax="{  0.01, 1e6,  1.01 }"/>
   </Geometry>
 
   <Events
-    maxTime="10.0">
+    maxTime="40.0">
     <SoloEvent
       name="preFracture"
       target="/Solvers/SurfaceGen"/>
@@ -46,22 +47,36 @@
     solver time-step request -->
     <PeriodicEvent
       name="solverApplications0"
-      beginTime="0.0"
-      endTime="1.0"
-      forceDt="0.2"
+      maxEventDt="5.0"
       target="/Solvers/hydrofracture"/>
 
     <PeriodicEvent
-      name="solverApplications1"
-      beginTime="1.0"
-      endTime="10.0"
-      forceDt="0.5"
-      target="/Solvers/hydrofracture"/>
+      name="sourcePressureCollection"
+      beginTime="2.0"
+      targetExactTimestep="0"
+      target="/Tasks/sourcePressureCollection"/>
+
+    <PeriodicEvent
+      name="sourceHydraulicApertureCollection"
+      beginTime="2.0"
+      targetExactTimestep="0"
+      target="/Tasks/sourceHydraulicApertureCollection"/>
+
+    <PeriodicEvent
+      name="curveOutput"
+      timeFrequency="20.0"
+      targetExactTimestep="0"
+      beginTime="2.0"
+      target="/Outputs/curveOutput"/>
+
+    <PeriodicEvent
+      name="vtk"
+      target="/Outputs/vtkOutput"/>
 
     <PeriodicEvent
       name="restarts"
-      timeFrequency="5.0"
-      targetExactTimestep="0"
+      timeFrequency="20.0"
+      targetExactTimestep="1"
       target="/Outputs/restartOutput"/>
   </Events> 
 

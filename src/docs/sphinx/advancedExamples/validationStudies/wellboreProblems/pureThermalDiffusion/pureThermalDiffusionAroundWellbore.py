@@ -57,7 +57,12 @@ def getLoadingFromXML(xmlFilePath):
             
 	thermalConductivity = float( extractDataFromXMLList( tree.find('Constitutive/SinglePhaseConstantThermalConductivity').get('thermalConductivityComponents') )[0] )
 
-	volumetricHeatCapacity = float( tree.find('Constitutive/SolidInternalEnergy').get('volumetricHeatCapacity') )
+	tree_SolidInternalEnergies = tree.findall('Constitutive/SolidInternalEnergy')
+
+	for tree_SolidInternalEnergy in tree_SolidInternalEnergies:
+		if tree_SolidInternalEnergy.get('name') == "rockInternalEnergy_linear":
+			volumetricHeatCapacity = float( tree_SolidInternalEnergy.get('volumetricHeatCapacity') )
+			
 	
 	permeability = float( extractDataFromXMLList( tree.find('Constitutive/ConstantPermeability').get('permeabilityComponents') )[0] )
 

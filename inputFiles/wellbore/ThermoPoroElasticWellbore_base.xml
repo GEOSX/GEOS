@@ -66,14 +66,14 @@
     <BiotPorosity
       name="rockPorosity"
       defaultReferencePorosity="0.001"
-      grainBulkModulus="23.5e9"
-      defaultThermalExpansionCoefficient="4e-5"/>
+      defaultGrainBulkModulus="23.5e9"
+      defaultPorosityTEC="4e-5"/>
     <!-- SPHINX_PoroElasticPropertiesEnd -->
 
     <!-- SPHINX_HeatCapacityProperties -->
     <SolidInternalEnergy
       name="rockInternalEnergy"
-      volumetricHeatCapacity="1.89e6"
+      referenceVolumetricHeatCapacity="1.89e6"
       referenceTemperature="0"
       referenceInternalEnergy="0"/>
     <!-- SPHINX_HeatCapacityPropertiesEnd -->
@@ -100,7 +100,7 @@
       compressibility="5e-10"
       thermalExpansionCoeff="3e-4"
       viscosibility="0.0"
-      volumetricHeatCapacity="1"
+      specificHeatCapacity="1"
       referenceInternalEnergy="1"/>
     <!-- SPHINX_FluidPropertiesEnd -->
 
@@ -110,7 +110,7 @@
       defaultDensity="2700"
       defaultBulkModulus="20.7e9"
       defaultShearModulus="12.4e9"
-      defaultThermalExpansionCoefficient="4e-5"/>
+      defaultDrainedLinearTEC="4e-5"/>
     <!-- SPHINX_ThermoElasticPropertiesEnd -->
     
   </Constitutive>

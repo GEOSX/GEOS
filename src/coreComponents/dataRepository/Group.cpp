@@ -2,10 +2,11 @@
  * ------------------------------------------------------------------------------------------------------------
  * SPDX-License-Identifier: LGPL-2.1-only
  *
- * Copyright (c) 2018-2020 Lawrence Livermore National Security LLC
- * Copyright (c) 2018-2020 The Board of Trustees of the Leland Stanford Junior University
- * Copyright (c) 2018-2020 TotalEnergies
- * Copyright (c) 2019-     GEOSX Contributors
+ * Copyright (c) 2016-2024 Lawrence Livermore National Security LLC
+ * Copyright (c) 2018-2024 Total, S.A
+ * Copyright (c) 2018-2024 The Board of Trustees of the Leland Stanford Junior University
+ * Copyright (c) 2018-2024 Chevron
+ * Copyright (c) 2019-     GEOS/GEOSX Contributors
  * All rights reserved
  *
  * See top level LICENSE, COPYRIGHT, CONTRIBUTORS, NOTICE, and ACKNOWLEDGEMENTS files for details.
@@ -18,7 +19,8 @@
 #include "codingUtilities/StringUtilities.hpp"
 #include "codingUtilities/Utilities.hpp"
 #include "common/TimingMacros.hpp"
-#if defined(GEOSX_USE_PYGEOSX)
+#include "GroupContext.hpp"
+#if defined(GEOS_USE_PYGEOSX)
 #include "python/PyGroupType.hpp"
 #endif
 
@@ -31,7 +33,7 @@ Group::Group( string const & name,
               Group * const parent ):
   Group( name, parent->getConduitNode() )
 {
-  GEOS_ERROR_IF( parent == nullptr, "Should not be null." );
+  GEOS_ERROR_IF( parent == nullptr, "Should not be null (for Group named " << name << ")." );
   m_parent = parent;
 }
 
@@ -47,7 +49,8 @@ Group::Group( string const & name,
   m_logLevel( 0 ),
   m_restart_flags( RestartFlags::WRITE_AND_READ ),
   m_input_flags( InputFlags::INVALID ),
-  m_conduitNode( rootNode[ name ] )
+  m_conduitNode( rootNode[ name ] ),
+  m_dataContext( std::make_unique< GroupContext >( *this ) )
 {}
 
 Group::~Group()
@@ -71,7 +74,8 @@ WrapperBase & Group::registerWrapper( std::unique_ptr< WrapperBase > wrapper )
 
 void Group::deregisterWrapper( string const & name )
 {
-  GEOS_ERROR_IF( !hasWrapper( name ), "Wrapper " << name << " doesn't exist." );
+  GEOS_ERROR_IF( !hasWrapper( name ),
+                 "Wrapper " << name << " doesn't exist in Group" << getDataContext() << '.' );
   m_wrappers.erase( name );
   m_conduitNode.remove( name );
 }
@@ -125,32 +129,52 @@ void Group::reserve( indexType const newSize )
 
 string Group::getPath() const
 {
-  // In the Conduit node heirarchy everything begins with 'Problem', we should change it so that
+  // In the Conduit node hierarchy everything begins with 'Problem', we should change it so that
   // the ProblemManager actually uses the root Conduit Node but that will require a full rebaseline.
   string const noProblem = getConduitNode().path().substr( stringutilities::cstrlen( dataRepository::keys::ProblemManager ) );
   return noProblem.empty() ? "/" : noProblem;
 }
 
-void Group::processInputFileRecursive( xmlWrapper::xmlNode & targetNode )
+void Group::processInputFileRecursive( xmlWrapper::xmlDocument & xmlDocument,
+                                       xmlWrapper::xmlNode & targetNode )
 {
-  xmlWrapper::addIncludedXML( targetNode );
+  xmlWrapper::xmlNodePos nodePos = xmlDocument.getNodePosition( targetNode );
+  processInputFileRecursive( xmlDocument, targetNode, nodePos );
+}
+void Group::processInputFileRecursive( xmlWrapper::xmlDocument & xmlDocument,
+                                       xmlWrapper::xmlNode & targetNode,
+                                       xmlWrapper::xmlNodePos const & nodePos )
+{
+  xmlDocument.addIncludedXML( targetNode );
 
   // Handle the case where the node was imported from a different input file
   // Set the path prefix to make sure all relative Path variables are interpreted correctly
-  string const oldPrefix = Path::pathPrefix();
+  string const oldPrefix = std::string( Path::getPathPrefix() );
   xmlWrapper::xmlAttribute filePath = targetNode.attribute( xmlWrapper::filePathString );
   if( filePath )
   {
-    Path::pathPrefix() = splitPath( filePath.value() ).first;
-    targetNode.remove_attribute( filePath );
+    Path::setPathPrefix( getAbsolutePath( splitPath( filePath.value() ).first ) );
   }
 
   // Loop over the child nodes of the targetNode
   array1d< string > childNames;
   for( xmlWrapper::xmlNode childNode : targetNode.children() )
   {
+    xmlWrapper::xmlNodePos childNodePos = xmlDocument.getNodePosition( childNode );
+
     // Get the child tag and name
-    string childName = childNode.attribute( "name" ).value();
+    string childName;
+
+    try
+    {
+      xmlWrapper::readAttributeAsType( childName, "name",
+                                       rtTypes::getTypeRegex< string >( rtTypes::CustomTypes::groupName ),
+                                       childNode, string( "" ) );
+    } catch( std::exception const & ex )
+    {
+      xmlWrapper::processInputException( ex, "name", childNode, childNodePos );
+    }
+
     if( childName.empty() )
     {
       childName = childNode.name();
@@ -159,8 +183,11 @@ void Group::processInputFileRecursive( xmlWrapper::xmlNode & targetNode )
     {
       // Make sure child names are not duplicated
       GEOS_ERROR_IF( std::find( childNames.begin(), childNames.end(), childName ) != childNames.end(),
-                     GEOS_FMT( "Error: An XML block cannot contain children with duplicated names ({}/{}). ",
-                               getPath(), childName ) );
+                     GEOS_FMT( "Error: An XML block cannot contain children with duplicated names.\n"
+                               "Error detected at node {} with name = {} ({}:l.{})",
+                               childNode.path(), childName, xmlDocument.getFilePath(),
+                               xmlDocument.getNodePosition( childNode ).line ) );
+
       childNames.emplace_back( childName );
     }
 
@@ -172,22 +199,29 @@ void Group::processInputFileRecursive( xmlWrapper::xmlNode & targetNode )
     }
     if( newChild != nullptr )
     {
-      newChild->processInputFileRecursive( childNode );
+      newChild->processInputFileRecursive( xmlDocument, childNode, childNodePos );
     }
   }
 
-  processInputFile( targetNode );
+  processInputFile( targetNode, nodePos );
 
   // Restore original prefix once the node is processed
-  Path::pathPrefix() = oldPrefix;
+  Path::setPathPrefix( oldPrefix );
 }
 
-void Group::processInputFile( xmlWrapper::xmlNode const & targetNode )
+void Group::processInputFile( xmlWrapper::xmlNode const & targetNode,
+                              xmlWrapper::xmlNodePos const & nodePos )
 {
+  if( nodePos.isFound() )
+  {
+    m_dataContext = std::make_unique< DataFileContext >( targetNode, nodePos );
+  }
+
+
   std::set< string > processedAttributes;
   for( std::pair< string const, WrapperBase * > & pair : m_wrappers )
   {
-    if( pair.second->processInputFile( targetNode ) )
+    if( pair.second->processInputFile( targetNode, nodePos ) )
     {
       processedAttributes.insert( pair.first );
     }
@@ -196,28 +230,27 @@ void Group::processInputFile( xmlWrapper::xmlNode const & targetNode )
   for( xmlWrapper::xmlAttribute attribute : targetNode.attributes() )
   {
     string const attributeName = attribute.name();
-    if( attributeName != "name" && attributeName != "xmlns:xsi" && attributeName != "xsi:noNamespaceSchemaLocation" )
+    if( !xmlWrapper::isFileMetadataAttribute( attributeName ) )
     {
       GEOS_THROW_IF( processedAttributes.count( attributeName ) == 0,
-                     GEOS_FMT( "XML Node '{}' with name='{}' contains unused attribute '{}'.\n"
+                     GEOS_FMT( "XML Node at '{}' with name={} contains unused attribute '{}'.\n"
                                "Valid attributes are:\n{}\nFor more details, please refer to documentation at:\n"
                                "http://geosx-geosx.readthedocs-hosted.com/en/latest/docs/sphinx/userGuide/Index.html",
-                               targetNode.path(), targetNode.attribute( "name" ).value(), attributeName, dumpInputOptions() ),
+                               targetNode.path(), m_dataContext->toString(), attributeName,
+                               dumpInputOptions() ),
                      InputError );
     }
   }
 }
 
-void Group::postProcessInputRecursive()
+void Group::postInputInitializationRecursive()
 {
   for( auto const & subGroupIter : m_subGroups )
   {
-    subGroupIter.second->postProcessInputRecursive();
+    subGroupIter.second->postInputInitializationRecursive();
   }
-  postProcessInput();
+  postInputInitialization();
 }
-
-
 
 void Group::registerDataOnMeshRecursive( Group & meshBodies )
 {
@@ -228,7 +261,6 @@ void Group::registerDataOnMeshRecursive( Group & meshBodies )
   }
 }
 
-
 Group * Group::createChild( string const & childKey, string const & childName )
 {
   GEOS_ERROR_IF( !(CatalogInterface::hasKeyName( childKey )),
@@ -238,17 +270,18 @@ Group * Group::createChild( string const & childKey, string const & childName )
                          CatalogInterface::factory( childKey, childName, this ) );
 }
 
-
-void Group::printDataHierarchy( integer const indent )
+void Group::printDataHierarchy( integer const indent ) const
 {
+  GEOS_LOG( string( indent, '\t' ) << getName() << " : " << LvArray::system::demangleType( *this ) );
   for( auto & view : wrappers() )
   {
-    GEOS_LOG( string( indent, '\t' ) << view.second->getName() << ", " << LvArray::system::demangleType( view.second ) );
+    GEOS_LOG( string( indent, '\t' ) << "-> " << view.second->getName() << " : "
+                                     << LvArray::system::demangleType( *view.second ) );
   }
+  GEOS_LOG( string( indent, '\t' ) );
 
   for( auto & group : m_subGroups )
   {
-    GEOS_LOG( string( indent, '\t' ) << group.first << ':' );
     group.second->printDataHierarchy( indent + 1 );
   }
 }
@@ -380,7 +413,7 @@ localIndex Group::packImpl( buffer_unit_type * & buffer,
     }
     else
     {
-      GEOS_ERROR( "Wrapper " << wrapperName << " not found in Group " << getName() << "." );
+      GEOS_ERROR( "Wrapper " << wrapperName << " not found in Group " << getDataContext() << "." );
     }
   }
 
@@ -608,9 +641,8 @@ void Group::postRestartInitializationRecursive()
 
 void Group::enableLogLevelInput()
 {
-  string const logLevelString = "logLevel";
-
-  registerWrapper( logLevelString, &m_logLevel ).
+  // TODO : Improve the Log Level description to clearly assign a usecase per log level (incoming PR).
+  registerWrapper( viewKeyStruct::logLevelString(), &m_logLevel ).
     setApplyDefaultValue( 0 ).
     setInputFlag( InputFlags::OPTIONAL ).
     setDescription( "Log level" );
@@ -674,7 +706,7 @@ localIndex Group::getSubGroupIndex( keyType const & key ) const
   return getSubGroups().getIndex( key );
 }
 
-#if defined(GEOSX_USE_PYGEOSX)
+#if defined(GEOS_USE_PYGEOSX)
 PyTypeObject * Group::getPythonType() const
 { return geos::python::getPyGroupType(); }
 #endif

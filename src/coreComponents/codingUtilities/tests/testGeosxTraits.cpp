@@ -2,10 +2,11 @@
  * ------------------------------------------------------------------------------------------------------------
  * SPDX-License-Identifier: LGPL-2.1-only
  *
- * Copyright (c) 2018-2020 Lawrence Livermore National Security LLC
- * Copyright (c) 2018-2020 The Board of Trustees of the Leland Stanford Junior University
- * Copyright (c) 2018-2020 TotalEnergies
- * Copyright (c) 2019-     GEOSX Contributors
+ * Copyright (c) 2016-2024 Lawrence Livermore National Security LLC
+ * Copyright (c) 2018-2024 Total, S.A
+ * Copyright (c) 2018-2024 The Board of Trustees of the Leland Stanford Junior University
+ * Copyright (c) 2018-2024 Chevron
+ * Copyright (c) 2019-     GEOS/GEOSX Contributors
  * All rights reserved
  *
  * See top level LICENSE, COPYRIGHT, CONTRIBUTORS, NOTICE, and ACKNOWLEDGEMENTS files for details.
@@ -90,7 +91,7 @@ TEST( testGeosxTraits, Pointer )
   static_assert( std::is_same< Pointer< int >, int * >::value, "Should be true." );
   static_assert( std::is_same< Pointer< R1Tensor >, R1Tensor * >::value, "Should be true." );
   static_assert( std::is_same< Pointer< std::vector< double > >, double * >::value, "Should be true." );
-  static_assert( std::is_same< Pointer< string >, char const * >::value, "Should be true." );
+  static_assert( std::is_same< Pointer< string >, char * >::value, "Should be true." );
   static_assert( std::is_same< Pointer< array3d< string > >, string * >::value, "Should be true." );
   static_assert( std::is_same< Pointer< SortedArray< float > >, float const * >::value, "Should be true." );
 

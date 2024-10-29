@@ -2,10 +2,11 @@
  * ------------------------------------------------------------------------------------------------------------
  * SPDX-License-Identifier: LGPL-2.1-only
  *
- * Copyright (c) 2018-2020 Lawrence Livermore National Security LLC
- * Copyright (c) 2018-2020 The Board of Trustees of the Leland Stanford Junior University
- * Copyright (c) 2018-2020 TotalEnergies
- * Copyright (c) 2019-     GEOSX Contributors
+ * Copyright (c) 2016-2024 Lawrence Livermore National Security LLC
+ * Copyright (c) 2018-2024 Total, S.A
+ * Copyright (c) 2018-2024 The Board of Trustees of the Leland Stanford Junior University
+ * Copyright (c) 2018-2024 Chevron
+ * Copyright (c) 2019-     GEOS/GEOSX Contributors
  * All rights reserved
  *
  * See top level LICENSE, COPYRIGHT, CONTRIBUTORS, NOTICE, and ACKNOWLEDGEMENTS files for details.
@@ -28,7 +29,7 @@
 // System includes
 #include <stdexcept>
 
-#if defined(GEOSX_USE_MPI)
+#if defined(GEOS_USE_MPI)
   #include <mpi.h>
 #endif
 
@@ -479,11 +480,41 @@ struct InputError : public std::runtime_error
   {}
 
   /**
-   * @brief Construct an InputError from an underlying exception.
-   * @param subException An exception to base this new one on.
-   * @param msgToInsert The error message. It will be inserted into the one inside of subException.
+   * @brief Constructs an InputError from an underlying exception.
+   * @param subException The exception on which the created one is based.
+   * @param msgToInsert The error message that will be inserted in the subException error message.
    */
   InputError( std::exception const & subException, std::string const & msgToInsert );
+};
+
+/**
+ * @brief Exception class used to report errors in user input.
+ */
+struct SimulationError : public std::runtime_error
+{
+  /**
+   * @brief Constructor
+   * @param what the error message
+   */
+  SimulationError( std::string const & what ):
+    std::runtime_error( what )
+  {}
+
+  /**
+   * @brief Constructor
+   * @param what the error message
+   */
+  SimulationError( char const * const what ):
+    std::runtime_error( what )
+  {}
+
+  /**
+   * @brief Construct a SimulationError from an underlying exception.
+   * @param subException An exception to base this new one on.
+   * @param msgToInsert The error message.
+   * It will be inserted before the error message inside of subException.
+   */
+  SimulationError( std::exception const & subException, std::string const & msgToInsert );
 };
 
 /**
@@ -506,12 +537,12 @@ extern int n_ranks;
 
 extern std::ostream * rankStream;
 
-#if defined(GEOSX_USE_MPI)
+#if defined(GEOS_USE_MPI)
 extern MPI_Comm comm;
 #endif
 } // namespace internal
 
-#if defined(GEOSX_USE_MPI)
+#if defined(GEOS_USE_MPI)
 /**
  * @brief Initialize the logger in a parallel build.
  * @param comm global MPI communicator

@@ -51,11 +51,11 @@ def getFracturePressureFromXML(xmlFilePath):
 def getFractureLengthFromXML(xmlFilePath):
     tree = ElementTree.parse(xmlFilePath)
 
-    boundedPlane = tree.find('Geometry/BoundedPlane')
-    dimensions = boundedPlane.get("dimensions")
+    rectangle = tree.find('Geometry/Rectangle')
+    dimensions = rectangle.get("dimensions")
     dimensions = [float(i) for i in dimensions[1:-1].split(",")]
     length = dimensions[0] / 2
-    origin = boundedPlane.get("origin")
+    origin = rectangle.get("origin")
     origin = [float(i) for i in origin[1:-1].split(",")]
 
     return length, origin[0]
@@ -96,13 +96,13 @@ def main():
     loc_HydroFrac = x[0, :, 1]
 
     #-------- Extract info from XML
-    xmlFilePath = "../../../../../../../inputFiles/efemFractureMechanics/Sneddon_embeddedFrac_base.xml"
+    xmlFilePath = "../../../../../../../inputFiles/efemFractureMechanics/Sneddon_embeddedFrac"
 
-    mechanicalParameters = getMechanicalParametersFromXML(xmlFilePath)
-    appliedPressure = getFracturePressureFromXML(xmlFilePath)
+    mechanicalParameters = getMechanicalParametersFromXML(xmlFilePath+"_base.xml")
+    appliedPressure = getFracturePressureFromXML(xmlFilePath+"_base.xml")
 
     # Get length of the fracture
-    length, origin = getFractureLengthFromXML(xmlFilePath)
+    length, origin = getFractureLengthFromXML(xmlFilePath+"_verification.xml")
 
     # Initialize Sneddon's analytical solution
     sneddonAnalyticalSolution = Sneddon(mechanicalParameters, length, appliedPressure)

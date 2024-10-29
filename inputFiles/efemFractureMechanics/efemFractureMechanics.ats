@@ -1,0 +1,66 @@
+from geos.ats.test_builder import TestDeck, CurveCheckParameters, RestartcheckParameters, generate_geos_tests
+
+restartcheck_params = {'atol': 1e-08, 'rtol': 4e-07}
+
+curvecheck_params = {}
+curvecheck_params["filename"] = "displacementJump_embeddedFrac.hdf5"
+curvecheck_params["tolerance"] = [1e-5]
+curvecheck_params["script_instructions"] = [[
+    "./scripts/sneddonCurveChecks.py", "sneddon_curve_check_solution",
+    "displacementJump"
+]]
+curvecheck_params["curves"] = "displacementJump"
+
+decks = [
+    TestDeck(
+        name="Sneddon_embeddedFrac_smoke",
+        description="Smoke test for Sneddon's problem with horizontal fracture",
+        partitions=((1, 1, 1), (2, 2, 1)),
+        restart_step=0,
+        check_step=1,
+        restartcheck_params=RestartcheckParameters(**restartcheck_params)),
+    TestDeck(
+        name="Sneddon_embeddedFrac_benchmark",
+        description="Sneddon's problem with horizontal fracture (uses MGR)",
+        partitions=((1, 1, 1), ),
+        restart_step=0,
+        check_step=1,
+        curvecheck_params=CurveCheckParameters(**curvecheck_params)),
+    TestDeck(
+        name="Sneddon_embeddedFrac_staticCondensation_smoke",
+        description="Sneddon with horizontal fracture usic static condensation",
+        partitions=((1, 1, 1), (2, 2, 1)),
+        restart_step=0,
+        check_step=1,
+        restartcheck_params=RestartcheckParameters(**restartcheck_params)),
+    TestDeck(
+        name="Sneddon_embeddedFrac_staticCondensation_benchmark",
+        description="Sneddon with horizontal fracture usic static condensation",
+        partitions=((1, 1, 1), ),
+        restart_step=0,
+        check_step=1,
+        curvecheck_params=CurveCheckParameters(**curvecheck_params)),
+    TestDeck(
+        name="SneddonRotated_smoke",
+        description='Sneddon with inclined fracture',
+        partitions=((1, 1, 1), (2, 2, 1)),
+        restart_step=0,
+        check_step=1,
+        restartcheck_params=RestartcheckParameters(**restartcheck_params)),
+    TestDeck(
+        name="EmbFrac_Compression_Frictionless_smoke",
+        description='Single efem fracture under compression - frictionless',
+        partitions=((1, 1, 1), (2, 2, 1)),
+        restart_step=0,
+        check_step=1,
+        restartcheck_params=RestartcheckParameters(atol= 1e-06, rtol= 4e-07)),
+    TestDeck(
+        name="EmbFrac_Compression_CoulombFriction_smoke",
+        description='Single efem fracture under compression - Coulomb friction',
+        partitions=((1, 1, 1), (2, 2, 1)),
+        restart_step=0,
+        check_step=1,
+        restartcheck_params=RestartcheckParameters(atol= 1e-06, rtol= 4e-07))
+]
+
+generate_geos_tests(decks)

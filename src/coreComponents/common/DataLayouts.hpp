@@ -2,10 +2,11 @@
  * ------------------------------------------------------------------------------------------------------------
  * SPDX-License-Identifier: LGPL-2.1-only
  *
- * Copyright (c) 2018-2020 Lawrence Livermore National Security LLC
- * Copyright (c) 2018-2020 The Board of Trustees of the Leland Stanford Junior University
- * Copyright (c) 2018-2020 TotalEnergies
- * Copyright (c) 2019-     GEOSX Contributors
+ * Copyright (c) 2016-2024 Lawrence Livermore National Security LLC
+ * Copyright (c) 2018-2024 Total, S.A
+ * Copyright (c) 2018-2024 The Board of Trustees of the Leland Stanford Junior University
+ * Copyright (c) 2018-2024 Chevron
+ * Copyright (c) 2019-     GEOS/GEOSX Contributors
  * All rights reserved
  *
  * See top level LICENSE, COPYRIGHT, CONTRIBUTORS, NOTICE, and ACKNOWLEDGEMENTS files for details.
@@ -102,7 +103,7 @@ static constexpr int ACCELERATION_USD = LvArray::typeManipulation::getStrideOneD
 namespace particles
 {
 
-#if defined( GEOSX_USE_CUDA )
+#if defined( GEOS_USE_CUDA )
 
 /// Particle reference position permutation when using cuda.
 using REFERENCE_POSITION_PERM = RAJA::PERM_JI;
@@ -154,15 +155,24 @@ namespace cells
 /// Cell node map permutation when using cuda.
 using NODE_MAP_PERMUTATION = RAJA::PERM_JI;
 
+/// Cell strain permutation when using cuda
+using STRAIN_PERM = RAJA::PERM_JI;
+
 #else
 
 /// Cell node map permutation when not using cuda.
 using NODE_MAP_PERMUTATION = RAJA::PERM_IJ;
 
+/// Cell strain permutation when not using cuda
+using STRAIN_PERM = RAJA::PERM_IJ;
+
 #endif
 
 /// Cell node map unit stride dimension.
 static constexpr int NODE_MAP_USD = LvArray::typeManipulation::getStrideOneDimension( NODE_MAP_PERMUTATION {} );
+
+/// Cell strain unit stride dimension
+static constexpr int STRAIN_USD = LvArray::typeManipulation::getStrideOneDimension( STRAIN_PERM {} );
 
 } // namespace cells
 

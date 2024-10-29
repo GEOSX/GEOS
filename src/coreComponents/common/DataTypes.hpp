@@ -2,10 +2,11 @@
  * ------------------------------------------------------------------------------------------------------------
  * SPDX-License-Identifier: LGPL-2.1-only
  *
- * Copyright (c) 2018-2020 Lawrence Livermore National Security LLC
- * Copyright (c) 2018-2020 The Board of Trustees of the Leland Stanford Junior University
- * Copyright (c) 2018-2020 TotalEnergies
- * Copyright (c) 2019-     GEOSX Contributors
+ * Copyright (c) 2016-2024 Lawrence Livermore National Security LLC
+ * Copyright (c) 2018-2024 Total, S.A
+ * Copyright (c) 2018-2024 The Board of Trustees of the Leland Stanford Junior University
+ * Copyright (c) 2018-2024 Chevron
+ * Copyright (c) 2019-     GEOS/GEOSX Contributors
  * All rights reserved
  *
  * See top level LICENSE, COPYRIGHT, CONTRIBUTORS, NOTICE, and ACKNOWLEDGEMENTS files for details.
@@ -45,7 +46,7 @@
 #include <camp/camp.hpp>
 
 // System includes
-#ifdef GEOSX_USE_MPI
+#ifdef GEOS_USE_MPI
   #include <mpi.h>
 #endif
 
@@ -53,17 +54,19 @@
 //#include <cmath>
 #include <cstdint>
 #include <iostream>
+#include <map>
 #include <memory>
+#include <optional>
+#include <set>
+#include <string>
+#include <string_view>
 #include <typeindex>
 #include <typeinfo>
-#include <string>
-#include <map>
 #include <unordered_map>
 #include <vector>
-#include <set>
 
-/**
- * top level geosx namespace contains all code that is specific to GEOSX
+/*
+ * top level geos namespace contains all code that is specific to GEOSX
  */
 namespace geos
 {
@@ -103,7 +106,7 @@ NEW_TYPE dynamicCast( EXISTING_TYPE & val )
 }
 
 /// Global MPI communicator used by GEOSX.
-#ifdef GEOSX_USE_MPI
+#ifdef GEOS_USE_MPI
 extern MPI_Comm MPI_COMM_GEOSX;
 #else
 extern int MPI_COMM_GEOSX;
@@ -121,13 +124,16 @@ using size_t      = std::size_t;
 using integer     = std::int32_t;
 
 /// Local index type (for indexing objects within an MPI partition).
-using localIndex  = GEOSX_LOCALINDEX_TYPE;
+using localIndex  = GEOS_LOCALINDEX_TYPE;
 
 /// Global index type (for indexing objects across MPI partitions).
-using globalIndex = GEOSX_GLOBALINDEX_TYPE;
+using globalIndex = GEOS_GLOBALINDEX_TYPE;
 
 /// String type.
 using string      = std::string;
+
+/// String type.
+using string_view = std::string_view;
 
 /// 32-bit floating point type.
 using real32 = float;
@@ -144,7 +150,7 @@ using real64 = double;
 /// Type stored in communication buffers.
 using buffer_unit_type = signed char;
 
-#ifdef GEOSX_USE_CHAI
+#ifdef GEOS_USE_CHAI
 /// Type of storage for communication buffers.
 using buffer_type = std::vector< buffer_unit_type, BufferAllocator< buffer_unit_type > >;
 #else
@@ -502,195 +508,33 @@ constexpr static localIndex unmappedLocalIndexValue = -1;
 void printTypeSummary();
 
 /**
- * @brief Class to manage the type selection of types at runtime.
+ * @brief The regular expression data for validating inputs. Use rtTypes to get the regex of a
+ * type, and TypeRegex< T > to define a type regex.
  */
-class rtTypes
+struct Regex
 {
-public:
-
   /**
-   * @brief Convert a @p std::type_index to a string.
-   * @param key the std::type_index of the type
-   * @return a hard coded string that is related to the std::type_index
+   * @brief the regular expression string.
    */
-  static string typeNames( std::type_index const key )
-  {
-    static const std::unordered_map< std::type_index, string > type_names =
-    {
-      {std::type_index( typeid(integer)), "integer"},
-      {std::type_index( typeid(real32)), "real32"},
-      {std::type_index( typeid(real64)), "real64"},
-      {std::type_index( typeid(localIndex)), "localIndex"},
-      {std::type_index( typeid(globalIndex)), "globalIndex"},
-      {std::type_index( typeid(R1Tensor)), "R1Tensor"},
-      {std::type_index( typeid(R1Tensor32)), "R1Tensor32"},
-      {std::type_index( typeid(R2SymTensor)), "R2SymTensor"},
-      {std::type_index( typeid(integer_array)), "integer_array"},
-      {std::type_index( typeid(real32_array)), "real32_array"},
-      {std::type_index( typeid(real64_array)), "real64_array"},
-      {std::type_index( typeid(localIndex_array)), "localIndex_array"},
-      {std::type_index( typeid(globalIndex_array)), "globalIndex_array"},
-      {std::type_index( typeid(integer_array2d)), "integer_array2d"},
-      {std::type_index( typeid(real32_array2d)), "real32_array2d"},
-      {std::type_index( typeid(real64_array2d)), "real64_array2d"},
-      {std::type_index( typeid(localIndex_array2d)), "localIndex_array2d"},
-      {std::type_index( typeid(globalIndex_array2d)), "globalIndex_array2d"},
-      {std::type_index( typeid(integer_array3d)), "integer_array3d"},
-      {std::type_index( typeid(real32_array3d)), "real32_array3d"},
-      {std::type_index( typeid(real64_array3d)), "real64_array3d"},
-      {std::type_index( typeid(localIndex_array3d)), "localIndex_array3d"},
-      {std::type_index( typeid(globalIndex_array3d)), "globalIndex_array3d"},
-      {std::type_index( typeid(real64_array4d)), "real64_array4d"},
-      {std::type_index( typeid(string)), "string"},
-      {std::type_index( typeid(Path)), "path"},
-      {std::type_index( typeid(string_array)), "string_array"},
-      {std::type_index( typeid(path_array)), "path_array"},
-    };
-
-    // If the data type is not defined here, return type_info.name()
-    auto const iter = type_names.find( key );
-    if( iter != type_names.end() )
-    {
-      return iter->second;
-    }
-    else
-    {
-      return LvArray::system::demangle( key.name());
-    }
-  }
-
+  string m_regexStr;
   /**
-   * @brief Matching regex for data types in xml.
+   * @brief the description of the expected format of the regular expression.
    */
-  class typeRegex
-  {
-public:
-
-    /// The type of map used to store the map of type parsing regular expressions
-    using regexMapType = std::map< string, string >;
-
-    /**
-     * @brief Get an iterator to the beginning of regex map.
-     * @return
-     */
-    regexMapType::iterator begin(){return regexMap.begin();}
-
-    /**
-     * @brief Get an iterator to the end of regex map.
-     * @return
-     */
-    regexMapType::iterator end(){return regexMap.end();}
-
-    /**
-     * @brief Get a const iterator to the beginning of regex map.
-     * @return
-     */
-    regexMapType::const_iterator begin() const {return regexMap.begin();}
-
-    /**
-     * @brief Get a const iterator to the end of regex map.
-     * @return
-     */
-    regexMapType::const_iterator end() const {return regexMap.end();}
-
-private:
-
-    /**
-     * @brief Build Array regexes.
-     * @param subPattern
-     * @param dimension
-     * @return
-     *
-     * @note The sub pattern is the base object you are targeting.  It can either
-     *       be a simple type or a lower-dimensional array. Sub-elements and
-     *       axes are given as a comma-separated list enclosed in a curly brace.
-     *       For example, a 2D string array would look like: {{"a", "b"}, {"c", "d"}}
-     */
-    string constructArrayRegex( string subPattern, integer dimension )
-    {
-      if( dimension > 1 )
-      {
-        subPattern = constructArrayRegex( subPattern, dimension-1 );
-      }
-
-      string arrayPattern;
-      if( dimension == 1 )
-      {
-        // Allow the bottom-level to be empty
-        arrayPattern = "\\{\\s*((" + subPattern + ",\\s*)*" + subPattern + ")?\\s*\\}";
-      }
-      else
-      {
-        arrayPattern = "\\{\\s*(" + subPattern + ",\\s*)*" + subPattern + "\\s*\\}";
-      }
-
-      return arrayPattern;
-    }
-
-    // Define the component regexes:
-    // Regex to match an unsigned int (123, etc.)
-    string ru = "[\\d]+";
-
-    // Regex to match an signed int (-123, 455, +789, etc.)
-    string ri = "[+-]?[\\d]+";
-
-    // Regex to match a float (1, +2.3, -.4, 5.6e7, 8E-9, etc.)
-    // Explanation of parts:
-    // [+-]?[\\d]*  matches an optional +/- at the beginning, any numbers preceding the decimal
-    // ([\\d]\\.?|\\.[\\d]) matches the decimal region of the number (0, 1., 2.3, .4)
-    // [\\d]*  matches any number of numbers following the decimal
-    // ([eE][-+]?[\\d]+|\\s*)  matches an optional scientific notation number
-    // Note: the xsd regex implementation does not allow an empty branch, so use allow whitespace at the end
-    string rr = "[+-]?[\\d]*([\\d]\\.?|\\.[\\d])[\\d]*([eE][-+]?[\\d]+|\\s*)";
-
-    // Regex to match a string that does not contain the characters  ,{}
-    string rs = "[^,\\{\\}]*";
-
-    // Regex to match a R1Tensor
-    string r1 = "\\s*\\{\\s*(" + rr + ",\\s*){2}" + rr + "\\s*\\}";
-
-    // Regex to match a R2SymTensor
-    string r2s = "\\s*\\{\\s*(" + rr + ",\\s*){5}" + rr + "\\s*\\}";
-
-    // Build master list of regexes
-    regexMapType regexMap =
-    {
-      {"integer", ri},
-      {"localIndex", ri},
-      {"globalIndex", ri},
-      {"real32", rr},
-      {"real64", rr},
-      {"R1Tensor", r1},
-      {"R1Tensor32", r1},
-      {"R2SymTensor", r2s},
-      {"integer_array", constructArrayRegex( ri, 1 )},
-      {"localIndex_array", constructArrayRegex( ri, 1 )},
-      {"globalIndex_array", constructArrayRegex( ri, 1 )},
-      {"real32_array", constructArrayRegex( rr, 1 )},
-      {"real64_array", constructArrayRegex( rr, 1 )},
-      {"integer_array2d", constructArrayRegex( ri, 2 )},
-      {"localIndex_array2d", constructArrayRegex( ri, 2 )},
-      {"globalIndex_array2d", constructArrayRegex( ri, 2 )},
-      {"real32_array2d", constructArrayRegex( rr, 2 )},
-      {"real64_array2d", constructArrayRegex( rr, 2 )},
-      {"integer_array3d", constructArrayRegex( ri, 3 )},
-      {"localIndex_array3d", constructArrayRegex( ri, 3 )},
-      {"globalIndex_array3d", constructArrayRegex( ri, 3 )},
-      {"real32_array3d", constructArrayRegex( rr, 3 )},
-      {"real64_array3d", constructArrayRegex( rr, 3 )},
-      {"real64_array4d", constructArrayRegex( rr, 4 )},
-      {"string", rs},
-      {"path", rs},
-      {"string_array", constructArrayRegex( rs, 1 )},
-      {"path_array", constructArrayRegex( rs, 1 )},
-      {"mapPair", rs},
-      {"geos_dataRepository_PlotLevel", ri}
-    };
-  };
+  string m_formatDescription;
+  /**
+   * @brief Default constructor
+   */
+  Regex() {}
+  /**
+   * @param regexStr the regex string for validation (eg. "[\\d]+")
+   * @param formatDescription the description of the expected format to be validated (eg. "Input value must be an integer.").
+   */
+  Regex( string_view regexStr, string_view formatDescription );
 };
 
 /**
  * @brief Extension point for custom types to provide a validation regexp to schema.
+ * Do not use directly to obtain a type regex, rtTypes::getTypeRegex< T >() should be used instead.
  * @tparam T the type for which the regex is defined
  * @tparam ENABLE used to conditionally enable partial specializations
  *
@@ -703,10 +547,98 @@ template< typename T, typename ENABLE = void >
 struct TypeRegex
 {
   /**
-   * @brief Get the type's regex (default implementation).
-   * @return empty string, indicating no custom regex
+   * @brief Get the type's regex (default implementation returns nothing).
+   * @return The Regex associated with T.
    */
-  static string get() { return {}; }
+  static Regex get() { return {}; }
+};
+
+/**
+ * @brief Static class to manage the type selection of types at runtime and obtain the
+ * regexes of these types. Typically, these types are 'xsd:simpleType' in the XSD.
+ */
+class rtTypes
+{
+public:
+
+  /**
+   * @brief the regex map type to store and find the regexes by the associated rtTypeName.
+   */
+  using RegexMapType = std::map< string, Regex >;
+
+  /**
+   * @brief Custom types are useful to customize the regexes of an existing type. The type name
+   * can be one of the existing ones, or a totally new one (which can then be used in Wrapper::setRTTypename).
+   */
+  struct CustomTypes
+  {
+    /// @cond DO_NOT_DOCUMENT
+    static constexpr string_view mapPair             = "mapPair";
+    static constexpr string_view plotLevel           = "geos_dataRepository_PlotLevel";
+    static constexpr string_view groupName           = "groupName";
+    static constexpr string_view groupNameRef        = "groupNameRef";
+    static constexpr string_view groupNameRefArray   = "groupNameRef_array";
+    /// @endcond
+  };
+
+  /**
+   * @brief Convert a @p std::type_index to a string.
+   * @param key the std::type_index of the type
+   * @return a hard coded string that is related to the std::type_index
+   */
+  static string getTypeName( std::type_index const key );
+
+  /**
+   * @tparam T type we want the regex
+   * @return the regex string for the default rtType of T to validate input values to this type.
+   */
+  template< typename T >
+  static Regex const & getTypeRegex()
+  { return getTypeRegex< T >( getTypeName( typeid( T ) ) ); }
+
+  /**
+   * @param typeName The rtType name of the type we want the regex (can be a CustomTypes).
+   * @tparam T the type we want the regex. If none are available in createBasicTypesRegexMap(), one is
+   * generated from TypeRegex< T >::get().
+   * @return a regex string validating the type T.
+   */
+  template< typename T >
+  static Regex const & getTypeRegex( string_view typeName )
+  {
+    RegexMapType & map = getTypeRegexMap();
+    auto const it = map.find( string( typeName ) );
+    if( it != map.end() )
+    {
+      return it->second;
+    }
+    else
+    {
+      return map.emplace( typeName, TypeRegex< T >::get() ).first->second;
+    }
+  }
+
+  /**
+   * @brief Construct the regexMap for all basic types (TypeRegex< T > extented types are not mentionned)
+   * @return RegexMapType
+   */
+  static RegexMapType createBasicTypesRegexMap();
+
+private:
+
+  /**
+   * @return A reference to the types regexes map
+   */
+  static RegexMapType & getTypeRegexMap()
+  {
+    static RegexMapType m = createBasicTypesRegexMap();
+    return m;
+  }
+
+  /**
+   * @brief Private constructor because of static class
+   */
+  rtTypes() {}
+
 };
 
 /**
@@ -739,6 +671,29 @@ struct TypeName
 };
 
 }
+
+/**
+ * @brief Format to be able to directly use a std::optional<T>.
+ * @param T The type of the value contained std::optional and GEOS_FMT_NS::formatter.
+ */
+template< typename T >
+struct GEOS_FMT_NS::formatter< std::optional< T > > : GEOS_FMT_NS::formatter< T >
+{
+  /**
+   * @brief Format the std::optional<T> to a string.
+   * @param opt The std::optional< T > value to format
+   * @param ctx formatting state consisting of the formatting arguments and the output iterator
+   * @return return the corresponding value string. If std::optional<T> is empty retun an empty string
+   */
+  auto format( std::optional< T > const & opt, format_context & ctx ) const
+  {
+    if( opt )
+    {
+      return GEOS_FMT_NS::formatter< T >::format( *opt, ctx );
+    }
+    return GEOS_FMT_NS::format_to( ctx.out(), "" );
+  }
+};
 
 
 

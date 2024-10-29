@@ -1,0 +1,56 @@
+from geos.ats.test_builder import TestDeck, RestartcheckParameters, generate_geos_tests
+
+restartcheck_params = {}
+restartcheck_params['atol'] = 1e-09
+restartcheck_params['rtol'] = 4e-08
+
+decks = [
+    TestDeck(
+        name="compressible_single_phase_wells_1d",
+        description='Single phase well test (1D, compressible, 2 wells)',
+        partitions=((1, 1, 1), (2, 1, 1)),
+        restart_step=5,
+        check_step=10,
+        restartcheck_params=RestartcheckParameters(**restartcheck_params)),
+    TestDeck(
+        name="compressible_single_phase_wells_hybrid_1d",
+        description=
+        'Single phase well test (1D, hybrid FVM, compressible, 2 wells)',
+        partitions=((1, 1, 1), (2, 1, 1)),
+        restart_step=5,
+        check_step=10,
+        restartcheck_params=RestartcheckParameters(**restartcheck_params)),
+    TestDeck(
+        name="incompressible_single_phase_wells_2d",
+        description='Single phase flow test (2D, incompressible, 3 wells)',
+        partitions=((1, 1, 1), (2, 2, 1)),
+        restart_step=5,
+        check_step=10,
+        restartcheck_params=RestartcheckParameters(**restartcheck_params)),
+    TestDeck(
+        name="incompressible_single_phase_wells_hybrid_2d",
+        description=
+        'Single phase flow test (2D, hybrid FVM, incompressible, 3 wells)',
+        partitions=((1, 1, 1), (2, 2, 1)),
+        restart_step=5,
+        check_step=10,
+        restartcheck_params=RestartcheckParameters(**restartcheck_params)),
+    TestDeck(
+        name="staircase_single_phase_wells_3d",
+        description=
+        'Single phase flow test (3D staircase, compressible, 2 wells)',
+        partitions=((1, 1, 1), (2, 2, 2)),
+        restart_step=5,
+        check_step=10,
+        restartcheck_params=RestartcheckParameters(**restartcheck_params)),
+    TestDeck(
+        name="staircase_single_phase_wells_hybrid_3d",
+        description=
+        'Single phase flow test (3D staircase, hybrid FVM, compressible, 2 wells)',
+        partitions=((1, 1, 1), (2, 2, 2)),
+        restart_step=5,
+        check_step=10,
+        restartcheck_params=RestartcheckParameters(**restartcheck_params))
+]
+
+generate_geos_tests(decks)

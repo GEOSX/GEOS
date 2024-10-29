@@ -2,10 +2,11 @@
  * ------------------------------------------------------------------------------------------------------------
  * SPDX-License-Identifier: LGPL-2.1-only
  *
- * Copyright (c) 2018-2020 Lawrence Livermore National Security LLC
- * Copyright (c) 2018-2020 The Board of Trustees of the Leland Stanford Junior University
- * Copyright (c) 2018-2020 TotalEnergies
- * Copyright (c) 2020-     GEOSX Contributors
+ * Copyright (c) 2016-2024 Lawrence Livermore National Security LLC
+ * Copyright (c) 2018-2024 Total, S.A
+ * Copyright (c) 2018-2024 The Board of Trustees of the Leland Stanford Junior University
+ * Copyright (c) 2018-2024 Chevron
+ * Copyright (c) 2019-     GEOS/GEOSX Contributors
  * All rights reserved
  *
  * See top level LICENSE, COPYRIGHT, CONTRIBUTORS, NOTICE, and ACKNOWLEDGEMENTS files for details.
@@ -17,6 +18,7 @@
 
 #include "CellBlockUtilities.hpp"
 #include "dataRepository/Group.hpp"
+#include "LineBlockABC.hpp"
 
 #include <map>
 
@@ -100,10 +102,24 @@ public:
   virtual Group & getFaceBlocks() = 0;
 
   /**
+   * @brief Returns LineBlockABC corresponding to the given identifier
+   * @param name the name of the required LineBlockABC
+   * @return The LineBlockABC associated with the given name
+   *
+   */
+  virtual LineBlockABC const & getLineBlock( string name ) const = 0;
+
+  /**
    * @brief Returns a group containing the cell blocks as CellBlockABC instances
    * @return Const reference to the Group instance.
    */
   virtual const Group & getCellBlocks() const = 0;
+
+  /**
+   * @brief Returns a group containing the face blocks as FaceBlockABC instances
+   * @return Const reference to the Group instance.
+   */
+  virtual const Group & getFaceBlocks() const = 0;
 
   /**
    * @brief Total number of nodes across all the cell blocks.
@@ -191,6 +207,12 @@ public:
    * @return A reference to constant map.
    */
   virtual std::map< string, SortedArray< localIndex > > const & getNodeSets() const = 0;
+
+  /**
+   * @brief Getter for the global length
+   * @return the global length of the mesh
+   */
+  virtual real64 getGlobalLength() const = 0;
 
   /**
    * @brief Generates in place the high-order maps for this cell block manager.

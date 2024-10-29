@@ -2,10 +2,11 @@
  * ------------------------------------------------------------------------------------------------------------
  * SPDX-License-Identifier: LGPL-2.1-only
  *
- * Copyright (c) 2018-2020 Lawrence Livermore National Security LLC
- * Copyright (c) 2018-2020 The Board of Trustees of the Leland Stanford Junior University
- * Copyright (c) 2018-2020 TotalEnergies
- * Copyright (c) 2019-     GEOSX Contributors
+ * Copyright (c) 2016-2024 Lawrence Livermore National Security LLC
+ * Copyright (c) 2018-2024 Total, S.A
+ * Copyright (c) 2018-2024 The Board of Trustees of the Leland Stanford Junior University
+ * Copyright (c) 2018-2024 Chevron
+ * Copyright (c) 2019-     GEOS/GEOSX Contributors
  * All rights reserved
  *
  * See top level LICENSE, COPYRIGHT, CONTRIBUTORS, NOTICE, and ACKNOWLEDGEMENTS files for details.
@@ -40,7 +41,7 @@ ChomboIO::ChomboIO( string const & name, Group * const parent ):
 {
   registerWrapper( viewKeyStruct::outputPathString(), &m_outputPath ).
     setInputFlag( InputFlags::REQUIRED ).
-    setDescription( "Path at which the geosx to chombo file will be written." );
+    setDescription( "Path at which the geos to chombo file will be written." );
 
   registerWrapper( viewKeyStruct::beginCycleString(), &m_beginCycle ).
     setInputFlag( InputFlags::REQUIRED ).
@@ -49,17 +50,17 @@ ChomboIO::ChomboIO( string const & name, Group * const parent ):
   registerWrapper( viewKeyStruct::inputPathString(), &m_inputPath ).
     setInputFlag( InputFlags::OPTIONAL ).
     setDefaultValue( "/INVALID_INPUT_PATH" ).
-    setDescription( "Path at which the chombo to geosx file will be written." );
+    setDescription( "Path at which the chombo to geos file will be written." );
 
   registerWrapper( viewKeyStruct::waitForInputString(), &m_waitForInput ).
     setInputFlag( InputFlags::REQUIRED ).
     setDefaultValue( 0 ).
-    setDescription( "True iff geosx should wait for chombo to write out a file. When true the inputPath must be set." );
+    setDescription( "True iff geos should wait for chombo to write out a file. When true the inputPath must be set." );
 
   registerWrapper( viewKeyStruct::useChomboPressuresString(), &m_useChomboPressures ).
     setInputFlag( InputFlags::OPTIONAL ).
     setDefaultValue( 0 ).
-    setDescription( "True iff geosx should use the pressures chombo writes out." );
+    setDescription( "True iff geos should use the pressures chombo writes out." );
 }
 
 ChomboIO::~ChomboIO()

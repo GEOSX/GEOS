@@ -5,11 +5,11 @@
     gravityVector="{ 0.0, 0.0, -9.81 }">
     <SinglePhasePoromechanicsConformingFractures
       name="poroSolver"
-      targetRegions="{ Domain, Fracture }"
+      flowSolverName="flowSolver"
+      solidSolverName="fractureMechSolver"
       initialDt="1e-3"
-      LagrangianContactSolverName="fractureMechSolver"
-      poromechanicsSolverName="singlePhasePoromechanicsSolver"
-      logLevel="1">
+      logLevel="1"
+      targetRegions="{ Domain, Fracture }">
       <NonlinearSolverParameters
         maxTimeStepCuts="3"
         newtonTol="1e0"
@@ -19,30 +19,13 @@
         directParallel="0"/>
     </SinglePhasePoromechanicsConformingFractures>
 
-    <SinglePhasePoromechanics
-      name="singlePhasePoromechanicsSolver"
-      solidSolverName="matrixMechSolver"
-      flowSolverName="flowSolver"
-      logLevel="1"
-      targetRegions="{ Domain, Fracture }">
-    </SinglePhasePoromechanics>
-
-    <LagrangianContact
+    <SolidMechanicsLagrangeContact
       name="fractureMechSolver"
-      solidSolverName="matrixMechSolver"
       stabilizationName="singlePhaseTPFA_stab"
+      timeIntegrationOption="QuasiStatic"
       logLevel="1"
       targetRegions="{ Domain, Fracture }"
-      fractureRegionName="Fracture"
-      discretization="FE1"
-      contactRelationName="fractureContact"/>  
-
-    <SolidMechanics_LagrangianFEM
-      name="matrixMechSolver"
-      timeIntegrationOption="QuasiStatic"
-      discretization="FE1"
-      targetRegions="{ Domain, Fracture }"
-      logLevel="1"/>
+      discretization="FE1"/>  
 
     <SinglePhaseFVM
       name="flowSolver"
@@ -51,8 +34,7 @@
       targetRegions="{ Domain, Fracture }">
       <NonlinearSolverParameters
         newtonTol="1.0e-2"
-        newtonMaxIter="8"
-        allowNonConverged="1"/>
+        newtonMaxIter="8"/>
       <LinearSolverParameters
         directParallel="0"/>
     </SinglePhaseFVM>
@@ -71,6 +53,16 @@
       name="fracture"
       xMin="{ -0.01, -0.5, -0.01 }"
       xMax="{ 0.01,  0.5,  1.01 }"/>
+
+    <Box
+      name="fixedNodesInYAtXmin"
+      xMin="{ -1.01, -0.01, -0.01}"
+      xMax="{ -0.99,  0.01,  1.01}"/>
+
+    <Box
+      name="fixedNodesInYAtXmax"
+      xMin="{ 0.99, -0.01, -0.01}"
+      xMax="{ 1.01,  0.01,  1.01}"/>
   </Geometry>
 
   <NumericalMethods>
@@ -128,7 +120,7 @@
 
     <BiotPorosity
       name="rockPorosity"
-      grainBulkModulus="1.0e27"
+      defaultGrainBulkModulus="1.0e27"
       defaultReferencePorosity="0.2"/>
 
     <CompressibleSolidExponentialDecayPermeability
@@ -232,6 +224,14 @@
       component="0"
       scale="0.0"
       setNames="{ xneg }"/>
+
+    <FieldSpecification
+      name="yconstraint"
+      objectPath="nodeManager"
+      fieldName="totalDisplacement"
+      component="1"
+      scale="0.0"
+      setNames="{ fixedNodesInYAtXmin, fixedNodesInYAtXmax }"/>
 
     <FieldSpecification
       name="zconstraint"

@@ -2,10 +2,11 @@
  * ------------------------------------------------------------------------------------------------------------
  * SPDX-License-Identifier: LGPL-2.1-only
  *
- * Copyright (c) 2018-2020 Lawrence Livermore National Security LLC
- * Copyright (c) 2018-2020 The Board of Trustees of the Leland Stanford Junior University
- * Copyright (c) 2018-2020 TotalEnergies
- * Copyright (c) 2019-     GEOSX Contributors
+ * Copyright (c) 2016-2024 Lawrence Livermore National Security LLC
+ * Copyright (c) 2018-2024 Total, S.A
+ * Copyright (c) 2018-2024 The Board of Trustees of the Leland Stanford Junior University
+ * Copyright (c) 2018-2024 Chevron
+ * Copyright (c) 2019-     GEOS/GEOSX Contributors
  * All rights reserved
  *
  * See top level LICENSE, COPYRIGHT, CONTRIBUTORS, NOTICE, and ACKNOWLEDGEMENTS files for details.
@@ -40,6 +41,7 @@ ControlEquationHelper::
                  real64 const & targetBHP,
                  real64 const & targetPhaseRate,
                  real64 const & targetTotalRate,
+                 real64 const & targetMassRate,
                  real64 const & currentBHP,
                  arrayView1d< real64 const > const & currentPhaseVolRate,
                  real64 const & currentTotalVolRate,
@@ -102,9 +104,18 @@ ControlEquationHelper::
     }
     else
     {
-      newControl = ( currentControl == WellControls::Control::BHP )
-                 ? WellControls::Control::TOTALVOLRATE
-                 : WellControls::Control::BHP;
+      if( isZero( targetMassRate ) )
+      {
+        newControl = ( currentControl == WellControls::Control::BHP )
+                  ? WellControls::Control::TOTALVOLRATE
+                  : WellControls::Control::BHP;
+      }
+      else
+      {
+        newControl = ( currentControl == WellControls::Control::BHP )
+                  ? WellControls::Control::MASSRATE
+                  : WellControls::Control::BHP;
+      }
     }
   }
 }
@@ -120,6 +131,7 @@ ControlEquationHelper::
            real64 const & targetBHP,
            real64 const & targetPhaseRate,
            real64 const & targetTotalRate,
+           real64 const & targetMassRate,
            real64 const & currentBHP,
            real64 const & dCurrentBHP_dPres,
            arrayView1d< real64 const > const & dCurrentBHP_dCompDens,
@@ -131,6 +143,7 @@ ControlEquationHelper::
            real64 const & dCurrentTotalVolRate_dPres,
            arrayView1d< real64 const > const & dCurrentTotalVolRate_dCompDens,
            real64 const & dCurrentTotalVolRate_dRate,
+           real64 const & massDensity,
            globalIndex const dofNumber,
            CRSMatrixView< real64, globalIndex const > const & localMatrix,
            arrayView1d< real64 > const & localRhs )
@@ -187,6 +200,17 @@ ControlEquationHelper::
     for( integer ic = 0; ic < NC; ++ic )
     {
       dControlEqn_dComp[ic] = dCurrentTotalVolRate_dCompDens[ic];
+    }
+  }
+  // Total mass rate control
+  else if( currentControl == WellControls::Control::MASSRATE )
+  {
+    controlEqn = massDensity*currentTotalVolRate - targetMassRate;
+    dControlEqn_dPres = massDensity*dCurrentTotalVolRate_dPres;
+    dControlEqn_dRate = massDensity*dCurrentTotalVolRate_dRate;
+    for( integer ic = 0; ic < NC; ++ic )
+    {
+      dControlEqn_dComp[ic] = massDensity*dCurrentTotalVolRate_dCompDens[ic];
     }
   }
   else
@@ -282,6 +306,7 @@ void
 FluxKernel::
   launch( localIndex const size,
           globalIndex const rankOffset,
+          integer const useTotalMassEquation,
           WellControls const & wellControls,
           arrayView1d< globalIndex const > const & wellElemDofNumber,
           arrayView1d< localIndex const > const & nextWellElemIndex,
@@ -416,11 +441,14 @@ FluxKernel::
         oneSidedDofColIndices_dPresCompUp[jdof] = offsetUp + COFFSET::DPRES + jdof;
       }
 
-      // Apply equation/variable change transformation(s)
-      real64 work[NC+1]{};
-      shiftRowsAheadByOneAndReplaceFirstRowWithColumnSum( NC, 1, oneSidedFluxJacobian_dRate, work );
-      shiftRowsAheadByOneAndReplaceFirstRowWithColumnSum( NC, NC + 1, oneSidedFluxJacobian_dPresCompUp, work );
-      shiftElementsAheadByOneAndReplaceFirstElementWithSum( NC, oneSidedFlux );
+      if( useTotalMassEquation > 0 )
+      {
+        // Apply equation/variable change transformation(s)
+        real64 work[NC + 1]{};
+        shiftRowsAheadByOneAndReplaceFirstRowWithColumnSum( NC, 1, oneSidedFluxJacobian_dRate, work );
+        shiftRowsAheadByOneAndReplaceFirstRowWithColumnSum( NC, NC + 1, oneSidedFluxJacobian_dPresCompUp, work );
+        shiftElementsAheadByOneAndReplaceFirstElementWithSum( NC, oneSidedFlux );
+      }
 
       for( integer i = 0; i < NC; ++i )
       {
@@ -479,11 +507,14 @@ FluxKernel::
         dofColIndices_dPresCompUp[jdof] = offsetUp + COFFSET::DPRES + jdof;
       }
 
-      // Apply equation/variable change transformation(s)
-      real64 work[NC+1]{};
-      shiftBlockRowsAheadByOneAndReplaceFirstRowWithColumnSum( NC, NC, 1, 2, localFluxJacobian_dRate, work );
-      shiftBlockRowsAheadByOneAndReplaceFirstRowWithColumnSum( NC, NC, NC + 1, 2, localFluxJacobian_dPresCompUp, work );
-      shiftBlockElementsAheadByOneAndReplaceFirstElementWithSum( NC, NC, 2, localFlux );
+      if( useTotalMassEquation > 0 )
+      {
+        // Apply equation/variable change transformation(s)
+        real64 work[NC + 1]{};
+        shiftBlockRowsAheadByOneAndReplaceFirstRowWithColumnSum( NC, NC, 1, 2, localFluxJacobian_dRate, work );
+        shiftBlockRowsAheadByOneAndReplaceFirstRowWithColumnSum( NC, NC, NC + 1, 2, localFluxJacobian_dPresCompUp, work );
+        shiftBlockElementsAheadByOneAndReplaceFirstElementWithSum( NC, NC, 2, localFlux );
+      }
 
       for( integer i = 0; i < 2*NC; ++i )
       {
@@ -509,6 +540,7 @@ FluxKernel::
   void FluxKernel:: \
     launch< NC >( localIndex const size, \
                   globalIndex const rankOffset, \
+                  integer const useTotalMassEquation, \
                   WellControls const & wellControls, \
                   arrayView1d< globalIndex const > const & wellElemDofNumber, \
                   arrayView1d< localIndex const > const & nextWellElemIndex, \
@@ -602,6 +634,7 @@ PressureRelationKernel::
   real64 const targetBHP = wellControls.getTargetBHP( timeAtEndOfStep );
   real64 const targetTotalRate = wellControls.getTargetTotalRate( timeAtEndOfStep );
   real64 const targetPhaseRate = wellControls.getTargetPhaseRate( timeAtEndOfStep );
+  real64 const targetMassRate = wellControls.getTargetMassRate( timeAtEndOfStep );
 
   // dynamic well control data
   real64 const & currentBHP =
@@ -628,6 +661,8 @@ PressureRelationKernel::
     wellControls.getReference< array1d< real64 > >( CompositionalMultiphaseWell::viewKeyStruct::dCurrentTotalVolRate_dCompDensString() );
   real64 const & dCurrentTotalVolRate_dRate =
     wellControls.getReference< real64 >( CompositionalMultiphaseWell::viewKeyStruct::dCurrentTotalVolRate_dRateString() );
+  real64 const & massDensity  =
+    wellControls.getReference< real64 >( CompositionalMultiphaseWell::viewKeyStruct::massDensityString() );
 
   RAJA::ReduceMax< parallelDeviceReduce, localIndex > switchControl( 0 );
 
@@ -645,6 +680,7 @@ PressureRelationKernel::
                                             targetBHP,
                                             targetPhaseRate,
                                             targetTotalRate,
+                                            targetMassRate,
                                             currentBHP,
                                             currentPhaseVolRate,
                                             currentTotalVolRate,
@@ -660,6 +696,7 @@ PressureRelationKernel::
                                             targetBHP,
                                             targetPhaseRate,
                                             targetTotalRate,
+                                            targetMassRate,
                                             currentBHP,
                                             dCurrentBHP_dPres,
                                             dCurrentBHP_dCompDens,
@@ -671,6 +708,7 @@ PressureRelationKernel::
                                             dCurrentTotalVolRate_dPres,
                                             dCurrentTotalVolRate_dCompDens,
                                             dCurrentTotalVolRate_dRate,
+                                            massDensity,
                                             wellElemDofNumber[iwelemControl],
                                             localMatrix,
                                             localRhs );
@@ -1282,6 +1320,7 @@ AccumulationKernel::
   launch( localIndex const size,
           integer const numPhases,
           globalIndex const rankOffset,
+          integer const useTotalMassEquation,
           arrayView1d< globalIndex const > const & wellElemDofNumber,
           arrayView1d< integer const > const & wellElemGhostRank,
           arrayView1d< real64 const > const & wellElemVolume,
@@ -1341,10 +1380,13 @@ AccumulationKernel::
       dofColIndices[idof] = wellElemDofNumber[iwelem] + COFFSET::DPRES + idof;
     }
 
-    // Apply equation/variable change transformation(s)
-    real64 work[NC+1];
-    shiftRowsAheadByOneAndReplaceFirstRowWithColumnSum( NC, NC + 1, localAccumJacobian, work );
-    shiftElementsAheadByOneAndReplaceFirstElementWithSum( NC, localAccum );
+    if( useTotalMassEquation > 0 )
+    {
+      // Apply equation/variable change transformation(s)
+      real64 work[NC + 1];
+      shiftRowsAheadByOneAndReplaceFirstRowWithColumnSum( NC, NC + 1, localAccumJacobian, work );
+      shiftElementsAheadByOneAndReplaceFirstElementWithSum( NC, localAccum );
+    }
 
     // add contribution to residual and jacobian
     for( integer ic = 0; ic < NC; ++ic )
@@ -1364,6 +1406,7 @@ AccumulationKernel::
     launch< NC >( localIndex const size, \
                   integer const numPhases, \
                   globalIndex const rankOffset, \
+                  integer const useTotalMassEquation, \
                   arrayView1d< globalIndex const > const & wellElemDofNumber, \
                   arrayView1d< integer const > const & wellElemGhostRank, \
                   arrayView1d< real64 const > const & wellElemVolume, \
@@ -1677,7 +1720,7 @@ PresTempCompFracInitializationKernel::
     {
       foundNegativeTemp.max( 1 );
     }
-    if( !isZero( sumCompFracForCheck - 1.0 ) )
+    if( !isZero( sumCompFracForCheck - 1.0, constitutive::MultiFluidConstants::minForSpeciesPresence ) )
     {
       foundInconsistentCompFrac.max( 1 );
     }
@@ -1686,13 +1729,13 @@ PresTempCompFracInitializationKernel::
 
 
   GEOS_THROW_IF( foundNegativePres.get() == 1,
-                 "Invalid well initialization: negative pressure was found, please check " << wellControls.getName(),
+                 wellControls.getDataContext() << "Invalid well initialization, negative pressure was found.",
                  InputError );
   GEOS_THROW_IF( foundNegativeTemp.get() == 1,
-                 "Invalid well initialization: negative temperature was found, please check " << wellControls.getName(),
+                 wellControls.getDataContext() << "Invalid well initialization, negative temperature was found.",
                  InputError );
   GEOS_THROW_IF( foundInconsistentCompFrac.get() == 1,
-                 "Invalid well initialization: inconsistent component fractions were found, please check " << wellControls.getName(),
+                 wellControls.getDataContext() << "Invalid well initialization, inconsistent component fractions were found.",
                  InputError );
 
 
@@ -1733,6 +1776,7 @@ RateInitializationKernel::
   bool const isProducer = wellControls.isProducer();
   real64 const targetTotalRate = wellControls.getTargetTotalRate( currentTime );
   real64 const targetPhaseRate = wellControls.getTargetPhaseRate( currentTime );
+  real64 const targetMassRate = wellControls.getTargetMassRate( currentTime );
 
   // Estimate the connection rates
   forAll< parallelDevicePolicy<> >( subRegionSize, [=] GEOS_HOST_DEVICE ( localIndex const iwelem )
@@ -1747,8 +1791,21 @@ RateInitializationKernel::
       }
       else
       {
-        connRate[iwelem] = LvArray::math::min( 0.1 * targetTotalRate * totalDens[iwelem][0], 1e3 );
+        if( isZero( targetMassRate ) )
+        {
+          connRate[iwelem] = LvArray::math::min( 0.1 * targetTotalRate * totalDens[iwelem][0], 1e3 );
+        }
+        else
+        {
+          connRate[iwelem] = targetMassRate;
+        }
+
       }
+    }
+    else if( control == WellControls::Control::MASSRATE )
+    {
+      connRate[iwelem] = targetMassRate;
+      connRate[iwelem] = targetMassRate* totalDens[iwelem][0];
     }
     else
     {

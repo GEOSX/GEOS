@@ -2,10 +2,11 @@
  * ------------------------------------------------------------------------------------------------------------
  * SPDX-License-Identifier: LGPL-2.1-only
  *
- * Copyright (c) 2018-2020 Lawrence Livermore National Security LLC
- * Copyright (c) 2018-2020 The Board of Trustees of the Leland Stanford Junior University
- * Copyright (c) 2018-2020 TotalEnergies
- * Copyright (c) 2019-     GEOSX Contributors
+ * Copyright (c) 2016-2024 Lawrence Livermore National Security LLC
+ * Copyright (c) 2018-2024 Total, S.A
+ * Copyright (c) 2018-2024 The Board of Trustees of the Leland Stanford Junior University
+ * Copyright (c) 2018-2024 Chevron
+ * Copyright (c) 2019-     GEOS/GEOSX Contributors
  * All rights reserved
  *
  * See top level LICENSE, COPYRIGHT, CONTRIBUTORS, NOTICE, and ACKNOWLEDGEMENTS files for details.
@@ -279,6 +280,13 @@ localIndex Unpack( buffer_unit_type const * & buffer,
                    ArrayOfArrays< T > & var );
 
 //------------------------------------------------------------------------------
+inline
+localIndex
+Unpack( buffer_unit_type const * & buffer,
+        ArrayOfArrays< array1d< globalIndex > > & var,
+        localIndex const subArrayIndex );
+
+//------------------------------------------------------------------------------
 template< typename T >
 localIndex Unpack( buffer_unit_type const * & buffer,
                    ArrayOfSets< T > & var );
@@ -458,6 +466,14 @@ Pack( buffer_unit_type * & buffer,
       arrayView1d< globalIndex const > const & relatedObjectLocalToGlobalMap );
 
 //------------------------------------------------------------------------------
+template< bool DO_PACKING >
+localIndex
+Pack( buffer_unit_type * & buffer,
+      ArrayOfArraysView< array1d< globalIndex > const > const & var,
+      arrayView1d< localIndex const > const & indices,
+      arrayView1d< globalIndex const > const & localToGlobalMap );
+
+//------------------------------------------------------------------------------
 template< typename SORTED0, typename SORTED1 >
 inline
 localIndex
@@ -488,6 +504,15 @@ Unpack( buffer_unit_type const * & buffer,
         mapBase< localIndex, array1d< globalIndex >, SORTED0 > & unmappedGlobalIndices,
         mapBase< globalIndex, localIndex, SORTED1 > const & globalToLocalMap,
         mapBase< globalIndex, localIndex, SORTED2 > const & relatedObjectGlobalToLocalMap );
+
+//------------------------------------------------------------------------------
+template< typename SORTED0 >
+inline
+localIndex
+Unpack( buffer_unit_type const * & buffer,
+        ArrayOfArrays< array1d< globalIndex > > & var,
+        array1d< localIndex > & indices,
+        mapBase< globalIndex, localIndex, SORTED0 > const & globalToLocalMap );
 
 //------------------------------------------------------------------------------
 template< bool DO_PACKING, typename SORTED >
@@ -601,7 +626,7 @@ PackSize( VARPACK && ... pack )
   return Pack< false >( junk, pack ... );
 }
 
-#ifdef GEOSX_USE_ARRAY_BOUNDS_CHECK
+#ifdef GEOS_USE_ARRAY_BOUNDS_CHECK
 //------------------------------------------------------------------------------
 template< bool DO_PACKING, typename T, typename T_INDICES >
 typename std::enable_if< !is_packable_by_index< T > &&
@@ -638,7 +663,7 @@ Unpack( buffer_unit_type const * & buffer,
         arraySlice1d< INDEX_TYPE > const & indices,
         INDEX_TYPE & length );
 
-#endif /* GEOSX_USE_ARRAY_BOUNDS_CHECK */
+#endif /* GEOS_USE_ARRAY_BOUNDS_CHECK */
 
 } /* namespace bufferOps */
 } /* namespace geos */

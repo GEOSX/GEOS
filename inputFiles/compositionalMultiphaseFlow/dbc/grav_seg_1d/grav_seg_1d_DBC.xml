@@ -1,0 +1,222 @@
+<?xml version="1.0" ?>
+
+<Problem>
+  <!-- SPHINX_SOLVER -->
+  <Solvers
+    gravityVector="{ 0.0, 0.0, -9.81 }">
+    <CompositionalMultiphaseFVM
+      name="grav_seg_1d_DBC"
+      logLevel="1"
+      discretization="fluidTPFA"
+      temperature="300"
+      initialDt="1000"
+      useMass="1"
+      targetPhaseVolFractionChangeInTimeStep="1.0"
+      targetRelativePressureChangeInTimeStep="1.0"
+      solutionChangeScalingFactor="0"
+      targetRegions="{ region }"
+      useDBC="1"
+      continuationDBC="1"
+      omegaDBC="100"
+      miscibleDBC="0"
+      kappaminDBC="1e-20"
+      contMultiplierDBC="0.2">
+      <NonlinearSolverParameters
+        newtonTol="1.0e-4"
+        newtonMaxIter="100"
+        maxTimeStepCuts="1000"
+        maxSubSteps="1000"
+        lineSearchAction="None"
+        timeStepDecreaseFactor="1"
+        timeStepIncreaseFactor="2"/>
+      <LinearSolverParameters
+        solverType="direct"
+        directParallel="0"  
+        logLevel="0"/>
+    </CompositionalMultiphaseFVM>
+  </Solvers>
+  <!-- SPHINX_SOLVER_END -->
+ 
+  <!-- SPHINX_NUMERICAL -->
+  <NumericalMethods>
+    <FiniteVolume>
+      <TwoPointFluxApproximation
+        name="fluidTPFA"/>
+    </FiniteVolume>
+  </NumericalMethods>
+  <!-- SPHINX_NUMERICAL_END -->
+
+  <!-- SPHINX_ELEMENTREGIONS -->
+  <ElementRegions>
+    <CellElementRegion
+      name="region"
+      cellBlocks="{ cellBlock }"
+      materialList="{ fluid, rock, relperm, cappres }"/>
+  </ElementRegions>
+      <!-- materialList="{ fluid, rock, relperm }" -->
+  <!-- SPHINX_ELEMENTREGIONS_END -->
+
+  <!-- SPHINX_MATERIAL -->
+  <Constitutive>
+    <DeadOilFluid
+      name="fluid"
+      phaseNames="{ water, gas }"
+      surfaceDensities="{ 992.0, 100.0 }"
+      componentMolarWeight="{ 18e-3, 44e-3 }"
+      tableFiles="{ tables/pvtw.txt, tables/pvdg.txt }"/>
+
+    <CompressibleSolidConstantPermeability
+      name="rock"
+      solidModelName="nullSolid"
+      porosityModelName="rockPorosity"
+      permeabilityModelName="rockPerm"/>
+
+    <NullModel
+      name="nullSolid"/>
+
+    <PressurePorosity
+      name="rockPorosity"
+      defaultReferencePorosity="0.2"
+      referencePressure="1e7"
+      compressibility="1.0e-15"/>
+
+    <ConstantPermeability
+      name="rockPerm"
+      permeabilityComponents="{ 9.0e-13, 9.0e-13, 9.0e-13}"/>   
+    
+    <BrooksCoreyRelativePermeability
+      name="relperm"
+      phaseNames="{ water, gas }"
+      phaseMinVolumeFraction="{ 0.0, 0.0 }"
+      phaseRelPermExponent="{ 2, 2 }"
+      phaseRelPermMaxValue="{ 1.0, 1.0 }"/>
+    <TableCapillaryPressure
+      name="cappres"
+      phaseNames="{ water, gas }"
+      wettingNonWettingCapPressureTableName="waterCapillaryPressureTable"/>
+  </Constitutive>
+  <!-- SPHINX_MATERIAL_END -->
+
+  <!-- SPHINX_BC --> 
+  <FieldSpecifications>
+    <FieldSpecification
+      name="initialPressure"
+      initialCondition="1"
+      setNames="{ all }"
+      objectPath="ElementRegions/region/cellBlock"
+      fieldName="pressure"
+      scale="1e7"/>
+
+    <FieldSpecification
+      name="leftInitialComposition_gas"
+      initialCondition="1"
+      setNames="{ left_half }"
+      objectPath="ElementRegions/region/cellBlock"
+      fieldName="globalCompFraction"
+      component="0"
+      scale="0.001"/>
+    <FieldSpecification
+      name="leftInitialComposition_water"
+      initialCondition="1"
+      setNames="{ left_half }"
+      objectPath="ElementRegions/region/cellBlock"
+      fieldName="globalCompFraction"
+      component="1"
+      scale="0.999"/>
+
+    <FieldSpecification
+      name="rightInitialComposition_gas"
+      initialCondition="1"
+      setNames="{ right_half }"
+      objectPath="ElementRegions/region/cellBlock"
+      fieldName="globalCompFraction"
+      component="0"
+      scale="0.999"/>
+    <FieldSpecification
+      name="rightInitialComposition_water"
+      initialCondition="1"
+      setNames="{ right_half }"
+      objectPath="ElementRegions/region/cellBlock"
+      fieldName="globalCompFraction"
+      component="1"
+      scale="0.001"/>
+  </FieldSpecifications>
+  <!-- SPHINX_BC_END -->
+  
+  <!-- SPHINX_TASKS --> 
+  <Tasks>
+     <CompositionalMultiphaseStatistics
+      name="compflowstats"
+      flowSolverName="grav_seg_1d_DBC"
+      logLevel="1"
+      computeCFLNumbers="1"/> 
+      <!-- computeRegionStatistics="1" -->
+  </Tasks>
+  <!-- SPHINX_TASKS_END -->   
+
+  <!-- SPHINX_MESH -->
+  <Mesh>
+    <InternalMesh
+      name="mesh"
+      elementTypes="{ C3D8 }"
+      xCoords="{ 0.0, 1.0 }"
+      yCoords="{ 0.0, 1.0 }"
+      zCoords="{ 0.0, 10.0 }"
+      nx="{ 1 }"
+      ny="{ 1 }"
+      nz="{ 1000 }"
+      cellBlockNames="{ cellBlock }"/>
+  </Mesh>
+  <!-- SPHINX_MESH_END -->
+
+  <Geometry>
+    <Box
+      name="left_half"
+      xMin="{-0.1, -0.1, -0.1}"
+      xMax="{1.1, 1.1, 5.0}"/>
+    <Box
+      name="right_half"
+      xMin="{ -0.1, -0.1, 5.0}"
+      xMax="{ 1.1, 1.1, 10.1}"/>
+  </Geometry>
+
+
+
+  <Functions>
+    <TableFunction
+      name="waterCapillaryPressureTable"
+      coordinateFiles="{ tables/phaseVolumeFraction_water.txt }"
+      voxelFile="tables/capPres_water.txt"/>   
+  </Functions>
+
+  <!-- SPHINX_OUTPUT -->  
+  <Outputs>
+    <VTK
+      name="vtkOutput"/>
+
+    <Restart
+      name="restartOutput"/> 
+  </Outputs>
+  <!-- SPHINX_OUTPUT_END -->
+
+  <Events
+    maxTime="1e6">
+
+    <PeriodicEvent
+      name="statistics"
+      cycleFrequency="1"
+      target="/Tasks/compflowstats"/>  
+      
+    <PeriodicEvent
+      name="solverApplications"
+      maxEventDt="1e5"
+      target="/Solvers/grav_seg_1d_DBC"/>
+       
+
+    <PeriodicEvent
+      name="restarts"
+      timeFrequency="1e6" 
+      target="/Outputs/restartOutput"/>   
+       
+  </Events>
+</Problem>

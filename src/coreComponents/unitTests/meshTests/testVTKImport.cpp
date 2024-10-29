@@ -2,10 +2,11 @@
  * ------------------------------------------------------------------------------------------------------------
  * SPDX-License-Identifier: LGPL-2.1-only
  *
- * Copyright (c) 2018-2020 Lawrence Livermore National Security LLC
- * Copyright (c) 2018-2020 The Board of Trustees of the Leland Stanford Junior University
- * Copyright (c) 2018-2020 TotalEnergies
- * Copyright (c) 2019-     GEOSX Contributors
+ * Copyright (c) 2016-2024 Lawrence Livermore National Security LLC
+ * Copyright (c) 2018-2024 Total, S.A
+ * Copyright (c) 2018-2024 The Board of Trustees of the Leland Stanford Junior University
+ * Copyright (c) 2018-2024 Chevron
+ * Copyright (c) 2019-     GEOS/GEOSX Contributors
  * All rights reserved
  *
  * See top level LICENSE, COPYRIGHT, CONTRIBUTORS, NOTICE, and ACKNOWLEDGEMENTS files for details.
@@ -21,39 +22,291 @@
 #include "mesh/MeshManager.hpp"
 #include "mesh/generators/CellBlockManagerABC.hpp"
 #include "mesh/generators/CellBlockABC.hpp"
+#include "mesh/generators/VTKUtilities.hpp"
+#include "mesh/mpiCommunications/SpatialPartition.hpp"
 
 // special CMake-generated include
 #include "tests/meshDirName.hpp"
 
 // TPL includes
+#include <vtkCellData.h>
+#include <vtkInformation.h>
+#include <vtkMultiBlockDataSet.h>
+#include <vtkPointData.h>
+#include <vtkPoints.h>
+#include <vtkUnstructuredGrid.h>
+#include <vtkXMLMultiBlockDataWriter.h>
+
 #include <gtest/gtest.h>
 #include <conduit.hpp>
+
+#include <filesystem>
+
 
 using namespace geos;
 using namespace geos::testing;
 using namespace geos::dataRepository;
 
+
 template< class V >
-void TestMeshImport( string const & meshFilePath, V const & validate )
+void TestMeshImport( string const & meshFilePath, V const & validate, string const fractureName="" )
 {
-  string const meshNode = GEOS_FMT( R"(<Mesh><VTKMesh name="mesh" file="{}" partitionRefinement="0"/></Mesh>)", meshFilePath );
+  string const pattern = R"xml(
+    <Mesh>
+      <VTKMesh
+        name="mesh"
+        file="{}"
+        partitionRefinement="0"
+        useGlobalIds="0"
+        {} />
+    </Mesh>
+  )xml";
+  string const meshNode = GEOS_FMT( pattern, meshFilePath, fractureName.empty() ? "" : "faceBlocks=\"{" + fractureName + "}\"" );
   xmlWrapper::xmlDocument xmlDocument;
-  xmlDocument.load_buffer( meshNode.c_str(), meshNode.size() );
-  xmlWrapper::xmlNode xmlMeshNode = xmlDocument.child( "Mesh" );
+  xmlDocument.loadString( meshNode );
+  xmlWrapper::xmlNode xmlMeshNode = xmlDocument.getChild( "Mesh" );
 
   conduit::Node node;
   Group root( "root", node );
 
   MeshManager meshManager( "mesh", &root );
-  meshManager.processInputFileRecursive( xmlMeshNode );
-  meshManager.postProcessInputRecursive();
+  meshManager.processInputFileRecursive( xmlDocument, xmlMeshNode );
+  meshManager.postInputInitializationRecursive();
   DomainPartition domain( "domain", &root );
+  SpatialPartition & partition = dynamic_cast< SpatialPartition & >(domain.getReference< PartitionBase >( keys::partitionManager ));
+  partition.setPartitions( MpiWrapper::commSize(), 1, 1 );
+
   meshManager.generateMeshes( domain );
 
   // TODO Field import is not tested yet. Proper refactoring needs to be done first.
 
   validate( domain.getMeshBody( "mesh" ).getGroup< CellBlockManagerABC >( keys::cellManager ) );
 }
+
+
+class TestFractureImport : public ::testing::Test
+{
+protected:
+
+  TestFractureImport() = default;
+
+  inline static string const MULTI_BLOCK_NAME = "multi";
+
+  std::filesystem::path m_vtkFile;
+
+private:
+
+  /// Folder where the vtk files will be written.
+  std::filesystem::path m_vtkFolder;
+
+  void SetUp() override
+  {
+    if( MpiWrapper::commRank() == 0 )
+    {
+      namespace fs = std::filesystem;
+
+      fs::path const folder = fs::temp_directory_path();
+      srand( (unsigned) time( nullptr ) );
+      string const subFolder = "tmp-geos-vtk-" + std::to_string( rand() );
+      m_vtkFolder = folder / subFolder;
+      ASSERT_TRUE( fs::create_directory( m_vtkFolder ) );
+
+      m_vtkFile = createFractureMesh( m_vtkFolder );
+    }
+
+    string vtkFile( m_vtkFile );
+    MpiWrapper::broadcast( vtkFile );
+    if( MpiWrapper::commRank() != 0 )
+    {
+      m_vtkFile = vtkFile;
+    }
+  }
+
+  void TearDown() override
+  {
+    if( MpiWrapper::commRank() == 0 )
+    {
+      namespace fs = std::filesystem;
+
+      // Carefully removing the files one by one and waiting the folders to be empty before removing them as well.
+      // We do not want to remove important files!
+      ASSERT_TRUE( fs::remove( m_vtkFolder / MULTI_BLOCK_NAME / ( MULTI_BLOCK_NAME + "_0.vtu" ) ) );
+      ASSERT_TRUE( fs::remove( m_vtkFolder / MULTI_BLOCK_NAME / ( MULTI_BLOCK_NAME + "_1.vtu" ) ) );
+      if( fs::is_empty( m_vtkFolder / MULTI_BLOCK_NAME ) )
+      {
+        ASSERT_TRUE( fs::remove( m_vtkFolder / MULTI_BLOCK_NAME ) );
+      }
+      ASSERT_TRUE( fs::remove( m_vtkFolder / ( MULTI_BLOCK_NAME + ".vtm" ) ) );
+      if( fs::is_empty( m_vtkFolder ) )
+      {
+        ASSERT_TRUE( fs::remove( m_vtkFolder ) );
+      }
+    }
+  }
+
+  static std::filesystem::path createFractureMesh( std::filesystem::path const & folder )
+  {
+    // The main mesh
+    vtkNew< vtkUnstructuredGrid > main;
+    {
+      int constexpr numPoints = 16;
+      double const pointsCoords[numPoints][3] = {
+        { -1, 0, 0 },
+        { -1, 1, 0 },
+        { -1, 1, 1 },
+        { -1, 0, 1 },
+        { 0, 0, 0 },
+        { 0, 1, 0 },
+        { 0, 1, 1 },
+        { 0, 0, 1 },
+        { 0, 0, 0 },
+        { 0, 1, 0 },
+        { 0, 1, 1 },
+        { 0, 0, 1 },
+        { 1, 0, 0 },
+        { 1, 1, 0 },
+        { 1, 1, 1 },
+        { 1, 0, 1 } };
+      vtkNew< vtkPoints > points;
+      points->Allocate( numPoints );
+      for( double const * pointsCoord: pointsCoords )
+      {
+        points->InsertNextPoint( pointsCoord );
+      }
+      main->SetPoints( points );
+
+      int constexpr numHexs = 2;
+      vtkIdType const cubes[numHexs][8] = {
+        { 0, 1, 2, 3, 4, 5, 6, 7 },
+        { 8, 9, 10, 11, 12, 13, 14, 15 }
+      };
+      main->Allocate( numHexs );
+      for( vtkIdType const * cube: cubes )
+      {
+        main->InsertNextCell( VTK_HEXAHEDRON, 8, cube );
+      }
+
+      vtkNew< vtkIdTypeArray > cellGlobalIds;
+      cellGlobalIds->SetNumberOfComponents( 1 );
+      cellGlobalIds->SetNumberOfTuples( numHexs );
+      for( auto i = 0; i < numHexs; ++i )
+      {
+        cellGlobalIds->SetValue( i, i );
+      }
+      main->GetCellData()->SetGlobalIds( cellGlobalIds );
+
+      vtkNew< vtkIdTypeArray > pointGlobalIds;
+      pointGlobalIds->SetNumberOfComponents( 1 );
+      pointGlobalIds->SetNumberOfTuples( numPoints );
+      for( auto i = 0; i < numPoints; ++i )
+      {
+        pointGlobalIds->SetValue( i, i );
+      }
+      main->GetPointData()->SetGlobalIds( pointGlobalIds );
+    }
+
+    // The fracture mesh
+    vtkNew< vtkUnstructuredGrid > fracture;
+    {
+      int constexpr numPoints = 4;
+      double const pointsCoords[numPoints][3] = {
+        { 0, 0, 0 },
+        { 0, 1, 0 },
+        { 0, 1, 1 },
+        { 0, 0, 1 } };
+      vtkNew< vtkPoints > points;
+      points->Allocate( numPoints );
+      for( double const * pointsCoord: pointsCoords )
+      {
+        points->InsertNextPoint( pointsCoord );
+      }
+      fracture->SetPoints( points );
+
+      int constexpr numQuads = 1;
+      vtkIdType const quad[numQuads][4] = { { 0, 1, 2, 3 } };
+      fracture->Allocate( numQuads );
+      for( vtkIdType const * q: quad )
+      {
+        fracture->InsertNextCell( VTK_QUAD, numPoints, q );
+      }
+
+      // Do not forget the collocated_nodes fields
+      vtkNew< vtkIdTypeArray > collocatedNodes;
+      collocatedNodes->SetName( "collocated_nodes" );
+      collocatedNodes->SetNumberOfComponents( 2 );
+      collocatedNodes->SetNumberOfTuples( numPoints );
+      collocatedNodes->SetTuple2( 0, 4, 8 );
+      collocatedNodes->SetTuple2( 1, 5, 9 );
+      collocatedNodes->SetTuple2( 2, 6, 10 );
+      collocatedNodes->SetTuple2( 3, 7, 11 );
+
+      fracture->GetPointData()->AddArray( collocatedNodes );
+    }
+
+    vtkNew< vtkMultiBlockDataSet > multiBlock;
+    multiBlock->SetNumberOfBlocks( 2 );
+    multiBlock->SetBlock( 0, main );
+    multiBlock->SetBlock( 1, fracture );
+    multiBlock->GetMetaData( static_cast< unsigned int >( 0 ) )->Set( multiBlock->NAME(), "main" );
+    multiBlock->GetMetaData( static_cast< unsigned int >( 1 ) )->Set( multiBlock->NAME(), "fracture" );
+
+    vtkNew< vtkXMLMultiBlockDataWriter > writer;
+    std::filesystem::path const vtkFile = folder / ( MULTI_BLOCK_NAME + ".vtm" );
+    writer->SetFileName( vtkFile.c_str() );
+    writer->SetInputData( multiBlock );
+    writer->SetDataModeToAscii();
+    writer->Write();
+
+    return vtkFile;
+  }
+};
+
+
+TEST_F( TestFractureImport, fracture )
+{
+  auto validate = []( CellBlockManagerABC const & cellBlockManager ) -> void
+  {
+    // Instead of checking each rank on its own,
+    // we check that all the data is present across the ranks.
+    auto const sum = []( auto i )  // Alias
+    {
+      return MpiWrapper::sum( i );
+    };
+
+    // Volumic mesh validations
+    ASSERT_EQ( sum( cellBlockManager.numNodes() ), 16 );
+    ASSERT_EQ( sum( cellBlockManager.numEdges() ), 24 );
+    ASSERT_EQ( sum( cellBlockManager.numFaces() ), 12 );
+
+    // Fracture mesh validations
+    ASSERT_EQ( sum( cellBlockManager.getFaceBlocks().numSubGroups() ), MpiWrapper::commSize() );
+    FaceBlockABC const & faceBlock = cellBlockManager.getFaceBlocks().getGroup< FaceBlockABC >( 0 );
+    ASSERT_EQ( sum( faceBlock.num2dElements() ), 1 );
+    ASSERT_EQ( sum( faceBlock.num2dFaces() ), 4 );
+    auto ecn = faceBlock.get2dElemsToCollocatedNodesBuckets();
+    auto const num2dElems = ecn.size();
+    ASSERT_EQ( sum( num2dElems ), 1 );
+    auto numNodesInFrac = 0;
+    for( int ei = 0; ei < num2dElems; ++ei )
+    {
+      numNodesInFrac += ecn[ei].size();
+    }
+    ASSERT_EQ( sum( numNodesInFrac ), 4 );
+    for( int ei = 0; ei < num2dElems; ++ei )
+    {
+      for( int ni = 0; ni < numNodesInFrac; ++ni )
+      {
+        auto bucket = ecn( ei, ni );
+        ASSERT_EQ( bucket.size(), 2 );
+        std::set< globalIndex > result( bucket.begin(), bucket.end() );
+        ASSERT_EQ( result, std::set< globalIndex >( { 4 + ni, 8 + ni } ) );
+      }
+    }
+  };
+
+  TestMeshImport( m_vtkFile, validate, "fracture" );
+}
+
 
 TEST( VTKImport, cube )
 {
@@ -208,18 +461,17 @@ TEST( VTKImport, supportedElements )
     // 11 elements types x 11 regions = 121 sub-groups
     ASSERT_EQ( cellBlockManager.getCellBlocks().numSubGroups(), 121 );
 
-    // FIXME How to get the CellBlock as a function of the region, without knowing the naming pattern.
-    CellBlockABC const & zone0 = cellBlockManager.getCellBlocks().getGroup< CellBlockABC >( "0_tetrahedra" );
-    CellBlockABC const & zone1 = cellBlockManager.getCellBlocks().getGroup< CellBlockABC >( "1_pyramids" );
-    CellBlockABC const & zone2 = cellBlockManager.getCellBlocks().getGroup< CellBlockABC >( "2_wedges" );
-    CellBlockABC const & zone3 = cellBlockManager.getCellBlocks().getGroup< CellBlockABC >( "3_hexahedra" );
-    CellBlockABC const & zone4 = cellBlockManager.getCellBlocks().getGroup< CellBlockABC >( "4_pentagonalPrisms" );
-    CellBlockABC const & zone5 = cellBlockManager.getCellBlocks().getGroup< CellBlockABC >( "5_hexagonalPrisms" );
-    CellBlockABC const & zone6 = cellBlockManager.getCellBlocks().getGroup< CellBlockABC >( "6_heptagonalPrisms" );
-    CellBlockABC const & zone7 = cellBlockManager.getCellBlocks().getGroup< CellBlockABC >( "7_octagonalPrisms" );
-    CellBlockABC const & zone8 = cellBlockManager.getCellBlocks().getGroup< CellBlockABC >( "8_nonagonalPrisms" );
-    CellBlockABC const & zone9 = cellBlockManager.getCellBlocks().getGroup< CellBlockABC >( "9_decagonalPrisms" );
-    CellBlockABC const & zone10 = cellBlockManager.getCellBlocks().getGroup< CellBlockABC >( "10_hendecagonalPrisms" );
+    CellBlockABC const & tetraBlock = cellBlockManager.getCellBlocks().getGroup< CellBlockABC >( geos::vtk::buildCellBlockName( ElementType::Tetrahedron, 0 ) );
+    CellBlockABC const & pyramidBlock = cellBlockManager.getCellBlocks().getGroup< CellBlockABC >( geos::vtk::buildCellBlockName( ElementType::Pyramid, 1 ) );
+    CellBlockABC const & wedgeBlock = cellBlockManager.getCellBlocks().getGroup< CellBlockABC >( geos::vtk::buildCellBlockName( ElementType::Wedge, 2 ) );
+    CellBlockABC const & hexaBlock = cellBlockManager.getCellBlocks().getGroup< CellBlockABC >( geos::vtk::buildCellBlockName( ElementType::Hexahedron, 3 ) );
+    CellBlockABC const & prism5Block = cellBlockManager.getCellBlocks().getGroup< CellBlockABC >( geos::vtk::buildCellBlockName( ElementType::Prism5, 4 ) );
+    CellBlockABC const & prism6Block = cellBlockManager.getCellBlocks().getGroup< CellBlockABC >( geos::vtk::buildCellBlockName( ElementType::Prism6, 5 ) );
+    CellBlockABC const & prism7Block = cellBlockManager.getCellBlocks().getGroup< CellBlockABC >( geos::vtk::buildCellBlockName( ElementType::Prism7, 6 ) );
+    CellBlockABC const & prism8Block = cellBlockManager.getCellBlocks().getGroup< CellBlockABC >( geos::vtk::buildCellBlockName( ElementType::Prism8, 7 ) );
+    CellBlockABC const & prism9Block = cellBlockManager.getCellBlocks().getGroup< CellBlockABC >( geos::vtk::buildCellBlockName( ElementType::Prism9, 8 ) );
+    CellBlockABC const & prism10Block = cellBlockManager.getCellBlocks().getGroup< CellBlockABC >( geos::vtk::buildCellBlockName( ElementType::Prism10, 9 ) );
+    CellBlockABC const & prism11Block = cellBlockManager.getCellBlocks().getGroup< CellBlockABC >( geos::vtk::buildCellBlockName( ElementType::Prism11, 10 ) );
 
     std::vector< string > const elementNames{ "tetrahedra",
                                               "pyramids",
@@ -251,20 +503,20 @@ TEST( VTKImport, supportedElements )
     }
 
     // Tetrahedron
-    auto elementToNodes = zone0.getElemToNodes();
+    auto elementToNodes = tetraBlock.getElemToNodes();
     ASSERT_EQ( elementToNodes.size( 1 ), 4 );
-    ASSERT_EQ( zone0.getElemToEdges().size( 1 ), 6 );
-    ASSERT_EQ( zone0.getElemToFaces().size( 1 ), 4 );
+    ASSERT_EQ( tetraBlock.getElemToEdges().size( 1 ), 6 );
+    ASSERT_EQ( tetraBlock.getElemToFaces().size( 1 ), 4 );
     EXPECT_EQ( elementToNodes( 0, 0 ), 0 );
     EXPECT_EQ( elementToNodes( 0, 1 ), 1 );
     EXPECT_EQ( elementToNodes( 0, 2 ), 2 );
     EXPECT_EQ( elementToNodes( 0, 3 ), 3 );
 
     // Pyramid
-    elementToNodes = zone1.getElemToNodes();
+    elementToNodes = pyramidBlock.getElemToNodes();
     ASSERT_EQ( elementToNodes.size( 1 ), 5 );
-    ASSERT_EQ( zone1.getElemToEdges().size( 1 ), 8 );
-    ASSERT_EQ( zone1.getElemToFaces().size( 1 ), 5 );
+    ASSERT_EQ( pyramidBlock.getElemToEdges().size( 1 ), 8 );
+    ASSERT_EQ( pyramidBlock.getElemToFaces().size( 1 ), 5 );
     EXPECT_EQ( elementToNodes( 0, 0 ), 4 );
     EXPECT_EQ( elementToNodes( 0, 1 ), 5 );
     EXPECT_EQ( elementToNodes( 0, 2 ), 7 );
@@ -272,10 +524,10 @@ TEST( VTKImport, supportedElements )
     EXPECT_EQ( elementToNodes( 0, 4 ), 8 );
 
     // Wedges
-    elementToNodes = zone2.getElemToNodes();
+    elementToNodes = wedgeBlock.getElemToNodes();
     ASSERT_EQ( elementToNodes.size( 1 ), 6 );
-    ASSERT_EQ( zone2.getElemToEdges().size( 1 ), 9 );
-    ASSERT_EQ( zone2.getElemToFaces().size( 1 ), 5 );
+    ASSERT_EQ( wedgeBlock.getElemToEdges().size( 1 ), 9 );
+    ASSERT_EQ( wedgeBlock.getElemToFaces().size( 1 ), 5 );
     EXPECT_EQ( elementToNodes( 0, 0 ), 9 );
     EXPECT_EQ( elementToNodes( 0, 1 ), 12 );
     EXPECT_EQ( elementToNodes( 0, 2 ), 11 );
@@ -284,10 +536,10 @@ TEST( VTKImport, supportedElements )
     EXPECT_EQ( elementToNodes( 0, 5 ), 13 );
 
     // Hexahedron (from VTK_VOXEL and VTK_HEXAHEDRON or corresponding VTK_POLYHEDRON)
-    elementToNodes = zone3.getElemToNodes();
+    elementToNodes = hexaBlock.getElemToNodes();
     ASSERT_EQ( elementToNodes.size( 1 ), 8 );
-    ASSERT_EQ( zone3.getElemToEdges().size( 1 ), 12 );
-    ASSERT_EQ( zone3.getElemToFaces().size( 1 ), 6 );
+    ASSERT_EQ( hexaBlock.getElemToEdges().size( 1 ), 12 );
+    ASSERT_EQ( hexaBlock.getElemToFaces().size( 1 ), 6 );
 
     EXPECT_EQ( elementToNodes( 0, 0 ), 15 );
     EXPECT_EQ( elementToNodes( 0, 1 ), 16 );
@@ -308,76 +560,76 @@ TEST( VTKImport, supportedElements )
     EXPECT_EQ( elementToNodes( 1, 7 ), 29 );
 
     // Pentagonal prism
-    elementToNodes = zone4.getElemToNodes();
+    elementToNodes = prism5Block.getElemToNodes();
     ASSERT_EQ( elementToNodes.size( 1 ), 10 );
-    ASSERT_EQ( zone4.getElemToEdges().size( 1 ), 15 );
-    ASSERT_EQ( zone4.getElemToFaces().size( 1 ), 7 );
+    ASSERT_EQ( prism5Block.getElemToEdges().size( 1 ), 15 );
+    ASSERT_EQ( prism5Block.getElemToFaces().size( 1 ), 7 );
     for( int i=0; i < elementToNodes.size( 1 ); ++i )
     {
       EXPECT_EQ( elementToNodes( 0, i ), 31+i );
     }
 
     // Hexagonal prism
-    elementToNodes = zone5.getElemToNodes();
+    elementToNodes = prism6Block.getElemToNodes();
     ASSERT_EQ( elementToNodes.size( 1 ), 12 );
-    ASSERT_EQ( zone5.getElemToEdges().size( 1 ), 18 );
-    ASSERT_EQ( zone5.getElemToFaces().size( 1 ), 8 );
+    ASSERT_EQ( prism6Block.getElemToEdges().size( 1 ), 18 );
+    ASSERT_EQ( prism6Block.getElemToFaces().size( 1 ), 8 );
     for( int i=0; i < elementToNodes.size( 1 ); ++i )
     {
       EXPECT_EQ( elementToNodes( 0, i ), 41+i );
     }
 
     // Heptagonal prism
-    elementToNodes = zone6.getElemToNodes();
+    elementToNodes = prism7Block.getElemToNodes();
     ASSERT_EQ( elementToNodes.size( 1 ), 14 );
-    ASSERT_EQ( zone6.getElemToEdges().size( 1 ), 21 );
-    ASSERT_EQ( zone6.getElemToFaces().size( 1 ), 9 );
+    ASSERT_EQ( prism7Block.getElemToEdges().size( 1 ), 21 );
+    ASSERT_EQ( prism7Block.getElemToFaces().size( 1 ), 9 );
     for( int i=0; i < elementToNodes.size( 1 ); ++i )
     {
       EXPECT_EQ( elementToNodes( 0, i ), 53+i );
     }
 
     // Octagonal prism
-    elementToNodes = zone7.getElemToNodes();
+    elementToNodes = prism8Block.getElemToNodes();
     ASSERT_EQ( elementToNodes.size( 1 ), 16 );
-    ASSERT_EQ( zone7.getElemToEdges().size( 1 ), 24 );
-    ASSERT_EQ( zone7.getElemToFaces().size( 1 ), 10 );
+    ASSERT_EQ( prism8Block.getElemToEdges().size( 1 ), 24 );
+    ASSERT_EQ( prism8Block.getElemToFaces().size( 1 ), 10 );
     for( int i=0; i < elementToNodes.size( 1 ); ++i )
     {
       EXPECT_EQ( elementToNodes( 0, i ), 67+i );
     }
 
     // Nonagonal prism
-    elementToNodes = zone8.getElemToNodes();
+    elementToNodes = prism9Block.getElemToNodes();
     ASSERT_EQ( elementToNodes.size( 1 ), 18 );
-    ASSERT_EQ( zone8.getElemToEdges().size( 1 ), 27 );
-    ASSERT_EQ( zone8.getElemToFaces().size( 1 ), 11 );
+    ASSERT_EQ( prism9Block.getElemToEdges().size( 1 ), 27 );
+    ASSERT_EQ( prism9Block.getElemToFaces().size( 1 ), 11 );
     for( int i=0; i < elementToNodes.size( 1 ); ++i )
     {
       EXPECT_EQ( elementToNodes( 0, i ), 83+i );
     }
 
     // Decagonal prism
-    elementToNodes = zone9.getElemToNodes();
+    elementToNodes = prism10Block.getElemToNodes();
     ASSERT_EQ( elementToNodes.size( 1 ), 20 );
-    ASSERT_EQ( zone9.getElemToEdges().size( 1 ), 30 );
-    ASSERT_EQ( zone9.getElemToFaces().size( 1 ), 12 );
+    ASSERT_EQ( prism10Block.getElemToEdges().size( 1 ), 30 );
+    ASSERT_EQ( prism10Block.getElemToFaces().size( 1 ), 12 );
     for( int i=0; i < elementToNodes.size( 1 ); ++i )
     {
       EXPECT_EQ( elementToNodes( 0, i ), 101+i );
     }
 
     // Hendecagonal prism
-    elementToNodes = zone10.getElemToNodes();
+    elementToNodes = prism11Block.getElemToNodes();
     ASSERT_EQ( elementToNodes.size( 1 ), 22 );
-    ASSERT_EQ( zone10.getElemToEdges().size( 1 ), 33 );
-    ASSERT_EQ( zone10.getElemToFaces().size( 1 ), 13 );
+    ASSERT_EQ( prism11Block.getElemToEdges().size( 1 ), 33 );
+    ASSERT_EQ( prism11Block.getElemToFaces().size( 1 ), 13 );
     for( int i=0; i < elementToNodes.size( 1 ); ++i )
     {
       EXPECT_EQ( elementToNodes( 0, i ), 121+i );
     }
 
-    for( auto const & z: { &zone0, &zone1, &zone2, &zone4, &zone5, &zone6, &zone7, &zone8, &zone9, &zone10 } )
+    for( auto const & z: { &tetraBlock, &pyramidBlock, &wedgeBlock, &prism5Block, &prism6Block, &prism7Block, &prism8Block, &prism9Block, &prism10Block, &prism11Block } )
     {
       ASSERT_EQ( z->size(), 1 );
       ASSERT_EQ( z->getElemToNodes().size( 0 ), 1 );
@@ -385,10 +637,10 @@ TEST( VTKImport, supportedElements )
       ASSERT_EQ( z->getElemToFaces().size( 0 ), 1 );
     }
 
-    ASSERT_EQ( zone3.size(), 2 );
-    ASSERT_EQ( zone3.getElemToNodes().size( 0 ), 2 );
-    ASSERT_EQ( zone3.getElemToEdges().size( 0 ), 2 );
-    ASSERT_EQ( zone3.getElemToFaces().size( 0 ), 2 );
+    ASSERT_EQ( hexaBlock.size(), 2 );
+    ASSERT_EQ( hexaBlock.getElemToNodes().size( 0 ), 2 );
+    ASSERT_EQ( hexaBlock.getElemToEdges().size( 0 ), 2 );
+    ASSERT_EQ( hexaBlock.getElemToFaces().size( 0 ), 2 );
   };
 
   string const medleyVTK = testMeshDir + "/supportedElements.vtk";

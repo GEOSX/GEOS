@@ -1,0 +1,30 @@
+from geos.ats.test_builder import TestDeck, RestartcheckParameters, generate_geos_tests
+
+restartcheck_params = {'atol': 1e-06, 'rtol': 4e-06}
+
+decks = [
+    TestDeck(
+        name="ThermoPoroElastic_consolidation_smoke_fim",
+        description='1D thermo poro elastic case consolidation problem (FIM)',
+        partitions=((1, 1, 1), (1, 2, 1)),
+        restart_step=633,
+        check_step=683,
+        restartcheck_params=RestartcheckParameters(**restartcheck_params)),
+    TestDeck(
+        name="ThermoPoroElastic_consolidation_smoke_sequential",
+        description=
+        '1D thermo poro elastic case consolidation problem (sequential)',
+        partitions=((1, 1, 1), (1, 2, 1)),
+        restart_step=633,
+        check_step=683,
+        restartcheck_params=RestartcheckParameters(**restartcheck_params)),
+    TestDeck(
+        name="ThermoPoroElastic_staircase_co2_smoke",
+        description='Staircase thermo-poro-mechanics with cold CO2 injection',
+        partitions=((1, 1, 1), (2, 2, 1)),
+        restart_step=22,
+        check_step=33,
+        restartcheck_params=RestartcheckParameters(**restartcheck_params))
+]
+
+generate_geos_tests(decks)

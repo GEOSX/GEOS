@@ -2,10 +2,11 @@
  * ------------------------------------------------------------------------------------------------------------
  * SPDX-License-Identifier: LGPL-2.1-only
  *
- * Copyright (c) 2018-2020 Lawrence Livermore National Security LLC
- * Copyright (c) 2018-2020 The Board of Trustees of the Leland Stanford Junior University
- * Copyright (c) 2018-2020 TotalEnergies
- * Copyright (c) 2019-     GEOSX Contributors
+ * Copyright (c) 2016-2024 Lawrence Livermore National Security LLC
+ * Copyright (c) 2018-2024 Total, S.A
+ * Copyright (c) 2018-2024 The Board of Trustees of the Leland Stanford Junior University
+ * Copyright (c) 2018-2024 Chevron
+ * Copyright (c) 2019-     GEOS/GEOSX Contributors
  * All rights reserved
  *
  * See top level LICENSE, COPYRIGHT, CONTRIBUTORS, NOTICE, and ACKNOWLEDGEMENTS files for details.
@@ -92,6 +93,7 @@ struct ControlEquationHelper
                  real64 const & targetBHP,
                  real64 const & targetPhaseRate,
                  real64 const & targetTotalRate,
+                 real64 const & targetMassRate,
                  real64 const & currentBHP,
                  arrayView1d< real64 const > const & currentPhaseVolRate,
                  real64 const & currentTotalVolRate,
@@ -107,6 +109,7 @@ struct ControlEquationHelper
            real64 const & targetBHP,
            real64 const & targetPhaseRate,
            real64 const & targetTotalRate,
+           real64 const & targetMassRate,
            real64 const & currentBHP,
            real64 const & dCurrentBHP_dPres,
            arrayView1d< real64 const > const & dCurrentBHP_dCompDens,
@@ -118,6 +121,7 @@ struct ControlEquationHelper
            real64 const & dCurrentTotalVolRate_dPres,
            arrayView1d< real64 const > const & dCurrentTotalVolRate_dCompDens,
            real64 const & dCurrentTotalVolRate_dRate,
+           real64 const & massDensity,
            globalIndex const dofNumber,
            CRSMatrixView< real64, globalIndex const > const & localMatrix,
            arrayView1d< real64 > const & localRhs );
@@ -163,6 +167,7 @@ struct FluxKernel
   static void
   launch( localIndex const size,
           globalIndex const rankOffset,
+          integer const useTotalMassEquation,
           WellControls const & wellControls,
           arrayView1d< globalIndex const > const & wellElemDofNumber,
           arrayView1d< localIndex const > const & nextWellElemIndex,
@@ -361,6 +366,7 @@ struct AccumulationKernel
   launch( localIndex const size,
           integer const numPhases,
           globalIndex const rankOffset,
+          integer const useTotalMassEquation,
           arrayView1d< globalIndex const > const & wellElemDofNumber,
           arrayView1d< integer const > const & wellElemGhostRank,
           arrayView1d< real64 const > const & wellElemVolume,
@@ -656,7 +662,7 @@ class ResidualNormKernel : public solverBaseKernels::ResidualNormKernelBase< 1 >
 public:
 
   using Base = solverBaseKernels::ResidualNormKernelBase< 1 >;
-  using Base::minNormalizer;
+  using Base::m_minNormalizer;
   using Base::m_rankOffset;
   using Base::m_localResidual;
   using Base::m_dofNumber;
@@ -671,12 +677,14 @@ public:
                       WellElementSubRegion const & subRegion,
                       MultiFluidBase const & fluid,
                       WellControls const & wellControls,
-                      real64 const & timeAtEndOfStep,
-                      real64 const & dt )
+                      real64 const timeAtEndOfStep,
+                      real64 const dt,
+                      real64 const minNormalizer )
     : Base( rankOffset,
             localResidual,
             dofNumber,
-            ghostRank ),
+            ghostRank,
+            minNormalizer ),
     m_numComp( numComp ),
     m_numDof( numDof ),
     m_targetPhaseIndex( targetPhaseIndex ),
@@ -688,6 +696,7 @@ public:
     m_targetBHP( wellControls.getTargetBHP( timeAtEndOfStep ) ),
     m_targetTotalRate( wellControls.getTargetTotalRate( timeAtEndOfStep ) ),
     m_targetPhaseRate( wellControls.getTargetPhaseRate( timeAtEndOfStep ) ),
+    m_targetMassRate( wellControls.getTargetMassRate( timeAtEndOfStep ) ),
     m_volume( subRegion.getElementVolume() ),
     m_phaseDens_n( fluid.phaseDensity_n() ),
     m_totalDens_n( fluid.totalDensity_n() )
@@ -720,12 +729,17 @@ public:
           else if( m_currentControl == WellControls::Control::TOTALVOLRATE )
           {
             // the residual entry is in volume / time units
-            normalizer = LvArray::math::max( LvArray::math::abs( m_targetTotalRate ), minNormalizer );
+            normalizer = LvArray::math::max( LvArray::math::abs( m_targetTotalRate ), m_minNormalizer );
           }
           else if( m_currentControl == WellControls::Control::PHASEVOLRATE )
           {
             // the residual entry is in volume / time units
-            normalizer = LvArray::math::max( LvArray::math::abs( m_targetPhaseRate ), minNormalizer );
+            normalizer = LvArray::math::max( LvArray::math::abs( m_targetPhaseRate ), m_minNormalizer );
+          }
+          else if( m_currentControl == WellControls::Control::MASSRATE )
+          {
+            // the residual entry is in volume / time units
+            normalizer = LvArray::math::max( LvArray::math::abs( m_targetMassRate ), m_minNormalizer );
           }
         }
         // for the pressure difference equation, always normalize by the BHP
@@ -744,8 +758,16 @@ public:
         }
         else // Type::INJECTOR, only TOTALVOLRATE is supported for now
         {
-          // the residual is in mass units
-          normalizer = m_dt * LvArray::math::abs( m_targetTotalRate ) * m_totalDens_n[iwelem][0];
+          if( m_currentControl == WellControls::Control::MASSRATE )
+          {
+            normalizer = m_dt * LvArray::math::abs( m_targetMassRate );
+          }
+          else
+          {
+            // the residual is in mass units
+            normalizer = m_dt * LvArray::math::abs( m_targetTotalRate ) * m_totalDens_n[iwelem][0];
+          }
+
         }
 
         // to make sure that everything still works well if the rate is zero, we add this check
@@ -761,13 +783,21 @@ public:
         }
         else // Type::INJECTOR, only TOTALVOLRATE is supported for now
         {
-          normalizer = m_dt * LvArray::math::abs( m_targetTotalRate );
+          if( m_currentControl == WellControls::Control::MASSRATE )
+          {
+            normalizer = m_dt * LvArray::math::abs( m_targetMassRate/  m_totalDens_n[iwelem][0] );
+          }
+          else
+          {
+            normalizer = m_dt * LvArray::math::abs( m_targetTotalRate );
+          }
+
         }
 
         // to make sure that everything still works well if the rate is zero, we add this check
         normalizer = LvArray::math::max( normalizer, m_volume[iwelem] );
       }
-      normalizer = LvArray::math::max( minNormalizer, normalizer );
+      normalizer = LvArray::math::max( m_minNormalizer, normalizer );
 
       // Step 4: compute the contribution to the residual
       real64 const val = LvArray::math::abs( m_localResidual[stack.localRow + idof] ) / normalizer;
@@ -815,6 +845,7 @@ protected:
   real64 const m_targetBHP;
   real64 const m_targetTotalRate;
   real64 const m_targetPhaseRate;
+  real64 const m_targetMassRate;
 
   /// View on the volume
   arrayView1d< real64 const > const m_volume;
@@ -854,20 +885,21 @@ public:
                    integer const numDof,
                    integer const targetPhaseIndex,
                    globalIndex const rankOffset,
-                   string const dofKey,
+                   string const & dofKey,
                    arrayView1d< real64 const > const & localResidual,
                    WellElementSubRegion const & subRegion,
                    MultiFluidBase const & fluid,
                    WellControls const & wellControls,
-                   real64 const & timeAtEndOfStep,
-                   real64 const & dt,
+                   real64 const timeAtEndOfStep,
+                   real64 const dt,
+                   real64 const minNormalizer,
                    real64 (& residualNorm)[1] )
   {
     arrayView1d< globalIndex const > const dofNumber = subRegion.getReference< array1d< globalIndex > >( dofKey );
     arrayView1d< integer const > const ghostRank = subRegion.ghostRank();
 
     ResidualNormKernel kernel( rankOffset, localResidual, dofNumber, ghostRank,
-                               numComp, numDof, targetPhaseIndex, subRegion, fluid, wellControls, timeAtEndOfStep, dt );
+                               numComp, numDof, targetPhaseIndex, subRegion, fluid, wellControls, timeAtEndOfStep, dt, minNormalizer );
     ResidualNormKernel::launchLinf< POLICY >( subRegion.size(), kernel, residualNorm );
   }
 
@@ -886,7 +918,9 @@ public:
    * @brief Create a new kernel and launch
    * @tparam POLICY the policy used in the RAJA kernel
    * @param[in] maxRelativePresChange the max allowed relative pressure change
+   * @param[in] maxAbsolutePresChange the max allowed absolute pressure change
    * @param[in] maxCompFracChange the max allowed comp fraction change
+   * @param[in] maxRelativeCompDensChange the max allowed relative comp density change
    * @param[in] rankOffset the rank offset
    * @param[in] numComp the number of components
    * @param[in] dofKey the dof key to get dof numbers
@@ -894,22 +928,28 @@ public:
    * @param[in] localSolution the Newton update
    */
   template< typename POLICY >
-  static real64
+  static isothermalCompositionalMultiphaseBaseKernels::ScalingForSystemSolutionKernel::StackVariables
   createAndLaunch( real64 const maxRelativePresChange,
+                   real64 const maxAbsolutePresChange,
                    real64 const maxCompFracChange,
+                   real64 const maxRelativeCompDensChange,
                    globalIndex const rankOffset,
                    integer const numComp,
                    string const dofKey,
-                   ElementSubRegionBase const & subRegion,
+                   ElementSubRegionBase & subRegion,
                    arrayView1d< real64 const > const localSolution )
   {
     arrayView1d< real64 const > const pressure =
       subRegion.getField< fields::well::pressure >();
     arrayView2d< real64 const, compflow::USD_COMP > const compDens =
       subRegion.getField< fields::well::globalCompDensity >();
+    arrayView1d< real64 > pressureScalingFactor =
+      subRegion.getField< fields::well::pressureScalingFactor >();
+    arrayView1d< real64 > compDensScalingFactor =
+      subRegion.getField< fields::well::globalCompDensityScalingFactor >();
     isothermalCompositionalMultiphaseBaseKernels::
-      ScalingForSystemSolutionKernel kernel( maxRelativePresChange, maxCompFracChange, rankOffset,
-                                             numComp, dofKey, subRegion, localSolution, pressure, compDens );
+      ScalingForSystemSolutionKernel kernel( maxRelativePresChange, maxAbsolutePresChange, maxCompFracChange, maxRelativeCompDensChange, rankOffset,
+                                             numComp, dofKey, subRegion, localSolution, pressure, compDens, pressureScalingFactor, compDensScalingFactor );
     return isothermalCompositionalMultiphaseBaseKernels::
              ScalingForSystemSolutionKernel::
              launch< POLICY >( subRegion.size(), kernel );
@@ -938,20 +978,23 @@ public:
    * @param[in] localSolution the Newton update
    */
   template< typename POLICY >
-  static integer
+  static isothermalCompositionalMultiphaseBaseKernels::SolutionCheckKernel::StackVariables
   createAndLaunch( integer const allowCompDensChopping,
+                   CompositionalMultiphaseFVM::ScalingType const scalingType,
                    real64 const scalingFactor,
                    globalIndex const rankOffset,
                    integer const numComp,
                    string const dofKey,
-                   ElementSubRegionBase const & subRegion,
+                   ElementSubRegionBase & subRegion,
                    arrayView1d< real64 const > const localSolution )
   {
     arrayView1d< real64 const > const pressure = subRegion.getField< fields::well::pressure >();
     arrayView2d< real64 const, compflow::USD_COMP > const compDens = subRegion.getField< fields::well::globalCompDensity >();
+    arrayView1d< real64 > pressureScalingFactor = subRegion.getField< fields::well::pressureScalingFactor >();
+    arrayView1d< real64 > compDensScalingFactor = subRegion.getField< fields::well::globalCompDensityScalingFactor >();
     isothermalCompositionalMultiphaseBaseKernels::
-      SolutionCheckKernel kernel( allowCompDensChopping, scalingFactor, rankOffset,
-                                  numComp, dofKey, subRegion, localSolution, pressure, compDens );
+      SolutionCheckKernel kernel( allowCompDensChopping, 0, scalingType, scalingFactor, rankOffset, // no negative pressure
+                                  numComp, dofKey, subRegion, localSolution, pressure, compDens, pressureScalingFactor, compDensScalingFactor );
     return isothermalCompositionalMultiphaseBaseKernels::
              SolutionCheckKernel::
              launch< POLICY >( subRegion.size(), kernel );

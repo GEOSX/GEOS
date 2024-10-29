@@ -2,11 +2,12 @@
  * ------------------------------------------------------------------------------------------------------------
  * SPDX-License-Identifier: LGPL-2.1-only
  *
- * Copyright (c) 2018-2019 Lawrence Livermore National Security LLC
- * Copyright (c) 2018-2019 The Board of Trustees of the Leland Stanford Junior University
- * Copyright (c) 2018-2019 TotalEnergies
- * Copyright (c) 2019-     GEOSX Contributors
- * All right reserved
+ * Copyright (c) 2016-2024 Lawrence Livermore National Security LLC
+ * Copyright (c) 2018-2024 Total, S.A
+ * Copyright (c) 2018-2024 The Board of Trustees of the Leland Stanford Junior University
+ * Copyright (c) 2018-2024 Chevron
+ * Copyright (c) 2019-     GEOS/GEOSX Contributors
+ * All rights reserved
  *
  * See top level LICENSE, COPYRIGHT, CONTRIBUTORS, NOTICE, and ACKNOWLEDGEMENTS files for details.
  * ------------------------------------------------------------------------------------------------------------
@@ -97,14 +98,18 @@ void DruckerPrager::allocateConstitutiveData( dataRepository::Group & parent,
 }
 
 
-void DruckerPrager::postProcessInput()
+void DruckerPrager::postInputInitialization()
 {
-  ElasticIsotropic::postProcessInput();
+  ElasticIsotropic::postInputInitialization();
 
-  GEOS_THROW_IF( m_defaultCohesion < 0, "Negative cohesion value detected", InputError );
-  GEOS_THROW_IF( m_defaultFrictionAngle < 0, "Negative friction angle detected", InputError );
-  GEOS_THROW_IF( m_defaultDilationAngle < 0, "Negative dilation angle detected", InputError );
-  GEOS_THROW_IF( m_defaultFrictionAngle < m_defaultDilationAngle, "Dilation angle should not exceed friction angle", InputError );
+  GEOS_THROW_IF( m_defaultCohesion < 0,
+                 getFullName() << ": Negative cohesion value detected", InputError );
+  GEOS_THROW_IF( m_defaultFrictionAngle < 0,
+                 getFullName() << ": Negative friction angle detected", InputError );
+  GEOS_THROW_IF( m_defaultDilationAngle < 0,
+                 getFullName() << ": Negative dilation angle detected", InputError );
+  GEOS_THROW_IF( m_defaultFrictionAngle < m_defaultDilationAngle,
+                 getFullName() << ": Dilation angle should not exceed friction angle", InputError );
 
   // convert from Mohr-Coulomb constants to Drucker-Prager constants, assuming DP
   // passes through the triaxial compression corners of the MC surface.

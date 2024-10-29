@@ -10,32 +10,57 @@
     <InternalWellbore
       name="mesh1"
       elementTypes="{ C3D8 }"
-      radius="{ 0.1, 5.0 }"
-      theta="{ 0, 180 }"
+      radius="{ 0.1, 10.0 }"
+      theta="{ 0, 90 }"
       zCoords="{ -1, 1 }"
       nr="{ 40 }"
-      nt="{ 80 }"
-      nz="{ 2 }"
+      nt="{ 40 }"
+      nz="{ 1 }"
       trajectory="{ { 0.0, 0.0, -1.0 },
                     { 0.0, 0.0, 1.0 } }"
       autoSpaceRadialElems="{ 1 }"
-      useCartesianOuterBoundary="0"
       cellBlockNames="{ cb1 }"/>
   </Mesh>
-
   <!-- SPHINX_DP_WELLBORE_MESH_END -->
   
   <!--Solver application-->
   <Events
-    maxTime="1.0">
+    maxTime="1.05">
     <PeriodicEvent
       name="solverApplications"
-      forceDt="0.02"
+      forceDt="0.1"
+      beginTime="0"
+      endTime="0.5"
+      targetExactTimestep="1"
       target="/Solvers/mechanicsSolver"/>
 
     <PeriodicEvent
+      name="solverApplications2"
+      forceDt="0.02"
+      beginTime="0.5"
+      endTime="1.02"
+      targetExactTimestep="1"
+      target="/Solvers/mechanicsSolver"/>
+
+    <PeriodicEvent
+      name="stressHistoryCollection_rock"
+      target="/Tasks/stressCollection_rock"/>
+    <PeriodicEvent
+      name="stressTimeHistoryOutput_rock"
+      target="/Outputs/stressHistoryOutput_rock"/>
+
+    <!-- SPHINX_DisplacementPeriodicEvent -->
+    <PeriodicEvent
+      name="displacementHistoryCollection"
+      target="/Tasks/displacementCollection"/>
+    <PeriodicEvent
+      name="displacementTimeHistoryOutput"
+      target="/Outputs/displacementHistoryOutput"/>
+    <!-- SPHINX_DisplacementPeriodicEventEnd -->
+
+    <PeriodicEvent
       name="outputs"
-      target="/Outputs/siloOutput"/>
+      target="/Outputs/vtkOutput"/>
   </Events>
  
 </Problem>

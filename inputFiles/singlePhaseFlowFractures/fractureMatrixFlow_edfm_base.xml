@@ -20,6 +20,7 @@
       logLevel="1"
       discretization="FE1"
       targetRegions="{ RockMatrix, Fracture }"
+      targetObjects="{ FracturePlane }"
       fractureRegion="Fracture"
       mpiCommOrder="1"/>
   </Solvers>

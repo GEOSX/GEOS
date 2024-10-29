@@ -21,6 +21,7 @@
       name="mesh"
       logLevel="5"	
       partitionRefinement="3"
+      useGlobalIds="1"
       fieldsToImport="{ PERM, PORO, NTG }"
       fieldNamesInGEOSX="{ rockPerm_permeability, rockPorosity_referencePorosity, netToGross }"
 	

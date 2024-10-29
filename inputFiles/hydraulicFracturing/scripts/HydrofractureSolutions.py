@@ -267,6 +267,33 @@ class PennySolutions(HydrofractureSolutions):
         return (math.pi / 8.0 * pow(math.pi / 12, 1.0 / 5.0))
 
 
+class PKN_viscosityStorageDominated:
+
+    def __init__(self, E, nu, KIC, mu, Q0, t, h):
+        Ep = E / (1.0 - nu**2.0)
+        self.t = t
+        self.Q0 = Q0
+        self.mu = mu
+        self.Ep = Ep
+        self.h = h
+
+    def analyticalSolution(self):
+        t = self.t
+        Q0 = self.Q0
+        mu = self.mu
+        Ep = self.Ep
+        h = self.h
+
+        halfLength = 0.3817 * ((Ep * Q0**3.0 * t**4.0) / (mu * h**4.0))**(1.0 / 5.0)
+
+        inletAperture = 3.0 * ((mu * Q0 * halfLength) / (Ep))**(1.0 / 4.0)
+
+        inletPressure = ((16.0 * mu * Q0 * Ep**3.0 * halfLength) / (np.pi * h**4.0))**(1.0 / 4.0)
+
+        return [halfLength, inletAperture, inletPressure]
+
+
+
 if __name__ == "__main__":
     mu = 0.0005
     E = 3.2e10

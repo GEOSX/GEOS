@@ -1,3 +1,18 @@
+/*
+ * ------------------------------------------------------------------------------------------------------------
+ * SPDX-License-Identifier: LGPL-2.1-only
+ *
+ * Copyright (c) 2016-2024 Lawrence Livermore National Security LLC
+ * Copyright (c) 2018-2024 Total, S.A
+ * Copyright (c) 2018-2024 The Board of Trustees of the Leland Stanford Junior University
+ * Copyright (c) 2018-2024 Chevron 
+ * Copyright (c) 2019-     GEOS/GEOSX Contributors
+ * All rights reserved
+ *
+ * See top level LICENSE, COPYRIGHT, CONTRIBUTORS, NOTICE, and ACKNOWLEDGEMENTS files for details.
+ * ------------------------------------------------------------------------------------------------------------
+ */
+
 /**
  * @file GeosxVersion.hpp
  *
@@ -8,21 +23,26 @@
 #ifndef GEOS_MAININTERFACE_VERSION_HPP_
 #define GEOS_MAININTERFACE_VERSION_HPP_
 
-/// GEOSX major version number
-#define GEOSX_VERSION_MAJOR @GEOSX_VERSION_MAJOR@
-/// GEOSX minor version number
-#define GEOSX_VERSION_MINOR @GEOSX_VERSION_MINOR@
-/// GEOSX patch version number
-#define GEOSX_VERSION_PATCH @GEOSX_VERSION_PATCH@
-/// GEOSX full version number string
-#define GEOSX_VERSION_FULL  "@GEOSX_VERSION_FULL@"
+/// GEOS major version number
+#define GEOS_VERSION_MAJOR @GEOS_VERSION_MAJOR@
 
-/// GEOSX development branch string
-#cmakedefine GEOSX_GIT_BRANCH "@GEOSX_GIT_BRANCH@"
-/// GEOSX development branch string
-#cmakedefine GEOSX_GIT_HASH "@GEOSX_GIT_HASH@"
-/// GEOSX development branch string
-#cmakedefine GEOSX_GIT_TAG "@GEOSX_GIT_TAG@"
+/// GEOS minor version number
+#define GEOS_VERSION_MINOR @GEOS_VERSION_MINOR@
+
+/// GEOS patch version number
+#define GEOS_VERSION_PATCH @GEOS_VERSION_PATCH@
+
+/// GEOS full version number string
+#define GEOS_VERSION_FULL  "@GEOS_VERSION_FULL@"
+
+/// GEOS development branch string
+#cmakedefine GEOS_GIT_BRANCH "@GEOS_GIT_BRANCH@"
+
+/// GEOS development branch string
+#cmakedefine GEOS_GIT_HASH "@GEOS_GIT_HASH@"
+
+/// GEOS development branch string
+#cmakedefine GEOS_GIT_TAG "@GEOS_GIT_TAG@"
 
 #endif  /* GEOS_MAININTERFACE_VERSION_HPP_ */
 

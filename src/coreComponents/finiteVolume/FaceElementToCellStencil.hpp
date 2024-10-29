@@ -2,10 +2,11 @@
  * ------------------------------------------------------------------------------------------------------------
  * SPDX-License-Identifier: LGPL-2.1-only
  *
- * Copyright (c) 2018-2020 Lawrence Livermore National Security LLC
- * Copyright (c) 2018-2020 The Board of Trustees of the Leland Stanford Junior University
- * Copyright (c) 2018-2020 TotalEnergies
- * Copyright (c) 2019-     GEOSX Contributors
+ * Copyright (c) 2016-2024 Lawrence Livermore National Security LLC
+ * Copyright (c) 2018-2024 Total, S.A
+ * Copyright (c) 2018-2024 The Board of Trustees of the Leland Stanford Junior University
+ * Copyright (c) 2018-2024 Chevron
+ * Copyright (c) 2019-     GEOS/GEOSX Contributors
  * All rights reserved
  *
  * See top level LICENSE, COPYRIGHT, CONTRIBUTORS, NOTICE, and ACKNOWLEDGEMENTS files for details.
@@ -147,6 +148,24 @@ public:
                                     real64 ( & stabilizationWeight )[1][2] ) const
   { GEOS_UNUSED_VAR( iconn, stabilizationWeight ); }
 
+  /**
+   * @brief Remove the contribution of the aperture from the weight in the stencil (done before aperture update)
+   *
+   * @param iconn connection index
+   * @param hydraulicAperture hydraulic apertures of the fractures
+   */
+  GEOS_HOST_DEVICE
+  void removeHydraulicApertureContribution( localIndex const iconn, ElementRegionManager::ElementViewConst< arrayView1d< real64 const > > hydraulicAperture ) const;
+
+  /**
+   * @brief Add the contribution of the aperture to the weight in the stencil (done after aperture update)
+   *
+   * @param iconn connection index
+   * @param hydraulicAperture hydraulic apertures of the fractures
+   */
+  GEOS_HOST_DEVICE
+  void addHydraulicApertureContribution( localIndex const iconn, ElementRegionManager::ElementViewConst< arrayView1d< real64 const > > hydraulicAperture ) const;
+
 private:
 
   /// Face normal vector
@@ -244,18 +263,30 @@ inline void FaceElementToCellStencilWrapper::
   localIndex const esr0 =  m_elementSubRegionIndices[iconn][0];
   localIndex const ei0  =  m_elementIndices[iconn][0];
 
-  real64 halfWeight = m_weights[iconn][0];
+  localIndex const er1  =  m_elementRegionIndices[iconn][1];
+  localIndex const esr1 =  m_elementSubRegionIndices[iconn][1];
+  localIndex const ei1  =  m_elementIndices[iconn][1];
 
   real64 faceConormal[3];
 
+  // Will change when implementing collocation points.
   LvArray::tensorOps::hadamardProduct< 3 >( faceConormal, coefficient[er0][esr0][ei0][0], m_faceNormal[iconn] );
-  halfWeight *= LvArray::tensorOps::AiBi< 3 >( m_cellToFaceVec[iconn], faceConormal ) * m_transMultiplier[iconn];
+  real64 const t0 = m_weights[iconn][0] * LvArray::tensorOps::AiBi< 3 >( m_cellToFaceVec[iconn], faceConormal );
+  // We consider the 3rd component of the permeability which is the normal one.
+  real64 const t1 = m_weights[iconn][1] * coefficient[er1][esr1][ei1][0][2];
 
-  weight[0][0] = halfWeight;
-  weight[0][1] = -halfWeight;
+  real64 const sumOfTrans = t0+t1;
+  real64 const value = m_transMultiplier[iconn]*t0*t1/sumOfTrans;
 
-  dWeight_dVar[0][0] = 0.0 * dCoeff_dVar[er0][esr0][ei0][0][0];
-  dWeight_dVar[0][1] = 0.0;
+  weight[0][0] = value;
+  weight[0][1] = -value;
+
+  // We consider the 3rd component of the permeability which is the normal one.
+  real64 const dt0 = m_weights[iconn][0] * dCoeff_dVar[er0][esr0][ei0][0][0];
+  real64 const dt1 = m_weights[iconn][1] * dCoeff_dVar[er1][esr1][ei1][0][2];
+
+  dWeight_dVar[0][0] = ( dt0 * t1 * sumOfTrans - dt0 * t0 * t1 ) / ( sumOfTrans * sumOfTrans );
+  dWeight_dVar[0][1] = ( t0 * dt1 * sumOfTrans - dt1 * t0 * t1 ) / ( sumOfTrans * sumOfTrans );
 }
 
 GEOS_HOST_DEVICE
@@ -265,12 +296,15 @@ FaceElementToCellStencilWrapper
                     real64 ( & weight )[1][2],
                     real64 ( & dWeight_dVar )[1][2] ) const
 {
-  real64 halfWeight = m_weights[iconn][0];
+  // Will change when implementing collocation points.
+  real64 const t0 = m_weights[iconn][0] * LvArray::tensorOps::AiBi< 3 >( m_cellToFaceVec[iconn], m_faceNormal[iconn] );
+  real64 const t1 = m_weights[iconn][1];
 
-  halfWeight *= LvArray::tensorOps::AiBi< 3 >( m_cellToFaceVec[iconn], m_faceNormal[iconn] ) * m_transMultiplier[iconn];
+  real64 const sumOfTrans = t0+t1;
+  real64 const value = m_transMultiplier[iconn]*t0*t1/sumOfTrans;
 
-  weight[0][0] = halfWeight;
-  weight[0][1] = -halfWeight;
+  weight[0][0] = value;
+  weight[0][1] = -value;
 
   dWeight_dVar[0][0] = 0.0;
   dWeight_dVar[0][1] = 0.0;
@@ -291,23 +325,64 @@ FaceElementToCellStencilWrapper::
   localIndex const esr0 =  m_elementSubRegionIndices[iconn][0];
   localIndex const ei0  =  m_elementIndices[iconn][0];
 
-  real64 halfWeight = m_weights[iconn][0];
+  localIndex const er1  =  m_elementRegionIndices[iconn][1];
+  localIndex const esr1 =  m_elementSubRegionIndices[iconn][1];
+  localIndex const ei1  =  m_elementIndices[iconn][1];
 
   real64 faceConormal[3];
 
+  // Will change when implementing collocation points.
   LvArray::tensorOps::hadamardProduct< 3 >( faceConormal, coefficient[er0][esr0][ei0][0], m_faceNormal[iconn] );
-  halfWeight *= LvArray::tensorOps::AiBi< 3 >( m_cellToFaceVec[iconn], faceConormal ) * m_transMultiplier[iconn];
+  real64 const t0 = m_weights[iconn][0] * LvArray::tensorOps::AiBi< 3 >( m_cellToFaceVec[iconn], faceConormal );
+  // We consider the 3rd component of the permeability which is the normal one.
+  real64 const t1 = m_weights[iconn][1] * coefficient[er1][esr1][ei1][0][2];
 
-  weight[0][0] = halfWeight;
-  weight[0][1] = -halfWeight;
+  real64 const sumOfTrans = t0+t1;
+  real64 const value = m_transMultiplier[iconn]*t0*t1/sumOfTrans;
 
-  dWeight_dVar1[0][0] = 0.0 * dCoeff_dVar1[er0][esr0][ei0][0][0];
-  dWeight_dVar1[0][1] = 0.0;
+  weight[0][0] = value;
+  weight[0][1] = -value;
 
-  dWeight_dVar2[0][0] = 0.0 * dCoeff_dVar2[er0][esr0][ei0][0][0];
-  dWeight_dVar2[0][1] = 0.0;
+  // We consider the 3rd component of the permeability which is the normal one.
+  real64 const dt0_dVar1 = m_weights[iconn][0] * dCoeff_dVar1[er0][esr0][ei0][0][0];
+  real64 const dt1_dVar1 = m_weights[iconn][1] * dCoeff_dVar1[er1][esr1][ei1][0][2];
+  real64 const dt0_dVar2 = m_weights[iconn][0] * dCoeff_dVar2[er0][esr0][ei0][0][0];
+  real64 const dt1_dVar2 = m_weights[iconn][1] * dCoeff_dVar2[er1][esr1][ei1][0][2];
+
+  dWeight_dVar1[0][0] = ( dt0_dVar1 * t1 * sumOfTrans - dt0_dVar1 * t0 * t1 ) / ( sumOfTrans * sumOfTrans );
+  dWeight_dVar1[0][1] = ( t0 * dt1_dVar1 * sumOfTrans - dt1_dVar1 * t0 * t1 ) / ( sumOfTrans * sumOfTrans );
+
+  dWeight_dVar2[0][0] = ( dt0_dVar2 * t1 * sumOfTrans - dt0_dVar2 * t0 * t1 ) / ( sumOfTrans * sumOfTrans );
+  dWeight_dVar2[0][1] = ( t0 * dt1_dVar2 * sumOfTrans - dt1_dVar2 * t0 * t1 ) / ( sumOfTrans * sumOfTrans );
 }
 
+GEOS_HOST_DEVICE
+inline void
+FaceElementToCellStencilWrapper::
+  removeHydraulicApertureContribution( localIndex const iconn, ElementRegionManager::ElementViewConst< arrayView1d< real64 const > > hydraulicAperture ) const
+{
+  // only the fracture side is modified, k=1
+  localIndex constexpr k = 1;
+  localIndex const er  =  m_elementRegionIndices[iconn][k];
+  localIndex const esr =  m_elementSubRegionIndices[iconn][k];
+  localIndex const ei  =  m_elementIndices[iconn][k];
+
+  m_weights[iconn][k] = m_weights[iconn][k] * hydraulicAperture[er][esr][ei];
+}
+
+GEOS_HOST_DEVICE
+inline void
+FaceElementToCellStencilWrapper::
+  addHydraulicApertureContribution( localIndex const iconn, ElementRegionManager::ElementViewConst< arrayView1d< real64 const > > hydraulicAperture ) const
+{
+  // only the fracture side is modified, k=1
+  localIndex constexpr k = 1;
+  localIndex const er  =  m_elementRegionIndices[iconn][k];
+  localIndex const esr =  m_elementSubRegionIndices[iconn][k];
+  localIndex const ei  =  m_elementIndices[iconn][k];
+
+  m_weights[iconn][k] = m_weights[iconn][k] / hydraulicAperture[er][esr][ei];
+}
 
 } /* namespace geos */
 

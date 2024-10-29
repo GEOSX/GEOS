@@ -2,11 +2,12 @@
  * ------------------------------------------------------------------------------------------------------------
  * SPDX-License-Identifier: LGPL-2.1-only
  *
- * Copyright (c) 2018-2019 Lawrence Livermore National Security LLC
- * Copyright (c) 2018-2019 The Board of Trustees of the Leland Stanford Junior University
- * Copyright (c) 2018-2019 TotalEnergies
- * Copyright (c) 2019-     GEOSX Contributors
- * All right reserved
+ * Copyright (c) 2016-2024 Lawrence Livermore National Security LLC
+ * Copyright (c) 2018-2024 Total, S.A
+ * Copyright (c) 2018-2024 The Board of Trustees of the Leland Stanford Junior University
+ * Copyright (c) 2018-2024 Chevron
+ * Copyright (c) 2019-     GEOS/GEOSX Contributors
+ * All rights reserved
  *
  * See top level LICENSE, COPYRIGHT, CONTRIBUTORS, NOTICE, and ACKNOWLEDGEMENTS files for details.
  * ------------------------------------------------------------------------------------------------------------
@@ -16,7 +17,7 @@
 
 #include "fileIO/timeHistory/HDFFile.hpp"
 
-#if defined(GEOSX_USE_PYGEOSX)
+#if defined(GEOS_USE_PYGEOSX)
 #include "fileIO/python/PyHistoryOutputType.hpp"
 #endif
 
@@ -31,7 +32,10 @@ TimeHistoryOutput::TimeHistoryOutput( string const & name,
   m_recordCount( 0 ),
   m_io( )
 {
+  enableLogLevelInput();
+
   registerWrapper( viewKeys::timeHistoryOutputTargetString(), &m_collectorPaths ).
+    setRTTypeName( rtTypes::CustomTypes::groupNameRefArray ).
     setInputFlag( InputFlags::REQUIRED ).
     setDescription( "A list of collectors from which to collect and output time history information." );
 
@@ -74,6 +78,7 @@ void TimeHistoryOutput::initCollectorParallel( DomainPartition const & domain, H
       }
 
       m_io.emplace_back( std::make_unique< HDFHistoryIO >( outputFile, metadata, m_recordCount ) );
+      m_io.back()->setLogLevel( this->getLogLevel() );
       hc.registerBufferProvider( collectorIdx, [this, idx = m_io.size() - 1]( localIndex count )
       {
         m_io[idx]->updateCollectingCount( count );
@@ -83,12 +88,13 @@ void TimeHistoryOutput::initCollectorParallel( DomainPartition const & domain, H
     }
   };
 
-  // FIXME Why stop (pseudo) recursion at one single level?
   registerBufferCalls( collector );
+  MpiWrapper::barrier( MPI_COMM_GEOSX );
 
   for( localIndex metaIdx = 0; metaIdx < collector.numMetaDataCollectors(); ++metaIdx )
   {
     registerBufferCalls( collector.getMetaDataCollector( metaIdx ), collector.getTargetName() + " " );
+    MpiWrapper::barrier( MPI_COMM_GEOSX );
   }
 
   // Do the time output last so its at the end of the m_io list, since writes are parallel
@@ -99,6 +105,7 @@ void TimeHistoryOutput::initCollectorParallel( DomainPartition const & domain, H
   {
     HistoryMetadata timeMetadata = collector.getTimeMetaData();
     m_io.emplace_back( std::make_unique< HDFHistoryIO >( outputFile, timeMetadata, m_recordCount, 1, 2, MPI_COMM_SELF ) );
+    m_io.back()->setLogLevel( this->getLogLevel() );
     // We copy the back `idx` not to rely on possible future appends to `m_io`.
     collector.registerTimeBufferProvider( [this, idx = m_io.size() - 1]() { return m_io[idx]->getBufferHead(); } );
     m_io.back()->init( !freshInit );
@@ -122,11 +129,20 @@ void TimeHistoryOutput::initializePostInitialConditionsPostSubGroups()
   }
 
   DomainPartition & domain = this->getGroupByPath< DomainPartition >( "/Problem/domain" );
+  GEOS_LOG_LEVEL_BY_RANK( 3, GEOS_FMT( "TimeHistory: '{}' initializing data collectors.", this->getName() ) );
   for( auto collectorPath : m_collectorPaths )
   {
-    HistoryCollection & collector = this->getGroupByPath< HistoryCollection >( collectorPath );
-    collector.initializePostSubGroups();
-    initCollectorParallel( domain, collector );
+    try
+    {
+      HistoryCollection & collector = this->getGroupByPath< HistoryCollection >( collectorPath );
+      collector.initializePostSubGroups();
+      initCollectorParallel( domain, collector );
+    }
+    catch( std::exception const & e )
+    {
+      throw InputError( e, GEOS_FMT( "Error while reading {}:\n",
+                                     getWrapperDataContext( viewKeys::timeHistoryOutputTargetString() ) ) );
+    }
   }
 }
 
@@ -166,6 +182,7 @@ void TimeHistoryOutput::cleanup( real64 const time_n,
                                  DomainPartition & domain )
 {
   execute( time_n, 0.0, cycleNumber, eventCounter, eventProgress, domain );
+  MpiWrapper::barrier( MPI_COMM_GEOSX );
   // remove any unused trailing space reserved to write additional histories
   for( auto & th_io : m_io )
   {
@@ -173,7 +190,7 @@ void TimeHistoryOutput::cleanup( real64 const time_n,
   }
 }
 
-#if defined(GEOSX_USE_PYGEOSX)
+#if defined(GEOS_USE_PYGEOSX)
 PyTypeObject * TimeHistoryOutput::getPythonType() const
 { return python::getPyHistoryOutputType(); }
 #endif

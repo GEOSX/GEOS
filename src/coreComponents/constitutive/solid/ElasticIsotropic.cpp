@@ -2,10 +2,11 @@
  * ------------------------------------------------------------------------------------------------------------
  * SPDX-License-Identifier: LGPL-2.1-only
  *
- * Copyright (c) 2018-2020 Lawrence Livermore National Security LLC
- * Copyright (c) 2018-2020 The Board of Trustees of the Leland Stanford Junior University
- * Copyright (c) 2018-2020 TotalEnergies
- * Copyright (c) 2019-     GEOSX Contributors
+ * Copyright (c) 2016-2024 Lawrence Livermore National Security LLC
+ * Copyright (c) 2018-2024 Total, S.A
+ * Copyright (c) 2018-2024 The Board of Trustees of the Leland Stanford Junior University
+ * Copyright (c) 2018-2024 Chevron
+ * Copyright (c) 2019-     GEOS/GEOSX Contributors
  * All rights reserved
  *
  * See top level LICENSE, COPYRIGHT, CONTRIBUTORS, NOTICE, and ACKNOWLEDGEMENTS files for details.
@@ -63,11 +64,11 @@ ElasticIsotropic::ElasticIsotropic( string const & name, Group * const parent ):
 ElasticIsotropic::~ElasticIsotropic()
 {}
 
-void ElasticIsotropic::postProcessInput()
+void ElasticIsotropic::postInputInitialization()
 {
   // check what constants the user actually input, and do conversions as needed
 
-  SolidBase::postProcessInput();
+  SolidBase::postInputInitialization();
 
   real64 & nu = getReference< real64 >( viewKeyStruct::defaultPoissonRatioString() );
   real64 & E  = getReference< real64 >( viewKeyStruct::defaultYoungModulusString() );
@@ -102,8 +103,9 @@ void ElasticIsotropic::postProcessInput()
   errorCheck += ")";
 
   GEOS_ERROR_IF( numConstantsSpecified != 2,
-                 "A specific pair of elastic constants is required. Either (K,G), (K,E), (G,E), (K,nu), (G,nu) or (E,nu). "<<
-                 "You have specified "<<errorCheck );
+                 getFullName() << ": A specific pair of elastic constants is required. " <<
+                 "Either (K,G), (K,E), (G,E), (K,nu), (G,nu) or (E,nu). " <<
+                 "You have specified " << errorCheck );
 
   if( nu > -0.5 && nu < 0.5 && E > 0.0 )
   {
@@ -137,7 +139,8 @@ void ElasticIsotropic::postProcessInput()
   }
   else
   {
-    GEOS_ERROR( "Invalid specification for default elastic constants. "<<errorCheck<<" has been specified." );
+    GEOS_ERROR( getFullName() << ": Invalid specification for default elastic constants. " <<
+                errorCheck << " has been specified." );
   }
 
   // set results as array default values
@@ -146,6 +149,9 @@ void ElasticIsotropic::postProcessInput()
 
   this->getWrapper< array1d< real64 > >( viewKeyStruct::shearModulusString() ).
     setApplyDefaultValue( m_defaultShearModulus );
+
+  this->getWrapper< array2d< real64 > >( viewKeyStruct::wavespeedString() ).
+    setApplyDefaultValue( sqrt( ( m_defaultBulkModulus + (4.0/3.0) * m_defaultShearModulus ) / m_defaultDensity ) );
 }
 
 REGISTER_CATALOG_ENTRY( ConstitutiveBase, ElasticIsotropic, string const &, Group * const )

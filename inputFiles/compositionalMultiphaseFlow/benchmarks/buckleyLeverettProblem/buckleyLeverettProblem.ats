@@ -1,0 +1,18 @@
+from geos.ats.test_builder import TestDeck, RestartcheckParameters, generate_geos_tests
+
+restartcheck_params = {}
+restartcheck_params["atol"] = 1.0E-6
+restartcheck_params["rtol"] = 1.0E-5
+
+decks = [
+    TestDeck(
+        name="buckleyLeverett_smoke",
+        description=
+        "Smoke test for a CO2 core flood experiment (1D displacement, 2-phase dead-oil, Brooks-Corey pairwise 2-phase relperm curves)",
+        partitions=((1, 1, 1), (2, 1, 1)),
+        restart_step=9,
+        check_step=13,
+        restartcheck_params=RestartcheckParameters(**restartcheck_params))
+]
+
+generate_geos_tests(decks)

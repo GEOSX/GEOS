@@ -1,5 +1,21 @@
+/*
+ * ------------------------------------------------------------------------------------------------------------
+ * SPDX-License-Identifier: LGPL-2.1-only
+ *
+ * Copyright (c) 2016-2024 Lawrence Livermore National Security LLC
+ * Copyright (c) 2018-2024 Total, S.A
+ * Copyright (c) 2018-2024 The Board of Trustees of the Leland Stanford Junior University
+ * Copyright (c) 2018-2024 Chevron
+ * Copyright (c) 2019-     GEOS/GEOSX Contributors
+ * All rights reserved
+ *
+ * See top level LICENSE, COPYRIGHT, CONTRIBUTORS, NOTICE, and ACKNOWLEDGEMENTS files for details.
+ * ------------------------------------------------------------------------------------------------------------
+ */
+
 #include "mainInterface/initialization.hpp"
-#include "common/lifoStorage.hpp"
+#define LIFO_DISABLE_CALIPER
+#include "common/LifoStorage.hpp"
 #include "LvArray/src/Array.hpp"
 #include "LvArray/src/MallocBuffer.hpp"
 #if defined(LVARRAY_USE_CHAI)
@@ -18,12 +34,17 @@
                                                                        STRINGIZE( L ) " = " << ( L ) << "\n" << STRINGIZE( R ) " = " << ( R ) );
 #endif
 
+namespace geos
+{
+
+namespace local
+{
 
 template< typename >
 struct RAJAHelper
 {};
 
-using serialPolicy = RAJA::loop_exec;
+using serialPolicy = RAJA::seq_exec;
 
 template<>
 struct RAJAHelper< serialPolicy >
@@ -52,8 +73,8 @@ struct RAJAHelper< parallelHostPolicy >
 template< unsigned long THREADS_PER_BLOCK >
 using devicePolicy = RAJA::cuda_exec< THREADS_PER_BLOCK >;
 
-template< unsigned long N >
-struct RAJAHelper< RAJA::cuda_exec< N > >
+template< typename X, typename Y, typename C, size_t BLOCK_SIZE, bool ASYNC >
+struct RAJAHelper< RAJA::policy::cuda::cuda_exec_explicit< X, Y, C, BLOCK_SIZE, ASYNC > >
 {
   using ReducePolicy = RAJA::cuda_reduce;
   using AtomicPolicy = RAJA::cuda_atomic;
@@ -62,16 +83,15 @@ struct RAJAHelper< RAJA::cuda_exec< N > >
 
 #endif
 
-using namespace geos;
-
+}
 
 template< typename POLICY >
 void testLifoStorage( int elemCnt, int numberOfElementsOnDevice, int numberOfElementsOnHost, int totalNumberOfBuffers )
 {
 
   array1d< float > array( elemCnt );
-  array.move( RAJAHelper< POLICY >::space );
-  lifoStorage< float > lifo( "lifo", array, numberOfElementsOnDevice, numberOfElementsOnHost, totalNumberOfBuffers );
+  array.move( local::RAJAHelper< POLICY >::space );
+  LifoStorage< float, localIndex > lifo( "lifo", array, numberOfElementsOnDevice, numberOfElementsOnHost, totalNumberOfBuffers );
 
   for( int j = 0; j < totalNumberOfBuffers; j++ )
   {
@@ -93,11 +113,38 @@ void testLifoStorage( int elemCnt, int numberOfElementsOnDevice, int numberOfEle
 }
 
 template< typename POLICY >
+void testLifoStorageBig( int elemCnt, int numberOfElementsOnDevice, int numberOfElementsOnHost, int totalNumberOfBuffers )
+{
+
+  array1d< float > array( elemCnt );
+  array.move( local::RAJAHelper< POLICY >::space );
+  LifoStorage< float, localIndex > lifo( "lifo", array, numberOfElementsOnDevice, numberOfElementsOnHost, totalNumberOfBuffers );
+
+  for( int j = 0; j < 10; j++ )
+  {
+
+    float * dataPointer = array.data();
+    forAll< POLICY >( elemCnt, [dataPointer, j, elemCnt] GEOS_HOST_DEVICE ( int i ) { dataPointer[ i ] = j*elemCnt+i; } );
+    lifo.push( array );
+  }
+
+  for( int j = 0; j < 10; j++ )
+  {
+    lifo.pop( array );
+    float * dataPointer = array.data();
+    forAll< POLICY >( elemCnt, [dataPointer, j, elemCnt] GEOS_HOST_DEVICE ( int i )
+    {
+      PORTABLE_EXPECT_EQ( dataPointer[ i ], (float)(10-j-1)*elemCnt+i );
+    } );
+  }
+}
+
+template< typename POLICY >
 void testLifoStorageAsync( int elemCnt, int numberOfElementsOnDevice, int numberOfElementsOnHost, int totalNumberOfBuffers )
 {
   array1d< float > array( elemCnt );
-  array.move( RAJAHelper< POLICY >::space );
-  lifoStorage< float > lifo( "lifo", array, numberOfElementsOnDevice, numberOfElementsOnHost, totalNumberOfBuffers );
+  array.move( local::RAJAHelper< POLICY >::space );
+  LifoStorage< float, localIndex > lifo( "lifo", array, numberOfElementsOnDevice, numberOfElementsOnHost, totalNumberOfBuffers );
 
   for( int j = 0; j < totalNumberOfBuffers; j++ )
   {
@@ -121,38 +168,65 @@ void testLifoStorageAsync( int elemCnt, int numberOfElementsOnDevice, int number
 }
 
 
-TEST( LifoStorageTest, LifoStorageBufferOnHost )
-{
-  testLifoStorage< serialPolicy >( 10, 2, 3, 10 );
-}
-
-TEST( LifoStorageTest, LifoStorageBufferOnHostNoDeviceBuffer )
-{
-  testLifoStorage< serialPolicy >( 10, 0, 3, 10 );
-}
-
-TEST( LifoStorageTest, LifoStorageAsyncBufferOnHost )
-{
-  testLifoStorageAsync< serialPolicy >( 10, 2, 3, 10 );
-}
-
 
 #ifdef GEOS_USE_CUDA
+// running tests on GPUs
 TEST( LifoStorageTest, LifoStorageBufferOnCUDA )
 {
-  testLifoStorage< parallelDevicePolicy< > >( 10, 2, 3, 10 );
+  testLifoStorage< local::devicePolicy< 32 > >( 10, 2, 3, 10 );
 }
+
+TEST( LifoStorageTest, LifoStorageBufferOnCUDAlarge )
+{
+  testLifoStorageBig< parallelDevicePolicy< > >( 1000000, 2, 3, 10000 );
+}
+
+TEST( LifoStorageTest, LifoStorageBufferOnCUDAlargeAutoSizeHost )
+{
+  testLifoStorageBig< parallelDevicePolicy< > >( 1000000, 2, -80, 10000 );
+}
+
+TEST( LifoStorageTest, LifoStorageBufferOnCUDAlargeAutoSizeDevice )
+{
+  testLifoStorageBig< parallelDevicePolicy< > >( 1000000, -80, 3, 10000 );
+}
+
+TEST( LifoStorageTest, LifoStorageBufferOnCUDAlargeAutoSizeBoth )
+{
+  testLifoStorageBig< parallelDevicePolicy< > >( 1000000, -80, -80, 10000 );
+}
+
 
 TEST( LifoStorageTest, LifoStorageBufferOnCUDANoDeviceBuffer )
 {
-  testLifoStorage< parallelDevicePolicy< > >( 10, 0, 3, 10 );
+  testLifoStorage< local::devicePolicy< 32 > >( 10, 0, 3, 10 );
 }
 
 TEST( LifoStorageTest, LifoStorageAsyncBufferOnCUDA )
 {
-  testLifoStorageAsync< parallelDevicePolicy< > >( 10, 2, 3, 10 );
+  testLifoStorageAsync< local::devicePolicy< 32 > >( 10, 2, 3, 10 );
 }
+
+#else
+// running tests on CPUs
+TEST( LifoStorageTest, LifoStorageBufferOnHost )
+{
+  testLifoStorage< local::serialPolicy >( 10, 2, 3, 10 );
+}
+
+TEST( LifoStorageTest, LifoStorageBufferOnHostNoDeviceBuffer )
+{
+  testLifoStorage< local::serialPolicy >( 10, 0, 3, 10 );
+}
+
+TEST( LifoStorageTest, LifoStorageAsyncBufferOnHost )
+{
+  testLifoStorageAsync< local::serialPolicy >( 10, 2, 3, 10 );
+}
+
 #endif
+
+}
 
 int main( int ac, char * av[] )
 {

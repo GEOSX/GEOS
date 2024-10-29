@@ -1,0 +1,191 @@
+<?xml version="1.0" ?>
+
+<Problem>
+  <Solvers>
+    <SinglePhaseReservoir
+      name="reservoirSystem"
+      flowSolverName="singlePhaseFlow"
+      wellSolverName="singlePhaseWell"
+      logLevel="1"
+      targetRegions="{ Region1, wellRegion1, wellRegion2 }">
+      <NonlinearSolverParameters
+        newtonMaxIter="40"/>
+      <LinearSolverParameters
+        directParallel="0"/>
+    </SinglePhaseReservoir>
+
+    <SinglePhaseFVM
+      name="singlePhaseFlow"
+      logLevel="1"
+      discretization="singlePhaseTPFA"
+      targetRegions="{ Region1 }"/>
+
+    <SinglePhaseWell
+      name="singlePhaseWell"
+      logLevel="1"
+      targetRegions="{ wellRegion1, wellRegion2 }">
+      <WellControls
+        name="wellControls1"
+        type="producer"
+        control="BHP"
+        referenceElevation="2"
+        targetBHP="5e5"
+        targetTotalRate="1e-4"/>
+      <WellControls
+        name="wellControls2"
+        type="injector"
+        control="totalVolRate"
+        referenceElevation="2"
+        targetBHP="1e7"
+        targetTotalRate="1e-7"/>
+    </SinglePhaseWell>
+  </Solvers>
+
+  <Mesh>
+    <InternalMesh
+      name="mesh1"
+      elementTypes="{ C3D8 }"
+      xCoords="{ 0, 5 }"
+      yCoords="{ 0, 1 }"
+      zCoords="{ 0, 1 }"
+      nx="{ 5 }"
+      ny="{ 1 }"
+      nz="{ 1 }"
+      cellBlockNames="{ cb1 }">
+
+      <InternalWell
+        name="well_producer1"
+        wellRegionName="wellRegion1"
+        wellControlsName="wellControls1"
+        polylineNodeCoords="{ { 4.5, 0, 2 },
+                              { 4.5, 0, 0.5 } }"
+        polylineSegmentConn="{ { 0, 1 } }"
+        radius="0.1"
+        numElementsPerSegment="2">
+        <Perforation
+          name="producer1_perf1"
+	  distanceFromHead="1.45"
+	  skinFactor="1"/>
+      </InternalWell>
+
+      <InternalWell
+        name="well_injector1"
+        wellRegionName="wellRegion2"
+        wellControlsName="wellControls2"
+        polylineNodeCoords="{ { 0.5, 0, 2 },
+                              { 0.5, 0, 0.5 } }"
+        polylineSegmentConn="{ { 0, 1 } }"
+        radius="0.1"
+        numElementsPerSegment="3">
+        <Perforation
+          name="injector1_perf1"
+          distanceFromHead="1.45"/>
+      </InternalWell>
+    </InternalMesh>
+  </Mesh>
+
+  <Events
+    maxTime="1e5">
+    <PeriodicEvent
+      name="solverApplications"
+      forceDt="1e4"
+      target="/Solvers/reservoirSystem"/>
+
+    <PeriodicEvent
+      name="outputs"
+      timeFrequency="1e4"
+      target="/Outputs/siloOutput"/>
+
+    <PeriodicEvent
+      name="restarts"
+      timeFrequency="5e4"
+      targetExactTimestep="0"
+      target="/Outputs/restartOutput"/>
+  </Events>
+
+  <NumericalMethods>
+    <FiniteVolume>
+      <TwoPointFluxApproximation
+        name="singlePhaseTPFA"/>
+    </FiniteVolume>
+  </NumericalMethods>
+
+  <ElementRegions>
+    <CellElementRegion
+      name="Region1"
+      cellBlocks="{ cb1 }"
+      materialList="{ water, rock }"/>
+
+    <WellElementRegion
+      name="wellRegion1"
+      materialList="{ water }"/>
+
+    <WellElementRegion
+      name="wellRegion2"
+      materialList="{ water }"/>
+  </ElementRegions>
+
+  <Constitutive>
+    <CompressibleSinglePhaseFluid
+      name="water"
+      defaultDensity="1000"
+      defaultViscosity="0.001"
+      referencePressure="0.0"
+      compressibility="5e-9"
+      referenceViscosity="0.005"
+      viscosibility="0.0"/>
+
+    <CompressibleSolidConstantPermeability
+      name="rock"
+      solidModelName="nullSolid"
+      porosityModelName="rockPorosity"
+      permeabilityModelName="rockPerm"/>
+
+    <NullModel
+      name="nullSolid"/>
+
+    <PressurePorosity
+      name="rockPorosity"
+      defaultReferencePorosity="0.05"
+      referencePressure="0.0"
+      compressibility="1.0e-9"/>
+
+    <ConstantPermeability
+      name="rockPerm"
+      permeabilityComponents="{ 2.0e-16, 2.0e-16, 2.0e-16 }"/>
+  </Constitutive>
+
+  <FieldSpecifications>
+    <FieldSpecification
+      name="referencePorosity"
+      initialCondition="1"
+      setNames="{ all }"
+      objectPath="ElementRegions/Region1/cb1"
+      fieldName="rockPorosity_referencePorosity"
+      scale="0.05"/>
+
+    <FieldSpecification
+      name="initialPressure"
+      initialCondition="1"
+      setNames="{ all }"
+      objectPath="ElementRegions/Region1/cb1"
+      fieldName="pressure"
+      scale="5e6"/>
+  </FieldSpecifications>
+
+  <Functions>
+    <TableFunction
+      name="timeFunction"
+      inputVarNames="{ time }"
+      coordinates="{ 1.0, 2.0, 6e4 }"
+      values="{ 1.0, 2.0, 2.0 }"/>
+  </Functions>
+
+  <Outputs>
+    <Silo
+      name="siloOutput"/>
+
+    <Restart
+      name="restartOutput"/>
+  </Outputs>
+</Problem>

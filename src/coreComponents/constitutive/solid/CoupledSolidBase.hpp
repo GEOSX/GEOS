@@ -2,10 +2,11 @@
  * ------------------------------------------------------------------------------------------------------------
  * SPDX-License-Identifier: LGPL-2.1-only
  *
- * Copyright (c) 2018-2020 Lawrence Livermore National Security LLC
- * Copyright (c) 2018-2020 The Board of Trustees of the Leland Stanford Junior University
- * Copyright (c) 2018-2020 TotalEnergies
- * Copyright (c) 2019-     GEOSX Contributors
+ * Copyright (c) 2016-2024 Lawrence Livermore National Security LLC
+ * Copyright (c) 2018-2024 Total, S.A
+ * Copyright (c) 2018-2024 The Board of Trustees of the Leland Stanford Junior University
+ * Copyright (c) 2018-2024 Chevron
+ * Copyright (c) 2019-     GEOS/GEOSX Contributors
  * All rights reserved
  *
  * See top level LICENSE, COPYRIGHT, CONTRIBUTORS, NOTICE, and ACKNOWLEDGEMENTS files for details.
@@ -180,9 +181,29 @@ public:
   }
 
   /**
+   * @brief Const/non-mutable accessor for the mean total stress increment
+   * (with respect to the previous converged time level) at the previous sequential iteration
+   * @return Accessor
+   */
+  arrayView2d< real64 const > const getMeanTotalStressIncrement_k() const
+  {
+    return getBasePorosityModel().getMeanTotalStressIncrement_k();
+  }
+
+  /**
+   * @brief Non-const accessor for the mean total stress increment at the previous sequential iteration
+   * @return Accessor
+   */
+  arrayView1d< real64 > const getAverageMeanTotalStressIncrement_k()
+  {
+    return getBasePorosityModel().getAverageMeanTotalStressIncrement_k();
+  }
+
+
+  /**
    * @brief initialize the constitutive models fields.
    */
-  void initializeState() const
+  virtual void initializeState() const
   {
     getBasePorosityModel().initializeState();
     getBasePermModel().initializeState();
@@ -199,11 +220,33 @@ public:
   }
 
   /**
+   * @brief ignore the porosity update (after initialization step)
+   */
+  virtual void ignoreConvergedState() const
+  {
+    getBasePorosityModel().ignoreConvergedState();
+  }
+
+  /**
    * @brief get a constant reference to the solid internal energy model
    * return a constant SolidInternalEnergy reference to the solid internal energy model
    */
   SolidInternalEnergy const & getSolidInternalEnergyModel() const
   { return this->getParent().template getGroup< SolidInternalEnergy >( m_solidInternalEnergyModelName ); }
+
+  /**
+   * @brief get a PorosityBase constant reference to the porosity model
+   * return a constant PorosityBase reference to the porosity model
+   */
+  PorosityBase const & getBasePorosityModel() const
+  { return this->getParent().template getGroup< PorosityBase >( m_porosityModelName ); }
+
+  /**
+   * @brief get a PorosityBase reference to the porosity model
+   * return a PorosityBase reference to the porosity model
+   */
+  PorosityBase & getBasePorosityModel()
+  { return this->getParent().template getGroup< PorosityBase >( m_porosityModelName ); }
 
 protected:
 
@@ -221,12 +264,6 @@ protected:
 
 private:
 
-  /**
-   * @brief get a PorosityBase constant reference to the porosity model
-   * return a constant PorosityBase reference to the porosity model
-   */
-  PorosityBase const & getBasePorosityModel() const
-  { return this->getParent().template getGroup< PorosityBase >( m_porosityModelName ); }
   /**
    * @brief get a Permeability base constant reference to the permeability model
    * return a constant PermeabilityBase reference to the permeability model

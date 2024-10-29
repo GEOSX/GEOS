@@ -2,10 +2,11 @@
  * ------------------------------------------------------------------------------------------------------------
  * SPDX-License-Identifier: LGPL-2.1-only
  *
- * Copyright (c) 2018-2020 Lawrence Livermore National Security LLC
- * Copyright (c) 2018-2020 The Board of Trustees of the Leland Stanford Junior University
- * Copyright (c) 2018-2020 TotalEnergies
- * Copyright (c) 2019-     GEOSX Contributors
+ * Copyright (c) 2016-2024 Lawrence Livermore National Security LLC
+ * Copyright (c) 2018-2024 Total, S.A
+ * Copyright (c) 2018-2024 The Board of Trustees of the Leland Stanford Junior University
+ * Copyright (c) 2018-2024 Chevron
+ * Copyright (c) 2019-     GEOS/GEOSX Contributors
  * All rights reserved
  *
  * See top level LICENSE, COPYRIGHT, CONTRIBUTORS, NOTICE, and ACKNOWLEDGEMENTS files for details.
@@ -27,32 +28,10 @@ namespace constitutive
 {
 
 SolidBase::SolidBase( string const & name, Group * const parent ):
-  ConstitutiveBase( name, parent ),
-  m_newStress( 0, 0, 6 ),
-  m_oldStress( 0, 0, 6 ),
-  m_density(),
+  ContinuumBase( name, parent ),
   m_thermalExpansionCoefficient()
 {
   string const voightLabels[6] = { "XX", "YY", "ZZ", "YZ", "XZ", "XY" };
-
-  registerWrapper( viewKeyStruct::stressString(), &m_newStress ).
-    setPlotLevel( PlotLevel::LEVEL_0 ).
-    setApplyDefaultValue( 0 ). // default to zero initial stress
-    setDescription( "Current Material Stress" ).
-    setDimLabels( 2, voightLabels );
-
-  registerWrapper( viewKeyStruct::oldStressString(), &m_oldStress ).
-    setApplyDefaultValue( 0 ). // default to zero initial stress
-    setDescription( "Previous Material Stress" );
-
-  registerWrapper( viewKeyStruct::densityString(), &m_density ).
-    setPlotLevel( PlotLevel::LEVEL_0 ).
-    setApplyDefaultValue( -1 ). // will be overwritten
-    setDescription( "Material Density" );
-
-  registerWrapper( viewKeyStruct::defaultDensityString(), &m_defaultDensity ).
-    setInputFlag( InputFlags::REQUIRED ).
-    setDescription( "Default Material Density" );
 
   registerWrapper( viewKeyStruct::defaultThermalExpansionCoefficientString(), &m_defaultThermalExpansionCoefficient ).
     setApplyDefaultValue( 0.0 ).
@@ -69,10 +48,9 @@ SolidBase::~SolidBase()
 {}
 
 
-void SolidBase::postProcessInput()
+void SolidBase::postInputInitialization()
 {
-  this->getWrapper< array2d< real64 > >( viewKeyStruct::densityString() ).
-    setApplyDefaultValue( m_defaultDensity );
+  ContinuumBase::postInputInitialization();
 
   this->getWrapper< array1d< real64 > >( viewKeyStruct::thermalExpansionCoefficientString() ).
     setApplyDefaultValue( m_defaultThermalExpansionCoefficient );
@@ -82,11 +60,9 @@ void SolidBase::postProcessInput()
 void SolidBase::allocateConstitutiveData( dataRepository::Group & parent,
                                           localIndex const numConstitutivePointsPerParentIndex )
 {
-  m_density.resize( 0, numConstitutivePointsPerParentIndex );
-  m_newStress.resize( 0, numConstitutivePointsPerParentIndex, 6 );
-  m_oldStress.resize( 0, numConstitutivePointsPerParentIndex, 6 );
+  ContinuumBase::allocateConstitutiveData( parent, numConstitutivePointsPerParentIndex );
 
-  ConstitutiveBase::allocateConstitutiveData( parent, numConstitutivePointsPerParentIndex );
+  m_thermalExpansionCoefficient.resize( 0 );
 }
 
 
@@ -107,6 +83,6 @@ void SolidBase::saveConvergedState() const
   } );
 }
 
-
+REGISTER_CATALOG_ENTRY( ConstitutiveBase, SolidBase, string const &, Group * const )
 } /* namespace constitutive */
 } /* namespace geos */

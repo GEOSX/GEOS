@@ -1,0 +1,78 @@
+<?xml version="1.0" ?>
+
+<Problem>
+  <Included>
+    <File
+      name="./ThermoPoroElastic_base.xml"/>
+  </Included>
+
+  <Solvers
+    gravityVector="{ 0.0, 0.0, 0.0 }">
+    <SinglePhasePoromechanicsEmbeddedFractures
+      name="poroSolver"
+      targetRegions="{ RockMatrix, Fracture }"
+      initialDt="1e-3"
+      flowSolverName="flowSolver"
+      solidSolverName="fractureMechSolver"
+      logLevel="1"
+      isThermal="1">
+      <NonlinearSolverParameters
+        newtonTol="1.0e-2"
+        newtonMaxIter="15"
+        maxTimeStepCuts="4"/>
+      <LinearSolverParameters
+        directParallel="0"
+        solverType="direct"/>
+    </SinglePhasePoromechanicsEmbeddedFractures>
+
+    <SolidMechanicsEmbeddedFractures
+      name="fractureMechSolver"
+      targetRegions="{ RockMatrix, Fracture }"
+      timeIntegrationOption="QuasiStatic"
+      discretization="FE1"/>
+
+    <SinglePhaseFVM
+      name="flowSolver"
+      discretization="singlePhaseTPFA"
+      targetRegions="{ RockMatrix, Fracture }"
+      isThermal="1">
+      <NonlinearSolverParameters
+        normType="L2"/>
+    </SinglePhaseFVM>
+
+    <EmbeddedSurfaceGenerator
+      name="SurfaceGenerator"
+      targetRegions="{ RockMatrix, Fracture }"
+      targetObjects="{ FracturePlane }"
+      discretization="FE1"
+      fractureRegion="Fracture"
+      logLevel="1"
+      mpiCommOrder="1"/>
+  </Solvers>
+
+  <NumericalMethods>
+    <FiniteElements>
+      <FiniteElementSpace
+        name="FE1"
+        order="1"/>
+    </FiniteElements>
+
+    <FiniteVolume>
+      <TwoPointFluxApproximation
+        name="singlePhaseTPFA"/>
+    </FiniteVolume>
+  </NumericalMethods>
+
+  <ElementRegions>
+    <CellElementRegion
+      name="RockMatrix"
+      cellBlocks="{ cb1 }"
+      materialList="{ porousRock, water, thermalCond }"/>
+
+    <SurfaceElementRegion
+      name="Fracture"
+      subRegionType="embeddedElement"
+      materialList="{ water, fractureFilling, fractureContact, thermalCond }"
+      defaultAperture="1.e-4"/>
+  </ElementRegions>
+</Problem>

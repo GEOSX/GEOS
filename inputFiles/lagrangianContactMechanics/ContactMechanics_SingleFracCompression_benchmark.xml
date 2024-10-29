@@ -14,7 +14,7 @@
   </Mesh>
 
   <Geometry>
-    <BoundedPlane
+    <Rectangle
       name="fracture"
       normal="{-0.342020143325669, 0.939692620785908, 0.0}"
       origin="{0.0, 0.0, 0.0}"
@@ -22,7 +22,7 @@
       widthVector="{0.0, 0.0, 1.0}"
       dimensions="{ 2, 10 }"/>
 
-    <BoundedPlane
+    <Rectangle
       name="core"
       normal="{-0.342020143325669, 0.939692620785908, 0.0}"
       origin="{0.0, 0.0, 0.0}"

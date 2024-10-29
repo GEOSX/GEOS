@@ -2,10 +2,11 @@
  * ------------------------------------------------------------------------------------------------------------
  * SPDX-License-Identifier: LGPL-2.1-only
  *
- * Copyright (c) 2018-2020 Lawrence Livermore National Security LLC
- * Copyright (c) 2018-2020 The Board of Trustees of the Leland Stanford Junior University
- * Copyright (c) 2018-2020 TotalEnergies
- * Copyright (c) 2019-     GEOSX Contributors
+ * Copyright (c) 2016-2024 Lawrence Livermore National Security LLC
+ * Copyright (c) 2018-2024 Total, S.A
+ * Copyright (c) 2018-2024 The Board of Trustees of the Leland Stanford Junior University
+ * Copyright (c) 2018-2024 Chevron
+ * Copyright (c) 2019-     GEOS/GEOSX Contributors
  * All rights reserved
  *
  * See top level LICENSE, COPYRIGHT, CONTRIBUTORS, NOTICE, and ACKNOWLEDGEMENTS files for details.
@@ -67,16 +68,6 @@ public:
 
   /// Deleted move assignment operator
   CompressibleSinglePhaseUpdate & operator=( CompressibleSinglePhaseUpdate && ) = delete;
-
-  GEOS_HOST_DEVICE
-  GEOS_FORCE_INLINE
-  virtual void compute( real64 const pressure,
-                        real64 & density,
-                        real64 & viscosity ) const override
-  {
-    m_densRelation.compute( pressure, density );
-    m_viscRelation.compute( pressure, viscosity );
-  }
 
   GEOS_HOST_DEVICE
   GEOS_FORCE_INLINE
@@ -191,7 +182,7 @@ public:
 
 protected:
 
-  virtual void postProcessInput() override;
+  virtual void postInputInitialization() override;
 
   /// default density value
   real64 m_defaultDensity;

@@ -1,0 +1,2 @@
+DensityFun EzrokhiBrineDensity 0.1033 -2.2991e-5 -2.3658e-6
+ViscosityFun EzrokhiBrineViscosity 0 0 0

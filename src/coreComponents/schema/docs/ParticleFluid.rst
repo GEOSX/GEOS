@@ -9,7 +9,7 @@ fluidViscosity              real64                                  0.001    Flu
 hinderedSettlingCoefficient real64                                  5.9      Hindered settling coefficient                                                            
 isCollisionalSlip           integer                                 0        Whether the collisional component of the slip velocity is considered                     
 maxProppantConcentration    real64                                  0.6      Max proppant concentration                                                               
-name                        string                                  required A name is required for any non-unique nodes                                              
+name                        groupName                               required A name is required for any non-unique nodes                                              
 particleSettlingModel       geos_constitutive_ParticleSettlingModel required | Particle settling velocity model. Valid options:                                         
                                                                              | * Stokes                                                                                 
                                                                              | * Intermediate                                                                           

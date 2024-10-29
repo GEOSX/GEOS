@@ -2,10 +2,11 @@
  * ------------------------------------------------------------------------------------------------------------
  * SPDX-License-Identifier: LGPL-2.1-only
  *
- * Copyright (c) 2018-2020 Lawrence Livermore National Security LLC
- * Copyright (c) 2018-2020 The Board of Trustees of the Leland Stanford Junior University
- * Copyright (c) 2018-2020 TotalEnergies
- * Copyright (c) 2019-     GEOSX Contributors
+ * Copyright (c) 2016-2024 Lawrence Livermore National Security LLC
+ * Copyright (c) 2018-2024 Total, S.A
+ * Copyright (c) 2018-2024 The Board of Trustees of the Leland Stanford Junior University
+ * Copyright (c) 2018-2024 Chevron
+ * Copyright (c) 2019-     GEOS/GEOSX Contributors
  * All rights reserved
  *
  * See top level LICENSE, COPYRIGHT, CONTRIBUTORS, NOTICE, and ACKNOWLEDGEMENTS files for details.
@@ -301,4 +302,39 @@ TEST( testStringUtilities, toMetricPrefixString )
     negAnswer[sign-1] = '-';
     EXPECT_STRCASEEQ( negResult.c_str(), negAnswer.c_str() );
   }
+}
+
+TEST( testStringUtilities, testStartsAndEndsWith )
+{
+  // classic use cases
+  EXPECT_TRUE( stringutilities::startsWith( "Hello World", "Hello" ) );
+  EXPECT_TRUE( stringutilities::endsWith( "Hello World", "World" ) );
+
+  // inverted prefix & suffix
+  EXPECT_FALSE( stringutilities::endsWith( "Hello World", "Hello" ) );
+  EXPECT_FALSE( stringutilities::startsWith( "Hello World", "World" ) );
+  EXPECT_FALSE( stringutilities::endsWith( "Hello World", "H" ) );
+  EXPECT_FALSE( stringutilities::startsWith( "Hello World", "d" ) );
+
+  // If prefix / suffix equals input string, then it must return true
+  EXPECT_TRUE( stringutilities::startsWith( "Hello World", "Hello World" ) );
+  EXPECT_TRUE( stringutilities::endsWith( "Hello World", "Hello World" ) );
+  EXPECT_TRUE( stringutilities::startsWith( "H", "H" ) );
+  EXPECT_TRUE( stringutilities::endsWith( "d", "d" ) );
+  EXPECT_TRUE( stringutilities::startsWith( "", "" ) );
+  EXPECT_TRUE( stringutilities::endsWith( "", "" ) );
+
+  // Empty prefix / suffix are expected to work
+  EXPECT_TRUE( stringutilities::startsWith( "Hello World", "" ) );
+  EXPECT_TRUE( stringutilities::endsWith( "Hello World", "" ) );
+
+  // the prefix / suffix is longer than the input string: return false (inverted parameters mistake?)
+  EXPECT_FALSE( stringutilities::startsWith( "Hello", "Hello World" ) );
+  EXPECT_FALSE( stringutilities::endsWith( "World", "Hello World" ) );
+
+  // the prefix / suffix is longer than the input string: return false (inverted parameters mistake?)
+  EXPECT_FALSE( stringutilities::startsWith( "Hello", "Hello World" ) );
+  EXPECT_FALSE( stringutilities::endsWith( "World", "Hello World" ) );
+  EXPECT_FALSE( stringutilities::startsWith( "", "Hello World" ) );
+  EXPECT_FALSE( stringutilities::endsWith( "", "Hello World" ) );
 }

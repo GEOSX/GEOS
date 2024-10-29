@@ -47,7 +47,7 @@
       name="cellVelocity"
       initialCondition="1"
       objectPath="mesh/FE1/ElementRegions/Region/cb"
-      fieldName="mediumVelocity"
+      fieldName="acousticVelocity"
       scale="1500.0"
       setNames="{ all }"/>
 
@@ -55,7 +55,7 @@
       name="cellDensity"
       initialCondition="1"
       objectPath="mesh/FE1/ElementRegions/Region/cb"
-      fieldName="mediumDensity"
+      fieldName="acousticDensity"
       scale="1.0"
       setNames="{ all }"/>
 

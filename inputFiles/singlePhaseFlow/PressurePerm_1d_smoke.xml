@@ -1,0 +1,75 @@
+<?xml version="1.0" ?>
+
+<Problem>
+
+  <Included>
+    <File name="./PressurePerm_1d_base.xml"/>
+  </Included>  
+
+  <Solvers>
+
+    <SinglePhaseFVM
+      name="singlePhaseFlow"
+      logLevel="1"
+      discretization="fluidTPFA"
+      targetRegions="{ Domain }">
+      <NonlinearSolverParameters
+        newtonMaxIter="40"
+        newtonTol="1e-10"/>
+      <LinearSolverParameters
+        directParallel="0"/>
+    </SinglePhaseFVM>
+
+  </Solvers>
+
+  <Mesh>
+    <InternalMesh
+      name="mesh"
+      elementTypes="{ C3D8 }"
+      xCoords="{ 0, 21 }"
+      yCoords="{ 0, 1 }"
+      zCoords="{ 0, 1 }"
+      nx="{ 21 }"
+      ny="{ 1 }"
+      nz="{ 1 }"
+      cellBlockNames="{ cb1 }">
+    </InternalMesh>
+  </Mesh>
+
+  <Events
+      maxTime="2e2">
+    
+    <PeriodicEvent
+      name="outputs"
+      cycleFrequency="10"
+      target="/Outputs/vtkOutput_flow"/>
+
+    <PeriodicEvent
+      name="solverApplications"
+      beginTime="0"
+      maxEventDt="10"
+      target="/Solvers/singlePhaseFlow"/>
+
+    <PeriodicEvent
+      name="restarts"
+      cycleFrequency="10"
+      target="/Outputs/restartOutput"/>
+
+  </Events>
+
+  <Geometry>
+    <Box
+      name="source"
+      xMin="{ 9.99, -0.01, -0.01 }"
+      xMax="{ 11.01, 1.01, 1.01 }"/>
+  </Geometry>
+
+  <Outputs>
+    <VTK
+      name="vtkOutput_flow"/>
+
+    <Restart
+      name="restartOutput"/>
+  </Outputs>
+</Problem>
+

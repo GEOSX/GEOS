@@ -2,10 +2,11 @@
  * ------------------------------------------------------------------------------------------------------------
  * SPDX-License-Identifier: LGPL-2.1-only
  *
- * Copyright (c) 2018-2020 Lawrence Livermore National Security LLC
- * Copyright (c) 2018-2020 The Board of Trustees of the Leland Stanford Junior University
- * Copyright (c) 2018-2020 TotalEnergies
- * Copyright (c) 2019-     GEOSX Contributors
+ * Copyright (c) 2016-2024 Lawrence Livermore National Security LLC
+ * Copyright (c) 2018-2024 Total, S.A
+ * Copyright (c) 2018-2024 The Board of Trustees of the Leland Stanford Junior University
+ * Copyright (c) 2018-2024 Chevron
+ * Copyright (c) 2019-     GEOS/GEOSX Contributors
  * All rights reserved
  *
  * See top level LICENSE, COPYRIGHT, CONTRIBUTORS, NOTICE, and ACKNOWLEDGEMENTS files for details.
@@ -65,6 +66,10 @@ public:
 
 
   static string catalogName() { return "SurfaceGenerator"; }
+  /**
+   * @copydoc SolverBase::getCatalogName()
+   */
+  string getCatalogName() const override { return catalogName(); }
 
   virtual void registerDataOnMesh( Group & MeshBody ) override final;
 
@@ -94,6 +99,8 @@ public:
   /**@}*/
 
   inline string const getFractureRegionName() const { return m_fractureRegionName; }
+
+  void postInputInitialization() override final;
 
 protected:
 
@@ -510,6 +517,7 @@ private:
     constexpr static char const * trailingFacesString() { return "trailingFaces"; }
     constexpr static char const * fractureRegionNameString() { return "fractureRegion"; }
     constexpr static char const * mpiCommOrderString() { return "mpiCommOrder"; }
+    constexpr static char const * isPoroelasticString() {return "isPoroelastic";}
 
     //TODO: rock toughness should be a material parameter, and we need to make rock toughness to KIC a constitutive
     // relation.
@@ -517,7 +525,6 @@ private:
 
 //    //TODO: Once the node-based SIF criterion becomes mature and robust, remove the edge-based criterion.
     constexpr static char const * nodeBasedSIFString() { return "nodeBasedSIF"; }
-
   };
 
 
@@ -531,6 +538,8 @@ private:
   array1d< localIndex > m_solidMaterialFullIndex;
 
   int m_nodeBasedSIF;
+
+  int m_isPoroelastic;
 
   real64 m_rockToughness;
 

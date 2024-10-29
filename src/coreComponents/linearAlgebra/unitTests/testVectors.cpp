@@ -2,11 +2,12 @@
  * ------------------------------------------------------------------------------------------------------------
  * SPDX-License-Identifier: LGPL-2.1-only
  *
- * Copyright (c) 2018-2019 Lawrence Livermore National Security LLC
- * Copyright (c) 2018-2019 The Board of Trustees of the Leland Stanford Junior University
- * Copyright (c) 2018-2019 TotalEnergies
- * Copyright (c) 2019-     GEOSX Contributors
- * All right reserved
+ * Copyright (c) 2016-2024 Lawrence Livermore National Security LLC
+ * Copyright (c) 2018-2024 Total, S.A
+ * Copyright (c) 2018-2024 The Board of Trustees of the Leland Stanford Junior University
+ * Copyright (c) 2018-2024 Chevron
+ * Copyright (c) 2019-     GEOS/GEOSX Contributors
+ * All rights reserved
  *
  * See top level LICENSE, COPYRIGHT, CONTRIBUTORS, NOTICE, and ACKNOWLEDGEMENTS files for details.
  * ------------------------------------------------------------------------------------------------------------
@@ -150,7 +151,7 @@ TYPED_TEST_P( VectorTest, copyConstruction )
   using Vector = typename TypeParam::ParallelVector;
 
   Vector x;
-  createAndAssemble< parallelDevicePolicy<> >( 3, x );
+  createAndAssemble< geos::parallelDevicePolicy<> >( 3, x );
   Vector y( x );
 
   // Test that values are equal after copy construction
@@ -168,12 +169,12 @@ TYPED_TEST_P( VectorTest, moveConstruction )
   using Vector = typename TypeParam::ParallelVector;
 
   Vector x;
-  createAndAssemble< parallelDevicePolicy<> >( 3, x );
+  createAndAssemble< geos::parallelDevicePolicy<> >( 3, x );
   localIndex const localSize = x.localSize();
   globalIndex const globalSize = x.globalSize();
 
   array1d< real64 > values( x.localSize() );
-  values.template setValues< parallelDevicePolicy<> >( x.values() );
+  values.template setValues< geos::parallelDevicePolicy<> >( x.values() );
 
   Vector y( std::move( x ) );
 
@@ -189,7 +190,7 @@ TYPED_TEST_P( VectorTest, copy )
   using Vector = typename TypeParam::ParallelVector;
 
   Vector x;
-  createAndAssemble< parallelDevicePolicy<> >( 3, x );
+  createAndAssemble< geos::parallelDevicePolicy<> >( 3, x );
 
   Vector y;
   y.create( x.localSize(), x.comm() );
@@ -222,7 +223,7 @@ TYPED_TEST_P( VectorTest, zeroAllValues )
   using Vector = typename TypeParam::ParallelVector;
 
   Vector x;
-  createAndAssemble< parallelDevicePolicy<> >( 3, x );
+  createAndAssemble< geos::parallelDevicePolicy<> >( 3, x );
 
   x.zero();
 
@@ -239,10 +240,10 @@ TYPED_TEST_P( VectorTest, scaleValues )
   using Vector = typename TypeParam::ParallelVector;
 
   Vector x;
-  createAndAssemble< parallelDevicePolicy<> >( 3, x );
+  createAndAssemble< geos::parallelDevicePolicy<> >( 3, x );
 
   array1d< real64 > values( x.localSize() );
-  values.template setValues< parallelDevicePolicy<> >( x.values() );
+  values.template setValues< geos::parallelDevicePolicy<> >( x.values() );
 
   real64 const factor = 0.5;
   Vector y( x );
@@ -256,7 +257,7 @@ TYPED_TEST_P( VectorTest, reciprocal )
   using Vector = typename TypeParam::ParallelVector;
 
   Vector x;
-  createAndAssemble< parallelDevicePolicy<> >( 3, x );
+  createAndAssemble< geos::parallelDevicePolicy<> >( 3, x );
 
   Vector y( x );
   y.reciprocal();
@@ -269,7 +270,7 @@ TYPED_TEST_P( VectorTest, dotProduct )
   using Vector = typename TypeParam::ParallelVector;
 
   Vector x;
-  createAndAssemble< parallelDevicePolicy<> >( 3, x );
+  createAndAssemble< geos::parallelDevicePolicy<> >( 3, x );
 
   Vector y( x );
   y.reciprocal();
@@ -285,7 +286,7 @@ TYPED_TEST_P( VectorTest, axpy )
   real64 const alpha = 1.23;
 
   Vector x;
-  createAndAssemble< parallelDevicePolicy<> >( 3, x );
+  createAndAssemble< geos::parallelDevicePolicy<> >( 3, x );
 
   Vector y( x );
   x.axpy( alpha, y );
@@ -301,7 +302,7 @@ TYPED_TEST_P( VectorTest, axpby )
   real64 const beta = 3.0;
 
   Vector x;
-  createAndAssemble< parallelDevicePolicy<> >( 3, x );
+  createAndAssemble< geos::parallelDevicePolicy<> >( 3, x );
 
   Vector y( x );
   x.axpby( alpha, y, beta );
@@ -314,7 +315,7 @@ TYPED_TEST_P( VectorTest, norm1 )
   using Vector = typename TypeParam::ParallelVector;
 
   Vector x;
-  createAndAssemble< parallelDevicePolicy<> >( 3, x );
+  createAndAssemble< geos::parallelDevicePolicy<> >( 3, x );
 
   real64 const normTrue = ( x.globalSize() + 1 ) * x.globalSize() / 2;
   EXPECT_DOUBLE_EQ( x.norm1(), normTrue );
@@ -327,7 +328,7 @@ TYPED_TEST_P( VectorTest, norm2 )
   using Vector = typename TypeParam::ParallelVector;
 
   Vector x;
-  createAndAssemble< parallelDevicePolicy<> >( 3, x );
+  createAndAssemble< geos::parallelDevicePolicy<> >( 3, x );
 
   real64 const normTrue = std::sqrt( ( 2 * x.globalSize() + 1 ) * ( x.globalSize() + 1 ) * x.globalSize() / 6 );
   EXPECT_DOUBLE_EQ( x.norm2(), normTrue );
@@ -340,7 +341,7 @@ TYPED_TEST_P( VectorTest, normInf )
   using Vector = typename TypeParam::ParallelVector;
 
   Vector x;
-  createAndAssemble< parallelDevicePolicy<> >( 3, x );
+  createAndAssemble< geos::parallelDevicePolicy<> >( 3, x );
 
   real64 const normTrue = x.globalSize();
   EXPECT_DOUBLE_EQ( x.normInf(), normTrue );
@@ -364,15 +365,15 @@ REGISTER_TYPED_TEST_SUITE_P( VectorTest,
                              norm2,
                              normInf );
 
-#ifdef GEOSX_USE_TRILINOS
+#ifdef GEOS_USE_TRILINOS
 INSTANTIATE_TYPED_TEST_SUITE_P( Trilinos, VectorTest, TrilinosInterface, );
 #endif
 
-#ifdef GEOSX_USE_HYPRE
+#ifdef GEOS_USE_HYPRE
 INSTANTIATE_TYPED_TEST_SUITE_P( Hypre, VectorTest, HypreInterface, );
 #endif
 
-#ifdef GEOSX_USE_PETSC
+#ifdef GEOS_USE_PETSC
 INSTANTIATE_TYPED_TEST_SUITE_P( Petsc, VectorTest, PetscInterface, );
 #endif
 

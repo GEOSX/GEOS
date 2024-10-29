@@ -3,7 +3,11 @@ matplotlib
 numpy
 h5py
 mpmath
-docutils<0.18
-# using plantuml for diagrams
+docutils>=0.18
+pandas
+Sphinx>=7.0.0
+sphinx_rtd_theme
 sphinxcontrib-plantuml
 sphinx-argparse
+sphinx-design
+sphinxcontrib-programoutput>=0.17

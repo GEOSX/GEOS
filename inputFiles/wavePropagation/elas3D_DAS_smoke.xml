@@ -133,7 +133,7 @@
       name="cellVelocityVp"
       initialCondition="1"
       objectPath="ElementRegions/Region/cb"
-      fieldName="mediumVelocityVp"
+      fieldName="elasticVelocityVp"
       scale="4000"
       setNames="{ all }"/>
 
@@ -141,7 +141,7 @@
       name="cellVelocityVs"
       initialCondition="1"
       objectPath="ElementRegions/Region/cb"
-      fieldName="mediumVelocityVs"
+      fieldName="elasticVelocityVs"
       scale="2000"
       setNames="{ all }"/>
 
@@ -149,7 +149,7 @@
       name="cellDensity"
       initialCondition="1"
       objectPath="ElementRegions/Region/cb"
-      fieldName="mediumDensity"
+      fieldName="elasticDensity"
       scale="2000"
       setNames="{ all }"/>
 
@@ -158,6 +158,7 @@
   <Outputs>
     <VTK
       name="vtkOutput"
+      levelNames="{ FE1 }"
       plotLevel="3"/>
     <Restart
       name="restartOutput"/>

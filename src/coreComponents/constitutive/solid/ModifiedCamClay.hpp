@@ -2,11 +2,12 @@
  * ------------------------------------------------------------------------------------------------------------
  * SPDX-License-Identifier: LGPL-2.1-only
  *
- * Copyright (c) 2018-2019 Lawrence Livermore National Security LLC
- * Copyright (c) 2018-2019 The Board of Trustees of the Leland Stanford Junior University
- * Copyright (c) 2018-2019 TotalEnergies
- * Copyright (c) 2019-     GEOSX Contributors
- * All right reserved
+ * Copyright (c) 2016-2024 Lawrence Livermore National Security LLC
+ * Copyright (c) 2018-2024 Total, S.A
+ * Copyright (c) 2018-2024 The Board of Trustees of the Leland Stanford Junior University
+ * Copyright (c) 2018-2024 Chevron
+ * Copyright (c) 2019-     GEOS/GEOSX Contributors
+ * All rights reserved
  *
  * See top level LICENSE, COPYRIGHT, CONTRIBUTORS, NOTICE, and ACKNOWLEDGEMENTS files for details.
  * ------------------------------------------------------------------------------------------------------------
@@ -69,8 +70,19 @@ public:
                           arrayView1d< real64 const > const & thermalExpansionCoefficient,
                           arrayView3d< real64, solid::STRESS_USD > const & newStress,
                           arrayView3d< real64, solid::STRESS_USD > const & oldStress,
+                          arrayView2d< real64 > const & density,
+                          arrayView2d< real64 > const & wavespeed,
                           bool const & disableInelasticity ):
-    ElasticIsotropicPressureDependentUpdates( refPressure, refStrainVol, recompressionIndex, shearModulus, thermalExpansionCoefficient, newStress, oldStress, disableInelasticity ),
+    ElasticIsotropicPressureDependentUpdates( refPressure, 
+                                              refStrainVol,
+                                              recompressionIndex,
+                                              shearModulus,
+                                              thermalExpansionCoefficient,
+                                              newStress,
+                                              oldStress,
+                                              density,
+                                              wavespeed,
+                                              disableInelasticity ),
     m_virginCompressionIndex( virginCompressionIndex ),
     m_cslSlope( cslSlope ),
     m_newPreConsolidationPressure( newPreConsolidationPressure ),
@@ -227,6 +239,7 @@ void ModifiedCamClayUpdates::smallStrainUpdate( localIndex const k,
 {
 
   // Rename variables for easier implementation
+
   GEOS_UNUSED_VAR( timeIncrement );
   real64 const oldPc  = m_oldPreConsolidationPressure[k][q];   //pre-consolidation pressure
   real64 const mu     = m_shearModulus[k];
@@ -271,7 +284,6 @@ void ModifiedCamClayUpdates::smallStrainUpdate( localIndex const k,
   }
 
   // else, plasticity (trial stress point lies outside yield surface)
-
   eps_v_trial = std::log( trialP/p0 ) * Cr * (-1.0) + eps_v0;
   eps_s_trial = trialQ/3.0/mu;
 
@@ -558,6 +570,8 @@ public:
                                    m_thermalExpansionCoefficient,
                                    m_newStress,
                                    m_oldStress,
+                                   m_density,
+                                   m_wavespeed,
                                    m_disableInelasticity );
   }
 
@@ -583,12 +597,14 @@ public:
                           m_thermalExpansionCoefficient,
                           m_newStress,
                           m_oldStress,
+                          m_density,
+                          m_wavespeed,
                           m_disableInelasticity );
   }
 
 
 protected:
-  virtual void postProcessInput() override;
+  virtual void postInputInitialization() override;
 
   /// Material parameter: The default value of the virgin compression index
   real64 m_defaultVirginCompressionIndex;
