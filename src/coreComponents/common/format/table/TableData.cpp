@@ -44,7 +44,7 @@ void TableData::addSeparator()
   }
   integer rowSize = m_rows[0].size();
   m_rows.emplace_back( std::vector< string >( rowSize, "*" )); // Separator = '\1' ou un autre char ascii reservé ET
-                                                                                       // disponible
+  // disponible
 }
 
 void TableData::clear()
@@ -99,7 +99,6 @@ TableData2D::TableDataHolder TableData2D::buildTableData( string_view targetUnit
                                                           string_view columnFmt ) const
 {
   TableData2D::TableDataHolder tableData1D;
-  std::vector< size_t > rowsLength;
 
   tableData1D.headerNames.push_back( string( targetUnit ) );
 
@@ -126,8 +125,7 @@ TableData2D::TableDataHolder TableData2D::buildTableData( string_view targetUnit
       currentRowValues.push_back( GEOS_FMT( "{}", cellValue ) );
     }
 
-    tableData1D.tableData.addRow( std::move( currentRowValues ) );
-    rowsLength.push_back( currentRowValues.size() );
+    tableData1D.tableData.addRow( currentRowValues );
   }
 
   return tableData1D;

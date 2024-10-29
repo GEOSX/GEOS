@@ -26,6 +26,9 @@
 #include "fileIO/Outputs/OutputBase.hpp"
 #include "mesh/DomainPartition.hpp"
 #include "physicsSolvers/solidMechanics/LogLevelsInfo.hpp"
+#include "common/format/table/TableData.hpp"
+#include "common/format/table/TableFormatter.hpp"
+#include "common/format/table/TableLayout.hpp"
 
 namespace geos
 {
@@ -155,13 +158,24 @@ void SolidMechanicsStatistics::computeNodeStatistics( MeshLevel & mesh, real64 c
                          MpiWrapper::getMpiOp( MpiWrapper::Reduction::Min ),
                          MPI_COMM_GEOS );
 
-  GEOS_LOG_LEVEL_INFO_RANK_0( logInfo::Statistics, GEOS_FMT( "{} (time {} s): Min displacement (X, Y, Z): {}, {}, {} m",
-                                                             getName(), time, nodeStatistics.minDisplacement[0],
-                                                             nodeStatistics.minDisplacement[1], nodeStatistics.minDisplacement[2] ) );
-  GEOS_LOG_LEVEL_INFO_RANK_0( logInfo::Statistics, GEOS_FMT( "{} (time {} s): Max displacement (X, Y, Z): {}, {}, {} m",
-                                                             getName(), time, nodeStatistics.maxDisplacement[0],
-                                                             nodeStatistics.maxDisplacement[1], nodeStatistics.maxDisplacement[2] ) );
+  TableData mechanicsData;
+  mechanicsData.addRow( "min", GEOS_FMT( "[{},{},{}]", nodeStatistics.minDisplacement[0],
+                                         nodeStatistics.minDisplacement[1], nodeStatistics.minDisplacement[2] ));
+  mechanicsData.addRow( "max", GEOS_FMT( "[{},{},{}]", nodeStatistics.maxDisplacement[0],
+                                         nodeStatistics.maxDisplacement[1], nodeStatistics.maxDisplacement[2] ));
 
+  // GEOS_LOG_LEVEL_INFO_RANK_0( logInfo::Statistics, GEOS_FMT( "{} (time {} s): Min displacement (X, Y, Z): {}, {}, {} m",
+  //                                                            getName(), time, nodeStatistics.minDisplacement[0],
+  //                                                            nodeStatistics.minDisplacement[1], nodeStatistics.minDisplacement[2] ) );
+  // GEOS_LOG_LEVEL_INFO_RANK_0( logInfo::Statistics, GEOS_FMT( "{} (time {} s): Max displacement (X, Y, Z): {}, {}, {} m",
+  //                                                            getName(), time, nodeStatistics.maxDisplacement[0],
+  //                                                            nodeStatistics.maxDisplacement[1], nodeStatistics.maxDisplacement[2] ) );
+
+  TableLayout mechanicsLayout( GEOS_FMT( "{} (time {} s)", getName(), time ),
+                               { " ", "Displacement (X, Y, Z)"} );
+
+  TableTextFormatter mechanicsFormatter( mechanicsLayout );
+  GEOS_LOG_RANK_0( mechanicsFormatter.toString( mechanicsData ));
   if( m_writeCSV > 0 && MpiWrapper::commRank() == 0 )
   {
     std::ofstream outputFile( m_outputDir + "/" + mesh.getName() + "_node_statistics" + ".csv", std::ios_base::app );
