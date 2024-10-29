@@ -58,7 +58,7 @@ public:
     // Level 0: eliminate last density which corresponds to the volume constraint equation
     // m_labels[0].resize( m_numBlocks - 1 );
     // std::iota( m_labels[0].begin(), m_labels[0].end(), 0 );
-    
+
     // Level 0: eliminate the phase volume fractions
     m_labels[0].push_back( 0 );
 

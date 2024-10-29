@@ -1,0 +1,54 @@
+<?xml version="1.0" ?>
+
+<Problem>
+
+  <Included>
+    <File
+      name="./immiscibleTwoPhase_SPE10_layer84_base_iterative.xml"/>
+  </Included>
+
+
+  <!-- SPHINX_TUT_DEAD_OIL_BOTTOM_SPE10_MESH -->
+  <Mesh>
+    <InternalMesh
+      name="mesh"
+      elementTypes="{ C3D8 }"
+      xCoords="{ 0, 365.76 }"
+      yCoords="{ 0, 670.56 }"
+      zCoords="{ 0, 0.7 }"
+      nx="{ 60 }"
+      ny="{ 220 }"
+      nz="{ 1 }"
+      cellBlockNames="{ block }"/>
+  </Mesh>
+  <!-- SPHINX_TUT_DEAD_OIL_BOTTOM_SPE10_MESH_END -->
+
+  <!-- SPHINX_TUT_DEAD_OIL_BOTTOM_SPE10_GEOMETRY -->  
+  <Geometry>
+
+    <Box
+      name="source"
+      xMin="{ 182.85, 335.25, -0.01 }"
+      xMax="{ 189.00, 338.35, 2.00 }"/>
+    <Box
+      name="sink1"
+      xMin="{ -0.01, -0.01, -0.01 }"
+      xMax="{ 6.126, 3.078, 2.00 }"/>
+    <Box
+      name="sink2"
+      xMin="{ -0.01, 667.482, -0.01 }"
+      xMax="{ 6.126, 670.60, 2.00 }"/>
+    <Box
+      name="sink3"
+      xMin="{ 359.634, -0.01, -0.01 }"
+      xMax="{ 365.8, 3.048, 2.00 }"/>
+    <Box
+      name="sink4"
+      xMin="{ 359.634, 667.482, -0.01 }"
+      xMax="{ 365.8, 670.60, 2.00 }"/>
+    
+  </Geometry>
+  <!-- SPHINX_TUT_DEAD_OIL_BOTTOM_SPE10_GEOMETRY_END -->  
+
+  
+</Problem>
