@@ -14,7 +14,7 @@
       receiverCoordinates="{ { 1415,1015,1015 } }"
       outputSeismoTrace="1"
       dtSeismoTrace="0.0025"
-      timestepStabilityLimit="1"
+      timestepStabilityLimit="0"
       cflFactor="0.95"
       sourceWaveletTableNames="{ sourceTable1, sourceTable2 }"
       />
@@ -85,7 +85,7 @@
     <PeriodicEvent
       name="solverApplications"
       target="/Solvers/acousticSolver"
-      forceDt="0.0026"/>
+      forceDt="0.001"/>
 
     <PeriodicEvent
       name="timeHistoryCollection"
