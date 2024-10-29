@@ -87,6 +87,7 @@ public:
        CONSTITUTIVE_TYPE & inputConstitutiveType,
        arrayView1d< globalIndex const > const uDofNumber,
        arrayView1d< globalIndex const > const bDofNumber,
+       arrayView1d< globalIndex const > const tDofNumber,
        globalIndex const rankOffset,
        CRSMatrixView< real64, globalIndex const > const inputMatrix,
        arrayView1d< real64 > const inputRhs,
@@ -107,7 +108,8 @@ public:
           inputRhs,
           inputDt,
           faceElementList ),
-    m_traction( elementSubRegion.getField< fields::contact::traction >().toViewConst())
+    m_traction( elementSubRegion.getField< fields::contact::traction >().toViewConst() ),
+    m_tDofNumber( tDofNumber )
   {}
 
   //***************************************************************************
@@ -304,7 +306,7 @@ protected:
 
   arrayView2d< real64 const > const m_traction;
 
-  bool const m_symmetric;
+  arrayView1d< localIndex const > const m_tDofNumber;
 
 private:
 
