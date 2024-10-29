@@ -416,8 +416,7 @@ void DomainPartition::outputPartitionInformation() const
                                       TableLayout::Column{"Edges", {"local", "ghost"}},
                                       TableLayout::Column{"Faces", {"local", "ghost"}},
                                       TableLayout::Column{"Elems", {"local", "ghost"}}} );
-        layoutPartition.setMargin( TableLayout::MarginValue::large );
-        layoutPartition.disableLineWrap();
+        layoutPartition.setMargin( TableLayout::MarginValue::large ).disableLineWrap();
 
         TableData dataPartition;
         dataPartition.addRow( "min",

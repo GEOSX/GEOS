@@ -27,13 +27,12 @@ using namespace geos;
 TEST( testTable, tableEmptyRow )
 {
   //table with empty row
-  TableLayout tableLayout( {"Well\nelement no.\nPV weighted\nbar",
-                            "CordX",
-                            "CoordZ",
-                            "Prev\nelement",
-                            "Next\nelement"} );
-  string const title = "InternalWellGenerator well_injector1";
-  tableLayout.setTitle( title );
+  TableLayout const tableLayout( "InternalWellGenerator well_injector1",
+                                 {"Well\nelement no.\nPV weighted\nbar",
+                                  "CordX",
+                                  "CoordZ",
+                                  "Prev\nelement",
+                                  "Next\nelement"} );
 
   TableData tableData;
   tableData.addRow( "value1", "[30.21543]", "3.0", 54, 0 );
@@ -61,13 +60,12 @@ TEST( testTable, tableEmptyRow )
 
 TEST( testTable, tableClassic )
 {
-  TableLayout tableLayout( {"Duis fringilla, ligula sed porta fringilla,\nligula wisi commodo felis,ut adipiscing felis dui in enim. Suspendisse malesuada ultrices ante",
-                            "CordX",
-                            "CoordZ",
-                            "Prev\nelement",
-                            "Next\nelement"} );
-  string const title = "InternalWellGenerator well_injector1";
-  tableLayout.setTitle( title );
+  TableLayout const tableLayout( "InternalWellGenerator well_injector1",
+                                 {"Duis fringilla, ligula sed porta fringilla,\nligula wisi commodo felis,ut adipiscing felis dui in enim. Suspendisse malesuada ultrices ante",
+                                  "CordX",
+                                  "CoordZ",
+                                  "Prev\nelement",
+                                  "Next\nelement"} );
 
   TableData tableData;
   tableData.addRow( "value1", "[30.21543]", "3.0", 54, 0 );
@@ -98,18 +96,15 @@ TEST( testTable, tableColumnParamClassic ) //TODO
                             TableLayout::Column{{"Prev\nelement"}, TableLayout::Alignment::right},
                             TableLayout::Column{{"Next\nelement"}, TableLayout::Alignment::right}} );
   tableLayout.setValuesAlignment( TableLayout::Alignment::right );
-  string const title = "InternalWellGenerator well_injector1";
-  tableLayout.setTitle( title );
 
   TableData tableData;
   tableData.addRow( "value1", " ", "3.0", 3.0129877, 2.0f, 1 );
   tableData.addRow( "val1", "v", "[3.045,42.02,89.25]", 3.0, 10.0f, 3 );
 
   TableTextFormatter const tableText( tableLayout );
+  std::cout <<  tableText.toString( tableData ) <<std::endl;
   EXPECT_EQ( tableText.toString( tableData ),
              "\n-------------------------------------------------------------------------------------------\n"
-             "|                          InternalWellGenerator well_injector1                           |\n"
-             "-------------------------------------------------------------------------------------------\n"
              "|  Cras egestas  |  CoordX  |  C                    |  CoordZ     |     Prev  |     Next  |\n"
              "|                |          |                       |             |  element  |  element  |\n"
              "-------------------------------------------------------------------------------------------\n"
@@ -121,14 +116,15 @@ TEST( testTable, tableColumnParamClassic ) //TODO
 
 TEST( testTable, tableHiddenColumn ) // TODO
 {
-  TableLayout tableLayout( {TableLayout::Column{{"Cras egestas"}, TableLayout::Alignment::center},
+  string const title = "Cras egestas ipsum a nisl. Vivamus variu dolor utsisicdis parturient montes, nascetur ridiculus mus. Duis";
+  TableLayout tableLayout( title,
+                           {TableLayout::Column{{"Cras egestas"}, TableLayout::Alignment::center},
                             TableLayout::Column{{"CoordX"}, TableLayout::Alignment::right},
                             TableLayout::Column{{"C"}, TableLayout::Alignment::center},
                             TableLayout::Column{{"CoordZ"}, TableLayout::Alignment::left},
                             TableLayout::Column{{"Prev\nelement"}, TableLayout::Alignment::left, false},
                             TableLayout::Column{{"Next\nelement"}, TableLayout::Alignment::center, false}} );
-  string const title = "Cras egestas ipsum a nisl. Vivamus variu dolor utsisicdis parturient montes, nascetur ridiculus mus. Duis";
-  tableLayout.setTitle( title ).setValuesAlignment( TableLayout::Alignment::left );
+  tableLayout.setValuesAlignment( TableLayout::Alignment::left );
 
   TableData tableData;
   tableData.addRow( "value1", " ", "3.0", 3.0129877, 2.0f, 1 );
@@ -148,9 +144,8 @@ TEST( testTable, tableHiddenColumn ) // TODO
 
 TEST( testTable, tableUniqueColumn )
 {
-  TableLayout tableLayout( {TableLayout::Column{{"Cras egestas"}, TableLayout::Alignment::center}} );
   string const title = "Cras egestas ipsum a nisl. Vivamus variu dolor utsisicdis parturient montes, nascetur ridiculus mus. Duis";
-  tableLayout.setTitle( title );
+  TableLayout const tableLayout( title, {TableLayout::Column{{"Cras egestas"}, TableLayout::Alignment::center}} );
 
   TableData tableData;
   tableData.addRow( "value1" );
@@ -170,12 +165,12 @@ TEST( testTable, tableUniqueColumn )
 
 TEST( testTable, tableEmptyTitle )
 {
-  TableLayout tableLayout( {TableLayout::Column{{"Cras egestas"}, TableLayout::Alignment::center},
-                            TableLayout::Column{{"CoordX"}, TableLayout::Alignment::right},
-                            TableLayout::Column{{"C"}, TableLayout::Alignment::center},
-                            TableLayout::Column{{"CoordZ"}, TableLayout::Alignment::left},
-                            TableLayout::Column{{"Prev\nelement"}, TableLayout::Alignment::left},
-                            TableLayout::Column{{"Next\nelement"}, TableLayout::Alignment::center}} );
+  TableLayout const tableLayout( {TableLayout::Column{{"Cras egestas"}, TableLayout::Alignment::center},
+                                  TableLayout::Column{{"CoordX"}, TableLayout::Alignment::right},
+                                  TableLayout::Column{{"C"}, TableLayout::Alignment::center},
+                                  TableLayout::Column{{"CoordZ"}, TableLayout::Alignment::left},
+                                  TableLayout::Column{{"Prev\nelement"}, TableLayout::Alignment::left},
+                                  TableLayout::Column{{"Next\nelement"}, TableLayout::Alignment::center}} );
 
   TableData tableData;
   tableData.addRow( "value1", " ", "3.0", 3.0129877, 2.0f, 1 );
@@ -215,7 +210,7 @@ TEST( testTable, table2DTable )
                                                                           columnFmt );
 
   //format
-  TableLayout tableLayout( "", tableconverted.headerNames );
+  TableLayout const tableLayout( "", tableconverted.headerNames );
 
   //log
   TableTextFormatter const tableText( tableLayout );
@@ -234,8 +229,7 @@ TEST( testTable, layoutTable )
 {
   string filename = "fluid1_phaseModel1_PhillipsBrineDensity_table";
   string log = GEOS_FMT( "The {} PVT table exceeding 500 rows.\nTo visualize the tables, go to the generated csv \n", filename );
-  TableLayout tableLayoutInfos( {TableLayout::Column{{log}, TableLayout::Alignment::left}} );
-  tableLayoutInfos.setTitle( filename );
+  TableLayout const tableLayoutInfos( filename, {TableLayout::Column{{log}, TableLayout::Alignment::left}} );
 
   TableTextFormatter const tableText( tableLayoutInfos );
   EXPECT_EQ( tableText.toString(),
@@ -251,12 +245,12 @@ TEST( testTable, layoutTable )
 TEST( testTable, subColumns )
 {
   {
-    TableLayout tableLayout( {" ",
-                              "Column1",
-                              TableLayout::Column{"Nodes ", TableLayout::Alignment::right, true, {"Locales", "Ghost", "Active"}},
-                              "Column3",
-                              TableLayout::Column{"Column4 ", TableLayout::Alignment::right, true, {"Locales", "Ghost"}},
-                              "Column5"} );
+    TableLayout const tableLayout( {" ",
+                                    "Column1",
+                                    TableLayout::Column{"Nodes ", TableLayout::Alignment::right, true, {"Locales", "Ghost", "Active"}},
+                                    "Column3",
+                                    TableLayout::Column{"Column4 ", TableLayout::Alignment::right, true, {"Locales", "Ghost"}},
+                                    "Column5"} );
 
     TableData tableData;
     tableData.addRow( "min", "125", "375,0001", " YES", 2354654, 562, 43.0, 43.0, 562, 5 );
