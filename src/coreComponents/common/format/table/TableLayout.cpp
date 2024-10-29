@@ -60,7 +60,7 @@ TableLayout & TableLayout::setTitle( string_view title )
   return *this;
 }
 
-TableLayout & TableLayout::disableLineWrap()
+TableLayout & TableLayout::disableLineBreak()
 {
   m_wrapLine = false;
   return *this;
@@ -84,7 +84,7 @@ TableLayout & TableLayout::setValuesAlignment( TableLayout::Alignment alignment 
   return *this;
 }
 
-bool TableLayout::isLineWrapEnabled() const
+bool TableLayout::isLineBreakEnabled() const
 {
   return m_wrapLine;
 }

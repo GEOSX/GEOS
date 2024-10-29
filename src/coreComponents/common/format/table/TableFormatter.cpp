@@ -232,7 +232,7 @@ void TableTextFormatter::outputTable( std::ostringstream & tableOutput,
 {
   integer const nbValuesRows = tableColumnsData[0].columnValues.size();
 
-  if( m_tableLayout.isLineWrapEnabled())
+  if( m_tableLayout.isLineBreakEnabled())
   {
     tableOutput << '\n';
   }
@@ -242,7 +242,7 @@ void TableTextFormatter::outputTable( std::ostringstream & tableOutput,
   outputHeaderSectionRows( tableColumnsData, tableOutput, nbHeaderRows, sectionSeparatingLine );
 
   outputValuesSectionRows( tableColumnsData, tableOutput, nbValuesRows, sectionSeparatingLine );
-  if( m_tableLayout.isLineWrapEnabled())
+  if( m_tableLayout.isLineBreakEnabled())
   {
     tableOutput << '\n';
   }

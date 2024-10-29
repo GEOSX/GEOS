@@ -159,7 +159,7 @@ public:
      * @param col The parameters for the column.
      * @param subColumnInit The subcolumns contained in the colum
      */
-    TableColumnData ( Column col, std::vector< TableColumnData > subColumnInit )
+    TableColumnData ( Column col, std::vector< TableColumnData > const & subColumnInit )
       : column( col ), subColumn( subColumnInit )
     {}
 
@@ -170,10 +170,10 @@ public:
      * @param maxStringSizeInit The largest string(s) in the column.
      * @param subColumnInit The sub-columns of the column.
      */
-    TableColumnData ( Column col,
-                      std::vector< string > columnValuesInit,
-                      std::vector< string > maxStringSizeInit,
-                      std::vector< TableColumnData > subColumnInit )
+    TableColumnData ( Column const & col,
+                      std::vector< string > const & columnValuesInit,
+                      std::vector< string > const & maxStringSizeInit,
+                      std::vector< TableColumnData > const & subColumnInit )
       : column( col ),
       columnValues( columnValuesInit ),
       maxStringSize( maxStringSizeInit ),
@@ -257,10 +257,10 @@ public:
   TableLayout & setTitle( string_view title );
 
   /**
-   * @brief Remove the last return line a the end of the table
+   * @brief Remove the return line at the end & begenning of the table
    * @return The tableLayout reference
    */
-  TableLayout & disableLineWrap();
+  TableLayout & disableLineBreak();
 
   /**
    * @brief Set the minimal margin width between cell content and borders.
@@ -277,9 +277,9 @@ public:
   TableLayout & setValuesAlignment( TableLayout::Alignment alignment );
 
   /**
-   * @return whether we have a line return at the end of the table or not
+   * @return check if the line break at the end & beginning is activated
    */
-  bool isLineWrapEnabled() const;
+  bool isLineBreakEnabled() const;
 
   /**
    * @brief Remove all subcolumn in all columns

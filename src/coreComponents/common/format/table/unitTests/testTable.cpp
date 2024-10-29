@@ -247,9 +247,9 @@ TEST( testTable, subColumns )
   {
     TableLayout const tableLayout( {" ",
                                     "Column1",
-                                    TableLayout::Column{"Nodes ", TableLayout::Alignment::right, true, {"Locales", "Ghost", "Active"}},
+                                    TableLayout::Column{"Nodes", TableLayout::Alignment::right, true, {"Locales", "Ghost", "Active"}},
                                     "Column3",
-                                    TableLayout::Column{"Column4 ", TableLayout::Alignment::right, true, {"Locales", "Ghost"}},
+                                    TableLayout::Column{"Column4", TableLayout::Alignment::right, true, {"Locales", "Ghost"}},
                                     "Column5"} );
 
     TableData tableData;
@@ -260,7 +260,7 @@ TEST( testTable, subColumns )
 
     EXPECT_EQ( tableText.toString( tableData ),
                "\n--------------------------------------------------------------------------------------------------------\n"
-               "|       |  Column1  |                            Nodes   |  Column3  |           Column4   |  Column5  |\n"
+               "|       |  Column1  |                             Nodes  |  Column3  |            Column4  |  Column5  |\n"
                "--------------------------------------------------------------------------------------------------------\n"
                "|       |           |   Locales  |  Ghost  |     Active  |           |  Locales  |  Ghost  |           |\n"
                "--------------------------------------------------------------------------------------------------------\n"
@@ -299,10 +299,10 @@ TEST( testTable, variadicTest )
                );
   }
 }
-TEST( testTable, testLineWrap )
+TEST( testTable, testLineBreak )
 {
   TableLayout tableLayout( {"Cras egestas", "CoordX", "C", "CoordZ", "Prev\nelement", "Next\nelement"} );
-  tableLayout.setTitle( "title" ).setMargin( TableLayout::MarginValue::tiny ).disableLineWrap();
+  tableLayout.setTitle( "title" ).setMargin( TableLayout::MarginValue::tiny ).disableLineBreak();
 
   TableData tableData;
   tableData.addRow( "1", "2", "3.0", 3.0129877, 2.0f, 1 );
