@@ -212,7 +212,7 @@ protected:
                                    DofManager const & dofManager,
                                    CRSMatrix< real64, globalIndex > & localMatrix );
 
-  void setMGRStrategy();
+  virtual void setMGRStrategy() override;
 
 private:
 
