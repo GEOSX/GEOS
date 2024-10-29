@@ -1774,8 +1774,11 @@ bool CompositionalMultiphaseBase::validateDirichletBC( DomainPartition & domain,
             if( !compMask[ic] )
             {
               bcConsistent = false;
-              GEOS_WARNING( GEOS_FMT( "Boundary condition not applied to composition[{}] on set {}/{}/{}",
-                                      ic, regionEntry.first, subRegionEntry.first, setEntry.first ) );
+              GEOS_WARNING( GEOS_FMT(
+                              "Boundary condition not applied to composition[{}] on CellElement region {}/{}/{}\n" \
+                              "Check if you have added or applied the appropriate fields to the FieldSpecification component with fieldName=”{}” and setNames=\"{}\"\n",
+                              ic, regionEntry.first, subRegionEntry.first, setEntry.first,
+                              fields::flow::globalCompFraction::key(), setEntry.first ) );
             }
           }
         }
