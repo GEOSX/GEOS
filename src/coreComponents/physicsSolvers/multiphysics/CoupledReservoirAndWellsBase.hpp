@@ -205,7 +205,7 @@ public:
     }
   }
 
-  void postInputInitialization()
+  virtual void postInputInitialization() override
   {
     Base::postInputInitialization();
 
