@@ -4623,10 +4623,14 @@ Level 0 outputs no specific information for this solver. Higher levels require m
 		<xsd:attribute name="flowSolverName" type="groupNameRef" use="required" />
 		<!--fluxNames => Name(s) array of the SourceFlux(s) for which we want the statistics. Use "*" to target all SourceFlux.-->
 		<xsd:attribute name="fluxNames" type="groupNameRef_array" default="{*}" />
-		<!--logLevel => Log level
-- Log Level 1 outputs the sum of all SourceFlux(s) produced rate & mass,
-- Log Level 2 details values for each SourceFlux,
-- Log Level 3 details values for each region.-->
+		<!--logLevel => Sets the level of information to write in the standard output (the console typically).
+Level 0 outputs no specific information for this solver. Higher levels require more outputs.
+1
+ - Print source flux statistics resulting from all flux in a mesh
+2
+ - Print source flux statistics for each flux in a mesh
+3
+ - Print source flux statistics for each regions -->
 		<xsd:attribute name="logLevel" type="integer" default="0" />
 		<!--writeCSV => Write statistics into a CSV file-->
 		<xsd:attribute name="writeCSV" type="integer" default="0" />
