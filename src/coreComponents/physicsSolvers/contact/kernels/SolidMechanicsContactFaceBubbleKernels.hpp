@@ -17,11 +17,11 @@
  * @file SolidMechanicsContactFaceBubbleKernels.hpp
  */
 
-#ifndef GEOS_PHYSICSSOLVERS_CONTACT_KERNELS_SOLIDMECHANICSALMBUBBLEKERNELS_HPP_
-#define GEOS_PHYSICSSOLVERS_CONTACT_KERNELS_SOLIDMECHANICSALMBUBBLEKERNELS_HPP_
+#ifndef GEOS_PHYSICSSOLVERS_CONTACT_KERNELS_SOLIDMECHANICSCONTACTFACEBUBBLEKERNELS_HPP_
+#define GEOS_PHYSICSSOLVERS_CONTACT_KERNELS_SOLIDMECHANICSCONTACTFACEBUBBLEKERNELS_HPP_
 
 #include "physicsSolvers/solidMechanics/kernels/ImplicitSmallStrainQuasiStatic.hpp"
-#include "SolidMechanicsALMKernelsHelper.hpp"
+#include "SolidMechanicsConformingContactKernelsHelper.hpp"
 
 // TODO: Use the bilinear form utilities
 //#include "finiteElement/BilinearFormUtilities.hpp"
@@ -280,10 +280,10 @@ public:
     m_constitutiveUpdate.getElasticStiffness( k, q, stack.constitutiveStiffness );
 
     real64 strainMatrix[6][nUdof];
-    solidMechanicsALMKernelsHelper::assembleStrainOperator< 6, nUdof, numNodesPerElem >( strainMatrix, dNdX );
+    solidMechanicsConformingContactKernelsHelper::assembleStrainOperator< 6, nUdof, numNodesPerElem >( strainMatrix, dNdX );
 
     real64 strainBubbleMatrix[6][nBubbleUdof];
-    solidMechanicsALMKernelsHelper::assembleStrainOperator< 6, nBubbleUdof, numFacesPerElem >( strainBubbleMatrix, dBubbleNdX );
+    solidMechanicsConformingContactKernelsHelper::assembleStrainOperator< 6, nBubbleUdof, numFacesPerElem >( strainBubbleMatrix, dBubbleNdX );
 
     // TODO: It would be nice use BilinearFormUtilities::compute
 
@@ -439,4 +439,4 @@ using FaceBubbleFactory = finiteElement::KernelFactory< FaceBubbleKernels,
 } // namespace geos
 
 
-#endif /* GEOS_PHYSICSSOLVERS_CONTACT_KERNELS_SOLIDMECHANICSALMBUBBLEKERNELS_HPP_ */
+#endif /* GEOS_PHYSICSSOLVERS_CONTACT_KERNELS_SOLIDMECHANICSCONTACTFACEBUBBLEKERNELS_HPP_ */

@@ -21,7 +21,7 @@
 #define GEOS_PHYSICSSOLVERS_CONTACT_KERNELS_SOLIDMECHANICSCONFORMINGCONTACTKERNELSBASE_HPP_
 
 #include "finiteElement/kernelInterface/InterfaceKernelBase.hpp"
-#include "SolidMechanicsALMKernelsHelper.hpp"
+#include "SolidMechanicsConformingContactKernelsHelper.hpp"
 #include "codingUtilities/Utilities.hpp"
 
 namespace geos
@@ -218,14 +218,14 @@ public:
     m_finiteElementSpace.getPermutation( permutation );
 
     // TODO: Try using bilinear utilities to perform these two operations
-    solidMechanicsALMKernelsHelper::accumulateAtuLocalOperator< numTdofs,
+    solidMechanicsConformingContactKernelsHelper::accumulateAtuLocalOperator< numTdofs,
                                                                 numUdofs,
                                                                 numNodesPerElem >( stack.localAtu,
                                                                                    N,
                                                                                    permutation,
                                                                                    detJ );
 
-    solidMechanicsALMKernelsHelper::accumulateAtuLocalOperator< numTdofs,
+    solidMechanicsConformingContactKernelsHelper::accumulateAtuLocalOperator< numTdofs,
                                                                 numBdofs,
                                                                 1 >( stack.localAtb,
                                                                      BubbleN,

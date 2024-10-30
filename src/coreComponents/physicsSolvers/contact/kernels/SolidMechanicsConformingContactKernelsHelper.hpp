@@ -15,7 +15,7 @@
 
 
 /**
- * @file SolidMechanicsALMKernelsHelper.hpp
+ * @file SolidMechanicsConformingContactKernelsHelper.hpp
  */
 
 #ifndef GEOS_PHYSICSSOLVERS_CONTACT_KERNELS_SOLIDMECHANICSALMKERNELSHELPER_HPP_
@@ -26,7 +26,7 @@
 namespace geos
 {
 
-namespace solidMechanicsALMKernelsHelper
+namespace solidMechanicsConformingContactKernelsHelper
 {
 
 template< int I_SIZE,
@@ -76,7 +76,7 @@ void assembleStrainOperator( real64 ( & strainMatrix )[I_SIZE][J_SIZE],
   }
 }
 
-} // solidMechanicsALMKernelsHelper
+} // solidMechanicsConformingContactKernelsHelper
 
 } // geos
 
