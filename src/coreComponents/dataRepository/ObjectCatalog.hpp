@@ -174,8 +174,9 @@ public:
    * @param[in] objectTypeName the key to the catalog entry that is able to create the correct type.
    * @param args these are the arguments to the constructor of the target type
    * @return passes a unique_ptr<BASETYPE> to the newly allocated class.
-   *
-   * @note The simulation is killed if the builder is not found.
+   * @note Generate a fatal error:
+   * - if the object type to create is not found in this Catalog,
+   * - if the builder is not found.
    */
   //START_SPHINX_2
   static std::unique_ptr< BASETYPE > factory( std::string const & objectTypeName,
