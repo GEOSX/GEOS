@@ -166,7 +166,6 @@ bool visitNeighborElements( MeshLevel const & mesh,
   ArrayOfArraysView< localIndex const > const & toElementRegionList    = nodeManager.elementRegionList();
   ArrayOfArraysView< localIndex const > const & toElementSubRegionList = nodeManager.elementSubRegionList();
   ArrayOfArraysView< localIndex const > const & toElementList          = nodeManager.elementList();
-  arrayView1d< globalIndex const > localToGlobalIndex = nodeManager.localToGlobalMap();
   arrayView2d< real64 const, nodes::REFERENCE_POSITION_USD > const referencePosition =
     nodeManager.referencePosition().toViewConst();
 
@@ -195,7 +194,6 @@ bool visitNeighborElements( MeshLevel const & mesh,
       localIndex const er      = toElementRegionList[currNode][b];
       localIndex const esr     = toElementSubRegionList[currNode][b];
       localIndex const eiLocal = toElementList[currNode][b];
-      globalIndex const gIndex = localToGlobalIndex[eiLocal];
       CellElementRegion const & region = elemManager.getRegion< CellElementRegion >( er );
       CellElementSubRegion const & subRegion = region.getSubRegion< CellElementSubRegion >( esr );
       arrayView2d< localIndex const > const elemsToFaces = subRegion.faceList();
@@ -223,7 +221,7 @@ bool visitNeighborElements( MeshLevel const & mesh,
           erMatched  = er;
           esrMatched = esr;
           eiMatched  = eiLocal;
-          giMatched = gIndex;
+          giMatched = eiGlobal;
           matched    = true;
           break;
         }
