@@ -24,7 +24,7 @@
 #include "physicsSolvers/contact/kernels/SolidMechanicsConformingContactKernelsBase.hpp"
 #include "physicsSolvers/contact/kernels/SolidMechanicsLagrangeContactKernels.hpp"
 #include "physicsSolvers/contact/kernels/SolidMechanicsALMSimultaneousKernels.hpp"
-#include "physicsSolvers/contact/kernels/SolidMechanicsALMJumpUpdateKernels.hpp"
+#include "physicsSolvers/contact/kernels/SolidMechanicsDispJumpUpdateKernels.hpp"
 #include "physicsSolvers/contact/kernels/SolidMechanicsALMBubbleKernels.hpp"
 #include "physicsSolvers/contact/LogLevelsInfo.hpp"
 
@@ -546,7 +546,7 @@ void SolidMechanicsLagrangeContactBubbleStab::applySystemSolution( DofManager co
                                                           arrayView1d< localIndex const > const & faceElementList )
     {
 
-      solidMechanicsALMKernels::ALMJumpUpdateFactory kernelFactory( dispDofNumber,
+      solidMechanicsConformingContactKernels::DispJumpUpdateFactory kernelFactory( dispDofNumber,
                                                                     bubbleDofNumber,
                                                                     dofManager.rankOffset(),
                                                                     voidMatrix.toViewConstSizes(),

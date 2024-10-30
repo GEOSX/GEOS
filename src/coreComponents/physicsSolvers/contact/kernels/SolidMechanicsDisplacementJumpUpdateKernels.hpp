@@ -25,7 +25,7 @@
 namespace geos
 {
 
-namespace solidMechanicsALMKernels
+namespace solidMechanicsConformingContactKernels
 {
 
 /**
@@ -33,7 +33,7 @@ namespace solidMechanicsALMKernels
  */
 template< typename CONSTITUTIVE_TYPE,
           typename FE_TYPE >
-class ALMJumpUpdate :
+class DispJumpUpdate :
   public ALMKernelsBase< CONSTITUTIVE_TYPE,
                          FE_TYPE >
 {
@@ -59,7 +59,7 @@ public:
    * @brief Constructor
    * @copydoc geos::finiteElement::InterfaceKernelBase::InterfaceKernelBase
    */
-  ALMJumpUpdate( NodeManager const & nodeManager,
+  DispJumpUpdate( NodeManager const & nodeManager,
                  EdgeManager const & edgeManager,
                  FaceManager const & faceManager,
                  localIndex const targetRegionIndex,
@@ -260,7 +260,7 @@ protected:
 
 };
 
-using ALMJumpUpdateFactory = finiteElement::InterfaceKernelFactory< ALMJumpUpdate,
+using DispJumpUpdateFactory = finiteElement::InterfaceKernelFactory< DispJumpUpdate,
                                                                     arrayView1d< globalIndex const > const,
                                                                     arrayView1d< globalIndex const > const,
                                                                     globalIndex const,

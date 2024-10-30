@@ -23,7 +23,7 @@
 #include "physicsSolvers/contact/kernels/SolidMechanicsConformingContactKernelsBase.hpp"
 #include "physicsSolvers/contact/kernels/SolidMechanicsALMKernels.hpp"
 #include "physicsSolvers/contact/kernels/SolidMechanicsALMSimultaneousKernels.hpp"
-#include "physicsSolvers/contact/kernels/SolidMechanicsALMJumpUpdateKernels.hpp"
+#include "physicsSolvers/contact/kernels/SolidMechanicsDispJumpUpdateKernels.hpp"
 #include "physicsSolvers/contact/kernels/SolidMechanicsALMBubbleKernels.hpp"
 #include "physicsSolvers/contact/LogLevelsInfo.hpp"
 
@@ -685,7 +685,7 @@ void SolidMechanicsAugmentedLagrangianContact::applySystemSolution( DofManager c
                                                           arrayView1d< localIndex const > const & faceElementList )
     {
 
-      solidMechanicsALMKernels::ALMJumpUpdateFactory kernelFactory( dispDofNumber,
+      solidMechanicsConformingContactKernels::DispJumpUpdateFactory kernelFactory( dispDofNumber,
                                                                     bubbleDofNumber,
                                                                     dofManager.rankOffset(),
                                                                     voidMatrix.toViewConstSizes(),

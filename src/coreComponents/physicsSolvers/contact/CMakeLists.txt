@@ -15,7 +15,7 @@ set( physicsSolvers_headers
      contact/kernels/SolidMechanicsALMKernelsBase.hpp
      contact/kernels/SolidMechanicsALMKernels.hpp
      contact/kernels/SolidMechanicsALMKernelsHelper.hpp
-     contact/kernels/SolidMechanicsALMJumpUpdateKernels.hpp
+     contact/kernels/SolidMechanicsDispJumpUpdateKernels.hpp
      contact/kernels/SolidMechanicsALMBubbleKernels.hpp
      contact/kernels/SolidMechanicsLagrangeContactKernels.hpp 
      contact/LogLevelsInfo.hpp
