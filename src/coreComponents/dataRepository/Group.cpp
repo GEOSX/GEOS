@@ -266,8 +266,6 @@ void Group::registerDataOnMeshRecursive( Group & meshBodies )
 
 Group * Group::createChild( string const & childKey, string const & childName )
 {
-  GEOS_ERROR_IF( !(CatalogInterface::hasKeyName( childKey )),
-                 "KeyName ("<<childKey<<") not found in Group::Catalog" );
   GEOS_LOG_RANK_0( "Adding Object " << childKey<<" named "<< childName<<" from Group::Catalog." );
   return &registerGroup( childName,
                          CatalogInterface::factory( childKey, getDataContext(),

@@ -46,15 +46,10 @@ PhysicsSolverManager::~PhysicsSolverManager()
 //START_SPHINX_INCLUDE_00
 Group * PhysicsSolverManager::createChild( string const & childKey, string const & childName )
 {
-  Group * rval = nullptr;
-  if( SolverBase::CatalogInterface::hasKeyName( childKey ) )
-  {
-    GEOS_LOG_RANK_0( "Adding Solver of type " << childKey << ", named " << childName );
-    rval = &registerGroup( childName,
-                           SolverBase::CatalogInterface::factory( childKey, getDataContext(),
-                                                                  childName, this ) );
-  }
-  return rval;
+  GEOS_LOG_RANK_0( "Adding Solver of type " << childKey << ", named " << childName );
+  return &registerGroup( childName,
+                         SolverBase::CatalogInterface::factory( childKey, getDataContext(),
+                                                                childName, this ) );
 }
 
 
