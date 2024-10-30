@@ -26,7 +26,7 @@
 #include "mesh/generators/LineBlock.hpp"
 #include "mesh/generators/LineBlockABC.hpp"
 #include "mesh/generators/CellBlockManagerABC.hpp"
-#include "mesh/generators/PartitionDescriptor.hpp"
+//#include "mesh/generators/PartitionDescriptor.hpp"
 
 namespace geos
 {

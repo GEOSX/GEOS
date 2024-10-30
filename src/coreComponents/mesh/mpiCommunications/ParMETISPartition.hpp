@@ -13,8 +13,8 @@
  * ------------------------------------------------------------------------------------------------------------
  */
 
-#ifndef GEOS_MESH_MPICOMMUNICATIONS_SPATIALPARTITION_HPP_
-#define GEOS_MESH_MPICOMMUNICATIONS_SPATIALPARTITION_HPP_
+#ifndef GEOS_MESH_MPICOMMUNICATIONS_PARMETISPARTITION_HPP_
+#define GEOS_MESH_MPICOMMUNICATIONS_PARMETISPARTITION_HPP_
 
 
 #include "PartitionBase.hpp"
@@ -28,14 +28,14 @@ namespace geos
 {
 
 /**
- * @brief Concrete (cartesian?) partitioning.
+ * @brief ParMETIS partitioning information.
  */
-class SpatialPartition : public PartitionBase
+class ParMETISPartition : public PartitionBase
 {
 public:
-  SpatialPartition();
+  ParMETISPartition();
 
-  ~SpatialPartition() override;
+  ~ParMETISPartition() override;
 
   bool isCoordInPartition( const real64 & coord, const int dir ) const override;
 
@@ -49,11 +49,12 @@ public:
                  real64 const ( &max )[ 3 ] ) override;
 
 
+
   void setPartitions( unsigned int xPartitions,
                       unsigned int yPartitions,
                       unsigned int zPartitions ) override;
 
-  virtual void setColorValue() override final;
+  int getColor() override;
 
   void repartitionMasterParticles( ParticleSubRegion & subRegion,
                                    MPI_iCommData & commData );
@@ -93,6 +94,15 @@ public:
     return m_metisNeighborList;
   }
 
+  /**
+   * @brief Sets the list of metis neighbor list.
+   * @param metisNeighborList A reference to the Metis neighbor list.
+   */
+  virtual void setNeighborList( std::vector< int > const & metisNeighborList ) override
+  {
+    m_metisNeighborList.clear();
+    m_metisNeighborList.insert( metisNeighborList.cbegin(), metisNeighborList.cend() );
+  }
 
   /**
    * @brief Get the number of domains in each dimension for a regular partition with InternalMesh.
@@ -115,29 +125,11 @@ public:
 private:
 
   /**
-   * @brief Recursively builds neighbors if an MPI cartesian topology is used (i.e. not metis).
-   * @param idim Dimension index in the cartesian.
-   * @param cartcomm Communicator with cartesian structure.
-   * @param ncoords Cartesian coordinates of a process (assumed to be of length 3).
-   *
-   * @note Rough copy/paste of DomainPartition::AddNeighbors
-   */
-  void addNeighbors( const unsigned int idim,
-                     MPI_Comm & cartcomm,
-                     int * ncoords );
-
-  /**
    * @brief Defines a distance/buffer below which we are considered in the contact zone ghosts.
    * @param bufferSize The distance.
    */
   void setContactGhostRange( const real64 bufferSize );
 
-
-  /// Locations of partition boundaries
-  array1d< real64 > m_PartitionLocations[3];
-
-  /// Length of partition dimensions (excluding ghost objects).
-  real64 m_blockSize[3];
 
 
   /**
@@ -161,4 +153,4 @@ private:
 };
 
 }
-#endif /* GEOS_MESH_MPICOMMUNICATIONS_SPATIALPARTITION_HPP_ */
+#endif /* GEOS_MESH_MPICOMMUNICATIONS_PARMETISPARTITION_HPP_ */

@@ -489,7 +489,7 @@ real64 SurfaceGenerator::solverStep( real64 const & time_n,
                              meshLevel,
                              domain.getNeighbors(),
                              rank,
-                             partition.numColor(),
+                             partition.getNumColors(),
                              0,
                              time_n + dt );
 
@@ -2792,7 +2792,7 @@ void SurfaceGenerator::identifyRupturedFaces( DomainPartition const & domain,
 
   if( !m_nodeBasedSIF )
   {
-//    for( int color=0 ; color<partition.NumColor() ; ++color )
+//    for( int color=0 ; color<partition.getNumColors() ; ++color )
 //    {
     arrayView1d< integer > const & isEdgeGhost = edgeManager.ghostRank();
     ModifiedObjectLists modifiedObjects;
