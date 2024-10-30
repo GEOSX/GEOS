@@ -18,6 +18,7 @@
 
 #include "common/TimingMacros.hpp"
 #include "linearAlgebra/solvers/KrylovSolver.hpp"
+#include "fieldSpecification/FieldSpecificationManager.hpp"
 #include "mesh/DomainPartition.hpp"
 #include "math/interpolation/Interpolation.hpp"
 #include "common/Timer.hpp"
@@ -78,6 +79,11 @@ SolverBase::SolverBase( string const & name,
                     "the solver will be applied to these regions, only that allocation will occur such that the "
                     "solver may be applied to these regions. The decision about what regions this solver will be"
                     "applied to rests in the EventManager." );
+
+  registerWrapper( viewKeyStruct::preStepFieldSpecificationNamesString(), &m_preStepFieldSpecificationNames ).
+    setRTTypeName( rtTypes::CustomTypes::groupNameRefArray ).
+    setInputFlag( InputFlags::OPTIONAL ).
+    setDescription( "Names of the field specifications that this solver will apply prior to execution of SolverStep()." );
 
   registerWrapper( viewKeyStruct::meshTargetsString(), &m_meshTargets ).
     setInputFlag( InputFlags::FALSE ).
@@ -282,6 +288,8 @@ bool SolverBase::execute( real64 const time_n,
   {
     // reset number of nonlinear and linear iterations
     m_solverStatistics.initializeTimeStepStatistics();
+
+    PreStepFieldSpecification( time_n + (dt - dtRemaining), domain );
 
     real64 const dtAccepted = solverStep( time_n + (dt - dtRemaining),
                                           nextDt,
@@ -1435,6 +1443,19 @@ void SolverBase::saveSequentialIterationState( DomainPartition & GEOS_UNUSED_PAR
 {
   // up to specific solver to save what is needed
   GEOS_ERROR( "Call to SolverBase::saveSequentialIterationState. Method should be overloaded by the solver" );
+}
+
+
+void SolverBase::PreStepFieldSpecification( real64 const time, DomainPartition & domain )
+{
+    FieldSpecificationManager & fsManager = FieldSpecificationManager::getInstance();
+
+  forDiscretizationOnMeshTargets( domain.getMeshBodies(), [&] ( string const &,
+                                                                MeshLevel & mesh,
+                                                                arrayView1d< string const > const & )
+  {
+    fsManager.applyNonInitialConditions( time, mesh, this->m_preStepFieldSpecificationNames );
+  } );
 }
 
 #if defined(GEOS_USE_PYGEOSX)

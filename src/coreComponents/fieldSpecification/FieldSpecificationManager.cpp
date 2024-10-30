@@ -230,4 +230,26 @@ void FieldSpecificationManager::applyInitialConditions( MeshLevel & mesh ) const
   } );
 }
 
+
+void FieldSpecificationManager::applyNonInitialConditions( real64 const time, 
+                                                           MeshLevel & mesh,
+                                                           array1d<string> const & fsNames ) const
+{
+  this->forSubGroups< FieldSpecificationBase >( fsNames, [&] ( localIndex, FieldSpecificationBase const & fs )
+  {
+    if( !fs.initialCondition() )
+    {
+      fs.apply< dataRepository::Group >( mesh,
+                                         [&]( FieldSpecificationBase const & bc,
+                                              string const &,
+                                              SortedArrayView< localIndex const > const & targetSet,
+                                              Group & targetGroup,
+                                              string const fieldName )
+      {
+        bc.applyFieldValue< FieldSpecificationEqual >( targetSet, time, targetGroup, fieldName );
+      } );
+    }
+  } );
+}
+
 } /* namespace geos */

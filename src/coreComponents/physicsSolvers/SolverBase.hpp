@@ -704,6 +704,9 @@ public:
 
     /// @return string for the writeLinearSystem wrapper
     static constexpr char const * writeLinearSystemString() { return "writeLinearSystem"; }
+
+    /// @return string for the fieldSpecificationNames wrapper
+    static constexpr char const * preStepFieldSpecificationNamesString() { return "preStepFieldSpecificationNames"; }
   };
 
   /**
@@ -1060,12 +1063,19 @@ protected:
   /// Timers for the aggregate profiling of the solver
   std::map< std::string, std::chrono::system_clock::duration > m_timers;
 
+
 private:
   /// List of names of regions the solver will be applied to
   array1d< string > m_targetRegionNames;
 
+  /// List of field specification names to apply by this solver prior to the step
+  array1d< string > m_preStepFieldSpecificationNames;
+
   /// Map containing the array of target regions (value) for each MeshBody (key).
   map< std::pair< string, string >, array1d< string > > m_meshTargets;
+
+
+  void PreStepFieldSpecification( real64 const time, DomainPartition & domain );
 
   /**
    * @brief This function sets constitutive name fields on an

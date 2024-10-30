@@ -178,6 +178,11 @@ public:
    */
   void applyInitialConditions( MeshLevel & mesh ) const;
 
+  void applyNonInitialConditions( real64 const time, 
+                                  MeshLevel & mesh,
+                                  array1d<string> const & fsNames ) const;
+
+
   /**
    * @brief function to validate the application of boundary conditions
    * @param mesh the MeshLevel object
