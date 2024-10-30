@@ -38,19 +38,19 @@ void TableLayout::addToColumns( Column const & column )
 {
   if( !column.subColumnNames.empty())
   {
-    std::vector< TableLayout::TableColumnData > subColumns;
+    std::vector< TableLayout::ColumnStructure > subColumns;
     for( const auto & subColumnsName : column.subColumnNames )
     {
       subColumns.push_back(
-        TableLayout::TableColumnData {
+        TableLayout::ColumnStructure {
           TableLayout::Column{ subColumnsName, column.alignmentSettings.headerAlignment }
         } );
     }
-    m_tableColumnsData.push_back( TableLayout::TableColumnData { column, subColumns } );
+    m_tableColumnsData.push_back( TableLayout::ColumnStructure { column, subColumns } );
   }
   else
   {
-    m_tableColumnsData.push_back( TableLayout::TableColumnData { column } );
+    m_tableColumnsData.push_back( TableLayout::ColumnStructure { column } );
   }
 }
 
@@ -100,7 +100,7 @@ void TableLayout::removeSubColumn()
   }
 }
 
-std::vector< TableLayout::TableColumnData > const & TableLayout::getColumns() const
+std::vector< TableLayout::ColumnStructure > const & TableLayout::getColumns() const
 {
   return m_tableColumnsData;
 }

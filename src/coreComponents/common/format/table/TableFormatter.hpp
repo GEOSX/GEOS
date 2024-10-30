@@ -136,7 +136,7 @@ public:
 
   /**
    * @return A TableLayout string representation,
-   * The TableTextFormatter receives hasn't receive any data, so only the top part is returned.
+   * The TableTextFormatter receives hasn't receive any data, so only the header part is returned.
    */
   string toString() const;
 
@@ -160,26 +160,22 @@ private:
    * @param tableColumnsData  The vector containg all tableColumnsData . Each tableColumnData contains its own
    *        parameters (such as name, alignment, etc.).
    * @param tableData Vector containing all rows filled with values
-   * @param nbHeaderRows Number of header rows, which will be calculated based on tableColumnData headers and their formatting.
    * @param sectionSeparatingLine Separator string used between sections of the table
    * @param topSeparator The table top separator
    */
-  void prepareAndBuildTable( std::vector< TableLayout::TableColumnData > & tableColumnsData,
+  void prepareAndBuildTable( std::vector< TableLayout::ColumnStructure > & tableColumnsData,
                              TableData const & tableData,
-                             size_t & nbHeaderRows,
                              string & sectionSeparatingLine,
                              string & topSeparator ) const;
 /**
  * @brief Displays the complete table
  * @param tableOutput The output stream
  * @param tableColumnsData  Vector containg all tableColumnsData
- * @param nbHeaderRows A variable to be calculated which will contain the number of header lines
  * @param sectionSeparatingLine Separator string used between sections of the table
  * @param topSeparator The table top separator
  */
   void outputTable( std::ostringstream & tableOutput,
-                    std::vector< TableLayout::TableColumnData > & tableColumnsData,
-                    size_t & nbHeaderRows,
+                    std::vector< TableLayout::ColumnStructure > & tableColumnsData,
                     string_view sectionSeparatingLine,
                     string_view topSeparator ) const;
 
@@ -189,18 +185,16 @@ private:
    * @param tableData Vector containing all rows filled with values
    * @param isSubColumn Boolean indicating if the current tableColumnData is a subcolumn
    */
-  void populateColumnsFromTableData( std::vector< TableLayout::TableColumnData > & tableColumnsData,
+  void populateColumnsFromTableData( std::vector< TableLayout::ColumnStructure > & tableColumnsData,
                                      std::vector< std::vector< string > > const & tableData ) const;
 
   /**
    * @brief Split all header names by detecting the newline \\n character. and
    * set the same vector size for each split header and merge it into tableColumnsData
    * @param tableColumnsData  The vector containg all tableColumnsData
-   * @param nbHeaderRows Variable which will contain the number of header lines to be displayed
    * @param splitHeaders Vector to store the split header names for each tableColumnData
    */
-  void splitAndMergeColumnHeaders( std::vector< TableLayout::TableColumnData > & tableColumnsData,
-                                   size_t & nbHeaderRows,
+  void splitAndMergeColumnHeaders( std::vector< TableLayout::ColumnStructure > & tableColumnsData,
                                    std::vector< std::vector< string > > & splitHeaders ) const;
 
   /**
@@ -212,7 +206,7 @@ private:
    * @note Compares the longest string from the header with the longest string from the column values.
    * If the column contains subcolumns, it recursively applies the same logic to them
    */
-  void findAndSetLongestColumnString( TableLayout::TableColumnData & tableColumnData,
+  void findAndSetLongestColumnString( TableLayout::ColumnStructure & tableColumnData,
                                       std::vector< string > & maxStringSize,
                                       integer const idxColumn ) const;
 
@@ -221,14 +215,14 @@ private:
    * Increase the size of the tableColumnsData  if necessary
    * @param tableColumnsData Vector of tableColumnData containing containing the largest string for each tableColumnData
    */
-  void computeTableWidth( std::vector< TableLayout::TableColumnData > & tableColumnsData ) const;
+  void computeTableWidth( std::vector< TableLayout::ColumnStructure > & tableColumnsData ) const;
 
   /**
    * @brief Increase each tableColumnData size if the title is larger than all the tableColumnsData
    * @param tableColumnsData  Vector containing all table tableColumnsData
    * @param extraCharacters ExtraCharacters to be distributed between each tableColumnsData
    */
-  void increaseColumnsSize( std::vector< TableLayout::TableColumnData > & tableColumnsData,
+  void increaseColumnsSize( std::vector< TableLayout::ColumnStructure > & tableColumnsData,
                             real64 const extraCharacters ) const;
 
   /**
@@ -237,21 +231,9 @@ private:
    * @param sectionSeparatingLine Separator string used between sections of the table
    * @param topSeparator The table top separator
    */
-  void buildTableSeparators( std::vector< TableLayout::TableColumnData > const & tableColumnsData,
+  void buildTableSeparators( std::vector< TableLayout::ColumnStructure > const & tableColumnsData,
                              string & sectionSeparatingLine,
                              string & topSeparator ) const;
-
-  /**
-   * @brief Output the values rows in the table
-   * @param tableColumnsData  Vector containing all table tableColumnsData
-   * @param tableOutput The output stream
-   * @param nbRows Total number of rows to output.
-   * @param sectionSeparatingLine Separator string used between sections of the table
-   */
-  void outputValuesSectionRows( std::vector< TableLayout::TableColumnData > const & tableColumnsData,
-                                std::ostringstream & tableOutput,
-                                size_t const nbRows,
-                                string_view sectionSeparatingLine ) const;
 
   /**
    * @brief Output the title row in the table
@@ -264,12 +246,10 @@ private:
    * @brief Output the header rows in the table
    * @param tableColumnsData  Vector containing all table tableColumnsData
    * @param tableOutput The output stream
-   * @param nbRows The total number of rows to output.
    * @param sectionSeparatingLine Separator string used between sections of the table
    */
-  void outputHeaderSectionRows( std::vector< TableLayout::TableColumnData > const & tableColumnsData,
+  void outputHeaderSectionRows( std::vector< TableLayout::ColumnStructure > const & tableColumnsData,
                                 std::ostringstream & tableOutput,
-                                size_t const nbRows,
                                 string_view sectionSeparatingLine ) const;
 
   /**
@@ -278,9 +258,19 @@ private:
    * @param tableOutput The output stream
    * @param idxRow Index of the current row in the table
    */
-  void outputSubSection( std::vector< TableLayout::TableColumnData > const & tableColumnsData,
+  void outputSubSection( std::vector< TableLayout::ColumnStructure > const & tableColumnsData,
                          std::ostringstream & tableOutput,
                          integer idxRow ) const;
+
+  /**
+   * @brief Output the values rows in the table
+   * @param tableColumnsData  Vector containing all table tableColumnsData
+   * @param tableOutput The output stream
+   * @param sectionSeparatingLine Separator string used between sections of the table
+   */
+  void outputValuesSectionRows( std::vector< TableLayout::ColumnStructure > const & tableColumnsData,
+                                std::ostringstream & tableOutput,
+                                string_view sectionSeparatingLine ) const;
 };
 
 /**

@@ -132,10 +132,10 @@ public:
   };
 
   /**
-   * @brief Struct for a TableColumnData.
+   * @brief Struct for a ColumnStructure.
    * Each column contains its own parameters (such as name, alignment, etc.).
    */
-  struct TableColumnData
+  struct ColumnStructure
   {
     /// Structure who contains parameters for a column
     Column column;
@@ -144,36 +144,36 @@ public:
     /// The largest string(s) in the column
     std::vector< string > maxStringSize;
     /// Vector containing all sub columns subdivison
-    std::vector< TableColumnData > subColumn;
+    std::vector< ColumnStructure > subColumn;
 
     /**
-     * @brief Constructs a TableColumnData  with the given column.
+     * @brief Constructs a ColumnStructure  with the given column.
      * @param col The parameters for the column.
      */
-    TableColumnData ( Column col )
+    ColumnStructure ( Column col )
       : column( col )
     {}
 
     /**
-     * @brief Constructs a TableColumnData with the given parameters.
+     * @brief Constructs a ColumnStructure with the given parameters.
      * @param col The parameters for the column.
      * @param subColumnInit The subcolumns contained in the colum
      */
-    TableColumnData ( Column col, std::vector< TableColumnData > const & subColumnInit )
+    ColumnStructure ( Column col, std::vector< ColumnStructure > const & subColumnInit )
       : column( col ), subColumn( subColumnInit )
     {}
 
     /**
-     * @brief Constructs a TableColumnData  with the given parameters.
+     * @brief Constructs a ColumnStructure  with the given parameters.
      * @param col The parameters for the column.
      * @param columnValuesInit The values in the column.
      * @param maxStringSizeInit The largest string(s) in the column.
      * @param subColumnInit The sub-columns of the column.
      */
-    TableColumnData ( Column const & col,
+    ColumnStructure ( Column const & col,
                       std::vector< string > const & columnValuesInit,
                       std::vector< string > const & maxStringSizeInit,
-                      std::vector< TableColumnData > const & subColumnInit )
+                      std::vector< ColumnStructure > const & subColumnInit )
       : column( col ),
       columnValues( columnValuesInit ),
       maxStringSize( maxStringSizeInit ),
@@ -243,7 +243,7 @@ public:
   /**
    * @return The columns vector
    */
-  std::vector< TableColumnData > const & getColumns() const;
+  std::vector< ColumnStructure > const & getColumns() const;
 
   /**
    * @return The table name
@@ -310,7 +310,7 @@ public:
 private:
 
   /**
-   * @brief Add a column to the table given an initializer_list of string & TableColumnData
+   * @brief Add a column to the table given an initializer_list of string & ColumnStructure
    * @param args An initializer_list containing string / column
    */
   void processArguments( TableLayoutArgs args )
@@ -352,7 +352,7 @@ private:
  */
   void addToColumns( Column const & column );
 
-  std::vector< TableColumnData > m_tableColumnsData;
+  std::vector< ColumnStructure > m_tableColumnsData;
 
   bool m_wrapLine = true;
   string m_tableTitle;
