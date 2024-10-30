@@ -41,7 +41,7 @@ class LagrangeContact :
 public:
   /// Alias for the base class.
   using Base = solidMechanicsConformingContactKernels::ConformingContactKernelsBase< CONSTITUTIVE_TYPE, 
-                                                                                     FE_TYPE >
+                                                                                     FE_TYPE >;
 
   /// Maximum number of nodes per element, which is equal to the maxNumTestSupportPointPerElem and
   /// maxNumTrialSupportPointPerElem by definition.
@@ -50,14 +50,9 @@ public:
   /// Compile time value for the number of quadrature points per element.
   static constexpr int numQuadraturePointsPerElem = FE_TYPE::numQuadraturePoints;
 
-  /// The number of displacement dofs per element.
-  static constexpr int numUdofs = numNodesPerElem * 3 * 2;
-
-  /// The number of lagrange multiplier dofs per element.
-  static constexpr int numTdofs = 3;
-
-  /// The number of bubble dofs per element.
-  static constexpr int numBdofs = 3*2;
+  using Base::numUdofs;
+  using Base::numTdofs;
+  using Base::numBdofs;
 
   using Base::m_elemsToFaces;
   using Base::m_faceToNodes;
@@ -68,7 +63,6 @@ public:
   using Base::m_dofRankOffset;
   using Base::m_X;
   using Base::m_rotationMatrix;
-  using Base::m_penalty;
   using Base::m_dispJump;
   using Base::m_oldDispJump;
   using Base::m_matrix;
@@ -111,15 +105,11 @@ public:
     m_tDofNumber( elementSubRegion.getReference< globalIndex_array >( tractionDofKey ) )
   {}
 
-  //***************************************************************************
-
   /**
    * @copydoc finiteElement::KernelBase::StackVariables
    */
   struct StackVariables : public Base::StackVariables
   {
-
-    
 public:
 
     GEOS_HOST_DEVICE
@@ -200,8 +190,6 @@ public:
   {
     constexpr int shift = numNodesPerElem * 3;
 
-    constexpr int numTdofs = 3;
-
     int permutation[numNodesPerElem];
     m_finiteElementSpace.getPermutation( permutation );
 
@@ -232,7 +220,6 @@ public:
 
     for( int i=0; i<numTdofs; ++i )
     {
-      stack.tLocal[i] = m_traction( k, i );
       stack.dispJumpLocal[i] = m_dispJump( k, i );
       stack.oldDispJumpLocal[i] = m_oldDispJump( k, i );
     }
@@ -259,7 +246,7 @@ public:
                               localIndex const q,
                               StackVariables & stack ) const
   {
-    Base::quadraturePointKernel( k, q, stack, [ = ]( real64 const detJ ), 
+    Base::quadraturePointKernel( k, q, stack, [ =, &stack ] GEOS_HOST_DEVICE ( real64 const detJ )
     {
       // This will vary depending on the state.
       stack.localRt[0] += detJ * m_dispJump[k][0];
@@ -309,6 +296,28 @@ protected:
 
   arrayView1d< localIndex const > const m_tDofNumber;
 
+   /**
+   * @brief Create the list of finite elements of the same type
+   *   for each FaceElementSubRegion (Triangle or Quadrilateral)
+   *   and of the same fracture state (Stick or Slip).
+   * @param domain The physical domain object
+   */
+  void updateStickSlipList( DomainPartition const & domain );
+
+  /**
+   * @brief Create the list of finite elements of the same type
+   *   for each FaceElementSubRegion (Triangle or Quadrilateral).
+   * @param domain The physical domain object
+   */
+  void createFaceTypeList( DomainPartition const & domain );
+
+  /**
+   * @brief Create the list of elements belonging to CellElementSubRegion
+   *  that are enriched with the bubble basis functions
+   * @param domain The physical domain object
+   */
+  void createBubbleCellList( DomainPartition & domain ) const;
+
 private:
 
   void fillGlobalMatrix( localIndex const k,
@@ -332,7 +341,7 @@ private:
 
       // Fill in matrix block Atu
       m_matrix.template addToRowBinarySearchUnsorted< parallelDeviceAtomic >( dof,
-                                                                              stack.uColIndices,
+                                                                              stack.dispColIndices,
                                                                               stack.localAtu[i],
                                                                               numUdofs );
 

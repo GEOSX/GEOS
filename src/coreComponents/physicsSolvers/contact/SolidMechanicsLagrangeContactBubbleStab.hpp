@@ -50,8 +50,6 @@ public:
    */
   string getCatalogName() const override { return catalogName(); }
 
-  virtual void initializePreSubGroups() override;
-
   virtual void registerDataOnMesh( Group & MeshBodies ) override final;
 
   virtual void
@@ -98,8 +96,8 @@ public:
                        real64 const dt,
                        DomainPartition & domain ) override;
 
-  virtual void
-  resetStateToBeginningOfStep( DomainPartition & domain ) override;
+  // virtual void
+  // resetStateToBeginningOfStep( DomainPartition & domain ) override;
 
   virtual real64
   setNextDt( real64 const & currentDt,
@@ -107,16 +105,17 @@ public:
 
   void updateState( DomainPartition & domain ) override final;
 
-  void assembleContact( DomainPartition & domain,
+  void assembleContact( real64 const dt, 
+                        DomainPartition & domain,
                         DofManager const & dofManager,
                         CRSMatrixView< real64, globalIndex const > const & localMatrix,
                         arrayView1d< real64 > const & localRhs );
   
-  void assembleStabilization( MeshLevel const & mesh,
-                              NumericalMethodsManager const & numericalMethodManager,
-                              DofManager const & dofManager,
-                              CRSMatrixView< real64, globalIndex const > const & localMatrix,
-                              arrayView1d< real64 > const & localRhs );
+  void assembleStabilization( real64 const dt, 
+                        DomainPartition & domain,
+                        DofManager const & dofManager,
+                        CRSMatrixView< real64, globalIndex const > const & localMatrix,
+                        arrayView1d< real64 > const & localRhs );
 
   real64 calculateContactResidualNorm( DomainPartition const & domain,
                                        DofManager const & dofManager,
@@ -172,6 +171,28 @@ public:
 
 private:
 
+/**
+   * @brief Create the list of finite elements of the same type
+   *   for each FaceElementSubRegion (Triangle or Quadrilateral)
+   *   and of the same fracture state (Stick or Slip).
+   * @param domain The physical domain object
+   */
+  void updateStickSlipList( DomainPartition const & domain );
+
+  /**
+   * @brief Create the list of finite elements of the same type
+   *   for each FaceElementSubRegion (Triangle or Quadrilateral).
+   * @param domain The physical domain object
+   */
+  void createFaceTypeList( DomainPartition const & domain );
+
+  /**
+   * @brief Create the list of elements belonging to CellElementSubRegion
+   *  that are enriched with the bubble basis functions
+   * @param domain The physical domain object
+   */
+  void createBubbleCellList( DomainPartition & domain ) const;
+
   /**
    * @brief add the number of non-zero elements induced by the coupling between
    *   nodal and bubble displacement.
@@ -196,10 +217,16 @@ private:
   /// Finite element type to face element index map
   std::map< string, std::map< string, array1d< localIndex > > > m_faceTypesToFaceElements;
 
+  /// Finite element type to face element index map (stick mode)
+  std::map< string, std::map< string, array1d< localIndex > > > m_faceTypesToFaceElementsStick;
+
+  /// Finite element type to face element index map (slip mode)
+  std::map< string, std::map< string, array1d< localIndex > > > m_faceTypesToFaceElementsSlip;
+
   /// Finite element type to finite element object map
   std::map< string, std::unique_ptr< geos::finiteElement::FiniteElementBase > > m_faceTypeToFiniteElements;
 
-  void computeFaceDisplacementJump( DomainPartition & domain );
+  //  void computeFaceDisplacementJump( DomainPartition & domain );
 
   struct viewKeyStruct : ContactSolverBase::viewKeyStruct
   {

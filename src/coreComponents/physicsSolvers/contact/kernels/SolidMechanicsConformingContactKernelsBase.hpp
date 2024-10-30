@@ -22,6 +22,7 @@
 
 #include "finiteElement/kernelInterface/InterfaceKernelBase.hpp"
 #include "SolidMechanicsALMKernelsHelper.hpp"
+#include "codingUtilities/Utilities.hpp"
 
 namespace geos
 {
@@ -97,8 +98,17 @@ public:
     m_bDofNumber( bDofNumber ),
     m_rotationMatrix( elementSubRegion.getField< fields::contact::rotationMatrix >().toViewConst()),
     m_dispJump( elementSubRegion.getField< fields::contact::dispJump >().toView() ),
-    m_oldDispJump( elementSubRegion.getField< fields::contact::oldDispJump >().toViewConst() ),
+    m_oldDispJump( elementSubRegion.getField< fields::contact::oldDispJump >().toViewConst() )
   {}
+
+  /// The number of displacement dofs per element.
+  static constexpr int numUdofs = numNodesPerElem * 3 * 2;
+
+  /// The number of lagrange multiplier dofs per element.
+  static constexpr int numTdofs = 3;
+
+  /// The number of bubble dofs per element.
+  static constexpr int numBdofs = 3*2;
 
   //***************************************************************************
   /**
@@ -106,14 +116,7 @@ public:
    */
   struct StackVariables
   {
-    /// The number of displacement dofs per element.
-    static constexpr int numUdofs = numNodesPerElem * 3 * 2;
-
-    /// The number of lagrange multiplier dofs per element.
-    static constexpr int numTdofs = 3;
-
-    /// The number of bubble dofs per element.
-    static constexpr int numBdofs = 3*2;
+    
 
 public:
 
@@ -196,15 +199,9 @@ public:
   void quadraturePointKernel( localIndex const k,
                               localIndex const q,
                               StackVariables & stack,
-                              LAMBDA && lambda = NoOpFunctors{} ) const
+                              LAMBDA && lambda = NoOpFunc{} ) const
   {
     GEOS_UNUSED_VAR( k );
-
-    constexpr int numUdofs = numNodesPerElem * 3 * 2;
-
-    constexpr int numTdofs = 3;
-
-    constexpr int numBdofs = 3*2;
 
     real64 const detJ = m_finiteElementSpace.transformedQuadratureWeight( q, stack.X );
 

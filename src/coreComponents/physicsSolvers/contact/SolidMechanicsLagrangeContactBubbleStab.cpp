@@ -17,6 +17,8 @@
  * @file SolidMechanicsLagrangeContactBubbleStab.cpp
  *
  */
+
+#include "mesh/DomainPartition.hpp"
 #include "SolidMechanicsLagrangeContactBubbleStab.hpp"
 
 #include "physicsSolvers/contact/kernels/SolidMechanicsConformingContactKernelsBase.hpp"
@@ -253,13 +255,12 @@ void SolidMechanicsLagrangeContactBubbleStab::assembleSystem( real64 const time,
 
 
  
-  assembleStabilization( domain, dofManager, localMatrix, localRhs );
+  assembleStabilization( dt, domain, dofManager, localMatrix, localRhs );
 
-  assembleContact( domain, dofManager, localMatrix, localRhs );
+  assembleContact( dt, domain, dofManager, localMatrix, localRhs );
 }
 
-void SolidMechanicsLagrangeContactBubbleStab::assembleStabilization( real64 const time,
-                                                                     real64 const dt,
+void SolidMechanicsLagrangeContactBubbleStab::assembleStabilization( real64 const dt,
                                                                      DomainPartition & domain,
                                                                      DofManager const & dofManager,
                                                                      CRSMatrixView< real64, globalIndex const > const & localMatrix,
@@ -305,12 +306,13 @@ void SolidMechanicsLagrangeContactBubbleStab::assembleStabilization( real64 cons
   } );
 }
 
-void SolidMechanicsLagrangeContactBubbleStab::assembleContact( DomainPartition & domain,
+void SolidMechanicsLagrangeContactBubbleStab::assembleContact( real64 const dt, 
+                                                               DomainPartition & domain,
                                                                DofManager const & dofManager,
                                                                CRSMatrixView< real64, globalIndex const > const & localMatrix,
                                                                arrayView1d< real64 > const & localRhs )
 {
-  forDiscretizationOnMeshTargets( domain.getMeshBodies(), [&] ( string const &,
+  forDiscretizationOnMeshTargets( domain.getMeshBodies(), [&] ( string const & meshName,
                                                                 MeshLevel & mesh,
                                                                 arrayView1d< string const > const & regionNames )
   {
@@ -517,6 +519,55 @@ void SolidMechanicsLagrangeContactBubbleStab::applySystemSolution( DofManager co
                                solidMechanics::incrementalBubbleDisplacement::key(),
                                scalingFactor );                             
 
+  
+  // Loop for updating the displacement jump
+  forDiscretizationOnMeshTargets( domain.getMeshBodies(), [&] ( string const & meshName,
+                                                                MeshLevel & mesh,
+                                                                arrayView1d< string const > const & )
+
+  {
+
+    NodeManager const & nodeManager = mesh.getNodeManager();
+    FaceManager const & faceManager = mesh.getFaceManager();
+
+    string const & dispDofKey = dofManager.getKey( solidMechanics::totalDisplacement::key() );
+    string const & bubbleDofKey = dofManager.getKey( solidMechanics::totalBubbleDisplacement::key() );
+
+    arrayView1d< globalIndex const > const dispDofNumber = nodeManager.getReference< globalIndex_array >( dispDofKey );
+    arrayView1d< globalIndex const > const bubbleDofNumber = faceManager.getReference< globalIndex_array >( bubbleDofKey );
+
+    string const & fractureRegionName = this->getUniqueFractureRegionName();
+
+    CRSMatrix< real64, globalIndex > const voidMatrix;
+    array1d< real64 > const voidRhs;
+
+    forFiniteElementOnFractureSubRegions( meshName, [&] ( string const &,
+                                                          finiteElement::FiniteElementBase const & subRegionFE,
+                                                          arrayView1d< localIndex const > const & faceElementList )
+    {
+
+      solidMechanicsALMKernels::ALMJumpUpdateFactory kernelFactory( dispDofNumber,
+                                                                    bubbleDofNumber,
+                                                                    dofManager.rankOffset(),
+                                                                    voidMatrix.toViewConstSizes(),
+                                                                    voidRhs.toView(),
+                                                                    dt,
+                                                                    faceElementList );
+
+      real64 maxTraction = finiteElement::
+                             interfaceBasedKernelApplication
+                           < parallelDevicePolicy< >,
+                             constitutive::NullModel >( mesh,
+                                                        fractureRegionName,
+                                                        faceElementList,
+                                                        subRegionFE,
+                                                        "",
+                                                        kernelFactory );
+
+      GEOS_UNUSED_VAR( maxTraction );
+
+    } );
+  } );
 
   forDiscretizationOnMeshTargets( domain.getMeshBodies(), [&] ( string const &,
                                                                 MeshLevel & mesh,
@@ -543,7 +594,6 @@ void SolidMechanicsLagrangeContactBubbleStab::applySystemSolution( DofManager co
 void SolidMechanicsLagrangeContactBubbleStab::updateState( DomainPartition & domain )
 {
   GEOS_MARK_FUNCTION;
-  computeFaceDisplacementJump( domain );
 }
 
 real64 SolidMechanicsLagrangeContactBubbleStab::setNextDt( real64 const & currentDt,
@@ -809,6 +859,301 @@ void SolidMechanicsLagrangeContactBubbleStab::addCouplingSparsityPattern( Domain
 
       }
     }
+  } );
+
+}
+
+void SolidMechanicsLagrangeContactBubbleStab::updateStickSlipList( DomainPartition const & domain )
+{
+
+  forDiscretizationOnMeshTargets( domain.getMeshBodies(), [&] ( string const & meshName,
+                                                                MeshLevel const & mesh,
+                                                                arrayView1d< string const > const & )
+
+  {
+
+    ElementRegionManager const & elemManager = mesh.getElemManager();
+    SurfaceElementRegion const & region = elemManager.getRegion< SurfaceElementRegion >( getUniqueFractureRegionName() );
+    FaceElementSubRegion const & subRegion = region.getUniqueSubRegion< FaceElementSubRegion >();
+
+    arrayView1d< integer const > const fractureState = subRegion.getField< contact::fractureState >();
+
+    forFiniteElementOnFractureSubRegions( meshName, [&] ( string const & finiteElementName,
+                                                          finiteElement::FiniteElementBase const &,
+                                                          arrayView1d< localIndex const > const & faceElementList )
+    {
+
+      array1d< localIndex > keys( subRegion.size());
+      array1d< localIndex > vals( subRegion.size());
+      array1d< localIndex > stickList;
+      array1d< localIndex > slipList;
+      RAJA::ReduceSum< ReducePolicy< parallelDevicePolicy<> >, localIndex > nStick_r( 0 );
+      RAJA::ReduceSum< ReducePolicy< parallelDevicePolicy<> >, localIndex > nSlip_r( 0 );
+
+      arrayView1d< localIndex > const keys_v = keys.toView();
+      arrayView1d< localIndex > const vals_v = vals.toView();
+      forAll< parallelDevicePolicy<> >( faceElementList.size(),
+                                        [ = ]
+                                        GEOS_HOST_DEVICE ( localIndex const kfe )
+      {
+
+        localIndex const faceIndex = faceElementList[kfe];
+        if( fractureState[faceIndex] == contact::FractureState::Stick )
+        {
+          keys_v[kfe]=0;
+          vals_v[kfe]=faceIndex;
+          nStick_r += 1;
+        }
+        else if(( fractureState[faceIndex] == contact::FractureState::Slip ) ||
+                (fractureState[faceIndex] == contact::FractureState::NewSlip))
+        {
+          keys_v[kfe]=1;
+          vals_v[kfe]=faceIndex;
+          nSlip_r += 1;
+        }
+        else
+        {
+          keys_v[kfe] = 2;
+        }
+
+      } );
+
+      localIndex nStick = static_cast< localIndex >(nStick_r.get());
+      localIndex nSlip = static_cast< localIndex >(nSlip_r.get());
+
+      // Sort vals according to keys to ensure that
+      // elements of the same type are adjacent in the vals list.
+      // This arrangement allows for efficient copying into the container
+      // by leveraging parallelism.
+      RAJA::sort_pairs< parallelDevicePolicy<> >( keys_v, vals_v );
+
+      stickList.resize( nStick );
+      slipList.resize( nSlip );
+      arrayView1d< localIndex > const stickList_v = stickList.toView();
+      arrayView1d< localIndex > const slipList_v = slipList.toView();
+
+      forAll< parallelDevicePolicy<> >( nStick, [ = ]
+                                        GEOS_HOST_DEVICE ( localIndex const kfe )
+      {
+        stickList_v[kfe] = vals_v[kfe];
+      } );
+
+      forAll< parallelDevicePolicy<> >( nSlip, [ = ]
+                                        GEOS_HOST_DEVICE ( localIndex const kfe )
+      {
+        slipList_v[kfe] = vals_v[nStick+kfe];
+      } );
+
+      this->m_faceTypesToFaceElementsStick[meshName][finiteElementName] =  stickList;
+      this->m_faceTypesToFaceElementsSlip[meshName][finiteElementName]  =  slipList;
+
+      GEOS_LOG_LEVEL_INFO_RANK_0( logInfo::Configuration, GEOS_FMT( "# stick elements: {}, # slip elements: {}", nStick, nSlip ))
+    } );
+  } );
+
+}
+
+void SolidMechanicsLagrangeContactBubbleStab::createFaceTypeList( DomainPartition const & domain )
+{
+
+  // Generate lists containing elements of various face types
+  forDiscretizationOnMeshTargets( domain.getMeshBodies(), [&] ( string const & meshName,
+                                                                MeshLevel const & mesh,
+                                                                arrayView1d< string const > const )
+  {
+    FaceManager const & faceManager = mesh.getFaceManager();
+    ElementRegionManager const & elemManager = mesh.getElemManager();
+    ArrayOfArraysView< localIndex const > const faceToNodeMap = faceManager.nodeList().toViewConst();
+
+    SurfaceElementRegion const & region = elemManager.getRegion< SurfaceElementRegion >( getUniqueFractureRegionName() );
+    FaceElementSubRegion const & subRegion = region.getUniqueSubRegion< FaceElementSubRegion >();
+
+    array1d< localIndex > keys( subRegion.size());
+    array1d< localIndex > vals( subRegion.size());
+    array1d< localIndex > quadList;
+    array1d< localIndex > triList;
+    RAJA::ReduceSum< ReducePolicy< parallelDevicePolicy<> >, localIndex > nTri_r( 0 );
+    RAJA::ReduceSum< ReducePolicy< parallelDevicePolicy<> >, localIndex > nQuad_r( 0 );
+
+    arrayView1d< localIndex > const keys_v = keys.toView();
+    arrayView1d< localIndex > const vals_v = vals.toView();
+    // Determine the size of the lists and generate the vector keys and vals for parallel indexing into lists.
+    // (With RAJA, parallelizing this operation seems the most viable approach.)
+    forAll< parallelDevicePolicy<> >( subRegion.size(),
+                                      [ = ] GEOS_HOST_DEVICE ( localIndex const kfe )
+    {
+
+      localIndex const numNodesPerFace = faceToNodeMap.sizeOfArray( kfe );
+      if( numNodesPerFace == 3 )
+      {
+        keys_v[kfe]=0;
+        vals_v[kfe]=kfe;
+        nTri_r += 1;
+      }
+      else if( numNodesPerFace == 4 )
+      {
+        keys_v[kfe]=1;
+        vals_v[kfe]=kfe;
+        nQuad_r += 1;
+      }
+      else
+      {
+        GEOS_ERROR( "SolidMechanicsLagrangeContactBubbleStab:: invalid face type" );
+      }
+    } );
+
+    localIndex nQuad = static_cast< localIndex >(nQuad_r.get());
+    localIndex nTri = static_cast< localIndex >(nTri_r.get());
+
+    // Sort vals according to keys to ensure that
+    // elements of the same type are adjacent in the vals list.
+    // This arrangement allows for efficient copying into the container
+    // by leveraging parallelism.
+    RAJA::sort_pairs< parallelDevicePolicy<> >( keys_v, vals_v );
+
+    quadList.resize( nQuad );
+    triList.resize( nTri );
+    arrayView1d< localIndex > const quadList_v = quadList.toView();
+    arrayView1d< localIndex > const triList_v = triList.toView();
+
+    forAll< parallelDevicePolicy<> >( nTri, [ = ] GEOS_HOST_DEVICE ( localIndex const kfe )
+    {
+      triList_v[kfe] = vals_v[kfe];
+    } );
+
+    forAll< parallelDevicePolicy<> >( nQuad, [ = ] GEOS_HOST_DEVICE ( localIndex const kfe )
+    {
+      quadList_v[kfe] = vals_v[nTri+kfe];
+    } );
+
+    this->m_faceTypesToFaceElements[meshName]["Quadrilateral"] =  quadList;
+    this->m_faceTypesToFaceElements[meshName]["Triangle"] =  triList;
+  } );
+
+}
+
+void SolidMechanicsLagrangeContactBubbleStab::createBubbleCellList( DomainPartition & domain ) const
+{
+
+  forDiscretizationOnMeshTargets( domain.getMeshBodies(), [&] ( string const &,
+                                                                MeshLevel & mesh,
+                                                                arrayView1d< string const > const regionNames )
+  {
+    ElementRegionManager & elemManager = mesh.getElemManager();
+
+    SurfaceElementRegion const & region = elemManager.getRegion< SurfaceElementRegion >( getUniqueFractureRegionName() );
+    FaceElementSubRegion const & subRegion = region.getUniqueSubRegion< FaceElementSubRegion >();
+    // Array to store face indexes
+    array1d< localIndex > tmpSpace( 2*subRegion.size());
+    SortedArray< localIndex > faceIdList;
+
+    arrayView1d< localIndex > const tmpSpace_v = tmpSpace.toView();
+    // Store indexes of faces in the temporany array.
+    {
+      ArrayOfArraysView< localIndex const > const elemsToFaces = subRegion.faceList().toViewConst();
+
+      forAll< parallelDevicePolicy<> >( subRegion.size(), [ = ] GEOS_HOST_DEVICE ( localIndex const kfe )
+      {
+
+        localIndex const kf0 = elemsToFaces[kfe][0], kf1 = elemsToFaces[kfe][1];
+        tmpSpace_v[2*kfe] = kf0, tmpSpace_v[2*kfe+1] = kf1;
+
+      } );
+    }
+
+    // Sort indexes to enable efficient searching using binary search.
+    RAJA::stable_sort< parallelDevicePolicy<> >( tmpSpace_v );
+    faceIdList.insert( tmpSpace_v.begin(), tmpSpace_v.end());
+
+    // Search for bubble element on each CellElementSubRegion and
+    // store element indexes, global and local face indexes.
+    elemManager.forElementSubRegions< CellElementSubRegion >( regionNames, [&]( localIndex const, CellElementSubRegion & cellElementSubRegion )
+    {
+
+      arrayView2d< localIndex const > const elemsToFaces = cellElementSubRegion.faceList().toViewConst();
+
+      RAJA::ReduceSum< ReducePolicy< parallelDevicePolicy<> >, localIndex > nBubElems_r( 0 );
+
+      localIndex const n_max = cellElementSubRegion.size() * elemsToFaces.size( 1 );
+      array1d< localIndex > keys( n_max );
+      array1d< localIndex > perms( n_max );
+      array1d< localIndex > vals( n_max );
+      array1d< localIndex > localFaceIds( n_max );
+
+      arrayView1d< localIndex > const keys_v = keys.toView();
+      arrayView1d< localIndex > const perms_v = perms.toView();
+      arrayView1d< localIndex > const vals_v = vals.toView();
+      arrayView1d< localIndex > const localFaceIds_v = localFaceIds.toView();
+      SortedArrayView< localIndex const > const faceIdList_v = faceIdList.toViewConst();
+
+      forAll< parallelDevicePolicy<> >( cellElementSubRegion.size(),
+                                        [ = ]
+                                        GEOS_HOST_DEVICE ( localIndex const kfe )
+      {
+        for( int i=0; i < elemsToFaces.size( 1 ); ++i )
+        {
+          perms_v[kfe*elemsToFaces.size( 1 )+i] = kfe*elemsToFaces.size( 1 )+i;
+          if( faceIdList_v.contains( elemsToFaces[kfe][i] ))
+          {
+            keys_v[kfe*elemsToFaces.size( 1 )+i] = 0;
+            vals_v[kfe*elemsToFaces.size( 1 )+i] = kfe;
+            localFaceIds_v[kfe*elemsToFaces.size( 1 )+i] = i;
+            nBubElems_r += 1;
+          }
+          else
+          {
+            keys_v[kfe*elemsToFaces.size( 1 )+i] = 1;
+            vals_v[kfe*elemsToFaces.size( 1 )+i] = -1;
+            localFaceIds_v[kfe*elemsToFaces.size( 1 )+i] = -1;
+          }
+        }
+      } );
+
+      // Sort perms according to keys to ensure that bubble elements are adjacent
+      // and occupy the first positions of the list.
+      // This arrangement allows for efficient copying into the container
+      // by leveraging parallelism.
+      localIndex nBubElems = static_cast< localIndex >(nBubElems_r.get());
+      RAJA::sort_pairs< parallelDevicePolicy<> >( keys_v, perms_v );
+
+      array1d< localIndex > bubbleElemsList;
+      bubbleElemsList.resize( nBubElems );
+
+      arrayView1d< localIndex > const bubbleElemsList_v = bubbleElemsList.toView();
+
+      forAll< parallelDevicePolicy<> >( n_max, [ = ] GEOS_HOST_DEVICE ( localIndex const k )
+      {
+        keys_v[k] = vals_v[perms_v[k]];
+      } );
+
+      forAll< parallelDevicePolicy<> >( nBubElems, [ = ] GEOS_HOST_DEVICE ( localIndex const k )
+      {
+        bubbleElemsList_v[k] = keys_v[k];
+      } );
+      cellElementSubRegion.setBubbleElementsList( bubbleElemsList.toViewConst());
+
+      forAll< parallelDevicePolicy<> >( n_max, [ = ] GEOS_HOST_DEVICE ( localIndex const k )
+      {
+        keys_v[k] = localFaceIds_v[perms_v[k]];
+      } );
+
+      array2d< localIndex > faceElemsList;
+      faceElemsList.resize( nBubElems, 2 );
+
+      arrayView2d< localIndex > const faceElemsList_v = faceElemsList.toView();
+
+      forAll< parallelDevicePolicy<> >( nBubElems,
+                                        [ = ]
+                                        GEOS_HOST_DEVICE ( localIndex const k )
+      {
+        localIndex const kfe =  bubbleElemsList_v[k];
+        faceElemsList_v[k][0] = elemsToFaces[kfe][keys_v[k]];
+        faceElemsList_v[k][1] = keys_v[k];
+      } );
+      cellElementSubRegion.setFaceElementsList( faceElemsList.toViewConst());
+
+    } );
+
   } );
 
 }
