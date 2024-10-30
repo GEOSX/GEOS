@@ -250,25 +250,6 @@ public:
   }
 
   /**
-   * @brief @copybrief registerGroup(string const &,std::unique_ptr<T>)
-   *
-   * @tparam T The type of the Group to add/register. This should be a type that derives from Group.
-   * @tparam TBASE The type whose type catalog will be used to look up the new sub-group type
-   * @param[in] name        The name of the group to use as a string key.
-   * @param[in] catalogName The catalog name of the new type.
-   * @return                A pointer to the newly registered Group.
-   *
-   * Creates and registers a Group or class derived from Group as a subgroup of this Group.
-   */
-  template< typename T = Group, typename TBASE = Group >
-  T & registerGroup( string const & name, string const & catalogName )
-  {
-    std::unique_ptr< TBASE > newGroup = TBASE::CatalogInterface::Factory( catalogName, getDataContext(),
-                                                                          name, this );
-    return registerGroup< T >( name, std::move( newGroup ) );
-  }
-
-  /**
    * @brief Removes a child group from this group.
    * @param name the name of the child group to remove from this group.
    */
