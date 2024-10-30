@@ -352,7 +352,7 @@ struct StateUpdateKernel
           arrayView1d< real64 > const & aperture,
           arrayView1d< real64 const > const & oldHydraulicAperture,
           arrayView1d< real64 > const & hydraulicAperture,
-          arrayView2d< real64 > const & fractureContactTraction )
+          arrayView2d< real64 > const & fractureEffectiveTraction )
   {
     forAll< POLICY >( size, [=] GEOS_HOST_DEVICE ( localIndex const k )
     {
@@ -362,21 +362,21 @@ struct StateUpdateKernel
       real64 dHydraulicAperture_dNormalJump = 0.0;
       real64 dHydraulicAperture_dNormalTraction = 0.0;
       hydraulicAperture[k] = contactWrapper.computeHydraulicAperture( aperture[k],
-                                                                      fractureContactTraction[k][0],
+                                                                      fractureEffectiveTraction[k][0],
                                                                       dHydraulicAperture_dNormalJump,
                                                                       dHydraulicAperture_dNormalTraction );
 
       deltaVolume[k] = hydraulicAperture[k] * area[k] - volume[k];
 
       real64 const jump[3] = LVARRAY_TENSOROPS_INIT_LOCAL_3 ( dispJump[k] );
-      real64 const contactTraction[3] = LVARRAY_TENSOROPS_INIT_LOCAL_3 ( fractureContactTraction[k] );
+      real64 const effectiveTraction[3] = LVARRAY_TENSOROPS_INIT_LOCAL_3 ( fractureEffectiveTraction[k] );
 
-      // all perm update models below should need contact traction instead of total traction 
-      // (total traction is combined forces of fluid pressure and contact traction)
+      // all perm update models below should need effective traction instead of total traction 
+      // (total traction is combined forces of fluid pressure and effective traction)
       porousMaterialWrapper.updateStateFromPressureApertureJumpAndTraction( k, 0, pressure[k],
                                                                             oldHydraulicAperture[k], hydraulicAperture[k],
                                                                             dHydraulicAperture_dNormalJump,
-                                                                            jump, contactTraction );
+                                                                            jump, effectiveTraction );
 
     } );
   }
