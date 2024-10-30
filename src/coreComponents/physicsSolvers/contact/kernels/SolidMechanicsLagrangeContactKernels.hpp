@@ -35,12 +35,12 @@ namespace solidMechanicsLagrangeContactKernels
 template< typename CONSTITUTIVE_TYPE,
           typename FE_TYPE >
 class LagrangeContact :
-  public solidMechanicsConformingContactKernels::ConformingContactKernelsBase< CONSTITUTIVE_TYPE, 
+  public solidMechanicsConformingContactKernels::ConformingContactKernelsBase< CONSTITUTIVE_TYPE,
                                                                                FE_TYPE >
 {
 public:
   /// Alias for the base class.
-  using Base = solidMechanicsConformingContactKernels::ConformingContactKernelsBase< CONSTITUTIVE_TYPE, 
+  using Base = solidMechanicsConformingContactKernels::ConformingContactKernelsBase< CONSTITUTIVE_TYPE,
                                                                                      FE_TYPE >;
 
   /// Maximum number of nodes per element, which is equal to the maxNumTestSupportPointPerElem and
@@ -73,20 +73,20 @@ public:
    * @copydoc geos::finiteElement::InterfaceKernelBase::InterfaceKernelBase
    */
   LagrangeContact( NodeManager const & nodeManager,
-       EdgeManager const & edgeManager,
-       FaceManager const & faceManager,
-       localIndex const targetRegionIndex,
-       FaceElementSubRegion & elementSubRegion,
-       FE_TYPE const & finiteElementSpace,
-       CONSTITUTIVE_TYPE & inputConstitutiveType,
-       arrayView1d< globalIndex const > const uDofNumber,
-       arrayView1d< globalIndex const > const bDofNumber,
-       globalIndex const rankOffset,
-       CRSMatrixView< real64, globalIndex const > const inputMatrix,
-       arrayView1d< real64 > const inputRhs,
-       real64 const inputDt,
-       arrayView1d< localIndex const > const & faceElementList,
-       string const tractionDofKey ):
+                   EdgeManager const & edgeManager,
+                   FaceManager const & faceManager,
+                   localIndex const targetRegionIndex,
+                   FaceElementSubRegion & elementSubRegion,
+                   FE_TYPE const & finiteElementSpace,
+                   CONSTITUTIVE_TYPE & inputConstitutiveType,
+                   arrayView1d< globalIndex const > const uDofNumber,
+                   arrayView1d< globalIndex const > const bDofNumber,
+                   globalIndex const rankOffset,
+                   CRSMatrixView< real64, globalIndex const > const inputMatrix,
+                   arrayView1d< real64 > const inputRhs,
+                   real64 const inputDt,
+                   arrayView1d< localIndex const > const & faceElementList,
+                   string const tractionDofKey ):
     Base( nodeManager,
           edgeManager,
           faceManager,
@@ -115,17 +115,17 @@ public:
     GEOS_HOST_DEVICE
     StackVariables():
       Base::StackVariables(),
-            dispEqnRowIndices{},
-            dispColIndices{},
-            bEqnRowIndices{},
-            bColIndices{},
-            tColIndices{},
-            localRu{},
-            localRb{},
-            localRt{},
-            localAtt{{}},
-            localAut{{}},
-            localAbt{{}}
+                                       dispEqnRowIndices{},
+                                       dispColIndices{},
+                                       bEqnRowIndices{},
+                                       bColIndices{},
+                                       tColIndices{},
+                                       localRu{},
+                                       localRb{},
+                                       localRt{},
+                                       localAtt{ {} },
+      localAut{ {} },
+      localAbt{ {} }
     {}
 
     /// C-array storage for the element local row degrees of freedom.
@@ -139,7 +139,7 @@ public:
 
     /// C-array storage for the element local column degrees of freedom.
     globalIndex bColIndices[numBdofs];
-    
+
     /// C-array storage for the traction local row degrees of freedom.
     localIndex tEqnRowIndices[numTdofs];
 
@@ -157,10 +157,10 @@ public:
 
     /// C-array storage for the element local Att matrix.
     real64 localAtt[numTdofs][numTdofs];
-    
+
     /// C-array storage for the element local Aut matrix.
     real64 localAut[numUdofs][numTdofs];
-    
+
     /// C-array storage for the element local Abt matrix.
     real64 localAbt[numBdofs][numTdofs];
   };
@@ -233,13 +233,13 @@ public:
       stack.bColIndices[3+i]    = m_bDofNumber[kf1] + i;
     }
 
-     for( int i=0; i<3; ++i )
+    for( int i=0; i<3; ++i )
     {
       stack.tEqnRowIndices[i]   = m_tDofNumber[k] + i - m_dofRankOffset;
       stack.tColIndices[i]      = m_tDofNumber[k] + i;
     }
   }
-  
+
   GEOS_HOST_DEVICE
   inline
   void quadraturePointKernel( localIndex const k,
@@ -254,7 +254,7 @@ public:
       stack.localRt[2] += detJ * ( m_dispJump[k][2] - m_oldDispJump[k][2] );
     } );
   }
-  
+
 
   GEOS_HOST_DEVICE
   inline
@@ -296,7 +296,7 @@ protected:
 
   arrayView1d< localIndex const > const m_tDofNumber;
 
-   /**
+  /**
    * @brief Create the list of finite elements of the same type
    *   for each FaceElementSubRegion (Triangle or Quadrilateral)
    *   and of the same fracture state (Stick or Slip).
@@ -324,12 +324,12 @@ private:
                          StackVariables & stack ) const
   {
 
-     for( localIndex i=0; i < numTdofs; ++i )
+    for( localIndex i=0; i < numTdofs; ++i )
     {
       localIndex const dof = LvArray::integerConversion< localIndex >( stack.tEqnRowIndices[ i ] );
 
       if( dof < 0 || dof >= m_matrix.numRows() ) continue;
-      
+
       // TODO: May not need to be an atomic operation
       RAJA::atomicAdd< parallelDeviceAtomic >( &m_rhs[dof], stack.localRt[i] );
 
@@ -349,7 +349,7 @@ private:
       m_matrix.template addToRowBinarySearchUnsorted< parallelDeviceAtomic >( dof,
                                                                               stack.bColIndices,
                                                                               stack.localAtb[i],
-                                                                              numBdofs );                                                                                                                                                
+                                                                              numBdofs );
     }
 
     for( localIndex i=0; i < numUdofs; ++i )
@@ -390,14 +390,14 @@ private:
 
 /// The factory used to construct the kernel.
 using LagrangeContactFactory = finiteElement::InterfaceKernelFactory< LagrangeContact,
-                                                          arrayView1d< globalIndex const > const,
-                                                          arrayView1d< globalIndex const > const,
-                                                          globalIndex const,
-                                                          CRSMatrixView< real64, globalIndex const > const,
-                                                          arrayView1d< real64 > const,
-                                                          real64 const,
-                                                          arrayView1d< localIndex const > const,
-                                                          string const >;
+                                                                      arrayView1d< globalIndex const > const,
+                                                                      arrayView1d< globalIndex const > const,
+                                                                      globalIndex const,
+                                                                      CRSMatrixView< real64, globalIndex const > const,
+                                                                      arrayView1d< real64 > const,
+                                                                      real64 const,
+                                                                      arrayView1d< localIndex const > const,
+                                                                      string const >;
 
 } // namespace solidMechanicsLagrangeContactKernels
 

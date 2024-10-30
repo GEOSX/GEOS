@@ -105,23 +105,23 @@ public:
 
   void updateState( DomainPartition & domain ) override final;
 
-  void assembleContact( real64 const dt, 
+  void assembleContact( real64 const dt,
                         DomainPartition & domain,
                         DofManager const & dofManager,
                         CRSMatrixView< real64, globalIndex const > const & localMatrix,
                         arrayView1d< real64 > const & localRhs );
-  
-  void assembleStabilization( real64 const dt, 
-                        DomainPartition & domain,
-                        DofManager const & dofManager,
-                        CRSMatrixView< real64, globalIndex const > const & localMatrix,
-                        arrayView1d< real64 > const & localRhs );
+
+  void assembleStabilization( real64 const dt,
+                              DomainPartition & domain,
+                              DofManager const & dofManager,
+                              CRSMatrixView< real64, globalIndex const > const & localMatrix,
+                              arrayView1d< real64 > const & localRhs );
 
   real64 calculateContactResidualNorm( DomainPartition const & domain,
                                        DofManager const & dofManager,
                                        arrayView1d< real64 const > const & localRhs );
 
-   /**
+  /**
    * @brief Loop over the finite element type on the fracture subregions of meshName and apply callback.
    * @tparam LAMBDA The callback function type
    * @param meshName The mesh name.
@@ -167,16 +167,16 @@ public:
 
       lambda( finiteElementName, subRegionFE, faceElemList, isStickState );
     }
-  }                                     
+  }
 
 private:
 
 /**
-   * @brief Create the list of finite elements of the same type
-   *   for each FaceElementSubRegion (Triangle or Quadrilateral)
-   *   and of the same fracture state (Stick or Slip).
-   * @param domain The physical domain object
-   */
+ * @brief Create the list of finite elements of the same type
+ *   for each FaceElementSubRegion (Triangle or Quadrilateral)
+ *   and of the same fracture state (Stick or Slip).
+ * @param domain The physical domain object
+ */
   void updateStickSlipList( DomainPartition const & domain );
 
   /**

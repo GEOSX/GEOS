@@ -75,19 +75,19 @@ public:
    * @copydoc geos::finiteElement::InterfaceKernelBase::InterfaceKernelBase
    */
   ConformingContactKernelsBase( NodeManager const & nodeManager,
-                  EdgeManager const & edgeManager,
-                  FaceManager const & faceManager,
-                  localIndex const targetRegionIndex,
-                  FaceElementSubRegion & elementSubRegion,
-                  FE_TYPE const & finiteElementSpace,
-                  CONSTITUTIVE_TYPE & inputConstitutiveType,
-                  arrayView1d< globalIndex const > const uDofNumber,
-                  arrayView1d< globalIndex const > const bDofNumber,
-                  globalIndex const rankOffset,
-                  CRSMatrixView< real64, globalIndex const > const inputMatrix,
-                  arrayView1d< real64 > const inputRhs,
-                  real64 const inputDt,
-                  arrayView1d< localIndex const > const & faceElementList ):
+                                EdgeManager const & edgeManager,
+                                FaceManager const & faceManager,
+                                localIndex const targetRegionIndex,
+                                FaceElementSubRegion & elementSubRegion,
+                                FE_TYPE const & finiteElementSpace,
+                                CONSTITUTIVE_TYPE & inputConstitutiveType,
+                                arrayView1d< globalIndex const > const uDofNumber,
+                                arrayView1d< globalIndex const > const bDofNumber,
+                                globalIndex const rankOffset,
+                                CRSMatrixView< real64, globalIndex const > const inputMatrix,
+                                arrayView1d< real64 > const inputRhs,
+                                real64 const inputDt,
+                                arrayView1d< localIndex const > const & faceElementList ):
     Base( nodeManager,
           edgeManager,
           faceManager,
@@ -116,7 +116,7 @@ public:
    */
   struct StackVariables
   {
-    
+
 
 public:
 
@@ -192,7 +192,7 @@ public:
     return maxResidual.get();
   }
   //END_kernelLauncher
-  
+
   template< typename LAMBDA = NoOpFunc >
   GEOS_HOST_DEVICE
   inline
@@ -232,7 +232,7 @@ public:
                                                                      bperm,
                                                                      detJ );
 
-    lambda( detJ );                                                                 
+    lambda( detJ );
   }
 
 protected:

@@ -24,7 +24,7 @@
 #include "physicsSolvers/contact/kernels/SolidMechanicsALMKernels.hpp"
 #include "physicsSolvers/contact/kernels/SolidMechanicsALMSimultaneousKernels.hpp"
 #include "physicsSolvers/contact/kernels/SolidMechanicsDisplacementJumpUpdateKernels.hpp"
-#include "physicsSolvers/contact/kernels/SolidMechanicsALMBubbleKernels.hpp"
+#include "physicsSolvers/contact/kernels/SolidMechanicsContactFaceBubbleKernels.hpp"
 #include "physicsSolvers/contact/LogLevelsInfo.hpp"
 
 #include "constitutive/ConstitutiveManager.hpp"
@@ -478,7 +478,7 @@ void SolidMechanicsAugmentedLagrangianContact::assembleSystem( real64 const time
     real64 const gravityVectorData[3] = LVARRAY_TENSOROPS_INIT_LOCAL_3( gravityVector() );
 
 
-    solidMechanicsALMKernels::ALMBubbleFactory kernelFactory( dispDofNumber,
+    solidMechanicsConformingContactKernels::FaceBubbleFactory kernelFactory( dispDofNumber,
                                                               bubbleDofNumber,
                                                               dofManager.rankOffset(),
                                                               localMatrix,
@@ -686,12 +686,12 @@ void SolidMechanicsAugmentedLagrangianContact::applySystemSolution( DofManager c
     {
 
       solidMechanicsConformingContactKernels::DispJumpUpdateFactory kernelFactory( dispDofNumber,
-                                                                    bubbleDofNumber,
-                                                                    dofManager.rankOffset(),
-                                                                    voidMatrix.toViewConstSizes(),
-                                                                    voidRhs.toView(),
-                                                                    dt,
-                                                                    faceElementList );
+                                                                                   bubbleDofNumber,
+                                                                                   dofManager.rankOffset(),
+                                                                                   voidMatrix.toViewConstSizes(),
+                                                                                   voidRhs.toView(),
+                                                                                   dt,
+                                                                                   faceElementList );
 
       real64 maxTraction = finiteElement::
                              interfaceBasedKernelApplication

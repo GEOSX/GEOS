@@ -14,7 +14,7 @@
  */
 
 /**
- * @file SolidMechanicsALMBubbleKernels.hpp
+ * @file SolidMechanicsContactFaceBubbleKernels.hpp
  */
 
 #ifndef GEOS_PHYSICSSOLVERS_CONTACT_KERNELS_SOLIDMECHANICSALMBUBBLEKERNELS_HPP_
@@ -29,7 +29,7 @@
 namespace geos
 {
 
-namespace solidMechanicsALMKernels
+namespace solidMechanicsConformingContactKernels
 {
 
 /**
@@ -40,7 +40,7 @@ namespace solidMechanicsALMKernels
 template< typename SUBREGION_TYPE,
           typename CONSTITUTIVE_TYPE,
           typename FE_TYPE >
-class ALMBubbleKernels :
+class FaceBubbleKernels :
   public solidMechanicsLagrangianFEMKernels::ImplicitSmallStrainQuasiStatic< SUBREGION_TYPE,
                                                                              CONSTITUTIVE_TYPE,
                                                                              FE_TYPE >
@@ -75,7 +75,7 @@ public:
    * @brief Constructor
    * @copydoc geos::finiteElement::ImplicitKernelBase::ImplicitKernelBase
    */
-  ALMBubbleKernels( NodeManager const & nodeManager,
+  FaceBubbleKernels( NodeManager const & nodeManager,
                     EdgeManager const & edgeManager,
                     FaceManager const & faceManager,
                     localIndex const targetRegionIndex,
@@ -425,7 +425,7 @@ protected:
 };
 
 /// The factory used to construct a QuasiStatic kernel.
-using ALMBubbleFactory = finiteElement::KernelFactory< ALMBubbleKernels,
+using FaceBubbleFactory = finiteElement::KernelFactory< FaceBubbleKernels,
                                                        arrayView1d< globalIndex const > const,
                                                        arrayView1d< globalIndex const > const,
                                                        globalIndex const,
@@ -434,7 +434,7 @@ using ALMBubbleFactory = finiteElement::KernelFactory< ALMBubbleKernels,
                                                        real64 const,
                                                        real64 const (&) [3] >;
 
-} // namespace SolidMechanicsALMBubbleKernels
+} // namespace SolidMechanicsContactFaceBubbleKernels
 
 } // namespace geos
 

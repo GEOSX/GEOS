@@ -24,7 +24,7 @@
 #include "physicsSolvers/contact/kernels/SolidMechanicsConformingContactKernelsBase.hpp"
 #include "physicsSolvers/contact/kernels/SolidMechanicsLagrangeContactKernels.hpp"
 #include "physicsSolvers/contact/kernels/SolidMechanicsDisplacementJumpUpdateKernels.hpp"
-#include "physicsSolvers/contact/kernels/SolidMechanicsALMBubbleKernels.hpp"
+#include "physicsSolvers/contact/kernels/SolidMechanicsContactFaceBubbleKernels.hpp"
 #include "physicsSolvers/contact/LogLevelsInfo.hpp"
 
 #include "constitutive/ConstitutiveManager.hpp"
@@ -123,7 +123,7 @@ void SolidMechanicsLagrangeContactBubbleStab::setupDofs( DomainPartition const &
   dofManager.addCoupling( solidMechanics::totalBubbleDisplacement::key(),
                           contact::traction::key(),
                           DofManager::Connector::Elem,
-                          meshTargets );                        
+                          meshTargets );
 }
 
 void SolidMechanicsLagrangeContactBubbleStab::setupSystem( DomainPartition & domain,
@@ -220,9 +220,9 @@ void SolidMechanicsLagrangeContactBubbleStab::implicitStepSetup( real64 const & 
 
     // Compute rotation matrices
     solidMechanicsConformingContactKernels::ComputeRotationMatricesKernel::launch< parallelDevicePolicy<> >( subRegion.size(),
-                                                                                           faceNormal,
-                                                                                           elemsToFaces,
-                                                                                           rotationMatrix );
+                                                                                                             faceNormal,
+                                                                                                             elemsToFaces,
+                                                                                                             rotationMatrix );
 
     forAll< parallelDevicePolicy<> >( subRegion.size(),
                                       [ = ]
@@ -253,7 +253,7 @@ void SolidMechanicsLagrangeContactBubbleStab::assembleSystem( real64 const time,
                                                localRhs );
 
 
- 
+
   assembleStabilization( dt, domain, dofManager, localMatrix, localRhs );
 
   assembleContact( dt, domain, dofManager, localMatrix, localRhs );
@@ -265,7 +265,7 @@ void SolidMechanicsLagrangeContactBubbleStab::assembleStabilization( real64 cons
                                                                      CRSMatrixView< real64, globalIndex const > const & localMatrix,
                                                                      arrayView1d< real64 > const & localRhs )
 {
-   // Loop for assembling contributes of bubble elements (Abb, Abu, Aub)
+  // Loop for assembling contributes of bubble elements (Abb, Abu, Aub)
   forDiscretizationOnMeshTargets( domain.getMeshBodies(), [&] ( string const &,
                                                                 MeshLevel & mesh,
                                                                 arrayView1d< string const > const & regionNames )
@@ -282,7 +282,7 @@ void SolidMechanicsLagrangeContactBubbleStab::assembleStabilization( real64 cons
     real64 const gravityVectorData[3] = LVARRAY_TENSOROPS_INIT_LOCAL_3( gravityVector() );
 
 
-    solidMechanicsALMKernels::ALMBubbleFactory kernelFactory( dispDofNumber,
+    solidMechanicsConformingContactKernels::FaceBubbleFactory kernelFactory( dispDofNumber,
                                                               bubbleDofNumber,
                                                               dofManager.rankOffset(),
                                                               localMatrix,
@@ -305,7 +305,7 @@ void SolidMechanicsLagrangeContactBubbleStab::assembleStabilization( real64 cons
   } );
 }
 
-void SolidMechanicsLagrangeContactBubbleStab::assembleContact( real64 const dt, 
+void SolidMechanicsLagrangeContactBubbleStab::assembleContact( real64 const dt,
                                                                DomainPartition & domain,
                                                                DofManager const & dofManager,
                                                                CRSMatrixView< real64, globalIndex const > const & localMatrix,
@@ -373,7 +373,7 @@ void SolidMechanicsLagrangeContactBubbleStab::assembleContact( real64 const dt,
     real64 const gravityVectorData[3] = LVARRAY_TENSOROPS_INIT_LOCAL_3( gravityVector() );
 
 
-    solidMechanicsALMKernels::ALMBubbleFactory kernelFactory( dispDofNumber,
+    solidMechanicsConformingContactKernels::FaceBubbleFactory kernelFactory( dispDofNumber,
                                                               bubbleDofNumber,
                                                               dofManager.rankOffset(),
                                                               localMatrix,
@@ -516,9 +516,9 @@ void SolidMechanicsLagrangeContactBubbleStab::applySystemSolution( DofManager co
   dofManager.addVectorToField( localSolution,
                                solidMechanics::totalBubbleDisplacement::key(),
                                solidMechanics::incrementalBubbleDisplacement::key(),
-                               scalingFactor );                             
+                               scalingFactor );
 
-  
+
   // Loop for updating the displacement jump
   forDiscretizationOnMeshTargets( domain.getMeshBodies(), [&] ( string const & meshName,
                                                                 MeshLevel & mesh,
@@ -546,12 +546,12 @@ void SolidMechanicsLagrangeContactBubbleStab::applySystemSolution( DofManager co
     {
 
       solidMechanicsConformingContactKernels::DispJumpUpdateFactory kernelFactory( dispDofNumber,
-                                                                    bubbleDofNumber,
-                                                                    dofManager.rankOffset(),
-                                                                    voidMatrix.toViewConstSizes(),
-                                                                    voidRhs.toView(),
-                                                                    dt,
-                                                                    faceElementList );
+                                                                                   bubbleDofNumber,
+                                                                                   dofManager.rankOffset(),
+                                                                                   voidMatrix.toViewConstSizes(),
+                                                                                   voidRhs.toView(),
+                                                                                   dt,
+                                                                                   faceElementList );
 
       real64 maxTraction = finiteElement::
                              interfaceBasedKernelApplication

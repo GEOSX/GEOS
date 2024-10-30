@@ -69,19 +69,19 @@ public:
    * @copydoc geos::finiteElement::InterfaceKernelBase::InterfaceKernelBase
    */
   DispJumpUpdate( NodeManager const & nodeManager,
-                 EdgeManager const & edgeManager,
-                 FaceManager const & faceManager,
-                 localIndex const targetRegionIndex,
-                 FaceElementSubRegion & elementSubRegion,
-                 FE_TYPE const & finiteElementSpace,
-                 CONSTITUTIVE_TYPE & inputConstitutiveType,
-                 arrayView1d< globalIndex const > const uDofNumber,
-                 arrayView1d< globalIndex const > const bDofNumber,
-                 globalIndex const rankOffset,
-                 CRSMatrixView< real64, globalIndex const > const inputMatrix,
-                 arrayView1d< real64 > const inputRhs,
-                 real64 const inputDt,
-                 arrayView1d< localIndex const > const & faceElementList ):
+                  EdgeManager const & edgeManager,
+                  FaceManager const & faceManager,
+                  localIndex const targetRegionIndex,
+                  FaceElementSubRegion & elementSubRegion,
+                  FE_TYPE const & finiteElementSpace,
+                  CONSTITUTIVE_TYPE & inputConstitutiveType,
+                  arrayView1d< globalIndex const > const uDofNumber,
+                  arrayView1d< globalIndex const > const bDofNumber,
+                  globalIndex const rankOffset,
+                  CRSMatrixView< real64, globalIndex const > const inputMatrix,
+                  arrayView1d< real64 > const inputRhs,
+                  real64 const inputDt,
+                  arrayView1d< localIndex const > const & faceElementList ):
     Base( nodeManager,
           edgeManager,
           faceManager,
@@ -116,11 +116,11 @@ public:
     GEOS_HOST_DEVICE
     StackVariables():
       Base::StackVariables(),
-            uLocal{},
-            bLocal{},
-            duLocal{},
-            dbLocal{},
-            deltaDispJumpLocal{}
+                                       uLocal{},
+                                       bLocal{},
+                                       duLocal{},
+                                       dbLocal{},
+                                       deltaDispJumpLocal{}
     {}
 
     /// Stack storage for the element local displacement vector
@@ -256,13 +256,13 @@ protected:
 };
 
 using DispJumpUpdateFactory = finiteElement::InterfaceKernelFactory< DispJumpUpdate,
-                                                                    arrayView1d< globalIndex const > const,
-                                                                    arrayView1d< globalIndex const > const,
-                                                                    globalIndex const,
-                                                                    CRSMatrixView< real64, globalIndex const > const,
-                                                                    arrayView1d< real64 > const,
-                                                                    real64 const,
-                                                                    arrayView1d< localIndex const > const >;
+                                                                     arrayView1d< globalIndex const > const,
+                                                                     arrayView1d< globalIndex const > const,
+                                                                     globalIndex const,
+                                                                     CRSMatrixView< real64, globalIndex const > const,
+                                                                     arrayView1d< real64 > const,
+                                                                     real64 const,
+                                                                     arrayView1d< localIndex const > const >;
 
 } // namespace SolidMechanicsALMKernels
 
