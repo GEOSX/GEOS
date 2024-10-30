@@ -76,20 +76,15 @@ WellGeneratorBase::WellGeneratorBase( string const & name, Group * const parent 
 
 Group * WellGeneratorBase::createChild( string const & childKey, string const & childName )
 {
-  if( childKey == viewKeyStruct::perforationString() )
-  {
-    ++m_numPerforations;
+  GEOS_LOG_RANK_0( "Adding Well attribute: " << childKey << ", " << childName );
+  const auto childTypes = { viewKeyStruct::perforationString };
+  GEOS_ERROR_IF( childKey != viewKeyStruct::perforationString,
+                 CatalogInterface::unknownTypeError( getCatalogName(), getDataContext(), childTypes ) );
 
-    // keep track of the perforations that have been added
-    m_perforationList.emplace_back( childName );
-    GEOS_LOG_RANK_0( "Adding Well attribute: " << childKey << ", " << childName );
-    return &registerGroup< Perforation >( childName );
-  }
-  else
-  {
-    GEOS_THROW( "Unrecognized node: " << childKey, InputError );
-  }
-  return nullptr;
+  ++m_numPerforations;
+  m_perforationList.emplace_back( childName );
+
+  return &registerGroup< Perforation >( childName );
 }
 
 void WellGeneratorBase::expandObjectCatalogs()
