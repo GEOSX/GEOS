@@ -301,29 +301,37 @@ void NeighborCommunicator::unpackGhosts( MeshLevel & mesh,
   m_receiveBufferPtr = receiveBuff.data();
 
   m_unpackedSize = 0;
-  m_nodeUnpackList.resize(0);
-  m_edgeUnpackList.resize(0);
-  m_faceUnpackList.resize(0);
+
+  m_nodeUnpackList.resize( 0 );
+  m_unpackedSize += nodeManager.unpackGlobalMaps( m_receiveBufferPtr, m_nodeUnpackList, 0 );
+
+  m_edgeUnpackList.resize( 0 );
+  m_unpackedSize += edgeManager.unpackGlobalMaps( m_receiveBufferPtr, m_edgeUnpackList, 0 );
+
+  m_faceUnpackList.resize( 0 );
+  m_unpackedSize += faceManager.unpackGlobalMaps( m_receiveBufferPtr, m_faceUnpackList, 0 );
+
   m_elementAdjacencyReceiveListArray =
     elemManager.constructReferenceAccessor< localIndex_array >( ObjectManagerBase::viewKeyStruct::ghostsToReceiveString(),
                                                                 std::to_string( this->m_neighborRank ) );
 
-  m_unpackedSize += nodeManager.unpackGlobalMaps( m_receiveBufferPtr, m_nodeUnpackList, 0 );
-  m_unpackedSize += edgeManager.unpackGlobalMaps( m_receiveBufferPtr, m_edgeUnpackList, 0 );
-  m_unpackedSize += faceManager.unpackGlobalMaps( m_receiveBufferPtr, m_faceUnpackList, 0 );
   m_unpackedSize += elemManager.unpackGlobalMaps( m_receiveBufferPtr,
-                                                m_elementAdjacencyReceiveListArray );
+                                                  m_elementAdjacencyReceiveListArray );
 
 
 }
 
 void NeighborCommunicator::unpackGhostsData( MeshLevel & mesh,
-                                            int const commID )
+                                             int const commID )
 {
   NodeManager & nodeManager = mesh.getNodeManager();
   EdgeManager & edgeManager = mesh.getEdgeManager();
   FaceManager & faceManager = mesh.getFaceManager();
   ElementRegionManager & elemManager = mesh.getElemManager();
+
+  ElemAdjListViewType elementAdjacencyReceiveList =
+    elemManager.constructViewAccessor< array1d< localIndex >, arrayView1d< localIndex > >( ObjectManagerBase::viewKeyStruct::ghostsToReceiveString(),
+                                                                                           std::to_string( this->m_neighborRank ) );
 
 
   m_unpackedSize += nodeManager.unpackUpDownMaps( m_receiveBufferPtr, m_nodeUnpackList, false, false );
@@ -335,10 +343,6 @@ void NeighborCommunicator::unpackGhostsData( MeshLevel & mesh,
   m_unpackedSize += nodeManager.unpack( m_receiveBufferPtr, m_nodeUnpackList, 0, false, events );
   m_unpackedSize += edgeManager.unpack( m_receiveBufferPtr, m_edgeUnpackList, 0, false, events );
   m_unpackedSize += faceManager.unpack( m_receiveBufferPtr, m_faceUnpackList, 0, false, events );
-
-  ElemAdjListViewType elementAdjacencyReceiveList =
-    elemManager.constructViewAccessor< array1d< localIndex >, arrayView1d< localIndex > >( ObjectManagerBase::viewKeyStruct::ghostsToReceiveString(),
-                                                                                           std::to_string( this->m_neighborRank ) );
   m_unpackedSize += elemManager.unpack( m_receiveBufferPtr, elementAdjacencyReceiveList );
 
   waitAllDeviceEvents( events );

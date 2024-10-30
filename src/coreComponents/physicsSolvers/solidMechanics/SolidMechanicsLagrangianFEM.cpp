@@ -1227,20 +1227,6 @@ SolidMechanicsLagrangianFEM::
     SortedArrayView< localIndex const > const &
     targetNodes = nodeManager.sets().getReference< SortedArray< localIndex > >( viewKeyStruct::targetNodesString() ).toViewConst();
 
-  // int const numRanks = MpiWrapper::commSize();
-  // int const thisRank = MpiWrapper::commRank();
-
-  // for( int rank=0; rank<numRanks; ++rank )
-  // {
-  //   if( rank==thisRank )
-  //   { 
-  //     std::cout<<"rank: "<<rank<<std::endl;
-  //     std::cout<<"targetNodes: "<<targetNodes<<std::endl;
-  //     std::cout<<"dofNumber: "<<dofNumber<<std::endl;
-  //   }
-  //   MpiWrapper::barrier( MPI_COMM_GEOS );
-  // }
-
     forAll< parallelDevicePolicy<> >( targetNodes.size(),
                                       [localRhs, localSum, dofNumber, rankOffset, ghostRank, targetNodes] GEOS_HOST_DEVICE ( localIndex const k )
     {

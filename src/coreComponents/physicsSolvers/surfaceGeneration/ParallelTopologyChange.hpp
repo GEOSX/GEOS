@@ -43,15 +43,15 @@ void synchronizeTopologyChange( MeshLevel * const mesh,
 
 struct TopologyChangeStepData
 {
-  void init( ElementRegionManager const & elemManager)
+  void init( ElementRegionManager const & elemManager )
   {
-    m_nodes.resize(0) ;
-    m_edges.resize(0) ;
-    m_faces.resize(0) ;
+    m_nodes.resize( 0 );
+    m_edges.resize( 0 );
+    m_faces.resize( 0 );
     m_elements.resize( elemManager.numRegions() );
     m_elementsView.resize( elemManager.numRegions() );
-    m_elementsData.resize(elemManager.numRegions() );
-    m_size = 0 ;
+    m_elementsData.resize( elemManager.numRegions() );
+    m_size = 0;
 
     for( localIndex er=0; er<elemManager.numRegions(); ++er )
     {
@@ -61,7 +61,7 @@ struct TopologyChangeStepData
       m_elementsData[er].resize( elemRegion.numSubRegions());
       for( localIndex esr=0; esr<elemRegion.numSubRegions(); ++esr )
       {
-        m_elementsData[er][esr].resize(0);
+        m_elementsData[er][esr].resize( 0 );
         m_elements[er][esr].set( m_elementsData[er][esr] );
         m_elementsView[er][esr] = m_elementsData[er][esr];
       }
@@ -83,9 +83,9 @@ struct TopologyChangeStepData
 struct TopologyChangeUnpackStepData : public TopologyChangeStepData
 {
   void init( buffer_type const & receiveBuffer,
-             ElementRegionManager const & elemManager)
+             ElementRegionManager const & elemManager )
   {
-    m_bufferPtr = receiveBuffer.data() ;
+    m_bufferPtr = receiveBuffer.data();
     TopologyChangeStepData::init( elemManager );
   }
 

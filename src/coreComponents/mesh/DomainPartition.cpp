@@ -83,7 +83,6 @@ void DomainPartition::setupBaseLevelMeshGlobalInfo()
   SpatialPartition & partition = dynamic_cast< SpatialPartition & >(partition1);
 
   const std::set< int > metisNeighborList = partition.getMetisNeighborList();
-  std::cout<<"metisNeighborList.size() = "<<metisNeighborList.size()<<std::endl;
   if( metisNeighborList.empty() )
   {
 
@@ -106,14 +105,10 @@ void DomainPartition::setupBaseLevelMeshGlobalInfo()
   }
   else
   {
-    std::cout<<" MpiWrapper::commRank() = "<<MpiWrapper::commRank()<<" has neighbors ( ";
     for( integer const neighborRank : metisNeighborList )
     {
       m_neighbors.emplace_back( neighborRank );
-      std::cout<<neighborRank<<", ";
-
     }
-    std::cout<<" )"<<std::endl;
   }
 
   // Create an array of the first neighbors.

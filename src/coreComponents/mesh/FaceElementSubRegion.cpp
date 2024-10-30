@@ -355,27 +355,13 @@ localIndex FaceElementSubRegion::unpackUpDownMaps( buffer_unit_type const * & bu
                                      packList,
                                      this->globalToLocalMap() );
 
+
+  GEOS_ERROR_IF_NE( m_unmappedGlobalIndicesInToNodes.size(), 0 );
+  GEOS_ERROR_IF_NE( m_unmappedGlobalIndicesInToEdges.size(), 0 );
+  GEOS_ERROR_IF_NE( m_unmappedGlobalIndicesInToFaces.size(), 0 );
+
   return unPackedSize;
 }
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
 
 localIndex FaceElementSubRegion::packToFaceRelationSize( arrayView1d< localIndex const > const & packList ) const
 {
@@ -384,7 +370,7 @@ localIndex FaceElementSubRegion::packToFaceRelationSize( arrayView1d< localIndex
 }
 
 localIndex FaceElementSubRegion::packToFaceRelation( buffer_unit_type * & buffer,
-                                                 arrayView1d< localIndex const > const & packList ) const
+                                                     arrayView1d< localIndex const > const & packList ) const
 {
   return packToFaceRelationImpl< true >( buffer, packList );
 }
@@ -392,7 +378,7 @@ localIndex FaceElementSubRegion::packToFaceRelation( buffer_unit_type * & buffer
 
 template< bool DO_PACKING >
 localIndex FaceElementSubRegion::packToFaceRelationImpl( buffer_unit_type * & buffer,
-                                                     arrayView1d< localIndex const > const & packList ) const
+                                                         arrayView1d< localIndex const > const & packList ) const
 {
   arrayView1d< globalIndex const > const localToGlobal = this->localToGlobalMap();
   arrayView1d< globalIndex const > const faceLocalToGlobal = m_toFacesRelation.relatedObjectLocalToGlobal();
@@ -410,9 +396,9 @@ localIndex FaceElementSubRegion::packToFaceRelationImpl( buffer_unit_type * & bu
 
 
 localIndex FaceElementSubRegion::unpackToFaceRelation( buffer_unit_type const * & buffer,
-                                                   localIndex_array & packList,
-                                                   bool const overwriteUpMaps,
-                                                   bool const GEOS_UNUSED_PARAM( overwriteDownMaps ) )
+                                                       localIndex_array & packList,
+                                                       bool const overwriteUpMaps,
+                                                       bool const GEOS_UNUSED_PARAM( overwriteDownMaps ) )
 {
   localIndex unPackedSize = 0;
 
@@ -429,22 +415,6 @@ localIndex FaceElementSubRegion::unpackToFaceRelation( buffer_unit_type const * 
 
   return unPackedSize;
 }
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
 
 
 /**

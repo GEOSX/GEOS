@@ -556,25 +556,6 @@ ElementRegionManager::unpackUpDownMaps( buffer_unit_type const * & buffer,
   return unpackedSize;
 }
 
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
 int ElementRegionManager::packFaceElementToFaceSize( ElementViewAccessor< arrayView1d< localIndex > > const & packList ) const
 {
   buffer_unit_type * junk = nullptr;
@@ -582,14 +563,14 @@ int ElementRegionManager::packFaceElementToFaceSize( ElementViewAccessor< arrayV
 }
 
 int ElementRegionManager::packFaceElementToFace( buffer_unit_type * & buffer,
-                                          ElementViewAccessor< arrayView1d< localIndex > > const & packList ) const
+                                                 ElementViewAccessor< arrayView1d< localIndex > > const & packList ) const
 {
   return packFaceElementToFaceImpl< true >( buffer, packList );
 }
 
 template< bool DO_PACKING, typename T >
 int ElementRegionManager::packFaceElementToFaceImpl( buffer_unit_type * & buffer,
-                                              T const & packList ) const
+                                                     T const & packList ) const
 {
   int packedSize = 0;
 
@@ -635,30 +616,26 @@ int ElementRegionManager::packFaceElementToFaceImpl( buffer_unit_type * & buffer
 
 int
 ElementRegionManager::unpackFaceElementToFace( buffer_unit_type const * & buffer,
-                                        ElementReferenceAccessor< localIndex_array > & packList,
-                                        bool const overwriteMap )
+                                               ElementReferenceAccessor< localIndex_array > & packList,
+                                               bool const overwriteMap )
 {
   int unpackedSize = 0;
 
   localIndex numRegionsRead;
   unpackedSize += bufferOps::Unpack( buffer, numRegionsRead );
-  //std::cout<<"numRegionsRead: "<<numRegionsRead<<std::endl;
   for( localIndex kReg=0; kReg<numRegionsRead; ++kReg )
   {
     string regionName;
     unpackedSize += bufferOps::Unpack( buffer, regionName );
-    //std::cout<<"regionName: "<<regionName<<std::endl;
     ElementRegionBase & elemRegion = getRegion( regionName );
 
     localIndex numSubRegionsRead;
     unpackedSize += bufferOps::Unpack( buffer, numSubRegionsRead );
-    //std::cout<<"numSubRegionsRead: "<<numSubRegionsRead<<std::endl;
     elemRegion.forElementSubRegionsIndex< FaceElementSubRegion >(
       [&]( localIndex const kSubReg, FaceElementSubRegion & subRegion )
     {
       string subRegionName;
       unpackedSize += bufferOps::Unpack( buffer, subRegionName );
-      //std::cout<<"subRegionName: "<<subRegionName<<std::endl;
       GEOS_ERROR_IF( subRegionName != subRegion.getName(),
                      "Unpacked subregion name (" << subRegionName << ") does not equal object name (" << subRegion.getName() << ")" );
 
@@ -669,19 +646,6 @@ ElementRegionManager::unpackFaceElementToFace( buffer_unit_type const * & buffer
 
   return unpackedSize;
 }
-
-
-
-
-
-
-
-
-
-
-
-
-
 
 
 int ElementRegionManager::packFracturedElementsSize( ElementViewAccessor< arrayView1d< localIndex > > const & packList,
@@ -837,7 +801,7 @@ void ElementRegionManager::outputObjectConnectivity() const
           auto const & elemGlobalToLocal = subRegion.globalToLocalMap();
           arrayView1d< globalIndex const > const & nodeLocalToGlobal = elemToNodeRelation.relatedObjectLocalToGlobal();
           auto const & refCoords = getParent().getGroup< NodeManager >( "nodeManager" ).referencePosition();
-          
+
           printf( "  ElementToNodes map:\n" );
           for( localIndex k=0; k<elemToNode.size( 0 ); ++k )
           {
@@ -854,7 +818,7 @@ void ElementRegionManager::outputObjectConnectivity() const
           }
 
           printf( "\n  ElementToNodes map ( global nodes sorted by global elems):\n" );
-          map< globalIndex, localIndex > const sortedGlobalToLocalMap( elemGlobalToLocal.begin(), 
+          map< globalIndex, localIndex > const sortedGlobalToLocalMap( elemGlobalToLocal.begin(),
                                                                        elemGlobalToLocal.end());
           for( auto indexPair : sortedGlobalToLocalMap )
           {

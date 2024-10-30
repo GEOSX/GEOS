@@ -1091,12 +1091,6 @@ public:
                         bool const overwriteMap );
 
 
-
-
-
-
-
-
   /**
    * @brief Get the buffer size needed to pack element-to-node and element-to-face maps.
    * @param packList list of indices to pack
@@ -1111,7 +1105,7 @@ public:
    * @return the size of data packed.
    */
   int packFaceElementToFace( buffer_unit_type * & buffer,
-                      ElementViewAccessor< arrayView1d< localIndex > > const & packList ) const;
+                             ElementViewAccessor< arrayView1d< localIndex > > const & packList ) const;
 
   /**
    * @brief Unpack element-to-node and element-to-face maps.
@@ -1121,17 +1115,8 @@ public:
    * @return the size of data packed.
    */
   int unpackFaceElementToFace( buffer_unit_type const * & buffer,
-                        ElementReferenceAccessor< localIndex_array > & packList,
-                        bool const overwriteMap );
-
-
-
-
-
-
-
-
-
+                               ElementReferenceAccessor< localIndex_array > & packList,
+                               bool const overwriteMap );
 
   /**
    * @brief Get the buffer size needed to pack the set of fractured elements and the map toEmbSurfaces.
@@ -1203,8 +1188,8 @@ private:
   template< bool DO_PACKING, typename T >
   int
   packFaceElementToFaceImpl( buffer_unit_type * & buffer,
-                      T const & packList ) const;
-                      
+                             T const & packList ) const;
+
   /**
    * @brief Unpack element-to-node and element-to-face maps.
    * @param buffer pointer to the buffer to be unpacked

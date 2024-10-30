@@ -117,9 +117,9 @@ public:
                                  arrayView1d< localIndex const > const & packList ) const;
 
   localIndex unpackToFaceRelation( buffer_unit_type const * & buffer,
-                                       array1d< localIndex > & packList,
-                                       bool const overwriteUpMaps,
-                                       bool const overwriteDownMaps );
+                                   array1d< localIndex > & packList,
+                                   bool const overwriteUpMaps,
+                                   bool const overwriteDownMaps );
 
 
 

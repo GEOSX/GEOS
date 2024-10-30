@@ -299,9 +299,9 @@ localIndex NodeManager::unpackUpDownMaps( buffer_unit_type const * & buffer,
                                      m_toElements.getElementRegionManager(),
                                      overwriteUpMaps );
 
-  // GEOS_ERROR_IF_EQ( m_unmappedGlobalIndicesInToEdges.size(), 0 );
-  // GEOS_ERROR_IF_EQ( m_unmappedGlobalIndicesInToFaces.size(), 0 );
-  
+  GEOS_ERROR_IF_NE( m_unmappedGlobalIndicesInToEdges.size(), 0 );
+  GEOS_ERROR_IF_NE( m_unmappedGlobalIndicesInToFaces.size(), 0 );
+
 
   return unPackedSize;
 }
@@ -381,18 +381,18 @@ void NodeManager::outputObjectConnectivity() const
       printf( "  Reference positions:\n" );
       for( localIndex a=0; a<this->size(); ++a )
       {
-        printf( "  %3d( %3lld ): %6.2f, %6.2f, %6.2f \n", a, m_localToGlobalMap(a), m_referencePosition( a, 0 ), m_referencePosition( a, 1 ), m_referencePosition( a, 2 ) );
+        printf( "  %3d( %3lld ): %6.2f, %6.2f, %6.2f \n", a, m_localToGlobalMap( a ), m_referencePosition( a, 0 ), m_referencePosition( a, 1 ), m_referencePosition( a, 2 ) );
       }
 
       printf( "\n  Reference positions (sorted by global):\n" );
-      map< globalIndex, localIndex > const sortedGlobalToLocalMap(m_globalToLocalMap.begin(), m_globalToLocalMap.end());
+      map< globalIndex, localIndex > const sortedGlobalToLocalMap( m_globalToLocalMap.begin(), m_globalToLocalMap.end());
       for( auto indexPair : sortedGlobalToLocalMap )
       {
         globalIndex const ga = indexPair.first;
         localIndex const a = indexPair.second;
-        printf( "  %3d( %3lld ): %6.2f, %6.2f, %6.2f \n", a, m_localToGlobalMap(a), m_referencePosition( a, 0 ), m_referencePosition( a, 1 ), m_referencePosition( a, 2 ) );
-      }      
-      
+        printf( "  %3d( %3lld ): %6.2f, %6.2f, %6.2f \n", a, m_localToGlobalMap( a ), m_referencePosition( a, 0 ), m_referencePosition( a, 1 ), m_referencePosition( a, 2 ) );
+      }
+
       // printf( "  toEdgesRelation: \n" );
       // arrayView1d< globalIndex const > const & edgeLocalToGlobal = m_toEdgesRelation.relatedObjectLocalToGlobal();
       // for( localIndex a=0; a<this->size(); ++a )

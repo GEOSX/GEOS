@@ -48,15 +48,24 @@ void print( ModifiedObjectLists const & objectList )
       std::cout<<"rank "<<rank<<std::endl;
 
       std::cout<<"  newNodes: ";
-      for( localIndex newNode : objectList.newNodes ) { std::cout<<newNode<<" "; }
+      for( localIndex newNode : objectList.newNodes )
+      {
+        std::cout<<newNode<<" ";
+      }
       std::cout<<std::endl;
 
       std::cout<<"  newEdges: ";
-      for( localIndex newEdge : objectList.newEdges ) { std::cout<<newEdge<<" "; }
+      for( localIndex newEdge : objectList.newEdges )
+      {
+        std::cout<<newEdge<<" ";
+      }
       std::cout<<std::endl;
 
       std::cout<<"  newFaces: ";
-      for( localIndex newFace : objectList.newFaces ) { std::cout<<newFace<<" "; }
+      for( localIndex newFace : objectList.newFaces )
+      {
+        std::cout<<newFace<<" ";
+      }
       std::cout<<std::endl;
 
       std::cout<<"  newElements: "<<std::endl;
@@ -72,15 +81,24 @@ void print( ModifiedObjectLists const & objectList )
       std::cout<<std::endl;
 
       std::cout<<"  modifiedNodes: ";
-      for( localIndex modifiedNode : objectList.modifiedNodes ) { std::cout<<modifiedNode<<" "; }
+      for( localIndex modifiedNode : objectList.modifiedNodes )
+      {
+        std::cout<<modifiedNode<<" ";
+      }
       std::cout<<std::endl;
 
       std::cout<<"  modifiedEdges: ";
-      for( localIndex modifiedEdge : objectList.modifiedEdges ) { std::cout<<modifiedEdge<<" "; }
+      for( localIndex modifiedEdge : objectList.modifiedEdges )
+      {
+        std::cout<<modifiedEdge<<" ";
+      }
       std::cout<<std::endl;
 
       std::cout<<"  modifiedFaces: ";
-      for( localIndex modifiedFace : objectList.modifiedFaces ) { std::cout<<modifiedFace<<" "; }
+      for( localIndex modifiedFace : objectList.modifiedFaces )
+      {
+        std::cout<<modifiedFace<<" ";
+      }
       std::cout<<std::endl;
 
       std::cout<<"  modifiedElements: "<<std::endl;
@@ -103,8 +121,7 @@ void print( ModifiedObjectLists const & objectList )
 
 
 
-
-void packNewAndModifiedObjectsToOwningRanks(  NeighborCommunicator & neighbor,
+void packNewAndModifiedObjectsToOwningRanks( NeighborCommunicator & neighbor,
                                              MeshLevel * const meshLevel,
                                              ModifiedObjectLists const & modifiedObjects,
                                              int const commID )
@@ -477,10 +494,10 @@ localIndex unpackNewAndModifiedObjectsOnOwningRanks( NeighborCommunicator * cons
   return unpackedSize;
 }
 #else
-localIndex unpackNewObjectsOnOwningRanks(  NeighborCommunicator & neighbor,
-                                                     MeshLevel * const mesh,
-                                                     int const commID,
-                                                     ModifiedObjectLists & receivedObjects )
+localIndex unpackNewObjectsOnOwningRanks( NeighborCommunicator & neighbor,
+                                          MeshLevel * const mesh,
+                                          int const commID,
+                                          ModifiedObjectLists & receivedObjects )
 {
   GEOS_MARK_FUNCTION;
 
@@ -500,9 +517,9 @@ localIndex unpackNewObjectsOnOwningRanks(  NeighborCommunicator & neighbor,
   ElementRegionManager::ElementReferenceAccessor< array1d< localIndex > > & newLocalElements = neighbor.m_newLocalElements;
   array1d< array1d< localIndex_array > > & newLocalElementsData = neighbor.m_newLocalElementsData;
 
-  newLocalNodes.resize(0);
-  newLocalEdges.resize(0);
-  newLocalFaces.resize(0);
+  newLocalNodes.resize( 0 );
+  newLocalEdges.resize( 0 );
+  newLocalFaces.resize( 0 );
 
 
   newLocalElements.resize( elemManager.numRegions());
@@ -514,7 +531,7 @@ localIndex unpackNewObjectsOnOwningRanks(  NeighborCommunicator & neighbor,
     newLocalElementsData[er].resize( elemRegion.numSubRegions());
     for( localIndex esr=0; esr<elemRegion.numSubRegions(); ++esr )
     {
-      newLocalElementsData[er][esr].resize(0);
+      newLocalElementsData[er][esr].resize( 0 );
       newLocalElements[er][esr].set( newLocalElementsData[er][esr] );
     }
   }
@@ -551,10 +568,10 @@ localIndex unpackNewObjectsOnOwningRanks(  NeighborCommunicator & neighbor,
   return unpackedSize;
 }
 
-localIndex unpackNewAndModifiedObjectsDataOnOwningRanks(  NeighborCommunicator & neighbor,
-                                                     MeshLevel * const mesh,
-                                                     int const commID,
-                                                     ModifiedObjectLists & receivedObjects )
+localIndex unpackNewAndModifiedObjectsDataOnOwningRanks( NeighborCommunicator & neighbor,
+                                                         MeshLevel * const mesh,
+                                                         int const commID,
+                                                         ModifiedObjectLists & receivedObjects )
 {
   GEOS_MARK_FUNCTION;
 
@@ -692,7 +709,7 @@ void FilterModObjectsForPackToGhosts( std::set< localIndex > const & objectList,
   }
 }
 
-void packNewModifiedObjectsToGhosts(  NeighborCommunicator & neighbor,
+void packNewModifiedObjectsToGhosts( NeighborCommunicator & neighbor,
                                      int commID,
                                      MeshLevel * const mesh,
                                      ModifiedObjectLists & receivedObjects )
@@ -994,10 +1011,10 @@ void unpackNewModToGhosts( NeighborCommunicator * const neighbor,
 
 }
 #else
-void unpackNewObjectsToGhosts(  NeighborCommunicator & neighbor,
-                           int commID,
-                           MeshLevel * const mesh,
-                           ModifiedObjectLists & receivedObjects )
+void unpackNewObjectsToGhosts( NeighborCommunicator & neighbor,
+                               int commID,
+                               MeshLevel * const mesh,
+                               ModifiedObjectLists & receivedObjects )
 {
 
   NodeManager & nodeManager = mesh->getNodeManager();
@@ -1019,9 +1036,9 @@ void unpackNewObjectsToGhosts(  NeighborCommunicator & neighbor,
   localIndex_array & newGhostEdges = neighbor.m_newGhostEdges;
   localIndex_array & newGhostFaces = neighbor.m_newGhostFaces;
 
-  newGhostNodes.resize(0);
-  newGhostEdges.resize(0);
-  newGhostFaces.resize(0);
+  newGhostNodes.resize( 0 );
+  newGhostEdges.resize( 0 );
+  newGhostFaces.resize( 0 );
 
   ElementRegionManager::ElementReferenceAccessor< localIndex_array > & newGhostElems = neighbor.m_newGhostElems;
   array1d< array1d< localIndex_array > > & newGhostElemsData = neighbor.m_newGhostElemsData;
@@ -1034,7 +1051,7 @@ void unpackNewObjectsToGhosts(  NeighborCommunicator & neighbor,
     newGhostElems[er].resize( elemRegion.numSubRegions() );
     for( localIndex esr=0; esr<elemRegion.numSubRegions(); ++esr )
     {
-      newGhostElemsData[er][esr].resize(0);
+      newGhostElemsData[er][esr].resize( 0 );
       newGhostElems[er][esr].set( newGhostElemsData[er][esr] );
     }
   }
@@ -1100,15 +1117,10 @@ void unpackNewObjectsToGhosts(  NeighborCommunicator & neighbor,
 
 
 
-
-
-
-
-
-void unpackNewAndModifiedObjectsDataToGhosts(  NeighborCommunicator & neighbor,
-                           int commID,
-                           MeshLevel * const mesh,
-                           ModifiedObjectLists & receivedObjects )
+void unpackNewAndModifiedObjectsDataToGhosts( NeighborCommunicator & neighbor,
+                                              int commID,
+                                              MeshLevel * const mesh,
+                                              ModifiedObjectLists & receivedObjects )
 {
 
   NodeManager & nodeManager = mesh->getNodeManager();
@@ -1194,10 +1206,6 @@ void unpackNewAndModifiedObjectsDataToGhosts(  NeighborCommunicator & neighbor,
 
 }
 #endif
-
-
-
-
 
 
 
@@ -1329,9 +1337,9 @@ void parallelTopologyChange::synchronizeTopologyChange( MeshLevel * const mesh,
                                               receivedObjects );
 #else
     unpackNewObjectsOnOwningRanks( neighbor,
-                                              mesh,
-                                              commData.commID(),
-                                              receivedObjects );
+                                   mesh,
+                                   commData.commID(),
+                                   receivedObjects );
 #endif
   }
 
