@@ -49,6 +49,12 @@
     <PeriodicEvent
       name="solverApplications"
       target="/Solvers/FlowSolver" />
+
+    <PeriodicEvent
+      name="restarts"
+      timeFrequency="0.1"
+      targetExactTimestep="0"
+      target="/Outputs/restartOutput"/>
   </Events>
 
   <NumericalMethods>
@@ -128,7 +134,7 @@
       name="rockPorosity"
       defaultReferencePorosity="1.0"
       referencePressure="0.0"
-      compressibility="0.0" />
+      compressibility="1e-9" />
 
     <ConstantPermeability
       name="rockPerm"
@@ -191,5 +197,7 @@
   <Outputs>
     <VTK
       name="vtkOutput" />
+    <Restart
+      name="restartOutput"/>      
   </Outputs>
 </Problem>
