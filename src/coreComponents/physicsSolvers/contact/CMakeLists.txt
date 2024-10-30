@@ -8,6 +8,7 @@ set( physicsSolvers_headers
      contact/SolidMechanicsLagrangeContactBubbleStab.hpp
      contact/SolidMechanicsAugmentedLagrangianContact.hpp
      contact/kernels/SolidMechanicsConformingContactKernelsBase.hpp
+     contact/kernels/SolidMechanicsDisplacementJumpUpdateKernels.hpp
      contact/kernels/SolidMechanicsEFEMKernelsBase.hpp
      contact/kernels/SolidMechanicsEFEMKernels.hpp
      contact/kernels/SolidMechanicsEFEMStaticCondensationKernels.hpp
@@ -15,7 +16,6 @@ set( physicsSolvers_headers
      contact/kernels/SolidMechanicsALMKernelsBase.hpp
      contact/kernels/SolidMechanicsALMKernels.hpp
      contact/kernels/SolidMechanicsALMKernelsHelper.hpp
-     contact/kernels/SolidMechanicsDispJumpUpdateKernels.hpp
      contact/kernels/SolidMechanicsALMBubbleKernels.hpp
      contact/kernels/SolidMechanicsLagrangeContactKernels.hpp 
      contact/LogLevelsInfo.hpp

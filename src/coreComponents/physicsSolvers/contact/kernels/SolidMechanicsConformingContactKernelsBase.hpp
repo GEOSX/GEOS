@@ -55,6 +55,15 @@ public:
   /// Compile time value for the number of quadrature points per element.
   static constexpr int numQuadraturePointsPerElem = FE_TYPE::numQuadraturePoints;
 
+  /// The number of displacement dofs per element.
+  static constexpr int numUdofs = numNodesPerElem * 3 * 2;
+
+  /// The number of lagrange multiplier dofs per element.
+  static constexpr int numTdofs = 3;
+
+  /// The number of bubble dofs per element.
+  static constexpr int numBdofs = 3*2;
+
   using Base::m_dofNumber;
   using Base::m_dofRankOffset;
   using Base::m_finiteElementSpace;
@@ -100,15 +109,6 @@ public:
     m_dispJump( elementSubRegion.getField< fields::contact::dispJump >().toView() ),
     m_oldDispJump( elementSubRegion.getField< fields::contact::oldDispJump >().toViewConst() )
   {}
-
-  /// The number of displacement dofs per element.
-  static constexpr int numUdofs = numNodesPerElem * 3 * 2;
-
-  /// The number of lagrange multiplier dofs per element.
-  static constexpr int numTdofs = 3;
-
-  /// The number of bubble dofs per element.
-  static constexpr int numBdofs = 3*2;
 
   //***************************************************************************
   /**
@@ -193,7 +193,7 @@ public:
   }
   //END_kernelLauncher
   
-  template< typename LAMBDA >
+  template< typename LAMBDA = NoOpFunc >
   GEOS_HOST_DEVICE
   inline
   void quadraturePointKernel( localIndex const k,

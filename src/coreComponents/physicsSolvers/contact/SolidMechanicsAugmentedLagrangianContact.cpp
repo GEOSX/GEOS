@@ -23,7 +23,7 @@
 #include "physicsSolvers/contact/kernels/SolidMechanicsConformingContactKernelsBase.hpp"
 #include "physicsSolvers/contact/kernels/SolidMechanicsALMKernels.hpp"
 #include "physicsSolvers/contact/kernels/SolidMechanicsALMSimultaneousKernels.hpp"
-#include "physicsSolvers/contact/kernels/SolidMechanicsDispJumpUpdateKernels.hpp"
+#include "physicsSolvers/contact/kernels/SolidMechanicsDisplacementJumpUpdateKernels.hpp"
 #include "physicsSolvers/contact/kernels/SolidMechanicsALMBubbleKernels.hpp"
 #include "physicsSolvers/contact/LogLevelsInfo.hpp"
 

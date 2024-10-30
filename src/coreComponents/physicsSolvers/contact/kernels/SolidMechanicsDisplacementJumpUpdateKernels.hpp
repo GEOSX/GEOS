@@ -17,10 +17,10 @@
  * @file SolidMechanicsALMUpdateKernels.hpp
  */
 
-#ifndef GEOS_PHYSICSSOLVERS_CONTACT_KERNELS_SOLIDMECHANICSALMUPDATEKERNELS_HPP_
-#define GEOS_PHYSICSSOLVERS_CONTACT_KERNELS_SOLIDMECHANICSALMUPDATEKERNELS_HPP_
+#ifndef GEOS_PHYSICSSOLVERS_CONTACT_KERNELS_SOLIDMECHANICSDISPLACEMENTJUPDATEKERNELS_HPP_
+#define GEOS_PHYSICSSOLVERS_CONTACT_KERNELS_SOLIDMECHANICSDISPLACEMENTJUPDATEKERNELS_HPP_
 
-#include "SolidMechanicsALMKernelsBase.hpp"
+#include "SolidMechanicsConformingContactKernelsBase.hpp"
 
 namespace geos
 {
@@ -34,17 +34,26 @@ namespace solidMechanicsConformingContactKernels
 template< typename CONSTITUTIVE_TYPE,
           typename FE_TYPE >
 class DispJumpUpdate :
-  public ALMKernelsBase< CONSTITUTIVE_TYPE,
-                         FE_TYPE >
+  public ConformingContactKernelsBase< CONSTITUTIVE_TYPE,
+                                       FE_TYPE >
 {
 public:
   /// Alias for the base class;
-  using Base = ALMKernelsBase< CONSTITUTIVE_TYPE,
-                               FE_TYPE >;
+  using Base = ConformingContactKernelsBase< CONSTITUTIVE_TYPE,
+                                             FE_TYPE >;
 
   /// Maximum number of nodes per element, which is equal to the maxNumTestSupportPointPerElem and
   /// maxNumTrialSupportPointPerElem by definition.
   static constexpr int numNodesPerElem = Base::maxNumTestSupportPointsPerElem;
+
+  /// The number of displacement dofs per element.
+  static constexpr int numUdofs = Base::numUdofs;
+
+  /// The number of bubble dofs per element.
+  static constexpr int numBdofs = Base::numBdofs;
+
+  /// The number of lagrange multiplier dofs per element.
+  static constexpr int numTdofs = Base::numTdofs;
 
   using Base::m_X;
   using Base::m_finiteElementSpace;
@@ -101,15 +110,6 @@ public:
    */
   struct StackVariables : public Base::StackVariables
   {
-
-    /// The number of displacement dofs per element.
-    static constexpr int numUdofs = numNodesPerElem * 3 * 2;
-
-    /// The number of bubble dofs per element.
-    static constexpr int numBdofs = 3 * 2;
-
-    /// The number of lagrange multiplier dofs per element.
-    static constexpr int numTdofs = 3;
 
 public:
 
@@ -208,11 +208,6 @@ public:
   real64 complete( localIndex const k,
                    StackVariables & stack ) const
   {
-
-    constexpr int numUdofs = numNodesPerElem * 3 * 2;
-
-    constexpr int numBdofs = 3 * 2;
-
     real64 matRtAtu[3][numUdofs];
     real64 matRtAtb[3][numBdofs];
 
@@ -273,4 +268,4 @@ using DispJumpUpdateFactory = finiteElement::InterfaceKernelFactory< DispJumpUpd
 
 } // namespace geos
 
-#endif /* GEOS_PHYSICSSOLVERS_CONTACT_KERNELS_SOLIDMECHANICSALMUPDATEKERNELS_HPP_ */
+#endif /* GEOS_PHYSICSSOLVERS_CONTACT_KERNELS_SOLIDMECHANICSDISPLACEMENTJUPDATEKERNELS_HPP_ */
