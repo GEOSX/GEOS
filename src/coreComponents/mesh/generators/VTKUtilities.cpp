@@ -1088,7 +1088,7 @@ ElementType convertVtkToGeosxElementType( vtkCell *cell )
     case VTK_TETRA:            return ElementType::Tetrahedron;
     case VTK_PYRAMID:          return ElementType::Pyramid;
     case VTK_WEDGE:            return ElementType::Wedge;
-    case VTK_VOXEL:            return ElementType::Hexahedron;
+    case VTK_VOXEL:            return ElementType::Voxel;
     case VTK_HEXAHEDRON:       return ElementType::Hexahedron;
     case VTK_PENTAGONAL_PRISM: return ElementType::Prism5;
     case VTK_HEXAGONAL_PRISM:  return ElementType::Prism6;

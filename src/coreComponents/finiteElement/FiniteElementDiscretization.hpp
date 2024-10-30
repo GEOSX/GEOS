@@ -110,6 +110,9 @@ private:
 
   void postInputInitialization() override final;
 
+  std::unique_ptr<FiniteElementBase> createDefaultElement(ElementType const type) const;
+  std::unique_ptr<FiniteElementBase> createSpectralElement(ElementType const type) const;
+
 };
 
 /// Declare strings associated with enumeration values.

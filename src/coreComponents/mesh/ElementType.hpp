@@ -38,6 +38,7 @@ enum class ElementType : integer
   Tetrahedron,   ///< Four-node tetrahedral element
   Pyramid,       ///< Five-node pyramid element
   Wedge,         ///< Six-node wedge element
+  Voxel,         ///< Eight-node voxel element
   Hexahedron,    ///< Eight-node hexahedral element
   Prism5,        ///< Ten-node pentagonal prism
   Prism6,        ///< Twelve-node hexagonal prism
@@ -63,7 +64,7 @@ inline constexpr integer numElementTypes()
 /**
  * @brief Get number of spatial dimensions of element type
  * @param elementType type of element
- * @return number of spatial dimensions (1-3)
+ * @return number of spatial dimensions (1-3) HERE
  */
 inline int getElementDim( ElementType const elementType )
 {
@@ -77,6 +78,7 @@ inline int getElementDim( ElementType const elementType )
     case ElementType::Tetrahedron:
     case ElementType::Pyramid:
     case ElementType::Wedge:
+    case ElementType::Voxel:
     case ElementType::Hexahedron:
     case ElementType::Prism5:
     case ElementType::Prism6:
@@ -100,6 +102,7 @@ ENUM_STRINGS( ElementType,
               "C3D4",
               "C3D5",
               "C3D6",
+              "Voxel",
               "C3D8",
               "PentagonalPrism",
               "HexagonalPrism",
@@ -120,6 +123,7 @@ inline string getElementTypeName( ElementType const type )
 {
   switch( type )
   {
+    case ElementType::Voxel:       return "voxel";
     case ElementType::Hexahedron:  return "hexahedra";
     case ElementType::Tetrahedron: return "tetrahedra";
     case ElementType::Wedge:       return "wedges";

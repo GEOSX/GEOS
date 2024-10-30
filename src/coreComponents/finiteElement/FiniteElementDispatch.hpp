@@ -26,9 +26,9 @@
 #include "elementFormulations/H1_Pyramid_Lagrange1_Gauss5.hpp"
 #include "elementFormulations/H1_Tetrahedron_Lagrange1_Gauss1.hpp"
 #include "elementFormulations/H1_Wedge_Lagrange1_Gauss6.hpp"
-#if !defined( GEOS_USE_HIP )
+#include "elementFormulations/Qk_Cube_Lagrange_GaussLobatto.hpp"
 #include "elementFormulations/Qk_Hexahedron_Lagrange_GaussLobatto.hpp"
-#endif
+#include "elementFormulations/Qk_Voxel_Lagrange_GaussLobatto.hpp"
 #include "elementFormulations/H1_QuadrilateralFace_Lagrange1_GaussLegendre2.hpp"
 #include "elementFormulations/H1_TriangleFace_Lagrange1_Gauss1.hpp"
 #include "LvArray/src/system.hpp"
@@ -40,11 +40,21 @@
   finiteElement::H1_Pyramid_Lagrange1_Gauss5
 
 #define GL_FE_TYPES \
+  finiteElement::Q1_Cube_Lagrange_GaussLobatto, \
+  finiteElement::Q2_Cube_Lagrange_GaussLobatto, \
+  finiteElement::Q3_Cube_Lagrange_GaussLobatto, \
+  finiteElement::Q4_Cube_Lagrange_GaussLobatto, \
+  finiteElement::Q5_Cube_Lagrange_GaussLobatto, \
   finiteElement::Q1_Hexahedron_Lagrange_GaussLobatto, \
   finiteElement::Q2_Hexahedron_Lagrange_GaussLobatto, \
   finiteElement::Q3_Hexahedron_Lagrange_GaussLobatto, \
   finiteElement::Q4_Hexahedron_Lagrange_GaussLobatto, \
-  finiteElement::Q5_Hexahedron_Lagrange_GaussLobatto
+  finiteElement::Q5_Hexahedron_Lagrange_GaussLobatto  \
+  finiteElement::Q1_Voxel_Lagrange_GaussLobatto, \
+  finiteElement::Q2_Voxel_Lagrange_GaussLobatto, \
+  finiteElement::Q3_Voxel_Lagrange_GaussLobatto, \
+  finiteElement::Q4_Voxel_Lagrange_GaussLobatto, \
+  finiteElement::Q5_Voxel_Lagrange_GaussLobatto
 
 #if defined( GEOS_DISPATCH_VEM )
 

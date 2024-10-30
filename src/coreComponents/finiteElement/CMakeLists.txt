@@ -22,15 +22,14 @@ set( finiteElement_headers
      elementFormulations/LagrangeBasis2.hpp
      elementFormulations/LagrangeBasis3GL.hpp
      elementFormulations/LagrangeBasis5GL.hpp
+     elementFormulations/Qk_Cube_Lagrange_GaussLobatto.hpp
+     elementFormulations/Qk_Voxel_Lagrange_GaussLobatto.hpp
+     elementFormulations/Qk_Hexahedron_Lagrange_GaussLobatto.hpp
      kernelInterface/InterfaceKernelBase.hpp
      kernelInterface/ImplicitKernelBase.hpp
      kernelInterface/KernelBase.hpp
      kernelInterface/SparsityKernelBase.hpp
    )
-
-if( NOT ${ENABLE_HIP} )
-  list(APPEND finiteElement_headers elementFormulations/Qk_Hexahedron_Lagrange_GaussLobatto.hpp )
-endif()
 
 #
 # Specify all sources

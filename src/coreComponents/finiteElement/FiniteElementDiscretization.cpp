@@ -64,205 +64,94 @@ void FiniteElementDiscretization::postInputInitialization()
 std::unique_ptr< FiniteElementBase >
 FiniteElementDiscretization::factory( ElementType const parentElementShape ) const
 {
-  if( m_order==1 )
+  switch( m_formulation )
   {
-    switch( parentElementShape )
+    case Formulation::Default:
+      return createDefaultlElement( parentElementShape );
+    case Formulation::SEM:
+      return createSpectralElement( parentElementShape );
+    default:
+      GEOS_ERROR( getDataContext() << ": Formulation " << m_formulation << " is not supported." );
+  }
+}
+
+// TOOD fix broken refactoring
+
+std::unique_ptr<FiniteElementBase> createSpectralElement(ElementType const type) const {
+  switch( type )
+  {
+    case ElementType::Voxel 
+    {
+      // @TODO -> need to check if voxels are cubes
+      if (order == 1) return std::make_unique< Q1_Hexahedron_Lagrange_GaussLobatto >();
+      if (order == 2) return std::make_unique< Q2_Hexahedron_Lagrange_GaussLobatto >();
+      if (order == 3) return std::make_unique< Q3_Hexahedron_Lagrange_GaussLobatto >();
+      if (order == 4) return std::make_unique< Q4_Hexahedron_Lagrange_GaussLobatto >();
+      if (order == 5) return std::make_unique< Q5_Hexahedron_Lagrange_GaussLobatto >();
+      GEOS_ERROR( getDataContext() << ": Element Voxel does not have an associated SEM formulation for order " << order << "." );
+    }
+    case ElementType::Hexahedron:
+    {
+      if (order == 1) return std::make_unique< Q1_Hexahedron_Lagrange_GaussLobatto >();
+      if (order == 2) return std::make_unique< Q2_Hexahedron_Lagrange_GaussLobatto >();
+      if (order == 3) return std::make_unique< Q3_Hexahedron_Lagrange_GaussLobatto >();
+      if (order == 4) return std::make_unique< Q4_Hexahedron_Lagrange_GaussLobatto >();
+      if (order == 5) return std::make_unique< Q5_Hexahedron_Lagrange_GaussLobatto >();
+      GEOS_ERROR( getDataContext() << ": Element Hexahedron does not have an associated SEM formulation for order " << order << "." );
+    }
+    default:
+      GEOS_ERROR( getDataContext() << ": Element type " << type << " does not have an associated SEM formulation." );
+  }
+  return {};
+}
+
+std::unique_ptr<FiniteElementBase> createDefaultlElement(ElementType const type) const {
+  // On polyhedra where FEM are available, we use VEM only if useVirtualElements is set to 1 in
+  // the input file. On more general polyhedra (Prism), we always use VEM
+  if( m_useVem == 1 )
+  {
+    switch( type )
     {
       case ElementType::Triangle:      return std::make_unique< H1_TriangleFace_Lagrange1_Gauss1 >();
       case ElementType::Quadrilateral: return std::make_unique< H1_QuadrilateralFace_Lagrange1_GaussLegendre2 >();
-      // On polyhedra where FEM are available, we use VEM only if useVirtualElements is set to 1 in
-      // the input file.
-      case ElementType::Tetrahedron:
-      {
-        if( m_useVem == 1 )
-        {
-          return std::make_unique< H1_Tetrahedron_VEM_Gauss1 >();
-        }
-        else
-        {
-          return std::make_unique< H1_Tetrahedron_Lagrange1_Gauss1 >();
-        }
-      }
-      case ElementType::Pyramid:
-      {
-        if( m_useVem == 1 )
-        {
-          return std::make_unique< H1_Pyramid_VEM_Gauss1 >();
-        }
-        else
-        {
-          return std::make_unique< H1_Pyramid_Lagrange1_Gauss5 >();
-        }
-      }
-      case ElementType::Wedge:
-      {
-        if( m_useVem == 1 )
-        {
-#if !defined( GEOS_USE_HIP )
-          return std::make_unique< H1_Wedge_VEM_Gauss1 >();
-#else
-          GEOS_ERROR( "Cannot compile this with HIP active." );
-          return nullptr;
-#endif
-        }
-        else
-        {
-          return std::make_unique< H1_Wedge_Lagrange1_Gauss6 >();
-        }
-      }
-      case ElementType::Hexahedron:
-      {
-        if( m_useVem == 1 )
-        {
-#if !defined( GEOS_USE_HIP )
-          return std::make_unique< H1_Hexahedron_VEM_Gauss1 >();
-#else
-          GEOS_ERROR( "Cannot compile this with HIP active." );
-          return nullptr;
-#endif
-        }
-        else if( m_formulation == Formulation::SEM )
-        {
-#if !defined( GEOS_USE_HIP )
-          return std::make_unique< Q1_Hexahedron_Lagrange_GaussLobatto >();
-#else
-          GEOS_ERROR( "Cannot compile this with HIP active." );
-          return nullptr;
-#endif
-        }
-        else
-        {
-          return std::make_unique< H1_Hexahedron_Lagrange1_GaussLegendre2 >();
-        }
-      }
-      // On more general polyhedra, we always use VEM
-      case ElementType::Prism5:
-      {
-        return std::make_unique< H1_Prism5_VEM_Gauss1 >();
-      }
-      case ElementType::Prism6:
-      {
-        return std::make_unique< H1_Prism6_VEM_Gauss1 >();
-      }
-      case ElementType::Prism7:
-      {
-        return std::make_unique< H1_Prism7_VEM_Gauss1 >();
-      }
-      case ElementType::Prism8:
-      {
-        return std::make_unique< H1_Prism8_VEM_Gauss1 >();
-      }
-      case ElementType::Prism9:
-      {
-        return std::make_unique< H1_Prism9_VEM_Gauss1 >();
-      }
-      case ElementType::Prism10:
-      {
-        return std::make_unique< H1_Prism10_VEM_Gauss1 >();
-      }
-#if !defined( GEOS_USE_HIP )
-      case ElementType::Prism11:
-      {
-        return std::make_unique< H1_Prism11_VEM_Gauss1 >();
-      }
-#endif
+      case ElementType::Tetrahedron:   return std::make_unique< H1_Tetrahedron_VEM_Gauss1 >();
+      case ElementType::Pyramid:       return std::make_unique< H1_Pyramid_VEM_Gauss1 >();
+      case ElementType::Wedge:         return std::make_unique< H1_Wedge_VEM_Gauss1 >();
+      case ElementType::Voxel:         return std::make_unique< H1_Hexahedron_VEM_Gauss1 >();
+      case ElementType::Hexahedron:    return std::make_unique< H1_Hexahedron_VEM_Gauss1 >();
+      case ElementType::Prism5:        return std::make_unique< H1_Prism5_VEM_Gauss1 >();
+      case ElementType::Prism6:        return std::make_unique< H1_Prism6_VEM_Gauss1 >();
+      case ElementType::Prism7:        return std::make_unique< H1_Prism7_VEM_Gauss1 >();
+      case ElementType::Prism8:        return std::make_unique< H1_Prism8_VEM_Gauss1 >();
+      case ElementType::Prism9:        return std::make_unique< H1_Prism9_VEM_Gauss1 >();
+      case ElementType::Prism10:       return std::make_unique< H1_Prism10_VEM_Gauss1 >();
+      case ElementType::Prism11:       return std::make_unique< H1_Prism11_VEM_Gauss1 >();
       default:
-      {
-        GEOS_ERROR( getDataContext() << ": Element type " << parentElementShape << " does not have an associated element formulation." );
-      }
+        GEOS_ERROR( getDataContext() << ": Element type " << type << " does not have an associated default element formulation." );
     }
-    return {};
   }
-
-  if( m_order==2 )
+  else
   {
-    switch( parentElementShape )
+    switch( type )
     {
-#if !defined( GEOS_USE_HIP )
-      case ElementType::Hexahedron:
-        GEOS_ERROR_IF( m_formulation != Formulation::SEM,
-                       getDataContext() << ": Element type Hexahedron with order 2 available" <<
-                       " only when using the Spectral Element Method" );
-        return std::make_unique< Q2_Hexahedron_Lagrange_GaussLobatto >();
-#else
-      GEOS_ERROR( "Cannot compile this with HIP active." );
-#endif
+      case ElementType::Triangle:      return std::make_unique< H1_TriangleFace_Lagrange1_Gauss1 >();
+      case ElementType::Quadrilateral: return std::make_unique< H1_QuadrilateralFace_Lagrange1_GaussLegendre2 >();
+      case ElementType::Tetrahedron:   return std::make_unique< H1_Tetrahedron_Lagrange1_Gauss1 >();
+      case ElementType::Pyramid:       return std::make_unique< H1_Pyramid_Lagrange1_Gauss5 >();
+      case ElementType::Wedge:         return std::make_unique< H1_Wedge_Lagrange1_Gauss6 >();
+      case ElementType::Voxel:         return std::make_unique< H1_Hexahedron_Lagrange1_GaussLegendre2 >();
+      case ElementType::Hexahedron:    return std::make_unique< H1_Hexahedron_Lagrange1_GaussLegendre2 >();
+      case ElementType::Prism5:        return std::make_unique< H1_Prism5_VEM_Gauss1 >();
+      case ElementType::Prism6:        return std::make_unique< H1_Prism6_VEM_Gauss1 >();
+      case ElementType::Prism7:        return std::make_unique< H1_Prism7_VEM_Gauss1 >();
+      case ElementType::Prism8:        return std::make_unique< H1_Prism8_VEM_Gauss1 >();
+      case ElementType::Prism9:        return std::make_unique< H1_Prism9_VEM_Gauss1 >();
+      case ElementType::Prism10:       return std::make_unique< H1_Prism10_VEM_Gauss1 >();
+      case ElementType::Prism11:       return std::make_unique< H1_Prism11_VEM_Gauss1 >();
       default:
-      {
-        GEOS_ERROR( getDataContext() << ": Element type " << parentElementShape << " does not" <<
-                    " have an associated element formulation." );
-      }
+        GEOS_ERROR( getDataContext() << ": Element type " << type << " does not have an associated default element formulation." );
     }
-    return {};
   }
-
-  if( m_order==3 )
-  {
-    switch( parentElementShape )
-    {
-#if !defined( GEOS_USE_HIP )
-      case ElementType::Hexahedron:
-        GEOS_ERROR_IF( m_formulation != Formulation::SEM,
-                       getDataContext() << ": Element type Hexahedron with order 3 available" <<
-                       " only when using the Spectral Element Method" );
-        return std::make_unique< Q3_Hexahedron_Lagrange_GaussLobatto >();
-#else
-      GEOS_ERROR( "Cannot compile this with HIP active." );
-#endif
-      default:
-      {
-        GEOS_ERROR( getDataContext() << ": Element type " << parentElementShape << " does not" <<
-                    " have an associated element formulation." );
-      }
-    }
-    return {};
-  }
-
-  if( m_order==4 )
-  {
-    switch( parentElementShape )
-    {
-#if !defined( GEOS_USE_HIP )
-      case ElementType::Hexahedron:
-        GEOS_ERROR_IF( m_formulation != Formulation::SEM,
-                       getDataContext() << ": Element type Hexahedron with order 4 available only" <<
-                       " when using the Spectral Element Method" );
-        return std::make_unique< Q4_Hexahedron_Lagrange_GaussLobatto >();
-#else
-      GEOS_ERROR( "Cannot compile this with HIP active." );
-#endif
-      default:
-      {
-        GEOS_ERROR( getDataContext() << ": Element type " << parentElementShape << " does not have" <<
-                    " an associated element formulation." );
-      }
-    }
-    return {};
-  }
-
-  if( m_order==5 )
-  {
-    switch( parentElementShape )
-    {
-#if !defined( GEOS_USE_HIP )
-      case ElementType::Hexahedron:
-        GEOS_ERROR_IF( m_formulation != Formulation::SEM,
-                       getDataContext() << ": Element type Hexahedron with order 5 available only" <<
-                       " when using the Spectral Element Method" );
-        return std::make_unique< Q5_Hexahedron_Lagrange_GaussLobatto >();
-#else
-      GEOS_ERROR( "Cannot compile this with HIP active." );
-#endif
-      default:
-      {
-        GEOS_ERROR( getDataContext() << ": Element type " << parentElementShape << " does not have" <<
-                    " an associated element formulation." );
-      }
-    }
-    return {};
-  }
-  GEOS_ERROR( getDataContext() << ": Element type " << parentElementShape << " does not have an" <<
-              " associated element formulation." );
   return {};
 }
 

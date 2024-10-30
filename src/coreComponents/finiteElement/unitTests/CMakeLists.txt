@@ -1,4 +1,5 @@
 # Specify list of tests
+# @TODO -> add tests for all element discretization
 set(testSources
     testFiniteElementBase.cpp
     testH1_QuadrilateralFace_Lagrange1_GaussLegendre2.cpp

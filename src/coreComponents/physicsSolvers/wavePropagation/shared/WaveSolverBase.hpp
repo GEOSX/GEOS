@@ -25,21 +25,25 @@
 #include "mesh/MeshFields.hpp"
 #include "physicsSolvers/SolverBase.hpp"
 #include "common/LifoStorage.hpp"
-#if !defined( GEOS_USE_HIP )
 #include "finiteElement/elementFormulations/Qk_Hexahedron_Lagrange_GaussLobatto.hpp"
-#endif
 #include "WaveSolverUtils.hpp"
 
-#if !defined( GEOS_USE_HIP )
 #define SEM_FE_TYPES \
+  finiteElement::Q1_Cube_Lagrange_GaussLobatto, \
+  finiteElement::Q2_Cube_Lagrange_GaussLobatto, \
+  finiteElement::Q3_Cube_Lagrange_GaussLobatto, \
+  finiteElement::Q4_Cube_Lagrange_GaussLobatto, \
+  finiteElement::Q5_Cube_Lagrange_GaussLobatto, \
   finiteElement::Q1_Hexahedron_Lagrange_GaussLobatto, \
   finiteElement::Q2_Hexahedron_Lagrange_GaussLobatto, \
   finiteElement::Q3_Hexahedron_Lagrange_GaussLobatto, \
   finiteElement::Q4_Hexahedron_Lagrange_GaussLobatto, \
-  finiteElement::Q5_Hexahedron_Lagrange_GaussLobatto
-#else
-#define SEM_FE_TYPES
-#endif
+  finiteElement::Q5_Hexahedron_Lagrange_GaussLobatto  \
+  finiteElement::Q1_Voxel_Lagrange_GaussLobatto, \
+  finiteElement::Q2_Voxel_Lagrange_GaussLobatto, \
+  finiteElement::Q3_Voxel_Lagrange_GaussLobatto, \
+  finiteElement::Q4_Voxel_Lagrange_GaussLobatto, \
+  finiteElement::Q5_Voxel_Lagrange_GaussLobatto
 
 #define SELECTED_FE_TYPES SEM_FE_TYPES
 
