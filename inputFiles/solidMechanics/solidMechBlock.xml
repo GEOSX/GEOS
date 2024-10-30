@@ -67,7 +67,7 @@
     <!-- ElementRegion name="Region1" cellBlocks="cb1"     numericalMethod="FE1" material="granite"/-->
     <CellElementRegion
       name="Region2"
-      cellBlocks="{ cb1 }"
+      cellBlocks="{ * }"
       materialList="{ shale }"/>
   </ElementRegions>
 
