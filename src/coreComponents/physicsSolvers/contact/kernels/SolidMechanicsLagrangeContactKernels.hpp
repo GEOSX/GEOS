@@ -87,13 +87,12 @@ public:
        CONSTITUTIVE_TYPE & inputConstitutiveType,
        arrayView1d< globalIndex const > const uDofNumber,
        arrayView1d< globalIndex const > const bDofNumber,
-       arrayView1d< globalIndex const > const tDofNumber,
        globalIndex const rankOffset,
        CRSMatrixView< real64, globalIndex const > const inputMatrix,
        arrayView1d< real64 > const inputRhs,
        real64 const inputDt,
        arrayView1d< localIndex const > const & faceElementList,
-       bool const isSymmetric ):
+       string const tractionDofKey ):
     Base( nodeManager,
           edgeManager,
           faceManager,
@@ -109,7 +108,7 @@ public:
           inputDt,
           faceElementList ),
     m_traction( elementSubRegion.getField< fields::contact::traction >().toViewConst() ),
-    m_tDofNumber( tDofNumber )
+    m_tDofNumber( elementSubRegion.getReference< globalIndex_array >( tractionDofKey ) )
   {}
 
   //***************************************************************************
@@ -133,7 +132,10 @@ public:
             tColIndices{},
             localRu{},
             localRb{},
-            localRt{}
+            localRt{},
+            localAtt{{}},
+            localAut{{}},
+            localAbt{{}}
     {}
 
     /// C-array storage for the element local row degrees of freedom.
@@ -163,7 +165,7 @@ public:
     /// C-array storage for the element local Rt residual vector.
     real64 localRt[numTdofs];
 
-    /// C-array storage for the element local Aut matrix.
+    /// C-array storage for the element local Att matrix.
     real64 localAtt[numTdofs][numTdofs];
     
     /// C-array storage for the element local Aut matrix.
@@ -246,7 +248,6 @@ public:
 
      for( int i=0; i<3; ++i )
     {
-      // need to grab the index.
       stack.tEqnRowIndices[i]   = m_tDofNumber[k] + i - m_dofRankOffset;
       stack.tColIndices[i]      = m_tDofNumber[k] + i;
     }
@@ -261,9 +262,9 @@ public:
     Base::quadraturePointKernel( k, q, stack, [ = ]( real64 const detJ ), 
     {
       // This will vary depending on the state.
-      stack.localRt[0] = detJ * m_dispJump[k][0];
-      stack.localRt[1] = detJ * ( m_dispJump[k][1] - m_oldDispJump[k][1] );
-      stack.localRt[2] = detJ * ( m_dispJump[k][2] - m_oldDispJump[k][2] );
+      stack.localRt[0] += detJ * m_dispJump[k][0];
+      stack.localRt[1] += detJ * ( m_dispJump[k][1] - m_oldDispJump[k][1] );
+      stack.localRt[2] += detJ * ( m_dispJump[k][2] - m_oldDispJump[k][2] );
     } );
   }
   
@@ -325,13 +326,13 @@ private:
 
       // Fill in matrix block Att
       m_matrix.template addToRowBinarySearchUnsorted< parallelDeviceAtomic >( dof,
-                                                                              stack.bColIndices,
+                                                                              stack.tColIndices,
                                                                               stack.localAtt[i],
                                                                               numTdofs );
 
       // Fill in matrix block Atu
       m_matrix.template addToRowBinarySearchUnsorted< parallelDeviceAtomic >( dof,
-                                                                              stack.bColIndices,
+                                                                              stack.uColIndices,
                                                                               stack.localAtu[i],
                                                                               numUdofs );
 
@@ -387,7 +388,7 @@ using LagrangeContactFactory = finiteElement::InterfaceKernelFactory< LagrangeCo
                                                           arrayView1d< real64 > const,
                                                           real64 const,
                                                           arrayView1d< localIndex const > const,
-                                                          bool const >;
+                                                          string const >;
 
 } // namespace solidMechanicsLagrangeContactKernels
 
