@@ -190,8 +190,7 @@ private:
    * @param isSubColumn Boolean indicating if the current tableColumnData is a subcolumn
    */
   void populateColumnsFromTableData( std::vector< TableLayout::TableColumnData > & tableColumnsData,
-                                     std::vector< std::vector< string > > const & tableData,
-                                     bool isSubColumn ) const;
+                                     std::vector< std::vector< string > > const & tableData ) const;
 
   /**
    * @brief Split all header names by detecting the newline \\n character. and

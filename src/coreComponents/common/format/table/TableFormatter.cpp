@@ -209,7 +209,7 @@ void TableTextFormatter::prepareAndBuildTable( std::vector< TableLayout::TableCo
   if( !tableDataRows.empty())
   {
     updateVisibleColumns( tableColumnsData, tableDataRows );
-    populateColumnsFromTableData( tableColumnsData, tableDataRows, false );
+    populateColumnsFromTableData( tableColumnsData, tableDataRows );
   }
 
   std::vector< std::vector< string > > splitHeaders;
@@ -248,46 +248,52 @@ void TableTextFormatter::outputTable( std::ostringstream & tableOutput,
   }
 }
 
+void populateSubColumnsFromTableData( TableLayout::TableColumnData & tableColumnData,
+                                      std::vector< std::vector< string > > const & valuesByColumn,
+                                      size_t & idxColumn )
+{
+  size_t idxSubColumn = idxColumn;
+  for( auto & subColumnData : tableColumnData.subColumn )
+  {
+    subColumnData.columnValues = valuesByColumn[idxSubColumn++];
+  }
+
+  size_t nbSubColumns = tableColumnData.column.subColumnNames.size();
+  auto subColumnStartIter = valuesByColumn.begin() + idxColumn;
+  std::vector< std::vector< string > > valuesBySubColumn( subColumnStartIter,
+                                                          subColumnStartIter + nbSubColumns );
+  for( const auto & columnValues : valuesBySubColumn )
+  { // add all subcolumn values in parent tableColumnData
+    tableColumnData.columnValues.insert( tableColumnData.columnValues.end(),
+                                         columnValues.begin(),
+                                         columnValues.end() );
+  }
+  idxColumn += nbSubColumns;
+}
+
 void TableTextFormatter::populateColumnsFromTableData( std::vector< TableLayout::TableColumnData > & tableColumnsData,
-                                                       std::vector< std::vector< string > > const & tableDataRows,
-                                                       bool isSubColumn ) const
+                                                       std::vector< std::vector< string > > const & tableDataRows ) const
 {
   size_t currentColumn = 0;
-  std::vector< std::vector< string > > tColumnsValues( tableDataRows[0].size(),
+  std::vector< std::vector< string > > valuesByColumn( tableDataRows[0].size(),
                                                        std::vector< string >( tableDataRows.size()));
-  if( !isSubColumn )
-  {
-    transpose( tColumnsValues, tableDataRows );
-  }
+
+  // to insert directly the values in each columns, we fill with the transposed tableDataRows (row major->column major)
+  transpose( valuesByColumn, tableDataRows );
 
   for( auto & tableColumnData : tableColumnsData )
   {
     if( tableColumnData.subColumn.empty())
     {
-      tableColumnData.columnValues = !isSubColumn ?
-                                     tColumnsValues[currentColumn++] : tableDataRows[currentColumn++];
+      tableColumnData.columnValues = valuesByColumn[currentColumn++];
     }
     else
     {
-      size_t nbSubColumns = tableColumnData.column.subColumnNames.size();
-      auto subColumnStartIdx = tColumnsValues.begin() + currentColumn;
-      std::vector< std::vector< string > > subColumnValues( subColumnStartIdx,
-                                                            subColumnStartIdx + nbSubColumns );
-      populateColumnsFromTableData( tableColumnData.subColumn, subColumnValues, true );
-
-      std::vector< std::vector< string > > tSubColumnValues( subColumnValues[0].size(),
-                                                             std::vector< string >( subColumnValues.size()) );
-      transpose( tSubColumnValues, subColumnValues );
-      for( const auto & columnValues : tSubColumnValues )
-      { // add all subcolumn values in parent tableColumnData
-        tableColumnData.columnValues.insert( tableColumnData.columnValues.end(),
-                                             columnValues.begin(),
-                                             columnValues.end() );
-      }
-      currentColumn += subColumnValues.size();
+      populateSubColumnsFromTableData( tableColumnData, valuesByColumn, currentColumn );
     }
   }
 }
+
 
 void TableTextFormatter::splitAndMergeColumnHeaders( std::vector< TableLayout::TableColumnData > & tableColumnsData,
                                                      size_t & nbHeaderRows,
