@@ -11,14 +11,12 @@
 #
 # See top level LICENSE, COPYRIGHT, CONTRIBUTORS, NOTICE, and ACKNOWLEDGEMENTS files for details.
 # ------------------------------------------------------------------------------------------------------------
-import sys, os
-sys.path.append(os.path.join(os.path.dirname(__file__), '..', '..', '..', 'scripts', 'pygeosx'))
 
 import numpy as np
 from mpi4py import MPI
 
-from utilities.input import XML
-from utilities.solvers import ReservoirSolver
+from geos.pygeos_tools.utilities.input import XML
+from geos.pygeos_tools.utilities.solvers import ReservoirSolver
 
 from darts.models.darts_model import DartsModel
 from darts.physics.super.physics import Compositional
