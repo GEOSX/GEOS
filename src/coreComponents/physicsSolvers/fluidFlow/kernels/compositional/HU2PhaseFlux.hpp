@@ -575,8 +575,8 @@ protected:
                       localIndex const (&seri)[numFluxSupportPoints],
                       localIndex const (&sesri)[numFluxSupportPoints],
                       localIndex const (&sei)[numFluxSupportPoints],
-                      real64 const & pot_i, real64 const ( & dPot_i_dP )[numFluxSupportPoints], real64 const (&dPot_i_dC )[numFluxSupportPoints][numComp],
-                      real64 const & pot_j, real64 const ( & dPot_j_dP )[numFluxSupportPoints], real64 const ( &dPot_j_dC)[numFluxSupportPoints][numComp],
+                      real64 const & pot_i, real64 const ( &dPot_i_dP )[numFluxSupportPoints], real64 const (&dPot_i_dC )[numFluxSupportPoints][numComp],
+                      real64 const & pot_j, real64 const ( &dPot_j_dP )[numFluxSupportPoints], real64 const ( &dPot_j_dC)[numFluxSupportPoints][numComp],
                       ElementViewConst< arrayView2d< real64 const, compflow::USD_PHASE > > const & phaseMob,
                       ElementViewConst< arrayView3d< real64 const, compflow::USD_PHASE_DC > > const & dPhaseMob,
                       real64 & phaseFlux, real64 ( & dPhaseFlux_dP )[numFluxSupportPoints], real64 ( & dPhaseFlux_dC)[numFluxSupportPoints][numComp] )
