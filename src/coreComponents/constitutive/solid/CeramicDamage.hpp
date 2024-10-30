@@ -424,7 +424,7 @@ void CeramicDamageUpdates::smallStrainUpdateHelper( localIndex const k,
   real64 tFail = m_lengthScale[k] / m_crackSpeed;
 
   // get trial pressure
-  real64 pressure = -m_bulkModulus[k] * log( m_jacobian[k][q] );
+  real64 pressure = -m_bulkModulus[k] * LvArray::math::log( m_jacobian[k][q] );
 
   // Intermediate strength parameter
   real64 Yt0 = m_thirdInvariantDependence == 1 ? LvArray::math::max( 0.5 * Yt, LvArray::math::min( 2.0 * Yt, (3.0 * Yc * Yt ) / ( 2.0 * Yc + Yt + 1.0e-16 ) ) ) : Yt;

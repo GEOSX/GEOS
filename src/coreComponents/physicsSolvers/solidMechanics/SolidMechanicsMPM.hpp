@@ -299,6 +299,8 @@ public:
     static constexpr char const * gridReferenceSurfacePositionString() { return "gridReferenceSurfacePosition"; }
     static constexpr char const * gridReferenceMaterialVolumeString() { return "gridReferenceMaterialVolume"; }
 
+    static constexpr char const * gridBoreholeStressString() { return "gridBoreholeStress"; }
+
     static constexpr char const * gridSurfaceMassString() { return "gridSurfaceMass"; }
     static constexpr char const * gridSurfaceFieldMassString() { return "gridSurfaceFieldMass"; }
     static constexpr char const * gridExplicitSurfaceNormalString() { return "gridExplicitSurfaceNormal"; }
@@ -599,6 +601,8 @@ public:
                            real64 & shearStress,
                            real64 & damage );
 
+  void updateGridBoreholeStress( NodeManager & nodeManager );
+
   void particleToGrid( real64 const time_n,
                        integer const cycleNumber,
                        ParticleManager & particleManager,
@@ -824,7 +828,8 @@ protected:
   array1d< real64 > m_bodyForce;
 
   // borehole fluid pressure and radius used in the boreholePressure event.
-  real64 m_boreholePressure;
+  int m_enableBoreholePressure;
+  array1d< real64 > m_boreholeStress;
   real64 m_boreholeRadius;
 
   array1d< int > m_stressControl;

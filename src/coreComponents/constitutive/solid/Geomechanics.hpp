@@ -899,12 +899,12 @@ int GeomechanicsUpdates::computeStep( real64 const ( & D )[6],               // 
  		  {  // creep compaction
  			  real64 dphidt = -1.0*p*C*( phi_p - phi_e );  // creep compaction rate:
  			  real64 phi_c = LvArray::math::max( phi_e, phi_p + dphidt*dt ); // unloaded porosity after creep, don't let it go below equilibrium level
- 			  real64 evp_c = log( (phi_i - 1. ) / ( phi_c - 1. ) ); // vol. strain after creep.
+ 			  real64 evp_c = LvArray::math::log( (phi_i - 1. ) / ( phi_c - 1. ) ); // vol. strain after creep.
  			  real64 devp = evp_c - evp;  // creep vol. strain increment
  			  real64 p_c = LvArray::math::max( 0., p + bulk*devp );  // relaxed pressure after creep.
 
         // uncomment for debugging:
-        // real64 evp_0 = log( (phi_i - 1. ) / ( phi_p - 1. ) ); // vol. strain before creep, computed from porosity (uncomment for debugging)
+        // real64 evp_0 = LvArray::math::log( (phi_i - 1. ) / ( phi_p - 1. ) ); // vol. strain before creep, computed from porosity (uncomment for debugging)
         // std::cout<<"creep compaction:phi_p = "<<phi_p<<", phi_e = "<<phi_e<<", phi_c = "<<phi_c<<", dphiDt = "<<dphidt
         // <<", evp_0 = "<<evp_0<<", evp = "<<evp<<", devp = "<<devp<<", bulk = "<<bulk
         // <<", p_old = "<<p<<", p_c = "<<p_c<<std::endl;
@@ -1167,7 +1167,7 @@ int GeomechanicsUpdates::computeStepDivisions( const real64 & X,
   // of the trial stress relative to the size of the yield surface, as well
   // as change in elastic properties between sigma_n and sigma_trial.
   int subcycling_characteristic_number = 256;
-  int nmax = ceil(subcycling_characteristic_number);
+  int nmax = LvArray::math::ceil(subcycling_characteristic_number);
 
   // Compute change in bulk modulus:
   real64 bulk_n,
@@ -1198,7 +1198,7 @@ int GeomechanicsUpdates::computeStepDivisions( const real64 & X,
                             phi_i,
                             bulk_trial,
                             shear_trial );
-  int n_bulk = ceil( fabs( bulk_n - bulk_trial ) / bulk_n );
+  int n_bulk = LvArray::math::ceil( fabs( bulk_n - bulk_trial ) / bulk_n );
 
   // Compute trial stress increment relative to yield surface size:
   real64 d_sigma[6] = { 0 };
@@ -1217,7 +1217,7 @@ int GeomechanicsUpdates::computeStepDivisions( const real64 & X,
   d_sigma[3] *= 2.0;
   d_sigma[4] *= 2.0;
   d_sigma[5] *= 2.0;
-  int n_yield = int( std::ceil( 1.0e-4 * LvArray::tensorOps::l2Norm< 6 >( d_sigma ) / size ));
+  int n_yield = int( LvArray::math::ceil( 1.0e-4 * LvArray::tensorOps::l2Norm< 6 >( d_sigma ) / size ));
   d_sigma[3] *= 0.5;
   d_sigma[4] *= 0.5;
   d_sigma[5] *= 0.5;
@@ -1337,10 +1337,10 @@ real64 GeomechanicsUpdates::computeX( const real64 & evp,
     // We first compute the drained response.  If there are fluid effects, this value will
     // be used in determining the elastic volumetric strain to yield.
     if( evp <= 0.0 ){
-      X = ( m_p0 * m_p1 + log( ( evp + m_p3 ) / m_p3 ) ) / m_p1;
+      X = ( m_p0 * m_p1 + LvArray::math::log( ( evp + m_p3 ) / m_p3 ) ) / m_p1;
     }
     else{
-      X = m_p0 * powf( 1.0 + evp, 1.0 / ( m_p0 * m_p1 * m_p3 ) );
+      X = m_p0 * LvArray::math::pow( 1.0 + evp, 1.0 / ( m_p0 * m_p1 * m_p3 ) );
     }
 
     if( Kf !=0.0 && evp <= ev0 ) { // ------------------------------------------- Fluid Effects
@@ -1609,7 +1609,7 @@ int GeomechanicsUpdates::computeSubstep( real64 const ( & D )[6],         // str
            eta_mid,
            d_evp;
     int i = 0,
-        imax = 93;  // imax = ceil(-10.0*log(TOL)); // Update this if TOL changes
+        imax = 93;  // imax = LvArray::math::ceil(-10.0*LvArray::math::log(TOL)); // Update this if TOL changes
 
     real64 dZetadevp = computedZetadevp(fluid_pressure_initial,Km,Kf,ev0,phi_i,Zeta_old,evp_old);
 

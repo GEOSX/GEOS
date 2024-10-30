@@ -390,7 +390,7 @@ void HyperelasticMMSUpdates::hyperUpdate( localIndex const k,
              F[0][1] * ( F[1][0] * F[2][2] - F[1][2] * F[2][0] ) +
              F[0][2] * ( F[1][0] * F[2][1] - F[1][1] * F[2][0] );
 
-  real64 const x1 = lambda * std::log(J) / J;
+  real64 const x1 = lambda * LvArray::math::log(J) / J;
   real64 const x2 = G / J;
 
   stress[0] = x1 +  x2 * ( C[0][0] - 1 );

@@ -309,7 +309,7 @@ void VonMisesJUpdates::smallStrainUpdate_StressOnly( localIndex const k,
 
   // Exactly compute pressure 
   real64 J = LvArray::tensorOps::determinant< 3 >( m_deformationGradient[k] );
-  real64 pressure = -m_bulkModulus[k] * std::log( J );
+  real64 pressure = -m_bulkModulus[k] * LvArray::math::log( J );
 
   // Hypoelastically compute deviatoric stress
   real64 rotationTranspose[3][3] = { { 0 } };
