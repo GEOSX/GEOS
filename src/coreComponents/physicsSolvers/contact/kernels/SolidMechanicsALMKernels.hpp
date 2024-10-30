@@ -20,13 +20,13 @@
 #ifndef GEOS_PHYSICSSOLVERS_CONTACT_KERNELS_SOLIDMECHANICSALMKERNELS_HPP_
 #define GEOS_PHYSICSSOLVERS_CONTACT_KERNELS_SOLIDMECHANICSALMKERNELS_HPP_
 
-#include "SolidMechanicsALMKernelsBase.hpp"
+#include "SolidMechanicsConformingContactKernelsBase.hpp"
 
 namespace geos
 {
 
 namespace solidMechanicsALMKernels
-{
+{  
 
 /**
  * @copydoc geos::finiteElement::ImplicitKernelBase
@@ -34,12 +34,12 @@ namespace solidMechanicsALMKernels
 template< typename CONSTITUTIVE_TYPE,
           typename FE_TYPE >
 class ALM :
-  public ALMKernelsBase< CONSTITUTIVE_TYPE,
+  public solidMechanicsConformingContactKernels::ConformingContactKernelsBase< CONSTITUTIVE_TYPE,
                          FE_TYPE >
 {
 public:
   /// Alias for the base class.
-  using Base = ALMKernelsBase< CONSTITUTIVE_TYPE,
+  using Base = solidMechanicsConformingContactKernels::ConformingContactKernelsBase< CONSTITUTIVE_TYPE,
                                FE_TYPE >;
 
   /// Maximum number of nodes per element, which is equal to the maxNumTestSupportPointPerElem and
@@ -58,7 +58,6 @@ public:
   using Base::m_dofRankOffset;
   using Base::m_X;
   using Base::m_rotationMatrix;
-  using Base::m_penalty;
   using Base::m_dispJump;
   using Base::m_oldDispJump;
   using Base::m_matrix;
@@ -98,7 +97,8 @@ public:
           inputDt,
           faceElementList ),
     m_traction( elementSubRegion.getField< fields::contact::traction >().toViewConst()),
-    m_symmetric( isSymmetric )
+    m_symmetric( isSymmetric ),
+    m_penalty( elementSubRegion.getField< fields::contact::iterativePenalty >().toViewConst() )
   {}
 
   //***************************************************************************
@@ -372,6 +372,8 @@ protected:
 
   bool const m_symmetric;
 
+  /// The array containing the penalty coefficients for each element.
+  arrayView2d< real64 const > const m_penalty;
 };
 
 /// The factory used to construct the kernel.
