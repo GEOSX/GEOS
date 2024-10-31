@@ -66,6 +66,7 @@ static std::vector< int > getBlueprintNodeOrdering( ElementType const elementTyp
     case ElementType::Tetrahedron:   return { 1, 0, 2, 3 };
     case ElementType::Pyramid:       return { 0, 3, 2, 1, 4, 0, 0, 0 };
     case ElementType::Wedge:         return { 0, 4, 2, 1, 5, 3, 0, 0 };
+    case ElementType::Voxel:
     case ElementType::Hexahedron:    return { 0, 1, 3, 2, 4, 5, 7, 6 };
     case ElementType::Prism5:        return { }; // TODO
     case ElementType::Prism6:        return { }; // TODO

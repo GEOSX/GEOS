@@ -68,7 +68,7 @@ struct AcousticMatricesSEM
           localIndex const nodeIndex = elemsToNodes( e, FE_TYPE::meshIndexToLinearIndex3D( a ) );
           for( localIndex i = 0; i < 3; ++i )
           {
-            xLocal[a][i] = nodeCoords( nodeIndex, i );
+            xLocal[a][i] = nodeCoords( nodeIndex, i ); // @TODO -> optim
           }
         }
         constexpr localIndex numQuadraturePointsPerElem = FE_TYPE::numQuadraturePoints;
@@ -132,7 +132,7 @@ struct AcousticMatricesSEM
               localIndex const nodeIndex = facesToNodes( f, FE_TYPE::meshIndexToLinearIndex2D( a ) );
               for( localIndex d = 0; d < 3; ++d )
               {
-                xLocal[a][d] = nodeCoords( nodeIndex, d );
+                xLocal[a][d] = nodeCoords( nodeIndex, d ); // @TODO -> optim
               }
             }
             real32 const alpha = 1.0 / (density[e] * velocity[e]);

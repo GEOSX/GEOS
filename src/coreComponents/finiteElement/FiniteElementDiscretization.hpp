@@ -110,8 +110,8 @@ private:
 
   void postInputInitialization() override final;
 
-  std::unique_ptr<FiniteElementBase> createDefaultElement(ElementType const type) const;
-  std::unique_ptr<FiniteElementBase> createSpectralElement(ElementType const type) const;
+  std::unique_ptr< finiteElement::FiniteElementBase > createDefaultElement( ElementType const type ) const;
+  std::unique_ptr< finiteElement::FiniteElementBase > createSpectralElement( ElementType const type ) const;
 
 };
 

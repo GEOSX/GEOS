@@ -67,37 +67,41 @@ FiniteElementDiscretization::factory( ElementType const parentElementShape ) con
   switch( m_formulation )
   {
     case Formulation::Default:
-      return createDefaultlElement( parentElementShape );
+      return createDefaultElement( parentElementShape );
     case Formulation::SEM:
       return createSpectralElement( parentElementShape );
     default:
       GEOS_ERROR( getDataContext() << ": Formulation " << m_formulation << " is not supported." );
   }
+  return {};
 }
 
-// TOOD fix broken refactoring
+// @TOOD fix broken refactoring
 
-std::unique_ptr<FiniteElementBase> createSpectralElement(ElementType const type) const {
+std::unique_ptr< FiniteElementBase >
+FiniteElementDiscretization::createSpectralElement( ElementType const type ) const {
   switch( type )
   {
-    case ElementType::Voxel 
+    case ElementType::Voxel:
     {
       // @TODO -> need to check if voxels are cubes
-      if (order == 1) return std::make_unique< Q1_Hexahedron_Lagrange_GaussLobatto >();
-      if (order == 2) return std::make_unique< Q2_Hexahedron_Lagrange_GaussLobatto >();
-      if (order == 3) return std::make_unique< Q3_Hexahedron_Lagrange_GaussLobatto >();
-      if (order == 4) return std::make_unique< Q4_Hexahedron_Lagrange_GaussLobatto >();
-      if (order == 5) return std::make_unique< Q5_Hexahedron_Lagrange_GaussLobatto >();
-      GEOS_ERROR( getDataContext() << ": Element Voxel does not have an associated SEM formulation for order " << order << "." );
+      if (m_order == 1) return std::make_unique< Q1_Hexahedron_Lagrange_GaussLobatto >();
+      if (m_order == 2) return std::make_unique< Q2_Hexahedron_Lagrange_GaussLobatto >();
+      if (m_order == 3) return std::make_unique< Q3_Hexahedron_Lagrange_GaussLobatto >();
+      if (m_order == 4) return std::make_unique< Q4_Hexahedron_Lagrange_GaussLobatto >();
+      if (m_order == 5) return std::make_unique< Q5_Hexahedron_Lagrange_GaussLobatto >();
+      GEOS_ERROR( getDataContext() << ": Element Voxel does not have an associated SEM formulation for order " << m_order << "." );
+      break;
     }
     case ElementType::Hexahedron:
     {
-      if (order == 1) return std::make_unique< Q1_Hexahedron_Lagrange_GaussLobatto >();
-      if (order == 2) return std::make_unique< Q2_Hexahedron_Lagrange_GaussLobatto >();
-      if (order == 3) return std::make_unique< Q3_Hexahedron_Lagrange_GaussLobatto >();
-      if (order == 4) return std::make_unique< Q4_Hexahedron_Lagrange_GaussLobatto >();
-      if (order == 5) return std::make_unique< Q5_Hexahedron_Lagrange_GaussLobatto >();
-      GEOS_ERROR( getDataContext() << ": Element Hexahedron does not have an associated SEM formulation for order " << order << "." );
+      if (m_order == 1) return std::make_unique< Q1_Hexahedron_Lagrange_GaussLobatto >();
+      if (m_order == 2) return std::make_unique< Q2_Hexahedron_Lagrange_GaussLobatto >();
+      if (m_order == 3) return std::make_unique< Q3_Hexahedron_Lagrange_GaussLobatto >();
+      if (m_order == 4) return std::make_unique< Q4_Hexahedron_Lagrange_GaussLobatto >();
+      if (m_order == 5) return std::make_unique< Q5_Hexahedron_Lagrange_GaussLobatto >();
+      GEOS_ERROR( getDataContext() << ": Element Hexahedron does not have an associated SEM formulation for order " << m_order << "." );
+      break;
     }
     default:
       GEOS_ERROR( getDataContext() << ": Element type " << type << " does not have an associated SEM formulation." );
@@ -105,7 +109,8 @@ std::unique_ptr<FiniteElementBase> createSpectralElement(ElementType const type)
   return {};
 }
 
-std::unique_ptr<FiniteElementBase> createDefaultlElement(ElementType const type) const {
+std::unique_ptr< FiniteElementBase >
+FiniteElementDiscretization::createDefaultElement( ElementType const type ) const {
   // On polyhedra where FEM are available, we use VEM only if useVirtualElements is set to 1 in
   // the input file. On more general polyhedra (Prism), we always use VEM
   if( m_useVem == 1 )

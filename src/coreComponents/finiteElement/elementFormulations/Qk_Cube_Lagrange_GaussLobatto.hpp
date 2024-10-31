@@ -17,8 +17,8 @@
  * @file Qk_Cube_Lagrange_GaussLobatto.hpp
  */
 
-#ifndef GEOS_FINITEELEMENT_ELEMENTFORMULATIONS_Q1HEXAHEDRON_HPP_
-#define GEOS_FINITEELEMENT_ELEMENTFORMULATIONS_Q1HEXAHEDRON_HPP_
+#ifndef GEOS_FINITEELEMENT_ELEMENTFORMULATIONS_Q1CUBE_HPP_
+#define GEOS_FINITEELEMENT_ELEMENTFORMULATIONS_Q1CUBE_HPP_
 
 #include "FiniteElementBase.hpp"
 #include "LagrangeBasis1.hpp"
@@ -36,7 +36,7 @@ namespace finiteElement
 {
 
 /**
- * This class is the basis class for the hexahedron finite element cells with
+ * This class is the basis class for the cube finite element cells with
  * shape functions defined on Gauss-Lobatto quadrature points.
  * All the degree-specific versions (Q1, Q2, Q3, ...) are defined at the end of this file.
  */
@@ -1048,7 +1048,7 @@ Qk_Cube_Lagrange_GaussLobatto< GL_BASIS >::
 jacobianTransformation( int const qa,
                         int const qb,
                         int const qc,
-                        real64 const (&X)[8][3],
+                        real64 const (&X)[8][3], // @TODO -> optim
                         real64 ( & J )[3][3] )
 {
   for( int k = 0; k < 8; k++ )
@@ -1205,7 +1205,7 @@ computeMassTerm( localIndex const q,
 {
   int qa, qb, qc;
   GL_BASIS::TensorProduct3D::multiIndex( q, qa, qb, qc );
-  const real64 w3D = GL_BASIS::weight( qa )*GL_BASIS::weight( qb )*GL_BASIS::weight( qc );
+  const real64 w3D = GL_BASIS::weight( qa )*GL_BASIS::weight( qb )*GL_BASIS::weight( qc ); // @TODO -> could be constexpr
   real64 J[3][3] = {{0}};
   jacobianTransformation( qa, qb, qc, X, J );
   return LvArray::math::abs( LvArray::tensorOps::determinant< 3 >( J ) )*w3D;

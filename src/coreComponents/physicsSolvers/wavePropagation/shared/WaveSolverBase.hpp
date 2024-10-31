@@ -25,7 +25,9 @@
 #include "mesh/MeshFields.hpp"
 #include "physicsSolvers/SolverBase.hpp"
 #include "common/LifoStorage.hpp"
+#include "finiteElement/elementFormulations/Qk_Cube_Lagrange_GaussLobatto.hpp"
 #include "finiteElement/elementFormulations/Qk_Hexahedron_Lagrange_GaussLobatto.hpp"
+#include "finiteElement/elementFormulations/Qk_Voxel_Lagrange_GaussLobatto.hpp"
 #include "WaveSolverUtils.hpp"
 
 #define SEM_FE_TYPES \
@@ -38,7 +40,7 @@
   finiteElement::Q2_Hexahedron_Lagrange_GaussLobatto, \
   finiteElement::Q3_Hexahedron_Lagrange_GaussLobatto, \
   finiteElement::Q4_Hexahedron_Lagrange_GaussLobatto, \
-  finiteElement::Q5_Hexahedron_Lagrange_GaussLobatto  \
+  finiteElement::Q5_Hexahedron_Lagrange_GaussLobatto, \
   finiteElement::Q1_Voxel_Lagrange_GaussLobatto, \
   finiteElement::Q2_Voxel_Lagrange_GaussLobatto, \
   finiteElement::Q3_Voxel_Lagrange_GaussLobatto, \

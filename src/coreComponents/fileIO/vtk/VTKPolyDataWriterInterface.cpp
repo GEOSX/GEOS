@@ -72,13 +72,14 @@ toVTKCellType( ElementType const elementType, localIndex const numNodes )
     case ElementType::Tetrahedron:   return VTK_TETRA;
     case ElementType::Pyramid:       return VTK_PYRAMID;
     case ElementType::Wedge:         return VTK_WEDGE;
+    case ElementType::Voxel:
     case ElementType::Hexahedron:
       switch( numNodes )
       {
         case 8:
           return VTK_HEXAHEDRON;
         case 27:
-          return VTK_QUADRATIC_HEXAHEDRON;
+          return VTK_QUADRATIC_HEXAHEDRON; // @TODO -> what is this ?
         default:
           return VTK_HEXAHEDRON;
       }
@@ -150,6 +151,7 @@ static std::vector< int > getVtkConnectivity( ElementType const elementType, loc
     case ElementType::Tetrahedron:   return { 0, 1, 2, 3 };
     case ElementType::Pyramid:       return { 0, 1, 3, 2, 4 };
     case ElementType::Wedge:         return { 0, 4, 2, 1, 5, 3 };
+    case ElementType::Voxel:
     case ElementType::Hexahedron:
       switch( numNodes )
       {

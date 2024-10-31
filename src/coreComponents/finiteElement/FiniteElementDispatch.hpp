@@ -49,7 +49,7 @@
   finiteElement::Q2_Hexahedron_Lagrange_GaussLobatto, \
   finiteElement::Q3_Hexahedron_Lagrange_GaussLobatto, \
   finiteElement::Q4_Hexahedron_Lagrange_GaussLobatto, \
-  finiteElement::Q5_Hexahedron_Lagrange_GaussLobatto  \
+  finiteElement::Q5_Hexahedron_Lagrange_GaussLobatto, \
   finiteElement::Q1_Voxel_Lagrange_GaussLobatto, \
   finiteElement::Q2_Voxel_Lagrange_GaussLobatto, \
   finiteElement::Q3_Voxel_Lagrange_GaussLobatto, \

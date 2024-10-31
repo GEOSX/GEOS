@@ -17,8 +17,8 @@
  * @file Qk_Voxel_Lagrange_GaussLobatto.hpp
  */
 
-#ifndef GEOS_FINITEELEMENT_ELEMENTFORMULATIONS_Q1HEXAHEDRON_HPP_
-#define GEOS_FINITEELEMENT_ELEMENTFORMULATIONS_Q1HEXAHEDRON_HPP_
+#ifndef GEOS_FINITEELEMENT_ELEMENTFORMULATIONS_Q1VOXEL_HPP_
+#define GEOS_FINITEELEMENT_ELEMENTFORMULATIONS_Q1VOXEL_HPP_
 
 #include "FiniteElementBase.hpp"
 #include "LagrangeBasis1.hpp"
@@ -36,7 +36,7 @@ namespace finiteElement
 {
 
 /**
- * This class is the basis class for the hexahedron finite element cells with
+ * This class is the basis class for the voxel finite element cells with
  * shape functions defined on Gauss-Lobatto quadrature points.
  * All the degree-specific versions (Q1, Q2, Q3, ...) are defined at the end of this file.
  */
