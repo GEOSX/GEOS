@@ -21,6 +21,8 @@
 #define GEOS_PHYSICSSOLVERS_CONTACT_KERNELS_SOLIDMECHANICSALMKERNELS_HPP_
 
 #include "SolidMechanicsConformingContactKernelsBase.hpp"
+#include "mesh/MeshFields.hpp"
+
 
 namespace geos
 {
@@ -98,7 +100,8 @@ public:
           faceElementList ),
     m_traction( elementSubRegion.getField< fields::contact::traction >().toViewConst()),
     m_symmetric( isSymmetric ),
-    m_penalty( elementSubRegion.getField< fields::contact::iterativePenalty >().toViewConst() )
+    m_penalty( elementSubRegion.getField< fields::contact::iterativePenalty >().toViewConst() ),
+    m_faceArea( elementSubRegion.getField< fields::elementArea >().toViewConst() )
   {}
 
   //***************************************************************************
@@ -268,6 +271,7 @@ public:
                                          m_dispJump[k],
                                          m_penalty[k],
                                          m_traction[k],
+                                         m_faceArea[k],
                                          m_symmetric,
                                          m_symmetric,
                                          zero,
@@ -374,6 +378,8 @@ protected:
 
   /// The array containing the penalty coefficients for each element.
   arrayView2d< real64 const > const m_penalty;
+
+  arrayView1d< real64 const > const m_faceArea;
 };
 
 /// The factory used to construct the kernel.
@@ -412,6 +418,7 @@ struct ComputeTractionKernel
           arrayView2d< real64 const > const & traction,
           arrayView2d< real64 const > const & dispJump,
           arrayView2d< real64 const > const & deltaDispJump,
+          arrayView1d< real64 const > const & faceArea,
           arrayView2d< real64 > const & tractionNew )
   {
 
@@ -419,7 +426,7 @@ struct ComputeTractionKernel
     {
 
       contactWrapper.updateTractionOnly( dispJump[k], deltaDispJump[k],
-                                         penalty[k], traction[k], tractionNew[k] );
+                                         penalty[k], traction[k], faceArea[k], tractionNew[k] );
 
     } );
   }

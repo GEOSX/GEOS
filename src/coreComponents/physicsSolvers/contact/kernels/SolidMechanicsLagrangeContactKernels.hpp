@@ -274,8 +274,6 @@ public:
     // transp(R) * Atb
     LvArray::tensorOps::Rij_eq_AkiBkj< 3, numBdofs, 3 >( matRRtAtb, stack.localRotationMatrix, stack.localAtb );
 
-    // LvArray::tensorOps::scale<3, numBdofs>( stack.localAtb, -1.0 );
-
     LvArray::tensorOps::copy< numTdofs, numUdofs >( stack.localAtu, matRRtAtu );
     LvArray::tensorOps::copy< numTdofs, numBdofs >( stack.localAtb, matRRtAtb );
 

@@ -68,7 +68,6 @@ struct ConstraintCheckKernel
           arrayView1d< real64 const > const & normalDisplacementTolerance,
           arrayView1d< real64 const > const & slidingTolerance,
           real64 const slidingCheckTolerance,
-          arrayView1d< real64 const > const & area,
           arrayView1d< integer const > const & fractureState,
           arrayView1d< integer > const & condConv )
   {
@@ -82,8 +81,8 @@ struct ConstraintCheckKernel
                                         traction[k],
                                         fractureState[k],
                                         normalTractionTolerance[k],
-                                        normalDisplacementTolerance[k]*area[k],
-                                        slidingTolerance[k]*area[k],
+                                        normalDisplacementTolerance[k],
+                                        slidingTolerance[k],
                                         slidingCheckTolerance,
                                         condConv[k] );
       }
@@ -118,6 +117,7 @@ struct UpdateStateKernel
           arrayView2d< real64 const > const & oldDispJump,
           arrayView2d< real64 const > const & dispJump,
           arrayView2d< real64 > const & penalty,
+          arrayView1d< real64 const > const & faceArea,
           bool const symmetric,
           arrayView1d< real64 const > const & normalTractionTolerance,
           arrayView2d< real64 > const & traction,
@@ -135,6 +135,7 @@ struct UpdateStateKernel
                                      dispJump[k],
                                      penalty[k],
                                      traction[k],
+                                     faceArea[k],
                                      symmetric,
                                      false,
                                      normalTractionTolerance[k],

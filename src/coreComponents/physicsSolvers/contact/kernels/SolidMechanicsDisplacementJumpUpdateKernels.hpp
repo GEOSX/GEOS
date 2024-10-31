@@ -21,6 +21,7 @@
 #define GEOS_PHYSICSSOLVERS_CONTACT_KERNELS_SOLIDMECHANICSDISPLACEMENTJUPDATEKERNELS_HPP_
 
 #include "SolidMechanicsConformingContactKernelsBase.hpp"
+#include "mesh/MeshFields.hpp"
 
 namespace geos
 {
@@ -100,7 +101,8 @@ public:
     m_bubbleDisp( faceManager.getField< fields::solidMechanics::totalBubbleDisplacement >() ),
     m_incrDisp( nodeManager.getField< fields::solidMechanics::incrementalDisplacement >() ),
     m_incrBubbleDisp( faceManager.getField< fields::solidMechanics::incrementalBubbleDisplacement >() ),
-    m_deltaDispJump( elementSubRegion.getField< fields::contact::deltaDispJump >().toView() )
+    m_deltaDispJump( elementSubRegion.getField< fields::contact::deltaDispJump >().toView() ),
+    m_elementArea( elementSubRegion.getField< fields::elementArea >().toView() )
   {}
 
   //***************************************************************************
@@ -227,10 +229,12 @@ public:
     LvArray::tensorOps::Ri_add_AijBj< 3, numBdofs >( stack.deltaDispJumpLocal, matRtAtb, stack.dbLocal );
 
     // Store the results
+    real64 const scale = 1 / m_elementArea[k];
+
     for( int i=0; i<3; ++i )
     {
-      m_dispJump[ k ][ i ] = stack.dispJumpLocal[ i ];
-      m_deltaDispJump[ k ][ i ] = stack.deltaDispJumpLocal[ i ];
+      m_dispJump[ k ][ i ] = scale * stack.dispJumpLocal[ i ] ;
+      m_deltaDispJump[ k ][ i ] = scale * stack.deltaDispJumpLocal[ i ];
     }
 
     return 0.0;
@@ -252,6 +256,8 @@ protected:
 
   /// The rank-global delta displacement jump array.
   arrayView2d< real64 > const m_deltaDispJump;
+
+  arrayView1d< real64 const > const m_elementArea;
 
 };
 

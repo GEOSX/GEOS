@@ -777,7 +777,7 @@ bool SolidMechanicsAugmentedLagrangianContact::updateConfiguration( DomainPartit
       arrayView1d< real64 const > const & normalTractionTolerance =
         subRegion.getReference< array1d< real64 > >( viewKeyStruct::normalTractionToleranceString() );
 
-      arrayView1d< real64 const > const area = subRegion.getElementArea().toViewConst();
+      arrayView1d< real64 const > const faceElementArea = subRegion.getElementArea().toViewConst();
 
       std::ptrdiff_t const sizes[ 2 ] = {subRegion.size(), 3};
       traction_new.resize( 2, sizes );
@@ -800,6 +800,7 @@ bool SolidMechanicsAugmentedLagrangianContact::updateConfiguration( DomainPartit
                                               traction,
                                               dispJump,
                                               deltaDispJump,
+                                              faceElementArea,
                                               traction_new_v );
         }
         else
@@ -811,6 +812,7 @@ bool SolidMechanicsAugmentedLagrangianContact::updateConfiguration( DomainPartit
                                               traction,
                                               dispJump,
                                               deltaDispJump,
+                                              faceElementArea,
                                               traction_new_v );
         }
       } );
@@ -833,7 +835,6 @@ bool SolidMechanicsAugmentedLagrangianContact::updateConfiguration( DomainPartit
                                             normalDisplacementTolerance,
                                             slidingTolerance,
                                             slidingCheckTolerance,
-                                            area,
                                             fractureState,
                                             condConv_v );
       } );
@@ -957,6 +958,8 @@ bool SolidMechanicsAugmentedLagrangianContact::updateConfiguration( DomainPartit
 
         arrayView2d< real64 const > const deltaDispJump = subRegion.getField< contact::deltaDispJump >();
 
+        arrayView1d< real64 const > const faceElementArea = subRegion.getField< fields::elementArea >();
+
         constitutiveUpdatePassThru( frictionLaw, [&] ( auto & castedFrictionLaw )
         {
           using FrictionType = TYPEOFREF( castedFrictionLaw );
@@ -968,6 +971,7 @@ bool SolidMechanicsAugmentedLagrangianContact::updateConfiguration( DomainPartit
                                               oldDispJump,
                                               dispJump,
                                               iterativePenalty,
+                                              faceElementArea,
                                               m_symmetric,
                                               normalTractionTolerance,
                                               traction,

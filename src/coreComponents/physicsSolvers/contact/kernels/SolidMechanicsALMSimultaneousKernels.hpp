@@ -20,6 +20,7 @@
 #define GEOS_PHYSICSSOLVERS_CONTACT_KERNELS_SOLIDMECHANICSALMSIMULTANEOUSKERNELS_HPP_
 
 #include "SolidMechanicsConformingContactKernelsBase.hpp"
+#include "mesh/MeshFields.hpp"
 
 namespace geos
 {
@@ -94,7 +95,8 @@ public:
           inputDt,
           faceElementList ),
     m_traction( elementSubRegion.getField< fields::contact::traction >().toViewConst()),
-    m_penalty( elementSubRegion.getField< fields::contact::iterativePenalty >().toViewConst() )
+    m_penalty( elementSubRegion.getField< fields::contact::iterativePenalty >().toViewConst() ),
+    m_faceArea( elementSubRegion.getField< fields::elementArea >().toViewConst() )
   {}
 
   //***************************************************************************
@@ -270,9 +272,9 @@ public:
 
     // Compute the trial traction
     real64 dispJump[ 3 ];
-    dispJump[0] = stack.dispJumpLocal[0];
-    dispJump[1] = stack.dispJumpLocal[1] - stack.oldDispJumpLocal[1];
-    dispJump[2] = stack.dispJumpLocal[2] - stack.oldDispJumpLocal[2];
+    dispJump[0] = stack.dispJumpLocal[0] * m_faceArea[k];
+    dispJump[1] = ( stack.dispJumpLocal[1] - stack.oldDispJumpLocal[1] ) * m_faceArea[k];
+    dispJump[2] = ( stack.dispJumpLocal[2] - stack.oldDispJumpLocal[2] ) * m_faceArea[k];
 
     LvArray::tensorOps::scaledCopy< 3 >( tractionNew, stack.tLocal, -1.0 );
     LvArray::tensorOps::Ri_add_AijBj< 3, 3 >( tractionNew, stack.localPenalty, dispJump );
@@ -380,6 +382,8 @@ protected:
 
   /// The array containing the penalty coefficients for each element.
   arrayView2d< real64 const > const m_penalty;
+
+  arrayView1d< real64 const > const m_faceArea;
 };
 
 /// The factory used to construct the kernel.
@@ -415,16 +419,17 @@ struct ComputeTractionSimultaneousKernel
           arrayView2d< real64 const > const & traction,
           arrayView2d< real64 const > const & dispJump,
           arrayView2d< real64 const > const & deltaDispJump,
+          arrayView1d< real64 const > const & faceElementArea,
           arrayView2d< real64 > const & tractionNew )
   {
 
     forAll< POLICY >( size, [=] GEOS_HOST_DEVICE ( localIndex const kfe )
     {
-      tractionNew[kfe][0] = traction[kfe][0] + penalty[kfe][0] * dispJump[kfe][0];
-      tractionNew[kfe][1] = traction[kfe][1] + penalty[kfe][2] * deltaDispJump[kfe][1] +
-                            penalty[kfe][4] * deltaDispJump[kfe][2];
-      tractionNew[kfe][2] = traction[kfe][2] + penalty[kfe][3] * deltaDispJump[kfe][2] +
-                            penalty[kfe][4] * deltaDispJump[kfe][1];
+      tractionNew[kfe][0] = traction[kfe][0] + penalty[kfe][0] * dispJump[kfe][0] * faceElementArea[kfe];
+      tractionNew[kfe][1] = traction[kfe][1] + ( penalty[kfe][2] * deltaDispJump[kfe][1]+
+                            penalty[kfe][4] * deltaDispJump[kfe][2] ) * faceElementArea[kfe];
+      tractionNew[kfe][2] = traction[kfe][2] + ( penalty[kfe][3] * deltaDispJump[kfe][2] +
+                            penalty[kfe][4] * deltaDispJump[kfe][1] ) * faceElementArea[kfe];
     } );
   }
 
