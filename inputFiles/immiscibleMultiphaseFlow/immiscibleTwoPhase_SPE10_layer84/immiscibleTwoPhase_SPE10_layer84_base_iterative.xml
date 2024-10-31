@@ -34,6 +34,12 @@
       name="solverApplications"
       maxEventDt="1e6"  
       target="/Solvers/FlowSolver"/>
+
+    <PeriodicEvent
+      name="restarts"
+      timeFrequency="8e7"
+      targetExactTimestep="0"
+      target="/Outputs/restartOutput"/>
   </Events>
 
   <NumericalMethods>
@@ -233,6 +239,8 @@
   <Outputs>
     <VTK
       name="vtkOutput_iterative"/>
+   <Restart
+      name="restartOutput"/>
   </Outputs>
   
 </Problem>

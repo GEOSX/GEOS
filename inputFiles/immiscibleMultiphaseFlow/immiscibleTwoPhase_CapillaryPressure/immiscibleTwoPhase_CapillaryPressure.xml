@@ -49,6 +49,12 @@
     <PeriodicEvent
       name="solverApplications"
       target="/Solvers/FlowSolver" />
+
+    <PeriodicEvent
+      name="restarts"
+      timeFrequency="50"
+      targetExactTimestep="0"
+      target="/Outputs/restartOutput" />
   </Events>
 
   <NumericalMethods>
@@ -186,5 +192,7 @@
   <Outputs>
     <VTK
       name="vtkOutput" />
+   <Restart
+      name="restartOutput" />
   </Outputs>
 </Problem>
