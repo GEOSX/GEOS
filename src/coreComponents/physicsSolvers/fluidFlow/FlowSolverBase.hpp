@@ -39,6 +39,57 @@ public:
   /// String used to form the solverName used to register single-physics solvers in CoupledSolver
   static string coupledSolverAttributePrefix() { return "flow"; }
 
+  struct BCWarningMessage
+  {
+    static string missingPressureBC( string_view regionName,
+                                     string_view subRegionName,
+                                     string_view setName )
+    {
+      return GEOS_FMT( "Pressure boundary condition not prescribed on set {}/{}/{}",
+                       regionName, subRegionName, setName );
+    }
+    static string missingTemperatureBC( string_view regionName,
+                                        string_view subRegionName,
+                                        string_view setName )
+    {
+      return GEOS_FMT( "Temperature boundary condition not prescribed on set {}/{}/{}",
+                       regionName, subRegionName, setName );
+    }
+
+    static string conflictingComposition( string_view fieldName,
+                                          string_view regionName,
+                                          string_view subRegionName,
+                                          string_view setName )
+    {
+      return GEOS_FMT( "Conflicting composition[{}] boundary conditions on set {}/{}/{}",
+                       fieldName, regionName, subRegionName, setName );
+    }
+    static string invalidComponentIndex( integer const comp,
+                                         string_view fsName )
+    {
+      return GEOS_FMT( "Invalid component index [{}] in composition boundary condition {}",
+                       comp, fsName );
+    }
+
+    static string nonConsistencyBC( integer componentIndex,
+                                    string_view componentName,
+                                    string_view regionName,
+                                    string_view subRegionName,
+                                    string_view setName )
+    {
+      string completeMessage =  GEOS_FMT( "Boundary condition not applied to composition[{}] ({}) on region {}/{}/{}\n",
+                                          componentIndex, componentName, regionName, subRegionName, setName );
+    }
+
+    static string fieldSpecificationIndication( string_view fieldName, string_view setName )
+    {
+      return GEOS_FMT( "Check if you have added or applied the appropriate fields to" \
+                       "the FieldSpecification component with fieldName=”{}” and setNames=\"{}\"\n",
+                       fieldName, setName );
+    }
+
+  }
+
 /**
  * @brief main constructor for Group Objects
  * @param name the name of this instantiation of Group in the repository

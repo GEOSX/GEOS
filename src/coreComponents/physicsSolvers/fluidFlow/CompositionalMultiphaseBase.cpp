@@ -1733,7 +1733,7 @@ bool CompositionalMultiphaseBase::validateDirichletBC( DomainPartition & domain,
       if( subRegionSetMap.count( setName ) == 0 )
       {
         bcConsistent = false;
-        GEOS_WARNING( GEOS_FMT( "Pressure boundary condition not prescribed on set {}/{}/{}", regionName, subRegionName, setName ) );
+        GEOS_WARNING( BCWarningMessage::missingPressureBC( regionName, subRegionName, setName ) );
       }
       if( m_isThermal )
       {
@@ -1741,13 +1741,13 @@ bool CompositionalMultiphaseBase::validateDirichletBC( DomainPartition & domain,
         if( tempSubRegionSetMap.count( setName ) == 0 )
         {
           bcConsistent = false;
-          GEOS_WARNING( GEOS_FMT( "Temperature boundary condition not prescribed on set {}/{}/{}", regionName, subRegionName, setName ) );
+          GEOS_WARNING( BCWarningMessage::missingTemperatureBC( regionName, subRegionName, setName ) );
         }
       }
       if( comp < 0 || comp >= m_numComponents )
       {
         bcConsistent = false;
-        GEOS_WARNING( GEOS_FMT( "Invalid component index [{}] in composition boundary condition {}", comp, fs.getName() ) );
+        GEOS_WARNING( BCWarningMessage::invalidComponentIndex( comp, fs.getName() ) );
         return; // can't check next part with invalid component id
       }
 
@@ -1755,7 +1755,7 @@ bool CompositionalMultiphaseBase::validateDirichletBC( DomainPartition & domain,
       if( compMask[comp] )
       {
         bcConsistent = false;
-        GEOS_WARNING( GEOS_FMT( "Conflicting composition[{}] boundary conditions on set {}/{}/{}", comp, regionName, subRegionName, setName ) );
+        GEOS_WARNING( BCWarningMessage::conflictingComposition( comp, regionName, subRegionName, setName ) );
       }
       compMask.set( comp );
     } );
@@ -1769,19 +1769,20 @@ bool CompositionalMultiphaseBase::validateDirichletBC( DomainPartition & domain,
         for( auto const & setEntry : subRegionEntry.second )
         {
           ComponentMask< MAX_NC > const & compMask = setEntry.second;
-          for( integer ic = 0; ic < m_numComponents; ++ic )
+
+          fsManager.forSubGroups< EquilibriumInitialCondition >( [&] ( EquilibriumInitialCondition const & fs )
           {
-            if( !compMask[ic] )
+            arrayView1d< string const > componentNames = fs.getComponentNames();
+            for( int ic = 0; ic < componentNames.size(); ic++ )
             {
-              bcConsistent = false;
-              GEOS_WARNING( GEOS_FMT(
-                              "Boundary condition not applied to composition[{}] on CellElement region {}/{}/{}\n" \
-                              "Check if you have added or applied the appropriate fields to the FieldSpecification component with fieldName=”{}” and setNames=\"{}\"\n",
-                              ic, regionEntry.first, subRegionEntry.first, setEntry.first,
-                              fields::flow::globalCompFraction::key(), setEntry.first ) );
+              if( !compMask[ic] )
+              {
+                bcConsistent = false;
+                GEOS_WARNING( BCWarningMessage::conflictingComposition( ic, componentNames[ic], regionEntry.first, subRegionEntry.first, setEntry.first ) );
+                GEOS_WARNING( BCWarningMessage::fieldSpecificationIndication( fields::flow::globalCompFraction::key(), setEntry.first ) );
             }
           }
-        }
+        });
       }
     }
   } );
