@@ -10,6 +10,10 @@ PR #2909 (2024-10-30)
 =====================
 Add routine for automatic time steps in waveSolvers with new attributes
 
+PR #3156 (2024-10-29)
+====================
+Restart check errors due to 1) schema node added to enable thermal option in well model and 2) arrays removed/added for option.  Max difference errors due treatment of shutin wells.  Previously non-zero rate value reported for shutin well, new code will set rate arrays to zero. 
+
 PR #2878 (2024-10-17)
 =====================
 Sorted region cellBlocks names alphabetically. Therefore affected ordering of: faceManager/elemSubRegionList, nodeManager/elemList, nodeManager/elemSubRegionList, SurfaceElementSubRegion::fractureElementsToCellSubRegions, field::perforation::reservoirElementSubregion.
