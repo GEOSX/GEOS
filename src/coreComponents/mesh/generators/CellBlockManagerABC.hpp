@@ -138,7 +138,7 @@ public:
    * @brief Returns a group containing the embedded surfaces blocks as EmbeddedSurfaceBlockABC instances
    * @return Const reference to the Group instance.
    */
-  virtual const Group & getEmbeddedSurfaceBlocks() const = 0;
+  virtual Group const & getEmbeddedSurfaceBlocks() const = 0;
 
   /**
    * @brief Total number of nodes across all the cell blocks.

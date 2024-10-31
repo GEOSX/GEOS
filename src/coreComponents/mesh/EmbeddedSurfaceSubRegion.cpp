@@ -418,12 +418,12 @@ bool EmbeddedSurfaceSubRegion::copyFromCellBlock( EmbeddedSurfaceBlockABC const 
 {
 
 
-  DomainPartition & domain = getGlobalState().getProblemManager().getDomainPartition();
-  MeshLevel & meshLevel = domain.getMeshBody( 0 ).getBaseDiscretization();
-  EmbeddedSurfaceNodeManager & embSurfNodeManager = meshLevel.getEmbSurfNodeManager();
-  EdgeManager & edgeManager = meshLevel.getEdgeManager();
+  // DomainPartition & domain = getGlobalState().getProblemManager().getDomainPartition();
+  // MeshLevel & meshLevel = domain.getMeshBody( 0 ).getBaseDiscretization();
+  // EmbeddedSurfaceNodeManager & embSurfNodeManager = meshLevel.getEmbSurfNodeManager();
+  // EdgeManager & edgeManager = meshLevel.getEdgeManager();
 
-  ElementRegionManager & elemManager = meshLevel.getElemManager();
+  // ElementRegionManager & elemManager = meshLevel.getElemManager();
 
   localIndex const numElems= embeddedSurfaceBlock.numEmbeddedSurfElem();
 
@@ -465,40 +465,40 @@ bool EmbeddedSurfaceSubRegion::copyFromCellBlock( EmbeddedSurfaceBlockABC const 
   }
 
   // add nodes to embNodeManager
-  for( auto i =0; i < elemNodesLocations.size(); ++i )
-  {
+ /// for( auto i =0; i < elemNodesLocations.size(); ++i )
+ /// {
 
-    array2d< real64 >  elemNodeCoords( 1, 3 );
-    auto ghostRank = -2;
+ ///   array2d< real64 >  elemNodeCoords( 1, 3 );
+ ///   auto ghostRank = -2;
 
-    //  // Add the point to the node Manager
-    //  globalIndex parentEdgeID = edgeLocalToGlobal[ pointParentIndex[ originalIndices[ j ] ] ];
-    //  nodeIndex = embSurfNodeManager.size();
-    embSurfNodeManager.appendNode( elemNodesLocations[i].toSliceConst(), ghostRank );
+ ///   //  // Add the point to the node Manager
+ ///   //  globalIndex parentEdgeID = edgeLocalToGlobal[ pointParentIndex[ originalIndices[ j ] ] ];
+ ///   //  nodeIndex = embSurfNodeManager.size();
+ ///   embSurfNodeManager.appendNode( elemNodesLocations[i].toSliceConst(), ghostRank );
 
-    //  arrayView1d< localIndex > const & parentIndex =
-    //    embSurfNodeManager.getField< fields::parentEdgeIndex >();
+ ///   //  arrayView1d< localIndex > const & parentIndex =
+ ///   //    embSurfNodeManager.getField< fields::parentEdgeIndex >();
 
-    //  parentIndex[nodeIndex] = pointParentIndex[ originalIndices[ j ] ];
+ ///   //  parentIndex[nodeIndex] = pointParentIndex[ originalIndices[ j ] ];
 
-    //  array1d< globalIndex > & parentEdgeGlobalIndex = embSurfNodeManager.getParentEdgeGlobalIndex();
-    //  parentEdgeGlobalIndex[nodeIndex] = parentEdgeID;
-  }
+ ///   //  array1d< globalIndex > & parentEdgeGlobalIndex = embSurfNodeManager.getParentEdgeGlobalIndex();
+ ///   //  parentEdgeGlobalIndex[nodeIndex] = parentEdgeID;
+ /// }
 
 
-  elemManager.forElementSubRegionsComplete< CellElementSubRegion >(
-    [&] ( localIndex, localIndex, ElementRegionBase const & region, CellElementSubRegion & subRegion )
-  {
+  // elemManager.forElementSubRegionsComplete< CellElementSubRegion >(
+  //   [&] ( localIndex, localIndex, ElementRegionBase const & region, CellElementSubRegion & subRegion )
+  // {
 
-    for( auto i = 0; i<numElems; ++i )
-    {
-      localIndex elem3dIndex = elemTo3dElem.toCellIndex[i][0];
+  //   for( auto i = 0; i<numElems; ++i )
+  //   {
+  //     localIndex elem3dIndex = elemTo3dElem.toCellIndex[i][0];
 
-      subRegion.addFracturedElement( elem3dIndex, i );
+  //     subRegion.addFracturedElement( elem3dIndex, i );
 
-    }
+  //   }
 
-  } );
+  // } );
 
 
   return true;
