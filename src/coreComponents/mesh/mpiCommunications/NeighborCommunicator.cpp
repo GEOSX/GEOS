@@ -308,6 +308,33 @@ void NeighborCommunicator::unpackGhosts( MeshLevel & mesh,
   m_edgeUnpackList.resize( 0 );
   m_unpackedSize += edgeManager.unpackGlobalMaps( m_receiveBufferPtr, m_edgeUnpackList, 0 );
 
+
+  arrayView1d< globalIndex > const & edgeLocalToGlobal = edgeManager.localToGlobalMap();
+  for( int rank=0; rank<MpiWrapper::commSize(); ++rank )
+  {
+    MpiWrapper::barrier();
+    if( rank==MpiWrapper::commRank() )
+    {
+        std::cout<<"  Rank "<<MpiWrapper::commRank()<< std::endl;
+        std::cout<<"  local edges: ";
+        for( auto const & edgeIndex : m_edgeUnpackList )
+        {
+          std::cout<<edgeIndex<<" ";
+        }
+        std::cout<<std::endl;
+        std::cout<<"  global edges: ";
+        for( auto const & edgeIndex : m_edgeUnpackList )
+        {
+          std::cout<<edgeLocalToGlobal[edgeIndex]<<" ";
+        }
+        std::cout<<std::endl;
+    }
+  }
+  MpiWrapper::barrier();
+
+
+
+
   m_faceUnpackList.resize( 0 );
   m_unpackedSize += faceManager.unpackGlobalMaps( m_receiveBufferPtr, m_faceUnpackList, 0 );
 

@@ -299,6 +299,32 @@ localIndex NodeManager::unpackUpDownMaps( buffer_unit_type const * & buffer,
                                      m_toElements.getElementRegionManager(),
                                      overwriteUpMaps );
 
+  MpiWrapper::barrier();
+  for( int rank=0; rank<MpiWrapper::commSize(); ++rank )
+  {
+    if( rank==MpiWrapper::commRank() )
+    {
+      if( m_unmappedGlobalIndicesInToEdges.size() > 0 )
+      {
+        std::cout<<"  Rank "<<MpiWrapper::commRank()<< std::endl;
+        for( auto const & entryPair : m_unmappedGlobalIndicesInToEdges )
+        {
+          localIndex const localNode = entryPair.first;
+          std::cout<<"  local node ("<<localNode<<"): ";
+
+          SortedArray< globalIndex > const & globalIndices = entryPair.second;
+          for( globalIndex const edgeGlobalIndex : globalIndices )
+          {
+            std::cout<<edgeGlobalIndex<<" ";
+          }
+          std::cout<<std::endl;
+        }
+      }
+    }
+  }
+  MpiWrapper::barrier();
+
+
   GEOS_ERROR_IF_NE( m_unmappedGlobalIndicesInToEdges.size(), 0 );
   GEOS_ERROR_IF_NE( m_unmappedGlobalIndicesInToFaces.size(), 0 );
 
@@ -397,7 +423,7 @@ void NodeManager::outputObjectConnectivity() const
       arrayView1d< globalIndex const > const & edgeLocalToGlobal = m_toEdgesRelation.relatedObjectLocalToGlobal();
       for( localIndex a=0; a<this->size(); ++a )
       {
-        printf( "  %3d(%3lld): ", a, m_localToGlobalMap(a) );
+        printf( "  %3d(%3lld): ", a, m_localToGlobalMap( a ) );
 
         for( localIndex b=0; b<m_toEdgesRelation.sizeOfSet( a ); ++b )
         {
@@ -407,10 +433,10 @@ void NodeManager::outputObjectConnectivity() const
             printf( ", " );
           }
         }
-        printf( "\n           (");
+        printf( "\n           (" );
         for( localIndex b=0; b<m_toEdgesRelation.sizeOfSet( a ); ++b )
         {
-          printf( "%3lld",edgeLocalToGlobal( m_toEdgesRelation( a, b ) ) );
+          printf( "%3lld", edgeLocalToGlobal( m_toEdgesRelation( a, b ) ) );
           if( b != m_toEdgesRelation.sizeOfSet( a ) - 1 )
           {
             printf( ", " );
@@ -423,7 +449,7 @@ void NodeManager::outputObjectConnectivity() const
       arrayView1d< globalIndex const > const & faceLocalToGlobal = m_toFacesRelation.relatedObjectLocalToGlobal();
       for( localIndex a=0; a<this->size(); ++a )
       {
-        printf( "  %3d(%3lld): ", a, m_localToGlobalMap(a) );
+        printf( "  %3d(%3lld): ", a, m_localToGlobalMap( a ) );
 
         for( localIndex b=0; b<m_toFacesRelation.sizeOfSet( a ); ++b )
         {
@@ -433,10 +459,10 @@ void NodeManager::outputObjectConnectivity() const
             printf( ", " );
           }
         }
-        printf( "\n           (");
+        printf( "\n           (" );
         for( localIndex b=0; b<m_toFacesRelation.sizeOfSet( a ); ++b )
         {
-          printf( "%3lld",faceLocalToGlobal( m_toFacesRelation( a, b ) ) );
+          printf( "%3lld", faceLocalToGlobal( m_toFacesRelation( a, b ) ) );
           if( b != m_toFacesRelation.sizeOfSet( a ) - 1 )
           {
             printf( ", " );
