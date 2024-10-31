@@ -122,21 +122,14 @@ DECLARE_FIELD( totalMassDensity,
                WRITE_AND_READ,
                "Total mass density" );
 
-DECLARE_FIELD( dTotalMassDensity_dPressure,
-               "dTotalMassDensity_dPressure",
-               array1d< real64 >,
-               0,
-               NOPLOT,
-               NO_WRITE,
-               "Derivative of total mass density with respect to pressure" );
-
-DECLARE_FIELD( dTotalMassDensity_dGlobalCompDensity,
-               "dTotalMassDensity_dComp", // to avoid a rebaseline
+DECLARE_FIELD( dTotalMassDensity,
+               "dTotalMassDensity",
                array2dLayoutFluid_dC,
                0,
                NOPLOT,
                NO_WRITE,
-               "Derivative of total mass density with respect to global component density" );
+               "Derivative of total mass density with respect to pressure, temperature, and global component density" );
+
 
 DECLARE_FIELD( compPerforationRate,
                "compPerforationRate",
@@ -146,21 +139,15 @@ DECLARE_FIELD( compPerforationRate,
                WRITE_AND_READ,
                "Component perforation rate" );
 
-DECLARE_FIELD( dCompPerforationRate_dPres,
-               "dCompPerforationRate_dPres",
-               array3d< real64 >,
-               0,
-               NOPLOT,
-               NO_WRITE,
-               "Derivative of component perforation rate with respect to pressure" );
-
-DECLARE_FIELD( dCompPerforationRate_dComp,
-               "dCompPerforationRate_dComp",
+DECLARE_FIELD( dCompPerforationRate,
+               "dCompPerforationRate",
                array4d< real64 >,
                0,
                NOPLOT,
                NO_WRITE,
-               "Derivative of component perforation rate with respect to global component density" );
+               "Derivative of component perforation rate with respect to pressure temperature and global component density" );
+
+
 
 DECLARE_FIELD( globalCompDensityScalingFactor,
                "globalCompDensityScalingFactor",
@@ -169,6 +156,7 @@ DECLARE_FIELD( globalCompDensityScalingFactor,
                NOPLOT,
                NO_WRITE,
                "Scaling factors for global component densities" );
+
 
 }
 
