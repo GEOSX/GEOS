@@ -1,0 +1,18 @@
+from geos.ats.test_builder import TestDeck, RestartcheckParameters, generate_geos_tests
+
+restartcheck_params = {}
+restartcheck_params['atol'] = 1.0E-8
+restartcheck_params['rtol'] = 1.0E-8
+
+decks = [
+    TestDeck(
+        name="immiscibleTwoPhase_CapillaryPressure",
+        description=
+        'Test 2 fluids can mix based on capillary pressure.',
+        partitions=((1, 1, 1), ),
+        restart_step=0,
+        check_step=68,
+        restartcheck_params=RestartcheckParameters(**restartcheck_params))
+]
+
+generate_geos_tests(decks)
