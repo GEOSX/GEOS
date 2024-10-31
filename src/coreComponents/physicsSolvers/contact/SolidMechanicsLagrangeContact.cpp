@@ -73,12 +73,27 @@ SolidMechanicsLagrangeContact::SolidMechanicsLagrangeContact( const string & nam
     setDescription( "It be used to increase the scale of the stabilization entries. A value < 1.0 results in larger entries in the stabilization matrix." );
 
   addLogLevel< logInfo::Configuration >();
+}
 
-  LinearSolverParameters & linSolParams = m_linearSolverParameters.get();
-  linSolParams.mgr.strategy = LinearSolverParameters::MGR::StrategyType::lagrangianContactMechanics;
-  linSolParams.mgr.separateComponents = true;
-  linSolParams.mgr.displacementFieldName = solidMechanics::totalDisplacement::key();
-  linSolParams.dofsPerNode = 3;
+void SolidMechanicsLagrangeContact::postInputInitialization()
+{
+  ContactSolverBase::postInputInitialization();
+
+  setMGRStrategy();
+}
+
+void SolidMechanicsLagrangeContact::setMGRStrategy()
+{
+  LinearSolverParameters & linearSolverParameters = m_linearSolverParameters.get();
+
+  if( linearSolverParameters.preconditionerType != LinearSolverParameters::PreconditionerType::mgr )
+    return;
+
+  linearSolverParameters.mgr.strategy = LinearSolverParameters::MGR::StrategyType::lagrangianContactMechanics;
+  GEOS_LOG_LEVEL_RANK_0( 1, GEOS_FMT( "{}: MGR strategy set to {}", getName(),
+                                      EnumStrings< LinearSolverParameters::MGR::StrategyType >::toString( linearSolverParameters.mgr.strategy )));
+  linearSolverParameters.mgr.separateComponents = true;
+  linearSolverParameters.mgr.displacementFieldName = solidMechanics::totalDisplacement::key();
 }
 
 void SolidMechanicsLagrangeContact::registerDataOnMesh( Group & meshBodies )

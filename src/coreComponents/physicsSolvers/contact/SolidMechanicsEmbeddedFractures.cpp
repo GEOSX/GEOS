@@ -64,20 +64,32 @@ SolidMechanicsEmbeddedFractures::~SolidMechanicsEmbeddedFractures()
 
 void SolidMechanicsEmbeddedFractures::postInputInitialization()
 {
-  SolidMechanicsLagrangianFEM::postInputInitialization();
-
-  LinearSolverParameters & linParams = m_linearSolverParameters.get();
+  ContactSolverBase::postInputInitialization();
 
   if( m_useStaticCondensation )
   {
-    linParams.dofsPerNode = 3;
-    linParams.isSymmetric = true;
-    linParams.amg.separateComponents = true;
+    // configure AMG
+    LinearSolverParameters & linearSolverParameters = m_linearSolverParameters.get();
+    linearSolverParameters.dofsPerNode = 3;
+    linearSolverParameters.isSymmetric = true;
+    linearSolverParameters.amg.separateComponents = true;
   }
   else
   {
-    linParams.mgr.strategy = LinearSolverParameters::MGR::StrategyType::solidMechanicsEmbeddedFractures;
+    setMGRStrategy();
   }
+}
+
+void SolidMechanicsEmbeddedFractures::setMGRStrategy()
+{
+  LinearSolverParameters & linearSolverParameters = m_linearSolverParameters.get();
+
+  if( linearSolverParameters.preconditionerType != LinearSolverParameters::PreconditionerType::mgr )
+    return;
+
+  linearSolverParameters.mgr.strategy = LinearSolverParameters::MGR::StrategyType::solidMechanicsEmbeddedFractures;
+  GEOS_LOG_LEVEL_RANK_0( 1, GEOS_FMT( "{}: MGR strategy set to {}", getName(),
+                                      EnumStrings< LinearSolverParameters::MGR::StrategyType >::toString( linearSolverParameters.mgr.strategy )));
 }
 
 void SolidMechanicsEmbeddedFractures::registerDataOnMesh( dataRepository::Group & meshBodies )
