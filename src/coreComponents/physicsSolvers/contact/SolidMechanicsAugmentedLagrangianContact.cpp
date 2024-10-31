@@ -84,6 +84,9 @@ void SolidMechanicsAugmentedLagrangianContact::registerDataOnMesh( dataRepositor
   {
     fractureRegion.forElementSubRegions< SurfaceElementSubRegion >( [&]( SurfaceElementSubRegion & subRegion )
     {
+      subRegion.registerField< fields::contact::deltaTraction >( getName() ).
+        reference().resizeDimension< 1 >( 3 );
+
       // Register the rotation matrix
       subRegion.registerField< contact::rotationMatrix >( this->getName() ).
         reference().resizeDimension< 1, 2 >( 3, 3 );
@@ -480,12 +483,12 @@ void SolidMechanicsAugmentedLagrangianContact::assembleSystem( real64 const time
 
 
     solidMechanicsConformingContactKernels::FaceBubbleFactory kernelFactory( dispDofNumber,
-                                                              bubbleDofNumber,
-                                                              dofManager.rankOffset(),
-                                                              localMatrix,
-                                                              localRhs,
-                                                              dt,
-                                                              gravityVectorData );
+                                                                             bubbleDofNumber,
+                                                                             dofManager.rankOffset(),
+                                                                             localMatrix,
+                                                                             localRhs,
+                                                                             dt,
+                                                                             gravityVectorData );
 
     real64 maxTraction = finiteElement::
                            regionBasedKernelApplication

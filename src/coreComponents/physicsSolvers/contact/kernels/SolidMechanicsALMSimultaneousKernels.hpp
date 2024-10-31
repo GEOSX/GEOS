@@ -34,12 +34,12 @@ template< typename CONSTITUTIVE_TYPE,
           typename FE_TYPE >
 class ALMSimultaneous :
   public solidMechanicsConformingContactKernels::ConformingContactKernelsBase< CONSTITUTIVE_TYPE,
-                         FE_TYPE >
+                                                                               FE_TYPE >
 {
 public:
   /// Alias for the base class.
   using Base = solidMechanicsConformingContactKernels::ConformingContactKernelsBase< CONSTITUTIVE_TYPE,
-                               FE_TYPE >;
+                                                                                     FE_TYPE >;
 
   /// Maximum number of nodes per element, which is equal to the maxNumTestSupportPointPerElem and
   /// maxNumTrialSupportPointPerElem by definition.

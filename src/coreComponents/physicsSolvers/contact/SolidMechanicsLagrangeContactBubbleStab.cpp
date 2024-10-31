@@ -78,6 +78,9 @@ void SolidMechanicsLagrangeContactBubbleStab::registerDataOnMesh( Group & meshBo
       // Register the rotation matrix
       subRegion.registerField< contact::rotationMatrix >( this->getName() ).
         reference().resizeDimension< 1, 2 >( 3, 3 );
+
+      subRegion.registerField< fields::contact::deltaTraction >( getName() ).
+        reference().resizeDimension< 1 >( 3 );
     } );
   } );
 }
@@ -92,10 +95,16 @@ void SolidMechanicsLagrangeContactBubbleStab::setupDofs( DomainPartition const &
   map< std::pair< string, string >, array1d< string > > meshTargets;
   forDiscretizationOnMeshTargets( domain.getMeshBodies(), [&] ( string const & meshBodyName,
                                                                 MeshLevel const & meshLevel,
-                                                                arrayView1d< string const > const & )
+                                                                arrayView1d< string const > const & regionNames )
   {
     array1d< string > regions;
-    regions.emplace_back( getUniqueFractureRegionName() );
+    ElementRegionManager const & elementRegionManager = meshLevel.getElemManager();
+    elementRegionManager.forElementRegions< SurfaceElementRegion >( regionNames,
+                                                                    [&]( localIndex const,
+                                                                         SurfaceElementRegion const & region )
+    {
+      regions.emplace_back( region.getName() );
+    } );
     meshTargets[std::make_pair( meshBodyName, meshLevel.getName())] = std::move( regions );
   } );
 
@@ -104,16 +113,19 @@ void SolidMechanicsLagrangeContactBubbleStab::setupDofs( DomainPartition const &
                        3,
                        meshTargets );
 
-  // Add coupling between bubble
-  // Useful to create connection between bubble dofs for Augmented Lagrangian formulation
-  dofManager.addCoupling( solidMechanics::totalBubbleDisplacement::key(),
-                          solidMechanics::totalBubbleDisplacement::key(),
-                          DofManager::Connector::Elem );
-
   dofManager.addField( contact::traction::key(),
                        FieldLocation::Elem,
                        3,
                        meshTargets );
+
+  // Add coupling between bubble
+  dofManager.addCoupling( solidMechanics::totalBubbleDisplacement::key(),
+                          solidMechanics::totalBubbleDisplacement::key(),
+                          DofManager::Connector::Elem );
+
+  dofManager.addCoupling( contact::traction::key(),
+                          contact::traction::key(),
+                          DofManager::Connector::Elem );
 
   dofManager.addCoupling( solidMechanics::totalDisplacement::key(),
                           contact::traction::key(),
@@ -122,6 +134,11 @@ void SolidMechanicsLagrangeContactBubbleStab::setupDofs( DomainPartition const &
 
   dofManager.addCoupling( solidMechanics::totalBubbleDisplacement::key(),
                           contact::traction::key(),
+                          DofManager::Connector::Elem,
+                          meshTargets );
+
+  dofManager.addCoupling( solidMechanics::totalDisplacement::key(),
+                          solidMechanics::totalBubbleDisplacement::key(),
                           DofManager::Connector::Elem,
                           meshTargets );
 }
@@ -136,7 +153,6 @@ void SolidMechanicsLagrangeContactBubbleStab::setupSystem( DomainPartition & dom
 
 
   // setup monolithic coupled system
-  SolverBase::setupSystem( domain, dofManager, localMatrix, rhs, solution, true ); // "true" is to force setSparsity
 
   // Create the lists of interface elements that have same type.
   createFaceTypeList( domain );
@@ -150,6 +166,7 @@ void SolidMechanicsLagrangeContactBubbleStab::setupSystem( DomainPartition & dom
   dofManager.setDomain( domain );
   setupDofs( domain, dofManager );
   dofManager.reorderByRank();
+  dofManager.printFieldInfo();
 
   // Set the sparsity pattern without the Abu and Aub blocks.
   SparsityPattern< globalIndex > patternDiag;
@@ -188,7 +205,6 @@ void SolidMechanicsLagrangeContactBubbleStab::setupSystem( DomainPartition & dom
 
   solution.setName( this->getName() + "/solution" );
   solution.create( dofManager.numLocalDofs(), MPI_COMM_GEOS );
-
 }
 
 void SolidMechanicsLagrangeContactBubbleStab::implicitStepSetup( real64 const & time_n,
@@ -252,11 +268,14 @@ void SolidMechanicsLagrangeContactBubbleStab::assembleSystem( real64 const time,
                                                localMatrix,
                                                localRhs );
 
-
-
   assembleStabilization( dt, domain, dofManager, localMatrix, localRhs );
 
   assembleContact( dt, domain, dofManager, localMatrix, localRhs );
+
+  // ParallelMatrix parallel_matrix;
+  // parallel_matrix.create( localMatrix.toViewConst(), dofManager.numLocalDofs(), MPI_COMM_GEOS );
+  // parallel_matrix.write("newMatrix.mtx");
+  // std::cout << localRhs << std::endl;
 }
 
 void SolidMechanicsLagrangeContactBubbleStab::assembleStabilization( real64 const dt,
@@ -283,12 +302,12 @@ void SolidMechanicsLagrangeContactBubbleStab::assembleStabilization( real64 cons
 
 
     solidMechanicsConformingContactKernels::FaceBubbleFactory kernelFactory( dispDofNumber,
-                                                              bubbleDofNumber,
-                                                              dofManager.rankOffset(),
-                                                              localMatrix,
-                                                              localRhs,
-                                                              dt,
-                                                              gravityVectorData );
+                                                                             bubbleDofNumber,
+                                                                             dofManager.rankOffset(),
+                                                                             localMatrix,
+                                                                             localRhs,
+                                                                             dt,
+                                                                             gravityVectorData );
 
     real64 maxTraction = finiteElement::
                            regionBasedKernelApplication
@@ -322,7 +341,6 @@ void SolidMechanicsLagrangeContactBubbleStab::assembleContact( real64 const dt,
     string const & bubbleDofKey = dofManager.getKey( solidMechanics::totalBubbleDisplacement::key() );
     string const & tractionDofKey = dofManager.getKey( contact::traction::key() );
 
-
     arrayView1d< globalIndex const > const dispDofNumber = nodeManager.getReference< globalIndex_array >( dispDofKey );
     arrayView1d< globalIndex const > const bubbleDofNumber = faceManager.getReference< globalIndex_array >( bubbleDofKey );
 
@@ -355,46 +373,6 @@ void SolidMechanicsLagrangeContactBubbleStab::assembleContact( real64 const dt,
       GEOS_UNUSED_VAR( maxTraction );
     } );
   } );
-
-  // Loop for assembling contributes of bubble elements (Abb, Abu, Aub)
-  forDiscretizationOnMeshTargets( domain.getMeshBodies(), [&] ( string const &,
-                                                                MeshLevel & mesh,
-                                                                arrayView1d< string const > const & regionNames )
-  {
-    NodeManager const & nodeManager = mesh.getNodeManager();
-    FaceManager const & faceManager = mesh.getFaceManager();
-
-    string const & dispDofKey = dofManager.getKey( solidMechanics::totalDisplacement::key() );
-    string const & bubbleDofKey = dofManager.getKey( solidMechanics::totalBubbleDisplacement::key() );
-
-    arrayView1d< globalIndex const > const dispDofNumber = nodeManager.getReference< globalIndex_array >( dispDofKey );
-    arrayView1d< globalIndex const > const bubbleDofNumber = faceManager.getReference< globalIndex_array >( bubbleDofKey );
-
-    real64 const gravityVectorData[3] = LVARRAY_TENSOROPS_INIT_LOCAL_3( gravityVector() );
-
-
-    solidMechanicsConformingContactKernels::FaceBubbleFactory kernelFactory( dispDofNumber,
-                                                              bubbleDofNumber,
-                                                              dofManager.rankOffset(),
-                                                              localMatrix,
-                                                              localRhs,
-                                                              dt,
-                                                              gravityVectorData );
-
-    real64 maxTraction = finiteElement::
-                           regionBasedKernelApplication
-                         < parallelDevicePolicy< >,
-                           constitutive::ElasticIsotropic,
-                           CellElementSubRegion >( mesh,
-                                                   regionNames,
-                                                   getDiscretizationName(),
-                                                   SolidMechanicsLagrangianFEM::viewKeyStruct::solidMaterialNamesString(),
-                                                   kernelFactory );
-
-    GEOS_UNUSED_VAR( maxTraction );
-
-  } );
-
 }
 
 void SolidMechanicsLagrangeContactBubbleStab::implicitStepComplete( real64 const & time_n,

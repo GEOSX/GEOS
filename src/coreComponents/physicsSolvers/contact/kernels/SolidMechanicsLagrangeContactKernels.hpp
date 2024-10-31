@@ -102,7 +102,7 @@ public:
           inputDt,
           faceElementList ),
     m_traction( elementSubRegion.getField< fields::contact::traction >().toViewConst() ),
-    m_tDofNumber( elementSubRegion.getReference< globalIndex_array >( tractionDofKey ) )
+    m_tDofNumber( elementSubRegion.getReference< globalIndex_array >( tractionDofKey ).toViewConst() )
   {}
 
   /**
@@ -267,17 +267,27 @@ public:
     real64 tractionR[numUdofs];
     real64 tractionRb[numBdofs];
 
+    real64 matRRtAtu[3][numUdofs], matRRtAtb[3][numBdofs];
+
     // transp(R) * Atu
-    LvArray::tensorOps::Rij_eq_AkiBkj< 3, numUdofs, 3 >( stack.localAtu, stack.localRotationMatrix, stack.localAtu );
+    LvArray::tensorOps::Rij_eq_AkiBkj< 3, numUdofs, 3 >( matRRtAtu, stack.localRotationMatrix, stack.localAtu );
     // transp(R) * Atb
-    LvArray::tensorOps::Rij_eq_AkiBkj< 3, numBdofs, 3 >( stack.localAtb, stack.localRotationMatrix, stack.localAtb );
+    LvArray::tensorOps::Rij_eq_AkiBkj< 3, numBdofs, 3 >( matRRtAtb, stack.localRotationMatrix, stack.localAtb );
+
+    // LvArray::tensorOps::scale<3, numBdofs>( stack.localAtb, -1.0 );
+
+    LvArray::tensorOps::copy< numTdofs, numUdofs >( stack.localAtu, matRRtAtu );
+    LvArray::tensorOps::copy< numTdofs, numBdofs >( stack.localAtb, matRRtAtb );
+
+    LvArray::tensorOps::scale< numTdofs, numUdofs >( stack.localAtu, -1.0 );
+    LvArray::tensorOps::scale< numTdofs, numBdofs >( stack.localAtb, -1.0 );
 
     LvArray::tensorOps::transpose< numUdofs, numTdofs >( stack.localAut, stack.localAtu );
     LvArray::tensorOps::transpose< numBdofs, numTdofs >( stack.localAbt, stack.localAtb );
 
     // Compute the traction contribute of the local residuals
-    LvArray::tensorOps::Ri_eq_AijBj< numUdofs, 3 >( tractionR, stack.localAut, m_traction[k] );
-    LvArray::tensorOps::Ri_eq_AijBj< numBdofs, 3 >( tractionRb, stack.localAbt, m_traction[k] );
+    LvArray::tensorOps::Ri_eq_AijBj< numUdofs, numTdofs >( tractionR, stack.localAut, m_traction[k] );
+    LvArray::tensorOps::Ri_eq_AijBj< numBdofs, numTdofs >( tractionRb, stack.localAbt, m_traction[k] );
 
     // Compute the local residuals
     // Force Balance for nodal displacement dofs
@@ -294,7 +304,7 @@ protected:
 
   arrayView2d< real64 const > const m_traction;
 
-  arrayView1d< localIndex const > const m_tDofNumber;
+  arrayView1d< globalIndex const > const m_tDofNumber;
 
   /**
    * @brief Create the list of finite elements of the same type

@@ -1795,17 +1795,17 @@ void DofManager::printFieldInfo( std::ostream & os ) const
     localIndex const numFields = LvArray::integerConversion< localIndex >( m_fields.size() );
 
     os << "Fields:" << std::endl;
-    os << " # | " << std::setw( 20 ) << "name" << " | " << "comp" << " | " << "N global DOF" << std::endl;
-    os << "---+----------------------+------+-------------" << std::endl;
+    os << " # | " << std::setw( 30 ) << "name" << " | " << "comp" << " | " << "N global DOF" << std::endl;
+    os << "---+--------------------------------+------+-------------" << std::endl;
     for( localIndex i = 0; i < numFields; ++i )
     {
       FieldDescription const & f = m_fields[i];
       os << ' ' << i << " | "
-         << std::setw( 20 ) << f.name << " | "
+         << std::setw( 30 ) << f.name << " | "
          << std::setw( 4 ) << f.numComponents << " | "
          << std::setw( 12 ) << f.numGlobalDof << std::endl;
     }
-    os << "---+----------------------+------+-------------" << std::endl;
+    os << "---+--------------------------------+------+-------------" << std::endl;
 
     os << std::endl << "Connectivity:" << std::endl;
     for( localIndex i = 0; i < numFields; ++i )
@@ -1814,43 +1814,46 @@ void DofManager::printFieldInfo( std::ostream & os ) const
       {
         if( m_coupling.count( {i, j} ) == 0 )
         {
-          continue;
+          os << "   ";
         }
-        switch( m_coupling.at( {i, j} ).connector )
+        else
         {
-          case Connector::Elem:
+          switch( m_coupling.at( {i, j} ).connector )
           {
-            os << " E ";
-            break;
-          }
-          case Connector::Face:
-          {
-            os << " F ";
-            break;
-          }
-          case Connector::Edge:
-          {
-            os << " G ";
-            break;
-          }
-          case Connector::Node:
-          {
-            os << " N ";
-            break;
-          }
-          case Connector::None:
-          {
-            os << "   ";
-            break;
-          }
-          case Connector::Stencil:
-          {
-            os << " S ";
-            break;
-          }
-          default:
-          {
-            GEOS_ERROR( "Invalid connector type: " << static_cast< int >( m_coupling.at( {i, j} ).connector ) );
+            case Connector::Elem:
+            {
+              os << " E ";
+              break;
+            }
+            case Connector::Face:
+            {
+              os << " F ";
+              break;
+            }
+            case Connector::Edge:
+            {
+              os << " G ";
+              break;
+            }
+            case Connector::Node:
+            {
+              os << " N ";
+              break;
+            }
+            case Connector::None:
+            {
+              os << "   ";
+              break;
+            }
+            case Connector::Stencil:
+            {
+              os << " S ";
+              break;
+            }
+            default:
+            {
+              GEOS_ERROR( "Invalid connector type: " << static_cast< int >( m_coupling.at( {i, j} ).connector ) );
+            }
           }
         }
         if( j < numFields - 1 )

@@ -219,18 +219,18 @@ public:
 
     // TODO: Try using bilinear utilities to perform these two operations
     solidMechanicsConformingContactKernelsHelper::accumulateAtuLocalOperator< numTdofs,
-                                                                numUdofs,
-                                                                numNodesPerElem >( stack.localAtu,
-                                                                                   N,
-                                                                                   permutation,
-                                                                                   detJ );
+                                                                              numUdofs,
+                                                                              numNodesPerElem >( stack.localAtu,
+                                                                                                 N,
+                                                                                                 permutation,
+                                                                                                 detJ );
 
     solidMechanicsConformingContactKernelsHelper::accumulateAtuLocalOperator< numTdofs,
-                                                                numBdofs,
-                                                                1 >( stack.localAtb,
-                                                                     BubbleN,
-                                                                     bperm,
-                                                                     detJ );
+                                                                              numBdofs,
+                                                                              1 >( stack.localAtb,
+                                                                                   BubbleN,
+                                                                                   bperm,
+                                                                                   detJ );
 
     lambda( detJ );
   }
