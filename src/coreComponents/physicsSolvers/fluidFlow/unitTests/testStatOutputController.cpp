@@ -135,14 +135,16 @@ TEST( testStatOutputController, checkSinglePhaseFluxStatistics )
       name="FluxRate"
       inputVarNames="{ time }"
       interpolation="lower"
-      coordinates="{    0.0,  500.0, 1000.0, 1500.0, 2000.0, 2500.0, 3000.0, 3500.0, 4000.0, 4500.0, 5000.0, 5500.0 }"
-      values="{       0.000,  0.000,  0.767,  0.894,  0.561,  0.234,  0.194,  0.178,  0.162,  0.059,  0.000,  0.000 }"
+      coordinates="{    0.0,  500.0, 1000.0 }"
+      values="{       0.000,  1.000,  0.767 }"
     />
   </Functions>
 
   <Tasks>
 
-    <StatOutputController name="statController" >
+    <StatOutputController 
+      name="statController"
+      outputDirectory="./hdf/statistics" >
       <SinglePhaseStatistics
         name="singFlowStatistics"
         flowSolverName="testSolver"
@@ -181,9 +183,9 @@ TEST( testStatOutputController, checkSinglePhaseFluxStatistics )
 
 )xml";
 
+  OutputBase::setOutputDirectory( "." );
   GeosxState state( std::make_unique< CommandLineOptions >( g_commandLineOptions ) );
   ProblemManager & problem = state.getProblemManager();
-  OutputBase::setOutputDirectory( "." );
   setupProblemFromXML( problem, testSet.data() );
 
   { // verify component creation
@@ -199,7 +201,7 @@ TEST( testStatOutputController, checkSinglePhaseFluxStatistics )
       "/Tasks/packCollectionreservoirmaxTemperature",
       "/Tasks/packCollectionreservoirtotalPoreVolume",
       "/Tasks/packCollectionreservoirtotalUncompactedPoreVolume",
-      "/Outputs/compFlowHistoryreservoir"
+      "/Outputs/compFlowHistory_reservoir"
     };
 
     for( string const & path : groupPaths )
@@ -212,7 +214,7 @@ TEST( testStatOutputController, checkSinglePhaseFluxStatistics )
   }
 
   { // check all timeHistory paths
-    TimeHistoryOutput & timeHistory = problem.getGroupByPath< TimeHistoryOutput >( "/Outputs/compFlowHistoryreservoir" );
+    TimeHistoryOutput & timeHistory = problem.getGroupByPath< TimeHistoryOutput >( "/Outputs/compFlowHistory_reservoir" );
     string_array & collectorPaths =  timeHistory.getReference< string_array >( TimeHistoryOutput::viewKeys::timeHistoryOutputTargetString() );
 
     std::vector< string > refCollectorPaths =
@@ -240,11 +242,12 @@ TEST( testStatOutputController, checkSinglePhaseFluxStatistics )
   // run simulation
   EXPECT_FALSE( problem.runSimulation() ) << "Simulation exited early.";
 
-  int64_t fileId = H5Fopen( "./generatedHDFStatreservoir.hdf5", H5F_ACC_RDWR, 0 );
+  string fileFromPath = "./hdf/statistics/compFlowHistory_reservoir.hdf5";
+  int64_t fileId = H5Fopen( fileFromPath.c_str(), H5F_ACC_RDWR, 0 );
   EXPECT_TRUE( fileId != -1 );
   H5Fclose( fileId );
 
-  integer status = std::remove( "./generatedHDFStatreservoir.hdf5" );
+  integer status = std::remove( fileFromPath.c_str() );
   EXPECT_TRUE( status == 0 );
 
 }

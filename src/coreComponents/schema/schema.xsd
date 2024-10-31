@@ -4722,6 +4722,8 @@ Level 0 outputs no specific information for this solver. Higher levels require m
 			<xsd:element name="CompositionalMultiphaseStatistics" type="CompositionalMultiphaseStatisticsType" />
 			<xsd:element name="SinglePhaseStatistics" type="SinglePhaseStatisticsType" />
 		</xsd:choice>
+		<!--outputDirectory => Output directory for statistics HDF regions file-->
+		<xsd:attribute name="outputDirectory" type="string" default="." />
 		<!--name => A name is required for any non-unique nodes-->
 		<xsd:attribute name="name" type="groupName" use="required" />
 	</xsd:complexType>

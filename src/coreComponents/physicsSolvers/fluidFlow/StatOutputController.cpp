@@ -49,8 +49,10 @@ void StatOutputController::generateTimeHistory( OutputManager & outputManager,
                                                 string_view regionName,
                                                 string_array const & packCollectionPaths )
 {
-  string const outputManagerKey = GEOS_FMT( "compFlowHistory{}", regionName );
-  string const filename = GEOS_FMT( "generatedHDFStat{}", regionName );
+  string const outputManagerKey = GEOS_FMT( "compFlowHistory_{}", regionName );
+  //we expect timeHistory will add the extension by itself
+  makeDirsForPath( m_outputDir );
+  string const filename = GEOS_FMT( "{}/{}", m_outputDir, outputManagerKey );
 
   TimeHistoryOutput * timeHistory = &outputManager.registerGroup< TimeHistoryOutput >( outputManagerKey );
   string_array & collectorPaths =  timeHistory->getReference< string_array >( TimeHistoryOutput::viewKeys::timeHistoryOutputTargetString() );
@@ -65,7 +67,12 @@ StatOutputController::StatOutputController( const string & name,
                                             Group * const parent ):
   TaskBase( name, parent ),
   m_statistics( nullptr )
-{}
+{
+  registerWrapper( viewKeyStruct::outputDirString(), &m_outputDir ).
+    setApplyDefaultValue( "." ).
+    setInputFlag( InputFlags::OPTIONAL ).
+    setDescription( "Output directory for statistics HDF regions file" );
+}
 
 void StatOutputController::initializePreSubGroups()
 {
@@ -125,10 +132,8 @@ Group * StatOutputController::createChild( string const & childKey, string const
 template< typename LAMBDA >
 void StatOutputController::forSubStats( LAMBDA lambda )
 {
-
   forSubGroups< SinglePhaseStatistics,
                 CompositionalMultiphaseStatistics >( lambda );
-
 }
 
 void StatOutputController::expandObjectCatalogs()
