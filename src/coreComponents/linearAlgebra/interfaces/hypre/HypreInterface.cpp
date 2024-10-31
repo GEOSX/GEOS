@@ -40,9 +40,16 @@ namespace geos
 
 void HypreInterface::initialize()
 {
-#ifdef GEOS_USE_OPENMP
-  GEOS_LOG_RANK_0_IF( omp_get_max_threads()>1,
-                      "OMP_NUM_THREADS > 1 may not be optimal for certain hypre preconditioning options. " );
+#if defined(GEOS_USE_OPENMP) && defined(HYPRE_USING_OPENMP)
+  GEOS_LOG_RANK_0_IF( omp_get_max_threads() > 1,
+                      "\n"
+                      "********************************************************************\n"
+                      "*                                                                  *\n"
+                      "*    WARNING: OMP_NUM_THREADS > 1 MAY NOT BE OPTIMAL FOR CERTAIN   *\n"
+                      "*             HYPRE PRECONDITIONING OPTIONS!                       *\n"
+                      "*                                                                  *\n"
+                      "********************************************************************\n"
+                      );
 #endif
 
   HYPRE_Initialize();
