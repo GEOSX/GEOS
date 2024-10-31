@@ -21,6 +21,7 @@
 #include "TableFormatter.hpp"
 #include <numeric>
 #include "common/format/StringUtilities.hpp"
+#include "common/logger/Logger.hpp"
 #include "TableFormatter.hpp"
 
 namespace geos
@@ -107,6 +108,9 @@ void distributeSpaces( std::vector< string > & vec, int totalSpaces )
 void transpose( std::vector< std::vector< string > > & dest,
                 std::vector< std::vector< string > > const & source )
 {
+  GEOS_ERROR_IF( dest.size() != source[0].size(), "Dest matrix must have the number of rows equal to the number of columns in the source matrix" );
+  GEOS_ERROR_IF( dest[0].size() != source.size(), "Dest matrix must have the number of columns equal to the number of rows in the source matrix." );
+
   for( size_t idxRow = 0; idxRow < source.size(); ++idxRow )
   {
     for( size_t idxCol = 0; idxCol < source[idxRow].size(); ++idxCol )

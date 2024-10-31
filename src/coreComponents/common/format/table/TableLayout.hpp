@@ -141,7 +141,7 @@ public:
     Column column;
     /// A vector containing all the values of a column
     std::vector< string > columnValues;
-    /// The largest string(s) in the column
+    /// Vector of string containing the largest string for a column and its subColumns
     std::vector< string > maxStringSize;
     /// Vector containing all sub columns subdivison
     std::vector< ColumnStructure > subColumn;

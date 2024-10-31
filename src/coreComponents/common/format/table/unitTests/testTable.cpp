@@ -102,7 +102,6 @@ TEST( testTable, tableColumnParamClassic ) //TODO
   tableData.addRow( "val1", "v", "[3.045,42.02,89.25]", 3.0, 10.0f, 3 );
 
   TableTextFormatter const tableText( tableLayout );
-  std::cout <<  tableText.toString( tableData ) <<std::endl;
   EXPECT_EQ( tableText.toString( tableData ),
              "\n-------------------------------------------------------------------------------------------\n"
              "|  Cras egestas  |  CoordX  |  C                    |  CoordZ     |     Prev  |     Next  |\n"
@@ -245,19 +244,19 @@ TEST( testTable, layoutTable )
 TEST( testTable, subColumns )
 {
   {
-    TableLayout const tableLayout( {" ",
-                                    "Column1",
-                                    TableLayout::Column{"Nodes", TableLayout::Alignment::right, true, {"Locales", "Ghost", "Active"}},
-                                    "Column3",
-                                    TableLayout::Column{"Column4", TableLayout::Alignment::right, true, {"Locales", "Ghost"}},
-                                    "Column5"} );
+    TableLayout const tableLayout( {
+      " ",
+      "Column1",
+      TableLayout::Column{"Nodes", TableLayout::Alignment::right, true, {"Locales", "Ghost", "Active"}},
+      "Column3",
+      TableLayout::Column{"Column4", TableLayout::Alignment::right, true, {"Locales", "Ghost"}},
+      "Column5"} );
 
     TableData tableData;
     tableData.addRow( "min", "125", "375,0001", " YES", 2354654, 562, 43.0, 43.0, 562, 5 );
     tableData.addRow( "max", "360", "390,1", " YES", 383213213, 712, 48.0, 47.0, 72, 2 );
 
     TableTextFormatter tableText( tableLayout );
-
     EXPECT_EQ( tableText.toString( tableData ),
                "\n--------------------------------------------------------------------------------------------------------\n"
                "|       |  Column1  |                             Nodes  |  Column3  |            Column4  |  Column5  |\n"
