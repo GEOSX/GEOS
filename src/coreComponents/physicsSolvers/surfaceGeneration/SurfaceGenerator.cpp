@@ -482,7 +482,7 @@ real64 SurfaceGenerator::solverStep( real64 const & time_n,
   {
     SpatialPartition & partition = dynamicCast< SpatialPartition & >( domain.getReference< PartitionBase >( dataRepository::keys::partitionManager ) );
 
-    int const rank = MpiWrapper::commRank();
+    //int const rank = MpiWrapper::commRank();
     //std::cout<<"rank, color = "<<rank<<", "<<partition.getColor()<<std::endl;
 
     rval = separationDriver( domain,

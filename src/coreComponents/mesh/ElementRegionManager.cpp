@@ -585,7 +585,7 @@ int ElementRegionManager::packFaceElementToFaceImpl( buffer_unit_type * & buffer
 
     localIndex numFaceElementSubregions = 0;
     elemRegion.forElementSubRegionsIndex< FaceElementSubRegion >(
-      [&]( localIndex const esr, FaceElementSubRegion const & subRegion )
+      [&]( localIndex const, FaceElementSubRegion const & )
     {
       ++numFaceElementSubregions;
     } );
@@ -800,7 +800,7 @@ void ElementRegionManager::outputObjectConnectivity() const
           arrayView1d< globalIndex const > const & elemLocalToGlobal = subRegion.localToGlobalMap();
           auto const & elemGlobalToLocal = subRegion.globalToLocalMap();
           arrayView1d< globalIndex const > const & nodeLocalToGlobal = elemToNodeRelation.relatedObjectLocalToGlobal();
-          auto const & refCoords = getParent().getGroup< NodeManager >( "nodeManager" ).referencePosition();
+//          auto const & refCoords = getParent().getGroup< NodeManager >( "nodeManager" ).referencePosition();
 
           printf( "  ElementToNodes map:\n" );
           for( localIndex k=0; k<elemToNode.size( 0 ); ++k )

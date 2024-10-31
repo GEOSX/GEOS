@@ -397,7 +397,7 @@ localIndex FaceElementSubRegion::packToFaceRelationImpl( buffer_unit_type * & bu
 
 localIndex FaceElementSubRegion::unpackToFaceRelation( buffer_unit_type const * & buffer,
                                                        localIndex_array & packList,
-                                                       bool const overwriteUpMaps,
+                                                       bool const GEOS_UNUSED_PARAM( overwriteUpMaps ),
                                                        bool const GEOS_UNUSED_PARAM( overwriteDownMaps ) )
 {
   localIndex unPackedSize = 0;

@@ -554,9 +554,7 @@ void unpackNewObjectsOnGhosts( NeighborCommunicator & neighbor,
 
 
 //***** 3a *****//
-localIndex unpackNewAndModifiedObjectsDataOnOwningRanks( NeighborCommunicator & neighbor,
-                                                         MeshLevel * const mesh,
-                                                         int const commID,
+localIndex unpackNewAndModifiedObjectsDataOnOwningRanks( MeshLevel * const mesh,
                                                          ModifiedObjectLists & receivedObjects,
                                                          TopologyChangeUnpackStepData & unpackStateData )
 {
@@ -574,7 +572,6 @@ localIndex unpackNewAndModifiedObjectsDataOnOwningRanks( NeighborCommunicator & 
   localIndex_array & newLocalFaces = unpackStateData.m_faces;
 
   ElementRegionManager::ElementReferenceAccessor< array1d< localIndex > > & newLocalElements = unpackStateData.m_elements;
-  array1d< array1d< localIndex_array > > & newLocalElementsData = unpackStateData.m_elementsData;
 
   localIndex_array modifiedLocalNodes;
   localIndex_array modifiedLocalEdges;
@@ -625,13 +622,9 @@ localIndex unpackNewAndModifiedObjectsDataOnOwningRanks( NeighborCommunicator & 
 
   waitAllDeviceEvents( events );
 
-  std::set< localIndex > & allNewNodes      = receivedObjects.newNodes;
   std::set< localIndex > & allModifiedNodes = receivedObjects.modifiedNodes;
-  std::set< localIndex > & allNewEdges      = receivedObjects.newEdges;
   std::set< localIndex > & allModifiedEdges = receivedObjects.modifiedEdges;
-  std::set< localIndex > & allNewFaces      = receivedObjects.newFaces;
   std::set< localIndex > & allModifiedFaces = receivedObjects.modifiedFaces;
-  map< std::pair< localIndex, localIndex >, std::set< localIndex > > & allNewElements = receivedObjects.newElements;
   map< std::pair< localIndex, localIndex >, std::set< localIndex > > & allModifiedElements = receivedObjects.modifiedElements;
 
   allModifiedNodes.insert( modifiedLocalNodes.begin(), modifiedLocalNodes.end() );
@@ -682,10 +675,6 @@ void packNewModifiedObjectsToGhosts( NeighborCommunicator & neighbor,
   localIndex_array & nodeGhostsToSend = nodeManager.getNeighborData( neighbor.neighborRank() ).ghostsToSend();
   localIndex_array & edgeGhostsToSend = edgeManager.getNeighborData( neighbor.neighborRank() ).ghostsToSend();
   localIndex_array & faceGhostsToSend = faceManager.getNeighborData( neighbor.neighborRank() ).ghostsToSend();
-
-  arrayView1d< localIndex > const & nodalParentIndices = nodeManager.getField< fields::parentIndex >();
-  arrayView1d< localIndex > const & edgeParentIndices = edgeManager.getField< fields::parentIndex >();
-  arrayView1d< localIndex > const & faceParentIndices = faceManager.getField< fields::parentIndex >();
 
   filterModObjectsForPackToGhosts( receivedObjects.modifiedNodes, nodeGhostsToSend, modNodesToSend );
   filterModObjectsForPackToGhosts( receivedObjects.modifiedEdges, edgeGhostsToSend, modEdgesToSend );
@@ -818,10 +807,6 @@ void unpackNewAndModifiedObjectsDataOnGhosts( NeighborCommunicator & neighbor,
   FaceManager & faceManager = mesh->getFaceManager();
   ElementRegionManager & elemManager = mesh->getElemManager();
 
-  localIndex_array & nodeGhostsToRecv = nodeManager.getNeighborData( neighbor.neighborRank() ).ghostsToReceive();
-  localIndex_array & edgeGhostsToRecv = edgeManager.getNeighborData( neighbor.neighborRank() ).ghostsToReceive();
-  localIndex_array & faceGhostsToRecv = faceManager.getNeighborData( neighbor.neighborRank() ).ghostsToReceive();
-
   buffer_type const & receiveBuffer = neighbor.receiveBuffer( commID );
   buffer_unit_type const * receiveBufferPtr = receiveBuffer.data();
 
@@ -884,10 +869,8 @@ void unpackNewAndModifiedObjectsDataOnGhosts( NeighborCommunicator & neighbor,
 
 
   elemManager.forElementSubRegionsComplete< ElementSubRegionBase >(
-    [&]( localIndex const er, localIndex const esr, ElementRegionBase &, ElementSubRegionBase & subRegion )
+    [&]( localIndex const er, localIndex const esr, ElementRegionBase &, ElementSubRegionBase & )
   {
-    localIndex_array & elemGhostsToReceive = subRegion.getNeighborData( neighbor.neighborRank() ).ghostsToReceive();
-
     receivedObjects.modifiedElements[ { er, esr } ].insert( modGhostElemsData[er][esr].begin(),
                                                             modGhostElemsData[er][esr].end() );
   } );
@@ -1194,9 +1177,7 @@ void synchronizeTopologyChange( MeshLevel * const mesh,
 
   for( unsigned int count=0; count<neighbors.size(); ++count )
   {
-    unpackNewAndModifiedObjectsDataOnOwningRanks( neighbors[count],
-                                                  mesh,
-                                                  commData1.commID(),
+    unpackNewAndModifiedObjectsDataOnOwningRanks( mesh,
                                                   receivedObjects,
                                                   step1bUnpackData[count] );
   }
