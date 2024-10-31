@@ -44,7 +44,7 @@ namespace UpwindHelpers
 
 template< localIndex numComp >
 GEOS_HOST_DEVICE
-static void assignDerivativesToZero( real64 & deriv_dP, real64 ( & deriv_dC )[numComp] )
+static void assignToZero( real64 & deriv_dP, real64 ( & deriv_dC )[numComp] )
 {
   deriv_dP = 0.0;
   for( localIndex ic = 0; ic < numComp; ++ic )
@@ -58,7 +58,7 @@ GEOS_HOST_DEVICE
 static void assignToZero( real64 & value, real64 & deriv_dP, real64 ( & deriv_dC )[numComp] )
 {
   value = 0.0;
-  assignDerivativesToZero( deriv_dP, deriv_dC );
+  assignToZero( deriv_dP, deriv_dC );
 }
 
 template< localIndex numComp, localIndex numFluxSupportPoints >
@@ -68,7 +68,7 @@ static void assignToZero( real64 & value, real64 ( & deriv_dP )[numFluxSupportPo
   value = 0;
   for( localIndex ke = 0; ke < numFluxSupportPoints; ++ke )
   {
-    assignDerivativesToZero( deriv_dP[ke], deriv_dC[ke] );
+    assignToZero( deriv_dP[ke], deriv_dC[ke] );
   }
 }
 
@@ -81,6 +81,18 @@ static void addDerivativesScaled( real64 ( &deriv_dP ), real64 ( & deriv_dC )[nu
   deriv_dP += dDeriv_dP * factor;
   for( localIndex ic = 0; ic < numComp; ++ic )
     deriv_dC[ic] += dDeriv_dC[ic] * factor;
+}
+
+template< localIndex numComp, localIndex numFluxSupportPoints >
+GEOS_HOST_DEVICE
+static void addDerivativesScaled( real64 ( & deriv_dP )[numFluxSupportPoints], real64 ( & deriv_dC )[numFluxSupportPoints][numComp],
+                                  real64 const ( &dDeriv_dP )[numFluxSupportPoints], real64 const ( &dDeriv_dC )[numFluxSupportPoints][numComp],
+                                  real64 const & factor )
+{
+  for( localIndex ke = 0; ke < numFluxSupportPoints; ++ke )
+  {
+    addDerivativesScaled( deriv_dP[ke], deriv_dC[ke], dDeriv_dP[ke], dDeriv_dC[ke], factor );
+  }
 }
 
 template< localIndex numComp >
@@ -97,7 +109,7 @@ static void addValueAndDerivatives( real64 & value, real64 ( &deriv_dP ), real64
                                     real64 const & dValue, real64 const ( &dDeriv_dP ), real64 const ( &dDeriv_dC )[numComp] )
 {
   value += dValue;
-  addDerivativesScaled( deriv_dP, deriv_dC, dDeriv_dP, dDeriv_dC, 1.0 );
+  addDerivatives( deriv_dP, deriv_dC, dDeriv_dP, dDeriv_dC );
 }
 
 template< localIndex numComp, localIndex numFluxSupportPoints >
@@ -108,19 +120,7 @@ static void addValueAndDerivatives( real64 & value, real64 ( & deriv_dP )[numFlu
   value += dValue;
   for( localIndex ke = 0; ke < numFluxSupportPoints; ++ke )
   {
-    addDerivativesScaled( deriv_dP[ke], deriv_dC[ke], dDeriv_dP[ke], dDeriv_dC[ke], 1.0 );
-  }
-}
-
-template< localIndex numComp, localIndex numFluxSupportPoints >
-GEOS_HOST_DEVICE
-static void addDerivativesScaled( real64 ( & deriv_dP )[numFluxSupportPoints], real64 ( & deriv_dC )[numFluxSupportPoints][numComp],
-                                  real64 const ( &dDeriv_dP )[numFluxSupportPoints], real64 const ( &dDeriv_dC )[numFluxSupportPoints][numComp],
-                                  real64 const & factor )
-{
-  for( localIndex ke = 0; ke < numFluxSupportPoints; ++ke )
-  {
-    addDerivativesScaled( deriv_dP[ke], deriv_dC[ke], dDeriv_dP[ke], dDeriv_dC[ke], factor );
+    addDerivatives( deriv_dP[ke], deriv_dC[ke], dDeriv_dP[ke], dDeriv_dC[ke] );
   }
 }
 
@@ -151,8 +151,8 @@ static void assignMobilityAndDerivatives( localIndex const & ip, localIndex cons
 
 template< localIndex numComp, localIndex numFluxSupportPoints >
 GEOS_HOST_DEVICE
-static void computeFractionalFlowAndDerivatives( localIndex const & k_up, real64 const & mob, real64 const & dMob_dP, real64 const ( &dMob_dC )[numComp],
-                                                 real64 const & totMob, real64 const ( &dTotMob_dP )[numFluxSupportPoints], real64 const ( &dTotMob_dC )[numFluxSupportPoints][numComp],
+static void computeFractionalFlowAndDerivatives( localIndex const & k_up, real64 const & mob, real64 const & dMob_dP, real64 const ( & dMob_dC )[numComp],
+                                                 real64 const & totMob, real64 const ( & dTotMob_dP )[numFluxSupportPoints], real64 const ( & dTotMob_dC )[numFluxSupportPoints][numComp],
                                                  real64 & fractionalFlow, real64 ( & dFractionalFlow_dP )[numFluxSupportPoints], real64 ( & dFractionalFlow_dC )[numFluxSupportPoints][numComp] )
 {
   // guard against no flow region
@@ -193,7 +193,7 @@ upwindMobilityViscous( localIndex const numPhase,
                        integer const capPressureFlag,
                        localIndex & upwindDir,
                        real64 & mobility,
-                       real64(&dMobility_dP),
+                       real64 (&dMobility_dP),
                        real64 (& dMobility_dC)[numComp] )
 {
   UPWIND scheme;
@@ -357,9 +357,6 @@ computeFractionalFlowViscous( localIndex const numPhase,
                               real64 (& dFractionalFlow_dP)[numFluxSupportPoints],
                               real64 (& dFractionalFlow_dC)[numFluxSupportPoints][numComp] )
 {
-  // reinit
-  assignToZero( fractionalFlow, dFractionalFlow_dP, dFractionalFlow_dC );
-
   localIndex k_up;
   real64 mob{};
   real64 dMob_dP{};
@@ -389,6 +386,8 @@ computeFractionalFlowViscous( localIndex const numPhase,
                                                                   dMob_dP,
                                                                   dMob_dC );
 
+  // reinit
+  assignToZero( fractionalFlow, dFractionalFlow_dP, dFractionalFlow_dC );
   computeFractionalFlowAndDerivatives( k_up, mob, dMob_dP, dMob_dC,
                                        totMob, dTotMob_dP, dTotMob_dC,
                                        fractionalFlow, dFractionalFlow_dP, dFractionalFlow_dC );
@@ -423,9 +422,6 @@ computeFractionalFlowGravity( localIndex const numPhase,
                               real64 (& dFractionalFlow_dP)[numFluxSupportPoints],
                               real64 (& dFractionalFlow_dC)[numFluxSupportPoints][numComp] )
 {
-  //reinit
-  assignToZero( fractionalFlow, dFractionalFlow_dP, dFractionalFlow_dC );
-
   localIndex k_up;
   real64 mob{};
   real64 dMob_dP{};
@@ -455,6 +451,8 @@ computeFractionalFlowGravity( localIndex const numPhase,
                                                                   dMob_dP,
                                                                   dMob_dC );
 
+  // reinit
+  assignToZero( fractionalFlow, dFractionalFlow_dP, dFractionalFlow_dC );
   computeFractionalFlowAndDerivatives( k_up, mob, dMob_dP, dMob_dC,
                                        totMob, dTotMob_dP, dTotMob_dC,
                                        fractionalFlow, dFractionalFlow_dP, dFractionalFlow_dC );
@@ -490,9 +488,6 @@ computeFractionalFlowCapillary( localIndex const numPhase,
                                 real64 ( & dFractionalFlow_dC)[numFluxSupportPoints][numComp]
                                 )
 {
-  //reinit
-  assignToZero( fractionalFlow, dFractionalFlow_dP, dFractionalFlow_dC );
-
   localIndex k_up;
   real64 mob{};
   real64 dMob_dP{};
@@ -522,6 +517,8 @@ computeFractionalFlowCapillary( localIndex const numPhase,
                                                                     dMob_dP,
                                                                     dMob_dC );
 
+  // reinit
+  assignToZero( fractionalFlow, dFractionalFlow_dP, dFractionalFlow_dC );
   computeFractionalFlowAndDerivatives( k_up, mob, dMob_dP, dMob_dC,
                                        totMob, dTotMob_dP, dTotMob_dC,
                                        fractionalFlow, dFractionalFlow_dP, dFractionalFlow_dC );
@@ -1568,13 +1565,29 @@ struct IHUPhaseFlux
                              phaseCapPressure, dPhaseCapPressure_dPhaseVolFrac,
                              potGrad, phaseFlux, dPhaseFlux_dP, dPhaseFlux_dC );
 
-      // choose upstream cell
-      localIndex const k_up = (phaseFlux >= 0) ? 0 : 1;
-      // accumulate into total mobility
-      UpwindHelpers::assignMobilityAndDerivatives( jp, k_up, seri, sesri, sei, phaseMob, dPhaseMob, totMob, dTotFlux_dP[k_up], dTotFlux_dC[k_up] );
       // accumulate into total flux
       UpwindHelpers::addValueAndDerivatives( totFlux, dTotFlux_dP, dTotFlux_dC,
                                              phaseFlux, dPhaseFlux_dP, dPhaseFlux_dC );
+      // old wrong way:
+      for( localIndex ke = 0; ke < numFluxSupportPoints; ++ke )
+      {	
+        totMob += phaseMob[seri[ke]][sesri[ke]][sei[ke]][jp];	
+        dTotMob_dP[ke] += dPhaseMob[seri[ke]][sesri[ke]][sei[ke]][jp][Deriv::dP];	
+        for( localIndex jc = 0; jc < numComp; ++jc )
+        {
+          dTotMob_dC[ke][jc] += dPhaseMob[seri[ke]][sesri[ke]][sei[ke]][jp][Deriv::dC + jc];	
+        }	
+      }
+
+/*
+      // new more correct:
+      // choose upstream cell
+      localIndex const k_up = (phaseFlux >= 0) ? 0 : 1;
+      // accumulate into total mobility
+      UpwindHelpers::assignMobilityAndDerivatives( jp, k_up, seri, sesri, sei,
+                                                   phaseMob, dPhaseMob,
+                                                   totMob, dTotMob_dP[k_up], dTotMob_dC[k_up] );
+*/
     }
 
     // safeguard
