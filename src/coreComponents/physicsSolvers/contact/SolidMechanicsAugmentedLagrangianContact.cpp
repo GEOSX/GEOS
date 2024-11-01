@@ -63,6 +63,26 @@ SolidMechanicsAugmentedLagrangianContact::SolidMechanicsAugmentedLagrangianConta
     setApplyDefaultValue( 0.1 ).
     setDescription( "Factor for tuning the iterative penalty coefficient for tangential traction" );
 
+  registerWrapper( viewKeyStruct::tolJumpDispNFacString(), &m_tolJumpDispNFac ).
+    setInputFlag( InputFlags::OPTIONAL ).
+    setApplyDefaultValue( 1.e-07 ).
+    setDescription( "Factor to adjust the tolerance for normal jump" );
+
+  registerWrapper( viewKeyStruct::tolJumpDispTFacString(), &m_tolJumpDispTFac ).
+    setInputFlag( InputFlags::OPTIONAL ).
+    setApplyDefaultValue( 1.e-05 ).
+    setDescription( "Factor to adjust the tolerance for tangential jump" );
+
+  registerWrapper( viewKeyStruct::tolNormalTracFacString(), &m_tolNormalTracFac ).
+    setInputFlag( InputFlags::OPTIONAL ).
+    setApplyDefaultValue( 0.5 ).
+    setDescription( "Factor to adjust the tolerance for normal traction" );
+
+  registerWrapper( viewKeyStruct::tolTauLimitString(), &m_slidingCheckTolerance ).
+    setInputFlag( InputFlags::OPTIONAL ).
+    setApplyDefaultValue( 1.e-05 ).
+    setDescription( "Tolerance for the sliding check" );
+ 
   // Set the default linear solver parameters
   LinearSolverParameters & linSolParams = m_linearSolverParameters.get();
   // Strategy: AMG with separate displacement components
@@ -1311,6 +1331,19 @@ void SolidMechanicsAugmentedLagrangianContact::createBubbleCellList( DomainParti
 
       arrayView2d< localIndex > const faceElemsList_v = faceElemsList.toView();
 
+//////////////////////////////////////////////////////////////////////////////////////////
+/*
+      FaceManager const & faceManager = mesh.getFaceManager();
+      ArrayOfArraysView< localIndex const > const faceToNodeMap = faceManager.nodeList().toViewConst();
+      NodeManager const & nodeManager = mesh.getNodeManager();
+
+      arrayView2d< localIndex const > const elemsToNodeMap = cellElementSubRegion.nodeList().toViewConst();
+      arrayView2d< real64 const > const elemsCenter = cellElementSubRegion.getElementCenter().toViewConst();
+
+      arrayView2d< real64 const, nodes::REFERENCE_POSITION_USD > const nodePosition = nodeManager.referencePosition();
+*/
+//////////////////////////////////////////////////////////////////////////////////////////
+
       forAll< parallelDevicePolicy<> >( nBubElems,
                                         [ = ]
                                         GEOS_HOST_DEVICE ( localIndex const k )
@@ -1318,6 +1351,57 @@ void SolidMechanicsAugmentedLagrangianContact::createBubbleCellList( DomainParti
         localIndex const kfe =  bubbleElemsList_v[k];
         faceElemsList_v[k][0] = elemsToFaces[kfe][keys_v[k]];
         faceElemsList_v[k][1] = keys_v[k];
+//////////////////////////////////////////////////////////////////////////////////////////
+/*
+        std::cout << "GlobID: " << faceElemsList_v[k][0] << " LocalID: " << faceElemsList_v[k][1] << std::endl;
+        std::cout << "FACE NODES: " << std::endl;
+        real64 x = 0;
+        real64 y = 0;
+        real64 z = 0;
+        for (int nod=0; nod<3; ++nod)
+        {
+          std::cout << faceToNodeMap( faceElemsList_v[k][0], nod) << " ";
+          x +=  nodePosition[faceToNodeMap( faceElemsList_v[k][0], nod)][0]; 
+          y +=  nodePosition[faceToNodeMap( faceElemsList_v[k][0], nod)][1]; 
+          z +=  nodePosition[faceToNodeMap( faceElemsList_v[k][0], nod)][2]; 
+        }
+        std::cout << std::endl;
+        std::cout << "FACE CENTERS: " << std::endl;
+        std::cout << x/3 << " " << y/3 << " " << z/3 << std::endl;
+        std::cout << "ELEMENT CENTERS: " << kfe << std::endl;
+        std::cout << elemsCenter[kfe][0] << " " << elemsCenter[kfe][1] << " " << elemsCenter[kfe][2] << std::endl;
+        std::cout << "ELMENT NODES: " << std::endl;
+        if (faceElemsList_v[k][1] == 0) 
+        {
+          std::cout << elemsToNodeMap(kfe, 0) << " "; 
+          std::cout << elemsToNodeMap(kfe, 1) << " ";
+          std::cout << elemsToNodeMap(kfe, 3) << " ";
+          std::cout << std::endl;
+        }
+        else if (faceElemsList_v[k][1] == 1) 
+        {
+          std::cout << elemsToNodeMap(kfe, 0) << " "; 
+          std::cout << elemsToNodeMap(kfe, 2) << " ";
+          std::cout << elemsToNodeMap(kfe, 1) << " ";
+          std::cout << std::endl;
+        }
+        else if (faceElemsList_v[k][1] == 2) 
+        {
+          std::cout << elemsToNodeMap(kfe, 0) << " "; 
+          std::cout << elemsToNodeMap(kfe, 3) << " ";
+          std::cout << elemsToNodeMap(kfe, 2) << " ";
+          std::cout << std::endl;
+        }
+        else if (faceElemsList_v[k][1] == 3) 
+        {
+          std::cout << elemsToNodeMap(kfe, 1) << " "; 
+          std::cout << elemsToNodeMap(kfe, 2) << " ";
+          std::cout << elemsToNodeMap(kfe, 3) << " ";
+          std::cout << std::endl;
+        }
+        std::cout << std::endl;
+*/
+//////////////////////////////////////////////////////////////////////////////////////////
       } );
       cellElementSubRegion.setFaceElementsList( faceElemsList.toViewConst());
 
@@ -1730,11 +1814,16 @@ void SolidMechanicsAugmentedLagrangianContact::computeTolerances( DomainPartitio
             LvArray::tensorOps::scale< 3, 3 >( rotatedInvStiffApprox, area );
 
             // Finally, compute tolerances for the given fracture element
-            normalDisplacementTolerance[kfe] = rotatedInvStiffApprox[ 0 ][ 0 ] * averageYoungModulus / 2.e+7;
+            normalDisplacementTolerance[kfe] = rotatedInvStiffApprox[ 0 ][ 0 ] * averageYoungModulus * m_tolJumpDispNFac;
             slidingTolerance[kfe] = sqrt( pow( rotatedInvStiffApprox[ 1 ][ 1 ], 2 ) +
-                                          pow( rotatedInvStiffApprox[ 2 ][ 2 ], 2 )) * averageYoungModulus / 2.e+5;
-            normalTractionTolerance[kfe] = (1.0 / 2.0) * (averageConstrainedModulus / averageBoxSize0) *
+                                          pow( rotatedInvStiffApprox[ 2 ][ 2 ], 2 )) * averageYoungModulus * m_tolJumpDispTFac;
+            normalTractionTolerance[kfe] = m_tolNormalTracFac * (averageConstrainedModulus / averageBoxSize0) *
                                            (normalDisplacementTolerance[kfe]);
+
+            GEOS_LOG_LEVEL( 2,
+                      GEOS_FMT( "kfe: {}, normalDisplacementTolerance: {}, slidingTolerance: {}, normalTractionTolerance: {}",
+                                 kfe, normalDisplacementTolerance[kfe], slidingTolerance[kfe], normalTractionTolerance[kfe]));
+
             iterativePenalty[kfe][0] = m_iterPenaltyNFac*averageConstrainedModulus/(averageBoxSize0*area);
             iterativePenalty[kfe][1] = m_iterPenaltyTFac*averageConstrainedModulus/(averageBoxSize0*area);
           }

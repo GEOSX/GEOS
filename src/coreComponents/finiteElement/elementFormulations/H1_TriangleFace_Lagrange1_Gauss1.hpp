@@ -60,7 +60,10 @@ public:
   constexpr static localIndex maxSupportPoints = numNodes;
 
   /// The number of quadrature points per element.
-  constexpr static localIndex numQuadraturePoints = 1;
+  //constexpr static localIndex numQuadraturePoints = 6;
+  constexpr static localIndex numQuadraturePoints = 4;
+  //constexpr static localIndex numQuadraturePoints = 3;
+  //constexpr static localIndex numQuadraturePoints = 1;
 
   virtual ~H1_TriangleFace_Lagrange1_Gauss1() override
   {}
@@ -172,10 +175,11 @@ public:
   static void calcBubbleN( localIndex const q,
                            real64 (& N)[1] )
   {
-    GEOS_UNUSED_VAR( q );
 
-    // single quadrature point (centroid), i.e.  r = s = 1/3
-    real64 const qCoords[2] = { 1.0 / 3.0, 1.0 / 3.0};
+    real64 const qCoords[2] = {quadratureParentCoords0(q), quadratureParentCoords1(q) };
+
+    //std::cout << "FACE q: " << q << " r: " << qCoords[0] << " s: " << qCoords[1] << std::endl; 
+
     calcBubbleN( qCoords, N );
   }
 
@@ -227,7 +231,92 @@ private:
   constexpr static real64 parentArea = 0.5;
 
   /// The weight of each quadrature point.
-  constexpr static real64 weight = parentArea / numQuadraturePoints;
+  //constexpr static real64 weight = parentArea / numQuadraturePoints;
+  constexpr static real64 weight = parentArea;
+
+  /**
+   * @brief Calculate the weights
+   * @param q
+   * @return weight.
+   */
+  GEOS_HOST_DEVICE
+  inline
+  constexpr static real64 quadratureWeight( localIndex const q )
+  {
+
+    real64 const w[numQuadraturePoints] = {-0.562500000000000,
+                                            0.520833333333333,
+                                            0.520833333333333,
+                                            0.520833333333333 };
+
+/*
+    real64 const w[numQuadraturePoints] = { 1.0/6.0,
+                                            1.0/6.0,
+                                            1.0/6.0,
+                                            1.0/6.0,
+                                            1.0/6.0,
+                                            1.0/6.0 };
+*/
+
+    return w[q];
+
+  }
+
+  /**
+   * @brief Calculate the parent coordinates for the r direction, given the
+   *        linear index of a quadrature point.
+   * @param a The linear index of quadrature point
+   * @return parent coordinate in the r direction.
+   */
+  GEOS_HOST_DEVICE
+  inline
+  constexpr static real64 quadratureParentCoords0( localIndex const q )
+  {
+
+    real64 const qCoords[numQuadraturePoints] = { 0.333333333333333,
+                                                  0.600000000000000,
+                                                  0.200000000000000,
+                                                  0.200000000000000 };
+
+/*
+    real64 const qCoords[numQuadraturePoints] = { 0.659027622374092,
+                                                  0.109039009072877,
+                                                  0.231933368553031,
+                                                  0.659027622374092,
+                                                  0.109039009072877,
+                                                  0.231933368553031 };
+*/
+
+    return qCoords[q];
+  }
+
+  /**
+   * @brief Calculate the parent coordinates for the s direction, given the
+   *        linear index of a quadrature point.
+   * @param q The linear index of quadrature point
+   * @return parent coordinate in the s direction.
+   */
+  GEOS_HOST_DEVICE
+  inline
+  constexpr static real64 quadratureParentCoords1( localIndex const q )
+  {
+
+    real64 const qCoords[numQuadraturePoints] = { 0.333333333333333,
+                                                  0.200000000000000,
+                                                  0.600000000000000,
+                                                  0.200000000000000 };
+
+/*
+    real64 const qCoords[numQuadraturePoints] = { 0.231933368553031,
+                                                  0.659027622374092,
+                                                  0.109039009072877,
+                                                  0.109039009072877,
+                                                  0.231933368553031,
+                                                  0.659027622374092 };
+*/
+
+    return qCoords[q];
+  }
 
 };
 
@@ -270,12 +359,11 @@ H1_TriangleFace_Lagrange1_Gauss1::
   calcN( localIndex const q,
          real64 (& N)[numNodes] )
 {
-  GEOS_UNUSED_VAR( q );
 
-  // single quadrature point (centroid), i.e.  r = s = 1/3
-  N[0] = 1.0 / 3.0; // N0 = 1 - r - s
-  N[1] = N[0];      // N1 = r
-  N[2] = N[0];      // N2 = s
+  real64 const qCoords[2] = {quadratureParentCoords0(q), quadratureParentCoords1(q) };
+
+  calcN(qCoords, N);
+
 }
 
 GEOS_HOST_DEVICE
@@ -297,11 +385,13 @@ H1_TriangleFace_Lagrange1_Gauss1::
   transformedQuadratureWeight( localIndex const q,
                                real64 const (&X)[numNodes][3] )
 {
-  GEOS_UNUSED_VAR( q );
+  //GEOS_UNUSED_VAR( q );
   real64 n[3] = { ( X[1][1] - X[0][1] ) * ( X[2][2] - X[0][2] ) - ( X[2][1] - X[0][1] ) * ( X[1][2] - X[0][2] ),
                   ( X[2][0] - X[0][0] ) * ( X[1][2] - X[0][2] ) - ( X[1][0] - X[0][0] ) * ( X[2][2] - X[0][2] ),
                   ( X[1][0] - X[0][0] ) * ( X[2][1] - X[0][1] ) - ( X[2][0] - X[0][0] ) * ( X[1][1] - X[0][1] )};
-  return sqrt( n[0] * n[0] + n[1] * n[1] + n[2] * n[2] ) * weight;
+
+  //std::cout << "FACE q: " << q << " weight: " << 2 * weight * quadratureWeight(q) << std::endl; 
+  return sqrt( n[0] * n[0] + n[1] * n[1] + n[2] * n[2] ) * weight * quadratureWeight(q);
 }
 
 /// @endcond

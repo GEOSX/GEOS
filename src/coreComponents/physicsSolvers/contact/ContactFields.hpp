@@ -80,7 +80,15 @@ DECLARE_FIELD( slip,
                0,
                LEVEL_0,
                NO_WRITE,
-               "Slip." );
+               "Slip" );
+
+DECLARE_FIELD( tangentialTraction,
+               "tangentialTraction",
+               array1d< real64 >,
+               0,
+               LEVEL_0,
+               NO_WRITE,
+               "Tangential traction" );
 
 DECLARE_FIELD( deltaDispJump,
                "deltaDisplacementJump",
