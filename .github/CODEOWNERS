@@ -14,30 +14,30 @@
 /inputFiles/compositionalMultiphaseFlow               @paveltomin
 /inputFiles/compositionalMultiphaseWell               @paveltomin
 /inputFiles/efemFractureMechanics                     @CusiniM
-/inputFiles/hydraulicFracturing                       @CusiniM @rrsettgast @frankfeifan @Guotong-Ren @cssherman
+/inputFiles/hydraulicFracturing                       @CusiniM @rrsettgast @frankfeifan @Guotong-Ren @cssherman @jhuang2601
 /inputFiles/inducedSeismicity                         @CusiniM @matteofrigo5 
-/inputFiles/initialization
-/inputFiles/lagrangianContactMechanics                @CusiniM
+/inputFiles/initialization                                 @jhuang2601 
+/inputFiles/lagrangianContactMechanics                @CusiniM @jhuang2601 
 /inputFiles/materialPointMethod                @homel1 @cmcrook5 
 /inputFiles/meshGeneration
-/inputFiles/multiphaseFlowFractures                   @paveltomin
+/inputFiles/multiphaseFlowFractures                   @paveltomin @jhuang2601
 /inputFiles/multipleMeshBodies
 /inputFiles/phaseField                                @frankfeifan @CusiniM
-/inputFiles/poromechanics                             @CusiniM @castelletto1 @paveltomin
-/inputFiles/poromechanicsFractures                    @CusiniM @castelletto1 @paveltomin
-/inputFiles/proppant
+/inputFiles/poromechanics                             @CusiniM @castelletto1 @paveltomin @jhuang2601
+/inputFiles/poromechanicsFractures                    @CusiniM @castelletto1 @paveltomin @jhuang2601
+/inputFiles/proppant                                  @jhuang2601 
 /inputFiles/relpermDriver
 /inputFiles/simplePDE
 /inputFiles/singlePhaseFlow                           @CusiniM @castelletto1 @paveltomin
-/inputFiles/singlePhaseFlowFractures                  @CusiniM @castelletto1 @paveltomin
+/inputFiles/singlePhaseFlowFractures                  @CusiniM @castelletto1 @paveltomin @jhuang2601 
 /inputFiles/singlePhaseWell                           @paveltomin
-/inputFiles/solidMechanics                            @CusiniM @castelletto1
+/inputFiles/solidMechanics                            @CusiniM @castelletto1 @jhuang2601 
 /inputFiles/surfaceGeneration                         @CusiniM @castelletto1
 /inputFiles/thermalMultiphaseFlow                     @paveltomin
-/inputFiles/thermalSinglePhaseFlowFractures           @CusiniM @castelletto1 @paveltomin
-/inputFiles/thermoPoromechanics                       @paveltomin
-/inputFiles/thermoPoromechanicsFractures              @CusiniM @castelletto1 @paveltomin
-/inputFiles/triaxialDriver
+/inputFiles/thermalSinglePhaseFlowFractures           @CusiniM @castelletto1 @paveltomin @jhuang2601 
+/inputFiles/thermoPoromechanics                       @paveltomin @jhuang2601 
+/inputFiles/thermoPoromechanicsFractures              @CusiniM @castelletto1 @paveltomin @jhuang2601 
+/inputFiles/triaxialDriver                 @jhuang2601
 /inputFiles/wavePropagation                           @acitrain @sframba
 /inputFiles/wellbore                                  @jhuang2601
 /inputFiles/wellboreECP                               @rrsettgast
