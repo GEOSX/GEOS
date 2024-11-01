@@ -18,7 +18,7 @@
 /inputFiles/inducedSeismicity                         @CusiniM @matteofrigo5 
 /inputFiles/initialization
 /inputFiles/lagrangianContactMechanics                @CusiniM
-/inputFiles/materialPointMethod
+/inputFiles/materialPointMethod                @homel1 @cmcrook5 
 /inputFiles/meshGeneration
 /inputFiles/multiphaseFlowFractures                   @paveltomin
 /inputFiles/multipleMeshBodies
