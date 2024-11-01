@@ -118,7 +118,7 @@ struct LinearSolverParameters
     real64 relTolerance = 1e-6;       ///< Relative convergence tolerance for iterative solvers
     integer maxIterations = 200;      ///< Max iterations before declaring convergence failure
 #if GEOS_USE_HYPRE_DEVICE == GEOS_USE_HYPRE_CUDA || GEOS_USE_HYPRE_DEVICE == GEOS_USE_HYPRE_HIP
-    integer maxRestart = 50;          ///< Max number of vectors in Krylov basis before restarting (GPUs)
+    integer maxRestart = 100;         ///< Max number of vectors in Krylov basis before restarting (GPUs)
 #else
     integer maxRestart = 200;         ///< Max number of vectors in Krylov basis before restarting (CPUs)
 #endif
