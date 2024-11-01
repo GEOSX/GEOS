@@ -15,8 +15,8 @@
 
 
 #include "physicsSolvers/multiphysics/poromechanicsKernels/SinglePhasePoromechanicsEFEM_impl.hpp"
-#include "policies.hpp"
 
+using SinglePhasePoromechanicsEFEMPolicy = @SinglePhasePoromechanicsEFEMPolicy@;
 
 #define INSTANTIATION( NAME )\
 template class NAME < @SUBREGION_TYPE@, @CONSTITUTIVE_TYPE@, @FE_TYPE@ >; \

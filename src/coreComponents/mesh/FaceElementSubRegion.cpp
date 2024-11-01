@@ -526,7 +526,8 @@ buildCollocatedEdgeBuckets( std::map< globalIndex, globalIndex > const & referen
   std::map< std::pair< globalIndex, globalIndex >, std::set< localIndex > > collocatedEdgeBuckets;
   for( auto const & p: edgesIds )
   {
-    static constexpr std::string_view nodeNotFound = "Internal error when trying to access the reference collocated node for global node {}.";
+    static constexpr auto nodeNotFound = "Internal error when trying to access the reference collocated node for global node {}.";
+    GEOS_UNUSED_VAR( nodeNotFound ); // Not used in GPU builds.
 
     std::pair< globalIndex, globalIndex > const & nodes = p.first;
     localIndex const & edge = p.second;

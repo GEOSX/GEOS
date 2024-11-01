@@ -29,6 +29,8 @@
 #include "SurfaceElementRegion.hpp"
 #include "WellElementRegion.hpp"
 
+#include "common/TypeDispatch.hpp"
+
 namespace geos
 {
 
@@ -559,6 +561,20 @@ public:
   void forElementSubRegions( LOOKUP_CONTAINER const & targetRegions, LAMBDA && lambda )
   {
     forElementSubRegionsComplete< SUBREGIONTYPE, SUBREGIONTYPES... >( targetRegions,
+                                                                      [lambda = std::forward< LAMBDA >( lambda )]( localIndex const targetIndex,
+                                                                                                                   localIndex const,
+                                                                                                                   localIndex const,
+                                                                                                                   ElementRegionBase &,
+                                                                                                                   auto & subRegion )
+    {
+      lambda( targetIndex, subRegion );
+    } );
+  }
+
+  template< typename ... SUBREGIONTYPES, typename LOOKUP_CONTAINER, typename LAMBDA >
+  void forElementSubRegions( types::TypeList< SUBREGIONTYPES... >, LOOKUP_CONTAINER const & targetRegions, LAMBDA && lambda )
+  {
+    forElementSubRegionsComplete< SUBREGIONTYPES... >( targetRegions,
                                                                       [lambda = std::forward< LAMBDA >( lambda )]( localIndex const targetIndex,
                                                                                                                    localIndex const,
                                                                                                                    localIndex const,

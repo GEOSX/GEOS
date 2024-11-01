@@ -1,0 +1,14 @@
+#include "physicsSolvers/fluidFlow/ThermalCompositionalMultiphaseFVMKernels.hpp"
+
+// using DirichletFaceBasedAssemblyKernelPolicy = @DirichletFaceBasedAssemblyKernelPolicy@;
+
+namespace geos
+{
+namespace thermalCompositionalMultiphaseFVMKernels
+{
+  template class @NAME@ < @NCOMP_NDOF@, @KERNEL_TYPE@::KernelWrapper >;
+  // these kernels don't implement their own launch, they rely on the isothermal launch which is
+  // instantiated as a byproduct of the above explicit instantiation
+}
+
+}

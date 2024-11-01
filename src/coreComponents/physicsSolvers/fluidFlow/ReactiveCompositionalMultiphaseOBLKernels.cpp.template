@@ -1,0 +1,20 @@
+#include "physicsSolvers/fluidFlow/ReactiveCompositionalMultiphaseOBLKernels.hpp"
+#include "finiteVolume/CellElementStencilTPFA.hpp"
+#include "finiteVolume/SurfaceElementStencil.hpp"
+#include "finiteVolume/EmbeddedSurfaceToCellStencil.hpp"
+#include "finiteVolume/FaceElementToCellStencil.hpp"
+
+using FaceBasedAssemblyKernelPolicy = @FaceBasedAssemblyKernelPolicy@;
+
+namespace geos
+{
+namespace reactiveCompositionalMultiphaseOBLKernels
+{
+  @EXTERN@ template class @NAME@ < @NDIM@, @NCOMP@, @ENABLE_ENERGY@, @STENCIL@::KernelWrapper >;
+  @EXTERN@ template void @NAME@ < @NDIM@, @NCOMP@, @ENABLE_ENERGY@, @STENCIL@::KernelWrapper >::launch< @NAME@Policy,
+                                                                                                        @NAME@ < @NDIM@, @NCOMP@, @ENABLE_ENERGY@, @STENCIL@::KernelWrapper > >
+                                                                                                         ( const localIndex,
+                                                                                                           @NAME@ < @NDIM@, @NCOMP@, @ENABLE_ENERGY@, @STENCIL@::KernelWrapper > const & );
+}
+}
+

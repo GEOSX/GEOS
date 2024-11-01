@@ -23,7 +23,9 @@
 #include "common/DataLayouts.hpp"
 #include "common/DataTypes.hpp"
 #include "common/GEOS_RAJA_Interface.hpp"
+#include "constitutive/permeability/PermeabilityBase.hpp"
 #include "constitutive/permeability/PermeabilityFields.hpp"
+#include "functions/MultivariableTableFunction.hpp"
 #include "functions/MultivariableTableFunctionKernels.hpp"
 #include "mesh/ElementSubRegionBase.hpp"
 #include "mesh/ObjectManagerBase.hpp"
@@ -1369,9 +1371,9 @@ struct SolutionCheckKernel
 
 };
 
+
 } // namespace ReactiveCompositionalMultiphaseOBLKernels
 
 } // namespace geos
-
 
 #endif //GEOS_PHYSICSSOLVERS_FLUIDFLOW_REACTIVECOMPOSITIONALMULTIPHASEOBLKERNELS_HPP

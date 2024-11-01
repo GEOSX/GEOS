@@ -377,7 +377,7 @@ void CompositionalMultiphaseHybridFVM::assembleFluxTerms( real64 const dt,
       mimeticInnerProductReducedDispatch( mimeticInnerProductBase,
                                           [&] ( auto const mimeticInnerProduct )
       {
-        using IP_TYPE = TYPEOFREF( mimeticInnerProduct );
+        using IP_TYPE = std::remove_const_t< TYPEOFREF( mimeticInnerProduct ) >;
         kernelLaunchSelector< FluxKernel,
                               IP_TYPE >( subRegion.numFacesPerElement(),
                                          m_numComponents, m_numPhases,

@@ -17,8 +17,11 @@
 #include "physicsSolvers/solidMechanics/kernels/ExplicitFiniteStrain_impl.hpp"
 #include "physicsSolvers/solidMechanics/kernels/ImplicitSmallStrainNewmark_impl.hpp"
 #include "physicsSolvers/solidMechanics/kernels/ImplicitSmallStrainQuasiStatic_impl.hpp"
-#include "policies.hpp"
 
+using ExplicitSmallStrainPolicy = @ExplicitSmallStrainPolicy@;
+using ExplicitFiniteStrainPolicy = @ExplicitFiniteStrainPolicy@;
+using ImplicitSmallStrainNewmarkPolicy = @ImplicitSmallStrainNewmarkPolicy@;
+using ImplicitSmallStrainQuasiStaticPolicy = @ImplicitSmallStrainQuasiStaticPolicy@;
 
 #define INSTANTIATION( NAME )\
 template class NAME < @SUBREGION_TYPE@, @CONSTITUTIVE_TYPE@, @FE_TYPE@ >; \

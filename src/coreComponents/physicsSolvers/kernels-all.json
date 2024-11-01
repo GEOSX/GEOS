@@ -1,0 +1,512 @@
+{
+  "doc" :
+  {
+    "comment" : "All kernel template instantiation specs need all dict keys except 'comment' and 'explicit'",
+    "vars" :
+    [
+      "This is a list of the keys in the combinations dict (keys aren't queryable in cmake)",
+      "they are also the names of the CMAKE variables which will be set to one of the values specified",
+      "in the combinations dict just prior to cmake calling configure_file() on the template file"
+    ],
+    "constants" :
+    [
+      [ "key", "value" ],
+      [ "note", "All constants will be set for cmake to configure_file() for every instantiation." ]
+    ],
+    "combinations" :
+    {
+      "vars" : [ "each value in this list will be used to generate kernel template files",
+                 "combinatorally with all other value lists" ]
+    },
+    "explicit" : [ "specify a specific combination of the variables to generate",
+                   "specify by choosing one value from each variable you want generated",
+                   "and concating them with '#' (this can by modified internally at the",
+                   "generation call). Duplicate entries are unified internally" ]
+  },
+
+  "SolidMechanicsKernels": {
+    "vars": [ "SUBREGION_TYPE", "CONSTITUTIVE_TYPE", "FE_TYPE" ],
+    "constants": [
+      [ "ExplicitSmallStrainPolicy", "geos::parallelDevicePolicy< GEOS_BLOCK_SIZE >" ],
+      [ "ExplicitFiniteStrainPolicy", "geos::parallelDevicePolicy< GEOS_BLOCK_SIZE >" ],
+      [ "FixedStressThermoPoromechanicsPolicy", "geos::parallelDevicePolicy< GEOS_BLOCK_SIZE >" ],
+      [ "ImplicitSmallStrainNewmarkPolicy", "geos::parallelDevicePolicy< GEOS_BLOCK_SIZE >" ],
+      [ "ImplicitSmallStrainQuasiStaticPolicy", "geos::parallelDevicePolicy< GEOS_BLOCK_SIZE >" ]
+    ],
+    "combinations": {
+      "SUBREGION_TYPE": [
+        "CellElementSubRegion"
+      ],
+      "CONSTITUTIVE_TYPE": [
+        "DamageSpectral<ElasticIsotropic>",
+        "DamageVolDev<ElasticIsotropic>",
+        "Damage<ElasticIsotropic>",
+        "DuvautLionsSolid<DruckerPrager>",
+        "DuvautLionsSolid<DruckerPragerExtended>",
+        "DuvautLionsSolid<ModifiedCamClay>",
+        "DruckerPragerExtended",
+        "ModifiedCamClay",
+        "DelftEgg",
+        "DruckerPrager",
+        "ElasticIsotropic",
+        "ElasticTransverseIsotropic",
+        "ElasticIsotropicPressureDependent",
+        "ElasticOrthotropic"
+      ],
+      "FE_TYPE": [
+        "H1_Hexahedron_Lagrange1_GaussLegendre2",
+        "H1_Wedge_Lagrange1_Gauss6",
+        "H1_Tetrahedron_Lagrange1_Gauss1",
+        "H1_Pyramid_Lagrange1_Gauss5",
+        "H1_Tetrahedron_VEM_Gauss1",
+        "H1_Prism5_VEM_Gauss1",
+        "H1_Prism6_VEM_Gauss1",
+        "H1_Prism7_VEM_Gauss1",
+        "H1_Prism8_VEM_Gauss1",
+        "H1_Prism9_VEM_Gauss1",
+        "H1_Prism10_VEM_Gauss1",
+        "Q1_Hexahedron_Lagrange_GaussLobatto",
+        "Q2_Hexahedron_Lagrange_GaussLobatto",
+        "Q3_Hexahedron_Lagrange_GaussLobatto",
+        "Q4_Hexahedron_Lagrange_GaussLobatto",
+        "Q5_Hexahedron_Lagrange_GaussLobatto",
+        "H1_Hexahedron_VEM_Gauss1",
+        "H1_Wedge_VEM_Gauss1",
+        "H1_Prism11_VEM_Gauss1"
+      ]
+    },
+    "explicit": []
+  },
+
+  "SolidMechanicsFixedStressThermoPoromechanicsKernels": {
+    "vars": [
+      "SUBREGION_TYPE",
+      "CONSTITUTIVE_TYPE",
+      "FE_TYPE"
+    ],
+    "constants": [
+      [ "ExplicitSmallStrainPolicy", "geos::parallelDevicePolicy< GEOS_BLOCK_SIZE >" ],
+      [ "ExplicitFiniteStrainPolicy", "geos::parallelDevicePolicy< GEOS_BLOCK_SIZE >" ],
+      [ "FixedStressThermoPoromechanicsPolicy", "geos::parallelDevicePolicy< GEOS_BLOCK_SIZE >" ],
+      [ "ImplicitSmallStrainNewmarkPolicy", "geos::parallelDevicePolicy< GEOS_BLOCK_SIZE >" ],
+      [ "ImplicitSmallStrainQuasiStaticPolicy", "geos::parallelDevicePolicy< GEOS_BLOCK_SIZE >" ]
+    ],
+    "combinations": {
+      "SUBREGION_TYPE": [
+        "CellElementSubRegion"
+      ],
+      "CONSTITUTIVE_TYPE": [
+        "PorousSolid<ElasticIsotropic>"
+      ],
+      "FE_TYPE": [
+        "H1_Hexahedron_Lagrange1_GaussLegendre2",
+        "H1_Wedge_Lagrange1_Gauss6",
+        "H1_Tetrahedron_Lagrange1_Gauss1",
+        "H1_Pyramid_Lagrange1_Gauss5",
+        "H1_Tetrahedron_VEM_Gauss1",
+        "H1_Prism5_VEM_Gauss1",
+        "H1_Prism6_VEM_Gauss1",
+        "H1_Prism7_VEM_Gauss1",
+        "H1_Prism8_VEM_Gauss1",
+        "H1_Prism9_VEM_Gauss1",
+        "H1_Prism10_VEM_Gauss1",
+        "Q1_Hexahedron_Lagrange_GaussLobatto",
+        "Q2_Hexahedron_Lagrange_GaussLobatto",
+        "Q3_Hexahedron_Lagrange_GaussLobatto",
+        "Q4_Hexahedron_Lagrange_GaussLobatto",
+        "Q5_Hexahedron_Lagrange_GaussLobatto",
+        "H1_Hexahedron_VEM_Gauss1",
+        "H1_Wedge_VEM_Gauss1",
+        "H1_Prism11_VEM_Gauss1"
+      ]
+    },
+    "explicit": []
+  },
+
+  "SolidMechanicsFixedStressThermoPoroElasticKernels": {
+    "vars": [
+      "SUBREGION_TYPE",
+      "CONSTITUTIVE_TYPE",
+      "FE_TYPE"
+    ],
+    "constants": [
+      [ "FixedStressThermoPoromechanicsPolicy", "geos::parallelDevicePolicy< GEOS_BLOCK_SIZE >" ]
+    ],
+    "combinations": {
+      "SUBREGION_TYPE": [
+        "CellElementSubRegion"
+      ],
+      "CONSTITUTIVE_TYPE": [
+        "PorousSolid<ElasticIsotropic>"
+      ],
+      "FE_TYPE": [
+        "H1_Hexahedron_Lagrange1_GaussLegendre2",
+        "H1_Wedge_Lagrange1_Gauss6",
+        "H1_Tetrahedron_Lagrange1_Gauss1",
+        "H1_Pyramid_Lagrange1_Gauss5",
+        "H1_Tetrahedron_VEM_Gauss1",
+        "H1_Prism5_VEM_Gauss1",
+        "H1_Prism6_VEM_Gauss1",
+        "H1_Prism7_VEM_Gauss1",
+        "H1_Prism8_VEM_Gauss1",
+        "H1_Prism9_VEM_Gauss1",
+        "H1_Prism10_VEM_Gauss1",
+        "Q1_Hexahedron_Lagrange_GaussLobatto",
+        "Q2_Hexahedron_Lagrange_GaussLobatto",
+        "Q3_Hexahedron_Lagrange_GaussLobatto",
+        "Q4_Hexahedron_Lagrange_GaussLobatto",
+        "Q5_Hexahedron_Lagrange_GaussLobatto",
+        "H1_Hexahedron_VEM_Gauss1",
+        "H1_Wedge_VEM_Gauss1",
+        "H1_Prism11_VEM_Gauss1"
+      ]
+    },
+    "explicit": []
+  },
+
+  "PoromechanicsKernels": {
+    "vars": [
+      "SUBREGION_TYPE",
+      "CONSTITUTIVE_TYPE",
+      "FE_TYPE"
+    ],
+    "constants": [
+      [ "SinglePhasePoromechanicsPolicy", "geos::parallelDevicePolicy< GEOS_BLOCK_SIZE >" ],
+      [ "MultiphasePoromechanicsPolicy", "geos::parallelDevicePolicy< GEOS_BLOCK_SIZE >" ]
+    ],
+    "combinations": {
+      "SUBREGION_TYPE": [
+        "CellElementSubRegion"
+      ],
+      "CONSTITUTIVE_TYPE": [
+        "PorousSolid<DruckerPragerExtended>",
+        "PorousSolid<ModifiedCamClay>",
+        "PorousSolid<DelftEgg>",
+        "PorousSolid<DruckerPrager>",
+        "PorousSolid<ElasticIsotropic>",
+        "PorousSolid<ElasticTransverseIsotropic>",
+        "PorousSolid<ElasticIsotropicPressureDependent>",
+        "PorousSolid<ElasticOrthotropic>",
+        "PorousSolid<DamageSpectral<ElasticIsotropic>>",
+        "PorousSolid<DamageVolDev<ElasticIsotropic>>",
+        "PorousSolid<Damage<ElasticIsotropic>>",
+        "PorousSolid<DuvautLionsSolid<DruckerPrager>>",
+        "PorousSolid<DuvautLionsSolid<DruckerPragerExtended>>",
+        "PorousSolid<DuvautLionsSolid<ModifiedCamClay>>"
+      ],
+      "FE_TYPE": [
+        "H1_Hexahedron_Lagrange1_GaussLegendre2",
+        "H1_Wedge_Lagrange1_Gauss6",
+        "H1_Tetrahedron_Lagrange1_Gauss1",
+        "H1_Pyramid_Lagrange1_Gauss5",
+        "H1_Tetrahedron_VEM_Gauss1",
+        "H1_Prism5_VEM_Gauss1",
+        "H1_Prism6_VEM_Gauss1",
+        "H1_Prism7_VEM_Gauss1",
+        "H1_Prism8_VEM_Gauss1",
+        "H1_Prism9_VEM_Gauss1",
+        "H1_Prism10_VEM_Gauss1",
+        "H1_Hexahedron_VEM_Gauss1",
+        "H1_Wedge_VEM_Gauss1",
+        "H1_Prism11_VEM_Gauss1"
+      ]
+    },
+    "explicit": []
+  },
+
+  "PoromechanicsEFEMKernels": {
+    "vars": [
+      "SUBREGION_TYPE",
+      "CONSTITUTIVE_TYPE",
+      "FE_TYPE"
+    ],
+    "constants": [
+      [ "SinglePhasePoromechanicsEFEMPolicy", "geos::parallelDevicePolicy< GEOS_BLOCK_SIZE >" ]
+    ],
+    "combinations": {
+      "SUBREGION_TYPE": [
+        "CellElementSubRegion"
+      ],
+      "CONSTITUTIVE_TYPE": [
+        "PorousSolid<ElasticIsotropic>"
+      ],
+      "FE_TYPE": [
+        "H1_Hexahedron_Lagrange1_GaussLegendre2",
+        "H1_Wedge_Lagrange1_Gauss6",
+        "H1_Tetrahedron_Lagrange1_Gauss1",
+        "H1_Pyramid_Lagrange1_Gauss5",
+        "H1_Tetrahedron_VEM_Gauss1",
+        "H1_Prism5_VEM_Gauss1",
+        "H1_Prism6_VEM_Gauss1",
+        "H1_Prism7_VEM_Gauss1",
+        "H1_Prism8_VEM_Gauss1",
+        "H1_Prism9_VEM_Gauss1",
+        "H1_Prism10_VEM_Gauss1",
+        "H1_Hexahedron_VEM_Gauss1",
+        "H1_Wedge_VEM_Gauss1",
+        "H1_Prism11_VEM_Gauss1"
+      ]
+    },
+    "explicit": []
+  },
+
+  "ThermoPoromechanicsKernels": {
+    "vars": [
+      "SUBREGION_TYPE",
+      "CONSTITUTIVE_TYPE",
+      "FE_TYPE"
+    ],
+    "constants": [
+      [ "ThermalMultiphasePoromechanicsPolicy", "geos::parallelDevicePolicy< GEOS_BLOCK_SIZE >" ],
+      [ "ThermalSinglePhasePoromechanicsPolicy", "geos::parallelDevicePolicy< GEOS_BLOCK_SIZE >" ],
+      [ "ThermalSinglePhasePoromechanicsEFEMPolicy", "geos::parallelDevicePolicy< GEOS_BLOCK_SIZE >" ]
+    ],
+    "combinations": {
+      "SUBREGION_TYPE": [
+        "CellElementSubRegion"
+      ],
+      "CONSTITUTIVE_TYPE": [
+        "PorousSolid<ElasticIsotropic>"
+      ],
+      "FE_TYPE": [
+        "H1_Hexahedron_Lagrange1_GaussLegendre2",
+        "H1_Wedge_Lagrange1_Gauss6",
+        "H1_Tetrahedron_Lagrange1_Gauss1",
+        "H1_Pyramid_Lagrange1_Gauss5",
+        "H1_Tetrahedron_VEM_Gauss1",
+        "H1_Prism5_VEM_Gauss1",
+        "H1_Prism6_VEM_Gauss1",
+        "H1_Prism7_VEM_Gauss1",
+        "H1_Prism8_VEM_Gauss1",
+        "H1_Prism9_VEM_Gauss1",
+        "H1_Prism10_VEM_Gauss1",
+        "H1_Hexahedron_VEM_Gauss1",
+        "H1_Wedge_VEM_Gauss1",
+        "H1_Prism11_VEM_Gauss1"
+      ]
+    },
+    "explicit": []
+  },
+
+  "SinglePhaseHybridFVMKernels": {
+    "vars": [
+      "NAME",
+      "NFACES",
+      "IP"
+    ],
+    "constants": [
+      [ "ElementBasedAssemblyKernelPolicy", "geos::parallelDevicePolicy< GEOS_BLOCK_SIZE >" ]
+    ],
+    "combinations": {
+      "NAME": [
+        "ElementBasedAssemblyKernel"
+      ],
+      "NFACES": [
+        4,
+        5,
+        6,
+        7,
+        8,
+        9,
+        10,
+        11,
+        12,
+        13
+      ],
+      "IP": [
+        "mimeticInnerProduct::TPFAInnerProduct",
+        "mimeticInnerProduct::QuasiTPFAInnerProduct",
+        "mimeticInnerProduct::QuasiRTInnerProduct",
+        "mimeticInnerProduct::SimpleInnerProduct",
+        "mimeticInnerProduct::BdVLMInnerProduct"
+      ]
+    },
+    "explicit": []
+  },
+
+  "CompositionalMultiphaseHybridFVMKernels_upwinding": {
+    "vars": [
+      "NCOMPS",
+      "NPHASES"
+    ],
+    "constants": [],
+    "combinations": {
+      "NCOMPS": [
+        1,
+        2,
+        3,
+        4,
+        5
+      ],
+      "NPHASES": [
+        2,
+        3
+      ]
+    },
+    "explicit": []
+  },
+
+  "CompositionalMultiphaseHybridFVMKernels_assembly": {
+    "vars": [
+      "NFACES",
+      "NCOMPS",
+      "NPHASES"
+    ],
+    "constants": [],
+    "combinations": {
+      "NFACES": [
+        4,
+        5,
+        6
+      ],
+      "NCOMPS": [
+        1,
+        2,
+        3,
+        4,
+        5
+      ],
+      "NPHASES": [
+        2,
+        3
+      ]
+    },
+    "explicit": []
+  },
+
+  "CompositionalMultiphaseHybridFVMKernels_flux": {
+    "vars": [
+      "NFACES",
+      "NCOMPS",
+      "NPHASES",
+      "IP_TYPE"
+    ],
+    "constants": [],
+    "combinations": {
+      "NFACES": [
+        4,
+        5,
+        6
+      ],
+      "NCOMPS": [
+        1,
+        2,
+        3,
+        4,
+        5
+      ],
+      "NPHASES": [
+        2,
+        3
+      ],
+      "IP_TYPE": [
+        "mimeticInnerProduct::TPFAInnerProduct",
+        "mimeticInnerProduct::BdVLMInnerProduct"
+      ]
+    },
+    "explicit": []
+  },
+
+  "ReactiveCompositionalMultiphaseOBLKernels": {
+    "vars": [
+      "NAME",
+      "NDIM",
+      "NCOMP",
+      "ENABLE_ENERGY",
+      "STENCIL"
+    ],
+    "constants": [
+      [ "FaceBasedAssemblyKernelPolicy", "geos::parallelDevicePolicy< GEOS_BLOCK_SIZE >" ]
+    ],
+    "combinations": {
+      "NAME": [
+        "FaceBasedAssemblyKernel"
+      ],
+      "NDIM": [
+        1,
+        2,
+        3
+      ],
+      "NCOMP": [
+        1,
+        2,
+        3,
+        4,
+        5
+      ],
+      "ENABLE_ENERGY": [
+        "true",
+        "false"
+      ],
+      "STENCIL": [
+        "CellElementStencilTPFA",
+        "SurfaceElementStencil",
+        "EmbeddedSurfaceToCellStencil",
+        "FaceElementToCellStencil"
+      ]
+    },
+    "explicit": []
+  },
+
+  "IsothermalCompositionalMultiphaseFVM_DirichletFaceBasedAssemblyKernels": {
+    "vars": [
+      "NAME",
+      "NCOMP_NDOF",
+      "KERNEL_TYPE"
+    ],
+    "constants": [
+      [ "DirichletFaceBasedAssemblyKernelPolicy", "geos::parallelDevicePolicy< GEOS_BLOCK_SIZE >" ]
+    ],
+    "combinations": {
+      "NAME": [
+        "DirichletFaceBasedAssemblyKernel"
+      ],
+      "NCOMP_NDOF": [
+        "1, 2",
+        "2, 3",
+        "3, 4",
+        "4, 5",
+        "5, 6"
+      ],
+      "KERNEL_TYPE": [
+        "constitutive::DeadOilFluid",
+        "constitutive::BlackOilFluid",
+        "constitutive::CO2BrinePhillipsFluid",
+        "constitutive::CO2BrineEzrokhiFluid",
+        "constitutive::CO2BrinePhillipsThermalFluid"
+      ]
+    },
+    "explicit": []
+  },
+
+  "ThermalCompositionalMultiphaseFVM_DirichletFaceBasedAssemblyKernels": {
+    "vars": [
+      "NAME",
+      "NCOMP_NDOF",
+      "KERNEL_TYPE"
+    ],
+    "constants": [
+      [ "DirichletFaceBasedAssemblyKernelPolicy", "geos::parallelDevicePolicy< GEOS_BLOCK_SIZE >" ]
+    ],
+    "combinations": {
+      "NAME": [
+        "DirichletFaceBasedAssemblyKernel"
+      ],
+      "NCOMP_NDOF": [
+        "1, 2",
+        "2, 3",
+        "3, 4",
+        "4, 5",
+        "5, 6"
+      ],
+      "KERNEL_TYPE": [
+        "constitutive::DeadOilFluid",
+        "constitutive::BlackOilFluid",
+        "constitutive::CO2BrinePhillipsFluid",
+        "constitutive::CO2BrineEzrokhiFluid",
+        "constitutive::CO2BrinePhillipsThermalFluid"
+      ]
+    },
+    "explicit": []
+  }
+}

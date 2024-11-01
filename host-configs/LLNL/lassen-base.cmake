@@ -74,5 +74,8 @@ set(Python3_EXECUTABLE /usr/gapps/GEOSX/thirdPartyLibs/python/lassen-gcc-python/
 
 # ATS
 set(ATS_ARGUMENTS "--ats jsrun_omp --ats jsrun_bind=packed"  CACHE STRING "")
+set(USER $ENV{USER} CACHE STRING "")
+set(ATS_WORKING_DIR "/p/gpfs1/${USER}/integratedTestsGEOS/${CONFIG_NAME}"  CACHE PATH "")
+set(ATS_BASELINE_DIR "/p/gpfs1/${USER}/integratedTestsGEOS/baselines"  CACHE PATH "")
 
 include(${CMAKE_CURRENT_LIST_DIR}/../tpls.cmake)

@@ -14,8 +14,8 @@
  */
 
 #include "physicsSolvers/solidMechanics/kernels/FixedStressThermoPoromechanics_impl.hpp"
-#include "policies.hpp"
 
+using FixedStressThermoPoromechanicsPolicy = @FixedStressThermoPoromechanicsPolicy@;
 
 #define INSTANTIATION( NAME )\
 template class NAME < @SUBREGION_TYPE@, @CONSTITUTIVE_TYPE@, @FE_TYPE@ >; \

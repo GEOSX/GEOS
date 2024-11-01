@@ -19,8 +19,10 @@
 #include "physicsSolvers/multiphysics/poromechanicsKernels/ThermalMultiphasePoromechanics_impl.hpp"
 #include "physicsSolvers/multiphysics/poromechanicsKernels/ThermalSinglePhasePoromechanics_impl.hpp"
 #include "physicsSolvers/multiphysics/poromechanicsKernels/ThermalSinglePhasePoromechanicsEFEM_impl.hpp"
-#include "policies.hpp"
 
+using ThermalMultiphasePoromechanicsPolicy = @ThermalMultiphasePoromechanicsPolicy@;
+using ThermalSinglePhasePoromechanicsPolicy = @ThermalSinglePhasePoromechanicsPolicy@;
+using ThermalSinglePhasePoromechanicsEFEMPolicy = @ThermalSinglePhasePoromechanicsEFEMPolicy@;
 
 #define INSTANTIATION( NAME )\
 template class NAME < @SUBREGION_TYPE@, @CONSTITUTIVE_TYPE@, @FE_TYPE@ >; \
@@ -29,14 +31,13 @@ template real64 NAME < @SUBREGION_TYPE@, @CONSTITUTIVE_TYPE@, @FE_TYPE@ >::kerne
                                                                                       ( localIndex const, \
                                                                                         NAME < @SUBREGION_TYPE@, @CONSTITUTIVE_TYPE@, @FE_TYPE@ > const & ); \
 
-
 namespace geos
 {
 using namespace constitutive;
 using namespace finiteElement;
 namespace thermalPoromechanicsKernels
 {
-  INSTANTIATION( ThermalMultiphasePoromechanics )	
+  INSTANTIATION( ThermalMultiphasePoromechanics )
   INSTANTIATION( ThermalSinglePhasePoromechanics )
 }
 

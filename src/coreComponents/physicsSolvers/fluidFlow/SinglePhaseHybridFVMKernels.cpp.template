@@ -1,0 +1,21 @@
+#include "physicsSolvers/fluidFlow/SinglePhaseHybridFVMKernels.hpp"
+#include "finiteVolume/mimeticInnerProducts/TPFAInnerProduct.hpp"
+#include "finiteVolume/mimeticInnerProducts/QuasiTPFAInnerProduct.hpp"
+#include "finiteVolume/mimeticInnerProducts/QuasiRTInnerProduct.hpp"
+#include "finiteVolume/mimeticInnerProducts/SimpleInnerProduct.hpp"
+#include "finiteVolume/mimeticInnerProducts/BdVLMInnerProduct.hpp"
+
+using ElementBasedAssemblyKernelPolicy = @ElementBasedAssemblyKernelPolicy@;
+
+namespace geos
+{
+namespace singlePhaseHybridFVMKernels
+{
+  @EXTERN@ template class @NAME@ < @NFACES@, @IP@ >;
+  @EXTERN@ template void @NAME@ < @NFACES@, @IP@ >::launch< @NAME@Policy,
+                                                   @NAME@ < @NFACES@, @IP@ > >
+                                                   ( const localIndex,
+                                                   @NAME@ < @NFACES@, @IP@ > const & );
+}
+}
+

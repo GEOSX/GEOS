@@ -1,0 +1,37 @@
+/*
+ * ------------------------------------------------------------------------------------------------------------
+ * SPDX-License-Identifier: LGPL-2.1-only
+ *
+ * Copyright (c) 2018-2019 Lawrence Livermore National Security LLC
+ * Copyright (c) 2018-2019 The Board of Trustees of the Leland Stanford Junior University
+ * Copyright (c) 2018-2019 Total, S.A
+ * Copyright (c) 2019-     GEOSX Contributors
+ * All right reserved
+ *
+ * See top level LICENSE, COPYRIGHT, CONTRIBUTORS, NOTICE, and ACKNOWLEDGEMENTS files for details.
+ * ------------------------------------------------------------------------------------------------------------
+ */
+
+/**
+ * @file @KERNEL_GROUP_NAME@DispatchTypeList.hpp
+ */
+
+#ifndef GEOS_@KERNEL_GROUP_NAME@_DISPATCHTYPELIST_HPP
+#define GEOS_@KERNEL_GROUP_NAME@_DISPATCHTYPELIST_HPP
+
+#include "common/TypeDispatch.hpp"
+
+namespace geos
+{
+
+// TODO remove and find a proper solution to namespacing
+using namespace constitutive;
+using namespace finiteElement;
+
+using @KERNEL_GROUP_NAME@DispatchTypeList = types::TypeList<
+  @typeCombinationList@
+>;
+
+} // namespace geos
+
+#endif //GEOS_@KERNEL_GROUP_NAME@_DISPATCHTYPELIST_HPP

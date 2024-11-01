@@ -1,0 +1,13 @@
+#include "physicsSolvers/fluidFlow/IsothermalCompositionalMultiphaseFVMKernels.hpp"
+
+using DirichletFaceBasedAssemblyKernelPolicy = @DirichletFaceBasedAssemblyKernelPolicy@;
+
+namespace geos
+{
+namespace isothermalCompositionalMultiphaseFVMKernels
+{
+  @EXTERN@ template class @NAME@ < @NCOMP_NDOF@, @KERNEL_TYPE@::KernelWrapper >;
+  // template void @NAME@ < @NCOMP_NDOF@, @KERNEL_TYPE@::KernelWrapper >::launch< @NAME@Policy >( localIndex const,
+                                                                                        // @NAME@ < @NCOMP_NDOF@, @KERNEL_TYPE@::KernelWrapper > const & );
+}
+}

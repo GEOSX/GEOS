@@ -24,6 +24,8 @@
 #include "physicsSolvers/contact/SolidMechanicsEmbeddedFractures.hpp"
 #include "physicsSolvers/fluidFlow/SinglePhaseBase.hpp"
 
+#include "physicsSolvers/multiphysics/poromechanicsKernels/PoromechanicsEFEMKernelsDispatchTypeList.hpp"
+
 namespace geos
 {
 
@@ -107,8 +109,7 @@ protected:
 
 private:
 
-  template< typename CONSTITUTIVE_BASE,
-            typename KERNEL_WRAPPER,
+  template< typename KERNEL_WRAPPER,
             typename EFEM_KERNEL_WRAPPER >
   real64 assemblyLaunch( MeshLevel & mesh,
                          DofManager const & dofManager,
@@ -121,8 +122,7 @@ private:
 };
 
 
-template< typename CONSTITUTIVE_BASE,
-          typename KERNEL_WRAPPER,
+template< typename KERNEL_WRAPPER,
           typename EFEM_KERNEL_WRAPPER >
 real64 SinglePhasePoromechanicsEmbeddedFractures::assemblyLaunch( MeshLevel & mesh,
                                                                   DofManager const & dofManager,
@@ -162,12 +162,11 @@ real64 SinglePhasePoromechanicsEmbeddedFractures::assemblyLaunch( MeshLevel & me
   real64 const maxForce =
     finiteElement::
       regionBasedKernelApplication< parallelDevicePolicy< >,
-                                    CONSTITUTIVE_BASE,
-                                    CellElementSubRegion >( mesh,
-                                                            regionNames,
-                                                            solidMechanicsSolver()->getDiscretizationName(),
-                                                            materialNamesString,
-                                                            kernelWrapper );
+                                    PoromechanicsEFEMKernelsDispatchTypeList >( mesh,
+                                                                                regionNames,
+                                                                                solidMechanicsSolver()->getDiscretizationName(),
+                                                                                materialNamesString,
+                                                                                kernelWrapper );
 
   EFEM_KERNEL_WRAPPER EFEMkernelWrapper( subRegion,
                                          dispDofNumber,
@@ -182,12 +181,11 @@ real64 SinglePhasePoromechanicsEmbeddedFractures::assemblyLaunch( MeshLevel & me
 
   finiteElement::
     regionBasedKernelApplication< parallelDevicePolicy< >,
-                                  CONSTITUTIVE_BASE,
-                                  CellElementSubRegion >( mesh,
-                                                          regionNames,
-                                                          solidMechanicsSolver()->getDiscretizationName(),
-                                                          materialNamesString,
-                                                          EFEMkernelWrapper );
+                                  PoromechanicsEFEMKernelsDispatchTypeList >( mesh,
+                                                                              regionNames,
+                                                                              solidMechanicsSolver()->getDiscretizationName(),
+                                                                              materialNamesString,
+                                                                              EFEMkernelWrapper );
 
   return maxForce;
 

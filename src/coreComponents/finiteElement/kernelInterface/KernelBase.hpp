@@ -27,6 +27,7 @@
 #include "finiteElement/FiniteElementDispatch.hpp"
 #include "mesh/MeshLevel.hpp"
 #include "common/GEOS_RAJA_Interface.hpp"
+#include "common/TypeDispatch.hpp"
 
 /**
  * @brief This macro allows solvers to select a subset of FE_TYPES on which the dispatch is done. If none are selected, by default all the
@@ -455,6 +456,114 @@ real64 regionBasedKernelApplication( MeshLevel & mesh,
                     KERNEL_TYPE::template kernelLaunch< POLICY, KERNEL_TYPE >( numElems, kernel ) );
       } );
     } );
+
+    // Remove the null constitutive model (not required, but cleaner)
+    if( nullConstitutiveModel )
+    {
+      elementSubRegion.deregisterGroup( "nullModelGroup" );
+    }
+
+  } );
+
+  return maxResidualContribution;
+}
+
+/**
+ * @brief Performs a loop over specific regions (by type and name) and calls a kernel launch on the subregions
+ *   with compile time knowledge of sub-loop bounds such as number of nodes and quadrature points per element.
+ * @tparam POLICY The RAJA launch policy to pass to the kernel launch.
+ * @tparam DISPATCH_TYPE_LIST a TypeList where each entry is also TypeList and contains a tuple of the form
+ *   (SUBREGION_TYPE, CONSTITUTIVE_TYPE, FE_TYPE). This is a list of kernel instantiations to dispatch over.
+ * @tparam KERNEL_FACTORY The type of @p kernelFactory, typically an instantiation of @c KernelFactory, and
+ *   must adhere to that interface.
+ * @param mesh The MeshLevel object.
+ * @param targetRegions The names of the target regions(of type @p SUBREGION_TYPE) to apply the @p KERNEL_TEMPLATE.
+ * @param finiteElementName The name of the finite element.
+ * @param constitutiveStringName The key to the constitutive model name found on the Region.
+ * @param kernelFactory The object used to construct the kernel.
+ * @return The maximum contribution to the residual, which may be used to scale the residual.
+ *
+ * @details Loops over all regions Applies/Launches a kernel specified by the @p KERNEL_TEMPLATE through
+ * #::geos::finiteElement::KernelBase::kernelLaunch().
+ */
+template< typename POLICY,
+          typename DISPATCH_TYPE_LIST,
+          typename KERNEL_FACTORY >
+static
+real64 regionBasedKernelApplication( MeshLevel & mesh,
+                                     arrayView1d< string const > const & targetRegions,
+                                     string const & finiteElementName,
+                                     string const & constitutiveStringName,
+                                     KERNEL_FACTORY & kernelFactory )
+{
+  GEOS_MARK_FUNCTION;
+  // save the maximum residual contribution for scaling residuals for convergence criteria.
+  real64 maxResidualContribution = 0;
+
+  NodeManager & nodeManager = mesh.getNodeManager();
+  EdgeManager & edgeManager = mesh.getEdgeManager();
+  FaceManager & faceManager = mesh.getFaceManager();
+  ElementRegionManager & elementRegionManager = mesh.getElemManager();
+
+  // using SUBREGION_TYPES = types::Slice< DISPATCH_TYPE_LIST >;
+  using SUBREGION_TYPES = types::TypeList< CellElementSubRegion >;
+
+  // Loop over all sub-regions in regions of type SUBREGION_TYPE, that are listed in the targetRegions array.
+  elementRegionManager.forElementSubRegions( SUBREGION_TYPES{}, targetRegions,
+                                             [&constitutiveStringName,
+                                              &maxResidualContribution,
+                                              &nodeManager,
+                                              &edgeManager,
+                                              &faceManager,
+                                              &kernelFactory,
+                                              &finiteElementName]
+                                               ( localIndex const targetRegionIndex, ElementSubRegionBase & elementSubRegion )
+  {
+    localIndex const numElems = elementSubRegion.size();
+
+    // Get the constitutive model...and allocate a null constitutive model if required.
+    constitutive::ConstitutiveBase * constitutiveRelation = nullptr;
+    constitutive::NullModel * nullConstitutiveModel = nullptr;
+    if( elementSubRegion.template hasWrapper< string >( constitutiveStringName ) )
+    {
+      string const & constitutiveName = elementSubRegion.template getReference< string >( constitutiveStringName );
+      constitutiveRelation = &elementSubRegion.template getConstitutiveModel( constitutiveName );
+    }
+    else
+    {
+      nullConstitutiveModel = &elementSubRegion.template registerGroup< constitutive::NullModel >( "nullModelGroup" );
+      constitutiveRelation = nullConstitutiveModel;
+    }
+
+    FiniteElementBase & subRegionFE = elementSubRegion.template getReference< FiniteElementBase >( finiteElementName );
+
+    auto kernelLaunch = [&]( auto typeCombination )
+    {
+      using SUBREGION_TYPE = camp::at_v< decltype( typeCombination ), 0 >;
+      using CONSTITUTIVE_TYPE = camp::at_v< decltype( typeCombination ), 1 >;
+      using FE_TYPE = camp::at_v< decltype( typeCombination ), 2 >;
+
+      SUBREGION_TYPE & castedSubRegion = dynamicCast< SUBREGION_TYPE & >( elementSubRegion );
+      CONSTITUTIVE_TYPE & castedConstitutiveRelation = dynamicCast< CONSTITUTIVE_TYPE & >( *constitutiveRelation );
+      FE_TYPE & castedFiniteElement = dynamicCast< FE_TYPE & >( subRegionFE );
+
+      auto kernel = kernelFactory.createKernel( nodeManager,
+                                                edgeManager,
+                                                faceManager,
+                                                targetRegionIndex,
+                                                castedSubRegion,
+                                                castedFiniteElement,
+                                                castedConstitutiveRelation );
+
+      using KERNEL_TYPE = decltype( kernel );
+
+      // Call the kernelLaunch function, and store the maximum contribution to the residual.
+      maxResidualContribution =
+        std::max( maxResidualContribution,
+                  KERNEL_TYPE::template kernelLaunch< POLICY, KERNEL_TYPE >( numElems, kernel ) );
+    };
+
+    types::dispatch( DISPATCH_TYPE_LIST{}, kernelLaunch, elementSubRegion, *constitutiveRelation, subRegionFE );
 
     // Remove the null constitutive model (not required, but cleaner)
     if( nullConstitutiveModel )
