@@ -1,0 +1,78 @@
+<?xml version="1.0" ?>
+
+<Problem>
+  <Solvers>
+
+    <CompositionalMultiphaseFVM
+      name="compositionalMultiphaseFlow"
+      logLevel="1"
+      discretization="TPFA"
+      initialDt="1e0"
+      targetRegions="{ cement, rock }"
+      maxCompFractionChange="0.2"
+      targetPhaseVolFractionChangeInTimeStep="0.2"
+      temperature="368.15"
+      useMass="1">
+      <NonlinearSolverParameters
+        newtonTol="1.0e-3"
+        lineSearchAction="None"
+        timeStepIncreaseIterLimit="0.45"
+        timeStepDecreaseIterLimit="0.99"
+        maxTimeStepCuts="10"
+        newtonMaxIter="5"/>
+      <LinearSolverParameters
+        logLevel="3"
+        solverType="fgmres"
+        krylovMaxIter="100"
+        krylovMaxRestart="20"
+        preconditionerType="mgr"
+        krylovAdaptiveTol="1"
+        krylovWeakestTol="1e-3"
+        krylovTol="1e-4"
+        />
+    </CompositionalMultiphaseFVM>
+
+  </Solvers>
+
+  <Included>
+    <File name="../../ECP_Wellbore_geom03.xml"/>
+    <File name="../ECP_Wellbore_probdef.xml"/>
+  </Included>
+
+  <Events
+    maxTime="3e6"> <!-- ideally we would like to go further: at least to 94608000s -->
+
+    <!-- <PeriodicEvent -->
+    <!--   name="outputs" -->
+    <!--   timeFrequency="31536000" -->
+    <!--   targetExactTimestep="1" -->
+    <!--   target="/Outputs/siloOutput"/> -->
+
+    <PeriodicEvent
+      name="statistics"
+      targetExactTimestep="0"
+      timeFrequency="1e5"
+      target="/Tasks/compflowStatistics"/>
+
+    <PeriodicEvent
+      name="solverApplications"
+      maxEventDt="1e6"
+      target="/Solvers/compositionalMultiphaseFlow"/>
+
+  </Events>
+
+  <Outputs>
+    <!-- <Silo -->
+    <!--   name="siloOutput" -->
+    <!--   parallelThreads="32" -->
+    <!--   plotFileRoot="plot" -->
+    <!--   childDirectory="sub"/> -->
+
+    <!--Restart
+      name="restartOutput"/-->
+
+    <!--VTK
+      name="vtkOutput"/-->
+  </Outputs>
+
+</Problem>

@@ -5,7 +5,7 @@
  * Copyright (c) 2016-2024 Lawrence Livermore National Security LLC
  * Copyright (c) 2018-2024 Total, S.A
  * Copyright (c) 2018-2024 The Board of Trustees of the Leland Stanford Junior University
- * Copyright (c) 2018-2024 Chevron
+ * Copyright (c) 2023-2024 Chevron
  * Copyright (c) 2019-     GEOS/GEOSX Contributors
  * All rights reserved
  *
@@ -124,6 +124,9 @@ struct LinearSolverParameters
 #endif
     integer useAdaptiveTol = false;   ///< Use Eisenstat-Walker adaptive tolerance
     real64 weakestTol = 1e-3;         ///< Weakest allowed tolerance when using adaptive method
+    real64 strongestTol = 1e-8;       ///< Strongest allowed tolerance when using adaptive method
+    real64 adaptiveGamma = 0.1;       ///< Gamma parameter for adaptive method
+    real64 adaptiveExponent = 1.0;    ///< Exponent parameter for adaptive method
   }
   krylov;                             ///< Krylov-method parameter struct
 
@@ -268,28 +271,29 @@ struct LinearSolverParameters
      */
     enum class StrategyType : integer
     {
-      invalid,                                     ///< default value, to ensure solver sets something
-      singlePhaseReservoirFVM,                     ///< finite volume single-phase flow with wells
-      singlePhaseHybridFVM,                        ///< hybrid finite volume single-phase flow
-      singlePhaseReservoirHybridFVM,               ///< hybrid finite volume single-phase flow with wells
-      singlePhasePoromechanics,                    ///< single phase poromechanics with finite volume single phase flow
-      thermalSinglePhasePoromechanics,             ///< thermal single phase poromechanics with finite volume single phase flow
-      hybridSinglePhasePoromechanics,              ///< single phase poromechanics with hybrid finite volume single phase flow
-      singlePhasePoromechanicsEmbeddedFractures,   ///< single phase poromechanics with FV embedded fractures
-      singlePhasePoromechanicsConformingFractures, ///< single phase poromechanics with FV conforming  fractures
-      singlePhasePoromechanicsReservoirFVM,        ///< single phase poromechanics with finite volume single phase flow with wells
-      compositionalMultiphaseFVM,                  ///< finite volume compositional multiphase flow
-      compositionalMultiphaseHybridFVM,            ///< hybrid finite volume compositional multiphase flow
-      compositionalMultiphaseReservoirFVM,         ///< finite volume compositional multiphase flow with wells
-      compositionalMultiphaseReservoirHybridFVM,   ///< hybrid finite volume compositional multiphase flow with wells
-      reactiveCompositionalMultiphaseOBL,          ///< finite volume reactive compositional flow with OBL
-      thermalCompositionalMultiphaseFVM,           ///< finite volume thermal compositional multiphase flow
-      multiphasePoromechanics,                     ///< multiphase poromechanics with finite volume compositional multiphase flow
-      multiphasePoromechanicsReservoirFVM,         ///< multiphase poromechanics with finite volume compositional multiphase flow with wells
-      thermalMultiphasePoromechanics,              ///< thermal multiphase poromechanics with finite volume compositional multiphase flow
-      hydrofracture,                               ///< hydrofracture
-      lagrangianContactMechanics,                  ///< Lagrangian contact mechanics
-      solidMechanicsEmbeddedFractures              ///< Embedded fractures mechanics
+      invalid,                                   ///< default value, to ensure solver sets something
+      singlePhaseReservoirFVM,                   ///< finite volume single-phase flow with wells
+      singlePhaseHybridFVM,                      ///< hybrid finite volume single-phase flow
+      singlePhaseReservoirHybridFVM,             ///< hybrid finite volume single-phase flow with wells
+      singlePhasePoromechanics,                  ///< single phase poromechanics with finite volume single phase flow
+      thermalSinglePhasePoromechanics,           ///< thermal single phase poromechanics with finite volume single phase flow
+      hybridSinglePhasePoromechanics,            ///< single phase poromechanics with hybrid finite volume single phase flow
+      singlePhasePoromechanicsEmbeddedFractures, ///< single phase poromechanics with FV embedded fractures
+      singlePhasePoromechanicsConformingFractures, ///< single phase poromechanics with FV embedded fractures
+      singlePhasePoromechanicsReservoirFVM,      ///< single phase poromechanics with finite volume single phase flow with wells
+      compositionalMultiphaseFVM,                ///< finite volume compositional multiphase flow
+      compositionalMultiphaseHybridFVM,          ///< hybrid finite volume compositional multiphase flow
+      compositionalMultiphaseReservoirFVM,       ///< finite volume compositional multiphase flow with wells
+      compositionalMultiphaseReservoirHybridFVM, ///< hybrid finite volume compositional multiphase flow with wells
+      reactiveCompositionalMultiphaseOBL,        ///< finite volume reactive compositional flow with OBL
+      thermalCompositionalMultiphaseFVM,         ///< finite volume thermal compositional multiphase flow
+      thermalCompositionalMultiphaseReservoirFVM,///< finite volume thermal compositional multiphase flow
+      multiphasePoromechanics,                   ///< multiphase poromechanics with finite volume compositional multiphase flow
+      multiphasePoromechanicsReservoirFVM,       ///< multiphase poromechanics with finite volume compositional multiphase flow with wells
+      thermalMultiphasePoromechanics,            ///< thermal multiphase poromechanics with finite volume compositional multiphase flow
+      hydrofracture,                             ///< hydrofracture
+      lagrangianContactMechanics,                ///< Lagrangian contact mechanics
+      solidMechanicsEmbeddedFractures            ///< Embedded fractures mechanics
     };
 
     StrategyType strategy = StrategyType::invalid; ///< Predefined MGR solution strategy (solver specific)
@@ -376,6 +380,7 @@ ENUM_STRINGS( LinearSolverParameters::MGR::StrategyType,
               "compositionalMultiphaseReservoirHybridFVM",
               "reactiveCompositionalMultiphaseOBL",
               "thermalCompositionalMultiphaseFVM",
+              "thermalCompositionalMultiphaseReservoirFVM",
               "multiphasePoromechanics",
               "multiphasePoromechanicsReservoirFVM",
               "thermalMultiphasePoromechanics",

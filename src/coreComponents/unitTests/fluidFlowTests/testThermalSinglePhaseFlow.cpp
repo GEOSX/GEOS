@@ -5,7 +5,7 @@
  * Copyright (c) 2016-2024 Lawrence Livermore National Security LLC
  * Copyright (c) 2018-2024 Total, S.A
  * Copyright (c) 2018-2024 The Board of Trustees of the Leland Stanford Junior University
- * Copyright (c) 2018-2024 Chevron
+ * Copyright (c) 2023-2024 Chevron
  * Copyright (c) 2019-     GEOS/GEOSX Contributors
  * All rights reserved
  *
@@ -80,7 +80,7 @@ char const * xmlInput =
     </NumericalMethods>
     <ElementRegions>
       <CellElementRegion name="region"
-                         cellBlocks="{ cb }"
+                         cellBlocks="{ * }"
                          materialList="{ water, rock, thermalCond }" />
     </ElementRegions>
     <Constitutive>
@@ -109,8 +109,8 @@ char const * xmlInput =
                                            thermalExpansionCoeff="7e-4"
                                            viscosibility="0.0"
                                            specificHeatCapacity="4.5e3" />
-      <SinglePhaseConstantThermalConductivity name="thermalCond"
-                                              thermalConductivityComponents="{ 0.6, 0.6, 0.6 }" />
+      <SinglePhaseThermalConductivity name="thermalCond"
+                                      defaultThermalConductivityComponents="{ 0.6, 0.6, 0.6 }" />
     </Constitutive>
     <FieldSpecifications>
       <FieldSpecification name="initialPressure"

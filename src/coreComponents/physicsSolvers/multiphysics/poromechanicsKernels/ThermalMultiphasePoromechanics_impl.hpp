@@ -5,7 +5,7 @@
  * Copyright (c) 2016-2024 Lawrence Livermore National Security LLC
  * Copyright (c) 2018-2024 Total, S.A
  * Copyright (c) 2018-2024 The Board of Trustees of the Leland Stanford Junior University
- * Copyright (c) 2018-2024 Chevron
+ * Copyright (c) 2023-2024 Chevron
  * Copyright (c) 2019-     GEOS/GEOSX Contributors
  * All rights reserved
  *
@@ -188,8 +188,6 @@ computeBodyForce( localIndex const k,
                   real64 const & dSolidDensity_dPressure,
                   StackVariables & stack ) const
 {
-  using Deriv = constitutive::multifluid::DerivativeOffset;
-
   Base::computeBodyForce( k, q,
                           porosity,
                           dPorosity_dVolStrain,
@@ -201,27 +199,11 @@ computeBodyForce( localIndex const k,
   {
     GEOS_UNUSED_VAR( mixtureDensity );
 
-    arraySlice1d< real64 const, constitutive::multifluid::USD_PHASE - 2 > const phaseMassDensity = m_fluidPhaseMassDensity[k][q];
-    arraySlice2d< real64 const, constitutive::multifluid::USD_PHASE_DC - 2 > const dPhaseMassDensity = m_dFluidPhaseMassDensity[k][q];
-    arraySlice1d< real64 const, compflow::USD_PHASE - 1 > const phaseVolFrac = m_fluidPhaseVolFrac[k];
-    arraySlice2d< real64 const, compflow::USD_PHASE_DC - 1 > const dPhaseVolFrac = m_dFluidPhaseVolFrac[k];
+    // Step 1: compute the derivative of the mixture density (an average between total mass density and solid density) wrt temperature
+    //         TODO include solid density derivative with respect to temperature
+    real64 const dMixtureDens_dTemperature = dPorosity_dTemperature * ( -m_solidDensity( k, q ) + totalMassDensity );
 
-    // Step 1: compute fluid total mass density and its derivatives
-
-    real64 dTotalMassDensity_dTemperature = 0.0;
-
-    for( integer ip = 0; ip < m_numPhases; ++ip )
-    {
-      dTotalMassDensity_dTemperature += dPhaseVolFrac( ip, Deriv::dT ) * phaseMassDensity( ip )
-                                        + phaseVolFrac( ip ) * dPhaseMassDensity( ip, Deriv::dT );
-    }
-
-    // Step 2: compute the derivative of the bulk density (an average between total mass density and solid density) wrt temperature
-
-    real64 const dMixtureDens_dTemperature = dPorosity_dTemperature * ( -m_solidDensity( k, q ) + totalMassDensity )
-                                             + porosity * dTotalMassDensity_dTemperature;
-
-    // Step 3: finally, get the body force
+    // Step 2: finally, get the body force
 
     LvArray::tensorOps::scaledCopy< 3 >( stack.dBodyForce_dTemperature, m_gravityVector, dMixtureDens_dTemperature );
 

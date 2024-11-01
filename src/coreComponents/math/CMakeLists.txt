@@ -14,3 +14,4 @@ blt_add_library( NAME         math
                
 target_include_directories( math INTERFACE ${CMAKE_SOURCE_DIR}/coreComponents )
 
+install( TARGETS math LIBRARY DESTINATION ${CMAKE_INSTALL_PREFIX}/lib )

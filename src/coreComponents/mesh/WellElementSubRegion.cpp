@@ -5,7 +5,7 @@
  * Copyright (c) 2016-2024 Lawrence Livermore National Security LLC
  * Copyright (c) 2018-2024 Total, S.A
  * Copyright (c) 2018-2024 The Board of Trustees of the Leland Stanford Junior University
- * Copyright (c) 2018-2024 Chevron
+ * Copyright (c) 2023-2024 Chevron
  * Copyright (c) 2019-     GEOS/GEOSX Contributors
  * All rights reserved
  *
@@ -148,6 +148,7 @@ void collectElementNodes( CellElementSubRegion const & subRegion,
  * @param[inout] erMatched the region index of the reservoir element that contains "location", if any
  * @param[inout] esrMatched the subregion index of the reservoir element that contains "location", if any
  * @param[inout] eiMatched the element index of the reservoir element that contains "location", if any
+ * @param[inout] giMatched the element global index of the reservoir element that contains "location", if any
  */
 bool visitNeighborElements( MeshLevel const & mesh,
                             real64 const (&location)[3],
@@ -165,8 +166,6 @@ bool visitNeighborElements( MeshLevel const & mesh,
   ArrayOfArraysView< localIndex const > const & toElementRegionList    = nodeManager.elementRegionList();
   ArrayOfArraysView< localIndex const > const & toElementSubRegionList = nodeManager.elementSubRegionList();
   ArrayOfArraysView< localIndex const > const & toElementList          = nodeManager.elementList();
-  arrayView1d< globalIndex const > localToGlobalIndex = nodeManager.localToGlobalMap();
-
   arrayView2d< real64 const, nodes::REFERENCE_POSITION_USD > const referencePosition =
     nodeManager.referencePosition().toViewConst();
 
@@ -195,7 +194,6 @@ bool visitNeighborElements( MeshLevel const & mesh,
       localIndex const er      = toElementRegionList[currNode][b];
       localIndex const esr     = toElementSubRegionList[currNode][b];
       localIndex const eiLocal = toElementList[currNode][b];
-      globalIndex const gIndex = localToGlobalIndex[eiLocal];
       CellElementRegion const & region = elemManager.getRegion< CellElementRegion >( er );
       CellElementSubRegion const & subRegion = region.getSubRegion< CellElementSubRegion >( esr );
       arrayView2d< localIndex const > const elemsToFaces = subRegion.faceList();
@@ -223,7 +221,7 @@ bool visitNeighborElements( MeshLevel const & mesh,
           erMatched  = er;
           esrMatched = esr;
           eiMatched  = eiLocal;
-          giMatched = gIndex;
+          giMatched = eiGlobal;
           matched    = true;
           break;
         }
@@ -295,6 +293,7 @@ void initializeLocalSearch( MeshLevel const & mesh,
  * @param[inout] erMatched the region index of the reservoir element that contains "location", if any
  * @param[inout] esrMatched the subregion index of the reservoir element that contains "location", if any
  * @param[inout] eiMatched the element index of the reservoir element that contains "location", if any
+ * @param[inout] giMatched the element global index of the reservoir element that contains "location", if any
  */
 bool searchLocalElements( MeshLevel const & mesh,
                           real64 const (&location)[3],
@@ -328,7 +327,6 @@ bool searchLocalElements( MeshLevel const & mesh,
   // collect the nodes of the current element
   // they will be used to access the neighbors and check if they contain the perforation
   collectElementNodes( subRegion, eiInit, nodes );
-
   // if no match is found, enlarge the neighborhood m_searchDepth'th times
   for( localIndex d = 0; d < searchDepth; ++d )
   {
@@ -558,7 +556,7 @@ void WellElementSubRegion::checkPartitioningValidity( LineBlockABC const & lineB
 
       for( globalIndex iownerRank : rankSetsByStatus[WellElemStatus::LOCAL] )
       {
-        if( MpiWrapper::commRank( MPI_COMM_GEOSX ) != iownerRank )
+        if( MpiWrapper::commRank( MPI_COMM_GEOS ) != iownerRank )
         {
           elemStatusGlobal[iwelemGlobal] = WellElemStatus::REMOTE;
         }
@@ -576,7 +574,7 @@ void WellElementSubRegion::checkPartitioningValidity( LineBlockABC const & lineB
         if( rankCount == 0 )
         {
           // update the elemStatusGlobal array for all ranks
-          if( MpiWrapper::commRank( MPI_COMM_GEOSX ) != iownerRank )
+          if( MpiWrapper::commRank( MPI_COMM_GEOS ) != iownerRank )
           {
             elemStatusGlobal[iwelemGlobal] = WellElemStatus::REMOTE;
           }
@@ -584,7 +582,7 @@ void WellElementSubRegion::checkPartitioningValidity( LineBlockABC const & lineB
         else // (rankCount > 0)
         {
           // remove the duplicate elements
-          if( MpiWrapper::commRank( MPI_COMM_GEOSX ) == iownerRank )
+          if( MpiWrapper::commRank( MPI_COMM_GEOS ) == iownerRank )
           {
             localElems.remove( iwelemGlobal );
           }
@@ -861,7 +859,7 @@ void WellElementSubRegion::reconstructLocalConnectivity()
 
 bool WellElementSubRegion::isLocallyOwned() const
 {
-  return m_topRank == MpiWrapper::commRank( MPI_COMM_GEOSX );
+  return m_topRank == MpiWrapper::commRank( MPI_COMM_GEOS );
 }
 
 

@@ -5,7 +5,7 @@
  * Copyright (c) 2016-2024 Lawrence Livermore National Security LLC
  * Copyright (c) 2018-2024 Total, S.A
  * Copyright (c) 2018-2024 The Board of Trustees of the Leland Stanford Junior University
- * Copyright (c) 2018-2024 Chevron
+ * Copyright (c) 2023-2024 Chevron
  * Copyright (c) 2019-     GEOS/GEOSX Contributors
  * All rights reserved
  *
@@ -29,8 +29,6 @@ namespace geos
 
 namespace dissipationCompositionalMultiphaseFVMKernels
 {
-
-using namespace constitutive;
 
 static constexpr integer newtonContinuationCutoffIteration = 5;
 static constexpr real64 initialDirectionalCoef = 100;
@@ -85,9 +83,9 @@ public:
                       fields::elementVolume >;
 
   using PorosityAccessors =
-    StencilMaterialAccessors< PorosityBase, fields::porosity::porosity_n >;
+    StencilMaterialAccessors< constitutive::PorosityBase, fields::porosity::porosity_n >;
 
-  using Deriv = multifluid::DerivativeOffset;
+  using Deriv = constitutive::multifluid::DerivativeOffset;
 
   /**
    * @brief Constructor for the kernel interface

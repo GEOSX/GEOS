@@ -15,11 +15,11 @@ def main():
     # Read simulation output from HDF5 file
     hf = h5py.File(hdf5FilePathPressure, 'r')
     timePressure = hf.get('pressure Time')
-    timePressure = np.array(timePressure)
+    timePressure = np.asarray(timePressure)
     centerPressure = hf.get('pressure elementCenter')
-    centerPressure = np.array(centerPressure)
+    centerPressure = np.asarray(centerPressure)
     pressure = hf.get('pressure')
-    pressure = np.array(pressure)
+    pressure = np.asarray(pressure)
 
     time = 1
     posElement1 = -1

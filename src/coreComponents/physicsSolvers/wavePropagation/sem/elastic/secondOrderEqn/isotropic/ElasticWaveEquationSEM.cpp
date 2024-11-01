@@ -5,7 +5,7 @@
  * Copyright (c) 2016-2024 Lawrence Livermore National Security LLC
  * Copyright (c) 2018-2024 Total, S.A
  * Copyright (c) 2018-2024 The Board of Trustees of the Leland Stanford Junior University
- * Copyright (c) 2018-2024 Chevron
+ * Copyright (c) 2023-2024 Chevron
  * Copyright (c) 2019-     GEOS/GEOSX Contributors
  * All rights reserved
  *
@@ -26,6 +26,7 @@
 #include "finiteElement/FiniteElementDiscretization.hpp"
 #include "mainInterface/ProblemManager.hpp"
 #include "mesh/ElementType.hpp"
+#include "mesh/DomainPartition.hpp"
 #include "mesh/mpiCommunications/CommunicationTools.hpp"
 #include "physicsSolvers/wavePropagation/shared/WaveSolverUtils.hpp"
 #include "physicsSolvers/wavePropagation/shared/PrecomputeSourcesAndReceiversKernel.hpp"
@@ -92,7 +93,7 @@ ElasticWaveEquationSEM::ElasticWaveEquationSEM( const std::string & name,
     setSizedFromParent( 0 ).
     setApplyDefaultValue( { 1.0, 1.0, 1.0, 0.0, 0.0, 0.0 } ).
     setDescription( "Moment of the source: 6 real values describing a symmetric tensor in Voigt notation."
-                    "The default value is { 1, 1, 1, 0, 0, 0 } (diagonal moment, corresponding to a pure explosion)." );
+                    "The default value is { 1, 1, 1, 0, 0, 0 } (diagonal moment, corresponding to a seismic charge)." );
 
 
   registerWrapper( viewKeyStruct::useVtiString(), &m_useVTI ).
@@ -223,15 +224,14 @@ void ElasticWaveEquationSEM::postInputInitialization()
 }
 
 
-void ElasticWaveEquationSEM::precomputeSourceAndReceiverTerm( MeshLevel & mesh, arrayView1d< string const > const & regionNames )
+void ElasticWaveEquationSEM::precomputeSourceAndReceiverTerm( MeshLevel & baseMesh, MeshLevel & mesh, arrayView1d< string const > const & regionNames )
 {
-  NodeManager const & nodeManager = mesh.getNodeManager();
-  FaceManager const & faceManager = mesh.getFaceManager();
+  GEOS_MARK_FUNCTION;
 
-  arrayView2d< wsCoordType const, nodes::REFERENCE_POSITION_USD > const X =
-    nodeManager.getField< fields::referencePosition32 >().toViewConst();
-  arrayView2d< real64 const > const faceNormal  = faceManager.faceNormal();
-  arrayView2d< real64 const > const faceCenter  = faceManager.faceCenter();
+  arrayView1d< globalIndex const > const nodeLocalToGlobal = baseMesh.getNodeManager().localToGlobalMap().toViewConst();
+  ArrayOfArraysView< localIndex const > const nodesToElements = baseMesh.getNodeManager().elementList().toViewConst();
+  ArrayOfArraysView< localIndex const > const facesToNodes = baseMesh.getFaceManager().nodeList().toViewConst();
+  arrayView2d< real64 const, nodes::REFERENCE_POSITION_USD > const nodeCoords = baseMesh.getNodeManager().referencePosition();
 
   arrayView2d< real64 const > const sourceCoordinates = m_sourceCoordinates.toViewConst();
   arrayView2d< localIndex > const sourceNodeIds = m_sourceNodeIds.toView();
@@ -267,8 +267,11 @@ void ElasticWaveEquationSEM::precomputeSourceAndReceiverTerm( MeshLevel & mesh, 
     }
   }
 
-  mesh.getElemManager().forElementSubRegions< CellElementSubRegion >( regionNames, [&]( localIndex const,
-                                                                                        CellElementSubRegion & elementSubRegion )
+  mesh.getElemManager().forElementSubRegionsComplete< CellElementSubRegion >( regionNames, [&]( localIndex const,
+                                                                                                localIndex const er,
+                                                                                                localIndex const esr,
+                                                                                                ElementRegionBase &,
+                                                                                                CellElementSubRegion & elementSubRegion )
   {
 
     GEOS_THROW_IF( elementSubRegion.getElementType() != ElementType::Hexahedron,
@@ -277,8 +280,10 @@ void ElasticWaveEquationSEM::precomputeSourceAndReceiverTerm( MeshLevel & mesh, 
 
     arrayView2d< localIndex const > const elemsToFaces = elementSubRegion.faceList();
     arrayView2d< localIndex const, cells::NODE_MAP_USD > const & elemsToNodes = elementSubRegion.nodeList();
+    arrayView2d< localIndex const, cells::NODE_MAP_USD > const & baseElemsToNodes = baseMesh.getElemManager().getRegion( er ).getSubRegion< CellElementSubRegion >( esr ).nodeList();
     arrayView2d< real64 const > const elemCenter = elementSubRegion.getElementCenter();
     arrayView1d< integer const > const elemGhostRank = elementSubRegion.ghostRank();
+    arrayView1d< globalIndex const > const elemLocalToGlobal = elementSubRegion.localToGlobalMap().toViewConst();
 
     finiteElement::FiniteElementBase const &
     fe = elementSubRegion.getReference< finiteElement::FiniteElementBase >( getDiscretizationName() );
@@ -286,19 +291,20 @@ void ElasticWaveEquationSEM::precomputeSourceAndReceiverTerm( MeshLevel & mesh, 
     {
       using FE_TYPE = TYPEOFREF( finiteElement );
 
-      localIndex const numFacesPerElem = elementSubRegion.numFacesPerElement();
       PreComputeSourcesAndReceivers::
         Compute3DSourceAndReceiverConstantsWithDAS
       < EXEC_POLICY, FE_TYPE >
         ( elementSubRegion.size(),
-        numFacesPerElem,
-        X,
+        facesToNodes,
+        nodeCoords,
+        nodeLocalToGlobal,
+        elemLocalToGlobal,
+        nodesToElements,
+        baseElemsToNodes,
         elemGhostRank,
         elemsToNodes,
         elemsToFaces,
         elemCenter,
-        faceNormal,
-        faceCenter,
         sourceCoordinates,
         sourceIsAccessible,
         sourceNodeIds,
@@ -320,7 +326,18 @@ void ElasticWaveEquationSEM::precomputeSourceAndReceiverTerm( MeshLevel & mesh, 
         m_sourceForce,
         m_sourceMoment );
     } );
+    elementSubRegion.faceList().freeOnDevice();
+    baseMesh.getElemManager().getRegion( er ).getSubRegion< CellElementSubRegion >( esr ).nodeList().freeOnDevice();
+    elementSubRegion.getElementCenter().freeOnDevice();
+    elementSubRegion.ghostRank().freeOnDevice();
+    elementSubRegion.localToGlobalMap().freeOnDevice();
   } );
+  baseMesh.getNodeManager().localToGlobalMap().freeOnDevice();
+  baseMesh.getNodeManager().elementList().toView().freeOnDevice();
+  baseMesh.getFaceManager().nodeList().toView().freeOnDevice();
+  baseMesh.getNodeManager().referencePosition().freeOnDevice();
+  facesToNodes.freeOnDevice();
+  nodesToElements.freeOnDevice();
 }
 
 void ElasticWaveEquationSEM::addSourceToRightHandSide( integer const & cycleNumber,
@@ -363,11 +380,12 @@ void ElasticWaveEquationSEM::initializePostInitialConditionsPreSubGroups()
 
   applyFreeSurfaceBC( 0.0, domain );
 
-  forDiscretizationOnMeshTargets( domain.getMeshBodies(), [&] ( string const &,
+  forDiscretizationOnMeshTargets( domain.getMeshBodies(), [&] ( string const & meshBodyName,
                                                                 MeshLevel & mesh,
                                                                 arrayView1d< string const > const & regionNames )
   {
-    precomputeSourceAndReceiverTerm( mesh, regionNames );
+    MeshLevel & baseMesh = domain.getMeshBodies().getGroup< MeshBody >( meshBodyName ).getBaseDiscretization();
+    precomputeSourceAndReceiverTerm( baseMesh, mesh, regionNames );
 
     NodeManager & nodeManager = mesh.getNodeManager();
     FaceManager & faceManager = mesh.getFaceManager();
@@ -849,7 +867,7 @@ void ElasticWaveEquationSEM::cleanup( real64 const time_n,
                              dasReceivers.data(),
                              m_linearDASGeometry.size( 0 ),
                              MpiWrapper::getMpiOp( MpiWrapper::Reduction::Sum ),
-                             MPI_COMM_GEOSX );
+                             MPI_COMM_GEOS );
       WaveSolverUtils::writeSeismoTrace( "dasTraceReceiver", getName(), m_outputSeismoTrace, m_linearDASGeometry.size( 0 ),
                                          m_receiverIsLocal, m_nsamplesSeismoTrace, dasReceivers );
     }

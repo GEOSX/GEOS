@@ -10,6 +10,7 @@
 /.github/ @rrsettgast
 
 /BASELINE_NOTES.md
+/.integrated_tests.yaml                               @CusiniM @cssherman @rrsettgast @wrtobin @castelletto1 @jhuang2601 @paveltomin
 /inputFiles/                                          @CusiniM @cssherman @jhuang2601 @rrsettgast
 /src/coreComponents/LvArray                           @rrsettgast @wrtobin @corbett5 @CusiniM 
 /src/coreComponents/codingUtilities                   @rrsettgast @untereiner @corbett5 @wrtobin

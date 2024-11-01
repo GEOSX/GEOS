@@ -5,7 +5,7 @@
  * Copyright (c) 2016-2024 Lawrence Livermore National Security LLC
  * Copyright (c) 2018-2024 Total, S.A
  * Copyright (c) 2018-2024 The Board of Trustees of the Leland Stanford Junior University
- * Copyright (c) 2018-2024 Chevron
+ * Copyright (c) 2023-2024 Chevron
  * Copyright (c) 2019-     GEOS/GEOSX Contributors
  * All rights reserved
  *
@@ -14,8 +14,8 @@
  */
 
 #include "NonlinearSolverParameters.hpp"
-#include "common/Logger.hpp"
-#include "fileIO/Table/TableFormatter.hpp"
+#include "common/logger/Logger.hpp"
+#include "common/format/table/TableFormatter.hpp"
 
 namespace geos
 {
@@ -37,7 +37,7 @@ NonlinearSolverParameters::NonlinearSolverParameters( string const & name,
     setDescription( "How the line search is to be used. Options are: \n "
                     "* None    - Do not use line search.\n"
                     "* Attempt - Use line search. Allow exit from line search without achieving smaller residual than starting residual.\n"
-                    "* Require - Use line search. If smaller residual than starting resdual is not achieved, cut time step." );
+                    "* Require - Use line search. If smaller residual than starting resdual is not achieved, cut time-step." );
 
   registerWrapper( viewKeysStruct::lineSearchInterpolationTypeString(), &m_lineSearchInterpType ).
     setApplyDefaultValue( LineSearchInterpolationType::Linear ).
@@ -112,32 +112,37 @@ NonlinearSolverParameters::NonlinearSolverParameters( string const & name,
   registerWrapper( viewKeysStruct::timeStepDecreaseIterLimString(), &m_timeStepDecreaseIterLimit ).
     setApplyDefaultValue( 0.7 ).
     setInputFlag( InputFlags::OPTIONAL ).
-    setDescription( "Fraction of the max Newton iterations above which the solver asks for the time-step to be decreased for the next time step." );
+    setDescription( "Fraction of the max Newton iterations above which the solver asks for the time-step to be decreased for the next time-step." );
 
   registerWrapper( viewKeysStruct::timeStepIncreaseIterLimString(), &m_timeStepIncreaseIterLimit ).
     setApplyDefaultValue( 0.4 ).
     setInputFlag( InputFlags::OPTIONAL ).
-    setDescription( "Fraction of the max Newton iterations below which the solver asks for the time-step to be increased for the next time step." );
+    setDescription( "Fraction of the max Newton iterations below which the solver asks for the time-step to be increased for the next time-step." );
 
   registerWrapper( viewKeysStruct::timeStepDecreaseFactorString(), &m_timeStepDecreaseFactor ).
     setApplyDefaultValue( 0.5 ).
     setInputFlag( InputFlags::OPTIONAL ).
-    setDescription( "Factor by which the time step is decreased when the number of Newton iterations is large." );
+    setDescription( "Factor by which the time-step is decreased when the number of Newton iterations is large." );
 
   registerWrapper( viewKeysStruct::timeStepIncreaseFactorString(), &m_timeStepIncreaseFactor ).
     setApplyDefaultValue( 2.0 ).
     setInputFlag( InputFlags::OPTIONAL ).
-    setDescription( "Factor by which the time step is increased when the number of Newton iterations is small." );
+    setDescription( "Factor by which the time-step is increased when the number of Newton iterations is small." );
+
+  registerWrapper( viewKeysStruct::minTimeStepIncreaseIntervalString(), &m_minTimeStepIncreaseInterval ).
+    setApplyDefaultValue( 10 ).
+    setInputFlag( InputFlags::OPTIONAL ).
+    setDescription( "Minimum number of cycles since the last time-step cut for increasing the time-step again." );
 
   registerWrapper( viewKeysStruct::timeStepCutFactorString(), &m_timeStepCutFactor ).
     setApplyDefaultValue( 0.5 ).
     setInputFlag( InputFlags::OPTIONAL ).
-    setDescription( "Factor by which the time step will be cut if a timestep cut is required." );
+    setDescription( "Factor by which the time-step will be cut if a time-step cut is required." );
 
   registerWrapper( viewKeysStruct::maxTimeStepCutsString(), &m_maxTimeStepCuts ).
     setApplyDefaultValue( 2 ).
     setInputFlag( InputFlags::OPTIONAL ).
-    setDescription( "Max number of time step cuts" );
+    setDescription( "Max number of time-step cuts" );
 
   registerWrapper( viewKeysStruct::maxSubStepsString(), &m_maxSubSteps ).
     setApplyDefaultValue( 10 ).
@@ -215,13 +220,14 @@ void NonlinearSolverParameters::print() const
   tableData.addRow( "Minimum iterations", m_minIterNewton );
   tableData.addRow( "Maximum allowed residual norm", m_maxAllowedResidualNorm );
   tableData.addRow( "Allow non-converged", m_allowNonConverged );
-  tableData.addRow( "Time step decrease iterations limit", m_timeStepDecreaseIterLimit );
-  tableData.addRow( "Time step increase iterations limit", m_timeStepIncreaseIterLimit );
-  tableData.addRow( "Time step decrease factor", m_timeStepDecreaseFactor );
-  tableData.addRow( "Time step increase factor", m_timeStepDecreaseFactor );
-  tableData.addRow( "Time step cut factor", m_timeStepCutFactor );
-  tableData.addRow( "Maximum time step cuts", m_maxTimeStepCuts );
-  tableData.addRow( "Maximum sub time steps", m_maxSubSteps );
+  tableData.addRow( "Time-step decrease iterations limit", m_timeStepDecreaseIterLimit );
+  tableData.addRow( "Time-step increase iterations limit", m_timeStepIncreaseIterLimit );
+  tableData.addRow( "Time-step decrease factor", m_timeStepDecreaseFactor );
+  tableData.addRow( "Time-step increase factor", m_timeStepDecreaseFactor );
+  tableData.addRow( "Time-step cut factor", m_timeStepCutFactor );
+  tableData.addRow( "Minimum time-step increase interval", m_minTimeStepIncreaseInterval );
+  tableData.addRow( "Maximum time-step cuts", m_maxTimeStepCuts );
+  tableData.addRow( "Maximum sub time-steps", m_maxSubSteps );
   tableData.addRow( "Maximum number of configuration attempts", m_maxNumConfigurationAttempts );
   tableData.addRow( "Coupling type", m_couplingType );
   if( m_couplingType == CouplingType::Sequential )

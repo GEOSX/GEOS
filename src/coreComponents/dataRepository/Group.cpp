@@ -5,7 +5,7 @@
  * Copyright (c) 2016-2024 Lawrence Livermore National Security LLC
  * Copyright (c) 2018-2024 Total, S.A
  * Copyright (c) 2018-2024 The Board of Trustees of the Leland Stanford Junior University
- * Copyright (c) 2018-2024 Chevron
+ * Copyright (c) 2023-2024 Chevron
  * Copyright (c) 2019-     GEOS/GEOSX Contributors
  * All rights reserved
  *
@@ -16,7 +16,7 @@
 // Source includes
 #include "Group.hpp"
 #include "ConduitRestart.hpp"
-#include "codingUtilities/StringUtilities.hpp"
+#include "common/format/StringUtilities.hpp"
 #include "codingUtilities/Utilities.hpp"
 #include "common/TimingMacros.hpp"
 #include "GroupContext.hpp"
@@ -50,6 +50,7 @@ Group::Group( string const & name,
   m_restart_flags( RestartFlags::WRITE_AND_READ ),
   m_input_flags( InputFlags::INVALID ),
   m_conduitNode( rootNode[ name ] ),
+  m_logLevelsRegistry( std::make_unique< LogLevelsRegistry >() ),
   m_dataContext( std::make_unique< GroupContext >( *this ) )
 {}
 
@@ -79,7 +80,6 @@ void Group::deregisterWrapper( string const & name )
   m_wrappers.erase( name );
   m_conduitNode.remove( name );
 }
-
 
 void Group::resize( indexType const newSize )
 {
@@ -245,6 +245,7 @@ void Group::processInputFile( xmlWrapper::xmlNode const & targetNode,
 
 void Group::postInputInitializationRecursive()
 {
+  m_logLevelsRegistry = nullptr;
   for( auto const & subGroupIter : m_subGroups )
   {
     subGroupIter.second->postInputInitializationRecursive();

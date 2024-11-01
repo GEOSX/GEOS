@@ -11,6 +11,8 @@ set( dataRepository_headers
      InputFlags.hpp
      KeyIndexT.hpp
      KeyNames.hpp
+     LogLevelsInfo.hpp
+     LogLevelsRegistry.hpp
      MappedVector.hpp
      ObjectCatalog.hpp
      ReferenceWrapper.hpp
@@ -35,6 +37,7 @@ set( dataRepository_sources
      xmlWrapper.cpp
      DataContext.cpp
      GroupContext.cpp
+     LogLevelsRegistry.cpp
      WrapperContext.cpp )
 
 set( dependencyList ${parallelDeps} codingUtilities )
@@ -50,14 +53,19 @@ if( ENABLE_PYGEOSX )
   list( APPEND dependencyList Python3::Python pylvarray )
 endif()
 
+geos_decorate_link_dependencies( LIST decoratedDependencies
+                                 DEPENDENCIES ${dependencyList} )
 
 blt_add_library( NAME       dataRepository
                  SOURCES    ${dataRepository_sources}
                  HEADERS    ${dataRepository_headers}
-                 DEPENDS_ON ${dependencyList}
-                 OBJECT     ${GEOS_BUILD_OBJ_LIBS} )
+                 DEPENDS_ON ${decoratedDependencies}
+                 OBJECT     ${GEOS_BUILD_OBJ_LIBS}
+                 SHARED     ${GEOS_BUILD_SHARED_LIBS}
+               )
 
 target_include_directories( dataRepository PUBLIC ${CMAKE_SOURCE_DIR}/coreComponents )
+install( TARGETS dataRepository LIBRARY DESTINATION ${CMAKE_INSTALL_PREFIX}/lib )
 
 
 if( GEOS_ENABLE_TESTS )

@@ -11,7 +11,6 @@
       surfaceGeneratorName="SurfaceGen"
       logLevel="1"
       targetRegions="{ Fracture }"
-      contactRelationName="fractureContact"
       maxNumResolves="2">
       <NonlinearSolverParameters
         newtonTol="1.0e-5"
@@ -29,7 +28,8 @@
       timeIntegrationOption="QuasiStatic"
       discretization="FE1"
       targetRegions="{ Domain, Fracture }"
-      contactRelationName="fractureContact">
+      contactRelationName="fractureContact"
+      contactPenaltyStiffness="1e12">
       <NonlinearSolverParameters
         newtonTol="1.0e-6"/>
       <LinearSolverParameters
@@ -116,13 +116,13 @@
   <ElementRegions>
     <CellElementRegion
       name="Domain"
-      cellBlocks="{ cb1 }"
+      cellBlocks="{ * }"
       materialList="{ water, rock }"/>
 
     <SurfaceElementRegion
       name="Fracture"
       defaultAperture="1.0e-4"
-      materialList="{ water, fractureFilling, fractureContact }"/>
+      materialList="{ water, fractureFilling, fractureContact, hApertureModel }"/>
   </ElementRegions>
 
   <Constitutive>
@@ -157,9 +157,11 @@
       compressibility="0.0"/>
 
     <FrictionlessContact
-      name="fractureContact"
-      penaltyStiffness="1e12"
-      apertureTableName="apertureTable"/>
+      name="fractureContact"/>
+
+     <HydraulicApertureTable
+      name="hApertureModel"
+      apertureTableName="apertureTable"/>  
 
     <ParallelPlatesPermeability
       name="fracturePerm"/>

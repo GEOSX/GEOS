@@ -5,7 +5,7 @@
  * Copyright (c) 2016-2024 Lawrence Livermore National Security LLC
  * Copyright (c) 2018-2024 Total, S.A
  * Copyright (c) 2018-2024 The Board of Trustees of the Leland Stanford Junior University
- * Copyright (c) 2018-2024 Chevron
+ * Copyright (c) 2023-2024 Chevron
  * Copyright (c) 2019-     GEOS/GEOSX Contributors
  * All rights reserved
  *
@@ -249,13 +249,13 @@ struct FaceBuilder
    */
   auto duplicateFaceEquality() const
   {
-    return [duplicateFaces = duplicateFaces.toViewConst()]
+    return [faces = duplicateFaces.toViewConst()]
              ( NodesAndElementOfFace const & lhs, NodesAndElementOfFace const & rhs )
     {
-      return std::equal( duplicateFaces[ lhs.duplicateFaceNodesIndex ].begin(),
-                         duplicateFaces[ lhs.duplicateFaceNodesIndex ].end(),
-                         duplicateFaces[ rhs.duplicateFaceNodesIndex ].begin(),
-                         duplicateFaces[ rhs.duplicateFaceNodesIndex ].end() );
+      return std::equal( faces[ lhs.duplicateFaceNodesIndex ].begin(),
+                         faces[ lhs.duplicateFaceNodesIndex ].end(),
+                         faces[ rhs.duplicateFaceNodesIndex ].begin(),
+                         faces[ rhs.duplicateFaceNodesIndex ].end() );
     };
   }
 
@@ -769,6 +769,14 @@ CellBlock & CellBlockManager::registerCellBlock( string const & name )
   return this->getCellBlocks().registerGroup< CellBlock >( name );
 }
 
+CellBlock & CellBlockManager::registerCellBlock( string const & cellBlockName,
+                                                 integer regionAttribute )
+{
+  CellBlock & cb = this->getCellBlocks().registerGroup< CellBlock >( cellBlockName );
+  m_regionAttributesCellBlocks[ regionAttribute ].emplace( cellBlockName );
+  return cb;
+}
+
 FaceBlock & CellBlockManager::registerFaceBlock( string const & name )
 {
   return this->getFaceBlocks().registerGroup< FaceBlock >( name );
@@ -1071,7 +1079,7 @@ void CellBlockManager::generateHighOrderMaps( localIndex const order,
                                 [ =, faceToNodesMapSource=faceToNodesMapSource.toView(),
                                   edgeToNodeMapNew=edgeToNodeMapNew.toView(),
                                   faceToNodeMapNew=faceToNodeMapNew.toView(),
-                                  m_faceToEdges=m_faceToEdges.toView(),
+                                  faceToEdges=m_faceToEdges.toView(),
                                   refPosSrc=refPosSource.toView(),
                                   refPosNew=refPosNew.toView(),
                                   faceLocalToGlobal=faceLocalToGlobal.toView(),
@@ -1099,7 +1107,7 @@ void CellBlockManager::generateHighOrderMaps( localIndex const order,
       for( localIndex iter_node=0; iter_node<numInternalNodesPerEdge; iter_node++ )
       {
         localIndex nodeIdxInMap = numVerticesPerFace + iter_edge * numInternalNodesPerEdge + iter_node;
-        localIndex edge = m_faceToEdges[ iter_face ][ iter_edge ];
+        localIndex edge = faceToEdges[ iter_face ][ iter_edge ];
         faceToNodeMapWork[ nodeIdxInMap ] = edgeToNodeMapNew[ edge ][ iter_node + 1 ];
         nodeIDs[ createNodeKey( edgeToNodeMapNew[ edge ][ 0 ], edgeToNodeMapNew[ edge ][ numNodesPerEdge - 1 ], iter_node + 1, order ) ] = nodeIdxInMap;
       }

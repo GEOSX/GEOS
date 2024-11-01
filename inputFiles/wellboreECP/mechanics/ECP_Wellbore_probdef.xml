@@ -1,0 +1,91 @@
+<Problem>
+  <NumericalMethods>
+    <FiniteElements>
+      <FiniteElementSpace
+        name="FE1"
+        order="1"/>
+    </FiniteElements>
+  </NumericalMethods>
+
+  <ElementRegions>
+    <CellElementRegion
+      name="casing"
+      cellBlocks="{ casing }"
+      materialList="{ steel }"/>
+      
+    <CellElementRegion
+      name="cement"
+      cellBlocks="{ cement }"
+      materialList="{ cement }"/>
+
+    <CellElementRegion
+      name="rock"
+      cellBlocks="{ rock }"
+      materialList="{ shale }"/>
+
+      
+  </ElementRegions>
+
+  <Constitutive>
+    <!-- SPHINX_Material -->
+    <ElasticIsotropic
+      name="steel"
+      defaultDensity="2700"
+      defaultBulkModulus="5.5556e9"
+      defaultShearModulus="4.16667e9"/>
+
+    <ElasticIsotropic
+      name="cement"
+      defaultDensity="2700"
+      defaultBulkModulus="5.5556e9"
+      defaultShearModulus="4.16667e9"/>
+
+    <ElasticIsotropic
+      name="shale"
+      defaultDensity="2700"
+      defaultBulkModulus="5.5556e9"
+      defaultShearModulus="4.16667e9"/>
+  </Constitutive>
+
+  <FieldSpecifications>
+    <FieldSpecification
+      name="xConstraint"
+      objectPath="nodeManager"
+      fieldName="totalDisplacement"
+      component="0"
+      scale="0.0"
+      setNames="{ rpos }"/>
+
+    <FieldSpecification
+      name="yposConstraint"
+      objectPath="nodeManager"
+      fieldName="totalDisplacement"
+      component="1"
+      scale="0.0"
+      setNames="{ tneg, tpos }"/>
+
+    <FieldSpecification
+      name="zconstraint"
+      objectPath="nodeManager"
+      fieldName="totalDisplacement"
+      component="2"
+      scale="0.0"
+      setNames="{ zneg, zpos }"/>
+
+    <Traction
+      name="innerPressure"
+      objectPath="faceManager"
+      tractionType="normal"
+      scale="-1.0e6"
+      functionName="timeFunction"
+      setNames="{ rneg }"/>
+  </FieldSpecifications>
+
+  <Functions>
+    <TableFunction
+      name="timeFunction"
+      inputVarNames="{ time }"
+      coordinates="{ 0.0, 10.0 }"
+      values="{ 0.0, 10.0 }"/>
+  </Functions>
+</Problem>

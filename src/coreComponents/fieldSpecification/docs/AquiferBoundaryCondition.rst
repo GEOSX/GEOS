@@ -156,7 +156,7 @@ The main Carter-Tracy parameters and the expected units are listed below:
 
 The full list of parameters is provided below:
 
-.. include:: /coreComponents/schema/docs/Aquifer.rst
+.. include:: /docs/sphinx/datastructure/Aquifer.rst
 
 Examples
 ===============

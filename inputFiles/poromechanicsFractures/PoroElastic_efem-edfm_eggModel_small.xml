@@ -25,7 +25,8 @@
       name="fractureMechSolver"
       targetRegions="{ Reservoir, Overburden, Underburden, Sideburden, Fracture }"
       timeIntegrationOption="QuasiStatic"
-      discretization="FE1">
+      discretization="FE1"
+      contactPenaltyStiffness="1e12">
       <NonlinearSolverParameters
         maxTimeStepCuts="1"
         newtonTol="1e-03"
@@ -62,7 +63,7 @@
       file="../../../GEOSDATA/DataSets/Egg/egg_withBurdens_small.vts"
       regionAttribute="elementRegionMarker"
       fieldsToImport="{ PERM }"
-      fieldNamesInGEOSX="{ rockPermeability_permeability }"/>
+      fieldNamesInGEOS="{ rockPermeability_permeability }"/>
   </Mesh>
 
   <Geometry>
@@ -172,28 +173,28 @@
   <ElementRegions>
     <CellElementRegion
       name="Reservoir"
-      cellBlocks="{ 1_hexahedra }"
+      cellBlocks="{ 1 }"
       materialList="{ porousRock, water }"/>
 
     <CellElementRegion
       name="Overburden"
-      cellBlocks="{ 3_hexahedra }"
+      cellBlocks="{ 3 }"
       materialList="{ porousRock, water }"/> 
     
     <CellElementRegion
       name="Underburden"
-      cellBlocks="{ 2_hexahedra }"
+      cellBlocks="{ 2 }"
       materialList="{ porousRock, water }"/>
       
     <CellElementRegion
       name="Sideburden"
-      cellBlocks="{ 0_hexahedra }"
+      cellBlocks="{ 0 }"
       materialList="{ porousRock, water }"/>  
 
     <SurfaceElementRegion
       name="Fracture"
       subRegionType="embeddedElement"
-      materialList="{ water, fractureFilling, fractureContact }"
+      materialList="{ water, fractureFilling, fractureContact, hApertureModel }"
       defaultAperture="1e-3"/>
   </ElementRegions>
 
@@ -247,9 +248,11 @@
       name="fracturePerm"/>
 
     <FrictionlessContact
-      name="fractureContact"
-      penaltyStiffness="0.0e8"
-      apertureTableName="apertureTable"/>
+      name="fractureContact"/>
+
+ <HydraulicApertureTable
+      name="hApertureModel"
+      apertureTableName="apertureTable"/>   
   </Constitutive>
 
   <FieldSpecifications>

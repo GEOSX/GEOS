@@ -5,7 +5,7 @@
  * Copyright (c) 2016-2024 Lawrence Livermore National Security LLC
  * Copyright (c) 2018-2024 Total, S.A
  * Copyright (c) 2018-2024 The Board of Trustees of the Leland Stanford Junior University
- * Copyright (c) 2018-2024 Chevron
+ * Copyright (c) 2023-2024 Chevron
  * Copyright (c) 2019-     GEOS/GEOSX Contributors
  * All rights reserved
  *
@@ -136,7 +136,7 @@ void LohrenzBrayClarkViscosityUpdate::computePhaseDiluteViscosity_HerningZippere
                                                                                    real64 & phaseViscosity,
                                                                                    arraySlice1d< real64, USD2 > const & dPhaseViscosity ) const
 {
-  using Deriv = multifluid::DerivativeOffset;
+  using Deriv = constitutive::multifluid::DerivativeOffset;
   GEOS_UNUSED_VAR( temperature );
 
   real64 A = 0.0;
@@ -175,7 +175,7 @@ void LohrenzBrayClarkViscosityUpdate::computePhaseDiluteViscosity_Wilke( integer
                                                                          real64 & phaseViscosity,
                                                                          arraySlice1d< real64, USD2 > const & dPhaseViscosity ) const
 {
-  using Deriv = multifluid::DerivativeOffset;
+  using Deriv = constitutive::multifluid::DerivativeOffset;
   GEOS_UNUSED_VAR( temperature );
 
   // compute the "phi" interaction matrix (and its temperature derivatives)
@@ -256,7 +256,7 @@ void LohrenzBrayClarkViscosityUpdate::computePhaseDiluteViscosity_Brokaw( intege
                                                                           real64 & phaseViscosity,
                                                                           arraySlice1d< real64, USD2 > const & dPhaseViscosity ) const
 {
-  using Deriv = multifluid::DerivativeOffset;
+  using Deriv = constitutive::multifluid::DerivativeOffset;
   GEOS_UNUSED_VAR( temperature );
 
   // Compute the "phi" interaction matrix (constant, as only function of molecular weights)
@@ -324,7 +324,7 @@ void LohrenzBrayClarkViscosityUpdate::computePhaseViscosity_LohrenzBrayClark( in
                                                                               real64 & phaseViscosity,
                                                                               arraySlice1d< real64, USD2 > const & dPhaseViscosity ) const
 {
-  using Deriv = multifluid::DerivativeOffset;
+  using Deriv = constitutive::multifluid::DerivativeOffset;
   // Compute phase pseudo properties via Kay's mixing rule
   real64 phaseCriticalPressure = 0.0;
   real64 phaseCriticalTemperature = 0.0;

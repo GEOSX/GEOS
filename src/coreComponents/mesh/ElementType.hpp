@@ -5,7 +5,7 @@
  * Copyright (c) 2016-2024 Lawrence Livermore National Security LLC
  * Copyright (c) 2018-2024 Total, S.A
  * Copyright (c) 2018-2024 The Board of Trustees of the Leland Stanford Junior University
- * Copyright (c) 2018-2024 Chevron
+ * Copyright (c) 2023-2024 Chevron
  * Copyright (c) 2019-     GEOS/GEOSX Contributors
  * All rights reserved
  *
@@ -109,6 +109,36 @@ ENUM_STRINGS( ElementType,
               "DecagonalPrism",
               "HendecagonalPrism",
               "Polyhedron" );
+
+/**
+ * @brief Returns a string describing the element.
+ * @param[in] type The element type.
+ * @return The name.
+ * @warning This information will be visible in the input file... Consider refactoring with great care.
+ */
+inline string getElementTypeName( ElementType const type )
+{
+  switch( type )
+  {
+    case ElementType::Hexahedron:  return "hexahedra";
+    case ElementType::Tetrahedron: return "tetrahedra";
+    case ElementType::Wedge:       return "wedges";
+    case ElementType::Pyramid:     return "pyramids";
+    case ElementType::Prism5:      return "pentagonalPrisms";
+    case ElementType::Prism6:      return "hexagonalPrisms";
+    case ElementType::Prism7:      return "heptagonalPrisms";
+    case ElementType::Prism8:      return "octagonalPrisms";
+    case ElementType::Prism9:      return "nonagonalPrisms";
+    case ElementType::Prism10:     return "decagonalPrisms";
+    case ElementType::Prism11:     return "hendecagonalPrisms";
+    case ElementType::Polyhedron:  return "polyhedra";
+    default:
+    {
+      GEOS_ERROR( "Element type '" << type << "' is not supported" );
+      return {};
+    }
+  }
+}
 
 /// String available for mesh errors
 inline auto constexpr generalMeshErrorAdvice = "Consider checking the validity of your mesh with "

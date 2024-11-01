@@ -5,7 +5,7 @@
  * Copyright (c) 2016-2024 Lawrence Livermore National Security LLC
  * Copyright (c) 2018-2024 Total, S.A
  * Copyright (c) 2018-2024 The Board of Trustees of the Leland Stanford Junior University
- * Copyright (c) 2018-2024 Chevron
+ * Copyright (c) 2023-2024 Chevron
  * Copyright (c) 2019-     GEOS/GEOSX Contributors
  * All rights reserved
  *
@@ -75,7 +75,7 @@ void createPermutationMatrix( NodeManager const & nodeManager,
    */
 
   localIndex const numLocalRows = nodeManager.getNumberOfLocalIndices() * nDofPerNode;
-  permutationMatrix.createWithLocalSize( numLocalRows, numLocalRows, 1, MPI_COMM_GEOSX );
+  permutationMatrix.createWithLocalSize( numLocalRows, numLocalRows, 1, MPI_COMM_GEOS );
 
   arrayView1d< globalIndex const > const & dofNumber = nodeManager.getReference< globalIndex_array >( dofKey );
   arrayView1d< globalIndex const > const & localToGlobal = nodeManager.localToGlobalMap();
@@ -127,7 +127,7 @@ void createPermutationMatrix( ElementRegionManager const & elemManager,
       numLocalRows += elementSubRegion.getNumberOfLocalIndices() * nDofPerCell;
     }
   } );
-  permutationMatrix.createWithLocalSize( numLocalRows, numLocalRows, 1, MPI_COMM_GEOSX );
+  permutationMatrix.createWithLocalSize( numLocalRows, numLocalRows, 1, MPI_COMM_GEOS );
 
   permutationMatrix.open();
   elemManager.forElementSubRegions< ElementSubRegionBase >( [&]( ElementSubRegionBase const & elementSubRegion )
@@ -250,7 +250,7 @@ void computeRigidBodyModes( MeshLevel const & mesh,
   rigidBodyModes.resize( numRidigBodyModes );
   for( localIndex k = 0; k < numComponents; ++k )
   {
-    rigidBodyModes[k].create( numNodes * numComponents, MPI_COMM_GEOSX );
+    rigidBodyModes[k].create( numNodes * numComponents, MPI_COMM_GEOS );
     arrayView1d< real64 > const values = rigidBodyModes[k].open();
     forAll< parallelHostPolicy >( numNodes, [=]( localIndex const i )
     {
@@ -264,7 +264,7 @@ void computeRigidBodyModes( MeshLevel const & mesh,
     case 2:
     {
       localIndex const k = 2;
-      rigidBodyModes[k].create( numNodes*numComponents, MPI_COMM_GEOSX );
+      rigidBodyModes[k].create( numNodes*numComponents, MPI_COMM_GEOS );
       {
         arrayView1d< real64 > const values = rigidBodyModes[k].open();
         forAll< parallelHostPolicy >( numNodes, [=]( localIndex const i )
@@ -285,7 +285,7 @@ void computeRigidBodyModes( MeshLevel const & mesh,
     case 3:
     {
       localIndex k = 3;
-      rigidBodyModes[k].create( numNodes*numComponents, MPI_COMM_GEOSX );
+      rigidBodyModes[k].create( numNodes*numComponents, MPI_COMM_GEOS );
       {
         arrayView1d< real64 > const values = rigidBodyModes[k].open();
         forAll< parallelHostPolicy >( numNodes, [=]( localIndex const i )
@@ -303,7 +303,7 @@ void computeRigidBodyModes( MeshLevel const & mesh,
       rigidBodyModes[k].scale( 1.0 / rigidBodyModes[k].norm2() );
 
       ++k;
-      rigidBodyModes[k].create( numNodes*numComponents, MPI_COMM_GEOSX );
+      rigidBodyModes[k].create( numNodes*numComponents, MPI_COMM_GEOS );
       {
         arrayView1d< real64 > const values = rigidBodyModes[k].open();
         forAll< parallelHostPolicy >( numNodes, [=]( localIndex const i )
@@ -321,7 +321,7 @@ void computeRigidBodyModes( MeshLevel const & mesh,
       rigidBodyModes[k].scale( 1.0 / rigidBodyModes[k].norm2() );
 
       ++k;
-      rigidBodyModes[k].create( numNodes*numComponents, MPI_COMM_GEOSX );
+      rigidBodyModes[k].create( numNodes*numComponents, MPI_COMM_GEOS );
       {
         arrayView1d< real64 > const values = rigidBodyModes[k].open();
         forAll< parallelHostPolicy >( numNodes, [=]( localIndex const i )

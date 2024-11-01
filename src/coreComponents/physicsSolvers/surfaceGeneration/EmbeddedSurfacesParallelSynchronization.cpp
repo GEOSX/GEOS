@@ -5,7 +5,7 @@
  * Copyright (c) 2016-2024 Lawrence Livermore National Security LLC
  * Copyright (c) 2018-2024 Total, S.A
  * Copyright (c) 2018-2024 The Board of Trustees of the Leland Stanford Junior University
- * Copyright (c) 2018-2024 Chevron
+ * Copyright (c) 2023-2024 Chevron
  * Copyright (c) 2019-     GEOS/GEOSX Contributors
  * All rights reserved
  *
@@ -383,7 +383,7 @@ void synchronizeNewNodes( MeshLevel & mesh,
   //************************************************************************************************
   // We need to send over the new embedded surfaces and related objects for those whose parents are ghosts on neighbors.
 
-  MPI_iCommData commData( CommunicationTools::getInstance().getCommID() );
+  MPI_iCommData commData;
   commData.resize( neighbors.size());
   for( unsigned int neighborIndex=0; neighborIndex<neighbors.size(); ++neighborIndex )
   {
@@ -397,7 +397,7 @@ void synchronizeNewNodes( MeshLevel & mesh,
     neighbor.mpiISendReceiveBufferSizes( commData.commID(),
                                          commData.mpiSendBufferSizeRequest( neighborIndex ),
                                          commData.mpiRecvBufferSizeRequest( neighborIndex ),
-                                         MPI_COMM_GEOSX );
+                                         MPI_COMM_GEOS );
 
   }
 
@@ -414,7 +414,7 @@ void synchronizeNewNodes( MeshLevel & mesh,
     neighbor.mpiISendReceiveBuffers( commData.commID(),
                                      commData.mpiSendBufferRequest( neighborIndex ),
                                      commData.mpiRecvBufferRequest( neighborIndex ),
-                                     MPI_COMM_GEOSX );
+                                     MPI_COMM_GEOS );
   }
 
 
@@ -458,7 +458,7 @@ void synchronizeNewSurfaces( MeshLevel & mesh,
   //************************************************************************************************
   // We need to send over the new embedded surfaces and related objects for those whose parents are ghosts on neighbors.
 
-  MPI_iCommData commData( CommunicationTools::getInstance().getCommID() );
+  MPI_iCommData commData;
   commData.resize( neighbors.size());
   for( unsigned int neighborIndex=0; neighborIndex<neighbors.size(); ++neighborIndex )
   {
@@ -472,7 +472,7 @@ void synchronizeNewSurfaces( MeshLevel & mesh,
     neighbor.mpiISendReceiveBufferSizes( commData.commID(),
                                          commData.mpiSendBufferSizeRequest( neighborIndex ),
                                          commData.mpiRecvBufferSizeRequest( neighborIndex ),
-                                         MPI_COMM_GEOSX );
+                                         MPI_COMM_GEOS );
 
   }
 
@@ -489,7 +489,7 @@ void synchronizeNewSurfaces( MeshLevel & mesh,
     neighbor.mpiISendReceiveBuffers( commData.commID(),
                                      commData.mpiSendBufferRequest( neighborIndex ),
                                      commData.mpiRecvBufferRequest( neighborIndex ),
-                                     MPI_COMM_GEOSX );
+                                     MPI_COMM_GEOS );
   }
 
 
@@ -528,8 +528,7 @@ void synchronizeFracturedElements( MeshLevel & mesh,
                                    std::vector< NeighborCommunicator > & neighbors,
                                    string const fractureRegionName )
 {
-  MPI_iCommData commDataJunk( CommunicationTools::getInstance().getCommID() );
-  MPI_iCommData commData( CommunicationTools::getInstance().getCommID() );
+  MPI_iCommData commData;
   commData.resize( neighbors.size());
   for( unsigned int neighborIndex=0; neighborIndex<neighbors.size(); ++neighborIndex )
   {
@@ -543,7 +542,7 @@ void synchronizeFracturedElements( MeshLevel & mesh,
     neighbor.mpiISendReceiveBufferSizes( commData.commID(),
                                          commData.mpiSendBufferSizeRequest( neighborIndex ),
                                          commData.mpiRecvBufferSizeRequest( neighborIndex ),
-                                         MPI_COMM_GEOSX );
+                                         MPI_COMM_GEOS );
 
   }
 
@@ -560,7 +559,7 @@ void synchronizeFracturedElements( MeshLevel & mesh,
     neighbor.mpiISendReceiveBuffers( commData.commID(),
                                      commData.mpiSendBufferRequest( neighborIndex ),
                                      commData.mpiRecvBufferRequest( neighborIndex ),
-                                     MPI_COMM_GEOSX );
+                                     MPI_COMM_GEOS );
   }
 
 

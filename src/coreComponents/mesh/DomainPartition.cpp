@@ -5,7 +5,7 @@
  * Copyright (c) 2016-2024 Lawrence Livermore National Security LLC
  * Copyright (c) 2018-2024 Total, S.A
  * Copyright (c) 2018-2024 The Board of Trustees of the Leland Stanford Junior University
- * Copyright (c) 2018-2024 Chevron
+ * Copyright (c) 2023-2024 Chevron
  * Copyright (c) 2019-     GEOS/GEOSX Contributors
  * All rights reserved
  *
@@ -90,10 +90,10 @@ void DomainPartition::setupBaseLevelMeshGlobalInfo()
     MPI_Comm cartcomm;
     {
       int reorder = 0;
-      MpiWrapper::cartCreate( MPI_COMM_GEOSX, 3, partition.getPartitions().data(), partition.m_Periodic.data(), reorder, &cartcomm );
+      MpiWrapper::cartCreate( MPI_COMM_GEOS, 3, partition.getPartitions().data(), partition.m_Periodic.data(), reorder, &cartcomm );
       GEOS_ERROR_IF( cartcomm == MPI_COMM_NULL, "Fail to run MPI_Cart_create and establish communications" );
     }
-    int const rank = MpiWrapper::commRank( MPI_COMM_GEOSX );
+    int const rank = MpiWrapper::commRank( MPI_COMM_GEOS );
     int nsdof = 3;
 
     MpiWrapper::cartCoords( cartcomm, rank, nsdof, partition.m_coords.data() );
@@ -125,7 +125,7 @@ void DomainPartition::setupBaseLevelMeshGlobalInfo()
 
   for( std::size_t i = 0; i < m_neighbors.size(); ++i )
   {
-    MpiWrapper::iSend( firstNeighborRanks.toView(), m_neighbors[ i ].neighborRank(), neighborsTag, MPI_COMM_GEOSX, &requests[ i ] );
+    MpiWrapper::iSend( firstNeighborRanks.toView(), m_neighbors[ i ].neighborRank(), neighborsTag, MPI_COMM_GEOS, &requests[ i ] );
   }
 
   // This set will contain the second (neighbor of) neighbors ranks.
@@ -134,7 +134,7 @@ void DomainPartition::setupBaseLevelMeshGlobalInfo()
   array1d< int > neighborOfNeighborRanks;
   for( std::size_t i = 0; i < m_neighbors.size(); ++i )
   {
-    MpiWrapper::recv( neighborOfNeighborRanks, m_neighbors[ i ].neighborRank(), neighborsTag, MPI_COMM_GEOSX, MPI_STATUS_IGNORE );
+    MpiWrapper::recv( neighborOfNeighborRanks, m_neighbors[ i ].neighborRank(), neighborsTag, MPI_COMM_GEOS, MPI_STATUS_IGNORE );
 
     // Insert the neighbors of the current neighbor into the set of second neighbors.
     secondNeighborRanks.insert( neighborOfNeighborRanks.begin(), neighborOfNeighborRanks.end() );

@@ -5,7 +5,7 @@
  * Copyright (c) 2016-2024 Lawrence Livermore National Security LLC
  * Copyright (c) 2018-2024 Total, S.A
  * Copyright (c) 2018-2024 The Board of Trustees of the Leland Stanford Junior University
- * Copyright (c) 2018-2024 Chevron
+ * Copyright (c) 2023-2024 Chevron
  * Copyright (c) 2019-     GEOS/GEOSX Contributors
  * All rights reserved
  *
@@ -18,6 +18,7 @@
  */
 
 #include "LohrenzBrayClarkViscosity.hpp"
+#include "CriticalVolume.hpp"
 #include "constitutive/fluid/multifluid/Layouts.hpp"
 #include "constitutive/fluid/multifluid/MultiFluidConstants.hpp"
 #include "constitutive/fluid/multifluid/MultiFluidBase.hpp"
@@ -42,7 +43,7 @@ LohrenzBrayClarkViscosity::LohrenzBrayClarkViscosity( string const & name,
                                                       integer const phaseIndex,
                                                       ModelParameters const & modelParameters ):
   FunctionBase( name, componentProperties ),
-  m_parameters( modelParameters.get< Parameters >() )
+  m_parameters( modelParameters )
 {
   GEOS_UNUSED_VAR( phaseIndex );
 }
@@ -50,8 +51,10 @@ LohrenzBrayClarkViscosity::LohrenzBrayClarkViscosity( string const & name,
 LohrenzBrayClarkViscosity::KernelWrapper
 LohrenzBrayClarkViscosity::createKernelWrapper() const
 {
-  auto const mixingType = EnumStrings< LohrenzBrayClarkViscosityUpdate::MixingType >::fromString( m_parameters->m_componentMixingType );
-  return KernelWrapper( mixingType, m_parameters->m_componentCriticalVolume );
+  Parameters const * parameters = m_parameters.get< Parameters >();
+  CriticalVolume const * criticalVolume = m_parameters.get< CriticalVolume >();
+  auto const mixingType = EnumStrings< LohrenzBrayClarkViscosityUpdate::MixingType >::fromString( parameters->m_componentMixingType );
+  return KernelWrapper( mixingType, criticalVolume->m_componentCriticalVolume );
 }
 
 std::unique_ptr< ModelParameters >
@@ -61,7 +64,7 @@ LohrenzBrayClarkViscosity::createParameters( std::unique_ptr< ModelParameters > 
   {
     return parameters;
   }
-  return std::make_unique< Parameters >( std::move( parameters ) );
+  return std::make_unique< Parameters >( CriticalVolume::create( std::move( parameters )) );
 }
 
 LohrenzBrayClarkViscosity::Parameters::Parameters( std::unique_ptr< ModelParameters > parameters ):
@@ -73,10 +76,6 @@ LohrenzBrayClarkViscosity::Parameters::Parameters( std::unique_ptr< ModelParamet
 
 void LohrenzBrayClarkViscosity::Parameters::registerParametersImpl( MultiFluidBase * fluid )
 {
-  fluid->registerWrapper( viewKeyStruct::componentCriticalVolumeString(), &m_componentCriticalVolume ).
-    setInputFlag( dataRepository::InputFlags::OPTIONAL ).
-    setDescription( "Component critical volumes" );
-
   fluid->registerWrapper( viewKeyStruct::componentMixingTypeString(), &m_componentMixingType ).
     setInputFlag( dataRepository::InputFlags::OPTIONAL ).
     setApplyDefaultValue( m_componentMixingType ).
@@ -87,40 +86,9 @@ void LohrenzBrayClarkViscosity::Parameters::registerParametersImpl( MultiFluidBa
 void LohrenzBrayClarkViscosity::Parameters::postInputInitializationImpl( MultiFluidBase const * fluid,
                                                                          ComponentProperties const & componentProperties )
 {
-  integer const numComponents = fluid->numFluidComponents();
-
-  if( m_componentCriticalVolume.empty() )
-  {
-    m_componentCriticalVolume.resize( numComponents );
-
-    arrayView1d< real64 > const & componentCriticalPressure = componentProperties.getComponentCriticalPressure();
-    arrayView1d< real64 > const & componentCriticalTemperature = componentProperties.getComponentCriticalTemperature();
-
-    calculateCriticalVolume( numComponents,
-                             componentCriticalPressure,
-                             componentCriticalTemperature,
-                             m_componentCriticalVolume );
-  }
-
-  GEOS_THROW_IF_NE_MSG( m_componentCriticalVolume.size(), numComponents,
-                        GEOS_FMT( "{}: invalid number of values in attribute '{}'", fluid->getFullName(),
-                                  viewKeyStruct::componentCriticalVolumeString() ),
-                        InputError );
-
+  GEOS_UNUSED_VAR( fluid, componentProperties );
   // If the value is invalid, this will throw
   EnumStrings< LohrenzBrayClarkViscosityUpdate::MixingType >::fromString( m_componentMixingType );
-}
-
-void LohrenzBrayClarkViscosity::Parameters::calculateCriticalVolume(
-  integer const numComponents,
-  arrayView1d< const real64 > const criticalPressure,
-  arrayView1d< const real64 > const criticalTemperature,
-  arrayView1d< real64 > const criticalVolume )
-{
-  for( integer ic=0; ic<numComponents; ++ic )
-  {
-    criticalVolume[ic] = 2.215e-6 * criticalTemperature[ic] / (0.025 + 1e-6*criticalPressure[ic] );   // m^3/mol
-  }
 }
 
 } // end namespace compositional

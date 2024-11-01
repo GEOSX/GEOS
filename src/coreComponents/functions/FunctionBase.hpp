@@ -5,7 +5,7 @@
  * Copyright (c) 2016-2024 Lawrence Livermore National Security LLC
  * Copyright (c) 2018-2024 Total, S.A
  * Copyright (c) 2018-2024 The Board of Trustees of the Leland Stanford Junior University
- * Copyright (c) 2018-2024 Chevron
+ * Copyright (c) 2023-2024 Chevron
  * Copyright (c) 2019-     GEOS/GEOSX Contributors
  * All rights reserved
  *
@@ -124,6 +124,17 @@ public:
    */
   void setInputVarNames( string_array inputVarNames ) { m_inputVarNames = std::move( inputVarNames ); }
 
+  /**
+   * @brief Get the output directory for function output
+   * @return a string containing the output directory
+   */
+  static string const & getOutputDirectory();
+
+  /**
+   * @brief Set the output directory for function output
+   * @param outputDir The output directory
+   */
+  static void setOutputDirectory( string const & outputDir );
 
 protected:
   /// names for the input variables

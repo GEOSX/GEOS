@@ -22,7 +22,8 @@
       name="fractureMechSolver"
       targetRegions="{ Domain, Fracture }"
       timeIntegrationOption="QuasiStatic"
-      discretization="FE1"/>
+      discretization="FE1"
+      contactPenaltyStiffness="2.0e11"/>
 
     <SinglePhaseFVM
       name="flowSolver"
@@ -49,22 +50,21 @@
     <FiniteVolume>
       <TwoPointFluxApproximation
         name="singlePhaseTPFA"
-        usePEDFM="1"
-      />
+        usePEDFM="1"/>
     </FiniteVolume>
   </NumericalMethods>
 
   <ElementRegions>
     <CellElementRegion
       name="Domain"
-      cellBlocks="{ cb1 }"
+      cellBlocks="{ * }"
       materialList="{ porousRock, water }"/>
 
     <SurfaceElementRegion
       name="Fracture"
       faceBlock="embeddedSurfaceSubRegion"
       subRegionType="embeddedElement"
-      materialList="{ water, fractureFilling, fractureContact }"
+      materialList="{ water, fractureFilling, fractureContact, hApertureModel}"
       defaultAperture="1e-3"/>
   </ElementRegions>
   
@@ -121,9 +121,11 @@
       initialPermeability="{1e-15, 1e-15, 1e-15}"/>
       
     <FrictionlessContact
-      name="fractureContact"
-      penaltyStiffness="2.0e11"
-      apertureTableName="aperTable"/>
+      name="fractureContact"/>
+
+    <HydraulicApertureTable
+      name="hApertureModel"
+      apertureTableName="aperTable"/>  
   </Constitutive>
   
   <Functions>

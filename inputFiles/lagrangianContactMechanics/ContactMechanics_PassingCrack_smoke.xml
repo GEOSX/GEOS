@@ -3,57 +3,35 @@
 <Problem>
   <Included>
     <File
-      name="./ContactMechanics_PassingCrack_base.xml"/>
+      name="./PassingCrack_smoke.xml"/>
   </Included>
 
-  <Mesh>
-    <VTKMesh
-      name="CubeHex"
-      file="passingCrack_smoke.vtu"/>
-  </Mesh>
-
-  <Geometry>
-    <Rectangle
-      name="fracture"
-      normal="{ -0.707106781186548, 0.707106781186548, 0.0 }"
-      origin="{ 1.0, 1.7, 0.25 }"
-      lengthVector="{ 0.707106781186548, 0.707106781186548, 0.0 }"
-      widthVector="{ 0.0, 0.0, 1.0 }"
-      dimensions="{ 2.82842712474619, 0.51 }"/>
-
-    <Rectangle
-      name="core"
-      normal="{ -0.707106781186548, 0.707106781186548, 0.0 }"
-      origin="{ 1.0, 1.7, 0.25 }"
-      lengthVector="{ 0.707106781186548, 0.707106781186548, 0.0 }"
-      widthVector="{ 0.0, 0.0, 1.0 }"
-      dimensions="{ 2.82842712474619, 0.51 }"/>
-
-    <Box
-      name="bottom"
-      xMin="{ -0.1, -0.1, -0.1 }"
-      xMax="{ 2.1, 0.1, 0.6 }"/>
-
-    <Box
-      name="top"
-      xMin="{ -0.1, 3.9, -0.1 }"
-      xMax="{ 2.1, 4.1, 0.6 }"/>
-
-    <Box
-      name="bottomRightCorner"
-      xMin="{ 1.9, -0.1, -0.1 }"
-      xMax="{ 2.1, 0.1, 0.6 }"/>
-
-    <Box
-      name="front"
-      xMin="{ -0.1, -0.1, -0.1 }"
-      xMax="{ 2.1, 4.1, 0.1 }"/>
-
-    <Box
-      name="rear"
-      xMin="{ -0.1, -0.1, 0.4 }"
-      xMax="{ 2.1, 4.1, 0.6 }"/>
-  </Geometry>
+  <Solvers
+    gravityVector="{ 0.0, 0.0, 0.0 }">
+    <SolidMechanicsLagrangeContact
+      name="lagrangiancontact"
+      stabilizationName="TPFAstabilization"
+      logLevel="1"
+      timeIntegrationOption="QuasiStatic"
+      discretization="FE1"
+      targetRegions="{ Region, Fracture }">
+      <NonlinearSolverParameters
+        newtonTol="1.0e-6"
+        logLevel="2"
+        newtonMaxIter="10"
+        lineSearchAction="Require"
+        lineSearchMaxCuts="2"/>
+      <LinearSolverParameters
+        directParallel="0"/>
+    </SolidMechanicsLagrangeContact>
+  </Solvers>
+ 
+  <NumericalMethods>
+    <FiniteVolume>
+      <TwoPointFluxApproximation
+        name="TPFAstabilization"/>
+    </FiniteVolume>
+  </NumericalMethods>
 
   <Events
     maxTime="1.0">
@@ -62,25 +40,22 @@
       target="/Solvers/SurfaceGen"/>
 
     <PeriodicEvent
-      name="solverApplications"
-      beginTime="0.0"
-      endTime="1.0"
-      forceDt="1.0"
-      target="/Solvers/lagrangiancontact"/>
-
-    <PeriodicEvent
       name="restarts"
       timeFrequency="1.0"
       targetExactTimestep="0"
       target="/Outputs/restartOutput"/>
 
-    <!-- This event is applied every 1.0s.  The targetExactTimestep
-    flag allows this event to request a dt modification to match an
-    integer multiple of the timeFrequency. -->
     <PeriodicEvent
       name="outputs"
       timeFrequency="1"
       targetExactTimestep="0"
-      target="/Outputs/siloOutput"/>
+      target="/Outputs/vtkOutput"/>
+
+    <PeriodicEvent
+      name="solverApplications"
+      beginTime="0.0"
+      endTime="1.0"
+      forceDt="1.0"
+      target="/Solvers/lagrangiancontact"/>
   </Events>
 </Problem>

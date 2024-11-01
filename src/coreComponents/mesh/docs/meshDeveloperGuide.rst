@@ -30,7 +30,7 @@ regions (Top and Bottom) (:numref:`modelMeshDevFig`).
 
 DomainPartition
 ===============
-In :numref:`MeshObjectInstantiationHierarchy` the top level object ``DomainPartition`` represents
+In :numref:`diagMeshDevFig` the top level object ``DomainPartition`` represents
 a partition of the decomposed physical domain.
 At this time there is a unique ``DomainPartition`` for every MPI rank.
 
@@ -135,3 +135,13 @@ tetrahedra, one for all hexahedra, one for all wedges and one for all the pyrami
 
 Now that all the classes of the mesh hierarchy has been described, we propose to adapt the diagram
 presented in :numref:`diagMeshDevFig` to match with the example presented in :numref:`modelMeshDevFig`.
+
+Direct links to some useful class documentation:
+
+`ObjectManagerBase API <../../../doxygen_output/html/classgeos_1_1_object_manager_base.html>`_
+
+`MeshLevel API <../../../doxygen_output/html/classgeos_1_1_mesh_level.html>`_
+
+`NodeManager API <../../../doxygen_output/html/classgeos_1_1_node_manager.html>`_
+
+`FaceManager API <../../../doxygen_output/html/classgeos_1_1_face_manager.html>`_

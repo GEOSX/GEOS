@@ -5,7 +5,7 @@
  * Copyright (c) 2016-2024 Lawrence Livermore National Security LLC
  * Copyright (c) 2018-2024 Total, S.A
  * Copyright (c) 2018-2024 The Board of Trustees of the Leland Stanford Junior University
- * Copyright (c) 2018-2024 Chevron
+ * Copyright (c) 2023-2024 Chevron
  * Copyright (c) 2019-     GEOS/GEOSX Contributors
  * All rights reserved
  *
@@ -104,16 +104,17 @@ public:
   {
 
     // arguments of stress exponential at current and previous time step
-    real64 const g = ( m_tau[k] + stack.backgroundStressingRateValue*(time_n+dt))/(stack.directEffectValue*stack.effectiveNormalTraction )
-                     - m_tau_0[k]/(stack.directEffectValue * stack.effectiveNormalTraction_0 );
+    real64 const g   = ( LvArray::math::abs( m_tau[k] ) + stack.backgroundStressingRateValue*(time_n+dt) ) / ( stack.directEffectValue*stack.effectiveNormalTraction ) -
+                       LvArray::math::abs( m_tau_0[k] ) / (stack.directEffectValue * stack.effectiveNormalTraction_0 );
 
-    real64 const g_n = ( m_tau_n[k] + stack.backgroundStressingRateValue*time_n)/(stack.directEffectValue*stack.effectiveNormalTraction_n )
-                       - m_tau_0[k]/(stack.directEffectValue*stack.effectiveNormalTraction_0);
+    real64 const g_n = ( LvArray::math::abs( m_tau_n[k] ) + stack.backgroundStressingRateValue*time_n ) / ( stack.directEffectValue*stack.effectiveNormalTraction_n ) -
+                       LvArray::math::abs( m_tau_0[k] ) / (stack.directEffectValue*stack.effectiveNormalTraction_0);
 
     // Compute the difference of the log of the denominator of closed for integral solution.
     // This avoids directly computing the exponential of the current stress state which is more prone to overflow.
-    m_logDenom[k] += std::log( 1 + dt/(2*(stack.directEffectValue*stack.effectiveNormalTraction_0/stack.backgroundStressingRateValue))
-                               *(std::exp( g - m_logDenom[k] ) + std::exp( g_n - m_logDenom[k] ) ));
+    m_logDenom[k] +=
+      LvArray::math::log( 1 + dt/(2*(stack.directEffectValue*stack.effectiveNormalTraction_0/stack.backgroundStressingRateValue) ) *
+                          ( LvArray::math::exp( g - m_logDenom[k] ) + LvArray::math::exp( g_n - m_logDenom[k] ) ));
 
     // Convert log seismicity rate to raw value
     m_R[k] = LvArray::math::exp( g - m_logDenom[k] );
@@ -157,7 +158,7 @@ public:
   {
     stack.effectiveNormalTraction_0 = -m_sigma_0[k] - m_pressure_0[k];
     stack.effectiveNormalTraction_n = -m_sigma_n[k] - m_pressure_n[k];
-    stack.effectiveNormalTraction   = -m_sigma[k] - m_pressure[k];
+    stack.effectiveNormalTraction   = -m_sigma[k]   - m_pressure[k];
   }
 
 private:

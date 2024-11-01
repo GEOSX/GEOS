@@ -5,7 +5,7 @@
  * Copyright (c) 2016-2024 Lawrence Livermore National Security LLC
  * Copyright (c) 2018-2024 Total, S.A
  * Copyright (c) 2018-2024 The Board of Trustees of the Leland Stanford Junior University
- * Copyright (c) 2018-2024 Chevron
+ * Copyright (c) 2023-2024 Chevron
  * Copyright (c) 2019-     GEOS/GEOSX Contributors
  * All rights reserved
  *
@@ -30,8 +30,6 @@ namespace geos
 
 namespace thermalCompositionalMultiphaseFVMKernels
 {
-
-using namespace constitutive;
 
 /******************************** PhaseMobilityKernel ********************************/
 
@@ -63,8 +61,8 @@ public:
    * @param[in] relperm the relperm model
    */
   PhaseMobilityKernel( ObjectManagerBase & subRegion,
-                       MultiFluidBase const & fluid,
-                       RelativePermeabilityBase const & relperm )
+                       constitutive::MultiFluidBase const & fluid,
+                       constitutive::RelativePermeabilityBase const & relperm )
     : Base( subRegion, fluid, relperm )
   {}
 
@@ -76,13 +74,13 @@ public:
   inline
   void compute( localIndex const ei ) const
   {
-    using Deriv = multifluid::DerivativeOffset;
+    using Deriv = constitutive::multifluid::DerivativeOffset;
 
-    arraySlice1d< real64 const, multifluid::USD_PHASE - 2 > const phaseDens = m_phaseDens[ei][0];
-    arraySlice2d< real64 const, multifluid::USD_PHASE_DC - 2 > const dPhaseDens = m_dPhaseDens[ei][0];
-    arraySlice1d< real64 const, multifluid::USD_PHASE - 2 > const phaseVisc = m_phaseVisc[ei][0];
-    arraySlice2d< real64 const, multifluid::USD_PHASE_DC - 2 > const dPhaseVisc = m_dPhaseVisc[ei][0];
-    arraySlice2d< real64 const, relperm::USD_RELPERM_DS - 2 > const dPhaseRelPerm_dPhaseVolFrac = m_dPhaseRelPerm_dPhaseVolFrac[ei][0];
+    arraySlice1d< real64 const, constitutive::multifluid::USD_PHASE - 2 > const phaseDens = m_phaseDens[ei][0];
+    arraySlice2d< real64 const, constitutive::multifluid::USD_PHASE_DC - 2 > const dPhaseDens = m_dPhaseDens[ei][0];
+    arraySlice1d< real64 const, constitutive::multifluid::USD_PHASE - 2 > const phaseVisc = m_phaseVisc[ei][0];
+    arraySlice2d< real64 const, constitutive::multifluid::USD_PHASE_DC - 2 > const dPhaseVisc = m_dPhaseVisc[ei][0];
+    arraySlice2d< real64 const, constitutive::relperm::USD_RELPERM_DS - 2 > const dPhaseRelPerm_dPhaseVolFrac = m_dPhaseRelPerm_dPhaseVolFrac[ei][0];
     arraySlice2d< real64 const, compflow::USD_PHASE_DC - 1 > const dPhaseVolFrac = m_dPhaseVolFrac[ei];
 
     Base::compute( ei, [&] ( localIndex const ip,
@@ -125,8 +123,8 @@ public:
   createAndLaunch( integer const numComp,
                    integer const numPhase,
                    ObjectManagerBase & subRegion,
-                   MultiFluidBase const & fluid,
-                   RelativePermeabilityBase const & relperm )
+                   constitutive::MultiFluidBase const & fluid,
+                   constitutive::RelativePermeabilityBase const & relperm )
   {
     if( numPhase == 2 )
     {
@@ -213,12 +211,12 @@ public:
     StencilAccessors< fields::flow::temperature >;
 
   using ThermalMultiFluidAccessors =
-    StencilMaterialAccessors< MultiFluidBase,
+    StencilMaterialAccessors< constitutive::MultiFluidBase,
                               fields::multifluid::phaseEnthalpy,
                               fields::multifluid::dPhaseEnthalpy >;
 
   using ThermalConductivityAccessors =
-    StencilMaterialAccessors< MultiPhaseThermalConductivityBase,
+    StencilMaterialAccessors< constitutive::MultiPhaseThermalConductivityBase,
                               fields::thermalconductivity::effectiveConductivity >;
   // for now, we treat thermal conductivity explicitly
 
@@ -305,7 +303,7 @@ public:
   void computeFlux( localIndex const iconn,
                     StackVariables & stack ) const
   {
-    using Deriv = multifluid::DerivativeOffset;
+    using Deriv = constitutive::multifluid::DerivativeOffset;
 
     // ***********************************************
     // First, we call the base computeFlux to compute:
@@ -416,9 +414,9 @@ public:
       // Step 3.2: compute the derivative of component flux wrt temperature
 
       // slice some constitutive arrays to avoid too much indexing in component loop
-      arraySlice1d< real64 const, multifluid::USD_PHASE_COMP - 3 > phaseCompFracSub =
+      arraySlice1d< real64 const, constitutive::multifluid::USD_PHASE_COMP - 3 > phaseCompFracSub =
         m_phaseCompFrac[er_up][esr_up][ei_up][0][ip];
-      arraySlice2d< real64 const, multifluid::USD_PHASE_COMP_DC - 3 > dPhaseCompFracSub =
+      arraySlice2d< real64 const, constitutive::multifluid::USD_PHASE_COMP_DC - 3 > dPhaseCompFracSub =
         m_dPhaseCompFrac[er_up][esr_up][ei_up][0][ip];
 
       for( integer ic = 0; ic < numComp; ++ic )
@@ -588,8 +586,8 @@ protected:
   ElementViewConst< arrayView1d< real64 const > > const m_temp;
 
   /// Views on phase enthalpies
-  ElementViewConst< arrayView3d< real64 const, multifluid::USD_PHASE > > const m_phaseEnthalpy;
-  ElementViewConst< arrayView4d< real64 const, multifluid::USD_PHASE_DC > > const m_dPhaseEnthalpy;
+  ElementViewConst< arrayView3d< real64 const, constitutive::multifluid::USD_PHASE > > const m_phaseEnthalpy;
+  ElementViewConst< arrayView4d< real64 const, constitutive::multifluid::USD_PHASE_DC > > const m_dPhaseEnthalpy;
 
   /// View on thermal conductivity
   ElementViewConst< arrayView3d< real64 const > > const m_thermalConductivity;
@@ -784,7 +782,7 @@ public:
   void computeDiffusionFlux( localIndex const iconn,
                              StackVariables & stack ) const
   {
-    using Deriv = multifluid::DerivativeOffset;
+    using Deriv = constitutive::multifluid::DerivativeOffset;
 
     // ***********************************************
     // First, we call the base computeFlux to compute the diffusionFlux and its derivatives (including derivatives wrt temperature),
@@ -856,7 +854,7 @@ public:
   void computeDispersionFlux( localIndex const iconn,
                               StackVariables & stack ) const
   {
-    using Deriv = multifluid::DerivativeOffset;
+    using Deriv = constitutive::multifluid::DerivativeOffset;
 
     // ***********************************************
     // First, we call the base computeFlux to compute the dispersionFlux and its derivatives (including derivatives wrt temperature),
@@ -1046,12 +1044,12 @@ public:
     StencilAccessors< fields::flow::temperature >;
 
   using ThermalMultiFluidAccessors =
-    StencilMaterialAccessors< MultiFluidBase,
+    StencilMaterialAccessors< constitutive::MultiFluidBase,
                               fields::multifluid::phaseEnthalpy,
                               fields::multifluid::dPhaseEnthalpy >;
 
   using ThermalConductivityAccessors =
-    StencilMaterialAccessors< MultiPhaseThermalConductivityBase,
+    StencilMaterialAccessors< constitutive::MultiPhaseThermalConductivityBase,
                               fields::thermalconductivity::effectiveConductivity >;
   // for now, we treat thermal conductivity explicitly
 
@@ -1160,7 +1158,7 @@ public:
                     StackVariables & stack ) const
   {
     using Order = BoundaryStencil::Order;
-    using Deriv = multifluid::DerivativeOffset;
+    using Deriv = constitutive::multifluid::DerivativeOffset;
 
     // ***********************************************
     // First, we call the base computeFlux to compute:
@@ -1177,8 +1175,8 @@ public:
                                            localIndex const kf,
                                            real64 const f, // potGrad times trans
                                            real64 const facePhaseMob,
-                                           arraySlice1d< const real64, multifluid::USD_PHASE - 2 > const & facePhaseEnthalpy,
-                                           arraySlice2d< const real64, multifluid::USD_PHASE_COMP-2 > const & facePhaseCompFrac,
+                                           arraySlice1d< const real64, constitutive::multifluid::USD_PHASE - 2 > const & facePhaseEnthalpy,
+                                           arraySlice2d< const real64, constitutive::multifluid::USD_PHASE_COMP-2 > const & facePhaseCompFrac,
                                            real64 const phaseFlux,
                                            real64 const dPhaseFlux_dP,
                                            real64 const (&dPhaseFlux_dC)[numComp] )
@@ -1211,9 +1209,9 @@ public:
         // Step 3.2.a: compute the derivative of component flux wrt temperature
 
         // slice some constitutive arrays to avoid too much indexing in component loop
-        arraySlice1d< real64 const, multifluid::USD_PHASE_COMP - 3 > phaseCompFracSub =
+        arraySlice1d< real64 const, constitutive::multifluid::USD_PHASE_COMP - 3 > phaseCompFracSub =
           m_phaseCompFrac[er][esr][ei][0][ip];
-        arraySlice2d< real64 const, multifluid::USD_PHASE_COMP_DC - 3 > dPhaseCompFracSub =
+        arraySlice2d< real64 const, constitutive::multifluid::USD_PHASE_COMP_DC - 3 > dPhaseCompFracSub =
           m_dPhaseCompFrac[er][esr][ei][0][ip];
 
         for( integer ic = 0; ic < numComp; ++ic )
@@ -1346,8 +1344,8 @@ protected:
   ElementViewConst< arrayView1d< real64 const > > const m_temp;
 
   /// Views on phase enthalpies
-  ElementViewConst< arrayView3d< real64 const, multifluid::USD_PHASE > > const m_phaseEnthalpy;
-  ElementViewConst< arrayView4d< real64 const, multifluid::USD_PHASE_DC > > const m_dPhaseEnthalpy;
+  ElementViewConst< arrayView3d< real64 const, constitutive::multifluid::USD_PHASE > > const m_phaseEnthalpy;
+  ElementViewConst< arrayView4d< real64 const, constitutive::multifluid::USD_PHASE_DC > > const m_dPhaseEnthalpy;
 
   /// View on thermal conductivity
   ElementViewConst< arrayView3d< real64 const > > const m_thermalConductivity;
@@ -1390,7 +1388,7 @@ public:
                    FaceManager const & faceManager,
                    ElementRegionManager const & elemManager,
                    STENCILWRAPPER const & stencilWrapper,
-                   MultiFluidBase & fluidBase,
+                   constitutive::MultiFluidBase & fluidBase,
                    real64 const dt,
                    CRSMatrixView< real64, globalIndex const > const & localMatrix,
                    arrayView1d< real64 > const & localRhs )

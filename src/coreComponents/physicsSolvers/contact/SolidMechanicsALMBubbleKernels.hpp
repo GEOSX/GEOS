@@ -5,7 +5,7 @@
  * Copyright (c) 2016-2024 Lawrence Livermore National Security LLC
  * Copyright (c) 2018-2024 Total, S.A
  * Copyright (c) 2018-2024 The Board of Trustees of the Leland Stanford Junior University
- * Copyright (c) 2018-2024 Chevron
+ * Copyright (c) 2023-2024 Chevron
  * Copyright (c) 2019-     GEOS/GEOSX Contributors
  * All rights reserved
  *
@@ -285,30 +285,7 @@ public:
     real64 strainBubbleMatrix[6][nBubbleUdof];
     solidMechanicsALMKernelsHelper::assembleStrainOperator< 6, nBubbleUdof, numFacesPerElem >( strainBubbleMatrix, dBubbleNdX );
 
-    // TODO: Use the following functions
-    //using namespace PDEUtilities;
-    //constexpr FunctionSpace displacementTrialSpace = FE_TYPE::template getFunctionSpace< numDofPerTrialSupportPoint >();
-    //constexpr FunctionSpace displacementTestSpace = displacementTrialSpace;
-    //real64 Abb_bilinear[nBubbleUdof][nBubbleUdof];
-    //BilinearFormUtilities::compute< displacementTrialSpace,
-    //                                displacementTestSpace,
-    //                                DifferentialOperator::SymmetricGradient,
-    //                                DifferentialOperator::SymmetricGradient >
-    //(
-    //  Abb_bilinear,
-    //  dBubbleNdX,
-    //  stack.constitutiveStiffness, // fourth-order tensor handled via DiscretizationOps
-    //  dBubbleNdX,
-    //  -detJ );
-
-
-    //LinearFormUtilities::compute< displacementTestSpace,
-    //                            DifferentialOperator::Identity >
-    //(
-    //stack.localResidualMomentum,
-    //N,
-    //stack.bodyForce,
-    //detJxW );
+    // TODO: It would be nice use BilinearFormUtilities::compute
 
     real64 matBD[nBubbleUdof][6];
     real64 Abb_gauss[nBubbleUdof][nBubbleUdof], Abu_gauss[nBubbleUdof][nUdof], Aub_gauss[nUdof][nBubbleUdof];
@@ -323,12 +300,28 @@ public:
     LvArray::tensorOps::Rij_eq_AikBkj< nBubbleUdof, nBubbleUdof, 6 >( Abb_gauss, matBD, strainBubbleMatrix );
 
     // transp(B)DBb
-    tensorOps::transpose< nUdof, nBubbleUdof >( Aub_gauss, Abu_gauss );
+    LvArray::tensorOps::transpose< nUdof, nBubbleUdof >( Aub_gauss, Abu_gauss );
 
     // multiply by determinant and add to element matrix
     LvArray::tensorOps::scaledAdd< nBubbleUdof, nBubbleUdof >( stack.localAbb, Abb_gauss, -detJ );
     LvArray::tensorOps::scaledAdd< nBubbleUdof, nUdof >( stack.localAbu, Abu_gauss, -detJ );
     LvArray::tensorOps::scaledAdd< nUdof, nBubbleUdof >( stack.localAub, Aub_gauss, -detJ );
+
+    // Compute the initial stress
+    // The following block assumes a linear elastic constitutive model
+    real64 rb_gauss[nBubbleUdof]{};
+    real64 strain[6] = {0};
+    LvArray::tensorOps::Ri_eq_AijBj< 6, nUdof >( strain, strainMatrix, stack.uLocal );
+
+    real64 initStressLocal[ 6 ] = {0};
+    LvArray::tensorOps::Ri_eq_AijBj< 6, 6 >( initStressLocal, stack.constitutiveStiffness, strain );
+    for( localIndex c = 0; c < 6; ++c )
+    {
+      initStressLocal[ c ] -= m_constitutiveUpdate.m_newStress( k, q, c );
+    }
+
+    LvArray::tensorOps::Ri_eq_AjiBj< nBubbleUdof, 6 >( rb_gauss, strainBubbleMatrix, initStressLocal );
+    LvArray::tensorOps::scaledAdd< nBubbleUdof >( stack.localRb, rb_gauss, detJ );
 
   }
 

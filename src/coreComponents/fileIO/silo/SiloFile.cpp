@@ -5,7 +5,7 @@
  * Copyright (c) 2016-2024 Lawrence Livermore National Security LLC
  * Copyright (c) 2018-2024 Total, S.A
  * Copyright (c) 2018-2024 The Board of Trustees of the Leland Stanford Junior University
- * Copyright (c) 2018-2024 Chevron
+ * Copyright (c) 2023-2024 Chevron
  * Copyright (c) 2019-     GEOS/GEOSX Contributors
  * All rights reserved
  *
@@ -25,13 +25,13 @@
 
 #include "codingUtilities/Utilities.hpp"
 #include "common/DataTypes.hpp"
-#include "common/Logger.hpp"
+#include "common/logger/Logger.hpp"
 #include "common/MpiWrapper.hpp"
 #include "common/TypeDispatch.hpp"
 #include "constitutive/ConstitutiveManager.hpp"
 #include "constitutive/fluid/singlefluid/SingleFluidBase.hpp"
 #include "constitutive/fluid/multifluid/MultiFluidBase.hpp"
-#include "constitutive/contact/ContactBase.hpp"
+#include "constitutive/contact/FrictionBase.hpp"
 #include "constitutive/NullModel.hpp"
 #include "fileIO/Outputs/OutputUtilities.hpp"
 #include "mesh/DomainPartition.hpp"
@@ -283,7 +283,7 @@ void SiloFile::makeSiloDirectories()
 
   int rank=0;
 #ifdef GEOS_USE_MPI
-  MPI_Comm_rank( MPI_COMM_GEOSX, &rank );
+  MPI_Comm_rank( MPI_COMM_GEOS, &rank );
 #endif
 
   if( rank==0 )
@@ -305,12 +305,12 @@ void SiloFile::initialize( int const MPI_PARAM( numGroups ) )
 #else
   m_numGroups = 1;
 #endif
-  MpiWrapper::bcast( &m_numGroups, 1, 0, MPI_COMM_GEOSX );
-//  MPI_Bcast( const_cast<int*>(&m_driver), 1, MPI_INT, 0, MPI_COMM_GEOSX);
+  MpiWrapper::bcast( &m_numGroups, 1, 0, MPI_COMM_GEOS );
+//  MPI_Bcast( const_cast<int*>(&m_driver), 1, MPI_INT, 0, MPI_COMM_GEOS);
   // Initialize PMPIO, pass a pointer to the driver type as the user data.
   m_baton = PMPIO_Init( m_numGroups,
                         PMPIO_WRITE,
-                        MPI_COMM_GEOSX,
+                        MPI_COMM_GEOS,
                         1,
                         PMPIO_DefaultCreate,
                         PMPIO_DefaultOpen,
@@ -348,7 +348,7 @@ void SiloFile::waitForBatonWrite( int const domainNumber,
 
   int rank = 0;
 #ifdef GEOS_USE_MPI
-  MPI_Comm_rank( MPI_COMM_GEOSX, &rank );
+  MPI_Comm_rank( MPI_COMM_GEOS, &rank );
 #endif
   int const groupRank = PMPIO_GroupRank( m_baton, rank );
 
@@ -382,7 +382,7 @@ void SiloFile::waitForBaton( int const domainNumber, string const & restartFileN
 
   int rank = 0;
 #ifdef GEOS_USE_MPI
-  MPI_Comm_rank( MPI_COMM_GEOSX, &rank );
+  MPI_Comm_rank( MPI_COMM_GEOS, &rank );
 #endif
   int const groupRank = PMPIO_GroupRank( m_baton, rank );
 
@@ -416,7 +416,7 @@ void SiloFile::handOffBaton()
 
   int rank = 0;
 #ifdef GEOS_USE_MPI
-  MPI_Comm_rank( MPI_COMM_GEOSX, &rank );
+  MPI_Comm_rank( MPI_COMM_GEOS, &rank );
 #endif
   if( rank==0 )
   {
@@ -578,7 +578,7 @@ void SiloFile::writeMeshObject( string const & meshName,
   // write multimesh object
   int rank = 0;
 #ifdef GEOS_USE_MPI
-  MPI_Comm_rank( MPI_COMM_GEOSX, &rank );
+  MPI_Comm_rank( MPI_COMM_GEOS, &rank );
 #endif
   if( rank == 0 )
   {
@@ -653,7 +653,7 @@ void SiloFile::writeBeamMesh( string const & meshName,
   {
     int rank = 0;
   #ifdef GEOS_USE_MPI
-    MPI_Comm_rank( MPI_COMM_GEOSX, &rank );
+    MPI_Comm_rank( MPI_COMM_GEOS, &rank );
   #endif
     if( rank == 0 )
     {
@@ -686,7 +686,7 @@ void SiloFile::writePointMesh( string const & meshName,
   {
     int rank = 0;
   #ifdef GEOS_USE_MPI
-    MPI_Comm_rank( MPI_COMM_GEOSX, &rank );
+    MPI_Comm_rank( MPI_COMM_GEOS, &rank );
   #endif
     if( rank == 0 )
     {
@@ -814,12 +814,12 @@ void SiloFile::writeMaterialMapsFullStorage( ElementRegionBase const & elemRegio
     // write multimesh object
     int rank = 0;
   #ifdef GEOS_USE_MPI
-    MPI_Comm_rank( MPI_COMM_GEOSX, &rank );
+    MPI_Comm_rank( MPI_COMM_GEOS, &rank );
   #endif
     if( rank == 0 )
     {
 
-      int const size = MpiWrapper::commSize( MPI_COMM_GEOSX );
+      int const size = MpiWrapper::commSize( MPI_COMM_GEOS );
 
       array1d< string > vBlockNames( size );
       std::vector< char * > BlockNames( size );
@@ -983,8 +983,8 @@ void SiloFile::writeMaterialVarDefinition( string const & subDir,
 void SiloFile::clearEmptiesFromMultiObjects( int const cycleNum )
 {
 
-  int const size = MpiWrapper::commSize( MPI_COMM_GEOSX );
-  int const rank = MpiWrapper::commRank( MPI_COMM_GEOSX );
+  int const size = MpiWrapper::commSize( MPI_COMM_GEOS );
+  int const rank = MpiWrapper::commRank( MPI_COMM_GEOS );
 
   string sendbufferVars;
   string sendbufferMesh;
@@ -1015,7 +1015,7 @@ void SiloFile::clearEmptiesFromMultiObjects( int const cycleNum )
 
   integer_array rcounts( size );
   integer_array displs( size );
-  MpiWrapper::gather( &sizeOfSendBufferVars, 1, rcounts.data(), 1, 0, MPI_COMM_GEOSX );
+  MpiWrapper::gather( &sizeOfSendBufferVars, 1, rcounts.data(), 1, 0, MPI_COMM_GEOS );
 
   int sizeOfReceiveBuffer = 0;
   displs[0] = 0;
@@ -1032,10 +1032,10 @@ void SiloFile::clearEmptiesFromMultiObjects( int const cycleNum )
                         rcounts.data(),
                         displs.data(),
                         0,
-                        MPI_COMM_GEOSX );
+                        MPI_COMM_GEOS );
 
 
-  MpiWrapper::gather( &sizeOfSendBufferMesh, 1, rcounts.data(), 1, 0, MPI_COMM_GEOSX );
+  MpiWrapper::gather( &sizeOfSendBufferMesh, 1, rcounts.data(), 1, 0, MPI_COMM_GEOS );
 
   int sizeOfReceiveBufferMesh = 0;
   displs[0] = 0;
@@ -1052,7 +1052,7 @@ void SiloFile::clearEmptiesFromMultiObjects( int const cycleNum )
                         rcounts.data(),
                         displs.data(),
                         0,
-                        MPI_COMM_GEOSX );
+                        MPI_COMM_GEOS );
 
 
 
@@ -1468,7 +1468,7 @@ void SiloFile::writeElementMesh( ElementRegionBase const & elementRegion,
     localIndex const numFluids = regionFluidMaterialList.size();
 
     string_array
-      fractureContactMaterialList = elementRegion.getConstitutiveNames< constitutive::ContactBase >();
+      fractureContactMaterialList = elementRegion.getConstitutiveNames< constitutive::FrictionBase >();
 
     localIndex const numContacts = fractureContactMaterialList.size();
 
@@ -2112,7 +2112,7 @@ void SiloFile::writeMultiXXXX( const DBObjectType type,
 
   int size = 1;
 #ifdef GEOS_USE_MPI
-  MPI_Comm_size( MPI_COMM_GEOSX, &size );
+  MPI_Comm_size( MPI_COMM_GEOS, &size );
 #endif
 
   string_array vBlockNames( size );
@@ -2260,7 +2260,7 @@ void SiloFile::writeDataField( string const & meshName,
   // write multimesh object
   int rank = 0;
 #ifdef GEOS_USE_MPI
-  MPI_Comm_rank( MPI_COMM_GEOSX, &rank );
+  MPI_Comm_rank( MPI_COMM_GEOS, &rank );
 #endif
   if( rank == 0 )
   {
@@ -2529,7 +2529,7 @@ void SiloFile::writeDataField( string const & meshName,
   // write multimesh object
   int rank = 0;
 #ifdef GEOS_USE_MPI
-  MPI_Comm_rank( MPI_COMM_GEOSX, &rank );
+  MPI_Comm_rank( MPI_COMM_GEOS, &rank );
 #endif
   if( rank == 0 )
   {
@@ -2817,7 +2817,7 @@ void SiloFile::writeMaterialDataField( string const & meshName,
   // write multimesh object
   int rank = 0;
 #ifdef GEOS_USE_MPI
-  MPI_Comm_rank( MPI_COMM_GEOSX, &rank );
+  MPI_Comm_rank( MPI_COMM_GEOS, &rank );
 #endif
   if( rank == 0 )
   {
@@ -3127,7 +3127,7 @@ void SiloFile::writeStressVarDefinition( string const & MatDir )
 void SiloFile::writeVectorVarDefinition( string const & fieldName,
                                          string const & subDirectory )
 {
-  if( MpiWrapper::commRank( MPI_COMM_GEOSX ) == 0 )
+  if( MpiWrapper::commRank( MPI_COMM_GEOS ) == 0 )
   {
     DBSetDir( m_dbBaseFilePtr, subDirectory.c_str() );
     DBtoc * const siloTOC = DBGetToc ( m_dbBaseFilePtr );

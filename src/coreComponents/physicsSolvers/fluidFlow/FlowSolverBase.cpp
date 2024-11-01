@@ -5,7 +5,7 @@
  * Copyright (c) 2016-2024 Lawrence Livermore National Security LLC
  * Copyright (c) 2018-2024 Total, S.A
  * Copyright (c) 2018-2024 The Board of Trustees of the Leland Stanford Junior University
- * Copyright (c) 2018-2024 Chevron
+ * Copyright (c) 2023-2024 Chevron
  * Copyright (c) 2019-     GEOS/GEOSX Contributors
  * All rights reserved
  *
@@ -22,6 +22,7 @@
 #include "constitutive/ConstitutivePassThru.hpp"
 #include "constitutive/permeability/PermeabilityFields.hpp"
 #include "constitutive/solid/SolidInternalEnergy.hpp"
+#include "constitutive/contact/HydraulicApertureBase.hpp"
 #include "discretizationMethods/NumericalMethodsManager.hpp"
 #include "fieldSpecification/AquiferBoundaryCondition.hpp"
 #include "fieldSpecification/EquilibriumInitialCondition.hpp"
@@ -586,12 +587,12 @@ void FlowSolverBase::findMinMaxElevationInEquilibriumTarget( DomainPartition & d
                          maxElevation.data(),
                          localMaxElevation.size(),
                          MpiWrapper::getMpiOp( MpiWrapper::Reduction::Max ),
-                         MPI_COMM_GEOSX );
+                         MPI_COMM_GEOS );
   MpiWrapper::allReduce( localMinElevation.data(),
                          minElevation.data(),
                          localMinElevation.size(),
                          MpiWrapper::getMpiOp( MpiWrapper::Reduction::Min ),
-                         MPI_COMM_GEOSX );
+                         MPI_COMM_GEOS );
 }
 
 void FlowSolverBase::computeSourceFluxSizeScalingFactor( real64 const & time,
@@ -641,7 +642,7 @@ void FlowSolverBase::computeSourceFluxSizeScalingFactor( real64 const & time,
                          bcAllSetsSize.data(),
                          bcAllSetsSize.size(),
                          MpiWrapper::getMpiOp( MpiWrapper::Reduction::Sum ),
-                         MPI_COMM_GEOSX );
+                         MPI_COMM_GEOS );
 }
 
 void FlowSolverBase::saveAquiferConvergedState( real64 const & time,
@@ -725,7 +726,7 @@ void FlowSolverBase::saveAquiferConvergedState( real64 const & time,
                          globalSumFluxes.data(),
                          localSumFluxes.size(),
                          MpiWrapper::getMpiOp( MpiWrapper::Reduction::Sum ),
-                         MPI_COMM_GEOSX );
+                         MPI_COMM_GEOS );
 
   // Step 3: we are ready to save the summed fluxes for each individual aquifer
 
@@ -794,13 +795,13 @@ void FlowSolverBase::updateStencilWeights( DomainPartition & domain ) const
 bool FlowSolverBase::checkSequentialSolutionIncrements( DomainPartition & GEOS_UNUSED_PARAM( domain ) ) const
 {
 
-  GEOS_LOG_LEVEL_RANK_0( 1, GEOS_FMT( "    {}: Max pressure change during outer iteration: {} Pa",
-                                      getName(), fmt::format( "{:.{}f}", m_sequentialPresChange, 3 ) ) );
+  GEOS_LOG_LEVEL_INFO_RANK_0( logInfo::Convergence, GEOS_FMT( "    {}: Max pressure change during outer iteration: {} Pa",
+                                                              getName(), fmt::format( "{:.{}f}", m_sequentialPresChange, 3 ) ) );
 
   if( m_isThermal )
   {
-    GEOS_LOG_LEVEL_RANK_0( 1, GEOS_FMT( "    {}: Max temperature change during outer iteration: {} K",
-                                        getName(), fmt::format( "{:.{}f}", m_sequentialTempChange, 3 ) ) );
+    GEOS_LOG_LEVEL_INFO_RANK_0( logInfo::Convergence, GEOS_FMT( "    {}: Max temperature change during outer iteration: {} K",
+                                                                getName(), fmt::format( "{:.{}f}", m_sequentialTempChange, 3 ) ) );
   }
 
   return (m_sequentialPresChange < m_maxSequentialPresChange) && (m_sequentialTempChange < m_maxSequentialTempChange);

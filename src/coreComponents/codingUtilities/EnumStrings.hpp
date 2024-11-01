@@ -5,7 +5,7 @@
  * Copyright (c) 2016-2024 Lawrence Livermore National Security LLC
  * Copyright (c) 2018-2024 Total, S.A
  * Copyright (c) 2018-2024 The Board of Trustees of the Leland Stanford Junior University
- * Copyright (c) 2018-2024 Chevron
+ * Copyright (c) 2023-2024 Chevron
  * Copyright (c) 2019-     GEOS/GEOSX Contributors
  * All rights reserved
  *
@@ -25,10 +25,11 @@
 #ifndef GEOS_CODINGUTILITIES_ENUMSTRINGS_HPP
 #define GEOS_CODINGUTILITIES_ENUMSTRINGS_HPP
 
-#include "codingUtilities/StringUtilities.hpp"
+#include "common/format/StringUtilities.hpp"
+#include "codingUtilities/RTTypes.hpp"
 #include "common/DataTypes.hpp"
-#include "common/Logger.hpp"
-#include "common/Format.hpp"
+#include "common/logger/Logger.hpp"
+#include "common/format/Format.hpp"
 
 #include <iostream>
 #include <type_traits>
@@ -178,7 +179,7 @@ struct TypeRegex< ENUM, std::enable_if_t< internal::HasEnumStrings< ENUM > > >
   static Regex get()
   {
     return Regex( EnumStrings< ENUM >::concat( "|" ),
-                  "Input value must be one of { " + EnumStrings< ENUM >::concat( ", " ) + "}." );
+                  "Input value must be one of { " + EnumStrings< ENUM >::concat( ", " ) + " }." );
   }
 };
 

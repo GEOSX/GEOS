@@ -5,7 +5,7 @@
  * Copyright (c) 2016-2024 Lawrence Livermore National Security LLC
  * Copyright (c) 2018-2024 Total, S.A
  * Copyright (c) 2018-2024 The Board of Trustees of the Leland Stanford Junior University
- * Copyright (c) 2018-2024 Chevron
+ * Copyright (c) 2023-2024 Chevron
  * Copyright (c) 2019-     GEOS/GEOSX Contributors
  * All rights reserved
  *
@@ -142,7 +142,7 @@ private:
     void computeDensitiesViscosities( bool const needDerivs,
                                       real64 const pressure,
                                       real64 const composition[NC_BO],
-                                      arraySlice1d< real64 const, multifluid::USD_PHASE - 2 > const & phaseFrac,
+                                      arraySlice1d< real64 const, constitutive::multifluid::USD_PHASE - 2 > const & phaseFrac,
                                       PhaseProp::SliceType const & phaseDens,
                                       PhaseProp::SliceType const & phaseMassDens,
                                       PhaseProp::SliceType const & phaseVisc,
@@ -253,7 +253,7 @@ private:
                                  real64 const dBo_dPres,
                                  real64 const dBo_dComp[HNC_BO],
                                  real64 & dens,
-                                 arraySlice1d< real64, multifluid::USD_PHASE_DC - 3 > const & dDens ) const;
+                                 arraySlice1d< real64, constitutive::multifluid::USD_PHASE_DC - 3 > const & dDens ) const;
 
     /// Data needed to update the oil phase properties
     PVTOData::KernelWrapper m_PVTOView;
@@ -415,7 +415,7 @@ BlackOilFluid::KernelWrapper::
                       PhaseProp::SliceType const & phaseFraction,
                       PhaseComp::SliceType const & phaseCompFraction ) const
 {
-  using Deriv = multifluid::DerivativeOffset;
+  using Deriv = constitutive::multifluid::DerivativeOffset;
   using PT = BlackOilFluid::PhaseType;
 
   integer const ipOil   = m_phaseOrder[PT::OIL];
@@ -563,14 +563,14 @@ BlackOilFluid::KernelWrapper::
   computeDensitiesViscosities( bool const needDerivs,
                                real64 const pressure,
                                real64 const composition[NC_BO],
-                               arraySlice1d< real64 const, multifluid::USD_PHASE - 2 > const & phaseFrac,
+                               arraySlice1d< real64 const, constitutive::multifluid::USD_PHASE - 2 > const & phaseFrac,
                                PhaseProp::SliceType const & phaseDens,
                                PhaseProp::SliceType const & phaseMassDens,
                                PhaseProp::SliceType const & phaseVisc,
                                real64 phaseMolecularWeight[NP_BO],
                                real64 dPhaseMolecularWeight[NP_BO][NC_BO+2] ) const
 {
-  using Deriv = multifluid::DerivativeOffset;
+  using Deriv = constitutive::multifluid::DerivativeOffset;
   using PT = BlackOilFluid::PhaseType;
 
   integer const ipOil = m_phaseOrder[PT::OIL];
@@ -905,9 +905,9 @@ BlackOilFluid::KernelWrapper::
                           real64 const dBo_dPres,
                           real64 const dBo_dComp[HNC_BO],
                           real64 & dens,
-                          arraySlice1d< real64, multifluid::USD_PHASE_DC - 3 > const & dDens ) const
+                          arraySlice1d< real64, constitutive::multifluid::USD_PHASE_DC - 3 > const & dDens ) const
 {
-  using Deriv = multifluid::DerivativeOffset;
+  using Deriv = constitutive::multifluid::DerivativeOffset;
   using PT = BlackOilFluid::PhaseType;
 
   real64 const oilDens = (useMass)? m_PVTOView.m_surfaceMassDensity[PT::OIL]:
