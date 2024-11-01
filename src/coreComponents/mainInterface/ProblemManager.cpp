@@ -702,7 +702,6 @@ void ProblemManager::generateMesh()
 
 
 
-
   domain.outputPartitionInformation();
 
   domain.forMeshBodies( [&]( MeshBody & meshBody )

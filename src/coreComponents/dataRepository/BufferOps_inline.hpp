@@ -1844,7 +1844,6 @@ Unpack( buffer_unit_type const * & buffer,
 
     if( unmappedIndices.size()>0 )
     {
-      GEOS_ERROR( "Unmapped global index" );
       unmappedGlobalIndices[li] = unmappedIndices;
     }
 

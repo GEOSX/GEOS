@@ -299,36 +299,6 @@ localIndex NodeManager::unpackUpDownMaps( buffer_unit_type const * & buffer,
                                      m_toElements.getElementRegionManager(),
                                      overwriteUpMaps );
 
-  MpiWrapper::barrier();
-  for( int rank=0; rank<MpiWrapper::commSize(); ++rank )
-  {
-    if( rank==MpiWrapper::commRank() )
-    {
-      if( m_unmappedGlobalIndicesInToEdges.size() > 0 )
-      {
-        std::cout<<"  Rank "<<MpiWrapper::commRank()<< std::endl;
-        for( auto const & entryPair : m_unmappedGlobalIndicesInToEdges )
-        {
-          localIndex const localNode = entryPair.first;
-          std::cout<<"  local node ("<<localNode<<"): ";
-
-          SortedArray< globalIndex > const & globalIndices = entryPair.second;
-          for( globalIndex const edgeGlobalIndex : globalIndices )
-          {
-            std::cout<<edgeGlobalIndex<<" ";
-          }
-          std::cout<<std::endl;
-        }
-      }
-    }
-  }
-  MpiWrapper::barrier();
-
-  // This is OK because all of the maps are upward pointing and can't be filled
-  // GEOS_ERROR_IF_NE( m_unmappedGlobalIndicesInToEdges.size(), 0 );
-  // GEOS_ERROR_IF_NE( m_unmappedGlobalIndicesInToFaces.size(), 0 );
-
-
   return unPackedSize;
 }
 

@@ -307,21 +307,20 @@ void NeighborCommunicator::unpackGhosts( MeshLevel & mesh,
 
   m_edgeUnpackList.resize( 0 );
   m_unpackedSize += edgeManager.unpackGlobalMaps( m_receiveBufferPtr, m_edgeUnpackList, 0 );
-  }
-  MpiWrapper::barrier();
+}
+MpiWrapper::barrier();
 
 
 
+m_faceUnpackList.resize( 0 );
+m_unpackedSize += faceManager.unpackGlobalMaps( m_receiveBufferPtr, m_faceUnpackList, 0 );
 
-  m_faceUnpackList.resize( 0 );
-  m_unpackedSize += faceManager.unpackGlobalMaps( m_receiveBufferPtr, m_faceUnpackList, 0 );
+m_elementAdjacencyReceiveListArray =
+  elemManager.constructReferenceAccessor< localIndex_array >( ObjectManagerBase::viewKeyStruct::ghostsToReceiveString(),
+                                                              std::to_string( this->m_neighborRank ) );
 
-  m_elementAdjacencyReceiveListArray =
-    elemManager.constructReferenceAccessor< localIndex_array >( ObjectManagerBase::viewKeyStruct::ghostsToReceiveString(),
-                                                                std::to_string( this->m_neighborRank ) );
-
-  m_unpackedSize += elemManager.unpackGlobalMaps( m_receiveBufferPtr,
-                                                  m_elementAdjacencyReceiveListArray );
+m_unpackedSize += elemManager.unpackGlobalMaps( m_receiveBufferPtr,
+                                                m_elementAdjacencyReceiveListArray );
 
 
 }
