@@ -337,7 +337,7 @@ struct StateUpdateKernel
    * @param[out] deltaVolume the change in volume
    * @param[out] aperture the aperture
    * @param[out] hydraulicAperture the effecture aperture
-   * @param[out] fractureContactTraction the fracture contact traction 
+   * @param[out] fractureContactTraction the fracture contact traction
    */
   template< typename POLICY, typename POROUS_WRAPPER, typename CONTACT_WRAPPER >
   static void
@@ -371,7 +371,7 @@ struct StateUpdateKernel
       real64 const jump[3] = LVARRAY_TENSOROPS_INIT_LOCAL_3 ( dispJump[k] );
       real64 const effectiveTraction[3] = LVARRAY_TENSOROPS_INIT_LOCAL_3 ( fractureEffectiveTraction[k] );
 
-      // all perm update models below should need effective traction instead of total traction 
+      // all perm update models below should need effective traction instead of total traction
       // (total traction is combined forces of fluid pressure and effective traction)
       porousMaterialWrapper.updateStateFromPressureApertureJumpAndTraction( k, 0, pressure[k],
                                                                             oldHydraulicAperture[k], hydraulicAperture[k],

@@ -107,7 +107,7 @@ public:
           inputDt,
           inputGravityVector ),
     m_w( embeddedSurfSubRegion.getField< fields::contact::dispJump >().toView() ),
-    m_effStress(inputConstitutiveType.getStress()),
+    m_effStress( inputConstitutiveType.getStress()),
     m_tractionVec( embeddedSurfSubRegion.getField< fields::contact::traction >().toViewConst() ),
     m_dTraction_dJump( embeddedSurfSubRegion.getField< fields::contact::dTraction_dJump >().toViewConst() ),
     m_nVec( embeddedSurfSubRegion.getNormalVector().toViewConst() ),
@@ -301,7 +301,7 @@ public:
     // transp(B)DB
     LvArray::tensorOps::Rij_eq_AikBjk< nUdof, 3, 6 >( Kuw_gauss, matBD, compMatrix );
     // EqMatrix * effStress
-    LvArray::tensorOps::Ri_eq_AijBj<3, 6> (eqMStress_gauss, eqMatrix, m_effStress[k][q]);
+    LvArray::tensorOps::Ri_eq_AijBj< 3, 6 >( eqMStress_gauss, eqMatrix, m_effStress[k][q] );
 
     /// FIX: add old Equilibrium operator times oldStress (in Voigt notation)
 
@@ -309,7 +309,7 @@ public:
     LvArray::tensorOps::scaledAdd< 3, 3 >( stack.localKww, Kww_gauss, -detJ );
     LvArray::tensorOps::scaledAdd< 3, nUdof >( stack.localKwu, Kwu_gauss, -detJ );
     LvArray::tensorOps::scaledAdd< nUdof, 3 >( stack.localKuw, Kuw_gauss, -detJ );
-    LvArray::tensorOps::scaledAdd< 3 > (stack.localEqMStress, eqMStress_gauss, -detJ);
+    LvArray::tensorOps::scaledAdd< 3 >( stack.localEqMStress, eqMStress_gauss, -detJ );
   }
 
 protected:
