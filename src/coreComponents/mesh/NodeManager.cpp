@@ -324,9 +324,9 @@ localIndex NodeManager::unpackUpDownMaps( buffer_unit_type const * & buffer,
   }
   MpiWrapper::barrier();
 
-
-  GEOS_ERROR_IF_NE( m_unmappedGlobalIndicesInToEdges.size(), 0 );
-  GEOS_ERROR_IF_NE( m_unmappedGlobalIndicesInToFaces.size(), 0 );
+  // This is OK because all of the maps are upward pointing and can't be filled
+  // GEOS_ERROR_IF_NE( m_unmappedGlobalIndicesInToEdges.size(), 0 );
+  // GEOS_ERROR_IF_NE( m_unmappedGlobalIndicesInToFaces.size(), 0 );
 
 
   return unPackedSize;

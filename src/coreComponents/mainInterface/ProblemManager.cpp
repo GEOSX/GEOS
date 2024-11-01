@@ -679,8 +679,6 @@ void ProblemManager::generateMesh()
     }
   }
 
-  domain.setupCommunications( useNonblockingMPI );
-
 
   //***** Leave here for debugging purposes
   // domain.forMeshBodies( [&]( MeshBody & meshBody )
@@ -699,6 +697,11 @@ void ProblemManager::generateMesh()
 
   // } );
   //***** End Leave here for debugging purposes
+
+  domain.setupCommunications( useNonblockingMPI );
+
+
+
 
   domain.outputPartitionInformation();
 
