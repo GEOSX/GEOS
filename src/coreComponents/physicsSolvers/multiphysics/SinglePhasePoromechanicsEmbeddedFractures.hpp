@@ -105,8 +105,6 @@ protected:
 
   virtual void initializePostInitialConditionsPreSubGroups() override final;
 
-  virtual void setMGRStrategy() override;
-
 private:
 
   template< typename CONSTITUTIVE_BASE,

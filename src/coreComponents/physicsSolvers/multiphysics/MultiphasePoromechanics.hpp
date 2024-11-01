@@ -109,11 +109,7 @@ protected:
 
   virtual void initializePostInitialConditionsPreSubGroups() override;
 
-  virtual void setMGRStrategy()
-  {
-    if( this->m_linearSolverParameters.get().preconditionerType == LinearSolverParameters::PreconditionerType::mgr )
-      GEOS_ERROR( GEOS_FMT( "{}: MGR strategy is not implemented for {}", this->getName(), this->getCatalogName()));
-  }
+
 
 private:
 
@@ -134,6 +130,7 @@ private:
                          arrayView1d< real64 > const & localRhs,
                          real64 const dt,
                          PARAMS && ... params );
+
 
 };
 

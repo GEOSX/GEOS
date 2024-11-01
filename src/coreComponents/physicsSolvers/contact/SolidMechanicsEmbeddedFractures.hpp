@@ -127,8 +127,6 @@ protected:
 
   virtual void postInputInitialization() override final;
 
-  void setMGRStrategy();
-
 private:
 
   void updateJump( DofManager const & dofManager,

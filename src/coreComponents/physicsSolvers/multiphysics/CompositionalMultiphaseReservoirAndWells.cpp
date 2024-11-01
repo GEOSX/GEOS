@@ -75,23 +75,16 @@ void
 CompositionalMultiphaseReservoirAndWells<>::
 setMGRStrategy()
 {
-  LinearSolverParameters & linearSolverParameters = m_linearSolverParameters.get();
-
-  if( linearSolverParameters.preconditionerType != LinearSolverParameters::PreconditionerType::mgr )
-    return;
-
-  if( dynamic_cast< CompositionalMultiphaseHybridFVM * >( flowSolver() ) )
+  if( flowSolver()->getLinearSolverParameters().mgr.strategy == LinearSolverParameters::MGR::StrategyType::compositionalMultiphaseHybridFVM )
   {
     // add Reservoir
-    linearSolverParameters.mgr.strategy = LinearSolverParameters::MGR::StrategyType::compositionalMultiphaseReservoirHybridFVM;
+    m_linearSolverParameters.get().mgr.strategy = LinearSolverParameters::MGR::StrategyType::compositionalMultiphaseReservoirHybridFVM;
   }
   else
   {
     // add Reservoir
-    linearSolverParameters.mgr.strategy = LinearSolverParameters::MGR::StrategyType::compositionalMultiphaseReservoirFVM;
+    m_linearSolverParameters.get().mgr.strategy = LinearSolverParameters::MGR::StrategyType::compositionalMultiphaseReservoirFVM;
   }
-  GEOS_LOG_LEVEL_RANK_0( 1, GEOS_FMT( "{}: MGR strategy set to {}", getName(),
-                                      EnumStrings< LinearSolverParameters::MGR::StrategyType >::toString( linearSolverParameters.mgr.strategy )));
 }
 
 template<>
@@ -99,23 +92,16 @@ void
 CompositionalMultiphaseReservoirAndWells< MultiphasePoromechanics<> >::
 setMGRStrategy()
 {
-  LinearSolverParameters & linearSolverParameters = m_linearSolverParameters.get();
-
-  if( linearSolverParameters.preconditionerType != LinearSolverParameters::PreconditionerType::mgr )
-    return;
-
   // flow solver here is indeed flow solver, not poromechanics solver
-  if( dynamic_cast< CompositionalMultiphaseHybridFVM * >( flowSolver() ) )
+  if( flowSolver()->getLinearSolverParameters().mgr.strategy == LinearSolverParameters::MGR::StrategyType::compositionalMultiphaseHybridFVM )
   {
     GEOS_ERROR( "The poromechanics MGR strategy for hybrid FVM is not implemented" );
   }
   else
   {
     // add Reservoir
-    linearSolverParameters.mgr.strategy = LinearSolverParameters::MGR::StrategyType::multiphasePoromechanicsReservoirFVM;
+    m_linearSolverParameters.get().mgr.strategy = LinearSolverParameters::MGR::StrategyType::multiphasePoromechanicsReservoirFVM;
   }
-  GEOS_LOG_LEVEL_RANK_0( 1, GEOS_FMT( "{}: MGR strategy set to {}", getName(),
-                                      EnumStrings< LinearSolverParameters::MGR::StrategyType >::toString( linearSolverParameters.mgr.strategy )));
 }
 
 template< typename RESERVOIR_SOLVER >
@@ -135,6 +121,15 @@ initializePreSubGroups()
                            this->getDataContext(), CompositionalMultiphaseBase::viewKeyStruct::useMassFlagString(),
                            Base::reservoirSolver()->getDataContext(), Base::wellSolver()->getDataContext() ),
                  InputError );
+}
+
+template< typename RESERVOIR_SOLVER >
+void
+CompositionalMultiphaseReservoirAndWells< RESERVOIR_SOLVER >::
+initializePostInitialConditionsPreSubGroups()
+{
+  Base::initializePostInitialConditionsPreSubGroups();
+  setMGRStrategy();
 }
 
 template< typename RESERVOIR_SOLVER >
