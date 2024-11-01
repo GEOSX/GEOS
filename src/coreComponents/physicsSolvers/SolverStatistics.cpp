@@ -38,7 +38,6 @@ SolverStatistics::SolverStatistics( string const & name, Group * const parent )
     setApplyDefaultValue( 0 ).
     setDescription( "Number of time step cuts" );
 
-
   registerWrapper( viewKeyStruct::numSuccessfulOuterLoopIterationsString(), &m_numSuccessfulOuterLoopIterations ).
     setApplyDefaultValue( 0 ).
     setDescription( "Cumulative number of successful outer loop iterations" );
