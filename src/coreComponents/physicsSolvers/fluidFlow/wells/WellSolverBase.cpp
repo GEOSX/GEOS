@@ -207,67 +207,6 @@ void WellSolverBase::implicitStepSetup( real64 const & time_n,
   initializeWells( domain, time_n, dt );
 }
 
-
-void WellSolverBase::shutInWell( real64 const time_n,
-                                 real64 const dt,
-                                 DomainPartition const & domain,
-                                 DofManager const & dofManager,
-                                 CRSMatrixView< real64, globalIndex const > const & localMatrix,
-                                 arrayView1d< real64 > const & localRhs )
-{
-  GEOS_MARK_FUNCTION;
-  GEOS_UNUSED_VAR( time_n );
-  GEOS_UNUSED_VAR( dt );
-
-  string const wellDofKey = dofManager.getKey( wellElementDofName() );
-
-  forDiscretizationOnMeshTargets( domain.getMeshBodies(), [&] ( string const &,
-                                                                MeshLevel const & mesh,
-                                                                arrayView1d< string const > const & regionNames )
-  {
-
-    ElementRegionManager const & elemManager = mesh.getElemManager();
-
-    elemManager.forElementSubRegions< WellElementSubRegion >( regionNames,
-                                                              [&]( localIndex const,
-                                                                   WellElementSubRegion const & subRegion )
-    {
-
-      globalIndex const rankOffset = dofManager.rankOffset();
-
-      arrayView1d< integer const > const ghostRank =
-        subRegion.getReference< array1d< integer > >( ObjectManagerBase::viewKeyStruct::ghostRankString() );
-      arrayView1d< globalIndex const > const dofNumber =
-        subRegion.getReference< array1d< globalIndex > >( wellDofKey );
-
-      forAll< parallelDevicePolicy<> >( subRegion.size(), [=] GEOS_HOST_DEVICE ( localIndex const ei )
-      {
-        if( ghostRank[ei] >= 0 )
-        {
-          return;
-        }
-
-        globalIndex const dofIndex = dofNumber[ei];
-        localIndex const localRow = dofIndex - rankOffset;
-
-
-        real64 unity = 1.0;
-        for( integer i=0; i < m_numDofPerWellElement; i++ )
-        {
-          globalIndex const cindex =  dofNumber[ei] + i;
-          globalIndex const rindex = localRow+i;
-          localMatrix.template addToRow< serialAtomic >( rindex,
-                                                         &cindex,
-                                                         &unity,
-                                                         1 );
-          localRhs[cindex] = 0.0;
-        }
-      } );
-    } );
-  } );
-}
-
-
 void WellSolverBase::updateState( DomainPartition & domain )
 {
   GEOS_MARK_FUNCTION;
@@ -289,9 +228,6 @@ void WellSolverBase::assembleSystem( real64 const time,
                                      CRSMatrixView< real64, globalIndex const > const & localMatrix,
                                      arrayView1d< real64 > const & localRhs )
 {
-  if( m_keepVariablesConstantDuringInitStep )
-    return;
-  
   string const wellDofKey = dofManager.getKey( wellElementDofName());
 
   // assemble the accumulation term in the mass balance equations
