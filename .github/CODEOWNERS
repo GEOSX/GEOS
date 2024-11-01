@@ -23,7 +23,7 @@
 /inputFiles/multiphaseFlowFractures                   @paveltomin @jhuang2601
 /inputFiles/multipleMeshBodies
 /inputFiles/phaseField                                @frankfeifan @CusiniM
-/inputFiles/poromechanics                             @CusiniM @castelletto1 @paveltomin @jhuang2601
+/inputFiles/poromechanics                             @CusiniM @castelletto1 @paveltomin @jhuang2601 @ryar9534 
 /inputFiles/poromechanicsFractures                    @CusiniM @castelletto1 @paveltomin @jhuang2601
 /inputFiles/proppant                                  @jhuang2601 
 /inputFiles/relpermDriver
