@@ -6,6 +6,10 @@ This file is designed to track changes to the integrated test baselines.
 Any developer who updates the baseline ID in the .integrated_tests.yaml file is expected to create an entry in this file with the pull request number, date, and their justification for rebaselining.
 These notes should be in reverse-chronological order, and use the following time format: (YYYY-MM-DD).
 
+PR #3156 (2024-10-29)
+====================
+Restart check errors due to 1) schema node added to enable thermal option in well model and 2) arrays removed/added for option.  Max difference errors due treatment of shutin wells.  Previously non-zero rate value reported for shutin well, new code will set rate arrays to zero. 
+
 PR #2878 (2024-10-17)
 =====================
 Sorted region cellBlocks names alphabetically. Therefore affected ordering of: faceManager/elemSubRegionList, nodeManager/elemList, nodeManager/elemSubRegionList, SurfaceElementSubRegion::fractureElementsToCellSubRegions, field::perforation::reservoirElementSubregion.
