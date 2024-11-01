@@ -120,7 +120,7 @@ public:
                                      real64 & energyNormalizer ) const
   {
     massNormalizer = LvArray::math::max( m_minNormalizer, m_mass_n[ei] );
-    energyNormalizer = LvArray::math::max( m_minNormalizer, m_energy_n[ei] );
+    energyNormalizer = LvArray::math::max( m_minNormalizer, LvArray::math::abs( m_energy_n[ei] ) ); // energy can be negative
   }
 
   GEOS_HOST_DEVICE
