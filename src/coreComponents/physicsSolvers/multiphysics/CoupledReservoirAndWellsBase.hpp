@@ -201,16 +201,8 @@ public:
     // Validate well perforations: Ensure that each perforation is in a region targeted by the solver
     if( !validateWellPerforations( domain ))
     {
-      GEOS_ERROR( GEOS_FMT( "{}: well perforations validation failed, bad perforations found", this->getName()));
+      return;
     }
-  }
-
-  virtual void
-  postInputInitialization() override
-  {
-    Base::postInputInitialization();
-
-    setMGRStrategy();
   }
 
   virtual void
@@ -305,12 +297,6 @@ protected:
   addCouplingSparsityPattern( DomainPartition const & domain,
                               DofManager const & dofManager,
                               SparsityPatternView< globalIndex > const & pattern ) const = 0;
-
-  virtual void setMGRStrategy()
-  {
-    if( this->m_linearSolverParameters.get().preconditionerType == LinearSolverParameters::PreconditionerType::mgr )
-      GEOS_ERROR( GEOS_FMT( "{}: MGR strategy is not implemented for {}", this->getName(), this->getCatalogName()));
-  }
 
   /// Flag to determine whether the well transmissibility needs to be computed
   bool m_isWellTransmissibilityComputed;

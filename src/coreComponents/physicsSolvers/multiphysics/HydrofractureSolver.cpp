@@ -80,22 +80,13 @@ HydrofractureSolver< POROMECHANICS_SOLVER >::HydrofractureSolver( const string &
     setDescription( "Flag to determine whether or not to apply lagging update for the fracture stencil weights. " );
 
   m_numResolves[0] = 0;
-}
-
-template< typename POROMECHANICS_SOLVER >
-void HydrofractureSolver< POROMECHANICS_SOLVER >::setMGRStrategy()
-{
-  LinearSolverParameters & linearSolverParameters = this->m_linearSolverParameters.get();
-
-  if( linearSolverParameters.preconditionerType != LinearSolverParameters::PreconditionerType::mgr )
-    return;
 
   // This may need to be different depending on whether poroelasticity is on or not.
-  linearSolverParameters.mgr.strategy = LinearSolverParameters::MGR::StrategyType::hydrofracture;
-  GEOS_LOG_LEVEL_RANK_0( 1, GEOS_FMT( "{}: MGR strategy set to {}", this->getName(),
-                                      EnumStrings< LinearSolverParameters::MGR::StrategyType >::toString( linearSolverParameters.mgr.strategy )));
-  linearSolverParameters.mgr.separateComponents = false;
-  linearSolverParameters.mgr.displacementFieldName = solidMechanics::totalDisplacement::key();
+  m_linearSolverParameters.get().mgr.strategy = LinearSolverParameters::MGR::StrategyType::hydrofracture;
+  m_linearSolverParameters.get().mgr.separateComponents = false;
+  m_linearSolverParameters.get().mgr.displacementFieldName = solidMechanics::totalDisplacement::key();
+  m_linearSolverParameters.get().dofsPerNode = 3;
+
 }
 
 template< typename POROMECHANICS_SOLVER >
@@ -165,8 +156,6 @@ template< typename POROMECHANICS_SOLVER >
 void HydrofractureSolver< POROMECHANICS_SOLVER >::postInputInitialization()
 {
   Base::postInputInitialization();
-
-  setMGRStrategy();
 
   static const std::set< integer > binaryOptions = { 0, 1 };
   GEOS_ERROR_IF( binaryOptions.count( m_isMatrixPoroelastic ) == 0, viewKeyStruct::isMatrixPoroelasticString() << " option can be either 0 (false) or 1 (true)" );

@@ -31,6 +31,7 @@ class NumericalMethodsManager;
 class SolidMechanicsLagrangeContact : public ContactSolverBase
 {
 public:
+
   SolidMechanicsLagrangeContact( const string & name,
                                  Group * const parent );
 
@@ -177,10 +178,6 @@ protected:
   real64 calculateContactResidualNorm( DomainPartition const & domain,
                                        DofManager const & dofManager,
                                        arrayView1d< real64 const > const & localRhs );
-
-  virtual void postInputInitialization() override final;
-
-  void setMGRStrategy();
 
 private:
   string m_stabilizationName;

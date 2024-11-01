@@ -45,14 +45,18 @@ template< typename FLOW_SOLVER, typename MECHANICS_SOLVER >
 MultiphasePoromechanics< FLOW_SOLVER, MECHANICS_SOLVER >::MultiphasePoromechanics( const string & name,
                                                                                    Group * const parent )
   : Base( name, parent )
-{}
+{
+  LinearSolverParameters & linearSolverParameters = this->m_linearSolverParameters.get();
+  linearSolverParameters.mgr.strategy = LinearSolverParameters::MGR::StrategyType::multiphasePoromechanics;
+  linearSolverParameters.mgr.separateComponents = true;
+  linearSolverParameters.mgr.displacementFieldName = solidMechanics::totalDisplacement::key();
+  linearSolverParameters.dofsPerNode = 3;
+}
 
 template< typename FLOW_SOLVER, typename MECHANICS_SOLVER >
 void MultiphasePoromechanics< FLOW_SOLVER, MECHANICS_SOLVER >::postInputInitialization()
 {
   Base::postInputInitialization();
-
-  setMGRStrategy();
 
   GEOS_ERROR_IF( this->flowSolver()->getCatalogName() == "CompositionalMultiphaseReservoir" &&
                  this->getNonlinearSolverParameters().couplingType() != NonlinearSolverParameters::CouplingType::Sequential,
@@ -272,28 +276,11 @@ void MultiphasePoromechanics< FLOW_SOLVER, MECHANICS_SOLVER >::initializePostIni
                              getCatalogName(), this->getDataContext(), poromechanicsTargetRegionNames[i], this->flowSolver()->getDataContext() ),
                    InputError );
   }
-}
-
-template<>
-void MultiphasePoromechanics<>::setMGRStrategy()
-{
-  LinearSolverParameters & linearSolverParameters = this->m_linearSolverParameters.get();
-
-  if( linearSolverParameters.preconditionerType != LinearSolverParameters::PreconditionerType::mgr )
-    return;
 
   if( this->m_isThermal )
   {
-    linearSolverParameters.mgr.strategy = LinearSolverParameters::MGR::StrategyType::thermalMultiphasePoromechanics;
+    this->m_linearSolverParameters.get().mgr.strategy = LinearSolverParameters::MGR::StrategyType::thermalMultiphasePoromechanics;
   }
-  else
-  {
-    linearSolverParameters.mgr.strategy = LinearSolverParameters::MGR::StrategyType::multiphasePoromechanics;
-  }
-  GEOS_LOG_LEVEL_RANK_0( 1, GEOS_FMT( "{}: MGR strategy set to {}", getName(),
-                                      EnumStrings< LinearSolverParameters::MGR::StrategyType >::toString( linearSolverParameters.mgr.strategy )));
-  linearSolverParameters.mgr.separateComponents = true;
-  linearSolverParameters.mgr.displacementFieldName = solidMechanics::totalDisplacement::key();
 }
 
 template< typename FLOW_SOLVER, typename MECHANICS_SOLVER >

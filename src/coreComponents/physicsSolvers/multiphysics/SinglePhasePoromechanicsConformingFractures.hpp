@@ -103,12 +103,6 @@ public:
 
   virtual void updateState( DomainPartition & domain ) override final;
 
-  virtual void setMGRStrategy() override
-  {
-    if( this->m_linearSolverParameters.get().preconditionerType == LinearSolverParameters::PreconditionerType::mgr )
-      GEOS_ERROR( GEOS_FMT( "{}: MGR strategy is not implemented for {}", this->getName(), this->getCatalogName()));
-  }
-
   /**@}*/
 
 private:
@@ -181,6 +175,7 @@ private:
    * @param domain
    */
   void updateHydraulicApertureAndFracturePermeability( DomainPartition & domain );
+
 
   std::unique_ptr< CRSMatrix< real64, localIndex > > & getRefDerivativeFluxResidual_dAperture()
   {

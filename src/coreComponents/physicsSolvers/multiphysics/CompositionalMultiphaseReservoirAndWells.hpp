@@ -94,11 +94,13 @@ protected:
 
   virtual void initializePreSubGroups() override;
 
-  virtual void setMGRStrategy() override;
+  virtual void initializePostInitialConditionsPreSubGroups() override;
 
 private:
 
   CompositionalMultiphaseBase * flowSolver() const;
+
+  void setMGRStrategy();
 
 };
 
