@@ -151,8 +151,8 @@ static void assignMobilityAndDerivatives( localIndex const & ip, localIndex cons
 
 template< localIndex numComp, localIndex numFluxSupportPoints >
 GEOS_HOST_DEVICE
-static void computeFractionalFlowAndDerivatives( localIndex const & k_up, real64 const & mob, real64 const & dMob_dP, real64 const ( & dMob_dC )[numComp],
-                                                 real64 const & totMob, real64 const ( & dTotMob_dP )[numFluxSupportPoints], real64 const ( & dTotMob_dC )[numFluxSupportPoints][numComp],
+static void computeFractionalFlowAndDerivatives( localIndex const & k_up, real64 const & mob, real64 const & dMob_dP, real64 const ( &dMob_dC )[numComp],
+                                                 real64 const & totMob, real64 const ( &dTotMob_dP )[numFluxSupportPoints], real64 const ( &dTotMob_dC )[numFluxSupportPoints][numComp],
                                                  real64 & fractionalFlow, real64 ( & dFractionalFlow_dP )[numFluxSupportPoints], real64 ( & dFractionalFlow_dC )[numFluxSupportPoints][numComp] )
 {
   // guard against no flow region
@@ -1570,13 +1570,13 @@ struct IHUPhaseFlux
                                              phaseFlux, dPhaseFlux_dP, dPhaseFlux_dC );
       // old wrong way:
       for( localIndex ke = 0; ke < numFluxSupportPoints; ++ke )
-      {	
-        totMob += phaseMob[seri[ke]][sesri[ke]][sei[ke]][jp];	
-        dTotMob_dP[ke] += dPhaseMob[seri[ke]][sesri[ke]][sei[ke]][jp][Deriv::dP];	
+      {
+        totMob += phaseMob[seri[ke]][sesri[ke]][sei[ke]][jp];
+        dTotMob_dP[ke] += dPhaseMob[seri[ke]][sesri[ke]][sei[ke]][jp][Deriv::dP];
         for( localIndex jc = 0; jc < numComp; ++jc )
         {
-          dTotMob_dC[ke][jc] += dPhaseMob[seri[ke]][sesri[ke]][sei[ke]][jp][Deriv::dC + jc];	
-        }	
+          dTotMob_dC[ke][jc] += dPhaseMob[seri[ke]][sesri[ke]][sei[ke]][jp][Deriv::dC + jc];
+        }
       }
 
 /*
@@ -1587,7 +1587,7 @@ struct IHUPhaseFlux
       UpwindHelpers::assignMobilityAndDerivatives( jp, k_up, seri, sesri, sei,
                                                    phaseMob, dPhaseMob,
                                                    totMob, dTotMob_dP[k_up], dTotMob_dC[k_up] );
-*/
+ */
     }
 
     // safeguard
