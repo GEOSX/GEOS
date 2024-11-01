@@ -326,7 +326,18 @@ void ElasticWaveEquationSEM::precomputeSourceAndReceiverTerm( MeshLevel & baseMe
         m_sourceForce,
         m_sourceMoment );
     } );
+    elementSubRegion.faceList().freeOnDevice();
+    baseMesh.getElemManager().getRegion( er ).getSubRegion< CellElementSubRegion >( esr ).nodeList().freeOnDevice();
+    elementSubRegion.getElementCenter().freeOnDevice();
+    elementSubRegion.ghostRank().freeOnDevice();
+    elementSubRegion.localToGlobalMap().freeOnDevice();
   } );
+  baseMesh.getNodeManager().localToGlobalMap().freeOnDevice();
+  baseMesh.getNodeManager().elementList().toView().freeOnDevice();
+  baseMesh.getFaceManager().nodeList().toView().freeOnDevice();
+  baseMesh.getNodeManager().referencePosition().freeOnDevice();
+  facesToNodes.freeOnDevice();
+  nodesToElements.freeOnDevice();
 }
 
 void ElasticWaveEquationSEM::addSourceToRightHandSide( integer const & cycleNumber,

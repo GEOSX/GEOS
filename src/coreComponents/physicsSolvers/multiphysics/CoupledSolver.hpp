@@ -22,6 +22,7 @@
 #define GEOS_PHYSICSSOLVERS_MULTIPHYSICS_COUPLEDSOLVER_HPP_
 
 #include "physicsSolvers/PhysicsSolverBase.hpp"
+#include "physicsSolvers/multiphysics/LogLevelsInfo.hpp"
 
 #include <tuple>
 
@@ -55,6 +56,8 @@ public:
 
     this->getWrapper< string >( PhysicsSolverBase::viewKeyStruct::discretizationString() ).
       setInputFlag( dataRepository::InputFlags::FALSE );
+
+    addLogLevel< logInfo::Coupling >();
   }
 
   /// deleted copy constructor
@@ -88,7 +91,7 @@ public:
                                getDataContext(),
                                solverName, solverType ),
                      InputError );
-      GEOS_LOG_LEVEL_RANK_0( 1, GEOS_FMT( "{}: found {} solver named {}", getName(), solver->getCatalogName(), solverName ) );
+      GEOS_LOG_LEVEL_INFO_RANK_0( logInfo::Coupling, GEOS_FMT( "{}: found {} solver named {}", getName(), solver->getCatalogName(), solverName ) );
     } );
   }
 
@@ -282,6 +285,10 @@ public:
     forEachArgInTuple( m_solvers, [&]( auto & solver, auto )
     {
       bool const validSinglePhysicsSolution = solver->checkSystemSolution( domain, dofManager, localSolution, scalingFactor );
+      if( !validSinglePhysicsSolution )
+      {
+        GEOS_LOG_RANK_0( GEOS_FMT( "      {}/{}: Solution check failed. Newton loop terminated.", getName(), solver->getName()) );
+      }
       validSolution = validSolution && validSinglePhysicsSolution;
     } );
     return validSolution;
@@ -479,7 +486,7 @@ protected:
         // Solve the subproblems nonlinearly
         forEachArgInTuple( m_solvers, [&]( auto & solver, auto idx )
         {
-          GEOS_LOG_LEVEL_RANK_0( 1, GEOS_FMT( "  Iteration {:2}: {}", iter + 1, solver->getName() ) );
+          GEOS_LOG_LEVEL_INFO_RANK_0( logInfo::NonlinearSolver, GEOS_FMT( "  Iteration {:2}: {}", iter + 1, solver->getName() ) );
           real64 solverDt = solver->nonlinearImplicitStep( time_n,
                                                            stepDt,
                                                            cycleNumber,
@@ -530,7 +537,7 @@ protected:
       {
         // cut timestep, go back to beginning of step and restart the Newton loop
         stepDt *= dtCutFactor;
-        GEOS_LOG_LEVEL_RANK_0 ( 1, GEOS_FMT( "New dt = {}", stepDt ) );
+        GEOS_LOG_LEVEL_INFO_RANK_0( logInfo::TimeStep, GEOS_FMT( "New dt = {}", stepDt ) );
 
         // notify the solver statistics counter that this is a time step cut
         m_solverStatistics.logTimeStepCut();
@@ -582,11 +589,11 @@ protected:
 
     if( params.m_subcyclingOption == 0 )
     {
-      GEOS_LOG_LEVEL_RANK_0( 1, "***** Single Pass solver, no subcycling *****" );
+      GEOS_LOG_LEVEL_INFO_RANK_0( logInfo::Convergence, "***** Single Pass solver, no subcycling *****" );
     }
     else
     {
-      GEOS_LOG_LEVEL_RANK_0( 1, GEOS_FMT( "  Iteration {:2}: outer-loop convergence check", iter + 1 ) );
+      GEOS_LOG_LEVEL_INFO_RANK_0( logInfo::Convergence, GEOS_FMT( "  Iteration {:2}: outer-loop convergence check", iter + 1 ) );
 
       if( params.sequentialConvergenceCriterion() == NonlinearSolverParameters::SequentialConvergenceCriterion::ResidualNorm )
       {
@@ -627,7 +634,7 @@ protected:
 
         // finally, we perform the convergence check on the multiphysics residual
         residualNorm = sqrt( residualNorm );
-        GEOS_LOG_LEVEL_RANK_0( 1, GEOS_FMT( "        ( R ) = ( {:4.2e} )", residualNorm ) );
+        GEOS_LOG_LEVEL_INFO_RANK_0( logInfo::Convergence, GEOS_FMT( "        ( R ) = ( {:4.2e} )", residualNorm ) );
         isConverged = ( residualNorm < params.m_newtonTol );
 
       }
@@ -654,7 +661,7 @@ protected:
 
       if( isConverged )
       {
-        GEOS_LOG_LEVEL_RANK_0( 1, GEOS_FMT( "***** The iterative coupling has converged in {} iteration(s) *****", iter + 1 ) );
+        GEOS_LOG_LEVEL_INFO_RANK_0( logInfo::Convergence, GEOS_FMT( "***** The iterative coupling has converged in {} iteration(s) *****", iter + 1 ) );
       }
     }
     return isConverged;
@@ -669,7 +676,7 @@ protected:
     bool const usesLineSearch = getNonlinearSolverParameters().m_lineSearchAction != NonlinearSolverParameters::LineSearchAction::None;
     GEOS_THROW_IF( isSequential && usesLineSearch,
                    GEOS_FMT( "{}: line search is not supported by the coupled solver when {} is set to `{}`. Please set {} to `{}` to remove this error",
-                             getWrapperDataContext( NonlinearSolverParameters::viewKeysStruct::couplingTypeString() ),
+                             getNonlinearSolverParameters().getWrapperDataContext( NonlinearSolverParameters::viewKeysStruct::couplingTypeString() ),
                              NonlinearSolverParameters::viewKeysStruct::couplingTypeString(),
                              EnumStrings< NonlinearSolverParameters::CouplingType >::toString( NonlinearSolverParameters::CouplingType::Sequential ),
                              NonlinearSolverParameters::viewKeysStruct::lineSearchActionString(),

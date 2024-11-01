@@ -69,7 +69,7 @@
   <ElementRegions>
     <CellElementRegion
       name="RockMatrix"
-      cellBlocks="{ cb1 }"
+      cellBlocks="{ * }"
       materialList="{ porousRock, water, thermalCond }"/>
 
     <SurfaceElementRegion

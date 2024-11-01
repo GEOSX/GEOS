@@ -303,7 +303,18 @@ void ElasticFirstOrderWaveEquationSEM::precomputeSourceAndReceiverTerm( MeshLeve
         m_timeSourceDelay,
         m_rickerOrder );
     } );
+    elementSubRegion.faceList().freeOnDevice();
+    baseMesh.getElemManager().getRegion( regionIndex ).getSubRegion< CellElementSubRegion >( esr ).nodeList().freeOnDevice();
+    elementSubRegion.getElementCenter().freeOnDevice();
+    elementSubRegion.ghostRank().freeOnDevice();
+    elementSubRegion.localToGlobalMap().freeOnDevice();
   } );
+  baseMesh.getNodeManager().localToGlobalMap().freeOnDevice();
+  baseMesh.getNodeManager().elementList().toView().freeOnDevice();
+  baseMesh.getFaceManager().nodeList().toView().freeOnDevice();
+  baseMesh.getNodeManager().referencePosition().freeOnDevice();
+  facesToNodes.freeOnDevice();
+  nodesToElements.freeOnDevice();
 }
 
 void ElasticFirstOrderWaveEquationSEM::initializePostInitialConditionsPreSubGroups()

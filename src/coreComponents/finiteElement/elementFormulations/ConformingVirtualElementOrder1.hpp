@@ -63,7 +63,9 @@ public:
 
   ConformingVirtualElementOrder1() = default;
 
-  virtual ~ConformingVirtualElementOrder1() = default;
+  GEOS_HOST_DEVICE
+  virtual ~ConformingVirtualElementOrder1() override
+  {}
 
   /**
    * @struct StackVariables

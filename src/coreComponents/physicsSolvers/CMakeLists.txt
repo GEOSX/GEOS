@@ -6,7 +6,8 @@ set( physicsSolvers_headers
      PhysicsSolverBase.hpp
      PhysicsSolverBaseKernels.hpp
      SolverStatistics.hpp
-     FieldStatisticsBase.hpp )
+     FieldStatisticsBase.hpp
+     LogLevelsInfo.hpp )
 
 # Specify solver sources
 set( physicsSolvers_sources
