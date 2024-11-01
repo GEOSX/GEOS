@@ -254,19 +254,6 @@ void ElasticWaveEquationSEM::precomputeSourceAndReceiverTerm( MeshLevel & baseMe
   receiverConstants.setValues< EXEC_POLICY >( 0 );
   receiverIsLocal.zero();
 
-  arrayView2d< real32 > const sourceValue = m_sourceValue.toView();
-
-  real64 dt = 0;
-  EventManager const & event = getGroupByPath< EventManager >( "/Problem/Events" );
-  for( localIndex numSubEvent = 0; numSubEvent < event.numSubGroups(); ++numSubEvent )
-  {
-    EventBase const * subEvent = static_cast< EventBase const * >( event.getSubGroups()[numSubEvent] );
-    if( subEvent->getEventName() == "/Solvers/" + getName() )
-    {
-      dt = subEvent->getReference< real64 >( EventBase::viewKeyStruct::forceDtString() );
-    }
-  }
-
   mesh.getElemManager().forElementSubRegionsComplete< CellElementSubRegion >( regionNames, [&]( localIndex const,
                                                                                                 localIndex const er,
                                                                                                 localIndex const esr,
@@ -315,11 +302,6 @@ void ElasticWaveEquationSEM::precomputeSourceAndReceiverTerm( MeshLevel & baseMe
         receiverIsLocal,
         receiverNodeIds,
         receiverConstants,
-        sourceValue,
-        dt,
-        m_timeSourceFrequency,
-        m_timeSourceDelay,
-        m_rickerOrder,
         m_useDAS,
         m_linearDASSamples,
         m_linearDASGeometry.toViewConst(),
@@ -340,7 +322,7 @@ void ElasticWaveEquationSEM::precomputeSourceAndReceiverTerm( MeshLevel & baseMe
   nodesToElements.freeOnDevice();
 }
 
-void ElasticWaveEquationSEM::addSourceToRightHandSide( integer const & cycleNumber,
+void ElasticWaveEquationSEM::addSourceToRightHandSide( real64 const & time_n,
                                                        arrayView1d< real32 > const rhsx,
                                                        arrayView1d< real32 > const rhsy,
                                                        arrayView1d< real32 > const rhsz )
@@ -349,22 +331,25 @@ void ElasticWaveEquationSEM::addSourceToRightHandSide( integer const & cycleNumb
   arrayView2d< real64 const > const sourceConstantsx   = m_sourceConstantsx.toViewConst();
   arrayView2d< real64 const > const sourceConstantsy   = m_sourceConstantsy.toViewConst();
   arrayView2d< real64 const > const sourceConstantsz   = m_sourceConstantsz.toViewConst();
-
   arrayView1d< localIndex const > const sourceIsAccessible = m_sourceIsAccessible.toViewConst();
-  arrayView2d< real32 const > const sourceValue   = m_sourceValue.toViewConst();
-
-  GEOS_THROW_IF( cycleNumber > sourceValue.size( 0 ), getDataContext() << ": Too many steps compared to array size", std::runtime_error );
+  real32 const timeSourceFrequency = m_timeSourceFrequency;
+  real32 const timeSourceDelay = m_timeSourceDelay;
+  localIndex const rickerOrder = m_rickerOrder;
+  bool useSourceWaveletTables = m_useSourceWaveletTables;
+  arrayView1d< TableFunction::KernelWrapper const > const sourceWaveletTableWrappers = m_sourceWaveletTableWrappers.toViewConst();
   forAll< EXEC_POLICY >( m_sourceConstantsx.size( 0 ), [=] GEOS_HOST_DEVICE ( localIndex const isrc )
   {
     if( sourceIsAccessible[isrc] == 1 )
     {
+      real64 const srcValue =
+        useSourceWaveletTables ? sourceWaveletTableWrappers[ isrc ].compute( &time_n ) : WaveSolverUtils::evaluateRicker( time_n, timeSourceFrequency, timeSourceDelay, rickerOrder );
       for( localIndex inode = 0; inode < sourceConstantsx.size( 1 ); ++inode )
       {
-        real32 const localIncrementx = sourceConstantsx[isrc][inode] * sourceValue[cycleNumber][isrc];
+        real32 const localIncrementx = sourceConstantsx[isrc][inode] * srcValue;
         RAJA::atomicAdd< ATOMIC_POLICY >( &rhsx[sourceNodeIds[isrc][inode]], localIncrementx );
-        real32 const localIncrementy = sourceConstantsy[isrc][inode] * sourceValue[cycleNumber][isrc];
+        real32 const localIncrementy = sourceConstantsy[isrc][inode] * srcValue;
         RAJA::atomicAdd< ATOMIC_POLICY >( &rhsy[sourceNodeIds[isrc][inode]], localIncrementy );
-        real32 const localIncrementz = sourceConstantsz[isrc][inode] * sourceValue[cycleNumber][isrc];
+        real32 const localIncrementz = sourceConstantsz[isrc][inode] * srcValue;
         RAJA::atomicAdd< ATOMIC_POLICY >( &rhsz[sourceNodeIds[isrc][inode]], localIncrementz );
       }
     }
@@ -436,6 +421,8 @@ void ElasticWaveEquationSEM::initializePostInitialConditionsPreSubGroups()
                                                                           density,
                                                                           mass );
 
+
+
         ElasticMatricesSEM::DampingMatrix< FE_TYPE > kernelD( finiteElement );
         kernelD.template computeDampingMatrix< EXEC_POLICY, ATOMIC_POLICY >( elementSubRegion.size(),
                                                                              nodeCoords,
@@ -472,8 +459,176 @@ void ElasticWaveEquationSEM::initializePostInitialConditionsPreSubGroups()
 
   } );
 
+  if( m_timestepStabilityLimit==1 )
+  {
+    real64 dtOut = 0.0;
+    computeTimeStep( dtOut );
+    m_timestepStabilityLimit = 0;
+    m_timeStep=dtOut;
+  }
+
   WaveSolverUtils::initTrace( "seismoTraceReceiver", getName(), m_outputSeismoTrace, m_receiverConstants.size( 0 ), m_receiverIsLocal );
   WaveSolverUtils::initTrace( "dasTraceReceiver", getName(), m_outputSeismoTrace, m_linearDASGeometry.size( 0 ), m_receiverIsLocal );
+}
+
+real64 ElasticWaveEquationSEM::computeTimeStep( real64 & dtOut )
+{
+
+  DomainPartition & domain = getGroupByPath< DomainPartition >( "/Problem/domain" );
+
+  forDiscretizationOnMeshTargets( domain.getMeshBodies(), [&] ( string const &,
+                                                                MeshLevel & mesh,
+                                                                arrayView1d< string const > const & regionNames )
+  {
+
+    NodeManager & nodeManager = mesh.getNodeManager();
+
+    // mass matrix to be computed in this function
+    arrayView1d< real32 > const mass = nodeManager.getField< elasticfields::ElasticMassVector >();
+    arrayView1d< real32 > const stiffnessVectorx = nodeManager.getField< elasticfields::StiffnessVectorx >();
+    arrayView1d< real32 > const stiffnessVectory = nodeManager.getField< elasticfields::StiffnessVectory >();
+    arrayView1d< real32 > const stiffnessVectorz = nodeManager.getField< elasticfields::StiffnessVectorz >();
+
+    arrayView1d< real32 > const ux_n = nodeManager.getField< elasticfields::Displacementx_n >();
+    arrayView1d< real32 > const uy_n = nodeManager.getField< elasticfields::Displacementy_n >();
+    arrayView1d< real32 > const uz_n = nodeManager.getField< elasticfields::Displacementz_n >();
+
+    localIndex const sizeNode = nodeManager.size();
+
+    real64 const epsilon = 0.00001;
+    localIndex const nIterMax = 10000;
+    localIndex numberIter = 0;
+    localIndex counter = 0;
+    real64 lambdaNew = 0.0;
+
+    //Randomize p values
+    srand( time( NULL ));
+    for( localIndex a = 0; a < sizeNode; ++a )
+    {
+      ux_n[a] = (real64)rand()/(real64) RAND_MAX;
+      uy_n[a] = (real64)rand()/(real64) RAND_MAX;
+      uy_n[a] = (real64)rand()/(real64) RAND_MAX;
+    }
+
+    //Step 1: Normalize randomized pressure
+    real64 normUx= 0.0;
+    real64 normUy= 0.0;
+    real64 normUz= 0.0;
+    WaveSolverUtils::dotProduct( sizeNode, ux_n, ux_n, normUx );
+    WaveSolverUtils::dotProduct( sizeNode, uy_n, uy_n, normUy );
+    WaveSolverUtils::dotProduct( sizeNode, uz_n, uz_n, normUz );
+    real64 normUtot = normUx+normUy+normUz;
+
+    forAll< EXEC_POLICY >( sizeNode, [=] GEOS_HOST_DEVICE ( localIndex const a )
+    {
+      ux_n[a]/= sqrt( normUtot );
+      uy_n[a]/= sqrt( normUtot );
+      uz_n[a]/= sqrt( normUtot );
+    } );
+
+    //Step 2: Iterations of M^{-1}K)p until we found the max eigenvalues
+    auto kernelFactory = elasticWaveEquationSEMKernels::ExplicitElasticSEMFactory( dtOut );
+    real64 lambdaOld = lambdaNew;
+    real64 dotProductUxUxaux = 0.0;
+    real64 dotProductUyUyaux = 0.0;
+    real64 dotProductUzUzaux = 0.0;
+    real64 dotProductUtotUtotAux = dotProductUxUxaux+dotProductUyUyaux+dotProductUzUzaux;
+    real64 normUxaux = 0.0;
+    real64 normUyaux = 0.0;
+    real64 normUzaux = 0.0;
+    real64 normUtotAux = normUxaux+normUyaux+normUzaux;
+
+    do
+    {
+
+      stiffnessVectorx.zero();
+      stiffnessVectory.zero();
+      stiffnessVectorz.zero();
+
+      finiteElement::
+        regionBasedKernelApplication< EXEC_POLICY,
+                                      constitutive::NullModel,
+                                      CellElementSubRegion >( mesh,
+                                                              regionNames,
+                                                              getDiscretizationName(),
+                                                              "",
+                                                              kernelFactory );
+
+
+
+      forAll< EXEC_POLICY >( sizeNode, [=] GEOS_HOST_DEVICE ( localIndex const a )
+      {
+        stiffnessVectorx[a]/= mass[a];
+        stiffnessVectory[a]/= mass[a];
+        stiffnessVectorz[a]/= mass[a];
+      } );
+      lambdaOld = lambdaNew;
+
+      //Compute lambdaNew using two dotProducts
+      dotProductUzUzaux = 0.0;
+      dotProductUxUxaux = 0.0;
+      dotProductUyUyaux = 0.0;
+      normUx= 0.0;
+      normUy= 0.0;
+      normUz= 0.0;
+
+      WaveSolverUtils::dotProduct( sizeNode, ux_n, stiffnessVectorx, dotProductUxUxaux );
+      WaveSolverUtils::dotProduct( sizeNode, uy_n, stiffnessVectory, dotProductUyUyaux );
+      WaveSolverUtils::dotProduct( sizeNode, ux_n, stiffnessVectorz, dotProductUzUzaux );
+      dotProductUtotUtotAux = dotProductUxUxaux+dotProductUyUyaux+dotProductUzUzaux;
+      WaveSolverUtils::dotProduct( sizeNode, ux_n, ux_n, normUx );
+      WaveSolverUtils::dotProduct( sizeNode, uy_n, ux_n, normUy );
+      WaveSolverUtils::dotProduct( sizeNode, uz_n, ux_n, normUz );
+      normUtot = normUx+normUy+normUz;
+
+      lambdaNew = dotProductUtotUtotAux/normUtot;
+
+      normUxaux = 0.0;
+      normUyaux = 0.0;
+      normUzaux = 0.0;
+      WaveSolverUtils::dotProduct( sizeNode, stiffnessVectorx, stiffnessVectorx, normUxaux );
+      WaveSolverUtils::dotProduct( sizeNode, stiffnessVectory, stiffnessVectory, normUyaux );
+      WaveSolverUtils::dotProduct( sizeNode, stiffnessVectorz, stiffnessVectorz, normUzaux );
+
+      normUtotAux = normUxaux+normUyaux+normUzaux;
+
+      forAll< EXEC_POLICY >( sizeNode, [=] GEOS_HOST_DEVICE ( localIndex const a )
+      {
+        ux_n[a] = stiffnessVectorx[a]/( normUtotAux );
+        uy_n[a] = stiffnessVectory[a]/( normUtotAux );
+        uz_n[a] = stiffnessVectorz[a]/( normUtotAux );
+      } );
+
+      if( LvArray::math::abs( lambdaNew-lambdaOld )/LvArray::math::abs( lambdaNew )<= epsilon )
+      {
+        counter++;
+      }
+      else
+      {
+        counter=0;
+      }
+
+      numberIter++;
+
+
+    }
+    while (counter < 10 && numberIter < nIterMax);
+
+    GEOS_THROW_IF( numberIter> nIterMax, "Power Iteration algorithm does not converge", std::runtime_error );
+
+    //We use 1.99 instead of 2 to have a 5% margin error
+    real64 dt = 1.99/sqrt( LvArray::math::abs( lambdaNew ));
+
+    dtOut = MpiWrapper::min( dt );
+
+    stiffnessVectorx.zero();
+    stiffnessVectory.zero();
+    stiffnessVectorz.zero();
+    ux_n.zero();
+    uy_n.zero();
+    uz_n.zero();
+  } );
+  return m_timeStep * m_cflFactor;
 }
 
 real32 ElasticWaveEquationSEM::computeGlobalMinQFactor()
@@ -576,30 +731,29 @@ void ElasticWaveEquationSEM::applyFreeSurfaceBC( real64 const time, DomainPartit
 
 real64 ElasticWaveEquationSEM::explicitStepForward( real64 const & time_n,
                                                     real64 const & dt,
-                                                    integer cycleNumber,
+                                                    integer,
                                                     DomainPartition & domain,
                                                     bool GEOS_UNUSED_PARAM( computeGradient ) )
 {
-  real64 dtOut = explicitStepInternal( time_n, dt, cycleNumber, domain );
-  return dtOut;
+  real64 dtCompute = explicitStepInternal( time_n, dt, domain );
+  return dtCompute;
 }
 
 
 
 real64 ElasticWaveEquationSEM::explicitStepBackward( real64 const & time_n,
                                                      real64 const & dt,
-                                                     integer cycleNumber,
+                                                     integer,
                                                      DomainPartition & domain,
                                                      bool GEOS_UNUSED_PARAM( computeGradient ) )
 {
   GEOS_ERROR( getDataContext() << ": Backward propagation for the elastic wave propagator not yet implemented" );
-  real64 dtOut = explicitStepInternal( time_n, dt, cycleNumber, domain );
+  real64 dtOut = explicitStepInternal( time_n, dt, domain );
   return dtOut;
 }
 
-void ElasticWaveEquationSEM::computeUnknowns( real64 const &,
+void ElasticWaveEquationSEM::computeUnknowns( real64 const & time_n,
                                               real64 const & dt,
-                                              integer const cycleNumber,
                                               DomainPartition &,
                                               MeshLevel & mesh,
                                               arrayView1d< string const > const & regionNames )
@@ -666,12 +820,7 @@ void ElasticWaveEquationSEM::computeUnknowns( real64 const &,
                                                             kernelFactory );
   }
 
-  //Modification of cycleNember useful when minTime < 0
-  EventManager const & event = getGroupByPath< EventManager >( "/Problem/Events" );
-  real64 const & minTime = event.getReference< real64 >( EventManager::viewKeyStruct::minTimeString() );
-  integer const cycleForSource = int(round( -minTime / dt + cycleNumber ));
-
-  addSourceToRightHandSide( cycleForSource, rhsx, rhsy, rhsz );
+  addSourceToRightHandSide( time_n, rhsx, rhsy, rhsz );
 
   SortedArrayView< localIndex const > const solverTargetNodesSet = m_solverTargetNodesSet.toViewConst();
   if( m_attenuationType == WaveSolverUtils::AttenuationType::sls )
@@ -701,7 +850,6 @@ void ElasticWaveEquationSEM::computeUnknowns( real64 const &,
 
 void ElasticWaveEquationSEM::synchronizeUnknowns( real64 const & time_n,
                                                   real64 const & dt,
-                                                  integer const,
                                                   DomainPartition & domain,
                                                   MeshLevel & mesh,
                                                   arrayView1d< string const > const & )
@@ -804,23 +952,25 @@ void ElasticWaveEquationSEM::prepareNextTimestep( MeshLevel & mesh )
 
 real64 ElasticWaveEquationSEM::explicitStepInternal( real64 const & time_n,
                                                      real64 const & dt,
-                                                     integer const cycleNumber,
                                                      DomainPartition & domain )
 {
   GEOS_MARK_FUNCTION;
 
   GEOS_LOG_RANK_0_IF( dt < epsilonLoc, "Warning! Value for dt: " << dt << "s is smaller than local threshold: " << epsilonLoc );
 
+  real64 dtCompute;
   forDiscretizationOnMeshTargets( domain.getMeshBodies(), [&] ( string const &,
                                                                 MeshLevel & mesh,
                                                                 arrayView1d< string const > const & regionNames )
   {
-    computeUnknowns( time_n, dt, cycleNumber, domain, mesh, regionNames );
-    synchronizeUnknowns( time_n, dt, cycleNumber, domain, mesh, regionNames );
+    localIndex nSubSteps = (int) ceil( dt/m_timeStep );
+    dtCompute = dt/nSubSteps;
+    computeUnknowns( time_n, dtCompute, domain, mesh, regionNames );
+    synchronizeUnknowns( time_n, dtCompute, domain, mesh, regionNames );
     prepareNextTimestep( mesh );
   } );
 
-  return dt;
+  return dtCompute;
 }
 
 void ElasticWaveEquationSEM::cleanup( real64 const time_n,

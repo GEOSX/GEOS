@@ -54,12 +54,6 @@ WaveSolverBase::WaveSolverBase( const std::string & name,
     setSizedFromParent( 0 ).
     setDescription( "Coordinates (x,y,z) of the receivers" );
 
-  registerWrapper( viewKeyStruct::sourceValueString(), &m_sourceValue ).
-    setInputFlag( InputFlags::FALSE ).
-    setRestartFlags( RestartFlags::NO_WRITE ).
-    setSizedFromParent( 0 ).
-    setDescription( "Source Value of the sources" );
-
   registerWrapper( viewKeyStruct::timeSourceDelayString(), &m_timeSourceDelay ).
     setInputFlag( InputFlags::OPTIONAL ).
     setApplyDefaultValue( -1 ).
@@ -191,6 +185,18 @@ WaveSolverBase::WaveSolverBase( const std::string & name,
     setSizedFromParent( 0 ).
     setDescription( "Flag that indicates whether the receiver is local to this MPI rank" );
 
+  registerWrapper( viewKeyStruct::timestepStabilityLimitString(), &m_timestepStabilityLimit ).
+    setInputFlag( InputFlags::OPTIONAL ).
+    setApplyDefaultValue( 0 ).
+    setDescription( "Set to 1 to apply a stability limit to the simulation timestep. The timestep used is that given by the CFL condition times the cflFactor parameter." );
+
+  registerWrapper( viewKeyStruct::timeStepString(), &m_timeStep ).
+    setInputFlag( InputFlags::FALSE ).
+    setSizedFromParent( 0 ).
+    setApplyDefaultValue( 1 ).
+    setDescription( "TimeStep computed with the power iteration method (if we don't want to compute it, it is initialized with the XML value" );
+
+
   registerWrapper( viewKeyStruct::receiverRegionString(), &m_receiverRegion ).
     setInputFlag( InputFlags::FALSE ).
     setSizedFromParent( 0 ).
@@ -219,6 +225,11 @@ WaveSolverBase::WaveSolverBase( const std::string & name,
     setInputFlag( InputFlags::OPTIONAL ).
     setApplyDefaultValue( WaveSolverUtils::AttenuationType::none ).
     setDescription( "Flag to indicate which attenuation model to use: \"none\" for no attenuation, \"sls\\" " for the standard-linear-solid (SLS) model (Fichtner, 2014)." );
+
+  registerWrapper( viewKeyStruct::sourceWaveletTableNames(), &m_sourceWaveletTableNames ).
+    setInputFlag( InputFlags::OPTIONAL ).
+    setDescription( "Names of the table functions, one for each source, that are used to define the source wavelets. If a list is given, it overrides the Ricker wavelet definitions."
+                    "The default value is an empty list, which means that a Ricker wavelet is used everywhere." );
 
 }
 
@@ -272,6 +283,17 @@ void WaveSolverBase::initializePreSubGroups()
   m_receiverNodeIds.resize( numReceiversGlobal, numNodesPerElem );
   m_receiverConstants.resize( numReceiversGlobal, numNodesPerElem );
   m_receiverIsLocal.resize( numReceiversGlobal );
+
+  if( m_useSourceWaveletTables )
+  {
+    FunctionManager const & functionManager = FunctionManager::getInstance();
+    m_sourceWaveletTableWrappers.clear();
+    for( integer i = 0; i < m_sourceWaveletTableNames.size(); i++ )
+    {
+      TableFunction const & sourceWaveletTable = functionManager.getGroup< TableFunction >( m_sourceWaveletTableNames[ i ] );
+      m_sourceWaveletTableWrappers.emplace_back( sourceWaveletTable.createKernelWrapper() );
+    }
+  }
 
 }
 
@@ -359,18 +381,6 @@ void WaveSolverBase::postInputInitialization()
 
   EventManager const & event = getGroupByPath< EventManager >( "/Problem/Events" );
   real64 const & maxTime = event.getReference< real64 >( EventManager::viewKeyStruct::maxTimeString() );
-  real64 const & minTime = event.getReference< real64 >( EventManager::viewKeyStruct::minTimeString() );
-  real64 dt = 0;
-  for( localIndex numSubEvent = 0; numSubEvent < event.numSubGroups(); ++numSubEvent )
-  {
-    EventBase const * subEvent = static_cast< EventBase const * >( event.getSubGroups()[numSubEvent] );
-    if( subEvent->getEventName() == "/Solvers/" + this->getName() )
-    {
-      dt = subEvent->getReference< real64 >( EventBase::viewKeyStruct::forceDtString() );
-    }
-  }
-
-  GEOS_THROW_IF( dt < epsilonLoc * maxTime, getDataContext() << ": Value for dt: " << dt <<" is smaller than local threshold: " << epsilonLoc, std::runtime_error );
 
   if( m_dtSeismoTrace > 0 )
   {
@@ -380,10 +390,11 @@ void WaveSolverBase::postInputInitialization()
   {
     m_nsamplesSeismoTrace = 0;
   }
-  localIndex const nsamples = int( (maxTime - minTime) / dt) + 1;
 
-  localIndex const numSourcesGlobal = m_sourceCoordinates.size( 0 );
-  m_sourceValue.resize( nsamples, numSourcesGlobal );
+  GEOS_THROW_IF( m_sourceWaveletTableNames.size() > 0 && m_sourceWaveletTableNames.size() != m_sourceCoordinates.size( 0 ),
+                 "Invalid number of source wavelet table names. The number of table functions must be equal to the number of sources",
+                 InputError );
+  m_useSourceWaveletTables = m_sourceWaveletTableNames.size() > 0;
 
 }
 
