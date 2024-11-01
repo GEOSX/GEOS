@@ -1,0 +1,60 @@
+<?xml version="1.0" ?>
+
+<Problem>
+
+  <Included>
+    <File name="./LagrangeContactBubbleStab_singleFracCompression_base.xml"/>
+  </Included>
+
+  <Mesh>
+    <InternalMesh
+      name="mesh1"
+      elementTypes="{ C3D8 }"
+      xCoords="{ -5, 5 }"
+      yCoords="{ 0, 1 }"
+      zCoords="{ -5, 5 }"
+      nx="{ 20 }"
+      ny="{ 2 }"
+      nz="{ 20 }"
+      cellBlockNames="{ cb1 }"/>
+  </Mesh>
+
+  <Geometry>
+    <Rectangle
+      name="fracture"
+      normal="{ 0.0, 0.0, 1.0 }"
+      origin="{ 0.0, 0.0, 0.0 }"
+      lengthVector="{ 0.0, 1.0, 0.0 }"
+      widthVector="{ 1.0, 0.0, 0.0 }"
+      dimensions="{ 10., 10. }"/> 
+
+    <Box
+      name="rightPoint"
+      xMin="{ -5.1, -0.1, 4.9 }"
+      xMax="{  5.1,  1.1,  5.1 }"/>
+
+    <Box
+      name="leftPoint"
+      xMin="{ -5.1, -0.1, -5.1 }"
+      xMax="{  5.1,  1.1, -4.9 }"/>
+  </Geometry>
+
+  <Events
+    maxTime="1.0">
+    <SoloEvent
+      name="preFracture"
+      target="/Solvers/SurfaceGen"/>
+
+    <PeriodicEvent
+      name="solverApplications"
+      beginTime="0.0"
+      forceDt="1.0"
+      target="/Solvers/AugmentedLagrangian"/>
+
+    <PeriodicEvent
+      name="outputs"
+      timeFrequency="1"
+      targetExactTimestep="0"
+      target="/Outputs/vtkOutput"/>
+  </Events> 
+</Problem>

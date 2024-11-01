@@ -1,0 +1,134 @@
+<?xml version="1.0" ?>
+
+<Problem>
+  <Solvers
+    gravityVector="{0.0, 0.0, 0.0}">
+
+    <SolidMechanicsLagrangeContactBubbleStab
+      name="AugmentedLagrangian"
+      timeIntegrationOption="QuasiStatic"
+      logLevel="2"
+      writeLinearSystem="2"
+      discretization="FE1"
+      targetRegions="{ Region, Fracture }">
+      <NonlinearSolverParameters
+        newtonTol="1.0e-8"
+        logLevel="2"
+        newtonMaxIter="10"
+        maxNumConfigurationAttempts="50"
+        lineSearchAction="Require"
+        lineSearchMaxCuts="2"
+        maxTimeStepCuts="1"/>
+      <LinearSolverParameters
+        solverType="direct"
+        directParallel="0"
+        logLevel="0"/>
+    </SolidMechanicsLagrangeContactBubbleStab>
+
+    <SurfaceGenerator
+      name="SurfaceGen"
+      logLevel="0"
+      fractureRegion="Fracture"
+      targetRegions="{ Region }"
+      rockToughness="1.0e6"
+      mpiCommOrder="1"/>
+  </Solvers>
+
+  <NumericalMethods>
+    <FiniteElements>
+      <FiniteElementSpace
+        name="FE1"
+        order="1"/>
+    </FiniteElements>
+  </NumericalMethods>
+
+  <ElementRegions>
+    <CellElementRegion
+      name="Region"
+      cellBlocks="{ cb1 }"
+      materialList="{ rock }"/>
+
+    <SurfaceElementRegion
+      name="Fracture"
+      faceBlock="faceElementSubRegion"
+      defaultAperture="1.e-4"
+      materialList="{ fractureMaterial }"/>
+  </ElementRegions>
+
+  <Constitutive>
+    <ElasticIsotropic
+      name="rock"
+      defaultDensity="2700"
+      defaultBulkModulus="1.666666666666666e4"
+      defaultShearModulus="1.0e4"/>
+
+    <Coulomb
+      name="fractureMaterial"
+      cohesion="0.0"
+      frictionCoefficient="0.577350269e9"/>
+  </Constitutive>
+
+  <Functions>
+    <TableFunction
+      name="apertureTable"
+      coordinates="{ -1.0e-3, 0.0 }"
+      values="{ 0.002e-3, 0.02e-3 }"/>      
+
+    <TableFunction
+      name="dispFunction"
+      inputVarNames="{ time }"
+      coordinates="{ 0.0, 1.0 }"
+      values="{ 0.0, 1.0 }"/>
+  </Functions>
+
+  <FieldSpecifications>
+
+    <FieldSpecification
+      name="frac"
+      initialCondition="1"
+      setNames="{ fracture }"
+      objectPath="faceManager"
+      fieldName="ruptureState"
+      scale="1"/>
+
+    <FieldSpecification
+      name="xconstraint"
+      objectPath="nodeManager"
+      fieldName="totalDisplacement"
+      component="0"
+      scale="0.0"
+      setNames="{ leftPoint }"/>
+
+    <FieldSpecification
+      name="yconstraint"
+      objectPath="nodeManager"
+      fieldName="totalDisplacement"
+      component="1"
+      scale="0.0"
+      setNames="{ leftPoint }"/>
+
+    <FieldSpecification
+      name="zconstraint"
+      objectPath="nodeManager"
+      fieldName="totalDisplacement"
+      component="2"
+      scale="0.0"
+      setNames="{ leftPoint }"/>
+
+    <Traction
+      name="NormalTraction"
+      objectPath="faceManager"
+      tractionType="normal"
+      scale="-1.0e2"
+      setNames="{ rightPoint }"
+      functionName="dispFunction"/>
+  </FieldSpecifications>
+
+  <Outputs>
+    <VTK
+      name="vtkOutput"
+      plotLevel="2"
+      format="binary"
+      plotFileRoot="bubbleStab"/>
+    </Outputs>
+</Problem>
