@@ -64,7 +64,7 @@
 /src/coreComponents/fieldSpecification                @rrsettgast @CusiniM @corbett5 @cssherman 
 /src/coreComponents/fileIO                            @rrsettgast @wrtobin @MelReyCG @untereiner
 /src/coreComponents/finiteElement                     @rrsettgast @castelletto1 @andrea-borio @CusiniM
-/src/coreComponents/finiteVolume                      @rrsettgast @castelletto1 @CusiniM @paveltomin
+/src/coreComponents/finiteVolume                      @rrsettgast @castelletto1 @CusiniM @paveltomin @ryar9534
 /src/coreComponents/functions                         @cssherman  @wrtobin @rrsettgast
 /src/coreComponents/linearAlgebra                     @rrsettgast @castelletto1 @victorapm 
 /src/coreComponents/mainInterface                     @rrsettgast @corbett5 @wrtobin 
@@ -72,7 +72,7 @@
 /src/coreComponents/mesh                              @rrsettgast @wrtobin @untereiner @CusiniM 
 /src/coreComponents/physicsSolvers                    @rrsettgast @CusiniM
 /src/coreComponents/physicsSolvers/contact            @CusiniM @rrsettgast @matteofrigo5
-/src/coreComponents/physicsSolvers/fluidFlow          @CusiniM @paveltomin @klevzoff @francoishamon
+/src/coreComponents/physicsSolvers/fluidFlow          @CusiniM @paveltomin @klevzoff @ryar9534
 /src/coreComponents/physicsSolvers/inducedSeismicity  @CusiniM @rrsettgast @matteofrigo5
 /src/coreComponents/physicsSolvers/multiphysics       @CusiniM @paveltomin @castelletto1 @rrsettgast @frankfeifan @ryar9534 
 /src/coreComponents/physicsSolvers/python             @cssherman @corbett5
