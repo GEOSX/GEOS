@@ -1,0 +1,176 @@
+<?xml version="1.0" ?>
+
+<Problem>
+  <Solvers>
+    <!-- define the solver -->
+    <!-- define the source coordinates -->
+    <!-- define the time source frequency -->
+    <!-- define the receiver coordinates -->
+    <AcousticSEM
+      name="acousticSolver"
+      discretization="FE1"
+      targetRegions="{ Region }"
+      sourceCoordinates="{ { 1015, 1015, 1015 }, {1215,1015,1015} }"
+      receiverCoordinates="{ { 1415,1015,1015 } }"
+      outputSeismoTrace="1"
+      dtSeismoTrace="0.0025"
+      timestepStabilityLimit="0"
+      cflFactor="0.95"
+      sourceWaveletTableNames="{ sourceTable1, sourceTable2 }"
+      />
+  </Solvers>
+  <Functions>
+    <TableFunction
+      name="sourceTable1"
+      coordinateFiles="{ time.txt }"
+      voxelFile="source1.txt"/>
+    <TableFunction
+      name="sourceTable2"
+      coordinateFiles="{ time.txt }"
+      voxelFile="source2.txt"/>
+
+  </Functions>
+  <!-- hexahedral mesh generated internally by GEOSX -->
+  <Mesh>
+    <InternalMesh
+      name="mesh"
+      elementTypes="{ C3D8 }"
+      xCoords="{ 0, 2000 }"
+      yCoords="{ 0, 2000 }"
+      zCoords="{ 0, 2000 }"
+      nx="{ 3 }"
+      ny="{ 3 }"
+      nz="{ 3 }"
+      cellBlockNames="{ cb }"/>
+  </Mesh>
+
+   <Geometry>
+   <Box
+     name="zpos"
+     xMin="{-0.01, -0.01, 1999.99}"
+     xMax="{2000.01, 2000.01, 2000.01}"/>
+
+   <Box
+
+     name="zneg"
+     xMin="{-0.01, -0.01, -0.01}"
+     xMax="{2000.01, 2000.01, 0.01}"/>
+
+   <Box
+
+     name="xpos"
+     xMin="{1999.99, -0.01, -0.01}"
+     xMax="{2000.01, 2000.01, 2000.01}"/>
+
+   <Box
+     name="xneg"
+     xMin="{-0.01, -0.01, -0.01}"
+     xMax="{ 0.01,  2000.01, 2000.01}"/>
+
+   <Box
+     name="ypos"
+     xMin="{-0.01, 1999.99, -0.01}"
+     xMax="{2000.01, 2000.01, 2000.01}"/>
+
+   <Box
+     name="yneg"
+     xMin="{-0.01, -0.01, -0.01}"
+     xMax="{2000.01, 0.01, 2000.01}"/>
+
+ </Geometry>
+
+  <Events
+    maxTime="0.2">
+    <!-- control the timestepping here with forceDt -->
+    <PeriodicEvent
+      name="solverApplications"
+      target="/Solvers/acousticSolver"
+      forceDt="0.001"/>
+
+    <PeriodicEvent
+      name="timeHistoryCollection"
+      timeFrequency="0.001"
+      target="/Tasks/pressureCollection"/>
+
+    <PeriodicEvent
+      name="timeHistoryOutput"
+      timeFrequency="0.01"
+      targetExactTimestep="0"
+      target="/Outputs/timeHistoryOutput"/>
+
+    <PeriodicEvent
+      name="restarts"
+      timeFrequency="0.1"
+      target="/Outputs/restartOutput"/>
+
+  </Events>
+
+  <NumericalMethods>
+    <FiniteElements>
+      <FiniteElementSpace
+        name="FE1"
+        order="1"
+        formulation="SEM"/>
+    </FiniteElements>
+  </NumericalMethods>
+
+  <ElementRegions>
+    <CellElementRegion
+      name="Region"
+      cellBlocks="{ cb }"
+      materialList="{ nullModel }"/>
+  </ElementRegions>
+
+  <Constitutive>
+    <NullModel
+      name="nullModel"/>
+  </Constitutive>
+
+  <FieldSpecifications>
+    <!-- 1) The initial pressure field -->
+
+    <!-- 2) The velocity in the domain -->
+    <FieldSpecification
+      name="cellVelocity"
+      initialCondition="1"
+      objectPath="mesh/FE1/ElementRegions/Region/cb"
+      fieldName="acousticVelocity"
+      scale="1500.0"
+      setNames="{ all }"/>
+
+    <FieldSpecification
+      name="cellDensity"
+      initialCondition="1"
+      objectPath="mesh/FE1/ElementRegions/Region/cb"
+      fieldName="acousticDensity"
+      scale="1.0"
+      setNames="{ all }"/>
+
+    <!-- 3) The free surface condition the domain -->
+    <FieldSpecification
+      name="zposFreeSurface"
+      objectPath="mesh/FE1/faceManager"
+      fieldName="FreeSurface"
+      setNames="{}"/>
+  </FieldSpecifications>
+
+  <!-- collect the pressure values at the nodes -->
+  <Tasks>
+    <PackCollection
+      name="pressureCollection"
+      objectPath="/Problem/domain/MeshBodies/mesh/meshLevels/FE1/nodeManager"
+      fieldName="pressure_np1"/>
+  </Tasks>
+
+  <Outputs>
+
+    <!-- output the pressure values to a file named pressure_history.hdf5  -->
+    <TimeHistory
+      name="timeHistoryOutput"
+      sources="{ /Tasks/pressureCollection }"
+      filename="pressure_history"/>
+
+    <Restart
+      name="restartOutput"/>
+  </Outputs>
+</Problem>
