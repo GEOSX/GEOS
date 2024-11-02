@@ -18,6 +18,7 @@
 
 #include "ElementRegionManager.hpp"
 
+#include "common/DataLayouts.hpp"
 #include "common/TimingMacros.hpp"
 #include "mesh/mpiCommunications/CommunicationTools.hpp"
 #include "SurfaceElementRegion.hpp"
@@ -29,6 +30,7 @@
 #include "schema/schemaUtilities.hpp"
 #include "mesh/generators/LineBlockABC.hpp"
 #include "mesh/CellElementRegionSelector.hpp"
+
 
 namespace geos
 {
@@ -796,7 +798,7 @@ void ElementRegionManager::outputObjectConnectivity() const
           printf( "  %s\n", subRegion.getName().c_str() );
 
           CellElementSubRegion::NodeMapType const & elemToNodeRelation = subRegion.nodeList();
-          arrayView2d< localIndex const > const elemToNode = elemToNodeRelation;
+          arrayView2d< localIndex const, cells::NODE_MAP_USD > const elemToNode = elemToNodeRelation;
           arrayView1d< globalIndex const > const & elemLocalToGlobal = subRegion.localToGlobalMap();
           auto const & elemGlobalToLocal = subRegion.globalToLocalMap();
           arrayView1d< globalIndex const > const & nodeLocalToGlobal = elemToNodeRelation.relatedObjectLocalToGlobal();
