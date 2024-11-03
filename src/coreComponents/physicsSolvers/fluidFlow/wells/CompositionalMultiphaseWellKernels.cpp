@@ -514,7 +514,7 @@ PresTempCompFracInitializationKernel::
 
   RAJA::ReduceSum< parallelDeviceReduce, real64 > sumTotalMassDens( 0 );
   RAJA::ReduceSum< parallelDeviceReduce, real64 > sumTemp( 0 );
-  RAJA::ReduceSum< parallelDeviceReduce, real64 > sumCompFrac[MAX_NUM_COMP]{};
+  RAJA::MultiReduceSum< parallelDeviceMultiReduce, real64 > sumCompFrac(MAX_NUM_COMP,0.0);
   RAJA::ReduceMin< parallelDeviceReduce, real64 > localMinGravCoefDiff( 1e9 );
 
   forAll< parallelDevicePolicy<> >( perforationSize, [=] GEOS_HOST_DEVICE ( localIndex const iperf )

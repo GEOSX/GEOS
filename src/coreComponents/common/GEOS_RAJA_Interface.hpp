@@ -83,6 +83,8 @@ using parallelDeviceEvent = RAJA::resources::Event;
 using parallelDeviceReduce = RAJA::cuda_reduce;
 using parallelDeviceAtomic = RAJA::cuda_atomic;
 
+using parallelDeviceMultiReduce = RAJA::cuda_multi_reduce_atomic;
+
 void RAJA_INLINE parallelDeviceSync() { RAJA::synchronize< RAJA::cuda_synchronize >(); }
 
 template< typename POLICY, typename RESOURCE, typename LAMBDA >
@@ -106,6 +108,8 @@ using parallelDeviceEvent = RAJA::resources::Event;
 
 using parallelDeviceReduce = RAJA::hip_reduce;
 using parallelDeviceAtomic = RAJA::hip_atomic;
+
+using parallelDeviceMultiReduce = RAJA::hip_multi_reduce_atomic;
 
 void RAJA_INLINE parallelDeviceSync() { RAJA::synchronize< RAJA::hip_synchronize >( ); }
 
@@ -134,6 +138,12 @@ using parallelDeviceEvent = parallelHostEvent;
 
 using parallelDeviceReduce = parallelHostReduce;
 using parallelDeviceAtomic = parallelHostAtomic;
+
+#if defined( GEOS_USE_OPENMP )
+using parallelDeviceMultiReduce = RAJA::omp_multi_reduce;
+#else
+using parallelDeviceMultiReduce = RAJA::seq_multi_reduce;
+#endif
 
 void RAJA_INLINE parallelDeviceSync() { parallelHostSync( ); }
 
