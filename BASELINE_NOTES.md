@@ -6,6 +6,14 @@ This file is designed to track changes to the integrated test baselines.
 Any developer who updates the baseline ID in the .integrated_tests.yaml file is expected to create an entry in this file with the pull request number, date, and their justification for rebaselining.
 These notes should be in reverse-chronological order, and use the following time format: (YYYY-MM-DD).
 
+PR #2909 (2024-10-30)
+=====================
+Add routine for automatic time steps in waveSolvers with new attributes
+
+PR #3156 (2024-10-29)
+====================
+Restart check errors due to 1) schema node added to enable thermal option in well model and 2) arrays removed/added for option.  Max difference errors due treatment of shutin wells.  Previously non-zero rate value reported for shutin well, new code will set rate arrays to zero. 
+
 PR #2878 (2024-10-17)
 =====================
 Sorted region cellBlocks names alphabetically. Therefore affected ordering of: faceManager/elemSubRegionList, nodeManager/elemList, nodeManager/elemSubRegionList, SurfaceElementSubRegion::fractureElementsToCellSubRegions, field::perforation::reservoirElementSubregion.
@@ -48,7 +56,7 @@ Added restartcheks to hydrofrac cases and reduced time of cases that were too lo
 
 PR #3135 (2024-09-04)
 ======================
-Temperature dependent single phase thermal conductivity. Rebaseline all thermal cases. 
+Temperature dependent single phase thermal conductivity. Rebaseline all thermal cases.
 
 PR #3294 (2024-09-01)
 ======================
@@ -64,11 +72,11 @@ Reuse computeSinglePhaseFlux. Rebaseline due to minor numerical diffs.
 
 PR #3249 (2024-08-14)
 ======================
-Two initialization options for poromechanical models. Rebaseline the corresponding cases. 
+Two initialization options for poromechanical models. Rebaseline the corresponding cases.
 
 PR #3278 (2024-08-12)
 ======================
-Renamed GEOSX to GEOS in enternal mesh import, so rebaseline to change these names is the baselines. 
+Renamed GEOSX to GEOS in enternal mesh import, so rebaseline to change these names is the baselines.
 
 202 (2024-08-03)
 ======================

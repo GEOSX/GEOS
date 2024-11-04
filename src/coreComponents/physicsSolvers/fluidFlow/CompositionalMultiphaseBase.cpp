@@ -280,6 +280,7 @@ void CompositionalMultiphaseBase::registerDataOnMesh( Group & meshBodies )
     MultiFluidBase const & referenceFluid = cm.getConstitutiveRelation< MultiFluidBase >( m_referenceFluidModelName );
     m_numPhases = referenceFluid.numFluidPhases();
     m_numComponents = referenceFluid.numFluidComponents();
+    m_isThermal = referenceFluid.isThermal();
   }
 
   // n_c components + one pressure ( + one temperature if needed )
@@ -2266,7 +2267,6 @@ void CompositionalMultiphaseBase::computeCFLNumbers( geos::DomainPartition & dom
 
     fluxApprox.forAllStencils( mesh, [&] ( auto & stencil )
     {
-
       typename TYPEOFREF( stencil ) ::KernelWrapper stencilWrapper = stencil.createKernelWrapper();
 
       // While this kernel is waiting for a factory class, pass all the accessors here
