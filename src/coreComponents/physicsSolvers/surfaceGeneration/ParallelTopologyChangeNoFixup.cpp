@@ -661,8 +661,8 @@ void packNewModifiedObjectsToGhosts( NeighborCommunicator & neighbor,
   localIndex_array & newNodesToSend = packData.m_nodes;
   localIndex_array & newEdgesToSend = packData.m_edges;
   localIndex_array & newFacesToSend = packData.m_faces;
-  ElementRegionManager::ElementViewAccessor< arrayView1d< localIndex > > & newElemsToSend = packData.m_elementsView;
-  array1d< array1d< localIndex_array > > & newElemsToSendData = packData.m_elementsData;
+  // ElementRegionManager::ElementViewAccessor< arrayView1d< localIndex > > & newElemsToSend = packData.m_elementsView;
+  // array1d< array1d< localIndex_array > > & newElemsToSendData = packData.m_elementsData;
 
   localIndex_array modNodesToSend;
   localIndex_array modEdgesToSend;
