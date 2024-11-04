@@ -34,9 +34,11 @@
 #include "physicsSolvers/fluidFlow/CompositionalMultiphaseUtilities.hpp"
 #include "physicsSolvers/SolverBaseKernels.hpp"
 #include "physicsSolvers/fluidFlow/CompositionalMultiphaseFVM.hpp"
+#include "physicsSolvers/KernelLaunchSelectors.hpp"
 
 namespace geos
 {
+
 
 namespace isothermalCompositionalMultiphaseBaseKernels
 {
@@ -112,6 +114,8 @@ public:
 
 namespace internal
 {
+
+
 
 template< typename T, typename LAMBDA >
 void kernelLaunchSelectorCompSwitch( T value, LAMBDA && lambda )
@@ -1461,20 +1465,17 @@ public:
                    real64 const maxAbsolutePresChange,
                    real64 const maxCompFracChange,
                    real64 const maxRelativeCompDensChange,
+                   arrayView1d< real64 const > const pressure,
+                   arrayView2d< real64 const, compflow::USD_COMP > const compDens,
+                   arrayView1d< real64 > pressureScalingFactor,
+                   arrayView1d< real64 > compDensScalingFactor,
                    globalIndex const rankOffset,
                    integer const numComp,
                    string const dofKey,
                    ElementSubRegionBase & subRegion,
                    arrayView1d< real64 const > const localSolution )
   {
-    arrayView1d< real64 const > const pressure =
-      subRegion.getField< fields::flow::pressure >();
-    arrayView2d< real64 const, compflow::USD_COMP > const compDens =
-      subRegion.getField< fields::flow::globalCompDensity >();
-    arrayView1d< real64 > pressureScalingFactor =
-      subRegion.getField< fields::flow::pressureScalingFactor >();
-    arrayView1d< real64 > compDensScalingFactor =
-      subRegion.getField< fields::flow::globalCompDensityScalingFactor >();
+
     ScalingForSystemSolutionKernel kernel( maxRelativePresChange, maxAbsolutePresChange, maxCompFracChange, maxRelativeCompDensChange, rankOffset,
                                            numComp, dofKey, subRegion, localSolution, pressure, compDens, pressureScalingFactor, compDensScalingFactor );
     return ScalingForSystemSolutionKernel::launch< POLICY >( subRegion.size(), kernel );
@@ -1516,15 +1517,15 @@ public:
                        integer const allowNegativePressure,
                        CompositionalMultiphaseFVM::ScalingType const scalingType,
                        real64 const scalingFactor,
+                       arrayView1d< real64 const > const pressure,
+                       arrayView2d< real64 const, compflow::USD_COMP > const compDens,
+                       arrayView1d< real64 > pressureScalingFactor,
+                       arrayView1d< real64 > compDensScalingFactor,
                        globalIndex const rankOffset,
                        integer const numComp,
                        string const dofKey,
                        ElementSubRegionBase const & subRegion,
-                       arrayView1d< real64 const > const localSolution,
-                       arrayView1d< real64 const > const pressure,
-                       arrayView2d< real64 const, compflow::USD_COMP > const compDens,
-                       arrayView1d< real64 > pressureScalingFactor,
-                       arrayView1d< real64 > compDensScalingFactor )
+                       arrayView1d< real64 const > const localSolution )
     : Base( rankOffset,
             numComp,
             dofKey,
@@ -1761,22 +1762,20 @@ public:
                    integer const allowNegativePressure,
                    CompositionalMultiphaseFVM::ScalingType const scalingType,
                    real64 const scalingFactor,
+                   arrayView1d< real64 const > const pressure,
+                   arrayView2d< real64 const, compflow::USD_COMP > const compDens,
+                   arrayView1d< real64 > pressureScalingFactor,
+                   arrayView1d< real64 > compDensScalingFactor,
                    globalIndex const rankOffset,
                    integer const numComp,
                    string const dofKey,
                    ElementSubRegionBase & subRegion,
                    arrayView1d< real64 const > const localSolution )
   {
-    arrayView1d< real64 const > const pressure =
-      subRegion.getField< fields::flow::pressure >();
-    arrayView2d< real64 const, compflow::USD_COMP > const compDens =
-      subRegion.getField< fields::flow::globalCompDensity >();
-    arrayView1d< real64 > pressureScalingFactor =
-      subRegion.getField< fields::flow::pressureScalingFactor >();
-    arrayView1d< real64 > compDensScalingFactor =
-      subRegion.getField< fields::flow::globalCompDensityScalingFactor >();
-    SolutionCheckKernel kernel( allowCompDensChopping, allowNegativePressure, scalingType, scalingFactor, rankOffset,
-                                numComp, dofKey, subRegion, localSolution, pressure, compDens, pressureScalingFactor, compDensScalingFactor );
+
+    SolutionCheckKernel kernel( allowCompDensChopping, allowNegativePressure, scalingType, scalingFactor,
+                                pressure, compDens, pressureScalingFactor, compDensScalingFactor, rankOffset,
+                                numComp, dofKey, subRegion, localSolution );
     return SolutionCheckKernel::launch< POLICY >( subRegion.size(), kernel );
   }
 
@@ -2410,6 +2409,16 @@ struct HydrostaticPressureKernel
 
 /******************************** Kernel launch machinery ********************************/
 
+
+template< typename KERNELWRAPPER, typename ... ARGS >
+void KernelLaunchSelectorCompTherm( integer const numComp, bool const isThermal, ARGS && ... args )
+{
+  geos::internal::kernelLaunchSelectorCompThermSwitch( numComp, isThermal, [&] ( auto NC, auto ISTHERMAL )
+  {
+    KERNELWRAPPER::template launch< NC(), ISTHERMAL() >( std::forward< ARGS >( args )... );
+  } );
+}
+
 template< typename KERNELWRAPPER, typename ... ARGS >
 void KernelLaunchSelector1( integer const numComp, ARGS && ... args )
 {
@@ -2440,6 +2449,54 @@ void KernelLaunchSelector2( integer const numComp, integer const numPhase, ARGS 
   else
   {
     GEOS_ERROR( "Unsupported number of phases: " << numPhase );
+  }
+}
+
+template< typename KERNELWRAPPER, typename ... ARGS >
+void KernelLaunchSelector_NC_NP_THERM( integer const numComp, integer const numPhase, integer const isThermal, ARGS && ... args )
+{
+  // Ideally this would be inside the dispatch, but it breaks on Summit with GCC 9.1.0 and CUDA 11.0.3.
+  if( isThermal )
+  {
+    if( numPhase == 2 )
+    {
+      internal::kernelLaunchSelectorCompSwitch( numComp, [&] ( auto NC )
+      {
+        KERNELWRAPPER::template launch< NC(), 2, 1 >( std::forward< ARGS >( args ) ... );
+      } );
+    }
+    else if( numPhase == 3 )
+    {
+      internal::kernelLaunchSelectorCompSwitch( numComp, [&] ( auto NC )
+      {
+        KERNELWRAPPER::template launch< NC(), 3, 1 >( std::forward< ARGS >( args ) ... );
+      } );
+    }
+    else
+    {
+      GEOS_ERROR( "Unsupported number of phases: " << numPhase );
+    }
+  }
+  else
+  {
+    if( numPhase == 2 )
+    {
+      internal::kernelLaunchSelectorCompSwitch( numComp, [&] ( auto NC )
+      {
+        KERNELWRAPPER::template launch< NC(), 2, 0 >( std::forward< ARGS >( args ) ... );
+      } );
+    }
+    else if( numPhase == 3 )
+    {
+      internal::kernelLaunchSelectorCompSwitch( numComp, [&] ( auto NC )
+      {
+        KERNELWRAPPER::template launch< NC(), 3, 0 >( std::forward< ARGS >( args ) ... );
+      } );
+    }
+    else
+    {
+      GEOS_ERROR( "Unsupported number of phases: " << numPhase );
+    }
   }
 }
 
