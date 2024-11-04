@@ -1683,7 +1683,9 @@ bool CompositionalMultiphaseBase::validateDirichletBC( DomainPartition & domain,
       if( subRegionSetMap.count( setName ) > 0 )
       {
         bcConsistent = false;
-        GEOS_WARNING( GEOS_FMT( "Conflicting pressure boundary conditions on set {}/{}/{}", regionName, subRegionName, setName ) );
+        GEOS_WARNING(
+          BCWarningMessage::conflictPressureBC( regionName, subRegionName, setName,
+                                                fields::flow::pressure::key() ) );
       }
       subRegionSetMap[setName].setNumComp( m_numComponents );
     } );
@@ -1708,7 +1710,9 @@ bool CompositionalMultiphaseBase::validateDirichletBC( DomainPartition & domain,
         if( tempSubRegionSetMap.count( setName ) > 0 )
         {
           bcConsistent = false;
-          GEOS_WARNING( GEOS_FMT( "Conflicting temperature boundary conditions on set {}/{}/{}", regionName, subRegionName, setName ) );
+          GEOS_WARNING(
+            BCWarningMessage::conflictTemperatureBC( regionName, subRegionName, setName,
+                                                     fields::flow::temperature::key() ) );
         }
         tempSubRegionSetMap.insert( setName );
       } );
@@ -1725,7 +1729,7 @@ bool CompositionalMultiphaseBase::validateDirichletBC( DomainPartition & domain,
                                                    string const & )
     {
       // 3.1 Check pressure, temperature, and record composition bc application
-      string const & subRegionName = subRegion.getName();
+      string const & subRegionName = subRegion.getName(   );
       string const & regionName = subRegion.getParent().getParent().getName();
       integer const comp = fs.getComponent();
 
@@ -1733,7 +1737,9 @@ bool CompositionalMultiphaseBase::validateDirichletBC( DomainPartition & domain,
       if( subRegionSetMap.count( setName ) == 0 )
       {
         bcConsistent = false;
-        GEOS_WARNING( BCWarningMessage::missingPressureBC( regionName, subRegionName, setName ) );
+        GEOS_WARNING(
+          BCWarningMessage::missingPressureBC( regionName, subRegionName, setName,
+                                               fields::flow::pressure::key() ) );
       }
       if( m_isThermal )
       {
@@ -1741,13 +1747,16 @@ bool CompositionalMultiphaseBase::validateDirichletBC( DomainPartition & domain,
         if( tempSubRegionSetMap.count( setName ) == 0 )
         {
           bcConsistent = false;
-          GEOS_WARNING( BCWarningMessage::missingTemperatureBC( regionName, subRegionName, setName ) );
+          GEOS_WARNING(
+            BCWarningMessage::missingTemperatureBC( regionName, subRegionName, setName,
+                                                    fields::flow::temperature::key() ) );
         }
       }
       if( comp < 0 || comp >= m_numComponents )
       {
         bcConsistent = false;
-        GEOS_WARNING( BCWarningMessage::invalidComponentIndex( comp, fs.getName() ) );
+        GEOS_WARNING( BCWarningMessage::invalidComponentIndex( comp, fs.getName(),
+                                                               fields::flow::globalCompFraction::key() ) );
         return; // can't check next part with invalid component id
       }
 
@@ -1755,7 +1764,9 @@ bool CompositionalMultiphaseBase::validateDirichletBC( DomainPartition & domain,
       if( compMask[comp] )
       {
         bcConsistent = false;
-        GEOS_WARNING( BCWarningMessage::conflictingComposition( comp, regionName, subRegionName, setName ) );
+        GEOS_WARNING(
+          BCWarningMessage::conflictingComposition( comp, regionName, subRegionName, setName,
+                                                    fields::flow::globalCompFraction::key() ) );
       }
       compMask.set( comp );
     } );
@@ -1778,11 +1789,15 @@ bool CompositionalMultiphaseBase::validateDirichletBC( DomainPartition & domain,
               if( !compMask[ic] )
               {
                 bcConsistent = false;
-                GEOS_WARNING( BCWarningMessage::conflictingComposition( ic, componentNames[ic], regionEntry.first, subRegionEntry.first, setEntry.first ) );
-                GEOS_WARNING( BCWarningMessage::fieldSpecificationIndication( fields::flow::globalCompFraction::key(), setEntry.first ) );
+                GEOS_WARNING(
+                  BCWarningMessage::nonConsistencyBC(
+                    ic, componentNames[ic],
+                    regionEntry.first, subRegionEntry.first, setEntry.first,
+                    fields::flow::globalCompFraction::key() ) );
+              }
             }
-          }
-        });
+          } );
+        }
       }
     }
   } );
