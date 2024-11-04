@@ -1684,7 +1684,7 @@ bool CompositionalMultiphaseBase::validateDirichletBC( DomainPartition & domain,
       {
         bcConsistent = false;
         GEOS_WARNING( BCMessage::pressureConflict( regionName, subRegionName, setName,
-                                                    fields::flow::pressure::key() ) );
+                                                   fields::flow::pressure::key() ) );
       }
       subRegionSetMap[setName].setNumComp( m_numComponents );
     } );
@@ -1710,7 +1710,7 @@ bool CompositionalMultiphaseBase::validateDirichletBC( DomainPartition & domain,
         {
           bcConsistent = false;
           GEOS_WARNING( BCMessage::temperatureConflict( regionName, subRegionName, setName,
-                                                         fields::flow::temperature::key() ) );
+                                                        fields::flow::temperature::key() ) );
         }
         tempSubRegionSetMap.insert( setName );
       } );
@@ -1736,7 +1736,7 @@ bool CompositionalMultiphaseBase::validateDirichletBC( DomainPartition & domain,
       {
         bcConsistent = false;
         GEOS_WARNING( BCMessage::missingPressure( regionName, subRegionName, setName,
-                                                   fields::flow::pressure::key() ) );
+                                                  fields::flow::pressure::key() ) );
       }
       if( m_isThermal )
       {
@@ -1745,14 +1745,14 @@ bool CompositionalMultiphaseBase::validateDirichletBC( DomainPartition & domain,
         {
           bcConsistent = false;
           GEOS_WARNING( BCMessage::missingTemperature( regionName, subRegionName, setName,
-                                                        fields::flow::temperature::key() ) );
+                                                       fields::flow::temperature::key() ) );
         }
       }
       if( comp < 0 || comp >= m_numComponents )
       {
         bcConsistent = false;
         GEOS_WARNING( BCMessage::invalidComponentIndex( comp, fs.getName(),
-                                                         fields::flow::globalCompFraction::key() ) );
+                                                        fields::flow::globalCompFraction::key() ) );
         return; // can't check next part with invalid component id
       }
 
@@ -1761,7 +1761,7 @@ bool CompositionalMultiphaseBase::validateDirichletBC( DomainPartition & domain,
       {
         bcConsistent = false;
         GEOS_WARNING( BCMessage::conflictingComposition( comp, regionName, subRegionName, setName,
-                                                          fields::flow::globalCompFraction::key() ) );
+                                                         fields::flow::globalCompFraction::key() ) );
       }
       compMask.set( comp );
     } );
@@ -1784,10 +1784,9 @@ bool CompositionalMultiphaseBase::validateDirichletBC( DomainPartition & domain,
               if( !compMask[ic] )
               {
                 bcConsistent = false;
-                GEOS_WARNING(
-                  BCMessage::nonConsistency( ic, componentNames[ic],
-                                              regionEntry.first, subRegionEntry.first, setEntry.first,
-                                              fields::flow::globalCompFraction::key() ) );
+                GEOS_WARNING( BCMessage::inconsistency( ic, componentNames[ic],
+                                                        regionEntry.first, subRegionEntry.first, setEntry.first,
+                                                        fields::flow::globalCompFraction::key() ) );
               }
             }
           } );

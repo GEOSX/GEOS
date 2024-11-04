@@ -232,89 +232,34 @@ protected:
    * @brief
    *
    */
-  struct BCWarningMessage
+  class BCMessage
   {
+public:
+    static string generateMessage( string_view baseMessage,
+                                   string_view fieldName, string_view setName );
 
-    static string generateMessage( string_view baseMessage, string_view fieldName, string_view setName )
-    {
-      string fieldSpecificationMsg = GEOS_FMT( "Check if you have added or applied the appropriate fields to" \
-                                               "the FieldSpecification component with fieldName=”{}” and setNames=\"{}\"\n",
-                                               fieldName, setName );
-      return GEOS_FMT( "{}{}", baseMessage, fieldSpecificationMsg );
-    }
+    static string pressureConflict( string_view regionName, string_view subRegionName,
+                                    string_view setName, string_view fieldName );
 
-    static string pressureConflict( string_view regionName,
-                                      string_view subRegionName,
-                                      string_view setName,
-                                      string_view fieldName )
-    {
-      return generateMessage(
-        GEOS_FMT( "Conflicting pressure boundary conditions on set {}/{}/{}\n",
-                  regionName, subRegionName, setName ),
-        fieldName, setName );
-    }
+    static string temperatureConflict( string_view regionName, string_view subRegionName,
+                                       string_view setName, string_view fieldName );
 
-    static string temperatureConflict( string_view regionName,
-                                         string_view subRegionName,
-                                         string_view setName,
-                                         string_view fieldName )
-    {
-      return generateMessage(
-        GEOS_FMT( "Conflicting temperature boundary conditions on set {}/{}/{}\n",
-                  regionName, subRegionName, setName ),
-        fieldName, setName );
-    }
-
-    static string missingPressure( string_view regionName, string_view subRegionName, string_view setName,
-                                     string_view fieldName )
-    {
-      return generateMessage(
-        GEOS_FMT( "Pressure boundary condition not prescribed on set {}/{}/{}\n",
-                  regionName, subRegionName, setName ),
-        fieldName, setName );
-    }
+    static string missingPressure( string_view regionName, string_view subRegionName,
+                                   string_view setName, string_view fieldName );
 
     static string missingTemperature( string_view regionName, string_view subRegionName,
-                                        string_view setName, string_view fieldName )
-    {
-      return generateMessage(
-        GEOS_FMT( "Temperature boundary condition not prescribed on set {}/{}/{}\n",
-                  regionName, subRegionName, setName ),
-        fieldName, setName );
-    }
+                                      string_view setName, string_view fieldName );
 
-    static string conflictingComposition( integer const comp,
+    static string conflictingComposition( int comp,
                                           string_view regionName, string_view subRegionName,
-                                          string_view setName, string_view fieldName )
-    {
-      return generateMessage(
-        GEOS_FMT( "Conflicting composition[{}] boundary conditions on set {}/{}/{}\n",
-                  comp, regionName, subRegionName, setName ),
-        fieldName, setName );
-    }
+                                          string_view setName, string_view fieldName );
 
-    static string invalidComponentIndex( integer const comp,
-                                         string_view fsName,
-                                         string_view fieldName )
-    {
-      return generateMessage(
-        GEOS_FMT( "Invalid component index [{}] in composition boundary condition {}\n",
-                  comp, fsName ), fieldName, fsName );
-    }
+    static string invalidComponentIndex( int comp,
+                                         string_view fsName, string_view fieldName );
 
-    static string nonConsistency( integer componentIndex,
-                                    string_view componentName,
-                                    string_view regionName,
-                                    string_view subRegionName,
-                                    string_view setName,
-                                    string_view fieldName )
-    {
-      return generateMessage(
-        GEOS_FMT( "Boundary condition not applied to composition[{}] ({}) on region {}/{}/{}\n",
-                  componentIndex, componentName, regionName, subRegionName, setName ),
-        fieldName, setName );
-    }
-
+    static string inconsistency( int componentIndex, string_view componentName,
+                                 string_view regionName, string_view subRegionName,
+                                 string_view setName, string_view fieldName );
   };
 
 private:
