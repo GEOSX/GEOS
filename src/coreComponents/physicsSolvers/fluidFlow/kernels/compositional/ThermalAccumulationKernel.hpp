@@ -81,7 +81,7 @@ public:
                       constitutive::CoupledSolidBase const & solid,
                       CRSMatrixView< real64, globalIndex const > const & localMatrix,
                       arrayView1d< real64 > const & localRhs,
-                      BitFlags< isothermalCompositionalMultiphaseBaseKernels::AccumulationKernelFlags > const kernelFlags )
+                      BitFlags< isothermalCompositionalMultiphaseBaseKernels::KernelFlags > const kernelFlags )
     : Base( numPhases, rankOffset, dofKey, subRegion, fluid, solid, localMatrix, localRhs, kernelFlags ),
     m_dPoro_dTemp( solid.getDporosity_dTemperature() ),
     m_phaseInternalEnergy( fluid.phaseInternalEnergy() ),
@@ -325,9 +325,9 @@ public:
       localIndex constexpr NUM_COMP = NC();
       localIndex constexpr NUM_DOF = NC()+2;
 
-      BitFlags< isothermalCompositionalMultiphaseBaseKernels::AccumulationKernelFlags > kernelFlags;
+      BitFlags< isothermalCompositionalMultiphaseBaseKernels::KernelFlags > kernelFlags;
       if( useTotalMassEquation )
-        kernelFlags.set( isothermalCompositionalMultiphaseBaseKernels::AccumulationKernelFlags::TotalMassEquation );
+        kernelFlags.set( isothermalCompositionalMultiphaseBaseKernels::KernelFlags::TotalMassEquation );
 
       AccumulationKernel< NUM_COMP, NUM_DOF > kernel( numPhases, rankOffset, dofKey, subRegion,
                                                       fluid, solid, localMatrix, localRhs, kernelFlags );

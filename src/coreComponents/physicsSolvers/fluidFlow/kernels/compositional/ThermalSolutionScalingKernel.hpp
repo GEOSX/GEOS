@@ -76,7 +76,8 @@ public:
                          arrayView2d< real64 const, compflow::USD_COMP > const compDens,
                          arrayView1d< real64 > pressureScalingFactor,
                          arrayView1d< real64 > compDensScalingFactor,
-                         arrayView1d< real64 > temperatureScalingFactor )
+                         arrayView1d< real64 > temperatureScalingFactor,
+                         integer const temperatureOffset )
     : Base( maxRelativePresChange,
             maxAbsolutePresChange,
             maxCompFracChange,
@@ -92,7 +93,8 @@ public:
             compDensScalingFactor ),
     m_maxRelativeTempChange( maxRelativeTempChange ),
     m_temperature( temperature ),
-    m_temperatureScalingFactor( temperatureScalingFactor )
+    m_temperatureScalingFactor( temperatureScalingFactor ),
+    m_temperatureOffset( temperatureOffset )
   {}
 
   /**
@@ -121,7 +123,7 @@ public:
     {
       // compute the change in temperature
       real64 const temp = m_temperature[ei];
-      real64 const absTempChange = LvArray::math::abs( m_localSolution[stack.localRow + m_numComp + 1] );
+      real64 const absTempChange = LvArray::math::abs( m_localSolution[stack.localRow + m_temperatureOffset] );
       if( stack.localMaxDeltaTemp < absTempChange )
       {
         stack.localMaxDeltaTemp = absTempChange;
@@ -160,6 +162,8 @@ protected:
   /// View on the scaling factor
   arrayView1d< real64 > const m_temperatureScalingFactor;
 
+  /// Temperature offset in solution array
+  integer const m_temperatureOffset;
 };
 
 /**
@@ -190,23 +194,24 @@ public:
                    real64 const maxRelativeTempChange,
                    real64 const maxCompFracChange,
                    real64 const maxRelativeCompDensChange,
+                   arrayView1d< real64 const > const pressure,
+                   arrayView1d< real64 const > const temperature,
+                   arrayView2d< real64 const, compflow::USD_COMP > const compDens,
+                   arrayView1d< real64 > pressureScalingFactor,
+                   arrayView1d< real64 > compDensScalingFactor,
+                   arrayView1d< real64 > temperatureScalingFactor,
                    globalIndex const rankOffset,
                    integer const numComp,
                    string const dofKey,
                    ElementSubRegionBase & subRegion,
-                   arrayView1d< real64 const > const localSolution )
+                   arrayView1d< real64 const > const localSolution,
+                   integer const temperatureOffset )
   {
-    arrayView1d< real64 const > const pressure = subRegion.getField< fields::flow::pressure >();
-    arrayView1d< real64 const > const temperature = subRegion.getField< fields::flow::temperature >();
-    arrayView2d< real64 const, compflow::USD_COMP > const compDens = subRegion.getField< fields::flow::globalCompDensity >();
-    arrayView1d< real64 > pressureScalingFactor = subRegion.getField< fields::flow::pressureScalingFactor >();
-    arrayView1d< real64 > temperatureScalingFactor = subRegion.getField< fields::flow::temperatureScalingFactor >();
-    arrayView1d< real64 > compDensScalingFactor = subRegion.getField< fields::flow::globalCompDensityScalingFactor >();
     SolutionScalingKernel kernel( maxRelativePresChange, maxAbsolutePresChange, maxRelativeTempChange,
                                   maxCompFracChange, maxRelativeCompDensChange,
                                   rankOffset, numComp, dofKey, subRegion, localSolution,
                                   pressure, temperature, compDens, pressureScalingFactor,
-                                  temperatureScalingFactor, compDensScalingFactor );
+                                  compDensScalingFactor, temperatureScalingFactor, temperatureOffset );
     return thermalCompositionalMultiphaseBaseKernels::
              SolutionScalingKernel::launch< POLICY >( subRegion.size(), kernel );
   }

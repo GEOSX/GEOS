@@ -62,7 +62,7 @@ set( physicsSolvers_headers
      fluidFlow/kernels/compositional/GlobalComponentFractionKernel.hpp
      fluidFlow/kernels/compositional/HydrostaticPressureKernel.hpp
      fluidFlow/kernels/compositional/IHUPhaseFlux.hpp
-     fluidFlow/kernels/compositional/KernelLaunchSelector.hpp
+     fluidFlow/kernels/compositional/KernelLaunchSelectors.hpp
      fluidFlow/kernels/compositional/PhaseComponentFlux.hpp
      fluidFlow/kernels/compositional/PhaseMobilityKernel.hpp
      fluidFlow/kernels/compositional/PhaseVolumeFractionKernel.hpp

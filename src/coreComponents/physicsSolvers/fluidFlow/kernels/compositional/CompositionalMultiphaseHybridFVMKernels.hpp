@@ -35,7 +35,7 @@
 #include "physicsSolvers/fluidFlow/StencilAccessors.hpp"
 #include "physicsSolvers/fluidFlow/kernels/compositional/AccumulationKernel.hpp"
 #include "physicsSolvers/fluidFlow/kernels/compositional/PropertyKernelBase.hpp"
-#include "physicsSolvers/fluidFlow/kernels/compositional/KernelLaunchSelector.hpp"
+#include "physicsSolvers/fluidFlow/kernels/compositional/KernelLaunchSelectors.hpp"
 
 
 namespace geos
