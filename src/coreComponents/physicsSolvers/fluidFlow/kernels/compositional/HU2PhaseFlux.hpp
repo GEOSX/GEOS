@@ -198,7 +198,7 @@ protected:
                                                        dMob_dP,
                                                        dMob_dC );
       // accumulate total mobility
-      UpwindHelpers::addValueAndDerivatives( totMob, dTotMob_dP, dTotMob_dC, mob, dMob_dP, dMob_dC );
+      UpwindHelpers::addToValueAndDerivatives( mob, dMob_dP, dMob_dC, totMob, dTotMob_dP, dTotMob_dC );
     }
 
     // upwind based on totFlux sign
@@ -214,7 +214,7 @@ protected:
                                                      dMob_dP,
                                                      dMob_dC );
     // accumulate total mobility
-    UpwindHelpers::addValueAndDerivatives( totMob, dTotMob_dP, dTotMob_dC, mob, dMob_dP, dMob_dC );
+    UpwindHelpers::addToValueAndDerivatives( mob, dMob_dP, dMob_dC, totMob, dTotMob_dP, dTotMob_dC );
 
     // safeguard
     totMob = LvArray::math::max( totMob, minTotMob );
@@ -225,8 +225,8 @@ protected:
     real64 const fractionalFlow = mob * invTotMob;
     real64 dFractionalFlow_dP{};
     real64 dFractionalFlow_dC[numComp]{};
-    UpwindHelpers::addDerivativesScaled( dFractionalFlow_dP, dFractionalFlow_dC, dMob_dP, dMob_dC, invTotMob );
-    UpwindHelpers::addDerivativesScaled( dFractionalFlow_dP, dFractionalFlow_dC, dTotMob_dP, dTotMob_dC, -fractionalFlow * invTotMob );
+    UpwindHelpers::addToDerivativesScaled( dMob_dP, dMob_dC, invTotMob, dFractionalFlow_dP, dFractionalFlow_dC );
+    UpwindHelpers::addToDerivativesScaled( dTotMob_dP, dTotMob_dC, -fractionalFlow * invTotMob, dFractionalFlow_dP, dFractionalFlow_dC );
 
     /// Assembling the viscous flux (and derivatives) from fractional flow and total velocity as \phi_{\mu} = f_i^{up,\mu} uT
 
@@ -235,14 +235,14 @@ protected:
     real64 dViscousPhaseFlux_dC[numFluxSupportPoints][numComp]{};
 
     // fractionalFlow derivatives
-    UpwindHelpers::addDerivativesScaled( dViscousPhaseFlux_dP[k_up], dViscousPhaseFlux_dC[k_up], dFractionalFlow_dP, dFractionalFlow_dC, totFlux );
+    UpwindHelpers::addToDerivativesScaled( dFractionalFlow_dP, dFractionalFlow_dC, totFlux, dViscousPhaseFlux_dP[k_up], dViscousPhaseFlux_dC[k_up] );
 
     // Ut derivatives
-    UpwindHelpers::addDerivativesScaled( dViscousPhaseFlux_dP, dViscousPhaseFlux_dC, dTotFlux_dP, dTotFlux_dC, fractionalFlow );
+    UpwindHelpers::addToDerivativesScaled( dTotFlux_dP, dTotFlux_dC, fractionalFlow, dViscousPhaseFlux_dP, dViscousPhaseFlux_dC );
 
     // accumulate in the flux and its derivatives (need to be very careful doing that)
-    UpwindHelpers::addValueAndDerivatives( phaseFlux, dPhaseFlux_dP, dPhaseFlux_dC,
-                                           viscousPhaseFlux, dViscousPhaseFlux_dP, dViscousPhaseFlux_dC );
+    UpwindHelpers::addToValueAndDerivatives( viscousPhaseFlux, dViscousPhaseFlux_dP, dViscousPhaseFlux_dC,
+                                             phaseFlux, dPhaseFlux_dP, dPhaseFlux_dC );
   }
 
   template< localIndex numComp, localIndex numFluxSupportPoints >
@@ -316,8 +316,8 @@ protected:
     }
 
     // update phaseFlux from gravitational
-    UpwindHelpers::addValueAndDerivatives( phaseFlux, dPhaseFlux_dP, dPhaseFlux_dC,
-                                           gravPhaseFlux, dGravPhaseFlux_dP, dGravPhaseFlux_dC );
+    UpwindHelpers::addToValueAndDerivatives( gravPhaseFlux, dGravPhaseFlux_dP, dGravPhaseFlux_dC,
+                                             phaseFlux, dPhaseFlux_dP, dPhaseFlux_dC );
   }
 
   template< localIndex numComp, localIndex numFluxSupportPoints >
@@ -391,8 +391,8 @@ protected:
     }
 
     // update phaseFlux from capillary flux
-    UpwindHelpers::addValueAndDerivatives( phaseFlux, dPhaseFlux_dP, dPhaseFlux_dC,
-                                           capPhaseFlux, dCapPhaseFlux_dP, dCapPhaseFlux_dC );
+    UpwindHelpers::addToValueAndDerivatives( capPhaseFlux, dCapPhaseFlux_dP, dCapPhaseFlux_dC,
+                                             phaseFlux, dPhaseFlux_dP, dPhaseFlux_dC );
   }
 
   template< localIndex numComp, localIndex numFluxSupportPoints >
@@ -433,8 +433,8 @@ protected:
                              phaseCapPressure, dPhaseCapPressure_dPhaseVolFrac,
                              potGrad, phaseFlux, dPhaseFlux_dP, dPhaseFlux_dC );
 
-      UpwindHelpers::addValueAndDerivatives( totFlux, dTotFlux_dP, dTotFlux_dC,
-                                             phaseFlux, dPhaseFlux_dP, dPhaseFlux_dC );
+      UpwindHelpers::addToValueAndDerivatives( phaseFlux, dPhaseFlux_dP, dPhaseFlux_dC,
+                                               totFlux, dTotFlux_dP, dTotFlux_dC );
     }
   }
 
@@ -521,7 +521,7 @@ protected:
       dGravPot_dP[i] += densMean * dGravD_dP;
 
       // need to add contributions from both cells the mean density depends on
-      UpwindHelpers::addDerivativesScaled( dGravPot_dP, dGravPot_dC, dDensMean_dP, dDensMean_dC, gravD );
+      UpwindHelpers::addToDerivativesScaled( dDensMean_dP, dDensMean_dC, gravD, dGravPot_dP, dGravPot_dC );
     }
 
   }
@@ -585,8 +585,8 @@ protected:
     real64 const potDiff = pot_j - pot_i;
     real64 dPotDiff_dP[numFluxSupportPoints]{};
     real64 dPotDiff_dC[numFluxSupportPoints][numComp]{};
-    UpwindHelpers::addDerivativesScaled( dPotDiff_dP, dPotDiff_dC, dPot_j_dP, dPot_j_dC, 1.0 );
-    UpwindHelpers::addDerivativesScaled( dPotDiff_dP, dPotDiff_dC, dPot_i_dP, dPot_i_dC, -1.0 );
+    UpwindHelpers::addToDerivativesScaled( dPot_j_dP, dPot_j_dC, 1.0, dPotDiff_dP, dPotDiff_dC );
+    UpwindHelpers::addToDerivativesScaled( dPot_i_dP, dPot_i_dC, -1.0, dPotDiff_dP, dPotDiff_dC );
 
     localIndex k_up_i = -1;
     real64 mob_i{};
@@ -624,24 +624,24 @@ protected:
     real64 const mobTotInv = 1 / mobTot;
     real64 dMobTot_dP[numFluxSupportPoints]{};
     real64 dMobTot_dC[numFluxSupportPoints][numComp]{};
-    UpwindHelpers::addDerivatives( dMobTot_dP[k_up_i], dMobTot_dC[k_up_i], dMob_i_dP, dMob_i_dC );
-    UpwindHelpers::addDerivatives( dMobTot_dP[k_up_j], dMobTot_dC[k_up_j], dMob_j_dP, dMob_j_dC );
+    UpwindHelpers::addToDerivatives( dMob_i_dP, dMob_i_dC, dMobTot_dP[k_up_i], dMobTot_dC[k_up_i] );
+    UpwindHelpers::addToDerivatives( dMob_j_dP, dMob_j_dC, dMobTot_dP[k_up_j], dMobTot_dC[k_up_j] );
 
     // Assembling flux phase-wise as \phi_{i,g} = \sum_{k\nei} \lambda_k^{up,g} f_k^{up,g} (Pot_i - Pot_k)
     phaseFlux += mob_i * mob_j * mobTotInv * potDiff;
 
     // mob_i derivatives
-    UpwindHelpers::addDerivativesScaled( dPhaseFlux_dP[k_up_i], dPhaseFlux_dC[k_up_i], dMob_i_dP, dMob_i_dC, mob_j * mobTotInv * potDiff );
+    UpwindHelpers::addToDerivativesScaled( dMob_i_dP, dMob_i_dC, mob_j * mobTotInv * potDiff, dPhaseFlux_dP[k_up_i], dPhaseFlux_dC[k_up_i] );
 
     // mob_j derivatives
-    UpwindHelpers::addDerivativesScaled( dPhaseFlux_dP[k_up_j], dPhaseFlux_dC[k_up_j], dMob_j_dP, dMob_j_dC, mob_i * mobTotInv * potDiff );
+    UpwindHelpers::addToDerivativesScaled( dMob_j_dP, dMob_j_dC, mob_i * mobTotInv * potDiff, dPhaseFlux_dP[k_up_j], dPhaseFlux_dC[k_up_j] );
 
     // mobTot derivatives
     real64 const mobTotInv2 = mobTotInv * mobTotInv;
-    UpwindHelpers::addDerivativesScaled( dPhaseFlux_dP, dPhaseFlux_dC, dMobTot_dP, dMobTot_dC, -mob_i * mob_j * mobTotInv2 * potDiff );
+    UpwindHelpers::addToDerivativesScaled( dMobTot_dP, dMobTot_dC, -mob_i * mob_j * mobTotInv2 * potDiff, dPhaseFlux_dP, dPhaseFlux_dC );
 
     // potDiff derivatives
-    UpwindHelpers::addDerivativesScaled( dPhaseFlux_dP, dPhaseFlux_dC, dPotDiff_dP, dPotDiff_dC, mob_i * mob_j * mobTotInv );
+    UpwindHelpers::addToDerivativesScaled( dPotDiff_dP, dPotDiff_dC, mob_i * mob_j * mobTotInv, dPhaseFlux_dP, dPhaseFlux_dC );
   }
 
 };
