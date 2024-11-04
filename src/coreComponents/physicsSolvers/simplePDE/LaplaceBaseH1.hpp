@@ -17,17 +17,17 @@
 #define GEOS_PHYSICSSOLVERS_SIMPLEPDE_LAPLACE_BASE_HPP
 
 #include "codingUtilities/EnumStrings.hpp"   // facilities for enum-string conversion (for reading enum values from XML input)
-#include "physicsSolvers/SolverBase.hpp"  // an abstraction class shared by all physics solvers
+#include "physicsSolvers/PhysicsSolverBase.hpp"  // an abstraction class shared by all physics solvers
 #include "fieldSpecification/FieldSpecificationManager.hpp" // a manager that can access and set values on the discretized domain
 
 namespace geos
 {
 
-// Like most physics solvers, the Laplace solver derives from a generic SolverBase class.
+// Like most physics solvers, the Laplace solver derives from a generic PhysicsSolverBase class.
 // The base class is densely Doxygen-commented and worth a look if you have not done so already.
 // Most important system assembly steps, linear and non-linear resolutions, and time-stepping mechanisms
-// are implemented at the SolverBase class level and can thus be used in Laplace without needing reimplementation.
-class LaplaceBaseH1 : public SolverBase
+// are implemented at the PhysicsSolverBase class level and can thus be used in Laplace without needing reimplementation.
+class LaplaceBaseH1 : public PhysicsSolverBase
 {
 public:
   /// The default nullary constructor is disabled to avoid compiler auto-generation:
@@ -111,7 +111,7 @@ public:
   /// This structure stores ``dataRepository::ViewKey`` objects used as binding between the input
   /// XML tags and source code variables (here, timeIntegrationOption and fieldVarName)
   //START_SPHINX_INCLUDE_VIEWKEY
-  struct viewKeyStruct : public SolverBase::viewKeyStruct
+  struct viewKeyStruct : public PhysicsSolverBase::viewKeyStruct
   {
     static constexpr char const * timeIntegrationOption() { return "timeIntegrationOption"; }
     static constexpr char const * fieldVarName() { return "fieldName"; }
