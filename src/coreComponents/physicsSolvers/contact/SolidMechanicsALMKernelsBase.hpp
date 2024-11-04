@@ -98,7 +98,8 @@ public:
     m_rotationMatrix( elementSubRegion.getField< fields::contact::rotationMatrix >().toViewConst()),
     m_dispJump( elementSubRegion.getField< fields::contact::dispJump >().toView() ),
     m_oldDispJump( elementSubRegion.getField< fields::contact::oldDispJump >().toViewConst() ),
-    m_penalty( elementSubRegion.getField< fields::contact::iterativePenalty >().toViewConst() )
+    m_penalty( elementSubRegion.getField< fields::contact::iterativePenalty >().toViewConst() ),
+    m_area( elementSubRegion.getElementArea().toViewConst() )
   {}
 
   //***************************************************************************
@@ -264,6 +265,8 @@ protected:
   /// The array containing the penalty coefficients for each element.
   arrayView2d< real64 const > const m_penalty;
 
+  /// The array containing the element area
+  arrayView1d< real64 const > const m_area;
 };
 
 /**
@@ -325,7 +328,6 @@ struct ConstraintCheckKernel
    * @param[in] normalDisplacementTolerance Check tolerance (compenetration)
    * @param[in] slidingTolerance Check tolerance (sliding)
    * @param[in] slidingCheckTolerance Check tolerance (if shear strass exceeds tauLim)
-   * @param[in] area interface element area
    * @param[in] fractureState the array containing the fracture state
    * @param[out] condConv the array containing the convergence flag:
    *                      0: Constraint conditions satisfied
@@ -346,7 +348,6 @@ struct ConstraintCheckKernel
           arrayView1d< real64 const > const & normalDisplacementTolerance,
           arrayView1d< real64 const > const & slidingTolerance,
           real64 const slidingCheckTolerance,
-          arrayView1d< real64 const > const & area,
           arrayView1d< integer const > const & fractureState,
           arrayView1d< integer > const & condConv )
   {
@@ -360,8 +361,8 @@ struct ConstraintCheckKernel
                                         traction[k],
                                         fractureState[k],
                                         normalTractionTolerance[k],
-                                        normalDisplacementTolerance[k]*area[k],
-                                        slidingTolerance[k]*area[k],
+                                        normalDisplacementTolerance[k],
+                                        slidingTolerance[k],
                                         slidingCheckTolerance,
                                         condConv[k] );
       }
