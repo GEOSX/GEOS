@@ -157,18 +157,6 @@ void AcousticWaveEquationSEM::precomputeSourceAndReceiverTerm( MeshLevel & baseM
   receiverConstants.setValues< EXEC_POLICY >( -1 );
   receiverIsLocal.zero();
 
-  arrayView2d< real32 > const sourceValue = m_sourceValue.toView();
-  real64 dt = 0;
-  EventManager const & event = getGroupByPath< EventManager >( "/Problem/Events" );
-  for( localIndex numSubEvent = 0; numSubEvent < event.numSubGroups(); ++numSubEvent )
-  {
-    EventBase const * subEvent = static_cast< EventBase const * >( event.getSubGroups()[numSubEvent] );
-    if( subEvent->getEventName() == "/Solvers/" + getName() )
-    {
-      dt = subEvent->getReference< real64 >( EventBase::viewKeyStruct::forceDtString() );
-    }
-  }
-
   mesh.getElemManager().forElementSubRegionsComplete< CellElementSubRegion >( regionNames, [&]( localIndex const,
                                                                                                 localIndex const er,
                                                                                                 localIndex const esr,
@@ -215,12 +203,7 @@ void AcousticWaveEquationSEM::precomputeSourceAndReceiverTerm( MeshLevel & baseM
           receiverCoordinates,
           receiverIsLocal,
           receiverNodeIds,
-          receiverConstants,
-          sourceValue,
-          dt,
-          m_timeSourceFrequency,
-          m_timeSourceDelay,
-          m_rickerOrder );
+          receiverConstants );
       }
     } );
     elementSubRegion.faceList().freeOnDevice();
@@ -237,23 +220,25 @@ void AcousticWaveEquationSEM::precomputeSourceAndReceiverTerm( MeshLevel & baseM
   nodesToElements.freeOnDevice();
 }
 
-void AcousticWaveEquationSEM::addSourceToRightHandSide( integer const & cycleNumber, arrayView1d< real32 > const rhs )
+void AcousticWaveEquationSEM::addSourceToRightHandSide( real64 const & time_n, arrayView1d< real32 > const rhs )
 {
   arrayView2d< localIndex const > const sourceNodeIds = m_sourceNodeIds.toViewConst();
   arrayView2d< real64 const > const sourceConstants   = m_sourceConstants.toViewConst();
   arrayView1d< localIndex const > const sourceIsAccessible = m_sourceIsAccessible.toViewConst();
-  arrayView2d< real32 const > const sourceValue   = m_sourceValue.toViewConst();
-
-  GEOS_THROW_IF( cycleNumber > sourceValue.size( 0 ),
-                 getDataContext() << ": Too many steps compared to array size",
-                 std::runtime_error );
+  real32 const timeSourceFrequency = m_timeSourceFrequency;
+  real32 const timeSourceDelay = m_timeSourceDelay;
+  localIndex const rickerOrder = m_rickerOrder;
+  bool useSourceWaveletTables = m_useSourceWaveletTables;
+  arrayView1d< TableFunction::KernelWrapper const > const sourceWaveletTableWrappers = m_sourceWaveletTableWrappers.toViewConst();
   forAll< EXEC_POLICY >( sourceConstants.size( 0 ), [=] GEOS_HOST_DEVICE ( localIndex const isrc )
   {
     if( sourceIsAccessible[isrc] == 1 )
     {
+      real64 const srcValue =
+        useSourceWaveletTables ? sourceWaveletTableWrappers[ isrc ].compute( &time_n ) : WaveSolverUtils::evaluateRicker( time_n, timeSourceFrequency, timeSourceDelay, rickerOrder );
       for( localIndex inode = 0; inode < sourceConstants.size( 1 ); ++inode )
       {
-        real32 const localIncrement = sourceConstants[isrc][inode] * sourceValue[cycleNumber][isrc];
+        real32 const localIncrement = sourceConstants[isrc][inode] * srcValue;
         RAJA::atomicAdd< ATOMIC_POLICY >( &rhs[sourceNodeIds[isrc][inode]], localIncrement );
       }
     }
@@ -323,6 +308,7 @@ void AcousticWaveEquationSEM::initializePostInitialConditionsPreSubGroups()
 
       /// Partial gradient if gradient as to be computed
       arrayView1d< real32 > grad = elementSubRegion.getField< acousticfields::PartialGradient >();
+
       grad.zero();
 
       finiteElement::FiniteElementDispatchHandler< SEM_FE_TYPES >::dispatch3D( fe, [&] ( auto const finiteElement )
@@ -357,8 +343,130 @@ void AcousticWaveEquationSEM::initializePostInitialConditionsPreSubGroups()
     initializeAnelasticityCoefficients< acousticfields::AcousticQualityFactor >( domain );
   }
 
+  if( m_timestepStabilityLimit==1 )
+  {
+    real64 dtOut = 0.0;
+    computeTimeStep( dtOut );
+    m_timestepStabilityLimit = 0;
+    m_timeStep=dtOut;
+  }
+
+
+>>>>>>> develop
   WaveSolverUtils::initTrace( "seismoTraceReceiver", getName(), m_outputSeismoTrace, m_receiverConstants.size( 0 ), m_receiverIsLocal );
 }
+
+//This function is only to give an easy accesss to the computation of the time-step for Pygeosx interface and avoid to exit the code when
+// using Pygeosx
+
+real64 AcousticWaveEquationSEM::computeTimeStep( real64 & dtOut )
+{
+
+  DomainPartition & domain = getGroupByPath< DomainPartition >( "/Problem/domain" );
+
+  forDiscretizationOnMeshTargets( domain.getMeshBodies(), [&] ( string const &,
+                                                                MeshLevel & mesh,
+                                                                arrayView1d< string const > const & regionNames )
+  {
+
+    NodeManager & nodeManager = mesh.getNodeManager();
+
+    arrayView1d< real32 > const mass = nodeManager.getField< acousticfields::AcousticMassVector >();
+    arrayView1d< real32 > const p   = nodeManager.getField< acousticfields::Pressure_n >();
+    arrayView1d< real32 > const stiffnessVector = nodeManager.getField< acousticfields::StiffnessVector >();
+
+    localIndex const sizeNode = nodeManager.size();
+
+    real64 const epsilon = 0.00001;
+    localIndex const nIterMax = 10000;
+    localIndex numberIter = 0;
+    localIndex counter = 0;
+    real64 lambdaNew = 0.0;
+
+    //Randomize p values
+    srand( time( NULL ));
+    for( localIndex a = 0; a < sizeNode; ++a )
+    {
+      p[a] = (real64)rand()/(real64) RAND_MAX;
+    }
+
+    //Step 1: Normalize randomized pressure
+    real64 normP= 0.0;
+    WaveSolverUtils::dotProduct( sizeNode, p, p, normP );
+
+    forAll< EXEC_POLICY >( sizeNode, [=] GEOS_HOST_DEVICE ( localIndex const a )
+    {
+      p[a]/= sqrt( normP );
+    } );
+
+    //Step 2: Iterations of M^{-1}K)p until we found the max eigenvalues
+    auto kernelFactory = acousticWaveEquationSEMKernels::ExplicitAcousticSEMFactory( dtOut );
+    real64 dotProductPPaux = 0.0;
+    real64 normPaux = 0.0;
+    real64 lambdaOld = lambdaNew;
+    do
+    {
+      stiffnessVector.zero();
+
+      finiteElement::
+        regionBasedKernelApplication< EXEC_POLICY,
+                                      constitutive::NullModel,
+                                      CellElementSubRegion >( mesh,
+                                                              regionNames,
+                                                              getDiscretizationName(),
+                                                              "",
+                                                              kernelFactory );
+
+      forAll< EXEC_POLICY >( sizeNode, [=] GEOS_HOST_DEVICE ( localIndex const a )
+      {
+        stiffnessVector[a]/= mass[a];
+      } );
+
+      lambdaOld = lambdaNew;
+
+      dotProductPPaux = 0.0;
+      normP=0.0;
+      WaveSolverUtils::dotProduct( sizeNode, p, stiffnessVector, dotProductPPaux );
+      WaveSolverUtils::dotProduct( sizeNode, p, p, normP );
+
+      lambdaNew = dotProductPPaux/normP;
+
+      normPaux = 0.0;
+      WaveSolverUtils::dotProduct( sizeNode, stiffnessVector, stiffnessVector, normPaux );
+
+      forAll< EXEC_POLICY >( sizeNode, [=] GEOS_HOST_DEVICE ( localIndex const a )
+      {
+        p[a] = stiffnessVector[a]/( normPaux );
+      } );
+
+      if( LvArray::math::abs( lambdaNew-lambdaOld )/LvArray::math::abs( lambdaNew )<= epsilon )
+      {
+        counter++;
+      }
+      else
+      {
+        counter=0;
+      }
+
+      numberIter++;
+
+
+    }
+    while (counter < 10 && numberIter < nIterMax);
+
+    GEOS_THROW_IF( numberIter> nIterMax, "Power Iteration algorithm does not converge", std::runtime_error );
+
+    // We use 1.99 instead of 2 to have a 5% margin error
+    real64 dt = 1.99/sqrt( LvArray::math::abs( lambdaNew ));
+
+    dtOut = MpiWrapper::min( dt );
+
+    stiffnessVector.zero();
+    p.zero();
+  } );
+  return m_timeStep * m_cflFactor;
+}
+
 
 
 void AcousticWaveEquationSEM::applyFreeSurfaceBC( real64 time, DomainPartition & domain )
@@ -781,7 +889,7 @@ real64 AcousticWaveEquationSEM::explicitStepForward( real64 const & time_n,
                                                      DomainPartition & domain,
                                                      bool computeGradient )
 {
-  real64 dtOut = explicitStepInternal( time_n, dt, cycleNumber, domain );
+  real64 dtCompute = explicitStepInternal( time_n, dt, domain );
 
   forDiscretizationOnMeshTargets( domain.getMeshBodies(),
                                   [&] ( string const &,
@@ -850,7 +958,7 @@ real64 AcousticWaveEquationSEM::explicitStepForward( real64 const & time_n,
     prepareNextTimestep( mesh );
   } );
 
-  return dtOut;
+  return dtCompute;
 }
 
 
@@ -860,7 +968,7 @@ real64 AcousticWaveEquationSEM::explicitStepBackward( real64 const & time_n,
                                                       DomainPartition & domain,
                                                       bool computeGradient )
 {
-  real64 dtOut = explicitStepInternal( time_n, dt, cycleNumber, domain );
+  real64 dtCompute = explicitStepInternal( time_n, dt, domain );
   forDiscretizationOnMeshTargets( domain.getMeshBodies(),
                                   [&] ( string const &,
                                         MeshLevel & mesh,
@@ -932,7 +1040,7 @@ real64 AcousticWaveEquationSEM::explicitStepBackward( real64 const & time_n,
     prepareNextTimestep( mesh );
   } );
 
-  return dtOut;
+  return dtCompute;
 }
 
 void AcousticWaveEquationSEM::prepareNextTimestep( MeshLevel & mesh )
@@ -970,7 +1078,6 @@ void AcousticWaveEquationSEM::prepareNextTimestep( MeshLevel & mesh )
 
 void AcousticWaveEquationSEM::computeUnknowns( real64 const & time_n,
                                                real64 const & dt,
-                                               integer cycleNumber,
                                                DomainPartition & domain,
                                                MeshLevel & mesh,
                                                arrayView1d< string const > const & regionNames )
@@ -1011,10 +1118,7 @@ void AcousticWaveEquationSEM::computeUnknowns( real64 const & time_n,
                                                             kernelFactory );
   }
   //Modification of cycleNember useful when minTime < 0
-  EventManager const & event = getGroupByPath< EventManager >( "/Problem/Events" );
-  real64 const & minTime = event.getReference< real64 >( EventManager::viewKeyStruct::minTimeString() );
-  integer const cycleForSource = int(round( -minTime / dt + cycleNumber ));
-  addSourceToRightHandSide( cycleForSource, rhs );
+  addSourceToRightHandSide( time_n, rhs );
 
   /// calculate your time integrators
   real64 const dt2 = pow( dt, 2 );
@@ -1109,7 +1213,6 @@ void AcousticWaveEquationSEM::computeUnknowns( real64 const & time_n,
 
 void AcousticWaveEquationSEM::synchronizeUnknowns( real64 const & time_n,
                                                    real64 const & dt,
-                                                   integer const,
                                                    DomainPartition & domain,
                                                    MeshLevel & mesh,
                                                    arrayView1d< string const > const & )
@@ -1161,22 +1264,24 @@ void AcousticWaveEquationSEM::synchronizeUnknowns( real64 const & time_n,
 
 real64 AcousticWaveEquationSEM::explicitStepInternal( real64 const & time_n,
                                                       real64 const & dt,
-                                                      integer const cycleNumber,
                                                       DomainPartition & domain )
 {
   GEOS_MARK_FUNCTION;
 
   GEOS_LOG_RANK_0_IF( dt < epsilonLoc, "Warning! Value for dt: " << dt << "s is smaller than local threshold: " << epsilonLoc );
 
+  real64 dtCompute;
   forDiscretizationOnMeshTargets( domain.getMeshBodies(), [&] ( string const &,
                                                                 MeshLevel & mesh,
                                                                 arrayView1d< string const > const & regionNames )
   {
-    computeUnknowns( time_n, dt, cycleNumber, domain, mesh, regionNames );
-    synchronizeUnknowns( time_n, dt, cycleNumber, domain, mesh, regionNames );
+    localIndex nSubSteps = (int) ceil( dt/m_timeStep );
+    dtCompute = dt/nSubSteps;
+    computeUnknowns( time_n, dtCompute, domain, mesh, regionNames );
+    synchronizeUnknowns( time_n, dtCompute, domain, mesh, regionNames );
   } );
 
-  return dt;
+  return dtCompute;
 }
 
 void AcousticWaveEquationSEM::cleanup( real64 const time_n,

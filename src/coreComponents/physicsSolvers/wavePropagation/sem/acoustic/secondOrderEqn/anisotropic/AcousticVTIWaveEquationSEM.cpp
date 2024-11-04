@@ -153,18 +153,6 @@ void AcousticVTIWaveEquationSEM::precomputeSourceAndReceiverTerm( MeshLevel & ba
   receiverConstants.setValues< EXEC_POLICY >( -1 );
   receiverIsLocal.zero();
 
-  arrayView2d< real32 > const sourceValue = m_sourceValue.toView();
-  real64 dt = 0;
-  EventManager const & event = getGroupByPath< EventManager >( "/Problem/Events" );
-  for( localIndex numSubEvent = 0; numSubEvent < event.numSubGroups(); ++numSubEvent )
-  {
-    EventBase const * subEvent = static_cast< EventBase const * >( event.getSubGroups()[numSubEvent] );
-    if( subEvent->getEventName() == "/Solvers/" + getName() )
-    {
-      dt = subEvent->getReference< real64 >( EventBase::viewKeyStruct::forceDtString() );
-    }
-  }
-
   mesh.getElemManager().forElementSubRegionsComplete< CellElementSubRegion >( regionNames, [&]( localIndex const,
                                                                                                 localIndex const er,
                                                                                                 localIndex const esr,
@@ -209,12 +197,7 @@ void AcousticVTIWaveEquationSEM::precomputeSourceAndReceiverTerm( MeshLevel & ba
         receiverCoordinates,
         receiverIsLocal,
         receiverNodeIds,
-        receiverConstants,
-        sourceValue,
-        dt,
-        m_timeSourceFrequency,
-        m_timeSourceDelay,
-        m_rickerOrder );
+        receiverConstants );
     } );
     elementSubRegion.faceList().freeOnDevice();
     baseMesh.getElemManager().getRegion( er ).getSubRegion< CellElementSubRegion >( esr ).nodeList().freeOnDevice();
@@ -230,21 +213,22 @@ void AcousticVTIWaveEquationSEM::precomputeSourceAndReceiverTerm( MeshLevel & ba
   nodesToElements.freeOnDevice();
 }
 
-void AcousticVTIWaveEquationSEM::addSourceToRightHandSide( integer const & cycleNumber, arrayView1d< real32 > const rhs )
+void AcousticVTIWaveEquationSEM::addSourceToRightHandSide( real64 const & time_n, arrayView1d< real32 > const rhs )
 {
   arrayView2d< localIndex const > const sourceNodeIds = m_sourceNodeIds.toViewConst();
   arrayView2d< real64 const > const sourceConstants   = m_sourceConstants.toViewConst();
   arrayView1d< localIndex const > const sourceIsAccessible = m_sourceIsAccessible.toViewConst();
-  arrayView2d< real32 const > const sourceValue   = m_sourceValue.toViewConst();
-
-  GEOS_THROW_IF( cycleNumber > sourceValue.size( 0 ), "Too many steps compared to array size", std::runtime_error );
+  bool useSourceWaveletTables = m_useSourceWaveletTables;
+  real64 const rickerValue = useSourceWaveletTables ? 0 : WaveSolverUtils::evaluateRicker( time_n, m_timeSourceFrequency, m_timeSourceDelay, m_rickerOrder );
+  arrayView1d< TableFunction::KernelWrapper const > const sourceWaveletTableWrappers = m_sourceWaveletTableWrappers.toViewConst();
   forAll< EXEC_POLICY >( sourceConstants.size( 0 ), [=] GEOS_HOST_DEVICE ( localIndex const isrc )
   {
     if( sourceIsAccessible[isrc] == 1 )
     {
+      real64 const srcValue = useSourceWaveletTables ? sourceWaveletTableWrappers[ isrc ].compute( &time_n ) : rickerValue;
       for( localIndex inode = 0; inode < sourceConstants.size( 1 ); ++inode )
       {
-        real32 const localIncrement = sourceConstants[isrc][inode] * sourceValue[cycleNumber][isrc];
+        real32 const localIncrement = sourceConstants[isrc][inode] * srcValue;
         RAJA::atomicAdd< ATOMIC_POLICY >( &rhs[sourceNodeIds[isrc][inode]], localIncrement );
       }
     }
@@ -351,6 +335,13 @@ void AcousticVTIWaveEquationSEM::initializePostInitialConditionsPreSubGroups()
 
   WaveSolverUtils::initTrace( "seismoTraceReceiver", getName(), m_outputSeismoTrace, m_receiverConstants.size( 0 ), m_receiverIsLocal );
 }
+
+real64 AcousticVTIWaveEquationSEM::computeTimeStep( real64 & dtOut )
+{
+  GEOS_ERROR( getDataContext() << ":  Time-Step computation for the second order acoustic vti wave propagator not yet implemented" );
+  return dtOut;
+}
+
 
 void AcousticVTIWaveEquationSEM::precomputeSurfaceFieldIndicator( DomainPartition & domain )
 {
@@ -509,11 +500,11 @@ void AcousticVTIWaveEquationSEM::applyFreeSurfaceBC( real64 time, DomainPartitio
 
 real64 AcousticVTIWaveEquationSEM::explicitStepForward( real64 const & time_n,
                                                         real64 const & dt,
-                                                        integer cycleNumber,
+                                                        integer,
                                                         DomainPartition & domain,
                                                         bool computeGradient )
 {
-  real64 dtOut = explicitStepInternal( time_n, dt, cycleNumber, domain );
+  real64 dtOut = explicitStepInternal( time_n, dt, domain );
 
   forDiscretizationOnMeshTargets( domain.getMeshBodies(),
                                   [&] ( string const &,
@@ -574,7 +565,6 @@ real64 AcousticVTIWaveEquationSEM::explicitStepBackward( real64 const & GEOS_UNU
 
 real64 AcousticVTIWaveEquationSEM::explicitStepInternal( real64 const & time_n,
                                                          real64 const & dt,
-                                                         integer cycleNumber,
                                                          DomainPartition & domain )
 {
   GEOS_MARK_FUNCTION;
@@ -634,7 +624,7 @@ real64 AcousticVTIWaveEquationSEM::explicitStepInternal( real64 const & time_n,
                                                               kernelFactory );
     }
 
-    addSourceToRightHandSide( cycleNumber, rhs );
+    addSourceToRightHandSide( time_n, rhs );
 
     /// calculate your time integrators
 
