@@ -740,8 +740,8 @@ bool PhysicsSolverBase::lineSearchWithParabolicInterpolation( real64 const & tim
 
 
 real64 PhysicsSolverBase::eisenstatWalker( real64 const newNewtonNorm,
-                                    real64 const oldNewtonNorm,
-                                    LinearSolverParameters::Krylov const & krylovParams )
+                                           real64 const oldNewtonNorm,
+                                           LinearSolverParameters::Krylov const & krylovParams )
 {
   real64 normRatio = std::min( newNewtonNorm / oldNewtonNorm, 1.0 );
   real64 newKrylovTol = krylovParams.adaptiveGamma * std::pow( normRatio, krylovParams.adaptiveExponent );
