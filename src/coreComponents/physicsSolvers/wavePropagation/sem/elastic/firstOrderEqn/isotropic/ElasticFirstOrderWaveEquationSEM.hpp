@@ -145,6 +145,8 @@ private:
    */
   virtual void applyPML( real64 const time, DomainPartition & domain ) override;
 
+  virtual real64 computeTimeStep( real64 & dtOut ) override;
+
   /// Displacement_np1 at the receiver location for each time step for each receiver
   array2d< real32 > m_displacementxNp1AtReceivers;
 
