@@ -16,6 +16,7 @@
 #include <gtest/gtest.h>
 
 #include "dataRepository/xmlWrapper.hpp"
+#include "codingUtilities/EnumStrings.hpp"
 
 using namespace geos;
 
@@ -326,6 +327,32 @@ INSTANTIATE_TEST_SUITE_P(
                      std::make_tuple( "1234gamma", 0, true ),
                      std::make_tuple( "1 ", 0, true ),
                      std::make_tuple( "1 2", 0, true )));
+
+
+enum class TestEnum { None, Default, Value, Value2 };
+ENUM_STRINGS( TestEnum, "None", "Default", "Value", "Value2" );
+
+class enumAttributeTestFixture : public AttributeReadTestFixture< TestEnum > {};
+
+TEST_P( enumAttributeTestFixture, testParsing )
+{
+  testParams = GetParam();
+  this->test();
+}
+
+INSTANTIATE_TEST_SUITE_P(
+  enumAttributeTests,
+  enumAttributeTestFixture,
+  ::testing::Values( std::make_tuple( "None", TestEnum::None, false ),
+                     std::make_tuple( "Default", TestEnum::Default, false ),
+                     std::make_tuple( "Value", TestEnum::Value, false ),
+                     std::make_tuple( "Value2", TestEnum::Value2, false ),
+                     std::make_tuple( "0", TestEnum( 0 ), true ),
+                     std::make_tuple( "4.", TestEnum( 0 ), true ),
+                     std::make_tuple( "alpha", TestEnum( 0 ), true ),
+                     std::make_tuple( "Val", TestEnum( 0 ), true ),
+                     std::make_tuple( "Def ault", TestEnum( 0 ), true ),
+                     std::make_tuple( "None123", TestEnum( 0 ), true ) ) );
 
 
 TEST( testXmlWrapper, testGroupNamesFormats )

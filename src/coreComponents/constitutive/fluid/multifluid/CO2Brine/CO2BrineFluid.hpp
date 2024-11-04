@@ -386,7 +386,6 @@ CO2BrineFluid< PHASE1, PHASE2, FLASH >::KernelWrapper::
 
   if( m_isThermal )
   {
-
     m_phase1.enthalpy.compute( pressure,
                                temperatureInCelsius,
                                phaseCompFraction.value[ip1].toSliceConst(), phaseCompFraction.derivs[ip1].toSliceConst(),
