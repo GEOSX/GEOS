@@ -128,7 +128,6 @@ public:
   integer getNumDiscardedLinearIterations() const
   { return m_numDiscardedLinearIterations; }
 
-private:
 
   /**
    * @brief Struct to serve as a container for variable strings and keys.
@@ -156,6 +155,7 @@ private:
     static constexpr char const * numDiscardedLinearIterationsString() { return "numDiscardedLinearIterations"; }
   };
 
+private:
   /// Number of time steps
   integer m_numTimeSteps;
 
