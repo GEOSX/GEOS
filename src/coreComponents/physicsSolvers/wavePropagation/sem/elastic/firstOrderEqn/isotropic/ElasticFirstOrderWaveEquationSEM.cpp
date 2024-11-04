@@ -254,19 +254,6 @@ void ElasticFirstOrderWaveEquationSEM::precomputeSourceAndReceiverTerm( MeshLeve
   receiverConstants.setValues< serialPolicy >( -1 );
   receiverIsLocal.zero();
 
-  arrayView2d< real32 > const sourceValue = m_sourceValue.toView();
-  real64 dt = 0;
-  EventManager const & event = getGroupByPath< EventManager >( "/Problem/Events" );
-
-  for( localIndex numSubEvent = 0; numSubEvent < event.numSubGroups(); ++numSubEvent )
-  {
-    EventBase const * subEvent = static_cast< EventBase const * >( event.getSubGroups()[numSubEvent] );
-    if( subEvent->getEventName() == "/Solvers/" + getName() )
-    {
-      dt = subEvent->getReference< real64 >( EventBase::viewKeyStruct::forceDtString() );
-    }
-  }
-
   mesh.getElemManager().forElementSubRegionsComplete< CellElementSubRegion >( regionNames, [&]( localIndex const,
                                                                                                 localIndex const regionIndex,
                                                                                                 localIndex const esr,
@@ -317,12 +304,7 @@ void ElasticFirstOrderWaveEquationSEM::precomputeSourceAndReceiverTerm( MeshLeve
         receiverElem,
         receiverNodeIds,
         receiverConstants,
-        receiverRegion,
-        sourceValue,
-        dt,
-        m_timeSourceFrequency,
-        m_timeSourceDelay,
-        m_rickerOrder );
+        receiverRegion );
     } );
     elementSubRegion.faceList().freeOnDevice();
     baseMesh.getElemManager().getRegion( regionIndex ).getSubRegion< CellElementSubRegion >( esr ).nodeList().freeOnDevice();
@@ -334,8 +316,6 @@ void ElasticFirstOrderWaveEquationSEM::precomputeSourceAndReceiverTerm( MeshLeve
   baseMesh.getNodeManager().elementList().toView().freeOnDevice();
   baseMesh.getFaceManager().nodeList().toView().freeOnDevice();
   baseMesh.getNodeManager().referencePosition().freeOnDevice();
-  m_sourceCoordinates.freeOnDevice();
-  m_receiverCoordinates.freeOnDevice();
   facesToNodes.freeOnDevice();
   nodesToElements.freeOnDevice();
 }
@@ -388,9 +368,11 @@ void ElasticFirstOrderWaveEquationSEM::initializePostInitialConditionsPreSubGrou
 
       arrayView2d< localIndex const, cells::NODE_MAP_USD > const elemsToNodes = elementSubRegion.nodeList();
       arrayView2d< localIndex const > const elemsToFaces = elementSubRegion.faceList();
-      arrayView1d< real32 > const density = elementSubRegion.getField< elasticfields::ElasticDensity >();
-      arrayView1d< real32 > const velocityVp = elementSubRegion.getField< elasticfields::ElasticVelocityVp >();
-      arrayView1d< real32 > const velocityVs = elementSubRegion.getField< elasticfields::ElasticVelocityVs >();
+      arrayView1d< real32 const > const density = elementSubRegion.getField< elasticfields::ElasticDensity >();
+      arrayView1d< real32 const > const velocityVp = elementSubRegion.getField< elasticfields::ElasticVelocityVp >();
+      arrayView1d< real32 const > const velocityVs = elementSubRegion.getField< elasticfields::ElasticVelocityVs >();
+      arrayView1d< real32 > const lambda = elementSubRegion.getField< elasticfields::Lambda >();
+      arrayView1d< real32 > const mu = elementSubRegion.getField< elasticfields::Mu >();
 
       finiteElement::FiniteElementBase const &
       fe = elementSubRegion.getReference< finiteElement::FiniteElementBase >( getDiscretizationName() );
@@ -408,6 +390,7 @@ void ElasticFirstOrderWaveEquationSEM::initializePostInitialConditionsPreSubGrou
                                                                           elemsToNodes,
                                                                           density,
                                                                           mass );
+
 
         ElasticMatricesSEM::DampingMatrix< FE_TYPE > kernelD( finiteElement );
 
@@ -429,6 +412,11 @@ void ElasticFirstOrderWaveEquationSEM::initializePostInitialConditionsPreSubGrou
   } );
 }
 
+real64 ElasticFirstOrderWaveEquationSEM::computeTimeStep( real64 & dtOut )
+{
+  GEOS_ERROR( getDataContext() << ":  Time-Step computation for the first order elastic wave propagator not yet implemented" );
+  return dtOut;
+}
 
 void ElasticFirstOrderWaveEquationSEM::applyFreeSurfaceBC( real64 const time, DomainPartition & domain )
 {
@@ -530,7 +518,6 @@ real64 ElasticFirstOrderWaveEquationSEM::explicitStepInternal( real64 const & ti
   arrayView1d< localIndex const > const sourceIsAccessible = m_sourceIsAccessible.toView();
   arrayView1d< localIndex const > const sourceElem = m_sourceElem.toView();
   arrayView1d< localIndex const > const sourceRegion = m_sourceRegion.toView();
-  arrayView2d< real32 const > const sourceValue = m_sourceValue.toView();
 
 
   forDiscretizationOnMeshTargets( domain.getMeshBodies(), [&] ( string const &,
@@ -581,9 +568,6 @@ real64 ElasticFirstOrderWaveEquationSEM::explicitStepInternal( real64 const & ti
         using FE_TYPE = TYPEOFREF( finiteElement );
 
         //Modification of cycleNember useful when minTime < 0
-        EventManager const & event = getGroupByPath< EventManager >( "/Problem/Events" );
-        real64 const & minTime = event.getReference< real64 >( EventManager::viewKeyStruct::minTimeString() );
-        integer const cycleForSource = int(round( -minTime / dt + cycleNumber ));
 
         elasticFirstOrderWaveEquationSEMKernels::
           StressComputation< FE_TYPE > kernel( finiteElement );
@@ -604,9 +588,13 @@ real64 ElasticFirstOrderWaveEquationSEM::explicitStepInternal( real64 const & ti
           sourceIsAccessible,
           sourceElem,
           sourceRegion,
-          sourceValue,
           dt,
-          cycleForSource,
+          time_n,
+          m_timeSourceFrequency,
+          m_timeSourceDelay,
+          m_rickerOrder,
+          m_useSourceWaveletTables,
+          m_sourceWaveletTableWrappers,
           stressxx,
           stressyy,
           stresszz,
