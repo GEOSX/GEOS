@@ -50,6 +50,7 @@
     <SurfaceGenerator
       name="SurfaceGen"
       targetRegions="{ Fracture }"
+      logLevel="0"
       rockToughness="1e6"
       mpiCommOrder="1"/>
   </Solvers>

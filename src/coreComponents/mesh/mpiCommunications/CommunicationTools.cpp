@@ -909,17 +909,21 @@ void CommunicationTools::setupGhosts( MeshLevel & meshLevel,
   MpiWrapper::waitAll( commData.size(), commData.mpiSendBufferSizeRequest(), commData.mpiSendBufferSizeStatus() );
   MpiWrapper::waitAll( commData.size(), commData.mpiSendBufferRequest(), commData.mpiSendBufferStatus() );
 
+  //nodeManager.fixUpDownMaps( false );
   verifyGhostingConsistency( nodeManager, neighbors );
+  //edgeManager.fixUpDownMaps( false );
   verifyGhostingConsistency( edgeManager, neighbors );
+  //faceManager.fixUpDownMaps( false );
   verifyGhostingConsistency( faceManager, neighbors );
   elemManager.forElementSubRegions< ElementSubRegionBase >( [&]( ElementSubRegionBase & subRegion )
   {
+    //subRegion.fixUpDownMaps( false );
     verifyGhostingConsistency( subRegion, neighbors );
   } );
-  // elemManager.forElementSubRegions< FaceElementSubRegion >( [&]( FaceElementSubRegion & subRegion )
-  // {
-  //   subRegion.fixSecondaryMappings( nodeManager, edgeManager, faceManager, elemManager );
-  // } );
+  elemManager.forElementSubRegions< FaceElementSubRegion >( [&]( FaceElementSubRegion & subRegion )
+  {
+    subRegion.fixSecondaryMappings( nodeManager, edgeManager, faceManager, elemManager );
+  } );
 
   removeUnusedNeighbors( nodeManager, edgeManager, faceManager, elemManager, neighbors );
 
@@ -1102,6 +1106,81 @@ void CommunicationTools::synchronizeFields( FieldIdentifiers const & fieldsToBeS
   synchronizePackSendRecvSizes( fieldsToBeSync, mesh, neighbors, icomm, onDevice );
   synchronizePackSendRecv( fieldsToBeSync, mesh, neighbors, icomm, onDevice );
   synchronizeUnpack( mesh, neighbors, icomm, onDevice );
+}
+
+
+void CommunicationTools::checkSendRecv( ObjectManagerBase const & objectManager,
+                                        std::vector< NeighborCommunicator > & neighbors )
+{
+  MPI_iCommData commData;
+  commData.resize( neighbors.size() );
+  arrayView1d< globalIndex const > const & localToGlobal = objectManager.localToGlobalMap();
+
+  std::cout<<objectManager.getName()<<std::endl;
+  /// For each neighbor send them the indices of their ghosts
+  for( std::size_t i = 0; i < neighbors.size(); ++i )
+  {
+    int const neighborRank = neighbors[ i ].neighborRank();
+    int const tag = 45;
+    arrayView1d< localIndex const > const ghostsToSend = objectManager.getNeighborData( neighborRank ).ghostsToSend();
+    array1d< globalIndex > ghostsToSendGlobal( ghostsToSend.size() );
+
+    std::cout<<" Rank "<<MpiWrapper::commRank()<<" sending to "<<neighborRank<<" ghostsToSend.size() = "<<ghostsToSend.size()<<" : ";
+    for( localIndex a = 0; a < ghostsToSend.size(); ++a )
+    {
+      ghostsToSendGlobal[ a ] = localToGlobal[ ghostsToSend[ a ] ];
+      std::cout<<ghostsToSend[ a ]<<"("<<ghostsToSendGlobal[ a ]<<") ";
+    }
+    std::cout<<std::endl;
+
+    MpiWrapper::iSend( ghostsToSendGlobal.toView(),
+                       neighborRank,
+                       tag,
+                       MPI_COMM_GEOS,
+                       &commData.mpiSendBufferRequest(i) );
+  }
+
+  for( int i=0; i<commData.size(); ++i )
+  {
+    NeighborCommunicator const & neighbor = neighbors[ i ];
+    int const neighborRank = neighbor.neighborRank();
+    int const tag = 45;
+    array1d< globalIndex > ghostThatAreSentToMeGlobal;
+
+    MpiWrapper::recv( ghostThatAreSentToMeGlobal,
+                      neighborRank,
+                      tag,
+                      MPI_COMM_GEOS,
+                      &commData.mpiRecvBufferStatus(i) );
+
+    arrayView1d< localIndex const > const ghostsToRecv = objectManager.getNeighborData( neighborRank ).ghostsToReceive();
+    array1d< globalIndex > ghostToRecvGlobal( ghostsToRecv.size() );
+
+
+    std::cout<<" Rank "<<MpiWrapper::commRank()<<" recving fr "<<neighborRank<<" ghostsToRecv.size() = "<<ghostsToRecv.size()<<" : ";
+    for( localIndex a = 0; a < ghostsToRecv.size(); ++a )
+    {
+      ghostToRecvGlobal[ a ] = localToGlobal[ ghostsToRecv[ a ] ];
+      std::cout<<ghostsToRecv[ a ]<<"("<<ghostToRecvGlobal[ a ]<<") ";
+    }
+    std::cout<<std::endl;
+
+
+
+
+    GEOS_ERROR_IF_NE( ghostsToRecv.size(), ghostThatAreSentToMeGlobal.size() );
+  }
+
+  /// Wait on the initial send requests.
+  MpiWrapper::waitAll( commData.size(),
+                       commData.mpiSendBufferRequest(),
+                       commData.mpiSendBufferStatus() );
+  MpiWrapper::waitAll( commData.size(),
+                       commData.mpiRecvBufferRequest(),
+                       commData.mpiRecvBufferStatus() );
+
+  
+
 }
 
 } /* namespace geos */

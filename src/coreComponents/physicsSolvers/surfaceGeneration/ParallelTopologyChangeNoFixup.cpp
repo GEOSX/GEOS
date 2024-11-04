@@ -486,7 +486,6 @@ void unpackNewObjectsOnGhosts( NeighborCommunicator & neighbor,
     newGhostElems[er].resize( elemRegion.numSubRegions() );
     for( localIndex esr=0; esr<elemRegion.numSubRegions(); ++esr )
     {
-      newGhostElemsData[er][esr].resize( 0 );
       newGhostElems[er][esr].set( newGhostElemsData[er][esr] );
     }
   }
@@ -533,7 +532,6 @@ void unpackNewObjectsOnGhosts( NeighborCommunicator & neighbor,
     [&]( localIndex const er, localIndex const esr, ElementRegionBase &, ElementSubRegionBase & subRegion )
   {
     localIndex_array & elemGhostsToReceive = subRegion.getNeighborData( neighbor.neighborRank() ).ghostsToReceive();
-
     if( newGhostElemsData[er][esr].size() > 0 )
     {
       elemGhostsToReceive.move( hostMemorySpace );
@@ -680,40 +678,34 @@ void packNewModifiedObjectsToGhosts( NeighborCommunicator & neighbor,
   filterModObjectsForPackToGhosts( receivedObjects.modifiedEdges, edgeGhostsToSend, modEdgesToSend );
   filterModObjectsForPackToGhosts( receivedObjects.modifiedFaces, faceGhostsToSend, modFacesToSend );
 
-  SortedArray< localIndex > faceGhostsToSendSet;
-  for( localIndex const & kf : faceGhostsToSend )
-  {
-    faceGhostsToSendSet.insert( kf );
-  }
-
-  newElemsToSendData.resize( elemManager.numRegions() );
-  newElemsToSend.resize( elemManager.numRegions() );
+  // newElemsToSendData.resize( elemManager.numRegions() );
+  // newElemsToSend.resize( elemManager.numRegions() );
   modElemsToSendData.resize( elemManager.numRegions() );
   modElemsToSend.resize( elemManager.numRegions() );
   for( localIndex er=0; er<elemManager.numRegions(); ++er )
   {
     ElementRegionBase & elemRegion = elemManager.getRegion( er );
-    newElemsToSendData[er].resize( elemRegion.numSubRegions() );
-    newElemsToSend[er].resize( elemRegion.numSubRegions() );
+    // newElemsToSendData[er].resize( elemRegion.numSubRegions() );
+    // newElemsToSend[er].resize( elemRegion.numSubRegions() );
     modElemsToSendData[er].resize( elemRegion.numSubRegions() );
     modElemsToSend[er].resize( elemRegion.numSubRegions() );
 
-    elemRegion.forElementSubRegionsIndex< FaceElementSubRegion >( [&]( localIndex const esr,
-                                                                       FaceElementSubRegion & subRegion )
-    {
-      ArrayOfArraysView< localIndex const > const faceList = subRegion.faceList().toViewConst();
-      localIndex_array & elemGhostsToSend = subRegion.getNeighborData( neighbor.neighborRank() ).ghostsToSend();
-      elemGhostsToSend.move( hostMemorySpace );
-      for( localIndex const & k : receivedObjects.newElements.at( {er, esr} ) )
-      {
-        if( faceGhostsToSendSet.count( faceList( k, 0 ) ) )
-        {
-          newElemsToSendData[er][esr].emplace_back( k );
-          elemGhostsToSend.emplace_back( k );
-        }
-      }
-      newElemsToSend[er][esr] = newElemsToSendData[er][esr];
-    } );
+    // elemRegion.forElementSubRegionsIndex< FaceElementSubRegion >( [&]( localIndex const esr,
+    //                                                                    FaceElementSubRegion & subRegion )
+    // {
+    //   ArrayOfArraysView< localIndex const > const faceList = subRegion.faceList().toViewConst();
+    //   localIndex_array & elemGhostsToSend = subRegion.getNeighborData( neighbor.neighborRank() ).ghostsToSend();
+    //   elemGhostsToSend.move( hostMemorySpace );
+    //   for( localIndex const & k : receivedObjects.newElements.at( {er, esr} ) )
+    //   {
+    //     if( faceGhostsToSendSet.count( faceList( k, 0 ) ) )
+    //     {
+    //       newElemsToSendData[er][esr].emplace_back( k );
+    //       elemGhostsToSend.emplace_back( k );
+    //     }
+    //   }
+    //   newElemsToSend[er][esr] = newElemsToSendData[er][esr];
+    // } );
 
     elemRegion.forElementSubRegionsIndex< ElementSubRegionBase >( [&]( localIndex const esr,
                                                                        ElementSubRegionBase const & subRegion )

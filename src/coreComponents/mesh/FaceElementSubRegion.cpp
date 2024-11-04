@@ -490,7 +490,7 @@ void FaceElementSubRegion::fixUpDownMaps( bool const clearIfUnmapped )
                                     m_unmappedGlobalIndicesInToFaces,
                                     clearIfUnmapped );
 
-//  fixNeighborMappingsInconsistency( getName(), m_2dElemToElems, m_toFacesRelation );
+  fixNeighborMappingsInconsistency( getName(), m_2dElemToElems, m_toFacesRelation );
 }
 
 /**
@@ -1076,7 +1076,7 @@ void FaceElementSubRegion::fixSecondaryMappings( NodeManager const & nodeManager
 
   m_2dFaceTo2dElems = build2dFaceTo2dElems( m_toEdgesRelation.toViewConst(), m_edgesTo2dFaces, referenceCollocatedEdges );
 
-//  fixNeighborMappingsInconsistency( getName(), m_2dElemToElems, m_toFacesRelation );
+  fixNeighborMappingsInconsistency( getName(), m_2dElemToElems, m_toFacesRelation );
 
   fixNodesOrder( m_toFacesRelation.toViewConst(), faceToNodes, m_toNodesRelation );
 }

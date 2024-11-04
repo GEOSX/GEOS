@@ -688,6 +688,16 @@ int SurfaceGenerator::separationDriver( DomainPartition & domain,
 
     ModifiedObjectLists receivedObjects;
 
+  //   CommunicationTools::checkSendRecv( faceManager, neighbors );
+  //   elementManager.forElementSubRegionsComplete< FaceElementSubRegion >( [&]( localIndex const er,
+  //                                                                          localIndex const esr,
+  //                                                                          ElementRegionBase &,
+  //                                                                          FaceElementSubRegion & subRegion )
+  // {
+  //   CommunicationTools::checkSendRecv( subRegion, neighbors );
+  // } );
+  //   std::cout<<" synchronizeTopologyChange "<<std::endl;
+
     /// Nodes to edges in process node is not being set on rank 2. need to check that the new node->edge map is properly
     /// communicated
     parallelTopologyChange::synchronizeTopologyChange( &mesh,
@@ -696,6 +706,14 @@ int SurfaceGenerator::separationDriver( DomainPartition & domain,
                                                        receivedObjects,
                                                        m_mpiCommOrder );
 
+  //   CommunicationTools::checkSendRecv( faceManager, neighbors );
+  //   elementManager.forElementSubRegionsComplete< FaceElementSubRegion >( [&]( localIndex const er,
+  //                                                                          localIndex const esr,
+  //                                                                          ElementRegionBase &,
+  //                                                                          FaceElementSubRegion & subRegion )
+  // {
+  //   CommunicationTools::checkSendRecv( subRegion, neighbors );
+  // } );
     // for( int rank=0; rank<MpiWrapper::commSize(); ++rank )
     // {
     //   MpiWrapper::barrier();
@@ -1028,9 +1046,9 @@ bool SurfaceGenerator::findFracturePlanes( localIndex const nodeID,
 
   ArrayOfArraysView< localIndex const > const & faceToEdgeMap = faceManager.edgeList().toViewConst();
 
-  arraySlice1d< localIndex const > const & nodeToRegionMap = nodeManager.elementRegionList()[nodeID];
-  arraySlice1d< localIndex const > const & nodeToSubRegionMap = nodeManager.elementSubRegionList()[nodeID];
-  arraySlice1d< localIndex const > const & nodeToElementMap = nodeManager.elementList()[nodeID];
+  arraySlice1d< localIndex const > const nodeToRegionMap = nodeManager.elementRegionList()[nodeID];
+  arraySlice1d< localIndex const > const nodeToSubRegionMap = nodeManager.elementSubRegionList()[nodeID];
+  arraySlice1d< localIndex const > const nodeToElementMap = nodeManager.elementList()[nodeID];
 
   // BACKWARDS COMPATIBILITY HACK!
   //
@@ -1951,6 +1969,7 @@ void SurfaceGenerator::performFracture( const localIndex nodeID,
                                                                     this->m_originalFaceToEdges.toViewConst(),
                                                                     faceIndices );
           m_faceElemsRupturedThisSolve.insert( newFaceElement );
+          GEOS_LOG_LEVEL_INFO_BY_RANK( logInfo::SurfaceGenerator, GEOS_FMT ( "Created new FaceElement {} when creating face {} from {}", newFaceElement, newFaceIndex, faceIndex ) );
           modifiedObjects.newElements[ {fractureElementRegion.getIndexInParent(), 0} ].insert( newFaceElement );
         }
       } // if( faceManager.SplitObject( faceIndex, newFaceIndex ) )

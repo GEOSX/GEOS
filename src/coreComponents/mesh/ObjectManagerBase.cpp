@@ -316,6 +316,9 @@ localIndex ObjectManagerBase::packImpl( buffer_unit_type * & buffer,
     }
   }
 
+  // std::cout<< "  Rank "<<MpiWrapper::commRank()<<": "<<this->getName()<<": ObjectManagerBase::packImpl(): packedSize = " << packedSize << std::endl;
+  // std::cout<<"    packList.size() = "<<packList.size()<<std::endl;
+
   packedSize += bufferOps::Pack< DO_PACKING >( buffer, this->getName() );
 
   return packedSize;
@@ -374,6 +377,8 @@ localIndex ObjectManagerBase::unpack( buffer_unit_type const * & buffer,
     }
   }
 
+  // std::cout<< "  Rank "<<MpiWrapper::commRank()<<": "<<this->getName()<<": ObjectManagerBase::unpack(): unpackedSize = " << unpackedSize << std::endl;
+  // std::cout<<"    packList.size() = "<<packList.size()<<std::endl;
   unpackedSize += bufferOps::Unpack( buffer, groupName );
   GEOS_ERROR_IF_NE( groupName, this->getName() );
 

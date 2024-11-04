@@ -138,6 +138,9 @@ public:
                        parallelDeviceEvents & events,
                        MPI_Op op=MPI_REPLACE );
 
+  static void checkSendRecv( ObjectManagerBase const & objectManager,
+                      std::vector< NeighborCommunicator > & neighbors );
+
 private:
   std::set< int > m_freeCommIDs;
   static CommunicationTools * m_instance;
