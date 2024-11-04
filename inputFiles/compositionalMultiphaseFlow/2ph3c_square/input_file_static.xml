@@ -1,0 +1,216 @@
+<?xml version="1.0"?>
+<Problem>
+	<Solvers>
+		<ReactiveCompositionalMultiphaseOBL
+			name="compflow"
+			logLevel="1"
+			discretization="fluidTPFA"
+			targetRegions="{Region1}"
+			enableEnergyBalance="0"
+			maxCompFractionChange="1"
+			numComponents="3"
+			numPhases="2"
+			transMultExp="1">
+		<NonlinearSolverParameters
+			timeStepDecreaseFactor="0.5"
+			newtonTol="0.0001"
+			newtonMaxIter="25"/>
+		<LinearSolverParameters
+			directParallel="0"/>
+		</ReactiveCompositionalMultiphaseOBL>
+	</Solvers>
+
+	<Mesh>
+		<InternalMesh
+			name="mesh1"
+			elementTypes="{C3D8}"
+			xCoords="{0.0, 500.0}"
+			yCoords="{0.0, 500.0}"
+			zCoords="{0.0, 20.0}"
+			nx="{25}"
+			ny="{25}"
+			nz="{1}"
+			cellBlockNames="{block1}"/>
+	</Mesh>
+
+	<Geometry>
+		<Box
+			name="inj1"
+			xMin="{-0.2, -0.2, -0.2}"
+			xMax="{20.2, 20.2, 20.2}"/>
+		<Box
+			name="prd1"
+			xMin="{479.8, 479.8, -0.1999999999999993}"
+			xMax="{500.2, 500.2, 20.2}"/>
+	</Geometry>
+
+	<Events
+		maxTime="31536000.0">
+		<PeriodicEvent
+			name="outputs"
+			timeFrequency="2592000.0"
+			target="/Outputs/vtkOutput"/>
+		<PeriodicEvent
+			name="solver_1"
+			forceDt="86400.0"
+			endTime="604800.0"
+			target="/Solvers/compflow"/>
+		<PeriodicEvent
+			name="solver_2"
+			forceDt="1209600.0"
+			beginTime="604800.0"
+			target="/Solvers/compflow"/>
+	</Events>
+
+	<NumericalMethods>
+		<FiniteVolume>
+			<TwoPointFluxApproximation name="fluidTPFA"/>
+		</FiniteVolume>
+	</NumericalMethods>
+
+	<ElementRegions>
+		<CellElementRegion
+			name="Region1"
+			cellBlocks="{block1}"
+			materialList="{rock, fluid}"/>
+	</ElementRegions>
+
+	<Constitutive>
+		<CompressibleSolidConstantPermeability
+			name="rock"
+			solidModelName="nullSolid"
+			porosityModelName="rockPorosity"
+			permeabilityModelName="rockPerm"/>
+		<NullModel
+			name="nullSolid"/>
+		<PressurePorosity
+			name="rockPorosity"
+			defaultReferencePorosity="0.3"
+			referencePressure="5000000.0"
+			compressibility="1e-09"/>
+ 		<ConstantPermeability
+			name="rockPerm"
+			permeabilityComponents="{9.869e-14, 9.869e-14, 9.869e-14}"/>
+		<OBLFluid
+			name="fluid"
+			interpolatorMode="static"
+			oblOperatorsTableFile="obl_table.txt"/>
+	</Constitutive>
+
+	<FieldSpecifications>
+		<FieldSpecification
+			name="Region1InitialPressure"
+			initialCondition="1"
+			setNames="{ all }"
+			objectPath="ElementRegions/Region1"
+			fieldName="pressure"
+			scale="5000000.0"/>
+		<FieldSpecification
+			name="Region1InitialTemp"
+			initialCondition="1"
+			setNames="{ all }"
+			objectPath="ElementRegions/Region1"
+			fieldName="temperature"
+			scale="348.15"/>
+		<FieldSpecification
+			name="Region1InitCO2"
+			initialCondition="1"
+			setNames="{ all }"
+			objectPath="ElementRegions/Region1"
+			fieldName="globalCompFraction"
+			component="0"
+			scale="0.1"/>
+		<FieldSpecification
+			name="Region1InitC1"
+			initialCondition="1"
+			setNames="{ all }"
+			objectPath="ElementRegions/Region1"
+			fieldName="globalCompFraction"
+			component="1"
+			scale="0.2"/>
+		<FieldSpecification
+			name="Region1InitH2O"
+			initialCondition="1"
+			setNames="{ all }"
+			objectPath="ElementRegions/Region1"
+			fieldName="globalCompFraction"
+			component="2"
+			scale="0.7"/>
+
+		<FieldSpecification
+			name="inj1Pressure"
+			objectPath="ElementRegions/Region1"
+			fieldName="pressure"
+			scale="14000000.0"
+			setNames="{ inj1 }"/>
+		<FieldSpecification
+			name="inj1TermTemp"
+			setNames="{ inj1 }"
+			objectPath="ElementRegions/Region1"
+			fieldName="temperature"
+			scale="348.15"/>
+		<FieldSpecification
+			name="inj1CO2"
+			setNames="{ inj1 }"
+			objectPath="ElementRegions/Region1"
+			fieldName="globalCompFraction"
+			component="0"
+			scale="0.99999998"/>
+		<FieldSpecification
+			name="inj1C1"
+			setNames="{ inj1 }"
+			objectPath="ElementRegions/Region1"
+			fieldName="globalCompFraction"
+			component="1"
+			scale="1e-08"/>
+		<FieldSpecification
+			name="inj1H2O"
+			setNames="{ inj1 }"
+			objectPath="ElementRegions/Region1"
+			fieldName="globalCompFraction"
+			component="2"
+			scale="1e-08"/>
+
+		<FieldSpecification
+			name="prd1Pressure"
+			objectPath="ElementRegions/Region1"
+			fieldName="pressure"
+			scale="5000000.0"
+			setNames="{ prd1 }"/>
+		<FieldSpecification
+			name="prd1TermTemp"
+			setNames="{ prd1 }"
+			objectPath="ElementRegions/Region1"
+			fieldName="temperature"
+			scale="348.15"/>
+		<FieldSpecification
+			name="prd1CO2"
+			setNames="{ prd1 }"
+			objectPath="ElementRegions/Region1"
+			fieldName="globalCompFraction"
+			component="0"
+			scale="0.99999998"/>
+		<FieldSpecification
+			name="prd1C1"
+			setNames="{ prd1 }"
+			objectPath="ElementRegions/Region1"
+			fieldName="globalCompFraction"
+			component="1"
+			scale="1e-08"/>
+		<FieldSpecification
+			name="prd1H2O"
+			setNames="{ prd1 }"
+			objectPath="ElementRegions/Region1"
+			fieldName="globalCompFraction"
+			component="2"
+			scale="1e-08"/>
+
+
+	</FieldSpecifications>
+
+	<Outputs>
+		<VTK
+			name="vtkOutput"
+			plotFileRoot="2ph_square_static"/>
+	</Outputs>
+</Problem>

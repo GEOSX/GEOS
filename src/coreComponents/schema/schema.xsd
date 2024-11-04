@@ -737,6 +737,10 @@
 					<xsd:selector xpath="NullModel" />
 					<xsd:field xpath="@name" />
 				</xsd:unique>
+				<xsd:unique name="domainConstitutiveOBLFluidUniqueName">
+					<xsd:selector xpath="OBLFluid" />
+					<xsd:field xpath="@name" />
+				</xsd:unique>
 				<xsd:unique name="domainConstitutiveParallelPlatesPermeabilityUniqueName">
 					<xsd:selector xpath="ParallelPlatesPermeability" />
 					<xsd:field xpath="@name" />
@@ -3416,8 +3420,6 @@ Level 0 outputs no specific information for this solver. Higher levels require m
 			<xsd:element name="LinearSolverParameters" type="LinearSolverParametersType" maxOccurs="1" />
 			<xsd:element name="NonlinearSolverParameters" type="NonlinearSolverParametersType" maxOccurs="1" />
 		</xsd:choice>
-		<!--OBLOperatorsTableFile => File containing OBL operator values-->
-		<xsd:attribute name="OBLOperatorsTableFile" type="path" use="required" />
 		<!--allowLocalOBLChopping => Allow keeping solution within OBL limits-->
 		<xsd:attribute name="allowLocalOBLChopping" type="integer" default="1" />
 		<!--allowNegativePressure => Flag indicating if negative pressure is allowed-->
@@ -4784,6 +4786,7 @@ Level 0 outputs no specific information for this solver. Higher levels require m
 			<xsd:element name="MultiPhaseConstantThermalConductivity" type="MultiPhaseConstantThermalConductivityType" />
 			<xsd:element name="MultiPhaseVolumeWeightedThermalConductivity" type="MultiPhaseVolumeWeightedThermalConductivityType" />
 			<xsd:element name="NullModel" type="NullModelType" />
+			<xsd:element name="OBLFluid" type="OBLFluidType" />
 			<xsd:element name="ParallelPlatesPermeability" type="ParallelPlatesPermeabilityType" />
 			<xsd:element name="ParticleFluid" type="ParticleFluidType" />
 			<xsd:element name="PerfectlyPlastic" type="PerfectlyPlasticType" />
@@ -5717,6 +5720,16 @@ If you want to do a three-phase simulation, please use instead wettingIntermedia
 		<xsd:attribute name="name" type="groupName" use="required" />
 	</xsd:complexType>
 	<xsd:complexType name="NullModelType">
+		<!--name => A name is required for any non-unique nodes-->
+		<xsd:attribute name="name" type="groupName" use="required" />
+	</xsd:complexType>
+	<xsd:complexType name="OBLFluidType">
+		<!--interpolatorMode => OBL interpolator mode: static or adaptive-->
+		<xsd:attribute name="interpolatorMode" type="string" use="required" />
+		<!--interpolatorType => OBL interpolator type: multilinear or linear-->
+		<xsd:attribute name="interpolatorType" type="string" default="" />
+		<!--oblOperatorsTableFile => File containing OBL operator values for static mode interpolation-->
+		<xsd:attribute name="oblOperatorsTableFile" type="path" default="" />
 		<!--name => A name is required for any non-unique nodes-->
 		<xsd:attribute name="name" type="groupName" use="required" />
 	</xsd:complexType>

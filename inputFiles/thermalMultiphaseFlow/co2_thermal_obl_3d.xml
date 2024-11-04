@@ -10,8 +10,7 @@
       enableEnergyBalance="1"
       maxCompFractionChange="1"
       numComponents="3"
-      numPhases="2"
-      OBLOperatorsTableFile="ccs_thermal_10p_static.txt">
+      numPhases="2">
       <NonlinearSolverParameters
 	timeStepCutFactor="0.5"
 	newtonTol="1.0e-4"
@@ -79,7 +78,7 @@
     <CellElementRegion
       name="Region1"
       cellBlocks="{ * }"
-      materialList="{ rock }"/>
+      materialList="{ rock, fluid }"/>
   </ElementRegions>
 
   <Constitutive>
@@ -100,7 +99,10 @@
     <ConstantPermeability
       name="rockPerm"
       permeabilityComponents="{ 9.869233e-14, 9.869233e-14, 9.869233e-14 }"/>
-    
+    <OBLFluid
+			name="fluid"
+			interpolatorMode="static"
+			oblOperatorsTableFile="ccs_thermal_10p_static.txt"/>
   </Constitutive>
 
   <FieldSpecifications>

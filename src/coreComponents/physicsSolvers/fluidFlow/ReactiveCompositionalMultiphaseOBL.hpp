@@ -241,8 +241,6 @@ public:
 
     static constexpr char const * phaseNamesString() { return "phaseNames"; }
 
-    static constexpr char const * OBLOperatorsTableFileString() { return "OBLOperatorsTableFile"; }
-
     static constexpr char const * transMultExpString() { return "transMultExp"; }
 
     static constexpr char const * maxCompFracChangeString() { return "maxCompFractionChange"; }
@@ -327,12 +325,6 @@ private:
 
   /// the number of OBL operators
   integer m_numOBLOperators;
-
-  /// OBL operators table file (if OBL physics becomes consitutive, multiple regions will be supported )
-  Path m_OBLOperatorsTableFile;
-
-  /// OBL operators table function tabulated vs all primary variables
-  MultivariableTableFunction const * m_OBLOperatorsTable;
 
   /// flag indicating whether energy balance will be enabled or not
   integer m_enableEnergyBalance;

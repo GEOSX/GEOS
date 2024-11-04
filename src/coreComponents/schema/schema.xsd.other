@@ -332,12 +332,14 @@
 		<xsd:choice minOccurs="0" maxOccurs="unbounded">
 			<xsd:element name="CompositeFunction" type="CompositeFunctionType" />
 			<xsd:element name="MultivariableTableFunction" type="MultivariableTableFunctionType" />
+			<xsd:element name="PythonFunction" type="PythonFunctionType" />
 			<xsd:element name="SymbolicFunction" type="SymbolicFunctionType" />
 			<xsd:element name="TableFunction" type="TableFunctionType" />
 		</xsd:choice>
 	</xsd:complexType>
 	<xsd:complexType name="CompositeFunctionType" />
 	<xsd:complexType name="MultivariableTableFunctionType" />
+	<xsd:complexType name="PythonFunctionType" />
 	<xsd:complexType name="SymbolicFunctionType" />
 	<xsd:complexType name="TableFunctionType" />
 	<xsd:complexType name="GeometryType">
@@ -1474,6 +1476,7 @@
 			<xsd:element name="MultiPhaseConstantThermalConductivity" type="MultiPhaseConstantThermalConductivityType" />
 			<xsd:element name="MultiPhaseVolumeWeightedThermalConductivity" type="MultiPhaseVolumeWeightedThermalConductivityType" />
 			<xsd:element name="NullModel" type="NullModelType" />
+			<xsd:element name="OBLFluid" type="OBLFluidType" />
 			<xsd:element name="ParallelPlatesPermeability" type="ParallelPlatesPermeabilityType" />
 			<xsd:element name="ParticleFluid" type="ParticleFluidType" />
 			<xsd:element name="PerfectlyPlastic" type="PerfectlyPlasticType" />
@@ -2414,6 +2417,7 @@
 		<xsd:attribute name="rockThermalConductivity" type="real64_array3d" />
 	</xsd:complexType>
 	<xsd:complexType name="NullModelType" />
+	<xsd:complexType name="OBLFluidType" />
 	<xsd:complexType name="ParallelPlatesPermeabilityType">
 		<!--dPerm_dDispJump => Derivative of rock permeability with respect to displacement jump-->
 		<xsd:attribute name="dPerm_dDispJump" type="real64_array4d" />

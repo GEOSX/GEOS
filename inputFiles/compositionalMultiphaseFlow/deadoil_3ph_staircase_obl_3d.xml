@@ -12,8 +12,7 @@
       enableEnergyBalance="0"
       useDARTSL2Norm="1"
       numComponents="3"
-      numPhases="3"
-      OBLOperatorsTableFile="obl_do_static.txt">
+      numPhases="3">
       <NonlinearSolverParameters
         newtonTol="1.0e-10"
         newtonMaxIter="15"/>
@@ -95,7 +94,7 @@
     <CellElementRegion
       name="Channel"
       cellBlocks="{ cb-1_0_0, cb-0_0_0, cb-0_0_1, cb-0_1_1, cb-0_1_2, cb-1_1_2, cb-1_1_3, cb-1_0_3 }"
-      materialList="{ rock }"/>
+      materialList="{ rock, fluid }"/>
 
     <CellElementRegion
       name="Barrier"
@@ -134,6 +133,11 @@
     <ConstantPermeability
       name="rockPerm"
       permeabilityComponents="{ 1.0e-16, 1.0e-16, 1.0e-16 }"/>
+
+    <OBLFluid
+			name="fluid"
+			interpolatorMode="static"
+			oblOperatorsTableFile="obl_do_static.txt"/>
   </Constitutive>
 
   <!-- END_SPHINX_INCLUDE_CONST_BLOCK -->

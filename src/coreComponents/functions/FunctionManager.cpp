@@ -18,6 +18,7 @@
  */
 
 #include "FunctionManager.hpp"
+#include "PythonFunction.hpp"
 
 namespace geos
 {
@@ -54,8 +55,19 @@ Group * FunctionManager::createChild( string const & functionCatalogKey,
                                       string const & functionName )
 {
   GEOS_LOG_RANK_0( "   " << functionCatalogKey << ": " << functionName );
-  std::unique_ptr< FunctionBase > function = FunctionBase::CatalogInterface::factory( functionCatalogKey, functionName, this );
-  return &this->registerGroup< FunctionBase >( functionName, std::move( function ) );
+
+  if( functionCatalogKey == "PythonFunction" )
+  {
+    // Create PythonFunction instance
+    std::unique_ptr< PythonFunction< __uint128_t > > function = std::make_unique< PythonFunction< __uint128_t > >( functionName, this );
+    return &this->registerGroup< PythonFunction< __uint128_t > >( functionName, std::move( function ));
+  }
+  else
+  {
+    // Create FunctionBase-derived instance
+    std::unique_ptr< FunctionBase > function = FunctionBase::CatalogInterface::factory( functionCatalogKey, functionName, this );
+    return &this->registerGroup< FunctionBase >( functionName, std::move( function ));
+  }
 }
 
 
@@ -66,6 +78,9 @@ void FunctionManager::expandObjectCatalogs()
   {
     createChild( catalogIter.first, catalogIter.first );
   }
+
+  // Register an example of PythonFunction
+  createChild( "PythonFunction", "PythonFunction" );
 }
 
 } // end of namespace geos

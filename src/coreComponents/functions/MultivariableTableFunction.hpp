@@ -32,7 +32,7 @@ namespace geos
  * @class MultivariableTableFunction
  *
  * An interface class for multivariable table function (function with multiple inputs and outputs) with uniform discretization
- * Prepares input data for MultivariableStaticInterpolatorKernel, which performes actual interpolation
+ * Prepares input data for MultilinearInterpolatorStaticKernel, which performes actual interpolation
  */
 
 class MultivariableTableFunction : public FunctionBase
@@ -157,7 +157,7 @@ public:
    * @brief Get the table axes hypercube index multiplicators
    * @return a reference to an array of table axes hypercube index multiplicators
    */
-  arrayView1d< globalIndex const > getAxisHypercubeMults() const { return m_axisHypercubeMults.toViewConst(); }
+  arrayView1d< __uint128_t const > getAxisHypercubeMults() const { return m_axisHypercubeMults.toViewConst(); }
 
   /**
    * @brief Get the table values stored per-hypercube
@@ -214,10 +214,10 @@ private:
   real64_array m_axisStepInvs;
 
   ///  Array [numDims] of point index mult factors for each axis
-  globalIndex_array m_axisPointMults;
+  array1d< __uint128_t > m_axisPointMults;
 
   ///  Array [numDims] of hypercube index mult factors for each axis
-  globalIndex_array m_axisHypercubeMults;
+  array1d< __uint128_t > m_axisHypercubeMults;
 
   // inputs: operator sample data
 

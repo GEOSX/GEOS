@@ -25,6 +25,7 @@
 #include "fileIO/python/PyHistoryCollectionType.hpp"
 #include "fileIO/python/PyHistoryOutputType.hpp"
 #include "fileIO/python/PyVTKOutputType.hpp"
+#include "functions/python/PyPythonFunctionType.hpp"
 #include "mainInterface/initialization.hpp"
 #include "LvArray/src/python/PyArray.hpp"
 
@@ -426,6 +427,11 @@ PyInit_pygeosx()
   }
 
   if( !LvArray::python::addTypeToModule( module, geos::python::getPyVTKOutputType(), "VTKOutput" ) )
+  {
+    return nullptr;
+  }
+
+  if( !LvArray::python::addTypeToModule( module, geos::python::getPyPythonFunctionType(), "PythonFunction" ) )
   {
     return nullptr;
   }
