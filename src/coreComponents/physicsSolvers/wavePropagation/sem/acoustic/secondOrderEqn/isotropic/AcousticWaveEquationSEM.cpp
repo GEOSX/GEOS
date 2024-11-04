@@ -352,7 +352,6 @@ void AcousticWaveEquationSEM::initializePostInitialConditionsPreSubGroups()
   }
 
 
->>>>>>> develop
   WaveSolverUtils::initTrace( "seismoTraceReceiver", getName(), m_outputSeismoTrace, m_receiverConstants.size( 0 ), m_receiverIsLocal );
 }
 
