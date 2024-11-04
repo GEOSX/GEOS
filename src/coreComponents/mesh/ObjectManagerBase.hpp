@@ -930,6 +930,10 @@ public:
     return m_domainBoundaryIndicator.toViewConst();
   }
 
+  /**
+   * @brief Function to output connectivity in order to assist debugging issues 
+   *        with object connectivity.
+   */
   virtual void outputObjectConnectivity() const
   {
     // This is a dummy function that should be specialized by derived classes.

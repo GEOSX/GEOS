@@ -1137,7 +1137,7 @@ void CommunicationTools::checkSendRecv( ObjectManagerBase const & objectManager,
                        neighborRank,
                        tag,
                        MPI_COMM_GEOS,
-                       &commData.mpiSendBufferRequest(i) );
+                       &commData.mpiSendBufferRequest( i ) );
   }
 
   for( int i=0; i<commData.size(); ++i )
@@ -1151,7 +1151,7 @@ void CommunicationTools::checkSendRecv( ObjectManagerBase const & objectManager,
                       neighborRank,
                       tag,
                       MPI_COMM_GEOS,
-                      &commData.mpiRecvBufferStatus(i) );
+                      &commData.mpiRecvBufferStatus( i ) );
 
     arrayView1d< localIndex const > const ghostsToRecv = objectManager.getNeighborData( neighborRank ).ghostsToReceive();
     array1d< globalIndex > ghostToRecvGlobal( ghostsToRecv.size() );
@@ -1167,7 +1167,6 @@ void CommunicationTools::checkSendRecv( ObjectManagerBase const & objectManager,
 
 
 
-
     GEOS_ERROR_IF_NE( ghostsToRecv.size(), ghostThatAreSentToMeGlobal.size() );
   }
 
@@ -1179,7 +1178,7 @@ void CommunicationTools::checkSendRecv( ObjectManagerBase const & objectManager,
                        commData.mpiRecvBufferRequest(),
                        commData.mpiRecvBufferStatus() );
 
-  
+
 
 }
 
