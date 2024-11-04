@@ -16,12 +16,12 @@
 #ifndef GEOS_PHYSICSSOLVERS_INDUCED_SEISMICITY_SEISMICITYRATE_HPP
 #define GEOS_PHYSICSSOLVERS_INDUCED_SEISMICITY_SEISMICITYRATE_HPP
 
-#include "physicsSolvers/SolverBase.hpp"
+#include "physicsSolvers/PhysicsSolverBase.hpp"
 
 namespace geos
 {
 
-class SeismicityRate : public SolverBase
+class SeismicityRate : public PhysicsSolverBase
 {
 public:
   /// The default nullary constructor is disabled to avoid compiler auto-generation:
@@ -44,7 +44,7 @@ public:
   /// This method ties properties with their supporting mesh
   virtual void registerDataOnMesh( Group & meshBodies ) override;
 
-  struct viewKeyStruct : public SolverBase::viewKeyStruct
+  struct viewKeyStruct : public PhysicsSolverBase::viewKeyStruct
   {
     static constexpr char const * stressSolverNameString() { return "stressSolverName"; }
     static constexpr char const * initialFaultNormalTractionString() { return "initialFaultNormalTraction"; }
@@ -133,7 +133,7 @@ protected:
   virtual void postInputInitialization() override;
 
   /// pointer to stress solver
-  SolverBase * m_stressSolver;
+  PhysicsSolverBase *m_stressSolver;
 
   /// stress solver name string
   string m_stressSolverName;
