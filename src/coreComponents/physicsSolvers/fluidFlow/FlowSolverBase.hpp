@@ -39,97 +39,6 @@ public:
   /// String used to form the solverName used to register single-physics solvers in CoupledSolver
   static string coupledSolverAttributePrefix() { return "flow"; }
 
-  struct BCWarningMessage
-  {
-
-    static string generateMessage( string_view baseMessage, string_view fieldName, string_view setName )
-    {
-      string fieldSpecificationMsg = GEOS_FMT( "Check if you have added or applied the appropriate fields to" \
-                                               "the FieldSpecification component with fieldName=”{}” and setNames=\"{}\"\n",
-                                               fieldName, setName );
-      return GEOS_FMT( "{}{}", baseMessage, fieldSpecificationMsg );
-    }
-
-    static string conflictPressureBC( string_view regionName,
-                                      string_view subRegionName,
-                                      string_view setName,
-                                      string_view fieldName )
-    {
-      return generateMessage(
-        GEOS_FMT( "Conflicting pressure boundary conditions on set {}/{}/{}\n",
-                  regionName, subRegionName, setName ),
-        fieldName, setName );
-    }
-
-    static string conflictTemperatureBC( string_view regionName,
-                                         string_view subRegionName,
-                                         string_view setName,
-                                         string_view fieldName )
-    {
-      return generateMessage(
-        GEOS_FMT( "Conflicting temperature boundary conditions on set {}/{}/{}\n",
-                  regionName, subRegionName, setName ),
-        fieldName, setName );
-    }
-
-    static string missingPressureBC( string_view regionName,
-                                     string_view subRegionName,
-                                     string_view setName,
-                                     string_view fieldName )
-    {
-      return generateMessage(
-        GEOS_FMT( "Pressure boundary condition not prescribed on set {}/{}/{}\n",
-                  regionName, subRegionName, setName ),
-        fieldName, setName );
-    }
-
-    static string missingTemperatureBC( string_view regionName,
-                                        string_view subRegionName,
-                                        string_view setName,
-                                        string_view fieldName )
-    {
-      return generateMessage(
-        GEOS_FMT( "Temperature boundary condition not prescribed on set {}/{}/{}\n",
-                  regionName, subRegionName, setName ),
-        fieldName, setName );
-    }
-
-    static string conflictingComposition( integer const comp,
-                                          string_view regionName,
-                                          string_view subRegionName,
-                                          string_view setName,
-                                          string_view fieldName )
-    {
-      return generateMessage(
-        GEOS_FMT( "Conflicting composition[{}] boundary conditions on set {}/{}/{}\n",
-                  comp, regionName, subRegionName, setName ),
-        fieldName, setName );
-    }
-
-    static string invalidComponentIndex( integer const comp,
-                                         string_view fsName,
-                                         string_view fieldName )
-    {
-      return generateMessage(
-        GEOS_FMT( "Invalid component index [{}] in composition boundary condition {}\n",
-                  comp, fsName ), fieldName, fsName );
-    }
-
-    static string nonConsistencyBC( integer componentIndex,
-                                    string_view componentName,
-                                    string_view regionName,
-                                    string_view subRegionName,
-                                    string_view setName,
-                                    string_view fieldName )
-    {
-      return generateMessage(
-        GEOS_FMT( "Boundary condition not applied to composition[{}] ({}) on region {}/{}/{}\n",
-                  componentIndex, componentName, regionName, subRegionName, setName ),
-        fieldName, setName );
-    }
-
-  };
-
 /**
  * @brief main constructor for Group Objects
  * @param name the name of this instantiation of Group in the repository
@@ -318,6 +227,95 @@ protected:
   /// maximum (absolute) temperature change in a sequential iteration
   real64 m_sequentialTempChange;
   real64 m_maxSequentialTempChange;
+
+  /**
+   * @brief
+   *
+   */
+  struct BCWarningMessage
+  {
+
+    static string generateMessage( string_view baseMessage, string_view fieldName, string_view setName )
+    {
+      string fieldSpecificationMsg = GEOS_FMT( "Check if you have added or applied the appropriate fields to" \
+                                               "the FieldSpecification component with fieldName=”{}” and setNames=\"{}\"\n",
+                                               fieldName, setName );
+      return GEOS_FMT( "{}{}", baseMessage, fieldSpecificationMsg );
+    }
+
+    static string pressureConflict( string_view regionName,
+                                      string_view subRegionName,
+                                      string_view setName,
+                                      string_view fieldName )
+    {
+      return generateMessage(
+        GEOS_FMT( "Conflicting pressure boundary conditions on set {}/{}/{}\n",
+                  regionName, subRegionName, setName ),
+        fieldName, setName );
+    }
+
+    static string temperatureConflict( string_view regionName,
+                                         string_view subRegionName,
+                                         string_view setName,
+                                         string_view fieldName )
+    {
+      return generateMessage(
+        GEOS_FMT( "Conflicting temperature boundary conditions on set {}/{}/{}\n",
+                  regionName, subRegionName, setName ),
+        fieldName, setName );
+    }
+
+    static string missingPressure( string_view regionName, string_view subRegionName, string_view setName,
+                                     string_view fieldName )
+    {
+      return generateMessage(
+        GEOS_FMT( "Pressure boundary condition not prescribed on set {}/{}/{}\n",
+                  regionName, subRegionName, setName ),
+        fieldName, setName );
+    }
+
+    static string missingTemperature( string_view regionName, string_view subRegionName,
+                                        string_view setName, string_view fieldName )
+    {
+      return generateMessage(
+        GEOS_FMT( "Temperature boundary condition not prescribed on set {}/{}/{}\n",
+                  regionName, subRegionName, setName ),
+        fieldName, setName );
+    }
+
+    static string conflictingComposition( integer const comp,
+                                          string_view regionName, string_view subRegionName,
+                                          string_view setName, string_view fieldName )
+    {
+      return generateMessage(
+        GEOS_FMT( "Conflicting composition[{}] boundary conditions on set {}/{}/{}\n",
+                  comp, regionName, subRegionName, setName ),
+        fieldName, setName );
+    }
+
+    static string invalidComponentIndex( integer const comp,
+                                         string_view fsName,
+                                         string_view fieldName )
+    {
+      return generateMessage(
+        GEOS_FMT( "Invalid component index [{}] in composition boundary condition {}\n",
+                  comp, fsName ), fieldName, fsName );
+    }
+
+    static string nonConsistency( integer componentIndex,
+                                    string_view componentName,
+                                    string_view regionName,
+                                    string_view subRegionName,
+                                    string_view setName,
+                                    string_view fieldName )
+    {
+      return generateMessage(
+        GEOS_FMT( "Boundary condition not applied to composition[{}] ({}) on region {}/{}/{}\n",
+                  componentIndex, componentName, regionName, subRegionName, setName ),
+        fieldName, setName );
+    }
+
+  };
 
 private:
   virtual void setConstitutiveNames( ElementSubRegionBase & subRegion ) const override;

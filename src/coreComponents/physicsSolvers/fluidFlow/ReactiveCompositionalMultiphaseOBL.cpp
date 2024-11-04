@@ -959,8 +959,8 @@ bool ReactiveCompositionalMultiphaseOBL::validateDirichletBC( DomainPartition & 
       {
         bcConsistent = false;
         GEOS_WARNING(
-          BCWarningMessage::conflictPressureBC( regionName, subRegionName, setName,
-                                                fields::flow::pressure::key() ) );
+          BCMessage::pressureConflict( regionName, subRegionName, setName,
+                                        fields::flow::pressure::key() ) );
       }
       subRegionSetMap[setName].setNumComp( numCompWithEnergy );
     } );
@@ -984,15 +984,14 @@ bool ReactiveCompositionalMultiphaseOBL::validateDirichletBC( DomainPartition & 
       if( subRegionSetMap.count( setName ) == 0 )
       {
         bcConsistent = false;
-        GEOS_WARNING(
-          BCWarningMessage::missingPressureBC( regionName, subRegionName, setName,
-                                               fields::flow::pressure::key() ) );
+        GEOS_WARNING( BCMessage::missingPressure( regionName, subRegionName, setName,
+                                                   fields::flow::pressure::key() ) );
       }
       if( comp < 0 || comp >= numComp )
       {
         bcConsistent = false;
-        GEOS_WARNING( BCWarningMessage::invalidComponentIndex( comp, fs.getName(),
-                                                               fields::flow::globalCompFraction::key() ) );
+        GEOS_WARNING( BCMessage::invalidComponentIndex( comp, fs.getName(),
+                                                         fields::flow::globalCompFraction::key() ) );
         return; // can't check next part with invalid component id
       }
 
@@ -1000,9 +999,8 @@ bool ReactiveCompositionalMultiphaseOBL::validateDirichletBC( DomainPartition & 
       if( compMask[comp] )
       {
         bcConsistent = false;
-        GEOS_WARNING(
-          BCWarningMessage::conflictingComposition( comp, regionName, subRegionName, setName,
-                                                    fields::flow::globalCompFraction::key() ) );
+        GEOS_WARNING( BCMessage::conflictingComposition( comp, regionName, subRegionName, setName,
+                                                          fields::flow::globalCompFraction::key() ) );
       }
       compMask.set( comp );
     } );
@@ -1027,9 +1025,8 @@ bool ReactiveCompositionalMultiphaseOBL::validateDirichletBC( DomainPartition & 
         if( subRegionSetMap.count( setName ) == 0 )
         {
           bcConsistent = false;
-          GEOS_WARNING(
-            BCWarningMessage::conflictPressureBC( regionName, subRegionName, setName,
-                                                  fields::flow::pressure::key() ) );
+          GEOS_WARNING( BCMessage::pressureConflict( regionName, subRegionName, setName,
+                                                      fields::flow::pressure::key() ) );
         }
 
         ComponentMask< MAX_NC > & compMask = subRegionSetMap[setName];
@@ -1037,9 +1034,8 @@ bool ReactiveCompositionalMultiphaseOBL::validateDirichletBC( DomainPartition & 
         if( compMask[numComp] )
         {
           bcConsistent = false;
-          GEOS_WARNING(
-            BCWarningMessage::conflictTemperatureBC( regionName, subRegionName, setName,
-                                                     fields::flow::temperature::key() ));
+          GEOS_WARNING( BCMessage::temperatureConflict( regionName, subRegionName, setName,
+                                                         fields::flow::temperature::key() ));
         }
         compMask.set( numComp );
       } );
@@ -1062,10 +1058,9 @@ bool ReactiveCompositionalMultiphaseOBL::validateDirichletBC( DomainPartition & 
               {
                 bcConsistent = false;
                 GEOS_WARNING(
-                  BCWarningMessage::nonConsistencyBC(
-                    ic, componentNames[ic],
-                    regionEntry.first, subRegionEntry.first, setEntry.first,
-                    fields::flow::globalCompFraction::key() ) );
+                  BCMessage::nonConsistency( ic, componentNames[ic],
+                                              regionEntry.first, subRegionEntry.first, setEntry.first,
+                                              fields::flow::globalCompFraction::key() ) );
               }
             }
           } );
