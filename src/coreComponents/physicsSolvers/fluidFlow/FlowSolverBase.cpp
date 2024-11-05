@@ -864,7 +864,7 @@ string FlowSolverBase::BCMessage::notAppliedOnRegion( int componentIndex, string
                                                       string_view regionName, string_view subRegionName,
                                                       string_view setName, string_view fieldName )
 {
-  return generateMessage( GEOS_FMT( "Boundary condition not applied to {} composition (no.{})"
+  return generateMessage( GEOS_FMT( "Boundary condition not applied to {} component (no.{})"
                                     "on region {}/{}/{}\n",
                                     componentName, componentIndex, regionName, subRegionName, setName ),
                           fieldName, setName );
