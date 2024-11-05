@@ -936,7 +936,7 @@ public:
    */
   virtual void outputObjectConnectivity() const
   {
-    // This is a dummy function that should be specialized by derived classes.
+    GEOS_ERROR( "Called outputObjectConnectivity in ObjectManagerBase. Function should be implemented." );
   }
 
 protected:

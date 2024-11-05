@@ -699,9 +699,6 @@ void ProblemManager::generateMesh()
   //***** End Leave here for debugging purposes
 
   domain.setupCommunications( useNonblockingMPI );
-
-
-
   domain.outputPartitionInformation();
 
   domain.forMeshBodies( [&]( MeshBody & meshBody )

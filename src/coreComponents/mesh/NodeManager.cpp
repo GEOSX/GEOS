@@ -384,7 +384,6 @@ void NodeManager::outputObjectConnectivity() const
       map< globalIndex, localIndex > const sortedGlobalToLocalMap( m_globalToLocalMap.begin(), m_globalToLocalMap.end());
       for( auto indexPair : sortedGlobalToLocalMap )
       {
-//        globalIndex const ga = indexPair.first;
         localIndex const a = indexPair.second;
         printf( "  %3d( %3lld ): %6.2f, %6.2f, %6.2f \n", a, m_localToGlobalMap( a ), m_referencePosition( a, 0 ), m_referencePosition( a, 1 ), m_referencePosition( a, 2 ) );
       }

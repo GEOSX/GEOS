@@ -271,8 +271,6 @@ localIndex EdgeManager::unpackUpDownMaps( buffer_unit_type const * & buffer,
                                      overwriteUpMaps );
 
   GEOS_ERROR_IF_NE( m_unmappedGlobalIndicesInToNodes.size(), 0 );
-  //GEOS_ERROR_IF_NE( m_unmappedGlobalIndicesInToFaces.size(), 0 );
-
   return unPackedSize;
 }
 

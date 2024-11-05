@@ -179,13 +179,6 @@ void packNewAndModifiedObjectsToOwningRanks( NeighborCommunicator & neighbor,
       if( modifiedObjects.newElements.count( {er, esr} ) > 0 )
       {
         std::set< localIndex > const & elemList = modifiedObjects.newElements.at( {er, esr} );
-//        std::cout<<"modifiedObjects.newElements{ "<<er<<", "<<esr<<" } ( "<<MpiWrapper::commRank()<<" -> "<<neighbor.neighborRank()<<"):
-// ";
-        // for( auto const & index : elemList )
-        // {
-        //   std::cout<<index<<", ";
-        // }
-        // std::cout<<std::endl;
         filterNonOwnedFromContainer( newElemData[er][esr], elemList, subRegionGhostRank, neighborRank );
       }
 
@@ -248,8 +241,6 @@ void packNewAndModifiedObjectsToOwningRanks( NeighborCommunicator & neighbor,
   packedSize += edgeManager.packParentChildMaps( sendBufferPtr, newEdgePackListArray );
   packedSize += faceManager.packParentChildMaps( sendBufferPtr, newFacePackListArray );
   packedSize += elemManager.packFaceElementToFace( sendBufferPtr, newElemPackList );
-
-//  std::cout<<"packedSize ( "<<MpiWrapper::commRank()<<" -> "<<neighbor.neighborRank()<<"): "<<packedSize<<std::endl;
 
   packedSize += nodeManager.packUpDownMaps( sendBufferPtr, newNodePackListArray );
   packedSize += edgeManager.packUpDownMaps( sendBufferPtr, newEdgePackListArray );
@@ -336,10 +327,6 @@ localIndex unpackNewObjectsOnOwningRanks( NeighborCommunicator & neighbor,
   unpackedSize += edgeManager.unpackParentChildMaps( receiveBufferPtr, newLocalEdges );
   unpackedSize += faceManager.unpackParentChildMaps( receiveBufferPtr, newLocalFaces );
   unpackedSize += elemManager.unpackFaceElementToFace( receiveBufferPtr, newLocalElements, true );
-
-  // std::cout<<"unpackedSize ( "<<neighbor.neighborRank()<<" -> "<<MpiWrapper::commRank()<<"): "<<unpackedSize<<std::endl;
-  // std::cout<<" end of 1b receiveBufferPtr ("<<neighbor.neighborRank()<<" -> "<<MpiWrapper::commRank()<<" ) = "<<reinterpret_cast<void
-  // const *>(receiveBufferPtr)<<std::endl;
 
   std::set< localIndex > & allNewNodes      = receivedObjects.newNodes;
   std::set< localIndex > & allNewEdges      = receivedObjects.newEdges;
@@ -1204,7 +1191,6 @@ void synchronizeTopologyChange( MeshLevel * const mesh,
                                          MPI_COMM_GEOS );
   }
 
-//  std::cout<<"***** Step 3b - bp2 *****"<<std::endl;
   // send/recv buffer sizes
   for( unsigned int count=0; count<neighbors.size(); ++count )
   {
@@ -1261,92 +1247,6 @@ void synchronizeTopologyChange( MeshLevel * const mesh,
                        commData3.mpiSendBufferSizeStatus() );
 
   modifiedObjects.insert( receivedObjects );
-
-
-  // nodeManager.fixUpDownMaps( false );
-  // edgeManager.fixUpDownMaps( false );
-  // faceManager.fixUpDownMaps( false );
-
-
-  // for( localIndex er = 0; er < elemManager.numRegions(); ++er )
-  // {
-  //   ElementRegionBase & elemRegion = elemManager.getRegion( er );
-  //   for( localIndex esr = 0; esr < elemRegion.numSubRegions(); ++esr )
-  //   {
-  //     elemRegion.getSubRegion( esr ).fixUpDownMaps( false );
-  //   }
-  // }
-
-  // for( int rank=0; rank<MpiWrapper::commSize(); ++rank )
-  // {
-  //   MpiWrapper::barrier();
-  //   if( rank != MpiWrapper::commRank() )
-  //   {
-  //     for( unsigned int neighborIndex=0; neighborIndex<neighbors.size(); ++neighborIndex )
-  //     {
-  //       NeighborCommunicator & neighbor = neighbors[neighborIndex];
-  //       localIndex_array const & nodeGhostsToSend = nodeManager.getNeighborData( neighbor.neighborRank() ).ghostsToSend();
-  //       localIndex_array const & nodeGhostsToRecv = nodeManager.getNeighborData( neighbor.neighborRank() ).ghostsToReceive();
-  //       arrayView1d< globalIndex const > const & nodeGlobalIndices = nodeManager.localToGlobalMap();
-
-  //       localIndex_array const & edgeGhostsToSend = edgeManager.getNeighborData( neighbor.neighborRank() ).ghostsToSend();
-  //       localIndex_array const & edgeGhostsToRecv = edgeManager.getNeighborData( neighbor.neighborRank() ).ghostsToReceive();
-  //       arrayView1d< globalIndex const > const & edgeGlobalIndices = edgeManager.localToGlobalMap();
-
-  //       localIndex_array const & faceGhostsToSend = faceManager.getNeighborData( neighbor.neighborRank() ).ghostsToSend();
-  //       localIndex_array const & faceGhostsToRecv = faceManager.getNeighborData( neighbor.neighborRank() ).ghostsToReceive();
-  //       arrayView1d< globalIndex const > const & faceGlobalIndices = faceManager.localToGlobalMap();
-
-  //       std::cout<< "Rank: " << MpiWrapper::commRank() << " Neighbor: " << neighbor.neighborRank() << std::endl;
-
-  //       std::cout<< "  nodeGhostsToSend: " ;
-  //       for( localIndex const & k : nodeGhostsToSend )
-  //       {
-  //         std::cout << nodeGlobalIndices[k] << ", ";
-  //       }
-  //       std::cout<< std::endl;
-
-  //       std::cout<< "  nodeGhostsToRecv: ";
-  //       for( localIndex const & k : nodeGhostsToRecv )
-  //       {
-  //         std::cout << nodeGlobalIndices[k] << ", ";
-  //       }
-  //       std::cout<< std::endl;
-
-  //       std::cout<< "  edgeGhostsToSend: ";
-  //       for( localIndex const & k : edgeGhostsToSend )
-  //       {
-  //         std::cout << edgeGlobalIndices[k] << ", ";
-  //       }
-  //       std::cout<< std::endl;
-
-  //       std::cout<< "  edgeGhostsToRecv: ";
-  //       for( localIndex const & k : edgeGhostsToRecv )
-  //       {
-  //         std::cout << edgeGlobalIndices[k] << ", ";
-  //       }
-  //       std::cout<< std::endl;
-
-  //       std::cout<< "  faceGhostsToSend: ";
-  //       for( localIndex const & k : faceGhostsToSend )
-  //       {
-  //         std::cout << faceGlobalIndices[k] << ", ";
-  //       }
-  //       std::cout<< std::endl;
-
-  //       std::cout<< "  faceGhostsToRecv: ";
-  //       for( localIndex const & k : faceGhostsToRecv )
-  //       {
-  //         std::cout << faceGlobalIndices[k] << ", ";
-  //       }
-  //       std::cout<< std::endl;
-
-  //     }
-  //   }
-  //   MpiWrapper::barrier();
-  // }
-
-
 
   elemManager.forElementSubRegionsComplete< FaceElementSubRegion >( [&]( localIndex const er,
                                                                          localIndex const esr,

@@ -851,9 +851,6 @@ void CommunicationTools::setupGhosts( MeshLevel & meshLevel,
   MpiWrapper::waitAll( commData.size(), commData.mpiSendBufferSizeRequest(), commData.mpiSendBufferSizeStatus() );
   MpiWrapper::waitAll( commData.size(), commData.mpiSendBufferRequest(), commData.mpiSendBufferStatus() );
 
-
-  MpiWrapper::barrier( MPI_COMM_GEOS );
-
   // unpack the ghost inter-object maps and other data
   for( auto & neighbor : neighbors )
   {
