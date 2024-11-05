@@ -32,13 +32,6 @@
       cellBlockNames="{ block1 }" />
   </Mesh>
 
-  <Geometry>
-    <Box
-      name="sink"
-      xMin="{ 8.99, -0.01, -0.01 }"
-      xMax="{ 10.01, 1.01, 1.01 }" />
-  </Geometry>
-
   <Events
     maxTime="50">
     <PeriodicEvent
@@ -122,7 +115,7 @@
       name="rockPorosity"
       defaultReferencePorosity="0.05"
       referencePressure="0.0"
-      compressibility="0" />
+      compressibility="1e-12" />
 
     <ConstantPermeability
       name="rockPerm"
@@ -181,12 +174,6 @@
       scale="1.0"
       functionName="saturationTable2" />
 
-    <FieldSpecification
-      name="sinkTerm"
-      objectPath="ElementRegions/Domain/block1"
-      fieldName="pressure"
-      scale="0.0"
-      setNames="{ sink }" />
   </FieldSpecifications>
 
   <Outputs>
