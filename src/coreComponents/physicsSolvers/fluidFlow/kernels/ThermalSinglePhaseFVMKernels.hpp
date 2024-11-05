@@ -20,10 +20,11 @@
 #ifndef GEOS_PHYSICSSOLVERS_FLUIDFLOW_THERMALSINGLEPHASEFVMKERNELS_HPP
 #define GEOS_PHYSICSSOLVERS_FLUIDFLOW_THERMALSINGLEPHASEFVMKERNELS_HPP
 
+#include "physicsSolvers/fluidFlow/kernels/SinglePhaseFVMKernels.hpp"
+
 #include "constitutive/thermalConductivity/SinglePhaseThermalConductivityBase.hpp"
 #include "constitutive/thermalConductivity/ThermalConductivityFields.hpp"
 #include "constitutive/thermalConductivity/SinglePhaseThermalConductivityFields.hpp"
-#include "physicsSolvers/fluidFlow/SinglePhaseFVMKernels.hpp"
 
 namespace geos
 {

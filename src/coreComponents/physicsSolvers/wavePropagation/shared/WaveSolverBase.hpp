@@ -23,8 +23,9 @@
 
 
 #include "mesh/MeshFields.hpp"
-#include "physicsSolvers/SolverBase.hpp"
+#include "physicsSolvers/PhysicsSolverBase.hpp"
 #include "common/LifoStorage.hpp"
+#include "functions/TableFunction.hpp"
 #if !defined( GEOS_USE_HIP )
 #include "finiteElement/elementFormulations/Qk_Hexahedron_Lagrange_GaussLobatto.hpp"
 #endif
@@ -46,7 +47,7 @@
 namespace geos
 {
 
-class WaveSolverBase : public SolverBase
+class WaveSolverBase : public PhysicsSolverBase
 {
 public:
 
@@ -79,10 +80,9 @@ public:
                                integer const cycleNumber,
                                DomainPartition & domain ) override;
 
-  struct viewKeyStruct : SolverBase::viewKeyStruct
+  struct viewKeyStruct : PhysicsSolverBase::viewKeyStruct
   {
     static constexpr char const * sourceCoordinatesString() { return "sourceCoordinates"; }
-    static constexpr char const * sourceValueString() { return "sourceValue"; }
 
     static constexpr char const * timeSourceFrequencyString() { return "timeSourceFrequency"; }
     static constexpr char const * timeSourceDelayString() { return "timeSourceDelay"; }
@@ -123,9 +123,14 @@ public:
     static constexpr char const * receiverRegionString() { return "receiverRegion"; }
     static constexpr char const * freeSurfaceString() { return "FreeSurface"; }
 
+    static constexpr char const * timestepStabilityLimitString() { return "timestepStabilityLimit"; }
+    static constexpr char const * timeStepString() { return "timeStep"; }
+
     static constexpr char const * attenuationTypeString() { return "attenuationType"; }
     static constexpr char const * slsReferenceAngularFrequenciesString() { return "slsReferenceAngularFrequencies"; }
     static constexpr char const * slsAnelasticityCoefficientsString() { return "slsAnelasticityCoefficients"; }
+
+    static constexpr char const * sourceWaveletTableNames() { return "sourceWaveletTableNames"; }
   };
 
   /**
@@ -157,6 +162,9 @@ protected:
    */
   virtual void applyFreeSurfaceBC( real64 const time, DomainPartition & domain ) = 0;
 
+  /**
+   */
+  virtual real64 computeTimeStep( real64 & dtOut ) = 0;
 
   /**
    * @brief Initialize Perfectly Matched Layer (PML) information
@@ -249,9 +257,6 @@ protected:
   /// Coordinates of the sources in the mesh
   array2d< real64 > m_sourceCoordinates;
 
-  /// Precomputed value of the source terms
-  array2d< real32 > m_sourceValue;
-
   /// Central frequency for the Ricker time source
   real32 m_timeSourceFrequency;
 
@@ -315,6 +320,14 @@ protected:
   /// Flag to apply PML
   integer m_usePML;
 
+  /// Flag to precompute the time-step
+  /// usage:  the time-step is computed then the code exit and you can
+  /// copy paste the time-step inside the XML then deactivate the option
+  integer m_timestepStabilityLimit;
+
+  //Time step computed with power iteration
+  real64 m_timeStep;
+
   /// Indices of the nodes (in the right order) for each source point
   array2d< localIndex > m_sourceNodeIds;
 
@@ -356,6 +369,15 @@ protected:
 
   /// A set of target nodes IDs that will be handled by the current solver
   SortedArray< localIndex > m_solverTargetNodesSet;
+
+  /// Names of table functions for source wavelet (time dependency)
+  array1d< string > m_sourceWaveletTableNames;
+
+  /// Flag to indicate if source wavelet table functions are used
+  bool m_useSourceWaveletTables;
+
+  /// Wrappers of table functions for source wavelet (time dependency)
+  array1d< TableFunction::KernelWrapper > m_sourceWaveletTableWrappers;
 
   struct parametersPML
   {

@@ -28,7 +28,7 @@
 #include "physicsSolvers/fluidFlow/wells/WellControls.hpp"
 #include "physicsSolvers/fluidFlow/wells/WellSolverBaseFields.hpp"
 #include "physicsSolvers/fluidFlow/wells/LogLevelsInfo.hpp"
-#include "physicsSolvers/fluidFlow/wells/ThermalCompositionalMultiphaseWellKernels.hpp"
+#include "physicsSolvers/fluidFlow/wells/kernels/ThermalCompositionalMultiphaseWellKernels.hpp"
 #include "fileIO/Outputs/OutputBase.hpp"
 
 namespace geos
@@ -39,7 +39,7 @@ using namespace constitutive;
 
 WellSolverBase::WellSolverBase( string const & name,
                                 Group * const parent )
-  : SolverBase( name, parent ),
+  : PhysicsSolverBase( name, parent ),
   m_numPhases( 0 ),
   m_numComponents( 0 ),
   m_numDofPerWellElement( 0 ),
@@ -74,7 +74,7 @@ Group *WellSolverBase::createChild( string const & childKey, string const & chil
   }
   else
   {
-    SolverBase::createChild( childKey, childName );
+    PhysicsSolverBase::createChild( childKey, childName );
   }
   return rval;
 }
@@ -88,7 +88,7 @@ WellSolverBase::~WellSolverBase() = default;
 
 void WellSolverBase::postInputInitialization()
 {
-  SolverBase::postInputInitialization();
+  PhysicsSolverBase::postInputInitialization();
 
   // 1. Set key dimensions of the problem
   m_numDofPerWellElement = m_isThermal ?    m_numComponents + 2 : m_numComponents + 1; // 1 pressure  connectionRate + temp if thermal
@@ -109,7 +109,7 @@ void WellSolverBase::postInputInitialization()
 
 void WellSolverBase::registerDataOnMesh( Group & meshBodies )
 {
-  SolverBase::registerDataOnMesh( meshBodies );
+  PhysicsSolverBase::registerDataOnMesh( meshBodies );
 
   // loop over the wells
   forDiscretizationOnMeshTargets( meshBodies, [&] ( string const &,
@@ -163,8 +163,11 @@ void WellSolverBase::initializePostSubGroups()
 
 void WellSolverBase::setConstitutiveNamesCallSuper( ElementSubRegionBase & subRegion ) const
 {
-  SolverBase::setConstitutiveNamesCallSuper( subRegion );
-  subRegion.registerWrapper< string >( viewKeyStruct::fluidNamesString()).setPlotLevel( PlotLevel::NOPLOT ).setRestartFlags( RestartFlags::NO_WRITE ).setSizedFromParent( 0 );
+  PhysicsSolverBase::setConstitutiveNamesCallSuper( subRegion );
+  subRegion.registerWrapper< string >( viewKeyStruct::fluidNamesString() ).
+    setPlotLevel( PlotLevel::NOPLOT ).
+    setRestartFlags( RestartFlags::NO_WRITE ).
+    setSizedFromParent( 0 );
 }
 
 void WellSolverBase::setupDofs( DomainPartition const & domain,
@@ -308,7 +311,7 @@ void WellSolverBase::assembleSystem( real64 const time,
 
 void WellSolverBase::initializePostInitialConditionsPreSubGroups()
 {
-  SolverBase::initializePostInitialConditionsPreSubGroups();
+  PhysicsSolverBase::initializePostInitialConditionsPreSubGroups();
 
   DomainPartition & domain = this->getGroupByPath< DomainPartition >( "/Problem/domain" );
 
