@@ -142,7 +142,7 @@ public:
     /// A vector containing all the values of a column
     std::vector< string > columnValues;
     /// Vector of string containing the largest string for a column and its subColumns
-    std::vector< string > maxStringSize;
+    size_t maxStringSize;
     /// Vector containing all sub columns subdivison
     std::vector< ColumnStructure > subColumn;
 
@@ -172,14 +172,13 @@ public:
      */
     ColumnStructure ( Column const & col,
                       std::vector< string > const & columnValuesInit,
-                      std::vector< string > const & maxStringSizeInit,
+                      size_t const maxStringSizeInit,
                       std::vector< ColumnStructure > const & subColumnInit )
       : column( col ),
       columnValues( columnValuesInit ),
       maxStringSize( maxStringSizeInit ),
       subColumn( subColumnInit )
     {}
-
   };
 
   /// Alias for an initializer list of variants that can contain either a string or a layout column.
