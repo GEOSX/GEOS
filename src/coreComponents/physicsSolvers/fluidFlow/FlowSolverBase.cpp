@@ -76,6 +76,7 @@ void updatePorosityAndPermeabilityFromPressureAndAperture( POROUSWRAPPER_TYPE po
 {
   forAll< parallelDevicePolicy<> >( subRegion.size(), [=] GEOS_DEVICE ( localIndex const k )
   {
+    std::cout << "hydraulic aper " << oldHydraulicAperture[k] << " " << newHydraulicAperture[k] << std::endl;
     for( localIndex q = 0; q < porousWrapper.numGauss(); ++q )
     {
       porousWrapper.updateStateFromPressureAndAperture( k, q,

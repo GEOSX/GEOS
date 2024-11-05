@@ -107,6 +107,7 @@ struct DeformationUpdateKernel
                                                                             oldHydraulicAperture, newHydraulicAperture,
                                                                             dHydraulicAperture_dNormalJump,
                                                                             jump, traction );
+      std::cout <<"kfe " << kfe << " " << "hydro kernal aperture " << hydraulicAperture[kfe] << " " << volume[kfe]<< std::endl;
 
 #ifdef GEOS_USE_SEPARATION_COEFFICIENT
       real64 const s = aperture[kfe] / apertureAtFailure[kfe];

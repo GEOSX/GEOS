@@ -792,6 +792,7 @@ real64 SolverBase::nonlinearImplicitStep( real64 const & time_n,
     {
       resetStateToBeginningOfStep( domain );
       resetConfigurationToBeginningOfStep( domain );
+      updateState( domain );
     }
 
     // it's the simplest configuration that can be attempted whenever Newton's fails as a last resource.

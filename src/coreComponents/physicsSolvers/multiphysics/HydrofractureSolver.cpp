@@ -209,10 +209,10 @@ real64 HydrofractureSolver< POROMECHANICS_SOLVER >::fullyCoupledSolverStep( real
     }
 
     // currently the only method is implicit time integration
-    dtReturn = nonlinearImplicitStep( time_n, dt, cycleNumber, domain );
+    dtReturn = nonlinearImplicitStep( time_n, dtReturn, cycleNumber, domain );
 
 
-    if( !this->m_performStressInitialization && m_surfaceGenerator->solverStep( time_n, dt, cycleNumber, domain ) > 0 )
+    if( !this->m_performStressInitialization && m_surfaceGenerator->solverStep( time_n, dtReturn, cycleNumber, domain ) > 0 )
     {
       locallyFractured = 1;
     }
