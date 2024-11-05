@@ -42,7 +42,7 @@ void StatOutputController::generatePackCollection( TasksManager & taskManager,
   pcName = fieldName;
 
   m_packCollections.push_back( packCollection );
-  packCollectionPaths.emplace_back( GEOS_FMT( "{}/", packCollection->getPath()) );
+  packCollectionPaths.emplace_back( GEOS_FMT( "{}", packCollection->getPath()) );
 }
 
 void StatOutputController::generateTimeHistory( OutputManager & outputManager,

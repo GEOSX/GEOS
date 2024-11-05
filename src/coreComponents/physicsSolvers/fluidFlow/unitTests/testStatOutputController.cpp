@@ -190,17 +190,17 @@ TEST( testStatOutputController, checkSinglePhaseFluxStatistics )
 
   std::vector< string > const refCollectorPaths =
   {
-    "/Tasks/packCollectionreservoiraveragePressure/",
-    "/Tasks/packCollectionreservoirminPressure/",
-    "/Tasks/packCollectionreservoirmaxPressure/",
-    "/Tasks/packCollectionreservoirminDeltaPressure/",
-    "/Tasks/packCollectionreservoirmaxDeltaPressure/",
-    "/Tasks/packCollectionreservoirtotalMass/",
-    "/Tasks/packCollectionreservoiraverageTemperature/",
-    "/Tasks/packCollectionreservoirminTemperature/",
-    "/Tasks/packCollectionreservoirmaxTemperature/",
-    "/Tasks/packCollectionreservoirtotalPoreVolume/",
-    "/Tasks/packCollectionreservoirtotalUncompactedPoreVolume/",
+    "/Tasks/packCollectionreservoiraveragePressure",
+    "/Tasks/packCollectionreservoirminPressure",
+    "/Tasks/packCollectionreservoirmaxPressure",
+    "/Tasks/packCollectionreservoirminDeltaPressure",
+    "/Tasks/packCollectionreservoirmaxDeltaPressure",
+    "/Tasks/packCollectionreservoirtotalMass",
+    "/Tasks/packCollectionreservoiraverageTemperature",
+    "/Tasks/packCollectionreservoirminTemperature",
+    "/Tasks/packCollectionreservoirmaxTemperature",
+    "/Tasks/packCollectionreservoirtotalPoreVolume",
+    "/Tasks/packCollectionreservoirtotalUncompactedPoreVolume",
   };
   string const outputPath = "/Outputs/compFlowHistory_reservoir";
 
