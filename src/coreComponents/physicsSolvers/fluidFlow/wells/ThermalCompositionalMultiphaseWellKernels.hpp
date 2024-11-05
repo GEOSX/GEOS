@@ -20,7 +20,7 @@
 #define GEOS_PHYSICSSOLVERS_FLUIDFLOW_WELLS_THERMALCOMPOSITIONALMULTIPHASEWELLKERNELS_HPP
 
 #include "physicsSolvers/fluidFlow/wells/CompositionalMultiphaseWellKernels.hpp"
-#include "physicsSolvers/SolverBaseKernels.hpp"
+#include "physicsSolvers/PhysicsSolverBaseKernels.hpp"
 namespace geos
 {
 
@@ -139,7 +139,7 @@ public:
  * @class ResidualNormKernel
  */
 template< localIndex NUM_COMP >
-class ResidualNormKernel : public solverBaseKernels::ResidualNormKernelBase< 2 >
+class ResidualNormKernel : public physicsSolverBaseKernels::ResidualNormKernelBase< 2 >
 {
 public:
 
@@ -149,7 +149,7 @@ public:
 
   using WJ_ROFFSET = compositionalMultiphaseWellKernels::RowOffset_WellJac< NUM_COMP, 1 >;
 
-  using Base = solverBaseKernels::ResidualNormKernelBase< 2 >;
+  using Base = physicsSolverBaseKernels::ResidualNormKernelBase< 2 >;
   using Base::m_minNormalizer;
   using Base::m_rankOffset;
   using Base::m_localResidual;
