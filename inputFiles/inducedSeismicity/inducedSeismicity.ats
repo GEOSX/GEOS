@@ -21,13 +21,13 @@ decks = [
         partitions=((1, 1, 1), ),
         restart_step=0,
         check_step=100,
-        curvecheck_params=CurveCheckParameters(**curvecheck_params))
+        curvecheck_params=CurveCheckParameters(**curvecheck_params)),
     TestDeck(
         name="SpringSlider_smoke",
         description="Spring slider 0D system",
         partitions=((1, 1, 1), ),
         restart_step=0,
         check_step=3265,
-        restartcheck_params=RestartcheckParameters(atol=1e-4, rtol=1e-3) )
+        restartcheck_params=RestartcheckParameters(atol=1e-4, rtol=1e-3))
         ]
 generate_geos_tests(decks)
