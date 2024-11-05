@@ -812,7 +812,7 @@ string FlowSolverBase::BCMessage::generateMessage( string_view baseMessage,
 {
   return GEOS_FMT( "{} Check if you have added or applied the appropriate fields to "
                    "the FieldSpecification component with fieldName=\"{}\" "
-                   "and setNames=\"{}\"\n{}", baseMessage, fieldName, setName );
+                   "and setNames=\"{}\"\n", baseMessage, fieldName, setName );
 }
 
 string FlowSolverBase::BCMessage::pressureConflict( string_view regionName, string_view subRegionName,
