@@ -679,25 +679,6 @@ void ProblemManager::generateMesh()
     }
   }
 
-
-  //***** Leave here for debugging purposes
-  // domain.forMeshBodies( [&]( MeshBody & meshBody )
-  // {
-  //   meshBody.forMeshLevels( [&]( MeshLevel & meshLevel )
-  //   {
-  //     if( !meshLevel.isShallowCopy() )
-  //     {
-  //       NodeManager const & nodeManager = meshLevel.getNodeManager();
-  //       nodeManager.outputObjectConnectivity();
-
-  //       ElementRegionManager & elementManager = meshLevel.getElemManager();
-  //       elementManager.outputObjectConnectivity();
-  //     }
-  //   } );
-
-  // } );
-  //***** End Leave here for debugging purposes
-
   domain.setupCommunications( useNonblockingMPI );
   domain.outputPartitionInformation();
 

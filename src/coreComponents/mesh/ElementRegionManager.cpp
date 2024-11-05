@@ -802,7 +802,7 @@ void ElementRegionManager::outputObjectConnectivity() const
           arrayView1d< globalIndex const > const & elemLocalToGlobal = subRegion.localToGlobalMap();
           auto const & elemGlobalToLocal = subRegion.globalToLocalMap();
           arrayView1d< globalIndex const > const & nodeLocalToGlobal = elemToNodeRelation.relatedObjectLocalToGlobal();
-//          auto const & refCoords = getParent().getGroup< NodeManager >( "nodeManager" ).referencePosition();
+          auto const & refCoords = getParent().getGroup< NodeManager >( "nodeManager" ).referencePosition();
 
           printf( "  ElementToNodes map:\n" );
           for( localIndex k=0; k<elemToNode.size( 0 ); ++k )
@@ -839,24 +839,24 @@ void ElementRegionManager::outputObjectConnectivity() const
             printf( " )\n" );
           }
 
-          // printf( "\n  ElementToNodes coords:\n" );
-          // for( auto indexPair : sortedGlobalToLocalMap )
-          // {
-          //   globalIndex const gk = indexPair.first;
-          //   localIndex const k = indexPair.second;
+          printf( "\n  ElementToNodes coords:\n" );
+          for( auto indexPair : sortedGlobalToLocalMap )
+          {
+            globalIndex const gk = indexPair.first;
+            localIndex const k = indexPair.second;
 
-          //   printf( "  %3d( %3lld ): ", k, gk );
-          //   for( localIndex a=0; a<elemToNode.size( 1 ); ++a )
-          //   {
-          //     localIndex const b = elemToNode( k, a );
-          //     printf( "( %4.1f, %4.1f, %4.1f )", refCoords( b, 0), refCoords( b, 1 ), refCoords( b, 2 ) );
-          //     if( a != elemToNode.size( 1 )-1 )
-          //     {
-          //       printf( ", " );
-          //     }
-          //   }
-          //   printf( " )\n" );
-          // }
+            printf( "  %3d( %3lld ): ", k, gk );
+            for( localIndex a=0; a<elemToNode.size( 1 ); ++a )
+            {
+              localIndex const b = elemToNode( k, a );
+              printf( "( %4.1f, %4.1f, %4.1f )", refCoords( b, 0 ), refCoords( b, 1 ), refCoords( b, 2 ) );
+              if( a != elemToNode.size( 1 )-1 )
+              {
+                printf( ", " );
+              }
+            }
+            printf( " )\n" );
+          }
 
         } );
       } );
