@@ -66,7 +66,7 @@ You can have several objects of the same class and hence the same ``catalogName`
 
 **How can I add my new externally-accessible class to the ObjectCatalog?**
 
-Let us consider a flow solver class derived from ``FlowSolverBase``, that itself is derived from ``SolverBase``.
+Let us consider a flow solver class derived from ``FlowSolverBase``, that itself is derived from ``PhysicsSolverBase``.
 To instantiate and use this solver, the developer needs to make the derived flow solver class reachable from the XML file, via an XML tag.
 Internally, this requires adding the derived class information to ``ObjectCatalog``, which is achieved with two main ingredients: 1) a ``CatalogName()`` method in the class that lets GEOS know *what* to search for in the internal ``ObjectCatalog`` to instantiate an object of this class, 2) a macro that specifies *where* to search in the ``ObjectCatalog``.
 
@@ -89,7 +89,7 @@ Internally, this requires adding the derived class information to ``ObjectCatalo
 
 
 2. To let GEOS know where to search in the ``ObjectCatalog``, a macro needs to be added at the end of the .cpp file implementing the class.
-   This macro (illustrated below) must contain the type of the base class (in this case, ``SolverBase``), and the name of the derived class (continuing with the example used above, this is ``CompositionalMultiphaseFlow``).
+   This macro (illustrated below) must contain the type of the base class (in this case, ``PhysicsSolverBase``), and the name of the derived class (continuing with the example used above, this is ``CompositionalMultiphaseFlow``).
    As a result of this construct, the ``ObjectCatalog`` is not a flat list of ``string`` s mapping the C++ classes.
    Instead, the ``ObjectCatalog`` forms a tree that reproduces locally the structure of the class diagram, from the base class to the derived classes.
 
@@ -196,7 +196,7 @@ To do this, the method ``CreateChild`` of the ``PhysicsSolverManager`` class is 
     // --------------------------------
     // childKey = "XmlNameOfMySolver" (string)
     // childName = "nameOfThisSolverInstance" (string)
-    // SolverBase::CatalogInterface = the Catalog attached to the base Solver class
+    // PhysicsSolverBase::CatalogInterface = the Catalog attached to the base Solver class
     // hasKeyName = bool method to test if the childKey string is present in the Catalog
     // registerGroup = method to create a new instance of the solver and add it to the group tree
 
@@ -207,11 +207,11 @@ To do this, the method ``CreateChild`` of the ``PhysicsSolverManager`` class is 
 
 *[Source: src/coreComponents/physicsSolvers/PhysicsSolverManager.cpp]*
 
-In the code listing above, we see that in the ``PhysicsSolverManager`` class, the ``ObjectCatalog`` is searched to find the ``catalogName`` "CompositionalMultiphaseFlow" in the scope of the ``SolverBase`` class.
-Then, the factory function of the base class ``SolverBase`` is called.
+In the code listing above, we see that in the ``PhysicsSolverManager`` class, the ``ObjectCatalog`` is searched to find the ``catalogName`` "CompositionalMultiphaseFlow" in the scope of the ``PhysicsSolverBase`` class.
+Then, the factory function of the base class ``PhysicsSolverBase`` is called.
 The ``catalogName`` (stored in ``childKey``) is passed as an argument of the factory function to ensure that it instantiates an object of the desired derived class.
 
-As explained above, this is working because 1) the XML tag matches the ``catalogName`` of the ``CompositionalMultiphaseFlow`` class and 2) a macro is placed at the end of the .cpp file implementing the ``CompositionalMultiphaseFlow`` class to let the ``ObjectCatalog`` know that ``CompositionalMultiphaseFlow`` is a derived class of ``SolverBase``.
+As explained above, this is working because 1) the XML tag matches the ``catalogName`` of the ``CompositionalMultiphaseFlow`` class and 2) a macro is placed at the end of the .cpp file implementing the ``CompositionalMultiphaseFlow`` class to let the ``ObjectCatalog`` know that ``CompositionalMultiphaseFlow`` is a derived class of ``PhysicsSolverBase``.
 
 Note that several instances of the same type of solver can be created, as long as they each have a different name.
 

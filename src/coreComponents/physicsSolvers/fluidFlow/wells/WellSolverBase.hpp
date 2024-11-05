@@ -20,7 +20,7 @@
 #ifndef GEOS_PHYSICSSOLVERS_FLUIDFLOW_WELLS_WELLSOLVERBASE_HPP_
 #define GEOS_PHYSICSSOLVERS_FLUIDFLOW_WELLS_WELLSOLVERBASE_HPP_
 
-#include "physicsSolvers/SolverBase.hpp"
+#include "physicsSolvers/PhysicsSolverBase.hpp"
 
 namespace geos
 {
@@ -35,7 +35,7 @@ class WellElementSubRegion;
  * Base class for well solvers.
  * Provides some common features
  */
-class WellSolverBase : public SolverBase
+class WellSolverBase : public PhysicsSolverBase
 {
 public:
 
@@ -287,7 +287,7 @@ public:
                                         real64 const & dt,
                                         DomainPartition & domain ) = 0;
 
-  struct viewKeyStruct : SolverBase::viewKeyStruct
+  struct viewKeyStruct : PhysicsSolverBase::viewKeyStruct
   {
     static constexpr char const * fluidNamesString() { return "fluidNames"; }
     static constexpr char const * isThermalString() { return "isThermal"; }

@@ -23,7 +23,7 @@
 
 
 #include "mesh/MeshFields.hpp"
-#include "physicsSolvers/SolverBase.hpp"
+#include "physicsSolvers/PhysicsSolverBase.hpp"
 #include "common/LifoStorage.hpp"
 #include "functions/TableFunction.hpp"
 #if !defined( GEOS_USE_HIP )
@@ -47,7 +47,7 @@
 namespace geos
 {
 
-class WaveSolverBase : public SolverBase
+class WaveSolverBase : public PhysicsSolverBase
 {
 public:
 
@@ -80,7 +80,7 @@ public:
                                integer const cycleNumber,
                                DomainPartition & domain ) override;
 
-  struct viewKeyStruct : SolverBase::viewKeyStruct
+  struct viewKeyStruct : PhysicsSolverBase::viewKeyStruct
   {
     static constexpr char const * sourceCoordinatesString() { return "sourceCoordinates"; }
 

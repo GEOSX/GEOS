@@ -598,6 +598,6 @@ void AcousticFirstOrderWaveEquationSEM::applyPML( real64 const, DomainPartition 
   GEOS_ERROR( getDataContext() << ": PML for the first order acoustic wave propagator not yet implemented" );
 }
 
-REGISTER_CATALOG_ENTRY( SolverBase, AcousticFirstOrderWaveEquationSEM, string const &, dataRepository::Group * const )
+REGISTER_CATALOG_ENTRY( PhysicsSolverBase, AcousticFirstOrderWaveEquationSEM, string const &, dataRepository::Group * const )
 
 } /* namespace geos */
