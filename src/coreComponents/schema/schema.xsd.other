@@ -443,9 +443,9 @@
 		<!--normType => Norm used by the flow solver to check nonlinear convergence. Valid options:
 * Linfinity
 * L2-->
-		<xsd:attribute name="normType" type="geos_solverBaseKernels_NormType" />
+		<xsd:attribute name="normType" type="geos_physicsSolverBaseKernels_NormType" />
 	</xsd:complexType>
-	<xsd:simpleType name="geos_solverBaseKernels_NormType">
+	<xsd:simpleType name="geos_physicsSolverBaseKernels_NormType">
 		<xsd:restriction base="xsd:string">
 			<xsd:pattern value=".*[\[\]`$].*|Linfinity|L2" />
 		</xsd:restriction>
@@ -3329,6 +3329,8 @@
 		<xsd:attribute name="maxGlobalIndex" type="globalIndex" />
 		<!--numPerforationsGlobal => (no description available)-->
 		<xsd:attribute name="numPerforationsGlobal" type="globalIndex" />
+		<!--reservoirElementGlobalIndex => For each perforation, global element index of the perforated element-->
+		<xsd:attribute name="reservoirElementGlobalIndex" type="globalIndex_array" />
 		<!--reservoirElementIndex => For each perforation, element index of the perforated element-->
 		<xsd:attribute name="reservoirElementIndex" type="integer_array" />
 		<!--reservoirElementRegion => For each perforation, elementRegion index of the perforated element-->

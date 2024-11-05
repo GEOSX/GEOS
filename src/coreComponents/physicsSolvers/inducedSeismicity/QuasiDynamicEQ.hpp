@@ -16,12 +16,20 @@
 #ifndef GEOS_PHYSICSSOLVERS_INDUCED_QUASIDYNAMICEQ_HPP
 #define GEOS_PHYSICSSOLVERS_INDUCED_QUASIDYNAMICEQ_HPP
 
+<<<<<<< HEAD
 #include "physicsSolvers/SolverBase.hpp"
+=======
+#include "physicsSolvers/PhysicsSolverBase.hpp"
+>>>>>>> origin/develop
 
 namespace geos
 {
 
+<<<<<<< HEAD
 class QuasiDynamicEQ : public SolverBase
+=======
+class QuasiDynamicEQ : public PhysicsSolverBase
+>>>>>>> origin/develop
 {
 public:
   /// The default nullary constructor is disabled to avoid compiler auto-generation:
@@ -44,7 +52,11 @@ public:
   /// This method ties properties with their supporting mesh
   virtual void registerDataOnMesh( Group & meshBodies ) override;
 
+<<<<<<< HEAD
   struct viewKeyStruct : public SolverBase::viewKeyStruct
+=======
+  struct viewKeyStruct : public PhysicsSolverBase::viewKeyStruct
+>>>>>>> origin/develop
   {
     /// stress solver name
     static constexpr char const * stressSolverNameString() { return "stressSolverName"; }
@@ -61,6 +73,7 @@ public:
                              integer const cycleNumber,
                              DomainPartition & domain ) override final;
 
+<<<<<<< HEAD
 private:
 
   virtual real64 setNextDt( real64 const & currentDt,
@@ -68,6 +81,11 @@ private:
 
   virtual void postInputInitialization() override;
 
+=======
+  virtual real64 setNextDt( real64 const & currentDt,
+                            DomainPartition & domain ) override final;
+
+>>>>>>> origin/develop
   real64 updateStresses( real64 const & time_n,
                          real64 const & dt,
                          const int cycleNumber,
@@ -79,8 +97,14 @@ private:
    */
   void saveOldStateAndUpdateSlip( ElementSubRegionBase & subRegion, real64 const dt ) const;
 
+
+
+private:
+
+  virtual void postInputInitialization() override;
+
   /// pointer to stress solver
-  SolverBase * m_stressSolver;
+  PhysicsSolverBase * m_stressSolver;
 
   /// stress solver name
   string m_stressSolverName;

@@ -33,7 +33,11 @@
       xCoords="{ 0, 1 }"
       yCoords="{ 0, 2 }"
       zCoords="{ 0, 1 }"
+<<<<<<< HEAD
       nx="{ 100 }"
+=======
+      nx="{ 1 }"
+>>>>>>> origin/develop
       ny="{ 2 }"
       nz="{ 1 }"
       cellBlockNames="{ cb1 }"/>
@@ -139,6 +143,9 @@
     <VTK
       name="vtkOutput"
       plotFileRoot="springSlider"/>
+
+    <Restart
+      name="restart"/>  
 
     <TimeHistory
       name="timeHistoryOutput"

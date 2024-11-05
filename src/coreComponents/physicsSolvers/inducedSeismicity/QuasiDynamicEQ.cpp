@@ -35,7 +35,7 @@ using namespace constitutive;
 
 QuasiDynamicEQ::QuasiDynamicEQ( const string & name,
                                 Group * const parent ):
-  SolverBase( name, parent ),
+  PhysicsSolverBase( name, parent ),
   m_stressSolver( nullptr ),
   m_stressSolverName( "SpringSlider" ),
   m_shearImpedance( 0.0 ),
@@ -53,8 +53,6 @@ QuasiDynamicEQ::QuasiDynamicEQ( const string & name,
     setInputFlag( InputFlags::OPTIONAL ).
     setApplyDefaultValue( 1.0e-7 ).
     setDescription( "Target slip incrmeent for timestep size selction" );
-
-  /// just a Test.
 }
 
 void QuasiDynamicEQ::postInputInitialization()
@@ -71,12 +69,11 @@ void QuasiDynamicEQ::postInputInitialization()
 
 QuasiDynamicEQ::~QuasiDynamicEQ()
 {
-  // TODO Auto-generated destructor stub
 }
 
 void QuasiDynamicEQ::registerDataOnMesh( Group & meshBodies )
 {
-  SolverBase::registerDataOnMesh( meshBodies );
+  PhysicsSolverBase::registerDataOnMesh( meshBodies );
 
   forDiscretizationOnMeshTargets( meshBodies, [&] ( string const &,
                                                     MeshLevel & mesh,
@@ -117,7 +114,7 @@ void QuasiDynamicEQ::registerDataOnMesh( Group & meshBodies )
           setSizedFromParent( 0 );
 
         string & frictionLawName = subRegion.getReference< string >( viewKeyStruct::frictionLawNameString() );
-        frictionLawName = SolverBase::getConstitutiveName< FrictionBase >( subRegion );
+        frictionLawName =PhysicsSolverBase::getConstitutiveName< FrictionBase >( subRegion );
         GEOS_ERROR_IF( frictionLawName.empty(), GEOS_FMT( "{}: FrictionBase model not found on subregion {}",
                                                           getDataContext(), subRegion.getDataContext() ) );
       }
@@ -282,6 +279,6 @@ real64 QuasiDynamicEQ::setNextDt( real64 const & currentDt, DomainPartition & do
   return nextDt;
 }
 
-REGISTER_CATALOG_ENTRY( SolverBase, QuasiDynamicEQ, string const &, dataRepository::Group * const )
+REGISTER_CATALOG_ENTRY( PhysicsSolverBase, QuasiDynamicEQ, string const &, dataRepository::Group * const )
 
 } // namespace geos

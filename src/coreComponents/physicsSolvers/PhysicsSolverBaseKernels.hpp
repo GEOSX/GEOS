@@ -14,7 +14,7 @@
  */
 
 /**
- * @file SolverBaseKernels.hpp
+ * @file PhysicsSolverBaseKernels.hpp
  */
 
 #ifndef GEOS_PHYSICSSOLVERS_SOLVERBASEKERNELS_HPP
@@ -27,7 +27,7 @@
 namespace geos
 {
 
-namespace solverBaseKernels
+namespace physicsSolverBaseKernels
 {
 
 /******************************** ResidualNormKernelBase ********************************/
@@ -342,7 +342,7 @@ ENUM_STRINGS( NormType,
               "L2" );
 
 
-} // namespace solverBaseKernels
+} // namespace physicsSolverBaseKernels
 
 } // namespace geos
 
