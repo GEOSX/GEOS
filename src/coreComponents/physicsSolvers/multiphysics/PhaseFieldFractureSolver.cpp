@@ -107,6 +107,6 @@ void PhaseFieldFractureSolver::mapSolutionBetweenSolvers( DomainPartition & doma
   }
 }
 
-REGISTER_CATALOG_ENTRY( SolverBase, PhaseFieldFractureSolver, string const &, Group * const )
+REGISTER_CATALOG_ENTRY( PhysicsSolverBase, PhaseFieldFractureSolver, string const &, Group * const )
 
 } /* namespace geos */
