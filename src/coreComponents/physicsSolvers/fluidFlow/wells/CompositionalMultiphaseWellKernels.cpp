@@ -514,7 +514,7 @@ PresTempCompFracInitializationKernel::
 
   RAJA::ReduceSum< parallelDeviceReduce, real64 > sumTotalMassDens( 0 );
   RAJA::ReduceSum< parallelDeviceReduce, real64 > sumTemp( 0 );
-  RAJA::ReduceSum< parallelDeviceReduce, real64 > sumCompFrac[MAX_NUM_COMP]{};
+  RAJA::MultiReduceSum< parallelDeviceMultiReduce, real64 > sumCompFrac(MAX_NUM_COMP,0.0);
   RAJA::ReduceMin< parallelDeviceReduce, real64 > localMinGravCoefDiff( 1e9 );
 
   forAll< parallelDevicePolicy<> >( perforationSize, [=] GEOS_HOST_DEVICE ( localIndex const iperf )
@@ -557,7 +557,10 @@ PresTempCompFracInitializationKernel::
   // for total mass density, we always use the values of the perforated reservoir elements, even for injectors
   real64 const avgTotalMassDens = MpiWrapper::sum( sumTotalMassDens.get() ) / numPerforations;
 
-  stackArray1d< real64, MAX_NUM_COMP > avgCompFrac( numComps );
+//  stackArray1d< real64, MAX_NUM_COMP > avgCompFrac( numComps );
+  array1d< real64 > aveCompFracArray( numComps );
+  arrayView1d< real64 > const avgCompFrac = aveCompFracArray.toView();
+
   real64 avgTemp = 0;
 
   // for a producer, we use the temperature and component fractions from the reservoir
