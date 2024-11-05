@@ -75,7 +75,7 @@
 /src/coreComponents/physicsSolvers/contact            @rrsettgast @CusiniM @matteofrigo5 @Guotong-Ren
 /src/coreComponents/physicsSolvers/fluidFlow          @CusiniM @paveltomin @ryar9534
 /src/coreComponents/physicsSolvers/inducedSeismicity  @rrsettgast @CusiniM @matteofrigo5 @VidarStiernstrom
-/src/coreComponents/physicsSolvers/multiphysics       @rrsettgast @CusiniM @paveltomin @castelletto1 @frankfeifan @ryar9534 
+/src/coreComponents/physicsSolvers/multiphysics       @rrsettgast @CusiniM @paveltomin @castelletto1 @frankfeifan @ryar9534 @jhuang2601
 /src/coreComponents/physicsSolvers/python             @cssherman @corbett5 @alexbenedicto 
 /src/coreComponents/physicsSolvers/simplePDE          @CusiniM @castelletto1 @rrsettgast  @frankfeifan
 /src/coreComponents/physicsSolvers/solidMechanics     @rrsettgast @CusiniM @castelletto1 @jhuang2601
