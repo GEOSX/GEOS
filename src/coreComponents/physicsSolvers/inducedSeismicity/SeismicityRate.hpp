@@ -16,11 +16,7 @@
 #ifndef GEOS_PHYSICSSOLVERS_INDUCED_SEISMICITY_SEISMICITYRATE_HPP
 #define GEOS_PHYSICSSOLVERS_INDUCED_SEISMICITY_SEISMICITYRATE_HPP
 
-<<<<<<< HEAD
-#include "physicsSolvers/SolverBase.hpp"
-=======
 #include "physicsSolvers/PhysicsSolverBase.hpp"
->>>>>>> origin/develop
 
 namespace geos
 {
