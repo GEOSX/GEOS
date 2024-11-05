@@ -40,6 +40,7 @@
 #include "physicsSolvers/fluidFlow/kernels/SinglePhaseBaseKernels.hpp"
 #include "physicsSolvers/fluidFlow/kernels/HybridFVMHelperKernels.hpp"
 #include "physicsSolvers/PhysicsSolverBaseKernels.hpp"
+#include "codingUtilities/Utilities.hpp"
 
 namespace geos
 {
@@ -479,11 +480,11 @@ public:
    * @param[inout] stack the stack variables
    * @param[in] kernelOp the function used to customize the kernel
    */
-  template< typename FUNC = singlePhaseBaseKernels::NoOpFunc >
+  template< typename FUNC = NoOpFunc >
   GEOS_HOST_DEVICE
   void compute( localIndex const ei,
                 StackVariables & stack,
-                FUNC && kernelOp = singlePhaseBaseKernels::NoOpFunc{} ) const
+                FUNC && kernelOp = NoOpFunc{} ) const
   {
     GEOS_UNUSED_VAR( ei, stack, kernelOp );
 

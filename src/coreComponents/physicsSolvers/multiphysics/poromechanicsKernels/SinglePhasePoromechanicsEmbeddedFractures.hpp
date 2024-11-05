@@ -22,6 +22,7 @@
 
 #include "physicsSolvers/fluidFlow/kernels/SinglePhaseFVMKernels.hpp"
 #include "physicsSolvers/fluidFlow/kernels/FluxKernelsHelper.hpp"
+#include "codingUtilities/Utilities.hpp"
 
 namespace geos
 {
@@ -150,11 +151,11 @@ public:
    * @param[inout] stack the stack variables
    * @param[in] NoOpFunc the function used to customize the computation of the flux
    */
-  template< typename FUNC = singlePhaseBaseKernels::NoOpFunc >
+  template< typename FUNC = NoOpFunc >
   GEOS_HOST_DEVICE
   void computeFlux( localIndex const iconn,
                     StackVariables & stack,
-                    FUNC && kernelOp = singlePhaseBaseKernels::NoOpFunc{} ) const
+                    FUNC && kernelOp = NoOpFunc{} ) const
 
   {
 
