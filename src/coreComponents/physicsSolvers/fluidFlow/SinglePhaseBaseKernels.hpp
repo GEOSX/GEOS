@@ -371,7 +371,6 @@ public:
   {
     Base::computeAccumulation( ei, stack, [&] ()
     {
-      std::cout << "acc update kernel " << Base::m_volume  << " " << Base::m_deltaVolume << std::endl;
       if( Base::m_mass_n[ei] > 1.1 * m_creationMass[ei] )
       {
         stack.localResidual[0] += m_creationMass[ei] * 0.25;

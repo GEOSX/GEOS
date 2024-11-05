@@ -209,7 +209,6 @@ public:
         // populate local flux vector and derivatives
         stack.localFlux[k[0]* numDof] += m_dt * fluxVal;
         stack.localFlux[k[1]* numDof] -= m_dt * fluxVal;
-        std::cout << "flux val " << fluxVal << " " << trans[0] << " " << m_dt << std::endl;
 
         real64 dFlux_dAper[2] = {0.0, 0.0};
         dFlux_dAper[0] =  m_dt * dFlux_dTrans * stack.dTrans_dDispJump[connectionIndex][0][0];

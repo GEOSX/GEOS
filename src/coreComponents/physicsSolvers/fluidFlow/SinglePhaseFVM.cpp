@@ -622,7 +622,6 @@ void SinglePhaseFVM< BASE >::assembleHydrofracFluxTerms( real64 const GEOS_UNUSE
       }
       else
       {
-        std::cout << "dt is hydro fracture " << dt << std::endl;
         singlePhasePoromechanicsConformingFracturesKernels::
           ConnectorBasedAssemblyKernelFactory::createAndLaunch< parallelDevicePolicy<> >( dofManager.rankOffset(),
                                                                                           dofKey,

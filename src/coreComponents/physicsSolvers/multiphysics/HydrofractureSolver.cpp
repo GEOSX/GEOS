@@ -209,10 +209,9 @@ real64 HydrofractureSolver< POROMECHANICS_SOLVER >::fullyCoupledSolverStep( real
     }
 
     // currently the only method is implicit time integration
-    dtReturn = nonlinearImplicitStep( time_n, dtReturn, cycleNumber, domain );
+    dtReturn = nonlinearImplicitStep( time_n, dt, cycleNumber, domain );
 
-
-    if( !this->m_performStressInitialization && m_surfaceGenerator->solverStep( time_n, dtReturn, cycleNumber, domain ) > 0 )
+    if( !this->m_performStressInitialization && m_surfaceGenerator->solverStep( time_n, dt, cycleNumber, domain ) > 0 )
     {
       locallyFractured = 1;
     }
@@ -903,6 +902,13 @@ void HydrofractureSolver< POROMECHANICS_SOLVER >::implicitStepComplete( real64 c
     // update the stencil weights using the updated hydraulic aperture
     flowSolver()->updateStencilWeights( domain );
   }
+}
+
+template< typename POROMECHANICS_SOLVER >
+void HydrofractureSolver < POROMECHANICS_SOLVER >::resetStateToBeginningOfStep( DomainPartition & domain )
+{
+  Base::resetStateToBeginningOfStep( domain );
+  updateState( domain );
 }
 
 template< typename POROMECHANICS_SOLVER >
