@@ -10,51 +10,52 @@
 /.github/ @rrsettgast
 
 /BASELINE_NOTES.md
-/.integrated_tests.yaml                               @CusiniM @cssherman @rrsettgast @wrtobin @castelletto1 @jhuang2601 @paveltomin
-/inputFiles/compositionalMultiphaseFlow               @paveltomin
-/inputFiles/compositionalMultiphaseWell               @paveltomin
-/inputFiles/efemFractureMechanics                     @CusiniM
+/.integrated_tests.yaml                               @rrsettgast @CusiniM @cssherman @wrtobin @castelletto1 @jhuang2601 @paveltomin
+/inputFiles                                           @rrsettgast @CusiniM  @cssherman @paveltomin @jhuang2601
+/inputFiles/compositionalMultiphaseFlow               @paveltomin @dkachuma
+/inputFiles/compositionalMultiphaseWell               @CusiniM @paveltomin @tjb-ltk @dkachuma
+/inputFiles/efemFractureMechanics                     @CusiniM @matteofrigo5 @Guotong-Ren
 /inputFiles/hydraulicFracturing                       @CusiniM @rrsettgast @frankfeifan @Guotong-Ren @cssherman @jhuang2601
-/inputFiles/inducedSeismicity                         @CusiniM @matteofrigo5 
-/inputFiles/initialization                            @jhuang2601 @rrsettgast
+/inputFiles/inducedSeismicity                         @CusiniM @matteofrigo5 @VidarStiernstrom 
+/inputFiles/initialization                            @rrsettgast @jhuang2601 
 /inputFiles/lagrangianContactMechanics                @CusiniM @jhuang2601 @matteofrigo5 
 /inputFiles/materialPointMethod                       @homel1 @cmcrook5 
-/inputFiles/meshGeneration
-/inputFiles/multiphaseFlowFractures                   @paveltomin @jhuang2601
-/inputFiles/multipleMeshBodies
-/inputFiles/phaseField                                @frankfeifan @CusiniM
+/inputFiles/meshGeneration                            @rrsettgast @cssherman
+/inputFiles/multiphaseFlowFractures                   @CusiniM @paveltomin @jhuang2601
+/inputFiles/multipleMeshBodies                        @rrsettgast @wrtobin
+/inputFiles/phaseField                                @CusiniM @frankfeifan 
 /inputFiles/poromechanics                             @CusiniM @castelletto1 @paveltomin @jhuang2601 @ryar9534 
 /inputFiles/poromechanicsFractures                    @CusiniM @castelletto1 @paveltomin @jhuang2601
-/inputFiles/proppant                                  @jhuang2601 
-/inputFiles/relpermDriver
-/inputFiles/simplePDE
+/inputFiles/proppant                                  @rrsettgast @jhuang2601 
+/inputFiles/relpermDriver                             @dkachuma @paveltomin @jafranc
+/inputFiles/simplePDE                                 
 /inputFiles/singlePhaseFlow                           @CusiniM @castelletto1 @paveltomin
 /inputFiles/singlePhaseFlowFractures                  @CusiniM @castelletto1 @paveltomin @jhuang2601 
-/inputFiles/singlePhaseWell                           @paveltomin
+/inputFiles/singlePhaseWell                           @CusiniM @paveltomin @tjb-ltk
 /inputFiles/solidMechanics                            @CusiniM @castelletto1 @jhuang2601 
 /inputFiles/surfaceGeneration                         @CusiniM @castelletto1 @rrsettgast 
-/inputFiles/thermalMultiphaseFlow                     @paveltomin
-/inputFiles/thermalSinglePhaseFlowFractures           @CusiniM @castelletto1 @paveltomin @jhuang2601 
-/inputFiles/thermoPoromechanics                       @paveltomin @jhuang2601 
+/inputFiles/thermalMultiphaseFlow                     @paveltomin @dkachuma
+/inputFiles/thermalSinglePhaseFlowFractures           @CusiniM @castelletto1 @paveltomin @jhuang2601 @frankfeifan
+/inputFiles/thermoPoromechanics                       @paveltomin @jhuang2601 @castelletto1 @frankfeifan
 /inputFiles/thermoPoromechanicsFractures              @CusiniM @castelletto1 @paveltomin @jhuang2601 
-/inputFiles/triaxialDriver                            @jhuang2601
+/inputFiles/triaxialDriver                            @rrsettgast @jhuang2601
 /inputFiles/wavePropagation                           @acitrain @sframba
-/inputFiles/wellbore                                  @jhuang2601
-/inputFiles/wellboreECP                               @rrsettgast
-/src/coreComponents/LvArray                           @rrsettgast @wrtobin @corbett5 @CusiniM 
+/inputFiles/wellbore                                  @rrsettgast @jhuang2601
+/inputFiles/wellboreECP                               @rrsettgast 
+/src/coreComponents/LvArray                           @rrsettgast @CusiniM @wrtobin @corbett5 
 /src/coreComponents/codingUtilities                   @rrsettgast @untereiner @corbett5 @wrtobin
 /src/coreComponents/common                            @rrsettgast @MelReyCG @corbett5 @wrtobin
 /src/coreComponents/constitutive                      @rrsettgast @CusiniM @dkachuma @paveltomin @castelletto1
-/src/coreComponents/constitutive/capillaryPressure    @CusiniM @dkachuma @paveltomin @joshua-white
+/src/coreComponents/constitutive/capillaryPressure    @CusiniM @dkachuma @paveltomin
 /src/coreComponents/constitutive/contact              @rrsettgast @CusiniM @matteofrigo5 @Guotong-Ren
 /src/coreComponents/constitutive/diffusion            @CusiniM @dkachuma @paveltomin 
 /src/coreComponents/constitutive/dispersion           @CusiniM @dkachuma @paveltomin 
 /src/coreComponents/constitutive/docs                  
 /src/coreComponents/constitutive/fluid                @CusiniM @dkachuma @paveltomin 
 /src/coreComponents/constitutive/permeability         @CusiniM @dkachuma @paveltomin 
-/src/coreComponents/constitutive/pvtPackage           @CusiniM @dkachuma @paveltomin @joshua-white
+/src/coreComponents/constitutive/pvtPackage           @CusiniM @dkachuma @paveltomin
 /src/coreComponents/constitutive/relativePermeability @dkachuma @paveltomin 
-/src/coreComponents/constitutive/solid                @rrsettgast @CusiniM @paveltomin @joshua-white @castelletto1
+/src/coreComponents/constitutive/solid                @rrsettgast @CusiniM @paveltomin @castelletto1
 /src/coreComponents/constitutive/thermalConductivity  @CusiniM @dkachuma @paveltomin 
 /src/coreComponents/constitutive/unitTests            @rrsettgast @CusiniM @dkachuma @paveltomin 
 /src/coreComponents/dataRepository                    @rrsettgast @wrtobin @corbett5
@@ -65,23 +66,23 @@
 /src/coreComponents/fileIO                            @rrsettgast @wrtobin @MelReyCG @untereiner
 /src/coreComponents/finiteElement                     @rrsettgast @castelletto1 @andrea-borio @CusiniM
 /src/coreComponents/finiteVolume                      @rrsettgast @castelletto1 @CusiniM @paveltomin @ryar9534
-/src/coreComponents/functions                         @cssherman  @wrtobin @rrsettgast
-/src/coreComponents/linearAlgebra                     @rrsettgast @castelletto1 @victorapm  @CusiniM 
+/src/coreComponents/functions                         @rrsettgast @cssherman @wrtobin 
+/src/coreComponents/linearAlgebra                     @rrsettgast @CusiniM @castelletto1 @victorapm   
 /src/coreComponents/mainInterface                     @rrsettgast @corbett5 @wrtobin 
 /src/coreComponents/math                              @rrsettgast @corbett5 @wrtobin 
-/src/coreComponents/mesh                              @rrsettgast @wrtobin @untereiner @CusiniM 
+/src/coreComponents/mesh                              @rrsettgast @CusiniM  @wrtobin @untereiner 
 /src/coreComponents/physicsSolvers                    @rrsettgast @CusiniM
-/src/coreComponents/physicsSolvers/contact            @CusiniM @rrsettgast @matteofrigo5
-/src/coreComponents/physicsSolvers/fluidFlow          @CusiniM @paveltomin @klevzoff @ryar9534
-/src/coreComponents/physicsSolvers/inducedSeismicity  @CusiniM @rrsettgast @matteofrigo5
-/src/coreComponents/physicsSolvers/multiphysics       @CusiniM @paveltomin @castelletto1 @rrsettgast @frankfeifan @ryar9534 
+/src/coreComponents/physicsSolvers/contact            @rrsettgast @CusiniM @matteofrigo5 @Guotong-Ren
+/src/coreComponents/physicsSolvers/fluidFlow          @CusiniM @paveltomin @ryar9534
+/src/coreComponents/physicsSolvers/inducedSeismicity  @rrsettgast @CusiniM @matteofrigo5 @VidarStiernstrom
+/src/coreComponents/physicsSolvers/multiphysics       @rrsettgast @CusiniM @paveltomin @castelletto1 @frankfeifan @ryar9534 
 /src/coreComponents/physicsSolvers/python             @cssherman @corbett5 @alexbenedicto 
-/src/coreComponents/physicsSolvers/simplePDE          @castelletto1 @rrsettgast @CusiniM @frankfeifan
-/src/coreComponents/physicsSolvers/solidMechanics     @rrsettgast @castelletto1 @CusiniM @jhuang2601
+/src/coreComponents/physicsSolvers/simplePDE          @CusiniM @castelletto1 @rrsettgast  @frankfeifan
+/src/coreComponents/physicsSolvers/solidMechanics     @rrsettgast @CusiniM @castelletto1 @jhuang2601
 /src/coreComponents/physicsSolvers/surfaceGeneration  @rrsettgast @CusiniM @jhuang2601
 /src/coreComponents/physicsSolvers/wavePropagation    @sframba @acitrain
 /src/coreComponents/schema
-/src/coreComponents/unitTests                         @rrsettgast @corbett5 @wrtobin
+/src/coreComponents/unitTests                         @rrsettgast @CusiniM @corbett5 @wrtobin 
 
 # Here is a list of GEOS-DEV members as of 2024-07-02
 # username           name
