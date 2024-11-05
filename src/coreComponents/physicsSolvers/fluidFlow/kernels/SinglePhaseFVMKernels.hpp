@@ -35,9 +35,9 @@
 #include "linearAlgebra/interfaces/InterfaceTypes.hpp"
 #include "physicsSolvers/fluidFlow/FlowSolverBaseFields.hpp"
 #include "physicsSolvers/fluidFlow/SinglePhaseBaseFields.hpp"
-#include "physicsSolvers/fluidFlow/SinglePhaseBaseKernels.hpp"
 #include "physicsSolvers/fluidFlow/StencilAccessors.hpp"
-#include "physicsSolvers/fluidFlow/FluxKernelsHelper.hpp"
+#include "physicsSolvers/fluidFlow/kernels/SinglePhaseBaseKernels.hpp"
+#include "physicsSolvers/fluidFlow/kernels/FluxKernelsHelper.hpp"
 
 namespace geos
 {

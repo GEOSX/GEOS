@@ -20,8 +20,8 @@
 #ifndef GEOS_PHYSICSSOLVERS_MULTIPHYSICS_POROMECHANICSKERNELS_SINGLEPHASEPOROMECHANICSCONFORMINGFRACTURES_HPP
 #define GEOS_PHYSICSSOLVERS_MULTIPHYSICS_POROMECHANICSKERNELS_SINGLEPHASEPOROMECHANICSCONFORMINGFRACTURES_HPP
 
-#include "physicsSolvers/fluidFlow/SinglePhaseFVMKernels.hpp"
-#include "physicsSolvers/fluidFlow/FluxKernelsHelper.hpp"
+#include "physicsSolvers/fluidFlow/kernels/SinglePhaseFVMKernels.hpp"
+#include "physicsSolvers/fluidFlow/kernels/FluxKernelsHelper.hpp"
 
 namespace geos
 {

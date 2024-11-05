@@ -31,9 +31,9 @@
 #include "finiteVolume/FiniteVolumeManager.hpp"
 #include "finiteVolume/FluxApproximationBase.hpp"
 #include "mesh/DomainPartition.hpp"
-#include "physicsSolvers/fluidFlow/FluxKernelsHelper.hpp"
 #include "physicsSolvers/fluidFlow/FlowSolverBaseFields.hpp"
-#include "physicsSolvers/fluidFlow/FlowSolverBaseKernels.hpp"
+#include "physicsSolvers/fluidFlow/kernels/FlowSolverBaseKernels.hpp"
+#include "physicsSolvers/fluidFlow/kernels/FluxKernelsHelper.hpp"
 
 namespace geos
 {

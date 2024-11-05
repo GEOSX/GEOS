@@ -34,14 +34,14 @@
 #include "finiteVolume/FluxApproximationBase.hpp"
 #include "mesh/DomainPartition.hpp"
 #include "mesh/mpiCommunications/CommunicationTools.hpp"
-#include "physicsSolvers/fluidFlow/CompositionalMultiphaseBaseFields.hpp"
 #include "physicsSolvers/fluidFlow/FlowSolverBaseFields.hpp"
-#include "physicsSolvers/fluidFlow/StabilizedCompositionalMultiphaseFVMKernels.hpp"
-#include "physicsSolvers/fluidFlow/IsothermalCompositionalMultiphaseBaseKernels.hpp"
-#include "physicsSolvers/fluidFlow/ThermalCompositionalMultiphaseBaseKernels.hpp"
-#include "physicsSolvers/fluidFlow/IsothermalCompositionalMultiphaseFVMKernels.hpp"
-#include "physicsSolvers/fluidFlow/ThermalCompositionalMultiphaseFVMKernels.hpp"
-#include "physicsSolvers/fluidFlow/DissipationCompositionalMultiphaseFVMKernels.hpp"
+#include "physicsSolvers/fluidFlow/CompositionalMultiphaseBaseFields.hpp"
+#include "physicsSolvers/fluidFlow/kernels/IsothermalCompositionalMultiphaseBaseKernels.hpp"
+#include "physicsSolvers/fluidFlow/kernels/ThermalCompositionalMultiphaseBaseKernels.hpp"
+#include "physicsSolvers/fluidFlow/kernels/IsothermalCompositionalMultiphaseFVMKernels.hpp"
+#include "physicsSolvers/fluidFlow/kernels/ThermalCompositionalMultiphaseFVMKernels.hpp"
+#include "physicsSolvers/fluidFlow/kernels/StabilizedCompositionalMultiphaseFVMKernels.hpp"
+#include "physicsSolvers/fluidFlow/kernels/DissipationCompositionalMultiphaseFVMKernels.hpp"
 
 namespace geos
 {
