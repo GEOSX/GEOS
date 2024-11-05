@@ -810,7 +810,7 @@ bool FlowSolverBase::checkSequentialSolutionIncrements( DomainPartition & GEOS_U
 string FlowSolverBase::BCMessage::generateMessage( string_view baseMessage,
                                                    string_view fieldName, string_view setName )
 {
-  return GEOS_FMT( "{} Check if you have added or applied the appropriate fields to "
+  return GEOS_FMT( "{}\nCheck if you have added or applied the appropriate fields to "
                    "the FieldSpecification component with fieldName=\"{}\" "
                    "and setNames=\"{}\"\n", baseMessage, fieldName, setName );
 }
@@ -818,37 +818,38 @@ string FlowSolverBase::BCMessage::generateMessage( string_view baseMessage,
 string FlowSolverBase::BCMessage::pressureConflict( string_view regionName, string_view subRegionName,
                                                     string_view setName, string_view fieldName )
 {
-  return generateMessage( GEOS_FMT( "Conflicting pressure boundary conditions on set {}/{}/{}\n",
+  return generateMessage( GEOS_FMT( "Conflicting pressure boundary conditions on set {}/{}/{}",
                                     regionName, subRegionName, setName ), fieldName, setName );
 }
 
 string FlowSolverBase::BCMessage::temperatureConflict( string_view regionName, string_view subRegionName,
                                                        string_view setName, string_view fieldName )
 {
-  return generateMessage( GEOS_FMT( "Conflicting temperature boundary conditions on set {}/{}/{}\n",
+  return generateMessage( GEOS_FMT( "Conflicting temperature boundary conditions on set {}/{}/{}",
                                     regionName, subRegionName, setName ), fieldName, setName );
 }
 
 string FlowSolverBase::BCMessage::missingPressure( string_view regionName, string_view subRegionName,
                                                    string_view setName, string_view fieldName )
 {
-  return generateMessage( GEOS_FMT( "Pressure boundary condition not prescribed on set {}/{}/{}\n",
+  return generateMessage( GEOS_FMT( "Pressure boundary condition not prescribed on set {}/{}/{}",
                                     regionName, subRegionName, setName ), fieldName, setName );
 }
 
 string FlowSolverBase::BCMessage::missingTemperature( string_view regionName, string_view subRegionName,
                                                       string_view setName, string_view fieldName )
 {
-  return generateMessage( GEOS_FMT( "Temperature boundary condition not prescribed on set {}/{}/{}\n",
+  return generateMessage( GEOS_FMT( "Temperature boundary condition not prescribed on set {}/{}/{}",
                                     regionName, subRegionName, setName ), fieldName, setName );
 }
 
-string FlowSolverBase::BCMessage::conflictingComposition( int comp,
+string FlowSolverBase::BCMessage::conflictingComposition( int comp, string_view componentName,
                                                           string_view regionName, string_view subRegionName,
                                                           string_view setName, string_view fieldName )
 {
-  return generateMessage( GEOS_FMT( "Conflicting composition[{}] boundary conditions on set {}/{}/{}\n",
-                                    comp, regionName, subRegionName, setName ), fieldName, setName );
+  return generateMessage( GEOS_FMT( "Conflicting composition[{}] ({}) boundary conditions on set {}/{}/{}",
+                                    comp, componentName, regionName, subRegionName, setName ),
+                          fieldName, setName );
 }
 
 string FlowSolverBase::BCMessage::invalidComponentIndex( int comp,
@@ -859,9 +860,9 @@ string FlowSolverBase::BCMessage::invalidComponentIndex( int comp,
                                     comp, fsName ), fieldName, fsName );
 }
 
-string FlowSolverBase::BCMessage::inconsistency( int componentIndex, string_view componentName,
-                                                 string_view regionName, string_view subRegionName,
-                                                 string_view setName, string_view fieldName )
+string FlowSolverBase::BCMessage::notAppliedOnRegion( int componentIndex, string_view componentName,
+                                                      string_view regionName, string_view subRegionName,
+                                                      string_view setName, string_view fieldName )
 {
   return generateMessage( GEOS_FMT( "Boundary condition not applied to composition[{}] ({}) "
                                     "on region {}/{}/{}\n",

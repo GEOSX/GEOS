@@ -959,7 +959,7 @@ bool ReactiveCompositionalMultiphaseOBL::validateDirichletBC( DomainPartition & 
       {
         bcConsistent = false;
         GEOS_WARNING( BCMessage::pressureConflict( regionName, subRegionName, setName,
-                                       fields::flow::pressure::key() ) );
+                                                   fields::flow::pressure::key() ) );
       }
       subRegionSetMap[setName].setNumComp( numCompWithEnergy );
     } );
@@ -998,8 +998,13 @@ bool ReactiveCompositionalMultiphaseOBL::validateDirichletBC( DomainPartition & 
       if( compMask[comp] )
       {
         bcConsistent = false;
-        GEOS_WARNING( BCMessage::conflictingComposition( comp, regionName, subRegionName, setName,
-                                                         fields::flow::globalCompFraction::key() ) );
+        fsManager.forSubGroups< EquilibriumInitialCondition >( [&] ( EquilibriumInitialCondition const & bc )
+        {
+          arrayView1d< string const > componentNames = bc.getComponentNames();
+          GEOS_WARNING( BCMessage::conflictingComposition( comp, componentNames[comp],
+                                                           regionName, subRegionName, setName,
+                                                           fields::flow::globalCompFraction::key() ) );
+        } );
       }
       compMask.set( comp );
     } );
@@ -1056,9 +1061,9 @@ bool ReactiveCompositionalMultiphaseOBL::validateDirichletBC( DomainPartition & 
               if( !compMask[ic] )
               {
                 bcConsistent = false;
-                GEOS_WARNING( BCMessage::inconsistency( ic, componentNames[ic],
-                                                        regionEntry.first, subRegionEntry.first, setEntry.first,
-                                                        fields::flow::globalCompFraction::key() ) );
+                GEOS_WARNING( BCMessage::notAppliedOnRegion( ic, componentNames[ic],
+                                                             regionEntry.first, subRegionEntry.first, setEntry.first,
+                                                             fields::flow::globalCompFraction::key() ) );
               }
             }
           } );
