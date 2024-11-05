@@ -847,7 +847,7 @@ string FlowSolverBase::BCMessage::conflictingComposition( int comp, string_view 
                                                           string_view regionName, string_view subRegionName,
                                                           string_view setName, string_view fieldName )
 {
-  return generateMessage( GEOS_FMT( "Conflicting composition[{}] ({}) boundary conditions on set {}/{}/{}",
+  return generateMessage( GEOS_FMT( "Conflicting composition for no.{} ({}) boundary conditions on set {}/{}/{}",
                                     comp, componentName, regionName, subRegionName, setName ),
                           fieldName, setName );
 }
@@ -856,7 +856,7 @@ string FlowSolverBase::BCMessage::invalidComponentIndex( int comp,
                                                          string_view fsName,
                                                          string_view fieldName )
 {
-  return generateMessage( GEOS_FMT( "Invalid component index [{}] in composition boundary condition {}",
+  return generateMessage( GEOS_FMT( "Invalid component index no.{} in composition boundary condition {}",
                                     comp, fsName ), fieldName, fsName );
 }
 
@@ -864,7 +864,7 @@ string FlowSolverBase::BCMessage::notAppliedOnRegion( int componentIndex, string
                                                       string_view regionName, string_view subRegionName,
                                                       string_view setName, string_view fieldName )
 {
-  return generateMessage( GEOS_FMT( "Boundary condition not applied to composition[{}] ({}) "
+  return generateMessage( GEOS_FMT( "Boundary condition not applied to composition for no.{} ({}) "
                                     "on region {}/{}/{}\n",
                                     componentIndex, componentName, regionName, subRegionName, setName ),
                           fieldName, setName );
