@@ -132,7 +132,7 @@ real64 SinglePhaseFVM< BASE >::calculateResidualNorm( real64 const & GEOS_UNUSED
   localResidualNorm.resize( numNorm );
   localResidualNormalizer.resize( numNorm );
 
-  solverBaseKernels::NormType const normType = BASE::getNonlinearSolverParameters().normType();
+  physicsSolverBaseKernels::NormType const normType = BASE::getNonlinearSolverParameters().normType();
 
   globalIndex const rankOffset = dofManager.rankOffset();
   string const dofKey = dofManager.getKey( BASE::viewKeyStruct::elemDofFieldString() );
@@ -149,17 +149,17 @@ real64 SinglePhaseFVM< BASE >::calculateResidualNorm( real64 const & GEOS_UNUSED
       real64 subRegionResidualNormalizer[numNorm]{};
 
       string const & fluidName = subRegion.template getReference< string >( BASE::viewKeyStruct::fluidNamesString() );
-      SingleFluidBase const & fluid = SolverBase::getConstitutiveModel< SingleFluidBase >( subRegion, fluidName );
+      SingleFluidBase const & fluid = PhysicsSolverBase::getConstitutiveModel< SingleFluidBase >( subRegion, fluidName );
 
       // step 1: compute the norm in the subRegion
 
       if( m_isThermal )
       {
         string const & solidName = subRegion.template getReference< string >( BASE::viewKeyStruct::solidNamesString() );
-        CoupledSolidBase const & solid = SolverBase::getConstitutiveModel< CoupledSolidBase >( subRegion, solidName );
+        CoupledSolidBase const & solid = PhysicsSolverBase::getConstitutiveModel< CoupledSolidBase >( subRegion, solidName );
 
         string const & solidInternalEnergyName = subRegion.template getReference< string >( BASE::viewKeyStruct::solidInternalEnergyNamesString() );
-        SolidInternalEnergy const & solidInternalEnergy = SolverBase::getConstitutiveModel< SolidInternalEnergy >( subRegion, solidInternalEnergyName );
+        SolidInternalEnergy const & solidInternalEnergy = PhysicsSolverBase::getConstitutiveModel< SolidInternalEnergy >( subRegion, solidInternalEnergyName );
 
         thermalSinglePhaseBaseKernels::
           ResidualNormKernelFactory::
@@ -195,14 +195,14 @@ real64 SinglePhaseFVM< BASE >::calculateResidualNorm( real64 const & GEOS_UNUSED
 
       // step 2: first reduction across meshBodies/regions/subRegions
 
-      if( normType == solverBaseKernels::NormType::Linf )
+      if( normType == physicsSolverBaseKernels::NormType::Linf )
       {
-        solverBaseKernels::LinfResidualNormHelper::
+        physicsSolverBaseKernels::LinfResidualNormHelper::
           updateLocalNorm< numNorm >( subRegionResidualNorm, localResidualNorm );
       }
       else
       {
-        solverBaseKernels::L2ResidualNormHelper::
+        physicsSolverBaseKernels::L2ResidualNormHelper::
           updateLocalNorm< numNorm >( subRegionResidualNorm, subRegionResidualNormalizer, localResidualNorm, localResidualNormalizer );
       }
     } );
@@ -215,14 +215,14 @@ real64 SinglePhaseFVM< BASE >::calculateResidualNorm( real64 const & GEOS_UNUSED
   {
     array1d< real64 > globalResidualNorm;
     globalResidualNorm.resize( numNorm );
-    if( normType == solverBaseKernels::NormType::Linf )
+    if( normType == physicsSolverBaseKernels::NormType::Linf )
     {
-      solverBaseKernels::LinfResidualNormHelper::
+      physicsSolverBaseKernels::LinfResidualNormHelper::
         computeGlobalNorm( localResidualNorm, globalResidualNorm );
     }
     else
     {
-      solverBaseKernels::L2ResidualNormHelper::
+      physicsSolverBaseKernels::L2ResidualNormHelper::
         computeGlobalNorm( localResidualNorm, localResidualNormalizer, globalResidualNorm );
     }
     residualNorm = sqrt( globalResidualNorm[0] * globalResidualNorm[0] + globalResidualNorm[1] * globalResidualNorm[1] );
@@ -233,13 +233,13 @@ real64 SinglePhaseFVM< BASE >::calculateResidualNorm( real64 const & GEOS_UNUSED
   else
   {
 
-    if( normType == solverBaseKernels::NormType::Linf )
+    if( normType == physicsSolverBaseKernels::NormType::Linf )
     {
-      solverBaseKernels::LinfResidualNormHelper::computeGlobalNorm( localResidualNorm[0], residualNorm );
+      physicsSolverBaseKernels::LinfResidualNormHelper::computeGlobalNorm( localResidualNorm[0], residualNorm );
     }
     else
     {
-      solverBaseKernels::L2ResidualNormHelper::computeGlobalNorm( localResidualNorm[0], localResidualNormalizer[0], residualNorm );
+      physicsSolverBaseKernels::L2ResidualNormHelper::computeGlobalNorm( localResidualNorm[0], localResidualNormalizer[0], residualNorm );
     }
 
     GEOS_LOG_LEVEL_INFO_RANK_0_NLR( logInfo::Convergence,
@@ -949,8 +949,8 @@ void SinglePhaseFVM<>::applyAquiferBC( real64 const time,
 namespace
 {
 typedef SinglePhaseFVM< SinglePhaseProppantBase > SinglePhaseFVMProppant;
-REGISTER_CATALOG_ENTRY( SolverBase, SinglePhaseFVMProppant, string const &, Group * const )
+REGISTER_CATALOG_ENTRY( PhysicsSolverBase, SinglePhaseFVMProppant, string const &, Group * const )
 typedef SinglePhaseFVM<> SinglePhaseFVM;
-REGISTER_CATALOG_ENTRY( SolverBase, SinglePhaseFVM, string const &, Group * const )
+REGISTER_CATALOG_ENTRY( PhysicsSolverBase, SinglePhaseFVM, string const &, Group * const )
 }
 } /* namespace geos */

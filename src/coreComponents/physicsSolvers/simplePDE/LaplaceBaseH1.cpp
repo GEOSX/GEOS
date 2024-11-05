@@ -32,7 +32,7 @@ using namespace dataRepository;
 //START_SPHINX_INCLUDE_CONSTRUCTOR
 LaplaceBaseH1::LaplaceBaseH1( const string & name,
                               Group * const parent ):
-  SolverBase( name, parent ),
+  PhysicsSolverBase( name, parent ),
   m_fieldName( "primaryField" ),
   m_timeIntegrationOption( TimeIntegrationOption::ImplicitTransient )
 {
@@ -89,8 +89,8 @@ void LaplaceBaseH1::registerDataOnMesh( Group & meshBodies )
    Here, we decide how we march in time in the resolutions based on the possible two options set in
    the XML file (Steady state or Implicit transient). In the case of Implicit transient, we perform
    an implicit step (backward Euler). The implementation of the Implicit Step is found in the
-   SolverBase.  From now on, we oscillate between specific Laplace solver operations if implemented
-   and more generic SolverBase operations.  The initial values of the solver step are all at time_n,
+   PhysicsSolverBase.  From now on, we oscillate between specific Laplace solver operations if implemented
+   and more generic PhysicsSolverBase operations.  The initial values of the solver step are all at time_n,
    and the solver attempts to advance by a time step of dt.  This dt time step size is specified
    initially by the user and the solverStep method also returns its value.
  */
@@ -105,7 +105,7 @@ real64 LaplaceBaseH1::solverStep( real64 const & time_n,
 
 /*
    IMPLICIT STEP SETUP
-   This method uses the system setup from SolverBase (see below).
+   This method uses the system setup from PhysicsSolverBase (see below).
    The current system of this class does not use the time variable. The macro GEOS_UNUSED_PARAM is
    therefore used here to avoid a compilation error.
  */
@@ -175,7 +175,7 @@ void LaplaceBaseH1::updateState( DomainPartition & domain )
 
 /*
    APPLY BOUNDARY CONDITIONS
-   Here, this call is the generic call from SolverBase.
+   Here, this call is the generic call from PhysicsSolverBase.
    All it does is to call a specific Dirichlet boundary condition implemented for this solver
  */
 void LaplaceBaseH1::applyBoundaryConditions( real64 const time_n,

@@ -483,11 +483,11 @@ public:
 /**
  * @class ResidualNormKernel
  */
-class ResidualNormKernel : public solverBaseKernels::ResidualNormKernelBase< 1 >
+class ResidualNormKernel : public physicsSolverBaseKernels::ResidualNormKernelBase< 1 >
 {
 public:
 
-  using Base = solverBaseKernels::ResidualNormKernelBase< 1 >;
+  using Base = physicsSolverBaseKernels::ResidualNormKernelBase< 1 >;
   using Base::m_minNormalizer;
   using Base::m_rankOffset;
   using Base::m_localResidual;

@@ -189,7 +189,7 @@ void ReactiveCompositionalMultiphaseOBL::implicitStepComplete( real64 const & ti
 void ReactiveCompositionalMultiphaseOBL::postInputInitialization()
 {
   // need to override to skip the check for fluidModel, which is enabled in FlowSolverBase
-  SolverBase::postInputInitialization();
+  PhysicsSolverBase::postInputInitialization();
 
   GEOS_THROW_IF_GT_MSG( m_maxCompFracChange, 1.0,
                         GEOS_FMT( "{}: The maximum absolute change in component fraction is set to {}, while it must not be greater than 1.0",
@@ -1365,6 +1365,6 @@ void ReactiveCompositionalMultiphaseOBL::updateState( DomainPartition & domain )
 
 
 //START_SPHINX_INCLUDE_01
-REGISTER_CATALOG_ENTRY( SolverBase, ReactiveCompositionalMultiphaseOBL, string const &, Group * const )
+REGISTER_CATALOG_ENTRY( PhysicsSolverBase, ReactiveCompositionalMultiphaseOBL, string const &, Group * const )
 //END_SPHINX_INCLUDE_01
 }// namespace geos
