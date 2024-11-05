@@ -856,7 +856,7 @@ string FlowSolverBase::BCMessage::invalidComponentIndex( int comp,
                                                          string_view fsName,
                                                          string_view fieldName )
 {
-  return generateMessage( GEOS_FMT( "Invalid component index [{}] in composition boundary condition {}\n",
+  return generateMessage( GEOS_FMT( "Invalid component index [{}] in composition boundary condition {}",
                                     comp, fsName ), fieldName, fsName );
 }
 
