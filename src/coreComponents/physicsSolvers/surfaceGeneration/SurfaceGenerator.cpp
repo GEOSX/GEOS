@@ -482,13 +482,10 @@ real64 SurfaceGenerator::solverStep( real64 const & time_n,
   {
     SpatialPartition & partition = dynamicCast< SpatialPartition & >( domain.getReference< PartitionBase >( dataRepository::keys::partitionManager ) );
 
-    //int const rank = MpiWrapper::commRank();
-    //std::cout<<"rank, color = "<<rank<<", "<<partition.getColor()<<std::endl;
-
     rval = separationDriver( domain,
                              meshLevel,
                              domain.getNeighbors(),
-                             partition.getColor(), //rank, this was for debugging...need it for new color testing
+                             partition.getColor(),
                              partition.numColor(),
                              0,
                              time_n + dt );
@@ -644,10 +641,6 @@ int SurfaceGenerator::separationDriver( DomainPartition & domain,
 
   for( int color=0; color<numTileColors; ++color )
   {
-
-    // MpiWrapper::barrier();
-    // std::cout<<"color = "<<color<<std::endl;
-    // MpiWrapper::barrier();
     ModifiedObjectLists modifiedObjects;
     if( color==tileColor )
     {
@@ -688,16 +681,6 @@ int SurfaceGenerator::separationDriver( DomainPartition & domain,
 
     ModifiedObjectLists receivedObjects;
 
-    //   CommunicationTools::checkSendRecv( faceManager, neighbors );
-    //   elementManager.forElementSubRegionsComplete< FaceElementSubRegion >( [&]( localIndex const er,
-    //                                                                          localIndex const esr,
-    //                                                                          ElementRegionBase &,
-    //                                                                          FaceElementSubRegion & subRegion )
-    // {
-    //   CommunicationTools::checkSendRecv( subRegion, neighbors );
-    // } );
-    //   std::cout<<" synchronizeTopologyChange "<<std::endl;
-
     /// Nodes to edges in process node is not being set on rank 2. need to check that the new node->edge map is properly
     /// communicated
     parallelTopologyChange::synchronizeTopologyChange( &mesh,
@@ -706,26 +689,10 @@ int SurfaceGenerator::separationDriver( DomainPartition & domain,
                                                        receivedObjects,
                                                        m_mpiCommOrder );
 
-    //   CommunicationTools::checkSendRecv( faceManager, neighbors );
-    //   elementManager.forElementSubRegionsComplete< FaceElementSubRegion >( [&]( localIndex const er,
-    //                                                                          localIndex const esr,
-    //                                                                          ElementRegionBase &,
-    //                                                                          FaceElementSubRegion & subRegion )
-    // {
-    //   CommunicationTools::checkSendRecv( subRegion, neighbors );
-    // } );
-    // for( int rank=0; rank<MpiWrapper::commSize(); ++rank )
-    // {
-    //   MpiWrapper::barrier();
-    //   if( rank==MpiWrapper::commRank() )
-    //   {
-//      std::cout<<"rank "<<rank<<std::endl;
     synchronizeTipSets( faceManager,
                         edgeManager,
                         nodeManager,
                         receivedObjects );
-    //   }
-    // }
 
 
 #else
