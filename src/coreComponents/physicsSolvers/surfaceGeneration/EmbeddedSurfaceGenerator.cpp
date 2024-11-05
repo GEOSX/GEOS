@@ -140,9 +140,10 @@ void EmbeddedSurfaceGenerator::initializePostSubGroups()
     // CellBlockManager & cellBlockManagerConcrete = dynamic_cast< CellBlockManager & >(cellBlockManagerNoConst);
     //Group const & embSurfBlocks = cellBlockManagerConcrete.getEmbeddedSurfaceBlocks();
     Group const & embSurfBlocks = cellBlockManager.getEmbeddedSurfaceBlocks();
-    if( embSurfBlocks.hasGroup( "EmbeddedSurface" ))
+    //if( embSurfBlocks.hasGroup( "EmbeddedSurface" ))
+    if( embSurfBlocks.hasGroup( "fracture" ))
     {
-      EmbeddedSurfaceBlockABC const & embSurf = embSurfBlocks.getGroup< EmbeddedSurfaceBlockABC >( "EmbeddedSurface" );
+      EmbeddedSurfaceBlockABC const & embSurf = embSurfBlocks.getGroup< EmbeddedSurfaceBlockABC >( "fracture" );
 
 
       elemManager.forElementSubRegionsComplete< CellElementSubRegion >(
