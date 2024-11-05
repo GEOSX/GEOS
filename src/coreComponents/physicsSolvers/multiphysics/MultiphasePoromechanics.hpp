@@ -41,6 +41,7 @@ public:
   using Base::m_stabilizationType;
   using Base::m_stabilizationRegionNames;
   using Base::m_stabilizationMultiplier;
+  using Base::getLogLevel;
 
   /**
    * @brief main constructor for MultiphasePoromechanics Objects
@@ -70,7 +71,7 @@ public:
   }
 
   /**
-   * @copydoc SolverBase::getCatalogName()
+   * @copydoc PhysicsSolverBase::getCatalogName()
    */
   string getCatalogName() const override { return catalogName(); }
 
@@ -153,7 +154,7 @@ real64 MultiphasePoromechanics< FLOW_SOLVER, MECHANICS_SOLVER >::assemblyLaunch(
   string const dofKey = dofManager.getKey( fields::solidMechanics::totalDisplacement::key() );
   arrayView1d< globalIndex const > const & dofNumber = nodeManager.getReference< globalIndex_array >( dofKey );
 
-  real64 const gravityVectorData[3] = LVARRAY_TENSOROPS_INIT_LOCAL_3( SolverBase::gravityVector() );
+  real64 const gravityVectorData[3] = LVARRAY_TENSOROPS_INIT_LOCAL_3( PhysicsSolverBase::gravityVector() );
 
   KERNEL_WRAPPER kernelWrapper( dofNumber,
                                 dofManager.rankOffset(),

@@ -40,8 +40,8 @@
 #include "mesh/mpiCommunications/CommunicationTools.hpp"
 #include "physicsSolvers/fluidFlow/FlowSolverBaseFields.hpp"
 #include "physicsSolvers/fluidFlow/SinglePhaseBaseFields.hpp"
-#include "physicsSolvers/fluidFlow/SinglePhaseBaseKernels.hpp"
-#include "physicsSolvers/fluidFlow/ThermalSinglePhaseBaseKernels.hpp"
+#include "physicsSolvers/fluidFlow/kernels/SinglePhaseBaseKernels.hpp"
+#include "physicsSolvers/fluidFlow/kernels/ThermalSinglePhaseBaseKernels.hpp"
 
 
 namespace geos
@@ -1339,8 +1339,8 @@ real64 SinglePhaseBase::scalingForSystemSolution( DomainPartition & domain,
   scalingFactor = MpiWrapper::min( scalingFactor );
   maxDeltaPres  = MpiWrapper::max( maxDeltaPres );
 
-  GEOS_LOG_LEVEL_RANK_0( 1, GEOS_FMT( "        {}: Max pressure change = {} Pa (before scaling)",
-                                      getName(), fmt::format( "{:.{}f}", maxDeltaPres, 3 ) ) );
+  GEOS_LOG_LEVEL_INFO_RANK_0( logInfo::Solution, GEOS_FMT( "        {}: Max pressure change = {} Pa (before scaling)",
+                                                           getName(), fmt::format( "{:.{}f}", maxDeltaPres, 3 ) ) );
 
   return scalingFactor;
 }
@@ -1381,8 +1381,8 @@ bool SinglePhaseBase::checkSystemSolution( DomainPartition & domain,
   numNegativePressures = MpiWrapper::sum( numNegativePressures );
 
   if( numNegativePressures > 0 )
-    GEOS_LOG_LEVEL_RANK_0( 1, GEOS_FMT( "        {}: Number of negative pressure values: {}, minimum value: {} Pa",
-                                        getName(), numNegativePressures, fmt::format( "{:.{}f}", minPressure, 3 ) ) );
+    GEOS_LOG_LEVEL_INFO_RANK_0( logInfo::Solution, GEOS_FMT( "        {}: Number of negative pressure values: {}, minimum value: {} Pa",
+                                                             getName(), numNegativePressures, fmt::format( "{:.{}f}", minPressure, 3 ) ) );
 
   return (m_allowNegativePressure || numNegativePressures == 0) ?  1 : 0;
 }
