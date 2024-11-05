@@ -16,8 +16,8 @@
 /inputFiles/efemFractureMechanics                     @CusiniM
 /inputFiles/hydraulicFracturing                       @CusiniM @rrsettgast @frankfeifan @Guotong-Ren @cssherman @jhuang2601
 /inputFiles/inducedSeismicity                         @CusiniM @matteofrigo5 
-/inputFiles/initialization                            @jhuang2601 
-/inputFiles/lagrangianContactMechanics                @CusiniM @jhuang2601 
+/inputFiles/initialization                            @jhuang2601 @rrsettgast
+/inputFiles/lagrangianContactMechanics                @CusiniM @jhuang2601 @matteofrigo5 
 /inputFiles/materialPointMethod                       @homel1 @cmcrook5 
 /inputFiles/meshGeneration
 /inputFiles/multiphaseFlowFractures                   @paveltomin @jhuang2601
@@ -32,7 +32,7 @@
 /inputFiles/singlePhaseFlowFractures                  @CusiniM @castelletto1 @paveltomin @jhuang2601 
 /inputFiles/singlePhaseWell                           @paveltomin
 /inputFiles/solidMechanics                            @CusiniM @castelletto1 @jhuang2601 
-/inputFiles/surfaceGeneration                         @CusiniM @castelletto1
+/inputFiles/surfaceGeneration                         @CusiniM @castelletto1 @rrsettgast 
 /inputFiles/thermalMultiphaseFlow                     @paveltomin
 /inputFiles/thermalSinglePhaseFlowFractures           @CusiniM @castelletto1 @paveltomin @jhuang2601 
 /inputFiles/thermoPoromechanics                       @paveltomin @jhuang2601 
@@ -51,8 +51,8 @@
 /src/coreComponents/constitutive/dispersion           @CusiniM @dkachuma @paveltomin 
 /src/coreComponents/constitutive/docs                  
 /src/coreComponents/constitutive/fluid                @CusiniM @dkachuma @paveltomin 
-/src/coreComponents/constitutive/permeability         @rrsettgast @CusiniM @dkachuma @paveltomin 
-/src/coreComponents/constitutive/pvtPackage           @rrsettgast @CusiniM @dkachuma @paveltomin @joshua-white
+/src/coreComponents/constitutive/permeability         @CusiniM @dkachuma @paveltomin 
+/src/coreComponents/constitutive/pvtPackage           @CusiniM @dkachuma @paveltomin @joshua-white
 /src/coreComponents/constitutive/relativePermeability @dkachuma @paveltomin 
 /src/coreComponents/constitutive/solid                @rrsettgast @CusiniM @paveltomin @joshua-white @castelletto1
 /src/coreComponents/constitutive/thermalConductivity  @CusiniM @dkachuma @paveltomin 
@@ -66,7 +66,7 @@
 /src/coreComponents/finiteElement                     @rrsettgast @castelletto1 @andrea-borio @CusiniM
 /src/coreComponents/finiteVolume                      @rrsettgast @castelletto1 @CusiniM @paveltomin @ryar9534
 /src/coreComponents/functions                         @cssherman  @wrtobin @rrsettgast
-/src/coreComponents/linearAlgebra                     @rrsettgast @castelletto1 @victorapm 
+/src/coreComponents/linearAlgebra                     @rrsettgast @castelletto1 @victorapm  @CusiniM 
 /src/coreComponents/mainInterface                     @rrsettgast @corbett5 @wrtobin 
 /src/coreComponents/math                              @rrsettgast @corbett5 @wrtobin 
 /src/coreComponents/mesh                              @rrsettgast @wrtobin @untereiner @CusiniM 
@@ -75,9 +75,9 @@
 /src/coreComponents/physicsSolvers/fluidFlow          @CusiniM @paveltomin @klevzoff @ryar9534
 /src/coreComponents/physicsSolvers/inducedSeismicity  @CusiniM @rrsettgast @matteofrigo5
 /src/coreComponents/physicsSolvers/multiphysics       @CusiniM @paveltomin @castelletto1 @rrsettgast @frankfeifan @ryar9534 
-/src/coreComponents/physicsSolvers/python             @cssherman @corbett5
+/src/coreComponents/physicsSolvers/python             @cssherman @corbett5 @alexbenedicto 
 /src/coreComponents/physicsSolvers/simplePDE          @castelletto1 @rrsettgast @CusiniM @frankfeifan
-/src/coreComponents/physicsSolvers/solidMechanics     @rrsettgast @castelletto1 @CusiniM 
+/src/coreComponents/physicsSolvers/solidMechanics     @rrsettgast @castelletto1 @CusiniM @jhuang2601
 /src/coreComponents/physicsSolvers/surfaceGeneration  @rrsettgast @CusiniM @jhuang2601
 /src/coreComponents/physicsSolvers/wavePropagation    @sframba @acitrain
 /src/coreComponents/schema
