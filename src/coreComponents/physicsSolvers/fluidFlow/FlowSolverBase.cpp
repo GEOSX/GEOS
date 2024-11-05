@@ -810,12 +810,9 @@ bool FlowSolverBase::checkSequentialSolutionIncrements( DomainPartition & GEOS_U
 string FlowSolverBase::BCMessage::generateMessage( string_view baseMessage,
                                                    string_view fieldName, string_view setName )
 {
-  string fieldSpecificationMsg = GEOS_FMT(
-    "Check if you have added or applied the appropriate fields to "
-    "the FieldSpecification component with fieldName=\"{}\" "
-    "and setNames=\"{}\"\n",
-    fieldName, setName );
-  return GEOS_FMT( "{}{}", baseMessage, fieldSpecificationMsg );
+  return GEOS_FMT( "{} Check if you have added or applied the appropriate fields to "
+                   "the FieldSpecification component with fieldName=\"{}\" "
+                   "and setNames=\"{}\"\n{}", baseMessage, fieldName, setName );
 }
 
 string FlowSolverBase::BCMessage::pressureConflict( string_view regionName, string_view subRegionName,

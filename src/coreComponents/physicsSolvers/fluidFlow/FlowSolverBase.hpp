@@ -229,15 +229,11 @@ protected:
   real64 m_maxSequentialTempChange;
 
   /**
-   * @brief
-   *
+   * @brief Class used for displaying boundary warning message
    */
   class BCMessage
   {
 public:
-    static string generateMessage( string_view baseMessage,
-                                   string_view fieldName, string_view setName );
-
     static string pressureConflict( string_view regionName, string_view subRegionName,
                                     string_view setName, string_view fieldName );
 
@@ -260,6 +256,10 @@ public:
     static string inconsistency( int componentIndex, string_view componentName,
                                  string_view regionName, string_view subRegionName,
                                  string_view setName, string_view fieldName );
+private:
+    static string generateMessage( string_view baseMessage,
+                                   string_view fieldName, string_view setName );
+
   };
 
 private:
