@@ -117,12 +117,13 @@ public:
   }
 
   GEOS_HOST_DEVICE
-  std::pair< int, real64 > checkConvergence( StackVariables const & stack,
-                                             real64 const tol ) const
+  camp::tuple< int, real64 > checkConvergence( StackVariables const & stack,
+                                               real64 const tol ) const
   {
     real64 const residualNorm = LvArray::tensorOps::l2Norm< 2 >( stack.rhs );
     int const converged = residualNorm < tol ? 1 : 0;
-    return std::make_pair( converged, residualNorm );
+    camp::tuple< int, real64 > result { converged, residualNorm };
+    return result;
   }
 
 private:
@@ -177,9 +178,9 @@ createAndLaunch( SurfaceElementSubRegion & subRegion,
       RateAndStateKernel::StackVariables stack;
       kernel.setup( k, dt, stack );
       kernel.solve( k, stack );
-      auto result = kernel.checkConvergence( stack, 1.0e-6 );
-      converged.min( std::get< 0 >( result ) );
-      residualNorm.max( std::get< 1 >( result ) );
+      auto const [elementConverged, elementResidualNorm] = kernel.checkConvergence( stack, 1.0e-6 );
+      converged.min( elementConverged );
+      residualNorm.max( elementResidualNorm );
     } );
 
     real64 const maxResidualNorm = MpiWrapper::max( residualNorm.get() );
