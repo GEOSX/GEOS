@@ -48,7 +48,7 @@ namespace coupledReservoirAndWellsInternal
  * @param wellElemDofName name of the well element dofs
  */
 void
-addCouplingNumNonzeros( SolverBase const * const solver,
+addCouplingNumNonzeros( PhysicsSolverBase const * const solver,
                         DomainPartition & domain,
                         DofManager & dofManager,
                         arrayView1d< localIndex > const & rowLengths,
@@ -64,7 +64,7 @@ addCouplingNumNonzeros( SolverBase const * const solver,
  * @param wellSolver the well solver
  * @param domain the physical domain object
  */
-bool validateWellPerforations( SolverBase const * const reservoirSolver,
+bool validateWellPerforations( PhysicsSolverBase const * const reservoirSolver,
                                WellSolverBase const * const wellSolver,
                                DomainPartition const & domain );
 

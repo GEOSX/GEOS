@@ -27,8 +27,8 @@ set( physicsSolvers_headers
      LinearSolverParameters.hpp
      NonlinearSolverParameters.hpp
      PhysicsSolverManager.hpp
-     SolverBase.hpp
-     SolverBaseKernels.hpp
+     PhysicsSolverBase.hpp
+     PhysicsSolverBaseKernels.hpp
      SolverStatistics.hpp
      FieldStatisticsBase.hpp
      LogLevelsInfo.hpp )
@@ -40,7 +40,7 @@ set( physicsSolvers_sources
      LinearSolverParameters.cpp
      NonlinearSolverParameters.cpp
      PhysicsSolverManager.cpp
-     SolverBase.cpp
+     PhysicsSolverBase.cpp
      SolverStatistics.cpp )
 
 if( GEOS_ENABLE_CONTACT )
