@@ -111,11 +111,30 @@ public:
                                        bool const overwriteDownMaps ) override;
 
 
+  /**
+   * @brief Size of packing of the FaceElement to face relation.
+   * @param packList The list of face elements to pack
+   * @return The size of the packed data
+   */
   localIndex packToFaceRelationSize( arrayView1d< localIndex const > const & packList ) const;
 
+  /**
+   * @brief Pack the FaceElement to face relation.
+   * @param buffer The buffer to pack the data into
+   * @param packList The list of face elements to pack
+   * @return The size of the packed data
+   */
   localIndex packToFaceRelation( buffer_unit_type * & buffer,
                                  arrayView1d< localIndex const > const & packList ) const;
 
+  /**
+   * @brief Unpack the FaceElement to face relation.
+   * @param buffer The buffer to unpack the data from
+   * @param packList The list of face elements to unpack
+   * @param overwriteUpMaps Flag to overwrite the up maps
+   * @param overwriteDownMaps Flag to overwrite the down maps
+   * @return The size of the unpacked data
+   */
   localIndex unpackToFaceRelation( buffer_unit_type const * & buffer,
                                    array1d< localIndex > & packList,
                                    bool const overwriteUpMaps,
