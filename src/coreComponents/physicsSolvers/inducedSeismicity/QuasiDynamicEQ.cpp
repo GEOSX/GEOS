@@ -61,10 +61,10 @@ void QuasiDynamicEQ::postInputInitialization()
   // Initialize member stress solver as specified in XML input
   if( !m_stressSolverName.empty() )
   {
-    m_stressSolver = &this->getParent().getGroup< SolverBase >( m_stressSolverName );
+    m_stressSolver = &this->getParent().getGroup< PhysicsSolverBase >( m_stressSolverName );
   }
 
-  SolverBase::postInputInitialization();
+  PhysicsSolverBase::postInputInitialization();
 }
 
 QuasiDynamicEQ::~QuasiDynamicEQ()
@@ -179,7 +179,7 @@ real64 QuasiDynamicEQ::updateStresses( real64 const & time_n,
   if( m_stressSolver )
   {
     // 1. Solve the momentum balance
-    real64 const dtStress =  m_stressSolver->solverStep( time_n, dt, cycleNumber, domain );
+    real64 const dtStress = m_stressSolver->solverStep( time_n, dt, cycleNumber, domain );
 
     return dtStress;
   }

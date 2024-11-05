@@ -262,8 +262,6 @@ public:
                    StackVariables & stack ) const
   {
     GEOS_UNUSED_VAR( k );
-    constexpr real64 zero = LvArray::NumericLimits< real64 >::epsilon;
-
     real64 tractionR[numUdofs];
     real64 tractionRb[numBdofs];
 
@@ -293,7 +291,7 @@ public:
     // Force Balance for the bubble dofs
     LvArray::tensorOps::scaledAdd< numBdofs >( stack.localRb, tractionRb, 1.0 );
 
-    fillGlobalMatrix( k, stack );
+    fillGlobalMatrix( stack );
 
     return 0.0;
   }
@@ -328,8 +326,7 @@ protected:
 
 private:
 
-  void fillGlobalMatrix( localIndex const k,
-                         StackVariables & stack ) const
+  void fillGlobalMatrix( StackVariables & stack ) const
   {
 
     for( localIndex i=0; i < numTdofs; ++i )

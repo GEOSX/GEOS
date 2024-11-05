@@ -332,7 +332,7 @@ void SolidMechanicsLagrangeContactBubbleStab::assembleContact( real64 const dt,
 {
   forDiscretizationOnMeshTargets( domain.getMeshBodies(), [&] ( string const & meshName,
                                                                 MeshLevel & mesh,
-                                                                arrayView1d< string const > const & regionNames )
+                                                                arrayView1d< string const > const & )
   {
     NodeManager const & nodeManager = mesh.getNodeManager();
     FaceManager const & faceManager = mesh.getFaceManager();
@@ -570,6 +570,7 @@ void SolidMechanicsLagrangeContactBubbleStab::applySystemSolution( DofManager co
 
 void SolidMechanicsLagrangeContactBubbleStab::updateState( DomainPartition & domain )
 {
+  GEOS_UNUSED_VAR( domain );
   GEOS_MARK_FUNCTION;
 }
 
@@ -1135,6 +1136,6 @@ void SolidMechanicsLagrangeContactBubbleStab::createBubbleCellList( DomainPartit
 
 }
 
-REGISTER_CATALOG_ENTRY( SolverBase, SolidMechanicsLagrangeContactBubbleStab, string const &, Group * const )
+REGISTER_CATALOG_ENTRY( PhysicsSolverBase, SolidMechanicsLagrangeContactBubbleStab, string const &, Group * const )
 
 } /* namespace geos */
