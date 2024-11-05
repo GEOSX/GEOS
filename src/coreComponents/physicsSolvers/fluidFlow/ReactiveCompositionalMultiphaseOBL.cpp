@@ -958,8 +958,7 @@ bool ReactiveCompositionalMultiphaseOBL::validateDirichletBC( DomainPartition & 
       if( subRegionSetMap.count( setName ) > 0 )
       {
         bcConsistent = false;
-        GEOS_WARNING(
-          BCMessage::pressureConflict( regionName, subRegionName, setName,
+        GEOS_WARNING( BCMessage::pressureConflict( regionName, subRegionName, setName,
                                        fields::flow::pressure::key() ) );
       }
       subRegionSetMap[setName].setNumComp( numCompWithEnergy );
