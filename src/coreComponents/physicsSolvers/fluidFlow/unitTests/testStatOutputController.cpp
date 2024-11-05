@@ -188,49 +188,41 @@ TEST( testStatOutputController, checkSinglePhaseFluxStatistics )
   ProblemManager & problem = state.getProblemManager();
   setupProblemFromXML( problem, testSet.data() );
 
-  { // verify component creation
-    std::vector< string > const groupPaths{
-      "/Tasks/packCollectionreservoiraveragePressure",
-      "/Tasks/packCollectionreservoirminPressure",
-      "/Tasks/packCollectionreservoirmaxPressure",
-      "/Tasks/packCollectionreservoirminDeltaPressure",
-      "/Tasks/packCollectionreservoirmaxDeltaPressure",
-      "/Tasks/packCollectionreservoirtotalMass",
-      "/Tasks/packCollectionreservoiraverageTemperature",
-      "/Tasks/packCollectionreservoirminTemperature",
-      "/Tasks/packCollectionreservoirmaxTemperature",
-      "/Tasks/packCollectionreservoirtotalPoreVolume",
-      "/Tasks/packCollectionreservoirtotalUncompactedPoreVolume",
-      "/Outputs/compFlowHistory_reservoir"
-    };
+  std::vector< string > const refCollectorPaths =
+  {
+    "/Tasks/packCollectionreservoiraveragePressure/",
+    "/Tasks/packCollectionreservoirminPressure/",
+    "/Tasks/packCollectionreservoirmaxPressure/",
+    "/Tasks/packCollectionreservoirminDeltaPressure/",
+    "/Tasks/packCollectionreservoirmaxDeltaPressure/",
+    "/Tasks/packCollectionreservoirtotalMass/",
+    "/Tasks/packCollectionreservoiraverageTemperature/",
+    "/Tasks/packCollectionreservoirminTemperature/",
+    "/Tasks/packCollectionreservoirmaxTemperature/",
+    "/Tasks/packCollectionreservoirtotalPoreVolume/",
+    "/Tasks/packCollectionreservoirtotalUncompactedPoreVolume/",
+  };
+  string const outputPath = "/Outputs/compFlowHistory_reservoir";
 
-    for( string const & path : groupPaths )
+  { // verify component creation
+
+    for( string const & path : refCollectorPaths )
     {
       EXPECT_NO_THROW( {
           Group const & group = problem.getGroupByPath( path );
           ASSERT_STREQ( path.c_str(), group.getPath().c_str() );
         } );
     }
+
+    EXPECT_NO_THROW( {
+        Group const & group = problem.getGroupByPath( outputPath );
+        ASSERT_STREQ( outputPath.c_str(), group.getPath().c_str() );
+      } );
   }
 
   { // check all timeHistory paths
     TimeHistoryOutput & timeHistory = problem.getGroupByPath< TimeHistoryOutput >( "/Outputs/compFlowHistory_reservoir" );
     string_array & collectorPaths =  timeHistory.getReference< string_array >( TimeHistoryOutput::viewKeys::timeHistoryOutputTargetString() );
-
-    std::vector< string > refCollectorPaths =
-    {
-      "/Tasks/packCollectionreservoiraveragePressure/",
-      "/Tasks/packCollectionreservoirminPressure/",
-      "/Tasks/packCollectionreservoirmaxPressure/",
-      "/Tasks/packCollectionreservoirminDeltaPressure/",
-      "/Tasks/packCollectionreservoirmaxDeltaPressure/",
-      "/Tasks/packCollectionreservoirtotalMass/",
-      "/Tasks/packCollectionreservoiraverageTemperature/",
-      "/Tasks/packCollectionreservoirminTemperature/",
-      "/Tasks/packCollectionreservoirmaxTemperature/",
-      "/Tasks/packCollectionreservoirtotalPoreVolume/",
-      "/Tasks/packCollectionreservoirtotalUncompactedPoreVolume/",
-    };
 
     for( size_t idxPath = 0; idxPath < refCollectorPaths.size(); idxPath++ )
     {
