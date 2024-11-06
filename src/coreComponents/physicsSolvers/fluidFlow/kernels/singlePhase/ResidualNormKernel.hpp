@@ -20,7 +20,7 @@
 #ifndef GEOS_PHYSICSSOLVERS_FLUIDFLOW_SINGLEPHASE_RESIDUALNORMKERNEL_HPP
 #define GEOS_PHYSICSSOLVERS_FLUIDFLOW_SINGLEPHASE_RESIDUALNORMKERNEL_HPP
 
-#include "physicsSolvers/SolverBaseKernels.hpp"
+#include "physicsSolvers/PhysicsSolverBaseKernels.hpp"
 
 namespace geos
 {
@@ -33,11 +33,11 @@ namespace singlePhaseBaseKernels
 /**
  * @class IsothermalResidualNormKernel
  */
-class IsothermalResidualNormKernel : public solverBaseKernels::ResidualNormKernelBase< 1 >
+class IsothermalResidualNormKernel : public physicsSolverBaseKernels::ResidualNormKernelBase< 1 >
 {
 public:
 
-  using Base = solverBaseKernels::ResidualNormKernelBase< 1 >;
+  using Base = physicsSolverBaseKernels::ResidualNormKernelBase< 1 >;
   using Base::m_minNormalizer;
   using Base::m_rankOffset;
   using Base::m_localResidual;
@@ -89,11 +89,11 @@ protected:
 /**
  * @class ThermalResidualNormKernel
  */
-class ThermalResidualNormKernel : public solverBaseKernels::ResidualNormKernelBase< 2 >
+class ThermalResidualNormKernel : public physicsSolverBaseKernels::ResidualNormKernelBase< 2 >
 {
 public:
 
-  using Base = solverBaseKernels::ResidualNormKernelBase< 2 >;
+  using Base = physicsSolverBaseKernels::ResidualNormKernelBase< 2 >;
   using Base::m_minNormalizer;
   using Base::m_rankOffset;
   using Base::m_localResidual;
@@ -197,7 +197,7 @@ public:
    */
   template< typename POLICY >
   static void
-  createAndLaunch( solverBaseKernels::NormType const normType,
+  createAndLaunch( physicsSolverBaseKernels::NormType const normType,
                    globalIndex const rankOffset,
                    string const dofKey,
                    arrayView1d< real64 const > const & localResidual,
@@ -210,7 +210,7 @@ public:
     arrayView1d< integer const > const ghostRank = subRegion.ghostRank();
 
     IsothermalResidualNormKernel kernel( rankOffset, localResidual, dofNumber, ghostRank, subRegion, minNormalizer );
-    if( normType == solverBaseKernels::NormType::Linf )
+    if( normType == physicsSolverBaseKernels::NormType::Linf )
     {
       IsothermalResidualNormKernel::launchLinf< POLICY >( subRegion.size(), kernel, residualNorm );
     }
@@ -236,7 +236,7 @@ public:
    */
   template< typename POLICY >
   static void
-  createAndLaunch( solverBaseKernels::NormType const normType,
+  createAndLaunch( physicsSolverBaseKernels::NormType const normType,
                    globalIndex const rankOffset,
                    string const & dofKey,
                    arrayView1d< real64 const > const & localResidual,
@@ -249,7 +249,7 @@ public:
     arrayView1d< integer const > const ghostRank = subRegion.ghostRank();
 
     ThermalResidualNormKernel kernel( rankOffset, localResidual, dofNumber, ghostRank, subRegion, minNormalizer );
-    if( normType == solverBaseKernels::NormType::Linf )
+    if( normType == physicsSolverBaseKernels::NormType::Linf )
     {
       ThermalResidualNormKernel::launchLinf< POLICY >( subRegion.size(), kernel, residualNorm );
     }
