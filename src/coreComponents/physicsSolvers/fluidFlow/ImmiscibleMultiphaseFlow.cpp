@@ -784,68 +784,6 @@ char const bcLogMessage[] =
 }
 
 
-void applyAndSpecifyFieldValue( real64 const & time_n,
-                                real64 const & dt,
-                                MeshLevel & mesh,
-                                globalIndex const rankOffset,
-                                string const dofKey,
-                                bool const,
-                                integer const idof,
-                                string const fieldKey,
-                                string const boundaryFieldKey,
-                                CRSMatrixView< real64, globalIndex const > const & localMatrix,
-                                arrayView1d< real64 > const & localRhs )
-{
-  FieldSpecificationManager & fsManager = FieldSpecificationManager::getInstance();
-
-  fsManager.apply< ElementSubRegionBase >( time_n + dt,
-                                           mesh,
-                                           fieldKey,
-                                           [&]( FieldSpecificationBase const & fs,
-                                                string const &,
-                                                SortedArrayView< localIndex const > const & lset,
-                                                ElementSubRegionBase & subRegion,
-                                                string const & )
-  {
-    // Specify the bc value of the field
-    fs.applyFieldValue< FieldSpecificationEqual,
-                        parallelDevicePolicy<> >( lset,
-                                                  time_n + dt,
-                                                  subRegion,
-                                                  boundaryFieldKey );
-
-    arrayView1d< integer const > const ghostRank = subRegion.ghostRank();
-    arrayView1d< globalIndex const > const dofNumber =
-      subRegion.getReference< array1d< globalIndex > >( dofKey );
-    arrayView1d< real64 const > const bcField =
-      subRegion.getReference< array1d< real64 > >( boundaryFieldKey );
-    arrayView1d< real64 const > const field =
-      subRegion.getReference< array1d< real64 > >( fieldKey );
-
-    forAll< parallelDevicePolicy<> >( lset.size(), [=] GEOS_HOST_DEVICE ( localIndex const a )
-    {
-      localIndex const ei = lset[a];
-      if( ghostRank[ei] >= 0 )
-      {
-        return;
-      }
-
-      globalIndex const dofIndex = dofNumber[ei];
-      localIndex const localRow = dofIndex - rankOffset;
-      real64 rhsValue;
-
-      // Apply field value to the matrix/rhs
-      FieldSpecificationEqual::SpecifyFieldValue( dofIndex + idof,
-                                                  rankOffset,
-                                                  localMatrix,
-                                                  rhsValue,
-                                                  bcField[ei],
-                                                  field[ei] );
-      localRhs[localRow + idof] = rhsValue;
-    } );
-  } );
-}
-
 void ImmiscibleMultiphaseFlow::applyDirichletBC( real64 const time_n,
                                                  real64 const dt,
                                                  DofManager const & dofManager,
