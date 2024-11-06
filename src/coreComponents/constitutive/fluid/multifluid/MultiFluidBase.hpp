@@ -783,12 +783,14 @@ MultiFluidBase::KernelWrapper::
   real64 totalMolality = 0.0;
   for( integer ic = 0; ic < numComps; ++ic )
   {
+    // component weight can not be zero, checked in MultiFluidBase::postInputInitialization
     real64 const mwInv = 1.0 / m_componentMolarWeight[ic];
     compMoleFrac[ic] = composition[ic] * mwInv; // this is molality (units of mole/mass)
     dCompMoleFrac_dCompMassFrac[ic][ic] = mwInv;
     totalMolality += compMoleFrac[ic];
   }
 
+  GEOS_ERROR_IF( totalMolality < LvArray::NumericLimits< real64 >::epsilon, "Zero total molality, all component concentrations are equal to zero." );
   real64 const totalMolalityInv = 1.0 / totalMolality;
   for( integer ic = 0; ic < numComps; ++ic )
   {

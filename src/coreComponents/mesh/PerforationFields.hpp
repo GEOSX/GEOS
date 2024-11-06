@@ -58,6 +58,14 @@ DECLARE_FIELD( reservoirElementIndex,
                WRITE_AND_READ,
                "For each perforation, element index of the perforated element" );
 
+DECLARE_FIELD( reservoirElementGlobalIndex,
+               "reservoirElementGlobalIndex",
+               array1d< globalIndex >,
+               0,
+               NOPLOT,
+               WRITE_AND_READ,
+               "For each perforation, global element index of the perforated element" );
+
 DECLARE_FIELD( wellElementIndex,
                "wellElementIndex",
                array1d< localIndex >,
