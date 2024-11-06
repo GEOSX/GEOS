@@ -308,42 +308,16 @@ public:
     return scalingFactor;
   }
 
-  virtual real64
-  setNextDtBasedOnStateChange( real64 const & currentDt,
-                               DomainPartition & domain ) override
-  {
-    real64 nextDt = PhysicsSolverBase::setNextDtBasedOnStateChange( currentDt, domain );
-    forEachArgInTuple( m_solvers, [&]( auto & solver, auto )
-    {
-      real64 const singlePhysicsNextDt =
-        solver->setNextDtBasedOnStateChange( currentDt, domain );
-      nextDt = LvArray::math::min( singlePhysicsNextDt, nextDt );
-    } );
-    return nextDt;
-  }
-
-  virtual real64 setNextDtBasedOnNewtonIter( real64 const & currentDt ) override
-  {
-    real64 nextDt = PhysicsSolverBase::setNextDtBasedOnNewtonIter( currentDt );
-    forEachArgInTuple( m_solvers, [&]( auto & solver, auto )
-    {
-      real64 const singlePhysicsNextDt =
-        solver->setNextDtBasedOnNewtonIter( currentDt );
-      nextDt = LvArray::math::min( singlePhysicsNextDt, nextDt );
-    } );
-    return nextDt;
-  }
-
-  virtual real64
-  setNextDt( real64 const & currentTime,
+ virtual real64
+  setNextDt( real64 const & time,
              real64 const & lastDt,
              DomainPartition & domain ) override
   {
-    real64 nextDt = PhysicsSolverBase::setNextDt( currentTime, lastDt, domain );
+    real64 nextDt = PhysicsSolverBase::setNextDt( time, lastDt, domain );
     forEachArgInTuple( m_solvers, [&]( auto & solver, auto )
     {
       real64 const singlePhysicsNextDt =
-        solver->setNextDt( currentTime, lastDt, domain );
+        solver->setNextDt( time, lastDt, domain );
       nextDt = LvArray::math::min( singlePhysicsNextDt, nextDt );
     } );
     return nextDt;

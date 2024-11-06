@@ -121,7 +121,7 @@ public:
                                CRSMatrixView< real64, globalIndex const > const & localMatrix,
                                arrayView1d< real64 > const & localRhs ) override;
 
-  virtual real64 setNextDt( real64 const & currentTime,
+  virtual real64 setNextDt( real64 const & time,
                             real64 const & lastDt,
                             DomainPartition & domain ) override;
 

@@ -118,13 +118,13 @@ string SinglePhaseWell::resElementDofName() const
 }
 
 void SinglePhaseWell::validateWellConstraints( real64 const & time_n,
-                                               real64 const & dt,
+                                               real64 const & GEOS_UNUSED_PARAM( dt ),
                                                WellElementSubRegion const & subRegion )
 {
   WellControls const & wellControls = getWellControls( subRegion );
   WellControls::Control const currentControl = wellControls.getControl();
-  real64 const targetTotalRate = wellControls.getTargetTotalRate( time_n + dt );
-  real64 const targetPhaseRate = wellControls.getTargetPhaseRate( time_n + dt );
+  real64 const targetTotalRate = wellControls.getTargetTotalRate( time_n );
+  real64 const targetPhaseRate = wellControls.getTargetPhaseRate( time_n );
   GEOS_THROW_IF( currentControl == WellControls::Control::PHASEVOLRATE,
                  "WellControls " << wellControls.getDataContext() <<
                  ": Phase rate control is not available for SinglePhaseWell",
@@ -470,7 +470,7 @@ void SinglePhaseWell::assembleFluxTerms( real64 const & time_n,
 }
 
 void SinglePhaseWell::assemblePressureRelations( real64 const & time_n,
-                                                 real64 const & dt,
+                                                 real64 const & GEOS_UNUSED_PARAM( dt ),
                                                  DomainPartition const & domain,
                                                  DofManager const & dofManager,
                                                  CRSMatrixView< real64, globalIndex const > const & localMatrix,
@@ -518,7 +518,7 @@ void SinglePhaseWell::assemblePressureRelations( real64 const & time_n,
                                         subRegion.isLocallyOwned(),
                                         subRegion.getTopWellElementIndex(),
                                         wellControls,
-                                        time_n + dt,   // controls evaluated with BHP/rate of the end of the time interval
+                                        time_n,   // controls evaluated with BHP/rate of the beginning of the time interval
                                         wellElemDofNumber,
                                         wellElemGravCoef,
                                         nextWellElemIndex,
@@ -533,16 +533,14 @@ void SinglePhaseWell::assemblePressureRelations( real64 const & time_n,
         // Note: if BHP control is not viable, we switch to TOTALVOLRATE
         //       if TOTALVOLRATE is not viable, we switch to BHP
 
-        real64 const timeAtEndOfStep = time_n + dt;
-
         if( wellControls.getControl() == WellControls::Control::BHP )
         {
-          wellControls.switchToTotalRateControl( wellControls.getTargetTotalRate( timeAtEndOfStep ) );
+          wellControls.switchToTotalRateControl( wellControls.getTargetTotalRate( time_n ) );
           GEOS_LOG_LEVEL_INFO_RANK_0( logInfo::WellControl, GEOS_FMT( "Control switch for well {} from BHP constraint to rate constraint", subRegion.getName()) );
         }
         else
         {
-          wellControls.switchToBHPControl( wellControls.getTargetBHP( timeAtEndOfStep ) );
+          wellControls.switchToBHPControl( wellControls.getTargetBHP( time_n ) );
           GEOS_LOG_LEVEL_INFO_RANK_0( logInfo::WellControl, GEOS_FMT( "Control switch for well {} from rate constraint to BHP constraint", subRegion.getName()) );
         }
       }
@@ -612,7 +610,7 @@ void SinglePhaseWell::assembleVolumeBalanceTerms( DomainPartition const & GEOS_U
 }
 
 void SinglePhaseWell::shutDownWell( real64 const time_n,
-                                    real64 const dt,
+                                    real64 const GEOS_UNUSED_PARAM( dt ),
                                     DomainPartition const & domain,
                                     DofManager const & dofManager,
                                     CRSMatrixView< real64, globalIndex const > const & localMatrix,
@@ -636,7 +634,7 @@ void SinglePhaseWell::shutDownWell( real64 const time_n,
 
       // if the well is open, we don't have to do anything, so we just return
       WellControls const & wellControls = getWellControls( subRegion );
-      if( wellControls.isWellOpen( time_n + dt ) )
+      if( wellControls.isWellOpen( time_n ) )
       {
         return;
       }
@@ -813,7 +811,7 @@ SinglePhaseWell::calculateResidualNorm( real64 const & time_n,
                                                    subRegion,
                                                    fluid,
                                                    wellControls,
-                                                   time_n + dt,
+                                                   time_n,
                                                    dt,
                                                    m_nonlinearSolverParameters.m_minNormalizer,
                                                    subRegionResidualNorm );
@@ -1010,7 +1008,7 @@ void SinglePhaseWell::implicitStepComplete( real64 const & time_n,
 }
 
 void SinglePhaseWell::printRates( real64 const & time_n,
-                                  real64 const & dt,
+                                  real64 const & GEOS_UNUSED_PARAM( dt ),
                                   DomainPartition & domain )
 {
   forDiscretizationOnMeshTargets( domain.getMeshBodies(), [&] ( string const &,
@@ -1048,10 +1046,10 @@ void SinglePhaseWell::printRates( real64 const & time_n,
       if( m_writeCSV > 0 )
       {
         outputFile.open( m_ratesOutputDir + "/" + wellControlsName + ".csv", std::ios_base::app );
-        outputFile << time_n + dt;
+        outputFile << time_n;
       }
 
-      if( !wellControls.isWellOpen( time_n + dt ) )
+      if( !wellControls.isWellOpen( time_n ) )
       {
         GEOS_LOG( GEOS_FMT( "{}: well is shut", wellControlsName ) );
         if( outputFile.is_open())

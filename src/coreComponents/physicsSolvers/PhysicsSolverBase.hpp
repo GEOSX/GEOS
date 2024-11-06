@@ -216,21 +216,21 @@ public:
 
   /**
    * @brief function to set the next time step size
-   * @param[in] currentTime the current time
+   * @param[in] time the current time
    * @param[in] lastDt the last time step size
    * @param[in] domain the domain object
    * @return the prescribed time step size
    */
-  virtual real64 setNextDt( real64 const & currentTime,
+  virtual real64 setNextDt( real64 const & time,
                             real64 const & lastDt,
                             DomainPartition & domain );
 
   /**
-   * @brief function to set the next time step size based on Newton convergence
+   * @brief function to set the next time step size based on convergence
    * @param[in] lastDt the last time step size
    * @return the prescribed time step size
    */
-  virtual real64 setNextDtBasedOnNewtonIter( real64 const & lastDt );
+  virtual real64 setNextDtBasedOnIterNumber( real64 const & lastDt );
 
   /**
    * @brief function to set the next dt based on state change

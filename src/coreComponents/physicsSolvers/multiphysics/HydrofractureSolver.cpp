@@ -906,16 +906,16 @@ void HydrofractureSolver< POROMECHANICS_SOLVER >::implicitStepComplete( real64 c
 }
 
 template< typename POROMECHANICS_SOLVER >
-real64 HydrofractureSolver< POROMECHANICS_SOLVER >::setNextDt( real64 const & currentTime,
+real64 HydrofractureSolver< POROMECHANICS_SOLVER >::setNextDt( real64 const & time,
                                                                real64 const & lastDt,
                                                                DomainPartition & domain )
 {
-  GEOS_UNUSED_VAR( currentTime, domain );
+  GEOS_UNUSED_VAR( time, domain );
   real64 nextDt = 0.0;
 
   if( m_numResolves[0] == 0 && m_numResolves[1] == 0 )
   {
-    nextDt = this->setNextDtBasedOnNewtonIter( lastDt );
+    nextDt = this->setNextDtBasedOnIterNumber( lastDt );
   }
   else
   {

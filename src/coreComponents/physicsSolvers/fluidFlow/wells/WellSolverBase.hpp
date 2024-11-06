@@ -28,6 +28,7 @@ namespace geos
 class DomainPartition;
 class WellControls;
 class WellElementSubRegion;
+class TableFunction;
 
 /**
  * @class WellSolverBase
@@ -294,9 +295,9 @@ public:
    * @param[in] domain the domain object
    * @return the prescribed time step size
    */
-  virtual real64 setNextDt( real64 const & currentTime,
-                            real64 const & lastDt,
-                            DomainPartition & domain ) override;
+  virtual real64 setNextDt(real64 const &currentTime,
+                           real64 const &lastDt,
+                           DomainPartition &domain) override;
 
   struct viewKeyStruct : PhysicsSolverBase::viewKeyStruct
   {
@@ -343,6 +344,8 @@ protected:
   virtual void printRates( real64 const & time_n,
                            real64 const & dt,
                            DomainPartition & domain ) = 0;
+
+  void setNextDtFromTable(TableFunction const * table, real64 const currentTime, real64 & nextDt);
 
   /// name of the flow solver
   string m_flowSolverName;

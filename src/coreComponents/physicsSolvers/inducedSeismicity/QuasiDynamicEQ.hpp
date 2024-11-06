@@ -61,7 +61,7 @@ public:
                              integer const cycleNumber,
                              DomainPartition & domain ) override final;
 
-  virtual real64 setNextDt( real64 const & currentTime,
+  virtual real64 setNextDt( real64 const & time,
                             real64 const & lastDt,
                             DomainPartition & domain ) override final;
 

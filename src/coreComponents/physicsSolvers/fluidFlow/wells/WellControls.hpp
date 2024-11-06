@@ -198,9 +198,9 @@ public:
    * @brief Get the target mass rate
    * @return the target mass rate
    */
-  real64 getTargetMassRate( real64 const & currentTime ) const
+  real64 getTargetMassRate( real64 const & time ) const
   {
-    return m_rateSign * m_targetMassRateTable->evaluate( &currentTime );
+    return m_rateSign * m_targetMassRateTable->evaluate( &time );
   }
 
   /**

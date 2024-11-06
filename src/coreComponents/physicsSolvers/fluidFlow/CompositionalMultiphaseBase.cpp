@@ -2626,11 +2626,12 @@ bool CompositionalMultiphaseBase::checkSequentialSolutionIncrements( DomainParti
   return isConverged && (m_sequentialCompDensChange < m_maxSequentialCompDensChange);
 }
 
-real64 CompositionalMultiphaseBase::setNextDt( real64 const & currentTime, const real64 & lastDt, DomainPartition & domain )
+real64 CompositionalMultiphaseBase::setNextDt( real64 const & time,
+                                    const real64 & lastDt,
+                                    DomainPartition & domain )
 {
-
   if( m_targetFlowCFL < 0 )
-    return PhysicsSolverBase::setNextDt( currentTime, lastDt, domain );
+    return PhysicsSolverBase::setNextDt( time, lastDt, domain );
   else
     return setNextDtBasedOnCFL( lastDt, domain );
 }
