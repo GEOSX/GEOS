@@ -174,6 +174,16 @@ private:
     interpolateRound( IN_ARRAY const & input ) const;
 
     /**
+     * @brief ...
+     * @param[in] input vector of input value
+     * @return coordinate value
+     */
+    template< typename IN_ARRAY >
+    GEOS_HOST_DEVICE
+    std::vector< real64 >
+    getCoord( IN_ARRAY const & input, InterpolationType interpolationMethod ) const;
+
+    /**
      * @brief Interpolate in the table with derivatives using linear method.
      * @param[in] input vector of input value
      * @param[out] derivatives vector of derivatives of interpolated value wrt the variables present in input
@@ -239,6 +249,13 @@ private:
    * @return the function result
    */
   virtual real64 evaluate( real64 const * const input ) const override final;
+
+  /**
+   * @brief Method to get coordinates
+   * @param input a scalar input
+   * @return the coordinates
+   */
+  std::vector< real64 > getCoord( real64 const * const input, InterpolationType interpolationMethod ) const;
 
   /**
    * @brief Check if the given coordinate is in the bounds of the table coordinates in the
@@ -552,6 +569,64 @@ TableFunction::KernelWrapper::interpolateRound( IN_ARRAY const & input ) const
 
   // Retrieve the nearest value
   return m_values[tableIndex];
+}
+
+template< typename IN_ARRAY >
+GEOS_HOST_DEVICE
+GEOS_FORCE_INLINE
+std::vector< real64 >
+TableFunction::KernelWrapper::getCoord( IN_ARRAY const & input, InterpolationType interpolationMethod ) const
+{
+  integer const numDimensions = LvArray::integerConversion< integer >( m_coordinates.size() );
+  std::vector< real64 > ret( numDimensions, 0.0 );
+
+  // Determine the index to the nearest table entry
+  localIndex subIndex;
+  for( integer dim = 0; dim < numDimensions; ++dim )
+  {
+    arraySlice1d< real64 const > const coords = m_coordinates[dim];
+    // Determine the index along each table axis
+    if( input[dim] <= coords[0] )
+    {
+      // Coordinate is to the left of the table axis
+      subIndex = 0;
+    }
+    else if( input[dim] >= coords[coords.size() - 1] )
+    {
+      // Coordinate is to the right of the table axis
+      subIndex = coords.size() - 1;
+    }
+    else
+    {
+      // Coordinate is within the table axis
+      // Note: find() will return the index of the upper table vertex
+      auto const lower = LvArray::sortedArrayManipulation::find( coords.begin(), coords.size(), input[dim] );
+      subIndex = LvArray::integerConversion< localIndex >( lower );
+
+      // Interpolation types:
+      //   - Nearest returns the value of the closest table vertex
+      //   - Upper returns the value of the next table vertex
+      //   - Lower returns the value of the previous table vertex
+      if( interpolationMethod == TableFunction::InterpolationType::Nearest )
+      {
+        if( ( input[dim] - coords[subIndex - 1]) <= ( coords[subIndex] - input[dim]) )
+        {
+          --subIndex;
+        }
+      }
+      else if( interpolationMethod == TableFunction::InterpolationType::Lower )
+      {
+        if( subIndex > 0 )
+        {
+          --subIndex;
+        }
+      }
+    }
+    // Retrieve the nearest coordinate
+    ret[dim] = coords[subIndex];
+  }
+
+  return ret;
 }
 
 template< typename IN_ARRAY, typename OUT_ARRAY >

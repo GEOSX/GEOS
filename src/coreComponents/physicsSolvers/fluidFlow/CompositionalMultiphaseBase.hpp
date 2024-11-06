@@ -362,22 +362,24 @@ public:
    */
   void chopNegativeDensities( DomainPartition & domain );
 
-  virtual real64 setNextDtBasedOnStateChange( real64 const & currentDt,
+  virtual real64 setNextDtBasedOnStateChange( real64 const & lastDt,
                                               DomainPartition & domain ) override;
 
   void computeCFLNumbers( DomainPartition & domain, real64 const & dt, real64 & maxPhaseCFL, real64 & maxCompCFL );
 
   /**
    * @brief function to set the next time step size
-   * @param[in] currentDt the current time step size
+   * @param[in] currentTime the current time
+   * @param[in] lastDt the last time step size
    * @param[in] domain the domain object
    * @return the prescribed time step size
    */
-  real64 setNextDt( real64 const & currentDt,
-                    DomainPartition & domain ) override;
+  virtual real64 setNextDt( real64 const & currentTime,
+                            real64 const & lastDt,
+                            DomainPartition & domain ) override;
 
-  virtual real64 setNextDtBasedOnCFL( real64 const & currentDt,
-                                      DomainPartition & domain ) override;
+  real64 setNextDtBasedOnCFL( real64 const & lastDt,
+                              DomainPartition & domain );
 
   virtual void initializePostInitialConditionsPreSubGroups() override;
 

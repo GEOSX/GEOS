@@ -193,11 +193,6 @@ public:
   {
     return m_rateSign * m_targetPhaseRateTable->evaluate( &currentTime );
   }
-  /**
-   * @brief Get the target phase name
-   * @return the target phase name
-   */
-  const string & getTargetPhaseName() const { return m_targetPhaseName; }
 
   /**
    * @brief Get the target mass rate
@@ -208,6 +203,56 @@ public:
     return m_rateSign * m_targetMassRateTable->evaluate( &currentTime );
   }
 
+  /**
+   * @brief Get the target phase name
+   * @return the target phase name
+   */
+  const string & getTargetPhaseName() const { return m_targetPhaseName; }
+
+  /**
+   * @brief Get the target bottom hole pressure table
+   * @return table for the target bottom hole pressure
+   */
+  TableFunction const * getTargetBHPTable() const
+  {
+    return m_targetBHPTable;
+  }
+
+  /**
+   * @brief Get the target total rate table
+   * @return table for the target total rate
+   */
+  TableFunction const * getTargetTotalRateTable() const
+  {
+    return m_targetTotalRateTable;
+  }
+
+  /**
+   * @brief Get the target phase rate table
+   * @return table for the target phase rate
+   */
+  TableFunction const * getTargetPhaseRateTable() const
+  {
+    return m_targetPhaseRateTable;
+  }
+
+  /**
+   * @brief Get the target mass rate table
+   * @return table for the target mass rate
+   */
+  TableFunction const * getTargetMassRateTable() const
+  {
+    return m_targetMassRateTable;
+  }
+
+  /**
+   * @brief Get the status table
+   * @return table for the status
+   */
+  TableFunction const * getStatusTable() const
+  {
+    return m_statusTable;
+  }
 
   /**
    * @brief Const accessor for the composition of the injection stream

@@ -312,7 +312,7 @@ public:
   setNextDtBasedOnStateChange( real64 const & currentDt,
                                DomainPartition & domain ) override
   {
-    real64 nextDt = LvArray::NumericLimits< real64 >::max;
+    real64 nextDt = PhysicsSolverBase::setNextDtBasedOnStateChange( currentDt, domain );
     forEachArgInTuple( m_solvers, [&]( auto & solver, auto )
     {
       real64 const singlePhysicsNextDt =
@@ -329,6 +329,21 @@ public:
     {
       real64 const singlePhysicsNextDt =
         solver->setNextDtBasedOnNewtonIter( currentDt );
+      nextDt = LvArray::math::min( singlePhysicsNextDt, nextDt );
+    } );
+    return nextDt;
+  }
+
+  virtual real64
+  setNextDt( real64 const & currentTime,
+             real64 const & lastDt,
+             DomainPartition & domain ) override
+  {
+    real64 nextDt = PhysicsSolverBase::setNextDt( currentTime, lastDt, domain );
+    forEachArgInTuple( m_solvers, [&]( auto & solver, auto )
+    {
+      real64 const singlePhysicsNextDt =
+        solver->setNextDt( currentTime, lastDt, domain );
       nextDt = LvArray::math::min( singlePhysicsNextDt, nextDt );
     } );
     return nextDt;

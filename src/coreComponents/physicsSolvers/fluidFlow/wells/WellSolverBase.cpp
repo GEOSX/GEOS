@@ -377,4 +377,77 @@ WellControls const & WellSolverBase::getWellControls( WellElementSubRegion const
   return this->getGroup< WellControls >( subRegion.getWellControlsName());
 }
 
+real64 WellSolverBase::setNextDt( real64 const & currentTime, const real64 & lastDt, geos::DomainPartition & domain )
+{
+  GEOS_LOG_RANK_0( "WellSolverBase::setNextDt" );
+
+  real64 nextDt = PhysicsSolverBase::setNextDt( currentTime, lastDt, domain );
+
+  forDiscretizationOnMeshTargets( domain.getMeshBodies(), [&]( string const &,
+                                                               MeshLevel & mesh,
+                                                               arrayView1d< string const > const & regionNames )
+  {
+    mesh.getElemManager().forElementSubRegions< WellElementSubRegion >( regionNames, [&]( localIndex const,
+                                                                                          WellElementSubRegion & subRegion )
+    {
+      WellControls & wellControls = getWellControls( subRegion );
+
+      GEOS_LOG_RANK_0( subRegion.getName() << " " << wellControls.getName());
+
+      if( wellControls.getTargetBHPTable())
+      {
+        real64 const dtLimit = wellControls.getTargetBHPTable()->getCoord( &currentTime, TableFunction::InterpolationType::Upper )[0] - currentTime;
+        if( dtLimit > 0 && dtLimit < nextDt )
+        {
+          nextDt = dtLimit;
+          if( m_nonlinearSolverParameters.getLogLevel() > 0 )
+            GEOS_LOG_RANK_0( GEOS_FMT( "{}: next time step based on target BHP table coordinates = {}", getName(), dtLimit ));
+        }
+      }
+      if( wellControls.getTargetMassRateTable())
+      {
+        real64 const dtLimit = wellControls.getTargetMassRateTable()->getCoord( &currentTime, TableFunction::InterpolationType::Upper )[0] - currentTime;
+        if( dtLimit > 0 && dtLimit < nextDt )
+        {
+          nextDt = dtLimit;
+          if( m_nonlinearSolverParameters.getLogLevel() > 0 )
+            GEOS_LOG_RANK_0( GEOS_FMT( "{}: next time step based on target mass rate table coordinates = {}", getName(), dtLimit ));
+        }
+      }
+      if( wellControls.getTargetPhaseRateTable())
+      {
+        real64 const dtLimit = wellControls.getTargetPhaseRateTable()->getCoord( &currentTime, TableFunction::InterpolationType::Upper )[0] - currentTime;
+        if( dtLimit > 0 && dtLimit < nextDt )
+        {
+          nextDt = dtLimit;
+          if( m_nonlinearSolverParameters.getLogLevel() > 0 )
+            GEOS_LOG_RANK_0( GEOS_FMT( "{}: next time step based on target phase rate table coordinates = {}", getName(), dtLimit ));
+        }
+      }
+      if( wellControls.getTargetTotalRateTable())
+      {
+        real64 const dtLimit = wellControls.getTargetTotalRateTable()->getCoord( &currentTime, TableFunction::InterpolationType::Upper )[0] - currentTime;
+        if( dtLimit > 0 && dtLimit < nextDt )
+        {
+          nextDt = dtLimit;
+          if( m_nonlinearSolverParameters.getLogLevel() > 0 )
+            GEOS_LOG_RANK_0( GEOS_FMT( "{}: next time step based on target total rate table coordinates = {}", getName(), dtLimit ));
+        }
+      }
+      if( wellControls.getStatusTable())
+      {
+        real64 const dtLimit = wellControls.getStatusTable()->getCoord( &currentTime, TableFunction::InterpolationType::Upper )[0] - currentTime;
+        if( dtLimit > 0 && dtLimit < nextDt )
+        {
+          nextDt = dtLimit;
+          if( m_nonlinearSolverParameters.getLogLevel() > 0 )
+            GEOS_LOG_RANK_0( GEOS_FMT( "{}: next time step based on status table coordinates = {}", getName(), dtLimit ));
+        }
+      }
+    } );
+  } );
+
+  return nextDt;
+}
+
 } // namespace geos

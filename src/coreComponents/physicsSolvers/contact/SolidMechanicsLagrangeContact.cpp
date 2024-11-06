@@ -2356,13 +2356,6 @@ bool SolidMechanicsLagrangeContact::isFractureAllInStickCondition( DomainPartiti
   return ( ( numNewSlip + numSlip + numOpen ) == 0 );
 }
 
-real64 SolidMechanicsLagrangeContact::setNextDt( real64 const & currentDt,
-                                                 DomainPartition & domain )
-{
-  GEOS_UNUSED_VAR( domain );
-  return currentDt;
-}
-
 REGISTER_CATALOG_ENTRY( PhysicsSolverBase, SolidMechanicsLagrangeContact, string const &, Group * const )
 
 } /* namespace geos */

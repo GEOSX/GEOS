@@ -101,10 +101,6 @@ public:
   virtual void
   resetStateToBeginningOfStep( DomainPartition & domain ) override;
 
-  virtual real64
-  setNextDt( real64 const & currentDt,
-             DomainPartition & domain ) override;
-
   void updateState( DomainPartition & domain ) override final;
 
   void assembleContact( DomainPartition & domain,
