@@ -57,7 +57,8 @@
 /src/coreComponents/constitutive/relativePermeability @dkachuma @paveltomin 
 /src/coreComponents/constitutive/solid                @rrsettgast @CusiniM @paveltomin @castelletto1 @jhuang2601 
 /src/coreComponents/constitutive/thermalConductivity  @CusiniM @dkachuma @paveltomin @jhuang2601 
-/src/coreComponents/constitutive/unitTests            @rrsettgast @CusiniM @dkachuma @paveltomin 
+/src/coreComponents/constitutive/unitTests            @rrsettgast @CusiniM @dkachuma @paveltomin
+/src/coreComponents/constitutiveDrivers               @rrsettgast @CusiniM @dkachuma @jhuang2601
 /src/coreComponents/dataRepository                    @rrsettgast @wrtobin @corbett5
 /src/coreComponents/denseLinearAlgebra                @rrsettgast @CusiniM @castelletto1 
 /src/coreComponents/discretizationMethods             @rrsettgast @CusiniM @castelletto1 
