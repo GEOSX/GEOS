@@ -50,7 +50,7 @@
       timeFrequency="5e5"
       target="/Outputs/restartOutput"/>
   </Events>
-
+  
   <FieldSpecifications>
     <FieldSpecification
       name="fracPorosity"

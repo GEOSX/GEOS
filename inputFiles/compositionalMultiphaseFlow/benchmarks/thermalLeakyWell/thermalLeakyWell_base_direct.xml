@@ -60,9 +60,6 @@
       name="statistics"
       forceDt="1e6"
       target="/Tasks/compflowStatistics"/>
-    <PeriodicEvent name="timestepStatsEvent"
-        timeFrequency="1e5"
-          target="/Tasks/testLogStats" />
   </Events>
 
   <NumericalMethods>
@@ -176,10 +173,7 @@
       objectPath="ElementRegions/injectionWell"
       component="0"
       scale="-0.0887"
-      setNames="{ source }"
-      />
-
-
+      setNames="{ source }"/>
     <!-- SPHINX_SOURCE_BC_END -->                      
     
     <!-- SPHINX_DIRICHLET_BC -->
@@ -361,20 +355,12 @@
       name="compOutfluxCollection"
       objectPath="ElementRegions/leakyWell/aquitard11"
       fieldName="componentOutflux"/>
-    <SourceFluxStatistics
-        name="testLogStats"
-        flowSolverName="compflow"
-        fluxNames="{*}"
-        logLevel="1"
-        writeCSV="3"
-        />
     <CompositionalMultiphaseStatistics
       name="compflowStatistics"
       flowSolverName="compflow"
       logLevel="1"
       computeCFLNumbers="1"
       computeRegionStatistics="1"/>
-      
   </Tasks>
   
 </Problem>
