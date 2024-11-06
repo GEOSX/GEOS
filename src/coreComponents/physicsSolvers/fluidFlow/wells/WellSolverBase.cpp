@@ -344,7 +344,7 @@ void WellSolverBase::setNextDtFromTable(TableFunction const * table,  real64 con
   if (table)
   {
     // small epsilon to make sure we land on the other side of table interval and pick up the right rate
-    real64 const eps = 1e-10;
+    real64 const eps = 1e-6;
     real64 const dtLimit = (table->getCoord(&currentTime, TableFunction::InterpolationType::Upper)[0] - currentTime) * ( 1.0 + eps );
     if (dtLimit > eps && dtLimit < nextDt)
     {
