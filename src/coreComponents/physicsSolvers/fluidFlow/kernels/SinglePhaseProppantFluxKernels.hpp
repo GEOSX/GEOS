@@ -21,12 +21,8 @@
 #define GEOS_PHYSICSSOLVERS_FLUIDFLOW_SINGLEPHASEPROPPANTFLUXKERNELS_HPP
 
 #include "common/DataTypes.hpp"
-#include "finiteVolume/BoundaryStencil.hpp"
-#include "finiteVolume/FluxApproximationBase.hpp"
-#include "common/GEOS_RAJA_Interface.hpp"
-#include "linearAlgebra/interfaces/InterfaceTypes.hpp"
-#include "physicsSolvers/fluidFlow/SinglePhaseFVMKernels.hpp"
-
+#include "mesh/ElementRegionManager.hpp"
+#include "finiteVolume/SurfaceElementStencil.hpp"
 
 namespace geos
 {

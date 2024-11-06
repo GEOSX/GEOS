@@ -18,14 +18,14 @@
  */
 
 #include "CompositionalMultiphaseHybridFVMKernels.hpp"
-#include "CompositionalMultiphaseUtilities.hpp"
 
 #include "finiteVolume/mimeticInnerProducts/MimeticInnerProductBase.hpp"
 #include "finiteVolume/mimeticInnerProducts/BdVLMInnerProduct.hpp"
 #include "finiteVolume/mimeticInnerProducts/TPFAInnerProduct.hpp"
 
 #include "physicsSolvers/fluidFlow/FlowSolverBaseFields.hpp"
-#include "physicsSolvers/fluidFlow/HybridFVMHelperKernels.hpp"
+#include "physicsSolvers/fluidFlow/CompositionalMultiphaseUtilities.hpp"
+#include "physicsSolvers/fluidFlow/kernels/HybridFVMHelperKernels.hpp"
 
 namespace geos
 {

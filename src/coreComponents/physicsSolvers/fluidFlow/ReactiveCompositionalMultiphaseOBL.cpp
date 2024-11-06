@@ -29,9 +29,9 @@
 #include "finiteVolume/FluxApproximationBase.hpp"
 #include "mesh/DomainPartition.hpp"
 #include "mesh/mpiCommunications/CommunicationTools.hpp"
-#include "physicsSolvers/fluidFlow/ReactiveCompositionalMultiphaseOBLFields.hpp"
 #include "physicsSolvers/fluidFlow/FlowSolverBaseFields.hpp"
-#include "physicsSolvers/fluidFlow/ReactiveCompositionalMultiphaseOBLKernels.hpp"
+#include "physicsSolvers/fluidFlow/ReactiveCompositionalMultiphaseOBLFields.hpp"
+#include "physicsSolvers/fluidFlow/kernels/ReactiveCompositionalMultiphaseOBLKernels.hpp"
 
 
 namespace geos
