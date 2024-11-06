@@ -542,6 +542,6 @@ void SinglePhasePoromechanicsEmbeddedFractures::updateState( DomainPartition & d
   } );
 }
 
-REGISTER_CATALOG_ENTRY( SolverBase, SinglePhasePoromechanicsEmbeddedFractures, std::string const &, Group * const )
+REGISTER_CATALOG_ENTRY( PhysicsSolverBase, SinglePhasePoromechanicsEmbeddedFractures, std::string const &, Group * const )
 
 } /* namespace geos */
