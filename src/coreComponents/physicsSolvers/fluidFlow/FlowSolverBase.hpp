@@ -228,6 +228,41 @@ protected:
   real64 m_sequentialTempChange;
   real64 m_maxSequentialTempChange;
 
+  /**
+   * @brief Class used for displaying boundary warning message
+   */
+  class BCMessage
+  {
+public:
+    static string pressureConflict( string_view regionName, string_view subRegionName,
+                                    string_view setName, string_view fieldName );
+
+    static string temperatureConflict( string_view regionName, string_view subRegionName,
+                                       string_view setName, string_view fieldName );
+
+    static string missingPressure( string_view regionName, string_view subRegionName,
+                                   string_view setName, string_view fieldName );
+
+    static string missingTemperature( string_view regionName, string_view subRegionName,
+                                      string_view setName, string_view fieldName );
+
+    static string conflictingComposition( int comp, string_view componentName,
+                                          string_view regionName, string_view subRegionName,
+                                          string_view setName, string_view fieldName );
+
+    static string invalidComponentIndex( int comp,
+                                         string_view fsName, string_view fieldName );
+
+    static string notAppliedOnRegion( int componentIndex, string_view componentName,
+                                      string_view regionName, string_view subRegionName,
+                                      string_view setName, string_view fieldName );
+private:
+    static string generateMessage( string_view baseMessage,
+                                   string_view fieldName, string_view setName );
+
+    BCMessage();
+  };
+
 private:
   virtual void setConstitutiveNames( ElementSubRegionBase & subRegion ) const override;
 
