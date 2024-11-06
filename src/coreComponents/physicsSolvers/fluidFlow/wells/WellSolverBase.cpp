@@ -379,8 +379,6 @@ WellControls const & WellSolverBase::getWellControls( WellElementSubRegion const
 
 real64 WellSolverBase::setNextDt( real64 const & currentTime, const real64 & lastDt, geos::DomainPartition & domain )
 {
-  GEOS_LOG_RANK_0( "WellSolverBase::setNextDt" );
-
   real64 nextDt = PhysicsSolverBase::setNextDt( currentTime, lastDt, domain );
 
   forDiscretizationOnMeshTargets( domain.getMeshBodies(), [&]( string const &,
@@ -391,8 +389,6 @@ real64 WellSolverBase::setNextDt( real64 const & currentTime, const real64 & las
                                                                                           WellElementSubRegion & subRegion )
     {
       WellControls & wellControls = getWellControls( subRegion );
-
-      GEOS_LOG_RANK_0( subRegion.getName() << " " << wellControls.getName());
 
       if( wellControls.getTargetBHPTable())
       {
