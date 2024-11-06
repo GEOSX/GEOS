@@ -190,7 +190,7 @@ private:
 
   /**
    * @brief Split all header names by detecting the newline \\n character. and
-   * set the same vector size for each split header and merge it into tableColumnsData
+   * set the same vector size for each divided header and merge it into tableColumnsData
    * @param tableColumnsData  The vector containg all tableColumnsData
    * @param allDividedHeaderParts Vector to store the split header names for each tableColumnData
    */
@@ -210,19 +210,18 @@ private:
 
   /**
    * @brief Compute the max table line length, taking into account the length of : title, tableColumnsData  header/values
-   * Increase the size of the tableColumnsData  if necessary then builds the table's separating lines
-   *
+   * Increase the size of the tableColumnsData if necessary, then builds the table's separating lines
    * @param tableColumnsData Vector of tableColumnData containing containing the largest string for each tableColumnData
    * @param sectionSeparatingLine Separator string used between sections of the table
    * @param topSeparator The table top separator
    */
   void computeAndBuildTableSeparator( std::vector< TableLayout::ColumnStructure > & tableColumnsData,
                                       string & sectionSeparatingLine,
-                                      string & topSeparato ) const;
+                                      string & topSeparator ) const;
 
   /**
    * @brief Increase each tableColumnData size if the title is larger than all the tableColumnsData
-   * @param tableColumnsData  Vector containing all table tableColumnsData
+   * @param tableColumnsData Vector containing all table tableColumnsData
    * @param extraCharacters ExtraCharacters to be distributed between each tableColumnsData
    */
   void increaseColumnsSize( std::vector< TableLayout::ColumnStructure > & tableColumnsData,

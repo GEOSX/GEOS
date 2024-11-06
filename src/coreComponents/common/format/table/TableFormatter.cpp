@@ -343,14 +343,12 @@ void TableTextFormatter::findAndSetLongestColumnString( TableLayout::ColumnStruc
 
   { // subcolumn values case
     size_t totalLengthSubColumns = 0;
-    size_t lengthSubColumns = 0;
     if( !tableColumnData.subColumn.empty() )
     {
       for( auto & subColumn : tableColumnData.subColumn )
       {
         findAndSetLongestColumnString( subColumn );
         totalLengthSubColumns += subColumn.maxStringSize;
-        lengthSubColumns += subColumn.maxStringSize;
         if( &subColumn != &tableColumnData.subColumn[0] )
         {
           totalLengthSubColumns += m_tableLayout.getColumnMargin();
@@ -358,7 +356,7 @@ void TableTextFormatter::findAndSetLongestColumnString( TableLayout::ColumnStruc
       }
     }
 
-    if( lengthSubColumns > tableColumnData.maxStringSize )
+    if( totalLengthSubColumns > tableColumnData.maxStringSize )
     {
       tableColumnData.maxStringSize = totalLengthSubColumns;
     }
