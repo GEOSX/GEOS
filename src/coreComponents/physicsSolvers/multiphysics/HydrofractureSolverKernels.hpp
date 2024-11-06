@@ -124,7 +124,8 @@ struct DeformationUpdateKernel
         }
       }
 #endif
-      deltaVolume[kfe] = hydraulicAperture[kfe] * area[kfe] - volume[kfe];
+      //deltaVolume[kfe] = hydraulicAperture[kfe] * area[kfe] - volume[kfe];
+      deltaVolume[kfe] = aperture[kfe] * area[kfe] - volume[kfe];
     } );
 
     return std::make_tuple( maxApertureChange.get(), maxHydraulicApertureChange.get(), minAperture.get(), maxAperture.get(), minHydraulicAperture.get(), maxHydraulicAperture.get() );
@@ -168,7 +169,8 @@ struct FluidMassResidualDerivativeAssemblyKernel
           nodeDOF[kf * 3 * numNodesPerFace + 3 * a + i] = dispDofNumber[faceToNodeMap( elemsToFaces[kf], a )] + i;
 
           real64 const dNormalJump_dDisplacement = kfSign[kf] * Nbar[i] / numNodesPerFace;
-          real64 const dHydraulicAperture_dDisplacement = dHydraulicAperture_dNormalJump * dNormalJump_dDisplacement;
+          //real64 const dHydraulicAperture_dDisplacement = dHydraulicAperture_dNormalJump * dNormalJump_dDisplacement;
+          real64 const dHydraulicAperture_dDisplacement = 1 * dNormalJump_dDisplacement;
           real64 const dVolume_dDisplacement = area * dHydraulicAperture_dDisplacement;
 
           dRdU( kf * 3 * numNodesPerFace + 3 * a + i ) = dens * dVolume_dDisplacement;
