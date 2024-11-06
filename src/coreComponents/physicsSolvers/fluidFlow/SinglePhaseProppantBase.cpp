@@ -67,7 +67,7 @@ SinglePhaseProppantBase::~SinglePhaseProppantBase()
 void SinglePhaseProppantBase::setConstitutiveNames( ElementSubRegionBase & subRegion ) const
 {
   string & fluidMaterialName = subRegion.getReference< string >( viewKeyStruct::fluidNamesString() );
-  fluidMaterialName = SolverBase::getConstitutiveName< SlurryFluidBase >( subRegion );
+  fluidMaterialName = PhysicsSolverBase::getConstitutiveName< SlurryFluidBase >( subRegion );
   GEOS_ERROR_IF( fluidMaterialName.empty(), GEOS_FMT( "{}: Fluid model not found on subregion {}",
                                                       getDataContext(), subRegion.getName() ) );
 }

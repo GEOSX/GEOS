@@ -20,7 +20,7 @@
 #ifndef GEOS_PHYSICSSOLVERS_FLUIDFLOW_COMPOSITIONAL_RESIDUALNORMKERNEL_HPP
 #define GEOS_PHYSICSSOLVERS_FLUIDFLOW_COMPOSITIONAL_RESIDUALNORMKERNEL_HPP
 
-#include "physicsSolvers/SolverBaseKernels.hpp"
+#include "physicsSolvers/PhysicsSolverBaseKernels.hpp"
 
 namespace geos
 {
@@ -33,11 +33,11 @@ namespace isothermalCompositionalMultiphaseBaseKernels
 /**
  * @class ResidualNormKernel
  */
-class ResidualNormKernel : public solverBaseKernels::ResidualNormKernelBase< 2 >
+class ResidualNormKernel : public physicsSolverBaseKernels::ResidualNormKernelBase< 2 >
 {
 public:
 
-  using Base = solverBaseKernels::ResidualNormKernelBase< 2 >;
+  using Base = physicsSolverBaseKernels::ResidualNormKernelBase< 2 >;
   using Base::m_minNormalizer;
   using Base::m_rankOffset;
   using Base::m_localResidual;
@@ -155,7 +155,7 @@ public:
    */
   template< typename POLICY >
   static void
-  createAndLaunch( solverBaseKernels::NormType const normType,
+  createAndLaunch( physicsSolverBaseKernels::NormType const normType,
                    integer const numComps,
                    globalIndex const rankOffset,
                    string const dofKey,
@@ -171,7 +171,7 @@ public:
     arrayView1d< integer const > const ghostRank = subRegion.ghostRank();
 
     ResidualNormKernel kernel( rankOffset, localResidual, dofNumber, ghostRank, numComps, subRegion, fluid, solid, minNormalizer );
-    if( normType == solverBaseKernels::NormType::Linf )
+    if( normType == physicsSolverBaseKernels::NormType::Linf )
     {
       ResidualNormKernel::launchLinf< POLICY >( subRegion.size(), kernel, residualNorm );
     }
