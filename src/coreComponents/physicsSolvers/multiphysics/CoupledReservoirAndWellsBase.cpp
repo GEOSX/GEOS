@@ -27,7 +27,7 @@ namespace coupledReservoirAndWellsInternal
 {
 
 void
-addCouplingNumNonzeros( SolverBase const * const solver,
+addCouplingNumNonzeros( PhysicsSolverBase const * const solver,
                         DomainPartition & domain,
                         DofManager & dofManager,
                         arrayView1d< localIndex > const & rowLengths,
@@ -111,14 +111,14 @@ addCouplingNumNonzeros( SolverBase const * const solver,
   } );
 }
 
-bool validateWellPerforations( SolverBase const * const reservoirSolver,
+bool validateWellPerforations( PhysicsSolverBase const * const reservoirSolver,
                                WellSolverBase const * const wellSolver,
                                DomainPartition const & domain )
 {
   std::pair< string, string > badPerforation;
 
   arrayView1d< string const > const flowTargetRegionNames =
-    reservoirSolver->getReference< array1d< string > >( SolverBase::viewKeyStruct::targetRegionsString() );
+    reservoirSolver->getReference< array1d< string > >( PhysicsSolverBase::viewKeyStruct::targetRegionsString() );
 
   wellSolver->forDiscretizationOnMeshTargets( domain.getMeshBodies(), [&] ( string const &,
                                                                             MeshLevel const & meshLevel,
