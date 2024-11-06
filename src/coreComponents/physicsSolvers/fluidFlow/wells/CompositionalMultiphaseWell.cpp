@@ -2236,5 +2236,5 @@ void CompositionalMultiphaseWell::printRates( real64 const & time_n,
   } );
 }
 
-REGISTER_CATALOG_ENTRY( SolverBase, CompositionalMultiphaseWell, string const &, Group * const )
-}     // namespace geos
+REGISTER_CATALOG_ENTRY( PhysicsSolverBase, CompositionalMultiphaseWell, string const &, Group * const )
+} // namespace geos

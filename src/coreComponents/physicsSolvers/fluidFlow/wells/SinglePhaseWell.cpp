@@ -1101,5 +1101,5 @@ void SinglePhaseWell::printRates( real64 const & time_n,
   } );
 }
 
-REGISTER_CATALOG_ENTRY( SolverBase, SinglePhaseWell, string const &, Group * const )
+REGISTER_CATALOG_ENTRY( PhysicsSolverBase, SinglePhaseWell, string const &, Group * const )
 }// namespace geos
