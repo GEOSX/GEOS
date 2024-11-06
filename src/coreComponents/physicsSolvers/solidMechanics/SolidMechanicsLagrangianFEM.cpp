@@ -50,7 +50,7 @@ using namespace fields;
 
 SolidMechanicsLagrangianFEM::SolidMechanicsLagrangianFEM( const string & name,
                                                           Group * const parent ):
-  SolverBase( name, parent ),
+  PhysicsSolverBase( name, parent ),
   m_newmarkGamma( 0.5 ),
   m_newmarkBeta( 0.25 ),
   m_massDamping( 0.0 ),
@@ -128,7 +128,7 @@ SolidMechanicsLagrangianFEM::SolidMechanicsLagrangianFEM( const string & name,
 
 void SolidMechanicsLagrangianFEM::postInputInitialization()
 {
-  SolverBase::postInputInitialization();
+  PhysicsSolverBase::postInputInitialization();
 
   // configure AMG
   LinearSolverParameters & linParams = m_linearSolverParameters.get();
@@ -136,7 +136,7 @@ void SolidMechanicsLagrangianFEM::postInputInitialization()
   linParams.dofsPerNode = 3;
   linParams.amg.separateComponents = true;
 
-  m_surfaceGenerator = this->getParent().getGroupPointer< SolverBase >( m_surfaceGeneratorName );
+  m_surfaceGenerator = this->getParent().getGroupPointer< PhysicsSolverBase >( m_surfaceGeneratorName );
 }
 
 SolidMechanicsLagrangianFEM::~SolidMechanicsLagrangianFEM()
@@ -229,7 +229,7 @@ void SolidMechanicsLagrangianFEM::registerDataOnMesh( Group & meshBodies )
 
 void SolidMechanicsLagrangianFEM::setConstitutiveNamesCallSuper( ElementSubRegionBase & subRegion ) const
 {
-  SolverBase::setConstitutiveNamesCallSuper( subRegion );
+  PhysicsSolverBase::setConstitutiveNamesCallSuper( subRegion );
 
   subRegion.registerWrapper< string >( viewKeyStruct::solidMaterialNamesString() ).
     setPlotLevel( PlotLevel::NOPLOT ).
@@ -237,7 +237,7 @@ void SolidMechanicsLagrangianFEM::setConstitutiveNamesCallSuper( ElementSubRegio
     setSizedFromParent( 0 );
 
   string & solidMaterialName = subRegion.getReference< string >( viewKeyStruct::solidMaterialNamesString() );
-  solidMaterialName = SolverBase::getConstitutiveName< SolidBase >( subRegion );
+  solidMaterialName = PhysicsSolverBase::getConstitutiveName< SolidBase >( subRegion );
   GEOS_ERROR_IF( solidMaterialName.empty(), GEOS_FMT( "{}: SolidBase model not found on subregion {}",
                                                       getDataContext(), subRegion.getDataContext() ) );
 
@@ -245,7 +245,7 @@ void SolidMechanicsLagrangianFEM::setConstitutiveNamesCallSuper( ElementSubRegio
 
 void SolidMechanicsLagrangianFEM::initializePreSubGroups()
 {
-  SolverBase::initializePreSubGroups();
+  PhysicsSolverBase::initializePreSubGroups();
 
   DomainPartition & domain = this->getGroupByPath< DomainPartition >( "/Problem/domain" );
 
@@ -260,7 +260,7 @@ void SolidMechanicsLagrangianFEM::initializePreSubGroups()
                                                                             CellElementSubRegion & subRegion )
     {
       string & solidMaterialName = subRegion.getReference< string >( viewKeyStruct::solidMaterialNamesString() );
-      solidMaterialName = SolverBase::getConstitutiveName< SolidBase >( subRegion );
+      solidMaterialName = PhysicsSolverBase::getConstitutiveName< SolidBase >( subRegion );
     } );
   } );
 
@@ -991,7 +991,7 @@ void SolidMechanicsLagrangianFEM::setupSystem( DomainPartition & domain,
                                                bool const setSparsity )
 {
   GEOS_MARK_FUNCTION;
-  SolverBase::setupSystem( domain, dofManager, localMatrix, rhs, solution, setSparsity );
+  PhysicsSolverBase::setupSystem( domain, dofManager, localMatrix, rhs, solution, setSparsity );
 
   SparsityPattern< globalIndex > sparsityPattern( dofManager.numLocalDofs(),
                                                   dofManager.numGlobalDofs(),
@@ -1481,5 +1481,5 @@ void SolidMechanicsLagrangianFEM::saveSequentialIterationState( DomainPartition 
   // nothing to save
 }
 
-REGISTER_CATALOG_ENTRY( SolverBase, SolidMechanicsLagrangianFEM, string const &, dataRepository::Group * const )
+REGISTER_CATALOG_ENTRY( PhysicsSolverBase, SolidMechanicsLagrangianFEM, string const &, dataRepository::Group * const )
 }
