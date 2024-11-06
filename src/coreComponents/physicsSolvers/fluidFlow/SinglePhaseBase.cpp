@@ -763,7 +763,7 @@ void SinglePhaseBase::implicitStepComplete( real64 const & time,
 
       CoupledSolidBase const & porousSolid =
         getConstitutiveModel< CoupledSolidBase >( subRegion, subRegion.template getReference< string >( viewKeyStruct::solidNamesString() ) );
-      if( m_keepFlowVariablesConstantDuringInitStep )
+      if( m_keepVariablesConstantDuringInitStep )
       {
         porousSolid.ignoreConvergedState(); // newPorosity <- porosity_n
       }
@@ -877,13 +877,13 @@ void SinglePhaseBase::applyBoundaryConditions( real64 time_n,
 {
   GEOS_MARK_FUNCTION;
 
-  if( m_keepFlowVariablesConstantDuringInitStep )
+  if( m_keepVariablesConstantDuringInitStep )
   {
     // this function is going to force the current flow state to be constant during the time step
     // this is used when the poromechanics solver is performing the stress initialization
     // TODO: in the future, a dedicated poromechanics kernel should eliminate the flow vars to construct a reduced system
     //       which will remove the need for this brittle passing aroung of flag
-    keepFlowVariablesConstantDuringInitStep( time_n, dt, dofManager, domain, localMatrix.toViewConstSizes(), localRhs.toView() );
+    keepVariablesConstantDuringInitStep( time_n, dt, dofManager, domain, localMatrix.toViewConstSizes(), localRhs.toView() );
   }
   else
   {
@@ -1184,12 +1184,12 @@ void SinglePhaseBase::applySourceFluxBC( real64 const time_n,
   } );
 }
 
-void SinglePhaseBase::keepFlowVariablesConstantDuringInitStep( real64 const time,
-                                                               real64 const dt,
-                                                               DofManager const & dofManager,
-                                                               DomainPartition & domain,
-                                                               CRSMatrixView< real64, globalIndex const > const & localMatrix,
-                                                               arrayView1d< real64 > const & localRhs ) const
+void SinglePhaseBase::keepVariablesConstantDuringInitStep( real64 const time,
+                                                           real64 const dt,
+                                                           DofManager const & dofManager,
+                                                           DomainPartition & domain,
+                                                           CRSMatrixView< real64, globalIndex const > const & localMatrix,
+                                                           arrayView1d< real64 > const & localRhs ) const
 {
   GEOS_MARK_FUNCTION;
 

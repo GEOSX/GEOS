@@ -1451,13 +1451,13 @@ void CompositionalMultiphaseBase::applyBoundaryConditions( real64 const time_n,
 {
   GEOS_MARK_FUNCTION;
 
-  if( m_keepFlowVariablesConstantDuringInitStep )
+  if( m_keepVariablesConstantDuringInitStep )
   {
     // this function is going to force the current flow state to be constant during the time step
     // this is used when the poromechanics solver is performing the stress initialization
     // TODO: in the future, a dedicated poromechanics kernel should eliminate the flow vars to construct a reduced system
     //       which will remove the need for this brittle passing aroung of flag
-    keepFlowVariablesConstantDuringInitStep( time_n, dt, dofManager, domain, localMatrix.toViewConstSizes(), localRhs.toView() );
+    keepVariablesConstantDuringInitStep( time_n, dt, dofManager, domain, localMatrix.toViewConstSizes(), localRhs.toView() );
   }
   else
   {
@@ -1976,12 +1976,12 @@ void CompositionalMultiphaseBase::applyDirichletBC( real64 const time_n,
   } );
 }
 
-void CompositionalMultiphaseBase::keepFlowVariablesConstantDuringInitStep( real64 const time,
-                                                                           real64 const dt,
-                                                                           DofManager const & dofManager,
-                                                                           DomainPartition & domain,
-                                                                           CRSMatrixView< real64, globalIndex const > const & localMatrix,
-                                                                           arrayView1d< real64 > const & localRhs ) const
+void CompositionalMultiphaseBase::keepVariablesConstantDuringInitStep( real64 const time,
+                                                                       real64 const dt,
+                                                                       DofManager const & dofManager,
+                                                                       DomainPartition & domain,
+                                                                       CRSMatrixView< real64, globalIndex const > const & localMatrix,
+                                                                       arrayView1d< real64 > const & localRhs ) const
 {
   GEOS_MARK_FUNCTION;
 
@@ -2464,7 +2464,7 @@ void CompositionalMultiphaseBase::implicitStepComplete( real64 const & time,
       // Step 3: save the converged solid state
       string const & solidName = subRegion.getReference< string >( viewKeyStruct::solidNamesString() );
       CoupledSolidBase const & porousMaterial = getConstitutiveModel< CoupledSolidBase >( subRegion, solidName );
-      if( m_keepFlowVariablesConstantDuringInitStep )
+      if( m_keepVariablesConstantDuringInitStep )
       {
         porousMaterial.ignoreConvergedState(); // newPorosity <- porosity_n
       }

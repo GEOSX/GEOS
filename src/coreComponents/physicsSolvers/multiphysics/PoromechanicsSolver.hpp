@@ -239,7 +239,7 @@ public:
                                   real64 const & dt,
                                   DomainPartition & domain ) override
   {
-    flowSolver()->setKeepFlowVariablesConstantDuringInitStep( m_performStressInitialization );
+    flowSolver()->setKeepVariablesConstantDuringInitStep( m_performStressInitialization );
 
     if( this->m_stabilizationType == stabilization::StabilizationType::Global || this->m_stabilizationType == stabilization::StabilizationType::Local )
     {

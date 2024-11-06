@@ -91,7 +91,7 @@ FlowSolverBase::FlowSolverBase( string const & name,
   PhysicsSolverBase( name, parent ),
   m_numDofPerCell( 0 ),
   m_isThermal( 0 ),
-  m_keepFlowVariablesConstantDuringInitStep( 0 ),
+  m_keepVariablesConstantDuringInitStep( 0 ),
   m_isFixedStressPoromechanicsUpdate( false ),
   m_isJumpStabilized( false ),
   m_isLaggingFractureStencilWeightsUpdate( 0 )

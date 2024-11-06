@@ -356,15 +356,15 @@ public:
    * @param[in] domain the domain
    * @param[in] localMatrix local system matrix
    * @param[in] localRhs local system right-hand side vector
-   * @detail This function is meant to be called when the flag m_keepFlowVariablesConstantDuringInitStep is on
+   * @detail This function is meant to be called when the flag m_keepVariablesConstantDuringInitStep is on
    *         The main use case is the initialization step in coupled problems during which we solve an elastic problem for a fixed pressure
    */
-  void keepFlowVariablesConstantDuringInitStep( real64 const time,
-                                                real64 const dt,
-                                                DofManager const & dofManager,
-                                                DomainPartition & domain,
-                                                CRSMatrixView< real64, globalIndex const > const & localMatrix,
-                                                arrayView1d< real64 > const & localRhs ) const;
+  void keepVariablesConstantDuringInitStep( real64 const time,
+                                            real64 const dt,
+                                            DofManager const & dofManager,
+                                            DomainPartition & domain,
+                                            CRSMatrixView< real64, globalIndex const > const & localMatrix,
+                                            arrayView1d< real64 > const & localRhs ) const;
 
 protected:
 
