@@ -47,12 +47,12 @@
 /src/coreComponents/common                            @rrsettgast @MelReyCG @corbett5 @wrtobin
 /src/coreComponents/constitutive                      @rrsettgast @CusiniM @dkachuma @paveltomin @castelletto1
 /src/coreComponents/constitutive/capillaryPressure    @CusiniM @dkachuma @paveltomin
-/src/coreComponents/constitutive/contact              @rrsettgast @CusiniM @matteofrigo5 @Guotong-Ren
+/src/coreComponents/constitutive/contact              @rrsettgast @CusiniM @matteofrigo5 @Guotong-Ren @jhuang2601 
 /src/coreComponents/constitutive/diffusion            @CusiniM @dkachuma @paveltomin 
 /src/coreComponents/constitutive/dispersion           @CusiniM @dkachuma @paveltomin 
 /src/coreComponents/constitutive/docs                  
 /src/coreComponents/constitutive/fluid                @CusiniM @dkachuma @paveltomin 
-/src/coreComponents/constitutive/permeability         @CusiniM @dkachuma @paveltomin 
+/src/coreComponents/constitutive/permeability         @CusiniM @dkachuma @paveltomin @jhuang2601 
 /src/coreComponents/constitutive/pvtPackage           @CusiniM @dkachuma @paveltomin
 /src/coreComponents/constitutive/relativePermeability @dkachuma @paveltomin 
 /src/coreComponents/constitutive/solid                @rrsettgast @CusiniM @paveltomin @castelletto1
