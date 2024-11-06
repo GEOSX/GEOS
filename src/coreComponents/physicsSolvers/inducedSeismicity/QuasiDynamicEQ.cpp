@@ -149,22 +149,22 @@ real64 QuasiDynamicEQ::solverStep( real64 const & time_n,
   /// 2. Solve for slip rate and state variable and, compute slip
   GEOS_LOG_LEVEL_RANK_0( 1, "Rate and State solver" );
 
-  integer const maxNewtonIter = m_nonlinearSolverParameters.m_maxIterNewton;
-  forDiscretizationOnMeshTargets( domain.getMeshBodies(), [&]( string const &,
-                                                               MeshLevel & mesh,
-                                                               arrayView1d< string const > const & regionNames )
+  // integer const maxNewtonIter = m_nonlinearSolverParameters.m_maxIterNewton;
+  // forDiscretizationOnMeshTargets( domain.getMeshBodies(), [&]( string const &,
+  //                                                              MeshLevel & mesh,
+  //                                                              arrayView1d< string const > const & regionNames )
 
-  {
-    mesh.getElemManager().forElementSubRegions< SurfaceElementSubRegion >( regionNames,
-                                                                           [&]( localIndex const,
-                                                                                SurfaceElementSubRegion & subRegion )
-    {
-      // solve rate and state equations.
-      rateAndStateKernels::createAndLaunch< parallelDevicePolicy<> >( subRegion, viewKeyStruct::frictionLawNameString(), m_shearImpedance, maxNewtonIter, time_n, dtStress );
-      // save old state
-      saveOldStateAndUpdateSlip( subRegion, dtStress );
-    } );
-  } );
+  // {
+  //   mesh.getElemManager().forElementSubRegions< SurfaceElementSubRegion >( regionNames,
+  //                                                                          [&]( localIndex const,
+  //                                                                               SurfaceElementSubRegion & subRegion )
+  //   {
+  //     // solve rate and state equations.
+  //     rateAndStateKernels::createAndLaunch< parallelDevicePolicy<> >( subRegion, viewKeyStruct::frictionLawNameString(), m_shearImpedance, maxNewtonIter, time_n, dtStress );
+  //     // save old state
+  //     saveOldStateAndUpdateSlip( subRegion, dtStress );
+  //   } );
+  // } );
 
   // return time step size achieved by stress solver
   return dtStress;

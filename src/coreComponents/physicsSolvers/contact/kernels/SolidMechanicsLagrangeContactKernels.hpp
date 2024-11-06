@@ -102,7 +102,9 @@ public:
           inputDt,
           faceElementList ),
     m_traction( elementSubRegion.getField< fields::contact::traction >().toViewConst() ),
-    m_tDofNumber( elementSubRegion.getReference< globalIndex_array >( tractionDofKey ).toViewConst() )
+    m_tDofNumber( elementSubRegion.getReference< globalIndex_array >( tractionDofKey ).toViewConst() ),
+    m_incrDisp( nodeManager.getField< fields::solidMechanics::incrementalDisplacement >() ),
+    m_incrBubbleDisp( faceManager.getField< fields::solidMechanics::incrementalBubbleDisplacement >() )
   {}
 
   /**
@@ -124,8 +126,10 @@ public:
                                        localRb{},
                                        localRt{},
                                        localAtt{ {} },
-      localAut{ {} },
-      localAbt{ {} }
+                                       localAut{ {} },
+                                       localAbt{ {} },
+                                       duLocal{},
+                                       dbLocal{}
     {}
 
     /// C-array storage for the element local row degrees of freedom.
@@ -163,6 +167,12 @@ public:
 
     /// C-array storage for the element local Abt matrix.
     real64 localAbt[numBdofs][numTdofs];
+
+    /// Stack storage for the element local incremental displacement vector
+    real64 duLocal[numUdofs];
+
+    /// Stack storage for the element local incremental bubble displacement vector
+    real64 dbLocal[numBdofs];
   };
 
   //***************************************************************************
@@ -207,6 +217,9 @@ public:
         stack.dispColIndices[a*3+i] = m_dofNumber[kn0]+i;
         stack.dispColIndices[shift + a*3+i] = m_dofNumber[kn1]+i;
         stack.X[ a ][ i ] = m_X[ m_faceToNodes( kf0, permutation[ a ] ) ][ i ];
+
+        stack.duLocal[a*3+i] = m_incrDisp[kn0][i];
+        stack.duLocal[shift + a*3+i] = m_incrDisp[kn1][i];
       }
     }
 
@@ -220,7 +233,7 @@ public:
 
     for( int i=0; i<numTdofs; ++i )
     {
-      stack.dispJumpLocal[i] = m_dispJump( k, i );
+      stack.dispJumpLocal[i]    = m_dispJump( k, i );
       stack.oldDispJumpLocal[i] = m_oldDispJump( k, i );
     }
 
@@ -231,6 +244,9 @@ public:
       stack.bEqnRowIndices[3+i] = m_bDofNumber[kf1] + i - m_dofRankOffset;
       stack.bColIndices[i]      = m_bDofNumber[kf0] + i;
       stack.bColIndices[3+i]    = m_bDofNumber[kf1] + i;
+
+      stack.dbLocal[ i ] = m_incrBubbleDisp[ kf0 ][i];
+      stack.dbLocal[ 3 + i ] = m_incrBubbleDisp[ kf1 ][i];
     }
 
     for( int i=0; i<3; ++i )
@@ -250,7 +266,7 @@ public:
     {
       // This will vary depending on the state.
       stack.localRt[0] += detJ * m_dispJump[k][0];
-      stack.localRt[1] += detJ * ( m_dispJump[k][1] - m_oldDispJump[k][1] );
+      stack.localRt[1] += detJ * ( m_dispJump[k][1] - m_oldDispJump[k][1]  );
       stack.localRt[2] += detJ * ( m_dispJump[k][2] - m_oldDispJump[k][2] );
     } );
   }
@@ -290,7 +306,13 @@ public:
     LvArray::tensorOps::scaledAdd< numUdofs >( stack.localRu, tractionR, 1.0 );
     // Force Balance for the bubble dofs
     LvArray::tensorOps::scaledAdd< numBdofs >( stack.localRb, tractionRb, 1.0 );
+    
+    // Constraint equations
+    // real64 Rt[numTdofs]{};
+    LvArray::tensorOps::Ri_add_AijBj< numTdofs, numUdofs >( stack.localRt, stack.localAtu, stack.duLocal);
+    LvArray::tensorOps::Ri_add_AijBj< numTdofs, numBdofs >( stack.localRt, stack.localAtb, stack.dbLocal);
 
+    // LvArray::tensorOps::scaledAdd< numTdofs >( stack.localRt, Rt, 1.0 );
     fillGlobalMatrix( stack );
 
     return 0.0;
@@ -301,6 +323,10 @@ protected:
   arrayView2d< real64 const > const m_traction;
 
   arrayView1d< globalIndex const > const m_tDofNumber;
+
+  arrayView2d< real64 const > const m_incrDisp;
+
+  arrayView2d< real64 const > const m_incrBubbleDisp;  
 
   /**
    * @brief Create the list of finite elements of the same type

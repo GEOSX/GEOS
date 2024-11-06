@@ -282,7 +282,10 @@ struct ComputeRotationMatricesKernel
   launch( localIndex const size,
           arrayView2d< real64 const > const & faceNormal,
           ArrayOfArraysView< localIndex const > const & elemsToFaces,
-          arrayView3d< real64 > const & rotationMatrix )
+          arrayView3d< real64 > const & rotationMatrix,
+          arrayView2d< real64 > const & unitNormal,
+          arrayView2d< real64 > const & unitTangent1,
+          arrayView2d< real64 > const & unitTangent2 )
   {
 
     forAll< POLICY >( size, [=] GEOS_HOST_DEVICE ( localIndex const k )
@@ -299,6 +302,17 @@ struct ComputeRotationMatricesKernel
       LvArray::tensorOps::normalize< 3 >( Nbar );
       computationalGeometry::RotationMatrix_3D( Nbar, rotationMatrix[k] );
 
+      real64 const columnVector1[3] = { rotationMatrix[k][ 0 ][ 1 ],
+                                        rotationMatrix[k][ 1 ][ 1 ],
+                                        rotationMatrix[k][ 2 ][ 1 ] };
+
+      real64 const columnVector2[3] = { rotationMatrix[k][ 0 ][ 2 ],
+                                        rotationMatrix[k][ 1 ][ 2 ],
+                                        rotationMatrix[k][ 2 ][ 2 ] };
+
+      LvArray::tensorOps::copy< 3 >( unitNormal[k], Nbar );
+      LvArray::tensorOps::copy< 3 >( unitTangent1[k], columnVector1 );
+      LvArray::tensorOps::copy< 3 >( unitTangent2[k], columnVector2 );
     } );
   }
 

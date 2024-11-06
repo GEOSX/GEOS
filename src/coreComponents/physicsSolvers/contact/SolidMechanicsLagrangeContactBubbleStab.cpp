@@ -234,11 +234,18 @@ void SolidMechanicsLagrangeContactBubbleStab::implicitStepSetup( real64 const & 
     arrayView3d< real64 > const rotationMatrix =
       subRegion.getField< fields::contact::rotationMatrix >().toView();
 
+    arrayView2d< real64 > const unitNormal   = subRegion.getNormalVector();
+    arrayView2d< real64 > const unitTangent1 = subRegion.getTangentVector1();
+    arrayView2d< real64 > const unitTangent2 = subRegion.getTangentVector2();  
+
     // Compute rotation matrices
     solidMechanicsConformingContactKernels::ComputeRotationMatricesKernel::launch< parallelDevicePolicy<> >( subRegion.size(),
                                                                                                              faceNormal,
                                                                                                              elemsToFaces,
-                                                                                                             rotationMatrix );
+                                                                                                             rotationMatrix,
+                                                                                                             unitNormal,
+                                                                                                             unitTangent1,
+                                                                                                             unitTangent2 );
 
     forAll< parallelDevicePolicy<> >( subRegion.size(),
                                       [ = ]
@@ -363,7 +370,7 @@ void SolidMechanicsLagrangeContactBubbleStab::assembleContact( real64 const dt,
       real64 maxTraction = finiteElement::
                              interfaceBasedKernelApplication
                            < parallelDevicePolicy< >,
-                             constitutive::CoulombFriction >( mesh,
+                             constitutive::FrictionBase >( mesh,
                                                               fractureRegionName,
                                                               faceElementList,
                                                               subRegionFE,
@@ -497,54 +504,54 @@ void SolidMechanicsLagrangeContactBubbleStab::applySystemSolution( DofManager co
                                scalingFactor );
 
 
-  // Loop for updating the displacement jump
-  forDiscretizationOnMeshTargets( domain.getMeshBodies(), [&] ( string const & meshName,
-                                                                MeshLevel & mesh,
-                                                                arrayView1d< string const > const & )
+  // // Loop for updating the displacement jump
+  // forDiscretizationOnMeshTargets( domain.getMeshBodies(), [&] ( string const & meshName,
+  //                                                               MeshLevel & mesh,
+  //                                                               arrayView1d< string const > const & )
 
-  {
+  // {
 
-    NodeManager const & nodeManager = mesh.getNodeManager();
-    FaceManager const & faceManager = mesh.getFaceManager();
+  //   NodeManager const & nodeManager = mesh.getNodeManager();
+  //   FaceManager const & faceManager = mesh.getFaceManager();
 
-    string const & dispDofKey = dofManager.getKey( solidMechanics::totalDisplacement::key() );
-    string const & bubbleDofKey = dofManager.getKey( solidMechanics::totalBubbleDisplacement::key() );
+  //   string const & dispDofKey = dofManager.getKey( solidMechanics::totalDisplacement::key() );
+  //   string const & bubbleDofKey = dofManager.getKey( solidMechanics::totalBubbleDisplacement::key() );
 
-    arrayView1d< globalIndex const > const dispDofNumber = nodeManager.getReference< globalIndex_array >( dispDofKey );
-    arrayView1d< globalIndex const > const bubbleDofNumber = faceManager.getReference< globalIndex_array >( bubbleDofKey );
+  //   arrayView1d< globalIndex const > const dispDofNumber = nodeManager.getReference< globalIndex_array >( dispDofKey );
+  //   arrayView1d< globalIndex const > const bubbleDofNumber = faceManager.getReference< globalIndex_array >( bubbleDofKey );
 
-    string const & fractureRegionName = this->getUniqueFractureRegionName();
+  //   string const & fractureRegionName = this->getUniqueFractureRegionName();
 
-    CRSMatrix< real64, globalIndex > const voidMatrix;
-    array1d< real64 > const voidRhs;
+  //   CRSMatrix< real64, globalIndex > const voidMatrix;
+  //   array1d< real64 > const voidRhs;
 
-    forFiniteElementOnFractureSubRegions( meshName, [&] ( string const &,
-                                                          finiteElement::FiniteElementBase const & subRegionFE,
-                                                          arrayView1d< localIndex const > const & faceElementList )
-    {
+  //   forFiniteElementOnFractureSubRegions( meshName, [&] ( string const &,
+  //                                                         finiteElement::FiniteElementBase const & subRegionFE,
+  //                                                         arrayView1d< localIndex const > const & faceElementList )
+  //   {
 
-      solidMechanicsConformingContactKernels::DispJumpUpdateFactory kernelFactory( dispDofNumber,
-                                                                                   bubbleDofNumber,
-                                                                                   dofManager.rankOffset(),
-                                                                                   voidMatrix.toViewConstSizes(),
-                                                                                   voidRhs.toView(),
-                                                                                   dt,
-                                                                                   faceElementList );
+  //     solidMechanicsConformingContactKernels::DispJumpUpdateFactory kernelFactory( dispDofNumber,
+  //                                                                                  bubbleDofNumber,
+  //                                                                                  dofManager.rankOffset(),
+  //                                                                                  voidMatrix.toViewConstSizes(),
+  //                                                                                  voidRhs.toView(),
+  //                                                                                  dt,
+  //                                                                                  faceElementList );
 
-      real64 maxTraction = finiteElement::
-                             interfaceBasedKernelApplication
-                           < parallelDevicePolicy< >,
-                             constitutive::NullModel >( mesh,
-                                                        fractureRegionName,
-                                                        faceElementList,
-                                                        subRegionFE,
-                                                        "",
-                                                        kernelFactory );
+  //     real64 maxTraction = finiteElement::
+  //                            interfaceBasedKernelApplication
+  //                          < parallelDevicePolicy< >,
+  //                            constitutive::NullModel >( mesh,
+  //                                                       fractureRegionName,
+  //                                                       faceElementList,
+  //                                                       subRegionFE,
+  //                                                       "",
+  //                                                       kernelFactory );
 
-      GEOS_UNUSED_VAR( maxTraction );
+  //     GEOS_UNUSED_VAR( maxTraction );
 
-    } );
-  } );
+  //   } );
+  // } );
 
   forDiscretizationOnMeshTargets( domain.getMeshBodies(), [&] ( string const &,
                                                                 MeshLevel & mesh,

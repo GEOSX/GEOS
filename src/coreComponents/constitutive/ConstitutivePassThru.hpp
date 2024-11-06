@@ -50,6 +50,7 @@
 #include "permeability/SlipDependentPermeability.hpp"
 #include "permeability/WillisRichardsPermeability.hpp"
 #include "contact/CoulombFriction.hpp"
+#include "contact/RateAndStateFriction.hpp"
 
 
 namespace geos
@@ -88,6 +89,20 @@ struct ConstitutivePassThru< ElasticIsotropic >
  * Specialization for models that derive from CoulombFriction.
  */
 template<>
+struct ConstitutivePassThru< FrictionBase >
+{
+  template< typename LAMBDA >
+  static
+  void execute( ConstitutiveBase & constitutiveRelation, LAMBDA && lambda )
+  {
+    ConstitutivePassThruHandler< CoulombFriction, 
+                                 RateAndStateFriction >::execute( constitutiveRelation,
+                                                                  std::forward< LAMBDA >( lambda ) );
+  }
+};
+
+
+template<>
 struct ConstitutivePassThru< CoulombFriction >
 {
   template< typename LAMBDA >
@@ -95,7 +110,7 @@ struct ConstitutivePassThru< CoulombFriction >
   void execute( ConstitutiveBase & constitutiveRelation, LAMBDA && lambda )
   {
     ConstitutivePassThruHandler< CoulombFriction >::execute( constitutiveRelation,
-                                                             std::forward< LAMBDA >( lambda ) );
+                                                                  std::forward< LAMBDA >( lambda ) );
   }
 };
 

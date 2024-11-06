@@ -242,12 +242,19 @@ void SolidMechanicsAugmentedLagrangianContact::implicitStepSetup( real64 const &
     arrayView3d< real64 > const
     rotationMatrix = subRegion.getField< fields::contact::rotationMatrix >().toView();
 
+    arrayView2d< real64 > const unitNormal   = subRegion.getNormalVector();
+    arrayView2d< real64 > const unitTangent1 = subRegion.getTangentVector1();
+    arrayView2d< real64 > const unitTangent2 = subRegion.getTangentVector2();
+
     // Compute rotation matrices
     solidMechanicsConformingContactKernels::ComputeRotationMatricesKernel::
       launch< parallelDevicePolicy<> >( subRegion.size(),
                                         faceNormal,
                                         elemsToFaces,
-                                        rotationMatrix );
+                                        rotationMatrix,
+                                        unitNormal,
+                                        unitTangent1,
+                                        unitTangent2 );
 
     // Set the tollerances
     computeTolerances( domain );

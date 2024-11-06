@@ -23,6 +23,7 @@
 #include "constitutive/ConstitutivePassThruHandler.hpp"
 #include "constitutive/contact/CoulombFriction.hpp"
 #include "constitutive/contact/FrictionlessContact.hpp"
+#include "constitutive/contact/RateAndStateFriction.hpp"
 
 namespace geos
 {
@@ -35,7 +36,8 @@ void constitutiveUpdatePassThru( FrictionBase const & contact,
                                  LAMBDA && lambda )
 {
   ConstitutivePassThruHandler< FrictionlessContact,
-                               CoulombFriction >::execute( contact, std::forward< LAMBDA >( lambda ) );
+                               CoulombFriction, 
+                               RateAndStateFriction >::execute( contact, std::forward< LAMBDA >( lambda ) );
 }
 
 template< typename LAMBDA >
@@ -43,7 +45,8 @@ void constitutiveUpdatePassThru( FrictionBase & contact,
                                  LAMBDA && lambda )
 {
   ConstitutivePassThruHandler< FrictionlessContact,
-                               CoulombFriction >::execute( contact, std::forward< LAMBDA >( lambda ) );
+                               CoulombFriction,
+                               RateAndStateFriction >::execute( contact, std::forward< LAMBDA >( lambda ) );
 }
 
 } /* namespace constitutive */
