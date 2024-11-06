@@ -31,8 +31,8 @@
 #include "mesh/ElementRegionManager.hpp"
 #include "mesh/ObjectManagerBase.hpp"
 #include "physicsSolvers/fluidFlow/CompositionalMultiphaseBaseFields.hpp"
-#include "physicsSolvers/fluidFlow/IsothermalCompositionalMultiphaseBaseKernels.hpp"
 #include "physicsSolvers/fluidFlow/StencilAccessors.hpp"
+#include "physicsSolvers/fluidFlow/kernels/IsothermalCompositionalMultiphaseBaseKernels.hpp"
 
 
 namespace geos
@@ -840,11 +840,11 @@ public:
 /**
  * @class ResidualNormKernel
  */
-class ResidualNormKernel : public solverBaseKernels::ResidualNormKernelBase< 1 >
+class ResidualNormKernel : public physicsSolverBaseKernels::ResidualNormKernelBase< 1 >
 {
 public:
 
-  using Base = solverBaseKernels::ResidualNormKernelBase< 1 >;
+  using Base = physicsSolverBaseKernels::ResidualNormKernelBase< 1 >;
   using Base::m_minNormalizer;
   using Base::m_rankOffset;
   using Base::m_localResidual;
@@ -1001,7 +1001,7 @@ public:
    */
   template< typename POLICY >
   static void
-  createAndLaunch( solverBaseKernels::NormType const normType,
+  createAndLaunch( physicsSolverBaseKernels::NormType const normType,
                    globalIndex const rankOffset,
                    string const & dofKey,
                    arrayView1d< real64 const > const & localResidual,
@@ -1024,7 +1024,7 @@ public:
 
     ResidualNormKernel kernel( rankOffset, localResidual, dofNumber, ghostRank,
                                regionFilter, faceManager, flowAccessors, fluidAccessors, poroAccessors, dt, minNormalizer );
-    if( normType == solverBaseKernels::NormType::Linf )
+    if( normType == physicsSolverBaseKernels::NormType::Linf )
     {
       ResidualNormKernel::launchLinf< POLICY >( faceManager.size(), kernel, residualNorm );
     }

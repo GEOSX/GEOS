@@ -443,9 +443,9 @@
 		<!--normType => Norm used by the flow solver to check nonlinear convergence. Valid options:
 * Linfinity
 * L2-->
-		<xsd:attribute name="normType" type="geos_solverBaseKernels_NormType" />
+		<xsd:attribute name="normType" type="geos_physicsSolverBaseKernels_NormType" />
 	</xsd:complexType>
-	<xsd:simpleType name="geos_solverBaseKernels_NormType">
+	<xsd:simpleType name="geos_physicsSolverBaseKernels_NormType">
 		<xsd:restriction base="xsd:string">
 			<xsd:pattern value=".*[\[\]`$].*|Linfinity|L2" />
 		</xsd:restriction>
@@ -522,6 +522,7 @@
 			<xsd:element name="PhaseFieldDamageFEM" type="PhaseFieldDamageFEMType" />
 			<xsd:element name="PhaseFieldFracture" type="PhaseFieldFractureType" />
 			<xsd:element name="ProppantTransport" type="ProppantTransportType" />
+			<xsd:element name="QuasiDynamicEQ" type="QuasiDynamicEQType" />
 			<xsd:element name="ReactiveCompositionalMultiphaseOBL" type="ReactiveCompositionalMultiphaseOBLType" />
 			<xsd:element name="SeismicityRate" type="SeismicityRateType" />
 			<xsd:element name="SinglePhaseFVM" type="SinglePhaseFVMType" />
@@ -1000,6 +1001,19 @@
 		<xsd:attribute name="maxStableDt" type="real64" />
 		<!--meshTargets => MeshBody/Region combinations that the solver will be applied to.-->
 		<xsd:attribute name="meshTargets" type="geos_mapBase_lt_std_pair_lt_string_cm_-string-_gt__cm_-LvArray_Array_lt_string_cm_-1_cm_-camp_int_seq_lt_long_cm_-0l_gt__cm_-int_cm_-LvArray_ChaiBuffer_gt__cm_-std_integral_constant_lt_bool_cm_-true_gt_-_gt_" />
+	</xsd:complexType>
+	<xsd:complexType name="QuasiDynamicEQType">
+		<xsd:choice minOccurs="0" maxOccurs="unbounded">
+			<xsd:element name="LinearSolverParameters" type="LinearSolverParametersType" maxOccurs="1" />
+			<xsd:element name="NonlinearSolverParameters" type="NonlinearSolverParametersType" maxOccurs="1" />
+			<xsd:element name="SolverStatistics" type="SolverStatisticsType" />
+		</xsd:choice>
+		<!--discretization => Name of discretization object (defined in the :ref:`NumericalMethodsManager`) to use for this solver. For instance, if this is a Finite Element Solver, the name of a :ref:`FiniteElement` should be specified. If this is a Finite Volume Method, the name of a :ref:`FiniteVolume` discretization should be specified.-->
+		<xsd:attribute name="discretization" type="groupNameRef" />
+		<!--maxStableDt => Value of the Maximum Stable Timestep for this solver.-->
+		<xsd:attribute name="maxStableDt" type="real64" />
+		<!--meshTargets => MeshBody/Region combinations that the solver will be applied to.-->
+		<xsd:attribute name="meshTargets" type="geos_mapBase_lt_std___1_pair_lt_std___1_basic_string_lt_char_cm_-std___1_char_traits_lt_char_gt__cm_-std___1_allocator_lt_char_gt__gt__cm_-std___1_basic_string_lt_char_cm_-std___1_char_traits_lt_char_gt__cm_-std___1_allocator_lt_char_gt__gt__gt__cm_-LvArray_Array_lt_std___1_basic_string_lt_char_cm_-std___1_char_traits_lt_char_gt__cm_-std___1_allocator_lt_char_gt__gt__cm_-1_cm_-camp_int_seq_lt_long_cm_-0l_gt__cm_-int_cm_-LvArray_ChaiBuffer_gt__cm_-std___1_integral_constant_lt_bool_cm_-true_gt__gt_" />
 	</xsd:complexType>
 	<xsd:complexType name="ReactiveCompositionalMultiphaseOBLType">
 		<xsd:choice minOccurs="0" maxOccurs="unbounded">
@@ -1496,6 +1510,7 @@
 			<xsd:element name="ProppantPorosity" type="ProppantPorosityType" />
 			<xsd:element name="ProppantSlurryFluid" type="ProppantSlurryFluidType" />
 			<xsd:element name="ProppantSolidProppantPermeability" type="ProppantSolidProppantPermeabilityType" />
+			<xsd:element name="RateAndStateFriction" type="RateAndStateFrictionType" />
 			<xsd:element name="ReactiveBrine" type="ReactiveBrineType" />
 			<xsd:element name="ReactiveBrineThermal" type="ReactiveBrineThermalType" />
 			<xsd:element name="SinglePhaseThermalConductivity" type="SinglePhaseThermalConductivityType" />
@@ -2572,6 +2587,7 @@
 		<xsd:attribute name="viscosity" type="real64_array2d" />
 	</xsd:complexType>
 	<xsd:complexType name="ProppantSolidProppantPermeabilityType" />
+	<xsd:complexType name="RateAndStateFrictionType" />
 	<xsd:complexType name="ReactiveBrineType">
 		<!--dPhaseCompFraction => Derivative of phase component fraction with respect to pressure, temperature, and global component fractions-->
 		<xsd:attribute name="dPhaseCompFraction" type="LvArray_Array_lt_double_cm_-5_cm_-camp_int_seq_lt_long_cm_-0l_cm_-1l_cm_-2l_cm_-3l_cm_-4l_gt__cm_-int_cm_-LvArray_ChaiBuffer_gt_" />

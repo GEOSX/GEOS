@@ -21,10 +21,10 @@
 namespace geos
 {
 
-// Like most physics solvers, the Laplace solver derives from a generic SolverBase class.
+// Like most physics solvers, the Laplace solver derives from a generic PhysicsSolverBase class.
 // The base class is densely Doxygen-commented and worth a look if you have not done so already.
 // Most important system assembly steps, linear and non-linear resolutions, and time-stepping mechanisms
-// are implemented at the SolverBase class level and can thus be used in Laplace without needing reimplementation.
+// are implemented at the PhysicsSolverBase class level and can thus be used in Laplace without needing reimplementation.
 
 //START_SPHINX_INCLUDE_BEGINCLASS
 class LaplaceFEM : public LaplaceBaseH1
@@ -45,7 +45,7 @@ public:
   /// this C++ classes. This is important.
   static string catalogName() { return "LaplaceFEM"; }
   /**
-   * @copydoc SolverBase::getCatalogName()
+   * @copydoc PhysicsSolverBase::getCatalogName()
    */
   string getCatalogName() const override { return catalogName(); }
 

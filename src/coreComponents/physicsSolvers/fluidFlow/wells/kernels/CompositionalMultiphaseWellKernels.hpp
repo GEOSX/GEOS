@@ -32,8 +32,8 @@
 #include "physicsSolvers/KernelLaunchSelectors.hpp"
 #include "physicsSolvers/fluidFlow/CompositionalMultiphaseBaseFields.hpp"
 #include "physicsSolvers/fluidFlow/FlowSolverBaseFields.hpp"
-#include "physicsSolvers/fluidFlow/IsothermalCompositionalMultiphaseBaseKernels.hpp"
 #include "physicsSolvers/fluidFlow/StencilAccessors.hpp"
+#include "physicsSolvers/fluidFlow/kernels/IsothermalCompositionalMultiphaseBaseKernels.hpp"
 #include "physicsSolvers/fluidFlow/wells/CompositionalMultiphaseWellFields.hpp"
 #include "physicsSolvers/fluidFlow/wells/WellControls.hpp"
 #include "physicsSolvers/fluidFlow/wells/WellSolverBaseFields.hpp"
@@ -483,11 +483,11 @@ public:
 /**
  * @class ResidualNormKernel
  */
-class ResidualNormKernel : public solverBaseKernels::ResidualNormKernelBase< 1 >
+class ResidualNormKernel : public physicsSolverBaseKernels::ResidualNormKernelBase< 1 >
 {
 public:
 
-  using Base = solverBaseKernels::ResidualNormKernelBase< 1 >;
+  using Base = physicsSolverBaseKernels::ResidualNormKernelBase< 1 >;
   using Base::m_minNormalizer;
   using Base::m_rankOffset;
   using Base::m_localResidual;
