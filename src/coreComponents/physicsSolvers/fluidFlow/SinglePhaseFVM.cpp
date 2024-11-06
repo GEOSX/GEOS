@@ -650,7 +650,7 @@ SinglePhaseFVM< BASE >::applyBoundaryConditions( real64 const time_n,
   GEOS_MARK_FUNCTION;
 
   BASE::applyBoundaryConditions( time_n, dt, domain, dofManager, localMatrix, localRhs );
-  if( !BASE::m_keepFlowVariablesConstantDuringInitStep )
+  if( !BASE::m_keepVariablesConstantDuringInitStep )
   {
     applyFaceDirichletBC( time_n, dt, dofManager, domain, localMatrix, localRhs );
   }
