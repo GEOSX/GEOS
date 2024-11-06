@@ -34,12 +34,12 @@ public:
 
   /**
    * @brief Construct a new LogPart
-   * @param m_sectionTitle The section title
+   * @param m_logPartTitle The logPart title
    */
-  LogPart( string_view m_sectionTitle );
+  LogPart( string_view m_logPartTitle );
 
   /**
-   * @brief Add a description to the section by concatening a description name and descriptions values.
+   * @brief Add a description to the logPart by concatening a description name and descriptions values.
    * @param name The description name
    * @param args Descriptions values to be concatened.
    * Descriptions values can be be any types and will be aligned
@@ -48,13 +48,13 @@ public:
   void addDescription( string_view name, Args const & ... args );
 
   /**
-   * @brief Add a description to the section
+   * @brief Add a description to the logPart
    * @param description The string value of the description
    */
   void addDescription( string_view description );
 
   /**
-   * @brief Add a description to the end of the section by concatening a description name and descriptions values.
+   * @brief Add a description to the end of the logPart by concatening a description name and descriptions values.
    * @param name The description name
    * @param args Descriptions values to be concatened.
    * Descriptions values can be be any types and will be aligned
@@ -63,7 +63,7 @@ public:
   void addEndDescription( string_view name, Args const & ... args );
 
   /**
-   * @brief Add a description to the end of the section
+   * @brief Add a description to the end of the logPart
    * @param description The string value of the description
    */
   void addEndDescription( string_view description );
@@ -75,13 +75,13 @@ public:
   void setMinWidth( integer const & minWidth );
 
   /**
-   * @brief Draw the first part of the section. It include the title and optionnaly, the description(s);
+   * @brief Draw the first part of the logPart. It include the title and optionnaly, the end description(s).
    * @param os An output stream (by default, std::cout)
    */
-  void begin( std::ostream & os = std::cout );
+  void begin( std::ostream & os = std::cout ) const;
 
   /**
-   * @brief Draw the last part of the section. It include the title
+   * @brief Draw the last part of the logPart. It include the title
    * @param oss An output stream (by default, std::cout)
    */
   void end( std::ostream & oss = std::cout ) const;
@@ -93,40 +93,42 @@ private:
    * @param name The decription name
    * @param decriptionsValues The description values
    */
-  void formatAndInsertDescriptions( std::vector< string > & descriptionContainer,
+  void formatAndInsertDescriptions( std::vector< string > & formattedDescriptions,
                                     string_view name,
                                     std::vector< string > const & decriptionsValues );
 
   /**
-   * @brief Constructs the string section title of the log part.
+   * @brief Constructs the string logPart title of the log part.
    * @param title The title to be set
    */
   string buildTitlePart( string_view title ) const;
 
   /**
-   * @brief Constructs the string section descriptions of the log part.
+   * @brief Constructs the string logPart descriptions of the log part.
    * @param descriptions The description to be formatted
    */
-  string buildDescriptionPart( std::vector< string > const & descriptions ) const;
+  string buildDescriptionPart( std::vector< string > const & formattedDescriptions ) const;
 
   /// Vector containing all descriptions
-  std::vector< string > m_descriptions;
-  /// title of section
-  std::vector< string > m_endLogMessages;
+  std::vector< string > m_beginningDescs;
+  /// title of logPart
+  std::vector< string > m_endDescs;
 
-  /// title of section
-  string m_sectionTitle;
+  /// title of logPart
+  string m_logPartTitle;
   /// Start title footer string
   string m_footerTitle;
-  /// section length
-  integer m_sectionWidth;
-  /// min width of section length
+  /// min width of logPart length
   integer m_rowMinWidth = 70;
+  /// logPart length
+  integer m_logPartWidth;
 
   /// description border margin
   static constexpr integer m_marginBorder = 2;
   /// numbers of character used as border
   static constexpr integer m_nbBorderChar = 2;
+  /// character used for logPart construction
+  static constexpr integer m_borderCharacter = '#';
 
   /// String containing horizontal border
   string m_horizontalBorder;
@@ -142,7 +144,7 @@ void LogPart::addDescription( string_view name, Args const &... args )
     values.push_back( value );
   } (), ...);
 
-  formatAndInsertDescriptions( m_descriptions, name, values );
+  formatAndInsertDescriptions( m_beginningDescs, name, values );
 }
 
 template< typename ... Args >
@@ -155,7 +157,7 @@ void LogPart::addEndDescription( string_view name, Args const &... args )
     values.push_back( value );
   } (), ...);
 
-  formatAndInsertDescriptions( m_endLogMessages, name, values );
+  formatAndInsertDescriptions( m_endDescs, name, values );
 }
 }
 

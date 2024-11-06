@@ -170,7 +170,7 @@ bool EventManager::run( DomainPartition & domain )
       m_dt = dt_global;
 #endif
     }
-    LogPart logPart( "TIMESTEP START" );
+    LogPart logPart( "TIMESTEP" );
     outputTime( logPart );
     logPart.begin();
 
