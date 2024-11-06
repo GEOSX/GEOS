@@ -106,9 +106,10 @@ void LogPart::begin( std::ostream & os ) const
   }
 
   string const horizontalBorder = string( m_logPartWidth, m_borderCharacter );
-  string topPart =  GEOS_FMT( "{}\n{}{}\n", horizontalBorder,
-                              buildTitlePart( m_logPartTitle ),
-                              horizontalBorder );
+  string const topPart =  GEOS_FMT( "{}\n{}{}\n",
+                                    horizontalBorder,
+                                    buildTitlePart( m_logPartTitle ),
+                                    horizontalBorder );
   os << GEOS_FMT( "\n{}{}\n", topPart, bottomPart );
 }
 

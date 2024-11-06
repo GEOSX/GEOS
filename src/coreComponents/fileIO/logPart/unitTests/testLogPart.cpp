@@ -23,7 +23,6 @@ TEST( testSection, sectionWithTitle )
   std::ostringstream oss;
   LogPart logPart( "section name" );
   logPart.begin( oss );
-  std::cout << oss.str() << std::endl;
   EXPECT_EQ( oss.str(),
              "\n######################################################################\n"
              "##                           section name                           ##\n"
@@ -33,7 +32,6 @@ TEST( testSection, sectionWithTitle )
   oss.str( "" );
 
   logPart.end( oss );
-  std::cout << oss.str() << std::endl;
   EXPECT_EQ( oss.str(),
              "\n##                       End of section name                        ##\n"
              "######################################################################\n\n"
@@ -47,7 +45,6 @@ TEST( testSection, sectionWithTitleAndOneDescription )
   LogPart logPart( "section name" );
   logPart.addDescription( "description name" );
   logPart.begin( oss );
-  std::cout << oss.str() << std::endl;
   EXPECT_EQ( oss.str(),
              "\n######################################################################\n"
              "##                           section name                           ##\n"
@@ -65,7 +62,6 @@ TEST( testSection, sectionWithSetWidth )
   logPart.addDescription( "description name 2" );
   logPart.setMinWidth( 100 );
   logPart.begin( oss );
-  std::cout << oss.str() << std::endl;
   EXPECT_EQ( oss.str(),
              "\n####################################################################################################\n"
              "##                                          section name                                          ##\n"
@@ -77,7 +73,6 @@ TEST( testSection, sectionWithSetWidth )
   oss.str( "" );
 
   logPart.end( oss );
-  std::cout << oss.str() << std::endl;
   EXPECT_EQ( oss.str(),
              "\n##                                      End of section name                                       ##\n"
              "####################################################################################################\n\n"
@@ -94,7 +89,6 @@ TEST( testSection, sectionMultipleDescriptions )
   logPart.addDescription( "- Cycle: 1" );
   logPart.setMinWidth( 70 );
   logPart.begin( oss );
-  std::cout << oss.str() << std::endl;
   EXPECT_EQ ( oss.str(),
               "\n######################################################################\n"
               "##                          TIMESTEP START                          ##\n"
@@ -108,7 +102,6 @@ TEST( testSection, sectionMultipleDescriptions )
   oss.str( "" );
 
   logPart.end( oss );
-  std::cout << oss.str() << std::endl;
   EXPECT_EQ( oss.str(),
              "\n##                      End of TIMESTEP START                       ##\n"
              "######################################################################\n\n"
@@ -128,8 +121,6 @@ TEST( testSection, sectionEndDescription )
   oss.str( "" );
 
   logPart.end( oss );
-
-  std::cout << oss.str() << std::endl;
 
   EXPECT_EQ( oss.str(),
              "\n##  test end description                                            ##\n"
