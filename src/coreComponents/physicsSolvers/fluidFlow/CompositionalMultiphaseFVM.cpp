@@ -34,14 +34,14 @@
 #include "finiteVolume/FluxApproximationBase.hpp"
 #include "mesh/DomainPartition.hpp"
 #include "mesh/mpiCommunications/CommunicationTools.hpp"
-#include "physicsSolvers/fluidFlow/CompositionalMultiphaseBaseFields.hpp"
 #include "physicsSolvers/fluidFlow/FlowSolverBaseFields.hpp"
-#include "physicsSolvers/fluidFlow/StabilizedCompositionalMultiphaseFVMKernels.hpp"
-#include "physicsSolvers/fluidFlow/IsothermalCompositionalMultiphaseBaseKernels.hpp"
-#include "physicsSolvers/fluidFlow/ThermalCompositionalMultiphaseBaseKernels.hpp"
-#include "physicsSolvers/fluidFlow/IsothermalCompositionalMultiphaseFVMKernels.hpp"
-#include "physicsSolvers/fluidFlow/ThermalCompositionalMultiphaseFVMKernels.hpp"
-#include "physicsSolvers/fluidFlow/DissipationCompositionalMultiphaseFVMKernels.hpp"
+#include "physicsSolvers/fluidFlow/CompositionalMultiphaseBaseFields.hpp"
+#include "physicsSolvers/fluidFlow/kernels/IsothermalCompositionalMultiphaseBaseKernels.hpp"
+#include "physicsSolvers/fluidFlow/kernels/ThermalCompositionalMultiphaseBaseKernels.hpp"
+#include "physicsSolvers/fluidFlow/kernels/IsothermalCompositionalMultiphaseFVMKernels.hpp"
+#include "physicsSolvers/fluidFlow/kernels/ThermalCompositionalMultiphaseFVMKernels.hpp"
+#include "physicsSolvers/fluidFlow/kernels/StabilizedCompositionalMultiphaseFVMKernels.hpp"
+#include "physicsSolvers/fluidFlow/kernels/DissipationCompositionalMultiphaseFVMKernels.hpp"
 
 namespace geos
 {
@@ -336,7 +336,7 @@ real64 CompositionalMultiphaseFVM::calculateResidualNorm( real64 const & GEOS_UN
   localResidualNorm.resize( numNorm );
   localResidualNormalizer.resize( numNorm );
 
-  solverBaseKernels::NormType const normType = getNonlinearSolverParameters().normType();
+  physicsSolverBaseKernels::NormType const normType = getNonlinearSolverParameters().normType();
 
   globalIndex const rankOffset = dofManager.rankOffset();
   string const dofKey = dofManager.getKey( viewKeyStruct::elemDofFieldString() );
@@ -408,14 +408,14 @@ real64 CompositionalMultiphaseFVM::calculateResidualNorm( real64 const & GEOS_UN
 
       // step 2: first reduction across meshBodies/regions/subRegions
 
-      if( normType == solverBaseKernels::NormType::Linf )
+      if( normType == physicsSolverBaseKernels::NormType::Linf )
       {
-        solverBaseKernels::LinfResidualNormHelper::
+        physicsSolverBaseKernels::LinfResidualNormHelper::
           updateLocalNorm< numNorm >( subRegionResidualNorm, localResidualNorm );
       }
       else
       {
-        solverBaseKernels::L2ResidualNormHelper::
+        physicsSolverBaseKernels::L2ResidualNormHelper::
           updateLocalNorm< numNorm >( subRegionResidualNorm, subRegionResidualNormalizer, localResidualNorm, localResidualNormalizer );
       }
     } );
@@ -428,14 +428,14 @@ real64 CompositionalMultiphaseFVM::calculateResidualNorm( real64 const & GEOS_UN
   {
     array1d< real64 > globalResidualNorm;
     globalResidualNorm.resize( numNorm );
-    if( normType == solverBaseKernels::NormType::Linf )
+    if( normType == physicsSolverBaseKernels::NormType::Linf )
     {
-      solverBaseKernels::LinfResidualNormHelper::
+      physicsSolverBaseKernels::LinfResidualNormHelper::
         computeGlobalNorm( localResidualNorm, globalResidualNorm );
     }
     else
     {
-      solverBaseKernels::L2ResidualNormHelper::
+      physicsSolverBaseKernels::L2ResidualNormHelper::
         computeGlobalNorm( localResidualNorm, localResidualNormalizer, globalResidualNorm );
     }
     residualNorm = sqrt( globalResidualNorm[0] * globalResidualNorm[0] + globalResidualNorm[1] * globalResidualNorm[1]  + globalResidualNorm[2] * globalResidualNorm[2] );
@@ -447,14 +447,14 @@ real64 CompositionalMultiphaseFVM::calculateResidualNorm( real64 const & GEOS_UN
   {
     array1d< real64 > globalResidualNorm;
     globalResidualNorm.resize( numNorm - 1 );
-    if( normType == solverBaseKernels::NormType::Linf )
+    if( normType == physicsSolverBaseKernels::NormType::Linf )
     {
-      solverBaseKernels::LinfResidualNormHelper::
+      physicsSolverBaseKernels::LinfResidualNormHelper::
         computeGlobalNorm( localResidualNorm, globalResidualNorm );
     }
     else
     {
-      solverBaseKernels::L2ResidualNormHelper::
+      physicsSolverBaseKernels::L2ResidualNormHelper::
         computeGlobalNorm( localResidualNorm, localResidualNormalizer, globalResidualNorm );
     }
     residualNorm = sqrt( globalResidualNorm[0] * globalResidualNorm[0] + globalResidualNorm[1] * globalResidualNorm[1] );
@@ -814,7 +814,7 @@ void CompositionalMultiphaseFVM::applyBoundaryConditions( real64 time_n,
 {
   GEOS_MARK_FUNCTION;
   CompositionalMultiphaseBase::applyBoundaryConditions( time_n, dt, domain, dofManager, localMatrix, localRhs );
-  if( !m_keepFlowVariablesConstantDuringInitStep )
+  if( !m_keepVariablesConstantDuringInitStep )
   {
     applyFaceDirichletBC( time_n, dt, dofManager, domain, localMatrix, localRhs );
   }
@@ -1156,6 +1156,6 @@ void CompositionalMultiphaseFVM::applyAquiferBC( real64 const time,
 }
 
 //START_SPHINX_INCLUDE_01
-REGISTER_CATALOG_ENTRY( SolverBase, CompositionalMultiphaseFVM, string const &, Group * const )
+REGISTER_CATALOG_ENTRY( PhysicsSolverBase, CompositionalMultiphaseFVM, string const &, Group * const )
 //END_SPHINX_INCLUDE_01
 }// namespace geos

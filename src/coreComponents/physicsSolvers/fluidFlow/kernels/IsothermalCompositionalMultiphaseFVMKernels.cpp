@@ -18,7 +18,7 @@
  */
 
 #include "IsothermalCompositionalMultiphaseFVMKernels.hpp"
-#include "CompositionalMultiphaseUtilities.hpp"
+#include "physicsSolvers/fluidFlow/CompositionalMultiphaseUtilities.hpp"
 
 #include "finiteVolume/CellElementStencilTPFA.hpp"
 #include "finiteVolume/SurfaceElementStencil.hpp"
