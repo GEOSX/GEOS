@@ -20,7 +20,7 @@
 #ifndef GEOS_PHYSICSSOLVERS_FLUIDFLOW_THERMALSINGLEPHASEBASEKERNELS_HPP
 #define GEOS_PHYSICSSOLVERS_FLUIDFLOW_THERMALSINGLEPHASEBASEKERNELS_HPP
 
-#include "physicsSolvers/fluidFlow/SinglePhaseBaseKernels.hpp"
+#include "physicsSolvers/fluidFlow/kernels/SinglePhaseBaseKernels.hpp"
 
 namespace geos
 {

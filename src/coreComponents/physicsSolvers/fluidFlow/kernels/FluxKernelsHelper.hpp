@@ -25,6 +25,7 @@
 #include "finiteVolume/BoundaryStencil.hpp"
 #include "linearAlgebra/interfaces/InterfaceTypes.hpp"
 #include "mesh/ElementRegionManager.hpp"
+#include "fieldSpecification/AquiferBoundaryCondition.hpp"
 
 namespace geos
 {
