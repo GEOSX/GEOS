@@ -28,7 +28,7 @@
 #include "mainInterface/ProblemManager.hpp"
 #include "mesh/mpiCommunications/CommunicationTools.hpp"
 #include "physicsSolvers/fluidFlow/SinglePhaseBaseFields.hpp"
-#include "physicsSolvers/fluidFlow/SinglePhaseHybridFVMKernels.hpp"
+#include "physicsSolvers/fluidFlow/kernels/SinglePhaseHybridFVMKernels.hpp"
 
 
 /**
@@ -336,7 +336,7 @@ void SinglePhaseHybridFVM::applyBoundaryConditions( real64 const time_n,
   GEOS_MARK_FUNCTION;
 
   SinglePhaseBase::applyBoundaryConditions( time_n, dt, domain, dofManager, localMatrix, localRhs );
-  if( !m_keepFlowVariablesConstantDuringInitStep )
+  if( !m_keepVariablesConstantDuringInitStep )
   {
     applyFaceDirichletBC( time_n, dt, dofManager, domain, localMatrix, localRhs );
   }

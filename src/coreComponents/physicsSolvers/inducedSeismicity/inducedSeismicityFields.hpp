@@ -95,7 +95,6 @@ DECLARE_FIELD( logDenom,
                LEVEL_2,
                WRITE_AND_READ,
                "Log of the denominator of the integral form of the seismicity rate" );
-
 }
 
 }

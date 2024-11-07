@@ -18,7 +18,7 @@
  */
 
 #include "IsothermalCompositionalMultiphaseFVMKernels.hpp"
-#include "CompositionalMultiphaseUtilities.hpp"
+#include "physicsSolvers/fluidFlow/CompositionalMultiphaseUtilities.hpp"
 
 #include "finiteVolume/CellElementStencilTPFA.hpp"
 #include "finiteVolume/SurfaceElementStencil.hpp"
@@ -51,8 +51,9 @@ FaceBasedAssemblyKernelBase::FaceBasedAssemblyKernelBase( integer const numPhase
   m_ghostRank( compFlowAccessors.get( fields::ghostRank {} ) ),
   m_gravCoef( compFlowAccessors.get( fields::flow::gravityCoefficient {} ) ),
   m_pres( compFlowAccessors.get( fields::flow::pressure {} ) ),
-  m_dCompFrac_dCompDens( compFlowAccessors.get( fields::flow::dGlobalCompFraction_dGlobalCompDensity {} ) ),
+  m_phaseVolFrac( compFlowAccessors.get( fields::flow::phaseVolumeFraction {} ) ),
   m_dPhaseVolFrac( compFlowAccessors.get( fields::flow::dPhaseVolumeFraction {} ) ),
+  m_dCompFrac_dCompDens( compFlowAccessors.get( fields::flow::dGlobalCompFraction_dGlobalCompDensity {} ) ),
   m_phaseCompFrac( multiFluidAccessors.get( fields::multifluid::phaseCompFraction {} ) ),
   m_dPhaseCompFrac( multiFluidAccessors.get( fields::multifluid::dPhaseCompFraction {} ) ),
   m_localMatrix( localMatrix ),
@@ -97,14 +98,26 @@ CFLFluxKernel::
     real64 gravHead{};
 
     // calculate quantities on primary connected cells
+    integer denom = 0;
     for( localIndex i = 0; i < NUM_ELEMS; ++i )
     {
       localIndex const er  = seri[i];
       localIndex const esr = sesri[i];
       localIndex const ei  = sei[i];
 
+      bool const phaseExists = (phaseVolFrac[er][esr][ei][ip] > 0);
+      if( !phaseExists )
+      {
+        continue;
+      }
+
       // average density across the face
-      densMean += 0.5 * phaseMassDens[er][esr][ei][0][ip];
+      densMean += phaseMassDens[er][esr][ei][0][ip];
+      denom++;
+    }
+    if( denom > 1 )
+    {
+      densMean /= denom;
     }
 
     //***** calculation of phase volumetric flux *****

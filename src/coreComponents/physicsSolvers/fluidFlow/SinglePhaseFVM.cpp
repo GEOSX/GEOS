@@ -33,13 +33,12 @@
 #include "fieldSpecification/AquiferBoundaryCondition.hpp"
 #include "physicsSolvers/fluidFlow/FlowSolverBaseFields.hpp"
 #include "physicsSolvers/fluidFlow/SinglePhaseBaseFields.hpp"
-#include "physicsSolvers/fluidFlow/SinglePhaseBaseKernels.hpp"
-#include "physicsSolvers/fluidFlow/ThermalSinglePhaseBaseKernels.hpp"
-#include "physicsSolvers/fluidFlow/SinglePhaseFVMKernels.hpp"
-#include "physicsSolvers/fluidFlow/ThermalSinglePhaseFVMKernels.hpp"
-#include "physicsSolvers/fluidFlow/StabilizedSinglePhaseFVMKernels.hpp"
-
-#include "physicsSolvers/fluidFlow/SinglePhaseProppantFluxKernels.hpp"
+#include "physicsSolvers/fluidFlow/kernels/SinglePhaseBaseKernels.hpp"
+#include "physicsSolvers/fluidFlow/kernels/ThermalSinglePhaseBaseKernels.hpp"
+#include "physicsSolvers/fluidFlow/kernels/SinglePhaseFVMKernels.hpp"
+#include "physicsSolvers/fluidFlow/kernels/ThermalSinglePhaseFVMKernels.hpp"
+#include "physicsSolvers/fluidFlow/kernels/StabilizedSinglePhaseFVMKernels.hpp"
+#include "physicsSolvers/fluidFlow/kernels/SinglePhaseProppantFluxKernels.hpp"
 #include "physicsSolvers/multiphysics/poromechanicsKernels/SinglePhasePoromechanicsEmbeddedFractures.hpp"
 #include "physicsSolvers/multiphysics/poromechanicsKernels/ThermalSinglePhasePoromechanicsEmbeddedFractures.hpp"
 #include "physicsSolvers/multiphysics/poromechanicsKernels/SinglePhasePoromechanicsConformingFractures.hpp"
@@ -651,7 +650,7 @@ SinglePhaseFVM< BASE >::applyBoundaryConditions( real64 const time_n,
   GEOS_MARK_FUNCTION;
 
   BASE::applyBoundaryConditions( time_n, dt, domain, dofManager, localMatrix, localRhs );
-  if( !BASE::m_keepFlowVariablesConstantDuringInitStep )
+  if( !BASE::m_keepVariablesConstantDuringInitStep )
   {
     applyFaceDirichletBC( time_n, dt, dofManager, domain, localMatrix, localRhs );
   }
