@@ -19,7 +19,6 @@
 
 #include "CompositionalMultiphaseWell.hpp"
 
-
 #include "codingUtilities/Utilities.hpp"
 #include "common/DataTypes.hpp"
 #include "common/FieldSpecificationOps.hpp"
@@ -35,19 +34,16 @@
 #include "mesh/PerforationFields.hpp"
 #include "mesh/WellElementSubRegion.hpp"
 #include "mesh/mpiCommunications/CommunicationTools.hpp"
-#include "physicsSolvers/fluidFlow/wells/PerforationFluxKernels.hpp"
-#include "physicsSolvers/fluidFlow/IsothermalCompositionalMultiphaseBaseKernels.hpp"
-#include "physicsSolvers/fluidFlow/ThermalCompositionalMultiphaseBaseKernels.hpp"
-#include "physicsSolvers/fluidFlow/wells/CompositionalMultiphaseWellFields.hpp"
-#include "physicsSolvers/fluidFlow/wells/CompositionalMultiphaseWellKernels.hpp"
-
-#include "physicsSolvers/fluidFlow/wells/ThermalCompositionalMultiphaseWellKernels.hpp"
-#include "physicsSolvers/fluidFlow/wells/SinglePhaseWellKernels.hpp"
 #include "physicsSolvers/fluidFlow/wells/WellSolverBaseFields.hpp"
+#include "physicsSolvers/fluidFlow/wells/WellFields.hpp"
+#include "physicsSolvers/fluidFlow/wells/CompositionalMultiphaseWellFields.hpp"
 #include "physicsSolvers/fluidFlow/wells/WellControls.hpp"
 #include "physicsSolvers/fluidFlow/wells/LogLevelsInfo.hpp"
-
-#include "physicsSolvers/fluidFlow/wells/WellFields.hpp"
+#include "physicsSolvers/fluidFlow/wells/kernels/CompositionalMultiphaseWellKernels.hpp"
+#include "physicsSolvers/fluidFlow/wells/kernels/ThermalCompositionalMultiphaseWellKernels.hpp"
+#include "physicsSolvers/fluidFlow/wells/kernels/PerforationFluxKernels.hpp"
+#include "physicsSolvers/fluidFlow/kernels/IsothermalCompositionalMultiphaseBaseKernels.hpp"
+#include "physicsSolvers/fluidFlow/kernels/ThermalCompositionalMultiphaseBaseKernels.hpp"
 
 #if defined( __INTEL_COMPILER )
 #pragma GCC optimize "O0"
@@ -1095,7 +1091,7 @@ void CompositionalMultiphaseWell::assembleFluxTerms( real64 const & time,
                                                                              WellElementSubRegion & subRegion )
     {
       WellControls const & well_controls = getWellControls( subRegion );
-      if( well_controls.isWellOpen( time+ dt ) )
+      if( well_controls.isWellOpen( time + dt ) && !m_keepVariablesConstantDuringInitStep )
       {
         string const & fluidName = subRegion.getReference< string >( viewKeyStruct::fluidNamesString());
         MultiFluidBase const & fluid = getConstitutiveModel< MultiFluidBase >( subRegion, fluidName );
@@ -1160,7 +1156,7 @@ void CompositionalMultiphaseWell::assembleAccumulationTerms( real64 const & time
       int numPhases = fluid.numFluidPhases();
       int numComponents = fluid.numFluidComponents();
       WellControls const & wellControls = getWellControls( subRegion );
-      if( wellControls.isWellOpen( time+ dt ) )
+      if( wellControls.isWellOpen( time+ dt ) && !m_keepVariablesConstantDuringInitStep )
       {
         if( isThermal() )
         {
@@ -1640,7 +1636,7 @@ void CompositionalMultiphaseWell::computePerforationRates( real64 const & time_n
     {
       PerforationData * const perforationData = subRegion.getPerforationData();
       WellControls const & wellControls = getWellControls( subRegion );
-      if( wellControls.isWellOpen( time_n+ dt ) )
+      if( wellControls.isWellOpen( time_n + dt ) && !m_keepVariablesConstantDuringInitStep )
       {
 
         bool const disableReservoirToWellFlow = wellControls.isInjector() and !wellControls.isCrossflowEnabled();
@@ -1884,7 +1880,7 @@ void CompositionalMultiphaseWell::assemblePressureRelations( real64 const & time
 
       WellControls & wellControls = getWellControls( subRegion );
 
-      if( wellControls.isWellOpen( time_n+ dt ) )
+      if( wellControls.isWellOpen( time_n + dt ) && !m_keepVariablesConstantDuringInitStep )
       {
         string const & fluidName = subRegion.getReference< string >( viewKeyStruct::fluidNamesString() );
         MultiFluidBase const & fluid = getConstitutiveModel< MultiFluidBase >( subRegion, fluidName );
@@ -1960,98 +1956,6 @@ void CompositionalMultiphaseWell::assemblePressureRelations( real64 const & time
         }
       }
 
-    } );
-  } );
-}
-
-void CompositionalMultiphaseWell::shutDownWell( real64 const time_n,
-                                                real64 const dt,
-                                                DomainPartition const & domain,
-                                                DofManager const & dofManager,
-                                                CRSMatrixView< real64, globalIndex const > const & localMatrix,
-                                                arrayView1d< real64 > const & localRhs )
-{
-  GEOS_MARK_FUNCTION;
-
-  string const wellDofKey = dofManager.getKey( wellElementDofName() );
-
-  forDiscretizationOnMeshTargets( domain.getMeshBodies(), [&] ( string const &,
-                                                                MeshLevel const & mesh,
-                                                                arrayView1d< string const > const & regionNames )
-  {
-
-    ElementRegionManager const & elemManager = mesh.getElemManager();
-
-    elemManager.forElementSubRegions< WellElementSubRegion >( regionNames,
-                                                              [&]( localIndex const,
-                                                                   WellElementSubRegion const & subRegion )
-    {
-
-      // if the well is open, we don't have to do anything, so we just return
-      WellControls const & wellControls = getWellControls( subRegion );
-      if( wellControls.isWellOpen( time_n + dt ) )
-      {
-        return;
-      }
-
-      globalIndex const rankOffset = dofManager.rankOffset();
-
-      arrayView1d< integer const > const ghostRank =
-        subRegion.getReference< array1d< integer > >( ObjectManagerBase::viewKeyStruct::ghostRankString() );
-      arrayView1d< globalIndex const > const dofNumber =
-        subRegion.getReference< array1d< globalIndex > >( wellDofKey );
-
-      arrayView1d< real64 const > const pres =
-        subRegion.getField< fields::well::pressure >();
-      arrayView2d< real64 const, compflow::USD_COMP > const compDens =
-        subRegion.getField< fields::well::globalCompDensity >();
-      arrayView1d< real64 const > const connRate =
-        subRegion.getField< fields::well::mixtureConnectionRate >();
-
-      integer const numComp = m_numComponents;
-
-      forAll< parallelDevicePolicy<> >( subRegion.size(), [=] GEOS_HOST_DEVICE ( localIndex const ei )
-      {
-        if( ghostRank[ei] >= 0 )
-        {
-          return;
-        }
-
-        globalIndex const dofIndex = dofNumber[ei];
-        localIndex const localRow = dofIndex - rankOffset;
-        real64 rhsValue;
-
-        // 4.1. Apply pressure value to the matrix/rhs
-        FieldSpecificationEqual::SpecifyFieldValue( dofIndex,
-                                                    rankOffset,
-                                                    localMatrix,
-                                                    rhsValue,
-                                                    pres[ei],   // freeze the current pressure value
-                                                    pres[ei] );
-        localRhs[localRow] = rhsValue;
-
-        // 4.2. For each component, apply target global density value
-        for( integer ic = 0; ic < numComp; ++ic )
-        {
-          FieldSpecificationEqual::SpecifyFieldValue( dofIndex + ic + 1,
-                                                      rankOffset,
-                                                      localMatrix,
-                                                      rhsValue,
-                                                      compDens[ei][ic],   // freeze the current component density values
-                                                      compDens[ei][ic] );
-          localRhs[localRow + ic + 1] = rhsValue;
-        }
-
-        // 4.3. Apply rate value to the matrix/rhs
-        FieldSpecificationEqual::SpecifyFieldValue( dofIndex + numComp + 1,
-                                                    rankOffset,
-                                                    localMatrix,
-                                                    rhsValue,
-                                                    connRate[ei],   // freeze the current pressure value
-                                                    connRate[ei] );
-        localRhs[localRow + numComp + 1] = rhsValue;
-
-      } );
     } );
   } );
 }
