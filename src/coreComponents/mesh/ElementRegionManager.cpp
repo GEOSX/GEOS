@@ -190,7 +190,12 @@ void ElementRegionManager::generateMesh( CellBlockManagerABC const & cellBlockMa
       {
         elemRegion.setCellBlockNames( cellBlockSelector.buildCellBlocksSelection( elemRegion ) );
         elemRegion.generateMesh( cellBlocks, cellsInRegion[ elemRegion.getName() ] );
-        std::cout<<"Region "<<elemRegion.getName()<<" has "<<elemRegion.size()<<" elements"<<std::endl;
+
+        std::cout<<"Region "<<elemRegion.getName()<<" has "<<elemRegion.getNumberOfElements()<<" elements"<<std::endl;
+        elemRegion.forElementSubRegions( [&]( ElementSubRegionBase const & subRegion )
+        {
+          std::cout<<"  subregion "<<subRegion.getName()<<" has "<<subRegion.size()<<" elements"<<std::endl;
+        } );
       } );
 
     }
@@ -200,7 +205,6 @@ void ElementRegionManager::generateMesh( CellBlockManagerABC const & cellBlockMa
       {
         elemRegion.setCellBlockNames( cellBlockSelector.buildCellBlocksSelection( elemRegion ) );
         elemRegion.generateMesh( cellBlocks );
-        std::cout<<"Region "<<elemRegion.getName()<<" has "<<elemRegion.size()<<" elements"<<std::endl;
       } );    
     }
 
