@@ -170,7 +170,7 @@ public:
   /**
    * @brief Update the event progress for the event/sub-events.
    * @note This method is used to determine how to handle the timestamp for an event
-   * @note If the event occurs after anything targeting a SolverBase object, then
+   * @note If the event occurs after anything targeting a PhysicsSolverBase object, then
    *       set the m_isPostSolverEvent flag.  If set, then the time passed to the target
    *       will be time + dt.
    * @param eventCounters The event count for each event/sub-event.

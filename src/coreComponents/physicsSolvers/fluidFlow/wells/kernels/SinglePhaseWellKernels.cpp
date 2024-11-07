@@ -20,7 +20,7 @@
 #include "SinglePhaseWellKernels.hpp"
 
 // TODO: move keys to WellControls
-#include "SinglePhaseWell.hpp"
+#include "physicsSolvers/fluidFlow/wells/SinglePhaseWell.hpp"
 
 namespace geos
 {
