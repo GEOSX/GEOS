@@ -20,10 +20,11 @@
 #ifndef GEOS_PHYSICSSOLVERS_FLUIDFLOW_THERMALCOMPOSITIONALMULTIPHASEFVMKERNELS_HPP
 #define GEOS_PHYSICSSOLVERS_FLUIDFLOW_THERMALCOMPOSITIONALMULTIPHASEFVMKERNELS_HPP
 
+#include "physicsSolvers/fluidFlow/kernels/IsothermalCompositionalMultiphaseFVMKernels.hpp"
+
 #include "constitutive/thermalConductivity/MultiPhaseThermalConductivityBase.hpp"
 #include "constitutive/thermalConductivity/ThermalConductivityFields.hpp"
 #include "constitutive/thermalConductivity/MultiPhaseThermalConductivityFields.hpp"
-#include "physicsSolvers/fluidFlow/IsothermalCompositionalMultiphaseFVMKernels.hpp"
 
 namespace geos
 {
@@ -47,7 +48,6 @@ public:
   using Base = isothermalCompositionalMultiphaseFVMKernels::PhaseMobilityKernel< NUM_COMP, NUM_PHASE >;
   using Base::numPhase;
   using Base::m_dPhaseVolFrac;
-  using Base::m_dPhaseMob;
   using Base::m_phaseDens;
   using Base::m_dPhaseDens;
   using Base::m_phaseVisc;
@@ -182,9 +182,8 @@ public:
 
   using AbstractBase::m_dt;
   using AbstractBase::m_numPhases;
-  using AbstractBase::m_rankOffset;
-  using AbstractBase::m_dofNumber;
   using AbstractBase::m_gravCoef;
+  using AbstractBase::m_phaseVolFrac;
   using AbstractBase::m_dPhaseVolFrac;
   using AbstractBase::m_phaseCompFrac;
   using AbstractBase::m_dPhaseCompFrac;
@@ -194,9 +193,7 @@ public:
   using Base::numComp;
   using Base::numDof;
   using Base::numEqn;
-  using Base::maxNumElems;
   using Base::maxNumConns;
-  using Base::maxStencilSize;
   using Base::numFluxSupportPoints;
   using Base::m_phaseMob;
   using Base::m_dPhaseMob;
@@ -343,14 +340,28 @@ public:
       real64 dConvectiveEnergyFlux_dC[numFluxSupportPoints][numComp]{};
       real64 dCompFlux_dT[numFluxSupportPoints][numComp]{};
 
+      integer denom = 0;
       for( integer i = 0; i < numFluxSupportPoints; ++i )
       {
         localIndex const er  = seri[i];
         localIndex const esr = sesri[i];
         localIndex const ei  = sei[i];
 
-        real64 const dDens_dT = m_dPhaseMassDens[er][esr][ei][0][ip][Deriv::dT];
-        dDensMean_dT[i] = 0.5 * dDens_dT;
+        bool const phaseExists = (m_phaseVolFrac[er_up][esr_up][ei_up][ip] > 0);
+        if( !phaseExists )
+        {
+          continue;
+        }
+
+        dDensMean_dT[i] = 0.5 * m_dPhaseMassDens[er][esr][ei][0][ip][Deriv::dT];
+        denom++;
+      }
+      if( denom > 1 )
+      {
+        for( integer i = 0; i < numFluxSupportPoints; ++i )
+        {
+          dDensMean_dT[i] /= denom;
+        }
       }
 
       // Step 2: compute the derivatives of the phase potential difference wrt temperature
@@ -1016,9 +1027,6 @@ public:
   using PermeabilityAccessors = AbstractBase::PermeabilityAccessors;
 
   using AbstractBase::m_dt;
-  using AbstractBase::m_numPhases;
-  using AbstractBase::m_rankOffset;
-  using AbstractBase::m_dofNumber;
   using AbstractBase::m_gravCoef;
   using AbstractBase::m_phaseCompFrac;
   using AbstractBase::m_dPhaseCompFrac;
@@ -1031,7 +1039,6 @@ public:
   using Base::m_phaseMob;
   using Base::m_dPhaseMob;
   using Base::m_dPhaseMassDens;
-  using Base::m_dPhaseCapPressure_dPhaseVolFrac;
   using Base::m_stencilWrapper;
   using Base::m_seri;
   using Base::m_sesri;

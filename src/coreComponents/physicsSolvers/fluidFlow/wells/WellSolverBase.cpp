@@ -28,7 +28,7 @@
 #include "physicsSolvers/fluidFlow/wells/WellControls.hpp"
 #include "physicsSolvers/fluidFlow/wells/WellSolverBaseFields.hpp"
 #include "physicsSolvers/fluidFlow/wells/LogLevelsInfo.hpp"
-#include "physicsSolvers/fluidFlow/wells/ThermalCompositionalMultiphaseWellKernels.hpp"
+#include "physicsSolvers/fluidFlow/wells/kernels/ThermalCompositionalMultiphaseWellKernels.hpp"
 #include "fileIO/Outputs/OutputBase.hpp"
 
 namespace geos
@@ -39,13 +39,14 @@ using namespace constitutive;
 
 WellSolverBase::WellSolverBase( string const & name,
                                 Group * const parent )
-  : SolverBase( name, parent ),
+  : PhysicsSolverBase( name, parent ),
   m_numPhases( 0 ),
   m_numComponents( 0 ),
   m_numDofPerWellElement( 0 ),
   m_numDofPerResElement( 0 ),
   m_isThermal( 0 ),
-  m_ratesOutputDir( joinPath( OutputBase::getOutputDirectory(), name + "_rates" ))
+  m_ratesOutputDir( joinPath( OutputBase::getOutputDirectory(), name + "_rates" ) ),
+  m_keepVariablesConstantDuringInitStep( 0 )
 {
   registerWrapper( viewKeyStruct::isThermalString(), &m_isThermal ).
     setApplyDefaultValue( 0 ).
@@ -74,7 +75,7 @@ Group *WellSolverBase::createChild( string const & childKey, string const & chil
   }
   else
   {
-    SolverBase::createChild( childKey, childName );
+    PhysicsSolverBase::createChild( childKey, childName );
   }
   return rval;
 }
@@ -88,7 +89,7 @@ WellSolverBase::~WellSolverBase() = default;
 
 void WellSolverBase::postInputInitialization()
 {
-  SolverBase::postInputInitialization();
+  PhysicsSolverBase::postInputInitialization();
 
   // 1. Set key dimensions of the problem
   m_numDofPerWellElement = m_isThermal ?    m_numComponents + 2 : m_numComponents + 1; // 1 pressure  connectionRate + temp if thermal
@@ -109,7 +110,7 @@ void WellSolverBase::postInputInitialization()
 
 void WellSolverBase::registerDataOnMesh( Group & meshBodies )
 {
-  SolverBase::registerDataOnMesh( meshBodies );
+  PhysicsSolverBase::registerDataOnMesh( meshBodies );
 
   // loop over the wells
   forDiscretizationOnMeshTargets( meshBodies, [&] ( string const &,
@@ -163,8 +164,11 @@ void WellSolverBase::initializePostSubGroups()
 
 void WellSolverBase::setConstitutiveNamesCallSuper( ElementSubRegionBase & subRegion ) const
 {
-  SolverBase::setConstitutiveNamesCallSuper( subRegion );
-  subRegion.registerWrapper< string >( viewKeyStruct::fluidNamesString()).setPlotLevel( PlotLevel::NOPLOT ).setRestartFlags( RestartFlags::NO_WRITE ).setSizedFromParent( 0 );
+  PhysicsSolverBase::setConstitutiveNamesCallSuper( subRegion );
+  subRegion.registerWrapper< string >( viewKeyStruct::fluidNamesString() ).
+    setPlotLevel( PlotLevel::NOPLOT ).
+    setRestartFlags( RestartFlags::NO_WRITE ).
+    setSizedFromParent( 0 );
 }
 
 void WellSolverBase::setupDofs( DomainPartition const & domain,
@@ -206,68 +210,6 @@ void WellSolverBase::implicitStepSetup( real64 const & time_n,
   initializeWells( domain, time_n, dt );
 }
 
-
-void WellSolverBase::shutInWell( real64 const time_n,
-                                 real64 const dt,
-                                 DomainPartition const & domain,
-                                 DofManager const & dofManager,
-                                 CRSMatrixView< real64, globalIndex const > const & localMatrix,
-                                 arrayView1d< real64 > const & localRhs )
-{
-  GEOS_MARK_FUNCTION;
-  GEOS_UNUSED_VAR( time_n );
-  GEOS_UNUSED_VAR( dt );
-
-  string const wellDofKey = dofManager.getKey( wellElementDofName() );
-
-  forDiscretizationOnMeshTargets( domain.getMeshBodies(), [&] ( string const &,
-                                                                MeshLevel const & mesh,
-                                                                arrayView1d< string const > const & regionNames )
-  {
-
-    ElementRegionManager const & elemManager = mesh.getElemManager();
-
-    elemManager.forElementSubRegions< WellElementSubRegion >( regionNames,
-                                                              [&]( localIndex const,
-                                                                   WellElementSubRegion const & subRegion )
-    {
-
-      globalIndex const rankOffset = dofManager.rankOffset();
-
-      arrayView1d< integer const > const ghostRank =
-        subRegion.getReference< array1d< integer > >( ObjectManagerBase::viewKeyStruct::ghostRankString() );
-      arrayView1d< globalIndex const > const dofNumber =
-        subRegion.getReference< array1d< globalIndex > >( wellDofKey );
-
-      forAll< parallelDevicePolicy<> >( subRegion.size(), [=] GEOS_HOST_DEVICE ( localIndex const ei )
-      {
-        if( ghostRank[ei] >= 0 )
-        {
-          return;
-        }
-
-        globalIndex const dofIndex = dofNumber[ei];
-        localIndex const localRow = dofIndex - rankOffset;
-
-
-        real64 unity = 1.0;
-        for( integer i=0; i < m_numDofPerWellElement; i++ )
-        {
-          globalIndex const cindex =  dofNumber[ei] + i;
-          globalIndex const rindex = localRow+i;
-          localMatrix.template addToRow< serialAtomic >( rindex,
-                                                         &cindex,
-                                                         &unity,
-                                                         1 );
-          localRhs[cindex] = 0.0;
-        }
-
-      } );
-    } );
-  } );
-}
-
-
 void WellSolverBase::updateState( DomainPartition & domain )
 {
   GEOS_MARK_FUNCTION;
@@ -303,12 +245,11 @@ void WellSolverBase::assembleSystem( real64 const time,
   // get a reference to the degree-of-freedom numbers
   // then assemble the flux terms in the mass balance equations
   assembleFluxTerms( time, dt, domain, dofManager, localMatrix, localRhs );
-
 }
 
 void WellSolverBase::initializePostInitialConditionsPreSubGroups()
 {
-  SolverBase::initializePostInitialConditionsPreSubGroups();
+  PhysicsSolverBase::initializePostInitialConditionsPreSubGroups();
 
   DomainPartition & domain = this->getGroupByPath< DomainPartition >( "/Problem/domain" );
 

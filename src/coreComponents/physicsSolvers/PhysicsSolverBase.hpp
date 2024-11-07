@@ -14,11 +14,11 @@
  */
 
 /**
- * @file SolverBase.hpp
+ * @file PhysicsSolverBase.hpp
  */
 
-#ifndef GEOS_PHYSICSSOLVERS_SOLVERBASE_HPP_
-#define GEOS_PHYSICSSOLVERS_SOLVERBASE_HPP_
+#ifndef GEOS_PHYSICSSOLVERS_PHYSICSSOLVERBASE_HPP_
+#define GEOS_PHYSICSSOLVERS_PHYSICSSOLVERBASE_HPP_
 
 #include "codingUtilities/traits.hpp"
 #include "common/DataTypes.hpp"
@@ -40,54 +40,54 @@ namespace geos
 class DomainPartition;
 
 /**
- * @class SolverBase
+ * @class PhysicsSolverBase
  * @brief Base class for all physics solvers
  *
  * This class provides the base interface for all physics solvers. It provides the basic
  * functionality for setting up and solving a linear system, as well as the interface for
  * performing a timestep.
  */
-class SolverBase : public ExecutableGroup
+class PhysicsSolverBase : public ExecutableGroup
 {
 public:
 
   /**
-   * @brief Constructor for SolverBase
-   * @param name the name of this instantiation of SolverBase
-   * @param parent the parent group of this instantiation of SolverBase
+   * @brief Constructor for PhysicsSolverBase
+   * @param name the name of this instantiation of PhysicsSolverBase
+   * @param parent the parent group of this instantiation of PhysicsSolverBase
    */
-  explicit SolverBase( string const & name,
-                       Group * const parent );
+  explicit PhysicsSolverBase( string const & name,
+                              Group * const parent );
 
   /**
-   * @brief Move constructor for SolverBase
+   * @brief Move constructor for PhysicsSolverBase
    */
-  SolverBase( SolverBase && ) = default;
+  PhysicsSolverBase( PhysicsSolverBase && ) = default;
 
   /**
-   * @brief Destructor for SolverBase
+   * @brief Destructor for PhysicsSolverBase
    */
-  virtual ~SolverBase() override;
+  virtual ~PhysicsSolverBase() override;
 
   /**
    * @brief Deleted constructor
    */
-  SolverBase() = delete;
+  PhysicsSolverBase() = delete;
 
   /**
    * @brief Deleted copy constructor
    */
-  SolverBase( SolverBase const & ) = delete;
+  PhysicsSolverBase( PhysicsSolverBase const & ) = delete;
 
   /**
    * @brief Deleted copy assignment operator
    */
-  SolverBase & operator=( SolverBase const & ) = delete;
+  PhysicsSolverBase & operator=( PhysicsSolverBase const & ) = delete;
 
   /**
    * @brief Deleted move assignment operator
    */
-  SolverBase & operator=( SolverBase && ) = delete;
+  PhysicsSolverBase & operator=( PhysicsSolverBase && ) = delete;
 
   /**
    * @return Get the final class Catalog name
@@ -658,7 +658,7 @@ public:
   {return m_nextDt;};
 
   /**
-   * @brief creates a child group of of this SolverBase instantiation
+   * @brief creates a child group of of this PhysicsSolverBase instantiation
    * @param childKey the key of the child type
    * @param childName the name of the child
    * @return a pointer to the child group
@@ -668,10 +668,10 @@ public:
   /**
    * @brief Type alias for catalog interface used by this class. See CatalogInterface.
    */
-  using CatalogInterface = dataRepository::CatalogInterface< SolverBase, string const &, Group * const >;
+  using CatalogInterface = dataRepository::CatalogInterface< PhysicsSolverBase, string const &, Group * const >;
 
   /**
-   * @brief Get the singleton catalog for SolverBase.
+   * @brief Get the singleton catalog for PhysicsSolverBase.
    * @return reference to the catalog object
    */
   static CatalogInterface::CatalogType & getCatalog();
@@ -1101,7 +1101,7 @@ private:
 };
 
 template< typename CONSTITUTIVE_BASE_TYPE >
-string SolverBase::getConstitutiveName( ElementSubRegionBase const & subRegion )
+string PhysicsSolverBase::getConstitutiveName( ElementSubRegionBase const & subRegion )
 {
   string validName;
   dataRepository::Group const & constitutiveModels = subRegion.getConstitutiveModels();
@@ -1115,7 +1115,7 @@ string SolverBase::getConstitutiveName( ElementSubRegionBase const & subRegion )
 }
 
 template< typename CONSTITUTIVE_BASE_TYPE >
-string SolverBase::getConstitutiveName( ParticleSubRegionBase const & subRegion ) // particle overload
+string PhysicsSolverBase::getConstitutiveName( ParticleSubRegionBase const & subRegion ) // particle overload
 {
   string validName;
   dataRepository::Group const & constitutiveModels = subRegion.getConstitutiveModels();
@@ -1132,4 +1132,4 @@ string SolverBase::getConstitutiveName( ParticleSubRegionBase const & subRegion 
 } // namespace geos
 
 
-#endif /* GEOS_PHYSICSSOLVERS_SOLVERBASE_HPP_ */
+#endif /* GEOS_PHYSICSSOLVERS_PHYSICSSOLVERBASE_HPP_ */

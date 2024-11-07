@@ -17,9 +17,9 @@
  * @file singlePhaseProppantFluxKernels.cpp
  */
 
-#include "physicsSolvers/fluidFlow/SinglePhaseFVMKernels.hpp"
-#include "physicsSolvers/fluidFlow/FluxKernelsHelper.hpp"
 #include "SinglePhaseProppantFluxKernels.hpp"
+
+#include "physicsSolvers/fluidFlow/kernels/FluxKernelsHelper.hpp"
 
 namespace geos
 {
