@@ -109,6 +109,18 @@ InternalMeshGenerator::InternalMeshGenerator( string const & name, Group * const
     setInputFlag( InputFlags::OPTIONAL ).
     setRestartFlags( RestartFlags::NO_WRITE ).
     setDescription( "A position tolerance to verify if a node belong to a nodeset" );
+
+  registerWrapper( viewKeyStruct::regionTableNameString(), &m_regionTableName ).
+    setInputFlag( InputFlags::OPTIONAL ).
+    setApplyDefaultValue( "" ).
+    setDescription( "Name of table that contains coordinate based region specification. By number?" );
+
+  registerWrapper( viewKeyStruct::regionTableKeyString(), &m_regionTableKey ).
+    setInputFlag( InputFlags::OPTIONAL ).
+    setApplyDefaultValue( "" ).
+    setDescription( GEOS_FMT( "array which maps indices specified in {} to the name of the corresponding ElementRegion.", 
+                              viewKeyStruct::regionTableNameString()) );
+
 }
 
 static int getNumElemPerBox( ElementType const elementType )
@@ -545,6 +557,9 @@ static void getElemToNodesRelationInBox( ElementType const elementType,
 void InternalMeshGenerator::fillCellBlockManager( CellBlockManager & cellBlockManager, SpatialPartition & partition )
 {
   GEOS_MARK_FUNCTION;
+
+  cellBlockManager.setRegionTableName( m_regionTableName );
+  cellBlockManager.setRegionTableKey( m_regionTableKey );
 
   // Partition based on even spacing to get load balance
   // Partition geometrical boundaries will be corrected in the end.

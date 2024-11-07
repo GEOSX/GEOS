@@ -1,0 +1,116 @@
+<?xml version="1.0" ?>
+
+<Problem>
+
+  <Solvers>
+    <LaplaceFEM
+      name="laplace"
+      discretization="FE1"
+      timeIntegrationOption="SteadyState"
+      fieldName="Temperature"
+      targetRegions="{ region0, region1 }">
+      <LinearSolverParameters
+        directParallel="0"/>
+    </LaplaceFEM>
+  </Solvers>
+
+  <Events
+    maxTime="2.0">
+    <!-- This event is applied every cycle, and overrides the
+    solver time-step request -->
+    <PeriodicEvent
+      name="solverApplications"
+      forceDt="1.0"
+      target="/Solvers/laplace"/>
+
+    <!-- This event is applied every 1.0s.  The targetExactTimestep
+    flag allows this event to request a dt modification to match an
+    integer multiple of the timeFrequency. -->
+    <PeriodicEvent
+      name="outputs"
+      timeFrequency="1.0"
+      target="/Outputs/vtkOutput"/>
+
+    <PeriodicEvent
+      name="restarts"
+      timeFrequency="1.0"
+      targetExactTimestep="0"
+      target="/Outputs/restartOutput"/>
+  </Events>
+
+  <Constitutive>
+    <NullModel
+      name="nullModel"/>
+  </Constitutive>
+
+  <FieldSpecifications>
+    <!-- <FieldSpecification
+      name="sourceTerm"
+      fieldName="Temperature"
+      objectPath="nodeManager"
+      functionName="DirichletTimeFunction"
+      scale="1.0"
+      setNames="{ source }"/>
+
+    <FieldSpecification
+      name="sinkTerm"
+      fieldName="Temperature"
+      objectPath="nodeManager"
+      scale="0.0"
+      setNames="{ sink }"/>-->
+  </FieldSpecifications>
+
+  <Outputs>
+    <VTK
+      name="vtkOutput"/>
+
+    <Restart
+      name="restartOutput"/>
+  </Outputs>
+
+  <Geometry>
+  </Geometry>
+
+  <Functions>
+    <TableFunction
+      name="regionTable"
+      coordinateFiles="{ tables/x.geos, tables/y.geos, tables/z.geos }"
+      voxelFile="tables/regions.geos"/>
+  </Functions>
+
+  <Mesh>
+    <InternalMesh
+      name="mesh"
+      elementTypes="{ C3D8 }"
+      xCoords="{ 0, 10 }"
+      yCoords="{ 0, 1 }"
+      zCoords="{ 0, 10 }"
+      nx="{ 10 }"
+      ny="{ 1 }"
+      nz="{ 10 }"
+      cellBlockNames="{ cb1 }"
+      regionTableName="regionTable"
+      regionTableKey="{region0, region1}"
+      />
+  </Mesh>
+
+  <ElementRegions>
+    <CellElementRegion
+      name="region0"
+      cellBlocks="{ * }"
+      materialList="{ nullModel }"/>
+    <CellElementRegion
+      name="region1"
+      cellBlocks="{ * }"
+      materialList="{ nullModel }"/>
+  </ElementRegions>
+
+  <NumericalMethods>
+    <FiniteElements>
+      <FiniteElementSpace
+        name="FE1"
+        order="1"/>
+    </FiniteElements>
+  </NumericalMethods>
+
+</Problem>

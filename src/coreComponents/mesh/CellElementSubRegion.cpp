@@ -106,6 +106,53 @@ void CellElementSubRegion::copyFromCellBlock( CellBlockABC const & cellBlock )
   } );
 }
 
+
+
+void CellElementSubRegion::copyFromCellBlock( CellBlockABC const & cellBlock,
+                                              arrayView1d< localIndex const > const & cellList )
+{
+  // Defines the (unique) element type of this cell element region,
+  // and its associated number of nodes, edges, faces.
+  m_elementType = cellBlock.getElementType();
+  m_numNodesPerElement = cellBlock.numNodesPerElement();
+  m_numEdgesPerElement = cellBlock.numEdgesPerElement();
+  m_numFacesPerElement = cellBlock.numFacesPerElement();
+
+  // We call the `resize` member function of the cell to (nodes, edges, faces) relations,
+  // before calling the `CellElementSubRegion::resize` in order to keep the first dimension.
+  // Be careful when refactoring.
+  m_toNodesRelation.resize( this->size(), m_numNodesPerElement );
+  m_toEdgesRelation.resize( this->size(), m_numEdgesPerElement );
+  m_toFacesRelation.resize( this->size(), m_numFacesPerElement );
+  this->resize( cellList.size() );
+
+  auto const & cbToNodes = cellBlock.getElemToNodes();
+  auto const & cbToEdges = cellBlock.getElemToEdges();
+  auto const & cbToFaces = cellBlock.getElemToFaces();
+  auto const & cbLocalToGlobalMap = cellBlock.localToGlobalMap();
+
+  for( localIndex kcell = 0; kcell < cellList.size(); ++kcell )
+  {
+    localIndex const cellElemIndex = cellList[kcell];
+    for( int a=0; a<m_numNodesPerElement; ++a ) m_toNodesRelation( kcell, a ) = cbToNodes( cellElemIndex, a );
+    for( int a=0; a<m_numEdgesPerElement; ++a ) m_toEdgesRelation( kcell, a ) = cbToEdges( cellElemIndex, a );
+    for( int a=0; a<m_numFacesPerElement; ++a ) m_toFacesRelation( kcell, a ) = cbToFaces( cellElemIndex, a );
+    m_localToGlobalMap[ kcell ] = cbLocalToGlobalMap[ cellElemIndex ];
+  }
+
+  this->constructGlobalToLocalMap();
+
+  // cellBlock.forExternalProperties( [&]( WrapperBase const & wrapper )
+  // {
+  //   types::dispatch( types::ListofTypeList< types::StandardArrays >{}, [&]( auto tupleOfTypes )
+  //   {
+  //     using ArrayType = camp::first< decltype( tupleOfTypes ) >;
+  //     auto const src = Wrapper< ArrayType >::cast( wrapper ).reference().toViewConst();
+  //     this->registerWrapper( wrapper.getName(), std::make_unique< ArrayType >( &src ) );
+  //   }, wrapper );
+  // } );
+}
+
 void CellElementSubRegion::addFracturedElement( localIndex const cellElemIndex,
                                                 localIndex const embSurfIndex )
 {

@@ -214,6 +214,12 @@ public:
    */
   void setGlobalLength( real64 globalLength ) { m_globalLength = globalLength; }
 
+  void setRegionTableName( string const & regionTableName ) { m_regionTableName = regionTableName; }
+  void setRegionTableKey( array1d< string > const & regionTableKey ) { m_regionTableKey = regionTableKey; }
+
+  string const & getRegionTableName() const { return m_regionTableName; }
+  array1d< string > const & getRegionTableKey() const { return m_regionTableKey; }
+
 private:
 
   struct viewKeyStruct
@@ -290,6 +296,11 @@ private:
   localIndex m_numNodes;
   localIndex m_numFaces;
   localIndex m_numEdges;
+
+  string m_regionTableName;
+
+  array1d< string > m_regionTableKey;
+
 };
 
 }

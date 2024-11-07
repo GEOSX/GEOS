@@ -160,6 +160,10 @@ protected:
     constexpr static char const * trianglePatternString() { return "trianglePattern"; }
     constexpr static char const * meshTypeString() { return "meshType"; }
     constexpr static char const * positionToleranceString() { return "positionTolerance"; }
+    constexpr static char const * regionTableNameString() {return "regionTableName"; }
+    constexpr static char const * regionTableKeyString() {return "regionTableKey"; }
+
+
   };
   /// @endcond
 
@@ -210,6 +214,10 @@ private:
 
   /// Array of number of element per box
   array1d< integer > m_numElePerBox;
+
+  string m_regionTableName = "regionTable";
+
+  array1d< string > m_regionTableKey;
 
   /**
    * @brief Member variable for triangle pattern seletion.
