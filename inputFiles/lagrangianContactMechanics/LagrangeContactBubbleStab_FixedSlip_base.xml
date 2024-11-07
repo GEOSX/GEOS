@@ -1,0 +1,136 @@
+<?xml version="1.0" ?>
+<Problem>
+  <NumericalMethods>
+    <FiniteElements>
+      <FiniteElementSpace
+        name="FE1"
+        order="1"/>
+    </FiniteElements>
+  </NumericalMethods>
+
+  <Mesh>
+    <InternalMesh
+      name="mesh1"
+      elementTypes="{ C3D8 }"
+      xCoords="{ -1, 1 }"
+      yCoords="{ -1, 1 }"
+      zCoords="{ -1, 1 }"
+      nx="{ 100 }"
+      ny="{ 10 }"
+      nz="{ 1 }"
+      cellBlockNames="{ cb1 }"/>
+  </Mesh>
+
+  <Geometry>
+    <Box
+      name="faultPlane"
+      xmin="{ -0.5, -0.01, -1.01 }"
+      xmax="{  0.5,  0.01,  1.01 }"/>    
+  </Geometry>
+
+  <ElementRegions>
+    <CellElementRegion
+      name="Domain"
+      cellBlocks="{ cb1 }"
+      materialList="{rock}"/>
+
+    <SurfaceElementRegion
+      name="Fault"
+      materialList="{frictionLaw}"
+      defaultAperture="1e-3"/>  
+    </ElementRegions>
+  <Constitutive>
+
+    <ElasticIsotropic
+     name="rock"
+     defaultDensity="2700"
+     defaultBulkModulus="1.666666666666666e4"
+     defaultShearModulus="1.0e4"/>
+
+    <RateAndStateFriction
+      name="frictionLaw"
+      defaultA="0.01"
+      defaultB="0.015"
+      defaultDc="1.0e-5"  
+      defaultReferenceVelocity="1.0e-6"
+      defaultReferenceFrictionCoefficient="0.6"/>  
+  </Constitutive>
+
+  <FieldSpecifications>
+    <FieldSpecification
+      name="fault"
+      fieldName="ruptureState"
+      initialCondition="1"
+      objectPath="faceManager"
+      scale="1"
+      setNames="{ faultPlane }"/>
+
+    <FieldSpecification
+      name="xconstraint"
+      objectPath="nodeManager"
+      fieldName="totalDisplacement"
+      component="0"
+      scale="0.0"
+      setNames="{ xneg, xpos }"/>
+
+    <FieldSpecification
+      name="yconstraint"
+      objectPath="nodeManager"
+      fieldName="totalDisplacement"
+      component="1"
+      scale="0.0"
+      setNames="{ ypos, yneg, xneg, xpos }"/>
+
+    <FieldSpecification
+      name="zconstraint"
+      objectPath="nodeManager"
+      fieldName="totalDisplacement"
+      component="2"
+      scale="0.0"
+      setNames="{ zpos, zneg }"/>
+      
+    <FieldSpecification
+      name="dispJump_normal"
+      fieldName="targetIncrementalJump"
+      initialCondition="1"
+      objectPath="ElementRegions/Fault/FractureSubRegion"
+      scale="0.0"
+      component="0"
+      setNames="{all}"/>
+      
+    <FieldSpecification
+      name="dispJump_t1"
+      fieldName="targetIncrementalJump"
+      initialCondition="1"
+      objectPath="ElementRegions/Fault/FractureSubRegion"
+      scale="0.1"
+      component="1"
+      functionName="dispJumpFunction"
+      setNames="{all}"/>
+    
+    <FieldSpecification
+      name="dispJump_t2"
+      fieldName="targetIncrementalJump"
+      initialCondition="1"
+      objectPath="ElementRegions/Fault/FractureSubRegion"
+      scale="0.0"
+      component="2"
+      setNames="{all}"/>  
+  </FieldSpecifications>
+
+  <Functions>
+    <TableFunction
+     name="dispJumpFunction"
+     inputVarNames="{elementCenter}"
+     coordinateFiles="{dataTables/x.csv, dataTables/y.csv, dataTables/z.csv}" 
+     voxelFile="dataTables/tangentialJump.csv"/>
+
+  <Outputs>
+    <VTK
+      name="vtkOutput"
+      plotFileRoot="fixedSlip"/>
+
+    <Restart
+      name="restart"/>  
+  </Outputs>
+</Problem>

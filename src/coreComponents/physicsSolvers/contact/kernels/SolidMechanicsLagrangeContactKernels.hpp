@@ -104,7 +104,8 @@ public:
     m_traction( elementSubRegion.getField< fields::contact::traction >().toViewConst() ),
     m_tDofNumber( elementSubRegion.getReference< globalIndex_array >( tractionDofKey ).toViewConst() ),
     m_incrDisp( nodeManager.getField< fields::solidMechanics::incrementalDisplacement >() ),
-    m_incrBubbleDisp( faceManager.getField< fields::solidMechanics::incrementalBubbleDisplacement >() )
+    m_incrBubbleDisp( faceManager.getField< fields::solidMechanics::incrementalBubbleDisplacement >() ),
+    m_targetIncrementalJump( elementSubRegion.getField< fields::contact::targetIncrementalJump >().toViewConst() )
   {}
 
   /**
@@ -126,10 +127,10 @@ public:
                                        localRb{},
                                        localRt{},
                                        localAtt{ {} },
-                                       localAut{ {} },
-                                       localAbt{ {} },
-                                       duLocal{},
-                                       dbLocal{}
+      localAut{ {} },
+      localAbt{ {} },
+      duLocal{},
+      dbLocal{}
     {}
 
     /// C-array storage for the element local row degrees of freedom.
@@ -264,10 +265,9 @@ public:
   {
     Base::quadraturePointKernel( k, q, stack, [ =, &stack ] GEOS_HOST_DEVICE ( real64 const detJ )
     {
-      // This will vary depending on the state.
-      stack.localRt[0] += detJ * m_dispJump[k][0];
-      stack.localRt[1] += detJ * ( m_dispJump[k][1] - m_oldDispJump[k][1]  );
-      stack.localRt[2] += detJ * ( m_dispJump[k][2] - m_oldDispJump[k][2] );
+      stack.localRt[0] -= detJ * ( m_dispJump[k][0] - m_targetIncrementalJump[k][0] );
+      stack.localRt[1] -= detJ * ( ( m_dispJump[k][1] - m_oldDispJump[k][1] ) - m_targetIncrementalJump[k][1] );
+      stack.localRt[2] -= detJ * ( ( m_dispJump[k][2] - m_oldDispJump[k][2] ) - m_targetIncrementalJump[k][2] );
     } );
   }
 
@@ -306,13 +306,11 @@ public:
     LvArray::tensorOps::scaledAdd< numUdofs >( stack.localRu, tractionR, 1.0 );
     // Force Balance for the bubble dofs
     LvArray::tensorOps::scaledAdd< numBdofs >( stack.localRb, tractionRb, 1.0 );
-    
-    // Constraint equations
-    // real64 Rt[numTdofs]{};
-    LvArray::tensorOps::Ri_add_AijBj< numTdofs, numUdofs >( stack.localRt, stack.localAtu, stack.duLocal);
-    LvArray::tensorOps::Ri_add_AijBj< numTdofs, numBdofs >( stack.localRt, stack.localAtb, stack.dbLocal);
 
-    // LvArray::tensorOps::scaledAdd< numTdofs >( stack.localRt, Rt, 1.0 );
+    // // Constraint equations
+    // LvArray::tensorOps::Ri_add_AijBj< numTdofs, numUdofs >( stack.localRt, stack.localAtu, stack.duLocal);
+    // LvArray::tensorOps::Ri_add_AijBj< numTdofs, numBdofs >( stack.localRt, stack.localAtb, stack.dbLocal);
+
     fillGlobalMatrix( stack );
 
     return 0.0;
@@ -326,7 +324,9 @@ protected:
 
   arrayView2d< real64 const > const m_incrDisp;
 
-  arrayView2d< real64 const > const m_incrBubbleDisp;  
+  arrayView2d< real64 const > const m_incrBubbleDisp;
+
+  arrayView2d< real64 const > const m_targetIncrementalJump;
 
   /**
    * @brief Create the list of finite elements of the same type

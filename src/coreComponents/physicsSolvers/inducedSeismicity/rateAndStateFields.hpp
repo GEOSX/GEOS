@@ -64,15 +64,6 @@ DECLARE_FIELD( stateVariable_n,
                WRITE_AND_READ,
                "Rate- and state-dependent friction state variable at previous time step" );
 
-DECLARE_FIELD( deltaSlip,
-               "deltaSlip",
-               array2d< real64 >,
-               0.0,
-               LEVEL_0,
-               WRITE_AND_READ,
-               "Slip increment" );
-
-
 }
 
 }

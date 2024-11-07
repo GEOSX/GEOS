@@ -1,0 +1,33 @@
+<?xml version="1.0" ?>
+<Problem>
+  <Included>
+    <File
+      name="./Quasi-dynamic_2D_base.xml"/>
+  </Included>
+
+  <Events
+    maxTime="4.5e4"
+    maxCycle="1">
+
+    <SoloEvent 
+      name="generateFault"
+      target="/Solvers/SurfaceGen"/>
+
+    <PeriodicEvent
+      name="vtkOutput"
+      cycleFrequency="1"
+      targetExactTimestep="0"
+      target="/Outputs/vtkOutput"/>  
+      
+    <PeriodicEvent
+      name="solverApplications"
+      maxEventDt="1e4"
+      target="/Solvers/QDSolver"/>
+
+    <PeriodicEvent
+      name="resarts"
+      timeFrequency="2e4"
+      targetExactTimestep="0"
+      target="/Outputs/restart"/>  
+  </Events>
+</Problem>

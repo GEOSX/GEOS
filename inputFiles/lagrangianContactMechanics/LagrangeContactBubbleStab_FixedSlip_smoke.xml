@@ -1,0 +1,84 @@
+<?xml version="1.0" ?>
+<Problem>
+  <Included>
+    <File
+      name="./LagrangeContactBubbleStab_FixedSlip_base.xml"/>
+  </Included>
+
+  <Solvers>
+    <SolidMechanicsLagrangeContactBubbleStab
+      name="stressSolver"
+      timeIntegrationOption="QuasiStatic"
+      logLevel="2"
+      writeLinearSystem="0"
+      discretization="FE1"
+      targetRegions="{ Domain, Fault }">
+      <NonlinearSolverParameters
+        newtonTol="1.0e-8"
+        logLevel="2"
+        newtonMaxIter="10"
+        maxNumConfigurationAttempts="1"
+        lineSearchAction="Require"
+        lineSearchMaxCuts="2"
+        maxTimeStepCuts="1"/>
+      <LinearSolverParameters
+        solverType="direct"
+        directParallel="0"
+        logLevel="0"/>
+    </SolidMechanicsLagrangeContactBubbleStab>
+    
+    <SurfaceGenerator
+      name="SurfaceGen"
+      targetRegions="{ Domain }"
+      rockToughness="1.0"
+      mpiCommOrder="1"
+      fractureRegion="Fault"/>  
+  </Solvers>
+
+  <Mesh>
+    <InternalMesh
+      name="mesh1"
+      elementTypes="{ C3D8 }"
+      xCoords="{ -1, 1 }"
+      yCoords="{ -1, 1 }"
+      zCoords="{ -1, 1 }"
+      nx="{ 2 }"
+      ny="{ 2 }"
+      nz="{ 1 }"
+      cellBlockNames="{ cb1 }"/>
+  </Mesh>
+
+  <Geometry>    
+    <ThickPlane
+      name="faultPlane"
+      normal="{ 0.0, 1.0, 0.0 }"
+      origin="{ 0.0, 0.0, 0.0 }"
+      thickness="0.1"/>
+  </Geometry>
+
+  <Events
+    maxTime="4.5e4"
+    maxCycle="1">
+
+    <SoloEvent 
+      name="generateFault"
+      target="/Solvers/SurfaceGen"/>
+
+    <PeriodicEvent
+      name="vtkOutput"
+      cycleFrequency="1"
+      targetExactTimestep="0"
+      target="/Outputs/vtkOutput"/>  
+      
+    <PeriodicEvent
+      name="solverApplications"
+      maxEventDt="1e4"
+      target="/Solvers/stressSolver"/>
+
+    <PeriodicEvent
+      name="resarts"
+      timeFrequency="2e4"
+      targetExactTimestep="0"
+      target="/Outputs/restart"/>  
+  </Events>
+</Problem>

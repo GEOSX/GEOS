@@ -36,7 +36,7 @@ void constitutiveUpdatePassThru( FrictionBase const & contact,
                                  LAMBDA && lambda )
 {
   ConstitutivePassThruHandler< FrictionlessContact,
-                               CoulombFriction, 
+                               CoulombFriction,
                                RateAndStateFriction >::execute( contact, std::forward< LAMBDA >( lambda ) );
 }
 

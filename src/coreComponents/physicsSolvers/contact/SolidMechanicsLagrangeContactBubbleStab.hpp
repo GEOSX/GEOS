@@ -226,8 +226,6 @@ private:
   /// Finite element type to finite element object map
   std::map< string, std::unique_ptr< geos::finiteElement::FiniteElementBase > > m_faceTypeToFiniteElements;
 
-  //  void computeFaceDisplacementJump( DomainPartition & domain );
-
   struct viewKeyStruct : ContactSolverBase::viewKeyStruct
   {
     constexpr static char const * rotationMatrixString() { return "rotationMatrix"; }

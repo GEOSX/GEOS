@@ -1,0 +1,133 @@
+<?xml version="1.0" ?>
+
+<Problem>
+  <Solvers>
+    <SinglePhaseFVM
+      name="SinglePhaseFlow"
+      discretization="singlePhaseTPFA"
+      targetRegions="{ Domain }">
+      <NonlinearSolverParameters
+        newtonTol="1.0e-6"
+        newtonMaxIter="8"/>
+      <LinearSolverParameters
+        directParallel="0"/>
+    </SinglePhaseFVM>
+  </Solvers>
+
+  <Mesh>
+    <InternalMesh
+      name="mesh1"
+      elementTypes="{ C3D8 }"
+      xCoords="{ 0, 10 }"
+      yCoords="{ 0, 1 }"
+      zCoords="{ 0, 1 }"
+      nx="{ 10 }"
+      ny="{ 1 }"
+      nz="{ 1 }"
+      cellBlockNames="{ block1 }"/>
+  </Mesh>
+
+  <Geometry>
+    <Box
+      name="source"
+      xMin="{ -0.01, -0.01, -0.01 }"
+      xMax="{ 1.01, 1.01, 1.01 }"/>
+
+    <Box
+      name="sink"
+      xMin="{ 8.99, -0.01, -0.01 }"
+      xMax="{ 10.01, 1.01, 1.01 }"/>
+  </Geometry>
+
+  <NumericalMethods>
+    <FiniteVolume>
+      <TwoPointFluxApproximation
+        name="singlePhaseTPFA"/>
+    </FiniteVolume>
+  </NumericalMethods>
+
+  <ElementRegions>
+    <CellElementRegion
+      name="Domain"
+      cellBlocks="{ block1 }"
+      materialList="{ water, rock }"/>
+  </ElementRegions>
+
+  <Constitutive>
+    <CompressibleSinglePhaseFluid
+      name="water"
+      defaultDensity="1"
+      defaultViscosity="0.001"
+      referencePressure="0.0"
+      compressibility="5e-10"
+      viscosibility="0.0"/>
+
+    <CompressibleSolidConstantPermeability
+      name="rock"
+      solidModelName="nullSolid"
+      porosityModelName="rockPorosity"
+      permeabilityModelName="rockPerm"/>
+
+    <NullModel
+      name="nullSolid"/>
+
+    <PressurePorosity
+      name="rockPorosity"
+      defaultReferencePorosity="1"
+      referencePressure="0.0"
+      compressibility="0.0"/>
+
+    <ConstantPermeability
+      name="rockPerm"
+      permeabilityComponents="{ 1.0e-12, 1.0e-12, 1.0e-12 }"/>
+  </Constitutive>
+
+  <FieldSpecifications>
+    <FieldSpecification
+      name="Porosity"
+      initialCondition="1"
+      setNames="{ all }"
+      objectPath="ElementRegions/Domain/block1"
+      fieldName="rockPorosity_referencePorosity"
+      scale="1.00"/>
+
+    <FieldSpecification
+      name="initialPressure"
+      initialCondition="1"
+      setNames="{ all }"
+      objectPath="ElementRegions/Domain/block1"
+      fieldName="pressure"
+      scale="0"/>
+
+    <SourceFlux
+      name="sourceTerm"
+      objectPath="ElementRegions/Domain/block1"
+      scale="-0.00001"
+      setNames="{ source }"/>
+
+    <FieldSpecification
+      name="sinkTerm"
+      objectPath="ElementRegions/Domain/block1"
+      fieldName="pressure"
+      scale="0"
+      setNames="{ sink }"/>
+  </FieldSpecifications>
+
+  <Outputs>
+    <VTK
+      name="vtkOutput"/>
+  </Outputs>
+
+  <Events
+  maxTime="2e4">
+  <PeriodicEvent
+    name="outputs"
+    cycleFrequency="1"
+    target="/Outputs/vtkOutput"/>
+
+  <PeriodicEvent
+    name="solverApplications"
+    forceDt="1e3"
+    target="/Solvers/SinglePhaseFlow"/>
+</Events>
+</Problem>

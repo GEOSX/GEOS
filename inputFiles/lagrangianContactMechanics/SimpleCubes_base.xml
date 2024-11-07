@@ -134,7 +134,7 @@
   </Functions>
 
   <Outputs>
-    <Silo
+    <VTK
       name="siloOutput"
       plotLevel="3"/>
 

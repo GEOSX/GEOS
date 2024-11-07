@@ -102,7 +102,8 @@ public:
     m_incrDisp( nodeManager.getField< fields::solidMechanics::incrementalDisplacement >() ),
     m_incrBubbleDisp( faceManager.getField< fields::solidMechanics::incrementalBubbleDisplacement >() ),
     m_deltaDispJump( elementSubRegion.getField< fields::contact::deltaDispJump >().toView() ),
-    m_elementArea( elementSubRegion.getField< fields::elementArea >().toView() )
+    m_elementArea( elementSubRegion.getField< fields::elementArea >().toView() ),
+    m_slip( elementSubRegion.getField< fields::contact::slip >().toView() )
   {}
 
   //***************************************************************************
@@ -233,9 +234,12 @@ public:
 
     for( int i=0; i<3; ++i )
     {
-      m_dispJump[ k ][ i ] = scale * stack.dispJumpLocal[ i ] ;
+      m_dispJump[ k ][ i ] = scale * stack.dispJumpLocal[ i ];
       m_deltaDispJump[ k ][ i ] = scale * stack.deltaDispJumpLocal[ i ];
     }
+
+    m_slip[k] = LvArray::math::sqrt( LvArray::math::square( m_dispJump( k, 1 ) ) + LvArray::math::square( m_dispJump( k, 2 ) ) );
+
 
     return 0.0;
   }
@@ -258,6 +262,8 @@ protected:
   arrayView2d< real64 > const m_deltaDispJump;
 
   arrayView1d< real64 const > const m_elementArea;
+
+  arrayView1d< real64 > const m_slip;
 
 };
 

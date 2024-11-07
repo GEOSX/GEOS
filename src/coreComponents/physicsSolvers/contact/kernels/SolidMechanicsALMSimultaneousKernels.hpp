@@ -427,9 +427,9 @@ struct ComputeTractionSimultaneousKernel
     {
       tractionNew[kfe][0] = traction[kfe][0] + penalty[kfe][0] * dispJump[kfe][0] * faceElementArea[kfe];
       tractionNew[kfe][1] = traction[kfe][1] + ( penalty[kfe][2] * deltaDispJump[kfe][1]+
-                            penalty[kfe][4] * deltaDispJump[kfe][2] ) * faceElementArea[kfe];
+                                                 penalty[kfe][4] * deltaDispJump[kfe][2] ) * faceElementArea[kfe];
       tractionNew[kfe][2] = traction[kfe][2] + ( penalty[kfe][3] * deltaDispJump[kfe][2] +
-                            penalty[kfe][4] * deltaDispJump[kfe][1] ) * faceElementArea[kfe];
+                                                 penalty[kfe][4] * deltaDispJump[kfe][1] ) * faceElementArea[kfe];
     } );
   }
 
