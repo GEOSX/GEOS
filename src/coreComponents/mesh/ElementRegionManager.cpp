@@ -188,7 +188,9 @@ void ElementRegionManager::generateMesh( CellBlockManagerABC const & cellBlockMa
       
       this->forElementRegions< CellElementRegion >( [&]( CellElementRegion & elemRegion )
       {
+        elemRegion.setCellBlockNames( cellBlockSelector.buildCellBlocksSelection( elemRegion ) );
         elemRegion.generateMesh( cellBlocks, cellsInRegion[ elemRegion.getName() ] );
+        std::cout<<"Region "<<elemRegion.getName()<<" has "<<elemRegion.size()<<" elements"<<std::endl;
       } );
 
     }
