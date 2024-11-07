@@ -19,7 +19,7 @@
 
 #include "PhysicsSolverManager.hpp"
 
-#include "SolverBase.hpp"
+#include "PhysicsSolverBase.hpp"
 
 namespace geos
 {
@@ -48,15 +48,15 @@ Group * PhysicsSolverManager::createChild( string const & childKey, string const
 {
   GEOS_LOG_RANK_0( "Adding Solver of type " << childKey << ", named " << childName );
   return &registerGroup( childName,
-                         SolverBase::CatalogInterface::factory( childKey, getDataContext(),
-                                                                childName, this ) );
+                         PhysicsSolverBase::CatalogInterface::factory( childKey, getDataContext(),
+                                                                       childName, this ) );
 }
 
 
 void PhysicsSolverManager::expandObjectCatalogs()
 {
-  // During schema generation, register one of each type derived from SolverBase here
-  for( auto & catalogIter: SolverBase::getCatalog())
+  // During schema generation, register one of each type derived from PhysicsSolverBase here
+  for( auto & catalogIter: PhysicsSolverBase::getCatalog())
   {
     createChild( catalogIter.first, catalogIter.first );
   }

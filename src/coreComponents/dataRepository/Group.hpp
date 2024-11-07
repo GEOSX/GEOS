@@ -439,7 +439,6 @@ public:
   {
     using T = std::conditional_t< std::is_const< CONTAINERTYPE >::value, CASTTYPE const, CASTTYPE >;
     T * const castedContainer = dynamic_cast< T * >( &container );
-
     if( castedContainer != nullptr )
     {
       lambda( *castedContainer );
@@ -580,6 +579,7 @@ public:
   void forSubGroups( LOOKUP_CONTAINER const & subGroupKeys, LAMBDA && lambda )
   {
     localIndex counter = 0;
+
     for( auto const & subgroup : subGroupKeys )
     {
       applyLambdaToContainer< GROUPTYPE, GROUPTYPES... >( getGroup( subgroup ), [&]( auto & castedSubGroup )
