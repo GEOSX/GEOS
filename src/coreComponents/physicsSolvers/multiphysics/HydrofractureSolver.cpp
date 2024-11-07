@@ -905,7 +905,7 @@ void HydrofractureSolver< POROMECHANICS_SOLVER >::implicitStepComplete( real64 c
 }
 
 template< typename POROMECHANICS_SOLVER >
-void HydrofractureSolver < POROMECHANICS_SOLVER >::resetStateToBeginningOfStep( DomainPartition & domain )
+void HydrofractureSolver< POROMECHANICS_SOLVER >::resetStateToBeginningOfStep( DomainPartition & domain )
 {
   Base::resetStateToBeginningOfStep( domain );
   updateState( domain );
