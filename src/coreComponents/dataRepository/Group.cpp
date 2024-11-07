@@ -356,7 +356,6 @@ void Group::initialize_postMeshGeneration()
 
 void Group::initialize()
 {
-
   initializePreSubGroups();
 
   array1d< string > initOrder;

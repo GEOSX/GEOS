@@ -58,7 +58,7 @@ public:
       setDescription( "Name of the " + SOLVER::coupledSolverAttributePrefix() + " solver" );
 
     this->registerWrapper( viewKeyStruct::writeCSVFlagString(), &m_writeCSV ).
-      setApplyDefaultValue( 1 ).
+      setApplyDefaultValue( 0 ).
       setInputFlag( dataRepository::InputFlags::OPTIONAL ).
       setDescription( "Write statistics into a CSV file" );
   }
