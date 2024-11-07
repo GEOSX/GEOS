@@ -1121,6 +1121,10 @@ public:
                                ElementReferenceAccessor< localIndex_array > & packList,
                                string const fractureRegionName );
 
+  struct viewKeyStruct : public ElementRegionBase::viewKeyStruct
+  {
+    static constexpr char const * regionTableNameString() {return "regionTableName"; }
+  };
 
 private:
 
@@ -1186,6 +1190,9 @@ private:
    * @return reference to this object
    */
   ElementRegionManager & operator=( const ElementRegionManager & );
+
+  string m_regionTableName = "regionTable";
+
 };
 
 

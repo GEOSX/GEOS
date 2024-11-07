@@ -25,7 +25,10 @@
 #include "constitutive/ConstitutiveManager.hpp"
 #include "mesh/NodeManager.hpp"
 #include "mesh/MeshLevel.hpp"
+#include "mesh/generators/CellBlock.hpp"
 #include "mesh/utilities/MeshMapUtilities.hpp"
+#include "functions/FunctionManager.hpp"
+#include "functions/TableFunction.hpp"
 #include "schema/schemaUtilities.hpp"
 #include "mesh/generators/LineBlockABC.hpp"
 #include "mesh/CellElementRegionSelector.hpp"
@@ -39,6 +42,12 @@ ElementRegionManager::ElementRegionManager( string const & name, Group * const p
 {
   setInputFlags( InputFlags::OPTIONAL );
   this->registerGroup< Group >( ElementRegionManager::groupKeyStruct::elementRegionsGroup() );
+
+  registerWrapper( viewKeyStruct::regionTableNameString(), &m_regionTableName ).
+    setInputFlag( InputFlags::OPTIONAL ).
+    setApplyDefaultValue( "" ).
+    setDescription( "Name of table that contains coordinate based region specification. By number?" );
+
 }
 
 ElementRegionManager::~ElementRegionManager()
@@ -127,6 +136,43 @@ void ElementRegionManager::generateMesh( CellBlockManagerABC const & cellBlockMa
     Group const & cellBlocks = cellBlockManager.getCellBlocks();
     CellElementRegionSelector cellBlockSelector{ cellBlocks,
                                                  cellBlockManager.getRegionAttributesCellBlocks() };
+
+    if( !m_regionTableName.empty() )
+    {
+      FunctionManager const & functionManager = FunctionManager::getInstance();
+      TableFunction const & regionTable = functionManager.getGroup< TableFunction >( m_regionTableName );
+
+      // key = cellBlock name
+      // value = array of region index in cellBlock
+      map< string, array1d< localIndex > > cellRegions;
+
+      auto const & vertexCoords = cellBlockManager.getNodePositions();
+      cellBlocks.forSubGroups<CellBlock>( [&]( CellBlock const & cellBlock )
+      {
+        string const & cellBlockName = cellBlock.getName();
+        array1d<localIndex> & regionIndex = cellRegions[cellBlockName];
+        regionIndex.resize( cellBlock.size() );
+        auto const & cellToNodes = cellBlock.getElemToNodes();
+
+        for( localIndex k=0; k<cellBlock.size(); ++k )
+        {
+          real64 centroid[3] = {0};
+          for( localIndex a=0; a<cellBlock.numNodesPerElement(); ++a )
+          {
+            centroid[0] += vertexCoords( cellToNodes( k, a ), 0 ) / cellBlock.numNodesPerElement();
+            centroid[1] += vertexCoords( cellToNodes( k, a ), 1 ) / cellBlock.numNodesPerElement();
+            centroid[2] += vertexCoords( cellToNodes( k, a ), 2 ) / cellBlock.numNodesPerElement();
+          }
+          real64 value = regionTable.evaluate( centroid );
+          localIndex regionOfCell = static_cast<localIndex>( std::round( value ));
+          std::cout<<value<<std::endl;
+          std::cout<<regionOfCell<<std::endl;
+          regionIndex[k]=regionOfCell;
+        }
+      });
+
+    }
+
     this->forElementRegions< CellElementRegion >( [&]( CellElementRegion & elemRegion )
     {
       elemRegion.setCellBlockNames( cellBlockSelector.buildCellBlocksSelection( elemRegion ) );
