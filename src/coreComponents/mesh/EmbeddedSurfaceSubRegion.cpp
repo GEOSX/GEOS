@@ -29,13 +29,8 @@
 
 
 #include "mainInterface/GeosxState.hpp"
-//#include "common/DataTypes.hpp"
-//#include "linearAlgebra/DofManager.hpp"
-//#include "mainInterface/initialization.hpp"
 #include "mainInterface/ProblemManager.hpp"
 #include "mesh/DomainPartition.hpp"
-//#include "mesh/MeshManager.hpp"
-//#include "mesh/mpiCommunications/CommunicationTools.hpp"
 
 namespace geos
 {
@@ -278,7 +273,7 @@ array1d< localIndex > EmbeddedSurfaceSubRegion::getEdfmNodeParentEdgeIndex( Arra
                                                                             arrayView2d< localIndex const > const & edgeToNodes,
                                                                             arrayView2d< real64 const, nodes::REFERENCE_POSITION_USD > const & nodesCoord )
 {
-  // first we build a node index to parent cell index map (we oly need one)
+  // first we build a node index to parent cell index map (we only need one)
   array1d< int > nodeToElem( elemNodesLocations.size());
   for( int i = 0; i<elemNodesLocations.size(); i++ )
   {
@@ -411,98 +406,6 @@ bool EmbeddedSurfaceSubRegion::addAllEmbeddedSurfaces(
   }
 
   return true;
-
-}
-
-bool EmbeddedSurfaceSubRegion::copyFromCellBlock( EmbeddedSurfaceBlockABC const & embeddedSurfaceBlock )
-{
-
-
-  // DomainPartition & domain = getGlobalState().getProblemManager().getDomainPartition();
-  // MeshLevel & meshLevel = domain.getMeshBody( 0 ).getBaseDiscretization();
-  // EmbeddedSurfaceNodeManager & embSurfNodeManager = meshLevel.getEmbSurfNodeManager();
-  // EdgeManager & edgeManager = meshLevel.getEdgeManager();
-
-  // ElementRegionManager & elemManager = meshLevel.getElemManager();
-
-  localIndex const numElems= embeddedSurfaceBlock.numEmbeddedSurfElem();
-
-  resize( embeddedSurfaceBlock.numEmbeddedSurfElem() );
-
-  ToCellRelation< ArrayOfArrays< localIndex > > elemTo3dElem = embeddedSurfaceBlock.getEmbeddedSurfElemTo3dElem();
-  ArrayOfArrays< localIndex > elemToNodes = embeddedSurfaceBlock.getEmbeddedSurfElemToNodes();
-  ArrayOfArrays< real64 > elemNodesLocations = embeddedSurfaceBlock.getEmbeddedSurfElemNodesCoords();
-  ArrayOfArrays< real64 > elemNormalVectors = embeddedSurfaceBlock.getEmbeddedSurfElemNormalVectors();
-  ArrayOfArrays< real64 > elemTangentialVectors1 = embeddedSurfaceBlock.getEmbeddedSurfElemTangentialWidthVectors();
-  ArrayOfArrays< real64 > elemTangentialVectors2 = embeddedSurfaceBlock.getEmbeddedSurfElemTangentialLengthVectors();
-
-
-
-  for( auto i = 0; i<numElems; ++i )
-  {
-    m_toNodesRelation.resizeArray( i, 4 );
-    localIndex elem3dIndex = elemTo3dElem.toCellIndex[i][0];
-    localIndex elemRegionIndex = elemTo3dElem.toBlockIndex[i][0];
-    // region and subregion will be filled later.
-    m_2dElemToElems.m_toElementIndex.emplaceBack( i, elem3dIndex );
-    m_2dElemToElems.m_toElementSubRegion.emplaceBack( i, elemRegionIndex );
-    m_2dElemToElems.m_toElementRegion.emplaceBack( i, 0 );
-
-    // we only accept quads
-    array2d< real64 >  elemNodeCoords( 4, 3 );
-    for( localIndex inode = 0; inode < 4; inode++ )
-    {
-      auto nodeGlobalIndex = elemToNodes[i][ inode ];
-      m_toNodesRelation( i, inode ) = nodeGlobalIndex;
-      LvArray::tensorOps::copy< 3 >( elemNodeCoords[inode], elemNodesLocations[nodeGlobalIndex] );
-    }
-
-    m_parentPlaneName[i] = "elem_" + std::to_string( i );
-    LvArray::tensorOps::copy< 3 >( m_normalVector[i], elemNormalVectors[i] );
-    LvArray::tensorOps::copy< 3 >( m_tangentVector1[i], elemTangentialVectors1[i] );
-    LvArray::tensorOps::copy< 3 >( m_tangentVector2[i], elemTangentialVectors2[i] );
-    this->calculateElementGeometricQuantities( elemNodeCoords.toViewConst(), i );
-  }
-
-  // add nodes to embNodeManager
- /// for( auto i =0; i < elemNodesLocations.size(); ++i )
- /// {
-
- ///   array2d< real64 >  elemNodeCoords( 1, 3 );
- ///   auto ghostRank = -2;
-
- ///   //  // Add the point to the node Manager
- ///   //  globalIndex parentEdgeID = edgeLocalToGlobal[ pointParentIndex[ originalIndices[ j ] ] ];
- ///   //  nodeIndex = embSurfNodeManager.size();
- ///   embSurfNodeManager.appendNode( elemNodesLocations[i].toSliceConst(), ghostRank );
-
- ///   //  arrayView1d< localIndex > const & parentIndex =
- ///   //    embSurfNodeManager.getField< fields::parentEdgeIndex >();
-
- ///   //  parentIndex[nodeIndex] = pointParentIndex[ originalIndices[ j ] ];
-
- ///   //  array1d< globalIndex > & parentEdgeGlobalIndex = embSurfNodeManager.getParentEdgeGlobalIndex();
- ///   //  parentEdgeGlobalIndex[nodeIndex] = parentEdgeID;
- /// }
-
-
-  // elemManager.forElementSubRegionsComplete< CellElementSubRegion >(
-  //   [&] ( localIndex, localIndex, ElementRegionBase const & region, CellElementSubRegion & subRegion )
-  // {
-
-  //   for( auto i = 0; i<numElems; ++i )
-  //   {
-  //     localIndex elem3dIndex = elemTo3dElem.toCellIndex[i][0];
-
-  //     subRegion.addFracturedElement( elem3dIndex, i );
-
-  //   }
-
-  // } );
-
-
-  return true;
-
 
 }
 

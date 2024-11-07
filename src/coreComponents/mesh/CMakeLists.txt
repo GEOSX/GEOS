@@ -210,7 +210,3 @@ endif()
 if( GEOS_ENABLE_TESTS )
     add_subdirectory( unitTests )
 endif( )
-
-
-#add_dependencies(mesh mainInterface)
-#add_dependencies(mesh linearAlgebra)

@@ -141,12 +141,10 @@ void ElementRegionManager::generateMesh( CellBlockManagerABC const & cellBlockMa
     
      if( elemRegion.subRegionType() == SurfaceElementRegion::SurfaceSubRegionType::faceElement )
      {
-       Group const * fracBlocks = &cellBlockManager.getFaceBlocks();
        elemRegion.generateMesh( cellBlockManager.getFaceBlocks() );
      }
     else if( elemRegion.subRegionType() == SurfaceElementRegion::SurfaceSubRegionType::embeddedElement )
     {
-      Group const * edfmBlocks = &cellBlockManager.getEmbeddedSurfaceBlocks();
       elemRegion.generateMesh( cellBlockManager.getEmbeddedSurfaceBlocks() );
     }
 

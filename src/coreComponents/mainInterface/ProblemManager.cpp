@@ -691,6 +691,8 @@ void ProblemManager::generateMesh()
     else if( meshBody.hasGroup( keys::cellManager ) )
     {
       // meshBody.deregisterGroup( keys::cellManager );
+      // Cell block manager is needed for EDFM loading from VTK
+      // Can't be deregistred here
       //meshBody.deregisterCellBlockManager();
     }
 

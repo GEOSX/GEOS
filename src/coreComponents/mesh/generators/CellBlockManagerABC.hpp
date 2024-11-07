@@ -161,12 +161,6 @@ public:
   virtual localIndex numFaces() const = 0;
 
   /**
-   * @brief Total number of embedded surfaces across all the cell blocks.
-   * @return The total number of embedded surfaces.
-   */
-  virtual localIndex numEmbeddedSurfaces() const = 0;
-
-  /**
    * @brief Returns the node coordinates in a (numNodes, 3) 2d array.
    * @return A const view to the array.
    */
@@ -221,12 +215,6 @@ public:
    */
   virtual ToCellRelation< array2d< localIndex > > getFaceToElements() const = 0;
 
-  /**
-   * @brief Returns the embedded surface to elements mapping.
-   * @return A 1 to 1 relationship. The result is mapping from 1 fracture element to its parent matrix element.
-   *
-   */
-  virtual ToCellRelation< localIndex > getEmbeddedSurfaceToElements() const = 0;
   /**
    * @brief The node to global mapping for nodes.
    * @return The mapping as an array of size numNodes.

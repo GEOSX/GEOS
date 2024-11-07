@@ -82,8 +82,6 @@ public:
 
   ToCellRelation< array2d< localIndex > > getFaceToElements() const override;
 
-  ToCellRelation< localIndex > getEmbeddedSurfaceToElements() const override;
-
   array1d< globalIndex > getNodeLocalToGlobal() const override;
 
   /**
@@ -127,8 +125,6 @@ public:
   localIndex numEdges() const override;
 
   localIndex numFaces() const override;
-
-  localIndex numEmbeddedSurfaces() const override;
 
   using Group::resize;
 
@@ -297,8 +293,6 @@ private:
   ArrayOfArrays< localIndex > m_faceToEdges;
   ToCellRelation< array2d< localIndex > > m_faceToCells;
 
-  ToCellRelation< localIndex > m_embeddedSurfToCells;
-
   array1d< globalIndex > m_nodeLocalToGlobal;
 
   std::map< string, SortedArray< localIndex > > m_nodeSets;
@@ -310,7 +304,6 @@ private:
   localIndex m_numNodes;
   localIndex m_numFaces;
   localIndex m_numEdges;
-  localIndex m_numEmbeddedSurfElem;
 };
 
 }

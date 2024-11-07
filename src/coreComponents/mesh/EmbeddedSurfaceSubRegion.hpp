@@ -30,10 +30,6 @@
 //Do we really need this include Rectangle?
 #include "simpleGeometricObjects/Rectangle.hpp"
 
-//#include "mainInterface/GeosxState.hpp"
-//#include "mainInterface/ProblemManager.hpp"
-//#include "mesh/DomainPartition.hpp"
-
 namespace geos
 {
 
@@ -151,12 +147,34 @@ public:
                               FixedOneToManyRelation const & cellToEdges,
                               PlanarGeometricObject const * fracture );
 
+  /**
+   * @brief Function that maps each node of an embedded surface element to its parent edge on the 3D element
+   * @param elemNodesLocations geometric coordinates of each embedded surface element node (no duplicates for shared nodes)
+   * @param elemToNodes embedded surface node index to the array of its node indices map
+   * @param elemTo3dElem embedded element to its parent 3D cell element map
+   * @param cellToEdges 3D cells to its edges map
+   * @param edgeToNodes edge to its node indices map
+   * @param nodesCoord geometric coordinates of 3D cells
+   * @return embedded node to 3D cell edge mapping
+   */
   array1d< localIndex > getEdfmNodeParentEdgeIndex( ArrayOfArraysView< real64 > const & elemNodesLocations,
                                                     ArrayOfArraysView< localIndex > const & elemToNodes,
                                                     ToCellRelation< ArrayOfArrays< localIndex > > const & elemTo3dElem,
                                                     FixedOneToManyRelation const & cellToEdges,
                                                     arrayView2d< localIndex const > const & edgeToNodes,
                                                     arrayView2d< real64 const, nodes::REFERENCE_POSITION_USD > const & nodesCoord );
+
+  /**
+   * @brief Function to add a all the embedded surface elements (loaded from VTK).
+   * @param regionIndex cell element region index
+   * @param subRegionIndex cell element subregion index
+   * @param nodeManager the nodemanager group
+   * @param embSurfNodeManager the embSurfNodeManager group
+   * @param edgeManager the edgemanager group
+   * @param cellToEdges cellElement to edges map
+   * @param embeddedSurfaceBlock embeddedSurfaceBloc holds the information for all embedded element network
+   * @return boolean defining whether all the embedded elements were added or not
+   */
 
   bool addAllEmbeddedSurfaces( localIndex const regionIndex,
                                localIndex const subRegionIndex,
@@ -166,11 +184,6 @@ public:
                                FixedOneToManyRelation const & cellToEdges,
                                EmbeddedSurfaceBlockABC const & embeddedSurfaceBlock );
 
-  /**
-   * @brief Fill @p EmbeddedSurfaceSubRegion  by copying the data from the source embedded surface block
-   *
-   * **/
-  bool copyFromCellBlock( EmbeddedSurfaceBlockABC const & embeddedSurfaceBlock );
 
   /**
    * @brief inherit ghost rank from cell elements.
