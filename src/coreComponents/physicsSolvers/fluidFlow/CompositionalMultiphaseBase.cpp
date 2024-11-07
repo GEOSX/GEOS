@@ -2644,8 +2644,8 @@ bool CompositionalMultiphaseBase::checkSequentialSolutionIncrements( DomainParti
 }
 
 real64 CompositionalMultiphaseBase::setNextDt( real64 const & time,
-                                    const real64 & lastDt,
-                                    DomainPartition & domain )
+                                               const real64 & lastDt,
+                                               DomainPartition & domain )
 {
   if( m_targetFlowCFL < 0 )
     return PhysicsSolverBase::setNextDt( time, lastDt, domain );

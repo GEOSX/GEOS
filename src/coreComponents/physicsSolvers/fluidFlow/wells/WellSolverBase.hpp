@@ -262,9 +262,9 @@ public:
    * @param[in] domain the domain object
    * @return the prescribed time step size
    */
-  virtual real64 setNextDt(real64 const &currentTime,
-                           real64 const &lastDt,
-                           DomainPartition &domain) override;
+  virtual real64 setNextDt( real64 const & currentTime,
+                            real64 const & lastDt,
+                            DomainPartition & domain ) override;
 
   /**
    * @brief Utility function to keep the well variables during a time step (used in poromechanics simulations)
@@ -320,7 +320,7 @@ protected:
                            real64 const & dt,
                            DomainPartition & domain ) = 0;
 
-  void setNextDtFromTable(TableFunction const * table, real64 const currentTime, real64 & nextDt);
+  void setNextDtFromTable( TableFunction const * table, real64 const currentTime, real64 & nextDt );
 
   /// name of the flow solver
   string m_flowSolverName;

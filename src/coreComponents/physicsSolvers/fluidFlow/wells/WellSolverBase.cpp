@@ -328,29 +328,29 @@ real64 WellSolverBase::setNextDt( real64 const & time, const real64 & lastDt, ge
     {
       WellControls & wellControls = getWellControls( subRegion );
 
-      setNextDtFromTable(wellControls.getTargetBHPTable(), time, nextDt);
-      setNextDtFromTable(wellControls.getTargetMassRateTable(), time, nextDt);
-      setNextDtFromTable(wellControls.getTargetPhaseRateTable(), time, nextDt);
-      setNextDtFromTable(wellControls.getTargetTotalRateTable(), time, nextDt);
-      setNextDtFromTable(wellControls.getStatusTable(), time, nextDt);
+      setNextDtFromTable( wellControls.getTargetBHPTable(), time, nextDt );
+      setNextDtFromTable( wellControls.getTargetMassRateTable(), time, nextDt );
+      setNextDtFromTable( wellControls.getTargetPhaseRateTable(), time, nextDt );
+      setNextDtFromTable( wellControls.getTargetTotalRateTable(), time, nextDt );
+      setNextDtFromTable( wellControls.getStatusTable(), time, nextDt );
     } );
   } );
 
   return nextDt;
 }
 
-void WellSolverBase::setNextDtFromTable(TableFunction const * table,  real64 const currentTime, real64 & nextDt)
+void WellSolverBase::setNextDtFromTable( TableFunction const * table, real64 const currentTime, real64 & nextDt )
 {
-  if (table)
+  if( table )
   {
     // small epsilon to make sure we land on the other side of table interval and pick up the right rate
     real64 const eps = 1e-6;
-    real64 const dtLimit = (table->getCoord(&currentTime, TableFunction::InterpolationType::Upper)[0] - currentTime) * ( 1.0 + eps );
-    if (dtLimit > eps && dtLimit < nextDt)
+    real64 const dtLimit = (table->getCoord( &currentTime, TableFunction::InterpolationType::Upper )[0] - currentTime) * ( 1.0 + eps );
+    if( dtLimit > eps && dtLimit < nextDt )
     {
       nextDt = dtLimit;
-      if (m_nonlinearSolverParameters.getLogLevel() > 0)
-        GEOS_LOG_RANK_0(GEOS_FMT("{}: next time step based on {} coordinates = {}", getName(), table->getName(), dtLimit));
+      if( m_nonlinearSolverParameters.getLogLevel() > 0 )
+        GEOS_LOG_RANK_0( GEOS_FMT( "{}: next time step based on {} coordinates = {}", getName(), table->getName(), dtLimit ));
     }
   }
 }

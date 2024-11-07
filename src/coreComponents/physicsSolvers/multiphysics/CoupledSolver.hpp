@@ -308,7 +308,7 @@ public:
     return scalingFactor;
   }
 
- virtual real64
+  virtual real64
   setNextDt( real64 const & time,
              real64 const & lastDt,
              DomainPartition & domain ) override
