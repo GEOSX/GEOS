@@ -712,14 +712,18 @@ struct computePotentialCapillary
       localIndex const esr = sesri[i];
       localIndex const ei = sei[i];
 
-      pot += transmissibility[i] * phaseCapPressure[er][esr][ei][0][ip];
+      real64 const capPres = phaseCapPressure[er][esr][ei][0][ip];
+
+      pot += transmissibility[i] * capPres;
+
+      dPot_dPres[i] += dTrans_dPres[i] * capPres;
+
       // need to add contributions from both cells
       for( localIndex jp = 0; jp < numPhase; ++jp )
       {
         real64 const dCapPressure_dS = dPhaseCapPressure_dPhaseVolFrac[er][esr][ei][0][ip][jp];
-        dPot_dPres[i] +=
-          transmissibility[i] * dCapPressure_dS * dPhaseVolFrac[er][esr][ei][jp][Deriv::dP]
-          + dTrans_dPres[i] * phaseCapPressure[er][esr][ei][0][jp];
+
+        dPot_dPres[i] += transmissibility[i] * dCapPressure_dS * dPhaseVolFrac[er][esr][ei][jp][Deriv::dP];
 
         for( localIndex jc = 0; jc < numComp; ++jc )
         {
@@ -1579,6 +1583,7 @@ struct IHUPhaseFlux
       // accumulate into total flux
       UpwindHelpers::addToValueAndDerivatives( phaseFlux, dPhaseFlux_dP, dPhaseFlux_dC,
                                                totFlux, dTotFlux_dP, dTotFlux_dC );
+/*
       // old wrong way:
       for( localIndex ke = 0; ke < numFluxSupportPoints; ++ke )
       {
@@ -1589,8 +1594,8 @@ struct IHUPhaseFlux
           dTotMob_dC[ke][jc] += dPhaseMob[seri[ke]][sesri[ke]][sei[ke]][jp][Deriv::dC + jc];
         }
       }
+ */
 
-/*
       // new more correct:
       // choose upstream cell
       localIndex const k_up = (phaseFlux >= 0) ? 0 : 1;
@@ -1598,7 +1603,6 @@ struct IHUPhaseFlux
       UpwindHelpers::assignMobilityAndDerivatives( jp, k_up, seri, sesri, sei,
                                                    phaseMob, dPhaseMob,
                                                    totMob, dTotMob_dP[k_up], dTotMob_dC[k_up] );
- */
     }
 
     // safeguard

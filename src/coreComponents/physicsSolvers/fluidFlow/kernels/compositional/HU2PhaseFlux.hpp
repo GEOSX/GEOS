@@ -465,7 +465,7 @@ protected:
                                        localIndex const (&sesri)[numFluxSupportPoints],
                                        localIndex const (&sei)[numFluxSupportPoints],
                                        real64 const (&trans)[2],
-                                       real64 const (&dTrans_dPres)[2],
+                                       real64 const (&dTrans_dP)[2],
                                        ElementViewConst< arrayView1d< real64 const > > const & gravCoef,
                                        ElementViewConst< arrayView3d< real64 const, compflow::USD_COMP_DC > > const & dCompFrac_dCompDens,
                                        ElementViewConst< arrayView3d< real64 const, constitutive::multifluid::USD_PHASE > > const & phaseMassDens,
@@ -516,7 +516,7 @@ protected:
       localIndex const ei = sei[i];
 
       real64 const gravD = trans[i] * gravCoef[er][esr][ei];
-      real64 const dGravD_dP = dTrans_dPres[i] * gravCoef[er][esr][ei];
+      real64 const dGravD_dP = dTrans_dP[i] * gravCoef[er][esr][ei];
       gravPot += densMean * gravD;
       dGravPot_dP[i] += densMean * dGravD_dP;
 
@@ -533,7 +533,7 @@ protected:
                                          localIndex const (&seri)[numFluxSupportPoints],
                                          localIndex const (&sesri)[numFluxSupportPoints],
                                          localIndex const (&sei)[numFluxSupportPoints],
-                                         real64 const (&transmissibility)[2],
+                                         real64 const (&trans)[2],
                                          real64 const (&dTrans_dPres)[2],
                                          ElementViewConst< arrayView3d< real64 const, compflow::USD_PHASE_DC > > const & dPhaseVolFrac,
                                          ElementViewConst< arrayView3d< real64 const, constitutive::cappres::USD_CAPPRES > > const & phaseCapPressure,
@@ -545,25 +545,32 @@ protected:
     // init
     UpwindHelpers::assignToZero( capPot, dCapPot_dP, dCapPot_dC );
 
+    // need to add contributions from both cells
     for( localIndex i = 0; i < numFluxSupportPoints; ++i )
     {
       localIndex const er = seri[i];
       localIndex const esr = sesri[i];
       localIndex const ei = sei[i];
 
-      capPot += transmissibility[i] * phaseCapPressure[er][esr][ei][0][ip];
-      // need to add contributions from both cells
-      for( localIndex jp = 0; jp < numPhase; ++jp )
+      real64 const capPressure = phaseCapPressure[er][esr][ei][0][ip];
+      real64 dCapPressure_dP{};
+      real64 dCapPressure_dC[numComp]{};
+      for( integer jp = 0; jp < numPhase; ++jp )
       {
         real64 const dCapPressure_dS = dPhaseCapPressure_dPhaseVolFrac[er][esr][ei][0][ip][jp];
-        dCapPot_dP[i] +=
-          transmissibility[i] * dCapPressure_dS * dPhaseVolFrac[er][esr][ei][jp][Deriv::dP]
-          + dTrans_dPres[i] * phaseCapPressure[er][esr][ei][0][jp];
+        dCapPressure_dP += dCapPressure_dS * dPhaseVolFrac[er][esr][ei][jp][Deriv::dP];
 
-        for( localIndex jc = 0; jc < numComp; ++jc )
+        for( integer jc = 0; jc < numComp; ++jc )
         {
-          dCapPot_dC[i][jc] += transmissibility[i] * dCapPressure_dS * dPhaseVolFrac[er][esr][ei][jp][Deriv::dC + jc];
+          dCapPressure_dC[jc] += dCapPressure_dS * dPhaseVolFrac[er][esr][ei][jp][Deriv::dC+jc];
         }
+      }
+
+      capPot += trans[i] * capPressure;
+      dCapPot_dP[i] += trans[i] * dCapPressure_dP + dTrans_dPres[i] * capPressure;
+      for( integer jc = 0; jc < numComp; ++jc )
+      {
+        dCapPot_dC[i][jc] += trans[i] * dCapPressure_dC[jc];
       }
     }
   }
