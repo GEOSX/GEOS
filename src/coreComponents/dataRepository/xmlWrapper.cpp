@@ -32,18 +32,29 @@ using namespace dataRepository;
 namespace xmlWrapper
 {
 
-void validateString( string const & value, Regex const & regex )
+void validateString( std::string const & value, const Regex & regex )
 {
-  std::smatch m;
-  bool inputValidated = std::regex_match( value, m, std::regex( regex.m_regexStr ) );
-  if( !inputValidated )
+  std::regex regexInstance{ regex.m_regexStr };
+  // if validation fails, let's try to find the error start & end to underline it. If it fails, underline the whole message.
+  if( !std::regex_match( value, regexInstance ))
   {
-    ptrdiff_t errorId = ( m.size()>0 && m.position( 0 )==0 ) ? m.length() : 0;
+    std::smatch m;
+    std::regex_search( value, m, regexInstance );
+    ptrdiff_t const errorStart = ( m.size()>0 && m.position( 0 )==0 ) ? m.length() : 0;
+
+    size_t errorLength;
+    for( errorLength = 1; errorStart + errorLength < value.length(); ++errorLength )
+    {
+      if( std::regex_match( value.substr( errorStart + errorLength, 1 ), regexInstance ) )
+        break;
+    }
+
+    std::string const underline = std::string( errorStart, ' ' ) + std::string( errorLength, '^' );
     GEOS_THROW( GEOS_FMT( "Input string validation failed at:\n"
                           "  \"{}\"\n"
-                          "   {:>{}}\n"
+                          "   {}\n"
                           "  Expected format: {}",
-                          value, '^', errorId+1, regex.m_formatDescription ),
+                          value, underline, regex.m_formatDescription ),
                 InputError );
   }
 }
