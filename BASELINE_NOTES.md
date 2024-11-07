@@ -94,7 +94,7 @@ PR #3278 (2024-08-12)
 ======================
 Renamed GEOSX to GEOS in enternal mesh import, so rebaseline to change these names is the baselines.
 
-202 (2024-08-03)
+PR #3202 (2024-08-03)
 ======================
 Acoustic VTI tests needed rebaselining after update in source and receiver location algorithm.
 
