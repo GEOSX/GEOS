@@ -26,7 +26,7 @@
 #include "kernels/StrainHelper.hpp"
 #include "mesh/mpiCommunications/CommunicationTools.hpp"
 #include "mesh/mpiCommunications/MPI_iCommData.hpp"
-#include "physicsSolvers/SolverBase.hpp"
+#include "physicsSolvers/PhysicsSolverBase.hpp"
 #include "physicsSolvers/fluidFlow/FlowSolverBase.hpp"
 
 #include "physicsSolvers/solidMechanics/SolidMechanicsFields.hpp"
@@ -39,7 +39,7 @@ namespace geos
  *
  * This class implements a finite element solution to the equations of motion.
  */
-class SolidMechanicsLagrangianFEM : public SolverBase
+class SolidMechanicsLagrangianFEM : public PhysicsSolverBase
 {
 public:
 
@@ -79,11 +79,11 @@ public:
   virtual ~SolidMechanicsLagrangianFEM() override;
 
   /**
-   * @return The string that may be used to generate a new instance from the SolverBase::CatalogInterface::CatalogType
+   * @return The string that may be used to generate a new instance from the PhysicsSolverBase::CatalogInterface::CatalogType
    */
   static string catalogName() { return "SolidMechanics_LagrangianFEM"; }
   /**
-   * @copydoc SolverBase::getCatalogName()
+   * @copydoc PhysicsSolverBase::getCatalogName()
    */
   string getCatalogName() const override { return catalogName(); }
 
@@ -229,7 +229,7 @@ public:
 
   virtual void saveSequentialIterationState( DomainPartition & domain ) override;
 
-  struct viewKeyStruct : SolverBase::viewKeyStruct
+  struct viewKeyStruct : PhysicsSolverBase::viewKeyStruct
   {
     static constexpr char const * newmarkGammaString() { return "newmarkGamma"; }
     static constexpr char const * newmarkBetaString() { return "newmarkBeta"; }
@@ -305,7 +305,7 @@ private:
 
   string m_contactRelationName;
 
-  SolverBase * m_surfaceGenerator;
+  PhysicsSolverBase *m_surfaceGenerator;
   string m_surfaceGeneratorName;
 };
 
