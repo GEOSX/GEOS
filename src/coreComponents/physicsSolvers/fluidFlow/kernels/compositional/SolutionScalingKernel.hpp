@@ -359,20 +359,16 @@ public:
                    real64 const maxAbsolutePresChange,
                    real64 const maxCompFracChange,
                    real64 const maxRelativeCompDensChange,
+                   arrayView1d< real64 const > const pressure,
+                   arrayView2d< real64 const, compflow::USD_COMP > const compDens,
+                   arrayView1d< real64 > pressureScalingFactor,
+                   arrayView1d< real64 > compDensScalingFactor,
                    globalIndex const rankOffset,
                    integer const numComp,
                    string const dofKey,
                    ElementSubRegionBase & subRegion,
                    arrayView1d< real64 const > const localSolution )
   {
-    arrayView1d< real64 const > const pressure =
-      subRegion.getField< fields::flow::pressure >();
-    arrayView2d< real64 const, compflow::USD_COMP > const compDens =
-      subRegion.getField< fields::flow::globalCompDensity >();
-    arrayView1d< real64 > pressureScalingFactor =
-      subRegion.getField< fields::flow::pressureScalingFactor >();
-    arrayView1d< real64 > compDensScalingFactor =
-      subRegion.getField< fields::flow::globalCompDensityScalingFactor >();
     SolutionScalingKernel kernel( maxRelativePresChange, maxAbsolutePresChange, maxCompFracChange, maxRelativeCompDensChange, rankOffset,
                                   numComp, dofKey, subRegion, localSolution, pressure, compDens, pressureScalingFactor, compDensScalingFactor );
     return SolutionScalingKernel::launch< POLICY >( subRegion.size(), kernel );

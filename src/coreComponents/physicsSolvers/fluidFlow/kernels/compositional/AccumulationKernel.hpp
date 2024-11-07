@@ -30,7 +30,7 @@
 #include "physicsSolvers/fluidFlow/FlowSolverBaseFields.hpp"
 #include "physicsSolvers/fluidFlow/CompositionalMultiphaseBaseFields.hpp"
 #include "physicsSolvers/fluidFlow/CompositionalMultiphaseUtilities.hpp"
-#include "physicsSolvers/fluidFlow/kernels/compositional/KernelLaunchSelector.hpp"
+#include "physicsSolvers/fluidFlow/kernels/compositional/KernelLaunchSelectors.hpp"
 
 namespace geos
 {
@@ -40,7 +40,7 @@ namespace isothermalCompositionalMultiphaseBaseKernels
 
 static constexpr real64 minDensForDivision = 1e-10;
 
-enum class AccumulationKernelFlags
+enum class KernelFlags
 {
   SimpleAccumulation = 1 << 0, // 1
   TotalMassEquation = 1 << 1, // 2
@@ -94,7 +94,7 @@ public:
                       constitutive::CoupledSolidBase const & solid,
                       CRSMatrixView< real64, globalIndex const > const & localMatrix,
                       arrayView1d< real64 > const & localRhs,
-                      BitFlags< AccumulationKernelFlags > const kernelFlags )
+                      BitFlags< KernelFlags > const kernelFlags )
     : m_numPhases( numPhases ),
     m_rankOffset( rankOffset ),
     m_dofNumber( subRegion.getReference< array1d< globalIndex > >( dofKey ) ),
@@ -192,7 +192,7 @@ public:
                             StackVariables & stack,
                             FUNC && phaseAmountKernelOp = NoOpFunc{} ) const
   {
-    if( m_kernelFlags.isSet( AccumulationKernelFlags::SimpleAccumulation ) )
+    if( m_kernelFlags.isSet( KernelFlags::SimpleAccumulation ) )
     {
       // ic - index of component whose conservation equation is assembled
       // (i.e. row number in local matrix)
@@ -346,7 +346,7 @@ public:
   {
     using namespace compositionalMultiphaseUtilities;
 
-    if( m_kernelFlags.isSet( AccumulationKernelFlags::TotalMassEquation ) )
+    if( m_kernelFlags.isSet( KernelFlags::TotalMassEquation ) )
     {
       // apply equation/variable change transformation to the component mass balance equations
       real64 work[numDof]{};
@@ -446,7 +446,7 @@ protected:
   /// View on the local RHS
   arrayView1d< real64 > const m_localRhs;
 
-  BitFlags< AccumulationKernelFlags > const m_kernelFlags;
+  BitFlags< KernelFlags > const m_kernelFlags;
 };
 
 /**
@@ -488,11 +488,11 @@ public:
       integer constexpr NUM_COMP = NC();
       integer constexpr NUM_DOF = NC()+1;
 
-      BitFlags< AccumulationKernelFlags > kernelFlags;
+      BitFlags< KernelFlags > kernelFlags;
       if( useTotalMassEquation )
-        kernelFlags.set( AccumulationKernelFlags::TotalMassEquation );
+        kernelFlags.set( KernelFlags::TotalMassEquation );
       if( useSimpleAccumulation )
-        kernelFlags.set( AccumulationKernelFlags::SimpleAccumulation );
+        kernelFlags.set( KernelFlags::SimpleAccumulation );
 
       AccumulationKernel< NUM_COMP, NUM_DOF > kernel( numPhases, rankOffset, dofKey, subRegion,
                                                       fluid, solid, localMatrix, localRhs, kernelFlags );

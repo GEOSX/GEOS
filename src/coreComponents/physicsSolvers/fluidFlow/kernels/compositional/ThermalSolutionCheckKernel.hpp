@@ -62,32 +62,34 @@ public:
                        integer const allowNegativePressure,
                        CompositionalMultiphaseFVM::ScalingType const scalingType,
                        real64 const scalingFactor,
-                       globalIndex const rankOffset,
-                       integer const numComp,
-                       string const dofKey,
-                       ElementSubRegionBase const & subRegion,
-                       arrayView1d< real64 const > const localSolution,
                        arrayView1d< real64 const > const pressure,
                        arrayView1d< real64 const > const temperature,
                        arrayView2d< real64 const, compflow::USD_COMP > const compDens,
                        arrayView1d< real64 > pressureScalingFactor,
                        arrayView1d< real64 > compDensScalingFactor,
-                       arrayView1d< real64 > temperatureScalingFactor )
+                       arrayView1d< real64 > temperatureScalingFactor,
+                       globalIndex const rankOffset,
+                       integer const numComp,
+                       string const dofKey,
+                       ElementSubRegionBase const & subRegion,
+                       arrayView1d< real64 const > const localSolution,
+                       integer const temperatureOffset )
     : Base( allowCompDensChopping,
             allowNegativePressure,
             scalingType,
             scalingFactor,
+            pressure,
+            compDens,
+            pressureScalingFactor,
+            compDensScalingFactor,
             rankOffset,
             numComp,
             dofKey,
             subRegion,
-            localSolution,
-            pressure,
-            compDens,
-            pressureScalingFactor,
-            compDensScalingFactor ),
+            localSolution ),
     m_temperature( temperature ),
-    m_temperatureScalingFactor( temperatureScalingFactor )
+    m_temperatureScalingFactor( temperatureScalingFactor ),
+    m_temperatureOffset( temperatureOffset )
   {}
 
   /**
@@ -103,7 +105,7 @@ public:
     {
       bool const localScaling = m_scalingType == CompositionalMultiphaseFVM::ScalingType::Local;
       // compute the change in temperature
-      real64 const newTemp = m_temperature[ei] + (localScaling ? m_temperatureScalingFactor[ei] : m_scalingFactor * m_localSolution[stack.localRow + m_numComp + 1]);
+      real64 const newTemp = m_temperature[ei] + (localScaling ? m_temperatureScalingFactor[ei] : m_scalingFactor * m_localSolution[stack.localRow + m_temperatureOffset]);
       if( newTemp < minTemperature )
       {
         stack.localMinVal = 0;
@@ -118,6 +120,9 @@ protected:
 
   /// View on the scaling factor
   arrayView1d< real64 const > const m_temperatureScalingFactor;
+
+  /// Offset to temperature variable
+  integer m_temperatureOffset;
 
 };
 
@@ -146,24 +151,23 @@ public:
                    integer const allowNegativePressure,
                    CompositionalMultiphaseFVM::ScalingType const scalingType,
                    real64 const scalingFactor,
+                   arrayView1d< real64 const > const pressure,
+                   arrayView1d< real64 const > const temperature,
+                   arrayView2d< real64 const, compflow::USD_COMP > const compDens,
+                   arrayView1d< real64 > pressureScalingFactor,
+                   arrayView1d< real64 > temperatureScalingFactor,
+                   arrayView1d< real64 > compDensScalingFactor,
                    globalIndex const rankOffset,
                    integer const numComp,
                    string const dofKey,
                    ElementSubRegionBase & subRegion,
-                   arrayView1d< real64 const > const localSolution )
+                   arrayView1d< real64 const > const localSolution,
+                   integer temperatureOffset )
   {
-    arrayView1d< real64 const > const pressure =
-      subRegion.getField< fields::flow::pressure >();
-    arrayView1d< real64 const > const temperature =
-      subRegion.getField< fields::flow::temperature >();
-    arrayView2d< real64 const, compflow::USD_COMP > const compDens =
-      subRegion.getField< fields::flow::globalCompDensity >();
-    arrayView1d< real64 > pressureScalingFactor = subRegion.getField< fields::flow::pressureScalingFactor >();
-    arrayView1d< real64 > temperatureScalingFactor = subRegion.getField< fields::flow::temperatureScalingFactor >();
-    arrayView1d< real64 > compDensScalingFactor = subRegion.getField< fields::flow::globalCompDensityScalingFactor >();
     SolutionCheckKernel kernel( allowCompDensChopping, allowNegativePressure, scalingType, scalingFactor,
+                                pressure, temperature, compDens, pressureScalingFactor, compDensScalingFactor, temperatureScalingFactor,
                                 rankOffset, numComp, dofKey, subRegion, localSolution,
-                                pressure, temperature, compDens, pressureScalingFactor, temperatureScalingFactor, compDensScalingFactor );
+                                temperatureOffset );
     return SolutionCheckKernel::launch< POLICY >( subRegion.size(), kernel );
   }
 
