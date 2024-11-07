@@ -32,7 +32,7 @@ using namespace fields;
 
 void AcousticElasticWaveEquationSEM::registerDataOnMesh( Group & meshBodies )
 {
-  SolverBase::registerDataOnMesh( meshBodies );
+  PhysicsSolverBase::registerDataOnMesh( meshBodies );
 
   forDiscretizationOnMeshTargets( meshBodies, [&] ( string const &,
                                                     MeshLevel & mesh,
@@ -47,7 +47,7 @@ void AcousticElasticWaveEquationSEM::registerDataOnMesh( Group & meshBodies )
 
 void AcousticElasticWaveEquationSEM::initializePostInitialConditionsPreSubGroups()
 {
-  SolverBase::initializePostInitialConditionsPreSubGroups();
+  PhysicsSolverBase::initializePostInitialConditionsPreSubGroups();
 
   auto acousSolver = acousticSolver();
   auto elasSolver = elasticSolver();
@@ -63,8 +63,8 @@ void AcousticElasticWaveEquationSEM::initializePostInitialConditionsPreSubGroups
   localIndex const numInterfaceNodes = MpiWrapper::sum( m_interfaceNodesSet.size() );
   GEOS_THROW_IF( numInterfaceNodes == 0, "Failed to compute interface: check xml input (solver order)", std::runtime_error );
 
-  m_acousRegions = acousSolver->getReference< array1d< string > >( SolverBase::viewKeyStruct::targetRegionsString() );
-  m_elasRegions = elasSolver->getReference< array1d< string > >( SolverBase::viewKeyStruct::targetRegionsString() );
+  m_acousRegions = acousSolver->getReference< array1d< string > >( PhysicsSolverBase::viewKeyStruct::targetRegionsString() );
+  m_elasRegions = elasSolver->getReference< array1d< string > >( PhysicsSolverBase::viewKeyStruct::targetRegionsString() );
 
   DomainPartition & domain = getGroupByPath< DomainPartition >( "/Problem/domain" );
 
@@ -210,6 +210,6 @@ void AcousticElasticWaveEquationSEM::cleanup( real64 const time_n,
   acousticSolver()->cleanup( time_n, cycleNumber, eventCounter, eventProgress, domain );
 }
 
-REGISTER_CATALOG_ENTRY( SolverBase, AcousticElasticWaveEquationSEM, string const &, Group * const )
+REGISTER_CATALOG_ENTRY( PhysicsSolverBase, AcousticElasticWaveEquationSEM, string const &, Group * const )
 
 } /* namespace geos */
