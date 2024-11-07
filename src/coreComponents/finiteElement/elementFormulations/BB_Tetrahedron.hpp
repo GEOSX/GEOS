@@ -35,6 +35,11 @@ namespace finiteElement
  * Bernstein-Bézier (BB) modal any-order tetrahedron finite element with 
  * Gaussian quadrature rules. Available functions are tailored for
  * Discontinuous Galerkin (DG) applications.
+ * In barycentric coordinates l1, l2, l3, l4, the function indexed by 
+ * (i1, i2, i3, i4) corresponds to the function
+ * (i1+i2+i3+i4+3)! / (i1! i2! i3! i4!) l1^i1 l2^i2 l3^i3 l4^i4 
+ * and they integrate to one over the reference element defined
+ * by 0<=l1,l2,l3,l3<=1, l1+l2+l3+l4=1
  */
 template< int n >
 class BB_Tetrahedron final : public FiniteElementBase
@@ -108,31 +113,15 @@ public:
 
 
   /**
-   * @brief Calculate shape functions values at a single point in the reference element using De Casteljau's algorithm.
-   * @param[in] coords The parent coordinates at which to evaluate the shape function value, in the reference element
-   * @param[out] N The shape function values.
+   * @brief Returns the determinant of the Jacobian of the element 
+   * @param[in] X The coordinates of the tetrahedron
+   * @return the (absolute value of the) determinant of the Jacobian on the element
    */
   GEOS_HOST_DEVICE
   GEOS_FORCE_INLINE
-  static void calcN( real64 const (&coords)[3],
-                     real64 (& N)[numNodes] )
+  static real64 jacobianDeterminant( real64 const (&X)[4][3] )
+                         
   {
-    return calcN( { 1.0 - coords[ 0 ] - coords[ 1 ] - coords[ 2 ],
-                    coords[ 0 ], coords[ 1 ], coords[ 2 ] }, N );
-  }
-
-  /**
-   * @brief Calculate shape functions values at a single point, given the coorginates of the tetrahedron vertices, using De Casteljau's algorithm.
-   * @param[in] coords The parent coordinates at which to evaluate the shape function value, in the reference element
-   * @param[out] N The shape function values.
-   */
-  GEOS_HOST_DEVICE
-  GEOS_FORCE_INLINE
-  static void calcN( real64 const (&X)[4][3],
-                     real64 const (&coords)[3],
-                     real64 (& N)[numNodes] )
-  {
-    real64 lambda[4] = {};
     real64 m[3][3] = {};
     for( int i = 0; i < 3; i++ )
     {
@@ -141,21 +130,33 @@ public:
         m[ i ][ j ] = X[ i + 1 ][ j ] - X[ 0 ][ j ];
       }
     }
-    real64 den = LvARray::math::abs( LvArray::tensorOps::determinant< 3 >( m ) );
-    for( int i = 0; i < 3; i++ )
-    {
-      for( int j = 0; j < 3; j++ )
-      {
-        m[ i ][ j ] = coords[ j ] - X[ 0 ][ j ];
-      }
-      lambda[ i + 1 ] = LvArray::math::abs( LvArray::tensorOps::determinant< 3 >( m ) ) / den;
-      for( int j = 0; j < 3; j++ )
-      {
-        m[ i ][ j ] = X[ i + 1 ][ j ] - X[ 0 ][ j ];
-      }
-    }
-    lambda[ 0 ] = 1.0 - lambda[ 1 ] - lambda[ 2 ] - lambda[ 3 ];
-    return calcN( lambda, N );
+    return LvArray::math::abs( LvArray::tensorOps::determinant< 3 >( m ) ) / 2.0;
+  }
+
+  /**
+   * @brief Calculate the determinant of the jacobian on the face opposite to the given vertex 
+   * @param[in] face The index of the vertex opposite to the desired face
+   * @return the (absolute value of the) determinant of the Jacobian on the face 
+   */
+  GEOS_HOST_DEVICE
+  GEOS_FORCE_INLINE
+  static real64 faceJacobianDeterminant( localIndex face,
+                                         real64 const (&coords)[3],
+                                         real64 (& N)[numNodesPerFace] )
+  {
+    int i1 = ( face + 1 ) % 4;
+    int i2 = ( face + 2 ) % 4;
+    int i3 = ( face + 3 ) % 4;
+    real64 ab[3] = { coords[ i2 ][ 0 ] - coords[ i1 ][ 0 ],
+                     coords[ i2 ][ 1 ] - coords[ i1 ][ 1 ],
+                     coords[ i2 ][ 2 ] - coords[ i1 ][ 2 ] };
+    real64 ac[3] = { coords[ i3 ][ 0 ] - coords[ i1 ][ 0 ],
+                     coords[ i3 ][ 1 ] - coords[ i1 ][ 1 ],
+                     coords[ i3 ][ 2 ] - coords[ i1 ][ 2 ] };
+    real64 term1 = ab[1] * ac[2] - ab[2] * ac[1];
+    real64 term2 = ab[2] * ac[0] - ab[0] * ac[2];
+    real64 term3 = ab[0] * ac[1] - ab[1] * ac[0];
+    return LvArray::math::sqrt( ( term1 * term1 + term2 * term2 + term3 * term3 ) / 3.0 );
   }
 
   /**
@@ -202,33 +203,9 @@ public:
       }
     } 
   }
- 
-  /**
-   * @brief Calculate shape functions values at a single point in the reference element using De Casteljau's algorithm.
-   * @param[in] coords The parent coordinates at which to evaluate the shape function value, in the reference element
-   * @param[out] N The shape function values.
-   * @param[out] gradN The derivatives of the shape function values.
-   */
-  GEOS_HOST_DEVICE
-  GEOS_FORCE_INLINE
-  static void calcNandGradN( real64 const (&coords)[3],
-                             real64 (& N)[numNodes] )
-                             real64 (& gradN)[numNodes][3] )
-  {
-    real64 dNdLambda[numNodes][4];
-    calcNandGradN( { 1.0 - coords[ 0 ] - coords[ 1 ] - coords[ 2 ],
-                     coords[ 0 ], coords[ 1 ], coords[ 2 ] }, N, dNdLambda );
-    for( int i = 0; i < numNodes; i++ )
-    {
-      for( int j = 0; j < 3; j++ )
-      {
-        gradN[ i ][ j ] = dNdLambda[ i ][ j + 1 ] - dNdLambda[ i ][ 0 ]
-      }
-    }
-  }
 
   /**
-   * @brief Calculate shape functions values at a single point, given the coorginates of the tetrahedron vertices, using De Casteljau's algorithm.
+   * @brief Calculate shape functions values at a single point, given the coordinates of the tetrahedron vertices, using De Casteljau's algorithm.
    * @param[in] coords The parent coordinates at which to evaluate the shape function value, in the reference element
    * @param[out] N The shape function values.
    */
@@ -240,8 +217,6 @@ public:
   {
     real64 lambda[4] = {};
     real64 m[3][3] = {};
-    real64 dNdLambda[numNodes][4];
-    real64 dLambdadX[4][4];
     for( int i = 0; i < 3; i++ )
     {
       for( int j = 0; j < 3; j++ )
@@ -263,21 +238,11 @@ public:
       }
     }
     lambda[ 0 ] = 1.0 - lambda[ 1 ] - lambda[ 2 ] - lambda[ 3 ];
-    calcNandGradN( lambda, N, dNdLambda );
-    for( int i = 0; i < numNodes; i++ )
-    {
-      for( int j = 0; j < 3; j++ )
-      {
-        gradN[ i ][ j ] = ( ( ( X[ 2 ][ (j+1)%3 ] - X[ 0 ][ (j+1)%3 ]) * ( X[ 3 ][ (j+2)%3 ] - X[ 0 ][ (j+2)%3 ] ) - ( X[ 3 ][ (j+1)%3 ] - X[ 0 ][ (j+1)%3 ]) * ( X[ 2 ][ (j+2)%3 ] - X[ 0 ][ (j+2)%3 ] ) )* ( dNdLambda[ i ][ 1 ] - dNdLambda[ i ][ 0 ] ) +
-                            ( ( X[ 3 ][ (j+1)%3 ] - X[ 0 ][ (j+1)%3 ]) * ( X[ 1 ][ (j+2)%3 ] - X[ 0 ][ (j+2)%3 ] ) - ( X[ 1 ][ (j+1)%3 ] - X[ 0 ][ (j+1)%3 ]) * ( X[ 3 ][ (j+2)%3 ] - X[ 0 ][ (j+2)%3 ] ) )* ( dNdLambda[ i ][ 2 ] - dNdLambda[ i ][ 0 ] ) +
-                            ( ( X[ 1 ][ (j+1)%3 ] - X[ 0 ][ (j+1)%3 ]) * ( X[ 2 ][ (j+2)%3 ] - X[ 0 ][ (j+2)%3 ] ) - ( X[ 2 ][ (j+1)%3 ] - X[ 0 ][ (j+1)%3 ]) * ( X[ 1 ][ (j+2)%3 ] - X[ 0 ][ (j+2)%3 ] ) )* ( dNdLambda[ i ][ 3 ] - dNdLambda[ i ][ 0 ] )) / den 
-      }
-    }
+    return calcN( lambda, N );
   }
 
-
   /**
-   * @brief Calculate the derivatives of shape functions with respect to barycentric coordinates at a single point using De Casteljau's algorithm.
+   * @brief Calculate the values and derivatives of shape functions with respect to barycentric coordinates at a single point using De Casteljau's algorithm.
    * @param[in] lambda barycentric coordinates of the point in thetetrahedron
    * @param[out] N The shape function values.
    * @param[out] gradN The derivatives of the shape functions with respect to the lambdas
@@ -332,34 +297,23 @@ public:
     } 
   }
 
-  /**
-   * @brief Calculate shape functions values at a single point in the reference element using De Casteljau's algorithm.
-   * @param[in] face The index of the vertex opposite to the dersired face
-   * @param[in] coords The parent coordinates at which to evaluate the shape function value, in the reference element
-   * @param[out] N The shape function values.
-   */
-  GEOS_HOST_DEVICE
-  GEOS_FORCE_INLINE
-  static void calcN( real64 const (&coords)[3],
-                     real64 (& N)[numNodes] )
-  {
-    return calcN( { 1.0 - coords[ 0 ] - coords[ 1 ] - coords[ 2 ],
-                    coords[ 0 ], coords[ 1 ], coords[ 2 ] }, N );
-  }
 
   /**
-   * @brief Calculate shape functions values at a single point, given the coorginates of the tetrahedron vertices, using De Casteljau's algorithm.
+   * @brief Calculate the shape functions values and derivatives at a single point, given the coorginates of the tetrahedron vertices, using De Casteljau's algorithm.
    * @param[in] coords The parent coordinates at which to evaluate the shape function value, in the reference element
    * @param[out] N The shape function values.
    */
   GEOS_HOST_DEVICE
   GEOS_FORCE_INLINE
-  static void calcN( real64 const (&X)[4][3],
-                     real64 const (&coords)[3],
-                     real64 (& N)[numNodes] )
+  static void calcNandGradN( real64 const (&X)[4][3],
+                             real64 const (&coords)[3],
+                             real64 (& N)[numNodes],
+                             real64 (& gradN)[numNodes][ 4 ] )
   {
     real64 lambda[4] = {};
     real64 m[3][3] = {};
+    real64 dNdLambda[numNodes][4];
+    real64 dLambdadX[4][4];
     for( int i = 0; i < 3; i++ )
     {
       for( int j = 0; j < 3; j++ )
@@ -381,32 +335,15 @@ public:
       }
     }
     lambda[ 0 ] = 1.0 - lambda[ 1 ] - lambda[ 2 ] - lambda[ 3 ];
-    return calcN( lambda, N );
-  }
-  /**
-   * @brief Calculate shape functions values at a single point on a face of the reference element using De Casteljau's algorithm.
-   * @param[in] face The index of the vertex opposite to the desired face
-   * @param[in] coords The parent coordinates at which to evaluate the shape function value, in the reference element
-   * @param[out] N The shape function values.
-   */
-  GEOS_HOST_DEVICE
-  GEOS_FORCE_INLINE
-  static void calcN( localIndex face,
-                     real64 const (&coords)[3],
-                     real64 (& N)[numNodesPerFace] )
-  {
-    switch( face )
+    calcNandGradN( lambda, N, dNdLambda );
+    for( int i = 0; i < numNodes; i++ )
     {
-      case 0: 
-        return calcN( { coords[ 0 ], coords[ 1 ], coords[ 2 ] }, N );
-      case 1: 
-        return calcN( { 1.0 - coords[ 0 ] - coords[ 1 ] - coords[ 2 ], coords[ 1 ], coords[ 2 ] }, N );
-      case 2: 
-        return calcN( { 1.0 - coords[ 0 ] - coords[ 1 ] - coords[ 2 ], coords[ 0 ], coords[ 2 ] }, N );
-      case 3: 
-        return calcN( { 1.0 - coords[ 0 ] - coords[ 1 ] - coords[ 2 ], coords[ 0 ], coords[ 1 ] }, N );
-      default:
-        return 0;
+      for( int j = 0; j < 3; j++ )
+      {
+        gradN[ i ][ j ] = ( ( ( X[ 2 ][ (j+1)%3 ] - X[ 0 ][ (j+1)%3 ]) * ( X[ 3 ][ (j+2)%3 ] - X[ 0 ][ (j+2)%3 ] ) - ( X[ 3 ][ (j+1)%3 ] - X[ 0 ][ (j+1)%3 ]) * ( X[ 2 ][ (j+2)%3 ] - X[ 0 ][ (j+2)%3 ] ) )* ( dNdLambda[ i ][ 1 ] - dNdLambda[ i ][ 0 ] ) +
+                            ( ( X[ 3 ][ (j+1)%3 ] - X[ 0 ][ (j+1)%3 ]) * ( X[ 1 ][ (j+2)%3 ] - X[ 0 ][ (j+2)%3 ] ) - ( X[ 1 ][ (j+1)%3 ] - X[ 0 ][ (j+1)%3 ]) * ( X[ 3 ][ (j+2)%3 ] - X[ 0 ][ (j+2)%3 ] ) )* ( dNdLambda[ i ][ 2 ] - dNdLambda[ i ][ 0 ] ) +
+                            ( ( X[ 1 ][ (j+1)%3 ] - X[ 0 ][ (j+1)%3 ]) * ( X[ 2 ][ (j+2)%3 ] - X[ 0 ][ (j+2)%3 ] ) - ( X[ 2 ][ (j+1)%3 ] - X[ 0 ][ (j+1)%3 ]) * ( X[ 1 ][ (j+2)%3 ] - X[ 0 ][ (j+2)%3 ] ) )* ( dNdLambda[ i ][ 3 ] - dNdLambda[ i ][ 0 ] )) / den 
+      }
     }
   }
 
@@ -528,6 +465,233 @@ public:
   {
     return calcGradN( q, X, gradN );
   }
+
+  /**
+   * @brief Computes a! / ( b! * c! ) with b + c >= a >= b, c
+   * @param[in] a
+   * @param[in] b
+   * @param[in] c
+   * @return a!/(b!*c!)
+   */
+   constexpr static real64 integralTerm(const int a, const int b, const int c)
+   {
+     real64 res = 1.0;
+     int num = a;
+     int den = c;
+     for( int i = b; i > 0; i--)
+     {
+         res *= ( (real64) num ) /  i;
+         num--;
+     }
+     for( int i = num; i > 0; i--)
+     {
+         res *= ( (real64) i ) /  den;
+         den--;
+     }
+     for( int i = den; i > 0; i--)
+     {
+         res /= i;
+     }
+     
+     return res;
+  }
+
+  /**
+   * @brief Computes the superposition integral between Bernstein-Bézier functions indexed by 
+   *  (i1, j1, k1, l1) and (i1, j2, k2, l2)
+   * @param[in] i1
+   * @param[in] j1
+   * @param[in] k1
+   * @param[in] l1
+   * @param[in] i2
+   * @param[in] j2
+   * @param[in] k2
+   * @param[in] l2
+   * @return the superposition integral over the barycentric coordinates
+   */
+   constexpr static real64 computeSuperpositionIntegral( const int i1, const int j1, const int k1, const int l1, 
+                                                         const int i2, const int j2, const int k2, const int l2 )
+   {
+     return (integralTerm(i1+i2, i1, i2)*
+             integralTerm(j1+j2, j1, j2)*
+             integralTerm(k1+k2, k1, k2)*
+             integralTerm(l1+l2, l1, l2))/
+             integralTerm(i1+j1+k1+l1+i2+j2+k2+l2+3, 
+                          i1+j1+k1+l1+3, i2+j2+k2+l2+3);
+   }
+
+  /**
+   * @brief Computes the reference mass matrix, i.e., the superposition matrix of the shape functions
+   *   in barycentric coordinates. The real-world mass matrix can be obtained by using the multiplying
+   *   this matrix by the determinant of the Jacobian. 
+   *   
+   * @param[out] m The mass matrix 
+   */
+  GEOS_HOST_DEVICE
+  GEOS_FORCE_INLINE
+  static
+  void
+  computeReferenceMassMatrix( real64 (& m)[numNodes][numNodes] )
+  {
+    int c1 = 0;
+    for( int i1 = n; i1 >= 0; i1--)
+    {
+      for( int j1 = n - i1; j1 >= 0; j1--)
+      {
+        for( int k1 = n - i1 - j1; k1 >= 0; k1--)
+        {
+          int l1 = n - i1 - j1 - k1;
+          int c2 = 0;
+          for( int i2 = n; i2 >= 0; i2--)
+          {
+            for( int j2 = n - i2; j2 >= 0; j2--)
+            {
+              for( int k2 = n - i2 - j2; k2 >= 0; k2--)
+              {
+                int l2 = n - i2 - j2 - k2;
+                m[ c1 ][ c2 ] = computeSuperpositionIntegral( i1, j1, k1, l1, i2, j2, k2, l2 ); 
+                c2++;
+              }
+            }
+          }
+          c1++;
+        }
+      }
+    }
+  }
+
+  /**
+   * @brief Helper function for static for loop
+   * @tparam FUNC the callback function
+   * @tparam ...Is integer indices of the loop
+   */
+  template < typename FUNC, int... Is >
+  static constexpr void forEach( FUNC && func, std::integer_sequence< int, Is... > )
+  {
+      ( func( std::integral_constant< int, Is >{} ), ... );
+  }
+  
+  /**
+   * @brief Helper function for loop over barycentric coordinates
+   * @tparam FUNC the callback function
+   */
+  template < typename FUNC >
+  static constexpr void barycentricCoordinateLoop(FUNC && func) {
+      forEach( [&] ( auto const i ) {
+        func( std::integral_constant< int, i >{} );
+      }, std::make_integer_sequence< int, 4 >{} );
+  }
+  /**
+   * @brief Helper function for loop over tet basis functions
+   * @tparam FUNC the callback function
+   */
+  template < typename FUNC >
+  static constexpr void basisLoop(FUNC && func) {
+    forEach( [&] ( auto const i )
+    {
+      constexpr int i1 = n - i;
+      forEach( [&] ( auto const j )
+
+        if constexpr ( j1 <= n - i1 )
+        {
+          forEach( [&] ( auto const k )
+          {
+            constexpr int k1 = n - k;
+            if constexpr ( k1 <= n - i1 - j1 )
+            {
+              constexpr int l1 = n - i1 - j1 - k1;
+              constexpr int c1 = (n-i1)*(n-i1+1)*(n-i1+2)/6 + (n-i1-j1)*(n-i1-j1+1)/2 + (n-i1-j1-k1);
+              func( std::integral_constant< int, c1 >{}, 
+                    std::integral_constant< int, i1 >{},
+                    std::integral_constant< int, j1 >{},
+                    std::integral_constant< int, k1 >{},
+                    std::integral_constant< int, l1 >{} );
+            }
+        }, std::make_integer_sequence< int, n + 1 > {} );
+      }
+      }, std::make_integer_sequence< int, n + 1 > {} );
+    }, std::make_integer_sequence< int, n + 1 > {} );
+  }
+
+  /**
+   * @brief Computes the non-zero contributions inside the element of the
+   *   mass matrix M, i.e., the superposition matrix of shape functions
+   * @param X Array containing the coordinates of the support points.
+   * @param func Callback function accepting three parameters: i, j (local d.o.f. inside the element) and M_ij
+   */
+  template< typename FUNC >
+  GEOS_HOST_DEVICE
+  GEOS_FORCE_INLINE
+  static
+  constexpr
+  void
+  computeMassTerm( real64 const (&X)[4][3],
+                   FUNC && func )
+  {
+    real64 detJ = jacobianDeterminant( X );
+    basisLoop( [&] ( auto const c1, auto const i1, auto const j1, auto const k1, auto const l1 )
+    {
+      basisLoop( [&] ( auto const c2, auto const i2, auto const j2, auto const k2, auto const l2 )
+      {
+        constexpr real64 val = computeSuperpositionIntegral( i1, j1, k1, l1, i2, j2, k2, l2 );
+        func( c1, c2, val * detJ );                
+      } );
+    } );
+  }
+
+  /**
+   * @brief Computes the non-zero contributions inside the element of the
+   *   stiffness matrix R, i.e., the superposition matrix of first derivatives of shape functions
+   * @param X Array containing the coordinates of the support points.
+   * @param func Callback function accepting three parameters: i, j (local d.o.f. inside the element) and R_ij
+   */
+  GEOS_HOST_DEVICE
+  GEOS_FORCE_INLINE
+  static
+  constexpr
+  void
+  computeStiffnessTerm( real64 const (&X)[4][3],
+                        FUNC && func )
+  {
+    real64 detJ = jacobianDeterminant( X );
+      real64 dLambdadX[4][3] = {};
+    for( int j = 0; j < 3; j ++ )
+    {
+      dLambdadX[1][j] = ( ( X[ 2 ][ (j+1)%3 ] - X[ 0 ][ (j+1)%3 ]) * ( X[ 3 ][ (j+2)%3 ] - X[ 0 ][ (j+2)%3 ] ) - ( X[ 3 ][ (j+1)%3 ] - X[ 0 ][ (j+1)%3 ]) * ( X[ 2 ][ (j+2)%3 ] - X[ 0 ][ (j+2)%3 ] ) ) / detJ;
+      dLambdadX[2][j] = ( ( X[ 3 ][ (j+1)%3 ] - X[ 0 ][ (j+1)%3 ]) * ( X[ 1 ][ (j+2)%3 ] - X[ 0 ][ (j+2)%3 ] ) - ( X[ 1 ][ (j+1)%3 ] - X[ 0 ][ (j+1)%3 ]) * ( X[ 3 ][ (j+2)%3 ] - X[ 0 ][ (j+2)%3 ] ) ) / detJ;
+      dLambdadX[3][j] = ( ( X[ 1 ][ (j+1)%3 ] - X[ 0 ][ (j+1)%3 ]) * ( X[ 2 ][ (j+2)%3 ] - X[ 0 ][ (j+2)%3 ] ) - ( X[ 2 ][ (j+1)%3 ] - X[ 0 ][ (j+1)%3 ]) * ( X[ 1 ][ (j+2)%3 ] - X[ 0 ][ (j+2)%3 ] ) ) / detJ;
+      dLambdadX[0][j] = -dLambdadX[1][j] - dLambdadX[2][j] - dLambdadX[3][j];
+    }
+    basisLoop( [&] ( auto const c1, auto const i1, auto const j1, auto const k1, auto const l1 )
+    {
+      basisLoop( [&] ( auto const c2, auto const i2, auto const j2, auto const k2, auto const l2 )
+      {
+        barycentricCoordinateLoop( [&] ( auto const d1 ) 
+        {
+          barycentricCoordinateLoop( [&] ( auto const d2 ) 
+          {
+            constexpr int prefactor1 = ( d1 == 0 ) * i1 + ( d1 == 1 ) * j1 + ( d1 == 2 ) * k1 + ( d1 == 3 ) * l1;
+            constexpr int prefactor2 = ( d2 == 0 ) * i2 + ( d2 == 1 ) * j2 + ( d2 == 2 ) * k2 + ( d2 == 3 ) * l2;
+            constexpr int ii1 = ( d1 != 0 ) * i1 + ( d1 == 0 ) * ( i1 - 1 );
+            constexpr int ij1 = ( d1 != 1 ) * j1 + ( d1 == 1 ) * ( j1 - 1 );
+            constexpr int ik1 = ( d1 != 2 ) * k1 + ( d1 == 2 ) * ( k1 - 1 );
+            constexpr int il1 = ( d1 != 3 ) * l1 + ( d1 == 3 ) * ( l1 - 1 );
+            constexpr int ii2 = ( d2 != 0 ) * i2 + ( d2 == 0 ) * ( i2 - 1 );
+            constexpr int ij2 = ( d2 != 1 ) * j2 + ( d2 == 1 ) * ( j2 - 1 );
+            constexpr int ik2 = ( d2 != 2 ) * k2 + ( d2 == 2 ) * ( k2 - 1 );
+            constexpr int il2 = ( d2 != 3 ) * l2 + ( d2 == 3 ) * ( l2 - 1 );
+            if constexpr (ii1 >= 0 && ij1 >= 0 && ik1 >= 0 && il1 >= 0 &&
+                          ii2 >= 0 && ij2 >= 0 && ik2 >= 0 && il2 >= 0)
+            {
+              constexpr real64 val = computeSuperpositionIntegral( ii1, ij1, ik1, il1, ii2, ij2, ik2, il2 ) * prefactor1 * prefactor2;
+              func( c1, c2, d1, d2, val * (dLambdadX[d1][0]*dLambdadX[d2][0] + dLambdadX[d1][1]*dLambdadX[d2][1] + dLambdadX[d1][2]*dLambdadX[d2][2] );
+            }
+          } );
+        } );
+      } );
+    } );
+  }
+
 
   /**
    * @brief Calculate the integration weights for a quadrature point.
@@ -746,60 +910,7 @@ public:
                                   real64 const (&X)[numNodes][3] );
 
 
-  /**
-   * @brief Computes the superposition integral between Bernstein-Bézier functions indexed by 
-   *  (i1, j1, k1, l1) and (i1, j2, k2, l2)
-   * @param[in] i1
-   * @param[in] j1
-   * @param[in] k1
-   * @param[in] l1
-   * @param[in] i2
-   * @param[in] j2
-   * @param[in] k2
-   * @param[in] l2
-   * @return the superposition integral over the barycentric coordinates
-   */
   
-   constexpr static real64 computeSuperpositionIntegral( const int i1, const int j1, const int k1, const int l1, 
-                                                         const int i2, const int j2, const int k2, const int l2 )
-   {
-     return (integralTerm(i1+i2, i1, i2)*
-             integralTerm(j1+j2, j1, j2)*
-             integralTerm(k1+k2, k1, k2)*
-             integralTerm(l1+l2, l1, l2))/
-             integralTerm(i1+j1+k1+l1+i2+j2+k2+l2+3, 
-                          i1+j1+k1+l1+3, i2+j2+k2+l2+3);
-   }
-  /**
-   * @brief Computes a! / ( b! * c! ) with b + c >= a >= b, c
-   * @param[in] a
-   * @param[in] b
-   * @param[in] c
-   * @return a!/(b!*c!)
-   */
-   constexpr static real64 integralTerm(const int a, const int b, const int c)
-   {
-     real64 res = 1.0;
-     int num = a;
-     int den = c;
-     for( int i = b; i > 0; i--)
-     {
-         res *= ( (real64) num ) /  i;
-         num--;
-     }
-     for( int i = num; i > 0; i--)
-     {
-         res *= ( (real64) i ) /  den;
-         den--;
-     }
-     for( int i = den; i > 0; i--)
-     {
-         res /= i;
-     }
-     
-     return res;
-  }
-
   /**
    * @brief computes the non-zero contributions of the d.o.f. indexd by q to the
    *   mass matrix M, i.e., the superposition matrix of the shape functions.
@@ -1184,47 +1295,7 @@ jacobianTransformation2d( int const qa,
   }
 }
 
-/**
- * @brief Computes the reference mass matrix, i.e., the superposition matrix of the shape functions
- *   in barycentric coordinates. The real-world mass matrix can be obtained by using the multiplying
- *   this matrix by the determinant of the Jacobian. 
- *   
- * @param[out] m The mass matrix 
- */
-template< typename GL_BASIS >
-GEOS_HOST_DEVICE
-GEOS_FORCE_INLINE
-static
-void
-BB_Tetrahedron< GL_BASIS >::
-computeReferenceMassMatrix( real64 (& m)[numNodes][numNodes] )
-{
-  int c1 = 0;
-  for( int i1 = n; i1 >= 0; i1--)
-  {
-    for( int j1 = n - i1; j1 >= 0; j1--)
-    {
-      for( int k1 = n - i1 - j1; k1 >= 0; k1--)
-      {
-        int l1 = n - i1 - j1 - k1;
-        int c2 = 0;
-        for( int i2 = n; i2 >= 0; i2--)
-        {
-          for( int j2 = n - i2; j2 >= 0; j2--)
-          {
-            for( int k2 = n - i2 - j2; k2 >= 0; k2--)
-            {
-              int l2 = n - i2 - j2 - k2;
-              m[ c1 ][ c2 ] = computeSuperpositionIntegral( i1, j1, k1, l1, i2, j2, k2, l2 ); 
-              c2++;
-            }
-          }
-        }
-        c1++;
-      }
-    }
-  }
-}
+
 
 /**
  * @brief Computes the reference stiffness matrix, i.e., the superposition matrix of the dot product
@@ -1270,10 +1341,10 @@ computeReferenceFirstDerivativeMatrix( real64 (& k)[numNodes][numNodes] )
                             
 /**
  * @brief Computes the reference stiffness matrix, i.e., the superposition matrix of the dot product
- *   of derivatives of shape functions in barycentric coordinates. The real-world mass matrix can be obtained by multiplying
- *   this matrix by the determinant of the Jacobian. 
+ *   of derivatives of shape functions in barycentric coordinates. The real-world mass matrix can be obtained
+ *   using the Jacobian
  *   
- * @param[out] m The mass matrix 
+ * @param[out] k The stiffness matrix
  */
 template< typename GL_BASIS >
 GEOS_HOST_DEVICE
@@ -1281,7 +1352,7 @@ GEOS_FORCE_INLINE
 static
 void
 BB_Tetrahedron< GL_BASIS >::
-computeReferenceSecondDerivativeMatrix( real64 (& k)[numNodes][numNodes] )
+computeReferenceStiffnessMatrix( real64 (& k)[numNodes][numNodes] )
 {
   int c1 = 0;
   for( int i1 = n; i1 >= 0; i1--)
