@@ -1175,9 +1175,9 @@ void HydrofractureSolver< POROMECHANICS_SOLVER >::initializeNewFractureFields( D
 namespace
 {
 typedef HydrofractureSolver<> SinglePhaseHydrofracture;
-REGISTER_CATALOG_ENTRY( SolverBase, SinglePhaseHydrofracture, string const &, Group * const )
+REGISTER_CATALOG_ENTRY( PhysicsSolverBase, SinglePhaseHydrofracture, string const &, Group * const )
 // typedef HydrofractureSolver< MultiphasePoromechanics<> > MultiphaseHydrofracture;
-// REGISTER_CATALOG_ENTRY( SolverBase, MultiphaseHydrofracture, string const &, Group * const )
+// REGISTER_CATALOG_ENTRY( PhysicsSolverBase, MultiphaseHydrofracture, string const &, Group * const )
 }
 
 } /* namespace geos */
