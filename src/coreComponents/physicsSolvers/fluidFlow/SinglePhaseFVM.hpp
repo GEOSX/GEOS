@@ -44,7 +44,7 @@ public:
   // have to use this->member etc.
   using BASE::getLogLevel;
 
-  // Aliasing public/protected members/methods of SolverBase so we don't
+  // Aliasing public/protected members/methods of PhysicsSolverBase so we don't
   // have to use this->member etc.
   using BASE::forDiscretizationOnMeshTargets;
   using BASE::m_cflFactor;
@@ -114,7 +114,7 @@ public:
   }
 
   /**
-   * @copydoc SolverBase::getCatalogName()
+   * @copydoc PhysicsSolverBase::getCatalogName()
    */
   string getCatalogName() const override { return catalogName(); }
 
