@@ -20,7 +20,7 @@
 #ifndef GEOS_PHYSICSSOLVERS_FINITEVOLUME_FLOWSOLVERBASE_HPP_
 #define GEOS_PHYSICSSOLVERS_FINITEVOLUME_FLOWSOLVERBASE_HPP_
 
-#include "physicsSolvers/SolverBase.hpp"
+#include "physicsSolvers/PhysicsSolverBase.hpp"
 #include "common/Units.hpp"
 
 namespace geos
@@ -32,7 +32,7 @@ namespace geos
  * Base class for finite volume fluid flow solvers.
  * Provides some common features
  */
-class FlowSolverBase : public SolverBase
+class FlowSolverBase : public PhysicsSolverBase
 {
 public:
 
@@ -65,7 +65,7 @@ public:
 
   virtual void registerDataOnMesh( Group & MeshBodies ) override;
 
-  struct viewKeyStruct : SolverBase::viewKeyStruct
+  struct viewKeyStruct : PhysicsSolverBase::viewKeyStruct
   {
     // misc inputs
     static constexpr char const * fluidNamesString() { return "fluidNames"; }
@@ -123,11 +123,11 @@ public:
 
   /**
    * @brief Utility function to keep the flow variables during a time step (used in poromechanics simulations)
-   * @param[in] keepFlowVariablesConstantDuringInitStep flag to tell the solver to freeze its primary variables during a time step
+   * @param[in] keepVariablesConstantDuringInitStep flag to tell the solver to freeze its primary variables during a time step
    * @detail This function is meant to be called by a specific task before/after the initialization step
    */
-  void setKeepFlowVariablesConstantDuringInitStep( bool const keepFlowVariablesConstantDuringInitStep )
-  { m_keepFlowVariablesConstantDuringInitStep = keepFlowVariablesConstantDuringInitStep; }
+  void setKeepVariablesConstantDuringInitStep( bool const keepVariablesConstantDuringInitStep )
+  { m_keepVariablesConstantDuringInitStep = keepVariablesConstantDuringInitStep; }
 
   virtual bool checkSequentialSolutionIncrements( DomainPartition & domain ) const override;
 
@@ -219,7 +219,7 @@ protected:
   real64 m_inputTemperature;
 
   /// flag to freeze the initial state during initialization in coupled problems
-  integer m_keepFlowVariablesConstantDuringInitStep;
+  integer m_keepVariablesConstantDuringInitStep;
 
   /// enable the fixed stress poromechanics update of porosity
   bool m_isFixedStressPoromechanicsUpdate;
@@ -240,6 +240,41 @@ protected:
   /// maximum (absolute) temperature change in a sequential iteration
   real64 m_sequentialTempChange;
   real64 m_maxSequentialTempChange;
+
+  /**
+   * @brief Class used for displaying boundary warning message
+   */
+  class BCMessage
+  {
+public:
+    static string pressureConflict( string_view regionName, string_view subRegionName,
+                                    string_view setName, string_view fieldName );
+
+    static string temperatureConflict( string_view regionName, string_view subRegionName,
+                                       string_view setName, string_view fieldName );
+
+    static string missingPressure( string_view regionName, string_view subRegionName,
+                                   string_view setName, string_view fieldName );
+
+    static string missingTemperature( string_view regionName, string_view subRegionName,
+                                      string_view setName, string_view fieldName );
+
+    static string conflictingComposition( int comp, string_view componentName,
+                                          string_view regionName, string_view subRegionName,
+                                          string_view setName, string_view fieldName );
+
+    static string invalidComponentIndex( int comp,
+                                         string_view fsName, string_view fieldName );
+
+    static string notAppliedOnRegion( int componentIndex, string_view componentName,
+                                      string_view regionName, string_view subRegionName,
+                                      string_view setName, string_view fieldName );
+private:
+    static string generateMessage( string_view baseMessage,
+                                   string_view fieldName, string_view setName );
+
+    BCMessage();
+  };
 
 private:
   virtual void setConstitutiveNames( ElementSubRegionBase & subRegion ) const override;
