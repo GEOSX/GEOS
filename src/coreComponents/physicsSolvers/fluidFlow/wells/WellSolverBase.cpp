@@ -59,7 +59,7 @@ Group * WellSolverBase::createChild( string const & childKey, string const & chi
 {
   const auto childTypes = { keys::wellControls };
   GEOS_ERROR_IF( childKey != keys::wellControls,
-                 CatalogInterface::unknownTypeError( getCatalogName(), getDataContext(), childTypes ) );
+                 CatalogInterface::unknownTypeError( childKey, getDataContext(), childTypes ) );
   return &registerGroup< WellControls >( childName );
 }
 
