@@ -88,10 +88,8 @@ void transpose( std::vector< std::vector< string > > & dest,
 
   for( size_t idxRow = 0; idxRow < source.size(); ++idxRow )
   {
-    // GEOS_ERROR_IF( dest.size() != source[idxRow].size(), "Dest matrix must have the number of rows equal to the number of columns in the
-    // source matrix" );
-    // GEOS_ERROR_IF( dest[idxRow].size() != source.size(), "Dest matrix must have the number of columns equal to the number of rows in the
-    // source matrix." );
+    GEOS_ERROR_IF( dest.size() != source[idxRow].size(), "Dest matrix must have the number of rows equal to the number of columns in the" \
+                                                         "source matrix" );
     for( size_t idxCol = 0; idxCol < source[idxRow].size(); ++idxCol )
     {
       dest[idxCol][idxRow] = source[idxRow][idxCol];
