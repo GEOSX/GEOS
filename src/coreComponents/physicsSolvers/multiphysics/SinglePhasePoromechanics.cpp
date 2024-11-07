@@ -194,7 +194,7 @@ void SinglePhasePoromechanics< FLOW_SOLVER, MECHANICS_SOLVER >::assembleElementB
     if( this->m_isThermal )
     {
       poromechanicsMaxForce =
-        assemblyLaunch< constitutive::PorousSolid< ElasticIsotropic >, // TODO: change once there is a cmake solution
+        assemblyLaunch< constitutive::PorousSolidBase,
                         thermalPoromechanicsKernels::ThermalSinglePhasePoromechanicsKernelFactory >( mesh,
                                                                                                      dofManager,
                                                                                                      regionNames,

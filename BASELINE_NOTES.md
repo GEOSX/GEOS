@@ -10,6 +10,10 @@ PR #3339 (2024-11-08)
 ====================
 Fix default parameter (amgNumFunctions = 3) for models involving mechanics.
 
+PR #3413 (2024-11-07)
+====================
+Add tests for poro-thermo-plastic model.
+
 PR #3337 (2024-11-06)
 ====================
 Change density treatment for gravity in multiphase flow solver.
@@ -94,7 +98,7 @@ PR #3278 (2024-08-12)
 ======================
 Renamed GEOSX to GEOS in enternal mesh import, so rebaseline to change these names is the baselines.
 
-202 (2024-08-03)
+PR #3202 (2024-08-03)
 ======================
 Acoustic VTI tests needed rebaselining after update in source and receiver location algorithm.
 
