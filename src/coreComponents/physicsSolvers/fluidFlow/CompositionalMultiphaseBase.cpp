@@ -92,6 +92,10 @@ CompositionalMultiphaseBase::CompositionalMultiphaseBase( const string & name,
     setInputFlag( InputFlags::OPTIONAL ).
     setDescription( GEOS_FMT( "Use mass formulation instead of molar. Warning : Affects {} rates units.",
                               SourceFluxBoundaryCondition::catalogName() ) );
+  this->registerWrapper( viewKeyStruct::useZFormulationFlagString(), &m_useZFormulation ).
+    setApplyDefaultValue( 0 ).
+    setInputFlag( InputFlags::OPTIONAL ).
+    setDescription( "Use overall composition (Z) formulation instead of component density." );                            
 
   this->registerWrapper( viewKeyStruct::solutionChangeScalingFactorString(), &m_solutionChangeScalingFactor ).
     setSizedFromParent( 0 ).
@@ -1372,27 +1376,44 @@ void CompositionalMultiphaseBase::assembleSystem( real64 const GEOS_UNUSED_PARAM
 {
   GEOS_MARK_FUNCTION;
 
-  assembleAccumulationAndVolumeBalanceTerms( domain,
+  if (m_useZFormulation)
+  {
+    assembleZFormulationAccumulation( domain,
+                          dofManager,
+                          localMatrix,
+                          localRhs );
+
+    assembleZFormulationFluxTerms( dt,
+                      domain,
+                      dofManager,
+                      localMatrix,
+                      localRhs );
+  }
+  else
+  {
+    assembleAccumulationAndVolumeBalanceTerms( domain,
                                              dofManager,
                                              localMatrix,
                                              localRhs );
 
-  if( m_isJumpStabilized )
-  {
-    assembleStabilizedFluxTerms( dt,
-                                 domain,
-                                 dofManager,
-                                 localMatrix,
-                                 localRhs );
+    if( m_isJumpStabilized )
+    {
+      assembleStabilizedFluxTerms( dt,
+                                  domain,
+                                  dofManager,
+                                  localMatrix,
+                                  localRhs );
+    }
+    else
+    {
+      assembleFluxTerms( dt,
+                        domain,
+                        dofManager,
+                        localMatrix,
+                        localRhs );
+    }
   }
-  else
-  {
-    assembleFluxTerms( dt,
-                       domain,
-                       dofManager,
-                       localMatrix,
-                       localRhs );
-  }
+
 }
 
 void CompositionalMultiphaseBase::assembleAccumulationAndVolumeBalanceTerms( DomainPartition & domain,
@@ -1448,6 +1469,67 @@ void CompositionalMultiphaseBase::assembleAccumulationAndVolumeBalanceTerms( Dom
                                                      localMatrix,
                                                      localRhs );
       }
+    } );
+  } );
+}
+
+void CompositionalMultiphaseBase::assembleZFormulationAccumulation( DomainPartition & domain,
+                                                                             DofManager const & dofManager,
+                                                                             CRSMatrixView< real64, globalIndex const > const & localMatrix,
+                                                                             arrayView1d< real64 > const & localRhs ) const
+{
+  GEOS_MARK_FUNCTION;
+
+  forDiscretizationOnMeshTargets( domain.getMeshBodies(), [&]( string const &,
+                                                               MeshLevel const & mesh,
+                                                               arrayView1d< string const > const & regionNames )
+  {
+    mesh.getElemManager().forElementSubRegions( regionNames,
+                                                [&]( localIndex const,
+                                                     ElementSubRegionBase const & subRegion )
+    {
+      string const dofKey = dofManager.getKey( viewKeyStruct::elemDofFieldString() );
+      string const & fluidName = subRegion.getReference< string >( viewKeyStruct::fluidNamesString() );
+      string const & solidName = subRegion.getReference< string >( viewKeyStruct::solidNamesString() );
+
+      MultiFluidBase const & fluid = getConstitutiveModel< MultiFluidBase >( subRegion, fluidName );
+      CoupledSolidBase const & solid = getConstitutiveModel< CoupledSolidBase >( subRegion, solidName );
+
+      // TODO: add the thermal case
+      /*
+      if( m_isThermal )
+      {
+        thermalCompositionalMultiphaseBaseKernels::
+          AccumulationKernelFactory::
+          createAndLaunch< parallelDevicePolicy<> >( m_numComponents,
+                                                     m_numPhases,
+                                                     dofManager.rankOffset(),
+                                                     m_useTotalMassEquation,
+                                                     dofKey,
+                                                     subRegion,
+                                                     fluid,
+                                                     solid,
+                                                     localMatrix,
+                                                     localRhs );
+      }
+      else
+      {
+      }
+      */
+     // isothermal for now
+        isothermalCompositionalMultiphaseBaseKernels::
+          AccumulationKernelFactory::
+          createAndLaunch< parallelDevicePolicy<> >( m_numComponents,
+                                                     m_numPhases,
+                                                     dofManager.rankOffset(),
+                                                     m_useTotalMassEquation,
+                                                     m_useSimpleAccumulation,
+                                                     dofKey,
+                                                     subRegion,
+                                                     fluid,
+                                                     solid,
+                                                     localMatrix,
+                                                     localRhs );
     } );
   } );
 }

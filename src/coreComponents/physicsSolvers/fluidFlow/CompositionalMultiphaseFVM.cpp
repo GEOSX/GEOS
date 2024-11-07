@@ -289,6 +289,137 @@ void CompositionalMultiphaseFVM::assembleFluxTerms( real64 const dt,
   } );
 }
 
+void CompositionalMultiphaseFVM::assembleZFormulationFluxTerms( real64 const dt,
+                                                    DomainPartition const & domain,
+                                                    DofManager const & dofManager,
+                                                    CRSMatrixView< real64, globalIndex const > const & localMatrix,
+                                                    arrayView1d< real64 > const & localRhs ) const
+{
+  GEOS_MARK_FUNCTION;
+
+  forDiscretizationOnMeshTargets( domain.getMeshBodies(), [&]( string const &,
+                                                               MeshLevel const & mesh,
+                                                               arrayView1d< string const > const & )
+  {
+    NumericalMethodsManager const & numericalMethodManager = domain.getNumericalMethodManager();
+    FiniteVolumeManager const & fvManager = numericalMethodManager.getFiniteVolumeManager();
+    FluxApproximationBase const & fluxApprox = fvManager.getFluxApproximation( m_discretizationName );
+
+    string const & elemDofKey = dofManager.getKey( viewKeyStruct::elemDofFieldString() );
+
+    fluxApprox.forAllStencils( mesh, [&] ( auto & stencil )
+    {
+      typename TYPEOFREF( stencil ) ::KernelWrapper stencilWrapper = stencil.createKernelWrapper();
+
+      // Convective flux
+      if( m_isThermal )
+      {
+        thermalCompositionalMultiphaseFVMKernels::
+          FluxComputeKernelFactory::
+          createAndLaunch< parallelDevicePolicy<> >( m_numComponents,
+                                                     m_numPhases,
+                                                     dofManager.rankOffset(),
+                                                     elemDofKey,
+                                                     m_hasCapPressure,
+                                                     m_useTotalMassEquation,
+                                                     getName(),
+                                                     mesh.getElemManager(),
+                                                     stencilWrapper,
+                                                     dt,
+                                                     localMatrix.toViewConstSizes(),
+                                                     localRhs.toView() );
+      }
+      else
+      {
+        if( m_dbcParams.useDBC )
+        {
+          dissipationCompositionalMultiphaseFVMKernels::
+            FluxComputeKernelFactory::
+            createAndLaunch< parallelDevicePolicy<> >( m_numComponents,
+                                                       m_numPhases,
+                                                       dofManager.rankOffset(),
+                                                       elemDofKey,
+                                                       m_hasCapPressure,
+                                                       m_useTotalMassEquation,
+                                                       getName(),
+                                                       mesh.getElemManager(),
+                                                       stencilWrapper,
+                                                       dt,
+                                                       localMatrix.toViewConstSizes(),
+                                                       localRhs.toView(),
+                                                       m_dbcParams.omega,
+                                                       getNonlinearSolverParameters().m_numNewtonIterations,
+                                                       m_dbcParams.continuation,
+                                                       m_dbcParams.miscible,
+                                                       m_dbcParams.kappamin,
+                                                       m_dbcParams.contMultiplier );
+        }
+        else
+        {
+          isothermalCompositionalMultiphaseFVMKernels::
+            FluxComputeKernelFactory::
+            createAndLaunch< parallelDevicePolicy<> >( m_numComponents,
+                                                       m_numPhases,
+                                                       dofManager.rankOffset(),
+                                                       elemDofKey,
+                                                       m_hasCapPressure,
+                                                       m_useTotalMassEquation,
+                                                       fluxApprox.upwindingParams(),
+                                                       getName(),
+                                                       mesh.getElemManager(),
+                                                       stencilWrapper,
+                                                       dt,
+                                                       localMatrix.toViewConstSizes(),
+                                                       localRhs.toView() );
+        }
+      }
+
+      // Diffusive and dispersive flux
+      if( m_hasDiffusion || m_hasDispersion )
+      {
+
+        if( m_isThermal )
+        {
+          thermalCompositionalMultiphaseFVMKernels::
+            DiffusionDispersionFluxComputeKernelFactory::
+            createAndLaunch< parallelDevicePolicy<> >( m_numComponents,
+                                                       m_numPhases,
+                                                       dofManager.rankOffset(),
+                                                       elemDofKey,
+                                                       m_hasDiffusion,
+                                                       m_hasDispersion,
+                                                       m_useTotalMassEquation,
+                                                       getName(),
+                                                       mesh.getElemManager(),
+                                                       stencilWrapper,
+                                                       dt,
+                                                       localMatrix.toViewConstSizes(),
+                                                       localRhs.toView() );
+        }
+        else
+        {
+          isothermalCompositionalMultiphaseFVMKernels::
+            DiffusionDispersionFluxComputeKernelFactory::
+            createAndLaunch< parallelDevicePolicy<> >( m_numComponents,
+                                                       m_numPhases,
+                                                       dofManager.rankOffset(),
+                                                       elemDofKey,
+                                                       m_hasDiffusion,
+                                                       m_hasDispersion,
+                                                       m_useTotalMassEquation,
+                                                       getName(),
+                                                       mesh.getElemManager(),
+                                                       stencilWrapper,
+                                                       dt,
+                                                       localMatrix.toViewConstSizes(),
+                                                       localRhs.toView() );
+        }
+      }
+
+    } );
+  } );
+}
+
 void CompositionalMultiphaseFVM::assembleStabilizedFluxTerms( real64 const dt,
                                                               DomainPartition const & domain,
                                                               DofManager const & dofManager,

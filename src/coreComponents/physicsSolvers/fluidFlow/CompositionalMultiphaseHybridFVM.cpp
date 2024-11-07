@@ -420,6 +420,17 @@ void CompositionalMultiphaseHybridFVM::assembleFluxTerms( real64 const dt,
   } );
 }
 
+void CompositionalMultiphaseHybridFVM::assembleZFormulationFluxTerms( real64 const dt,
+                                                                    DomainPartition const & domain,
+                                                                    DofManager const & dofManager,
+                                                                    CRSMatrixView< real64, globalIndex const > const & localMatrix,
+                                                                    arrayView1d< real64 > const & localRhs ) const
+{
+  // z formulation not implemented
+  GEOS_UNUSED_VAR( dt, domain, dofManager, localMatrix, localRhs );
+  GEOS_ERROR( "Z formulation not yet available for this flow solver" );
+}
+
 void CompositionalMultiphaseHybridFVM::assembleStabilizedFluxTerms( real64 const dt,
                                                                     DomainPartition const & domain,
                                                                     DofManager const & dofManager,
