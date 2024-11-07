@@ -751,6 +751,12 @@ public:
    */
   void postRestartInitializationRecursive();
 
+  static string processInputName( xmlWrapper::xmlNode const & targetNode,
+                                  xmlWrapper::xmlNodePos const & targetNodePos,
+                                  string_view parentNodeName,
+                                  xmlWrapper::xmlNodePos const & parentNodePos,
+                                  std::set< string > & siblingNames );
+
   /**
    * @brief Recursively read values using ProcessInputFile() from the input
    * file and put them into the wrapped values for this group.
@@ -769,7 +775,7 @@ public:
    */
   void processInputFileRecursive( xmlWrapper::xmlDocument & xmlDocument,
                                   xmlWrapper::xmlNode & targetNode,
-                                  xmlWrapper::xmlNodePos const & nodePos );
+                                  xmlWrapper::xmlNodePos const & targetNodePos );
 
   /**
    * @brief Recursively call postInputInitialization() to apply post processing after

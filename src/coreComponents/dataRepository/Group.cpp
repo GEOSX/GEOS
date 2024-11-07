@@ -135,21 +135,60 @@ string Group::getPath() const
   return noProblem.empty() ? "/" : noProblem;
 }
 
+string Group::processInputName( xmlWrapper::xmlNode const & targetNode,
+                                xmlWrapper::xmlNodePos const & targetNodePos,
+                                string_view parentNodeName,
+                                xmlWrapper::xmlNodePos const & parentNodePos,
+                                std::set< string > & siblingNames )
+{
+  GEOS_ERROR_IF( targetNode.type() != xmlWrapper::xmlNodeType::node_element,
+                 GEOS_FMT( "Error in node named \"{}\" ({}): GEOS XML nodes cannot contain "
+                           "text data nor anything but XML nodes.\nErroneous content: \"{}\"\n",
+                           parentNodeName, parentNodePos.toString(),
+                           stringutilities::trimSpaces( targetNode.value() ) ));
+
+  string targetNodeName;
+  try
+  { // read & validate the name attribute
+    xmlWrapper::readAttributeAsType( targetNodeName, "name",
+                                     rtTypes::getTypeRegex< string >( rtTypes::CustomTypes::groupName ),
+                                     targetNode, string( "" ) );
+  } catch( std::exception const & ex )
+  {
+    xmlWrapper::processInputException( ex, "name", targetNode, targetNodePos );
+  }
+
+  if( targetNodeName.empty() )
+  { // if there is no name attribute, we use the node tag as a node name
+    targetNodeName = targetNode.name();
+  }
+  else
+  { // Make sure names are not duplicated by checking all previous siblings
+    GEOS_ERROR_IF( siblingNames.count( targetNodeName ) != 0,
+                   GEOS_FMT( "Error at node named \"{}\" ({}): "
+                             "An XML block cannot contain children with duplicated names.\n",
+                             targetNodeName, targetNodePos.toString() ) );
+    siblingNames.insert( targetNodeName );
+  }
+
+  return targetNodeName;
+}
+
 void Group::processInputFileRecursive( xmlWrapper::xmlDocument & xmlDocument,
                                        xmlWrapper::xmlNode & targetNode )
 {
-  xmlWrapper::xmlNodePos nodePos = xmlDocument.getNodePosition( targetNode );
-  processInputFileRecursive( xmlDocument, targetNode, nodePos );
+  xmlWrapper::xmlNodePos targetNodePos = xmlDocument.getNodePosition( targetNode );
+  processInputFileRecursive( xmlDocument, targetNode, targetNodePos );
 }
 void Group::processInputFileRecursive( xmlWrapper::xmlDocument & xmlDocument,
                                        xmlWrapper::xmlNode & targetNode,
-                                       xmlWrapper::xmlNodePos const & nodePos )
+                                       xmlWrapper::xmlNodePos const & targetNodePos )
 {
   xmlDocument.addIncludedXML( targetNode );
 
-  if( nodePos.isFound() )
+  if( targetNodePos.isFound() )
   {
-    m_dataContext = std::make_unique< DataFileContext >( targetNode, nodePos );
+    m_dataContext = std::make_unique< DataFileContext >( targetNode, targetNodePos );
   }
 
   // Handle the case where the node was imported from a different input file
@@ -162,43 +201,12 @@ void Group::processInputFileRecursive( xmlWrapper::xmlDocument & xmlDocument,
   }
 
   // Loop over the child nodes of the targetNode
-  array1d< string > childNames;
+  std::set< string > childNames;
   for( xmlWrapper::xmlNode childNode : targetNode.children() )
   {
     xmlWrapper::xmlNodePos childNodePos = xmlDocument.getNodePosition( childNode );
-
-    GEOS_ERROR_IF( childNode.type() != xmlWrapper::xmlNodeType::node_element,
-                   GEOS_FMT( "Error in {}: GEOS XML nodes cannot contain text data nor anything but XML nodes.",
-                             getDataContext() ));
-
-    // Get the child tag and name
-    string childName;
-    try
-    {
-      xmlWrapper::readAttributeAsType( childName, "name",
-                                       rtTypes::getTypeRegex< string >( rtTypes::CustomTypes::groupName ),
-                                       childNode, string( "" ) );
-    } catch( std::exception const & ex )
-    {
-      xmlWrapper::processInputException( ex, "name", childNode, childNodePos );
-    }
-
-    if( childName.empty() )
-    {
-      childName = childNode.name();
-    }
-    else
-    {
-      // Make sure child names are not duplicated
-      GEOS_ERROR_IF( std::find( childNames.begin(), childNames.end(), childName ) != childNames.end(),
-                     GEOS_FMT( "Error: An XML block cannot contain children with duplicated names.\n"
-                               "Error detected at node {} with name = {} ({}:l.{})",
-                               childNode.path(), childName, xmlDocument.getFilePath(),
-                               xmlDocument.getNodePosition( childNode ).line ) );
-
-      childNames.emplace_back( childName );
-    }
-
+    string const childName = processInputName( childNode, childNodePos,
+                                               getName(), targetNodePos, childNames );
     // Create children
     Group * newChild = createChild( childNode.name(), childName );
     if( newChild == nullptr )
@@ -211,7 +219,7 @@ void Group::processInputFileRecursive( xmlWrapper::xmlDocument & xmlDocument,
     }
   }
 
-  processInputFile( targetNode, nodePos );
+  processInputFile( targetNode, targetNodePos );
 
   // Restore original prefix once the node is processed
   Path::setPathPrefix( oldPrefix );
