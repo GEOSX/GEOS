@@ -39,16 +39,16 @@
 #include "constitutive/solid/porosity/PorosityBase.hpp"
 #include "constitutive/solid/porosity/PorosityFields.hpp"
 #include "fieldSpecification/AquiferBoundaryCondition.hpp"
+#include "finiteVolume/FluxApproximationBase.hpp"
 #include "finiteVolume/BoundaryStencil.hpp"
 #include "mesh/ElementRegionManager.hpp"
 #include "mesh/utilities/MeshMapUtilities.hpp"
 #include "physicsSolvers/fluidFlow/FlowSolverBaseFields.hpp"
 #include "physicsSolvers/fluidFlow/CompositionalMultiphaseBaseFields.hpp"
 #include "physicsSolvers/fluidFlow/CompositionalMultiphaseUtilities.hpp"
-#include "physicsSolvers/fluidFlow/IsothermalCompositionalMultiphaseBaseKernels.hpp"
-#include "physicsSolvers/fluidFlow/IsothermalCompositionalMultiphaseFVMKernelUtilities.hpp"
 #include "physicsSolvers/fluidFlow/StencilAccessors.hpp"
-#include "finiteVolume/FluxApproximationBase.hpp"
+#include "physicsSolvers/fluidFlow/kernels/IsothermalCompositionalMultiphaseBaseKernels.hpp"
+#include "physicsSolvers/fluidFlow/kernels/IsothermalCompositionalMultiphaseFVMKernelUtilities.hpp"
 
 namespace geos
 {
@@ -373,9 +373,12 @@ protected:
   /// Views on pressure
   ElementViewConst< arrayView1d< real64 const > > const m_pres;
 
-  /// Views on derivatives of phase volume fractions and comp fractions
-  ElementViewConst< arrayView3d< real64 const, compflow::USD_COMP_DC > > const m_dCompFrac_dCompDens;
+  /// Views on phase volume fractions
+  ElementViewConst< arrayView2d< real64 const, compflow::USD_PHASE > > const m_phaseVolFrac;
   ElementViewConst< arrayView3d< real64 const, compflow::USD_PHASE_DC > > const m_dPhaseVolFrac;
+
+  /// Views on derivatives of comp fractions
+  ElementViewConst< arrayView3d< real64 const, compflow::USD_COMP_DC > > const m_dCompFrac_dCompDens;
 
   /// Views on phase component fractions
   ElementViewConst< arrayView4d< real64 const, constitutive::multifluid::USD_PHASE_COMP > > const m_phaseCompFrac;
@@ -632,7 +635,7 @@ public:
               m_pres,
               m_gravCoef,
               m_phaseMob, m_dPhaseMob,
-              m_dPhaseVolFrac,
+              m_phaseVolFrac, m_dPhaseVolFrac,
               m_phaseCompFrac, m_dPhaseCompFrac,
               m_dCompFrac_dCompDens,
               m_phaseMassDens, m_dPhaseMassDens,
@@ -658,7 +661,7 @@ public:
               m_pres,
               m_gravCoef,
               m_phaseMob, m_dPhaseMob,
-              m_dPhaseVolFrac,
+              m_phaseVolFrac, m_dPhaseVolFrac,
               m_phaseCompFrac, m_dPhaseCompFrac,
               m_dCompFrac_dCompDens,
               m_phaseMassDens, m_dPhaseMassDens,
@@ -684,7 +687,7 @@ public:
               m_pres,
               m_gravCoef,
               m_phaseMob, m_dPhaseMob,
-              m_dPhaseVolFrac,
+              m_phaseVolFrac, m_dPhaseVolFrac,
               m_phaseCompFrac, m_dPhaseCompFrac,
               m_dCompFrac_dCompDens,
               m_phaseMassDens, m_dPhaseMassDens,
