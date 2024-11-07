@@ -23,7 +23,7 @@
       defaultFrictionAngle="15.27"
       defaultDilationAngle="15.0"
       defaultHardeningRate="10.0e6"
-      defaultDrainedLinearTEC="3e-7"/> 
+      defaultDrainedTEC="3e-7"/> 
 
     <BiotPorosity
       name="rockPorosity"
