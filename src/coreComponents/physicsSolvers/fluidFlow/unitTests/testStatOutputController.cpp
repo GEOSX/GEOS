@@ -38,14 +38,8 @@ using namespace geos::testing;
 
 CommandLineOptions g_commandLineOptions;
 
-namespace ComponentsGeneration
-{
-
-
-TEST( testStatOutputController, checkSinglePhaseFluxStatistics )
-{
-  string const testSet =
-    R"xml(
+const char * xmlInput =
+  R"xml(
 <Problem>
 
   <Solvers>
@@ -183,10 +177,30 @@ TEST( testStatOutputController, checkSinglePhaseFluxStatistics )
 
 )xml";
 
-  OutputBase::setOutputDirectory( "." );
-  GeosxState state( std::make_unique< CommandLineOptions >( g_commandLineOptions ) );
+class StatOutputControllerTest : public ::testing::Test
+{
+public:
+
+  StatOutputControllerTest():
+    state( std::make_unique< CommandLineOptions >( g_commandLineOptions ) )
+  {}
+
+protected:
+
+
+  void SetUp() override
+  {
+    OutputBase::setOutputDirectory( "." );
+    setupProblemFromXML( state.getProblemManager(), xmlInput );
+  }
+
+  GeosxState state;
+
+};
+
+TEST_F( StatOutputControllerTest, checkSinglePhaseFluxStatistics )
+{
   ProblemManager & problem = state.getProblemManager();
-  setupProblemFromXML( problem, testSet.data() );
 
   std::vector< string > const refCollectorPaths =
   {
@@ -204,23 +218,23 @@ TEST( testStatOutputController, checkSinglePhaseFluxStatistics )
   };
   string const outputPath = "/Outputs/compFlowHistory_reservoir";
 
-  { // verify component creation
+  {   // verify component creation
 
     for( string const & path : refCollectorPaths )
     {
       EXPECT_NO_THROW( {
-          Group const & group = problem.getGroupByPath( path );
-          ASSERT_STREQ( path.c_str(), group.getPath().c_str() );
-        } );
+        Group const & group = problem.getGroupByPath( path );
+        ASSERT_STREQ( path.c_str(), group.getPath().c_str() );
+      } );
     }
 
     EXPECT_NO_THROW( {
-        Group const & group = problem.getGroupByPath( outputPath );
-        ASSERT_STREQ( outputPath.c_str(), group.getPath().c_str() );
-      } );
+      Group const & group = problem.getGroupByPath( outputPath );
+      ASSERT_STREQ( outputPath.c_str(), group.getPath().c_str() );
+    } );
   }
 
-  { // check all timeHistory paths
+  {   // check all timeHistory paths
     TimeHistoryOutput & timeHistory = problem.getGroupByPath< TimeHistoryOutput >( "/Outputs/compFlowHistory_reservoir" );
     string_array & collectorPaths =  timeHistory.getReference< string_array >( TimeHistoryOutput::viewKeys::timeHistoryOutputTargetString() );
 
@@ -242,7 +256,6 @@ TEST( testStatOutputController, checkSinglePhaseFluxStatistics )
   integer status = std::remove( fileFromPath.c_str() );
   EXPECT_TRUE( status == 0 );
 
-}
 }
 
 int main( int argc, char * * argv )

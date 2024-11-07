@@ -66,6 +66,101 @@ CompositionalMultiphaseStatistics::CompositionalMultiphaseStatistics( const stri
   addLogLevel< logInfo::Statistics >();
 }
 
+RegionCompStatsClass::RegionStatistics( const string & name,
+                                        Group * const parent ) :
+  Group( name, parent )
+{
+  registerWrapper( viewKeyStruct::averagePressureString(), &m_averagePressure ).
+    setApplyDefaultValue( 0 ).
+    //setInputFlag( dataRepository::InputFlags::OPTIONAL ).
+    setDescription( "average region pressure" );
+
+  registerWrapper( viewKeyStruct::minPressureString(), &m_minPressure ).
+    setApplyDefaultValue( 0 ).
+    //setInputFlag( dataRepository::InputFlags::OPTIONAL ).
+    setDescription( "minimum region pressure" );
+
+  registerWrapper( viewKeyStruct::maxPressureString(), &m_maxPressure ).
+    setApplyDefaultValue( 0 ).
+    //setInputFlag( dataRepository::InputFlags::OPTIONAL ).
+    setDescription( "maximum region pressure" );
+
+
+  registerWrapper( viewKeyStruct::minDeltaPressureString(), &m_minDeltaPressure ).
+    setApplyDefaultValue( 0 ).
+    //setInputFlag( dataRepository::InputFlags::OPTIONAL ).
+    setDescription( "minimum region delta pressure" );
+
+  registerWrapper( viewKeyStruct::maxDeltaPressureString(), &m_maxDeltaPressure ).
+    setApplyDefaultValue( 0 ).
+    //setInputFlag( dataRepository::InputFlags::OPTIONAL ).
+    setDescription( "maximum region delta pressure" );
+
+
+  registerWrapper( viewKeyStruct::averageTemperatureString(), &m_averageTemperature ).
+    setApplyDefaultValue( 0 ).
+    //setInputFlag( dataRepository::InputFlags::OPTIONAL ).
+    setDescription( "average region temperature" );
+
+  registerWrapper( viewKeyStruct::minTemperatureString(), &m_minTemperature ).
+    setApplyDefaultValue( 0 ).
+    //setInputFlag( dataRepository::InputFlags::OPTIONAL ).
+    setDescription( "minimum region temperature" );
+
+  registerWrapper( viewKeyStruct::maxTemperatureString(), &m_maxTemperature ).
+    setApplyDefaultValue( 0 ).
+    //setInputFlag( dataRepository::InputFlags::OPTIONAL ).
+    setDescription( "maximum region temperature" );
+
+
+  registerWrapper( viewKeyStruct::totalPoreVolumeString(), &m_totalPoreVolume ).
+    setApplyDefaultValue( 0 ).
+    //setInputFlag( dataRepository::InputFlags::OPTIONAL ).
+    setDescription( "total region pore volume" );
+
+  registerWrapper( viewKeyStruct::totalUncompactedPoreVolumeString(), &m_totalUncompactedPoreVolume ).
+    setApplyDefaultValue( 0 ).
+    //setInputFlag( dataRepository::InputFlags::OPTIONAL ).
+    setDescription( "total region uncompacted pore volume" );
+
+
+  registerWrapper( viewKeyStruct::phasePoreVolumeString(), &m_phasePoreVolume ).
+    setApplyDefaultValue( 0 ).
+    //setInputFlag( dataRepository::InputFlags::OPTIONAL ).
+    setDescription( "Phase region phase pore volume" );
+
+
+  registerWrapper( viewKeyStruct::phaseMassString(), &m_phaseMass ).
+    setApplyDefaultValue( 0 ).
+    //setInputFlag( dataRepository::InputFlags::OPTIONAL ).
+    setDescription( "Region phase mass (trapped and non-trapped, immobile and mobile)" );
+
+  registerWrapper( viewKeyStruct::trappedPhaseMassString(), &m_trappedPhaseMass ).
+    setApplyDefaultValue( 0 ).
+    //setInputFlag( dataRepository::InputFlags::OPTIONAL ).
+    setDescription( "Trapped region phase mass" );
+
+  registerWrapper( viewKeyStruct::immobilePhaseMassString(), &m_immobilePhaseMass ).
+    setApplyDefaultValue( 0 ).
+    //setInputFlag( dataRepository::InputFlags::OPTIONAL ).
+    setDescription( "Immobile region phase mass" );
+
+  registerWrapper( viewKeyStruct::dissolvedComponentMassString(), &m_dissolvedComponentMass ).
+    setApplyDefaultValue( 0 ).
+    //setInputFlag( dataRepository::InputFlags::OPTIONAL ).
+    setDescription( "Dissolved region component mass" );
+}
+
+void RegionCompStatsClass::init( integer const numPhases, integer const numComps )
+{
+  m_phasePoreVolume.resizeDimension< 0 >( numPhases );
+  m_phaseMass.resizeDimension< 0 >( numPhases );
+  m_trappedPhaseMass.resizeDimension< 0 >( numPhases );
+  m_immobilePhaseMass.resizeDimension< 0 >( numPhases );
+  m_dissolvedComponentMass.resizeDimension< 0, 1 >( numPhases, numComps );
+}
+
+
 void CompositionalMultiphaseStatistics::postInputInitialization()
 {
   Base::postInputInitialization();
@@ -109,7 +204,8 @@ void CompositionalMultiphaseStatistics::registerDataOnMesh( Group & meshBodies )
         region.registerGroup< RegionStatistics >( viewKeyStruct::regionStatisticsString() ).
           setRestartFlags( RestartFlags::NO_WRITE );
 
-        RegionStatistics & regionStatistics = region.getGroup< RegionStatistics >( viewKeyStruct::regionStatisticsString() );
+        RegionStatistics & regionStatistics =
+          region.getGroup< RegionStatistics >( viewKeyStruct::regionStatisticsString() );
         regionStatistics.init( numPhases, numComps );
         // write output header
         if( m_writeCSV > 0 && MpiWrapper::commRank() == 0 )
@@ -200,29 +296,30 @@ void CompositionalMultiphaseStatistics::computeRegionStatistics( real64 const ti
   {
     ElementRegionBase & region = elemManager.getRegion( regionNames[i] );
 
-    RegionStatistics & regionStatistics = region.getGroup< RegionStatistics >( viewKeyStruct::regionStatisticsString() );
+    RegionStatistics & regionStatistics =
+      region.getGroup< RegionStatistics >( viewKeyStruct::regionStatisticsString() );
 
-    regionStatistics.getWrapper< real64 >( RegionStatistics::viewKeyStruct::averagePressureString()).setApplyDefaultValue( 0.0 );
-    regionStatistics.getWrapper< real64 >( RegionStatistics::viewKeyStruct::maxPressureString()).setApplyDefaultValue( 0.0 );
+    regionStatistics.getWrapper< real64 >( statsVKS::averagePressureString()).setApplyDefaultValue( 0.0 );
+    regionStatistics.getWrapper< real64 >( statsVKS::maxPressureString()).setApplyDefaultValue( 0.0 );
     constexpr real64 max = LvArray::NumericLimits< real64 >::max;
-    regionStatistics.getWrapper< real64 >( RegionStatistics::viewKeyStruct::minPressureString()).setApplyDefaultValue( max );
+    regionStatistics.getWrapper< real64 >( statsVKS::minPressureString()).setApplyDefaultValue( max );
 
-    regionStatistics.getWrapper< real64 >( RegionStatistics::viewKeyStruct::maxDeltaPressureString()).setApplyDefaultValue( -max );
-    regionStatistics.getWrapper< real64 >( RegionStatistics::viewKeyStruct::minDeltaPressureString()).setApplyDefaultValue( max );
+    regionStatistics.getWrapper< real64 >( statsVKS::maxDeltaPressureString()).setApplyDefaultValue( -max );
+    regionStatistics.getWrapper< real64 >( statsVKS::minDeltaPressureString()).setApplyDefaultValue( max );
 
-    regionStatistics.getWrapper< real64 >( RegionStatistics::viewKeyStruct::averageTemperatureString()).setApplyDefaultValue( 0.0 );
-    regionStatistics.getWrapper< real64 >( RegionStatistics::viewKeyStruct::maxTemperatureString()).setApplyDefaultValue( 0.0 );
-    regionStatistics.getWrapper< real64 >( RegionStatistics::viewKeyStruct::minTemperatureString()).setApplyDefaultValue( max );
+    regionStatistics.getWrapper< real64 >( statsVKS::averageTemperatureString()).setApplyDefaultValue( 0.0 );
+    regionStatistics.getWrapper< real64 >( statsVKS::maxTemperatureString()).setApplyDefaultValue( 0.0 );
+    regionStatistics.getWrapper< real64 >( statsVKS::minTemperatureString()).setApplyDefaultValue( max );
 
-    regionStatistics.getWrapper< real64 >( RegionStatistics::viewKeyStruct::totalPoreVolumeString()).setApplyDefaultValue( 0.0 );
-    regionStatistics.getWrapper< real64 >( RegionStatistics::viewKeyStruct::totalUncompactedPoreVolumeString()).setApplyDefaultValue( 0.0 );
+    regionStatistics.getWrapper< real64 >( statsVKS::totalPoreVolumeString()).setApplyDefaultValue( 0.0 );
+    regionStatistics.getWrapper< real64 >( statsVKS::totalUncompactedPoreVolumeString()).setApplyDefaultValue( 0.0 );
 
-    regionStatistics.getReference< array1d< real64 > >( RegionStatistics::viewKeyStruct::phasePoreVolumeString()).setValues< serialPolicy >( 0.0 );
+    regionStatistics.getPhasePoreVolume().setValues< serialPolicy >( 0.0 );
 
-    regionStatistics.getReference< array1d< real64 > >( RegionStatistics::viewKeyStruct::phaseMassString()).setValues< serialPolicy >( 0.0 );
-    regionStatistics.getReference< array1d< real64 > >( RegionStatistics::viewKeyStruct::trappedPhaseMassString()).setValues< serialPolicy >( 0.0 );
-    regionStatistics.getReference< array1d< real64 > >( RegionStatistics::viewKeyStruct::immobilePhaseMassString()).setValues< serialPolicy >( 0.0 );
-    regionStatistics.getReference< array2d< real64 > >( RegionStatistics::viewKeyStruct::dissolvedComponentMassString()).setValues< serialPolicy >( 0.0 );
+    regionStatistics.getPhaseMass().setValues< serialPolicy >( 0.0 );
+    regionStatistics.getTrappedPhaseMass().setValues< serialPolicy >( 0.0 );
+    regionStatistics.getImmobilePhaseMass().setValues< serialPolicy >( 0.0 );
+    regionStatistics.getDissolvedComponentMass().setValues< serialPolicy >( 0.0 );
   }
 
   // Step 2: increment the average/min/max quantities for all the subRegions
@@ -309,52 +406,52 @@ void CompositionalMultiphaseStatistics::computeRegionStatistics( real64 const ti
     ElementRegionBase & region = elemManager.getRegion( ElementRegionBase::getParentRegion( subRegion ).getName() );
     RegionStatistics & regionStatistics = region.getGroup< RegionStatistics >( viewKeyStruct::regionStatisticsString() );
 
-    real64 & averagePressure = regionStatistics.getReference< real64 >( RegionStatistics::viewKeyStruct::averagePressureString());
+    real64 & averagePressure = regionStatistics.getAveragePressure();
     averagePressure += subRegionAvgPresNumerator;
-    real64 & minPressure = regionStatistics.getReference< real64 >( RegionStatistics::viewKeyStruct::minPressureString());
+    real64 & minPressure = regionStatistics.getMinPressure();
     if( subRegionMinPres < minPressure )
     {
-      regionStatistics.getWrapper< real64 >( RegionStatistics::viewKeyStruct::minPressureString()).setApplyDefaultValue( subRegionMinPres );
+      regionStatistics.getWrapper< real64 >( statsVKS::minPressureString()).setApplyDefaultValue( subRegionMinPres );
     }
-    real64 & maxPressure = regionStatistics.getReference< real64 >( RegionStatistics::viewKeyStruct::maxPressureString());
+    real64 & maxPressure = regionStatistics.getMaxPressure();
     if( subRegionMaxPres > maxPressure )
     {
-      regionStatistics.getWrapper< real64 >( RegionStatistics::viewKeyStruct::maxPressureString()).setApplyDefaultValue( subRegionMaxPres );
+      regionStatistics.getWrapper< real64 >( statsVKS::maxPressureString()).setApplyDefaultValue( subRegionMaxPres );
     }
-    real64 & minDeltaPressure = regionStatistics.getReference< real64 >( RegionStatistics::viewKeyStruct::minDeltaPressureString());
+    real64 & minDeltaPressure = regionStatistics.getMinDeltaPressure();
     if( subRegionMinDeltaPres < minDeltaPressure )
     {
-      regionStatistics.getWrapper< real64 >( RegionStatistics::viewKeyStruct::minDeltaPressureString()).setApplyDefaultValue( subRegionMinDeltaPres );
+      regionStatistics.getWrapper< real64 >( statsVKS::minDeltaPressureString()).setApplyDefaultValue( subRegionMinDeltaPres );
     }
-    real64 & maxDeltaPressure = regionStatistics.getReference< real64 >( RegionStatistics::viewKeyStruct::maxDeltaPressureString());
+    real64 & maxDeltaPressure = regionStatistics.getMaxDeltaPressure();
     if( subRegionMaxDeltaPres > maxDeltaPressure )
     {
-      regionStatistics.getWrapper< real64 >( RegionStatistics::viewKeyStruct::maxDeltaPressureString()).setApplyDefaultValue( subRegionMaxDeltaPres );
+      regionStatistics.getWrapper< real64 >( statsVKS::maxDeltaPressureString()).setApplyDefaultValue( subRegionMaxDeltaPres );
     }
-    real64 & averageTemperature = regionStatistics.getReference< real64 >( RegionStatistics::viewKeyStruct::averageTemperatureString());
+    real64 & averageTemperature = regionStatistics.getAverageTemperature();
     averageTemperature += subRegionAvgTempNumerator;
-    real64 & minTemperature = regionStatistics.getReference< real64 >( RegionStatistics::viewKeyStruct::minTemperatureString());
+    real64 & minTemperature = regionStatistics.getMinTemperature();
     if( subRegionMinTemp < minTemperature )
     {
-      regionStatistics.getWrapper< real64 >( RegionStatistics::viewKeyStruct::minTemperatureString()).setApplyDefaultValue( subRegionMinTemp );
+      regionStatistics.getWrapper< real64 >( statsVKS::minTemperatureString()).setApplyDefaultValue( subRegionMinTemp );
     }
-    real64 & maxTemperature = regionStatistics.getReference< real64 >( RegionStatistics::viewKeyStruct::maxTemperatureString());
+    real64 & maxTemperature = regionStatistics.getMaxTemperature();
     if( subRegionMaxTemp > maxTemperature )
     {
-      regionStatistics.getWrapper< real64 >( RegionStatistics::viewKeyStruct::maxTemperatureString()).setApplyDefaultValue( subRegionMaxTemp );
+      regionStatistics.getWrapper< real64 >( statsVKS::maxTemperatureString()).setApplyDefaultValue( subRegionMaxTemp );
     }
-    real64 & totalUncompactedPoreVolume = regionStatistics.getReference< real64 >( RegionStatistics::viewKeyStruct::totalUncompactedPoreVolumeString());
+    real64 & totalUncompactedPoreVolume = regionStatistics.getReference< real64 >( statsVKS::totalUncompactedPoreVolumeString());
     totalUncompactedPoreVolume += subRegionTotalUncompactedPoreVol;
     for( integer ip = 0; ip < numPhases; ++ip )
     {
-      regionStatistics.getReference< array1d< real64 > >( RegionStatistics::viewKeyStruct::phasePoreVolumeString())[ip] += subRegionPhaseDynamicPoreVol[ip];
-      regionStatistics.getReference< array1d< real64 > >( RegionStatistics::viewKeyStruct::phaseMassString())[ip] += subRegionPhaseMass[ip];
-      regionStatistics.getReference< array1d< real64 > >( RegionStatistics::viewKeyStruct::trappedPhaseMassString())[ip] += subRegionTrappedPhaseMass[ip];
-      regionStatistics.getReference< array1d< real64 > >( RegionStatistics::viewKeyStruct::immobilePhaseMassString())[ip] += subRegionImmobilePhaseMass[ip];
+      regionStatistics.getPhasePoreVolume()[ip] += subRegionPhaseDynamicPoreVol[ip];
+      regionStatistics.getPhaseMass()[ip] += subRegionPhaseMass[ip];
+      regionStatistics.getTrappedPhaseMass()[ip] += subRegionTrappedPhaseMass[ip];
+      regionStatistics.getImmobilePhaseMass()[ip] += subRegionImmobilePhaseMass[ip];
 
       for( integer ic = 0; ic < numComps; ++ic )
       {
-        regionStatistics.getReference< array2d< real64 > >( RegionStatistics::viewKeyStruct::dissolvedComponentMassString())[ip][ic] += subRegiondissolvedComponentMass[ip][ic];
+        regionStatistics.getDissolvedComponentMass()[ip][ic] += subRegiondissolvedComponentMass[ip][ic];
       }
     }
 
@@ -366,33 +463,33 @@ void CompositionalMultiphaseStatistics::computeRegionStatistics( real64 const ti
     ElementRegionBase & region = elemManager.getRegion( regionNames[i] );
     RegionStatistics & regionStatistics = region.getGroup< RegionStatistics >( viewKeyStruct::regionStatisticsString() );
 
-    real64 minPressure = MpiWrapper::min( regionStatistics.getReference< real64 >( RegionStatistics::viewKeyStruct::minPressureString()) );
-    regionStatistics.getWrapper< real64 >( RegionStatistics::viewKeyStruct::minPressureString()).setApplyDefaultValue( minPressure );
+    real64 minPressure = MpiWrapper::min( regionStatistics.getMinPressure() );
+    regionStatistics.getWrapper< real64 >( statsVKS::minPressureString()).setApplyDefaultValue( minPressure );
 
-    real64 maxPressure = MpiWrapper::max( regionStatistics.getReference< real64 >( RegionStatistics::viewKeyStruct::maxPressureString()) );
-    regionStatistics.getWrapper< real64 >( RegionStatistics::viewKeyStruct::maxPressureString()).setApplyDefaultValue( maxPressure );
+    real64 maxPressure = MpiWrapper::max( regionStatistics.getMaxPressure() );
+    regionStatistics.getWrapper< real64 >( statsVKS::maxPressureString()).setApplyDefaultValue( maxPressure );
 
-    real64 minDeltaPressure = MpiWrapper::min( regionStatistics.getReference< real64 >( RegionStatistics::viewKeyStruct::minDeltaPressureString()) );
-    regionStatistics.getWrapper< real64 >( RegionStatistics::viewKeyStruct::minDeltaPressureString()).setApplyDefaultValue( minDeltaPressure );
+    real64 minDeltaPressure = MpiWrapper::min( regionStatistics.getMinDeltaPressure() );
+    regionStatistics.getWrapper< real64 >( statsVKS::minDeltaPressureString()).setApplyDefaultValue( minDeltaPressure );
 
-    real64 maxDeltaPressure = MpiWrapper::max( regionStatistics.getReference< real64 >( RegionStatistics::viewKeyStruct::maxDeltaPressureString()) );
-    regionStatistics.getWrapper< real64 >( RegionStatistics::viewKeyStruct::maxDeltaPressureString()).setApplyDefaultValue( maxDeltaPressure );
+    real64 maxDeltaPressure = MpiWrapper::max( regionStatistics.getMaxDeltaPressure() );
+    regionStatistics.getWrapper< real64 >( statsVKS::maxDeltaPressureString()).setApplyDefaultValue( maxDeltaPressure );
 
-    real64 minTemperature = MpiWrapper::min( regionStatistics.getReference< real64 >( RegionStatistics::viewKeyStruct::minTemperatureString()) );
-    regionStatistics.getWrapper< real64 >( RegionStatistics::viewKeyStruct::minTemperatureString()).setApplyDefaultValue( minTemperature );
+    real64 minTemperature = MpiWrapper::min( regionStatistics.getMinTemperature() );
+    regionStatistics.getWrapper< real64 >( statsVKS::minTemperatureString()).setApplyDefaultValue( minTemperature );
 
-    real64 maxTemperature = MpiWrapper::max( regionStatistics.getReference< real64 >( RegionStatistics::viewKeyStruct::maxTemperatureString()) );
-    regionStatistics.getWrapper< real64 >( RegionStatistics::viewKeyStruct::maxTemperatureString()).setApplyDefaultValue( maxTemperature );
+    real64 maxTemperature = MpiWrapper::max( regionStatistics.getMaxTemperature() );
+    regionStatistics.getWrapper< real64 >( statsVKS::maxTemperatureString()).setApplyDefaultValue( maxTemperature );
 
-    real64 totalUncompactedPoreVolume = MpiWrapper::sum( regionStatistics.getReference< real64 >( RegionStatistics::viewKeyStruct::totalUncompactedPoreVolumeString()) );
-    regionStatistics.getWrapper< real64 >( RegionStatistics::viewKeyStruct::totalUncompactedPoreVolumeString()).setApplyDefaultValue( totalUncompactedPoreVolume );
+    real64 totalUncompactedPoreVolume = MpiWrapper::sum( regionStatistics.getReference< real64 >( statsVKS::totalUncompactedPoreVolumeString()) );
+    regionStatistics.getWrapper< real64 >( statsVKS::totalUncompactedPoreVolumeString()).setApplyDefaultValue( totalUncompactedPoreVolume );
 
 
-    array1d< real64 > phasePoreVolume = regionStatistics.getReference< array1d< real64 > >( RegionStatistics::viewKeyStruct::phasePoreVolumeString());
-    array1d< real64 > phaseMass = regionStatistics.getReference< array1d< real64 > >( RegionStatistics::viewKeyStruct::phaseMassString());
-    array1d< real64 > trappedPhaseMass = regionStatistics.getReference< array1d< real64 > >( RegionStatistics::viewKeyStruct::trappedPhaseMassString());
-    array1d< real64 > immobilePhaseMass = regionStatistics.getReference< array1d< real64 > >( RegionStatistics::viewKeyStruct::immobilePhaseMassString());
-    array2d< real64 > dissolvedComponentMass = regionStatistics.getReference< array2d< real64 > >( RegionStatistics::viewKeyStruct::dissolvedComponentMassString());
+    array1d< real64 > phasePoreVolume = regionStatistics.getPhasePoreVolume();
+    array1d< real64 > phaseMass = regionStatistics.getPhaseMass();
+    array1d< real64 > trappedPhaseMass = regionStatistics.getTrappedPhaseMass();
+    array1d< real64 > immobilePhaseMass = regionStatistics.getImmobilePhaseMass();
+    array2d< real64 > dissolvedComponentMass = regionStatistics.getDissolvedComponentMass();
 
     real64 totalPoreVolume = 0.0;
     for( integer ip = 0; ip < numPhases; ++ip )
@@ -407,12 +504,12 @@ void CompositionalMultiphaseStatistics::computeRegionStatistics( real64 const ti
         dissolvedComponentMass[ip][ic] = MpiWrapper::sum( dissolvedComponentMass[ip][ic] );
       }
     }
-    regionStatistics.getWrapper< real64 >( RegionStatistics::viewKeyStruct::totalPoreVolumeString()).setApplyDefaultValue( totalPoreVolume );
+    regionStatistics.getWrapper< real64 >( statsVKS::totalPoreVolumeString()).setApplyDefaultValue( totalPoreVolume );
 
-    real64 & averagePressure = regionStatistics.getReference< real64 >( RegionStatistics::viewKeyStruct::averagePressureString() );
+    real64 & averagePressure = regionStatistics.getReference< real64 >( statsVKS::averagePressureString() );
     averagePressure = MpiWrapper::sum( averagePressure );
 
-    real64 & averageTemperature = regionStatistics.getReference< real64 >( RegionStatistics::viewKeyStruct::averageTemperatureString() );
+    real64 & averageTemperature = regionStatistics.getReference< real64 >( statsVKS::averageTemperatureString() );
     averageTemperature = MpiWrapper::sum( averageTemperature );
 
     if( totalUncompactedPoreVolume > 0 )
@@ -500,7 +597,7 @@ void CompositionalMultiphaseStatistics::computeRegionStatistics( real64 const ti
 
 void CompositionalMultiphaseStatistics::computeCFLNumbers( real64 const time,
                                                            real64 const dt,
-                                                           DomainPartition & domain )
+                                                           DomainPartition & domain ) const
 {
   GEOS_MARK_FUNCTION;
   real64 maxPhaseCFL, maxCompCFL;

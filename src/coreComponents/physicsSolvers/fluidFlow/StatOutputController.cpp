@@ -74,6 +74,9 @@ StatOutputController::StatOutputController( const string & name,
     setDescription( "Output directory for statistics HDF regions file" );
 }
 
+static std::set< string > const allowedChildTypes = { SinglePhaseStatistics::catalogName(),
+                                                      CompositionalMultiphaseStatistics::catalogName() };
+
 void StatOutputController::initializePreSubGroups()
 {
 
@@ -85,11 +88,13 @@ void StatOutputController::initializePreSubGroups()
   Group & meshBodies = domain.getMeshBodies();
   std::vector< string > const groupNames = this->getSubGroupsNames();
 
-  GEOS_ERROR_IF( groupNames.empty() || groupNames.size() >= 2,
-                 "StatOutputController must have one of the following components : {SinglePhaseStatistics, CompositionalMultiphaseStatistics} " );
+  GEOS_ERROR_IF( groupNames.empty(),
+                 GEOS_FMT( "StatOutputController must have one of the following components : {}",
+                           stringutilities::join( allowedChildTypes, "," ) ) );
 
   m_statistics = &this->getGroup< TaskBase >( groupNames[0] );
 
+  // creating all needed components to read sub-groups statistics.
   forSubStats( [&]( auto & statistics ) {
     using STATSTYPE = typename TYPEOFREF( statistics );
 
@@ -103,7 +108,8 @@ void StatOutputController::initializePreSubGroups()
       {
         ElementRegionBase & region = elemManager.getRegion( regionName );
         string const regionStatPath = GEOS_FMT( "{}/regionStatistics", region.getPath() );
-        typename STATSTYPE::RegionStatistics & regionStats = this->getGroupByPath< typename STATSTYPE::RegionStatistics >( regionStatPath );
+        typename STATSTYPE::RegionStatistics & regionStats =
+          this->getGroupByPath< typename STATSTYPE::RegionStatistics >( regionStatPath );
 
         string_array packCollectionPaths;
         regionStats.forWrappers( [&]( WrapperBase const & wrapper )
@@ -124,7 +130,11 @@ void StatOutputController::initializePreSubGroups()
 
 Group * StatOutputController::createChild( string const & childKey, string const & childName )
 {
+  GEOS_ERROR_IF( allowedChildTypes.count( childKey )==0,
+                 GEOS_FMT( "Wrong children \"{}\" in {}, allowed child types are {}",
+                           childKey, getDataContext(), stringutilities::join( allowedChildTypes, "," )) );
   GEOS_LOG_RANK_0( "Adding Statistics: " << childKey << ", " << childName );
+
   std::unique_ptr< TaskBase > task = TaskBase::CatalogInterface::factory( childKey, childName, this );
   return &this->registerGroup< TaskBase >( childName, std::move( task ) );
 }
@@ -138,10 +148,10 @@ void StatOutputController::forSubStats( LAMBDA lambda )
 
 void StatOutputController::expandObjectCatalogs()
 {
-  createChild( SinglePhaseStatistics::catalogName(),
-               SinglePhaseStatistics::catalogName() );
-  createChild( CompositionalMultiphaseStatistics::catalogName(),
-               CompositionalMultiphaseStatistics::catalogName() );
+  for( auto const & key: allowedChildTypes )
+  {
+    createChild( key, key );
+  }
 }
 
 bool StatOutputController::execute( real64 const time_n,

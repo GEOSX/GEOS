@@ -65,68 +65,7 @@ public:
   class RegionStatistics : public dataRepository::Group
   {
 public:
-    RegionStatistics( string const & name,
-                      Group * const parent )
-      : Group( name, parent )
-    {
-      registerWrapper( viewKeyStruct::averagePressureString(), &m_averagePressure ).
-        setApplyDefaultValue( 0 ).
-        //setInputFlag( dataRepository::InputFlags::OPTIONAL ).
-        setDescription( "average region pressure" );
-
-      registerWrapper( viewKeyStruct::minPressureString(), &m_minPressure ).
-        setApplyDefaultValue( 0 ).
-        //setInputFlag( dataRepository::InputFlags::OPTIONAL ).
-        setDescription( "minimum region pressure" );
-
-      registerWrapper( viewKeyStruct::maxPressureString(), &m_maxPressure ).
-        setApplyDefaultValue( 0 ).
-        //setInputFlag( dataRepository::InputFlags::OPTIONAL ).
-        setDescription( "maximum region pressure" );
-
-      registerWrapper( viewKeyStruct::minDeltaPressureString(), &m_minDeltaPressure ).
-        setApplyDefaultValue( 0 ).
-        //setInputFlag( dataRepository::InputFlags::OPTIONAL ).
-        setDescription( "minimum region delta pressure" );
-
-      registerWrapper( viewKeyStruct::maxDeltaPressureString(), &m_maxDeltaPressure ).
-        setApplyDefaultValue( 0 ).
-        //setInputFlag( dataRepository::InputFlags::OPTIONAL ).
-        setDescription( "maximum region delta pressure" );
-
-      registerWrapper( viewKeyStruct::totalMassString(), &m_totalMass ).
-        setApplyDefaultValue( 0 ).
-        //setInputFlag( dataRepository::InputFlags::OPTIONAL ).
-        setDescription( "fluid mass" );
-
-
-      registerWrapper( viewKeyStruct::averageTemperatureString(), &m_averageTemperature ).
-        setApplyDefaultValue( 0 ).
-        //setInputFlag( dataRepository::InputFlags::OPTIONAL ).
-        setDescription( "average region temperature" );
-
-      registerWrapper( viewKeyStruct::minTemperatureString(), &m_minTemperature ).
-        setApplyDefaultValue( 0 ).
-        //setInputFlag( dataRepository::InputFlags::OPTIONAL ).
-        setDescription( "minimum region temperature" );
-
-      registerWrapper( viewKeyStruct::maxTemperatureString(), &m_maxTemperature ).
-        setApplyDefaultValue( 0 ).
-        //setInputFlag( dataRepository::InputFlags::OPTIONAL ).
-        setDescription( "maximum region temperature" );
-
-
-      registerWrapper( viewKeyStruct::totalPoreVolumeString(), &m_totalPoreVolume ).
-        setApplyDefaultValue( 0 ).
-        //setInputFlag( dataRepository::InputFlags::OPTIONAL ).
-        setDescription( "total region pore volume" );
-
-      registerWrapper( viewKeyStruct::totalUncompactedPoreVolumeString(), &m_totalUncompactedPoreVolume ).
-        setApplyDefaultValue( 0 ).
-        //setInputFlag( dataRepository::InputFlags::OPTIONAL ).
-        setDescription( "total region uncompacted pore volume" );
-
-    }
+    RegionStatistics( string const & name, Group * const parent );
 
     struct viewKeyStruct
     {
@@ -147,6 +86,23 @@ public:
       constexpr static char const * totalUncompactedPoreVolumeString() { return "totalUncompactedPoreVolume"; }
     };
 
+    real64 & getAveragePressure() { return m_averagePressure; }
+    real64 & getMinPressure()  { return m_minPressure; }
+    real64 & getMaxPressure()  { return m_maxPressure; }
+
+    real64 & getMinDeltaPressure()  { return m_minDeltaPressure; }
+    real64 & getMaxDeltaPressure()  { return m_maxDeltaPressure; }
+
+    real64 & getTotalMass()  { return m_totalMass; }
+
+    real64 & getAverageTemperature()  { return m_averageTemperature; }
+    real64 & getMinTemperature()  { return m_minTemperature; }
+    real64 & getMaxTemperature()  { return m_maxTemperature; }
+
+    real64 & getTotalPoreVolume()  { return m_totalPoreVolume; }
+    real64 & getTotalUncompactedPoreVolume()  { return m_totalUncompactedPoreVolume; }
+
+    array1d< real64 > & getPhasePoreVolume()  { return m_phasePoreVolume; }
 
 private:
     /// average region pressure
@@ -180,6 +136,8 @@ private:
 
   };
 
+  using statsVKS = RegionStatistics::viewKeyStruct;
+
   /**@}*/
 
   /**
@@ -211,6 +169,7 @@ private:
 
 };
 
+using RegionSingStatsClass = SinglePhaseStatistics::RegionStatistics;
 
 } /* namespace geos */
 
