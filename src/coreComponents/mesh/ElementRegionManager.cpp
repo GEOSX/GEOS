@@ -67,7 +67,8 @@ void ElementRegionManager::setMaxGlobalIndex()
   m_maxGlobalIndex = MpiWrapper::max( m_localMaxGlobalIndex, MPI_COMM_GEOS );
 }
 
-auto const & getUserAvailableKeys() {
+auto const & getUserAvailableKeys()
+{
   static std::set< string > keys = {
     CellElementRegion::catalogName(),
     WellElementRegion::catalogName(),

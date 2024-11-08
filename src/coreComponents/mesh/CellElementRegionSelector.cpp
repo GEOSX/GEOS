@@ -67,9 +67,9 @@ CellElementRegionSelector::getMatchingCellblocks( CellElementRegion const & regi
                            region.getWrapperDataContext( ViewKeys::sourceCellBlockNamesString() ),
                            matchPattern,
                            stringutilities::joinLambda( m_regionAttributesOwners, ", ",
-                                                       []( auto pair ) { return pair->first; } ),
+                                                        []( auto pair ) { return pair->first; } ),
                            stringutilities::joinLambda( m_cellBlocksOwners, ", ",
-                                                       []( auto pair ) { return pair->first; } ) ),
+                                                        []( auto pair ) { return pair->first; } ) ),
                  InputError );
   return matchedCellBlocks;
 }
@@ -86,7 +86,7 @@ CellElementRegionSelector::verifyRequestedCellBlocks( CellElementRegion const & 
                              region.getWrapperDataContext( ViewKeys::sourceCellBlockNamesString() ),
                              requestedCellBlockName,
                              stringutilities::joinLambda( m_cellBlocksOwners, ", ",
-                                                         []( auto pair ) { return pair->first; } ) ),
+                                                          []( auto pair ) { return pair->first; } ) ),
                    InputError );
   }
 }
