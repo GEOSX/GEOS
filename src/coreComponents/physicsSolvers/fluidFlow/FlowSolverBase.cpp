@@ -91,7 +91,7 @@ FlowSolverBase::FlowSolverBase( string const & name,
   PhysicsSolverBase( name, parent ),
   m_numDofPerCell( 0 ),
   m_isThermal( 0 ),
-  m_keepFlowVariablesConstantDuringInitStep( 0 ),
+  m_keepVariablesConstantDuringInitStep( 0 ),
   m_isFixedStressPoromechanicsUpdate( false ),
   m_isJumpStabilized( false ),
   m_isLaggingFractureStencilWeightsUpdate( 0 )
@@ -796,15 +796,78 @@ bool FlowSolverBase::checkSequentialSolutionIncrements( DomainPartition & GEOS_U
 {
 
   GEOS_LOG_LEVEL_INFO_RANK_0( logInfo::Convergence, GEOS_FMT( "    {}: Max pressure change during outer iteration: {} Pa",
-                                                              getName(), fmt::format( "{:.{}f}", m_sequentialPresChange, 3 ) ) );
+                                                              getName(), GEOS_FMT( "{:.{}f}", m_sequentialPresChange, 3 ) ) );
 
   if( m_isThermal )
   {
     GEOS_LOG_LEVEL_INFO_RANK_0( logInfo::Convergence, GEOS_FMT( "    {}: Max temperature change during outer iteration: {} K",
-                                                                getName(), fmt::format( "{:.{}f}", m_sequentialTempChange, 3 ) ) );
+                                                                getName(), GEOS_FMT( "{:.{}f}", m_sequentialTempChange, 3 ) ) );
   }
 
   return (m_sequentialPresChange < m_maxSequentialPresChange) && (m_sequentialTempChange < m_maxSequentialTempChange);
+}
+
+string FlowSolverBase::BCMessage::generateMessage( string_view baseMessage,
+                                                   string_view fieldName, string_view setName )
+{
+  return GEOS_FMT( "{}\nCheck if you have added or applied the appropriate fields to "
+                   "the FieldSpecification component with fieldName=\"{}\" "
+                   "and setNames=\"{}\"\n", baseMessage, fieldName, setName );
+}
+
+string FlowSolverBase::BCMessage::pressureConflict( string_view regionName, string_view subRegionName,
+                                                    string_view setName, string_view fieldName )
+{
+  return generateMessage( GEOS_FMT( "Conflicting pressure boundary conditions on set {}/{}/{}",
+                                    regionName, subRegionName, setName ), fieldName, setName );
+}
+
+string FlowSolverBase::BCMessage::temperatureConflict( string_view regionName, string_view subRegionName,
+                                                       string_view setName, string_view fieldName )
+{
+  return generateMessage( GEOS_FMT( "Conflicting temperature boundary conditions on set {}/{}/{}",
+                                    regionName, subRegionName, setName ), fieldName, setName );
+}
+
+string FlowSolverBase::BCMessage::missingPressure( string_view regionName, string_view subRegionName,
+                                                   string_view setName, string_view fieldName )
+{
+  return generateMessage( GEOS_FMT( "Pressure boundary condition not prescribed on set {}/{}/{}",
+                                    regionName, subRegionName, setName ), fieldName, setName );
+}
+
+string FlowSolverBase::BCMessage::missingTemperature( string_view regionName, string_view subRegionName,
+                                                      string_view setName, string_view fieldName )
+{
+  return generateMessage( GEOS_FMT( "Temperature boundary condition not prescribed on set {}/{}/{}",
+                                    regionName, subRegionName, setName ), fieldName, setName );
+}
+
+string FlowSolverBase::BCMessage::conflictingComposition( int comp, string_view componentName,
+                                                          string_view regionName, string_view subRegionName,
+                                                          string_view setName, string_view fieldName )
+{
+  return generateMessage( GEOS_FMT( "Conflicting {} composition (no.{}) for boundary conditions on set {}/{}/{}",
+                                    componentName, comp, regionName, subRegionName, setName ),
+                          fieldName, setName );
+}
+
+string FlowSolverBase::BCMessage::invalidComponentIndex( int comp,
+                                                         string_view fsName,
+                                                         string_view fieldName )
+{
+  return generateMessage( GEOS_FMT( "Invalid component index no.{} in boundary condition {}",
+                                    comp, fsName ), fieldName, fsName );
+}
+
+string FlowSolverBase::BCMessage::notAppliedOnRegion( int componentIndex, string_view componentName,
+                                                      string_view regionName, string_view subRegionName,
+                                                      string_view setName, string_view fieldName )
+{
+  return generateMessage( GEOS_FMT( "Boundary condition not applied to {} component (no.{})"
+                                    "on region {}/{}/{}\n",
+                                    componentName, componentIndex, regionName, subRegionName, setName ),
+                          fieldName, setName );
 }
 
 } // namespace geos

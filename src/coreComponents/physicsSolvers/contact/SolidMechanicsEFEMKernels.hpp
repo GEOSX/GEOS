@@ -220,8 +220,9 @@ public:
 
     // Compute the local residuals
     LvArray::tensorOps::Ri_add_AijBj< 3, 3 >( stack.localRw, stack.localKww, stack.wLocal );
-    LvArray::tensorOps::Ri_add_AijBj< 3, nUdof >( stack.localRw, stack.localKwu, stack.uLocal );
     LvArray::tensorOps::Ri_add_AijBj< nUdof, 3 >( stack.localRu, stack.localKuw, stack.wLocal );
+    // add EqM * effStress into the residual of enrichment nodes
+    LvArray::tensorOps::add< 3 >( stack.localRw, stack.localEqMStress );
 
     // Add traction contribution
     LvArray::tensorOps::scaledAdd< 3 >( stack.localRw, stack.tractionVec, -1 );

@@ -170,6 +170,14 @@ public:
     return getBaseSolidModel().getDensity();
   }
 
+  /*
+   * @brief get the current solid effective stress
+   * return a constant arrayView3d to effective stress in Voigt form
+   */
+  arrayView3d< real64 const, solid::STRESS_USD > const getEffectiveStress() const
+  {
+    return getBaseSolidModel().getStress();
+  }
 
   /*
    * @brief get the current biot coefficient
