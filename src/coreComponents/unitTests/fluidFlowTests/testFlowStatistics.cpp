@@ -207,9 +207,7 @@ real64 getTotalFluidMass( ProblemManager & problem, string_view flowSolverPath )
     {
       SinglePhaseStatistics::RegionStatistics & regionStatistics =
         region.getGroupByPath< SinglePhaseStatistics::RegionStatistics >( SinglePhaseStatistics::viewKeyStruct::regionStatisticsString() );
-      real64 & regionTotalMass = regionStatistics.getReference< real64 >( SinglePhaseStatistics::RegionStatistics::viewKeyStruct::totalMassString());
-
-      totalMass += regionTotalMass;
+      totalMass += regionStatistics.m_totalMass;
     } );
   } );
   return totalMass;

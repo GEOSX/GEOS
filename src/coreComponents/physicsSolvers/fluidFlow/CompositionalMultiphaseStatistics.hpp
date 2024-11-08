@@ -61,9 +61,14 @@ public:
                         real64 const eventProgress,
                         DomainPartition & domain ) override;
   /**@}*/
-  class RegionStatistics : public dataRepository::Group
+  struct RegionStatistics : public dataRepository::Group
   {
-public:
+
+    /**
+     * @brief Constructor for the RegionStatistics struct
+     * @param[in] name the name of the task coming from the xml
+     * @param[in] parent the parent group of the task
+     */
     RegionStatistics( const string & name,
                       Group * const parent );
 
@@ -97,30 +102,6 @@ public:
      */
     void init( integer const numPhases, integer const numComps );
 
-    real64 & getAveragePressure() { return m_averagePressure; }
-    real64 & getMinPressure()  { return m_minPressure; }
-    real64 & getMaxPressure()  { return m_maxPressure; }
-
-    real64 & getMinDeltaPressure()  { return m_minDeltaPressure; }
-    real64 & getMaxDeltaPressure()  { return m_maxDeltaPressure; }
-
-    real64 & getAverageTemperature()  { return m_averageTemperature; }
-    real64 & getMinTemperature()  { return m_minTemperature; }
-    real64 & getMaxTemperature()  { return m_maxTemperature; }
-
-    real64 & getTotalPoreVolume()  { return m_totalPoreVolume; }
-    real64 & getTotalUncompactedPoreVolume()  { return m_totalUncompactedPoreVolume; }
-
-    array1d< real64 > & getPhasePoreVolume()  { return m_phasePoreVolume; }
-    array1d< real64 > & getPhaseMass()  { return m_phaseMass; }
-    array1d< real64 > & getTrappedPhaseMass()  { return m_trappedPhaseMass; }
-    array1d< real64 > & getImmobilePhaseMass()  { return m_immobilePhaseMass; }
-
-    // Getter pour array2d<real64>
-    array2d< real64 > & getDissolvedComponentMass()  { return m_dissolvedComponentMass; }
-
-
-private:
     RegionStatistics() = delete;
     /// average region pressure
     real64 m_averagePressure;

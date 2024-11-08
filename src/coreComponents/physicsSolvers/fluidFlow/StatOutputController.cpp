@@ -88,7 +88,7 @@ void StatOutputController::initializePreSubGroups()
   Group & meshBodies = domain.getMeshBodies();
   std::vector< string > const groupNames = this->getSubGroupsNames();
 
-  GEOS_ERROR_IF( groupNames.empty(),
+  GEOS_ERROR_IF( groupNames.size() != 1,
                  GEOS_FMT( "StatOutputController must have one of the following components : {}",
                            stringutilities::join( allowedChildTypes, "," ) ) );
 

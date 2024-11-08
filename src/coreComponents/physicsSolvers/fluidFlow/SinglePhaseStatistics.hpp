@@ -62,9 +62,13 @@ public:
                         DomainPartition & domain ) override;
 
   /**@}*/
-  class RegionStatistics : public dataRepository::Group
+  struct RegionStatistics : public dataRepository::Group
   {
-public:
+    /**
+     * @brief Constructor for the RegionStatistics struct
+     * @param[in] name the name of the task coming from the xml
+     * @param[in] parent the parent group of the task
+     */
     RegionStatistics( string const & name, Group * const parent );
 
     struct viewKeyStruct
@@ -86,25 +90,6 @@ public:
       constexpr static char const * totalUncompactedPoreVolumeString() { return "totalUncompactedPoreVolume"; }
     };
 
-    real64 & getAveragePressure() { return m_averagePressure; }
-    real64 & getMinPressure()  { return m_minPressure; }
-    real64 & getMaxPressure()  { return m_maxPressure; }
-
-    real64 & getMinDeltaPressure()  { return m_minDeltaPressure; }
-    real64 & getMaxDeltaPressure()  { return m_maxDeltaPressure; }
-
-    real64 & getTotalMass()  { return m_totalMass; }
-
-    real64 & getAverageTemperature()  { return m_averageTemperature; }
-    real64 & getMinTemperature()  { return m_minTemperature; }
-    real64 & getMaxTemperature()  { return m_maxTemperature; }
-
-    real64 & getTotalPoreVolume()  { return m_totalPoreVolume; }
-    real64 & getTotalUncompactedPoreVolume()  { return m_totalUncompactedPoreVolume; }
-
-    array1d< real64 > & getPhasePoreVolume()  { return m_phasePoreVolume; }
-
-private:
     /// average region pressure
     real64 m_averagePressure;
     /// minimum region pressure
