@@ -69,9 +69,9 @@ NonlinearSolverParameters::NonlinearSolverParameters( string const & name,
 
   registerWrapper( viewKeysStruct::normTypeString(), &m_normType ).
     setInputFlag( InputFlags::FALSE ).
-    setApplyDefaultValue( solverBaseKernels::NormType::Linf ).
+    setApplyDefaultValue( physicsSolverBaseKernels::NormType::Linf ).
     setDescription( "Norm used by the flow solver to check nonlinear convergence. "
-                    "Valid options:\n* " + EnumStrings< solverBaseKernels::NormType >::concat( "\n* " ) );
+                    "Valid options:\n* " + EnumStrings< physicsSolverBaseKernels::NormType >::concat( "\n* " ) );
 
   registerWrapper( viewKeysStruct::minNormalizerString(), &m_minNormalizer ).
     setInputFlag( dataRepository::InputFlags::OPTIONAL ).
