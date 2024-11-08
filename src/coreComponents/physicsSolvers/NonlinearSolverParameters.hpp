@@ -18,7 +18,7 @@
 
 #include "common/format/EnumStrings.hpp"
 #include "dataRepository/Group.hpp"
-#include "physicsSolvers/SolverBaseKernels.hpp"
+#include "physicsSolvers/PhysicsSolverBaseKernels.hpp"
 
 namespace geos
 {
@@ -241,7 +241,7 @@ public:
    * @brief Getter for the norm type used to check convergence in the flow/well solvers
    * @return the norm type
    */
-  solverBaseKernels::NormType normType() const
+  physicsSolverBaseKernels::NormType normType() const
   {
     return m_normType;
   }
@@ -283,7 +283,7 @@ public:
   real64 m_lineSearchResidualFactor;
 
   /// Norm used to check the nonlinear loop convergence
-  solverBaseKernels::NormType m_normType;
+  physicsSolverBaseKernels::NormType m_normType;
 
   /// The tolerance for the nonlinear convergence check.
   real64 m_newtonTol;
