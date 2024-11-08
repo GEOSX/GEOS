@@ -760,7 +760,7 @@ public:
    * @param parentNodeName The name of the parent node, used for error reporting.
    * @param parentNodePos The position of the parent node, used for error reporting.
    * @param siblingNames A set containing the names of sibling nodes (to verify that there are no
-   *                     duplicates). The function will populate this set if the attribute name is 
+   *                     duplicates). The function will populate this set if the attribute name is
    *                     used and if no error is found.
    * @throws InputError if the node type is not an xml element or if there are duplicate names
    *         among xml siblings.
