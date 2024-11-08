@@ -345,11 +345,11 @@ static void addUmpireHighWaterMarks()
     pushStatsIntoAdiak( allocatorName + " rank max", mark );
   }
 
-  TableLayout const memoryStatLayout ( {"Umpire Memory Pool\n(reserved / % over total)",
-                                       "Min over ranks",
-                                       "Max  over ranks",
-                                       "Avg  over ranks",
-                                       "Sum over ranks"} );
+  TableLayout const memoryStatLayout ( { "Umpire Memory Pool\n(reserved / % over total)",
+                                         "Min over ranks",
+                                         "Max  over ranks",
+                                         "Avg  over ranks",
+                                         "Sum over ranks" } );
   TableTextFormatter const memoryStatLog( memoryStatLayout );
 
   GEOS_LOG_RANK_0( memoryStatLog.toString( tableData ));

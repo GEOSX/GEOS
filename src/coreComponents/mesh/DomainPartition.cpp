@@ -410,33 +410,33 @@ void DomainPartition::outputPartitionInformation() const
 
         GEOS_LOG_RANK_0( "  MeshBody: " + meshBody.getName() + " MeshLevel: " + meshLevel.getName() + "\n" );
 
-        TableLayout tableLayout( {"Rank",
-                                 TableLayout::Column{"Nodes", {"local", "ghost"}},
-                                 TableLayout::Column{"Edges", {"local", "ghost"}},
-                                 TableLayout::Column{"Faces", {"local", "ghost"}},
-                                 TableLayout::Column{"Elems", {"local", "ghost"}}} );
-        tableLayout.setMargin( TableLayout::MarginValue::large );
-        tableLayout.disableLineWrap();
+        TableLayout layoutPartition( "Rank",
+                                     {" ",
+                                      TableLayout::Column{"Nodes", {"local", "ghost"}},
+                                      TableLayout::Column{"Edges", {"local", "ghost"}},
+                                      TableLayout::Column{"Faces", {"local", "ghost"}},
+                                      TableLayout::Column{"Elems", {"local", "ghost"}}} );
+        layoutPartition.setMargin( TableLayout::MarginValue::large ).disableLineBreak();
 
-        TableData tableData;
-        tableData.addRow( "min",
-                          addCommaSeparators( minNumLocalNodes ),
-                          addCommaSeparators( minNumGhostNodes ),
-                          addCommaSeparators( minNumLocalEdges ),
-                          addCommaSeparators( minNumGhostEdges ),
-                          addCommaSeparators( minNumLocalFaces ),
-                          addCommaSeparators( minNumGhostFaces ),
-                          addCommaSeparators( minNumLocalElems ),
-                          addCommaSeparators( minNumGhostElems ));
-        tableData.addRow( "max",
-                          addCommaSeparators( maxNumLocalNodes ),
-                          addCommaSeparators( maxNumGhostNodes ),
-                          addCommaSeparators( maxNumLocalEdges ),
-                          addCommaSeparators( maxNumGhostEdges ),
-                          addCommaSeparators( maxNumLocalFaces ),
-                          addCommaSeparators( maxNumGhostFaces ),
-                          addCommaSeparators( maxNumLocalElems ),
-                          addCommaSeparators( maxNumGhostElems ));
+        TableData dataPartition;
+        dataPartition.addRow( "min",
+                              addCommaSeparators( minNumLocalNodes ),
+                              addCommaSeparators( minNumGhostNodes ),
+                              addCommaSeparators( minNumLocalEdges ),
+                              addCommaSeparators( minNumGhostEdges ),
+                              addCommaSeparators( minNumLocalFaces ),
+                              addCommaSeparators( minNumGhostFaces ),
+                              addCommaSeparators( minNumLocalElems ),
+                              addCommaSeparators( minNumGhostElems ));
+        dataPartition.addRow( "max",
+                              addCommaSeparators( maxNumLocalNodes ),
+                              addCommaSeparators( maxNumGhostNodes ),
+                              addCommaSeparators( maxNumLocalEdges ),
+                              addCommaSeparators( maxNumGhostEdges ),
+                              addCommaSeparators( maxNumLocalFaces ),
+                              addCommaSeparators( maxNumGhostFaces ),
+                              addCommaSeparators( maxNumLocalElems ),
+                              addCommaSeparators( maxNumGhostElems ));
 
         // output in rank order
         int const thisRank = MpiWrapper::commRank();
@@ -444,40 +444,39 @@ void DomainPartition::outputPartitionInformation() const
         {
           if( rank == thisRank )
           {
-            tableData.addRow( rank,
-                              addCommaSeparators( numLocalNodes ),
-                              addCommaSeparators( numGhostNodes ),
-                              addCommaSeparators( numLocalEdges ),
-                              addCommaSeparators( numGhostEdges ),
-                              addCommaSeparators( numLocalFaces ),
-                              addCommaSeparators( numGhostFaces ),
-                              addCommaSeparators( numLocalElems ),
-                              addCommaSeparators( numGhostElems ));
+            dataPartition.addRow( rank,
+                                  addCommaSeparators( numLocalNodes ),
+                                  addCommaSeparators( numGhostNodes ),
+                                  addCommaSeparators( numLocalEdges ),
+                                  addCommaSeparators( numGhostEdges ),
+                                  addCommaSeparators( numLocalFaces ),
+                                  addCommaSeparators( numGhostFaces ),
+                                  addCommaSeparators( numLocalElems ),
+                                  addCommaSeparators( numGhostElems ));
           }
           MpiWrapper::barrier();
         }
         MpiWrapper::barrier();
-        TableTextFormatter tableLog( tableLayout );
-        GEOS_LOG_RANK_0( tableLog.toString( tableData ));
+        TableTextFormatter logPartition( layoutPartition );
+        GEOS_LOG_RANK_0( logPartition.toString( dataPartition ));
 
-        TableLayout tableLayoutRatio( {"Rank", "Nodes ", "Edges ", "Faces ", "Elems "} );
-        tableLayout.setMargin( TableLayout::MarginValue::large );
+        TableLayout layoutPartitionRatio( {"Rank", "Nodes ", "Edges ", "Faces ", "Elems "} );
+        layoutPartitionRatio.setMargin( TableLayout::MarginValue::large );
 
-        TableData tableDataRatio;
-        tableDataRatio.addRow( "min(local/total)",
-                               minNodeRatio,
-                               minEdgeRatio,
-                               minFaceRatio,
-                               minElemRatio );
-        tableDataRatio.addRow( "min(local/total)",
-                               maxNodeRatio,
-                               maxEdgeRatio,
-                               maxFaceRatio,
-                               maxElemRatio );
+        TableData dataPartitionRatio;
+        dataPartitionRatio.addRow( "min(local/total)",
+                                   minNodeRatio,
+                                   minEdgeRatio,
+                                   minFaceRatio,
+                                   minElemRatio );
+        dataPartitionRatio.addRow( "min(local/total)",
+                                   maxNodeRatio,
+                                   maxEdgeRatio,
+                                   maxFaceRatio,
+                                   maxElemRatio );
 
-        tableLayout.removeSubColumn();
-        TableTextFormatter tableLogRatio( tableLayoutRatio );
-        GEOS_LOG_RANK_0( tableLogRatio.toString( tableDataRatio ));
+        TableTextFormatter logPartitionRation( layoutPartitionRatio );
+        GEOS_LOG_RANK_0( logPartitionRation.toString( dataPartitionRatio ));
       }
     } );
   }

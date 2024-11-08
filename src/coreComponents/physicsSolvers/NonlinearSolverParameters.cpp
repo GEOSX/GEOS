@@ -236,8 +236,8 @@ void NonlinearSolverParameters::print() const
     tableData.addRow( "Subcycling", m_subcyclingOption );
   }
   TableLayout const tableLayout = TableLayout( GEOS_FMT( "{}: nonlinear solver", getParent().getName() ),
-                                               {TableLayout::Column{"Parameter", TableLayout::Alignment::left},
-                                                TableLayout::Column{"Value", TableLayout::Alignment::left}}
+                                               { TableLayout::Column{"Parameter", TableLayout::Alignment::left},
+                                                 TableLayout::Column{"Value", TableLayout::Alignment::left} }
                                                );
   TableTextFormatter const tableFormatter( tableLayout );
   GEOS_LOG_RANK_0( tableFormatter.toString( tableData ));

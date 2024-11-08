@@ -307,7 +307,7 @@ string TableCSVFormatter::toString< TableFunction >( TableFunction const & table
                                                  units::getDescription( tableFunction.getDimUnit( 0 ) ),
                                                  units::getDescription( tableFunction.getDimUnit( 1 ) ) );
 
-    TableLayout tableLayout( "", tableConverted.headerNames );
+    TableLayout const tableLayout( "", tableConverted.headerNames );
 
     TableCSVFormatter csvFormat( tableLayout );
     formatterStream << csvFormat.headerToString() << csvFormat.dataToString( tableConverted.tableData );
@@ -356,7 +356,7 @@ string TableTextFormatter::toString< TableFunction >( TableFunction const & tabl
                                                    units::getDescription( tableFunction.getDimUnit( 0 ) ),
                                                    units::getDescription( tableFunction.getDimUnit( 1 ) ));
 
-      TableLayout tableLayout( filename, tableConverted.headerNames );
+      TableLayout const tableLayout( filename, tableConverted.headerNames );
       TableTextFormatter const table2DLog( tableLayout );
       logOutput =  table2DLog.toString( tableConverted.tableData );
     }

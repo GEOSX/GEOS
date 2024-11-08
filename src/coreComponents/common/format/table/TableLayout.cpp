@@ -25,7 +25,7 @@ void TableLayout::addToColumns( const std::vector< string > & columnNames )
 {
   for( const auto & columnName : columnNames )
   {
-    addToColumns( string( columnName ) );
+    addToColumns( columnName );
   }
 }
 
@@ -36,21 +36,21 @@ void TableLayout::addToColumns( string_view columnName )
 
 void TableLayout::addToColumns( Column const & column )
 {
-  if( !column.subColumns.empty())
+  if( !column.subColumnNames.empty())
   {
-    std::vector< TableLayout::TableColumnData > subColumns;
-    for( const auto & subColumnsName : column.subColumns )
+    std::vector< TableLayout::ColumnStructure > subColumns;
+    for( const auto & subColumnsName : column.subColumnNames )
     {
       subColumns.push_back(
-        TableLayout::TableColumnData {
+        TableLayout::ColumnStructure {
           TableLayout::Column{ subColumnsName, column.alignmentSettings.headerAlignment }
         } );
     }
-    m_tableColumnsData.push_back( TableLayout::TableColumnData { column, subColumns } );
+    m_tableColumnsData.push_back( TableLayout::ColumnStructure { column, subColumns } );
   }
   else
   {
-    m_tableColumnsData.push_back( TableLayout::TableColumnData { column } );
+    m_tableColumnsData.push_back( TableLayout::ColumnStructure { column } );
   }
 }
 
@@ -60,7 +60,7 @@ TableLayout & TableLayout::setTitle( string_view title )
   return *this;
 }
 
-TableLayout & TableLayout::disableLineWrap()
+TableLayout & TableLayout::disableLineBreak()
 {
   m_wrapLine = false;
   return *this;
@@ -84,7 +84,7 @@ TableLayout & TableLayout::setValuesAlignment( TableLayout::Alignment alignment 
   return *this;
 }
 
-bool TableLayout::isLineWrapEnabled() const
+bool TableLayout::isLineBreakEnabled() const
 {
   return m_wrapLine;
 }
@@ -100,7 +100,7 @@ void TableLayout::removeSubColumn()
   }
 }
 
-std::vector< TableLayout::TableColumnData > const & TableLayout::getColumns() const
+std::vector< TableLayout::ColumnStructure > const & TableLayout::getColumns() const
 {
   return m_tableColumnsData;
 }
