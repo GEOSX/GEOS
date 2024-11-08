@@ -25,7 +25,6 @@
 
 namespace geos
 {
-class SolverBase;
 
 /**
  * @class MeshManager

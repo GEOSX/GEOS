@@ -4,54 +4,56 @@ set( physicsSolvers_headers
      fluidFlow/CompositionalMultiphaseBase.hpp
      fluidFlow/CompositionalMultiphaseBaseFields.hpp
      fluidFlow/CompositionalMultiphaseStatistics.hpp
-     fluidFlow/IsothermalCompositionalMultiphaseBaseKernels.hpp
-     fluidFlow/ThermalCompositionalMultiphaseBaseKernels.hpp
+     fluidFlow/kernels/IsothermalCompositionalMultiphaseBaseKernels.hpp
+     fluidFlow/kernels/ThermalCompositionalMultiphaseBaseKernels.hpp
      fluidFlow/CompositionalMultiphaseFVM.hpp
-     fluidFlow/IsothermalCompositionalMultiphaseFVMKernels.hpp
-     fluidFlow/IsothermalCompositionalMultiphaseFVMKernelUtilities.hpp
-     fluidFlow/ThermalCompositionalMultiphaseFVMKernels.hpp
+     fluidFlow/kernels/IsothermalCompositionalMultiphaseFVMKernels.hpp
+     fluidFlow/kernels/IsothermalCompositionalMultiphaseFVMKernelUtilities.hpp
+     fluidFlow/kernels/ThermalCompositionalMultiphaseFVMKernels.hpp
      fluidFlow/CompositionalMultiphaseHybridFVM.hpp
-     fluidFlow/CompositionalMultiphaseHybridFVMKernels.hpp
+     fluidFlow/kernels/CompositionalMultiphaseHybridFVMKernels.hpp
      fluidFlow/CompositionalMultiphaseUtilities.hpp
      fluidFlow/ReactiveCompositionalMultiphaseOBL.hpp
      fluidFlow/ReactiveCompositionalMultiphaseOBLFields.hpp
-     fluidFlow/ReactiveCompositionalMultiphaseOBLKernels.hpp
+     fluidFlow/kernels/ReactiveCompositionalMultiphaseOBLKernels.hpp
      fluidFlow/FlowSolverBase.hpp
      fluidFlow/FlowSolverBaseFields.hpp
-     fluidFlow/FlowSolverBaseKernels.hpp
-     fluidFlow/FluxKernelsHelper.hpp
-     fluidFlow/HybridFVMHelperKernels.hpp
+     fluidFlow/kernels/FlowSolverBaseKernels.hpp
+     fluidFlow/kernels/FluxKernelsHelper.hpp
+     fluidFlow/kernels/HybridFVMHelperKernels.hpp
      fluidFlow/SourceFluxStatistics.hpp
      fluidFlow/proppantTransport/ProppantTransport.hpp
      fluidFlow/proppantTransport/ProppantTransportFields.hpp
      fluidFlow/proppantTransport/ProppantTransportKernels.hpp
      fluidFlow/SinglePhaseBase.hpp
      fluidFlow/SinglePhaseBaseFields.hpp
-     fluidFlow/SinglePhaseBaseKernels.hpp
+     fluidFlow/kernels/SinglePhaseBaseKernels.hpp
      fluidFlow/SinglePhaseStatistics.hpp
      fluidFlow/SinglePhaseFVM.hpp
-     fluidFlow/SinglePhaseFVMKernels.hpp
+     fluidFlow/kernels/SinglePhaseFVMKernels.hpp
      fluidFlow/SinglePhaseHybridFVM.hpp
-     fluidFlow/SinglePhaseHybridFVMKernels.hpp
+     fluidFlow/kernels/SinglePhaseHybridFVMKernels.hpp
      fluidFlow/SinglePhaseProppantBase.hpp
-     fluidFlow/SinglePhaseProppantBaseKernels.hpp
-     fluidFlow/SinglePhaseProppantFluxKernels.hpp
-     fluidFlow/StabilizedCompositionalMultiphaseFVMKernels.hpp
-     fluidFlow/StabilizedSinglePhaseFVMKernels.hpp
+     fluidFlow/kernels/SinglePhaseProppantBaseKernels.hpp
+     fluidFlow/kernels/SinglePhaseProppantFluxKernels.hpp
+     fluidFlow/kernels/StabilizedCompositionalMultiphaseFVMKernels.hpp
+     fluidFlow/kernels/StabilizedSinglePhaseFVMKernels.hpp
      fluidFlow/StencilAccessors.hpp
      fluidFlow/StencilDataCollection.hpp
-     fluidFlow/ThermalSinglePhaseBaseKernels.hpp
-     fluidFlow/ThermalSinglePhaseFVMKernels.hpp
+     fluidFlow/kernels/ThermalSinglePhaseBaseKernels.hpp
+     fluidFlow/kernels/ThermalSinglePhaseFVMKernels.hpp
+     fluidFlow/LogLevelsInfo.hpp
      fluidFlow/wells/CompositionalMultiphaseWell.hpp
      fluidFlow/wells/CompositionalMultiphaseWellFields.hpp
-     fluidFlow/wells/CompositionalMultiphaseWellKernels.hpp
+     fluidFlow/wells/kernels/CompositionalMultiphaseWellKernels.hpp
      fluidFlow/wells/SinglePhaseWell.hpp
      fluidFlow/wells/SinglePhaseWellFields.hpp
-     fluidFlow/wells/SinglePhaseWellKernels.hpp
+     fluidFlow/wells/kernels/SinglePhaseWellKernels.hpp
      fluidFlow/wells/WellConstants.hpp
      fluidFlow/wells/WellControls.hpp
      fluidFlow/wells/WellSolverBase.hpp
      fluidFlow/wells/WellSolverBaseFields.hpp
+     fluidFlow/wells/LogLevelsInfo.hpp
      PARENT_SCOPE )
 
 # Specify solver sources
@@ -60,9 +62,9 @@ set( physicsSolvers_sources
      fluidFlow/CompositionalMultiphaseBase.cpp
      fluidFlow/CompositionalMultiphaseFVM.cpp
      fluidFlow/CompositionalMultiphaseStatistics.cpp
-     fluidFlow/IsothermalCompositionalMultiphaseFVMKernels.cpp
+     fluidFlow/kernels/IsothermalCompositionalMultiphaseFVMKernels.cpp
      fluidFlow/CompositionalMultiphaseHybridFVM.cpp
-     fluidFlow/CompositionalMultiphaseHybridFVMKernels.cpp
+     fluidFlow/kernels/CompositionalMultiphaseHybridFVMKernels.cpp
      fluidFlow/ReactiveCompositionalMultiphaseOBL.cpp
      fluidFlow/FlowSolverBase.cpp
      fluidFlow/proppantTransport/ProppantTransport.cpp
@@ -72,13 +74,13 @@ set( physicsSolvers_sources
      fluidFlow/SinglePhaseFVM.cpp
      fluidFlow/SinglePhaseHybridFVM.cpp
      fluidFlow/SinglePhaseProppantBase.cpp
-     fluidFlow/SinglePhaseProppantFluxKernels.cpp
+     fluidFlow/kernels/SinglePhaseProppantFluxKernels.cpp
      fluidFlow/SourceFluxStatistics.cpp
      fluidFlow/StencilDataCollection.cpp
      fluidFlow/wells/CompositionalMultiphaseWell.cpp
-     fluidFlow/wells/CompositionalMultiphaseWellKernels.cpp
+     fluidFlow/wells/kernels/CompositionalMultiphaseWellKernels.cpp
      fluidFlow/wells/SinglePhaseWell.cpp
-     fluidFlow/wells/SinglePhaseWellKernels.cpp
+     fluidFlow/wells/kernels/SinglePhaseWellKernels.cpp
      fluidFlow/wells/WellControls.cpp
      fluidFlow/wells/WellSolverBase.cpp 
      PARENT_SCOPE )

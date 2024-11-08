@@ -41,9 +41,9 @@
 #include "mesh/mpiCommunications/CommunicationTools.hpp"
 #include "physicsSolvers/fluidFlow/CompositionalMultiphaseBaseFields.hpp"
 #include "physicsSolvers/fluidFlow/FlowSolverBaseFields.hpp"
-#include "physicsSolvers/fluidFlow/IsothermalCompositionalMultiphaseBaseKernels.hpp"
-#include "physicsSolvers/fluidFlow/IsothermalCompositionalMultiphaseFVMKernels.hpp"
-#include "physicsSolvers/fluidFlow/ThermalCompositionalMultiphaseBaseKernels.hpp"
+#include "physicsSolvers/fluidFlow/kernels/IsothermalCompositionalMultiphaseBaseKernels.hpp"
+#include "physicsSolvers/fluidFlow/kernels/IsothermalCompositionalMultiphaseFVMKernels.hpp" // TODO this should not be here
+#include "physicsSolvers/fluidFlow/kernels/ThermalCompositionalMultiphaseBaseKernels.hpp"
 
 #if defined( __INTEL_COMPILER )
 #pragma GCC optimize "O0"
@@ -280,6 +280,7 @@ void CompositionalMultiphaseBase::registerDataOnMesh( Group & meshBodies )
     MultiFluidBase const & referenceFluid = cm.getConstitutiveRelation< MultiFluidBase >( m_referenceFluidModelName );
     m_numPhases = referenceFluid.numFluidPhases();
     m_numComponents = referenceFluid.numFluidComponents();
+    m_isThermal = referenceFluid.isThermal();
   }
 
   // n_c components + one pressure ( + one temperature if needed )
@@ -1450,13 +1451,13 @@ void CompositionalMultiphaseBase::applyBoundaryConditions( real64 const time_n,
 {
   GEOS_MARK_FUNCTION;
 
-  if( m_keepFlowVariablesConstantDuringInitStep )
+  if( m_keepVariablesConstantDuringInitStep )
   {
     // this function is going to force the current flow state to be constant during the time step
     // this is used when the poromechanics solver is performing the stress initialization
     // TODO: in the future, a dedicated poromechanics kernel should eliminate the flow vars to construct a reduced system
     //       which will remove the need for this brittle passing aroung of flag
-    keepFlowVariablesConstantDuringInitStep( time_n, dt, dofManager, domain, localMatrix.toViewConstSizes(), localRhs.toView() );
+    keepVariablesConstantDuringInitStep( time_n, dt, dofManager, domain, localMatrix.toViewConstSizes(), localRhs.toView() );
   }
   else
   {
@@ -1683,7 +1684,8 @@ bool CompositionalMultiphaseBase::validateDirichletBC( DomainPartition & domain,
       if( subRegionSetMap.count( setName ) > 0 )
       {
         bcConsistent = false;
-        GEOS_WARNING( GEOS_FMT( "Conflicting pressure boundary conditions on set {}/{}/{}", regionName, subRegionName, setName ) );
+        GEOS_WARNING( BCMessage::pressureConflict( regionName, subRegionName, setName,
+                                                   fields::flow::pressure::key() ) );
       }
       subRegionSetMap[setName].setNumComp( m_numComponents );
     } );
@@ -1708,7 +1710,8 @@ bool CompositionalMultiphaseBase::validateDirichletBC( DomainPartition & domain,
         if( tempSubRegionSetMap.count( setName ) > 0 )
         {
           bcConsistent = false;
-          GEOS_WARNING( GEOS_FMT( "Conflicting temperature boundary conditions on set {}/{}/{}", regionName, subRegionName, setName ) );
+          GEOS_WARNING( BCMessage::temperatureConflict( regionName, subRegionName, setName,
+                                                        fields::flow::temperature::key() ) );
         }
         tempSubRegionSetMap.insert( setName );
       } );
@@ -1725,7 +1728,7 @@ bool CompositionalMultiphaseBase::validateDirichletBC( DomainPartition & domain,
                                                    string const & )
     {
       // 3.1 Check pressure, temperature, and record composition bc application
-      string const & subRegionName = subRegion.getName();
+      string const & subRegionName = subRegion.getName(   );
       string const & regionName = subRegion.getParent().getParent().getName();
       integer const comp = fs.getComponent();
 
@@ -1733,7 +1736,8 @@ bool CompositionalMultiphaseBase::validateDirichletBC( DomainPartition & domain,
       if( subRegionSetMap.count( setName ) == 0 )
       {
         bcConsistent = false;
-        GEOS_WARNING( GEOS_FMT( "Pressure boundary condition not prescribed on set {}/{}/{}", regionName, subRegionName, setName ) );
+        GEOS_WARNING( BCMessage::missingPressure( regionName, subRegionName, setName,
+                                                  fields::flow::pressure::key() ) );
       }
       if( m_isThermal )
       {
@@ -1741,13 +1745,15 @@ bool CompositionalMultiphaseBase::validateDirichletBC( DomainPartition & domain,
         if( tempSubRegionSetMap.count( setName ) == 0 )
         {
           bcConsistent = false;
-          GEOS_WARNING( GEOS_FMT( "Temperature boundary condition not prescribed on set {}/{}/{}", regionName, subRegionName, setName ) );
+          GEOS_WARNING( BCMessage::missingTemperature( regionName, subRegionName, setName,
+                                                       fields::flow::temperature::key() ) );
         }
       }
       if( comp < 0 || comp >= m_numComponents )
       {
         bcConsistent = false;
-        GEOS_WARNING( GEOS_FMT( "Invalid component index [{}] in composition boundary condition {}", comp, fs.getName() ) );
+        GEOS_WARNING( BCMessage::invalidComponentIndex( comp, fs.getName(),
+                                                        fields::flow::globalCompFraction::key() ) );
         return; // can't check next part with invalid component id
       }
 
@@ -1755,7 +1761,13 @@ bool CompositionalMultiphaseBase::validateDirichletBC( DomainPartition & domain,
       if( compMask[comp] )
       {
         bcConsistent = false;
-        GEOS_WARNING( GEOS_FMT( "Conflicting composition[{}] boundary conditions on set {}/{}/{}", comp, regionName, subRegionName, setName ) );
+        fsManager.forSubGroups< EquilibriumInitialCondition >( [&] ( EquilibriumInitialCondition const & bc )
+        {
+          arrayView1d< string const > componentNames = bc.getComponentNames();
+          GEOS_WARNING( BCMessage::conflictingComposition( comp, componentNames[comp],
+                                                           regionName, subRegionName, setName,
+                                                           fields::flow::globalCompFraction::key() ) );
+        } );
       }
       compMask.set( comp );
     } );
@@ -1769,15 +1781,21 @@ bool CompositionalMultiphaseBase::validateDirichletBC( DomainPartition & domain,
         for( auto const & setEntry : subRegionEntry.second )
         {
           ComponentMask< MAX_NC > const & compMask = setEntry.second;
-          for( integer ic = 0; ic < m_numComponents; ++ic )
+
+          fsManager.forSubGroups< EquilibriumInitialCondition >( [&] ( EquilibriumInitialCondition const & fs )
           {
-            if( !compMask[ic] )
+            arrayView1d< string const > componentNames = fs.getComponentNames();
+            for( int ic = 0; ic < componentNames.size(); ic++ )
             {
-              bcConsistent = false;
-              GEOS_WARNING( GEOS_FMT( "Boundary condition not applied to composition[{}] on set {}/{}/{}",
-                                      ic, regionEntry.first, subRegionEntry.first, setEntry.first ) );
+              if( !compMask[ic] )
+              {
+                bcConsistent = false;
+                GEOS_WARNING( BCMessage::notAppliedOnRegion( ic, componentNames[ic],
+                                                             regionEntry.first, subRegionEntry.first, setEntry.first,
+                                                             fields::flow::globalCompFraction::key() ) );
+              }
             }
-          }
+          } );
         }
       }
     }
@@ -1958,12 +1976,12 @@ void CompositionalMultiphaseBase::applyDirichletBC( real64 const time_n,
   } );
 }
 
-void CompositionalMultiphaseBase::keepFlowVariablesConstantDuringInitStep( real64 const time,
-                                                                           real64 const dt,
-                                                                           DofManager const & dofManager,
-                                                                           DomainPartition & domain,
-                                                                           CRSMatrixView< real64, globalIndex const > const & localMatrix,
-                                                                           arrayView1d< real64 > const & localRhs ) const
+void CompositionalMultiphaseBase::keepVariablesConstantDuringInitStep( real64 const time,
+                                                                       real64 const dt,
+                                                                       DofManager const & dofManager,
+                                                                       DomainPartition & domain,
+                                                                       CRSMatrixView< real64, globalIndex const > const & localMatrix,
+                                                                       arrayView1d< real64 > const & localRhs ) const
 {
   GEOS_MARK_FUNCTION;
 
@@ -2152,23 +2170,23 @@ real64 CompositionalMultiphaseBase::setNextDtBasedOnStateChange( real64 const & 
   maxRelativePresChange = MpiWrapper::max( maxRelativePresChange );
   maxAbsolutePhaseVolFracChange = MpiWrapper::max( maxAbsolutePhaseVolFracChange );
 
-  GEOS_LOG_LEVEL_RANK_0( 1, GEOS_FMT( "{}: max relative pressure change during time step = {} %",
-                                      getName(), GEOS_FMT( "{:.{}f}", 100*maxRelativePresChange, 3 ) ) );
-  GEOS_LOG_LEVEL_RANK_0( 1, GEOS_FMT( "{}: max absolute phase volume fraction change during time step = {}",
-                                      getName(), GEOS_FMT( "{:.{}f}", maxAbsolutePhaseVolFracChange, 3 ) ) );
+  GEOS_LOG_LEVEL_INFO_RANK_0( logInfo::TimeStep, GEOS_FMT( "{}: max relative pressure change during time step = {} %",
+                                                           getName(), GEOS_FMT( "{:.{}f}", 100*maxRelativePresChange, 3 ) ) );
+  GEOS_LOG_LEVEL_INFO_RANK_0( logInfo::TimeStep, GEOS_FMT( "{}: max absolute phase volume fraction change during time step = {}",
+                                                           getName(), GEOS_FMT( "{:.{}f}", maxAbsolutePhaseVolFracChange, 3 ) ) );
 
   if( m_targetRelativeCompDensChange < LvArray::NumericLimits< real64 >::max )
   {
     maxRelativeCompDensChange = MpiWrapper::max( maxRelativeCompDensChange );
-    GEOS_LOG_LEVEL_RANK_0( 1, GEOS_FMT( "{}: max relative component density change during time step = {} %",
-                                        getName(), GEOS_FMT( "{:.{}f}", 100*maxRelativeCompDensChange, 3 ) ) );
+    GEOS_LOG_LEVEL_INFO_RANK_0( logInfo::TimeStep, GEOS_FMT( "{}: max relative component density change during time step = {} %",
+                                                             getName(), GEOS_FMT( "{:.{}f}", 100*maxRelativeCompDensChange, 3 ) ) );
   }
 
   if( m_isThermal )
   {
     maxRelativeTempChange = MpiWrapper::max( maxRelativeTempChange );
-    GEOS_LOG_LEVEL_RANK_0( 1, GEOS_FMT( "{}: max relative temperature change during time step = {} %",
-                                        getName(), GEOS_FMT( "{:.{}f}", 100*maxRelativeTempChange, 3 ) ) );
+    GEOS_LOG_LEVEL_INFO_RANK_0( logInfo::TimeStep, GEOS_FMT( "{}: max relative temperature change during time step = {} %",
+                                                             getName(), GEOS_FMT( "{:.{}f}", 100*maxRelativeTempChange, 3 ) ) );
   }
 
   real64 const eps = LvArray::NumericLimits< real64 >::epsilon;
@@ -2208,8 +2226,8 @@ real64 CompositionalMultiphaseBase::setNextDtBasedOnCFL( const geos::real64 & cu
 
   computeCFLNumbers( domain, currentDt, maxPhaseCFL, maxCompCFL );
 
-  GEOS_LOG_LEVEL_RANK_0( 1, GEOS_FMT( "{}: max phase CFL number = {}", getName(), maxPhaseCFL ) );
-  GEOS_LOG_LEVEL_RANK_0( 1, GEOS_FMT( "{}: max component CFL number = {} ", getName(), maxCompCFL ) );
+  GEOS_LOG_LEVEL_INFO_RANK_0( logInfo::TimeStep, GEOS_FMT( "{}: max phase CFL number = {}", getName(), maxPhaseCFL ) );
+  GEOS_LOG_LEVEL_INFO_RANK_0( logInfo::TimeStep, GEOS_FMT( "{}: max component CFL number = {} ", getName(), maxCompCFL ) );
 
   return std::min( m_targetFlowCFL * currentDt / maxCompCFL,
                    m_targetFlowCFL * currentDt / maxPhaseCFL );
@@ -2266,7 +2284,6 @@ void CompositionalMultiphaseBase::computeCFLNumbers( geos::DomainPartition & dom
 
     fluxApprox.forAllStencils( mesh, [&] ( auto & stencil )
     {
-
       typename TYPEOFREF( stencil ) ::KernelWrapper stencilWrapper = stencil.createKernelWrapper();
 
       // While this kernel is waiting for a factory class, pass all the accessors here
@@ -2447,7 +2464,7 @@ void CompositionalMultiphaseBase::implicitStepComplete( real64 const & time,
       // Step 3: save the converged solid state
       string const & solidName = subRegion.getReference< string >( viewKeyStruct::solidNamesString() );
       CoupledSolidBase const & porousMaterial = getConstitutiveModel< CoupledSolidBase >( subRegion, solidName );
-      if( m_keepFlowVariablesConstantDuringInitStep )
+      if( m_keepVariablesConstantDuringInitStep )
       {
         porousMaterial.ignoreConvergedState(); // newPorosity <- porosity_n
       }
@@ -2611,7 +2628,8 @@ void CompositionalMultiphaseBase::updateState( DomainPartition & domain )
 
   maxDeltaPhaseVolFrac = MpiWrapper::max( maxDeltaPhaseVolFrac );
 
-  GEOS_LOG_LEVEL_RANK_0( 1, GEOS_FMT( "        {}: Max phase volume fraction change = {}", getName(), fmt::format( "{:.{}f}", maxDeltaPhaseVolFrac, 4 ) ) );
+  GEOS_LOG_LEVEL_INFO_RANK_0( logInfo::Solution,
+                              GEOS_FMT( "        {}: Max phase volume fraction change = {}", getName(), fmt::format( "{:.{}f}", maxDeltaPhaseVolFrac, 4 ) ) );
 }
 
 bool CompositionalMultiphaseBase::checkSequentialSolutionIncrements( DomainPartition & domain ) const
@@ -2619,8 +2637,8 @@ bool CompositionalMultiphaseBase::checkSequentialSolutionIncrements( DomainParti
   bool isConverged = FlowSolverBase::checkSequentialSolutionIncrements( domain );
 
   string const unit = m_useMass ? "kg/m3" : "mol/m3";
-  GEOS_LOG_LEVEL_RANK_0( 1, GEOS_FMT( "    {}: Max component density change during outer iteration: {} {}",
-                                      getName(), fmt::format( "{:.{}f}", m_sequentialCompDensChange, 3 ), unit ) );
+  GEOS_LOG_LEVEL_INFO_RANK_0( logInfo::Convergence, GEOS_FMT( "    {}: Max component density change during outer iteration: {} {}",
+                                                              getName(), fmt::format( "{:.{}f}", m_sequentialCompDensChange, 3 ), unit ) );
 
   return isConverged && (m_sequentialCompDensChange < m_maxSequentialCompDensChange);
 }
@@ -2629,7 +2647,7 @@ real64 CompositionalMultiphaseBase::setNextDt( const geos::real64 & currentDt, g
 {
 
   if( m_targetFlowCFL < 0 )
-    return SolverBase::setNextDt( currentDt, domain );
+    return PhysicsSolverBase::setNextDt( currentDt, domain );
   else
     return setNextDtBasedOnCFL( currentDt, domain );
 }
