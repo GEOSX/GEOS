@@ -155,11 +155,51 @@ void FaceManager::setGeometricalRelations( CellBlockManagerABC const & cellBlock
   m_toNodesRelation.base() = cellBlockManager.getFaceToNodes();
   m_toEdgesRelation.base() = cellBlockManager.getFaceToEdges();
 
-  ToCellRelation< array2d< localIndex > > const toCellBlock = cellBlockManager.getFaceToElements();
-  array2d< localIndex > const blockToSubRegion = elemRegionManager.getCellBlockToSubRegionMap( cellBlockManager );
-  meshMapUtilities::transformCellBlockToRegionMap< parallelHostPolicy >( blockToSubRegion.toViewConst(),
-                                                                         toCellBlock,
-                                                                         m_toElements );
+  // ToCellRelation< array2d< localIndex > > const toCellBlock = cellBlockManager.getFaceToElements();
+  // array2d< localIndex > const blockToSubRegion = elemRegionManager.getCellBlockToSubRegionMap( cellBlockManager );
+  // meshMapUtilities::transformCellBlockToRegionMap< parallelHostPolicy >( blockToSubRegion.toViewConst(),
+  //                                                                        toCellBlock,
+  //                                                                        m_toElements );
+
+  elemRegionManager.forElementSubRegionsComplete<CellElementSubRegion>( [&]( localIndex const er,
+                                                                             localIndex const esr,
+                                                                             ElementRegionBase const &,
+                                                                             CellElementSubRegion const & subRegion )
+  {
+    FixedOneToManyRelation const & elemsToFaces = subRegion.faceList();
+      std::cout<<"subRegion.size() = "<<subRegion.size()<<std::endl;
+    for( localIndex ei=0; ei<subRegion.size(); ++ei )
+    {
+      std::cout<<"elemsToFaces.size(1) = "<<elemsToFaces.size(1)<<std::endl;
+      for( localIndex kf=0; kf<elemsToFaces.size(1); ++kf )
+      {
+        localIndex const faceIndex = elemsToFaces(ei, kf);
+        int ka=-1;
+        if( m_toElements.m_toElementRegion( faceIndex, 0 )==-1 && 
+            m_toElements.m_toElementSubRegion( faceIndex, 0 )==-1 && 
+            m_toElements.m_toElementIndex( faceIndex, 0 )==-1 )
+        {
+          ka=0;
+        }
+        else if( m_toElements.m_toElementRegion( faceIndex, 1 )==-1 && 
+                m_toElements.m_toElementSubRegion( faceIndex, 1 )==-1 && 
+                m_toElements.m_toElementIndex( faceIndex, 1 )==-1 )
+        {
+          ka=1;
+        }
+        GEOS_ERROR_IF_EQ_MSG( ka, -1, "can't find a place to put entry for faceToElem map");
+
+        m_toElements.m_toElementRegion( faceIndex, ka ) = er;
+        m_toElements.m_toElementSubRegion( faceIndex, ka ) = esr;
+        m_toElements.m_toElementIndex( faceIndex, ka ) = ei;
+        std::cout<<"Setting m_toElements["<<faceIndex<<"] = ( "<<er<<", "<<esr<<", "<<ei<<" )"<<std::endl;
+      }
+    }
+  });
+
+
+
+
 
   // Since the mappings of the current FaceManager instance were only filled based on the {face -> elements} mapping,
   // they do not take into account any connection between the 3d elements and the 2d elements of fracture meshes.
