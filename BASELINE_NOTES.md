@@ -6,6 +6,14 @@ This file is designed to track changes to the integrated test baselines.
 Any developer who updates the baseline ID in the .integrated_tests.yaml file is expected to create an entry in this file with the pull request number, date, and their justification for rebaselining.
 These notes should be in reverse-chronological order, and use the following time format: (YYYY-MM-DD).
 
+PR #3413 (2024-11-07)
+====================
+Add tests for poro-thermo-plastic model.
+
+PR #3337 (2024-11-06)
+====================
+Change density treatment for gravity in multiphase flow solver.
+
 PR #3408 (2024-11-06)
 ====================
 EFEM bugfixes: effective traction + oldStress.
@@ -86,7 +94,7 @@ PR #3278 (2024-08-12)
 ======================
 Renamed GEOSX to GEOS in enternal mesh import, so rebaseline to change these names is the baselines.
 
-202 (2024-08-03)
+PR #3202 (2024-08-03)
 ======================
 Acoustic VTI tests needed rebaselining after update in source and receiver location algorithm.
 

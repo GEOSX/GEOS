@@ -67,6 +67,7 @@ public:
   using AbstractBase::m_rankOffset;
   using AbstractBase::m_dofNumber;
   using AbstractBase::m_gravCoef;
+  using AbstractBase::m_phaseVolFrac;
   using AbstractBase::m_dPhaseVolFrac;
   using AbstractBase::m_phaseCompFrac;
   using AbstractBase::m_dPhaseCompFrac;
@@ -225,14 +226,28 @@ public:
       real64 dConvectiveEnergyFlux_dC[numFluxSupportPoints][numComp]{};
       real64 dCompFlux_dT[numFluxSupportPoints][numComp]{};
 
+      integer denom = 0;
       for( integer i = 0; i < numFluxSupportPoints; ++i )
       {
         localIndex const er  = seri[i];
         localIndex const esr = sesri[i];
         localIndex const ei  = sei[i];
 
-        real64 const dDens_dT = m_dPhaseMassDens[er][esr][ei][0][ip][Deriv::dT];
-        dDensMean_dT[i] = 0.5 * dDens_dT;
+        bool const phaseExists = (m_phaseVolFrac[er_up][esr_up][ei_up][ip] > 0);
+        if( !phaseExists )
+        {
+          continue;
+        }
+
+        dDensMean_dT[i] = m_dPhaseMassDens[er][esr][ei][0][ip][Deriv::dT];
+        denom++;
+      }
+      if( denom > 1 )
+      {
+        for( integer i = 0; i < numFluxSupportPoints; ++i )
+        {
+          dDensMean_dT[i] /= denom;
+        }
       }
 
       // Step 2: compute the derivatives of the phase potential difference wrt temperature

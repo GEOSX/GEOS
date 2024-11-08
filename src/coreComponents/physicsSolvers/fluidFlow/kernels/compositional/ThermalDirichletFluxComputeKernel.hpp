@@ -80,7 +80,6 @@ public:
   using Base::m_phaseMob;
   using Base::m_dPhaseMob;
   using Base::m_dPhaseMassDens;
-  using Base::m_dPhaseCapPressure_dPhaseVolFrac;
   using Base::m_stencilWrapper;
   using Base::m_seri;
   using Base::m_sesri;

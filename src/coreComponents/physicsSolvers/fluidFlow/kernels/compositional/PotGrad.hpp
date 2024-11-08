@@ -53,6 +53,7 @@ struct PotGrad
             real64 const ( &dTrans_dPres )[numFluxSupportPoints],
             ElementViewConst< arrayView1d< real64 const > > const & pres,
             ElementViewConst< arrayView1d< real64 const > > const & gravCoef,
+            ElementViewConst< arrayView2d< real64 const, compflow::USD_PHASE > > const & phaseVolFrac,
             ElementViewConst< arrayView3d< real64 const, compflow::USD_PHASE_DC > > const & dPhaseVolFrac,
             ElementViewConst< arrayView3d< real64 const, compflow::USD_COMP_DC > > const & dCompFrac_dCompDens,
             ElementViewConst< arrayView3d< real64 const, constitutive::multifluid::USD_PHASE > > const & phaseMassDens,
@@ -89,11 +90,18 @@ struct PotGrad
     real64 dProp_dC[numComp]{};
 
     // calculate quantities on primary connected cells
+    integer denom = 0;
     for( integer i = 0; i < numFluxSupportPoints; ++i )
     {
       localIndex const er  = seri[i];
       localIndex const esr = sesri[i];
       localIndex const ei  = sei[i];
+
+      bool const phaseExists = (phaseVolFrac[er][esr][ei][ip] > 0);
+      if( !phaseExists )
+      {
+        continue;
+      }
 
       // density
       real64 const density  = phaseMassDens[er][esr][ei][0][ip];
@@ -106,11 +114,23 @@ struct PotGrad
                       Deriv::dC );
 
       // average density and derivatives
-      densMean += 0.5 * density;
-      dDensMean_dP[i] = 0.5 * dDens_dP;
+      densMean += density;
+      dDensMean_dP[i] = dDens_dP;
       for( integer jc = 0; jc < numComp; ++jc )
       {
-        dDensMean_dC[i][jc] = 0.5 * dProp_dC[jc];
+        dDensMean_dC[i][jc] = dProp_dC[jc];
+      }
+    }
+    if( denom > 1 )
+    {
+      densMean /= denom;
+      for( integer i = 0; i < numFluxSupportPoints; ++i )
+      {
+        dDensMean_dP[i] /= denom;
+        for( integer jc = 0; jc < numComp; ++jc )
+        {
+          dDensMean_dC[i][jc] /= denom;
+        }
       }
     }
 
