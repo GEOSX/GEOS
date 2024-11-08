@@ -1,4 +1,4 @@
-####################################
+###################################
 #
 # 3rd Party Dependencies
 #
@@ -909,7 +909,7 @@ if( ${CMAKE_VERSION} VERSION_LESS "3.19" )
     set( PYTHON_AND_VERSION Python3 )
     set( PYTHON_OPTIONAL_COMPONENTS)
 else()
-    set( PYTHON_AND_VERSION Python3 3.6.0...3.12.2 )
+    set( PYTHON_AND_VERSION Python3 3.6.0...3.12.3 )
     set( PYTHON_OPTIONAL_COMPONENTS OPTIONAL_COMPONENTS Development NumPy)
 endif()
 if(ENABLE_PYGEOSX)
