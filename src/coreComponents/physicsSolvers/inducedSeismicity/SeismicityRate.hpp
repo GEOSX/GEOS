@@ -17,7 +17,7 @@
 #define GEOS_PHYSICSSOLVERS_INDUCED_SEISMICITY_SEISMICITYRATE_HPP
 
 #include "codingUtilities/EnumStrings.hpp"   // facilities for enum-string conversion (for reading enum values from XML input)
-#include "physicsSolvers/SolverBase.hpp"  // an abstraction class shared by all physics solvers
+#include "physicsSolvers/PhysicsSolverBase.hpp"  // an abstraction class shared by all physics solvers
 #include "fieldSpecification/FieldSpecificationManager.hpp" // a manager that can access and set values on the discretized domain
 
 #include "physicsSolvers/inducedSeismicity/inducedSeismicityFields.hpp"
@@ -27,7 +27,7 @@
 namespace geos
 {
 
-class SeismicityRate : public SolverBase
+class SeismicityRate : public PhysicsSolverBase
 {
 public:
   /// The default nullary constructor is disabled to avoid compiler auto-generation:
@@ -50,7 +50,7 @@ public:
   /// This method ties properties with their supporting mesh
   virtual void registerDataOnMesh( Group & meshBodies ) override;
 
-  struct viewKeyStruct : public SolverBase::viewKeyStruct
+  struct viewKeyStruct : public PhysicsSolverBase::viewKeyStruct
   {
     static constexpr char const * stressSolverNameString() { return "stressSolverName"; }
     static constexpr char const * initialFaultNormalTractionString() { return "initialFaultNormalTraction"; }
@@ -139,7 +139,7 @@ protected:
   virtual void postInputInitialization() override;
 
   /// pointer to stress solver
-  SolverBase * m_stressSolver;
+  PhysicsSolverBase *m_stressSolver;
 
   /// stress solver name string
   string m_stressSolverName;

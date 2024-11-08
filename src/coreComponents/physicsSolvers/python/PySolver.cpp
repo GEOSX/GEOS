@@ -38,9 +38,9 @@ struct PySolver
   PyObject_HEAD
 
   static constexpr char const * docString =
-    "A Python interface to geos::SolverBase.";
+    "A Python interface to geos::PhysicsSolverBase.";
 
-  geos::SolverBase * group;
+  geos::PhysicsSolverBase *group;
 };
 
 

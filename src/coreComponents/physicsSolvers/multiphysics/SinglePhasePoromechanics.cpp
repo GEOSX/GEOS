@@ -89,7 +89,7 @@ void SinglePhasePoromechanics< FLOW_SOLVER, MECHANICS_SOLVER >::setupSystem( Dom
   }
 
   // setup monolithic coupled system
-  SolverBase::setupSystem( domain, dofManager, localMatrix, rhs, solution, setSparsity );
+  PhysicsSolverBase::setupSystem( domain, dofManager, localMatrix, rhs, solution, setSparsity );
 
   if( !this->m_precond && this->m_linearSolverParameters.get().solverType != LinearSolverParameters::SolverType::direct )
   {
@@ -103,9 +103,9 @@ void SinglePhasePoromechanics< FLOW_SOLVER, MECHANICS_SOLVER >::initializePostIn
   Base::initializePostInitialConditionsPreSubGroups();
 
   arrayView1d< string const > const & poromechanicsTargetRegionNames =
-    this->template getReference< array1d< string > >( SolverBase::viewKeyStruct::targetRegionsString() );
+    this->template getReference< array1d< string > >( PhysicsSolverBase::viewKeyStruct::targetRegionsString() );
   arrayView1d< string const > const & flowTargetRegionNames =
-    this->flowSolver()->template getReference< array1d< string > >( SolverBase::viewKeyStruct::targetRegionsString() );
+    this->flowSolver()->template getReference< array1d< string > >( PhysicsSolverBase::viewKeyStruct::targetRegionsString() );
   for( integer i = 0; i < poromechanicsTargetRegionNames.size(); ++i )
   {
     GEOS_THROW_IF( std::find( flowTargetRegionNames.begin(), flowTargetRegionNames.end(), poromechanicsTargetRegionNames[i] )
@@ -339,15 +339,15 @@ template class SinglePhasePoromechanics<>;
 template class SinglePhasePoromechanics< SinglePhaseBase, SolidMechanicsLagrangeContact >;
 template class SinglePhasePoromechanics< SinglePhaseBase, SolidMechanicsEmbeddedFractures >;
 template class SinglePhasePoromechanics< SinglePhaseReservoirAndWells<> >;
-//template class SinglePhasePoromechanics< SinglePhaseReservoirAndWells<>, SolidMechanicsLagrangeContact >;
+template class SinglePhasePoromechanics< SinglePhaseReservoirAndWells<>, SolidMechanicsLagrangeContact >;
 //template class SinglePhasePoromechanics< SinglePhaseReservoirAndWells<>, SolidMechanicsEmbeddedFractures >;
 
 namespace
 {
 typedef SinglePhasePoromechanics< SinglePhaseReservoirAndWells<> > SinglePhaseReservoirPoromechanics;
-REGISTER_CATALOG_ENTRY( SolverBase, SinglePhaseReservoirPoromechanics, string const &, Group * const )
+REGISTER_CATALOG_ENTRY( PhysicsSolverBase, SinglePhaseReservoirPoromechanics, string const &, Group * const )
 typedef SinglePhasePoromechanics<> SinglePhasePoromechanics;
-REGISTER_CATALOG_ENTRY( SolverBase, SinglePhasePoromechanics, string const &, Group * const )
+REGISTER_CATALOG_ENTRY( PhysicsSolverBase, SinglePhasePoromechanics, string const &, Group * const )
 }
 
 } /* namespace geos */

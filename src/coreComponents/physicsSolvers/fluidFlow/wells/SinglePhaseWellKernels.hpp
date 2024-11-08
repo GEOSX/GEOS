@@ -28,7 +28,7 @@
 #include "physicsSolvers/fluidFlow/FlowSolverBaseFields.hpp"
 #include "physicsSolvers/fluidFlow/StencilAccessors.hpp"
 #include "physicsSolvers/fluidFlow/wells/WellControls.hpp"
-#include "physicsSolvers/SolverBaseKernels.hpp"
+#include "physicsSolvers/PhysicsSolverBaseKernels.hpp"
 
 namespace geos
 {
@@ -310,11 +310,11 @@ struct RateInitializationKernel
 /**
  * @class ResidualNormKernel
  */
-class ResidualNormKernel : public solverBaseKernels::ResidualNormKernelBase< 1 >
+class ResidualNormKernel : public physicsSolverBaseKernels::ResidualNormKernelBase< 1 >
 {
 public:
 
-  using Base = solverBaseKernels::ResidualNormKernelBase< 1 >;
+  using Base = physicsSolverBaseKernels::ResidualNormKernelBase< 1 >;
   using Base::m_minNormalizer;
   using Base::m_rankOffset;
   using Base::m_localResidual;
@@ -467,38 +467,6 @@ public:
     ResidualNormKernel::launchLinf< POLICY >( subRegion.size(), kernel, residualNorm );
   }
 
-};
-
-/******************************** SolutionCheckKernel ********************************/
-
-struct SolutionCheckKernel
-{
-  template< typename POLICY >
-  static localIndex
-  launch( arrayView1d< real64 const > const & localSolution,
-          globalIndex const rankOffset,
-          arrayView1d< globalIndex const > const & presDofNumber,
-          arrayView1d< integer const > const & ghostRank,
-          arrayView1d< real64 const > const & pres,
-          real64 const scalingFactor )
-  {
-    RAJA::ReduceMin< ReducePolicy< POLICY >, localIndex > minVal( 1 );
-
-    forAll< POLICY >( presDofNumber.size(), [=] GEOS_HOST_DEVICE ( localIndex const ei )
-    {
-      if( ghostRank[ei] < 0 && presDofNumber[ei] >= 0 )
-      {
-        localIndex const lid = presDofNumber[ei] - rankOffset;
-        real64 const newPres = pres[ei] + scalingFactor * localSolution[lid];
-
-        if( newPres < 0.0 )
-        {
-          minVal.min( 0 );
-        }
-      }
-    } );
-    return minVal.get();
-  }
 };
 
 } // end namespace singlePhaseWellKernels

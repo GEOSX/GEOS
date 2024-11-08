@@ -97,7 +97,7 @@ char const * PostXmlInput =
     </NumericalMethods>
     <ElementRegions>
       <CellElementRegion name="Region1"
-                         cellBlocks="{cb1}"
+                         cellBlocks="{ * }"
                          materialList="{water, rock}"/>
       <WellElementRegion name="wellRegion1"
                          materialList="{water}"/>
@@ -385,7 +385,7 @@ protected:
                            [&] ( CRSMatrixView< real64, globalIndex const > const & localMatrix,
                                  arrayView1d< real64 > const & localRhs )
     {
-      solver->wellSolver()->assembleFluxTerms( DT, domain, solver->getDofManager(), localMatrix, localRhs );
+      solver->wellSolver()->assembleFluxTerms( TIME, DT, domain, solver->getDofManager(), localMatrix, localRhs );
     } );
   }
 
@@ -415,7 +415,7 @@ protected:
                            [&] ( CRSMatrixView< real64, globalIndex const > const & localMatrix,
                                  arrayView1d< real64 > const & localRhs )
     {
-      solver->wellSolver()->assembleAccumulationTerms( domain, solver->getDofManager(), localMatrix, localRhs );
+      solver->wellSolver()->assembleAccumulationTerms( TIME, DT, domain, solver->getDofManager(), localMatrix, localRhs );
     } );
   }
 
@@ -497,7 +497,7 @@ TEST_F( SinglePhaseReservoirSolverInternalWellTest, jacobianNumericalCheck_Flux 
                          [&] ( CRSMatrixView< real64, globalIndex const > const & localMatrix,
                                arrayView1d< real64 > const & localRhs )
   {
-    solver->wellSolver()->assembleFluxTerms( DT, domain, solver->getDofManager(), localMatrix, localRhs );
+    solver->wellSolver()->assembleFluxTerms( TIME, DT, domain, solver->getDofManager(), localMatrix, localRhs );
   } );
 }
 

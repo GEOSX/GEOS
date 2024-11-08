@@ -552,7 +552,8 @@ public:
                                   arrayView2d< real64 const, compflow::USD_COMP > const compDens,
                                   arrayView1d< real64 > pressureScalingFactor,
                                   arrayView1d< real64 > compDensScalingFactor,
-                                  arrayView1d< real64 > temperatureScalingFactor )
+                                  arrayView1d< real64 > temperatureScalingFactor,
+                                  integer const temperatureOffset )
     : Base( maxRelativePresChange,
             maxAbsolutePresChange,
             maxCompFracChange,
@@ -568,7 +569,8 @@ public:
             compDensScalingFactor ),
     m_maxRelativeTempChange( maxRelativeTempChange ),
     m_temperature( temperature ),
-    m_temperatureScalingFactor( temperatureScalingFactor )
+    m_temperatureScalingFactor( temperatureScalingFactor ),
+    m_temperatureOffset( temperatureOffset )
   {}
 
   /**
@@ -597,7 +599,7 @@ public:
     {
       // compute the change in temperature
       real64 const temp = m_temperature[ei];
-      real64 const absTempChange = LvArray::math::abs( m_localSolution[stack.localRow + m_numComp + 1] );
+      real64 const absTempChange = LvArray::math::abs( m_localSolution[stack.localRow + m_temperatureOffset] );
       if( stack.localMaxDeltaTemp < absTempChange )
       {
         stack.localMaxDeltaTemp = absTempChange;
@@ -636,11 +638,15 @@ protected:
   /// View on the scaling factor
   arrayView1d< real64 > const m_temperatureScalingFactor;
 
+  /// Temperature offset in solution array
+  integer const m_temperatureOffset;
+
 };
 
 /**
  * @class ScalingForSystemSolutionKernelFactory
  */
+
 class ScalingForSystemSolutionKernelFactory
 {
 public:
@@ -666,23 +672,27 @@ public:
                    real64 const maxRelativeTempChange,
                    real64 const maxCompFracChange,
                    real64 const maxRelativeCompDensChange,
+                   arrayView1d< real64 const > const pressure,
+                   arrayView1d< real64 const > const temperature,
+                   arrayView2d< real64 const, compflow::USD_COMP > const compDens,
+                   arrayView1d< real64 > pressureScalingFactor,
+                   arrayView1d< real64 > compDensScalingFactor,
+                   arrayView1d< real64 > temperatureScalingFactor,
+
+
                    globalIndex const rankOffset,
                    integer const numComp,
                    string const dofKey,
                    ElementSubRegionBase & subRegion,
-                   arrayView1d< real64 const > const localSolution )
+                   arrayView1d< real64 const > const localSolution,
+                   integer const temperatureOffset )
   {
-    arrayView1d< real64 const > const pressure = subRegion.getField< fields::flow::pressure >();
-    arrayView1d< real64 const > const temperature = subRegion.getField< fields::flow::temperature >();
-    arrayView2d< real64 const, compflow::USD_COMP > const compDens = subRegion.getField< fields::flow::globalCompDensity >();
-    arrayView1d< real64 > pressureScalingFactor = subRegion.getField< fields::flow::pressureScalingFactor >();
-    arrayView1d< real64 > temperatureScalingFactor = subRegion.getField< fields::flow::temperatureScalingFactor >();
-    arrayView1d< real64 > compDensScalingFactor = subRegion.getField< fields::flow::globalCompDensityScalingFactor >();
+
     ScalingForSystemSolutionKernel kernel( maxRelativePresChange, maxAbsolutePresChange, maxRelativeTempChange,
                                            maxCompFracChange, maxRelativeCompDensChange,
                                            rankOffset, numComp, dofKey, subRegion, localSolution,
                                            pressure, temperature, compDens, pressureScalingFactor,
-                                           temperatureScalingFactor, compDensScalingFactor );
+                                           compDensScalingFactor, temperatureScalingFactor, temperatureOffset );
     return thermalCompositionalMultiphaseBaseKernels::
              ScalingForSystemSolutionKernel::launch< POLICY >( subRegion.size(), kernel );
   }
@@ -723,32 +733,36 @@ public:
                        integer const allowNegativePressure,
                        CompositionalMultiphaseFVM::ScalingType const scalingType,
                        real64 const scalingFactor,
-                       globalIndex const rankOffset,
-                       integer const numComp,
-                       string const dofKey,
-                       ElementSubRegionBase const & subRegion,
-                       arrayView1d< real64 const > const localSolution,
                        arrayView1d< real64 const > const pressure,
                        arrayView1d< real64 const > const temperature,
                        arrayView2d< real64 const, compflow::USD_COMP > const compDens,
                        arrayView1d< real64 > pressureScalingFactor,
                        arrayView1d< real64 > compDensScalingFactor,
-                       arrayView1d< real64 > temperatureScalingFactor )
+                       arrayView1d< real64 > temperatureScalingFactor,
+                       globalIndex const rankOffset,
+                       integer const numComp,
+                       string const dofKey,
+                       ElementSubRegionBase const & subRegion,
+                       arrayView1d< real64 const > const localSolution,
+
+                       integer const temperatureOffset )
     : Base( allowCompDensChopping,
             allowNegativePressure,
             scalingType,
             scalingFactor,
+
+            pressure,
+            compDens,
+            pressureScalingFactor,
+            compDensScalingFactor,
             rankOffset,
             numComp,
             dofKey,
             subRegion,
-            localSolution,
-            pressure,
-            compDens,
-            pressureScalingFactor,
-            compDensScalingFactor ),
+            localSolution ),
     m_temperature( temperature ),
-    m_temperatureScalingFactor( temperatureScalingFactor )
+    m_temperatureScalingFactor( temperatureScalingFactor ),
+    m_temperatureOffset( temperatureOffset )
   {}
 
   /**
@@ -764,7 +778,7 @@ public:
     {
       bool const localScaling = m_scalingType == CompositionalMultiphaseFVM::ScalingType::Local;
       // compute the change in temperature
-      real64 const newTemp = m_temperature[ei] + (localScaling ? m_temperatureScalingFactor[ei] : m_scalingFactor * m_localSolution[stack.localRow + m_numComp + 1]);
+      real64 const newTemp = m_temperature[ei] + (localScaling ? m_temperatureScalingFactor[ei] : m_scalingFactor * m_localSolution[stack.localRow + m_temperatureOffset]);
       if( newTemp < minTemperature )
       {
         stack.localMinVal = 0;
@@ -779,6 +793,9 @@ protected:
 
   /// View on the scaling factor
   arrayView1d< real64 const > const m_temperatureScalingFactor;
+
+  /// Offset to temperature variable
+  integer m_temperatureOffset;
 
 };
 
@@ -807,24 +824,27 @@ public:
                    integer const allowNegativePressure,
                    CompositionalMultiphaseFVM::ScalingType const scalingType,
                    real64 const scalingFactor,
+                   arrayView1d< real64 const > const pressure,
+                   arrayView1d< real64 const > const temperature,
+                   arrayView2d< real64 const, compflow::USD_COMP > const compDens,
+                   arrayView1d< real64 > pressureScalingFactor,
+                   arrayView1d< real64 > temperatureScalingFactor,
+                   arrayView1d< real64 > compDensScalingFactor,
+
+
+
                    globalIndex const rankOffset,
                    integer const numComp,
                    string const dofKey,
                    ElementSubRegionBase & subRegion,
-                   arrayView1d< real64 const > const localSolution )
+                   arrayView1d< real64 const > const localSolution,
+                   integer temperatureOffset )
   {
-    arrayView1d< real64 const > const pressure =
-      subRegion.getField< fields::flow::pressure >();
-    arrayView1d< real64 const > const temperature =
-      subRegion.getField< fields::flow::temperature >();
-    arrayView2d< real64 const, compflow::USD_COMP > const compDens =
-      subRegion.getField< fields::flow::globalCompDensity >();
-    arrayView1d< real64 > pressureScalingFactor = subRegion.getField< fields::flow::pressureScalingFactor >();
-    arrayView1d< real64 > temperatureScalingFactor = subRegion.getField< fields::flow::temperatureScalingFactor >();
-    arrayView1d< real64 > compDensScalingFactor = subRegion.getField< fields::flow::globalCompDensityScalingFactor >();
+
     SolutionCheckKernel kernel( allowCompDensChopping, allowNegativePressure, scalingType, scalingFactor,
+                                pressure, temperature, compDens, pressureScalingFactor, compDensScalingFactor, temperatureScalingFactor,
                                 rankOffset, numComp, dofKey, subRegion, localSolution,
-                                pressure, temperature, compDens, pressureScalingFactor, temperatureScalingFactor, compDensScalingFactor );
+                                temperatureOffset );
     return SolutionCheckKernel::launch< POLICY >( subRegion.size(), kernel );
   }
 
@@ -836,7 +856,7 @@ public:
 /**
  * @class ResidualNormKernel
  */
-class ResidualNormKernel : public solverBaseKernels::ResidualNormKernelBase< 3 >
+class ResidualNormKernel : public physicsSolverBaseKernels::ResidualNormKernelBase< 3 >
 {
 public:
 
@@ -911,7 +931,7 @@ public:
     // step 2: volume residual
 
     real64 const valVol = LvArray::math::abs( m_localResidual[stack.localRow + m_numComponents] ) / volumeNormalizer;
-    if( valVol > stack.localValue[0] )
+    if( valVol > stack.localValue[1] )
     {
       stack.localValue[1] = valVol;
     }
@@ -919,7 +939,7 @@ public:
     // step 3: energy residual
 
     real64 const valEnergy = LvArray::math::abs( m_localResidual[stack.localRow + m_numComponents + 1] ) / energyNormalizer;
-    if( valEnergy > stack.localValue[1] )
+    if( valEnergy > stack.localValue[2] )
     {
       stack.localValue[2] = valEnergy;
     }
@@ -1004,7 +1024,7 @@ public:
    */
   template< typename POLICY >
   static void
-  createAndLaunch( solverBaseKernels::NormType const normType,
+  createAndLaunch( physicsSolverBaseKernels::NormType const normType,
                    integer const numComps,
                    integer const numPhases,
                    globalIndex const rankOffset,
@@ -1023,7 +1043,7 @@ public:
 
     ResidualNormKernel kernel( rankOffset, localResidual, dofNumber, ghostRank,
                                numComps, numPhases, subRegion, fluid, solid, solidInternalEnergy, minNormalizer );
-    if( normType == solverBaseKernels::NormType::Linf )
+    if( normType == physicsSolverBaseKernels::NormType::Linf )
     {
       ResidualNormKernel::launchLinf< POLICY >( subRegion.size(), kernel, residualNorm );
     }
