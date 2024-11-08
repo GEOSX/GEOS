@@ -139,8 +139,6 @@ public:
     array2d< real64 > m_dissolvedComponentMass;
   };
 
-  using statsVKS = RegionStatistics::viewKeyStruct;
-
   /**@}*/
 
 private:

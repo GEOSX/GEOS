@@ -121,8 +121,6 @@ public:
 
   };
 
-  using statsVKS = RegionStatistics::viewKeyStruct;
-
   /**@}*/
 
   /**

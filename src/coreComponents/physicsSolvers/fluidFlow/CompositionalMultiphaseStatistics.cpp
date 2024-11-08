@@ -482,7 +482,7 @@ void CompositionalMultiphaseStatistics::computeRegionStatistics( real64 const ti
         dissolvedComponentMass[ip][ic] = MpiWrapper::sum( dissolvedComponentMass[ip][ic] );
       }
     }
-    stats.getWrapper< real64 >( statsVKS::totalPoreVolumeString()).setApplyDefaultValue( totalPoreVolume );
+    stats.m_totalPoreVolume = totalPoreVolume;
 
     stats.m_averagePressure = MpiWrapper::sum( stats.m_averagePressure );
 
