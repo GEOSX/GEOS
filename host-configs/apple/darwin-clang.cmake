@@ -35,4 +35,4 @@ if(NOT ( EXISTS "${GEOS_TPL_DIR}" AND IS_DIRECTORY "${GEOS_TPL_DIR}" ) )
     set(GEOS_TPL_DIR "${CMAKE_SOURCE_DIR}/../../thirdPartyLibs/install-darwin-clang-release" CACHE PATH "" FORCE )
 endif()
 
-include(${CMAKE_CURRENT_LIST_DIR}/tpls.cmake)
+include(${CMAKE_CURRENT_LIST_DIR}/../tpls.cmake)
