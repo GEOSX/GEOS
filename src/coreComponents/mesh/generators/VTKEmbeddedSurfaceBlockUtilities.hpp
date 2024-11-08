@@ -33,9 +33,9 @@ namespace geos::vtk
  * @param cellBlockManager[inout] The cell block manager that will receive the embedded surface block information.
  */
 void importEmbeddedFractureNetwork( string const & embeddedSurfaceBlockName,
-                            vtkSmartPointer< vtkDataSet > embeddedSurfaceMesh,
-                            vtkSmartPointer< vtkDataSet > mesh,
-                            CellBlockManager & cellBlockManager );
+                                    vtkSmartPointer< vtkDataSet > embeddedSurfaceMesh,
+                                    vtkSmartPointer< vtkDataSet > mesh,
+                                    CellBlockManager & cellBlockManager );
 }
 
 #endif // include guard

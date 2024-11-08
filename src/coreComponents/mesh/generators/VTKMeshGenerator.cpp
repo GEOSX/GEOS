@@ -95,10 +95,11 @@ void VTKMeshGenerator::fillCellBlockManager( CellBlockManager & cellBlockManager
   GEOS_LOG_RANK_0( GEOS_FMT( "{} '{}': reading mesh from {}", catalogName(), getName(), m_filePath ) );
   {
     GEOS_LOG_LEVEL_RANK_0( 2, "  reading the dataset..." );
-    vtk::AllMeshes allMeshes = vtk::loadAllMeshes( m_filePath, m_mainBlockName, m_faceBlockNames, m_embeddedSurfaceBlockNames);
+    vtk::AllMeshes allMeshes = vtk::loadAllMeshes( m_filePath, m_mainBlockName, m_faceBlockNames, m_embeddedSurfaceBlockNames );
     GEOS_LOG_LEVEL_RANK_0( 2, "  redistributing mesh..." );
     vtk::AllMeshes redistributedMeshes =
-      vtk::redistributeMeshes( getLogLevel(), allMeshes.getMainMesh(), allMeshes.getFaceBlocks(), allMeshes.getEmbeddedSurfaceBlocks(), comm, m_partitionMethod, m_partitionRefinement, m_useGlobalIds );
+      vtk::redistributeMeshes( getLogLevel(), allMeshes.getMainMesh(), allMeshes.getFaceBlocks(), allMeshes.getEmbeddedSurfaceBlocks(), comm, m_partitionMethod, m_partitionRefinement,
+                               m_useGlobalIds );
     m_vtkMesh = redistributedMeshes.getMainMesh();
     m_faceBlockMeshes = redistributedMeshes.getFaceBlocks();
     m_embeddedSurfaceBlockMeshes = redistributedMeshes.getEmbeddedSurfaceBlocks();

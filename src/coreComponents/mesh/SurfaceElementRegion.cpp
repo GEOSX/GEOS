@@ -54,11 +54,11 @@ void SurfaceElementRegion::generateMesh( Group const & faceBlocks )
   Group & elementSubRegions = this->getGroup( viewKeyStruct::elementSubRegions() );
 
 
-   if( m_subRegionType == SurfaceSubRegionType::embeddedElement )
-   {
-     // We just register the subregion copying of data is done at the EmbeddedSurfaceGenerator
-      EmbeddedSurfaceSubRegion &subRegion = elementSubRegions.registerGroup<EmbeddedSurfaceSubRegion>(m_faceBlockName);
-   }
+  if( m_subRegionType == SurfaceSubRegionType::embeddedElement )
+  {
+    // We just register the subregion copying of data is done at the EmbeddedSurfaceGenerator
+    EmbeddedSurfaceSubRegion & subRegion = elementSubRegions.registerGroup< EmbeddedSurfaceSubRegion >( m_faceBlockName );
+  }
   else if( m_subRegionType == SurfaceSubRegionType::faceElement )
   {
     FaceElementSubRegion & subRegion = elementSubRegions.registerGroup< FaceElementSubRegion >( m_faceBlockName );

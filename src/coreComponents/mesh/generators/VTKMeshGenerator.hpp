@@ -144,9 +144,9 @@ private:
 
   /// Maps the face block name to its vtk mesh instance.
   std::map< string, vtkSmartPointer< vtkDataSet > > m_faceBlockMeshes;
-  
+
   // Maps the edfm surface block name to its vtk mesh instance.
-  
+
   std::map< string, vtkSmartPointer< vtkDataSet > >  m_embeddedSurfaceBlockMeshes;
 
   /// Names of VTK nodesets to import

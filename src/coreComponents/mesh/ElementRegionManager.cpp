@@ -138,11 +138,11 @@ void ElementRegionManager::generateMesh( CellBlockManagerABC const & cellBlockMa
 
   this->forElementRegions< SurfaceElementRegion >( [&]( SurfaceElementRegion & elemRegion )
   {
-    
-     if( elemRegion.subRegionType() == SurfaceElementRegion::SurfaceSubRegionType::faceElement )
-     {
-       elemRegion.generateMesh( cellBlockManager.getFaceBlocks() );
-     }
+
+    if( elemRegion.subRegionType() == SurfaceElementRegion::SurfaceSubRegionType::faceElement )
+    {
+      elemRegion.generateMesh( cellBlockManager.getFaceBlocks() );
+    }
     else if( elemRegion.subRegionType() == SurfaceElementRegion::SurfaceSubRegionType::embeddedElement )
     {
       elemRegion.generateMesh( cellBlockManager.getEmbeddedSurfaceBlocks() );

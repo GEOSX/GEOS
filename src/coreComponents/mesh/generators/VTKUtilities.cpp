@@ -566,7 +566,7 @@ loadMesh( Path const & filePath,
 AllMeshes loadAllMeshes( Path const & filePath,
                          string const & mainBlockName,
                          array1d< string > const & faceBlockNames,
-                          array1d< string > const & edfmSurfBlockNames)
+                         array1d< string > const & edfmSurfBlockNames )
 {
   int const lastRank = MpiWrapper::commSize() - 1;
   vtkSmartPointer< vtkDataSet > main = loadMesh( filePath, mainBlockName );
@@ -693,9 +693,9 @@ AllMeshes redistributeByCellGraph( AllMeshes & input,
     vtkSmartPointer< vtkUnstructuredGrid > const finalFracMesh = vtk::redistribute( *splitFracMesh, MPI_COMM_GEOS );
     finalFractures[fractureName] = finalFracMesh;
   }
-  
+
   // Ouassim: just add the edfm mesh at the moment and see.
-  auto edfmMesh = input.getEmbeddedSurfaceBlocks(); 
+  auto edfmMesh = input.getEmbeddedSurfaceBlocks();
   return AllMeshes( finalMesh, finalFractures, edfmMesh );
 }
 
@@ -971,7 +971,7 @@ redistributeMeshes( integer const logLevel,
   {
     result.setMainMesh( mesh );
     result.setFaceBlocks( namesToFractures );
-    result.setEmbeddedSurfaceBlocks( namesToEdfmFractures);
+    result.setEmbeddedSurfaceBlocks( namesToEdfmFractures );
   }
 
   // Logging some information about the redistribution.
