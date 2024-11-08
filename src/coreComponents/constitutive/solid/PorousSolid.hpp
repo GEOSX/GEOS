@@ -313,7 +313,6 @@ private:
                            real64 ( & totalStress )[6],
                            real64 ( & dTotalStress_dPressure )[6],
                            real64 ( & dTotalStress_dTemperature )[6],
-
                            DiscretizationOps & stiffness ) const
   {
     updateBiotCoefficientAndAssignModuli( k );
@@ -432,7 +431,7 @@ public:
   {
     return KernelWrapper( getSolidModel(),
                           getPorosityModel(),
-                          getPermModel());
+                          getPermModel() );
   }
 
   /**

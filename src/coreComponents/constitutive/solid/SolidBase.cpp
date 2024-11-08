@@ -39,36 +39,36 @@ SolidBase::SolidBase( string const & name, Group * const parent ):
   registerWrapper( viewKeyStruct::stressString(), &m_newStress ).
     setPlotLevel( PlotLevel::LEVEL_0 ).
     setApplyDefaultValue( 0 ). // default to zero initial stress
-    setDescription( "Current Material Stress [Pa]" ).
+    setDescription( "Current Material Stress" ).
     setDimLabels( 2, voightLabels );
 
   registerWrapper( viewKeyStruct::oldStressString(), &m_oldStress ).
     setApplyDefaultValue( 0 ). // default to zero initial stress
-    setDescription( "Previous Material Stress [Pa]" );
+    setDescription( "Previous Material Stress" );
 
   registerWrapper( viewKeyStruct::densityString(), &m_density ).
     setPlotLevel( PlotLevel::LEVEL_0 ).
     setApplyDefaultValue( -1 ). // will be overwritten
-    setDescription( "Material Density [Kg/cm^3]" );
+    setDescription( "Material Density" );
 
   registerWrapper( viewKeyStruct::defaultDensityString(), &m_defaultDensity ).
     setInputFlag( InputFlags::REQUIRED ).
-    setDescription( "Default Material Density [Kg/cm^3]" );
+    setDescription( "Default Material Density" );
 
   registerWrapper( viewKeyStruct::defaultThermalExpansionCoefficientString(), &m_defaultThermalExpansionCoefficient ).
     setApplyDefaultValue( 0.0 ).
     setInputFlag( InputFlags::OPTIONAL ).
-    setDescription( "Default Linear Thermal Expansion Coefficient of the Solid Rock Frame [1/K]" );
+    setDescription( "Default Linear Thermal Expansion Coefficient of the Solid Rock Frame" );
 
   registerWrapper( viewKeyStruct::dThermalExpansionCoefficient_dTemperatureString(), &m_dThermalExpansionCoefficient_dTemperature ).
     setApplyDefaultValue( 0.0 ).
     setInputFlag( InputFlags::OPTIONAL ).
-    setDescription( "Derivative of the Thermal Expansion Coefficient of the Solid Rock Frame w.r.t. temperature [1/K^2]" );
+    setDescription( "Derivative of the Thermal Expansion Coefficient of the Solid Rock Frame w.r.t. temperature" );
 
   registerWrapper( viewKeyStruct::referenceTemperatureString(), &m_referenceTemperature ).
     setApplyDefaultValue( 0.0 ).
     setInputFlag( InputFlags::OPTIONAL ).
-    setDescription( "Reference temperature at which the default Thermal Expansion Coefficient is defined [K]" );
+    setDescription( "Reference temperature at which the default Thermal Expansion Coefficient is defined" );
 
   registerWrapper( viewKeyStruct::drainedTECTableNameString(), &m_drainedTECTableName ).
     setInputFlag( InputFlags::OPTIONAL ).
@@ -76,7 +76,7 @@ SolidBase::SolidBase( string const & name, Group * const parent ):
 
   registerWrapper( viewKeyStruct::thermalExpansionCoefficientString(), &m_thermalExpansionCoefficient ).
     setApplyDefaultValue( -1.0 ). // will be overwritten
-    setDescription( "Linear Thermal Expansion Coefficient Field [1/K]" );
+    setDescription( "Linear Thermal Expansion Coefficient Field" );
 }
 
 
