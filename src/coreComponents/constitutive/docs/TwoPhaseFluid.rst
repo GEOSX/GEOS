@@ -24,7 +24,7 @@ The model is represented by ``<TwoPhaseFluid>`` node in the input.
 The following attributes are supported:
 
 .. include:: /docs/sphinx/datastructure/TwoPhaseFluid.rst
-
+              
 
 Example using TableFunctions
 ============================
@@ -82,6 +82,7 @@ Example using text files
 with, for example, ``water.txt`` being set as:
 
 .. code-block:: text
+
   #  P(Pa) Dens(kg/m3) Visc(Pa.s)
    2068000     980.683     0.0003     
    5516000      982.07     0.0003
