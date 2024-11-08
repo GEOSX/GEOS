@@ -51,13 +51,13 @@ TwoPhaseFluid::TwoPhaseFluid( string const & name, Group * const parent )
     setRTTypeName( rtTypes::CustomTypes::groupNameRefArray ).
     setInputFlag( InputFlags::OPTIONAL ).
     setDescription( "List of density TableFuncion names from the Function block. \n"
-                    "The user must provide one TableFunction par phase, respecting the order provided in \"phaseNames\"." );
+                    "The user must provide one TableFunction per phase, respecting the order provided in \"phaseNames\"." );
 
   registerWrapper( viewKeyStruct::viscosityTableNamesString(), &m_viscosityTableNames ).
     setRTTypeName( rtTypes::CustomTypes::groupNameRefArray ).
     setInputFlag( InputFlags::OPTIONAL ).
     setDescription( "List of viscosity TableFuncion names from the Function block. \n"
-                    "The user must provide one TableFunction par phase, respecting the order provided in \"phaseNames\"." );
+                    "The user must provide one TableFunction per phase, respecting the order provided in \"phaseNames\"." );
 
   registerField( fields::twophasefluid::phaseDensity{}, &m_phaseDensity.value );
   registerField( fields::twophasefluid::dPhaseDensity{}, &m_phaseDensity.derivs );
