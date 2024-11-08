@@ -2,7 +2,7 @@
 
 <Problem>
   <Included>
-    <File name="./ThermoElasticOedometric_base.xml" />
+    <File name="./ThermoElasticOedometric_tecTable_base.xml" />
   </Included>
 
   <Mesh>
@@ -40,7 +40,7 @@
 
     <PeriodicEvent
       name="restarts"
-      timeFrequency="5e4"
+      timeFrequency="5e3"
       target="/Outputs/restartOutput"/>
   </Events>
 

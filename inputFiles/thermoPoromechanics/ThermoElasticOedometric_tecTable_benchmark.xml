@@ -2,7 +2,7 @@
 
 <Problem>
   <Included>
-    <File name="./ThermoElasticOedometric_base.xml" />
+    <File name="./ThermoElasticOedometric_tecTable_base.xml" />
   </Included>
 
   <Mesh>
@@ -22,7 +22,7 @@
   <CellElementRegion
       name="rock"
       cellBlocks="{ rock }"
-      materialList="{ fluid, rock_linearTEC, rockThermalCond }"/>
+      materialList="{ fluid, rock_tecTable, rockThermalCond }"/>
   </ElementRegions>
 
   <Events
@@ -63,11 +63,6 @@
       name="solverApplications"
       maxEventDt="1e3"
       target="/Solvers/thermoElasticSolver"/>
-
-    <!--PeriodicEvent
-      name="restarts"
-      timeFrequency="5e4"
-      target="/Outputs/restartOutput"/-->
   </Events>
 
 </Problem>

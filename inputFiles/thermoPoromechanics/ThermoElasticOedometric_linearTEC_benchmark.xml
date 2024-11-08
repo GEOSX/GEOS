@@ -1,0 +1,68 @@
+<?xml version="1.0" ?>
+
+<Problem>
+  <Included>
+    <File name="./ThermoElasticOedometric_linearTEC_base.xml" />
+  </Included>
+
+  <Mesh>
+    <InternalMesh
+      name="mesh1"
+      elementTypes="{ C3D8 }"
+      xCoords="{ 0, 0.1 }"
+      yCoords="{ 0, 0.1 }"
+      zCoords="{ 0, 0.1 }"
+      nx="{ 2 }"
+      ny="{ 2 }"
+      nz="{ 2 }"
+      cellBlockNames="{ rock }"/>
+  </Mesh>
+
+  <ElementRegions>
+  <CellElementRegion
+      name="rock"
+      cellBlocks="{ rock }"
+      materialList="{ fluid, rock_linearTEC, rockThermalCond }"/>
+  </ElementRegions>
+
+  <Events
+    maxTime="1e5">
+
+    
+    <PeriodicEvent
+      name="stressHistoryCollection_rock"
+      endTime="1e5"
+      forceDt="1e4"
+      target="/Tasks/stressCollection_rock"/>
+    
+    <PeriodicEvent
+      name="stressTimeHistoryOutput_rock"
+      endTime="1e5"
+      forceDt="1e4"
+      target="/Outputs/stressHistoryOutput_rock"/>
+
+    
+    <PeriodicEvent
+      name="temperatureHistoryCollection_rock"
+      endTime="1e5"
+      forceDt="1e4"
+      target="/Tasks/temperatureCollection_rock"/>
+    
+    <PeriodicEvent
+      name="temperatureTimeHistoryOutput_rock"
+      endTime="1e5"
+      forceDt="1e4"
+      target="/Outputs/temperatureHistoryOutput_rock"/>
+
+    <PeriodicEvent
+      name="outputs"
+      timeFrequency="1e4"
+      target="/Outputs/vtkOutput"/>
+
+    <PeriodicEvent
+      name="solverApplications"
+      maxEventDt="1e3"
+      target="/Solvers/thermoElasticSolver"/>
+  </Events>
+
+</Problem>
