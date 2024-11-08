@@ -141,18 +141,17 @@ public:
   GEOS_HOST_DEVICE
   GEOS_FORCE_INLINE
   static real64 faceJacobianDeterminant( localIndex face,
-                                         real64 const (&coords)[3],
-                                         real64 (& N)[numNodesPerFace] )
+                                         real64 const (&X)[4][3] )
   {
     int i1 = ( face + 1 ) % 4;
     int i2 = ( face + 2 ) % 4;
     int i3 = ( face + 3 ) % 4;
-    real64 ab[3] = { coords[ i2 ][ 0 ] - coords[ i1 ][ 0 ],
-                     coords[ i2 ][ 1 ] - coords[ i1 ][ 1 ],
-                     coords[ i2 ][ 2 ] - coords[ i1 ][ 2 ] };
-    real64 ac[3] = { coords[ i3 ][ 0 ] - coords[ i1 ][ 0 ],
-                     coords[ i3 ][ 1 ] - coords[ i1 ][ 1 ],
-                     coords[ i3 ][ 2 ] - coords[ i1 ][ 2 ] };
+    real64 ab[3] = { X[ i2 ][ 0 ] - X[ i1 ][ 0 ],
+                     X[ i2 ][ 1 ] - X[ i1 ][ 1 ],
+                     X[ i2 ][ 2 ] - X[ i1 ][ 2 ] };
+    real64 ac[3] = { X[ i3 ][ 0 ] - X[ i1 ][ 0 ],
+                     X[ i3 ][ 1 ] - X[ i1 ][ 1 ],
+                     X[ i3 ][ 2 ] - X[ i1 ][ 2 ] };
     real64 term1 = ab[1] * ac[2] - ab[2] * ac[1];
     real64 term2 = ab[2] * ac[0] - ab[0] * ac[2];
     real64 term3 = ab[0] * ac[1] - ab[1] * ac[0];
@@ -521,6 +520,28 @@ public:
    }
 
   /**
+   * @brief Computes the superposition integral over a face between Bernstein-Bézier functions whose indices are given by 
+   *  (i1, j1, k1, l1=0 ) and (i1, j2, k2, l2=0)
+   * @param[in] i1
+   * @param[in] j1
+   * @param[in] k1
+   * @param[in] i2
+   * @param[in] j2
+   * @param[in] k2
+   * @return the superposition integral over the barycentric coordinates
+   */
+   constexpr static real64 computeFaceSuperpositionIntegral( const int i1, const int j1, const int k1, 
+                                                             const int i2, const int j2, const int k2 )
+   {
+     return ((i1+k1+j1+3)*(i2+j2+k2+3)*
+             integralTerm(i1+i2, i1, i2)*
+             integralTerm(j1+j2, j1, j2)*
+             integralTerm(k1+k2, k1, k2))/
+             integralTerm(i1+j1+k1+i2+j2+k2+2, 
+                          i1+j1+k1+2, i2+j2+k2+2);
+   }
+
+  /**
    * @brief Computes the reference mass matrix, i.e., the superposition matrix of the shape functions
    *   in barycentric coordinates. The real-world mass matrix can be obtained by using the multiplying
    *   this matrix by the determinant of the Jacobian. 
@@ -566,7 +587,7 @@ public:
    * @tparam ...Is integer indices of the loop
    */
   template < typename FUNC, int... Is >
-  static constexpr void forEach( FUNC && func, std::integer_sequence< int, Is... > )
+  static constexpr void loop( FUNC && func, std::integer_sequence< int, Is... > )
   {
       ( func( std::integral_constant< int, Is >{} ), ... );
   }
@@ -577,24 +598,25 @@ public:
    */
   template < typename FUNC >
   static constexpr void barycentricCoordinateLoop(FUNC && func) {
-      forEach( [&] ( auto const i ) {
+      loop( [&] ( auto const i ) {
         func( std::integral_constant< int, i >{} );
       }, std::make_integer_sequence< int, 4 >{} );
   }
+
   /**
    * @brief Helper function for loop over tet basis functions
    * @tparam FUNC the callback function
    */
   template < typename FUNC >
   static constexpr void basisLoop(FUNC && func) {
-    forEach( [&] ( auto const i )
+    loop( [&] ( auto const i )
     {
       constexpr int i1 = n - i;
-      forEach( [&] ( auto const j )
+      loop( [&] ( auto const j )
 
         if constexpr ( j1 <= n - i1 )
         {
-          forEach( [&] ( auto const k )
+          loop( [&] ( auto const k )
           {
             constexpr int k1 = n - k;
             if constexpr ( k1 <= n - i1 - j1 )
@@ -606,6 +628,63 @@ public:
                     std::integral_constant< int, j1 >{},
                     std::integral_constant< int, k1 >{},
                     std::integral_constant< int, l1 >{} );
+            }
+        }, std::make_integer_sequence< int, n + 1 > {} );
+      }
+      }, std::make_integer_sequence< int, n + 1 > {} );
+    }, std::make_integer_sequence< int, n + 1 > {} );
+  }
+
+  /**
+   * @brief Helper function for loop over tet basis functions that have one index in a given set of indices.
+   *   If multiple indices are in the given list, the callback is called multiple times. 
+   * @tparam FUNC the callback function
+   * @tparam Is the setindices
+   */
+  template < typename FUNC, int Is.. >
+  static constexpr void conditionalBasisLoop(FUNC && func) {
+    loop( [&] ( auto const i )
+    {
+      constexpr int i1 = n - i;
+      loop( [&] ( auto const j )
+
+        if constexpr ( j1 <= n - i1 )
+        {
+          loop( [&] ( auto const k )
+          {
+            constexpr int k1 = n - k;
+            if constexpr ( k1 <= n - i1 - j1 )
+            {
+              constexpr int l1 = n - i1 - j1 - k1;
+              constexpr int c1 = (n-i1)*(n-i1+1)*(n-i1+2)/6 + (n-i1-j1)*(n-i1-j1+1)/2 + (n-i1-j1-k1);
+              ( ( (i1 == Is) &&
+               (void( func( 0,
+                      std::integral_constant<int, i1>{},
+                      std::integral_constant<int, c1>{}, 
+                      std::integral_constant<int, j1>{},
+                      std::integral_constant<int, k1>{},
+                      std::integral_constant<int, l1>{}) ), 1 ) ) || ... );
+              ( ( (j1 == Is) &&
+               (void( func( 1,
+                     std::integral_constant<int, j1>{},
+                     std::integral_constant<int, c1>{}, 
+                     std::integral_constant<int, k1>{},
+                     std::integral_constant<int, l1>{},
+                     std::integral_constant<int, i1>{}) ), 1 ) ) || ... );
+              ( ( (k1 == Is) &&
+               ( void( func( 2,
+                     std::integral_constant<int, k1>{},
+                     std::integral_constant<int, c1>{},
+                     std::integral_constant<int, l1>{},
+                     std::integral_constant<int, i1>{},
+                     std::integral_constant<int, j1>{}) ), 1 ) ) || ... );
+              ( ( (l1 == Is) &&
+               ( void( func( 3,
+                     std::integral_constant<int, l1>{},
+                     std::integral_constant<int, c1>{}, 
+                     std::integral_constant<int, i1>{},
+                     std::integral_constant<int, j1>{},                 
+                     std::integral_constant<int, k1>{}) ), 1 ) ) || ...);
             }
         }, std::make_integer_sequence< int, n + 1 > {} );
       }
@@ -645,6 +724,7 @@ public:
    * @param X Array containing the coordinates of the support points.
    * @param func Callback function accepting three parameters: i, j (local d.o.f. inside the element) and R_ij
    */
+  template< typename FUNC >
   GEOS_HOST_DEVICE
   GEOS_FORCE_INLINE
   static
@@ -654,7 +734,7 @@ public:
                         FUNC && func )
   {
     real64 detJ = jacobianDeterminant( X );
-      real64 dLambdadX[4][3] = {};
+    real64 dLambdadX[4][3] = {};
     for( int j = 0; j < 3; j ++ )
     {
       dLambdadX[1][j] = ( ( X[ 2 ][ (j+1)%3 ] - X[ 0 ][ (j+1)%3 ]) * ( X[ 3 ][ (j+2)%3 ] - X[ 0 ][ (j+2)%3 ] ) - ( X[ 3 ][ (j+1)%3 ] - X[ 0 ][ (j+1)%3 ]) * ( X[ 2 ][ (j+2)%3 ] - X[ 0 ][ (j+2)%3 ] ) ) / detJ;
@@ -670,8 +750,8 @@ public:
         {
           barycentricCoordinateLoop( [&] ( auto const d2 ) 
           {
-            constexpr int prefactor1 = ( d1 == 0 ) * i1 + ( d1 == 1 ) * j1 + ( d1 == 2 ) * k1 + ( d1 == 3 ) * l1;
-            constexpr int prefactor2 = ( d2 == 0 ) * i2 + ( d2 == 1 ) * j2 + ( d2 == 2 ) * k2 + ( d2 == 3 ) * l2;
+            constexpr real64 factor1 = ( i1 + j1 + k1 + l1 + 3 ) / ( i1 +j1 + k1 + l1 + 2);
+            constexpr real64 factor2 = ( i2 + j2 + k2 + l2 + 3 ) / ( i2 +j2 + k2 + l2 + 2);
             constexpr int ii1 = ( d1 != 0 ) * i1 + ( d1 == 0 ) * ( i1 - 1 );
             constexpr int ij1 = ( d1 != 1 ) * j1 + ( d1 == 1 ) * ( j1 - 1 );
             constexpr int ik1 = ( d1 != 2 ) * k1 + ( d1 == 2 ) * ( k1 - 1 );
@@ -683,14 +763,58 @@ public:
             if constexpr (ii1 >= 0 && ij1 >= 0 && ik1 >= 0 && il1 >= 0 &&
                           ii2 >= 0 && ij2 >= 0 && ik2 >= 0 && il2 >= 0)
             {
-              constexpr real64 val = computeSuperpositionIntegral( ii1, ij1, ik1, il1, ii2, ij2, ik2, il2 ) * prefactor1 * prefactor2;
-              func( c1, c2, d1, d2, val * (dLambdadX[d1][0]*dLambdadX[d2][0] + dLambdadX[d1][1]*dLambdadX[d2][1] + dLambdadX[d1][2]*dLambdadX[d2][2] );
+              constexpr real64 val = computeSuperpositionIntegral( ii1, ij1, ik1, il1, ii2, ij2, ik2, il2 ) * factor1 * factor2;
+              func( c1, c2, val * (dLambdadX[d1][0]*dLambdadX[d2][0] + dLambdadX[d1][1]*dLambdadX[d2][1] + dLambdadX[d1][2]*dLambdadX[d2][2] );
             }
           } );
         } );
       } );
     } );
   }
+
+  /**
+   * @brief Computes the non-zero contributions inside the element of the surface terms, including the value of 
+   *   the superposition integral of basis functions (used for the penalty and damping terms) and
+   *   the superposition integral of the derivative of a function with the value of the other, used for the flux terms. 
+   * @param X Array containing the coordinates of the support points.
+   * @param funcP Callback function for non-zero penalty-type terms, accepting four parameters: 
+   *   i, j (local d.o.f. inside the element), f (index of the face, i.e., index of the opposite vertex), and value 
+   * @param funcF Callback function for non-zero flux-type terms, accepting four parameters: 
+   *   i, j (local d.o.f. inside the element), f (index of the face, i.e., index of the opposite vertex), and value 
+   */
+  template< typename FUNC >
+  GEOS_HOST_DEVICE
+  GEOS_FORCE_INLINE
+  static
+  constexpr
+  void
+  computeSurfaceTerms( real64 const (&X)[4][3],
+                       FUNC && funcP,
+                       FUNC && funcF )
+  {
+    real64 detJf = faceJacobianDeterminant( face, X );
+    conditionalBasisLoop< 0, 1 >( [&] ( auto const f1, auto const d, auto const c1, auto const j1, auto const j1, auto const k1 )
+    {
+      conditionalBasisLoop< 0 >( [&] ( auto const f2, auto const, auto const c2, auto const i2, auto const j2, auto const k2 )
+      {
+        if constexpr f1 == f2 )
+        {
+          if constexpr( d == 0 )
+          {
+            constexpr real64 val = computeFaceSuperpositionIntegral( j1, k1, l1, j2, k2, l2 );
+            funcP( c1, c2, f1, val * detJf );
+          }
+          else if constexpr (d == 1)
+          {
+            constexpr real64 factor = ( i1 + j1 + k1 + 4 )/(i1 + j1 + k1 + 3) ;
+            constexpr real64 val = computeFaceSuperpositionIntegral( i1, j1, k1, i2, kj, k2 ) * factor; 
+            funcF( c1, c2, f1, val * detJf );
+          }
+        }
+      } );
+    } );
+  }
+
 
 
   /**
