@@ -67,14 +67,26 @@ CFLFluxKernel::
     real64 gravHead{};
 
     // calculate quantities on primary connected cells
+    integer denom = 0;
     for( localIndex i = 0; i < NUM_ELEMS; ++i )
     {
       localIndex const er  = seri[i];
       localIndex const esr = sesri[i];
       localIndex const ei  = sei[i];
 
+      bool const phaseExists = (phaseVolFrac[er][esr][ei][ip] > 0);
+      if( !phaseExists )
+      {
+        continue;
+      }
+
       // average density across the face
-      densMean += 0.5 * phaseMassDens[er][esr][ei][0][ip];
+      densMean += phaseMassDens[er][esr][ei][0][ip];
+      denom++;
+    }
+    if( denom > 1 )
+    {
+      densMean /= denom;
     }
 
     //***** calculation of phase volumetric flux *****

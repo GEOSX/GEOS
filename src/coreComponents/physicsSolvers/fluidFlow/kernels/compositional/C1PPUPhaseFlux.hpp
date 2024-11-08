@@ -86,6 +86,7 @@ struct C1PPUPhaseFlux
            ElementViewConst< arrayView1d< real64 const > > const & gravCoef,
            ElementViewConst< arrayView2d< real64 const, compflow::USD_PHASE > > const & phaseMob,
            ElementViewConst< arrayView3d< real64 const, compflow::USD_PHASE_DC > > const & dPhaseMob,
+           ElementViewConst< arrayView2d< real64 const, compflow::USD_PHASE > > const & phaseVolFrac,
            ElementViewConst< arrayView3d< real64 const, compflow::USD_PHASE_DC > > const & dPhaseVolFrac,
            ElementViewConst< arrayView3d< real64 const, compflow::USD_COMP_DC > > const & dCompFrac_dCompDens,
            ElementViewConst< arrayView3d< real64 const, constitutive::multifluid::USD_PHASE > > const & phaseMassDens,
@@ -102,7 +103,7 @@ struct C1PPUPhaseFlux
     real64 dGravHead_dP[numFluxSupportPoints]{};
     real64 dGravHead_dC[numFluxSupportPoints][numComp]{};
     PotGrad::compute< numComp, numFluxSupportPoints >( numPhase, ip, hasCapPressure, seri, sesri, sei, trans, dTrans_dPres, pres,
-                                                       gravCoef, dPhaseVolFrac, dCompFrac_dCompDens, phaseMassDens, dPhaseMassDens,
+                                                       gravCoef, phaseVolFrac, dPhaseVolFrac, dCompFrac_dCompDens, phaseMassDens, dPhaseMassDens,
                                                        phaseCapPressure, dPhaseCapPressure_dPhaseVolFrac, potGrad, dPresGrad_dP,
                                                        dPresGrad_dC, dGravHead_dP, dGravHead_dC );
 
