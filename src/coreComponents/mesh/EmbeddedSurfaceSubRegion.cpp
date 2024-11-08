@@ -298,7 +298,7 @@ array1d< localIndex > EmbeddedSurfaceSubRegion::getEdfmNodeParentEdgeIndex( Arra
     auto elementIndex =nodeToElem[i];
     auto cell3dIndex = elemTo3dElem.toCellIndex[elementIndex][0];
     double elemMinDistance = std::numeric_limits< double >::max();
-    localIndex targetEdgeIndex;
+    localIndex targetEdgeIndex = -1;
 
     R1Tensor nodexyz;
     LvArray::tensorOps::copy< 3 >( nodexyz, elemNodesLocations[i] );
