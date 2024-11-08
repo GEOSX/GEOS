@@ -751,6 +751,20 @@ public:
    */
   void postRestartInitializationRecursive();
 
+  /**
+   * @return The validated name for a given Group from its xml value: If the node has a "name"
+   *         attribute, it is validated after the `groupName` rtType regex, and its value is
+   *         returned. Else if the Group name is not "Required", the node tag name is used.
+   * @param targetNode The XML node whose name is to be processed. It throws if not of element type.
+   * @param targetNodePos The position of the target node within the XML document.
+   * @param parentNodeName The name of the parent node, used for error reporting.
+   * @param parentNodePos The position of the parent node, used for error reporting.
+   * @param siblingNames A set containing the names of sibling nodes (to verify that there are no
+   *                     duplicates). The function will populate this set if the attribute name is 
+   *                     used and if no error is found.
+   * @throws InputError if the node type is not an xml element or if there are duplicate names
+   *         among xml siblings.
+   */
   static string processInputName( xmlWrapper::xmlNode const & targetNode,
                                   xmlWrapper::xmlNodePos const & targetNodePos,
                                   string_view parentNodeName,

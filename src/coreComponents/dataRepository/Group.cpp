@@ -141,11 +141,12 @@ string Group::processInputName( xmlWrapper::xmlNode const & targetNode,
                                 xmlWrapper::xmlNodePos const & parentNodePos,
                                 std::set< string > & siblingNames )
 {
-  GEOS_ERROR_IF( targetNode.type() != xmlWrapper::xmlNodeType::node_element,
+  GEOS_THROW_IF( targetNode.type() != xmlWrapper::xmlNodeType::node_element,
                  GEOS_FMT( "Error in node named \"{}\" ({}): GEOS XML nodes cannot contain "
                            "text data nor anything but XML nodes.\nErroneous content: \"{}\"\n",
                            parentNodeName, parentNodePos.toString(),
-                           stringutilities::trimSpaces( targetNode.value() ) ));
+                           stringutilities::trimSpaces( targetNode.value() ) ),
+                 InputError );
 
   string targetNodeName;
   try
@@ -164,10 +165,11 @@ string Group::processInputName( xmlWrapper::xmlNode const & targetNode,
   }
   else
   { // Make sure names are not duplicated by checking all previous siblings
-    GEOS_ERROR_IF( siblingNames.count( targetNodeName ) != 0,
+    GEOS_THROW_IF( siblingNames.count( targetNodeName ) != 0,
                    GEOS_FMT( "Error at node named \"{}\" ({}): "
                              "An XML block cannot contain children with duplicated names.\n",
-                             targetNodeName, targetNodePos.toString() ) );
+                             targetNodeName, targetNodePos.toString() ),
+                   InputError );
     siblingNames.insert( targetNodeName );
   }
 
