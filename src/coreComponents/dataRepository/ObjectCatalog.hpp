@@ -172,6 +172,7 @@ public:
   /**
    * @brief Static method to create a new object that derives from BASETYPE
    * @param[in] objectTypeName the key to the catalog entry that is able to create the correct type.
+   * @param context The data context of the Group for which we attempt to create a sub-group.
    * @param args these are the arguments to the constructor of the target type
    * @return passes a unique_ptr<BASETYPE> to the newly allocated class.
    * @note Generate a fatal error:
