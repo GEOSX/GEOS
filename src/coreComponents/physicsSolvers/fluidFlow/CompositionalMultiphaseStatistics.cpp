@@ -426,7 +426,7 @@ void CompositionalMultiphaseStatistics::computeRegionStatistics( real64 const ti
     compPhaseStatsData.addRow( regionNames[i], "Max Temperature [K]", regionStatistics.maxTemperature );
     compPhaseStatsData.addRow( regionNames[i], "Total dynamic pore volume [rm^3]", regionStatistics.totalPoreVolume );
     compPhaseStatsData.addRow( regionNames[i], "Phase dynamic pore volume: {} rm^3", regionStatistics.phasePoreVolume );
-    compPhaseStatsData.addRow( regionNames[i], GEOS_FMT( "Phase mass {}", massUnit ), regionStatistics.phaseMass );
+    compPhaseStatsData.addRow( regionNames[i], GEOS_FMT( "Phase mass {}", massUnit ), regionStatistics.phaseMass  );
     // metric 1: trapping computed with the Land trapping coefficient (similar to Eclipse)
     compPhaseStatsData.addRow( regionNames[i], GEOS_FMT( "Trapped phase mass (metric 1) {}", massUnit ), regionStatistics.trappedPhaseMass );
     compPhaseStatsData.addRow( regionNames[i], GEOS_FMT( "nonTrappedPhaseMass {}", massUnit ), nonTrappedPhaseMass );
