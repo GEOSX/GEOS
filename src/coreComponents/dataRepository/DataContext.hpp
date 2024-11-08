@@ -143,7 +143,10 @@ public:
                    xmlWrapper::xmlAttributePos const & attPos );
 
   /**
-   * @brief Construct the file context of a Group from an cpp source file.
+   * @brief Constructs the file context of a Group from a C++ source file.
+   * @param targetName The name of the target Group.
+   * @param file The name of the source file.
+   * @param line The line number in the source file.
    */
   DataFileContext( string_view targetName, string_view file, size_t line );
 

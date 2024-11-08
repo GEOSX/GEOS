@@ -196,6 +196,13 @@ public:
   }
   //STOP_SPHINX
 
+  /**
+   * @return Generates a formatted error message for an unknown type for a catalog.
+   * @param objectTypeName The name of the object type that is invalid.
+   * @param context The data context of the Group for which the erroneous type creation was attempted.
+   * @param allowedKeys A container of allowed keys, which will be listed in the error message.
+   * @tparam KEYS_CONTAINER_T A container type holding the allowed keys.
+   */
   template< typename KEYS_CONTAINER_T >
   static string unknownTypeError( std::string const & objectTypeName, DataContext const & context,
                                   KEYS_CONTAINER_T const & allowedKeys )

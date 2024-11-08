@@ -785,7 +785,7 @@ public:
    * but allow to reuse an existing xmlNodePos.
    * @param[in] xmlDocument the XML document that contains the targetNode.
    * @param[in] targetNode the XML node that to extract input values from.
-   * @param[in] nodePos the target node position, typically obtained with xmlDocument::getNodePosition().
+   * @param[in] targetNodePos the target node position, typically obtained with xmlDocument::getNodePosition().
    */
   void processInputFileRecursive( xmlWrapper::xmlDocument & xmlDocument,
                                   xmlWrapper::xmlNode & targetNode,
