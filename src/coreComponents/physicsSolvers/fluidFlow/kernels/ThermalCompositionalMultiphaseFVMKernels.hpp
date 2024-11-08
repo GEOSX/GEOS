@@ -353,7 +353,7 @@ public:
           continue;
         }
 
-        dDensMean_dT[i] = 0.5 * m_dPhaseMassDens[er][esr][ei][0][ip][Deriv::dT];
+        dDensMean_dT[i] = m_dPhaseMassDens[er][esr][ei][0][ip][Deriv::dT];
         denom++;
       }
       if( denom > 1 )
