@@ -564,7 +564,7 @@ pullDataFromConduitNode( ArrayOfArrays< T, INDEX_TYPE > & var,
   ArrayOfArraysView< T const, INDEX_TYPE > const & varView = var.toViewConst();
 
   GEOS_ERROR_IF_NE( valuesSize, allocatedSize );
-  GEOS_ERROR_IF_NE( allocatedSize, offsets[sizeOffsets] );
+  GEOS_ERROR_IF_NE( allocatedSize, offsets[sizeOffsets-1] );
 
   INDEX_TYPE const * const varOffsets = varView.getOffsets();
   INDEX_TYPE const * const varSizes = varView.getSizes();
