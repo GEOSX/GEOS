@@ -24,7 +24,6 @@
 #include "constitutive/relativePermeability/RelativePermeabilityBase.hpp"
 #include "constitutive/relativePermeability/RelativePermeabilityFields.hpp"
 
-
 namespace geos
 {
 
