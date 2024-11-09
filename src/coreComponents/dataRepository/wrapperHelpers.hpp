@@ -490,6 +490,101 @@ pullDataFromConduitNode( Array< T, NDIM, PERMUTATION > & var,
   std::memcpy( var.data(), valuesNode.data_ptr(), numBytesFromArray );
 }
 
+
+
+template< typename T, typename INDEX_TYPE >
+std::enable_if_t< bufferOps::can_memcpy< T > >
+pushDataToConduitNode( ArrayOfArrays< T, INDEX_TYPE > const & var2,
+                       conduit::Node & node )
+{
+  ArrayOfArraysView< T const, INDEX_TYPE > const & var = var2.toViewConst();
+  internal::logOutputType( LvArray::system::demangleType( var ), "Output array via external pointer: " );
+  
+  // ArrayOfArray::m_numArrays
+  INDEX_TYPE const numArrays = var.size();
+  conduit::DataType const numArraysType( conduitTypeInfo< INDEX_TYPE >::id, 1 );
+  node[ "__numberOfArrays__" ].set( numArraysType, const_cast< void* >( static_cast< void const *>(&numArrays) ) );
+
+  // ArrayOfArray::m_offsets
+  INDEX_TYPE const * const offsets = var.getOffsets();
+  conduit::DataType const offsetsType( conduitTypeInfo< INDEX_TYPE >::id, numArrays+1 );
+  node[ "__offsets__" ].set_external( offsetsType, const_cast< void* >( static_cast< void const* >( offsets ) ) );
+
+  // ArrayOfArray::m_sizes
+  INDEX_TYPE const * const sizes = var.getSizes();
+  conduit::DataType const sizesType( conduitTypeInfo< INDEX_TYPE >::id, numArrays );
+  node[ "__sizes__" ].set_external( sizesType, const_cast< void* >( static_cast< void const* >( sizes ) ) );
+
+  // Push the data into conduit
+  constexpr int conduitTypeID = conduitTypeInfo< T >::id;
+  constexpr int sizeofConduitType = conduitTypeInfo< T >::sizeOfConduitType;
+  conduit::DataType const dtype( conduitTypeID, offsets[numArrays] * sizeof( T ) / sizeofConduitType );
+  void * const ptr = const_cast< void * >( static_cast< void const * >( var.getValues() ) );
+  node[ "__values__" ].set_external( dtype, ptr );
+}
+
+// This is an LvArray that doesn't need to be packed.
+template< typename T, typename INDEX_TYPE >
+std::enable_if_t< bufferOps::can_memcpy< T > >
+pullDataFromConduitNode( ArrayOfArrays< T, INDEX_TYPE > & var,
+                         conduit::Node const & node )
+{
+
+
+  conduit::Node const & numArraysNode = node.fetch_existing( "__numberOfArrays__" );
+  INDEX_TYPE const * const numArrays = numArraysNode.value();
+
+  conduit::Node const & offsetsNode = node.fetch_existing( "__offsets__" );
+  conduit::DataType const & offsetsDataType = offsetsNode.dtype();
+  INDEX_TYPE const * const offsets = offsetsNode.value();
+  INDEX_TYPE const sizeOffsets = offsetsDataType.number_of_elements();
+
+  conduit::Node const & sizesNode = node.fetch_existing( "__sizes__" );
+  conduit::DataType const & sizesDataType = sizesNode.dtype();
+  INDEX_TYPE const * const sizes = sizesNode.value();
+  INDEX_TYPE const sizeSizes = sizesDataType.number_of_elements();
+
+  GEOS_ERROR_IF_NE( *numArrays, sizeSizes );
+  GEOS_ERROR_IF_NE( *numArrays+1, sizeOffsets );
+
+  // values node
+  conduit::Node const & valuesNode = node.fetch_existing( "__values__" );
+  conduit::DataType const & valuesDataType = valuesNode.dtype();
+  const INDEX_TYPE valuesSize = valuesDataType.number_of_elements();
+
+  var.resize( *numArrays, valuesSize/(*numArrays) );
+  localIndex allocatedSize = 0;
+  for( INDEX_TYPE i = 0; i < *numArrays; ++i )
+  {
+    INDEX_TYPE const arrayAllocation = offsets[i+1] - offsets[i];
+    var.setCapacityOfArray( i, arrayAllocation );
+    var.resizeArray( i, sizes[ i ] );
+    allocatedSize += arrayAllocation;
+  }
+  ArrayOfArraysView< T const, INDEX_TYPE > const & varView = var.toViewConst();
+
+  GEOS_ERROR_IF_NE( valuesSize, allocatedSize );
+  GEOS_ERROR_IF_NE( allocatedSize, offsets[sizeOffsets] );
+
+  INDEX_TYPE const * const varOffsets = varView.getOffsets();
+  INDEX_TYPE const * const varSizes = varView.getSizes();
+
+  GEOS_ERROR_IF_NE( varOffsets[0], offsets[0] );
+  for( INDEX_TYPE i = 0; i<*numArrays; ++i )
+  {
+    GEOS_ERROR_IF_NE( varOffsets[i+1], offsets[i+1] );
+    GEOS_ERROR_IF_NE( varSizes[i], sizes[i] );
+  }
+
+
+  localIndex numBytesFromArray =  allocatedSize * sizeof( T );
+  // GEOS_ERROR_IF_NE( numBytesFromArray, valuesNode.dtype().strided_bytes() );
+  std::memcpy( &var(0,0), valuesNode.data_ptr(), numBytesFromArray );
+}
+
+
+
+
 template< typename T >
 void pushDataToConduitNode( InterObjectRelation< T > const & var,
                             conduit::Node & node )
