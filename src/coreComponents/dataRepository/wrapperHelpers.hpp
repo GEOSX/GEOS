@@ -499,21 +499,21 @@ pushDataToConduitNode( ArrayOfArrays< T, INDEX_TYPE > const & var2,
 {
   ArrayOfArraysView< T const, INDEX_TYPE > const & var = var2.toViewConst();
   internal::logOutputType( LvArray::system::demangleType( var ), "Output array via external pointer: " );
-  
+
   // ArrayOfArray::m_numArrays
   INDEX_TYPE const numArrays = var.size();
   conduit::DataType const numArraysType( conduitTypeInfo< INDEX_TYPE >::id, 1 );
-  node[ "__numberOfArrays__" ].set( numArraysType, const_cast< void* >( static_cast< void const *>(&numArrays) ) );
+  node[ "__numberOfArrays__" ].set( numArraysType, const_cast< void * >( static_cast< void const * >(&numArrays) ) );
 
   // ArrayOfArray::m_offsets
   INDEX_TYPE const * const offsets = var.getOffsets();
   conduit::DataType const offsetsType( conduitTypeInfo< INDEX_TYPE >::id, numArrays+1 );
-  node[ "__offsets__" ].set_external( offsetsType, const_cast< void* >( static_cast< void const* >( offsets ) ) );
+  node[ "__offsets__" ].set_external( offsetsType, const_cast< void * >( static_cast< void const * >( offsets ) ) );
 
   // ArrayOfArray::m_sizes
   INDEX_TYPE const * const sizes = var.getSizes();
   conduit::DataType const sizesType( conduitTypeInfo< INDEX_TYPE >::id, numArrays );
-  node[ "__sizes__" ].set_external( sizesType, const_cast< void* >( static_cast< void const* >( sizes ) ) );
+  node[ "__sizes__" ].set_external( sizesType, const_cast< void * >( static_cast< void const * >( sizes ) ) );
 
   // Push the data into conduit
   constexpr int conduitTypeID = conduitTypeInfo< T >::id;
@@ -579,9 +579,8 @@ pullDataFromConduitNode( ArrayOfArrays< T, INDEX_TYPE > & var,
 
   localIndex numBytesFromArray =  allocatedSize * sizeof( T );
   // GEOS_ERROR_IF_NE( numBytesFromArray, valuesNode.dtype().strided_bytes() );
-  std::memcpy( &var(0,0), valuesNode.data_ptr(), numBytesFromArray );
+  std::memcpy( &var( 0, 0 ), valuesNode.data_ptr(), numBytesFromArray );
 }
-
 
 
 
