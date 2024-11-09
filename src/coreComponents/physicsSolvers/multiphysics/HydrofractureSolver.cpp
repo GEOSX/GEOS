@@ -21,6 +21,7 @@
 
 #include "constitutive/contact/HydraulicApertureRelationSelector.hpp"
 #include "constitutive/fluid/singlefluid/SingleFluidBase.hpp"
+#include "constitutive/fluid/singlefluid/SingleFluidFields.hpp"
 #include "physicsSolvers/multiphysics/HydrofractureSolverKernels.hpp"
 #include "physicsSolvers/solidMechanics/SolidMechanicsFields.hpp"
 #include "physicsSolvers/multiphysics/SinglePhasePoromechanics.hpp"
@@ -29,7 +30,7 @@
 #include "physicsSolvers/surfaceGeneration/LogLevelsInfo.hpp"
 #include "dataRepository/LogLevelsInfo.hpp"
 #include "mesh/MeshFields.hpp"
-#include "constitutive/fluid/singlefluid/SingleFluidFields.hpp"
+#include "finiteVolume/FluxApproximationBase.hpp"
 
 namespace geos
 {
