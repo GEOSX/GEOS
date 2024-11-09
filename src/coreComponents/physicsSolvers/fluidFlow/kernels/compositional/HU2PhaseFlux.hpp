@@ -138,10 +138,10 @@ protected:
   GEOS_HOST_DEVICE
   static void
   computeViscousFlux( integer const & ip, integer const & numPhase, integer const & hasCapPressure,
-                      localIndex const (& seri)[numFluxSupportPoints],
-                      localIndex const (& sesri)[numFluxSupportPoints],
-                      localIndex const (& sei)[numFluxSupportPoints],
-                      real64 const (& trans)[2], real64 const (& dTrans_dPres)[2],
+                      localIndex const (&seri)[numFluxSupportPoints],
+                      localIndex const (&sesri)[numFluxSupportPoints],
+                      localIndex const (&sei)[numFluxSupportPoints],
+                      real64 const (&trans)[2], real64 const (&dTrans_dPres)[2],
                       ElementViewConst< arrayView1d< real64 const > > const & pres,
                       ElementViewConst< arrayView1d< real64 const > > const & gravCoef,
                       ElementViewConst< arrayView3d< real64 const > > const & dCompFrac_dCompDens,
@@ -251,10 +251,10 @@ protected:
   GEOS_HOST_DEVICE
   static void
   computeGravityFlux( integer const & ip, integer const & numPhase,
-                      localIndex const (& seri)[numFluxSupportPoints],
-                      localIndex const (& sesri)[numFluxSupportPoints],
-                      localIndex const (& sei)[numFluxSupportPoints],
-                      real64 const (& trans)[2], real64 const (& dTrans_dPres)[2],
+                      localIndex const (&seri)[numFluxSupportPoints],
+                      localIndex const (&sesri)[numFluxSupportPoints],
+                      localIndex const (&sei)[numFluxSupportPoints],
+                      real64 const (&trans)[2], real64 const (&dTrans_dPres)[2],
                       ElementViewConst< arrayView1d< real64 const > > const & gravCoef,
                       ElementViewConst< arrayView2d< real64 const, 1 > > const & phaseMob,
                       ElementViewConst< arrayView3d< real64 const > > const & dPhaseMob,
@@ -326,10 +326,10 @@ protected:
   GEOS_HOST_DEVICE
   static void
   computeCapillaryFlux( integer const & ip, integer const & numPhase,
-                        localIndex const (& seri)[numFluxSupportPoints],
-                        localIndex const (& sesri)[numFluxSupportPoints],
-                        localIndex const (& sei)[numFluxSupportPoints],
-                        real64 const (& trans)[2], real64 const (& dTrans_dPres)[2],
+                        localIndex const (&seri)[numFluxSupportPoints],
+                        localIndex const (&sesri)[numFluxSupportPoints],
+                        localIndex const (&sei)[numFluxSupportPoints],
+                        real64 const (&trans)[2], real64 const (&dTrans_dPres)[2],
                         ElementViewConst< arrayView2d< real64 const, 1 > > const & phaseMob,
                         ElementViewConst< arrayView3d< real64 const > > const & dPhaseMob,
                         ElementViewConst< arrayView3d< real64 const > > const & dPhaseVolFrac,
