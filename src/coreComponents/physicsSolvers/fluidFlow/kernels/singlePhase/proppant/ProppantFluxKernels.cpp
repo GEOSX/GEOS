@@ -14,12 +14,12 @@
  */
 
 /**
- * @file singlePhaseProppantFluxKernels.cpp
+ * @file ProppantFluxKernels.cpp
  */
 
-#include "SinglePhaseProppantFluxKernels.hpp"
+#include "ProppantFluxKernels.hpp"
 
-#include "physicsSolvers/fluidFlow/kernels/FluxKernelsHelper.hpp"
+#include "physicsSolvers/fluidFlow/kernels/singlePhase/FluxKernelsHelper.hpp"
 
 namespace geos
 {
@@ -27,7 +27,7 @@ namespace geos
 namespace singlePhaseProppantFluxKernels
 {
 
-using namespace fluxKernelsHelper;
+using namespace singlePhaseFluxKernelsHelper;
 
 
 void FaceElementFluxKernel::

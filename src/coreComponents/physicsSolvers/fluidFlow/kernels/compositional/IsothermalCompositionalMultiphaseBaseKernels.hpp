@@ -992,7 +992,7 @@ public:
 
 };
 
-/******************************** ScalingForSystemSolutionKernel ********************************/
+/******************************** SolutionScalingKernelKernel ********************************/
 
 /**
  * @class ScalingAndCheckingSystemSolutionKernelBase
