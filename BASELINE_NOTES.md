@@ -8,10 +8,14 @@ These notes should be in reverse-chronological order, and use the following time
 
 PR #3434 (2024-11-09)
 =====================
-bugfix: Fixed output of ArrayOfArray objects to restart files
+Bugfix: Fixed output of ArrayOfArray objects to restart files.
+
+PR #3372 (2024-11-09)
+====================
+Fix a bug related to mass and energy updates for poromechanics.
 
 PR #3426 (2024-11-08)
-=====================
+====================
 Bugfix: reset accumulation in fracture when time step cut occurs in hydrofrac solver.
 
 PR #3413 (2024-11-07)

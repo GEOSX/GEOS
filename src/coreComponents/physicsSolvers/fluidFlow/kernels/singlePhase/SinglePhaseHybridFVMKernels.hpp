@@ -17,8 +17,8 @@
  * @file SinglePhaseHybridFVMKernels.hpp
  */
 
-#ifndef GEOS_PHYSICSSOLVERS_FLUIDFLOW_SINGLEPHASEHYBRIDFVMKERNELS_HPP
-#define GEOS_PHYSICSSOLVERS_FLUIDFLOW_SINGLEPHASEHYBRIDFVMKERNELS_HPP
+#ifndef GEOS_PHYSICSSOLVERS_FLUIDFLOW_SINGLEPHASE_HYBRIDFVMKERNELS_HPP
+#define GEOS_PHYSICSSOLVERS_FLUIDFLOW_SINGLEPHASE_HYBRIDFVMKERNELS_HPP
 
 #include "common/DataTypes.hpp"
 #include "constitutive/fluid/singlefluid/SingleFluidBase.hpp"
@@ -37,7 +37,7 @@
 #include "physicsSolvers/fluidFlow/FlowSolverBaseFields.hpp"
 #include "physicsSolvers/fluidFlow/SinglePhaseBaseFields.hpp"
 #include "physicsSolvers/fluidFlow/StencilAccessors.hpp"
-#include "physicsSolvers/fluidFlow/kernels/SinglePhaseBaseKernels.hpp"
+#include "physicsSolvers/fluidFlow/kernels/singlePhase/AccumulationKernels.hpp"
 #include "physicsSolvers/fluidFlow/kernels/HybridFVMHelperKernels.hpp"
 #include "physicsSolvers/PhysicsSolverBaseKernels.hpp"
 #include "codingUtilities/Utilities.hpp"
@@ -959,4 +959,4 @@ public:
 
 } // namespace geos
 
-#endif //GEOS_PHYSICSSOLVERS_FLUIDFLOW_SINGLEPHASEHYBRIDFVMKERNELS_HPP
+#endif //GEOS_PHYSICSSOLVERS_FLUIDFLOW_SINGLEPHASE_HYBRIDFVMKERNELS_HPP

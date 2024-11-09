@@ -14,11 +14,11 @@
  */
 
 /**
- * @file FlowSolverBaseKernels.hpp
+ * @file MinPoreVolumeMaxPorosityKernel.hpp
  */
 
-#ifndef GEOS_PHYSICSSOLVERS_FLUIDFLOW_FLOWSOLVERBASEKERNELS_HPP
-#define GEOS_PHYSICSSOLVERS_FLUIDFLOW_FLOWSOLVERBASEKERNELS_HPP
+#ifndef GEOS_PHYSICSSOLVERS_FLUIDFLOW_MINPOREVOLUMEMAXPOROSITYKERNEL_HPP
+#define GEOS_PHYSICSSOLVERS_FLUIDFLOW_MINPOREVOLUMEMAXPOROSITYKERNEL_HPP
 
 #include "common/DataTypes.hpp"
 #include "common/GEOS_RAJA_Interface.hpp"
@@ -32,9 +32,6 @@ namespace flowSolverBaseKernels
 
 /// Threshold for the min pore volume (below, a warning is issued)
 static constexpr real64 poreVolumeThreshold = 1e-4;
-
-template< typename VIEWTYPE >
-using ElementViewConst = ElementRegionManager::ElementViewConst< VIEWTYPE >;
 
 /**
  * @struct MinPoreVolumeMaxPorosityKernel
@@ -106,47 +103,8 @@ struct MinPoreVolumeMaxPorosityKernel
   }
 };
 
-/**
- * @brief
- *
- * @tparam STENCILWRAPPER
- */
-template< typename STENCILWRAPPER >
-struct stencilWeightsUpdateKernel
-{
-  /**
-   * @brief
-   *
-   * @param stencilWrappper
-   * @param hydraulicAperture
-   */
-  inline static void prepareStencilWeights( STENCILWRAPPER & stencilWrapper,
-                                            ElementViewConst< arrayView1d< real64 const > > const hydraulicAperture )
-  {
-    forAll< parallelDevicePolicy<> >( stencilWrapper.size(), [=] GEOS_HOST_DEVICE ( localIndex const iconn )
-    {
-      stencilWrapper.removeHydraulicApertureContribution( iconn, hydraulicAperture );
-    } );
-  }
-
-  /**
-   * @brief
-   *
-   * @param stencilWrappper
-   * @param hydraulicAperture
-   */
-  inline static void updateStencilWeights( STENCILWRAPPER & stencilWrapper,
-                                           ElementViewConst< arrayView1d< real64 const > > const hydraulicAperture )
-  {
-    forAll< parallelDevicePolicy<> >( stencilWrapper.size(), [=] GEOS_HOST_DEVICE ( localIndex const iconn )
-    {
-      stencilWrapper.addHydraulicApertureContribution( iconn, hydraulicAperture );
-    } );
-  }
-};
-
 } // namespace flowSolverBaseKernels
 
 } // namespace geos
 
-#endif //GEOS_PHYSICSSOLVERS_FLUIDFLOW_FLOWSOLVERBASEKERNELS_HPP
+#endif //GEOS_PHYSICSSOLVERS_FLUIDFLOW_MINPOREVOLUMEMAXPOROSITYKERNEL_HPP

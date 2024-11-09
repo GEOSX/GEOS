@@ -19,7 +19,6 @@
 
 #include "SinglePhaseThermalConductivityBase.hpp"
 #include "ThermalConductivityFields.hpp"
-#include "SinglePhaseThermalConductivityFields.hpp"
 
 namespace geos
 {

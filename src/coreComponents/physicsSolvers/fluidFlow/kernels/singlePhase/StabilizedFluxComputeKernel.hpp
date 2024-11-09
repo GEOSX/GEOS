@@ -14,13 +14,13 @@
  */
 
 /**
- * @file StabilizedSinglePhaseFVMKernels.hpp
+ * @file StabilizedFluxComputeKernel.hpp
  */
 
-#ifndef GEOS_PHYSICSSOLVERS_FLUIDFLOW_STABILIZEDSINGLEPHASEFVMKERNELS_HPP
-#define GEOS_PHYSICSSOLVERS_FLUIDFLOW_STABILIZEDSINGLEPHASEFVMKERNELS_HPP
+#ifndef GEOS_PHYSICSSOLVERS_FLUIDFLOW_SINGLEPHASE_STABILIZEDFLUXCOMPUTEKERNEL_HPP
+#define GEOS_PHYSICSSOLVERS_FLUIDFLOW_SINGLEPHASE_STABILIZEDFLUXCOMPUTEKERNEL_HPP
 
-#include "physicsSolvers/fluidFlow/kernels/SinglePhaseFVMKernels.hpp"
+#include "physicsSolvers/fluidFlow/kernels/singlePhase/FluxComputeKernel.hpp"
 
 namespace geos
 {
@@ -28,24 +28,23 @@ namespace geos
 namespace stabilizedSinglePhaseFVMKernels
 {
 
-
-/******************************** FaceBasedAssemblyKernel ********************************/
+/******************************** FluxComputeKernel ********************************/
 
 /**
- * @class FaceBasedAssemblyKernel
+ * @class FluxComputeKernel
  * @tparam NUM_DOF number of degrees of freedom
  * @tparam STENCILWRAPPER the type of the stencil wrapper
  * @brief Define the interface for the assembly kernel in charge of flux terms
  */
 template< integer NUM_EQN, integer NUM_DOF, typename STENCILWRAPPER >
-class FaceBasedAssemblyKernel : public singlePhaseFVMKernels::FaceBasedAssemblyKernel< NUM_EQN, NUM_DOF, STENCILWRAPPER >
+class FluxComputeKernel : public singlePhaseFVMKernels::FluxComputeKernel< NUM_EQN, NUM_DOF, STENCILWRAPPER >
 {
 public:
 
   template< typename VIEWTYPE >
   using ElementViewConst = ElementRegionManager::ElementViewConst< VIEWTYPE >;
 
-  using AbstractBase = singlePhaseFVMKernels::FaceBasedAssemblyKernelBase;
+  using AbstractBase = singlePhaseFVMKernels::FluxComputeKernelBase;
   using DofNumberAccessor = AbstractBase::DofNumberAccessor;
   using SinglePhaseFlowAccessors = AbstractBase::SinglePhaseFlowAccessors;
   using SinglePhaseFluidAccessors = AbstractBase::SinglePhaseFluidAccessors;
@@ -67,7 +66,7 @@ public:
   using AbstractBase::m_gravCoef;
   using AbstractBase::m_pres;
 
-  using Base = singlePhaseFVMKernels::FaceBasedAssemblyKernel< NUM_EQN, NUM_DOF, STENCILWRAPPER >;
+  using Base = singlePhaseFVMKernels::FluxComputeKernel< NUM_EQN, NUM_DOF, STENCILWRAPPER >;
   using Base::numDof;
   using Base::numEqn;
   using Base::maxNumElems;
@@ -92,17 +91,17 @@ public:
    * @param[inout] localMatrix the local CRS matrix
    * @param[inout] localRhs the local right-hand side vector
    */
-  FaceBasedAssemblyKernel( globalIndex const rankOffset,
-                           STENCILWRAPPER const & stencilWrapper,
-                           DofNumberAccessor const & dofNumberAccessor,
-                           SinglePhaseFlowAccessors const & singlePhaseFlowAccessors,
-                           StabSinglePhaseFlowAccessors const & stabSinglePhaseFlowAccessors,
-                           SinglePhaseFluidAccessors const & singlePhaseFluidAccessors,
-                           StabSinglePhaseFluidAccessors const & stabSinglePhaseFluidAccessors,
-                           PermeabilityAccessors const & permeabilityAccessors,
-                           real64 const & dt,
-                           CRSMatrixView< real64, globalIndex const > const & localMatrix,
-                           arrayView1d< real64 > const & localRhs )
+  FluxComputeKernel( globalIndex const rankOffset,
+                     STENCILWRAPPER const & stencilWrapper,
+                     DofNumberAccessor const & dofNumberAccessor,
+                     SinglePhaseFlowAccessors const & singlePhaseFlowAccessors,
+                     StabSinglePhaseFlowAccessors const & stabSinglePhaseFlowAccessors,
+                     SinglePhaseFluidAccessors const & singlePhaseFluidAccessors,
+                     StabSinglePhaseFluidAccessors const & stabSinglePhaseFluidAccessors,
+                     PermeabilityAccessors const & permeabilityAccessors,
+                     real64 const & dt,
+                     CRSMatrixView< real64, globalIndex const > const & localMatrix,
+                     arrayView1d< real64 > const & localRhs )
     : Base( rankOffset,
             stencilWrapper,
             dofNumberAccessor,
@@ -248,9 +247,9 @@ protected:
 };
 
 /**
- * @class FaceBasedAssemblyKernelFactory
+ * @class FluxComputeKernelFactory
  */
-class FaceBasedAssemblyKernelFactory
+class FluxComputeKernelFactory
 {
 public:
 
@@ -286,7 +285,7 @@ public:
       elemManager.constructArrayViewAccessor< globalIndex, 1 >( dofKey );
     dofNumberAccessor.setName( solverName + "/accessors/" + dofKey );
 
-    using KERNEL_TYPE = FaceBasedAssemblyKernel< NUM_EQN, NUM_DOF, STENCILWRAPPER >;
+    using KERNEL_TYPE = FluxComputeKernel< NUM_EQN, NUM_DOF, STENCILWRAPPER >;
     typename KERNEL_TYPE::SinglePhaseFlowAccessors singlePhaseFlowAccessors( elemManager, solverName );
     typename KERNEL_TYPE::SinglePhaseFluidAccessors singlePhaseFluidAccessors( elemManager, solverName );
     typename KERNEL_TYPE::StabSinglePhaseFlowAccessors stabSinglePhaseFlowAccessors( elemManager, solverName );
@@ -306,4 +305,4 @@ public:
 } // namespace geos
 
 
-#endif //GEOS_PHYSICSSOLVERS_FLUIDFLOW_STABILIZEDSINGLEPHASEFVMKERNELS_HPP
+#endif //GEOS_PHYSICSSOLVERS_FLUIDFLOW_SINGLEPHASE_STABILIZEDFLUXCOMPUTEKERNEL_HPP
