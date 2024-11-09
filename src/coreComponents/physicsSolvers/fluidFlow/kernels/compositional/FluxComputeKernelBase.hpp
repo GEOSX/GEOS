@@ -41,7 +41,7 @@ namespace geos
 namespace isothermalCompositionalMultiphaseFVMKernels
 {
 
-enum class FluxComputeKernelFlags
+enum class KernelFlags
 {
   /// Flag to specify whether capillary pressure is used or not
   CapPressure = 1 << 0, // 1
@@ -127,7 +127,7 @@ public:
                          real64 const dt,
                          CRSMatrixView< real64, globalIndex const > const & localMatrix,
                          arrayView1d< real64 > const & localRhs,
-                         BitFlags< FluxComputeKernelFlags > kernelFlags );
+                         BitFlags< KernelFlags > kernelFlags );
 
 protected:
 
@@ -170,7 +170,7 @@ protected:
   /// View on the local RHS
   arrayView1d< real64 > const m_localRhs;
 
-  BitFlags< FluxComputeKernelFlags > const m_kernelFlags;
+  BitFlags< KernelFlags > const m_kernelFlags;
 };
 
 } // namespace isothermalCompositionalMultiphaseFVMKernels

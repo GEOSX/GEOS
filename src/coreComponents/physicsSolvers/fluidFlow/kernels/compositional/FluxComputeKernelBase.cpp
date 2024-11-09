@@ -42,7 +42,7 @@ FluxComputeKernelBase::FluxComputeKernelBase( integer const numPhases,
                                               real64 const dt,
                                               CRSMatrixView< real64, globalIndex const > const & localMatrix,
                                               arrayView1d< real64 > const & localRhs,
-                                              BitFlags< FluxComputeKernelFlags > kernelFlags )
+                                              BitFlags< KernelFlags > kernelFlags )
   : m_numPhases( numPhases ),
   m_rankOffset( rankOffset ),
   m_dt( dt ),

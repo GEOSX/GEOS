@@ -131,7 +131,7 @@ public:
                               real64 const dt,
                               CRSMatrixView< real64, globalIndex const > const & localMatrix,
                               arrayView1d< real64 > const & localRhs,
-                              BitFlags< FluxComputeKernelFlags > kernelFlags )
+                              BitFlags< KernelFlags > kernelFlags )
     : Base( numPhases,
             rankOffset,
             stencilWrapper,
@@ -431,7 +431,7 @@ public:
     using namespace compositionalMultiphaseUtilities;
     using Order = BoundaryStencil::Order;
 
-    if( AbstractBase::m_kernelFlags.isSet( FluxComputeKernelFlags::TotalMassEquation ) )
+    if( AbstractBase::m_kernelFlags.isSet( KernelFlags::TotalMassEquation ) )
     {
       // Apply equation/variable change transformation(s)
       real64 work[numDof]{};
@@ -532,9 +532,9 @@ public:
       dofNumberAccessor.setName( solverName + "/accessors/" + dofKey );
 
       // for now, we neglect capillary pressure in the kernel
-      BitFlags< FluxComputeKernelFlags > kernelFlags;
+      BitFlags< KernelFlags > kernelFlags;
       if( useTotalMassEquation )
-        kernelFlags.set( FluxComputeKernelFlags::TotalMassEquation );
+        kernelFlags.set( KernelFlags::TotalMassEquation );
 
       using kernelType = DirichletFluxComputeKernel< NUM_COMP, NUM_DOF, typename FluidType::KernelWrapper >;
       typename kernelType::CompFlowAccessors compFlowAccessors( elemManager, solverName );

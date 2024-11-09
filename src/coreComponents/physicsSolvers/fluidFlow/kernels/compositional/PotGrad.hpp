@@ -120,6 +120,7 @@ struct PotGrad
       {
         dDensMean_dC[i][jc] = dProp_dC[jc];
       }
+      denom++;
     }
     if( denom > 1 )
     {
