@@ -591,7 +591,7 @@ pullDataFromConduitNode( ArrayOfArrays< T, INDEX_TYPE > & var,
   // copy the values
   localIndex numBytesFromArray =  allocatedSize * sizeof( T );
   GEOS_ERROR_IF_NE( numBytesFromArray, valuesDataType.strided_bytes() );
-  std::memcpy( &var( 0, 0 ), valuesNode.data_ptr(), numBytesFromArray );
+  std::memcpy( const_cast< T * >(varView.getValues()), valuesNode.data_ptr(), numBytesFromArray );
 }
 
 
