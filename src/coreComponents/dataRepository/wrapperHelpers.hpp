@@ -554,11 +554,10 @@ pullDataFromConduitNode( ArrayOfArrays< T, INDEX_TYPE > & var,
   conduit::DataType const & valuesDataType = valuesNode.dtype();
   const INDEX_TYPE valuesSize = valuesDataType.number_of_elements();
 
-  // resize var with estimated sizes
-  if( *numArrays > 0 )
-  {
-    var.resize( *numArrays, valuesSize/(*numArrays) );
-  }
+  // should preallocate var.m_values with estimated sizes
+  INDEX_TYPE const arraySizeEstimate = (*numArrays)==0 ? 0 : valuesSize / (*numArrays);
+  var.resize( *numArrays, arraySizeEstimate );
+  var.reserveValues( valuesSize );
 
   // correctly set the sizes and capacities of each sub-array
   localIndex allocatedSize = 0;
