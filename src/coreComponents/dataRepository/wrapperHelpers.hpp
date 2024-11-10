@@ -555,7 +555,10 @@ pullDataFromConduitNode( ArrayOfArrays< T, INDEX_TYPE > & var,
   const INDEX_TYPE valuesSize = valuesDataType.number_of_elements();
 
   // resize var with estimated sizes
-  var.resize( *numArrays, valuesSize/(*numArrays) );
+  if( *numArrays > 0 )
+  {
+    var.resize( *numArrays, valuesSize/(*numArrays) );
+  }
 
   // correctly set the sizes and capacities of each sub-array
   localIndex allocatedSize = 0;
