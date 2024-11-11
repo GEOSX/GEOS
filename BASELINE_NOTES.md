@@ -10,6 +10,10 @@ PR #3434 (2024-11-09)
 =====================
 Bugfix: Fixed output of ArrayOfArray objects to restart files.
 
+PR #3374 (2024-11-09)
+====================
+Bugfix for gravity treatment in flux for thermal.
+
 PR #3372 (2024-11-09)
 ====================
 Fix a bug related to mass and energy updates for poromechanics.

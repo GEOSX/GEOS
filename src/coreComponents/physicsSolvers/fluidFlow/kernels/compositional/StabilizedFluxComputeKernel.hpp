@@ -14,13 +14,15 @@
  */
 
 /**
- * @file StabilizedCompositionalMultiphaseFVMKernels.hpp
+ * @file StabilizedFluxComputeKernel.hpp
  */
 
-#ifndef GEOS_PHYSICSSOLVERS_FLUIDFLOW_STABILIZEDCOMPOSITIONALMULTIPHASEFVMKERNELS_HPP
-#define GEOS_PHYSICSSOLVERS_FLUIDFLOW_STABILIZEDCOMPOSITIONALMULTIPHASEFVMKERNELS_HPP
+#ifndef GEOS_PHYSICSSOLVERS_FLUIDFLOW_COMPOSITIONAL_STABILIZEDFLUXCOMPUTEKERNEL_HPP
+#define GEOS_PHYSICSSOLVERS_FLUIDFLOW_COMPOSITIONAL_STABILIZEDFLUXCOMPUTEKERNEL_HPP
 
-#include "physicsSolvers/fluidFlow/kernels/compositional/IsothermalCompositionalMultiphaseFVMKernels.hpp"
+#include "physicsSolvers/fluidFlow/kernels/compositional/FluxComputeKernel.hpp"
+#include "constitutive/relativePermeability/RelativePermeabilityBase.hpp"
+#include "constitutive/relativePermeability/RelativePermeabilityFields.hpp"
 
 namespace geos
 {
@@ -28,17 +30,17 @@ namespace geos
 namespace stabilizedCompositionalMultiphaseFVMKernels
 {
 
-/******************************** FaceBasedAssemblyKernel ********************************/
+/******************************** FluxComputeKernel ********************************/
 
 /**
- * @class FaceBasedAssemblyKernel
+ * @class FluxComputeKernel
  * @tparam NUM_COMP number of fluid components
  * @tparam NUM_DOF number of degrees of freedom
  * @tparam STENCILWRAPPER the type of the stencil wrapper
  * @brief Define the interface for the assembly kernel in charge of flux terms
  */
 template< integer NUM_COMP, integer NUM_DOF, typename STENCILWRAPPER >
-class FaceBasedAssemblyKernel : public isothermalCompositionalMultiphaseFVMKernels::FaceBasedAssemblyKernel< NUM_COMP, NUM_DOF, STENCILWRAPPER >
+class FluxComputeKernel : public isothermalCompositionalMultiphaseFVMKernels::FluxComputeKernel< NUM_COMP, NUM_DOF, STENCILWRAPPER >
 {
 public:
 
@@ -51,7 +53,7 @@ public:
   template< typename VIEWTYPE >
   using ElementViewConst = ElementRegionManager::ElementViewConst< VIEWTYPE >;
 
-  using AbstractBase = isothermalCompositionalMultiphaseFVMKernels::FaceBasedAssemblyKernelBase;
+  using AbstractBase = isothermalCompositionalMultiphaseFVMKernels::FluxComputeKernelBase;
   using DofNumberAccessor = AbstractBase::DofNumberAccessor;
   using CompFlowAccessors = AbstractBase::CompFlowAccessors;
   using MultiFluidAccessors = AbstractBase::MultiFluidAccessors;
@@ -82,7 +84,7 @@ public:
   using AbstractBase::m_dCompFrac_dCompDens;
   using AbstractBase::m_pres;
 
-  using Base = isothermalCompositionalMultiphaseFVMKernels::FaceBasedAssemblyKernel< NUM_COMP, NUM_DOF, STENCILWRAPPER >;
+  using Base = isothermalCompositionalMultiphaseFVMKernels::FluxComputeKernel< NUM_COMP, NUM_DOF, STENCILWRAPPER >;
   using Base::numComp;
   using Base::numDof;
   using Base::numEqn;
@@ -115,21 +117,21 @@ public:
    * @param[inout] localRhs the local right-hand side vector
    * @param[in] kernelFlags flags packed together
    */
-  FaceBasedAssemblyKernel( integer const numPhases,
-                           globalIndex const rankOffset,
-                           STENCILWRAPPER const & stencilWrapper,
-                           DofNumberAccessor const & dofNumberAccessor,
-                           CompFlowAccessors const & compFlowAccessors,
-                           StabCompFlowAccessors const & stabCompFlowAccessors,
-                           MultiFluidAccessors const & multiFluidAccessors,
-                           StabMultiFluidAccessors const & stabMultiFluidAccessors,
-                           CapPressureAccessors const & capPressureAccessors,
-                           PermeabilityAccessors const & permeabilityAccessors,
-                           RelPermAccessors const & relPermAccessors,
-                           real64 const & dt,
-                           CRSMatrixView< real64, globalIndex const > const & localMatrix,
-                           arrayView1d< real64 > const & localRhs,
-                           BitFlags< isothermalCompositionalMultiphaseFVMKernels::FaceBasedAssemblyKernelFlags > kernelFlags )
+  FluxComputeKernel( integer const numPhases,
+                     globalIndex const rankOffset,
+                     STENCILWRAPPER const & stencilWrapper,
+                     DofNumberAccessor const & dofNumberAccessor,
+                     CompFlowAccessors const & compFlowAccessors,
+                     StabCompFlowAccessors const & stabCompFlowAccessors,
+                     MultiFluidAccessors const & multiFluidAccessors,
+                     StabMultiFluidAccessors const & stabMultiFluidAccessors,
+                     CapPressureAccessors const & capPressureAccessors,
+                     PermeabilityAccessors const & permeabilityAccessors,
+                     RelPermAccessors const & relPermAccessors,
+                     real64 const & dt,
+                     CRSMatrixView< real64, globalIndex const > const & localMatrix,
+                     arrayView1d< real64 > const & localRhs,
+                     BitFlags< isothermalCompositionalMultiphaseFVMKernels::KernelFlags > kernelFlags )
     : Base( numPhases,
             rankOffset,
             stencilWrapper,
@@ -296,9 +298,9 @@ protected:
 };
 
 /**
- * @class FaceBasedAssemblyKernelFactory
+ * @class FluxComputeKernelFactory
  */
-class FaceBasedAssemblyKernelFactory
+class FluxComputeKernelFactory
 {
 public:
 
@@ -343,13 +345,13 @@ public:
         elemManager.constructArrayViewAccessor< globalIndex, 1 >( dofKey );
       dofNumberAccessor.setName( solverName + "/accessors/" + dofKey );
 
-      BitFlags< isothermalCompositionalMultiphaseFVMKernels::FaceBasedAssemblyKernelFlags > kernelFlags;
+      BitFlags< isothermalCompositionalMultiphaseFVMKernels::KernelFlags > kernelFlags;
       if( hasCapPressure )
-        kernelFlags.set( isothermalCompositionalMultiphaseFVMKernels::FaceBasedAssemblyKernelFlags::CapPressure );
+        kernelFlags.set( isothermalCompositionalMultiphaseFVMKernels::KernelFlags::CapPressure );
       if( useTotalMassEquation )
-        kernelFlags.set( isothermalCompositionalMultiphaseFVMKernels::FaceBasedAssemblyKernelFlags::TotalMassEquation );
+        kernelFlags.set( isothermalCompositionalMultiphaseFVMKernels::KernelFlags::TotalMassEquation );
 
-      using KERNEL_TYPE = FaceBasedAssemblyKernel< NUM_COMP, NUM_DOF, STENCILWRAPPER >;
+      using KERNEL_TYPE = FluxComputeKernel< NUM_COMP, NUM_DOF, STENCILWRAPPER >;
       typename KERNEL_TYPE::CompFlowAccessors compFlowAccessors( elemManager, solverName );
       typename KERNEL_TYPE::MultiFluidAccessors multiFluidAccessors( elemManager, solverName );
       typename KERNEL_TYPE::StabCompFlowAccessors stabCompFlowAccessors( elemManager, solverName );
@@ -372,4 +374,4 @@ public:
 } // namespace geos
 
 
-#endif //GEOS_PHYSICSSOLVERS_FLUIDFLOW_STABILIZEDCOMPOSITIONALMULTIPHASEFVMKERNELS_HPP
+#endif //GEOS_PHYSICSSOLVERS_FLUIDFLOW_COMPOSITIONAL_STABILIZEDFLUXCOMPUTEKERNEL_HPP
