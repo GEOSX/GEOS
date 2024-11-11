@@ -18,7 +18,7 @@
       <NonlinearSolverParameters
         newtonTol="1.0e-5"
         newtonMaxIter="50"
-        lineSearchMaxCuts="10"/>
+	lineSearchAction="None"/>
       <LinearSolverParameters
         directParallel="0"/>
     </Hydrofracture>

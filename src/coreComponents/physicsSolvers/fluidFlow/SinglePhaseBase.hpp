@@ -21,8 +21,8 @@
 #define GEOS_PHYSICSSOLVERS_FLUIDFLOW_SINGLEPHASEBASE_HPP_
 
 #include "physicsSolvers/fluidFlow/FlowSolverBase.hpp"
-#include "physicsSolvers/fluidFlow/kernels/SinglePhaseBaseKernels.hpp"
-#include "physicsSolvers/fluidFlow/kernels/ThermalSinglePhaseBaseKernels.hpp"
+#include "physicsSolvers/fluidFlow/kernels/singlePhase/AccumulationKernels.hpp"
+#include "physicsSolvers/fluidFlow/kernels/singlePhase/ThermalAccumulationKernels.hpp"
 #include "constitutive/fluid/singlefluid/SingleFluidBase.hpp"
 #include "constitutive/solid/CoupledSolidBase.hpp"
 
@@ -441,7 +441,7 @@ void SinglePhaseBase::accumulationAssemblyLaunch( DofManager const & dofManager,
   if( m_isThermal )
   {
     thermalSinglePhaseBaseKernels::
-      ElementBasedAssemblyKernelFactory::
+      AccumulationKernelFactory::
       createAndLaunch< parallelDevicePolicy<> >( dofManager.rankOffset(),
                                                  dofKey,
                                                  subRegion,
@@ -453,7 +453,7 @@ void SinglePhaseBase::accumulationAssemblyLaunch( DofManager const & dofManager,
   else
   {
     singlePhaseBaseKernels::
-      ElementBasedAssemblyKernelFactory::
+      AccumulationKernelFactory::
       createAndLaunch< parallelDevicePolicy<> >( dofManager.rankOffset(),
                                                  dofKey,
                                                  subRegion,
