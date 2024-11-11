@@ -368,7 +368,7 @@ complete( localIndex const k,
                                                                             1 );
   }
 
-// // it only affects the normal jump
+//    // it only affects the normal jump
 
   if( stack.jumpEqnRowIndices[0] >= 0 && stack.jumpEqnRowIndices[0] < m_matrix.numRows() )
   {
