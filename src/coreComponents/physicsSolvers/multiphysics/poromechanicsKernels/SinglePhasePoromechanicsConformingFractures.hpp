@@ -20,8 +20,8 @@
 #ifndef GEOS_PHYSICSSOLVERS_MULTIPHYSICS_POROMECHANICSKERNELS_SINGLEPHASEPOROMECHANICSCONFORMINGFRACTURES_HPP
 #define GEOS_PHYSICSSOLVERS_MULTIPHYSICS_POROMECHANICSKERNELS_SINGLEPHASEPOROMECHANICSCONFORMINGFRACTURES_HPP
 
-#include "physicsSolvers/fluidFlow/kernels/SinglePhaseFVMKernels.hpp"
-#include "physicsSolvers/fluidFlow/kernels/FluxKernelsHelper.hpp"
+#include "physicsSolvers/fluidFlow/kernels/singlePhase/FluxComputeKernel.hpp"
+#include "physicsSolvers/fluidFlow/kernels/singlePhase/FluxKernelsHelper.hpp"
 #include "codingUtilities/Utilities.hpp"
 
 namespace geos
@@ -31,7 +31,7 @@ namespace singlePhasePoromechanicsConformingFracturesKernels
 {
 
 template< integer NUM_EQN, integer NUM_DOF >
-class ConnectorBasedAssemblyKernel : public singlePhaseFVMKernels::FaceBasedAssemblyKernel< NUM_EQN, NUM_DOF, SurfaceElementStencilWrapper >
+class ConnectorBasedAssemblyKernel : public singlePhaseFVMKernels::FluxComputeKernel< NUM_EQN, NUM_DOF, SurfaceElementStencilWrapper >
 {
 public:
 
@@ -44,7 +44,7 @@ public:
   template< typename VIEWTYPE >
   using ElementViewConst = ElementRegionManager::ElementViewConst< VIEWTYPE >;
 
-  using AbstractBase = singlePhaseFVMKernels::FaceBasedAssemblyKernelBase;
+  using AbstractBase = singlePhaseFVMKernels::FluxComputeKernelBase;
   using DofNumberAccessor = AbstractBase::DofNumberAccessor;
   using SinglePhaseFlowAccessors = AbstractBase::SinglePhaseFlowAccessors;
   using SinglePhaseFluidAccessors = AbstractBase::SinglePhaseFluidAccessors;
@@ -64,7 +64,7 @@ public:
   using AbstractBase::m_dens;
   using AbstractBase::m_dDens_dPres;
 
-  using Base = singlePhaseFVMKernels::FaceBasedAssemblyKernel< NUM_EQN, NUM_DOF, SurfaceElementStencilWrapper >;
+  using Base = singlePhaseFVMKernels::FluxComputeKernel< NUM_EQN, NUM_DOF, SurfaceElementStencilWrapper >;
   using Base::numDof;
   using Base::numEqn;
   using Base::maxNumElems;
@@ -191,21 +191,21 @@ public:
         localIndex const subRegionIndex[2] = {m_sesri[iconn][k[0]], m_sesri[iconn][k[1]]};
         localIndex const elementIndex[2]   = {m_sei[iconn][k[0]], m_sei[iconn][k[1]]};
 
-        fluxKernelsHelper::computeSinglePhaseFlux( regionIndex, subRegionIndex, elementIndex,
-                                                   trans,
-                                                   dTrans,
-                                                   m_pres,
-                                                   m_gravCoef,
-                                                   m_dens,
-                                                   m_dDens_dPres,
-                                                   m_mob,
-                                                   m_dMob_dPres,
-                                                   alpha,
-                                                   mobility,
-                                                   potGrad,
-                                                   fluxVal,
-                                                   dFlux_dP,
-                                                   dFlux_dTrans );
+        singlePhaseFluxKernelsHelper::computeSinglePhaseFlux( regionIndex, subRegionIndex, elementIndex,
+                                                              trans,
+                                                              dTrans,
+                                                              m_pres,
+                                                              m_gravCoef,
+                                                              m_dens,
+                                                              m_dDens_dPres,
+                                                              m_mob,
+                                                              m_dMob_dPres,
+                                                              alpha,
+                                                              mobility,
+                                                              potGrad,
+                                                              fluxVal,
+                                                              dFlux_dP,
+                                                              dFlux_dTrans );
 
         // populate local flux vector and derivatives
         stack.localFlux[k[0]* numDof] += m_dt * fluxVal;
@@ -269,7 +269,7 @@ private:
 
 
 /**
- * @class FaceBasedAssemblyKernelFactory
+ * @class ConnectorBasedAssemblyKernelFactory
  */
 class ConnectorBasedAssemblyKernelFactory
 {
