@@ -175,20 +175,6 @@ public:
   virtual void allocateConstitutiveData( dataRepository::Group & parent,
                                          localIndex const numConstitutivePointsPerParentIndex ) override final;
 
-  /**
-   * @brief Const accessor for cohesion
-   * @return A const reference to arrayView1d<real64 const> containing the
-   *         cohesions (at every element).
-   */
-  real64 const & cohesion() const { return m_cohesion; }
-
-  /**
-   * @brief Const accessor for friction angle
-   * @return A const reference to arrayView1d<real64 const> containing the
-   *         friction coefficient (at every element).
-   */
-  real64 const & frictionCoefficient() const { return m_frictionCoefficient; }
-
   /// Type of kernel wrapper for in-kernel update
   using KernelWrapper = CoulombFrictionUpdates;
 
