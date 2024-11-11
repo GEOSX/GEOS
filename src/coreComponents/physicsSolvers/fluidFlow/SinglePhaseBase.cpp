@@ -40,8 +40,15 @@
 #include "mesh/mpiCommunications/CommunicationTools.hpp"
 #include "physicsSolvers/fluidFlow/FlowSolverBaseFields.hpp"
 #include "physicsSolvers/fluidFlow/SinglePhaseBaseFields.hpp"
-#include "physicsSolvers/fluidFlow/kernels/SinglePhaseBaseKernels.hpp"
-#include "physicsSolvers/fluidFlow/kernels/ThermalSinglePhaseBaseKernels.hpp"
+#include "physicsSolvers/fluidFlow/kernels/singlePhase/AccumulationKernels.hpp"
+#include "physicsSolvers/fluidFlow/kernels/singlePhase/ThermalAccumulationKernels.hpp"
+#include "physicsSolvers/fluidFlow/kernels/singlePhase/MobilityKernel.hpp"
+#include "physicsSolvers/fluidFlow/kernels/singlePhase/SolutionCheckKernel.hpp"
+#include "physicsSolvers/fluidFlow/kernels/singlePhase/SolutionScalingKernel.hpp"
+#include "physicsSolvers/fluidFlow/kernels/singlePhase/StatisticsKernel.hpp"
+#include "physicsSolvers/fluidFlow/kernels/singlePhase/HydrostaticPressureKernel.hpp"
+#include "physicsSolvers/fluidFlow/kernels/singlePhase/FluidUpdateKernel.hpp"
+#include "physicsSolvers/fluidFlow/kernels/singlePhase/SolidInternalEnergyUpdateKernel.hpp"
 
 
 namespace geos
@@ -258,7 +265,7 @@ void SinglePhaseBase::updateFluidModel( ObjectManagerBase & dataGroup ) const
   constitutiveUpdatePassThru( fluid, [&]( auto & castedFluid )
   {
     typename TYPEOFREF( castedFluid ) ::KernelWrapper fluidWrapper = castedFluid.createKernelWrapper();
-    thermalSinglePhaseBaseKernels::FluidUpdateKernel::launch( fluidWrapper, pres, temp );
+    singlePhaseBaseKernels::FluidUpdateKernel::launch( fluidWrapper, pres, temp );
   } );
 }
 
@@ -368,16 +375,16 @@ void SinglePhaseBase::updateMobility( ObjectManagerBase & dataGroup ) const
 
     ThermalFluidPropViews thermalFluidProps = getThermalFluidProperties( fluid );
 
-    thermalSinglePhaseBaseKernels::MobilityKernel::launch< parallelDevicePolicy<> >( dataGroup.size(),
-                                                                                     fluidProps.dens,
-                                                                                     fluidProps.dDens_dPres,
-                                                                                     thermalFluidProps.dDens_dTemp,
-                                                                                     fluidProps.visc,
-                                                                                     fluidProps.dVisc_dPres,
-                                                                                     thermalFluidProps.dVisc_dTemp,
-                                                                                     mob,
-                                                                                     dMob_dPres,
-                                                                                     dMob_dTemp );
+    singlePhaseBaseKernels::MobilityKernel::launch< parallelDevicePolicy<> >( dataGroup.size(),
+                                                                              fluidProps.dens,
+                                                                              fluidProps.dDens_dPres,
+                                                                              thermalFluidProps.dDens_dTemp,
+                                                                              fluidProps.visc,
+                                                                              fluidProps.dVisc_dPres,
+                                                                              thermalFluidProps.dVisc_dTemp,
+                                                                              mob,
+                                                                              dMob_dPres,
+                                                                              dMob_dTemp );
   }
   else
   {
@@ -1278,7 +1285,7 @@ real64 SinglePhaseBase::scalingForSystemSolution( DomainPartition & domain,
       arrayView1d< integer const > const ghostRank = subRegion.ghostRank();
 
       auto const subRegionData =
-        singlePhaseBaseKernels::ScalingForSystemSolutionKernel::
+        singlePhaseBaseKernels::SolutionScalingKernel::
           launch< parallelDevicePolicy<> >( localSolution, rankOffset, dofNumber, ghostRank, m_maxAbsolutePresChange );
 
       scalingFactor = std::min( scalingFactor, subRegionData.first );
