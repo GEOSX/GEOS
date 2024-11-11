@@ -24,7 +24,7 @@ namespace geos::vtk
 
 void importEmbeddedFractureNetwork( string const & embeddedSurfaceBlockName,
                                     vtkSmartPointer< vtkDataSet > embeddedSurfaceMesh,
-                                    vtkSmartPointer< vtkDataSet > mesh,
+                                    vtkSmartPointer< vtkDataSet > GEOS_UNUSED_PARAM( mesh ),
                                     CellBlockManager & cellBlockManager )
 {
 

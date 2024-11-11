@@ -134,6 +134,8 @@ public:
    */
   SurfaceSubRegionType subRegionType() const { return m_subRegionType; }
 
+  string const & getFaceBlockName() const { return m_faceBlockName; }
+
   /**
    * @brief Returns the unique sub-region of type @p SUBREGION_TYPE for the current @p SurfaceElementRegion.
    * @tparam SUBREGION_TYPE The type of the sub region we're looking for.
