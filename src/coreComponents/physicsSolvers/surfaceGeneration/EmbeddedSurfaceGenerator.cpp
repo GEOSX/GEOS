@@ -131,8 +131,9 @@ void EmbeddedSurfaceGenerator::initializePostSubGroups()
 
   NewObjectLists newObjects;
 
-  bool bulk_edfm_fill = true;
-  if( bulk_edfm_fill )
+  string const & faceBlockName = embeddedSurfaceRegion.getFaceBlockName();
+
+  if( !faceBlockName.empty() )
   {
 
     CellBlockManagerABC const & cellBlockManager = meshBody.getCellBlockManager();
@@ -141,9 +142,9 @@ void EmbeddedSurfaceGenerator::initializePostSubGroups()
     //Group const & embSurfBlocks = cellBlockManagerConcrete.getEmbeddedSurfaceBlocks();
     Group const & embSurfBlocks = cellBlockManager.getEmbeddedSurfaceBlocks();
     //if( embSurfBlocks.hasGroup( "EmbeddedSurface" ))
-    if( embSurfBlocks.hasGroup( "fracture" ))
+    if( embSurfBlocks.hasGroup( faceBlockName ))
     {
-      EmbeddedSurfaceBlockABC const & embSurf = embSurfBlocks.getGroup< EmbeddedSurfaceBlockABC >( "fracture" );
+      EmbeddedSurfaceBlockABC const & embSurf = embSurfBlocks.getGroup< EmbeddedSurfaceBlockABC >( faceBlockName );
 
 
       elemManager.forElementSubRegionsComplete< CellElementSubRegion >(

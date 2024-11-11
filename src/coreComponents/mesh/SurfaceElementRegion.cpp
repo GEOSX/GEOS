@@ -57,7 +57,7 @@ void SurfaceElementRegion::generateMesh( Group const & faceBlocks )
   if( m_subRegionType == SurfaceSubRegionType::embeddedElement )
   {
     // We just register the subregion copying of data is done at the EmbeddedSurfaceGenerator
-    EmbeddedSurfaceSubRegion & subRegion = elementSubRegions.registerGroup< EmbeddedSurfaceSubRegion >( m_faceBlockName );
+    elementSubRegions.registerGroup< EmbeddedSurfaceSubRegion >( m_faceBlockName );
   }
   else if( m_subRegionType == SurfaceSubRegionType::faceElement )
   {
