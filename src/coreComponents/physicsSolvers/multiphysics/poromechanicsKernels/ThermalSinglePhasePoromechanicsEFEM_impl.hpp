@@ -175,8 +175,8 @@ complete( localIndex const k,
 
   localIndex const embSurfIndex = m_cellsToEmbeddedSurfaces[k][0];
   // Energy balance accumulation
-  real64 const volume        =  m_elementVolumeCell( embSurfIndex ) + m_deltaVolume( embSurfIndex );
-  real64 const volume_n      =  m_elementVolumeCell( embSurfIndex );
+  real64 const volume        =  m_elementVolumeFrac( embSurfIndex ) + m_deltaVolume( embSurfIndex );
+  real64 const volume_n      =  m_elementVolumeFrac( embSurfIndex );
   real64 const fluidEnergy   =  m_fluidDensity( embSurfIndex, 0 ) * m_fluidInternalEnergy( embSurfIndex, 0 ) * volume;
   real64 const fluidEnergy_n =  m_fluidDensity_n( embSurfIndex, 0 ) * m_fluidInternalEnergy_n( embSurfIndex, 0 ) * volume_n;
 
