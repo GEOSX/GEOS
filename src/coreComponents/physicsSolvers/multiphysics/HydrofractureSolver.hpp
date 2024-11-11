@@ -57,6 +57,7 @@ public:
   using Base::flowSolver;
   using Base::solidMechanicsSolver;
   using Base::assembleElementBasedTerms;
+  using Base::resetStateToBeginningOfStep;
 
 
   /**
@@ -130,6 +131,8 @@ public:
   virtual void implicitStepComplete( real64 const & time_n,
                                      real64 const & dt,
                                      DomainPartition & domain ) override final;
+
+  virtual void resetStateToBeginningOfStep( DomainPartition & domain ) override final;
 
   /**@}*/
 

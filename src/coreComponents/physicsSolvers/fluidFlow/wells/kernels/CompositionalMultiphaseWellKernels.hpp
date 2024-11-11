@@ -33,7 +33,10 @@
 #include "physicsSolvers/fluidFlow/CompositionalMultiphaseBaseFields.hpp"
 #include "physicsSolvers/fluidFlow/FlowSolverBaseFields.hpp"
 #include "physicsSolvers/fluidFlow/StencilAccessors.hpp"
-#include "physicsSolvers/fluidFlow/kernels/IsothermalCompositionalMultiphaseBaseKernels.hpp"
+#include "physicsSolvers/fluidFlow/kernels/compositional/AccumulationKernel.hpp"
+#include "physicsSolvers/fluidFlow/kernels/compositional/PropertyKernelBase.hpp"
+#include "physicsSolvers/fluidFlow/kernels/compositional/SolutionScalingKernel.hpp"
+#include "physicsSolvers/fluidFlow/kernels/compositional/SolutionCheckKernel.hpp"
 #include "physicsSolvers/fluidFlow/wells/CompositionalMultiphaseWellFields.hpp"
 #include "physicsSolvers/fluidFlow/wells/WellControls.hpp"
 #include "physicsSolvers/fluidFlow/wells/WellSolverBaseFields.hpp"
@@ -731,12 +734,12 @@ public:
 
 };
 
-/******************************** ScalingForSystemSolutionKernel ********************************/
+/******************************** SolutionScalingKernel ********************************/
 
 /**
- * @class ScalingForSystemSolutionKernelFactory
+ * @class SolutionScalingKernelFactory
  */
-class ScalingForSystemSolutionKernelFactory
+class SolutionScalingKernelFactory
 {
 public:
 
@@ -754,7 +757,7 @@ public:
    * @param[in] localSolution the Newton update
    */
   template< typename POLICY >
-  static isothermalCompositionalMultiphaseBaseKernels::ScalingForSystemSolutionKernel::StackVariables
+  static isothermalCompositionalMultiphaseBaseKernels::SolutionScalingKernel::StackVariables
   createAndLaunch( real64 const maxRelativePresChange,
                    real64 const maxAbsolutePresChange,
                    real64 const maxCompFracChange,
@@ -774,10 +777,10 @@ public:
     arrayView1d< real64 > compDensScalingFactor =
       subRegion.getField< fields::well::globalCompDensityScalingFactor >();
     isothermalCompositionalMultiphaseBaseKernels::
-      ScalingForSystemSolutionKernel kernel( maxRelativePresChange, maxAbsolutePresChange, maxCompFracChange, maxRelativeCompDensChange, rankOffset,
-                                             numComp, dofKey, subRegion, localSolution, pressure, compDens, pressureScalingFactor, compDensScalingFactor );
+      SolutionScalingKernel kernel( maxRelativePresChange, maxAbsolutePresChange, maxCompFracChange, maxRelativeCompDensChange, rankOffset,
+                                    numComp, dofKey, subRegion, localSolution, pressure, compDens, pressureScalingFactor, compDensScalingFactor );
     return isothermalCompositionalMultiphaseBaseKernels::
-             ScalingForSystemSolutionKernel::
+             SolutionScalingKernel::
              launch< POLICY >( subRegion.size(), kernel );
   }
 
@@ -879,7 +882,7 @@ public:
                               constitutive::MultiFluidBase const & fluid,
                               CRSMatrixView< real64, globalIndex const > const & localMatrix,
                               arrayView1d< real64 > const & localRhs,
-                              BitFlags< isothermalCompositionalMultiphaseBaseKernels::ElementBasedAssemblyKernelFlags > const kernelFlags )
+                              BitFlags< isothermalCompositionalMultiphaseBaseKernels::KernelFlags > const kernelFlags )
     : m_numPhases( numPhases ),
     m_isProducer( isProducer ),
     m_rankOffset( rankOffset ),
@@ -1192,7 +1195,7 @@ public:
       }
     }
 
-    if( m_kernelFlags.isSet( isothermalCompositionalMultiphaseBaseKernels::ElementBasedAssemblyKernelFlags::TotalMassEquation ) )
+    if( m_kernelFlags.isSet( isothermalCompositionalMultiphaseBaseKernels::KernelFlags::TotalMassEquation ) )
     {
       // apply equation/variable change transformation to the component mass balance equations
       real64 work[numComp + 1 + IS_THERMAL]{};
@@ -1301,7 +1304,7 @@ protected:
   /// View on the local RHS
   arrayView1d< real64 > const m_localRhs;
 
-  BitFlags< isothermalCompositionalMultiphaseBaseKernels::ElementBasedAssemblyKernelFlags > const m_kernelFlags;
+  BitFlags< isothermalCompositionalMultiphaseBaseKernels::KernelFlags > const m_kernelFlags;
 };
 
 
@@ -1342,9 +1345,9 @@ public:
 
       integer constexpr istherm = IS_THERMAL();
 
-      BitFlags< isothermalCompositionalMultiphaseBaseKernels::ElementBasedAssemblyKernelFlags > kernelFlags;
+      BitFlags< isothermalCompositionalMultiphaseBaseKernels::KernelFlags > kernelFlags;
       if( useTotalMassEquation )
-        kernelFlags.set( isothermalCompositionalMultiphaseBaseKernels::ElementBasedAssemblyKernelFlags::TotalMassEquation );
+        kernelFlags.set( isothermalCompositionalMultiphaseBaseKernels::KernelFlags::TotalMassEquation );
 
       ElementBasedAssemblyKernel< NUM_COMP, istherm >
       kernel( numPhases, isProducer, rankOffset, dofKey, subRegion, fluid, localMatrix, localRhs, kernelFlags );
@@ -1407,7 +1410,7 @@ public:
                            WellElementSubRegion const & subRegion,
                            CRSMatrixView< real64, globalIndex const > const & localMatrix,
                            arrayView1d< real64 > const & localRhs,
-                           BitFlags< isothermalCompositionalMultiphaseBaseKernels::ElementBasedAssemblyKernelFlags > kernelFlags )
+                           BitFlags< isothermalCompositionalMultiphaseBaseKernels::KernelFlags > kernelFlags )
     :
     m_dt( dt ),
     m_rankOffset( rankOffset ),
@@ -1418,7 +1421,7 @@ public:
     m_dWellElemCompFrac_dCompDens ( subRegion.getField< fields::well::dGlobalCompFraction_dGlobalCompDensity >() ),
     m_localMatrix( localMatrix ),
     m_localRhs ( localRhs ),
-    m_useTotalMassEquation ( kernelFlags.isSet( isothermalCompositionalMultiphaseBaseKernels::ElementBasedAssemblyKernelFlags::TotalMassEquation ) ),
+    m_useTotalMassEquation ( kernelFlags.isSet( isothermalCompositionalMultiphaseBaseKernels::KernelFlags::TotalMassEquation ) ),
     m_isProducer ( wellControls.isProducer() ),
     m_injection ( wellControls.getInjectionStream() )
   {}
@@ -1898,9 +1901,9 @@ public:
       integer constexpr NUM_COMP = NC();
 
 
-      BitFlags< isothermalCompositionalMultiphaseBaseKernels::ElementBasedAssemblyKernelFlags > kernelFlags;
+      BitFlags< isothermalCompositionalMultiphaseBaseKernels::KernelFlags > kernelFlags;
       if( useTotalMassEquation )
-        kernelFlags.set( isothermalCompositionalMultiphaseBaseKernels::ElementBasedAssemblyKernelFlags::TotalMassEquation );
+        kernelFlags.set( isothermalCompositionalMultiphaseBaseKernels::KernelFlags::TotalMassEquation );
 
       using kernelType = FaceBasedAssemblyKernel< NUM_COMP, 0 >;
 
