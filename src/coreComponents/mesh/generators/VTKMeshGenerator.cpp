@@ -129,13 +129,11 @@ void VTKMeshGenerator::fillCellBlockManager( CellBlockManager & cellBlockManager
 
   for( auto const & [name, mesh]: m_faceBlockMeshes )
   {
-    //TODO: Ouassim change for experimentation
     vtk::importFractureNetwork( name, mesh, m_vtkMesh, cellBlockManager );
 
   }
   for( auto const & [name, mesh]: m_embeddedSurfaceBlockMeshes )
   {
-    //TODO: Ouassim change for experimentation
     vtk::importEmbeddedFractureNetwork( name, mesh, m_vtkMesh, cellBlockManager );
 
   }
