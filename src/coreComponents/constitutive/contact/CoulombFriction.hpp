@@ -91,7 +91,6 @@ public:
                                     arraySlice1d< real64 const > const & dispJump,
                                     arraySlice1d< real64 const > const & oldDispJump,
                                     arraySlice1d< real64 const > const & tractionVector,
-                                    real64 const pressure,
                                     integer & fractureState ) const override final;
 
   GEOS_HOST_DEVICE
@@ -174,20 +173,6 @@ public:
 
   virtual void allocateConstitutiveData( dataRepository::Group & parent,
                                          localIndex const numConstitutivePointsPerParentIndex ) override final;
-
-  /**
-   * @brief Const accessor for cohesion
-   * @return A const reference to arrayView1d<real64 const> containing the
-   *         cohesions (at every element).
-   */
-  real64 const & cohesion() const { return m_cohesion; }
-
-  /**
-   * @brief Const accessor for friction angle
-   * @return A const reference to arrayView1d<real64 const> containing the
-   *         friction coefficient (at every element).
-   */
-  real64 const & frictionCoefficient() const { return m_frictionCoefficient; }
 
   /// Type of kernel wrapper for in-kernel update
   using KernelWrapper = CoulombFrictionUpdates;
@@ -324,7 +309,6 @@ inline void CoulombFrictionUpdates::updateFractureState( localIndex const k,
                                                          arraySlice1d< real64 const > const & dispJump,
                                                          arraySlice1d< real64 const > const & oldDispJump,
                                                          arraySlice1d< real64 const > const & tractionVector,
-                                                         real64 const pressure,
                                                          integer & fractureState ) const
 {
   using namespace fields::contact;
@@ -343,7 +327,7 @@ inline void CoulombFrictionUpdates::updateFractureState( localIndex const k,
 
     // pressure added to convert to effective traction, biotCoeff = 1 is assumed
     real64 dLimitTau_dNormalTraction;
-    real64 const limitTau = computeLimitTangentialTractionNorm( tractionVector[0] + pressure,
+    real64 const limitTau = computeLimitTangentialTractionNorm( tractionVector[0],
                                                                 dLimitTau_dNormalTraction );
 
     // Yield function (not necessary but makes it clearer)

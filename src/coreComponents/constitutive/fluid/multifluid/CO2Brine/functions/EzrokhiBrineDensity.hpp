@@ -109,7 +109,7 @@ public:
                        string_array const & inputPara,
                        string_array const & componentNames,
                        array1d< real64 > const & componentMolarWeight,
-                       bool const printTable );
+                       TableFunction::OutputOptions const pvtOutputOpts );
 
   virtual ~EzrokhiBrineDensity() override = default;
 

@@ -221,7 +221,7 @@ CO2Solubility::CO2Solubility( string const & name,
                               string_array const & phaseNames,
                               string_array const & componentNames,
                               array1d< real64 > const & componentMolarWeight,
-                              bool const printTable ):
+                              TableFunction::OutputOptions const pvtOutputOpts ):
   FlashModelBase( name,
                   componentNames,
                   componentMolarWeight )
@@ -257,11 +257,9 @@ CO2Solubility::CO2Solubility( string const & name,
 
   std::tie( m_CO2SolubilityTable, m_WaterVapourisationTable ) = makeSolubilityTables( m_modelName, inputParams, solubilityModel );
 
-  if( printTable )
-  {
-    m_CO2SolubilityTable->print( m_CO2SolubilityTable->getName() );
-    m_WaterVapourisationTable->print( m_WaterVapourisationTable->getName() );
-  }
+  m_CO2SolubilityTable->outputPVTTableData( pvtOutputOpts );
+  m_WaterVapourisationTable->outputPVTTableData( pvtOutputOpts );
+
 }
 
 void CO2Solubility::checkTablesParameters( real64 const pressure,

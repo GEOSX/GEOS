@@ -71,6 +71,7 @@ SinglePhasePoromechanicsEFEM( NodeManager const & nodeManager,
   m_disp( nodeManager.getField< fields::solidMechanics::totalDisplacement >() ),
   m_deltaDisp( nodeManager.getField< fields::solidMechanics::incrementalDisplacement >() ),
   m_w( embeddedSurfSubRegion.getField< fields::contact::dispJump >() ),
+  m_effStress( inputConstitutiveType.getEffectiveStress()),
   m_matrixPresDofNumber( elementSubRegion.template getReference< array1d< globalIndex > >( inputFlowDofKey ) ),
   m_fracturePresDofNumber( embeddedSurfSubRegion.template getReference< array1d< globalIndex > >( inputFlowDofKey ) ),
   m_wDofNumber( jumpDofNumber ),
@@ -80,6 +81,7 @@ SinglePhasePoromechanicsEFEM( NodeManager const & nodeManager,
   m_dFluidDensity_dPressure( embeddedSurfSubRegion.template getConstitutiveModel< constitutive::SingleFluidBase >( elementSubRegion.template getReference< string >(
                                                                                                                      fluidModelKey ) ).dDensity_dPressure() ),
   m_matrixPressure( elementSubRegion.template getField< fields::flow::pressure >() ),
+  m_fracturePressure( embeddedSurfSubRegion.template getField< fields::flow::pressure >() ),
   m_porosity_n( inputConstitutiveType.getPorosity_n() ),
   m_tractionVec( embeddedSurfSubRegion.getField< fields::contact::traction >() ),
   m_dTraction_dJump( embeddedSurfSubRegion.getField< fields::contact::dTraction_dJump >() ),
@@ -148,7 +150,6 @@ setup( localIndex const k,
   localIndex const embSurfIndex = m_cellsToEmbeddedSurfaces[k][0];
 
   stack.hInv = m_surfaceArea[embSurfIndex] / m_elementVolumeCell[k];
-
   for( localIndex a=0; a<numNodesPerElem; ++a )
   {
     localIndex const localNodeIndex = m_elemsToNodes( k, a );
@@ -190,6 +191,12 @@ quadraturePointKernel( localIndex const k,
                        FUNC && kernelOp ) const
 {
 
+  // The quarature kernal deals with the fracture force balance (eq. 29 in https://onlinelibrary.wiley.com/doi/epdf/10.1002/nag.3168)
+  // The total stress in matrix: sigma_tau = simga_eff_old + sigma_eff_incr - biot * p_m = sigma_eff_new - biot * p_m
+  // We can either use formulation: sigma_eff_old + stiffness_matrix * incremental_strain - biot * p_m or directly effective_stress_current
+  // - biot * p_m
+  // The latter one is adopted here.
+
   localIndex const embSurfIndex = m_cellsToEmbeddedSurfaces[k][0];
 
   // Get displacement: (i) basis functions (N), (ii) basis function
@@ -203,6 +210,9 @@ quadraturePointKernel( localIndex const k,
 
   // Gauss contribution to Kww, Kwu and Kuw blocks
   real64 Kww_gauss[3][3]{}, Kwu_gauss[3][nUdof]{}, Kuw_gauss[nUdof][3]{}, Kwpm_gauss[3]{};
+
+  // Gauss contirbution to eqMStress which is EqMatrix*effStress, all stresses are in Voigt notation
+  real64 eqMStress_gauss[3]{};
 
   //  Compatibility, equilibrium and strain operators. The compatibility operator is constructed as
   //  a 3 x 6 because it is more convenient for construction purposes (reduces number of local var).
@@ -249,6 +259,8 @@ quadraturePointKernel( localIndex const k,
   LvArray::tensorOps::Rij_eq_AikBkj< 3, nUdof, 6 >( Kwu_gauss, matED, strainMatrix );
   // transp(B)DB
   LvArray::tensorOps::Rij_eq_AikBjk< nUdof, 3, 6 >( Kuw_gauss, matBD, compMatrix );
+  // EqMatrix * effStress
+  LvArray::tensorOps::Ri_eq_AijBj< 3, 6 >( eqMStress_gauss, eqMatrix, m_effStress[k][q] );
 
   LvArray::tensorOps::fill< 3 >( Kwpm_gauss, 0 );
   for( int i=0; i < 3; ++i )
@@ -262,6 +274,7 @@ quadraturePointKernel( localIndex const k,
   LvArray::tensorOps::scaledAdd< 3, 3 >( stack.localKww, Kww_gauss, -detJ );
   LvArray::tensorOps::scaledAdd< 3, nUdof >( stack.localKwu, Kwu_gauss, -detJ );
   LvArray::tensorOps::scaledAdd< nUdof, 3 >( stack.localKuw, Kuw_gauss, -detJ );
+  LvArray::tensorOps::scaledAdd< 3 >( stack.localEqMStress, eqMStress_gauss, -detJ );
 
   /// TODO: should this be negative???
   // I had No neg coz the total stress = effective stress - porePressure
@@ -287,25 +300,30 @@ complete( localIndex const k,
 
   // Compute the local residuals
   LvArray::tensorOps::Ri_add_AijBj< 3, 3 >( stack.localJumpResidual, stack.localKww, stack.wLocal );
-  LvArray::tensorOps::Ri_add_AijBj< 3, nUdof >( stack.localJumpResidual, stack.localKwu, stack.dispLocal );
   LvArray::tensorOps::Ri_add_AijBj< nUdof, 3 >( stack.localDispResidual, stack.localKuw, stack.wLocal );
+  // add EqM * effStress into the residual of enrichment nodes
+  LvArray::tensorOps::add< 3 >( stack.localJumpResidual, stack.localEqMStress );
 
   // add pore pressure contribution
   LvArray::tensorOps::scaledAdd< 3 >( stack.localJumpResidual, stack.localKwpm, m_matrixPressure[ k ] );
 
   localIndex const embSurfIndex = m_cellsToEmbeddedSurfaces[k][0];
 
-  // Add traction contribution tranction
+  // Add total traction contribution from penalty force and fracture pressure
+  // total traction is T_total = -k * dispJump + pf (where dispJump < 0)
+  // -1 is because k*dispJump was saved in tractionVec
   LvArray::tensorOps::scaledAdd< 3 >( stack.localJumpResidual, stack.tractionVec, -1 );
   LvArray::tensorOps::scaledAdd< 3, 3 >( stack.localKww, stack.dTractiondw, -1 );
 
-  // JumpFractureFlowJacobian
-  real64 const localJumpFracPressureJacobian = -m_dTraction_dPressure[embSurfIndex] * m_surfaceArea[embSurfIndex];
+  // fracture pressure only affects normal direction
+  stack.localJumpResidual[0] += m_fracturePressure[embSurfIndex] * m_surfaceArea[embSurfIndex];
+  // fracture force balance residual w.r.t. fracture pressure
+  real64 const localJumpFracPressureJacobian = m_surfaceArea[embSurfIndex];
 
   // Mass balance accumulation
   real64 const newVolume = m_elementVolumeFrac( embSurfIndex ) + m_deltaVolume( embSurfIndex );
-  real64 const newMass =  m_fluidDensity( embSurfIndex, 0 ) * newVolume;
-  real64 const oldMass =  m_fluidDensity_n( embSurfIndex, 0 ) * m_elementVolumeFrac( embSurfIndex );
+  real64 const newMass = m_fluidDensity( embSurfIndex, 0 ) * newVolume;
+  real64 const oldMass = m_fluidDensity_n( embSurfIndex, 0 ) * m_elementVolumeFrac( embSurfIndex );
   real64 const localFlowResidual = ( newMass - oldMass );
   real64 const localFlowJumpJacobian = m_fluidDensity( embSurfIndex, 0 ) * m_surfaceArea[ embSurfIndex ];
   real64 const localFlowFlowJacobian = m_dFluidDensity_dPressure( embSurfIndex, 0 ) * newVolume;
@@ -322,6 +340,7 @@ complete( localIndex const k,
                                                                             stack.jumpColIndices,
                                                                             stack.localKuw[i],
                                                                             3 );
+
   }
 
   for( localIndex i=0; i < 3; ++i )
@@ -349,7 +368,7 @@ complete( localIndex const k,
                                                                             1 );
   }
 
-  // it only affects the normal jump
+//    // it only affects the normal jump
 
   if( stack.jumpEqnRowIndices[0] >= 0 && stack.jumpEqnRowIndices[0] < m_matrix.numRows() )
   {
