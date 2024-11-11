@@ -91,7 +91,6 @@ public:
                                     arraySlice1d< real64 const > const & dispJump,
                                     arraySlice1d< real64 const > const & oldDispJump,
                                     arraySlice1d< real64 const > const & tractionVector,
-                                    real64 const pressure,
                                     integer & fractureState ) const override final;
 
   GEOS_HOST_DEVICE
@@ -310,7 +309,6 @@ inline void CoulombFrictionUpdates::updateFractureState( localIndex const k,
                                                          arraySlice1d< real64 const > const & dispJump,
                                                          arraySlice1d< real64 const > const & oldDispJump,
                                                          arraySlice1d< real64 const > const & tractionVector,
-                                                         real64 const pressure,
                                                          integer & fractureState ) const
 {
   using namespace fields::contact;
@@ -329,7 +327,7 @@ inline void CoulombFrictionUpdates::updateFractureState( localIndex const k,
 
     // pressure added to convert to effective traction, biotCoeff = 1 is assumed
     real64 dLimitTau_dNormalTraction;
-    real64 const limitTau = computeLimitTangentialTractionNorm( tractionVector[0] + pressure,
+    real64 const limitTau = computeLimitTangentialTractionNorm( tractionVector[0],
                                                                 dLimitTau_dNormalTraction );
 
     // Yield function (not necessary but makes it clearer)

@@ -114,7 +114,6 @@ public:
                                       arraySlice1d< real64 const > const & dispJump,
                                       arraySlice1d< real64 const > const & oldDispJump,
                                       arraySlice1d< real64 const > const & tractionVector,
-                                      real64 const pressure,
                                       integer & fractureState ) const override final;
 
     GEOS_HOST_DEVICE
@@ -245,11 +244,10 @@ inline void RateAndStateFriction::KernelWrapper::updateFractureState( localIndex
                                                                       arraySlice1d< real64 const > const & dispJump,
                                                                       arraySlice1d< real64 const > const & oldDispJump,
                                                                       arraySlice1d< real64 const > const & tractionVector,
-                                                                      real64 const pressure,
                                                                       integer & fractureState ) const
 {
 
-  GEOS_UNUSED_VAR( tractionVector, k, oldDispJump, pressure );
+  GEOS_UNUSED_VAR( tractionVector, k, oldDispJump );
   using namespace fields::contact;
 
   if( dispJump[0] >  -m_displacementJumpThreshold )

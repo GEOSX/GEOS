@@ -87,9 +87,8 @@ public:
                                     arraySlice1d< real64 const > const & dispJump,
                                     arraySlice1d< real64 const > const & oldDispJump,
                                     arraySlice1d< real64 const > const & tractionVector,
-                                    real64 const pressure,
                                     integer & fractureState ) const
-  { GEOS_UNUSED_VAR( k, dispJump, oldDispJump, tractionVector, pressure, fractureState ); }
+  { GEOS_UNUSED_VAR( k, dispJump, oldDispJump, tractionVector, fractureState ); }
 
   /**
    * @brief Update the trial traction vector ( return mapping )

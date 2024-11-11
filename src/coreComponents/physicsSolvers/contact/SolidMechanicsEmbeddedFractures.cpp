@@ -35,7 +35,6 @@
 #include "physicsSolvers/contact/SolidMechanicsEFEMKernels.hpp"
 #include "physicsSolvers/contact/SolidMechanicsEFEMStaticCondensationKernels.hpp"
 #include "physicsSolvers/contact/SolidMechanicsEFEMJumpUpdateKernels.hpp"
-#include "physicsSolvers/fluidFlow/FlowSolverBaseFields.hpp" // should not be here
 
 namespace geos
 {
@@ -770,7 +769,6 @@ bool SolidMechanicsEmbeddedFractures::updateConfiguration( DomainPartition & dom
       arrayView2d< real64 const > const & dispJump = subRegion.getField< fields::contact::dispJump >();
       arrayView2d< real64 const > const & oldJump = subRegion.getField< fields::contact::oldDispJump >();
       arrayView2d< real64 const > const & traction = subRegion.getField< fields::contact::traction >();
-      arrayView1d< real64 const > const & pressure = subRegion.template getField< fields::flow::pressure >(); // should not be here
       arrayView1d< integer > const & fractureState = subRegion.getField< fields::contact::fractureState >();
 
       string const & frictionLawName = subRegion.template getReference< string >( viewKeyStruct::frictionLawNameString() );
@@ -788,7 +786,7 @@ bool SolidMechanicsEmbeddedFractures::updateConfiguration( DomainPartition & dom
           if( ghostRank[kfe] < 0 )
           {
             integer const originalFractureState = fractureState[kfe];
-            frictionWrapper.updateFractureState( kfe, dispJump[kfe], oldJump[kfe], traction[kfe], pressure[kfe], fractureState[kfe] );
+            frictionWrapper.updateFractureState( kfe, dispJump[kfe], oldJump[kfe], traction[kfe], fractureState[kfe] );
             checkActiveSetSub.min( compareFractureStates( originalFractureState, fractureState[kfe] ) );
           }
         } );
