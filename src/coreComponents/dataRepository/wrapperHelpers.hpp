@@ -515,11 +515,32 @@ pushDataToConduitNode( ArrayOfArrays< T, INDEX_TYPE > const & var2,
   conduit::DataType const sizesType( conduitTypeInfo< INDEX_TYPE >::id, numArrays );
   node[ "__sizes__" ].set_external( sizesType, const_cast< void * >( static_cast< void const * >( sizes ) ) );
 
-  // Push the data into conduit
+  // **** WARNING: alters the uninitialized values in the ArrayOfArrays ****
+  T const * const values = var.getValues();
+  std::vector< T > valuesCopy( values, values + offsets[numArrays] );
+  for( INDEX_TYPE i = 0; i < numArrays; ++i )
+  {
+    INDEX_TYPE const curOffset = offsets[ i ];
+    INDEX_TYPE const nextOffset = offsets[ i + 1 ];
+    for( INDEX_TYPE j = curOffset + var.sizeOfArray( i ); j < nextOffset; ++j )
+    {
+      if constexpr ( std::is_arithmetic< T >::value )
+      {
+        valuesCopy[ j ] = 0;
+      }
+      else
+      {
+        valuesCopy[ j ] = T();
+      }
+    }
+  }
+
   constexpr int conduitTypeID = conduitTypeInfo< T >::id;
   constexpr int sizeofConduitType = conduitTypeInfo< T >::sizeOfConduitType;
   conduit::DataType const dtype( conduitTypeID, offsets[numArrays] * sizeof( T ) / sizeofConduitType );
-  void * const ptr = const_cast< void * >( static_cast< void const * >( var.getValues() ) );
+
+  // Push the data into conduit
+  void * const ptr = valuesCopy.data();
   node[ "__values__" ].set_external( dtype, ptr );
 }
 
