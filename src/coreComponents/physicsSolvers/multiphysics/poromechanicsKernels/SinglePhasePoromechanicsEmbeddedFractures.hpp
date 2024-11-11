@@ -239,7 +239,7 @@ private:
 
 
 /**
- * @class FaceBasedAssemblyKernelFactory
+ * @class ConnectorBasedAssemblyKernelFactory
  */
 class ConnectorBasedAssemblyKernelFactory
 {

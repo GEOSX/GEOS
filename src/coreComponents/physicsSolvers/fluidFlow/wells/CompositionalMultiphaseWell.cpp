@@ -42,9 +42,16 @@
 #include "physicsSolvers/fluidFlow/wells/kernels/CompositionalMultiphaseWellKernels.hpp"
 #include "physicsSolvers/fluidFlow/wells/kernels/ThermalCompositionalMultiphaseWellKernels.hpp"
 #include "physicsSolvers/fluidFlow/wells/kernels/PerforationFluxKernels.hpp"
-#include "physicsSolvers/fluidFlow/kernels/compositional/IsothermalCompositionalMultiphaseBaseKernels.hpp"
-#include "physicsSolvers/fluidFlow/kernels/compositional/ThermalCompositionalMultiphaseBaseKernels.hpp"
-#include "physicsSolvers/fluidFlow/wells/LogLevelsInfo.hpp"
+#include "physicsSolvers/fluidFlow/kernels/compositional/AccumulationKernel.hpp"
+#include "physicsSolvers/fluidFlow/kernels/compositional/ThermalAccumulationKernel.hpp"
+#include "physicsSolvers/fluidFlow/kernels/compositional/SolutionScalingKernel.hpp"
+#include "physicsSolvers/fluidFlow/kernels/compositional/ThermalSolutionScalingKernel.hpp"
+#include "physicsSolvers/fluidFlow/kernels/compositional/SolutionCheckKernel.hpp"
+#include "physicsSolvers/fluidFlow/kernels/compositional/ThermalSolutionCheckKernel.hpp"
+#include "physicsSolvers/fluidFlow/kernels/compositional/GlobalComponentFractionKernel.hpp"
+#include "physicsSolvers/fluidFlow/kernels/compositional/PhaseVolumeFractionKernel.hpp"
+#include "physicsSolvers/fluidFlow/kernels/compositional/ThermalPhaseVolumeFractionKernel.hpp"
+#include "physicsSolvers/fluidFlow/kernels/compositional/FluidUpdateKernel.hpp"
 
 #if defined( __INTEL_COMPILER )
 #pragma GCC optimize "O0"
@@ -1386,7 +1393,7 @@ CompositionalMultiphaseWell::scalingForSystemSolution( DomainPartition & domain,
       auto const subRegionData =
         m_isThermal
   ? thermalCompositionalMultiphaseBaseKernels::
-          ScalingForSystemSolutionKernelFactory::
+          SolutionScalingKernelFactory::
           createAndLaunch< parallelDevicePolicy<> >( m_maxRelativePresChange,
                                                      m_maxAbsolutePresChange,
                                                      m_maxRelativeTempChange,
@@ -1405,7 +1412,7 @@ CompositionalMultiphaseWell::scalingForSystemSolution( DomainPartition & domain,
                                                      localSolution,
                                                      temperatureOffset )
   : isothermalCompositionalMultiphaseBaseKernels::
-          ScalingForSystemSolutionKernelFactory::
+          SolutionScalingKernelFactory::
           createAndLaunch< parallelDevicePolicy<> >( m_maxRelativePresChange,
                                                      m_maxAbsolutePresChange,
                                                      m_maxCompFracChange,
