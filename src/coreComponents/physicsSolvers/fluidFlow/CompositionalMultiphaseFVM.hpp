@@ -73,7 +73,7 @@ public:
    */
   static string catalogName() { return "CompositionalMultiphaseFVM"; }
   /**
-   * @copydoc SolverBase::getCatalogName()
+   * @copydoc PhysicsSolverBase::getCatalogName()
    */
   string getCatalogName() const override { return catalogName(); }
 //END_SPHINX_INCLUDE_01

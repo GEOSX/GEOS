@@ -1,0 +1,167 @@
+<?xml version="1.0" ?>
+
+<Problem>
+  <Included>
+    <File name="./ThermoPoroPlastic_consolidation_base.xml" />
+  </Included>
+
+  <Constitutive>
+    <PorousExtendedDruckerPrager
+      name="rock"
+      solidModelName="rockSolid"
+      porosityModelName="rockPorosity"
+      permeabilityModelName="rockPerm"
+      solidInternalEnergyModelName="rockInternalEnergy"
+    />
+
+    <ExtendedDruckerPrager 
+      name="rockSolid"
+      defaultDensity="2700"
+      defaultBulkModulus="0.5e9"
+      defaultShearModulus="0.3e9"
+      defaultCohesion="0.1e6"
+      defaultInitialFrictionAngle="15.27"
+      defaultResidualFrictionAngle="23.05"
+      defaultDilationRatio="1.0"
+      defaultHardening="0.01"
+      defaultDrainedLinearTEC="3e-7"/> 
+ 
+    <BiotPorosity
+      name="rockPorosity"
+      defaultGrainBulkModulus="1.0e27"
+      defaultReferencePorosity="0.2"
+      defaultPorosityTEC="3e-7"/>   
+        
+    <SolidInternalEnergy
+      name="rockInternalEnergy"
+      referenceVolumetricHeatCapacity="1.672e5"
+      referenceTemperature="0.0"
+      referenceInternalEnergy="0.0"/>     
+              
+    <ThermalCompressibleSinglePhaseFluid
+      name="water"
+      defaultDensity="1000"
+      defaultViscosity="1e-3"
+      referencePressure="0.0"
+      referenceTemperature="0.0"
+      compressibility="0.0"
+      thermalExpansionCoeff="0.0"
+      viscosibility="0.0"
+      specificHeatCapacity="1.672e2"
+      referenceInternalEnergy="0.001"/>            
+    
+    <ConstantPermeability
+      name="rockPerm"
+      permeabilityComponents="{ 4.0e-9, 4.0e-9, 4.0e-9 }"/>
+    
+    <SinglePhaseThermalConductivity
+      name="thermalCond"
+      defaultThermalConductivityComponents="{ 836, 836, 836 }"/>    
+  </Constitutive>
+
+  <Mesh>
+    <InternalMesh
+      name="mesh1"
+      elementTypes="{ C3D8 }"
+      xCoords="{ 0, 1 }"
+      yCoords="{ 0, 7 }"
+      zCoords="{ 0, 1 }"
+      nx="{ 1 }"
+      ny="{ 14 }"
+      nz="{ 1 }"
+      cellBlockNames="{ cb1 }"/>
+  </Mesh>
+
+  <Events
+    maxTime="100001"> 
+
+    <PeriodicEvent
+      name="output"
+      timeFrequency="10000"
+      target="/Outputs/thermoPoroVTKOutput"/>
+
+    <PeriodicEvent
+      name="pressureHistoryCollection"
+      beginTime="10001"
+      endTime="100001"
+      targetExactTimestep="0"
+      timeFrequency="10000"
+      target="/Tasks/pressureCollection"/>
+    <PeriodicEvent
+      name="pressureTimeHistoryOutput"
+      beginTime="10001"
+      endTime="100001"
+      targetExactTimestep="0"      
+      timeFrequency="10000"
+      target="/Outputs/pressureHistoryOutput"/>
+    <PeriodicEvent
+      name="temperatureHistoryCollection"
+      beginTime="10001"
+      endTime="100001"
+      targetExactTimestep="0"      
+      timeFrequency="10000"
+      target="/Tasks/temperatureCollection"/>
+    <PeriodicEvent
+      name="temperatureTimeHistoryOutput"
+      beginTime="10001"
+      endTime="100001"
+      targetExactTimestep="0"      
+      timeFrequency="10000"
+      target="/Outputs/temperatureHistoryOutput"/>
+    <PeriodicEvent
+      name="displacementHistoryCollection"
+      beginTime="10001"
+      endTime="100001"
+      targetExactTimestep="0"      
+      timeFrequency="10000"
+      target="/Tasks/displacementCollection"/>
+    <PeriodicEvent
+      name="displacementTimeHistoryOutput"
+      beginTime="10001"
+      endTime="100001"
+      targetExactTimestep="0"      
+      timeFrequency="10000"
+      target="/Outputs/displacementHistoryOutput"/>
+    
+    <PeriodicEvent
+      name="solverApplication0"
+      endTime="1e-2"
+      forceDt="1e-2"
+      target="/Solvers/thermoPoroSolver"/>
+
+    <PeriodicEvent
+      name="solverApplication1"
+      beginTime="1e-2"
+      endTime="1"
+      forceDt="0.99"
+      target="/Solvers/thermoPoroSolver"/>
+
+    <PeriodicEvent
+      name="solverApplication2"
+      beginTime="1"
+      endTime="1001"
+      forceDt="2"
+      target="/Solvers/thermoPoroSolver"/>
+
+    <PeriodicEvent
+      name="solverApplication3"
+      beginTime="1001"
+      endTime="10001"
+      forceDt="100"
+      target="/Solvers/thermoPoroSolver"/>
+
+    <PeriodicEvent
+      name="solverApplication4"
+      beginTime="10001"
+      endTime="100001"
+      forceDt="1000"
+      target="/Solvers/thermoPoroSolver"/>
+
+    <PeriodicEvent
+      name="restarts"
+      timeFrequency="5e4"
+      target="/Outputs/restartOutput"/>
+    
+  </Events>
+
+</Problem>
