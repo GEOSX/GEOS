@@ -11,8 +11,7 @@ PIP_CMD="pip --disable-pip-version-check"
 PACKAGE_BRANCH=main
 
 
-declare -a TARGET_PACKAGES=("geos-mesh-tools"
-                            "geos-mesh-doctor"
+declare -a TARGET_PACKAGES=("geos-mesh"
                             "geos-xml-tools"
                             "hdf5-wrapper"
                             "pygeos-tools"
