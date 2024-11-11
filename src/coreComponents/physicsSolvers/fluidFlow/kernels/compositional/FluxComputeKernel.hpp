@@ -103,7 +103,7 @@ public:
                      real64 const dt,
                      CRSMatrixView< real64, globalIndex const > const & localMatrix,
                      arrayView1d< real64 > const & localRhs,
-                     BitFlags< FluxComputeKernelFlags > kernelFlags )
+                     BitFlags< KernelFlags > kernelFlags )
     : FluxComputeKernelBase( numPhases,
                              rankOffset,
                              dofNumberAccessor,
@@ -272,12 +272,12 @@ public:
           real64 dPhaseFlux_dP[numFluxSupportPoints]{};
           real64 dPhaseFlux_dC[numFluxSupportPoints][numComp]{};
 
-          if( m_kernelFlags.isSet( FluxComputeKernelFlags::C1PPU ) )
+          if( m_kernelFlags.isSet( KernelFlags::C1PPU ) )
           {
             C1PPUPhaseFlux::compute< numComp, numFluxSupportPoints >
               ( m_numPhases,
               ip,
-              m_kernelFlags.isSet( FluxComputeKernelFlags::CapPressure ),
+              m_kernelFlags.isSet( KernelFlags::CapPressure ),
               seri, sesri, sei,
               trans,
               dTrans_dPres,
@@ -293,12 +293,12 @@ public:
               dPhaseFlux_dP,
               dPhaseFlux_dC );
           }
-          else if( m_kernelFlags.isSet( FluxComputeKernelFlags::IHU ) )
+          else if( m_kernelFlags.isSet( KernelFlags::IHU ) )
           {
             IHUPhaseFlux::compute< numComp, numFluxSupportPoints >
               ( m_numPhases,
               ip,
-              m_kernelFlags.isSet( FluxComputeKernelFlags::CapPressure ),
+              m_kernelFlags.isSet( KernelFlags::CapPressure ),
               seri, sesri, sei,
               trans,
               dTrans_dPres,
@@ -314,12 +314,12 @@ public:
               dPhaseFlux_dP,
               dPhaseFlux_dC );
           }
-          else if( m_kernelFlags.isSet( FluxComputeKernelFlags::HU2PH ) )
+          else if( m_kernelFlags.isSet( KernelFlags::HU2PH ) )
           {
             HU2PhaseFlux::compute< numComp, numFluxSupportPoints >
               ( m_numPhases,
               ip,
-              m_kernelFlags.isSet( FluxComputeKernelFlags::CapPressure ),
+              m_kernelFlags.isSet( KernelFlags::CapPressure ),
               seri, sesri, sei,
               trans,
               dTrans_dPres,
@@ -340,7 +340,7 @@ public:
             PPUPhaseFlux::compute< numComp, numFluxSupportPoints >
               ( m_numPhases,
               ip,
-              m_kernelFlags.isSet( FluxComputeKernelFlags::CapPressure ),
+              m_kernelFlags.isSet( KernelFlags::CapPressure ),
               seri, sesri, sei,
               trans,
               dTrans_dPres,
@@ -415,7 +415,7 @@ public:
   {
     using namespace compositionalMultiphaseUtilities;
 
-    if( m_kernelFlags.isSet( FluxComputeKernelFlags::TotalMassEquation ) )
+    if( m_kernelFlags.isSet( KernelFlags::TotalMassEquation ) )
     {
       // Apply equation/variable change transformation(s)
       stackArray1d< real64, maxStencilSize * numDof > work( stack.stencilSize * numDof );
@@ -556,18 +556,17 @@ public:
         elemManager.constructArrayViewAccessor< globalIndex, 1 >( dofKey );
       dofNumberAccessor.setName( solverName + "/accessors/" + dofKey );
 
-      BitFlags< FluxComputeKernelFlags > kernelFlags;
+      BitFlags< KernelFlags > kernelFlags;
       if( hasCapPressure )
-        kernelFlags.set( FluxComputeKernelFlags::CapPressure );
+        kernelFlags.set( KernelFlags::CapPressure );
       if( useTotalMassEquation )
-        kernelFlags.set( FluxComputeKernelFlags::TotalMassEquation );
+        kernelFlags.set( KernelFlags::TotalMassEquation );
       if( upwindingParams.upwindingScheme == UpwindingScheme::C1PPU &&
           isothermalCompositionalMultiphaseFVMKernelUtilities::epsC1PPU > 0 )
-        kernelFlags.set( FluxComputeKernelFlags::C1PPU );
+        kernelFlags.set( KernelFlags::C1PPU );
       else if( upwindingParams.upwindingScheme == UpwindingScheme::IHU )
-        kernelFlags.set( FluxComputeKernelFlags::IHU );
-      else if( upwindingParams.upwindingScheme == UpwindingScheme::HU2PH )
-        kernelFlags.set( FluxComputeKernelFlags::HU2PH );
+        kernelFlags.set( KernelFlags::IHU );
+
 
       using kernelType = FluxComputeKernel< NUM_COMP, NUM_DOF, STENCILWRAPPER >;
       typename kernelType::CompFlowAccessors compFlowAccessors( elemManager, solverName );

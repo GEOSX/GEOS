@@ -135,7 +135,7 @@ public:
                      real64 const dt,
                      CRSMatrixView< real64, globalIndex const > const & localMatrix,
                      arrayView1d< real64 > const & localRhs,
-                     BitFlags< isothermalCompositionalMultiphaseFVMKernels::FluxComputeKernelFlags > kernelFlags )
+                     BitFlags< isothermalCompositionalMultiphaseFVMKernels::KernelFlags > kernelFlags )
     : Base( numPhases,
             rankOffset,
             stencilWrapper,
@@ -265,7 +265,7 @@ public:
 
         // Step 2.1: compute derivative of capillary pressure wrt temperature
         real64 dCapPressure_dT = 0.0;
-        if( AbstractBase::m_kernelFlags.isSet( isothermalCompositionalMultiphaseFVMKernels::FluxComputeKernelFlags::CapPressure ) )
+        if( AbstractBase::m_kernelFlags.isSet( isothermalCompositionalMultiphaseFVMKernels::KernelFlags::CapPressure ) )
         {
           for( integer jp = 0; jp < m_numPhases; ++jp )
           {
@@ -540,11 +540,11 @@ public:
         elemManager.constructArrayViewAccessor< globalIndex, 1 >( dofKey );
       dofNumberAccessor.setName( solverName + "/accessors/" + dofKey );
 
-      BitFlags< isothermalCompositionalMultiphaseFVMKernels::FluxComputeKernelFlags > kernelFlags;
+      BitFlags< isothermalCompositionalMultiphaseFVMKernels::KernelFlags > kernelFlags;
       if( hasCapPressure )
-        kernelFlags.set( isothermalCompositionalMultiphaseFVMKernels::FluxComputeKernelFlags::CapPressure );
+        kernelFlags.set( isothermalCompositionalMultiphaseFVMKernels::KernelFlags::CapPressure );
       if( useTotalMassEquation )
-        kernelFlags.set( isothermalCompositionalMultiphaseFVMKernels::FluxComputeKernelFlags::TotalMassEquation );
+        kernelFlags.set( isothermalCompositionalMultiphaseFVMKernels::KernelFlags::TotalMassEquation );
 
       using KernelType = FluxComputeKernel< NUM_COMP, NUM_DOF, STENCILWRAPPER >;
       typename KernelType::CompFlowAccessors compFlowAccessors( elemManager, solverName );

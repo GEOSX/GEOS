@@ -122,7 +122,7 @@ public:
                                         real64 const dt,
                                         CRSMatrixView< real64, globalIndex const > const & localMatrix,
                                         arrayView1d< real64 > const & localRhs,
-                                        BitFlags< FluxComputeKernelFlags > kernelFlags )
+                                        BitFlags< KernelFlags > kernelFlags )
     : FluxComputeKernelBase( numPhases,
                              rankOffset,
                              dofNumberAccessor,
@@ -593,7 +593,7 @@ public:
   {
     using namespace compositionalMultiphaseUtilities;
 
-    if( m_kernelFlags.isSet( FluxComputeKernelFlags::TotalMassEquation ) )
+    if( m_kernelFlags.isSet( KernelFlags::TotalMassEquation ) )
     {
       // Apply equation/variable change transformation(s)
       stackArray1d< real64, maxStencilSize * numDof > work( stack.stencilSize * numDof );
@@ -745,9 +745,9 @@ public:
         elemManager.constructArrayViewAccessor< globalIndex, 1 >( dofKey );
       dofNumberAccessor.setName( solverName + "/accessors/" + dofKey );
 
-      BitFlags< FluxComputeKernelFlags > kernelFlags;
+      BitFlags< KernelFlags > kernelFlags;
       if( useTotalMassEquation )
-        kernelFlags.set( FluxComputeKernelFlags::TotalMassEquation );
+        kernelFlags.set( KernelFlags::TotalMassEquation );
 
       using kernelType = DiffusionDispersionFluxComputeKernel< NUM_COMP, NUM_DOF, STENCILWRAPPER >;
       typename kernelType::CompFlowAccessors compFlowAccessors( elemManager, solverName );

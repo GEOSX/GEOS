@@ -1631,7 +1631,7 @@ struct IHUPhaseFlux
       }
  */
 
-      // new more correct:
+      // new correct way:
       // choose upstream cell
       localIndex const k_up = (phaseFlux >= 0) ? 0 : 1;
       // accumulate into total mobility
