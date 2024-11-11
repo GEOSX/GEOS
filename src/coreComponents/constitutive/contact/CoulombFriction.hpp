@@ -265,6 +265,8 @@ inline void CoulombFrictionUpdates::computeShearTraction( localIndex const k,
       real64 dLimitTau_dNormalTraction;
       real64 const limitTau = computeLimitTangentialTractionNorm( tractionVector[0],
                                                                   dLimitTau_dNormalTraction );
+      // dLimitTau_dNormalTraction from the function above has a wrong sign, flip it
+      dLimitTau_dNormalTraction = -dLimitTau_dNormalTraction;
 
       real64 const slipNorm = LvArray::tensorOps::l2Norm< 2 >( slip );
 
@@ -274,10 +276,10 @@ inline void CoulombFrictionUpdates::computeShearTraction( localIndex const k,
 
       dTractionVector_dJump[1][0] = dTractionVector_dJump[0][0] * dLimitTau_dNormalTraction * slip[0] / slipNorm;
       dTractionVector_dJump[1][1] = limitTau * pow( slip[1], 2 )  / pow( LvArray::tensorOps::l2NormSquared< 2 >( slip ), 1.5 );
-      dTractionVector_dJump[1][2] = limitTau * slip[0] * slip[1] / pow( LvArray::tensorOps::l2NormSquared< 2 >( slip ), 1.5 );
+      dTractionVector_dJump[1][2] = -limitTau * slip[0] * slip[1] / pow( LvArray::tensorOps::l2NormSquared< 2 >( slip ), 1.5 );
 
       dTractionVector_dJump[2][0] = dTractionVector_dJump[0][0] * dLimitTau_dNormalTraction * slip[1] / slipNorm;
-      dTractionVector_dJump[2][1] = limitTau * slip[0] * slip[1] / pow( LvArray::tensorOps::l2NormSquared< 2 >( slip ), 1.5 );
+      dTractionVector_dJump[2][1] = -limitTau * slip[0] * slip[1] / pow( LvArray::tensorOps::l2NormSquared< 2 >( slip ), 1.5 );
       dTractionVector_dJump[2][2] = limitTau * pow( slip[0], 2 )  / pow( LvArray::tensorOps::l2NormSquared< 2 >( slip ), 1.5 );
 
       // Compute elastic component of the slip for this case

@@ -278,7 +278,9 @@ protected:
 
   arrayView1d< real64 const > const m_surfaceArea;
 
-  arrayView1d< real64 const > const m_elementVolume;
+  arrayView1d< real64 const > const m_elementVolumeCell;
+
+  arrayView1d< real64 const > const m_elementVolumeFrac;
 
   arrayView1d< real64 const > const m_deltaVolume;
 
