@@ -150,7 +150,6 @@ setup( localIndex const k,
   localIndex const embSurfIndex = m_cellsToEmbeddedSurfaces[k][0];
 
   stack.hInv = m_surfaceArea[embSurfIndex] / m_elementVolumeCell[k];
-
   for( localIndex a=0; a<numNodesPerElem; ++a )
   {
     localIndex const localNodeIndex = m_elemsToNodes( k, a );
@@ -341,6 +340,7 @@ complete( localIndex const k,
                                                                             stack.jumpColIndices,
                                                                             stack.localKuw[i],
                                                                             3 );
+
   }
 
   for( localIndex i=0; i < 3; ++i )
@@ -368,7 +368,7 @@ complete( localIndex const k,
                                                                             1 );
   }
 
-  // it only affects the normal jump
+// // it only affects the normal jump
 
   if( stack.jumpEqnRowIndices[0] >= 0 && stack.jumpEqnRowIndices[0] < m_matrix.numRows() )
   {
