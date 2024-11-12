@@ -9,7 +9,7 @@
     <MultiphasePoromechanicsConformingFractures
       name="poroFractureSolver"
       targetRegions="{ Region, Fault }" 
-      initialDt="1e-3"
+      initialDt="1e5"
       flowSolverName="flowSolver"
       solidSolverName="fractureMechSolver"
       logLevel="1">
@@ -90,14 +90,14 @@
   </Geometry>
 
   <Events
-    minTime="-1"
-    maxTime="1.0e6">
+    minTime="-1e5"
+    maxTime="1.0e7">
 
     <!-- Initialization -->
     <SoloEvent 
       name="poroelasticityPreEquilibrationStep" 
-      targetTime="-1" 
-      beginTime="-1" 
+      targetTime="-1e5" 
+      beginTime="-1e5" 
       target="/Tasks/poroelasticityPreEquilibrationStep"
     />
     <!-- Injection -->
@@ -110,19 +110,20 @@
     <PeriodicEvent
       name="outputs"
       beginTime="0.0"
-      endTime="1.0e6"
-      forceDt="0.5e5"
+      endTime="1.0e7"
+      timeFrequency="1e5"
       target="/Outputs/vtkOutput"/>
 
     <PeriodicEvent
       name="solverApplication"
-      endTime="1.0e6"
-      forceDt="0.5e5"
+      endTime="1.0e7"
+      maxEventDt="1e5"
       target="/Solvers/poroFractureSolver"/>
 
     <PeriodicEvent
       name="restarts"
       beginTime="0.0"
+      timeFrequency="1e5"
       endTime="1.0e6"
       target="/Outputs/restartOutput"/>
   </Events>

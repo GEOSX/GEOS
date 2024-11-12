@@ -156,7 +156,6 @@ void MultiphasePoromechanicsConformingFractures< FLOW_SOLVER >::assembleSystem( 
                                      localMatrix,
                                      localRhs );
 
-// TODO
   // Assemble fluxes 3D/2D and get dFluidResidualDAperture
   this->flowSolver()->assembleHydrofracFluxTerms( time_n,
                                                   dt,
@@ -239,14 +238,16 @@ setUpDflux_dApertureMatrix( DomainPartition & domain,
     std::unique_ptr< CRSMatrix< real64, localIndex > > & derivativeFluxResidual_dAperture = this->getRefDerivativeFluxResidual_dAperture();
 
     {
+      // calculate number of fracture elements
       localIndex numRows = 0;
       mesh.getElemManager().forElementSubRegions< FaceElementSubRegion >( regionNames,
                                                                           [&]( localIndex const, FaceElementSubRegion const & subRegion )
       {
         numRows += subRegion.size();
       } );
-      // TODO
+      // number of columns (derivatives) = number of fracture elements
       localIndex numCol = numRows;
+      // number of rows (equations) = number of fracture elements * number of components
       numRows *= numComp;
 
       derivativeFluxResidual_dAperture = std::make_unique< CRSMatrix< real64, localIndex > >( numRows, numCol );
@@ -283,7 +284,6 @@ setUpDflux_dApertureMatrix( DomainPartition & domain,
           {
             for( integer ic = 0; ic < numComp; ic++ )
             {
-              // TODO
               derivativeFluxResidual_dAperture->insertNonZero( sei[iconn][k0] * numComp + ic, sei[iconn][k1], 0.0 );
             }
           }
@@ -605,7 +605,6 @@ assembleFluidMassResidualDerivativeWrtDisplacement( MeshLevel const & mesh,
     arrayView1d< globalIndex const > const & flowDofNumber = subRegion.getReference< array1d< globalIndex > >( flowDofKey );
 
     ArrayOfArraysView< localIndex const > const & elemsToFaces = subRegion.faceList().toViewConst();
-    // TODO uncomment and fix build
     arrayView1d< real64 const > const & area = subRegion.getElementArea().toViewConst();
 
     arrayView1d< integer const > const & fractureState = subRegion.getField< fields::contact::fractureState >();
@@ -677,7 +676,6 @@ assembleFluidMassResidualDerivativeWrtDisplacement( MeshLevel const & mesh,
         }
       }
 
-      // TODO
       // flux derivative
       bool skipAssembly = true;
       for( integer ic = 0; ic < numComp; ic++ )
@@ -691,7 +689,6 @@ assembleFluidMassResidualDerivativeWrtDisplacement( MeshLevel const & mesh,
 
         for( localIndex kfe1 = 0; kfe1 < numColumns; ++kfe1 )
         {
-          // TODO uncomment and fix build
           real64 const dR_dAper = values[kfe1];
           localIndex const kfe2 = columns[kfe1];
 
@@ -718,7 +715,6 @@ assembleFluidMassResidualDerivativeWrtDisplacement( MeshLevel const & mesh,
               {
                 nodeDOF[ kf*3*numNodesPerFace + 3*a+i ] = dispDofNumber[faceToNodeMap( elemsToFaces[kfe2][kf], a )]
                                                           + LvArray::integerConversion< globalIndex >( i );
-                // TODO uncomment and fix build
                 real64 const dAper_dU = -pow( -1, kf ) * Nbar[i] * ( nodalArea[a] / area[kfe2] );
                 dRdU[ ic ][ kf*3*numNodesPerFace + 3*a + i ] = dR_dAper * dAper_dU;
               }
