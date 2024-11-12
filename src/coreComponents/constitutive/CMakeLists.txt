@@ -172,7 +172,6 @@ set( constitutive_headers
      thermalConductivity/MultiPhaseVolumeWeightedThermalConductivity.hpp
      thermalConductivity/SinglePhaseThermalConductivity.hpp
      thermalConductivity/SinglePhaseThermalConductivityBase.hpp
-     thermalConductivity/SinglePhaseThermalConductivityFields.hpp
      thermalConductivity/SinglePhaseThermalConductivitySelector.hpp
      thermalConductivity/ThermalConductivityFields.hpp
    )
