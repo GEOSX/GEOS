@@ -253,6 +253,7 @@ private:
   /**
    * @brief Method to get coordinates
    * @param input a scalar input
+   * @param interpolationMethod the interpolation method
    * @return the coordinates
    */
   std::vector< real64 > getCoord( real64 const * const input, InterpolationType interpolationMethod ) const;
