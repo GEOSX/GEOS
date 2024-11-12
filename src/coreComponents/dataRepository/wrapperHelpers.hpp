@@ -516,7 +516,7 @@ pushDataToConduitNode( ArrayOfArrays< T, INDEX_TYPE > const & var2,
   node[ "__sizes__" ].set_external( sizesType, const_cast< void * >( static_cast< void const * >( sizes ) ) );
 
   // **** WARNING: alters the uninitialized values in the ArrayOfArrays ****
-  T * const values = const_cast<T*>(var.getValues());
+  T * const values = const_cast< T * >(var.getValues());
   for( INDEX_TYPE i = 0; i < numArrays; ++i )
   {
     INDEX_TYPE const curOffset = offsets[ i ];
