@@ -43,6 +43,7 @@
 #include "physicsSolvers/fluidFlow/FlowSolverBaseFields.hpp"
 #include "physicsSolvers/fluidFlow/SourceFluxStatistics.hpp"
 #include "physicsSolvers/fluidFlow/kernels/compositional/AccumulationKernel.hpp"
+#include "physicsSolvers/fluidFlow/kernels/compositional/AccumulationZFormulationKernel.hpp"
 #include "physicsSolvers/fluidFlow/kernels/compositional/ThermalAccumulationKernel.hpp"
 #include "physicsSolvers/fluidFlow/kernels/compositional/GlobalComponentFractionKernel.hpp"
 #include "physicsSolvers/fluidFlow/kernels/compositional/PhaseVolumeFractionKernel.hpp"
@@ -297,8 +298,19 @@ void CompositionalMultiphaseBase::registerDataOnMesh( Group & meshBodies )
     m_isThermal = referenceFluid.isThermal();
   }
 
-  // n_c components + one pressure ( + one temperature if needed )
-  m_numDofPerCell = m_isThermal ? m_numComponents + 2 : m_numComponents + 1;
+  
+  if (m_useZFormulation)
+    // Z formulation - component densities and pressure are primary unknowns
+    // (n_c-1) overall compositions + one pressure 
+    // Testing: let's have sum_c zc = 1 as explicit equation for now
+    m_numDofPerCell = m_numComponents + 1; 
+  else
+  {
+    // default formulation - component densities and pressure are primary unknowns
+    // n_c components + one pressure ( + one temperature if needed )
+    m_numDofPerCell = m_isThermal ? m_numComponents + 2 : m_numComponents + 1;
+  }
+    
 
   // 2. Register and resize all fields as necessary
   forDiscretizationOnMeshTargets( meshBodies, [&]( string const &,
@@ -1517,19 +1529,19 @@ void CompositionalMultiphaseBase::assembleZFormulationAccumulation( DomainPartit
       }
       */
      // isothermal for now
-        isothermalCompositionalMultiphaseBaseKernels::
-          AccumulationKernelFactory::
-          createAndLaunch< parallelDevicePolicy<> >( m_numComponents,
-                                                     m_numPhases,
-                                                     dofManager.rankOffset(),
-                                                     m_useTotalMassEquation,
-                                                     m_useSimpleAccumulation,
-                                                     dofKey,
-                                                     subRegion,
-                                                     fluid,
-                                                     solid,
-                                                     localMatrix,
-                                                     localRhs );
+      isothermalCompositionalMultiphaseBaseKernels::
+        AccumulationZFormulationKernelFactory::
+        createAndLaunch< parallelDevicePolicy<> >( m_numComponents,
+                                                    m_numPhases,
+                                                    dofManager.rankOffset(),
+                                                    m_useTotalMassEquation,
+                                                    m_useSimpleAccumulation,
+                                                    dofKey,
+                                                    subRegion,
+                                                    fluid,
+                                                    solid,
+                                                    localMatrix,
+                                                    localRhs );
     } );
   } );
 }

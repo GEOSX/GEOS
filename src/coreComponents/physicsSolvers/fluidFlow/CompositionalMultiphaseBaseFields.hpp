@@ -72,6 +72,14 @@ DECLARE_FIELD( globalCompFraction,
                WRITE_AND_READ,
                "Global component fraction" );
 
+DECLARE_FIELD( globalCompFraction_k,
+               "globalCompFraction_k",
+               array2dLayoutComp,
+               0,
+               NOPLOT,
+               NO_WRITE,
+               "Global component fraction updates at the previous sequential iteration" );
+
 DECLARE_FIELD( faceGlobalCompFraction,
                "faceGlobalCompFraction",
                array2dLayoutComp,
