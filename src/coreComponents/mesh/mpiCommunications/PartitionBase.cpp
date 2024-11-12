@@ -18,12 +18,17 @@
 namespace geos
 {
 
-PartitionBase::PartitionBase( const unsigned int numPartitions,
-                              const unsigned int thisPartition )
+PartitionBase::PartitionBase()
   :
-  m_size( numPartitions ),
-  m_rank( thisPartition ),
-  m_numColors( 1 )
+  m_rank( MpiWrapper::commRank( MPI_COMM_GEOS ) ),
+  m_size( MpiWrapper::commSize( MPI_COMM_GEOS ) ),
+  m_numColors( -1 ),
+  m_color( -1 ),
+  m_min{ 0.0, 0.0, 0.0 },
+  m_max{ 0.0, 0.0, 0.0 },
+  m_gridSize{ 0.0, 0.0, 0.0 },
+  m_gridMin{ 0.0, 0.0, 0.0 },
+  m_gridMax{ 0.0, 0.0, 0.0 }
 {}
 
 PartitionBase::~PartitionBase()

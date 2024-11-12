@@ -110,6 +110,19 @@ public:
                                        bool const overwriteUpMaps,
                                        bool const overwriteDownMaps ) override;
 
+
+  localIndex packToFaceRelationSize( arrayView1d< localIndex const > const & packList ) const;
+
+  localIndex packToFaceRelation( buffer_unit_type * & buffer,
+                                 arrayView1d< localIndex const > const & packList ) const;
+
+  localIndex unpackToFaceRelation( buffer_unit_type const * & buffer,
+                                       array1d< localIndex > & packList,
+                                       bool const overwriteUpMaps,
+                                       bool const overwriteDownMaps );
+
+
+
   virtual void fixUpDownMaps( bool const clearIfUnmapped ) override;
 
   /**
@@ -323,6 +336,11 @@ private:
   template< bool DO_PACKING >
   localIndex packUpDownMapsImpl( buffer_unit_type * & buffer,
                                  arrayView1d< localIndex const > const & packList ) const;
+
+
+  template< bool DO_PACKING >
+  localIndex packToFaceRelationImpl( buffer_unit_type * & buffer,
+                                     arrayView1d< localIndex const > const & packList ) const;
 
   /// The array of shape function derivaties.
   array4d< real64 > m_dNdX;

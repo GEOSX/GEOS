@@ -359,6 +359,94 @@ localIndex FaceElementSubRegion::unpackUpDownMaps( buffer_unit_type const * & bu
 }
 
 
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+localIndex FaceElementSubRegion::packToFaceRelationSize( arrayView1d< localIndex const > const & packList ) const
+{
+  buffer_unit_type * junk = nullptr;
+  return packToFaceRelationImpl< false >( junk, packList );
+}
+
+localIndex FaceElementSubRegion::packToFaceRelation( buffer_unit_type * & buffer,
+                                                 arrayView1d< localIndex const > const & packList ) const
+{
+  return packToFaceRelationImpl< true >( buffer, packList );
+}
+
+
+template< bool DO_PACKING >
+localIndex FaceElementSubRegion::packToFaceRelationImpl( buffer_unit_type * & buffer,
+                                                     arrayView1d< localIndex const > const & packList ) const
+{
+  arrayView1d< globalIndex const > const localToGlobal = this->localToGlobalMap();
+  arrayView1d< globalIndex const > const faceLocalToGlobal = m_toFacesRelation.relatedObjectLocalToGlobal();
+
+  localIndex packedSize = 0;
+  packedSize += bufferOps::Pack< DO_PACKING >( buffer, string( viewKeyStruct::faceListString() ) );
+  packedSize += bufferOps::Pack< DO_PACKING >( buffer,
+                                               m_toFacesRelation.toViewConst(),
+                                               m_unmappedGlobalIndicesInToFaces,
+                                               packList,
+                                               localToGlobal,
+                                               faceLocalToGlobal );
+  return packedSize;
+}
+
+
+localIndex FaceElementSubRegion::unpackToFaceRelation( buffer_unit_type const * & buffer,
+                                                   localIndex_array & packList,
+                                                   bool const overwriteUpMaps,
+                                                   bool const GEOS_UNUSED_PARAM( overwriteDownMaps ) )
+{
+  localIndex unPackedSize = 0;
+
+  string faceListString;
+  unPackedSize += bufferOps::Unpack( buffer, faceListString );
+  GEOS_ERROR_IF_NE( faceListString, viewKeyStruct::faceListString() );
+
+  unPackedSize += bufferOps::Unpack( buffer,
+                                     m_toFacesRelation,
+                                     packList,
+                                     m_unmappedGlobalIndicesInToFaces,
+                                     this->globalToLocalMap(),
+                                     m_toFacesRelation.relatedObjectGlobalToLocal() );
+
+  return unPackedSize;
+}
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
 /**
  * @brief The two mappings @p elem2dToElems3d and @p elem2dToFaces have to be consistent
  * in the sense that each @p face for a given index must "belong" to @p 3d @p element at the same index.
@@ -432,7 +520,7 @@ void FaceElementSubRegion::fixUpDownMaps( bool const clearIfUnmapped )
                                     m_unmappedGlobalIndicesInToFaces,
                                     clearIfUnmapped );
 
-  fixNeighborMappingsInconsistency( getName(), m_2dElemToElems, m_toFacesRelation );
+//  fixNeighborMappingsInconsistency( getName(), m_2dElemToElems, m_toFacesRelation );
 }
 
 /**
@@ -1018,7 +1106,7 @@ void FaceElementSubRegion::fixSecondaryMappings( NodeManager const & nodeManager
 
   m_2dFaceTo2dElems = build2dFaceTo2dElems( m_toEdgesRelation.toViewConst(), m_edgesTo2dFaces, referenceCollocatedEdges );
 
-  fixNeighborMappingsInconsistency( getName(), m_2dElemToElems, m_toFacesRelation );
+//  fixNeighborMappingsInconsistency( getName(), m_2dElemToElems, m_toFacesRelation );
 
   fixNodesOrder( m_toFacesRelation.toViewConst(), faceToNodes, m_toNodesRelation );
 }

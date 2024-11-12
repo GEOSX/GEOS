@@ -26,6 +26,7 @@
 #include "mesh/FaceManager.hpp"
 #include "mesh/ToElementRelation.hpp"
 #include "mesh/utilities/MeshMapUtilities.hpp"
+#include "common/MpiWrapper.hpp"
 
 namespace geos
 {
@@ -271,7 +272,7 @@ localIndex NodeManager::unpackUpDownMaps( buffer_unit_type const * & buffer,
 
   string temp;
   unPackedSize += bufferOps::Unpack( buffer, temp );
-  GEOS_ERROR_IF( temp != viewKeyStruct::edgeListString(), "" );
+  GEOS_ERROR_IF_NE( temp, viewKeyStruct::edgeListString() );
   unPackedSize += bufferOps::Unpack( buffer,
                                      m_toEdgesRelation,
                                      packList,
@@ -297,6 +298,10 @@ localIndex NodeManager::unpackUpDownMaps( buffer_unit_type const * & buffer,
                                      packList,
                                      m_toElements.getElementRegionManager(),
                                      overwriteUpMaps );
+
+  // GEOS_ERROR_IF_EQ( m_unmappedGlobalIndicesInToEdges.size(), 0 );
+  // GEOS_ERROR_IF_EQ( m_unmappedGlobalIndicesInToFaces.size(), 0 );
+  
 
   return unPackedSize;
 }
@@ -360,6 +365,91 @@ void NodeManager::depopulateUpMaps( std::set< localIndex > const & receivedNodes
   }
 }
 
-REGISTER_CATALOG_ENTRY( ObjectManagerBase, NodeManager, string const &, Group * const )
+void NodeManager::outputObjectConnectivity() const
+{
+
+  int const numRanks = MpiWrapper::commSize();
+  int const thisRank = MpiWrapper::commRank();
+
+  for( int rank=0; rank<numRanks; ++rank )
+  {
+    if( rank==thisRank )
+    {
+      printf( "rank %d\n", rank );
+      printf( "NodeManager: %s\n", this->getName().c_str() );
+
+      printf( "  Reference positions:\n" );
+      for( localIndex a=0; a<this->size(); ++a )
+      {
+        printf( "  %3d( %3lld ): %6.2f, %6.2f, %6.2f \n", a, m_localToGlobalMap(a), m_referencePosition( a, 0 ), m_referencePosition( a, 1 ), m_referencePosition( a, 2 ) );
+      }
+
+      printf( "\n  Reference positions (sorted by global):\n" );
+      map< globalIndex, localIndex > const sortedGlobalToLocalMap(m_globalToLocalMap.begin(), m_globalToLocalMap.end());
+      for( auto indexPair : sortedGlobalToLocalMap )
+      {
+        globalIndex const ga = indexPair.first;
+        localIndex const a = indexPair.second;
+        printf( "  %3d( %3lld ): %6.2f, %6.2f, %6.2f \n", a, m_localToGlobalMap(a), m_referencePosition( a, 0 ), m_referencePosition( a, 1 ), m_referencePosition( a, 2 ) );
+      }      
+      
+      // printf( "  toEdgesRelation: \n" );
+      // arrayView1d< globalIndex const > const & edgeLocalToGlobal = m_toEdgesRelation.relatedObjectLocalToGlobal();
+      // for( localIndex a=0; a<this->size(); ++a )
+      // {
+      //   printf( "  %3d(%3lld): ", a, m_localToGlobalMap(a) );
+
+      //   for( localIndex b=0; b<m_toEdgesRelation.sizeOfSet( a ); ++b )
+      //   {
+      //     printf( "%3d", m_toEdgesRelation( a, b ) );
+      //     if( b != m_toEdgesRelation.sizeOfSet( a ) - 1 )
+      //     {
+      //       printf( ", " );
+      //     }
+      //   }
+      //   printf( "\n           (");
+      //   for( localIndex b=0; b<m_toEdgesRelation.sizeOfSet( a ); ++b )
+      //   {
+      //     printf( "%3lld",edgeLocalToGlobal( m_toEdgesRelation( a, b ) ) );
+      //     if( b != m_toEdgesRelation.sizeOfSet( a ) - 1 )
+      //     {
+      //       printf( ", " );
+      //     }
+      //   }
+      //   printf( " )\n" );
+      // }
+
+      // printf( "  toFacesRelation: \n" );
+      // arrayView1d< globalIndex const > const & faceLocalToGlobal = m_toFacesRelation.relatedObjectLocalToGlobal();
+      // for( localIndex a=0; a<this->size(); ++a )
+      // {
+      //   printf( "  %3d(%3lld): ", a, m_localToGlobalMap(a) );
+
+      //   for( localIndex b=0; b<m_toFacesRelation.sizeOfSet( a ); ++b )
+      //   {
+      //     printf( "%3d", m_toFacesRelation( a, b ) );
+      //     if( b != m_toFacesRelation.sizeOfSet( a ) - 1 )
+      //     {
+      //       printf( ", " );
+      //     }
+      //   }
+      //   printf( "\n           (");
+      //   for( localIndex b=0; b<m_toFacesRelation.sizeOfSet( a ); ++b )
+      //   {
+      //     printf( "%3lld",faceLocalToGlobal( m_toFacesRelation( a, b ) ) );
+      //     if( b != m_toFacesRelation.sizeOfSet( a ) - 1 )
+      //     {
+      //       printf( ", " );
+      //     }
+      //   }
+      //   printf( " )\n" );
+      // }
+    }
+    MpiWrapper::barrier();
+  }
 
 }
+
+REGISTER_CATALOG_ENTRY( ObjectManagerBase, NodeManager, string const &, Group * const )
+
+} // namespace geos

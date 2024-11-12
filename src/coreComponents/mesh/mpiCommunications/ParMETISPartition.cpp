@@ -13,7 +13,7 @@
  * ------------------------------------------------------------------------------------------------------------
  */
 
-#include "SpatialPartition.hpp"
+#include "ParMETISPartition.hpp"
 #include "codingUtilities/Utilities.hpp"
 #include "LvArray/src/genericTensorOps.hpp"
 #include "mesh/mpiCommunications/MPI_iCommData.hpp"
@@ -23,44 +23,30 @@
 namespace geos
 {
 
-namespace
-{
 
-// Modulo
-// returns a positive value regardless of the sign of numerator
-real64 Mod( real64 num, real64 denom )
-{
-  if( fabs( denom )<fabs( num )*1.0e-14 )
-  {
-    return num;
-  }
 
-  return num - denom * std::floor( num/denom );
-}
-
-// MapValueToRange
-// returns a periodic value in the range [min, max)
-real64 MapValueToRange( real64 value, real64 min, real64 max )
-{
-  return Mod( value-min, max-min )+min;
-}
-
-}
-
-SpatialPartition::SpatialPartition():
+ParMETISPartition::ParMETISPartition():
   PartitionBase(),
   m_Periodic( nsdof ),
   m_coords( nsdof ),
+  m_min{ 0.0 },
+  m_max{ 0.0 },
+  m_blockSize{ 1.0 },
+  m_gridSize{ 0.0 },
+  m_gridMin{ 0.0 },
+  m_gridMax{ 0.0 },
   m_Partitions()
 {
-  setNumColors( 8 ),
+  m_size = 0;
+  m_rank = 0;
+  m_numColors = 8,
   setPartitions( 1, 1, 1 );
 }
 
-SpatialPartition::~SpatialPartition()
+ParMETISPartition::~ParMETISPartition()
 {}
 
-void SpatialPartition::setPartitions( unsigned int xPartitions,
+void ParMETISPartition::setPartitions( unsigned int xPartitions,
                                       unsigned int yPartitions,
                                       unsigned int zPartitions )
 {
@@ -68,20 +54,17 @@ void SpatialPartition::setPartitions( unsigned int xPartitions,
   m_Partitions( 0 ) = xPartitions;
   m_Partitions( 1 ) = yPartitions;
   m_Partitions( 2 ) = zPartitions;
-  int size = 1;
+  m_size = 1;
   for( int i = 0; i < nsdof; i++ )
   {
-    size *= m_Partitions( i );
+    m_size *= m_Partitions( i );
   }
-
-  setSize( size );
   setContactGhostRange( 0.0 );
 }
 
-void SpatialPartition::setColorValue()
+int ParMETISPartition::getColor()
 {
   int color = 0;
-  int numColors = 1;
 
   if( isOdd( m_coords[0] ) )
   {
@@ -98,18 +81,12 @@ void SpatialPartition::setColorValue()
     color += 4;
   }
 
-  for( int i = 0; i < nsdof; ++i )
-  {
-    if( m_Partitions[i] > 1 )
-    {
-      numColors *= 2;
-    }
-  }
-  setColor( color );
-  setNumColors( numColors );
+  m_numColors = 8;
+
+  return color;
 }
 
-void SpatialPartition::addNeighbors( const unsigned int idim,
+void ParMETISPartition::addNeighbors( const unsigned int idim,
                                      MPI_Comm & cartcomm,
                                      int * ncoords )
 {
@@ -158,7 +135,7 @@ void SpatialPartition::addNeighbors( const unsigned int idim,
   }
 }
 
-void SpatialPartition::updateSizes( arrayView1d< real64 > const domainL,
+void ParMETISPartition::updateSizes( arrayView1d< real64 > const domainL,
                                     real64 const dt )
 {
   for( int i=0; i<3; i++ )
@@ -176,7 +153,7 @@ void SpatialPartition::updateSizes( arrayView1d< real64 > const domainL,
   }
 }
 
-void SpatialPartition::setSizes( real64 const ( &min )[ 3 ],
+void ParMETISPartition::setSizes( real64 const ( &min )[ 3 ],
                                  real64 const ( &max )[ 3 ] )
 {
 
@@ -200,8 +177,7 @@ void SpatialPartition::setSizes( real64 const ( &min )[ 3 ],
       int reorder = 0;
       MpiWrapper::cartCreate( MPI_COMM_GEOS, nsdof, m_Partitions.data(), m_Periodic.data(), reorder, &cartcomm );
     }
-    int rank = MpiWrapper::commRank( cartcomm );
-    GEOS_ERROR_IF_NE( rank, getRank() );
+    m_rank = MpiWrapper::commRank( cartcomm );
     MpiWrapper::cartCoords( cartcomm, m_rank, nsdof, m_coords.data());
 
     //add neighbors
@@ -262,12 +238,12 @@ void SpatialPartition::setSizes( real64 const ( &min )[ 3 ],
     }
     else
     {
-      GEOS_ERROR( "SpatialPartition::setSizes(): number of partition locations does not equal number of partitions - 1\n" );
+      GEOS_ERROR( "ParMETISPartition::setSizes(): number of partition locations does not equal number of partitions - 1\n" );
     }
   }
 }
 
-bool SpatialPartition::isCoordInPartition( const real64 & coord, const int dir ) const
+bool ParMETISPartition::isCoordInPartition( const real64 & coord, const int dir ) const
 {
   bool rval = true;
   const int i = dir;
@@ -288,7 +264,7 @@ bool SpatialPartition::isCoordInPartition( const real64 & coord, const int dir )
   return rval;
 }
 
-bool SpatialPartition::isCoordInPartitionBoundingBox( const R1Tensor & elemCenter,
+bool ParMETISPartition::isCoordInPartitionBoundingBox( const R1Tensor & elemCenter,
                                                       const real64 & boundaryRadius ) const
 // test a point relative to a boundary box. If non-zero buffer specified, expand the box.
 {
@@ -321,7 +297,7 @@ bool SpatialPartition::isCoordInPartitionBoundingBox( const R1Tensor & elemCente
   return true;
 }
 
-void SpatialPartition::setContactGhostRange( const real64 bufferSize )
+void ParMETISPartition::setContactGhostRange( const real64 bufferSize )
 {
   LvArray::tensorOps::copy< 3 >( m_contactGhostMin, m_min );
   LvArray::tensorOps::addScalar< 3 >( m_contactGhostMin, -bufferSize );
@@ -330,7 +306,7 @@ void SpatialPartition::setContactGhostRange( const real64 bufferSize )
   LvArray::tensorOps::addScalar< 3 >( m_contactGhostMax, bufferSize );
 }
 
-void SpatialPartition::repartitionMasterParticles( ParticleSubRegion & subRegion,
+void ParMETISPartition::repartitionMasterParticles( ParticleSubRegion & subRegion,
                                                    MPI_iCommData & commData )
 {
 
@@ -533,7 +509,7 @@ void SpatialPartition::repartitionMasterParticles( ParticleSubRegion & subRegion
 }
 
 
-void SpatialPartition::getGhostParticlesFromNeighboringPartitions( DomainPartition & domain,
+void ParMETISPartition::getGhostParticlesFromNeighboringPartitions( DomainPartition & domain,
                                                                    MPI_iCommData & commData,
                                                                    const real64 & boundaryRadius )
 {
@@ -747,7 +723,7 @@ void SpatialPartition::getGhostParticlesFromNeighboringPartitions( DomainPartiti
  * @param[in] commData Solver's MPI communicator
  * @param[in] particleCoordinatesReceivedFromNeighbors List of lists of coordinates received from each neighbor
  */
-void SpatialPartition::sendCoordinateListToNeighbors( arrayView1d< R1Tensor > const & particleCoordinatesSendingToNeighbors,
+void ParMETISPartition::sendCoordinateListToNeighbors( arrayView1d< R1Tensor > const & particleCoordinatesSendingToNeighbors,
                                                       MPI_iCommData & commData,
                                                       std::vector< array1d< R1Tensor > > & particleCoordinatesReceivedFromNeighbors
                                                       )
@@ -842,7 +818,7 @@ void SpatialPartition::sendCoordinateListToNeighbors( arrayView1d< R1Tensor > co
 }
 
 template< typename indexType >
-void SpatialPartition::sendListOfIndicesToNeighbors( std::vector< array1d< indexType > > & listSendingToEachNeighbor,
+void ParMETISPartition::sendListOfIndicesToNeighbors( std::vector< array1d< indexType > > & listSendingToEachNeighbor,
                                                      MPI_iCommData & commData,
                                                      std::vector< array1d< indexType > > & listReceivedFromEachNeighbor )
 {
@@ -940,7 +916,7 @@ void SpatialPartition::sendListOfIndicesToNeighbors( std::vector< array1d< index
   }
 }
 
-void SpatialPartition::sendParticlesToNeighbor( ParticleSubRegionBase & subRegion,
+void ParMETISPartition::sendParticlesToNeighbor( ParticleSubRegionBase & subRegion,
                                                 std::vector< int > const & newParticleStartingIndices,
                                                 std::vector< int > const & numberOfIncomingParticles,
                                                 MPI_iCommData & commData,

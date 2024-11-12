@@ -415,6 +415,9 @@ public:
 
   ///@}
 
+  virtual void outputObjectConnectivity() const override final;
+
+
 private:
 
   /**

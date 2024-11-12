@@ -521,14 +521,6 @@ int ElementRegionManager::packUpDownMapsImpl( buffer_unit_type * & buffer,
   return packedSize;
 }
 
-//template int
-//ElementRegionManager::
-//PackUpDownMapsImpl<true>( buffer_unit_type * & buffer,
-//                             ElementViewAccessor<arrayView1d<localIndex>> const & packList ) const;
-//template int
-//ElementRegionManager::
-//PackUpDownMapsImpl<false>( buffer_unit_type * & buffer,
-//                             ElementViewAccessor<arrayView1d<localIndex>> const & packList ) const;
 
 int
 ElementRegionManager::unpackUpDownMaps( buffer_unit_type const * & buffer,
@@ -563,6 +555,134 @@ ElementRegionManager::unpackUpDownMaps( buffer_unit_type const * & buffer,
 
   return unpackedSize;
 }
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+int ElementRegionManager::packFaceElementToFaceSize( ElementViewAccessor< arrayView1d< localIndex > > const & packList ) const
+{
+  buffer_unit_type * junk = nullptr;
+  return packFaceElementToFaceImpl< false >( junk, packList );
+}
+
+int ElementRegionManager::packFaceElementToFace( buffer_unit_type * & buffer,
+                                          ElementViewAccessor< arrayView1d< localIndex > > const & packList ) const
+{
+  return packFaceElementToFaceImpl< true >( buffer, packList );
+}
+
+template< bool DO_PACKING, typename T >
+int ElementRegionManager::packFaceElementToFaceImpl( buffer_unit_type * & buffer,
+                                              T const & packList ) const
+{
+  int packedSize = 0;
+
+  packedSize += bufferOps::Pack< DO_PACKING >( buffer, numRegions() );
+
+  for( typename dataRepository::indexType kReg=0; kReg<numRegions(); ++kReg )
+  {
+    ElementRegionBase const & elemRegion = getRegion( kReg );
+    packedSize += bufferOps::Pack< DO_PACKING >( buffer, elemRegion.getName() );
+
+
+
+    localIndex numFaceElementSubregions = 0;
+    elemRegion.forElementSubRegionsIndex< FaceElementSubRegion >(
+      [&]( localIndex const esr, FaceElementSubRegion const & subRegion )
+    {
+      ++numFaceElementSubregions;
+    } );
+
+
+    packedSize += bufferOps::Pack< DO_PACKING >( buffer, numFaceElementSubregions );
+
+    elemRegion.forElementSubRegionsIndex< FaceElementSubRegion >(
+      [&]( localIndex const esr, FaceElementSubRegion const & subRegion )
+    {
+      packedSize += bufferOps::Pack< DO_PACKING >( buffer, subRegion.getName() );
+
+      arrayView1d< localIndex > const elemList = packList[kReg][esr];
+      if( DO_PACKING )
+      {
+        packedSize += subRegion.packToFaceRelation( buffer, elemList );
+      }
+      else
+      {
+        packedSize += subRegion.packToFaceRelationSize( elemList );
+      }
+    } );
+  }
+
+  return packedSize;
+}
+
+
+int
+ElementRegionManager::unpackFaceElementToFace( buffer_unit_type const * & buffer,
+                                        ElementReferenceAccessor< localIndex_array > & packList,
+                                        bool const overwriteMap )
+{
+  int unpackedSize = 0;
+
+  localIndex numRegionsRead;
+  unpackedSize += bufferOps::Unpack( buffer, numRegionsRead );
+  //std::cout<<"numRegionsRead: "<<numRegionsRead<<std::endl;
+  for( localIndex kReg=0; kReg<numRegionsRead; ++kReg )
+  {
+    string regionName;
+    unpackedSize += bufferOps::Unpack( buffer, regionName );
+    //std::cout<<"regionName: "<<regionName<<std::endl;
+    ElementRegionBase & elemRegion = getRegion( regionName );
+
+    localIndex numSubRegionsRead;
+    unpackedSize += bufferOps::Unpack( buffer, numSubRegionsRead );
+    //std::cout<<"numSubRegionsRead: "<<numSubRegionsRead<<std::endl;
+    elemRegion.forElementSubRegionsIndex< FaceElementSubRegion >(
+      [&]( localIndex const kSubReg, FaceElementSubRegion & subRegion )
+    {
+      string subRegionName;
+      unpackedSize += bufferOps::Unpack( buffer, subRegionName );
+      //std::cout<<"subRegionName: "<<subRegionName<<std::endl;
+      GEOS_ERROR_IF( subRegionName != subRegion.getName(),
+                     "Unpacked subregion name (" << subRegionName << ") does not equal object name (" << subRegion.getName() << ")" );
+
+      localIndex_array & elemList = packList[kReg][kSubReg];
+      unpackedSize += subRegion.unpackToFaceRelation( buffer, elemList, false, overwriteMap );
+    } );
+  }
+
+  return unpackedSize;
+}
+
+
+
+
+
+
+
+
+
+
+
+
+
+
 
 int ElementRegionManager::packFracturedElementsSize( ElementViewAccessor< arrayView1d< localIndex > > const & packList,
                                                      string const fractureRegionName ) const
@@ -692,6 +812,94 @@ ElementRegionManager::getCellBlockToSubRegionMap( CellBlockManagerABC const & ce
 
   return blockMap;
 }
+
+void ElementRegionManager::outputObjectConnectivity() const
+{
+  int const numRanks = MpiWrapper::commSize();
+  int const thisRank = MpiWrapper::commRank();
+
+  for( int rank=0; rank<numRanks; ++rank )
+  {
+    if( rank==thisRank )
+    {
+      printf( "rank %d\n", rank );
+      printf( "ElementManager: %s\n", this->getName().c_str() );
+
+      forElementRegions< CellElementRegion >( [&]( CellElementRegion const & elemRegion )
+      {
+        elemRegion.forElementSubRegions< CellElementSubRegion >( [&]( CellElementSubRegion const & subRegion )
+        {
+          printf( "  %s\n", subRegion.getName().c_str() );
+
+          CellElementSubRegion::NodeMapType const & elemToNodeRelation = subRegion.nodeList();
+          arrayView2d< localIndex const > const elemToNode = elemToNodeRelation;
+          arrayView1d< globalIndex const > const & elemLocalToGlobal = subRegion.localToGlobalMap();
+          auto const & elemGlobalToLocal = subRegion.globalToLocalMap();
+          arrayView1d< globalIndex const > const & nodeLocalToGlobal = elemToNodeRelation.relatedObjectLocalToGlobal();
+          auto const & refCoords = getParent().getGroup< NodeManager >( "nodeManager" ).referencePosition();
+          
+          printf( "  ElementToNodes map:\n" );
+          for( localIndex k=0; k<elemToNode.size( 0 ); ++k )
+          {
+            printf( "  %3d( %3lld ): ", k, elemLocalToGlobal( k ) );
+            for( localIndex a=0; a<elemToNode.size( 1 ); ++a )
+            {
+              printf( "%3d", elemToNode( k, a ) );
+              if( a != elemToNode.size( 1 )-1 )
+              {
+                printf( ", " );
+              }
+            }
+            printf( " )\n" );
+          }
+
+          printf( "\n  ElementToNodes map ( global nodes sorted by global elems):\n" );
+          map< globalIndex, localIndex > const sortedGlobalToLocalMap( elemGlobalToLocal.begin(), 
+                                                                       elemGlobalToLocal.end());
+          for( auto indexPair : sortedGlobalToLocalMap )
+          {
+            globalIndex const gk = indexPair.first;
+            localIndex const k = indexPair.second;
+
+            printf( "  %3d( %3lld ): ", k, gk );
+            for( localIndex a=0; a<elemToNode.size( 1 ); ++a )
+            {
+              printf( "%3lld", nodeLocalToGlobal( elemToNode( k, a ) ) );
+              if( a != elemToNode.size( 1 )-1 )
+              {
+                printf( ", " );
+              }
+            }
+            printf( " )\n" );
+          }
+
+          // printf( "\n  ElementToNodes coords:\n" );
+          // for( auto indexPair : sortedGlobalToLocalMap )
+          // {
+          //   globalIndex const gk = indexPair.first;
+          //   localIndex const k = indexPair.second;
+
+          //   printf( "  %3d( %3lld ): ", k, gk );
+          //   for( localIndex a=0; a<elemToNode.size( 1 ); ++a )
+          //   {
+          //     localIndex const b = elemToNode( k, a );
+          //     printf( "( %4.1f, %4.1f, %4.1f )", refCoords( b, 0), refCoords( b, 1 ), refCoords( b, 2 ) );
+          //     if( a != elemToNode.size( 1 )-1 )
+          //     {
+          //       printf( ", " );
+          //     }
+          //   }
+          //   printf( " )\n" );
+          // }
+
+        } );
+      } );
+      std::cout<<std::endl;
+    }
+    MpiWrapper::barrier();
+  }
+}
+
 
 
 REGISTER_CATALOG_ENTRY( ObjectManagerBase, ElementRegionManager, string const &, Group * const )

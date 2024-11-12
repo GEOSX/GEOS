@@ -17,13 +17,15 @@
 #include "mesh/generators/CollocatedNodes.hpp"
 #include "mesh/generators/VTKMeshGeneratorTools.hpp"
 #include "mesh/generators/VTKUtilities.hpp"
-
 #include "mesh/generators/ParMETISInterface.hpp"
 #ifdef GEOS_USE_SCOTCH
 #include "mesh/generators/PTScotchInterface.hpp"
 #endif
 
+#include "LvArray/src/tensorOps.hpp"
+
 #include "common/TypeDispatch.hpp"
+#include "mesh/utilities/ComputationalGeometry.hpp"
 
 #include <vtkArrayDispatch.h>
 #include <vtkBoundingBox.h>

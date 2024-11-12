@@ -930,6 +930,11 @@ public:
     return m_domainBoundaryIndicator.toViewConst();
   }
 
+  virtual void outputObjectConnectivity() const
+  {
+    // This is a dummy function that should be specialized by derived classes.
+  }
+
 protected:
   /// Group that holds object sets.
   Group m_sets;

@@ -60,49 +60,70 @@ public:
                               unsigned int yPartitions,
                               unsigned int zPartitions ) = 0;
 
-  /**
-   * @brief Computes an associated color.
-   * @return The color
-   *
-   * @note The other Color member function.
-   */
-  virtual int getColor() = 0;
+  virtual void setNeighborList( std::vector< int > const & neighbors ) {}
 
   /**
    * @brief Returns the number of colors.
    * @return The number of associated colors.
    */
-  int numColor() const
-  { return m_numColors; }
+  int getNumColors() const { return m_numColors; }
+
+  int getColor() const { return m_color; }
+
+  int getSize() const { return m_size; }
+
+  int getRank() const { return m_rank; }
+
+  void setNumColors( int const numColors ) { m_numColors = numColors; }
+
+  void setColor( int const color ) { m_color = color; }
+
+  void setSize( int const size ) { m_size = size; }
+
+  real64 * getLocalMin() { return m_min; }
+  real64 * getLocalMax() { return m_max; }
+  real64 * getGlobalMin() { return m_gridMin; }
+  real64 * getGlobalMax() { return m_gridMax; }
 
 protected:
   /**
-   * @brief Preventing dummy default constructor.
+   * @brief default constructor.
    */
-  PartitionBase() = default;
+  PartitionBase();
 
-  /**
-   * @brief Builds from the size of partitions and the current rank of the partition
-   * @param numPartitions Size of the partitions.
-   * @param thisPartition The rank of the build partition.
-   */
-  PartitionBase( const unsigned int numPartitions,
-                 const unsigned int thisPartition );
+  virtual void setColorValue() = 0;
+
+protected:
 
   /**
    * @brief Array of neighbor communicators.
    */
   std::vector< NeighborCommunicator > m_neighbors;
 
+  int const m_rank; ///< Rank of the current process
+
   /// Size of the group associated with the MPI communicator
   int m_size;
-  /// MPI rank of the current partition
-  int m_rank;
 
-  /**
-   * @brief Number of colors
-   */
+  /// the number of colors in the global partitioning
   int m_numColors;
+
+  /// color of this partition
+  int m_color;
+
+
+  /// Minimum extent of partition dimensions (excluding ghost objects)
+  real64 m_min[3];
+  /// Maximum extent of partition dimensions (excluding ghost objects)
+  real64 m_max[3];
+
+  /// Total length of problem dimensions (excluding ghost objects).
+  real64 m_gridSize[3];
+  /// Minimum extent of problem dimensions (excluding ghost objects).
+  real64 m_gridMin[3];
+  /// Maximum extent of problem dimensions (excluding ghost objects).
+  real64 m_gridMax[3];
+
 };
 
 }

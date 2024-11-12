@@ -18,7 +18,6 @@
  */
 
 #include "SurfaceGenerator.hpp"
-#include "ParallelTopologyChange.hpp"
 
 #include "mesh/mpiCommunications/CommunicationTools.hpp"
 #include "mesh/mpiCommunications/NeighborCommunicator.hpp"
@@ -36,6 +35,7 @@
 #include "physicsSolvers/fluidFlow/FlowSolverBaseFields.hpp"
 #include "kernels/surfaceGenerationKernels.hpp"
 
+#include "ParallelTopologyChange.hpp"
 
 #include <algorithm>
 
@@ -482,11 +482,14 @@ real64 SurfaceGenerator::solverStep( real64 const & time_n,
   {
     SpatialPartition & partition = dynamicCast< SpatialPartition & >( domain.getReference< PartitionBase >( dataRepository::keys::partitionManager ) );
 
+    int const rank = MpiWrapper::commRank();
+    std::cout<<"rank, color = "<<rank<<", "<<partition.getColor()<<std::endl;
+
     rval = separationDriver( domain,
                              meshLevel,
                              domain.getNeighbors(),
-                             partition.getColor(),
-                             partition.numColor(),
+                             rank,
+                             partition.getNumColors(),
                              0,
                              time_n + dt );
 
@@ -641,6 +644,10 @@ int SurfaceGenerator::separationDriver( DomainPartition & domain,
 
   for( int color=0; color<numTileColors; ++color )
   {
+
+    MpiWrapper::barrier();
+    std::cout<<"color = "<<color<<std::endl;
+    MpiWrapper::barrier();
     ModifiedObjectLists modifiedObjects;
     if( color==tileColor )
     {
@@ -689,10 +696,18 @@ int SurfaceGenerator::separationDriver( DomainPartition & domain,
                                                        receivedObjects,
                                                        m_mpiCommOrder );
 
-    synchronizeTipSets( faceManager,
-                        edgeManager,
-                        nodeManager,
-                        receivedObjects );
+  for( int rank=0; rank<MpiWrapper::commSize(); ++rank )
+  {
+    MpiWrapper::barrier();
+    if( rank==MpiWrapper::commRank() )
+    {
+//      std::cout<<"rank "<<rank<<std::endl;
+      synchronizeTipSets( faceManager,
+                          edgeManager,
+                          nodeManager,
+                          receivedObjects );
+    }
+  }
 
 
 #else
@@ -750,7 +765,7 @@ int SurfaceGenerator::separationDriver( DomainPartition & domain,
 
   real64 ruptureRate = calculateRuptureRate( elementManager.getRegion< SurfaceElementRegion >( this->m_fractureRegionName ) );
 
-  GEOS_LOG_LEVEL_INFO_RANK_0( logInfo::RuptureRate, GEOS_FMT( "Rupture rate = {}", ruptureRate ) );
+  GEOS_LOG_LEVEL_RANK_0( 3, "rupture rate is " << ruptureRate );
   if( ruptureRate > 0 )
     m_nextDt = ruptureRate < 1e99 ? m_cflFactor / ruptureRate : 1e99;
 
@@ -791,6 +806,7 @@ void SurfaceGenerator::synchronizeTipSets ( FaceManager & faceManager,
 {
   arrayView1d< localIndex const > const & parentNodeIndices = nodeManager.getField< fields::parentIndex >();
 
+  //std::cout<<"breakpoint 1"<<std::endl;
   for( localIndex const nodeIndex : receivedObjects.newNodes )
   {
     localIndex const parentNodeIndex = parentNodeIndices[nodeIndex];
@@ -800,6 +816,7 @@ void SurfaceGenerator::synchronizeTipSets ( FaceManager & faceManager,
     m_tipNodes.remove( parentNodeIndex );
   }
 
+  //std::cout<<"breakpoint 2"<<std::endl;
   arrayView1d< integer const > const & faceIsExternal = faceManager.isExternal();
   arrayView1d< integer > const & edgeIsExternal = edgeManager.isExternal();
   arrayView1d< integer > const & nodeIsExternal = nodeManager.isExternal();
@@ -844,6 +861,8 @@ void SurfaceGenerator::synchronizeTipSets ( FaceManager & faceManager,
     }
   }
 
+  //std::cout<<"breakpoint 3"<<std::endl;
+
   arrayView1d< integer const > const & isFaceSeparable = faceManager.getField< surfaceGeneration::isFaceSeparable >();
   arrayView2d< localIndex const > const & faceToElementMap = faceManager.elementList();
 
@@ -852,20 +871,25 @@ void SurfaceGenerator::synchronizeTipSets ( FaceManager & faceManager,
 
   for( localIndex const faceIndex : receivedObjects.newFaces )
   {
+    //std::cout<<"  breakpoint 3a"<<std::endl;
     localIndex const parentFaceIndex = parentFaceIndices[faceIndex];
     GEOS_ERROR_IF( parentFaceIndex == -1, getDataContext() << ": parentFaceIndex should not be -1" );
 
     m_trailingFaces.insert( parentFaceIndex );
     m_tipFaces.remove( parentFaceIndex );
 
+    //std::cout<<"  breakpoint 3b"<<std::endl;
     for( localIndex const edgeIndex : faceManager.edgeList()[ parentFaceIndex ] )
     {
+    //std::cout<<"  breakpoint 3c: "<<edgeIndex<<std::endl;
       if( parentEdgeIndices[edgeIndex]==-1 && childEdgeIndices[edgeIndex]==-1 )
       {
         m_tipEdges.insert( edgeIndex );
 
+    //std::cout<<"  breakpoint 3d"<<std::endl;
         for( localIndex const iface: edgeManager.faceList()[ edgeIndex ] )
         {
+    //std::cout<<"  breakpoint 3e"<<std::endl;
           if( faceToElementMap.size( 1 ) == 2  &&
               faceIsExternal[iface] < 1 &&
               isFaceSeparable[iface] == 1 )
@@ -874,23 +898,30 @@ void SurfaceGenerator::synchronizeTipSets ( FaceManager & faceManager,
           }
         }
       }
+    //std::cout<<"  breakpoint 3f"<<std::endl;
       if( edgeIsExternal[edgeIndex]==0 )
       {
+    //std::cout<<"  breakpoint 3g"<<std::endl;
         edgeIsExternal[edgeIndex] = 2;
       }
     }
+    //std::cout<<"  breakpoint 3h"<<std::endl;
     for( localIndex const nodeIndex : faceManager.nodeList()[ parentFaceIndex ] )
     {
+    //std::cout<<"  breakpoint 3i"<<std::endl;
       if( parentNodeIndices[nodeIndex]==-1 && childNodeIndices[nodeIndex]==-1 )
       {
         m_tipNodes.insert( nodeIndex );
       }
+    //std::cout<<"  breakpoint 3j"<<std::endl;
       if( nodeIsExternal[nodeIndex] )
       {
         nodeIsExternal[nodeIndex] = 2;
       }
     }
   }
+  //std::cout<<"breakpoint 4"<<std::endl;
+
 }
 
 
@@ -1729,13 +1760,14 @@ void SurfaceGenerator::performFracture( const localIndex nodeID,
 
   // Split the node into two, using the original index, and a new one.
   localIndex newNodeIndex;
+  if( getLogLevel() > 0 )
   {
     std::ostringstream s;
     for( std::set< localIndex >::const_iterator i=separationPathFaces.begin(); i!=separationPathFaces.end(); ++i )
     {
       s << *i << " ";
     }
-    GEOS_LOG_LEVEL_INFO_BY_RANK( logInfo::SurfaceGenerator, GEOS_FMT( "Splitting node {} along separation plane faces: {}", nodeID, s.str() ) );
+    GEOS_LOG_RANK( GEOS_FMT( "Splitting node {} along separation plane faces: {}", nodeID, s.str() ) );
   }
 
 
@@ -1774,7 +1806,11 @@ void SurfaceGenerator::performFracture( const localIndex nodeID,
 // >("usedFaces")[newNodeIndex];
 //  usedFacesNew = usedFaces[nodeID];
 
-  GEOS_LOG_LEVEL_INFO_BY_RANK( logInfo::SurfaceGenerator, GEOS_FMT( "Done splitting node {} into nodes {} and {}", nodeID, nodeID, newNodeIndex ) );
+
+  if( getLogLevel() > 0 )
+  {
+    GEOS_LOG_RANK( GEOS_FMT( "Done splitting node {} into nodes {} and {}", nodeID, nodeID, newNodeIndex ) );
+  }
 
   // split edges
   map< localIndex, localIndex > splitEdges;
@@ -1795,7 +1831,10 @@ void SurfaceGenerator::performFracture( const localIndex nodeID,
 
       edgeToFaceMap.clearSet( newEdgeIndex );
 
-      GEOS_LOG_LEVEL_INFO_BY_RANK( logInfo::SurfaceGenerator, GEOS_FMT ( "Split edge {} into edges {} and {}", parentEdgeIndex, parentEdgeIndex, newEdgeIndex ) );
+      if( getLogLevel() > 0 )
+      {
+        GEOS_LOG_RANK( GEOS_FMT ( "Split edge {} into edges {} and {}", parentEdgeIndex, parentEdgeIndex, newEdgeIndex ) );
+      }
 
       splitEdges[parentEdgeIndex] = newEdgeIndex;
       modifiedObjects.newEdges.insert( newEdgeIndex );
@@ -1851,7 +1890,11 @@ void SurfaceGenerator::performFracture( const localIndex nodeID,
 
       if( faceManager.splitObject( faceIndex, rank, newFaceIndex ) )
       {
-        GEOS_LOG_LEVEL_INFO_BY_RANK( logInfo::SurfaceGenerator, GEOS_FMT ( "Split face {} into faces {} and {}", faceIndex, faceIndex, newFaceIndex ) );
+
+        if( getLogLevel() > 0 )
+        {
+          GEOS_LOG_RANK( GEOS_FMT ( "Split face {} into faces {} and {}", faceIndex, faceIndex, newFaceIndex ) );
+        }
 
         splitFaces[faceIndex] = newFaceIndex;
         modifiedObjects.newFaces.insert( newFaceIndex );
@@ -2118,19 +2161,23 @@ void SurfaceGenerator::performFracture( const localIndex nodeID,
             faceToElementMap[faceIndex][1] = -1;
           }
 
-          GEOS_LOG_LEVEL_INFO_RANK_0( logInfo::Mapping, "    faceToRegionMap["<<newFaceIndex<<"][0]    = "<<faceToRegionMap[newFaceIndex][0] );
-          GEOS_LOG_LEVEL_INFO_RANK_0( logInfo::Mapping, "    faceToSubRegionMap["<<newFaceIndex<<"][0] = "<<faceToSubRegionMap[newFaceIndex][0] );
-          GEOS_LOG_LEVEL_INFO_RANK_0( logInfo::Mapping, "    faceToElementMap["<<newFaceIndex<<"][0]      = "<<faceToElementMap[newFaceIndex][0] );
-          GEOS_LOG_LEVEL_INFO_RANK_0( logInfo::Mapping, "    faceToRegionMap["<<newFaceIndex<<"][1]    = "<<faceToRegionMap[newFaceIndex][1] );
-          GEOS_LOG_LEVEL_INFO_RANK_0( logInfo::Mapping, "    faceToSubRegionMap["<<newFaceIndex<<"][1] = "<<faceToSubRegionMap[newFaceIndex][1] );
-          GEOS_LOG_LEVEL_INFO_RANK_0( logInfo::Mapping, "    faceToElementMap["<<newFaceIndex<<"][1]      = "<<faceToElementMap[newFaceIndex][1] );
+          if( getLogLevel() > 1 )
+          {
+            GEOS_LOG( "    faceToRegionMap["<<newFaceIndex<<"][0]    = "<<faceToRegionMap[newFaceIndex][0] );
+            GEOS_LOG( "    faceToSubRegionMap["<<newFaceIndex<<"][0] = "<<faceToSubRegionMap[newFaceIndex][0] );
+            GEOS_LOG( "    faceToElementMap["<<newFaceIndex<<"][0]      = "<<faceToElementMap[newFaceIndex][0] );
+            GEOS_LOG( "    faceToRegionMap["<<newFaceIndex<<"][1]    = "<<faceToRegionMap[newFaceIndex][1] );
+            GEOS_LOG( "    faceToSubRegionMap["<<newFaceIndex<<"][1] = "<<faceToSubRegionMap[newFaceIndex][1] );
+            GEOS_LOG( "    faceToElementMap["<<newFaceIndex<<"][1]      = "<<faceToElementMap[newFaceIndex][1] );
 
-          GEOS_LOG_LEVEL_INFO_RANK_0( logInfo::Mapping, "    faceToRegionMap["<<faceIndex<<"][0]    = "<<faceToRegionMap[faceIndex][0] );
-          GEOS_LOG_LEVEL_INFO_RANK_0( logInfo::Mapping, "    faceToSubRegionMap["<<faceIndex<<"][0] = "<<faceToSubRegionMap[faceIndex][0] );
-          GEOS_LOG_LEVEL_INFO_RANK_0( logInfo::Mapping, "    faceToElementMap["<<faceIndex<<"][0]      = "<<faceToElementMap[faceIndex][0] );
-          GEOS_LOG_LEVEL_INFO_RANK_0( logInfo::Mapping, "    faceToRegionMap["<<faceIndex<<"][1]    = "<<faceToRegionMap[faceIndex][1] );
-          GEOS_LOG_LEVEL_INFO_RANK_0( logInfo::Mapping, "    faceToSubRegionMap["<<faceIndex<<"][1] = "<<faceToSubRegionMap[faceIndex][1] );
-          GEOS_LOG_LEVEL_INFO_RANK_0( logInfo::Mapping, "    faceToElementMap["<<faceIndex<<"][1]      = "<<faceToElementMap[faceIndex][1] );
+            GEOS_LOG( "    faceToRegionMap["<<faceIndex<<"][0]    = "<<faceToRegionMap[faceIndex][0] );
+            GEOS_LOG( "    faceToSubRegionMap["<<faceIndex<<"][0] = "<<faceToSubRegionMap[faceIndex][0] );
+            GEOS_LOG( "    faceToElementMap["<<faceIndex<<"][0]      = "<<faceToElementMap[faceIndex][0] );
+            GEOS_LOG( "    faceToRegionMap["<<faceIndex<<"][1]    = "<<faceToRegionMap[faceIndex][1] );
+            GEOS_LOG( "    faceToSubRegionMap["<<faceIndex<<"][1] = "<<faceToSubRegionMap[faceIndex][1] );
+            GEOS_LOG( "    faceToElementMap["<<faceIndex<<"][1]      = "<<faceToElementMap[faceIndex][1] );
+
+          }
 
           for( int i = 0; i < 2; i++ )
           {
@@ -2320,6 +2367,7 @@ void SurfaceGenerator::mapConsistencyCheck( localIndex const GEOS_UNUSED_PARAM( 
   arrayView2d< localIndex const > const & faceToRegionMap = faceManager.elementRegionList();
   arrayView2d< localIndex const > const & faceToSubRegionMap = faceManager.elementSubRegionList();
   arrayView2d< localIndex const > const & faceToElementMap = faceManager.elementList();
+
 
 #if 1
   if( getLogLevel() > 2 )
@@ -2744,7 +2792,7 @@ void SurfaceGenerator::identifyRupturedFaces( DomainPartition const & domain,
 
   if( !m_nodeBasedSIF )
   {
-//    for( int color=0 ; color<partition.NumColor() ; ++color )
+//    for( int color=0 ; color<partition.getNumColors() ; ++color )
 //    {
     arrayView1d< integer > const & isEdgeGhost = edgeManager.ghostRank();
     ModifiedObjectLists modifiedObjects;

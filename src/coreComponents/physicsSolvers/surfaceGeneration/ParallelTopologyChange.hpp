@@ -22,6 +22,8 @@
 
 #include "physicsSolvers/surfaceGeneration/SurfaceGenerator.hpp"
 
+#define PARALLEL_TOPOLOGY_CHANGE_METHOD 1
+
 namespace geos
 {
 class MeshLevel;
@@ -36,6 +38,59 @@ void synchronizeTopologyChange( MeshLevel * const mesh,
                                 ModifiedObjectLists & modifiedObjects,
                                 ModifiedObjectLists & receivedObjects,
                                 int mpiCommOrder );
+
+
+
+struct TopologyChangeStepData
+{
+  void init( ElementRegionManager const & elemManager)
+  {
+    m_nodes.resize(0) ;
+    m_edges.resize(0) ;
+    m_faces.resize(0) ;
+    m_elements.resize( elemManager.numRegions() );
+    m_elementsView.resize( elemManager.numRegions() );
+    m_elementsData.resize(elemManager.numRegions() );
+    m_size = 0 ;
+
+    for( localIndex er=0; er<elemManager.numRegions(); ++er )
+    {
+      ElementRegionBase const & elemRegion = elemManager.getRegion( er );
+      m_elements[er].resize( elemRegion.numSubRegions());
+      m_elementsView[er].resize( elemRegion.numSubRegions());
+      m_elementsData[er].resize( elemRegion.numSubRegions());
+      for( localIndex esr=0; esr<elemRegion.numSubRegions(); ++esr )
+      {
+        m_elementsData[er][esr].resize(0);
+        m_elements[er][esr].set( m_elementsData[er][esr] );
+        m_elementsView[er][esr] = m_elementsData[er][esr];
+      }
+    }
+  }
+
+
+  localIndex_array m_nodes;
+  localIndex_array m_edges;
+  localIndex_array m_faces;
+  ElementRegionManager::ElementReferenceAccessor< localIndex_array > m_elements;
+  ElementRegionManager::ElementViewAccessor< arrayView1d< localIndex > > m_elementsView;
+
+  array1d< array1d< localIndex_array > > m_elementsData;
+  buffer_type::size_type m_size;
+
+};
+
+struct TopologyChangeUnpackStepData : public TopologyChangeStepData
+{
+  void init( buffer_type const & receiveBuffer,
+             ElementRegionManager const & elemManager)
+  {
+    m_bufferPtr = receiveBuffer.data() ;
+    TopologyChangeStepData::init( elemManager );
+  }
+
+  buffer_unit_type const * m_bufferPtr;
+};
 
 }
 

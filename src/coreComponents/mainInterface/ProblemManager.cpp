@@ -680,6 +680,24 @@ void ProblemManager::generateMesh()
   }
 
   domain.setupCommunications( useNonblockingMPI );
+
+  
+  // domain.forMeshBodies( [&]( MeshBody & meshBody )
+  // {
+  //   meshBody.forMeshLevels( [&]( MeshLevel & meshLevel )
+  //   {
+  //     if( !meshLevel.isShallowCopy() )
+  //     {
+  //       NodeManager const & nodeManager = meshLevel.getNodeManager();
+  //       nodeManager.outputObjectConnectivity();
+
+  //       ElementRegionManager & elementManager = meshLevel.getElemManager();
+  //       elementManager.outputObjectConnectivity();
+  //     }
+  //   } );
+
+  // } );
+
   domain.outputPartitionInformation();
 
   domain.forMeshBodies( [&]( MeshBody & meshBody )
