@@ -2,10 +2,11 @@
  * ------------------------------------------------------------------------------------------------------------
  * SPDX-License-Identifier: LGPL-2.1-only
  *
- * Copyright (c) 2018-2020 Lawrence Livermore National Security LLC
- * Copyright (c) 2018-2020 The Board of Trustees of the Leland Stanford Junior University
- * Copyright (c) 2018-2020 TotalEnergies
- * Copyright (c) 2019-     GEOSX Contributors
+ * Copyright (c) 2016-2024 Lawrence Livermore National Security LLC
+ * Copyright (c) 2018-2024 Total, S.A
+ * Copyright (c) 2018-2024 The Board of Trustees of the Leland Stanford Junior University
+ * Copyright (c) 2023-2024 Chevron
+ * Copyright (c) 2019-     GEOS/GEOSX Contributors
  * All rights reserved
  *
  * See top level LICENSE, COPYRIGHT, CONTRIBUTORS, NOTICE, and ACKNOWLEDGEMENTS files for details.
@@ -24,7 +25,6 @@
 #include "mesh/ObjectManagerBase.hpp"
 #include "mesh/mpiCommunications/CommunicationTools.hpp"
 #include "mesh/mpiCommunications/SpatialPartition.hpp"
-
 
 
 namespace geos
@@ -78,7 +78,7 @@ void DomainPartition::setupBaseLevelMeshGlobalInfo()
 {
   GEOS_MARK_FUNCTION;
 
-#if defined(GEOSX_USE_MPI)
+#if defined(GEOS_USE_MPI)
   PartitionBase & partition1 = getReference< PartitionBase >( keys::partitionManager );
   SpatialPartition & partition = dynamic_cast< SpatialPartition & >(partition1);
 
@@ -90,10 +90,10 @@ void DomainPartition::setupBaseLevelMeshGlobalInfo()
     MPI_Comm cartcomm;
     {
       int reorder = 0;
-      MpiWrapper::cartCreate( MPI_COMM_GEOSX, 3, partition.getPartitions().data(), partition.m_Periodic.data(), reorder, &cartcomm );
+      MpiWrapper::cartCreate( MPI_COMM_GEOS, 3, partition.getPartitions().data(), partition.m_Periodic.data(), reorder, &cartcomm );
       GEOS_ERROR_IF( cartcomm == MPI_COMM_NULL, "Fail to run MPI_Cart_create and establish communications" );
     }
-    int const rank = MpiWrapper::commRank( MPI_COMM_GEOSX );
+    int const rank = MpiWrapper::commRank( MPI_COMM_GEOS );
     int nsdof = 3;
 
     MpiWrapper::cartCoords( cartcomm, rank, nsdof, partition.m_coords.data() );
@@ -125,7 +125,7 @@ void DomainPartition::setupBaseLevelMeshGlobalInfo()
 
   for( std::size_t i = 0; i < m_neighbors.size(); ++i )
   {
-    MpiWrapper::iSend( firstNeighborRanks.toView(), m_neighbors[ i ].neighborRank(), neighborsTag, MPI_COMM_GEOSX, &requests[ i ] );
+    MpiWrapper::iSend( firstNeighborRanks.toView(), m_neighbors[ i ].neighborRank(), neighborsTag, MPI_COMM_GEOS, &requests[ i ] );
   }
 
   // This set will contain the second (neighbor of) neighbors ranks.
@@ -134,7 +134,7 @@ void DomainPartition::setupBaseLevelMeshGlobalInfo()
   array1d< int > neighborOfNeighborRanks;
   for( std::size_t i = 0; i < m_neighbors.size(); ++i )
   {
-    MpiWrapper::recv( neighborOfNeighborRanks, m_neighbors[ i ].neighborRank(), neighborsTag, MPI_COMM_GEOSX, MPI_STATUS_IGNORE );
+    MpiWrapper::recv( neighborOfNeighborRanks, m_neighbors[ i ].neighborRank(), neighborsTag, MPI_COMM_GEOS, MPI_STATUS_IGNORE );
 
     // Insert the neighbors of the current neighbor into the set of second neighbors.
     secondNeighborRanks.insert( neighborOfNeighborRanks.begin(), neighborOfNeighborRanks.end() );
@@ -318,6 +318,163 @@ void DomainPartition::addNeighbors( const unsigned int idim,
       }
     }
   }
+}
+
+void DomainPartition::outputPartitionInformation() const
+{
+
+  auto numberOfEntities = []( ObjectManagerBase const & objectManager )
+  {
+    return std::make_pair( objectManager.getNumberOfLocalIndices(), objectManager.getNumberOfGhosts() );
+  };
+
+  auto addCommaSeparators = []( localIndex const num )
+  {
+    std::string const numStr = std::to_string( num );
+    std::string result;
+    for( std::size_t i = 0; i < numStr.size(); ++i )
+    {
+      result += numStr[i];
+      if( ( numStr.size() - i - 1 ) % 3 == 0 && i != numStr.size() - 1 )
+      {
+        result += ",";
+      }
+    }
+    return result;
+  };
+
+  GEOS_LOG_RANK_0( "MPI Partition information:" );
+
+
+  forMeshBodies( [&]( MeshBody const & meshBody )
+  {
+    meshBody.getMeshLevels().forSubGroupsIndex< MeshLevel >( [&]( int const level, MeshLevel const & meshLevel )
+    {
+      if( level!=0 )
+      {
+
+        // get the number of local and ghost entities for each type
+        auto const [ numLocalNodes, numGhostNodes ] = numberOfEntities( meshLevel.getNodeManager() );
+        real64 const nodeRatio = ( numLocalNodes + numGhostNodes ) > 0 ? real64( numLocalNodes ) / real64( numLocalNodes + numGhostNodes ) : -1.0;
+        auto const [ numLocalEdges, numGhostEdges ] = numberOfEntities( meshLevel.getEdgeManager() );
+        real64 const edgeRatio = ( numLocalEdges + numGhostEdges ) > 0 ? real64( numLocalEdges ) / real64( numLocalEdges + numGhostEdges ) : -1.0;
+        auto const [ numLocalFaces, numGhostFaces ] = numberOfEntities( meshLevel.getFaceManager() );
+        real64 const faceRatio = ( numLocalFaces + numGhostFaces ) > 0 ? real64( numLocalFaces ) / real64( numLocalFaces + numGhostFaces ) : -1.0;
+
+        localIndex numLocalElems = 0;
+        localIndex numGhostElems = 0;
+        meshLevel.getElemManager().forElementSubRegions< CellElementSubRegion >( [&]( CellElementSubRegion const & subRegion )
+        {
+          auto [ numLocalElemsInSubRegion, numGhostElemsInSubRegion ] = numberOfEntities( subRegion );
+          numLocalElems += numLocalElemsInSubRegion;
+          numGhostElems += numGhostElemsInSubRegion;
+        } );
+        real64 const elemRatio = ( numLocalElems + numGhostElems ) > 0 ? real64( numLocalElems ) / real64( numLocalElems + numGhostElems ) : -1.0;
+
+        localIndex const values[8] = { numLocalNodes, numGhostNodes, numLocalEdges, numGhostEdges, numLocalFaces, numGhostFaces, numLocalElems, numGhostElems };
+        localIndex minValues[8] = {0};
+        localIndex maxValues[8] = {0};
+        MpiWrapper::allReduce( values, minValues, 8, MPI_MIN, MPI_COMM_WORLD );
+        MpiWrapper::allReduce( values, maxValues, 8, MPI_MAX, MPI_COMM_WORLD );
+        localIndex const minNumLocalNodes = minValues[0];
+        localIndex const maxNumLocalNodes = maxValues[0];
+        localIndex const minNumGhostNodes = minValues[1];
+        localIndex const maxNumGhostNodes = maxValues[1];
+        localIndex const minNumLocalEdges = minValues[2];
+        localIndex const maxNumLocalEdges = maxValues[2];
+        localIndex const minNumGhostEdges = minValues[3];
+        localIndex const maxNumGhostEdges = maxValues[3];
+        localIndex const minNumLocalFaces = minValues[4];
+        localIndex const maxNumLocalFaces = maxValues[4];
+        localIndex const minNumGhostFaces = minValues[5];
+        localIndex const maxNumGhostFaces = maxValues[5];
+        localIndex const minNumLocalElems = minValues[6];
+        localIndex const maxNumLocalElems = maxValues[6];
+        localIndex const minNumGhostElems = minValues[7];
+        localIndex const maxNumGhostElems = maxValues[7];
+
+        real64 const ratios[4] = { nodeRatio, edgeRatio, faceRatio, elemRatio };
+        real64 minRatios[4] = {0};
+        real64 maxRatios[4] = {0};
+        MpiWrapper::allReduce( ratios, minRatios, 4, MPI_MIN, MPI_COMM_WORLD );
+        MpiWrapper::allReduce( ratios, maxRatios, 4, MPI_MAX, MPI_COMM_WORLD );
+        real64 const minNodeRatio = minRatios[0];
+        real64 const maxNodeRatio = maxRatios[0];
+        real64 const minEdgeRatio = minRatios[1];
+        real64 const maxEdgeRatio = maxRatios[1];
+        real64 const minFaceRatio = minRatios[2];
+        real64 const maxFaceRatio = maxRatios[2];
+        real64 const minElemRatio = minRatios[3];
+        real64 const maxElemRatio = maxRatios[3];
+
+        GEOS_LOG_RANK_0( "  MeshBody: " + meshBody.getName() + " MeshLevel: " + meshLevel.getName() + "\n" );
+        GEOS_LOG_RANK_0( "  |------------------------------------------------------------------------------------------------------------------------------------------------|" );
+        GEOS_LOG_RANK_0( "  |                |             Nodes             |             Edges             |             Faces             |             Elems             |" );
+        GEOS_LOG_RANK_0( "  |------------------------------------------------------------------------------------------------------------------------------------------------|" );
+        GEOS_LOG_RANK_0( GEOS_FMT( "  |min(local/total)|             {:4.2f}              |             {:4.2f}              |             {:4.2f}              |             {:4.2f}              | ",
+                                   minNodeRatio,
+                                   minEdgeRatio,
+                                   minFaceRatio,
+                                   minElemRatio ) );
+        GEOS_LOG_RANK_0( GEOS_FMT( "  |max(local/total)|             {:4.2f}              |             {:4.2f}              |             {:4.2f}              |             {:4.2f}              | ",
+                                   maxNodeRatio,
+                                   maxEdgeRatio,
+                                   maxFaceRatio,
+                                   maxElemRatio ) );
+        GEOS_LOG_RANK_0( "  |------------------------------------------------------------------------------------------------------------------------------------------------|" );
+        GEOS_LOG_RANK_0( "  |      Rank      |     local     |     ghost     |     local     |     ghost     |     local     |     ghost     |     local     |     ghost     |" );
+        GEOS_LOG_RANK_0( "  |----------------|---------------|---------------|---------------|---------------|---------------|---------------|---------------|---------------|" );
+
+
+        GEOS_LOG_RANK_0( GEOS_FMT( "  |            min | {:>13} | {:>13} | {:>13} | {:>13} | {:>13} | {:>13} | {:>13} | {:>13} |",
+                                   addCommaSeparators( minNumLocalNodes ),
+                                   addCommaSeparators( minNumGhostNodes ),
+                                   addCommaSeparators( minNumLocalEdges ),
+                                   addCommaSeparators( minNumGhostEdges ),
+                                   addCommaSeparators( minNumLocalFaces ),
+                                   addCommaSeparators( minNumGhostFaces ),
+                                   addCommaSeparators( minNumLocalElems ),
+                                   addCommaSeparators( minNumGhostElems ) ) );
+
+        GEOS_LOG_RANK_0( GEOS_FMT( "  |            max | {:>13} | {:>13} | {:>13} | {:>13} | {:>13} | {:>13} | {:>13} | {:>13} |",
+                                   addCommaSeparators( maxNumLocalNodes ),
+                                   addCommaSeparators( maxNumGhostNodes ),
+                                   addCommaSeparators( maxNumLocalEdges ),
+                                   addCommaSeparators( maxNumGhostEdges ),
+                                   addCommaSeparators( maxNumLocalFaces ),
+                                   addCommaSeparators( maxNumGhostFaces ),
+                                   addCommaSeparators( maxNumLocalElems ),
+                                   addCommaSeparators( maxNumGhostElems ) ) );
+
+        GEOS_LOG_RANK_0( "  |------------------------------------------------------------------------------------------------------------------------------------------------|" );
+
+        // output in rank order
+        int const thisRank = MpiWrapper::commRank();
+        for( int rank=0; rank<MpiWrapper::commSize(); ++rank )
+        {
+          if( rank == thisRank )
+          {
+            GEOS_LOG( GEOS_FMT( "  | {:14} | {:>13} | {:>13} | {:>13} | {:>13} | {:>13} | {:>13} | {:>13} | {:>13} | ",
+                                rank,
+                                addCommaSeparators( numLocalNodes ),
+                                addCommaSeparators( numGhostNodes ),
+                                addCommaSeparators( numLocalEdges ),
+                                addCommaSeparators( numGhostEdges ),
+                                addCommaSeparators( numLocalFaces ),
+                                addCommaSeparators( numGhostFaces ),
+                                addCommaSeparators( numLocalElems ),
+                                addCommaSeparators( numGhostElems ) ) );
+          }
+          MpiWrapper::barrier();
+        }
+        MpiWrapper::barrier();
+        GEOS_LOG_RANK_0( "  |------------------------------------------------------------------------------------------------------------------------------------------------|" );
+      }
+    } );
+  }
+
+                 );
+
 }
 
 } /* namespace geos */

@@ -2,10 +2,11 @@
  * ------------------------------------------------------------------------------------------------------------
  * SPDX-License-Identifier: LGPL-2.1-only
  *
- * Copyright (c) 2018-2020 Lawrence Livermore National Security LLC
- * Copyright (c) 2018-2020 The Board of Trustees of the Leland Stanford Junior University
- * Copyright (c) 2018-2020 TotalEnergies
- * Copyright (c) 2019-     GEOSX Contributors
+ * Copyright (c) 2016-2024 Lawrence Livermore National Security LLC
+ * Copyright (c) 2018-2024 Total, S.A
+ * Copyright (c) 2018-2024 The Board of Trustees of the Leland Stanford Junior University
+ * Copyright (c) 2023-2024 Chevron
+ * Copyright (c) 2019-     GEOS/GEOSX Contributors
  * All rights reserved
  *
  * See top level LICENSE, COPYRIGHT, CONTRIBUTORS, NOTICE, and ACKNOWLEDGEMENTS files for details.
@@ -89,6 +90,7 @@ void TableRelativePermeability::postInputInitialization()
   RelativePermeabilityBase::postInputInitialization();
 
   integer const numPhases = m_phaseNames.size();
+  integer const numDir = m_wettingNonWettingRelPermTableNames.size(0);
   //reshape Name containers
 
 
@@ -97,11 +99,11 @@ void TableRelativePermeability::postInputInitialization()
                            getFullName() ),
                  InputError );
 
-  for( int dir=0; dir < 3; ++dir )
+  for( int dir=0; dir < numDir; ++dir )
   {
     if( numPhases == 2 )
     {
-      m_wettingNonWettingRelPermTableNames.resize( 3, numPhases );
+      m_wettingNonWettingRelPermTableNames.resize( numDir, numPhases );
 
       GEOS_THROW_IF( m_wettingNonWettingRelPermTableNames[dir][0].empty() || m_wettingNonWettingRelPermTableNames[dir][1].empty(),
                      GEOS_FMT(
@@ -120,8 +122,8 @@ void TableRelativePermeability::postInputInitialization()
     }
     else if( numPhases == 3 )
     {
-      m_wettingIntermediateRelPermTableNames.resize( 3, 2 );
-      m_nonWettingIntermediateRelPermTableNames.resize( 3, 2 );
+      m_wettingIntermediateRelPermTableNames.resize( numDir, 2 );
+      m_nonWettingIntermediateRelPermTableNames.resize( numDir, 2 );
       GEOS_THROW_IF( m_wettingIntermediateRelPermTableNames[dir][0].empty() || m_wettingIntermediateRelPermTableNames[dir][1].empty()
                      || m_nonWettingIntermediateRelPermTableNames[dir][0].empty() || m_nonWettingIntermediateRelPermTableNames[dir][1].empty(),
                      GEOS_FMT(
@@ -148,12 +150,33 @@ void TableRelativePermeability::postInputInitialization()
   }
 }
 
+void TableRelativePermeability::resizeFields( localIndex const size, localIndex const numPts )
+{
+  RelativePermeabilityBase::resizeFields( size, numPts );
+
+  integer const numPhases = numFluidPhases();
+  integer const numDir =  m_wettingNonWettingRelPermTableNames.size(0);
+
+
+  m_phaseRelPerm.resize( size, numPts, numPhases, numDir );
+  m_phaseRelPerm_n.resize( size, numPts, numPhases, numDir );
+  m_dPhaseRelPerm_dPhaseVolFrac.resize( size, numPts, numPhases, numPhases, numDir );
+  //phase trapped for stats
+  m_phaseTrappedVolFrac.resize( size, numPts, numPhases );
+  m_phaseTrappedVolFrac.zero();
+
+
+}
+
+
 void TableRelativePermeability::initializePreSubGroups()
 {
   RelativePermeabilityBase::initializePreSubGroups();
+  
+  integer const numDir = m_wettingNonWettingRelPermTableNames.size(0);
 
   integer const numPhases = m_phaseNames.size();
-  m_phaseMinVolumeFraction.resize( 3, MAX_NUM_PHASES );
+  m_phaseMinVolumeFraction.resize( numDir, MAX_NUM_PHASES );
 
 
   string const fullName = getFullName();
@@ -166,7 +189,7 @@ void TableRelativePermeability::initializePreSubGroups()
 
   FunctionManager const & functionManager = FunctionManager::getInstance();
 
-  for( int dir=0; dir<3; ++dir )
+  for( int dir=0; dir<numDir; ++dir )
   {
     if( numPhases == 2 )
     {
@@ -262,16 +285,16 @@ void TableRelativePermeability::createAllTableKernelWrappers()
   FunctionManager const & functionManager = FunctionManager::getInstance();
 
   integer const numPhases = m_phaseNames.size();
-
+  integer const numDir =  m_wettingNonWettingRelPermTableNames.size(0);
   // we want to make sure that the wrappers are always up-to-date, so we recreate them everytime
 
   m_relPermKernelWrappers.clear();
 
-  for( int dir=0; dir<3; ++dir )
+  for( int dir=0; dir<numDir; ++dir )
   {
     if( numPhases == 2 )
     {
-      m_relPermKernelWrappers.resize( 3, numPhases );
+      m_relPermKernelWrappers.resize( numDir, numPhases );
       for( integer ip = 0; ip < m_wettingNonWettingRelPermTableNames[dir].size(); ++ip )
       {
         TableFunction const & relPermTable = functionManager.getGroup< TableFunction >(
@@ -281,7 +304,7 @@ void TableRelativePermeability::createAllTableKernelWrappers()
     }
     else if( numPhases == 3 )
     {
-      m_relPermKernelWrappers.resize( 3, 4 );     //because of TPT indirection
+      m_relPermKernelWrappers.resize( numDir, 4 );     //because of TPT indirection
       for( integer ip = 0; ip < m_wettingIntermediateRelPermTableNames[dir].size(); ++ip )
       {
         TableFunction const & relPermTable = functionManager.getGroup< TableFunction >(
@@ -305,9 +328,9 @@ TableRelativePermeability::KernelWrapper::
                  arrayView1d< integer const > const & phaseTypes,
                  arrayView1d< integer const > const & phaseOrder,
                  ThreePhaseInterpolator const & threePhaseInterpolator,
-                 arrayView4d< real64, relperm::USD_RELPERM > const & phaseRelPerm,
-                 arrayView5d< real64, relperm::USD_RELPERM_DS > const & dPhaseRelPerm_dPhaseVolFrac,
-                 arrayView3d< real64, relperm::USD_PHASE > const & phaseTrappedVolFrac )
+                 arrayView4d< real64, constitutive::relperm::USD_RELPERM > const & phaseRelPerm,
+                 arrayView5d< real64, constitutive::relperm::USD_RELPERM_DS > const & dPhaseRelPerm_dPhaseVolFrac,
+                 arrayView3d< real64, constitutive::relperm::USD_PHASE > const & phaseTrappedVolFrac )
   : RelativePermeabilityBaseUpdate( phaseTypes,
                                     phaseOrder,
                                     phaseRelPerm,

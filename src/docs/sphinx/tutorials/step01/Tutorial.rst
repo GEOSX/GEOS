@@ -91,6 +91,9 @@ in different regions of the domain at different moments of the simulation.
 
 In this first example, we use one type of solver in the entire domain and
 for the entire duration of the simulation.
+The input file for this tutorial can be found in the repository at
+`inputFiles/singlePhaseFlow/3D_10x10x10_compressible_smoke.xml <https://github.com/GEOS-DEV/GEOS/blob/6dd40e776556ec1235ba183e00796f2eedc035ac/inputFiles/singlePhaseFlow/3D_10x10x10_compressible_smoke.xml>`_, which also includes
+`inputFiles/singlePhaseFlow/3D_10x10x10_compressible_base.xml <https://github.com/GEOS-DEV/GEOS/blob/6dd40e776556ec1235ba183e00796f2eedc035ac/inputFiles/singlePhaseFlow/3D_10x10x10_compressible_base.xml>`_.
 The solver we are specifying here is a single-phase flow solver.
 In GEOS, such a solver is created using a ``SinglePhaseFVM`` element.
 This type of solver is one among several cell-centered single-phase finite volume methods.
@@ -134,7 +137,7 @@ In production runs, you may want to suppress most console output.
 
 For solvers of the ``SinglePhaseFVM`` family, one required attribute is a discretization scheme.
 Here, we use a Two-Point Flux Approximation (TPFA) finite volume discretization scheme called ``singlePhaseTPFA``.
-To know the list of admissible values of an attribute, please see GEOS's XML schema.
+To know the list of admissible values of an attribute, please see `GEOS's XML schema <https://geosx-geosx.readthedocs-hosted.com/en/latest/docs/sphinx/CompleteXMLSchema.html#>`_.
 This discretization type must know how to find permeability values that it uses internally to compute transmissibilities.
 The ``permeabilityNames`` attribute tells the solver the user-defined name (the *handle*)
 of the permeability values that will be defined elsewhere in the input file.
@@ -291,14 +294,11 @@ Now to use this scheme, we need to supply more details in the ``NumericalMethods
   :start-after: <!-- SPHINX_TUT_INT_HEX_NUM_METHODS -->
   :end-before: <!-- SPHINX_TUT_INT_HEX_NUM_METHODS_END -->
 
-The ``fieldName`` attribute specifies which property will be used for flux computations,
-and also specifies that for Dirichlet boundary conditions, the pressure value at the element face is used.
-The ``coefficientName`` attribute is used for the stencil transmissibility computations.
-
 Note that in GEOS, there is a difference between physics solvers and numerical methods.
 Their parameterizations are thus independent. We can have
 multiple solvers using the same numerical scheme but with different tolerances, for instance.
 
+The available numerical methods and their options are listed in the GEOS XML schema documentation which may be found by using the search function in the documentation.
 
 .. _ElementRegions_tag_single_phase_internal_mesh:
 

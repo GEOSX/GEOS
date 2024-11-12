@@ -2,10 +2,11 @@
  * ------------------------------------------------------------------------------------------------------------
  * SPDX-License-Identifier: LGPL-2.1-only
  *
- * Copyright (c) 2018-2020 Lawrence Livermore National Security LLC
- * Copyright (c) 2018-2020 The Board of Trustees of the Leland Stanford Junior University
- * Copyright (c) 2018-2020 TotalEnergies
- * Copyright (c) 2019-     GEOSX Contributors
+ * Copyright (c) 2016-2024 Lawrence Livermore National Security LLC
+ * Copyright (c) 2018-2024 Total, S.A
+ * Copyright (c) 2018-2024 The Board of Trustees of the Leland Stanford Junior University
+ * Copyright (c) 2023-2024 Chevron
+ * Copyright (c) 2019-     GEOS/GEOSX Contributors
  * All rights reserved
  *
  * See top level LICENSE, COPYRIGHT, CONTRIBUTORS, NOTICE, and ACKNOWLEDGEMENTS files for details.
@@ -16,8 +17,8 @@
  * @file IsothermalCompositionalMultiphaseFVMKernelUtilities.hpp
  */
 
-#ifndef GEOSX_PHYSICSSOLVERS_FLUIDFLOW_ISOTHERMALCOMPOSITIONALMULTIPHASEFVMKERNELUTILITIES_HPP_
-#define GEOSX_PHYSICSSOLVERS_FLUIDFLOW_ISOTHERMALCOMPOSITIONALMULTIPHASEFVMKERNELUTILITIES_HPP_
+#ifndef GEOS_PHYSICSSOLVERS_FLUIDFLOW_ISOTHERMALCOMPOSITIONALMULTIPHASEFVMKERNELUTILITIES_HPP_
+#define GEOS_PHYSICSSOLVERS_FLUIDFLOW_ISOTHERMALCOMPOSITIONALMULTIPHASEFVMKERNELUTILITIES_HPP_
 
 #include "common/DataLayouts.hpp"
 #include "common/DataTypes.hpp"
@@ -333,6 +334,9 @@ struct PPUPhaseFlux
            real64 ( & dCompFlux_dP )[numFluxSupportPoints][numComp],
            real64 ( & dCompFlux_dC )[numFluxSupportPoints][numComp][numComp] )
   {
+
+
+
     real64 dPresGrad_dP[numFluxSupportPoints]{};
     real64 dPresGrad_dC[numFluxSupportPoints][numComp]{};
     real64 dGravHead_dP[numFluxSupportPoints]{};
@@ -354,10 +358,23 @@ struct PPUPhaseFlux
     localIndex const esr_up = sesri[k_up];
     localIndex const ei_up = sei[k_up];
 
-    auto const correction_term = LvArray::math::abs( faceNormal[0] + faceNormal[1] + faceNormal[2] + 1e-25 );
-    real64 const mobility = LvArray::math::abs( LvArray::tensorOps::AiBi< 3 >( phaseMob[er_up][esr_up][ei_up][ip], faceNormal ) )
-                            /correction_term;
+    integer const numDir =  phaseMob[er_up][esr_up][ei_up][ip].size();    
+    // std::cout << "Size of dimension 4: " << numDir << std::endl;
 
+
+    real64 mobility;
+    auto const correction_term = LvArray::math::abs( faceNormal[0] + faceNormal[1] + faceNormal[2] + 1e-25 );   
+
+    if ( numDir == 1)
+    {
+      mobility = phaseMob[er_up][esr_up][ei_up][ip][0];
+    }
+    else
+    {
+
+      mobility = LvArray::math::abs( LvArray::tensorOps::AiBi< 3 >( phaseMob[er_up][esr_up][ei_up][ip], faceNormal ) )
+                              /correction_term;
+    }
 //      GEOS_LOG_RANK_0(GEOS_FMT("-----\n faceNormal: {}",faceNormal));
 //      GEOS_LOG_RANK_0(GEOS_FMT("phaseMob check [ip-tmob-pmob]: {} - {} - {}", ip, phaseMob[er_up][esr_up][ei_up][ip], mobility));
 
@@ -374,17 +391,31 @@ struct PPUPhaseFlux
     }
     // compute phase flux using upwind mobility.
     phaseFlux = mobility * potGrad;
-
-    real64 const dMob_dP = LvArray::tensorOps::AiBi< 3 >( dPhaseMob[er_up][esr_up][ei_up][ip][Deriv::dP], faceNormal )/  correction_term;
-    arraySlice2d< real64 const, constitutive::relperm::USD_MOB_DC - 2 > dPhaseMobSub = dPhaseMob[er_up][esr_up][ei_up][ip];
-
-    // add contribution from upstream cell mobility derivatives
-    dPhaseFlux_dP[k_up] += dMob_dP * potGrad;
-    for( integer jc = 0; jc < numComp; ++jc )
+    
+    if ( numDir == 1)
     {
-      dPhaseFlux_dC[k_up][jc] +=LvArray::tensorOps::AiBi< 3 >( dPhaseMobSub[Deriv::dC + jc], faceNormal ) * potGrad / correction_term;
+      real64 const dMob_dP = dPhaseMob[er_up][esr_up][ei_up][ip][Deriv::dP][0];
+      arraySlice2d< real64 const, constitutive::relperm::USD_MOB_DC - 2 > dPhaseMobSub = dPhaseMob[er_up][esr_up][ei_up][ip];  
+
+      dPhaseFlux_dP[k_up] += dMob_dP * potGrad;
+      for( integer jc = 0; jc < numComp; ++jc )
+      {
+        dPhaseFlux_dC[k_up][jc] += dPhaseMobSub[Deriv::dC+jc][0] * potGrad;
+      }
     }
 
+    else 
+    {
+      real64 const dMob_dP = LvArray::tensorOps::AiBi< 3 >( dPhaseMob[er_up][esr_up][ei_up][ip][Deriv::dP], faceNormal )/  correction_term;
+      arraySlice2d< real64 const, constitutive::relperm::USD_MOB_DC - 2 > dPhaseMobSub = dPhaseMob[er_up][esr_up][ei_up][ip];
+    
+      // add contribution from upstream cell mobility derivatives
+      dPhaseFlux_dP[k_up] += dMob_dP * potGrad;
+      for( integer jc = 0; jc < numComp; ++jc )
+      {
+        dPhaseFlux_dC[k_up][jc] +=LvArray::tensorOps::AiBi< 3 >( dPhaseMobSub[Deriv::dC + jc], faceNormal ) * potGrad / correction_term;
+      }
+    }
     //distribute on phaseComponentFlux here
     PhaseComponentFlux::compute( ip, k_up, seri, sesri, sei, phaseCompFrac, dPhaseCompFrac, dCompFrac_dCompDens, phaseFlux
                                  , dPhaseFlux_dP, dPhaseFlux_dC, compFlux, dCompFlux_dP, dCompFlux_dC );
@@ -455,6 +486,9 @@ struct C1PPUPhaseFlux
            real64 ( & dCompFlux_dP )[numFluxSupportPoints][numComp],
            real64 ( & dCompFlux_dC )[numFluxSupportPoints][numComp][numComp] )
   {
+
+
+
     real64 dPresGrad_dP[numFluxSupportPoints]{};
     real64 dPresGrad_dC[numFluxSupportPoints][numComp]{};
     real64 dGravHead_dP[numFluxSupportPoints]{};
@@ -479,7 +513,10 @@ struct C1PPUPhaseFlux
 
       gravHead += gravD;
     }
-
+    //integer const numDir = 3; //phaseMob.size(4); 
+    integer const numDir = phaseMob[seri[0]][sesri[0]][sei[0]][ip].size();
+    std::cout << "Size of utilities: " << numDir << std::endl;
+    
     // *** upwinding ***
 
     // phase flux and derivatives
@@ -489,11 +526,90 @@ struct C1PPUPhaseFlux
     real64 Ttrans = fabs( trans[0] );
     potGrad = potGrad / Ttrans;
 
-    real64 const mobility_i = LvArray::tensorOps::AiBi< 3 >( phaseMob[seri[0]][sesri[0]][sei[0]][ip],
-                                                             faceNormal );
-    real64
-    const mobility_j = LvArray::tensorOps::AiBi< 3 >( phaseMob[seri[1]][sesri[1]][sei[1]][ip], faceNormal );
+    real64 mobility_i;
+    real64 mobility_j;
 
+    if (numDir == 1)
+    {
+      mobility_i = phaseMob[seri[0]][sesri[0]][sei[0]][ip][0];
+      mobility_j = phaseMob[seri[1]][sesri[1]][sei[1]][ip][0];
+    
+
+        // compute phase flux, see Eqs. (66) and (69) from the reference above
+    real64 smoEps = epsC1PPU;
+    if( fabs( gravHead ) <= 1e-20 )
+      smoEps = 1000;
+    real64 const tmpSqrt = sqrt( potGrad * potGrad + smoEps * smoEps );
+    real64 const smoMax = 0.5 * (-potGrad + tmpSqrt);
+
+    
+    {
+      real64 const dMob_dP = dPhaseMob[seri[0]][sesri[0]][sei[0]][ip][Deriv::dP][0];
+      dPhaseFlux_dP[0] += Ttrans * potGrad * dMob_dP;
+    }
+        // dC
+
+      {
+      arraySlice1d< real64 const, compflow::USD_PHASE_DC - 2 >
+      dPhaseMobSub = dPhaseMob[seri[0]][sesri[0]][sei[0]][ip][0];
+      for( integer jc = 0; jc < numComp; ++jc )
+      {
+        dPhaseFlux_dC[0][jc] += Ttrans * potGrad * dPhaseMobSub[Deriv::dC + jc];
+      }
+    }
+    real64 const tmpInv = 1.0 / tmpSqrt;
+    real64 const dSmoMax_x = 0.5 * (1.0 - potGrad * tmpInv);
+
+    // pressure gradient and mobility difference depend on all points in the stencil
+    real64 const dMobDiff_sign[numFluxSupportPoints] = {-1.0, 1.0};
+
+
+
+      for( integer ke = 0; ke < numFluxSupportPoints; ++ke )
+      {
+      // dP
+      real64 const dPotGrad_dP = dPresGrad_dP[ke] - dGravHead_dP[ke];
+      // first part
+      dPhaseFlux_dP[ke] += dPotGrad_dP * mobility_i;
+      // second part
+      real64 const dSmoMax_dP = -dPotGrad_dP * dSmoMax_x;
+      dPhaseFlux_dP[ke] += -dSmoMax_dP * (mobility_j - mobility_i);
+
+      real64 const dMob_dP = dPhaseMob[seri[ke]][sesri[ke]][sei[ke]][ip][Deriv::dP][0];
+      dPhaseFlux_dP[ke] += -Ttrans * smoMax * dMobDiff_sign[ke] * dMob_dP;
+
+      // dC
+
+      arraySlice1d< real64 const, compflow::USD_PHASE_DC - 2 >
+      dPhaseMobSub = dPhaseMob[seri[ke]][sesri[ke]][sei[ke]][ip][0];
+
+      for( integer jc = 0; jc < numComp; ++jc )
+      {
+        real64 const dPotGrad_dC = dPresGrad_dC[ke][jc] - dGravHead_dC[ke][jc];
+        // first part
+        dPhaseFlux_dC[ke][jc] += dPotGrad_dC * mobility_i;
+        // second part
+        real64 const dSmoMax_dC = -dPotGrad_dC * dSmoMax_x;
+        dPhaseFlux_dC[ke][jc] += -dSmoMax_dC * (mobility_j - mobility_i);
+        dPhaseFlux_dC[ke][jc] += -Ttrans * smoMax * dMobDiff_sign[ke] * dPhaseMobSub[Deriv::dC + jc];
+      }  
+    }
+    
+    potGrad = potGrad * Ttrans;
+
+    // choose upstream cell for composition upwinding
+    k_up = (phaseFlux >= 0) ? 0 : 1;
+
+    //distribute on phaseComponentFlux here
+    PhaseComponentFlux::compute( ip, k_up, seri, sesri, sei, phaseCompFrac, dPhaseCompFrac, dCompFrac_dCompDens, phaseFlux
+                                 , dPhaseFlux_dP, dPhaseFlux_dC, compFlux, dCompFlux_dP, dCompFlux_dC );
+    }
+
+    else
+    {
+      mobility_i = LvArray::tensorOps::AiBi< 3 >( phaseMob[seri[0]][sesri[0]][sei[0]][ip], faceNormal );
+      mobility_j = LvArray::tensorOps::AiBi< 3 >( phaseMob[seri[1]][sesri[1]][sei[1]][ip], faceNormal );
+    
     // compute phase flux, see Eqs. (66) and (69) from the reference above
     real64 smoEps = epsC1PPU;
     if( fabs( gravHead ) <= 1e-20 )
@@ -503,18 +619,23 @@ struct C1PPUPhaseFlux
 
     phaseFlux = Ttrans * (potGrad * mobility_i - smoMax * (mobility_j - mobility_i));
 
-    // derivativess
+
+    
+
+    // derivatives
 
     // first part, mobility derivative
 
     // dP
-    {
+
+{
       real64 const dMob_dP = LvArray::tensorOps::AiBi< 3 >( dPhaseMob[seri[0]][sesri[0]][sei[0]][ip][Deriv::dP], faceNormal );
       dPhaseFlux_dP[0] += Ttrans * potGrad * dMob_dP;
     }
-
     // dC
-    {
+
+
+{
       arraySlice2d< real64 const, constitutive::relperm::USD_MOB_DC - 2 >
       dPhaseMobSub = dPhaseMob[seri[0]][sesri[0]][sei[0]][ip];
       for( integer jc = 0; jc < numComp; ++jc )
@@ -528,42 +649,44 @@ struct C1PPUPhaseFlux
 
     // pressure gradient and mobility difference depend on all points in the stencil
     real64 const dMobDiff_sign[numFluxSupportPoints] = {-1.0, 1.0};
-    for( integer ke = 0; ke < numFluxSupportPoints; ++ke )
-    {
-      // dP
 
-      real64 const dPotGrad_dP = dPresGrad_dP[ke] - dGravHead_dP[ke];
 
-      // first part
-      dPhaseFlux_dP[ke] += dPotGrad_dP * mobility_i;
 
-      // second part
-      real64 const dSmoMax_dP = -dPotGrad_dP * dSmoMax_x;
-      dPhaseFlux_dP[ke] += -dSmoMax_dP * (mobility_j - mobility_i);
-
-      real64 const dMob_dP = LvArray::tensorOps::AiBi< 3 >( dPhaseMob[seri[ke]][sesri[ke]][sei[ke]][ip][Deriv::dP], faceNormal );
-      dPhaseFlux_dP[ke] += -Ttrans * smoMax * dMobDiff_sign[ke] * dMob_dP;
-
-      // dC
-
-      arraySlice2d< real64 const, constitutive::relperm::USD_MOB_DC - 2 >
-      dPhaseMobSub = dPhaseMob[seri[ke]][sesri[ke]][sei[ke]][ip];
-
-      for( integer jc = 0; jc < numComp; ++jc )
+      for( integer ke = 0; ke < numFluxSupportPoints; ++ke )
       {
-        real64 const dPotGrad_dC = dPresGrad_dC[ke][jc] - dGravHead_dC[ke][jc];
+        // dP
 
+        real64 const dPotGrad_dP = dPresGrad_dP[ke] - dGravHead_dP[ke];
+  
         // first part
-        dPhaseFlux_dC[ke][jc] += dPotGrad_dC * mobility_i;
-
+        dPhaseFlux_dP[ke] += dPotGrad_dP * mobility_i;
+  
         // second part
-        real64 const dSmoMax_dC = -dPotGrad_dC * dSmoMax_x;
-        dPhaseFlux_dC[ke][jc] += -dSmoMax_dC * (mobility_j - mobility_i);
-        dPhaseFlux_dC[ke][jc] += -Ttrans * smoMax * dMobDiff_sign[ke] *
-                                 LvArray::tensorOps::AiBi< 3 >( dPhaseMobSub[Deriv::dC + jc], faceNormal );
-      }
-    }
+        real64 const dSmoMax_dP = -dPotGrad_dP * dSmoMax_x;
+        dPhaseFlux_dP[ke] += -dSmoMax_dP * (mobility_j - mobility_i);
+  
+        real64 const dMob_dP = LvArray::tensorOps::AiBi< 3 >( dPhaseMob[seri[ke]][sesri[ke]][sei[ke]][ip][Deriv::dP], faceNormal );
+        dPhaseFlux_dP[ke] += -Ttrans * smoMax * dMobDiff_sign[ke] * dMob_dP;
+  
+        // dC
+  
+        arraySlice2d< real64 const, constitutive::relperm::USD_MOB_DC - 2 >
+        dPhaseMobSub = dPhaseMob[seri[ke]][sesri[ke]][sei[ke]][ip];
 
+        for( integer jc = 0; jc < numComp; ++jc )
+        {
+          real64 const dPotGrad_dC = dPresGrad_dC[ke][jc] - dGravHead_dC[ke][jc];
+  
+          // first part
+           dPhaseFlux_dC[ke][jc] += dPotGrad_dC * mobility_i;
+  
+          // second part
+          real64 const dSmoMax_dC = -dPotGrad_dC * dSmoMax_x;
+          dPhaseFlux_dC[ke][jc] += -dSmoMax_dC * (mobility_j - mobility_i);
+          dPhaseFlux_dC[ke][jc] += -Ttrans * smoMax * dMobDiff_sign[ke] *
+                                   LvArray::tensorOps::AiBi< 3 >( dPhaseMobSub[Deriv::dC + jc], faceNormal );
+        }
+        
     potGrad = potGrad * Ttrans;
 
     // choose upstream cell for composition upwinding
@@ -572,6 +695,13 @@ struct C1PPUPhaseFlux
     //distribute on phaseComponentFlux here
     PhaseComponentFlux::compute( ip, k_up, seri, sesri, sei, phaseCompFrac, dPhaseCompFrac, dCompFrac_dCompDens, phaseFlux
                                  , dPhaseFlux_dP, dPhaseFlux_dC, compFlux, dCompFlux_dP, dCompFlux_dC );
+      }
+    
+    }
+
+
+
+
   }
 };
 
@@ -2549,7 +2679,7 @@ struct C1PPUPhaseFlux
 
 }     // namespace isothermalCompositionalMultiPhaseFVMKernelUtilities
 
-} // namespace geosx
+} // namespace geos
 
 
-#endif // GEOSX_PHYSICSSOLVERS_FLUIDFLOW_ISOTHERMALCOMPOSITIONALMULTIPHASEFVMKERNELUTILITIES_HPP_
+#endif // GEOS_PHYSICSSOLVERS_FLUIDFLOW_ISOTHERMALCOMPOSITIONALMULTIPHASEFVMKERNELUTILITIES_HPP_

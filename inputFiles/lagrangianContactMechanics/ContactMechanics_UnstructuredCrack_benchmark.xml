@@ -1,76 +1,39 @@
 <?xml version="1.0" ?>
 
 <Problem>
-
   <Included>
     <File
-      name="./ContactMechanics_UnstructuredCrack_base.xml"/>
+      name="./UnstructuredCrack_benchmark.xml"/>
   </Included>
 
-  <Mesh>
-    <VTKMesh
-      name="CubeHex"
-      file="crackInPlane_benchmark.vtu"/>
-  </Mesh>
+  <Solvers
+    gravityVector="{ 0.0, 0.0, 0.0 }">
+    <SolidMechanicsLagrangeContact
+      name="lagrangiancontact"
+      timeIntegrationOption="QuasiStatic"
+      stabilizationName="TPFAstabilization"
+      logLevel="1"
+      discretization="FE1"
+      targetRegions="{ Region, Fracture }">
+      <NonlinearSolverParameters
+        newtonTol="1.0e-8"
+        logLevel="2"
+        newtonMaxIter="10"
+        lineSearchAction="Require"
+        lineSearchMaxCuts="2"/>
+      <LinearSolverParameters
+        directParallel="0"/>
+    </SolidMechanicsLagrangeContact>
+  </Solvers>
 
- <Geometry>
-    <Rectangle
-      name="fracture"
-      normal="{-0.342020143325669, 0.939692620785908, 0.0}"
-      origin="{0.0, 0.0, 0.0}"
-      lengthVector="{0.939692620785908, 0.342020143325669, 0.0}"
-      widthVector="{0.0, 0.0, 1.0}"
-      dimensions="{ 2, 10 }"/>
+  <NumericalMethods>
+    <FiniteVolume>
+      <TwoPointFluxApproximation
+        name="TPFAstabilization"/>
+    </FiniteVolume>
+  </NumericalMethods>
 
-    <Rectangle
-      name="core"
-      normal="{-0.342020143325669, 0.939692620785908, 0.0}"
-      origin="{0.0, 0.0, 0.0}"
-      lengthVector="{0.939692620785908, 0.342020143325669, 0.0}"
-      widthVector="{0.0, 0.0, 1.0}"
-      dimensions="{ 2, 10 }"/>
 
-    <Box
-      name="rightPoint"
-      xMin="{ 39.9, -40.1, -0.001}"
-      xMax="{ 40.1,  40.1,  0.051}"/>
-
-    <Box
-      name="leftPoint"
-      xMin="{-40.1, -40.1, -0.001}"
-      xMax="{-39.9,  40.1,  0.051}"/>
-
-    <Box
-      name="topPoint"
-      xMin="{-40.1, 39.9, -0.001}"
-      xMax="{ 40.1, 40.1,  0.051}"/>
-
-    <Box
-      name="bottomPoint"
-      xMin="{-40.1, -40.1, -0.001}"
-      xMax="{ 40.1, -39.9,  0.051}"/>
-
-    <Box
-      name="front"
-      xMin="{-40.1, -40.1, -0.001}"
-      xMax="{ 40.1,  40.1,  0.001}"/>
-
-    <Box
-      name="rear"
-      xMin="{-40.1, -40.1, 0.049}"
-      xMax="{ 40.1,  40.1, 0.051}"/>
-
-    <Box
-      name="xmin"
-      xMin="{-40.1, -40.1, -0.001}"
-      xMax="{-39.9,  40.1,  0.051}"/>
-
-    <Box
-      name="xmax"
-      xMin="{39.9, -40.1, -0.001}"
-      xMax="{40.1,  40.1, 0.051}"/>
-  </Geometry>
-  
   <Events
     maxTime="2.0">
     <SoloEvent
@@ -90,14 +53,12 @@
       targetExactTimestep="0"
       target="/Outputs/restartOutput"/>
 
-    <!-- This event is applied every 1.0s.  The targetExactTimestep
-    flag allows this event to request a dt modification to match an
-    integer multiple of the timeFrequency. -->
     <PeriodicEvent
       name="outputs"
       timeFrequency="1"
       targetExactTimestep="0"
       target="/Outputs/siloOutput"/>
+
   </Events>
 
 </Problem>

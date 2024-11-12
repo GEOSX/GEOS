@@ -2,10 +2,11 @@
  * ------------------------------------------------------------------------------------------------------------
  * SPDX-License-Identifier: LGPL-2.1-only
  *
- * Copyright (c) 2018-2020 Lawrence Livermore National Security LLC
- * Copyright (c) 2018-2020 The Board of Trustees of the Leland Stanford Junior University
- * Copyright (c) 2018-2020 TotalEnergies
- * Copyright (c) 2019-     GEOSX Contributors
+ * Copyright (c) 2016-2024 Lawrence Livermore National Security LLC
+ * Copyright (c) 2018-2024 Total, S.A
+ * Copyright (c) 2018-2024 The Board of Trustees of the Leland Stanford Junior University
+ * Copyright (c) 2023-2024 Chevron
+ * Copyright (c) 2019-     GEOS/GEOSX Contributors
  * All rights reserved
  *
  * See top level LICENSE, COPYRIGHT, CONTRIBUTORS, NOTICE, and ACKNOWLEDGEMENTS files for details.
@@ -57,10 +58,33 @@ BrooksCoreyRelativePermeability::BrooksCoreyRelativePermeability( string const &
 
 }
 
+void BrooksCoreyRelativePermeability::resizeFields( localIndex const size, localIndex const numPts )
+{
+  RelativePermeabilityBase::resizeFields( size, numPts );
+
+  integer const numPhases = numFluidPhases();
+
+
+
+  integer const numDir = m_phaseRelPermExponent.size(0);
+
+
+  m_phaseRelPerm.resize( size, numPts, numPhases, numDir );
+  m_phaseRelPerm_n.resize( size, numPts, numPhases, numDir );
+  m_dPhaseRelPerm_dPhaseVolFrac.resize( size, numPts, numPhases, numPhases, numDir );
+  //phase trapped for stats
+  m_phaseTrappedVolFrac.resize( size, numPts, numPhases );
+  m_phaseTrappedVolFrac.zero();
+
+
+}
+
 void BrooksCoreyRelativePermeability::postInputInitialization()
 {
   RelativePermeabilityBase::postInputInitialization();
-  m_volFracScale.resize( 3 /*ndims*/ );
+
+  integer const numDir = m_phaseRelPermExponent.size(0);
+  m_volFracScale.resize( numDir /*ndims*/ );
 
   auto const checkInputSize = [&]( auto const & array, auto const & attribute ) {
     GEOS_THROW_IF_NE_MSG( array.size(), m_phaseNames.size(),
@@ -69,7 +93,7 @@ void BrooksCoreyRelativePermeability::postInputInitialization()
                           InputError );
   };
 
-  for( int dir = 0; dir < 3; ++dir )
+  for( int dir = 0; dir < numDir; ++dir )
   {
     checkInputSize( m_phaseMinVolumeFraction[dir], viewKeyStruct::phaseMinVolumeFractionString());
     m_volFracScale[dir] = 1.0;
@@ -91,7 +115,7 @@ void BrooksCoreyRelativePermeability::postInputInitialization()
     }
   }
 
-  for( int dir = 0; dir < 3; ++dir )
+  for( int dir = 0; dir < numDir; ++dir )
   {
 
     checkInputSize( m_phaseRelPermExponent[dir], viewKeyStruct::phaseRelPermExponentString());

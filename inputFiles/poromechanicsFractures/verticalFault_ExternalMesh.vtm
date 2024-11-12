@@ -5,7 +5,7 @@
           name="main" 
           file="Domain_Mesh_FaultModel.vtu"
           fieldsToImport="{ YoungModulus, PoissonRatio  }"
-          fieldNamesInGEOSX="{ rock_youngModulus, rock_poissonRatio }"
+          fieldNamesInGEOS="{ rock_youngModulus, rock_poissonRatio }"
         />
         <DataSet 
           name="fracture" 

@@ -2,10 +2,11 @@
  * ------------------------------------------------------------------------------------------------------------
  * SPDX-License-Identifier: LGPL-2.1-only
  *
- * Copyright (c) 2018-2020 Lawrence Livermore National Security LLC
- * Copyright (c) 2018-2020 The Board of Trustees of the Leland Stanford Junior University
- * Copyright (c) 2018-2020 TotalEnergies
- * Copyright (c) 2019-     GEOSX Contributors
+ * Copyright (c) 2016-2024 Lawrence Livermore National Security LLC
+ * Copyright (c) 2018-2024 Total, S.A
+ * Copyright (c) 2018-2024 The Board of Trustees of the Leland Stanford Junior University
+ * Copyright (c) 2023-2024 Chevron
+ * Copyright (c) 2019-     GEOS/GEOSX Contributors
  * All rights reserved
  *
  * See top level LICENSE, COPYRIGHT, CONTRIBUTORS, NOTICE, and ACKNOWLEDGEMENTS files for details.
@@ -137,14 +138,14 @@ void MeshManager::importFields( DomainPartition & domain )
       for( auto const & pair : fieldsMapping )
       {
         string const & meshFieldName = pair.first;
-        string const & geosxFieldName = pair.second;
+        string const & geosFieldName = pair.second;
         // Find destination
-        if( !subRegion.hasWrapper( geosxFieldName ) )
+        if( !subRegion.hasWrapper( geosFieldName ) )
         {
           // Skip - the user may have not enabled a particular physics model/solver on this destination region.
           if( generator.getLogLevel() >= 1 )
           {
-            GEOS_LOG_RANK_0( "Skipping import of " << meshFieldName << " -> " << geosxFieldName <<
+            GEOS_LOG_RANK_0( "Skipping import of " << meshFieldName << " -> " << geosFieldName <<
                              " on " << region.getName() << "/" << subRegion.getName() << " (field not found)" );
           }
 
@@ -152,16 +153,16 @@ void MeshManager::importFields( DomainPartition & domain )
         }
 
         // Now that we know that the subRegion has this wrapper,
-        // we can add the geosxFieldName to the list of fields to synchronize
-        fieldsToBeSync.addElementFields( { geosxFieldName }, { region.getName() } );
-        WrapperBase & wrapper = subRegion.getWrapperBase( geosxFieldName );
+        // we can add the geosFieldName to the list of fields to synchronize
+        fieldsToBeSync.addElementFields( { geosFieldName }, { region.getName() } );
+        WrapperBase & wrapper = subRegion.getWrapperBase( geosFieldName );
         if( generator.getLogLevel() >= 1 )
         {
-          GEOS_LOG_RANK_0( "Importing field " << meshFieldName << " into " << geosxFieldName <<
+          GEOS_LOG_RANK_0( "Importing field " << meshFieldName << " into " << geosFieldName <<
                            " on " << region.getName() << "/" << subRegion.getName() );
         }
 
-        bool const isMaterialField = materialWrapperNames.count( geosxFieldName ) > 0 && wrapper.numArrayDims() > 1;
+        bool const isMaterialField = materialWrapperNames.count( geosFieldName ) > 0 && wrapper.numArrayDims() > 1;
         generator.importFieldOnArray( block, subRegion.getName(), meshFieldName, isMaterialField, wrapper );
       }
     };

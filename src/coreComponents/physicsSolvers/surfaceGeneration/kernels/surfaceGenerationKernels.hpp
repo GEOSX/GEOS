@@ -2,10 +2,11 @@
  * ------------------------------------------------------------------------------------------------------------
  * SPDX-License-Identifier: LGPL-2.1-only
  *
- * Copyright (c) 2018-2020 Lawrence Livermore National Security LLC
- * Copyright (c) 2018-2020 The Board of Trustees of the Leland Stanford Junior University
- * Copyright (c) 2018-2020 TotalEnergies
- * Copyright (c) 2019-     GEOSX Contributors
+ * Copyright (c) 2016-2024 Lawrence Livermore National Security LLC
+ * Copyright (c) 2018-2024 Total, S.A
+ * Copyright (c) 2018-2024 The Board of Trustees of the Leland Stanford Junior University
+ * Copyright (c) 2023-2024 Chevron
+ * Copyright (c) 2019-     GEOS/GEOSX Contributors
  * All rights reserved
  *
  * See top level LICENSE, COPYRIGHT, CONTRIBUTORS, NOTICE, and ACKNOWLEDGEMENTS files for details.
@@ -30,8 +31,6 @@ namespace geos
 
 namespace surfaceGenerationKernels
 {
-
-using namespace surfaceGenerationKernelsHelpers;
 
 class NodalForceKernel
 {
@@ -75,11 +74,11 @@ public:
     {
       real64 const quadratureStress[6] = LVARRAY_TENSOROPS_INIT_LOCAL_6 ( m_stress[er][esr][m_solidMaterialFullIndex[er]][ei][q] );
       real64 const dNdX[3] = LVARRAY_TENSOROPS_INIT_LOCAL_3 ( m_dNdX[er][esr][ei][q][targetNode] );
-      computeNodalForce( quadratureStress, dNdX, m_detJ[er][esr][ei][q], force );
+      surfaceGenerationKernelsHelpers::computeNodalForce( quadratureStress, dNdX, m_detJ[er][esr][ei][q], force );
     }
 
     //wu40: the nodal force need to be weighted by Young's modulus and possion's ratio.
-    scaleNodalForce( m_bulkModulus[er][esr][m_solidMaterialFullIndex[er]][ei], m_shearModulus[er][esr][m_solidMaterialFullIndex[er]][ei], force );
+    surfaceGenerationKernelsHelpers::scaleNodalForce( m_bulkModulus[er][esr][m_solidMaterialFullIndex[er]][ei], m_shearModulus[er][esr][m_solidMaterialFullIndex[er]][ei], force );
   }
 
 protected:
@@ -141,11 +140,11 @@ public:
       /// TODO: make it work for the thermal case as well
       LvArray::tensorOps::symAddIdentity< 3 >( totalStress, -m_biotCoefficient[er][esr][m_porosityMaterialFullIndex[er]][ei] * m_pressure[er][esr][ei] );
 
-      computeNodalForce( totalStress, dNdX, m_detJ[er][esr][ei][q], force );
+      surfaceGenerationKernelsHelpers::computeNodalForce( totalStress, dNdX, m_detJ[er][esr][ei][q], force );
     }
 
     //wu40: the nodal force need to be weighted by Young's modulus and possion's ratio.
-    scaleNodalForce( m_bulkModulus[er][esr][m_solidMaterialFullIndex[er]][ei], m_shearModulus[er][esr][m_solidMaterialFullIndex[er]][ei], force );
+    surfaceGenerationKernelsHelpers::scaleNodalForce( m_bulkModulus[er][esr][m_solidMaterialFullIndex[er]][ei], m_shearModulus[er][esr][m_solidMaterialFullIndex[er]][ei], force );
   }
 
 private:

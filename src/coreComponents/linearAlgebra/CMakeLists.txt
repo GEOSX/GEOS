@@ -47,16 +47,17 @@ set( linearAlgebra_sources
      solvers/SeparateComponentPreconditioner.cpp
      utilities/ReverseCutHillMcKeeOrdering.cpp )
 
-set( dependencyList ${parallelDeps} mesh denseLinearAlgebra )
+set( dependencyList ${parallelDeps} mesh denseLinearAlgebra finiteVolume )
+set( tplDependencyList "" )
 
 list( APPEND linearAlgebra_headers interfaces/direct/SuiteSparse.hpp )
 list( APPEND linearAlgebra_sources interfaces/direct/SuiteSparse.cpp )
-list( APPEND dependencyList suitesparse )
+list( APPEND tplDependencyList suitesparse )
 
 if( ENABLE_SUPERLU_DIST )
       list( APPEND linearAlgebra_headers interfaces/direct/SuperLUDist.hpp )
       list( APPEND linearAlgebra_sources interfaces/direct/SuperLUDist.cpp )
-      list( APPEND dependencyList superlu_dist )
+      list( APPEND tplDependencyList superlu_dist )
 endif( )
 
 if( ENABLE_TRILINOS )
@@ -78,7 +79,7 @@ if( ENABLE_TRILINOS )
           interfaces/trilinos/TrilinosPreconditioner.cpp
           interfaces/trilinos/TrilinosSolver.cpp )
 
-    list( APPEND dependencyList trilinos )
+    list( APPEND tplDependencyList trilinos )
 
 endif()
 
@@ -122,7 +123,7 @@ if( ENABLE_HYPRE )
           interfaces/hypre/HypreUtils.cpp
           interfaces/hypre/HypreVector.cpp )
 
-    list( APPEND dependencyList hypre umpire )
+    list( APPEND tplDependencyList hypre umpire )
 
 endif()
 
@@ -145,19 +146,24 @@ if( ENABLE_PETSC )
           interfaces/petsc/PetscSolver.cpp
           interfaces/petsc/PetscVector.cpp )
 
-    list( APPEND dependencyList petsc )
+    list( APPEND tplDependencyList petsc )
 
 endif()
+
+geos_decorate_link_dependencies( LIST decoratedDependencies
+                                 DEPENDENCIES ${dependencyList} )
 
 blt_add_library( NAME       linearAlgebra
                  SOURCES    ${linearAlgebra_sources}
                  HEADERS    ${linearAlgebra_headers}
-                 DEPENDS_ON ${dependencyList}
-                 OBJECT     ${GEOSX_BUILD_OBJ_LIBS}
+                 DEPENDS_ON ${decoratedDependencies} ${tplDependencyList}
+                 OBJECT     ${GEOS_BUILD_OBJ_LIBS}
+                 SHARED     ${GEOS_BUILD_SHARED_LIBS}
                )
 
 target_include_directories( linearAlgebra PUBLIC ${CMAKE_CURRENT_LIST_DIR} )
 
+install( TARGETS linearAlgebra LIBRARY DESTINATION ${CMAKE_INSTALL_PREFIX}/lib )
 
 if( GEOS_ENABLE_TESTS )
   add_subdirectory( unitTests )

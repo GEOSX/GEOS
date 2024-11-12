@@ -10,12 +10,12 @@ def main():
 
 	# Plot GEOSX results
 	hf = h5py.File("temperatureHistory_rock.hdf5", 'r')
-	time = np.array( hf.get('temperature Time') )
-	center = np.array( hf.get('temperature elementCenter') )
-	temperature = np.array( hf.get('temperature') )
+	time = np.asarray( hf.get('temperature Time') )
+	center = np.asarray( hf.get('temperature elementCenter') )
+	temperature = np.asarray( hf.get('temperature') )
 
 	hf = h5py.File("pressureHistory_rock.hdf5", 'r')
-	pressure = np.array( hf.get('pressure') )
+	pressure = np.asarray( hf.get('pressure') )
 	
 	nElements = center.shape[1]
 	xCoord = center[0, 0:nElements, 0]

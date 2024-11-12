@@ -2,15 +2,17 @@
  * ------------------------------------------------------------------------------------------------------------
  * SPDX-License-Identifier: LGPL-2.1-only
  *
- * Copyright (c) 2018-2020 Lawrence Livermore National Security LLC
- * Copyright (c) 2018-2020 The Board of Trustees of the Leland Stanford Junior University
- * Copyright (c) 2018-2020 TotalEnergies
- * Copyright (c) 2019-     GEOSX Contributors
+ * Copyright (c) 2016-2024 Lawrence Livermore National Security LLC
+ * Copyright (c) 2018-2024 Total, S.A
+ * Copyright (c) 2018-2024 The Board of Trustees of the Leland Stanford Junior University
+ * Copyright (c) 2023-2024 Chevron
+ * Copyright (c) 2019-     GEOS/GEOSX Contributors
  * All rights reserved
  *
  * See top level LICENSE, COPYRIGHT, CONTRIBUTORS, NOTICE, and ACKNOWLEDGEMENTS files for details.
  * ------------------------------------------------------------------------------------------------------------
  */
+
 #ifndef LIFOSTORAGEHOST_HPP
 #define LIFOSTORAGEHOST_HPP
 
@@ -74,7 +76,7 @@ public:
 
       if( baseLifo::m_maxNumberOfBuffers - pushId > (int)baseLifo::m_hostDeque.capacity() )
       {
-        LIFO_MARK_SCOPE( geosx::lifoStorage::pushAddTasks );
+        LIFO_MARK_SCOPE( geos::lifoStorage::pushAddTasks );
         // This buffer will go to host memory, and maybe on disk
         std::packaged_task< void() > t2( std::bind( &LifoStorageHost< T, INDEX_TYPE >::hostToDisk, this, baseLifo::m_bufferToDiskCount++ ) );
         {
@@ -117,7 +119,7 @@ public:
 
       if( baseLifo::m_bufferToDiskCount > 0 )
       {
-        LIFO_MARK_SCOPE( geosx::LifoStorageHost::popAddTasks );
+        LIFO_MARK_SCOPE( geos::LifoStorageHost::popAddTasks );
         // Trigger pull one buffer from host, and maybe from disk
         std::packaged_task< void() > task2( std::bind( &LifoStorageHost< T, INDEX_TYPE >::diskToHost, this, --baseLifo::m_bufferToDiskCount ) );
         {

@@ -9,8 +9,7 @@
       solidSolverName="lagsolve"
       flowSolverName="SinglePhaseFlow"
       surfaceGeneratorName="SurfaceGen"
-      targetRegions="{ Fracture }"
-      contactRelationName="fractureContact">
+      targetRegions="{ Fracture }">
       <NonlinearSolverParameters
         newtonTol="1.0e-5"
         newtonMaxIter="50"
@@ -23,7 +22,8 @@
       timeIntegrationOption="QuasiStatic"
       discretization="FE1"
       targetRegions="{ Domain, Fracture }"
-      contactRelationName="fractureContact"/>
+      contactRelationName="fractureContact"
+      contactPenaltyStiffness="0.0e12"/>
 
     <SinglePhaseFVM
       name="SinglePhaseFlow"
@@ -121,7 +121,7 @@
 
     <SurfaceElementRegion
       name="Fracture"
-      materialList="{ water, fractureFilling, fractureContact }"
+      materialList="{ water, fractureFilling, fractureContact, hApertureModel }"
       defaultAperture="1e-4"/>
   </ElementRegions>
 
@@ -160,9 +160,11 @@
       name="fracturePerm"/>
 
     <FrictionlessContact
-      name="fractureContact"
-      penaltyStiffness="0.0e8"
-      apertureTableName="apertureTable" />
+      name="fractureContact"/>
+    
+    <HydraulicApertureTable
+      name="hApertureModel"
+      apertureTableName="apertureTable"/> 
     
   </Constitutive>
 

@@ -3,54 +3,37 @@
 <Problem>
   <Included>
     <File
-      name="./ContactMechanics_SimpleCubes_base.xml"/>
+      name="./SimpleCubes_smoke.xml"/>
   </Included>
 
+  <Solvers
+    gravityVector="{ 0.0, 0.0, 0.0 }">
+    <SolidMechanicsLagrangeContact
+      name="lagrangiancontact"
+      stabilizationName="TPFAstabilization"
+      discretization="FE1"
+      targetRegions="{ Region, Fracture }"
+      timeIntegrationOption="QuasiStatic"
+      logLevel="1">
+      <NonlinearSolverParameters
+        newtonTol="1.0e-8"
+        logLevel="2"
+        newtonMaxIter="20"
+        lineSearchAction="Require"
+        lineSearchStartingIteration="2"
+        lineSearchMaxCuts="2"
+        lineSearchInterpolationType="Parabolic"/>
+      <LinearSolverParameters
+        directParallel="0"/>
+    </SolidMechanicsLagrangeContact>
+  </Solvers>
 
-  <Mesh>
-    <InternalMesh
-      name="mesh1"
-      elementTypes="{ C3D8 }"
-      xCoords="{ -4, 4 }"
-      yCoords="{ 0, 20 }"
-      zCoords="{ 0, 20 }"
-      nx="{ 4 }"
-      ny="{ 10 }"
-      nz="{ 10 }"
-      cellBlockNames="{ cb1 }"/>
-  </Mesh>
-
-  <Geometry>
-    <Box
-      name="fracture"
-      xMin="{ -0.01, -0.01, -0.01 }"
-      xMax="{ 0.01, 20.01, 20.01 }"/>
-
-    <Box
-      name="core"
-      xMin="{ -0.01, -0.01, -0.01 }"
-      xMax="{ 0.01, 20.01, 20.01 }"/>
-
-    <Box
-      name="front"
-      xMin="{ 3.99, -0.01, -0.01 }"
-      xMax="{ 4.01, 20.01, 20.01 }"/>
-
-    <Box
-      name="back"
-      xMin="{ -4.01, -0.01, -0.01 }"
-      xMax="{ -3.99, 20.01, 20.01 }"/>
-
-    <Box
-      name="xpos_top"
-      xMin="{ -0.01, -0.01, 19.99 }"
-      xMax="{ 4.01, 20.01, 20.01 }"/>
-
-    <Box
-      name="bottom"
-      xMin="{ -4.01, -0.01, -0.01 }"
-      xMax="{ 4.01, 20.01, 0.01 }"/>
-  </Geometry>
+  <NumericalMethods>
+    <FiniteVolume>
+      <TwoPointFluxApproximation
+        name="TPFAstabilization"/>
+    </FiniteVolume>
+  </NumericalMethods>
 
   <Events
     maxTime="10.0">
@@ -74,9 +57,6 @@
       targetExactTimestep="0"
       target="/Outputs/restartOutput"/>
 
-    <!-- This event is applied every 1.0s.  The targetExactTimestep
-    flag allows this event to request a dt modification to match an
-    integer multiple of the timeFrequency. -->
     <PeriodicEvent
       name="outputs"
       timeFrequency="1"

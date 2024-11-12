@@ -2,10 +2,11 @@
  * ------------------------------------------------------------------------------------------------------------
  * SPDX-License-Identifier: LGPL-2.1-only
  *
- * Copyright (c) 2018-2020 Lawrence Livermore National Security LLC
- * Copyright (c) 2018-2020 The Board of Trustees of the Leland Stanford Junior University
- * Copyright (c) 2018-2020 TotalEnergies
- * Copyright (c) 2019-     GEOSX Contributors
+ * Copyright (c) 2016-2024 Lawrence Livermore National Security LLC
+ * Copyright (c) 2018-2024 Total, S.A
+ * Copyright (c) 2018-2024 The Board of Trustees of the Leland Stanford Junior University
+ * Copyright (c) 2023-2024 Chevron
+ * Copyright (c) 2019-     GEOS/GEOSX Contributors
  * All rights reserved
  *
  * See top level LICENSE, COPYRIGHT, CONTRIBUTORS, NOTICE, and ACKNOWLEDGEMENTS files for details.
@@ -27,6 +28,7 @@
 
 namespace geos
 {
+using namespace constitutive;
 
 namespace isothermalCompositionalMultiphaseFVMKernels
 {
@@ -83,6 +85,8 @@ CFLFluxKernel::
            ElementView< arrayView2d< real64, compflow::USD_PHASE > > const & phaseOutflux,
            ElementView< arrayView2d< real64, compflow::USD_COMP > > const & compOutflux )
 {
+  integer const numDir = phaseRelPerm.size(3);
+  std::cout << "Size of iso1: " << numDir << std::endl;
   // loop over phases, compute and upwind phase flux and sum contributions to each component's flux
   for( integer ip = 0; ip < numPhases; ++ip )
   {
@@ -136,11 +140,21 @@ CFLFluxKernel::
     {
       continue;
     }
+    real64 mobility;
 
-    real64 const mobility =
-      LvArray::tensorOps::AiBi< 3 >( phaseRelPerm[er_up][esr_up][ei_up][0][ip], faceNormal ) /
-      phaseVisc[er_up][esr_up][ei_up][0][ip];
+    if (numDir == 1)
+    {
 
+    // I think the next part is actually fine
+    mobility = phaseRelPerm[er_up][esr_up][ei_up][0][ip][0] / phaseVisc[er_up][esr_up][ei_up][0][ip];
+    }
+    else 
+    {
+      mobility =
+        LvArray::tensorOps::AiBi< 3 >( phaseRelPerm[er_up][esr_up][ei_up][0][ip], faceNormal ) /
+        phaseVisc[er_up][esr_up][ei_up][0][ip];
+    }
+    
     // increment the phase (volumetric) outflux of the upstream cell
     real64 const absPhaseFlux = LvArray::math::abs( dt * mobility * potGrad );
     RAJA::atomicAdd( parallelDeviceAtomic{}, &phaseOutflux[er_up][esr_up][ei_up][ip], absPhaseFlux );
@@ -193,6 +207,7 @@ CFLFluxKernel::
                                    transmissibility,
                                    dTrans_dPres );
 
+    // integer const numDir = 3;
     real64 faceNormal[3];
     stencilWrapper.getFaceNormal( iconn, faceNormal );
 
@@ -278,8 +293,10 @@ CFLKernel::
 {
   // then, depending on the regime, apply the appropriate CFL formula
   phaseCFLNumber = 0;
+  integer const numDir =  phaseRelPerm.size(1);
+  std::cout << "Size of iso2: " << numDir << std::endl;
 
-  for( int dir = 0; dir < 3; ++dir )
+  for( int dir = 0; dir < numDir; ++dir )
   {
     // first, check which phases are mobile in the cell
     real64 mob[NP]{};

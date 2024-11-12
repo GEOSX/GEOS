@@ -2,10 +2,11 @@
  * ------------------------------------------------------------------------------------------------------------
  * SPDX-License-Identifier: LGPL-2.1-only
  *
- * Copyright (c) 2018-2020 Lawrence Livermore National Security LLC
- * Copyright (c) 2018-2020 The Board of Trustees of the Leland Stanford Junior University
- * Copyright (c) 2018-2020 TotalEnergies
- * Copyright (c) 2019-     GEOSX Contributors
+ * Copyright (c) 2016-2024 Lawrence Livermore National Security LLC
+ * Copyright (c) 2018-2024 Total, S.A
+ * Copyright (c) 2018-2024 The Board of Trustees of the Leland Stanford Junior University
+ * Copyright (c) 2023-2024 Chevron
+ * Copyright (c) 2019-     GEOS/GEOSX Contributors
  * All rights reserved
  *
  * See top level LICENSE, COPYRIGHT, CONTRIBUTORS, NOTICE, and ACKNOWLEDGEMENTS files for details.
@@ -48,7 +49,7 @@ void convertRigidBodyModes( LinearSolverParameters const & params,
       GEOS_LAI_CHECK_ERROR( VecSetBlockSize( nullvecs[i], params.dofsPerNode ) );
       GEOS_LAI_CHECK_ERROR( VecSetUp( nullvecs[i] ) );
     }
-    GEOS_LAI_CHECK_ERROR( MatNullSpaceCreate( MPI_COMM_GEOSX, PETSC_FALSE, numRBM, nullvecs.data(), &nullsp ) );
+    GEOS_LAI_CHECK_ERROR( MatNullSpaceCreate( MPI_COMM_GEOS, PETSC_FALSE, numRBM, nullvecs.data(), &nullsp ) );
     for( localIndex i = 0; i < numRBM; ++i )
     {
       GEOS_LAI_CHECK_ERROR( VecDestroy( &nullvecs[i] ) );
@@ -221,7 +222,7 @@ void createPetscAMG( LinearSolverParameters const & params,
 
       // Sanity checks
       GEOS_LAI_ASSERT_EQ( n_local, 1 );
-      GEOS_LAI_ASSERT_EQ( first_local, MpiWrapper::commRank( MPI_COMM_GEOSX ) );
+      GEOS_LAI_ASSERT_EQ( first_local, MpiWrapper::commRank( MPI_COMM_GEOS ) );
 
       // Set up local block ILU preconditioner
       PC prec_local;

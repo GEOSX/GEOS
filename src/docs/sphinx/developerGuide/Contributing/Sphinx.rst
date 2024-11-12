@@ -11,7 +11,7 @@ Generating the documentation
 
    sudo apt install python-sphinx
 
-  Then you can generate the documentation files with the following command
+  Then you can generate the documentation files with the following commands
 
  .. code-block:: sh
 

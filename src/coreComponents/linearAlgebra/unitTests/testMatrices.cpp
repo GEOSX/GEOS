@@ -2,11 +2,12 @@
  * ------------------------------------------------------------------------------------------------------------
  * SPDX-License-Identifier: LGPL-2.1-only
  *
- * Copyright (c) 2018-2019 Lawrence Livermore National Security LLC
- * Copyright (c) 2018-2019 The Board of Trustees of the Leland Stanford Junior University
- * Copyright (c) 2018-2019 TotalEnergies
- * Copyright (c) 2019-     GEOSX Contributors
- * All right reserved
+ * Copyright (c) 2016-2024 Lawrence Livermore National Security LLC
+ * Copyright (c) 2018-2024 Total, S.A
+ * Copyright (c) 2018-2024 The Board of Trustees of the Leland Stanford Junior University
+ * Copyright (c) 2023-2024 Chevron
+ * Copyright (c) 2019-     GEOS/GEOSX Contributors
+ * All rights reserved
  *
  * See top level LICENSE, COPYRIGHT, CONTRIBUTORS, NOTICE, and ACKNOWLEDGEMENTS files for details.
  * ------------------------------------------------------------------------------------------------------------
@@ -36,8 +37,8 @@ TYPED_TEST_P( MatrixTest, MatrixFunctions )
   using Matrix = typename TypeParam::ParallelMatrix;
 
   // Get the MPI rank
-  int numranks = MpiWrapper::commSize( MPI_COMM_GEOSX );
-  int rank = MpiWrapper::commRank( MPI_COMM_GEOSX );
+  int numranks = MpiWrapper::commSize( MPI_COMM_GEOS );
+  int rank = MpiWrapper::commRank( MPI_COMM_GEOS );
 
   std::cout << "*** Rank: " << rank << std::endl;
 
@@ -47,7 +48,7 @@ TYPED_TEST_P( MatrixTest, MatrixFunctions )
   {
     // Test matrix-matrix product: C = A*B
     Matrix A;
-    geos::testing::compute2DLaplaceOperator( MPI_COMM_GEOSX, 2 * numranks, A );
+    geos::testing::compute2DLaplaceOperator( MPI_COMM_GEOS, 2 * numranks, A );
     Matrix B( A );
 
     A.multiply( B, C );
@@ -57,10 +58,10 @@ TYPED_TEST_P( MatrixTest, MatrixFunctions )
   // Define some vectors, matrices
   Vector vec1, vec2, vec3;
   Matrix mat1, mat2, mat3, mat4;
-  mat1.createWithLocalSize( 2, 2, MPI_COMM_GEOSX ); // 2*numranks x 2*numranks
-  mat2.createWithGlobalSize( 2, 2, MPI_COMM_GEOSX ); // 2x2
-  mat3.createWithLocalSize( 2, 3, 3, MPI_COMM_GEOSX ); // 2*numranks x 3*numranks
-  mat4.createWithGlobalSize( 3, 4, 3, MPI_COMM_GEOSX ); // 3x4
+  mat1.createWithLocalSize( 2, 2, MPI_COMM_GEOS ); // 2*numranks x 2*numranks
+  mat2.createWithGlobalSize( 2, 2, MPI_COMM_GEOS ); // 2x2
+  mat3.createWithLocalSize( 2, 3, 3, MPI_COMM_GEOS ); // 2*numranks x 3*numranks
+  mat4.createWithGlobalSize( 3, 4, 3, MPI_COMM_GEOS ); // 3x4
 
   // Testing create, globalRows, globalCols
   EXPECT_EQ( mat1.numGlobalRows(), 2 * numranks );
@@ -124,7 +125,7 @@ TYPED_TEST_P( MatrixTest, MatrixFunctions )
   }
   // Testing add/set/insert array1d
   Matrix mat6;
-  mat6.createWithGlobalSize( 4, 4, MPI_COMM_GEOSX );
+  mat6.createWithGlobalSize( 4, 4, MPI_COMM_GEOS );
   array1d< real64 > vals6( 3 );
   array1d< real64 > vals7( 3 );
   array1d< globalIndex > inds6( 3 );
@@ -151,7 +152,7 @@ TYPED_TEST_P( MatrixTest, MatrixFunctions )
 
   // Testing add/set/insert array2d
   Matrix mat7;
-  mat7.createWithGlobalSize( 4, 4, MPI_COMM_GEOSX );
+  mat7.createWithGlobalSize( 4, 4, MPI_COMM_GEOS );
   array1d< globalIndex > rows( 2 );
   array1d< globalIndex > cols( 2 );
   array2d< real64 > vals8( 2, 2 );
@@ -183,8 +184,8 @@ TYPED_TEST_P( MatrixTest, MatrixFunctions )
   mat1.close();
 
   // Testing vector multiply, matrix multiply, MatrixMatrixMultiply
-  vec1.createWithGlobalSize( 2, MPI_COMM_GEOSX );
-  vec2.createWithGlobalSize( 2, MPI_COMM_GEOSX );
+  vec1.createWithGlobalSize( 2, MPI_COMM_GEOS );
+  vec2.createWithGlobalSize( 2, MPI_COMM_GEOS );
   vec1.set( 1 );
   vec1.close();
   globalIndex inds4[2] = { 0, 1 };
@@ -229,7 +230,7 @@ TYPED_TEST_P( MatrixTest, MatrixMatrixOperations )
 
   globalIndex const n = 100;
   Matrix A;
-  geos::testing::compute2DLaplaceOperator( MPI_COMM_GEOSX, n, A );
+  geos::testing::compute2DLaplaceOperator( MPI_COMM_GEOS, n, A );
 
   Matrix A_squared;
   A.multiply( A, A_squared );
@@ -245,14 +246,14 @@ TYPED_TEST_P( MatrixTest, RectangularMatrixOperations )
 {
   using Matrix = typename TypeParam::ParallelMatrix;
 
-  int const mpiSize = MpiWrapper::commSize( MPI_COMM_GEOSX );
+  int const mpiSize = MpiWrapper::commSize( MPI_COMM_GEOS );
 
   // Set a size that allows to run with arbitrary number of processes
   globalIndex const nRows = std::max( 100, mpiSize );
   globalIndex const nCols = 2 * nRows;
 
   Matrix A;
-  A.createWithGlobalSize( nRows, nCols, 2, MPI_COMM_GEOSX );
+  A.createWithGlobalSize( nRows, nCols, 2, MPI_COMM_GEOS );
 
   A.open();
   for( globalIndex i = A.ilower(); i < A.iupper(); ++i )
@@ -282,15 +283,15 @@ REGISTER_TYPED_TEST_SUITE_P( MatrixTest,
                              MatrixMatrixOperations,
                              RectangularMatrixOperations );
 
-#ifdef GEOSX_USE_TRILINOS
+#ifdef GEOS_USE_TRILINOS
 INSTANTIATE_TYPED_TEST_SUITE_P( Trilinos, MatrixTest, TrilinosInterface, );
 #endif
 
-#ifdef GEOSX_USE_HYPRE
+#ifdef GEOS_USE_HYPRE
 INSTANTIATE_TYPED_TEST_SUITE_P( Hypre, MatrixTest, HypreInterface, );
 #endif
 
-#ifdef GEOSX_USE_PETSC
+#ifdef GEOS_USE_PETSC
 INSTANTIATE_TYPED_TEST_SUITE_P( Petsc, MatrixTest, PetscInterface, );
 #endif
 

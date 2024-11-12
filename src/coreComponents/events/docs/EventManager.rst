@@ -52,7 +52,7 @@ Event
 ^^^^^^^^^^^^^^^^^^^^^^^^^^^^
 The children of the Event block define the events that may execute during a simulation.  These may be of type ``HaltEvent``, ``PeriodicEvent``, or ``SoloEvent``.  The exit criteria for the global event loop are defined by the attributes ``maxTime`` and ``maxCycle`` (which by default are set to their max values).  If the optional logLevel flag is set, the EventManager will report additional information with regards to timestep requests and event forecasts for its children.
 
-.. include:: ../../../coreComponents/schema/docs/Events.rst
+.. include:: /docs/sphinx/datastructure/Events.rst
 
 
 PeriodicEvent
@@ -67,21 +67,21 @@ By default, a PeriodicEvent will execute throughout the entire simulation.  This
 
 The timestep request event is typically determined via its target.  However, this value can be overridden by setting the ``forceDt`` or ``maxEventDt`` attributes.
 
-.. include:: ../../../coreComponents/schema/docs/PeriodicEvent.rst
+.. include:: /docs/sphinx/datastructure/PeriodicEvent.rst
 
 
 SoloEvent
 ^^^^^^^^^^^^^^^^^^^^^^^^^^^^
 This type of event will execute once once the event loop reaches a certain cycle (targetCycle) or time (targetTime).  Similar to the PeriodicEvent type, this event will modify its timestep requests so that a cycle occurs at the exact time requested (this can be turned off by specifying targetExactTimestep="0").  The forecast calculations follow an similar approach to the PeriodicEvent type.
 
-.. include:: ../../../coreComponents/schema/docs/SoloEvent.rst
+.. include:: /docs/sphinx/datastructure/SoloEvent.rst
 
 
 HaltEvent
 ^^^^^^^^^^^^^^^^^^^^^^^^^^^^
 This event type is designed to track the wall clock.  When the time exceeds the value specified via maxRunTime, the event will trigger and set a flag that instructs the main EventManager loop to cleanly exit at the end of the current cycle.  The event for cast for this event type is given by: ``forecast = (maxRuntime - (currentTime - startTime)) / realDt``
 
-.. include:: ../../../coreComponents/schema/docs/HaltEvent.rst
+.. include:: /docs/sphinx/datastructure/HaltEvent.rst
 
 
 

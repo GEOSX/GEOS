@@ -19,7 +19,7 @@
   <Mesh>
     <VTKMesh
       surfacicFieldsToImport="{aperture}"
-      surfacicFieldsInGEOSX="{elementAperture}"
+      surfacicFieldsInGEOS="{elementAperture}"
       name="mesh1"
       useGlobalIds="1"
       faceBlocks="{fracture}"

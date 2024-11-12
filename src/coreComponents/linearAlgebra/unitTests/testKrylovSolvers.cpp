@@ -2,10 +2,11 @@
  * ------------------------------------------------------------------------------------------------------------
  * SPDX-License-Identifier: LGPL-2.1-only
  *
- * Copyright (c) 2018-2020 Lawrence Livermore National Security LLC
- * Copyright (c) 2018-2020 The Board of Trustees of the Leland Stanford Junior University
- * Copyright (c) 2018-2020 TotalEnergies
- * Copyright (c) 2019-     GEOSX Contributors
+ * Copyright (c) 2016-2024 Lawrence Livermore National Security LLC
+ * Copyright (c) 2018-2024 Total, S.A
+ * Copyright (c) 2018-2024 The Board of Trustees of the Leland Stanford Junior University
+ * Copyright (c) 2023-2024 Chevron
+ * Copyright (c) 2019-     GEOS/GEOSX Contributors
  * All rights reserved
  *
  * See top level LICENSE, COPYRIGHT, CONTRIBUTORS, NOTICE, and ACKNOWLEDGEMENTS files for details.
@@ -124,13 +125,13 @@ protected:
   {
     // Compute matrix and preconditioner
     globalIndex constexpr n = 100;
-    geos::testing::compute2DLaplaceOperator( MPI_COMM_GEOSX, n, this->matrix );
+    geos::testing::compute2DLaplaceOperator( MPI_COMM_GEOS, n, this->matrix );
     this->precond.setup( this->matrix );
 
     // Set up vectors
-    this->sol_true.create( this->matrix.numLocalCols(), MPI_COMM_GEOSX );
-    this->sol_comp.create( this->matrix.numLocalCols(), MPI_COMM_GEOSX );
-    this->rhs_true.create( this->matrix.numLocalRows(), MPI_COMM_GEOSX );
+    this->sol_true.create( this->matrix.numLocalCols(), MPI_COMM_GEOS );
+    this->sol_comp.create( this->matrix.numLocalCols(), MPI_COMM_GEOS );
+    this->rhs_true.create( this->matrix.numLocalRows(), MPI_COMM_GEOS );
 
     // Condition number for the Laplacian matrix estimate: 4 * n^2 / pi^2
     this->cond_est = 1.5 * 4.0 * n * n / std::pow( M_PI, 2 );
@@ -159,15 +160,15 @@ REGISTER_TYPED_TEST_SUITE_P( KrylovSolverTest,
                              BiCGSTAB,
                              GMRES );
 
-#ifdef GEOSX_USE_TRILINOS
+#ifdef GEOS_USE_TRILINOS
 INSTANTIATE_TYPED_TEST_SUITE_P( Trilinos, KrylovSolverTest, TrilinosInterface, );
 #endif
 
-#ifdef GEOSX_USE_HYPRE
+#ifdef GEOS_USE_HYPRE
 INSTANTIATE_TYPED_TEST_SUITE_P( Hypre, KrylovSolverTest, HypreInterface, );
 #endif
 
-#ifdef GEOSX_USE_PETSC
+#ifdef GEOS_USE_PETSC
 INSTANTIATE_TYPED_TEST_SUITE_P( Petsc, KrylovSolverTest, PetscInterface, );
 #endif
 
@@ -197,7 +198,7 @@ protected:
   void SetUp() override
   {
     globalIndex constexpr n = 100;
-    geos::testing::compute2DLaplaceOperator( MPI_COMM_GEOSX, n, laplace2D );
+    geos::testing::compute2DLaplaceOperator( MPI_COMM_GEOS, n, laplace2D );
 
     // We are going to assembly the following dummy system
     // [L 0] [x_true] = [b_0]
@@ -217,9 +218,9 @@ protected:
 
     for( localIndex i = 0; i < 2; ++i )
     {
-      this->sol_true.block( i ).create( laplace2D.numLocalCols(), MPI_COMM_GEOSX );
-      this->sol_comp.block( i ).create( laplace2D.numLocalCols(), MPI_COMM_GEOSX );
-      this->rhs_true.block( i ).create( laplace2D.numLocalRows(), MPI_COMM_GEOSX );
+      this->sol_true.block( i ).create( laplace2D.numLocalCols(), MPI_COMM_GEOS );
+      this->sol_comp.block( i ).create( laplace2D.numLocalCols(), MPI_COMM_GEOS );
+      this->rhs_true.block( i ).create( laplace2D.numLocalRows(), MPI_COMM_GEOS );
     }
 
     // Condition number for the Laplacian matrix estimate: 4 * n^2 / pi^2
@@ -249,15 +250,15 @@ REGISTER_TYPED_TEST_SUITE_P( KrylovSolverBlockTest,
                              BiCGSTAB,
                              GMRES );
 
-#ifdef GEOSX_USE_TRILINOS
+#ifdef GEOS_USE_TRILINOS
 INSTANTIATE_TYPED_TEST_SUITE_P( Trilinos, KrylovSolverBlockTest, TrilinosInterface, );
 #endif
 
-#ifdef GEOSX_USE_HYPRE
+#ifdef GEOS_USE_HYPRE
 INSTANTIATE_TYPED_TEST_SUITE_P( Hypre, KrylovSolverBlockTest, HypreInterface, );
 #endif
 
-#ifdef GEOSX_USE_PETSC
+#ifdef GEOS_USE_PETSC
 INSTANTIATE_TYPED_TEST_SUITE_P( Petsc, KrylovSolverBlockTest, PetscInterface, );
 #endif
 

@@ -7,8 +7,10 @@ set( gtest_geosx_tests
      testDruckerPrager.cpp
      testElasticIsotropic.cpp
      testKValueInitialization.cpp
+     testImmiscibleWaterFlashModel.cpp
      testLohrenzBrayClarkViscosity.cpp
      testModifiedCamClay.cpp
+     testMultiFluidSelector.cpp
      testNegativeTwoPhaseFlash.cpp
      testNegativeTwoPhaseFlash9Comp.cpp
      testParticleFluidEnums.cpp

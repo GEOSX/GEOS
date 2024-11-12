@@ -2,10 +2,11 @@
  * ------------------------------------------------------------------------------------------------------------
  * SPDX-License-Identifier: LGPL-2.1-only
  *
- * Copyright (c) 2018-2020 Lawrence Livermore National Security LLC
- * Copyright (c) 2018-2020 The Board of Trustees of the Leland Stanford Junior University
- * Copyright (c) 2018-2020 TotalEnergies
- * Copyright (c) 2019-     GEOSX Contributors
+ * Copyright (c) 2016-2024 Lawrence Livermore National Security LLC
+ * Copyright (c) 2018-2024 Total, S.A
+ * Copyright (c) 2018-2024 The Board of Trustees of the Leland Stanford Junior University
+ * Copyright (c) 2023-2024 Chevron
+ * Copyright (c) 2019-     GEOS/GEOSX Contributors
  * All rights reserved
  *
  * See top level LICENSE, COPYRIGHT, CONTRIBUTORS, NOTICE, and ACKNOWLEDGEMENTS files for details.
@@ -26,9 +27,6 @@ namespace geos
 
 namespace stabilizedCompositionalMultiphaseFVMKernels
 {
-
-using namespace constitutive;
-
 
 /******************************** FaceBasedAssemblyKernel ********************************/
 
@@ -66,12 +64,12 @@ public:
                       fields::flow::pressure_n >;
 
   using StabMultiFluidAccessors =
-    StencilMaterialAccessors< MultiFluidBase,
+    StencilMaterialAccessors< constitutive::MultiFluidBase,
                               fields::multifluid::phaseDensity_n,
                               fields::multifluid::phaseCompFraction_n >;
 
   using RelPermAccessors =
-    StencilMaterialAccessors< RelativePermeabilityBase, fields::relperm::phaseRelPerm_n >;
+    StencilMaterialAccessors< constitutive::RelativePermeabilityBase, fields::relperm::phaseRelPerm_n >;
 
   using AbstractBase::m_dt;
   using AbstractBase::m_numPhases;
@@ -241,7 +239,8 @@ public:
       localIndex const er_up_stab  = seri[k_up_stab];
       localIndex const esr_up_stab = sesri[k_up_stab];
       localIndex const ei_up_stab  = sei[k_up_stab];
-
+      // I don't really know about this one and check for single direction in tensorOp:
+      integer const numDir = 3;
       real64 faceNormal[3];
       m_stencilWrapper.getFaceNormal( iconn, faceNormal );
 
@@ -250,7 +249,7 @@ public:
       if( isStabilizationActive && areInSameMacroElement )
       {
 
-        for( int dir = 0; dir < 3; ++dir )
+        for( int dir = 0; dir < numDir; ++dir )
         {
 
           for( integer ic = 0; ic < numComp; ++ic )
@@ -294,9 +293,9 @@ protected:
 
   /// Views on flow properties at the previous converged time step
   ElementViewConst< arrayView1d< real64 const > > const m_pres_n;
-  ElementViewConst< arrayView3d< real64 const, multifluid::USD_PHASE > > const m_phaseDens_n;
-  ElementViewConst< arrayView4d< real64 const, multifluid::USD_PHASE_COMP > > const m_phaseCompFrac_n;
-  ElementViewConst< arrayView4d< real64 const, relperm::USD_RELPERM > > const m_phaseRelPerm_n;
+  ElementViewConst< arrayView3d< real64 const, constitutive::multifluid::USD_PHASE > > const m_phaseDens_n;
+  ElementViewConst< arrayView4d< real64 const, constitutive::multifluid::USD_PHASE_COMP > > const m_phaseCompFrac_n;
+  ElementViewConst< arrayView4d< real64 const, constitutive::relperm::USD_RELPERM > > const m_phaseRelPerm_n;
 
   /// Views on the macroelement indices and stab constant
   ElementViewConst< arrayView1d< integer const > > const m_macroElementIndex;

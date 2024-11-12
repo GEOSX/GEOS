@@ -23,7 +23,7 @@ Basic Example
 The Internal Mesh Generator allows one to quickly build simple cartesian grids and divide
 them into several regions.  The following attributes are supported in the input block for InternalMesh:
 
-.. include:: /coreComponents/schema/docs/InternalMesh.rst
+.. include:: /docs/sphinx/datastructure/InternalMesh.rst
 
 
 The following is an example XML ``<mesh>`` block, which will generate a vertical beam with two ``CellBlocks`` (one in red and one in blue in the following picture).
@@ -287,7 +287,7 @@ Importing surfaces
 ******************
 
 Surfaces are imported through point sets in GEOS. This feature is supported using only the ``vtk`` file format.
-In the same way than the regions, the surfaces of interests can be defined using the `physical entity names`_.
+In the same way than the regions, the surfaces of interests can be defined using the `physical entity names`.
 The surfaces are automatically import in GEOS if they exist in the ``vtk`` file.
 Within GEOS, the point set will have the same name than the one given in the file. This name can be used
 again to impose boundary condition. For instance, if a surface is named "Bottom" and the user wants to

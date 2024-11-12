@@ -11,7 +11,6 @@
       logLevel="1"
       targetRegions="{ Domain, Fracture }"
       isMatrixPoroelastic="1"
-      contactRelationName="fractureContact"
       maxNumResolves="2">
 
       <NonlinearSolverParameters
@@ -27,7 +26,8 @@
       timeIntegrationOption="QuasiStatic"
       discretization="FE1"
       targetRegions="{ Domain, Fracture }"
-      contactRelationName="fractureContact"/>
+      contactRelationName="fractureContact"
+      contactPenaltyStiffness="1.0"/>
 
     <SinglePhaseFVM
       name="SinglePhaseFlow"
@@ -64,7 +64,7 @@
     <SurfaceElementRegion
       name="Fracture"
       defaultAperture="0.02e-3"
-      materialList="{ water, fractureFilling, fractureContact }"/>
+      materialList="{ water, fractureFilling, fractureContact, hApertureModel }"/>
   </ElementRegions>
 
   <Constitutive>
@@ -117,9 +117,11 @@
       name="fracturePerm"/>
 
     <FrictionlessContact
-      name="fractureContact"
-      penaltyStiffness="1.0e0"
-      apertureTableName="aperTable"/>
+      name="fractureContact"/>
+
+    <HydraulicApertureTable
+      name="hApertureModel"
+      apertureTableName="aperTable"/>  
   </Constitutive>
 
   <FieldSpecifications>

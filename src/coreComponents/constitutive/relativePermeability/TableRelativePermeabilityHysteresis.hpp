@@ -2,10 +2,11 @@
  * ------------------------------------------------------------------------------------------------------------
  * SPDX-License-Identifier: LGPL-2.1-only
  *
- * Copyright (c) 2018-2020 Lawrence Livermore National Security LLC
- * Copyright (c) 2018-2020 The Board of Trustees of the Leland Stanford Junior University
- * Copyright (c) 2018-2020 TotalEnergies
- * Copyright (c) 2019-     GEOSX Contributors
+ * Copyright (c) 2016-2024 Lawrence Livermore National Security LLC
+ * Copyright (c) 2018-2024 Total, S.A
+ * Copyright (c) 2018-2024 The Board of Trustees of the Leland Stanford Junior University
+ * Copyright (c) 2023-2024 Chevron
+ * Copyright (c) 2019-     GEOS/GEOSX Contributors
  * All rights reserved
  *
  * See top level LICENSE, COPYRIGHT, CONTRIBUTORS, NOTICE, and ACKNOWLEDGEMENTS files for details.
@@ -137,9 +138,9 @@ public:
                    real64 const & waterOilRelPermMaxValue,
                    arrayView2d< real64 const, compflow::USD_PHASE > const & phaseMinHistoricalVolFraction,
                    arrayView2d< real64 const, compflow::USD_PHASE > const & phaseMaxHistoricalVolFraction,
-                   arrayView3d< real64, relperm::USD_PHASE > const & phaseTrappedVolFrac,
-                   arrayView4d< real64, relperm::USD_RELPERM > const & phaseRelPerm,
-                   arrayView5d< real64, relperm::USD_RELPERM_DS > const & dPhaseRelPerm_dPhaseVolFrac );
+                   arrayView3d< real64, constitutive::relperm::USD_PHASE > const & phaseTrappedVolFrac,
+                   arrayView4d< real64, constitutive::relperm::USD_RELPERM > const & phaseRelPerm,
+                   arrayView5d< real64, constitutive::relperm::USD_RELPERM_DS > const & dPhaseRelPerm_dPhaseVolFrac );
 
     /**
      * @brief Function updating the relperm (and derivative) for a phase using the drainage table
@@ -258,10 +259,10 @@ public:
                           arraySlice1d< real64 const, compflow::USD_PHASE - 1 > const & phaseVolFraction,
                           arraySlice1d< real64 const, compflow::USD_PHASE - 1 > const & phaseMaxHistoricalVolFraction,
                           arraySlice1d< real64 const, compflow::USD_PHASE - 1 > const & phaseMinHistoricalVolFraction,
-                          arraySlice1d< real64, relperm::USD_PHASE - 2 > const & phaseTrappedVolFrac,
-                          arraySlice2d< real64, relperm::USD_RELPERM - 2 > const & phaseRelPerm,
+                          arraySlice1d< real64, constitutive::relperm::USD_PHASE - 2 > const & phaseTrappedVolFrac,
+                          arraySlice2d< real64, constitutive::relperm::USD_RELPERM - 2 > const & phaseRelPerm,
                           arraySlice3d< real64,
-                                        relperm::USD_RELPERM_DS - 2 > const & dPhaseRelPerm_dPhaseVolFrac ) const;
+                                        constitutive::relperm::USD_RELPERM_DS - 2 > const & dPhaseRelPerm_dPhaseVolFrac ) const;
 
     /**
      * @brief Function updating all the phase relperms (and derivatives) for three-phase flow
@@ -283,10 +284,10 @@ public:
                             arraySlice1d< real64 const, compflow::USD_PHASE - 1 > const & phaseVolFraction,
                             arraySlice1d< real64 const, compflow::USD_PHASE - 1 > const & phaseMaxHistoricalVolFraction,
                             arraySlice1d< real64 const, compflow::USD_PHASE - 1 > const & phaseMinHistoricalVolFraction,
-                            arraySlice1d< real64, relperm::USD_PHASE - 2 > const & phaseTrappedVolFrac,
-                            arraySlice2d< real64, relperm::USD_RELPERM - 2 > const & phaseRelPerm,
+                            arraySlice1d< real64, constitutive::relperm::USD_PHASE - 2 > const & phaseTrappedVolFrac,
+                            arraySlice2d< real64, constitutive::relperm::USD_RELPERM - 2 > const & phaseRelPerm,
                             arraySlice3d< real64,
-                                          relperm::USD_RELPERM_DS - 2 > const & dPhaseRelPerm_dPhaseVolFrac ) const;
+                                          constitutive::relperm::USD_RELPERM_DS - 2 > const & dPhaseRelPerm_dPhaseVolFrac ) const;
 
     /**
      * @brief Main function updating all the phase relperms (and derivatives)
@@ -300,9 +301,9 @@ public:
     void compute( arraySlice1d< real64 const, compflow::USD_PHASE - 1 > const & phaseVolFraction,
                   arraySlice1d< real64 const, compflow::USD_PHASE - 1 > const & phaseMaxHistoricalVolFraction,
                   arraySlice1d< real64 const, compflow::USD_PHASE - 1 > const & phaseMinHistoricalVolFraction,
-                  arraySlice1d< real64, relperm::USD_PHASE - 2 > const & phaseTrappedVolFrac,
-                  arraySlice2d< real64, relperm::USD_RELPERM - 2 > const & phaseRelPerm,
-                  arraySlice3d< real64, relperm::USD_RELPERM_DS - 2 > const & dPhaseRelPerm_dPhaseVolFrac ) const;
+                  arraySlice1d< real64, constitutive::relperm::USD_PHASE - 2 > const & phaseTrappedVolFrac,
+                  arraySlice2d< real64, constitutive::relperm::USD_RELPERM - 2 > const & phaseRelPerm,
+                  arraySlice3d< real64, constitutive::relperm::USD_RELPERM_DS - 2 > const & dPhaseRelPerm_dPhaseVolFrac ) const;
 
     GEOS_HOST_DEVICE
     virtual void update( localIndex const k,
@@ -450,12 +451,14 @@ private:
 
 private:
 
+  virtual void resizeFields( localIndex const size,
+                             localIndex const numPts ) override;
+
   virtual void postInputInitialization() override;
 
   virtual void initializePreSubGroups() override;
 
-  virtual void resizeFields( localIndex const size,
-                             localIndex const numPts ) override;
+
 
   /**
    * @brief Create all the table kernel wrappers needed for the simulation (for all the phases present)
@@ -489,7 +492,6 @@ private:
    */
   void computeLandCoefficient();
 
-//Seems like I need to change these
 
   // Table names
 
@@ -608,7 +610,7 @@ TableRelativePermeabilityHysteresis::KernelWrapper::
   real64 const denom = A + landParam * pow( ( Shy - Scrd ) / ( Smx - Scrd ), 1 + jerauldParam_b / landParam );
   Scrt = LvArray::math::max( 0.0, Scrd + numerator / denom ); // trapped critical saturation from equation 2.162
 }
-
+// pass inputs as data point
 GEOS_HOST_DEVICE
 inline
 void
@@ -784,15 +786,17 @@ TableRelativePermeabilityHysteresis::KernelWrapper::
                    arraySlice1d< real64 const, compflow::USD_PHASE - 1 > const & phaseVolFraction,
                    arraySlice1d< real64 const, compflow::USD_PHASE - 1 > const & phaseMaxHistoricalVolFraction,
                    arraySlice1d< real64 const, compflow::USD_PHASE - 1 > const & phaseMinHistoricalVolFraction,
-                   arraySlice1d< real64, relperm::USD_PHASE - 2 > const & phaseTrappedVolFrac,
-                   arraySlice2d< real64, relperm::USD_RELPERM - 2 > const & phaseRelPerm,
-                   arraySlice3d< real64, relperm::USD_RELPERM_DS - 2 > const & dPhaseRelPerm_dPhaseVolFrac ) const
+                   arraySlice1d< real64, constitutive::relperm::USD_PHASE - 2 > const & phaseTrappedVolFrac,
+                   arraySlice2d< real64, constitutive::relperm::USD_RELPERM - 2 > const & phaseRelPerm,
+                   arraySlice3d< real64, constitutive::relperm::USD_RELPERM_DS - 2 > const & dPhaseRelPerm_dPhaseVolFrac ) const
 {
-  using TPT = TableRelativePermeabilityHysteresis::TwoPhasePairPhaseType;
-  using IPT = TableRelativePermeabilityHysteresis::ImbibitionPhasePairPhaseType;
+  using TPT = constitutive::TableRelativePermeabilityHysteresis::TwoPhasePairPhaseType;
+  using IPT = constitutive::TableRelativePermeabilityHysteresis::ImbibitionPhasePairPhaseType;
 
+
+  integer const numDir =  m_drainageRelPermKernelWrappers.size(0);
   // ---------- wetting rel perm
-  for (int dir=0; dir<3; ++dir) {
+  for (int dir=0; dir<numDir; ++dir) {
     if( !m_phaseHasHysteresis[IPT::WETTING] ||
         phaseVolFraction[ipWetting] <= phaseMinHistoricalVolFraction[ipWetting] + flowReversalBuffer )
     {
@@ -823,7 +827,7 @@ TableRelativePermeabilityHysteresis::KernelWrapper::
     }
   }
 
-  for (int dir=0; dir<3; ++dir) {
+  for (int dir=0; dir<numDir; ++dir) {
   // --------- non-wetting rel perm
     if( !m_phaseHasHysteresis[IPT::NONWETTING] ||
         phaseVolFraction[ipNonWetting] >= phaseMaxHistoricalVolFraction[ipNonWetting] - flowReversalBuffer )
@@ -878,20 +882,22 @@ TableRelativePermeabilityHysteresis::KernelWrapper::
                      arraySlice1d< real64 const, compflow::USD_PHASE - 1 > const & phaseVolFraction,
                      arraySlice1d< real64 const, compflow::USD_PHASE - 1 > const & phaseMaxHistoricalVolFraction,
                      arraySlice1d< real64 const, compflow::USD_PHASE - 1 > const & phaseMinHistoricalVolFraction,
-                     arraySlice1d< real64, relperm::USD_PHASE - 2 > const & phaseTrappedVolFrac,
-                     arraySlice2d< real64, relperm::USD_RELPERM - 2 > const & phaseRelPerm,
-                     arraySlice3d< real64, relperm::USD_RELPERM_DS - 2 > const & dPhaseRelPerm_dPhaseVolFrac ) const
+                     arraySlice1d< real64, constitutive::relperm::USD_PHASE - 2 > const & phaseTrappedVolFrac,
+                     arraySlice2d< real64, constitutive::relperm::USD_RELPERM - 2 > const & phaseRelPerm,
+                     arraySlice3d< real64, constitutive::relperm::USD_RELPERM_DS - 2 > const & dPhaseRelPerm_dPhaseVolFrac ) const
 {
   real64 interRelPerm_wi = 0; // oil rel perm using two-phase gas-oil data
   real64 dInterRelPerm_wi_dInterVolFrac = 0; // derivative w.r.t to So
   real64 interRelPerm_nwi = 0; // oil rel perm using two-phase gas-oil data
   real64 dInterRelPerm_nwi_dInterVolFrac = 0; // derivative w.r.t to So
 
-  using TPT = TableRelativePermeabilityHysteresis::ThreePhasePairPhaseType;
-  using IPT = TableRelativePermeabilityHysteresis::ImbibitionPhasePairPhaseType;
+  using TPT = constitutive::TableRelativePermeabilityHysteresis::ThreePhasePairPhaseType;
+  using IPT = constitutive::TableRelativePermeabilityHysteresis::ImbibitionPhasePairPhaseType;
+
+  integer const numDir =  m_drainageRelPermKernelWrappers.size(0);
 
   // 1) Wetting and intermediate phase relative permeabilities using two-phase wetting-intermediate data
-  for (int dir=0; dir<3; ++dir) {
+  for (int dir=0; dir<numDir; ++dir) {
     // ---------- wetting rel perm
     if( !m_phaseHasHysteresis[IPT::WETTING] ||
         phaseVolFraction[ipWetting] <= phaseMinHistoricalVolFraction[ipWetting] + flowReversalBuffer )
@@ -927,7 +933,7 @@ TableRelativePermeabilityHysteresis::KernelWrapper::
       m_drainageRelPermKernelWrappers[dir][TPT::INTERMEDIATE_WETTING].compute( &( phaseVolFraction )[ipInter],
                                                                           &dInterRelPerm_wi_dInterVolFrac );
   }
-  for (int dir=0; dir<3; ++dir) {
+  for (int dir=0; dir<numDir; ++dir) {
     // 2) Non-wetting and intermediate phase relative permeabilities using two-phase non-wetting-intermediate data
 
     // ---------- non-wetting rel perm
@@ -977,7 +983,7 @@ TableRelativePermeabilityHysteresis::KernelWrapper::
       m_drainageRelPermKernelWrappers[dir][TPT::INTERMEDIATE_NONWETTING].compute( &( phaseVolFraction )[ipInter],
                                                                             &dInterRelPerm_nwi_dInterVolFrac );
   }
-  for (int dir=0; dir<3; ++dir) {
+  for (int dir=0; dir<numDir; ++dir) {
     // 3) Compute the "three-phase" oil relperm
 
     // use saturation-weighted interpolation
@@ -993,7 +999,7 @@ TableRelativePermeabilityHysteresis::KernelWrapper::
                                             interRelPerm_nwi,
                                             dInterRelPerm_nwi_dInterVolFrac,
                                             phaseRelPerm[ipInter][dir],
-                                            dPhaseRelPerm_dPhaseVolFrac[ipInter][dir] );
+                                            dPhaseRelPerm_dPhaseVolFrac[ipInter] );
 
     }
     else// if( m_threePhaseInterpolator == ThreePhaseInterpolator::STONEII )
@@ -1011,7 +1017,7 @@ TableRelativePermeabilityHysteresis::KernelWrapper::
                                             phaseRelPerm[ipNonWetting][dir],
                                             dPhaseRelPerm_dPhaseVolFrac[ipNonWetting][ipNonWetting][dir],
                                             phaseRelPerm[ipInter][dir],
-                                            dPhaseRelPerm_dPhaseVolFrac[ipInter][dir] );
+                                            dPhaseRelPerm_dPhaseVolFrac[ipInter] );
     }
   }
 }
@@ -1023,9 +1029,9 @@ TableRelativePermeabilityHysteresis::KernelWrapper::
   compute( arraySlice1d< real64 const, compflow::USD_PHASE - 1 > const & phaseVolFraction,
            arraySlice1d< real64 const, compflow::USD_PHASE - 1 > const & phaseMaxHistoricalVolFraction,
            arraySlice1d< real64 const, compflow::USD_PHASE - 1 > const & phaseMinHistoricalVolFraction,
-           arraySlice1d< real64, relperm::USD_PHASE - 2 > const & phaseTrappedVolFrac,
-           arraySlice2d< real64, relperm::USD_RELPERM - 2 > const & phaseRelPerm,
-           arraySlice3d< real64, relperm::USD_RELPERM_DS - 2 > const & dPhaseRelPerm_dPhaseVolFrac ) const
+           arraySlice1d< real64, constitutive::relperm::USD_PHASE - 2 > const & phaseTrappedVolFrac,
+           arraySlice2d< real64, constitutive::relperm::USD_RELPERM - 2 > const & phaseRelPerm,
+           arraySlice3d< real64, constitutive::relperm::USD_RELPERM_DS - 2 > const & dPhaseRelPerm_dPhaseVolFrac ) const
 {
   LvArray::forValuesInSlice( dPhaseRelPerm_dPhaseVolFrac, []( real64 & val )
   { val = 0.0; } );

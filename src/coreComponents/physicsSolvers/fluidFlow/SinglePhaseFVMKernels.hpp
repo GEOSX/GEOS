@@ -2,10 +2,11 @@
  * ------------------------------------------------------------------------------------------------------------
  * SPDX-License-Identifier: LGPL-2.1-only
  *
- * Copyright (c) 2018-2020 Lawrence Livermore National Security LLC
- * Copyright (c) 2018-2020 The Board of Trustees of the Leland Stanford Junior University
- * Copyright (c) 2018-2020 TotalEnergies
- * Copyright (c) 2019-     GEOSX Contributors
+ * Copyright (c) 2016-2024 Lawrence Livermore National Security LLC
+ * Copyright (c) 2018-2024 Total, S.A
+ * Copyright (c) 2018-2024 The Board of Trustees of the Leland Stanford Junior University
+ * Copyright (c) 2023-2024 Chevron
+ * Copyright (c) 2019-     GEOS/GEOSX Contributors
  * All rights reserved
  *
  * See top level LICENSE, COPYRIGHT, CONTRIBUTORS, NOTICE, and ACKNOWLEDGEMENTS files for details.
@@ -36,13 +37,13 @@
 #include "physicsSolvers/fluidFlow/SinglePhaseBaseFields.hpp"
 #include "physicsSolvers/fluidFlow/SinglePhaseBaseKernels.hpp"
 #include "physicsSolvers/fluidFlow/StencilAccessors.hpp"
+#include "physicsSolvers/fluidFlow/FluxKernelsHelper.hpp"
 
 namespace geos
 {
 
 namespace singlePhaseFVMKernels
 {
-using namespace constitutive;
 
 /******************************** FaceBasedAssemblyKernelBase ********************************/
 
@@ -74,22 +75,22 @@ public:
                       fields::flow::dMobility_dPressure >;
 
   using SinglePhaseFluidAccessors =
-    StencilMaterialAccessors< SingleFluidBase,
+    StencilMaterialAccessors< constitutive::SingleFluidBase,
                               fields::singlefluid::density,
                               fields::singlefluid::dDensity_dPressure >;
 
   using SlurryFluidAccessors =
-    StencilMaterialAccessors< SlurryFluidBase,
+    StencilMaterialAccessors< constitutive::SlurryFluidBase,
                               fields::singlefluid::density,
                               fields::singlefluid::dDensity_dPressure >;
 
   using PermeabilityAccessors =
-    StencilMaterialAccessors< PermeabilityBase,
+    StencilMaterialAccessors< constitutive::PermeabilityBase,
                               fields::permeability::permeability,
                               fields::permeability::dPerm_dPressure >;
 
   using ProppantPermeabilityAccessors =
-    StencilMaterialAccessors< PermeabilityBase,
+    StencilMaterialAccessors< constitutive::PermeabilityBase,
                               fields::permeability::permeability,
                               fields::permeability::dPerm_dPressure,
                               fields::permeability::dPerm_dDispJump,
@@ -345,135 +346,33 @@ public:
     {
       for( k[1] = k[0] + 1; k[1] < stack.numFluxElems; ++k[1] )
       {
-        // clear working arrays
-        real64 densMean = 0.0;
-        real64 dDensMean_dP[2]{0.0, 0.0};
-
-        // create local work arrays
         real64 fluxVal = 0.0;
-        real64 dFlux_dP[2]{0.0, 0.0};
+        real64 dFlux_dTrans = 0.0;
+        real64 alpha = 0.0;
+        real64 mobility = 0.0;
+        real64 potGrad = 0.0;
+        real64 trans[2] = { stack.transmissibility[connectionIndex][0], stack.transmissibility[connectionIndex][1] };
+        real64 dTrans[2] = { stack.dTrans_dPres[connectionIndex][0], stack.dTrans_dPres[connectionIndex][1] };
+        real64 dFlux_dP[2] = {0.0, 0.0};
+        localIndex const regionIndex[2]    = {m_seri( iconn, k[0] ), m_seri( iconn, k[1] )};
+        localIndex const subRegionIndex[2] = {m_sesri( iconn, k[0] ), m_sesri( iconn, k[1] )};
+        localIndex const elementIndex[2]   = {m_sei( iconn, k[0] ), m_sei( iconn, k[1] )};
 
-        real64 const trans[2] = { stack.transmissibility[connectionIndex][0], stack.transmissibility[connectionIndex][1] };
-        real64 const dTrans_dP[2] = { stack.dTrans_dPres[connectionIndex][0], stack.dTrans_dPres[connectionIndex][1] };
-
-        real64 presGrad = 0.0;
-        real64 dPresGrad_dP[2]{0.0, 0.0};
-
-        real64 gravHead = 0.0;
-        real64 dGravHead_dP[2]{0.0, 0.0};
-
-        localIndex const seri[2]  = {m_seri( iconn, k[0] ), m_seri( iconn, k[1] )};
-        localIndex const sesri[2] = {m_sesri( iconn, k[0] ), m_sesri( iconn, k[1] )};
-        localIndex const sei[2]   = {m_sei( iconn, k[0] ), m_sei( iconn, k[1] )};
-
-        // calculate quantities on primary connected cells
-        for( integer ke = 0; ke < 2; ++ke )
-        {
-          // density
-          real64 const density  = m_dens[seri[ke]][sesri[ke]][sei[ke]][0];
-          real64 const dDens_dP = m_dDens_dPres[seri[ke]][sesri[ke]][sei[ke]][0];
-
-          // average density and derivatives
-          densMean += 0.5 * density;
-          dDensMean_dP[ke] = 0.5 * dDens_dP;
-        }
-
-        //***** calculation of flux *****
-
-        // compute potential difference
-        real64 potScale = 0.0;
-        real64 dPresGrad_dTrans = 0.0;
-        real64 dGravHead_dTrans = 0.0;
-        int signPotDiff[2] = {1, -1};
-
-        for( integer ke = 0; ke < 2; ++ke )
-        {
-          localIndex const er  = seri[ke];
-          localIndex const esr = sesri[ke];
-          localIndex const ei  = sei[ke];
-
-          real64 const pressure = m_pres[er][esr][ei];
-          presGrad += trans[ke] * pressure;
-          dPresGrad_dTrans += signPotDiff[ke] * pressure;
-          dPresGrad_dP[ke] = trans[ke];
-
-          real64 const gravD = trans[ke] * m_gravCoef[er][esr][ei];
-          real64 const pot = trans[ke] * pressure - densMean * gravD;
-
-          gravHead += densMean * gravD;
-          dGravHead_dTrans += signPotDiff[ke] * densMean * m_gravCoef[er][esr][ei];
-
-          for( integer i = 0; i < 2; ++i )
-          {
-            dGravHead_dP[i] += dDensMean_dP[i] * gravD;
-          }
-
-          potScale = fmax( potScale, fabs( pot ) );
-        }
-
-        for( integer ke = 0; ke < 2; ++ke )
-        {
-          dPresGrad_dP[ke] += dTrans_dP[ke] * dPresGrad_dTrans;
-          dGravHead_dP[ke] += dTrans_dP[ke] * dGravHead_dTrans;
-        }
-
-        // *** upwinding ***
-
-        // compute potential gradient
-        real64 const potGrad = presGrad - gravHead;
-
-        // compute upwinding tolerance
-        real64 constexpr upwRelTol = 1e-8;
-        real64 const upwAbsTol = fmax( potScale * upwRelTol, LvArray::NumericLimits< real64 >::epsilon );
-
-        // decide mobility coefficients - smooth variation in [-upwAbsTol; upwAbsTol]
-        real64 const alpha = ( potGrad + upwAbsTol ) / ( 2 * upwAbsTol );
-
-        // choose upstream cell
-        real64 mobility{};
-        real64 dMob_dP[2]{};
-        if( alpha <= 0.0 || alpha >= 1.0 )
-        {
-          localIndex const k_up = 1 - localIndex( fmax( fmin( alpha, 1.0 ), 0.0 ) );
-
-          mobility = m_mob[seri[k_up]][sesri[k_up]][sei[k_up]];
-          dMob_dP[k_up] = m_dMob_dPres[seri[k_up]][sesri[k_up]][sei[k_up]];
-        }
-        else
-        {
-          real64 const mobWeights[2] = { alpha, 1.0 - alpha };
-          for( integer ke = 0; ke < 2; ++ke )
-          {
-            mobility += mobWeights[ke] * m_mob[seri[ke]][sesri[ke]][sei[ke]];
-            dMob_dP[ke] = mobWeights[ke] * m_dMob_dPres[seri[ke]][sesri[ke]][sei[ke]];
-          }
-        }
-
-        // pressure gradient depends on all points in the stencil
-        for( integer ke = 0; ke < 2; ++ke )
-        {
-          dFlux_dP[ke] += dPresGrad_dP[ke];
-        }
-
-        // gravitational head depends only on the two cells connected (same as mean density)
-        for( integer ke = 0; ke < 2; ++ke )
-        {
-          dFlux_dP[ke] -= dGravHead_dP[ke];
-        }
-
-        // compute the flux and derivatives using upstream cell mobility
-        fluxVal = mobility * potGrad;
-
-        for( integer ke = 0; ke < 2; ++ke )
-        {
-          dFlux_dP[ke] *= mobility;
-        }
-
-        // add contribution from upstream cell mobility derivatives
-        for( integer ke = 0; ke < 2; ++ke )
-        {
-          dFlux_dP[ke] += dMob_dP[ke] * potGrad;
-        }
+        fluxKernelsHelper::computeSinglePhaseFlux( regionIndex, subRegionIndex, elementIndex,
+                                                   trans,
+                                                   dTrans,
+                                                   m_pres,
+                                                   m_gravCoef,
+                                                   m_dens,
+                                                   m_dDens_dPres,
+                                                   m_mob,
+                                                   m_dMob_dPres,
+                                                   alpha,
+                                                   mobility,
+                                                   potGrad,
+                                                   fluxVal,
+                                                   dFlux_dP,
+                                                   dFlux_dTrans );
 
         // populate local flux vector and derivatives
         stack.localFlux[k[0]*numEqn] += m_dt * fluxVal;
@@ -487,7 +386,7 @@ public:
         }
 
         // Customize the kernel with this lambda
-        kernelOp( k, seri, sesri, sei, connectionIndex, alpha, mobility, potGrad, fluxVal, dFlux_dP );
+        kernelOp( k, regionIndex, subRegionIndex, elementIndex, connectionIndex, alpha, mobility, potGrad, fluxVal, dFlux_dP );
 
         connectionIndex++;
       }
@@ -778,7 +677,7 @@ public:
 
     // Get flow quantities on the elem/face
     real64 faceDens, faceVisc;
-    SingleFluidBaseUpdate::computeValues( m_fluidWrapper, m_facePres[kf], faceDens, faceVisc );
+    constitutive::SingleFluidBaseUpdate::computeValues( m_fluidWrapper, m_facePres[kf], faceDens, faceVisc );
 
     mobility[Order::ELEM] = m_mob[er][esr][ei];
     singlePhaseBaseKernels::MobilityKernel::compute( faceDens, faceVisc, mobility[Order::FACE] );
@@ -898,7 +797,7 @@ public:
                    FaceManager const & faceManager,
                    ElementRegionManager const & elemManager,
                    BoundaryStencilWrapper const & stencilWrapper,
-                   SingleFluidBase & fluidBase,
+                   constitutive::SingleFluidBase & fluidBase,
                    real64 const & dt,
                    CRSMatrixView< real64, globalIndex const > const & localMatrix,
                    arrayView1d< real64 > const & localRhs )

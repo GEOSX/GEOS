@@ -2,10 +2,11 @@
  * ------------------------------------------------------------------------------------------------------------
  * SPDX-License-Identifier: LGPL-2.1-only
  *
- * Copyright (c) 2018-2020 Lawrence Livermore National Security LLC
- * Copyright (c) 2018-2020 The Board of Trustees of the Leland Stanford Junior University
- * Copyright (c) 2018-2020 TotalEnergies
- * Copyright (c) 2019-     GEOSX Contributors
+ * Copyright (c) 2016-2024 Lawrence Livermore National Security LLC
+ * Copyright (c) 2018-2024 Total, S.A
+ * Copyright (c) 2018-2024 The Board of Trustees of the Leland Stanford Junior University
+ * Copyright (c) 2023-2024 Chevron
+ * Copyright (c) 2019-     GEOS/GEOSX Contributors
  * All rights reserved
  *
  * See top level LICENSE, COPYRIGHT, CONTRIBUTORS, NOTICE, and ACKNOWLEDGEMENTS files for details.
@@ -32,9 +33,7 @@ namespace geos
 namespace testing
 {
 
-using namespace geos::constitutive;
-using namespace geos::constitutive::multifluid;
-
+inline
 void fillNumericalJacobian( arrayView1d< real64 const > const & residual,
                             arrayView1d< real64 const > const & residualOrig,
                             globalIndex const dofIndex,
@@ -51,6 +50,7 @@ void fillNumericalJacobian( arrayView1d< real64 const > const & residual,
   } );
 }
 
+inline
 void setupProblemFromXML( ProblemManager & problemManager, char const * const xmlInput )
 {
   xmlWrapper::xmlDocument xmlDocument;
@@ -62,7 +62,7 @@ void setupProblemFromXML( ProblemManager & problemManager, char const * const xm
     GEOS_LOG_RANK_0( "Error offset: " << xmlResult.offset );
   }
 
-  int mpiSize = MpiWrapper::commSize( MPI_COMM_GEOSX );
+  int mpiSize = MpiWrapper::commSize( MPI_COMM_GEOS );
 
   dataRepository::Group & commandLine =
     problemManager.getGroup< dataRepository::Group >( problemManager.groupKeys.commandLine );
@@ -90,6 +90,7 @@ void setupProblemFromXML( ProblemManager & problemManager, char const * const xm
   problemManager.applyInitialConditions();
 }
 
+inline
 void testCompositionNumericalDerivatives( CompositionalMultiphaseFVM & solver,
                                           DomainPartition & domain,
                                           real64 const perturbParameter,
@@ -110,7 +111,7 @@ void testCompositionNumericalDerivatives( CompositionalMultiphaseFVM & solver,
       SCOPED_TRACE( subRegion.getParent().getParent().getName() + "/" + subRegion.getName() );
 
       string const & fluidName = subRegion.getReference< string >( CompositionalMultiphaseBase::viewKeyStruct::fluidNamesString() );
-      MultiFluidBase const & fluid = subRegion.getConstitutiveModel< MultiFluidBase >( fluidName );
+      constitutive::MultiFluidBase const & fluid = subRegion.getConstitutiveModel< constitutive::MultiFluidBase >( fluidName );
       arrayView1d< string const > const & components = fluid.componentNames();
 
       arrayView2d< real64, compflow::USD_COMP > const compDens =
@@ -170,13 +171,14 @@ void testCompositionNumericalDerivatives( CompositionalMultiphaseFVM & solver,
   } );
 }
 
+inline
 void testPhaseVolumeFractionNumericalDerivatives( CompositionalMultiphaseFVM & solver,
                                                   DomainPartition & domain,
                                                   bool const isThermal,
                                                   real64 const perturbParameter,
                                                   real64 const relTol )
 {
-  using Deriv = multifluid::DerivativeOffset;
+  using Deriv = constitutive::multifluid::DerivativeOffset;
 
   integer const numComp = solver.numFluidComponents();
   integer const numPhase = solver.numFluidPhases();
@@ -194,7 +196,7 @@ void testPhaseVolumeFractionNumericalDerivatives( CompositionalMultiphaseFVM & s
       SCOPED_TRACE( subRegion.getParent().getParent().getName() + "/" + subRegion.getName() );
 
       string const & fluidName = subRegion.getReference< string >( CompositionalMultiphaseFVM::viewKeyStruct::fluidNamesString() );
-      MultiFluidBase const & fluid = subRegion.getConstitutiveModel< MultiFluidBase >( fluidName );
+      constitutive::MultiFluidBase const & fluid = subRegion.getConstitutiveModel< constitutive::MultiFluidBase >( fluidName );
       arrayView1d< string const > const & components = fluid.componentNames();
       arrayView1d< string const > const & phases = fluid.phaseNames();
 
@@ -334,13 +336,14 @@ void testPhaseVolumeFractionNumericalDerivatives( CompositionalMultiphaseFVM & s
   } );
 }
 
+inline
 void testPhaseMobilityNumericalDerivatives( CompositionalMultiphaseFVM & solver,
                                             DomainPartition & domain,
                                             bool const isThermal,
                                             real64 const perturbParameter,
                                             real64 const relTol )
 {
-  using Deriv = multifluid::DerivativeOffset;
+  using Deriv = constitutive::multifluid::DerivativeOffset;
 
   integer const numComp = solver.numFluidComponents();
   integer const numPhase = solver.numFluidPhases();
@@ -358,7 +361,7 @@ void testPhaseMobilityNumericalDerivatives( CompositionalMultiphaseFVM & solver,
       SCOPED_TRACE( subRegion.getParent().getParent().getName() + "/" + subRegion.getName() );
 
       string const & fluidName = subRegion.getReference< string >( CompositionalMultiphaseFVM::viewKeyStruct::fluidNamesString() );
-      MultiFluidBase const & fluid = subRegion.getConstitutiveModel< MultiFluidBase >( fluidName );
+      constitutive::MultiFluidBase const & fluid = subRegion.getConstitutiveModel< constitutive::MultiFluidBase >( fluidName );
       arrayView1d< string const > const & components = fluid.componentNames();
       arrayView1d< string const > const & phases = fluid.phaseNames();
 
@@ -372,10 +375,10 @@ void testPhaseMobilityNumericalDerivatives( CompositionalMultiphaseFVM & solver,
       arrayView2d< real64 const, compflow::USD_COMP > const compDens_n =
         subRegion.getField< fields::flow::globalCompDensity_n >();
 
-      arrayView2d< real64, compflow::USD_PHASE > const phaseMob =
+      arrayView2d< real64, constitutive::relperm::USD_MOB > const phaseMob =
         subRegion.getField< fields::flow::phaseMobility >();
 
-      arrayView3d< real64, compflow::USD_PHASE_DC > const dPhaseMob =
+      arrayView3d< real64, constitutive::relperm::USD_MOB_DC > const dPhaseMob =
         subRegion.getField< fields::flow::dPhaseMobility >();
 
       // reset the solver state to zero out variable updates
@@ -499,16 +502,17 @@ void testPhaseMobilityNumericalDerivatives( CompositionalMultiphaseFVM & solver,
   } );
 }
 
+
 template< typename COMPOSITIONAL_SOLVER, typename LAMBDA >
-void fillCellCenteredNumericalJacobian( COMPOSITIONAL_SOLVER & solver,
-                                        DomainPartition & domain,
-                                        bool const isThermal,
-                                        real64 const perturbParameter,
-                                        arrayView1d< real64 > residual,
-                                        arrayView1d< real64 > residualOrig,
-                                        CRSMatrixView< real64, globalIndex > jacobian,
-                                        CRSMatrixView< real64, globalIndex > jacobianFD,
-                                        LAMBDA assembleFunction )
+inline void fillCellCenteredNumericalJacobian( COMPOSITIONAL_SOLVER & solver,
+                                               DomainPartition & domain,
+                                               bool const isThermal,
+                                               real64 const perturbParameter,
+                                               arrayView1d< real64 > residual,
+                                               arrayView1d< real64 > residualOrig,
+                                               CRSMatrixView< real64, globalIndex > jacobian,
+                                               CRSMatrixView< real64, globalIndex > jacobianFD,
+                                               LAMBDA assembleFunction )
 {
   integer const numComp = solver.numFluidComponents();
 

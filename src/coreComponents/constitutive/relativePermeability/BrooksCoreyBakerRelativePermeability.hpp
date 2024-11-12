@@ -2,10 +2,11 @@
  * ------------------------------------------------------------------------------------------------------------
  * SPDX-License-Identifier: LGPL-2.1-only
  *
- * Copyright (c) 2018-2020 Lawrence Livermore National Security LLC
- * Copyright (c) 2018-2020 The Board of Trustees of the Leland Stanford Junior University
- * Copyright (c) 2018-2020 TotalEnergies
- * Copyright (c) 2019-     GEOSX Contributors
+ * Copyright (c) 2016-2024 Lawrence Livermore National Security LLC
+ * Copyright (c) 2018-2024 Total, S.A
+ * Copyright (c) 2018-2024 The Board of Trustees of the Leland Stanford Junior University
+ * Copyright (c) 2023-2024 Chevron
+ * Copyright (c) 2019-     GEOS/GEOSX Contributors
  * All rights reserved
  *
  * See top level LICENSE, COPYRIGHT, CONTRIBUTORS, NOTICE, and ACKNOWLEDGEMENTS files for details.
@@ -39,9 +40,9 @@ public:
                                               arrayView1d< real64 const > const & volFracScale,
                                               arrayView1d< integer const > const & phaseTypes,
                                               arrayView1d< integer const > const & phaseOrder,
-                                              arrayView4d< real64, relperm::USD_RELPERM > const & phaseRelPerm,
-                                              arrayView5d< real64, relperm::USD_RELPERM_DS > const & dPhaseRelPerm_dPhaseVolFrac,
-                                              arrayView3d< real64, relperm::USD_PHASE > const & phaseTrappedVolFrac )
+                                              arrayView4d< real64, constitutive::relperm::USD_RELPERM > const & phaseRelPerm,
+                                              arrayView5d< real64, constitutive::relperm::USD_RELPERM_DS > const & dPhaseRelPerm_dPhaseVolFrac,
+                                              arrayView3d< real64, constitutive::relperm::USD_PHASE > const & phaseTrappedVolFrac )
     : RelativePermeabilityBaseUpdate( phaseTypes,
                                       phaseOrder,
                                       phaseRelPerm,
@@ -56,9 +57,9 @@ public:
 
   GEOS_HOST_DEVICE
   void compute( arraySlice1d< real64 const, compflow::USD_PHASE - 1 > const & phaseVolFraction,
-                arraySlice1d< real64, relperm::USD_PHASE - 2 > const & phaseTrappedVolFrac,
-                arraySlice2d< real64, relperm::USD_RELPERM - 2 > const & phaseRelPerm,
-                arraySlice3d< real64, relperm::USD_RELPERM_DS - 2 > const & dPhaseRelPerm_dPhaseVolFrac ) const;
+                arraySlice1d< real64, constitutive::relperm::USD_PHASE - 2 > const & phaseTrappedVolFrac,
+                arraySlice2d< real64, constitutive::relperm::USD_RELPERM - 2 > const & phaseRelPerm,
+                arraySlice3d< real64, constitutive::relperm::USD_RELPERM_DS - 2 > const & dPhaseRelPerm_dPhaseVolFrac ) const;
 
   GEOS_HOST_DEVICE
   virtual void update( localIndex const k,
@@ -148,6 +149,10 @@ public:
 
 protected:
 
+
+  virtual void resizeFields( localIndex const size,
+                             localIndex const numPts ) override;
+
   virtual void postInputInitialization() override;
 
   array2d< real64 > m_phaseMinVolumeFraction;
@@ -169,9 +174,9 @@ GEOS_HOST_DEVICE
 inline void
 BrooksCoreyBakerRelativePermeabilityUpdate::
   compute( arraySlice1d< real64 const, compflow::USD_PHASE - 1 > const & phaseVolFraction,
-           arraySlice1d< real64, relperm::USD_PHASE - 2 > const & phaseTrappedVolFrac,
-           arraySlice2d< real64, relperm::USD_RELPERM - 2 > const & phaseRelPerm,
-           arraySlice3d< real64, relperm::USD_RELPERM_DS - 2 > const & dPhaseRelPerm_dPhaseVolFrac ) const
+           arraySlice1d< real64, constitutive::relperm::USD_PHASE - 2 > const & phaseTrappedVolFrac,
+           arraySlice2d< real64, constitutive::relperm::USD_RELPERM - 2 > const & phaseRelPerm,
+           arraySlice3d< real64, constitutive::relperm::USD_RELPERM_DS - 2 > const & dPhaseRelPerm_dPhaseVolFrac ) const
 {
   LvArray::forValuesInSlice( dPhaseRelPerm_dPhaseVolFrac, []( real64 & val ) { val = 0.0; } );
 
@@ -180,8 +185,9 @@ BrooksCoreyBakerRelativePermeabilityUpdate::
   integer const ipOil = m_phaseOrder[PT::OIL];
   integer const ipGas = m_phaseOrder[PT::GAS];
 
+  integer const numDir = 3;
 
-  for( int dir = 0; dir < 3; ++dir )
+  for( int dir = 0; dir < numDir; ++dir )
   {
 
     real64 const volFracScaleInv = 1.0 / m_volFracScale[dir];
@@ -287,7 +293,7 @@ BrooksCoreyBakerRelativePermeabilityUpdate::
                                             oilRelPerm_go,
                                             dOilRelPerm_go_dOilVolFrac,
                                             phaseRelPerm[ipOil][dir],
-                                            dPhaseRelPerm_dPhaseVolFrac[ipOil][dir] );
+                                            dPhaseRelPerm_dPhaseVolFrac[ipOil] );
     }
 
 

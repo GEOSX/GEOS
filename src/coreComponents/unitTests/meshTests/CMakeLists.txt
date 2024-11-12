@@ -19,29 +19,13 @@ if( ENABLE_VTK )
   configure_file( ${CMAKE_CURRENT_SOURCE_DIR}/meshDirName.hpp.in ${CMAKE_BINARY_DIR}/include/tests/meshDirName.hpp )
 endif()
 
-set( dependencyList ${parallelDeps} gtest )
+set( tplDependencyList ${parallelDeps} gtest )
 
-if( GEOSX_BUILD_SHARED_LIBS )
-  list( APPEND dependencyList geosx_core HDF5::HDF5 )
-else()
-  list( APPEND dependencyList ${geosx_core_libs} HDF5::HDF5 )
-endif()
+set( dependencyList mainInterface )
 
-if (TARGET pugixml::pugixml)
-  list( APPEND dependencyList pugixml::pugixml )
-endif()
+geos_decorate_link_dependencies( LIST decoratedDependencies
+                                 DEPENDENCIES ${dependencyList} )
 
-if (TARGET pugixml)
-  list( APPEND dependencyList pugixml )
-endif()
-
-if (TARGET fmt::fmt-header-only)
-  list( APPEND dependencyList fmt::fmt-header-only )
-endif()
-
-if (TARGET fmt)
-  list( APPEND dependencyList fmt )
-endif()
 
 # Add gtest C++ based tests
 foreach( test ${gtest_geosx_tests} )
@@ -49,7 +33,7 @@ foreach( test ${gtest_geosx_tests} )
   blt_add_executable( NAME ${test_name}
                       SOURCES ${test}
                       OUTPUT_DIR ${TEST_OUTPUT_DIRECTORY}
-                      DEPENDS_ON ${dependencyList} )
+                      DEPENDS_ON ${decoratedDependencies} ${tplDependencyList} )
 
   geos_add_test( NAME ${test_name}
                  COMMAND ${test_name} ${CMAKE_CURRENT_LIST_DIR} )
@@ -75,7 +59,7 @@ if( ENABLE_MPI )
     blt_add_executable( NAME ${test_name}
                         SOURCES ${test}
                         OUTPUT_DIR ${TEST_OUTPUT_DIRECTORY}
-                        DEPENDS_ON ${dependencyList} )
+                        DEPENDS_ON ${decoratedDependencies} ${tplDependencyList} )
 
     geos_add_test( NAME ${test_name}
                    COMMAND ${test_name} -x ${nranks}

@@ -48,7 +48,7 @@
     <SurfaceElementRegion
       name="Fracture"
       faceBlock="faceElementSubRegion"
-      defaultAperture="0"
+      defaultAperture="1e-6"
       materialList="{ fractureContact }"/>
   <!-- SPHINX_SurfaceElementRegionEnd -->   
  
@@ -74,9 +74,7 @@
     <Coulomb
       name="fractureContact"
       cohesion="0"
-      frictionCoefficient="0.5"
-      penaltyStiffness="1.0e8"
-      apertureTableName="apertureTable"/>
+      frictionCoefficient="0.5"/>
     <!-- SPHINX_MaterialContactEnd --> 
   
     <ElasticIsotropic
@@ -175,10 +173,6 @@
       inputVarNames="{ time }"
       coordinates="{ 0.0, 0.5, 2.0 }"
       values="{ 0.0, -1.0, 1.0 }"/>
-    <TableFunction
-      name="apertureTable"
-      coordinates="{ -1.0e-3, 0.0 }"
-      values="{ 1e-4, 1e-3 }"/> 
   </Functions>
   <!-- SPHINX_TableFunctionEnd -->
 

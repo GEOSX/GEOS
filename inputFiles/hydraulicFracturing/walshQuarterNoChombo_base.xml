@@ -37,7 +37,7 @@
 
     <SurfaceElementRegion name="Fracture"
                        defaultAperture="0.02e-3"
-                       materialList="{water, rock, fractureFilling,  fractureContact}"/>
+                       materialList="{water, rock, fractureFilling,  fractureContact, hApertureModel}"/>
   </ElementRegions>
 
   <Constitutive>
@@ -74,9 +74,11 @@
       name="fracturePerm"/>
 
     <FrictionlessContact
-      name="fractureContact"
-      penaltyStiffness="1.0e0"
-      apertureTableName="aperTable"/>
+      name="fractureContact"/>
+
+    <HydraulicApertureTable
+      name="hApertureModel"
+      apertureTableName="aperTable"/>  
   </Constitutive>
 
   <Outputs>

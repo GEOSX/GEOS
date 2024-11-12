@@ -1,0 +1,362 @@
+@startuml StencilModel
+
+' left to right direction
+
+skinparam classAttributeIconSize 0
+skinparam groupInheritance 0
+
+<style>
+  note {
+    MaximumWidth 200
+  }
+</style>
+
+
+' #############################
+' # external classes
+' #############################
+class array2d
+hide array2d
+
+
+
+' #############################
+' # Stencil traits templates
+' #############################
+
+
+package "Stencil traits" <<Rectangle>> {
+  class StencilTraits << template >> {
+    CONTAINER               : class
+    MAX_NUM_POINTS_IN_FLUX  : localIndex
+    MAX_STENCIL_SIZE        : localIndex
+    MAX_NUM_CONNECTIONS     : localIndex
+  }
+
+  map TwoPointStencilTraits {
+    CONTAINER =>              array2d
+    MAX_NUM_POINTS_IN_FLUX => 2
+    MAX_STENCIL_SIZE =>       2
+    MAX_NUM_CONNECTIONS =>    1
+  }
+  map CellElementStencilMPFATraits {
+    CONTAINER =>              ArrayOfArrays
+    MAX_NUM_POINTS_IN_FLUX => 2
+    MAX_STENCIL_SIZE =>       18
+    MAX_NUM_CONNECTIONS =>    1
+  }
+  map SurfaceElementStencilTraits {
+    CONTAINER =>              ArrayOfArrays
+    MAX_NUM_POINTS_IN_FLUX => 6
+    MAX_STENCIL_SIZE =>       6
+    MAX_NUM_CONNECTIONS =>    15
+  }
+
+  StencilTraits <|--u TwoPointStencilTraits : << template instance >>
+  StencilTraits <|--u CellElementStencilMPFATraits : << template instance >>
+  StencilTraits <|--u SurfaceElementStencilTraits : << template instance >>
+}
+
+
+' #############################
+' # Stencil classes
+' #############################
+class StencilBase< TRAITS > {
+  - m_elementRegionIndices : IndexContainerView
+  - m_elementSubRegionIndices : IndexContainerView
+  - m_elementIndices : IndexContainerView
+  - m_weights : WeightContainerView
+  - m_connectorIndices 
+
+  getElementRegionIndices() : IndexContainerView
+  getElementSubRegionIndices() : IndexContainerView
+  getElementIndices() : IndexContainerView
+  getWeights() : WeightContainerView
+
+  {abstract} reserve() : void
+  {abstract} add(N, elemRegionIds[N], elemSubRegionIds[N], elemIds[N], weights[N], connIndex) : void
+  {abstract} move() : void
+  {abstract} zero() : bool
+  {abstract} size() : localIndex
+  setName() : void
+}
+note right : Provides management of the interior stencil points
+StencilTraits <|-d- StencilBase : TRAITS : StencilTraits
+
+
+class CellElementStencilTPFA {
+  createKernelWrapper() : CellElementStencilTPFAWrapper
+  addVectors( transMultipler, geomStabilizationCoef faceNormal[3], cellToFace[2][3] )
+}
+note left : Provides management of the interior stencil points when using Two-Point flux approximation.
+StencilBase <|-- CellElementStencilTPFA : << TRAITS : TwoPointStencilTraits >>
+
+
+class BoundaryStencil {
+  createKernelWrapper() : BoundaryStencilWrapper
+  addVectors( transMultipler, faceNormal[3], cellToFace[2][3] )
+}
+note right : Provides management of the boundary stencil points(stencils used to prescribe boundary conditions on domain boundaries, i.e. faces)
+StencilBase <|-- BoundaryStencil : << TRAITS : TwoPointStencilTraits >>
+
+
+class CellElementStencilMPFA {
+}
+note right : Provides management of the interior stencil points when using a Multi-point flux approximation.
+StencilBase <|-- CellElementStencilMPFA : << TRAITS : CellElementStencilMPFATraits >>
+
+
+class FaceElementToCellStencil {
+  createKernelWrapper() : FaceElementToCellStencilWrapper
+  addVectors( transMultipler, faceNormal[3], cellToFace[2][3] )
+}
+note right : Provides management of the interior stencil points for a face elements when using Two-Point flux approximation.
+StencilBase <|-- FaceElementToCellStencil : << TRAITS : TwoPointStencilTraits >>
+
+
+class EmbeddedSurfaceToCellStencil {
+  createKernelWrapper() : EmbeddedSurfaceToCellStencilWrapper
+}
+note right : Provides management of the interior stencil points for a face elements when using Two-Point flux approximation.
+StencilBase <|-- EmbeddedSurfaceToCellStencil : << TRAITS : TwoPointStencilTraits >>
+
+
+class SurfaceElementStencil {
+  createKernelWrapper() : SurfaceElementStencilWrapper
+}
+note right : Provides management of the interior stencil points for a face elements when using Two-Point flux approximation.
+StencilBase <|-- SurfaceElementStencil : << TRAITS : SurfaceElementStencilTraits >>
+
+
+CellElementStencilTPFA -[hidden]u- BoundaryStencil
+BoundaryStencil -[hidden]u- CellElementStencilMPFA
+CellElementStencilMPFA -[hidden]u- FaceElementToCellStencil
+FaceElementToCellStencil -[hidden]u- EmbeddedSurfaceToCellStencil
+EmbeddedSurfaceToCellStencil -[hidden]u- SurfaceElementStencil
+
+
+' #############################
+' # Stencil Wrapper classes
+' #############################
+class StencilWrapperBase< TRAITS > {
+  - m_elementRegionIndices : IndexContainerView
+  - m_elementSubRegionIndices : IndexContainerView
+  - m_elementIndices : IndexContainerView
+  - m_weights : WeightContainerView
+
+  getElementRegionIndices() : IndexContainerView
+  getElementSubRegionIndices() : IndexContainerView
+  getElementIndices() : IndexContainerView
+  getWeights() : WeightContainerView
+
+  void {abstract} computeWeights(iconn, coefficient, weight)
+}
+note right of StencilWrapperBase
+  Class to provide access to the computation of stencil weights that may be called from a kernel function.
+end note
+note left of StencilWrapperBase::"computeWeights(iconn, coefficient, weight, [...])"
+  Present in the inheriting classes with different signatures.
+  Compute transmissibility for the "iconn" cell-cell connection taking the "coefficient" (= permeability) and the stencil value into account to compute "weight":
+  transmissibility = stencilWeight * permeability
+end note
+StencilTraits <|-d- StencilWrapperBase : TRAITS : StencilTraits
+
+
+class BoundaryStencilWrapper {
+  - m_faceNormal : arrayView2D< real64 >
+  - m_cellToFaceVec : arrayView2D< real64 >
+  - m_weightMultiplier : arrayView2D< real64 >
+
+  void computeWeights( iconn, coefficient, &weight, ... )
+}
+note right : Provides access to the boundary stencil that may be called from a kernel function.
+StencilWrapperBase <|-- BoundaryStencilWrapper : << TRAITS : TwoPointStencilTraits >>
+
+
+class CellElementStencilTPFAWrapper {
+  m_faceNormal : arrayView2d< real64 >
+  m_cellToFaceVec : arrayView3d< real64 >
+  m_transMultiplier : arrayView1d< real64 >
+  m_geometricStabilizationCoef : arrayView1d< real64 >
+
+  void computeWeights( iconn, coefficient, &weight[1][2], ... )
+}
+note right : Provides access to the cellElement stencil that may be called from a kernel function.
+StencilWrapperBase <|-- CellElementStencilTPFAWrapper : << TRAITS : TwoPointStencilTraits >>
+
+
+class FaceElementToCellStencilWrapper {
+  m_faceNormal : arrayView2d< real64 >
+  m_cellToFaceVec : arrayView3d< real64 >
+  m_transMultiplier : arrayView1d< real64 >
+
+  void computeWeights( iconn, coefficient, &weight[1][2], ... )
+}
+note right : Provides access to the FaceElementToCellStencil that may be called from a kernel function.
+StencilWrapperBase <|-- FaceElementToCellStencilWrapper : << TRAITS : TwoPointStencilTraits >>
+
+
+class SurfaceElementStencilWrapper {
+  m_cellCenterToEdgeCenters ArrayOfArraysView<R1Tensor>
+  m_meanPermCoefficient real64
+
+  void computeWeights( iconn, coefficient, &weight[1][2], ... )
+}
+note right : Provides access to the SurfaceElementStencil that may be called from a kernel function.
+StencilWrapperBase <|-- SurfaceElementStencilWrapper : << TRAITS : SurfaceElementStencilTraits >>
+
+
+class EmbeddedSurfaceToCellStencilWrapper {
+  void computeWeights( iconn, coefficient, &weight[1][2], ... )
+}
+note right : Provide access to the EmbeddedSurfaceToCellStencil that may be called from a kernel function.
+StencilWrapperBase <|-- EmbeddedSurfaceToCellStencilWrapper : << TRAITS : TwoPointStencilTraits >>
+
+
+BoundaryStencilWrapper -[hidden]down- CellElementStencilTPFAWrapper
+CellElementStencilTPFAWrapper -[hidden]down- FaceElementToCellStencilWrapper
+FaceElementToCellStencilWrapper -[hidden]down- SurfaceElementStencilWrapper
+SurfaceElementStencilWrapper -[hidden]down- EmbeddedSurfaceToCellStencilWrapper
+
+
+' #############################
+' # Physics solver classes
+' #############################
+
+
+class SinglePhaseFVM {
+  assembleFluxTerms( dt, domain )
+}
+
+package singlePhaseFVMKernels {
+
+  class FaceBasedAssemblyKernelBase {
+    - m_rankOffset : globalIndex
+    - m_dt : real64
+    - m_permeability : arrayView3d< real64 >
+    - m_pres : arrayView1d< real64 >
+    - m_dens : arrayView2d< real64 >
+    - ...
+  }
+
+  class FaceBasedAssemblyKernel< STENCIL_WRAPPER > {
+    {static} launch(int numConnections, FaceBasedAssemblyKernel kernel)
+    setup(localIndex iconn, StackVariables & stack)
+    computeFlux(localIndex iconn, StackVariables & stack)
+    complete(localIndex iconn, StackVariables & stack)
+  }
+  note left: Define the interface for the assembly kernel in charge of flux terms (there are more classes of this type)
+  note right of FaceBasedAssemblyKernel::launch
+    Performs the kernel launch: setup(), computeFlux(), complete()
+  end note
+  note right of FaceBasedAssemblyKernel::computeFlux
+    Compute the local flux contributions.
+    - Depends on StencilWrapperBase::computeWeights() to compute the transmissibility for the current timestep (because permeability can change)
+  end note
+  FaceBasedAssemblyKernelBase <|-- FaceBasedAssemblyKernel
+  FaceBasedAssemblyKernel *-- StencilWrapperBase : contains a << STENCIL_WRAPPER : StencilWrapperBase >>
+
+  class StackVariables {
+    - stencilSize : localIndex
+    - numFluxElems : localIndex
+    - transmissibility : real64[][2]
+    - dTrans_dPres : real64[][2]
+    - dofColIndices : stackArray1d< globalIndex >
+    - localFlux : stackArray1d< real64 >
+    - localFluxJacobian : stackArray2d< real64 >
+  }
+  FaceBasedAssemblyKernel ..> StackVariables : depends on
+
+  class FaceBasedAssemblyKernelFactory< STENCIL_WRAPPER > {
+    {static} createAndLaunch([...], STENCIL_WRAPPER stencilWrapper, [...])
+  }
+  note right of FaceBasedAssemblyKernelFactory::createAndLaunch
+    Create and call a FaceBasedAssemblyKernel after the StencilWrapperBase
+  end note
+  FaceBasedAssemblyKernelFactory ..> FaceBasedAssemblyKernel : creates a
+  FaceBasedAssemblyKernelFactory ..> StencilWrapperBase : depends on << STENCIL_WRAPPER : StencilWrapperBase >>
+  SinglePhaseFVM::assembleFluxTerms ..> FaceBasedAssemblyKernelFactory : launches
+
+}
+note top of singlePhaseFVMKernels: Namespace that groups device kernel classes for the SinglePhaseFVM physics solver
+
+
+' #############################
+' # FIELDS
+' #############################
+
+
+package fields {
+
+'  class ghostRank
+'  class elementVolume
+
+  package permeability {
+    class permeability
+    class permeabilityMultiplier
+'    class dPerm_dPressure
+  }
+  note "constitutive/permeability/PermeabilityFields.hpp" as permeabilityN
+  permeabilityN .. permeability
+
+  package flow {
+    class pressure
+'    class initialPressure
+'    class deltaPressure
+    class temperature
+'    class netToGross
+'    class deltaVolume
+'    class gravityCoefficient
+
+    class transMultiplier
+    note right of transMultiplier : Permeability multiplier in transmissibility calculation
+  }
+  note "physicsSolvers/fluidFlow/FlowSolverBaseFields.hpp" as flowN
+  flowN .. flow
+}
+note top of fields : mesh/MeshFields.hpp
+
+
+' #############################
+' # Flux classes
+' #############################
+
+
+class FluxApproximationBase {
+  initializePostInitialConditionsPreSubGroups()
+  {abstract} computeCellStencil( mesh )
+  {abstract} computeBoundaryStencil( mesh )
+  {abstract} computeAquiferStencil( domain, mesh )
+  [...]
+}
+note top of FluxApproximationBase
+  Base class for various flux approximation classes.
+  Stores the main and boundary stencils, construction is implemented in derived classes.
+end note
+note right of FluxApproximationBase::initializePostInitialConditionsPreSubGroups
+  Call :
+  - computeCellStencil()
+  - computeBoundaryStencil()
+  - computeAquiferStencil()
+end note
+note right of FluxApproximationBase::computeCellStencil
+  Compute the "Main stencil" **(=CellElementStencilXPFA)** for cell-cell fluxes.
+end note
+note right of FluxApproximationBase::computeBoundaryStencil
+  Boundary stencils are for Dirichlet boundary conditions
+end note
+note right of FluxApproximationBase::computeAquiferStencil
+  Called for each "Aquifer"
+end note
+
+class TwoPointFluxApproximation {
+  computeCellStencil( mesh )
+  computeBoundaryStencil( mesh )
+  computeAquiferStencil( domain, mesh )
+  [...]
+}
+FluxApproximationBase <|-- TwoPointFluxApproximation : creates a
+CellElementStencilTPFA <..r... TwoPointFluxApproximation::computeCellStencil : computeCellStencil()\nwrites in
+
+
+@enduml

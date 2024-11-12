@@ -2,10 +2,11 @@
  * ------------------------------------------------------------------------------------------------------------
  * SPDX-License-Identifier: LGPL-2.1-only
  *
- * Copyright (c) 2018-2020 Lawrence Livermore National Security LLC
- * Copyright (c) 2018-2020 The Board of Trustees of the Leland Stanford Junior University
- * Copyright (c) 2018-2020 TotalEnergies
- * Copyright (c) 2019-     GEOSX Contributors
+ * Copyright (c) 2016-2024 Lawrence Livermore National Security LLC
+ * Copyright (c) 2018-2024 Total, S.A
+ * Copyright (c) 2018-2024 The Board of Trustees of the Leland Stanford Junior University
+ * Copyright (c) 2023-2024 Chevron
+ * Copyright (c) 2019-     GEOS/GEOSX Contributors
  * All rights reserved
  *
  * See top level LICENSE, COPYRIGHT, CONTRIBUTORS, NOTICE, and ACKNOWLEDGEMENTS files for details.
@@ -290,17 +291,18 @@ struct StateUpdateKernel
   /**
    * @brief Launch the kernel function doing fracture traction updates
    * @tparam POLICY the type of policy used in the kernel launch
-   * @tparam CONTACT_WRAPPER the type of contact wrapper doing the fracture traction updates
+   * @tparam FRICTION_WRAPPER the type of contact wrapper doing the fracture traction updates
    * @param[in] size the size of the subregion
-   * @param[in] contactWrapper the wrapper implementing the contact relationship
+   * @param[in] frictionWrapper the wrapper implementing the contact relationship
    * @param[in] jump the displacement jump
    * @param[out] fractureTraction the fracture traction
    * @param[out] dFractureTraction_dJump the derivative of the fracture traction wrt displacement jump
    */
-  template< typename POLICY, typename CONTACT_WRAPPER >
+  template< typename POLICY, typename FRICTION_WRAPPER >
   static void
   launch( localIndex const size,
-          CONTACT_WRAPPER const & contactWrapper,
+          FRICTION_WRAPPER const & frictionWrapper,
+          real64 const contactPenaltyStiffness,
           arrayView2d< real64 const > const & oldJump,
           arrayView2d< real64 const > const & jump,
           arrayView2d< real64 > const & fractureTraction,
@@ -310,10 +312,26 @@ struct StateUpdateKernel
   {
     forAll< POLICY >( size, [=] GEOS_HOST_DEVICE ( localIndex const k )
     {
-      contactWrapper.computeTraction( k, oldJump[k], jump[k],
-                                      fractureState[k],
-                                      fractureTraction[k],
-                                      dFractureTraction_dJump[k] );
+      // Initialize traction and derivatives to 0
+      LvArray::forValuesInSlice( fractureTraction[k], []( real64 & val ){ val = 0.0; } );
+      LvArray::forValuesInSlice( dFractureTraction_dJump[k], []( real64 & val ){ val = 0.0; } );
+
+      // If the fracture is open the traction is 0 and so are its derivatives so there is nothing to do
+      bool const isOpen = fractureState[k] == fields::contact::FractureState::Open;
+
+      if( !isOpen )
+      {
+        // normal component of the traction
+        fractureTraction[k][0] = contactPenaltyStiffness * jump[k][0];
+
+        // derivative of the normal component w.r.t. to the normal dispJump
+        dFractureTraction_dJump[k][0][0] = contactPenaltyStiffness;
+
+        frictionWrapper.computeShearTraction( k, oldJump[k], jump[k],
+                                              fractureState[k],
+                                              fractureTraction[k],
+                                              dFractureTraction_dJump[k] );
+      }
 
       slip[ k ] = LvArray::math::sqrt( LvArray::math::square( jump( k, 1 ) ) +
                                        LvArray::math::square( jump( k, 2 ) ) );

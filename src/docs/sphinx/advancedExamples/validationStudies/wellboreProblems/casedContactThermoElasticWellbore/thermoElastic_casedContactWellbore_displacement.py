@@ -13,9 +13,9 @@ def main():
 
 	# Plot GEOSX results
 	hf = h5py.File(hdf5FilePath, 'r')
-	time = np.array( hf.get('totalDisplacement Time') )
-	center = np.array( hf.get('totalDisplacement ReferencePosition') )
-	displacement = np.array( hf.get('totalDisplacement') )
+	time = np.asarray( hf.get('totalDisplacement Time') )
+	center = np.asarray( hf.get('totalDisplacement ReferencePosition') )
+	displacement = np.asarray( hf.get('totalDisplacement') )
 	
 	nNodes = center.shape[1]
 	xCoord = center[0, 0:nNodes, 0]

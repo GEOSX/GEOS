@@ -21,7 +21,7 @@ decks = [
         check_step=2,
         restartcheck_params=RestartcheckParameters(**restartcheck_params)),
     TestDeck(
-        name="Sneddon_contactMechanics_smoke",
+        name="ContactMechanics_Sneddon_smoke",
         description=
         "Testing Sneddon problem using contact mechanics (structured grid)",
         partitions=((1, 1, 1), ),
@@ -51,6 +51,45 @@ decks = [
         partitions=((1, 1, 1), (2, 1, 1)),
         restart_step=5,
         check_step=10,
+        restartcheck_params=RestartcheckParameters(**restartcheck_params)),
+    TestDeck(
+        name="ALM_SimpleCubes_smoke",
+        description=
+        "Two cubes with a fracture separating them (structured grid)",
+        partitions=((1, 1, 1), (2, 2, 2), (1, 3, 3)),
+        restart_step=10,
+        check_step=20,
+        restartcheck_params=RestartcheckParameters(**restartcheck_params)),
+    TestDeck(
+        name="ALM_UnstructuredCrack_smoke",
+        description="A thick plane with a crack in it (unstructured grid)",
+        partitions=((1, 1, 1), ),
+        restart_step=1,
+        check_step=2,
+        restartcheck_params=RestartcheckParameters(**restartcheck_params)),
+    TestDeck(
+        name="ALM_Sneddon_smoke",
+        description=
+        "Testing Sneddon problem using contact mechanics (structured grid)",
+        partitions=((1, 1, 1), ),
+        restart_step=1,
+        check_step=2,
+        restartcheck_params=RestartcheckParameters(**restartcheck_params)),
+    TestDeck(
+        name="ALM_TFrac_smoke",
+        description=
+        "Two fractures intersecting at a right angle (structured grid)",
+        partitions=((1, 1, 1), (2, 2, 1)),
+        restart_step=1,
+        check_step=2,
+        restartcheck_params=RestartcheckParameters(**restartcheck_params)),
+    TestDeck(
+        name="ALM_SingleFracCompression_smoke",
+        description=
+        "Single tilted fracture subjected to remote compression (unstructured grid)",
+        partitions=((1, 1, 1), ),
+        restart_step=1,
+        check_step=2,
         restartcheck_params=RestartcheckParameters(**restartcheck_params))
 ]
 

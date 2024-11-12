@@ -2,10 +2,11 @@
  * ------------------------------------------------------------------------------------------------------------
  * SPDX-License-Identifier: LGPL-2.1-only
  *
- * Copyright (c) 2018-2020 Lawrence Livermore National Security LLC
- * Copyright (c) 2018-2020 The Board of Trustees of the Leland Stanford Junior University
- * Copyright (c) 2018-2020 TotalEnergies
- * Copyright (c) 2019-     GEOSX Contributors
+ * Copyright (c) 2016-2024 Lawrence Livermore National Security LLC
+ * Copyright (c) 2018-2024 Total, S.A
+ * Copyright (c) 2018-2024 The Board of Trustees of the Leland Stanford Junior University
+ * Copyright (c) 2023-2024 Chevron
+ * Copyright (c) 2019-     GEOS/GEOSX Contributors
  * All rights reserved
  *
  * See top level LICENSE, COPYRIGHT, CONTRIBUTORS, NOTICE, and ACKNOWLEDGEMENTS files for details.
@@ -72,31 +73,31 @@ public:
                    arrayView1d< integer const > const & phaseTypes,
                    arrayView1d< integer const > const & phaseOrder,
                    ThreePhaseInterpolator const & threePhaseInterpolator,
-                   arrayView4d< real64, relperm::USD_RELPERM > const & phaseRelPerm,
-                   arrayView5d< real64, relperm::USD_RELPERM_DS > const & dPhaseRelPerm_dPhaseVolFrac,
-                   arrayView3d< real64, relperm::USD_PHASE > const & phaseTrappedVolFrac );
+                   arrayView4d< real64, constitutive::relperm::USD_RELPERM > const & phaseRelPerm,
+                   arrayView5d< real64, constitutive::relperm::USD_RELPERM_DS > const & dPhaseRelPerm_dPhaseVolFrac,
+                   arrayView3d< real64, constitutive::relperm::USD_PHASE > const & phaseTrappedVolFrac );
 
 
     GEOS_HOST_DEVICE
     void computeTwoPhase( integer const ipWetting,
                           integer const ipNonWetting,
                           arraySlice1d< real64 const, compflow::USD_PHASE - 1 > const & phaseVolFraction,
-                          arraySlice2d< real64, relperm::USD_RELPERM - 2 > const & phaseRelPerm,
-                          arraySlice3d< real64, relperm::USD_RELPERM_DS - 2 > const & dPhaseRelPerm_dPhaseVolFrac ) const;
+                          arraySlice2d< real64, constitutive::relperm::USD_RELPERM - 2 > const & phaseRelPerm,
+                          arraySlice3d< real64, constitutive::relperm::USD_RELPERM_DS - 2 > const & dPhaseRelPerm_dPhaseVolFrac ) const;
 
     GEOS_HOST_DEVICE
     void computeThreePhase( integer const ipWetting,
                             integer const ipInter,
                             integer const ipNonWetting,
                             arraySlice1d< real64 const, compflow::USD_PHASE - 1 > const & phaseVolFraction,
-                            arraySlice2d< real64, relperm::USD_RELPERM - 2 > const & phaseRelPerm,
-                            arraySlice3d< real64, relperm::USD_RELPERM_DS - 2 > const & dPhaseRelPerm_dPhaseVolFrac ) const;
+                            arraySlice2d< real64, constitutive::relperm::USD_RELPERM - 2 > const & phaseRelPerm,
+                            arraySlice3d< real64, constitutive::relperm::USD_RELPERM_DS - 2 > const & dPhaseRelPerm_dPhaseVolFrac ) const;
 
     GEOS_HOST_DEVICE
     void compute( arraySlice1d< real64 const, compflow::USD_PHASE - 1 > const & phaseVolFraction,
-                  arraySlice1d< real64, relperm::USD_PHASE - 2 > const & phaseTrappedVolFrac,
-                  arraySlice2d< real64, relperm::USD_RELPERM - 2 > const & phaseRelPerm,
-                  arraySlice3d< real64, relperm::USD_RELPERM_DS - 2 > const & dPhaseRelPerm_dPhaseVolFrac ) const;
+                  arraySlice1d< real64, constitutive::relperm::USD_PHASE - 2 > const & phaseTrappedVolFrac,
+                  arraySlice2d< real64, constitutive::relperm::USD_RELPERM - 2 > const & phaseRelPerm,
+                  arraySlice3d< real64, constitutive::relperm::USD_RELPERM_DS - 2 > const & dPhaseRelPerm_dPhaseVolFrac ) const;
 
     GEOS_HOST_DEVICE
     virtual void update( localIndex const k,
@@ -145,6 +146,9 @@ private:
 
 private:
 
+  virtual void resizeFields( localIndex const size,
+                             localIndex const numPts ) override;
+
   virtual void postInputInitialization() override;
 
   virtual void initializePreSubGroups() override;
@@ -189,11 +193,13 @@ TableRelativePermeability::KernelWrapper::
   computeTwoPhase( integer const ipWetting,
                    integer const ipNonWetting,
                    arraySlice1d< real64 const, compflow::USD_PHASE - 1 > const & phaseVolFraction,
-                   arraySlice2d< real64, relperm::USD_RELPERM - 2 > const & phaseRelPerm,
-                   arraySlice3d< real64, relperm::USD_RELPERM_DS - 2 > const & dPhaseRelPerm_dPhaseVolFrac ) const
+                   arraySlice2d< real64, constitutive::relperm::USD_RELPERM - 2 > const & phaseRelPerm,
+                   arraySlice3d< real64, constitutive::relperm::USD_RELPERM_DS - 2 > const & dPhaseRelPerm_dPhaseVolFrac ) const
 {
   using TPT = TableRelativePermeability::TwoPhasePairPhaseType;
-  for( int dir=0; dir<3; ++dir )
+  integer const numDir = 3; // phaseRelPerm.size(1);
+  
+  for( int dir=0; dir<numDir; ++dir )
   {
     // water rel perm
     phaseRelPerm[ipWetting][dir] =
@@ -217,15 +223,17 @@ TableRelativePermeability::KernelWrapper::
                      integer const ipInter,
                      integer const ipNonWetting,
                      arraySlice1d< real64 const, compflow::USD_PHASE - 1 > const & phaseVolFraction,
-                     arraySlice2d< real64, relperm::USD_RELPERM - 2 > const & phaseRelPerm,
-                     arraySlice3d< real64, relperm::USD_RELPERM_DS - 2 > const & dPhaseRelPerm_dPhaseVolFrac ) const
+                     arraySlice2d< real64, constitutive::relperm::USD_RELPERM - 2 > const & phaseRelPerm,
+                     arraySlice3d< real64, constitutive::relperm::USD_RELPERM_DS - 2 > const & dPhaseRelPerm_dPhaseVolFrac ) const
 {
-  for( int dir=0; dir<3; ++dir )
+  integer const numDir = 3; //phaseRelPerm.size(1);
+  for( int dir=0; dir<numDir; ++dir )
   {
     real64 interRelPerm_wi = 0;     // oil rel perm using two-phase gas-oil data
     real64 dInterRelPerm_wi_dInterVolFrac = 0;     // derivative w.r.t to So
     real64 interRelPerm_nwi = 0;     // oil rel perm using two-phase gas-oil data
     real64 dInterRelPerm_nwi_dInterVolFrac = 0;     // derivative w.r.t to So
+    
     using TPT = TableRelativePermeability::ThreePhasePairPhaseType;
 
     // 1) Wetting and intermediate phase relative permeabilities using two-phase wetting-intermediate data
@@ -268,7 +276,7 @@ TableRelativePermeability::KernelWrapper::
                                             interRelPerm_nwi,
                                             dInterRelPerm_nwi_dInterVolFrac,
                                             phaseRelPerm[ipInter][dir],
-                                            dPhaseRelPerm_dPhaseVolFrac[ipInter][dir] );
+                                            dPhaseRelPerm_dPhaseVolFrac[ipInter] );
 
     }
     else      // if( m_threePhaseInterpolator == ThreePhaseInterpolator::STONEII )
@@ -286,7 +294,7 @@ TableRelativePermeability::KernelWrapper::
                                              phaseRelPerm[ipNonWetting][dir],
                                              dPhaseRelPerm_dPhaseVolFrac[ipNonWetting][ipNonWetting][dir],
                                              phaseRelPerm[ipInter][dir],
-                                             dPhaseRelPerm_dPhaseVolFrac[ipInter][dir] );
+                                             dPhaseRelPerm_dPhaseVolFrac[ipInter] );
     }
   }
 
@@ -298,9 +306,9 @@ GEOS_HOST_DEVICE
 inline void
 TableRelativePermeability::KernelWrapper::
   compute( arraySlice1d< real64 const, compflow::USD_PHASE - 1 > const & phaseVolFraction,
-           arraySlice1d< real64, relperm::USD_PHASE - 2 > const & phaseTrappedVolFrac,
-           arraySlice2d< real64, relperm::USD_RELPERM - 2 > const & phaseRelPerm,
-           arraySlice3d< real64, relperm::USD_RELPERM_DS - 2 > const & dPhaseRelPerm_dPhaseVolFrac ) const
+           arraySlice1d< real64, constitutive::relperm::USD_PHASE - 2 > const & phaseTrappedVolFrac,
+           arraySlice2d< real64, constitutive::relperm::USD_RELPERM - 2 > const & phaseRelPerm,
+           arraySlice3d< real64, constitutive::relperm::USD_RELPERM_DS - 2 > const & dPhaseRelPerm_dPhaseVolFrac ) const
 {
   LvArray::forValuesInSlice( dPhaseRelPerm_dPhaseVolFrac, []( real64 & val ){ val = 0.0; } );
 
@@ -308,6 +316,8 @@ TableRelativePermeability::KernelWrapper::
   integer const ipWater = m_phaseOrder[PT::WATER];
   integer const ipOil   = m_phaseOrder[PT::OIL];
   integer const ipGas   = m_phaseOrder[PT::GAS];
+
+  integer const numDir = 3; //phaseRelPerm.size(1);
 
   if( ipWater >= 0 && ipOil >= 0 && ipGas >= 0 )
   {
@@ -344,7 +354,7 @@ TableRelativePermeability::KernelWrapper::
                      dPhaseRelPerm_dPhaseVolFrac );
   }
 
-  for( int dir= 0; dir < 3; ++dir )
+  for( int dir= 0; dir < numDir; ++dir )
   {
 
     // update trapped phase volume fraction

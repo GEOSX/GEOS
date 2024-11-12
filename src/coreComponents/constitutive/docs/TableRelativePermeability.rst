@@ -28,7 +28,7 @@ node.
 
 The following attributes are supported:
 
-.. include:: /coreComponents/schema/docs/TableRelativePermeability.rst
+.. include:: /docs/sphinx/datastructure/TableRelativePermeability.rst
 
 Below are some comments on the model parameters.
 

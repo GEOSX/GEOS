@@ -2,10 +2,11 @@
  * ------------------------------------------------------------------------------------------------------------
  * SPDX-License-Identifier: LGPL-2.1-only
  *
- * Copyright (c) 2018-2020 Lawrence Livermore National Security LLC
- * Copyright (c) 2018-2020 The Board of Trustees of the Leland Stanford Junior University
- * Copyright (c) 2018-2020 TotalEnergies
- * Copyright (c) 2019-     GEOSX Contributors
+ * Copyright (c) 2016-2024 Lawrence Livermore National Security LLC
+ * Copyright (c) 2018-2024 Total, S.A
+ * Copyright (c) 2018-2024 The Board of Trustees of the Leland Stanford Junior University
+ * Copyright (c) 2023-2024 Chevron
+ * Copyright (c) 2019-     GEOS/GEOSX Contributors
  * All rights reserved
  *
  * See top level LICENSE, COPYRIGHT, CONTRIBUTORS, NOTICE, and ACKNOWLEDGEMENTS files for details.
@@ -51,7 +52,7 @@ public:
    * @param[out] kValues the k-values estimated from the stationary points
    * @return a flag indicating that 2 stationary points have been found
    */
-  template< integer USD1 >
+  template< integer USD1, integer USD2 >
   GEOS_HOST_DEVICE
   static bool compute( integer const numComps,
                        real64 const pressure,
@@ -60,25 +61,23 @@ public:
                        ComponentProperties::KernelWrapper const & componentProperties,
                        EquationOfStateType const & equationOfState,
                        real64 & tangentPlaneDistance,
-                       arraySlice1d< real64 > const & kValues )
+                       arraySlice1d< real64, USD2 > const & kValues )
   {
     constexpr integer numTrials = 2;    // Trial compositions
-    stackArray1d< real64, maxNumComps > logFugacity( numComps );
-    stackArray1d< real64, maxNumComps > normalizedComposition( numComps );
-    stackArray2d< real64, numTrials *maxNumComps > trialComposition( numTrials, numComps );
-    stackArray1d< real64, maxNumComps > logTrialComposition( numComps );
-    stackArray1d< real64, maxNumComps > hyperplane( numComps );     // h-parameter
+    stackArray2d< real64, 4*maxNumComps > workSpace( 4, numComps );
+    arraySlice1d< real64 > logFugacity = workSpace[0];
+    arraySlice1d< real64 > normalizedComposition = workSpace[1];
+    arraySlice1d< real64 > logTrialComposition = workSpace[2];
+    arraySlice1d< real64 > hyperplane = workSpace[3]; // h-parameter
     stackArray1d< integer, maxNumComps > availableComponents( numComps );
 
     calculatePresentComponents( numComps, composition, availableComponents );
     auto const presentComponents = availableComponents.toSliceConst();
 
+    LvArray::forValuesInSlice( workSpace.toSlice(), []( real64 & a ){ a = 0.0; } );
+
     // Calculate the hyperplane parameter
     // h_i = log( z_i ) + log( phi_i )
-    for( integer ic = 0; ic < numComps; ++ic )
-    {
-      hyperplane[ic] = 0.0;
-    }
     FugacityCalculator::computeLogFugacity( numComps,
                                             pressure,
                                             temperature,
@@ -98,43 +97,21 @@ public:
                                                         componentProperties,
                                                         kValues );
 
-    for( integer ic = 0; ic < numComps; ++ic )
-    {
-      trialComposition( 0, ic ) = composition[ic] / kValues[ic];
-      trialComposition( 1, ic ) = composition[ic] * kValues[ic];
-    }
-
-    integer numberOfStationaryPoints = 0;
     tangentPlaneDistance = LvArray::NumericLimits< real64 >::max;
     for( integer trialIndex = 0; trialIndex < numTrials; ++trialIndex )
     {
-      for( integer ic = 0; ic < numComps; ++ic )
-      {
-        normalizedComposition[ic] = trialComposition( trialIndex, ic );
-      }
-      normalizeComposition( numComps, normalizedComposition.toSlice() );
-
-      FugacityCalculator::computeLogFugacity( numComps,
-                                              pressure,
-                                              temperature,
-                                              normalizedComposition.toSliceConst(),
-                                              componentProperties,
-                                              equationOfState,
-                                              logFugacity );
+      // Initialise next sample
+      real64 const alpha = static_cast< real64 >(trialIndex)/(numTrials-1);
       for( integer const ic : presentComponents )
       {
-        logTrialComposition[ic] = LvArray::math::log( trialComposition( trialIndex, ic ) );
+        normalizedComposition[ic] = composition[ic]*(alpha * kValues[ic] + (1.0 - alpha) / kValues[ic]);
+        logTrialComposition[ic] = LvArray::math::log( normalizedComposition[ic] );
       }
+
       for( localIndex iterationCount = 0; iterationCount < MultiFluidConstants::maxSSIIterations; ++iterationCount )
       {
-        for( integer const ic : presentComponents )
-        {
-          logTrialComposition[ic] = hyperplane[ic] - logFugacity[ic];
-          trialComposition( trialIndex, ic ) = LvArray::math::exp( logTrialComposition[ic] );
-          normalizedComposition[ic] = trialComposition( trialIndex, ic );
-        }
-        normalizeComposition( numComps, normalizedComposition.toSlice() );
-
+        // Normalise the composition and calculate the fugacity
+        real64 const totalMoles = normalizeComposition( numComps, normalizedComposition );
         FugacityCalculator::computeLogFugacity( numComps,
                                                 pressure,
                                                 temperature,
@@ -143,6 +120,22 @@ public:
                                                 equationOfState,
                                                 logFugacity );
 
+        // Calculate the TPD
+        real64 tpd = 0.0;
+        for( integer const ic : presentComponents )
+        {
+          tpd += composition[ic] + totalMoles * normalizedComposition[ic] * (logTrialComposition[ic] + logFugacity[ic] - hyperplane[ic] - 1.0);
+        }
+        if( tpd < tangentPlaneDistance )
+        {
+          tangentPlaneDistance = tpd;
+        }
+        if( tangentPlaneDistance < -MultiFluidConstants::fugacityTolerance )
+        {
+          break;
+        }
+
+        // Check stationarity
         real64 error = 0.0;
         for( integer const ic : presentComponents )
         {
@@ -150,32 +143,24 @@ public:
           error += (dG*dG);
         }
         error = LvArray::math::sqrt( error );
-
         if( error < MultiFluidConstants::fugacityTolerance )
         {
-          // Calculate modified tangent plane distance (Michelsen, 1982b) of trial composition relative to input composition
-          real64 tpd = 1.0;
-          for( integer const ic : presentComponents )
-          {
-            tpd += trialComposition( trialIndex, ic ) * (logTrialComposition[ic] + logFugacity[ic] - hyperplane[ic] - 1.0);
-          }
-          if( tpd < tangentPlaneDistance )
-          {
-            tangentPlaneDistance = tpd;
-          }
-          numberOfStationaryPoints++;
           break;
         }
+
+        // Update to next step
+        for( integer const ic : presentComponents )
+        {
+          logTrialComposition[ic] = hyperplane[ic] - logFugacity[ic];
+          normalizedComposition[ic] = LvArray::math::exp( logTrialComposition[ic] );
+        }
       }
-    }
-    if( numberOfStationaryPoints == numTrials )
-    {
-      for( integer const ic : presentComponents )
+      if( tangentPlaneDistance < -MultiFluidConstants::fugacityTolerance )
       {
-        kValues[ic] = trialComposition( 1, ic ) / trialComposition( 0, ic );
+        break;
       }
     }
-    return numberOfStationaryPoints == numTrials;
+    return true;
   }
 
 private:
