@@ -606,7 +606,7 @@ assembleFluidMassResidualDerivativeWrtDisplacement( MeshLevel const & mesh,
 
     ArrayOfArraysView< localIndex const > const & elemsToFaces = subRegion.faceList().toViewConst();
     // TODO uncomment and fix build
-    //arrayView1d< real64 const > const & area = subRegion.getElementArea().toViewConst();
+    arrayView1d< real64 const > const & area = subRegion.getElementArea().toViewConst();
 
     arrayView1d< integer const > const & fractureState = subRegion.getField< fields::contact::fractureState >();
 
@@ -685,14 +685,14 @@ assembleFluidMassResidualDerivativeWrtDisplacement( MeshLevel const & mesh,
         localIndex const numColumns = dFluxResidual_dNormalJump.numNonZeros( kfe * numComp + ic );
         arraySlice1d< localIndex const > const & columns = dFluxResidual_dNormalJump.getColumns( kfe * numComp + ic );
         // TODO uncomment and fix build
-        //arraySlice1d< real64 const > const & values = dFluxResidual_dNormalJump.getEntries( kfe * numComp + ic );
+        arraySlice1d< real64 const > const & values = dFluxResidual_dNormalJump.getEntries( kfe * numComp + ic );
 
         skipAssembly &= !isFractureOpen;
 
         for( localIndex kfe1 = 0; kfe1 < numColumns; ++kfe1 )
         {
           // TODO uncomment and fix build
-          //real64 const dR_dAper = values[kfe1];
+          real64 const dR_dAper = values[kfe1];
           localIndex const kfe2 = columns[kfe1];
 
           bool const isOpen = ( fractureState[kfe2] == fields::contact::FractureState::Open );
@@ -719,8 +719,8 @@ assembleFluidMassResidualDerivativeWrtDisplacement( MeshLevel const & mesh,
                 nodeDOF[ kf*3*numNodesPerFace + 3*a+i ] = dispDofNumber[faceToNodeMap( elemsToFaces[kfe2][kf], a )]
                                                           + LvArray::integerConversion< globalIndex >( i );
                 // TODO uncomment and fix build
-                //real64 const dAper_dU = -pow( -1, kf ) * Nbar[i] * ( nodalArea[a] / area[kfe2] );
-                //dRdU[ ic ][ kf*3*numNodesPerFace + 3*a + i ] = dR_dAper[ic] * dAper_dU;
+                real64 const dAper_dU = -pow( -1, kf ) * Nbar[i] * ( nodalArea[a] / area[kfe2] );
+                dRdU[ ic ][ kf*3*numNodesPerFace + 3*a + i ] = dR_dAper * dAper_dU;
               }
             }
           }
