@@ -1712,18 +1712,19 @@ struct IHUPhaseFlux
            real64 ( & dCompFlux_dP )[numFluxSupportPoints][numComp],
            real64 ( & dCompFlux_dC )[numFluxSupportPoints][numComp][numComp] )
   {
-    // loop over all phases to form total velocity
+
+    //loop over all phases to form total velocity
     real64 totFlux{};
     real64 dTotFlux_dP[numFluxSupportPoints]{};
     real64 dTotFlux_dC[numFluxSupportPoints][numComp]{};
 
-    // store totMob upwinded by PPU for later schemes
+    //store totMob upwinded by PPU for later schemes
     real64 totMob{};
     real64 dTotMob_dP[numFluxSupportPoints]{};
     real64 dTotMob_dC[numFluxSupportPoints][numComp]{};
     localIndex k_up_ppu = -1;
 
-    // unelegant but need dummy when forming PPU total velocity
+    //unelegant but need dummy when forming PPU total velocity
     real64 dummy[numComp];
     real64 dDummy_dP[numFluxSupportPoints][numComp];
     real64 dDummy_dC[numFluxSupportPoints][numComp][numComp];
@@ -1764,8 +1765,8 @@ struct IHUPhaseFlux
       }
     }
 
-    // fractional flow loop with IHU
-    // maybe needed to have density out for upwinding
+    //fractional flow loop with IHU
+    //maybe needed to have density out for upwinding
 
     // choose upstream cell
     // create local work arrays
@@ -1808,6 +1809,7 @@ struct IHUPhaseFlux
                                                                   dFractionalFlow_dP,
                                                                   dFractionalFlow_dC );
 
+
     /// Assembling the viscous flux (and derivatives) from fractional flow and total velocity as \phi_{\mu} = f_i^{up,\mu} uT
     viscousPhaseFlux = fractionalFlow * totFlux;
     for( localIndex ke = 0; ke < numFluxSupportPoints; ++ke )
@@ -1821,7 +1823,7 @@ struct IHUPhaseFlux
       }
     }
 
-    // NON-FIXED UT -- to be canceled out if considered fixed
+    //NON-FIXED UT -- to be canceled out if considered fixed
     for( localIndex ke = 0; ke < numFluxSupportPoints; ++ke )
     {
       dViscousPhaseFlux_dP[ke] += fractionalFlow * dTotFlux_dP[ke];
@@ -1832,8 +1834,7 @@ struct IHUPhaseFlux
         dViscousPhaseFlux_dC[ke][jc] += fractionalFlow * dTotFlux_dC[ke][jc];
       }
     }
-
-    // distribute on phaseComponentFlux here
+    //distribute on phaseComponentFlux here
     PhaseComponentFlux::compute( ip, k_up,
                                  seri, sesri, sei,
                                  phaseCompFrac, dPhaseCompFrac, dCompFrac_dCompDens,
@@ -1891,14 +1892,17 @@ struct IHUPhaseFlux
       gravitationalPhaseFlux_dP,
       gravitationalPhaseFlux_dC );
 
-    // distribute on phaseComponentFlux here
+
+
+    //distribute on phaseComponentFlux here
     PhaseComponentFlux::compute( ip, k_up_g,
                                  seri, sesri, sei,
                                  phaseCompFrac, dPhaseCompFrac, dCompFrac_dCompDens,
                                  gravitationalPhaseFlux, gravitationalPhaseFlux_dP, gravitationalPhaseFlux_dC,
                                  compFlux, dCompFlux_dP, dCompFlux_dC );
 
-    // update phaseFlux from gravitational
+
+    //update phaseFlux from gravitational
     phaseFlux += gravitationalPhaseFlux;
     for( localIndex ke = 0; ke < numFluxSupportPoints; ++ke )
     {
@@ -1906,6 +1910,7 @@ struct IHUPhaseFlux
       for( localIndex ic = 0; ic < numComp; ++ic )
         dPhaseFlux_dC[ke][ic] += gravitationalPhaseFlux_dC[ke][ic];
     }
+
 
     if( hasCapPressure )
     {
@@ -1948,14 +1953,15 @@ struct IHUPhaseFlux
         capillaryPhaseFlux_dP,
         capillaryPhaseFlux_dC );
 
-      // distribute on phaseComponentFlux here
+      //distribute on phaseComponentFlux here
       PhaseComponentFlux::compute( ip, k_up_pc,
                                    seri, sesri, sei,
                                    phaseCompFrac, dPhaseCompFrac, dCompFrac_dCompDens,
                                    capillaryPhaseFlux, capillaryPhaseFlux_dP, capillaryPhaseFlux_dC,
                                    compFlux, dCompFlux_dP, dCompFlux_dC );
 
-      // update phaseFlux from capillary
+
+      //update phaseFlux from capillary
       phaseFlux += capillaryPhaseFlux;
       for( localIndex ke = 0; ke < numFluxSupportPoints; ++ke )
       {
@@ -1964,8 +1970,11 @@ struct IHUPhaseFlux
           dPhaseFlux_dC[ke][ic] += capillaryPhaseFlux_dC[ke][ic];
 
       }
-    } // end if cappres
+
+    }//end if cappres
+
   }
+
 };
 
 } // namespace isothermalCompositionalMultiPhaseFVMKernelUtilities

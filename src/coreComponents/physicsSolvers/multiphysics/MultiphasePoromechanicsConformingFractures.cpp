@@ -88,11 +88,6 @@ void MultiphasePoromechanicsConformingFractures< FLOW_SOLVER >::setupSystem( Dom
   this->setupDofs( domain, dofManager );
   dofManager.reorderByRank();
 
-  if( this->getLogLevel() > 2 )
-  {
-    dofManager.printFieldInfo();
-  }
-
   /// 2. Add coupling terms not added by the DofManager.
   localIndex const numLocalRows = dofManager.numLocalDofs();
 
