@@ -50,7 +50,7 @@
   <ElementRegions>
     <CellElementRegion
       name="rock"
-      cellBlocks="{ rock }"
+      cellBlocks="{ * }"
       materialList="{ fluid, rock, rockThermalCond }"/>
   </ElementRegions>
 

@@ -251,7 +251,7 @@ setUpDflux_dApertureMatrix( DomainPartition & domain,
         numRows += subRegion.size();
       } );
       // TODO
-      numCol = numRows;
+      localIndex numCol = numRows;
       numRows *= numComp;
 
       derivativeFluxResidual_dAperture = std::make_unique< CRSMatrix< real64, localIndex > >( numRows, numCol );
@@ -610,7 +610,8 @@ assembleFluidMassResidualDerivativeWrtDisplacement( MeshLevel const & mesh,
     arrayView1d< globalIndex const > const & flowDofNumber = subRegion.getReference< array1d< globalIndex > >( flowDofKey );
 
     ArrayOfArraysView< localIndex const > const & elemsToFaces = subRegion.faceList().toViewConst();
-    arrayView1d< real64 const > const & area = subRegion.getElementArea().toViewConst();
+    // TODO uncomment and fix build
+    //arrayView1d< real64 const > const & area = subRegion.getElementArea().toViewConst();
 
     arrayView1d< integer const > const & fractureState = subRegion.getField< fields::contact::fractureState >();
 
@@ -684,45 +685,47 @@ assembleFluidMassResidualDerivativeWrtDisplacement( MeshLevel const & mesh,
       // TODO
       // flux derivative
       bool skipAssembly = true;
-              for( integer ic = 0; ic < numComp; ic++ )
-              {
-      localIndex const numColumns = dFluxResidual_dNormalJump.numNonZeros( kfe * Nc + ic );
-      arraySlice1d< localIndex const > const & columns = dFluxResidual_dNormalJump.getColumns( kfe * Nc + ic );
-      arraySlice1d< real64 const > const & values = dFluxResidual_dNormalJump.getEntries( kfe * Nc + ic );
-
-      skipAssembly &= !isFractureOpen;
-
-      for( localIndex kfe1 = 0; kfe1 < numColumns; ++kfe1 )
+      for( integer ic = 0; ic < numComp; ic++ )
       {
-        real64 const dR_dAper = values[kfe1];
-        localIndex const kfe2 = columns[kfe1];
+        localIndex const numColumns = dFluxResidual_dNormalJump.numNonZeros( kfe * numComp + ic );
+        arraySlice1d< localIndex const > const & columns = dFluxResidual_dNormalJump.getColumns( kfe * numComp + ic );
+        // TODO uncomment and fix build
+        //arraySlice1d< real64 const > const & values = dFluxResidual_dNormalJump.getEntries( kfe * numComp + ic );
 
-        bool const isOpen = ( fractureState[kfe2] == fields::contact::FractureState::Open );
-        skipAssembly &= !isOpen;
+        skipAssembly &= !isFractureOpen;
 
-        for( localIndex kf = 0; kf < 2; ++kf )
+        for( localIndex kfe1 = 0; kfe1 < numColumns; ++kfe1 )
         {
-          //TODO: We should avoid allocating LvArrays inside kernel
-          stackArray1d< real64, FaceManager::maxFaceNodes() > nodalArea;
-          this->solidMechanicsSolver()->computeFaceNodalArea( elemsToFaces[kfe2][kf],
-                                                              nodePosition,
-                                                              faceToNodeMap,
-                                                              faceToEdgeMap,
-                                                              edgeToNodeMap,
-                                                              faceCenters,
-                                                              faceNormal,
-                                                              faceAreas,
-                                                              nodalArea );
+          // TODO uncomment and fix build
+          //real64 const dR_dAper = values[kfe1];
+          localIndex const kfe2 = columns[kfe1];
 
-          for( localIndex a=0; a<numNodesPerFace; ++a )
+          bool const isOpen = ( fractureState[kfe2] == fields::contact::FractureState::Open );
+          skipAssembly &= !isOpen;
+
+          for( localIndex kf = 0; kf < 2; ++kf )
           {
-            for( localIndex i=0; i<3; ++i )
-            {
-              nodeDOF[ kf*3*numNodesPerFace + 3*a+i ] = dispDofNumber[faceToNodeMap( elemsToFaces[kfe2][kf], a )]
-                                                        + LvArray::integerConversion< globalIndex >( i );
-              real64 const dAper_dU = -pow( -1, kf ) * Nbar[i] * ( nodalArea[a] / area[kfe2] );
+            //TODO: We should avoid allocating LvArrays inside kernel
+            stackArray1d< real64, FaceManager::maxFaceNodes() > nodalArea;
+            this->solidMechanicsSolver()->computeFaceNodalArea( elemsToFaces[kfe2][kf],
+                                                                nodePosition,
+                                                                faceToNodeMap,
+                                                                faceToEdgeMap,
+                                                                edgeToNodeMap,
+                                                                faceCenters,
+                                                                faceNormal,
+                                                                faceAreas,
+                                                                nodalArea );
 
-              dRdU[ ic ][ kf*3*numNodesPerFace + 3*a + i ] = dR_dAper[ic] * dAper_dU;
+            for( localIndex a=0; a<numNodesPerFace; ++a )
+            {
+              for( localIndex i=0; i<3; ++i )
+              {
+                nodeDOF[ kf*3*numNodesPerFace + 3*a+i ] = dispDofNumber[faceToNodeMap( elemsToFaces[kfe2][kf], a )]
+                                                          + LvArray::integerConversion< globalIndex >( i );
+                // TODO uncomment and fix build
+                //real64 const dAper_dU = -pow( -1, kf ) * Nbar[i] * ( nodalArea[a] / area[kfe2] );
+                //dRdU[ ic ][ kf*3*numNodesPerFace + 3*a + i ] = dR_dAper[ic] * dAper_dU;
               }
             }
           }
@@ -833,9 +836,9 @@ namespace
 {
 //typedef MultiphasePoromechanicsConformingFractures< MultiphaseReservoirAndWells<> >
 // MultiphasePoromechanicsConformingFractures;
-//REGISTER_CATALOG_ENTRY( SolverBase, MultiphasePoromechanicsConformingFractures, string const &, Group * const )
+//REGISTER_CATALOG_ENTRY( PhysicsSolverBase, MultiphasePoromechanicsConformingFractures, string const &, Group * const )
 typedef MultiphasePoromechanicsConformingFractures<> MultiphasePoromechanicsConformingFractures;
-REGISTER_CATALOG_ENTRY( SolverBase, MultiphasePoromechanicsConformingFractures, string const &, Group * const )
+REGISTER_CATALOG_ENTRY( PhysicsSolverBase, MultiphasePoromechanicsConformingFractures, string const &, Group * const )
 }
 
 } /* namespace geos */

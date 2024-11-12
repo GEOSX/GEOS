@@ -40,8 +40,15 @@
 #include "mesh/mpiCommunications/CommunicationTools.hpp"
 #include "physicsSolvers/fluidFlow/FlowSolverBaseFields.hpp"
 #include "physicsSolvers/fluidFlow/SinglePhaseBaseFields.hpp"
-#include "physicsSolvers/fluidFlow/SinglePhaseBaseKernels.hpp"
-#include "physicsSolvers/fluidFlow/ThermalSinglePhaseBaseKernels.hpp"
+#include "physicsSolvers/fluidFlow/kernels/singlePhase/AccumulationKernels.hpp"
+#include "physicsSolvers/fluidFlow/kernels/singlePhase/ThermalAccumulationKernels.hpp"
+#include "physicsSolvers/fluidFlow/kernels/singlePhase/MobilityKernel.hpp"
+#include "physicsSolvers/fluidFlow/kernels/singlePhase/SolutionCheckKernel.hpp"
+#include "physicsSolvers/fluidFlow/kernels/singlePhase/SolutionScalingKernel.hpp"
+#include "physicsSolvers/fluidFlow/kernels/singlePhase/StatisticsKernel.hpp"
+#include "physicsSolvers/fluidFlow/kernels/singlePhase/HydrostaticPressureKernel.hpp"
+#include "physicsSolvers/fluidFlow/kernels/singlePhase/FluidUpdateKernel.hpp"
+#include "physicsSolvers/fluidFlow/kernels/singlePhase/SolidInternalEnergyUpdateKernel.hpp"
 
 
 namespace geos
@@ -255,7 +262,7 @@ void SinglePhaseBase::updateFluidModel( ObjectManagerBase & dataGroup ) const
   constitutiveUpdatePassThru( fluid, [&]( auto & castedFluid )
   {
     typename TYPEOFREF( castedFluid ) ::KernelWrapper fluidWrapper = castedFluid.createKernelWrapper();
-    thermalSinglePhaseBaseKernels::FluidUpdateKernel::launch( fluidWrapper, pres, temp );
+    singlePhaseBaseKernels::FluidUpdateKernel::launch( fluidWrapper, pres, temp );
   } );
 }
 
@@ -365,16 +372,16 @@ void SinglePhaseBase::updateMobility( ObjectManagerBase & dataGroup ) const
 
     ThermalFluidPropViews thermalFluidProps = getThermalFluidProperties( fluid );
 
-    thermalSinglePhaseBaseKernels::MobilityKernel::launch< parallelDevicePolicy<> >( dataGroup.size(),
-                                                                                     fluidProps.dens,
-                                                                                     fluidProps.dDens_dPres,
-                                                                                     thermalFluidProps.dDens_dTemp,
-                                                                                     fluidProps.visc,
-                                                                                     fluidProps.dVisc_dPres,
-                                                                                     thermalFluidProps.dVisc_dTemp,
-                                                                                     mob,
-                                                                                     dMob_dPres,
-                                                                                     dMob_dTemp );
+    singlePhaseBaseKernels::MobilityKernel::launch< parallelDevicePolicy<> >( dataGroup.size(),
+                                                                              fluidProps.dens,
+                                                                              fluidProps.dDens_dPres,
+                                                                              thermalFluidProps.dDens_dTemp,
+                                                                              fluidProps.visc,
+                                                                              fluidProps.dVisc_dPres,
+                                                                              thermalFluidProps.dVisc_dTemp,
+                                                                              mob,
+                                                                              dMob_dPres,
+                                                                              dMob_dTemp );
   }
   else
   {
@@ -760,7 +767,7 @@ void SinglePhaseBase::implicitStepComplete( real64 const & time,
 
       CoupledSolidBase const & porousSolid =
         getConstitutiveModel< CoupledSolidBase >( subRegion, subRegion.template getReference< string >( viewKeyStruct::solidNamesString() ) );
-      if( m_keepFlowVariablesConstantDuringInitStep )
+      if( m_keepVariablesConstantDuringInitStep )
       {
         porousSolid.ignoreConvergedState(); // newPorosity <- porosity_n
       }
@@ -874,13 +881,13 @@ void SinglePhaseBase::applyBoundaryConditions( real64 time_n,
 {
   GEOS_MARK_FUNCTION;
 
-  if( m_keepFlowVariablesConstantDuringInitStep )
+  if( m_keepVariablesConstantDuringInitStep )
   {
     // this function is going to force the current flow state to be constant during the time step
     // this is used when the poromechanics solver is performing the stress initialization
     // TODO: in the future, a dedicated poromechanics kernel should eliminate the flow vars to construct a reduced system
     //       which will remove the need for this brittle passing aroung of flag
-    keepFlowVariablesConstantDuringInitStep( time_n, dt, dofManager, domain, localMatrix.toViewConstSizes(), localRhs.toView() );
+    keepVariablesConstantDuringInitStep( time_n, dt, dofManager, domain, localMatrix.toViewConstSizes(), localRhs.toView() );
   }
   else
   {
@@ -1181,12 +1188,12 @@ void SinglePhaseBase::applySourceFluxBC( real64 const time_n,
   } );
 }
 
-void SinglePhaseBase::keepFlowVariablesConstantDuringInitStep( real64 const time,
-                                                               real64 const dt,
-                                                               DofManager const & dofManager,
-                                                               DomainPartition & domain,
-                                                               CRSMatrixView< real64, globalIndex const > const & localMatrix,
-                                                               arrayView1d< real64 > const & localRhs ) const
+void SinglePhaseBase::keepVariablesConstantDuringInitStep( real64 const time,
+                                                           real64 const dt,
+                                                           DofManager const & dofManager,
+                                                           DomainPartition & domain,
+                                                           CRSMatrixView< real64, globalIndex const > const & localMatrix,
+                                                           arrayView1d< real64 > const & localRhs ) const
 {
   GEOS_MARK_FUNCTION;
 
@@ -1325,7 +1332,7 @@ real64 SinglePhaseBase::scalingForSystemSolution( DomainPartition & domain,
       arrayView1d< integer const > const ghostRank = subRegion.ghostRank();
 
       auto const subRegionData =
-        singlePhaseBaseKernels::ScalingForSystemSolutionKernel::
+        singlePhaseBaseKernels::SolutionScalingKernel::
           launch< parallelDevicePolicy<> >( localSolution, rankOffset, dofNumber, ghostRank, m_maxAbsolutePresChange );
 
       scalingFactor = std::min( scalingFactor, subRegionData.first );
@@ -1336,8 +1343,8 @@ real64 SinglePhaseBase::scalingForSystemSolution( DomainPartition & domain,
   scalingFactor = MpiWrapper::min( scalingFactor );
   maxDeltaPres  = MpiWrapper::max( maxDeltaPres );
 
-  GEOS_LOG_LEVEL_RANK_0( 1, GEOS_FMT( "        {}: Max pressure change = {} Pa (before scaling)",
-                                      getName(), fmt::format( "{:.{}f}", maxDeltaPres, 3 ) ) );
+  GEOS_LOG_LEVEL_INFO_RANK_0( logInfo::Solution, GEOS_FMT( "        {}: Max pressure change = {} Pa (before scaling)",
+                                                           getName(), fmt::format( "{:.{}f}", maxDeltaPres, 3 ) ) );
 
   return scalingFactor;
 }
@@ -1378,8 +1385,8 @@ bool SinglePhaseBase::checkSystemSolution( DomainPartition & domain,
   numNegativePressures = MpiWrapper::sum( numNegativePressures );
 
   if( numNegativePressures > 0 )
-    GEOS_LOG_LEVEL_RANK_0( 1, GEOS_FMT( "        {}: Number of negative pressure values: {}, minimum value: {} Pa",
-                                        getName(), numNegativePressures, fmt::format( "{:.{}f}", minPressure, 3 ) ) );
+    GEOS_LOG_LEVEL_INFO_RANK_0( logInfo::Solution, GEOS_FMT( "        {}: Number of negative pressure values: {}, minimum value: {} Pa",
+                                                             getName(), numNegativePressures, fmt::format( "{:.{}f}", minPressure, 3 ) ) );
 
   return (m_allowNegativePressure || numNegativePressures == 0) ?  1 : 0;
 }

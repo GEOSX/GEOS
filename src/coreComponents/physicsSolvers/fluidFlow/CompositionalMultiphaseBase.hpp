@@ -24,8 +24,8 @@
 #include "fieldSpecification/FieldSpecificationManager.hpp"
 #include "constitutive/fluid/multifluid/MultiFluidBase.hpp"
 #include "constitutive/solid/CoupledSolidBase.hpp"
-#include "physicsSolvers/fluidFlow/IsothermalCompositionalMultiphaseBaseKernels.hpp"
-#include "physicsSolvers/fluidFlow/ThermalCompositionalMultiphaseBaseKernels.hpp"
+#include "physicsSolvers/fluidFlow/kernels/compositional/AccumulationKernel.hpp"
+#include "physicsSolvers/fluidFlow/kernels/compositional/ThermalAccumulationKernel.hpp"
 
 namespace geos
 {
@@ -364,15 +364,15 @@ public:
    * @param[in] domain the domain
    * @param[in] localMatrix local system matrix
    * @param[in] localRhs local system right-hand side vector
-   * @detail This function is meant to be called when the flag m_keepFlowVariablesConstantDuringInitStep is on
+   * @detail This function is meant to be called when the flag m_keepVariablesConstantDuringInitStep is on
    *         The main use case is the initialization step in coupled problems during which we solve an elastic problem for a fixed pressure
    */
-  void keepFlowVariablesConstantDuringInitStep( real64 const time,
-                                                real64 const dt,
-                                                DofManager const & dofManager,
-                                                DomainPartition & domain,
-                                                CRSMatrixView< real64, globalIndex const > const & localMatrix,
-                                                arrayView1d< real64 > const & localRhs ) const;
+  void keepVariablesConstantDuringInitStep( real64 const time,
+                                            real64 const dt,
+                                            DofManager const & dofManager,
+                                            DomainPartition & domain,
+                                            CRSMatrixView< real64, globalIndex const > const & localMatrix,
+                                            arrayView1d< real64 > const & localRhs ) const;
 
 
   /**
@@ -580,7 +580,7 @@ void CompositionalMultiphaseBase::accumulationAssemblyLaunch( DofManager const &
   if( m_isThermal )
   {
     thermalCompositionalMultiphaseBaseKernels::
-      ElementBasedAssemblyKernelFactory::
+      AccumulationKernelFactory::
       createAndLaunch< parallelDevicePolicy<> >( m_numComponents,
                                                  m_numPhases,
                                                  dofManager.rankOffset(),
@@ -595,7 +595,7 @@ void CompositionalMultiphaseBase::accumulationAssemblyLaunch( DofManager const &
   else
   {
     isothermalCompositionalMultiphaseBaseKernels::
-      ElementBasedAssemblyKernelFactory::
+      AccumulationKernelFactory::
       createAndLaunch< parallelDevicePolicy<> >( m_numComponents,
                                                  m_numPhases,
                                                  dofManager.rankOffset(),

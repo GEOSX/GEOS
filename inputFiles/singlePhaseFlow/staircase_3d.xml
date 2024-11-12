@@ -1,6 +1,7 @@
 <?xml version="1.0" ?>
 
-<Problem>
+<Problem xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance"
+ xsi:noNamespaceSchemaLocation="../../src/coreComponents/schema/schema.xsd">
   <Solvers
     gravityVector="{ 0.0, 0.0, -9.81 }">
     <SinglePhaseFVM

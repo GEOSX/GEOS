@@ -97,6 +97,8 @@ public:
     string m_maxStringSize;
   };
 
+  TableLayout() = default;
+
   /**
    * @brief Construct a new Table object, all values in the table are centered by default
    * @param columnNames The names of the columns
