@@ -43,7 +43,7 @@
 #include "physicsSolvers/fluidFlow/FlowSolverBaseFields.hpp"
 #include "physicsSolvers/fluidFlow/SourceFluxStatistics.hpp"
 #include "physicsSolvers/fluidFlow/kernels/compositional/AccumulationKernel.hpp"
-#include "physicsSolvers/fluidFlow/kernels/compositional/AccumulationZFormulationKernel.hpp"
+#include "physicsSolvers/fluidFlow/kernels/compositional/zFormulation/AccumulationZFormulationKernel.hpp"
 #include "physicsSolvers/fluidFlow/kernels/compositional/ThermalAccumulationKernel.hpp"
 #include "physicsSolvers/fluidFlow/kernels/compositional/GlobalComponentFractionKernel.hpp"
 #include "physicsSolvers/fluidFlow/kernels/compositional/PhaseVolumeFractionKernel.hpp"
@@ -1388,18 +1388,22 @@ void CompositionalMultiphaseBase::assembleSystem( real64 const GEOS_UNUSED_PARAM
 {
   GEOS_MARK_FUNCTION;
 
+  /*
+  assembleZFormulationFluxTerms( dt,
+                      domain,
+                      dofManager,
+                      localMatrix,
+                      localRhs );
+                      */
+
+ 
+  // Accumulation term
   if (m_useZFormulation)
   {
     assembleZFormulationAccumulation( domain,
                           dofManager,
                           localMatrix,
                           localRhs );
-
-    assembleZFormulationFluxTerms( dt,
-                      domain,
-                      dofManager,
-                      localMatrix,
-                      localRhs );
   }
   else
   {
@@ -1407,25 +1411,26 @@ void CompositionalMultiphaseBase::assembleSystem( real64 const GEOS_UNUSED_PARAM
                                              dofManager,
                                              localMatrix,
                                              localRhs );
-
-    if( m_isJumpStabilized )
-    {
-      assembleStabilizedFluxTerms( dt,
-                                  domain,
-                                  dofManager,
-                                  localMatrix,
-                                  localRhs );
-    }
-    else
-    {
-      assembleFluxTerms( dt,
-                        domain,
-                        dofManager,
-                        localMatrix,
-                        localRhs );
-    }
   }
+    
 
+  // Flux term
+  if( m_isJumpStabilized )
+  {
+    assembleStabilizedFluxTerms( dt,
+                                domain,
+                                dofManager,
+                                localMatrix,
+                                localRhs );
+  }
+  else
+  {
+    assembleFluxTerms( dt,
+                      domain,
+                      dofManager,
+                      localMatrix,
+                      localRhs );
+  }
 }
 
 void CompositionalMultiphaseBase::assembleAccumulationAndVolumeBalanceTerms( DomainPartition & domain,

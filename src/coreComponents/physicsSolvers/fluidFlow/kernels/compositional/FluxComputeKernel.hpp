@@ -35,6 +35,7 @@
 #include "physicsSolvers/fluidFlow/kernels/compositional/PPUPhaseFlux.hpp"
 #include "physicsSolvers/fluidFlow/kernels/compositional/C1PPUPhaseFlux.hpp"
 #include "physicsSolvers/fluidFlow/kernels/compositional/IHUPhaseFlux.hpp"
+#include "physicsSolvers/fluidFlow/kernels/compositional/zFormulation/PPUPhaseFluxZFormulation.hpp"
 
 namespace geos
 {
@@ -325,7 +326,34 @@ public:
           }
           else
           {
-            isothermalCompositionalMultiphaseFVMKernelUtilities::PPUPhaseFlux::compute< numComp, numFluxSupportPoints >
+            if( m_kernelFlags.isSet( FluxComputeKernelFlags::useZFormulation ) )
+            {
+              isothermalCompositionalMultiphaseFVMKernelUtilities::PPUPhaseFluxZFormulation::compute< numComp, numFluxSupportPoints >
+              ( m_numPhases,
+              ip,
+              m_kernelFlags.isSet( FluxComputeKernelFlags::CapPressure ),
+              seri, sesri, sei,
+              trans,
+              dTrans_dPres,
+              m_pres,
+              m_gravCoef,
+              m_phaseMob, m_dPhaseMob,
+              m_dPhaseVolFrac,
+              m_phaseCompFrac, m_dPhaseCompFrac,
+              m_phaseMassDens, m_dPhaseMassDens,
+              m_phaseCapPressure, m_dPhaseCapPressure_dPhaseVolFrac,
+              k_up,
+              potGrad,
+              phaseFlux,
+              dPhaseFlux_dP,
+              dPhaseFlux_dC,
+              compFlux,
+              dCompFlux_dP,
+              dCompFlux_dC );
+            }
+            else
+            {
+              isothermalCompositionalMultiphaseFVMKernelUtilities::PPUPhaseFlux::compute< numComp, numFluxSupportPoints >
               ( m_numPhases,
               ip,
               m_kernelFlags.isSet( FluxComputeKernelFlags::CapPressure ),
@@ -348,6 +376,8 @@ public:
               compFlux,
               dCompFlux_dP,
               dCompFlux_dC );
+            }
+            
           }
 
           // call the lambda in the phase loop to allow the reuse of the phase fluxes and their derivatives
@@ -525,6 +555,7 @@ public:
                    string const & dofKey,
                    integer const hasCapPressure,
                    integer const useTotalMassEquation,
+                   integer const useZFormulation,
                    UpwindingParameters upwindingParams,
                    string const & solverName,
                    ElementRegionManager const & elemManager,
@@ -552,7 +583,8 @@ public:
         kernelFlags.set( FluxComputeKernelFlags::C1PPU );
       else if( upwindingParams.upwindingScheme == UpwindingScheme::IHU )
         kernelFlags.set( FluxComputeKernelFlags::IHU );
-
+      if( useZFormulation )
+        kernelFlags.set( FluxComputeKernelFlags::useZFormulation );
 
       using kernelType = FluxComputeKernel< NUM_COMP, NUM_DOF, STENCILWRAPPER >;
       typename kernelType::CompFlowAccessors compFlowAccessors( elemManager, solverName );

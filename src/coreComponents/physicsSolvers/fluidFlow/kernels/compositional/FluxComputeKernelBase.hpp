@@ -50,7 +50,9 @@ enum class FluxComputeKernelFlags
   /// Flag indicating whether C1-PPU is used or not
   C1PPU = 1 << 2, // 4
   /// Flag indicating whether IHU is used or not
-  IHU = 1 << 3 // 8
+  IHU = 1 << 3, // 8
+  /// Flag indicating whether overall composition (Z) formulation is used or not
+  useZFormulation = 1 << 4 // 16
         /// Add more flags like that if needed:
         // Flag5 = 1 << 4, // 16
         // Flag6 = 1 << 5, // 32

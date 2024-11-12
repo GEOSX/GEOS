@@ -233,6 +233,7 @@ void CompositionalMultiphaseFVM::assembleFluxTerms( real64 const dt,
                                                        elemDofKey,
                                                        m_hasCapPressure,
                                                        m_useTotalMassEquation,
+                                                       m_useZFormulation,
                                                        fluxApprox.upwindingParams(),
                                                        getName(),
                                                        mesh.getElemManager(),
@@ -311,6 +312,7 @@ void CompositionalMultiphaseFVM::assembleZFormulationFluxTerms( real64 const dt,
     {
       typename TYPEOFREF( stencil ) ::KernelWrapper stencilWrapper = stencil.createKernelWrapper();
 
+      /*
       // Convective flux
       if( m_isThermal )
       {
@@ -356,24 +358,30 @@ void CompositionalMultiphaseFVM::assembleZFormulationFluxTerms( real64 const dt,
         }
         else
         {
-          isothermalCompositionalMultiphaseFVMKernels::
-            FluxComputeKernelFactory::
-            createAndLaunch< parallelDevicePolicy<> >( m_numComponents,
-                                                       m_numPhases,
-                                                       dofManager.rankOffset(),
-                                                       elemDofKey,
-                                                       m_hasCapPressure,
-                                                       m_useTotalMassEquation,
-                                                       fluxApprox.upwindingParams(),
-                                                       getName(),
-                                                       mesh.getElemManager(),
-                                                       stencilWrapper,
-                                                       dt,
-                                                       localMatrix.toViewConstSizes(),
-                                                       localRhs.toView() );
         }
       }
+      */
 
+       // isothermal only for now
+      isothermalCompositionalMultiphaseFVMKernels::
+        FluxComputeKernelFactory::
+        createAndLaunch< parallelDevicePolicy<> >( m_numComponents,
+                                                    m_numPhases,
+                                                    dofManager.rankOffset(),
+                                                    elemDofKey,
+                                                    m_hasCapPressure,
+                                                    m_useTotalMassEquation,
+                                                    m_useZFormulation,
+                                                    fluxApprox.upwindingParams(),
+                                                    getName(),
+                                                    mesh.getElemManager(),
+                                                    stencilWrapper,
+                                                    dt,
+                                                    localMatrix.toViewConstSizes(),
+                                                    localRhs.toView() );
+
+      // TO DO: implement diffusion and dispersion flux for Z formulation
+      /*
       // Diffusive and dispersive flux
       if( m_hasDiffusion || m_hasDispersion )
       {
@@ -413,8 +421,9 @@ void CompositionalMultiphaseFVM::assembleZFormulationFluxTerms( real64 const dt,
                                                        dt,
                                                        localMatrix.toViewConstSizes(),
                                                        localRhs.toView() );
-        }
+        } 
       }
+      */
 
     } );
   } );
