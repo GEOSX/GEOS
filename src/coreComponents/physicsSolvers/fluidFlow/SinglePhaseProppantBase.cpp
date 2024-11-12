@@ -20,6 +20,7 @@
 
 #include "SinglePhaseProppantBase.hpp"
 
+#include "mesh/DomainPartition.hpp"
 #include "constitutive/ConstitutivePassThru.hpp"
 #include "constitutive/fluid/singlefluid/SlurryFluidSelector.hpp"
 #include "constitutive/fluid/singlefluid/SingleFluidFields.hpp"
@@ -27,7 +28,7 @@
 #include "constitutive/solid/ProppantSolid.hpp"
 #include "constitutive/solid/porosity/ProppantPorosity.hpp"
 #include "physicsSolvers/fluidFlow/proppantTransport/ProppantTransportFields.hpp"
-#include "physicsSolvers/fluidFlow/kernels/SinglePhaseProppantBaseKernels.hpp"
+#include "physicsSolvers/fluidFlow/kernels/singlePhase/proppant/ProppantBaseKernels.hpp"
 
 namespace geos
 {

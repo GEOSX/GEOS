@@ -965,7 +965,7 @@
 		<!--maxCycle => Maximum simulation cycle for the global event loop. Disabled by default.-->
 		<xsd:attribute name="maxCycle" type="integer" default="2147483647" />
 		<!--maxTime => Maximum simulation time for the global event loop. Disabled by default.-->
-		<xsd:attribute name="maxTime" type="real64" default="1.79769e+308" />
+		<xsd:attribute name="maxTime" type="real64" default="3.1557e+11" />
 		<!--minTime => Start simulation time for the global event loop.-->
 		<xsd:attribute name="minTime" type="real64" default="0" />
 		<!--timeOutputFormat => Format of the time in the GEOS log.-->
@@ -3447,18 +3447,31 @@ Level 0 outputs no specific information for this solver. Higher levels require m
 		</xsd:choice>
 		<!--cflFactor => Factor to apply to the `CFL condition <http://en.wikipedia.org/wiki/Courant-Friedrichs-Lewy_condition>`_ when calculating the maximum allowable time step. Values should be in the interval (0,1] -->
 		<xsd:attribute name="cflFactor" type="real64" default="0.5" />
+		<!--discretization => Name of discretization object (defined in the :ref:`NumericalMethodsManager`) to use for this solver. For instance, if this is a Finite Element Solver, the name of a :ref:`FiniteElement` should be specified. If this is a Finite Volume Method, the name of a :ref:`FiniteVolume` discretization should be specified.-->
+		<xsd:attribute name="discretization" type="groupNameRef" use="required" />
 		<!--initialDt => Initial time-step value required by the solver to the event manager.-->
 		<xsd:attribute name="initialDt" type="real64" default="1e+99" />
-		<!--logLevel => Log level-->
+		<!--logLevel => Sets the level of information to write in the standard output (the console typically).
+Level 0 outputs no specific information for this solver. Higher levels require more outputs.
+1
+ - Line search information
+ - Solution information (scaling, maximum changes, quality check)
+ - Convergence information
+ - Time step information
+ - Linear solver information
+ - Nonlinear solver information
+ - Solver timers information
+2
+ - The summary of declared fields and coupling-->
 		<xsd:attribute name="logLevel" type="integer" default="0" />
-		<!--maxNumberOfNewtonIterations => Maximum number of Newton iterations string.-->
-		<xsd:attribute name="maxNumberOfNewtonIterations" type="integer" default="5" />
 		<!--shearImpedance => Shear impedance.-->
 		<xsd:attribute name="shearImpedance" type="real64" use="required" />
 		<!--stressSolverName => Name of solver for computing stress. If empty, the spring-slider model is run.-->
 		<xsd:attribute name="stressSolverName" type="string" default="" />
 		<!--targetRegions => Allowable regions that the solver may be applied to. Note that this does not indicate that the solver will be applied to these regions, only that allocation will occur such that the solver may be applied to these regions. The decision about what regions this solver will beapplied to rests in the EventManager.-->
 		<xsd:attribute name="targetRegions" type="groupNameRef_array" use="required" />
+		<!--targetSlipIncrement => Target slip incrmeent for timestep size selction-->
+		<xsd:attribute name="targetSlipIncrement" type="real64" default="1e-07" />
 		<!--writeLinearSystem => Write matrix, rhs, solution to screen ( = 1) or file ( = 2).-->
 		<xsd:attribute name="writeLinearSystem" type="integer" default="0" />
 		<!--name => A name is required for any non-unique nodes-->
@@ -6074,6 +6087,16 @@ If you want to do a three-phase simulation, please use instead wettingIntermedia
 		<xsd:attribute name="name" type="groupName" use="required" />
 	</xsd:complexType>
 	<xsd:complexType name="RateAndStateFrictionType">
+		<!--defaultA => Default value of the Rate- and State-dependent friction coefficient a.-->
+		<xsd:attribute name="defaultA" type="real64" use="required" />
+		<!--defaultB => Default value of the Rate- and State-dependent friction coefficient b.-->
+		<xsd:attribute name="defaultB" type="real64" use="required" />
+		<!--defaultDc => Default value of the Rate- and State-dependent friction characteristic length.-->
+		<xsd:attribute name="defaultDc" type="real64" use="required" />
+		<!--defaultReferenceFrictionCoefficient => Default value of the Rate- and State-dependent friction reference friction coefficient.-->
+		<xsd:attribute name="defaultReferenceFrictionCoefficient" type="real64" use="required" />
+		<!--defaultReferenceVelocity => Default value of the Rate- and State-dependent friction reference slip rate.-->
+		<xsd:attribute name="defaultReferenceVelocity" type="real64" use="required" />
 		<!--displacementJumpThreshold => A threshold valued to determine whether a fracture is open or not.-->
 		<xsd:attribute name="displacementJumpThreshold" type="real64" default="2.22045e-16" />
 		<!--name => A name is required for any non-unique nodes-->
