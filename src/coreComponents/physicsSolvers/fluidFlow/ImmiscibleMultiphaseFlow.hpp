@@ -220,6 +220,7 @@ public:
     static constexpr char const * capPressureNamesString() { return "capPressureNames"; }
     static constexpr char const * relPermNamesString() { return "relPermNames"; }
     static constexpr char const * elemDofFieldString() { return "elemDofField"; }
+    static constexpr char const * useTotalMassEquationString() { return "useTotalMassEquation"; }
   };
 
 

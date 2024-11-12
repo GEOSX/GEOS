@@ -24,8 +24,8 @@
 #include "physicsSolvers/fluidFlow/ImmiscibleMultiphaseKernels.hpp"
 #include "physicsSolvers/SolverBaseKernels.hpp"
 
-#include "physicsSolvers/fluidFlow/IsothermalCompositionalMultiphaseBaseKernels.hpp"  // should be removed eventually
-//#include "physicsSolvers/fluidFlow/IsothermalCompositionalMultiphaseFVMKernels.hpp"
+#include "physicsSolvers/fluidFlow/IsothermalCompositionalMultiphaseBaseKernels.hpp"
+#include "physicsSolvers/fluidFlow/CompositionalMultiphaseUtilities.hpp"
 
 #include "constitutive/ConstitutiveManager.hpp"
 #include "constitutive/capillaryPressure/CapillaryPressureFields.hpp"
@@ -34,9 +34,7 @@
 
 #include "fieldSpecification/SourceFluxBoundaryCondition.hpp"
 
-
 #include "constitutive/ConstitutivePassThru.hpp"
-
 #include "constitutive/fluid/twophasefluid/TwoPhaseFluid.hpp"
 
 #include <cmath>
@@ -60,11 +58,17 @@ ImmiscibleMultiphaseFlow::ImmiscibleMultiphaseFlow( const string & name,
   FlowSolverBase( name, parent ),
   m_numPhases( 2 ),
   m_hasCapPressure( 0 ),
-  m_useTotalMassEquation ( 0 )
+  m_useTotalMassEquation ( 1 )
 {
   this->registerWrapper( viewKeyStruct::inputTemperatureString(), &m_inputTemperature ).
     setInputFlag( InputFlags::REQUIRED ).
     setDescription( "Temperature" );
+
+  this->registerWrapper( viewKeyStruct::useTotalMassEquationString(), &m_useTotalMassEquation ).
+    setSizedFromParent( 0 ).
+    setInputFlag( InputFlags::OPTIONAL ).
+    setApplyDefaultValue( 1 ).
+    setDescription( "Flag indicating whether total mass equation is used" );
 }
 
 void ImmiscibleMultiphaseFlow::postInputInitialization()
@@ -671,6 +675,16 @@ void ImmiscibleMultiphaseFlow::assembleAccumulationTerm( DomainPartition & domai
 
         // complete
 
+        using namespace compositionalMultiphaseUtilities;
+
+        if( m_useTotalMassEquation  )
+        {
+          // apply equation/variable change transformation to the component mass balance equations
+          real64 work[numofPhases]{};
+          shiftRowsAheadByOneAndReplaceFirstRowWithColumnSum( numofPhases, numofPhases, localJacobian, work );
+          shiftElementsAheadByOneAndReplaceFirstElementWithSum( numofPhases, localResidual );
+        }
+
         integer const numRows = numofPhases;
 
         for( integer i = 0; i < numRows; ++i )
@@ -998,7 +1012,7 @@ void ImmiscibleMultiphaseFlow::applySourceFluxBC( real64 const time,
       real64 const sizeScalingFactor = bcAllSetsSize[bcNameToBcId.at( fs.getName())];
       integer const fluidPhaseId = fs.getComponent();
       integer const numFluidPhases = m_numPhases;
-      integer useTotalMassEquation = 0;
+      integer useTotalMassEquation = m_useTotalMassEquation;
       forAll< parallelDevicePolicy<> >( targetSet.size(), [sizeScalingFactor,
                                                            targetSet,
                                                            rankOffset,

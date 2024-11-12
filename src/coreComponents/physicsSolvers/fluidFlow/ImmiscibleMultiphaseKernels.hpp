@@ -39,7 +39,7 @@
 #include "linearAlgebra/interfaces/InterfaceTypes.hpp"
 #include "physicsSolvers/fluidFlow/FlowSolverBaseFields.hpp"
 #include "physicsSolvers/fluidFlow/ImmiscibleMultiphaseFlowFields.hpp"
-//#include "physicsSolvers/fluidFlow/SinglePhaseBaseKernels.hpp"            // check need of multiphase equivalent
+#include "physicsSolvers/fluidFlow/CompositionalMultiphaseUtilities.hpp"
 #include "physicsSolvers/fluidFlow/StencilAccessors.hpp"
 #include "physicsSolvers/SolverBaseKernels.hpp"
 
@@ -101,11 +101,14 @@ public:
    * @param[in] rankOffset the offset of my MPI rank
    * @param[in] dofNumberAccessor accessor for the dof numbers
    * @param[in] multiPhaseFlowAccessors accessor for wrappers registered by the solver
+   * @param[in] fluidAccessors accessor for wrappers registered by the fluid model
    * @param[in] capPressureAccessors accessor for wrappers registered by the capillary pressure model
    * @param[in] permeabilityAccessors accessor for wrappers registered by the permeability model
    * @param[in] dt time step size
    * @param[inout] localMatrix the local CRS matrix
    * @param[inout] localRhs the local right-hand side vector
+   * @param[inout] hasCapPressure flag to indicate whether problem includes capillarity
+   * @param[inout] useTotalMassEquation flag to indicate whether to use the total mass formulation
    */
   FaceBasedAssemblyKernelBase( integer const numPhases,
                                globalIndex const rankOffset,
@@ -138,7 +141,7 @@ public:
     m_localRhs( localRhs ),
     m_hasCapPressure ( hasCapPressure ),
     m_useTotalMassEquation ( useTotalMassEquation )
-  {GEOS_UNUSED_VAR( m_useTotalMassEquation );}
+  {}
 
 protected:
 
@@ -220,11 +223,12 @@ public:
 
   /**
    * @brief Constructor for the kernel interface
+   * @param[in] numPhases number of fluid phases 
    * @param[in] rankOffset the offset of my MPI rank
    * @param[in] stencilWrapper reference to the stencil wrapper
    * @param[in] dofNumberAccessor
-   * @param[in] singlePhaseFlowAccessors
-   * @param[in] singlePhaseFluidAccessors
+   * @param[in] multiPhaseFlowAccessors
+   * @param[in] fluidAccessors
    * @param[in] capPressureAccessors
    * @param[in] permeabilityAccessors
    * @param[in] dt time step size
@@ -620,6 +624,18 @@ public:
                  StackVariables & stack,
                  FUNC && kernelOp = NoOpFunc{} ) const
   {
+    using namespace compositionalMultiphaseUtilities;
+
+    if( m_useTotalMassEquation )
+    {
+      // Apply equation/variable change transformation(s)
+      stackArray1d< real64, maxStencilSize * numDof > work( stack.stencilSize * numDof );
+      shiftBlockRowsAheadByOneAndReplaceFirstRowWithColumnSum( m_numPhases, numEqn, numDof * stack.stencilSize, stack.numFluxElems,
+                                                               stack.localFluxJacobian, work );
+      shiftBlockElementsAheadByOneAndReplaceFirstElementWithSum( m_numPhases, numEqn, stack.numFluxElems,
+                                                                 stack.localFlux );
+    }
+    
     // add contribution to residual and jacobian into:
     // - the mass balance equation
     // note that numDof includes derivatives wrt temperature if this class is derived in ThermalKernels
