@@ -221,7 +221,7 @@ GEOS_HOST_DEVICE
 real64 CoulombFrictionUpdates::computeLimitTangentialTractionNorm( real64 const & normalTraction,
                                                                    real64 & dLimitTangentialTractionNorm_dTraction ) const
 {
-  dLimitTangentialTractionNorm_dTraction = - m_frictionCoefficient;
+  dLimitTangentialTractionNorm_dTraction = -m_frictionCoefficient;
   return ( m_cohesion - normalTraction * m_frictionCoefficient );
 }
 
