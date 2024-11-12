@@ -311,10 +311,10 @@ void CompositionalMultiphaseBase::registerDataOnMesh( Group & meshBodies )
                                  getDataContext(), subRegion.getDataContext() ),
                        InputError );
       }
+     
 
 
-
- 
+/*  
          subRegion.registerWrapper< string >( viewKeyStruct::relPermNamesString() ).
                            setPlotLevel( PlotLevel::NOPLOT ).
                            setRestartFlags( RestartFlags::NO_WRITE ).
@@ -324,7 +324,7 @@ void CompositionalMultiphaseBase::registerDataOnMesh( Group & meshBodies )
         string & relPermName = subRegion.getReference< string >( viewKeyStruct::relPermNamesString() );
         relPermName = getConstitutiveName< RelativePermeabilityBase >( subRegion );
         RelativePermeabilityBase const & relPerm = getConstitutiveModel< RelativePermeabilityBase >( subRegion, relPermName );
-
+ */
       Group const & constitutiveModels = subRegion.getGroup( ElementSubRegionBase::groupKeyStruct::constitutiveModelsString() ); 
       string const & relpermName = subRegion.getReference< string >( CompositionalMultiphaseBase::viewKeyStruct::relPermNamesString() );
       RelativePermeabilityBase const & relperm = constitutiveModels.getGroup< RelativePermeabilityBase >( relpermName );

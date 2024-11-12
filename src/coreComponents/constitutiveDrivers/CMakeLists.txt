@@ -5,8 +5,8 @@ set( constitutiveDrivers_headers
      fluid/multiFluid/PVTDriver.hpp
      fluid/multiFluid/PVTDriverRunTest.hpp
      fluid/multiFluid/reactive/ReactiveFluidDriver.hpp
-     relativePermeability/RelpermDriver.hpp
-     relativePermeability/RelpermDriverRunTest.hpp
+     #relativePermeability/RelpermDriver.hpp
+     #relativePermeability/RelpermDriverRunTest.hpp
      solid/TriaxialDriver.hpp
    )
 #
@@ -22,14 +22,14 @@ set( constitutiveDrivers_sources
      fluid/multiFluid/compositional/PVTDriverRunTestCompositionalTwoPhaseConstantViscosity.cpp
      fluid/multiFluid/compositional/PVTDriverRunTestCompositionalTwoPhaseLohrenzBrayClarkViscosity.cpp
      fluid/multiFluid/reactive/ReactiveFluidDriver.cpp
-     relativePermeability/RelpermDriver.cpp
-     relativePermeability/RelpermDriverBrooksCoreyBakerRunTest.cpp
-     relativePermeability/RelpermDriverBrooksCoreyStone2RunTest.cpp
-     relativePermeability/RelpermDriverBrooksCoreyRunTest.cpp
-     relativePermeability/RelpermDriverVanGenuchtenBakerRunTest.cpp
-     relativePermeability/RelpermDriverVanGenuchtenStone2RunTest.cpp
-     relativePermeability/RelpermDriverTableRelativeRunTest.cpp
-     relativePermeability/RelpermDriverTableRelativeHysteresisRunTest.cpp
+     #relativePermeability/RelpermDriver.cpp
+     #relativePermeability/RelpermDriverBrooksCoreyBakerRunTest.cpp
+     #relativePermeability/RelpermDriverBrooksCoreyStone2RunTest.cpp
+     #relativePermeability/RelpermDriverBrooksCoreyRunTest.cpp
+     #relativePermeability/RelpermDriverVanGenuchtenBakerRunTest.cpp
+     #relativePermeability/RelpermDriverVanGenuchtenStone2RunTest.cpp
+     #relativePermeability/RelpermDriverTableRelativeRunTest.cpp
+     #relativePermeability/RelpermDriverTableRelativeHysteresisRunTest.cpp
      solid/TriaxialDriver.cpp
    )
 

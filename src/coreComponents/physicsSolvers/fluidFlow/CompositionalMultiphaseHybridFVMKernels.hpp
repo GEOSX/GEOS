@@ -87,13 +87,13 @@ struct UpwindingHelper
   static void
     upwindViscousCoefficient( localIndex const (&localIds)[3],
                               localIndex const (&neighborIds)[3],
-                              ElementViewConst< arrayView3d< real64 const, multifluid::USD_PHASE > > const &phaseDens,
-                              ElementViewConst< arrayView4d< real64 const, multifluid::USD_PHASE_DC > > const &dPhaseDens,
-                              ElementViewConst< arrayView3d< real64 const, relperm::USD_MOB > > const &phaseMob,
-                              ElementViewConst< arrayView4d< real64 const, relperm::USD_MOB_DC > > const &dPhaseMob,
+                              ElementViewConst< arrayView3d< real64 const, constitutive::multifluid::USD_PHASE > > const &phaseDens,
+                              ElementViewConst< arrayView4d< real64 const, constitutive::multifluid::USD_PHASE_DC > > const &dPhaseDens,
+                              ElementViewConst< arrayView3d< real64 const, constitutive::relperm::USD_MOB > > const &phaseMob,
+                              ElementViewConst< arrayView4d< real64 const, constitutive::relperm::USD_MOB_DC > > const &dPhaseMob,
                               ElementViewConst< arrayView3d< real64 const, compflow::USD_COMP_DC > > const &dCompFrac_dCompDens,
-                              ElementViewConst< arrayView4d< real64 const, multifluid::USD_PHASE_COMP > > const &phaseCompFrac,
-                              ElementViewConst< arrayView5d< real64 const, multifluid::USD_PHASE_COMP_DC > > const &dPhaseCompFrac,
+                              ElementViewConst< arrayView4d< real64 const, constitutive::multifluid::USD_PHASE_COMP > > const &phaseCompFrac,
+                              ElementViewConst< arrayView5d< real64 const, constitutive::multifluid::USD_PHASE_COMP_DC > > const &dPhaseCompFrac,
                               ElementViewConst< arrayView1d< globalIndex const > > const &elemDofNumber,
                               real64 const &oneSidedVolFlux,
                               real64 ( &upwPhaseViscCoef )[NP][NC],
@@ -131,15 +131,15 @@ struct UpwindingHelper
     upwindBuoyancyCoefficient( localIndex const (&localIds)[3],
                                localIndex const (&neighborIds)[3],
                                real64 const &transGravCoef,
-                               ElementViewConst< arrayView3d< real64 const, multifluid::USD_PHASE > > const &phaseDens,
-                               ElementViewConst< arrayView4d< real64 const, multifluid::USD_PHASE_DC > > const &dPhaseDens,
-                               ElementViewConst< arrayView3d< real64 const, multifluid::USD_PHASE > > const &phaseMassDens,
-                               ElementViewConst< arrayView4d< real64 const, multifluid::USD_PHASE_DC > > const &dPhaseMassDens,
-                               ElementViewConst< arrayView3d< real64 const, relperm::USD_MOB > > const &phaseMob,
-                               ElementViewConst< arrayView4d< real64 const, relperm::USD_MOB_DC > > const &dPhaseMob,
+                               ElementViewConst< arrayView3d< real64 const, constitutive::multifluid::USD_PHASE > > const &phaseDens,
+                               ElementViewConst< arrayView4d< real64 const, constitutive::multifluid::USD_PHASE_DC > > const &dPhaseDens,
+                               ElementViewConst< arrayView3d< real64 const, constitutive::multifluid::USD_PHASE > > const &phaseMassDens,
+                               ElementViewConst< arrayView4d< real64 const, constitutive::multifluid::USD_PHASE_DC > > const &dPhaseMassDens,
+                               ElementViewConst< arrayView3d< real64 const, constitutive::relperm::USD_MOB > > const &phaseMob,
+                               ElementViewConst< arrayView4d< real64 const, constitutive::relperm::USD_MOB_DC > > const &dPhaseMob,
                                ElementViewConst< arrayView3d< real64 const, compflow::USD_COMP_DC > > const &dCompFrac_dCompDens,
-                               ElementViewConst< arrayView4d< real64 const, multifluid::USD_PHASE_COMP > > const &phaseCompFrac,
-                               ElementViewConst< arrayView5d< real64 const, multifluid::USD_PHASE_COMP_DC > > const &dPhaseCompFrac,
+                               ElementViewConst< arrayView4d< real64 const, constitutive::multifluid::USD_PHASE_COMP > > const &phaseCompFrac,
+                               ElementViewConst< arrayView5d< real64 const, constitutive::multifluid::USD_PHASE_COMP_DC > > const &dPhaseCompFrac,
                                real64 ( &phaseGravTerm )[NP][NP - 1],
                                real64 ( &dPhaseGravTerm_dPres )[NP][NP - 1][2],
                                real64 ( &dPhaseGravTerm_dCompDens )[NP][NP - 1][2][NC],
@@ -167,8 +167,8 @@ struct UpwindingHelper
     computePhaseGravTerm( localIndex const (&localIds)[3],
                           localIndex const (&neighborIds)[3],
                           real64 const &transGravCoef,
-                          ElementViewConst< arrayView3d< real64 const, multifluid::USD_PHASE > > const &phaseMassDens,
-                          ElementViewConst< arrayView4d< real64 const, multifluid::USD_PHASE_DC > > const &dPhaseMassDens,
+                          ElementViewConst< arrayView3d< real64 const, constitutive::multifluid::USD_PHASE > > const &phaseMassDens,
+                          ElementViewConst< arrayView4d< real64 const, constitutive::multifluid::USD_PHASE_DC > > const &dPhaseMassDens,
                           ElementViewConst< arrayView3d< real64 const, compflow::USD_COMP_DC > > const &dCompFrac_dCompDens,
                           real64 ( &phaseGravTerm )[NP][NP - 1],
                           real64 ( &dPhaseGravTerm_dPres )[NP][NP - 1][2],
@@ -190,8 +190,8 @@ struct UpwindingHelper
   static void
     computeUpwindedTotalMobility( localIndex const (&localIds)[3],
                                   localIndex const (&neighborIds)[3],
-                                  ElementViewConst< arrayView3d< real64 const, relperm::USD_MOB > > const &phaseMob,
-                                  ElementViewConst< arrayView4d< real64 const, relperm::USD_MOB_DC > > const &dPhaseMob,
+                                  ElementViewConst< arrayView3d< real64 const, constitutive::relperm::USD_MOB > > const &phaseMob,
+                                  ElementViewConst< arrayView4d< real64 const, constitutive::relperm::USD_MOB_DC > > const &dPhaseMob,
                                   real64 const (&phaseGravTerm)[NP][NP - 1],
                                   real64 &totalMob,
                                   real64 ( &dTotalMob_dPres )[2],
@@ -283,10 +283,10 @@ struct AssemblerKernelHelper
                    arraySlice1d< localIndex const > const &elemToFaces,
                    real64 const &elemPres,
                    real64 const &elemGravCoef,
-                   arraySlice1d< real64 const, multifluid::USD_PHASE - 2 > const &elemPhaseMassDens,
-                   arraySlice2d< real64 const, multifluid::USD_PHASE_DC - 2 > const &dElemPhaseMassDens,
-                   arraySlice2d< real64 const, relperm::USD_MOB- 1 > const &elemPhaseMob,
-                   arraySlice3d< real64 const, relperm::USD_MOB_DC - 1 > const &dElemPhaseMob,
+                   arraySlice1d< real64 const, constitutive::multifluid::USD_PHASE - 2 > const &elemPhaseMassDens,
+                   arraySlice2d< real64 const, constitutive::multifluid::USD_PHASE_DC - 2 > const &dElemPhaseMassDens,
+                   arraySlice2d< real64 const, constitutive::relperm::USD_MOB- 1 > const &elemPhaseMob,
+                   arraySlice3d< real64 const, constitutive::relperm::USD_MOB_DC - 1 > const &dElemPhaseMob,
                    arraySlice2d< real64 const, compflow::USD_COMP_DC - 1 > const &dElemCompFrac_dCompDens,
                    arraySlice2d< real64 const > const &transMatrix,
                    real64 ( &oneSidedVolFlux )[NF],
@@ -334,12 +334,12 @@ struct AssemblerKernelHelper
                           arraySlice1d< localIndex const > const & elemToFaces,
                           real64 const & elemGravCoef,
                           integer const useTotalMassEquation,
-                          ElementViewConst< arrayView3d< real64 const, multifluid::USD_PHASE > > const & phaseDens,
-                          ElementViewConst< arrayView4d< real64 const, multifluid::USD_PHASE_DC > > const & dPhaseDens,
-                          ElementViewConst< arrayView3d< real64 const, multifluid::USD_PHASE > > const & phaseMassDens,
-                          ElementViewConst< arrayView4d< real64 const, multifluid::USD_PHASE_DC > > const & dPhaseMassDens,
-                          ElementViewConst< arrayView3d< real64 const, relperm::USD_MOB > > const & phaseMob,
-                          ElementViewConst< arrayView4d< real64 const, relperm::USD_MOB_DC > > const & dPhaseMob,
+                          ElementViewConst< arrayView3d< real64 const, constitutive::multifluid::USD_PHASE > > const & phaseDens,
+                          ElementViewConst< arrayView4d< real64 const, constitutive::multifluid::USD_PHASE_DC > > const & dPhaseDens,
+                          ElementViewConst< arrayView3d< real64 const, constitutive::multifluid::USD_PHASE > > const & phaseMassDens,
+                          ElementViewConst< arrayView4d< real64 const, constitutive::multifluid::USD_PHASE_DC > > const & dPhaseMassDens,
+                          ElementViewConst< arrayView3d< real64 const, constitutive::relperm::USD_MOB > > const & phaseMob,
+                          ElementViewConst< arrayView4d< real64 const, constitutive::relperm::USD_MOB_DC > > const & dPhaseMob,
                           ElementViewConst< arrayView3d< real64 const, compflow::USD_COMP_DC > > const & dCompFrac_dCompDens,
                           ElementViewConst< arrayView4d< real64 const, constitutive::multifluid::USD_PHASE_COMP > > const & phaseCompFrac,
                           ElementViewConst< arrayView5d< real64 const, constitutive::multifluid::USD_PHASE_COMP_DC > > const & dPhaseCompFrac,
@@ -522,12 +522,12 @@ struct AssemblerKernel
            real64 const & elemPres,
            real64 const & elemGravCoef,
            const integer useTotalMassEquation,
-           ElementViewConst< arrayView3d< real64 const, multifluid::USD_PHASE > > const & phaseDens,
-           ElementViewConst< arrayView4d< real64 const, multifluid::USD_PHASE_DC > > const & dPhaseDens,
-           ElementViewConst< arrayView3d< real64 const, multifluid::USD_PHASE > > const & phaseMassDens,
-           ElementViewConst< arrayView4d< real64 const, multifluid::USD_PHASE_DC > > const & dPhaseMassDens,
-           ElementViewConst< arrayView3d< real64 const, relperm::USD_MOB > > const & phaseMob,
-           ElementViewConst< arrayView4d< real64 const, relperm::USD_MOB_DC > > const & dPhaseMob,
+           ElementViewConst< arrayView3d< real64 const, constitutive::multifluid::USD_PHASE > > const & phaseDens,
+           ElementViewConst< arrayView4d< real64 const, constitutive::multifluid::USD_PHASE_DC > > const & dPhaseDens,
+           ElementViewConst< arrayView3d< real64 const, constitutive::multifluid::USD_PHASE > > const & phaseMassDens,
+           ElementViewConst< arrayView4d< real64 const, constitutive::multifluid::USD_PHASE_DC > > const & dPhaseMassDens,
+           ElementViewConst< arrayView3d< real64 const, constitutive::relperm::USD_MOB > > const & phaseMob,
+           ElementViewConst< arrayView4d< real64 const, constitutive::relperm::USD_MOB_DC > > const & dPhaseMob,
            ElementViewConst< arrayView3d< real64 const, compflow::USD_COMP_DC > > const & dCompFrac_dCompDens,
            ElementViewConst< arrayView4d< real64 const, constitutive::multifluid::USD_PHASE_COMP > > const & phaseCompFrac,
            ElementViewConst< arrayView5d< real64 const, constitutive::multifluid::USD_PHASE_COMP_DC > > const & dPhaseCompFrac,
@@ -623,8 +623,8 @@ struct FluxKernel
           arrayView1d< real64 const > const & faceGravCoef,
           arrayView1d< real64 const > const & mimFaceGravCoef,
           arrayView1d< real64 const > const & transMultiplier,
-          ElementViewConst< arrayView3d< real64 const, relperm::USD_MOB > > const & phaseMob,
-          ElementViewConst< arrayView4d< real64 const, relperm::USD_MOB_DC > > const & dPhaseMob,
+          ElementViewConst< arrayView3d< real64 const, constitutive::relperm::USD_MOB > > const & phaseMob,
+          ElementViewConst< arrayView4d< real64 const, constitutive::relperm::USD_MOB_DC > > const & dPhaseMob,
           ElementViewConst< arrayView3d< real64 const, compflow::USD_COMP_DC > > const & dCompFrac_dCompDens,
           ElementViewConst< arrayView3d< real64 const, constitutive::multifluid::USD_PHASE > > const & phaseDens,
           ElementViewConst< arrayView4d< real64 const, constitutive::multifluid::USD_PHASE_DC > > const & dPhaseDens,
@@ -697,15 +697,15 @@ public:
 
     arraySlice2d< real64 const,
                   compflow::USD_COMP_DC - 1 > const dCompFrac_dCompDens = m_dCompFrac_dCompDens[ei];
-    arraySlice1d< real64 const, multifluid::USD_PHASE - 2 > const phaseVisc = m_phaseVisc[ei][0];
-    arraySlice2d< real64 const, multifluid::USD_PHASE_DC - 2 > const dPhaseVisc = m_dPhaseVisc[ei][0];
-    arraySlice2d< real64 const, relperm::USD_RELPERM - 2 > const phaseRelPerm = m_phaseRelPerm[ei][0];
-    arraySlice3d< real64 const, relperm::USD_RELPERM_DS -
+    arraySlice1d< real64 const, constitutive::multifluid::USD_PHASE - 2 > const phaseVisc = m_phaseVisc[ei][0];
+    arraySlice2d< real64 const, constitutive::multifluid::USD_PHASE_DC - 2 > const dPhaseVisc = m_dPhaseVisc[ei][0];
+    arraySlice2d< real64 const, constitutive::relperm::USD_RELPERM - 2 > const phaseRelPerm = m_phaseRelPerm[ei][0];
+    arraySlice3d< real64 const, constitutive::relperm::USD_RELPERM_DS -
                   2 > const dPhaseRelPerm_dPhaseVolFrac = m_dPhaseRelPerm_dPhaseVolFrac[ei][0];
     arraySlice1d< real64 const, compflow::USD_PHASE - 1 > const phaseVolFrac = m_phaseVolFrac[ei];
     arraySlice2d< real64 const, compflow::USD_PHASE_DC - 1 > const dPhaseVolFrac = m_dPhaseVolFrac[ei];
-    arraySlice2d< real64, relperm::USD_MOB - 1 > const phaseMob = m_phaseMob[ei];
-    arraySlice3d< real64, relperm::USD_MOB_DC - 1 > const dPhaseMob = m_dPhaseMob[ei];
+    arraySlice2d< real64, constitutive::relperm::USD_MOB - 1 > const phaseMob = m_phaseMob[ei];
+    arraySlice3d< real64, constitutive::relperm::USD_MOB_DC - 1 > const dPhaseMob = m_dPhaseMob[ei];
 
     real64 dRelPerm_dC[numComp]{};
     real64 dVisc_dC[numComp]{};
@@ -786,14 +786,14 @@ protected:
   arrayView4d< real64 const, constitutive::multifluid::USD_PHASE_DC > m_dPhaseVisc;
 
   /// Views on the phase relative permeabilities
-  arrayView4d< real64 const, relperm::USD_RELPERM > m_phaseRelPerm;
-  arrayView5d< real64 const, relperm::USD_RELPERM_DS > m_dPhaseRelPerm_dPhaseVolFrac;
+  arrayView4d< real64 const, constitutive::relperm::USD_RELPERM > m_phaseRelPerm;
+  arrayView5d< real64 const, constitutive::relperm::USD_RELPERM_DS > m_dPhaseRelPerm_dPhaseVolFrac;
 
   // outputs
 
   /// Views on the phase mobilities
-  arrayView3d< real64, relperm::USD_MOB > m_phaseMob;
-  arrayView4d< real64, relperm::USD_MOB_DC > m_dPhaseMob;
+  arrayView3d< real64, constitutive::relperm::USD_MOB > m_phaseMob;
+  arrayView4d< real64, constitutive::relperm::USD_MOB_DC > m_dPhaseMob;
 
 };
 

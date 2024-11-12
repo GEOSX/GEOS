@@ -74,7 +74,7 @@ void VanGenuchtenBakerRelativePermeability::resizeFields( localIndex const size,
   RelativePermeabilityBase::resizeFields( size, numPts );
 
   integer const numPhases = 3;
-  integer const numDir = 1;
+  integer const numDir = 3;
 
 
   m_phaseRelPerm.resize( size, numPts, numPhases, numDir );
@@ -91,7 +91,7 @@ void VanGenuchtenBakerRelativePermeability::postInputInitialization()
 {
   RelativePermeabilityBase::postInputInitialization();
 
-  integer const numDir = 1;
+  integer const numDir = 3;
 
   m_volFracScale.resize( numDir /*ndims*/ );
 

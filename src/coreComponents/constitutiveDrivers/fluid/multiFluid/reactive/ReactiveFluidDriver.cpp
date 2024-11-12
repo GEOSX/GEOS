@@ -193,9 +193,9 @@ void ReactiveFluidDriver::runTest( FLUID_TYPE & fluid, arrayView2d< real64 > con
   localIndex const numKineticReactions = fluid.numKineticReactions();
 
   // get output data views
-  arrayView2d< real64 const, multifluid::USD_FLUID > primarySpeciesConcentration = fluid.primarySpeciesConcentration();
-  arrayView2d< real64 const, multifluid::USD_FLUID > secondarySpeciesConcentration = fluid.secondarySpeciesConcentration();
-  arrayView2d< real64 const, multifluid::USD_FLUID > kineticReactionRates = fluid.kineticReactionRates();
+  arrayView2d< real64 const, constitutive::multifluid::USD_FLUID > primarySpeciesConcentration = fluid.primarySpeciesConcentration();
+  arrayView2d< real64 const, constitutive::multifluid::USD_FLUID > secondarySpeciesConcentration = fluid.secondarySpeciesConcentration();
+  arrayView2d< real64 const, constitutive::multifluid::USD_FLUID > kineticReactionRates = fluid.kineticReactionRates();
 
 
   // create kernel wrapper

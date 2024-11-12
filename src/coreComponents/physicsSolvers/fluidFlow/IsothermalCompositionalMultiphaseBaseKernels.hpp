@@ -1970,8 +1970,8 @@ struct StatisticsKernel
           arrayView3d< real64 const, constitutive::multifluid::USD_PHASE > const & phaseDensity,
           arrayView4d< real64 const, constitutive::multifluid::USD_PHASE_COMP > const & phaseCompFraction,
           arrayView2d< real64 const, compflow::USD_PHASE > const & phaseVolFrac,
-          arrayView3d< real64 const, relperm::USD_PHASE > const & phaseTrappedVolFrac,
-          arrayView4d< real64 const, relperm::USD_RELPERM > const & phaseRelperm,
+          arrayView3d< real64 const, constitutive::relperm::USD_PHASE > const & phaseTrappedVolFrac,
+          arrayView4d< real64 const, constitutive::relperm::USD_RELPERM > const & phaseRelPerm,
           real64 & minPres,
           real64 & avgPresNumerator,
           real64 & maxPres,
@@ -2014,7 +2014,7 @@ struct StatisticsKernel
                                              phaseDensity,
                                              phaseVolFrac,
                                              phaseTrappedVolFrac,
-                                             phaseRelperm,
+                                             phaseRelPerm,
                                              phaseCompFraction,
                                              subRegionMinPres,
                                              subRegionAvgPresNumerator,
@@ -2030,7 +2030,7 @@ struct StatisticsKernel
                                              trappedPhaseMass,
                                              immobilePhaseMass,
                                              dissolvedComponentMass] GEOS_HOST_DEVICE ( localIndex const ei )
-    // phaseRelperm (P capitialized? made that change and one in CompositionalMultiphaseStatistics may revert second)
+    // phaseRelPerm (P capitialized? made that change and one in CompositionalMultiphaseStatistics may revert second)
     {
       if( elemGhostRank[ei] >= 0 )
       {
@@ -2053,7 +2053,7 @@ struct StatisticsKernel
       subRegionMaxTemp.max( temp[ei] );
       subRegionTotalUncompactedPoreVol += uncompactedPoreVol;
 
-      integer const numDir = phaseRelperm.size(3);
+      integer const numDir = phaseRelPerm.size(3);
 
       for( integer ip = 0; ip < numPhases; ++ip )
       {
@@ -2067,7 +2067,7 @@ struct StatisticsKernel
         RAJA::atomicAdd( parallelDeviceAtomic{}, &trappedPhaseMass[ip], elemTrappedPhaseMass );
         for( int dir = 0; dir < numDir; ++dir )
         {
-          if( phaseRelperm[ei][0][ip][dir] < relpermThreshold )
+          if( phaseRelPerm[ei][0][ip][dir] < relpermThreshold )
           {
             RAJA::atomicAdd( parallelDeviceAtomic{}, &immobilePhaseMass[ip], elemPhaseMass );
           }

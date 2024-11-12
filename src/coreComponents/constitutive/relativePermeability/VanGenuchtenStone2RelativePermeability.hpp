@@ -40,9 +40,9 @@ public:
                                                 arrayView1d< real64 const > const & volFracScale,
                                                 arrayView1d< integer const > const & phaseTypes,
                                                 arrayView1d< integer const > const & phaseOrder,
-                                                arrayView4d< real64, relperm::USD_RELPERM > const & phaseRelPerm,
-                                                arrayView5d< real64, relperm::USD_RELPERM_DS > const & dPhaseRelPerm_dPhaseVolFrac,
-                                                arrayView3d< real64, relperm::USD_PHASE > const & phaseTrappedVolFrac )
+                                                arrayView4d< real64, constitutive::relperm::USD_RELPERM > const & phaseRelPerm,
+                                                arrayView5d< real64, constitutive::relperm::USD_RELPERM_DS > const & dPhaseRelPerm_dPhaseVolFrac,
+                                                arrayView3d< real64, constitutive::relperm::USD_PHASE > const & phaseTrappedVolFrac )
     : RelativePermeabilityBaseUpdate( phaseTypes,
                                       phaseOrder,
                                       phaseRelPerm,
@@ -58,9 +58,9 @@ public:
 
   GEOS_HOST_DEVICE
   void compute( arraySlice1d< real64 const, compflow::USD_PHASE - 1 > const & phaseVolFraction,
-                arraySlice1d< real64, relperm::USD_PHASE - 2 > const & phaseTrappedVolFrac,
-                arraySlice2d< real64, relperm::USD_RELPERM - 2 > const & phaseRelPerm,
-                arraySlice3d< real64, relperm::USD_RELPERM_DS - 2 > const & dPhaseRelPerm_dPhaseVolFrac ) const;
+                arraySlice1d< real64, constitutive::relperm::USD_PHASE - 2 > const & phaseTrappedVolFrac,
+                arraySlice2d< real64, constitutive::relperm::USD_RELPERM - 2 > const & phaseRelPerm,
+                arraySlice3d< real64, constitutive::relperm::USD_RELPERM_DS - 2 > const & dPhaseRelPerm_dPhaseVolFrac ) const;
 
   GEOS_HOST_DEVICE
   virtual void update( localIndex const k,
@@ -173,9 +173,9 @@ GEOS_HOST_DEVICE
 inline void
 VanGenuchtenStone2RelativePermeabilityUpdate::
   compute( arraySlice1d< real64 const, compflow::USD_PHASE - 1 > const & phaseVolFraction,
-           arraySlice1d< real64, relperm::USD_PHASE - 2 > const & phaseTrappedVolFrac,
-           arraySlice2d< real64, relperm::USD_RELPERM - 2 > const & phaseRelPerm,
-           arraySlice3d< real64, relperm::USD_RELPERM_DS - 2 > const & dPhaseRelPerm_dPhaseVolFrac ) const
+           arraySlice1d< real64, constitutive::relperm::USD_PHASE - 2 > const & phaseTrappedVolFrac,
+           arraySlice2d< real64, constitutive::relperm::USD_RELPERM - 2 > const & phaseRelPerm,
+           arraySlice3d< real64, constitutive::relperm::USD_RELPERM_DS - 2 > const & dPhaseRelPerm_dPhaseVolFrac ) const
 {
   LvArray::forValuesInSlice( dPhaseRelPerm_dPhaseVolFrac, []( real64 & val ){ val = 0.0; } );
 
@@ -189,7 +189,7 @@ VanGenuchtenStone2RelativePermeabilityUpdate::
   real64 oilRelPerm_go = 0.0; // oil rel perm using two-phase gas-oil data
   real64 dOilRelPerm_go_dOilVolFrac = 0.0; // derivative w.r.t to So
 
-  integer const numDir = 1;
+  integer const numDir = 3;
 
   // this function assumes that the oil phase can always be present (i.e., ipOil > 0)
   for( int dir=0; dir<numDir; ++dir )

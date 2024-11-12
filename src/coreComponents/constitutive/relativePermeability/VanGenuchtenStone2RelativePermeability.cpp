@@ -74,7 +74,7 @@ void VanGenuchtenStone2RelativePermeability::postInputInitialization()
   RelativePermeabilityBase::postInputInitialization();
 
 
-  integer const numDir = 1;
+  integer const numDir = 3;
   m_volFracScale.resize( numDir /*ndims*/ );
 
   GEOS_THROW_IF( m_phaseOrder[PhaseType::OIL] < 0,
@@ -175,7 +175,7 @@ void VanGenuchtenStone2RelativePermeability::resizeFields( localIndex const size
 
   integer const numPhases = numFluidPhases();
 
-  integer const numDir = 1;
+  integer const numDir = 3;
 
 
   m_phaseRelPerm.resize( size, numPts, numPhases, numDir );

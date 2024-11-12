@@ -375,10 +375,10 @@ void testPhaseMobilityNumericalDerivatives( CompositionalMultiphaseFVM & solver,
       arrayView2d< real64 const, compflow::USD_COMP > const compDens_n =
         subRegion.getField< fields::flow::globalCompDensity_n >();
 
-      arrayView2d< real64, compflow::USD_PHASE > const phaseMob =
+      arrayView2d< real64, constitutive::relperm::USD_MOB > const phaseMob =
         subRegion.getField< fields::flow::phaseMobility >();
 
-      arrayView3d< real64, compflow::USD_PHASE_DC > const dPhaseMob =
+      arrayView3d< real64, constitutive::relperm::USD_MOB_DC > const dPhaseMob =
         subRegion.getField< fields::flow::dPhaseMobility >();
 
       // reset the solver state to zero out variable updates

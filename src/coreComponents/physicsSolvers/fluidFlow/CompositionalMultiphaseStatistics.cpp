@@ -254,7 +254,7 @@ void CompositionalMultiphaseStatistics::computeRegionStatistics( real64 const ti
     string const & relpermName = subRegion.getReference< string >( CompositionalMultiphaseBase::viewKeyStruct::relPermNamesString() );
     RelativePermeabilityBase const & relperm = constitutiveModels.getGroup< RelativePermeabilityBase >( relpermName );
     arrayView3d< real64 const, relperm::USD_PHASE > const phaseTrappedVolFrac = relperm.phaseTrappedVolFraction();
-    arrayView4d< real64 const, relperm::USD_RELPERM > const phaseRelperm = relperm.phaseRelPerm();
+    arrayView4d< real64 const, relperm::USD_RELPERM > const phaseRelPerm = relperm.phaseRelPerm();
 
     real64 subRegionAvgPresNumerator = 0.0;
     real64 subRegionMinPres = 0.0;
@@ -289,7 +289,7 @@ void CompositionalMultiphaseStatistics::computeRegionStatistics( real64 const ti
                                         phaseCompFraction,
                                         phaseVolFrac,
                                         phaseTrappedVolFrac,
-                                        phaseRelperm,
+                                        phaseRelPerm,
                                         subRegionMinPres,
                                         subRegionAvgPresNumerator,
                                         subRegionMaxPres,

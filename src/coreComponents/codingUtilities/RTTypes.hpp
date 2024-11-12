@@ -140,6 +140,7 @@ public:
     static constexpr string_view groupName           = "groupName";
     static constexpr string_view groupNameRef        = "groupNameRef";
     static constexpr string_view groupNameRefArray   = "groupNameRef_array";
+    static constexpr string_view groupOfGroupNameRefArray   = "groupNameRef_array2d";
     /// @endcond
   };
 

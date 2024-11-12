@@ -270,13 +270,13 @@ void testValuesAgainstReference( TBL_WRAPPER const & relpermTblWrapper,
   phaseMinHistoricalVolFraction[0][1] = 0.;
 
   StackArray< real64, 3, constitutive::RelativePermeabilityBase::MAX_NUM_PHASES,
-              relperm::LAYOUT_RELPERM > phaseTrappedVolFrac( 1, 1, numPhases );
+              constitutive::relperm::LAYOUT_PHASE > phaseTrappedVolFrac( 1, 1, numPhases );
 
   StackArray< real64, 3, constitutive::RelativePermeabilityBase::MAX_NUM_PHASES,
-              relperm::LAYOUT_RELPERM > phaseRelPerm( 1, 1, numPhases );
+              constitutive::relperm::LAYOUT_RELPERM > phaseRelPerm( 1, 1, numPhases );
 
   StackArray< real64, 4, constitutive::RelativePermeabilityBase::MAX_NUM_PHASES *constitutive::RelativePermeabilityBase::MAX_NUM_PHASES,
-              relperm::LAYOUT_RELPERM_DS > dPhaseRelPerm_dPhaseVolFrac( 1, 1, numPhases, numPhases );
+              constitutive::relperm::LAYOUT_RELPERM_DS > dPhaseRelPerm_dPhaseVolFrac( 1, 1, numPhases, numPhases );
 
   relpermTblWrapper.computeTwoPhase( ipWetting,
                                      ipNonWetting,

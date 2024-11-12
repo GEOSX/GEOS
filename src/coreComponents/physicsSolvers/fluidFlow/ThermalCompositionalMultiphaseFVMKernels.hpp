@@ -62,8 +62,8 @@ public:
    * @param[in] relperm the relperm model
    */
   PhaseMobilityKernel( ObjectManagerBase & subRegion,
-                       MultiFluidBase const & fluid,
-                       RelativePermeabilityBase const & relperm )
+                       constitutive::MultiFluidBase const & fluid,
+                       constitutive::RelativePermeabilityBase const & relperm )
     : Base( subRegion, fluid, relperm ) {}
 
   /**
@@ -76,17 +76,17 @@ public:
   {
     using Deriv = constitutive::multifluid::DerivativeOffset;
 
-    arraySlice1d< real64 const, multifluid::USD_PHASE - 2 > const phaseDens = m_phaseDens[ei][0];
-    arraySlice2d< real64 const, multifluid::USD_PHASE_DC - 2 > const dPhaseDens = m_dPhaseDens[ei][0];
-    arraySlice1d< real64 const, multifluid::USD_PHASE - 2 > const phaseVisc = m_phaseVisc[ei][0];
-    arraySlice2d< real64 const, multifluid::USD_PHASE_DC - 2 > const dPhaseVisc = m_dPhaseVisc[ei][0];
-    arraySlice3d< real64 const, relperm::USD_RELPERM_DS -
+    arraySlice1d< real64 const, constitutive::multifluid::USD_PHASE - 2 > const phaseDens = m_phaseDens[ei][0];
+    arraySlice2d< real64 const, constitutive::multifluid::USD_PHASE_DC - 2 > const dPhaseDens = m_dPhaseDens[ei][0];
+    arraySlice1d< real64 const, constitutive::multifluid::USD_PHASE - 2 > const phaseVisc = m_phaseVisc[ei][0];
+    arraySlice2d< real64 const, constitutive::multifluid::USD_PHASE_DC - 2 > const dPhaseVisc = m_dPhaseVisc[ei][0];
+    arraySlice3d< real64 const, constitutive::relperm::USD_RELPERM_DS -
                   2 > const dPhaseRelPerm_dPhaseVolFrac = m_dPhaseRelPerm_dPhaseVolFrac[ei][0];
     arraySlice2d< real64 const, compflow::USD_PHASE_DC - 1 > const dPhaseVolFrac = m_dPhaseVolFrac[ei];
 
     Base::compute( ei, [&]( localIndex const ip,
-                            arraySlice1d< real64, relperm::USD_MOB - 2 > const & phaseMob,
-                            arraySlice2d< real64, relperm::USD_MOB_DC - 2 > const & dPhaseMob ) {
+                            arraySlice1d< real64, constitutive::relperm::USD_MOB - 2 > const & phaseMob,
+                            arraySlice2d< real64, constitutive::relperm::USD_MOB_DC - 2 > const & dPhaseMob ) {
 
       integer const numDir = dPhaseRelPerm_dPhaseVolFrac.size(2);
 
@@ -404,7 +404,7 @@ public:
       //       computing the following quantities: potGrad, phaseFlux, k_up, er_up, esr_up, ei_up
 
       real64 dPhaseFlux_dT[numFluxSupportPoints]{};
-      // integer const numDir = 1;
+      // integer const numDir = 3;
       real64 faceNormal[3];
       m_stencilWrapper.getFaceNormal( connectionIndex, faceNormal );
 
@@ -1204,9 +1204,9 @@ public:
                                           real64 const f,           // potGrad times trans
                                           real64 const facePhaseMob,
                                           arraySlice1d< const real64,
-                                                        multifluid::USD_PHASE - 2 > const & facePhaseEnthalpy,
+                                                        constitutive::multifluid::USD_PHASE - 2 > const & facePhaseEnthalpy,
                                           arraySlice2d< const real64,
-                                                        multifluid::USD_PHASE_COMP - 2 > const & facePhaseCompFrac,
+                                                        constitutive::multifluid::USD_PHASE_COMP - 2 > const & facePhaseCompFrac,
                                           real64 const phaseFlux,
                                           real64 const dPhaseFlux_dP,
                                           real64 const (&dPhaseFlux_dC)[numComp] ) {
@@ -1229,7 +1229,7 @@ public:
       //       computing the following quantities: potGrad, phaseFlux
       // It is easier to hard-code the if/else because it is difficult to address elem and face variables in a uniform way
 
-      // integer const numDir = 1;
+      // integer const numDir = 3;
       real64 faceNormal[3];
       m_stencilWrapper.getFaceNormal( kf, faceNormal );
 

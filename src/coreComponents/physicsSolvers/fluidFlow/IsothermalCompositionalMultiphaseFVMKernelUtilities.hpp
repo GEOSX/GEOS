@@ -513,7 +513,7 @@ struct C1PPUPhaseFlux
 
       gravHead += gravD;
     }
-    //integer const numDir = 1; //phaseMob.size(4); 
+    //integer const numDir = 3; //phaseMob.size(4); 
     integer const numDir = phaseMob[seri[0]][sesri[0]][sei[0]][ip].size();
     std::cout << "Size of utilities: " << numDir << std::endl;
     

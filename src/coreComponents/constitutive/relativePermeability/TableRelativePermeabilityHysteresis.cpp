@@ -280,8 +280,8 @@ void TableRelativePermeabilityHysteresis::initializePreSubGroups()
 
   m_drainagePhaseMinVolFraction.resize( numDir, MAX_NUM_PHASES );
   m_imbibitionPhaseMinVolFraction.resize( numDir, 2 ); // we don't save the value of the intermediate phase, for which we neglect hysteresis
+  
   // need to check the above line for correctness
-
   m_drainagePhaseMaxVolFraction.resize( MAX_NUM_PHASES );
   m_imbibitionPhaseMaxVolFraction.resize( 2 );
 

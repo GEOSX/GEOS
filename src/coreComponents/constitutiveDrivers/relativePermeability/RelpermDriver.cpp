@@ -89,8 +89,8 @@ void RelpermDriver::outputResults()
 
 void RelpermDriver::postInputInitialization()
 {
-  constitutive::ConstitutiveManager
-  & constitutiveManager = this->getGroupByPath< constitutive::ConstitutiveManager >( "/Problem/domain/Constitutive" );
+  constitutiveManager
+  & constitutiveManager = this->getGroupByPath< constitutiveManager >( "/Problem/domain/Constitutive" );
   constitutive::RelativePermeabilityBase
   & baseRelperm = constitutiveManager.getGroup< constitutive::RelativePermeabilityBase >( m_relpermName );
 
@@ -112,8 +112,8 @@ bool RelpermDriver::execute( const geos::real64 GEOS_UNUSED_PARAM( time_n ),
   GEOS_THROW_IF( MpiWrapper::commRank() > 0, "RelpermDriver should only be run in serial", std::runtime_error );
 
 
-  constitutive::ConstitutiveManager
-  & constitutiveManager = this->getGroupByPath< constitutive::ConstitutiveManager >( "/Problem/domain/Constitutive" );
+  constitutiveManager
+  & constitutiveManager = this->getGroupByPath< constitutiveManager >( "/Problem/domain/Constitutive" );
   constitutive::RelativePermeabilityBase
   & baseRelperm = constitutiveManager.getGroup< constitutive::RelativePermeabilityBase >( m_relpermName );
 
@@ -165,8 +165,8 @@ bool RelpermDriver::execute( const geos::real64 GEOS_UNUSED_PARAM( time_n ),
 template< typename RELPERM_TYPE >
 void RelpermDriver::resizeTables()
 {
-  constitutive::ConstitutiveManager
-  & constitutiveManager = this->getGroupByPath< constitutive::ConstitutiveManager >( "/Problem/domain/Constitutive" );
+  constitutiveManager
+  & constitutiveManager = this->getGroupByPath< constitutiveManager >( "/Problem/domain/Constitutive" );
   constitutive::RelativePermeabilityBase
   & baseRelperm = constitutiveManager.getGroup< constitutive::RelativePermeabilityBase >( m_relpermName );
 

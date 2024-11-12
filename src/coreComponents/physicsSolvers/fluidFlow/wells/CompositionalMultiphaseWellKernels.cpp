@@ -944,8 +944,8 @@ PerforationKernel::
 
       // relative permeability
 
-      //then for well make is an average of direction as there is no normal avail
-      real64 faceNormal[3] = {.33, .33, .33};
+      //then for well make is an average of direction as there is no normal avail (is this okay?  CHanged to 1 0 0 for testing)
+      real64 faceNormal[3] = {1, 0, 0};
       real64 const resRelPerm = LvArray::tensorOps::AiBi< 3 >( resPhaseRelPerm[ip], faceNormal );
       real64 dResRelPerm_dP = 0.0;
       for( integer jc = 0; jc < NC; ++jc )
