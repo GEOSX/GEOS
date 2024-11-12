@@ -486,6 +486,7 @@ protected:
     real64 dDensMean_dP[numFluxSupportPoints]{};
     real64 dDensMean_dC[numFluxSupportPoints][numComp]{};
 
+    integer denom = 0;
     for( localIndex i = 0; i < numFluxSupportPoints; ++i )
     {
       localIndex const er = seri[i];
@@ -503,11 +504,24 @@ protected:
                       Deriv::dC );
 
       // average density and derivatives
-      densMean += 0.5 * density;
-      dDensMean_dP[i] = 0.5 * dDens_dPres;
+      densMean += density;
+      dDensMean_dP[i] = dDens_dPres;
       for( localIndex jc = 0; jc < numComp; ++jc )
       {
-        dDensMean_dC[i][jc] = 0.5 * dDens_dC[jc];
+        dDensMean_dC[i][jc] = dDens_dC[jc];
+      }
+      denom++;
+    }
+    if( denom > 1 )
+    {
+      densMean /= denom;
+      for( integer i = 0; i < numFluxSupportPoints; ++i )
+      {
+        dDensMean_dP[i] /= denom;
+        for( integer jc = 0; jc < numComp; ++jc )
+        {
+          dDensMean_dC[i][jc] /= denom;
+        }
       }
     }
 
