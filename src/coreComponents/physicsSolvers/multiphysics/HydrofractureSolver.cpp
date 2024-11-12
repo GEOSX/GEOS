@@ -910,7 +910,7 @@ void HydrofractureSolver< POROMECHANICS_SOLVER >::resetStateToBeginningOfStep( D
   Base::resetStateToBeginningOfStep( domain );
   updateState( domain );
 }
-  
+
 template< typename POROMECHANICS_SOLVER >
 real64 HydrofractureSolver< POROMECHANICS_SOLVER >::setNextDt( real64 const & time,
                                                                real64 const & lastDt,
