@@ -382,7 +382,7 @@ addTransmissibilityCouplingPattern( DomainPartition const & domain,
     // Get the finite volume method used to compute the stabilization
     NumericalMethodsManager const & numericalMethodManager = domain.getNumericalMethodManager();
     FiniteVolumeManager const & fvManager = numericalMethodManager.getFiniteVolumeManager();
-    FluxApproximationBase const & stabilizationMethod = fvManager.getFluxApproximation( this->solidMechanicsSolver()->getStabilizationName() );
+    FluxApproximationBase const & fvDiscretization = fvManager.getFluxApproximation( this->flowSolver()->getDiscretizationName() );
 
     SurfaceElementRegion const & fractureRegion =
       elemManager.getRegion< SurfaceElementRegion >( this->solidMechanicsSolver()->getUniqueFractureRegionName() );
@@ -401,7 +401,7 @@ addTransmissibilityCouplingPattern( DomainPartition const & domain,
 
     ArrayOfArraysView< localIndex const > const & elemsToFaces = fractureSubRegion.faceList().toViewConst();
 
-    stabilizationMethod.forStencils< SurfaceElementStencil >( mesh, [&]( SurfaceElementStencil const & stencil )
+    fvDiscretization.forStencils< SurfaceElementStencil >( mesh, [&]( SurfaceElementStencil const & stencil )
     {
       forAll< serialPolicy >( stencil.size(), [=] ( localIndex const iconn )
       {
@@ -416,13 +416,14 @@ addTransmissibilityCouplingPattern( DomainPartition const & domain,
           for( localIndex kf = 0; kf < 2; ++kf )
           {
             // Set row DOF index
-            globalIndex const rowIndex = flowDofNumber[sei[iconn][1-kf]] - rankOffset;
+            // Note that the 1-kf index is intentional, as this is coupling the pressure of one face cell
+            // to the nodes of the adjacent cell
+            localIndex const rowIndex = flowDofNumber[sei[iconn][1-kf]] - rankOffset;
 
-            if( rowIndex > 0 && rowIndex < pattern.numRows() )
+            if( rowIndex >= 0 && rowIndex < pattern.numRows() )
             {
-
               // Get fracture, face and region/subregion/element indices (for elements on both sides)
-              localIndex fractureIndex = sei[iconn][kf];
+              localIndex const fractureIndex = sei[iconn][kf];
 
               // Get the number of nodes
               localIndex const numNodesPerFace = faceToNodeMap.sizeOfArray( elemsToFaces[fractureIndex][0] );
@@ -507,7 +508,7 @@ assembleForceResidualDerivativeWrtPressure( MeshLevel const & mesh,
       real64 nodeRHS[3 * m_maxFaceNodes];
       stackArray1d< real64, 3 * m_maxFaceNodes > dRdP( 3*m_maxFaceNodes );
       globalIndex colDOF[1];
-      colDOF[0] = flowDofNumber[kfe];
+      colDOF[0] = flowDofNumber[kfe]; // pressure is always first
 
       for( localIndex kf=0; kf<2; ++kf )
       {

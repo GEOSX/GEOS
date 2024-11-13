@@ -111,6 +111,9 @@ smallStrainUpdate( localIndex const k,
                                                        dPorosity_dTemperature,
                                                        dSolidDensity_dPressure );
 
+//if(k==0 && q==0)
+//std::cout<<k<<" "<<q<<" totalStress="<<stack.totalStress[0]<<std::endl;
+
   // Step 2: compute the body force
   computeBodyForce( k, q,
                     porosity,
@@ -119,6 +122,9 @@ smallStrainUpdate( localIndex const k,
                     dPorosity_dTemperature,
                     dSolidDensity_dPressure,
                     stack );
+
+//if(k==0 && q==0)
+//std::cout<<k<<" "<<q<<" bodyForce="<<stack.bodyForce[0]<<std::endl;
 
   // Step 3: compute fluid mass increment
   computeFluidIncrement( k, q,
@@ -383,6 +389,9 @@ quadraturePointKernel( localIndex const k,
   // This function also fills the local Jacobian rows corresponding to the momentum balance.
   assembleMomentumBalanceTerms( N, dNdX, detJxW, stack );
 
+//if(k==0 && q==0)
+//std::cout<<k<<" "<<q<<" localResidualMomentum="<<stack.localResidualMomentum[0]<<std::endl;
+
   // Step 5: use the fluid mass increment to increment the local mass balance residual
   // This function also fills the local Jacobian rows corresponding to the mass balance.
   assembleElementBasedFlowTerms( dNdX, detJxW, stack );
@@ -420,7 +429,9 @@ complete( localIndex const k,
                                                                               stack.dLocalResidualMomentum_dDisplacement[numDofPerTestSupportPoint * localNode + dim],
                                                                               numDisplacementDofs );
 
+      //std::cout<<"before m_rhs="<<m_rhs[dof]<<" "<<stack.localResidualMomentum[numDofPerTestSupportPoint * localNode + dim]<<std::endl;
       RAJA::atomicAdd< parallelDeviceAtomic >( &m_rhs[dof], stack.localResidualMomentum[numDofPerTestSupportPoint * localNode + dim] );
+      //std::cout<<"after m_rhs="<<m_rhs[dof]<<" "<<stack.localResidualMomentum[numDofPerTestSupportPoint * localNode + dim]<<std::endl;
       maxForce = fmax( maxForce, fabs( stack.localResidualMomentum[numDofPerTestSupportPoint * localNode + dim] ) );
       m_matrix.template addToRowBinarySearchUnsorted< parallelDeviceAtomic >( dof,
                                                                               &stack.localPressureDofIndex,
