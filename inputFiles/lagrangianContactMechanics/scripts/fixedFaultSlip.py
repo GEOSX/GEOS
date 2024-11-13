@@ -4,6 +4,7 @@ import sys
 import xml.etree.ElementTree as ElementTree
 import matplotlib
 import matplotlib.pyplot as plt
+import argparse
     
 class SingularCrackSlip:
 
@@ -60,10 +61,10 @@ def getFractureLengthFromXML(xmlFilePath):
    
     return length, origin
 
-def plot_traction_solution():
+def plot_traction_solution(inputFileDirectory, outputDirectory):
     # Read HDF5
     import hdf5_wrapper
-    hdf5File1Path = "Output/traction.hdf5"
+    hdf5File1Path = f'outputDirectory/traction.hdf5'
 
     # Read HDF5
     data = hdf5_wrapper.hdf5_wrapper(hdf5File1Path).get_copy()
@@ -74,12 +75,12 @@ def plot_traction_solution():
     x_geos = x[0, :, 0]
 
      #-------- Extract info from XML
-    xmlFilePath = "/Users/cusini1/geosx/GEOSX/inputFiles/lagrangianContactMechanics/LagrangeContactBubbleStab_FixedSlip_base.xml"
+    xmlFilePath = f'{inputFileDirectory}/lagrangianContactMechanics/LagrangeContactBubbleStab_FixedSlip_base.xml'
 
     mechanicalParameters = getMechanicalParametersFromXML(xmlFilePath)
 
     # Get length of the fracture
-    xmlFilePath = "/Users/cusini1/geosx/GEOSX/inputFiles/lagrangianContactMechanics/LagrangeContactBubbleStab_FixedSlip_smoke.xml"
+    xmlFilePath = f'{inputFileDirectory}lagrangianContactMechanics/LagrangeContactBubbleStab_FixedSlip_smoke.xml'
     totalHalfLength, originShift = getFractureLengthFromXML(xmlFilePath)
     halfLength = 2.0
 
@@ -116,15 +117,15 @@ def output_tables(x, slip, name):
     np.savetxt(f'{name}.csv', slip, fmt='%f')      
 
 
-def debug():
+def generate_tables(inputFileDirectory):
     #-------- Extract info from XML
-    xmlFilePath = "/Users/cusini1/geosx/GEOSX/inputFiles/lagrangianContactMechanics/LagrangeContactBubbleStab_FixedSlip_base.xml"
+    xmlFilePath = f'{inputFileDirectory}/lagrangianContactMechanics/LagrangeContactBubbleStab_FixedSlip_base.xml'
 
     mechanicalParameters = getMechanicalParametersFromXML(xmlFilePath)
     appliedPressure = 1.0
 
     # Get length of the fracture
-    xmlFilePath = "/Users/cusini1/geosx/GEOSX/inputFiles/lagrangianContactMechanics/LagrangeContactBubbleStab_FixedSlip_smoke.xml"
+    xmlFilePath = f'{inputFileDirectory}/lagrangianContactMechanics/LagrangeContactBubbleStab_FixedSlip_smoke.xml'
     totalHalfLength, originShift = getFractureLengthFromXML(xmlFilePath)
     halfLength = 2.0
 
@@ -134,7 +135,7 @@ def debug():
     gaussianSlipSolution = GaussianSlip( peakStrength, halfLength)
 
     # Plot analytical (continuous line) and numerical (markers) aperture solution
-    x = np.linspace(-totalHalfLength, totalHalfLength, 100000, endpoint=True)
+    x = np.linspace(-totalHalfLength, totalHalfLength, 10000, endpoint=True)
     singularCrackSlip = np.zeros(len(x))
     gaussianSlip = np.zeros(len(x))
     i = 0
@@ -175,5 +176,17 @@ def debug():
     output_tables(x, gaussianSlip, "gaussianSlip")
 
 if __name__ == "__main__":
-    # debug()
-    plot_traction_solution()
+
+    parser = argparse.ArgumentParser()
+    parser.add_argument('-a', '--action', type=str, choices=['generate_tables', 'plotTractions'], required=True, help='Action to perform: generate_tables or plotTractions')
+    parser.add_argument('-i', '--input-files-path', type=str, required=True, help='Path to the inputFilesFolder')
+    parser.add_argument('-o', '--output-dir', type=str, help='Directory containing the output files')
+   
+    args = parser.parse_args()
+    
+    if args.action == 'generate_tables':
+        print("Generating tables...")
+        generate_tables(os.path.normpath(args.input_files_path))
+    elif args.action == 'plotTractions':
+        print("Plotting tractions...")
+        plot_traction_solution(os.path.normpath(args.input_files_path), os.path.normpath(args.output_dir))    
