@@ -1,5 +1,58 @@
 <?xml version="1.0" ?>
 <Problem>
+  <Solvers>
+    <QuasiDynamicEQ
+      name="QDSolver"
+      targetRegions="{ Domain, Fault }"
+      shearImpedance="4.41"
+      initialDt="1"
+      logLevel="1"
+      discretization="FE1"
+      stressSolverName="stressSolver">
+    </QuasiDynamicEQ>
+
+    <SolidMechanicsLagrangeContactBubbleStab
+      name="stressSolver"
+      timeIntegrationOption="QuasiStatic"
+      logLevel="2"
+      writeLinearSystem="0"
+      discretization="FE1"
+      targetRegions="{ Domain, Fault }">
+      <NonlinearSolverParameters
+        newtonTol="1.0e-8"
+        logLevel="2"
+        newtonMaxIter="10"
+        maxNumConfigurationAttempts="1"
+        lineSearchAction="Require"
+        lineSearchMaxCuts="2"
+        maxTimeStepCuts="1"/>
+      <LinearSolverParameters
+        solverType="direct"
+        directParallel="0"
+        logLevel="0"/>
+    </SolidMechanicsLagrangeContactBubbleStab>
+    
+    <SurfaceGenerator
+      name="SurfaceGen"
+      targetRegions="{ Domain }"
+      rockToughness="1.0"
+      mpiCommOrder="1"
+      fractureRegion="Fault"/>  
+
+    <SinglePhaseFVM 
+      name="singlePhaseFlowSolver"
+      logLevel="1"
+      discretization="singlePhaseTPFA"
+      targetRegions="{ Domain }"> 
+      <NonlinearSolverParameters
+        newtonTol = "1.0e-6"
+        newtonMaxIter = "8"/>
+      <LinearSolverParameters
+        solverType="gmres"
+        krylovTol="1.0e-12"/>   
+    </SinglePhaseFVM>
+  </Solvers>
+
   <NumericalMethods>
     <FiniteElements>
       <FiniteElementSpace
@@ -8,6 +61,25 @@
     </FiniteElements>
   </NumericalMethods>
 
+  <Mesh>
+    <InternalMesh
+      name="mesh1"
+      elementTypes="{ C3D8 }"
+      xCoords="{ -100, 100 }"
+      yCoords="{ -1, 1 }"
+      zCoords="{ -100, 100 }"
+      nx="{ 100 }"
+      ny="{ 1 }"
+      nz="{ 100 }"
+      cellBlockNames="{ cb1 }"/>
+  </Mesh>
+
+  <Geometry>    
+    <Box
+      name="faultPlane"
+      xMin="{ -0.01, -1.010, -100.0 }"
+      xMax="{ 0.01,   1.01,   100.0 }"/>
+  </Geometry>
 
   <ElementRegions>
     <CellElementRegion
@@ -20,28 +92,6 @@
       materialList="{frictionLaw}"
       defaultAperture="1e-3"/>  
     </ElementRegions>
-  <Constitutive>
-
-    <!-- <ElasticIsotropic
-     name="rock"
-     defaultDensity="2700"
-     defaultBulkModulus="1.666666666666666e4"
-     defaultShearModulus="1.0e4"/> -->
-    
-    <ElasticIsotropic
-     name="rock"
-     defaultDensity="2700"
-     defaultBulkModulus="1.66667"
-     defaultShearModulus="1.0"/>
-
-    <RateAndStateFriction
-      name="frictionLaw"
-      defaultA="0.01"
-      defaultB="0.015"
-      defaultDc="1.0e-5"  
-      defaultReferenceVelocity="1.0e-6"
-      defaultReferenceFrictionCoefficient="0.6"/>  
-  </Constitutive>
 
   <FieldSpecifications>
     <FieldSpecification
@@ -66,7 +116,7 @@
       fieldName="totalDisplacement"
       component="1"
       scale="0.0"
-      setNames="{ xpos, xneg, yneg, ypos}"/>
+      setNames="{ ypos, yneg, xneg, xpos }"/>
 
     <FieldSpecification
       name="zconstraint"
@@ -83,7 +133,6 @@
       objectPath="ElementRegions/Fault/FractureSubRegion"
       scale="0.0"
       component="0"
-      functionName="dispJumpFunction"
       setNames="{all}"/>
       
     <FieldSpecification
@@ -91,9 +140,8 @@
       fieldName="targetIncrementalJump"
       initialCondition="1"
       objectPath="ElementRegions/Fault/FractureSubRegion"
-      scale="1.0"
+      scale="0.1"
       component="1"
-      functionName="dispJumpFunction"
       setNames="{all}"/>
     
     <FieldSpecification
@@ -105,34 +153,4 @@
       component="2"
       setNames="{all}"/>  
   </FieldSpecifications>
-
-  <Functions>
-    <TableFunction
-     name="dispJumpFunction"
-     inputVarNames="{elementCenter}"
-     coordinateFiles="{dataTables/x.csv, dataTables/y.csv, dataTables/z.csv}" 
-     voxelFile="dataTables/singularCrackSlip.csv"/>
-  </Functions>
-  
-  <Tasks>
-    <PackCollection
-      name="tractionCollection"
-      objectPath="ElementRegions/Fault/FractureSubRegion"
-      fieldName="traction"
-      setNames="{all}"/>
-  </Tasks>
-
-  <Outputs>
-    <VTK
-      name="vtkOutput"
-      plotFileRoot="fixedSlip"/>
-     
-    <TimeHistory
-      name="timeHistoryOutput"
-      sources="{/Tasks/tractionCollection}"
-      filename="traction" />  
-
-    <Restart
-      name="restart"/>  
-  </Outputs>
 </Problem>

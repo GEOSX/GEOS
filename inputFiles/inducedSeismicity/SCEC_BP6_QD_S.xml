@@ -1,0 +1,62 @@
+<?xml version="1.0" ?>
+<Problem>
+  <Included>
+    <File
+      name="./SCEC_BP6_base.xml"/>
+  </Included>
+
+  <ElementRegions>
+    <CellElementRegion
+      name="Domain"
+      cellBlocks="{ cb1 }"
+      materialList="{rock}"/>
+
+    <SurfaceElementRegion
+      name="Fault"
+      materialList="{frictionLaw}"
+      defaultAperture="1e-3"/>  
+    </ElementRegions>
+  <Constitutive>
+
+    <ElasticIsotropic
+     name="rock"
+     defaultDensity="2700"
+     defaultBulkModulus="1.666666666666666e4"
+     defaultShearModulus="1.0e4"/>
+
+    <RateAndStateFriction
+      name="frictionLaw"
+      defaultA="0.01"
+      defaultB="0.015"
+      defaultDc="1.0e-5"  
+      defaultReferenceVelocity="1.0e-6"
+      defaultReferenceFrictionCoefficient="0.6"/>  
+  </Constitutive>
+
+  <Outputs>
+    <VTK
+      name="vtkOutput"
+      plotFileRoot="BP6_QD_S"/>
+  </Outputs>
+
+  <Events
+    maxTime="4.5e4"
+    maxCycle="1">
+
+   <SoloEvent 
+     name="generateFault"
+     target="/Solvers/SurfaceGen"/>
+
+   <PeriodicEvent
+     name="vtkOutput"
+     cycleFrequency="1"
+     targetExactTimestep="0"
+     target="/Outputs/vtkOutput"/>  
+    
+   <PeriodicEvent
+     name="solverApplications"
+     maxEventDt="1e4"
+     target="/Solvers/QDSolver"/>
+
+  </Events>
+</Problem>
