@@ -21,7 +21,7 @@
 #define GEOS_MESH_MESHOBJECTPATH_HPP_
 
 
-#include "codingUtilities/EnumStrings.hpp"
+#include "common/format/EnumStrings.hpp"
 #include "MeshLevel.hpp"
 
 namespace geos
