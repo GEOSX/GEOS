@@ -117,6 +117,12 @@ public:
   real64 updatePhaseVolumeFraction( ObjectManagerBase & dataGroup ) const;
 
   /**
+   * @brief Recompute phase volume fractions (saturations) from constitutive and primary variables (pressure and global component fractions)
+   * @param dataGroup the group storing the required fields
+   */
+  real64 updatePhaseVolumeFractionZFormulation( ObjectManagerBase & dataGroup ) const;
+
+  /**
    * @brief Update all relevant fluid models using current values of pressure and composition
    * @param dataGroup the group storing the required fields
    */
@@ -139,6 +145,12 @@ public:
    * @param subRegion the subregion storing the required fields
    */
   void updateCompAmount( ElementSubRegionBase & subRegion ) const;
+
+  /**
+   * @brief Update components mass/moles if Z formulation is used
+   * @param subRegion the subregion storing the required fields
+   */
+  void updateCompAmountZFormulation( ElementSubRegionBase & subRegion ) const;
 
   /**
    * @brief Update energy

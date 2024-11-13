@@ -85,8 +85,6 @@ struct PotGradZFormulation
     real64 gravHead = 0.0;
     real64 dCapPressure_dC[numComp]{};
 
-    real64 dProp_dC[numComp]{};
-
     // calculate quantities on primary connected cells
     for( integer i = 0; i < numFluxSupportPoints; ++i )
     {

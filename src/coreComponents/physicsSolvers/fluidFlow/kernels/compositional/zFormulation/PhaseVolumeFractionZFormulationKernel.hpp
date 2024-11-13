@@ -58,7 +58,6 @@ public:
     m_phaseVolFrac( subRegion.getField< fields::flow::phaseVolumeFraction >() ),
     m_dPhaseVolFrac( subRegion.getField< fields::flow::dPhaseVolumeFraction >() ),
     m_compDens( subRegion.getField< fields::flow::globalCompDensity >() ),
-    m_dCompFrac_dCompDens( subRegion.getField< fields::flow::dGlobalCompFraction_dGlobalCompDensity >() ),
     m_phaseFrac( fluid.phaseFraction() ),
     m_dPhaseFrac( fluid.dPhaseFraction() ),
     m_phaseDens( fluid.phaseDensity() ),
@@ -79,15 +78,12 @@ public:
     using Deriv = constitutive::multifluid::DerivativeOffset;
 
     arraySlice1d< real64 const, compflow::USD_COMP - 1 > const compDens = m_compDens[ei];
-    arraySlice2d< real64 const, compflow::USD_COMP_DC - 1 > const dCompFrac_dCompDens = m_dCompFrac_dCompDens[ei];
     arraySlice1d< real64 const, constitutive::multifluid::USD_PHASE - 2 > const phaseDens = m_phaseDens[ei][0];
     arraySlice2d< real64 const, constitutive::multifluid::USD_PHASE_DC - 2 > const dPhaseDens = m_dPhaseDens[ei][0];
     arraySlice1d< real64 const, constitutive::multifluid::USD_PHASE - 2 > const phaseFrac = m_phaseFrac[ei][0];
     arraySlice2d< real64 const, constitutive::multifluid::USD_PHASE_DC - 2 > const dPhaseFrac = m_dPhaseFrac[ei][0];
     arraySlice1d< real64, compflow::USD_PHASE - 1 > const phaseVolFrac = m_phaseVolFrac[ei];
     arraySlice2d< real64, compflow::USD_PHASE_DC - 1 > const dPhaseVolFrac = m_dPhaseVolFrac[ei];
-
-    real64 work[numComp]{};
 
     // compute total density from component partial densities
     real64 totalDensity = 0.0;

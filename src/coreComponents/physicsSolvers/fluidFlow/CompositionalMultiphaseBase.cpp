@@ -43,7 +43,6 @@
 #include "physicsSolvers/fluidFlow/FlowSolverBaseFields.hpp"
 #include "physicsSolvers/fluidFlow/SourceFluxStatistics.hpp"
 #include "physicsSolvers/fluidFlow/kernels/compositional/AccumulationKernel.hpp"
-#include "physicsSolvers/fluidFlow/kernels/compositional/zFormulation/AccumulationZFormulationKernel.hpp"
 #include "physicsSolvers/fluidFlow/kernels/compositional/ThermalAccumulationKernel.hpp"
 #include "physicsSolvers/fluidFlow/kernels/compositional/GlobalComponentFractionKernel.hpp"
 #include "physicsSolvers/fluidFlow/kernels/compositional/PhaseVolumeFractionKernel.hpp"
@@ -55,6 +54,8 @@
 #include "physicsSolvers/fluidFlow/kernels/compositional/HydrostaticPressureKernel.hpp"
 #include "physicsSolvers/fluidFlow/kernels/compositional/StatisticsKernel.hpp"
 #include "physicsSolvers/fluidFlow/kernels/compositional/CFLKernel.hpp"
+#include "physicsSolvers/fluidFlow/kernels/compositional/zFormulation/AccumulationZFormulationKernel.hpp"
+//#include "physicsSolvers/fluidFlow/kernels/compositional/zFormulation/PhaseVolumeFractionZFormulationKernel.hpp"
 
 #if defined( __INTEL_COMPILER )
 #pragma GCC optimize "O0"
@@ -685,6 +686,28 @@ real64 CompositionalMultiphaseBase::updatePhaseVolumeFraction( ObjectManagerBase
   return maxDeltaPhaseVolFrac;
 }
 
+real64 CompositionalMultiphaseBase::updatePhaseVolumeFractionZFormulation( ObjectManagerBase & dataGroup ) const
+{
+  GEOS_MARK_FUNCTION;
+
+  string const & fluidName = dataGroup.getReference< string >( viewKeyStruct::fluidNamesString() );
+  MultiFluidBase const & fluid = getConstitutiveModel< MultiFluidBase >( dataGroup, fluidName );
+
+  // For now: isothermal only
+  GEOS_ERROR_IF( m_isThermal, GEOS_FMT( "CompositionalMultiphaseBase {}: Z Formulation is currently not available for thermal simulations", getDataContext() ) );
+
+  real64 maxDeltaPhaseVolFrac  =
+      isothermalCompositionalMultiphaseBaseKernels::
+      PhaseVolumeFractionKernelFactory::
+      createAndLaunch< parallelDevicePolicy<> >( m_numComponents,
+                                                 m_numPhases,
+                                                 dataGroup,
+                                                 fluid );
+  
+  // ZFormulation
+  return maxDeltaPhaseVolFrac;
+}
+
 void CompositionalMultiphaseBase::updateFluidModel( ObjectManagerBase & dataGroup ) const
 {
   GEOS_MARK_FUNCTION;
@@ -782,6 +805,33 @@ void CompositionalMultiphaseBase::updateCompAmount( ElementSubRegionBase & subRe
   } );
 }
 
+void CompositionalMultiphaseBase::updateCompAmountZFormulation( ElementSubRegionBase & subRegion ) const
+{
+  GEOS_MARK_FUNCTION;
+
+  string const & solidName = subRegion.template getReference< string >( viewKeyStruct::solidNamesString() );
+  CoupledSolidBase const & porousMaterial = getConstitutiveModel< CoupledSolidBase >( subRegion, solidName );
+  arrayView2d< real64 const > const porosity = porousMaterial.getPorosity();
+  arrayView1d< real64 const > const volume = subRegion.getElementVolume();
+  arrayView2d< real64 const, compflow::USD_COMP > const compFrac = subRegion.getField< fields::flow::globalCompFraction >();
+  arrayView2d< real64, compflow::USD_COMP > const compAmount = subRegion.getField< fields::flow::compAmount >();
+  // access total density stored in the fluid 
+  string const & fluidName = subRegion.getReference< string >( viewKeyStruct::fluidNamesString() );
+  MultiFluidBase const & fluid = getConstitutiveModel< MultiFluidBase >( subRegion, fluidName );
+  arrayView2d< real64 const, multifluid::USD_FLUID > const totalDens = fluid.totalDensity();
+
+  integer const numComp = m_numComponents;
+
+  forAll< parallelDevicePolicy<> >( subRegion.size(), [=] GEOS_HOST_DEVICE ( localIndex const ei )
+  {
+    for( integer ic = 0; ic < numComp; ++ic )
+    {
+      // m = phi*V*z_c*rho_T
+      compAmount[ei][ic] = porosity[ei][0] * volume[ei] * compFrac[ei][ic] * totalDens[ei][0];
+    }
+  } );
+}
+
 void CompositionalMultiphaseBase::updateEnergy( ElementSubRegionBase & subRegion ) const
 {
   GEOS_MARK_FUNCTION;
@@ -833,16 +883,35 @@ real64 CompositionalMultiphaseBase::updateFluidState( ElementSubRegionBase & sub
 {
   GEOS_MARK_FUNCTION;
 
-  updateGlobalComponentFraction( subRegion );
-  updateFluidModel( subRegion );
-  updateCompAmount( subRegion );
-  real64 const maxDeltaPhaseVolFrac = updatePhaseVolumeFraction( subRegion );
-  updateRelPermModel( subRegion );
-  updatePhaseMobility( subRegion );
-  updateCapPressureModel( subRegion );
+  real64 maxdS;
 
-  // note1: for now, thermal conductivity is treated explicitly, so no update here
-  // note2: for now, diffusion and dispersion are also treated explicitly
+  if (m_useZFormulation)
+  {
+    // For p, z_c as the primary unknowns
+    updateFluidModel( subRegion ); // rho_T is now a function of p, z_c from volume balance
+    updateCompAmountZFormulation( subRegion );
+    maxdS = updatePhaseVolumeFractionZFormulation( subRegion );
+    updateRelPermModel( subRegion );
+    updatePhaseMobility( subRegion );
+    updateCapPressureModel( subRegion );
+  }
+  else
+  {
+    // For p, rho_c as the primary unknowns
+    updateGlobalComponentFraction( subRegion );
+    updateFluidModel( subRegion );
+    updateCompAmount( subRegion );
+    maxdS = updatePhaseVolumeFraction( subRegion );
+    updateRelPermModel( subRegion );
+    updatePhaseMobility( subRegion );
+    updateCapPressureModel( subRegion );
+    // note1: for now, thermal conductivity is treated explicitly, so no update here
+    // note2: for now, diffusion and dispersion are also treated explicitly
+  }
+
+  
+  real64 const maxDeltaPhaseVolFrac = maxdS;
+  
   return maxDeltaPhaseVolFrac;
 }
 

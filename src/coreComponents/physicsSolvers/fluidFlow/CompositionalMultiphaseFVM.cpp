@@ -55,6 +55,8 @@
 #include "physicsSolvers/fluidFlow/kernels/compositional/DirichletFluxComputeKernel.hpp"
 #include "physicsSolvers/fluidFlow/kernels/compositional/ThermalDirichletFluxComputeKernel.hpp"
 #include "physicsSolvers/fluidFlow/kernels/compositional/AquiferBCKernel.hpp"
+#include "physicsSolvers/fluidFlow/kernels/compositional/zFormulation/AccumulationZFormulationKernel.hpp"
+#include "physicsSolvers/fluidFlow/kernels/compositional/zFormulation/PhaseMobilityZFormulationKernel.hpp"
 
 namespace geos
 {
@@ -934,25 +936,46 @@ void CompositionalMultiphaseFVM::updatePhaseMobility( ObjectManagerBase & dataGr
   string const & relpermName = dataGroup.getReference< string >( viewKeyStruct::relPermNamesString() );
   RelativePermeabilityBase const & relperm = getConstitutiveModel< RelativePermeabilityBase >( dataGroup, relpermName );
 
-  if( m_isThermal )
+  if (m_useZFormulation)
   {
-    thermalCompositionalMultiphaseFVMKernels::
-      PhaseMobilityKernelFactory::
-      createAndLaunch< parallelDevicePolicy<> >( m_numComponents,
-                                                 m_numPhases,
-                                                 dataGroup,
-                                                 fluid,
-                                                 relperm );
+    if( m_isThermal )
+    {
+      // For now: isothermal only
+      GEOS_ERROR_IF( m_isThermal, GEOS_FMT( "CompositionalMultiphaseBase {}: Z Formulation is currently not available for thermal simulations", getDataContext() ) );
+    }
+    else
+    {
+      isothermalCompositionalMultiphaseFVMKernels::
+        PhaseMobilityZFormulationKernelFactory::
+        createAndLaunch< parallelDevicePolicy<> >( m_numComponents,
+                                                  m_numPhases,
+                                                  dataGroup,
+                                                  fluid,
+                                                  relperm );
+    }
   }
   else
   {
-    isothermalCompositionalMultiphaseFVMKernels::
-      PhaseMobilityKernelFactory::
-      createAndLaunch< parallelDevicePolicy<> >( m_numComponents,
-                                                 m_numPhases,
-                                                 dataGroup,
-                                                 fluid,
-                                                 relperm );
+    if( m_isThermal )
+    {
+      thermalCompositionalMultiphaseFVMKernels::
+        PhaseMobilityKernelFactory::
+        createAndLaunch< parallelDevicePolicy<> >( m_numComponents,
+                                                  m_numPhases,
+                                                  dataGroup,
+                                                  fluid,
+                                                  relperm );
+    }
+    else
+    {
+      isothermalCompositionalMultiphaseFVMKernels::
+        PhaseMobilityKernelFactory::
+        createAndLaunch< parallelDevicePolicy<> >( m_numComponents,
+                                                  m_numPhases,
+                                                  dataGroup,
+                                                  fluid,
+                                                  relperm );
+    }
   }
 }
 

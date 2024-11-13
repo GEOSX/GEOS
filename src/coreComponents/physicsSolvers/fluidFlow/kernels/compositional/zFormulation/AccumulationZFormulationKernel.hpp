@@ -91,10 +91,10 @@ public:
     m_dPhaseVolFrac( subRegion.getField< fields::flow::dPhaseVolumeFraction >() ),
     m_phaseDens( fluid.phaseDensity() ),
     m_dPhaseDens( fluid.dPhaseDensity() ),
-    m_phaseCompFrac( fluid.phaseCompFraction() ),
-    m_dPhaseCompFrac( fluid.dPhaseCompFraction() ),
     m_phaseFrac( fluid.phaseFraction() ),
     m_dPhaseFrac( fluid.dPhaseFraction() ),
+    m_totalDens( fluid.totalDensity() ),
+    m_dTotalDens( fluid.dTotalDensity() ),
     m_compDens( subRegion.getField< fields::flow::globalCompDensity >() ),
     m_compFrac( subRegion.getField< fields::flow::globalCompFraction >() ),
     m_compAmount_n( subRegion.getField< fields::flow::compAmount_n >() ),
@@ -176,8 +176,7 @@ public:
   template< typename FUNC = NoOpFunc >
   GEOS_HOST_DEVICE
   void computeAccumulation( localIndex const ei,
-                            StackVariables & stack,
-                            FUNC && phaseAmountKernelOp = NoOpFunc{} ) const
+                            StackVariables & stack) const
   {
     using Deriv = constitutive::multifluid::DerivativeOffset;
 
@@ -187,6 +186,11 @@ public:
     arraySlice2d< real64 const, constitutive::multifluid::USD_PHASE_DC - 2 > const dPhaseDens = m_dPhaseDens[ei][0];
     arraySlice1d< real64 const, constitutive::multifluid::USD_PHASE - 2 > const phaseFrac = m_phaseFrac[ei][0];
     arraySlice2d< real64 const, constitutive::multifluid::USD_PHASE_DC - 2 > const dPhaseFrac = m_dPhaseFrac[ei][0];
+    //arraySlice1d< real64 const, constitutive::multifluid::USD_FLUID - 1 > const totalDens = m_totalDens[ei];
+    //arraySlice2d< real64 const, constitutive::multifluid::USD_FLUID_DC - 1 > const dTotalDens = m_dTotalDens[ei];
+
+    // debugging
+
 
     // calculate total component density from volume balance
     // TO DO: create separate kernel
@@ -292,10 +296,8 @@ public:
   template< typename FUNC = NoOpFunc >
   GEOS_HOST_DEVICE
   void computeVolumeBalance( localIndex const ei,
-                             StackVariables & stack,
-                             FUNC && phaseVolFractionSumKernelOp = NoOpFunc{} ) const
+                             StackVariables & stack) const
   {
-    using Deriv = constitutive::multifluid::DerivativeOffset;
 
     arraySlice1d< real64 const, compflow::USD_PHASE - 1 > compFrac = m_compFrac[ei];
 
@@ -310,6 +312,8 @@ public:
       // derivative w.r.t component fractions are unity: dzc_dzc = 1
       stack.localJacobian[numComp][ic+1] -= 1;
     }
+
+    //phaseVolFractionSumKernelOp( oneMinusCompFracSum );
 
     // scale componentFraction-based volume balance by pore volume (for better scaling w.r.t. other equations)
     stack.localResidual[numComp] = stack.poreVolume * oneMinusCompFracSum;
@@ -412,17 +416,17 @@ protected:
   arrayView2d< real64 const, compflow::USD_PHASE > const m_phaseVolFrac;
   arrayView3d< real64 const, compflow::USD_PHASE_DC > const m_dPhaseVolFrac;
 
-  /// Views on phase fractions
-  arrayView3d< real64 const, constitutive::multifluid::USD_PHASE > const m_phaseFrac;
-  arrayView4d< real64 const, constitutive::multifluid::USD_PHASE_DC > const m_dPhaseFrac;
-
   /// Views on the phase densities
   arrayView3d< real64 const, constitutive::multifluid::USD_PHASE > const m_phaseDens;
   arrayView4d< real64 const, constitutive::multifluid::USD_PHASE_DC > const m_dPhaseDens;
 
-  /// Views on the phase component fraction
-  arrayView4d< real64 const, constitutive::multifluid::USD_PHASE_COMP > const m_phaseCompFrac;
-  arrayView5d< real64 const, constitutive::multifluid::USD_PHASE_COMP_DC > const m_dPhaseCompFrac;
+  /// Views on phase fractions
+  arrayView3d< real64 const, constitutive::multifluid::USD_PHASE > const m_phaseFrac;
+  arrayView4d< real64 const, constitutive::multifluid::USD_PHASE_DC > const m_dPhaseFrac;
+
+  /// Views on the total density
+  arrayView2d< real64 const, constitutive::multifluid::USD_FLUID > const m_totalDens;
+  arrayView3d< real64 const, constitutive::multifluid::USD_FLUID_DC > const m_dTotalDens;
 
   // View on component densities and component fractions 
   arrayView2d< real64 const, compflow::USD_COMP > m_compDens;
