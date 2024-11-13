@@ -24,6 +24,30 @@ decks = [
         partitions=((1, 1, 1), (2, 2, 1)),
         restart_step=22,
         check_step=33,
+        restartcheck_params=RestartcheckParameters(**restartcheck_params)),
+    TestDeck(
+        name="ThermoPoroDruckerPrager_consolidation_smoke",
+        description=
+        '1D thermo poro consolidation problem with Drucker Prager model',
+        partitions=((1, 1, 1), (1, 2, 1)),
+        restart_step=633,
+        check_step=683,
+        restartcheck_params=RestartcheckParameters(**restartcheck_params)),
+    TestDeck(
+        name="ThermoPoroExtendedDruckerPrager_consolidation_smoke",
+        description=
+        '1D thermo poro consolidation problem with Extended Drucker Prager model',
+        partitions=((1, 1, 1), (1, 2, 1)),
+        restart_step=633,
+        check_step=683,
+        restartcheck_params=RestartcheckParameters(**restartcheck_params)),
+    TestDeck(
+        name="ThermoPoroMCC_consolidation_smoke",
+        description=
+        '1D thermo poro consolidation problem with Modified Cam-Clay model',
+        partitions=((1, 1, 1), (1, 2, 1)),
+        restart_step=633,
+        check_step=683,
         restartcheck_params=RestartcheckParameters(**restartcheck_params))
 ]
 

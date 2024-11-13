@@ -81,7 +81,7 @@ We will use the example of registering a ``totalDisplacement`` on the ``NodeMana
 from the ``SolidMechanics`` solver.
 The most general approach is to define a string key and call one of the
 `Group::registerWrapper() <../../../doxygen_output/html/classgeos_1_1data_repository_1_1_group.html#a741c3b5728fc47b33fbaad6c4f124991>`_
-functions from ``SolverBase::registerDataOnMesh()``.
+functions from ``PhysicsSolverBase::registerDataOnMesh()``.
 Then when you want to use the data, you can call ``Group::getReference()``.
 For example this would look something like:
 

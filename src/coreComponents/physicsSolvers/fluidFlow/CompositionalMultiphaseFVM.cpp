@@ -34,14 +34,27 @@
 #include "finiteVolume/FluxApproximationBase.hpp"
 #include "mesh/DomainPartition.hpp"
 #include "mesh/mpiCommunications/CommunicationTools.hpp"
-#include "physicsSolvers/fluidFlow/CompositionalMultiphaseBaseFields.hpp"
 #include "physicsSolvers/fluidFlow/FlowSolverBaseFields.hpp"
-#include "physicsSolvers/fluidFlow/StabilizedCompositionalMultiphaseFVMKernels.hpp"
-#include "physicsSolvers/fluidFlow/IsothermalCompositionalMultiphaseBaseKernels.hpp"
-#include "physicsSolvers/fluidFlow/ThermalCompositionalMultiphaseBaseKernels.hpp"
-#include "physicsSolvers/fluidFlow/IsothermalCompositionalMultiphaseFVMKernels.hpp"
-#include "physicsSolvers/fluidFlow/ThermalCompositionalMultiphaseFVMKernels.hpp"
-#include "physicsSolvers/fluidFlow/DissipationCompositionalMultiphaseFVMKernels.hpp"
+#include "physicsSolvers/fluidFlow/CompositionalMultiphaseBaseFields.hpp"
+#include "physicsSolvers/fluidFlow/kernels/compositional/AccumulationKernel.hpp"
+#include "physicsSolvers/fluidFlow/kernels/compositional/ThermalAccumulationKernel.hpp"
+#include "physicsSolvers/fluidFlow/kernels/compositional/ResidualNormKernel.hpp"
+#include "physicsSolvers/fluidFlow/kernels/compositional/ThermalResidualNormKernel.hpp"
+#include "physicsSolvers/fluidFlow/kernels/compositional/SolutionScalingKernel.hpp"
+#include "physicsSolvers/fluidFlow/kernels/compositional/ThermalSolutionScalingKernel.hpp"
+#include "physicsSolvers/fluidFlow/kernels/compositional/SolutionCheckKernel.hpp"
+#include "physicsSolvers/fluidFlow/kernels/compositional/ThermalSolutionCheckKernel.hpp"
+#include "physicsSolvers/fluidFlow/kernels/compositional/FluxComputeKernel.hpp"
+#include "physicsSolvers/fluidFlow/kernels/compositional/ThermalFluxComputeKernel.hpp"
+#include "physicsSolvers/fluidFlow/kernels/compositional/DiffusionDispersionFluxComputeKernel.hpp"
+#include "physicsSolvers/fluidFlow/kernels/compositional/ThermalDiffusionDispersionFluxComputeKernel.hpp"
+#include "physicsSolvers/fluidFlow/kernels/compositional/StabilizedFluxComputeKernel.hpp"
+#include "physicsSolvers/fluidFlow/kernels/compositional/DissipationFluxComputeKernel.hpp"
+#include "physicsSolvers/fluidFlow/kernels/compositional/PhaseMobilityKernel.hpp"
+#include "physicsSolvers/fluidFlow/kernels/compositional/ThermalPhaseMobilityKernel.hpp"
+#include "physicsSolvers/fluidFlow/kernels/compositional/DirichletFluxComputeKernel.hpp"
+#include "physicsSolvers/fluidFlow/kernels/compositional/ThermalDirichletFluxComputeKernel.hpp"
+#include "physicsSolvers/fluidFlow/kernels/compositional/AquiferBCKernel.hpp"
 
 namespace geos
 {
@@ -171,7 +184,7 @@ void CompositionalMultiphaseFVM::assembleFluxTerms( real64 const dt,
       if( m_isThermal )
       {
         thermalCompositionalMultiphaseFVMKernels::
-          FaceBasedAssemblyKernelFactory::
+          FluxComputeKernelFactory::
           createAndLaunch< parallelDevicePolicy<> >( m_numComponents,
                                                      m_numPhases,
                                                      dofManager.rankOffset(),
@@ -190,7 +203,7 @@ void CompositionalMultiphaseFVM::assembleFluxTerms( real64 const dt,
         if( m_dbcParams.useDBC )
         {
           dissipationCompositionalMultiphaseFVMKernels::
-            FaceBasedAssemblyKernelFactory::
+            FluxComputeKernelFactory::
             createAndLaunch< parallelDevicePolicy<> >( m_numComponents,
                                                        m_numPhases,
                                                        dofManager.rankOffset(),
@@ -213,7 +226,7 @@ void CompositionalMultiphaseFVM::assembleFluxTerms( real64 const dt,
         else
         {
           isothermalCompositionalMultiphaseFVMKernels::
-            FaceBasedAssemblyKernelFactory::
+            FluxComputeKernelFactory::
             createAndLaunch< parallelDevicePolicy<> >( m_numComponents,
                                                        m_numPhases,
                                                        dofManager.rankOffset(),
@@ -237,7 +250,7 @@ void CompositionalMultiphaseFVM::assembleFluxTerms( real64 const dt,
         if( m_isThermal )
         {
           thermalCompositionalMultiphaseFVMKernels::
-            DiffusionDispersionFaceBasedAssemblyKernelFactory::
+            DiffusionDispersionFluxComputeKernelFactory::
             createAndLaunch< parallelDevicePolicy<> >( m_numComponents,
                                                        m_numPhases,
                                                        dofManager.rankOffset(),
@@ -255,7 +268,7 @@ void CompositionalMultiphaseFVM::assembleFluxTerms( real64 const dt,
         else
         {
           isothermalCompositionalMultiphaseFVMKernels::
-            DiffusionDispersionFaceBasedAssemblyKernelFactory::
+            DiffusionDispersionFluxComputeKernelFactory::
             createAndLaunch< parallelDevicePolicy<> >( m_numComponents,
                                                        m_numPhases,
                                                        dofManager.rankOffset(),
@@ -304,7 +317,7 @@ void CompositionalMultiphaseFVM::assembleStabilizedFluxTerms( real64 const dt,
       // Thermal implementation not supported yet
 
       stabilizedCompositionalMultiphaseFVMKernels::
-        FaceBasedAssemblyKernelFactory::
+        FluxComputeKernelFactory::
         createAndLaunch< parallelDevicePolicy<> >( m_numComponents,
                                                    m_numPhases,
                                                    dofManager.rankOffset(),
@@ -336,7 +349,7 @@ real64 CompositionalMultiphaseFVM::calculateResidualNorm( real64 const & GEOS_UN
   localResidualNorm.resize( numNorm );
   localResidualNormalizer.resize( numNorm );
 
-  solverBaseKernels::NormType const normType = getNonlinearSolverParameters().normType();
+  physicsSolverBaseKernels::NormType const normType = getNonlinearSolverParameters().normType();
 
   globalIndex const rankOffset = dofManager.rankOffset();
   string const dofKey = dofManager.getKey( viewKeyStruct::elemDofFieldString() );
@@ -408,14 +421,14 @@ real64 CompositionalMultiphaseFVM::calculateResidualNorm( real64 const & GEOS_UN
 
       // step 2: first reduction across meshBodies/regions/subRegions
 
-      if( normType == solverBaseKernels::NormType::Linf )
+      if( normType == physicsSolverBaseKernels::NormType::Linf )
       {
-        solverBaseKernels::LinfResidualNormHelper::
+        physicsSolverBaseKernels::LinfResidualNormHelper::
           updateLocalNorm< numNorm >( subRegionResidualNorm, localResidualNorm );
       }
       else
       {
-        solverBaseKernels::L2ResidualNormHelper::
+        physicsSolverBaseKernels::L2ResidualNormHelper::
           updateLocalNorm< numNorm >( subRegionResidualNorm, subRegionResidualNormalizer, localResidualNorm, localResidualNormalizer );
       }
     } );
@@ -428,14 +441,14 @@ real64 CompositionalMultiphaseFVM::calculateResidualNorm( real64 const & GEOS_UN
   {
     array1d< real64 > globalResidualNorm;
     globalResidualNorm.resize( numNorm );
-    if( normType == solverBaseKernels::NormType::Linf )
+    if( normType == physicsSolverBaseKernels::NormType::Linf )
     {
-      solverBaseKernels::LinfResidualNormHelper::
+      physicsSolverBaseKernels::LinfResidualNormHelper::
         computeGlobalNorm( localResidualNorm, globalResidualNorm );
     }
     else
     {
-      solverBaseKernels::L2ResidualNormHelper::
+      physicsSolverBaseKernels::L2ResidualNormHelper::
         computeGlobalNorm( localResidualNorm, localResidualNormalizer, globalResidualNorm );
     }
     residualNorm = sqrt( globalResidualNorm[0] * globalResidualNorm[0] + globalResidualNorm[1] * globalResidualNorm[1]  + globalResidualNorm[2] * globalResidualNorm[2] );
@@ -447,14 +460,14 @@ real64 CompositionalMultiphaseFVM::calculateResidualNorm( real64 const & GEOS_UN
   {
     array1d< real64 > globalResidualNorm;
     globalResidualNorm.resize( numNorm - 1 );
-    if( normType == solverBaseKernels::NormType::Linf )
+    if( normType == physicsSolverBaseKernels::NormType::Linf )
     {
-      solverBaseKernels::LinfResidualNormHelper::
+      physicsSolverBaseKernels::LinfResidualNormHelper::
         computeGlobalNorm( localResidualNorm, globalResidualNorm );
     }
     else
     {
-      solverBaseKernels::L2ResidualNormHelper::
+      physicsSolverBaseKernels::L2ResidualNormHelper::
         computeGlobalNorm( localResidualNorm, localResidualNormalizer, globalResidualNorm );
     }
     residualNorm = sqrt( globalResidualNorm[0] * globalResidualNorm[0] + globalResidualNorm[1] * globalResidualNorm[1] );
@@ -505,7 +518,7 @@ real64 CompositionalMultiphaseFVM::scalingForSystemSolution( DomainPartition & d
       auto const subRegionData =
         m_isThermal
   ? thermalCompositionalMultiphaseBaseKernels::
-          ScalingForSystemSolutionKernelFactory::
+          SolutionScalingKernelFactory::
           createAndLaunch< parallelDevicePolicy<> >( m_maxRelativePresChange,
                                                      m_maxAbsolutePresChange,
                                                      m_maxRelativeTempChange,
@@ -524,7 +537,7 @@ real64 CompositionalMultiphaseFVM::scalingForSystemSolution( DomainPartition & d
                                                      localSolution,
                                                      temperatureOffset )
   : isothermalCompositionalMultiphaseBaseKernels::
-          ScalingForSystemSolutionKernelFactory::
+          SolutionScalingKernelFactory::
           createAndLaunch< parallelDevicePolicy<> >( m_maxRelativePresChange,
                                                      m_maxAbsolutePresChange,
                                                      m_maxCompFracChange,
@@ -673,10 +686,8 @@ bool CompositionalMultiphaseFVM::checkSystemSolution( DomainPartition & domain,
                                                      m_scalingType,
                                                      scalingFactor,
                                                      pressure,
-
                                                      compDens,
                                                      pressureScalingFactor,
-
                                                      compDensScalingFactor,
                                                      dofManager.rankOffset(),
                                                      m_numComponents,
@@ -849,7 +860,7 @@ void CompositionalMultiphaseFVM::applyBoundaryConditions( real64 time_n,
 {
   GEOS_MARK_FUNCTION;
   CompositionalMultiphaseBase::applyBoundaryConditions( time_n, dt, domain, dofManager, localMatrix, localRhs );
-  if( !m_keepFlowVariablesConstantDuringInitStep )
+  if( !m_keepVariablesConstantDuringInitStep )
   {
     applyFaceDirichletBC( time_n, dt, dofManager, domain, localMatrix, localRhs );
   }
@@ -1060,7 +1071,7 @@ void CompositionalMultiphaseFVM::applyFaceDirichletBC( real64 const time_n,
       {
         //todo (jafranc) extend upwindScheme name if satisfied in isothermalCase
         thermalCompositionalMultiphaseFVMKernels::
-          DirichletFaceBasedAssemblyKernelFactory::
+          DirichletFluxComputeKernelFactory::
           createAndLaunch< parallelDevicePolicy<> >( m_numComponents,
                                                      m_numPhases,
                                                      dofManager.rankOffset(),
@@ -1078,7 +1089,7 @@ void CompositionalMultiphaseFVM::applyFaceDirichletBC( real64 const time_n,
       else
       {
         isothermalCompositionalMultiphaseFVMKernels::
-          DirichletFaceBasedAssemblyKernelFactory::
+          DirichletFluxComputeKernelFactory::
           createAndLaunch< parallelDevicePolicy<> >( m_numComponents,
                                                      m_numPhases,
                                                      dofManager.rankOffset(),
@@ -1191,6 +1202,6 @@ void CompositionalMultiphaseFVM::applyAquiferBC( real64 const time,
 }
 
 //START_SPHINX_INCLUDE_01
-REGISTER_CATALOG_ENTRY( SolverBase, CompositionalMultiphaseFVM, string const &, Group * const )
+REGISTER_CATALOG_ENTRY( PhysicsSolverBase, CompositionalMultiphaseFVM, string const &, Group * const )
 //END_SPHINX_INCLUDE_01
 }// namespace geos
