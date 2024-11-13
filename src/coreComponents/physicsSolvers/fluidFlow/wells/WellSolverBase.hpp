@@ -28,7 +28,6 @@ namespace geos
 class DomainPartition;
 class WellControls;
 class WellElementSubRegion;
-class TableFunction;
 
 /**
  * @class WellSolverBase
@@ -320,8 +319,6 @@ protected:
   virtual void printRates( real64 const & time_n,
                            real64 const & dt,
                            DomainPartition & domain ) = 0;
-
-  void setNextDtFromTable( TableFunction const * table, real64 const currentTime, real64 & nextDt );
 
   /// name of the flow solver
   string m_flowSolverName;

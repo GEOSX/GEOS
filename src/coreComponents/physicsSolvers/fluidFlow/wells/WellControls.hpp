@@ -171,36 +171,36 @@ public:
    * @brief Get the target bottom hole pressure value.
    * @return a value for the target bottom hole pressure
    */
-  real64 getTargetBHP( real64 const & time ) const
+  real64 getTargetBHP( real64 const & currentTime ) const
   {
-    return m_targetBHPTable->evaluate( &time );
+    return m_targetBHPTable->evaluate( &currentTime );
   }
 
   /**
    * @brief Get the target total rate
    * @return the target total rate
    */
-  real64 getTargetTotalRate( real64 const & time ) const
+  real64 getTargetTotalRate( real64 const & currentTime ) const
   {
-    return m_rateSign * m_targetTotalRateTable->evaluate( &time );
+    return m_rateSign * m_targetTotalRateTable->evaluate( &currentTime );
   }
 
   /**
    * @brief Get the target phase rate
    * @return the target phase rate
    */
-  real64 getTargetPhaseRate( real64 const & time ) const
+  real64 getTargetPhaseRate( real64 const & currentTime ) const
   {
-    return m_rateSign * m_targetPhaseRateTable->evaluate( &time );
+    return m_rateSign * m_targetPhaseRateTable->evaluate( &currentTime );
   }
 
   /**
    * @brief Get the target mass rate
    * @return the target mass rate
    */
-  real64 getTargetMassRate( real64 const & time ) const
+  real64 getTargetMassRate( real64 const & currentTime ) const
   {
-    return m_rateSign * m_targetMassRateTable->evaluate( &time );
+    return m_rateSign * m_targetMassRateTable->evaluate( &currentTime );
   }
 
   /**
@@ -252,11 +252,11 @@ public:
   bool isProducer() const { return ( m_type == Type::PRODUCER ); }
 
   /**
-   * @brief Is the well open (or shut) at @p time?
-   * @param[in] time the time
+   * @brief Is the well open (or shut) at @p currentTime?
+   * @param[in] currentTime the current time
    * @return a boolean
    */
-  bool isWellOpen( real64 const & time ) const;
+  bool isWellOpen( real64 const & currentTime ) const;
 
   /**
    * @brief Getter for the flag to enable crossflow

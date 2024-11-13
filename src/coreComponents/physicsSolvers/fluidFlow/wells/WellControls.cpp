@@ -463,16 +463,15 @@ void WellControls::postInputInitialization()
   }
 }
 
-bool WellControls::isWellOpen( real64 const & time ) const
+bool WellControls::isWellOpen( real64 const & currentTime ) const
 {
   bool isOpen = true;
-  if( isZero( getTargetTotalRate( time ) )
-      && isZero( getTargetPhaseRate( time ) )
-      && isZero( getTargetMassRate( time ) ))
+  if( isZero( getTargetTotalRate( currentTime ) ) && isZero( getTargetPhaseRate( currentTime ) )
+      && isZero( getTargetMassRate( currentTime ) ))
   {
     isOpen = false;
   }
-  if( m_statusTable->evaluate( &time ) < LvArray::NumericLimits< real64 >::epsilon )
+  if( m_statusTable->evaluate( &currentTime ) < LvArray::NumericLimits< real64 >::epsilon )
   {
     isOpen = false;
   }

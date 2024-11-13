@@ -196,7 +196,7 @@ real64 TableFunction::evaluate( real64 const * const input ) const
   return m_kernelWrapper.compute( input );
 }
 
-real64 TableFunction::getCoord( real64 const * const input, localIndex dim, InterpolationType interpolationMethod ) const
+real64 TableFunction::getCoord( real64 const * const input, localIndex const dim, InterpolationType interpolationMethod ) const
 {
   return m_kernelWrapper.getCoord( input, dim, interpolationMethod );
 }

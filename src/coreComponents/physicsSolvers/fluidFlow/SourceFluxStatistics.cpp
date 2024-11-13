@@ -274,7 +274,7 @@ void SourceFluxStatsAggregator::WrappedStats::setTarget( string_view aggregatorN
   m_aggregatorName = aggregatorName;
   m_fluxName = fluxName;
 }
-void SourceFluxStatsAggregator::WrappedStats::gatherTimeStepStats( real64 const time, real64 const dt,
+void SourceFluxStatsAggregator::WrappedStats::gatherTimeStepStats( real64 const currentTime, real64 const dt,
                                                                    arrayView1d< real64 const > const & producedMass,
                                                                    integer const elementCount )
 {
@@ -283,14 +283,14 @@ void SourceFluxStatsAggregator::WrappedStats::gatherTimeStepStats( real64 const 
   if( !m_periodStats.m_isGathering )
   {
     // if beginning a new period, we must initialize constant values over the period
-    m_periodStats.m_periodStart = time;
+    m_periodStats.m_periodStart = currentTime;
     m_periodStats.m_elementCount = elementCount;
     m_periodStats.m_isGathering = true;
   }
   else
   {
-    GEOS_WARNING_IF( time < m_periodStats.m_timeStepStart, GEOS_FMT( "{}: Time seems to have rollback, stats will be wrong.", m_aggregatorName ) );
-    if( time > m_periodStats.m_timeStepStart )
+    GEOS_WARNING_IF( currentTime< m_periodStats.m_timeStepStart, GEOS_FMT( "{}: Time seems to have rollback, stats will be wrong.", m_aggregatorName ) );
+    if( currentTime > m_periodStats.m_timeStepStart )
     {
       // if beginning a new timestep, we must accumulate the stats from previous timesteps (mass & dt) before collecting the new ones
       for( int ip = 0; ip < m_periodStats.getPhaseCount(); ++ip )
@@ -301,7 +301,7 @@ void SourceFluxStatsAggregator::WrappedStats::gatherTimeStepStats( real64 const 
     }
   }
   // current timestep stats to take into account (overriding if not begining a new timestep)
-  m_periodStats.m_timeStepStart = time;
+  m_periodStats.m_timeStepStart = currentTime;
   m_periodStats.m_timeStepDeltaTime = dt;
   for( int ip = 0; ip < m_periodStats.getPhaseCount(); ++ip )
   {

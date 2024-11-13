@@ -275,7 +275,7 @@ void CompositionalMultiphaseWell::registerDataOnMesh( Group & meshBodies )
         integer const numPhase = m_numPhases;
         // format: time,bhp,total_rate,total_vol_rate,phase0_vol_rate,phase1_vol_rate,...
         std::ofstream outputFile( m_ratesOutputDir + "/" + wellControlsName + ".csv" );
-        outputFile << "Time [s],BHP [Pa],Total rate [" << massUnit << "/s],Total " << conditionKey << " Volumetric rate [" << unitKey << "m3/s]";
+        outputFile << "Time [s],Time step [s],BHP [Pa],Total rate [" << massUnit << "/s],Total " << conditionKey << " Volumetric rate [" << unitKey << "m3/s]";
         for( integer ip = 0; ip < numPhase; ++ip )
           outputFile << ",Phase" << ip << " " << conditionKey << " volumetric rate [" << unitKey << "m3/s]";
         outputFile << std::endl;
@@ -2046,7 +2046,7 @@ void CompositionalMultiphaseWell::implicitStepComplete( real64 const & time_n,
 }
 
 void CompositionalMultiphaseWell::printRates( real64 const & time_n,
-                                              real64 const & GEOS_UNUSED_PARAM( dt ),
+                                              real64 const & dt,
                                               DomainPartition & domain )
 {
   forDiscretizationOnMeshTargets( domain.getMeshBodies(), [&] ( string const &,
@@ -2079,7 +2079,7 @@ void CompositionalMultiphaseWell::printRates( real64 const & time_n,
       if( m_writeCSV > 0 )
       {
         outputFile.open( m_ratesOutputDir + "/" + wellControlsName + ".csv", std::ios_base::app );
-        outputFile << time_n;
+        outputFile << time_n << "," << dt;
       }
 
       if( !wellControls.isWellOpen( time_n ) )

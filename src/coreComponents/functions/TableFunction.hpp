@@ -579,7 +579,7 @@ template< typename IN_ARRAY >
 GEOS_HOST_DEVICE
 GEOS_FORCE_INLINE
 real64
-TableFunction::KernelWrapper::getCoord( IN_ARRAY const & input, localIndex dim, InterpolationType interpolationMethod ) const
+TableFunction::KernelWrapper::getCoord( IN_ARRAY const & input, localIndex const dim, InterpolationType interpolationMethod ) const
 {
   // Determine the index to the nearest table entry
   localIndex subIndex;
