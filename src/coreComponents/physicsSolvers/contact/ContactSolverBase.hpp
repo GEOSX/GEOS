@@ -49,6 +49,11 @@ public:
 
   void synchronizeFractureState( DomainPartition & domain ) const;
 
+  real64 solverStep( real64 const & time_n,
+                     real64 const & dt,
+                     const integer cycleNumber,
+                     DomainPartition & domain ) override final;
+
   struct viewKeyStruct : SolidMechanicsLagrangianFEM::viewKeyStruct
   {
     constexpr static char const * fractureStateString() { return "fractureState"; }
