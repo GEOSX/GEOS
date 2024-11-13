@@ -15,4 +15,4 @@ Some key doxygen pages are linked below:
 
 `ObjectManagerBase API <../../doxygen_output/html/classgeos_1_1_object_manager_base.html>`_
 
-`SolverBase API <../../doxygen_output/html/classgeos_1_1_solver_base.html>`_
+`PhysicsSolverBase API <../../doxygen_output/html/classgeos_1_1_physics_solver_base.html>`_

@@ -28,6 +28,7 @@
 #include "physicsSolvers/multiphysics/poromechanicsKernels/ThermalSinglePhasePoromechanicsEFEM.hpp"
 #include "physicsSolvers/solidMechanics/SolidMechanicsLagrangianFEM.hpp"
 #include "physicsSolvers/solidMechanics/SolidMechanicsFields.hpp"
+#include "finiteVolume/FluxApproximationBase.hpp"
 
 
 namespace geos
@@ -489,9 +490,7 @@ void SinglePhasePoromechanicsEmbeddedFractures::updateState( DomainPartition & d
 
       arrayView1d< real64 const > const area = subRegion.getElementArea().toViewConst();
 
-      arrayView2d< real64 > const & fractureTraction = subRegion.template getField< fields::contact::traction >();
-
-      arrayView1d< real64 >  const & dTdpf = subRegion.template getField< fields::contact::dTraction_dPressure >();
+      arrayView2d< real64 > const & fractureContactTraction = subRegion.template getField< fields::contact::traction >();
 
       arrayView1d< real64 const > const & pressure =
         subRegion.template getField< fields::flow::pressure >();
@@ -524,8 +523,7 @@ void SinglePhasePoromechanicsEmbeddedFractures::updateState( DomainPartition & d
                                               aperture,
                                               oldHydraulicAperture,
                                               hydraulicAperture,
-                                              fractureTraction,
-                                              dTdpf );
+                                              fractureContactTraction );
 
         } );
       } );
@@ -545,6 +543,6 @@ void SinglePhasePoromechanicsEmbeddedFractures::updateState( DomainPartition & d
   } );
 }
 
-REGISTER_CATALOG_ENTRY( SolverBase, SinglePhasePoromechanicsEmbeddedFractures, std::string const &, Group * const )
+REGISTER_CATALOG_ENTRY( PhysicsSolverBase, SinglePhasePoromechanicsEmbeddedFractures, std::string const &, Group * const )
 
 } /* namespace geos */

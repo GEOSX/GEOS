@@ -187,7 +187,7 @@ void SolidMechanicsLagrangeContact::setupSystem( DomainPartition & domain,
   }
 
   // setup monolithic coupled system
-  SolverBase::setupSystem( domain, dofManager, localMatrix, rhs, solution, true ); // "true" is to force setSparsity
+  PhysicsSolverBase::setupSystem( domain, dofManager, localMatrix, rhs, solution, true ); // "true" is to force setSparsity
 
   if( !m_precond && m_linearSolverParameters.get().solverType != LinearSolverParameters::SolverType::direct )
   {
@@ -2363,6 +2363,6 @@ real64 SolidMechanicsLagrangeContact::setNextDt( real64 const & currentDt,
   return currentDt;
 }
 
-REGISTER_CATALOG_ENTRY( SolverBase, SolidMechanicsLagrangeContact, string const &, Group * const )
+REGISTER_CATALOG_ENTRY( PhysicsSolverBase, SolidMechanicsLagrangeContact, string const &, Group * const )
 
 } /* namespace geos */

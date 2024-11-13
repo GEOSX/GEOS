@@ -25,6 +25,7 @@ set( constitutive_headers
      contact/HydraulicApertureBase.hpp
      contact/HydraulicApertureRelationSelector.hpp
      contact/HydraulicApertureTable.hpp
+     contact/RateAndStateFriction.hpp
      diffusion/ConstantDiffusion.hpp
      diffusion/DiffusionBase.hpp
      diffusion/DiffusionFields.hpp
@@ -171,7 +172,6 @@ set( constitutive_headers
      thermalConductivity/MultiPhaseVolumeWeightedThermalConductivity.hpp
      thermalConductivity/SinglePhaseThermalConductivity.hpp
      thermalConductivity/SinglePhaseThermalConductivityBase.hpp
-     thermalConductivity/SinglePhaseThermalConductivityFields.hpp
      thermalConductivity/SinglePhaseThermalConductivitySelector.hpp
      thermalConductivity/ThermalConductivityFields.hpp
    )
@@ -194,6 +194,7 @@ set( constitutive_sources
      contact/FrictionlessContact.cpp
      contact/HydraulicApertureBase.cpp
      contact/HydraulicApertureTable.cpp
+     contact/RateAndStateFriction.cpp
      diffusion/ConstantDiffusion.cpp
      diffusion/DiffusionBase.cpp
      dispersion/DispersionBase.cpp
