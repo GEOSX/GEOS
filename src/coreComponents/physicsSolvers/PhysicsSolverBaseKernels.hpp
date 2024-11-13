@@ -20,7 +20,7 @@
 #ifndef GEOS_PHYSICSSOLVERS_SOLVERBASEKERNELS_HPP
 #define GEOS_PHYSICSSOLVERS_SOLVERBASEKERNELS_HPP
 
-#include "codingUtilities/EnumStrings.hpp"
+#include "common/format/EnumStrings.hpp"
 #include "common/DataTypes.hpp"
 #include "common/MpiWrapper.hpp"
 

@@ -22,11 +22,11 @@
  * of these strings, like stream insertion/extraction operators.
  */
 
-#ifndef GEOS_CODINGUTILITIES_ENUMSTRINGS_HPP
-#define GEOS_CODINGUTILITIES_ENUMSTRINGS_HPP
+#ifndef GEOS_COMMON_FORMAT_ENUMSTRINGS_HPP
+#define GEOS_COMMON_FORMAT_ENUMSTRINGS_HPP
 
 #include "common/format/StringUtilities.hpp"
-#include "codingUtilities/RTTypes.hpp"
+// #include "codingUtilities/RTTypes.hpp"
 #include "common/DataTypes.hpp"
 #include "common/logger/Logger.hpp"
 #include "common/format/Format.hpp"
@@ -66,12 +66,26 @@ constexpr int countArgs( ARGS ... )
  * may be used to get access to strings at runtime. While not strictly necessary,
  * it is recommended that macro call immediately follows the enum definition
  * (or the class definition, if enum is defined inside a class).
+ *
+ * enum struct VTKOutputMode
+ * {
+ *   BINARY,
+ *   ASCII
+ * };
+ * ENUM_STRINGS( VTKOutputMode,
+ *               "binary",
+ *               "ascii" );
  */
 #define ENUM_STRINGS( ENUM, ... )                                     \
   inline auto const & getEnumStrings( ENUM const )                    \
   {                                                                   \
     static constexpr char const * ss[] { __VA_ARGS__ };               \
     return ss;                                                        \
+  }                                                                   \
+                                                                      \
+  inline auto const & getEnumTypeNameString( ENUM const )             \
+  {                                                                   \
+    return #ENUM;                                                     \
   }                                                                   \
                                                                       \
   inline std::ostream & operator<<( std::ostream & os, ENUM const e ) \
@@ -139,7 +153,7 @@ struct EnumStrings
     std::size_t size = std::distance( std::begin( strings ), std::end( strings ) );
     base_type const index = static_cast< base_type >( e );
     GEOS_THROW_IF( index >= LvArray::integerConversion< base_type >( size ),
-                   "Invalid value " << index << " of type " << TypeName< ENUM >::brief() << ". Valid range is 0.." << size - 1,
+                   "Invalid value " << index << " of type " << getEnumTypeNameString( enum_type{} ) << ". Valid range is 0.." << size - 1,
                    InputError );
     return strings[ index ];
   }
@@ -154,7 +168,7 @@ struct EnumStrings
     auto const & strings = get();
     auto const it = std::find( std::begin( strings ), std::end( strings ), s );
     GEOS_THROW_IF( it == std::end( strings ),
-                   "Invalid value '" << s << "' of type " << TypeName< enum_type >::brief() << ". Valid options are: " << concat( ", " ),
+                   "Invalid value '" << s << "' of type " << getEnumTypeNameString( enum_type{} ) << ". Valid options are: " << concat( ", " ),
                    InputError );
     enum_type const e = static_cast< enum_type >( LvArray::integerConversion< base_type >( std::distance( std::begin( strings ), it ) ) );
     return e;
@@ -165,23 +179,6 @@ namespace internal
 {
 IS_VALID_EXPRESSION( HasEnumStrings, ENUM, getEnumStrings( std::declval< ENUM >() ) );
 }
-
-/**
- * @brief Specialization of TypeRegex for enumeration types with strings attached (pun intended).
- * @tparam ENUM the type of enumeration
- */
-template< typename ENUM >
-struct TypeRegex< ENUM, std::enable_if_t< internal::HasEnumStrings< ENUM > > >
-{
-  /**
-   * @brief @return Regex for validating enumeration inputs for @p ENUM type.
-   */
-  static Regex get()
-  {
-    return Regex( EnumStrings< ENUM >::concat( "|" ),
-                  "Input value must be one of { " + EnumStrings< ENUM >::concat( ", " ) + " }." );
-  }
-};
 
 } // namespace geos
 
@@ -209,4 +206,4 @@ struct GEOS_FMT_NS::formatter< Enum, std::enable_if_t< std::is_enum< Enum >::val
   }
 };
 
-#endif //GEOS_CODINGUTILITIES_ENUMSTRINGS_HPP
+#endif //GEOS_COMMON_FORMAT_ENUMSTRINGS_HPP
