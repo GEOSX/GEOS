@@ -281,7 +281,6 @@ void SolidMechanicsLagrangeContactBubbleStab::assembleSystem( real64 const time,
 
   assembleContact( dt, domain, dofManager, localMatrix, localRhs );
 
-  // ParallelMatrix parallel_matrix;
   // parallel_matrix.create( localMatrix.toViewConst(), dofManager.numLocalDofs(), MPI_COMM_GEOS );
   // parallel_matrix.write("newMatrix.mtx");
   // std::cout << localRhs << std::endl;
