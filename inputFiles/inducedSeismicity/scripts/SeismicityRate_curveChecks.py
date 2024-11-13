@@ -55,7 +55,7 @@ def curve_check_solution(**kwargs):
     return np.array(analytical_rates)   
 
 
-def debug( xmlFilePath ):
+def debug( xmlFilePath, hdf5FilePath ):
     #-------- Extract info from XML
     parameters = getParametersFromXML( xmlFilePath )
 
@@ -90,31 +90,29 @@ def debug( xmlFilePath ):
             writer.writerow([tau])
 
     import h5py            
-    file_path = '/usr/workspace/cusini1/geosx/geosx_dev/GEOS_2/build-quartz-gcc-12-release/Output/seismicityRate.hdf5'
-    with h5py.File(file_path, 'r') as file:
-        # List all groups
-        print("Keys: %s" % file.keys())
+    with h5py.File(hdf5FilePath, 'r') as file:
 
         # Get the data
         time = np.squeeze(file['seismicityRate Time'][:])
         seismicityRate = np.squeeze(file['seismicityRate'][:])
-        print(time)
-        print(seismicityRate)
     
     # Plot analytical (continuous line) and numerical (markers) aperture solution 
     fig, ax = plt.subplots(figsize=(16, 12), nrows=2, ncols=1)
     
-    ax[0].plot(times, tau_plot)
+    ax[0].plot(times, tau_plot, color='r', lw=4)
     ax[0].set_xlabel('time [s]', weight="bold")
     ax[0].set_ylabel('shear stress', weight="bold")
     
-    ax[1].plot(times, analytical_rates)
+    ax[1].plot(times, analytical_rates, label='Analytical Solution', color='r', lw=4)
+    ax[1].plot(time, seismicityRate, label='geos', color='k', lw=4)
     ax[1].set_xlabel('time [s]', weight="bold")
     ax[1].set_ylabel('seismic rate', weight="bold")
+    ax[1].legend( bbox_to_anchor=(0.1, 0.8), loc='center', borderaxespad=0., fontsize=12)
     plt.savefig("seismicRate.png")
 
 if __name__ == "__main__":
     parser = argparse.ArgumentParser()
-    parser.add_argument('-f', '--xml-file', type=str, help='Path to XML file')
+    parser.add_argument('-f', '--xml-file', type=str, required=True, help='Path to XML file')
+    parser.add_argument('-h5', '--hdf5-file', type=str, required=True, help='Path to dhf5 file')
     args = parser.parse_args()
-    debug( args.xml_file )
+    debug( args.xml_file, args.hdf5_file )
