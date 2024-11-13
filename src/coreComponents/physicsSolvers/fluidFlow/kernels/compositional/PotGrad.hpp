@@ -180,7 +180,7 @@ struct PotGrad
       }
 
       real64 const gC = gravCoef[er][esr][ei];
-      real64 const gravD     = trans[i] * gC;
+      real64 const gravD = trans[i] * gC;
       real64 const dGravD_dTrans = gC;
       real64 const dGravD_dP = dTrans_dPres[i] * gC;
 

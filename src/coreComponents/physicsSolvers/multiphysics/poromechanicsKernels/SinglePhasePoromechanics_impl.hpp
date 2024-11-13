@@ -420,9 +420,7 @@ complete( localIndex const k,
                                                                               stack.dLocalResidualMomentum_dDisplacement[numDofPerTestSupportPoint * localNode + dim],
                                                                               numDisplacementDofs );
 
-      //std::cout<<"before m_rhs="<<m_rhs[dof]<<" "<<stack.localResidualMomentum[numDofPerTestSupportPoint * localNode + dim]<<std::endl;
       RAJA::atomicAdd< parallelDeviceAtomic >( &m_rhs[dof], stack.localResidualMomentum[numDofPerTestSupportPoint * localNode + dim] );
-      //std::cout<<"after m_rhs="<<m_rhs[dof]<<" "<<stack.localResidualMomentum[numDofPerTestSupportPoint * localNode + dim]<<std::endl;
       maxForce = fmax( maxForce, fabs( stack.localResidualMomentum[numDofPerTestSupportPoint * localNode + dim] ) );
       m_matrix.template addToRowBinarySearchUnsorted< parallelDeviceAtomic >( dof,
                                                                               &stack.localPressureDofIndex,

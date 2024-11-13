@@ -408,6 +408,7 @@ addTransmissibilityCouplingPattern( DomainPartition const & domain,
 
             if( rowIndex >= 0 && rowIndex < pattern.numRows() )
             {
+
               // Get fracture, face and region/subregion/element indices (for elements on both sides)
               localIndex const fractureIndex = sei[iconn][kf];
 
@@ -653,6 +654,7 @@ assembleFluidMassResidualDerivativeWrtDisplacement( MeshLevel const & mesh,
 
         if( localRow >= 0 && localRow < localMatrix.numRows() )
         {
+
           localMatrix.addToRowBinarySearchUnsorted< serialAtomic >( localRow,
                                                                     nodeDOF,
                                                                     dRdU.data(),
