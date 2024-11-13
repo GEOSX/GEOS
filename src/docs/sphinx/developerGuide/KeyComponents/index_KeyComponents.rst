@@ -12,6 +12,8 @@ The main code components are described here.
 .. toctree::
    :maxdepth: 2
 
+   ./Overview.rst
+
    ./../../../../coreComponents/dataRepository/docs/dataRepository.rst
 
    ./XML

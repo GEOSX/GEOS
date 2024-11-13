@@ -352,6 +352,7 @@ For a simulation with multiple regions, we could define multiple relative permea
 
 *For more examples on how to contribute to GEOS, please read* :ref:`AddingNewSolver`
 
+.. _`InputSchemaGenerationPar`:
 
 Input Schema Generation
 ===========================
