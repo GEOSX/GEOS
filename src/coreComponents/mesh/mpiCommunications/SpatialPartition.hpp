@@ -50,22 +50,26 @@ public:
 	                const std::pair<localIndex, localIndex>& rhs) 
   {
 		bool rv = false;
-	// 	int a = 0;
-	// 	int b = 2;
-	// 	if (dimension == 0)
-	// 		a = 1;
-	// 	if (dimension == 2)
-	// 		b = 1;
+		int a = 0;
+		int b = 2;
+		if (dimension == 0)
+			a = 1;
+		if (dimension == 2)
+			b = 1;
 
-	// 	const arraySlice1d<real64 const>& lhsVect = refPositions[lhs.first];
-	// 	const arraySlice1d<real64 const>& rhsVect = refPositions[rhs.first];
 
-	// 	if (lhsVect[a] < rhsVect[a]) {
-	// 		rv = true;
-	// 	} else if (isEqual(lhsVect[a], rhsVect[a])
-	// 			&& (lhsVect[b] < rhsVect[b])) {
-	// 		rv = true;
-	// 	};
+		auto const & lhsVect = refPositions[lhs.first];
+		auto const & rhsVect = refPositions[rhs.first];
+
+		// const arraySlice1d<real64 const>& lhsVect = refPositions[lhs.first];
+		// const arraySlice1d<real64 const>& rhsVect = refPositions[rhs.first];
+
+		if (lhsVect[a] < rhsVect[a]) {
+			rv = true;
+		} else if (isEqual(lhsVect[a], rhsVect[a])
+				&& (lhsVect[b] < rhsVect[b])) {
+			rv = true;
+		};
 
 		return rv;
 	};
@@ -75,22 +79,25 @@ public:
                   const localIndex& rhs)
   {
 		bool rv = false;
-		// int a = 0;
-		// int b = 2;
-		// if (dimension == 0)
-		// 	a = 1;
-		// if (dimension == 2)
-		// 	b = 1;
+		int a = 0;
+		int b = 2;
+		if (dimension == 0)
+			a = 1;
+		if (dimension == 2)
+			b = 1;
 
 		// const arraySlice1d<real64 const>& lhsVect = refPositions[lhs];
 		// const arraySlice1d<real64 const>& rhsVect = refPositions[rhs];
 
-		// if (lhsVect[a] < rhsVect[a]) {
-		// 	rv = true;
-		// } else if (isEqual(lhsVect[a], rhsVect[a])
-		// 		&& (lhsVect[b] < rhsVect[b])) {
-		// 	rv = true;
-		// };
+		auto const & lhsVect = refPositions[lhs];
+		auto const & rhsVect = refPositions[rhs];
+
+		if (lhsVect[a] < rhsVect[a]) {
+			rv = true;
+		} else if (isEqual(lhsVect[a], rhsVect[a])
+				&& (lhsVect[b] < rhsVect[b])) {
+			rv = true;
+		};
 
 		return rv;
 	};

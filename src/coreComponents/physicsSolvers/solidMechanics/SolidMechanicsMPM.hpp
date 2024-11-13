@@ -433,8 +433,17 @@ public:
                                   int const b,
                                   real64 & frictionCoefficient );
 
-  void computePairwiseNodalContactForce( int & separable,
+  GEOS_FORCE_INLINE
+  GEOS_HOST_DEVICE
+  void computePairwiseNodalContactForce( ContactNormalTypeOption const & contactNormalType,
+                                         ContactGapCorrectionOption const & contactGapCorrection,
+                                         OverlapCorrectionOption const & overlapCorrection,
+                                         real64 const (& hEl) [3],
+                                         int const & planeStrain,
+                                         real64 const & smallMass,
+                                         int const & useSurfacePositionForContact,
                                          int const & useCohesiveTangentialForces,
+                                         int & separable,
                                          real64 const & dt,
                                          real64 const & frictionCoefficient,
                                          real64 const & mA,
@@ -460,6 +469,8 @@ public:
                                          arraySlice1d< real64 > const fA,
                                          arraySlice1d< real64 > const fB );
 
+  GEOS_FORCE_INLINE
+  GEOS_HOST_DEVICE
   void computeOrthonormalBasis( const real64 * e1,  // input "normal" unit vector.
                                 real64 * e2,        // output "tangential" unit vector.
                                 real64 * e3 );      // output "tangential" unit vector.
@@ -467,8 +478,6 @@ public:
   void setGridFieldLabels( NodeManager & nodeManager );
 
   void solverProfiling( std::string label );
-
-  void solverProfilingIf( std::string label, bool condition );
 
   real64 computeNeighborList( ParticleManager & particleManager );
 
@@ -681,7 +690,15 @@ void interpolateValueInRange( real64 const & x,
 
   // void directionalOverlapCorrection( real64 dt, ParticleManager & particleManager );
 
-  int evaluateSeparabilityCriterion( localIndex const & A,
+  GEOS_FORCE_INLINE
+  GEOS_HOST_DEVICE
+  int evaluateSeparabilityCriterion( int const & planeStrain,
+                                     int const & numContactGroups,
+                                     int const & treatFullyDamagedAsSingleField,
+                                     real64 const & separabilityMinDamage,
+                                     real64 const & thinFeatureDFGThreshold,
+                                     real64 const & neighborRadius,
+                                     localIndex const & A,
                                      localIndex const & B,
                                      real64 const & damageA,
                                      real64 const & damageB,
@@ -974,8 +991,6 @@ protected:
   MPMEventManager* m_mpmEventManager;
 
   int m_surfaceHealing;
-
-  int m_debugFlag;
 
   int m_computeXProfile;
   real64 m_xProfileWriteInterval;

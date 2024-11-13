@@ -220,7 +220,6 @@ SolidMechanicsMPM::SolidMechanicsMPM( const string & name,
   m_useEvents( 0 ),
   m_mpmEventManager( nullptr ),
   m_surfaceHealing( false ),
-  m_debugFlag( 0 ),
   m_computeXProfile( 0 ),
   m_xProfileWriteInterval( 0.0 ),
   m_nextXProfileWriteTime( 0.0 ),
@@ -912,12 +911,6 @@ SolidMechanicsMPM::SolidMechanicsMPM( const string & name,
     setRestartFlags( RestartFlags::NO_WRITE ).
     setDescription( "Enable events" );
 
-  registerWrapper( "debugFlag", &m_debugFlag ).
-    setInputFlag( InputFlags::OPTIONAL ).
-    setDefaultValue( m_debugFlag ).
-    setRestartFlags( RestartFlags::NO_WRITE ).
-    setDescription( "Enables debugging of MPM explicit timestep" );
-
   registerWrapper( "computeXProfile", &m_computeXProfile ).
     setInputFlag( InputFlags::OPTIONAL ).
     setDefaultValue( m_computeXProfile ).
@@ -1056,6 +1049,7 @@ void SolidMechanicsMPM::postRestartInitialization()
 
 void SolidMechanicsMPM::postInputInitialization()
 {
+  GEOS_LOG_RANK("Started SolidMechanicsMPM::postInputInitialization");
   SolverBase::postInputInitialization();
 
   if( m_overlapCorrection == OverlapCorrectionOption::SPH )
@@ -1297,10 +1291,14 @@ void SolidMechanicsMPM::postInputInitialization()
   // Move unique global grid node indices to member variable
   m_plottableFieldsSorted.insert( m_plottableFields.begin(), m_plottableFields.begin() + numUniqueValues );
   GEOS_LOG_RANK_0( "Plotting fields: " << m_plottableFieldsSorted );
+
+  GEOS_LOG_RANK("Ended SolidMechanicsMPM::postInputInitialization");
 }
 
 void SolidMechanicsMPM::registerDataOnMesh( Group & meshBodies )
 {
+  GEOS_LOG_RANK("Started SolidMechanicsMPM::registerDataOnMesh");
+
   using namespace fields::mpm;
 
   ExecutableGroup::registerDataOnMesh( meshBodies );
@@ -1627,10 +1625,13 @@ void SolidMechanicsMPM::registerDataOnMesh( Group & meshBodies )
       }
     }
   } );
+
+  GEOS_LOG_RANK("Ended SolidMechanicsMPM::registerDataOnMesh");
 }
 
 void SolidMechanicsMPM::initializePreSubGroups()
 {
+  GEOS_LOG_RANK("Started SolidMechanicsMPM::initializePreSubGroups");
   SolverBase::initializePreSubGroups();
 
   DomainPartition & domain = this->getGroupByPath< DomainPartition >( "/Problem/domain" );
@@ -1664,6 +1665,8 @@ void SolidMechanicsMPM::initializePreSubGroups()
   FiniteElementDiscretization const &
   feDiscretization = feDiscretizationManager.getGroup< FiniteElementDiscretization >( m_discretizationName );
   GEOS_UNUSED_VAR( feDiscretization );
+
+  GEOS_LOG_RANK("Ended SolidMechanicsMPM::initializePreSubGroups");
 }
 
 
@@ -1865,10 +1868,10 @@ void SolidMechanicsMPM::initialize( NodeManager & nodeManager,
 
   // Identify node sets for applying boundary conditions. We need boundary nodes and buffer nodes.
   Group & nodeSets = nodeManager.sets();
-  array1d< SortedArray< localIndex > > & m_boundaryNodes = nodeSets.getReference< array1d< SortedArray< localIndex > > >( viewKeyStruct::boundaryNodesString() );
-  array1d< SortedArray< localIndex > > & m_bufferNodes = nodeSets.getReference< array1d< SortedArray< localIndex > > >( viewKeyStruct::bufferNodesString() );
-  m_boundaryNodes.resize( 6 );
-  m_bufferNodes.resize( 6 );
+  array1d< SortedArray< localIndex > > & boundaryNodes = nodeSets.getReference< array1d< SortedArray< localIndex > > >( viewKeyStruct::boundaryNodesString() );
+  array1d< SortedArray< localIndex > > & bufferNodes = nodeSets.getReference< array1d< SortedArray< localIndex > > >( viewKeyStruct::bufferNodesString() );
+  boundaryNodes.resize( 6 );
+  bufferNodes.resize( 6 );
 
   for( int face=0; face<6; face++ )
   {
@@ -1898,8 +1901,8 @@ void SolidMechanicsMPM::initialize( NodeManager & nodeManager,
       }
     }
 
-    m_boundaryNodes[face].insert( tmpBoundaryNodes.begin(), tmpBoundaryNodes.end() );
-    m_bufferNodes[face].insert( tmpBufferNodes.begin(), tmpBufferNodes.end() );
+    boundaryNodes[face].insert( tmpBoundaryNodes.begin(), tmpBoundaryNodes.end() );
+    bufferNodes[face].insert( tmpBufferNodes.begin(), tmpBufferNodes.end() );
   }
 
   // GEOS_LOG_RANK_0( "Get boundary nodes");
@@ -2183,6 +2186,7 @@ void SolidMechanicsMPM::initialize( NodeManager & nodeManager,
   // GEOS_LOG_RANK_0( "Finished initialization");
 }
 
+GEOS_HOST_DEVICE
 localIndex SolidMechanicsMPM::partitionField( int numContactGroups,
                                               int damageFieldPartitioning,
                                               localIndex particleGroup,
@@ -2239,9 +2243,9 @@ real64 SolidMechanicsMPM::explicitStep( real64 const & time_n,
   #define USE_PHYSICS_LOOP
 
   //#######################################################################################
-  GEOS_LOG_RANK_IF( m_debugFlag == 1, "Get spatial partition, get node and particle managers. Resize m_iComm." );
+  GEOS_LOG_LEVEL_BY_RANK( 1, "Get spatial partition, get node and particle managers. Resize m_iComm." );
   solverProfiling( "Get spatial partition, get node and particle managers. Resize m_iComm." );
-  //#######################################################################################
+
   // SpatialPartition & partition = dynamic_cast< SpatialPartition & >( domain.getReference< PartitionBase >( keys::partitionManager ) );
   SpatialPartition & partition = dynamic_cast< SpatialPartition & >( domain.getGroup( domain.groupKeys.partitionManager ) );
   arrayView1d< int const > const periodic = partition.getPeriodic();
@@ -2259,67 +2263,70 @@ real64 SolidMechanicsMPM::explicitStep( real64 const & time_n,
   NodeManager & nodeManager = mesh.getNodeManager();
 
   m_iComm.resize( domain.getNeighbors().size() );
-
   //#######################################################################################
-  GEOS_LOG_RANK_IF( m_debugFlag == 1 && cycleNumber == 0 , "At time step zero, perform initialization calculations" );
-  solverProfilingIf( "At time step zero, perform initialization calculations", cycleNumber == 0 );
+
   //#######################################################################################
   if( cycleNumber == 0 )
   {
+    GEOS_LOG_LEVEL_BY_RANK( 1, "At time step zero, perform initialization calculations" );
+    solverProfiling( "At time step zero, perform initialization calculations");
     initialize( nodeManager, particleManager, partition );
   }
-
+  //#######################################################################################
+  
 
   //#######################################################################################
-  GEOS_LOG_RANK_IF( m_debugFlag == 1, "Set grid multi-field labels to avoid a VTK output bug" );
+  GEOS_LOG_LEVEL_BY_RANK( 1, "Set grid multi-field labels to avoid a VTK output bug" );
   solverProfiling( "Set grid multi-field labels to avoid a VTK output bug" );
-  //#######################################################################################
   // Must be done every time step despite grid fields being registered
   // TODO: Only doing this on the 1st cycle breaks restarts, can we do better? Why aren't labels part of the restart data?
   setGridFieldLabels( nodeManager );
-
+  //#######################################################################################
+  
 
   //#######################################################################################
-  GEOS_LOG_RANK_IF( m_debugFlag == 1, "Set grid fields to zero" );
+  GEOS_LOG_LEVEL_BY_RANK( 1, "Set grid fields to zero" );
   solverProfiling( "Set grid fields to zero" );
-  //#######################################################################################
   initializeGridFields( nodeManager );
-
-
   //#######################################################################################
-  GEOS_LOG_RANK_IF( m_debugFlag == 1 && m_useEvents == 1, "Check if event has been triggered" );
-  solverProfilingIf( "Check if event has been triggered", m_useEvents == 1);
+
+  
   //#######################################################################################
   if( m_useEvents == 1 )
   {
+    GEOS_LOG_LEVEL_BY_RANK( 1, "Check if event has been triggered" );
+    solverProfiling( "Check if event has been triggered");
     triggerEvents( dt,
                    time_n,
                    particleManager,
                    partition );
   }
+  //#######################################################################################
 
-   //#######################################################################################
-  GEOS_LOG_RANK_IF( m_debugFlag == 1 && m_subdivideParticles, "Subdivide highly deformed particles" );
-  solverProfilingIf( "Subdivide highly deformed particles", m_subdivideParticles == 1 );
+
   //#######################################################################################
   if( m_subdivideParticles == 1 )
   {
+    GEOS_LOG_LEVEL_BY_RANK( 1, "Subdivide highly deformed particles" );
+    solverProfiling( "Subdivide highly deformed particles");
     subdivideParticles( particleManager ); 
   }
+  //#######################################################################################
+
 
   //#######################################################################################
-  GEOS_LOG_RANK_IF( m_debugFlag == 1, "Update global-to-local map" );
+  GEOS_LOG_LEVEL_BY_RANK( 1, "Update global-to-local map" );
   solverProfiling( "Update global-to-local map" );
-  //#######################################################################################
   particleManager.updateMaps();
-
-
   //#######################################################################################
-  GEOS_LOG_RANK_IF( m_debugFlag == 1 && MpiWrapper::commSize( MPI_COMM_GEOSX ) > 1 && m_needsNeighborList == 1,  "Perform particle ghosting" );
-  solverProfilingIf( "Perform particle ghosting", MpiWrapper::commSize( MPI_COMM_GEOSX ) > 1 && m_needsNeighborList == 1 );
+
+
   //#######################################################################################
   if( MpiWrapper::commSize( MPI_COMM_GEOSX ) > 1 && m_needsNeighborList == 1 )
   {
+    GEOS_LOG_LEVEL_BY_RANK( 1,  "Perform particle ghosting" );
+    solverProfiling( "Perform particle ghosting" );
+    
     // Move everything into host memory space
     particleManager.forParticleSubRegions( [&]( ParticleSubRegion & subRegion )
     {
@@ -2332,31 +2339,29 @@ real64 SolidMechanicsMPM::explicitStep( real64 const & time_n,
     // Perform ghosting
     partition.getGhostParticlesFromNeighboringPartitions( domain, m_iComm, m_neighborRadius );
   }
+  //#######################################################################################
 
 
   //#######################################################################################
-  GEOS_LOG_RANK_IF(m_debugFlag == 1, "Get indices of non-ghost particles" );
+  GEOS_LOG_LEVEL_BY_RANK( 1, "Get indices of non-ghost particles" );
   solverProfiling( "Get indices of non-ghost particles" );
-  //#######################################################################################
   particleManager.forParticleSubRegions( [&]( ParticleSubRegion & subRegion )
   {
     subRegion.setActiveParticleIndices();
   } );
-
-
   //#######################################################################################
-  GEOS_LOG_RANK_IF(m_debugFlag == 1 && ( periodic[0] == 1 || periodic[1] == 1 || periodic[2] == 1 ), "Correct ghost particle centers across periodic boundaries" );
-  solverProfilingIf( "Correct ghost particle centers across periodic boundaries",  periodic[0] == 1 || periodic[1] == 1 || periodic[2] == 1 );
+
+
   //#######################################################################################
   if( periodic[0] == 1 || periodic[1] == 1 || periodic[2] == 1 )
   {
+    GEOS_LOG_LEVEL_BY_RANK( 1, "Correct ghost particle centers across periodic boundaries" );
+    solverProfiling( "Correct ghost particle centers across periodic boundaries" );
     correctGhostParticleCentersAcrossPeriodicBoundaries(particleManager, partition);
   }
-
-
   //#######################################################################################
-  GEOS_LOG_RANK_IF(m_debugFlag == 1 && m_needsNeighborList == 1, "Construct neighbor list" );
-  solverProfilingIf( "Construct neighbor list", m_needsNeighborList == 1 );
+
+
   //#######################################################################################
   if( m_needsNeighborList == 1 )
   { // This optimization compares neighbor list creation time for different
@@ -2369,62 +2374,65 @@ real64 SolidMechanicsMPM::explicitStep( real64 const & time_n,
     // }
     // else
     // {
+    GEOS_LOG_LEVEL_BY_RANK( 1, "Construct neighbor list" );
+    solverProfiling( "Construct neighbor list" );
     (void) computeNeighborList( particleManager );
     // }
   }
+  //#######################################################################################
 
 
   //#######################################################################################
-  GEOS_LOG_RANK_IF( m_debugFlag == 1 && ( m_surfaceDetection > 0 && ( cycleNumber == 0 || m_surfaceHealing == true ) ), "Compute surface flags" );
-  solverProfilingIf( "Compute surface flags", ( m_surfaceDetection > 0 && ( cycleNumber == 0 || m_surfaceHealing == true ) ) );
-  //#######################################################################################
-  if( m_surfaceDetection > 0 && ( cycleNumber == 0 || m_surfaceHealing == true ) )
+  if( m_surfaceDetection > 0 && ( cycleNumber == 0 || m_surfaceHealing == 1 ) )
   {
+    GEOS_LOG_LEVEL_BY_RANK( 1, "Compute surface flags" );
+    solverProfiling( "Compute surface flags" );
     m_surfaceHealing = false;
     computeSurfaceFlags( particleManager );
   }
+  //#######################################################################################
   
 
   //#######################################################################################
-  GEOS_LOG_RANK_IF( m_debugFlag == 1 && m_computeSurfaceNormals == 1, "Compute particle surface normals" );
-  solverProfilingIf( "Compute particle surface normals", m_computeSurfaceNormals == 1 );
-  //#######################################################################################
   if( m_computeSurfaceNormals == 1 )
   {
+    GEOS_LOG_LEVEL_BY_RANK( 1, "Compute particle surface normals" );
+    solverProfiling( "Compute particle surface normals" );
     m_computeSurfaceNormals = 0;
     computeSurfaceNormals( particleManager,
                            nodeManager );
   }
-
-
   //#######################################################################################
-  GEOS_LOG_RANK_IF( m_debugFlag == 1 && m_computeSurfacePositions == 1, "Compute particle surface positions" );
-  solverProfilingIf( "Compute particle surface positions", m_computeSurfacePositions == 1 );
+
+
   //#######################################################################################
   if( m_computeSurfacePositions == 1 )
   {
+    GEOS_LOG_LEVEL_BY_RANK( 1, "Compute particle surface positions" );
+    solverProfiling( "Compute particle surface positions" );
     m_computeSurfacePositions = 0;
     computeSurfacePositions( particleManager,
                              nodeManager );
   }
-
-
   //#######################################################################################
-  GEOS_LOG_RANK_IF( m_debugFlag == 1 && m_prescribedBcTable == 1, "Update BCs based on bcTable" );
-  solverProfilingIf( "Update BCs based on bcTable", m_prescribedBcTable == 1 );
+
+
   //#######################################################################################
   if( m_prescribedBcTable == 1 )
   {
+    GEOS_LOG_LEVEL_BY_RANK( 1, "Update BCs based on bcTable" );
+    solverProfiling( "Update BCs based on bcTable" );    
     boundaryConditionUpdate( dt, time_n );
   }
-
-
   //#######################################################################################
-  GEOS_LOG_RANK_IF( m_debugFlag == 1 && m_disableSurfaceNormalsAndPositionsOnDamage == 1, "Disable explicit normals and positions of fully damaged particles" );
-  solverProfilingIf( "Disable explicit normals and positions of fully damaged particles", m_disableSurfaceNormalsAndPositionsOnDamage == 1 );
+
+
   //#######################################################################################
   if( m_disableSurfaceNormalsAndPositionsOnDamage == 1 )
   {
+    GEOS_LOG_LEVEL_BY_RANK( 1, "Disable explicit normals and positions of fully damaged particles" );
+    solverProfiling( "Disable explicit normals and positions of fully damaged particles" );
+    
     particleManager.forParticleSubRegions( [&]( ParticleSubRegion & subRegion )
     {
       arrayView1d< real64 > const particleDamage = subRegion.getParticleDamage();
@@ -2455,31 +2463,33 @@ real64 SolidMechanicsMPM::explicitStep( real64 const & time_n,
       } );
     } );
   }
-
-
   //#######################################################################################
-  GEOS_LOG_RANK_IF( m_debugFlag == 1 && m_cpdiDomainScaling == 1, "Perform r-vector scaling (CPDI domain scaling)" );
-  solverProfilingIf( "Perform r-vector scaling (CPDI domain scaling)", m_cpdiDomainScaling == 1 );
+
+
   //#######################################################################################
   if( m_cpdiDomainScaling == 1 )
   {
+    GEOS_LOG_LEVEL_BY_RANK( 1, "Perform r-vector scaling (CPDI domain scaling)" );
+    solverProfiling( "Perform r-vector scaling (CPDI domain scaling)" );
     cpdiDomainScaling( particleManager );
   }
+  //#######################################################################################
 
 
   //#######################################################################################
-  GEOS_LOG_RANK_IF( m_debugFlag == 1, "Resize and populate mapping arrays" );
+  GEOS_LOG_LEVEL_BY_RANK( 1, "Resize and populate mapping arrays" );
   solverProfiling( "Resize and populate mapping arrays" );
-  //#######################################################################################
   resizeMappingArrays( particleManager );
   populateMappingArrays( particleManager, nodeManager );
-
   //#######################################################################################
-  GEOS_LOG_RANK_IF( m_debugFlag == 1 && m_enableCohesiveLaws == 1, "Compute reactions due to cohesive laws" );
-  solverProfilingIf( "Compute reactions due to cohesive laws", m_enableCohesiveLaws == 1 );
+
+
   //#######################################################################################
   if( m_enableCohesiveLaws == 1 )
   { 
+    GEOS_LOG_LEVEL_BY_RANK( 1, "Compute reactions due to cohesive laws" );
+    solverProfiling( "Compute reactions due to cohesive laws" );
+    
     if( m_referenceCohesiveZone == 1 )
     {
       projectParticleSurfaceNormalsToGrid( domain, particleManager, nodeManager, mesh );
@@ -2495,86 +2505,92 @@ real64 SolidMechanicsMPM::explicitStep( real64 const & time_n,
     enforceCohesiveLaw( particleManager,
                         nodeManager );
   }
-
-
   //#######################################################################################
-  GEOS_LOG_RANK_IF( m_debugFlag == 1 && m_damageFieldPartitioning == 1, "Compute damage field gradient" );
-  solverProfilingIf( "Compute damage field gradient", m_damageFieldPartitioning == 1 );
+
+
   //#######################################################################################
   if( m_damageFieldPartitioning == 1 )
   {
+    GEOS_LOG_LEVEL_BY_RANK( 1, "Compute damage field gradient" );
+    solverProfiling( "Compute damage field gradient" );
     computeDamageFieldGradient( particleManager );
   }
+  //#######################################################################################
 
 
   //#######################################################################################
-  GEOS_LOG_RANK_IF( m_debugFlag == 1, "Update surface flag overload" );
+  GEOS_LOG_LEVEL_BY_RANK( 1, "Update surface flag overload" );
   solverProfiling( "Update surface flag overload" );
-  //#######################################################################################
   // We now read in surface flags so don't need to update them based on damage.
   // Keeping this here as it will eventually be used to support other surface
   // flag usages.
   // updateSurfaceFlagOverload( particleManager );
-
-
   //#######################################################################################
-  GEOS_LOG_RANK_IF( m_debugFlag == 1 && m_computeSPHJacobian > 0 , "Compute SPH Jacobian for overlap correction" );
-  solverProfilingIf( "Compute SPH Jacobian for overlap correction", m_computeSPHJacobian > 0 );
+
+
   //#######################################################################################
   if( m_computeSPHJacobian > 0 )
   {
+    GEOS_LOG_LEVEL_BY_RANK( 1, "Compute SPH Jacobian for overlap correction" );
+    solverProfiling( "Compute SPH Jacobian for overlap correction" );
     computeSPHJacobian( particleManager );
   }
-
-
   //#######################################################################################
-  GEOS_LOG_RANK_IF( m_debugFlag == 1 && m_damageFieldPartitioning == 1, "Project damage field gradient to the grid and then sync" );
-  solverProfilingIf( "Project damage field gradient to the grid and then sync", m_damageFieldPartitioning == 1 );
+
+
   //#######################################################################################
   if( m_damageFieldPartitioning == 1 )
   {
+    GEOS_LOG_LEVEL_BY_RANK( 1, "Project damage field gradient to the grid and then sync" );
+    solverProfiling( "Project damage field gradient to the grid and then sync" );
     projectDamageFieldGradientToGrid( domain, 
                                       particleManager, 
                                       nodeManager,
                                       mesh );
   }
+  //#######################################################################################
+
 
   //#######################################################################################
-  GEOS_LOG_RANK_IF( m_debugFlag == 1, "Compute particle body forces" );
+  GEOS_LOG_LEVEL_BY_RANK( 1, "Compute particle body forces" );
   solverProfiling( "Compute particle body forces" );
-  //#######################################################################################
   computeBodyForce( particleManager);
+  //#######################################################################################
+
 
   //#######################################################################################
-  GEOS_LOG_RANK_IF( m_debugFlag == 1 && m_generalizedVortexMMS == 1, "Compute particle body forces" );
-  solverProfilingIf( "Compute particle body forces", m_generalizedVortexMMS == 1 );
-  //#######################################################################################
-  if( m_generalizedVortexMMS == 1 ){
+  if( m_generalizedVortexMMS == 1 )
+  {
+    GEOS_LOG_LEVEL_BY_RANK( 1, "Compute particle body forces" );
+    solverProfiling( "Compute particle body forces" );
     computeGeneralizedVortexMMSBodyForce( time_n,
                                           particleManager );
   } 
-
   //#######################################################################################
-  GEOS_LOG_RANK_IF( m_debugFlag == 1 && m_enableBoreholePressure == 1, "Update borehole stress state on grid nodes" );
-  solverProfilingIf( "Update borehole stress state on grid nodes", m_enableBoreholePressure == 1 );
+
+
   //#######################################################################################
   if( m_enableBoreholePressure == 1 ){
+    GEOS_LOG_LEVEL_BY_RANK( 1, "Update borehole stress state on grid nodes" );
+    solverProfiling( "Update borehole stress state on grid nodes" );
     updateGridBoreholeStress( nodeManager );
   } 
+  //#######################################################################################
+
 
   //#######################################################################################
-  GEOS_LOG_RANK_IF( m_debugFlag == 1, "Particle-to-grid interpolation" );
+  GEOS_LOG_LEVEL_BY_RANK( 1, "Particle-to-grid interpolation" );
   solverProfiling( "Particle-to-grid interpolation" );
-  //#######################################################################################
   particleToGrid( time_n,
                   cycleNumber,
                   particleManager,
                   nodeManager );
+  //#######################################################################################
+
 
   //#######################################################################################
-  GEOS_LOG_RANK_IF( m_debugFlag == 1, "Grid MPI operations" );
+  GEOS_LOG_LEVEL_BY_RANK( 1, "Grid MPI operations" );
   solverProfiling( "Grid MPI operations" );
-  //#######################################################################################
   std::vector< std::string > fieldNames1 = { viewKeyStruct::gridMassString(),
                                              viewKeyStruct::gridDamageString(),
                                              viewKeyStruct::gridMaterialVolumeString(),
@@ -2585,57 +2601,58 @@ real64 SolidMechanicsMPM::explicitStep( real64 const & time_n,
   syncGridFields( fieldNames1, domain, nodeManager, mesh, MPI_SUM );
   std::vector< std::string > fieldNames2 = { viewKeyStruct::gridMaxDamageString() };
   syncGridFields( fieldNames2, domain, nodeManager, mesh, MPI_MAX );
+  //#######################################################################################
 
 
   //#######################################################################################
-  GEOS_LOG_RANK_IF( m_debugFlag == 1, "Determine trial momenta and velocities based on acceleration due to internal and external forces, but before contact enforcement" );
+  GEOS_LOG_LEVEL_BY_RANK( 1, "Determine trial momenta and velocities based on acceleration due to internal and external forces, but before contact enforcement" );
   solverProfiling( "Determine trial momenta and velocities based on acceleration due to internal and external forces, but before contact enforcement" );
-  //#######################################################################################
   gridTrialUpdate( dt, nodeManager );
-
-
   //#######################################################################################
-  GEOS_LOG_RANK_IF( m_debugFlag == 1 && m_numVelocityFields > 1, "Contact enforcement" );
-  solverProfilingIf( "Contact enforcement", m_numVelocityFields > 1 );
+
+
   //#######################################################################################
   if( m_numVelocityFields > 1 || std::any_of(m_boundaryConditionTypes.begin(), m_boundaryConditionTypes.end(),[]( int & bc ){ return bc == 3; }) )
   {
+    GEOS_LOG_LEVEL_BY_RANK( 1, "Contact enforcement" );
+    solverProfiling( "Contact enforcement" );
     enforceContact( dt, domain, particleManager, nodeManager, mesh );
   }
-
   //#######################################################################################
-  GEOS_LOG_RANK_IF( m_debugFlag == 1 && ( m_stressControl[0] == 1 || m_stressControl[1] == 1 || m_stressControl[2] == 1 ), "Interpolate stress table" );
-  solverProfilingIf( "Interpolate stress table", m_stressControl[0] == 1 || m_stressControl[1] == 1 || m_stressControl[2] == 1 );
+
+
   //#######################################################################################
   if( m_stressControl[0] == 1 || m_stressControl[1] == 1 || m_stressControl[2] == 1 )
   {
+    GEOS_LOG_LEVEL_BY_RANK( 1, "Interpolate stress table" );
+    solverProfiling( "Interpolate stress table" );
     interpolateStressTable( dt, time_n );
   }
-
-
   //#######################################################################################
-  GEOS_LOG_RANK_IF( m_debugFlag == 1 && ( !( m_stressControl[0] && m_stressControl[1]&& m_stressControl[2] ) && ( m_prescribedBoundaryFTable == 1 || m_prescribedFTable == 1 ) ), "Interpolate F table" );
-  solverProfilingIf( "Interpolate F table", !( m_stressControl[0] && m_stressControl[1]&& m_stressControl[2] ) && ( m_prescribedBoundaryFTable == 1 || m_prescribedFTable == 1 ) );
+
+
   //#######################################################################################
   if( !( m_stressControl[0] && m_stressControl[1]&& m_stressControl[2] ) && ( m_prescribedBoundaryFTable == 1 || m_prescribedFTable == 1 ) )
   {
+    GEOS_LOG_LEVEL_BY_RANK( 1, "Interpolate F table" );
+    solverProfiling( "Interpolate F table" );
     interpolateFTable( dt, time_n );
   }
+  //#######################################################################################
 
 
   //#######################################################################################
-  GEOS_LOG_RANK_IF( m_debugFlag == 1, "Apply essential boundary conditions" );
+  GEOS_LOG_LEVEL_BY_RANK( 1, "Apply essential boundary conditions" );
   solverProfiling( "Apply essential boundary conditions" );
-  //#######################################################################################
   applyEssentialBCs( dt, time_n, nodeManager );
-
-
   //#######################################################################################
-  GEOS_LOG_RANK_IF( m_debugFlag == 1, "Compute local averages to generate profile in x-direction: write to file." );
-  solverProfiling( "Compute local averages to generate profile in x-direction: write to file." );
+
+
   //#######################################################################################
   if( m_computeXProfile == 1 && ( ( m_nextXProfileWriteTime <= time_n ) || ( cycleNumber == 0 ) ) )
   {
+    GEOS_LOG_LEVEL_BY_RANK( 1, "Compute local averages to generate profile in x-direction: write to file." );
+    solverProfiling( "Compute local averages to generate profile in x-direction: write to file." );
     computeXProfile( cycleNumber,
                      time_n,
                      dt,
@@ -2643,181 +2660,190 @@ real64 SolidMechanicsMPM::explicitStep( real64 const & time_n,
                      partition );
     m_nextXProfileWriteTime += m_xProfileWriteInterval;
   }
+  //#######################################################################################
 
 
   // //#######################################################################################
-  // solverProfilingIf( "Directional overlap correction", m_directionalOverlapCorrection == 1 );
   // TODO: Figure out syncing on ghost particles and move this to after the F update
-  // //#######################################################################################
   // if( m_directionalOverlapCorrection == 1 )
   // {
+  //   GEOS_LOG_LEVEL_BY_RANK( 1, "Directional overlap correction" );
+  //   solverProfiling( "Directional overlap correction" );
   //   directionalOverlapCorrection( dt, particleManager );
   // }
+  // //#######################################################################################
 
 
   //#######################################################################################
-  GEOS_LOG_RANK_IF( m_debugFlag == 1, "Grid-to-particle interpolation" );
+  GEOS_LOG_LEVEL_BY_RANK( 1, "Grid-to-particle interpolation" );
   solverProfiling( "Grid-to-particle interpolation" );
-  //#######################################################################################
   gridToParticle( dt, particleManager, nodeManager, domain, mesh );
+  //#######################################################################################
 
 
   //#######################################################################################
-  GEOS_LOG_RANK_IF( m_debugFlag == 1 && m_prescribedFTable == 1, "Update particle positions according to prescribed F Table" );
-  solverProfilingIf( "Update particle positions according to prescribed F Table", m_prescribedFTable == 1 );
-  //####################################################################################### 
   if( m_prescribedFTable == 1 )
   {
+    GEOS_LOG_LEVEL_BY_RANK( 1, "Update particle positions according to prescribed F Table" );
+    solverProfiling( "Update particle positions according to prescribed F Table" );
     applySuperimposedVelocityGradient( dt,
                                        particleManager,
                                        partition );
   }
+  //####################################################################################### 
+
 
   //#######################################################################################
-  GEOS_LOG_RANK_IF( m_debugFlag == 1, "Update deformation gradient" );
+  GEOS_LOG_LEVEL_BY_RANK( 1, "Update deformation gradient" );
   solverProfiling( "Update deformation gradient" );
-  //#######################################################################################
   updateDeformationGradient( dt, particleManager );
-
-
   //#######################################################################################
-  GEOS_LOG_RANK_IF( m_debugFlag == 1 && m_overlapCorrection == OverlapCorrectionOption::SPH, "Scale F based on SPH-J" );
-  solverProfilingIf( "Scale F based on SPH-J", m_overlapCorrection == OverlapCorrectionOption::SPH );
+
+
   //#######################################################################################
   // Scale Jacobian to prevent overdensification if overlap correction type 2 is used.
   if( m_overlapCorrection == OverlapCorrectionOption::SPH )
   {
+    GEOS_LOG_LEVEL_BY_RANK( 1, "Scale F based on SPH-J" );
+    solverProfiling( "Scale F based on SPH-J" );
     overlapCorrection( dt,
                        particleManager );
   }
+  //#######################################################################################
+
 
   //#######################################################################################
-  GEOS_LOG_RANK_IF( m_debugFlag == 1, "Update particle geometry (e.g. volume, r-vectors) and density" );
+  GEOS_LOG_LEVEL_BY_RANK( 1, "Update particle geometry (e.g. volume, r-vectors) and density" );
   solverProfiling( "Update particle geometry (e.g. volume, r-vectors) and density" );
-  //#######################################################################################
   particleKinematicUpdate( particleManager );
+  //#######################################################################################
+
 
   //#######################################################################################
-  GEOS_LOG_RANK_IF( m_debugFlag == 1, "Compute kinetic energy" );
+  GEOS_LOG_LEVEL_BY_RANK( 1, "Compute kinetic energy" );
   solverProfiling( "Compute kinetic energy" );
-  //#######################################################################################
   // 1/2*m*v^2 calculation, TODO add micro kinetic energy.
   computeKineticEnergy( particleManager );
+  //#######################################################################################
 
 
   //#######################################################################################
-  GEOS_LOG_RANK_IF( m_debugFlag == 1 && m_useArtificialViscosity, "Compute artificial viscosity" );
-  solverProfilingIf( "Compute artificial viscosity", m_useArtificialViscosity );
-  //#######################################################################################
-  if( m_useArtificialViscosity )
+  if( m_useArtificialViscosity == 1 )
   {
+    GEOS_LOG_LEVEL_BY_RANK( 1, "Compute artificial viscosity" );
+    solverProfiling( "Compute artificial viscosity" );
     computeArtificialViscosity( particleManager );
   }
-
   //#######################################################################################
-  GEOS_LOG_RANK_IF( m_debugFlag == 1 && m_computeInternalEnergyAndTemperature == 1, "Increment internalEnergy with old stress and Fdot" );
-  solverProfilingIf( "Increment internalEnergy with old stress and Fdot", m_computeInternalEnergyAndTemperature == 1 );
+
+
   //#######################################################################################
   if( m_computeInternalEnergyAndTemperature == 1 )
   {
+    GEOS_LOG_LEVEL_BY_RANK( 1, "Increment internalEnergy with old stress and Fdot" );
+    solverProfiling( "Increment internalEnergy with old stress and Fdot" );
     computeInternalEnergyAndTemperature( dt,
                                         particleManager );
   }
+  //#######################################################################################
+
 
   //#######################################################################################
-  GEOS_LOG_RANK_IF( m_debugFlag == 1, "Update constitutive model dependencies" );
+  GEOS_LOG_LEVEL_BY_RANK( 1, "Update constitutive model dependencies" );
   solverProfiling( "Update constitutive model dependencies" );
-  //#######################################################################################
   updateConstitutiveModelDependencies( particleManager );
+  //#######################################################################################
+
 
   //#######################################################################################
-  GEOS_LOG_RANK_IF( m_debugFlag == 1, "Update stress" );
+  GEOS_LOG_LEVEL_BY_RANK( 1, "Update stress" );
   solverProfiling( "Update stress" );
-  //#######################################################################################
   updateStress( dt, particleManager );
+  //#######################################################################################
+
 
   //#######################################################################################
-  GEOS_LOG_RANK_IF( m_debugFlag == 1, "Update solver dependencies" );
+  GEOS_LOG_LEVEL_BY_RANK( 1, "Update solver dependencies" );
   solverProfiling( "Update solver dependencies" );
-  //#######################################################################################
   updateSolverDependencies( particleManager );
-
   //#######################################################################################
-  GEOS_LOG_RANK_IF( m_debugFlag == 1 && m_computeInternalEnergyAndTemperature == 1, "Increment internalEnergy with new stress and Fdot" );
-  solverProfilingIf( "Increment internalEnergy with new stress and Fdot", m_computeInternalEnergyAndTemperature == 1 );
+
+
   //#######################################################################################
   if( m_computeInternalEnergyAndTemperature == 1 )
   {
+    GEOS_LOG_LEVEL_BY_RANK( 1, "Increment internalEnergy with new stress and Fdot" );
+    solverProfiling( "Increment internalEnergy with new stress and Fdot" );
     computeInternalEnergyAndTemperature( dt,
                                         particleManager );
   }
+  //#######################################################################################
   
-  //#######################################################################################
-  GEOS_LOG_RANK_IF( m_debugFlag == 1 && m_boxAverageHistory == 1, "Compute and write box averages" );
-  solverProfilingIf( "Compute and write box averages", m_boxAverageHistory == 1 );
-  //#######################################################################################
-  if( m_boxAverageHistory == 1 )
-  {
-    if( time_n + dt >= m_nextBoxAverageWriteTime )
-    {
-      computeAndWriteBoxAverage( time_n, dt, particleManager );
-      m_nextBoxAverageWriteTime += m_boxAverageWriteInterval;
-    }
-  }
 
   //#######################################################################################
-  GEOS_LOG_RANK_IF( m_debugFlag == 1 && m_writeParticleData == 1, "Write particle data to file" );
-  solverProfilingIf( "Write particle data to file", m_writeParticleData == 1 );
-  //#######################################################################################
-  if( m_writeParticleData == 1 )
+  if( m_boxAverageHistory == 1 && time_n + dt >= m_nextBoxAverageWriteTime )
   {
-    if( time_n + dt >= m_nextParticleDataWriteTime )
-    {
-      writeParticleData( time_n, particleManager );
-      m_nextParticleDataWriteTime += m_particleDataWriteInterval;
-    }
+    GEOS_LOG_LEVEL_BY_RANK( 1, "Compute and write box averages" );
+    solverProfiling( "Compute and write box averages" );
+    computeAndWriteBoxAverage( time_n, dt, particleManager );
+    m_nextBoxAverageWriteTime += m_boxAverageWriteInterval;
   }
+  //#######################################################################################
+
 
   //#######################################################################################
-  GEOS_LOG_RANK_IF( m_debugFlag == 1 && ( m_stressControl[0] == 1 || m_stressControl[1] == 1 || m_stressControl[2] == 1 ), "Stress control" );
-  solverProfilingIf("Stress control",  m_stressControl[0] == 1 || m_stressControl[1] == 1 || m_stressControl[2] == 1 );
+  if( m_writeParticleData == 1 && time_n + dt >= m_nextParticleDataWriteTime )
+  {
+    GEOS_LOG_LEVEL_BY_RANK( 1, "Write particle data to file" );
+    solverProfiling( "Write particle data to file" );
+    writeParticleData( time_n, particleManager );
+    m_nextParticleDataWriteTime += m_particleDataWriteInterval;
+  }
+  //#######################################################################################
+
+
   //#######################################################################################
   // stress control reads a principal stress table.  we compute the
   // difference between most recent box sum and the prescribed value and increment
   // the domain strain rate accordingly.  This is a simple control loop.
   if( m_stressControl[0] == 1 || m_stressControl[1] == 1 || m_stressControl[2] == 1 )
   {
+    GEOS_LOG_LEVEL_BY_RANK( 1, "Stress control" );
+    solverProfiling( "Stress control" );
     stressControl( dt,
                    particleManager,
                    partition );
   }
+  //#######################################################################################
 
 
   //#######################################################################################
-  GEOS_LOG_RANK_IF( m_debugFlag == 1, "Calculate stable time step" );
+  GEOS_LOG_LEVEL_BY_RANK( 1, "Calculate stable time step" );
   solverProfiling( "Calculate stable time step" );
-  //#######################################################################################
   real64 dtReturn = getStableTimeStep( particleManager );
+  //#######################################################################################
+
 
   //#######################################################################################
-  GEOS_LOG_RANK_IF( m_debugFlag == 1, "Update global-to-local map" );
+  GEOS_LOG_LEVEL_BY_RANK( 1, "Update global-to-local map" );
   solverProfiling( "Update global-to-local map" );
-  //#######################################################################################
   flagOutOfRangeParticles( particleManager );
+  //#######################################################################################
 
 
   //#######################################################################################
-  GEOS_LOG_RANK_IF( m_debugFlag == 1, "Delete bad particles" );
+  GEOS_LOG_LEVEL_BY_RANK( 1, "Delete bad particles" );
   solverProfiling( "Delete bad particles" );
-  //#######################################################################################
   deleteBadParticles( particleManager );
-
   //#######################################################################################
-  GEOS_LOG_RANK_IF( m_debugFlag == 1 && MpiWrapper::commSize( MPI_COMM_GEOSX ) > 1, "Particle repartitioning" );
-  solverProfilingIf( "Particle repartitioning", MpiWrapper::commSize( MPI_COMM_GEOSX ) > 1 );
+
+
   //#######################################################################################
   if( MpiWrapper::commSize( MPI_COMM_GEOSX ) > 1 )
   {
+    GEOS_LOG_LEVEL_BY_RANK( 1, "Particle repartitioning" );
+    solverProfiling( "Particle repartitioning" );
+    
     particleManager.forParticleSubRegions( [&]( ParticleSubRegion & subRegion )
     {
       subRegion.forWrappers( [&]( WrapperBase & wrapper )
@@ -2835,44 +2861,52 @@ real64 SolidMechanicsMPM::explicitStep( real64 const & time_n,
         correctParticleCentersAcrossPeriodicBoundaries(particleManager, partition);
     }
   }
-
   //#######################################################################################
-  GEOS_LOG_RANK_IF( m_debugFlag == 1 && ( m_prescribedBoundaryFTable == 1 || m_prescribedFTable == 1 || m_stressControl[0] == 1 || m_stressControl[1] == 1 || m_stressControl[2] == 1 ), "Resize grid based on F-table" );
-  solverProfilingIf( "Resize grid based on F-table",  m_prescribedBoundaryFTable == 1 || m_prescribedFTable == 1 || m_stressControl[0] == 1 || m_stressControl[1] == 1 || m_stressControl[2] == 1 );
+
+
   //#######################################################################################
   if( m_prescribedBoundaryFTable == 1 || m_prescribedFTable == 1 || m_stressControl[0] == 1 || m_stressControl[1] == 1 || m_stressControl[2] == 1 )
   {
+    GEOS_LOG_LEVEL_BY_RANK( 1, "Resize grid based on F-table" );
+    solverProfiling( "Resize grid based on F-table" );
     resizeGrid( partition, nodeManager, dt );
   }
+  //#######################################################################################
 
- //#######################################################################################
-  GEOS_LOG_RANK_IF( m_debugFlag == 1 && m_resetDefGradForFullyDamagedParticles == 1, "Set F to scaled value for damaged particles, maintain J" );
-  solverProfilingIf( "Set F to scaled value for damaged particles, maintain J",  m_resetDefGradForFullyDamagedParticles == 1 );
+
   //#######################################################################################
   // Option to set F for fully damaged particles to J^(1/3)*[I], in 3D, so we don't get
   // negative J for super sheared particles with finite precision F Update.  This
   // Should only be used when all materials in the domain have a hypo-elastic
   // deviatoric update.
-  resetDeformationGradient( particleManager );
-
-
-  //#######################################################################################
-  GEOS_LOG_RANK_IF( m_debugFlag == 1 && m_plotUnscaledParticles == 1, "Reset CPDI R-vectors for plotting if option is selected to plot unscaled domains" );
-  solverProfilingIf( "Reset CPDI R-vectors for plotting if option is selected to plot unscaled domains", m_plotUnscaledParticles == 1 );
-  //#######################################################################################
-  if (m_plotUnscaledParticles == 1)
+  if( m_resetDefGradForFullyDamagedParticles == 1 )
   {
+    GEOS_LOG_LEVEL_BY_RANK( 1, "Set F to scaled value for damaged particles, maintain J" );
+    solverProfiling( "Set F to scaled value for damaged particles, maintain J" );
+  }
+  resetDeformationGradient( particleManager );
+  //#######################################################################################
+
+
+  //#######################################################################################
+  if ( m_plotUnscaledParticles == 1 )
+  {
+    GEOS_LOG_LEVEL_BY_RANK( 1, "Reset CPDI R-vectors for plotting if option is selected to plot unscaled domains" );
+    solverProfiling( "Reset CPDI R-vectors for plotting if option is selected to plot unscaled domains" );
     unscaleCPDIVectors( particleManager);
   }
+  //#######################################################################################
+
 
   //#######################################################################################
-  GEOS_LOG_RANK_IF( m_debugFlag == 1, "End of explicitStep");
+  GEOS_LOG_LEVEL_BY_RANK( 1, "End of explicitStep");
   solverProfiling( "End of explicitStep" );
-  //#######################################################################################
   if( m_solverProfiling >= 1 )
   {
     printProfilingResults();
   }
+  //#######################################################################################
+
 
   // Return stable time step
   return dtReturn;
@@ -3529,10 +3563,10 @@ void SolidMechanicsMPM::singleFaceVectorFieldSymmetryBC( const int face,
   //   * enforceGridVectorFieldSymmetryBC calls this on all grid faces
   //   * applyEssentialBCs calls this on faces that aren't moving (moving faces due to F-table need special treatment)
 
-  array1d< SortedArray< localIndex > > & m_boundaryNodes = nodeSets.getReference< array1d< SortedArray< localIndex > > >( viewKeyStruct::boundaryNodesString() );
-  array1d< SortedArray< localIndex > > & m_bufferNodes = nodeSets.getReference< array1d< SortedArray< localIndex > > >( viewKeyStruct::bufferNodesString() );
+  array1d< SortedArray< localIndex > > & boundaryNodes = nodeSets.getReference< array1d< SortedArray< localIndex > > >( viewKeyStruct::boundaryNodesString() );
+  array1d< SortedArray< localIndex > > & bufferNodes = nodeSets.getReference< array1d< SortedArray< localIndex > > >( viewKeyStruct::bufferNodesString() );
 
-  for( int fieldIndex=0; fieldIndex<m_numVelocityFields; fieldIndex++ )
+  for( int fieldIndex=0; fieldIndex < m_numVelocityFields; fieldIndex++ )
   {
     // Face-associated quantities
     int dir0 = face / 2;           // 0, 0, 1, 1, 2, 2 (x-, x+, y-, y+, z-, z+)
@@ -3541,44 +3575,43 @@ void SolidMechanicsMPM::singleFaceVectorFieldSymmetryBC( const int face,
     int positiveNormal = face % 2; // even => (-) => 0, odd => (+) => 1
 
     // Enforce BCs on boundary nodes
-    SortedArrayView< localIndex const > const boundaryNodes = m_boundaryNodes[face].toView();
-    int const numBoundaryNodes = boundaryNodes.size();
-    forAll< serialPolicy >( numBoundaryNodes, [&, vectorMultiField, dVectorMultiField] GEOS_HOST ( localIndex const gg ) // Probably not a big enough loop to
-                                                                                                      // warrant parallelization
-      {
-        int const g = boundaryNodes[gg];
-        dVectorMultiField[g][fieldIndex][dir0] = -vectorMultiField[g][fieldIndex][dir0];
-        vectorMultiField[g][fieldIndex][dir0] = 0.0;
-      } );
+    SortedArrayView< localIndex const > const boundaryNodesView = boundaryNodes[face].toView();
+    int const numBoundaryNodes = boundaryNodesView.size();
+    // Probably not a big enough loop to warrant parallelization
+    forAll< serialPolicy >( numBoundaryNodes, [&, vectorMultiField, dVectorMultiField] GEOS_HOST ( localIndex const gg ) 
+    {
+      int const g = boundaryNodesView[gg];
+      dVectorMultiField[g][fieldIndex][dir0] = -vectorMultiField[g][fieldIndex][dir0];
+      vectorMultiField[g][fieldIndex][dir0] = 0.0;
+    } );
 
     // Perform field reflection on buffer nodes
-    SortedArrayView< localIndex const > const bufferNodes = m_bufferNodes[face].toView();
-    int const numBufferNodes = bufferNodes.size();
-    forAll< serialPolicy >( numBufferNodes, [&, vectorMultiField, dVectorMultiField, gridPosition] GEOS_HOST ( localIndex const gg ) // Probably not a big
-                                                                                                                  // enough loop to warrant
-                                                                                                                  // parallelization
-      {
-        int const g = bufferNodes[gg];
-        int ijk[3];
-        ijk[dir0] = positiveNormal * ( m_nEl[dir0] - 2 ) + ( 1 - positiveNormal ) * ( 2 );
-        ijk[dir1] = std::round( ( gridPosition[g][dir1] - m_xLocalMin[dir1] ) / m_hEl[dir1] );
-        ijk[dir2] = std::round( ( gridPosition[g][dir2] - m_xLocalMin[dir2] ) / m_hEl[dir2] );
+    SortedArrayView< localIndex const > const bufferNodesView = bufferNodes[face].toView();
+    int const numBufferNodes = bufferNodesView.size();
+    // Probably not a big enough loop to warrant parallelization
+    forAll< serialPolicy >( numBufferNodes, [&, vectorMultiField, dVectorMultiField, gridPosition] GEOS_HOST ( localIndex const gg )
+    {
+      int const g = bufferNodesView[gg];
+      int ijk[3];
+      ijk[dir0] = positiveNormal * ( m_nEl[dir0] - 2 ) + ( 1 - positiveNormal ) * ( 2 );
+      ijk[dir1] = std::round( ( gridPosition[g][dir1] - m_xLocalMin[dir1] ) / m_hEl[dir1] );
+      ijk[dir2] = std::round( ( gridPosition[g][dir2] - m_xLocalMin[dir2] ) / m_hEl[dir2] );
 
-        localIndex gFrom = m_ijkMap[ijk[0]][ijk[1]][ijk[2]];
+      localIndex gFrom = m_ijkMap[ijk[0]][ijk[1]][ijk[2]];
 
-        real64 previousVectorMultiField[3] = { 0 };
-        previousVectorMultiField[dir0] = vectorMultiField[g][fieldIndex][dir0];
-        previousVectorMultiField[dir1] = vectorMultiField[g][fieldIndex][dir1];
-        previousVectorMultiField[dir2] = vectorMultiField[g][fieldIndex][dir2];
+      real64 previousVectorMultiField[3] = { 0 };
+      previousVectorMultiField[dir0] = vectorMultiField[g][fieldIndex][dir0];
+      previousVectorMultiField[dir1] = vectorMultiField[g][fieldIndex][dir1];
+      previousVectorMultiField[dir2] = vectorMultiField[g][fieldIndex][dir2];
 
-        vectorMultiField[g][fieldIndex][dir0] = -vectorMultiField[gFrom][fieldIndex][dir0]; // Negate component aligned with surface normal
-        vectorMultiField[g][fieldIndex][dir1] =  vectorMultiField[gFrom][fieldIndex][dir1];
-        vectorMultiField[g][fieldIndex][dir2] =  vectorMultiField[gFrom][fieldIndex][dir2];
+      vectorMultiField[g][fieldIndex][dir0] = -vectorMultiField[gFrom][fieldIndex][dir0]; // Negate component aligned with surface normal
+      vectorMultiField[g][fieldIndex][dir1] =  vectorMultiField[gFrom][fieldIndex][dir1];
+      vectorMultiField[g][fieldIndex][dir2] =  vectorMultiField[gFrom][fieldIndex][dir2];
 
-        dVectorMultiField[g][fieldIndex][dir0] += vectorMultiField[g][fieldIndex][dir0] - previousVectorMultiField[dir0];
-        dVectorMultiField[g][fieldIndex][dir1] += vectorMultiField[g][fieldIndex][dir1] - previousVectorMultiField[dir1];
-        dVectorMultiField[g][fieldIndex][dir2] += vectorMultiField[g][fieldIndex][dir2] - previousVectorMultiField[dir2];
-      } );
+      dVectorMultiField[g][fieldIndex][dir0] += vectorMultiField[g][fieldIndex][dir0] - previousVectorMultiField[dir0];
+      dVectorMultiField[g][fieldIndex][dir1] += vectorMultiField[g][fieldIndex][dir1] - previousVectorMultiField[dir1];
+      dVectorMultiField[g][fieldIndex][dir2] += vectorMultiField[g][fieldIndex][dir2] - previousVectorMultiField[dir2];
+    } );
   }
 }
 
@@ -3616,8 +3649,8 @@ void SolidMechanicsMPM::applyEssentialBCs( const real64 dt,
 
   // Get node sets
   Group & nodeSets = nodeManager.sets();
-  array1d< SortedArray< localIndex > > & m_boundaryNodes = nodeSets.getReference< array1d< SortedArray< localIndex > > >( viewKeyStruct::boundaryNodesString() );
-  array1d< SortedArray< localIndex > > & m_bufferNodes = nodeSets.getReference< array1d< SortedArray< localIndex > > >( viewKeyStruct::bufferNodesString() );
+  array1d< SortedArray< localIndex > > & boundaryNodes = nodeSets.getReference< array1d< SortedArray< localIndex > > >( viewKeyStruct::boundaryNodesString() );
+  array1d< SortedArray< localIndex > > & bufferNodes = nodeSets.getReference< array1d< SortedArray< localIndex > > >( viewKeyStruct::bufferNodesString() );
 
   // Impose BCs on each face while gathering reaction forces
   real64 localFaceReactions[6] = {0.0};
@@ -3651,15 +3684,12 @@ void SolidMechanicsMPM::applyEssentialBCs( const real64 dt,
             int positiveNormal = face % 2; // even => (-) => 0, odd => (+) => 1
 
             // Enforce BCs on boundary nodes using F-table
-            SortedArrayView< localIndex const > const boundaryNodes = m_boundaryNodes[face].toView();
-            int const numBoundaryNodes = boundaryNodes.size();
-            forAll< serialPolicy >( numBoundaryNodes, [&, gridPosition, gridVelocity, gridDVelocity, gridMass] GEOS_HOST ( localIndex const gg ) // Probably
-                                                                                                                                                 // not a big
-                                                                                                                                                 // enough loop
-                                                                                                                                                 // to warrant
-                                                                                                                                                 // parallelization
+            SortedArrayView< localIndex const > const boundaryNodesView = boundaryNodes[face].toView();
+            int const numBoundaryNodes = boundaryNodesView.size();
+            // Probably not a big enough loop to warrant parallelization
+            forAll< serialPolicy >( numBoundaryNodes, [&, gridPosition, gridVelocity, gridDVelocity, gridMass] GEOS_HOST ( localIndex const gg ) 
             {
-              int const g = boundaryNodes[gg];
+              int const g = boundaryNodesView[gg];
 
               // If boundary condition type is 3 (e.g. contact, default is sticky), performs a check if normal grid component of grid velocity is moving into plane, if so flips component and adds domain velocity
               real64 prescribedVelocity = gridVelocity[g][fieldIndex][dir0];
@@ -3731,12 +3761,12 @@ void SolidMechanicsMPM::applyEssentialBCs( const real64 dt,
             } );
 
             // Perform field reflection on buffer nodes - accounts for moving boundary effects
-            SortedArrayView< localIndex const > const bufferNodes = m_bufferNodes[face].toView();
-            int const numBufferNodes = bufferNodes.size();
+            SortedArrayView< localIndex const > const bufferNodesView = bufferNodes[face].toView();
+            int const numBufferNodes = bufferNodesView.size();
             // Possibly not a big enough loop to warrant parallelization
             forAll< serialPolicy >( numBufferNodes, [&, gridPosition, gridVelocity, gridDVelocity, gridAcceleration] GEOS_HOST ( localIndex const gg )
               {
-                int const g = bufferNodes[gg];
+                int const g = bufferNodesView[gg];
 
                 // Initialize grid ijk indices
                 int ijk[3];
@@ -3877,7 +3907,7 @@ void SolidMechanicsMPM::computeGridSurfaceNormals( ParticleManager & particleMan
     // arrayView1d< real64 const > const particleMass = subRegion.getField< mpm::fields::particleMass >();
     arrayView1d< real64 const > const particleVolume = subRegion.getParticleVolume();
     arrayView2d< real64 const > const particleDamageGradient = subRegion.getField< fields::mpm::particleDamageGradient >();
-    arrayView1d< real64 const > const particleDamage = subRegion.getParticleDamage();
+    // arrayView1d< real64 const > const particleDamage = subRegion.getParticleDamage();
     arrayView3d< real64 const > const particleRVectors = subRegion.getParticleRVectors();
 
     arrayView1d< int const > particleSurfaceFlag = subRegion.getParticleSurfaceFlag(); 
@@ -3952,7 +3982,6 @@ void SolidMechanicsMPM::computeGridSurfacePositions( ParticleManager & particleM
   real64 xLocalMin[3] = {0};
   arrayView3d< int const > const ijkMap = m_ijkMap;
 
-
   // Grid fields
   arrayView2d< real64 const, nodes::REFERENCE_POSITION_USD > const gridPosition = nodeManager.referencePosition();
   // arrayView3d< real64 const > const gridSurfaceNormal = nodeManager.getReference< array3d< real64 > >( viewKeyStruct::gridSurfaceNormalString() );
@@ -3978,29 +4007,31 @@ void SolidMechanicsMPM::computeGridSurfacePositions( ParticleManager & particleM
     int const numberOfVerticesPerParticle = subRegion.numberOfVerticesPerParticle();
     ParticleType const particleType = subRegion.getParticleType();
     SortedArrayView< localIndex const > const activeParticleIndices = subRegion.activeParticleIndices();
-    forAll< parallelDevicePolicy<> >( activeParticleIndices.size(), [=] GEOS_HOST_DEVICE ( localIndex const pp ) // Can parallelize with atomics
+    forAll< parallelDevicePolicy<> >( activeParticleIndices.size(), [=] GEOS_HOST_DEVICE ( localIndex const pp )
     {
       localIndex const p = activeParticleIndices[pp];
-
-      // On-the-fly shape function computation
-      int mappedNodes[64];
-      real64 shapeFunctionValues[64];
-      real64 shapeFunctionGradientValues[64][3];
-      mapNodesAndComputeShapeFunctions( ijkMap,
-                                        xLocalMin,
-                                        hEl,
-                                        particleType,
-                                        particlePosition[p],
-                                        particleRVectors[p],
-                                        gridPosition,
-                                        mappedNodes,
-                                        shapeFunctionValues,
-                                        shapeFunctionGradientValues );
+      
+      real64 particleContributionToGrid;
 
       // This may need to change if we add more surface flag options assumes all surface flags with value greater than one have explicit surface positions and normals defined
       // if( particleSurfaceFlag[p] > 1 )
       if( LvArray::tensorOps::l2Norm< 3 >( particleSurfaceNormal[p] ) > 1e-12 )
       {
+        // On-the-fly shape function computation
+        int mappedNodes[64];
+        real64 shapeFunctionValues[64];
+        real64 shapeFunctionGradientValues[64][3];
+        mapNodesAndComputeShapeFunctions( ijkMap,
+                                          xLocalMin,
+                                          hEl,
+                                          particleType,
+                                          particlePosition[p],
+                                          particleRVectors[p],
+                                          gridPosition,
+                                          mappedNodes,
+                                          shapeFunctionValues,
+                                          shapeFunctionGradientValues );
+
         // Map to grid
         for( int g = 0; g < 8 * numberOfVerticesPerParticle; g++ )
         {
@@ -4014,7 +4045,8 @@ void SolidMechanicsMPM::computeGridSurfacePositions( ParticleManager & particleM
                                                  particleSurfaceNormal[p],
                                                  gridDamageGradient[mappedNode] );
 
-          gridSurfaceFieldMass[mappedNode][fieldIndex] += shapeFunctionValue * particleMass[p];
+          particleContributionToGrid = shapeFunctionValue * particleMass[p];
+          RAJA::atomicAdd( parallelDeviceAtomic{}, &gridSurfaceFieldMass[mappedNode][fieldIndex], particleContributionToGrid );
 
           real64 surfacePositionRelativeToNode[3] = { 0.0 };
           LvArray::tensorOps::copy< 3 >( surfacePositionRelativeToNode, particleSurfacePosition[p] );
@@ -4028,7 +4060,8 @@ void SolidMechanicsMPM::computeGridSurfacePositions( ParticleManager & particleM
 
           for( int i=0; i < numDims; i++ )
           {
-            gridSurfacePosition[mappedNode][fieldIndex][i] += shapeFunctionValue * particleMass[p] * surfacePositionAlongNormal * particleSurfaceNormal[p][i] ;
+            particleContributionToGrid = shapeFunctionValue * particleMass[p] * surfacePositionAlongNormal * particleSurfaceNormal[p][i];
+            RAJA::atomicAdd( parallelDeviceAtomic{}, &gridSurfacePosition[mappedNode][fieldIndex][i], particleContributionToGrid ); 
           }
         }
       }
@@ -4116,7 +4149,7 @@ void SolidMechanicsMPM::computeGridSurfaceNormalWeights( ParticleManager & parti
   LvArray::tensorOps::copy< 3 >( xLocalMin, m_xLocalMin );
   real64 hEl[3] = {0};
   LvArray::tensorOps::copy< 3 >( hEl, m_hEl );
-  arrayView3d< int const > const ijkMap = m_ijkMap;
+  // arrayView3d< int const > const ijkMap = m_ijkMap;
 
   // Grid fields
   arrayView2d< real64 > const gridSurfaceNormalWeights = nodeManager.getReference< array2d< real64 > >( viewKeyStruct::gridSurfaceNormalWeightsString() );
@@ -4148,6 +4181,8 @@ void SolidMechanicsMPM::computeGridSurfaceNormalWeights( ParticleManager & parti
     {
       localIndex const p = activeParticleIndices[pp];
 
+      real64 particleContributionToGrid;
+
       // Map to grid
       for( int g = 0; g < 8 * numberOfVerticesPerParticle; g++ )
       {
@@ -4163,11 +4198,13 @@ void SolidMechanicsMPM::computeGridSurfaceNormalWeights( ParticleManager & parti
         real64 surfaceNormal[3] = { 0 };
         LvArray::tensorOps::copy< 3 >( surfaceNormal, particleSurfaceNormal[p] );
 
-        gridSurfaceNormalWeights[mappedNode][fieldIndex] += LvArray::tensorOps::AiBi< 3 >( gridSurfaceNormal[mappedNode][fieldIndex], surfaceNormal ) * shapeFunctionValues[pp][g] * particleMass[p];
+        particleContributionToGrid = LvArray::tensorOps::AiBi< 3 >( gridSurfaceNormal[mappedNode][fieldIndex], surfaceNormal ) * shapeFunctionValues[pp][g] * particleMass[p];
+        RAJA::atomicAdd( parallelDeviceAtomic{}, &gridSurfaceNormalWeights[mappedNode][fieldIndex], particleContributionToGrid );
 
         if( LvArray::tensorOps::l2NormSquared< 3 >( particleSurfaceNormal[p] ) )
         {
-          gridSurfaceNormalWeightNormalization[mappedNode][fieldIndex] += shapeFunctionValues[pp][g] * particleMass[p];
+          particleContributionToGrid = shapeFunctionValues[pp][g] * particleMass[p];
+          RAJA::atomicAdd( parallelDeviceAtomic{}, &gridSurfaceNormalWeightNormalization[mappedNode][fieldIndex], particleContributionToGrid );
         }
       }
     } ); // particle loop
@@ -4233,7 +4270,36 @@ void SolidMechanicsMPM::initializeFrictionCoefficients()
 void SolidMechanicsMPM::computeContactForces( real64 const dt,
                                               NodeManager & nodeManager )
 {
+  real64 hEl[3] = {0};
+  LvArray::tensorOps::copy< 3 >( hEl, m_hEl );
+
+  ContactNormalTypeOption const contactNormalType = m_contactNormalType;
+  ContactGapCorrectionOption const contactGapCorrection = m_contactGapCorrection;
+  OverlapCorrectionOption const overlapCorrection = m_overlapCorrection;
+
+  int const planeStrain = m_planeStrain;
   int const preventCZInterpentration = m_preventCZInterpentration;
+  int const treatFullyDamagedAsSingleField = m_treatFullyDamagedAsSingleField;
+  int const useSurfacePositionForContact = m_useSurfacePositionForContact;
+
+  int const numContactGroups = m_numContactGroups;
+  int const numVelocityFields = m_numVelocityFields;
+  int const numNodes = nodeManager.size(); //gridMass.size( 0 ); // get size from nodeManager instead?
+
+  real64 const smallMass = m_smallMass;
+  real64 const neighborRadius = m_neighborRadius;
+  real64 const separabilityMinDamage = m_separabilityMinDamage;
+  real64 const thinFeatureDFGThreshold = m_thinFeatureDFGThreshold;
+
+  array2d< real64 > frictionCoefficientTableCopy( numContactGroups, numContactGroups );
+  for( int i = 0; i < numContactGroups; i++)
+  {
+    for( int j = 0; j < numContactGroups; j++)
+    {
+      frictionCoefficientTableCopy[i][j] = m_frictionCoefficientTable[i][j];
+    }
+  }
+  arrayView2d< real64 const > const frictionCoefficientTable = frictionCoefficientTableCopy;
 
   // Grid fields
   arrayView2d< real64 const > const gridMass = nodeManager.getReference< array2d< real64 > >( viewKeyStruct::gridMassString() );
@@ -4250,31 +4316,27 @@ void SolidMechanicsMPM::computeContactForces( real64 const dt,
   arrayView2d< int const > const gridCohesiveFieldFlag = nodeManager.getReference< array2d< int > >( viewKeyStruct::gridCohesiveFieldFlagString() );
   arrayView2d< real64 const > const gridSurfaceNormalWeights = nodeManager.getReference< array2d< real64 > >( viewKeyStruct::gridSurfaceNormalWeightsString() );
   arrayView3d< real64 > const gridContactForce = nodeManager.getReference< array3d< real64 > >( viewKeyStruct::gridContactForceString() );
-
   arrayView2d< real64 > const gridDamageGradient = nodeManager.getReference< array2d< real64 > >( viewKeyStruct::gridDamageGradientString() );
 
-  // Get number of nodes
-  int numNodes = nodeManager.size(); //gridMass.size( 0 ); // get size from nodeManager instead?
-
-  forAll< serialPolicy >( numNodes, [&, gridMass, gridVelocity, gridMomentum, gridSurfaceNormal, gridCenterOfMass, gridContactForce] GEOS_HOST ( localIndex const g )
+  forAll< parallelDevicePolicy<> >( numNodes, [=] GEOS_HOST_DEVICE ( localIndex const g )
     {
       // Initialize gridContactForce[g] to zero. TODO: This shouldn't be necessary?
       // This looks to be zeroed every timestep in initializeGridFields, need to test if removing this breaks anything
-      for( int fieldIndex = 0; fieldIndex < m_numVelocityFields; fieldIndex++ )
+      for( int fieldIndex = 0; fieldIndex < numVelocityFields; fieldIndex++ )
       {
         LvArray::tensorOps::fill< 3 >( gridContactForce[g][fieldIndex], 0.0);
       }
 
-      for( localIndex A = 0; A < m_numVelocityFields - 1; A++ )
+      for( localIndex A = 0; A < numVelocityFields - 1; A++ )
       {
-        for( localIndex B = A + 1; B < m_numVelocityFields; B++ )
+        for( localIndex B = A + 1; B < numVelocityFields; B++ )
         {
           // Make sure both fields in the pair are active
-          bool active = ( gridMass[g][A] > m_smallMass ) && ( LvArray::tensorOps::l2NormSquared< 3 >( gridSurfaceNormal[g][A] ) > 1.0e-16 )
+          bool active = ( gridMass[g][A] > smallMass ) && ( LvArray::tensorOps::l2NormSquared< 3 >( gridSurfaceNormal[g][A] ) > 1.0e-16 )
                         and
-                        ( gridMass[g][B] > m_smallMass ) && ( LvArray::tensorOps::l2NormSquared< 3 >( gridSurfaceNormal[g][B] ) > 1.0e-16 ); // CC: Should grid surface normal min magnitude be DBL_MIN instead?
+                        ( gridMass[g][B] > smallMass ) && ( LvArray::tensorOps::l2NormSquared< 3 >( gridSurfaceNormal[g][B] ) > 1.0e-16 ); // CC: Should grid surface normal min magnitude be DBL_MIN instead?
 
-          real64 frictionCoefficient = m_frictionCoefficientTable[A % m_numContactGroups][B % m_numContactGroups];
+          real64 frictionCoefficient = frictionCoefficientTable[A % numContactGroups][B % numContactGroups];
 
           if( active )
           {
@@ -4295,7 +4357,13 @@ void SolidMechanicsMPM::computeContactForces( real64 const dt,
             } 
             else 
             {
-              separable = evaluateSeparabilityCriterion( A,
+              separable = evaluateSeparabilityCriterion( planeStrain,
+                                                         numContactGroups,
+                                                         treatFullyDamagedAsSingleField,
+                                                         separabilityMinDamage,
+                                                         thinFeatureDFGThreshold,
+                                                         neighborRadius,
+                                                         A,
                                                          B,
                                                          gridDamage[g][A],
                                                          gridDamage[g][B],
@@ -4306,8 +4374,15 @@ void SolidMechanicsMPM::computeContactForces( real64 const dt,
                                                          gridCenterOfMass[g][B] );
             }
 
-            computePairwiseNodalContactForce( separable,
+            computePairwiseNodalContactForce( contactNormalType,
+                                              contactGapCorrection,
+                                              overlapCorrection,
+                                              hEl,
+                                              planeStrain,
+                                              smallMass,
+                                              useSurfacePositionForContact,
                                               useCohesiveTangentialForces,
+                                              separable,
                                               dt,
                                               frictionCoefficient,
                                               gridMass[g][A],
@@ -4338,8 +4413,16 @@ void SolidMechanicsMPM::computeContactForces( real64 const dt,
     } );
 }
 
-void SolidMechanicsMPM::computePairwiseNodalContactForce( int & separable,
+GEOS_HOST_DEVICE
+void SolidMechanicsMPM::computePairwiseNodalContactForce( ContactNormalTypeOption const & contactNormalType,
+                                                          ContactGapCorrectionOption const & contactGapCorrection,
+                                                          OverlapCorrectionOption const & overlapCorrection,
+                                                          real64 const (& hEl) [3],
+                                                          int const & planeStrain,
+                                                          real64 const & smallMass,
+                                                          int const & useSurfacePositionForContact,
                                                           int const & useCohesiveTangentialForces,
+                                                          int & separable,
                                                           real64 const & dt,
                                                           real64 const & frictionCoefficient,
                                                           real64 const & mA, // Mass of field A
@@ -4372,7 +4455,7 @@ void SolidMechanicsMPM::computePairwiseNodalContactForce( int & separable,
   real64 nAB[3] = { 0 };
   
   // contact normal averaging: 0: simple, 1: mass weighted, 2: follow larger mass (useful for platens)
-  switch( m_contactNormalType )
+  switch( contactNormalType )
   {
     case ContactNormalTypeOption::Difference:
       LvArray::tensorOps::copy< 3 >( nAB, nA );
@@ -4397,7 +4480,7 @@ void SolidMechanicsMPM::computePairwiseNodalContactForce( int & separable,
         // If density is similar use mass weighted average
         real64 rhoA = mA / VA;
         real64 rhoB = mB / VB;
-        if ( fabs( rhoA - rhoB ) < 0.1 * rhoA )
+        if ( LvArray::math::abs( rhoA - rhoB ) < 0.1 * rhoA )
         {
           for( int i=0; i<3; i++ )
           {
@@ -4428,10 +4511,10 @@ void SolidMechanicsMPM::computePairwiseNodalContactForce( int & separable,
         // LvArray::tensorOps::scaledCopy< 3 >( tempA, nA, pow(wA, m_contactNormalExponent) );
         // LvArray::tensorOps::scaledCopy< 3 >( tempB, nB, pow(wB, m_contactNormalExponent) );
         real64 threshold = 0.9;
-        real64 xxA = fmin(fmax((wA-threshold)/threshold, 0.0),1.0);
-        real64 xxB = fmin(fmax((wB-threshold)/threshold, 0.0),1.0);
-        LvArray::tensorOps::scaledCopy< 3 >(tempA, nA, 3*pow(xxA,2)-2*pow(xxA,3));
-        LvArray::tensorOps::scaledCopy< 3 >(tempB, nB, 3*pow(xxB,2)-2*pow(xxB,3));
+        real64 xxA = LvArray::math::min(LvArray::math::max((wA-threshold)/threshold, 0.0),1.0);
+        real64 xxB = LvArray::math::min(LvArray::math::max((wB-threshold)/threshold, 0.0),1.0);
+        LvArray::tensorOps::scaledCopy< 3 >(tempA, nA, 3*LvArray::math::pow(xxA,2)-2*LvArray::math::pow(xxA,3));
+        LvArray::tensorOps::scaledCopy< 3 >(tempB, nB, 3*LvArray::math::pow(xxB,2)-2*LvArray::math::pow(xxB,3));
         LvArray::tensorOps::copy< 3 >( nAB, tempA );
         LvArray::tensorOps::subtract< 3 >( nAB, tempB );
       }
@@ -4448,11 +4531,11 @@ void SolidMechanicsMPM::computePairwiseNodalContactForce( int & separable,
   // }
 
   // Normalize the effective surface normal
-  if( m_planeStrain == 1 )
+  if( planeStrain == 1 )
   {
     nAB[2] = 0.0;
   }
-  real64 norm = sqrt( nAB[0] * nAB[0] + nAB[1] * nAB[1] + nAB[2] * nAB[2] );
+  real64 norm = LvArray::math::sqrt( nAB[0] * nAB[0] + nAB[1] * nAB[1] + nAB[2] * nAB[2] );
  
   // // CC: Is this the best solution?
   // // Need to prevent crashing from randomly defined normals that might arise when running with damage field gradient partitioning
@@ -4536,22 +4619,22 @@ void SolidMechanicsMPM::computePairwiseNodalContactForce( int & separable,
 
   // Calculate the contact gap between the fields
   real64 gap0;
-  if( m_planeStrain == 1 )
+  if( planeStrain == 1 )
   {
-    // gap0 = ( m_hEl[0]*m_hEl[1] ) / sqrt( m_hEl[1]*m_hEl[1]*nAB[0]*nAB[0] + m_hEl[0]*m_hEl[0]*nAB[1]*nAB[1] );
-    gap0 = 1/sqrt( std::pow(nAB[0]/m_hEl[0],2) + std::pow(nAB[1]/m_hEl[1],2) );
+    // gap0 = ( hEl[0]*hEl[1] ) / LvArray::math::sqrt( hEl[1]*hEl[1]*nAB[0]*nAB[0] + hEl[0]*hEl[0]*nAB[1]*nAB[1] );
+    gap0 = 1/LvArray::math::sqrt( LvArray::math::pow(nAB[0]/hEl[0],2) + LvArray::math::pow(nAB[1]/hEl[1],2) );
   }
   else
   {
     // CC: debug
     // currently failes with polymer model (suspect compliant materials) when z direction boundary type is 2
     //This needs to be corrected
-    // gap0 = (m_hEl[0]*m_hEl[1]*m_hEl[2]) /
-    //        sqrt( m_hEl[2]*m_hEl[2]*nAB[2]*nAB[2]*( m_hEl[1]*m_hEl[1]*nAB[0]*nAB[0] + m_hEl[0]*m_hEl[0]*nAB[1]*nAB[1] ) + m_hEl[0]*m_hEl[0]*m_hEl[1]*m_hEl[1]*( nAB[0]*nAB[0] + nAB[1]*nAB[1] ) );
+    // gap0 = (hEl[0]*hEl[1]*hEl[2]) /
+    //        LvArray::math::sqrt( hEl[2]*hEl[2]*nAB[2]*nAB[2]*( hEl[1]*hEl[1]*nAB[0]*nAB[0] + hEl[0]*hEl[0]*nAB[1]*nAB[1] ) + hEl[0]*hEl[0]*hEl[1]*hEl[1]*( nAB[0]*nAB[0] + nAB[1]*nAB[1] ) );
 
     // Elliptical solution
     // Gives element sizes in each direction and reasonable approximations in others
-    gap0 = 1/sqrt(std::pow(nAB[0]/m_hEl[0],2) + std::pow(nAB[1]/m_hEl[1],2) + std::pow(nAB[2]/m_hEl[2],2));
+    gap0 = 1/LvArray::math::sqrt(LvArray::math::pow(nAB[0]/hEl[0],2) + LvArray::math::pow(nAB[1]/hEl[1],2) + LvArray::math::pow(nAB[2]/hEl[2],2));
 
   }
 
@@ -4561,7 +4644,7 @@ void SolidMechanicsMPM::computePairwiseNodalContactForce( int & separable,
   // In case of asymmetric interfaces (explicit normals and positions only on one side) use the center of mass instead of surface position
   real64 gapScale = 0.0;
   real64 surfacePosA[3] = { 0 };
-  if ( spmA > m_smallMass && m_useSurfacePositionForContact )
+  if ( spmA > smallMass && useSurfacePositionForContact )
   {
     LvArray::tensorOps::copy< 3 >( surfacePosA, spA);
   }
@@ -4572,7 +4655,7 @@ void SolidMechanicsMPM::computePairwiseNodalContactForce( int & separable,
   }
 
   real64 surfacePosB[3] = { 0 };
-  if( spmB > m_smallMass && m_useSurfacePositionForContact )
+  if( spmB > smallMass && useSurfacePositionForContact )
   {
     LvArray::tensorOps::copy< 3 >( surfacePosB, spB);
   }
@@ -4594,7 +4677,7 @@ void SolidMechanicsMPM::computePairwiseNodalContactForce( int & separable,
   
   // real64 test = (vA[0] - vAB[0]) * nAB[0] + (vA[1] - vAB[1]) * nAB[1] + (vA[2] - vAB[2]) * nAB[2];
 
-  switch( m_contactGapCorrection )
+  switch( contactGapCorrection )
   {
     // Simplely check if component of field velocities will result in interpenetration if uncorrected
     case ContactGapCorrectionOption::Simple:
@@ -4630,20 +4713,20 @@ void SolidMechanicsMPM::computePairwiseNodalContactForce( int & separable,
   // Additional compressive normal force added to correct overlap, this is added only to the normal force and
   // doesn't affect the shear calculation (which in FEM cuts down on spurious stress oscillations).
   real64 fgap = 0.0;
-  if( m_overlapCorrection == OverlapCorrectionOption::NormalForce )
+  if( overlapCorrection == OverlapCorrectionOption::NormalForce )
   {
     real64 cellSpacing[3];
-    LvArray::tensorOps::copy< 3 >( cellSpacing, m_hEl);
+    LvArray::tensorOps::copy< 3 >( cellSpacing, hEl);
 
     real64 normalSpacing[3];
-    normalSpacing[0] = fabs( nAB[0] );
-    normalSpacing[1] = fabs( nAB[1] );
-    normalSpacing[2] = fabs( nAB[2] );
+    normalSpacing[0] = LvArray::math::abs( nAB[0] );
+    normalSpacing[1] = LvArray::math::abs( nAB[1] );
+    normalSpacing[2] = LvArray::math::abs( nAB[2] );
 
-    real64 cellVolume = m_hEl[0] * m_hEl[1] * m_hEl[2];
+    real64 cellVolume = hEl[0] * hEl[1] * hEl[2];
     real64 cellLength = LvArray::tensorOps::AiBi< 3 >( normalSpacing, cellSpacing );
     real64 cellArea = cellVolume / cellLength;
-    real64 overlap = m_planeStrain ? ( VA + VB - 0.5*cellVolume ) / cellArea : ( VA + VB - cellVolume ) / cellArea;
+    real64 overlap = planeStrain ? ( VA + VB - 0.5*cellVolume ) / cellArea : ( VA + VB - cellVolume ) / cellArea;
     if( overlap > 0.0 )
     {
       fgap = -1.0 * overlap * fmin( mA, mB ) / ( dt * dt ); // This could be -0.5*overlap*mAB/dt**2, but that might be less stable if one mass tiny
@@ -4674,7 +4757,7 @@ void SolidMechanicsMPM::computePairwiseNodalContactForce( int & separable,
     ftan2 = 0.0;
   }
 
-  real64 ftan = std::min( frictionCoefficient * std::abs( fnor ), ftanMag ); // This goes to zero when contact=0 due to the std::min
+  real64 ftan = LvArray::math::min( frictionCoefficient * LvArray::math::abs( fnor ), ftanMag ); // This goes to zero when contact=0 due to the std::min
   dfA[0] = ( fnor + fgap ) * nAB[0] + ftan * sAB[0];
   dfA[1] = ( fnor + fgap ) * nAB[1] + ftan * sAB[1];
   dfA[2] = ( fnor + fgap ) * nAB[2] + ftan * sAB[2];
@@ -4686,6 +4769,7 @@ void SolidMechanicsMPM::computePairwiseNodalContactForce( int & separable,
   fB[2] -= dfA[2];
 }
 
+GEOS_HOST_DEVICE
 void SolidMechanicsMPM::computeOrthonormalBasis( const real64 * e1, // input "normal" unit vector.
                                                  real64 * e2,       // output "tangential" unit vector.
                                                  real64 * e3 )      // output "tangential" unit vector.
@@ -4698,13 +4782,17 @@ void SolidMechanicsMPM::computeOrthonormalBasis( const real64 * e1, // input "no
   // This came up when trying to debug shear traction components and this
   // routine helped a lot.
 
-  real64 e1x = e1[0], e1y = e1[1], e1z = e1[2],
-         e2x, e2y, e2z;
+  real64 e1x = e1[0], 
+         e1y = e1[1], 
+         e1z = e1[2],
+         e2x, 
+         e2y, 
+         e2z;
 
   // find the maximum pair of values from the first vector.
-  real64 maxp1 = std::abs( e1x ) + std::abs( e1y ),
-         maxp2 = std::abs( e1y ) + std::abs( e1z ),
-         maxp3 = std::abs( e1x ) + std::abs( e1z );
+  real64 maxp1 = LvArray::math::abs( e1x ) + LvArray::math::abs( e1y ),
+         maxp2 = LvArray::math::abs( e1y ) + LvArray::math::abs( e1z ),
+         maxp3 = LvArray::math::abs( e1x ) + LvArray::math::abs( e1z );
 
   // This part amounts to setting the smallest component of the input vector to 0.
   // Then, the orthogonal vector is a simple operation in the 2D plane.
@@ -4728,7 +4816,7 @@ void SolidMechanicsMPM::computeOrthonormalBasis( const real64 * e1, // input "no
   }
 
   // Normalize the first base vector
-  real64 e2norm = sqrt( e2x * e2x + e2y * e2y + e2z * e2z );
+  real64 e2norm = LvArray::math::sqrt( e2x * e2x + e2y * e2y + e2z * e2z );
   e2[0] = e2x / e2norm;
   e2[1] = e2y / e2norm;
   e2[2] = e2z / e2norm;
@@ -4739,7 +4827,8 @@ void SolidMechanicsMPM::computeOrthonormalBasis( const real64 * e1, // input "no
   e3[0] =  e1y * e2z - e1z * e2y;
   e3[1] = -e1x * e2z + e1z * e2x;
   e3[2] =  e1x * e2y - e1y * e2x;
-  real64 e3norm = sqrt( e3[0] * e3[0] + e3[1] * e3[1] + e3[2] * e3[2] );
+
+  real64 e3norm = LvArray::math::sqrt( e3[0] * e3[0] + e3[1] * e3[1] + e3[2] * e3[2] );
   e3[0] /= e3norm;
   e3[1] /= e3norm;
   e3[2] /= e3norm;
@@ -4859,20 +4948,11 @@ void SolidMechanicsMPM::resizeGrid( SpatialPartition & partition,
 
 void SolidMechanicsMPM::solverProfiling( std::string label )
 {
-  if( m_solverProfiling >= 1 )
+  if( m_solverProfiling == 1 )
   {
     MPI_Barrier( MPI_COMM_GEOSX );
-    GEOS_LOG_RANK_IF( m_solverProfiling == 2, label );
     m_profilingTimes.push_back( MPI_Wtime() );
     m_profilingLabels.push_back( label );
-  }
-}
-
-void SolidMechanicsMPM::solverProfilingIf( std::string label, bool condition )
-{
-  if( condition )
-  {
-    solverProfiling( label );
   }
 }
 
@@ -6510,8 +6590,9 @@ void SolidMechanicsMPM::projectParticleSurfaceNormalsToGrid( DomainPartition & d
 
       for( int gg=0; gg < 8 * numberOfVerticesPerParticle; gg++ )
       {
+        // TODO Change this to use on the fly mappings
         localIndex const & g = mappedNodes[pp][gg];
-        gridMaxMappedParticleID[g] = gridMaxMappedParticleID[g] > particleID[p] ? gridMaxMappedParticleID[g] : particleID[p];
+        RAJA::atomicMax( parallelDeviceAtomic{}, &gridMaxMappedParticleID[g], particleID[p] );
       }
     } );
     subRegionIndex++;
@@ -6643,6 +6724,8 @@ void SolidMechanicsMPM::initializeCohesiveReferenceConfiguration( DomainPartitio
     { 
       localIndex const p = activeParticleIndices[pp];
 
+      real64 particleContributionToGrid;
+
       if( static_cast< SurfaceFlag >( particleSurfaceFlag[p] ) == SurfaceFlag::Cohesive )
       // if( particleSurfaceFlag[p] == 3 )
       {
@@ -6659,7 +6742,8 @@ void SolidMechanicsMPM::initializeCohesiveReferenceConfiguration( DomainPartitio
 
           particleCohesiveFieldMapping[p][g] = fieldIndex;
 
-          gridMass[mappedNode][fieldIndex] += particleMass[p] * shapeFunctionValues[pp][g];
+          particleContributionToGrid = particleMass[p] * shapeFunctionValues[pp][g];
+          RAJA::atomicAdd( parallelDeviceAtomic{}, &gridMass[mappedNode][fieldIndex], particleContributionToGrid );
         }     
       }
     });
@@ -8130,16 +8214,16 @@ void SolidMechanicsMPM::particleToGrid( real64 const time_n,
   arrayView2d< real64 const > const gridDamageGradient = nodeManager.getReference< array2d< real64 > >( viewKeyStruct::gridDamageGradientString() );
 
   arrayView2d< real64 const, nodes::REFERENCE_POSITION_USD > const gridPosition = nodeManager.referencePosition();
-  arrayView2d< real64 > const gridMass = nodeManager.getReference< array2d< real64 > >( viewKeyStruct::gridMassString() );
-  arrayView2d< real64 > const gridDamage = nodeManager.getReference< array2d< real64 > >( viewKeyStruct::gridDamageString() );
-  arrayView2d< real64 > const gridMaxDamage = nodeManager.getReference< array2d< real64 > >( viewKeyStruct::gridMaxDamageString() );
-  arrayView2d< real64 > const gridMaterialVolume = nodeManager.getReference< array2d< real64 > >( viewKeyStruct::gridMaterialVolumeString() );
-  arrayView3d< real64 > const gridMomentum = nodeManager.getReference< array3d< real64 > >( viewKeyStruct::gridMomentumString() );
-  arrayView3d< real64 > const gridInternalForce = nodeManager.getReference< array3d< real64 > >( viewKeyStruct::gridInternalForceString() );
-  arrayView3d< real64 > const gridExternalForce = nodeManager.getReference< array3d< real64 > >( viewKeyStruct::gridExternalForceString() );
+  arrayView2d< real64 > const & gridMass = nodeManager.getReference< array2d< real64 > >( viewKeyStruct::gridMassString() );
+  arrayView2d< real64 > const & gridDamage = nodeManager.getReference< array2d< real64 > >( viewKeyStruct::gridDamageString() );
+  arrayView2d< real64 > const & gridMaxDamage = nodeManager.getReference< array2d< real64 > >( viewKeyStruct::gridMaxDamageString() );
+  arrayView2d< real64 > const & gridMaterialVolume = nodeManager.getReference< array2d< real64 > >( viewKeyStruct::gridMaterialVolumeString() );
+  arrayView3d< real64 > const & gridMomentum = nodeManager.getReference< array3d< real64 > >( viewKeyStruct::gridMomentumString() );
+  arrayView3d< real64 > const & gridInternalForce = nodeManager.getReference< array3d< real64 > >( viewKeyStruct::gridInternalForceString() );
+  arrayView3d< real64 > const & gridExternalForce = nodeManager.getReference< array3d< real64 > >( viewKeyStruct::gridExternalForceString() );
 
-  arrayView3d< real64 > const gridCenterOfMass = nodeManager.getReference< array3d< real64 > >( viewKeyStruct::gridCenterOfMassString() );
-  arrayView3d< real64 > const gridCenterOfVolume = nodeManager.getReference< array3d< real64 > >( viewKeyStruct::gridCenterOfVolumeString() );
+  arrayView3d< real64 > const & gridCenterOfMass = nodeManager.getReference< array3d< real64 > >( viewKeyStruct::gridCenterOfMassString() );
+  arrayView3d< real64 > const & gridCenterOfVolume = nodeManager.getReference< array3d< real64 > >( viewKeyStruct::gridCenterOfVolumeString() );
 
   arrayView2d< real64 > const gridMassWeightedDamage = nodeManager.getReference< array2d< real64 > >( viewKeyStruct::gridMassWeightedDamageString() );
   arrayView3d< real64 > const gridNormalStress = nodeManager.getReference< array3d< real64 > >( viewKeyStruct::gridNormalStressString() );
@@ -8207,14 +8291,14 @@ void SolidMechanicsMPM::particleToGrid( real64 const time_n,
                                                particleDamageGradient[p],
                                                particleSurfaceNormal[p],
                                                gridDamageGradient[mappedNode] );
-
+        #define MPM_GPU_ATOMICS                                       
+        #ifdef MPM_GPU_ATOMICS
         RAJA::atomicOr( parallelDeviceAtomic{}, &gridCohesiveFieldFlag[mappedNode][fieldIndex], particleCohesiveZoneFlag[p]);
 
         if( computeXProfile == 1 )
         {
           for( int i = 0 ; i < 3 ; i++ )
           { // map the volume-weighted normal stress to nodes for profile output.
-
             particleContributionToGrid = shapeFunctionValue * particleStress[p][i] * particleVolume[p];
             RAJA::atomicAdd( parallelDeviceAtomic{}, &gridNormalStress[mappedNode][fieldIndex][i], particleContributionToGrid );
           }
@@ -8233,7 +8317,7 @@ void SolidMechanicsMPM::particleToGrid( real64 const time_n,
         particleContributionToGrid = particleMass[p] * ( particleSurfaceFlag[p] == 1 || particleSurfaceFlag[p] == 2 || particleSurfaceFlag[p] == 3 ? 1.0 : particleDamage[p] ) * shapeFunctionValue;
         RAJA::atomicAdd( parallelDeviceAtomic{}, &gridDamage[mappedNode][fieldIndex], particleContributionToGrid );       
         
-        particleContributionToGrid = LvArray::math::max( gridMaxDamage[mappedNode][fieldIndex], particleSurfaceFlag[p] == 1 || particleSurfaceFlag[p] == 2 || particleSurfaceFlag[p] == 3 ? 1.0 : particleDamage[p] );
+        particleContributionToGrid = particleSurfaceFlag[p] == 1 || particleSurfaceFlag[p] == 2 || particleSurfaceFlag[p] == 3 ? 1.0 : particleDamage[p];
         RAJA::atomicMax( parallelDeviceAtomic{}, &gridMaxDamage[mappedNode][fieldIndex], particleContributionToGrid );
 
         for( int i=0; i < numDims; i++ )
@@ -8260,6 +8344,48 @@ void SolidMechanicsMPM::particleToGrid( real64 const time_n,
             RAJA::atomicAdd( parallelDeviceAtomic{}, &gridInternalForce[mappedNode][fieldIndex][i], particleContributionToGrid ); 
           }
         }
+        #else
+        gridCohesiveFieldFlag[mappedNode][fieldIndex] |= particleCohesiveZoneFlag[p];
+
+        if( computeXProfile == 1 )
+        {
+          for( int i = 0 ; i < 3 ; i++ )
+          { // map the volume-weighted normal stress to nodes for profile output.
+            gridNormalStress[mappedNode][fieldIndex][i] += shapeFunctionValue * particleStress[p][i] * particleVolume[p];
+          }
+
+          gridMassWeightedDamage[mappedNode][fieldIndex] += shapeFunctionValue * particleDamage[p] * particleMass[p];
+        }
+
+        gridMass[mappedNode][fieldIndex] = particleMass[p] * shapeFunctionValue;
+        
+        gridMaterialVolume[mappedNode][fieldIndex] += particleVolume[p] * shapeFunctionValue;
+        
+        // TODO: Normalizing by volume might be better
+        gridDamage[mappedNode][fieldIndex] += particleMass[p] * ( particleSurfaceFlag[p] == 1 || particleSurfaceFlag[p] == 2 || particleSurfaceFlag[p] == 3 ? 1.0 : particleDamage[p] ) * shapeFunctionValue;       
+        
+        gridMaxDamage[mappedNode][fieldIndex] = LvArray::math::max( gridMaxDamage[mappedNode][fieldIndex], particleSurfaceFlag[p] == 1 || particleSurfaceFlag[p] == 2 || particleSurfaceFlag[p] == 3 ? 1.0 : particleDamage[p] );
+
+        for( int i=0; i < numDims; i++ )
+        {
+          gridMomentum[mappedNode][fieldIndex][i] += particleMass[p] * particleVelocity[p][i] * shapeFunctionValues[g];
+
+          gridExternalForce[mappedNode][fieldIndex][i] += ( particleBodyForce[p][i] * particleMass[p] + particleSurfaceTraction[p][i] + particleCohesiveForce[p][i] ) * shapeFunctionValue;
+
+          gridCenterOfVolume[mappedNode][fieldIndex][i] += particleVolume[p] * ( particlePosition[p][i] - gridPosition[mappedNode][i] ) * shapeFunctionValue;
+
+          gridCenterOfMass[mappedNode][fieldIndex][i] += particleMass[p] * ( particlePosition[p][i] - gridPosition[mappedNode][i] ) * shapeFunctionValue;
+          
+          // MH: This will modify the stress if there is a non-zero borehole pressure set by the boreholePressure
+          // event.  This change is applied if the radius in the x-y plane, centered at origin, defining the extent of the borehole
+          // pressure BC, should be bigger than the borehole but not near outer domain boundary.        
+          for( int k=0; k < numDims; k++ )
+          {
+            int voigt = voigtMap[k][i];
+            gridInternalForce[mappedNode][fieldIndex][i] += -( ( particleStress[p][voigt] - gridBoreholeStress[mappedNode][voigt] ) - particleArtificialViscosity[p] * useArtificialViscosity * (k == i) ) * shapeFunctionGradientValues[g][k] * particleVolume[p];
+          }
+        }
+        #endif
       }
     } ); // particle loop
 
@@ -8921,8 +9047,8 @@ void SolidMechanicsMPM::performXPICUpdate( real64 dt,
 
       // Get views to mapping arrays
       int const numberOfVerticesPerParticle = subRegion.numberOfVerticesPerParticle();
-      arrayView2d< localIndex const > const mappedNodes = m_mappedNodes[subRegionIndex];
-      arrayView2d< real64 const > const shapeFunctionValues = m_shapeFunctionValues[subRegionIndex];
+      // arrayView2d< localIndex const > const mappedNodes = m_mappedNodes[subRegionIndex];
+      // arrayView2d< real64 const > const shapeFunctionValues = m_shapeFunctionValues[subRegionIndex];
       // arrayView3d< real64 const > const shapeFunctionGradientValues = m_shapeFunctionGradientValues[subRegionIndex];
 
       ParticleType const particleType = subRegion.getParticleType();
@@ -9928,7 +10054,14 @@ void SolidMechanicsMPM::computeSphF( ParticleManager & particleManager )
 //   // TODO: If we're not at a surface, volumetric overlap correction should be performed after the F update
 // }
 
-int SolidMechanicsMPM::evaluateSeparabilityCriterion( localIndex const & A,
+GEOS_HOST_DEVICE
+int SolidMechanicsMPM::evaluateSeparabilityCriterion( int const & planeStrain,
+                                                      int const & numContactGroups,
+                                                      int const & treatFullyDamagedAsSingleField,
+                                                      real64 const & separabilityMinDamage,
+                                                      real64 const & thinFeatureDFGThreshold,
+                                                      real64 const & neighborRadius,
+                                                      localIndex const & A,
                                                       localIndex const & B,
                                                       real64 const & damageA,
                                                       real64 const & damageB,
@@ -9946,11 +10079,11 @@ int SolidMechanicsMPM::evaluateSeparabilityCriterion( localIndex const & A,
   // At least one field is fully damaged and both fields have the minimum separable level of damage.
   // The "a%b" is the "mod(a,b)" command, and indicates whether materials are from same contact group.
   if( ( ( maxDamageA >= 0.9999 || maxDamageB >= 0.9999 ) && 
-        ( damageA >= m_separabilityMinDamage && damageB >= m_separabilityMinDamage ) ) || 
-      ( A % m_numContactGroups != B % m_numContactGroups ) )
+        ( damageA >= separabilityMinDamage && damageB >= separabilityMinDamage ) ) || 
+      ( A % numContactGroups != B % numContactGroups ) )
   {
     real64 xi = 1e-3;
-    if( m_planeStrain == 1 )
+    if( planeStrain == 1 )
     {
       xi /= m_hEl[0] * m_hEl[0] + m_hEl[1] * m_hEl[1];
     }
@@ -9961,7 +10094,7 @@ int SolidMechanicsMPM::evaluateSeparabilityCriterion( localIndex const & A,
 
     // We artificially map damage for surface particles with explicit normals and positions as one to gridMaxDamage and gridDamage
     // If this flag is set, the contact fields are treated as inseparable which is the wrong behavior
-    if( m_treatFullyDamagedAsSingleField == 1 && LvArray::tensorOps::l2NormSquared< 3 >( dmgGrad ) < xi )
+    if( treatFullyDamagedAsSingleField == 1 && LvArray::tensorOps::l2NormSquared< 3 >( dmgGrad ) < xi )
     {
       // separable = ( fmin( damageA, damageB ) < 0.9999 ) ? 1 : 0; // Might not need this check with additional comparision of damage gradient in if above
       separable = 0;
@@ -9977,7 +10110,7 @@ int SolidMechanicsMPM::evaluateSeparabilityCriterion( localIndex const & A,
 	// We can detect this case by seeing if the distance between the position of the two fields is small relative to the grid cell spacing.  This will
 	// only happen in the case of a thin strip of material when using DFG, so in this case we set separable = 0
 	// The threshold spacing is normalized by the neighbor radius.
-	if ( m_thinFeatureDFGThreshold < 10.0 ) // Threshold defaults to 1.e99 so we only do this calculation if a lower value is set.
+	if ( thinFeatureDFGThreshold < 10.0 ) // Threshold defaults to 1.e99 so we only do this calculation if a lower value is set.
 	{                                       // After testing we may default to a lower value.
 		real64 dx[3] = { 0 };
     LvArray::tensorOps::copy< 3 >( dx, xA );
@@ -9985,7 +10118,7 @@ int SolidMechanicsMPM::evaluateSeparabilityCriterion( localIndex const & A,
 
     real64 productOfSquares = ( dx[0] * dx[0] ) * ( dx[1] * dx[1] ) * ( dx[2] * dx[2] );
 
-    if ( productOfSquares < ( m_thinFeatureDFGThreshold * m_neighborRadius ) * ( m_thinFeatureDFGThreshold * m_neighborRadius ) )
+    if ( productOfSquares < ( thinFeatureDFGThreshold * neighborRadius ) * ( thinFeatureDFGThreshold * neighborRadius ) )
 		{
 			separable = 0;
 		}
@@ -10349,7 +10482,7 @@ void SolidMechanicsMPM::subdivideParticles( ParticleManager & particleManager )
     // Only iterate over old particles, assumes on resize they are all at the front of the arrays
     // TODO convert this to RAJA forAll for device parallelization
     // forAll< parallelDevicePolicy<> >( oldSubRegionSize, [=, &currGlobalIndex, &subRegionNewParticleIndex] GEOS_HOST_DEVICE ( localIndex const p )
-    for( localIndex p = 0; p < oldSubRegionSize; p++)
+    for( size_t p = 0; p < oldSubRegionSize; p++)
     {   
       if( particleSubdivideFlag[p] == 1 )
       {

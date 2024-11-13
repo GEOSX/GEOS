@@ -1175,7 +1175,7 @@ void SpatialPartition::setPeriodicDomainBoundaryObjects( MeshBody & grid,
     GEOS_LOG_RANK( "Set periodic domain boundary objects");
     arrayView1d< globalIndex > localToGlobalMap = nodeManager.localToGlobalMap();
     // unordered_map< globalIndex, localIndex > const & globalToLocalMap = nodeManager.globalToLocalMap(); // CC: need this for single partition case 
-    arrayView2d< real64 const, nodes::REFERENCE_POSITION_USD > const gridPosition = nodeManager.referencePosition();
+    const arrayView2d< real64 const, nodes::REFERENCE_POSITION_USD > gridPosition = nodeManager.referencePosition();
 
     // CC: Should we be using periodicSets? Old geos used periodic sets in the input file, we don't here
     CellBlockManager & cellBlockManager = grid.getGroup< CellBlockManager >( dataRepository::keys::cellManager );
