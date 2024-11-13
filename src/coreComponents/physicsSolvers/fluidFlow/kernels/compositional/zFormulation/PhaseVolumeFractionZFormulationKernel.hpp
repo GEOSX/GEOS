@@ -57,11 +57,12 @@ public:
     : Base(),
     m_phaseVolFrac( subRegion.getField< fields::flow::phaseVolumeFraction >() ),
     m_dPhaseVolFrac( subRegion.getField< fields::flow::dPhaseVolumeFraction >() ),
-    m_compDens( subRegion.getField< fields::flow::globalCompDensity >() ),
     m_phaseFrac( fluid.phaseFraction() ),
     m_dPhaseFrac( fluid.dPhaseFraction() ),
     m_phaseDens( fluid.phaseDensity() ),
-    m_dPhaseDens( fluid.dPhaseDensity() )
+    m_dPhaseDens( fluid.dPhaseDensity() ),
+    m_totalDens( fluid.totalDensity() ),
+    m_dTotalDens( fluid.dTotalDensity() )
   {}
 
   /**
@@ -72,26 +73,18 @@ public:
    */
   template< typename FUNC = NoOpFunc >
   GEOS_HOST_DEVICE
-  real64 compute( localIndex const ei,
-                  FUNC && phaseVolFractionKernelOp = NoOpFunc{} ) const
+  real64 compute( localIndex const ei) const
   {
     using Deriv = constitutive::multifluid::DerivativeOffset;
 
-    arraySlice1d< real64 const, compflow::USD_COMP - 1 > const compDens = m_compDens[ei];
-    arraySlice1d< real64 const, constitutive::multifluid::USD_PHASE - 2 > const phaseDens = m_phaseDens[ei][0];
-    arraySlice2d< real64 const, constitutive::multifluid::USD_PHASE_DC - 2 > const dPhaseDens = m_dPhaseDens[ei][0];
     arraySlice1d< real64 const, constitutive::multifluid::USD_PHASE - 2 > const phaseFrac = m_phaseFrac[ei][0];
     arraySlice2d< real64 const, constitutive::multifluid::USD_PHASE_DC - 2 > const dPhaseFrac = m_dPhaseFrac[ei][0];
+    arraySlice1d< real64 const, constitutive::multifluid::USD_PHASE - 2 > const phaseDens = m_phaseDens[ei][0];
+    arraySlice2d< real64 const, constitutive::multifluid::USD_PHASE_DC - 2 > const dPhaseDens = m_dPhaseDens[ei][0];
+    real64 const totalDensity = m_totalDens[ei][0];
+    arraySlice1d< real64 const, constitutive::multifluid::USD_FLUID_DC - 2 > const dTotalDens = m_dTotalDens[ei][0];
     arraySlice1d< real64, compflow::USD_PHASE - 1 > const phaseVolFrac = m_phaseVolFrac[ei];
     arraySlice2d< real64, compflow::USD_PHASE_DC - 1 > const dPhaseVolFrac = m_dPhaseVolFrac[ei];
-
-    // compute total density from component partial densities
-    real64 totalDensity = 0.0;
-    real64 const dTotalDens_dCompDens = 1.0;
-    for( integer ic = 0; ic < numComp; ++ic )
-    {
-      totalDensity += compDens[ic];
-    }
 
     real64 maxDeltaPhaseVolFrac = 0.0;
 
@@ -110,39 +103,27 @@ public:
         continue;
       }
 
-      // Expression for volume fractions: S_p = (nu_p / rho_p) * rho_t
-      real64 const phaseDensInv = 1.0 / phaseDens[ip];
-
       // store old saturation to compute change later
       real64 const satOld = phaseVolFrac[ip];
 
-      // compute saturation and derivatives except multiplying by the total density
-      phaseVolFrac[ip] = phaseFrac[ip] * phaseDensInv;
+      // compute saturation and derivatives  S_p = rho_t * (nu_p / rho_p)
+      phaseVolFrac[ip] = totalDensity * phaseFrac[ip] / phaseDens[ip];
 
-      dPhaseVolFrac[ip][Deriv::dP] =
-        (dPhaseFrac[ip][Deriv::dP] - phaseVolFrac[ip] * dPhaseDens[ip][Deriv::dP]) * phaseDensInv;
-
+      dPhaseVolFrac[ip][Deriv::dP] = phaseVolFrac[ip] *
+         (dTotalDens[Deriv::dP] / totalDensity +  dPhaseFrac[ip][Deriv::dP] / phaseFrac[ip] - dPhaseDens[ip][Deriv::dP] / phaseDens[ip]);
+        
       for( integer jc = 0; jc < numComp; ++jc )
       {
-        dPhaseVolFrac[ip][Deriv::dC+jc] =
-          (dPhaseFrac[ip][Deriv::dC+jc] - phaseVolFrac[ip] * dPhaseDens[ip][Deriv::dC+jc]) * phaseDensInv;
+        dPhaseVolFrac[ip][Deriv::dC+jc] = phaseVolFrac[ip] *
+         (dTotalDens[Deriv::dC+jc] / totalDensity +  dPhaseFrac[ip][Deriv::dC+jc] / phaseFrac[ip] - dPhaseDens[ip][Deriv::dC+jc] / phaseDens[ip]);
       }
 
       // call the lambda in the phase loop to allow the reuse of the phaseVolFrac and totalDensity
       // possible use: assemble the derivatives wrt temperature
-      phaseVolFractionKernelOp( ip, phaseVolFrac[ip], phaseDensInv, totalDensity );
-
-      // now finalize the computation by multiplying by total density
-      for( integer jc = 0; jc < numComp; ++jc )
-      {
-        dPhaseVolFrac[ip][Deriv::dC+jc] *= totalDensity;
-        dPhaseVolFrac[ip][Deriv::dC+jc] += phaseVolFrac[ip] * dTotalDens_dCompDens;
-      }
-
-      phaseVolFrac[ip] *= totalDensity;
-      dPhaseVolFrac[ip][Deriv::dP] *= totalDensity;
+      //phaseVolFractionKernelOp( ip, phaseVolFrac[ip], phaseDensInv, totalDensity );
 
       real64 const deltaPhaseVolFrac = LvArray::math::abs( phaseVolFrac[ip] - satOld );
+
       if( maxDeltaPhaseVolFrac < deltaPhaseVolFrac )
       {
         maxDeltaPhaseVolFrac = deltaPhaseVolFrac;
@@ -182,10 +163,6 @@ protected:
 
   // inputs
 
-  /// Views on component densities
-  arrayView2d< real64 const, compflow::USD_COMP > m_compDens;
-  arrayView3d< real64 const, compflow::USD_COMP_DC > m_dCompFrac_dCompDens;
-
   /// Views on phase fractions
   arrayView3d< real64 const, constitutive::multifluid::USD_PHASE > m_phaseFrac;
   arrayView4d< real64 const, constitutive::multifluid::USD_PHASE_DC > m_dPhaseFrac;
@@ -193,6 +170,10 @@ protected:
   /// Views on phase densities
   arrayView3d< real64 const, constitutive::multifluid::USD_PHASE > m_phaseDens;
   arrayView4d< real64 const, constitutive::multifluid::USD_PHASE_DC > m_dPhaseDens;
+
+  /// Views on the total density
+  arrayView2d< real64 const, constitutive::multifluid::USD_FLUID > const m_totalDens;
+  arrayView3d< real64 const, constitutive::multifluid::USD_FLUID_DC > const m_dTotalDens;
 
 };
 

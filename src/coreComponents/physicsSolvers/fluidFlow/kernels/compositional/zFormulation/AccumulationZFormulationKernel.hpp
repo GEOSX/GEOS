@@ -89,13 +89,8 @@ public:
     m_dPoro_dPres( solid.getDporosity_dPressure() ),
     m_phaseVolFrac( subRegion.getField< fields::flow::phaseVolumeFraction >() ),
     m_dPhaseVolFrac( subRegion.getField< fields::flow::dPhaseVolumeFraction >() ),
-    m_phaseDens( fluid.phaseDensity() ),
-    m_dPhaseDens( fluid.dPhaseDensity() ),
-    m_phaseFrac( fluid.phaseFraction() ),
-    m_dPhaseFrac( fluid.dPhaseFraction() ),
     m_totalDens( fluid.totalDensity() ),
     m_dTotalDens( fluid.dTotalDensity() ),
-    m_compDens( subRegion.getField< fields::flow::globalCompDensity >() ),
     m_compFrac( subRegion.getField< fields::flow::globalCompFraction >() ),
     m_compAmount_n( subRegion.getField< fields::flow::compAmount_n >() ),
     m_localMatrix( localMatrix ),
@@ -180,74 +175,10 @@ public:
   {
     using Deriv = constitutive::multifluid::DerivativeOffset;
 
-    arraySlice1d< real64 const, compflow::USD_COMP - 1 > const compDens = m_compDens[ei];
     arraySlice1d< real64 const, compflow::USD_COMP - 1 > const compFrac = m_compFrac[ei];
-    arraySlice1d< real64 const, constitutive::multifluid::USD_PHASE - 2 > const phaseDens = m_phaseDens[ei][0];
-    arraySlice2d< real64 const, constitutive::multifluid::USD_PHASE_DC - 2 > const dPhaseDens = m_dPhaseDens[ei][0];
-    arraySlice1d< real64 const, constitutive::multifluid::USD_PHASE - 2 > const phaseFrac = m_phaseFrac[ei][0];
-    arraySlice2d< real64 const, constitutive::multifluid::USD_PHASE_DC - 2 > const dPhaseFrac = m_dPhaseFrac[ei][0];
-    //arraySlice1d< real64 const, constitutive::multifluid::USD_FLUID - 1 > const totalDens = m_totalDens[ei];
-    //arraySlice2d< real64 const, constitutive::multifluid::USD_FLUID_DC - 1 > const dTotalDens = m_dTotalDens[ei];
+    real64 const totalDensity = m_totalDens[ei][0];
+    arraySlice1d< real64 const, constitutive::multifluid::USD_FLUID_DC - 2 > const dTotalDens = m_dTotalDens[ei][0];
 
-    // debugging
-
-
-    // calculate total component density from volume balance
-    // TO DO: create separate kernel
-    real64 totalDensity = 0.0;
-    real64 dtotalDensity_dP = 0.0;
-    real64 dtotalDensity_dC[numComp]{};
-
-    for( integer ic = 0; ic < numComp; ++ic )
-    {
-      totalDensity += compDens[ic];
-      dtotalDensity_dC[ic] = 0.0;
-    }
-
-    //real64 const sum_phaseFrac_phaseDens = 0.0;
-    for( integer ip = 0; ip < m_numPhases; ++ip )
-    {
-      real64 const phaseDensInv = 1.0 / phaseDens[ip];
-      //sum_phaseFrac_phaseDens += phaseFrac[ip] * phaseDensInv;
-
-      dtotalDensity_dP += phaseDensInv * totalDensity * totalDensity *
-        (phaseFrac[ip] * phaseDensInv * dPhaseDens[ip][Deriv::dP] - dPhaseFrac[ip][Deriv::dP]);
-
-      for( integer jc = 0; jc < numComp; ++jc )
-      {
-        dtotalDensity_dC[jc] += phaseDensInv * totalDensity * totalDensity *
-          (phaseFrac[ip] * phaseDensInv * dPhaseDens[ip][Deriv::dC+jc] - dPhaseFrac[ip][Deriv::dC+jc]);
-      }
-    }
-
-    std::cout << "Cell [" << ei << "]" << std::endl;
-    for( integer ic = 0; ic < numComp; ++ic )
-      std::cout << "rho[" << ic << "] = " << compDens[ic] << std::endl;
-    for( integer ic = 0; ic < numComp; ++ic )
-      std::cout << "z[" << ic << "] = " << compFrac[ic] << std::endl;  
-    for( integer ip = 0; ip < m_numPhases; ++ip )
-    {
-      std::cout << "nu[" << ip << "] = " << phaseFrac[ip] << std::endl; 
-      std::cout << "dnu[" << ip << "]_dP = " << dPhaseFrac[ip][Deriv::dP] << std::endl;   
-      for( integer ic = 0; ic < numComp; ++ic )
-        std::cout << "dnu[" << ip << "]_dz[" << ic << "] = " << dPhaseFrac[ip][Deriv::dC+ic] << std::endl;  
-    }
-
-    for( integer ip = 0; ip < m_numPhases; ++ip )
-    {
-      std::cout << "phaseDens[" << ip << "] = " << phaseDens[ip] << std::endl; 
-      std::cout << "dphaseDens[" << ip << "]_dP = " << dPhaseDens[ip][Deriv::dP] << std::endl;   
-      for( integer ic = 0; ic < numComp; ++ic )
-        std::cout << "dphaseDens[" << ip << "]_dz[" << ic << "] = " << dPhaseDens[ip][Deriv::dC+ic] << std::endl;  
-    }
-      
-   
-
-    std::cout << "rhoT = " << totalDensity << std::endl;  
-    std::cout << "drhoT_dP = " << dtotalDensity_dP << std::endl;
-    for( integer ic = 0; ic < numComp; ++ic )
-      std::cout << "drhoT_dC[" << ic << "] = " << dtotalDensity_dC[ic] << std::endl;
-    
     // ic - index of component whose conservation equation is assembled
     // (i.e. row number in local matrix)
     for( integer ic = 0; ic < numComp; ++ic )
@@ -258,7 +189,7 @@ public:
       stack.localResidual[ic] += compAmount - compAmount_n;
 
       // derivatives with respect to pressure (p)
-      real64 const dCompAmount_dP = compFrac[ic] * (stack.dPoreVolume_dPres * totalDensity + stack.poreVolume * dtotalDensity_dP);
+      real64 const dCompAmount_dP = compFrac[ic] * (stack.dPoreVolume_dPres * totalDensity + stack.poreVolume * dTotalDens[Deriv::dP]);
       stack.localJacobian[ic][0] += dCompAmount_dP;
 
       // derivatives with respect to global component fraction (zc)
@@ -266,23 +197,12 @@ public:
       {
         real64 dCompAmount_dC;
         if (ic == jc)
-          dCompAmount_dC = stack.poreVolume * (totalDensity + dtotalDensity_dC[jc] * compFrac[ic]);
+          dCompAmount_dC = stack.poreVolume * (totalDensity + dTotalDens[Deriv::dC+jc] * compFrac[ic]);
         else
-          dCompAmount_dC = stack.poreVolume * (dtotalDensity_dC[jc] * compFrac[ic]);
+          dCompAmount_dC = stack.poreVolume * (dTotalDens[Deriv::dC+jc] * compFrac[ic]);
 
         stack.localJacobian[ic][jc + 1] += dCompAmount_dC;
       }
-    }
-  
-    for( integer ic = 0; ic < numComp; ++ic )
-    {
-      std::cout << "Raccum[" << ic << "] = " << stack.localResidual[ic] << std::endl;
-      std::cout << "dRaccum[" << ic << "]_dP = " << stack.localJacobian[ic][0] << std::endl;
-      for( integer jc = 0; jc < numComp; ++jc )
-      {
-        std::cout << "dRaccum[" << ic << "]_dz[" << jc << "] = " << stack.localJacobian[ic][jc+1] << std::endl;
-      }
-    
     }
   }
 
@@ -416,20 +336,11 @@ protected:
   arrayView2d< real64 const, compflow::USD_PHASE > const m_phaseVolFrac;
   arrayView3d< real64 const, compflow::USD_PHASE_DC > const m_dPhaseVolFrac;
 
-  /// Views on the phase densities
-  arrayView3d< real64 const, constitutive::multifluid::USD_PHASE > const m_phaseDens;
-  arrayView4d< real64 const, constitutive::multifluid::USD_PHASE_DC > const m_dPhaseDens;
-
-  /// Views on phase fractions
-  arrayView3d< real64 const, constitutive::multifluid::USD_PHASE > const m_phaseFrac;
-  arrayView4d< real64 const, constitutive::multifluid::USD_PHASE_DC > const m_dPhaseFrac;
-
   /// Views on the total density
   arrayView2d< real64 const, constitutive::multifluid::USD_FLUID > const m_totalDens;
   arrayView3d< real64 const, constitutive::multifluid::USD_FLUID_DC > const m_dTotalDens;
 
   // View on component densities and component fractions 
-  arrayView2d< real64 const, compflow::USD_COMP > m_compDens;
   arrayView2d< real64 const, compflow::USD_COMP > m_compFrac;
 
   // View on component amount (mass/moles) from previous time step

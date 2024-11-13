@@ -55,7 +55,7 @@
 #include "physicsSolvers/fluidFlow/kernels/compositional/StatisticsKernel.hpp"
 #include "physicsSolvers/fluidFlow/kernels/compositional/CFLKernel.hpp"
 #include "physicsSolvers/fluidFlow/kernels/compositional/zFormulation/AccumulationZFormulationKernel.hpp"
-//#include "physicsSolvers/fluidFlow/kernels/compositional/zFormulation/PhaseVolumeFractionZFormulationKernel.hpp"
+#include "physicsSolvers/fluidFlow/kernels/compositional/zFormulation/PhaseVolumeFractionZFormulationKernel.hpp"
 
 #if defined( __INTEL_COMPILER )
 #pragma GCC optimize "O0"
@@ -698,13 +698,12 @@ real64 CompositionalMultiphaseBase::updatePhaseVolumeFractionZFormulation( Objec
 
   real64 maxDeltaPhaseVolFrac  =
       isothermalCompositionalMultiphaseBaseKernels::
-      PhaseVolumeFractionKernelFactory::
+      PhaseVolumeFractionZFormulationKernelFactory::
       createAndLaunch< parallelDevicePolicy<> >( m_numComponents,
                                                  m_numPhases,
                                                  dataGroup,
                                                  fluid );
   
-  // ZFormulation
   return maxDeltaPhaseVolFrac;
 }
 
