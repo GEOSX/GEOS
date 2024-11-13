@@ -1117,8 +1117,17 @@ void GeomechanicsUpdates::computeElasticProperties( real64 & bulk,
     // When computeElasticProperties() is called with two real64s as arguments, it
     // computes the high pressure limit tangent elastic shear and bulk modulus
     // This is used to estimate wave speeds and make conservative estimates of substepping.
-    shear = m_g0;       // Linear elastic shear Modulus
     bulk  = m_b0 + m_b1;  // Bulk Modulus
+
+    shear = m_g0;  // Default behavior is constant shear modulus   
+    if(m_g1 != 0.0) // Poisson ratio control.
+    {
+      real64 nu = m_g1 + m_g2; // high-pressure limit.
+
+      // Force 0<nu<0.5
+      nu = std::min( std::max( nu, 0.5 ), 0.0  );
+      shear = 1.5 * bulk * ( 1.0 - 2.0 * nu ) / ( 1.0 + nu );
+    }
 }
 
 GEOS_HOST_DEVICE
@@ -1144,31 +1153,13 @@ void GeomechanicsUpdates::computeElasticProperties( real64 const ( &stress )[6],
   // ..........................................................Undrained
   // The low pressure bulk and shear moduli are also used for the tensile response.
 	bulk = m_b0;
-	shear = m_g0;
 
-	// To be thermodynamically consistent, the shear modulus in an isotropic model
-	// must be constant, but the bulk modulus can depend on pressure.  However, this
-	// leads to a Poisson's ratio that approaches 0.5 at high pressures, which is
-	// inconsistent with experimental data for the Poisson's ratio, inferred from the
-	// Young's modulus.  Induced anisotropy is likely the cause of the discrepency,
-	// but it may be better to allow the shear modulus to vary so the Poisson's ratio
-	// remains reasonable.
-	//
-	// If the user has specified a nonzero value of G1 and G2, the shear modulus will
-	// vary with pressure so the drained Poisson's ratio transitions from G1 to G1+G2 as
-	// the bulk modulus varies from B0 to B0+B1.  The fluid model further affects the
-	// bulk modulus, but does not alter the shear modulus, so the pore fluid does
-	// increase the Poisson's ratio.
 	if( evp <= 0.0 )
     {
-		if ( I1 < 0.0 )
-        {
+		if ( I1 < -1.e-12 )
+    {
 			real64 expb2byI1 = exp( m_b2 / I1 );
 			bulk = bulk + m_b1 * expb2byI1;
-			if(m_g1 != 0.0 && m_g2 != 0.0){
-				real64 nu = m_g1 + m_g2 * expb2byI1;
-				shear = 1.5 * bulk * ( 1.0 - 2.0 * nu ) / ( 1.0 + nu );
-			}
 		}
 
 		// Elastic-plastic coupling
@@ -1208,6 +1199,33 @@ void GeomechanicsUpdates::computeElasticProperties( real64 const ( &stress )[6],
 
   // don't allow elastic-plastic coupling to bring bulk modulus too low:
   bulk = fmax(bulk, m_b0);
+  
+  // To be thermodynamically consistent, the shear modulus in an isotropic model
+	// must be constant, but the bulk modulus can depend on pressure.  However, this
+	// leads to a Poisson's ratio that approaches 0.5 at high pressures, which is
+	// inconsistent with experimental data for the Poisson's ratio, inferred from the
+	// Young's modulus.  Induced anisotropy is likely the cause of the discrepency,
+	// but it may be better to allow the shear modulus to vary so the Poisson's ratio
+	// remains reasonable.
+	//
+	// If the user has specified a nonzero value of G1, the shear modulus will be defined
+  // from a poisson's ratio nu = g1+g2*exp(g3/I1)
+	// to vary with pressure so the drained Poisson's ratio transitions from G1 to G1+G2 as
+	// the pressure increases relative to g3.  Treatment of fluid effects has not yet been developed.
+  
+  shear = m_g0;  // Default behavior is constant shear modulus
+  
+  if(m_g1 != 0.0) // Poisson ratio control.
+  {
+    real64 nu = m_g1;
+    if ( I1 < -1.e-12 ) // in compression scale the poisson ratio
+    {
+      nu += m_g2 * exp( m_g3 / I1 );
+    }
+    // Force 0<nu<0.5
+    nu = std::min( std::max( nu, 0.5 ), 0.0  );
+		shear = 1.5 * bulk * ( 1.0 - 2.0 * nu ) / ( 1.0 + nu );
+	}
 }
 
 // [nsub] = computeStepDivisions(X,Zeta,ep,sigma_n,sigma_trial)
