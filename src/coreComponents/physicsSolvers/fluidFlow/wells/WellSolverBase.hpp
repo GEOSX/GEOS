@@ -279,6 +279,7 @@ public:
     static constexpr char const * fluidNamesString() { return "fluidNames"; }
     static constexpr char const * isThermalString() { return "isThermal"; }
     static constexpr char const * writeCSVFlagString() { return "writeCSV"; }
+    static constexpr char const * timeStepFromTablesFlagString() { return "timeStepFromTables"; }
   };
 
 private:
@@ -343,6 +344,9 @@ protected:
   /// rates output
   integer m_writeCSV;
   string const m_ratesOutputDir;
+
+  // flag to enable time step selection base on rates/bhp tables coordinates
+  integer m_timeStepFromTables;
 
   /// flag to freeze the initial state during initialization in coupled problems
   integer m_keepVariablesConstantDuringInitStep;

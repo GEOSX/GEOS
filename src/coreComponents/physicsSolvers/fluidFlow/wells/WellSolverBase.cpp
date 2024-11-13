@@ -61,6 +61,11 @@ WellSolverBase::WellSolverBase( string const & name,
     setInputFlag( dataRepository::InputFlags::OPTIONAL ).
     setDescription( "Write rates into a CSV file" );
 
+  this->registerWrapper( viewKeyStruct::timeStepFromTablesFlagString(), &m_timeStepFromTables ).
+    setApplyDefaultValue( 0 ).
+    setInputFlag( dataRepository::InputFlags::OPTIONAL ).
+    setDescription( "Choose time step to honor rates/bhp tables time intervals" );
+
   addLogLevel< logInfo::WellControl >();
   addLogLevel< logInfo::Crossflow >();
 }
@@ -319,22 +324,25 @@ real64 WellSolverBase::setNextDt( real64 const & time, const real64 & lastDt, ge
 {
   real64 nextDt = PhysicsSolverBase::setNextDt( time, lastDt, domain );
 
-  forDiscretizationOnMeshTargets( domain.getMeshBodies(), [&]( string const &,
-                                                               MeshLevel & mesh,
-                                                               arrayView1d< string const > const & regionNames )
+  if( m_timeStepFromTables )
   {
-    mesh.getElemManager().forElementSubRegions< WellElementSubRegion >( regionNames, [&]( localIndex const,
-                                                                                          WellElementSubRegion & subRegion )
+    forDiscretizationOnMeshTargets( domain.getMeshBodies(), [&]( string const &,
+                                                                 MeshLevel & mesh,
+                                                                 arrayView1d< string const > const & regionNames )
     {
-      WellControls & wellControls = getWellControls( subRegion );
+      mesh.getElemManager().forElementSubRegions< WellElementSubRegion >( regionNames, [&]( localIndex const,
+                                                                                            WellElementSubRegion & subRegion )
+      {
+        WellControls & wellControls = getWellControls( subRegion );
 
-      setNextDtFromTable( wellControls.getTargetBHPTable(), time, nextDt );
-      setNextDtFromTable( wellControls.getTargetMassRateTable(), time, nextDt );
-      setNextDtFromTable( wellControls.getTargetPhaseRateTable(), time, nextDt );
-      setNextDtFromTable( wellControls.getTargetTotalRateTable(), time, nextDt );
-      setNextDtFromTable( wellControls.getStatusTable(), time, nextDt );
+        setNextDtFromTable( wellControls.getTargetBHPTable(), time, nextDt );
+        setNextDtFromTable( wellControls.getTargetMassRateTable(), time, nextDt );
+        setNextDtFromTable( wellControls.getTargetPhaseRateTable(), time, nextDt );
+        setNextDtFromTable( wellControls.getTargetTotalRateTable(), time, nextDt );
+        setNextDtFromTable( wellControls.getStatusTable(), time, nextDt );
+      } );
     } );
-  } );
+  }
 
   return nextDt;
 }
