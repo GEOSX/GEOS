@@ -2,57 +2,45 @@
 
 <Problem>
   <Included>
-    <File name="./fractureMatrixFlow_edfm_base.xml" />
+    <File name="./fractureMatrixFlow_edfm_vtk.xml" />
   </Included>
 
   <Mesh>
-    <InternalMesh
-      name="mesh1"
-      elementTypes="{ C3D8 }"
-      xCoords="{ 0, 1 }"
-      yCoords="{ 0, 1 }"
-      zCoords="{ 0, 1 }"
-      nx="{ 11 }"
-      ny="{ 11 }"
-      nz="{ 11 }"
-      cellBlockNames="{ cb1 }"/>
+        <VTKMesh
+                name="mesh1"
+                useGlobalIds="1"
+                embeddedSurfaceBlocks="{edfm_vtk_fractures}"
+                file="./main_edfm_vtk.vtm"/>
   </Mesh>
 
   <Geometry>
     <Box
       name="source"
       xMin="{ -0.01, -0.01, -0.01 }"
-      xMax="{ 1.1, 0.1, 1.01 }"/>
+      xMax="{ 0.34, 0.34, 0.51 }"/>
 
     <Box
       name="sink"
-      xMin="{ -0.01, 0.9, -0.01 }"
+      xMin="{ 0.65, 0.65, 0.49 }"
       xMax="{ 1.01, 1.01, 1.01 }"/>
 
-    <Rectangle
-      name="FracturePlane"
-      normal="{ 1, 0, 0 }"
-      origin="{ 0.5, 0.5, 0.5 }"
-      lengthVector="{ 0, 1, 0 }"
-      widthVector="{ 0, 0, 1 }"
-      dimensions="{ 0.5, 1 }"/>
   </Geometry>
 
   <Events
     maxTime="2e3"
     logLevel="3">
-    <!-- <SoloEvent
+    <SoloEvent
       name="preFracture"
-      target="/Solvers/SurfaceGenerator"/> -->
+      target="/Solvers/SurfaceGenerator"/>
 
     <PeriodicEvent
       name="solverApplications"
       forceDt="1e3"
       target="/Solvers/SinglePhaseFlow"/>
 
-    <!-- <PeriodicEvent
+    <PeriodicEvent
       name="outputs"
-      target="/Outputs/vtkOutput"/> -->
+      target="/Outputs/vtkOutput"/>
 
     <PeriodicEvent
       name="restarts"

@@ -15,14 +15,14 @@
         directParallel="0"/>
     </SinglePhaseFVM>
 
-    <!-- <EmbeddedSurfaceGenerator
+    <EmbeddedSurfaceGenerator
       name="SurfaceGenerator"
       logLevel="1"
       discretization="FE1"
       targetRegions="{ RockMatrix, Fracture }"
-      targetObjects="{ FracturePlane }"
       fractureRegion="Fracture"
-      mpiCommOrder="1"/> -->
+      targetObjects="{ FracturePlane }"
+      mpiCommOrder="1"/>
   </Solvers>
 
   <NumericalMethods>
@@ -40,11 +40,12 @@
   <ElementRegions>
     <CellElementRegion
       name="RockMatrix"
-      cellBlocks="{ cb1 }"
+      cellBlocks="{ hexahedra }"
       materialList="{ water, rock }"/>
 
     <SurfaceElementRegion
       name="Fracture"
+      faceBlock = "edfm_vtk_fractures"
       defaultAperture="1e-3"
       materialList="{ water, fractureFilling }"
       subRegionType="embeddedElement"/>
@@ -100,7 +101,7 @@
       name="Porosity"
       initialCondition="1"
       setNames="{ all }"
-      objectPath="ElementRegions/RockMatrix/cb1"
+      objectPath="ElementRegions/RockMatrix/hexahedra"
       fieldName="rockPorosity_referencePorosity"
       scale="0.1"/>
 
@@ -116,20 +117,20 @@
       name="initialPressure"
       initialCondition="1"
       setNames="{ all }"
-      objectPath="ElementRegions/RockMatrix/cb1"
+      objectPath="ElementRegions/RockMatrix/hexahedra"
       fieldName="pressure"
       scale="0.0"/>
 
     <FieldSpecification
       name="sourceTerm"
-      objectPath="ElementRegions/RockMatrix/cb1"
+      objectPath="ElementRegions/RockMatrix/hexahedra"
       fieldName="pressure"
       scale="1e7"
       setNames="{ source }"/>
 
     <FieldSpecification
       name="sinkTerm"
-      objectPath="ElementRegions/RockMatrix/cb1"
+      objectPath="ElementRegions/RockMatrix/hexahedra"
       fieldName="pressure"
       scale="0.0"
       setNames="{ sink }"/>

@@ -1,0 +1,122 @@
+<VTKFile type="UnstructuredGrid" version="1.0" byte_order="LittleEndian" header_type="UInt64">
+  <UnstructuredGrid>
+    <Piece NumberOfPoints="48" NumberOfCells="18">
+      <PointData GlobalIds="GLOBAL_IDS_POINTS">
+        <DataArray type="Int64" IdType="1" Name="GLOBAL_IDS_POINTS" format="ascii" RangeMin="0" RangeMax="47">
+          0 1 2 3 4 5
+          6 7 8 9 10 11
+          12 13 14 15 16 17
+          18 19 20 21 22 23
+          24 25 26 27 28 29
+          30 31 32 33 34 35
+          36 37 38 39 40 41
+          42 43 44 45 46 47
+        </DataArray>
+      </PointData>
+      <CellData GlobalIds="GLOBAL_IDS_CELLS">
+        <DataArray type="Int64" Name="split" format="ascii" RangeMin="0" RangeMax="0">
+        0 0 0 0 0 0 
+        0 0 0 0 0 0
+        0 0 0 0 0 0 
+        </DataArray>
+        <DataArray type="Int64" IdType="1" Name="GLOBAL_IDS_CELLS" format="ascii" RangeMin="0" RangeMax="17">
+          0 1 2 3 4 5
+          6 7 8 9 10 11
+          12 13 14 15 16 17
+        </DataArray>
+      </CellData>
+      <Points>
+        <DataArray type="Float32" Name="Points" NumberOfComponents="3" format="ascii" RangeMin="0" RangeMax="1">
+            0 0 0
+            0.333 0 0
+            0.666 0 0
+            1 0 0
+            0 0.333 0
+            0.333 0.333 0
+            0.666 0.333 0
+            1 0.333 0
+            0 0.666 0
+            0.333 0.666 0
+            0.666 0.666 0
+            1 0.666 0
+            0 1 0
+            0.333 1 0
+            0.666 1 0
+            1 1 0
+            0 0 0.5
+            0.333 0 0.5
+            0.666 0 0.5
+            1 0 0.5
+            0 0.333 0.5
+            0.333 0.333 0.5
+            0.666 0.333 0.5
+            1 0.333 0.5
+            0 0.666 0.5
+            0.333 0.666 0.5
+            0.666 0.666 0.5
+            1 0.666 0.5
+            0 1 0.5
+            0.333 1 0.5
+            0.666 1 0.5
+            1 1 0.5
+            0 0 1
+            0.333 0 1
+            0.666 0 1
+            1 0 1
+            0 0.333 1
+            0.333 0.333 1
+            0.666 0.333 1
+            1 0.333 1
+            0 0.666 1
+            0.333 0.666 1
+            0.666 0.666 1
+            1 0.666 1
+            0 1 1
+            0.333 1 1
+            0.666 1 1
+            1 1 1
+          <InformationKey name="L2_NORM_RANGE" location="vtkDataArray" length="2">
+            <Value index="0">
+              0
+            </Value>
+            <Value index="1">
+              1.7320508076
+            </Value>
+          </InformationKey>
+        </DataArray>
+      </Points>
+      <Cells>
+        <DataArray type="Int64" Name="connectivity" format="ascii" RangeMin="0" RangeMax="47">
+         0  1  5  4  16 17 21 20
+         1  2  6  5  17 18 22 21
+         2  3  7  6  18 19 23 22
+         4  5  9  8  20 21 25 24
+         5  6  10 9  21 22 26 25
+         6  7  11 10 22 23 27 26
+         8  9  13 12 24 25 29 28
+         9  10 14 13 25 26 30 29
+         10 11 15 14 26 27 31 30
+         16 17 21 20 32 33 37 36
+         17 18 22 21 33 34 38 37
+         18 19 23 22 34 35 39 38
+         20 21 25 24 36 37 41 40
+         21 22 26 25 37 38 42 41
+         22 23 27 26 38 39 43 42
+         24 25 29 28 40 41 45 44
+         25 26 30 29 41 42 46 45
+         26 27 31 30 42 43 47 46
+        </DataArray>
+        <DataArray type="Int64" Name="offsets" format="ascii" RangeMin="8" RangeMax="144">
+          8 16 24 32 40 48
+          56 64 72 80 88 96
+          104 112 120 128 136 144
+        </DataArray>
+        <DataArray type="UInt8" Name="types" format="ascii" RangeMin="12" RangeMax="12">
+          12 12 12 12 12 12
+          12 12 12 12 12 12
+          12 12 12 12 12 12
+        </DataArray>
+      </Cells>
+    </Piece>
+  </UnstructuredGrid>
+</VTKFile>

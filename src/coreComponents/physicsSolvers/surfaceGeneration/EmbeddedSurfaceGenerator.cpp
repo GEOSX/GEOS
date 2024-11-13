@@ -137,11 +137,7 @@ void EmbeddedSurfaceGenerator::initializePostSubGroups()
   {
 
     CellBlockManagerABC const & cellBlockManager = meshBody.getCellBlockManager();
-    // CellBlockManagerABC & cellBlockManagerNoConst = const_cast< CellBlockManagerABC & >(domain.getMeshBody( 0 ).getCellBlockManager());
-    // CellBlockManager & cellBlockManagerConcrete = dynamic_cast< CellBlockManager & >(cellBlockManagerNoConst);
-    //Group const & embSurfBlocks = cellBlockManagerConcrete.getEmbeddedSurfaceBlocks();
     Group const & embSurfBlocks = cellBlockManager.getEmbeddedSurfaceBlocks();
-    //if( embSurfBlocks.hasGroup( "EmbeddedSurface" ))
     if( embSurfBlocks.hasGroup( faceBlockName ))
     {
       EmbeddedSurfaceBlockABC const & embSurf = embSurfBlocks.getGroup< EmbeddedSurfaceBlockABC >( faceBlockName );

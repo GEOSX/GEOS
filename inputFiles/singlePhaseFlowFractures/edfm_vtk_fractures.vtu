@@ -1,0 +1,75 @@
+<?xml version="1.0"?>
+<VTKFile type="UnstructuredGrid" version="0.1" byte_order="LittleEndian" header_type="UInt32" compressor="vtkZLibDataCompressor">
+  <UnstructuredGrid>
+    <Piece NumberOfPoints="6" NumberOfCells="2">
+      <PointData>
+        <DataArray type="Int32" Name="fracture_ids_points" NumberOfComponents="1" format="ascii">
+         0
+         1
+         2
+         3
+         4
+         5
+        </DataArray>
+      </PointData>
+      <CellData>
+        <DataArray type="Int32" Name="fracture_to_parent_matrix_cell_mapping" NumberOfComponents="2" format="ascii">
+         0 4
+         1 13
+        </DataArray>
+        <DataArray type="Float32" Name="permeability" NumberOfComponents="1" format="ascii" RangeMin="0.1" RangeMax="0.1">
+          0.1
+          0.1
+        </DataArray>
+        <DataArray type="Float32" Name="aperture" NumberOfComponents="1" format="ascii" RangeMin="0.0001" RangeMax="0.0001">
+          0.0001
+          0.0001
+        </DataArray>
+        <DataArray type="Float32" Name="tangential_width_vectors" NumberOfComponents="3" format="ascii">
+          0 0 1
+          0 0 1
+        </DataArray>
+        <DataArray type="Float32" Name="tangential_length_vectors" NumberOfComponents="3" format="ascii">
+          0 1 0
+          0 1 0
+        </DataArray>
+        <DataArray type="Float32" Name="normal_vectors" NumberOfComponents="3" format="ascii">
+          1 0 0
+          1 0 0
+        </DataArray>
+      </CellData>
+      <Points>
+        <DataArray type="Float32" Name="Points" NumberOfComponents="3" format="ascii" RangeMin="0" RangeMax="1">
+          0.5 0.3333 0
+          0.5 0.6666 0
+          0.5 0.3333 0.5
+          0.5 0.6666 0.5
+          0.5 0.3333 1
+          0.5 0.6666 1
+          <InformationKey name="L2_NORM_RANGE" location="vtkDataArray" length="2">
+            <Value index="0">
+              0
+            </Value>
+            <Value index="1">
+              1
+            </Value>
+          </InformationKey>
+        </DataArray>
+      </Points>
+      <Cells>
+        <DataArray type="Int64" Name="connectivity" format="ascii" RangeMin="0" RangeMax="5">
+        1 0 2 3
+        3 2 4 5
+        </DataArray>
+        <DataArray type="Int64" Name="offsets" format="ascii" RangeMin="4" RangeMax="8">
+          4
+          8
+        </DataArray>
+        <DataArray type="UInt8" Name="types" format="ascii" RangeMin="9" RangeMax="9">
+          9
+          9
+        </DataArray>
+      </Cells>
+    </Piece>
+  </UnstructuredGrid>
+</VTKFile>
