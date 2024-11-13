@@ -140,11 +140,11 @@ real64 ContactSolverBase::solverStep( real64 const & time_n,
         if( fs.initialCondition() )
         {
           fs.apply< SurfaceElementSubRegion >( mesh,
-                                            [&]( FieldSpecificationBase const & bc,
-                                                 string const &,
-                                                 SortedArrayView< localIndex const > const & targetSet,
-                                                 SurfaceElementSubRegion & targetGroup,
-                                                 string const fieldName )
+                                               [&]( FieldSpecificationBase const & bc,
+                                                    string const &,
+                                                    SortedArrayView< localIndex const > const & targetSet,
+                                                    SurfaceElementSubRegion & targetGroup,
+                                                    string const fieldName )
           {
             bc.applyFieldValue< FieldSpecificationEqual >( targetSet, 0.0, targetGroup, fieldName );
           } );
