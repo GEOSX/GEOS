@@ -42,9 +42,10 @@ void TableData::addSeparator()
   {
     GEOS_ERROR( "You must have filled values in TableData before using addSeparator()" );
   }
+
   integer rowSize = m_rows[0].size();
-  m_rows.emplace_back( std::vector< string >( rowSize, "*" )); // Separator = '\1' ou un autre char ascii reservé ET
-  // disponible
+  m_rows.emplace_back( std::vector< string >( rowSize, GEOS_FMT( "{}", (char) Action::SEPARATOR )));
+
 }
 
 void TableData::clear()

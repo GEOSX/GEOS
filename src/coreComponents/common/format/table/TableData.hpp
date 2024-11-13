@@ -33,6 +33,13 @@ namespace geos
 class TableData
 {
 public:
+
+  enum class Action : char
+  {
+    MERGE = '\x01',
+    SEPARATOR = '\x02',
+  };
+
   /**
    * @brief Add a row to the table.
    * The values passed to addRow (can be any type).
@@ -45,7 +52,7 @@ public:
    * @brief Add a row to the table
    * @param row A vector of string representing a row
    */
-  void addRow( std::vector< string >  & row );
+  void addRow( std::vector< string > & row );
 
   /**
    * @brief Add a line separator to the table

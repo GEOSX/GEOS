@@ -179,35 +179,6 @@ string TableTextFormatter::toString< TableData >( TableData const & tableData ) 
   return tableOutput.str();
 }
 
-void addSeparatorToTable( TableLayout::TableColumnData & tableColumnData, std::vector< string > const & maxStringSize )
-{
-
-  if( !tableColumnData.subColumn.empty())
-  {
-    for( auto & subColumn :  tableColumnData.subColumn )
-    {
-      addSeparatorToTable( subColumn, subColumn.maxStringSize );
-    }
-  }
-  else
-  {
-    bool modified = false;
-    for( auto & value : tableColumnData.columnValues )
-    {
-      if( !value.compare( "*" ) )
-      {
-        value = std::string( maxStringSize[0].length(), '-' );
-        modified = true;
-      }
-    }
-    if( modified )
-    {
-      tableColumnData.columnValues.pop_back();
-    }
-  }
-
-}
-
 void TableTextFormatter::prepareAndBuildTable( std::vector< TableLayout::ColumnStructure > & tableColumnsData,
                                                TableData const & tableData,
                                                string & sectionSeparatingLine,
@@ -226,10 +197,6 @@ void TableTextFormatter::prepareAndBuildTable( std::vector< TableLayout::ColumnS
   for( auto & tableColumnData : tableColumnsData )
   {
     findAndSetLongestColumnString( tableColumnData );
-  }
-  for( auto & tableColumnData : tableColumnsData )
-  {
-    addSeparatorToTable( tableColumnData, tableColumnData.maxStringSize );
   }
   computeAndBuildTableSeparator( tableColumnsData, sectionSeparatingLine, topSeparator );
 }
@@ -472,19 +439,20 @@ void TableTextFormatter::outputHeaderSectionRows( std::vector< TableLayout::Colu
   for( size_t idxRow = 0; idxRow < nbRows; ++idxRow )
   {
     // Append the left border
-    tableOutput << GEOS_FMT( "{:<{}}", m_verticalLine, borderMargin );
+    tableOutput << m_verticalLine;
 
-    for( std::size_t idxColumn = 0; idxColumn < tableColumnsData.size(); ++idxColumn )
+    for( auto const & tableColumnData : tableColumnsData )
     {
-      auto const & tableColumnData = tableColumnsData[idxColumn];
+      bool isNotLastColumn = &tableColumnData < &tableColumnsData.back();
+      //bool isFirstColumn = &tableColumnData == &tableColumnsData.front();
       string const cell = tableColumnData.column.splitColumnNames.at( idxRow );
       size_t const cellSize = tableColumnData.maxStringSize;
       tableOutput << buildCell( tableColumnData.column.alignmentSettings.headerAlignment,
                                 cell,
-                                cellSize );
+                                cellSize );                 
 
       // Add space between tableColumnsData
-      if( idxColumn < tableColumnsData.size() - 1 )
+      if( isNotLastColumn )
       {
         tableOutput << GEOS_FMT( "{:^{}}", m_verticalLine, columnMargin );
       }
@@ -526,22 +494,144 @@ void TableTextFormatter::outputHeaderSectionRows( std::vector< TableLayout::Colu
   }
 }
 
+void TableTextFormatter::ValueCell::formatCell( std::ostringstream & tableOutput,
+                                                TableLayout::ColumnStructure const & tableColumnData,
+                                                TableLayout const & tableLayout,
+                                                string & cell, bool isFirstColumn, bool isNotLastColumn )
+{
+  const size_t cellSize = tableColumnData.maxStringSize;
+  if( isFirstColumn )
+  {
+    tableOutput << string( tableLayout.getBorderMargin() - 1, ' ' );
+  }
+
+  tableOutput << buildCell( tableColumnData.column.alignmentSettings.valueAlignment, cell, cellSize );
+
+  if( isNotLastColumn )
+  {
+    tableOutput << GEOS_FMT( "{:^{}}", m_verticalLine, tableLayout.getColumnMargin());
+  }
+  else
+  {
+    tableOutput << string( tableLayout.getBorderMargin() - 1, ' ' );
+    tableOutput << m_verticalLine << "\n";
+  }
+}
+
+void TableTextFormatter::HeaderCell::formatCell( std::ostringstream & tableOutput,
+                                                TableLayout::ColumnStructure const & tableColumnData,
+                                                TableLayout const & tableLayout,
+                                                string & cell, bool isFirstColumn, bool isNotLastColumn )
+{
+  const size_t cellSize = tableColumnData.maxStringSize;
+  if( isFirstColumn )
+  {
+    tableOutput << string( tableLayout.getBorderMargin() - 1, ' ' );
+  }
+
+  tableOutput << buildCell( tableColumnData.column.alignmentSettings.headerAlignment, cell, cellSize );
+
+  if( isNotLastColumn )
+  {
+    tableOutput << GEOS_FMT( "{:^{}}", m_verticalLine, tableLayout.getColumnMargin());
+  }
+  else
+  {
+    tableOutput << string( tableLayout.getBorderMargin() - 1, ' ' );
+    tableOutput << m_verticalLine << "\n";
+  }
+}
+
+void TableTextFormatter::MergingCell::formatCell( std::ostringstream & tableOutput,
+                                                  TableLayout::ColumnStructure const & tableColumnData,
+                                                  TableLayout const & tableLayout,
+                                                  string & cell, bool isFirstColumn, bool isNotLastColumn )
+{
+  const size_t cellSize = tableColumnData.maxStringSize;
+  if( isFirstColumn )
+  {
+    tableOutput << string( tableLayout.getBorderMargin() - 1, ' ' );
+  }
+  cell = " ";
+  tableOutput << buildCell( tableColumnData.column.alignmentSettings.valueAlignment, cell, cellSize );
+  tableOutput << string( tableLayout.getColumnMargin(), ' ' );
+  if( !isNotLastColumn )
+  {
+    tableOutput << string( tableLayout.getBorderMargin() - 1, ' ' );
+    tableOutput << m_verticalLine << "\n";
+  }
+
+}
+
+void TableTextFormatter::SeparatingCell::formatCell( std::ostringstream & tableOutput,
+                                                     TableLayout::ColumnStructure const & tableColumnData,
+                                                     TableLayout const & tableLayout,
+                                                     string & cell, bool isFirstColumn, bool isNotLastColumn )
+{
+  const size_t cellSize = tableColumnData.maxStringSize;
+  if( isFirstColumn )
+  {
+    tableOutput << string( tableLayout.getBorderMargin() - 1, '-' );
+  }
+
+  if( isNotLastColumn )
+  {
+    cell = string( cellSize + tableLayout.getColumnMargin(), '-' );
+    tableOutput << buildCell( tableColumnData.column.alignmentSettings.valueAlignment, cell, cellSize );
+  }
+  else
+  {
+    cell = string( cellSize + tableLayout.getBorderMargin(), '-' );
+    tableOutput << buildCell( tableColumnData.column.alignmentSettings.valueAlignment, cell, cellSize );
+    tableOutput << '\n';
+  }
+}
+
+
+void TableTextFormatter::outputCell( std::ostringstream & tableOutput,
+                                     TableLayout::ColumnStructure const & tableColumnData,
+                                     size_t const idxRow,
+                                     bool isFirstColumn,
+                                     bool isNotLastColumn ) const
+{
+  string cell = tableColumnData.columnValues.at( idxRow );
+  bool isMergingCell = false;
+  bool isSeparatorCell = false;
+
+  if( cell.size() == 1 )
+  {
+    isMergingCell = (cell[0] ==  (char) TableData::Action::MERGE );
+    isSeparatorCell = (cell[0] ==  (char) TableData::Action::SEPARATOR );
+  }
+
+
+  std::unique_ptr< TableTextFormatter::CellFormatterStrategy > formatter;
+
+  if( isMergingCell )
+  {
+    formatter = std::make_unique< TableTextFormatter::MergingCell >();
+  }
+  else if( isSeparatorCell )
+  {
+    formatter = std::make_unique< TableTextFormatter::SeparatingCell >();
+  }
+  else
+  {
+    formatter = std::make_unique< TableTextFormatter::ValueCell >();
+  }
+
+  formatter->formatCell( tableOutput, tableColumnData, m_tableLayout, cell, isFirstColumn, isNotLastColumn );
+}
+
 void TableTextFormatter::outputSubSection( std::vector< TableLayout::ColumnStructure > const & tableColumnsData,
                                            std::ostringstream & tableOutput,
                                            integer idxRow ) const
 {
-  integer const columnMargin = m_tableLayout.getColumnMargin();
   for( auto const & tableColumnData : tableColumnsData )
   {
-    string const cell = tableColumnData.columnValues[idxRow];
-    size_t const cellSize =  tableColumnData.maxStringSize;
-    tableOutput << buildCell( tableColumnData.column.alignmentSettings.valueAlignment,
-                              cell,
-                              cellSize );
-    if( &tableColumnData < &tableColumnsData.back() )
-    {
-      tableOutput << GEOS_FMT( "{:^{}}", m_verticalLine, columnMargin );
-    }
+    bool isNotLastColumn = &tableColumnData < &tableColumnsData.back();
+    bool isFirstColumn = &tableColumnData == &tableColumnsData.front();
+    outputCell( tableOutput, tableColumnData, idxRow, isFirstColumn, isNotLastColumn );
   }
 }
 
@@ -550,45 +640,29 @@ void TableTextFormatter::outputValuesSectionRows( std::vector< TableLayout::Colu
                                                   string_view sectionSeparatingLine ) const
 {
   size_t const nbRows = tableColumnsData[0].columnValues.size();
-  integer const columnMargin = m_tableLayout.getColumnMargin();
-  integer const borderMargin = m_tableLayout.getBorderMargin();
-  string const spaces =  string( columnMargin - 1, ' ' );
-
   for( size_t idxRow = 0; idxRow < nbRows; ++idxRow )
   {
     // Append the left border
-    tableOutput << GEOS_FMT( "{:<{}}", m_verticalLine, borderMargin );
+    tableOutput << m_verticalLine;
 
-    for( std::size_t idxColumn = 0; idxColumn < tableColumnsData.size(); ++idxColumn )
+    for( auto const & tableColumnData : tableColumnsData )
     {
-      auto const & tableColumnData = tableColumnsData[idxColumn];
-
+      bool isNotLastColumn = &tableColumnData < &tableColumnsData.back();
+      bool isFirstColumn = &tableColumnData == &tableColumnsData.front();
       if( !tableColumnData.subColumn.empty())
       {
         outputSubSection( tableColumnData.subColumn, tableOutput, idxRow );
+
+        if( isNotLastColumn )
+        {
+          tableOutput << GEOS_FMT( "{:^{}}", m_verticalLine, m_tableLayout.getColumnMargin() );
+        }
       }
       else
       {
-        string const cell = tableColumnData.columnValues.at( idxRow );
-        size_t const cellSize =  tableColumnData.maxStringSize;
-        tableOutput << buildCell( tableColumnData.column.alignmentSettings.valueAlignment,
-                                  cell,
-                                  cellSize );
+        outputCell( tableOutput, tableColumnData, idxRow, isFirstColumn, isNotLastColumn );
       }
-
-      if( idxColumn < tableColumnsData.size() - 1 )
-      {
-        tableOutput << GEOS_FMT( "{:^{}}", m_verticalLine, columnMargin );
-      }
-
     }
-
-    // Append right border
-    tableOutput << GEOS_FMT( "{:>{}}", m_verticalLine, borderMargin );
-
-
-    tableOutput << "\n";
-
   }
 
   if( nbRows != 0 )

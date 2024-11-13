@@ -148,6 +148,49 @@ public:
   template< typename DATASOURCE >
   string toString( DATASOURCE const & tableData ) const;
 
+  class CellFormatterStrategy
+  {
+public:
+    virtual void formatCell( std::ostringstream & tableOutput,
+                             TableLayout::ColumnStructure const & tableColumnData,
+                             TableLayout const & tableLayout,
+                             string & cell, bool isFirstColumn, bool isNotLastColumn ) = 0;
+  };
+
+  class HeaderCell : public CellFormatterStrategy
+  {
+public:
+    virtual void formatCell( std::ostringstream & tableOutput,
+                             TableLayout::ColumnStructure const & tableColumnData,
+                             TableLayout const & tableLayout,
+                             string & cell, bool isFirstColumn, bool isNotLastColumn ) override;
+  };
+  class ValueCell : public CellFormatterStrategy
+  {
+public:
+    virtual void formatCell( std::ostringstream & tableOutput,
+                             TableLayout::ColumnStructure const & tableColumnData,
+                             TableLayout const & tableLayout,
+                             string & cell, bool isFirstColumn, bool isNotLastColumn ) override;
+  };
+  class MergingCell : public CellFormatterStrategy
+  {
+public:
+    virtual void formatCell( std::ostringstream & tableOutput,
+                             TableLayout::ColumnStructure const & tableColumnData,
+                             TableLayout const & tableLayout,
+                             string & cell, bool isFirstColumn, bool isNotLastColumn ) override;
+  };
+
+  class SeparatingCell : public CellFormatterStrategy
+  {
+public:
+    virtual void formatCell( std::ostringstream & tableOutput,
+                             TableLayout::ColumnStructure const & tableColumnData,
+                             TableLayout const & tableLayout,
+                             string & cell, bool isFirstColumn, bool isNotLastColumn ) override;
+  };
+
 private:
 
   /// symbol for separator construction
@@ -243,6 +286,19 @@ private:
   void outputHeaderSectionRows( std::vector< TableLayout::ColumnStructure > const & tableColumnsData,
                                 std::ostringstream & tableOutput,
                                 string_view sectionSeparatingLine ) const;
+
+  /**
+   * @brief
+   * @param tableOutput
+   * @param tableColumnData
+   * @param idxRow
+   * @param isLastColumn
+   */
+  void outputCell( std::ostringstream & tableOutput,
+                   TableLayout::ColumnStructure const & tableColumnData,
+                   size_t const idxRow,
+                   bool isFirstColumn,
+                   bool isLastColumn = false ) const;
 
   /**
    * @brief Outputs subcolumns for the given row in the table.
