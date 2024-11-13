@@ -1,0 +1,12 @@
+Test of the prescibed F-table and boundary condition table capability.
+
+An elastic block is loaded in tensile uniaxial strain, using prescibed F loading.
+The lateral boundaries are then freed using outflow BCs so that subsequent loading is uniaxial stress.
+
+Material is then unloaded to zero strain.
+
+Reactions are plotted against the expected result for an elastic material
+
+Initial slope is constrained modulus, 2nd leg is young's modulus, 3rd leg unloads with young's modulus.
+
+The Mathematica notebook 'rotateParticles.nb' can be used to rotate particles in-place to see the effect of grid-alignment.
