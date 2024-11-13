@@ -96,15 +96,6 @@ public:
                        real64 const dt,
                        DomainPartition & domain ) override;
 
-  // virtual void
-  // resetStateToBeginningOfStep( DomainPartition & domain ) override;
-
-  virtual real64
-  setNextDt( real64 const & currentDt,
-             DomainPartition & domain ) override;
-
-  void updateState( DomainPartition & domain ) override final;
-
   void assembleContact( real64 const dt,
                         DomainPartition & domain,
                         DofManager const & dofManager,

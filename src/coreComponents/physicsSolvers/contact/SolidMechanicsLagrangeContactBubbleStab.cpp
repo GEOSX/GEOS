@@ -577,19 +577,6 @@ void SolidMechanicsLagrangeContactBubbleStab::applySystemSolution( DofManager co
   } );
 }
 
-void SolidMechanicsLagrangeContactBubbleStab::updateState( DomainPartition & domain )
-{
-  GEOS_UNUSED_VAR( domain );
-  GEOS_MARK_FUNCTION;
-}
-
-real64 SolidMechanicsLagrangeContactBubbleStab::setNextDt( real64 const & currentDt,
-                                                           DomainPartition & domain )
-{
-  GEOS_UNUSED_VAR( domain );
-  return currentDt;
-}
-
 void SolidMechanicsLagrangeContactBubbleStab::addCouplingNumNonzeros( DomainPartition & domain,
                                                                       DofManager & dofManager,
                                                                       arrayView1d< localIndex > const & rowLengths ) const
