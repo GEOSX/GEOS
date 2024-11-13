@@ -1456,15 +1456,6 @@ void CompositionalMultiphaseBase::assembleSystem( real64 const GEOS_UNUSED_PARAM
 {
   GEOS_MARK_FUNCTION;
 
-  /*
-  assembleZFormulationFluxTerms( dt,
-                      domain,
-                      dofManager,
-                      localMatrix,
-                      localRhs );
-                      */
-
- 
   // Accumulation term
   if (m_useZFormulation)
   {
@@ -1472,6 +1463,12 @@ void CompositionalMultiphaseBase::assembleSystem( real64 const GEOS_UNUSED_PARAM
                           dofManager,
                           localMatrix,
                           localRhs );
+
+    assembleZFormulationFluxTerms( dt,
+                      domain,
+                      dofManager,
+                      localMatrix,
+                      localRhs );                      
   }
   else
   {
@@ -1479,25 +1476,23 @@ void CompositionalMultiphaseBase::assembleSystem( real64 const GEOS_UNUSED_PARAM
                                              dofManager,
                                              localMatrix,
                                              localRhs );
-  }
-    
 
-  // Flux term
-  if( m_isJumpStabilized )
-  {
-    assembleStabilizedFluxTerms( dt,
-                                domain,
-                                dofManager,
-                                localMatrix,
-                                localRhs );
-  }
-  else
-  {
-    assembleFluxTerms( dt,
-                      domain,
-                      dofManager,
-                      localMatrix,
-                      localRhs );
+    if( m_isJumpStabilized )
+    {
+      assembleStabilizedFluxTerms( dt,
+                                  domain,
+                                  dofManager,
+                                  localMatrix,
+                                  localRhs );
+    }
+    else
+    {
+      assembleFluxTerms( dt,
+                        domain,
+                        dofManager,
+                        localMatrix,
+                        localRhs );
+    }
   }
 }
 

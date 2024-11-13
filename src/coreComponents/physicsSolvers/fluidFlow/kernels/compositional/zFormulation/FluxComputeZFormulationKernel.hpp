@@ -14,11 +14,11 @@
  */
 
 /**
- * @file FluxComputeKernel.hpp
+ * @file FluxComputeZFormulationKernel.hpp
  */
 
-#ifndef GEOS_PHYSICSSOLVERS_FLUIDFLOW_COMPOSITIONAL_FLUXCOMPUTEKERNEL_HPP
-#define GEOS_PHYSICSSOLVERS_FLUIDFLOW_COMPOSITIONAL_FLUXCOMPUTEKERNEL_HPP
+#ifndef GEOS_PHYSICSSOLVERS_FLUIDFLOW_COMPOSITIONAL_FLUXCOMPUTEZFORMULATIONKERNEL_HPP
+#define GEOS_PHYSICSSOLVERS_FLUIDFLOW_COMPOSITIONAL_FLUXCOMPUTEZFORMULATIONKERNEL_HPP
 
 #include "physicsSolvers/fluidFlow/kernels/compositional/FluxComputeKernelBase.hpp"
 
@@ -44,14 +44,14 @@ namespace isothermalCompositionalMultiphaseFVMKernels
 {
 
 /**
- * @class FluxComputeKernel
+ * @class FluxComputeZFormulationKernel
  * @tparam NUM_COMP number of fluid components
  * @tparam NUM_DOF number of degrees of freedom
  * @tparam STENCILWRAPPER the type of the stencil wrapper
  * @brief Define the interface for the assembly kernel in charge of flux terms
  */
 template< integer NUM_COMP, integer NUM_DOF, typename STENCILWRAPPER >
-class FluxComputeKernel : public FluxComputeKernelBase
+class FluxComputeZFormulationKernel : public FluxComputeKernelBase
 {
 public:
 
@@ -91,7 +91,7 @@ public:
    * @param[inout] localRhs the local right-hand side vector
    * @param[in] kernelFlags flags packed together
    */
-  FluxComputeKernel( integer const numPhases,
+  FluxComputeZFormulationKernel( integer const numPhases,
                      globalIndex const rankOffset,
                      STENCILWRAPPER const & stencilWrapper,
                      DofNumberAccessor const & dofNumberAccessor,
@@ -272,113 +272,30 @@ public:
 
           localIndex k_up = -1;
 
-          if( m_kernelFlags.isSet( FluxComputeKernelFlags::C1PPU ) )
-          {
-            isothermalCompositionalMultiphaseFVMKernelUtilities::C1PPUPhaseFlux::compute< numComp, numFluxSupportPoints >
-              ( m_numPhases,
-              ip,
-              m_kernelFlags.isSet( FluxComputeKernelFlags::CapPressure ),
-              seri, sesri, sei,
-              trans,
-              dTrans_dPres,
-              m_pres,
-              m_gravCoef,
-              m_phaseMob, m_dPhaseMob,
-              m_dPhaseVolFrac,
-              m_phaseCompFrac, m_dPhaseCompFrac,
-              m_dCompFrac_dCompDens,
-              m_phaseMassDens, m_dPhaseMassDens,
-              m_phaseCapPressure, m_dPhaseCapPressure_dPhaseVolFrac,
-              k_up,
-              potGrad,
-              phaseFlux,
-              dPhaseFlux_dP,
-              dPhaseFlux_dC,
-              compFlux,
-              dCompFlux_dP,
-              dCompFlux_dC );
-          }
-          else if( m_kernelFlags.isSet( FluxComputeKernelFlags::IHU ) )
-          {
-            isothermalCompositionalMultiphaseFVMKernelUtilities::IHUPhaseFlux::compute< numComp, numFluxSupportPoints >
-              ( m_numPhases,
-              ip,
-              m_kernelFlags.isSet( FluxComputeKernelFlags::CapPressure ),
-              seri, sesri, sei,
-              trans,
-              dTrans_dPres,
-              m_pres,
-              m_gravCoef,
-              m_phaseMob, m_dPhaseMob,
-              m_dPhaseVolFrac,
-              m_phaseCompFrac, m_dPhaseCompFrac,
-              m_dCompFrac_dCompDens,
-              m_phaseMassDens, m_dPhaseMassDens,
-              m_phaseCapPressure, m_dPhaseCapPressure_dPhaseVolFrac,
-              k_up,
-              potGrad,
-              phaseFlux,
-              dPhaseFlux_dP,
-              dPhaseFlux_dC,
-              compFlux,
-              dCompFlux_dP,
-              dCompFlux_dC );
-          }
-          else
-          {
-            if( m_kernelFlags.isSet( FluxComputeKernelFlags::useZFormulation ) )
-            {
-              isothermalCompositionalMultiphaseFVMKernelUtilities::PPUPhaseFluxZFormulation::compute< numComp, numFluxSupportPoints >
-              ( m_numPhases,
-              ip,
-              m_kernelFlags.isSet( FluxComputeKernelFlags::CapPressure ),
-              seri, sesri, sei,
-              trans,
-              dTrans_dPres,
-              m_pres,
-              m_gravCoef,
-              m_phaseMob, m_dPhaseMob,
-              m_dPhaseVolFrac,
-              m_phaseCompFrac, m_dPhaseCompFrac,
-              m_phaseMassDens, m_dPhaseMassDens,
-              m_phaseCapPressure, m_dPhaseCapPressure_dPhaseVolFrac,
-              k_up,
-              potGrad,
-              phaseFlux,
-              dPhaseFlux_dP,
-              dPhaseFlux_dC,
-              compFlux,
-              dCompFlux_dP,
-              dCompFlux_dC );
-            }
-            else
-            {
-              isothermalCompositionalMultiphaseFVMKernelUtilities::PPUPhaseFlux::compute< numComp, numFluxSupportPoints >
-              ( m_numPhases,
-              ip,
-              m_kernelFlags.isSet( FluxComputeKernelFlags::CapPressure ),
-              seri, sesri, sei,
-              trans,
-              dTrans_dPres,
-              m_pres,
-              m_gravCoef,
-              m_phaseMob, m_dPhaseMob,
-              m_dPhaseVolFrac,
-              m_phaseCompFrac, m_dPhaseCompFrac,
-              m_dCompFrac_dCompDens,
-              m_phaseMassDens, m_dPhaseMassDens,
-              m_phaseCapPressure, m_dPhaseCapPressure_dPhaseVolFrac,
-              k_up,
-              potGrad,
-              phaseFlux,
-              dPhaseFlux_dP,
-              dPhaseFlux_dC,
-              compFlux,
-              dCompFlux_dP,
-              dCompFlux_dC );
-            }
-            
-          }
+
+          
+          isothermalCompositionalMultiphaseFVMKernelUtilities::PPUPhaseFluxZFormulation::compute< numComp, numFluxSupportPoints >
+          ( m_numPhases,
+          ip,
+          m_kernelFlags.isSet( FluxComputeKernelFlags::CapPressure ),
+          seri, sesri, sei,
+          trans,
+          dTrans_dPres,
+          m_pres,
+          m_gravCoef,
+          m_phaseMob, m_dPhaseMob,
+          m_dPhaseVolFrac,
+          m_phaseCompFrac, m_dPhaseCompFrac,
+          m_phaseMassDens, m_dPhaseMassDens,
+          m_phaseCapPressure, m_dPhaseCapPressure_dPhaseVolFrac,
+          k_up,
+          potGrad,
+          phaseFlux,
+          dPhaseFlux_dP,
+          dPhaseFlux_dC,
+          compFlux,
+          dCompFlux_dP,
+          dCompFlux_dC );
 
           // call the lambda in the phase loop to allow the reuse of the phase fluxes and their derivatives
           // possible use: assemble the derivatives wrt temperature, and the flux term of the energy equation for this phase
@@ -525,9 +442,9 @@ protected:
 };
 
 /**
- * @class FluxComputeKernelFactory
+ * @class FluxComputeZFormulationKernelFactory
  */
-class FluxComputeKernelFactory
+class FluxComputeZFormulationKernelFactory
 {
 public:
 
@@ -555,7 +472,6 @@ public:
                    string const & dofKey,
                    integer const hasCapPressure,
                    integer const useTotalMassEquation,
-                   integer const useZFormulation,
                    UpwindingParameters upwindingParams,
                    string const & solverName,
                    ElementRegionManager const & elemManager,
@@ -580,13 +496,18 @@ public:
         kernelFlags.set( FluxComputeKernelFlags::TotalMassEquation );
       if( upwindingParams.upwindingScheme == UpwindingScheme::C1PPU &&
           isothermalCompositionalMultiphaseFVMKernelUtilities::epsC1PPU > 0 )
+      {
         kernelFlags.set( FluxComputeKernelFlags::C1PPU );
+        //GEOS_FMT("CompositionalMultiphaseBase {}: Z Formulation is currently not available for C1PPU ",  getDataContext() );
+      } 
       else if( upwindingParams.upwindingScheme == UpwindingScheme::IHU )
+      {
         kernelFlags.set( FluxComputeKernelFlags::IHU );
-      if( useZFormulation )
-        kernelFlags.set( FluxComputeKernelFlags::useZFormulation );
+        //GEOS_FMT("CompositionalMultiphaseBase {}: Z Formulation is currently not available for IHU ",  getDataContext() );
+      }
+        
 
-      using kernelType = FluxComputeKernel< NUM_COMP, NUM_DOF, STENCILWRAPPER >;
+      using kernelType = FluxComputeZFormulationKernel< NUM_COMP, NUM_DOF, STENCILWRAPPER >;
       typename kernelType::CompFlowAccessors compFlowAccessors( elemManager, solverName );
       typename kernelType::MultiFluidAccessors multiFluidAccessors( elemManager, solverName );
       typename kernelType::CapPressureAccessors capPressureAccessors( elemManager, solverName );
@@ -604,4 +525,4 @@ public:
 
 } // namespace geos
 
-#endif //GEOS_PHYSICSSOLVERS_FLUIDFLOW_COMPOSITIONAL_FLUXCOMPUTEKERNEL_HPP
+#endif //GEOS_PHYSICSSOLVERS_FLUIDFLOW_COMPOSITIONAL_FLUXCOMPUTEZFORMULATIONKERNEL_HPP
