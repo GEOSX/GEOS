@@ -29,6 +29,8 @@ namespace geos
 namespace finiteElement
 {
 
+#define TRIANGLE_QUADRATURE_POINTS 4
+
 /**
  * This class contains the kernel accessible functions specific to the
  * H1-conforming nodal linear triangular face finite element with a
@@ -60,10 +62,13 @@ public:
   constexpr static localIndex maxSupportPoints = numNodes;
 
   /// The number of quadrature points per element.
-  //constexpr static localIndex numQuadraturePoints = 6;
+#if TRIANGLE_QUADRATURE_POINTS == 6
+  constexpr static localIndex numQuadraturePoints = 6;
+#elif TRIANGLE_QUADRATURE_POINTS == 4
   constexpr static localIndex numQuadraturePoints = 4;
-  //constexpr static localIndex numQuadraturePoints = 3;
-  //constexpr static localIndex numQuadraturePoints = 1;
+#elif TRIANGLE_QUADRATURE_POINTS == 1
+  constexpr static localIndex numQuadraturePoints = 1;
+#endif
 
   virtual ~H1_TriangleFace_Lagrange1_Gauss1() override
   {}
@@ -178,8 +183,6 @@ public:
 
     real64 const qCoords[2] = {quadratureParentCoords0(q), quadratureParentCoords1(q) };
 
-    //std::cout << "FACE q: " << q << " r: " << qCoords[0] << " s: " << qCoords[1] << std::endl; 
-
     calcBubbleN( qCoords, N );
   }
 
@@ -244,19 +247,25 @@ private:
   constexpr static real64 quadratureWeight( localIndex const q )
   {
 
-    real64 const w[numQuadraturePoints] = {-0.562500000000000,
-                                            0.520833333333333,
-                                            0.520833333333333,
-                                            0.520833333333333 };
-
-/*
+#if TRIANGLE_QUADRATURE_POINTS == 6
     real64 const w[numQuadraturePoints] = { 1.0/6.0,
                                             1.0/6.0,
                                             1.0/6.0,
                                             1.0/6.0,
                                             1.0/6.0,
                                             1.0/6.0 };
-*/
+
+#elif TRIANGLE_QUADRATURE_POINTS == 4
+
+    real64 const w[numQuadraturePoints] = {-0.562500000000000,
+                                            0.520833333333333,
+                                            0.520833333333333,
+                                            0.520833333333333 };
+
+#elif TRIANGLE_QUADRATURE_POINTS == 1
+
+    real64 const w[numQuadraturePoints] = { 1.0 };
+#endif
 
     return w[q];
 
@@ -273,19 +282,25 @@ private:
   constexpr static real64 quadratureParentCoords0( localIndex const q )
   {
 
-    real64 const qCoords[numQuadraturePoints] = { 0.333333333333333,
-                                                  0.600000000000000,
-                                                  0.200000000000000,
-                                                  0.200000000000000 };
-
-/*
+#if TRIANGLE_QUADRATURE_POINTS == 6
     real64 const qCoords[numQuadraturePoints] = { 0.659027622374092,
                                                   0.109039009072877,
                                                   0.231933368553031,
                                                   0.659027622374092,
                                                   0.109039009072877,
                                                   0.231933368553031 };
-*/
+
+#elif TRIANGLE_QUADRATURE_POINTS == 4
+    real64 const qCoords[numQuadraturePoints] = { 0.333333333333333,
+                                                  0.600000000000000,
+                                                  0.200000000000000,
+                                                  0.200000000000000 };
+
+#elif TRIANGLE_QUADRATURE_POINTS == 1
+    real64 const qCoords[numQuadraturePoints] = { 1/3 };
+
+#endif
+
 
     return qCoords[q];
   }
@@ -301,19 +316,24 @@ private:
   constexpr static real64 quadratureParentCoords1( localIndex const q )
   {
 
-    real64 const qCoords[numQuadraturePoints] = { 0.333333333333333,
-                                                  0.200000000000000,
-                                                  0.600000000000000,
-                                                  0.200000000000000 };
-
-/*
+#if TRIANGLE_QUADRATURE_POINTS == 6
     real64 const qCoords[numQuadraturePoints] = { 0.231933368553031,
                                                   0.659027622374092,
                                                   0.109039009072877,
                                                   0.109039009072877,
                                                   0.231933368553031,
                                                   0.659027622374092 };
-*/
+
+#elif TRIANGLE_QUADRATURE_POINTS == 4
+    real64 const qCoords[numQuadraturePoints] = { 0.333333333333333,
+                                                  0.200000000000000,
+                                                  0.600000000000000,
+                                                  0.200000000000000 };
+
+#elif TRIANGLE_QUADRATURE_POINTS == 1
+    real64 const qCoords[numQuadraturePoints] = { 1/3 };
+
+#endif
 
     return qCoords[q];
   }
@@ -390,11 +410,12 @@ H1_TriangleFace_Lagrange1_Gauss1::
                   ( X[2][0] - X[0][0] ) * ( X[1][2] - X[0][2] ) - ( X[1][0] - X[0][0] ) * ( X[2][2] - X[0][2] ),
                   ( X[1][0] - X[0][0] ) * ( X[2][1] - X[0][1] ) - ( X[2][0] - X[0][0] ) * ( X[1][1] - X[0][1] )};
 
-  //std::cout << "FACE q: " << q << " weight: " << 2 * weight * quadratureWeight(q) << std::endl; 
   return sqrt( n[0] * n[0] + n[1] * n[1] + n[2] * n[2] ) * weight * quadratureWeight(q);
 }
 
 /// @endcond
+
+#undef TRIANGLE_QUADRATURE_POINTS
 
 }
 }

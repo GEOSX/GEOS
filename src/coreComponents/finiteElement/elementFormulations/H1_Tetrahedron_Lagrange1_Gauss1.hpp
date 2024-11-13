@@ -29,6 +29,8 @@ namespace geos
 namespace finiteElement
 {
 
+#define TETRAHEDRON_QUADRATURE_POINTS 14
+
 /**
  * This class contains the kernel accessible functions specific to the
  * H1-conforming nodal linear tetrahedron finite element with a 1-point
@@ -63,10 +65,13 @@ public:
   constexpr static localIndex maxSupportPoints = numNodes;
 
   /// The number of quadrature points per element.
+#if TETRAHEDRON_QUADRATURE_POINTS == 14
   constexpr static localIndex numQuadraturePoints = 14;
-  //constexpr static localIndex numQuadraturePoints = 5;
-  //constexpr static localIndex numQuadraturePoints = 4;
-  //constexpr static localIndex numQuadraturePoints = 1;
+#elif TETRAHEDRON_QUADRATURE_POINTS == 5
+  constexpr static localIndex numQuadraturePoints = 5;
+#elif TETRAHEDRON_QUADRATURE_POINTS == 1
+  constexpr static localIndex numQuadraturePoints = 1;
+#endif
 
   /// The number of sampling points per element.
   constexpr static int numSamplingPoints = numSamplingPointsPerDirection * numSamplingPointsPerDirection * numSamplingPointsPerDirection;
@@ -337,10 +342,7 @@ private:
   constexpr static real64 quadratureWeight( localIndex const q )
   {
 
-    //real64 const w[numQuadraturePoints] = {-4.0/5.0, 9.0/20.0, 9.0/20.0, 9.0/20.0, 9.0/20.0 };
-    //real64 const w[numQuadraturePoints] = {-4.0, 9.0/4.0, 9.0/4.0, 9.0/4.0, 9.0/4.0 };
-
-    
+#if TETRAHEDRON_QUADRATURE_POINTS == 14
     real64 const w[numQuadraturePoints] = { 0.073493043116361949544,
                                             0.073493043116361949544,
                                             0.073493043116361949544,
@@ -355,6 +357,14 @@ private:
                                             0.042546020777081466438,
                                             0.042546020777081466438,
                                             0.042546020777081466438 };
+
+#elif TETRAHEDRON_QUADRATURE_POINTS == 5
+    real64 const w[numQuadraturePoints] = {-4.0/5.0, 9.0/20.0, 9.0/20.0, 9.0/20.0, 9.0/20.0 };
+
+#elif TETRAHEDRON_QUADRATURE_POINTS == 1
+    real64 const w[numQuadraturePoints] = { 1.0 };
+
+#endif
 
     return w[q];
 
@@ -371,8 +381,8 @@ private:
   constexpr static real64 quadratureParentCoords0( localIndex const q )
   {
 
-    //real64 const qCoords[numQuadraturePoints] = { 1.0/4.0, 1.0/2.0, 1.0/6.0, 1.0/6.0, 1.0/6.0 };
 
+#if TETRAHEDRON_QUADRATURE_POINTS == 14
     real64 const qCoords[numQuadraturePoints] = { 0.72179424906732632079,
                                                   0.092735250310891226402,
                                                   0.092735250310891226402,
@@ -388,6 +398,13 @@ private:
                                                   0.45449629587435035051,
                                                   0.45449629587435035051 };
 
+#elif TETRAHEDRON_QUADRATURE_POINTS == 5
+    real64 const qCoords[numQuadraturePoints] = { 1.0/4.0, 1.0/2.0, 1.0/6.0, 1.0/6.0, 1.0/6.0 };
+
+#elif TETRAHEDRON_QUADRATURE_POINTS == 1
+    real64 const qCoords[numQuadraturePoints] = { 1.0/4.0 };
+
+#endif
 
     return qCoords[q];
   }
@@ -403,8 +420,7 @@ private:
   constexpr static real64 quadratureParentCoords1( localIndex const q )
   {
 
-    //real64 const qCoords[numQuadraturePoints] = { 1.0/4.0, 1.0/6.0, 1.0/2.0,  1.0/6.0, 1.0/6.0 };
-
+#if TETRAHEDRON_QUADRATURE_POINTS == 14
     real64 const qCoords[numQuadraturePoints] = { 0.092735250310891226402, 
                                                   0.72179424906732632079,
                                                   0.092735250310891226402, 
@@ -420,6 +436,14 @@ private:
                                                   0.045503704125649649492, 
                                                   0.45449629587435035051 };
 
+#elif TETRAHEDRON_QUADRATURE_POINTS == 5
+    real64 const qCoords[numQuadraturePoints] = { 1.0/4.0, 1.0/6.0, 1.0/2.0,  1.0/6.0, 1.0/6.0 };
+
+#elif TETRAHEDRON_QUADRATURE_POINTS == 1
+    real64 const qCoords[numQuadraturePoints] = { 1.0/4.0 };
+
+#endif
+
     return qCoords[q];
   }
 
@@ -434,8 +458,7 @@ private:
   constexpr static real64 quadratureParentCoords2( localIndex const q )
   {
 
-    //real64 const qCoords[numQuadraturePoints] = { 1.0/4.0, 1.0/6.0, 1.0/6.0, 1.0/2.0, 1.0/6.0 };
-
+#if TETRAHEDRON_QUADRATURE_POINTS == 14
     real64 const qCoords[numQuadraturePoints] = { 0.092735250310891226402,
                                                   0.092735250310891226402,
                                                   0.72179424906732632079,
@@ -450,6 +473,15 @@ private:
                                                   0.045503704125649649492, 
                                                   0.45449629587435035051,
                                                   0.045503704125649649492 }; 
+
+#elif TETRAHEDRON_QUADRATURE_POINTS == 5
+    real64 const qCoords[numQuadraturePoints] = { 1.0/4.0, 1.0/6.0, 1.0/6.0, 1.0/2.0, 1.0/6.0 };
+
+#elif TETRAHEDRON_QUADRATURE_POINTS == 1
+    real64 const qCoords[numQuadraturePoints] = { 1.0/4.0 };
+
+#endif
+
     return qCoords[q];
   }
 
@@ -606,8 +638,6 @@ H1_Tetrahedron_Lagrange1_Gauss1::calcGradFaceBubbleN( localIndex const q,
   real64 const s = quadratureParentCoords1( q );
   real64 const t = quadratureParentCoords2( q );
 
-  //std::cout << detJ1 << " " << detJ << " " << q << " r: " << r << " s: " << s << " t: " << t << std::endl; 
-
   dNdXi[0][0] = ( 1 - 2 * r - s - t ) * t; // dN0/dr
   dNdXi[0][1] = -r * t;                    // dN0/ds
   dNdXi[0][2] = ( 1 - r - s - 2 * t ) * r; // dN0/dt
@@ -631,49 +661,6 @@ H1_Tetrahedron_Lagrange1_Gauss1::calcGradFaceBubbleN( localIndex const q,
     gradN[fi][2] = dNdXi[fi][0] * J[0][2] + dNdXi[fi][1] * J[1][2] + dNdXi[fi][2] * J[2][2];
   }
 
-///////////////////////////////////////////////////////////////////////////////////////////////////
-/*
-  real64 dNdXi1[numNodes][3] = {{0}};
-
-  dNdXi1[0][0] = -1; // dN0/dr
-  dNdXi1[0][1] = -1; // dN0/ds
-  dNdXi1[0][2] = -1; // dN0/dt
-
-  dNdXi1[1][0] =  1; // dN1/dr
-  dNdXi1[1][1] =  0; // dN1/ds
-  dNdXi1[1][2] =  0; // dN1/dt
-
-  dNdXi1[2][0] =  0; // dN2/dr
-  dNdXi1[2][1] =  1; // dN2/ds
-  dNdXi1[2][2] =  0; // dN2/dt
-
-  dNdXi1[3][0] =  0; // dN3/dr
-  dNdXi1[3][1] =  0; // dN3/ds
-  dNdXi1[3][2] =  1; // dN3/dt
-
-  real64 gradN1[numNodes][3] = {{0}};
-
-  for( int fi=0; fi<numNodes; ++fi )
-  {
-    gradN1[fi][0] = dNdXi1[fi][0] * J[0][0] + dNdXi1[fi][1] * J[1][0] + dNdXi1[fi][2] * J[2][0];
-    gradN1[fi][1] = dNdXi1[fi][0] * J[0][1] + dNdXi1[fi][1] * J[1][1] + dNdXi1[fi][2] * J[2][1];
-    gradN1[fi][2] = dNdXi1[fi][0] * J[0][2] + dNdXi1[fi][1] * J[1][2] + dNdXi1[fi][2] * J[2][2];
-  }
-
-  real64 gradN2[numNodes][3] = {{0}};
-
-  calcGradN( q, X, gradN2 );
-
-  for( int fi=0; fi<numNodes; ++fi )
-  {
-    std::cout << gradN1[fi][0] << " " << gradN2[fi][0] << std::endl;
-    std::cout << gradN1[fi][1] << " " << gradN2[fi][1] << std::endl;
-    std::cout << gradN1[fi][2] << " " << gradN2[fi][2] << std::endl;
-  }
-  std::cout << std::endl;
-*/
-///////////////////////////////////////////////////////////////////////////////////////////////////
-
   return detJ * weight * quadratureWeight(q);
 }
 
@@ -693,6 +680,8 @@ H1_Tetrahedron_Lagrange1_Gauss1::
 }
 
 /// @endcond
+
+#undef TETRAHEDRON_QUADRATURE_POINTS
 
 }
 }
