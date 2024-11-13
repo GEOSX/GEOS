@@ -61,6 +61,38 @@ def getFractureLengthFromXML(xmlFilePath):
    
     return length, origin
 
+def curve_check_solution(**kwargs):
+    #-------- Extract info from XML
+    xmlFilePath = f'./lagrangianContactMechanics/LagrangeContactBubbleStab_FixedSlip_base.xml'
+
+    mechanicalParameters = getMechanicalParametersFromXML(xmlFilePath)
+
+    # Get length of the fracture
+    xmlFilePath = f'./LagrangeContactBubbleStab_FixedSlip_smoke.xml'
+    totalHalfLength, originShift = getFractureLengthFromXML(xmlFilePath)
+    halfLength = 2.0
+
+    x = kwargs['traction elementCenter']
+    x_geos = x[0, :, 0]
+
+    return analytical_solution(x, mechanicalParameters, totalHalfLength, halfLength)
+
+def analytical_solution(x, mechanicalParameters, totalHalfLength, halfLength):
+    traction_analytical = np.zeros(len(x))
+    i = 0
+    for xCell in x:
+        traction_analytical[i] = singularCrackSlipSolution.computeTraction(xCell)
+        i += 1  
+
+    singularCrackSlipSolution = SingularCrackSlip(mechanicalParameters, halfLength)
+    x = np.linspace(-totalHalfLength, totalHalfLength, 10000, endpoint=True)
+    traction_analytical = np.zeros(len(x))
+    i = 0
+    for xCell in x:
+        traction_analytical[i] = singularCrackSlipSolution.computeTraction(xCell)
+        i += 1  
+    return traction_analytical
+
 def plot_traction_solution(inputFileDirectory, outputDirectory):
     # Read HDF5
     import hdf5_wrapper
@@ -84,13 +116,7 @@ def plot_traction_solution(inputFileDirectory, outputDirectory):
     totalHalfLength, originShift = getFractureLengthFromXML(xmlFilePath)
     halfLength = 2.0
 
-    singularCrackSlipSolution = SingularCrackSlip(mechanicalParameters, halfLength)
-    x = np.linspace(-totalHalfLength, totalHalfLength, 10000, endpoint=True)
-    traction_analytical = np.zeros(len(x))
-    i = 0
-    for xCell in x:
-        traction_analytical[i] = singularCrackSlipSolution.computeTraction(xCell)
-        i += 1
+    traction_analytical = analytical_solution(x, mechanicalParameters, totalHalfLength, halfLength)    
 
     fsize = 30
     msize = 15
@@ -189,4 +215,4 @@ if __name__ == "__main__":
         generate_tables(os.path.normpath(args.input_files_path))
     elif args.action == 'plotTractions':
         print("Plotting tractions...")
-        plot_traction_solution(os.path.normpath(args.input_files_path), os.path.normpath(args.output_dir))    
+        plot_traction_solution(os.path.normpath(args.input_files_path), os.path.normpath(args.output_dir))

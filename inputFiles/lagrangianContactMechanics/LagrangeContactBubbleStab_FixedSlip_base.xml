@@ -21,12 +21,6 @@
       defaultAperture="1e-3"/>  
     </ElementRegions>
   <Constitutive>
-
-    <!-- <ElasticIsotropic
-     name="rock"
-     defaultDensity="2700"
-     defaultBulkModulus="1.666666666666666e4"
-     defaultShearModulus="1.0e4"/> -->
     
     <ElasticIsotropic
      name="rock"

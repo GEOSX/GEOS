@@ -4,6 +4,16 @@ restartcheck_params = {}
 restartcheck_params["atol"] = 2.0E-4
 restartcheck_params["rtol"] = 1.0E-7
 
+
+curvecheck_params = {}
+curvecheck_params["filename"] = "traction.hdf5"
+curvecheck_params["tolerance"] = [1e-1]
+curvecheck_params["script_instructions"] = [[
+    "./scripts/fixedFaultSlip.py", "curve_check_solution",
+    "traction"
+]]
+curvecheck_params["curves"] = "traction"
+
 decks = [
     TestDeck(
         name="ContactMechanics_SimpleCubes_smoke",
@@ -91,6 +101,15 @@ decks = [
         restart_step=1,
         check_step=2,
         restartcheck_params=RestartcheckParameters(**restartcheck_params))
+
+    TestDeck(
+        name="LagrangeContactBubbleStab_FixedSlip_smoke",
+        description=
+        "Fault with imposed slip",
+        partitions=((1, 1, 1), ),
+        restart_step=0,
+        check_step=1,
+        curvecheck_params=CurveCheckParameters(**curvecheck_params))    
 ]
 
 generate_geos_tests(decks)

@@ -90,7 +90,6 @@ def sneddon_curve_check_solution(**kwargs):
 
     return dispJumpAnalytical
 
-
 def debug():
     #-------- EmbeddeFrac File path
     import hdf5_wrapper
