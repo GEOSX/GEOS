@@ -197,7 +197,7 @@ void setRateTable( array2d< real64 > & rateTable, std::initializer_list< std::in
 real64 getTotalFluidMass( ProblemManager & problem, string_view flowSolverPath )
 {
   real64 totalMass = 0.0;
-  SolverBase const & solver = problem.getGroupByPath< SolverBase >( string( flowSolverPath ) );
+  PhysicsSolverBase const & solver = problem.getGroupByPath< PhysicsSolverBase >( string( flowSolverPath ) );
   solver.forDiscretizationOnMeshTargets( problem.getDomainPartition().getMeshBodies(),
                                          [&] ( string const &,
                                                MeshLevel & mesh,
@@ -344,7 +344,7 @@ void checkWholeSimTimeStepStats( ProblemManager & problem,
 {
   EXPECT_EQ( timeStepChecker.getTestedTimeStepCount(), testSet.timestepCount ) << "The tested time-step were different than expected.";
 
-  SolverBase const & solver = problem.getGroupByPath< SolverBase >( testSet.inputs.flowSolverPath );
+  PhysicsSolverBase const & solver = problem.getGroupByPath< PhysicsSolverBase >( testSet.inputs.flowSolverPath );
   SolverStatistics const & solverStats = solver.getSolverStatistics();
   EXPECT_GE( solverStats.getNumTimeStepCuts(), testSet.inputs.requiredSubTimeStep ) << "The test did not encountered any timestep cut, but were expected to. "
                                                                                        "Consider adapting the simulation so a timestep cut occurs to check they work as expected.";

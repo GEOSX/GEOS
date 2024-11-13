@@ -20,7 +20,7 @@
 #ifndef GEOS_MESHUTILITIES_INTERNALWELLBOREGENERATOR_HPP
 #define GEOS_MESHUTILITIES_INTERNALWELLBOREGENERATOR_HPP
 
-#include "codingUtilities/EnumStrings.hpp"
+#include "common/format/EnumStrings.hpp"
 #include "dataRepository/Group.hpp"
 #include "InternalMeshGenerator.hpp"
 
