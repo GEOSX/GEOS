@@ -5,7 +5,7 @@
     gravityVector="{0.0, 0.0, 0.0}">
 
     <SolidMechanicsLagrangeContactBubbleStab
-      name="AugmentedLagrangian"
+      name="contactSolver"
       timeIntegrationOption="QuasiStatic"
       logLevel="2"
       writeLinearSystem="2"
