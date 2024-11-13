@@ -772,22 +772,44 @@ void CompositionalMultiphaseFVM::applySystemSolution( DofManager const & dofMana
                                  pressureMask );
   }
 
-  if( localScaling )
+  if (m_useZFormulation)
   {
-    dofManager.addVectorToField( localSolution,
-                                 viewKeyStruct::elemDofFieldString(),
-                                 fields::flow::globalCompDensity::key(),
-                                 fields::flow::globalCompDensityScalingFactor::key(),
-                                 componentMask );
+    if( localScaling )
+    {
+      dofManager.addVectorToField( localSolution,
+                                  viewKeyStruct::elemDofFieldString(),
+                                  fields::flow::globalCompFraction::key(),
+                                  fields::flow::globalCompDensityScalingFactor::key(),
+                                  componentMask );
+    }
+    else
+    {
+      dofManager.addVectorToField( localSolution,
+                                  viewKeyStruct::elemDofFieldString(),
+                                  fields::flow::globalCompFraction::key(),
+                                  scalingFactor,
+                                  componentMask );
+    }
   }
   else
   {
-    dofManager.addVectorToField( localSolution,
-                                 viewKeyStruct::elemDofFieldString(),
-                                 fields::flow::globalCompDensity::key(),
-                                 scalingFactor,
-                                 componentMask );
-  }
+    if( localScaling )
+    {
+      dofManager.addVectorToField( localSolution,
+                                  viewKeyStruct::elemDofFieldString(),
+                                  fields::flow::globalCompDensity::key(),
+                                  fields::flow::globalCompDensityScalingFactor::key(),
+                                  componentMask );
+    }
+    else
+    {
+      dofManager.addVectorToField( localSolution,
+                                  viewKeyStruct::elemDofFieldString(),
+                                  fields::flow::globalCompDensity::key(),
+                                  scalingFactor,
+                                  componentMask );
+    }
+  }  
 
   if( m_isThermal )
   {

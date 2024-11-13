@@ -59,7 +59,6 @@ public:
     : Base(),
     m_phaseVolFrac( subRegion.getField< fields::flow::phaseVolumeFraction >() ),
     m_dPhaseVolFrac( subRegion.getField< fields::flow::dPhaseVolumeFraction >() ),
-    m_dCompFrac_dCompDens( subRegion.getField< fields::flow::dGlobalCompFraction_dGlobalCompDensity >() ),
     m_phaseDens( fluid.phaseDensity() ),
     m_dPhaseDens( fluid.dPhaseDensity() ),
     m_phaseVisc( fluid.phaseViscosity() ),
@@ -83,7 +82,6 @@ public:
   {
     using Deriv = constitutive::multifluid::DerivativeOffset;
 
-    arraySlice2d< real64 const, compflow::USD_COMP_DC - 1 > const dCompFrac_dCompDens = m_dCompFrac_dCompDens[ei];
     arraySlice1d< real64 const, constitutive::multifluid::USD_PHASE - 2 > const phaseDens = m_phaseDens[ei][0];
     arraySlice2d< real64 const, constitutive::multifluid::USD_PHASE_DC - 2 > const dPhaseDens = m_dPhaseDens[ei][0];
     arraySlice1d< real64 const, constitutive::multifluid::USD_PHASE - 2 > const phaseVisc = m_phaseVisc[ei][0];
@@ -116,11 +114,13 @@ public:
 
       real64 const density = phaseDens[ip];
       real64 const dDens_dP = dPhaseDens[ip][Deriv::dP];
-      applyChainRule( numComp, dCompFrac_dCompDens, dPhaseDens[ip], dDens_dC, Deriv::dC );
+      for( integer jc = 0; jc < numComp; ++jc )
+        dDens_dC[jc] = dPhaseDens[ip][Deriv::dC+jc];
 
       real64 const viscosity = phaseVisc[ip];
       real64 const dVisc_dP = dPhaseVisc[ip][Deriv::dP];
-      applyChainRule( numComp, dCompFrac_dCompDens, dPhaseVisc[ip], dVisc_dC, Deriv::dC );
+      for( integer jc = 0; jc < numComp; ++jc )
+        dDens_dC[jc] = dPhaseVisc[ip][Deriv::dC+jc];
 
       real64 const relPerm = phaseRelPerm[ip];
       real64 dRelPerm_dP = 0.0;
@@ -166,7 +166,6 @@ protected:
   /// Views on the phase volume fractions
   arrayView2d< real64 const, compflow::USD_PHASE > m_phaseVolFrac;
   arrayView3d< real64 const, compflow::USD_PHASE_DC > m_dPhaseVolFrac;
-  arrayView3d< real64 const, compflow::USD_COMP_DC > m_dCompFrac_dCompDens;
 
   /// Views on the phase densities
   arrayView3d< real64 const, constitutive::multifluid::USD_PHASE > m_phaseDens;
