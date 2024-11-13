@@ -913,20 +913,20 @@ void HydrofractureSolver< POROMECHANICS_SOLVER >::resetStateToBeginningOfStep( D
 }
 
 template< typename POROMECHANICS_SOLVER >
-real64 HydrofractureSolver< POROMECHANICS_SOLVER >::setNextDt( real64 const & time,
-                                                               real64 const & lastDt,
+real64 HydrofractureSolver< POROMECHANICS_SOLVER >::setNextDt( real64 const & currentTime,
+                                                               real64 const & currentDt,
                                                                DomainPartition & domain )
 {
-  GEOS_UNUSED_VAR( time, domain );
+  GEOS_UNUSED_VAR( currentTime, domain );
   real64 nextDt = 0.0;
 
   if( m_numResolves[0] == 0 && m_numResolves[1] == 0 )
   {
-    nextDt = this->setNextDtBasedOnIterNumber( lastDt );
+    nextDt = this->setNextDtBasedOnIterNumber( currentDt );
   }
   else
   {
-    nextDt = m_surfaceGenerator->getTimestepRequest() < 1e99 ? m_surfaceGenerator->getTimestepRequest() : lastDt;
+    nextDt = m_surfaceGenerator->getTimestepRequest() < 1e99 ? m_surfaceGenerator->getTimestepRequest() : currentDt;
   }
 
   return nextDt;

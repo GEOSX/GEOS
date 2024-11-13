@@ -309,15 +309,15 @@ public:
   }
 
   virtual real64
-  setNextDt( real64 const & time,
-             real64 const & lastDt,
+  setNextDt( real64 const & currentTime,
+             real64 const & currentDt,
              DomainPartition & domain ) override
   {
-    real64 nextDt = PhysicsSolverBase::setNextDt( time, lastDt, domain );
+    real64 nextDt = PhysicsSolverBase::setNextDt( currentTime, currentDt, domain );
     forEachArgInTuple( m_solvers, [&]( auto & solver, auto )
     {
       real64 const singlePhysicsNextDt =
-        solver->setNextDt( time, lastDt, domain );
+        solver->setNextDt( currentTime, currentDt, domain );
       nextDt = LvArray::math::min( singlePhysicsNextDt, nextDt );
     } );
     return nextDt;

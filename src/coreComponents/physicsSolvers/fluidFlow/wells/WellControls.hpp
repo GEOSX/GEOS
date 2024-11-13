@@ -171,27 +171,27 @@ public:
    * @brief Get the target bottom hole pressure value.
    * @return a value for the target bottom hole pressure
    */
-  real64 getTargetBHP( real64 const & currentTime ) const
+  real64 getTargetBHP( real64 const & time ) const
   {
-    return m_targetBHPTable->evaluate( &currentTime );
+    return m_targetBHPTable->evaluate( &time );
   }
 
   /**
    * @brief Get the target total rate
    * @return the target total rate
    */
-  real64 getTargetTotalRate( real64 const & currentTime ) const
+  real64 getTargetTotalRate( real64 const & time ) const
   {
-    return m_rateSign * m_targetTotalRateTable->evaluate( &currentTime );
+    return m_rateSign * m_targetTotalRateTable->evaluate( &time );
   }
 
   /**
    * @brief Get the target phase rate
    * @return the target phase rate
    */
-  real64 getTargetPhaseRate( real64 const & currentTime ) const
+  real64 getTargetPhaseRate( real64 const & time ) const
   {
-    return m_rateSign * m_targetPhaseRateTable->evaluate( &currentTime );
+    return m_rateSign * m_targetPhaseRateTable->evaluate( &time );
   }
 
   /**
@@ -208,51 +208,6 @@ public:
    * @return the target phase name
    */
   const string & getTargetPhaseName() const { return m_targetPhaseName; }
-
-  /**
-   * @brief Get the target bottom hole pressure table
-   * @return table for the target bottom hole pressure
-   */
-  TableFunction const * getTargetBHPTable() const
-  {
-    return m_targetBHPTable;
-  }
-
-  /**
-   * @brief Get the target total rate table
-   * @return table for the target total rate
-   */
-  TableFunction const * getTargetTotalRateTable() const
-  {
-    return m_targetTotalRateTable;
-  }
-
-  /**
-   * @brief Get the target phase rate table
-   * @return table for the target phase rate
-   */
-  TableFunction const * getTargetPhaseRateTable() const
-  {
-    return m_targetPhaseRateTable;
-  }
-
-  /**
-   * @brief Get the target mass rate table
-   * @return table for the target mass rate
-   */
-  TableFunction const * getTargetMassRateTable() const
-  {
-    return m_targetMassRateTable;
-  }
-
-  /**
-   * @brief Get the status table
-   * @return table for the status
-   */
-  TableFunction const * getStatusTable() const
-  {
-    return m_statusTable;
-  }
 
   /**
    * @brief Const accessor for the composition of the injection stream
@@ -297,11 +252,11 @@ public:
   bool isProducer() const { return ( m_type == Type::PRODUCER ); }
 
   /**
-   * @brief Is the well open (or shut) at @p currentTime?
-   * @param[in] currentTime the current time
+   * @brief Is the well open (or shut) at @p time?
+   * @param[in] time the time
    * @return a boolean
    */
-  bool isWellOpen( real64 const & currentTime ) const;
+  bool isWellOpen( real64 const & time ) const;
 
   /**
    * @brief Getter for the flag to enable crossflow
@@ -314,6 +269,13 @@ public:
    * @return the initial pressure coefficient
    */
   real64 getInitialPressureCoefficient() const { return m_initialPressureCoefficient; }
+
+  /**
+   * @brief set next time step based on tables intervals
+   * @param[in] currentTime the current time
+   * @param[inout] nextDt the time step
+   */
+  void setNextDtFromTables( real64 const currentTime, real64 & nextDt );
 
   ///@}
 
@@ -373,6 +335,8 @@ public:
 protected:
 
   virtual void postInputInitialization() override;
+
+  void setNextDtFromTable( TableFunction const * table, real64 const currentTime, real64 & nextDt );
 
 private:
 

@@ -61,8 +61,8 @@ public:
                              integer const cycleNumber,
                              DomainPartition & domain ) override final;
 
-  virtual real64 setNextDt( real64 const & time,
-                            real64 const & lastDt,
+  virtual real64 setNextDt( real64 const & currentTime,
+                            real64 const & currentDt,
                             DomainPartition & domain ) override final;
 
   real64 updateStresses( real64 const & time_n,

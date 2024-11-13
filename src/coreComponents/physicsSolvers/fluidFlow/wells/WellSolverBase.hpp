@@ -258,12 +258,12 @@ public:
   /**
    * @brief function to set the next time step size
    * @param[in] currentTime the current time
-   * @param[in] lastDt the last time step size
+   * @param[in] currentDt the current time step size
    * @param[in] domain the domain object
    * @return the prescribed time step size
    */
   virtual real64 setNextDt( real64 const & currentTime,
-                            real64 const & lastDt,
+                            real64 const & currentDt,
                             DomainPartition & domain ) override;
 
   /**

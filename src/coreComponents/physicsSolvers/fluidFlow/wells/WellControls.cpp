@@ -479,4 +479,27 @@ bool WellControls::isWellOpen( real64 const & time ) const
   return isOpen;
 }
 
+void WellControls::setNextDtFromTables( real64 const currentTime, real64 & nextDt )
+{
+  setNextDtFromTable( m_targetBHPTable, currentTime, nextDt );
+  setNextDtFromTable( m_targetMassRateTable, currentTime, nextDt );
+  setNextDtFromTable( m_targetPhaseRateTable, currentTime, nextDt );
+  setNextDtFromTable( m_targetTotalRateTable, currentTime, nextDt );
+  setNextDtFromTable( m_statusTable, currentTime, nextDt );
+}
+
+void WellControls::setNextDtFromTable( TableFunction const * table, real64 const currentTime, real64 & nextDt )
+{
+  if( table )
+  {
+    // small epsilon to make sure we land on the other side of table interval and pick up the right rate
+    real64 const eps = 1e-6;
+    real64 const dtLimit = (table->getCoord( &currentTime, 0, TableFunction::InterpolationType::Upper ) - currentTime) * ( 1.0 + eps );
+    if( dtLimit > eps && dtLimit < nextDt )
+    {
+      nextDt = dtLimit;
+    }
+  }
+}
+
 } //namespace geos

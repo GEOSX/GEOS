@@ -244,9 +244,9 @@ void QuasiDynamicEQ::saveOldStateAndUpdateSlip( ElementSubRegionBase & subRegion
   } );
 }
 
-real64 QuasiDynamicEQ::setNextDt( real64 const & time, real64 const & lastDt, DomainPartition & domain )
+real64 QuasiDynamicEQ::setNextDt( real64 const & currentTime, real64 const & currentDt, DomainPartition & domain )
 {
-  GEOS_UNUSED_VAR( time, lastDt );
+  GEOS_UNUSED_VAR( currentTime, currentDt );
 
   real64 maxSlipRate = 0.0;
   // Spring-slider shear traction computation

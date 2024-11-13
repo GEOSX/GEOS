@@ -364,50 +364,50 @@ void PhysicsSolverBase::logEndOfCycleInformation( integer const cycleNumber,
 }
 
 real64 PhysicsSolverBase::setNextDt( real64 const & GEOS_UNUSED_PARAM( currentTime ),
-                                     real64 const & lastDt,
+                                     real64 const & currentDt,
                                      DomainPartition & domain )
 {
   integer const minTimeStepIncreaseInterval = m_nonlinearSolverParameters.minTimeStepIncreaseInterval();
-  real64 const nextDtNewton = setNextDtBasedOnIterNumber( lastDt );
+  real64 const nextDtNewton = setNextDtBasedOnIterNumber( currentDt );
   if( m_nonlinearSolverParameters.getLogLevel() > 0 && nextDtNewton < LvArray::NumericLimits< real64 >::max )
     GEOS_LOG_RANK_0( GEOS_FMT( "{}: next time step based on number of iterations = {}", getName(), nextDtNewton ));
-  real64 const nextDtStateChange = setNextDtBasedOnStateChange( lastDt, domain );
+  real64 const nextDtStateChange = setNextDtBasedOnStateChange( currentDt, domain );
   if( m_nonlinearSolverParameters.getLogLevel() > 0 && nextDtStateChange < LvArray::NumericLimits< real64 >::max )
     GEOS_LOG_RANK_0( GEOS_FMT( "{}: next time step based on state change = {}", getName(), nextDtStateChange ));
 
   if( ( m_numTimestepsSinceLastDtCut >= 0 ) && ( m_numTimestepsSinceLastDtCut < minTimeStepIncreaseInterval ) )
   {
-    GEOS_LOG_LEVEL_INFO_RANK_0( logInfo::TimeStep, GEOS_FMT( "{}: time-step size should be kept the same since it's been {} cycles since last cut",
+    GEOS_LOG_LEVEL_INFO_RANK_0( logInfo::TimeStep, GEOS_FMT( "{}: time-step size will be kept the same since it's been {} cycles since last cut",
                                                              getName(), m_numTimestepsSinceLastDtCut ) );
-    return lastDt;
+    return currentDt;
   }
 
   if( nextDtNewton < nextDtStateChange )      // time step size decided based on convergence
   {
-    if( nextDtNewton > lastDt )
+    if( nextDtNewton > currentDt )
     {
-      GEOS_LOG_LEVEL_INFO_RANK_0( logInfo::TimeStep, GEOS_FMT( "{}: time-step required should be increased based on number of iterations",
+      GEOS_LOG_LEVEL_INFO_RANK_0( logInfo::TimeStep, GEOS_FMT( "{}: time-step required will be increased based on number of iterations",
                                                                getName() ) );
     }
-    else if( nextDtNewton < lastDt )
+    else if( nextDtNewton < currentDt )
     {
-      GEOS_LOG_LEVEL_INFO_RANK_0( logInfo::TimeStep, GEOS_FMT( "{}: time-step required should be decreased based on number of iterations",
+      GEOS_LOG_LEVEL_INFO_RANK_0( logInfo::TimeStep, GEOS_FMT( "{}: time-step required will be decreased based on number of iterations",
                                                                getName() ) );
     }
     else
     {
-      GEOS_LOG_LEVEL_INFO_RANK_0( logInfo::TimeStep, GEOS_FMT( "{}: time-step required should be kept the same based on number of iterations",
+      GEOS_LOG_LEVEL_INFO_RANK_0( logInfo::TimeStep, GEOS_FMT( "{}: time-step required will be kept the same based on number of iterations",
                                                                getName() ) );
     }
   }
   else         // time step size decided based on state change
   {
-    if( nextDtStateChange > lastDt )
+    if( nextDtStateChange > currentDt )
     {
       GEOS_LOG_LEVEL_INFO_RANK_0( logInfo::TimeStep, GEOS_FMT( "{}: time-step required will be increased based on state change.",
                                                                getName()));
     }
-    else if( nextDtStateChange < lastDt )
+    else if( nextDtStateChange < currentDt )
     {
       GEOS_LOG_LEVEL_INFO_RANK_0( logInfo::TimeStep, GEOS_FMT( "{}: time-step required will be decreased based on state change.",
                                                                getName()));
@@ -422,14 +422,14 @@ real64 PhysicsSolverBase::setNextDt( real64 const & GEOS_UNUSED_PARAM( currentTi
   return std::min( nextDtNewton, nextDtStateChange );
 }
 
-real64 PhysicsSolverBase::setNextDtBasedOnStateChange( real64 const & lastDt,
+real64 PhysicsSolverBase::setNextDtBasedOnStateChange( real64 const & currentDt,
                                                        DomainPartition & domain )
 {
-  GEOS_UNUSED_VAR( lastDt, domain );
+  GEOS_UNUSED_VAR( currentDt, domain );
   return LvArray::NumericLimits< real64 >::max; // i.e., not implemented
 }
 
-real64 PhysicsSolverBase::setNextDtBasedOnIterNumber( real64 const & lastDt )
+real64 PhysicsSolverBase::setNextDtBasedOnIterNumber( real64 const & currentDt )
 {
   integer & newtonIter = m_nonlinearSolverParameters.m_numNewtonIterations;
   integer const iterDecreaseLimit = m_nonlinearSolverParameters.timeStepDecreaseIterLimit();
@@ -439,20 +439,20 @@ real64 PhysicsSolverBase::setNextDtBasedOnIterNumber( real64 const & lastDt )
   if( newtonIter < iterIncreaseLimit )
   {
     // Easy convergence, let's increase the time-step.
-    nextDt = lastDt * m_nonlinearSolverParameters.timeStepIncreaseFactor();
+    nextDt = currentDt * m_nonlinearSolverParameters.timeStepIncreaseFactor();
     if( m_nonlinearSolverParameters.getLogLevel() > 0 )
       GEOS_LOG_RANK_0( GEOS_FMT( "{}: number of iterations = {} is less than {}, next time step = {} (increase)", getName(), newtonIter, iterIncreaseLimit, nextDt ));
   }
   else if( newtonIter > iterDecreaseLimit )
   {
     // Tough convergence let us make the time-step smaller!
-    nextDt = lastDt * m_nonlinearSolverParameters.timeStepDecreaseFactor();
+    nextDt = currentDt * m_nonlinearSolverParameters.timeStepDecreaseFactor();
     if( m_nonlinearSolverParameters.getLogLevel() > 0 )
       GEOS_LOG_RANK_0( GEOS_FMT( "{}: number of iterations = {} is more than {}, next time step = {} (decrease)", getName(), newtonIter, iterDecreaseLimit, nextDt ));
   }
   else
   {
-    nextDt = lastDt;
+    nextDt = currentDt;
     if( m_nonlinearSolverParameters.getLogLevel() > 0 )
       GEOS_LOG_RANK_0( GEOS_FMT( "{}: number of iterations = {} is between {} and {}, next time step = {} (no change)", getName(), newtonIter, iterIncreaseLimit, iterDecreaseLimit, nextDt ));
   }
