@@ -1,0 +1,138 @@
+<?xml version="1.0" ?>
+<Problem>
+  <NumericalMethods>
+    <FiniteElements>
+      <FiniteElementSpace
+        name="FE1"
+        order="1"/>
+    </FiniteElements>
+  </NumericalMethods>
+
+
+  <ElementRegions>
+    <CellElementRegion
+      name="Domain"
+      cellBlocks="{ cb1 }"
+      materialList="{rock}"/>
+
+    <SurfaceElementRegion
+      name="Fault"
+      materialList="{frictionLaw}"
+      defaultAperture="1e-3"/>  
+    </ElementRegions>
+  <Constitutive>
+
+    <!-- <ElasticIsotropic
+     name="rock"
+     defaultDensity="2700"
+     defaultBulkModulus="1.666666666666666e4"
+     defaultShearModulus="1.0e4"/> -->
+    
+    <ElasticIsotropic
+     name="rock"
+     defaultDensity="2700"
+     defaultBulkModulus="1.66667"
+     defaultShearModulus="1.0"/>
+
+    <RateAndStateFriction
+      name="frictionLaw"
+      defaultA="0.01"
+      defaultB="0.015"
+      defaultDc="1.0e-5"  
+      defaultReferenceVelocity="1.0e-6"
+      defaultReferenceFrictionCoefficient="0.6"/>  
+  </Constitutive>
+
+  <FieldSpecifications>
+    <FieldSpecification
+      name="fault"
+      fieldName="ruptureState"
+      initialCondition="1"
+      objectPath="faceManager"
+      scale="1"
+      setNames="{ faultPlane }"/>
+
+    <FieldSpecification
+      name="xconstraint"
+      objectPath="nodeManager"
+      fieldName="totalDisplacement"
+      component="0"
+      scale="0.0"
+      setNames="{ xneg, xpos }"/>
+
+    <FieldSpecification
+      name="yconstraint"
+      objectPath="nodeManager"
+      fieldName="totalDisplacement"
+      component="1"
+      scale="0.0"
+      setNames="{ xpos, xneg, yneg, ypos}"/>
+
+    <FieldSpecification
+      name="zconstraint"
+      objectPath="nodeManager"
+      fieldName="totalDisplacement"
+      component="2"
+      scale="0.0"
+      setNames="{ zpos, zneg }"/>
+      
+    <FieldSpecification
+      name="dispJump_normal"
+      fieldName="targetIncrementalJump"
+      initialCondition="1"
+      objectPath="ElementRegions/Fault/FractureSubRegion"
+      scale="0.0"
+      component="0"
+      functionName="dispJumpFunction"
+      setNames="{all}"/>
+      
+    <FieldSpecification
+      name="dispJump_t1"
+      fieldName="targetIncrementalJump"
+      initialCondition="1"
+      objectPath="ElementRegions/Fault/FractureSubRegion"
+      scale="1.0"
+      component="1"
+      functionName="dispJumpFunction"
+      setNames="{all}"/>
+    
+    <FieldSpecification
+      name="dispJump_t2"
+      fieldName="targetIncrementalJump"
+      initialCondition="1"
+      objectPath="ElementRegions/Fault/FractureSubRegion"
+      scale="0.0"
+      component="2"
+      setNames="{all}"/>  
+  </FieldSpecifications>
+
+  <Functions>
+    <TableFunction
+     name="dispJumpFunction"
+     inputVarNames="{elementCenter}"
+     coordinateFiles="{dataTables/x.csv, dataTables/y.csv, dataTables/z.csv}" 
+     voxelFile="dataTables/singularCrackSlip.csv"/>
+  </Functions>
+  
+  <Tasks>
+    <PackCollection
+      name="tractionCollection"
+      objectPath="ElementRegions/Fault/FractureSubRegion"
+      fieldName="traction"
+      setNames="{all}"/>
+  </Tasks>
+
+  <Outputs>
+    <VTK
+      name="vtkOutput"
+      plotFileRoot="fixedSlip"/>
+     
+    <TimeHistory
+      name="timeHistoryOutput"
+      sources="{/Tasks/tractionCollection}"
+      filename="traction" />  
+
+    <Restart
+      name="restart"/>  
+  </Outputs>
+</Problem>

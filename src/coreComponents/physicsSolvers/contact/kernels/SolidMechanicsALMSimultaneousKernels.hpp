@@ -2,11 +2,10 @@
  * ------------------------------------------------------------------------------------------------------------
  * SPDX-License-Identifier: LGPL-2.1-only
  *
- * Copyright (c) 2016-2024 Lawrence Livermore National Security LLC
- * Copyright (c) 2018-2024 Total, S.A
- * Copyright (c) 2018-2024 The Board of Trustees of the Leland Stanford Junior University
- * Copyright (c) 2023-2024 Chevron
- * Copyright (c) 2019-     GEOS/GEOSX Contributors
+ * Copyright (c) 2018-2020 Lawrence Livermore National Security LLC
+ * Copyright (c) 2018-2020 The Board of Trustees of the Leland Stanford Junior University
+ * Copyright (c) 2018-2020 Total, S.A
+ * Copyright (c) 2019-     GEOSX Contributors
  * All rights reserved
  *
  * See top level LICENSE, COPYRIGHT, CONTRIBUTORS, NOTICE, and ACKNOWLEDGEMENTS files for details.
@@ -14,13 +13,14 @@
  */
 
 /**
- * @file SolidMechanicsALMKernels.hpp
+ * @file SolidMechanicsALMSimultaneousKernels.hpp
  */
 
-#ifndef GEOS_PHYSICSSOLVERS_CONTACT_SOLIDMECHANICSALMKERNELS_HPP_
-#define GEOS_PHYSICSSOLVERS_CONTACT_SOLIDMECHANICSALMKERNELS_HPP_
+#ifndef GEOS_PHYSICSSOLVERS_CONTACT_KERNELS_SOLIDMECHANICSALMSIMULTANEOUSKERNELS_HPP_
+#define GEOS_PHYSICSSOLVERS_CONTACT_KERNELS_SOLIDMECHANICSALMSIMULTANEOUSKERNELS_HPP_
 
-#include "SolidMechanicsALMKernelsBase.hpp"
+#include "SolidMechanicsConformingContactKernelsBase.hpp"
+#include "mesh/MeshFields.hpp"
 
 namespace geos
 {
@@ -33,14 +33,14 @@ namespace solidMechanicsALMKernels
  */
 template< typename CONSTITUTIVE_TYPE,
           typename FE_TYPE >
-class ALM :
-  public ALMKernelsBase< CONSTITUTIVE_TYPE,
-                         FE_TYPE >
+class ALMSimultaneous :
+  public solidMechanicsConformingContactKernels::ConformingContactKernelsBase< CONSTITUTIVE_TYPE,
+                                                                               FE_TYPE >
 {
 public:
   /// Alias for the base class.
-  using Base = ALMKernelsBase< CONSTITUTIVE_TYPE,
-                               FE_TYPE >;
+  using Base = solidMechanicsConformingContactKernels::ConformingContactKernelsBase< CONSTITUTIVE_TYPE,
+                                                                                     FE_TYPE >;
 
   /// Maximum number of nodes per element, which is equal to the maxNumTestSupportPointPerElem and
   /// maxNumTrialSupportPointPerElem by definition.
@@ -52,13 +52,11 @@ public:
   using Base::m_elemsToFaces;
   using Base::m_faceToNodes;
   using Base::m_finiteElementSpace;
-  using Base::m_constitutiveUpdate;
   using Base::m_dofNumber;
   using Base::m_bDofNumber;
   using Base::m_dofRankOffset;
   using Base::m_X;
   using Base::m_rotationMatrix;
-  using Base::m_penalty;
   using Base::m_dispJump;
   using Base::m_oldDispJump;
   using Base::m_matrix;
@@ -68,21 +66,20 @@ public:
    * @brief Constructor
    * @copydoc geos::finiteElement::InterfaceKernelBase::InterfaceKernelBase
    */
-  ALM( NodeManager const & nodeManager,
-       EdgeManager const & edgeManager,
-       FaceManager const & faceManager,
-       localIndex const targetRegionIndex,
-       FaceElementSubRegion & elementSubRegion,
-       FE_TYPE const & finiteElementSpace,
-       CONSTITUTIVE_TYPE & inputConstitutiveType,
-       arrayView1d< globalIndex const > const uDofNumber,
-       arrayView1d< globalIndex const > const bDofNumber,
-       globalIndex const rankOffset,
-       CRSMatrixView< real64, globalIndex const > const inputMatrix,
-       arrayView1d< real64 > const inputRhs,
-       real64 const inputDt,
-       arrayView1d< localIndex const > const & faceElementList,
-       bool const isSymmetric ):
+  ALMSimultaneous( NodeManager const & nodeManager,
+                   EdgeManager const & edgeManager,
+                   FaceManager const & faceManager,
+                   localIndex const targetRegionIndex,
+                   FaceElementSubRegion & elementSubRegion,
+                   FE_TYPE const & finiteElementSpace,
+                   CONSTITUTIVE_TYPE & inputConstitutiveType,
+                   arrayView1d< globalIndex const > const uDofNumber,
+                   arrayView1d< globalIndex const > const bDofNumber,
+                   globalIndex const rankOffset,
+                   CRSMatrixView< real64, globalIndex const > const inputMatrix,
+                   arrayView1d< real64 > const inputRhs,
+                   real64 const inputDt,
+                   arrayView1d< localIndex const > const & faceElementList ):
     Base( nodeManager,
           edgeManager,
           faceManager,
@@ -98,7 +95,8 @@ public:
           inputDt,
           faceElementList ),
     m_traction( elementSubRegion.getField< fields::contact::traction >().toViewConst()),
-    m_symmetric( isSymmetric )
+    m_penalty( elementSubRegion.getField< fields::contact::iterativePenalty >().toViewConst() ),
+    m_faceArea( elementSubRegion.getField< fields::elementArea >().toViewConst() )
   {}
 
   //***************************************************************************
@@ -226,6 +224,14 @@ public:
       }
     }
 
+    // The minus sign is consistent with the sign of the Jacobian
+    stack.localPenalty[0][0] = -m_penalty( k, 0 );
+
+    stack.localPenalty[1][1] = -m_penalty( k, 2 );
+    stack.localPenalty[2][2] = -m_penalty( k, 3 );
+    stack.localPenalty[1][2] = -m_penalty( k, 4 );
+    stack.localPenalty[2][1] = -m_penalty( k, 4 );
+
     for( int i=0; i<numTdofs; ++i )
     {
       stack.tLocal[i] = m_traction( k, i );
@@ -249,7 +255,7 @@ public:
                    StackVariables & stack ) const
   {
     GEOS_UNUSED_VAR( k );
-    constexpr real64 zero = LvArray::NumericLimits< real64 >::epsilon;
+    //constexpr real64 zero = 1.e-10;
 
     constexpr int numUdofs = numNodesPerElem * 3 * 2;
 
@@ -261,20 +267,24 @@ public:
     real64 tractionR[numUdofs];
     real64 tractionRb[numBdofs];
 
+
     real64 tractionNew[3];
 
-    integer fractureState;
-    m_constitutiveUpdate.updateTraction( m_oldDispJump[k],
-                                         m_dispJump[k],
-                                         m_penalty[k],
-                                         m_traction[k],
-                                         m_symmetric,
-                                         m_symmetric,
-                                         zero,
-                                         zero,
-                                         stack.localPenalty,
-                                         tractionNew,
-                                         fractureState );
+    // Compute the trial traction
+    real64 dispJump[ 3 ];
+    dispJump[0] = stack.dispJumpLocal[0] * m_faceArea[k];
+    dispJump[1] = ( stack.dispJumpLocal[1] - stack.oldDispJumpLocal[1] ) * m_faceArea[k];
+    dispJump[2] = ( stack.dispJumpLocal[2] - stack.oldDispJumpLocal[2] ) * m_faceArea[k];
+
+    LvArray::tensorOps::scaledCopy< 3 >( tractionNew, stack.tLocal, -1.0 );
+    LvArray::tensorOps::Ri_add_AijBj< 3, 3 >( tractionNew, stack.localPenalty, dispJump );
+
+    // If normal tangential trial is positive (opening)
+    //if (tractionNew[ 0 ] < -zero)
+    //{
+    //  tractionNew[0] = 0.0;
+    //  stack.localPenalty[0][0] = 0.0;
+    //}
 
     // transp(R) * Atu
     LvArray::tensorOps::Rij_eq_AkiBkj< 3, numUdofs, 3 >( matRRtAtu, stack.localRotationMatrix,
@@ -317,9 +327,9 @@ public:
                                                                 matRRtAtb );
 
     // Compute the local residuals
-    LvArray::tensorOps::scaledAdd< numUdofs >( stack.localRu, tractionR, -1 );
+    LvArray::tensorOps::scaledAdd< numUdofs >( stack.localRu, tractionR, 1 );
 
-    LvArray::tensorOps::scaledAdd< numBdofs >( stack.localRb, tractionRb, -1 );
+    LvArray::tensorOps::scaledAdd< numBdofs >( stack.localRb, tractionRb, 1 );
 
     for( localIndex i=0; i < numUdofs; ++i )
     {
@@ -370,31 +380,31 @@ protected:
 
   arrayView2d< real64 const > const m_traction;
 
-  bool const m_symmetric;
+  /// The array containing the penalty coefficients for each element.
+  arrayView2d< real64 const > const m_penalty;
 
+  arrayView1d< real64 const > const m_faceArea;
 };
 
 /// The factory used to construct the kernel.
-using ALMFactory = finiteElement::InterfaceKernelFactory< ALM,
-                                                          arrayView1d< globalIndex const > const,
-                                                          arrayView1d< globalIndex const > const,
-                                                          globalIndex const,
-                                                          CRSMatrixView< real64, globalIndex const > const,
-                                                          arrayView1d< real64 > const,
-                                                          real64 const,
-                                                          arrayView1d< localIndex const > const,
-                                                          bool const >;
+using ALMSimultaneousFactory = finiteElement::InterfaceKernelFactory< ALMSimultaneous,
+                                                                      arrayView1d< globalIndex const > const,
+                                                                      arrayView1d< globalIndex const > const,
+                                                                      globalIndex const,
+                                                                      CRSMatrixView< real64, globalIndex const > const,
+                                                                      arrayView1d< real64 > const,
+                                                                      real64 const,
+                                                                      arrayView1d< localIndex const > const >;
 
 /**
  * @brief A struct to compute the traction after nonlinear solve
  */
-struct ComputeTractionKernel
+struct ComputeTractionSimultaneousKernel
 {
 
   /**
-   * @brief Launch the kernel function to compute the traction
+   * @brief Launch the kernel function to comute traction
    * @tparam POLICY the type of policy used in the kernel launch
-   * @tparam CONTACT_WRAPPER the type of contact wrapper doing the fracture traction updates
    * @param[in] size the size of the subregion
    * @param[in] penalty the array containing the tangential penalty matrix
    * @param[in] traction the array containing the current traction
@@ -402,25 +412,27 @@ struct ComputeTractionKernel
    * @param[in] deltaDispJump the array containing the delta displacement jump
    * @param[out] tractionNew the array containing the new traction
    */
-  template< typename POLICY, typename CONTACT_WRAPPER >
+  template< typename POLICY >
   static void
   launch( localIndex const size,
-          CONTACT_WRAPPER const & contactWrapper,
           arrayView2d< real64 const > const & penalty,
           arrayView2d< real64 const > const & traction,
           arrayView2d< real64 const > const & dispJump,
           arrayView2d< real64 const > const & deltaDispJump,
+          arrayView1d< real64 const > const & faceElementArea,
           arrayView2d< real64 > const & tractionNew )
   {
 
-    forAll< POLICY >( size, [=] GEOS_HOST_DEVICE ( localIndex const k )
+    forAll< POLICY >( size, [=] GEOS_HOST_DEVICE ( localIndex const kfe )
     {
-
-      contactWrapper.updateTractionOnly( dispJump[k], deltaDispJump[k],
-                                         penalty[k], traction[k], tractionNew[k] );
-
+      tractionNew[kfe][0] = traction[kfe][0] + penalty[kfe][0] * dispJump[kfe][0] * faceElementArea[kfe];
+      tractionNew[kfe][1] = traction[kfe][1] + ( penalty[kfe][2] * deltaDispJump[kfe][1]+
+                                                 penalty[kfe][4] * deltaDispJump[kfe][2] ) * faceElementArea[kfe];
+      tractionNew[kfe][2] = traction[kfe][2] + ( penalty[kfe][3] * deltaDispJump[kfe][2] +
+                                                 penalty[kfe][4] * deltaDispJump[kfe][1] ) * faceElementArea[kfe];
     } );
   }
+
 };
 
 } // namespace SolidMechanicsALMKernels
@@ -428,4 +440,4 @@ struct ComputeTractionKernel
 } // namespace geos
 
 
-#endif /* GEOS_PHYSICSSOLVERS_CONTACT_SOLIDMECHANICSALMKERNELS_HPP_ */
+#endif /* GEOS_PHYSICSSOLVERS_CONTACT_KERNELS_SOLIDMECHANICSALMKERNELS_HPP_ */

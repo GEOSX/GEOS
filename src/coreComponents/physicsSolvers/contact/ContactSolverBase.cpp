@@ -26,6 +26,7 @@
 #include "physicsSolvers/contact/LogLevelsInfo.hpp"
 #include "physicsSolvers/solidMechanics/SolidMechanicsLagrangianFEM.hpp"
 #include "common/GEOS_RAJA_Interface.hpp"
+#include "fieldSpecification/FieldSpecificationManager.hpp"
 
 namespace geos
 {
@@ -92,6 +93,8 @@ void ContactSolverBase::registerDataOnMesh( dataRepository::Group & meshBodies )
       subRegion.registerField< fields::contact::oldFractureState >( getName() );
 
       subRegion.registerField< fields::contact::slip >( getName() );
+
+      subRegion.registerField< fields::contact::deltaSlip >( getName() );
     } );
 
   } );
@@ -114,6 +117,43 @@ void ContactSolverBase::setFractureRegions( dataRepository::Group const & meshBo
                  GEOS_FMT( "{} {}: The number of fracture regions can not be more than one",
                            this->getCatalogName(), this->getName() ),
                  InputError );
+}
+
+real64 ContactSolverBase::solverStep( real64 const & time_n,
+                                      real64 const & dt,
+                                      const integer cycleNumber,
+                                      DomainPartition & domain )
+{
+  if( cycleNumber == 0 )
+  {
+    /// Apply initial conditions to the Fault
+    FieldSpecificationManager & fieldSpecificationManager = FieldSpecificationManager::getInstance();
+
+    forDiscretizationOnMeshTargets( domain.getMeshBodies(), [&]( string const &,
+                                                                 MeshLevel & mesh,
+                                                                 arrayView1d< string const > const & )
+
+    {
+
+      fieldSpecificationManager.forSubGroups< FieldSpecificationBase >( [&] ( FieldSpecificationBase const & fs )
+      {
+        if( fs.initialCondition() )
+        {
+          fs.apply< SurfaceElementSubRegion >( mesh,
+                                            [&]( FieldSpecificationBase const & bc,
+                                                 string const &,
+                                                 SortedArrayView< localIndex const > const & targetSet,
+                                                 SurfaceElementSubRegion & targetGroup,
+                                                 string const fieldName )
+          {
+            bc.applyFieldValue< FieldSpecificationEqual >( targetSet, 0.0, targetGroup, fieldName );
+          } );
+        }
+      } );
+    } );
+  }
+
+  return PhysicsSolverBase::solverStep( time_n, dt, cycleNumber, domain );
 }
 
 void ContactSolverBase::computeFractureStateStatistics( MeshLevel const & mesh,
@@ -245,7 +285,7 @@ void ContactSolverBase::setConstitutiveNamesCallSuper( ElementSubRegionBase & su
       setSizedFromParent( 0 );
 
     string & frictionLawName = subRegion.getReference< string >( viewKeyStruct::frictionLawNameString() );
-    frictionLawName = SolverBase::getConstitutiveName< FrictionBase >( subRegion );
+    frictionLawName = PhysicsSolverBase::getConstitutiveName< FrictionBase >( subRegion );
     GEOS_ERROR_IF( frictionLawName.empty(), GEOS_FMT( "{}: FrictionBase model not found on subregion {}",
                                                       getDataContext(), subRegion.getDataContext() ) );
   }

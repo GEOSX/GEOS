@@ -15,18 +15,18 @@
 
 
 /**
- * @file SolidMechanicsALMKernelsHelper.hpp
+ * @file SolidMechanicsConformingContactKernelsHelper.hpp
  */
 
-#ifndef GEOS_PHYSICSSOLVERS_CONTACT_SOLIDMECHANICSALMKERNELSHELPER_HPP_
-#define GEOS_PHYSICSSOLVERS_CONTACT_SOLIDMECHANICSALMKERNELSHELPER_HPP_
+#ifndef GEOS_PHYSICSSOLVERS_CONTACT_KERNELS_SOLIDMECHANICSCONFORMINGCONTACTKERNELSHELPER_HPP_
+#define GEOS_PHYSICSSOLVERS_CONTACT_KERNELS_SOLIDMECHANICSCONFORMINGCONTACTKERNELSHELPER_HPP_
 
 #include "common/GeosxMacros.hpp"
 
 namespace geos
 {
 
-namespace solidMechanicsALMKernelsHelper
+namespace solidMechanicsConformingContactKernelsHelper
 {
 
 template< int I_SIZE,
@@ -76,8 +76,8 @@ void assembleStrainOperator( real64 ( & strainMatrix )[I_SIZE][J_SIZE],
   }
 }
 
-} // solidMechanicsALMKernelsHelper
+} // solidMechanicsConformingContactKernelsHelper
 
 } // geos
 
-#endif /* GEOS_PHYSICSSOLVERS_CONTACT_SOLIDMECHANICSALMKERNELSHELPER_HPP_ */
+#endif /* GEOS_PHYSICSSOLVERS_CONTACT_KERNELS_SOLIDMECHANICSCONFORMINGCONTACTKERNELSHELPER_HPP_ */

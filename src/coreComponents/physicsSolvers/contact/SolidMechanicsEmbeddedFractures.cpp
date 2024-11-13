@@ -32,9 +32,9 @@
 #include "mesh/SurfaceElementRegion.hpp"
 #include "physicsSolvers/solidMechanics/SolidMechanicsFields.hpp"
 #include "physicsSolvers/solidMechanics/SolidMechanicsLagrangianFEM.hpp"
-#include "physicsSolvers/contact/SolidMechanicsEFEMKernels.hpp"
-#include "physicsSolvers/contact/SolidMechanicsEFEMStaticCondensationKernels.hpp"
-#include "physicsSolvers/contact/SolidMechanicsEFEMJumpUpdateKernels.hpp"
+#include "physicsSolvers/contact/kernels/SolidMechanicsEFEMKernels.hpp"
+#include "physicsSolvers/contact/kernels/SolidMechanicsEFEMStaticCondensationKernels.hpp"
+#include "physicsSolvers/contact/kernels/SolidMechanicsEFEMJumpUpdateKernels.hpp"
 
 namespace geos
 {

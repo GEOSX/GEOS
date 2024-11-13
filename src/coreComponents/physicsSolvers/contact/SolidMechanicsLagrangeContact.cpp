@@ -505,9 +505,9 @@ void SolidMechanicsLagrangeContact::computeFaceDisplacementJump( DomainPartition
         ArrayOfArraysView< localIndex const > const & elemsToFaces = subRegion.faceList().toViewConst();
         arrayView1d< real64 const > const & area = subRegion.getElementArea().toViewConst();
 
-        arrayView2d< real64 > const & dispJump = subRegion.getField< contact::dispJump >();
-        arrayView1d< real64 > const & slip = subRegion.getField< fields::contact::slip >();
-        arrayView1d< real64 > const & aperture = subRegion.getField< fields::elementAperture >();
+        arrayView2d< real64 > const dispJump = subRegion.getField< contact::dispJump >();
+        arrayView1d< real64 > const slip = subRegion.getField< fields::contact::slip >();
+        arrayView1d< real64 > const aperture = subRegion.getField< fields::elementAperture >();
 
         forAll< parallelHostPolicy >( subRegion.size(), [=] ( localIndex const kfe )
         {

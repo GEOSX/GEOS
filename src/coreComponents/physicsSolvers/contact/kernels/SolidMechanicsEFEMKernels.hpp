@@ -18,8 +18,8 @@
  * @file SolidMechanicsEFEMKernels.hpp
  */
 
-#ifndef GEOS_PHYSICSSOLVERS_CONTACT_SOLIDMECHANICSEFEMKERNELS_HPP_
-#define GEOS_PHYSICSSOLVERS_CONTACT_SOLIDMECHANICSEFEMKERNELS_HPP_
+#ifndef GEOS_PHYSICSSOLVERS_CONTACT_KERNELS_SOLIDMECHANICSEFEMKERNELS_HPP_
+#define GEOS_PHYSICSSOLVERS_CONTACT_KERNELS_SOLIDMECHANICSEFEMKERNELS_HPP_
 
 #include "SolidMechanicsEFEMKernelsBase.hpp"
 
@@ -220,8 +220,9 @@ public:
 
     // Compute the local residuals
     LvArray::tensorOps::Ri_add_AijBj< 3, 3 >( stack.localRw, stack.localKww, stack.wLocal );
-    LvArray::tensorOps::Ri_add_AijBj< 3, nUdof >( stack.localRw, stack.localKwu, stack.uLocal );
     LvArray::tensorOps::Ri_add_AijBj< nUdof, 3 >( stack.localRu, stack.localKuw, stack.wLocal );
+    // add EqM * effStress into the residual of enrichment nodes
+    LvArray::tensorOps::add< 3 >( stack.localRw, stack.localEqMStress );
 
     // Add traction contribution
     LvArray::tensorOps::scaledAdd< 3 >( stack.localRw, stack.tractionVec, -1 );
@@ -346,4 +347,4 @@ struct StateUpdateKernel
 } // namespace geos
 
 
-#endif /* GEOS_PHYSICSSOLVERS_CONTACT_SOLIDMECHANICSEFEMKERNELS_HPP_ */
+#endif /* GEOS_PHYSICSSOLVERS_CONTACT_KERNELS_SOLIDMECHANICSEFEMKERNELS_HPP_ */
