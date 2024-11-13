@@ -49,6 +49,15 @@ public:
   /// Compile time value for the number of quadrature points per element.
   static constexpr int numQuadraturePointsPerElem = FE_TYPE::numQuadraturePoints;
 
+  /// The number of displacement dofs per element.
+  static constexpr int numUdofs = Base::numUdofs;
+
+  /// The number of bubble dofs per element.
+  static constexpr int numBdofs = Base::numBdofs;
+
+  /// The number of lagrange multiplier dofs per element.
+  static constexpr int numTdofs = Base::numTdofs;
+
   using Base::m_elemsToFaces;
   using Base::m_faceToNodes;
   using Base::m_finiteElementSpace;

@@ -51,6 +51,15 @@ public:
   /// Compile time value for the number of quadrature points per element.
   static constexpr int numQuadraturePointsPerElem = FE_TYPE::numQuadraturePoints;
 
+  /// The number of displacement dofs per element.
+  static constexpr int numUdofs = Base::numUdofs;
+
+  /// The number of bubble dofs per element.
+  static constexpr int numBdofs = Base::numBdofs;
+
+  /// The number of lagrange multiplier dofs per element.
+  static constexpr int numTdofs = Base::numTdofs;
+
   using Base::m_elemsToFaces;
   using Base::m_faceToNodes;
   using Base::m_finiteElementSpace;
@@ -111,15 +120,6 @@ public:
    */
   struct StackVariables : public Base::StackVariables
   {
-
-    /// The number of displacement dofs per element.
-    static constexpr int numUdofs = numNodesPerElem * 3 * 2;
-
-    /// The number of lagrange multiplier dofs per element.
-    static constexpr int numTdofs = 3;
-
-    /// The number of bubble dofs per element.
-    static constexpr int numBdofs = 3*2;
 
 public:
 
@@ -199,8 +199,6 @@ public:
   {
     constexpr int shift = numNodesPerElem * 3;
 
-    constexpr int numTdofs = 3;
-
     int permutation[numNodesPerElem];
     m_finiteElementSpace.getPermutation( permutation );
 
@@ -253,10 +251,6 @@ public:
   {
     GEOS_UNUSED_VAR( k );
     constexpr real64 zero = LvArray::NumericLimits< real64 >::epsilon;
-
-    constexpr int numUdofs = numNodesPerElem * 3 * 2;
-
-    constexpr int numBdofs = 3*2;
 
     real64 matRRtAtu[3][numUdofs], matDRtAtu[3][numUdofs];
     real64 matRRtAtb[3][numBdofs], matDRtAtb[3][numBdofs];
