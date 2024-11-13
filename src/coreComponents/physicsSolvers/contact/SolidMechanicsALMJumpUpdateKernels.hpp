@@ -54,6 +54,7 @@ public:
   using Base::m_faceToNodes;
   using Base::m_rotationMatrix;
   using Base::m_dispJump;
+  using Base::m_area;
 
   /**
    * @brief Constructor
@@ -234,8 +235,8 @@ public:
     // Store the results
     for( int i=0; i<3; ++i )
     {
-      m_dispJump[ k ][ i ] = stack.dispJumpLocal[ i ];
-      m_deltaDispJump[ k ][ i ] = stack.deltaDispJumpLocal[ i ];
+      m_dispJump[ k ][ i ] = stack.dispJumpLocal[ i ]/m_area[k];
+      m_deltaDispJump[ k ][ i ] = stack.deltaDispJumpLocal[ i ]/m_area[k];
     }
 
     return 0.0;

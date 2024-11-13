@@ -244,15 +244,23 @@ private:
 
     constexpr static char const * symmetricString() { return "symmetric"; }
 
-    constexpr static char const * iterativePenaltyNFacString() { return "epsNfac"; }
+    constexpr static char const * iterativePenaltyNFacString() { return "iterPenaltyN"; }
 
-    constexpr static char const * iterativePenaltyTFacString() { return "epsTfac"; }
+    constexpr static char const * iterativePenaltyTFacString() { return "iterPenaltyT"; }
+
+    constexpr static char const * tolJumpDispNFacString() { return "tolJumpN"; }
+
+    constexpr static char const * tolJumpDispTFacString() { return "tolJumpT"; }
+
+    constexpr static char const * tolNormalTracFacString() { return "tolNormalTrac"; }
+
+    constexpr static char const * tolTauLimitString() { return "tolTauLimit"; }
 
   };
 
   /// Tolerance for the sliding check: the tangential traction must exceed (1 + m_slidingCheckTolerance) * t_lim to activate the sliding
   /// condition
-  real64 const m_slidingCheckTolerance = 1.e-06;
+  real64 m_slidingCheckTolerance = 1.e-05;
 
   /// Flag to update the Lagrange multiplier at each Newton iteration (true), or only after the Newton loop has converged (false)
   int m_simultaneous = 1;
@@ -266,6 +274,15 @@ private:
 
   /// Factor for tuning the iterative penalty coefficient for tangential traction
   real64 m_iterPenaltyTFac = 0.1;
+
+  /// Factor to adjust the tolerance for normal jump
+  real64 m_tolJumpDispNFac = 1.e-07;
+
+  /// Factor to adjust the tolerance for tangential jump
+  real64 m_tolJumpDispTFac = 1.e-05;
+
+  /// Factor to adjust the tolerance for normal traction
+  real64 m_tolNormalTracFac = 0.5;
 
 };
 

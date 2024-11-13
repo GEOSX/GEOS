@@ -61,6 +61,7 @@ public:
   using Base::m_oldDispJump;
   using Base::m_matrix;
   using Base::m_rhs;
+  using Base::m_area;
 
   /**
    * @brief Constructor
@@ -223,18 +224,19 @@ public:
     }
 
     // The minus sign is consistent with the sign of the Jacobian
-    stack.localPenalty[0][0] = -m_penalty( k, 0 );
+    real64 const fac = 1.0 / m_area[k];
+    stack.localPenalty[0][0] = -m_penalty( k, 0 )*fac;
 
-    stack.localPenalty[1][1] = -m_penalty( k, 2 );
-    stack.localPenalty[2][2] = -m_penalty( k, 3 );
-    stack.localPenalty[1][2] = -m_penalty( k, 4 );
-    stack.localPenalty[2][1] = -m_penalty( k, 4 );
+    stack.localPenalty[1][1] = -m_penalty( k, 2 )*fac;
+    stack.localPenalty[2][2] = -m_penalty( k, 3 )*fac;
+    stack.localPenalty[1][2] = -m_penalty( k, 4 )*fac;
+    stack.localPenalty[2][1] = -m_penalty( k, 4 )*fac;
 
     for( int i=0; i<numTdofs; ++i )
     {
       stack.tLocal[i] = m_traction( k, i );
-      stack.dispJumpLocal[i] = m_dispJump( k, i );
-      stack.oldDispJumpLocal[i] = m_oldDispJump( k, i );
+      stack.dispJumpLocal[i] = m_dispJump( k, i )*m_area[k];
+      stack.oldDispJumpLocal[i] = m_oldDispJump( k, i )*m_area[k];
     }
 
     for( int i=0; i<3; ++i )
