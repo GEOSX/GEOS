@@ -49,7 +49,7 @@
       name="solverApplications"
       beginTime="0.0"
       forceDt="1.0"
-      target="/Solvers/AugmentedLagrangian"/>
+      target="/Solvers/contactSolver"/>
 
     <PeriodicEvent
       name="outputs"
