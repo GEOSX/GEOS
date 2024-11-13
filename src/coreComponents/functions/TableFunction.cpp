@@ -196,9 +196,9 @@ real64 TableFunction::evaluate( real64 const * const input ) const
   return m_kernelWrapper.compute( input );
 }
 
-std::vector< real64 > TableFunction::getCoord( real64 const * const input, InterpolationType interpolationMethod ) const
+real64 TableFunction::getCoord( real64 const * const input, localIndex dim, InterpolationType interpolationMethod ) const
 {
-  return m_kernelWrapper.getCoord( input, interpolationMethod );
+  return m_kernelWrapper.getCoord( input, dim, interpolationMethod );
 }
 
 TableFunction::KernelWrapper::KernelWrapper( InterpolationType const interpolationMethod,
