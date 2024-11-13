@@ -5,12 +5,12 @@
   <ElementRegions>
     <CellElementRegion
       name="Reservoir"
-      cellBlocks="{ 2_tetrahedra }"
+      cellBlocks="{ 2 }"
       materialList="{ water, rock }"/>
 
     <CellElementRegion
       name="Burden"
-      cellBlocks="{ 1_tetrahedra, 3_tetrahedra }"
+      cellBlocks="{ 1, 3 }"
       materialList="{ water, rock }"/>
   </ElementRegions>
 <!-- SPHINX_FIELD_CASE_REGION_END -->

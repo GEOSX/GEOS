@@ -5,7 +5,7 @@
  * Copyright (c) 2016-2024 Lawrence Livermore National Security LLC
  * Copyright (c) 2018-2024 Total, S.A
  * Copyright (c) 2018-2024 The Board of Trustees of the Leland Stanford Junior University
- * Copyright (c) 2018-2024 Chevron
+ * Copyright (c) 2023-2024 Chevron
  * Copyright (c) 2019-     GEOS/GEOSX Contributors
  * All rights reserved
  *
@@ -15,7 +15,7 @@
 
 // Source includes
 #include "common/DataTypes.hpp"
-#include "common/Format.hpp"
+#include "common/format/Format.hpp"
 #include "common/TimingMacros.hpp"
 #include "common/Units.hpp"
 #include "mainInterface/initialization.hpp"
@@ -71,12 +71,14 @@ int main( int argc, char *argv[] )
   // A NotAnError is thrown if "-h" or "--help" option is used.
   catch( NotAnError const & )
   {
+    basicCleanup();
     return 0;
   }
   catch( std::exception const & e )
   {
     GEOS_LOG( e.what() );
     LvArray::system::callErrorHandler();
+    basicCleanup();
     std::abort();
   }
   return 0;

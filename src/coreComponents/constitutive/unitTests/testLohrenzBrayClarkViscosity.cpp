@@ -5,7 +5,7 @@
  * Copyright (c) 2016-2024 Lawrence Livermore National Security LLC
  * Copyright (c) 2018-2024 Total, S.A
  * Copyright (c) 2018-2024 The Board of Trustees of the Leland Stanford Junior University
- * Copyright (c) 2018-2024 Chevron
+ * Copyright (c) 2023-2024 Chevron
  * Copyright (c) 2019-     GEOS/GEOSX Contributors
  * All rights reserved
  *
@@ -15,8 +15,8 @@
 
 // Source includes
 #include "codingUtilities/UnitTestUtilities.hpp"
-#include "constitutive/fluid/multifluid/compositional/functions/CubicEOSPhaseModel.hpp"
 #include "constitutive/fluid/multifluid/compositional/models/CompositionalDensity.hpp"
+#include "constitutive/fluid/multifluid/compositional/models/CriticalVolume.hpp"
 #include "constitutive/fluid/multifluid/compositional/models/LohrenzBrayClarkViscosity.hpp"
 #include "TestFluid.hpp"
 #include "TestFluidUtilities.hpp"
@@ -72,7 +72,7 @@ public:
     m_parameters = CompositionalDensity::createParameters( std::make_unique< ModelParameters >() );
     m_parameters = LohrenzBrayClarkViscosity::createParameters( std::move( m_parameters ) );
 
-    auto * parameters = const_cast< LohrenzBrayClarkViscosity::Parameters * >(m_parameters->get< LohrenzBrayClarkViscosity::Parameters >());
+    auto * parameters = const_cast< CriticalVolume * >(m_parameters->get< CriticalVolume >());
     parameters->m_componentCriticalVolume.resize( NC );
     TestFluid< 9 >::populateArray( parameters->m_componentCriticalVolume, this->m_fluid->criticalVolume );
 

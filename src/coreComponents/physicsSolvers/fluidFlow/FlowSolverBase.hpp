@@ -5,7 +5,7 @@
  * Copyright (c) 2016-2024 Lawrence Livermore National Security LLC
  * Copyright (c) 2018-2024 Total, S.A
  * Copyright (c) 2018-2024 The Board of Trustees of the Leland Stanford Junior University
- * Copyright (c) 2018-2024 Chevron
+ * Copyright (c) 2023-2024 Chevron
  * Copyright (c) 2019-     GEOS/GEOSX Contributors
  * All rights reserved
  *
@@ -20,8 +20,10 @@
 #ifndef GEOS_PHYSICSSOLVERS_FINITEVOLUME_FLOWSOLVERBASE_HPP_
 #define GEOS_PHYSICSSOLVERS_FINITEVOLUME_FLOWSOLVERBASE_HPP_
 
-#include "physicsSolvers/SolverBase.hpp"
+#include "physicsSolvers/PhysicsSolverBase.hpp"
 #include "common/Units.hpp"
+#include "finiteVolume/BoundaryStencil.hpp"
+#include "fieldSpecification/AquiferBoundaryCondition.hpp"
 
 namespace geos
 {
@@ -32,8 +34,11 @@ namespace geos
  * Base class for finite volume fluid flow solvers.
  * Provides some common features
  */
-class FlowSolverBase : public SolverBase
+class FlowSolverBase : public PhysicsSolverBase
 {
+  template< typename VIEWTYPE >
+  using ElementViewConst = ElementRegionManager::ElementViewConst< VIEWTYPE >;
+
 public:
 
   /// String used to form the solverName used to register single-physics solvers in CoupledSolver
@@ -65,7 +70,7 @@ public:
 
   virtual void registerDataOnMesh( Group & MeshBodies ) override;
 
-  struct viewKeyStruct : SolverBase::viewKeyStruct
+  struct viewKeyStruct : PhysicsSolverBase::viewKeyStruct
   {
     // misc inputs
     static constexpr char const * fluidNamesString() { return "fluidNames"; }
@@ -150,15 +155,23 @@ public:
 
   /**
    * @brief Utility function to keep the flow variables during a time step (used in poromechanics simulations)
-   * @param[in] keepFlowVariablesConstantDuringInitStep flag to tell the solver to freeze its primary variables during a time step
+   * @param[in] keepVariablesConstantDuringInitStep flag to tell the solver to freeze its primary variables during a time step
    * @detail This function is meant to be called by a specific task before/after the initialization step
    */
-  void setKeepFlowVariablesConstantDuringInitStep( bool const keepFlowVariablesConstantDuringInitStep )
-  { m_keepFlowVariablesConstantDuringInitStep = keepFlowVariablesConstantDuringInitStep; }
+  void setKeepVariablesConstantDuringInitStep( bool const keepVariablesConstantDuringInitStep )
+  { m_keepVariablesConstantDuringInitStep = keepVariablesConstantDuringInitStep; }
 
   virtual bool checkSequentialSolutionIncrements( DomainPartition & domain ) const override;
 
   void enableLaggingFractureStencilWeightsUpdate(){ m_isLaggingFractureStencilWeightsUpdate = 1; };
+
+  real64 sumAquiferFluxes( BoundaryStencil const & stencil,
+                           AquiferBoundaryCondition::KernelWrapper const & aquiferBCWrapper,
+                           ElementViewConst< arrayView1d< real64 const > > const & pres,
+                           ElementViewConst< arrayView1d< real64 const > > const & presOld,
+                           ElementViewConst< arrayView1d< real64 const > > const & gravCoef,
+                           real64 const & timeAtBeginningOfStep,
+                           real64 const & dt );
 
 protected:
 
@@ -206,7 +219,7 @@ protected:
   real64 m_inputTemperature;
 
   /// flag to freeze the initial state during initialization in coupled problems
-  integer m_keepFlowVariablesConstantDuringInitStep;
+  integer m_keepVariablesConstantDuringInitStep;
 
   /// enable the fixed stress poromechanics update of porosity
   bool m_isFixedStressPoromechanicsUpdate;
@@ -227,6 +240,41 @@ protected:
   /// maximum (absolute) temperature change in a sequential iteration
   real64 m_sequentialTempChange;
   real64 m_maxSequentialTempChange;
+
+  /**
+   * @brief Class used for displaying boundary warning message
+   */
+  class BCMessage
+  {
+public:
+    static string pressureConflict( string_view regionName, string_view subRegionName,
+                                    string_view setName, string_view fieldName );
+
+    static string temperatureConflict( string_view regionName, string_view subRegionName,
+                                       string_view setName, string_view fieldName );
+
+    static string missingPressure( string_view regionName, string_view subRegionName,
+                                   string_view setName, string_view fieldName );
+
+    static string missingTemperature( string_view regionName, string_view subRegionName,
+                                      string_view setName, string_view fieldName );
+
+    static string conflictingComposition( int comp, string_view componentName,
+                                          string_view regionName, string_view subRegionName,
+                                          string_view setName, string_view fieldName );
+
+    static string invalidComponentIndex( int comp,
+                                         string_view fsName, string_view fieldName );
+
+    static string notAppliedOnRegion( int componentIndex, string_view componentName,
+                                      string_view regionName, string_view subRegionName,
+                                      string_view setName, string_view fieldName );
+private:
+    static string generateMessage( string_view baseMessage,
+                                   string_view fieldName, string_view setName );
+
+    BCMessage();
+  };
 
 private:
   virtual void setConstitutiveNames( ElementSubRegionBase & subRegion ) const override;

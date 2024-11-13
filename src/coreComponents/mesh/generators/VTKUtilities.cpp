@@ -5,7 +5,7 @@
  * Copyright (c) 2016-2024 Lawrence Livermore National Security LLC
  * Copyright (c) 2018-2024 Total, S.A
  * Copyright (c) 2018-2024 The Board of Trustees of the Leland Stanford Junior University
- * Copyright (c) 2018-2024 Chevron
+ * Copyright (c) 2023-2024 Chevron
  * Copyright (c) 2019-     GEOS/GEOSX Contributors
  * All rights reserved
  *
@@ -72,6 +72,7 @@
 
 namespace geos
 {
+using namespace dataRepository;
 
 namespace vtk
 {
@@ -142,7 +143,7 @@ std::vector< T > collectUniqueValues( std::vector< T > const & data )
 {
   // Exchange the sizes of the data across all ranks.
   array1d< int > dataSizes( MpiWrapper::commSize() );
-  MpiWrapper::allGather( LvArray::integerConversion< int >( data.size() ), dataSizes, MPI_COMM_GEOSX );
+  MpiWrapper::allGather( LvArray::integerConversion< int >( data.size() ), dataSizes, MPI_COMM_GEOS );
   // `totalDataSize` contains the total data size across all the MPI ranks.
   int const totalDataSize = std::accumulate( dataSizes.begin(), dataSizes.end(), 0 );
 
@@ -153,7 +154,7 @@ std::vector< T > collectUniqueValues( std::vector< T > const & data )
   // `displacements` is the offset (relative to the receive buffer) to store the data for each rank.
   std::vector< int > displacements( MpiWrapper::commSize(), 0 );
   std::partial_sum( dataSizes.begin(), dataSizes.end() - 1, displacements.begin() + 1 );
-  MpiWrapper::allgatherv( data.data(), data.size(), allData.data(), dataSizes.data(), displacements.data(), MPI_COMM_GEOSX );
+  MpiWrapper::allgatherv( data.data(), data.size(), allData.data(), dataSizes.data(), displacements.data(), MPI_COMM_GEOS );
 
   // Finalizing by sorting, removing duplicates and trimming the result vector at the proper size.
   std::sort( allData.begin(), allData.end() );
@@ -404,7 +405,7 @@ vtkSmartPointer< vtkMultiProcessController > getController()
 {
 #ifdef GEOS_USE_MPI
   vtkNew< vtkMPIController > controller;
-  vtkMPICommunicatorOpaqueComm vtkGeosxComm( &MPI_COMM_GEOSX );
+  vtkMPICommunicatorOpaqueComm vtkGeosxComm( &MPI_COMM_GEOS );
   vtkNew< vtkMPICommunicator > communicator;
   communicator->InitializeExternal( &vtkGeosxComm );
   controller->SetCommunicator( communicator );
@@ -677,13 +678,13 @@ AllMeshes redistributeByCellGraph( AllMeshes & input,
 
   // First for the main 3d mesh...
   vtkSmartPointer< vtkPartitionedDataSet > const splitMesh = splitMeshByPartition( input.getMainMesh(), numRanks, newPartitions.toViewConst() );
-  vtkSmartPointer< vtkUnstructuredGrid > finalMesh = vtk::redistribute( *splitMesh, MPI_COMM_GEOSX );
+  vtkSmartPointer< vtkUnstructuredGrid > finalMesh = vtk::redistribute( *splitMesh, MPI_COMM_GEOS );
   // ... and then for the fractures.
   std::map< string, vtkSmartPointer< vtkDataSet > > finalFractures;
   for( auto const & [fractureName, fracture]: input.getFaceBlocks() )
   {
     vtkSmartPointer< vtkPartitionedDataSet > const splitFracMesh = splitMeshByPartition( fracture, numRanks, newFracturePartitions[fractureName].toViewConst() );
-    vtkSmartPointer< vtkUnstructuredGrid > const finalFracMesh = vtk::redistribute( *splitFracMesh, MPI_COMM_GEOSX );
+    vtkSmartPointer< vtkUnstructuredGrid > const finalFracMesh = vtk::redistribute( *splitFracMesh, MPI_COMM_GEOS );
     finalFractures[fractureName] = finalFracMesh;
   }
 
@@ -746,7 +747,7 @@ vtkSmartPointer< vtkDataSet > manageGlobalIds( vtkSmartPointer< vtkDataSet > mes
     // Add global ids on the fly if needed
     int const me = hasGlobalIds( mesh );
     int everyone;
-    MpiWrapper::allReduce( &me, &everyone, 1, MPI_MAX, MPI_COMM_GEOSX );
+    MpiWrapper::allReduce( &me, &everyone, 1, MPI_MAX, MPI_COMM_GEOS );
 
     if( everyone and not me )
     {
@@ -891,7 +892,7 @@ ensureNoEmptyRank( vtkSmartPointer< vtkDataSet > mesh,
                       "\nWarning! We strongly encourage the use of partitionRefinement > 5 for this number of MPI ranks \n" );
 
   vtkSmartPointer< vtkPartitionedDataSet > const splitMesh = splitMeshByPartition( mesh, numProcs, newParts.toViewConst() );
-  return vtk::redistribute( *splitMesh, MPI_COMM_GEOSX );
+  return vtk::redistribute( *splitMesh, MPI_COMM_GEOS );
 }
 
 
@@ -1816,36 +1817,6 @@ void fillCellBlock( vtkDataSet & mesh,
   }
 }
 
-/**
- * @brief Returns a string describing the element.
- * @param[in] type The element type.
- * @return The name.
- * @warning This information will be visible in the input file... Consider refactoring with great care.
- */
-string getElementTypeName( ElementType const type )
-{
-  switch( type )
-  {
-    case ElementType::Hexahedron:  return "hexahedra";
-    case ElementType::Tetrahedron: return "tetrahedra";
-    case ElementType::Wedge:       return "wedges";
-    case ElementType::Pyramid:     return "pyramids";
-    case ElementType::Prism5:      return "pentagonalPrisms";
-    case ElementType::Prism6:      return "hexagonalPrisms";
-    case ElementType::Prism7:      return "heptagonalPrisms";
-    case ElementType::Prism8:      return "octagonalPrisms";
-    case ElementType::Prism9:      return "nonagonalPrisms";
-    case ElementType::Prism10:     return "decagonalPrisms";
-    case ElementType::Prism11:     return "hendecagonalPrisms";
-    case ElementType::Polyhedron:  return "polyhedra";
-    default:
-    {
-      GEOS_ERROR( "Element type '" << type << "' is not supported" );
-      return {};
-    }
-  }
-}
-
 void importMaterialField( std::vector< vtkIdType > const & cellIds,
                           vtkDataArray * vtkArray,
                           WrapperBase & wrapper )
@@ -2113,8 +2084,8 @@ real64 writeNodes( integer const logLevel,
     bb.GetMaxPoint( xMax );
   }
 
-  MpiWrapper::min< real64 >( xMin, xMin, MPI_COMM_GEOSX );
-  MpiWrapper::max< real64 >( xMax, xMax, MPI_COMM_GEOSX );
+  MpiWrapper::min< real64 >( xMin, xMin, MPI_COMM_GEOS );
+  MpiWrapper::max< real64 >( xMax, xMax, MPI_COMM_GEOS );
   LvArray::tensorOps::subtract< 3 >( xMax, xMin );
   return LvArray::tensorOps::l2Norm< 3 >( xMax );
 }
@@ -2142,7 +2113,7 @@ void writeCells( integer const logLevel,
       GEOS_LOG_RANK_0_IF( logLevel >= 1, "Importing cell block " << cellBlockName );
 
       // Create and resize the cell block.
-      CellBlock & cellBlock = cellBlockManager.registerCellBlock( cellBlockName );
+      CellBlock & cellBlock = cellBlockManager.registerCellBlock( cellBlockName, regionId );
       cellBlock.setElementType( elemType );
       cellBlock.resize( LvArray::integerConversion< localIndex >( cellIds.size() ) );
 

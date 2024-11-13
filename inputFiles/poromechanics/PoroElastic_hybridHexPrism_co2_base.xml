@@ -10,7 +10,7 @@
       partitionMethod="ptscotch"
       scale="{ 50, 50, 50 }"
       fieldsToImport="{ PORO, NTG, DENSITY, BULKMOD }"
-      fieldNamesInGEOSX="{ rockPorosity_referencePorosity, netToGross, skeleton_density, skeleton_bulkModulus }"
+      fieldNamesInGEOS="{ rockPorosity_referencePorosity, netToGross, skeleton_density, skeleton_bulkModulus }"
       file="../singlePhaseFlow/pebi3d_with_properties.vtu"/>
 
   </Mesh>
@@ -79,7 +79,7 @@
   <ElementRegions>
     <CellElementRegion
       name="reservoir"
-      cellBlocks="{ hexahedra, pentagonalPrisms, hexagonalPrisms, heptagonalPrisms, octagonalPrisms }"
+      cellBlocks="{ * }"
       materialList="{ fluid, porousRock, relperm }"/>
   </ElementRegions>
 

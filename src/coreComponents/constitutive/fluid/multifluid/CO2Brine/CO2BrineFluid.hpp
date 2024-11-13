@@ -5,7 +5,7 @@
  * Copyright (c) 2016-2024 Lawrence Livermore National Security LLC
  * Copyright (c) 2018-2024 Total, S.A
  * Copyright (c) 2018-2024 The Board of Trustees of the Leland Stanford Junior University
- * Copyright (c) 2018-2024 Chevron
+ * Copyright (c) 2023-2024 Chevron
  * Copyright (c) 2019-     GEOS/GEOSX Contributors
  * All rights reserved
  *
@@ -20,7 +20,7 @@
 #ifndef GEOS_CONSTITUTIVE_FLUID_MULTIFLUID_CO2BRINE_CO2BRINEFLUID_HPP_
 #define GEOS_CONSTITUTIVE_FLUID_MULTIFLUID_CO2BRINE_CO2BRINEFLUID_HPP_
 
-#include "codingUtilities/EnumStrings.hpp"
+#include "common/format/EnumStrings.hpp"
 #include "constitutive/fluid/multifluid/MultiFluidBase.hpp"
 #include "constitutive/fluid/multifluid/MultiFluidUtils.hpp"
 #include "constitutive/fluid/multifluid/CO2Brine/PhaseModel.hpp"
@@ -171,6 +171,7 @@ private:
     static constexpr char const * flashModelParaFileString() { return "flashModelParaFile"; }
     static constexpr char const * solubilityTablesString() { return "solubilityTableNames"; }
     static constexpr char const * phasePVTParaFilesString() { return "phasePVTParaFiles"; }
+    static constexpr char const * writeCSVFlagString() { return "writeCSV"; }
   };
 
 protected:
@@ -181,6 +182,9 @@ protected:
 
 private:
 
+  /**
+   * @brief Create a PVT Model and output them
+   */
   void createPVTModels();
 
   /// Names of the files defining the viscosity and density models
@@ -198,6 +202,8 @@ private:
   /// Index of the gas phase
   integer m_p2Index;
 
+  /// Output csv file containing informations about PVT
+  integer m_writeCSV;
 
   /// Brine constitutive models
   std::unique_ptr< PHASE1 > m_phase1;
@@ -380,7 +386,6 @@ CO2BrineFluid< PHASE1, PHASE2, FLASH >::KernelWrapper::
 
   if( m_isThermal )
   {
-
     m_phase1.enthalpy.compute( pressure,
                                temperatureInCelsius,
                                phaseCompFraction.value[ip1].toSliceConst(), phaseCompFraction.derivs[ip1].toSliceConst(),

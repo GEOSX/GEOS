@@ -5,7 +5,7 @@
  * Copyright (c) 2016-2024 Lawrence Livermore National Security LLC
  * Copyright (c) 2018-2024 Total, S.A
  * Copyright (c) 2018-2024 The Board of Trustees of the Leland Stanford Junior University
- * Copyright (c) 2018-2024 Chevron
+ * Copyright (c) 2023-2024 Chevron
  * Copyright (c) 2019-     GEOS/GEOSX Contributors
  * All rights reserved
  *
@@ -21,7 +21,7 @@
 #define GEOS_CONSTITUTIVE_FLUID_MULTIFLUID_REACTIVE_REACTIVEMULTIFLUID_HPP_
 
 
-#include "codingUtilities/EnumStrings.hpp"
+#include "common/format/EnumStrings.hpp"
 #include "constitutive/fluid/multifluid/MultiFluidBase.hpp"
 #include "constitutive/fluid/multifluid/reactive/chemicalReactions/EquilibriumReactions.hpp"
 #include "constitutive/fluid/multifluid/reactive/chemicalReactions/KineticReactions.hpp"
@@ -189,13 +189,13 @@ protected:
 
   std::unique_ptr< chemicalReactions::KineticReactions > m_kineticReactions;
 
-  array2d< real64, multifluid::LAYOUT_FLUID >  m_primarySpeciesConcentration;
+  array2d< real64, constitutive::multifluid::LAYOUT_FLUID >  m_primarySpeciesConcentration;
 
-  array2d< real64, multifluid::LAYOUT_FLUID >  m_secondarySpeciesConcentration;
+  array2d< real64, constitutive::multifluid::LAYOUT_FLUID >  m_secondarySpeciesConcentration;
 
-  array2d< real64, multifluid::LAYOUT_FLUID >  m_primarySpeciesTotalConcentration;
+  array2d< real64, constitutive::multifluid::LAYOUT_FLUID >  m_primarySpeciesTotalConcentration;
 
-  array2d< real64, multifluid::LAYOUT_FLUID >  m_kineticReactionRates;
+  array2d< real64, constitutive::multifluid::LAYOUT_FLUID >  m_kineticReactionRates;
 };
 
 inline void

@@ -5,7 +5,7 @@
  * Copyright (c) 2016-2024 Lawrence Livermore National Security LLC
  * Copyright (c) 2018-2024 Total, S.A
  * Copyright (c) 2018-2024 The Board of Trustees of the Leland Stanford Junior University
- * Copyright (c) 2018-2024 Chevron
+ * Copyright (c) 2023-2024 Chevron
  * Copyright (c) 2019-     GEOS/GEOSX Contributors
  * All rights reserved
  *
@@ -159,11 +159,12 @@ struct PressureComputation
    * @param[in] mass the mass matrix
    * @param[in] damping the damping matrix
    * @param[in] sourceConstants constant part of the source terms
-   * @param[in] sourceValue value of the temporal source (eg. Ricker)
    * @param[in] sourceIsAccessible flag indicating whether the source is accessible or not
    * @param[in] sourceElem element where a source is located
-   * @param[in] cycleNumber the number of cycle
    * @param[in] dt time-step
+   * @param[in] timeSourceFrequency the central frequency of the source
+   * @param[in] timeSourceDelay the time delay of the source
+   * @param[in] rickerOrder order of the Ricker wavelet
    * @param[out] p_np1 pressure array (updated here)
    */
 
@@ -180,12 +181,16 @@ struct PressureComputation
           arrayView1d< real32 const > const mass,
           arrayView1d< real32 const > const damping,
           arrayView2d< real64 const > const sourceConstants,
-          arrayView2d< real32 const > const sourceValue,
           arrayView1d< localIndex const > const sourceIsAccessible,
           arrayView1d< localIndex const > const sourceElem,
           arrayView1d< localIndex const > const sourceRegion,
           real64 const dt,
-          integer const cycleNumber,
+          real64 const time_n,
+          real32 const timeSourceFrequency,
+          real32 const timeSourceDelay,
+          localIndex const rickerOrder,
+          bool const useSourceWaveletTables,
+          arrayView1d< TableFunction::KernelWrapper const > const sourceWaveletTableWrappers,
           arrayView1d< real32 > const p_np1 )
 
   {
@@ -195,6 +200,10 @@ struct PressureComputation
     {
       p_np1[a] *= 1.0-((dt/2)*(damping[a]/mass[a]));
     } );
+
+    //Source initialization
+
+    real64 const rickerValue = useSourceWaveletTables ? 0 : WaveSolverUtils::evaluateRicker( time_n, timeSourceFrequency, timeSourceDelay, rickerOrder );
 
     forAll< EXEC_POLICY >( size, [=] GEOS_HOST_DEVICE ( localIndex const k )
     {
@@ -263,9 +272,10 @@ struct PressureComputation
         {
           if( sourceElem[isrc]==k && sourceRegion[isrc] == regionIndex )
           {
+            real64 const srcValue = useSourceWaveletTables ? sourceWaveletTableWrappers[ isrc ].compute( &time_n ) : rickerValue;
             for( localIndex i = 0; i < numNodesPerElem; ++i )
             {
-              real32 const localIncrement2 = dt*(sourceConstants[isrc][i]*sourceValue[cycleNumber][isrc])/(mass[elemsToNodes[k][i]]);
+              real32 const localIncrement2 = dt*(sourceConstants[isrc][i]*srcValue)/(mass[elemsToNodes[k][i]]);
               RAJA::atomicAdd< ATOMIC_POLICY >( &p_np1[elemsToNodes[k][i]], localIncrement2 );
             }
           }

@@ -3,6 +3,8 @@ from math import factorial, floor
 import numpy as np
 import matplotlib.pyplot as plt
 import xml.etree.ElementTree as ElementTree
+import os
+import argparse
 
 
 def FFunction(s, R):
@@ -94,7 +96,7 @@ def getParametersFromXML(xmlFilePath):
 
     porosity = float(tree.find('Constitutive/BiotPorosity').get('defaultReferencePorosity'))
 
-    skeletonBulkModulus = float(tree.find('Constitutive/BiotPorosity').get('grainBulkModulus'))
+    skeletonBulkModulus = float(tree.find('Constitutive/BiotPorosity').get('defaultGrainBulkModulus'))
     fluidCompressibility = float(tree.find('Constitutive/CompressibleSinglePhaseFluid').get('compressibility'))
 
     bBiot = 1.0 - bulkModulus / skeletonBulkModulus
@@ -131,7 +133,21 @@ def getWellboreGeometryFromXML(xmlFilePath):
 
 
 def main():
-    xmlFilePathPrefix = "../../../../../../../inputFiles/wellbore/DeviatedPoroElasticWellbore_Injection"
+
+   # Initialize the argument parser
+    parser = argparse.ArgumentParser(description="Script to generate figure from tutorial.")
+
+    # Add arguments to accept individual file paths
+    parser.add_argument('--geosDir', help='Path to the GEOS repository ', default='../../../../../../..')
+    parser.add_argument('--outputDir', help='Path to output directory', default='.')
+
+    # Parse the command-line arguments
+    args = parser.parse_args()
+
+    outputDir = args.outputDir
+    geosDir = args.geosDir
+
+    xmlFilePathPrefix = geosDir + "/inputFiles/wellbore/DeviatedPoroElasticWellbore_Injection"
 
     geometry = getWellboreGeometryFromXML(xmlFilePathPrefix + "_benchmark.xml")
     parameters = getParametersFromXML(xmlFilePathPrefix + "_base.xml")
@@ -187,7 +203,7 @@ def main():
     # Get stress_ij and pore pressure
     # Data are extracted along the y-axis from the wellbore center
     r, pPore, stress_11, stress_12, stress_13, stress_22, stress_23, stress_33 = [], [], [], [], [], [], [], []
-    for line in open('stress_11.curve', 'r'):
+    for line in open( outputDir + '/stress_11.curve', 'r'):
         if not (line.strip().startswith("#") or line.strip() == ''):
             values = [float(s) for s in line.split()]
             rval = values[0]
@@ -195,37 +211,37 @@ def main():
             r.append(rval)
             stress_11.append(sigVal)
 
-    for line in open('stress_12.curve', 'r'):
+    for line in open( outputDir + '/stress_12.curve', 'r'):
         if not (line.strip().startswith("#") or line.strip() == ''):
             values = [float(s) for s in line.split()]
             sigVal = values[1] * 1e-6    # convert to MPa
             stress_12.append(sigVal)
 
-    for line in open('stress_13.curve', 'r'):
+    for line in open( outputDir + '/stress_13.curve', 'r'):
         if not (line.strip().startswith("#") or line.strip() == ''):
             values = [float(s) for s in line.split()]
             sigVal = values[1] * 1e-6    # convert to MPa
             stress_13.append(sigVal)
 
-    for line in open('stress_22.curve', 'r'):
+    for line in open( outputDir + '/stress_22.curve', 'r'):
         if not (line.strip().startswith("#") or line.strip() == ''):
             values = [float(s) for s in line.split()]
             sigVal = values[1] * 1e-6    # convert to MPa
             stress_22.append(sigVal)
 
-    for line in open('stress_23.curve', 'r'):
+    for line in open( outputDir + '/stress_23.curve', 'r'):
         if not (line.strip().startswith("#") or line.strip() == ''):
             values = [float(s) for s in line.split()]
             sigVal = values[1] * 1e-6    # convert to MPa
             stress_23.append(sigVal)
 
-    for line in open('stress_33.curve', 'r'):
+    for line in open( outputDir + '/stress_33.curve', 'r'):
         if not (line.strip().startswith("#") or line.strip() == ''):
             values = [float(s) for s in line.split()]
             sigVal = values[1] * 1e-6    # convert to MPa
             stress_33.append(sigVal)
 
-    for line in open('pressure.curve', 'r'):
+    for line in open( outputDir + '/pressure.curve', 'r'):
         if not (line.strip().startswith("#") or line.strip() == ''):
             values = [float(s) for s in line.split()]
             pPore.append(values[1] * 1e-6)

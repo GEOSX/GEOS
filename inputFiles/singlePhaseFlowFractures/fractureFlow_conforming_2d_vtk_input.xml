@@ -1,6 +1,7 @@
 <?xml version="1.0" ?>
 
-<Problem>
+<Problem xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance"
+ xsi:noNamespaceSchemaLocation="../../build-pangea4-gcc12.1-hpcxompi2.17.1-onemkl2023.2.0-release/schema.xsd">
   <Solvers
       gravityVector="{ 0.0, 0.0, -9.81 }">
     <SinglePhaseFVM
@@ -19,7 +20,7 @@
   <Mesh>
     <VTKMesh
       surfacicFieldsToImport="{aperture}"
-      surfacicFieldsInGEOSX="{elementAperture}"
+      surfacicFieldsInGEOS="{elementAperture}"
       name="mesh1"
       useGlobalIds="1"
       faceBlocks="{fracture}"
@@ -82,7 +83,7 @@
   <ElementRegions>
     <CellElementRegion
       name="Region"
-      cellBlocks="{ hexahedra, wedges }"
+      cellBlocks="{ * }"
       materialList="{ water, rock }"/>
 
     <SurfaceElementRegion

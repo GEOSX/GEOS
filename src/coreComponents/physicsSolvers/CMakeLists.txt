@@ -3,18 +3,18 @@ set( physicsSolvers_headers
      LinearSolverParameters.hpp
      NonlinearSolverParameters.hpp
      PhysicsSolverManager.hpp
-     SolverBase.hpp
-     SolverBaseKernels.hpp
+     PhysicsSolverBase.hpp
+     PhysicsSolverBaseKernels.hpp
      SolverStatistics.hpp
      FieldStatisticsBase.hpp
- )
+     LogLevelsInfo.hpp )
 
 # Specify solver sources
 set( physicsSolvers_sources
      LinearSolverParameters.cpp
      NonlinearSolverParameters.cpp
      PhysicsSolverManager.cpp
-     SolverBase.cpp
+     PhysicsSolverBase.cpp
      SolverStatistics.cpp )
 
 if( GEOS_ENABLE_CONTACT )
@@ -51,7 +51,8 @@ if( GEOS_ENABLE_WAVEPROPAGATION )
   add_subdirectory( wavePropagation )
 endif()
 
-set( dependencyList ${parallelDeps} constitutive mesh linearAlgebra discretizationMethods events )
+set( dependencyList ${parallelDeps} fileIO discretizationMethods events linearAlgebra )
+
 if( ENABLE_PYGEOSX )
   list( APPEND physicsSolvers_headers
   python/PySolver.hpp
@@ -61,13 +62,21 @@ if( ENABLE_PYGEOSX )
   list( APPEND dependencyList Python3::Python pylvarray )
 endif()
 
+geos_decorate_link_dependencies( LIST decoratedDependencies
+                                 DEPENDENCIES ${dependencyList} )
+
 blt_add_library( NAME       physicsSolvers
                  SOURCES    ${physicsSolvers_sources}
                  HEADERS    ${physicsSolvers_headers}
-                 DEPENDS_ON ${dependencyList} ${externalComponentDeps}
-                 OBJECT     ${GEOS_BUILD_OBJ_LIBS} )
+                 DEPENDS_ON ${decoratedDependencies} ${externalComponentDeps}
+                 OBJECT     ${GEOS_BUILD_OBJ_LIBS}
+                 SHARED     ${GEOS_BUILD_SHARED_LIBS}
+               )
 
 target_include_directories( physicsSolvers PUBLIC ${CMAKE_SOURCE_DIR}/coreComponents )
+
+install( TARGETS physicsSolvers LIBRARY DESTINATION ${CMAKE_INSTALL_PREFIX}/lib )
+
 if( externalComponentDeps )
   target_include_directories( physicsSolvers PUBLIC ${CMAKE_SOURCE_DIR}/externalComponents )
 endif()

@@ -5,7 +5,7 @@
  * Copyright (c) 2016-2024 Lawrence Livermore National Security LLC
  * Copyright (c) 2018-2024 Total, S.A
  * Copyright (c) 2018-2024 The Board of Trustees of the Leland Stanford Junior University
- * Copyright (c) 2018-2024 Chevron
+ * Copyright (c) 2023-2024 Chevron
  * Copyright (c) 2019-     GEOS/GEOSX Contributors
  * All rights reserved
  *
@@ -98,6 +98,13 @@ struct MPI_Status
 namespace geos
 {
 
+/// Global MPI communicator used by GEOSX.
+#ifdef GEOS_USE_MPI
+extern MPI_Comm MPI_COMM_GEOS;
+#else
+extern int MPI_COMM_GEOS;
+#endif
+
 /**
  * @struct MpiWrapper
  * This struct is a wrapper for all mpi.h functions that are used in GEOSX, and provides a collection of
@@ -139,7 +146,7 @@ public:
    */
   ///@{
 
-  static void barrier( MPI_Comm const & MPI_PARAM( comm )=MPI_COMM_GEOSX );
+  static void barrier( MPI_Comm const & MPI_PARAM( comm )=MPI_COMM_GEOS );
 
   static int cartCoords( MPI_Comm comm, int rank, int maxdims, int coords[] );
 
@@ -150,9 +157,9 @@ public:
 
   static void commFree( MPI_Comm & comm );
 
-  static int commRank( MPI_Comm const & MPI_PARAM( comm )=MPI_COMM_GEOSX );
+  static int commRank( MPI_Comm const & MPI_PARAM( comm )=MPI_COMM_GEOS );
 
-  static int commSize( MPI_Comm const & MPI_PARAM( comm )=MPI_COMM_GEOSX );
+  static int commSize( MPI_Comm const & MPI_PARAM( comm )=MPI_COMM_GEOS );
 
   static bool commCompare( MPI_Comm const & comm1, MPI_Comm const & comm2 );
 
@@ -337,12 +344,12 @@ public:
    * @param[out] allValues The values recived from each rank.
    */
   template< typename T >
-  static void allGather( T const myValue, array1d< T > & allValues, MPI_Comm comm = MPI_COMM_GEOSX );
+  static void allGather( T const myValue, array1d< T > & allValues, MPI_Comm comm = MPI_COMM_GEOS );
 
   template< typename T >
   static int allGather( arrayView1d< T const > const & sendbuf,
                         array1d< T > & recvbuf,
-                        MPI_Comm comm = MPI_COMM_GEOSX );
+                        MPI_Comm comm = MPI_COMM_GEOS );
 
   /**
    * @brief Strongly typed wrapper around MPI_Allreduce.
@@ -354,7 +361,7 @@ public:
    * @return The return value of the underlying call to MPI_Allreduce().
    */
   template< typename T >
-  static int allReduce( T const * sendbuf, T * recvbuf, int count, MPI_Op op, MPI_Comm comm = MPI_COMM_GEOSX );
+  static int allReduce( T const * sendbuf, T * recvbuf, int count, MPI_Op op, MPI_Comm comm = MPI_COMM_GEOS );
 
   /**
    * @brief Convenience wrapper for the MPI_Allreduce function.
@@ -365,7 +372,7 @@ public:
    * @return The value of reduction across all ranks
    */
   template< typename T >
-  static T allReduce( T const & value, Reduction const op, MPI_Comm comm = MPI_COMM_GEOSX );
+  static T allReduce( T const & value, Reduction const op, MPI_Comm comm = MPI_COMM_GEOS );
 
   /**
    * @brief Convenience wrapper for the MPI_Allreduce function. Version for sequences.
@@ -376,7 +383,7 @@ public:
    * @param comm The communicator.
    */
   template< typename T >
-  static void allReduce( Span< T const > src, Span< T > dst, Reduction const op, MPI_Comm comm = MPI_COMM_GEOSX );
+  static void allReduce( Span< T const > src, Span< T > dst, Reduction const op, MPI_Comm comm = MPI_COMM_GEOS );
 
 
   /**
@@ -389,7 +396,7 @@ public:
    * @return The return value of the underlying call to MPI_Reduce().
    */
   template< typename T >
-  static int reduce( T const * sendbuf, T * recvbuf, int count, MPI_Op op, int root, MPI_Comm comm = MPI_COMM_GEOSX );
+  static int reduce( T const * sendbuf, T * recvbuf, int count, MPI_Op op, int root, MPI_Comm comm = MPI_COMM_GEOS );
 
   /**
    * @brief Convenience wrapper for the MPI_Reduce function.
@@ -400,7 +407,7 @@ public:
    * @return The value of reduction (only significant at root)
    */
   template< typename T >
-  static T reduce( T const & value, Reduction const op, int root, MPI_Comm comm = MPI_COMM_GEOSX );
+  static T reduce( T const & value, Reduction const op, int root, MPI_Comm comm = MPI_COMM_GEOS );
 
   /**
    * @brief Convenience wrapper for the MPI_Reduce function. Version for sequences.
@@ -411,7 +418,7 @@ public:
    * @param comm The communicator.
    */
   template< typename T >
-  static void reduce( Span< T const > src, Span< T > dst, Reduction const op, int root, MPI_Comm comm = MPI_COMM_GEOSX );
+  static void reduce( Span< T const > src, Span< T > dst, Reduction const op, int root, MPI_Comm comm = MPI_COMM_GEOS );
 
 
   template< typename T >
@@ -439,7 +446,7 @@ public:
    * @param srcRank The rank that is sending the \p value.
    */
   template< typename T >
-  static void broadcast( T & value, int srcRank = 0, MPI_Comm comm = MPI_COMM_GEOSX );
+  static void broadcast( T & value, int srcRank = 0, MPI_Comm comm = MPI_COMM_GEOS );
 
   /**
    * @brief Strongly typed wrapper around MPI_Gather().
@@ -549,7 +556,7 @@ public:
    * @return a pair where first is the prefix sum, second is the full sum
    */
   template< typename U, typename T >
-  static U prefixSum( T const value, MPI_Comm comm = MPI_COMM_GEOSX );
+  static U prefixSum( T const value, MPI_Comm comm = MPI_COMM_GEOS );
 
   /**
    * @brief Convenience function for a MPI_Allreduce using a MPI_SUM operation.
@@ -557,7 +564,7 @@ public:
    * @return The sum of all \p value across the ranks.
    */
   template< typename T >
-  static T sum( T const & value, MPI_Comm comm = MPI_COMM_GEOSX );
+  static T sum( T const & value, MPI_Comm comm = MPI_COMM_GEOS );
 
   /**
    * @brief Convenience function for a MPI_Allreduce using a MPI_SUM operation.
@@ -566,7 +573,7 @@ public:
    * @return The sum of all \p value across the ranks.
    */
   template< typename T >
-  static void sum( Span< T const > src, Span< T > dst, MPI_Comm comm = MPI_COMM_GEOSX );
+  static void sum( Span< T const > src, Span< T > dst, MPI_Comm comm = MPI_COMM_GEOS );
 
   /**
    * @brief Convenience function for a MPI_Allreduce using a MPI_MIN operation.
@@ -574,7 +581,7 @@ public:
    * @return The minimum of all \p value across the ranks.
    */
   template< typename T >
-  static T min( T const & value, MPI_Comm comm = MPI_COMM_GEOSX );
+  static T min( T const & value, MPI_Comm comm = MPI_COMM_GEOS );
 
   /**
    * @brief Convenience function for a MPI_Allreduce using a MPI_MIN operation.
@@ -583,7 +590,7 @@ public:
    * @return The minimum of all \p value across the ranks.
    */
   template< typename T >
-  static void min( Span< T const > src, Span< T > dst, MPI_Comm comm = MPI_COMM_GEOSX );
+  static void min( Span< T const > src, Span< T > dst, MPI_Comm comm = MPI_COMM_GEOS );
 
   /**
    * @brief Convenience function for a MPI_Allreduce using a MPI_MAX operation.
@@ -591,7 +598,7 @@ public:
    * @return The maximum of all \p value across the ranks.
    */
   template< typename T >
-  static T max( T const & value, MPI_Comm comm = MPI_COMM_GEOSX );
+  static T max( T const & value, MPI_Comm comm = MPI_COMM_GEOS );
 
   /**
    * @brief Convenience function for a MPI_Allreduce using a MPI_MAX operation.
@@ -600,7 +607,7 @@ public:
    * @return The maximum of all \p value across the ranks.
    */
   template< typename T >
-  static void max( Span< T const > src, Span< T > dst, MPI_Comm comm = MPI_COMM_GEOSX );
+  static void max( Span< T const > src, Span< T > dst, MPI_Comm comm = MPI_COMM_GEOS );
 };
 
 namespace internal

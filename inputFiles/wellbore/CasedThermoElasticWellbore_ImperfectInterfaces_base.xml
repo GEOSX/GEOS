@@ -78,7 +78,7 @@
     <SurfaceElementRegion
       name="Fracture"
       faceBlock="faceElementSubRegion"
-      materialList="{ fluid, fractureFilling, fractureContact, contactThermalCond }"
+      materialList="{ fluid, fractureFilling, frictionLaw, contactThermalCond, hApertureModel }"
       defaultAperture="5.0e-4"/>
     <!-- SPHINX_SurfaceElementRegionEnd -->  
 
@@ -100,11 +100,13 @@
 
   <Constitutive>
     <Coulomb
-      name="fractureContact"
+      name="frictionLaw"
       cohesion="0"
-      frictionCoefficient="0.5"
-      penaltyStiffness="1.0e8"
-      apertureTableName="apertureTable"/>
+      frictionCoefficient="0.5"/>
+
+    <HydraulicApertureTable
+      name="hApertureModel"
+      apertureTableName="apertureTable"/>   
 
     <!-- SPHINX_ContactFlowProperties -->
     <CompressibleSolidParallelPlatesPermeability
@@ -200,22 +202,22 @@
     <!-- SPHINX_PermeabilityPropertiesEnd -->
 
     
-    <SinglePhaseConstantThermalConductivity
+    <SinglePhaseThermalConductivity
       name="casingThermalCond"
-      thermalConductivityComponents="{ 15, 15, 15 }"/>
+      defaultThermalConductivityComponents="{ 15, 15, 15 }"/>
 
-    <SinglePhaseConstantThermalConductivity
+    <SinglePhaseThermalConductivity
       name="cementThermalCond"
-      thermalConductivityComponents="{ 1.0, 1.0, 1.0 }"/>
+      defaultThermalConductivityComponents="{ 1.0, 1.0, 1.0 }"/>
 
-    <SinglePhaseConstantThermalConductivity
+    <SinglePhaseThermalConductivity
       name="rockThermalCond"
-      thermalConductivityComponents="{ 1.66, 1.66, 1.66 }"/>
+      defaultThermalConductivityComponents="{ 1.66, 1.66, 1.66 }"/>
 
     <!-- SPHINX_ContactThermalProperties -->
-    <SinglePhaseConstantThermalConductivity
+    <SinglePhaseThermalConductivity
       name="contactThermalCond"
-      thermalConductivityComponents="{ 1.0, 1.0, 1.0 }"/>
+      defaultThermalConductivityComponents="{ 1.0, 1.0, 1.0 }"/>
     <!-- SPHINX_ContactThermalPropertiesEnd -->
 
     <!-- SPHINX_FluidProperties -->

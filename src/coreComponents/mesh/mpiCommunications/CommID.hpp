@@ -5,7 +5,7 @@
  * Copyright (c) 2016-2024 Lawrence Livermore National Security LLC
  * Copyright (c) 2018-2024 Total, S.A
  * Copyright (c) 2018-2024 The Board of Trustees of the Leland Stanford Junior University
- * Copyright (c) 2018-2024 Chevron
+ * Copyright (c) 2023-2024 Chevron
  * Copyright (c) 2019-     GEOS/GEOSX Contributors
  * All rights reserved
  *
@@ -44,14 +44,15 @@ public:
    */
   ~CommID();
 
-  /// default copy constructor
-  CommID( CommID const & ) = default;
 
   /**
    * Move constructor
    * @param src The source to move data from.
    */
   CommID( CommID && src );
+
+  /// deleted default copy constructor
+  CommID( CommID const & ) = delete;
 
   /// deleted copy assignment operator
   CommID & operator=( CommID const & ) = delete;

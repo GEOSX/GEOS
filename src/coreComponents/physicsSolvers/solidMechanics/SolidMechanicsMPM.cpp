@@ -5,7 +5,7 @@
  * Copyright (c) 2016-2024 Lawrence Livermore National Security LLC
  * Copyright (c) 2018-2024 Total, S.A
  * Copyright (c) 2018-2024 The Board of Trustees of the Leland Stanford Junior University
- * Copyright (c) 2018-2024 Chevron
+ * Copyright (c) 2023-2024 Chevron
  * Copyright (c) 2019-     GEOS/GEOSX Contributors
  * All rights reserved
  *
@@ -29,7 +29,7 @@
 #include "codingUtilities/Utilities.hpp"
 #include "common/TimingMacros.hpp"
 #include "constitutive/ConstitutiveManager.hpp"
-#include "constitutive/contact/ContactBase.hpp"
+#include "constitutive/contact/FrictionBase.hpp"
 #include "finiteElement/FiniteElementDiscretizationManager.hpp"
 #include "finiteElement/Kinematics.h"
 #include "LvArray/src/output.hpp"
@@ -55,10 +55,10 @@ using namespace constitutive;
 
 SolidMechanicsMPM::SolidMechanicsMPM( const string & name,
                                       Group * const parent ):
-  SolverBase( name, parent ),
+  PhysicsSolverBase( name, parent ),
   m_solverProfiling( 0 ),
   m_timeIntegrationOption( TimeIntegrationOption::ExplicitDynamic ),
-  m_iComm( CommunicationTools::getInstance().getCommID() ),
+//  m_iComm( CommunicationTools::getInstance().getCommID() ),
   m_prescribedBcTable( 0 ),
   m_boundaryConditionTypes(),
   m_bcTable(),
@@ -292,7 +292,7 @@ SolidMechanicsMPM::SolidMechanicsMPM( const string & name,
 
 void SolidMechanicsMPM::postInputInitialization()
 {
-  SolverBase::postInputInitialization();
+  PhysicsSolverBase::postInputInitialization();
 
   // Activate neighbor list if necessary
   if( m_damageFieldPartitioning == 1 || m_surfaceDetection == 1 /*|| m_directionalOverlapCorrection == 1*/ )
@@ -467,7 +467,7 @@ void SolidMechanicsMPM::registerDataOnMesh( Group & meshBodies )
 
 void SolidMechanicsMPM::initializePreSubGroups()
 {
-  SolverBase::initializePreSubGroups();
+  PhysicsSolverBase::initializePreSubGroups();
 
   DomainPartition & domain = this->getGroupByPath< DomainPartition >( "/Problem/domain" );
 
@@ -487,7 +487,7 @@ void SolidMechanicsMPM::initializePreSubGroups()
                                                                                     ParticleSubRegion & subRegion )
       {
         string & solidMaterialName = subRegion.getReference< string >( viewKeyStruct::solidMaterialNamesString() );
-        solidMaterialName = SolverBase::getConstitutiveName< SolidBase >( subRegion );
+        solidMaterialName = PhysicsSolverBase::getConstitutiveName< SolidBase >( subRegion );
       } );
     }
   } );
@@ -528,7 +528,7 @@ real64 SolidMechanicsMPM::solverStep( real64 const & time_n,
   GEOS_MARK_FUNCTION;
   real64 dtReturn = dt;
 
-  SolverBase * const surfaceGenerator = this->getParent().getGroupPointer< SolverBase >( "SurfaceGen" );
+  PhysicsSolverBase * const surfaceGenerator = this->getParent().getGroupPointer< PhysicsSolverBase >( "SurfaceGen" );
 
   if( m_timeIntegrationOption == TimeIntegrationOption::ExplicitDynamic )
   {
@@ -561,7 +561,7 @@ void SolidMechanicsMPM::initialize( NodeManager & nodeManager,
   // Read and distribute BC table
   if( m_prescribedBcTable == 1 )
   {
-    int rank = MpiWrapper::commRank( MPI_COMM_GEOSX );
+    int rank = MpiWrapper::commRank( MPI_COMM_GEOS );
     int BCTableSize;
     std::vector< double > BCTable1D; // Need 1D version of BC table for MPI broadcast
 
@@ -576,12 +576,12 @@ void SolidMechanicsMPM::initialize( NodeManager & nodeManager,
       BCTableSize = BCTable1D.size();
     }
 
-    MPI_Bcast( &BCTableSize, 1, MPI_INT, 0, MPI_COMM_GEOSX ); // Broadcast the size of BCTable1D to other processes
+    MPI_Bcast( &BCTableSize, 1, MPI_INT, 0, MPI_COMM_GEOS ); // Broadcast the size of BCTable1D to other processes
     if( rank != 0 ) // All processes except for root resize their versions of BCTable1D
     {
       BCTable1D.resize( BCTableSize );
     }
-    MPI_Bcast( BCTable1D.data(), BCTableSize, MPI_DOUBLE, 0, MPI_COMM_GEOSX ); // Broadcast BCTable1D to other processes
+    MPI_Bcast( BCTable1D.data(), BCTableSize, MPI_DOUBLE, 0, MPI_COMM_GEOS ); // Broadcast BCTable1D to other processes
 
     // Technically don't need to reshape BCTable1D into a 2D array, but it makes things more readable and should have little runtime penalty
     m_bcTable.resize( BCTableSize / 7, 7 ); // Initialize size of m_BCTable
@@ -599,7 +599,7 @@ void SolidMechanicsMPM::initialize( NodeManager & nodeManager,
 
   if( m_prescribedBoundaryFTable == 1 )
   {
-    int rank = MpiWrapper::commRank( MPI_COMM_GEOSX );
+    int rank = MpiWrapper::commRank( MPI_COMM_GEOS );
     int FTableSize;
     std::vector< double > FTable1D; // Need 1D version of F table for MPI broadcast
 
@@ -617,12 +617,12 @@ void SolidMechanicsMPM::initialize( NodeManager & nodeManager,
       FTableSize = FTable1D.size();
     }
 
-    MPI_Bcast( &FTableSize, 1, MPI_INT, 0, MPI_COMM_GEOSX ); // Broadcast the size of FTable1D to other processes
+    MPI_Bcast( &FTableSize, 1, MPI_INT, 0, MPI_COMM_GEOS ); // Broadcast the size of FTable1D to other processes
     if( rank != 0 ) // All processes except for root resize their versions of FTable1D
     {
       FTable1D.resize( FTableSize );
     }
-    MPI_Bcast( FTable1D.data(), FTableSize, MPI_DOUBLE, 0, MPI_COMM_GEOSX ); // Broadcast FTable1D to other processes
+    MPI_Bcast( FTable1D.data(), FTableSize, MPI_DOUBLE, 0, MPI_COMM_GEOS ); // Broadcast FTable1D to other processes
 
     // Techinically don't need to reshape FTable1D into a 2D array, but it makes things more readable and should have little runtime penalty
     m_fTable.resize( FTableSize / 4, 4 ); // Initialize size of m_fTable
@@ -757,7 +757,7 @@ void SolidMechanicsMPM::initialize( NodeManager & nodeManager,
   }
 
   // Initialize reaction force history file and write its header
-  if( MpiWrapper::commRank( MPI_COMM_GEOSX ) == 0 && m_reactionHistory == 1 )
+  if( MpiWrapper::commRank( MPI_COMM_GEOS ) == 0 && m_reactionHistory == 1 )
   {
     std::ofstream file;
     file.open( "reactionHistory.csv", std::ios::out | std::ios::app );
@@ -827,7 +827,7 @@ void SolidMechanicsMPM::initialize( NodeManager & nodeManager,
                    1,
                    MPI_DOUBLE,
                    MPI_MIN,
-                   MPI_COMM_GEOSX );
+                   MPI_COMM_GEOS );
     m_smallMass = fmin( globalMinMass * 1.0e-12, m_smallMass );
 
     // Initialize deformation gradient and velocity gradient
@@ -854,7 +854,7 @@ void SolidMechanicsMPM::initialize( NodeManager & nodeManager,
   } );
   if( m_boxAverageHistory == 1 )
   {
-    if( MpiWrapper::commRank( MPI_COMM_GEOSX ) == 0 )
+    if( MpiWrapper::commRank( MPI_COMM_GEOS ) == 0 )
     {
       std::ofstream file;
       file.open( "boxAverageHistory.csv", std::ios::out | std::ios::app );
@@ -865,7 +865,7 @@ void SolidMechanicsMPM::initialize( NodeManager & nodeManager,
       file.exceptions( file.exceptions() | std::ios::failbit | std::ifstream::badbit );
       file << "Time, Sxx, Syy, Szz, Sxy, Syz, Sxz, Density, Damage" << std::endl;
     }
-    MpiWrapper::barrier( MPI_COMM_GEOSX ); // wait for the header to be written
+    MpiWrapper::barrier( MPI_COMM_GEOS ); // wait for the header to be written
     computeAndWriteBoxAverage( 0.0, 0.0, particleManager );
   }
 
@@ -888,7 +888,7 @@ void SolidMechanicsMPM::initialize( NodeManager & nodeManager,
                  1,
                  MPI_INT,
                  MPI_MAX,
-                 MPI_COMM_GEOSX );
+                 MPI_COMM_GEOS );
 
   // Number of contact groups
   m_numContactGroups = maxGlobalGroupNumber + 1;
@@ -940,6 +940,7 @@ real64 SolidMechanicsMPM::explicitStep( real64 const & time_n,
   MeshLevel & mesh = grid.getBaseDiscretization();
   NodeManager & nodeManager = mesh.getNodeManager();
 
+  MPI_iCommData m_iComm;
   m_iComm.resize( domain.getNeighbors().size() );
 
 
@@ -973,9 +974,9 @@ real64 SolidMechanicsMPM::explicitStep( real64 const & time_n,
 
 
   //#######################################################################################
-  solverProfilingIf( "Perform particle ghosting", MpiWrapper::commSize( MPI_COMM_GEOSX ) > 1 && m_needsNeighborList == 1 );
+  solverProfilingIf( "Perform particle ghosting", MpiWrapper::commSize( MPI_COMM_GEOS ) > 1 && m_needsNeighborList == 1 );
   //#######################################################################################
-  if( MpiWrapper::commSize( MPI_COMM_GEOSX ) > 1 && m_needsNeighborList == 1 )
+  if( MpiWrapper::commSize( MPI_COMM_GEOS ) > 1 && m_needsNeighborList == 1 )
   {
     // Move everything into host memory space
     particleManager.forParticleSubRegions( [&]( ParticleSubRegion & subRegion )
@@ -1204,9 +1205,9 @@ real64 SolidMechanicsMPM::explicitStep( real64 const & time_n,
 
 
   //#######################################################################################
-  solverProfilingIf( "Particle repartitioning", MpiWrapper::commSize( MPI_COMM_GEOSX ) > 1 );
+  solverProfilingIf( "Particle repartitioning", MpiWrapper::commSize( MPI_COMM_GEOS ) > 1 );
   //#######################################################################################
-  if( MpiWrapper::commSize( MPI_COMM_GEOSX ) > 1 )
+  if( MpiWrapper::commSize( MPI_COMM_GEOS ) > 1 )
   {
     particleManager.forParticleSubRegions( [&]( ParticleSubRegion & subRegion )
     {
@@ -1257,6 +1258,9 @@ void SolidMechanicsMPM::syncGridFields( std::vector< std::string > const & field
   FieldIdentifiers fieldsToBeSynced;
   fieldsToBeSynced.addFields( FieldLocation::Node, fieldNames );
   std::vector< NeighborCommunicator > & neighbors = domain.getNeighbors();
+
+  MPI_iCommData m_iComm;
+  m_iComm.resize( neighbors.size() );
 
   // (2) Swap send and receive indices so we can sum from ghost to master
   for( size_t n=0; n<neighbors.size(); n++ )
@@ -1465,7 +1469,7 @@ void SolidMechanicsMPM::applyEssentialBCs( const real64 dt,
                    1,
                    MPI_DOUBLE,
                    MPI_SUM,
-                   MPI_COMM_GEOSX );
+                   MPI_COMM_GEOS );
   }
 
   // Get end-of-step domain dimensions - note that m_domainExtent is updated later
@@ -1475,7 +1479,7 @@ void SolidMechanicsMPM::applyEssentialBCs( const real64 dt,
   height = m_domainExtent[2] * (1.0 + m_domainL[2] * dt);
 
   // Write global reactions to file
-  if( MpiWrapper::commRank( MPI_COMM_GEOSX ) == 0 && m_reactionHistory == 1 )
+  if( MpiWrapper::commRank( MPI_COMM_GEOS ) == 0 && m_reactionHistory == 1 )
   {
     std::ofstream file;
     // can't enable exception now because of gcc bug that raises ios_base::failure with useless message
@@ -1951,7 +1955,7 @@ void SolidMechanicsMPM::solverProfiling( std::string label )
 {
   if( m_solverProfiling >= 1 )
   {
-    MPI_Barrier( MPI_COMM_GEOSX );
+    MPI_Barrier( MPI_COMM_GEOS );
     GEOS_LOG_RANK_IF( m_solverProfiling == 2, label );
     m_profilingTimes.push_back( MPI_Wtime() );
     m_profilingLabels.push_back( label );
@@ -1974,7 +1978,7 @@ void SolidMechanicsMPM::setParticlesConstitutiveNames( ParticleSubRegionBase & s
     setSizedFromParent( 0 );
 
   string & solidMaterialName = subRegion.getReference< string >( viewKeyStruct::solidMaterialNamesString() );
-  solidMaterialName = SolverBase::getConstitutiveName< SolidBase >( subRegion );
+  solidMaterialName = PhysicsSolverBase::getConstitutiveName< SolidBase >( subRegion );
   GEOS_ERROR_IF( solidMaterialName.empty(), GEOS_FMT( "SolidBase model not found on subregion {}", subRegion.getName() ) );
 }
 
@@ -2195,13 +2199,13 @@ void SolidMechanicsMPM::optimizeBinSort( ParticleManager & particleManager )
                  1,
                  MPI_DOUBLE,
                  MPI_SUM,
-                 MPI_COMM_GEOSX );
+                 MPI_COMM_GEOS );
   MPI_Allreduce( &localNumberOfParticles,
                  &globalNumberOfParticles,
                  1,
                  MPI_INT,
                  MPI_SUM,
-                 MPI_COMM_GEOSX );
+                 MPI_COMM_GEOS );
 
   // Set bin size multiplier
   m_binSizeMultiplier = std::max( (int) std::round( globalWeightedMultiplier / globalNumberOfParticles ), 1 );
@@ -2754,12 +2758,12 @@ void SolidMechanicsMPM::computeAndWriteBoxAverage( const real64 dt,
                    1,
                    MPI_DOUBLE,
                    MPI_SUM,
-                   MPI_COMM_GEOSX );
+                   MPI_COMM_GEOS );
     boxSums[i] = globalSum;
   }
 
   int rank;
-  MPI_Comm_rank( MPI_COMM_GEOSX, &rank );
+  MPI_Comm_rank( MPI_COMM_GEOS, &rank );
   if( rank == 0 )
   {
     // Calculate the box volume
@@ -3303,7 +3307,7 @@ void SolidMechanicsMPM::deleteBadParticles( ParticleManager & particleManager )
 void SolidMechanicsMPM::printProfilingResults()
 {
   // Use MPI reduction to get the average elapsed time for each step on all partitions
-  int rank = MpiWrapper::commRank( MPI_COMM_GEOSX );
+  int rank = MpiWrapper::commRank( MPI_COMM_GEOS );
   unsigned int numIntervals = m_profilingTimes.size() - 1;
   std::vector< real64 > timeIntervalsAllRanks( numIntervals );
 
@@ -3314,7 +3318,7 @@ void SolidMechanicsMPM::printProfilingResults()
                                    &totalStepTimeAllRanks,
                                    1,
                                    MPI_SUM,
-                                   MPI_COMM_GEOSX );
+                                   MPI_COMM_GEOS );
 
   // Get total CPU times for each queried time interval
   for( unsigned int i = 0; i < numIntervals; i++ )
@@ -3325,7 +3329,7 @@ void SolidMechanicsMPM::printProfilingResults()
                                      &timeIntervalAllRanks,
                                      1,
                                      MPI_SUM,
-                                     MPI_COMM_GEOSX );
+                                     MPI_COMM_GEOS );
     if( rank == 0 )
     {
       timeIntervalsAllRanks[i] = timeIntervalAllRanks;
@@ -3333,7 +3337,7 @@ void SolidMechanicsMPM::printProfilingResults()
   }
 
   // Print out solver profiling
-  MPI_Barrier( MPI_COMM_GEOSX );
+  MPI_Barrier( MPI_COMM_GEOS );
   if( rank == 0 )
   {
     std::cout << "---------------------------------------------" << std::endl;
@@ -4059,5 +4063,5 @@ void SolidMechanicsMPM::populateMappingArrays( ParticleManager & particleManager
   } );
 }
 
-REGISTER_CATALOG_ENTRY( SolverBase, SolidMechanicsMPM, string const &, dataRepository::Group * const )
+REGISTER_CATALOG_ENTRY( PhysicsSolverBase, SolidMechanicsMPM, string const &, dataRepository::Group * const )
 }

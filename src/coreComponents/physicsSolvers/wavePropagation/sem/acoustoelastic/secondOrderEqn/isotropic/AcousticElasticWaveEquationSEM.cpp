@@ -5,7 +5,7 @@
  * Copyright (c) 2016-2024 Lawrence Livermore National Security LLC
  * Copyright (c) 2018-2024 Total, S.A
  * Copyright (c) 2018-2024 The Board of Trustees of the Leland Stanford Junior University
- * Copyright (c) 2018-2024 Chevron
+ * Copyright (c) 2023-2024 Chevron
  * Copyright (c) 2019-     GEOS/GEOSX Contributors
  * All rights reserved
  *
@@ -32,7 +32,7 @@ using namespace fields;
 
 void AcousticElasticWaveEquationSEM::registerDataOnMesh( Group & meshBodies )
 {
-  SolverBase::registerDataOnMesh( meshBodies );
+  PhysicsSolverBase::registerDataOnMesh( meshBodies );
 
   forDiscretizationOnMeshTargets( meshBodies, [&] ( string const &,
                                                     MeshLevel & mesh,
@@ -47,7 +47,7 @@ void AcousticElasticWaveEquationSEM::registerDataOnMesh( Group & meshBodies )
 
 void AcousticElasticWaveEquationSEM::initializePostInitialConditionsPreSubGroups()
 {
-  SolverBase::initializePostInitialConditionsPreSubGroups();
+  PhysicsSolverBase::initializePostInitialConditionsPreSubGroups();
 
   auto acousSolver = acousticSolver();
   auto elasSolver = elasticSolver();
@@ -63,8 +63,8 @@ void AcousticElasticWaveEquationSEM::initializePostInitialConditionsPreSubGroups
   localIndex const numInterfaceNodes = MpiWrapper::sum( m_interfaceNodesSet.size() );
   GEOS_THROW_IF( numInterfaceNodes == 0, "Failed to compute interface: check xml input (solver order)", std::runtime_error );
 
-  m_acousRegions = acousSolver->getReference< array1d< string > >( SolverBase::viewKeyStruct::targetRegionsString() );
-  m_elasRegions = elasSolver->getReference< array1d< string > >( SolverBase::viewKeyStruct::targetRegionsString() );
+  m_acousRegions = acousSolver->getReference< array1d< string > >( PhysicsSolverBase::viewKeyStruct::targetRegionsString() );
+  m_elasRegions = elasSolver->getReference< array1d< string > >( PhysicsSolverBase::viewKeyStruct::targetRegionsString() );
 
   DomainPartition & domain = getGroupByPath< DomainPartition >( "/Problem/domain" );
 
@@ -129,7 +129,7 @@ void AcousticElasticWaveEquationSEM::initializePostInitialConditionsPreSubGroups
 
 real64 AcousticElasticWaveEquationSEM::solverStep( real64 const & time_n,
                                                    real64 const & dt,
-                                                   int const cycleNumber,
+                                                   int const,
                                                    DomainPartition & domain )
 {
   GEOS_MARK_FUNCTION;
@@ -167,14 +167,14 @@ real64 AcousticElasticWaveEquationSEM::solverStep( real64 const & time_n,
     arrayView1d< real32 > const uy_np1 = nodeManager.getField< elasticfields::Displacementy_np1 >();
     arrayView1d< real32 > const uz_np1 = nodeManager.getField< elasticfields::Displacementz_np1 >();
 
-    elasSolver->computeUnknowns( time_n, dt, cycleNumber, domain, mesh, m_elasRegions );
+    elasSolver->computeUnknowns( time_n, dt, domain, mesh, m_elasRegions );
 
     AcoustoElasticTimeSchemeSEM::LeapFrog( dt, ux_np1, uy_np1, uz_np1, p_n, elasticMass, atoex, atoey, atoez,
                                            elasticFSNodeIndicator, interfaceNodesSet );
 
-    elasSolver->synchronizeUnknowns( time_n, dt, cycleNumber, domain, mesh, m_elasRegions );
+    elasSolver->synchronizeUnknowns( time_n, dt, domain, mesh, m_elasRegions );
 
-    acousSolver->computeUnknowns( time_n, dt, cycleNumber, domain, mesh, m_acousRegions );
+    acousSolver->computeUnknowns( time_n, dt, domain, mesh, m_acousRegions );
 
     forAll< EXEC_POLICY >( interfaceNodesSet.size(), [=] GEOS_HOST_DEVICE ( localIndex const in )
     {
@@ -191,7 +191,7 @@ real64 AcousticElasticWaveEquationSEM::solverStep( real64 const & time_n,
       RAJA::atomicAdd< ATOMIC_POLICY >( &p_np1[n], localIncrement );
     } );
 
-    acousSolver->synchronizeUnknowns( time_n, dt, cycleNumber, domain, mesh, m_acousRegions );
+    acousSolver->synchronizeUnknowns( time_n, dt, domain, mesh, m_acousRegions );
 
     acousSolver->prepareNextTimestep( mesh );
     elasSolver->prepareNextTimestep( mesh );
@@ -210,6 +210,6 @@ void AcousticElasticWaveEquationSEM::cleanup( real64 const time_n,
   acousticSolver()->cleanup( time_n, cycleNumber, eventCounter, eventProgress, domain );
 }
 
-REGISTER_CATALOG_ENTRY( SolverBase, AcousticElasticWaveEquationSEM, string const &, Group * const )
+REGISTER_CATALOG_ENTRY( PhysicsSolverBase, AcousticElasticWaveEquationSEM, string const &, Group * const )
 
 } /* namespace geos */

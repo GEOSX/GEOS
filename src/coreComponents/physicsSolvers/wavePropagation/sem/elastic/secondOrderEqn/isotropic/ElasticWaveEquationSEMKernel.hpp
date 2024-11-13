@@ -5,7 +5,7 @@
  * Copyright (c) 2016-2024 Lawrence Livermore National Security LLC
  * Copyright (c) 2018-2024 Total, S.A
  * Copyright (c) 2018-2024 The Board of Trustees of the Leland Stanford Junior University
- * Copyright (c) 2018-2024 Chevron
+ * Copyright (c) 2023-2024 Chevron
  * Copyright (c) 2019-     GEOS/GEOSX Contributors
  * All rights reserved
  *
@@ -26,7 +26,7 @@
 
 namespace geos
 {
-using namespace fields;
+
 /// Namespace to contain the elastic wave kernels.
 namespace elasticWaveEquationSEMKernels
 {
@@ -51,7 +51,7 @@ namespace elasticWaveEquationSEMKernels
 template< typename SUBREGION_TYPE,
           typename CONSTITUTIVE_TYPE,
           typename FE_TYPE,
-          typename SX = elasticfields::StiffnessVectorx, typename SY = elasticfields::StiffnessVectory, typename SZ = elasticfields::StiffnessVectorz >
+          typename SX = fields::elasticfields::StiffnessVectorx, typename SY = fields::elasticfields::StiffnessVectory, typename SZ = fields::elasticfields::StiffnessVectorz >
 class ExplicitElasticSEMBase : public finiteElement::KernelBase< SUBREGION_TYPE,
                                                                  CONSTITUTIVE_TYPE,
                                                                  FE_TYPE,
@@ -100,15 +100,15 @@ public:
           finiteElementSpace,
           inputConstitutiveType ),
     m_nodeCoords( nodeManager.getField< fields::referencePosition32 >() ),
-    m_ux_n( nodeManager.getField< elasticfields::Displacementx_n >() ),
-    m_uy_n( nodeManager.getField< elasticfields::Displacementy_n >() ),
-    m_uz_n( nodeManager.getField< elasticfields::Displacementz_n >() ),
+    m_ux_n( nodeManager.getField< fields::elasticfields::Displacementx_n >() ),
+    m_uy_n( nodeManager.getField< fields::elasticfields::Displacementy_n >() ),
+    m_uz_n( nodeManager.getField< fields::elasticfields::Displacementz_n >() ),
     m_stiffnessVectorx( nodeManager.getField< SX >() ),
     m_stiffnessVectory( nodeManager.getField< SY >() ),
     m_stiffnessVectorz( nodeManager.getField< SZ >() ),
-    m_density( elementSubRegion.template getField< elasticfields::ElasticDensity >() ),
-    m_velocityVp( elementSubRegion.template getField< elasticfields::ElasticVelocityVp >() ),
-    m_velocityVs( elementSubRegion.template getField< elasticfields::ElasticVelocityVs >() ),
+    m_density( elementSubRegion.template getField< fields::elasticfields::ElasticDensity >() ),
+    m_velocityVp( elementSubRegion.template getField< fields::elasticfields::ElasticVelocityVp >() ),
+    m_velocityVs( elementSubRegion.template getField< fields::elasticfields::ElasticVelocityVs >() ),
     m_dt( dt )
   {
     GEOS_UNUSED_VAR( edgeManager );
@@ -273,9 +273,9 @@ template< typename SUBREGION_TYPE,
 class ExplicitElasticAttenuativeSEM : public ExplicitElasticSEMBase< SUBREGION_TYPE,
                                                                      CONSTITUTIVE_TYPE,
                                                                      FE_TYPE,
-                                                                     elasticfields::StiffnessVectorAx,
-                                                                     elasticfields::StiffnessVectorAy,
-                                                                     elasticfields::StiffnessVectorAz >
+                                                                     fields::elasticfields::StiffnessVectorAx,
+                                                                     fields::elasticfields::StiffnessVectorAy,
+                                                                     fields::elasticfields::StiffnessVectorAz >
 {
 public:
 
@@ -283,9 +283,9 @@ public:
   using Base = ExplicitElasticSEMBase< SUBREGION_TYPE,
                                        CONSTITUTIVE_TYPE,
                                        FE_TYPE,
-                                       elasticfields::StiffnessVectorAx,
-                                       elasticfields::StiffnessVectorAy,
-                                       elasticfields::StiffnessVectorAz >;
+                                       fields::elasticfields::StiffnessVectorAx,
+                                       fields::elasticfields::StiffnessVectorAy,
+                                       fields::elasticfields::StiffnessVectorAz >;
 
 //*****************************************************************************
   /**
@@ -313,8 +313,8 @@ public:
           finiteElementSpace,
           inputConstitutiveType,
           dt ),
-    m_qualityFactorP( elementSubRegion.template getField< elasticfields::ElasticQualityFactorP >() ),
-    m_qualityFactorS( elementSubRegion.template getField< elasticfields::ElasticQualityFactorS >() )
+    m_qualityFactorP( elementSubRegion.template getField< fields::elasticfields::ElasticQualityFactorP >() ),
+    m_qualityFactorS( elementSubRegion.template getField< fields::elasticfields::ElasticQualityFactorS >() )
   {}
 
   /**

@@ -127,7 +127,7 @@ Parameters
 
 The following attributes are supported:
 
-.. include:: /coreComponents/schema/docs/CompositionalMultiphaseWell.rst
+.. include:: /docs/sphinx/datastructure/CompositionalMultiphaseWell.rst
 
 .. _well_input_example:
 

@@ -5,7 +5,7 @@
  * Copyright (c) 2016-2024 Lawrence Livermore National Security LLC
  * Copyright (c) 2018-2024 Total, S.A
  * Copyright (c) 2018-2024 The Board of Trustees of the Leland Stanford Junior University
- * Copyright (c) 2018-2024 Chevron
+ * Copyright (c) 2023-2024 Chevron
  * Copyright (c) 2019-     GEOS/GEOSX Contributors
  * All rights reserved
  *
@@ -14,13 +14,14 @@
  */
 
 #include "MPI_iCommData.hpp"
+#include "CommunicationTools.hpp"
 
 namespace geos
 {
 
-MPI_iCommData::MPI_iCommData( int const inputCommID ):
+MPI_iCommData::MPI_iCommData():
   m_size( 0 ),
-  m_commID( inputCommID ),      // CommunicationTools::getInstance().getCommID() ),
+  m_commID( CommunicationTools::getInstance().getCommID() ),
   m_mpiSendBufferRequest(),
   m_mpiRecvBufferRequest(),
   m_mpiSendBufferStatus(),

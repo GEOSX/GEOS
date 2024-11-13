@@ -5,7 +5,7 @@
  * Copyright (c) 2016-2024 Lawrence Livermore National Security LLC
  * Copyright (c) 2018-2024 Total, S.A
  * Copyright (c) 2018-2024 The Board of Trustees of the Leland Stanford Junior University
- * Copyright (c) 2018-2024 Chevron
+ * Copyright (c) 2023-2024 Chevron
  * Copyright (c) 2019-     GEOS/GEOSX Contributors
  * All rights reserved
  *
@@ -23,7 +23,7 @@
 #include "linearAlgebra/DofManager.hpp"
 #include "linearAlgebra/interfaces/InterfaceTypes.hpp"
 #include "fieldSpecification/FieldSpecificationManager.hpp"
-#include "physicsSolvers/SolverBase.hpp"
+#include "physicsSolvers/PhysicsSolverBase.hpp"
 
 struct stabledt
 {
@@ -40,7 +40,7 @@ class FieldSpecificationBase;
 class FiniteElementBase;
 class DomainPartition;
 
-class PhaseFieldDamageFEM : public SolverBase
+class PhaseFieldDamageFEM : public PhysicsSolverBase
 {
 public:
   PhaseFieldDamageFEM( const string & name, Group * const parent );
@@ -52,7 +52,7 @@ public:
     return "PhaseFieldDamageFEM";
   }
   /**
-   * @copydoc SolverBase::getCatalogName()
+   * @copydoc PhysicsSolverBase::getCatalogName()
    */
   string getCatalogName() const override { return catalogName(); }
 
@@ -147,7 +147,7 @@ public:
     Quadratic,
   };
 
-  struct viewKeyStruct : public SolverBase::viewKeyStruct
+  struct viewKeyStruct : public PhysicsSolverBase::viewKeyStruct
   {
     static constexpr char const * coeffNameString() { return "coeffField"; }
     static constexpr char const * localDissipationOptionString() { return "localDissipation"; }

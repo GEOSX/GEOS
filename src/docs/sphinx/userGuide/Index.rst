@@ -17,6 +17,8 @@ Welcome to the GEOS user guide.
 
    /coreComponents/constitutive/docs/Constitutive
 
+   /coreComponents/constitutiveDrivers/docs/ConstitutiveDrivers
+
    /coreComponents/fieldSpecification/docs/FieldSpecification
    
    /coreComponents/events/docs/EventManager
@@ -24,6 +26,8 @@ Welcome to the GEOS user guide.
    /coreComponents/events/docs/TasksManager
 
    /coreComponents/functions/docs/FunctionManager
+
+   /coreComponents/physicsSolvers/multiphysics/docs/Initialization.rst
 
    /coreComponents/linearAlgebra/docs/LinearSolvers.rst
 

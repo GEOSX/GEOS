@@ -5,7 +5,7 @@
  * Copyright (c) 2016-2024 Lawrence Livermore National Security LLC
  * Copyright (c) 2018-2024 Total, S.A
  * Copyright (c) 2018-2024 The Board of Trustees of the Leland Stanford Junior University
- * Copyright (c) 2018-2024 Chevron
+ * Copyright (c) 2023-2024 Chevron
  * Copyright (c) 2019-     GEOS/GEOSX Contributors
  * All rights reserved
  *
@@ -36,7 +36,7 @@ public:
    * @param inputCommID The CommID integer that indicates what communication
    *   pipeline to use for a set of neighbor communications.
    */
-  MPI_iCommData( int const inputCommID );
+  MPI_iCommData();
 
   /// Default destructor
   ~MPI_iCommData();
@@ -96,7 +96,7 @@ private:
   int m_size;
 
   /// The integer ID for the set of communication pipelines
-  int m_commID;
+  CommID m_commID;
 
   /// A collection of field names keyed on object keys to pack/unpack from
   /// communication pipeline.

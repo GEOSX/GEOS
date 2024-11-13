@@ -25,13 +25,13 @@
   <ElementRegions>
     <CellElementRegion
       name="Domain"
-      cellBlocks="{ cb1 }"
+      cellBlocks="{ * }"
       materialList="{ porousRock, water }"/>
 
     <SurfaceElementRegion
       name="Fracture"
       faceBlock="FractureSubRegion"
-      materialList="{ water, fractureFilling, fractureContact }"
+      materialList="{ water, fractureFilling, fractureContact, hApertureModel }"
       defaultAperture="1e-3"/>
   </ElementRegions>
 
@@ -87,8 +87,11 @@
     <Coulomb
       name="fractureContact"
       cohesion="0.0"
-      frictionCoefficient="0.1"
-      apertureTableName="apertureTable"/>
+      frictionCoefficient="0.1"/>
+
+    <HydraulicApertureTable
+      name="hApertureModel"
+      apertureTableName="apertureTable"/>    
   </Constitutive>
 
   <FieldSpecifications>

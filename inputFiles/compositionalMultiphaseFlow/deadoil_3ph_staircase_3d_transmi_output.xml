@@ -1,0 +1,81 @@
+<?xml version="1.0" ?>
+
+<Problem>
+  <!-- this exemple adds a transmissibility output to "deadoilStaircase.xml".
+
+    The "cellToCellDataCollection" gather the transmissibility data at the first timestep (triggered by
+    the SoloEvents). The transmissibility could be gathered at multiple timestep to see the influence
+    of the permeability variations.
+    All fields need to be individualy packed by the PackCollection, the TimeHistory outputs them in an hdf5.
+  -->
+
+  <Included>
+    <File name="./deadoil_3ph_staircase_3d.xml"/>
+  </Included>
+
+  <Events>
+
+    <SoloEvent
+      name="cellToCellDataCollectionEvent"
+      beginTime="1e5"
+      target="/Tasks/cellToCellDataCollection" />
+    <SoloEvent
+      name="cellAGlobalIdPackCollectionEvent"
+      beginTime="1e5"
+      target="/Tasks/cellAGlobalIdPackCollection" />
+    <SoloEvent
+      name="cellBGlobalIdPackCollectionEvent"
+      beginTime="1e5"
+      target="/Tasks/cellBGlobalIdPackCollection" />
+    <SoloEvent
+      name="transmissibilityABPackCollectionEvent"
+      beginTime="1e5"
+      target="/Tasks/transmissibilityABPackCollection" />
+    <SoloEvent
+      name="transmissibilityBAPackCollectionEvent"
+      beginTime="1e5"
+      target="/Tasks/transmissibilityBAPackCollection" />
+    <SoloEvent
+      name="cellToCellDataHistoryEvent"
+      beginTime="1e5"
+      target="/Outputs/cellToCellDataHistory" />
+
+  </Events>
+
+  <Tasks>
+    <CellToCellDataCollection
+      name="cellToCellDataCollection"
+      flowSolverName="compflow"
+      meshBody="mesh"
+      logLevel="1" />
+    <PackCollection
+      name="cellAGlobalIdPackCollection"
+      objectPath="/Tasks/cellToCellDataCollection"
+      fieldName="cellAGlobalId" />
+    <PackCollection
+      name="cellBGlobalIdPackCollection"
+      objectPath="/Tasks/cellToCellDataCollection"
+      fieldName="cellBGlobalId" />
+    <PackCollection
+      name="transmissibilityABPackCollection"
+      objectPath="/Tasks/cellToCellDataCollection"
+      fieldName="transmissibilityAB" />
+    <PackCollection
+      name="transmissibilityBAPackCollection"
+      objectPath="/Tasks/cellToCellDataCollection"
+      fieldName="transmissibilityBA" />
+  </Tasks>
+
+  <Outputs>
+    <TimeHistory
+      name="cellToCellDataHistory"
+      sources="{ 
+        /Tasks/cellAGlobalIdPackCollection,
+        /Tasks/cellBGlobalIdPackCollection,
+        /Tasks/transmissibilityABPackCollection,
+        /Tasks/transmissibilityBAPackCollection
+      }"
+      filename="deadoil_3ph_staircase_3d_cellToCellData" />
+  </Outputs>
+
+</Problem>

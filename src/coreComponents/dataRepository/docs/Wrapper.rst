@@ -124,7 +124,7 @@ The type ``DefaultValue<T>`` is used to store the default value for the wrapper.
    ``DefaultValue`` is actually not a type but an alias for another internal struct.
    As such, it cannot currently be specialized for a user's custom type.
 
-API documentation
------------------
+Doxygen API documentation
+-------------------------
 
-`Wrapper <../../../doxygen_output/html/classgeos_1_1data_repository_1_1_wrapper.html>`_
+`Wrapper API <../../../doxygen_output/html/classgeos_1_1data_repository_1_1_wrapper.html>`_

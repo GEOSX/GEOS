@@ -5,7 +5,7 @@
  * Copyright (c) 2016-2024 Lawrence Livermore National Security LLC
  * Copyright (c) 2018-2024 Total, S.A
  * Copyright (c) 2018-2024 The Board of Trustees of the Leland Stanford Junior University
- * Copyright (c) 2018-2024 Chevron
+ * Copyright (c) 2023-2024 Chevron
  * Copyright (c) 2019-     GEOS/GEOSX Contributors
  * All rights reserved
  *
@@ -85,7 +85,7 @@ struct StateUpdateKernel
   /**
    * @brief Launch the kernel function doing constitutive updates
    * @tparam POLICY the type of policy used in the kernel launch
-   * @tparam CONTACT_WRAPPER the type of contact wrapper doing the constitutive updates
+   * @tparam CONSTITUTIVE_WRAPPER the type of consitutive wrapper doing the constitutive updates
    * @param[in] size the size of the subregion
    * @param[in] constitutiveWrapper the wrapper implementing the constitutive model
    * @param[in] deformationGradient the deformation gradient

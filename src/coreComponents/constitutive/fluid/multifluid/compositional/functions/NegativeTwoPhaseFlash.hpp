@@ -5,7 +5,7 @@
  * Copyright (c) 2016-2024 Lawrence Livermore National Security LLC
  * Copyright (c) 2018-2024 Total, S.A
  * Copyright (c) 2018-2024 The Board of Trustees of the Leland Stanford Junior University
- * Copyright (c) 2018-2024 Chevron
+ * Copyright (c) 2023-2024 Chevron
  * Copyright (c) 2019-     GEOS/GEOSX Contributors
  * All rights reserved
  *
@@ -32,15 +32,12 @@ namespace geos
 
 namespace constitutive
 {
-
-using namespace multifluid;
-
 namespace compositional
 {
 
 struct NegativeTwoPhaseFlash
 {
-  using Deriv = multifluid::DerivativeOffset;
+  using Deriv = constitutive::multifluid::DerivativeOffset;
 
 public:
   /**
@@ -177,7 +174,7 @@ private:
    * @param[out] fugacityRatios the fugacity rations
    * @return The error
    */
-  template< integer USD >
+  template< integer USD1, integer USD2 >
   GEOS_HOST_DEVICE
   static real64 computeFugacityRatio(
     integer const numComps,
@@ -187,34 +184,32 @@ private:
     ComponentProperties::KernelWrapper const & componentProperties,
     EquationOfStateType const liquidEos,
     EquationOfStateType const vapourEos,
-    arraySlice1d< real64 const, USD > const & kValues,
+    arraySlice1d< real64 const, USD1 > const & kValues,
     arraySlice1d< integer const > const & presentComponents,
     real64 & vapourPhaseMoleFraction,
-    arraySlice1d< real64, USD > const & liquidComposition,
-    arraySlice1d< real64, USD > const & vapourComposition,
+    arraySlice1d< real64, USD2 > const & liquidComposition,
+    arraySlice1d< real64, USD2 > const & vapourComposition,
     arraySlice1d< real64 > const & logLiquidFugacity,
     arraySlice1d< real64 > const & logVapourFugacity,
     arraySlice1d< real64 > const & fugacityRatios );
 
   /**
    * @brief Solve the lineat system for the derivatives of the flash
-   * @param[in] A the coefficient matrix
-   * @param[in] b the rhs
-   * @param[out] x the solution
+   * @param[in/out] A the coefficient matrix. Destroyed after call
+   * @param[in/out] X the rhs and solution
    * @return @c true if the problem is well solved @c false otherwise
    */
+  template< int USD >
   GEOS_HOST_DEVICE
-  static bool solveLinearSystem( arraySlice2d< real64 const > const & A,
-                                 arraySlice1d< real64 const > const & b,
-                                 arraySlice1d< real64 > const & x )
+  static bool solveLinearSystem( arraySlice2d< real64, USD > const & A,
+                                 arraySlice2d< real64, USD > const & X )
   {
 #if defined(GEOS_DEVICE_COMPILE)
     GEOS_UNUSED_VAR( A );
-    GEOS_UNUSED_VAR( b );
-    GEOS_UNUSED_VAR( x );
+    GEOS_UNUSED_VAR( X );
     return false;
 #else
-    BlasLapackLA::solveLinearSystem( A, b, x );
+    BlasLapackLA::solveLinearSystem( A, X );
     return true;
 #endif
   }
@@ -262,9 +257,6 @@ bool NegativeTwoPhaseFlash::compute( integer const numComps,
     }
   }
 
-  bool kValueReset = true;
-  constexpr real64 boundsTolerance = 1.0e-3;
-
   if( needInitialisation )
   {
     KValueInitialization::computeWilsonGasLiquidKvalue( numComps,
@@ -275,8 +267,6 @@ bool NegativeTwoPhaseFlash::compute( integer const numComps,
   }
 
   auto const presentComponents = componentIndices.toSliceConst();
-
-  real64 const initialVapourFraction = RachfordRice::solve( kVapourLiquid.toSliceConst(), composition, presentComponents );
 
   bool converged = false;
   for( localIndex iterationCount = 0; iterationCount < MultiFluidConstants::maxSSIIterations; ++iterationCount )
@@ -306,23 +296,9 @@ bool NegativeTwoPhaseFlash::compute( integer const numComps,
     }
 
     // Update K-values
-    if( (vapourPhaseMoleFraction < -boundsTolerance || 1.0-vapourPhaseMoleFraction < -boundsTolerance)
-        && 0.2 < LvArray::math::abs( vapourPhaseMoleFraction-initialVapourFraction )
-        && !kValueReset )
+    for( integer ic = 0; ic < numComps; ++ic )
     {
-      KValueInitialization::computeConstantLiquidKvalue( numComps,
-                                                         pressure,
-                                                         temperature,
-                                                         componentProperties,
-                                                         kVapourLiquid );
-      kValueReset =  true;
-    }
-    else
-    {
-      for( integer ic = 0; ic < numComps; ++ic )
-      {
-        kVapourLiquid[ic] *= exp( fugacityRatios[ic] );
-      }
+      kVapourLiquid[ic] *= exp( fugacityRatios[ic] );
     }
   }
 
@@ -435,12 +411,11 @@ void NegativeTwoPhaseFlash::computeDerivatives(
 
     constexpr integer maxNumVals = 2*MultiFluidConstants::MAX_NUM_COMPONENTS+1;
     integer const numVals = 2*numComps;
-    stackArray1d< real64, maxNumVals > b( numVals + 1 );
-    stackArray1d< real64, maxNumVals > x( numVals + 1 );
-    stackArray2d< real64, maxNumVals * maxNumVals > A( numVals + 1, numVals + 1 );
+    StackArray< real64, 2, maxNumVals * maxNumVals, MatrixLayout::COL_MAJOR_PERM > A( numVals + 1, numVals + 1 );
+    StackArray< real64, 2, maxNumVals * maxNumVals, MatrixLayout::COL_MAJOR_PERM > X( numVals + 1, numVals + 1 );
 
     LvArray::forValuesInSlice( A.toSlice(), setZero );
-    LvArray::forValuesInSlice( b.toSlice(), setZero );
+    LvArray::forValuesInSlice( X.toSlice(), setZero );
 
     for( integer ic = 0; ic < numComps; ++ic )
     {
@@ -472,50 +447,47 @@ void NegativeTwoPhaseFlash::computeDerivatives(
       A( e, xi ) = -1.0;
       A( e, yi ) =  1.0;
     }
+
     // Pressure and temperature derivatives
-    for( integer const pc : {Deriv::dP, Deriv::dT} )
+    for( integer ic = 0; ic < numComps; ++ic )
     {
-      for( integer ic = 0; ic < numComps; ++ic )
-      {
-        real64 const phiL = exp( logLiquidFugacity( ic ) );
-        real64 const phiV = exp( logVapourFugacity( ic ) );
-        b( ic ) = 0.0;
-        b( ic + numComps ) = -liquidComposition[ic] * phiL * logLiquidFugacityDerivs( ic, pc )
-                             + vapourComposition[ic] * phiV * logVapourFugacityDerivs( ic, pc );
-      }
-      b( numVals ) = 0.0;
-      solveLinearSystem( A, b, x );
-      for( integer ic = 0; ic < numComps; ++ic )
-      {
-        liquidCompositionDerivs( ic, pc ) = x( ic );
-        vapourCompositionDerivs( ic, pc ) = x( ic + numComps );
-      }
-      vapourFractionDerivs( pc ) = x( numVals );
+      real64 const phiL = -liquidComposition[ic] * exp( logLiquidFugacity( ic ) );
+      real64 const phiV = vapourComposition[ic] * exp( logVapourFugacity( ic ) );
+      X( ic + numComps, Deriv::dP ) = phiL * logLiquidFugacityDerivs( ic, Deriv::dP ) +
+                                      phiV * logVapourFugacityDerivs( ic, Deriv::dP );
+      X( ic + numComps, Deriv::dT ) = phiL * logLiquidFugacityDerivs( ic, Deriv::dT ) +
+                                      phiV * logVapourFugacityDerivs( ic, Deriv::dT );
     }
+
     // Composition derivatives
     for( integer kc = 0; kc < numComps; ++kc )
     {
-      integer const pc = Deriv::dC + kc;
+      integer const idof = Deriv::dC + kc;
 
       for( integer ic = 0; ic < numComps; ++ic )
       {
-        b( ic ) = -composition[ic];
-        b( ic + numComps ) = 0.0;
+        X( ic, idof ) = -composition[ic];
       }
-      b( kc ) += 1.0;
-      b( numVals ) = 0.0;
-      solveLinearSystem( A, b, x );
+      X( kc, idof ) += 1.0;
+    }
+
+    // Solve linear system
+    solveLinearSystem( A.toSlice(), X.toSlice() );
+
+    // Fill in the derivatives
+    for( integer idof = 0; idof < numDofs; ++idof )
+    {
       for( integer ic = 0; ic < numComps; ++ic )
       {
-        liquidCompositionDerivs( ic, pc ) = x( ic );
-        vapourCompositionDerivs( ic, pc ) = x( ic + numComps );
+        liquidCompositionDerivs( ic, idof ) = X( ic, idof );
+        vapourCompositionDerivs( ic, idof ) = X( ic + numComps, idof );
       }
-      vapourFractionDerivs( pc ) = x( numVals );
+      vapourFractionDerivs( idof ) = X( numVals, idof );
     }
   }
 }
 
-template< integer USD >
+template< integer USD1, integer USD2 >
 GEOS_HOST_DEVICE
 real64 NegativeTwoPhaseFlash::computeFugacityRatio(
   integer const numComps,
@@ -525,11 +497,11 @@ real64 NegativeTwoPhaseFlash::computeFugacityRatio(
   ComponentProperties::KernelWrapper const & componentProperties,
   EquationOfStateType const liquidEos,
   EquationOfStateType const vapourEos,
-  arraySlice1d< real64 const, USD > const & kValues,
+  arraySlice1d< real64 const, USD1 > const & kValues,
   arraySlice1d< integer const > const & presentComponents,
   real64 & vapourPhaseMoleFraction,
-  arraySlice1d< real64, USD > const & liquidComposition,
-  arraySlice1d< real64, USD > const & vapourComposition,
+  arraySlice1d< real64, USD2 > const & liquidComposition,
+  arraySlice1d< real64, USD2 > const & vapourComposition,
   arraySlice1d< real64 > const & logLiquidFugacity,
   arraySlice1d< real64 > const & logVapourFugacity,
   arraySlice1d< real64 > const & fugacityRatios )

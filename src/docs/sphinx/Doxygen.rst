@@ -2,11 +2,17 @@
 Doxygen
 ###############################################################################
 
-The c++ source in GEOS is annotated using doxygen. Our doxygen pages are
-linked below.
+The GEOS c++ API in is documented using doxygen.
+The doxygen `class list pages <../../doxygen_output/html/classes.html>`_
 
-.. raw:: html
+Developers may find it helpful to review the :ref:`KeyComponents` described in the Developer Guide before diving into the doxygen.
 
-   <a href="../../doxygen_output/html/classes.html">GEOS Doxygen Pages</a>
+Some key doxygen pages are linked below:
 
-Developers may find it helpful to review the key code components described in the Developer Guide before diving into the doxygen.
+`Group API <../../doxygen_output/html/classgeos_1_1data_repository_1_1_group.html>`_
+
+`Wrapper API <../../doxygen_output/html/classgeos_1_1data_repository_1_1_wrapper.html>`_
+
+`ObjectManagerBase API <../../doxygen_output/html/classgeos_1_1_object_manager_base.html>`_
+
+`PhysicsSolverBase API <../../doxygen_output/html/classgeos_1_1_physics_solver_base.html>`_

@@ -5,7 +5,7 @@
  * Copyright (c) 2016-2024 Lawrence Livermore National Security LLC
  * Copyright (c) 2018-2024 Total, S.A
  * Copyright (c) 2018-2024 The Board of Trustees of the Leland Stanford Junior University
- * Copyright (c) 2018-2024 Chevron
+ * Copyright (c) 2023-2024 Chevron
  * Copyright (c) 2019-     GEOS/GEOSX Contributors
  * All rights reserved
  *
@@ -47,7 +47,7 @@ void setupProblemFromXML( ProblemManager * const problemManager, char const * co
     GEOS_LOG_RANK_0( "Error offset: " << xmlResult.offset );
   }
 
-  int mpiSize = MpiWrapper::commSize( MPI_COMM_GEOSX );
+  int mpiSize = MpiWrapper::commSize( MPI_COMM_GEOS );
   dataRepository::Group & commandLine =
     problemManager->getGroup< dataRepository::Group >( problemManager->groupKeys.commandLine );
   commandLine.registerWrapper< integer >( problemManager->viewKeys.xPartitionsOverride.key() ).

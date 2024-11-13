@@ -82,7 +82,7 @@ The computational domain is discretized by ``C3D8`` elements with the first orde
 functions at each direction in the parent domain. The 2 x 2 x 2 Gauss quadrature rule is adopted to be
 compatible with the first order interpolation functions.
 
-.. literalinclude:: ../../../../../inputFiles/solidMechanics/beamBending_base.xml
+.. literalinclude:: ../../../../../inputFiles/solidMechanics/beamBending_smoke.xml
   :language: xml
   :start-after: <!-- SPHINX_FEDiscretization -->
   :end-before:  <!-- SPHINX_FEDiscretizationEnd -->

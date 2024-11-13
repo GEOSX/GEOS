@@ -5,7 +5,7 @@
  * Copyright (c) 2016-2024 Lawrence Livermore National Security LLC
  * Copyright (c) 2018-2024 Total, S.A
  * Copyright (c) 2018-2024 The Board of Trustees of the Leland Stanford Junior University
- * Copyright (c) 2018-2024 Chevron
+ * Copyright (c) 2023-2024 Chevron
  * Copyright (c) 2019-     GEOS/GEOSX Contributors
  * All rights reserved
  *
@@ -148,6 +148,7 @@ void collectElementNodes( CellElementSubRegion const & subRegion,
  * @param[inout] erMatched the region index of the reservoir element that contains "location", if any
  * @param[inout] esrMatched the subregion index of the reservoir element that contains "location", if any
  * @param[inout] eiMatched the element index of the reservoir element that contains "location", if any
+ * @param[inout] giMatched the element global index of the reservoir element that contains "location", if any
  */
 bool visitNeighborElements( MeshLevel const & mesh,
                             real64 const (&location)[3],
@@ -155,7 +156,8 @@ bool visitNeighborElements( MeshLevel const & mesh,
                             SortedArray< globalIndex > & elements,
                             localIndex & erMatched,
                             localIndex & esrMatched,
-                            localIndex & eiMatched )
+                            localIndex & eiMatched,
+                            globalIndex & giMatched )
 {
   ElementRegionManager const & elemManager = mesh.getElemManager();
   NodeManager const & nodeManager = mesh.getNodeManager();
@@ -164,7 +166,6 @@ bool visitNeighborElements( MeshLevel const & mesh,
   ArrayOfArraysView< localIndex const > const & toElementRegionList    = nodeManager.elementRegionList();
   ArrayOfArraysView< localIndex const > const & toElementSubRegionList = nodeManager.elementSubRegionList();
   ArrayOfArraysView< localIndex const > const & toElementList          = nodeManager.elementList();
-
   arrayView2d< real64 const, nodes::REFERENCE_POSITION_USD > const referencePosition =
     nodeManager.referencePosition().toViewConst();
 
@@ -183,7 +184,7 @@ bool visitNeighborElements( MeshLevel const & mesh,
   // that contains only the nodes that have already been visited
   // the newly added nodes will be added to "nodes"
   SortedArray< localIndex > currNodes = nodes;
-
+  giMatched = -1;
   // for all the nodes already visited
   for( localIndex currNode : currNodes )
   {
@@ -193,7 +194,6 @@ bool visitNeighborElements( MeshLevel const & mesh,
       localIndex const er      = toElementRegionList[currNode][b];
       localIndex const esr     = toElementSubRegionList[currNode][b];
       localIndex const eiLocal = toElementList[currNode][b];
-
       CellElementRegion const & region = elemManager.getRegion< CellElementRegion >( er );
       CellElementSubRegion const & subRegion = region.getSubRegion< CellElementSubRegion >( esr );
       arrayView2d< localIndex const > const elemsToFaces = subRegion.faceList();
@@ -221,6 +221,7 @@ bool visitNeighborElements( MeshLevel const & mesh,
           erMatched  = er;
           esrMatched = esr;
           eiMatched  = eiLocal;
+          giMatched = eiGlobal;
           matched    = true;
           break;
         }
@@ -292,6 +293,7 @@ void initializeLocalSearch( MeshLevel const & mesh,
  * @param[inout] erMatched the region index of the reservoir element that contains "location", if any
  * @param[inout] esrMatched the subregion index of the reservoir element that contains "location", if any
  * @param[inout] eiMatched the element index of the reservoir element that contains "location", if any
+ * @param[inout] giMatched the element global index of the reservoir element that contains "location", if any
  */
 bool searchLocalElements( MeshLevel const & mesh,
                           real64 const (&location)[3],
@@ -301,7 +303,8 @@ bool searchLocalElements( MeshLevel const & mesh,
                           localIndex const & eiInit,
                           localIndex & erMatched,
                           localIndex & esrMatched,
-                          localIndex & eiMatched )
+                          localIndex & eiMatched,
+                          globalIndex & giMatched )
 {
   // search locally, starting from the location of the previous perforation
   // the assumption here is that perforations have been entered in order of depth
@@ -324,7 +327,6 @@ bool searchLocalElements( MeshLevel const & mesh,
   // collect the nodes of the current element
   // they will be used to access the neighbors and check if they contain the perforation
   collectElementNodes( subRegion, eiInit, nodes );
-
   // if no match is found, enlarge the neighborhood m_searchDepth'th times
   for( localIndex d = 0; d < searchDepth; ++d )
   {
@@ -334,7 +336,7 @@ bool searchLocalElements( MeshLevel const & mesh,
     // stop if a reservoir element containing the perforation is found
     // if not, enlarge the set "nodes"
     resElemFound = visitNeighborElements( mesh, location, nodes, elements,
-                                          erMatched, esrMatched, eiMatched );
+                                          erMatched, esrMatched, eiMatched, giMatched );
     if( resElemFound || nNodes == nodes.size())
     {
       break;
@@ -433,6 +435,14 @@ void WellElementSubRegion::generate( MeshLevel & mesh,
   // this assumes that the elemToNodes maps has been filled at Step 5)
   updateNodeManagerNodeToElementMap( mesh );
 
+  // Store local to global index mapping
+  integer n_localElems = localElems.size();
+  m_globalWellElementIndex.resize( n_localElems );
+  for( integer i=0; i<n_localElems; i++ )
+  {
+    m_globalWellElementIndex[i] = localElems[i];
+  }
+
 }
 
 
@@ -465,6 +475,7 @@ void WellElementSubRegion::assignUnownedElementsInReservoir( MeshLevel & mesh,
     localIndex erInit     = -1;
     localIndex esrInit    = -1;
     localIndex eiInit     = -1;
+    globalIndex giMatched   = -1;
 
     // Step 1: first, we search for the reservoir element that is the *closest* from the center of well element
     //         note that this reservoir element does not necessarily contain the center of the well element
@@ -477,7 +488,7 @@ void WellElementSubRegion::assignUnownedElementsInReservoir( MeshLevel & mesh,
     //         to do that, we loop over the reservoir elements that are in the neighborhood of (erInit,esrInit,eiInit)
     bool resElemFound = searchLocalElements( mesh, location, m_searchDepth,
                                              erInit, esrInit, eiInit,
-                                             erMatched, esrMatched, eiMatched );
+                                             erMatched, esrMatched, eiMatched, giMatched );
 
     // if the element was found
     if( resElemFound )
@@ -545,7 +556,7 @@ void WellElementSubRegion::checkPartitioningValidity( LineBlockABC const & lineB
 
       for( globalIndex iownerRank : rankSetsByStatus[WellElemStatus::LOCAL] )
       {
-        if( MpiWrapper::commRank( MPI_COMM_GEOSX ) != iownerRank )
+        if( MpiWrapper::commRank( MPI_COMM_GEOS ) != iownerRank )
         {
           elemStatusGlobal[iwelemGlobal] = WellElemStatus::REMOTE;
         }
@@ -563,7 +574,7 @@ void WellElementSubRegion::checkPartitioningValidity( LineBlockABC const & lineB
         if( rankCount == 0 )
         {
           // update the elemStatusGlobal array for all ranks
-          if( MpiWrapper::commRank( MPI_COMM_GEOSX ) != iownerRank )
+          if( MpiWrapper::commRank( MPI_COMM_GEOS ) != iownerRank )
           {
             elemStatusGlobal[iwelemGlobal] = WellElemStatus::REMOTE;
           }
@@ -571,7 +582,7 @@ void WellElementSubRegion::checkPartitioningValidity( LineBlockABC const & lineB
         else // (rankCount > 0)
         {
           // remove the duplicate elements
-          if( MpiWrapper::commRank( MPI_COMM_GEOSX ) == iownerRank )
+          if( MpiWrapper::commRank( MPI_COMM_GEOS ) == iownerRank )
           {
             localElems.remove( iwelemGlobal );
           }
@@ -779,6 +790,7 @@ void WellElementSubRegion::connectPerforationsToMeshElements( MeshLevel & mesh,
     localIndex erInit     = -1;
     localIndex esrInit    = -1;
     localIndex eiInit     = -1;
+    globalIndex giMatched  = -1;
 
     // for each perforation, we have to find the reservoir element that contains the perforation
 
@@ -793,7 +805,7 @@ void WellElementSubRegion::connectPerforationsToMeshElements( MeshLevel & mesh,
     //         to do that, we loop over the reservoir elements that are in the neighborhood of (erInit,esrInit,eiInit)
     bool resElemFound = searchLocalElements( mesh, location, m_searchDepth,
                                              erInit, esrInit, eiInit,
-                                             erMatched, esrMatched, eiMatched );
+                                             erMatched, esrMatched, eiMatched, giMatched );
 
     // if the element was found
     if( resElemFound )
@@ -802,6 +814,7 @@ void WellElementSubRegion::connectPerforationsToMeshElements( MeshLevel & mesh,
       m_perforationData.getMeshElements().m_toElementRegion[iperfLocal] = erMatched;
       m_perforationData.getMeshElements().m_toElementSubRegion[iperfLocal] = esrMatched;
       m_perforationData.getMeshElements().m_toElementIndex[iperfLocal] = eiMatched;
+      m_perforationData.getReservoirElementGlobalIndex()[iperfLocal] = giMatched;
 
       // construct the local wellTransmissibility and location maps
       m_perforationData.getWellTransmissibility()[iperfLocal] = perfWellTransmissibilityGlobal[iperfGlobal];
@@ -846,7 +859,7 @@ void WellElementSubRegion::reconstructLocalConnectivity()
 
 bool WellElementSubRegion::isLocallyOwned() const
 {
-  return m_topRank == MpiWrapper::commRank( MPI_COMM_GEOSX );
+  return m_topRank == MpiWrapper::commRank( MPI_COMM_GEOS );
 }
 
 
