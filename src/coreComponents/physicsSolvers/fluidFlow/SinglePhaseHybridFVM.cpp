@@ -23,12 +23,16 @@
 #include "constitutive/fluid/singlefluid/SingleFluidBase.hpp"
 #include "fieldSpecification/AquiferBoundaryCondition.hpp"
 #include "fieldSpecification/FieldSpecificationManager.hpp"
+#include "discretizationMethods/NumericalMethodsManager.hpp"
+#include "finiteVolume/FiniteVolumeManager.hpp"
 #include "finiteVolume/HybridMimeticDiscretization.hpp"
 #include "finiteVolume/MimeticInnerProductDispatch.hpp"
 #include "mainInterface/ProblemManager.hpp"
+#include "mesh/DomainPartition.hpp"
 #include "mesh/mpiCommunications/CommunicationTools.hpp"
 #include "physicsSolvers/fluidFlow/SinglePhaseBaseFields.hpp"
-#include "physicsSolvers/fluidFlow/SinglePhaseHybridFVMKernels.hpp"
+#include "physicsSolvers/fluidFlow/kernels/singlePhase/SinglePhaseHybridFVMKernels.hpp"
+#include "physicsSolvers/fluidFlow/kernels/singlePhase/ResidualNormKernel.hpp"
 
 
 /**
@@ -336,7 +340,7 @@ void SinglePhaseHybridFVM::applyBoundaryConditions( real64 const time_n,
   GEOS_MARK_FUNCTION;
 
   SinglePhaseBase::applyBoundaryConditions( time_n, dt, domain, dofManager, localMatrix, localRhs );
-  if( !m_keepFlowVariablesConstantDuringInitStep )
+  if( !m_keepVariablesConstantDuringInitStep )
   {
     applyFaceDirichletBC( time_n, dt, dofManager, domain, localMatrix, localRhs );
   }

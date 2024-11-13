@@ -21,8 +21,6 @@
 #define GEOS_PHYSICSSOLVERS_FLUIDFLOW_WELLS_SINGLEPHASEWELL_HPP_
 
 #include "WellSolverBase.hpp"
-#include "physicsSolvers/fluidFlow/SinglePhaseBaseFields.hpp"
-#include "physicsSolvers/fluidFlow/SinglePhaseBase.hpp"
 
 namespace geos
 {
@@ -225,23 +223,6 @@ public:
                                           DofManager const & dofManager,
                                           CRSMatrixView< real64, globalIndex const > const & localMatrix,
                                           arrayView1d< real64 > const & localRhs ) override;
-
-  /*
-   * @brief apply a special treatment to the wells that are shut
-   * @param time_n the time at the previous converged time step
-   * @param dt the time step size
-   * @param domain the physical domain object
-   * @param dofManager degree-of-freedom manager associated with the linear system
-   * @param matrix the system matrix
-   * @param rhs the system right-hand side vector
-   */
-  virtual void shutDownWell( real64 const time_n,
-                             real64 const dt,
-                             DomainPartition const & domain,
-                             DofManager const & dofManager,
-                             CRSMatrixView< real64, globalIndex const > const & localMatrix,
-                             arrayView1d< real64 > const & localRhs ) override;
-
 
   struct viewKeyStruct : WellSolverBase::viewKeyStruct
   {

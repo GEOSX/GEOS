@@ -31,9 +31,9 @@
 #include "finiteVolume/FiniteVolumeManager.hpp"
 #include "finiteVolume/FluxApproximationBase.hpp"
 #include "mesh/DomainPartition.hpp"
-#include "physicsSolvers/fluidFlow/FluxKernelsHelper.hpp"
 #include "physicsSolvers/fluidFlow/FlowSolverBaseFields.hpp"
-#include "physicsSolvers/fluidFlow/FlowSolverBaseKernels.hpp"
+#include "physicsSolvers/fluidFlow/kernels/MinPoreVolumeMaxPorosityKernel.hpp"
+#include "physicsSolvers/fluidFlow/kernels/StencilWeightsUpdateKernel.hpp"
 
 namespace geos
 {
@@ -91,7 +91,7 @@ FlowSolverBase::FlowSolverBase( string const & name,
   PhysicsSolverBase( name, parent ),
   m_numDofPerCell( 0 ),
   m_isThermal( 0 ),
-  m_keepFlowVariablesConstantDuringInitStep( 0 ),
+  m_keepVariablesConstantDuringInitStep( 0 ),
   m_isFixedStressPoromechanicsUpdate( false ),
   m_isJumpStabilized( false ),
   m_isLaggingFractureStencilWeightsUpdate( 0 )
@@ -709,14 +709,13 @@ void FlowSolverBase::saveAquiferConvergedState( real64 const & time,
       elemManager.constructFieldAccessor< fields::flow::gravityCoefficient >();
     gravCoef.setName( getName() + "/accessors/" + fields::flow::gravityCoefficient::key() );
 
-    real64 const targetSetSumFluxes =
-      fluxKernelsHelper::AquiferBCKernel::sumFluxes( stencil,
-                                                     aquiferBCWrapper,
-                                                     pressure.toNestedViewConst(),
-                                                     pressure_n.toNestedViewConst(),
-                                                     gravCoef.toNestedViewConst(),
-                                                     time,
-                                                     dt );
+    real64 const targetSetSumFluxes = sumAquiferFluxes( stencil,
+                                                        aquiferBCWrapper,
+                                                        pressure.toNestedViewConst(),
+                                                        pressure_n.toNestedViewConst(),
+                                                        gravCoef.toNestedViewConst(),
+                                                        time,
+                                                        dt );
 
     localIndex const aquiferIndex = aquiferNameToAquiferId.at( bc.getName() );
     localSumFluxes[aquiferIndex] += targetSetSumFluxes;
@@ -742,6 +741,49 @@ void FlowSolverBase::saveAquiferConvergedState( real64 const & time,
     }
     bc.saveConvergedState( dt * globalSumFluxes[aquiferIndex] );
   } );
+}
+
+/**
+ * @brief Function to sum the aquiferBC fluxes (as later save them) at the end of the time step
+ * This function is applicable for both single-phase and multiphase flow
+ */
+real64
+FlowSolverBase::sumAquiferFluxes( BoundaryStencil const & stencil,
+                                  AquiferBoundaryCondition::KernelWrapper const & aquiferBCWrapper,
+                                  ElementViewConst< arrayView1d< real64 const > > const & pres,
+                                  ElementViewConst< arrayView1d< real64 const > > const & presOld,
+                                  ElementViewConst< arrayView1d< real64 const > > const & gravCoef,
+                                  real64 const & timeAtBeginningOfStep,
+                                  real64 const & dt )
+{
+  using Order = BoundaryStencil::Order;
+
+  BoundaryStencil::IndexContainerViewConstType const & seri = stencil.getElementRegionIndices();
+  BoundaryStencil::IndexContainerViewConstType const & sesri = stencil.getElementSubRegionIndices();
+  BoundaryStencil::IndexContainerViewConstType const & sefi = stencil.getElementIndices();
+  BoundaryStencil::WeightContainerViewConstType const & weight = stencil.getWeights();
+
+  RAJA::ReduceSum< parallelDeviceReduce, real64 > targetSetSumFluxes( 0.0 );
+
+  forAll< parallelDevicePolicy<> >( stencil.size(), [=] GEOS_HOST_DEVICE ( localIndex const iconn )
+  {
+    localIndex const er  = seri( iconn, Order::ELEM );
+    localIndex const esr = sesri( iconn, Order::ELEM );
+    localIndex const ei  = sefi( iconn, Order::ELEM );
+    real64 const areaFraction = weight( iconn, Order::ELEM );
+
+    // compute the aquifer influx rate using the pressure influence function and the aquifer props
+    real64 dAquiferVolFlux_dPres = 0.0;
+    real64 const aquiferVolFlux = aquiferBCWrapper.compute( timeAtBeginningOfStep,
+                                                            dt,
+                                                            pres[er][esr][ei],
+                                                            presOld[er][esr][ei],
+                                                            gravCoef[er][esr][ei],
+                                                            areaFraction,
+                                                            dAquiferVolFlux_dPres );
+    targetSetSumFluxes += aquiferVolFlux;
+  } );
+  return targetSetSumFluxes.get();
 }
 
 void FlowSolverBase::prepareStencilWeights( DomainPartition & domain ) const
@@ -796,15 +838,78 @@ bool FlowSolverBase::checkSequentialSolutionIncrements( DomainPartition & GEOS_U
 {
 
   GEOS_LOG_LEVEL_INFO_RANK_0( logInfo::Convergence, GEOS_FMT( "    {}: Max pressure change during outer iteration: {} Pa",
-                                                              getName(), fmt::format( "{:.{}f}", m_sequentialPresChange, 3 ) ) );
+                                                              getName(), GEOS_FMT( "{:.{}f}", m_sequentialPresChange, 3 ) ) );
 
   if( m_isThermal )
   {
     GEOS_LOG_LEVEL_INFO_RANK_0( logInfo::Convergence, GEOS_FMT( "    {}: Max temperature change during outer iteration: {} K",
-                                                                getName(), fmt::format( "{:.{}f}", m_sequentialTempChange, 3 ) ) );
+                                                                getName(), GEOS_FMT( "{:.{}f}", m_sequentialTempChange, 3 ) ) );
   }
 
   return (m_sequentialPresChange < m_maxSequentialPresChange) && (m_sequentialTempChange < m_maxSequentialTempChange);
+}
+
+string FlowSolverBase::BCMessage::generateMessage( string_view baseMessage,
+                                                   string_view fieldName, string_view setName )
+{
+  return GEOS_FMT( "{}\nCheck if you have added or applied the appropriate fields to "
+                   "the FieldSpecification component with fieldName=\"{}\" "
+                   "and setNames=\"{}\"\n", baseMessage, fieldName, setName );
+}
+
+string FlowSolverBase::BCMessage::pressureConflict( string_view regionName, string_view subRegionName,
+                                                    string_view setName, string_view fieldName )
+{
+  return generateMessage( GEOS_FMT( "Conflicting pressure boundary conditions on set {}/{}/{}",
+                                    regionName, subRegionName, setName ), fieldName, setName );
+}
+
+string FlowSolverBase::BCMessage::temperatureConflict( string_view regionName, string_view subRegionName,
+                                                       string_view setName, string_view fieldName )
+{
+  return generateMessage( GEOS_FMT( "Conflicting temperature boundary conditions on set {}/{}/{}",
+                                    regionName, subRegionName, setName ), fieldName, setName );
+}
+
+string FlowSolverBase::BCMessage::missingPressure( string_view regionName, string_view subRegionName,
+                                                   string_view setName, string_view fieldName )
+{
+  return generateMessage( GEOS_FMT( "Pressure boundary condition not prescribed on set {}/{}/{}",
+                                    regionName, subRegionName, setName ), fieldName, setName );
+}
+
+string FlowSolverBase::BCMessage::missingTemperature( string_view regionName, string_view subRegionName,
+                                                      string_view setName, string_view fieldName )
+{
+  return generateMessage( GEOS_FMT( "Temperature boundary condition not prescribed on set {}/{}/{}",
+                                    regionName, subRegionName, setName ), fieldName, setName );
+}
+
+string FlowSolverBase::BCMessage::conflictingComposition( int comp, string_view componentName,
+                                                          string_view regionName, string_view subRegionName,
+                                                          string_view setName, string_view fieldName )
+{
+  return generateMessage( GEOS_FMT( "Conflicting {} composition (no.{}) for boundary conditions on set {}/{}/{}",
+                                    componentName, comp, regionName, subRegionName, setName ),
+                          fieldName, setName );
+}
+
+string FlowSolverBase::BCMessage::invalidComponentIndex( int comp,
+                                                         string_view fsName,
+                                                         string_view fieldName )
+{
+  return generateMessage( GEOS_FMT( "Invalid component index no.{} in boundary condition {}",
+                                    comp, fsName ), fieldName, fsName );
+}
+
+string FlowSolverBase::BCMessage::notAppliedOnRegion( int componentIndex, string_view componentName,
+                                                      string_view regionName, string_view subRegionName,
+                                                      string_view setName, string_view fieldName )
+{
+  return generateMessage( GEOS_FMT( "Boundary condition not applied to {} component (no.{})"
+                                    "on region {}/{}/{}\n",
+                                    componentName, componentIndex, regionName, subRegionName, setName ),
+                          fieldName, setName );
 }
 
 } // namespace geos
