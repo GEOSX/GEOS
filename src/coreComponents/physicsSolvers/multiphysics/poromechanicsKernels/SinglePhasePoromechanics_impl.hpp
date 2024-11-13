@@ -111,9 +111,6 @@ smallStrainUpdate( localIndex const k,
                                                        dPorosity_dTemperature,
                                                        dSolidDensity_dPressure );
 
-//if(k==0 && q==0)
-//std::cout<<k<<" "<<q<<" totalStress="<<stack.totalStress[0]<<std::endl;
-
   // Step 2: compute the body force
   computeBodyForce( k, q,
                     porosity,
@@ -122,9 +119,6 @@ smallStrainUpdate( localIndex const k,
                     dPorosity_dTemperature,
                     dSolidDensity_dPressure,
                     stack );
-
-//if(k==0 && q==0)
-//std::cout<<k<<" "<<q<<" bodyForce="<<stack.bodyForce[0]<<std::endl;
 
   // Step 3: compute fluid mass increment
   computeFluidIncrement( k, q,
@@ -388,9 +382,6 @@ quadraturePointKernel( localIndex const k,
   // Step 4: use the total stress and the body force to increment the local momentum balance residual
   // This function also fills the local Jacobian rows corresponding to the momentum balance.
   assembleMomentumBalanceTerms( N, dNdX, detJxW, stack );
-
-//if(k==0 && q==0)
-//std::cout<<k<<" "<<q<<" localResidualMomentum="<<stack.localResidualMomentum[0]<<std::endl;
 
   // Step 5: use the fluid mass increment to increment the local mass balance residual
   // This function also fills the local Jacobian rows corresponding to the mass balance.
