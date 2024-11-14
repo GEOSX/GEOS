@@ -324,21 +324,20 @@ void MultiphasePoromechanics< CompositionalMultiphaseReservoirAndWells<>, SolidM
   if( linearSolverParameters.preconditionerType != LinearSolverParameters::PreconditionerType::mgr )
     return;
 
-  // flow solver here is indeed flow solver, not poromechanics solver
-  if( dynamic_cast< CompositionalMultiphaseHybridFVM * >( flowSolver() ) )
+  linearSolverParameters.mgr.separateComponents = true;
+  linearSolverParameters.dofsPerNode = 3;
+
+  if( dynamic_cast< CompositionalMultiphaseHybridFVM * >( this->flowSolver() ) )
   {
-    GEOS_ERROR( "The poromechanics MGR strategy for hybrid FVM is not implemented" );
+    GEOS_ERROR( GEOS_FMT( "{}: MGR strategy is not implemented for {}/{}",
+                          this->getName(), this->getCatalogName(), this->flowSolver()->getCatalogName() ) );
   }
   else
   {
-    // add Reservoir
     linearSolverParameters.mgr.strategy = LinearSolverParameters::MGR::StrategyType::multiphasePoromechanicsReservoirFVM;
   }
   GEOS_LOG_LEVEL_RANK_0( 1, GEOS_FMT( "{}: MGR strategy set to {}", getName(),
                                       EnumStrings< LinearSolverParameters::MGR::StrategyType >::toString( linearSolverParameters.mgr.strategy )));
-  // TODO check if needed
-  //linearSolverParameters.mgr.separateComponents = true;
-  //linearSolverParameters.mgr.displacementFieldName = solidMechanics::totalDisplacement::key();
 }
 
 template< typename FLOW_SOLVER, typename MECHANICS_SOLVER >
