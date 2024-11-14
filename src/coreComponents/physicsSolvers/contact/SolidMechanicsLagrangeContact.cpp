@@ -77,7 +77,6 @@ SolidMechanicsLagrangeContact::SolidMechanicsLagrangeContact( const string & nam
   LinearSolverParameters & linSolParams = m_linearSolverParameters.get();
   linSolParams.mgr.strategy = LinearSolverParameters::MGR::StrategyType::lagrangianContactMechanics;
   linSolParams.mgr.separateComponents = true;
-  linSolParams.mgr.displacementFieldName = solidMechanics::totalDisplacement::key();
   linSolParams.dofsPerNode = 3;
 }
 

@@ -75,17 +75,18 @@ public:
 
   /**
    * @brief Setup the MGR strategy.
+   * @param mgrParams MGR configuration parameters
    * @param precond preconditioner wrapper
    * @param mgrData auxiliary MGR data
    */
-  void setup( LinearSolverParameters::MGR const &,
+  void setup( LinearSolverParameters::MGR const & mgrParams,
               HyprePrecWrapper & precond,
               HypreMGRData & mgrData )
   {
     setReduction( precond, mgrData );
 
     // Configure the BoomerAMG solver used as mgr coarse solver for the displacement reduced system
-    setDisplacementAMG( mgrData.coarseSolver );
+    setDisplacementAMG( mgrData.coarseSolver, mgrParams.separateComponents );
   }
 };
 
