@@ -325,7 +325,6 @@ inline void CoulombFrictionUpdates::updateFractureState( localIndex const k,
                             tractionVector[2] };
     real64 const tauNorm = LvArray::tensorOps::l2Norm< 2 >( tau );
 
-    // pressure added to convert to effective traction, biotCoeff = 1 is assumed
     real64 dLimitTau_dNormalTraction;
     real64 const limitTau = computeLimitTangentialTractionNorm( tractionVector[0],
                                                                 dLimitTau_dNormalTraction );
