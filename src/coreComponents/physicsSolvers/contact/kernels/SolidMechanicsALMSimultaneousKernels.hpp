@@ -203,8 +203,6 @@ public:
   {
     constexpr int shift = numNodesPerElem * 3;
 
-    constexpr int numTdofs = 3;
-
     int permutation[numNodesPerElem];
     m_finiteElementSpace.getPermutation( permutation );
 
@@ -265,10 +263,6 @@ public:
   {
     GEOS_UNUSED_VAR( k );
     //constexpr real64 zero = 1.e-10;
-
-    constexpr int numUdofs = numNodesPerElem * 3 * 2;
-
-    constexpr int numBdofs = 3*2;
 
     real64 matRRtAtu[3][numUdofs], matDRtAtu[3][numUdofs];
     real64 matRRtAtb[3][numBdofs], matDRtAtb[3][numBdofs];
