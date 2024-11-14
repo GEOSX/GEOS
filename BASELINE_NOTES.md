@@ -7,6 +7,10 @@ Any developer who updates the baseline ID in the .integrated_tests.yaml file is 
 These notes should be in reverse-chronological order, and use the following time format: (YYYY-MM-DD).
 
 
+PR #3339 (2024-11-14)
+=====================
+Hypre improvements, rebaseline is due to field value change (amgNumFunctions).
+
 PR #3434 (2024-11-09)
 =====================
 Bugfix: Fixed output of ArrayOfArray objects to restart files.
