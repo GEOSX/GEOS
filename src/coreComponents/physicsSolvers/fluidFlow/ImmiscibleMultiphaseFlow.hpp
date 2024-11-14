@@ -22,7 +22,7 @@
 
 #include "physicsSolvers/fluidFlow/FlowSolverBase.hpp"
 #include "fieldSpecification/FieldSpecificationManager.hpp"
-#include "physicsSolvers/fluidFlow/ImmiscibleMultiphaseKernels.hpp"
+#include "physicsSolvers/fluidFlow/kernels/immiscibleMultiphase/ImmiscibleMultiphaseKernels.hpp"
 
 namespace geos
 {

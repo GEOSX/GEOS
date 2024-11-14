@@ -21,12 +21,10 @@
 
 #include "FlowSolverBaseFields.hpp"
 #include "physicsSolvers/fluidFlow/ImmiscibleMultiphaseFlowFields.hpp"
-#include "physicsSolvers/fluidFlow/ImmiscibleMultiphaseKernels.hpp"
-#include "physicsSolvers/SolverBaseKernels.hpp"
-
-#include "physicsSolvers/fluidFlow/IsothermalCompositionalMultiphaseBaseKernels.hpp"
+#include "physicsSolvers/PhysicsSolverBaseKernels.hpp"
 #include "physicsSolvers/fluidFlow/CompositionalMultiphaseUtilities.hpp"
-
+#include "physicsSolvers/fluidFlow/kernels/immiscibleMultiphase/ImmiscibleMultiphaseKernels.hpp"
+#include "physicsSolvers/fluidFlow/kernels/compositional/ThermalAccumulationKernel.hpp"
 #include "constitutive/ConstitutiveManager.hpp"
 #include "constitutive/capillaryPressure/CapillaryPressureFields.hpp"
 #include "constitutive/capillaryPressure/capillaryPressureSelector.hpp"
@@ -1077,7 +1075,7 @@ real64 ImmiscibleMultiphaseFlow::calculateResidualNorm( real64 const & GEOS_UNUS
   localResidualNorm.resize( numNorm );
   localResidualNormalizer.resize( numNorm );
 
-  solverBaseKernels::NormType const normType = getNonlinearSolverParameters().normType();
+  physicsSolverBaseKernels::NormType const normType = getNonlinearSolverParameters().normType();
 
   globalIndex const rankOffset = dofManager.rankOffset();
   string const dofKey = dofManager.getKey( viewKeyStruct::elemDofFieldString() );
@@ -1116,14 +1114,14 @@ real64 ImmiscibleMultiphaseFlow::calculateResidualNorm( real64 const & GEOS_UNUS
       subRegionResidualNormalizer[0] = subRegionFlowResidualNormalizer[0];
 
       // step 2: first reduction across meshBodies/regions/subRegions
-      if( normType == solverBaseKernels::NormType::Linf )
+      if( normType == physicsSolverBaseKernels::NormType::Linf )
       {
-        solverBaseKernels::LinfResidualNormHelper::
+        physicsSolverBaseKernels::LinfResidualNormHelper::
           updateLocalNorm< numNorm >( subRegionResidualNorm, localResidualNorm );
       }
       else
       {
-        solverBaseKernels::L2ResidualNormHelper::
+        physicsSolverBaseKernels::L2ResidualNormHelper::
           updateLocalNorm< numNorm >( subRegionResidualNorm, subRegionResidualNormalizer, localResidualNorm, localResidualNormalizer );
       }
     } );
@@ -1131,20 +1129,19 @@ real64 ImmiscibleMultiphaseFlow::calculateResidualNorm( real64 const & GEOS_UNUS
 
   real64 residualNorm = 0.0;
   residualNorm = localResidualNorm[0];
-  if( normType == solverBaseKernels::NormType::Linf )
+  if( normType == physicsSolverBaseKernels::NormType::Linf )
   {
-    solverBaseKernels::LinfResidualNormHelper::computeGlobalNorm( localResidualNorm[0], residualNorm );
+    physicsSolverBaseKernels::LinfResidualNormHelper::computeGlobalNorm( localResidualNorm[0], residualNorm );
   }
   else
   {
-    solverBaseKernels::L2ResidualNormHelper::computeGlobalNorm( localResidualNorm[0], localResidualNormalizer[0], residualNorm );
+    physicsSolverBaseKernels::L2ResidualNormHelper::computeGlobalNorm( localResidualNorm[0], localResidualNormalizer[0], residualNorm );
   }
 
   if( getLogLevel() >= 1 && logger::internal::rank == 0 )
   {
     std::cout << GEOS_FMT( "        ( R{} ) = ( {:4.2e} )", coupledSolverAttributePrefix(), residualNorm );
   }
-
 
   return residualNorm;
 }
@@ -1276,7 +1273,7 @@ void ImmiscibleMultiphaseFlow::implicitStepComplete( real64 const & time,
       // Step 3: save the converged solid state
       string const & solidName = subRegion.getReference< string >( viewKeyStruct::solidNamesString() );
       CoupledSolidBase const & porousMaterial = getConstitutiveModel< CoupledSolidBase >( subRegion, solidName );
-      if( m_keepFlowVariablesConstantDuringInitStep )
+      if( m_keepVariablesConstantDuringInitStep )
       {
         porousMaterial.ignoreConvergedState(); // newPorosity <- porosity_n
       }
@@ -1354,9 +1351,9 @@ void ImmiscibleMultiphaseFlow::updateState( DomainPartition & domain )
 
 real64 ImmiscibleMultiphaseFlow::setNextDt( const geos::real64 & currentDt, geos::DomainPartition & domain )
 {
-  return SolverBase::setNextDt( currentDt, domain );
+  return PhysicsSolverBase::setNextDt( currentDt, domain );
 }
 
-REGISTER_CATALOG_ENTRY( SolverBase, ImmiscibleMultiphaseFlow, string const &, Group * const )
+REGISTER_CATALOG_ENTRY( PhysicsSolverBase, ImmiscibleMultiphaseFlow, string const &, Group * const )
 
 } // namespace geos

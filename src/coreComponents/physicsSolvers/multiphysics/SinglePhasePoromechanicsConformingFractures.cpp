@@ -22,15 +22,16 @@
 #include "dataRepository/LogLevelsInfo.hpp"
 #include "constitutive/solid/PorousSolid.hpp"
 #include "constitutive/fluid/singlefluid/SingleFluidBase.hpp"
+#include "constitutive/contact/HydraulicApertureRelationSelector.hpp"
 #include "linearAlgebra/solvers/BlockPreconditioner.hpp"
 #include "linearAlgebra/solvers/SeparateComponentPreconditioner.hpp"
-#include "constitutive/contact/HydraulicApertureRelationSelector.hpp"
 #include "physicsSolvers/fluidFlow/SinglePhaseBase.hpp"
 #include "physicsSolvers/multiphysics/poromechanicsKernels/SinglePhasePoromechanics.hpp"
 #include "physicsSolvers/multiphysics/poromechanicsKernels/ThermalSinglePhasePoromechanics.hpp"
 #include "physicsSolvers/multiphysics/poromechanicsKernels/SinglePhasePoromechanicsFractures.hpp"
 #include "physicsSolvers/solidMechanics/SolidMechanicsFields.hpp"
 #include "physicsSolvers/solidMechanics/SolidMechanicsLagrangianFEM.hpp"
+#include "finiteVolume/FluxApproximationBase.hpp"
 
 namespace geos
 {
@@ -804,9 +805,9 @@ template class SinglePhasePoromechanicsConformingFractures< SinglePhaseReservoir
 namespace
 {
 typedef SinglePhasePoromechanicsConformingFractures< SinglePhaseReservoirAndWells<> > SinglePhaseReservoirPoromechanicsConformingFractures;
-REGISTER_CATALOG_ENTRY( SolverBase, SinglePhaseReservoirPoromechanicsConformingFractures, string const &, Group * const )
+REGISTER_CATALOG_ENTRY( PhysicsSolverBase, SinglePhaseReservoirPoromechanicsConformingFractures, string const &, Group * const )
 typedef SinglePhasePoromechanicsConformingFractures<> SinglePhasePoromechanicsConformingFractures;
-REGISTER_CATALOG_ENTRY( SolverBase, SinglePhasePoromechanicsConformingFractures, string const &, Group * const )
+REGISTER_CATALOG_ENTRY( PhysicsSolverBase, SinglePhasePoromechanicsConformingFractures, string const &, Group * const )
 }
 
 } /* namespace geos */

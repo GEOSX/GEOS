@@ -22,7 +22,7 @@
 
 #include "FunctionBase.hpp"
 
-#include "codingUtilities/EnumStrings.hpp"
+#include "common/format/EnumStrings.hpp"
 #include "LvArray/src/tensorOps.hpp"
 #include "common/format/table/TableFormatter.hpp"
 #include "common/Units.hpp"
