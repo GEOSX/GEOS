@@ -493,7 +493,7 @@ pullDataFromConduitNode( Array< T, NDIM, PERMUTATION > & var,
 
 
 template< typename T, typename INDEX_TYPE >
-std::enable_if_t< bufferOps::can_memcpy< T > >
+std::enable_if_t< bufferOps::is_device_packable_v< T > >
 pushDataToConduitNode( ArrayOfArrays< T, INDEX_TYPE > const & var2,
                        conduit::Node & node )
 {
@@ -543,7 +543,7 @@ pushDataToConduitNode( ArrayOfArrays< T, INDEX_TYPE > const & var2,
 }
 
 template< typename T, typename INDEX_TYPE >
-std::enable_if_t< bufferOps::can_memcpy< T > >
+std::enable_if_t< bufferOps::is_device_packable_v< T > >
 pullDataFromConduitNode( ArrayOfArrays< T, INDEX_TYPE > & var,
                          conduit::Node const & node )
 {
