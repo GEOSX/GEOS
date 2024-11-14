@@ -118,7 +118,7 @@ public:
 
   /**
    * @brief Setup the MGR strategy.
-   * @param mgrParams parameters for the configuration of the MGR recipe
+   * @param mgrParams MGR configuration parameters
    * @param precond preconditioner wrapper
    * @param mgrData auxiliary MGR data
    */
@@ -136,7 +136,7 @@ public:
     setReduction( precond, mgrData );
 
     // Configure the BoomerAMG solver used as F-relaxation for the first level
-    setMechanicsFSolver( precond, mgrData );
+    setMechanicsFSolver( precond, mgrData, mgrParams.separateComponents );
 
     // Configure the BoomerAMG solver used as mgr coarse solver for the pressure reduced system
     setPressureAMG( mgrData.coarseSolver );
