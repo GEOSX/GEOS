@@ -1,9 +1,9 @@
 {
     "cmake": {
         "sourceDirectory": "${workspaceFolder}/src",
-        "buildDirectory": "${workspaceFolder}/build-self_build-relwithdebinfo",
-        "installPrefix": "${workspaceFolder}/install-self_build-relwithdebinfo",
-        "cacheInit": "${workspaceFolder}/host-configs/CVX/self_build.cmake",
+        "buildDirectory": "${userHome}/geos-build",
+        "installPrefix": "${userHome}/geos-install",
+        "cacheInit": "/workspaces/GEOS/host-configs/environment.cmake",
         "configureSettings": {
             "BLT_MPI_COMMAND_APPEND": "--use-hwthread-cpus;--oversubscribe",
             "ENABLE_OPENMP": "OFF",
