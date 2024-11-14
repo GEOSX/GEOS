@@ -232,7 +232,7 @@ GEOS_HOST_DEVICE
 real64 CoulombFrictionUpdates::computeLimitTangentialTractionNorm( real64 const & normalTraction,
                                                                    real64 & dLimitTangentialTractionNorm_dTraction ) const
 {
-  dLimitTangentialTractionNorm_dTraction = m_frictionCoefficient;
+  dLimitTangentialTractionNorm_dTraction = -m_frictionCoefficient;
   return ( m_cohesion - normalTraction * m_frictionCoefficient );
 }
 
@@ -275,8 +275,6 @@ inline void CoulombFrictionUpdates::computeShearTraction( localIndex const k,
       real64 dLimitTau_dNormalTraction;
       real64 const limitTau = computeLimitTangentialTractionNorm( tractionVector[0],
                                                                   dLimitTau_dNormalTraction );
-      // dLimitTau_dNormalTraction from the function above has a wrong sign, flip it
-      dLimitTau_dNormalTraction = -dLimitTau_dNormalTraction;
 
       real64 const slipNorm = LvArray::tensorOps::l2Norm< 2 >( slip );
 

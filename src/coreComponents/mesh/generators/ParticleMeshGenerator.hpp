@@ -22,7 +22,7 @@
 
 #include "mesh/generators/MeshGeneratorBase.hpp"
 
-#include "codingUtilities/EnumStrings.hpp"
+#include "common/format/EnumStrings.hpp"
 
 namespace geos
 {
