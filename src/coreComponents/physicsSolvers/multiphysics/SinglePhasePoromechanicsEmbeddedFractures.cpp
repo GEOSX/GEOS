@@ -28,6 +28,7 @@
 #include "physicsSolvers/multiphysics/poromechanicsKernels/ThermalSinglePhasePoromechanicsEFEM.hpp"
 #include "physicsSolvers/solidMechanics/SolidMechanicsLagrangianFEM.hpp"
 #include "physicsSolvers/solidMechanics/SolidMechanicsFields.hpp"
+#include "finiteVolume/FluxApproximationBase.hpp"
 
 
 namespace geos
@@ -52,11 +53,12 @@ void SinglePhasePoromechanicsEmbeddedFractures::setMGRStrategy()
   if( linearSolverParameters.preconditionerType != LinearSolverParameters::PreconditionerType::mgr )
     return;
 
+  linearSolverParameters.mgr.separateComponents = true;
+  linearSolverParameters.dofsPerNode = 3;
+
   linearSolverParameters.mgr.strategy = LinearSolverParameters::MGR::StrategyType::singlePhasePoromechanicsEmbeddedFractures;
   GEOS_LOG_LEVEL_RANK_0( 1, GEOS_FMT( "{}: MGR strategy set to {}", getName(),
                                       EnumStrings< LinearSolverParameters::MGR::StrategyType >::toString( linearSolverParameters.mgr.strategy )));
-  linearSolverParameters.mgr.separateComponents = false;
-  linearSolverParameters.mgr.displacementFieldName = solidMechanics::totalDisplacement::key();
 }
 
 void SinglePhasePoromechanicsEmbeddedFractures::postInputInitialization()

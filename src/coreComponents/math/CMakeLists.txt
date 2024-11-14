@@ -1,3 +1,22 @@
+# SPDX-License-Identifier: LGPL-2.1-only
+#
+# Copyright (c) 2016-2024 Lawrence Livermore National Security LLC
+# Copyright (c) 2018-2024 Total, S.A
+# Copyright (c) 2018-2024 The Board of Trustees of the Leland Stanford Junior University
+# Copyright (c) 2023-2024 Chevron
+# Copyright (c) 2019-     GEOS/GEOSX Contributors
+# All rights reserved
+#
+# See top level LICENSE, COPYRIGHT, CONTRIBUTORS, NOTICE, and ACKNOWLEDGEMENTS files for details.
+#
+#--------------------------------------------------------------------------------------------------
+
+#[[
+Package : math
+
+Contains interpolation and extrapolation math functions.
+#]]
+
 #
 # Specify all headers
 #
@@ -6,12 +25,12 @@ set( math_headers
      extrapolation/Extrapolation.hpp)
 
 blt_add_library( NAME         math
-                 SOURCES               
+                 SOURCES
                  HEADERS      ${math_headers}
-                 DEPENDS_ON            
+                 DEPENDS_ON
                  SHARED FALSE
                )
-               
+
 target_include_directories( math INTERFACE ${CMAKE_SOURCE_DIR}/coreComponents )
 
 install( TARGETS math LIBRARY DESTINATION ${CMAKE_INSTALL_PREFIX}/lib )

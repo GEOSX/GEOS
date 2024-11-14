@@ -228,6 +228,15 @@ string removeStringAndFollowingContent( string_view str,
                                         string_view strToRemove );
 
 /**
+ * @brief Add comma separators to an integral number for readability.
+ * @tparam T the integral type of the number to format.
+ * @param[in] num the integral number to format.
+ * @return a string representation of the number with comma separators.
+ */
+template< typename T >
+string addCommaSeparators( T const & num );
+
+/**
  * @brief Take a string, and return a array1d with the cast values
  * @tparam T the type to which the string will be cast
  * @param[in] str the string to turn into an array1d
