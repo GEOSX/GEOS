@@ -13,10 +13,38 @@
 
     <SurfaceElementRegion
       name="Fault"
-      materialList="{frictionLaw}"
+      materialList="{frictionLaw, faultMaterial, water}"
       defaultAperture="1e-3"/>  
     </ElementRegions>
-  <Constitutive>
+  
+    <Constitutive>
+
+    <CompressibleSinglePhaseFluid
+      name="water"
+      defaultDensity="1000"
+      defaultViscosity="0.001"
+      referencePressure="0.0"
+      compressibility="0.0"
+      viscosibility="0.0"/>
+
+    <CompressibleSolidConstantPermeability
+      name="faultMaterial"
+      solidModelName="nullSolid"
+      porosityModelName="faultPorosity"
+      permeabilityModelName="faultPermeability"/>  
+    
+    <PressurePorosity
+      name="faultPorosity"
+      defaultReferencePorosity="1.00"
+      referencePressure="0.0"
+      compressibility="0.0"/>
+      
+    <NullModel
+      name="nullSolid"/>  
+
+    <ConstantPermeability
+      name="faultPermeability"
+      permeabilityComponents="{ 2.0e-16, 2.0e-16, 2.0e-16 }"/>
 
     <ElasticIsotropic
      name="rock"
@@ -46,6 +74,12 @@
    <SoloEvent 
      name="generateFault"
      target="/Solvers/SurfaceGen"/>
+
+    <PeriodicEvent
+     name="vtkOutput"
+     cycleFrequency="1"
+     targetExactTimestep="0"
+     target="/Outputs/vtkOutput"/>   
 
    <PeriodicEvent
      name="vtkOutput"

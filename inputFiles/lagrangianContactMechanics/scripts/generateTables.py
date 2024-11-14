@@ -175,5 +175,5 @@ def debug():
     output_tables(x, gaussianSlip, "gaussianSlip")
 
 if __name__ == "__main__":
-    # debug()
+    debug()
     plot_traction_solution()

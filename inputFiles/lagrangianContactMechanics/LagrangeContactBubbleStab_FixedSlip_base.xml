@@ -111,7 +111,7 @@
      name="dispJumpFunction"
      inputVarNames="{elementCenter}"
      coordinateFiles="{dataTables/x.csv, dataTables/y.csv, dataTables/z.csv}" 
-     voxelFile="dataTables/singularCrackSlip.csv"/>
+     voxelFile="dataTables/gaussianSlip.csv"/>
   </Functions>
   
   <Tasks>
