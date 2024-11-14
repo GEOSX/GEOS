@@ -54,8 +54,8 @@ public:
    * @param[in] relperm the relperm model
    */
   PhaseMobilityZFormulationKernel( ObjectManagerBase & subRegion,
-                       constitutive::MultiFluidBase const & fluid,
-                       constitutive::RelativePermeabilityBase const & relperm )
+                                   constitutive::MultiFluidBase const & fluid,
+                                   constitutive::RelativePermeabilityBase const & relperm )
     : Base(),
     m_phaseVolFrac( subRegion.getField< fields::flow::phaseVolumeFraction >() ),
     m_dPhaseVolFrac( subRegion.getField< fields::flow::dPhaseVolumeFraction >() ),

@@ -92,17 +92,17 @@ public:
    * @param[in] kernelFlags flags packed together
    */
   FluxComputeZFormulationKernel( integer const numPhases,
-                     globalIndex const rankOffset,
-                     STENCILWRAPPER const & stencilWrapper,
-                     DofNumberAccessor const & dofNumberAccessor,
-                     CompFlowAccessors const & compFlowAccessors,
-                     MultiFluidAccessors const & multiFluidAccessors,
-                     CapPressureAccessors const & capPressureAccessors,
-                     PermeabilityAccessors const & permeabilityAccessors,
-                     real64 const dt,
-                     CRSMatrixView< real64, globalIndex const > const & localMatrix,
-                     arrayView1d< real64 > const & localRhs,
-                     BitFlags< FluxComputeKernelFlags > kernelFlags )
+                                 globalIndex const rankOffset,
+                                 STENCILWRAPPER const & stencilWrapper,
+                                 DofNumberAccessor const & dofNumberAccessor,
+                                 CompFlowAccessors const & compFlowAccessors,
+                                 MultiFluidAccessors const & multiFluidAccessors,
+                                 CapPressureAccessors const & capPressureAccessors,
+                                 PermeabilityAccessors const & permeabilityAccessors,
+                                 real64 const dt,
+                                 CRSMatrixView< real64, globalIndex const > const & localMatrix,
+                                 arrayView1d< real64 > const & localRhs,
+                                 BitFlags< KernelFlags > kernelFlags )
     : FluxComputeKernelBase( numPhases,
                              rankOffset,
                              dofNumberAccessor,
@@ -273,29 +273,29 @@ public:
           localIndex k_up = -1;
 
 
-          
+
           isothermalCompositionalMultiphaseFVMKernelUtilities::PPUPhaseFluxZFormulation::compute< numComp, numFluxSupportPoints >
-          ( m_numPhases,
-          ip,
-          m_kernelFlags.isSet( FluxComputeKernelFlags::CapPressure ),
-          seri, sesri, sei,
-          trans,
-          dTrans_dPres,
-          m_pres,
-          m_gravCoef,
-          m_phaseMob, m_dPhaseMob,
-          m_dPhaseVolFrac,
-          m_phaseCompFrac, m_dPhaseCompFrac,
-          m_phaseMassDens, m_dPhaseMassDens,
-          m_phaseCapPressure, m_dPhaseCapPressure_dPhaseVolFrac,
-          k_up,
-          potGrad,
-          phaseFlux,
-          dPhaseFlux_dP,
-          dPhaseFlux_dC,
-          compFlux,
-          dCompFlux_dP,
-          dCompFlux_dC );
+            ( m_numPhases,
+            ip,
+            m_kernelFlags.isSet( KernelFlags::CapPressure ),
+            seri, sesri, sei,
+            trans,
+            dTrans_dPres,
+            m_pres,
+            m_gravCoef,
+            m_phaseMob, m_dPhaseMob,
+            m_dPhaseVolFrac,
+            m_phaseCompFrac, m_dPhaseCompFrac,
+            m_phaseMassDens, m_dPhaseMassDens,
+            m_phaseCapPressure, m_dPhaseCapPressure_dPhaseVolFrac,
+            k_up,
+            potGrad,
+            phaseFlux,
+            dPhaseFlux_dP,
+            dPhaseFlux_dC,
+            compFlux,
+            dCompFlux_dP,
+            dCompFlux_dC );
 
           // call the lambda in the phase loop to allow the reuse of the phase fluxes and their derivatives
           // possible use: assemble the derivatives wrt temperature, and the flux term of the energy equation for this phase
@@ -348,7 +348,7 @@ public:
   {
     using namespace compositionalMultiphaseUtilities;
 
-    if( m_kernelFlags.isSet( FluxComputeKernelFlags::TotalMassEquation ) )
+    if( m_kernelFlags.isSet( KernelFlags::TotalMassEquation ) )
     {
       // Apply equation/variable change transformation(s)
       stackArray1d< real64, maxStencilSize * numDof > work( stack.stencilSize * numDof );
@@ -489,23 +489,23 @@ public:
         elemManager.constructArrayViewAccessor< globalIndex, 1 >( dofKey );
       dofNumberAccessor.setName( solverName + "/accessors/" + dofKey );
 
-      BitFlags< FluxComputeKernelFlags > kernelFlags;
+      BitFlags< KernelFlags > kernelFlags;
       if( hasCapPressure )
-        kernelFlags.set( FluxComputeKernelFlags::CapPressure );
+        kernelFlags.set( KernelFlags::CapPressure );
       if( useTotalMassEquation )
-        kernelFlags.set( FluxComputeKernelFlags::TotalMassEquation );
+        kernelFlags.set( KernelFlags::TotalMassEquation );
       if( upwindingParams.upwindingScheme == UpwindingScheme::C1PPU &&
           isothermalCompositionalMultiphaseFVMKernelUtilities::epsC1PPU > 0 )
       {
-        kernelFlags.set( FluxComputeKernelFlags::C1PPU );
+        kernelFlags.set( KernelFlags::C1PPU );
         //GEOS_FMT("CompositionalMultiphaseBase {}: Z Formulation is currently not available for C1PPU ",  getDataContext() );
-      } 
+      }
       else if( upwindingParams.upwindingScheme == UpwindingScheme::IHU )
       {
-        kernelFlags.set( FluxComputeKernelFlags::IHU );
+        kernelFlags.set( KernelFlags::IHU );
         //GEOS_FMT("CompositionalMultiphaseBase {}: Z Formulation is currently not available for IHU ",  getDataContext() );
       }
-        
+
 
       using kernelType = FluxComputeZFormulationKernel< NUM_COMP, NUM_DOF, STENCILWRAPPER >;
       typename kernelType::CompFlowAccessors compFlowAccessors( elemManager, solverName );

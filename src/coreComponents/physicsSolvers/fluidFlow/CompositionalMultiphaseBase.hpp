@@ -247,7 +247,7 @@ public:
                                CRSMatrixView< real64, globalIndex const > const & localMatrix,
                                arrayView1d< real64 > const & localRhs ) const = 0;
 
-    /**
+  /**
    * @brief assembles the accumulation term (Z formulation) for all cells
    * @param time_n previous time value
    * @param dt time step
@@ -257,9 +257,9 @@ public:
    * @param localRhs the system right-hand side vector
    */
   void assembleZFormulationAccumulation( DomainPartition & domain,
-                                                  DofManager const & dofManager,
-                                                  CRSMatrixView< real64, globalIndex const > const & localMatrix,
-                                                  arrayView1d< real64 > const & localRhs ) const;
+                                         DofManager const & dofManager,
+                                         CRSMatrixView< real64, globalIndex const > const & localMatrix,
+                                         arrayView1d< real64 > const & localRhs ) const;
 
   /**
    * @brief assembles the flux terms (Z formulation) for all cells
@@ -272,12 +272,12 @@ public:
    */
   virtual void
   assembleZFormulationFluxTerms( real64 const dt,
-                     DomainPartition const & domain,
-                     DofManager const & dofManager,
-                     CRSMatrixView< real64, globalIndex const > const & localMatrix,
-                     arrayView1d< real64 > const & localRhs ) const = 0;                         
+                                 DomainPartition const & domain,
+                                 DofManager const & dofManager,
+                                 CRSMatrixView< real64, globalIndex const > const & localMatrix,
+                                 arrayView1d< real64 > const & localRhs ) const = 0;
   /**@}*/
-  
+
 
   struct viewKeyStruct : FlowSolverBase::viewKeyStruct
   {

@@ -104,9 +104,9 @@ struct PPUPhaseFluxZFormulation
     real64 dGravHead_dP[numFluxSupportPoints]{};
     real64 dGravHead_dC[numFluxSupportPoints][numComp]{};
     PotGradZFormulation::compute< numComp, numFluxSupportPoints >( numPhase, ip, hasCapPressure, seri, sesri, sei, trans, dTrans_dPres, pres,
-                                                       gravCoef, dPhaseVolFrac, phaseMassDens, dPhaseMassDens,
-                                                       phaseCapPressure, dPhaseCapPressure_dPhaseVolFrac, potGrad, dPresGrad_dP,
-                                                       dPresGrad_dC, dGravHead_dP, dGravHead_dC );
+                                                                   gravCoef, dPhaseVolFrac, phaseMassDens, dPhaseMassDens,
+                                                                   phaseCapPressure, dPhaseCapPressure_dPhaseVolFrac, potGrad, dPresGrad_dP,
+                                                                   dPresGrad_dC, dGravHead_dP, dGravHead_dC );
 
     // *** upwinding ***
 
@@ -146,7 +146,7 @@ struct PPUPhaseFluxZFormulation
 
     //distribute on phaseComponentFlux here
     PhaseComponentFluxZFormulation::compute( ip, k_up, seri, sesri, sei, phaseCompFrac, dPhaseCompFrac, phaseFlux
-                                 , dPhaseFlux_dP, dPhaseFlux_dC, compFlux, dCompFlux_dP, dCompFlux_dC );
+                                             , dPhaseFlux_dP, dPhaseFlux_dC, compFlux, dCompFlux_dP, dCompFlux_dC );
 
   }
 };

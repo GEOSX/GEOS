@@ -67,6 +67,7 @@ public:
   using AbstractBase::m_rankOffset;
   using AbstractBase::m_dofNumber;
   using AbstractBase::m_gravCoef;
+  using AbstractBase::m_phaseVolFrac;
   using AbstractBase::m_dPhaseVolFrac;
   using AbstractBase::m_phaseCompFrac;
   using AbstractBase::m_dPhaseCompFrac;
@@ -134,7 +135,7 @@ public:
                      real64 const dt,
                      CRSMatrixView< real64, globalIndex const > const & localMatrix,
                      arrayView1d< real64 > const & localRhs,
-                     BitFlags< isothermalCompositionalMultiphaseFVMKernels::FluxComputeKernelFlags > kernelFlags )
+                     BitFlags< isothermalCompositionalMultiphaseFVMKernels::KernelFlags > kernelFlags )
     : Base( numPhases,
             rankOffset,
             stencilWrapper,
@@ -225,14 +226,28 @@ public:
       real64 dConvectiveEnergyFlux_dC[numFluxSupportPoints][numComp]{};
       real64 dCompFlux_dT[numFluxSupportPoints][numComp]{};
 
+      integer denom = 0;
       for( integer i = 0; i < numFluxSupportPoints; ++i )
       {
         localIndex const er  = seri[i];
         localIndex const esr = sesri[i];
         localIndex const ei  = sei[i];
 
-        real64 const dDens_dT = m_dPhaseMassDens[er][esr][ei][0][ip][Deriv::dT];
-        dDensMean_dT[i] = 0.5 * dDens_dT;
+        bool const phaseExists = (m_phaseVolFrac[er_up][esr_up][ei_up][ip] > 0);
+        if( !phaseExists )
+        {
+          continue;
+        }
+
+        dDensMean_dT[i] = m_dPhaseMassDens[er][esr][ei][0][ip][Deriv::dT];
+        denom++;
+      }
+      if( denom > 1 )
+      {
+        for( integer i = 0; i < numFluxSupportPoints; ++i )
+        {
+          dDensMean_dT[i] /= denom;
+        }
       }
 
       // Step 2: compute the derivatives of the phase potential difference wrt temperature
@@ -250,7 +265,7 @@ public:
 
         // Step 2.1: compute derivative of capillary pressure wrt temperature
         real64 dCapPressure_dT = 0.0;
-        if( AbstractBase::m_kernelFlags.isSet( isothermalCompositionalMultiphaseFVMKernels::FluxComputeKernelFlags::CapPressure ) )
+        if( AbstractBase::m_kernelFlags.isSet( isothermalCompositionalMultiphaseFVMKernels::KernelFlags::CapPressure ) )
         {
           for( integer jp = 0; jp < m_numPhases; ++jp )
           {
@@ -525,11 +540,11 @@ public:
         elemManager.constructArrayViewAccessor< globalIndex, 1 >( dofKey );
       dofNumberAccessor.setName( solverName + "/accessors/" + dofKey );
 
-      BitFlags< isothermalCompositionalMultiphaseFVMKernels::FluxComputeKernelFlags > kernelFlags;
+      BitFlags< isothermalCompositionalMultiphaseFVMKernels::KernelFlags > kernelFlags;
       if( hasCapPressure )
-        kernelFlags.set( isothermalCompositionalMultiphaseFVMKernels::FluxComputeKernelFlags::CapPressure );
+        kernelFlags.set( isothermalCompositionalMultiphaseFVMKernels::KernelFlags::CapPressure );
       if( useTotalMassEquation )
-        kernelFlags.set( isothermalCompositionalMultiphaseFVMKernels::FluxComputeKernelFlags::TotalMassEquation );
+        kernelFlags.set( isothermalCompositionalMultiphaseFVMKernels::KernelFlags::TotalMassEquation );
 
       using KernelType = FluxComputeKernel< NUM_COMP, NUM_DOF, STENCILWRAPPER >;
       typename KernelType::CompFlowAccessors compFlowAccessors( elemManager, solverName );

@@ -293,10 +293,10 @@ void CompositionalMultiphaseFVM::assembleFluxTerms( real64 const dt,
 }
 
 void CompositionalMultiphaseFVM::assembleZFormulationFluxTerms( real64 const dt,
-                                                    DomainPartition const & domain,
-                                                    DofManager const & dofManager,
-                                                    CRSMatrixView< real64, globalIndex const > const & localMatrix,
-                                                    arrayView1d< real64 > const & localRhs ) const
+                                                                DomainPartition const & domain,
+                                                                DofManager const & dofManager,
+                                                                CRSMatrixView< real64, globalIndex const > const & localMatrix,
+                                                                arrayView1d< real64 > const & localRhs ) const
 {
   GEOS_MARK_FUNCTION;
 
@@ -314,27 +314,27 @@ void CompositionalMultiphaseFVM::assembleZFormulationFluxTerms( real64 const dt,
     {
       typename TYPEOFREF( stencil ) ::KernelWrapper stencilWrapper = stencil.createKernelWrapper();
 
-      GEOS_ERROR_IF( m_isThermal, GEOS_FMT( 
-        "CompositionalMultiphaseBase {}: Z Formulation is currently not available for thermal simulations", getDataContext() ) );
-      GEOS_ERROR_IF( m_hasDiffusion || m_hasDispersion, GEOS_FMT( 
-        "CompositionalMultiphaseBase {}: Z Formulation is currently not available for Diffusion or Dispersion", getDataContext() ) );
+      GEOS_ERROR_IF( m_isThermal, GEOS_FMT(
+                       "CompositionalMultiphaseBase {}: Z Formulation is currently not available for thermal simulations", getDataContext() ) );
+      GEOS_ERROR_IF( m_hasDiffusion || m_hasDispersion, GEOS_FMT(
+                       "CompositionalMultiphaseBase {}: Z Formulation is currently not available for Diffusion or Dispersion", getDataContext() ) );
 
       // isothermal only for now
       isothermalCompositionalMultiphaseFVMKernels::
         FluxComputeZFormulationKernelFactory::
         createAndLaunch< parallelDevicePolicy<> >( m_numComponents,
-                                                    m_numPhases,
-                                                    dofManager.rankOffset(),
-                                                    elemDofKey,
-                                                    m_hasCapPressure,
-                                                    m_useTotalMassEquation,
-                                                    fluxApprox.upwindingParams(),
-                                                    getName(),
-                                                    mesh.getElemManager(),
-                                                    stencilWrapper,
-                                                    dt,
-                                                    localMatrix.toViewConstSizes(),
-                                                    localRhs.toView() );
+                                                   m_numPhases,
+                                                   dofManager.rankOffset(),
+                                                   elemDofKey,
+                                                   m_hasCapPressure,
+                                                   m_useTotalMassEquation,
+                                                   fluxApprox.upwindingParams(),
+                                                   getName(),
+                                                   mesh.getElemManager(),
+                                                   stencilWrapper,
+                                                   dt,
+                                                   localMatrix.toViewConstSizes(),
+                                                   localRhs.toView() );
     } );
   } );
 }
@@ -772,23 +772,23 @@ void CompositionalMultiphaseFVM::applySystemSolution( DofManager const & dofMana
                                  pressureMask );
   }
 
-  if (m_useZFormulation)
+  if( m_useZFormulation )
   {
     if( localScaling )
     {
       dofManager.addVectorToField( localSolution,
-                                  viewKeyStruct::elemDofFieldString(),
-                                  fields::flow::globalCompFraction::key(),
-                                  fields::flow::globalCompDensityScalingFactor::key(),
-                                  componentMask );
+                                   viewKeyStruct::elemDofFieldString(),
+                                   fields::flow::globalCompFraction::key(),
+                                   fields::flow::globalCompDensityScalingFactor::key(),
+                                   componentMask );
     }
     else
     {
       dofManager.addVectorToField( localSolution,
-                                  viewKeyStruct::elemDofFieldString(),
-                                  fields::flow::globalCompFraction::key(),
-                                  scalingFactor,
-                                  componentMask );
+                                   viewKeyStruct::elemDofFieldString(),
+                                   fields::flow::globalCompFraction::key(),
+                                   scalingFactor,
+                                   componentMask );
     }
   }
   else
@@ -796,20 +796,20 @@ void CompositionalMultiphaseFVM::applySystemSolution( DofManager const & dofMana
     if( localScaling )
     {
       dofManager.addVectorToField( localSolution,
-                                  viewKeyStruct::elemDofFieldString(),
-                                  fields::flow::globalCompDensity::key(),
-                                  fields::flow::globalCompDensityScalingFactor::key(),
-                                  componentMask );
+                                   viewKeyStruct::elemDofFieldString(),
+                                   fields::flow::globalCompDensity::key(),
+                                   fields::flow::globalCompDensityScalingFactor::key(),
+                                   componentMask );
     }
     else
     {
       dofManager.addVectorToField( localSolution,
-                                  viewKeyStruct::elemDofFieldString(),
-                                  fields::flow::globalCompDensity::key(),
-                                  scalingFactor,
-                                  componentMask );
+                                   viewKeyStruct::elemDofFieldString(),
+                                   fields::flow::globalCompDensity::key(),
+                                   scalingFactor,
+                                   componentMask );
     }
-  }  
+  }
 
   if( m_isThermal )
   {
@@ -866,23 +866,23 @@ void CompositionalMultiphaseFVM::updatePhaseMobility( ObjectManagerBase & dataGr
   string const & relpermName = dataGroup.getReference< string >( viewKeyStruct::relPermNamesString() );
   RelativePermeabilityBase const & relperm = getConstitutiveModel< RelativePermeabilityBase >( dataGroup, relpermName );
 
-  if (m_useZFormulation)
+  if( m_useZFormulation )
   {
     if( m_isThermal )
     {
       // For now: isothermal only
-      GEOS_ERROR_IF( m_isThermal, GEOS_FMT( 
-        "CompositionalMultiphaseBase {}: Z Formulation is currently not available for thermal simulations", getDataContext() ) );
+      GEOS_ERROR_IF( m_isThermal, GEOS_FMT(
+                       "CompositionalMultiphaseBase {}: Z Formulation is currently not available for thermal simulations", getDataContext() ) );
     }
     else
     {
       isothermalCompositionalMultiphaseFVMKernels::
         PhaseMobilityZFormulationKernelFactory::
         createAndLaunch< parallelDevicePolicy<> >( m_numComponents,
-                                                  m_numPhases,
-                                                  dataGroup,
-                                                  fluid,
-                                                  relperm );
+                                                   m_numPhases,
+                                                   dataGroup,
+                                                   fluid,
+                                                   relperm );
     }
   }
   else
@@ -892,20 +892,20 @@ void CompositionalMultiphaseFVM::updatePhaseMobility( ObjectManagerBase & dataGr
       thermalCompositionalMultiphaseFVMKernels::
         PhaseMobilityKernelFactory::
         createAndLaunch< parallelDevicePolicy<> >( m_numComponents,
-                                                  m_numPhases,
-                                                  dataGroup,
-                                                  fluid,
-                                                  relperm );
+                                                   m_numPhases,
+                                                   dataGroup,
+                                                   fluid,
+                                                   relperm );
     }
     else
     {
       isothermalCompositionalMultiphaseFVMKernels::
         PhaseMobilityKernelFactory::
         createAndLaunch< parallelDevicePolicy<> >( m_numComponents,
-                                                  m_numPhases,
-                                                  dataGroup,
-                                                  fluid,
-                                                  relperm );
+                                                   m_numPhases,
+                                                   dataGroup,
+                                                   fluid,
+                                                   relperm );
     }
   }
 }

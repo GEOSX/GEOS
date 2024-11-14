@@ -53,7 +53,7 @@ public:
    * @param[in] fluid the fluid model
    */
   PhaseVolumeFractionZFormulationKernel( ObjectManagerBase & subRegion,
-                             constitutive::MultiFluidBase const & fluid )
+                                         constitutive::MultiFluidBase const & fluid )
     : Base(),
     m_phaseVolFrac( subRegion.getField< fields::flow::phaseVolumeFraction >() ),
     m_dPhaseVolFrac( subRegion.getField< fields::flow::dPhaseVolumeFraction >() ),
@@ -73,7 +73,7 @@ public:
    */
   template< typename FUNC = NoOpFunc >
   GEOS_HOST_DEVICE
-  real64 compute( localIndex const ei) const
+  real64 compute( localIndex const ei ) const
   {
     using Deriv = constitutive::multifluid::DerivativeOffset;
 
@@ -110,12 +110,12 @@ public:
       phaseVolFrac[ip] = totalDensity * phaseFrac[ip] / phaseDens[ip];
 
       dPhaseVolFrac[ip][Deriv::dP] = phaseVolFrac[ip] *
-         (dTotalDens[Deriv::dP] / totalDensity +  dPhaseFrac[ip][Deriv::dP] / phaseFrac[ip] - dPhaseDens[ip][Deriv::dP] / phaseDens[ip]);
-        
+                                     (dTotalDens[Deriv::dP] / totalDensity +  dPhaseFrac[ip][Deriv::dP] / phaseFrac[ip] - dPhaseDens[ip][Deriv::dP] / phaseDens[ip]);
+
       for( integer jc = 0; jc < numComp; ++jc )
       {
         dPhaseVolFrac[ip][Deriv::dC+jc] = phaseVolFrac[ip] *
-         (dTotalDens[Deriv::dC+jc] / totalDensity +  dPhaseFrac[ip][Deriv::dC+jc] / phaseFrac[ip] - dPhaseDens[ip][Deriv::dC+jc] / phaseDens[ip]);
+                                          (dTotalDens[Deriv::dC+jc] / totalDensity +  dPhaseFrac[ip][Deriv::dC+jc] / phaseFrac[ip] - dPhaseDens[ip][Deriv::dC+jc] / phaseDens[ip]);
       }
 
       // call the lambda in the phase loop to allow the reuse of the phaseVolFrac and totalDensity

@@ -23,7 +23,7 @@
 #include "ModelParameters.hpp"
 #include "constitutive/fluid/multifluid/MultiFluidBase.hpp"
 #include "dataRepository/InputFlags.hpp"
-#include "codingUtilities/EnumStrings.hpp"
+#include "common/format/EnumStrings.hpp"
 
 namespace geos
 {

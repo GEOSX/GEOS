@@ -97,7 +97,7 @@ CompositionalMultiphaseBase::CompositionalMultiphaseBase( const string & name,
   this->registerWrapper( viewKeyStruct::useZFormulationFlagString(), &m_useZFormulation ).
     setApplyDefaultValue( 0 ).
     setInputFlag( InputFlags::OPTIONAL ).
-    setDescription( "Use overall composition (Z) formulation instead of component density." );                            
+    setDescription( "Use overall composition (Z) formulation instead of component density." );
 
   this->registerWrapper( viewKeyStruct::solutionChangeScalingFactorString(), &m_solutionChangeScalingFactor ).
     setSizedFromParent( 0 ).
@@ -299,19 +299,19 @@ void CompositionalMultiphaseBase::registerDataOnMesh( Group & meshBodies )
     m_isThermal = referenceFluid.isThermal();
   }
 
-  
-  if (m_useZFormulation)
+
+  if( m_useZFormulation )
     // Z formulation - component densities and pressure are primary unknowns
-    // (n_c-1) overall compositions + one pressure 
+    // (n_c-1) overall compositions + one pressure
     // Testing: let's have sum_c zc = 1 as explicit equation for now
-    m_numDofPerCell = m_numComponents + 1; 
+    m_numDofPerCell = m_numComponents + 1;
   else
   {
     // default formulation - component densities and pressure are primary unknowns
     // n_c components + one pressure ( + one temperature if needed )
     m_numDofPerCell = m_isThermal ? m_numComponents + 2 : m_numComponents + 1;
   }
-    
+
 
   // 2. Register and resize all fields as necessary
   forDiscretizationOnMeshTargets( meshBodies, [&]( string const &,
@@ -697,13 +697,13 @@ real64 CompositionalMultiphaseBase::updatePhaseVolumeFractionZFormulation( Objec
   GEOS_ERROR_IF( m_isThermal, GEOS_FMT( "CompositionalMultiphaseBase {}: Z Formulation is currently not available for thermal simulations", getDataContext() ) );
 
   real64 maxDeltaPhaseVolFrac  =
-      isothermalCompositionalMultiphaseBaseKernels::
+    isothermalCompositionalMultiphaseBaseKernels::
       PhaseVolumeFractionZFormulationKernelFactory::
       createAndLaunch< parallelDevicePolicy<> >( m_numComponents,
                                                  m_numPhases,
                                                  dataGroup,
                                                  fluid );
-  
+
   return maxDeltaPhaseVolFrac;
 }
 
@@ -814,7 +814,7 @@ void CompositionalMultiphaseBase::updateCompAmountZFormulation( ElementSubRegion
   arrayView1d< real64 const > const volume = subRegion.getElementVolume();
   arrayView2d< real64 const, compflow::USD_COMP > const compFrac = subRegion.getField< fields::flow::globalCompFraction >();
   arrayView2d< real64, compflow::USD_COMP > const compAmount = subRegion.getField< fields::flow::compAmount >();
-  // access total density stored in the fluid 
+  // access total density stored in the fluid
   string const & fluidName = subRegion.getReference< string >( viewKeyStruct::fluidNamesString() );
   MultiFluidBase const & fluid = getConstitutiveModel< MultiFluidBase >( subRegion, fluidName );
   arrayView2d< real64 const, multifluid::USD_FLUID > const totalDens = fluid.totalDensity();
@@ -884,7 +884,7 @@ real64 CompositionalMultiphaseBase::updateFluidState( ElementSubRegionBase & sub
 
   real64 maxdS;
 
-  if (m_useZFormulation)
+  if( m_useZFormulation )
   {
     // For p, z_c as the primary unknowns
     updateFluidModel( subRegion ); // rho_T is now a function of p, z_c from volume balance
@@ -908,9 +908,9 @@ real64 CompositionalMultiphaseBase::updateFluidState( ElementSubRegionBase & sub
     // note2: for now, diffusion and dispersion are also treated explicitly
   }
 
-  
+
   real64 const maxDeltaPhaseVolFrac = maxdS;
-  
+
   return maxDeltaPhaseVolFrac;
 }
 
@@ -1457,41 +1457,41 @@ void CompositionalMultiphaseBase::assembleSystem( real64 const GEOS_UNUSED_PARAM
   GEOS_MARK_FUNCTION;
 
   // Accumulation term
-  if (m_useZFormulation)
+  if( m_useZFormulation )
   {
     assembleZFormulationAccumulation( domain,
-                          dofManager,
-                          localMatrix,
-                          localRhs );
+                                      dofManager,
+                                      localMatrix,
+                                      localRhs );
 
     assembleZFormulationFluxTerms( dt,
-                      domain,
-                      dofManager,
-                      localMatrix,
-                      localRhs );                      
+                                   domain,
+                                   dofManager,
+                                   localMatrix,
+                                   localRhs );
   }
   else
   {
     assembleAccumulationAndVolumeBalanceTerms( domain,
-                                             dofManager,
-                                             localMatrix,
-                                             localRhs );
+                                               dofManager,
+                                               localMatrix,
+                                               localRhs );
 
     if( m_isJumpStabilized )
     {
       assembleStabilizedFluxTerms( dt,
-                                  domain,
-                                  dofManager,
-                                  localMatrix,
-                                  localRhs );
+                                   domain,
+                                   dofManager,
+                                   localMatrix,
+                                   localRhs );
     }
     else
     {
       assembleFluxTerms( dt,
-                        domain,
-                        dofManager,
-                        localMatrix,
-                        localRhs );
+                         domain,
+                         dofManager,
+                         localMatrix,
+                         localRhs );
     }
   }
 }
@@ -1554,9 +1554,9 @@ void CompositionalMultiphaseBase::assembleAccumulationAndVolumeBalanceTerms( Dom
 }
 
 void CompositionalMultiphaseBase::assembleZFormulationAccumulation( DomainPartition & domain,
-                                                                             DofManager const & dofManager,
-                                                                             CRSMatrixView< real64, globalIndex const > const & localMatrix,
-                                                                             arrayView1d< real64 > const & localRhs ) const
+                                                                    DofManager const & dofManager,
+                                                                    CRSMatrixView< real64, globalIndex const > const & localMatrix,
+                                                                    arrayView1d< real64 > const & localRhs ) const
 {
   GEOS_MARK_FUNCTION;
 
@@ -1577,9 +1577,9 @@ void CompositionalMultiphaseBase::assembleZFormulationAccumulation( DomainPartit
 
       // TODO: add the thermal case
       /*
-      if( m_isThermal )
-      {
-        thermalCompositionalMultiphaseBaseKernels::
+         if( m_isThermal )
+         {
+         thermalCompositionalMultiphaseBaseKernels::
           AccumulationKernelFactory::
           createAndLaunch< parallelDevicePolicy<> >( m_numComponents,
                                                      m_numPhases,
@@ -1591,25 +1591,25 @@ void CompositionalMultiphaseBase::assembleZFormulationAccumulation( DomainPartit
                                                      solid,
                                                      localMatrix,
                                                      localRhs );
-      }
-      else
-      {
-      }
-      */
-     // isothermal for now
+         }
+         else
+         {
+         }
+       */
+      // isothermal for now
       isothermalCompositionalMultiphaseBaseKernels::
         AccumulationZFormulationKernelFactory::
         createAndLaunch< parallelDevicePolicy<> >( m_numComponents,
-                                                    m_numPhases,
-                                                    dofManager.rankOffset(),
-                                                    m_useTotalMassEquation,
-                                                    m_useSimpleAccumulation,
-                                                    dofKey,
-                                                    subRegion,
-                                                    fluid,
-                                                    solid,
-                                                    localMatrix,
-                                                    localRhs );
+                                                   m_numPhases,
+                                                   dofManager.rankOffset(),
+                                                   m_useTotalMassEquation,
+                                                   m_useSimpleAccumulation,
+                                                   dofKey,
+                                                   subRegion,
+                                                   fluid,
+                                                   solid,
+                                                   localMatrix,
+                                                   localRhs );
     } );
   } );
 }

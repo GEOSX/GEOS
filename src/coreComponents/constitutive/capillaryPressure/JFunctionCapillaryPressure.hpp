@@ -22,7 +22,7 @@
 
 #include "constitutive/capillaryPressure/CapillaryPressureBase.hpp"
 
-#include "codingUtilities/EnumStrings.hpp"
+#include "common/format/EnumStrings.hpp"
 #include "functions/TableFunction.hpp"
 
 namespace geos

@@ -9,7 +9,7 @@
             "name": "Debug geos",
             "type": "cppdbg",
             "request": "launch",
-            "program": "${workspaceFolder}/build-self_build-relwithdebinfo/bin/geosx",
+            "program": "${userHome}/geos-build/bin/geosx",
             "args": ["-i", "${workspaceFolder}/inputFiles/simplePDE/10x10x10Hex_LaplaceFEM_smoke.xml", "-o", "${userHome}/geos-output"],
             "stopAtEntry": false,
             "cwd": "${workspaceFolder}",

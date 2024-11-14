@@ -80,7 +80,6 @@ public:
   using Base::m_phaseMob;
   using Base::m_dPhaseMob;
   using Base::m_dPhaseMassDens;
-  using Base::m_dPhaseCapPressure_dPhaseVolFrac;
   using Base::m_stencilWrapper;
   using Base::m_seri;
   using Base::m_sesri;
@@ -138,7 +137,7 @@ public:
                               real64 const dt,
                               CRSMatrixView< real64, globalIndex const > const & localMatrix,
                               arrayView1d< real64 > const & localRhs,
-                              BitFlags< isothermalCompositionalMultiphaseFVMKernels::FluxComputeKernelFlags > kernelFlags )
+                              BitFlags< isothermalCompositionalMultiphaseFVMKernels::KernelFlags > kernelFlags )
     : Base( numPhases,
             rankOffset,
             faceManager,
@@ -455,9 +454,9 @@ public:
       dofNumberAccessor.setName( solverName + "/accessors/" + dofKey );
 
       // for now, we neglect capillary pressure in the kernel
-      BitFlags< isothermalCompositionalMultiphaseFVMKernels::FluxComputeKernelFlags > kernelFlags;
+      BitFlags< isothermalCompositionalMultiphaseFVMKernels::KernelFlags > kernelFlags;
       if( useTotalMassEquation )
-        kernelFlags.set( isothermalCompositionalMultiphaseFVMKernels::FluxComputeKernelFlags::TotalMassEquation );
+        kernelFlags.set( isothermalCompositionalMultiphaseFVMKernels::KernelFlags::TotalMassEquation );
 
       using KernelType = DirichletFluxComputeKernel< NUM_COMP, NUM_DOF, typename FluidType::KernelWrapper >;
       typename KernelType::CompFlowAccessors compFlowAccessors( elemManager, solverName );

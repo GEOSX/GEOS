@@ -41,7 +41,7 @@ namespace geos
 namespace isothermalCompositionalMultiphaseFVMKernels
 {
 
-enum class FluxComputeKernelFlags
+enum class KernelFlags
 {
   /// Flag to specify whether capillary pressure is used or not
   CapPressure = 1 << 0, // 1
@@ -50,9 +50,7 @@ enum class FluxComputeKernelFlags
   /// Flag indicating whether C1-PPU is used or not
   C1PPU = 1 << 2, // 4
   /// Flag indicating whether IHU is used or not
-  IHU = 1 << 3, // 8
-  /// Flag indicating whether overall composition (Z) formulation is used or not
-  useZFormulation = 1 << 4 // 16
+  IHU = 1 << 3 // 8
         /// Add more flags like that if needed:
         // Flag5 = 1 << 4, // 16
         // Flag6 = 1 << 5, // 32
@@ -129,7 +127,7 @@ public:
                          real64 const dt,
                          CRSMatrixView< real64, globalIndex const > const & localMatrix,
                          arrayView1d< real64 > const & localRhs,
-                         BitFlags< FluxComputeKernelFlags > kernelFlags );
+                         BitFlags< KernelFlags > kernelFlags );
 
 protected:
 
@@ -154,9 +152,12 @@ protected:
   /// Views on pressure
   ElementViewConst< arrayView1d< real64 const > > const m_pres;
 
-  /// Views on derivatives of phase volume fractions and comp fractions
-  ElementViewConst< arrayView3d< real64 const, compflow::USD_COMP_DC > > const m_dCompFrac_dCompDens;
+  /// Views on phase volume fractions
+  ElementViewConst< arrayView2d< real64 const, compflow::USD_PHASE > > const m_phaseVolFrac;
   ElementViewConst< arrayView3d< real64 const, compflow::USD_PHASE_DC > > const m_dPhaseVolFrac;
+
+  /// Views on derivatives of comp fractions
+  ElementViewConst< arrayView3d< real64 const, compflow::USD_COMP_DC > > const m_dCompFrac_dCompDens;
 
   /// Views on phase component fractions
   ElementViewConst< arrayView4d< real64 const, constitutive::multifluid::USD_PHASE_COMP > > const m_phaseCompFrac;
@@ -169,7 +170,7 @@ protected:
   /// View on the local RHS
   arrayView1d< real64 > const m_localRhs;
 
-  BitFlags< FluxComputeKernelFlags > const m_kernelFlags;
+  BitFlags< KernelFlags > const m_kernelFlags;
 };
 
 } // namespace isothermalCompositionalMultiphaseFVMKernels

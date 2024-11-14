@@ -46,7 +46,7 @@ namespace isothermalCompositionalMultiphaseBaseKernels
  * @tparam NUM_DOF number of degrees of freedom
  * @brief Define the interface for the assembly kernel in charge of accumulation and volume balance
  */
-template< integer NUM_COMP, integer NUM_DOF>
+template< integer NUM_COMP, integer NUM_DOF >
 class AccumulationZFormulationKernel
 {
 public:
@@ -72,14 +72,14 @@ public:
    * @param[inout] localRhs the local right-hand side vector
    */
   AccumulationZFormulationKernel( localIndex const numPhases,
-                      globalIndex const rankOffset,
-                      string const dofKey,
-                      ElementSubRegionBase const & subRegion,
-                      constitutive::MultiFluidBase const & fluid,
-                      constitutive::CoupledSolidBase const & solid,
-                      CRSMatrixView< real64, globalIndex const > const & localMatrix,
-                      arrayView1d< real64 > const & localRhs,
-                      BitFlags< KernelFlags > const KernelFlags )
+                                  globalIndex const rankOffset,
+                                  string const dofKey,
+                                  ElementSubRegionBase const & subRegion,
+                                  constitutive::MultiFluidBase const & fluid,
+                                  constitutive::CoupledSolidBase const & solid,
+                                  CRSMatrixView< real64, globalIndex const > const & localMatrix,
+                                  arrayView1d< real64 > const & localRhs,
+                                  BitFlags< KernelFlags > const KernelFlags )
     : m_numPhases( numPhases ),
     m_rankOffset( rankOffset ),
     m_dofNumber( subRegion.getReference< array1d< globalIndex > >( dofKey ) ),
@@ -171,7 +171,7 @@ public:
   template< typename FUNC = NoOpFunc >
   GEOS_HOST_DEVICE
   void computeAccumulation( localIndex const ei,
-                            StackVariables & stack) const
+                            StackVariables & stack ) const
   {
     using Deriv = constitutive::multifluid::DerivativeOffset;
 
@@ -196,7 +196,7 @@ public:
       for( integer jc = 0; jc < numComp; ++jc )
       {
         real64 dCompAmount_dC;
-        if (ic == jc)
+        if( ic == jc )
           dCompAmount_dC = stack.poreVolume * (totalDensity + dTotalDens[Deriv::dC+jc] * compFrac[ic]);
         else
           dCompAmount_dC = stack.poreVolume * (dTotalDens[Deriv::dC+jc] * compFrac[ic]);
@@ -216,7 +216,7 @@ public:
   template< typename FUNC = NoOpFunc >
   GEOS_HOST_DEVICE
   void computeVolumeBalance( localIndex const ei,
-                             StackVariables & stack) const
+                             StackVariables & stack ) const
   {
 
     arraySlice1d< real64 const, compflow::USD_PHASE - 1 > compFrac = m_compFrac[ei];
@@ -340,7 +340,7 @@ protected:
   arrayView2d< real64 const, constitutive::multifluid::USD_FLUID > const m_totalDens;
   arrayView3d< real64 const, constitutive::multifluid::USD_FLUID_DC > const m_dTotalDens;
 
-  // View on component densities and component fractions 
+  // View on component densities and component fractions
   arrayView2d< real64 const, compflow::USD_COMP > m_compFrac;
 
   // View on component amount (mass/moles) from previous time step
@@ -399,9 +399,9 @@ public:
       if( useSimpleAccumulation )
         KernelFlags.set( KernelFlags::SimpleAccumulation );
 
-      AccumulationZFormulationKernel< NUM_COMP, NUM_DOF> kernel( numPhases, rankOffset, dofKey, subRegion,
-                                                      fluid, solid, localMatrix, localRhs, KernelFlags );
-      AccumulationZFormulationKernel< NUM_COMP, NUM_DOF>::template launch< POLICY >( subRegion.size(), kernel );
+      AccumulationZFormulationKernel< NUM_COMP, NUM_DOF > kernel( numPhases, rankOffset, dofKey, subRegion,
+                                                                  fluid, solid, localMatrix, localRhs, KernelFlags );
+      AccumulationZFormulationKernel< NUM_COMP, NUM_DOF >::template launch< POLICY >( subRegion.size(), kernel );
     } );
   }
 
