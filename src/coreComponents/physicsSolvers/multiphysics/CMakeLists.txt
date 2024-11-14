@@ -13,6 +13,7 @@ set( physicsSolvers_headers
      multiphysics/PoromechanicsInitialization.hpp
      multiphysics/PoromechanicsFields.hpp
      multiphysics/PoromechanicsInitialization.hpp
+     multiphysics/LogLevelsInfo.hpp
      multiphysics/poromechanicsKernels/MultiphasePoromechanics.hpp
      multiphysics/poromechanicsKernels/MultiphasePoromechanics_impl.hpp
      multiphysics/poromechanicsKernels/PoromechanicsBase.hpp

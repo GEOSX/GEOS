@@ -47,7 +47,7 @@ set( linearAlgebra_sources
      solvers/SeparateComponentPreconditioner.cpp
      utilities/ReverseCutHillMcKeeOrdering.cpp )
 
-set( dependencyList ${parallelDeps} mesh denseLinearAlgebra )
+set( dependencyList ${parallelDeps} mesh denseLinearAlgebra finiteVolume )
 set( tplDependencyList "" )
 
 list( APPEND linearAlgebra_headers interfaces/direct/SuiteSparse.hpp )
@@ -110,6 +110,7 @@ if( ENABLE_HYPRE )
           interfaces/hypre/mgrStrategies/SinglePhaseReservoirHybridFVM.hpp
           interfaces/hypre/mgrStrategies/SolidMechanicsEmbeddedFractures.hpp
           interfaces/hypre/mgrStrategies/ThermalCompositionalMultiphaseFVM.hpp
+          interfaces/hypre/mgrStrategies/ThermalCompositionalMultiphaseReservoirFVM.hpp
           interfaces/hypre/mgrStrategies/ThermalMultiphasePoromechanics.hpp
           interfaces/hypre/mgrStrategies/ThermalSinglePhasePoromechanics.hpp )
     list( APPEND linearAlgebra_sources

@@ -118,7 +118,7 @@ public:
    * @brief Create an update kernel wrapper.
    * @return the wrapper
    */
-  KernelWrapper createKernelWrapper() const;
+  KernelWrapper createKernelUpdates() const;
 
   /**
    * @struct Structure to hold scoped key names

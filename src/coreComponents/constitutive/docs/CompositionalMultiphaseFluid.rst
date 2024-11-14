@@ -199,7 +199,7 @@ In order to use the model, GEOS must be built with ``-DENABLE_PVTPACKAGE=ON`` (d
 
 The following attributes are supported:
 
-.. include:: ../../../coreComponents/schema/docs/CompositionalMultiphaseFluid.rst
+.. include:: /docs/sphinx/datastructure/CompositionalMultiphaseFluid.rst
 
 Supported phase names are:
 

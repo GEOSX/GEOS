@@ -56,6 +56,16 @@ ObjectManagerBase::ObjectManagerBase( string const & name,
 
   registerWrapper< array1d< integer > >( viewKeyStruct::domainBoundaryIndicatorString(), &m_domainBoundaryIndicator );
 
+  registerWrapper( viewKeyStruct::localMaxGlobalIndexString(), &m_localMaxGlobalIndex ).
+    setApplyDefaultValue( -1 ).
+    setRestartFlags( RestartFlags::WRITE_AND_READ ).
+    setPlotLevel( PlotLevel::NOPLOT );
+
+  registerWrapper( viewKeyStruct::maxGlobalIndexString(), &m_maxGlobalIndex ).
+    setApplyDefaultValue( -1 ).
+    setRestartFlags( RestartFlags::WRITE_AND_READ ).
+    setPlotLevel( PlotLevel::NOPLOT );
+
   m_sets.registerWrapper< SortedArray< localIndex > >( this->m_ObjectManagerBaseViewKeys.externalSet );
 
   excludeWrappersFromPacking( { viewKeyStruct::localToGlobalMapString(),

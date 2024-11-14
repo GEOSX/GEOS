@@ -179,8 +179,9 @@ rtTypes::RegexMapType rtTypes::createBasicTypesRegexMap()
 
   string_view const groupNameDesc = "Input value must be a string that cannot be empty and contains only upper/lower letters, digits, and the characters  . - _";
   string_view const groupNameRegex = "[a-zA-Z0-9.\\-_]+";
-  string_view const groupNameRefDesc = "Input value must be a string that can contain only upper/lower letters, digits, and the characters  . - _ / *";
-  string_view const groupNameRefRegex = "[a-zA-Z0-9.\\-_/*]*";
+  // to reference groups, we need to support the / for paths, and * [ ] for fnmatch patterns.
+  string_view const groupNameRefDesc = "Input value must be a string that can contain only upper/lower letters, digits, and the characters  . - _ / * [ ]";
+  string_view const groupNameRefRegex = "[a-zA-Z0-9.\\-_/*\\[\\]]*";
 
 
   // Build master list of regexes

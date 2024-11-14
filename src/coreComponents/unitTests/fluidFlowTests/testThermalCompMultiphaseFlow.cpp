@@ -95,7 +95,7 @@ char const * xmlInput =
     </NumericalMethods>
     <ElementRegions>
       <CellElementRegion name="region"
-                         cellBlocks="{ cb }"
+                         cellBlocks="{ * }"
                          materialList="{ fluid, rock, relperm, thermalCond }" />
     </ElementRegions>
     <Constitutive>
@@ -103,7 +103,7 @@ char const * xmlInput =
                                              solidModelName="nullSolid"
                                              porosityModelName="rockPorosity"
                                              permeabilityModelName="rockPerm"
-                                             solidInternalEnergyModelName="rockInternalEnergy" />
+                                             solidInternalEnergyModelName="rockInternalEnergy"/>
       <NullModel name="nullSolid" />
       <PressurePorosity name="rockPorosity"
                         defaultReferencePorosity="0.2"

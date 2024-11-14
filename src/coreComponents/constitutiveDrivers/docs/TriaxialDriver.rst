@@ -21,7 +21,7 @@ XML Structure
 -------------
 A typical XML file to run the triaxial driver will have the following key elements.  We present the whole file first, before digging into the individual blocks.
 
-.. literalinclude:: ../../../unitTests/constitutiveTests/testTriaxial_druckerPragerExtended.xml
+.. literalinclude:: ../../unitTests/constitutiveTests/testTriaxial_druckerPragerExtended.xml
   :language: xml
 
 The first thing to note is that the XML structure is identical to a standard GEOS input deck.  In fact, once the constitutive block is calibrated, one could start adding solver and discretization blocks to the same file to create a proper field simulation.  This makes it easy to go back and forth between calibration and simulation.
@@ -32,7 +32,7 @@ Internally, the triaxial driver uses a simple form of time-stepping to advance t
 
 The key parameters for the TriaxialDriver are:
 
-.. include:: /coreComponents/schema/docs/TriaxialDriver.rst
+.. include:: /docs/sphinx/datastructure/TriaxialDriver.rst
 
 .. note::
 

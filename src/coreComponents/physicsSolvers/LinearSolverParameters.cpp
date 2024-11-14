@@ -115,6 +115,21 @@ LinearSolverParametersInput::LinearSolverParametersInput( string const & name,
     setInputFlag( InputFlags::OPTIONAL ).
     setDescription( "Weakest-allowed tolerance for adaptive method" );
 
+  registerWrapper( viewKeyStruct::krylovStrongTolString(), &m_parameters.krylov.strongestTol ).
+    setApplyDefaultValue( m_parameters.krylov.strongestTol ).
+    setInputFlag( InputFlags::OPTIONAL ).
+    setDescription( "Strongest-allowed tolerance for adaptive method" );
+
+  registerWrapper( viewKeyStruct::adaptiveGammaString(), &m_parameters.krylov.adaptiveGamma ).
+    setApplyDefaultValue( m_parameters.krylov.adaptiveGamma ).
+    setInputFlag( InputFlags::OPTIONAL ).
+    setDescription( "Gamma parameter for adaptive method" );
+
+  registerWrapper( viewKeyStruct::adaptiveExponentString(), &m_parameters.krylov.adaptiveExponent ).
+    setApplyDefaultValue( m_parameters.krylov.adaptiveExponent ).
+    setInputFlag( InputFlags::OPTIONAL ).
+    setDescription( "Exponent parameter for adaptive method" );
+
   registerWrapper( viewKeyStruct::amgNumSweepsString(), &m_parameters.amg.numSweeps ).
     setApplyDefaultValue( m_parameters.amg.numSweeps ).
     setInputFlag( InputFlags::OPTIONAL ).

@@ -21,7 +21,7 @@
 #define GEOS_CONSTITUTIVE_SINGLEPHASE_THERMALCONDUCTIVITY_THERMALCONDUCTIVITYSELECTOR_HPP
 
 #include "constitutive/ConstitutivePassThruHandler.hpp"
-#include "constitutive/thermalConductivity/SinglePhaseConstantThermalConductivity.hpp"
+#include "constitutive/thermalConductivity/SinglePhaseThermalConductivity.hpp"
 
 namespace geos
 {
@@ -33,14 +33,14 @@ template< typename LAMBDA >
 void constitutiveUpdatePassThru( SinglePhaseThermalConductivityBase const & thermalConductivity,
                                  LAMBDA && lambda )
 {
-  ConstitutivePassThruHandler< SinglePhaseConstantThermalConductivity >::execute( thermalConductivity, std::forward< LAMBDA >( lambda ) );
+  ConstitutivePassThruHandler< SinglePhaseThermalConductivity >::execute( thermalConductivity, std::forward< LAMBDA >( lambda ) );
 }
 
 template< typename LAMBDA >
 void constitutiveUpdatePassThru( SinglePhaseThermalConductivityBase & thermalConductivity,
                                  LAMBDA && lambda )
 {
-  ConstitutivePassThruHandler< SinglePhaseConstantThermalConductivity >::execute( thermalConductivity, std::forward< LAMBDA >( lambda ) );
+  ConstitutivePassThruHandler< SinglePhaseThermalConductivity >::execute( thermalConductivity, std::forward< LAMBDA >( lambda ) );
 }
 
 } // namespace constitutive

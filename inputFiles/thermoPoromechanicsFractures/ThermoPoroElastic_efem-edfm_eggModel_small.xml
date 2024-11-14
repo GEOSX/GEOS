@@ -236,9 +236,9 @@
       specificHeatCapacity="1.672e2"
       referenceInternalEnergy="0.001"/> 
 
-    <SinglePhaseConstantThermalConductivity
+    <SinglePhaseThermalConductivity
       name="thermalCond"
-      thermalConductivityComponents="{ 10, 10, 10 }"/>   
+      defaultThermalConductivityComponents="{ 10, 10, 10 }"/>   
 
     <BiotPorosity
       name="rockPorosity"

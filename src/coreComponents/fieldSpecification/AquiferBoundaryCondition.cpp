@@ -19,8 +19,6 @@
 
 #include "AquiferBoundaryCondition.hpp"
 
-#include "mesh/DomainPartition.hpp"
-
 namespace geos
 {
 

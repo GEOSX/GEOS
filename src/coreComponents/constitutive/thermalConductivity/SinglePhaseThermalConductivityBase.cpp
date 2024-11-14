@@ -19,7 +19,6 @@
 
 #include "SinglePhaseThermalConductivityBase.hpp"
 #include "ThermalConductivityFields.hpp"
-#include "SinglePhaseThermalConductivityFields.hpp"
 
 namespace geos
 {
@@ -33,6 +32,7 @@ SinglePhaseThermalConductivityBase::SinglePhaseThermalConductivityBase( string c
   : ConstitutiveBase( name, parent )
 {
   registerField( fields::thermalconductivity::effectiveConductivity{}, &m_effectiveConductivity );
+  registerField( fields::thermalconductivity::dEffectiveConductivity_dT{}, &m_dEffectiveConductivity_dT );
 }
 
 void SinglePhaseThermalConductivityBase::postInputInitialization()
@@ -40,6 +40,7 @@ void SinglePhaseThermalConductivityBase::postInputInitialization()
   ConstitutiveBase::postInputInitialization();
 
   m_effectiveConductivity.resize( 0, 0, 3 );
+  m_dEffectiveConductivity_dT.resize( 0, 0, 3 );
 }
 
 void SinglePhaseThermalConductivityBase::allocateConstitutiveData( dataRepository::Group & parent,
@@ -47,6 +48,7 @@ void SinglePhaseThermalConductivityBase::allocateConstitutiveData( dataRepositor
 {
   // NOTE: enforcing 1 quadrature point
   m_effectiveConductivity.resize( 0, 1, 3 );
+  m_dEffectiveConductivity_dT.resize( 0, 1, 3 );
 
   ConstitutiveBase::allocateConstitutiveData( parent, numConstitutivePointsPerParentIndex );
 }

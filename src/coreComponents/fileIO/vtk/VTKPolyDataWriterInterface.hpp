@@ -22,7 +22,7 @@
 #include "dataRepository/Wrapper.hpp"
 #include "fileIO/vtk/VTKPVDWriter.hpp"
 #include "fileIO/vtk/VTKVTMWriter.hpp"
-#include "codingUtilities/EnumStrings.hpp"
+#include "common/format/EnumStrings.hpp"
 
 class vtkUnstructuredGrid;
 class vtkPointData;

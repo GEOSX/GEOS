@@ -35,7 +35,7 @@ block.
 
 The following attributes are supported:
 
-.. include:: /coreComponents/schema/docs/ParallelPlatesPermeability.rst
+.. include:: /docs/sphinx/datastructure/ParallelPlatesPermeability.rst
 
 
 .. _Witherspoon et al.: https://agupubs.onlinelibrary.wiley.com/doi/pdf/10.1029/WR016i006p01016

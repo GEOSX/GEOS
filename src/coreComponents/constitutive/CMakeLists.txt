@@ -25,6 +25,7 @@ set( constitutive_headers
      contact/HydraulicApertureBase.hpp
      contact/HydraulicApertureRelationSelector.hpp
      contact/HydraulicApertureTable.hpp
+     contact/RateAndStateFriction.hpp
      diffusion/ConstantDiffusion.hpp
      diffusion/DiffusionBase.hpp
      diffusion/DiffusionFields.hpp
@@ -169,9 +170,8 @@ set( constitutive_headers
      thermalConductivity/MultiPhaseThermalConductivityFields.hpp
      thermalConductivity/MultiPhaseThermalConductivitySelector.hpp
      thermalConductivity/MultiPhaseVolumeWeightedThermalConductivity.hpp
-     thermalConductivity/SinglePhaseConstantThermalConductivity.hpp
+     thermalConductivity/SinglePhaseThermalConductivity.hpp
      thermalConductivity/SinglePhaseThermalConductivityBase.hpp
-     thermalConductivity/SinglePhaseThermalConductivityFields.hpp
      thermalConductivity/SinglePhaseThermalConductivitySelector.hpp
      thermalConductivity/ThermalConductivityFields.hpp
    )
@@ -194,6 +194,7 @@ set( constitutive_sources
      contact/FrictionlessContact.cpp
      contact/HydraulicApertureBase.cpp
      contact/HydraulicApertureTable.cpp
+     contact/RateAndStateFriction.cpp
      diffusion/ConstantDiffusion.cpp
      diffusion/DiffusionBase.cpp
      dispersion/DispersionBase.cpp
@@ -285,7 +286,7 @@ set( constitutive_sources
      thermalConductivity/MultiPhaseConstantThermalConductivity.cpp
      thermalConductivity/MultiPhaseThermalConductivityBase.cpp
      thermalConductivity/MultiPhaseVolumeWeightedThermalConductivity.cpp
-     thermalConductivity/SinglePhaseConstantThermalConductivity.cpp
+     thermalConductivity/SinglePhaseThermalConductivity.cpp
      thermalConductivity/SinglePhaseThermalConductivityBase.cpp
    )
 

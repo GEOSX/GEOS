@@ -61,8 +61,6 @@ TimeHistoryOutput::TimeHistoryOutput( string const & name,
 
 void TimeHistoryOutput::initCollectorParallel( DomainPartition const & domain, HistoryCollection & collector )
 {
-  GEOS_ASSERT( m_io.empty() );
-
   bool const freshInit = ( m_recordCount == 0 );
 
   string const outputDirectory = getOutputDirectory();

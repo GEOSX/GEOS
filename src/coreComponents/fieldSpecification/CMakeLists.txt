@@ -26,7 +26,7 @@ set( fieldSpecification_sources
      PerfectlyMatchedLayer.cpp
    )
 
-set( dependencyList ${parallelDeps} linearAlgebra )
+set( dependencyList ${parallelDeps} mesh )
 
 geos_decorate_link_dependencies( LIST decoratedDependencies
                                  DEPENDENCIES ${dependencyList} )

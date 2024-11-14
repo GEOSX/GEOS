@@ -1,7 +1,7 @@
 .. _AppleMacOS:
 
 Building Apple MacOS
-==============
+====================
 
 Install homebrew
 ----------------
@@ -48,7 +48,7 @@ Clone thirdPartyLibs
 
 
 Configure and build thirdPartyLibs
----------------------------------
+----------------------------------
 
 .. code-block::
 

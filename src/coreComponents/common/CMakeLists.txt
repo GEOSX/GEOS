@@ -6,6 +6,7 @@ set( common_headers
      format/table/TableLayout.hpp
      format/table/TableFormatter.hpp
      format/table/TableData.hpp
+     format/EnumStrings.hpp
      format/Format.hpp
      format/StringUtilities.hpp
      logger/Logger.hpp
@@ -16,6 +17,7 @@ set( common_headers
      GEOS_RAJA_Interface.hpp
      GeosxMacros.hpp
      MemoryInfos.hpp
+     logger/Logger.hpp
      MpiWrapper.hpp
      Path.hpp
      Span.hpp

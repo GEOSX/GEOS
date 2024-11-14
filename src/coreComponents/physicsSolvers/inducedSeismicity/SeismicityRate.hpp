@@ -16,18 +16,12 @@
 #ifndef GEOS_PHYSICSSOLVERS_INDUCED_SEISMICITY_SEISMICITYRATE_HPP
 #define GEOS_PHYSICSSOLVERS_INDUCED_SEISMICITY_SEISMICITYRATE_HPP
 
-#include "codingUtilities/EnumStrings.hpp"   // facilities for enum-string conversion (for reading enum values from XML input)
-#include "physicsSolvers/SolverBase.hpp"  // an abstraction class shared by all physics solvers
-#include "fieldSpecification/FieldSpecificationManager.hpp" // a manager that can access and set values on the discretized domain
-
-#include "physicsSolvers/inducedSeismicity/inducedSeismicityFields.hpp"
-
-#include "physicsSolvers/fluidFlow/FlowSolverBaseFields.hpp"
+#include "physicsSolvers/PhysicsSolverBase.hpp"
 
 namespace geos
 {
 
-class SeismicityRate : public SolverBase
+class SeismicityRate : public PhysicsSolverBase
 {
 public:
   /// The default nullary constructor is disabled to avoid compiler auto-generation:
@@ -50,7 +44,7 @@ public:
   /// This method ties properties with their supporting mesh
   virtual void registerDataOnMesh( Group & meshBodies ) override;
 
-  struct viewKeyStruct : public SolverBase::viewKeyStruct
+  struct viewKeyStruct : public PhysicsSolverBase::viewKeyStruct
   {
     static constexpr char const * stressSolverNameString() { return "stressSolverName"; }
     static constexpr char const * initialFaultNormalTractionString() { return "initialFaultNormalTraction"; }
@@ -98,12 +92,12 @@ public:
    * @param sig
    * @param tau
    */
-  void computeTotalStressOnFault( arrayView1d< real64 const > const biotCoefficient,
-                                  arrayView1d< real64 const > const pres,
+  void computeTotalStressOnFault( arrayView1d< real64 const > const & biotCoefficient,
+                                  arrayView1d< real64 const > const & pres,
                                   real64 const (&faultNormalProjectionTensor)[6],
                                   real64 const (&faultShearProjectionTensor)[6],
-                                  arrayView1d< real64 > const sig,
-                                  arrayView1d< real64 > const tau ) const;
+                                  arrayView1d< real64 > const & sig,
+                                  arrayView1d< real64 > const & tau ) const;
 
   /**
    * @brief called in SolverStep before member stress solver is called to
@@ -139,7 +133,7 @@ protected:
   virtual void postInputInitialization() override;
 
   /// pointer to stress solver
-  SolverBase * m_stressSolver;
+  PhysicsSolverBase *m_stressSolver;
 
   /// stress solver name string
   string m_stressSolverName;
