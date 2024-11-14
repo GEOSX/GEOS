@@ -185,9 +185,9 @@
 					<xsd:field xpath="@name" />
 				</xsd:unique>
 			</xsd:element>
-			<xsd:element name="ExternalDataRepository" type="ExternalDataRepositoryType" minOccurs="1" maxOccurs="1">
-				<xsd:unique name="ExternalDataRepositoryVTKHierarchicalDataRepositoryUniqueName">
-					<xsd:selector xpath="VTKHierarchicalDataRepository" />
+			<xsd:element name="ExternalDataSource" type="ExternalDataSourceType" minOccurs="1" maxOccurs="1">
+				<xsd:unique name="ExternalDataSourceVTKHierarchicalDataSourceUniqueName">
+					<xsd:selector xpath="VTKHierarchicalDataSource" />
 					<xsd:field xpath="@name" />
 				</xsd:unique>
 			</xsd:element>
@@ -1081,19 +1081,19 @@
 			<xsd:pattern value=".*[\[\]`$].*|seconds|minutes|hours|days|years|full" />
 		</xsd:restriction>
 	</xsd:simpleType>
-	<xsd:complexType name="ExternalDataRepositoryType">
+	<xsd:complexType name="ExternalDataSourceType">
 		<xsd:choice minOccurs="0" maxOccurs="unbounded">
-			<xsd:element name="VTKHierarchicalDataRepository" type="VTKHierarchicalDataRepositoryType">
-				<xsd:unique name="ExternalDataRepositoryVTKHierarchicalDataRepositoryVTKHierarchicalDataRepositoryUniqueName">
-					<xsd:selector xpath="VTKHierarchicalDataRepository" />
+			<xsd:element name="VTKHierarchicalDataSource" type="VTKHierarchicalDataSourceType">
+				<xsd:unique name="ExternalDataSourceVTKHierarchicalDataSourceVTKHierarchicalDataSourceUniqueName">
+					<xsd:selector xpath="VTKHierarchicalDataSource" />
 					<xsd:field xpath="@name" />
 				</xsd:unique>
 			</xsd:element>
 		</xsd:choice>
 	</xsd:complexType>
-	<xsd:complexType name="VTKHierarchicalDataRepositoryType">
+	<xsd:complexType name="VTKHierarchicalDataSourceType">
 		<xsd:choice minOccurs="0" maxOccurs="unbounded">
-			<xsd:element name="VTKHierarchicalDataRepository" type="VTKHierarchicalDataRepositoryType" />
+			<xsd:element name="VTKHierarchicalDataSource" type="VTKHierarchicalDataSourceType" />
 		</xsd:choice>
 		<!--file => Path to the mesh file-->
 		<xsd:attribute name="file" type="groupNameRef" use="required" />
