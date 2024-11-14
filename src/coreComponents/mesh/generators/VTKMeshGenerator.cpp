@@ -120,7 +120,6 @@ void VTKMeshGenerator::fillCellBlockManager( CellBlockManager & cellBlockManager
   vtkSmartPointer< vtkMultiProcessController > controller = vtk::getController();
   vtkMultiProcessController::SetGlobalController( controller );
 
-  // GEOS_LOG_RANK_0( GEOS_FMT( "{} '{}': reading mesh from {}", catalogName(), getName(), m_filePath ) );
   {
     vtk::AllMeshes allMeshes;
 
