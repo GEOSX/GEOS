@@ -258,7 +258,7 @@ void MultiphasePoromechanics<>::setMGRStrategy()
   if( dynamic_cast< CompositionalMultiphaseHybridFVM * >( this->flowSolver() ) )
   {
     GEOS_ERROR( GEOS_FMT( "{}: MGR strategy is not implemented for {}/{}",
-    this->getName(), this->getCatalogName(), this->flowSolver()->getCatalogName()));
+                          this->getName(), this->getCatalogName(), this->flowSolver()->getCatalogName()));
   }
   else
   {

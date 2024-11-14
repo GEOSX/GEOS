@@ -129,14 +129,14 @@ void SinglePhasePoromechanics<>::setMGRStrategy()
     if( this->m_isThermal )
     {
       GEOS_ERROR( GEOS_FMT( "{}: MGR strategy is not implemented for thermal {}/{}",
-      this->getName(), this->getCatalogName(), this->flowSolver()->getCatalogName() ));
+                            this->getName(), this->getCatalogName(), this->flowSolver()->getCatalogName() ));
     }
     else
     {
       linearSolverParameters.mgr.strategy = LinearSolverParameters::MGR::StrategyType::hybridSinglePhasePoromechanics;
     }
   }
-  else 
+  else
   {
     if( this->m_isThermal )
     {
