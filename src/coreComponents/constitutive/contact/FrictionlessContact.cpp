@@ -35,7 +35,7 @@ FrictionlessContact::FrictionlessContact( string const & name,
 FrictionlessContact::~FrictionlessContact()
 {}
 
-FrictionlessContactUpdates FrictionlessContact::createKernelWrapper() const
+FrictionlessContactUpdates FrictionlessContact::createKernelUpdates() const
 {
   return FrictionlessContactUpdates( m_displacementJumpThreshold );
 }

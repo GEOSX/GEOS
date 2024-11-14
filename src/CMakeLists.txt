@@ -156,7 +156,7 @@ install( FILES ${CMAKE_INSTALL_PREFIX}/bin/geosx
          RENAME geos
          PERMISSIONS OWNER_READ OWNER_WRITE OWNER_EXECUTE GROUP_READ GROUP_EXECUTE WORLD_READ WORLD_EXECUTE )
 
-if( ENABLE_XML_UPDATES AND ENABLE_MPI AND UNIX AND NOT CMAKE_HOST_APPLE AND NOT ENABLE_CUDA AND NOT ENABLE_HIP )
+if( ENABLE_XML_UPDATES AND ENABLE_MPI AND UNIX AND NOT ENABLE_CUDA AND NOT ENABLE_HIP )
 
   set(SCHEMA_DIR ${CMAKE_SOURCE_DIR}/coreComponents/schema)
   set(SCRIPT_DIR ${CMAKE_SOURCE_DIR}/../scripts)
@@ -184,17 +184,15 @@ if( ENABLE_XML_UPDATES AND ENABLE_MPI AND UNIX AND NOT CMAKE_HOST_APPLE AND NOT 
                      DEPENDS geosx_generate_schema
                      COMMENT "Validating all XML files in the repository against the schema"
                      )
+  if( SPHINX_FOUND )
+    blt_add_sphinx_target( geosx_docs )
+    add_dependencies( geosx_docs geosx_build_datastructure_tables )
+  endif()
 endif()
 
 if( ENABLE_PYGEOSX )
    add_subdirectory( pygeosx )
 endif()
-
-if( SPHINX_FOUND )
-  blt_add_sphinx_target( geosx_docs )
-  add_dependencies( geosx_docs geosx_build_datastructure_tables )
-endif()
-
 
 install( DIRECTORY ../examples/
          DESTINATION ${CMAKE_INSTALL_DATAROOTDIR}/${CMAKE_PROJECT_NAME}/examples )

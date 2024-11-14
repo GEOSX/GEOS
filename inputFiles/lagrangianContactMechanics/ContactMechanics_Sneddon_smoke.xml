@@ -1,0 +1,80 @@
+<?xml version="1.0" ?>
+
+<Problem>
+ <Included>
+    <File
+      name="./Sneddon_smoke.xml"/>
+  </Included>
+
+  <Solvers
+    gravityVector="{0.0, 0.0, 0.0}">
+  <!-- SPHINX_SNEDDON_SOLVER -->
+    <SolidMechanicsLagrangeContact
+      name="lagrangiancontact"
+      timeIntegrationOption="QuasiStatic"
+      stabilizationName="TPFAstabilization"
+      logLevel="1"
+      discretization="FE1"
+      targetRegions="{ Region, Fracture }">
+      <NonlinearSolverParameters
+        newtonTol="1.0e-8"
+        logLevel="2"
+        newtonMaxIter="10"
+        maxNumConfigurationAttempts="10"
+        lineSearchAction="Require"
+        lineSearchMaxCuts="2"
+        maxTimeStepCuts="2"/>
+      <LinearSolverParameters
+        solverType="direct"
+        directParallel="0"
+        logLevel="0"/>
+    </SolidMechanicsLagrangeContact>
+  </Solvers>
+  <!-- SPHINX_SNEDDON_SOLVER_END -->
+
+  <NumericalMethods>
+    <FiniteVolume>
+      <TwoPointFluxApproximation
+        name="TPFAstabilization"/>
+    </FiniteVolume>
+  </NumericalMethods>
+
+  <!-- SPHINX_SNEDDON_EVENTS -->
+  <Events
+    maxTime="1.0">
+    <SoloEvent
+      name="preFracture"
+      target="/Solvers/SurfaceGen"/>
+
+    <PeriodicEvent
+      name="solverApplications"
+      beginTime="0.0"
+      forceDt="1.0"
+      target="/Solvers/lagrangiancontact"/>
+      
+    <PeriodicEvent
+      name="restarts"
+      timeFrequency="1.0"
+      target="/Outputs/restartOutput"/>      
+
+    <PeriodicEvent
+      name="outputs"
+      timeFrequency="1.0"
+      targetExactTimestep="0"
+      target="/Outputs/vtkOutput"/>
+
+    <PeriodicEvent
+      name="timeHistoryCollection"
+      timeFrequency="1.0"
+      targetExactTimestep="0"
+      target="/Tasks/displacementJumpCollection" />
+
+    <PeriodicEvent
+      name="timeHistoryOutput"
+      timeFrequency="1.0"
+      targetExactTimestep="0"
+      target="/Outputs/timeHistoryOutput"/>
+        
+  </Events> 
+  <!-- SPHINX_SNEDDON_EVENTS_END -->
+</Problem>

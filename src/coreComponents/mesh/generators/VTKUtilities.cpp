@@ -1816,36 +1816,6 @@ void fillCellBlock( vtkDataSet & mesh,
   }
 }
 
-/**
- * @brief Returns a string describing the element.
- * @param[in] type The element type.
- * @return The name.
- * @warning This information will be visible in the input file... Consider refactoring with great care.
- */
-string getElementTypeName( ElementType const type )
-{
-  switch( type )
-  {
-    case ElementType::Hexahedron:  return "hexahedra";
-    case ElementType::Tetrahedron: return "tetrahedra";
-    case ElementType::Wedge:       return "wedges";
-    case ElementType::Pyramid:     return "pyramids";
-    case ElementType::Prism5:      return "pentagonalPrisms";
-    case ElementType::Prism6:      return "hexagonalPrisms";
-    case ElementType::Prism7:      return "heptagonalPrisms";
-    case ElementType::Prism8:      return "octagonalPrisms";
-    case ElementType::Prism9:      return "nonagonalPrisms";
-    case ElementType::Prism10:     return "decagonalPrisms";
-    case ElementType::Prism11:     return "hendecagonalPrisms";
-    case ElementType::Polyhedron:  return "polyhedra";
-    default:
-    {
-      GEOS_ERROR( "Element type '" << type << "' is not supported" );
-      return {};
-    }
-  }
-}
-
 void importMaterialField( std::vector< vtkIdType > const & cellIds,
                           vtkDataArray * vtkArray,
                           WrapperBase & wrapper )
@@ -2142,7 +2112,7 @@ void writeCells( integer const logLevel,
       GEOS_LOG_RANK_0_IF( logLevel >= 1, "Importing cell block " << cellBlockName );
 
       // Create and resize the cell block.
-      CellBlock & cellBlock = cellBlockManager.registerCellBlock( cellBlockName );
+      CellBlock & cellBlock = cellBlockManager.registerCellBlock( cellBlockName, regionId );
       cellBlock.setElementType( elemType );
       cellBlock.resize( LvArray::integerConversion< localIndex >( cellIds.size() ) );
 

@@ -21,7 +21,7 @@
 #define GEOS_PHYSICSSOLVERS_CONTACT_CONTACTFIELDS_HPP_
 
 #include "mesh/MeshFields.hpp"
-#include "codingUtilities/EnumStrings.hpp"
+#include "common/format/EnumStrings.hpp"
 
 namespace geos
 {
@@ -50,13 +50,13 @@ struct FractureState
   };
 };
 
-DECLARE_FIELD( penalty,
-               "penalty",
+DECLARE_FIELD( iterativePenalty,
+               "iterativePenalty",
                array2d< real64 >,
-               0,
+               1.e5,
                LEVEL_0,
                WRITE_AND_READ,
-               "Penalty coefficients" );
+               "Penalty coefficients used in the iterative procedure of the Augmented Lagrangian Method" );
 
 DECLARE_FIELD( rotationMatrix,
                "rotationMatrix",
