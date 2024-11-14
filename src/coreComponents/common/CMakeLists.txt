@@ -1,3 +1,25 @@
+# SPDX-License-Identifier: LGPL-2.1-only
+#
+# Copyright (c) 2016-2024 Lawrence Livermore National Security LLC
+# Copyright (c) 2018-2024 Total, S.A
+# Copyright (c) 2018-2024 The Board of Trustees of the Leland Stanford Junior University
+# Copyright (c) 2023-2024 Chevron
+# Copyright (c) 2019-     GEOS/GEOSX Contributors
+# All rights reserved
+#
+# See top level LICENSE, COPYRIGHT, CONTRIBUTORS, NOTICE, and ACKNOWLEDGEMENTS files for details.
+#
+#--------------------------------------------------------------------------------------------------
+
+#[[
+Package: common
+
+Contains the definition of the basic static types of GEOS.
+Also provides commonly used components for such as logging, formatting, memory and wrapper of
+ dependencies.
+#]]
+
+
 #
 # Specify all headers
 #
@@ -6,6 +28,7 @@ set( common_headers
      format/table/TableLayout.hpp
      format/table/TableFormatter.hpp
      format/table/TableData.hpp
+     format/EnumStrings.hpp
      format/Format.hpp
      format/StringUtilities.hpp
      logger/Logger.hpp

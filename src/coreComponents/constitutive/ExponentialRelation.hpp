@@ -21,7 +21,7 @@
 #define GEOS_CONSITUTIVE_EXPONENTIALRELATION_HPP_
 
 #include "common/DataTypes.hpp"
-#include "codingUtilities/EnumStrings.hpp"
+#include "common/format/EnumStrings.hpp"
 
 #include <cmath>
 
