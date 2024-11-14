@@ -1,11 +1,11 @@
 #######################################
 #
-# Pangea4 - gcc - hpcxompi - openblas
+# Pangea4 - gcc - openmpi - onemkl
 #
 # Uses :
 #   - cray wrappers for gcc (cc, CC, ftn)
+#   - OpenMPI       for MPI
 #   - OpenBLAS      for BLAS and LAPACK
-#   - HPC-X OpenMPI for MPI
 #
 #######################################
 #
@@ -20,18 +20,18 @@
 #   - cray-python          = 3.10.10
 #   - craype-x86-milan     = 1.0
 #     PrgEnv-gnu loads gcc 12 that does not support craype-x86-genoa
-#   - hpcx                 = 2.17.1
-#   - openblas             = 0.3.23
+#   - openmpi              = 4.1.6
+#   - openbla              = 0.3.23
 #
 # Load modules this way :
 #   - module purge
 #   - module load PrgEnv-gnu/8.4.0 craype-x86-milan cmake/3.27.2 cray-python/3.10.10
 #   - module unload cray-libsci/23.09.1.1 cray-mpich/8.1.27
-#   - module load hpcx openblas/0.3.23
+#   - module load openmpi/4.1.6 openblas/0.3.23
 #
 ########################################
 
-set( CONFIG_NAME "pangea4-gcc12.1-hpcxompi2.17.1-openblas0.3.23" CACHE PATH "" )
+set( CONFIG_NAME "pangea4-gcc12.1-openmpi4.1.6-openblas0.3.23" CACHE PATH "" )
 
 include(${CMAKE_CURRENT_LIST_DIR}/pangea4-base.cmake)
 
@@ -70,12 +70,12 @@ set( CMAKE_Fortran_FLAGS_DEBUG   ${DEBUG_FLAGS}   CACHE STRING "" )
 #######################################
 
 # use :
-# - HPC-X OpenMPI library
+# - OpenMPI library
 
 set( ENABLE_MPI ON CACHE BOOL "" )
 
-if( NOT DEFINED ENV{HPCX_MPI_DIR} )
-    message( FATAL_ERROR "HPC-X OpenMPI is not loaded. Please load the hpcx module." )
+if( NOT "$ENV{LMOD_MPI_NAME}" STREQUAL "openmpi" )
+    message(FATAL_ERROR "OpenMPI is not loaded. Please load the openmpi/4.1.6 module.")
 endif()
 
 #######################################                                                                                                                                           
@@ -91,4 +91,4 @@ if(NOT OPENBLAS_LIB)
     message(FATAL_ERROR "OpenBLAS is not loaded. Please load the openblas/0.3.23 module.")
 endif()
 
-include( ${CMAKE_CURRENT_LIST_DIR}/../tpls.cmake )
+include( ${CMAKE_CURRENT_LIST_DIR}/../../tpls.cmake )

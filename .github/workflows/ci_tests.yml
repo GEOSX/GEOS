@@ -183,13 +183,13 @@ jobs:
             ENABLE_TRILINOS: OFF
             BUILD_SHARED_LIBS: ON
 
-          - name: Pangea4 (redhat 8, gcc 12.1.0, hpcx 2.17.1, mkl 2023.2.0)
+          - name: Pangea4 (redhat 8, gcc 12.1.0, hpcx 2.20.0, mkl 2023.2.0)
+            BUILD_AND_TEST_CLI_ARGS: "--build-exe-only"
             CMAKE_BUILD_TYPE: Release
-            DOCKER_REPOSITORY: geosx/pangea4-gcc12.1-hpcxompi2.17.1-onemkl2023.2.0
+            DOCKER_REPOSITORY: geosx/pangea4-gcc12.1-hpcxompi2.20.0-onemkl2023.2.0
             ENABLE_HYPRE: ON
             ENABLE_TRILINOS: OFF
-            GCP_BUCKET: geosx/Pangea4
-            HOST_CONFIG: host-configs/TOTAL/pangea4-gcc12.1-hpcxompi2.17.1-onemkl2023.2.0.cmake
+            HOST_CONFIG: host-configs/TotalEnergies/pangea-4/pangea4-gcc12.1-hpcxompi2.20.0-onemkl2023.2.0.cmake
 
     uses: ./.github/workflows/build_and_test.yml
     with:
@@ -343,7 +343,7 @@ jobs:
             CMAKE_BUILD_TYPE: Release
             BUILD_GENERATOR: "--makefile"
             DOCKER_REPOSITORY: geosx/pangea3-almalinux8-gcc9.4-openmpi4.1.2-cuda11.5.0-openblas0.3.18
-            HOST_CONFIG: host-configs/TOTAL/pangea3-gcc8.4.1-openmpi-4.1.2-wave-solver.cmake
+            HOST_CONFIG: host-configs/TotalEnergies/pangea-3/pangea3-gcc8.4.1-openmpi-4.1.2-wave-solver.cmake
             ENABLE_HYPRE_DEVICE: CUDA
             ENABLE_HYPRE: ON
             ENABLE_TRILINOS: OFF

@@ -63,3 +63,12 @@ set( RAJA_ENABLE_TBB    OFF         CACHE BOOL "" FORCE )
 
 set( ENABLE_PYGEOSX         ON CACHE BOOL "" )
 set( ENABLE_VTK_WRAP_PYTHON ON CACHE BOOL "" )
+
+#######################################
+# TPLs
+#######################################
+
+set(GEOS_TPL_DIR "$ENV{GEOS_TPL_DIR}" CACHE PATH "" FORCE)
+if (NOT DEFINED GEOS_TPL_DIR)
+  message(FATAL_ERROR "You must set GEOS_TPL_DIR with -DGEOS_TPL_DIR=")
+endif ()

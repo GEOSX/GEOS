@@ -1,10 +1,10 @@
 #######################################
 #
-# Pangea4 - gcc - hpcxompi - onemkl
+# Pangea4 - gcc - hpcxompi - openblas
 #
 # Uses :
 #   - cray wrappers for gcc (cc, CC, ftn)
-#   - oneAPI MKL    for BLAS and LAPACK
+#   - OpenBLAS      for BLAS and LAPACK
 #   - HPC-X OpenMPI for MPI
 #
 #######################################
@@ -20,18 +20,18 @@
 #   - cray-python          = 3.10.10
 #   - craype-x86-milan     = 1.0
 #     PrgEnv-gnu loads gcc 12 that does not support craype-x86-genoa
-#   - hpcx                 = 2.17.1
-#   - intel-oneapi-mkl     = 2023.2.0
+#   - hpcx                 = 2.20.0
+#   - openblas             = 0.3.23
 #
 # Load modules this way :
 #   - module purge
 #   - module load PrgEnv-gnu/8.4.0 craype-x86-milan cmake/3.27.2 cray-python/3.10.10
 #   - module unload cray-libsci/23.09.1.1 cray-mpich/8.1.27
-#   - module load hpcx intel-oneapi-mkl/2023.2.0
+#   - module load hpcx openblas/0.3.23
 #
 ########################################
 
-set( CONFIG_NAME "pangea4-gcc12.1-hpcxompi2.17.1-onemkl2023.2.0" CACHE PATH "" )
+set( CONFIG_NAME "pangea4-gcc12.1-hpcxompi2.20.0-openblas0.3.23" CACHE PATH "" )
 
 include(${CMAKE_CURRENT_LIST_DIR}/pangea4-base.cmake)
 
@@ -83,17 +83,12 @@ endif()
 #######################################
 
 # use :
-# - intel oneAPI MKL library
+# - OpenBLAS library
 
-set( ENABLE_MKL ON CACHE BOOL "" FORCE )
+find_library(OPENBLAS_LIB openblas)
 
-if( NOT DEFINED ENV{MKLROOT} )
-    message( FATAL_ERROR "MKL is not loaded. Please load the intel-oneapi-mkl/2023.2.0 module." )
+if(NOT OPENBLAS_LIB)
+    message(FATAL_ERROR "OpenBLAS is not loaded. Please load the openblas/0.3.23 module.")
 endif()
 
-set( MKL_INCLUDE_DIRS $ENV{MKLROOT}/include CACHE STRING "" )
-set( MKL_LIBRARIES    $ENV{MKLROOT}/lib/intel64/libmkl_rt.so
-                      $ENV{GCC_PATH}/lib/gcc/x86_64-redhat-linux/12/libgomp.so
-                      CACHE STRING "" )
-
-include( ${CMAKE_CURRENT_LIST_DIR}/../tpls.cmake )
+include( ${CMAKE_CURRENT_LIST_DIR}/../../tpls.cmake )
