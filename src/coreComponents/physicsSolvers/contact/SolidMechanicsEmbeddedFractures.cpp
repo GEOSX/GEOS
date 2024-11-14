@@ -66,13 +66,13 @@ void SolidMechanicsEmbeddedFractures::postInputInitialization()
 {
   ContactSolverBase::postInputInitialization();
 
+  LinearSolverParameters & linearSolverParameters = m_linearSolverParameters.get();
   if( m_useStaticCondensation )
   {
     // configure AMG
-    LinearSolverParameters & linearSolverParameters = m_linearSolverParameters.get();
-    linearSolverParameters.dofsPerNode = 3;
     linearSolverParameters.isSymmetric = true;
     linearSolverParameters.amg.separateComponents = true;
+    linearSolverParameters.dofsPerNode = 3;
   }
   else
   {
@@ -86,6 +86,9 @@ void SolidMechanicsEmbeddedFractures::setMGRStrategy()
 
   if( linearSolverParameters.preconditionerType != LinearSolverParameters::PreconditionerType::mgr )
     return;
+
+  linearSolverParameters.mgr.separateComponents = true;
+  linearSolverParameters.dofsPerNode = 3;
 
   linearSolverParameters.mgr.strategy = LinearSolverParameters::MGR::StrategyType::solidMechanicsEmbeddedFractures;
   GEOS_LOG_LEVEL_RANK_0( 1, GEOS_FMT( "{}: MGR strategy set to {}", getName(),

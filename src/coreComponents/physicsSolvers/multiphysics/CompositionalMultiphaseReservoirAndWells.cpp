@@ -82,20 +82,31 @@ setMGRStrategy()
   if( linearSolverParameters.preconditionerType != LinearSolverParameters::PreconditionerType::mgr )
     return;
 
-  if( dynamic_cast< CompositionalMultiphaseHybridFVM * >( flowSolver() ) )
-  {
-    // add Reservoir
-    linearSolverParameters.mgr.strategy = LinearSolverParameters::MGR::StrategyType::compositionalMultiphaseReservoirHybridFVM;
-  }
-  else if( isThermal() )
-  {
-    m_linearSolverParameters.get().mgr.strategy = LinearSolverParameters::MGR::StrategyType::thermalCompositionalMultiphaseReservoirFVM;
+  linearSolverParameters.mgr.separateComponents = true;
+  linearSolverParameters.dofsPerNode = 3;
 
+  if( dynamic_cast< CompositionalMultiphaseHybridFVM * >( this->flowSolver() ) )
+  {
+    if( isThermal() )
+    {
+      GEOS_ERROR( GEOS_FMT( "{}: MGR strategy is not implemented for thermal {}/{}",
+                            this->getName(), this->getCatalogName(), this->flowSolver()->getCatalogName()));
+    }
+    else
+    {
+      linearSolverParameters.mgr.strategy = LinearSolverParameters::MGR::StrategyType::compositionalMultiphaseReservoirHybridFVM;
+    }
   }
   else
   {
-    // add Reservoir
-    linearSolverParameters.mgr.strategy = LinearSolverParameters::MGR::StrategyType::compositionalMultiphaseReservoirFVM;
+    if( isThermal() )
+    {
+      m_linearSolverParameters.get().mgr.strategy = LinearSolverParameters::MGR::StrategyType::thermalCompositionalMultiphaseReservoirFVM;
+    }
+    else
+    {
+      linearSolverParameters.mgr.strategy = LinearSolverParameters::MGR::StrategyType::compositionalMultiphaseReservoirFVM;
+    }
   }
   GEOS_LOG_LEVEL_RANK_0( 1, GEOS_FMT( "{}: MGR strategy set to {}", getName(),
                                       EnumStrings< LinearSolverParameters::MGR::StrategyType >::toString( linearSolverParameters.mgr.strategy )));
@@ -111,14 +122,16 @@ setMGRStrategy()
   if( linearSolverParameters.preconditionerType != LinearSolverParameters::PreconditionerType::mgr )
     return;
 
-  // flow solver here is indeed flow solver, not poromechanics solver
-  if( dynamic_cast< CompositionalMultiphaseHybridFVM * >( flowSolver() ) )
+  linearSolverParameters.mgr.separateComponents = true;
+  linearSolverParameters.dofsPerNode = 3;
+
+  if( dynamic_cast< CompositionalMultiphaseHybridFVM * >( this->flowSolver() ) )
   {
-    GEOS_ERROR( "The poromechanics MGR strategy for hybrid FVM is not implemented" );
+    GEOS_ERROR( GEOS_FMT( "{}: MGR strategy is not implemented for {}/{}",
+                          this->getName(), this->getCatalogName(), this->flowSolver()->getCatalogName() ) );
   }
   else
   {
-    // add Reservoir
     linearSolverParameters.mgr.strategy = LinearSolverParameters::MGR::StrategyType::multiphasePoromechanicsReservoirFVM;
   }
   GEOS_LOG_LEVEL_RANK_0( 1, GEOS_FMT( "{}: MGR strategy set to {}", getName(),

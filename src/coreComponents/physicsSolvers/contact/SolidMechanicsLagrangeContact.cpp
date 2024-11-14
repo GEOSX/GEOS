@@ -89,11 +89,12 @@ void SolidMechanicsLagrangeContact::setMGRStrategy()
   if( linearSolverParameters.preconditionerType != LinearSolverParameters::PreconditionerType::mgr )
     return;
 
+  linearSolverParameters.mgr.separateComponents = true;
+  linearSolverParameters.dofsPerNode = 3;
+
   linearSolverParameters.mgr.strategy = LinearSolverParameters::MGR::StrategyType::lagrangianContactMechanics;
   GEOS_LOG_LEVEL_RANK_0( 1, GEOS_FMT( "{}: MGR strategy set to {}", getName(),
                                       EnumStrings< LinearSolverParameters::MGR::StrategyType >::toString( linearSolverParameters.mgr.strategy )));
-  linearSolverParameters.mgr.separateComponents = true;
-  linearSolverParameters.mgr.displacementFieldName = solidMechanics::totalDisplacement::key();
 }
 
 void SolidMechanicsLagrangeContact::registerDataOnMesh( Group & meshBodies )
