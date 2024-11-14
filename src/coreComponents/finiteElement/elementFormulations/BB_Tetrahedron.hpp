@@ -62,8 +62,7 @@ public:
   USING_FINITEELEMENTBASE
   /** @endcond Doxygen_Suppress */
 
-  virtual ~BB_Tetrahedron() override
-  {}
+  virtual ~BB_Tetrahedron() = default;
 
   GEOS_HOST_DEVICE
   virtual localIndex getNumQuadraturePoints() const override
@@ -204,71 +203,71 @@ public:
   }
 
   /**
-      * @brief Calculate shape functions values at a single point, given the coordinates of the tetrahedron vertices, using De Casteljau's algorithm.
-      * @param[in] coords The parent coordinates at which to evaluate the shape function value, in the reference element
-      * @param[out] ORDER The shape function values.
-      */
-     GEOS_HOST_DEVICE
-     GEOS_FORCE_INLINE
-     static void calcN( real64 const (&X)[4][3],
-                        real64 const (&coords)[3],
-                        real64 (& N)[numNodes] )
-     {
-       real64 lambda[4] = {};
-       real64 m[3][3] = {};
-       for( int i = 0; i < 3; i++ )
-       {
-         for( int j = 0; j < 3; j++ )
-         {
-           m[ i ][ j ] = X[ i + 1 ][ j ] - X[ 0 ][ j ];
-         }
-       }
-       real64 den = LvARray::math::abs( LvArray::tensorOps::determinant< 3 >( m ) );
-       for( int i = 0; i < 3; i++ )
-       {
-         for( int j = 0; j < 3; j++ )
-         {
-           m[ i ][ j ] = coords[ j ] - X[ 0 ][ j ];
-         }
-         lambda[ i + 1 ] = LvArray::math::abs( LvArray::tensorOps::determinant< 3 >( m ) ) / den;
-         for( int j = 0; j < 3; j++ )
-         {
-           m[ i ][ j ] = X[ i + 1 ][ j ] - X[ 0 ][ j ];
-         }
-       }
-       lambda[ 0 ] = 1.0 - lambda[ 1 ] - lambda[ 2 ] - lambda[ 3 ];
-       return calcN( lambda, N );
-     }
+   * @brief Calculate shape functions values at a single point, given the coordinates of the tetrahedron vertices, using De Casteljau's algorithm.
+   * @param[in] coords The parent coordinates at which to evaluate the shape function value, in the reference element
+   * @param[out] ORDER The shape function values.
+   */
+  GEOS_HOST_DEVICE
+  GEOS_FORCE_INLINE
+  static void calcN( real64 const (&X)[4][3],
+                     real64 const (&coords)[3],
+                     real64 (& N)[numNodes] )
+  {
+    real64 lambda[4] = {};
+    real64 m[3][3] = {};
+    for( int i = 0; i < 3; i++ )
+    {
+      for( int j = 0; j < 3; j++ )
+      {
+        m[ i ][ j ] = X[ i + 1 ][ j ] - X[ 0 ][ j ];
+      }
+    }
+    real64 den = LvArray::math::abs( LvArray::tensorOps::determinant< 3 >( m ) );
+    for( int i = 0; i < 3; i++ )
+    {
+      for( int j = 0; j < 3; j++ )
+      {
+        m[ i ][ j ] = coords[ j ] - X[ 0 ][ j ];
+      }
+      lambda[ i + 1 ] = LvArray::math::abs( LvArray::tensorOps::determinant< 3 >( m ) ) / den;
+      for( int j = 0; j < 3; j++ )
+      {
+        m[ i ][ j ] = X[ i + 1 ][ j ] - X[ 0 ][ j ];
+      }
+    }
+    lambda[ 0 ] = 1.0 - lambda[ 1 ] - lambda[ 2 ] - lambda[ 3 ];
+    return calcN( lambda, N );
+  }
 
-     /**
-      * @brief Calculate the values and derivatives of shape functions with respect to barycentric coordinates at a single point using De Casteljau's algorithm.
-      * @param[in] lambda barycentric coordinates of the point in thetetrahedron
-      * @param[out] N The shape function values.
-      * @param[out] gradN The derivatives of the shape functions with respect to the lambdas
-      */
-     GEOS_HOST_DEVICE
-     GEOS_FORCE_INLINE
-     static void calcNandGradN( real64 const ( & lambda)[4],
-                                real64 const ( & N)[numNodes],
-                                real64 (& gradN)[numNodes][ 4 ] )
-     {                  
-       gradN[ 0 ][ 0 ] = 0.0;
-       gradN[ 0 ][ 1 ] = 0.0;
-       gradN[ 0 ][ 2 ] = 0.0;
-       gradN[ 0 ][ 3 ] = 0.0;
-       N[ 0 ] = 6.0;
-       int prev;
-       int c;
-       int limits[ 4 ] = { 1, 1, 1, 1 };
-       for( int np = 1; np <= ORDER; np++)
-       {
-         prev = np * ( np + 1 ) * ( np + 2 ) / 6 - 1; 
-         c = ( np + 1 ) * ( np + 2 ) * ( np + 3 ) / 6 - 1; 
-         for( int i = 0; i < 4; i++ )
-         {
-           int denominator = i == 0 ? np : 1;
-           int offset = 0;
-           int c1 = np - 1;
+  /**
+   * @brief Calculate the values and derivatives of shape functions with respect to barycentric coordinates at a single point using De Casteljau's algorithm.
+   * @param[in] lambda barycentric coordinates of the point in thetetrahedron
+   * @param[out] N The shape function values.
+   * @param[out] gradN The derivatives of the shape functions with respect to the lambdas
+   */
+  GEOS_HOST_DEVICE
+  GEOS_FORCE_INLINE
+  static void calcNandGradN( real64 const ( & lambda)[4],
+                             real64 const ( & N)[numNodes],
+                             real64 (& gradN)[numNodes][ 4 ] )
+  {                  
+    gradN[ 0 ][ 0 ] = 0.0;
+    gradN[ 0 ][ 1 ] = 0.0;
+    gradN[ 0 ][ 2 ] = 0.0;
+    gradN[ 0 ][ 3 ] = 0.0;
+    N[ 0 ] = 6.0;
+    int prev;
+    int c;
+    int limits[ 4 ] = { 1, 1, 1, 1 };
+    for( int np = 1; np <= ORDER; np++)
+    {
+      prev = np * ( np + 1 ) * ( np + 2 ) / 6 - 1; 
+      c = ( np + 1 ) * ( np + 2 ) * ( np + 3 ) / 6 - 1; 
+      for( int i = 0; i < 4; i++ )
+      {
+        int denominator = i == 0 ? np : 1;
+        int offset = 0;
+        int c1 = np - 1;
         int c2 = i + np - 2;
         int repetitionCount = i == 0 ? 1 : limits[ i - 1 ];
         for( int j = 0; j < limits[ i ] ; j++ )
@@ -320,7 +319,7 @@ public:
         m[ i ][ j ] = X[ i + 1 ][ j ] - X[ 0 ][ j ];
       }
     }
-    real64 den = LvARray::math::abs( LvArray::tensorOps::determinant< 3 >( m ) );
+    real64 den = LvArray::math::abs( LvArray::tensorOps::determinant< 3 >( m ) );
     for( int i = 0; i < 3; i++ )
     {
       for( int j = 0; j < 3; j++ )
@@ -341,7 +340,7 @@ public:
       {
         gradN[ i ][ j ] = ( ( ( X[ 2 ][ (j+1)%3 ] - X[ 0 ][ (j+1)%3 ]) * ( X[ 3 ][ (j+2)%3 ] - X[ 0 ][ (j+2)%3 ] ) - ( X[ 3 ][ (j+1)%3 ] - X[ 0 ][ (j+1)%3 ]) * ( X[ 2 ][ (j+2)%3 ] - X[ 0 ][ (j+2)%3 ] ) )* ( dNdLambda[ i ][ 1 ] - dNdLambda[ i ][ 0 ] ) +
                             ( ( X[ 3 ][ (j+1)%3 ] - X[ 0 ][ (j+1)%3 ]) * ( X[ 1 ][ (j+2)%3 ] - X[ 0 ][ (j+2)%3 ] ) - ( X[ 1 ][ (j+1)%3 ] - X[ 0 ][ (j+1)%3 ]) * ( X[ 3 ][ (j+2)%3 ] - X[ 0 ][ (j+2)%3 ] ) )* ( dNdLambda[ i ][ 2 ] - dNdLambda[ i ][ 0 ] ) +
-                            ( ( X[ 1 ][ (j+1)%3 ] - X[ 0 ][ (j+1)%3 ]) * ( X[ 2 ][ (j+2)%3 ] - X[ 0 ][ (j+2)%3 ] ) - ( X[ 2 ][ (j+1)%3 ] - X[ 0 ][ (j+1)%3 ]) * ( X[ 1 ][ (j+2)%3 ] - X[ 0 ][ (j+2)%3 ] ) )* ( dNdLambda[ i ][ 3 ] - dNdLambda[ i ][ 0 ] )) / den 
+                            ( ( X[ 1 ][ (j+1)%3 ] - X[ 0 ][ (j+1)%3 ]) * ( X[ 2 ][ (j+2)%3 ] - X[ 0 ][ (j+2)%3 ] ) - ( X[ 2 ][ (j+1)%3 ] - X[ 0 ][ (j+1)%3 ]) * ( X[ 1 ][ (j+2)%3 ] - X[ 0 ][ (j+2)%3 ] ) )* ( dNdLambda[ i ][ 3 ] - dNdLambda[ i ][ 0 ] )) / den; 
       }
     }
   }
@@ -472,27 +471,29 @@ public:
    * @param[in] c
    * @return a!/(b!*c!)
    */
-   constexpr static real64 integralTerm(const int a, const int b, const int c)
-   {
-     real64 res = 1.0;
-     int num = a;
-     int den = c;
-     for( int i = b; i > 0; i--)
-     {
-         res *= ( (real64) num ) /  i;
-         num--;
-     }
-     for( int i = num; i > 0; i--)
-     {
-         res *= ( (real64) i ) /  den;
-         den--;
-     }
-     for( int i = den; i > 0; i--)
-     {
-         res /= i;
-     }
-     
-     return res;
+  GEOS_HOST_DEVICE
+  GEOS_FORCE_INLINE
+  constexpr static real64 integralTerm(const int a, const int b, const int c)
+  {
+    real64 res = 1.0;
+    int num = a;
+    int den = c;
+    for( int i = b; i > 0; i--)
+    {
+        res *= ( (real64) num ) /  i;
+        num--;
+    }
+    for( int i = num; i > 0; i--)
+    {
+        res *= ( (real64) i ) /  den;
+        den--;
+    }
+    for( int i = den; i > 0; i--)
+    {
+        res /= i;
+    }
+    
+    return res;
   }
 
   /**
@@ -508,16 +509,18 @@ public:
    * @param[in] l2
    * @return the superposition integral over the barycentric coordinates
    */
-   constexpr static real64 computeSuperpositionIntegral( const int i1, const int j1, const int k1, const int l1, 
-                                                         const int i2, const int j2, const int k2, const int l2 )
-   {
-     return (integralTerm(i1+i2, i1, i2)*
-             integralTerm(j1+j2, j1, j2)*
-             integralTerm(k1+k2, k1, k2)*
-             integralTerm(l1+l2, l1, l2))/
-             integralTerm(i1+j1+k1+l1+i2+j2+k2+l2+3, 
-                          i1+j1+k1+l1+3, i2+j2+k2+l2+3);
-   }
+  GEOS_HOST_DEVICE
+  GEOS_FORCE_INLINE
+  constexpr static real64 computeSuperpositionIntegral( const int i1, const int j1, const int k1, const int l1, 
+                                                        const int i2, const int j2, const int k2, const int l2 )
+  {
+    return (integralTerm(i1+i2, i1, i2)*
+            integralTerm(j1+j2, j1, j2)*
+            integralTerm(k1+k2, k1, k2)*
+            integralTerm(l1+l2, l1, l2))/
+            integralTerm(i1+j1+k1+l1+i2+j2+k2+l2+3, 
+                         i1+j1+k1+l1+3, i2+j2+k2+l2+3);
+  }
 
   /**
    * @brief Computes the superposition integral over a face between Bernstein-Bézier functions whose indices are given by 
@@ -530,16 +533,18 @@ public:
    * @param[in] k2
    * @return the superposition integral over the barycentric coordinates
    */
-   constexpr static real64 computeFaceSuperpositionIntegral( const int i1, const int j1, const int k1, 
-                                                             const int i2, const int j2, const int k2 )
-   {
-     return ((i1+k1+j1+3)*(i2+j2+k2+3)*
-             integralTerm(i1+i2, i1, i2)*
-             integralTerm(j1+j2, j1, j2)*
-             integralTerm(k1+k2, k1, k2))/
-             integralTerm(i1+j1+k1+i2+j2+k2+2, 
-                          i1+j1+k1+2, i2+j2+k2+2);
-   }
+  GEOS_HOST_DEVICE
+  GEOS_FORCE_INLINE
+  constexpr static real64 computeFaceSuperpositionIntegral( const int i1, const int j1, const int k1, 
+                                                            const int i2, const int j2, const int k2 )
+  {
+    return ((i1+k1+j1+3)*(i2+j2+k2+3)*
+            integralTerm(i1+i2, i1, i2)*
+            integralTerm(j1+j2, j1, j2)*
+            integralTerm(k1+k2, k1, k2))/
+            integralTerm(i1+j1+k1+i2+j2+k2+2, 
+                         i1+j1+k1+2, i2+j2+k2+2);
+  }
 
   /**
    * @brief Computes the local degree of freedom index given the shape function indices (i, j, k, l) for each vertex.
@@ -613,6 +618,8 @@ public:
    * @tparam ...Is integer indices of the loop
    */
   template < typename FUNC, int... Is >
+  GEOS_HOST_DEVICE
+  GEOS_FORCE_INLINE
   static constexpr void loop( FUNC && func, std::integer_sequence< int, Is... > )
   {
       ( func( std::integral_constant< int, Is >{} ), ... );
@@ -623,6 +630,8 @@ public:
    * @tparam FUNC the callback function
    */
   template < typename FUNC >
+  GEOS_HOST_DEVICE
+  GEOS_FORCE_INLINE
   static constexpr void barycentricCoordinateLoop(FUNC && func) {
       loop( [&] ( auto const i ) {
         func( std::integral_constant< int, i >{} );
@@ -634,12 +643,15 @@ public:
    * @tparam FUNC the callback function
    */
   template < typename FUNC >
+  GEOS_HOST_DEVICE
+  GEOS_FORCE_INLINE
   static constexpr void basisLoop(FUNC && func) {
     loop( [&] ( auto const i )
     {
       constexpr int i1 = ORDER - i;
       loop( [&] ( auto const j )
-
+      {
+        constexpr int j1 = ORDER - j;
         if constexpr ( j1 <= ORDER - i1 )
         {
           loop( [&] ( auto const k )
@@ -655,8 +667,8 @@ public:
                     std::integral_constant< int, k1 >{},
                     std::integral_constant< int, l1 >{} );
             }
-        }, std::make_integer_sequence< int, ORDER + 1 > {} );
-      }
+          }, std::make_integer_sequence< int, ORDER + 1 > {} );
+        }
       }, std::make_integer_sequence< int, ORDER + 1 > {} );
     }, std::make_integer_sequence< int, ORDER + 1 > {} );
   }
@@ -667,13 +679,16 @@ public:
    * @tparam FUNC the callback function
    * @tparam Is the setindices
    */
-  template < typename FUNC, int Is.. >
+  template < typename FUNC, int... Is >
+  GEOS_HOST_DEVICE
+  GEOS_FORCE_INLINE
   static constexpr void conditionalBasisLoop(FUNC && func) {
     loop( [&] ( auto const i )
     {
       constexpr int i1 = ORDER - i;
       loop( [&] ( auto const j )
-
+      {
+        constexpr int j1 = ORDER - j;
         if constexpr ( j1 <= ORDER - i1 )
         {
           loop( [&] ( auto const k )
@@ -712,8 +727,8 @@ public:
                      std::integral_constant<int, j1>{},                 
                      std::integral_constant<int, k1>{}) ), 1 ) ) || ...);
             }
-        }, std::make_integer_sequence< int, ORDER + 1 > {} );
-      }
+          }, std::make_integer_sequence< int, ORDER + 1 > {} );
+        }
       }, std::make_integer_sequence< int, ORDER + 1 > {} );
     }, std::make_integer_sequence< int, ORDER + 1 > {} );
   }
