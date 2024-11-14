@@ -173,7 +173,7 @@
 		<xsd:choice minOccurs="0" maxOccurs="unbounded">
 			<xsd:element name="Benchmarks" type="BenchmarksType" maxOccurs="1" />
 			<xsd:element name="Events" type="EventsType" minOccurs="1" maxOccurs="1" />
-			<xsd:element name="ExternalDataRepository" type="ExternalDataRepositoryType" minOccurs="1" maxOccurs="1" />
+			<xsd:element name="ExternalDataSource" type="ExternalDataSourceType" minOccurs="1" maxOccurs="1" />
 			<xsd:element name="FieldSpecifications" type="FieldSpecificationsType" maxOccurs="1" />
 			<xsd:element name="Functions" type="FunctionsType" maxOccurs="1" />
 			<xsd:element name="Geometry" type="GeometryType" maxOccurs="1" />
@@ -280,14 +280,14 @@
 		<!--lastTime => Last event occurrence (time)-->
 		<xsd:attribute name="lastTime" type="real64" />
 	</xsd:complexType>
-	<xsd:complexType name="ExternalDataRepositoryType">
+	<xsd:complexType name="ExternalDataSourceType">
 		<xsd:choice minOccurs="0" maxOccurs="unbounded">
-			<xsd:element name="VTKHierarchicalDataRepository" type="VTKHierarchicalDataRepositoryType" />
+			<xsd:element name="VTKHierarchicalDataSource" type="VTKHierarchicalDataSourceType" />
 		</xsd:choice>
 	</xsd:complexType>
-	<xsd:complexType name="VTKHierarchicalDataRepositoryType">
+	<xsd:complexType name="VTKHierarchicalDataSourceType">
 		<xsd:choice minOccurs="0" maxOccurs="unbounded">
-			<xsd:element name="VTKHierarchicalDataRepository" type="VTKHierarchicalDataRepositoryType" />
+			<xsd:element name="VTKHierarchicalDataSource" type="VTKHierarchicalDataSourceType" />
 		</xsd:choice>
 	</xsd:complexType>
 	<xsd:complexType name="FieldSpecificationsType">
