@@ -103,7 +103,7 @@ jobs:
         ls -la ./
 
     - name: Checkout Repository
-      uses: actions/checkout@v4.1.7
+      uses: actions/checkout@v4.2.2
       with:
         submodules: true
         lfs: ${{ inputs.BUILD_TYPE == 'integrated_tests' }}
@@ -111,14 +111,14 @@ jobs:
 
     - id: 'auth'
       if: ${{ inputs.GCP_BUCKET || inputs.USE_SCCACHE }}
-      uses: 'google-github-actions/auth@v2.1.3'
+      uses: 'google-github-actions/auth@v2.1.7'
       with:
         credentials_json: '${{ secrets.GOOGLE_CLOUD_GCP }}'
         create_credentials_file: true
 
     - name: 'Set up Cloud SDK'
       if: inputs.GCP_BUCKET
-      uses: 'google-github-actions/setup-gcloud@v2.1.0'
+      uses: 'google-github-actions/setup-gcloud@v2.1.2'
       with:
         version: '>= 363.0.0'
 
@@ -334,7 +334,7 @@ jobs:
 
     - name: Upload coverage to Codecov
       if: inputs.CODE_COVERAGE
-      uses: codecov/codecov-action@v4.5.0
+      uses: codecov/codecov-action@v4.6.0
       with:
         files: ${GITHUB_WORKSPACE}/geos_coverage.info.cleaned
         fail_ci_if_error: true

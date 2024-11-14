@@ -52,6 +52,7 @@ public:
   using Base::m_elemsToFaces;
   using Base::m_faceToNodes;
   using Base::m_finiteElementSpace;
+  using Base::m_constitutiveUpdate;
   using Base::m_dofNumber;
   using Base::m_bDofNumber;
   using Base::m_dofRankOffset;
@@ -80,7 +81,8 @@ public:
        CRSMatrixView< real64, globalIndex const > const inputMatrix,
        arrayView1d< real64 > const inputRhs,
        real64 const inputDt,
-       arrayView1d< localIndex const > const & faceElementList ):
+       arrayView1d< localIndex const > const & faceElementList,
+       bool const isSymmetric ):
     Base( nodeManager,
           edgeManager,
           faceManager,
@@ -95,7 +97,8 @@ public:
           inputRhs,
           inputDt,
           faceElementList ),
-    m_traction( elementSubRegion.getField< fields::contact::traction >().toViewConst())
+    m_traction( elementSubRegion.getField< fields::contact::traction >().toViewConst()),
+    m_symmetric( isSymmetric )
   {}
 
   //***************************************************************************
@@ -223,11 +226,6 @@ public:
       }
     }
 
-    // The minus sign is consistent with the sign of the Jacobian
-    stack.localPenalty[0][0] = -m_penalty( k, 0 );
-    stack.localPenalty[1][1] = -m_penalty( k, 1 );
-    stack.localPenalty[2][2] = -m_penalty( k, 1 );
-
     for( int i=0; i<numTdofs; ++i )
     {
       stack.tLocal[i] = m_traction( k, i );
@@ -251,6 +249,7 @@ public:
                    StackVariables & stack ) const
   {
     GEOS_UNUSED_VAR( k );
+    constexpr real64 zero = LvArray::NumericLimits< real64 >::epsilon;
 
     constexpr int numUdofs = numNodesPerElem * 3 * 2;
 
@@ -259,12 +258,23 @@ public:
     real64 matRRtAtu[3][numUdofs], matDRtAtu[3][numUdofs];
     real64 matRRtAtb[3][numBdofs], matDRtAtb[3][numBdofs];
 
-    real64 dispJumpR[numUdofs];
-    real64 oldDispJumpR[numUdofs];
     real64 tractionR[numUdofs];
-    real64 dispJumpRb[numBdofs];
-    real64 oldDispJumpRb[numBdofs];
     real64 tractionRb[numBdofs];
+
+    real64 tractionNew[3];
+
+    integer fractureState;
+    m_constitutiveUpdate.updateTraction( m_oldDispJump[k],
+                                         m_dispJump[k],
+                                         m_penalty[k],
+                                         m_traction[k],
+                                         m_symmetric,
+                                         m_symmetric,
+                                         zero,
+                                         zero,
+                                         stack.localPenalty,
+                                         tractionNew,
+                                         fractureState );
 
     // transp(R) * Atu
     LvArray::tensorOps::Rij_eq_AkiBkj< 3, numUdofs, 3 >( matRRtAtu, stack.localRotationMatrix,
@@ -274,8 +284,8 @@ public:
                                                          stack.localAtb );
 
     // Compute the traction contribute of the local residuals
-    LvArray::tensorOps::Ri_eq_AjiBj< numUdofs, 3 >( tractionR, matRRtAtu, stack.tLocal );
-    LvArray::tensorOps::Ri_eq_AjiBj< numBdofs, 3 >( tractionRb, matRRtAtb, stack.tLocal );
+    LvArray::tensorOps::Ri_eq_AjiBj< numUdofs, 3 >( tractionR, matRRtAtu, tractionNew );
+    LvArray::tensorOps::Ri_eq_AjiBj< numBdofs, 3 >( tractionRb, matRRtAtb, tractionNew );
 
     // D*RtAtu
     LvArray::tensorOps::Rij_eq_AikBkj< 3, numUdofs, 3 >( matDRtAtu, stack.localPenalty,
@@ -307,18 +317,9 @@ public:
                                                                 matRRtAtb );
 
     // Compute the local residuals
-    LvArray::tensorOps::Ri_eq_AjiBj< numUdofs, 3 >( dispJumpR, matDRtAtu, stack.dispJumpLocal );
-    LvArray::tensorOps::Ri_eq_AjiBj< numUdofs, 3 >( oldDispJumpR, matDRtAtu, stack.oldDispJumpLocal );
-    LvArray::tensorOps::Ri_eq_AjiBj< numBdofs, 3 >( dispJumpRb, matDRtAtb, stack.dispJumpLocal );
-    LvArray::tensorOps::Ri_eq_AjiBj< numBdofs, 3 >( oldDispJumpRb, matDRtAtb, stack.oldDispJumpLocal );
-
     LvArray::tensorOps::scaledAdd< numUdofs >( stack.localRu, tractionR, -1 );
-    LvArray::tensorOps::scaledAdd< numUdofs >( stack.localRu, dispJumpR, 1 );
-    LvArray::tensorOps::scaledAdd< numUdofs >( stack.localRu, oldDispJumpR, -1 );
 
     LvArray::tensorOps::scaledAdd< numBdofs >( stack.localRb, tractionRb, -1 );
-    LvArray::tensorOps::scaledAdd< numBdofs >( stack.localRb, dispJumpRb, 1 );
-    LvArray::tensorOps::scaledAdd< numBdofs >( stack.localRb, oldDispJumpRb, -1 );
 
     for( localIndex i=0; i < numUdofs; ++i )
     {
@@ -369,6 +370,8 @@ protected:
 
   arrayView2d< real64 const > const m_traction;
 
+  bool const m_symmetric;
+
 };
 
 /// The factory used to construct the kernel.
@@ -379,48 +382,45 @@ using ALMFactory = finiteElement::InterfaceKernelFactory< ALM,
                                                           CRSMatrixView< real64, globalIndex const > const,
                                                           arrayView1d< real64 > const,
                                                           real64 const,
-                                                          arrayView1d< localIndex const > const >;
-
+                                                          arrayView1d< localIndex const > const,
+                                                          bool const >;
 
 /**
- * @brief A struct to compute rotation matrices
+ * @brief A struct to compute the traction after nonlinear solve
  */
-struct ComputeRotationMatricesKernel
+struct ComputeTractionKernel
 {
 
   /**
-   * @brief Launch the kernel function to comute rotation matrices
+   * @brief Launch the kernel function to compute the traction
    * @tparam POLICY the type of policy used in the kernel launch
+   * @tparam CONTACT_WRAPPER the type of contact wrapper doing the fracture traction updates
    * @param[in] size the size of the subregion
-   * @param[in] faceNormal the array of array containing the face to nodes map
-   * @param[in] elemsToFaces the array of array containing the element to faces map
-   * @param[out] rotationMatrix the array containing the rotation matrices
+   * @param[in] penalty the array containing the tangential penalty matrix
+   * @param[in] traction the array containing the current traction
+   * @param[in] dispJump the array containing the displacement jump
+   * @param[in] deltaDispJump the array containing the delta displacement jump
+   * @param[out] tractionNew the array containing the new traction
    */
-  template< typename POLICY >
+  template< typename POLICY, typename CONTACT_WRAPPER >
   static void
   launch( localIndex const size,
-          arrayView2d< real64 const > const & faceNormal,
-          ArrayOfArraysView< localIndex const > const & elemsToFaces,
-          arrayView3d< real64 > const & rotationMatrix )
+          CONTACT_WRAPPER const & contactWrapper,
+          arrayView2d< real64 const > const & penalty,
+          arrayView2d< real64 const > const & traction,
+          arrayView2d< real64 const > const & dispJump,
+          arrayView2d< real64 const > const & deltaDispJump,
+          arrayView2d< real64 > const & tractionNew )
   {
 
     forAll< POLICY >( size, [=] GEOS_HOST_DEVICE ( localIndex const k )
     {
 
-      localIndex const f0 = elemsToFaces[k][0];
-      localIndex const f1 = elemsToFaces[k][1];
-
-      real64 Nbar[3];
-      Nbar[0] = faceNormal[f0][0] - faceNormal[f1][0];
-      Nbar[1] = faceNormal[f0][1] - faceNormal[f1][1];
-      Nbar[2] = faceNormal[f0][2] - faceNormal[f1][2];
-
-      LvArray::tensorOps::normalize< 3 >( Nbar );
-      computationalGeometry::RotationMatrix_3D( Nbar, rotationMatrix[k] );
+      contactWrapper.updateTractionOnly( dispJump[k], deltaDispJump[k],
+                                         penalty[k], traction[k], tractionNew[k] );
 
     } );
   }
-
 };
 
 } // namespace SolidMechanicsALMKernels

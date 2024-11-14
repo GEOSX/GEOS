@@ -9,7 +9,11 @@ set( dependencyList mainInterface )
 
 if( ENABLE_PVTPackage )
     list( APPEND gtest_geosx_tests
-          testReservoirCompositionalMultiphaseMSWells.cpp )
+          testReservoirCompositionalMultiphaseMSWells.cpp
+          testIsothermalReservoirCompositionalMultiphaseMSWells.cpp 
+          testIsothermalReservoirCompositionalMultiphaseSSWells.cpp 
+          testThermalReservoirCompositionalMultiphaseSSWells.cpp 
+          testThermalReservoirCompositionalMultiphaseMSWells.cpp )
 endif()
 
 geos_decorate_link_dependencies( LIST decoratedDependencies

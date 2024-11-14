@@ -176,8 +176,7 @@ public:
   GEOS_FORCE_INLINE
   constexpr static real64 gradientBubble( const real64 xi )
   {
-    GEOS_UNUSED_VAR( xi );
-    return -0.5*xi;
+    return -2.0*xi;
   }
 
   /**
@@ -420,20 +419,29 @@ public:
     static void valueFaceBubble( real64 const (&coords)[3],
                                  real64 (& N)[numSupportFaces] )
     {
-      for( int a=0; a<2; ++a )
-      {
-        N[ a*5 ]   = LagrangeBasis1::valueBubble( coords[0] ) *
-                     LagrangeBasis1::valueBubble( coords[1] ) *
-                     LagrangeBasis1::value( a, coords[2] );
+      N[ 0 ] = LagrangeBasis1::valueBubble( coords[0] ) *
+               LagrangeBasis1::value( 0, coords[1] ) *
+               LagrangeBasis1::valueBubble( coords[2] );
 
-        N[ a*3+1 ] = LagrangeBasis1::valueBubble( coords[0] ) *
-                     LagrangeBasis1::value( a, coords[1] ) *
-                     LagrangeBasis1::valueBubble( coords[2] );
+      N[ 1 ] = LagrangeBasis1::valueBubble( coords[0] ) *
+               LagrangeBasis1::valueBubble( coords[1] ) *
+               LagrangeBasis1::value( 0, coords[2] );
 
-        N[ a+2 ]   = LagrangeBasis1::value( a, coords[0] ) *
-                     LagrangeBasis1::valueBubble( coords[1] ) *
-                     LagrangeBasis1::valueBubble( coords[2] );
-      }
+      N[ 2 ] = LagrangeBasis1::value( 0, coords[0] ) *
+               LagrangeBasis1::valueBubble( coords[1] ) *
+               LagrangeBasis1::valueBubble( coords[2] );
+
+      N[ 3 ] = LagrangeBasis1::value( 1, coords[0] ) *
+               LagrangeBasis1::valueBubble( coords[1] ) *
+               LagrangeBasis1::valueBubble( coords[2] );
+
+      N[ 4 ] = LagrangeBasis1::valueBubble( coords[0] ) *
+               LagrangeBasis1::value( 1, coords[1] ) *
+               LagrangeBasis1::valueBubble( coords[2] );
+
+      N[ 5 ] = LagrangeBasis1::valueBubble( coords[0] ) *
+               LagrangeBasis1::valueBubble( coords[1] ) *
+               LagrangeBasis1::value( 1, coords[2] );
     }
 
     /**
@@ -448,38 +456,65 @@ public:
     static void gradientFaceBubble( real64 const (&coords)[3],
                                     real64 (& dNdXi)[numSupportFaces][3] )
     {
-      for( int a=0; a<2; ++a )
-      {
-        dNdXi[ a*5 ][0]   = LagrangeBasis1::gradientBubble( coords[0] ) *
-                            LagrangeBasis1::valueBubble( coords[1] ) *
-                            LagrangeBasis1::value( a, coords[2] );
-        dNdXi[ a*5 ][1]   = LagrangeBasis1::valueBubble( coords[0] ) *
-                            LagrangeBasis1::gradientBubble( coords[1] ) *
-                            LagrangeBasis1::value( a, coords[2] );
-        dNdXi[ a*5 ][2]   = LagrangeBasis1::valueBubble( coords[0] ) *
-                            LagrangeBasis1::valueBubble( coords[1] ) *
-                            LagrangeBasis1::gradient( a, coords[2] );
+      dNdXi[0][0] = LagrangeBasis1::gradientBubble( coords[0] ) *
+                    LagrangeBasis1::value( 0, coords[1] ) *
+                    LagrangeBasis1::valueBubble( coords[2] );
+      dNdXi[0][1] = LagrangeBasis1::valueBubble( coords[0] ) *
+                    LagrangeBasis1::gradient( 0, coords[1] ) *
+                    LagrangeBasis1::valueBubble( coords[2] );
+      dNdXi[0][2] = LagrangeBasis1::valueBubble( coords[0] ) *
+                    LagrangeBasis1::value( 0, coords[1] ) *
+                    LagrangeBasis1::gradientBubble( coords[2] );
 
-        dNdXi[ a*3+1 ][0] = LagrangeBasis1::gradientBubble( coords[0] ) *
-                            LagrangeBasis1::value( a, coords[1] ) *
-                            LagrangeBasis1::valueBubble( coords[2] );
-        dNdXi[ a*3+1 ][1] = LagrangeBasis1::valueBubble( coords[0] ) *
-                            LagrangeBasis1::gradient( a, coords[1] ) *
-                            LagrangeBasis1::valueBubble( coords[2] );
-        dNdXi[ a*3+1 ][2] = LagrangeBasis1::valueBubble( coords[0] ) *
-                            LagrangeBasis1::value( a, coords[1] ) *
-                            LagrangeBasis1::gradientBubble( coords[2] );
+      dNdXi[1][0] = LagrangeBasis1::gradientBubble( coords[0] ) *
+                    LagrangeBasis1::valueBubble( coords[1] ) *
+                    LagrangeBasis1::value( 0, coords[2] );
+      dNdXi[1][1] = LagrangeBasis1::valueBubble( coords[0] ) *
+                    LagrangeBasis1::gradientBubble( coords[1] ) *
+                    LagrangeBasis1::value( 0, coords[2] );
+      dNdXi[1][2] = LagrangeBasis1::valueBubble( coords[0] ) *
+                    LagrangeBasis1::valueBubble( coords[1] ) *
+                    LagrangeBasis1::gradient( 0, coords[2] );
 
-        dNdXi[ a+2 ][0]   = LagrangeBasis1::gradient( a, coords[0] ) *
-                            LagrangeBasis1::valueBubble( coords[1] ) *
-                            LagrangeBasis1::valueBubble( coords[2] );
-        dNdXi[ a+2 ][1]   = LagrangeBasis1::value( a, coords[0] ) *
-                            LagrangeBasis1::gradientBubble( coords[1] ) *
-                            LagrangeBasis1::valueBubble( coords[2] );
-        dNdXi[ a+2 ][2]   = LagrangeBasis1::value( a, coords[0] ) *
-                            LagrangeBasis1::valueBubble( coords[1] ) *
-                            LagrangeBasis1::gradientBubble( coords[2] );
-      }
+      dNdXi[2][0] = LagrangeBasis1::gradient( 0, coords[0] ) *
+                    LagrangeBasis1::valueBubble( coords[1] ) *
+                    LagrangeBasis1::valueBubble( coords[2] );
+      dNdXi[2][1] = LagrangeBasis1::value( 0, coords[0] ) *
+                    LagrangeBasis1::gradientBubble( coords[1] ) *
+                    LagrangeBasis1::valueBubble( coords[2] );
+      dNdXi[2][2] = LagrangeBasis1::value( 0, coords[0] ) *
+                    LagrangeBasis1::valueBubble( coords[1] ) *
+                    LagrangeBasis1::gradientBubble( coords[2] );
+
+      dNdXi[3][0] = LagrangeBasis1::gradient( 1, coords[0] ) *
+                    LagrangeBasis1::valueBubble( coords[1] ) *
+                    LagrangeBasis1::valueBubble( coords[2] );
+      dNdXi[3][1] = LagrangeBasis1::value( 1, coords[0] ) *
+                    LagrangeBasis1::gradientBubble( coords[1] ) *
+                    LagrangeBasis1::valueBubble( coords[2] );
+      dNdXi[3][2] = LagrangeBasis1::value( 1, coords[0] ) *
+                    LagrangeBasis1::valueBubble( coords[1] ) *
+                    LagrangeBasis1::gradientBubble( coords[2] );
+
+      dNdXi[4][0] = LagrangeBasis1::gradientBubble( coords[0] ) *
+                    LagrangeBasis1::value( 1, coords[1] ) *
+                    LagrangeBasis1::valueBubble( coords[2] );
+      dNdXi[4][1] = LagrangeBasis1::valueBubble( coords[0] ) *
+                    LagrangeBasis1::gradient( 1, coords[1] ) *
+                    LagrangeBasis1::valueBubble( coords[2] );
+      dNdXi[4][2] = LagrangeBasis1::valueBubble( coords[0] ) *
+                    LagrangeBasis1::value( 1, coords[1] ) *
+                    LagrangeBasis1::gradientBubble( coords[2] );
+
+      dNdXi[5][0] = LagrangeBasis1::gradientBubble( coords[0] ) *
+                    LagrangeBasis1::valueBubble( coords[1] ) *
+                    LagrangeBasis1::value( 1, coords[2] );
+      dNdXi[5][1] = LagrangeBasis1::valueBubble( coords[0] ) *
+                    LagrangeBasis1::gradientBubble( coords[1] ) *
+                    LagrangeBasis1::value( 1, coords[2] );
+      dNdXi[5][2] = LagrangeBasis1::valueBubble( coords[0] ) *
+                    LagrangeBasis1::valueBubble( coords[1] ) *
+                    LagrangeBasis1::gradient( 1, coords[2] );
     }
 
     /**

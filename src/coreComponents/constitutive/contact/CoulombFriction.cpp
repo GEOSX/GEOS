@@ -50,7 +50,6 @@ CoulombFriction::CoulombFriction( string const & name, Group * const parent ):
   registerWrapper( viewKeyStruct::elasticSlipString(), &m_elasticSlip ).
     setApplyDefaultValue( 0.0 ).
     setDescription( "Elastic Slip" );
-
 }
 
 CoulombFriction::~CoulombFriction()
@@ -73,7 +72,7 @@ void CoulombFriction::allocateConstitutiveData( Group & parent,
 }
 
 
-CoulombFrictionUpdates CoulombFriction::createKernelWrapper() const
+CoulombFrictionUpdates CoulombFriction::createKernelUpdates() const
 {
   return CoulombFrictionUpdates( m_displacementJumpThreshold,
                                  m_shearStiffness,

@@ -22,7 +22,7 @@
 #define GEOS_PHYSICSSOLVERS_WAVEPROPAGATION_ACOUSTICVTIWAVEEQUATIONSEM_HPP_
 
 #include "mesh/MeshFields.hpp"
-#include "physicsSolvers/SolverBase.hpp"
+#include "physicsSolvers/PhysicsSolverBase.hpp"
 #include "physicsSolvers/wavePropagation/shared/WaveSolverBase.hpp"
 #include "physicsSolvers/wavePropagation/sem/acoustic/shared/AcousticFields.hpp"
 #include "AcousticVTIFields.hpp"
@@ -42,7 +42,7 @@ public:
 
   static string catalogName() { return "AcousticVTISEM"; }
   /**
-   * @copydoc SolverBase::getCatalogName()
+   * @copydoc PhysicsSolverBase::getCatalogName()
    */
   string getCatalogName() const override { return catalogName(); }
 
@@ -76,7 +76,7 @@ public:
    * @param cycleNumber the cycle number/step number of evaluation of the source
    * @param rhs the right hand side vector to be computed
    */
-  virtual void addSourceToRightHandSide( integer const & cycleNumber, arrayView1d< real32 > const rhs );
+  virtual void addSourceToRightHandSide( real64 const & time_n, arrayView1d< real32 > const rhs );
 
   /**
    * @brief Overridden from ExecutableGroup. Used to write last seismogram if needed.
@@ -101,7 +101,6 @@ public:
    */
   real64 explicitStepInternal( real64 const & time_n,
                                real64 const & dt,
-                               integer const cycleNumber,
                                DomainPartition & domain );
 
   /**
@@ -144,6 +143,8 @@ private:
    * @param domain the partition domain
    */
   virtual void applyFreeSurfaceBC( real64 const time, DomainPartition & domain ) override;
+
+  virtual real64 computeTimeStep( real64 & dtOut ) override;
 
   /// Pressure_p_np1 at the receiver location for each time step for each receiver
   array2d< real32 > m_pressureNp1AtReceivers;

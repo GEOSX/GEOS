@@ -20,10 +20,10 @@
 #ifndef GEOS_PHYSICSSOLVERS_MULTIPHYSICS_POROMECHANICSKERNELS_MULTIPHASEPOROMECHANICS_HPP_
 #define GEOS_PHYSICSSOLVERS_MULTIPHYSICS_POROMECHANICSKERNELS_MULTIPHASEPOROMECHANICS_HPP_
 
-#include "codingUtilities/Utilities.hpp"
-#include "physicsSolvers/fluidFlow/CompositionalMultiphaseBaseFields.hpp"
-#include "physicsSolvers/multiphysics/PoromechanicsFields.hpp"
 #include "physicsSolvers/multiphysics/poromechanicsKernels/PoromechanicsBase.hpp"
+#include "physicsSolvers/multiphysics/PoromechanicsFields.hpp"
+#include "physicsSolvers/fluidFlow/CompositionalMultiphaseBaseFields.hpp"
+#include "codingUtilities/Utilities.hpp"
 
 namespace geos
 {
@@ -342,8 +342,10 @@ protected:
   arrayView3d< real64 const, compflow::USD_COMP_DC > const m_dGlobalCompFraction_dGlobalCompDensity;
 
   // Views on component densities
+  bool m_useMass;
   arrayView2d< real64 const, compflow::USD_COMP > m_compDens;
   arrayView2d< real64 const, compflow::USD_COMP > m_compDens_n;
+  arrayView1d< real64 const > m_componentMolarWeight;
 
   /// Number of components
   localIndex const m_numComponents;
@@ -386,20 +388,21 @@ public:
 
   /**
    * @brief Constructor
-   * @param[in] numPhases the number of fluid phases
+   * @param[in] numComponents the number of fluid components (species)
    * @param[in] fluid the fluid model
    * @param[in] solid the porous solid model
    * @param[in] subRegion the element subregion
    */
-  MultiphaseBulkDensityKernel( integer const numPhases,
+  MultiphaseBulkDensityKernel( integer const numComponents,
                                constitutive::MultiFluidBase const & fluid,
                                constitutive::CoupledSolidBase const & solid,
                                ElementSubRegionBase & subRegion )
-    : m_numPhases( numPhases ),
+    : m_numComponents( numComponents ),
     m_bulkDensity( subRegion.getField< fields::poromechanics::bulkDensity >() ),
-    m_fluidPhaseVolFrac( subRegion.getField< fields::flow::phaseVolumeFraction >() ),
+    m_compDens( subRegion.getField< fields::flow::globalCompDensity >() ),
+    m_useMass( fluid.getMassFlag()),
     m_rockDensity( solid.getDensity() ),
-    m_fluidPhaseDensity( fluid.phaseMassDensity() ),
+    m_componentMolarWeight( fluid.componentMolarWeights() ),
     m_porosity( solid.getPorosity() )
   {}
 
@@ -413,12 +416,12 @@ public:
                 localIndex const q ) const
   {
     m_bulkDensity[ei][q] = 0.0;
-    for( integer ip = 0; ip < m_numPhases; ++ip )
+    for( integer ic = 0; ic < m_numComponents; ++ic )
     {
-      m_bulkDensity[ei][q] += m_fluidPhaseVolFrac[ei][ip] * m_fluidPhaseDensity[ei][q][ip];
+      m_bulkDensity[ei][q] = m_bulkDensity[ei][q] + ( m_useMass ? m_compDens[ei][ic] : m_compDens[ei][ic] * m_componentMolarWeight[ic] );
     }
     m_bulkDensity[ei][q] *= m_porosity[ei][q];
-    m_bulkDensity[ei][q] += ( 1 - m_porosity[ei][q] ) * m_rockDensity[ei][q];
+    m_bulkDensity[ei][q] = m_bulkDensity[ei][q] + ( 1 - m_porosity[ei][q] ) * m_rockDensity[ei][q];
   }
 
   /**
@@ -446,20 +449,23 @@ public:
 
 protected:
 
-  // number of fluid phases
-  integer const m_numPhases;
+  // number of fluid components (species)
+  integer const m_numComponents;
 
   // the bulk density
   arrayView2d< real64 > const m_bulkDensity;
 
-  // the fluid phase saturation
-  arrayView2d< real64 const, compflow::USD_PHASE > const m_fluidPhaseVolFrac;
+  // the fluid component densities
+  arrayView2d< real64 const, compflow::USD_PHASE > const m_compDens;
+
+  // the flag for selecting mass formulation instead of molar formulation
+  bool m_useMass;
 
   // the rock density
   arrayView2d< real64 const > const m_rockDensity;
 
-  // the fluid density
-  arrayView3d< real64 const, constitutive::multifluid::USD_PHASE > const m_fluidPhaseDensity;
+  // the molar component weights
+  arrayView1d< real64 const > m_componentMolarWeight;
 
   // the porosity
   arrayView2d< real64 const > const m_porosity;
@@ -476,19 +482,19 @@ public:
   /**
    * @brief Create a new kernel and launch
    * @tparam POLICY the policy used in the RAJA kernel
-   * @param[in] numPhases number of phases
+   * @param[in] numComponents number of phases components (species)
    * @param[in] fluid the fluid model
    * @param[in] solid the porous solid model
    * @param[in] subRegion the element subregion
    */
   template< typename POLICY >
   static void
-  createAndLaunch( integer const numPhases,
+  createAndLaunch( integer const numComponents,
                    constitutive::MultiFluidBase const & fluid,
                    constitutive::CoupledSolidBase const & solid,
                    ElementSubRegionBase & subRegion )
   {
-    MultiphaseBulkDensityKernel kernel( numPhases, fluid, solid, subRegion );
+    MultiphaseBulkDensityKernel kernel( numComponents, fluid, solid, subRegion );
     MultiphaseBulkDensityKernel::launch< POLICY >( subRegion.size(),
                                                    subRegion.getField< fields::poromechanics::bulkDensity >().size( 1 ),
                                                    kernel );

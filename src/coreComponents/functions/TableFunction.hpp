@@ -22,8 +22,9 @@
 
 #include "FunctionBase.hpp"
 
-#include "codingUtilities/EnumStrings.hpp"
+#include "common/format/EnumStrings.hpp"
 #include "LvArray/src/tensorOps.hpp"
+#include "common/format/table/TableFormatter.hpp"
 #include "common/Units.hpp"
 
 namespace geos
@@ -45,6 +46,15 @@ public:
     Nearest,
     Upper,
     Lower
+  };
+
+  /// Struct containing output options
+  struct OutputOptions
+  {
+    /// Output PVT in CSV file
+    bool writeCSV;
+    /// Output PVT in log
+    bool writeInLog;
   };
 
   /// maximum dimensions for the coordinates in the table
@@ -277,7 +287,9 @@ private:
    * @return The unit of a coordinate dimension, or units::Unknown if no units has been specified.
    */
   units::Unit getDimUnit( localIndex const dim ) const
-  { return size_t(dim) < m_dimUnits.size() ? m_dimUnits[dim] : units::Unknown; }
+  {
+    return size_t(dim) < m_dimUnits.size() ? m_dimUnits[dim] : units::Unknown;
+  }
 
   /**
    * @brief Set the interpolation method
@@ -318,11 +330,17 @@ private:
     m_valueUnit = unit;
   }
 
+/**
+ * @return The table unit
+ */
+  units::Unit getValueUnit() const { return m_valueUnit; }
+
+
   /**
-   * @brief Print table into a CSV file (only 1d and 2d tables are supported)
-   * @param filename Filename for output
+   * @brief Print the table(s) in the log and/or CSV files when requested by the user.
+   * @param pvtOutputOpts Struct containing output options
    */
-  void print( std::string const & filename ) const;
+  void outputPVTTableData( OutputOptions const pvtOutputOpts ) const;
 
   /**
    * @brief Create an instance of the kernel wrapper
@@ -354,6 +372,7 @@ private:
    * @param[in] delimiter The delimiter used for file entries.
    */
   void readFile( string const & filename, array1d< real64 > & target );
+
 
   /// Coordinates for 1D table
   array1d< real64 > m_tableCoordinates1D;
@@ -673,6 +692,22 @@ ENUM_STRINGS( TableFunction::InterpolationType,
               "nearest",
               "upper",
               "lower" );
+
+/**
+ * @brief Template specialisation to convert a TableFunction to a CSV string.
+ * @param tableData The TableFunction object to convert.
+ * @return The CSV string representation of the TableFunction.
+ */
+template<>
+string TableTextFormatter::toString< TableFunction >( TableFunction const & tableData ) const;
+
+/**
+ * @brief Template specialisation to convert a TableFunction to a table string.
+ * @param tableData The TableFunction object to convert.
+ * @return The table string representation of the TableFunction.
+ */
+template<>
+string TableCSVFormatter::toString< TableFunction >( TableFunction const & tableData ) const;
 
 } /* namespace geos */
 

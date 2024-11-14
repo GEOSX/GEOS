@@ -1,0 +1,196 @@
+<?xml version="1.0" ?>
+
+<Problem>
+  <Solvers
+  gravityVector="{ 0.0, 0.0, 0.0 }">  
+ 
+  <SinglePhasePoromechanics
+    name="thermoPoroSolver"
+    solidSolverName="solidMechSolver"
+    flowSolverName="flowSolver"
+    isThermal="1"
+    logLevel="1"
+    targetRegions="{ Domain }">
+    <NonlinearSolverParameters
+      couplingType="FullyImplicit"
+      newtonMaxIter="200"/>
+    <LinearSolverParameters
+      directParallel="0"/>
+  </SinglePhasePoromechanics>
+  
+  <SolidMechanicsLagrangianSSLE
+    name="solidMechSolver"
+    timeIntegrationOption="QuasiStatic"
+    logLevel="1"
+    discretization="FE1"
+    targetRegions="{ Domain }"/>
+
+  <SinglePhaseFVM
+    name="flowSolver"
+    logLevel="1"
+    discretization="tpfaFlow"
+    temperature="273.0"
+    isThermal="1"
+    targetRegions="{ Domain }">
+    <NonlinearSolverParameters
+      newtonMaxIter="100"
+      newtonMinIter="0"
+      newtonTol="1.0e-6"/>
+    <LinearSolverParameters
+      directParallel="0"/>
+  </SinglePhaseFVM>   
+ </Solvers>
+
+  <NumericalMethods>
+    <FiniteElements>
+      <FiniteElementSpace
+        name="FE1"
+        order="1"/>
+    </FiniteElements>
+
+    <FiniteVolume>
+      <TwoPointFluxApproximation
+        name="tpfaFlow"/>
+    </FiniteVolume>
+  </NumericalMethods>
+
+  <ElementRegions>
+    <CellElementRegion
+      name="Domain"
+      cellBlocks="{ cb1 }"
+      materialList="{ rock, water, thermalCond }"/>
+  </ElementRegions>
+
+  <FieldSpecifications>      
+    <FieldSpecification
+      name="initialPressure"
+      initialCondition="1"
+      setNames="{ all }"
+      objectPath="ElementRegions/Domain/cb1"
+      fieldName="pressure"
+      scale="0.0"/>
+
+    <FieldSpecification
+      name="initialTemperature"
+      initialCondition="1"
+      setNames="{ all }"
+      objectPath="ElementRegions/Domain/cb1"
+      fieldName="temperature"
+      scale="273.0"/>
+
+    <FieldSpecification
+      name="initialSigma_x"
+      initialCondition="1"
+      setNames="{ all }"
+      objectPath="ElementRegions/Domain/cb1"
+      fieldName="rockSolid_stress"
+      component="0"
+      scale="-2.457"/>
+    <FieldSpecification
+      name="initialSigma_y"
+      initialCondition="1"
+      setNames="{ all }"
+      objectPath="ElementRegions/Domain/cb1"
+      fieldName="rockSolid_stress"
+      component="1"
+      scale="-2.457"/>
+    <FieldSpecification
+      name="initialSigma_z"
+      initialCondition="1"
+      setNames="{ all }"
+      objectPath="ElementRegions/Domain/cb1"
+      fieldName="rockSolid_stress"
+      component="2"
+      scale="-2.457"/>
+  
+    <FieldSpecification
+      name="xconstraint"
+      fieldName="totalDisplacement"
+      component="0"
+      objectPath="nodeManager"
+      setNames="{ xneg, xpos }"/>
+
+    <FieldSpecification
+      name="yconstraint"
+      fieldName="totalDisplacement"
+      component="1"
+      objectPath="nodeManager"
+      setNames="{ yneg }"/>
+
+    <FieldSpecification
+      name="zconstraint"
+      fieldName="totalDisplacement"
+      component="2"
+      objectPath="nodeManager"
+      setNames="{ zneg, zpos }"/>
+      
+    <Traction
+      name="traction"
+      objectPath="faceManager"
+      tractionType="normal"
+      scale="-1.0"
+      setNames="{ ypos }"
+      functionName="timeFunction"/>
+
+    <FieldSpecification
+      name="boundaryPressure"
+      objectPath="faceManager"
+      fieldName="pressure"
+      scale="0.0"
+      setNames="{ ypos }"/>
+
+    <FieldSpecification
+      name="boundaryTemperature"
+      objectPath="faceManager"
+      fieldName="temperature"
+      scale="323.0"
+      setNames="{ ypos }"/>    
+  </FieldSpecifications>
+
+  <Functions>
+    <TableFunction
+      name="timeFunction"
+      inputVarNames="{ time }"
+      coordinates="{ 0, 1e-10, 1e5 }"
+      values="{ 0.0, 1.0, 1.0 }"/>
+  </Functions>
+
+  <Tasks>
+
+    <PackCollection
+      name="pressureCollection"
+      objectPath="ElementRegions/Domain/cb1"
+      fieldName="pressure"/>
+    <PackCollection
+      name="temperatureCollection"
+      objectPath="ElementRegions/Domain/cb1"
+      fieldName="temperature"/>
+    <PackCollection
+      name="displacementCollection"
+      objectPath="nodeManager"
+      fieldName="totalDisplacement"/>
+    
+  </Tasks>
+  
+  <Outputs>
+    <VTK
+      name="thermoPoroVTKOutput"
+      plotFileRoot="thermoPoro_consolidation_fim"/>
+
+    <TimeHistory
+      name="pressureHistoryOutput"
+      sources="{ /Tasks/pressureCollection }"
+      filename="pressureHistory"/>
+    <TimeHistory
+      name="temperatureHistoryOutput"
+      sources="{ /Tasks/temperatureCollection }"
+      filename="temperatureHistory"/>
+    <TimeHistory
+      name="displacementHistoryOutput"
+      sources="{ /Tasks/displacementCollection }"
+      filename="displacementHistory"/>
+    
+    <Restart
+      name="restartOutput"/>
+  </Outputs>
+</Problem>

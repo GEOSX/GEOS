@@ -62,6 +62,7 @@ public:
   /// The number of quadrature points per element.
   constexpr static localIndex numQuadraturePoints = 1;
 
+  GEOS_HOST_DEVICE
   virtual ~H1_TriangleFace_Lagrange1_Gauss1() override
   {}
 

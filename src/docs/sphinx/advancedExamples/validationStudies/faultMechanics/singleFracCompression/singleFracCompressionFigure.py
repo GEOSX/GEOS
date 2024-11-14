@@ -96,8 +96,8 @@ def main():
     geosDir = args.geosDir
     hdf5File1Path = outputDir + "/traction_history.hdf5"
     hdf5File2Path = outputDir + "/displacementJump_history.hdf5"
-    xmlFile1Path = geosDir + "/inputFiles/lagrangianContactMechanics/ContactMechanics_SingleFracCompression_base.xml"
-    xmlFile2Path = geosDir + "/inputFiles/lagrangianContactMechanics/ContactMechanics_SingleFracCompression_benchmark.xml"
+    xmlFile1Path = geosDir + "/inputFiles/lagrangianContactMechanics/SingleFracCompression_base.xml"
+    xmlFile2Path = geosDir + "/inputFiles/lagrangianContactMechanics/SingleFracCompression_benchmark.xml"
 
     # Read HDF5
     # Global Coordinate of Fracture Element Center
