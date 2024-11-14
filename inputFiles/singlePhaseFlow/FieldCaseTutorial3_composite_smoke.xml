@@ -6,11 +6,11 @@
   </Included>
 
   <!-- SPHINX_FIELD_CASE_COMPOSITE_MESH -->
-  <ExternalDataRepository>
-    <VTKHierarchicalDataRepository 
+  <ExternalDataSource>
+    <VTKHierarchicalDataSource
       name="synthetic"
       file="synthetic.vtpc"/>
-  </ExternalDataRepository>
+  </ExternalDataSource>
 
   <Mesh>
     <VTKMesh
