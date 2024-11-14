@@ -14,11 +14,11 @@
  */
 
 /**
- * @file ExternalDataRepositoryManager.hpp
+ * @file ExternalDataSourceManager.hpp
  */
 
-#ifndef GEOS_MESH_EXTERNALDATAREPOSITORYMANAGER_HPP_
-#define GEOS_MESH_EXTERNALDATAREPOSITORYMANAGER_HPP_
+#ifndef GEOS_MESH_EXTERNALDATASOURCEMANAGER_HPP_
+#define GEOS_MESH_EXTERNALDATASOURCEMANAGER_HPP_
 
 #include "dataRepository/Group.hpp"
 #include "mesh/DomainPartition.hpp"
@@ -27,22 +27,22 @@ namespace geos
 {
 
 /**
- * @class ExternalDataRepositoryManager
+ * @class ExternalDataSourceManager
  * @brief This class manages a data repository whereof objects can be imported to GEOS (reservoir mesh, well mesh)
  */
-class ExternalDataRepositoryManager : public dataRepository::Group
+class ExternalDataSourceManager : public dataRepository::Group
 {
 public:
 
   /**
-   * @brief Constructor for the ExternalDataRepositoryManager object.
-   * @param[in] name the name of the ExternalDataRepositoryManager object in the repository
-   * @param[in] parent the parent group of the ExternalDataRepositoryManager object being constructed
+   * @brief Constructor for the ExternalDataSourceManager object.
+   * @param[in] name the name of the ExternalDataSourceManager object in the repository
+   * @param[in] parent the parent group of the ExternalDataSourceManager object being constructed
    */
-  ExternalDataRepositoryManager( string const & name,
-                                 Group * const parent );
+  ExternalDataSourceManager( string const & name,
+                             Group * const parent );
 
-  virtual ~ExternalDataRepositoryManager() override;
+  virtual ~ExternalDataSourceManager() override;
 
 
   /**
@@ -65,12 +65,12 @@ public:
 private:
 
   /**
-   * @brief Deleted default constructor of the ExternalDataRepositoryManager
+   * @brief Deleted default constructor of the ExternalDataSourceManager
    */
-  ExternalDataRepositoryManager() = delete;
+  ExternalDataSourceManager() = delete;
 
 };
 
 } /* namespace geos */
 
-#endif /* GEOS_MESH_ExternalDataRepositoryManager_HPP_ */
+#endif /* GEOS_MESH_EXTERNALDATASOURCEMANAGER_HPP_ */

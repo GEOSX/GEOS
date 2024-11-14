@@ -14,10 +14,10 @@
  */
 
 /**
- * @file VTKHierarchicalDataRepository.cpp
+ * @file VTKHierarchicalDataSource.cpp
  */
 
-#include "mesh/generators/VTKHierarchicalDataRepository.hpp"
+#include "mesh/generators/VTKHierarchicalDataSource.hpp"
 #include "mesh/generators/VTKUtilities.hpp"
 #include <vtkXMLPartitionedDataSetCollectionReader.h>
 
@@ -25,9 +25,9 @@ namespace geos
 {
 using namespace dataRepository;
 
-VTKHierarchicalDataRepository::VTKHierarchicalDataRepository( string const & name,
-                                                              Group * const parent )
-  : ExternalDataRepositoryBase( name, parent )
+VTKHierarchicalDataSource::VTKHierarchicalDataSource( string const & name,
+                                                      Group * const parent )
+  : ExternalDataSourceBase( name, parent )
 {
   registerWrapper( viewKeyStruct::filePathString(), &m_filePath ).
     setRTTypeName( rtTypes::CustomTypes::groupNameRef ).
@@ -36,7 +36,7 @@ VTKHierarchicalDataRepository::VTKHierarchicalDataRepository( string const & nam
     setDescription( "Path to the mesh file" );
 }
 
-void VTKHierarchicalDataRepository::open()
+void VTKHierarchicalDataSource::open()
 {
   string const extension = m_filePath.extension();
   GEOS_ERROR_IF( extension != "vtpc", "Unsupported vtk extension. File must be a vtpc file" );
@@ -52,7 +52,7 @@ void VTKHierarchicalDataRepository::open()
 }
 
 vtkSmartPointer< vtkPartitionedDataSet >
-VTKHierarchicalDataRepository::search( string const & path )
+VTKHierarchicalDataSource::search( string const & path )
 {
   int node = m_dataAssembly->GetFirstNodeByPath( path.c_str());
   GEOS_ERROR_IF( node == -1, "Node doesn't exist" );
@@ -66,7 +66,7 @@ VTKHierarchicalDataRepository::search( string const & path )
   return m_collection->GetPartitionedDataSet( indices[0] );
 }
 
-REGISTER_CATALOG_ENTRY( ExternalDataRepositoryBase, VTKHierarchicalDataRepository, string const &, Group * const )
+REGISTER_CATALOG_ENTRY( ExternalDataSourceBase, VTKHierarchicalDataSource, string const &, Group * const )
 
 
 }

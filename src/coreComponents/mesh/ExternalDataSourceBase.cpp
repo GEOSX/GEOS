@@ -12,41 +12,41 @@
  * ------------------------------------------------------------------------------------------------------------
  */
 
-#include "ExternalDataRepositoryBase.hpp"
+#include "ExternalDataSourceBase.hpp"
 
 namespace geos
 {
 using namespace dataRepository;
 
-ExternalDataRepositoryBase::ExternalDataRepositoryBase( string const & name, Group * const parent ):
+ExternalDataSourceBase::ExternalDataSourceBase( string const & name, Group * const parent ):
   Group( name, parent )
 {
   setInputFlags( InputFlags::OPTIONAL_NONUNIQUE );
 }
 
-Group * ExternalDataRepositoryBase::createChild( string const & childKey, string const & childName )
+Group * ExternalDataSourceBase::createChild( string const & childKey, string const & childName )
 {
-  GEOS_LOG_RANK_0( "Adding External Data Repository: " << childKey << ", " << childName );
-  std::unique_ptr< ExternalDataRepositoryBase > event = ExternalDataRepositoryBase::CatalogInterface::factory( childKey, childName, this );
-  return &this->registerGroup< ExternalDataRepositoryBase >( childName, std::move( event ) );
+  GEOS_LOG_RANK_0( "Adding External Data Source: " << childKey << ", " << childName );
+  std::unique_ptr< ExternalDataSourceBase > event = ExternalDataSourceBase::CatalogInterface::factory( childKey, childName, this );
+  return &this->registerGroup< ExternalDataSourceBase >( childName, std::move( event ) );
 }
 
-void ExternalDataRepositoryBase::expandObjectCatalogs()
+void ExternalDataSourceBase::expandObjectCatalogs()
 {
   // Only add children if the parent is of type EventManager
   // otherwise, this would fall into a loop
-  if( strcmp( this->getParent().getName().c_str(), "ExternalDataRepository" ) == 0 )
+  if( strcmp( this->getParent().getName().c_str(), "ExternalDataSource" ) == 0 )
   {
-    for( auto & catalogIter: ExternalDataRepositoryBase::getCatalog())
+    for( auto & catalogIter: ExternalDataSourceBase::getCatalog())
     {
       createChild( catalogIter.first, catalogIter.first );
     }
   }
 }
 
-ExternalDataRepositoryBase::CatalogInterface::CatalogType & ExternalDataRepositoryBase::getCatalog()
+ExternalDataSourceBase::CatalogInterface::CatalogType & ExternalDataSourceBase::getCatalog()
 {
-  static ExternalDataRepositoryBase::CatalogInterface::CatalogType catalog;
+  static ExternalDataSourceBase::CatalogInterface::CatalogType catalog;
   return catalog;
 }
 

@@ -19,7 +19,7 @@
 
 #include "VTKMeshGenerator.hpp"
 
-#include "mesh/ExternalDataRepositoryManager.hpp"
+#include "mesh/ExternalDataSourceManager.hpp"
 #include "mesh/generators/VTKFaceBlockUtilities.hpp"
 #include "mesh/generators/VTKMeshGeneratorTools.hpp"
 #include "mesh/generators/CellBlockManager.hpp"
@@ -38,7 +38,7 @@ using namespace dataRepository;
 VTKMeshGenerator::VTKMeshGenerator( string const & name,
                                     Group * const parent )
   : ExternalMeshGeneratorBase( name, parent ),
-  m_repository( nullptr )
+  m_dataSource( nullptr )
 {
   getWrapperBase( ExternalMeshGeneratorBase::viewKeyStruct::filePathString()).
     setInputFlag( InputFlags::OPTIONAL );
@@ -84,29 +84,29 @@ VTKMeshGenerator::VTKMeshGenerator( string const & name,
                     " If set to a negative value, the GlobalId arrays in the input mesh are not used, and generated global Ids are automatically generated."
                     " If set to a positive value, the GlobalId arrays in the input mesh are used and required, and the simulation aborts if they are not available" );
 
-  registerWrapper( viewKeyStruct::repositoryString(), &m_repositoryName ).
+  registerWrapper( viewKeyStruct::dataSourceString(), &m_dataSourceName ).
     setInputFlag( InputFlags::OPTIONAL ).
-    setDescription( "Name of the VTK Repository" );
+    setDescription( "Name of the VTK data source" );
 }
 
 void VTKMeshGenerator::postInputInitialization()
 {
-  GEOS_ERROR_IF( !this->m_filePath.empty() && !m_repositoryName.empty(), // (!m_repositoryName.empty() || !m_meshPath.empty()),
-                 getDataContext() << ": Access to the mesh via file or repository are mutually exclusive. "
-                                     "You can't set " << viewKeyStruct::repositoryString() << " or " << viewKeyStruct::meshPathString() << " and " <<
+  GEOS_ERROR_IF( !this->m_filePath.empty() && !m_dataSourceName.empty(),
+                 getDataContext() << ": Access to the mesh via file or data source are mutually exclusive. "
+                                     "You can't set " << viewKeyStruct::dataSourceString() << " or " << viewKeyStruct::meshPathString() << " and " <<
                  ExternalMeshGeneratorBase::viewKeyStruct::filePathString() );
 
-  if( !m_repositoryName.empty())
+  if( !m_dataSourceName.empty())
   {
-    ExternalDataRepositoryManager & externalDataManager = this->getGroupByPath< ExternalDataRepositoryManager >( "/Problem/ExternalDataRepository" );
+    ExternalDataSourceManager & externalDataManager = this->getGroupByPath< ExternalDataSourceManager >( "/Problem/ExternalDataSource" );
 
-    m_repository = externalDataManager.getGroupPointer< VTKHierarchicalDataRepository >( m_repositoryName );
+    m_dataSource = externalDataManager.getGroupPointer< VTKHierarchicalDataSource >( m_dataSourceName );
 
-    GEOS_THROW_IF( m_repository == nullptr,
-                   getDataContext() << ": VTK Data Object Repository not found: " << m_repositoryName,
+    GEOS_THROW_IF( m_dataSource == nullptr,
+                   getDataContext() << ": VTK Data Object Source not found: " << m_dataSourceName,
                    InputError );
 
-    m_repository->open();
+    m_dataSource->open();
   }
 
 }
@@ -128,7 +128,7 @@ void VTKMeshGenerator::fillCellBlockManager( CellBlockManager & cellBlockManager
       GEOS_LOG_RANK_0( GEOS_FMT( "{} '{}': reading mesh from {}", catalogName(), getName(), m_filePath ) );
       allMeshes = vtk::loadAllMeshes( m_filePath, m_mainBlockName, m_faceBlockNames );
     }
-    else if( !m_repositoryName.empty())
+    else if( !m_dataSourceName.empty())
     {
       if( MpiWrapper::commRank() == 0 )
       {
@@ -143,7 +143,7 @@ void VTKMeshGenerator::fillCellBlockManager( CellBlockManager & cellBlockManager
           integer region_id = region.getWrapper< integer >( Region::viewKeyStruct::idString()).reference();
 
           GEOS_LOG_RANK_0( GEOS_FMT( "{} '{}': reading partition from {}", catalogName(), getName(), path ) );
-          vtkPartitionedDataSet * p = m_repository->search( path );
+          vtkPartitionedDataSet * p = m_dataSource->search( path );
 
           //load the grid
           vtkDataObject * block = p->GetPartition( 0 );

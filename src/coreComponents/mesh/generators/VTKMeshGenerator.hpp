@@ -22,7 +22,7 @@
 
 #include "mesh/generators/ExternalMeshGeneratorBase.hpp"
 #include "mesh/generators/VTKUtilities.hpp"
-#include "mesh/generators/VTKHierarchicalDataRepository.hpp"
+#include "mesh/generators/VTKHierarchicalDataSource.hpp"
 #include "mesh/mpiCommunications/SpatialPartition.hpp"
 #include "mesh/generators/Region.hpp"
 #include <vtkDataSet.h>
@@ -114,7 +114,7 @@ private:
     constexpr static char const * partitionRefinementString() { return "partitionRefinement"; }
     constexpr static char const * partitionMethodString() { return "partitionMethod"; }
     constexpr static char const * useGlobalIdsString() { return "useGlobalIds"; }
-    constexpr static char const * repositoryString() { return "repositoryName"; }
+    constexpr static char const * dataSourceString() { return "dataSourceName"; }
     constexpr static char const * meshPathString() { return "meshPath"; }
   };
 
@@ -168,13 +168,13 @@ private:
   vtk::CellMapType m_cellMap;
 
   /// Repository name
-  string m_repositoryName;
+  string m_dataSourceName;
 
   /// path to the mesh in the repository
   string m_meshPath;
 
   /// Repository of VTK objects
-  VTKHierarchicalDataRepository * m_repository;
+  VTKHierarchicalDataSource * m_dataSource;
 
 };
 

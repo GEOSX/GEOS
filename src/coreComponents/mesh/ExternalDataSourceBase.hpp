@@ -13,11 +13,11 @@
  */
 
 /**
- * @file ExternalDataRepositoryBase.hpp
+ * @file ExternalDataSourceBase.hpp
  */
 
-#ifndef GEOS_MESH_EXTERNALDATAREPOSITORYBASE_HPP
-#define GEOS_MESH_EXTERNALDATAREPOSITORYBASE_HPP
+#ifndef GEOS_MESH_EXTERNALDATASOURCEBASE_HPP
+#define GEOS_MESH_EXTERNALDATASOURCEBASE_HPP
 
 #include "dataRepository/Group.hpp"
 #include "dataRepository/WrapperBase.hpp"
@@ -29,27 +29,27 @@ namespace geos
 {
 
 /**
- *  @class ExternalDataRepositoryBase
- *  @brief The ExternalDataRepositoryBase class provides an abstract base class implementation for different mesh types.
- *	   The ExternalDataRepositoryBase is the Group specialization for different type of mesh handling.
+ *  @class ExternalDataSourceBase
+ *  @brief The ExternalDataSourceBase class provides an abstract base class implementation for different mesh types.
+ *	   The ExternalDataSourceBase is the Group specialization for different type of mesh handling.
  */
-class ExternalDataRepositoryBase : public dataRepository::Group
+class ExternalDataSourceBase : public dataRepository::Group
 {
 public:
 
   /**
-   * @brief Main constructor for ExternalDataRepositoryBase base class.
-   * @param[in] name of the ExternalDataRepositoryBase object
-   * @param[in] parent the parent Group pointer for the ExternalDataRepositoryBase object
+   * @brief Main constructor for ExternalDataSourceBase base class.
+   * @param[in] name of the ExternalDataSourceBase object
+   * @param[in] parent the parent Group pointer for the ExternalDataSourceBase object
    */
-  explicit ExternalDataRepositoryBase( string const & name,
-                                       Group * const parent );
+  explicit ExternalDataSourceBase( string const & name,
+                                   Group * const parent );
 
   /// This function is used to expand any catalogs in the data structure
   virtual void expandObjectCatalogs() override;
 
-  /// using alias for templated Catalog ExternalDataRepositoryBase type
-  using CatalogInterface = dataRepository::CatalogInterface< ExternalDataRepositoryBase, string const &, Group * const >;
+  /// using alias for templated Catalog ExternalDataSourceBase type
+  using CatalogInterface = dataRepository::CatalogInterface< ExternalDataSourceBase, string const &, Group * const >;
 
   /**
    * @brief Create a new geometric object (box, plane, etc) as a child of this group.
@@ -74,4 +74,4 @@ public:
 
 }
 
-#endif /* GEOS_MESH_ExternalDataRepositoryBase_HPP */
+#endif /* GEOS_MESH_EXTERNALDATASOURCEBASE_HPP */

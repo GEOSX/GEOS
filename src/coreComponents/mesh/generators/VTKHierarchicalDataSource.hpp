@@ -14,14 +14,14 @@
  */
 
 /**
- * @file VTKHierarchicalDataRepository.hpp
+ * @file VTKHierarchicalDataSource.hpp
  */
 
-#ifndef GEOS_MESH_GENERATORS_VTKHIERARCHICALDATAREPOSITORY_HPP
-#define GEOS_MESH_GENERATORS_VTKHIERARCHICALDATAREPOSITORY_HPP
+#ifndef GEOS_MESH_GENERATORS_VTKHIERARCHICALDATASOURCE_HPP
+#define GEOS_MESH_GENERATORS_VTKHIERARCHICALDATASOURCE_HPP
 
 #include "dataRepository/Group.hpp"
-#include "mesh/ExternalDataRepositoryBase.hpp"
+#include "mesh/ExternalDataSourceBase.hpp"
 
 #include <vtkSmartPointer.h>
 #include <vtkDataSet.h>
@@ -33,27 +33,27 @@ namespace geos
 {
 
 /**
- * @class VTKHierarchicalDataRepository
+ * @class VTKHierarchicalDataSource
  * @brief This class provides an API to access VTKPartitionedDataSetCollection through a vtkDataAssembly
  */
-class VTKHierarchicalDataRepository : public ExternalDataRepositoryBase
+class VTKHierarchicalDataSource : public ExternalDataSourceBase
 {
 public:
 
   /**
-   * @brief Main constructor for VTKHierarchicalDataRepository base class.
-   * @param[in] name of the VTKHierarchicalDataRepository object
-   * @param[in] parent the parent Group pointer for the VTKHierarchicalDataRepository object
+   * @brief Main constructor for VTKHierarchicalDataSource base class.
+   * @param[in] name of the VTKHierarchicalDataSource object
+   * @param[in] parent the parent Group pointer for the VTKHierarchicalDataSource object
    */
-  VTKHierarchicalDataRepository( string const & name, Group * const parent );
+  VTKHierarchicalDataSource( string const & name, Group * const parent );
 
-  virtual ~VTKHierarchicalDataRepository() override = default;
+  virtual ~VTKHierarchicalDataSource() override = default;
 
   /**
    * @brief Return the name of the MeshGenerator in object catalog.
    * @return string that contains the catalog name of the MeshGenerator
    */
-  static string catalogName() { return "VTKHierarchicalDataRepository"; }
+  static string catalogName() { return "VTKHierarchicalDataSource"; }
 
   /**
    * @brief Opens a vtkPartitionedDataSetCollection and gets the colletion and the associated dataAssembly

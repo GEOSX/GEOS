@@ -243,7 +243,7 @@ public:
     dataRepository::GroupKey constitutiveManager = { "Constitutive" };                    ///< Constitutive key
     dataRepository::GroupKey domain    = { "domain" };                                    ///< Domain key
     dataRepository::GroupKey eventManager = { "Events" };                                 ///< Events key
-    dataRepository::GroupKey externalDataRepositoryManager = { "ExternalDataRepository" };///< External Data Repository key
+    dataRepository::GroupKey externalDataSourceManager = { "ExternalDataSource" };        ///< External Data Source key
     dataRepository::GroupKey fieldSpecificationManager = { "FieldSpecifications" };       ///< Field specification key
     dataRepository::GroupKey functionManager = { "Functions" };                           ///< Functions key
     dataRepository::GroupKey geometricObjectManager = { "Geometry" };                     ///< Geometry key

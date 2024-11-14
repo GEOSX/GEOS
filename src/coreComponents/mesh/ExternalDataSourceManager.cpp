@@ -14,8 +14,8 @@
  */
 
 
-#include "ExternalDataRepositoryManager.hpp"
-#include "ExternalDataRepositoryBase.hpp"
+#include "ExternalDataSourceManager.hpp"
+#include "ExternalDataSourceBase.hpp"
 
 
 namespace geos
@@ -23,37 +23,37 @@ namespace geos
 
 using namespace dataRepository;
 
-ExternalDataRepositoryManager::ExternalDataRepositoryManager( string const & name,
-                                                              Group * const parent ):
+ExternalDataSourceManager::ExternalDataSourceManager( string const & name,
+                                                      Group * const parent ):
   Group( name, parent )
 {
   setInputFlags( InputFlags::REQUIRED );
 }
 
-ExternalDataRepositoryManager::~ExternalDataRepositoryManager()
+ExternalDataSourceManager::~ExternalDataSourceManager()
 {}
 
-Group * ExternalDataRepositoryManager::createChild( string const & childKey, string const & childName )
+Group * ExternalDataSourceManager::createChild( string const & childKey, string const & childName )
 {
-  GEOS_LOG_RANK_0( "Adding External Data Repository: " << childKey << ", " << childName );
-  std::unique_ptr< ExternalDataRepositoryBase > externalDataRepo = ExternalDataRepositoryBase::CatalogInterface::factory( childKey, childName, this );
-  return &this->registerGroup< ExternalDataRepositoryBase >( childName, std::move( externalDataRepo ) );
+  GEOS_LOG_RANK_0( "Adding External Data Source: " << childKey << ", " << childName );
+  std::unique_ptr< ExternalDataSourceBase > externalDataSource = ExternalDataSourceBase::CatalogInterface::factory( childKey, childName, this );
+  return &this->registerGroup< ExternalDataSourceBase >( childName, std::move( externalDataSource ) );
 }
 
 
-void ExternalDataRepositoryManager::expandObjectCatalogs()
+void ExternalDataSourceManager::expandObjectCatalogs()
 {
-  // During schema generation, register one of each type derived from ExternalDataRepositoryBase here
-  for( auto & catalogIter: ExternalDataRepositoryBase::getCatalog())
+  // During schema generation, register one of each type derived from ExternalDataSourceBase here
+  for( auto & catalogIter: ExternalDataSourceBase::getCatalog())
   {
     createChild( catalogIter.first, catalogIter.first );
   }
 }
 
 
-void ExternalDataRepositoryManager::open( DomainPartition & GEOS_UNUSED_PARAM( domain ) )
+void ExternalDataSourceManager::open( DomainPartition & GEOS_UNUSED_PARAM( domain ) )
 {
-  forSubGroups< ExternalDataRepositoryBase >( []( ExternalDataRepositoryBase & external )
+  forSubGroups< ExternalDataSourceBase >( []( ExternalDataSourceBase & external )
   {
     external.open();
   } );
