@@ -195,7 +195,7 @@ if( ENABLE_VTK )
          generators/VTKMeshGenerator.hpp
          generators/VTKMeshGeneratorTools.hpp
          generators/VTKWellGenerator.hpp
-         generators/VTKUtilities.hpp         
+         generators/VTKUtilities.hpp
          )
     set( mesh_sources ${mesh_sources}
          generators/CollocatedNodes.cpp
