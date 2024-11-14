@@ -31,6 +31,7 @@
 #endif
 #include "elementFormulations/H1_QuadrilateralFace_Lagrange1_GaussLegendre2.hpp"
 #include "elementFormulations/H1_TriangleFace_Lagrange1_Gauss1.hpp"
+#include "elementFormulations/BB_Tetrahedron.hpp"
 #include "LvArray/src/system.hpp"
 
 #define FE_1_TYPES \
@@ -45,6 +46,13 @@
   finiteElement::Q3_Hexahedron_Lagrange_GaussLobatto, \
   finiteElement::Q4_Hexahedron_Lagrange_GaussLobatto, \
   finiteElement::Q5_Hexahedron_Lagrange_GaussLobatto
+
+#define BB_FE_TYPES \
+  finiteElement::BB1_Tetrahedron, \
+  finiteElement::BB2_Tetrahedron, \
+  finiteElement::BB3_Tetrahedron, \
+  finiteElement::BB4_Tetrahedron, \
+  finiteElement::BB5_Tetrahedron
 
 #if defined( GEOS_DISPATCH_VEM )
 
@@ -69,7 +77,7 @@
 #define VEM_TYPES VEM_1_TYPES
 #endif
 
-#define BASE_FE_TYPES FE_1_TYPES, VEM_TYPES
+#define BASE_FE_TYPES FE_1_TYPES, VEM_TYPES, BB_FE_TYPES
 
 #else
 

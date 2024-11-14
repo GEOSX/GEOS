@@ -1125,11 +1125,6 @@ using BB2_Tetrahedron = BB_Tetrahedron< 2 >;
 using BB3_Tetrahedron = BB_Tetrahedron< 3 >;
 using BB4_Tetrahedron = BB_Tetrahedron< 4 >;
 using BB5_Tetrahedron = BB_Tetrahedron< 5 >;
-using BB6_Tetrahedron = BB_Tetrahedron< 6 >;
-using BB7_Tetrahedron = BB_Tetrahedron< 7 >;
-using BB8_Tetrahedron = BB_Tetrahedron< 8 >;
-using BB9_Tetrahedron = BB_Tetrahedron< 9 >;
-using BB10_Tetrahedron = BB_Tetrahedron< 10 >;
 
 }
 }

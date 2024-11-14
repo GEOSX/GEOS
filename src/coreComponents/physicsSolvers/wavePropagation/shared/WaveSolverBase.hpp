@@ -28,6 +28,7 @@
 #if !defined( GEOS_USE_HIP )
 #include "finiteElement/elementFormulations/Qk_Hexahedron_Lagrange_GaussLobatto.hpp"
 #endif
+#include "finiteElement/elementFormulations/BB_Tetrahedron.hpp"
 #include "WaveSolverUtils.hpp"
 
 #if !defined( GEOS_USE_HIP )
@@ -40,8 +41,14 @@
 #else
 #define SEM_FE_TYPES
 #endif
+#define DG_FE_TYPES \
+  finiteElement::BB1_Tetrahedron, \
+  finiteElement::BB2_Tetrahedron, \
+  finiteElement::BB3_Tetrahedron, \
+  finiteElement::BB4_Tetrahedron, \
+  finiteElement::BB5_Tetrahedron
 
-#define SELECTED_FE_TYPES SEM_FE_TYPES
+#define SELECTED_FE_TYPES SEM_FE_TYPES DG_FE_TYPES
 
 namespace geos
 {
