@@ -346,8 +346,12 @@ protected:
    */
   void createBubbleCellList( DomainPartition & domain ) const;
 
-private:
-
+  /**
+   * @brief Fill global matrix and residual vector
+   * 
+   * @param stack stack variables 
+   */
+  GEOS_HOST_DEVICE
   void fillGlobalMatrix( StackVariables & stack ) const
   {
 
