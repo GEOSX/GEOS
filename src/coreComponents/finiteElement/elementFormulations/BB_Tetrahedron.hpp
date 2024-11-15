@@ -166,10 +166,28 @@ public:
    */
   GEOS_HOST_DEVICE
   GEOS_FORCE_INLINE
-  static void calcN( localIndex const q,
-                     real64 (& N)[numNodes] )
+  static void calcN( localIndex const,
+                     real64 (&)[numNodes] )
   {
     GEOS_ERROR( "Bernstein-Bézier basis is modal, not nodal." );
+  }
+
+  /**
+   * @brief Calculate shape functions values for each support point at a
+   *   quadrature point.
+   * @param q Index of the quadrature point.
+   * @param stack Variables allocated on the stack as filled by @ref setupStack.
+   * @param N An array to pass back the shape function values for each support
+   *   point.
+   */
+  GEOS_HOST_DEVICE
+  GEOS_FORCE_INLINE
+  static void calcN( localIndex const q,
+                     StackVariables const & stack,
+                     real64 ( & N )[numNodes] )
+  {
+    GEOS_UNUSED_VAR( stack );
+    return calcN( q, N );
   }
   /**
    * @brief Calculate shape functions values at a single point using De Casteljau's algorithm.

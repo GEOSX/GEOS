@@ -49,7 +49,8 @@
   finiteElement::BB4_Tetrahedron, \
   finiteElement::BB5_Tetrahedron
 
-#define SELECTED_FE_TYPES SEM_FE_TYPES DG_FE_TYPES
+#define SELECTED_FE_TYPES SEM_FE_TYPES
+// #define SELECTED_FE_TYPES SEM_FE_TYPES, DG_FE_TYPES
 
 namespace geos
 {
