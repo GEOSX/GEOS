@@ -338,7 +338,7 @@ localIndex Unpack( buffer_unit_type const * & buffer,
           {
             break;
           }
-          else if( ( elemRegionIndex==-1 || elemSubRegionIndex==-1 || elemIndex==-1 ) )
+          else if( ( elemRegionIndex==-1 || elemSubRegionIndex==-1 || elemIndex==-1 ) || clearFlag )
           {
             elemRegionIndex = recvElemRegionIndex;
             elemSubRegionIndex = recvElemSubRegionIndex;

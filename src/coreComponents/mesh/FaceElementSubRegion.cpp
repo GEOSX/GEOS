@@ -67,14 +67,17 @@ FaceElementSubRegion::FaceElementSubRegion( string const & name,
     setSizedFromParent( 1 );
 
   registerWrapper( viewKeyStruct::surfaceElementsToCellRegionsString(), &m_2dElemToElems.m_toElementRegion ).
+    setApplyDefaultValue( -1 ).
     setPlotLevel( PlotLevel::NOPLOT ).
     setDescription( "A map of face element local indices to the cell local indices" );
 
   registerWrapper( viewKeyStruct::surfaceElementsToCellSubRegionsString(), &m_2dElemToElems.m_toElementSubRegion ).
+    setApplyDefaultValue( -1 ).
     setPlotLevel( PlotLevel::NOPLOT ).
     setDescription( "A map of face element local indices to the cell local indices" );
 
   registerWrapper( viewKeyStruct::surfaceElementsToCellIndexString(), &m_2dElemToElems.m_toElementIndex ).
+    setApplyDefaultValue( -1 ).
     setPlotLevel( PlotLevel::NOPLOT ).
     setDescription( "A map of face element local indices to the cell local indices" );
 
@@ -321,9 +324,9 @@ localIndex FaceElementSubRegion::packUpDownMapsImpl( buffer_unit_type * & buffer
           localIndex const esr = m_2dElemToElems.m_toElementSubRegion[packIndex][j];
           localIndex const ei = m_2dElemToElems.m_toElementIndex[packIndex][j];
 
-          arrayView1d< globalIndex const > const elemLocalToGlobal = elementRegionManager.getRegion(er).getSubRegion(esr).localToGlobalMap();
+//          arrayView1d< globalIndex const > const elemLocalToGlobal = elementRegionManager.getRegion(er).getSubRegion(esr).localToGlobalMap();
 
-          std::cout<<"  "<<j<<": ("<<m_localToGlobalMap(packIndex)<<"): "<<er<<" "<<esr<<" "<<ei<<"("<<elemLocalToGlobal(ei)<<") "<<std::endl;
+          std::cout<<"  "<<j<<": ("<<m_localToGlobalMap(packIndex)<<"): "<<er<<" "<<esr<<" "<<ei<<"() "<<std::endl;
         }
       }
     }
@@ -421,7 +424,7 @@ localIndex FaceElementSubRegion::unpackUpDownMaps( buffer_unit_type const * & bu
                                      m_2dElemToElems,
                                      packList.toViewConst(),
                                      m_2dElemToElems.getElementRegionManager(),
-                                     overwriteUpMaps );
+                                     true );
 
     MpiWrapper::barrier();
 
@@ -431,7 +434,7 @@ localIndex FaceElementSubRegion::unpackUpDownMaps( buffer_unit_type const * & bu
     if( rank == MpiWrapper::commRank() )
     {
       ElementRegionManager const & elementRegionManager = *m_2dElemToElems.getElementRegionManager();
-      std::cout<< "PREUNPACK...Rank " << rank << " unpacking " << packList.size() <<" values" << std::endl;
+      std::cout<< "POSTUNPACK...Rank " << rank << " unpacking " << packList.size() <<" values" << std::endl;
       std::cout<< " all m_2dElemToElems "<<std::endl;
       for( int k = 0; k < m_2dElemToElems.size(0); ++k )
       {
