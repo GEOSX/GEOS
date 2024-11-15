@@ -54,132 +54,129 @@ public:
   /**
    * @brief Structure to set up values alignment for each colum.
    */
-  struct ColumnAlignment
+  struct CellAlignment
   {
     /// Alignment for column name. By default aligned to center
-    Alignment headerAlignment = Alignment::center;
+    Alignment headerAlignment;
     /// Alignment for column values. By default aligned to right side
-    Alignment valueAlignment = Alignment::right;
+    Alignment valueAlignment;
+  };
+
+  struct Cell
+  {
+    char type;
+    string value;
+    /// Vector containing sub columns name
+    std::vector< string > dividedValue;
+    size_t nbRows;
+
+    Cell()
+      : type( ' ' ), value( "" ), nbRows( 1 )
+    {}
+
+    Cell( string_view val )
+      : value( val )
+    {}
+
+    Cell( char t, string_view val )
+      : type( t ), value( val )
+    {}
+
+    Cell( char t, string_view val, std::vector< std::string > const & subCols )
+      : type( t ), value( val ), dividedValue( subCols )
+    {}
   };
 
   /**
-   * @brief Structure to set up each colum.
+   * @brief Struct for a Column.
+   * Each column contains its own parameters (such as name, alignment, etc.).
    */
   struct Column
   {
     /// Name for a column
-    string columnName;
-    /// Alignment for  column name. By default aligned to center
-    ColumnAlignment alignmentSettings;
-    /// A boolean to display a colummn
-    bool enabled = true;
-    /// Vector containing sub columns name
-    std::vector< string > subColumnNames;
-    /// Vector containing substring column name delimited by "\n"
-    std::vector< string > splitColumnNames = {""};
-
-    /**
-     * @brief Construct a Column object with the given parameters
-     * @param name The Column name
-     */
-    Column( string_view name )
-      : columnName( name )
-    {}
-
-    /**
-     * @brief Construct a Column object with the given parameters
-     * @param name The Column name
-     * @param headerAlign The column name alignment
-     */
-    Column( string_view name, Alignment headerAlign )
-      : columnName( name ), alignmentSettings( {headerAlign, Alignment::right} )
-    {}
-
-    /**
-     * @brief Construct a Column object with the given parameters
-     * @param name The Column name
-     * @param subColumnNamesInit Vector containing subcolumn names
-     */
-    Column( string_view name, std::vector< string > && subColumnNamesInit )
-      : columnName( name ), subColumnNames( subColumnNamesInit )
-    {}
-
-    /**
-     * @brief Construct a Column object with the given parameters
-     * @param name The Column name
-     * @param headerAlign The column name alignment
-     * @param display Flag indicating whether the column is enabled
-     */
-    Column( string_view name, Alignment headerAlign, bool display )
-      : columnName( name ),
-      alignmentSettings( {headerAlign, Alignment::right} ),
-      enabled( display )
-    {}
-
-    /**
-     * @brief Construct a Column object with the given parameters
-     * @param name The Column name
-     * @param headerAlign The column name alignment
-     * @param display Flag indicating whether the column is enabled
-     * @param subColumnNamesInit Vector containing subcolumn names
-     */
-    Column( string_view name, Alignment headerAlign, bool display, std::vector< string > && subColumnNamesInit )
-      : columnName( name ),
-      alignmentSettings( {headerAlign, Alignment::right} ),
-      enabled( display ),
-      subColumnNames( subColumnNamesInit )
-    {}
-  };
-
-  /**
-   * @brief Struct for a ColumnStructure.
-   * Each column contains its own parameters (such as name, alignment, etc.).
-   */
-  struct ColumnStructure
-  {
-    /// Structure who contains parameters for a column
-    Column column;
+    Cell columnName;
     /// A vector containing all the values of a column
-    std::vector< string > columnValues;
+    std::vector< Cell > cells;
+    /// A boolean to display a colummn
+    bool enabled;
+    /// Vector containing all sub columns subdivison
+    std::vector< Column > subColumn;
+    CellAlignment cellAlignment;
+
+    Column()
+    {
+      enabled = true;
+      cellAlignment = CellAlignment{ Alignment::center, Alignment::right };
+    }
+
+    Column( Cell cell )
+    {
+      columnName = cell;
+      enabled = true;
+      cellAlignment = CellAlignment{ Alignment::center, Alignment::right };
+    }
+
+
+    Column & setName( string_view name )
+    {
+      columnName.value = name;
+      return *this;
+    }
+
+    Column & setCells( std::vector< Cell > const & cellValues )
+    {
+      cells = cellValues;
+      return *this;
+    }
+
+    Column & hide()
+    {
+      enabled = false;
+      return *this;
+    }
+
+    Column & setMaxStringSize( size_t const size )
+    {
+      maxStringSize = size;
+      return *this;
+    }
+
+    size_t getMaxStringSize() const
+    {
+      return maxStringSize;
+    }
+
+    Column & addSubColumns( std::vector< string > const & subColName )
+    {
+      std::vector< Column > subColumns;
+      for( auto const & name : subColName )
+      {
+        Cell cell{'\x04', name};//TODO
+        Column col{cell};
+        subColumns.emplace_back( col );
+      }
+      subColumn = subColumns;
+      return *this;
+    }
+
+    Column & setHeaderAlignment( Alignment headerAlignment )
+    {
+      cellAlignment.headerAlignment = headerAlignment;
+      return *this;
+    }
+
+    Column & setValuesAlignment( Alignment valueAlignment )
+    {
+      cellAlignment.valueAlignment = valueAlignment;
+      return *this;
+    }
+
+private:
+    size_t nbHeaderRows;
     /// Vector of string containing the largest string for a column and its subColumns
     size_t maxStringSize;
-    /// Vector containing all sub columns subdivison
-    std::vector< ColumnStructure > subColumn;
-
-    /**
-     * @brief Constructs a ColumnStructure  with the given column.
-     * @param col The parameters for the column.
-     */
-    ColumnStructure ( Column col )
-      : column( col )
-    {}
-
-    /**
-     * @brief Constructs a ColumnStructure with the given parameters.
-     * @param col The parameters for the column.
-     * @param subColumnInit The subcolumns contained in the colum
-     */
-    ColumnStructure ( Column col, std::vector< ColumnStructure > const & subColumnInit )
-      : column( col ), subColumn( subColumnInit )
-    {}
-
-    /**
-     * @brief Constructs a ColumnStructure  with the given parameters.
-     * @param col The parameters for the column.
-     * @param columnValuesInit The values in the column.
-     * @param maxStringSizeInit The largest string(s) in the column.
-     * @param subColumnInit The sub-columns of the column.
-     */
-    ColumnStructure ( Column const & col,
-                      std::vector< string > const & columnValuesInit,
-                      size_t const maxStringSizeInit,
-                      std::vector< ColumnStructure > const & subColumnInit )
-      : column( col ),
-      columnValues( columnValuesInit ),
-      maxStringSize( maxStringSizeInit ),
-      subColumn( subColumnInit )
-    {}
   };
+
 
   /// Alias for an initializer list of variants that can contain either a string or a layout column.
   using TableLayoutArgs = std::initializer_list< std::variant< string_view, TableLayout::Column > >;
@@ -242,7 +239,7 @@ public:
   /**
    * @return The columns vector
    */
-  std::vector< ColumnStructure > const & getColumns() const;
+  std::vector< Column > const & getColumns() const;
 
   /**
    * @return The table name
@@ -267,13 +264,6 @@ public:
    * @return The tableLayout reference
    */
   TableLayout & setMargin( MarginValue marginValue );
-
-  /**
-   * @brief Set the column values alignment
-   * @param alignment column values alignment
-   * @return The tableLayout reference
-   */
-  TableLayout & setValuesAlignment( TableLayout::Alignment alignment );
 
   /**
    * @return check if the line break at the end & beginning is activated
@@ -309,7 +299,7 @@ public:
 private:
 
   /**
-   * @brief Add a column to the table given an initializer_list of string & ColumnStructure
+   * @brief Add a column to the table given an initializer_list of string & Column
    * @param args An initializer_list containing string / column
    */
   void processArguments( TableLayoutArgs args )
@@ -351,7 +341,7 @@ private:
  */
   void addToColumns( Column const & column );
 
-  std::vector< ColumnStructure > m_tableColumnsData;
+  std::vector< Column > m_tableColumnsData;
 
   bool m_wrapLine = true;
   string m_tableTitle;

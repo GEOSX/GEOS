@@ -34,10 +34,18 @@ class TableData
 {
 public:
 
-  enum class Action : char
+  enum class CellType : char // enum class Cell
   {
     MERGE = '\x01',
     SEPARATOR = '\x02',
+    Header = '\x03',
+    Value = '\x04',
+  };
+
+  struct DataType
+  {
+    CellType type;
+    string value;
   };
 
   /**
@@ -52,7 +60,7 @@ public:
    * @brief Add a row to the table
    * @param row A vector of string representing a row
    */
-  void addRow( std::vector< string > & row );
+  void addRow( std::vector< DataType > & row );
 
   /**
    * @brief Add a line separator to the table
@@ -68,7 +76,7 @@ public:
   /**
    * @return The rows of the table
    */
-  std::vector< std::vector< string > > const & getTableDataRows() const;
+  std::vector< std::vector< DataType > > const & getTableDataRows() const;
 
   /**
    * @brief Get all error messages
@@ -79,7 +87,7 @@ public:
 private:
 
   /// vector containing all rows with cell values
-  std::vector< std::vector< string > > m_rows;
+  std::vector< std::vector< DataType > > m_rows;
 
   /// store error if there are any inconsistencies related to the table
   std::vector< string > m_errorsMsg;
@@ -165,14 +173,13 @@ private:
 template< typename ... Args >
 void TableData::addRow( Args const &... args )
 {
-  std::vector< string > m_cellsValue;
+  std::vector< DataType > cells;
   ( [&] {
     static_assert( has_formatter_v< decltype(args) >, "Argument passed in addRow cannot be converted to string" );
     string const cellValue = GEOS_FMT( "{}", args );
-    m_cellsValue.push_back( cellValue );
+    cells.push_back( {CellType::Value, cellValue} );
   } (), ...);
-
-  addRow( m_cellsValue );
+  addRow( cells );
 }
 
 template< typename T >

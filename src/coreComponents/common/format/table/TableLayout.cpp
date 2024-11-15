@@ -31,27 +31,12 @@ void TableLayout::addToColumns( const std::vector< string > & columnNames )
 
 void TableLayout::addToColumns( string_view columnName )
 {
-  m_tableColumnsData.push_back( TableLayout::Column{ columnName } );
+  m_tableColumnsData.push_back( TableLayout::Column().setName( columnName ) );
 }
 
 void TableLayout::addToColumns( Column const & column )
 {
-  if( !column.subColumnNames.empty())
-  {
-    std::vector< TableLayout::ColumnStructure > subColumns;
-    for( const auto & subColumnsName : column.subColumnNames )
-    {
-      subColumns.push_back(
-        TableLayout::ColumnStructure {
-          TableLayout::Column{ subColumnsName, column.alignmentSettings.headerAlignment }
-        } );
-    }
-    m_tableColumnsData.push_back( TableLayout::ColumnStructure { column, subColumns } );
-  }
-  else
-  {
-    m_tableColumnsData.push_back( TableLayout::ColumnStructure { column } );
-  }
+  m_tableColumnsData.push_back( column );
 }
 
 TableLayout & TableLayout::setTitle( string_view title )
@@ -75,15 +60,6 @@ TableLayout & TableLayout::setMargin( MarginValue marginValue )
   return *this;
 }
 
-TableLayout & TableLayout::setValuesAlignment( TableLayout::Alignment alignment )
-{
-  for( auto & tableColumnData : m_tableColumnsData )
-  {
-    tableColumnData.column.alignmentSettings.valueAlignment = alignment;
-  }
-  return *this;
-}
-
 bool TableLayout::isLineBreakEnabled() const
 {
   return m_wrapLine;
@@ -100,7 +76,7 @@ void TableLayout::removeSubColumn()
   }
 }
 
-std::vector< TableLayout::ColumnStructure > const & TableLayout::getColumns() const
+std::vector< TableLayout::Column > const & TableLayout::getColumns() const
 {
   return m_tableColumnsData;
 }
