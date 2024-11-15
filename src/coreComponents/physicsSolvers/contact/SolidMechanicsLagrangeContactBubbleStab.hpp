@@ -160,8 +160,6 @@ public:
     }
   }
 
-private:
-
 /**
  * @brief Create the list of finite elements of the same type
  *   for each FaceElementSubRegion (Triangle or Quadrilateral)
@@ -184,6 +182,8 @@ private:
    */
   void createBubbleCellList( DomainPartition & domain ) const;
 
+
+private:
   /**
    * @brief add the number of non-zero elements induced by the coupling between
    *   nodal and bubble displacement.
