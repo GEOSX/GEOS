@@ -139,8 +139,10 @@ After building GEOS, the integrated tests can be triggered in the GEOS build dir
   When running test or creating new baselines on LC systems, we recommend that you use the *quartz-gcc-12-release* configuration
 
 
+.. _overrideTestBehavior:
+
 Override Test Behavior
--------------------------
+----------------------
 
 For cases where you need additional control over the integrated tests behavior, you can use this script in your build directory: */path/to/GEOS/build-xyz/integratedTests/geos_ats.sh*.
 To run the tests, simply call this script with any desired arguments (see the output of `geos_ats.sh --help` for additional details.)
@@ -510,15 +512,15 @@ This process is called rebaselining.
 We suggest the following workflow:
 
 
-#. Step 1. Open a pull request for your branch on github and select the **ci: run integrated tests** and **ci: upload test baselines** labels
-#. Step 2. Wait for the tests to finish
-#. Step 3. Download and unpack the new baselines from the link provided at the bottom of the test logs
-#. Step 4. Inspect the test results using the *test_results.html* file
-#. Step 5. Verify that the changes in the baseline files are desired
-#. Step 6. Update the baseline ID in the *GEOS/.integrated_tests.yaml* file
-#. Step 7. Add a justification for the baseline changes to the *GEOS/BASELINE_NOTES.md* file
-#. Step 8. Commit your changes and push the code
-#. Step 9. Wait for the CI tests to re-run and verify that the integrated tests step passed
+#. Open a pull request for your branch on github and select the **ci: run integrated tests** label
+#. Wait for the tests to finish
+#. Download and unpack the new baselines from the link provided at the bottom of the test logs
+#. Inspect the test results using the *test_results.html* file
+#. Verify that the changes in the baseline files are desired
+#. Update the baseline ID in the *GEOS/.integrated_tests.yaml* file
+#. Add a justification for the baseline changes to the *GEOS/BASELINE_NOTES.md* file
+#. Commit your changes and push the code
+#. Wait for the CI tests to re-run and verify that the integrated tests step passed
 
 
 
@@ -532,4 +534,4 @@ We highly recommend running tests and rebaselining on an MPI-aware platform.
 
 **Filtering Checks**: A common reason for rebaselining is that you have changed the name of an XML node in the input files.
 While the baselines may be numerically identical, the restarts will fail because they contain different node names.
-In this situation, it can be useful to add a filter to the restart check script using the *geos_ats.sh* script (see the `-e` and `-m` options in :ref:`Override Test Behavior` )
+In this situation, it can be useful to add a filter to the restart check script using the *geos_ats.sh* script (see the `-e` and `-m` options in :ref:`overrideTestBehavior` )

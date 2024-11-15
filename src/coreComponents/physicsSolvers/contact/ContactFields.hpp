@@ -2,10 +2,11 @@
  * ------------------------------------------------------------------------------------------------------------
  * SPDX-License-Identifier: LGPL-2.1-only
  *
- * Copyright (c) 2018-2020 Lawrence Livermore National Security LLC
- * Copyright (c) 2018-2020 The Board of Trustees of the Leland Stanford Junior University
- * Copyright (c) 2018-2020 TotalEnergies
- * Copyright (c) 2019-     GEOSX Contributors
+ * Copyright (c) 2016-2024 Lawrence Livermore National Security LLC
+ * Copyright (c) 2018-2024 Total, S.A
+ * Copyright (c) 2018-2024 The Board of Trustees of the Leland Stanford Junior University
+ * Copyright (c) 2023-2024 Chevron
+ * Copyright (c) 2019-     GEOS/GEOSX Contributors
  * All rights reserved
  *
  * See top level LICENSE, COPYRIGHT, CONTRIBUTORS, NOTICE, and ACKNOWLEDGEMENTS files for details.
@@ -20,7 +21,7 @@
 #define GEOS_PHYSICSSOLVERS_CONTACT_CONTACTFIELDS_HPP_
 
 #include "mesh/MeshFields.hpp"
-#include "codingUtilities/EnumStrings.hpp"
+#include "common/format/EnumStrings.hpp"
 
 namespace geos
 {
@@ -48,6 +49,22 @@ struct FractureState
     Open = 3     ///< element is open: no constraints are imposed.
   };
 };
+
+DECLARE_FIELD( iterativePenalty,
+               "iterativePenalty",
+               array2d< real64 >,
+               1.e5,
+               LEVEL_0,
+               WRITE_AND_READ,
+               "Penalty coefficients used in the iterative procedure of the Augmented Lagrangian Method" );
+
+DECLARE_FIELD( rotationMatrix,
+               "rotationMatrix",
+               array3d< real64 >,
+               0,
+               LEVEL_0,
+               WRITE_AND_READ,
+               "An array that holds the rotation matrices on the fracture" );
 
 DECLARE_FIELD( dispJump,
                "displacementJump",
@@ -117,8 +134,8 @@ DECLARE_FIELD( fractureState,
                "fractureState",
                array1d< integer >,
                FractureState::Stick,
-               NOPLOT,
-               NO_WRITE,
+               LEVEL_0,
+               WRITE_AND_READ,
                "Fracture state." );
 
 DECLARE_FIELD( oldFractureState,

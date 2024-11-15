@@ -4,6 +4,10 @@ set( gtest_geosx_tests
      testCO2BrinePVTModels.cpp
      testCO2SpycherPruessModels.cpp
      testDamage.cpp
+     testMultiFluidCO2Brine.cpp
+     testMultiFluidCompositionalMultiphase.cpp
+     testMultiFluidDeadOil.cpp
+     testMultiFluidLiveOil.cpp
      testRelPerm.cpp
      testRelPermHysteresis.cpp )
 
@@ -29,36 +33,17 @@ set( gtest_pvt_xmls
 set( gtest_reactivefluid_xmls
      testReactiveFluid.xml )
 
-set( dependencyList ${parallelDeps} gtest )
+set( tplDependencyList ${parallelDeps} gtest )
 
-if ( GEOSX_BUILD_SHARED_LIBS )
-  list( APPEND dependencyList geosx_core )
-else()
-  list( APPEND dependencyList ${geosx_core_libs} )
-endif()
+set( dependencyList mainInterface  )
 
 if( ENABLE_PVTPackage )
     list( APPEND gtest_geosx_tests
-          testMultiFluid.cpp )
-
-    list( APPEND dependencyList PVTPackage )
+          testMultiFluidCompositionalMultiphasePVTPackage.cpp )
 endif()
 
-if (TARGET pugixml::pugixml)
-  list( APPEND dependencyList pugixml::pugixml )
-endif()
-
-if (TARGET pugixml)
-  list( APPEND dependencyList pugixml )
-endif()
-
-if (TARGET fmt::fmt)
-  list( APPEND dependencyList fmt::fmt )
-endif()
-
-if (TARGET fmt)
-  list( APPEND dependencyList fmt )
-endif()
+geos_decorate_link_dependencies( LIST decoratedDependencies
+                                 DEPENDENCIES ${dependencyList} )
 
 # Add gtest C++ based tests
 foreach(test ${gtest_geosx_tests})
@@ -66,8 +51,7 @@ foreach(test ${gtest_geosx_tests})
     blt_add_executable( NAME ${test_name}
                         SOURCES ${test}
                         OUTPUT_DIR ${TEST_OUTPUT_DIRECTORY}
-                        DEPENDS_ON ${dependencyList} )
-
+                        DEPENDS_ON ${decoratedDependencies} ${tplDependencyList} )
     geos_add_test( NAME ${test_name}
                    COMMAND ${test_name} )
 
@@ -77,7 +61,7 @@ endforeach()
 blt_add_executable( NAME testTriaxial
                     SOURCES testTriaxial.cpp
                     OUTPUT_DIR ${TEST_OUTPUT_DIRECTORY}
-                    DEPENDS_ON ${dependencyList} "-lz" )
+                    DEPENDS_ON ${dependencyList} "-lz" ${tplDependencyList})
 
 foreach(test ${gtest_triaxial_xmls})
     get_filename_component( test_name ${test} NAME_WE )
@@ -89,7 +73,7 @@ endforeach()
 blt_add_executable( NAME testPVT
                     SOURCES testPVT.cpp
                     OUTPUT_DIR ${TEST_OUTPUT_DIRECTORY}
-                    DEPENDS_ON ${dependencyList} "-lz" )
+                    DEPENDS_ON ${dependencyList} "-lz" ${tplDependencyList} )
 
 foreach(test ${gtest_pvt_xmls})
     get_filename_component( test_name ${test} NAME_WE )
@@ -102,7 +86,7 @@ endforeach()
 blt_add_executable( NAME testReactiveFluid
                     SOURCES testReactiveFluid.cpp
                     OUTPUT_DIR ${TEST_OUTPUT_DIRECTORY}
-                    DEPENDS_ON ${dependencyList} "-lz" )
+                    DEPENDS_ON ${dependencyList} "-lz" ${tplDependencyList} )
 
 foreach(test ${gtest_reactivefluid_xmls})
     get_filename_component( test_name ${test} NAME_WE )

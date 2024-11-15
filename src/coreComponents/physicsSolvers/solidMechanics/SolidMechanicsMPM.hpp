@@ -2,10 +2,11 @@
  * ------------------------------------------------------------------------------------------------------------
  * SPDX-License-Identifier: LGPL-2.1-only
  *
- * Copyright (c) 2018-2020 Lawrence Livermore National Security LLC
- * Copyright (c) 2018-2020 The Board of Trustees of the Leland Stanford Junior University
- * Copyright (c) 2018-2020 TotalEnergies
- * Copyright (c) 2019-     GEOSX Contributors
+ * Copyright (c) 2016-2024 Lawrence Livermore National Security LLC
+ * Copyright (c) 2018-2024 Total, S.A
+ * Copyright (c) 2018-2024 The Board of Trustees of the Leland Stanford Junior University
+ * Copyright (c) 2023-2024 Chevron
+ * Copyright (c) 2019-     GEOS/GEOSX Contributors
  * All rights reserved
  *
  * See top level LICENSE, COPYRIGHT, CONTRIBUTORS, NOTICE, and ACKNOWLEDGEMENTS files for details.
@@ -16,17 +17,17 @@
  * @file SolidMechanicsMPM.hpp
  */
 
-#ifndef GEOSX_PHYSICSSOLVERS_SOLIDMECHANICS_MPM_HPP_
-#define GEOSX_PHYSICSSOLVERS_SOLIDMECHANICS_MPM_HPP_
+#ifndef GEOS_PHYSICSSOLVERS_SOLIDMECHANICS_MPM_HPP_
+#define GEOS_PHYSICSSOLVERS_SOLIDMECHANICS_MPM_HPP_
 
-#include "codingUtilities/EnumStrings.hpp"
+#include "common/format/EnumStrings.hpp"
 #include "common/TimingMacros.hpp"
 #include "kernels/SolidMechanicsLagrangianFEMKernels.hpp"
 #include "kernels/ExplicitMPM.hpp"
 #include "mesh/MeshForLoopInterface.hpp"
 #include "mesh/mpiCommunications/CommunicationTools.hpp"
 #include "mesh/mpiCommunications/MPI_iCommData.hpp"
-#include "physicsSolvers/SolverBase.hpp"
+#include "physicsSolvers/PhysicsSolverBase.hpp"
 #include "physicsSolvers/solidMechanics/SolidMechanicsFields.hpp"
 #include "MPMSolverFields.hpp"
 
@@ -41,7 +42,7 @@ class SpatialPartition;
  *
  * This class implements a material point method solution to the equations of motion.
  */
-class SolidMechanicsMPM : public SolverBase
+class SolidMechanicsMPM : public PhysicsSolverBase
 {
 public:
 
@@ -89,11 +90,11 @@ public:
   virtual ~SolidMechanicsMPM() override;
 
   /**
-   * @return The string that may be used to generate a new instance from the SolverBase::CatalogInterface::CatalogType
+   * @return The string that may be used to generate a new instance from the PhysicsSolverBase::CatalogInterface::CatalogType
    */
   static string catalogName() { return "SolidMechanics_MPM"; }
   /**
-   * @copydoc SolverBase::getCatalogName()
+   * @copydoc PhysicsSolverBase::getCatalogName()
    */
   string getCatalogName() const override { return catalogName(); }
 
@@ -165,7 +166,7 @@ public:
    * @param solution the solution vector
    */
 
-  struct viewKeyStruct : SolverBase::viewKeyStruct
+  struct viewKeyStruct : PhysicsSolverBase::viewKeyStruct
   {
     static constexpr char const * cflFactorString() { return "cflFactor"; }
     static constexpr char const * timeIntegrationOptionString() { return "timeIntegrationOption"; }
@@ -361,9 +362,7 @@ public:
                               NodeManager & nodeManager );
 
 protected:
-  virtual void postProcessInput() override final;
-
-  virtual void setConstitutiveNamesCallSuper( ParticleSubRegionBase & subRegion ) const override;
+  virtual void postInputInitialization() override final;
 
   std::vector< array2d< localIndex > > m_mappedNodes; // mappedNodes[subregion index][particle index][node index]. dims = {# of subregions,
                                                       // # of particles, # of nodes a particle on the subregion maps to}
@@ -378,7 +377,6 @@ protected:
   std::vector< std::string > m_profilingLabels;
 
   TimeIntegrationOption m_timeIntegrationOption;
-  MPI_iCommData m_iComm;
 
   int m_prescribedBcTable;
   array1d< int > m_boundaryConditionTypes; // TODO: Surely there's a way to have just one variable here
@@ -457,7 +455,7 @@ private:
     }
   };
 
-  virtual void setConstitutiveNames( ParticleSubRegionBase & subRegion ) const override;
+  void setParticlesConstitutiveNames( ParticleSubRegionBase & subRegion ) const;
 };
 
 ENUM_STRINGS( SolidMechanicsMPM::TimeIntegrationOption,
@@ -476,4 +474,4 @@ ENUM_STRINGS( SolidMechanicsMPM::BoundaryConditionOption,
 
 } /* namespace geos */
 
-#endif /* GEOSX_PHYSICSSOLVERS_SOLIDMECHANICS_SOLIDMECHANICSLAGRANGIANFEM_HPP_ */
+#endif /* GEOS_PHYSICSSOLVERS_SOLIDMECHANICS_SOLIDMECHANICSLAGRANGIANFEM_HPP_ */

@@ -2,11 +2,12 @@
  * ------------------------------------------------------------------------------------------------------------
  * SPDX-License-Identifier: LGPL-2.1-only
  *
- * Copyright (c) 2018-2020 Lawrence Livermore National Security LLC
- * Copyright (c) 2018-2020 The Board of Trustees of the Leland Stanford Junior University
- * Copyright (c) 2018-2020 Total, S.A
- * Copyright (c) 2020-     GEOSX Contributors
- * All right reserved
+ * Copyright (c) 2016-2024 Lawrence Livermore National Security LLC
+ * Copyright (c) 2018-2024 Total, S.A
+ * Copyright (c) 2018-2024 The Board of Trustees of the Leland Stanford Junior University
+ * Copyright (c) 2023-2024 Chevron
+ * Copyright (c) 2019-     GEOS/GEOSX Contributors
+ * All rights reserved
  *
  * See top level LICENSE, COPYRIGHT, CONTRIBUTORS, NOTICE, and ACKNOWLEDGEMENTS files for details.
  * ------------------------------------------------------------------------------------------------------------
@@ -15,6 +16,8 @@
 // using some utility classes from the following unit test
 #include "unitTests/fluidFlowTests/testCompFlowUtils.hpp"
 
+#include <iostream>
+#include <cstdio>
 #include "common/DataTypes.hpp"
 #include "mainInterface/initialization.hpp"
 #include "mainInterface/ProblemManager.hpp"
@@ -40,7 +43,6 @@ char const * xmlInput =
     <Solvers>
       <AcousticSEM
         name="acousticSolver"
-        cflFactor="0.25"
         discretization="FE1"
         targetRegions="{ Region }"
         sourceCoordinates="{ { 50, 50, 50 } }"
@@ -49,6 +51,8 @@ char const * xmlInput =
                                 { 99.9, 0.1, 0.1 }, { 99.9, 0.1, 99.9 }, { 99.9, 99.9, 0.1 }, { 99.9, 99.9, 99.9 },
                                 { 50, 50, 50 } }"
         outputSeismoTrace="0"
+        timestepStabilityLimit="1"
+        cflFactor="0.95"
         dtSeismoTrace="0.1"/>
     </Solvers>
     <Mesh>
@@ -98,7 +102,7 @@ char const * xmlInput =
     <ElementRegions>
       <CellElementRegion
         name="Region"
-        cellBlocks="{ cb }"
+        cellBlocks="{ * }"
         materialList="{ nullModel }"/>
     </ElementRegions>
     <Constitutive>
@@ -190,6 +194,12 @@ TEST_F( AcousticWaveEquationSEMTest, SeismoTrace )
 
   DomainPartition & domain = state.getProblemManager().getDomainPartition();
   propagator = &state.getProblemManager().getPhysicsSolverManager().getGroup< AcousticWaveEquationSEM >( "acousticSolver" );
+
+
+  //Assert on time-step computed with the automatci time-step routine
+  real64 const dtOut = propagator->getReference< real64 >( AcousticWaveEquationSEM::viewKeyStruct::timeStepString() );
+  ASSERT_TRUE( dtOut < 0.04 );
+
   real64 time_n = time;
   // run for 1s (10 steps)
   for( int i=0; i<10; i++ )

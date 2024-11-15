@@ -2,10 +2,11 @@
  * ------------------------------------------------------------------------------------------------------------
  * SPDX-License-Identifier: LGPL-2.1-only
  *
- * Copyright (c) 2018-2020 Lawrence Livermore National Security LLC
- * Copyright (c) 2018-2020 The Board of Trustees of the Leland Stanford Junior University
- * Copyright (c) 2018-2020 TotalEnergies
- * Copyright (c) 2019-     GEOSX Contributors
+ * Copyright (c) 2016-2024 Lawrence Livermore National Security LLC
+ * Copyright (c) 2018-2024 Total, S.A
+ * Copyright (c) 2018-2024 The Board of Trustees of the Leland Stanford Junior University
+ * Copyright (c) 2023-2024 Chevron
+ * Copyright (c) 2019-     GEOS/GEOSX Contributors
  * All rights reserved
  *
  * See top level LICENSE, COPYRIGHT, CONTRIBUTORS, NOTICE, and ACKNOWLEDGEMENTS files for details.
@@ -27,6 +28,7 @@
 #include "mesh/utilities/MeshMapUtilities.hpp"
 #include "schema/schemaUtilities.hpp"
 #include "mesh/generators/LineBlockABC.hpp"
+#include "mesh/CellElementRegionSelector.hpp"
 
 namespace geos
 {
@@ -62,7 +64,7 @@ void ElementRegionManager::setMaxGlobalIndex()
     m_localMaxGlobalIndex = std::max( m_localMaxGlobalIndex, subRegion.maxGlobalIndex() );
   } );
 
-  m_maxGlobalIndex = MpiWrapper::max( m_localMaxGlobalIndex, MPI_COMM_GEOSX );
+  m_maxGlobalIndex = MpiWrapper::max( m_localMaxGlobalIndex, MPI_COMM_GEOS );
 }
 
 
@@ -76,7 +78,6 @@ Group * ElementRegionManager::createChild( string const & childKey, string const
   Group & elementRegions = this->getGroup( ElementRegionManager::groupKeyStruct::elementRegionsGroup() );
   return &elementRegions.registerGroup( childName,
                                         CatalogInterface::factory( childKey, childName, &elementRegions ) );
-
 }
 
 void ElementRegionManager::expandObjectCatalogs()
@@ -119,12 +120,23 @@ void ElementRegionManager::setSchemaDeviations( xmlWrapper::xmlNode schemaRoot,
   }
 }
 
+
 void ElementRegionManager::generateMesh( CellBlockManagerABC const & cellBlockManager )
 {
-  this->forElementRegions< CellElementRegion >( [&]( CellElementRegion & elemRegion )
-  {
-    elemRegion.generateMesh( cellBlockManager.getCellBlocks() );
-  } );
+  { // cellBlocks loading
+    Group const & cellBlocks = cellBlockManager.getCellBlocks();
+    CellElementRegionSelector cellBlockSelector{ cellBlocks,
+                                                 cellBlockManager.getRegionAttributesCellBlocks() };
+    this->forElementRegions< CellElementRegion >( [&]( CellElementRegion & elemRegion )
+    {
+      elemRegion.setCellBlockNames( cellBlockSelector.buildCellBlocksSelection( elemRegion ) );
+      elemRegion.generateMesh( cellBlocks );
+    } );
+    // selecting all cellblocks is mandatory
+    cellBlockSelector.checkSelectionConsistency();
+  }
+
+
   this->forElementRegions< SurfaceElementRegion >( [&]( SurfaceElementRegion & elemRegion )
   {
     elemRegion.generateMesh( cellBlockManager.getFaceBlocks() );
@@ -150,7 +162,6 @@ void ElementRegionManager::generateMesh( CellBlockManagerABC const & cellBlockMa
                                                                            tmp,
                                                                            relation );
   } );
-
 }
 
 void ElementRegionManager::generateWells( CellBlockManagerABC const & cellBlockManager,

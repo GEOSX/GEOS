@@ -2,10 +2,11 @@
  * ------------------------------------------------------------------------------------------------------------
  * SPDX-License-Identifier: LGPL-2.1-only
  *
- * Copyright (c) 2018-2020 Lawrence Livermore National Security LLC
- * Copyright (c) 2018-2020 The Board of Trustees of the Leland Stanford Junior University
- * Copyright (c) 2018-2020 TotalEnergies
- * Copyright (c) 2020-     GEOSX Contributors
+ * Copyright (c) 2016-2024 Lawrence Livermore National Security LLC
+ * Copyright (c) 2018-2024 Total, S.A
+ * Copyright (c) 2018-2024 The Board of Trustees of the Leland Stanford Junior University
+ * Copyright (c) 2023-2024 Chevron
+ * Copyright (c) 2019-     GEOS/GEOSX Contributors
  * All rights reserved
  *
  * See top level LICENSE, COPYRIGHT, CONTRIBUTORS, NOTICE, and ACKNOWLEDGEMENTS files for details.
@@ -447,12 +448,17 @@ Elem2dTo3dInfo buildElem2dTo3dElemAndFaces( vtkSmartPointer< vtkDataSet > faceMe
     ng2l[globalPtIds->GetValue( i )] = i;
   }
 
-  // Let's build the elem2d to elem3d mapping. We need to find the 3d elements!
+  // Let's build the elem2d to elem3d mapping.
+  // We need to find the 3d elements (and only the 3d elements, so we can safely ignore the others).
   // First we compute the mapping from all the boundary nodes to the 3d elements that rely on those nodes.
   std::map< vtkIdType, std::vector< vtkIdType > > nodesToCellsFull;
   for( vtkIdType i = 0; i < boundary->GetNumberOfCells(); ++i )
   {
     vtkIdType const cellId = boundaryCells->GetValue( i );
+    if( mesh->GetCell( cellId )->GetCellDimension() != 3 )
+    {
+      continue;
+    }
     vtkIdList * pointIds = boundary->GetCell( i )->GetPointIds();
     for( int j = 0; j < pointIds->GetNumberOfIds(); ++j )
     {

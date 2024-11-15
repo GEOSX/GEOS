@@ -306,7 +306,8 @@
       name="siloOutput"
       plotLevel="3"/>
     <VTK
-      name="vtkOutput"/>
+      name="vtkOutput"
+      plotFileRoot="deadoil_3ph_staircase_3d"/>
 
     <Restart
       name="restartOutput"/>

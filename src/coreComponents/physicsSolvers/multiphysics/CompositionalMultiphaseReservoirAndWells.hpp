@@ -2,10 +2,11 @@
  * ------------------------------------------------------------------------------------------------------------
  * SPDX-License-Identifier: LGPL-2.1-only
  *
- * Copyright (c) 2018-2020 Lawrence Livermore National Security LLC
- * Copyright (c) 2018-2020 The Board of Trustees of the Leland Stanford Junior University
- * Copyright (c) 2018-2020 TotalEnergies
- * Copyright (c) 2019-     GEOSX Contributors
+ * Copyright (c) 2016-2024 Lawrence Livermore National Security LLC
+ * Copyright (c) 2018-2024 Total, S.A
+ * Copyright (c) 2018-2024 The Board of Trustees of the Leland Stanford Junior University
+ * Copyright (c) 2023-2024 Chevron
+ * Copyright (c) 2019-     GEOS/GEOSX Contributors
  * All rights reserved
  *
  * See top level LICENSE, COPYRIGHT, CONTRIBUTORS, NOTICE, and ACKNOWLEDGEMENTS files for details.
@@ -21,13 +22,14 @@
 #define GEOS_PHYSICSSOLVERS_MULTIPHYSICS_COMPOSITIONALMULTIPHASERESERVOIRANDWELLS_HPP_
 
 #include "physicsSolvers/multiphysics/CoupledReservoirAndWellsBase.hpp"
+#include "physicsSolvers/fluidFlow/CompositionalMultiphaseBase.hpp"
 #include "physicsSolvers/fluidFlow/wells/CompositionalMultiphaseWell.hpp"
 
 namespace geos
 {
 
 /// @tparam RESERVOIR_SOLVER compositional flow or compositional poromechanics solver
-template< typename RESERVOIR_SOLVER >
+template< typename RESERVOIR_SOLVER = CompositionalMultiphaseBase >
 class CompositionalMultiphaseReservoirAndWells : public CoupledReservoirAndWellsBase< RESERVOIR_SOLVER,
                                                                                       CompositionalMultiphaseWell >
 {
@@ -69,7 +71,7 @@ public:
   }
 
   /**
-   * @copydoc SolverBase::getCatalogName()
+   * @copydoc PhysicsSolverBase::getCatalogName()
    */
   string getCatalogName() const override { return catalogName(); }
 
@@ -83,45 +85,11 @@ public:
                                       DofManager const & dofManager,
                                       CRSMatrixView< real64, globalIndex const > const & localMatrix,
                                       arrayView1d< real64 > const & localRhs ) override;
-
-  void
-  assembleFluxTerms( real64 const dt,
-                     DomainPartition const & domain,
-                     DofManager const & dofManager,
-                     CRSMatrixView< real64, globalIndex const > const & localMatrix,
-                     arrayView1d< real64 > const & localRhs ) const
-  { flowSolver()->assembleFluxTerms( dt, domain, dofManager, localMatrix, localRhs );  }
-  void
-  assembleStabilizedFluxTerms( real64 const dt,
-                               DomainPartition const & domain,
-                               DofManager const & dofManager,
-                               CRSMatrixView< real64, globalIndex const > const & localMatrix,
-                               arrayView1d< real64 > const & localRhs ) const
-  { flowSolver()->assembleStabilizedFluxTerms( dt, domain, dofManager, localMatrix, localRhs );  }
-
-  void setKeepFlowVariablesConstantDuringInitStep( bool const keepFlowVariablesConstantDuringInitStep )
-  { flowSolver()->setKeepFlowVariablesConstantDuringInitStep( keepFlowVariablesConstantDuringInitStep ); }
-
-  real64 updateFluidState( ElementSubRegionBase & subRegion ) const
-  { return flowSolver()->updateFluidState( subRegion ); }
-  void updatePorosityAndPermeability( CellElementSubRegion & subRegion ) const
-  { flowSolver()->updatePorosityAndPermeability( subRegion ); }
-  void updateSolidInternalEnergyModel( ObjectManagerBase & dataGroup ) const
-  { flowSolver()->updateSolidInternalEnergyModel( dataGroup ); }
-
-  integer & isThermal() { return flowSolver()->isThermal(); }
+  integer isThermal() { return flowSolver()->isThermal(); }
   integer useSimpleAccumulation() const { return flowSolver()->useSimpleAccumulation(); }
   integer useTotalMassEquation() const { return flowSolver()->useTotalMassEquation(); }
   integer numFluidPhases() { return flowSolver()->numFluidPhases(); }
   integer numFluidComponents() { return flowSolver()->numFluidComponents(); }
-
-  void enableFixedStressPoromechanicsUpdate()
-  { flowSolver()->enableFixedStressPoromechanicsUpdate();  }
-
-  void enableJumpStabilization()
-  {flowSolver()->enableJumpStabilization(); }
-
-  virtual void saveSequentialIterationState( DomainPartition & domain ) override final { flowSolver()->saveSequentialIterationState( domain ); }
 
 protected:
 

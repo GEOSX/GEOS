@@ -2,11 +2,12 @@
  * ------------------------------------------------------------------------------------------------------------
  * SPDX-License-Identifier: LGPL-2.1-only
  *
- * Copyright (c) 2018-2019 Lawrence Livermore National Security LLC
- * Copyright (c) 2018-2019 The Board of Trustees of the Leland Stanford Junior University
- * Copyright (c) 2018-2019 TotalEnergies
- * Copyright (c) 2019-     GEOSX Contributors
- * All right reserved
+ * Copyright (c) 2016-2024 Lawrence Livermore National Security LLC
+ * Copyright (c) 2018-2024 Total, S.A
+ * Copyright (c) 2018-2024 The Board of Trustees of the Leland Stanford Junior University
+ * Copyright (c) 2023-2024 Chevron
+ * Copyright (c) 2019-     GEOS/GEOSX Contributors
+ * All rights reserved
  *
  * See top level LICENSE, COPYRIGHT, CONTRIBUTORS, NOTICE, and ACKNOWLEDGEMENTS files for details.
  * ------------------------------------------------------------------------------------------------------------
@@ -33,11 +34,11 @@ void createAndAssemble( localIndex const startSize, VEC & x )
   // - startSize      on rank 0;
   // - startSize + 1  on rank 1;
   // - etc.
-  int const rank = MpiWrapper::commRank( MPI_COMM_GEOSX );
+  int const rank = MpiWrapper::commRank( MPI_COMM_GEOS );
   localIndex const localSize = rank + startSize;
   globalIndex const rankOffset = rank * ( rank - 1 ) / 2 + rank * startSize;
 
-  x.create( localSize, MPI_COMM_GEOSX );
+  x.create( localSize, MPI_COMM_GEOS );
   arrayView1d< real64 > const values = x.open();
   forAll< POLICY >( localSize, [=] GEOS_HOST_DEVICE ( localIndex const i )
   {
@@ -126,7 +127,7 @@ TYPED_TEST_P( VectorTest, create )
 {
   using Vector = typename TypeParam::ParallelVector;
 
-  MPI_Comm const comm = MPI_COMM_GEOSX;
+  MPI_Comm const comm = MPI_COMM_GEOS;
   int const rank = MpiWrapper::commRank( comm );
   int const nproc = MpiWrapper::commSize( comm );
 
@@ -178,7 +179,7 @@ TYPED_TEST_P( VectorTest, moveConstruction )
   Vector y( std::move( x ) );
 
   EXPECT_TRUE( y.ready() );
-  EXPECT_TRUE( MpiWrapper::commCompare( y.comm(), MPI_COMM_GEOSX ) );
+  EXPECT_TRUE( MpiWrapper::commCompare( y.comm(), MPI_COMM_GEOS ) );
   EXPECT_EQ( y.localSize(), localSize );
   EXPECT_EQ( y.globalSize(), globalSize );
   compareValues( y.values(), values );
@@ -206,7 +207,7 @@ TYPED_TEST_P( VectorTest, setAllValues )
   real64 const value = 1.23;
 
   Vector x;
-  x.create( localSize, MPI_COMM_GEOSX );
+  x.create( localSize, MPI_COMM_GEOS );
   x.set( value );
 
   arrayView1d< real64 const > const values = x.values();
@@ -364,15 +365,15 @@ REGISTER_TYPED_TEST_SUITE_P( VectorTest,
                              norm2,
                              normInf );
 
-#ifdef GEOSX_USE_TRILINOS
+#ifdef GEOS_USE_TRILINOS
 INSTANTIATE_TYPED_TEST_SUITE_P( Trilinos, VectorTest, TrilinosInterface, );
 #endif
 
-#ifdef GEOSX_USE_HYPRE
+#ifdef GEOS_USE_HYPRE
 INSTANTIATE_TYPED_TEST_SUITE_P( Hypre, VectorTest, HypreInterface, );
 #endif
 
-#ifdef GEOSX_USE_PETSC
+#ifdef GEOS_USE_PETSC
 INSTANTIATE_TYPED_TEST_SUITE_P( Petsc, VectorTest, PetscInterface, );
 #endif
 

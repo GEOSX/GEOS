@@ -2,10 +2,11 @@
  * ------------------------------------------------------------------------------------------------------------
  * SPDX-License-Identifier: LGPL-2.1-only
  *
- * Copyright (c) 2018-2020 Lawrence Livermore National Security LLC
- * Copyright (c) 2018-2020 The Board of Trustees of the Leland Stanford Junior University
- * Copyright (c) 2018-2020 TotalEnergies
- * Copyright (c) 2019-     GEOSX Contributors
+ * Copyright (c) 2016-2024 Lawrence Livermore National Security LLC
+ * Copyright (c) 2018-2024 Total, S.A
+ * Copyright (c) 2018-2024 The Board of Trustees of the Leland Stanford Junior University
+ * Copyright (c) 2023-2024 Chevron
+ * Copyright (c) 2019-     GEOS/GEOSX Contributors
  * All rights reserved
  *
  * See top level LICENSE, COPYRIGHT, CONTRIBUTORS, NOTICE, and ACKNOWLEDGEMENTS files for details.
@@ -26,6 +27,7 @@
 #include "fieldSpecification/PerfectlyMatchedLayer.hpp"
 #include "mainInterface/ProblemManager.hpp"
 #include "mesh/mpiCommunications/CommunicationTools.hpp"
+#include "mesh/DomainPartition.hpp"
 #include "WaveSolverUtils.hpp"
 #include "events/EventManager.hpp"
 
@@ -38,8 +40,8 @@ using namespace dataRepository;
 
 WaveSolverBase::WaveSolverBase( const std::string & name,
                                 Group * const parent ):
-  SolverBase( name,
-              parent )
+  PhysicsSolverBase( name,
+                     parent )
 {
 
   registerWrapper( viewKeyStruct::sourceCoordinatesString(), &m_sourceCoordinates ).
@@ -51,12 +53,6 @@ WaveSolverBase::WaveSolverBase( const std::string & name,
     setInputFlag( InputFlags::OPTIONAL ).
     setSizedFromParent( 0 ).
     setDescription( "Coordinates (x,y,z) of the receivers" );
-
-  registerWrapper( viewKeyStruct::sourceValueString(), &m_sourceValue ).
-    setInputFlag( InputFlags::FALSE ).
-    setRestartFlags( RestartFlags::NO_WRITE ).
-    setSizedFromParent( 0 ).
-    setDescription( "Source Value of the sources" );
 
   registerWrapper( viewKeyStruct::timeSourceDelayString(), &m_timeSourceDelay ).
     setInputFlag( InputFlags::OPTIONAL ).
@@ -131,7 +127,8 @@ WaveSolverBase::WaveSolverBase( const std::string & name,
   registerWrapper( viewKeyStruct::useDASString(), &m_useDAS ).
     setInputFlag( InputFlags::OPTIONAL ).
     setApplyDefaultValue( WaveSolverUtils::DASType::none ).
-    setDescription( "Flag to indicate if DAS data will be modeled, and which DAS type to use: 1 for strain integration, 2 for displacement difference" );
+    setDescription(
+    "Flag to indicate if DAS data will be modeled, and which DAS type to use: \"none\" to deactivate DAS, \"strainIntegration\" for strain integration, \"dipole\" for displacement difference" );
 
   registerWrapper( viewKeyStruct::linearDASSamplesString(), &m_linearDASSamples ).
     setInputFlag( InputFlags::OPTIONAL ).
@@ -188,6 +185,18 @@ WaveSolverBase::WaveSolverBase( const std::string & name,
     setSizedFromParent( 0 ).
     setDescription( "Flag that indicates whether the receiver is local to this MPI rank" );
 
+  registerWrapper( viewKeyStruct::timestepStabilityLimitString(), &m_timestepStabilityLimit ).
+    setInputFlag( InputFlags::OPTIONAL ).
+    setApplyDefaultValue( 0 ).
+    setDescription( "Set to 1 to apply a stability limit to the simulation timestep. The timestep used is that given by the CFL condition times the cflFactor parameter." );
+
+  registerWrapper( viewKeyStruct::timeStepString(), &m_timeStep ).
+    setInputFlag( InputFlags::FALSE ).
+    setSizedFromParent( 0 ).
+    setApplyDefaultValue( 1 ).
+    setDescription( "TimeStep computed with the power iteration method (if we don't want to compute it, it is initialized with the XML value" );
+
+
   registerWrapper( viewKeyStruct::receiverRegionString(), &m_receiverRegion ).
     setInputFlag( InputFlags::FALSE ).
     setSizedFromParent( 0 ).
@@ -197,6 +206,31 @@ WaveSolverBase::WaveSolverBase( const std::string & name,
     setInputFlag( InputFlags::FALSE ).
     setSizedFromParent( 0 ).
     setDescription( "Element containing the receivers" );
+
+  registerWrapper( viewKeyStruct::slsReferenceAngularFrequenciesString(), &m_slsReferenceAngularFrequencies ).
+    setInputFlag( InputFlags::OPTIONAL ).
+    setSizedFromParent( 0 ).
+    setApplyDefaultValue( { } ).
+    setDescription( "Reference angular frequencies (omega) for the standard-linear-solid (SLS) anelasticity."
+                    "The default value is { }, corresponding to no attenuation. An array with the corresponding anelasticity coefficients must be provided." );
+
+  registerWrapper( viewKeyStruct::slsAnelasticityCoefficientsString(), &m_slsAnelasticityCoefficients ).
+    setInputFlag( InputFlags::OPTIONAL ).
+    setSizedFromParent( 0 ).
+    setApplyDefaultValue( { } ).
+    setDescription( "Anelasticity coefficients for the standard-linear-solid (SLS) anelasticity."
+                    "The default value is { }, corresponding to no attenuation. An array with the corresponding reference frequencies must be provided." );
+
+  registerWrapper( viewKeyStruct::attenuationTypeString(), &m_attenuationType ).
+    setInputFlag( InputFlags::OPTIONAL ).
+    setApplyDefaultValue( WaveSolverUtils::AttenuationType::none ).
+    setDescription( "Flag to indicate which attenuation model to use: \"none\" for no attenuation, \"sls\\" " for the standard-linear-solid (SLS) model (Fichtner, 2014)." );
+
+  registerWrapper( viewKeyStruct::sourceWaveletTableNames(), &m_sourceWaveletTableNames ).
+    setInputFlag( InputFlags::OPTIONAL ).
+    setDescription( "Names of the table functions, one for each source, that are used to define the source wavelets. If a list is given, it overrides the Ricker wavelet definitions."
+                    "The default value is an empty list, which means that a Ricker wavelet is used everywhere." );
+
 }
 
 WaveSolverBase::~WaveSolverBase()
@@ -207,7 +241,7 @@ WaveSolverBase::~WaveSolverBase()
 void WaveSolverBase::reinit()
 {
   initializePreSubGroups();
-  postProcessInput();
+  postInputInitialization();
   initializePostInitialConditionsPreSubGroups();
 }
 
@@ -236,7 +270,7 @@ void WaveSolverBase::registerDataOnMesh( Group & meshBodies )
 
 void WaveSolverBase::initializePreSubGroups()
 {
-  SolverBase::initializePreSubGroups();
+  PhysicsSolverBase::initializePreSubGroups();
 
   localIndex const numNodesPerElem = WaveSolverBase::getNumNodesPerElem();
 
@@ -250,11 +284,22 @@ void WaveSolverBase::initializePreSubGroups()
   m_receiverConstants.resize( numReceiversGlobal, numNodesPerElem );
   m_receiverIsLocal.resize( numReceiversGlobal );
 
+  if( m_useSourceWaveletTables )
+  {
+    FunctionManager const & functionManager = FunctionManager::getInstance();
+    m_sourceWaveletTableWrappers.clear();
+    for( integer i = 0; i < m_sourceWaveletTableNames.size(); i++ )
+    {
+      TableFunction const & sourceWaveletTable = functionManager.getGroup< TableFunction >( m_sourceWaveletTableNames[ i ] );
+      m_sourceWaveletTableWrappers.emplace_back( sourceWaveletTable.createKernelWrapper() );
+    }
+  }
+
 }
 
-void WaveSolverBase::postProcessInput()
+void WaveSolverBase::postInputInitialization()
 {
-  SolverBase::postProcessInput();
+  PhysicsSolverBase::postInputInitialization();
 
   /// set flag PML to one if a PML field is specified in the xml
   /// if counter>1, an error will be thrown as one single PML field is allowed
@@ -310,6 +355,22 @@ void WaveSolverBase::postProcessInput()
     }
   }
 
+  if( m_attenuationType == WaveSolverUtils::AttenuationType::sls )
+  {
+    GEOS_THROW_IF( m_slsReferenceAngularFrequencies.size( 0 ) != m_slsAnelasticityCoefficients.size( 0 ),
+                   "The number of attenuation anelasticity coefficients for the SLS model must be equal to the number of reference angular frequencies",
+                   InputError );
+    if( m_slsReferenceAngularFrequencies.size( 0 ) == 0 || m_slsAnelasticityCoefficients.size( 0 ) == 0 )
+    {
+      m_slsReferenceAngularFrequencies.resize( 1 );
+      m_slsReferenceAngularFrequencies[ 0 ] = 2.0 * M_PI * m_timeSourceFrequency;
+      m_slsAnelasticityCoefficients.resize( 1 );
+      // set the coefficient to a negative value, so that it will be recomputed when the quality factor is available
+      m_slsAnelasticityCoefficients[ 0 ] = -1;
+    }
+  }
+
+
   GEOS_THROW_IF( m_sourceCoordinates.size( 0 ) > 0 && m_sourceCoordinates.size( 1 ) != 3,
                  "Invalid number of physical coordinates for the sources",
                  InputError );
@@ -320,18 +381,6 @@ void WaveSolverBase::postProcessInput()
 
   EventManager const & event = getGroupByPath< EventManager >( "/Problem/Events" );
   real64 const & maxTime = event.getReference< real64 >( EventManager::viewKeyStruct::maxTimeString() );
-  real64 const & minTime = event.getReference< real64 >( EventManager::viewKeyStruct::minTimeString() );
-  real64 dt = 0;
-  for( localIndex numSubEvent = 0; numSubEvent < event.numSubGroups(); ++numSubEvent )
-  {
-    EventBase const * subEvent = static_cast< EventBase const * >( event.getSubGroups()[numSubEvent] );
-    if( subEvent->getEventName() == "/Solvers/" + this->getName() )
-    {
-      dt = subEvent->getReference< real64 >( EventBase::viewKeyStruct::forceDtString() );
-    }
-  }
-
-  GEOS_THROW_IF( dt < epsilonLoc * maxTime, getDataContext() << ": Value for dt: " << dt <<" is smaller than local threshold: " << epsilonLoc, std::runtime_error );
 
   if( m_dtSeismoTrace > 0 )
   {
@@ -341,10 +390,11 @@ void WaveSolverBase::postProcessInput()
   {
     m_nsamplesSeismoTrace = 0;
   }
-  localIndex const nsamples = int( (maxTime - minTime) / dt) + 1;
 
-  localIndex const numSourcesGlobal = m_sourceCoordinates.size( 0 );
-  m_sourceValue.resize( nsamples, numSourcesGlobal );
+  GEOS_THROW_IF( m_sourceWaveletTableNames.size() > 0 && m_sourceWaveletTableNames.size() != m_sourceCoordinates.size( 0 ),
+                 "Invalid number of source wavelet table names. The number of table functions must be equal to the number of sources",
+                 InputError );
+  m_useSourceWaveletTables = m_sourceWaveletTableNames.size() > 0;
 
 }
 

@@ -9,28 +9,28 @@
 #define GEOS_COMMON_CONFIG_HPP
 
 /// Enables floating point exceptions
-#define GEOSX_USE_FPE
+#define GEOS_USE_FPE
 
 /// Enables bounds check in LvArray classes (CMake option ARRAY_BOUNDS_CHECK)
-/* #undef GEOSX_USE_ARRAY_BOUNDS_CHECK */
+/* #undef GEOS_USE_ARRAY_BOUNDS_CHECK */
 
 /// Enables use of Caliper (CMake option ENABLE_CALIPER)
-#define GEOSX_USE_CALIPER
+#define GEOS_USE_CALIPER
 
 /// Enables use of Caliper (CMake option ENABLE_ADIAK)
-/* #undef GEOSX_USE_ADIAK */
+/* #undef GEOS_USE_ADIAK */
 
 /// Enables use of CHAI (CMake option ENABLE_CHAI)
-#define GEOSX_USE_CHAI
+#define GEOS_USE_CHAI
 
 /// Enables use of Mathpresso library (CMake option ENABLE_MATHPRESSO)
-#define GEOSX_USE_MATHPRESSO
+#define GEOS_USE_MATHPRESSO
 
 /// Enables use of MPI (CMake option ENABLE_MPI)
-#define GEOSX_USE_MPI
+#define GEOS_USE_MPI
 
 /// Enables use of OpenMP (CMake option ENABLE_OPENMP)
-/* #undef GEOSX_USE_OPENMP */
+/* #undef GEOS_USE_OPENMP */
 
 /// Enables use of CUDA (CMake option ENABLE_CUDA)
 /* #undef GEOS_USE_CUDA */
@@ -45,28 +45,28 @@
 /* #undef GEOS_USE_FMT_CONST_FORMATTER_WORKAROUND */
 
 /// Enables use of PVTPackage (CMake option ENABLE_PVTPackage)
-#define GEOSX_USE_PVTPackage
+#define GEOS_USE_PVTPackage
 
 /// Enables use of Python (CMake option ENABLE_PYTHON)
-/* #undef GEOSX_USE_PYGEOSX */
+/* #undef GEOS_USE_PYGEOSX */
 
 /// Enables use of RAJA (CMake option ENABLE_RAJA)
-#define GEOSX_USE_RAJA
+#define GEOS_USE_RAJA
 
 /// Enables use of sys/time.h based timers (CMake option ENABLE_TIMERS)
-/* #undef GEOSX_USE_TIMERS */
+/* #undef GEOS_USE_TIMERS */
 
 /// Enables use of additional debugging interface for TotalView (Cmake option ENABLE_TOTALVIEW_OUTPUT)
-/* #undef GEOSX_USE_TOTALVIEW_OUTPUT */
+/* #undef GEOS_USE_TOTALVIEW_OUTPUT */
 
 /// Enables use of Intel MKL (CMake option ENABLE_MKL)
-/* #undef GEOSX_USE_MKL */
+/* #undef GEOS_USE_MKL */
 
 /// Enables use of Trilinos library (CMake option ENABLE_TRILINOS)
-#define GEOSX_USE_TRILINOS
+#define GEOS_USE_TRILINOS
 
 /// Enables use of Hypre library (CMake option ENABLE_HYPRE)
-#define GEOSX_USE_HYPRE
+#define GEOS_USE_HYPRE
 
 /// Denotes HYPRE using CPU
 #define GEOS_USE_HYPRE_CPU 0
@@ -78,46 +78,46 @@
 #define GEOS_USE_HYPRE_DEVICE GEOS_USE_HYPRE_CPU
 
 /// Enables use of SuperLU_dist library through HYPRE (CMake option ENABLE_SUPERLU_DIST)
-#define GEOSX_USE_SUPERLU_DIST
+#define GEOS_USE_SUPERLU_DIST
 
 /// Enables use of PETSc library (CMake option ENABLE_PETSC)
-#define GEOSX_USE_PETSC
+#define GEOS_USE_PETSC
 
 /// Enables use of Scotch library (CMake option ENABLE_SCOTCH)
-#define GEOSX_USE_SCOTCH
+#define GEOS_USE_SCOTCH
 
-/// Choice of global linear algebra interface (CMake option GEOSX_LA_INTERFACE)
-#define GEOSX_LA_INTERFACE Hypre
+/// Choice of global linear algebra interface (CMake option GEOS_LA_INTERFACE)
+#define GEOS_LA_INTERFACE Hypre
 /// Macro defined when Trilinos interface is selected
-/* #undef GEOSX_LA_INTERFACE_TRILINOS */
+/* #undef GEOS_LA_INTERFACE_TRILINOS */
 /// Macro defined when Hypre interface is selected
-#define GEOSX_LA_INTERFACE_HYPRE
+#define GEOS_LA_INTERFACE_HYPRE
 /// Macro defined when PETSc interface is selected
-/* #undef GEOSX_LA_INTERFACE_PETSC */
+/* #undef GEOS_LA_INTERFACE_PETSC */
 
 /// Platform-dependent mangling of fortran function names (CMake option FORTRAN_MANGLE_NO_UNDERSCORE)
 /* #undef FORTRAN_MANGLE_NO_UNDERSCORE */
 
 /// USE OF SEPARATION COEFFICIENT IN FRACTURE FLOW
-/* #undef GEOSX_USE_SEPARATION_COEFFICIENT */
+/* #undef GEOS_USE_SEPARATION_COEFFICIENT */
 
 /// CMake option CMAKE_BUILD_TYPE
-#define GEOSX_CMAKE_BUILD_TYPE "Release"
+#define GEOS_CMAKE_BUILD_TYPE "Release"
 
 /// The type that localIndex will be aliased to.
-#define GEOSX_LOCALINDEX_TYPE int
+#define GEOS_LOCALINDEX_TYPE int
 
 /// An integer flag representing the type that localIndex will be aliased to.
-#define GEOSX_LOCALINDEX_TYPE_FLAG 0
+#define GEOS_LOCALINDEX_TYPE_FLAG 0
 
 /// The type that globalIndex will be aliased to.
-#define GEOSX_GLOBALINDEX_TYPE long long int
+#define GEOS_GLOBALINDEX_TYPE long long int
 
 /// An integer flag representing the type that globalIndex will be aliased to.
-#define GEOSX_GLOBALINDEX_TYPE_FLAG 2
+#define GEOS_GLOBALINDEX_TYPE_FLAG 2
 
 /// The default block size for GEOSX on this platform
-#define GEOSX_BLOCK_SIZE 32
+#define GEOS_BLOCK_SIZE 32
 
 /// Version information for HDF5
 #define HDF5_VERSION 1.12.1

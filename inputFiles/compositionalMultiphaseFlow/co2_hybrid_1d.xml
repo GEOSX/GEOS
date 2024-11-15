@@ -75,7 +75,7 @@
   <ElementRegions>
     <CellElementRegion
       name="region"
-      cellBlocks="{ cb }"
+      cellBlocks="{ * }"
       materialList="{ fluid, rock, relperm }"/>
   </ElementRegions>
 
@@ -199,7 +199,8 @@
 
   <Outputs>
     <VTK
-      name="vtkOutput"/>
+      name="vtkOutput"
+      plotFileRoot="co2_hybrid_1d"/>
 
     <Restart
       name="sidreRestart"/>

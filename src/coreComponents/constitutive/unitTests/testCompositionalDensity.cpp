@@ -2,10 +2,11 @@
  * ------------------------------------------------------------------------------------------------------------
  * SPDX-License-Identifier: LGPL-2.1-only
  *
- * Copyright (c) 2018-2020 Lawrence Livermore National Security LLC
- * Copyright (c) 2018-2020 The Board of Trustees of the Leland Stanford Junior University
- * Copyright (c) 2018-2020 TotalEnergies
- * Copyright (c) 2019-     GEOSX Contributors
+ * Copyright (c) 2016-2024 Lawrence Livermore National Security LLC
+ * Copyright (c) 2018-2024 Total, S.A
+ * Copyright (c) 2018-2024 The Board of Trustees of the Leland Stanford Junior University
+ * Copyright (c) 2023-2024 Chevron
+ * Copyright (c) 2019-     GEOS/GEOSX Contributors
  * All rights reserved
  *
  * See top level LICENSE, COPYRIGHT, CONTRIBUTORS, NOTICE, and ACKNOWLEDGEMENTS files for details.
@@ -14,7 +15,6 @@
 
 // Source includes
 #include "codingUtilities/UnitTestUtilities.hpp"
-#include "constitutive/fluid/multifluid/compositional/functions/CubicEOSPhaseModel.hpp"
 #include "constitutive/fluid/multifluid/compositional/models/CompositionalDensity.hpp"
 #include "TestFluid.hpp"
 #include "TestFluidUtilities.hpp"
@@ -53,7 +53,7 @@ struct FluidData< 9 >
   }
 };
 
-template< int NC, typename EOS_TYPE >
+template< int NC, EquationOfStateType EOS_TYPE >
 class CompositionalDensityTestFixture :  public ::testing::TestWithParam< DensityData< NC > >
 {
   static constexpr real64 relTol = 1.0e-5;
@@ -66,7 +66,13 @@ public:
     : m_fluid( FluidData< NC >::createFluid() )
   {
     ComponentProperties const & componentProperties = this->m_fluid->getComponentProperties();
-    m_density = std::make_unique< CompositionalDensity< EOS_TYPE > >( "PhaseDensity", componentProperties );
+    m_parameters = CompositionalDensity::createParameters( std::make_unique< ModelParameters >() );
+
+    auto equationOfState = const_cast< EquationOfState * >(m_parameters->get< EquationOfState >());
+    string const eosName = EnumStrings< EquationOfStateType >::toString( EOS_TYPE );
+    equationOfState->m_equationsOfStateNames.emplace_back( eosName );
+
+    m_density = std::make_unique< CompositionalDensity >( "PhaseDensity", componentProperties, 0, *m_parameters );
   }
 
   ~CompositionalDensityTestFixture() = default;
@@ -197,26 +203,28 @@ public:
   }
 
 protected:
-  std::unique_ptr< CompositionalDensity< EOS_TYPE > > m_density{};
+  std::unique_ptr< CompositionalDensity > m_density{};
   std::unique_ptr< TestFluid< NC > > m_fluid{};
+  std::unique_ptr< ModelParameters > m_parameters{};
 };
 
-using CompositionalDensity9CompPR = CompositionalDensityTestFixture< 9, CubicEOSPhaseModel< PengRobinsonEOS > >;
-using CompositionalDensity9CompSRK = CompositionalDensityTestFixture< 9, CubicEOSPhaseModel< SoaveRedlichKwongEOS > >;
+using PengRobinson = CompositionalDensityTestFixture< 9, EquationOfStateType::PengRobinson >;
+using SoaveRedlichKwong = CompositionalDensityTestFixture< 9, EquationOfStateType::SoaveRedlichKwong >;
 
-TEST_P( CompositionalDensity9CompPR, testDensityDerivatives )
+TEST_P( PengRobinson, testDensityDerivatives )
 {
   testDensityDerivatives( GetParam() );
 }
 
-TEST_P( CompositionalDensity9CompSRK, testDensityDerivatives )
+TEST_P( SoaveRedlichKwong, testDensityDerivatives )
 {
   testDensityDerivatives( GetParam() );
 }
+
+/* UNCRUSTIFY-OFF */
 
 INSTANTIATE_TEST_SUITE_P(
-  CompositionalDensityTest,
-  CompositionalDensity9CompPR,
+  CompositionalDensityTest, PengRobinson,
   ::testing::ValuesIn( {
       DensityData< 9 >{1.839590e+06, 2.971500e+02, {0.009000, 0.003000, 0.534700, 0.114600, 0.087900, 0.045600, 0.020900, 0.015100, 0.169200}, 8.355571e+03, 4.559906e+02 },
       DensityData< 9 >{1.839590e+06, 2.971500e+02, {0.008260, 0.005440, 0.770320, 0.104560, 0.061770, 0.024590, 0.008840, 0.004720, 0.011490}, 7.703898e+02, 2.691914e+01 },
@@ -233,8 +241,7 @@ INSTANTIATE_TEST_SUITE_P(
     } )
   );
 INSTANTIATE_TEST_SUITE_P(
-  CompositionalDensityTest,
-  CompositionalDensity9CompSRK,
+  CompositionalDensityTest, SoaveRedlichKwong,
   ::testing::ValuesIn( {
       DensityData< 9 >{1.839590e+06, 2.971500e+02, {0.009000, 0.003000, 0.534700, 0.114600, 0.087900, 0.045600, 0.020900, 0.015100, 0.169200}, 7.433979e+03, 4.056963e+02 },
       DensityData< 9 >{1.839590e+06, 2.971500e+02, {0.008260, 0.005440, 0.770320, 0.104560, 0.061770, 0.024590, 0.008840, 0.004720, 0.011490}, 7.629968e+02, 2.666082e+01 },
@@ -250,6 +257,8 @@ INSTANTIATE_TEST_SUITE_P(
       DensityData< 9 >{1.839590e+08, 3.630000e+02, {0.008990, 0.002990, 0.532810, 0.114470, 0.087910, 0.045660, 0.020950, 0.015160, 0.171070}, 9.554300e+03, 5.234471e+02 }
     } )
   );
+
+/* UNCRUSTIFY-ON */
 
 } // testing
 

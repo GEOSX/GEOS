@@ -15,7 +15,8 @@
       initialDt="10"
       timeIntegrationOption="QuasiStatic"
       discretization="FE1"
-      logLevel="1">
+      logLevel="1"
+      contactPenaltyStiffness="0.0e8">
       <NonlinearSolverParameters
         newtonTol="1.0e-3"
         newtonMaxIter="2"

@@ -2,10 +2,11 @@
  * ------------------------------------------------------------------------------------------------------------
  * SPDX-License-Identifier: LGPL-2.1-only
  *
- * Copyright (c) 2018-2020 Lawrence Livermore National Security LLC
- * Copyright (c) 2018-2020 The Board of Trustees of the Leland Stanford Junior University
- * Copyright (c) 2018-2020 TotalEnergies
- * Copyright (c) 2019-     GEOSX Contributors
+ * Copyright (c) 2016-2024 Lawrence Livermore National Security LLC
+ * Copyright (c) 2018-2024 Total, S.A
+ * Copyright (c) 2018-2024 The Board of Trustees of the Leland Stanford Junior University
+ * Copyright (c) 2023-2024 Chevron
+ * Copyright (c) 2019-     GEOS/GEOSX Contributors
  * All rights reserved
  *
  * See top level LICENSE, COPYRIGHT, CONTRIBUTORS, NOTICE, and ACKNOWLEDGEMENTS files for details.
@@ -36,6 +37,11 @@ public:
   static string catalogName() { return "DeadOilFluid"; }
 
   virtual string getCatalogName() const override { return catalogName(); }
+
+  static constexpr bool isThermalType(){ return false; }
+
+  static constexpr integer min_n_components = 2;
+  static constexpr integer max_n_components = 3;
 
   /**
    * @brief Kernel wrapper class for DeadOilFluid
@@ -130,6 +136,10 @@ private:
    */
   KernelWrapper createKernelWrapper();
 
+protected:
+
+  virtual void postInputInitialization() override;
+
 private:
 
   /**
@@ -151,7 +161,7 @@ DeadOilFluid::KernelWrapper::
   computeDensities( real64 const pressure,
                     PhaseProp::SliceType const & phaseMassDens ) const
 {
-  using Deriv = multifluid::DerivativeOffset;
+  using Deriv = constitutive::multifluid::DerivativeOffset;
 
   LvArray::forValuesInSlice( phaseMassDens.derivs, []( real64 & val ){ val = 0.0; } );
 
@@ -197,7 +207,7 @@ DeadOilFluid::KernelWrapper::
   computeViscosities( real64 const pressure,
                       PhaseProp::SliceType const & phaseVisc ) const
 {
-  using Deriv = multifluid::DerivativeOffset;
+  using Deriv = constitutive::multifluid::DerivativeOffset;
 
   LvArray::forValuesInSlice( phaseVisc.derivs, []( real64 & val ){ val = 0.0; } );
 
@@ -245,7 +255,7 @@ DeadOilFluid::KernelWrapper::
 {
   GEOS_UNUSED_VAR( temperature, phaseEnthalpy, phaseInternalEnergy );
 
-  using Deriv = multifluid::DerivativeOffset;
+  using Deriv = constitutive::multifluid::DerivativeOffset;
 
   integer const nComps = numComponents();
   integer const nPhases = numPhases();

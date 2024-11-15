@@ -2,10 +2,11 @@
  * ------------------------------------------------------------------------------------------------------------
  * SPDX-License-Identifier: LGPL-2.1-only
  *
- * Copyright (c) 2018-2020 Lawrence Livermore National Security LLC
- * Copyright (c) 2018-2020 The Board of Trustees of the Leland Stanford Junior University
- * Copyright (c) 2018-2020 TotalEnergies
- * Copyright (c) 2019-     GEOSX Contributors
+ * Copyright (c) 2016-2024 Lawrence Livermore National Security LLC
+ * Copyright (c) 2018-2024 Total, S.A
+ * Copyright (c) 2018-2024 The Board of Trustees of the Leland Stanford Junior University
+ * Copyright (c) 2023-2024 Chevron
+ * Copyright (c) 2019-     GEOS/GEOSX Contributors
  * All rights reserved
  *
  * See top level LICENSE, COPYRIGHT, CONTRIBUTORS, NOTICE, and ACKNOWLEDGEMENTS files for details.
@@ -45,7 +46,7 @@ public:
    */
   static string catalogName() { return "VTK"; }
 
-  virtual void postProcessInput() override;
+  virtual void postInputInitialization() override;
 
   /**
    * @brief Set the plotFileRoot name for the output
@@ -89,6 +90,7 @@ public:
     static constexpr auto plotFileRoot = "plotFileRoot";
     static constexpr auto writeFEMFaces = "writeFEMFaces";
     static constexpr auto writeGhostCells = "writeGhostCells";
+    static constexpr auto writeFaceElementsAs3D = "writeFaceElementsAs3D";
     static constexpr auto plotLevel = "plotLevel";
     static constexpr auto binaryString = "format";
     static constexpr auto outputRegionTypeString = "outputRegionType";
@@ -102,7 +104,7 @@ public:
    * @brief Return PyVTKOutput type.
    * @return Return PyVTKOutput type.
    */
-#if defined(GEOSX_USE_PYGEOSX)
+#if defined(GEOS_USE_PYGEOSX)
   virtual PyTypeObject * getPythonType() const override;
 #endif
 
@@ -114,6 +116,9 @@ private:
 
   /// Should the vtk files contain the ghost cells or not.
   integer m_writeGhostCells;
+
+  /// Should the face elements be written as 3d volumes or not.
+  integer m_writeFaceElementsAs3D;
 
   /// flag to decide whether we only plot the specified field names
   integer m_onlyPlotSpecifiedFieldNames;

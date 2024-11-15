@@ -252,7 +252,8 @@
   <!-- START_SPHINX_INCLUDE_OUTPUT_BLOCK -->
   <Outputs>
     <VTK
-      name="vtkOutput"/>
+      name="vtkOutput"
+      plotFileRoot="deadoil_3ph_staircase_obl_3d"/>
     <Restart
       name="restartOutput"/>
   </Outputs>

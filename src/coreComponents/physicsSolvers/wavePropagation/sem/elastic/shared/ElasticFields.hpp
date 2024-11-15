@@ -2,10 +2,11 @@
  * ------------------------------------------------------------------------------------------------------------
  * SPDX-License-Identifier: LGPL-2.1-only
  *
- * Copyright (c) 2018-2020 Lawrence Livermore National Security LLC
- * Copyright (c) 2018-2020 The Board of Trustees of the Leland Stanford Junior University
- * Copyright (c) 2018-2020 TotalEnergies
- * Copyright (c) 2019-     GEOSX Contributors
+ * Copyright (c) 2016-2024 Lawrence Livermore National Security LLC
+ * Copyright (c) 2018-2024 Total, S.A
+ * Copyright (c) 2018-2024 The Board of Trustees of the Leland Stanford Junior University
+ * Copyright (c) 2023-2024 Chevron
+ * Copyright (c) 2019-     GEOS/GEOSX Contributors
  * All rights reserved
  *
  * See top level LICENSE, COPYRIGHT, CONTRIBUTORS, NOTICE, and ACKNOWLEDGEMENTS files for details.
@@ -103,6 +104,30 @@ DECLARE_FIELD( Displacementz_np1,
                LEVEL_0,
                WRITE_AND_READ,
                "z-component of displacement at time n+1." );
+
+DECLARE_FIELD( DivPsix,
+               "divpsix",
+               array2d< real32 >,
+               0,
+               NOPLOT,
+               WRITE_AND_READ,
+               "x-component of memory variables for attenuation." );
+
+DECLARE_FIELD( DivPsiy,
+               "divpsiy",
+               array2d< real32 >,
+               0,
+               NOPLOT,
+               WRITE_AND_READ,
+               "y-component of memory variables for attenuation." );
+
+DECLARE_FIELD( DivPsiz,
+               "divpsiz",
+               array2d< real32 >,
+               0,
+               NOPLOT,
+               WRITE_AND_READ,
+               "z-component of memory variables for attenuation." );
 
 DECLARE_FIELD( Stresstensorxx,
                "stresstensorxx",
@@ -216,6 +241,30 @@ DECLARE_FIELD( StiffnessVectorz,
                WRITE_AND_READ,
                "z-component of stiffness vector." );
 
+DECLARE_FIELD( StiffnessVectorAx,
+               "stiffnessVectorAx",
+               array1d< real32 >,
+               0,
+               NOPLOT,
+               WRITE_AND_READ,
+               "x-component of attenuation stiffness vector." );
+
+DECLARE_FIELD( StiffnessVectorAy,
+               "stiffnessVectorAy",
+               array1d< real32 >,
+               0,
+               NOPLOT,
+               WRITE_AND_READ,
+               "y-component of attenuation stiffness vector." );
+
+DECLARE_FIELD( StiffnessVectorAz,
+               "stiffnessVectorAz",
+               array1d< real32 >,
+               0,
+               NOPLOT,
+               WRITE_AND_READ,
+               "z-component of attenuation stiffness vector." );
+
 DECLARE_FIELD( DampingVectorx,
                "dampingVectorx",
                array1d< real32 >,
@@ -263,6 +312,22 @@ DECLARE_FIELD( ElasticDensity,
                NOPLOT,
                WRITE_AND_READ,
                "Medium density of the cell" );
+
+DECLARE_FIELD( ElasticQualityFactorP,
+               "elasticQualityFactorP",
+               array1d< real32 >,
+               0,
+               NOPLOT,
+               WRITE_AND_READ,
+               "Quality factor for P-wave attenuation in the cell" );
+
+DECLARE_FIELD( ElasticQualityFactorS,
+               "elasticQualityFactorS",
+               array1d< real32 >,
+               0,
+               NOPLOT,
+               WRITE_AND_READ,
+               "Quality factor for S-wave attenuation in the cell" );
 
 DECLARE_FIELD( ElasticFreeSurfaceFaceIndicator,
                "elasticFreeSurfaceFaceIndicator",

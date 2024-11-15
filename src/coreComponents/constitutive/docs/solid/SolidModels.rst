@@ -12,7 +12,6 @@ known models.
    Theory
    Voight
    Plasticity
-   TriaxialDriver
    ElasticIsotropic
    ElasticIsotropicPressureDependent
    ElasticTransverseIsotropic

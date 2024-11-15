@@ -1,8 +1,8 @@
 .. _SolidMechanicsEmbeddedFractures:
 
-#####################################
+#########################################
 Solid mechanics embedded fractures solver
-#####################################
+#########################################
 
 
 
@@ -11,7 +11,7 @@ Introduction
 
 
 Discretization & soltuion strategy
-=========================
+==================================
 
 The linear momentum balance equation is discretized using a low order finite element method. Moreover, to account for the influence of the fractures on the overall behavior, we utilize the enriched finite element method (EFEM)
 with a piece-wise constant enrichment. This method employs an element-local enrichment of the FE space using the concept of assumedenhanced strain [1-6].
@@ -22,7 +22,7 @@ Example
 
 An example of a valid XML block is given here:
 
-.. literalinclude:: ../../../../../inputFiles/efemFractureMechanics/Sneddon_embeddedFrac_base.xml
+.. literalinclude:: ../../../../../inputFiles/efemFractureMechanics/Sneddon_embeddedFrac_smoke.xml
   :language: xml
   :start-after: <!-- SPHINX_SNEDDON_SOLVER -->
   :end-before: <!-- SPHINX_SNEDDON_SOLVER_END -->
@@ -34,11 +34,11 @@ In the preceding XML block, The `SolidMechanicsEmbeddedFractures` is specified b
 Note that the `SolidMechanicsEmbeddedFractures` always relies on the existance of a
 The following attributes are supported in the input block for `SolidMechanicsEmbeddedFractures`:
 
-.. include:: /coreComponents/schema/docs/SolidMechanicsEmbeddedFractures.rst
+.. include:: /docs/sphinx/datastructure/SolidMechanicsEmbeddedFractures.rst
 
 The following data are allocated and used by the solver:
 
-.. include:: /coreComponents/schema/docs/SolidMechanicsEmbeddedFractures_other.rst
+.. include:: /docs/sphinx/datastructure/SolidMechanicsEmbeddedFractures_other.rst
 
 References
 ==========

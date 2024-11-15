@@ -2,10 +2,11 @@
  * ------------------------------------------------------------------------------------------------------------
  * SPDX-License-Identifier: LGPL-2.1-only
  *
- * Copyright (c) 2018-2020 Lawrence Livermore National Security LLC
- * Copyright (c) 2018-2020 The Board of Trustees of the Leland Stanford Junior University
- * Copyright (c) 2018-2020 TotalEnergies
- * Copyright (c) 2019-     GEOSX Contributors
+ * Copyright (c) 2016-2024 Lawrence Livermore National Security LLC
+ * Copyright (c) 2018-2024 Total, S.A
+ * Copyright (c) 2018-2024 The Board of Trustees of the Leland Stanford Junior University
+ * Copyright (c) 2023-2024 Chevron
+ * Copyright (c) 2019-     GEOS/GEOSX Contributors
  * All rights reserved
  *
  * See top level LICENSE, COPYRIGHT, CONTRIBUTORS, NOTICE, and ACKNOWLEDGEMENTS files for details.
@@ -64,7 +65,7 @@ FaceElementSubRegion::FaceElementSubRegion( string const & name,
     setDescription( "A map eventually containing all the collocated nodes." ).
     setSizedFromParent( 1 );
 
-#ifdef GEOSX_USE_SEPARATION_COEFFICIENT
+#ifdef GEOS_USE_SEPARATION_COEFFICIENT
   registerWrapper( viewKeyStruct::separationCoeffString(), &m_separationCoefficient ).
     setApplyDefaultValue( 0.0 ).
     setPlotLevel( dataRepository::PlotLevel::LEVEL_1 ).
@@ -494,7 +495,6 @@ buildCollocatedEdgeBuckets( std::map< globalIndex, globalIndex > const & referen
                             arrayView2d< localIndex const > const edgeToNodes )
 {
   GEOS_ASSERT_EQ( edgeToNodes.size( 1 ), 2 );
-  static constexpr std::string_view nodeNotFound = "Internal error when trying to access the reference collocated node for global node {}.";
 
   // Checks if the node `gni` is handled as a collocated node on the curren rank.
   auto hasCollocatedNode = [&]( globalIndex const gni ) -> bool
@@ -526,6 +526,8 @@ buildCollocatedEdgeBuckets( std::map< globalIndex, globalIndex > const & referen
   std::map< std::pair< globalIndex, globalIndex >, std::set< localIndex > > collocatedEdgeBuckets;
   for( auto const & p: edgesIds )
   {
+    static constexpr std::string_view nodeNotFound = "Internal error when trying to access the reference collocated node for global node {}.";
+
     std::pair< globalIndex, globalIndex > const & nodes = p.first;
     localIndex const & edge = p.second;
 
