@@ -201,11 +201,7 @@ void HypreSolver::setup( HypreMatrix const & mat )
   clear();
   Base::setup( mat );
   Stopwatch timer( m_result.setupTime );
-
   m_precond.setup( mat );
-  m_componentFilterTime = m_precond.componentFilterTime();
-  m_makeRestrictorTime = m_precond.makeRestrictorTime();
-  m_computeAuuTime = m_precond.computeAuuTime();
 
   m_solver = std::make_unique< HypreSolverWrapper >();
   createHypreKrylovSolver( m_params, mat.comm(), *m_solver );
@@ -276,14 +272,18 @@ void HypreSolver::solve( HypreVector const & rhs,
 
   if( m_params.logLevel >= 1 )
   {
-    GEOS_LOG_RANK_0( "        Linear Solver | " << m_result.status <<
-                     " | Iterations: " << m_result.numIterations <<
-                     " | Final Rel Res: " << m_result.residualReduction <<
-                     " | Make Restrictor Time: " << m_makeRestrictorTime <<
-                     " | Compute Auu Time: " << m_computeAuuTime <<
-                     " | SC Filter Time: " << m_componentFilterTime <<
-                     " | Setup Time: " << m_result.setupTime << " s" <<
-                     " | Solve Time: " << m_result.solveTime << " s" );
+    HYPRE_BigInt global_num_rows, global_num_nonzeros;
+
+    // This involves an MPI collective call, and therefore we call it only when necessary
+    GEOS_LAI_CHECK_ERROR( HYPRE_IJMatrixGetGlobalInfo( matrix().unwrappedIJ(),
+                                                       &global_num_rows,
+                                                       &global_num_rows, // This is intentional and assuming the matrix is square
+                                                       &global_num_nonzeros ) );
+
+    GEOS_LOG_RANK_0( GEOS_FMT( "        Linear Solver | {} | Unknowns: {} | Nonzeros: {} | Iterations: {} | Final Rel Res: {:.4e} | Setup Time: {:.3f} s | Solve Time: {:.3f} s",
+                               m_result.status, stringutilities::addCommaSeparators( global_num_rows ),
+                               stringutilities::addCommaSeparators( global_num_nonzeros ), m_result.numIterations,
+                               m_result.residualReduction, m_result.setupTime, m_result.solveTime ) );
   }
 }
 

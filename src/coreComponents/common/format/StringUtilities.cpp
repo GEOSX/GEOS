@@ -73,6 +73,29 @@ string removeStringAndFollowingContent( string_view const str,
   return string( newStr );
 }
 
+// Add comma separators for thousands
+template< typename T >
+string addCommaSeparators( T const & num )
+{
+  static_assert( std::is_integral< T >::value, "addCommaSeparators only supports integral types" );
+
+  string const numStr = std::to_string( num );
+  string result;
+
+  for( std::size_t i = 0; i < numStr.size(); ++i )
+  {
+    result += numStr[i];
+    if((numStr.size() - i - 1) % 3 == 0 && i != numStr.size() - 1 )
+    {
+      result += ",";
+    }
+  }
+  return result;
+}
+
+template string addCommaSeparators( localIndex const & num );
+template string addCommaSeparators( globalIndex const & num );
+
 // put definition here so we can control the allowable values of T and
 // modication of this function triggers a whole code recompile...which
 // should be avoided.
