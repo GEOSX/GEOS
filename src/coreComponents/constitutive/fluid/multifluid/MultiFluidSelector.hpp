@@ -53,8 +53,7 @@ void constitutiveUpdatePassThru( constitutive::MultiFluidBase const & fluid,
 #if !defined(GEOS_DEVICE_COMPILE)
                                CO2BrineEzrokhiThermalFluid,
                                CompositionalTwoPhaseLohrenzBrayClarkViscosity,
-                               CompositionalKValueConstantViscosity,
-                               CompositionalThreePhaseKValueConstantViscosity,
+                               CompositionalThreePhaseLohrenzBrayClarkViscosity,
 #endif
                                CompositionalTwoPhaseConstantViscosity
                                >::execute( fluid, std::forward< LAMBDA >( lambda ) );
@@ -77,8 +76,7 @@ void constitutiveUpdatePassThru( constitutive::MultiFluidBase & fluid,
 #if !defined(GEOS_DEVICE_COMPILE)
                                CO2BrineEzrokhiThermalFluid,
                                CompositionalTwoPhaseLohrenzBrayClarkViscosity,
-                               CompositionalKValueConstantViscosity,
-                               CompositionalThreePhaseKValueConstantViscosity,
+                               CompositionalThreePhaseLohrenzBrayClarkViscosity,
 #endif
                                CompositionalTwoPhaseConstantViscosity
                                >::execute( fluid, std::forward< LAMBDA >( lambda ) );
