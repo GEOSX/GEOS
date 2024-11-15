@@ -653,7 +653,7 @@ void SpatialPartition::repartitionMasterParticles( ParticleSubRegion & subRegion
   {
     if( particleRankAfter[p] == -1 )
     {
-      
+      numOrphanedParticles++;
       indicesToErase.insert( p );
     }
     else if( particleRankAfter[p] != m_rank )
