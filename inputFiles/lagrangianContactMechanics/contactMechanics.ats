@@ -100,8 +100,7 @@ decks = [
         partitions=((1, 1, 1), ),
         restart_step=1,
         check_step=2,
-        restartcheck_params=RestartcheckParameters(**restartcheck_params))
-
+        restartcheck_params=RestartcheckParameters(**restartcheck_params)),
     TestDeck(
         name="LagrangeContactBubbleStab_FixedSlip_smoke",
         description=
