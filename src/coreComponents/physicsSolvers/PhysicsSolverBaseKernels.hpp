@@ -309,16 +309,17 @@ public:
   {
     array1d< real64 > sumLocalResidualNorm( localResidualNorm.size() );
     array1d< real64 > sumLocalResidualNormalizer( localResidualNormalizer.size() );
-    MpiWrapper::allReduce( localResidualNorm.data(),
-                           sumLocalResidualNorm.data(),
-                           localResidualNorm.size(),
-                           MpiWrapper::getMpiOp( MpiWrapper::Reduction::Sum ),
+
+    MpiWrapper::allReduce( localResidualNorm,
+                           sumLocalResidualNorm,
+                           MpiWrapper::Reduction::Sum,
                            MPI_COMM_GEOS );
+
     MpiWrapper::allReduce( localResidualNormalizer.data(),
                            sumLocalResidualNormalizer.data(),
-                           localResidualNormalizer.size(),
-                           MpiWrapper::getMpiOp( MpiWrapper::Reduction::Sum ),
+                           MpiWrapper::Reduction::Sum,
                            MPI_COMM_GEOS );
+
     for( integer i = 0; i < localResidualNorm.size(); ++i )
     {
       globalResidualNorm[i] = sqrt( sumLocalResidualNorm[i] ) / sqrt( sumLocalResidualNormalizer[i] );

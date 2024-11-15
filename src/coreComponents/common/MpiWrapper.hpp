@@ -22,6 +22,7 @@
 
 #include "common/DataTypes.hpp"
 #include "common/Span.hpp"
+#include "common/TypesHelpers.hpp"
 
 #if defined(GEOS_USE_MPI)
   #include <mpi.h>
@@ -384,6 +385,17 @@ public:
    */
   template< typename T >
   static void allReduce( Span< T const > src, Span< T > dst, Reduction const op, MPI_Comm comm = MPI_COMM_GEOS );
+
+  /**
+   * @brief Convenience wrapper for the MPI_Allreduce function. Version for arrays.
+   * @tparam T type of data to reduce. Must correspond to a valid MPI_Datatype.
+   * @param src[in] The values to send to the reduction.
+   * @param dst[out] The resulting values.
+   * @param op The Reduction enum to perform.
+   * @param comm The communicator.
+   */
+  template< typename CONTAINER_TYPE >
+  static void allReduce( CONTAINER_TYPE const & src, CONTAINER_TYPE & dst, Reduction const op, MPI_Comm const comm = MPI_COMM_GEOS );
 
 
   /**
@@ -1069,6 +1081,15 @@ T MpiWrapper::allReduce( T const & value, Reduction const op, MPI_Comm const com
 template< typename T >
 void MpiWrapper::allReduce( Span< T const > const src, Span< T > const dst, Reduction const op, MPI_Comm const comm )
 {
+  GEOS_ASSERT_EQ( src.size(), dst.size() );
+  allReduce( src.data(), dst.data(), LvArray::integerConversion< int >( src.size() ), getMpiOp( op ), comm );
+}
+
+template< typename CONTAINER_TYPE >
+void MpiWrapper::allReduce( CONTAINER_TYPE const & src, CONTAINER_TYPE & dst, Reduction const op, MPI_Comm const comm )
+{
+  static_assert( std::is_trivially_copyable< typename get_value_type< CONTAINER_TYPE >::type >::value,
+                 "The type in the container must be trivially copiable." );
   GEOS_ASSERT_EQ( src.size(), dst.size() );
   allReduce( src.data(), dst.data(), LvArray::integerConversion< int >( src.size() ), getMpiOp( op ), comm );
 }

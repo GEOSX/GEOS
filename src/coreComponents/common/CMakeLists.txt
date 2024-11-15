@@ -48,6 +48,7 @@ set( common_headers
      Tensor.hpp
      TimingMacros.hpp
      TypeDispatch.hpp
+     TypesHelpers.hpp
      initializeEnvironment.hpp
      LifoStorage.hpp
      LifoStorageCommon.hpp
