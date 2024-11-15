@@ -166,10 +166,28 @@ public:
    */
   GEOS_HOST_DEVICE
   GEOS_FORCE_INLINE
-  static void calcN( localIndex const q,
-                     real64 (& N)[numNodes] )
+  static void calcN( localIndex const,
+                     real64 (&)[numNodes] )
   {
     GEOS_ERROR( "Bernstein-Bézier basis is modal, not nodal." );
+  }
+
+  /**
+   * @brief Calculate shape functions values for each support point at a
+   *   quadrature point.
+   * @param q Index of the quadrature point.
+   * @param stack Variables allocated on the stack as filled by @ref setupStack.
+   * @param N An array to pass back the shape function values for each support
+   *   point.
+   */
+  GEOS_HOST_DEVICE
+  GEOS_FORCE_INLINE
+  static void calcN( localIndex const q,
+                     StackVariables const & stack,
+                     real64 ( & N )[numNodes] )
+  {
+    GEOS_UNUSED_VAR( stack );
+    return calcN( q, N );
   }
   /**
    * @brief Calculate shape functions values at a single point using De Casteljau's algorithm.
@@ -458,6 +476,24 @@ public:
 //    } 
 //  }
 
+  /**
+   * @brief Calculate the shape functions derivatives wrt the physical
+   *   coordinates.
+   * @param q Index of the quadrature point.
+   * @param X Array containing the coordinates of the mesh support points.
+   * @param gradN Array to contain the shape function derivatives for all
+   *   support points at the coordinates of the quadrature point @p q.
+   * @return The determinant of the parent/physical transformation matrix.
+   */
+  GEOS_HOST_DEVICE
+  GEOS_FORCE_INLINE
+  static real64 calcGradN( localIndex const q,
+                           real64 const (&X)[numNodes][3],
+                           real64 ( &gradN )[numNodes][3] )
+  {
+    GEOS_ERROR( "Bernstein-Bézier basis is modal, not nodal." );
+    return 0;
+  }
   /**
    * @brief Calculate the shape functions derivatives wrt the physical
    *   coordinates.
