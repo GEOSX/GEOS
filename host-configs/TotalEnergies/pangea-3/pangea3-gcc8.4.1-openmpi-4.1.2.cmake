@@ -108,4 +108,4 @@ set(ENABLE_HYPRE_DEVICE "CUDA" CACHE BOOL "")
 # disable benchmarks, they are incompatible with P3's nvcc version (cuda 11.5.0)
 set(ENABLE_BENCHMARKS OFF CACHE BOOL "")
 
-include( ${CMAKE_CURRENT_LIST_DIR}/../tpls.cmake )
+include( ${CMAKE_CURRENT_LIST_DIR}/../../tpls.cmake )
