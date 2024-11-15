@@ -14,7 +14,7 @@
  */
 
 /**
- * @file TypeHelpers.hpp
+ * @file TypesHelpers.hpp
  *
  */
 
@@ -46,7 +46,7 @@ struct has_ValueType< T, std::void_t< typename T::ValueType > > : std::true_type
 template< typename T, typename Enable = void >
 struct get_value_type
 {
-  static_assert( sizeof(T) == 0, "CONTAINER_TYPE must define either value_type or ValueType." );
+  static_assert( sizeof(T) == 0, "T must define either value_type or ValueType." );
 };
 
 template< typename T >
