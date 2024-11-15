@@ -49,7 +49,6 @@ SinglePhasePoromechanics< FLOW_SOLVER, MECHANICS_SOLVER >::SinglePhasePoromechan
   LinearSolverParameters & linearSolverParameters = this->m_linearSolverParameters.get();
   linearSolverParameters.mgr.strategy = LinearSolverParameters::MGR::StrategyType::singlePhasePoromechanics;
   linearSolverParameters.mgr.separateComponents = true;
-  linearSolverParameters.mgr.displacementFieldName = solidMechanics::totalDisplacement::key();
   linearSolverParameters.dofsPerNode = 3;
 }
 
@@ -89,7 +88,7 @@ void SinglePhasePoromechanics< FLOW_SOLVER, MECHANICS_SOLVER >::setupSystem( Dom
   }
 
   // setup monolithic coupled system
-  SolverBase::setupSystem( domain, dofManager, localMatrix, rhs, solution, setSparsity );
+  PhysicsSolverBase::setupSystem( domain, dofManager, localMatrix, rhs, solution, setSparsity );
 
   if( !this->m_precond && this->m_linearSolverParameters.get().solverType != LinearSolverParameters::SolverType::direct )
   {
@@ -103,9 +102,9 @@ void SinglePhasePoromechanics< FLOW_SOLVER, MECHANICS_SOLVER >::initializePostIn
   Base::initializePostInitialConditionsPreSubGroups();
 
   arrayView1d< string const > const & poromechanicsTargetRegionNames =
-    this->template getReference< array1d< string > >( SolverBase::viewKeyStruct::targetRegionsString() );
+    this->template getReference< array1d< string > >( PhysicsSolverBase::viewKeyStruct::targetRegionsString() );
   arrayView1d< string const > const & flowTargetRegionNames =
-    this->flowSolver()->template getReference< array1d< string > >( SolverBase::viewKeyStruct::targetRegionsString() );
+    this->flowSolver()->template getReference< array1d< string > >( PhysicsSolverBase::viewKeyStruct::targetRegionsString() );
   for( integer i = 0; i < poromechanicsTargetRegionNames.size(); ++i )
   {
     GEOS_THROW_IF( std::find( flowTargetRegionNames.begin(), flowTargetRegionNames.end(), poromechanicsTargetRegionNames[i] )
@@ -195,7 +194,7 @@ void SinglePhasePoromechanics< FLOW_SOLVER, MECHANICS_SOLVER >::assembleElementB
     if( this->m_isThermal )
     {
       poromechanicsMaxForce =
-        assemblyLaunch< constitutive::PorousSolid< ElasticIsotropic >, // TODO: change once there is a cmake solution
+        assemblyLaunch< constitutive::PorousSolidBase,
                         thermalPoromechanicsKernels::ThermalSinglePhasePoromechanicsKernelFactory >( mesh,
                                                                                                      dofManager,
                                                                                                      regionNames,
@@ -292,31 +291,6 @@ void SinglePhasePoromechanics< FLOW_SOLVER, MECHANICS_SOLVER >::createPreconditi
 }
 
 template< typename FLOW_SOLVER, typename MECHANICS_SOLVER >
-void SinglePhasePoromechanics< FLOW_SOLVER, MECHANICS_SOLVER >::updateState( DomainPartition & domain )
-{
-  GEOS_MARK_FUNCTION;
-
-  this->template forDiscretizationOnMeshTargets( domain.getMeshBodies(), [&] ( string const &,
-                                                                               MeshLevel & mesh,
-                                                                               arrayView1d< string const > const & regionNames )
-  {
-
-    ElementRegionManager & elemManager = mesh.getElemManager();
-
-    elemManager.forElementSubRegions< CellElementSubRegion >( regionNames,
-                                                              [&]( localIndex const,
-                                                                   CellElementSubRegion & subRegion )
-    {
-      this->flowSolver()->updateFluidState( subRegion );
-      if( this->m_isThermal )
-      {
-        this->flowSolver()->updateSolidInternalEnergyModel( subRegion );
-      }
-    } );
-  } );
-}
-
-template< typename FLOW_SOLVER, typename MECHANICS_SOLVER >
 void SinglePhasePoromechanics< FLOW_SOLVER, MECHANICS_SOLVER >::updateBulkDensity( ElementSubRegionBase & subRegion )
 {
   // get the fluid model (to access fluid density)
@@ -345,9 +319,9 @@ template class SinglePhasePoromechanics< SinglePhaseReservoirAndWells<>, SolidMe
 namespace
 {
 typedef SinglePhasePoromechanics< SinglePhaseReservoirAndWells<> > SinglePhaseReservoirPoromechanics;
-REGISTER_CATALOG_ENTRY( SolverBase, SinglePhaseReservoirPoromechanics, string const &, Group * const )
+REGISTER_CATALOG_ENTRY( PhysicsSolverBase, SinglePhaseReservoirPoromechanics, string const &, Group * const )
 typedef SinglePhasePoromechanics<> SinglePhasePoromechanics;
-REGISTER_CATALOG_ENTRY( SolverBase, SinglePhasePoromechanics, string const &, Group * const )
+REGISTER_CATALOG_ENTRY( PhysicsSolverBase, SinglePhasePoromechanics, string const &, Group * const )
 }
 
 } /* namespace geos */

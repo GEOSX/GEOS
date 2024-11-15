@@ -21,6 +21,7 @@
 
 #include "constitutive/contact/HydraulicApertureRelationSelector.hpp"
 #include "constitutive/fluid/singlefluid/SingleFluidBase.hpp"
+#include "constitutive/fluid/singlefluid/SingleFluidFields.hpp"
 #include "physicsSolvers/multiphysics/HydrofractureSolverKernels.hpp"
 #include "physicsSolvers/solidMechanics/SolidMechanicsFields.hpp"
 #include "physicsSolvers/multiphysics/SinglePhasePoromechanics.hpp"
@@ -29,7 +30,7 @@
 #include "physicsSolvers/surfaceGeneration/LogLevelsInfo.hpp"
 #include "dataRepository/LogLevelsInfo.hpp"
 #include "mesh/MeshFields.hpp"
-#include "constitutive/fluid/singlefluid/SingleFluidFields.hpp"
+#include "finiteVolume/FluxApproximationBase.hpp"
 
 namespace geos
 {
@@ -83,8 +84,7 @@ HydrofractureSolver< POROMECHANICS_SOLVER >::HydrofractureSolver( const string &
 
   // This may need to be different depending on whether poroelasticity is on or not.
   m_linearSolverParameters.get().mgr.strategy = LinearSolverParameters::MGR::StrategyType::hydrofracture;
-  m_linearSolverParameters.get().mgr.separateComponents = false;
-  m_linearSolverParameters.get().mgr.displacementFieldName = solidMechanics::totalDisplacement::key();
+  m_linearSolverParameters.get().mgr.separateComponents = true;
   m_linearSolverParameters.get().dofsPerNode = 3;
 
 }
@@ -210,7 +210,6 @@ real64 HydrofractureSolver< POROMECHANICS_SOLVER >::fullyCoupledSolverStep( real
 
     // currently the only method is implicit time integration
     dtReturn = nonlinearImplicitStep( time_n, dt, cycleNumber, domain );
-
 
     if( !this->m_performStressInitialization && m_surfaceGenerator->solverStep( time_n, dt, cycleNumber, domain ) > 0 )
     {
@@ -906,6 +905,13 @@ void HydrofractureSolver< POROMECHANICS_SOLVER >::implicitStepComplete( real64 c
 }
 
 template< typename POROMECHANICS_SOLVER >
+void HydrofractureSolver< POROMECHANICS_SOLVER >::resetStateToBeginningOfStep( DomainPartition & domain )
+{
+  Base::resetStateToBeginningOfStep( domain );
+  updateState( domain );
+}
+
+template< typename POROMECHANICS_SOLVER >
 real64 HydrofractureSolver< POROMECHANICS_SOLVER >::setNextDt( real64 const & currentDt,
                                                                DomainPartition & domain )
 {
@@ -1169,9 +1175,9 @@ void HydrofractureSolver< POROMECHANICS_SOLVER >::initializeNewFractureFields( D
 namespace
 {
 typedef HydrofractureSolver<> SinglePhaseHydrofracture;
-REGISTER_CATALOG_ENTRY( SolverBase, SinglePhaseHydrofracture, string const &, Group * const )
+REGISTER_CATALOG_ENTRY( PhysicsSolverBase, SinglePhaseHydrofracture, string const &, Group * const )
 // typedef HydrofractureSolver< MultiphasePoromechanics<> > MultiphaseHydrofracture;
-// REGISTER_CATALOG_ENTRY( SolverBase, MultiphaseHydrofracture, string const &, Group * const )
+// REGISTER_CATALOG_ENTRY( PhysicsSolverBase, MultiphaseHydrofracture, string const &, Group * const )
 }
 
 } /* namespace geos */

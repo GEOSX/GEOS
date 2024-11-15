@@ -22,7 +22,7 @@
 
 #include "FunctionBase.hpp"
 
-#include "codingUtilities/EnumStrings.hpp"
+#include "common/format/EnumStrings.hpp"
 
 namespace geos
 {
