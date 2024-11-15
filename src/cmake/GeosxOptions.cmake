@@ -136,8 +136,8 @@ blt_append_custom_compiler_flag( FLAGS_VAR CMAKE_CXX_FLAGS
                                )
 
 blt_append_custom_compiler_flag( FLAGS_VAR CMAKE_CXX_FLAGS_DEBUG
-                                 GNU "-Wno-unused-parameter -Wno-unused-variable -Wno-dangling-reference -fsanitize=undefined,leak"
-                                 CLANG "-Wno-unused-parameter -Wno-unused-variable -fstandalone-debug -fsanitize=address,undefined,thread,leak"
+                                 GNU "-Wno-unused-parameter -Wno-unused-variable -Wno-dangling-reference -fsanitize=undefined"
+                                 CLANG "-Wno-unused-parameter -Wno-unused-variable -fstandalone-debug -fsanitize=address,undefined"
                                )
 
 blt_append_custom_compiler_flag( FLAGS_VAR GEOS_NINJA_FLAGS
