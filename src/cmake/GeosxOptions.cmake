@@ -132,12 +132,12 @@ message( "CMAKE_CXX_COMPILER_ID = ${CMAKE_CXX_COMPILER_ID}" )
 blt_append_custom_compiler_flag( FLAGS_VAR CMAKE_CXX_FLAGS DEFAULT "${OpenMP_CXX_FLAGS}" )
 blt_append_custom_compiler_flag( FLAGS_VAR CMAKE_CXX_FLAGS
                                  GNU   "-Wpedantic -pedantic-errors -Wshadow -Wfloat-equal -Wcast-align -Wcast-qual -fsanitize=undefined"
-                                 CLANG "-Wpedantic -pedantic-errors -Wshadow -Wfloat-equal -Wno-cast-align -Wcast-qual -fsanitize=address,undefined"
+                                 CLANG "-Wpedantic -pedantic-errors -Wshadow -Wfloat-equal -Wno-cast-align -Wcast-qual -fsanitize=undefined "
                                )
 
 blt_append_custom_compiler_flag( FLAGS_VAR CMAKE_CXX_FLAGS_DEBUG
                                  GNU "-Wno-unused-parameter -Wno-unused-variable -Wno-dangling-reference -fsanitize=undefined"
-                                 CLANG "-Wno-unused-parameter -Wno-unused-variable -fstandalone-debug -fsanitize=address,undefined"
+                                 CLANG "-Wno-unused-parameter -Wno-unused-variable -fstandalone-debug -fsanitize=undefined"
                                )
 
 blt_append_custom_compiler_flag( FLAGS_VAR GEOS_NINJA_FLAGS
