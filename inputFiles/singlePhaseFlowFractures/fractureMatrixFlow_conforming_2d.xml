@@ -19,6 +19,7 @@
       name="SurfaceGen"
       targetRegions="{ Fracture }"
       rockToughness="1e6"
+      logLevel="1"
       mpiCommOrder="1"/>
   </Solvers>
 

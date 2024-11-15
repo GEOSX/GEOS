@@ -641,6 +641,8 @@ int SurfaceGenerator::separationDriver( DomainPartition & domain,
 
   for( int color=0; color<numTileColors; ++color )
   {
+    MpiWrapper::barrier();
+    std::cout<<" Rank, color, tileColor: "<<MpiWrapper::commRank()<<" "<<color<<" "<<tileColor<<std::endl;
     ModifiedObjectLists modifiedObjects;
     if( color==tileColor )
     {

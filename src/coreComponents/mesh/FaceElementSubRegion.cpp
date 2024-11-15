@@ -303,6 +303,33 @@ localIndex FaceElementSubRegion::packUpDownMapsImpl( buffer_unit_type * & buffer
                                                localToGlobal,
                                                faceLocalToGlobal );
 
+  for( int rank=0; rank<MpiWrapper::commSize(); ++rank )
+  {
+    MpiWrapper::barrier();
+    if( rank == MpiWrapper::commRank() )
+    {
+      ElementRegionManager const & elementRegionManager = *m_2dElemToElems.getElementRegionManager();
+      std::cout<< "PACK: Rank " << rank <<" packing "<< packList.size() << "values" << std::endl;
+      std::cout<< " m_2dElemToElems "<<std::endl;
+      for( int k = 0; k < packList.size(); ++k )
+      {
+        localIndex packIndex = packList[k];
+        std::cout<<" packIndex: "<<packIndex<<std::endl;
+        for( int j = 0; j < 2; ++j )
+        {
+          localIndex const er = m_2dElemToElems.m_toElementRegion[packIndex][j];
+          localIndex const esr = m_2dElemToElems.m_toElementSubRegion[packIndex][j];
+          localIndex const ei = m_2dElemToElems.m_toElementIndex[packIndex][j];
+
+          arrayView1d< globalIndex const > const elemLocalToGlobal = elementRegionManager.getRegion(er).getSubRegion(esr).localToGlobalMap();
+
+          std::cout<<"  "<<j<<": ("<<m_localToGlobalMap(packIndex)<<"): "<<er<<" "<<esr<<" "<<ei<<"("<<elemLocalToGlobal(ei)<<") "<<std::endl;
+        }
+      }
+    }
+  }
+    MpiWrapper::barrier();
+
   packedSize += bufferOps::Pack< DO_PACKING >( buffer, string( viewKeyStruct::surfaceElementsToCellRegionsString() ) );
   packedSize += bufferOps::Pack< DO_PACKING >( buffer,
                                                m_2dElemToElems,
@@ -370,8 +397,8 @@ localIndex FaceElementSubRegion::unpackUpDownMaps( buffer_unit_type const * & bu
     if( rank == MpiWrapper::commRank() )
     {
       ElementRegionManager const & elementRegionManager = *m_2dElemToElems.getElementRegionManager();
-      std::cout<< "preUnpack...Rank " << rank << " has " << m_2dElemToElems.size(0) << " elems in m_2dElemToElems." << std::endl;
-      std::cout<< " m_2dElemToElems "<<std::endl;
+      std::cout<< "PREUNPACK...Rank " << rank << " unpacking " << packList.size() <<" values" << std::endl;
+      std::cout<< " all m_2dElemToElems: "<<std::endl;
       for( int k = 0; k < m_2dElemToElems.size(0); ++k )
       {
         for( int j = 0; j < 2; ++j )
@@ -404,8 +431,8 @@ localIndex FaceElementSubRegion::unpackUpDownMaps( buffer_unit_type const * & bu
     if( rank == MpiWrapper::commRank() )
     {
       ElementRegionManager const & elementRegionManager = *m_2dElemToElems.getElementRegionManager();
-      std::cout<< "Unpacked...Rank " << rank << " has " << m_2dElemToElems.size(0) << " elems in m_2dElemToElems." << std::endl;
-      std::cout<< " m_2dElemToElems "<<std::endl;
+      std::cout<< "PREUNPACK...Rank " << rank << " unpacking " << packList.size() <<" values" << std::endl;
+      std::cout<< " all m_2dElemToElems "<<std::endl;
       for( int k = 0; k < m_2dElemToElems.size(0); ++k )
       {
         for( int j = 0; j < 2; ++j )
