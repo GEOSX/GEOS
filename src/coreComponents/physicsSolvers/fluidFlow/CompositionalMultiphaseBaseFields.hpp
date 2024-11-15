@@ -72,6 +72,14 @@ DECLARE_FIELD( globalCompFraction,
                WRITE_AND_READ,
                "Global component fraction" );
 
+DECLARE_FIELD( globalCompFraction_n,
+               "globalCompFraction_n",
+               array2dLayoutComp,
+               0,
+               NOPLOT,
+               NO_WRITE,
+               "Global component fraction at the previous converged time step" );               
+
 DECLARE_FIELD( globalCompFraction_k,
                "globalCompFraction_k",
                array2dLayoutComp,
@@ -176,6 +184,14 @@ DECLARE_FIELD( globalCompDensityScalingFactor,
                NOPLOT,
                NO_WRITE,
                "Scaling factors for global component densities" );
+
+DECLARE_FIELD( globalCompFractionScalingFactor,
+               "globalCompFractionScalingFactor",
+               array1d< real64 >,
+               1,
+               NOPLOT,
+               NO_WRITE,
+               "Scaling factors for global component fractions" );               
 
 DECLARE_FIELD( compAmount,
                "compAmount",

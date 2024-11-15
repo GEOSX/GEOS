@@ -80,7 +80,8 @@ CompositionalMultiphaseBase::CompositionalMultiphaseBase( const string & name,
   m_allowCompDensChopping( 1 ),
   m_useTotalMassEquation( 1 ),
   m_useSimpleAccumulation( 1 ),
-  m_minCompDens( isothermalCompositionalMultiphaseBaseKernels::minDensForDivision )
+  m_minCompDens( isothermalCompositionalMultiphaseBaseKernels::minDensForDivision ),
+  m_minCompFrac( isothermalCompositionalMultiphaseBaseKernels::minCompFracForDivision )
 {
 //START_SPHINX_INCLUDE_00
   this->registerWrapper( viewKeyStruct::inputTemperatureString(), &m_inputTemperature ).
@@ -175,6 +176,12 @@ CompositionalMultiphaseBase::CompositionalMultiphaseBase( const string & name,
     setInputFlag( InputFlags::OPTIONAL ).
     setApplyDefaultValue( isothermalCompositionalMultiphaseBaseKernels::minDensForDivision ).
     setDescription( "Minimum allowed global component density" );
+
+  this->registerWrapper( viewKeyStruct::minCompFracString(), &m_minCompFrac ).
+    setSizedFromParent( 0 ).
+    setInputFlag( InputFlags::OPTIONAL ).
+    setApplyDefaultValue( isothermalCompositionalMultiphaseBaseKernels::minCompFracForDivision ).
+    setDescription( "Minimum allowed global component fraction" );  
 
   this->registerWrapper( viewKeyStruct::maxSequentialCompDensChangeString(), &m_maxSequentialCompDensChange ).
     setSizedFromParent( 0 ).
@@ -385,10 +392,23 @@ void CompositionalMultiphaseBase::registerDataOnMesh( Group & meshBodies )
       subRegion.registerField< pressureScalingFactor >( getName() );
       subRegion.registerField< temperatureScalingFactor >( getName() );
       subRegion.registerField< globalCompDensityScalingFactor >( getName() );
+      subRegion.registerField< globalCompFractionScalingFactor >( getName() );
 
       // The resizing of the arrays needs to happen here, before the call to initializePreSubGroups,
       // to make sure that the dimensions are properly set before the timeHistoryOutput starts its initialization.
-
+/*
+      subRegion.registerField< globalCompFraction >( getName() ).
+        setDimLabels( 1, fluid.componentNames() ).
+        reference().resizeDimension< 1 >( m_numComponents );
+      subRegion.registerField< globalCompFraction_n >( getName() ).
+        setDimLabels( 1, fluid.componentNames() ).
+        reference().resizeDimension< 1 >( m_numComponents );
+      if( m_isFixedStressPoromechanicsUpdate )
+      {
+        subRegion.registerField< globalCompFraction_k >( getName() ).
+          setDimLabels( 1, fluid.componentNames() ).
+          reference().resizeDimension< 1 >( m_numComponents );
+      }  
       subRegion.registerField< globalCompDensity >( getName() ).
         setDimLabels( 1, fluid.componentNames() ).
         reference().resizeDimension< 1 >( m_numComponents );
@@ -400,12 +420,46 @@ void CompositionalMultiphaseBase::registerDataOnMesh( Group & meshBodies )
           setDimLabels( 1, fluid.componentNames() ).
           reference().resizeDimension< 1 >( m_numComponents );
       }
-
-      subRegion.registerField< globalCompFraction >( getName() ).
-        setDimLabels( 1, fluid.componentNames() ).
-        reference().resizeDimension< 1 >( m_numComponents );
       subRegion.registerField< dGlobalCompFraction_dGlobalCompDensity >( getName() ).
-        reference().resizeDimension< 1, 2 >( m_numComponents, m_numComponents );
+        reference().resizeDimension< 1, 2 >( m_numComponents, m_numComponents ); 
+      */ 
+
+      
+      if (m_useZFormulation)
+      {
+        subRegion.registerField< globalCompFraction >( getName() ).
+          setDimLabels( 1, fluid.componentNames() ).
+          reference().resizeDimension< 1 >( m_numComponents );
+        subRegion.registerField< globalCompFraction_n >( getName() ).
+          setDimLabels( 1, fluid.componentNames() ).
+          reference().resizeDimension< 1 >( m_numComponents );
+        if( m_isFixedStressPoromechanicsUpdate )
+        {
+          subRegion.registerField< globalCompFraction_k >( getName() ).
+            setDimLabels( 1, fluid.componentNames() ).
+            reference().resizeDimension< 1 >( m_numComponents );
+        }  
+      }
+      else
+      {
+        subRegion.registerField< globalCompDensity >( getName() ).
+          setDimLabels( 1, fluid.componentNames() ).
+          reference().resizeDimension< 1 >( m_numComponents );
+        subRegion.registerField< globalCompDensity_n >( getName() ).
+          reference().resizeDimension< 1 >( m_numComponents );
+        if( m_isFixedStressPoromechanicsUpdate )
+        {
+          subRegion.registerField< globalCompDensity_k >( getName() ).
+            setDimLabels( 1, fluid.componentNames() ).
+            reference().resizeDimension< 1 >( m_numComponents );
+        }
+        subRegion.registerField< globalCompFraction >( getName() ).
+          setDimLabels( 1, fluid.componentNames() ).
+          reference().resizeDimension< 1 >( m_numComponents );
+        subRegion.registerField< dGlobalCompFraction_dGlobalCompDensity >( getName() ).
+          reference().resizeDimension< 1, 2 >( m_numComponents, m_numComponents );  
+      }
+     
 
       subRegion.registerField< phaseVolumeFraction >( getName() ).
         setDimLabels( 1, fluid.phaseNames() ).
@@ -938,23 +992,29 @@ void CompositionalMultiphaseBase::initializeFluidState( MeshLevel & mesh,
     string const & fluidName = subRegion.getReference< string >( viewKeyStruct::fluidNamesString() );
     MultiFluidBase const & fluid = getConstitutiveModel< MultiFluidBase >( subRegion, fluidName );
     arrayView2d< real64 const, multifluid::USD_FLUID > const totalDens = fluid.totalDensity();
-
-    arrayView2d< real64 const, compflow::USD_COMP > const compFrac =
-      subRegion.getField< fields::flow::globalCompFraction >();
-    arrayView2d< real64, compflow::USD_COMP > const compDens =
-      subRegion.getField< fields::flow::globalCompDensity >();
-
-    forAll< parallelDevicePolicy<> >( subRegion.size(), [=] GEOS_HOST_DEVICE ( localIndex const ei )
+    
+    if (!m_useZFormulation)
     {
-      for( integer ic = 0; ic < numComp; ++ic )
+      arrayView2d< real64 const, compflow::USD_COMP > const compFrac =
+        subRegion.getField< fields::flow::globalCompFraction >();
+      arrayView2d< real64, compflow::USD_COMP > const compDens =
+        subRegion.getField< fields::flow::globalCompDensity >();
+
+      forAll< parallelDevicePolicy<> >( subRegion.size(), [=] GEOS_HOST_DEVICE ( localIndex const ei )
       {
-        compDens[ei][ic] = totalDens[ei][0] * compFrac[ei][ic];
-      }
-    } );
+        for( integer ic = 0; ic < numComp; ++ic )
+        {
+          compDens[ei][ic] = totalDens[ei][0] * compFrac[ei][ic];
+        }
+      } );
+    }
   } );
 
   // with initial component densities defined - check if they need to be corrected to avoid zero diags etc
-  chopNegativeDensities( domain );
+  if (m_useZFormulation)
+    chopNegativeCompFractions( domain );
+  else
+    chopNegativeDensities( domain );
 
   // for some reason CUDA does not want the host_device lambda to be defined inside the generic lambda
   // I need the exact type of the subRegion for updateSolidflowProperties to work well.
@@ -978,8 +1038,18 @@ void CompositionalMultiphaseBase::initializeFluidState( MeshLevel & mesh,
     porousSolid.scaleReferencePorosity( netToGross );
     saveConvergedState( subRegion ); // necessary for a meaningful porosity update in sequential schemes
     updatePorosityAndPermeability( subRegion );
-    updateCompAmount( subRegion );
-    updatePhaseVolumeFraction( subRegion );
+    if( m_useZFormulation )
+    {
+      updateCompAmountZFormulation( subRegion );
+      updatePhaseVolumeFractionZFormulation( subRegion );
+    }
+    else
+    {
+      updateCompAmount( subRegion );
+      updatePhaseVolumeFraction( subRegion );
+    }
+    
+    
 
     // Now, we initialize and update each constitutive model one by one
 
@@ -1365,9 +1435,19 @@ void CompositionalMultiphaseBase::initializePostInitialConditionsPreSubGroups()
                                                                arrayView1d< string const > const & regionNames )
   {
     FieldIdentifiers fieldsToBeSync;
-    fieldsToBeSync.addElementFields( { fields::flow::pressure::key(),
+    if (m_useZFormulation)
+    {
+      fieldsToBeSync.addElementFields( { fields::flow::pressure::key(),
+                                       fields::flow::globalCompFraction::key() },
+                                     regionNames );
+    }
+    else
+    {
+      fieldsToBeSync.addElementFields( { fields::flow::pressure::key(),
                                        fields::flow::globalCompDensity::key() },
                                      regionNames );
+    }
+    
 
     CommunicationTools::getInstance().synchronizeFields( fieldsToBeSync, mesh, domain.getNeighbors(), false );
 
@@ -2060,9 +2140,16 @@ void CompositionalMultiphaseBase::applyDirichletBC( real64 const time_n,
         subRegion.getReference< array1d< globalIndex > >( dofKey );
       arrayView1d< real64 const > const pres =
         subRegion.getReference< array1d< real64 > >( fields::flow::pressure::key() );
-      arrayView2d< real64 const, compflow::USD_COMP > const compDens =
-        subRegion.getReference< array2d< real64, compflow::LAYOUT_COMP > >( fields::flow::globalCompDensity::key() );
+
+      // for now to avoid lambda function complain
+      arrayView2d< real64 const, compflow::USD_COMP > compDens =
+        subRegion.getReference< array2d< real64, compflow::LAYOUT_COMP > >( fields::flow::globalCompFraction::key() );
       arrayView2d< real64 const, multifluid::USD_FLUID > const totalDens = fluid.totalDensity();
+      if (!m_useZFormulation)
+      {
+        compDens = subRegion.getReference< array2d< real64, compflow::LAYOUT_COMP > >( fields::flow::globalCompDensity::key() );
+      }  
+      
 
       integer const numComp = m_numComponents;
       forAll< parallelDevicePolicy<> >( targetSet.size(), [=] GEOS_HOST_DEVICE ( localIndex const a )
@@ -2086,16 +2173,19 @@ void CompositionalMultiphaseBase::applyDirichletBC( real64 const time_n,
                                                     pres[ei] );
         localRhs[localRow] = rhsValue;
 
-        // 4.2. For each component, apply target global density value
-        for( integer ic = 0; ic < numComp; ++ic )
+        if (!m_useZFormulation)
         {
-          FieldSpecificationEqual::SpecifyFieldValue( dofIndex + ic + 1,
-                                                      rankOffset,
-                                                      localMatrix,
-                                                      rhsValue,
-                                                      totalDens[ei][0] * compFrac[ei][ic],
-                                                      compDens[ei][ic] );
-          localRhs[localRow + ic + 1] = rhsValue;
+          // 4.2. For each component, apply target global density value
+          for( integer ic = 0; ic < numComp; ++ic )
+          {
+            FieldSpecificationEqual::SpecifyFieldValue( dofIndex + ic + 1,
+                                                        rankOffset,
+                                                        localMatrix,
+                                                        rhsValue,
+                                                        totalDens[ei][0] * compFrac[ei][ic],
+                                                        compDens[ei][ic] );
+            localRhs[localRow + ic + 1] = rhsValue;
+          }
         }
       } );
     } );
@@ -2266,24 +2356,14 @@ void CompositionalMultiphaseBase::chopNegativeDensities( DomainPartition & domai
   } );
 }
 
-real64 CompositionalMultiphaseBase::setNextDtBasedOnStateChange( real64 const & currentDt,
-                                                                 DomainPartition & domain )
+void CompositionalMultiphaseBase::chopNegativeCompFractions( DomainPartition & domain )
 {
-  if( m_targetRelativePresChange >= 1.0 &&
-      m_targetPhaseVolFracChange >= 1.0 &&
-      m_targetRelativeCompDensChange >= 1.0 &&
-      ( !m_isThermal || m_targetRelativeTempChange >= 1.0 ) )
-  {
-    return LvArray::NumericLimits< real64 >::max;
-  }
+  GEOS_MARK_FUNCTION;
 
-  real64 maxRelativePresChange = 0.0;
-  real64 maxRelativeTempChange = 0.0;
-  real64 maxAbsolutePhaseVolFracChange = 0.0;
-  real64 maxRelativeCompDensChange = 0.0;
+  using namespace isothermalCompositionalMultiphaseBaseKernels;
 
-  integer const numPhase = m_numPhases;
   integer const numComp = m_numComponents;
+  real64 const minCompFrac = m_minCompFrac;
 
   forDiscretizationOnMeshTargets( domain.getMeshBodies(), [&]( string const &,
                                                                MeshLevel & mesh,
@@ -2295,100 +2375,158 @@ real64 CompositionalMultiphaseBase::setNextDtBasedOnStateChange( real64 const & 
     {
       arrayView1d< integer const > const ghostRank = subRegion.ghostRank();
 
-      arrayView1d< real64 const > const pres = subRegion.getField< fields::flow::pressure >();
-      arrayView1d< real64 const > const pres_n = subRegion.getField< fields::flow::pressure_n >();
-      arrayView1d< real64 const > const temp = subRegion.getField< fields::flow::temperature >();
-      arrayView1d< real64 const > const temp_n = subRegion.getField< fields::flow::temperature_n >();
-      arrayView2d< real64 const, compflow::USD_PHASE > const phaseVolFrac =
-        subRegion.getField< fields::flow::phaseVolumeFraction >();
-      arrayView2d< real64 const, compflow::USD_PHASE > const phaseVolFrac_n =
-        subRegion.getField< fields::flow::phaseVolumeFraction_n >();
-      arrayView2d< real64 const, compflow::USD_COMP > const compDens =
-        subRegion.getField< fields::flow::globalCompDensity >();
-      arrayView2d< real64, compflow::USD_COMP > const compDens_n =
-        subRegion.getField< fields::flow::globalCompDensity_n >();
-
-      RAJA::ReduceMax< parallelDeviceReduce, real64 > subRegionMaxPresChange( 0.0 );
-      RAJA::ReduceMax< parallelDeviceReduce, real64 > subRegionMaxTempChange( 0.0 );
-      RAJA::ReduceMax< parallelDeviceReduce, real64 > subRegionMaxPhaseVolFracChange( 0.0 );
-      RAJA::ReduceMax< parallelDeviceReduce, real64 > subRegionMaxCompDensChange( 0.0 );
+      arrayView2d< real64, compflow::USD_COMP > const compFrac =
+        subRegion.getField< fields::flow::globalCompFraction >();
 
       forAll< parallelDevicePolicy<> >( subRegion.size(), [=] GEOS_HOST_DEVICE ( localIndex const ei )
       {
         if( ghostRank[ei] < 0 )
         {
-          // switch from relative to absolute when values less than 1
-          subRegionMaxPresChange.max( LvArray::math::abs( pres[ei] - pres_n[ei] ) / LvArray::math::max( LvArray::math::abs( pres_n[ei] ), 1.0 ) );
-          subRegionMaxTempChange.max( LvArray::math::abs( temp[ei] - temp_n[ei] ) / LvArray::math::max( LvArray::math::abs( temp_n[ei] ), 1.0 ) );
-          for( integer ip = 0; ip < numPhase; ++ip )
-          {
-            subRegionMaxPhaseVolFracChange.max( LvArray::math::abs( phaseVolFrac[ei][ip] - phaseVolFrac_n[ei][ip] ) );
-          }
           for( integer ic = 0; ic < numComp; ++ic )
           {
-            subRegionMaxCompDensChange.max( LvArray::math::abs( compDens[ei][ic] - compDens_n[ei][ic] ) / LvArray::math::max( LvArray::math::abs( compDens_n[ei][ic] ), 1.0 ) );
+            if( compFrac[ei][ic] < minCompFrac )
+            {
+              compFrac[ei][ic] = minCompFrac;
+            }
           }
         }
       } );
-
-      maxRelativePresChange = LvArray::math::max( maxRelativePresChange, subRegionMaxPresChange.get() );
-      maxRelativeTempChange = LvArray::math::max( maxRelativeTempChange, subRegionMaxTempChange.get() );
-      maxAbsolutePhaseVolFracChange = LvArray::math::max( maxAbsolutePhaseVolFracChange, subRegionMaxPhaseVolFracChange.get() );
-      maxRelativeCompDensChange = LvArray::math::max( maxRelativeCompDensChange, subRegionMaxCompDensChange.get() );
-
     } );
   } );
+}
 
-  maxRelativePresChange = MpiWrapper::max( maxRelativePresChange );
-  maxAbsolutePhaseVolFracChange = MpiWrapper::max( maxAbsolutePhaseVolFracChange );
+real64 CompositionalMultiphaseBase::setNextDtBasedOnStateChange( real64 const & currentDt,
+                                                                 DomainPartition & domain )
+{
+  // TODO: implement Dt estimation based on compFrac change
 
-  GEOS_LOG_LEVEL_INFO_RANK_0( logInfo::TimeStep, GEOS_FMT( "{}: max relative pressure change during time step = {} %",
-                                                           getName(), GEOS_FMT( "{:.{}f}", 100*maxRelativePresChange, 3 ) ) );
-  GEOS_LOG_LEVEL_INFO_RANK_0( logInfo::TimeStep, GEOS_FMT( "{}: max absolute phase volume fraction change during time step = {}",
-                                                           getName(), GEOS_FMT( "{:.{}f}", maxAbsolutePhaseVolFracChange, 3 ) ) );
-
-  if( m_targetRelativeCompDensChange < LvArray::NumericLimits< real64 >::max )
+  if (m_useZFormulation)
   {
-    maxRelativeCompDensChange = MpiWrapper::max( maxRelativeCompDensChange );
-    GEOS_LOG_LEVEL_INFO_RANK_0( logInfo::TimeStep, GEOS_FMT( "{}: max relative component density change during time step = {} %",
-                                                             getName(), GEOS_FMT( "{:.{}f}", 100*maxRelativeCompDensChange, 3 ) ) );
-  }
-
-  if( m_isThermal )
+    return LvArray::NumericLimits< real64 >::max;
+  } 
+  else
   {
-    maxRelativeTempChange = MpiWrapper::max( maxRelativeTempChange );
-    GEOS_LOG_LEVEL_INFO_RANK_0( logInfo::TimeStep, GEOS_FMT( "{}: max relative temperature change during time step = {} %",
-                                                             getName(), GEOS_FMT( "{:.{}f}", 100*maxRelativeTempChange, 3 ) ) );
-  }
+    if( m_targetRelativePresChange >= 1.0 &&
+        m_targetPhaseVolFracChange >= 1.0 &&
+        m_targetRelativeCompDensChange >= 1.0 &&
+        ( !m_isThermal || m_targetRelativeTempChange >= 1.0 ) )
+    {
+      return LvArray::NumericLimits< real64 >::max;
+    }
 
-  real64 const eps = LvArray::NumericLimits< real64 >::epsilon;
+    real64 maxRelativePresChange = 0.0;
+    real64 maxRelativeTempChange = 0.0;
+    real64 maxAbsolutePhaseVolFracChange = 0.0;
+    real64 maxRelativeCompDensChange = 0.0;
 
-  real64 const nextDtPressure = currentDt * ( 1.0 + m_solutionChangeScalingFactor ) * m_targetRelativePresChange
-                                / std::max( eps, maxRelativePresChange + m_solutionChangeScalingFactor * m_targetRelativePresChange );
-  if( m_nonlinearSolverParameters.getLogLevel() > 0 )
-    GEOS_LOG_RANK_0( GEOS_FMT( "{}: next time step based on pressure change = {}", getName(), nextDtPressure ));
-  real64 const nextDtPhaseVolFrac = currentDt * ( 1.0 + m_solutionChangeScalingFactor ) * m_targetPhaseVolFracChange
-                                    / std::max( eps, maxAbsolutePhaseVolFracChange + m_solutionChangeScalingFactor * m_targetPhaseVolFracChange );
-  if( m_nonlinearSolverParameters.getLogLevel() > 0 )
-    GEOS_LOG_RANK_0( GEOS_FMT( "{}: next time step based on phase volume fraction change = {}", getName(), nextDtPhaseVolFrac ));
-  real64 nextDtCompDens = LvArray::NumericLimits< real64 >::max;
-  if( m_targetRelativeCompDensChange < LvArray::NumericLimits< real64 >::max )
-  {
-    nextDtCompDens = currentDt * ( 1.0 + m_solutionChangeScalingFactor ) * m_targetRelativeCompDensChange
-                     / std::max( eps, maxRelativeCompDensChange + m_solutionChangeScalingFactor * m_targetRelativeCompDensChange );
+    integer const numPhase = m_numPhases;
+    integer const numComp = m_numComponents;
+
+    forDiscretizationOnMeshTargets( domain.getMeshBodies(), [&]( string const &,
+                                                                MeshLevel & mesh,
+                                                                arrayView1d< string const > const & regionNames )
+    {
+      mesh.getElemManager().forElementSubRegions( regionNames,
+                                                  [&]( localIndex const,
+                                                      ElementSubRegionBase & subRegion )
+      {
+        arrayView1d< integer const > const ghostRank = subRegion.ghostRank();
+
+        arrayView1d< real64 const > const pres = subRegion.getField< fields::flow::pressure >();
+        arrayView1d< real64 const > const pres_n = subRegion.getField< fields::flow::pressure_n >();
+        arrayView1d< real64 const > const temp = subRegion.getField< fields::flow::temperature >();
+        arrayView1d< real64 const > const temp_n = subRegion.getField< fields::flow::temperature_n >();
+        arrayView2d< real64 const, compflow::USD_PHASE > const phaseVolFrac =
+          subRegion.getField< fields::flow::phaseVolumeFraction >();
+        arrayView2d< real64 const, compflow::USD_PHASE > const phaseVolFrac_n =
+          subRegion.getField< fields::flow::phaseVolumeFraction_n >();
+        arrayView2d< real64 const, compflow::USD_COMP > const compDens =
+          subRegion.getField< fields::flow::globalCompDensity >();
+        arrayView2d< real64, compflow::USD_COMP > const compDens_n =
+          subRegion.getField< fields::flow::globalCompDensity_n >();
+
+        RAJA::ReduceMax< parallelDeviceReduce, real64 > subRegionMaxPresChange( 0.0 );
+        RAJA::ReduceMax< parallelDeviceReduce, real64 > subRegionMaxTempChange( 0.0 );
+        RAJA::ReduceMax< parallelDeviceReduce, real64 > subRegionMaxPhaseVolFracChange( 0.0 );
+        RAJA::ReduceMax< parallelDeviceReduce, real64 > subRegionMaxCompDensChange( 0.0 );
+
+        forAll< parallelDevicePolicy<> >( subRegion.size(), [=] GEOS_HOST_DEVICE ( localIndex const ei )
+        {
+          if( ghostRank[ei] < 0 )
+          {
+            // switch from relative to absolute when values less than 1
+            subRegionMaxPresChange.max( LvArray::math::abs( pres[ei] - pres_n[ei] ) / LvArray::math::max( LvArray::math::abs( pres_n[ei] ), 1.0 ) );
+            subRegionMaxTempChange.max( LvArray::math::abs( temp[ei] - temp_n[ei] ) / LvArray::math::max( LvArray::math::abs( temp_n[ei] ), 1.0 ) );
+            for( integer ip = 0; ip < numPhase; ++ip )
+            {
+              subRegionMaxPhaseVolFracChange.max( LvArray::math::abs( phaseVolFrac[ei][ip] - phaseVolFrac_n[ei][ip] ) );
+            }
+            for( integer ic = 0; ic < numComp; ++ic )
+            {
+              subRegionMaxCompDensChange.max( LvArray::math::abs( compDens[ei][ic] - compDens_n[ei][ic] ) / LvArray::math::max( LvArray::math::abs( compDens_n[ei][ic] ), 1.0 ) );
+            }
+          }
+        } );
+
+        maxRelativePresChange = LvArray::math::max( maxRelativePresChange, subRegionMaxPresChange.get() );
+        maxRelativeTempChange = LvArray::math::max( maxRelativeTempChange, subRegionMaxTempChange.get() );
+        maxAbsolutePhaseVolFracChange = LvArray::math::max( maxAbsolutePhaseVolFracChange, subRegionMaxPhaseVolFracChange.get() );
+        maxRelativeCompDensChange = LvArray::math::max( maxRelativeCompDensChange, subRegionMaxCompDensChange.get() );
+
+      } );
+    } );
+
+    maxRelativePresChange = MpiWrapper::max( maxRelativePresChange );
+    maxAbsolutePhaseVolFracChange = MpiWrapper::max( maxAbsolutePhaseVolFracChange );
+
+    GEOS_LOG_LEVEL_INFO_RANK_0( logInfo::TimeStep, GEOS_FMT( "{}: max relative pressure change during time step = {} %",
+                                                            getName(), GEOS_FMT( "{:.{}f}", 100*maxRelativePresChange, 3 ) ) );
+    GEOS_LOG_LEVEL_INFO_RANK_0( logInfo::TimeStep, GEOS_FMT( "{}: max absolute phase volume fraction change during time step = {}",
+                                                            getName(), GEOS_FMT( "{:.{}f}", maxAbsolutePhaseVolFracChange, 3 ) ) );
+
+    if( m_targetRelativeCompDensChange < LvArray::NumericLimits< real64 >::max )
+    {
+      maxRelativeCompDensChange = MpiWrapper::max( maxRelativeCompDensChange );
+      GEOS_LOG_LEVEL_INFO_RANK_0( logInfo::TimeStep, GEOS_FMT( "{}: max relative component density change during time step = {} %",
+                                                              getName(), GEOS_FMT( "{:.{}f}", 100*maxRelativeCompDensChange, 3 ) ) );
+    }
+
+    if( m_isThermal )
+    {
+      maxRelativeTempChange = MpiWrapper::max( maxRelativeTempChange );
+      GEOS_LOG_LEVEL_INFO_RANK_0( logInfo::TimeStep, GEOS_FMT( "{}: max relative temperature change during time step = {} %",
+                                                              getName(), GEOS_FMT( "{:.{}f}", 100*maxRelativeTempChange, 3 ) ) );
+    }
+
+    real64 const eps = LvArray::NumericLimits< real64 >::epsilon;
+
+    real64 const nextDtPressure = currentDt * ( 1.0 + m_solutionChangeScalingFactor ) * m_targetRelativePresChange
+                                  / std::max( eps, maxRelativePresChange + m_solutionChangeScalingFactor * m_targetRelativePresChange );
     if( m_nonlinearSolverParameters.getLogLevel() > 0 )
-      GEOS_LOG_RANK_0( GEOS_FMT( "{}: next time step based on component density change = {}", getName(), nextDtCompDens ));
-  }
-  real64 nextDtTemperature = LvArray::NumericLimits< real64 >::max;
-  if( m_isThermal )
-  {
-    nextDtTemperature = currentDt * ( 1.0 + m_solutionChangeScalingFactor ) * m_targetRelativeTempChange
-                        / std::max( eps, maxRelativeTempChange + m_solutionChangeScalingFactor * m_targetRelativeTempChange );
+      GEOS_LOG_RANK_0( GEOS_FMT( "{}: next time step based on pressure change = {}", getName(), nextDtPressure ));
+    real64 const nextDtPhaseVolFrac = currentDt * ( 1.0 + m_solutionChangeScalingFactor ) * m_targetPhaseVolFracChange
+                                      / std::max( eps, maxAbsolutePhaseVolFracChange + m_solutionChangeScalingFactor * m_targetPhaseVolFracChange );
     if( m_nonlinearSolverParameters.getLogLevel() > 0 )
-      GEOS_LOG_RANK_0( GEOS_FMT( "{}: next time step based on temperature change = {}", getName(), nextDtPhaseVolFrac ));
-  }
+      GEOS_LOG_RANK_0( GEOS_FMT( "{}: next time step based on phase volume fraction change = {}", getName(), nextDtPhaseVolFrac ));
+    real64 nextDtCompDens = LvArray::NumericLimits< real64 >::max;
+    if( m_targetRelativeCompDensChange < LvArray::NumericLimits< real64 >::max )
+    {
+      nextDtCompDens = currentDt * ( 1.0 + m_solutionChangeScalingFactor ) * m_targetRelativeCompDensChange
+                      / std::max( eps, maxRelativeCompDensChange + m_solutionChangeScalingFactor * m_targetRelativeCompDensChange );
+      if( m_nonlinearSolverParameters.getLogLevel() > 0 )
+        GEOS_LOG_RANK_0( GEOS_FMT( "{}: next time step based on component density change = {}", getName(), nextDtCompDens ));
+    }
+    real64 nextDtTemperature = LvArray::NumericLimits< real64 >::max;
+    if( m_isThermal )
+    {
+      nextDtTemperature = currentDt * ( 1.0 + m_solutionChangeScalingFactor ) * m_targetRelativeTempChange
+                          / std::max( eps, maxRelativeTempChange + m_solutionChangeScalingFactor * m_targetRelativeTempChange );
+      if( m_nonlinearSolverParameters.getLogLevel() > 0 )
+        GEOS_LOG_RANK_0( GEOS_FMT( "{}: next time step based on temperature change = {}", getName(), nextDtPhaseVolFrac ));
+    }
 
-  return std::min( std::min( nextDtPressure, std::min( nextDtPhaseVolFrac, nextDtCompDens ) ), nextDtTemperature );
+    return std::min( std::min( nextDtPressure, std::min( nextDtPhaseVolFrac, nextDtCompDens ) ), nextDtTemperature );
+  }
 }
 
 real64 CompositionalMultiphaseBase::setNextDtBasedOnCFL( const geos::real64 & currentDt, geos::DomainPartition & domain )
@@ -2575,11 +2713,23 @@ void CompositionalMultiphaseBase::resetStateToBeginningOfStep( DomainPartition &
         subRegion.template getField< fields::flow::pressure_n >();
       pres.setValues< parallelDevicePolicy<> >( pres_n );
 
-      arrayView2d< real64, compflow::USD_COMP > const & compDens =
-        subRegion.template getField< fields::flow::globalCompDensity >();
-      arrayView2d< real64 const, compflow::USD_COMP > const & compDens_n =
-        subRegion.template getField< fields::flow::globalCompDensity_n >();
-      compDens.setValues< parallelDevicePolicy<> >( compDens_n );
+      if (m_useZFormulation)
+      {
+        arrayView2d< real64, compflow::USD_COMP > const & compFrac =
+          subRegion.template getField< fields::flow::globalCompFraction >();
+        arrayView2d< real64 const, compflow::USD_COMP > const & compFrac_n =
+          subRegion.template getField< fields::flow::globalCompFraction_n >();
+        compFrac.setValues< parallelDevicePolicy<> >( compFrac_n );
+      }
+      else
+      {
+        arrayView2d< real64, compflow::USD_COMP > const & compDens =
+          subRegion.template getField< fields::flow::globalCompDensity >();
+        arrayView2d< real64 const, compflow::USD_COMP > const & compDens_n =
+          subRegion.template getField< fields::flow::globalCompDensity_n >();
+        compDens.setValues< parallelDevicePolicy<> >( compDens_n );
+      }
+      
 
       if( m_isThermal )
       {
@@ -2706,24 +2856,42 @@ void CompositionalMultiphaseBase::saveConvergedState( ElementSubRegionBase & sub
 {
   FlowSolverBase::saveConvergedState( subRegion );
 
-  arrayView2d< real64 const, compflow::USD_COMP > const & compDens =
-    subRegion.template getField< fields::flow::globalCompDensity >();
-  arrayView2d< real64, compflow::USD_COMP > const & compDens_n =
-    subRegion.template getField< fields::flow::globalCompDensity_n >();
-  compDens_n.setValues< parallelDevicePolicy<> >( compDens );
+  if (m_useZFormulation)
+  {
+    arrayView2d< real64 const, compflow::USD_COMP > const & compFrac =
+      subRegion.template getField< fields::flow::globalCompFraction >();
+    arrayView2d< real64, compflow::USD_COMP > const & compFrac_n =
+      subRegion.template getField< fields::flow::globalCompFraction_n >();
+    compFrac_n.setValues< parallelDevicePolicy<> >( compFrac );
+    if( m_isFixedStressPoromechanicsUpdate )
+    {
+      arrayView2d< real64, compflow::USD_COMP > const & compFrac_k =
+        subRegion.template getField< fields::flow::globalCompFraction_k >();
+      compFrac_k.setValues< parallelDevicePolicy<> >( compFrac );
+    }
+  }
+  else
+  {
+    arrayView2d< real64 const, compflow::USD_COMP > const & compDens =
+      subRegion.template getField< fields::flow::globalCompDensity >();
+    arrayView2d< real64, compflow::USD_COMP > const & compDens_n =
+      subRegion.template getField< fields::flow::globalCompDensity_n >();
+    compDens_n.setValues< parallelDevicePolicy<> >( compDens );
+    if( m_isFixedStressPoromechanicsUpdate )
+    {
+      arrayView2d< real64, compflow::USD_COMP > const & compDens_k =
+        subRegion.template getField< fields::flow::globalCompDensity_k >();
+      compDens_k.setValues< parallelDevicePolicy<> >( compDens );
+    }
+  }
+
+  
 
   arrayView2d< real64 const, compflow::USD_COMP > const & compAmount =
     subRegion.template getField< fields::flow::compAmount >();
   arrayView2d< real64, compflow::USD_COMP > const & compAmount_n =
     subRegion.template getField< fields::flow::compAmount_n >();
   compAmount_n.setValues< parallelDevicePolicy<> >( compAmount );
-
-  if( m_isFixedStressPoromechanicsUpdate )
-  {
-    arrayView2d< real64, compflow::USD_COMP > const & compDens_k =
-      subRegion.template getField< fields::flow::globalCompDensity_k >();
-    compDens_k.setValues< parallelDevicePolicy<> >( compDens );
-  }
 }
 
 void CompositionalMultiphaseBase::saveSequentialIterationState( DomainPartition & domain )

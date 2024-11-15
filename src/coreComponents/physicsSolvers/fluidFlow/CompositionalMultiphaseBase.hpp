@@ -313,6 +313,7 @@ public:
     static constexpr char const * useTotalMassEquationString() { return "useTotalMassEquation"; }
     static constexpr char const * useSimpleAccumulationString() { return "useSimpleAccumulation"; }
     static constexpr char const * minCompDensString() { return "minCompDens"; }
+    static constexpr char const * minCompFracString() { return "minCompFrac"; }
     static constexpr char const * maxSequentialCompDensChangeString() { return "maxSequentialCompDensChange"; }
     static constexpr char const * minScalingFactorString() { return "minScalingFactor"; }
 
@@ -405,6 +406,12 @@ public:
    * @param domain the physical domain object
    */
   void chopNegativeDensities( DomainPartition & domain );
+
+  /**
+   * @brief Sets all the negative component fractions (if any) to zero.
+   * @param domain the physical domain object
+   */
+  void chopNegativeCompFractions( DomainPartition & domain );
 
   virtual real64 setNextDtBasedOnStateChange( real64 const & currentDt,
                                               DomainPartition & domain ) override;
@@ -531,6 +538,9 @@ protected:
 
   /// minimum allowed global component density
   real64 m_minCompDens;
+
+  /// minimum allowed global component fraction
+  real64 m_minCompFrac;
 
   /// name of the fluid constitutive model used as a reference for component/phase description
   string m_referenceFluidModelName;

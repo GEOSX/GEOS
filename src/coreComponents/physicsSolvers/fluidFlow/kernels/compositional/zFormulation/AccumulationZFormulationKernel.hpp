@@ -38,6 +38,8 @@ namespace geos
 namespace isothermalCompositionalMultiphaseBaseKernels
 {
 
+  static constexpr real64 minCompFracForDivision = 0;
+
 /******************************** AccumulationKernel ********************************/
 
 /**
