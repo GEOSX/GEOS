@@ -174,6 +174,8 @@ public:
    */
   void chopNegativeDensities( DomainPartition & domain );
 
+  void chopNegativeDensities( ElementSubRegionBase & subRegion );
+
   /**
    * @brief Getter for the number of fluid components (species)
    * @return the number of components
@@ -408,8 +410,6 @@ protected:
                                DomainPartition & domain,
                                CRSMatrixView< real64, globalIndex const > const & localMatrix,
                                arrayView1d< real64 > const & localRhs ) const = 0;
-
-  void chopNegativeDensities( ElementSubRegionBase & subRegion );
 
   /**
    * @brief Utility function that encapsulates the call to FieldSpecificationBase::applyFieldValue in BC application

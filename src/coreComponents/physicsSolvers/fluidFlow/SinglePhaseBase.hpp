@@ -224,6 +224,23 @@ public:
                               arrayView1d< real64 > const & localRhs,
                               CRSMatrixView< real64, localIndex const > const & dR_dAper ) = 0;
 
+  /**
+   * @brief Apply source flux boundary conditions to the system
+   * @param time current time
+   * @param dt time step
+   * @param dofManager degree-of-freedom manager associated with the linear system
+   * @param domain the domain
+   * @param localMatrix local system matrix
+   * @param localRhs local system right-hand side vector
+   */
+  void
+  applySourceFluxBC( real64 const time_n,
+                     real64 const dt,
+                     DomainPartition & domain,
+                     DofManager const & dofManager,
+                     CRSMatrixView< real64, globalIndex const > const & localMatrix,
+                     arrayView1d< real64 > const & localRhs ) const;
+
   struct viewKeyStruct : FlowSolverBase::viewKeyStruct
   {
     static constexpr char const * elemDofFieldString() { return "singlePhaseVariables"; }
@@ -247,16 +264,48 @@ public:
 
   virtual void initializeFluid( MeshLevel & mesh, arrayView1d< string const > const & regionNames ) override;
 
-protected:
+  /**
+   * @brief Function to update fluid mass
+   * @param subRegion subregion that contains the fields
+   */
+  void
+  updateMass( ElementSubRegionBase & subRegion ) const;
 
-  virtual void initializePreSubGroups() override;
-
-  virtual void initializePostInitialConditionsPreSubGroups() override;
+  /**
+   * @brief Function to update energy
+   * @param subRegion subregion that contains the fields
+   */
+  void
+  updateEnergy( ElementSubRegionBase & subRegion ) const;
 
   /**
    * @brief Compute the hydrostatic equilibrium using the compositions and temperature input tables
    */
   virtual void computeHydrostaticEquilibrium( DomainPartition & domain ) override;
+
+  /**
+   * @brief Function to fix the initial state during the initialization step in coupled problems
+   * @param[in] time current time
+   * @param[in] dt time step
+   * @param[in] dofManager degree-of-freedom manager associated with the linear system
+   * @param[in] domain the domain
+   * @param[in] localMatrix local system matrix
+   * @param[in] localRhs local system right-hand side vector
+   * @detail This function is meant to be called when the flag m_keepVariablesConstantDuringInitStep is on
+   *         The main use case is the initialization step in coupled problems during which we solve an elastic problem for a fixed pressure
+   */
+  void keepVariablesConstantDuringInitStep( real64 const time,
+                                            real64 const dt,
+                                            DofManager const & dofManager,
+                                            DomainPartition & domain,
+                                            CRSMatrixView< real64, globalIndex const > const & localMatrix,
+                                            arrayView1d< real64 > const & localRhs ) const;
+
+protected:
+
+  virtual void initializePreSubGroups() override;
+
+  virtual void initializePostInitialConditionsPreSubGroups() override;
 
   virtual void initializeThermal( MeshLevel & mesh, arrayView1d< string const > const & regionNames ) override;
 
@@ -279,20 +328,6 @@ protected:
    */
   virtual void
   updateFluidModel( ObjectManagerBase & dataGroup ) const;
-
-  /**
-   * @brief Function to update fluid mass
-   * @param subRegion subregion that contains the fields
-   */
-  void
-  updateMass( ElementSubRegionBase & subRegion ) const;
-
-  /**
-   * @brief Function to update energy
-   * @param subRegion subregion that contains the fields
-   */
-  void
-  updateEnergy( ElementSubRegionBase & subRegion ) const;
 
   /**
    * @brief Update thermal conductivity
@@ -331,23 +366,6 @@ protected:
                     arrayView1d< real64 > const & localRhs ) const;
 
   /**
-   * @brief Apply source flux boundary conditions to the system
-   * @param time current time
-   * @param dt time step
-   * @param dofManager degree-of-freedom manager associated with the linear system
-   * @param domain the domain
-   * @param localMatrix local system matrix
-   * @param localRhs local system right-hand side vector
-   */
-  void
-  applySourceFluxBC( real64 const time_n,
-                     real64 const dt,
-                     DomainPartition & domain,
-                     DofManager const & dofManager,
-                     CRSMatrixView< real64, globalIndex const > const & localMatrix,
-                     arrayView1d< real64 > const & localRhs ) const;
-
-  /**
    * @brief Apply aquifer boundary conditions to the system
    * @param time current time
    * @param dt time step
@@ -363,24 +381,6 @@ protected:
                   DofManager const & dofManager,
                   CRSMatrixView< real64, globalIndex const > const & localMatrix,
                   arrayView1d< real64 > const & localRhs ) const = 0;
-
-  /**
-   * @brief Function to fix the initial state during the initialization step in coupled problems
-   * @param[in] time current time
-   * @param[in] dt time step
-   * @param[in] dofManager degree-of-freedom manager associated with the linear system
-   * @param[in] domain the domain
-   * @param[in] localMatrix local system matrix
-   * @param[in] localRhs local system right-hand side vector
-   * @detail This function is meant to be called when the flag m_keepVariablesConstantDuringInitStep is on
-   *         The main use case is the initialization step in coupled problems during which we solve an elastic problem for a fixed pressure
-   */
-  void keepVariablesConstantDuringInitStep( real64 const time,
-                                            real64 const dt,
-                                            DofManager const & dofManager,
-                                            DomainPartition & domain,
-                                            CRSMatrixView< real64, globalIndex const > const & localMatrix,
-                                            arrayView1d< real64 > const & localRhs ) const;
 
   /**
    * @brief Structure holding views into fluid properties used by the base solver.
