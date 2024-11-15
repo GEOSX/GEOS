@@ -363,11 +363,66 @@ localIndex FaceElementSubRegion::unpackUpDownMaps( buffer_unit_type const * & bu
   unPackedSize += bufferOps::Unpack( buffer, elementListString );
   GEOS_ERROR_IF_NE( elementListString, viewKeyStruct::surfaceElementsToCellRegionsString() );
 
+
+  for( int rank=0; rank<MpiWrapper::commSize(); ++rank )
+  {
+    MpiWrapper::barrier();
+    if( rank == MpiWrapper::commRank() )
+    {
+      ElementRegionManager const & elementRegionManager = *m_2dElemToElems.getElementRegionManager();
+      std::cout<< "preUnpack...Rank " << rank << " has " << m_2dElemToElems.size(0) << " elems in m_2dElemToElems." << std::endl;
+      std::cout<< " m_2dElemToElems "<<std::endl;
+      for( int k = 0; k < m_2dElemToElems.size(0); ++k )
+      {
+        for( int j = 0; j < 2; ++j )
+        {
+          localIndex const er = m_2dElemToElems.m_toElementRegion[k][j];
+          localIndex const esr = m_2dElemToElems.m_toElementSubRegion[k][j];
+          localIndex const ei = m_2dElemToElems.m_toElementIndex[k][j];
+
+          arrayView1d< globalIndex const > const elemLocalToGlobal = elementRegionManager.getRegion(er).getSubRegion(esr).localToGlobalMap();
+
+          std::cout<<k<<" ("<<m_localToGlobalMap(k)<<"): "<<er<<" "<<esr<<" "<<ei<<"("<<elemLocalToGlobal(ei)<<") "<<std::endl;
+        }
+      }
+    }
+  }
+    MpiWrapper::barrier();
+
+
   unPackedSize += bufferOps::Unpack( buffer,
                                      m_2dElemToElems,
                                      packList.toViewConst(),
                                      m_2dElemToElems.getElementRegionManager(),
                                      overwriteUpMaps );
+
+    MpiWrapper::barrier();
+
+  for( int rank=0; rank<MpiWrapper::commSize(); ++rank )
+  {
+    MpiWrapper::barrier();
+    if( rank == MpiWrapper::commRank() )
+    {
+      ElementRegionManager const & elementRegionManager = *m_2dElemToElems.getElementRegionManager();
+      std::cout<< "Unpacked...Rank " << rank << " has " << m_2dElemToElems.size(0) << " elems in m_2dElemToElems." << std::endl;
+      std::cout<< " m_2dElemToElems "<<std::endl;
+      for( int k = 0; k < m_2dElemToElems.size(0); ++k )
+      {
+        for( int j = 0; j < 2; ++j )
+        {
+          localIndex const er = m_2dElemToElems.m_toElementRegion[k][j];
+          localIndex const esr = m_2dElemToElems.m_toElementSubRegion[k][j];
+          localIndex const ei = m_2dElemToElems.m_toElementIndex[k][j];
+
+          arrayView1d< globalIndex const > const elemLocalToGlobal = elementRegionManager.getRegion(er).getSubRegion(esr).localToGlobalMap();
+
+          std::cout<<k<<" ("<<m_localToGlobalMap(k)<<"): "<<er<<" "<<esr<<" "<<ei<<"("<<elemLocalToGlobal(ei)<<") "<<std::endl;
+        }
+      }
+      std::cout<<std::endl<<std::endl;
+    }
+  }
+
 
   string elem2dToCollocatedNodesBucketsString;
   unPackedSize += bufferOps::Unpack( buffer, elem2dToCollocatedNodesBucketsString );

@@ -20,6 +20,7 @@
 #include "MeshFields.hpp"
 #include "EdgeManager.hpp"
 #include "SurfaceElementRegion.hpp"
+#include "common/MpiWrapper.hpp"
 
 
 namespace geos
@@ -179,8 +180,14 @@ localIndex SurfaceElementRegion::addToFractureMesh( real64 const time_np1,
     faceElementsToCells.m_toElementRegion[kfe][ke] = faceToElementRegion[faceIndices[ke]][ke];
     faceElementsToCells.m_toElementSubRegion[kfe][ke] = faceToElementSubRegion[faceIndices[ke]][ke];
     faceElementsToCells.m_toElementIndex[kfe][ke] = faceToElementIndex[faceIndices[ke]][ke];
-    
-  }
+
+    for( int rank=0; rank<MpiWrapper::commSize(); ++rank )
+    {
+      if( rank==MpiWrapper::commRank() )
+      {
+        std::cout<<"Rank: "<<rank<<" ke: "<<ke<<" er: "<<er<<" esr: "<<esr<<" ei: "<<ei<<std::endl;
+      }
+    }  }
 
   // Fill the connectivity between FaceElement entries. This is essentially a copy of the
   // edgesToFaces map, but with differing offsets.
