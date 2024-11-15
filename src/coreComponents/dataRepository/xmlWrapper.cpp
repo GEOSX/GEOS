@@ -5,7 +5,7 @@
  * Copyright (c) 2016-2024 Lawrence Livermore National Security LLC
  * Copyright (c) 2018-2024 Total, S.A
  * Copyright (c) 2018-2024 The Board of Trustees of the Leland Stanford Junior University
- * Copyright (c) 2018-2024 Chevron
+ * Copyright (c) 2023-2024 Chevron
  * Copyright (c) 2019-     GEOS/GEOSX Contributors
  * All rights reserved
  *
@@ -35,8 +35,8 @@ namespace xmlWrapper
 void validateString( string const & value, Regex const & regex )
 {
   std::smatch m;
-  bool inputValidated = std::regex_search( value, m, std::regex( regex.m_regexStr ) );
-  if( !inputValidated || m.length() != ptrdiff_t( value.length() ) )
+  bool inputValidated = std::regex_match( value, m, std::regex( regex.m_regexStr ) );
+  if( !inputValidated )
   {
     ptrdiff_t errorId = ( m.size()>0 && m.position( 0 )==0 ) ? m.length() : 0;
     GEOS_THROW( GEOS_FMT( "Input string validation failed at:\n"

@@ -82,7 +82,7 @@
   <ElementRegions>
     <CellElementRegion
       name="Domain"
-      cellBlocks="{ block1 }"
+      cellBlocks="{ * }"
       materialList="{ fluid1, relperm, porousRock }"/>
   </ElementRegions>
 

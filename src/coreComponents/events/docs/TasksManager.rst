@@ -21,13 +21,15 @@ Task
 ***************************
 The children of the Tasks block define different Tasks to be triggered by events specified in the :ref:`EventManager` during the execution of the simulation. At present the only supported task is the ``PackCollection`` used to collect time history data for output by a TimeHistory output.
 
-.. include:: ../../../coreComponents/schema/docs/Tasks.rst
-
+.. include:: /docs/sphinx/datastructure/Tasks.rst
+    :start-line: 3
+    
 PackCollection
 ***************************
 The ``PackCollection`` Task is used to collect time history information from fields. Either the entire field or specified named sets of indices in the field can be collected.
 
-.. include:: ../../../coreComponents/schema/docs/PackCollection.rst
+.. include:: /docs/sphinx/datastructure/PackCollection.rst
+    :start-line: 3
 
 Note: The time history information collected via this task is buffered internally until it is output by a linked TimeHistory Output.
 

@@ -80,7 +80,7 @@ Parameters
 ----------
 The key XML parameters for the PVTDriver are summarized in the following table:
 
-.. include:: /coreComponents/schema/docs/PVTDriver.rst
+.. include:: /docs/sphinx/datastructure/PVTDriver.rst
 
 Output Format
 -------------

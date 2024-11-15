@@ -5,7 +5,7 @@
  * Copyright (c) 2016-2024 Lawrence Livermore National Security LLC
  * Copyright (c) 2018-2024 Total, S.A
  * Copyright (c) 2018-2024 The Board of Trustees of the Leland Stanford Junior University
- * Copyright (c) 2018-2024 Chevron
+ * Copyright (c) 2023-2024 Chevron
  * Copyright (c) 2019-     GEOS/GEOSX Contributors
  * All rights reserved
  *
@@ -84,10 +84,11 @@ public:
 
   /**
    * @brief Setup the MGR strategy.
+   * @param mgrParams MGR configuration parameters
    * @param precond preconditioner wrapper
    * @param mgrData auxiliary MGR data
    */
-  void setup( LinearSolverParameters::MGR const &,
+  void setup( LinearSolverParameters::MGR const & mgrParams,
               HyprePrecWrapper & precond,
               HypreMGRData & mgrData )
   {
@@ -96,7 +97,7 @@ public:
     GEOS_LAI_CHECK_ERROR( HYPRE_MGRSetPMaxElmts( precond.ptr, 0 ));
 
     // Configure the BoomerAMG solver used as F-relaxation for the first level
-    setMechanicsFSolver( precond, mgrData );
+    setMechanicsFSolver( precond, mgrData, mgrParams.separateComponents );
 
     // Configure the BoomerAMG solver used as mgr coarse solver for the pressure reduced system
     setPressureAMG( mgrData.coarseSolver );

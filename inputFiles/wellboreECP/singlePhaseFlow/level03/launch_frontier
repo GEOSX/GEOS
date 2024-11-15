@@ -1,0 +1,18 @@
+#!/bin/bash
+#SBATCH -N 4
+#SBATCH -n 32
+#SBATCH -t 0:30:00
+#SBATCH -J geos
+#SBATCH -o frontier-%j-singlePhaseFlow-geom03.out
+
+echo `date`
+module load cpe/23.12
+module load craype-accel-amd-gfx90a
+module load rocm/5.4.3
+export MPICH_GPU_SUPPORT_ENABLED=1
+ldd ${1}
+cmd="srun -N 4 -n 32 -c 1 --gpus-per-node=8 --ntasks-per-gpu=1 --gpu-bind=closest ${1} -i ECP_Wellbore_gpu.xml -x 2 -y 2 -z 8 ${2}"
+echo "${cmd}"
+${cmd}
+echo `date`
+echo 'Done'

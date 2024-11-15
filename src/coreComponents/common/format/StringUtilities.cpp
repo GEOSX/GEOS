@@ -5,7 +5,7 @@
  * Copyright (c) 2016-2024 Lawrence Livermore National Security LLC
  * Copyright (c) 2018-2024 Total, S.A
  * Copyright (c) 2018-2024 The Board of Trustees of the Leland Stanford Junior University
- * Copyright (c) 2018-2024 Chevron
+ * Copyright (c) 2023-2024 Chevron
  * Copyright (c) 2019-     GEOS/GEOSX Contributors
  * All rights reserved
  *
@@ -57,10 +57,10 @@ string_view trimSpaces( string_view str )
 }
 
 
-string removeStringAndFollowingContent( string const & str,
-                                        string const & strToRemove )
+string removeStringAndFollowingContent( string_view const str,
+                                        string_view const strToRemove )
 {
-  string newStr = str;
+  string_view newStr = str;
 
   // check if the line contains the string to remove
   std::size_t const pos = newStr.find( strToRemove );
@@ -70,8 +70,31 @@ string removeStringAndFollowingContent( string const & str,
     // remove the character and everything afterwards
     newStr = newStr.substr( 0, pos );
   }
-  return newStr;
+  return string( newStr );
 }
+
+// Add comma separators for thousands
+template< typename T >
+string addCommaSeparators( T const & num )
+{
+  static_assert( std::is_integral< T >::value, "addCommaSeparators only supports integral types" );
+
+  string const numStr = std::to_string( num );
+  string result;
+
+  for( std::size_t i = 0; i < numStr.size(); ++i )
+  {
+    result += numStr[i];
+    if((numStr.size() - i - 1) % 3 == 0 && i != numStr.size() - 1 )
+    {
+      result += ",";
+    }
+  }
+  return result;
+}
+
+template string addCommaSeparators( localIndex const & num );
+template string addCommaSeparators( globalIndex const & num );
 
 // put definition here so we can control the allowable values of T and
 // modication of this function triggers a whole code recompile...which

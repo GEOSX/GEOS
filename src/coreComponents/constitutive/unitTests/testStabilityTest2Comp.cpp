@@ -5,7 +5,7 @@
  * Copyright (c) 2016-2024 Lawrence Livermore National Security LLC
  * Copyright (c) 2018-2024 Total, S.A
  * Copyright (c) 2018-2024 The Board of Trustees of the Leland Stanford Junior University
- * Copyright (c) 2018-2024 Chevron
+ * Copyright (c) 2023-2024 Chevron
  * Copyright (c) 2019-     GEOS/GEOSX Contributors
  * All rights reserved
  *
@@ -118,8 +118,8 @@ INSTANTIATE_TEST_SUITE_P(
   ::testing::Values(
     StabilityData{ 1.00000e+06, 297.15, 0.2,   1.1102230e-16 },
     StabilityData{ 1.00000e+06, 353.15, 0.2,  -2.2204460e-16 },
-    StabilityData{ 5.00000e+06, 297.15, 0.2,  -1.0438517e+00 },
-    StabilityData{ 5.00000e+06, 353.15, 0.2,  -2.0228439e-03 },
+    StabilityData{ 5.00000e+06, 297.15, 0.2,  -1.0160710e+00 },
+    StabilityData{ 5.00000e+06, 353.15, 0.2,  -1.4627298e-03 },
     StabilityData{ 2.00000e+07, 297.15, 0.2,  -3.3306691e-16 },
     StabilityData{ 2.00000e+07, 353.15, 0.2,  -6.6613381e-16 }    
   )
@@ -130,8 +130,8 @@ INSTANTIATE_TEST_SUITE_P(
   ::testing::Values(
     StabilityData{ 1.00000e+06, 297.15, 0.2,  -2.2204460e-16 },
     StabilityData{ 1.00000e+06, 353.15, 0.2,  -3.3306691e-16 },
-    StabilityData{ 5.00000e+06, 297.15, 0.2,  -1.0966021e+00 },
-    StabilityData{ 5.00000e+06, 353.15, 0.2,  -3.6652014e-03 },
+    StabilityData{ 5.00000e+06, 297.15, 0.2,  -1.0780446e+00 },
+    StabilityData{ 5.00000e+06, 353.15, 0.2,  -3.1421339e-03 },
     StabilityData{ 2.00000e+07, 297.15, 0.2,  -2.4424907e-15 },
     StabilityData{ 2.00000e+07, 353.15, 0.2,  -7.7715612e-16 }
   )

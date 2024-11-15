@@ -5,7 +5,7 @@
  * Copyright (c) 2016-2024 Lawrence Livermore National Security LLC
  * Copyright (c) 2018-2024 Total, S.A
  * Copyright (c) 2018-2024 The Board of Trustees of the Leland Stanford Junior University
- * Copyright (c) 2018-2024 Chevron
+ * Copyright (c) 2023-2024 Chevron
  * Copyright (c) 2019-     GEOS/GEOSX Contributors
  * All rights reserved
  *
@@ -20,6 +20,7 @@
 #include "fieldSpecification/FieldSpecificationManager.hpp"
 #include "mesh/DomainPartition.hpp"
 #include "mesh/generators/CellBlockManager.hpp"
+#include "mesh/CellElementRegionSelector.hpp"
 #include "common/GEOS_RAJA_Interface.hpp"
 #include "common/DataTypes.hpp"
 #include "common/TimingMacros.hpp"
@@ -98,13 +99,15 @@ TEST( FieldSpecification, Recursive )
     reg1Tet.setElementType( geos::ElementType::Tetrahedron );
     reg1Tet.resize( nbTetReg1 );
 
+    Group const & cellBlocks = cellBlockManager.getCellBlocks();
+
     reg0.addCellBlockName( reg0Hex.getName() );
     reg0.addCellBlockName( reg0Tet.getName() );
-    reg0.generateMesh( cellBlockManager.getCellBlocks() );
+    reg0.generateMesh( cellBlocks );
 
     reg1.addCellBlockName( reg1Hex.getName() );
     reg1.addCellBlockName( reg1Tet.getName() );
-    reg1.generateMesh( cellBlockManager.getCellBlocks() );
+    reg1.generateMesh( cellBlocks );
 
     // The cell block manager should not be used anymore.
     domain.deregisterGroup( keys::cellManager );

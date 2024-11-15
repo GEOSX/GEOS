@@ -5,7 +5,7 @@
  * Copyright (c) 2016-2024 Lawrence Livermore National Security LLC
  * Copyright (c) 2018-2024 Total, S.A
  * Copyright (c) 2018-2024 The Board of Trustees of the Leland Stanford Junior University
- * Copyright (c) 2018-2024 Chevron
+ * Copyright (c) 2023-2024 Chevron
  * Copyright (c) 2019-     GEOS/GEOSX Contributors
  * All rights reserved
  *
@@ -54,7 +54,7 @@ EventManager::EventManager( string const & name,
     setDescription( "Start simulation time for the global event loop." );
 
   registerWrapper( viewKeyStruct::maxTimeString(), &m_maxTime ).
-    setApplyDefaultValue( std::numeric_limits< real64 >::max() ).
+    setApplyDefaultValue( 10000 * units::YearSeconds ). // 10000 years
     setInputFlag( InputFlags::OPTIONAL ).
     setDescription( "Maximum simulation time for the global event loop. Disabled by default." );
 

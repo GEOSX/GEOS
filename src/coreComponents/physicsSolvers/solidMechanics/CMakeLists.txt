@@ -1,6 +1,7 @@
 # Specify solver headers
 set( physicsSolvers_headers
      ${physicsSolvers_headers}
+     solidMechanics/LogLevelsInfo.hpp
      solidMechanics/SolidMechanicsFields.hpp
      solidMechanics/SolidMechanicsLagrangianFEM.hpp
      solidMechanics/SolidMechanicsLagrangianFEM.hpp

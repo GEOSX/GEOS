@@ -4,6 +4,8 @@ import matplotlib.pyplot as plt
 from matplotlib.ticker import (MultipleLocator, FormatStrFormatter, AutoMinorLocator)
 import xml.etree.ElementTree as ElementTree
 import csv
+import os
+import argparse
 
 
 def getHydromechanicalParametersFromXML(xmlFilePath):
@@ -73,8 +75,21 @@ def getCompressiveStressFromXML(xmlFilePath):
 
 
 def main():
+
+   # Initialize the argument parser
+    parser = argparse.ArgumentParser(description="Script to generate figure from tutorial.")
+
+    # Add arguments to accept individual file paths
+    parser.add_argument('--geosDir', help='Path to the GEOS repository ', default='../../../../../../..')
+    parser.add_argument('--outputDir', help='Path to output directory', default='.')
+
+    # Parse the command-line arguments
+    args = parser.parse_args()
+
     # File path
-    xmlFilePath = "../../../../../../../inputFiles/poromechanics/faultPoroelastic_base.xml"
+    outputDir = args.outputDir
+    geosDir = args.geosDir
+    xmlFilePath = geosDir + "/inputFiles/poromechanics/faultPoroelastic_base.xml"
 
     # Extract info from XML
     hydromechanicalParameters = getHydromechanicalParametersFromXML(xmlFilePath)
@@ -82,7 +97,7 @@ def main():
     Stress, Pr_i = getCompressiveStressFromXML(xmlFilePath)
 
     # Load simulation result for case with impermeable fault
-    file = open("result_imp.csv")
+    file = open(outputDir + "/result_imp.csv")
     csvreader = csv.reader(file)
     header = next(csvreader)
     rows = []
@@ -104,7 +119,7 @@ def main():
         y_imp[i] = float(rows[i, 26])
 
     # Load simulation result for case with permeable fault
-    file = open("result_per.csv")
+    file = open( outputDir + "/result_per.csv")
     csvreader = csv.reader(file)
     header = next(csvreader)
     rows = []

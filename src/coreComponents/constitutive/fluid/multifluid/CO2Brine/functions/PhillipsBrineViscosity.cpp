@@ -5,7 +5,7 @@
  * Copyright (c) 2016-2024 Lawrence Livermore National Security LLC
  * Copyright (c) 2018-2024 Total, S.A
  * Copyright (c) 2018-2024 The Board of Trustees of the Leland Stanford Junior University
- * Copyright (c) 2018-2024 Chevron
+ * Copyright (c) 2023-2024 Chevron
  * Copyright (c) 2019-     GEOS/GEOSX Contributors
  * All rights reserved
  *
@@ -37,15 +37,15 @@ PhillipsBrineViscosity::PhillipsBrineViscosity( string const & name,
                                                 string_array const & inputPara,
                                                 string_array const & componentNames,
                                                 array1d< real64 > const & componentMolarWeight,
-                                                bool const printTable ):
+                                                TableFunction::OutputOptions const pvtOutputOpts ):
   PVTFunctionBase( name,
                    componentNames,
                    componentMolarWeight )
 {
   m_waterViscosityTable = PureWaterProperties::makeSaturationViscosityTable( m_functionName, FunctionManager::getInstance() );
-  if( printTable )
-    m_waterViscosityTable->print( m_waterViscosityTable->getName() );
   makeCoefficients( inputPara );
+
+  m_waterViscosityTable->outputPVTTableData( pvtOutputOpts );
 }
 
 void PhillipsBrineViscosity::makeCoefficients( string_array const & inputPara )
@@ -91,8 +91,6 @@ PhillipsBrineViscosity::createKernelWrapper() const
                         m_coef0,
                         m_coef1 );
 }
-
-REGISTER_CATALOG_ENTRY( PVTFunctionBase, PhillipsBrineViscosity, string const &, string_array const &, string_array const &, array1d< real64 > const &, bool const )
 
 } // end namespace PVTProps
 

@@ -5,7 +5,7 @@
  * Copyright (c) 2016-2024 Lawrence Livermore National Security LLC
  * Copyright (c) 2018-2024 Total, S.A
  * Copyright (c) 2018-2024 The Board of Trustees of the Leland Stanford Junior University
- * Copyright (c) 2018-2024 Chevron
+ * Copyright (c) 2023-2024 Chevron
  * Copyright (c) 2019-     GEOS/GEOSX Contributors
  * All rights reserved
  *
@@ -50,7 +50,6 @@ CoulombFriction::CoulombFriction( string const & name, Group * const parent ):
   registerWrapper( viewKeyStruct::elasticSlipString(), &m_elasticSlip ).
     setApplyDefaultValue( 0.0 ).
     setDescription( "Elastic Slip" );
-
 }
 
 CoulombFriction::~CoulombFriction()
@@ -73,7 +72,7 @@ void CoulombFriction::allocateConstitutiveData( Group & parent,
 }
 
 
-CoulombFrictionUpdates CoulombFriction::createKernelWrapper() const
+CoulombFrictionUpdates CoulombFriction::createKernelUpdates() const
 {
   return CoulombFrictionUpdates( m_displacementJumpThreshold,
                                  m_shearStiffness,

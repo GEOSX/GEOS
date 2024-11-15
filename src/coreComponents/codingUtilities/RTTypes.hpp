@@ -5,7 +5,7 @@
  * Copyright (c) 2016-2024 Lawrence Livermore National Security LLC
  * Copyright (c) 2018-2024 Total, S.A
  * Copyright (c) 2018-2024 The Board of Trustees of the Leland Stanford Junior University
- * Copyright (c) 2018-2024 Chevron
+ * Copyright (c) 2023-2024 Chevron
  * Copyright (c) 2019-     GEOS/GEOSX Contributors
  * All rights reserved
  *
@@ -24,6 +24,7 @@
 #define GEOS_CODINGUTILITIES_RTTYPES_HPP
 
 #include "common/DataTypes.hpp"
+#include "common/format/EnumStrings.hpp"
 #include "common/format/Format.hpp"
 #include "common/logger/Logger.hpp"
 
@@ -232,7 +233,30 @@ struct TypeName
   }
 };
 
-}
+/**
+ * @brief Base types TypeRegex specializations
+ */
+///@{
 
+/**
+ * @brief Specialization of TypeRegex for enumeration types with strings attached (pun intended).
+ * @tparam ENUM the type of enumeration
+ */
+template< typename ENUM >
+struct TypeRegex< ENUM, std::enable_if_t< internal::HasEnumStrings< ENUM > > >
+{
+  /**
+   * @brief @return Regex for validating enumeration inputs for @p ENUM type.
+   */
+  static Regex get()
+  {
+    return Regex( EnumStrings< ENUM >::concat( "|" ),
+                  "Input value must be one of { " + EnumStrings< ENUM >::concat( ", " ) + " }." );
+  }
+};
+
+///@}
+
+}
 
 #endif /* GEOS_CODINGUTILITIES_RTTYPES_HPP */

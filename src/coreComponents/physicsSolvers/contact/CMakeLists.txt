@@ -15,6 +15,7 @@ set( physicsSolvers_headers
      contact/SolidMechanicsALMKernelsHelper.hpp
      contact/SolidMechanicsALMJumpUpdateKernels.hpp
      contact/SolidMechanicsALMBubbleKernels.hpp 
+     contact/LogLevelsInfo.hpp
      PARENT_SCOPE )
 
 

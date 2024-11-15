@@ -5,7 +5,7 @@
  * Copyright (c) 2016-2024 Lawrence Livermore National Security LLC
  * Copyright (c) 2018-2024 Total, S.A
  * Copyright (c) 2018-2024 The Board of Trustees of the Leland Stanford Junior University
- * Copyright (c) 2018-2024 Chevron
+ * Copyright (c) 2023-2024 Chevron
  * Copyright (c) 2019-     GEOS/GEOSX Contributors
  * All rights reserved
  *
@@ -56,16 +56,18 @@ protected:
   /**
    * @brief Constructor for the class performing the thermal conductivity updates
    * @param effectiveConductivity the array of cell-wise effective conductivities in the subregion
-   * @param dEffectiveConductivity_dPhaseVolFrac the array of cell-wise derivatives of effective conductivities wrt phase vol fractions in
-   * the subregion
    */
-  SinglePhaseThermalConductivityBaseUpdate( arrayView3d< real64 > const & effectiveConductivity )
-    : m_effectiveConductivity( effectiveConductivity )
+  SinglePhaseThermalConductivityBaseUpdate( arrayView3d< real64 > const & effectiveConductivity,
+                                            arrayView3d< real64 > const & dEffectiveConductivity_dT )
+    : m_effectiveConductivity( effectiveConductivity ),
+    m_dEffectiveConductivity_dT( dEffectiveConductivity_dT )
   {}
 
   /// View on the cell-wise effective conductivities
   arrayView3d< real64 > m_effectiveConductivity;
 
+  /// View on the derivative of effective conductivities w.r.t. temperature
+  arrayView3d< real64 > m_dEffectiveConductivity_dT;
 private:
 
   /**
@@ -126,10 +128,23 @@ public:
   { GEOS_UNUSED_VAR( porosity ); }
 
   /**
+   * @brief Update the thermal conductivity state
+   * @param[in] temperature the  temperature field
+   */
+  virtual void updateFromTemperature( arrayView1d< real64 const > const & temperature ) const
+  { GEOS_UNUSED_VAR( temperature ); }
+
+  /**
    * @brief Getter for the effective conductivities in the subRegion
    * @return an arrayView of effective conductivities
    */
   arrayView3d< real64 const > effectiveConductivity() const { return m_effectiveConductivity; }
+
+  /**
+   * @brief Getter for the derivative of effective conductivities in the subRegion w.r.t. temperature
+   * @return an arrayView of derivative of effective conductivities w.r.t. temperature
+   */
+  arrayView3d< real64 const > dEffectiveConductivity_dT() const { return m_dEffectiveConductivity_dT; }
 
 private:
 
@@ -147,6 +162,8 @@ protected:
   /// cell-wise effective conductivities in the subregion
   array3d< real64 > m_effectiveConductivity;
 
+  /// Derivative of effective conductivities w.r.t. temperature
+  array3d< real64 > m_dEffectiveConductivity_dT;
 };
 
 } // namespace constitutive

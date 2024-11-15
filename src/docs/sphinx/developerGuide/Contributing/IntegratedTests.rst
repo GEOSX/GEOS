@@ -139,8 +139,10 @@ After building GEOS, the integrated tests can be triggered in the GEOS build dir
   When running test or creating new baselines on LC systems, we recommend that you use the *quartz-gcc-12-release* configuration
 
 
+.. _overrideTestBehavior:
+
 Override Test Behavior
--------------------------
+----------------------
 
 For cases where you need additional control over the integrated tests behavior, you can use this script in your build directory: */path/to/GEOS/build-xyz/integratedTests/geos_ats.sh*.
 To run the tests, simply call this script with any desired arguments (see the output of `geos_ats.sh --help` for additional details.)
@@ -532,4 +534,4 @@ We highly recommend running tests and rebaselining on an MPI-aware platform.
 
 **Filtering Checks**: A common reason for rebaselining is that you have changed the name of an XML node in the input files.
 While the baselines may be numerically identical, the restarts will fail because they contain different node names.
-In this situation, it can be useful to add a filter to the restart check script using the *geos_ats.sh* script (see the `-e` and `-m` options in :ref:`Override Test Behavior` )
+In this situation, it can be useful to add a filter to the restart check script using the *geos_ats.sh* script (see the `-e` and `-m` options in :ref:`overrideTestBehavior` )

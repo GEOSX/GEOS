@@ -5,7 +5,7 @@
  * Copyright (c) 2016-2024 Lawrence Livermore National Security LLC
  * Copyright (c) 2018-2024 Total, S.A
  * Copyright (c) 2018-2024 The Board of Trustees of the Leland Stanford Junior University
- * Copyright (c) 2018-2024 Chevron
+ * Copyright (c) 2023-2024 Chevron
  * Copyright (c) 2019-     GEOS/GEOSX Contributors
  * All rights reserved
  *
@@ -21,9 +21,15 @@
 
 #include "dataRepository/InputFlags.hpp"
 #include "mainInterface/GeosxState.hpp"
+#include "mesh/DomainPartition.hpp"
 #include "mesh/mpiCommunications/CommunicationTools.hpp"
 #include "physicsSolvers/solidMechanics/SolidMechanicsLagrangianFEM.hpp"
-#include "SeismicityRateKernels.hpp"
+#include "kernels/SeismicityRateKernels.hpp"
+#include "physicsSolvers/inducedSeismicity/inducedSeismicityFields.hpp"
+#include "physicsSolvers/fluidFlow/FlowSolverBaseFields.hpp"
+
+#include "fieldSpecification/FieldSpecificationManager.hpp"
+
 
 namespace geos
 {
@@ -34,16 +40,16 @@ using namespace constitutive;
 
 SeismicityRate::SeismicityRate( const string & name,
                                 Group * const parent ):
-  SolverBase( name, parent ),
+  PhysicsSolverBase( name, parent ),
   m_stressSolver( nullptr )
 {
   this->registerWrapper( viewKeyStruct::directEffectString(), &m_directEffect ).
     setInputFlag( InputFlags::REQUIRED ).
-    setDescription( "Rate-and-state friction direct effect parameter" );
+    setDescription( "Rate-and-state friction direct effect parameter." );
 
   this->registerWrapper( viewKeyStruct::backgroundStressingRateString(), &m_backgroundStressingRate ).
     setInputFlag( InputFlags::REQUIRED ).
-    setDescription( "Background stressing rate" );
+    setDescription( "Background stressing rate (Pa/s)." );
 
   this->registerWrapper( viewKeyStruct::stressSolverNameString(), &m_stressSolverName ).
     setInputFlag( InputFlags::OPTIONAL ).
@@ -78,10 +84,10 @@ void SeismicityRate::postInputInitialization()
   // Initialize member stress solver as specified in XML input
   if( !m_stressSolverName.empty() )
   {
-    m_stressSolver = &this->getParent().getGroup< SolverBase >( m_stressSolverName );
+    m_stressSolver = &this->getParent().getGroup< PhysicsSolverBase >( m_stressSolverName );
   }
 
-  SolverBase::postInputInitialization();
+  PhysicsSolverBase::postInputInitialization();
 }
 
 SeismicityRate::~SeismicityRate()
@@ -91,7 +97,7 @@ SeismicityRate::~SeismicityRate()
 
 void SeismicityRate::registerDataOnMesh( Group & meshBodies )
 {
-  SolverBase::registerDataOnMesh( meshBodies );
+  PhysicsSolverBase::registerDataOnMesh( meshBodies );
 
   forDiscretizationOnMeshTargets( meshBodies, [&] ( string const &,
                                                     MeshLevel & mesh,
@@ -184,12 +190,12 @@ void SeismicityRate::updateFaultTraction( ElementSubRegionBase & subRegion ) con
   }
 }
 
-void SeismicityRate::computeTotalStressOnFault( arrayView1d< real64 const > const biotCoefficient,
-                                                arrayView1d< real64 const > const pres,
+void SeismicityRate::computeTotalStressOnFault( arrayView1d< real64 const > const & biotCoefficient,
+                                                arrayView1d< real64 const > const & pres,
                                                 real64 const (&faultNormalProjectionTensor)[6],
                                                 real64 const (&faultShearProjectionTensor)[6],
-                                                arrayView1d< real64 > const sig,
-                                                arrayView1d< real64 > const tau ) const
+                                                arrayView1d< real64 > const & sig,
+                                                arrayView1d< real64 > const & tau ) const
 {
   // To calculate the action of the total stress on the fault from our previous calculations,
   // we need to project the action of the pore pressure on the stress tensor onto the fault
@@ -207,6 +213,7 @@ void SeismicityRate::computeTotalStressOnFault( arrayView1d< real64 const > cons
     sig[k] += pressureOnFaultNormal;
     tau[k] += pressureOnFaultShear;
   } );
+
 }
 
 void SeismicityRate::initializeFaultTraction( real64 const time_n, integer const cycleNumber, DomainPartition & domain ) const
@@ -410,5 +417,5 @@ void SeismicityRate::integralSolverStep( real64 const & time_n,
   }
 }
 
-REGISTER_CATALOG_ENTRY( SolverBase, SeismicityRate, string const &, dataRepository::Group * const )
+REGISTER_CATALOG_ENTRY( PhysicsSolverBase, SeismicityRate, string const &, dataRepository::Group * const )
 } // namespace geos

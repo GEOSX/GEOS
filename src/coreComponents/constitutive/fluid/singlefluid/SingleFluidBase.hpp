@@ -5,7 +5,7 @@
  * Copyright (c) 2016-2024 Lawrence Livermore National Security LLC
  * Copyright (c) 2018-2024 Total, S.A
  * Copyright (c) 2018-2024 The Board of Trustees of the Leland Stanford Junior University
- * Copyright (c) 2018-2024 Chevron
+ * Copyright (c) 2023-2024 Chevron
  * Copyright (c) 2019-     GEOS/GEOSX Contributors
  * All rights reserved
  *
@@ -275,6 +275,14 @@ public:
 
   virtual real64 defaultDensity() const = 0;
   virtual real64 defaultViscosity() const = 0;
+
+/**
+ * @brief Get the thermal flag.
+ * @return boolean value indicating whether the model can be used to assemble the energy balance equation or not
+ * @detail if isThermal is true, the constitutive model compute the enthalpy and internal energy of the phase.
+ *         This can be used to check the compatibility of the constitutive model with the solver
+ */
+  virtual bool isThermal() const { return false; }
 
 protected:
 

@@ -5,7 +5,7 @@
  * Copyright (c) 2016-2024 Lawrence Livermore National Security LLC
  * Copyright (c) 2018-2024 Total, S.A
  * Copyright (c) 2018-2024 The Board of Trustees of the Leland Stanford Junior University
- * Copyright (c) 2018-2024 Chevron
+ * Copyright (c) 2023-2024 Chevron
  * Copyright (c) 2019-     GEOS/GEOSX Contributors
  * All rights reserved
  *
@@ -46,7 +46,7 @@
 #include "mesh/mpiCommunications/CommunicationTools.hpp"
 #include "mesh/mpiCommunications/SpatialPartition.hpp"
 #include "physicsSolvers/PhysicsSolverManager.hpp"
-#include "physicsSolvers/SolverBase.hpp"
+#include "physicsSolvers/PhysicsSolverBase.hpp"
 #include "schema/schemaUtilities.hpp"
 
 // System includes
@@ -138,7 +138,6 @@ ProblemManager::ProblemManager( conduit::Node & root ):
     setApplyDefaultValue( 0 ).
     setRestartFlags( RestartFlags::WRITE ).
     setDescription( "Whether to disallow using pinned memory allocations for MPI communication buffers." );
-
 }
 
 ProblemManager::~ProblemManager()
@@ -767,7 +766,7 @@ ProblemManager::getDiscretizations() const
   DomainPartition const & domain  = getDomainPartition();
   Group const & meshBodies = domain.getMeshBodies();
 
-  m_physicsSolverManager->forSubGroups< SolverBase >( [&]( SolverBase & solver )
+  m_physicsSolverManager->forSubGroups< PhysicsSolverBase >( [&]( PhysicsSolverBase & solver )
   {
 
     solver.generateMeshTargetsFromTargetRegions( meshBodies );
@@ -903,7 +902,7 @@ map< std::tuple< string, string, string, string >, localIndex > ProblemManager::
 
   for( localIndex solverIndex=0; solverIndex<m_physicsSolverManager->numSubGroups(); ++solverIndex )
   {
-    SolverBase const * const solver = m_physicsSolverManager->getGroupPointer< SolverBase >( solverIndex );
+    PhysicsSolverBase const * const solver = m_physicsSolverManager->getGroupPointer< PhysicsSolverBase >( solverIndex );
 
     if( solver != nullptr )
     {

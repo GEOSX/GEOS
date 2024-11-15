@@ -5,7 +5,7 @@
  * Copyright (c) 2016-2024 Lawrence Livermore National Security LLC
  * Copyright (c) 2018-2024 Total, S.A
  * Copyright (c) 2018-2024 The Board of Trustees of the Leland Stanford Junior University
- * Copyright (c) 2018-2024 Chevron
+ * Copyright (c) 2023-2024 Chevron
  * Copyright (c) 2019-     GEOS/GEOSX Contributors
  * All rights reserved
  *
@@ -47,6 +47,19 @@ void fillNumericalJacobian( arrayView1d< real64 const > const & residual,
     {
       jacobian.addToRow< parallelDeviceAtomic >( row, &dofIndex, &dRdX, 1 );
     }
+  } );
+}
+
+inline
+void setNumericalJacobianValue( localIndex const rowIndex,
+                                globalIndex const colIndex,
+                                real64 const val,
+                                CRSMatrixView< real64, const globalIndex > const jacobian )
+{
+  forAll< parallelDevicePolicy<> >( 1, [=] GEOS_HOST_DEVICE ( localIndex const k )
+  {
+    GEOS_UNUSED_VAR( k );
+    jacobian.addToRow< parallelDeviceAtomic >( rowIndex, &colIndex, &val, 1 );
   } );
 }
 

@@ -5,7 +5,7 @@
  * Copyright (c) 2016-2024 Lawrence Livermore National Security LLC
  * Copyright (c) 2018-2024 Total, S.A
  * Copyright (c) 2018-2024 The Board of Trustees of the Leland Stanford Junior University
- * Copyright (c) 2018-2024 Chevron
+ * Copyright (c) 2023-2024 Chevron
  * Copyright (c) 2019-     GEOS/GEOSX Contributors
  * All rights reserved
  *
@@ -19,7 +19,7 @@
 
 #include "PhysicsSolverManager.hpp"
 
-#include "SolverBase.hpp"
+#include "PhysicsSolverBase.hpp"
 
 namespace geos
 {
@@ -47,11 +47,11 @@ PhysicsSolverManager::~PhysicsSolverManager()
 Group * PhysicsSolverManager::createChild( string const & childKey, string const & childName )
 {
   Group * rval = nullptr;
-  if( SolverBase::CatalogInterface::hasKeyName( childKey ) )
+  if( PhysicsSolverBase::CatalogInterface::hasKeyName( childKey ) )
   {
     GEOS_LOG_RANK_0( "Adding Solver of type " << childKey << ", named " << childName );
     rval = &registerGroup( childName,
-                           SolverBase::CatalogInterface::factory( childKey, childName, this ) );
+                           PhysicsSolverBase::CatalogInterface::factory( childKey, childName, this ) );
   }
   return rval;
 }
@@ -59,8 +59,8 @@ Group * PhysicsSolverManager::createChild( string const & childKey, string const
 
 void PhysicsSolverManager::expandObjectCatalogs()
 {
-  // During schema generation, register one of each type derived from SolverBase here
-  for( auto & catalogIter: SolverBase::getCatalog())
+  // During schema generation, register one of each type derived from PhysicsSolverBase here
+  for( auto & catalogIter: PhysicsSolverBase::getCatalog())
   {
     createChild( catalogIter.first, catalogIter.first );
   }

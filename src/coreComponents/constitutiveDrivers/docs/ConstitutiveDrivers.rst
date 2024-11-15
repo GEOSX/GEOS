@@ -7,7 +7,7 @@ These drivers are designed to facilitate the exploration of various constitutive
 
 .. toctree::
    :maxdepth: 1
-
-   SolidModels
    
    PVTDriver
+
+   TriaxialDriver

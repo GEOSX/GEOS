@@ -1,0 +1,77 @@
+<?xml version="1.0" ?>
+
+<Problem>
+
+  <Included>
+    <File name="./SingleFracCompression_smoke.xml"/>
+  </Included>
+
+  <Solvers
+    gravityVector="{ 0.0, 0.0, 0.0 }">
+    <SolidMechanicsAugmentedLagrangianContact
+      name="AugmentedLagrangian"
+      logLevel="2"
+      timeIntegrationOption="QuasiStatic"
+      discretization="FE1"
+      targetRegions="{ Region, Fracture }">
+      <NonlinearSolverParameters
+        newtonTol="1.0e-6"
+        logLevel="2"
+        maxNumConfigurationAttempts="50"
+        newtonMaxIter="20"
+        lineSearchAction="None"
+        lineSearchMaxCuts="4"/>
+      <LinearSolverParameters
+        directParallel="0"/>
+    </SolidMechanicsAugmentedLagrangianContact>
+  </Solvers>
+
+  <Events
+    maxTime="1.0">
+    <SoloEvent
+      name="preFracture"
+      target="/Solvers/SurfaceGen"/>
+
+    <PeriodicEvent
+      name="solverApplications"
+      beginTime="0.0"
+      forceDt="1.0"
+      target="/Solvers/AugmentedLagrangian"/>
+
+    <PeriodicEvent
+      name="outputs"
+      timeFrequency="1"
+      targetExactTimestep="0"
+      target="/Outputs/vtkOutput"/>
+    
+    <PeriodicEvent
+      name="restarts"
+      timeFrequency="1.0"
+      targetExactTimestep="0"
+      target="/Outputs/restartOutput"/>  
+ 
+    <PeriodicEvent
+      name="timeHistoryCollection"
+      timeFrequency="1"
+      targetExactTimestep="1"
+      target="/Tasks/tractionCollection" />
+
+    <PeriodicEvent
+      name="timeHistoryOutput"
+      timeFrequency="1"
+      targetExactTimestep="0"
+      target="/Outputs/timeHistoryOutput"/>
+
+    <PeriodicEvent
+      name="timeHistoryCollection1"
+      timeFrequency="1"
+      targetExactTimestep="1"
+      target="/Tasks/displacementJumpCollection" />
+
+    <PeriodicEvent
+      name="timeHistoryOutput1"
+      timeFrequency="1"
+      targetExactTimestep="0"
+      target="/Outputs/timeHistoryOutput1"/>    
+  </Events> 
+</Problem>

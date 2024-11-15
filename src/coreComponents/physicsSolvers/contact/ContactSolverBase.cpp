@@ -5,7 +5,7 @@
  * Copyright (c) 2016-2024 Lawrence Livermore National Security LLC
  * Copyright (c) 2018-2024 Total, S.A
  * Copyright (c) 2018-2024 The Board of Trustees of the Leland Stanford Junior University
- * Copyright (c) 2018-2024 Chevron
+ * Copyright (c) 2023-2024 Chevron
  * Copyright (c) 2019-     GEOS/GEOSX Contributors
  * All rights reserved
  *
@@ -23,6 +23,7 @@
 #include "constitutive/contact/FrictionBase.hpp"
 #include "mesh/DomainPartition.hpp"
 #include "mesh/SurfaceElementRegion.hpp"
+#include "physicsSolvers/contact/LogLevelsInfo.hpp"
 #include "physicsSolvers/solidMechanics/SolidMechanicsLagrangianFEM.hpp"
 #include "common/GEOS_RAJA_Interface.hpp"
 
@@ -244,7 +245,7 @@ void ContactSolverBase::setConstitutiveNamesCallSuper( ElementSubRegionBase & su
       setSizedFromParent( 0 );
 
     string & frictionLawName = subRegion.getReference< string >( viewKeyStruct::frictionLawNameString() );
-    frictionLawName = SolverBase::getConstitutiveName< FrictionBase >( subRegion );
+    frictionLawName = PhysicsSolverBase::getConstitutiveName< FrictionBase >( subRegion );
     GEOS_ERROR_IF( frictionLawName.empty(), GEOS_FMT( "{}: FrictionBase model not found on subregion {}",
                                                       getDataContext(), subRegion.getDataContext() ) );
   }

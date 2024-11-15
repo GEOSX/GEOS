@@ -9,9 +9,9 @@ set( subdirs
      schema
      finiteElement
      mesh
-     linearAlgebra
      fieldSpecification
      finiteVolume
+     linearAlgebra
      discretizationMethods
      events
      constitutiveDrivers

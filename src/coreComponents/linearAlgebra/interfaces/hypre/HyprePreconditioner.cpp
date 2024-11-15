@@ -5,7 +5,7 @@
  * Copyright (c) 2016-2024 Lawrence Livermore National Security LLC
  * Copyright (c) 2018-2024 Total, S.A
  * Copyright (c) 2018-2024 The Board of Trustees of the Leland Stanford Junior University
- * Copyright (c) 2018-2024 Chevron
+ * Copyright (c) 2023-2024 Chevron
  * Copyright (c) 2019-     GEOS/GEOSX Contributors
  * All rights reserved
  *
@@ -88,7 +88,6 @@ void createAMG( LinearSolverParameters const & params,
   GEOS_LAI_CHECK_ERROR( HYPRE_BoomerAMGSetTol( precond.ptr, 0.0 ) );
   GEOS_LAI_CHECK_ERROR( HYPRE_BoomerAMGSetMaxIter( precond.ptr, 1 ) );
   GEOS_LAI_CHECK_ERROR( HYPRE_BoomerAMGSetPrintLevel( precond.ptr, logLevel ) );
-  GEOS_LAI_CHECK_ERROR( HYPRE_BoomerAMGSetNumFunctions( precond.ptr, params.dofsPerNode ) );
 
   // Set maximum number of multigrid levels (default 25)
   GEOS_LAI_CHECK_ERROR( HYPRE_BoomerAMGSetMaxLevels( precond.ptr, LvArray::integerConversion< HYPRE_Int >( params.amg.maxLevels ) ) );
@@ -174,7 +173,9 @@ void createAMG( LinearSolverParameters const & params,
     GEOS_LAI_CHECK_ERROR( HYPRE_BoomerAMGSetPMaxElmts( precond.ptr, params.amg.interpolationMaxNonZeros ) );
   }
 
+  // Unknown-based AMG parameters
   GEOS_LAI_CHECK_ERROR( HYPRE_BoomerAMGSetNumFunctions( precond.ptr, params.amg.numFunctions ) );
+  GEOS_LAI_CHECK_ERROR( HYPRE_BoomerAMGSetFilterFunctions( precond.ptr, params.amg.separateComponents ) );
 
   if( params.amg.aggressiveNumLevels )
   {
@@ -340,32 +341,6 @@ void HyprePreconditioner::create( DofManager const * const dofManager )
 
 HypreMatrix const & HyprePreconditioner::setupPreconditioningMatrix( HypreMatrix const & mat )
 {
-  GEOS_MARK_FUNCTION;
-
-  if( m_params.preconditionerType == LinearSolverParameters::PreconditionerType::mgr && m_params.mgr.separateComponents )
-  {
-    GEOS_LAI_ASSERT_MSG( mat.dofManager() != nullptr, "MGR preconditioner requires a DofManager instance" );
-    HypreMatrix Pu;
-    HypreMatrix Auu;
-    {
-      Stopwatch timer( m_makeRestrictorTime );
-      mat.dofManager()->makeRestrictor( { { m_params.mgr.displacementFieldName, { 3, true } } }, mat.comm(), true, Pu );
-    }
-    {
-      Stopwatch timer( m_computeAuuTime );
-      mat.multiplyPtAP( Pu, Auu );
-    }
-    {
-      Stopwatch timer( m_componentFilterTime );
-      Auu.separateComponentFilter( m_precondMatrix, m_params.dofsPerNode );
-    }
-  }
-  else if( m_params.preconditionerType == LinearSolverParameters::PreconditionerType::amg && m_params.amg.separateComponents )
-  {
-    Stopwatch timer( m_componentFilterTime );
-    mat.separateComponentFilter( m_precondMatrix, m_params.dofsPerNode );
-    return m_precondMatrix;
-  }
   return mat;
 }
 
@@ -384,12 +359,6 @@ void HyprePreconditioner::setup( Matrix const & mat )
   // To be able to use Hypre preconditioner (e.g., BoomerAMG) we need to disable floating point exceptions
   {
     LvArray::system::FloatingPointExceptionGuard guard( FE_ALL_EXCEPT );
-
-    // Perform setup of the MGR mechanics F-solver with SDC matrix, if used
-    if( m_mgrData && m_mgrData->mechSolver.ptr && m_mgrData->mechSolver.setup )
-    {
-//      GEOS_LAI_CHECK_ERROR( m_mgrData->mechSolver.setup( m_mgrData->mechSolver.ptr, m_precondMatrix.unwrapped(), nullptr, nullptr ) );
-    }
 
     // Perform setup of the main solver, if needed
     if( m_precond->setup )

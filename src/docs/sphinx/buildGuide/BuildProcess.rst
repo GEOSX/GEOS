@@ -75,10 +75,10 @@ Option                          Default   Explanation
 ``ENABLE_TOTALVIEW_OUTPUT``     ``OFF``   Enables TotalView debugger custom view of GEOS data structures
 ``ENABLE_COV``                  ``OFF``   Enables code coverage
 ``GEOS_ENABLE_TESTS``           ``ON``    Enables unit testing targets
-``GEOS_LA_INTERFACE``          ``Hypre`` Choiсe of Linear Algebra backend (Hypre/Petsc/Trilinos)
-``GEOS_BUILD_OBJ_LIBS``        ``ON``    Use CMake Object Libraries build
-``GEOS_BUILD_SHARED_LIBS``     ``OFF``   Build ``geosx_core`` as a shared library instead of static
-``GEOS_PARALLEL_COMPILE_JOBS``           Max. number of compile jobs (when using Ninja), in addition to ``-j`` flag
-``GEOS_PARALLEL_LINK_JOBS``              Max. number of link jobs (when using Ninja), in addition to ``-j`` flag
-``GEOS_INSTALL_SCHEMA``        ``ON``    Enables schema generation and installation
+``GEOS_LA_INTERFACE``           ``Hypre`` Choiсe of Linear Algebra backend (Hypre/Petsc/Trilinos)
+``GEOS_BUILD_OBJ_LIBS``         ``ON``    Use CMake Object Libraries build
+``GEOS_BUILD_SHARED_LIBS``      ``OFF``   Build ``geosx_core`` as a shared library instead of static
+``GEOS_PARALLEL_COMPILE_JOBS``            Max. number of compile jobs (when using Ninja), in addition to ``-j`` flag
+``GEOS_PARALLEL_LINK_JOBS``               Max. number of link jobs (when using Ninja), in addition to ``-j`` flag
+``GEOS_INSTALL_SCHEMA``         ``ON``    Enables schema generation and installation
 =============================== ========= ==============================================================================

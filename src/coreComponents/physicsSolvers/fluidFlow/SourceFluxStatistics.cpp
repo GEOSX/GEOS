@@ -5,7 +5,7 @@
  * Copyright (c) 2016-2024 Lawrence Livermore National Security LLC
  * Copyright (c) 2018-2024 Total, S.A
  * Copyright (c) 2018-2024 The Board of Trustees of the Leland Stanford Junior University
- * Copyright (c) 2018-2024 Chevron
+ * Copyright (c) 2023-2024 Chevron
  * Copyright (c) 2019-     GEOS/GEOSX Contributors
  * All rights reserved
  *
@@ -31,7 +31,7 @@ SourceFluxStatsAggregator::SourceFluxStatsAggregator( const string & name,
                                                       Group * const parent ):
   Base( name, parent )
 {
-  getWrapper< integer >( Group::viewKeyStruct::logLevelString() ).
+  getWrapperBase( Group::viewKeyStruct::logLevelString() ).
     appendDescription( GEOS_FMT( "\n- Log Level 1 outputs the sum of all {0}(s) produced rate & mass,\n"
                                  "- Log Level 2 details values for each {0},\n"
                                  "- Log Level 3 details values for each region.",

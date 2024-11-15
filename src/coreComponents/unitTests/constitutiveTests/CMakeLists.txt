@@ -6,6 +6,7 @@ set( gtest_geosx_tests
      testDamage.cpp
      testKValueFlashModel.cpp
      testMultiFluidCO2Brine.cpp
+     testMultiFluidCompositionalMultiphase.cpp
      testMultiFluidDeadOil.cpp
      testMultiFluidLiveOil.cpp
      testRelPerm.cpp
@@ -53,8 +54,6 @@ foreach(test ${gtest_geosx_tests})
                         SOURCES ${test}
                         OUTPUT_DIR ${TEST_OUTPUT_DIRECTORY}
                         DEPENDS_ON ${decoratedDependencies} ${tplDependencyList} )
-
-                        blt_print_target_properties( TARGET ${test_name} )
     geos_add_test( NAME ${test_name}
                    COMMAND ${test_name} )
 

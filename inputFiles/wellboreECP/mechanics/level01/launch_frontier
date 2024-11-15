@@ -1,0 +1,13 @@
+#!/bin/bash
+#SBATCH -N 1
+#SBATCH -n 1
+#SBATCH -t 0:30:00
+#SBATCH -J geos
+#SBATCH -o frontier-%j-mechanics-geom01.out
+
+echo `date`
+cmd="srun -N 1 -n 1 -c 1 --gpus-per-node=1 --ntasks-per-gpu=1 --gpu-bind=closest ${1} -i ECP_Wellbore_gpu.xml -x 1 -y 1 -z 1 ${2}"
+echo "${cmd}"
+${cmd}
+echo `date`
+echo 'Done'

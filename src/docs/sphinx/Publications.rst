@@ -2,7 +2,7 @@
 Publications
 ###############################################################################
 
-Last updated 9-July-2024
+Last updated 26-August-2024
 
 Preprints and Early-Views
 =========================
@@ -49,6 +49,10 @@ Preprints and Early-Views
        | Journal of Computational Physics
        | `doi:10.1016/j.jcp.2024.113163 <https://doi.org/10.1016/j.jcp.2024.113163>`_
 
+   * - | **Theory and analytical solutions to wellbore problems with hardening/softening Drucker-Prager models**
+       | T Nguyen-Sy, J Huang, H Gross
+       | International Journal of Rock Mechanics and Mining Sciences
+       | `doi:10.1016/j.ijrmms.2024.105878 <https://doi.org/10.1016/j.ijrmms.2024.105878>`_
 
 2023
 ====

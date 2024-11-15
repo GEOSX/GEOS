@@ -5,7 +5,7 @@
  * Copyright (c) 2016-2024 Lawrence Livermore National Security LLC
  * Copyright (c) 2018-2024 Total, S.A
  * Copyright (c) 2018-2024 The Board of Trustees of the Leland Stanford Junior University
- * Copyright (c) 2018-2024 Chevron
+ * Copyright (c) 2023-2024 Chevron
  * Copyright (c) 2019-     GEOS/GEOSX Contributors
  * All rights reserved
  *
@@ -17,6 +17,7 @@
  * @file TableFormatter.cpp
  */
 
+#include "TableFormatter.hpp"
 #include <numeric>
 #include "common/format/StringUtilities.hpp"
 #include "TableFormatter.hpp"
@@ -67,7 +68,8 @@ string TableCSVFormatter::dataToString( TableData const & tableData ) const
   return oss.str();
 }
 
-string TableCSVFormatter::toString( TableData const & tableData ) const
+template<>
+string TableCSVFormatter::toString< TableData >( TableData const & tableData ) const
 {
   return headerToString() + dataToString( tableData );
 }
@@ -155,7 +157,8 @@ string TableTextFormatter::layoutToString() const
   return tableOutput.str();
 }
 
-string TableTextFormatter::toString( TableData const & tableData ) const
+template<>
+string TableTextFormatter::toString< TableData >( TableData const & tableData ) const
 {
   std::ostringstream tableOutput;
   string sectionSeparatingLine;
@@ -403,4 +406,5 @@ void TableTextFormatter::outputSectionRows( std::vector< TableLayout::Column > c
     tableOutput << GEOS_FMT( "{}\n", sectionSeparatingLine );
   }
 }
+
 }

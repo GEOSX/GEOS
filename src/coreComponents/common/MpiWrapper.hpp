@@ -5,7 +5,7 @@
  * Copyright (c) 2016-2024 Lawrence Livermore National Security LLC
  * Copyright (c) 2018-2024 Total, S.A
  * Copyright (c) 2018-2024 The Board of Trustees of the Leland Stanford Junior University
- * Copyright (c) 2018-2024 Chevron
+ * Copyright (c) 2023-2024 Chevron
  * Copyright (c) 2019-     GEOS/GEOSX Contributors
  * All rights reserved
  *
@@ -608,6 +608,16 @@ public:
    */
   template< typename T >
   static void max( Span< T const > src, Span< T > dst, MPI_Comm comm = MPI_COMM_GEOS );
+
+
+  /**
+   * @brief Convenience function for MPI_Gather using a MPI_MAX operation on struct of value and location
+   * @brief Max is performed on value and location (global index) is returned
+   * @param[in] struct to send into the max gather.
+   * @return struct with max val and location
+   */
+  template< typename T > static T maxValLoc( T localValueLocation, MPI_Comm comm = MPI_COMM_GEOS );
+
 };
 
 namespace internal
@@ -1115,7 +1125,32 @@ void MpiWrapper::reduce( Span< T const > const src, Span< T > const dst, Reducti
   reduce( src.data(), dst.data(), LvArray::integerConversion< int >( src.size() ), getMpiOp( op ), root, comm );
 }
 
+// Mpi helper function to return  struct containing the max value and location across ranks
+template< typename T >
+T MpiWrapper::maxValLoc( T localValueLocation, MPI_Comm comm )
+{
+  // Ensure T is trivially copyable
+  static_assert( std::is_trivially_copyable< T >::value, "maxValLoc requires a trivially copyable type" );
 
+  // T to have only 2 data members named value and location
+  static_assert( (sizeof(T::value)+sizeof(T::location)) == sizeof(T) );
+
+  // Ensure T has value and location members are scalars
+  static_assert( std::is_scalar_v< decltype(T::value) > || std::is_scalar_v< decltype(T::location) >, "members of struct should be scalar" );
+  static_assert( !std::is_pointer_v< decltype(T::value) > && !std::is_pointer_v< decltype(T::location) >, "members of struct should not be pointers" );
+
+  // receive "buffer"
+  int const numProcs =  commSize( comm );
+  std::vector< T > recvValLoc( numProcs );
+
+  MPI_Allgather( &localValueLocation, sizeof(T), MPI_BYTE, recvValLoc.data(), sizeof(T), MPI_BYTE, comm );
+
+  T maxValLoc= *std::max_element( recvValLoc.begin(),
+                                  recvValLoc.end(),
+                                  []( auto & lhs, auto & rhs ) -> bool {return lhs.value  <  rhs.value; } );
+
+  return maxValLoc;
+}
 } /* namespace geos */
 
 #endif /* GEOS_COMMON_MPIWRAPPER_HPP_ */

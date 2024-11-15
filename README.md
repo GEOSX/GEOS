@@ -21,10 +21,13 @@ page for more details on the HPC, numerics,
 and applied engineering components of this effort.
 
 Documentation
----------------------
+-------------
 
-Our documentation is hosted [here](https://geosx-geosx.readthedocs-hosted.com/en/latest/?).
+Please visit the [Main documentation for GEOS](https://geosx-geosx.readthedocs-hosted.com/en/latest/?).
 
+If you would like to contribute to GEOS, please see the [developer guide](https://geosx-geosx.readthedocs-hosted.com/en/latest/docs/sphinx/developerGuide/Index.html)
+
+If you would like to report a bug, please submit an [issue](https://github.com/GEOS-DEV/GEOS/issues/new/choose). 
 
 Who develops GEOS?
 -------------------

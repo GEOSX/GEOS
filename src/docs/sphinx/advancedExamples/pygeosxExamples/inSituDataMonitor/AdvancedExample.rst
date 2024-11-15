@@ -63,8 +63,8 @@ The custom packages include pygeosx, which provides an interface to GEOS, and py
 
 .. literalinclude:: ../../../../../../examples/pygeosxExamples/hydraulicFractureWithMonitor/hydraulicFractureWithMonitor.py
   :language: python
-  :start-after: # PYGEOS_SETUP
-  :end-before: # PYGEOS_SETUP_END
+  :start-after: # PYGEOSX_SETUP
+  :end-before: # PYGEOSX_SETUP_END
 
 In the next step, we apply the xml preprocessor to resolve the advanced xml features.
 Note that this step will modify the input arguments to reflect the location of the compiled xml file, which is processed directly by GEOS.
@@ -73,8 +73,8 @@ There is an opportunity to interact with the GEOS before the initial conditions 
 
 .. literalinclude:: ../../../../../../examples/pygeosxExamples/hydraulicFractureWithMonitor/hydraulicFractureWithMonitor.py
   :language: python
-  :start-after: # PYGEOS_INITIALIZATION
-  :end-before: # PYGEOS_INITIALIZATION_END
+  :start-after: # PYGEOSX_INITIALIZATION
+  :end-before: # PYGEOSX_INITIALIZATION_END
 
 To extract information from the problem, you need to know the full path (or 'key') to the target object.
 These keys can be quite long, and can change depending on the xml input.
@@ -84,8 +84,8 @@ Note that these functions will throw an error if they do not find a matching key
 
 .. literalinclude:: ../../../../../../examples/pygeosxExamples/hydraulicFractureWithMonitor/hydraulicFractureWithMonitor.py
   :language: python
-  :start-after: # PYGEOS_KEY_SEARCH
-  :end-before: # PYGEOS_KEY_SEARCH_END
+  :start-after: # PYGEOSX_KEY_SEARCH
+  :end-before: # PYGEOSX_KEY_SEARCH_END
 
 Next, we setup a dictionary that will allow us to use pygeosx_tools to automatically query the problem.
 The root level of this dictionary contains the target keys (fracture location and aperture) and the required `time` key.
@@ -94,8 +94,8 @@ The target dictionaries also hold an entry `fhandle`, which contains a matplotli
 
 .. literalinclude:: ../../../../../../examples/pygeosxExamples/hydraulicFractureWithMonitor/hydraulicFractureWithMonitor.py
   :language: python
-  :start-after: # PYGEOS_QUERY_SETUP
-  :end-before: # PYGEOS_QUERY_SETUP_END
+  :start-after: # PYGEOSX_QUERY_SETUP
+  :end-before: # PYGEOSX_QUERY_SETUP_END
 
 After setting up the problem, we enter the main problem loop.
 Upon calling `pygeosx.run()`, the code will execute until a Python event is triggered in the Event loop.
@@ -104,8 +104,8 @@ Here, we use pygeosx_tools to query the datastructure and occasionaly plot the r
 
 .. literalinclude:: ../../../../../../examples/pygeosxExamples/hydraulicFractureWithMonitor/hydraulicFractureWithMonitor.py
   :language: python
-  :start-after: # PYGEOS_QUERY_SETUP
-  :end-before: # PYGEOS_QUERY_SETUP_END
+  :start-after: # PYGEOSX_QUERY_SETUP
+  :end-before: # PYGEOSX_QUERY_SETUP_END
 
 
 ---------------------------------

@@ -5,7 +5,7 @@
  * Copyright (c) 2016-2024 Lawrence Livermore National Security LLC
  * Copyright (c) 2018-2024 Total, S.A
  * Copyright (c) 2018-2024 The Board of Trustees of the Leland Stanford Junior University
- * Copyright (c) 2018-2024 Chevron
+ * Copyright (c) 2023-2024 Chevron
  * Copyright (c) 2019-     GEOS/GEOSX Contributors
  * All rights reserved
  *
@@ -120,7 +120,7 @@ void testLifoStorageBig( int elemCnt, int numberOfElementsOnDevice, int numberOf
   array.move( local::RAJAHelper< POLICY >::space );
   LifoStorage< float, localIndex > lifo( "lifo", array, numberOfElementsOnDevice, numberOfElementsOnHost, totalNumberOfBuffers );
 
-  for( int j = 0; j < 10; j++ )
+  for( int j = 0; j < totalNumberOfBuffers; j++ )
   {
 
     float * dataPointer = array.data();
@@ -128,7 +128,7 @@ void testLifoStorageBig( int elemCnt, int numberOfElementsOnDevice, int numberOf
     lifo.push( array );
   }
 
-  for( int j = 0; j < 10; j++ )
+  for( int j = 0; j < totalNumberOfBuffers; j++ )
   {
     lifo.pop( array );
     float * dataPointer = array.data();
@@ -178,29 +178,34 @@ TEST( LifoStorageTest, LifoStorageBufferOnCUDA )
 
 TEST( LifoStorageTest, LifoStorageBufferOnCUDAlarge )
 {
-  testLifoStorageBig< parallelDevicePolicy< > >( 1000000, 2, 3, 10000 );
+  testLifoStorageBig< parallelDevicePolicy< > >( 1000000, 2, 3, 10 );
 }
 
 TEST( LifoStorageTest, LifoStorageBufferOnCUDAlargeAutoSizeHost )
 {
-  testLifoStorageBig< parallelDevicePolicy< > >( 1000000, 2, -80, 10000 );
+  testLifoStorageBig< parallelDevicePolicy< > >( 1000000, 2, -80, 10 );
 }
 
 TEST( LifoStorageTest, LifoStorageBufferOnCUDAlargeAutoSizeDevice )
 {
-  testLifoStorageBig< parallelDevicePolicy< > >( 1000000, -80, 3, 10000 );
+  testLifoStorageBig< parallelDevicePolicy< > >( 1000000, -80, 3, 10 );
 }
 
 TEST( LifoStorageTest, LifoStorageBufferOnCUDAlargeAutoSizeBoth )
 {
-  testLifoStorageBig< parallelDevicePolicy< > >( 1000000, -80, -80, 10000 );
+  testLifoStorageBig< parallelDevicePolicy< > >( 1000000, -80, -80, 10 );
 }
 
-
-TEST( LifoStorageTest, LifoStorageBufferOnCUDANoDeviceBuffer )
-{
-  testLifoStorage< local::devicePolicy< 32 > >( 10, 0, 3, 10 );
-}
+// The following test is disabled for now, as it produces a random assertion error
+// that affects the current CI (see issue https://github.com/GEOS-DEV/GEOS/issues/3355).
+// The error appears randomly on some configurations, and is probably related to the
+// size-0 device buffer case that this test covers. This case should not be frequent
+// in practise, but the issue should be resolved and the test reactivated as soon as
+// a solution is found.
+//TEST( LifoStorageTest, LifoStorageBufferOnCUDANoDeviceBuffer )
+//{
+//  testLifoStorage< local::devicePolicy< 32 > >( 10, 0, 3, 10 );
+//}
 
 TEST( LifoStorageTest, LifoStorageAsyncBufferOnCUDA )
 {
