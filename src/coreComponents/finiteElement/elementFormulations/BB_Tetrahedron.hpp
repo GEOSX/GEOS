@@ -646,15 +646,15 @@ public:
   GEOS_HOST_DEVICE
   GEOS_FORCE_INLINE
   static constexpr void basisLoop(FUNC && func) {
-    loop( [&] ( auto const i )
+    loop( [&func] ( auto const i )
     {
       constexpr int i1 = ORDER - i;
-      loop( [&] ( auto const j )
+      loop( [&func] ( auto const j )
       {
         constexpr int j1 = ORDER - j;
         if constexpr ( j1 <= ORDER - i1 )
         {
-          loop( [&] ( auto const k )
+          loop( [&func] ( auto const k )
           {
             constexpr int k1 = ORDER - k;
             if constexpr ( k1 <= ORDER - i1 - j1 )
@@ -683,15 +683,15 @@ public:
   GEOS_HOST_DEVICE
   GEOS_FORCE_INLINE
   static constexpr void conditionalBasisLoop(FUNC && func) {
-    loop( [&] ( auto const i )
+    loop( [&func] ( auto const i )
     {
       constexpr int i1 = ORDER - i;
-      loop( [&] ( auto const j )
+      loop( [&func] ( auto const j )
       {
         constexpr int j1 = ORDER - j;
         if constexpr ( j1 <= ORDER - i1 )
         {
-          loop( [&] ( auto const k )
+          loop( [&func] ( auto const k )
           {
             constexpr int k1 = ORDER - k;
             if constexpr ( k1 <= ORDER - i1 - j1 )
@@ -699,33 +699,33 @@ public:
               constexpr int l1 = ORDER - i1 - j1 - k1;
               constexpr int c1 = dofIndex< i1, j1, k1 >();
               ( ( (i1 == Is) &&
-               (void( func( 0,
-                      std::integral_constant<int, i1>{},
-                      std::integral_constant<int, c1>{}, 
-                      std::integral_constant<int, j1>{},
-                      std::integral_constant<int, k1>{},
-                      std::integral_constant<int, l1>{}) ), 1 ) ) || ... );
+               ( void( func( 0,
+                       std::integral_constant<int, i1>{},
+                       std::integral_constant<int, c1>{}, 
+                       std::integral_constant<int, j1>{},
+                       std::integral_constant<int, k1>{},
+                       std::integral_constant<int, l1>{} ) ), 1 ) ) || ... );
               ( ( (j1 == Is) &&
-               (void( func( 1,
-                     std::integral_constant<int, j1>{},
-                     std::integral_constant<int, c1>{}, 
-                     std::integral_constant<int, k1>{},
-                     std::integral_constant<int, l1>{},
-                     std::integral_constant<int, i1>{}) ), 1 ) ) || ... );
+               ( void( func( 1,
+                      std::integral_constant<int, j1>{},
+                      std::integral_constant<int, c1>{}, 
+                      std::integral_constant<int, k1>{},
+                      std::integral_constant<int, l1>{},
+                      std::integral_constant<int, i1>{} ) ), 1 ) ) || ... );
               ( ( (k1 == Is) &&
                ( void( func( 2,
-                     std::integral_constant<int, k1>{},
-                     std::integral_constant<int, c1>{},
-                     std::integral_constant<int, l1>{},
-                     std::integral_constant<int, i1>{},
-                     std::integral_constant<int, j1>{}) ), 1 ) ) || ... );
+                      std::integral_constant<int, k1>{},
+                      std::integral_constant<int, c1>{},
+                      std::integral_constant<int, l1>{},
+                      std::integral_constant<int, i1>{},
+                      std::integral_constant<int, j1>{} ) ), 1 ) ) || ... );
               ( ( (l1 == Is) &&
                ( void( func( 3,
-                     std::integral_constant<int, l1>{},
-                     std::integral_constant<int, c1>{}, 
-                     std::integral_constant<int, i1>{},
-                     std::integral_constant<int, j1>{},                 
-                     std::integral_constant<int, k1>{}) ), 1 ) ) || ...);
+                      std::integral_constant<int, l1>{},
+                      std::integral_constant<int, c1>{}, 
+                      std::integral_constant<int, i1>{},
+                      std::integral_constant<int, j1>{},                 
+                      std::integral_constant<int, k1>{} ) ), 1 ) ) || ...);
             }
           }, std::make_integer_sequence< int, ORDER + 1 > {} );
         }
@@ -746,9 +746,9 @@ public:
   void
   computeMassMatrix( real64 (& m)[numNodes][numNodes] )
   {
-    basisLoop( [&] ( auto const c1, auto const i1; auto const j1, auto const k1, auto const l1)
+    basisLoop( [&] ( auto const c1, auto const i1, auto const j1, auto const k1, auto const l1 )
     {
-      basisLoop( [&] ( auto const c2, auto const i2; auto const j2, auto const k2, auto const l2)
+      basisLoop( [&] ( auto const c2, auto const i2, auto const j2, auto const k2, auto const l2 )
       {
         constexpr real64 val = computeSuperpositionIntegral( i1, j1, k1, l1, i2, j2, k2, l2 ); 
         m[ c1 ][ c2 ] = val;
@@ -782,13 +782,13 @@ public:
         d[ c1 ][ c2 ] = 0;
       }
     }
-    conditionalBasisLoop< 0 >( [&] ( auto const f1, auto const, auto const c1; auto const i1, auto const j1, auto const k1)
+    conditionalBasisLoop< 0 >( [&] ( auto const f1, auto const, auto const c1, auto const i1, auto const j1, auto const k1)
     {
-      conditionalBasisLoop< 0 >( [&] ( auto const f2, auto const, auto const c2; auto const i2, auto const j2, auto const k2)
+      conditionalBasisLoop< 0 >( [&] ( auto const f2, auto const, auto const c2, auto const i2, auto const j2, auto const k2)
       {
         if constexpr( f1 == f2 )
         {
-          constexpr real64 val = computeFaceSuperpositionIntegral( j1, k1, l1, j2, k2, l2 );
+          constexpr real64 val = computeFaceSuperpositionIntegral( i1, j1, k1, i2, j2, k2 );
           if ( ( f1 == 0 && face1Damped ) ||
                ( f1 == 1 && face2Damped ) ||
                ( f1 == 2 && face3Damped ) ||
@@ -873,7 +873,7 @@ public:
                           ii2 >= 0 && ij2 >= 0 && ik2 >= 0 && il2 >= 0)
             {
               constexpr real64 val = computeSuperpositionIntegral( ii1, ij1, ik1, il1, ii2, ij2, ik2, il2 ) * factor1 * factor2;
-              func( c1, c2, val * (dLambdadX[d1][0]*dLambdadX[d2][0] + dLambdadX[d1][1]*dLambdadX[d2][1] + dLambdadX[d1][2]*dLambdadX[d2][2] );
+              func( c1, c2, val * ( dLambdadX[d1][0]*dLambdadX[d2][0] + dLambdadX[d1][1]*dLambdadX[d2][1] + dLambdadX[d1][2]*dLambdadX[d2][2] ) );
             }
           } );
         } );
@@ -903,7 +903,9 @@ public:
                        FUNC && funcP,
                        FUNC && funcF )
   {
-    real64 detJf = faceJacobianDeterminant( face, X );
+    real64 detJf[4] = { faceJacobianDeterminant( 0, X ), faceJacobianDeterminant( 1, X ),
+                        faceJacobianDeterminant( 2, X ), faceJacobianDeterminant( 3, X ) };
+
     conditionalBasisLoop< 0, 1 >( [&] ( auto const f1, auto const d, auto const c1, auto const i1, auto const j1, auto const k1 )
     {
       conditionalBasisLoop< 0 >( [&] ( auto const f2, auto const, auto const c2, auto const i2, auto const j2, auto const k2 )
@@ -912,14 +914,15 @@ public:
         {
           if constexpr( d == 0 )
           {
-            constexpr real64 val = computeFaceSuperpositionIntegral( j1, k1, l1, j2, k2, l2 );
-            funcP( c1, c2, f1, i2, j2, k2, val * detJf );
+            constexpr real64 val = computeFaceSuperpositionIntegral( i1, j1, k1, i2, j2, k2 );
+            funcP( c1, c2, f1, i2, j2, k2, val * detJf[ f1 ] );
           }
           else if constexpr ( d == 1 )
           {
+            real64 detJf = faceJacobianDeterminant( f1, X );
             constexpr real64 factor = ( i1 + j1 + k1 + 4 )/( i1 + j1 + k1 + 3 );
-            constexpr real64 val = computeFaceSuperpositionIntegral( i1, j1, k1, i2, kj, k2 ) * factor; 
-            funcF( c1, c2, f1, i2, j2, k2, val * detJf );
+            constexpr real64 val = computeFaceSuperpositionIntegral( i1, j1, k1, i2, j2, k2 ) * factor; 
+            funcF( c1, c2, f1, i2, j2, k2, val * detJf[ f1 ] );
           }
         }
       } );
