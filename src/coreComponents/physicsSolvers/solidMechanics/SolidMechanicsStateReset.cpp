@@ -93,7 +93,7 @@ bool SolidMechanicsStateReset::execute( real64 const time_n,
         nodeManager.getField< solidMechanics::velocity >().zero();
       }
       nodeManager.getField< solidMechanics::totalDisplacement >().zero();
-      nodeManager.getField< solidMechanics::incrementalDisplacement >().zero();
+      nodeManager.getField< solidMechanics::incrementalDisplacement >().zero();//
     }
 
     // Option 2: enable / disable inelastic behavior

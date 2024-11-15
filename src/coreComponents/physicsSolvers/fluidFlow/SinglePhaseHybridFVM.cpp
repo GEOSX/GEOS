@@ -299,7 +299,7 @@ void SinglePhaseHybridFVM::assembleEDFMFluxTerms( real64 const GEOS_UNUSED_PARAM
 {
   GEOS_UNUSED_VAR ( jumpDofKey );
 
-  std::cout << "In SinglePhaseHybridFVM::assembleEDFMFluxTerms!!" << std::endl;
+  //std::cout << "In SinglePhaseHybridFVM::assembleEDFMFluxTerms!!" << std::endl;
 
   assembleFluxTerms( dt,
                      domain,

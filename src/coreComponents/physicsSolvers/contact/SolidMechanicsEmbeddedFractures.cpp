@@ -151,11 +151,17 @@ void SolidMechanicsEmbeddedFractures::implicitStepComplete( real64 const & time_
 
     arrayView2d< real64 > oldDispJump = subRegion.getField< contact::oldDispJump >();
     arrayView2d< real64 const > const dispJump = subRegion.getField< contact::dispJump >();
+    arrayView1d< integer >& oldFractureState = subRegion.getField< fields::contact::oldFractureState>();
+    arrayView1d< integer > const& fractureState = subRegion.getField< fields::contact::fractureState >();
 
     forAll< parallelDevicePolicy<> >( subRegion.size(),
                                       [=] GEOS_HOST_DEVICE ( localIndex const k )
     {
-      LvArray::tensorOps::copy< 3 >( oldDispJump[k], dispJump[k] );
+      // oldDisplJump stores the total displ jump
+      // dispJump is the incremental solution of the current tiem step solve
+      LvArray::tensorOps::add< 3 >( oldDispJump[k], dispJump[k] );
+      std::cout << "fracture state k " << k << " " << fractureState[k];
+      oldFractureState[k] = fractureState[k];
     } );
   } );
 }
@@ -772,7 +778,9 @@ bool SolidMechanicsEmbeddedFractures::updateConfiguration( DomainPartition & dom
     {
       arrayView1d< integer const > const & ghostRank = subRegion.ghostRank();
       arrayView2d< real64 const > const & dispJump = subRegion.getField< fields::contact::dispJump >();
+      arrayView2d< real64 const > const & oldDispJump = subRegion.getField< fields::contact::oldDispJump >();
       arrayView2d< real64 const > const & traction = subRegion.getField< fields::contact::traction >();
+      arrayView1d< integer > const & oldFractureState = subRegion.getField< fields::contact::oldFractureState>();
       arrayView1d< integer > const & fractureState = subRegion.getField< fields::contact::fractureState >();
 
       arrayView1d< real64 const > const & pressure = subRegion.template getField< fields::flow::pressure >();

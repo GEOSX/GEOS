@@ -509,6 +509,9 @@ void SinglePhasePoromechanicsEmbeddedFractures::updateState( DomainPartition & d
       arrayView1d< real64 const > const & pressure =
         subRegion.template getField< fields::flow::pressure >();
 
+      arrayView1d< real64 const > const & pressure_n =
+        subRegion.template getField< fields::flow::pressure_n >();
+
       string const & contactRelationName = subRegion.template getReference< string >( ContactSolverBase::viewKeyStruct::contactRelationNameString() );
       ContactBase const & contact = getConstitutiveModel< ContactBase >( subRegion, contactRelationName );
 
@@ -527,6 +530,7 @@ void SinglePhasePoromechanicsEmbeddedFractures::updateState( DomainPartition & d
                                             porousMaterialWrapper,
                                             dispJump,
                                             pressure,
+                                            pressure_n,
                                             area,
                                             volume,
                                             deltaVolume,

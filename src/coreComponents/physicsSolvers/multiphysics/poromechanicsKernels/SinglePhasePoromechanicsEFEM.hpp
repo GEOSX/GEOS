@@ -128,6 +128,7 @@ public:
       localKww{ { 0.0 } },
       localKwu{ { 0.0 } },
       localKuw{ { 0.0 } },
+      localEqMStrold { 0.0 },
       localKwpm{ 0.0 },
       localKwpf( 0.0 ),
       wLocal(),
@@ -167,6 +168,9 @@ public:
     /// C-array storage for the element local Kuw matrix.
     real64 localKuw[numUdofs][numWdofs];
 
+    /// C-array storage for the element local EqM*Stress_old vector.
+    real64 localEqMStrold[numWdofs];
+
     /// C-array storage for the element local Kwpm matrix.
     real64 localKwpm[numWdofs];
 
@@ -180,7 +184,8 @@ public:
     real64 dispLocal[numUdofs];
 
     // Stack storage for incremental displacement
-    real64 deltaDispLocal[numNodesPerElem][numDofPerTrialSupportPoint];
+    //real64 deltaDispLocal[numNodesPerElem][numDofPerTrialSupportPoint];
+    real64 deltaDispLocal[numUdofs];
 
     /// Stack storage for Area/Volume
     real64 hInv;
@@ -246,6 +251,8 @@ protected:
 
   arrayView2d< real64 const > const m_w;
 
+  arrayView3d< real64 const, solid::STRESS_USD > m_stressOld;
+
   /// The global degree of freedom number
   arrayView1d< globalIndex const > const m_matrixPresDofNumber;
 
@@ -261,6 +268,9 @@ protected:
 
   /// The rank-global fluid pressure array.
   arrayView1d< real64 const > const m_matrixPressure;
+
+  /// The rank-global fluid pressure array at old time step.
+  arrayView1d< real64 const > const m_matrixPressure_n;
 
   /// The rank-global delta-fluid pressure array.
   arrayView2d< real64 const > const m_porosity_n;
@@ -324,6 +334,7 @@ struct StateUpdateKernel
    * @param[in] contactWrapper the wrapper implementing the contact relationship
    * @param[in] dispJump the displacement jump
    * @param[in] pressure the pressure
+   * @param[in] pressure_n the pressure_n
    * @param[in] area the area
    * @param[in] volume the volume
    * @param[out] deltaVolume the change in volume
@@ -339,6 +350,7 @@ struct StateUpdateKernel
           POROUS_WRAPPER const & porousMaterialWrapper,
           arrayView2d< real64 const > const & dispJump,
           arrayView1d< real64 const > const & pressure,
+          arrayView1d< real64 const > const & pressure_n,
           arrayView1d< real64 const > const & area,
           arrayView1d< real64 const > const & volume,
           arrayView1d< real64 > const & deltaVolume,

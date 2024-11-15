@@ -344,7 +344,7 @@ public:
 
     if ( iconn == 0 ) 
     {
-      std::cout << "iconn_FaceBasedAssemblyKernelFactory = " << iconn << std::endl;
+      //std::cout << "iconn_FaceBasedAssemblyKernelFactory = " << iconn << std::endl;
     }
     // std::cout << "iconn = " << iconn << ", Trans = { " << stack.transmissibility[connectionIndex][0] << ", " << stack.transmissibility[connectionIndex][1] << " }" << std::endl;
     

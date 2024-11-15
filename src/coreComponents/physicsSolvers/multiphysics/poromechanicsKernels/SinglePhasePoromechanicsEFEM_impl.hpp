@@ -70,6 +70,7 @@ SinglePhasePoromechanicsEFEM( NodeManager const & nodeManager,
   m_disp( nodeManager.getField< fields::solidMechanics::totalDisplacement >() ),
   m_deltaDisp( nodeManager.getField< fields::solidMechanics::incrementalDisplacement >() ),
   m_w( embeddedSurfSubRegion.getField< fields::contact::dispJump >() ),
+  m_stressOld(inputConstitutiveType.getOldStress()),
   m_matrixPresDofNumber( elementSubRegion.template getReference< array1d< globalIndex > >( inputFlowDofKey ) ),
   m_fracturePresDofNumber( embeddedSurfSubRegion.template getReference< array1d< globalIndex > >( inputFlowDofKey ) ),
   m_wDofNumber( jumpDofNumber ),
@@ -79,6 +80,7 @@ SinglePhasePoromechanicsEFEM( NodeManager const & nodeManager,
   m_dFluidDensity_dPressure( embeddedSurfSubRegion.template getConstitutiveModel< constitutive::SingleFluidBase >( elementSubRegion.template getReference< string >(
                                                                                                                      fluidModelKey ) ).dDensity_dPressure() ),
   m_matrixPressure( elementSubRegion.template getField< fields::flow::pressure >() ),
+  m_matrixPressure_n( elementSubRegion.template getField< fields::flow::pressure_n >() ),
   m_porosity_n( inputConstitutiveType.getPorosity_n() ),
   m_tractionVec( embeddedSurfSubRegion.getField< fields::contact::traction >() ),
   m_dTraction_dJump( embeddedSurfSubRegion.getField< fields::contact::dTraction_dJump >() ),
@@ -123,12 +125,12 @@ kernelLaunch( localIndex const numElems,
     localIndex k = kernelComponent.m_fracturedElems[i];
     typename KERNEL_TYPE::StackVariables stack;
 
-    // std::cout << "k = " << k << std::endl;
 
     kernelComponent.setup( k, stack );
     for( integer q=0; q<numQuadraturePointsPerElem; ++q )
     {
       kernelComponent.quadraturePointKernel( k, q, stack );
+      std::cout << "efem k = " << k << " "<< i <<  " " << q << std::endl;
     }
     maxResidual.max( kernelComponent.complete( k, stack ) );
   } );
@@ -171,7 +173,7 @@ setup( localIndex const k,
       stack.dispColIndices[a*3+i]    = m_dofNumber[localNodeIndex]+i;
       stack.xLocal[ a ][ i ] = m_X[ localNodeIndex ][ i ];
       stack.dispLocal[ a*3 + i ] = m_disp[ localNodeIndex ][ i ];
-      stack.deltaDispLocal[ a ][ i ] = m_deltaDisp[ localNodeIndex ][ i ];
+      stack.deltaDispLocal[ a*3 + i ] = m_deltaDisp[ localNodeIndex ][ i ];
     }
   }
 
@@ -182,6 +184,7 @@ setup( localIndex const k,
     stack.jumpColIndices[i]    = m_wDofNumber[embSurfIndex] + i;
     stack.wLocal[ i ] = m_w[ embSurfIndex ][i];
     stack.tractionVec[ i ] = m_tractionVec[ embSurfIndex ][i] * m_surfaceArea[embSurfIndex];
+    std::cout << "stack.tractionVec " << m_tractionVec[embSurfIndex][i] << " " << m_surfaceArea[embSurfIndex] << std::endl;
     for( int ii=0; ii < 3; ++ii )
     {
       stack.dTractiondw[ i ][ ii ] = m_dTraction_dJump[embSurfIndex][i][ii] * m_surfaceArea[embSurfIndex];
@@ -215,6 +218,19 @@ quadraturePointKernel( localIndex const k,
 
   // Gauss contribution to Kww, Kwu and Kuw blocks
   real64 Kww_gauss[3][3]{}, Kwu_gauss[3][nUdof]{}, Kuw_gauss[nUdof][3]{}, Kwpm_gauss[3]{};
+
+  // Gauss contirbution to eqMStrOld = EqMatrix*Sigma_old (3x6) *(6*1) in Voigt notation
+  real64 eqMStrOld_gauss[3]{};
+  real64 oldStress[6] = {m_stressOld[k][q][0], 
+                          m_stressOld[k][q][1], 
+                          m_stressOld[k][q][2],
+                          m_stressOld[k][q][3],
+                          m_stressOld[k][q][4],
+                          m_stressOld[k][q][5]};
+  std::cout << "old stress: ";
+  for (std::size_t i = 0; i < 6; ++i)
+    std::cout << oldStress[i] << " ";
+  std::cout << std::endl;
 
   //  Compatibility, equilibrium and strain operators. The compatibility operator is constructed as
   //  a 3 x 6 because it is more convenient for construction purposes (reduces number of local var).
@@ -262,6 +278,9 @@ quadraturePointKernel( localIndex const k,
   // transp(B)DB
   LvArray::tensorOps::Rij_eq_AikBjk< nUdof, 3, 6 >( Kuw_gauss, matBD, compMatrix );
 
+  // E*StressOld
+  LvArray::tensorOps::Ri_eq_AijBj<3, 6> (eqMStrOld_gauss, eqMatrix, oldStress);
+
   LvArray::tensorOps::fill< 3 >( Kwpm_gauss, 0 );
   for( int i=0; i < 3; ++i )
   {
@@ -274,6 +293,7 @@ quadraturePointKernel( localIndex const k,
   LvArray::tensorOps::scaledAdd< 3, 3 >( stack.localKww, Kww_gauss, -detJ );
   LvArray::tensorOps::scaledAdd< 3, nUdof >( stack.localKwu, Kwu_gauss, -detJ );
   LvArray::tensorOps::scaledAdd< nUdof, 3 >( stack.localKuw, Kuw_gauss, -detJ );
+  LvArray::tensorOps::scaledAdd< 3 > (stack.localEqMStrold, eqMStrOld_gauss, -detJ);
 
   /// TODO: should this be negative???
   // I had No neg coz the total stress = effective stress - porePressure
@@ -298,11 +318,11 @@ complete( localIndex const k,
   globalIndex matrixPressureColIndex = m_matrixPresDofNumber[k];
 
   // rm later!!
-  // std::cout << "printing localJumpResidual: " << std::endl;
-  // for (int i = 0; i < 3; i++)
-  // {
-  //   std::cout << "localJumpResidual[" << i << "] = " << stack.localJumpResidual[i] << std::endl;
-  // }
+   std::cout << "printing localJumpResidual: " << std::endl;
+   for (int i = 0; i < 3; i++)
+   {
+     std::cout << "localJumpResidual[" << i << "] = " << stack.localJumpResidual[i] << std::endl;
+   }
 
   // std::cout << "printing localKww: " << std::endl;
   // for (int i = 0; i < 3; i++)
@@ -331,11 +351,11 @@ complete( localIndex const k,
   //   }
   // }
 
-  // std::cout << "printing wLocal: " << std::endl;
-  // for (int i = 0; i < 3; i++)
-  // {
-  //   std::cout << "wLocal[" << i << "] = " << stack.wLocal[i] << std::endl;
-  // }
+   std::cout << "printing wLocal: " << std::endl;
+   for (int i = 0; i < 3; i++)
+   {
+     std::cout << "wLocal[" << i << "] = " << stack.wLocal[i] << std::endl;
+   }
 
   // std::cout << "printing localDispResidual: " << std::endl;
   // for (int i = 0; i < 3; i++)
@@ -343,16 +363,25 @@ complete( localIndex const k,
   //   std::cout << "localDispResidual[" << i << "] = " << stack.localDispResidual[i] << std::endl;
   // }
 
-  // std::cout << "printing dispLocal: " << std::endl;
-  // for (int i = 0; i < 3; i++)
-  // {
-  //   std::cout << "dispLocal[" << i << "] = " << stack.dispLocal[i] << std::endl;
-  // }
+   std::cout << "printing delta dispLocal: " << std::endl;
+   for (int i = 0; i < 3; i++)
+   {
+     std::cout << "dispLocal[" << i << "] = " << stack.deltaDispLocal[i] << std::endl;
+   }
+
+   std::cout << "printing localEqM stress old: " << std::endl;
+   for (int i = 0; i < 3; i++)
+   {
+     std::cout << "dispLocal[" << i << "] = " << stack.localEqMStrold[i] << std::endl;
+   }
 
   // Compute the local residuals
   LvArray::tensorOps::Ri_add_AijBj< 3, 3 >( stack.localJumpResidual, stack.localKww, stack.wLocal );
-  LvArray::tensorOps::Ri_add_AijBj< 3, nUdof >( stack.localJumpResidual, stack.localKwu, stack.dispLocal );
+  LvArray::tensorOps::Ri_add_AijBj< 3, nUdof >( stack.localJumpResidual, stack.localKwu, stack.deltaDispLocal );
   LvArray::tensorOps::Ri_add_AijBj< nUdof, 3 >( stack.localDispResidual, stack.localKuw, stack.wLocal );
+
+  // add EqM * Stress_old into the residual of enrichment nodes
+  LvArray::tensorOps::add< 3 >( stack.localJumpResidual, stack.localEqMStrold);
 
     // rm later!!
   // std::cout << "printing localJumpResidual: " << std::endl;
@@ -367,8 +396,8 @@ complete( localIndex const k,
   //   std::cout << "localDispResidual[" << i << "] = " << stack.localDispResidual[i] << std::endl;
   // }
 
-  // std::cout << "printing m_matrixPressure[ k ]: " << std::endl;
-  // std::cout << "m_matrixPressure[" << k << "] = " << m_matrixPressure[ k ] << std::endl;
+  std::cout << "printing m_matrixPressure[ k ]: " << std::endl;
+  std::cout << "m_matrixPressure[" << k << "] = " << m_matrixPressure[ k ] << " " << m_matrixPressure_n[ k ] << std::endl;
   
   // std::cout << "printing localKwpm: " << std::endl;
   // for (int i = 0; i < 3; i++)
@@ -409,11 +438,11 @@ complete( localIndex const k,
   LvArray::tensorOps::scaledAdd< 3, 3 >( stack.localKww, stack.dTractiondw, -1 );
 
   // rm later!!
-  // std::cout << "printing localJumpResidual after traction added added: " << std::endl;
-  // for (int i = 0; i < 3; i++)
-  // {
-  //   std::cout << "localJumpResidual[" << i << "] = " << stack.localJumpResidual[i] << std::endl;
-  // }
+   std::cout << "printing localJumpResidual after traction added added: " << std::endl;
+   for (int i = 0; i < 3; i++)
+   {
+     std::cout << "localJumpResidual[" << i << "] = " << stack.localJumpResidual[i] << std::endl;
+   }
 
   // JumpFractureFlowJacobian
   real64 const localJumpFracPressureJacobian = -m_dTraction_dPressure[embSurfIndex] * m_surfaceArea[embSurfIndex];

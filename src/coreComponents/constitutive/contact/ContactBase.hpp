@@ -107,6 +107,19 @@ public:
                                     real64 const pressure ) const
   { GEOS_UNUSED_VAR( k, dispJump, tractionVector, fractureState, pressure ); }
 
+  GEOS_HOST_DEVICE
+  inline
+  virtual void updateFractureState2( localIndex const k,
+                             arraySlice1d< real64 const > const & dispJump,
+                             arraySlice1d< real64 const > const & oldDispJump,
+                             // TO DO tractionVector here is the combined force of contact
+                             // fracture pressure, only  contact force is supposed to be here
+                             arraySlice1d< real64 const > const & tractionVector,
+                             integer & fractureState,
+                             integer & oldFractureState,
+                             real64 const pressure ) const
+  { GEOS_UNUSED_VAR( k, dispJump, oldDispJump, tractionVector, fractureState, pressure, oldFractureState ); }
+
   /**
    * @brief Update the traction with the pressure term
    * @param[in] pressure the pressure term

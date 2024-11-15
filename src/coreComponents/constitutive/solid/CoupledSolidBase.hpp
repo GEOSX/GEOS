@@ -167,8 +167,13 @@ public:
   arrayView2d< real64 const > const getDensity() const
   {
     return getBaseSolidModel().getDensity();
-  }
+  } 
 
+
+  arrayView3d< real64 const, solid::STRESS_USD > const getOldStress() const
+  {
+    return getBaseSolidModel().getOldStress();
+  }
 
   /*
    * @brief get the current biot coefficient

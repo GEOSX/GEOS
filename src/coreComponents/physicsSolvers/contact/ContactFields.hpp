@@ -105,6 +105,14 @@ DECLARE_FIELD( traction,
                WRITE_AND_READ,
                "Fracture traction vector in the local reference system." );
 
+DECLARE_FIELD( oldContactTraction,
+               "traction",
+               array2d< real64 >,
+               0,
+               LEVEL_0,
+               WRITE_AND_READ,
+               "Fracture contact traction vector in the local reference system at the previous time-step." );
+
 DECLARE_FIELD( deltaTraction,
                "deltaTraction",
                array2d< real64 >,
