@@ -1,4 +1,4 @@
-from geos.ats.test_builder import TestDeck, RestartcheckParameters, generate_geos_tests
+from geos.ats.test_builder import TestDeck, RestartcheckParameters, CurveCheckParameters, generate_geos_tests
 
 restartcheck_params = {}
 restartcheck_params["atol"] = 2.0E-4
