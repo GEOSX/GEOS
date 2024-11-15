@@ -70,6 +70,8 @@ public:
 
   virtual void registerDataOnMesh( Group & MeshBodies ) override;
 
+  virtual void initializePostInitialConditionsPreSubGroups() override;
+
   struct viewKeyStruct : PhysicsSolverBase::viewKeyStruct
   {
     // misc inputs
@@ -146,6 +148,8 @@ public:
                            real64 const & timeAtBeginningOfStep,
                            real64 const & dt );
 
+  virtual void initializeFluid( MeshLevel & mesh, const arrayView1d< const string > & regionNames ) { GEOS_UNUSED_VAR( mesh, regionNames ); }
+
 protected:
 
   /**
@@ -196,15 +200,11 @@ protected:
 
   void initializeHydraulicAperture( MeshLevel & mesh, const arrayView1d< const string > & regionNames );
 
-  virtual void initializeFluid( MeshLevel & mesh, const arrayView1d< const string > & regionNames ) { GEOS_UNUSED_VAR( mesh, regionNames ); }
-
   virtual void initializeThermal( MeshLevel & mesh, const arrayView1d< const string > & regionNames ) { GEOS_UNUSED_VAR( mesh, regionNames ); }
 
   void saveInitialPressureAndTemperature( MeshLevel & mesh, const arrayView1d< const string > & regionNames );
 
   virtual void initializePreSubGroups() override;
-
-  virtual void initializePostInitialConditionsPreSubGroups() override;
 
   virtual void setConstitutiveNamesCallSuper( ElementSubRegionBase & subRegion ) const override;
 

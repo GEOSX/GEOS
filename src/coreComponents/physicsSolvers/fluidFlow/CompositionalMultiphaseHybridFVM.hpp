@@ -75,6 +75,8 @@ public:
 
   virtual void registerDataOnMesh( Group & MeshBodies ) override;
 
+  virtual void initializePostInitialConditionsPreSubGroups() override;
+
   /**
    * @defgroup Solver Interface Functions
    *
@@ -164,8 +166,6 @@ public:
 protected:
 
   virtual void initializePreSubGroups() override;
-
-  virtual void initializePostInitialConditionsPreSubGroups() override;
 
   /// precompute the minGravityCoefficient for the buoyancy term
   void precomputeData( MeshLevel & mesh, arrayView1d< string const > const & regionNames ) override;

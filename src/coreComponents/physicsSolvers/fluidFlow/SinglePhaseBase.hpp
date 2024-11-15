@@ -245,6 +245,8 @@ public:
    */
   void updateSolidInternalEnergyModel( ObjectManagerBase & dataGroup ) const;
 
+  virtual void initializeFluid( MeshLevel & mesh, arrayView1d< string const > const & regionNames ) override;
+
 protected:
 
   virtual void initializePreSubGroups() override;
@@ -255,8 +257,6 @@ protected:
    * @brief Compute the hydrostatic equilibrium using the compositions and temperature input tables
    */
   virtual void computeHydrostaticEquilibrium( DomainPartition & domain ) override;
-
-  virtual void initializeFluid( MeshLevel & mesh, arrayView1d< string const > const & regionNames ) override;
 
   virtual void initializeThermal( MeshLevel & mesh, arrayView1d< string const > const & regionNames ) override;
 

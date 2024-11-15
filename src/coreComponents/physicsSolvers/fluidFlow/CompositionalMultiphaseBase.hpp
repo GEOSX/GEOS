@@ -68,6 +68,8 @@ public:
 
   virtual void registerDataOnMesh( Group & meshBodies ) override;
 
+  virtual void initializePostInitialConditionsPreSubGroups() override;
+
   /**
    * @defgroup Solver Interface Functions
    *
@@ -167,6 +169,12 @@ public:
   virtual void updateState( DomainPartition & domain ) override final;
 
   /**
+   * @brief Sets all the negative component densities (if any) to zero.
+   * @param domain the physical domain object
+   */
+  void chopNegativeDensities( DomainPartition & domain );
+
+  /**
    * @brief Getter for the number of fluid components (species)
    * @return the number of components
    */
@@ -234,6 +242,39 @@ public:
                                DofManager const & dofManager,
                                CRSMatrixView< real64, globalIndex const > const & localMatrix,
                                arrayView1d< real64 > const & localRhs ) const = 0;
+
+  /**
+   * @brief Apply source flux boundary conditions to the system
+   * @param time current time
+   * @param dt time step
+   * @param dofManager degree-of-freedom manager associated with the linear system
+   * @param domain the domain
+   * @param localMatrix local system matrix
+   * @param localRhs local system right-hand side vector
+   */
+  void applySourceFluxBC( real64 const time,
+                          real64 const dt,
+                          DofManager const & dofManager,
+                          DomainPartition & domain,
+                          CRSMatrixView< real64, globalIndex const > const & localMatrix,
+                          arrayView1d< real64 > const & localRhs ) const;
+
+  /**
+   * @brief Function to perform the Application of Dirichlet type BC's
+   * @param time current time
+   * @param dt time step
+   * @param dofManager degree-of-freedom manager associated with the linear system
+   * @param domain the domain
+   * @param localMatrix local system matrix
+   * @param localRhs local system right-hand side vector
+   */
+  void applyDirichletBC( real64 const time,
+                         real64 const dt,
+                         DofManager const & dofManager,
+                         DomainPartition & domain,
+                         CRSMatrixView< real64, globalIndex const > const & localMatrix,
+                         arrayView1d< real64 > const & localRhs ) const;
+
   /**@}*/
 
   struct viewKeyStruct : FlowSolverBase::viewKeyStruct
@@ -297,22 +338,6 @@ public:
 
   virtual bool checkSequentialSolutionIncrements( DomainPartition & domain ) const override;
 
-protected:
-
-  virtual void postInputInitialization() override;
-
-  virtual void initializePreSubGroups() override;
-
-  virtual void initializePostInitialConditionsPreSubGroups() override;
-
-  /**
-   * @brief Utility function that checks the consistency of the constitutive models
-   * @param[in] domain the domain partition
-   * This function will produce an error if one of the constitutive models
-   * (fluid, relperm) is incompatible with the reference fluid model.
-   */
-  void validateConstitutiveModels( DomainPartition const & domain ) const;
-
   /**
    * @brief Initialize all variables from initial conditions
    * @param domain the domain containing the mesh and fields
@@ -323,66 +348,10 @@ protected:
    */
   virtual void initializeFluid( MeshLevel & mesh, arrayView1d< string const > const & regionNames ) override;
 
-  virtual void initializeThermal( MeshLevel & mesh, arrayView1d< string const > const & regionNames ) override;
-
   /**
    * @brief Compute the hydrostatic equilibrium using the compositions and temperature input tables
    */
   virtual void computeHydrostaticEquilibrium( DomainPartition & domain ) override;
-
-  /**
-   * @brief Initialize the aquifer boundary condition (gravity vector, water phase index)
-   * @param[in] cm reference to the global constitutive model manager
-   */
-  void initializeAquiferBC( constitutive::ConstitutiveManager const & cm ) const;
-
-  /**
-   * @brief Function to perform the Application of Dirichlet type BC's
-   * @param time current time
-   * @param dt time step
-   * @param dofManager degree-of-freedom manager associated with the linear system
-   * @param domain the domain
-   * @param localMatrix local system matrix
-   * @param localRhs local system right-hand side vector
-   */
-  void applyDirichletBC( real64 const time,
-                         real64 const dt,
-                         DofManager const & dofManager,
-                         DomainPartition & domain,
-                         CRSMatrixView< real64, globalIndex const > const & localMatrix,
-                         arrayView1d< real64 > const & localRhs ) const;
-
-  /**
-   * @brief Apply source flux boundary conditions to the system
-   * @param time current time
-   * @param dt time step
-   * @param dofManager degree-of-freedom manager associated with the linear system
-   * @param domain the domain
-   * @param localMatrix local system matrix
-   * @param localRhs local system right-hand side vector
-   */
-  void applySourceFluxBC( real64 const time,
-                          real64 const dt,
-                          DofManager const & dofManager,
-                          DomainPartition & domain,
-                          CRSMatrixView< real64, globalIndex const > const & localMatrix,
-                          arrayView1d< real64 > const & localRhs ) const;
-
-  /**
-   * @brief Apply aquifer boundary conditions to the system
-   * @param time current time
-   * @param dt time step
-   * @param dofManager degree-of-freedom manager associated with the linear system
-   * @param domain the domain
-   * @param localMatrix local system matrix
-   * @param localRhs local system right-hand side vector
-   */
-  virtual void applyAquiferBC( real64 const time,
-                               real64 const dt,
-                               DofManager const & dofManager,
-                               DomainPartition & domain,
-                               CRSMatrixView< real64, globalIndex const > const & localMatrix,
-                               arrayView1d< real64 > const & localRhs ) const = 0;
 
   /**
    * @brief Function to fix the initial state during the initialization step in coupled problems
@@ -402,11 +371,43 @@ protected:
                                             CRSMatrixView< real64, globalIndex const > const & localMatrix,
                                             arrayView1d< real64 > const & localRhs ) const;
 
+protected:
+
+  virtual void postInputInitialization() override;
+
+  virtual void initializePreSubGroups() override;
+
   /**
-   * @brief Sets all the negative component densities (if any) to zero.
-   * @param domain the physical domain object
+   * @brief Utility function that checks the consistency of the constitutive models
+   * @param[in] domain the domain partition
+   * This function will produce an error if one of the constitutive models
+   * (fluid, relperm) is incompatible with the reference fluid model.
    */
-  void chopNegativeDensities( DomainPartition & domain );
+  void validateConstitutiveModels( DomainPartition const & domain ) const;
+
+  virtual void initializeThermal( MeshLevel & mesh, arrayView1d< string const > const & regionNames ) override;
+
+  /**
+   * @brief Initialize the aquifer boundary condition (gravity vector, water phase index)
+   * @param[in] cm reference to the global constitutive model manager
+   */
+  void initializeAquiferBC( constitutive::ConstitutiveManager const & cm ) const;
+
+  /**
+   * @brief Apply aquifer boundary conditions to the system
+   * @param time current time
+   * @param dt time step
+   * @param dofManager degree-of-freedom manager associated with the linear system
+   * @param domain the domain
+   * @param localMatrix local system matrix
+   * @param localRhs local system right-hand side vector
+   */
+  virtual void applyAquiferBC( real64 const time,
+                               real64 const dt,
+                               DofManager const & dofManager,
+                               DomainPartition & domain,
+                               CRSMatrixView< real64, globalIndex const > const & localMatrix,
+                               arrayView1d< real64 > const & localRhs ) const = 0;
 
   void chopNegativeDensities( ElementSubRegionBase & subRegion );
 
