@@ -1,4 +1,29 @@
+# SPDX-License-Identifier: LGPL-2.1-only
+#
+# Copyright (c) 2016-2024 Lawrence Livermore National Security LLC
+# Copyright (c) 2018-2024 Total, S.A
+# Copyright (c) 2018-2024 The Board of Trustees of the Leland Stanford Junior University
+# Copyright (c) 2023-2024 Chevron
+# Copyright (c) 2019-     GEOS/GEOSX Contributors
+# All rights reserved
+#
+# See top level LICENSE, COPYRIGHT, CONTRIBUTORS, NOTICE, and ACKNOWLEDGEMENTS files for details.
+#
+#--------------------------------------------------------------------------------------------------
+
+#[[
+Package: mesh
+
+Contains:
+ - components allowing to import, store and access the mesh.
+ - partitioning and communication tools (ParMETIS, Scotch and VTK interfaces).
+ - GEOS components defining simple geometric objects.
+ - basic geometric and mesh utilities.
+#]]
+
+#
 # Specify all headers
+#
 set( mesh_headers
      BufferOps.hpp
      CellElementRegion.hpp
@@ -78,13 +103,15 @@ set( mesh_headers
      simpleGeometricObjects/SimpleGeometricObjectBase.hpp
      simpleGeometricObjects/PlanarGeometricObject.hpp
      simpleGeometricObjects/ThickPlane.hpp
-     utilities/AverageOverQuadraturePointsKernel.hpp     
+     utilities/AverageOverQuadraturePointsKernel.hpp
      utilities/CIcomputationKernel.hpp
      utilities/ComputationalGeometry.hpp
      utilities/MeshMapUtilities.hpp
      utilities/StructuredGridUtilities.hpp )
 
+#
 # Specify all sources
+#
 set( mesh_sources
      BufferOps.cpp
      CellElementRegion.cpp
@@ -169,7 +196,7 @@ if( ENABLE_VTK )
          generators/VTKMeshGeneratorTools.cpp
          generators/VTKWellGenerator.cpp
          generators/VTKUtilities.cpp
-         )    
+         )
     list( APPEND dependencyList VTK::IOLegacy VTK::FiltersParallelDIY2 )
     if( ENABLE_MPI )
       list( APPEND dependencyList VTK::IOParallelXML VTK::ParallelMPI )
