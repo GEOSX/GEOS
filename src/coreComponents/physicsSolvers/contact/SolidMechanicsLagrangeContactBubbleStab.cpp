@@ -207,15 +207,12 @@ void SolidMechanicsLagrangeContactBubbleStab::setupSystem( DomainPartition & dom
 
   solution.setName( this->getName() + "/solution" );
   solution.create( dofManager.numLocalDofs(), MPI_COMM_GEOS );
+
+  computeRotationMatrices( domain );
 }
 
-void SolidMechanicsLagrangeContactBubbleStab::implicitStepSetup( real64 const & time_n,
-                                                                 real64 const & dt,
-                                                                 DomainPartition & domain )
+void SolidMechanicsLagrangeContactBubbleStab::computeRotationMatrices( DomainPartition & domain ) const
 {
-
-  SolidMechanicsLagrangianFEM::implicitStepSetup( time_n, dt, domain );
-
   forDiscretizationOnMeshTargets( domain.getMeshBodies(), [&] ( string const &,
                                                                 MeshLevel & mesh,
                                                                 arrayView1d< string const > const & )
@@ -259,6 +256,13 @@ void SolidMechanicsLagrangeContactBubbleStab::implicitStepSetup( real64 const & 
       LvArray::tensorOps::fill< 3 >( incrBubbleDisp[kf1], 0.0 );
     } );
   } );
+}
+
+void SolidMechanicsLagrangeContactBubbleStab::implicitStepSetup( real64 const & time_n,
+                                                                 real64 const & dt,
+                                                                 DomainPartition & domain )
+{
+  SolidMechanicsLagrangianFEM::implicitStepSetup( time_n, dt, domain );
 }
 
 void SolidMechanicsLagrangeContactBubbleStab::assembleSystem( real64 const time,

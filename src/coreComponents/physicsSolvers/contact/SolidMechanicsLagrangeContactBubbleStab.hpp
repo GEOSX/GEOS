@@ -182,6 +182,12 @@ public:
    */
   void createBubbleCellList( DomainPartition & domain ) const;
 
+  /**
+   * @brief Compute rotation matrices and unit normal vectors for Face elements.
+   * @param domain The domain partition object
+   */
+  void computeRotationMatrices( DomainPartition & domain ) const;
+
 
 private:
   /**
