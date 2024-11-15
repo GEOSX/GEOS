@@ -793,7 +793,7 @@ void SinglePhaseBase::implicitStepComplete( real64 const & time,
     } );
 
     mesh.getElemManager().forElementSubRegions< SurfaceElementSubRegion >( regionNames, [&]( localIndex const,
-                                                                                          SurfaceElementSubRegion & subRegion )
+                                                                                             SurfaceElementSubRegion & subRegion )
     {
       arrayView1d< integer const > const elemGhostRank = subRegion.ghostRank();
       arrayView1d< real64 const > const volume = subRegion.getElementVolume();
