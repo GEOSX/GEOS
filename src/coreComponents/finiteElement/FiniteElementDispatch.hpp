@@ -77,7 +77,7 @@
 #define VEM_TYPES VEM_1_TYPES
 #endif
 
-#define BASE_FE_TYPES FE_1_TYPES, VEM_TYPES, BB_FE_TYPES
+#define BASE_FE_TYPES FE_1_TYPES, VEM_TYPES
 
 #else
 
@@ -87,9 +87,9 @@
 
 #if !defined( GEOS_USE_HIP )
 // can only compile GL_FE_TYPES when not using cce+rocm
-#define ALL_FE_TYPES BASE_FE_TYPES, GL_FE_TYPES
+#define ALL_FE_TYPES BASE_FE_TYPES, GL_FE_TYPES, BB_FE_TYPES
 #else
-#define ALL_FE_TYPES BASE_FE_TYPES
+#define ALL_FE_TYPES BASE_FE_TYPES, BB_FE_TYPES
 #endif
 
 

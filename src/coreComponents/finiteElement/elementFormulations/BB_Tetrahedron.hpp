@@ -158,6 +158,20 @@ public:
   }
 
   /**
+   * @brief Calculate shape functions values for each support point at a
+   *   quadrature point.
+   * @param q Index of the quadrature point.
+   * @param N An array to pass back the shape function values for each support
+   *   point.
+   */
+  GEOS_HOST_DEVICE
+  GEOS_FORCE_INLINE
+  static void calcN( localIndex const q,
+                     real64 (& N)[numNodes] )
+  {
+    GEOS_ERROR( "Bernstein-Bézier basis is modal, not nodal." );
+  }
+  /**
    * @brief Calculate shape functions values at a single point using De Casteljau's algorithm.
    * @param[in] lambda barycentric coordinates of the point in thetetrahedron
    * @param[out] ORDER The shape function values.
@@ -942,7 +956,9 @@ public:
 //  static real64 transformedQuadratureWeight( localIndex const q,
 //                                             real64 const (&X)[numNodes][3] )
 //  {
-//    // TODO
+//    // not needed since the integrals are not computed via quadratures 
+//    GEOS_ERROR(" Quadrature rules are not implemented for Bernstein-Bézier bases. ");
+//    return 0;
 //  }
 //
 //  /**
