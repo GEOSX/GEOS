@@ -118,7 +118,7 @@ struct LinearSolverParameters
     real64 relTolerance = 1e-6;       ///< Relative convergence tolerance for iterative solvers
     integer maxIterations = 200;      ///< Max iterations before declaring convergence failure
 #if GEOS_USE_HYPRE_DEVICE == GEOS_USE_HYPRE_CUDA || GEOS_USE_HYPRE_DEVICE == GEOS_USE_HYPRE_HIP
-    integer maxRestart = 50;          ///< Max number of vectors in Krylov basis before restarting (GPUs)
+    integer maxRestart = 100;         ///< Max number of vectors in Krylov basis before restarting (GPUs)
 #else
     integer maxRestart = 200;         ///< Max number of vectors in Krylov basis before restarting (CPUs)
 #endif
@@ -184,7 +184,9 @@ struct LinearSolverParameters
       l1sgs,              ///< l1-Symmetric Gauss-Seidel
       chebyshev,          ///< Chebyshev polynomial (GPU support in hypre)
       direct,             ///< Direct solver as preconditioner
-      bgs                 ///< Gauss-Seidel smoothing (backward sweep)
+      bgs,                ///< Gauss-Seidel smoothing (backward sweep)
+      gsElimWPivoting,    ///< Gaussian Elimination with pivoting direct solver
+      gsElimWInverse      ///< Direct inverse with Gaussian Elimination
     };
 
     /// AMG coarsening types (HYPRE only)
@@ -298,9 +300,8 @@ struct LinearSolverParameters
 
     StrategyType strategy = StrategyType::invalid; ///< Predefined MGR solution strategy (solver specific)
     integer separateComponents = false;            ///< Apply a separate displacement component (SDC) filter before AMG construction
-    string displacementFieldName;                  ///< Displacement field name need for SDC filter
-    integer areWellsShut = false;                   ///< Flag to let MGR know that wells are shut, and that jacobi can be applied to the
-                                                    ///< well block
+    integer areWellsShut = false;                  ///< Flag to let MGR know that wells are shut, and that jacobi can be applied to the
+                                                   ///< well block
   }
   mgr;                                             ///< Multigrid reduction (MGR) parameters
 
@@ -424,7 +425,9 @@ ENUM_STRINGS( LinearSolverParameters::AMG::CoarseType,
               "l1sgs",
               "chebyshev",
               "direct",
-              "bgs" );
+              "bgs",
+              "gsElimWPivoting",
+              "gsElimWInverse" );
 
 /// Declare strings associated with enumeration values.
 ENUM_STRINGS( LinearSolverParameters::AMG::CoarseningType,
