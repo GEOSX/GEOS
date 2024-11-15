@@ -339,7 +339,7 @@ void MeshLevel::generateAdjacencyLists( arrayView1d< localIndex const > const & 
   {
     ArrayOfArraysView< localIndex const > const elems2dToNodes = subRegion.nodeList().toViewConst();
     ArrayOfArraysView< localIndex const > const elem2dToEdges = subRegion.edgeList().toViewConst();
-    ArrayOfArraysView< localIndex const > const elems2dToFaces = subRegion.faceList().toViewConst();
+    arrayView2d< localIndex const > const elems2dToFaces = subRegion.faceList().toViewConst();
 
     for( localIndex const ei: elementAdjacencySet[er][esr] )
     {

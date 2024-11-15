@@ -244,7 +244,7 @@ protected:
   ArrayOfArraysView< localIndex const > const m_faceToNodes;
 
   /// The array of array containing the element to face map.
-  ArrayOfArraysView< localIndex const > const m_elemsToFaces;
+  arrayView2d< localIndex const > const m_elemsToFaces;
 
   /// The array containing the list of face element of the same type.
   arrayView1d< localIndex const > const m_faceElementList;
@@ -284,7 +284,7 @@ struct ComputeRotationMatricesKernel
   static void
   launch( localIndex const size,
           arrayView2d< real64 const > const & faceNormal,
-          ArrayOfArraysView< localIndex const > const & elemsToFaces,
+          arrayView2d< localIndex const > const & elemsToFaces,
           arrayView3d< real64 > const & rotationMatrix )
   {
 

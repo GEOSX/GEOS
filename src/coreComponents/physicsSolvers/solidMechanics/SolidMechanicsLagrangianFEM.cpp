@@ -1388,7 +1388,7 @@ void SolidMechanicsLagrangianFEM::applyContactConstraint( DofManager const & dof
         real64 const contactStiffness = m_contactPenaltyStiffness;
 
         arrayView1d< real64 > const area = subRegion.getElementArea();
-        ArrayOfArraysView< localIndex const > const elemsToFaces = subRegion.faceList().toViewConst();
+        arrayView2d< localIndex const > const elemsToFaces = subRegion.faceList().toViewConst();
 
         // TODO: use parallel policy?
         forAll< serialPolicy >( subRegion.size(), [=] ( localIndex const kfe )

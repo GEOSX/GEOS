@@ -112,32 +112,6 @@ void FaceManager::setDomainBoundaryObjects( ElementRegionManager const & elemReg
       isFaceOnDomainBoundary( kf ) = 1;
     }
   } );
-
-  // We want to tag as boundary faces all the faces that touch a surface element (mainly a fracture),
-  // if this element only has one unique neighbor.
-  auto const f = [&]( SurfaceElementRegion const & region )
-  {
-    if( region.subRegionType() != SurfaceElementRegion::SurfaceSubRegionType::faceElement )
-    {
-      return;
-    }
-
-    FaceElementSubRegion const & subRegion = region.getUniqueSubRegion< FaceElementSubRegion >();
-    ArrayOfArraysView< localIndex const > const elem2dToFaces = subRegion.faceList().toViewConst();
-    for( int ei = 0; ei < elem2dToFaces.size(); ++ei )
-    {
-      if( elem2dToFaces.sizeOfArray( ei ) == 2 )
-      {
-        continue;
-      }
-
-      for( localIndex const & face: elem2dToFaces[ei] )
-      {
-        isFaceOnDomainBoundary[face] = 1;
-      }
-    }
-  };
-  elemRegionManager.forElementRegions< SurfaceElementRegion >( f );
 }
 
 void FaceManager::setGeometricalRelations( CellBlockManagerABC const & cellBlockManager,
@@ -179,7 +153,7 @@ void FaceManager::setGeometricalRelations( CellBlockManagerABC const & cellBlock
     // The fracture subregion knows the faces it's connected to.
     // And since a 2d element is connected to a given face, and since a face can only have 2 neighbors,
     // then the second neighbor of the face is bound to be undefined (i.e. -1).
-    ArrayOfArraysView< localIndex const > const & elem2dToFaces = subRegion.faceList().toViewConst();
+    arrayView2d< localIndex const > const & elem2dToFaces = subRegion.faceList().toViewConst();
     for( localIndex ei = 0; ei < elem2dToFaces.size(); ++ei )
     {
       for( localIndex const & face: elem2dToFaces[ei] )

@@ -90,6 +90,10 @@ FaceElementSubRegion::FaceElementSubRegion( string const & name,
   m_2dElemToElems.resize( 0, 2 );
 
   m_numNodesPerElement = 8;
+
+
+  m_2dElemToElems.setElementRegionManager( dynamicCast< ElementRegionManager & >( getParent().getParent().getParent().getParent() ) );
+
 }
 
 void FaceElementSubRegion::copyFromCellBlock( FaceBlockABC const & faceBlock )
@@ -183,7 +187,12 @@ void FaceElementSubRegion::copyFromCellBlock( FaceBlockABC const & faceBlock )
     }
   }
 
-  m_toFacesRelation.base() = faceBlock.get2dElemToFaces();
+  m_toFacesRelation.resize( num2dElements, 2 );
+  for( localIndex i = 0; i < num2dElements; ++i )
+  {
+    m_toFacesRelation( i, 0 ) = faceBlock.get2dElemToFaces()[i][0];
+    m_toFacesRelation( i, 1 ) = faceBlock.get2dElemToFaces()[i][1];
+  }
 
   m_2dFaceToEdge = faceBlock.get2dFaceToEdge();
   m_2dFaceTo2dElems = faceBlock.get2dFaceTo2dElems();
@@ -840,7 +849,7 @@ map< localIndex, localIndex > buildEdgesToFace2d( arrayView1d< localIndex const 
  * Even if we should have a more explicit design,
  * the current function resets this implicit information in our mappings.
  */
-void fixNodesOrder( ArrayOfArraysView< localIndex const > const elem2dToFaces,
+void fixNodesOrder( arrayView2d< localIndex const > const elem2dToFaces,
                     ArrayOfArraysView< localIndex const > const facesToNodes,
                     ArrayOfArrays< localIndex > & elem2dToNodes )
 {
@@ -995,7 +1004,7 @@ void FaceElementSubRegion::fixSecondaryMappings( NodeManager const & nodeManager
           m_2dElemToElems.m_toElementRegion( e2d, 1 ) = path.er ;
           m_2dElemToElems.m_toElementSubRegion( e2d, 1 ) = path.esr;
           m_2dElemToElems.m_toElementIndex( e2d, 1 ) = path.ei ;
-          m_toFacesRelation.emplaceBack( e2d, path.face );
+          m_toFacesRelation(e2d, 1) = path.face;
           for( localIndex const & n: path.nodes )
           {
             auto currentNodes = m_toNodesRelation[e2d];
@@ -1066,7 +1075,7 @@ std::set< std::set< globalIndex > > FaceElementSubRegion::getCollocatedNodes() c
 void FaceElementSubRegion::flipFaceMap( FaceManager & faceManager,
                                         ElementRegionManager const & elemManager )
 {
-  ArrayOfArraysView< localIndex > const & elems2dToFaces = faceList().toView();
+  arrayView2d< localIndex > const & elems2dToFaces = faceList().toView();
   arrayView2d< localIndex const > const & faceToElementRegionIndex    = faceManager.elementRegionList();
   arrayView2d< localIndex const > const & faceToElementSubRegionIndex = faceManager.elementSubRegionList();
   arrayView2d< localIndex const > const & faceToElementIndex          = faceManager.elementList();
@@ -1076,10 +1085,10 @@ void FaceElementSubRegion::flipFaceMap( FaceManager & faceManager,
 
   forAll< parallelHostPolicy >( this->size(), [=]( localIndex const kfe )
   {
-    if( elems2dToFaces.sizeOfArray( kfe ) != 2 )
-    {
-      return;
-    }
+    // if( elems2dToFaces.sizeOfArray( kfe ) != 2 )
+    // {
+    //   return;
+    // }
 
     localIndex & f0 = elems2dToFaces[kfe][0];
     localIndex & f1 = elems2dToFaces[kfe][1];
@@ -1106,7 +1115,7 @@ void FaceElementSubRegion::flipFaceMap( FaceManager & faceManager,
 void FaceElementSubRegion::fixNeighboringFacesNormals( FaceManager & faceManager,
                                                        ElementRegionManager const & elemManager )
 {
-  ArrayOfArraysView< localIndex > const & elems2dToFaces = faceList().toView();
+  arrayView2d< localIndex > const & elems2dToFaces = faceList().toView();
   arrayView2d< localIndex const > const & faceToElementRegionIndex    = faceManager.elementRegionList();
   arrayView2d< localIndex const > const & faceToElementSubRegionIndex = faceManager.elementSubRegionList();
   arrayView2d< localIndex const > const & faceToElementIndex          = faceManager.elementList();
@@ -1120,10 +1129,10 @@ void FaceElementSubRegion::fixNeighboringFacesNormals( FaceManager & faceManager
   arrayView2d< real64 > const faceNormal = faceManager.faceNormal();
   forAll< parallelHostPolicy >( this->size(), [=, &faceToNodes]( localIndex const kfe )
   {
-    if( elems2dToFaces.sizeOfArray( kfe ) != 2 )
-    {
-      return;
-    }
+    // if( elems2dToFaces.sizeOfArray( kfe ) != 2 )
+    // {
+    //   return;
+    // }
 
     localIndex const f0 = elems2dToFaces[kfe][0];
     localIndex const f1 = elems2dToFaces[kfe][1];
