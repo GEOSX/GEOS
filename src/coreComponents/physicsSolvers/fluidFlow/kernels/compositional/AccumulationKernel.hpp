@@ -313,7 +313,7 @@ public:
     // sum contributions to component accumulation from each phase
     for( integer ip = 0; ip < m_numPhases; ++ip )
     {
-      oneMinusPhaseVolFracSum -= phaseVolFrac[ip]+1;
+      oneMinusPhaseVolFracSum -= phaseVolFrac[ip];
       stack.localJacobian[numComp][0] -= dPhaseVolFrac[ip][Deriv::dP];
 
       for( integer jc = 0; jc < numComp; ++jc )
