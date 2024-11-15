@@ -154,42 +154,42 @@ public:
     virtual void formatCell( std::ostringstream & tableOutput,
                              TableLayout::Column const & tableColumnData,
                              TableLayout const & tableLayout,
-                             TableLayout::Cell &, bool isFirstColumn, bool isNotLastColumn ) = 0;
+                             TableLayout::Cell & cell, bool isFirstColumn, bool isNotLastColumn ) = 0;
   };
 
-    class HeaderCell : public CellFormatterStrategy
-    {
+  class HeaderCell : public CellFormatterStrategy
+  {
 public:
-      virtual void formatCell( std::ostringstream & tableOutput,
-                               TableLayout::Column const & tableColumnData,
-                               TableLayout const & tableLayout,
-                               TableLayout::Cell &, bool isFirstColumn, bool isNotLastColumn ) override;
-    };
-    class ValueCell : public CellFormatterStrategy
-    {
+    virtual void formatCell( std::ostringstream & tableOutput,
+                             TableLayout::Column const & tableColumnData,
+                             TableLayout const & tableLayout,
+                             TableLayout::Cell & cell, bool isFirstColumn, bool isNotLastColumn ) override;
+  };
+  class ValueCell : public CellFormatterStrategy
+  {
 public:
-      virtual void formatCell( std::ostringstream & tableOutput,
-                               TableLayout::Column const & tableColumnData,
-                               TableLayout const & tableLayout,
-                               TableLayout::Cell &, bool isFirstColumn, bool isNotLastColumn ) override;
-    };
-    class MergingCell : public CellFormatterStrategy
-    {
+    virtual void formatCell( std::ostringstream & tableOutput,
+                             TableLayout::Column const & tableColumnData,
+                             TableLayout const & tableLayout,
+                             TableLayout::Cell & cell, bool isFirstColumn, bool isNotLastColumn ) override;
+  };
+  class MergingCell : public CellFormatterStrategy
+  {
 public:
-      virtual void formatCell( std::ostringstream & tableOutput,
-                               TableLayout::Column const & tableColumnData,
-                               TableLayout const & tableLayout,
-                               TableLayout::Cell &, bool isFirstColumn, bool isNotLastColumn ) override;
-    };
+    virtual void formatCell( std::ostringstream & tableOutput,
+                             TableLayout::Column const & tableColumnData,
+                             TableLayout const & tableLayout,
+                             TableLayout::Cell & cell, bool isFirstColumn, bool isNotLastColumn ) override;
+  };
 
-    class SeparatingCell : public CellFormatterStrategy
-    {
+  class SeparatingCell : public CellFormatterStrategy
+  {
 public:
-      virtual void formatCell( std::ostringstream & tableOutput,
-                               TableLayout::Column const & tableColumnData,
-                               TableLayout const & tableLayout,
-                               TableLayout::Cell &, bool isFirstColumn, bool isNotLastColumn ) override;
-    };
+    virtual void formatCell( std::ostringstream & tableOutput,
+                             TableLayout::Column const & tableColumnData,
+                             TableLayout const & tableLayout,
+                             TableLayout::Cell & cell, bool isFirstColumn, bool isNotLastColumn ) override;
+  };
 
 private:
 
@@ -294,8 +294,9 @@ private:
    * @param isLastColumn
    */
   void outputCell( std::ostringstream & tableOutput,
-                   TableLayout::Column const & tableColumnData,
-                   size_t const idxRow,
+                   TableLayout::Column const & column,
+                   TableLayout::Cell cell,
+                   size_t idxRow,
                    bool isFirstColumn,
                    bool isLastColumn = false ) const;
 

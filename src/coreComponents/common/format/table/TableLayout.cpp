@@ -65,6 +65,16 @@ bool TableLayout::isLineBreakEnabled() const
   return m_wrapLine;
 }
 
+void TableLayout::setContainingSubColumn()
+{
+  m_containSubColumn = true;
+}
+
+bool TableLayout::isContainingSubColumn() const
+{
+  return m_containSubColumn;
+}
+
 void TableLayout::removeSubColumn()
 {
   for( auto & column : m_tableColumnsData )

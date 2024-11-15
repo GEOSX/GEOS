@@ -69,6 +69,7 @@ public:
     /// Vector containing sub columns name
     std::vector< string > dividedValue;
     size_t nbRows;
+    Alignment alignment;
 
     Cell()
       : type( ' ' ), value( "" ), nbRows( 1 )
@@ -85,6 +86,11 @@ public:
     Cell( char t, string_view val, std::vector< std::string > const & subCols )
       : type( t ), value( val ), dividedValue( subCols )
     {}
+
+    void setAlignment( Alignment align )
+    {
+      alignment = align;
+    }
   };
 
   /**
@@ -106,20 +112,25 @@ public:
     Column()
     {
       enabled = true;
-      cellAlignment = CellAlignment{ Alignment::center, Alignment::right };
+      columnName.setAlignment( Alignment::center );
+      cellAlignment = CellAlignment{ Alignment::center, Alignment::right };//todo
     }
 
     Column( Cell cell )
     {
       columnName = cell;
       enabled = true;
-      cellAlignment = CellAlignment{ Alignment::center, Alignment::right };
+      columnName.setAlignment( Alignment::center );
+      cellAlignment = CellAlignment{ Alignment::center, Alignment::right };//todo
     }
 
 
     Column & setName( string_view name )
     {
       columnName.value = name;
+      columnName.type = '\x03';
+      columnName.setAlignment( Alignment::center );
+      cellAlignment = CellAlignment{ Alignment::center, Alignment::right };
       return *this;
     }
 
@@ -151,7 +162,7 @@ public:
       std::vector< Column > subColumns;
       for( auto const & name : subColName )
       {
-        Cell cell{'\x04', name};//TODO
+        Cell cell{'\x03', name};//TODO
         Column col{cell};
         subColumns.emplace_back( col );
       }
@@ -271,6 +282,16 @@ private:
   bool isLineBreakEnabled() const;
 
   /**
+   * @brief
+   */
+  void setContainingSubColumn();
+
+  /**
+   * @return
+   */
+  bool isContainingSubColumn() const;
+
+  /**
    * @brief Remove all subcolumn in all columns
    * Can be used if we want to reuse a TableLayout without keep subcolumns
    */
@@ -344,7 +365,10 @@ private:
   std::vector< Column > m_tableColumnsData;
 
   bool m_wrapLine = true;
+  bool m_containSubColumn = false;
+
   string m_tableTitle;
+
   integer m_borderMargin;
   integer m_columnMargin;
   integer m_marginValue;
