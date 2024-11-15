@@ -31,7 +31,6 @@ using namespace dataRepository;
 SurfaceElementSubRegion::SurfaceElementSubRegion( string const & name,
                                                   dataRepository::Group * const parent ):
   ElementSubRegionBase( name, parent ),
-  m_2dElemToElems(),
   m_unmappedGlobalIndicesInToNodes(),
   m_toNodesRelation(),
   m_toEdgesRelation(),
@@ -46,18 +45,6 @@ SurfaceElementSubRegion::SurfaceElementSubRegion( string const & name,
 
   registerWrapper( viewKeyStruct::edgeListString(), &m_toEdgesRelation ).
     setDescription( "Map to the edges attached to each SurfaceElement." );
-
-  registerWrapper( viewKeyStruct::surfaceElementsToCellRegionsString(), &m_2dElemToElems.m_toElementRegion ).
-    setPlotLevel( PlotLevel::NOPLOT ).
-    setDescription( "A map of face element local indices to the cell local indices" );
-
-  registerWrapper( viewKeyStruct::surfaceElementsToCellSubRegionsString(), &m_2dElemToElems.m_toElementSubRegion ).
-    setPlotLevel( PlotLevel::NOPLOT ).
-    setDescription( "A map of face element local indices to the cell local indices" );
-
-  registerWrapper( viewKeyStruct::surfaceElementsToCellIndexString(), &m_2dElemToElems.m_toElementIndex ).
-    setPlotLevel( PlotLevel::NOPLOT ).
-    setDescription( "A map of face element local indices to the cell local indices" );
 
   registerField( fields::elementAperture{}, &m_elementAperture );
 
@@ -79,7 +66,7 @@ SurfaceElementSubRegion::SurfaceElementSubRegion( string const & name,
                                 viewKeyStruct::surfaceElementsToCellIndexString() } );
 
   // TODO there has to be a cleaner way than this.
-  m_2dElemToElems.setElementRegionManager( dynamicCast< ElementRegionManager & >( getParent().getParent().getParent().getParent() ) );
+//  m_2dElemToElems.setElementRegionManager( dynamicCast< ElementRegionManager & >( getParent().getParent().getParent().getParent() ) );
 
 }
 

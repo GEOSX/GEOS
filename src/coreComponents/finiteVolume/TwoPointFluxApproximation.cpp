@@ -418,14 +418,14 @@ void TwoPointFluxApproximation::addFractureMatrixConnectionsDFM( MeshLevel & mes
   SurfaceElementRegion & fractureRegion = elemManager.getRegion< SurfaceElementRegion >( faceElementRegionName );
   localIndex const fractureRegionIndex = fractureRegion.getIndexInParent();
   FaceElementSubRegion & fractureSubRegion = fractureRegion.getUniqueSubRegion< FaceElementSubRegion >();
-  OrderedVariableToManyElementRelation const & elems2dToElems3d = fractureSubRegion.getToCellRelation();
+  FixedToManyElementRelation const & elems2dToElems3d = fractureSubRegion.getToCellRelation();
 
   SortedArrayView< localIndex const > const new2dElems = fractureSubRegion.m_newFaceElements.toViewConst();
   FaceElementSubRegion::FaceMapType const & faceMap = fractureSubRegion.faceList();
 
-  ArrayOfArraysView< localIndex const > elemRegionList = elems2dToElems3d.m_toElementRegion.toViewConst();
-  ArrayOfArraysView< localIndex const > elemSubRegionList = elems2dToElems3d.m_toElementSubRegion.toViewConst();
-  ArrayOfArraysView< localIndex const > elemList = elems2dToElems3d.m_toElementIndex.toViewConst();
+  arrayView2d< localIndex const > const elemRegionList = elems2dToElems3d.m_toElementRegion.toViewConst();
+  arrayView2d< localIndex const > const elemSubRegionList = elems2dToElems3d.m_toElementSubRegion.toViewConst();
+  arrayView2d< localIndex const > const elemList = elems2dToElems3d.m_toElementIndex.toViewConst();
 
   // reserve memory for the connections of this region
   if( cellStencil.size() != 0 )
@@ -447,7 +447,6 @@ void TwoPointFluxApproximation::addFractureMatrixConnectionsDFM( MeshLevel & mes
 
   forAll< serialPolicy >( new2dElems.size(),
                           [ new2dElems,
-                            &elems2dToElems3d,
                             &faceToCellStencil,
                             &faceMap,
                             elemRegionList,
@@ -465,7 +464,7 @@ void TwoPointFluxApproximation::addFractureMatrixConnectionsDFM( MeshLevel & mes
   {
     localIndex const kfe = new2dElems[k];
     {
-      localIndex const numElems = elems2dToElems3d.m_toElementSubRegion.sizeOfArray( kfe );
+      localIndex const numElems = 2;
 
       GEOS_ERROR_IF( numElems > maxElems, "Max stencil size exceeded by fracture-cell connector " << kfe );
 

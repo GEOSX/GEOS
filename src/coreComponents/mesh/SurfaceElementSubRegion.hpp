@@ -154,23 +154,6 @@ public:
   localIndex numNodesPerElement( localIndex const k ) const final
   { return m_toNodesRelation[k].size(); }
 
-  /**
-   * @brief Get the surface element to cells map.
-   * @return The surface element to cells map
-   */
-  OrderedVariableToManyElementRelation & getToCellRelation()
-  {
-    return m_2dElemToElems;
-  }
-
-  /**
-   * @copydoc getToCellRelation()
-   */
-  OrderedVariableToManyElementRelation const & getToCellRelation() const
-  {
-    return m_2dElemToElems;
-  }
-
   ///@}
 
 
@@ -282,9 +265,6 @@ public:
   };
 
 protected:
-
-  /// Map between the surface elements and the cells
-  OrderedVariableToManyElementRelation m_2dElemToElems;
 
   /// Unmapped surface elements to nodes map
   map< localIndex, array1d< globalIndex > > m_unmappedGlobalIndicesInToNodes;

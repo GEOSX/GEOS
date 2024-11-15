@@ -43,7 +43,8 @@ EmbeddedSurfaceSubRegion::EmbeddedSurfaceSubRegion( string const & name,
   SurfaceElementSubRegion( name, parent ),
   m_numOfJumpEnrichments( 3 ),
   m_connectivityIndex(),
-  m_parentPlaneName()
+  m_parentPlaneName(),
+  m_2dElemToElems()
 {
   m_elementType = ElementType::Polygon;
 
@@ -62,6 +63,18 @@ EmbeddedSurfaceSubRegion::EmbeddedSurfaceSubRegion( string const & name,
   registerWrapper( viewKeyStruct::surfaceElementToParentPlaneString(), &m_parentPlaneName ).
     setRTTypeName( rtTypes::CustomTypes::groupNameRefArray ).
     setDescription( "A map of surface element to the parent fracture name" );
+
+  registerWrapper( viewKeyStruct::surfaceElementsToCellRegionsString(), &m_2dElemToElems.m_toElementRegion ).
+    setPlotLevel( PlotLevel::NOPLOT ).
+    setDescription( "A map of face element local indices to the cell local indices" );
+
+  registerWrapper( viewKeyStruct::surfaceElementsToCellSubRegionsString(), &m_2dElemToElems.m_toElementSubRegion ).
+    setPlotLevel( PlotLevel::NOPLOT ).
+    setDescription( "A map of face element local indices to the cell local indices" );
+
+  registerWrapper( viewKeyStruct::surfaceElementsToCellIndexString(), &m_2dElemToElems.m_toElementIndex ).
+    setPlotLevel( PlotLevel::NOPLOT ).
+    setDescription( "A map of face element local indices to the cell local indices" );
 
   m_normalVector.resizeDimension< 1 >( 3 );
   m_tangentVector1.resizeDimension< 1 >( 3 );

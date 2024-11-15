@@ -33,7 +33,8 @@ FaceElementSubRegion::FaceElementSubRegion( string const & name,
   m_unmappedGlobalIndicesInToEdges(),
   m_unmappedGlobalIndicesInToFaces(),
   m_newFaceElements(),
-  m_toFacesRelation()
+  m_toFacesRelation(),
+  m_2dElemToElems()
 {
   m_elementType = ElementType::Hexahedron;
 
@@ -64,6 +65,18 @@ FaceElementSubRegion::FaceElementSubRegion( string const & name,
     setPlotLevel( PlotLevel::NOPLOT ).
     setDescription( "A map eventually containing all the collocated nodes." ).
     setSizedFromParent( 1 );
+
+  registerWrapper( viewKeyStruct::surfaceElementsToCellRegionsString(), &m_2dElemToElems.m_toElementRegion ).
+    setPlotLevel( PlotLevel::NOPLOT ).
+    setDescription( "A map of face element local indices to the cell local indices" );
+
+  registerWrapper( viewKeyStruct::surfaceElementsToCellSubRegionsString(), &m_2dElemToElems.m_toElementSubRegion ).
+    setPlotLevel( PlotLevel::NOPLOT ).
+    setDescription( "A map of face element local indices to the cell local indices" );
+
+  registerWrapper( viewKeyStruct::surfaceElementsToCellIndexString(), &m_2dElemToElems.m_toElementIndex ).
+    setPlotLevel( PlotLevel::NOPLOT ).
+    setDescription( "A map of face element local indices to the cell local indices" );
 
 #ifdef GEOS_USE_SEPARATION_COEFFICIENT
   registerWrapper( viewKeyStruct::separationCoeffString(), &m_separationCoefficient ).
@@ -162,11 +175,11 @@ void FaceElementSubRegion::copyFromCellBlock( FaceBlockABC const & faceBlock )
   {
     for( localIndex const & j: elem2dToElems.toCellIndex[i] )
     {
-      m_2dElemToElems.m_toElementIndex.emplaceBack( i, j );
+      m_2dElemToElems.m_toElementIndex( i, j );
     }
     for( localIndex const & j: elem2dToElems.toBlockIndex[i] )
     {
-      m_2dElemToElems.m_toElementSubRegion.emplaceBack( i, j );
+      m_2dElemToElems.m_toElementSubRegion( i, j );
     }
   }
 
@@ -367,7 +380,7 @@ localIndex FaceElementSubRegion::unpackUpDownMaps( buffer_unit_type const * & bu
  * @param[in,out] elem2dToFaces This mapping will be corrected if needed to match @p elem2dToElems3d.
  */
 void fixNeighborMappingsInconsistency( string const & fractureName,
-                                       OrderedVariableToManyElementRelation const & elem2dToElems3d,
+                                       FixedToManyElementRelation const & elem2dToElems3d,
                                        FaceElementSubRegion::FaceMapType & elem2dToFaces )
 {
   {
@@ -937,7 +950,7 @@ void FaceElementSubRegion::fixSecondaryMappings( NodeManager const & nodeManager
   // When there's neighbor missing, we search for a face that would lie on the collocated nodes of the fracture element.
   for( int e2d = 0; e2d < num2dElems; ++e2d )
   {
-    if( m_2dElemToElems.m_toElementIndex.sizeOfArray( e2d ) >= 2 )  // All the neighbors are known.
+    if( m_2dElemToElems.m_toElementIndex.size(1) >= 2 )  // All the neighbors are known.
     {
       continue;
     }
@@ -977,11 +990,11 @@ void FaceElementSubRegion::fixSecondaryMappings( NodeManager const & nodeManager
       for( ElemPath const & path: match->second )
       {
         // This `if` prevents from storing the same data twice.
-        if( m_2dElemToElems.m_toElementIndex.sizeOfArray( e2d ) == 0 || m_2dElemToElems.m_toElementIndex[e2d][0] != path.ei )
+        if( m_2dElemToElems.m_toElementIndex.size(1) == 0 || m_2dElemToElems.m_toElementIndex[e2d][0] != path.ei )
         {
-          m_2dElemToElems.m_toElementRegion.emplaceBack( e2d, path.er );
-          m_2dElemToElems.m_toElementSubRegion.emplaceBack( e2d, path.esr );
-          m_2dElemToElems.m_toElementIndex.emplaceBack( e2d, path.ei );
+          m_2dElemToElems.m_toElementRegion( e2d, 1 ) = path.er ;
+          m_2dElemToElems.m_toElementSubRegion( e2d, 1 ) = path.esr;
+          m_2dElemToElems.m_toElementIndex( e2d, 1 ) = path.ei ;
           m_toFacesRelation.emplaceBack( e2d, path.face );
           for( localIndex const & n: path.nodes )
           {
@@ -1001,7 +1014,7 @@ void FaceElementSubRegion::fixSecondaryMappings( NodeManager const & nodeManager
   std::vector< localIndex > isolatedFractureElements;
   for( int e2d = 0; e2d < num2dElems; ++e2d )
   {
-    if( m_2dElemToElems.m_toElementIndex.sizeOfArray( e2d ) < 2 && m_ghostRank[e2d] < 0 )
+    if( m_2dElemToElems.m_toElementIndex.size(1)< 2 && m_ghostRank[e2d] < 0 )
     {
       isolatedFractureElements.push_back( e2d );
     }

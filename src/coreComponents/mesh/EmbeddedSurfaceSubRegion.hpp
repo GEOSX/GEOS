@@ -232,6 +232,23 @@ public:
    */
   std::vector< struct surfaceWithGhostNodes > surfaceWithGhostNodes() { return m_surfaceWithGhostNodes; }
 
+  /**
+   * @brief Get the surface element to cells map.
+   * @return The surface element to cells map
+   */
+  OrderedVariableToManyElementRelation & getToCellRelation()
+  {
+    return m_2dElemToElems;
+  }
+
+  /**
+   * @copydoc getToCellRelation()
+   */
+  OrderedVariableToManyElementRelation const & getToCellRelation() const
+  {
+    return m_2dElemToElems;
+  }
+  
   ///@}
 
 private:
@@ -258,6 +275,10 @@ private:
 
   /// Surfaces with ghost nodes
   std::vector< struct surfaceWithGhostNodes > m_surfaceWithGhostNodes;
+
+  /// Map between the surface elements and the cells
+  OrderedVariableToManyElementRelation m_2dElemToElems;
+
 };
 
 

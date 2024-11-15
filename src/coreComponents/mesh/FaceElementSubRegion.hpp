@@ -311,6 +311,23 @@ public:
     return m_2dElemToCollocatedNodesBuckets.toViewConst();
   }
 
+    /**
+   * @brief Get the surface element to cells map.
+   * @return The surface element to cells map
+   */
+  FixedToManyElementRelation & getToCellRelation()
+  {
+    return m_2dElemToElems;
+  }
+
+  /**
+   * @copydoc getToCellRelation()
+   */
+  FixedToManyElementRelation const & getToCellRelation() const
+  {
+    return m_2dElemToElems;
+  }
+
 private:
 
   /**
@@ -338,6 +355,9 @@ private:
    * @see FaceElementSubRegion::get2dElemToCollocatedNodesBuckets
    */
   ArrayOfArrays< array1d< globalIndex > > m_2dElemToCollocatedNodesBuckets;
+
+  /// Map between the surface elements and the cells
+  FixedToManyElementRelation m_2dElemToElems;
 
 #ifdef GEOS_USE_SEPARATION_COEFFICIENT
   /// Separation coefficient
