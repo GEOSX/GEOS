@@ -27,11 +27,11 @@
     <InternalMesh
       name="mesh1"
       elementTypes="{ C3D8 }"
-      xCoords="{ -1, 1 }"
-      yCoords="{ 0, 1 }"
+      xCoords="{ -5, 5 }"
+      yCoords="{ 0, 10 }"
       zCoords="{ 0, 1 }"
-      nx="{ 2 }"
-      ny="{ 1 }"
+      nx="{ 10 }"
+      ny="{ 10 }"
       nz="{ 1 }"
       cellBlockNames="{ cb1 }"/>
   </Mesh>
@@ -70,16 +70,16 @@
 
   <Events
     maxTime="50000">
-    <!--SoloEvent
+    <SoloEvent
             name="output0"
-            target="/Outputs/siloOutput" / -->
+            target="/Outputs/siloOutput" />
     <SoloEvent
       name="preFracture"
       target="/Solvers/SurfaceGen"/>
 
-    <!--SoloEvent
+    <SoloEvent
             name="output1"
-            target="/Outputs/siloOutput" / -->
+            target="/Outputs/siloOutput" />
     <PeriodicEvent
       name="solverApplications"
       forceDt="1e3"
@@ -201,7 +201,7 @@
   </FieldSpecifications>
 
   <Outputs>
-    <VTK
+    <Silo
       name="siloOutput"
       plotFileRoot="fractureMatrixFlow"/>
 

@@ -324,9 +324,9 @@ localIndex FaceElementSubRegion::packUpDownMapsImpl( buffer_unit_type * & buffer
           localIndex const esr = m_2dElemToElems.m_toElementSubRegion[packIndex][j];
           localIndex const ei = m_2dElemToElems.m_toElementIndex[packIndex][j];
 
-//          arrayView1d< globalIndex const > const elemLocalToGlobal = elementRegionManager.getRegion(er).getSubRegion(esr).localToGlobalMap();
+          arrayView1d< globalIndex const > const elemLocalToGlobal = elementRegionManager.getRegion(er).getSubRegion(esr).localToGlobalMap();
 
-          std::cout<<"  "<<j<<": ("<<m_localToGlobalMap(packIndex)<<"): "<<er<<" "<<esr<<" "<<ei<<"() "<<std::endl;
+          std::cout<<"  "<<j<<": ("<<m_localToGlobalMap(packIndex)<<"): "<<er<<" "<<esr<<" "<<ei<<"("<<elemLocalToGlobal(ei)<<") "<<std::endl;
         }
       }
     }
@@ -410,9 +410,15 @@ localIndex FaceElementSubRegion::unpackUpDownMaps( buffer_unit_type const * & bu
           localIndex const esr = m_2dElemToElems.m_toElementSubRegion[k][j];
           localIndex const ei = m_2dElemToElems.m_toElementIndex[k][j];
 
-          arrayView1d< globalIndex const > const elemLocalToGlobal = elementRegionManager.getRegion(er).getSubRegion(esr).localToGlobalMap();
-
-          std::cout<<k<<" ("<<m_localToGlobalMap(k)<<"): "<<er<<" "<<esr<<" "<<ei<<"("<<elemLocalToGlobal(ei)<<") "<<std::endl;
+          if( er == -1 || esr == -1 || ei == -1 )
+          {
+            std::cout<<k<<" ("<<m_localToGlobalMap(k)<<"): "<<er<<" "<<esr<<" "<<ei<<"() "<<std::endl;
+          }
+          else
+          {
+            arrayView1d< globalIndex const > const elemLocalToGlobal = elementRegionManager.getRegion(er).getSubRegion(esr).localToGlobalMap();
+            std::cout<<k<<" ("<<m_localToGlobalMap(k)<<"): "<<er<<" "<<esr<<" "<<ei<<"("<<elemLocalToGlobal(ei)<<") "<<std::endl;
+          }
         }
       }
     }
@@ -444,9 +450,15 @@ localIndex FaceElementSubRegion::unpackUpDownMaps( buffer_unit_type const * & bu
           localIndex const esr = m_2dElemToElems.m_toElementSubRegion[k][j];
           localIndex const ei = m_2dElemToElems.m_toElementIndex[k][j];
 
-          arrayView1d< globalIndex const > const elemLocalToGlobal = elementRegionManager.getRegion(er).getSubRegion(esr).localToGlobalMap();
-
-          std::cout<<k<<" ("<<m_localToGlobalMap(k)<<"): "<<er<<" "<<esr<<" "<<ei<<"("<<elemLocalToGlobal(ei)<<") "<<std::endl;
+          if( er == -1 || esr == -1 || ei == -1 )
+          {
+            std::cout<<k<<" ("<<m_localToGlobalMap(k)<<"): "<<er<<" "<<esr<<" "<<ei<<"() "<<std::endl;
+          }
+          else
+          {
+            arrayView1d< globalIndex const > const elemLocalToGlobal = elementRegionManager.getRegion(er).getSubRegion(esr).localToGlobalMap();
+            std::cout<<k<<" ("<<m_localToGlobalMap(k)<<"): "<<er<<" "<<esr<<" "<<ei<<"("<<elemLocalToGlobal(ei)<<") "<<std::endl;
+          }
         }
       }
       std::cout<<std::endl<<std::endl;
@@ -478,7 +490,7 @@ void fixNeighborMappingsInconsistency( string const & fractureName,
                                        FaceElementSubRegion::FaceMapType & elem2dToFaces )
 {
   {
-    localIndex const num2dElems = elem2dToFaces.size();
+    localIndex const num2dElems = elem2dToFaces.size(0);
     for( int e2d = 0; e2d < num2dElems; ++e2d )
     {
       std::set< localIndex > const sizes{
