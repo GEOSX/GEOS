@@ -173,9 +173,9 @@ localIndex SurfaceElementRegion::addToFractureMesh( real64 const time_np1,
 
   for( localIndex ke = 0; ke < 2; ++ke )
   {
-    localIndex const er = faceToElementRegion[faceIndices[ke]][ke];
-    localIndex const esr = faceToElementSubRegion[faceIndices[ke]][ke];
-    localIndex const ei = faceToElementIndex[faceIndices[ke]][ke];
+    // localIndex const er = faceToElementRegion[faceIndices[ke]][ke];
+    // localIndex const esr = faceToElementSubRegion[faceIndices[ke]][ke];
+    // localIndex const ei = faceToElementIndex[faceIndices[ke]][ke];
 
     faceElementsToCells.m_toElementRegion[kfe][ke] = faceToElementRegion[faceIndices[ke]][ke];
     faceElementsToCells.m_toElementSubRegion[kfe][ke] = faceToElementSubRegion[faceIndices[ke]][ke];

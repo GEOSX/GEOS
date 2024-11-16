@@ -98,7 +98,7 @@ void FaceManager::buildSets( NodeManager const & nodeManager )
   } );
 }
 
-void FaceManager::setDomainBoundaryObjects( ElementRegionManager const & elemRegionManager )
+void FaceManager::setDomainBoundaryObjects( ElementRegionManager const &  )
 {
   arrayView1d< integer > const isFaceOnDomainBoundary = getDomainBoundaryIndicator();
   isFaceOnDomainBoundary.zero();
