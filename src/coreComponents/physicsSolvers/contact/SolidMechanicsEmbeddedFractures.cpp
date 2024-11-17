@@ -68,15 +68,16 @@ void SolidMechanicsEmbeddedFractures::postInputInitialization()
 
   LinearSolverParameters & linParams = m_linearSolverParameters.get();
 
+  linParams.dofsPerNode = 3;
   if( m_useStaticCondensation )
   {
-    linParams.dofsPerNode = 3;
     linParams.isSymmetric = true;
     linParams.amg.separateComponents = true;
   }
   else
   {
     linParams.mgr.strategy = LinearSolverParameters::MGR::StrategyType::solidMechanicsEmbeddedFractures;
+    linParams.mgr.separateComponents = true;
   }
 }
 
