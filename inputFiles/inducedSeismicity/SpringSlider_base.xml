@@ -1,15 +1,17 @@
 <?xml version="1.0" ?>
 <Problem>
   <Solvers>
-    <QuasiDynamicEQ
+    <QuasiDynamicEQRK32
       name="SpringSlider"
       targetRegions="{ Fault }"
       shearImpedance="4.41"
-      initialDt="1"
+      initialDt="1.0e-5"
       logLevel="1"
       discretization="FE1">
-    </QuasiDynamicEQ>
-    
+      <NonlinearSolverParameters
+        newtonTol="1.0e-6"
+        newtonMaxIter="10"/>
+    </QuasiDynamicEQRK32>
     <SurfaceGenerator
       name="SurfaceGen"
       targetRegions="{ Domain }"
@@ -33,7 +35,7 @@
       xCoords="{ 0, 1 }"
       yCoords="{ 0, 2 }"
       zCoords="{ 0, 1 }"
-      nx="{ 100 }"
+      nx="{ 1 }"
       ny="{ 2 }"
       nz="{ 1 }"
       cellBlockNames="{ cb1 }"/>
@@ -123,7 +125,7 @@
       initialCondition="1"
       objectPath="ElementRegions/Fault/FractureSubRegion"
       component="0"
-      scale="0."
+      scale="0.70710678118e-6"
       setNames="{all}"/>               
     <FieldSpecification
       name="slipVelocity2"
@@ -131,7 +133,7 @@
       initialCondition="1"
       objectPath="ElementRegions/Fault/FractureSubRegion"
       component="1"
-      scale="0."
+      scale="0.70710678118e-6"
       setNames="{all}"/>               
   </FieldSpecifications>
 
