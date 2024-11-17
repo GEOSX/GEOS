@@ -93,7 +93,9 @@ string addCommaSeparators( T const & num )
   return result;
 }
 
+#if GEOS_LOCALINDEX_TYPE_FLAG != GEOS_GLOBALINDEX_TYPE_FLAG
 template string addCommaSeparators( localIndex const & num );
+#endif
 template string addCommaSeparators( globalIndex const & num );
 
 // put definition here so we can control the allowable values of T and
