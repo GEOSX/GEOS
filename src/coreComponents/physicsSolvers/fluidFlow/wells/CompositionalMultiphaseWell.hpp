@@ -75,7 +75,7 @@ public:
    */
   static string catalogName() { return "CompositionalMultiphaseWell"; }
   /**
-   * @copydoc SolverBase::getCatalogName()
+   * @copydoc PhysicsSolverBase::getCatalogName()
    */
   string getCatalogName() const override { return catalogName(); }
 
@@ -250,12 +250,7 @@ public:
    * @param matrix the system matrix
    * @param rhs the system right-hand side vector
    */
-  virtual void shutDownWell( real64 const time_n,
-                             real64 const dt,
-                             DomainPartition const & domain,
-                             DofManager const & dofManager,
-                             CRSMatrixView< real64, globalIndex const > const & localMatrix,
-                             arrayView1d< real64 > const & localRhs ) override;
+
 
   virtual void outputWellDebug( DomainPartition & domain,
                                 DofManager const & dofManager,

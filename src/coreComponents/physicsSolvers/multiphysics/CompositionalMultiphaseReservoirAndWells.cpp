@@ -30,8 +30,8 @@
 #include "physicsSolvers/fluidFlow/CompositionalMultiphaseUtilities.hpp"
 #include "physicsSolvers/fluidFlow/wells/CompositionalMultiphaseWell.hpp"
 #include "physicsSolvers/fluidFlow/wells/CompositionalMultiphaseWellFields.hpp"
-#include "physicsSolvers/fluidFlow/wells/CompositionalMultiphaseWellKernels.hpp"
 #include "physicsSolvers/fluidFlow/wells/WellControls.hpp"
+#include "physicsSolvers/fluidFlow/wells/kernels/CompositionalMultiphaseWellKernels.hpp"
 #include "physicsSolvers/fluidFlow/wells/LogLevelsInfo.hpp"
 #include "physicsSolvers/multiphysics/MultiphasePoromechanics.hpp"
 
@@ -77,10 +77,15 @@ void
 CompositionalMultiphaseReservoirAndWells<>::
 setMGRStrategy()
 {
+  LinearSolverParameters & linearSolverParameters = this->m_linearSolverParameters.get();
+
+  linearSolverParameters.mgr.separateComponents = true;
+  linearSolverParameters.dofsPerNode = 3;
+
   if( flowSolver()->getLinearSolverParameters().mgr.strategy == LinearSolverParameters::MGR::StrategyType::compositionalMultiphaseHybridFVM )
   {
     // add Reservoir
-    m_linearSolverParameters.get().mgr.strategy = LinearSolverParameters::MGR::StrategyType::compositionalMultiphaseReservoirHybridFVM;
+    linearSolverParameters.mgr.strategy = LinearSolverParameters::MGR::StrategyType::compositionalMultiphaseReservoirHybridFVM;
   }
   else if( isThermal() )
   {
@@ -90,7 +95,7 @@ setMGRStrategy()
   else
   {
     // add Reservoir
-    m_linearSolverParameters.get().mgr.strategy = LinearSolverParameters::MGR::StrategyType::compositionalMultiphaseReservoirFVM;
+    linearSolverParameters.mgr.strategy = LinearSolverParameters::MGR::StrategyType::compositionalMultiphaseReservoirFVM;
   }
 }
 
@@ -99,6 +104,11 @@ void
 CompositionalMultiphaseReservoirAndWells< MultiphasePoromechanics<> >::
 setMGRStrategy()
 {
+  LinearSolverParameters & linearSolverParameters = this->m_linearSolverParameters.get();
+
+  linearSolverParameters.mgr.separateComponents = true;
+  linearSolverParameters.dofsPerNode = 3;
+
   // flow solver here is indeed flow solver, not poromechanics solver
   if( flowSolver()->getLinearSolverParameters().mgr.strategy == LinearSolverParameters::MGR::StrategyType::compositionalMultiphaseHybridFVM )
   {
@@ -107,7 +117,7 @@ setMGRStrategy()
   else
   {
     // add Reservoir
-    m_linearSolverParameters.get().mgr.strategy = LinearSolverParameters::MGR::StrategyType::multiphasePoromechanicsReservoirFVM;
+    linearSolverParameters.mgr.strategy = LinearSolverParameters::MGR::StrategyType::multiphasePoromechanicsReservoirFVM;
   }
 }
 
@@ -154,7 +164,7 @@ addCouplingSparsityPattern( DomainPartition const & domain,
   {
     ElementRegionManager const & elemManager = mesh.getElemManager();
 
-    // TODO: remove this and just call SolverBase::setupSystem when DofManager can handle the coupling
+    // TODO: remove this and just call PhysicsSolverBase::setupSystem when DofManager can handle the coupling
 
     // Populate off-diagonal sparsity between well and reservoir
 
@@ -371,8 +381,8 @@ namespace
 {
 typedef CompositionalMultiphaseReservoirAndWells<> CompositionalMultiphaseFlowAndWells;
 typedef CompositionalMultiphaseReservoirAndWells< MultiphasePoromechanics<> > CompositionalMultiphasePoromechanicsAndWells;
-REGISTER_CATALOG_ENTRY( SolverBase, CompositionalMultiphaseFlowAndWells, string const &, Group * const )
-REGISTER_CATALOG_ENTRY( SolverBase, CompositionalMultiphasePoromechanicsAndWells, string const &, Group * const )
+REGISTER_CATALOG_ENTRY( PhysicsSolverBase, CompositionalMultiphaseFlowAndWells, string const &, Group * const )
+REGISTER_CATALOG_ENTRY( PhysicsSolverBase, CompositionalMultiphasePoromechanicsAndWells, string const &, Group * const )
 }
 
 } /* namespace geos */

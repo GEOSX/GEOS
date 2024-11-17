@@ -58,7 +58,7 @@ void SolidMechanicsPenaltyContact::setupSystem( DomainPartition & domain,
                                                 bool const setSparsity )
 {
   GEOS_MARK_FUNCTION;
-  SolverBase::setupSystem( domain, dofManager, localMatrix, rhs, solution, false );
+  PhysicsSolverBase::setupSystem( domain, dofManager, localMatrix, rhs, solution, false );
 
   SparsityPattern< globalIndex > sparsityPattern( dofManager.numLocalDofs(),
                                                   dofManager.numGlobalDofs(),
@@ -230,6 +230,6 @@ void SolidMechanicsPenaltyContact::assembleContact( DomainPartition & domain,
 }
 
 
-REGISTER_CATALOG_ENTRY( SolverBase, SolidMechanicsPenaltyContact, string const &, Group * const )
+REGISTER_CATALOG_ENTRY( PhysicsSolverBase, SolidMechanicsPenaltyContact, string const &, Group * const )
 
 } /* namespace geos */

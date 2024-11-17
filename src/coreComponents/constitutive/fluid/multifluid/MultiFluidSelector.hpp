@@ -14,7 +14,7 @@
  */
 
 /**
- * @file multiFluidSelector.hpp
+ * @file MultiFluidSelector.hpp
  */
 #ifndef GEOS_CONSTITUTIVE_FLUID_MULTIFLUIDSELECTOR_HPP_
 #define GEOS_CONSTITUTIVE_FLUID_MULTIFLUIDSELECTOR_HPP_

@@ -20,7 +20,7 @@
 #ifndef GEOS_PHYSICSSOLVERS_FLUIDFLOW_WELLS_WELLSOLVERBASE_HPP_
 #define GEOS_PHYSICSSOLVERS_FLUIDFLOW_WELLS_WELLSOLVERBASE_HPP_
 
-#include "physicsSolvers/SolverBase.hpp"
+#include "physicsSolvers/PhysicsSolverBase.hpp"
 #include "physicsSolvers/fluidFlow/wells/WellPropWriter.hpp"
 
 namespace geos
@@ -36,7 +36,7 @@ class WellElementSubRegion;
  * Base class for well solvers.
  * Provides some common features
  */
-class WellSolverBase : public SolverBase
+class WellSolverBase : public PhysicsSolverBase
 {
 public:
 
@@ -237,39 +237,6 @@ public:
                                           CRSMatrixView< real64, globalIndex const > const & localMatrix,
                                           arrayView1d< real64 > const & localRhs ) = 0;
 
-
-  /**
-   * @brief apply a special treatment to the wells that are shut (set Aww=I , Awr=Arw=0)
-   * @param time_n the time at the previous converged time step
-   * @param dt the time step size
-   * @param domain the physical domain object
-   * @param dofManager degree-of-freedom manager associated with the linear system
-   * @param matrix the system matrix
-   * @param rhs the system right-hand side vector
-   */
-  void shutInWell( real64 const time_n,
-                   real64 const dt,
-                   DomainPartition const & domain,
-                   DofManager const & dofManager,
-                   CRSMatrixView< real64, globalIndex const > const & localMatrix,
-                   arrayView1d< real64 > const & localRhs );
-
-  /**
-   * @brief apply a special treatment to the wells that are shut
-   * @param time_n the time at the previous converged time step
-   * @param dt the time step size
-   * @param domain the physical domain object
-   * @param dofManager degree-of-freedom manager associated with the linear system
-   * @param matrix the system matrix
-   * @param rhs the system right-hand side vector
-   */
-  virtual void shutDownWell( real64 const time_n,
-                             real64 const dt,
-                             DomainPartition const & domain,
-                             DofManager const & dofManager,
-                             CRSMatrixView< real64, globalIndex const > const & localMatrix,
-                             arrayView1d< real64 > const & localRhs ) = 0;
-
   virtual void outputWellDebug( DomainPartition & domain,
                                 DofManager const & dofManager,
                                 CRSMatrixView< real64, globalIndex const > const & localMatrix,
@@ -294,7 +261,15 @@ public:
                                         real64 const & dt,
                                         DomainPartition & domain ) = 0;
 
-  struct viewKeyStruct : SolverBase::viewKeyStruct
+  /**
+   * @brief Utility function to keep the well variables during a time step (used in poromechanics simulations)
+   * @param[in] keepVariablesConstantDuringInitStep flag to tell the solver to freeze its primary variables during a time step
+   * @detail This function is meant to be called by a specific task before/after the initialization step
+   */
+  void setKeepVariablesConstantDuringInitStep( bool const keepVariablesConstantDuringInitStep )
+  { m_keepVariablesConstantDuringInitStep = keepVariablesConstantDuringInitStep; }
+
+  struct viewKeyStruct : PhysicsSolverBase::viewKeyStruct
   {
     static constexpr char const * fluidNamesString() { return "fluidNames"; }
     static constexpr char const * isThermalString() { return "isThermal"; }
@@ -359,13 +334,17 @@ protected:
   /// flag indicating whether thermal formulation is used
   integer m_isThermal;
 
+  /// rates output
   integer m_writeCSV;
   string const m_ratesOutputDir;
   /// flag to write detailed segment properties
   integer m_writeSegDebug;
 
   std::map< std::string, WellPropWriter > m_wellPropWriter;
-/// name of the fluid constitutive model used as a reference for component/phase description
+  /// flag to freeze the initial state during initialization in coupled problems
+  integer m_keepVariablesConstantDuringInitStep;
+
+  /// name of the fluid constitutive model used as a reference for component/phase description
   string m_referenceFluidModelName;
 };
 
