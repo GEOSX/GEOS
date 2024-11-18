@@ -77,12 +77,10 @@ SinglePhasePoromechanicsEFEM( NodeManager const & nodeManager,
   m_wDofNumber( jumpDofNumber ),
   m_solidDensity( inputConstitutiveType.getDensity() ),
   m_fluidDensity( embeddedSurfSubRegion.template getConstitutiveModel< constitutive::SingleFluidBase >( elementSubRegion.template getReference< string >( fluidModelKey ) ).density() ),
-  m_fluidDensity_n( embeddedSurfSubRegion.template getConstitutiveModel< constitutive::SingleFluidBase >( elementSubRegion.template getReference< string >( fluidModelKey ) ).density_n() ),
   m_dFluidDensity_dPressure( embeddedSurfSubRegion.template getConstitutiveModel< constitutive::SingleFluidBase >( elementSubRegion.template getReference< string >(
                                                                                                                      fluidModelKey ) ).dDensity_dPressure() ),
   m_matrixPressure( elementSubRegion.template getField< fields::flow::pressure >() ),
   m_fracturePressure( embeddedSurfSubRegion.template getField< fields::flow::pressure >() ),
-  m_porosity_n( inputConstitutiveType.getPorosity_n() ),
   m_tractionVec( embeddedSurfSubRegion.getField< fields::contact::traction >() ),
   m_dTraction_dJump( embeddedSurfSubRegion.getField< fields::contact::dTraction_dJump >() ),
   m_dTraction_dPressure( embeddedSurfSubRegion.getField< fields::contact::dTraction_dPressure >() ),
@@ -94,6 +92,7 @@ SinglePhasePoromechanicsEFEM( NodeManager const & nodeManager,
   m_elementVolumeCell( elementSubRegion.getElementVolume() ),
   m_elementVolumeFrac( embeddedSurfSubRegion.getElementVolume() ),
   m_deltaVolume( embeddedSurfSubRegion.template getField< fields::flow::deltaVolume >() ),
+  m_mass_n( embeddedSurfSubRegion.template getField< fields::flow::mass_n >() ),
   m_fracturedElems( elementSubRegion.fracturedElementsList() ),
   m_cellsToEmbeddedSurfaces( elementSubRegion.embeddedSurfacesList().toViewConst() ),
   m_gravityVector{ inputGravityVector[0], inputGravityVector[1], inputGravityVector[2] },
@@ -322,9 +321,7 @@ complete( localIndex const k,
 
   // Mass balance accumulation
   real64 const newVolume = m_elementVolumeFrac( embSurfIndex ) + m_deltaVolume( embSurfIndex );
-  real64 const newMass = m_fluidDensity( embSurfIndex, 0 ) * newVolume;
-  real64 const oldMass = m_fluidDensity_n( embSurfIndex, 0 ) * m_elementVolumeFrac( embSurfIndex );
-  real64 const localFlowResidual = ( newMass - oldMass );
+  real64 const localFlowResidual = m_fluidDensity( embSurfIndex, 0 ) * newVolume - m_mass_n[embSurfIndex];
   real64 const localFlowJumpJacobian = m_fluidDensity( embSurfIndex, 0 ) * m_surfaceArea[ embSurfIndex ];
   real64 const localFlowFlowJacobian = m_dFluidDensity_dPressure( embSurfIndex, 0 ) * newVolume;
 

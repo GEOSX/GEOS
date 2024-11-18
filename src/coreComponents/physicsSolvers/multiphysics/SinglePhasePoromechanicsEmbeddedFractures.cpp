@@ -26,6 +26,7 @@
 #include "physicsSolvers/multiphysics/poromechanicsKernels/SinglePhasePoromechanics.hpp"
 #include "physicsSolvers/multiphysics/poromechanicsKernels/ThermalSinglePhasePoromechanics.hpp"
 #include "physicsSolvers/multiphysics/poromechanicsKernels/ThermalSinglePhasePoromechanicsEFEM.hpp"
+#include "physicsSolvers/multiphysics/poromechanicsKernels/SinglePhasePoromechanicsFractures.hpp"
 #include "physicsSolvers/solidMechanics/SolidMechanicsLagrangianFEM.hpp"
 #include "physicsSolvers/solidMechanics/SolidMechanicsFields.hpp"
 #include "finiteVolume/FluxApproximationBase.hpp"
@@ -510,10 +511,10 @@ void SinglePhasePoromechanicsEmbeddedFractures::updateState( DomainPartition & d
           using HydraulicApertureModelType = TYPEOFREF( castedHydraulicApertureModel );
           typename HydraulicApertureModelType::KernelWrapper hydraulicApertureModelWrapper = castedHydraulicApertureModel.createKernelWrapper();
 
-          poromechanicsEFEMKernels::StateUpdateKernel::
+          poromechanicsFracturesKernels::StateUpdateKernel::
             launch< parallelDevicePolicy<> >( subRegion.size(),
-                                              hydraulicApertureModelWrapper,
                                               porousMaterialWrapper,
+                                              hydraulicApertureModelWrapper,
                                               dispJump,
                                               pressure,
                                               area,
