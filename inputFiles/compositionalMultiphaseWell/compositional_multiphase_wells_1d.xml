@@ -26,6 +26,7 @@
     <CompositionalMultiphaseWell
       name="compositionalMultiphaseWell"
       logLevel="1"
+      writeSegDebug="1"
       targetRegions="{ wellRegion1, wellRegion2 }">
       <WellControls
         name="wellControls1"

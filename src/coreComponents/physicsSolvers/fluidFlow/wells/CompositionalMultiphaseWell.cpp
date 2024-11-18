@@ -18,7 +18,7 @@
  */
 
 #include "CompositionalMultiphaseWell.hpp"
-#include "mainInterface/GeosxState.hpp"
+//#include "mainInterface/GeosxState.hpp"
 
 #include "codingUtilities/Utilities.hpp"
 #include "common/DataTypes.hpp"
