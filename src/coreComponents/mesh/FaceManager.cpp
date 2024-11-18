@@ -99,7 +99,7 @@ void FaceManager::buildSets( NodeManager const & nodeManager )
   } );
 }
 
-void FaceManager::setDomainBoundaryObjects( ElementRegionManager const & )
+void FaceManager::setDomainBoundaryObjects( ElementRegionManager const & elemRegionManager )
 {
   arrayView1d< integer > const isFaceOnDomainBoundary = getDomainBoundaryIndicator();
   isFaceOnDomainBoundary.zero();
@@ -116,29 +116,42 @@ void FaceManager::setDomainBoundaryObjects( ElementRegionManager const & )
 
   // We want to tag as boundary faces all the faces that touch a surface element (mainly a fracture),
   // if this element only has one unique neighbor.
-  // auto const f = [&]( SurfaceElementRegion const & region )
-  // {
-  //   if( region.subRegionType() != SurfaceElementRegion::SurfaceSubRegionType::faceElement )
-  //   {
-  //     return;
-  //   }
+  auto const f = [&]( SurfaceElementRegion const & region )
+  {
+    if( region.subRegionType() != SurfaceElementRegion::SurfaceSubRegionType::faceElement )
+    {
+      return;
+    }
 
-  //   FaceElementSubRegion const & subRegion = region.getUniqueSubRegion< FaceElementSubRegion >();
-  //   arrayView2d< localIndex const > const elem2dToFaces = subRegion.faceList().toViewConst();
-  //   for( int ei = 0; ei < elem2dToFaces.size(); ++ei )
-  //   {
-  //     if( elem2dToFaces.sizeOfArray( ei ) == 2 )
-  //     {
-  //       continue;
-  //     }
+    FaceElementSubRegion const & subRegion = region.getUniqueSubRegion< FaceElementSubRegion >();
+    arrayView2d< localIndex const > const elem2dToFaces = subRegion.faceList().toViewConst();
+    for( int ei = 0; ei < elem2dToFaces.size(0); ++ei )
+    {
+      // if( elem2dToFaces.sizeOfArray( ei ) == 2 )
+      // {
+      //   continue;
+      // }
+      for( int rank=0; rank<MpiWrapper::commSize(); ++rank )
+      {
+        MpiWrapper::barrier();
+        if( rank==MpiWrapper::commRank() )
+        {
+          std::cout<<"RANK "<<rank<<std::endl;
+          std::cout<<"elem2dToFaces( "<<ei<<" ) = ( "<<elem2dToFaces( ei, 0 )<<", "<<elem2dToFaces( ei, 1 )<<" )"<<std::endl;
+        }
+      }
 
-  //     for( localIndex const & face: elem2dToFaces[ei] )
-  //     {
-  //       isFaceOnDomainBoundary[face] = 1;
-  //     }
-  //   }
-  // };
-  // elemRegionManager.forElementRegions< SurfaceElementRegion >( f );
+
+      for( localIndex const & face: elem2dToFaces[ei] )
+      {
+        if( face != -1 )
+        {
+          isFaceOnDomainBoundary[face] = 1;
+        }
+      }
+    }
+  };
+  elemRegionManager.forElementRegions< SurfaceElementRegion >( f );
 }
 
 void FaceManager::setGeometricalRelations( CellBlockManagerABC const & cellBlockManager,
@@ -157,7 +170,38 @@ void FaceManager::setGeometricalRelations( CellBlockManagerABC const & cellBlock
   m_toEdgesRelation.base() = cellBlockManager.getFaceToEdges();
 
   ToCellRelation< array2d< localIndex > > const toCellBlock = cellBlockManager.getFaceToElements();
+
+  for( int rank=0; rank<MpiWrapper::commSize(); ++rank )
+  {
+    MpiWrapper::barrier();
+    if( rank==MpiWrapper::commRank() )
+    {
+      std::cout<<"RANK "<<rank<<std::endl;
+      for( int i = 0; i < toCellBlock.toBlockIndex.size(0); ++i )
+      {
+        std::cout<<"  toCellBlock( "<<i<<", 0 ) = ( "<<toCellBlock.toBlockIndex( i, 0 )<<", "<<toCellBlock.toCellIndex( i, 0 )<<" )"<<std::endl;
+        std::cout<<"             ( "<<i<<", 1 ) = ( "<<toCellBlock.toBlockIndex( i, 1 )<<", "<<toCellBlock.toCellIndex( i, 1 )<<" )"<<std::endl;
+      }
+    }
+  }
+
   array2d< localIndex > const blockToSubRegion = elemRegionManager.getCellBlockToSubRegionMap( cellBlockManager );
+
+  for( int rank=0; rank<MpiWrapper::commSize(); ++rank )
+  {
+    MpiWrapper::barrier();
+    if( rank==MpiWrapper::commRank() )
+    { 
+      std::cout<<"RANK "<<rank<<std::endl;
+      std::cout<<"blockToSubRegion.size(0) = "<<blockToSubRegion.size(0)<<std::endl;
+      std::cout<<"blockToSubRegion.size(1) = "<<blockToSubRegion.size(1)<<std::endl;
+      for( int i = 0; i < blockToSubRegion.size(0); ++i )
+      {
+        std::cout<<"  blockToSubRegion( "<<i<<" ) = ( "<<blockToSubRegion( i, 0 )<<", "<<blockToSubRegion( i, 1 )<<" )"<<std::endl;
+      }
+    }
+  }
+
   meshMapUtilities::transformCellBlockToRegionMap< parallelHostPolicy >( blockToSubRegion.toViewConst(),
                                                                          toCellBlock,
                                                                          m_toElements );
@@ -183,23 +227,27 @@ void FaceManager::setGeometricalRelations( CellBlockManagerABC const & cellBlock
     arrayView2d< localIndex const > const & elem2dToFaces = subRegion.faceList().toViewConst();
     for( localIndex ei = 0; ei < elem2dToFaces.size(0); ++ei )
     {
+      std::cout<<ei<<std::endl;
       for( localIndex const & face: elem2dToFaces[ei] )
       {
-        std::cout<<"m_toElements( "<<face<<" )    = ( "<<m_toElements.m_toElementRegion( face, 0 )<<", "<<m_toElements.m_toElementSubRegion( face, 0 )<<", "<<m_toElements.m_toElementIndex( face, 0 )<<" )"<<std::endl;
-        std::cout<<"            ( "<<face<<" )    = ( "<<m_toElements.m_toElementRegion( face, 1 )<<", "<<m_toElements.m_toElementSubRegion( face, 1 )<<", "<<m_toElements.m_toElementIndex( face, 1 )<<" )"<<std::endl;
-        
+        if( face != -1 )
+        {
+          std::cout<<"m_toElements( "<<face<<" )    = ( "<<m_toElements.m_toElementRegion( face, 0 )<<", "<<m_toElements.m_toElementSubRegion( face, 0 )<<", "<<m_toElements.m_toElementIndex( face, 0 )<<" )"<<std::endl;
+          std::cout<<"            ( "<<face<<" )    = ( "<<m_toElements.m_toElementRegion( face, 1 )<<", "<<m_toElements.m_toElementSubRegion( face, 1 )<<", "<<m_toElements.m_toElementIndex( face, 1 )<<" )"<<std::endl;
+          
 
-        GEOS_ERROR_IF_EQ_MSG( m_toElements.m_toElementRegion( face, 0 ), -1, GEOS_FMT( err, face ) );
-        GEOS_ERROR_IF_EQ_MSG( m_toElements.m_toElementSubRegion( face, 0 ), -1, GEOS_FMT( err, face ) );
-        GEOS_ERROR_IF_EQ_MSG( m_toElements.m_toElementIndex( face, 0 ), -1, GEOS_FMT( err, face ) );
+          GEOS_ERROR_IF_EQ_MSG( m_toElements.m_toElementRegion( face, 0 ), -1, GEOS_FMT( err, face ) );
+          GEOS_ERROR_IF_EQ_MSG( m_toElements.m_toElementSubRegion( face, 0 ), -1, GEOS_FMT( err, face ) );
+          GEOS_ERROR_IF_EQ_MSG( m_toElements.m_toElementIndex( face, 0 ), -1, GEOS_FMT( err, face ) );
 
-        GEOS_ERROR_IF_NE_MSG( m_toElements.m_toElementRegion( face, 1 ), -1, GEOS_FMT( err, face ) );
-        GEOS_ERROR_IF_NE_MSG( m_toElements.m_toElementSubRegion( face, 1 ), -1, GEOS_FMT( err, face ) );
-        GEOS_ERROR_IF_NE_MSG( m_toElements.m_toElementIndex( face, 1 ), -1, GEOS_FMT( err, face ) );
+          GEOS_ERROR_IF_NE_MSG( m_toElements.m_toElementRegion( face, 1 ), -1, GEOS_FMT( err, face ) );
+          GEOS_ERROR_IF_NE_MSG( m_toElements.m_toElementSubRegion( face, 1 ), -1, GEOS_FMT( err, face ) );
+          GEOS_ERROR_IF_NE_MSG( m_toElements.m_toElementIndex( face, 1 ), -1, GEOS_FMT( err, face ) );
 
-        m_toElements.m_toElementRegion( face, 1 ) = er;
-        m_toElements.m_toElementSubRegion( face, 1 ) = esr;
-        m_toElements.m_toElementIndex( face, 1 ) = ei;
+          m_toElements.m_toElementRegion( face, 1 ) = er;
+          m_toElements.m_toElementSubRegion( face, 1 ) = esr;
+          m_toElements.m_toElementIndex( face, 1 ) = ei;
+        }
       }
     }
   };
