@@ -602,100 +602,18 @@ void ImmiscibleMultiphaseFlow::assembleAccumulationTerm( DomainPartition & domai
       TwoPhaseFluid const & fluid = getConstitutiveModel< TwoPhaseFluid >( subRegion, fluidName );
       CoupledSolidBase const & solid = getConstitutiveModel< CoupledSolidBase >( subRegion, solidName );
 
-      //arrayView1d< real64 const > const pres = subRegion.getField< fields::flow::pressure >();
-      integer const numofPhases = 2;
-      globalIndex const rankOffset = dofManager.rankOffset();
-      arrayView1d< globalIndex const > const dofNumber = subRegion.getReference< array1d< globalIndex > >( dofKey );
-      arrayView1d< integer const > const elemGhostRank= subRegion.ghostRank();
-      arrayView1d< real64 const > const volume = subRegion.getElementVolume();
-      arrayView2d< real64 const > const porosity = solid.getPorosity();
-      arrayView2d< real64 const > const dPoro_dPres = solid.getDporosity_dPressure();
-      arrayView2d< real64 const, immiscibleFlow::USD_PHASE > const phaseVolFrac= subRegion.template getField< fields::immiscibleMultiphaseFlow::phaseVolumeFraction >();
-      arrayView3d< real64 const, multifluid::USD_PHASE > phaseDens = fluid.phaseDensity();
-      arrayView4d< real64 const, multifluid::USD_PHASE_DC > dPhaseDens = fluid.dPhaseDensity();
-      arrayView2d< real64 const, immiscibleFlow::USD_PHASE > const PhaseMass_n = subRegion.template getField< fields::immiscibleMultiphaseFlow::phaseMass_n >();
-
-      // The line below is to be used if we want to use the total mass flux formulation
-      //BitFlags< ElementBasedAssemblyKernelFlags > m_kernelFlags = kernelFlags;
-
-
-      integer const numElems = subRegion.size();
-      forAll< parallelDevicePolicy<> >(
-        numElems, [=] GEOS_HOST_DEVICE ( localIndex const ei )
-      {
-        if( elemGhostRank( ei ) >= 0 )
-        {
-          return;
-        }
-
-        // setup
-        globalIndex dofIndices[2]{};
-        real64 localResidual[2]{};
-        real64 localJacobian[2][2]{};
-
-        real64 const poreVolume = volume[ei] * porosity[ei][0];
-        real64 const dPoreVolume_dPres = volume[ei] * dPoro_dPres[ei][0];
-
-        localIndex localRow = dofNumber[ei] - rankOffset;
-
-        for( integer idof = 0; idof < 2; ++idof )
-        {
-          dofIndices[idof] = dofNumber[ei] + idof;
-        }
-
-        // compute accumulation
-        int signPotDiff[2] = {1, -1};
-
-        for( integer ip = 0; ip < numofPhases; ++ip )
-        {
-          real64 const phaseMass = poreVolume * phaseVolFrac[ei][ip] * phaseDens[ei][0][ip];
-          real64 const phaseMass_n = PhaseMass_n[ei][ip];
-
-          localResidual[ip] += phaseMass - phaseMass_n;
-
-          real64 const dPhaseMass_dP =  dPoreVolume_dPres * phaseVolFrac[ei][ip] * phaseDens[ei][0][ip]
-                                       + poreVolume * phaseVolFrac[ei][ip] * dPhaseDens[ei][0][ip][0];
-          localJacobian[ip][0] += dPhaseMass_dP;
-
-          real64 const dPhaseMass_dS = poreVolume * phaseDens[ei][0][ip];
-
-
-          // if ( ip == 0)
-          // {
-          //   localJacobian[ip][1] += dPhaseMass_dS;
-          // } else {
-          //   localJacobian[ip][1] -= dPhaseMass_dS;
-          // }
-
-          localJacobian[ip][1] += signPotDiff[ip] * dPhaseMass_dS;
-
-        }
-
-        // complete
-
-        using namespace compositionalMultiphaseUtilities;
-
-        if( m_useTotalMassEquation  )
-        {
-          // apply equation/variable change transformation to the component mass balance equations
-          real64 work[numofPhases]{};
-          shiftRowsAheadByOneAndReplaceFirstRowWithColumnSum( numofPhases, numofPhases, localJacobian, work );
-          shiftElementsAheadByOneAndReplaceFirstElementWithSum( numofPhases, localResidual );
-        }
-
-        integer const numRows = numofPhases;
-
-        for( integer i = 0; i < numRows; ++i )
-        {
-          localRhs[localRow + i] += localResidual[i];
-          localMatrix.addToRow< serialAtomic >( localRow + i,
-                                                dofIndices,
-                                                localJacobian[i],
-                                                2 );
-        }
-
-      } );
-
+      immiscibleMultiphaseKernels::
+          AccumulationKernelFactory::
+          createAndLaunch< parallelDevicePolicy<> >( m_numPhases,
+                                                     dofManager.rankOffset(),
+                                                     m_useTotalMassEquation,
+                                                     dofKey,
+                                                     subRegion,
+                                                     fluid,
+                                                     solid,
+                                                     localMatrix,
+                                                     localRhs );     
+    
     } );
   } );
 
