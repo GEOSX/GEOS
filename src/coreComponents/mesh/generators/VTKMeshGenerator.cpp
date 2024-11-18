@@ -5,7 +5,7 @@
  * Copyright (c) 2016-2024 Lawrence Livermore National Security LLC
  * Copyright (c) 2018-2024 Total, S.A
  * Copyright (c) 2018-2024 The Board of Trustees of the Leland Stanford Junior University
- * Copyright (c) 2018-2024 Chevron
+ * Copyright (c) 2023-2024 Chevron
  * Copyright (c) 2019-     GEOS/GEOSX Contributors
  * All rights reserved
  *
@@ -19,12 +19,10 @@
 
 #include "VTKMeshGenerator.hpp"
 
-#include "VTKFaceBlockUtilities.hpp"
-#include "VTKMeshGeneratorTools.hpp"
-#include "CellBlockManager.hpp"
-
+#include "mesh/generators/VTKFaceBlockUtilities.hpp"
+#include "mesh/generators/VTKMeshGeneratorTools.hpp"
+#include "mesh/generators/CellBlockManager.hpp"
 #include "common/DataTypes.hpp"
-#include "common/GeosxMacros.hpp"
 
 #include <vtkXMLUnstructuredGridWriter.h>
 
@@ -80,11 +78,12 @@ VTKMeshGenerator::VTKMeshGenerator( string const & name,
 }
 
 void VTKMeshGenerator::fillCellBlockManager( CellBlockManager & cellBlockManager, array1d< int > const & GEOS_UNUSED_PARAM( partition ) )
+// void VTKMeshGenerator::fillCellBlockManager( CellBlockManager & cellBlockManager, SpatialPartition & partition ) // develop branch
 {
   // TODO refactor void MeshGeneratorBase::generateMesh( DomainPartition & domain )
   GEOS_MARK_FUNCTION;
 
-  MPI_Comm const comm = MPI_COMM_GEOSX;
+  MPI_Comm const comm = MPI_COMM_GEOS;
   vtkSmartPointer< vtkMultiProcessController > controller = vtk::getController();
   vtkMultiProcessController::SetGlobalController( controller );
 
@@ -100,7 +99,7 @@ void VTKMeshGenerator::fillCellBlockManager( CellBlockManager & cellBlockManager
     GEOS_LOG_LEVEL_RANK_0( 2, "  finding neighbor ranks..." );
     std::vector< vtkBoundingBox > boxes = vtk::exchangeBoundingBoxes( *m_vtkMesh, comm );
     std::vector< int > const neighbors = vtk::findNeighborRanks( std::move( boxes ) );
-    m_partition.setMetisNeighborList( std::move( neighbors ) );
+    partition.setMetisNeighborList( std::move( neighbors ) );
     GEOS_LOG_LEVEL_RANK_0( 2, "  done!" );
   }
   GEOS_LOG_RANK_0( GEOS_FMT( "{} '{}': generating GEOSX mesh data structure", catalogName(), getName() ) );

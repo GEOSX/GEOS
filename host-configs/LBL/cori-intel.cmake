@@ -26,9 +26,6 @@ set(MPIEXEC_NUMPROC_FLAG "-n" CACHE STRING "")
 
 set(GEOS_TPL_DIR "/global/project/projectdirs/m1411/GEOSX/tpls/install-cori-intel-release-22-07-20" CACHE PATH "" )
 
-set(GEOS_LINK_PREPEND_FLAG  "-Wl,--whole-archive"    CACHE STRING "" FORCE)
-set(GEOS_LINK_POSTPEND_FLAG "-Wl,--no-whole-archive" CACHE STRING "" FORCE)
-
 set(ENABLE_SPHINX_EXECUTABLE OFF CACHE BOOL "")
 set(ENABLE_UNCRUSTIFY OFF CACHE BOOL "")
 set(ENABLE_DOXYGEN OFF CACHE BOOL "")

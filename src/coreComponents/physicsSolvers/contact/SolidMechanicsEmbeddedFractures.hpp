@@ -5,7 +5,7 @@
  * Copyright (c) 2016-2024 Lawrence Livermore National Security LLC
  * Copyright (c) 2018-2024 Total, S.A
  * Copyright (c) 2018-2024 The Board of Trustees of the Leland Stanford Junior University
- * Copyright (c) 2018-2024 Chevron
+ * Copyright (c) 2023-2024 Chevron
  * Copyright (c) 2019-     GEOS/GEOSX Contributors
  * All rights reserved
  *
@@ -25,7 +25,6 @@
 
 namespace geos
 {
-using namespace constitutive;
 
 class SolidMechanicsEmbeddedFractures : public ContactSolverBase
 {
@@ -44,7 +43,7 @@ public:
     return "SolidMechanicsEmbeddedFractures";
   }
   /**
-   * @copydoc SolverBase::getCatalogName()
+   * @copydoc PhysicsSolverBase::getCatalogName()
    */
   string getCatalogName() const override { return catalogName(); }
 
@@ -118,6 +117,8 @@ public:
   struct viewKeyStruct : ContactSolverBase::viewKeyStruct
   {
     constexpr static char const * useStaticCondensationString() { return "useStaticCondensation"; }
+
+    constexpr static char const * contactPenaltyStiffnessString() { return "contactPenaltyStiffness"; }
   };
 
 protected:
@@ -134,6 +135,9 @@ private:
 
   /// decide whether to use static condensation or not
   integer m_useStaticCondensation;
+
+  // TODO: activate when solidMechanicsPenalty contact is used and this is removed from base solver.
+  // real64 m_contactPenaltyStiffness;
 
 };
 

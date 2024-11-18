@@ -5,7 +5,7 @@
  * Copyright (c) 2016-2024 Lawrence Livermore National Security LLC
  * Copyright (c) 2018-2024 Total, S.A
  * Copyright (c) 2018-2024 The Board of Trustees of the Leland Stanford Junior University
- * Copyright (c) 2018-2024 Chevron
+ * Copyright (c) 2023-2024 Chevron
  * Copyright (c) 2019-     GEOS/GEOSX Contributors
  * All rights reserved
  *
@@ -19,8 +19,6 @@
 #include "common/MpiWrapper.hpp"
 
 #include "common/DataTypes.hpp"
-
-#include "LvArray/src/tensorOps.hpp"
 
 #include <cmath>
 
@@ -97,7 +95,8 @@ InternalMeshGenerator::InternalMeshGenerator( string const & name, Group * const
   registerWrapper( viewKeyStruct::elementTypesString(), &m_elementType ).
     setInputFlag( InputFlags::REQUIRED ).
     setSizedFromParent( 0 ).
-    setDescription( "Element types of each mesh block" );
+    setDescription( GEOS_FMT( "Element types of each mesh block. Use \"C3D8\" for linear brick element. Possible values are: {}.",
+                              stringutilities::join( EnumStrings< ElementType >::get(), ", " ) ) );
 
   registerWrapper( viewKeyStruct::trianglePatternString(), &m_trianglePattern ).
     setApplyDefaultValue( 0 ).
@@ -559,6 +558,7 @@ static void getElemToNodesRelationInBox( ElementType const elementType,
 }
 
 void InternalMeshGenerator::fillCellBlockManager( CellBlockManager & cellBlockManager, array1d< int > const & partition )
+void InternalMeshGenerator::fillCellBlockManager( CellBlockManager & cellBlockManager, SpatialPartition & partition ) // develop branch
 {
   GEOS_MARK_FUNCTION;
   
@@ -578,6 +578,7 @@ void InternalMeshGenerator::fillCellBlockManager( CellBlockManager & cellBlockMa
     m_max[2] = m_vertices[2].back();
 
     m_partition.setSizes( m_min, m_max );
+    // partition.setSizes( m_min, m_max ); // develop branch
   }
 
   // Make sure that the node manager fields are initialized
@@ -615,6 +616,7 @@ void InternalMeshGenerator::fillCellBlockManager( CellBlockManager & cellBlockMa
       m_numElemsTotal[dim] += m_nElems[dim][block];
     }
     array1d< int > const parts = m_partition.getPartitions();
+    // array1d< int > const & parts = partition.getPartitions(); // develop branch
     GEOS_ERROR_IF( parts[dim] > m_numElemsTotal[dim], "Number of partitions in a direction should not exceed the number of elements in that direction" );
 
     elemCenterCoords[dim].resize( m_numElemsTotal[dim] );
@@ -627,7 +629,7 @@ void InternalMeshGenerator::fillCellBlockManager( CellBlockManager & cellBlockMa
                            elemCenterCoords[dim].data(),
                            m_numElemsTotal[dim],
                            MPI_MAX,
-                           MPI_COMM_GEOSX );
+                           MPI_COMM_GEOS );
   }
 
   // Find starting/ending index
@@ -642,6 +644,7 @@ void InternalMeshGenerator::fillCellBlockManager( CellBlockManager & cellBlockMa
     for( int k = 0; k < m_numElemsTotal[dim]; ++k )
     {
       if( m_partition.isCoordInPartition( elemCenterCoords[dim][k], dim ) )
+      // if( partition.isCoordInPartition( elemCenterCoords[dim][k], dim ) ) // develop branch
       {
         firstElemIndexInPartition[dim] = k;
         break;
@@ -653,6 +656,7 @@ void InternalMeshGenerator::fillCellBlockManager( CellBlockManager & cellBlockMa
       for( int k = firstElemIndexInPartition[dim]; k < m_numElemsTotal[dim]; ++k )
       {
         if( m_partition.isCoordInPartition( elemCenterCoords[dim][k], dim ) )
+        // if( partition.isCoordInPartition( elemCenterCoords[dim][k], dim ) ) // develop branch
         {
           lastElemIndexInPartition[dim] = k;
         }

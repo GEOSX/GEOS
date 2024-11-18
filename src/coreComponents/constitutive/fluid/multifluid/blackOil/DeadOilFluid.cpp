@@ -5,7 +5,7 @@
  * Copyright (c) 2016-2024 Lawrence Livermore National Security LLC
  * Copyright (c) 2018-2024 Total, S.A
  * Copyright (c) 2018-2024 The Board of Trustees of the Leland Stanford Junior University
- * Copyright (c) 2018-2024 Chevron
+ * Copyright (c) 2023-2024 Chevron
  * Copyright (c) 2019-     GEOS/GEOSX Contributors
  * All rights reserved
  *
@@ -32,6 +32,16 @@ DeadOilFluid::DeadOilFluid( string const & name,
   :
   BlackOilFluidBase( name, parent )
 {}
+
+void DeadOilFluid::postInputInitialization()
+{
+  BlackOilFluidBase::postInputInitialization();
+
+  integer const numComps = numFluidComponents();
+  GEOS_THROW_IF( numComps != 2 && numComps != 3,
+                 GEOS_FMT( "{}: this model only supports 2 or 3 components", getFullName() ),
+                 InputError );
+}
 
 void DeadOilFluid::readInputDataFromPVTFiles()
 {

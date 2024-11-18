@@ -5,7 +5,7 @@
  * Copyright (c) 2016-2024 Lawrence Livermore National Security LLC
  * Copyright (c) 2018-2024 Total, S.A
  * Copyright (c) 2018-2024 The Board of Trustees of the Leland Stanford Junior University
- * Copyright (c) 2018-2024 Chevron
+ * Copyright (c) 2023-2024 Chevron
  * Copyright (c) 2019-     GEOS/GEOSX Contributors
  * All rights reserved
  *
@@ -24,7 +24,7 @@
 #include "constitutive/ConstitutiveBase.hpp"
 #include "constitutive/relativePermeability/layouts.hpp"
 #include "common/GEOS_RAJA_Interface.hpp"
-#include "codingUtilities/EnumStrings.hpp"
+#include "common/format/EnumStrings.hpp"
 
 namespace geos
 {
@@ -58,7 +58,7 @@ public:
    */
 
   GEOS_HOST_DEVICE
-  arrayView3d< real64 const, relperm::USD_RELPERM > relperm() const
+  arrayView3d< real64 const, constitutive::relperm::USD_RELPERM > relperm() const
   { return m_phaseRelPerm; }
 
   /**
@@ -87,9 +87,9 @@ protected:
 
   RelativePermeabilityBaseUpdate( arrayView1d< integer const > const & phaseTypes,
                                   arrayView1d< integer const > const & phaseOrder,
-                                  arrayView3d< real64, relperm::USD_RELPERM > const & phaseRelPerm,
-                                  arrayView4d< real64, relperm::USD_RELPERM_DS > const & dPhaseRelPerm_dPhaseVolFrac,
-                                  arrayView3d< real64, relperm::USD_RELPERM > const & phaseTrappedVolFrac )
+                                  arrayView3d< real64, constitutive::relperm::USD_RELPERM > const & phaseRelPerm,
+                                  arrayView4d< real64, constitutive::relperm::USD_RELPERM_DS > const & dPhaseRelPerm_dPhaseVolFrac,
+                                  arrayView3d< real64, constitutive::relperm::USD_RELPERM > const & phaseTrappedVolFrac )
     : m_phaseTypes( phaseTypes ),
     m_phaseOrder( phaseOrder ),
     m_phaseRelPerm( phaseRelPerm ),
@@ -99,10 +99,10 @@ protected:
   arrayView1d< integer const > m_phaseTypes;
   arrayView1d< integer const > m_phaseOrder;
 
-  arrayView3d< real64, relperm::USD_RELPERM > m_phaseRelPerm;
-  arrayView4d< real64, relperm::USD_RELPERM_DS > m_dPhaseRelPerm_dPhaseVolFrac;
+  arrayView3d< real64, constitutive::relperm::USD_RELPERM > m_phaseRelPerm;
+  arrayView4d< real64, constitutive::relperm::USD_RELPERM_DS > m_dPhaseRelPerm_dPhaseVolFrac;
 
-  arrayView3d< real64, relperm::USD_RELPERM > m_phaseTrappedVolFrac;
+  arrayView3d< real64, constitutive::relperm::USD_RELPERM > m_phaseTrappedVolFrac;
 
 private:
   GEOS_HOST_DEVICE
@@ -157,10 +157,10 @@ public:
 
   arrayView1d< string const > phaseNames() const { return m_phaseNames; }
 
-  arrayView3d< real64 const, relperm::USD_RELPERM > phaseTrappedVolFraction() const { return m_phaseTrappedVolFrac; }
+  arrayView3d< real64 const, constitutive::relperm::USD_RELPERM > phaseTrappedVolFraction() const { return m_phaseTrappedVolFrac; }
 
-  arrayView3d< real64 const, relperm::USD_RELPERM > phaseRelPerm() const { return m_phaseRelPerm; }
-  arrayView4d< real64 const, relperm::USD_RELPERM_DS > dPhaseRelPerm_dPhaseVolFraction() const { return m_dPhaseRelPerm_dPhaseVolFrac; }
+  arrayView3d< real64 const, constitutive::relperm::USD_RELPERM > phaseRelPerm() const { return m_phaseRelPerm; }
+  arrayView4d< real64 const, constitutive::relperm::USD_RELPERM_DS > dPhaseRelPerm_dPhaseVolFraction() const { return m_dPhaseRelPerm_dPhaseVolFrac; }
 
   arrayView1d< integer const > getPhaseOrder() const { return m_phaseOrder; }
   virtual arrayView1d< real64 const > getPhaseMinVolumeFraction() const = 0;
@@ -213,10 +213,10 @@ protected:
 protected:
 
   // output quantities
-  array3d< real64, relperm::LAYOUT_RELPERM > m_phaseRelPerm;
-  array3d< real64, relperm::LAYOUT_RELPERM >  m_phaseRelPerm_n;
-  array4d< real64, relperm::LAYOUT_RELPERM_DS > m_dPhaseRelPerm_dPhaseVolFrac;
-  array3d< real64, relperm::LAYOUT_RELPERM > m_phaseTrappedVolFrac;
+  array3d< real64, constitutive::relperm::LAYOUT_RELPERM > m_phaseRelPerm;
+  array3d< real64, constitutive::relperm::LAYOUT_RELPERM >  m_phaseRelPerm_n;
+  array4d< real64, constitutive::relperm::LAYOUT_RELPERM_DS > m_dPhaseRelPerm_dPhaseVolFrac;
+  array3d< real64, constitutive::relperm::LAYOUT_RELPERM > m_phaseTrappedVolFrac;
 
 };
 

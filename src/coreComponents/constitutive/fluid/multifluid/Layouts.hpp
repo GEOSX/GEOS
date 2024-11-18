@@ -5,7 +5,7 @@
  * Copyright (c) 2016-2024 Lawrence Livermore National Security LLC
  * Copyright (c) 2018-2024 Total, S.A
  * Copyright (c) 2018-2024 The Board of Trustees of the Leland Stanford Junior University
- * Copyright (c) 2018-2024 Chevron
+ * Copyright (c) 2023-2024 Chevron
  * Copyright (c) 2019-     GEOS/GEOSX Contributors
  * All rights reserved
  *
@@ -30,10 +30,23 @@ namespace geos
 {
 namespace constitutive
 {
+
+namespace singlefluid
+{
+struct DerivativeOffset
+{
+  /// index of derivative wrt pressure
+  static integer constexpr dP = 0;
+  /// index of derivative wrt temperature
+  static integer constexpr dT = 1;
+
+};
+}
 namespace multifluid
 {
 
 /// indices of pressure, temperature, and composition derivatives
+// Fix me - if the order is changed the code crashes
 struct DerivativeOffset
 {
   /// index of derivative wrt pressure
@@ -42,6 +55,33 @@ struct DerivativeOffset
   static integer constexpr dT = 1;
   /// index of first derivative wrt compositions
   static integer constexpr dC = 2;
+};
+
+/// indices of pressure, temperature, and composition derivatives
+template< integer NC, integer IS_THERMAL >
+struct DerivativeOffsetC {};
+
+template< integer NC >
+struct DerivativeOffsetC< NC, 1 >
+{
+  /// index of derivative wrt pressure
+  static integer constexpr dP = 0;
+  /// index of derivative wrt temperature
+  static integer constexpr dT = dP + 1;
+  /// index of first derivative wrt compositions
+  static integer constexpr dC = dP+2;
+  /// number of derivatives
+  static integer constexpr nDer =  NC + 2;
+};
+template< integer NC >
+struct DerivativeOffsetC< NC, 0 >
+{
+  /// index of derivative wrt pressure
+  static integer constexpr dP = 0;
+  /// index of first derivative wrt compositions
+  static integer constexpr dC = dP+1;
+  /// number of derivatives
+  static integer constexpr nDer =  NC + 1;
 };
 
 #if defined( GEOS_USE_DEVICE )

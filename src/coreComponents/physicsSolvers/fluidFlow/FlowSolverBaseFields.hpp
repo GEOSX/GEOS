@@ -5,7 +5,7 @@
  * Copyright (c) 2016-2024 Lawrence Livermore National Security LLC
  * Copyright (c) 2018-2024 Total, S.A
  * Copyright (c) 2018-2024 The Board of Trustees of the Leland Stanford Junior University
- * Copyright (c) 2018-2024 Chevron
+ * Copyright (c) 2023-2024 Chevron
  * Copyright (c) 2019-     GEOS/GEOSX Contributors
  * All rights reserved
  *
@@ -272,6 +272,14 @@ DECLARE_FIELD( energy_n,
                NOPLOT,
                WRITE_AND_READ,
                "Energy at the previous converged time step" );
+
+DECLARE_FIELD( massCreated,
+               "massCreated",
+               array1d< real64 >,
+               0,
+               LEVEL_1,
+               WRITE_AND_READ,
+               "The amount of remaining mass that was introduced when the SurfaceElement was created." );
 
 }
 

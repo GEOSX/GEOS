@@ -5,7 +5,7 @@
  * Copyright (c) 2016-2024 Lawrence Livermore National Security LLC
  * Copyright (c) 2018-2024 Total, S.A
  * Copyright (c) 2018-2024 The Board of Trustees of the Leland Stanford Junior University
- * Copyright (c) 2018-2024 Chevron
+ * Copyright (c) 2023-2024 Chevron
  * Copyright (c) 2019-     GEOS/GEOSX Contributors
  * All rights reserved
  *
@@ -203,7 +203,7 @@ localIndex EmbeddedSurfaceNodeManager::packNewNodesGlobalMapsImpl( buffer_unit_t
   // this doesn't link without the string()...no idea why.
   packedSize += bufferOps::Pack< DO_PACKING >( buffer, string( viewKeyStruct::localToGlobalMapString() ) );
 
-  int const rank = MpiWrapper::commRank( MPI_COMM_GEOSX );
+  int const rank = MpiWrapper::commRank( MPI_COMM_GEOS );
   packedSize += bufferOps::Pack< DO_PACKING >( buffer, rank );
 
   localIndex const numPackedIndices = packList.size();
@@ -250,7 +250,7 @@ localIndex EmbeddedSurfaceNodeManager::unpackNewNodesGlobalMaps( buffer_unit_typ
   unpackedSize += bufferOps::Unpack( buffer, localToGlobalString );
   GEOS_ERROR_IF( localToGlobalString != viewKeyStruct::localToGlobalMapString(), "ObjectManagerBase::unpack(): label incorrect" );
 
-  int const rank = MpiWrapper::commRank( MPI_COMM_GEOSX );
+  int const rank = MpiWrapper::commRank( MPI_COMM_GEOS );
   int sendingRank;
   unpackedSize += bufferOps::Unpack( buffer, sendingRank );
 

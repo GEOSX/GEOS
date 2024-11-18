@@ -5,7 +5,7 @@
  * Copyright (c) 2016-2024 Lawrence Livermore National Security LLC
  * Copyright (c) 2018-2024 Total, S.A
  * Copyright (c) 2018-2024 The Board of Trustees of the Leland Stanford Junior University
- * Copyright (c) 2018-2024 Chevron
+ * Copyright (c) 2023-2024 Chevron
  * Copyright (c) 2019-     GEOS/GEOSX Contributors
  * All rights reserved
  *
@@ -22,6 +22,7 @@
 
 #include "common/DataTypes.hpp"
 #include "common/PhysicsConstants.hpp"
+#include "common/format/Format.hpp"
 
 namespace geos
 {
@@ -95,6 +96,9 @@ enum Unit : integer
 
   /// Mole rate in mol/s
   MoleRate,
+
+  /// Transmissibility in m2/s
+  Transmissibility,
 };
 
 
@@ -106,21 +110,22 @@ constexpr inline std::string_view getDescription( Unit unit )
 {
   switch( unit )
   {
-    default:              return "unknown [?]";
-    case Dimensionless:   return "dimensionless [1]";
-    case Pressure:        return "pressure [Pa]";
-    case Temperature:     return "temperature [K]";
-    case TemperatureInC:  return "temperature [C]";
-    case Distance:        return "distance [m]";
-    case Time:            return "time [s]";
-    case Viscosity:       return "viscosity [Pa*s]";
-    case Enthalpy:        return "enthalpy [J/kg]";
-    case Density:         return "density [kg/m3]";
-    case Solubility:      return "solubility [g/L]";
-    case Mass:            return "mass [kg]";
-    case Mole:            return "mole [mol]";
-    case MassRate:        return "mass rate [kg/s]";
-    case MoleRate:        return "mole rate [mol/s]";
+    default:                return "unknown [?]";
+    case Dimensionless:     return "dimensionless [1]";
+    case Pressure:          return "pressure [Pa]";
+    case Temperature:       return "temperature [K]";
+    case TemperatureInC:    return "temperature [C]";
+    case Distance:          return "distance [m]";
+    case Time:              return "time [s]";
+    case Viscosity:         return "viscosity [Pa*s]";
+    case Enthalpy:          return "enthalpy [J/kg]";
+    case Density:           return "density [kg/m3]";
+    case Solubility:        return "solubility [g/L]";
+    case Mass:              return "mass [kg]";
+    case Mole:              return "mole [mol]";
+    case MassRate:          return "mass rate [kg/s]";
+    case MoleRate:          return "mole rate [mol/s]";
+    case Transmissibility:  return "transmissibility [(Pa*s*rm3/s)/Pa]";
   }
 }
 
@@ -132,21 +137,22 @@ constexpr inline std::string_view getSymbol( Unit unit )
 {
   switch( unit )
   {
-    default:              return "?";
-    case Dimensionless:   return "1";
-    case Pressure:        return "Pa";
-    case Temperature:     return "K";
-    case TemperatureInC:  return "C";
-    case Distance:        return "m";
-    case Time:            return "s";
-    case Viscosity:       return "Pa*s";
-    case Enthalpy:        return "J/kg";
-    case Density:         return "kg/m3";
-    case Solubility:      return "g/L";
-    case Mass:            return "kg";
-    case Mole:            return "mol";
-    case MassRate:        return "kg/s";
-    case MoleRate:        return "mol/s";
+    default:                return "?";
+    case Dimensionless:     return "1";
+    case Pressure:          return "Pa";
+    case Temperature:       return "K";
+    case TemperatureInC:    return "C";
+    case Distance:          return "m";
+    case Time:              return "s";
+    case Viscosity:         return "Pa*s";
+    case Enthalpy:          return "J/kg";
+    case Density:           return "kg/m3";
+    case Solubility:        return "g/L";
+    case Mass:              return "kg";
+    case Mole:              return "mol";
+    case MassRate:          return "kg/s";
+    case MoleRate:          return "mol/s";
+    case Transmissibility:  return "(Pa*s*rm3/s)/Pa";
   }
 }
 
@@ -161,27 +167,28 @@ inline string formatValue( real64 value, Unit unit )
 {
   switch( unit )
   {
-    default:              return GEOS_FMT( "value of {} [?]", value );
-    case Dimensionless:   return GEOS_FMT( "value of {} [1]", value );
-    case Pressure:        return GEOS_FMT( "pressure of {} [Pa]", value );
-    case Temperature:     return GEOS_FMT( "temperature of {} [K]", value );
-    case TemperatureInC:  return GEOS_FMT( "temperature of {} [K]", convertCToK( value ) );
-    case Distance:        return GEOS_FMT( "distance of {} [s]", value );
-    case Time:            return GEOS_FMT( "time of {} [s]", value );
-    case Viscosity:       return GEOS_FMT( "viscosity of {} [Pa*s]", value );
-    case Enthalpy:        return GEOS_FMT( "enthalpy of {} [J/kg]", value );
-    case Density:         return GEOS_FMT( "density of {} [kg/m3]", value );
-    case Solubility:      return GEOS_FMT( "solubility of {} [g/L]", value );
-    case Mass:            return GEOS_FMT( "mass of {} [kg]", value );
-    case Mole:            return GEOS_FMT( "mole of {} [mol]", value );
-    case MassRate:        return GEOS_FMT( "mass rate of {} [kg/s]", value );
-    case MoleRate:        return GEOS_FMT( "mole rate of {} [mol/s]", value );
+    default:                return GEOS_FMT( "value of {} [?]", value );
+    case Dimensionless:     return GEOS_FMT( "value of {} [1]", value );
+    case Pressure:          return GEOS_FMT( "pressure of {} [Pa]", value );
+    case Temperature:       return GEOS_FMT( "temperature of {} [K]", value );
+    case TemperatureInC:    return GEOS_FMT( "temperature of {} [K]", convertCToK( value ) );
+    case Distance:          return GEOS_FMT( "distance of {} [s]", value );
+    case Time:              return GEOS_FMT( "time of {} [s]", value );
+    case Viscosity:         return GEOS_FMT( "viscosity of {} [Pa*s]", value );
+    case Enthalpy:          return GEOS_FMT( "enthalpy of {} [J/kg]", value );
+    case Density:           return GEOS_FMT( "density of {} [kg/m3]", value );
+    case Solubility:        return GEOS_FMT( "solubility of {} [g/L]", value );
+    case Mass:              return GEOS_FMT( "mass of {} [kg]", value );
+    case Mole:              return GEOS_FMT( "mole of {} [mol]", value );
+    case MassRate:          return GEOS_FMT( "mass rate of {} [kg/s]", value );
+    case MoleRate:          return GEOS_FMT( "mole rate of {} [mol/s]", value );
+    case Transmissibility:  return GEOS_FMT( "transmissibility of {} [(Pa*s*rm3/s)/Pa]", value );
   }
 }
 
 
 /// Clock in use in GEOS to manipulate system times.
-using SystemClock = std::chrono::system_clock;
+using SystemClock = std::chrono::high_resolution_clock;
 
 /// One year = 365.2425 days (= 146097 / 400) following the Gregorian calendar and the C++ convention.
 using YearDaysRatio = std::ratio< 146097, 400 >;
@@ -263,6 +270,21 @@ struct TimeFormatInfo
   string toSecondsString() const;
 };
 
+template< typename DURATION >
+TimeFormatInfo TimeFormatInfo::fromDuration( DURATION const value )
+{
+  using namespace std::chrono;
+
+  auto const totalYears = duration_cast< units::Years >( value );
+  auto const daysOut = duration_cast< units::Days >( value - totalYears );
+  auto const hoursOut = duration_cast< hours >( value - totalYears - daysOut );
+  auto const minutesOut = duration_cast< minutes >( value - totalYears - daysOut - hoursOut );
+  auto const secondsOut = duration_cast< seconds >( value - totalYears - daysOut - hoursOut - minutesOut );
+
+  return TimeFormatInfo( duration< double >( value ).count(), int( totalYears.count() ),
+                         int( daysOut.count() ), int( hoursOut.count() ),
+                         int( minutesOut.count() ), int( secondsOut.count() ) );
+}
 
 } // end namespace units
 

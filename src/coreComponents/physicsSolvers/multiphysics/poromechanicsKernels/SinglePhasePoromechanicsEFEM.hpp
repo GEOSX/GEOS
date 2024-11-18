@@ -5,7 +5,7 @@
  * Copyright (c) 2016-2024 Lawrence Livermore National Security LLC
  * Copyright (c) 2018-2024 Total, S.A
  * Copyright (c) 2018-2024 The Board of Trustees of the Leland Stanford Junior University
- * Copyright (c) 2018-2024 Chevron
+ * Copyright (c) 2023-2024 Chevron
  * Copyright (c) 2019-     GEOS/GEOSX Contributors
  * All rights reserved
  *
@@ -20,28 +20,14 @@
 #ifndef GEOS_PHYSICSSOLVERS_MULTIPHYSICS_POROMECHANICSKERNELS_SINGLEPHASEPOROMECHANICSEFEM_HPP_
 #define GEOS_PHYSICSSOLVERS_MULTIPHYSICS_POROMECHANICSKERNELS_SINGLEPHASEPOROMECHANICSEFEM_HPP_
 
-#include "constitutive/contact/ContactBase.hpp"
 #include "finiteElement/kernelInterface/ImplicitKernelBase.hpp"
+#include "codingUtilities/Utilities.hpp"
 
 namespace geos
 {
 
 namespace poromechanicsEFEMKernels
 {
-
-/**
- * @brief Internal struct to provide no-op defaults used in the inclusion
- *   of lambda functions into kernel component functions.
- * @struct NoOpFunc
- */
-struct NoOpFunc
-{
-  template< typename ... Ts >
-  GEOS_HOST_DEVICE
-  constexpr void
-  operator()( Ts && ... ) const {}
-};
-
 
 template< typename SUBREGION_TYPE,
           typename CONSTITUTIVE_TYPE,
@@ -129,6 +115,7 @@ public:
       localKww{ { 0.0 } },
       localKwu{ { 0.0 } },
       localKuw{ { 0.0 } },
+      localEqMStress { 0.0 },
       localKwpm{ 0.0 },
       localKwpf( 0.0 ),
       wLocal(),
@@ -167,6 +154,9 @@ public:
 
     /// C-array storage for the element local Kuw matrix.
     real64 localKuw[numUdofs][numWdofs];
+
+    /// C-array storage for the element local EqM*effStress vector.
+    real64 localEqMStress[numWdofs];
 
     /// C-array storage for the element local Kwpm matrix.
     real64 localKwpm[numWdofs];
@@ -221,12 +211,12 @@ public:
   void setup( localIndex const k,
               StackVariables & stack ) const;
 
-  template< typename FUNC = poromechanicsEFEMKernels::NoOpFunc >
+  template< typename FUNC = NoOpFunc >
   GEOS_HOST_DEVICE
   void quadraturePointKernel( localIndex const k,
                               localIndex const q,
                               StackVariables & stack,
-                              FUNC && kernelOp = poromechanicsEFEMKernels::NoOpFunc{} ) const;
+                              FUNC && kernelOp = NoOpFunc{} ) const;
 
   /**
    * @copydoc geos::finiteElement::ImplicitKernelBase::complete
@@ -247,6 +237,9 @@ protected:
 
   arrayView2d< real64 const > const m_w;
 
+  /// The effective stress at the current time
+  arrayView3d< real64 const, solid::STRESS_USD > m_effStress;
+
   /// The global degree of freedom number
   arrayView1d< globalIndex const > const m_matrixPresDofNumber;
 
@@ -262,6 +255,9 @@ protected:
 
   /// The rank-global fluid pressure array.
   arrayView1d< real64 const > const m_matrixPressure;
+
+  /// The rank-global fluid pressure array.
+  arrayView1d< real64 const > const m_fracturePressure;
 
   /// The rank-global delta-fluid pressure array.
   arrayView2d< real64 const > const m_porosity_n;
@@ -328,13 +324,12 @@ struct StateUpdateKernel
    * @param[out] deltaVolume the change in volume
    * @param[out] aperture the aperture
    * @param[out] hydraulicAperture the effecture aperture
-   * @param[out] fractureTraction the fracture traction
-   * @param[out] dFractureTraction_dPressure the derivative of the fracture traction wrt pressure
+   * @param[out] fractureContactTraction the fracture contact traction
    */
-  template< typename POLICY, typename POROUS_WRAPPER >
+  template< typename POLICY, typename POROUS_WRAPPER, typename CONTACT_WRAPPER >
   static void
   launch( localIndex const size,
-          constitutive::ContactBase::KernelWrapper const & contactWrapper,
+          CONTACT_WRAPPER const & contactWrapper,
           POROUS_WRAPPER const & porousMaterialWrapper,
           arrayView2d< real64 const > const & dispJump,
           arrayView1d< real64 const > const & pressure,
@@ -344,32 +339,31 @@ struct StateUpdateKernel
           arrayView1d< real64 > const & aperture,
           arrayView1d< real64 const > const & oldHydraulicAperture,
           arrayView1d< real64 > const & hydraulicAperture,
-          arrayView2d< real64 > const & fractureTraction,
-          arrayView1d< real64 > const & dFractureTraction_dPressure )
+          arrayView2d< real64 > const & fractureEffectiveTraction )
   {
     forAll< POLICY >( size, [=] GEOS_HOST_DEVICE ( localIndex const k )
     {
       // update aperture to be equal to the normal displacement jump
       aperture[k] = dispJump[k][0]; // the first component of the jump is the normal one.
 
-      real64 dHydraulicAperture_dNormalJump = 0;
+      real64 dHydraulicAperture_dNormalJump = 0.0;
+      real64 dHydraulicAperture_dNormalTraction = 0.0;
       hydraulicAperture[k] = contactWrapper.computeHydraulicAperture( aperture[k],
-                                                                      dHydraulicAperture_dNormalJump );
+                                                                      fractureEffectiveTraction[k][0],
+                                                                      dHydraulicAperture_dNormalJump,
+                                                                      dHydraulicAperture_dNormalTraction );
 
       deltaVolume[k] = hydraulicAperture[k] * area[k] - volume[k];
 
-      // traction on the fracture to include the pressure contribution
-      contactWrapper.addPressureToTraction( pressure[k],
-                                            fractureTraction[k],
-                                            dFractureTraction_dPressure[k] );
-
       real64 const jump[3] = LVARRAY_TENSOROPS_INIT_LOCAL_3 ( dispJump[k] );
-      real64 const traction[3] = LVARRAY_TENSOROPS_INIT_LOCAL_3 ( fractureTraction[k] );
+      real64 const effectiveTraction[3] = LVARRAY_TENSOROPS_INIT_LOCAL_3 ( fractureEffectiveTraction[k] );
 
+      // all perm update models below should need effective traction instead of total traction
+      // (total traction is combined forces of fluid pressure and effective traction)
       porousMaterialWrapper.updateStateFromPressureApertureJumpAndTraction( k, 0, pressure[k],
                                                                             oldHydraulicAperture[k], hydraulicAperture[k],
                                                                             dHydraulicAperture_dNormalJump,
-                                                                            jump, traction );
+                                                                            jump, effectiveTraction );
 
     } );
   }

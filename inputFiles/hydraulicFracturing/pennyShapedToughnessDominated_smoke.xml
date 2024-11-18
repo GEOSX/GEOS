@@ -15,7 +15,6 @@
       surfaceGeneratorName="SurfaceGen"
       logLevel="1"
       targetRegions="{ Fracture }"
-      contactRelationName="fractureContact"
       maxNumResolves="1"
       initialDt="0.01">
       <NonlinearSolverParameters
@@ -52,12 +51,12 @@
     <InternalMesh 
       name="mesh1"
       elementTypes="{C3D8}"
-      xCoords="{ -25, 0, 25 }"
-      yCoords="{ 0, 10, 30 }"
-      zCoords="{ 0, 10, 30 }"
-      nx="{ 5, 5 }"
-      ny="{ 20, 5 }"
-      nz="{ 20, 5 }"
+      xCoords="{ -10, 0, 10 }"
+      yCoords="{ 0, 5, 10 }"
+      zCoords="{ 0, 5, 10 }"
+      nx="{ 3, 3 }"
+      ny="{ 10, 2 }"
+      nz="{ 10, 2 }"
       xBias="{ 0.6, -0.6 }"
       yBias="{ 0.0, -0.6 }"
       zBias="{ 0.0, -0.6 }"
@@ -82,7 +81,8 @@
   </Geometry>
 
   <Events
-    maxTime="1.0">
+    maxTime="1.0"
+    maxCycle="10">
     <SoloEvent
       name="preFracture"
       target="/Solvers/SurfaceGen"/>
@@ -94,17 +94,20 @@
 
     <PeriodicEvent
       name="sourcePressureCollection"
-      beginTime="0.1"
+      beginTime="0.01"
+      targetExactTimestep="0"
       target="/Tasks/sourcePressureCollection"/>
 
     <PeriodicEvent
       name="sourceHydraulicApertureCollection"
-      beginTime="0.1"
+      beginTime="0.01"
+      targetExactTimestep="0"
       target="/Tasks/sourceHydraulicApertureCollection"/>
 
     <PeriodicEvent
       name="curveOutput"
-      timeFrequency="0.5"
+      beginTime="0.01"
+      timeFrequency="0.01"
       targetExactTimestep="0"
       target="/Outputs/curveOutput"/>
 
@@ -114,7 +117,7 @@
 
     <PeriodicEvent 
       name="restarts"
-      timeFrequency="0.5"
+      cycleFrequency="5"
       targetExactTimestep="0"
       target="/Outputs/restartOutput" />
   </Events>

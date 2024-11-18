@@ -5,7 +5,7 @@
  * Copyright (c) 2016-2024 Lawrence Livermore National Security LLC
  * Copyright (c) 2018-2024 Total, S.A
  * Copyright (c) 2018-2024 The Board of Trustees of the Leland Stanford Junior University
- * Copyright (c) 2018-2024 Chevron
+ * Copyright (c) 2023-2024 Chevron
  * Copyright (c) 2019-     GEOS/GEOSX Contributors
  * All rights reserved
  *
@@ -29,8 +29,6 @@
 
 namespace geos
 {
-
-using namespace fields;
 
 /// Namespace to contain the acoustic wave kernels.
 namespace acousticWaveEquationSEMKernels
@@ -106,9 +104,9 @@ public:
           finiteElementSpace,
           inputConstitutiveType ),
     m_nodeCoords( nodeManager.getField< fields::referencePosition32 >() ),
-    m_p_n( nodeManager.getField< acousticfields::Pressure_n >() ),
-    m_stiffnessVector( nodeManager.getField< acousticfields::StiffnessVector >() ),
-    m_density( elementSubRegion.template getField< acousticfields::AcousticDensity >() ),
+    m_p_n( nodeManager.getField< fields::acousticfields::Pressure_n >() ),
+    m_stiffnessVector( nodeManager.getField< fields::acousticfields::StiffnessVector >() ),
+    m_density( elementSubRegion.template getField< fields::acousticfields::AcousticDensity >() ),
     m_dt( dt )
   {
     GEOS_UNUSED_VAR( edgeManager );

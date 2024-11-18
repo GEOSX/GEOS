@@ -5,7 +5,7 @@
  * Copyright (c) 2016-2024 Lawrence Livermore National Security LLC
  * Copyright (c) 2018-2024 Total, S.A
  * Copyright (c) 2018-2024 The Board of Trustees of the Leland Stanford Junior University
- * Copyright (c) 2018-2024 Chevron
+ * Copyright (c) 2023-2024 Chevron
  * Copyright (c) 2019-     GEOS/GEOSX Contributors
  * All rights reserved
  *
@@ -21,7 +21,6 @@
 #include "mesh/mpiCommunications/SpatialPartition.hpp"
 #include "generators/CellBlockManagerABC.hpp"
 #include "generators/MeshGeneratorBase.hpp"
-#include "particleGenerators/ParticleMeshGeneratorBase.hpp"
 #include "mesh/mpiCommunications/CommunicationTools.hpp"
 #include "common/TimingMacros.hpp"
 
@@ -87,6 +86,7 @@ void MeshManager::generateMeshes( DomainPartition & domain )
   {
     MeshBody & meshBody = domain.getMeshBodies().registerGroup< MeshBody >( meshGen.getName() );
     meshBody.createMeshLevel( 0 );
+
     // SpatialPartition & partition = dynamic_cast< SpatialPartition & >(domain.getReference< PartitionBase >( keys::partitionManager ) );
     SpatialPartition & partition = dynamic_cast< SpatialPartition & >( domain.getGroup( domain.groupKeys.partitionManager ) );
 

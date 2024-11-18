@@ -5,7 +5,7 @@
  * Copyright (c) 2016-2024 Lawrence Livermore National Security LLC
  * Copyright (c) 2018-2024 Total, S.A
  * Copyright (c) 2018-2024 The Board of Trustees of the Leland Stanford Junior University
- * Copyright (c) 2018-2024 Chevron
+ * Copyright (c) 2023-2024 Chevron
  * Copyright (c) 2019-     GEOS/GEOSX Contributors
  * All rights reserved
  *
@@ -709,6 +709,18 @@ protected:
 
   /// Post-process XML input
   virtual void postInputInitialization() override;
+
+  /// The current stress at a quadrature point (i.e. at timestep n, global newton iteration k)
+  array3d< real64, solid::STRESS_PERMUTATION > m_newStress;
+
+  /// The previous stress at a quadrature point (i.e. at timestep (n-1))
+  array3d< real64, solid::STRESS_PERMUTATION > m_oldStress;
+
+  /// The material density at a quadrature point.
+  array2d< real64 > m_density;
+
+  /// The default density for new allocations.
+  real64 m_defaultDensity = 0;
 
   /// The thermal expansion coefficient for each upper level dimension (i.e. cell) of *this
   array1d< real64 > m_thermalExpansionCoefficient;

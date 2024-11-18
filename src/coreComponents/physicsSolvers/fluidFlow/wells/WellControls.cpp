@@ -5,7 +5,7 @@
  * Copyright (c) 2016-2024 Lawrence Livermore National Security LLC
  * Copyright (c) 2018-2024 Total, S.A
  * Copyright (c) 2018-2024 The Board of Trustees of the Leland Stanford Junior University
- * Copyright (c) 2018-2024 Chevron
+ * Copyright (c) 2023-2024 Chevron
  * Copyright (c) 2019-     GEOS/GEOSX Contributors
  * All rights reserved
  *
@@ -21,6 +21,8 @@
 #include "WellConstants.hpp"
 #include "dataRepository/InputFlags.hpp"
 #include "functions/FunctionManager.hpp"
+#include "physicsSolvers/fluidFlow/wells/LogLevelsInfo.hpp"
+
 
 namespace geos
 {
@@ -340,8 +342,8 @@ void WellControls::postInputInitialization()
   else if( m_targetBHP <= 0.0 && m_targetBHPTableName.empty() )
   {
     m_targetBHP = isProducer() ? WellConstants::defaultProducerBHP : WellConstants::defaultInjectorBHP;
-    GEOS_LOG_LEVEL_RANK_0( 1, "WellControls " << getDataContext() << ": Setting " << viewKeyStruct::targetBHPString() << " to default value "
-                                              << m_targetBHP << "." );
+    GEOS_LOG_LEVEL_INFO_RANK_0( logInfo::WellControl,
+                                GEOS_FMT( "WellControls {}: Setting {}  to default value {}", getDataContext(), viewKeyStruct::targetBHPString(), m_targetBHP ));
   }
 
   // 6.2) Check incoherent information
@@ -383,7 +385,7 @@ void WellControls::postInputInitialization()
     m_targetBHPTable = &(functionManager.getGroup< TableFunction const >( m_targetBHPTableName ));
 
     GEOS_THROW_IF( m_targetBHPTable->getInterpolationMethod() != TableFunction::InterpolationType::Lower,
-                   "WellControls " << getDataContext() << ": The interpolation method for the time-dependent rate table "
+                   "WellControls " << getDataContext() << ": The interpolation method for the time-dependent BHP table "
                                    << m_targetBHPTable->getName() << " should be TableFunction::InterpolationType::Lower",
                    InputError );
   }
@@ -400,7 +402,7 @@ void WellControls::postInputInitialization()
     m_targetTotalRateTable = &(functionManager.getGroup< TableFunction const >( m_targetTotalRateTableName ));
 
     GEOS_THROW_IF( m_targetTotalRateTable->getInterpolationMethod() != TableFunction::InterpolationType::Lower,
-                   "WellControls " << getDataContext() << ": The interpolation method for the time-dependent rate table "
+                   "WellControls " << getDataContext() << ": The interpolation method for the time-dependent total rate table "
                                    << m_targetTotalRateTable->getName() << " should be TableFunction::InterpolationType::Lower",
                    InputError );
   }
@@ -417,7 +419,7 @@ void WellControls::postInputInitialization()
     m_targetPhaseRateTable = &(functionManager.getGroup< TableFunction const >( m_targetPhaseRateTableName ));
 
     GEOS_THROW_IF( m_targetPhaseRateTable->getInterpolationMethod() != TableFunction::InterpolationType::Lower,
-                   "WellControls " << getDataContext() << ": The interpolation method for the time-dependent rate table "
+                   "WellControls " << getDataContext() << ": The interpolation method for the time-dependent phase rate table "
                                    << m_targetPhaseRateTable->getName() << " should be TableFunction::InterpolationType::Lower",
                    InputError );
   }
@@ -455,8 +457,8 @@ void WellControls::postInputInitialization()
     m_statusTable = &(functionManager.getGroup< TableFunction const >( m_statusTableName ));
 
     GEOS_THROW_IF( m_statusTable->getInterpolationMethod() != TableFunction::InterpolationType::Lower,
-                   "WellControls " << getDataContext() << ": The interpolation method for the time-dependent rate table "
-                                   << m_targetPhaseRateTable->getName() << " should be TableFunction::InterpolationType::Lower",
+                   "WellControls " << getDataContext() << ": The interpolation method for the time-dependent status table "
+                                   << m_statusTable->getName() << " should be TableFunction::InterpolationType::Lower",
                    InputError );
   }
 }

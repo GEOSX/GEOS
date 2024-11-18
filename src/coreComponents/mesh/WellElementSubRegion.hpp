@@ -5,7 +5,7 @@
  * Copyright (c) 2016-2024 Lawrence Livermore National Security LLC
  * Copyright (c) 2018-2024 Total, S.A
  * Copyright (c) 2018-2024 The Board of Trustees of the Leland Stanford Junior University
- * Copyright (c) 2018-2024 Chevron
+ * Copyright (c) 2023-2024 Chevron
  * Copyright (c) 2019-     GEOS/GEOSX Contributors
  * All rights reserved
  *
@@ -127,6 +127,14 @@ public:
     return m_topWellElementIndex;
   }
 
+  /**
+   * @brief Get for the top element index.
+   * @return local index of well's top element or -1 if it is not on current rank
+   */
+  arrayView1d< globalIndex const >  getGlobalWellElementIndex() const
+  {
+    return m_globalWellElementIndex;
+  }
   /**
    * @brief Set the name of the WellControls object of this well.
    * @param[in] name the name of the WellControls object
@@ -393,6 +401,9 @@ private:
 
   /// Element-to-node relation is one to one relation.
   NodeMapType m_toNodesRelation;
+
+  /// Local indices of the next well element (used in solvers)
+  array1d< globalIndex > m_globalWellElementIndex;
 
   /// Local indices of the next well element (used in solvers)
   array1d< localIndex > m_nextWellElementIndex;

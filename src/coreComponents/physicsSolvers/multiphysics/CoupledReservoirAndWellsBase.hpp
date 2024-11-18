@@ -5,7 +5,7 @@
  * Copyright (c) 2016-2024 Lawrence Livermore National Security LLC
  * Copyright (c) 2018-2024 Total, S.A
  * Copyright (c) 2018-2024 The Board of Trustees of the Leland Stanford Junior University
- * Copyright (c) 2018-2024 Chevron
+ * Copyright (c) 2023-2024 Chevron
  * Copyright (c) 2019-     GEOS/GEOSX Contributors
  * All rights reserved
  *
@@ -48,7 +48,7 @@ namespace coupledReservoirAndWellsInternal
  * @param wellElemDofName name of the well element dofs
  */
 void
-addCouplingNumNonzeros( SolverBase const * const solver,
+addCouplingNumNonzeros( PhysicsSolverBase const * const solver,
                         DomainPartition & domain,
                         DofManager & dofManager,
                         arrayView1d< localIndex > const & rowLengths,
@@ -64,7 +64,7 @@ addCouplingNumNonzeros( SolverBase const * const solver,
  * @param wellSolver the well solver
  * @param domain the physical domain object
  */
-bool validateWellPerforations( SolverBase const * const reservoirSolver,
+bool validateWellPerforations( PhysicsSolverBase const * const reservoirSolver,
                                WellSolverBase const * const wellSolver,
                                DomainPartition const & domain );
 
@@ -169,10 +169,10 @@ public:
     localMatrix.setName( this->getName() + "/localMatrix" );
 
     rhs.setName( this->getName() + "/rhs" );
-    rhs.create( dofManager.numLocalDofs(), MPI_COMM_GEOSX );
+    rhs.create( dofManager.numLocalDofs(), MPI_COMM_GEOS );
 
     solution.setName( this->getName() + "/solution" );
-    solution.create( dofManager.numLocalDofs(), MPI_COMM_GEOSX );
+    solution.create( dofManager.numLocalDofs(), MPI_COMM_GEOS );
   }
 
   /**@}*/
@@ -254,8 +254,11 @@ public:
   void enableFixedStressPoromechanicsUpdate()
   { reservoirSolver()->enableFixedStressPoromechanicsUpdate(); }
 
-  void setKeepFlowVariablesConstantDuringInitStep( bool const keepFlowVariablesConstantDuringInitStep )
-  { reservoirSolver()->setKeepFlowVariablesConstantDuringInitStep( keepFlowVariablesConstantDuringInitStep ); }
+  void setKeepVariablesConstantDuringInitStep( bool const keepVariablesConstantDuringInitStep )
+  {
+    reservoirSolver()->setKeepVariablesConstantDuringInitStep( keepVariablesConstantDuringInitStep );
+    wellSolver()->setKeepVariablesConstantDuringInitStep( keepVariablesConstantDuringInitStep );
+  }
 
   virtual void saveSequentialIterationState( DomainPartition & domain ) override
   { reservoirSolver()->saveSequentialIterationState( domain ); }
@@ -364,12 +367,12 @@ private:
           forAll< serialPolicy >( perforationData.size(), [=] ( localIndex const iperf )
           {
             GEOS_UNUSED_VAR( iperf ); // unused if geos_error_if is nulld
-            GEOS_LOG_RANK( GEOS_FMT( "Perforation at ({},{},{}); perforated element center: ({},{},{}); transmissibility: {} Pa.s.rm^3/s/Pa",
-                                     perfLocation[iperf][0], perfLocation[iperf][1], perfLocation[iperf][2],
+            GEOS_LOG_RANK( GEOS_FMT( "{}: perforation at ({},{},{}), perforated element center = ({},{},{}), transmissibility = {} [{}]",
+                                     this->getName(), perfLocation[iperf][0], perfLocation[iperf][1], perfLocation[iperf][2],
                                      elemCenter[resElemRegion[iperf]][resElemSubRegion[iperf]][resElemIndex[iperf]][0],
                                      elemCenter[resElemRegion[iperf]][resElemSubRegion[iperf]][resElemIndex[iperf]][1],
                                      elemCenter[resElemRegion[iperf]][resElemSubRegion[iperf]][resElemIndex[iperf]][2],
-                                     perfTrans[iperf] ) );
+                                     perfTrans[iperf], getSymbol( units::Transmissibility ) ) );
           } );
         }
       } );

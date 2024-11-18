@@ -16,7 +16,7 @@
       logLevel="5"  
       file="../../../../../GEOSDATA/DataSets/Class09_p3/Johansen_faces.vtu"
       fieldsToImport="{ perm, poro }"
-      fieldNamesInGEOSX="{ rockPerm_permeability, rockPorosity_referencePorosity }" >
+      fieldNamesInGEOS="{ rockPerm_permeability, rockPorosity_referencePorosity }" >
       <InternalWell
         name="wellInjector1"
         wellRegionName="wellRegion"

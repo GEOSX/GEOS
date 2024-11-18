@@ -5,7 +5,7 @@
  * Copyright (c) 2016-2024 Lawrence Livermore National Security LLC
  * Copyright (c) 2018-2024 Total, S.A
  * Copyright (c) 2018-2024 The Board of Trustees of the Leland Stanford Junior University
- * Copyright (c) 2018-2024 Chevron
+ * Copyright (c) 2023-2024 Chevron
  * Copyright (c) 2019-     GEOS/GEOSX Contributors
  * All rights reserved
  *
@@ -32,6 +32,25 @@ SolidBase::SolidBase( string const & name, Group * const parent ):
   m_thermalExpansionCoefficient()
 {
   string const voightLabels[6] = { "XX", "YY", "ZZ", "YZ", "XZ", "XY" };
+
+  registerWrapper( viewKeyStruct::stressString(), &m_newStress ).
+    setPlotLevel( PlotLevel::LEVEL_0 ).
+    setApplyDefaultValue( 0 ). // default to zero initial stress
+    setDescription( "Current Material Stress" ).
+    setDimLabels( 2, voightLabels );
+
+  registerWrapper( viewKeyStruct::oldStressString(), &m_oldStress ).
+    setApplyDefaultValue( 0 ). // default to zero initial stress
+    setDescription( "Previous Material Stress" );
+
+  registerWrapper( viewKeyStruct::densityString(), &m_density ).
+    setPlotLevel( PlotLevel::LEVEL_0 ).
+    setApplyDefaultValue( -1 ). // will be overwritten
+    setDescription( "Material Density" );
+
+  registerWrapper( viewKeyStruct::defaultDensityString(), &m_defaultDensity ).
+    setInputFlag( InputFlags::REQUIRED ).
+    setDescription( "Default Material Density" );
 
   registerWrapper( viewKeyStruct::defaultThermalExpansionCoefficientString(), &m_defaultThermalExpansionCoefficient ).
     setApplyDefaultValue( 0.0 ).

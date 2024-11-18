@@ -5,7 +5,7 @@
  * Copyright (c) 2016-2024 Lawrence Livermore National Security LLC
  * Copyright (c) 2018-2024 Total, S.A
  * Copyright (c) 2018-2024 The Board of Trustees of the Leland Stanford Junior University
- * Copyright (c) 2018-2024 Chevron
+ * Copyright (c) 2023-2024 Chevron
  * Copyright (c) 2019-     GEOS/GEOSX Contributors
  * All rights reserved
  *
@@ -22,6 +22,7 @@
 
 #include "PartitionDescriptor.hpp"
 #include "PartitionDescriptorABC.hpp"
+// #include "mesh/mpiCommunications/SpatialPartition.hpp"
 
 #include "dataRepository/Group.hpp"
 #include "dataRepository/WrapperBase.hpp"
@@ -56,7 +57,7 @@ public:
                               Group * const parent );
 
   /// This function is used to expand any catalogs in the data structure
-  void expandObjectCatalogs() override;
+  virtual void expandObjectCatalogs() override;
 
   /// using alias for templated Catalog meshGenerator type
   using CatalogInterface = dataRepository::CatalogInterface< MeshGeneratorBase, string const &, Group * const >;
@@ -81,6 +82,7 @@ public:
    * @param[in] partition The reference to spatial partition
    */
   void generateMesh( Group & parent, array1d< int > const & partition );
+  // void generateMesh( Group & parent, SpatialPartition & partition ); // develop branch
 
   /**
    * @brief Describe which kind of block must be considered.
@@ -115,13 +117,13 @@ public:
   virtual void freeResources() {}
 
   /**
-   * @brief Get the name mapping between mesh volumic field names and internal GEOSX volumic field names.
+   * @brief Get the name mapping between mesh volumic field names and internal GEOS volumic field names.
    * @return The string to string mapping of field names.
    */
   std::map< string, string > const & getVolumicFieldsMapping() const { return m_volumicFields; }
 
   /**
-   * @brief Get the name mapping between mesh surfacic field names and internal GEOSX surfacic field names.
+   * @brief Get the name mapping between mesh surfacic field names and internal GEOS surfacic field names.
    * @return The string to string mapping of field names.
    */
   std::map< string, string > const & getSurfacicFieldsMapping() const { return m_surfacicFields; }
@@ -132,10 +134,10 @@ public:
   }
 
 protected:
-  /// Mapping from volumic field source to GEOSX field.
+  /// Mapping from volumic field source to GEOS field.
   std::map< string, string > m_volumicFields;
 
-  /// Mapping from surfacic field source to GEOSX field.
+  /// Mapping from surfacic field source to GEOS field.
   std::map< string, string > m_surfacicFields;
 
   /// The partition information
@@ -150,6 +152,33 @@ private:
   virtual void fillCellBlockManager( CellBlockManager & cellBlockManager, array1d< int > const & partition ) = 0;
 
   void attachWellInfo( CellBlockManager & cellBlockManager );
+
+// BEGIN DEVELOP BRANCH MERGE
+  //  * @param[in] partition The reference to spatial partition
+  //  */
+  // virtual void fillCellBlockManager( CellBlockManager & cellBlockManager, SpatialPartition & partition )
+  // {
+  //   GEOS_UNUSED_VAR( cellBlockManager );
+  //   GEOS_UNUSED_VAR( partition );
+  //   GEOS_ERROR( "Cell mesh generation not implemented for generator of this type" );
+  // }
+
+  // void attachWellInfo( CellBlockManager & cellBlockManager );
+
+  // /**
+  //  * @brief Fill the particleBlockManager object .
+  //  * @param[inout] particleBlockManager the particleBlockManager that will receive the meshing information
+  //  * @param[in] particleManager The reference to the particle manager
+  //  * @param[in] partition The reference to spatial partition
+  //  */
+  // virtual void fillParticleBlockManager( ParticleBlockManager & particleBlockManager, ParticleManager & particleManager, SpatialPartition const & partition )
+  // {
+  //   GEOS_UNUSED_VAR( particleBlockManager );
+  //   GEOS_UNUSED_VAR( particleManager );
+  //   GEOS_UNUSED_VAR( partition );
+  //   GEOS_ERROR( "Particle mesh generation not implemented for generator of this type" );
+  // }
+// END DEVELOP BRANCH MERGE
 };
 }
 

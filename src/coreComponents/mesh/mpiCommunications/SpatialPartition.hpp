@@ -5,7 +5,7 @@
  * Copyright (c) 2016-2024 Lawrence Livermore National Security LLC
  * Copyright (c) 2018-2024 Total, S.A
  * Copyright (c) 2018-2024 The Board of Trustees of the Leland Stanford Junior University
- * Copyright (c) 2018-2024 Chevron
+ * Copyright (c) 2023-2024 Chevron
  * Copyright (c) 2019-     GEOS/GEOSX Contributors
  * All rights reserved
  *
@@ -138,24 +138,18 @@ public:
 
   void postInputInitialization() override; 
 
-  bool isCoordInPartition( const real64 & coord, const int dir ) const override;
+  void setSizes( real64 const ( &min )[ 3 ],
+                 real64 const ( &max )[ 3 ] );
 
-  bool isCoordInPartitionBoundingBox( const R1Tensor & elemCenter,
-                                      const real64 & boundaryRadius ) const;
+  void initializeNeighbors();
 
   void updateSizes( arrayView1d< real64 > const domainL,
                     real64 const dt );
 
-//  void setSizes( real64 const ( &min )[ 3 ],
-//                 real64 const ( &max )[ 3 ] ) override;
+  bool isCoordInPartition( const real64 & coord, const int dir ) const override;
 
-  void initializeNeighbors();
-
-  // real64 * getLocalMin()
-  array1d< real64 > const & getLocalMin()
-  {
-    return m_min;
-  }
+  bool isCoordInPartitionBoundingBox( const R1Tensor & elemCenter,
+                                      const real64 & boundaryRadius ) const;
 
   // real64 * getLocalMax()
   array1d< real64 > const & getLocalMax()
@@ -163,31 +157,26 @@ public:
     return m_max;
   }
 
-  // real64 * getGlobalMin()
-  array1d< real64 > const & getGlobalMin()
+  real64 * getLocalMin()
+  {
+    return m_min;
+  }
+
+  real64 * getLocalMax()
+  {
+    return m_max;
+  }
+
+  real64 * getGlobalMin()
   {
     return m_gridMin;
   }
 
-  // real64 * getGlobalMax()
-  array1d< real64 > const & getGlobalMax()
+  real64 * getGlobalMax()
   {
     return m_gridMax;
   }
 
-  void setCoords( array1d< int > coords ) {
-    m_coords = coords;
-  }
-
-  /**
-   * @brief Get the ijk coordinates of the partition in the domain.
-   * @return An array containing number of partition in X, Y and Z directions.
-   */
-  array1d< int > const & getCoords() const
-  {
-    return m_coords;
-  }
-  
   void setPartitions( unsigned int xPartitions,
                       unsigned int yPartitions,
                       unsigned int zPartitions ) override;
@@ -218,11 +207,55 @@ public:
                                                    MPI_iCommData & commData,
                                                    const real64 & boundaryRadius );
 
-  //CC: overrides global indices on periodic faces so they are matched when finding neighboring nodes
-  void setPeriodicDomainBoundaryObjects( MeshBody & grid,
-                                         NodeManager & nodeManager,
-                                         EdgeManager & edgeManager,
-                                         FaceManager & faceManager );
+  /**
+   * @brief Send coordinates to neighbors as part of repartition.
+   * @param[in] particleCoordinatesSendingToNeighbors Single list of coordinates sent to all neighbors
+   * @param[in] commData Solver's MPI communicator
+   * @param[in] particleCoordinatesReceivedFromNeighbors List of lists of coordinates received from each neighbor
+   */
+  void sendCoordinateListToNeighbors( arrayView1d< R1Tensor > const & particleCoordinatesSendingToNeighbors,
+                                      MPI_iCommData & commData,
+                                      std::vector< array1d< R1Tensor > > & particleCoordinatesReceivedFromNeighbors
+                                      );
+
+  template< typename indexType >
+  void sendListOfIndicesToNeighbors( std::vector< array1d< indexType > > & listSendingToEachNeighbor,
+                                     MPI_iCommData & commData,
+                                     std::vector< array1d< indexType > > & listReceivedFromEachNeighbor );
+
+  void sendParticlesToNeighbor( ParticleSubRegionBase & subRegion,
+                                std::vector< int > const & newParticleStartingIndices,
+                                std::vector< int > const & numberOfIncomingParticles,
+                                MPI_iCommData & commData,
+                                std::vector< array1d< localIndex > > const & particleLocalIndicesToSendToEachNeighbor );
+
+  /**
+   * @brief Get the metis neighbors indices, const version. @see DomainPartition#m_metisNeighborList
+   * @return Container of global indices.
+   */
+  std::set< int > const & getMetisNeighborList() const
+  {
+    return m_metisNeighborList;
+  }
+
+  /**
+   * @brief Sets the list of metis neighbor list.
+   * @param metisNeighborList A reference to the Metis neighbor list.
+   */
+  void setMetisNeighborList( std::vector< int > const & metisNeighborList )
+  {
+    m_metisNeighborList.clear();
+    m_metisNeighborList.insert( metisNeighborList.cbegin(), metisNeighborList.cend() );
+  }
+
+  /**
+   * @brief Get the number of domains in each dimension for a regular partition with InternalMesh.
+   * @return An array containing number of partition in X, Y and Z directions.
+   */
+  array1d< int > const & getPartitions() const
+  {
+    return m_Partitions;
+  }
 
   /**
    * @brief Send coordinates to neighbors as part of repartition.

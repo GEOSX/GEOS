@@ -50,7 +50,7 @@
   <ElementRegions>
     <CellElementRegion
       name="region"
-      cellBlocks="{ cellBlock }"
+      cellBlocks="{ * }"
       materialList="{ fluid, rock, relperm, cappres }"/>
   </ElementRegions>
       <!-- materialList="{ fluid, rock, relperm }" -->

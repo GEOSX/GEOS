@@ -5,7 +5,7 @@
  * Copyright (c) 2016-2024 Lawrence Livermore National Security LLC
  * Copyright (c) 2018-2024 Total, S.A
  * Copyright (c) 2018-2024 The Board of Trustees of the Leland Stanford Junior University
- * Copyright (c) 2018-2024 Chevron
+ * Copyright (c) 2023-2024 Chevron
  * Copyright (c) 2019-     GEOS/GEOSX Contributors
  * All rights reserved
  *
@@ -24,6 +24,7 @@
 
 #include "common/DataTypes.hpp"
 #include "common/MpiWrapper.hpp"
+#include "mesh/generators/CellBlockManager.hpp"
 
 #include <vtkDataSet.h>
 #include <vtkMultiProcessController.h>
@@ -34,9 +35,6 @@
 
 namespace geos
 {
-
-using namespace dataRepository;
-
 namespace vtk
 {
 
@@ -223,7 +221,7 @@ string buildCellBlockName( ElementType const type, int const regionId );
  */
 void importMaterialField( std::vector< vtkIdType > const & cellIds,
                           vtkDataArray * vtkArray,
-                          WrapperBase & wrapper );
+                          dataRepository::WrapperBase & wrapper );
 
 /**
  * @brief Imports 1d and 2d arrays from @p vtkArray to @p wrapper, only for @p cellIds
@@ -233,7 +231,7 @@ void importMaterialField( std::vector< vtkIdType > const & cellIds,
  */
 void importRegularField( std::vector< vtkIdType > const & cellIds,
                          vtkDataArray * vtkArray,
-                         WrapperBase & wrapper );
+                         dataRepository::WrapperBase & wrapper );
 
 /**
  * @brief Imports 1d and 2d arrays from @p vtkArray to @p wrapper, for all the elements/cells of the provided wrapper.
@@ -241,7 +239,7 @@ void importRegularField( std::vector< vtkIdType > const & cellIds,
  * @param wrapper The destination.
  */
 void importRegularField( vtkDataArray * vtkArray,
-                         WrapperBase & wrapper );
+                         dataRepository::WrapperBase & wrapper );
 
 
 } // namespace vtk

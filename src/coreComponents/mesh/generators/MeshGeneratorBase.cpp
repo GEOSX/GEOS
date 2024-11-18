@@ -5,7 +5,7 @@
  * Copyright (c) 2016-2024 Lawrence Livermore National Security LLC
  * Copyright (c) 2018-2024 Total, S.A
  * Copyright (c) 2018-2024 The Board of Trustees of the Leland Stanford Junior University
- * Copyright (c) 2018-2024 Chevron
+ * Copyright (c) 2023-2024 Chevron
  * Copyright (c) 2019-     GEOS/GEOSX Contributors
  * All rights reserved
  *
@@ -15,6 +15,7 @@
 
 #include "MeshGeneratorBase.hpp"
 #include "mesh/generators/CellBlockManager.hpp"
+#include "mesh/generators/ParticleBlockManager.hpp" // developer branch
 
 namespace geos
 {
@@ -53,6 +54,28 @@ void MeshGeneratorBase::generateMesh( Group & parent, array1d< int > const & par
   CellBlockManager & cellBlockManager = parent.registerGroup< CellBlockManager >( keys::cellManager );
   fillCellBlockManager( cellBlockManager, partition );
   this->attachWellInfo( cellBlockManager );
+
+// void MeshGeneratorBase::generateMesh( Group & parent, SpatialPartition & partition )
+// {
+//   MeshBody & meshBody = dynamic_cast< MeshBody & >( parent );
+//   if( meshBody.hasParticles() )
+//   {
+//     ParticleBlockManager & particleBlockManager = parent.registerGroup< ParticleBlockManager >( keys::particleManager );
+
+//     MeshLevel & meshLevel0 = meshBody.getBaseDiscretization();
+//     ParticleManager & particleManager = meshLevel0.getParticleManager();
+
+//     fillParticleBlockManager( particleBlockManager, particleManager, partition );
+//   }
+//   else
+//   {
+//     CellBlockManager & cellBlockManager = parent.registerGroup< CellBlockManager >( keys::cellManager );
+
+//     fillCellBlockManager( cellBlockManager, partition );
+
+//     this->attachWellInfo( cellBlockManager );
+//   }
+// >>>>>>> develop
 }
 
 void MeshGeneratorBase::attachWellInfo( CellBlockManager & cellBlockManager )

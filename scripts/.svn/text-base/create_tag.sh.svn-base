@@ -1,0 +1,41 @@
+#!/bin/bash
+
+#ARGS (1) new tag name (2) new directory (3) message to apply during creation
+if [ $# -ne 3 ]; then
+   echo "usage: $0 <tag name> <new directory path> <creation message>"
+   exit 1
+fi 
+#RETRIEVE TRUNK PATH
+if [ -z "$GEOS_TRUNK" ]; then
+    export GEOS_TRUNK=~/apps/geos_trunk
+    if [ -d "$GEOS_TRUNK" ]; then
+	echo "Setting default path to GEOS trunk: $GEOS_TRUNK"
+    else
+	echo "Cannot set default path to GEOS trunk: $GEOS_TRUNK"
+	exit 1
+    fi
+fi
+#echo "(1) $1"
+#echo "(2) $2"
+#echo "(3) $3"
+#exit
+
+#CREATE TAG
+if [ -d "$2" ]; then
+    rm -rf $2
+fi
+mkdir $2
+cd $2
+svn cp https://sourceforge.llnl.gov/svn/repos/gpac/trunk/src https://sourceforge.llnl.gov/svn/repos/gpac/tags/$1 -m "creating new tag: $3"
+svn co https://sourceforge.llnl.gov/svn/repos/gpac/tags/$1
+mv $1 src
+ln -s $GEOS_TRUNK/external_libs external_libs
+ln -s $GEOS_TRUNK/scripts scripts
+ln -s $GEOS_TRUNK/test test
+ln -s $GEOS_TRUNK/Make.local.defs Make.local.defs
+ln -s $GEOS_TRUNK/documents documents
+ln -s $GEOS_TRUNK/examples examples
+ln -s $GEOS_TRUNK/tools tools
+
+export USR=`whoami`
+ln -s $GEOS_TRUNK/Make.local.defs.$USR Make.local.defs.$USR

@@ -5,7 +5,7 @@
  * Copyright (c) 2016-2024 Lawrence Livermore National Security LLC
  * Copyright (c) 2018-2024 Total, S.A
  * Copyright (c) 2018-2024 The Board of Trustees of the Leland Stanford Junior University
- * Copyright (c) 2018-2024 Chevron
+ * Copyright (c) 2023-2024 Chevron
  * Copyright (c) 2019-     GEOS/GEOSX Contributors
  * All rights reserved
  *
@@ -179,8 +179,18 @@ public:
     return LvArray::math::max( m_c44[k], m_c66[k] );
   }
 
+  /**
+   * @brief Getter for apparent shear modulus.
+   * @return reference to shear modulus that will be used for computing stabilization scalling parameter.
+   */
+  GEOS_HOST_DEVICE
+  virtual real64 getShearModulus( localIndex const k ) const override final
+  {
+    return LvArray::math::max( m_c44[k], m_c66[k] );
+  }
 
-protected:
+
+private:
 
   /// A reference to the ArrayView holding c11 for each element.
   arrayView1d< real64 > const m_c11;

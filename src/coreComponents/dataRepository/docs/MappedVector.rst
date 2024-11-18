@@ -41,7 +41,7 @@ Element access
 In addition to these, an STL-conformant iterator interface is available via ``begin()`` and ``end()`` methods.
 The type iterated over is a key-pointer pair (provided as `value_type` alias).
 
-API documentation
------------------
+Doxygen API documentation
+-------------------------
 
-`MappedVector <../../../doxygen_output/html/classgeos_1_1_mapped_vector.html>`_
+`MappedVector  API <../../../doxygen_output/html/classgeos_1_1_mapped_vector.html>`_

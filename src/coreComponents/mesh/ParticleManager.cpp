@@ -5,7 +5,7 @@
  * Copyright (c) 2016-2024 Lawrence Livermore National Security LLC
  * Copyright (c) 2018-2024 Total, S.A
  * Copyright (c) 2018-2024 The Board of Trustees of the Leland Stanford Junior University
- * Copyright (c) 2018-2024 Chevron
+ * Copyright (c) 2023-2024 Chevron
  * Copyright (c) 2019-     GEOS/GEOSX Contributors
  * All rights reserved
  *
@@ -13,6 +13,7 @@
  * ------------------------------------------------------------------------------------------------------------
  */
 
+#include <map>
 #include <vector>
 
 #include "ParticleManager.hpp"
@@ -20,7 +21,8 @@
 #include "common/TimingMacros.hpp"
 #include "mesh/mpiCommunications/CommunicationTools.hpp"
 #include "constitutive/ConstitutiveManager.hpp"
-#include "particleGenerators/ParticleBlockManager.hpp"
+#include "generators/ParticleBlockManager.hpp"
+#include "mesh/MeshManager.hpp"
 #include "schema/schemaUtilities.hpp"
 
 namespace geos
@@ -79,7 +81,7 @@ void ParticleManager::setMaxGlobalIndex()
                          &m_maxGlobalIndex,
                          1,
                          MPI_MAX,
-                         MPI_COMM_GEOSX );
+                         MPI_COMM_GEOS );
 }
 
 Group * ParticleManager::createChild( string const & childKey, string const & childName )

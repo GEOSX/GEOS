@@ -1,0 +1,34 @@
+#!/bin/bash
+
+#ARGS (1) revision number (2) new directory
+if [ $# -ne 2 ]; then
+   echo "usage: $0 <revision number> <new directory path>"
+   exit 1
+fi 
+if [ -z "$GEOS_TRUNK" ]; then
+    export GEOS_TRUNK=~/apps/geos_trunk
+    if [ -d "$GEOS_TRUNK" ]; then
+	echo "Setting default path to GEOS trunk: $GEOS_TRUNK"
+    else
+	echo "Cannot set default path to GEOS trunk: $GEOS_TRUNK"
+	exit 1
+    fi
+fi
+if [ -d "$2" ]; then
+    rm -rf $2
+fi
+mkdir $2
+cd $2
+svn co -r $1 https://sourceforge.llnl.gov/svn/repos/gpac/trunk
+
+cd trunk
+export USR=`whoami`
+ln -s $GEOS_TRUNK/Make.local.defs.$USR Make.local.defs.$USR
+
+cd src
+cat make_me.sh | sed s/svn/#svn/ > make_me2.sh
+bash make_me2.sh
+export GEOS_EXEC=$2/src/GEOS.x
+
+cd ../test
+bash run_test_suite.sh 400

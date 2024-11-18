@@ -1,7 +1,33 @@
+# SPDX-License-Identifier: LGPL-2.1-only
+#
+# Copyright (c) 2016-2024 Lawrence Livermore National Security LLC
+# Copyright (c) 2018-2024 Total, S.A
+# Copyright (c) 2018-2024 The Board of Trustees of the Leland Stanford Junior University
+# Copyright (c) 2023-2024 Chevron
+# Copyright (c) 2019-     GEOS/GEOSX Contributors
+# All rights reserved
+#
+# See top level LICENSE, COPYRIGHT, CONTRIBUTORS, NOTICE, and ACKNOWLEDGEMENTS files for details.
+#
+#--------------------------------------------------------------------------------------------------
+
+#[[
+Package: mesh
+
+Contains:
+ - components allowing to import, store and access the mesh.
+ - partitioning and communication tools (ParMETIS, Scotch and VTK interfaces).
+ - GEOS components defining simple geometric objects.
+ - basic geometric and mesh utilities.
+#]]
+
+#
 # Specify all headers
+#
 set( mesh_headers
      BufferOps.hpp
      CellElementRegion.hpp
+     CellElementRegionSelector.hpp
      CellElementSubRegion.hpp
      DomainPartition.hpp
      EdgeManager.hpp
@@ -43,6 +69,8 @@ set( mesh_headers
      generators/CellBlockManager.hpp
      generators/CellBlockManagerABC.hpp
      generators/CellBlockUtilities.hpp
+     generators/LineBlock.hpp
+     generators/LineBlockABC.hpp
      generators/ExternalMeshGeneratorBase.hpp
      generators/FaceBlock.hpp
      generators/FaceBlockABC.hpp
@@ -53,8 +81,13 @@ set( mesh_headers
      generators/LineBlockABC.hpp
      generators/MeshGeneratorBase.hpp
      generators/ParMETISInterface.hpp
+     particleGenerators/ParticleBlock.hpp
+     particleGenerators/ParticleBlockABC.hpp
+     particleGenerators/ParticleBlockManager.hpp
+     particleGenerators/ParticleBlockManagerABC.hpp
+     particleGenerators/ParticleMeshGeneratorBase.hpp
+     particleGenerators/ParticleMeshGenerator.hpp
      generators/PartitionDescriptor.hpp
-     generators/PartitionDescriptorABC.hpp
      generators/PrismUtilities.hpp
      generators/WellGeneratorABC.hpp
      generators/WellGeneratorBase.hpp
@@ -65,11 +98,9 @@ set( mesh_headers
      mpiCommunications/NeighborData.hpp
      mpiCommunications/PartitionBase.hpp
      mpiCommunications/SpatialPartition.hpp
-     particleGenerators/ParticleBlock.hpp
-     particleGenerators/ParticleBlockABC.hpp
-     particleGenerators/ParticleBlockManager.hpp
-     particleGenerators/ParticleMeshGenerator.hpp
-     particleGenerators/ParticleMeshGeneratorBase.hpp
+     simpleGeometricObjects/Rectangle.hpp
+     simpleGeometricObjects/Disc.hpp
+     simpleGeometricObjects/CustomPolarObject.hpp
      simpleGeometricObjects/Box.hpp
      simpleGeometricObjects/CustomPolarObject.hpp
      simpleGeometricObjects/Cylinder.hpp
@@ -78,17 +109,21 @@ set( mesh_headers
      simpleGeometricObjects/PlanarGeometricObject.hpp
      simpleGeometricObjects/Rectangle.hpp
      simpleGeometricObjects/SimpleGeometricObjectBase.hpp
+     simpleGeometricObjects/PlanarGeometricObject.hpp
      simpleGeometricObjects/ThickPlane.hpp
-     utilities/AverageOverQuadraturePointsKernel.hpp     
+     utilities/AverageOverQuadraturePointsKernel.hpp
      utilities/CIcomputationKernel.hpp
      utilities/ComputationalGeometry.hpp
      utilities/MeshMapUtilities.hpp
      utilities/StructuredGridUtilities.hpp )
 
+#
 # Specify all sources
+#
 set( mesh_sources
      BufferOps.cpp
      CellElementRegion.cpp
+     CellElementRegionSelector.cpp
      CellElementSubRegion.cpp
      DomainPartition.cpp
      EdgeManager.cpp
@@ -105,6 +140,8 @@ set( mesh_sources
      MeshObjectPath.cpp
      NodeManager.cpp
      ObjectManagerBase.cpp
+     particleGenerators/ParticleBlock.cpp
+     particleGenerators/ParticleBlockManager.cpp
      ParticleManager.cpp
      ParticleRegion.cpp
      ParticleRegionBase.cpp
@@ -121,6 +158,7 @@ set( mesh_sources
      generators/CellBlock.cpp
      generators/CellBlockManager.cpp
      generators/CellBlockUtilities.cpp
+     generators/LineBlock.cpp
      generators/ExternalMeshGeneratorBase.cpp
      generators/FaceBlock.cpp
      generators/InternalMeshGenerator.cpp
@@ -129,7 +167,8 @@ set( mesh_sources
      generators/LineBlock.cpp
      generators/MeshGeneratorBase.cpp
      generators/ParMETISInterface.cpp
-     generators/PartitionDescriptor.cpp
+     particleGenerators/ParticleMeshGeneratorBase.cpp
+     particleGenerators/ParticleMeshGenerator.cpp
      generators/WellGeneratorBase.cpp
      mpiCommunications/CommID.cpp
      mpiCommunications/CommunicationTools.cpp
@@ -137,10 +176,9 @@ set( mesh_sources
      mpiCommunications/NeighborCommunicator.cpp
      mpiCommunications/PartitionBase.cpp
      mpiCommunications/SpatialPartition.cpp
-     particleGenerators/ParticleBlock.cpp
-     particleGenerators/ParticleBlockManager.cpp
-     particleGenerators/ParticleMeshGenerator.cpp
-     particleGenerators/ParticleMeshGeneratorBase.cpp
+     simpleGeometricObjects/Rectangle.cpp
+     simpleGeometricObjects/Disc.cpp
+     simpleGeometricObjects/CustomPolarObject.cpp
      simpleGeometricObjects/Box.cpp
      simpleGeometricObjects/CustomPolarObject.cpp
      simpleGeometricObjects/Cylinder.cpp
@@ -149,10 +187,11 @@ set( mesh_sources
      simpleGeometricObjects/PlanarGeometricObject.cpp
      simpleGeometricObjects/Rectangle.cpp
      simpleGeometricObjects/SimpleGeometricObjectBase.cpp
+     simpleGeometricObjects/PlanarGeometricObject.cpp
      simpleGeometricObjects/ThickPlane.cpp
      utilities/ComputationalGeometry.cpp )
 
-set( dependencyList ${parallelDeps} schema dataRepository constitutive finiteElement parmetis metis )
+set( dependencyList ${parallelDeps} schema constitutive finiteElement parmetis metis )
 
 if( ENABLE_VTK )
     message(STATUS "Adding VTK readers")
@@ -171,7 +210,7 @@ if( ENABLE_VTK )
          generators/VTKMeshGeneratorTools.cpp
          generators/VTKWellGenerator.cpp
          generators/VTKUtilities.cpp
-         )    
+         )
     list( APPEND dependencyList VTK::IOLegacy VTK::FiltersParallelDIY2 )
     if( ENABLE_MPI )
       list( APPEND dependencyList VTK::IOParallelXML VTK::ParallelMPI )
@@ -184,13 +223,20 @@ if( ENABLE_SCOTCH )
     list( APPEND dependencyList ptscotch )
 endif()
 
+geos_decorate_link_dependencies( LIST decoratedDependencies
+                                 DEPENDENCIES ${dependencyList} )
+
 blt_add_library( NAME       mesh
                  SOURCES    ${mesh_sources}
                  HEADERS    ${mesh_headers}
-                 DEPENDS_ON ${dependencyList}
-                 OBJECT     ${GEOS_BUILD_OBJ_LIBS} )
+                 DEPENDS_ON ${decoratedDependencies}
+                 OBJECT     ${GEOS_BUILD_OBJ_LIBS}
+                 SHARED     ${GEOS_BUILD_SHARED_LIBS}
+               )
 
 target_include_directories( mesh PUBLIC ${CMAKE_SOURCE_DIR}/coreComponents )
+
+install( TARGETS mesh LIBRARY DESTINATION ${CMAKE_INSTALL_PREFIX}/lib )
 
 if( ENABLE_VTK )
     # Avoid compiling with nvcc which sometimes segfaults in debug

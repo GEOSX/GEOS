@@ -1,0 +1,33 @@
+#!/bin/bash
+
+#ARGS (1) input file
+if [ $# -ne 1 ]; then
+   echo "usage: ARGS (1) input file"
+   exit 1
+fi 
+if [ -z "$GEOS_SCRIPT_PATH" ]; then
+    #NOTE: this only provides a value for the current script
+    export GEOS_SCRIPT_PATH=~/apps/geos_trunk/scripts
+    echo "setting default for GEOS_SCRIPT_PATH: $GEOS_SCRIPT_PATH"
+fi
+
+if [ -z "$GEOS_EXEC" ]; then
+    #NOTE: this only provides a value for the current script
+    export GEOS_EXEC=~/apps/geos_trunk/src/GEOS.x
+    echo "setting default for GEOS_EXEC: $GEOS_EXEC"
+fi
+
+#get the mesh
+perl $GEOS_SCRIPT_PATH/geos2fracflowmesh.pl $1 > mesh
+
+#get the boundary conditions
+perl $GEOS_SCRIPT_PATH/geos2fracflowbc.pl $1 > Boundary
+
+#get the prefrac file
+export PFPATH=`grep PreFracPath $1 | sed 's/\s*PreFracPath\s*\=\s*//' | sed 's/"//g'`
+cp $PFPATH PreFrac
+
+#extract the parameters
+perl $GEOS_SCRIPT_PATH/geos2fracflowparams.pl $1 > Parameters
+
+exit 0

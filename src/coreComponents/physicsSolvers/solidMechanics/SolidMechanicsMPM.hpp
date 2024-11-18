@@ -5,7 +5,7 @@
  * Copyright (c) 2016-2024 Lawrence Livermore National Security LLC
  * Copyright (c) 2018-2024 Total, S.A
  * Copyright (c) 2018-2024 The Board of Trustees of the Leland Stanford Junior University
- * Copyright (c) 2018-2024 Chevron
+ * Copyright (c) 2023-2024 Chevron
  * Copyright (c) 2019-     GEOS/GEOSX Contributors
  * All rights reserved
  *
@@ -20,18 +20,18 @@
 #ifndef GEOS_PHYSICSSOLVERS_SOLIDMECHANICS_MPM_HPP_
 #define GEOS_PHYSICSSOLVERS_SOLIDMECHANICS_MPM_HPP_
 
-#include "codingUtilities/EnumStrings.hpp"
+
+#include "common/format/EnumStrings.hpp"
 #include "common/TimingMacros.hpp"
 #include "kernels/SolidMechanicsLagrangianFEMKernels.hpp"
 #include "kernels/ExplicitMPM.hpp"
 #include "mesh/MeshForLoopInterface.hpp"
 #include "mesh/mpiCommunications/CommunicationTools.hpp"
 #include "mesh/mpiCommunications/MPI_iCommData.hpp"
-#include "physicsSolvers/SolverBase.hpp"
+#include "physicsSolvers/PhysicsSolverBase.hpp"
 #include "physicsSolvers/solidMechanics/SolidMechanicsFields.hpp"
 #include "MPMSolverFields.hpp"
 #include "events/mpmEvents/MPMEventManager.hpp"
-
 
 namespace geos
 {
@@ -44,7 +44,7 @@ class SpatialPartition;
  *
  * This class implements a material point method solution to the equations of motion.
  */
-class SolidMechanicsMPM : public SolverBase
+class SolidMechanicsMPM : public PhysicsSolverBase
 {
 public:
 
@@ -180,24 +180,21 @@ public:
   /**
    * destructor
    */
-  virtual ~SolidMechanicsMPM() override {};
+  virtual ~SolidMechanicsMPM() override;
 
   /**
-   * @return The string that may be used to generate a new instance from the SolverBase::CatalogInterface::CatalogType
+   * @return The string that may be used to generate a new instance from the PhysicsSolverBase::CatalogInterface::CatalogType
    */
   static string catalogName() { return "SolidMechanics_MPM"; }
 
   /**
-   * @copydoc SolverBase::getCatalogName()
+   * @copydoc PhysicsSolverBase::getCatalogName()
    */
   string getCatalogName() const override { return catalogName(); }
 
   virtual void initializePreSubGroups() override;
 
   virtual void registerDataOnMesh( Group & meshBodies ) override final;
-
-  void updateIntrinsicNodalData( DomainPartition * const domain );
-
 
   /**
    * @defgroup Solver Interface Functions
@@ -263,7 +260,8 @@ public:
    * @param solution the solution vector
    */
 
-  struct viewKeyStruct : SolverBase::viewKeyStruct
+
+  struct viewKeyStruct : PhysicsSolverBase::viewKeyStruct
   {
     static constexpr char const * cflFactorString() { return "cflFactor"; }
     static constexpr char const * timeIntegrationOptionString() { return "timeIntegrationOption"; }
@@ -324,6 +322,7 @@ public:
   {
     dataRepository::GroupKey mpmEventManager = { "MPMEvents" }; ///< MPM Events key
   } groupKeys; ///< Child group viewKeys
+
 
   void initialize( NodeManager & nodeManager,
                    ParticleManager & particleManager,
@@ -972,6 +971,7 @@ protected:
   int m_planeStrain;
   int m_numDims;
 
+
   int m_generalizedVortexMMS;
 
   array1d< real64 > m_hEl;                // Grid spacing in x-y-z
@@ -984,7 +984,6 @@ protected:
   array1d< real64 > m_partitionExtent;    // Length of each edge of partition including buffer and ghost cells
   array1d< real64 > m_domainExtent;       // Length of each edge of global domain excluding buffer cells
   array1d< int > m_nEl;                   // Number of elements in each grid direction including buffer and ghost cells
-
   array3d< int > m_ijkMap;        // Map from indices in each spatial dimension to local node ID
 
   int m_useEvents;                   // Events flag
@@ -1028,8 +1027,7 @@ private:
     }
   };
 
-  virtual void setConstitutiveNames( ParticleSubRegionBase & subRegion ) const override;
-  // void setParticlesConstitutiveNames( ParticleSubRegionBase & subRegion ) const;
+  void setParticlesConstitutiveNames( ParticleSubRegionBase & subRegion ) const;
 };
 
 ENUM_STRINGS( SolidMechanicsMPM::TimeIntegrationOption,
@@ -1083,4 +1081,5 @@ ENUM_STRINGS( SolidMechanicsMPM::CohesiveLawOption,
 
 } /* namespace geos */
 
-#endif /* GEOSX_PHYSICSSOLVERS_SOLIDMECHANICS_MPM_HPP_ */
+#endif /* GEOS_PHYSICSSOLVERS_SOLIDMECHANICS_SOLIDMECHANICSMPM_HPP_ */
+

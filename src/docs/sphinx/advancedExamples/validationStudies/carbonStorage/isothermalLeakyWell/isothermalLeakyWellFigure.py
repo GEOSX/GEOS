@@ -14,9 +14,10 @@ def main():
     # Read HDF5
     hf = h5py.File(hdf5FilePath, 'r')
     time = hf.get('phaseOutflux Time')
-    time = np.array(time)
     phaseOutflux = hf.get('phaseOutflux')
-    phaseOutflux = np.array(phaseOutflux)
+
+    time = np.asarray(time)
+    phaseOutflux = np.asarray(phaseOutflux)
 
     # Conversions
     inKilograms = 479.0

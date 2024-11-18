@@ -5,7 +5,7 @@
  * Copyright (c) 2016-2024 Lawrence Livermore National Security LLC
  * Copyright (c) 2018-2024 Total, S.A
  * Copyright (c) 2018-2024 The Board of Trustees of the Leland Stanford Junior University
- * Copyright (c) 2018-2024 Chevron
+ * Copyright (c) 2023-2024 Chevron
  * Copyright (c) 2019-     GEOS/GEOSX Contributors
  * All rights reserved
  *
@@ -36,7 +36,7 @@
 #include "mesh/simpleGeometricObjects/GeometricObjectManager.hpp"
 #include "mesh/simpleGeometricObjects/Rectangle.hpp"
 #include "physicsSolvers/fluidFlow/FlowSolverBaseFields.hpp"
-
+#include "physicsSolvers/surfaceGeneration/LogLevelsInfo.hpp"
 
 
 namespace geos
@@ -64,7 +64,7 @@ void NewObjectLists::insert( NewObjectLists const & newObjects )
 
 EmbeddedSurfaceGenerator::EmbeddedSurfaceGenerator( const string & name,
                                                     Group * const parent ):
-  SolverBase( name, parent ),
+  PhysicsSolverBase( name, parent ),
   m_fractureRegionName(),
   m_mpiCommOrder( 0 )
 {
@@ -191,7 +191,7 @@ void EmbeddedSurfaceGenerator::initializePostSubGroups()
 
             if( added )
             {
-              GEOS_LOG_LEVEL_RANK_0( 2, "Element " << cellIndex << " is fractured" );
+              GEOS_LOG_LEVEL_INFO_RANK_0( logInfo::SurfaceGenerator, "Element " << cellIndex << " is fractured" );
 
               // Add the information to the CellElementSubRegion
               subRegion.addFracturedElement( cellIndex, localNumberOfSurfaceElems );
@@ -338,8 +338,8 @@ void EmbeddedSurfaceGenerator::setGlobalIndices( ElementRegionManager & elemMana
                                                  EmbeddedSurfaceSubRegion & embeddedSurfaceSubRegion )
 {
   // Add new globalIndices
-  int const thisRank = MpiWrapper::commRank( MPI_COMM_GEOSX );
-  int const commSize = MpiWrapper::commSize( MPI_COMM_GEOSX );
+  int const thisRank = MpiWrapper::commRank( MPI_COMM_GEOS );
+  int const commSize = MpiWrapper::commSize( MPI_COMM_GEOS );
 
   localIndex_array numberOfSurfaceElemsPerRank( commSize );
   localIndex_array globalIndexOffset( commSize );
@@ -353,7 +353,7 @@ void EmbeddedSurfaceGenerator::setGlobalIndices( ElementRegionManager & elemMana
     totalNumberOfSurfaceElements += numberOfSurfaceElemsPerRank[rank];
   }
 
-  GEOS_LOG_LEVEL_RANK_0( 1, "Number of embedded surface elements: " << totalNumberOfSurfaceElements );
+  GEOS_LOG_LEVEL_INFO_RANK_0( logInfo::SurfaceGenerator, "Number of embedded surface elements: " << totalNumberOfSurfaceElements );
 
   arrayView1d< globalIndex > const & elemLocalToGlobal = embeddedSurfaceSubRegion.localToGlobalMap();
 
@@ -425,7 +425,7 @@ void EmbeddedSurfaceGenerator::addEmbeddedElementsToSets( ElementRegionManager c
   } );
 }
 
-REGISTER_CATALOG_ENTRY( SolverBase,
+REGISTER_CATALOG_ENTRY( PhysicsSolverBase,
                         EmbeddedSurfaceGenerator,
                         string const &, dataRepository::Group * const )
 

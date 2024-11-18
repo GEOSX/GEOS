@@ -5,7 +5,7 @@
  * Copyright (c) 2016-2024 Lawrence Livermore National Security LLC
  * Copyright (c) 2018-2024 Total, S.A
  * Copyright (c) 2018-2024 The Board of Trustees of the Leland Stanford Junior University
- * Copyright (c) 2018-2024 Chevron
+ * Copyright (c) 2023-2024 Chevron
  * Copyright (c) 2019-     GEOS/GEOSX Contributors
  * All rights reserved
  *
@@ -30,7 +30,7 @@ inline int CommTag( int const GEOS_UNUSED_PARAM( senderRank ),
                     int const comm )
 {
 //  int m_size;
-//  MPI_Comm_size( MPI_COMM_GEOSX, &m_size );
+//  MPI_Comm_size( MPI_COMM_GEOS, &m_size );
 //  return senderRank * m_size + receiverRank + m_size * m_size * comm;
   return comm;
 }

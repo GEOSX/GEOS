@@ -5,7 +5,7 @@
  * Copyright (c) 2016-2024 Lawrence Livermore National Security LLC
  * Copyright (c) 2018-2024 Total, S.A
  * Copyright (c) 2018-2024 The Board of Trustees of the Leland Stanford Junior University
- * Copyright (c) 2018-2024 Chevron
+ * Copyright (c) 2023-2024 Chevron
  * Copyright (c) 2019-     GEOS/GEOSX Contributors
  * All rights reserved
  *
@@ -86,7 +86,7 @@ public:
                         string_array const & inputParams,
                         string_array const & componentNames,
                         array1d< real64 > const & componentMolarWeight,
-                        bool const printTable );
+                        TableFunction::OutputOptions const pvtOutputOpts );
 
   static string catalogName() { return "PhillipsBrineDensity"; }
 
@@ -136,7 +136,7 @@ void PhillipsBrineDensityUpdate::compute( real64 const & pressure,
                                           arraySlice1d< real64, USD3 > const & dValue,
                                           bool useMass ) const
 {
-  using Deriv = multifluid::DerivativeOffset;
+  using Deriv = constitutive::multifluid::DerivativeOffset;
 
   // this method implements the method proposed by E. Garcia (2001)
 

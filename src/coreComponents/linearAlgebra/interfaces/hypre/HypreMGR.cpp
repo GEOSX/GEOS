@@ -5,7 +5,7 @@
  * Copyright (c) 2016-2024 Lawrence Livermore National Security LLC
  * Copyright (c) 2018-2024 Total, S.A
  * Copyright (c) 2018-2024 The Board of Trustees of the Leland Stanford Junior University
- * Copyright (c) 2018-2024 Chevron
+ * Copyright (c) 2023-2024 Chevron
  * Copyright (c) 2019-     GEOS/GEOSX Contributors
  * All rights reserved
  *
@@ -38,6 +38,7 @@
 #include "linearAlgebra/interfaces/hypre/mgrStrategies/SinglePhaseReservoirFVM.hpp"
 #include "linearAlgebra/interfaces/hypre/mgrStrategies/SinglePhaseReservoirHybridFVM.hpp"
 #include "linearAlgebra/interfaces/hypre/mgrStrategies/ThermalCompositionalMultiphaseFVM.hpp"
+#include "linearAlgebra/interfaces/hypre/mgrStrategies/ThermalCompositionalMultiphaseReservoirFVM.hpp"
 #include "linearAlgebra/interfaces/hypre/mgrStrategies/ThermalSinglePhasePoromechanics.hpp"
 #include "linearAlgebra/interfaces/hypre/mgrStrategies/ThermalMultiphasePoromechanics.hpp"
 #include "linearAlgebra/interfaces/hypre/mgrStrategies/SolidMechanicsEmbeddedFractures.hpp"
@@ -110,6 +111,11 @@ void hypre::mgr::createMGR( LinearSolverParameters const & params,
     case LinearSolverParameters::MGR::StrategyType::thermalCompositionalMultiphaseFVM:
     {
       setStrategy< ThermalCompositionalMultiphaseFVM >( params.mgr, numComponentsPerField, precond, mgrData );
+      break;
+    }
+    case LinearSolverParameters::MGR::StrategyType::thermalCompositionalMultiphaseReservoirFVM:
+    {
+      setStrategy< ThermalCompositionalMultiphaseReservoirFVM >( params.mgr, numComponentsPerField, precond, mgrData );
       break;
     }
     case LinearSolverParameters::MGR::StrategyType::hybridSinglePhasePoromechanics:

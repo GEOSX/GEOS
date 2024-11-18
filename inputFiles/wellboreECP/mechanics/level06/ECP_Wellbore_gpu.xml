@@ -1,0 +1,87 @@
+<?xml version="1.0" ?>
+
+<Problem>
+  <Solvers
+    gravityVector="{0.0, 0.0, 0.0}">
+    <SolidMechanicsLagrangianSSLE
+      name="lagsolve"
+      timeIntegrationOption="QuasiStatic"
+      discretization="FE1"
+      logLevel="1"
+      targetRegions="{ casing, cement, rock }">
+      <NonlinearSolverParameters
+        newtonTol="1.0e-4"
+        newtonMaxIter="8"/>
+      <!--LinearSolverParameters
+        solverType="direct"
+        directParallel="0"
+        logLevel="0"/-->
+      <LinearSolverParameters
+        logLevel="1"
+        solverType="gmres"
+        krylovTol="1.0e-08"
+        krylovMaxIter="500"
+        krylovMaxRestart="40"
+        preconditionerType="amg"
+        amgSmootherType="chebyshev"
+        amgNumSweeps="1"
+        amgCoarseningType="PMIS"
+        amgInterpolationType="extendedI"
+        amgNumFunctions="1"
+        amgThreshold="0.6"
+        amgAggressiveCoarseningLevels="0"
+        />
+    </SolidMechanicsLagrangianSSLE>
+  </Solvers>
+
+  <Included>
+    <File name="../../ECP_Wellbore_geom06.xml"/>
+    <File name="../ECP_Wellbore_probdef.xml"/>
+  </Included>
+
+  <Events
+    maxTime="10.0">
+    <!-- This event is applied every cycle, and overrides the
+    solver time-step request -->
+    <PeriodicEvent
+      name="solverApplications"
+      forceDt="1.0"
+      target="/Solvers/lagsolve"/>
+
+    <!-- This event is applied every 5.0e-5s.  The targetExactTimestep
+    flag allows this event to request a dt modification to match an
+    integer multiple of the timeFrequency. -->
+    <!-- <PeriodicEvent -->
+    <!--   name="outputs" -->
+    <!--   timeFrequency="1.0" -->
+    <!--   targetExactTimestep="1" -->
+    <!--   target="/Outputs/siloOutput"/> -->
+
+    <!--PeriodicEvent
+      name="restarts"
+      timeFrequency="1e99"
+      targetExactTimestep="0"
+      target="/Outputs/restartOutput"/-->
+
+    <!--PeriodicEvent
+      name="output"
+      timeFrequency="1.0"
+      targetExactTimestep="1"
+      target="/Outputs/vtkOutput"/-->
+  </Events>
+
+
+  <Outputs>
+    <!-- <Silo -->
+    <!--   name="siloOutput" -->
+    <!--   parallelThreads="32" -->
+    <!--   plotFileRoot="plot" -->
+    <!--   childDirectory="sub"/> -->
+
+    <!--Restart
+      name="restartOutput"/-->
+
+    <!--VTK
+      name="vtkOutput"/-->
+  </Outputs>
+</Problem>

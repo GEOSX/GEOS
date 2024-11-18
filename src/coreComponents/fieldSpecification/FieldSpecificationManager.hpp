@@ -5,7 +5,7 @@
  * Copyright (c) 2016-2024 Lawrence Livermore National Security LLC
  * Copyright (c) 2018-2024 Total, S.A
  * Copyright (c) 2018-2024 The Board of Trustees of the Leland Stanford Junior University
- * Copyright (c) 2018-2024 Chevron
+ * Copyright (c) 2023-2024 Chevron
  * Copyright (c) 2019-     GEOS/GEOSX Contributors
  * All rights reserved
  *
@@ -22,11 +22,9 @@
 
 #include "FieldSpecificationBase.hpp"
 
-#include "codingUtilities/StringUtilities.hpp"
+#include "common/format/StringUtilities.hpp"
 #include "common/DataTypes.hpp"
 #include "common/TimingMacros.hpp"
-#include "mesh/ObjectManagerBase.hpp"
-#include "mesh/DomainPartition.hpp"
 
 namespace geos
 {

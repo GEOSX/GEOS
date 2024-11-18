@@ -5,7 +5,7 @@
  * Copyright (c) 2016-2024 Lawrence Livermore National Security LLC
  * Copyright (c) 2018-2024 Total, S.A
  * Copyright (c) 2018-2024 The Board of Trustees of the Leland Stanford Junior University
- * Copyright (c) 2018-2024 Chevron
+ * Copyright (c) 2023-2024 Chevron
  * Copyright (c) 2019-     GEOS/GEOSX Contributors
  * All rights reserved
  *
@@ -588,7 +588,7 @@ void DofManagerSparsityTest< LAI >::test( std::vector< FieldDesc > fields,
     dofManager.setSparsityPattern( localPattern );
     CRSMatrix< real64, globalIndex > localMatrix;
     localMatrix.assimilate< parallelHostPolicy >( std::move( localPattern ) );
-    pattern.create( localMatrix.toViewConst(), dofManager.numLocalDofs(), MPI_COMM_GEOSX );
+    pattern.create( localMatrix.toViewConst(), dofManager.numLocalDofs(), MPI_COMM_GEOS );
     pattern.set( 1.0 );
   }
 
@@ -626,7 +626,7 @@ void DofManagerSparsityTest< LAI >::test( std::vector< FieldDesc > fields,
                            f2.components,
                            localPatternExpected );
   }
-  patternExpected.create( localPatternExpected.toViewConst(), dofManager.numLocalDofs(), MPI_COMM_GEOSX );
+  patternExpected.create( localPatternExpected.toViewConst(), dofManager.numLocalDofs(), MPI_COMM_GEOS );
 
   // Compare the sparsity patterns
   pattern.set( 1.0 );
@@ -873,7 +873,7 @@ void DofManagerRestrictorTest< LAI >::test( std::vector< FieldDesc > fields,
     dofManager.setSparsityPattern( localPattern );
     CRSMatrix< real64, globalIndex > localMatrix;
     localMatrix.assimilate< parallelHostPolicy >( std::move( localPattern ) );
-    A.create( localMatrix.toViewConst(), dofManager.numLocalDofs(), MPI_COMM_GEOSX );
+    A.create( localMatrix.toViewConst(), dofManager.numLocalDofs(), MPI_COMM_GEOS );
     A.set( 1.0 );
   }
 
@@ -925,7 +925,7 @@ void DofManagerRestrictorTest< LAI >::test( std::vector< FieldDesc > fields,
     dofManager.setSparsityPattern( localPattern );
     CRSMatrix< real64, globalIndex > localMatrix;
     localMatrix.assimilate< parallelHostPolicy >( std::move( localPattern ) );
-    B.create( localMatrix.toViewConst(), dofManager.numLocalDofs(), MPI_COMM_GEOSX );
+    B.create( localMatrix.toViewConst(), dofManager.numLocalDofs(), MPI_COMM_GEOS );
     B.set( 1.0 );
   }
 

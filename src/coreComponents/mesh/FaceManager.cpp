@@ -5,7 +5,7 @@
  * Copyright (c) 2016-2024 Lawrence Livermore National Security LLC
  * Copyright (c) 2018-2024 Total, S.A
  * Copyright (c) 2018-2024 The Board of Trustees of the Leland Stanford Junior University
- * Copyright (c) 2018-2024 Chevron
+ * Copyright (c) 2023-2024 Chevron
  * Copyright (c) 2019-     GEOS/GEOSX Contributors
  * All rights reserved
  *
@@ -20,7 +20,7 @@
 #include "FaceManager.hpp"
 
 #include "common/GEOS_RAJA_Interface.hpp"
-#include "common/Logger.hpp"
+#include "common/logger/Logger.hpp"
 #include "common/TimingMacros.hpp"
 #include "LvArray/src/tensorOps.hpp"
 #include "mesh/BufferOps.hpp"
@@ -272,11 +272,7 @@ void FaceManager::sortAllFaceNodes( NodeManager const & nodeManager,
     if( facesToElements( faceIndex, 0 ) < 0 && facesToElements( faceIndex, 1 ) < 0 )
     {
       GEOS_ERROR( getDataContext() << ": Face " << faceIndex <<
-                  " is not connected to any cell.\n"
-                  "You might have:\n"
-                  "- an invalid mesh,\n"
-                  "- not enough CellElementRegions to describe your input mesh (all regions, simulated or not, must be listed),\n"
-                  "- forgotten one cell type in an existing \"" << CellElementRegion::viewKeyStruct::sourceCellBlockNamesString() << "\'." );
+                  " is not connected to any cell. You might have an invalid mesh." );
     }
 
     // Take the first defined face-to-(elt/region/sub region) to sorting direction.

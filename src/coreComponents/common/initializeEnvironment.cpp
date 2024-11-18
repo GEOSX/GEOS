@@ -5,7 +5,7 @@
  * Copyright (c) 2016-2024 Lawrence Livermore National Security LLC
  * Copyright (c) 2018-2024 Total, S.A
  * Copyright (c) 2018-2024 The Board of Trustees of the Leland Stanford Junior University
- * Copyright (c) 2018-2024 Chevron
+ * Copyright (c) 2023-2024 Chevron
  * Copyright (c) 2019-     GEOS/GEOSX Contributors
  * All rights reserved
  *
@@ -18,9 +18,7 @@
 #include "TimingMacros.hpp"
 #include "Path.hpp"
 #include "LvArray/src/system.hpp"
-#include "fileIO/Table/TableLayout.hpp"
-#include "fileIO/Table/TableData.hpp"
-#include "fileIO/Table/TableFormatter.hpp"
+#include "common/format/table/TableFormatter.hpp"
 #include "common/LifoStorageCommon.hpp"
 #include "common/MemoryInfos.hpp"
 #include <umpire/TypedAllocator.hpp>
@@ -65,7 +63,7 @@ namespace geos
 void setupLogger()
 {
 #ifdef GEOS_USE_MPI
-  logger::InitializeLogger( MPI_COMM_GEOSX );
+  logger::InitializeLogger( MPI_COMM_GEOS );
 #else
   logger::InitializeLogger();
 #endif
@@ -100,6 +98,9 @@ void setupLvArray()
 #else
   LvArray::system::disableFloatingPointExceptions( FE_ALL_EXCEPT );
 #endif
+
+  /* Disable chai callbacks by default */
+  chai::ArrayManager::getInstance()->disableCallbacks();
 }
 
 ///////////////////////////////////////////////////////////////////////////////////////////////////////////////////////
@@ -126,19 +127,19 @@ void setupMPI( int argc, char * argv[] )
     MpiWrapper::init( &argc, &argv );
   }
 
-  MPI_COMM_GEOSX = MpiWrapper::commDup( MPI_COMM_WORLD );
+  MPI_COMM_GEOS = MpiWrapper::commDup( MPI_COMM_WORLD );
 
-  if( MpiWrapper::commRank( MPI_COMM_GEOSX ) == 0 )
+  if( MpiWrapper::commRank( MPI_COMM_GEOS ) == 0 )
   {
     // Can't use logging macros prior to logger init
-    std::cout << "Num ranks: " << MpiWrapper::commSize( MPI_COMM_GEOSX ) << std::endl;
+    std::cout << "Num ranks: " << MpiWrapper::commSize( MPI_COMM_GEOS ) << std::endl;
   }
 }
 
 ///////////////////////////////////////////////////////////////////////////////////////////////////////////////////////
 void finalizeMPI()
 {
-  MpiWrapper::commFree( MPI_COMM_GEOSX );
+  MpiWrapper::commFree( MPI_COMM_GEOS );
   MpiWrapper::finalize();
 }
 
@@ -154,7 +155,7 @@ void setupCaliper( cali::ConfigManager & caliperManager,
 
 #if defined( GEOS_USE_ADIAK )
 #if defined( GEOS_USE_MPI )
-  adiak::init( &MPI_COMM_GEOSX );
+  adiak::init( &MPI_COMM_GEOS );
 #else
   adiak::init( nullptr );
 #endif
@@ -289,7 +290,7 @@ static void addUmpireHighWaterMarks()
     string allocatorNameMinChars = string( MAX_NAME_LENGTH, '\0' );
 
     // Make sure that each rank is looking at the same allocator.
-    MpiWrapper::allReduce( allocatorNameFixedSize.c_str(), &allocatorNameMinChars.front(), MAX_NAME_LENGTH, MPI_MIN, MPI_COMM_GEOSX );
+    MpiWrapper::allReduce( allocatorNameFixedSize.c_str(), &allocatorNameMinChars.front(), MAX_NAME_LENGTH, MPI_MIN, MPI_COMM_GEOS );
     if( allocatorNameFixedSize != allocatorNameMinChars )
     {
       GEOS_WARNING( "Not all ranks have an allocator named " << allocatorNameFixedSize << ", cannot compute high water mark." );

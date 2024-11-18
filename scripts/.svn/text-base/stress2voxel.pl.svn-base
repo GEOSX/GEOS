@@ -1,0 +1,217 @@
+#!/bin/perl
+use strict;
+use Math::Trig;
+
+my $narg = $#ARGV + 1;
+die
+"usage: $0 <profile file name with t sigH sigh tuples> <sigH strike> <fault strike> <top: x y z> <bottom: x y z>\n"
+  if ( $narg != 9 );
+
+my $filename = shift;
+die "cannot open $filename" if ( !open( IN, "<$filename" ) );
+
+#get transform
+my $sHT = 0;    #T[2][0]
+my $shT = 0;    #T[2][1]
+my $sHS = 0;    #T[1][0]
+my $shS = 0;    #T[1][1];
+{
+	my $sstrike = shift;
+	my $fstrike = shift;
+	my $dtheta  = ( $fstrike - $sstrike ) * atan(1.0) / 45;
+	my $ct      = cos($dtheta);
+	my $st      = sin($dtheta);
+	$sHT = -$st * $ct;
+	$shT = $st * $ct;
+	$sHS = $st * $st;
+	$shS = $ct * $ct;
+}
+
+#get domain boundaries
+my @x0 = ( 0, 0, 0 );
+my @x1 = ( 0, 0, 0 );
+for ( my $i = 0 ; $i < 3 ; $i++ ) {
+	$x1[$i] = shift;
+}
+for ( my $i = 0 ; $i < 3 ; $i++ ) {
+	$x0[$i] = shift;
+	die
+"Cannot have lower bound greater than of equal to upper bound: $x0[$i] >= $x1[$i]"
+	  if ( $x0[$i] >= $x1[$i] );
+}
+
+#get random perturbations from gradient
+#my $dtau   = 0.0;
+#my $dsigma = 0.0;
+#if ( $narg > 9 ) {
+#	$dtau = shift;
+#	if ( $narg > 10 ) {
+#		$dsigma = shift;
+#	}
+#}
+
+print "USING: x0 ($x0[0] $x0[1] $x0[2]) 
+              x1 ($x1[0] $x1[1] $x1[2])
+";
+
+##################################
+#PRINT THE COORDINATES IN X AND Y
+##################################
+{
+	open( XOUT, ">x" );
+	open( YOUT, ">y" );
+	my $dx = ( $x1[0] - $x0[0] ) / 3;
+	my $dy = ( $x1[1] - $x0[1] ) / 3;
+	for ( my $i = 0 ; $i < 4 ; $i++ ) {
+		my $xx = $x0[0] + $dx * $i;
+		my $yy = $x0[1] + $dy * $i;
+		print XOUT "$xx\n";
+		print YOUT "$yy\n";
+	}
+	close XOUT;
+	close YOUT;
+}
+
+##################################
+#PRINT THE COORDINATES IN Z
+##################################
+my @zs   = ();
+my @sigs = ();
+{
+	my @asigs = ();
+
+	#get sigma entries from file ... will clip to fit domain later
+	{
+		my $z = -1e10;
+		while (<IN>) {
+			my $line = $_;
+			$line =~ s/^\s+//;
+			chomp($line);
+			my @arr = split( /\s+/, $line );
+			die "$0 : cannot parse line: $_" if ( $#arr != 2 );
+			die
+"$0 : cannot have non-sequential points in the sigma file: $arr[0] <= $z"
+			  if ( $arr[0] <= $z );
+			$z = $arr[0];
+			die "$0 : cannot have negative sigmas\n" if ( $arr[1] < 0 || $arr[2] < 0);
+			push( @asigs, \@arr );
+		}
+		close IN;
+		die "must have at least two sigma entries in $filename\n"
+		  if ( $#asigs <= 0 );
+		die "$0 : domain must lie completely in the z-range of the sigmas"
+		  if ( $asigs[0][0] > $x0[2] || $asigs[$#asigs][0] < $x1[2] );
+	}
+
+	#where do the boundaries lie within the stress field?
+	my @z01 = ( $x0[2], $x1[2] );
+	my @ii01 = ( -1, -1 );
+	{
+		for ( my $i = 0 ; $i <= $#z01 ; $i++ ) {
+			my $zz = $z01[$i];
+			for ( my $j = 0 ; $j <= $#asigs ; $j++ ) {
+				if ( $asigs[$j][0] <= $zz ) {
+					$ii01[$i] = $j;
+				}
+				else {
+					last;
+				}
+			}
+		}
+	}
+	print "Boundaries at $z01[0] - $z01[1]; these lie in indices $ii01[0] and $ii01[1]\n";
+
+	#fill the sigs and zs
+	{
+
+		#get the stress at the boundaries and add to "tmp" arrays
+		my @zstmp   = ();
+		my @sigstmp = ();
+		for ( my $i = 0 ; $i <= $#ii01 ; $i++ ) {
+			my $zz       = $z01[$i];
+			my @indices  = ( 0, 0 );
+			my $addpoint = 0;
+			if ( $ii01[$i] == $#asigs ) {
+				$indices[0] = $#asigs - 1;
+				$indices[1] = $#asigs;
+			}
+			else {
+				$indices[0] = $i;
+				$indices[1] = $i + 1;
+			}
+
+			my $z0    = $asigs[ $indices[0] ][0];
+			my $sigH0 = $asigs[ $indices[0] ][1];
+			my $sigh0 = $asigs[ $indices[0] ][2];
+
+			my $z1    = $asigs[ $indices[1] ][0];
+			my $sigH1 = $asigs[ $indices[1] ][1];
+			my $sigh1 = $asigs[ $indices[1] ][2];
+
+			my $fct  = ( $zz - $z0 ) / ( $z1 - $z0 );
+			my $sigH = $sigH0 + $fct * ( $sigH1 - $sigH0 );
+			my $sigh = $sigh0 + $fct * ( $sigh1 - $sigh0 );
+
+			push( @zstmp, $zz );
+			push( @sigstmp,
+				[ $sigH * $sHS + $sigh * $shS, $sigH * $sHT + $sigh * $shT ] );
+
+			if ( $zz == $z0 ) {
+				if ( $i == 0 ) {
+					++$ii01[$i];
+				}
+				else {
+					--$ii01[$i];
+				}
+			}
+		}
+
+		#add first boundary zs and sigs
+		push( @zs, $zstmp[0] );
+		push( @sigs, [ $sigstmp[0][0], $sigstmp[0][1] ] );
+
+		#get the stresses in between
+		for ( my $ii = $ii01[0] ; $ii <= $ii01[1] ; $ii++ ) {
+			my $zz   = $asigs[$ii][0];
+			my $sigH = $asigs[$ii][1];
+			my $sigh = $asigs[$ii][2];
+			push( @zs, $zz );
+			push( @sigs,
+				[ $sigH * $sHS + $sigh * $shS, $sigH * $sHT + $sigh * $shT ] );
+		}
+
+		#add second boundary zs and sigs
+		push( @zs, $zstmp[1] );
+		push( @sigs, [ $sigstmp[1][0], $sigstmp[1][1] ] );
+	}
+}
+
+#now the zs are all ascending ... check to make sure there are enough
+my $nzs = $#zs + 1;
+die "$0 : must have at least 4 points in the z range -> currently $nzs !\n" if ( $nzs < 4 );
+
+##################################
+#PRINT THE STRESSES INTO TAU AND SIGMA
+##################################
+my $nz = $#zs + 1;
+open( T, ">tau" );
+open( S, ">sigma" );
+open( ZOUT, ">z" );
+print T "4 4 $nz\n";
+print S "4 4 $nz\n";
+for ( my $k = 0 ; $k <= $#zs ; $k++ ) {
+	my $zz = $zs[$k];
+	
+	my $sigma = $sigs[$k][0];
+	my $tau = $sigs[$k][1];
+	for ( my $i = 0 ; $i < 16 ; $i++ ) {
+		print T "$tau ";
+		print S "$sigma ";
+	}
+	print T "\n";
+	print S "\n";
+	print ZOUT "$zz\n";
+}
+close T;
+close S;
+close ZOUT;

@@ -1,0 +1,138 @@
+#!/usr/bin/perl
+use strict;
+
+my $narg = $#ARGV + 1;
+
+#determine if the user is asking for help (either "help" or no arguments)
+my $print_help = 0;
+my $file = "";
+if($narg > 0)
+{
+    $file = shift;
+    if($file eq "help") {$print_help=1;}
+}
+else
+{
+    $print_help = 1;
+}
+
+if($print_help)
+{
+    print "usage: $0 <input_file> <scalar0> <scalar1> ... <scalarN>\n";
+    print "input is space-delimited, carriage return terminated\n";
+    print "note: positions must be defined by the field names 'x', 'y', and 'z'\n";
+    print "      also, output to a .okc file for visit to auto-recognize\n";
+    exit();
+}
+
+my @args = ();
+my $nscalars = $narg-1;
+#first, assume 12 characters per scalar
+my $nchar = 12;
+my $ncols = $nscalars*$nchar;
+my @pos = (-1,-1,-1);
+if($nscalars==0)
+{
+    #by default, assume the file only contains points
+    push(@args,"x");
+    push(@args,"y");
+    push(@args,"z");
+}
+else
+{
+    for(my $i=0;$i<$nscalars;$i++)
+    {
+	my $arg = shift;
+	if($arg eq "x"){$pos[0]=$i;}
+	if($arg eq "y"){$pos[1]=$i;}
+	if($arg eq "z"){$pos[2]=$i;}
+	push(@args,$arg);
+    }
+}
+
+#count points
+my $npoint = 0;
+{
+    open(IN,"<$file");
+    while(<IN>)
+    {
+	$npoint++;
+    }
+    close IN;
+}
+
+#print the file header
+
+my $ndim = 2;
+if($pos[2]>-1)
+{
+    $ndim = 3;
+}
+
+print "$nscalars $npoint $ncols\n";
+print "x\ny\n";
+if($ndim>2)
+{
+    print "z\n";
+}
+for(my $i=0;$i<$nscalars;$i++)
+{
+    my $found = 0;
+    for(my $j = 0; $j < $ndim; $j++)
+    {
+	if($pos[$j]==$i)
+	{
+	    $found=1;
+	    last;
+	}
+    }
+    if($found==0)
+    {
+	print "$args[$i]\n";
+    }
+}
+
+#print points
+{
+    open(IN,"<$file");
+    while(<IN>)
+    {
+	#get position
+	my $line = $_;
+	chomp($line);
+	$line =~s/^\s+//;
+	my @values = split(/\s+/,$line);
+	for(my $i=0;$i<$ndim;$i++)
+	{
+	    my $value = $values[$pos[$i]];
+	    #$value = unpack("f",pack("f",$value));
+	    #print sprintf('%f',$value);
+	    print sprintf(" %1.5e",$value);
+	}
+	#for(my $i=$ndim;$i<3;$i++)
+	#{
+	#    print sprintf("%*d",$nchar,0);
+	#}
+	for(my $i = 0; $i<$nscalars; $i++)
+	{
+	    my $found = 0;
+	    for(my $j=0; $j < $nscalars; $j++)
+	    {
+		if($pos[$j]==$i)
+		{
+		    $found = 1;
+		    last;
+		}
+	    }
+	    if($found==0)
+	    {
+		my $value = $values[$i];
+		print sprintf(" %1.5e",$value);
+		#exit();
+	    }
+	}
+	#exit();
+	print "\n";
+    }
+    close IN;
+}

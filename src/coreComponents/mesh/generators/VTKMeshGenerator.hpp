@@ -5,7 +5,7 @@
  * Copyright (c) 2016-2024 Lawrence Livermore National Security LLC
  * Copyright (c) 2018-2024 Total, S.A
  * Copyright (c) 2018-2024 The Board of Trustees of the Leland Stanford Junior University
- * Copyright (c) 2018-2024 Chevron
+ * Copyright (c) 2023-2024 Chevron
  * Copyright (c) 2019-     GEOS/GEOSX Contributors
  * All rights reserved
  *
@@ -22,6 +22,7 @@
 
 #include "mesh/generators/ExternalMeshGeneratorBase.hpp"
 #include "mesh/generators/VTKUtilities.hpp"
+#include "mesh/mpiCommunications/SpatialPartition.hpp"
 
 #include <vtkDataSet.h>
 
@@ -87,7 +88,9 @@ public:
    * surfaces of interest, with triangles and/or quads holding an attribute value
    * of 1, 2 or 3, three node sets named "1", "2" and "3" will be instantiated by this method
    */
+
   virtual void fillCellBlockManager( CellBlockManager & cellBlockManager, array1d< int > const & partition ) override;
+  // virtual void fillCellBlockManager( CellBlockManager & cellBlockManager, SpatialPartition & partition ) override; // develop branch
 
   void importFieldOnArray( Block block,
                            string const & blockName,
