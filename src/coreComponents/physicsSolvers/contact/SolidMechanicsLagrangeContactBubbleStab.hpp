@@ -52,6 +52,11 @@ public:
 
   virtual void registerDataOnMesh( Group & MeshBodies ) override final;
 
+  real64 solverStep( real64 const & time_n,
+                     real64 const & dt,
+                     const integer cycleNumber,
+                     DomainPartition & domain ) override final;
+
   virtual void
   setupDofs( DomainPartition const & domain,
              DofManager & dofManager ) const override;
