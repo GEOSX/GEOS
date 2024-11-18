@@ -22,8 +22,10 @@
 
 #include "functions/FunctionManager.hpp"
 #include "functions/TableFunction.hpp"
+#ifdef GEOS_USE_MATHPRESSO
 #include "functions/SymbolicFunction.hpp"
 #include "functions/CompositeFunction.hpp"
+#endif
 
 #include "common/Units.hpp"
 #include "common/format/table/TableFormatter.hpp"
@@ -134,6 +136,7 @@ void KValueFlashParameters< NUM_PHASE >::postInputInitializationImpl( MultiFluid
     {
       numDims = tableFunction->numDimensions();
     }
+#ifdef GEOS_USE_MATHPRESSO
     else if( SymbolicFunction const * symbolicFunction = dynamicCast< SymbolicFunction const * >( function ))
     {
       numDims = symbolicFunction->getWrapper< string_array >( "variableNames" ).reference().size();
@@ -142,6 +145,7 @@ void KValueFlashParameters< NUM_PHASE >::postInputInitializationImpl( MultiFluid
     {
       numDims = compositeFunction->getWrapper< string_array >( "variableNames" ).reference().size();
     }
+#endif
     GEOS_THROW_IF_NE_MSG( numDims, 2,
                           GEOS_FMT( "Function with name {} must have a dimension of 2. ", functionName ),
                           InputError );

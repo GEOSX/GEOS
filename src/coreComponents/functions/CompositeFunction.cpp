@@ -76,7 +76,9 @@ void CompositeFunction::initializeFunction()
   m_numSubFunctions = LvArray::integerConversion< localIndex >( m_functionNames.size());
   for( localIndex ii=0; ii<m_numSubFunctions; ++ii )
   {
-    m_subFunctions.emplace_back( &functionManager.getGroup< FunctionBase >( m_functionNames[ii] ) );
+    FunctionBase * function = &functionManager.getGroup< FunctionBase >( m_functionNames[ii] );
+    function->initializeFunction();
+    m_subFunctions.emplace_back( function );
   }
 }
 
