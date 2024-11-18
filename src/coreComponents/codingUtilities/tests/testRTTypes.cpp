@@ -57,6 +57,12 @@ TEST(DynamicCastTests, Reference_Casting_Success) {
 TEST(DynamicCastTests, Reference_Casting_Failure) {
     Base base;
     Base& base_ref = base;
+    
+//    Derived& derived_base_ref = geos::dynamicCast<Derived&>(base_ref);
+//    // this test a good_cast
+//    ASSERT_EQ(&derived_base_ref, &base) << "Expected successful cast from Base to Derived.";
+    
+    // this test a bad_cast for clang
     ASSERT_THROW(geos::dynamicCast<Derived&>(base_ref), std::bad_cast) << "Expected bad_cast due to failed reference cast.";
 }
 
@@ -81,7 +87,7 @@ TEST(RtTypesTests, GetTypeRegex_Default) {
 }
 
 int main(int argc, char **argv) {
-    ::testing::InitGoogleTest(&argc, argv);
+    testing::InitGoogleTest(&argc, argv);
     return RUN_ALL_TESTS();
 }
 
