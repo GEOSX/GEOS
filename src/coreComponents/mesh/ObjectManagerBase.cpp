@@ -43,7 +43,7 @@ ObjectManagerBase::ObjectManagerBase( string const & name,
   registerGroup( groupKeyStruct::neighborDataString(), &m_neighborGroup );
 
   registerWrapper( viewKeyStruct::localToGlobalMapString(), &m_localToGlobalMap ).
-    setApplyDefaultValue( -1 ).
+    setApplyDefaultValue( -1 ).setPlotLevel( PlotLevel::LEVEL_0 ).
     setDescription( "Array that contains a map from localIndex to globalIndex." );
 
   registerWrapper( viewKeyStruct::globalToLocalMapString(), &m_globalToLocalMap );
