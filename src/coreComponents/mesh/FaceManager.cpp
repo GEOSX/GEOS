@@ -22,6 +22,7 @@
 #include "common/GEOS_RAJA_Interface.hpp"
 #include "common/logger/Logger.hpp"
 #include "common/TimingMacros.hpp"
+#include "common/MpiWrapper.hpp"
 #include "LvArray/src/tensorOps.hpp"
 #include "mesh/BufferOps.hpp"
 #include "mesh/ElementRegionManager.hpp"
@@ -184,6 +185,10 @@ void FaceManager::setGeometricalRelations( CellBlockManagerABC const & cellBlock
     {
       for( localIndex const & face: elem2dToFaces[ei] )
       {
+        std::cout<<"m_toElements( "<<face<<" )    = ( "<<m_toElements.m_toElementRegion( face, 0 )<<", "<<m_toElements.m_toElementSubRegion( face, 0 )<<", "<<m_toElements.m_toElementIndex( face, 0 )<<" )"<<std::endl;
+        std::cout<<"            ( "<<face<<" )    = ( "<<m_toElements.m_toElementRegion( face, 1 )<<", "<<m_toElements.m_toElementSubRegion( face, 1 )<<", "<<m_toElements.m_toElementIndex( face, 1 )<<" )"<<std::endl;
+        
+
         GEOS_ERROR_IF_EQ_MSG( m_toElements.m_toElementRegion( face, 0 ), -1, GEOS_FMT( err, face ) );
         GEOS_ERROR_IF_EQ_MSG( m_toElements.m_toElementSubRegion( face, 0 ), -1, GEOS_FMT( err, face ) );
         GEOS_ERROR_IF_EQ_MSG( m_toElements.m_toElementIndex( face, 0 ), -1, GEOS_FMT( err, face ) );
@@ -199,7 +204,15 @@ void FaceManager::setGeometricalRelations( CellBlockManagerABC const & cellBlock
     }
   };
   // Connecting all the 3d elements (information is already in the m_toElements mappings) and all the 2d elements.
-  elemRegionManager.forElementRegionsComplete< SurfaceElementRegion >( connect2dElems );
+  for( int rank=0; rank<MpiWrapper::commSize(); ++rank )
+  {
+    MpiWrapper::barrier();
+    if( rank==MpiWrapper::commRank() )
+    {
+        std::cout<<"RANK "<<rank<<std::endl;
+        elemRegionManager.forElementRegionsComplete< SurfaceElementRegion >( connect2dElems );
+    }
+  }
 
   if( isBaseMeshLevel )
   {
