@@ -2,6 +2,7 @@
 set( testSources
      testGeosxTraits.cpp
      testParsing.cpp
+     testRTTypes.cpp
      testUtilities.cpp )
 
 set( dependencyList codingUtilities ${parallelDeps} )
