@@ -538,7 +538,12 @@ void CompositionalMultiphaseWell::initializePostSubGroups()
   } );
 }
 
-void CompositionalMultiphaseWell::outputWellDebug( DomainPartition & domain,
+void CompositionalMultiphaseWell::outputWellDebug( real64 const time,
+                                                   real64 const dt, 
+                                                   integer num_timesteps,
+                                                   integer current_newton_iteration,
+                                                   integer num_timestep_cuts,
+                                                   DomainPartition & domain,
                                                    DofManager const & dofManager,
                                                    CRSMatrixView< real64, globalIndex const > const & localMatrix,
                                                    arrayView1d< real64 > const & localRhs )
@@ -562,25 +567,30 @@ void CompositionalMultiphaseWell::outputWellDebug( DomainPartition & domain,
         integer n = solver_names.size();
         // Bit of a hack, cases with > 3 solvers we need to find the base solver for wells
         // Assume that solver definition order follows coupledreswell, res, and then well
-        std::string coupled_solver_name = solver_names[n-3];
+        //std::string coupled_solver_name = solver_names[n-3];
 
-        GeosxState & gs = getGlobalState();
+        //GeosxState & gs = getGlobalState();
 
-        CompositionalMultiphaseReservoirAndWells< CompositionalMultiphaseBase > * solver =
-          &(gs.getProblemManager().getPhysicsSolverManager().getGroup< geos::CompositionalMultiphaseReservoirAndWells< geos::CompositionalMultiphaseBase > >( coupled_solver_name ));
+        //CompositionalMultiphaseReservoirAndWells< CompositionalMultiphaseBase > * solver =
+        //  &(gs.getProblemManager().getPhysicsSolverManager().getGroup< geos::CompositionalMultiphaseReservoirAndWells< geos::CompositionalMultiphaseBase > >( coupled_solver_name ));
 
         EventManager const & event = getGroupByPath< EventManager >( "/Problem/Events" );
         real64 const & ctime = event.getReference< real64 >( EventManager::viewKeyStruct::timeString() );
         real64 const & dt = event.getReference< real64 >( EventManager::viewKeyStruct::dtString() );
         integer const & cycle = event.getReference< integer >( EventManager::viewKeyStruct::cycleString() );
         integer const & subevent = event.getReference< integer >( EventManager::viewKeyStruct::currentSubEventString() );
+
+
+       // std::cout << "tjbtime1 " << ctime <<  " " << m_globalNumTimeSteps <<  " " << dt << " " << cycle << " " << subevent 
+       // << " "  << m_numTimeStepCuts << " " << m_currentNewtonIteration << std::endl;
         if( true) // need to fix for restarts cycle >= m_writeSegDebug   )
         {
-          SolverStatistics & solver_stat = solver->getSolverStatistics();
-          integer num_timesteps = solver_stat.getReference< integer >( SolverStatistics::viewKeyStruct::numTimeStepsString());
-          integer current_newton_iteration = solver_stat.getReference< integer >( SolverStatistics::viewKeyStruct::numCurrentNonlinearIterationsString());
-          integer num_timestep_cuts = solver_stat.getReference< integer >( SolverStatistics::viewKeyStruct::numTimeStepCutsString());
-
+          //SolverStatistics & solver_stat = solver->getSolverStatistics();
+          //integer num_timesteps = solver_stat.getReference< integer >( SolverStatistics::viewKeyStruct::numTimeStepsString());
+          //integer current_newton_iteration = solver_stat.getReference< integer >( SolverStatistics::viewKeyStruct::numCurrentNonlinearIterationsString());
+          //integer num_timestep_cuts = solver_stat.getReference< integer >( SolverStatistics::viewKeyStruct::numTimeStepCutsString());
+        //std::cout << "tjbtime2 " << ctime <<  " " << m_globalNumTimeSteps <<  " " << dt << " " << cycle << " " << subevent 
+        //<< " "  << m_numTimeStepCuts << " " << m_currentNewtonIteration << std::endl;
           string & fluidName = subRegion.getReference< string >( viewKeyStruct::fluidNamesString() );
           fluidName = getConstitutiveName< MultiFluidBase >( subRegion );
           WellControls & wellControls = getWellControls( subRegion );

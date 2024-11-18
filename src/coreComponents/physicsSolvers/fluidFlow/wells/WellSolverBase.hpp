@@ -237,7 +237,12 @@ public:
                                           CRSMatrixView< real64, globalIndex const > const & localMatrix,
                                           arrayView1d< real64 > const & localRhs ) = 0;
 
-  virtual void outputWellDebug( DomainPartition & domain,
+  virtual void outputWellDebug( real64 const time,
+                                real64 const dt, 
+                                integer num_timesteps,
+                                integer current_newton_iteration,
+                                integer num_timestep_cuts, 
+                                DomainPartition & domain,
                                 DofManager const & dofManager,
                                 CRSMatrixView< real64, globalIndex const > const & localMatrix,
                                 arrayView1d< real64 > const & localRhs ) = 0;
@@ -287,6 +292,7 @@ private:
 
   virtual void setConstitutiveNamesCallSuper( ElementSubRegionBase & subRegion ) const override;
 
+  std::tuple<integer,integer,integer> currentIter(real64 const time,real64 const dt);
 
 protected:
 
@@ -339,6 +345,14 @@ protected:
   string const m_ratesOutputDir;
   /// flag to write detailed segment properties
   integer m_writeSegDebug;
+  
+  integer m_globalNumTimeSteps;
+  real64  m_currentTime;
+  real64  m_currentDt;
+  real64  m_prevTime;
+  real64  m_prevDt;
+  integer m_numTimeStepCuts;
+  integer m_currentNewtonIteration;
 
   std::map< std::string, WellPropWriter > m_wellPropWriter;
   /// flag to freeze the initial state during initialization in coupled problems
