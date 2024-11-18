@@ -148,14 +148,14 @@ void ElementRegionManager::generateMesh( CellBlockManagerABC const & cellBlockMa
   // It also creates the mappings concerning the regions.
   array2d< localIndex > const blockToSubRegion = this->getCellBlockToSubRegionMap( cellBlockManager );
 
-  // While indicated as containing element subregion information,
-  // `relation` currently contains cell block information
-  // that will be transformed into element subregion information.
-  // This is why we copy the information into a temporary,
-  // which frees space for the final information (of same size).
   this->forElementRegions< SurfaceElementRegion >( [&]( SurfaceElementRegion & elemRegion )
   {
     SurfaceElementSubRegion & surfaceSubRegion = elemRegion.getUniqueSubRegion< SurfaceElementSubRegion >();
+    // While indicated as containing element subregion information,
+    // `relation` currently contains cell block information
+    // that will be transformed into element subregion information.
+    // This is why we copy the information into a temporary,
+    // which frees space for the final information (of same size).
     if( auto * const faceElementSubRegion = dynamic_cast< FaceElementSubRegion * >( &surfaceSubRegion ) )
     {
       FixedToManyElementRelation & relation = faceElementSubRegion->getToCellRelation();

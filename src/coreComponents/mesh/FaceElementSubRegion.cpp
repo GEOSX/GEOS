@@ -176,25 +176,24 @@ void FaceElementSubRegion::copyFromCellBlock( FaceBlockABC const & faceBlock )
   // we store the cell block mapping at the sub region mapping location.
   // It will later be transformed into a sub regions mapping.
   // Last, we fill the regions mapping with dummy -1 values that should all be replaced eventually.
-  auto const elem2dToElems = faceBlock.get2dElemToElems();
+  auto const & elem2dToElems = faceBlock.get2dElemToElems();
   m_2dElemToElems.resize( num2dElements, 2 );
   for( int i = 0; i < num2dElements; ++i )
   {
-    for( localIndex const & j: elem2dToElems.toCellIndex[i] )
+    for( localIndex j=0; j<2; ++j )
     {
-      m_2dElemToElems.m_toElementIndex( i, j );
-    }
-    for( localIndex const & j: elem2dToElems.toBlockIndex[i] )
-    {
-      m_2dElemToElems.m_toElementSubRegion( i, j );
+      m_2dElemToElems.m_toElementSubRegion( i, j ) = elem2dToElems.toBlockIndex( i, j );
+      m_2dElemToElems.m_toElementIndex( i, j ) = elem2dToElems.toCellIndex( i, j );
     }
   }
-
+  
   m_toFacesRelation.resize( num2dElements, 2 );
+  ArrayOfArrays< localIndex > const & elem2dToFaces = faceBlock.get2dElemToFaces();
+  
   for( localIndex i = 0; i < num2dElements; ++i )
   {
-    m_toFacesRelation( i, 0 ) = faceBlock.get2dElemToFaces()[i][0];
-    m_toFacesRelation( i, 1 ) = faceBlock.get2dElemToFaces()[i][1];
+    m_toFacesRelation( i, 0 ) = elem2dToFaces( i, 0 );
+    m_toFacesRelation( i, 1 ) = elem2dToFaces( i, 1 );
   }
 
   m_2dFaceToEdge = faceBlock.get2dFaceToEdge();

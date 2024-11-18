@@ -180,7 +180,7 @@ void FaceManager::setGeometricalRelations( CellBlockManagerABC const & cellBlock
     // And since a 2d element is connected to a given face, and since a face can only have 2 neighbors,
     // then the second neighbor of the face is bound to be undefined (i.e. -1).
     arrayView2d< localIndex const > const & elem2dToFaces = subRegion.faceList().toViewConst();
-    for( localIndex ei = 0; ei < elem2dToFaces.size(); ++ei )
+    for( localIndex ei = 0; ei < elem2dToFaces.size(0); ++ei )
     {
       for( localIndex const & face: elem2dToFaces[ei] )
       {
