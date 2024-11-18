@@ -26,7 +26,6 @@
 #include "physicsSolvers/contact/LogLevelsInfo.hpp"
 #include "physicsSolvers/solidMechanics/SolidMechanicsLagrangianFEM.hpp"
 #include "common/GEOS_RAJA_Interface.hpp"
-#include "fieldSpecification/FieldSpecificationManager.hpp"
 
 namespace geos
 {

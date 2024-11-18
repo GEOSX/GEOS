@@ -29,6 +29,7 @@
 
 #include "constitutive/ConstitutiveManager.hpp"
 #include "constitutive/contact/FrictionSelector.hpp"
+#include "fieldSpecification/FieldSpecificationManager.hpp"
 
 
 namespace geos
