@@ -210,7 +210,6 @@ public:
     // If slip rate is outside the bracket, re-initialize to the middle value
     real64 const upperBound = shearTractionMagnitude/m_shearImpedance;
     real64 const bracketedSlipRate = m_slipRate[k] > upperBound ? upperBound/2 : m_slipRate[k];
-    //real64 const bracketedSlipRate = m_slipRate[k];
   
     stack.rhs = shearTractionMagnitude - m_shearImpedance *bracketedSlipRate - normalTraction * m_frictionLaw.frictionCoefficient( k,bracketedSlipRate, m_stateVariable[k] );
     stack.jacobian = -m_shearImpedance - normalTraction * m_frictionLaw.dFrictionCoefficient_dSlipRate( k, bracketedSlipRate, m_stateVariable[k] );
