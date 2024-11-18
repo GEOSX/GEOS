@@ -53,9 +53,9 @@ SolidMechanicsLagrangeContactBubbleStab::~SolidMechanicsLagrangeContactBubbleSta
 }
 
 real64 SolidMechanicsLagrangeContactBubbleStab::solverStep( real64 const & time_n,
-                                      real64 const & dt,
-                                      const integer cycleNumber,
-                                      DomainPartition & domain )
+                                                            real64 const & dt,
+                                                            const integer cycleNumber,
+                                                            DomainPartition & domain )
 {
   if( cycleNumber == 0 )
   {
