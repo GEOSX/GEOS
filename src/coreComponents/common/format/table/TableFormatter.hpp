@@ -151,44 +151,57 @@ public:
   class CellFormatterStrategy
   {
 public:
+
+    /**
+     * @brief Formats a table cell with appropriate padding, borders, and alignment.
+     * @param tableOutput The output stream
+     * @param column The column information for the cell
+     * @param tableLayout The table layout, used to get column margins and border margins.
+     * @param alignment The alignment for the cell content (left, center, right).
+     * @param cell The string content to be formatted.
+     * @param isFirstColumn A flag indicating whether the cell is in the first column.
+     * @param isNotLastColumn A flag indicating whether the cell is not in the last column.
+     * @param cellChar A string representing the character used for border formatting.
+     */
+    void formatCellCommon( std::ostringstream & tableOutput, TableLayout::Column const & column,
+                           TableLayout const & tableLayout, TableLayout::Alignment alignment,
+                           string const & cell, bool isFirstColumn, bool isNotLastColumn,
+                           string const & cellChar );
+
     virtual void formatCell( std::ostringstream & tableOutput,
-                             TableLayout::Column const & tableColumnData,
+                             TableLayout::Column const & column,
                              TableLayout const & tableLayout,
-                             TableLayout::Cell & cell, bool isFirstColumn, bool isNotLastColumn ) = 0;
+                             TableLayout::Alignment alignment, string const & cell,
+                             bool isFirstColumn, bool isNotLastColumn ) = 0;
   };
 
-  class HeaderCell : public CellFormatterStrategy
-  {
-public:
-    virtual void formatCell( std::ostringstream & tableOutput,
-                             TableLayout::Column const & tableColumnData,
-                             TableLayout const & tableLayout,
-                             TableLayout::Cell & cell, bool isFirstColumn, bool isNotLastColumn ) override;
-  };
   class ValueCell : public CellFormatterStrategy
   {
 public:
     virtual void formatCell( std::ostringstream & tableOutput,
-                             TableLayout::Column const & tableColumnData,
+                             TableLayout::Column const & column,
                              TableLayout const & tableLayout,
-                             TableLayout::Cell & cell, bool isFirstColumn, bool isNotLastColumn ) override;
+                             TableLayout::Alignment alignment, string const & cell,
+                             bool isFirstColumn, bool isNotLastColumn ) override;
   };
   class MergingCell : public CellFormatterStrategy
   {
 public:
     virtual void formatCell( std::ostringstream & tableOutput,
-                             TableLayout::Column const & tableColumnData,
+                             TableLayout::Column const & column,
                              TableLayout const & tableLayout,
-                             TableLayout::Cell & cell, bool isFirstColumn, bool isNotLastColumn ) override;
+                             TableLayout::Alignment alignment, string const & cell,
+                             bool isFirstColumn, bool isNotLastColumn ) override;
   };
 
   class SeparatingCell : public CellFormatterStrategy
   {
 public:
     virtual void formatCell( std::ostringstream & tableOutput,
-                             TableLayout::Column const & tableColumnData,
+                             TableLayout::Column const & column,
                              TableLayout const & tableLayout,
-                             TableLayout::Cell & cell, bool isFirstColumn, bool isNotLastColumn ) override;
+                             TableLayout::Alignment alignment, string const & cell,
+                             bool isFirstColumn, bool isNotLastColumn ) override;
   };
 
 private:
@@ -232,19 +245,14 @@ private:
                                      std::vector< std::vector< TableData::DataType > > const & tableData ) const;
 
   /**
-   * @brief Split all header names by detecting the newline \\n character. and
-   * set the same vector size for each divided header and merge it into columns
-   * @param columns  The vector containg all columns
-   * @param allDividedHeaderParts Vector to store the split header names for each tableColumnData
+   * @brief Divides cells (header and values) by detecting the newline \\n character and set the same cell vector
+   * @param columns The vector containg all columns
    */
-  void splitAndMergeColumnHeaders( std::vector< TableLayout::Column > & columns ) const;
+  void dividesCells( std::vector< TableLayout::Column > & columns ) const;
 
   /**
    * @brief For each tableColumnData find and set the column's longest string
    * @param tableColumnData The tableColumnData to process.
-   * @param maxStringSize Store the longest string(s) for each tableColumnData.
-   * @param idxColumn The current index of the tableColumnData
-   *
    * @note Compares the longest string from the header with the longest string from the column values.
    * If the column contains subcolumns, it recursively applies the same logic to them
    */
@@ -300,15 +308,23 @@ private:
                    bool isFirstColumn,
                    bool isLastColumn = false ) const;
 
-  /**
-   * @brief Outputs subcolumns for the given row in the table.
-   * @param columns  Vector containing the subcolumn values
-   * @param tableOutput The output stream
-   * @param idxRow Index of the current row in the table
-   */
+/**
+ * @brief Outputs subcolumns for the given row in the table.
+ * @param columns  Vector containing the subcolumn values
+ * @param tableOutput The output stream
+ * @param idxRow Index of the current row in the table
+ */
   void outputSubSection( std::vector< TableLayout::Column > const & columns,
                          std::ostringstream & tableOutput,
                          size_t const idxRow ) const;
+
+/**
+ * @brief Outputs subcolumns for the given row in the table.
+ * @param columns  Vector containing the subcolumn values
+ * @param tableOutput The output stream
+ */
+  void outputSubHeaderSection( std::vector< TableLayout::Column > const & columns,
+                               std::ostringstream & tableOutput ) const;
 
   /**
    * @brief Output the values rows in the table

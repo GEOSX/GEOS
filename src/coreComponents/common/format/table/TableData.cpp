@@ -45,7 +45,7 @@ void TableData::addSeparator()
   }
 
   integer rowSize = m_rows[0].size();
-  m_rows.emplace_back( std::vector< TableData::DataType >( rowSize, { CellType::SEPARATOR, "" } ));
+  m_rows.emplace_back( std::vector< TableData::DataType >( rowSize, { CellType::SEPARATOR, "-" } ));
 
 }
 

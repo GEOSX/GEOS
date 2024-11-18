@@ -170,14 +170,29 @@ private:
   std::set< real64 > m_columnValues;
 };
 
+template< typename T >
+constexpr bool isCellType = std::is_same_v< T, TableData::CellType >;
+
 template< typename ... Args >
 void TableData::addRow( Args const &... args )
 {
   std::vector< DataType > cells;
   ( [&] {
-    static_assert( has_formatter_v< decltype(args) >, "Argument passed in addRow cannot be converted to string" );
-    string const cellValue = GEOS_FMT( "{}", args );
-    cells.push_back( {CellType::Value, cellValue} );
+    static_assert( has_formatter_v< decltype(args) > || isCellType< decltype(args) >, "Argument passed in addRow cannot be converted to string nor a CellType" );
+    if constexpr (std::is_same_v< Args, TableData::CellType >) {
+      if( args == TableData::CellType::SEPARATOR )
+      {
+        cells.push_back( {TableData::CellType::SEPARATOR, "-"} );
+      }
+      else
+      {
+        cells.push_back( {TableData::CellType::MERGE, " "} );
+      }
+    }
+    else
+    {
+      cells.push_back( {TableData::CellType::Value, GEOS_FMT( "{}", args )} );
+    }
   } (), ...);
   addRow( cells );
 }

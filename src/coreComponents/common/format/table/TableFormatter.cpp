@@ -95,8 +95,8 @@ void transpose( std::vector< std::vector< TableLayout::Cell > > & dest,
                                                          "source matrix" );
     for( size_t idxCol = 0; idxCol < source[idxRow].size(); ++idxCol )
     {
-      dest[idxCol][idxRow].type = (char) source[idxRow][idxCol].type;
       dest[idxCol][idxRow].value = source[idxRow][idxCol].value;
+      dest[idxCol][idxRow].type = (char) source[idxRow][idxCol].type;
     }
   }
 }
@@ -185,14 +185,13 @@ void TableTextFormatter::prepareAndBuildTable( std::vector< TableLayout::Column 
                                                string & sectionSeparatingLine,
                                                string & topSeparator ) const
 {
-  std::cout << "sfdxfdwfdwd";
   std::vector< std::vector< TableData::DataType > > tableDataRows( tableData.getTableDataRows());
   if( !tableDataRows.empty())
   {
     updateVisibleColumns( columns, tableDataRows );
     populateColumnsFromTableData( columns, tableDataRows );
   }
-  splitAndMergeColumnHeaders( columns );
+  dividesCells( columns );
   for( auto & column : columns )
   {
     findAndSetLongestColumnString( column );
@@ -247,6 +246,7 @@ void TableTextFormatter::populateColumnsFromTableData( std::vector< TableLayout:
                                                        std::vector< std::vector< TableData::DataType > > const & tableDataRows ) const
 {
   size_t currentColumn = 0;
+  bool containSubColumn=  false;
   std::vector< std::vector< TableLayout::Cell > > valuesByColumn( tableDataRows[0].size(),
                                                                   std::vector< TableLayout::Cell >( tableDataRows.size()));
 
@@ -258,70 +258,89 @@ void TableTextFormatter::populateColumnsFromTableData( std::vector< TableLayout:
     if( column.subColumn.empty())
     {
       column.cells = valuesByColumn[currentColumn++];
-      for( auto  & cell : column.cells)//todo en haut
+      for( auto & cell : column.cells )//todo
       {
-        cell.setAlignment(column.cellAlignment.valueAlignment);
+        cell.alignment = column.cellAlignment.valueAlignment;
       }
     }
     else
     {
+      containSubColumn=  true;
       populateSubColumnsFromTableData( column, valuesByColumn, currentColumn );
+    }
+  }
+
+  if( containSubColumn )
+  {
+    for( auto & column : columns )
+    {
+      if( column.subColumn.empty())
+      {
+        column.subColumn = std::vector< TableLayout::Column >{TableLayout::Column()};
+      }
     }
   }
 }
 
 
-void TableTextFormatter::splitAndMergeColumnHeaders( std::vector< TableLayout::Column > & columns ) const
+void TableTextFormatter::dividesCells( std::vector< TableLayout::Column > & columns ) const
 {
   size_t maxNbRow = 1;
-  bool c = false;
+  size_t maxCellRow = 1;
+
+  auto splitValue = []( const std::string & value, std::vector< std::string > & dividedValue ) {
+    std::istringstream ss( value );
+    std::string subValue;
+    while( getline( ss, subValue, '\n' ))
+    {
+      dividedValue.push_back( subValue );
+    }
+  };
+
   for( auto & column : columns )
   {
-    std::vector< string > & headerDivided = column.columnName.dividedValue;
-    std::istringstream ss( column.columnName.value );
-    string subColumnNames;
-    while( getline( ss, subColumnNames, '\n' ))
-    {
-      headerDivided.push_back( subColumnNames );
-    }
+    splitValue( column.columnName.value, column.columnName.dividedValues );
+    maxNbRow = std::max( maxNbRow, column.columnName.dividedValues.size());
 
-    if( headerDivided.size() > maxNbRow )
+    for( auto & cell : column.cells )
     {
-      maxNbRow = headerDivided.size();
+      splitValue( cell.value, cell.dividedValues );
+      maxCellRow = std::max( maxCellRow, cell.dividedValues.size());
     }
 
     if( !column.subColumn.empty())
     {
-      c = true;
-      splitAndMergeColumnHeaders( column.subColumn );
+      dividesCells( column.subColumn );
     }
-
-    if(c)
-    {
-      //column.subColumn = std::vector< TableLayout::Column >{TableLayout::Column()};
-    }
-
   }
 
+  // set the same size for all cells
   for( auto & column : columns )
   {
-    std::vector< string > & headerDivided = column.columnName.dividedValue;
 
-    if( headerDivided.size() < maxNbRow )
+    if( column.columnName.dividedValues.size() < maxNbRow )
     {
-      headerDivided.resize( maxNbRow, " " );
-
+      column.columnName.dividedValues.resize( maxNbRow, " " );
     }
     column.columnName.nbRows = maxNbRow;
-  }
 
+    for( auto & cell : column.cells )
+    {
+      if( cell.dividedValues.size() < maxCellRow )
+      {
+        cell.dividedValues.resize( maxCellRow, " " );
+
+      }
+      cell.nbRows = maxCellRow;
+    }
+  }
 }
 
 void TableTextFormatter::findAndSetLongestColumnString( TableLayout::Column & column ) const
 {
-  { // header case
-    auto maxCellIt = *std::max_element( column.columnName.dividedValue.begin(),
-                                        column.columnName.dividedValue.end(),
+  {   // header case
+    auto maxCellIt = *std::max_element( column.columnName.dividedValues.begin(),
+                                        column.columnName.dividedValues.end(),
                                         []( const auto & a, const auto & b )
     {
       return a.length() < b.length();
@@ -329,7 +348,7 @@ void TableTextFormatter::findAndSetLongestColumnString( TableLayout::Column & co
     column.setMaxStringSize( maxCellIt.length());
   }
 
-  {  // cells case
+  {   // cells case
     if( column.subColumn.empty() && !column.cells.empty())
     {
       auto maxCellIt = std::max_element( column.cells.begin(),
@@ -346,13 +365,13 @@ void TableTextFormatter::findAndSetLongestColumnString( TableLayout::Column & co
     }
   }
 
-  { // subcolumn values case
+  {   // subcolumn values case
     size_t totalLengthSubColumns = 0;
     if( !column.subColumn.empty() )
     {
       for( auto & subColumn : column.subColumn )
       {
-        findAndSetLongestColumnString( subColumn );
+        findAndSetLongestColumnString( subColumn );//todo
         totalLengthSubColumns += subColumn.getMaxStringSize();
         if( &subColumn != &column.subColumn[0] )
         {
@@ -396,7 +415,7 @@ void TableTextFormatter::computeAndBuildTableSeparator( std::vector< TableLayout
   }
 
   sectionSeparatingLine = GEOS_FMT( "{:-^{}}", m_horizontalLine, sectionlineLength );
-  integer const topSeparatorLength = maxTopLineLength - 2; // Adjust for border characters
+  integer const topSeparatorLength = maxTopLineLength - 2;   // Adjust for border characters
   topSeparator = GEOS_FMT( "{}{:-<{}}{}", m_horizontalLine, "", topSeparatorLength, m_horizontalLine );
 }
 
@@ -435,20 +454,80 @@ void TableTextFormatter::outputTitleRow( std::ostringstream & tableOutput,
   }
 }
 
-void outputSubHeaderSection( std::vector< TableLayout::Column > const & columns,
-                             std::ostringstream & tableOutput )
+std::unique_ptr< TableTextFormatter::CellFormatterStrategy > createCellFormatter( TableData::CellType type )
 {
-  integer const columnMargin = 5;
+  switch( type )
+  {
+    case TableData::CellType::MERGE:
+      return std::make_unique< TableTextFormatter::MergingCell >();
+    case TableData::CellType::SEPARATOR:
+      return std::make_unique< TableTextFormatter::SeparatingCell >();
+    case TableData::CellType::Header:
+    case TableData::CellType::Value:
+      return std::make_unique< TableTextFormatter::ValueCell >();
+    default:
+      throw std::invalid_argument( "Unknown cell type" );
+  }
+}
+
+void TableTextFormatter::CellFormatterStrategy::formatCellCommon( std::ostringstream & tableOutput, TableLayout::Column const & column,
+                                                                  TableLayout const & tableLayout, TableLayout::Alignment alignment,
+                                                                  string const & cell, bool isFirstColumn, bool isNotLastColumn,
+                                                                  string const & cellChar )
+{
+  const size_t cellSize = column.getMaxStringSize();
+
+  if( isFirstColumn )
+  {
+    tableOutput << string( tableLayout.getBorderMargin() - 1, cellChar.front() );
+  }
+
+  tableOutput << buildCell( alignment, cell, cellSize );
+
+  if( isNotLastColumn )
+  {
+    tableOutput << GEOS_FMT( "{:^{}}", m_verticalLine, tableLayout.getColumnMargin());
+  }
+  else
+  {
+    tableOutput << string( tableLayout.getBorderMargin() - 1, ' ' );
+    tableOutput << m_verticalLine << "\n";
+  }
+}
+
+void TableTextFormatter::ValueCell::formatCell( std::ostringstream & tableOutput, TableLayout::Column const & column,
+                                                TableLayout const & tableLayout, TableLayout::Alignment alignment,
+                                                string const & cell, bool isFirstColumn, bool isNotLastColumn )
+{
+  formatCellCommon( tableOutput, column, tableLayout, alignment, cell, isFirstColumn, isNotLastColumn, " " );
+}
+
+void TableTextFormatter::MergingCell::formatCell( std::ostringstream & tableOutput, TableLayout::Column const & column,
+                                                  TableLayout const & tableLayout, TableLayout::Alignment alignment,
+                                                  string const & cell, bool isFirstColumn, bool isNotLastColumn )
+{
+  formatCellCommon( tableOutput, column, tableLayout, alignment, cell, isFirstColumn, isNotLastColumn, cell );
+  tableOutput << string( tableLayout.getColumnMargin(), cell.front() );
+}
+
+void TableTextFormatter::SeparatingCell::formatCell( std::ostringstream & tableOutput, TableLayout::Column const & column,
+                                                     TableLayout const & tableLayout, TableLayout::Alignment alignment,
+                                                     string const & cell, bool isFirstColumn, bool isNotLastColumn )
+{
+  formatCellCommon( tableOutput, column, tableLayout, alignment, cell, isFirstColumn, isNotLastColumn, cell );
+}
+
+void TableTextFormatter::outputSubHeaderSection( std::vector< TableLayout::Column > const & columns,
+                                                 std::ostringstream & tableOutput ) const
+{
   for( auto const & column : columns )
   {
-    string const cell = column.columnName.value;
-    size_t const cellSize =  column.getMaxStringSize();
-    tableOutput << buildCell( column.cellAlignment.valueAlignment,
-                              cell,
-                              cellSize );
+    tableOutput << buildCell( column.columnName.alignment,
+                              column.columnName.value,
+                              column.getMaxStringSize() );
     if( &column < &columns.back() )
     {
-      tableOutput << GEOS_FMT( "{:^{}}", "|", columnMargin );
+      tableOutput << GEOS_FMT( "{:^{}}", "|", m_tableLayout.getColumnMargin() );
     }
   }
 }
@@ -465,161 +544,40 @@ void TableTextFormatter::outputHeaderSectionRows( std::vector< TableLayout::Colu
     // Append the left border
     tableOutput << m_verticalLine;
 
-    for( auto const & column : columns )
+    for( auto & column : columns )
     {
       bool isNotLastColumn = &column < &columns.back();
       bool isFirstColumn = &column == &columns.front();
-      outputCell( tableOutput, column, column.columnName,  idxRow ,isFirstColumn, isNotLastColumn );
+      auto formatter = createCellFormatter( static_cast< TableData::CellType >(column.columnName.type));
+      formatter->formatCell( tableOutput, column, m_tableLayout, column.columnName.alignment, column.columnName.dividedValues[idxRow], isFirstColumn, isNotLastColumn );
     }
   }
 
   tableOutput << GEOS_FMT( "{}\n", sectionSeparatingLine );
 
-  //build subrow header
   if( columns[0].subColumn.size() > 0 )
   {
     std::vector< TableLayout::Column > rowSubColumns;
-
     for( auto const & column : columns )
     {
-      rowSubColumns.insert( rowSubColumns.end(),
-                            column.subColumn.begin(),
-                            column.subColumn.end());
+      rowSubColumns.insert( rowSubColumns.end(), column.subColumn.begin(), column.subColumn.end());
     }
     outputHeaderSectionRows( rowSubColumns, tableOutput, sectionSeparatingLine );
-
   }
-
-}
-
-void TableTextFormatter::ValueCell::formatCell( std::ostringstream & tableOutput,
-                                                TableLayout::Column const & column,
-                                                TableLayout const & tableLayout,
-                                                TableLayout::Cell & cell, bool isFirstColumn, bool isNotLastColumn )
-{
-  const size_t cellSize = column.getMaxStringSize();
-  if( isFirstColumn )
-  {
-    tableOutput << string( tableLayout.getBorderMargin() - 1, ' ' );
-  }
-
-  tableOutput << buildCell( cell.alignment, cell.value, cellSize );
-
-  if( isNotLastColumn )
-  {
-    tableOutput << GEOS_FMT( "{:^{}}", m_verticalLine, tableLayout.getColumnMargin());
-  }
-  else
-  {
-    tableOutput << string( tableLayout.getBorderMargin() - 1, ' ' );
-    tableOutput << m_verticalLine << "\n";
-  }
-}
-
-void TableTextFormatter::HeaderCell::formatCell( std::ostringstream & tableOutput,
-                                                 TableLayout::Column const & column,
-                                                 TableLayout const & tableLayout,
-                                                 TableLayout::Cell & cell, bool isFirstColumn, bool isNotLastColumn )
-{
-  std::cout << isFirstColumn << std::endl;
-  const size_t cellSize = column.getMaxStringSize();
-  tableOutput << buildCell( cell.alignment, cell.value, cellSize );
-
-  if( isNotLastColumn )
-  {
-    tableOutput << GEOS_FMT( "{:^{}}", m_verticalLine, tableLayout.getColumnMargin());
-  }
-}
-
-void TableTextFormatter::MergingCell::formatCell( std::ostringstream & tableOutput,
-                                                  TableLayout::Column const & column,
-                                                  TableLayout const & tableLayout,
-                                                  TableLayout::Cell & cell, bool isFirstColumn, bool isNotLastColumn )
-{
-  const size_t cellSize = column.getMaxStringSize();
-  if( isFirstColumn )
-  {
-    tableOutput << string( tableLayout.getBorderMargin() - 1, ' ' );
-  }
-  tableOutput << buildCell( cell.alignment, cell.value, cellSize );
-  tableOutput << string( tableLayout.getColumnMargin(), ' ' );
-  if( !isNotLastColumn )
-  {
-    tableOutput << string( tableLayout.getBorderMargin() - 1, ' ' );
-    tableOutput << m_verticalLine << "\n";
-  }
-
-}
-
-void TableTextFormatter::SeparatingCell::formatCell( std::ostringstream & tableOutput,
-                                                     TableLayout::Column const & column,
-                                                     TableLayout const & tableLayout,
-                                                     TableLayout::Cell & cell, bool isFirstColumn, bool isNotLastColumn )
-{
-  const size_t cellSize = column.getMaxStringSize();
-  if( isFirstColumn )
-  {
-    tableOutput << string( tableLayout.getBorderMargin() - 1, '-' );
-  }
-
-  if( isNotLastColumn )
-  {
-    cell.value = string( cellSize + tableLayout.getColumnMargin(), '-' );
-    tableOutput << buildCell( cell.alignment, cell.value, cellSize );
-  }
-  else
-  {
-    cell.value = string( cellSize + tableLayout.getBorderMargin(), '-' );
-    tableOutput << buildCell( cell.alignment, cell.value, cellSize );
-    tableOutput << '\n';
-  }
-}
-
-
-void TableTextFormatter::outputCell( std::ostringstream & tableOutput,
-                                     TableLayout::Column const & column,
-                                     TableLayout::Cell cell,//todo &
-                                     size_t idxRow,
-                                     bool isFirstColumn,
-                                     bool isNotLastColumn ) const
-{
-  std::unique_ptr< TableTextFormatter::CellFormatterStrategy > formatter;
-  if( cell.type == (char) TableData::CellType::MERGE )
-  {
-    formatter = std::make_unique< TableTextFormatter::MergingCell >();
-  }
-  else if( cell.type == (char)TableData::CellType::SEPARATOR )
-  {
-    formatter = std::make_unique< TableTextFormatter::SeparatingCell >();
-  }
-  else if( cell.type == (char) TableData::CellType::Header )
-  {
-    cell.value = cell.dividedValue[idxRow];
-    formatter = std::make_unique< TableTextFormatter::ValueCell >();
-  }
-  else if( cell.type == (char) TableData::CellType::Value )
-  {
-    formatter = std::make_unique< TableTextFormatter::ValueCell >();
-  }
-
-  formatter->formatCell( tableOutput, column, m_tableLayout, cell, isFirstColumn, isNotLastColumn );
 }
 
 void TableTextFormatter::outputSubSection( std::vector< TableLayout::Column > const & columns,
                                            std::ostringstream & tableOutput,
                                            size_t const idxRow ) const
 {
-  integer const columnMargin = m_tableLayout.getColumnMargin();
   for( auto const & column : columns )
   {
-    string const cell = column.cells.at( idxRow ).value;
-    size_t const cellSize =  column.getMaxStringSize();
-    tableOutput << buildCell( column.cellAlignment.valueAlignment,
-                              cell,
-                              cellSize );
+    tableOutput << buildCell( column.cells.at( idxRow ).alignment,
+                              column.cells.at( idxRow ).value,
+                              column.getMaxStringSize() );
     if( &column < &columns.back() )
     {
-      tableOutput << GEOS_FMT( "{:^{}}", m_verticalLine, columnMargin );
+      tableOutput << GEOS_FMT( "{:^{}}", m_verticalLine, m_tableLayout.getColumnMargin() );
     }
   }
 }
@@ -634,22 +592,28 @@ void TableTextFormatter::outputValuesSectionRows( std::vector< TableLayout::Colu
     // Append the left border
     tableOutput << m_verticalLine;
 
-    for( auto const & column : columns )
+    for( auto & column : columns )
     {
       bool isNotLastColumn = &column < &columns.back();
       bool isFirstColumn = &column == &columns.front();
-      if( !column.subColumn.empty())
+      if( column.subColumn.size() > 1 )
       {
         outputSubSection( column.subColumn, tableOutput, idxRow );
 
-        if( isNotLastColumn )//todo le mettre dan sla fonction
+        if( isNotLastColumn )
         {
           tableOutput << GEOS_FMT( "{:^{}}", m_verticalLine, m_tableLayout.getColumnMargin() );
         }
       }
       else
       {
-        outputCell( tableOutput, column, column.cells.at( idxRow ), idxRow, isFirstColumn, isNotLastColumn );
+        size_t nbCellRow = column.cells[idxRow].nbRows;
+        for( size_t idxCellRow = 0; idxCellRow < nbCellRow; ++idxCellRow )
+        {
+          auto formatter = createCellFormatter( static_cast< TableData::CellType >(column.cells[idxRow].type));
+          formatter->formatCell( tableOutput, column, m_tableLayout, column.cells[idxRow].alignment, column.cells[idxRow].dividedValues[idxCellRow],
+                                 isFirstColumn, isNotLastColumn );
+        }
       }
     }
   }

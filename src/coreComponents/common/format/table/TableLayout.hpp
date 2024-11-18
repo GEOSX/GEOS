@@ -57,34 +57,55 @@ public:
   struct CellAlignment
   {
     /// Alignment for column name. By default aligned to center
-    Alignment headerAlignment;
+    Alignment headerAlignment = Alignment::center;
     /// Alignment for column values. By default aligned to right side
-    Alignment valueAlignment;
+    Alignment valueAlignment = Alignment::right;
   };
 
   struct Cell
   {
     char type;
+    /// The value/content of the cell
     string value;
-    /// Vector containing sub columns name
-    std::vector< string > dividedValue;
+    /// Vector containing sub values name
+    std::vector< string > dividedValues;
+    /// The number of rows this cell
     size_t nbRows;
+    /// The alignment of the cell (left, right, center)
     Alignment alignment;
 
+    /**
+     * @brief Default constructor for the Cell.
+     */
     Cell()
       : type( ' ' ), value( "" ), nbRows( 1 )
     {}
 
+    /**
+     * @brief Constructor to initialize a Cell with a specific value.
+     * @param val The value to be assigned to the cell.
+     */
     Cell( string_view val )
-      : value( val )
+      : value( val ), nbRows( 1 )
     {}
 
+     /**
+     * @brief Constructor to initialize a Cell with a specific type and value.
+     * @param t The type of the cell.
+     * @param val The value to be assigned to the cell.
+     */
     Cell( char t, string_view val )
-      : type( t ), value( val )
+      : type( t ), value( val ), nbRows( 1 )
     {}
 
+    /**
+     * @brief Constructor to initialize a Cell with a specific type, value, and sub-columns.
+     * @param t The type of the cell .
+     * @param val The value to be assigned to the cell.
+     * @param subCols A vector of sub-column names (used for multi-line cells).
+     */
     Cell( char t, string_view val, std::vector< std::string > const & subCols )
-      : type( t ), value( val ), dividedValue( subCols )
+      : type( t ), value( val ), dividedValues( subCols )
     {}
 
     void setAlignment( Alignment align )
@@ -107,21 +128,22 @@ public:
     bool enabled;
     /// Vector containing all sub columns subdivison
     std::vector< Column > subColumn;
+    /// struct containing alignment for the column (header and values)
     CellAlignment cellAlignment;
 
     Column()
     {
       enabled = true;
-      columnName.setAlignment( Alignment::center );
-      cellAlignment = CellAlignment{ Alignment::center, Alignment::right };//todo
+      columnName.value = "";
+      columnName.type  = '\x03';
+      columnName.alignment = Alignment::center;
     }
 
     Column( Cell cell )
     {
       columnName = cell;
+      columnName.alignment = Alignment::center;
       enabled = true;
-      columnName.setAlignment( Alignment::center );
-      cellAlignment = CellAlignment{ Alignment::center, Alignment::right };//todo
     }
 
 
@@ -129,8 +151,6 @@ public:
     {
       columnName.value = name;
       columnName.type = '\x03';
-      columnName.setAlignment( Alignment::center );
-      cellAlignment = CellAlignment{ Alignment::center, Alignment::right };
       return *this;
     }
 
@@ -173,6 +193,7 @@ public:
     Column & setHeaderAlignment( Alignment headerAlignment )
     {
       cellAlignment.headerAlignment = headerAlignment;
+      columnName.alignment = headerAlignment;
       return *this;
     }
 
