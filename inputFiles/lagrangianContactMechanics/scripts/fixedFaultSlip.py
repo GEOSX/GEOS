@@ -63,7 +63,7 @@ def getFractureLengthFromXML(xmlFilePath):
 
 def curve_check_solution(**kwargs):
     #-------- Extract info from XML
-    xmlFilePath = f'./lagrangianContactMechanics/LagrangeContactBubbleStab_FixedSlip_base.xml'
+    xmlFilePath = f'./LagrangeContactBubbleStab_FixedSlip_base.xml'
 
     mechanicalParameters = getMechanicalParametersFromXML(xmlFilePath)
 
@@ -146,6 +146,7 @@ def output_tables(x, slip, name):
 def generate_tables(inputFileDirectory):
     #-------- Extract info from XML
     xmlFilePath = f'{inputFileDirectory}/lagrangianContactMechanics/LagrangeContactBubbleStab_FixedSlip_base.xml'
+    ./lagrangianContactMechanics/LagrangeContactBubbleStab_FixedSlip_base.xml
 
     mechanicalParameters = getMechanicalParametersFromXML(xmlFilePath)
     appliedPressure = 1.0

@@ -129,27 +129,29 @@ real64 ContactSolverBase::solverStep( real64 const & time_n,
     /// Apply initial conditions to the Fault
     FieldSpecificationManager & fieldSpecificationManager = FieldSpecificationManager::getInstance();
 
-    forDiscretizationOnMeshTargets( domain.getMeshBodies(), [&]( string const &,
-                                                                 MeshLevel & mesh,
-                                                                 arrayView1d< string const > const & )
+    forDiscretizationOnMeshTargets ( domain.getMeshBodies(), [&]( string const &,
+                                                                  MeshLevel & mesh,
+                                                                  arrayView1d< string const > const & )
 
     {
-
-      fieldSpecificationManager.forSubGroups< FieldSpecificationBase >( [&] ( FieldSpecificationBase const & fs )
-      {
-        if( fs.initialCondition() )
-        {
-          fs.apply< SurfaceElementSubRegion >( mesh,
-                                               [&]( FieldSpecificationBase const & bc,
-                                                    string const &,
-                                                    SortedArrayView< localIndex const > const & targetSet,
-                                                    SurfaceElementSubRegion & targetGroup,
-                                                    string const fieldName )
-          {
-            bc.applyFieldValue< FieldSpecificationEqual >( targetSet, 0.0, targetGroup, fieldName );
-          } );
-        }
-      } );
+      fieldSpecificationManager.applyInitialConditions( mesh );
+      // Would like to do it like this but it is not working. There is a cast in Object path that tries to cast
+      // all objects that derive to ElementSubRegionBase to the specified type so this obviously faisl.
+      //   fieldSpecificationManager.forSubGroups< FieldSpecificationBase >( [&] ( FieldSpecificationBase const & fs )
+      //   {
+      //     if( fs.initialCondition() )
+      //     {
+      //       fs.apply< SurfaceElementSubRegion >( mesh,
+      //                                            [&]( FieldSpecificationBase const & bc,
+      //                                                 string const &,
+      //                                                 SortedArrayView< localIndex const > const & targetSet,
+      //                                                 SurfaceElementSubRegion & targetGroup,
+      //                                                 string const fieldName )
+      //       {
+      //         bc.applyFieldValue< FieldSpecificationEqual >( targetSet, 0.0, targetGroup, fieldName );
+      //       } );
+      //     }
+      //   } );
     } );
   }
 
@@ -291,4 +293,4 @@ void ContactSolverBase::setConstitutiveNamesCallSuper( ElementSubRegionBase & su
   }
 }
 
-} /* namespace geos */
+}   /* namespace geos */
