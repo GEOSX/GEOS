@@ -180,7 +180,7 @@ localIndex SurfaceElementRegion::addToFractureMesh( real64 const time_np1,
     faceElementsToCells.m_toElementRegion[kfe][ke] = faceToElementRegion[faceIndices[ke]][ke];
     faceElementsToCells.m_toElementSubRegion[kfe][ke] = faceToElementSubRegion[faceIndices[ke]][ke];
     faceElementsToCells.m_toElementIndex[kfe][ke] = faceToElementIndex[faceIndices[ke]][ke];
-    
+
     // for( int rank=0; rank<MpiWrapper::commSize(); ++rank )
     // {
     //   if( rank==MpiWrapper::commRank() )
@@ -220,7 +220,7 @@ localIndex SurfaceElementRegion::addToFractureMesh( real64 const time_np1,
   {
     SortedArrayView< localIndex const > const & faceSet = faceManager->sets().getReference< SortedArray< localIndex > >( setIter.first );
     SortedArray< localIndex > & faceElementSet = subRegion.sets().registerWrapper< SortedArray< localIndex > >( setIter.first ).reference();
-    for( localIndex a = 0; a < faceMap.size(0); ++a )
+    for( localIndex a = 0; a < faceMap.size( 0 ); ++a )
     {
       if( faceSet.count( faceMap[a][0] ) )
       {

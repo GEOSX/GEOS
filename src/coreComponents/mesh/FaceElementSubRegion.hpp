@@ -311,7 +311,7 @@ public:
     return m_2dElemToCollocatedNodesBuckets.toViewConst();
   }
 
-    /**
+  /**
    * @brief Get the surface element to cells map.
    * @return The surface element to cells map
    */

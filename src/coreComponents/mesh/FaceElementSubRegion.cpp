@@ -324,9 +324,11 @@ localIndex FaceElementSubRegion::packUpDownMapsImpl( buffer_unit_type * & buffer
   //         localIndex const esr = m_2dElemToElems.m_toElementSubRegion[packIndex][j];
   //         localIndex const ei = m_2dElemToElems.m_toElementIndex[packIndex][j];
 
-  //         arrayView1d< globalIndex const > const elemLocalToGlobal = elementRegionManager.getRegion(er).getSubRegion(esr).localToGlobalMap();
+  //         arrayView1d< globalIndex const > const elemLocalToGlobal =
+  // elementRegionManager.getRegion(er).getSubRegion(esr).localToGlobalMap();
 
-  //         std::cout<<"  "<<j<<": ("<<m_localToGlobalMap(packIndex)<<"): "<<er<<" "<<esr<<" "<<ei<<"("<<elemLocalToGlobal(ei)<<") "<<std::endl;
+  //         std::cout<<"  "<<j<<": ("<<m_localToGlobalMap(packIndex)<<"): "<<er<<" "<<esr<<" "<<ei<<"("<<elemLocalToGlobal(ei)<<")
+  // "<<std::endl;
   //       }
   //     }
   //   }
@@ -351,7 +353,7 @@ localIndex FaceElementSubRegion::packUpDownMapsImpl( buffer_unit_type * & buffer
 
 localIndex FaceElementSubRegion::unpackUpDownMaps( buffer_unit_type const * & buffer,
                                                    localIndex_array & packList,
-                                                   bool const ,
+                                                   bool const,
                                                    bool const GEOS_UNUSED_PARAM( overwriteDownMaps ) )
 {
   localIndex unPackedSize = 0;
@@ -416,7 +418,8 @@ localIndex FaceElementSubRegion::unpackUpDownMaps( buffer_unit_type const * & bu
   //         }
   //         else
   //         {
-  //           arrayView1d< globalIndex const > const elemLocalToGlobal = elementRegionManager.getRegion(er).getSubRegion(esr).localToGlobalMap();
+  //           arrayView1d< globalIndex const > const elemLocalToGlobal =
+  // elementRegionManager.getRegion(er).getSubRegion(esr).localToGlobalMap();
   //           std::cout<<k<<" ("<<m_localToGlobalMap(k)<<"): "<<er<<" "<<esr<<" "<<ei<<"("<<elemLocalToGlobal(ei)<<") "<<std::endl;
   //         }
   //       }
@@ -456,7 +459,8 @@ localIndex FaceElementSubRegion::unpackUpDownMaps( buffer_unit_type const * & bu
   //         }
   //         else
   //         {
-  //           arrayView1d< globalIndex const > const elemLocalToGlobal = elementRegionManager.getRegion(er).getSubRegion(esr).localToGlobalMap();
+  //           arrayView1d< globalIndex const > const elemLocalToGlobal =
+  // elementRegionManager.getRegion(er).getSubRegion(esr).localToGlobalMap();
   //           std::cout<<k<<" ("<<m_localToGlobalMap(k)<<"): "<<er<<" "<<esr<<" "<<ei<<"("<<elemLocalToGlobal(ei)<<") "<<std::endl;
   //         }
   //       }
@@ -490,7 +494,7 @@ void fixNeighborMappingsInconsistency( string const & fractureName,
                                        FaceElementSubRegion::FaceMapType & elem2dToFaces )
 {
   {
-    localIndex const num2dElems = elem2dToFaces.size(0);
+    localIndex const num2dElems = elem2dToFaces.size( 0 );
     for( int e2d = 0; e2d < num2dElems; ++e2d )
     {
       std::set< localIndex > const sizes{
@@ -1056,7 +1060,7 @@ void FaceElementSubRegion::fixSecondaryMappings( NodeManager const & nodeManager
   // When there's neighbor missing, we search for a face that would lie on the collocated nodes of the fracture element.
   for( int e2d = 0; e2d < num2dElems; ++e2d )
   {
-    if( m_2dElemToElems.m_toElementIndex.size(1) >= 2 )  // All the neighbors are known.
+    if( m_2dElemToElems.m_toElementIndex.size( 1 ) >= 2 )  // All the neighbors are known.
     {
       continue;
     }
@@ -1096,12 +1100,12 @@ void FaceElementSubRegion::fixSecondaryMappings( NodeManager const & nodeManager
       for( ElemPath const & path: match->second )
       {
         // This `if` prevents from storing the same data twice.
-        if( m_2dElemToElems.m_toElementIndex.size(1) == 0 || m_2dElemToElems.m_toElementIndex[e2d][0] != path.ei )
+        if( m_2dElemToElems.m_toElementIndex.size( 1 ) == 0 || m_2dElemToElems.m_toElementIndex[e2d][0] != path.ei )
         {
-          m_2dElemToElems.m_toElementRegion( e2d, 1 ) = path.er ;
+          m_2dElemToElems.m_toElementRegion( e2d, 1 ) = path.er;
           m_2dElemToElems.m_toElementSubRegion( e2d, 1 ) = path.esr;
-          m_2dElemToElems.m_toElementIndex( e2d, 1 ) = path.ei ;
-          m_toFacesRelation(e2d, 1) = path.face;
+          m_2dElemToElems.m_toElementIndex( e2d, 1 ) = path.ei;
+          m_toFacesRelation( e2d, 1 ) = path.face;
           for( localIndex const & n: path.nodes )
           {
             auto currentNodes = m_toNodesRelation[e2d];
@@ -1120,7 +1124,7 @@ void FaceElementSubRegion::fixSecondaryMappings( NodeManager const & nodeManager
   std::vector< localIndex > isolatedFractureElements;
   for( int e2d = 0; e2d < num2dElems; ++e2d )
   {
-    if( m_2dElemToElems.m_toElementIndex.size(1)< 2 && m_ghostRank[e2d] < 0 )
+    if( m_2dElemToElems.m_toElementIndex.size( 1 )< 2 && m_ghostRank[e2d] < 0 )
     {
       isolatedFractureElements.push_back( e2d );
     }

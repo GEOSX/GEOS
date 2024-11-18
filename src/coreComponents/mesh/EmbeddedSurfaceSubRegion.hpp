@@ -248,7 +248,7 @@ public:
   {
     return m_2dElemToElems;
   }
-  
+
   ///@}
 
 private:
