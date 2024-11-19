@@ -1092,10 +1092,8 @@ void FaceElementSubRegion::fixSecondaryMappings( NodeManager const & nodeManager
   // When there's neighbor missing, we search for a face that would lie on the collocated nodes of the fracture element.
   for( int e2d = 0; e2d < num2dElems; ++e2d )
   {
-    if( m_2dElemToElems.m_toElementIndex.size( 1 ) >= 2 )  // All the neighbors are known.
-    {
-      continue;
-    }
+    // std::cout<<"m_2dElemToElems("<<e2d<<") { "<<m_2dElemToElems.m_toElementRegion(e2d,0)<<", "<<m_2dElemToElems.m_toElementSubRegion(e2d,0)<<", "<<m_2dElemToElems.m_toElementIndex(e2d,0)<<"}"<<std::endl;
+    // std::cout<<"               ("<<e2d<<") { "<<m_2dElemToElems.m_toElementRegion(e2d,1)<<", "<<m_2dElemToElems.m_toElementSubRegion(e2d,1)<<", "<<m_2dElemToElems.m_toElementIndex(e2d,1)<<"}"<<std::endl;
 
     std::set< globalIndex > refNodes;
     if( m_toNodesRelation[e2d].size() != 0 )

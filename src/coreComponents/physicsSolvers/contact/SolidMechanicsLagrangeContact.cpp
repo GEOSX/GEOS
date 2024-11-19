@@ -336,63 +336,55 @@ void SolidMechanicsLagrangeContact::computeTolerances( DomainPartition & domain 
             for( localIndex i = 0; i < 2; ++i )
             {
               localIndex const faceIndex = elemsToFaces[kfe][i];
-              if( faceIndex!=-1  )
+              localIndex const er = faceToElemRegion[faceIndex][0];
+              localIndex const esr = faceToElemSubRegion[faceIndex][0];
+              localIndex const ei = faceToElemIndex[faceIndex][0];
+
+              real64 const volume = elemVolume[er][esr][ei];
+
+              // Get the "element to node" map for the specific region/subregion
+              NodeMapViewType const & cellElemsToNodes = elemToNodeView[er][esr];
+              localIndex const numNodesPerElem = cellElemsToNodes.size( 1 );
+
+              // Compute the box size
+              real64 maxSize[3];
+              real64 minSize[3];
+              for( localIndex j = 0; j < 3; ++j )
               {
-
-                localIndex const er = faceToElemRegion[faceIndex][0];
-                localIndex const esr = faceToElemSubRegion[faceIndex][0];
-                localIndex const ei = faceToElemIndex[faceIndex][0];
-
-                if( !(  er == -1 || esr == -1 || ei == -1 ) )
+                maxSize[j] = nodePosition[cellElemsToNodes[ei][0]][j];
+                minSize[j] = nodePosition[cellElemsToNodes[ei][0]][j];
+              }
+              for( localIndex a = 1; a < numNodesPerElem; ++a )
+              {
+                for( localIndex j = 0; j < 3; ++j )
                 {
-
-                  real64 const volume = elemVolume[er][esr][ei];
-
-                  // Get the "element to node" map for the specific region/subregion
-                  NodeMapViewType const & cellElemsToNodes = elemToNodeView[er][esr];
-                  localIndex const numNodesPerElem = cellElemsToNodes.size( 1 );
-
-                  // Compute the box size
-                  real64 maxSize[3];
-                  real64 minSize[3];
-                  for( localIndex j = 0; j < 3; ++j )
-                  {
-                    maxSize[j] = nodePosition[cellElemsToNodes[ei][0]][j];
-                    minSize[j] = nodePosition[cellElemsToNodes[ei][0]][j];
-                  }
-                  for( localIndex a = 1; a < numNodesPerElem; ++a )
-                  {
-                    for( localIndex j = 0; j < 3; ++j )
-                    {
-                      maxSize[j] = fmax( maxSize[j], nodePosition[cellElemsToNodes[ei][a]][j] );
-                      minSize[j] = fmin( minSize[j], nodePosition[cellElemsToNodes[ei][a]][j] );
-                    }
-                  }
-
-                  real64 boxSize[3];
-                  for( localIndex j = 0; j < 3; ++j )
-                  {
-                    boxSize[j] = maxSize[j] - minSize[j];
-                  }
-
-                  // Get linear elastic isotropic constitutive parameters for the element
-                  real64 const K = bulkModulus[er][esr][ei];
-                  real64 const G = shearModulus[er][esr][ei];
-                  real64 const E = 9.0 * K * G / ( 3.0 * K + G );
-                  real64 const nu = ( 3.0 * K - 2.0 * G ) / ( 2.0 * ( 3.0 * K + G ) );
-                  real64 const M = K + 4.0 / 3.0 * G;
-
-                  // Combine E and nu to obtain a stiffness approximation (like it was an hexahedron)
-                  for( localIndex j = 0; j < 3; ++j )
-                  {
-                    stiffDiagApprox[ i ][ j ] = E / ( ( 1.0 + nu )*( 1.0 - 2.0*nu ) ) * 4.0 / 9.0 * ( 2.0 - 3.0 * nu ) * volume / ( boxSize[j]*boxSize[j] );
-                  }
-
-                  averageYoungModulus += 0.5*E;
-                  averageConstrainedModulus += 0.5*M;
-                  averageBoxSize0 += 0.5*boxSize[0];
+                  maxSize[j] = fmax( maxSize[j], nodePosition[cellElemsToNodes[ei][a]][j] );
+                  minSize[j] = fmin( minSize[j], nodePosition[cellElemsToNodes[ei][a]][j] );
                 }
               }
+
+              real64 boxSize[3];
+              for( localIndex j = 0; j < 3; ++j )
+              {
+                boxSize[j] = maxSize[j] - minSize[j];
+              }
+
+              // Get linear elastic isotropic constitutive parameters for the element
+              real64 const K = bulkModulus[er][esr][ei];
+              real64 const G = shearModulus[er][esr][ei];
+              real64 const E = 9.0 * K * G / ( 3.0 * K + G );
+              real64 const nu = ( 3.0 * K - 2.0 * G ) / ( 2.0 * ( 3.0 * K + G ) );
+              real64 const M = K + 4.0 / 3.0 * G;
+
+              // Combine E and nu to obtain a stiffness approximation (like it was an hexahedron)
+              for( localIndex j = 0; j < 3; ++j )
+              {
+                stiffDiagApprox[ i ][ j ] = E / ( ( 1.0 + nu )*( 1.0 - 2.0*nu ) ) * 4.0 / 9.0 * ( 2.0 - 3.0 * nu ) * volume / ( boxSize[j]*boxSize[j] );
+              }
+
+              averageYoungModulus += 0.5*E;
+              averageConstrainedModulus += 0.5*M;
+              averageBoxSize0 += 0.5*boxSize[0];
             }
 
             // Average the stiffness and compute the inverse
@@ -518,9 +510,6 @@ void SolidMechanicsLagrangeContact::computeFaceDisplacementJump( DomainPartition
 
         forAll< parallelHostPolicy >( subRegion.size(), [=] ( localIndex const kfe )
         {
-          if( !( elemsToFaces[kfe][0] == -1 || elemsToFaces[kfe][1] == -1 ) )
-          {
-
 
           // Contact constraints
           localIndex const numNodesPerFace = faceToNodeMap.sizeOfArray( elemsToFaces[kfe][0] );
@@ -565,7 +554,6 @@ void SolidMechanicsLagrangeContact::computeFaceDisplacementJump( DomainPartition
           slip[ kfe ] = LvArray::math::sqrt( LvArray::math::square( dispJump( kfe, 1 ) ) +
                                              LvArray::math::square( dispJump( kfe, 2 ) ) );
           aperture[ kfe ] = dispJump[ kfe ][ 0 ];
-          }
         } );
       }
     } );
@@ -965,8 +953,7 @@ void SolidMechanicsLagrangeContact::computeRotationMatrices( DomainPartition & d
 
       forAll< parallelHostPolicy >( subRegion.size(), [=]( localIndex const kfe )
       {
-        if( !( elemsToFaces[kfe][0] == -1 || elemsToFaces[kfe][1] == -1 ) )
-        {
+
 
         localIndex const f0 = elemsToFaces[kfe][0];
         localIndex const f1 = elemsToFaces[kfe][1];
@@ -989,7 +976,6 @@ void SolidMechanicsLagrangeContact::computeRotationMatrices( DomainPartition & d
         LvArray::tensorOps::copy< 3 >( unitNormal[kfe], Nbar );
         LvArray::tensorOps::copy< 3 >( unitTangent1[kfe], columnVector1 );
         LvArray::tensorOps::copy< 3 >( unitTangent2[kfe], columnVector2 );
-        }
       } );
     } );
   } );
@@ -1359,8 +1345,6 @@ void SolidMechanicsLagrangeContact::
 
     forAll< parallelHostPolicy >( subRegion.size(), [=] ( localIndex const kfe )
     {
-      if( !( elemsToFaces[kfe][0] == -1 || elemsToFaces[kfe][1] == -1 ) )
-      {
 
       localIndex const numNodesPerFace = faceToNodeMap.sizeOfArray( elemsToFaces[kfe][0] );
 
@@ -1429,7 +1413,6 @@ void SolidMechanicsLagrangeContact::
           }
         }
       }
-      }
     } );
   } );
 }
@@ -1490,8 +1473,7 @@ void SolidMechanicsLagrangeContact::
 
       forAll< parallelHostPolicy >( subRegion.size(), [=] ( localIndex const kfe )
       {
-        if( !( elemsToFaces[kfe][0] == -1 || elemsToFaces[kfe][1] == -1 ) )
-        {
+
 
         if( ghostRank[kfe] < 0 )
         {
@@ -1695,7 +1677,6 @@ void SolidMechanicsLagrangeContact::
                                                     elemDOF,
                                                     dRdT[idof].dataIfContiguous(),
                                                     3 );
-            }
           }
         }
         }
@@ -1893,11 +1874,9 @@ void SolidMechanicsLagrangeContact::assembleStabilization( MeshLevel const & mes
 
           for( localIndex i = 0; i < 2; ++i )
           {
-            std::cout<<"breakpoint 1"<<std::endl;
             localIndex const faceIndex = ( kf == 0 || id1 == 0 ) ? elem2dToFaces[fractureIndex][i] : elem2dToFaces[fractureIndex][1 - i];
             localIndex const ke = faceToElemIndex[faceIndex][0] >= 0 ? 0 : 1;
 
-            std::cout<<"breakpoint 2"<<std::endl;
             localIndex const er  = faceToElemRegion[faceIndex][ke];
             localIndex const esr = faceToElemSubRegion[faceIndex][ke];
             localIndex const ei  = faceToElemIndex[faceIndex][ke];

@@ -19,7 +19,6 @@
       name="SurfaceGen"
       targetRegions="{ Fracture }"
       rockToughness="1e6"
-      logLevel="1"
       mpiCommOrder="1"/>
   </Solvers>
 
@@ -70,16 +69,16 @@
 
   <Events
     maxTime="50000">
-    <SoloEvent
+    <!--SoloEvent
             name="output0"
-            target="/Outputs/siloOutput" />
+            target="/Outputs/siloOutput" / -->
     <SoloEvent
       name="preFracture"
       target="/Solvers/SurfaceGen"/>
 
-    <SoloEvent
+    <!--SoloEvent
             name="output1"
-            target="/Outputs/siloOutput" />
+            target="/Outputs/siloOutput" / -->
     <PeriodicEvent
       name="solverApplications"
       forceDt="1e3"
@@ -201,7 +200,7 @@
   </FieldSpecifications>
 
   <Outputs>
-    <Silo
+    <VTK
       name="siloOutput"
       plotFileRoot="fractureMatrixFlow"/>
 

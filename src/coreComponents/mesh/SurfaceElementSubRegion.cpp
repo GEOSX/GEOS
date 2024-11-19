@@ -65,8 +65,6 @@ SurfaceElementSubRegion::SurfaceElementSubRegion( string const & name,
                                 viewKeyStruct::surfaceElementsToCellSubRegionsString(),
                                 viewKeyStruct::surfaceElementsToCellIndexString() } );
 
-  // TODO there has to be a cleaner way than this.
-//  m_2dElemToElems.setElementRegionManager( dynamicCast< ElementRegionManager & >( getParent().getParent().getParent().getParent() ) );
 
 }
 

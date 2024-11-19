@@ -147,7 +147,6 @@ void ElementRegionManager::generateMesh( CellBlockManagerABC const & cellBlockMa
   // The following makes use of cell block to subregions mappings to finalize the surfaces information.
   // It also creates the mappings concerning the regions.
   array2d< localIndex > const blockToSubRegion = this->getCellBlockToSubRegionMap( cellBlockManager );
-
   this->forElementRegions< SurfaceElementRegion >( [&]( SurfaceElementRegion & elemRegion )
   {
     SurfaceElementSubRegion & surfaceSubRegion = elemRegion.getUniqueSubRegion< SurfaceElementSubRegion >();
