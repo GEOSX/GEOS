@@ -14,9 +14,15 @@
  */
 
 #include "codingUtilities/RTTypes.hpp"
+#include "dataRepository/Group.hpp"
+#include "dataRepository/Wrapper.hpp"
 
+// TPL includes
 #include <gtest/gtest.h>
+#include <conduit.hpp>
 
+using namespace geos;
+using namespace dataRepository;
 
 // Mock classes to test dynamic casting
 class Base  {
@@ -61,6 +67,78 @@ TEST(DynamicCastTests, Reference_Casting_Failure) {
     Base& derived_base_ref = geos::dynamicCast<Base&>(base_ref);
     ASSERT_EQ(&derived_base_ref, &base) << "Expected successful cast from Base to Base.";
     
+}
+
+
+// Typed test for geos wrapper
+template< typename T >
+class WrapperMock : public ::testing::Test
+{
+public:
+  WrapperMock():
+    m_node(),
+    m_group( "root", m_node ),
+    m_wrapper( "wrapper", m_group ),
+    m_wrapperBase( m_wrapper )
+  {}
+
+  void testDynamicCastWithPointer( )
+  {
+    {
+      WrapperBase* base_pointer = &m_wrapperBase;
+      Wrapper< T >* derived = geos::dynamicCast<Wrapper< T >*>(base_pointer);
+      ASSERT_NE(derived, nullptr) << "Expected successful cast from Base to Derived.";
+    }
+      {
+        WrapperBase* base_pointer = &m_wrapperBase;
+        WrapperBase* derived = geos::dynamicCast<WrapperBase*>(base_pointer);
+        ASSERT_NE(derived, nullptr) << "Expected successful cast from Base to Base.";
+      }
+    {
+      Wrapper< T >* defived_pointer = &m_wrapper;
+      Wrapper< T >* derived = geos::dynamicCast<Wrapper< T >*>(defived_pointer);
+      ASSERT_NE(derived, nullptr) << "Expected successful cast from Derived to Derived.";
+    }
+  }
+    
+void testDynamicCastWithReference( )
+{
+  {
+    WrapperBase& base_reference = m_wrapperBase;
+    Wrapper< T >& derived = geos::dynamicCast<Wrapper< T >&>(base_reference);
+    ASSERT_EQ(&derived, &base_reference) << "Expected successful cast from Base to Derived.";
+  }
+    {
+      WrapperBase& base_reference = m_wrapperBase;
+      WrapperBase& derived = geos::dynamicCast<WrapperBase &>(base_reference);
+      ASSERT_EQ(&derived, &base_reference) << "Expected successful cast from Base to Base.";
+    }
+  {
+    Wrapper< T >& defived_reference = m_wrapper;
+    Wrapper< T >& derived = geos::dynamicCast<Wrapper< T >&>(defived_reference);
+    ASSERT_EQ(&derived, &defived_reference) << "Expected successful cast from Derived to Derived.";
+  }
+}
+
+
+private:
+  conduit::Node m_node;
+  Group m_group;
+  Wrapper< T > m_wrapper;
+  WrapperBase & m_wrapperBase;
+};
+
+using WrapperMockTypes = ::testing::Types< int, array1d< real64 >, array1d< array1d< int > >, void *, std::function< void (void) > >;
+TYPED_TEST_SUITE( WrapperMock, WrapperMockTypes, );
+
+TYPED_TEST( WrapperMock, DynamicCastWithPointer )
+{
+  this->testDynamicCastWithPointer( );
+}
+
+TYPED_TEST( WrapperMock, DynamicCastWithReference )
+{
+  this->testDynamicCastWithReference( );
 }
 
 // Test Regex constructor
