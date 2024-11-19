@@ -711,7 +711,8 @@ TableRelativePermeabilityHysteresis::KernelWrapper::
                                       real64 & phaseRelPerm,
                                       real64 & dPhaseRelPerm_dPhaseVolFrac ) const
 {
-  // note: for simplicity, the notations are taken from reservoir simulation literature (although this breaks our phaseVolFrac naming convention)
+  // note: for simplicity, the notations are taken from reservoir simulation literature (although this breaks our phaseVolFrac naming
+  // convention)
 
   // Step 1: for a given value of the max historical saturation, Shy, compute the trapped critical saturation, Scrt,
   //         using Land's method. The calculation includes the modifications from Jerauld.
