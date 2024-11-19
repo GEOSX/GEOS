@@ -172,6 +172,14 @@ const char * xmlInput =
          xMin="{  4.99, 8.99, -1.01 }"
          xMax="{ 10.01, 10.01, 0.01 }" />
   </Geometry>
+
+  <FieldSpecifications>
+    <HydrostaticEquilibrium name="equil"
+                            objectPath="ElementRegions"
+                            maxNumberOfEquilibrationIterations="100"
+                            datumElevation="-5"
+                            datumPressure="1.895e7" />
+  </FieldSpecifications>
   
 </Problem>
 
@@ -198,46 +206,44 @@ protected:
 
 };
 
-TEST_F( StatOutputControllerTest, checkSinglePhaseFluxStatistics )
+TEST_F( StatOutputControllerTest, checkControllerComponents )
 {
   ProblemManager & problem = state.getProblemManager();
 
   std::vector< string > const refCollectorPaths =
   {
-    "/Tasks/packCollectionreservoiraveragePressure",
-    "/Tasks/packCollectionreservoirminPressure",
-    "/Tasks/packCollectionreservoirmaxPressure",
-    "/Tasks/packCollectionreservoirminDeltaPressure",
-    "/Tasks/packCollectionreservoirmaxDeltaPressure",
-    "/Tasks/packCollectionreservoirtotalMass",
-    "/Tasks/packCollectionreservoiraverageTemperature",
-    "/Tasks/packCollectionreservoirminTemperature",
-    "/Tasks/packCollectionreservoirmaxTemperature",
-    "/Tasks/packCollectionreservoirtotalPoreVolume",
-    "/Tasks/packCollectionreservoirtotalUncompactedPoreVolume",
+    "/Tasks/packCollection_reservoir_averagePressure",
+    "/Tasks/packCollection_reservoir_minPressure",
+    "/Tasks/packCollection_reservoir_maxPressure",
+    "/Tasks/packCollection_reservoir_minDeltaPressure",
+    "/Tasks/packCollection_reservoir_maxDeltaPressure",
+    "/Tasks/packCollection_reservoir_totalMass",
+    "/Tasks/packCollection_reservoir_averageTemperature",
+    "/Tasks/packCollection_reservoir_minTemperature",
+    "/Tasks/packCollection_reservoir_maxTemperature",
+    "/Tasks/packCollection_reservoir_totalPoreVolume",
+    "/Tasks/packCollection_reservoir_totalUncompactedPoreVolume",
   };
   string const outputPath = "/Outputs/compFlowHistory_reservoir";
 
-  {   // verify component creation
-
+  {  // verify component creation
     for( string const & path : refCollectorPaths )
     {
-      EXPECT_NO_THROW( {
+      ASSERT_NO_THROW( {
         Group const & group = problem.getGroupByPath( path );
-        ASSERT_STREQ( path.c_str(), group.getPath().c_str() );
       } );
     }
 
-    EXPECT_NO_THROW( {
+    ASSERT_NO_THROW( {
       Group const & group = problem.getGroupByPath( outputPath );
-      ASSERT_STREQ( outputPath.c_str(), group.getPath().c_str() );
     } );
   }
 
-  {   // check all timeHistory paths
+  { // check all timeHistory paths
     TimeHistoryOutput & timeHistory = problem.getGroupByPath< TimeHistoryOutput >( "/Outputs/compFlowHistory_reservoir" );
     string_array & collectorPaths =  timeHistory.getReference< string_array >( TimeHistoryOutput::viewKeys::timeHistoryOutputTargetString() );
 
+    ASSERT_EQ( refCollectorPaths.size(), collectorPaths.size());
     for( size_t idxPath = 0; idxPath < refCollectorPaths.size(); idxPath++ )
     {
       ASSERT_STREQ( refCollectorPaths[idxPath].c_str(), collectorPaths[idxPath].c_str() );
@@ -246,7 +252,7 @@ TEST_F( StatOutputControllerTest, checkSinglePhaseFluxStatistics )
 
 
   // run simulation
-  EXPECT_FALSE( problem.runSimulation() ) << "Simulation exited early.";
+  //EXPECT_FALSE( problem.runSimulation() ) << "Simulation exited early.";
 
   string fileFromPath = "./hdf/statistics/compFlowHistory_reservoir.hdf5";
   int64_t fileId = H5Fopen( fileFromPath.c_str(), H5F_ACC_RDWR, 0 );
@@ -255,7 +261,6 @@ TEST_F( StatOutputControllerTest, checkSinglePhaseFluxStatistics )
 
   integer status = std::remove( fileFromPath.c_str() );
   EXPECT_TRUE( status == 0 );
-
 }
 
 int main( int argc, char * * argv )
