@@ -54,7 +54,7 @@ DECLARE_FIELD( slipVelocity_n,
                0.70710678118e-6,
                NOPLOT,
                WRITE_AND_READ,
-               "Slip velocity" );                 
+               "Slip velocity at previous time step" );                 
 
 DECLARE_FIELD( stateVariable,
                "stateVariable",
@@ -78,7 +78,7 @@ DECLARE_FIELD( dStateVariableStage1,
                0.0,
                NOPLOT,
                WRITE_AND_READ,
-               "Rate- and state-dependent friction state variable at previous time step" );
+               "First Runge-Kutta stage rate for friction state variable" );
 
 DECLARE_FIELD( dStateVariableStage2,
                "dStateVariableStage2",
@@ -86,7 +86,7 @@ DECLARE_FIELD( dStateVariableStage2,
                0.0,
                NOPLOT,
                WRITE_AND_READ,
-               "Rate- and state-dependent friction state variable at previous time step" );
+               "Second Runge-Kutta stage rate for friction state variable" );
 
 DECLARE_FIELD( deltaSlip,
                "deltaSlip",
@@ -102,7 +102,7 @@ DECLARE_FIELD( deltaSlip_n,
                0.0,
                NOPLOT,
                WRITE_AND_READ,
-               "Slip increment" );
+               "Slip increment at previous time step" );
 
 
 DECLARE_FIELD( dDeltaSlipStage1,
@@ -111,7 +111,7 @@ DECLARE_FIELD( dDeltaSlipStage1,
                0.0,
                NOPLOT,
                WRITE_AND_READ,
-               "Slip increment" );
+               "First Runge-Kutta stage rate for slip increment" );  
 
 DECLARE_FIELD( dDeltaSlipStage2,
                "dDeltaSlipStage2",
@@ -119,7 +119,7 @@ DECLARE_FIELD( dDeltaSlipStage2,
                0.0,
                NOPLOT,
                WRITE_AND_READ,
-               "Slip increment" );  
+               "Second Runge-Kutta stage rate for slip increment" );  
 
 
 DECLARE_FIELD( error,
@@ -128,7 +128,7 @@ DECLARE_FIELD( error,
                0.0,
                LEVEL_0,
                WRITE_AND_READ,
-               "Error" );                              
+               "Error for rate-and-state fields" );                              
 
 }
 
