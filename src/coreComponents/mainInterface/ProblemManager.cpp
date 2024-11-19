@@ -172,10 +172,17 @@ void ProblemManager::problemSetup()
   logPart.end();
 
 //  initialize_postMeshGeneration();
+  LogPart logPart( "NumericalMethods" );
+  logPart.begin();
   applyNumericalMethods();
 
+  LogPart logPart( "Mesh data registration :" );
+  logPart.begin();
   registerDataOnMeshRecursive( getDomainPartition().getMeshBodies() );
 
+  LogPart logPart( "Group & subgroups initializatf:H6svfHYlX:KJr!@gIqya-3J8GYGj\yz9;GAg?~
+  ion" );
+  logPart.begin();
   initialize();
 
   importFields();
