@@ -300,6 +300,7 @@ public:
     static constexpr char const * targetRelativeTempChangeString() { return "targetRelativeTemperatureChangeInTimeStep"; }
     static constexpr char const * targetPhaseVolFracChangeString() { return "targetPhaseVolFractionChangeInTimeStep"; }
     static constexpr char const * targetRelativeCompDensChangeString() { return "targetRelativeCompDensChangeInTimeStep"; }
+    static constexpr char const * targetCompFracChangeString() { return "targetCompFracChangeInTimeStep"; }
     static constexpr char const * targetFlowCFLString() { return "targetFlowCFL"; }
 
 
@@ -523,6 +524,9 @@ protected:
 
   /// target (relative) change in component density in a time step
   real64 m_targetRelativeCompDensChange;
+
+  /// target (absolute) change in component fraction in a time step
+  real64 m_targetCompFracChange;
 
   /// minimum value of the scaling factor obtained by enforcing maxCompFracChange
   real64 m_minScalingFactor;

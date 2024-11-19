@@ -88,6 +88,14 @@ DECLARE_FIELD( globalCompFraction_k,
                NO_WRITE,
                "Global component fraction updates at the previous sequential iteration" );
 
+DECLARE_FIELD( bcglobalCompFraction,
+               "bcglobalCompFraction",
+               array2dLayoutComp,
+               0,
+               NOPLOT,
+               WRITE_AND_READ,
+               "Dirichlet boundary condition composition" );               
+
 DECLARE_FIELD( faceGlobalCompFraction,
                "faceGlobalCompFraction",
                array2dLayoutComp,

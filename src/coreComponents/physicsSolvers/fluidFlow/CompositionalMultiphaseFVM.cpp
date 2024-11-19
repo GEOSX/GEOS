@@ -882,7 +882,7 @@ void CompositionalMultiphaseFVM::applySystemSolution( DofManager const & dofMana
       dofManager.addVectorToField( localSolution,
                                    viewKeyStruct::elemDofFieldString(),
                                    fields::flow::globalCompFraction::key(),
-                                   fields::flow::globalCompDensityScalingFactor::key(),
+                                   fields::flow::globalCompFractionScalingFactor::key(),
                                    componentMask );
     }
     else
@@ -939,9 +939,13 @@ void CompositionalMultiphaseFVM::applySystemSolution( DofManager const & dofMana
   // these negative component densities are set to zero in this function
 
   // TODO: implement chopNegativeZ
-  if( m_allowCompDensChopping && !m_useZFormulation)
+  
+  if( m_allowCompDensChopping)
   {
-    chopNegativeDensities( domain );
+    if (m_useZFormulation)
+      chopNegativeCompFractions( domain );
+    else
+      chopNegativeDensities( domain );
   }
 
   forDiscretizationOnMeshTargets( domain.getMeshBodies(), [&]( string const &,
