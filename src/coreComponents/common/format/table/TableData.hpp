@@ -34,20 +34,6 @@ class TableData
 {
 public:
 
-  enum class CellType : char // enum class Cell
-  {
-    MERGE = '\x01',
-    SEPARATOR = '\x02',
-    Header = '\x03',
-    Value = '\x04',
-  };
-
-  struct DataType
-  {
-    CellType type;
-    string value;
-  };
-
   /**
    * @brief Add a row to the table.
    * The values passed to addRow (can be any type).

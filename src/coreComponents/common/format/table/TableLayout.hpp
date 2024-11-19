@@ -62,55 +62,31 @@ public:
     Alignment valueAlignment = Alignment::right;
   };
 
-  struct Cell
+  struct CellLayout
   {
-    char type;
-    /// The value/content of the cell
-    string value;
+    CellType type;
     /// Vector containing sub values name
     std::vector< string > dividedValues;
-    /// The number of rows this cell
+    /// Nb rows this cell is divided
     size_t nbRows;
-    /// The alignment of the cell (left, right, center)
+    /// Cell alignment (left, right, center)
     Alignment alignment;
 
     /**
-     * @brief Default constructor for the Cell.
-     */
-    Cell()
-      : type( ' ' ), value( "" ), nbRows( 1 )
-    {}
-
-    /**
-     * @brief Constructor to initialize a Cell with a specific value.
-     * @param val The value to be assigned to the cell.
-     */
-    Cell( string_view val )
-      : value( val ), nbRows( 1 )
-    {}
-
-     /**
      * @brief Constructor to initialize a Cell with a specific type and value.
      * @param t The type of the cell.
      * @param val The value to be assigned to the cell.
      */
-    Cell( char t, string_view val )
-      : type( t ), value( val ), nbRows( 1 )
-    {}
+    CellLayout( CellType t, string_view val, Alignement alignment );
 
-    /**
-     * @brief Constructor to initialize a Cell with a specific type, value, and sub-columns.
-     * @param t The type of the cell .
-     * @param val The value to be assigned to the cell.
-     * @param subCols A vector of sub-column names (used for multi-line cells).
-     */
-    Cell( char t, string_view val, std::vector< std::string > const & subCols )
-      : type( t ), value( val ), dividedValues( subCols )
-    {}
-
-    void setAlignment( Alignment align )
+    void setAlignment( Alignment const align )
     {
       alignment = align;
+    }
+
+    void setCellSize( size_t const size)
+    {
+      cellSize = size;
     }
   };
 

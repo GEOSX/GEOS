@@ -116,4 +116,10 @@ integer const & TableLayout::getMarginTitle() const
   return m_titleMargin;
 }
 
+CellLayout::CellLayout( CellType type, string_view cellv, Alignement alignment ):
+  cellType( type ), d, alignment( alignment )
+{
+  divi
+}
+
 }

@@ -164,14 +164,15 @@ public:
      * @param cellChar A string representing the character used for border formatting.
      */
     void formatCellCommon( std::ostringstream & tableOutput, TableLayout::Column const & column,
-                           TableLayout const & tableLayout, TableLayout::Alignment alignment,
-                           string const & cell, bool isFirstColumn, bool isNotLastColumn,
+                           TableLayout const & tableLayout, TableLayout::Cell const & cell, size_t const idxRowCell,
+                           bool isFirstColumn, bool isNotLastColumn,
                            string const & cellChar );
 
     virtual void formatCell( std::ostringstream & tableOutput,
                              TableLayout::Column const & column,
                              TableLayout const & tableLayout,
-                             TableLayout::Alignment alignment, string const & cell,
+                             TableLayout::Cell const & cell,
+                             size_t const idxRowCell,
                              bool isFirstColumn, bool isNotLastColumn ) = 0;
   };
 
@@ -181,7 +182,8 @@ public:
     virtual void formatCell( std::ostringstream & tableOutput,
                              TableLayout::Column const & column,
                              TableLayout const & tableLayout,
-                             TableLayout::Alignment alignment, string const & cell,
+                             TableLayout::Cell const & cell,
+                             size_t const idxRowCell,
                              bool isFirstColumn, bool isNotLastColumn ) override;
   };
   class MergingCell : public CellFormatterStrategy
@@ -190,7 +192,8 @@ public:
     virtual void formatCell( std::ostringstream & tableOutput,
                              TableLayout::Column const & column,
                              TableLayout const & tableLayout,
-                             TableLayout::Alignment alignment, string const & cell,
+                             TableLayout::Cell const & cell,
+                             size_t const idxRowCell,
                              bool isFirstColumn, bool isNotLastColumn ) override;
   };
 
@@ -200,7 +203,8 @@ public:
     virtual void formatCell( std::ostringstream & tableOutput,
                              TableLayout::Column const & column,
                              TableLayout const & tableLayout,
-                             TableLayout::Alignment alignment, string const & cell,
+                             TableLayout::Cell const & cell,
+                             size_t const idxRowCell,
                              bool isFirstColumn, bool isNotLastColumn ) override;
   };
 
@@ -284,47 +288,19 @@ private:
   void outputTitleRow( std::ostringstream & tableOutput,
                        string_view topSeparator ) const;
 
+  void outputSubValues( std::vector< TableLayout::Column > const & columns,
+                        std::ostringstream & tableOutput,
+                        size_t idxRow ) const;
+
   /**
    * @brief Output the header rows in the table
    * @param columns  Vector containing all table columns
    * @param tableOutput The output stream
    * @param sectionSeparatingLine Separator string used between sections of the table
    */
-  void outputHeaderSectionRows( std::vector< TableLayout::Column > const & columns,
-                                std::ostringstream & tableOutput,
-                                string_view sectionSeparatingLine ) const;
-
-  /**
-   * @brief
-   * @param tableOutput
-   * @param tableColumnData
-   * @param idxRow
-   * @param isLastColumn
-   */
-  void outputCell( std::ostringstream & tableOutput,
-                   TableLayout::Column const & column,
-                   TableLayout::Cell cell,
-                   size_t idxRow,
-                   bool isFirstColumn,
-                   bool isLastColumn = false ) const;
-
-/**
- * @brief Outputs subcolumns for the given row in the table.
- * @param columns  Vector containing the subcolumn values
- * @param tableOutput The output stream
- * @param idxRow Index of the current row in the table
- */
-  void outputSubSection( std::vector< TableLayout::Column > const & columns,
-                         std::ostringstream & tableOutput,
-                         size_t const idxRow ) const;
-
-/**
- * @brief Outputs subcolumns for the given row in the table.
- * @param columns  Vector containing the subcolumn values
- * @param tableOutput The output stream
- */
-  void outputSubHeaderSection( std::vector< TableLayout::Column > const & columns,
-                               std::ostringstream & tableOutput ) const;
+  void outputHeader( std::vector< TableLayout::Column > const & columns,
+                     std::ostringstream & tableOutput,
+                     string_view sectionSeparatingLine ) const;
 
   /**
    * @brief Output the values rows in the table
@@ -332,9 +308,9 @@ private:
    * @param tableOutput The output stream
    * @param sectionSeparatingLine Separator string used between sections of the table
    */
-  void outputValuesSectionRows( std::vector< TableLayout::Column > const & columns,
-                                std::ostringstream & tableOutput,
-                                string_view sectionSeparatingLine ) const;
+  void outputValues( std::vector< TableLayout::Column > const & columns,
+                     std::ostringstream & tableOutput,
+                     string_view sectionSeparatingLine ) const;
 };
 
 /**
