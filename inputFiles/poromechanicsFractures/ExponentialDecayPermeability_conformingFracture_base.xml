@@ -89,7 +89,7 @@
       name="Fracture"
       faceBlock="FractureSubRegion"
       materialList="{ water, fractureFilling, fractureContact, rock, hApertureModel}"
-      defaultAperture="1e-3"/>
+      defaultAperture="1e-4"/>
   </ElementRegions>
 
   <Constitutive>
