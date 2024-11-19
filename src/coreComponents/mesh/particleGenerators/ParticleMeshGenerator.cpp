@@ -281,6 +281,7 @@ void ParticleMeshGenerator::fillParticleBlockManager( ParticleBlockManager & par
     array2d< real64 > particleSurfaceNormal( npInBlock, 3);
     array2d< real64 > particleSurfacePosition( npInBlock, 3 );
     array2d< real64 > particleSurfaceTraction( npInBlock, 3 );
+    array1d< real64 > particleDistanceToCrackTip( npInBlock );
 
     // Populate particle fields with data
     for( int i = 0; i < npInBlock; i++ )
@@ -302,6 +303,9 @@ void ParticleMeshGenerator::fillParticleBlockManager( ParticleBlockManager & par
       particleAcceleration[i][0] = particleData[b][i][static_cast< int >( ParticleColumnHeaders::AccelerationX )];
       particleAcceleration[i][1] = particleData[b][i][static_cast< int >( ParticleColumnHeaders::AccelerationY )];
       particleAcceleration[i][2] = particleData[b][i][static_cast< int >( ParticleColumnHeaders::AccelerationZ )];
+
+      // Distance to crack tip
+      particleDistanceToCrackTip[i] = particleData[b][i][static_cast< int >( ParticleColumnHeaders::DistanceToCrackTip )];
   
       // Material (set above) is [10]
 
@@ -418,6 +422,7 @@ void ParticleMeshGenerator::fillParticleBlockManager( ParticleBlockManager & par
     particleBlock.setParticleSurfaceNormal( particleSurfaceNormal );
     particleBlock.setParticleSurfacePosition( particleSurfacePosition );
     particleBlock.setParticleSurfaceTraction( particleSurfaceTraction );
+    particleBlock.setParticleDistanceToCrackTip( particleDistanceToCrackTip );
   } // loop over particle blocks
 
   // Resize particle regions

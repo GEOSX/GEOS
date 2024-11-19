@@ -315,6 +315,19 @@ public:
   { return m_particleSurfaceTraction; }
 
   /**
+   * @brief Get the distance to crack tip of each particle in this subregion.
+   * @return an arrayView1d of const particle distances to crack tip
+   */
+  arrayView1d< real64 const > getParticleDistanceToCrackTip() const
+  { return m_particleDistanceToCrackTip; }
+
+  /**
+   * @copydoc getParticleDistanceToCrackTip() const
+   */
+  arrayView1d< real64 > getParticleDistanceToCrackTip()
+  { return m_particleDistanceToCrackTip; }  
+
+  /**
    * @brief Get the group in which the constitutive models of this subregion are registered.
    * @return a pointer to the const group in which the constitutive models are registered
    */
@@ -463,6 +476,9 @@ public:
   
     /// @return String key for the member level field for the particle surface traction.
     static constexpr char const * particleSurfaceTractionString() { return "particleSurfaceTraction"; }
+
+    /// @return String key for the member level field for the particle distance to crack tip.
+    static constexpr char const * particleDistanceToCrackTipString() { return "particleDistanceToCrackTip"; }  
   };
 
   /**
@@ -603,6 +619,9 @@ protected:
 
   /// Neighbor list
   OrderedVariableToManyParticleRelation m_neighborList;
+
+  /// Member level field for the particle distance to crack tip.
+  array1d< real64 > m_particleDistanceToCrackTip;
 
 };
 

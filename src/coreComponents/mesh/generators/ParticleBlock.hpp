@@ -220,6 +220,16 @@ public:
   void setParticleSurfaceNormal( array2d< real64 > const particleSurfaceNormal )
   { m_particleSurfaceNormal = particleSurfaceNormal; }
 
+  array1d< real64 > getParticleDistanceToCrackTip() const override
+  { return m_particleDistanceToCrackTip; }
+
+  /**
+   * @brief Set the list of particle distances to a crack tip in this subregion.
+   * @param particleDistanceToCrackTip The input list of distances to a crack tip
+   */
+  void setParticleDistanceToCrackTip( array1d< real64 > const particleDistanceToCrackTip )
+  { m_particleDistanceToCrackTip = particleDistanceToCrackTip; }  
+
   localIndex numParticles() const override
   { return size(); }
 
@@ -294,6 +304,9 @@ private:
 
   /// Type of particles in this subregion.
   ParticleType m_particleType;
+
+  /// Member level field for the particle distances to a crack tip.
+  array1d< real64 > m_particleDistanceToCrackTip;    
 
   /// Bool flag for whether particles in this block have r-vectors defining its domain
   bool m_hasRVectors;

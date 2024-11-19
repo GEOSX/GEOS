@@ -40,7 +40,8 @@ CeramicDamage::CeramicDamage( string const & name, Group * const parent ):
   m_damagedMaterialFrictionSlope(),
   m_thirdInvariantDependence(),
   m_velocityGradient(),
-  m_plasticStrain()
+  m_plasticStrain(),
+  m_crackTipStressConcentration()
 {
   // register default values
   registerWrapper( viewKeyStruct::tensileStrengthString(), &m_tensileStrength ).
@@ -109,8 +110,11 @@ CeramicDamage::CeramicDamage( string const & name, Group * const parent ):
     setApplyDefaultValue( 0.0 ).
     setPlotLevel( PlotLevel::NOPLOT ).
     setDescription( "Plastic strain" );
-}
 
+  registerWrapper( viewKeyStruct::crackTipStressConcentrationString(), &m_crackTipStressConcentration ).
+    setPlotLevel( PlotLevel::NOPLOT ).
+    setDescription( "Crack Tip Stress Concentration" );
+}
 
 CeramicDamage::~CeramicDamage()
 {}

@@ -50,7 +50,8 @@ ParticleSubRegionBase::ParticleSubRegionBase( string const & name, Group * const
   m_particleRVectors(),
   m_particleSurfaceNormal(),
   m_particleSurfacePosition(),
-  m_particleSurfaceTraction()
+  m_particleSurfaceTraction(),
+  m_particleDistanceToCrackTip()
 {
   registerGroup( groupKeyStruct::constitutiveModelsString(), &m_constitutiveModels ).
     setSizedFromParent( 1 );
@@ -113,6 +114,9 @@ ParticleSubRegionBase::ParticleSubRegionBase( string const & name, Group * const
   registerWrapper( viewKeyStruct::particleSurfaceTractionString(), &m_particleSurfaceTraction ).
     setPlotLevel( PlotLevel::LEVEL_1 ).
     reference().resizeDimension< 1 >( 3 );
+
+  registerWrapper( viewKeyStruct::particleDistanceToCrackTipString(), &m_particleDistanceToCrackTip ).
+    setPlotLevel( PlotLevel::LEVEL_1 );    
 }
 
 ParticleSubRegionBase::~ParticleSubRegionBase()

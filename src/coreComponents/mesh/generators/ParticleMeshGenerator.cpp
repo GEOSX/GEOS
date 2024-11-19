@@ -294,6 +294,7 @@ void ParticleMeshGenerator::generateMesh( DomainPartition & domain )
     array1d< real64 > particleStrengthScale( npInBlock );
     array3d< real64 > particleRVectors( npInBlock, 3, 3 ); // TODO: Flatten the r-vector array into a 1x9 for each particle
     array2d< real64 > particleSurfaceNormal( npInBlock, 3); // TODO:: read from file eventually
+    array2d< real64 > particleDistanceToCrackTip( npInBlock );
 
     // Assign particle data to the appropriate block.
     std::vector< int > & indices = indexMap[particleBlockName];
@@ -314,9 +315,12 @@ void ParticleMeshGenerator::generateMesh( DomainPartition & domain )
       particleVelocity[index][2] = particleData[particleType][i][6];
 
       // Acceleration
-      particleAcceleration[i][0] = particleData[b][i][static_cast< int >( ParticleColumnHeaders::AccelerationX )];
-      particleAcceleration[i][1] = particleData[b][i][static_cast< int >( ParticleColumnHeaders::AccelerationY )];
-      particleAcceleration[i][2] = particleData[b][i][static_cast< int >( ParticleColumnHeaders::AccelerationZ )];
+      particleAcceleration[i][0] = particleData[particleType][i][static_cast< int >( ParticleColumnHeaders::AccelerationX )];
+      particleAcceleration[i][1] = particleData[particleType][i][static_cast< int >( ParticleColumnHeaders::AccelerationY )];
+      particleAcceleration[i][2] = particleData[particleType][i][static_cast< int >( ParticleColumnHeaders::AccelerationZ )];
+
+      // Distance to crack tip
+      particleDistanceToCrackTip[index] = particleData[particleType][i][static_cast< int >( ParticleColumnHeaders::DistanceToCrackTip )];
   
       // Material (set above) is [7]
 
@@ -403,6 +407,7 @@ void ParticleMeshGenerator::generateMesh( DomainPartition & domain )
     particleBlock.setParticleRVectors( particleRVectors );
     particleBlock.setParticleInitialSurfaceNormal( particleSurfaceNormal );
     particleBlock.setParticleSurfaceNormal( particleSurfaceNormal );
+    particleBlock.setParticleDistanceToCrackTip( particleDistanceToCrackTip );
   } // loop over particle blocks
 
   // Resize particle regions

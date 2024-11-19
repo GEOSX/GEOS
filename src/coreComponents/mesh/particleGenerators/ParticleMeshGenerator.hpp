@@ -85,6 +85,7 @@ public:
     SurfaceTractionX,
     SurfaceTractionY,
     SurfaceTractionZ,
+    DistanceToCrackTip,
     Count
   };
 
@@ -184,6 +185,7 @@ ENUM_STRINGS( ParticleMeshGenerator::ParticleColumnHeaders,
               "SurfaceTractionX",
               "SurfaceTractionY",
               "SurfaceTractionZ",
+              "DistanceToCrackTip",
               "COUNT" );
 
 } /* namespace geos */

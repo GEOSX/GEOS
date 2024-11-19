@@ -73,6 +73,7 @@ public:
     SurfaceNormalX,
     SurfaceNormalY,
     SurfaceNormalZ,
+    DistanceToCrackTip,
     COUNT   // holds the number of particle column header options e.g. 30 for [0-29]
   };
 
@@ -188,6 +189,7 @@ ENUM_STRINGS( ParticleMeshGenerator::ParticleColumnHeaders,
               "SurfaceTractionX",
               "SurfaceTractionY",
               "SurfaceTractionZ",
+              "DistanceToCrackTip",
               "COUNT" );
 
 } /* namespace geos */

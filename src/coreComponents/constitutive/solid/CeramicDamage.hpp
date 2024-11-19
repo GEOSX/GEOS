@@ -92,7 +92,8 @@ public:
                         arrayView3d< real64, solid::STRESS_USD > const & oldStress,
                         arrayView2d< real64 > const & density,
                         arrayView2d< real64 > const & wavespeed,
-                        bool const & disableInelasticity ):
+                        bool const & disableInelasticity,
+                        arrayView1d< real64 > const & fractureToughnessModeI ):
     ElasticIsotropicUpdates( bulkModulus,
                              shearModulus,
                              thermalExpansionCoefficient,
@@ -114,7 +115,8 @@ public:
     m_damagedMaterialFrictionSlope( damagedMaterialFrictionSlope ),
     m_thirdInvariantDependence( thirdInvariantDependence ),
     m_velocityGradient( velocityGradient ),
-    m_plasticStrain( plasticStrain )
+    m_plasticStrain( plasticStrain ),
+    m_fractureToughnessModeI( fractureToughnessModeI )
   {}
 
   /// Default copy constructor
@@ -188,36 +190,36 @@ public:
                       const real64 Yt0,         // Tensile parameter
                       const real64 Ymax ) const; // Max strength
 
-GEOS_HOST_DEVICE
-real64 ceramicY10( const real64 pLocal,   // pressure
-                                         const real64 dLocal,   // damage,
-                                         const real64 muLocal,  // friction slope
-                                         const real64 Yt0Local, // tensile strength parameter
-                                         const real64 YcLocal ) const;
+  GEOS_HOST_DEVICE
+  real64 ceramicY10( const real64 pLocal,   // pressure
+                     const real64 dLocal,   // damage,
+                     const real64 muLocal,  // friction slope
+                     const real64 Yt0Local, // tensile strength parameter
+                     const real64 YcLocal ) const;
 
-GEOS_HOST_DEVICE
-real64 ceramicdY10dp(const real64 d, // damage,
-                                const real64 mu, // friction slope
-                                const real64 Yc, // unconfined compressive strength
-                                const real64 Yt0 ) const; // unconfined tensile strength before 3rd invariant scaling
+  GEOS_HOST_DEVICE
+  real64 ceramicdY10dp(const real64 d, // damage,
+                       const real64 mu, // friction slope
+                       const real64 Yc, // unconfined compressive strength
+                       const real64 Yt0 ) const; // unconfined tensile strength before 3rd invariant scaling
 
-GEOS_HOST_DEVICE
-real64 ceramicdY20dp(const real64 p, // pressure
-                                const real64 d,   // damage,
-                                const real64 mu,  // friction slope
-                                const real64 Yc,  // unconfined compressive strength
-                                const real64 Yt0,  // unconfined tensile strength before 3rd invariant scaling
-                                const real64 Ymax ) const; // max shear stress
+  GEOS_HOST_DEVICE
+  real64 ceramicdY20dp(const real64 p, // pressure
+                       const real64 d,   // damage,
+                       const real64 mu,  // friction slope
+                       const real64 Yc,  // unconfined compressive strength
+                       const real64 Yt0,  // unconfined tensile strength before 3rd invariant scaling
+                       const real64 Ymax ) const; // max shear stress
 
-GEOS_HOST_DEVICE
-real64 smoothStep(const real64 x,
-                             const real64 xmin,
-                             const real64 xmax) const;
+  GEOS_HOST_DEVICE
+  real64 smoothStep(const real64 x,
+                    const real64 xmin,
+                    const real64 xmax) const;
 
-GEOS_HOST_DEVICE
-real64 thirdInvariantStrengthScaling( const real64 J2,
-                                      const real64 J3,
-                                      const real64 dfdp ) const;
+  GEOS_HOST_DEVICE
+  real64 thirdInvariantStrengthScaling( const real64 J2,
+                                        const real64 J3,
+                                        const real64 dfdp ) const;
 
 
   GEOS_HOST_DEVICE
@@ -270,6 +272,9 @@ private:
 
   /// State variable: The plastic strain values for each quadrature point
   arrayView3d< real64 > const m_plasticStrain;
+
+  ///A reference to the ArrayView holding the fracture toughness
+  arrayView1d< real64 > const m_fractureToughnessModeI;
 };
 
 
@@ -729,6 +734,9 @@ public:
     /// string/key for maximum strength
     static constexpr char const * maximumStrengthString() { return "maximumStrength"; }
 
+    /// string/key for maximum strength
+    // static constexpr char const * maximumStrengthString() { return ""; }
+
     /// string/key for crack speed
     static constexpr char const * crackSpeedString() { return "crackSpeed"; }
 
@@ -743,6 +751,12 @@ public:
 
     /// string/key for quadrature point plasticStrain value 
     static constexpr char const * plasticStrainString() { return "plasticStrain"; }
+
+    /// string/key for crack tip stress concentration flag 
+    static constexpr char const * crackTipStressConcentrationString() { return "crackTipStressConcentration"; }
+
+    /// string/key for fracture toughness 
+    static constexpr char const * fractureToughnessModeIString() { return "fractureToughnessModeI"; }
   };
 
   /**
@@ -772,7 +786,9 @@ public:
                                  m_oldStress,
                                  m_density,
                                  m_wavespeed,
-                                 m_disableInelasticity );
+                                 m_disableInelasticity, 
+                                 m_fractureToughnessModeI
+                                 );
   }
 
   /**
@@ -807,7 +823,9 @@ public:
                           m_oldStress,
                           m_density,
                           m_wavespeed,
-                          m_disableInelasticity );
+                          m_disableInelasticity,
+                          m_fractureToughnessModeI
+                          );
   }
 
 
@@ -855,6 +873,11 @@ protected:
 
   ///State variable: The plastic strain values for each quadrature point
   array3d< real64 > m_plasticStrain;
+
+  real64 m_crackTipStressConcentration;
+
+  /// Material parameter: The mode I fracture toughness
+  array1d< real64 > m_fractureToughnessModeI;
 };
 
 } /* namespace constitutive */

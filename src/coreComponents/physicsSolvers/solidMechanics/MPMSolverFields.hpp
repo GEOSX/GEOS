@@ -343,7 +343,15 @@ DECLARE_FIELD( particleCopyFlag,
                -1,
                LEVEL_1,
                WRITE_AND_READ,
-               "particleCopyFlag" );        
+               "particleCopyFlag" );      
+
+DECLARE_FIELD( particleDistanceToCrackTip,
+               "particleDistanceToCrackTip",
+               array1d< real64 >,
+               0.0,
+               LEVEL_1,
+               WRITE_AND_READ,
+               "An array that stores particle distances to a crack tip ( 0: not relevant, > 0: relevant )." );                            
 }
 
 }
