@@ -2054,18 +2054,12 @@ the relative residual norm satisfies:
 		<xsd:attribute name="adiosConfig" type="string" default="" />
 		<!--childDirectory => Child directory path-->
 		<xsd:attribute name="childDirectory" type="string" default="" />
-		<!--fullFieldChannelName => Name to give to the channel passing the full field data.-->
-		<xsd:attribute name="fullFieldChannelName" type="string" default="" />
+		<!--fieldNames => Names of the fields to output.-->
+		<xsd:attribute name="fieldNames" type="groupNameRef_array" default="{}" />
 		<!--implementation => Name of the catalyst implementation to use.-->
 		<xsd:attribute name="implementation" type="string" default="" />
 		<!--implementationPath => Path to the catalyst the implementation to use.-->
 		<xsd:attribute name="implementationPath" type="string" default="" />
-		<!--outputFullQuadratureData => If true writes out data associated with every quadrature point.-->
-		<xsd:attribute name="outputFullQuadratureData" type="integer" default="0" />
-		<!--parallelThreads => Number of plot files.-->
-		<xsd:attribute name="parallelThreads" type="integer" default="1" />
-		<!--plotLevel => Determines which fields to write.-->
-		<xsd:attribute name="plotLevel" type="geos_dataRepository_PlotLevel" default="1" />
 		<!--scripts => Column separated paths to the catalyst scripts.-->
 		<xsd:attribute name="scripts" type="string" use="required" />
 		<!--name => A name is required for any non-unique nodes-->
