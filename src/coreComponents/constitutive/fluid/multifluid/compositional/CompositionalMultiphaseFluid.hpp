@@ -23,6 +23,9 @@
 #include "constitutive/fluid/multifluid/compositional/CompositionalMultiphaseFluidUpdates.hpp"
 #include "constitutive/fluid/multifluid/compositional/models/ConstantViscosity.hpp"
 #include "constitutive/fluid/multifluid/compositional/models/CompositionalDensity.hpp"
+#include "constitutive/fluid/multifluid/compositional/models/ImmiscibleWaterDensity.hpp"
+#include "constitutive/fluid/multifluid/compositional/models/ImmiscibleWaterFlashModel.hpp"
+#include "constitutive/fluid/multifluid/compositional/models/ImmiscibleWaterViscosity.hpp"
 #include "constitutive/fluid/multifluid/compositional/models/LohrenzBrayClarkViscosity.hpp"
 #include "constitutive/fluid/multifluid/compositional/models/NegativeTwoPhaseFlashModel.hpp"
 #include "constitutive/fluid/multifluid/compositional/models/ModelParameters.hpp"
@@ -110,14 +113,26 @@ protected:
 
   virtual void resizeFields( localIndex const size, localIndex const numPts ) override;
 
+  enum PhaseType : integer
+  {
+    LIQUID = 0,
+    VAPOUR = 1,
+    AQUEOUS = 2,
+  };
+
 private:
   // Create the fluid models
   void createModels();
+
+  integer findPhaseIndex( string names ) const;
 
   static std::unique_ptr< compositional::ModelParameters > createModelParameters();
 
   // Flash model
   std::unique_ptr< FLASH > m_flash{};
+
+  // Phase ordering
+  array1d< integer > m_phaseOrder;
 
   // Phase models
   std::unique_ptr< PHASE1 > m_phase1{};
@@ -142,6 +157,11 @@ using CompositionalTwoPhaseLohrenzBrayClarkViscosity = CompositionalMultiphaseFl
   compositional::NegativeTwoPhaseFlashModel,
   compositional::PhaseModel< compositional::CompositionalDensity, compositional::LohrenzBrayClarkViscosity, compositional::NullModel >,
   compositional::PhaseModel< compositional::CompositionalDensity, compositional::LohrenzBrayClarkViscosity, compositional::NullModel > >;
+using CompositionalThreePhaseLohrenzBrayClarkViscosity = CompositionalMultiphaseFluid<
+  compositional::ImmiscibleWaterFlashModel,
+  compositional::PhaseModel< compositional::CompositionalDensity, compositional::LohrenzBrayClarkViscosity, compositional::NullModel >,
+  compositional::PhaseModel< compositional::CompositionalDensity, compositional::LohrenzBrayClarkViscosity, compositional::NullModel >,
+  compositional::PhaseModel< compositional::ImmiscibleWaterDensity, compositional::ImmiscibleWaterViscosity, compositional::NullModel > >;
 
 } /* namespace constitutive */
 
