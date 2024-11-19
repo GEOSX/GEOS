@@ -78,11 +78,6 @@ def curve_check_solution(**kwargs):
     return analytical_solution(x, mechanicalParameters, totalHalfLength, halfLength)
 
 def analytical_solution(x, mechanicalParameters, totalHalfLength, halfLength):
-    traction_analytical = np.zeros(len(x))
-    i = 0
-    for xCell in x:
-        traction_analytical[i] = singularCrackSlipSolution.computeTraction(xCell)
-        i += 1  
 
     singularCrackSlipSolution = SingularCrackSlip(mechanicalParameters, halfLength)
     x = np.linspace(-totalHalfLength, totalHalfLength, 10000, endpoint=True)
