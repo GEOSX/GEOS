@@ -1,4 +1,4 @@
-/*
+   /*
  * ------------------------------------------------------------------------------------------------------------
  * SPDX-License-Identifier: LGPL-2.1-only
  *
@@ -617,31 +617,6 @@ real64 ElasticWaveEquationSEM::computeTimeStep( real64 & dtOut )
   } );
   return m_timeStep * m_cflFactor;
 }
-
-real32 ElasticWaveEquationSEM::computeGlobalMinQFactor()
-{
-  RAJA::ReduceMin< ReducePolicy< EXEC_POLICY >, real32 > minQ( LvArray::NumericLimits< real32 >::max );
-  DomainPartition & domain = getGroupByPath< DomainPartition >( "/Problem/domain" );
-
-  forDiscretizationOnMeshTargets( domain.getMeshBodies(), [&] ( string const &,
-                                                                MeshLevel & mesh,
-                                                                arrayView1d< string const > const & regionNames )
-  {
-    mesh.getElemManager().forElementSubRegions< CellElementSubRegion >( regionNames, [&]( localIndex const,
-                                                                                          CellElementSubRegion & elementSubRegion )
-    {
-      arrayView1d< real32 const > const qp = elementSubRegion.getField< elasticfields::ElasticQualityFactorP >();
-      arrayView1d< real32 const > const qs = elementSubRegion.getField< elasticfields::ElasticQualityFactorS >();
-      forAll< EXEC_POLICY >( elementSubRegion.size(), [=] GEOS_HOST_DEVICE ( localIndex const e ) {
-        minQ.min( qp[e] );
-        minQ.min( qs[e] );
-      } );
-    } );
-  } );
-  real32 minQVal = minQ.get();
-  return MpiWrapper::min< real32 >( minQVal );
-}
->>>>>>> develop
 
 void ElasticWaveEquationSEM::applyFreeSurfaceBC( real64 const time, DomainPartition & domain )
 {
