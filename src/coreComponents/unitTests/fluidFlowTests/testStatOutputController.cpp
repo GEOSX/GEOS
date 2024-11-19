@@ -229,14 +229,10 @@ TEST_F( StatOutputControllerTest, checkControllerComponents )
   {  // verify component creation
     for( string const & path : refCollectorPaths )
     {
-      ASSERT_NO_THROW( {
-        Group const & group = problem.getGroupByPath( path );
-      } );
+      ASSERT_NO_THROW( { problem.getGroupByPath( path );} );
     }
 
-    ASSERT_NO_THROW( {
-      Group const & group = problem.getGroupByPath( outputPath );
-    } );
+    ASSERT_NO_THROW( {problem.getGroupByPath( outputPath );} );
   }
 
   { // check all timeHistory paths
