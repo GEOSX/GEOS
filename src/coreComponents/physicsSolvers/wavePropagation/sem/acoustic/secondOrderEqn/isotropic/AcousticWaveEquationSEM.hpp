@@ -23,7 +23,7 @@
 
 #include "physicsSolvers/wavePropagation/shared/WaveSolverBase.hpp"
 #include "mesh/MeshFields.hpp"
-#include "physicsSolvers/SolverBase.hpp"
+#include "physicsSolvers/PhysicsSolverBase.hpp"
 #include "physicsSolvers/wavePropagation/sem/acoustic/shared/AcousticFields.hpp"
 
 namespace geos
@@ -53,7 +53,7 @@ public:
 
   static string catalogName() { return "AcousticSEM"; }
   /**
-   * @copydoc SolverBase::getCatalogName()
+   * @copydoc PhysicsSolverBase::getCatalogName()
    */
   string getCatalogName() const override { return catalogName(); }
 

@@ -55,7 +55,7 @@ using namespace constitutive;
 
 SolidMechanicsMPM::SolidMechanicsMPM( const string & name,
                                       Group * const parent ):
-  SolverBase( name, parent ),
+  PhysicsSolverBase( name, parent ),
   m_solverProfiling( 0 ),
   m_timeIntegrationOption( TimeIntegrationOption::ExplicitDynamic ),
 //  m_iComm( CommunicationTools::getInstance().getCommID() ),
@@ -292,7 +292,7 @@ SolidMechanicsMPM::SolidMechanicsMPM( const string & name,
 
 void SolidMechanicsMPM::postInputInitialization()
 {
-  SolverBase::postInputInitialization();
+  PhysicsSolverBase::postInputInitialization();
 
   // Activate neighbor list if necessary
   if( m_damageFieldPartitioning == 1 || m_surfaceDetection == 1 /*|| m_directionalOverlapCorrection == 1*/ )
@@ -467,7 +467,7 @@ void SolidMechanicsMPM::registerDataOnMesh( Group & meshBodies )
 
 void SolidMechanicsMPM::initializePreSubGroups()
 {
-  SolverBase::initializePreSubGroups();
+  PhysicsSolverBase::initializePreSubGroups();
 
   DomainPartition & domain = this->getGroupByPath< DomainPartition >( "/Problem/domain" );
 
@@ -487,7 +487,7 @@ void SolidMechanicsMPM::initializePreSubGroups()
                                                                                     ParticleSubRegion & subRegion )
       {
         string & solidMaterialName = subRegion.getReference< string >( viewKeyStruct::solidMaterialNamesString() );
-        solidMaterialName = SolverBase::getConstitutiveName< SolidBase >( subRegion );
+        solidMaterialName = PhysicsSolverBase::getConstitutiveName< SolidBase >( subRegion );
       } );
     }
   } );
@@ -528,7 +528,7 @@ real64 SolidMechanicsMPM::solverStep( real64 const & time_n,
   GEOS_MARK_FUNCTION;
   real64 dtReturn = dt;
 
-  SolverBase * const surfaceGenerator = this->getParent().getGroupPointer< SolverBase >( "SurfaceGen" );
+  PhysicsSolverBase * const surfaceGenerator = this->getParent().getGroupPointer< PhysicsSolverBase >( "SurfaceGen" );
 
   if( m_timeIntegrationOption == TimeIntegrationOption::ExplicitDynamic )
   {
@@ -1978,7 +1978,7 @@ void SolidMechanicsMPM::setParticlesConstitutiveNames( ParticleSubRegionBase & s
     setSizedFromParent( 0 );
 
   string & solidMaterialName = subRegion.getReference< string >( viewKeyStruct::solidMaterialNamesString() );
-  solidMaterialName = SolverBase::getConstitutiveName< SolidBase >( subRegion );
+  solidMaterialName = PhysicsSolverBase::getConstitutiveName< SolidBase >( subRegion );
   GEOS_ERROR_IF( solidMaterialName.empty(), GEOS_FMT( "SolidBase model not found on subregion {}", subRegion.getName() ) );
 }
 
@@ -4063,5 +4063,5 @@ void SolidMechanicsMPM::populateMappingArrays( ParticleManager & particleManager
   } );
 }
 
-REGISTER_CATALOG_ENTRY( SolverBase, SolidMechanicsMPM, string const &, dataRepository::Group * const )
+REGISTER_CATALOG_ENTRY( PhysicsSolverBase, SolidMechanicsMPM, string const &, dataRepository::Group * const )
 }

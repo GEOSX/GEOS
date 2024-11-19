@@ -20,7 +20,7 @@
 #ifndef GEOS_DATAREPOSITORY_EXECUTABLEGROUP_HPP_
 #define GEOS_DATAREPOSITORY_EXECUTABLEGROUP_HPP_
 
-#include "codingUtilities/EnumStrings.hpp"
+#include "common/format/EnumStrings.hpp"
 #include "common/DataTypes.hpp"
 #include "Group.hpp"
 
