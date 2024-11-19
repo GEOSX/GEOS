@@ -568,7 +568,7 @@ private:
   /// Max krwo value (unique as krwo and krgo are considred non hysteretical in our implementation)
   real64 m_waterOilMaxRelPerm;
 
-  /// enum class to dispatch interpolator (Baker/Eclipse,StoneII)
+  /// enum class to dispatch interpolator (Baker,StoneII)
   ThreePhaseInterpolator m_threePhaseInterpolator;
 
 };
