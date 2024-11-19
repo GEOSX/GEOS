@@ -19,7 +19,7 @@
 
 #ifndef GEOS_PHYSICSSOLVERS_STATOUTPUTCONTROLLER_HPP_
 #define GEOS_PHYSICSSOLVERS_STATOUTPUTCONTROLLER_HPP_
-#include "physicsSolvers/SolverBase.hpp"
+#include "physicsSolvers/PhysicsSolverBase.hpp"
 #include "physicsSolvers/fluidFlow/CompositionalMultiphaseBase.hpp"
 #include "physicsSolvers/fluidFlow/CompositionalMultiphaseStatistics.hpp"
 #include "physicsSolvers/fluidFlow/SinglePhaseStatistics.hpp"

@@ -21,7 +21,6 @@
 #include "physicsSolvers/fluidFlow/SourceFluxStatistics.hpp"
 #include "physicsSolvers/fluidFlow/SinglePhaseStatistics.hpp"
 
-
 #include <gtest/gtest.h>
 
 
@@ -205,9 +204,10 @@ real64 getTotalFluidMass( ProblemManager & problem, string_view flowSolverPath )
   {
     mesh.getElemManager().forElementRegions( [&]( ElementRegionBase & region )
     {
-      SinglePhaseStatistics::RegionStatistics & regionStatistics =
+      SinglePhaseStatistics::RegionStatistics & stats =
         region.getGroupByPath< SinglePhaseStatistics::RegionStatistics >( SinglePhaseStatistics::viewKeyStruct::regionStatisticsString() );
-      totalMass += regionStatistics.m_totalMass;
+
+      totalMass += stats.m_totalMass;
     } );
   } );
   return totalMass;
@@ -1134,7 +1134,9 @@ TEST_F( FlowStatisticsTest, checkMultiPhaseFluxStatisticsMol )
 
 }   /* namespace MultiPhaseFluxStatisticsTest */
 
+
 //////////////////////////////// Main ////////////////////////////////
+
 
 int main( int argc, char * * argv )
 {
