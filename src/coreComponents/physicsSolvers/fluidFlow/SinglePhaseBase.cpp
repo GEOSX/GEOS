@@ -471,7 +471,7 @@ void SinglePhaseBase::initializePostInitialConditionsPreSubGroups()
                                                                      [&]( localIndex const,
                                                                           SurfaceElementRegion & region )
     {
-      region.forElementSubRegions< FaceElementSubRegion >( [&]( FaceElementSubRegion & subRegion )
+      region.forElementSubRegions< SurfaceElementSubRegion >( [&]( SurfaceElementSubRegion & subRegion )
       {
         subRegion.getWrapper< real64_array >( fields::flow::hydraulicAperture::key() ).
           setApplyDefaultValue( region.getDefaultAperture() );
@@ -792,8 +792,8 @@ void SinglePhaseBase::implicitStepComplete( real64 const & time,
 
     } );
 
-    mesh.getElemManager().forElementSubRegions< FaceElementSubRegion >( regionNames, [&]( localIndex const,
-                                                                                          FaceElementSubRegion & subRegion )
+    mesh.getElemManager().forElementSubRegions< SurfaceElementSubRegion >( regionNames, [&]( localIndex const,
+                                                                                             SurfaceElementSubRegion & subRegion )
     {
       arrayView1d< integer const > const elemGhostRank = subRegion.ghostRank();
       arrayView1d< real64 const > const volume = subRegion.getElementVolume();

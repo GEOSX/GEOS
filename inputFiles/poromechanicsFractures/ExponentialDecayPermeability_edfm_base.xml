@@ -13,7 +13,9 @@
       <NonlinearSolverParameters
         newtonTol="1.0e-1"
         newtonMaxIter="10"
-        maxTimeStepCuts="1"/>
+        maxTimeStepCuts="1"
+        maxAllowedResidualNorm="1e20"
+        lineSearchAction="None"/>
       <LinearSolverParameters
         directParallel="0"/>
     </SinglePhasePoromechanicsEmbeddedFractures>
@@ -65,7 +67,7 @@
       faceBlock="embeddedSurfaceSubRegion"
       subRegionType="embeddedElement"
       materialList="{ water, fractureFilling, frictionLaw, hApertureModel }"
-      defaultAperture="1e-3"/>
+      defaultAperture="1e-4"/>
   </ElementRegions>
   
   <Constitutive>
