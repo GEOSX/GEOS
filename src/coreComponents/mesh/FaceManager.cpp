@@ -127,19 +127,19 @@ void FaceManager::setDomainBoundaryObjects( ElementRegionManager const & elemReg
     arrayView2d< localIndex const > const elem2dToFaces = subRegion.faceList().toViewConst();
     for( int ei = 0; ei < elem2dToFaces.size(0); ++ei )
     {
-      // if( elem2dToFaces.sizeOfArray( ei ) == 2 )
-      // {
-      //   continue;
-      // }
-      for( int rank=0; rank<MpiWrapper::commSize(); ++rank )
+      if( !( elem2dToFaces[ei][0] == -1 || elem2dToFaces[ei][1] == -1 ) )
       {
-        MpiWrapper::barrier();
-        if( rank==MpiWrapper::commRank() )
-        {
-          std::cout<<"RANK "<<rank<<std::endl;
-          std::cout<<"elem2dToFaces( "<<ei<<" ) = ( "<<elem2dToFaces( ei, 0 )<<", "<<elem2dToFaces( ei, 1 )<<" )"<<std::endl;
-        }
-      }
+
+
+      // for( int rank=0; rank<MpiWrapper::commSize(); ++rank )
+      // {
+      //   MpiWrapper::barrier();
+      //   if( rank==MpiWrapper::commRank() )
+      //   {
+      //     std::cout<<"RANK "<<rank<<std::endl;
+      //     std::cout<<"elem2dToFaces( "<<ei<<" ) = ( "<<elem2dToFaces( ei, 0 )<<", "<<elem2dToFaces( ei, 1 )<<" )"<<std::endl;
+      //   }
+      // }
 
 
       for( localIndex const & face: elem2dToFaces[ei] )
@@ -149,6 +149,7 @@ void FaceManager::setDomainBoundaryObjects( ElementRegionManager const & elemReg
           isFaceOnDomainBoundary[face] = 1;
         }
       }
+    }
     }
   };
   elemRegionManager.forElementRegions< SurfaceElementRegion >( f );
@@ -171,36 +172,36 @@ void FaceManager::setGeometricalRelations( CellBlockManagerABC const & cellBlock
 
   ToCellRelation< array2d< localIndex > > const toCellBlock = cellBlockManager.getFaceToElements();
 
-  for( int rank=0; rank<MpiWrapper::commSize(); ++rank )
-  {
-    MpiWrapper::barrier();
-    if( rank==MpiWrapper::commRank() )
-    {
-      std::cout<<"RANK "<<rank<<std::endl;
-      for( int i = 0; i < toCellBlock.toBlockIndex.size(0); ++i )
-      {
-        std::cout<<"  toCellBlock( "<<i<<", 0 ) = ( "<<toCellBlock.toBlockIndex( i, 0 )<<", "<<toCellBlock.toCellIndex( i, 0 )<<" )"<<std::endl;
-        std::cout<<"             ( "<<i<<", 1 ) = ( "<<toCellBlock.toBlockIndex( i, 1 )<<", "<<toCellBlock.toCellIndex( i, 1 )<<" )"<<std::endl;
-      }
-    }
-  }
+  // for( int rank=0; rank<MpiWrapper::commSize(); ++rank )
+  // {
+  //   MpiWrapper::barrier();
+  //   if( rank==MpiWrapper::commRank() )
+  //   {
+  //     std::cout<<"RANK "<<rank<<std::endl;
+  //     for( int i = 0; i < toCellBlock.toBlockIndex.size(0); ++i )
+  //     {
+  //       std::cout<<"  toCellBlock( "<<i<<", 0 ) = ( "<<toCellBlock.toBlockIndex( i, 0 )<<", "<<toCellBlock.toCellIndex( i, 0 )<<" )"<<std::endl;
+  //       std::cout<<"             ( "<<i<<", 1 ) = ( "<<toCellBlock.toBlockIndex( i, 1 )<<", "<<toCellBlock.toCellIndex( i, 1 )<<" )"<<std::endl;
+  //     }
+  //   }
+  // }
 
   array2d< localIndex > const blockToSubRegion = elemRegionManager.getCellBlockToSubRegionMap( cellBlockManager );
 
-  for( int rank=0; rank<MpiWrapper::commSize(); ++rank )
-  {
-    MpiWrapper::barrier();
-    if( rank==MpiWrapper::commRank() )
-    { 
-      std::cout<<"RANK "<<rank<<std::endl;
-      std::cout<<"blockToSubRegion.size(0) = "<<blockToSubRegion.size(0)<<std::endl;
-      std::cout<<"blockToSubRegion.size(1) = "<<blockToSubRegion.size(1)<<std::endl;
-      for( int i = 0; i < blockToSubRegion.size(0); ++i )
-      {
-        std::cout<<"  blockToSubRegion( "<<i<<" ) = ( "<<blockToSubRegion( i, 0 )<<", "<<blockToSubRegion( i, 1 )<<" )"<<std::endl;
-      }
-    }
-  }
+  // for( int rank=0; rank<MpiWrapper::commSize(); ++rank )
+  // {
+  //   MpiWrapper::barrier();
+  //   if( rank==MpiWrapper::commRank() )
+  //   { 
+  //     std::cout<<"RANK "<<rank<<std::endl;
+  //     std::cout<<"blockToSubRegion.size(0) = "<<blockToSubRegion.size(0)<<std::endl;
+  //     std::cout<<"blockToSubRegion.size(1) = "<<blockToSubRegion.size(1)<<std::endl;
+  //     for( int i = 0; i < blockToSubRegion.size(0); ++i )
+  //     {
+  //       std::cout<<"  blockToSubRegion( "<<i<<" ) = ( "<<blockToSubRegion( i, 0 )<<", "<<blockToSubRegion( i, 1 )<<" )"<<std::endl;
+  //     }
+  //   }
+  // }
 
   meshMapUtilities::transformCellBlockToRegionMap< parallelHostPolicy >( blockToSubRegion.toViewConst(),
                                                                          toCellBlock,
@@ -227,13 +228,13 @@ void FaceManager::setGeometricalRelations( CellBlockManagerABC const & cellBlock
     arrayView2d< localIndex const > const & elem2dToFaces = subRegion.faceList().toViewConst();
     for( localIndex ei = 0; ei < elem2dToFaces.size(0); ++ei )
     {
-      std::cout<<ei<<std::endl;
+      // std::cout<<ei<<std::endl;
       for( localIndex const & face: elem2dToFaces[ei] )
       {
         if( face != -1 )
         {
-          std::cout<<"m_toElements( "<<face<<" )    = ( "<<m_toElements.m_toElementRegion( face, 0 )<<", "<<m_toElements.m_toElementSubRegion( face, 0 )<<", "<<m_toElements.m_toElementIndex( face, 0 )<<" )"<<std::endl;
-          std::cout<<"            ( "<<face<<" )    = ( "<<m_toElements.m_toElementRegion( face, 1 )<<", "<<m_toElements.m_toElementSubRegion( face, 1 )<<", "<<m_toElements.m_toElementIndex( face, 1 )<<" )"<<std::endl;
+          // std::cout<<"m_toElements( "<<face<<" )    = ( "<<m_toElements.m_toElementRegion( face, 0 )<<", "<<m_toElements.m_toElementSubRegion( face, 0 )<<", "<<m_toElements.m_toElementIndex( face, 0 )<<" )"<<std::endl;
+          // std::cout<<"            ( "<<face<<" )    = ( "<<m_toElements.m_toElementRegion( face, 1 )<<", "<<m_toElements.m_toElementSubRegion( face, 1 )<<", "<<m_toElements.m_toElementIndex( face, 1 )<<" )"<<std::endl;
           
 
           GEOS_ERROR_IF_EQ_MSG( m_toElements.m_toElementRegion( face, 0 ), -1, GEOS_FMT( err, face ) );
@@ -252,15 +253,15 @@ void FaceManager::setGeometricalRelations( CellBlockManagerABC const & cellBlock
     }
   };
   // Connecting all the 3d elements (information is already in the m_toElements mappings) and all the 2d elements.
-  for( int rank=0; rank<MpiWrapper::commSize(); ++rank )
-  {
-    MpiWrapper::barrier();
-    if( rank==MpiWrapper::commRank() )
-    {
-        std::cout<<"RANK "<<rank<<std::endl;
+  // for( int rank=0; rank<MpiWrapper::commSize(); ++rank )
+  // {
+  //   MpiWrapper::barrier();
+  //   if( rank==MpiWrapper::commRank() )
+  //   {
+  //       std::cout<<"RANK "<<rank<<std::endl;
         elemRegionManager.forElementRegionsComplete< SurfaceElementRegion >( connect2dElems );
-    }
-  }
+  //   }
+  // }
 
   if( isBaseMeshLevel )
   {

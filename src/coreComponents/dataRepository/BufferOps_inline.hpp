@@ -1762,7 +1762,11 @@ Pack( buffer_unit_type * & buffer,
       arraySlice1d< globalIndex const > const & relatedObjectLocalToGlobalMap )
 {
   localIndex sizeOfPackedChars = 0;
-  array1d< globalIndex > junk;
+  array1d< globalIndex > junk( var.size( 1 ) );
+  for( localIndex a=0; a<var.size( 1 ); ++a )
+  {
+    junk[a] = -1;
+  }
 
   sizeOfPackedChars += Pack< DO_PACKING >( buffer, indices.size() );
   for( localIndex a=0; a<indices.size(); ++a )

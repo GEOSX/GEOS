@@ -340,6 +340,9 @@ void SolidMechanicsLagrangeContact::computeTolerances( DomainPartition & domain 
               localIndex const esr = faceToElemSubRegion[faceIndex][0];
               localIndex const ei = faceToElemIndex[faceIndex][0];
 
+              if( !( faceIndex==-1 || er == -1 || esr == -1 || ei == -1 ) )
+              {
+
               real64 const volume = elemVolume[er][esr][ei];
 
               // Get the "element to node" map for the specific region/subregion
@@ -385,6 +388,7 @@ void SolidMechanicsLagrangeContact::computeTolerances( DomainPartition & domain 
               averageYoungModulus += 0.5*E;
               averageConstrainedModulus += 0.5*M;
               averageBoxSize0 += 0.5*boxSize[0];
+              }
             }
 
             // Average the stiffness and compute the inverse
@@ -510,10 +514,9 @@ void SolidMechanicsLagrangeContact::computeFaceDisplacementJump( DomainPartition
 
         forAll< parallelHostPolicy >( subRegion.size(), [=] ( localIndex const kfe )
         {
-          // if( elemsToFaces.sizeOfArray( kfe ) != 2 )
-          // {
-          //   return;
-          // }
+          if( !( elemsToFaces[kfe][0] == -1 || elemsToFaces[kfe][1] == -1 ) )
+          {
+
 
           // Contact constraints
           localIndex const numNodesPerFace = faceToNodeMap.sizeOfArray( elemsToFaces[kfe][0] );
@@ -558,6 +561,7 @@ void SolidMechanicsLagrangeContact::computeFaceDisplacementJump( DomainPartition
           slip[ kfe ] = LvArray::math::sqrt( LvArray::math::square( dispJump( kfe, 1 ) ) +
                                              LvArray::math::square( dispJump( kfe, 2 ) ) );
           aperture[ kfe ] = dispJump[ kfe ][ 0 ];
+          }
         } );
       }
     } );
@@ -957,10 +961,8 @@ void SolidMechanicsLagrangeContact::computeRotationMatrices( DomainPartition & d
 
       forAll< parallelHostPolicy >( subRegion.size(), [=]( localIndex const kfe )
       {
-        // if( elemsToFaces.sizeOfArray( kfe ) != 2 )
-        // {
-        //   return;
-        // }
+        if( !( elemsToFaces[kfe][0] == -1 || elemsToFaces[kfe][1] == -1 ) )
+        {
 
         localIndex const f0 = elemsToFaces[kfe][0];
         localIndex const f1 = elemsToFaces[kfe][1];
@@ -983,6 +985,7 @@ void SolidMechanicsLagrangeContact::computeRotationMatrices( DomainPartition & d
         LvArray::tensorOps::copy< 3 >( unitNormal[kfe], Nbar );
         LvArray::tensorOps::copy< 3 >( unitTangent1[kfe], columnVector1 );
         LvArray::tensorOps::copy< 3 >( unitTangent2[kfe], columnVector2 );
+        }
       } );
     } );
   } );
@@ -1352,10 +1355,9 @@ void SolidMechanicsLagrangeContact::
 
     forAll< parallelHostPolicy >( subRegion.size(), [=] ( localIndex const kfe )
     {
-      // if( elemsToFaces.sizeOfArray( kfe ) != 2 )
-      // {
-      //   return;
-      // }
+      if( !( elemsToFaces[kfe][0] == -1 || elemsToFaces[kfe][1] == -1 ) )
+      {
+
       localIndex const numNodesPerFace = faceToNodeMap.sizeOfArray( elemsToFaces[kfe][0] );
 
       globalIndex rowDOF[3 * m_maxFaceNodes]; // this needs to be changed when dealing with arbitrary element types
@@ -1423,6 +1425,7 @@ void SolidMechanicsLagrangeContact::
           }
         }
       }
+      }
     } );
   } );
 }
@@ -1483,10 +1486,8 @@ void SolidMechanicsLagrangeContact::
 
       forAll< parallelHostPolicy >( subRegion.size(), [=] ( localIndex const kfe )
       {
-        // if( elemsToFaces.sizeOfArray( kfe ) != 2 )
-        // {
-        //   return;
-        // }
+        if( !( elemsToFaces[kfe][0] == -1 || elemsToFaces[kfe][1] == -1 ) )
+        {
 
         if( ghostRank[kfe] < 0 )
         {
@@ -1692,6 +1693,7 @@ void SolidMechanicsLagrangeContact::
                                                     3 );
             }
           }
+        }
         }
       } );
     } );
