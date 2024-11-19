@@ -146,7 +146,6 @@ def output_tables(x, slip, name):
 def generate_tables(inputFileDirectory):
     #-------- Extract info from XML
     xmlFilePath = f'{inputFileDirectory}/lagrangianContactMechanics/LagrangeContactBubbleStab_FixedSlip_base.xml'
-    ./lagrangianContactMechanics/LagrangeContactBubbleStab_FixedSlip_base.xml
 
     mechanicalParameters = getMechanicalParametersFromXML(xmlFilePath)
     appliedPressure = 1.0
