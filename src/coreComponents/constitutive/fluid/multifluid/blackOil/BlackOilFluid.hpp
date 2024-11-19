@@ -276,7 +276,7 @@ private:
   virtual void readInputDataFromPVTFiles() override;
 
   /**
-   * @brief Read all the PVT table provided by the user in Eclipse format
+   * @brief Read all the PVT table provided by the user in text format
    * @param[in] oilTable the oil table data read from file
    * @param[in] oilSurfaceMassDensity the oil phase surface mass density
    * @param[in] oilSurfaceMolecularWeight the oil phase surface molecular weight
