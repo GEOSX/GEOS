@@ -1796,7 +1796,7 @@ stress - traction is applied to the faces as specified by the inner product of i
 		<xsd:attribute name="amgAggressiveCoarseningPaths" type="integer" default="1" />
 		<!--amgAggressiveInterpType => AMG aggressive interpolation algorithm. Available options are: ``default|extendedIStage2|standardStage2|extendedStage2|multipass|modifiedExtended|modifiedExtendedI|modifiedExtendedE|modifiedMultipass``-->
 		<xsd:attribute name="amgAggressiveInterpType" type="geos_LinearSolverParameters_AMG_AggInterpType" default="multipass" />
-		<!--amgCoarseSolver => AMG coarsest level solver/smoother type. Available options are: ``default|jacobi|l1jacobi|fgs|sgs|l1sgs|chebyshev|direct|bgs``-->
+		<!--amgCoarseSolver => AMG coarsest level solver/smoother type. Available options are: ``default|jacobi|l1jacobi|fgs|sgs|l1sgs|chebyshev|direct|bgs|gsElimWPivoting|gsElimWInverse``-->
 		<xsd:attribute name="amgCoarseSolver" type="geos_LinearSolverParameters_AMG_CoarseType" default="direct" />
 		<!--amgCoarseningType => AMG coarsening algorithm. Available options are: ``default|CLJP|RugeStueben|Falgout|PMIS|HMIS``-->
 		<xsd:attribute name="amgCoarseningType" type="geos_LinearSolverParameters_AMG_CoarseningType" default="HMIS" />
@@ -1867,7 +1867,7 @@ the relative residual norm satisfies:
 	</xsd:simpleType>
 	<xsd:simpleType name="geos_LinearSolverParameters_AMG_CoarseType">
 		<xsd:restriction base="xsd:string">
-			<xsd:pattern value=".*[\[\]`$].*|default|jacobi|l1jacobi|fgs|sgs|l1sgs|chebyshev|direct|bgs" />
+			<xsd:pattern value=".*[\[\]`$].*|default|jacobi|l1jacobi|fgs|sgs|l1sgs|chebyshev|direct|bgs|gsElimWPivoting|gsElimWInverse" />
 		</xsd:restriction>
 	</xsd:simpleType>
 	<xsd:simpleType name="geos_LinearSolverParameters_AMG_CoarseningType">
