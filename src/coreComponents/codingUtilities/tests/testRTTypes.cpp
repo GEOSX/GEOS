@@ -19,12 +19,12 @@
 
 
 // Mock classes to test dynamic casting
-class Base {
+class Base  {
 public:
     virtual ~Base() = default; // Needed for RTTI
 };
 
-class Derived : public Base {
+class Derived final : public Base {
 public:
     void show() {
         std::cout << "Derived class method." << std::endl;
@@ -59,7 +59,6 @@ TEST(DynamicCastTests, Reference_Casting_Failure) {
     Base& base_ref = base;
     
     Base& derived_base_ref = geos::dynamicCast<Base&>(base_ref);
-    // this test a good_cast
     ASSERT_EQ(&derived_base_ref, &base) << "Expected successful cast from Base to Base.";
     
 }
