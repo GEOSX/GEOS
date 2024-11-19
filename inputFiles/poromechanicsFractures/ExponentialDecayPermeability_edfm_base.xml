@@ -13,9 +13,7 @@
       <NonlinearSolverParameters
         newtonTol="1.0e-1"
         newtonMaxIter="10"
-        maxTimeStepCuts="1"
-        maxAllowedResidualNorm="1e20"
-        lineSearchAction="None"/>
+        maxTimeStepCuts="1"/>
       <LinearSolverParameters
         directParallel="0"/>
     </SinglePhasePoromechanicsEmbeddedFractures>
