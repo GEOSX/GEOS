@@ -46,8 +46,8 @@ struct Baker
    * @param[in] dGoRelPerm_dOilVolFrac
    *
    * This function interpolates the two-phase relperms to compute the three-phase relperm
-   * The interpolation is based on the modified Baker method, also used as default in Eclipse
-   * Reference: Eclipse technical description and PetroWiki
+   * The interpolation is based on the modified Baker method
+   * Reference: PetroWiki
    */
   GEOS_HOST_DEVICE
   GEOS_FORCE_INLINE
@@ -131,7 +131,6 @@ struct Stone2
    *
    * This function interpolates the two-phase relperms to compute the three-phase relperm
    * The interpolation is based on the modified Stone 2 method
-   * Reference: Eclipse technical description
    */
   GEOS_HOST_DEVICE
   GEOS_FORCE_INLINE
