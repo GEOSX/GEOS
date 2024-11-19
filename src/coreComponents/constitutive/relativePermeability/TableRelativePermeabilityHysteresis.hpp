@@ -711,11 +711,10 @@ TableRelativePermeabilityHysteresis::KernelWrapper::
                                       real64 & phaseRelPerm,
                                       real64 & dPhaseRelPerm_dPhaseVolFrac ) const
 {
-  // note: for simplicity, the notations are taken from IX documentation (although this breaks our phaseVolFrac naming convention)
+  // note: for simplicity, the notations are taken from reservoir simulation literature (although this breaks our phaseVolFrac naming convention)
 
   // Step 1: for a given value of the max historical saturation, Shy, compute the trapped critical saturation, Scrt,
-  //         using Land's method. The calculation includes the modifications from Jerauld. This is equation 2.162 from
-  //         the IX technical description.
+  //         using Land's method. The calculation includes the modifications from Jerauld.
   real64 const S = phaseVolFraction;
   real64 const Scri = imbibitionPhaseMinVolFraction;
   real64 const Scrd = drainagePhaseMinVolFraction;
@@ -744,9 +743,8 @@ TableRelativePermeabilityHysteresis::KernelWrapper::
   else
   {
     // Step 2: compute the normalized saturation, S_norm, at which the imbibition relperm curve will be evaluated.
-    //         This is equation 2.166 from the IX technical description.
     real64 const ratio = ( Smx - Scri ) / ( Shy - Scrt );
-    real64 const Snorm = Scri + ( S - Scrt ) * ratio; // normalized saturation from equation 2.166
+    real64 const Snorm = Scri + ( S - Scrt ) * ratio; // normalized saturation
     real64 const dSnorm_dS = ratio;
 
     // Step 3: evaluate the imbibition relperm, kri(Snorm), at the normalized saturation, Snorm.
@@ -761,7 +759,6 @@ TableRelativePermeabilityHysteresis::KernelWrapper::
     real64 const krdAtSmx = drainageRelPermEndPoint;
 
     // Step 6: apply the formula blending drainage and imbibition relperms from the Killough model.
-    //         This equation 2.165 from the IX technical description.
     real64 const drainageRelPermRatio = krdAtShy / krdAtSmx;
     phaseRelPerm = kriAtSnorm * drainageRelPermRatio;
     dPhaseRelPerm_dPhaseVolFrac = dkriAtSnorm_dS * drainageRelPermRatio;
