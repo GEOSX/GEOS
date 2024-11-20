@@ -357,7 +357,7 @@ AquiferBoundaryCondition::KernelWrapper::
            real64 const & areaFraction,
            real64 & dAquiferVolFlux_dPres ) const
 {
-  // compute the dimensionless time (equation 5.5 of the Eclipse TD)
+  // compute the dimensionless time
   real64 const dimensionlessTimeAtBeginningOfStep = timeAtBeginningOfStep / m_timeConstant;
   real64 const dimensionlessTimeAtEndOfStep = ( timeAtBeginningOfStep + dt ) / m_timeConstant;
 
@@ -368,15 +368,15 @@ AquiferBoundaryCondition::KernelWrapper::
   // compute the potential difference between the reservoir (old pressure) and the aquifer
   real64 const potDiff = m_initialPressure - reservoirPressure_n - m_density * ( m_gravCoef - reservoirGravCoef );
 
-  // compute the a (equation 5.8 of the Eclipse TD)
+  // compute the a
   real64 const timeConstantInv = 1.0 / m_timeConstant;
   real64 const denom = presInfluence - dimensionlessTimeAtBeginningOfStep * dPresInfluence_dTime;
   real64 const a = timeConstantInv * ( m_influxConstant * potDiff - m_cumulativeFlux * dPresInfluence_dTime ) / denom;
 
-  // compute the b (equation 5.9 of the Eclipse TD)
+  // compute the b
   real64 const b = timeConstantInv * m_influxConstant / denom;
 
-  // compute the average inflow rate Q (equation 5.7 of the Eclipse TD)
+  // compute the average inflow rate Q
   real64 const aquiferVolFlux =  areaFraction * ( a - b * ( reservoirPressure - reservoirPressure_n ) );
   dAquiferVolFlux_dPres = -areaFraction * b;
 
