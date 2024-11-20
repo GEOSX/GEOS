@@ -46,6 +46,12 @@
       target="/Solvers/SurfaceGen"/>
 
     <PeriodicEvent
+      name="restarts"
+      timeFrequency="1"
+      targetExactTimestep="0"
+      target="/Outputs/restartOutput"/>   
+
+    <PeriodicEvent
       name="solverApplications"
       beginTime="0.0"
       forceDt="1.0"
