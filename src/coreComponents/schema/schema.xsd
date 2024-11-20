@@ -609,6 +609,10 @@
 					<xsd:selector xpath="CompositionalMultiphaseFluid" />
 					<xsd:field xpath="@name" />
 				</xsd:unique>
+				<xsd:unique name="domainConstitutiveCompositionalThreePhaseFluidLohrenzBrayClarkUniqueName">
+					<xsd:selector xpath="CompositionalThreePhaseFluidLohrenzBrayClark" />
+					<xsd:field xpath="@name" />
+				</xsd:unique>
 				<xsd:unique name="domainConstitutiveCompositionalTwoPhaseFluidUniqueName">
 					<xsd:selector xpath="CompositionalTwoPhaseFluid" />
 					<xsd:field xpath="@name" />
@@ -4819,6 +4823,7 @@ Level 0 outputs no specific information for this solver. Higher levels require m
 			<xsd:element name="CarmanKozenyPermeability" type="CarmanKozenyPermeabilityType" />
 			<xsd:element name="CeramicDamage" type="CeramicDamageType" />
 			<xsd:element name="CompositionalMultiphaseFluid" type="CompositionalMultiphaseFluidType" />
+			<xsd:element name="CompositionalThreePhaseFluidLohrenzBrayClark" type="CompositionalThreePhaseFluidLohrenzBrayClarkType" />
 			<xsd:element name="CompositionalTwoPhaseFluid" type="CompositionalTwoPhaseFluidType" />
 			<xsd:element name="CompositionalTwoPhaseFluidLohrenzBrayClark" type="CompositionalTwoPhaseFluidLohrenzBrayClarkType" />
 			<xsd:element name="CompressibleSinglePhaseFluid" type="CompressibleSinglePhaseFluidType" />
@@ -5148,6 +5153,55 @@ The expected format is "{ waterMax, oilMax }", in that order-->
 		<xsd:attribute name="equationsOfState" type="string_array" use="required" />
 		<!--phaseNames => List of fluid phases-->
 		<xsd:attribute name="phaseNames" type="groupNameRef_array" use="required" />
+		<!--name => A name is required for any non-unique nodes-->
+		<xsd:attribute name="name" type="groupName" use="required" />
+	</xsd:complexType>
+	<xsd:complexType name="CompositionalThreePhaseFluidLohrenzBrayClarkType">
+		<!--checkPVTTablesRanges => Enable (1) or disable (0) an error when the input pressure or temperature of the PVT tables is out of range.-->
+		<xsd:attribute name="checkPVTTablesRanges" type="integer" default="1" />
+		<!--componentAcentricFactor => Component acentric factors-->
+		<xsd:attribute name="componentAcentricFactor" type="real64_array" use="required" />
+		<!--componentBinaryCoeff => Table of binary interaction coefficients-->
+		<xsd:attribute name="componentBinaryCoeff" type="real64_array2d" default="{{0}}" />
+		<!--componentCriticalPressure => Component critical pressures-->
+		<xsd:attribute name="componentCriticalPressure" type="real64_array" use="required" />
+		<!--componentCriticalTemperature => Component critical temperatures-->
+		<xsd:attribute name="componentCriticalTemperature" type="real64_array" use="required" />
+		<!--componentCriticalVolume => Component critical volumes-->
+		<xsd:attribute name="componentCriticalVolume" type="real64_array" default="{0}" />
+		<!--componentMolarWeight => Component molar weights-->
+		<xsd:attribute name="componentMolarWeight" type="real64_array" use="required" />
+		<!--componentNames => List of component names-->
+		<xsd:attribute name="componentNames" type="string_array" use="required" />
+		<!--componentVolumeShift => Component volume shifts-->
+		<xsd:attribute name="componentVolumeShift" type="real64_array" default="{0}" />
+		<!--equationsOfState => List of equation of state types for each phase. Valid options:
+* pr
+* srk-->
+		<xsd:attribute name="equationsOfState" type="string_array" use="required" />
+		<!--phaseNames => List of fluid phases-->
+		<xsd:attribute name="phaseNames" type="groupNameRef_array" use="required" />
+		<!--viscosityMixingRule => Viscosity mixing rule to be used for Lohrenz-Bray-Clark computation. Valid options:
+* HerningZipperer
+* Wilke
+* Brokaw-->
+		<xsd:attribute name="viscosityMixingRule" type="string" default="HerningZipperer" />
+		<!--waterCompressibility => The compressibility of water-->
+		<xsd:attribute name="waterCompressibility" type="real64" use="required" />
+		<!--waterDensity => The water density at the reference pressure and temperature-->
+		<xsd:attribute name="waterDensity" type="real64" use="required" />
+		<!--waterExpansionCoefficient => The volumetric coefficient of thermal expansion of water-->
+		<xsd:attribute name="waterExpansionCoefficient" type="real64" default="0" />
+		<!--waterReferencePressure => The reference pressure for water density and viscosity-->
+		<xsd:attribute name="waterReferencePressure" type="real64" use="required" />
+		<!--waterReferenceTemperature => The reference temperature for water density and viscosity-->
+		<xsd:attribute name="waterReferenceTemperature" type="real64" default="293.15" />
+		<!--waterViscosity => The water viscosity at the reference pressure and temperature-->
+		<xsd:attribute name="waterViscosity" type="real64" use="required" />
+		<!--waterViscosityCompressibility => The compressibility (normalized derivative with respect to pressure) of the water viscosity-->
+		<xsd:attribute name="waterViscosityCompressibility" type="real64" default="0" />
+		<!--waterViscosityExpansionCoefficient => The coefficient of thermal expansion (normalized derivative with respect to temperature) of water viscosity-->
+		<xsd:attribute name="waterViscosityExpansionCoefficient" type="real64" default="0" />
 		<!--name => A name is required for any non-unique nodes-->
 		<xsd:attribute name="name" type="groupName" use="required" />
 	</xsd:complexType>
