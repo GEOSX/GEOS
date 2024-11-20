@@ -189,15 +189,6 @@ resize( T & GEOS_UNUSED_PARAM( value ),
         localIndex const GEOS_UNUSED_PARAM( newSize ) )
 {}
 
-
-// template< typename T, int NDIM, typename PERMUTATION >
-// inline std::enable_if_t< DefaultValue< Array< T, NDIM, PERMUTATION > >::has_default_value >
-// resizeDefault( Array< T, NDIM, PERMUTATION > & value,
-//                localIndex const newSize,
-//                DefaultValue< Array< T, NDIM, PERMUTATION > > const & defaultValue )
-// { value.resizeDefault( newSize, defaultValue.value ); }
-
-
 template< typename T >
 inline std::enable_if_t< traits::HasMemberFunction_resizeDefault< T > &&
                          DefaultValue< T >::has_default_value >
