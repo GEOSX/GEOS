@@ -126,8 +126,6 @@ if( ENABLE_CALIPER )
   endif()
 endif()
 
-set( dependencyList ${dependencyList} fileIO codingUtilities )
-
 blt_add_library( NAME       common
                  SOURCES    ${common_sources}
                  HEADERS    ${common_headers}
