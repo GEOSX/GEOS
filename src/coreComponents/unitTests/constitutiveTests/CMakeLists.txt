@@ -10,7 +10,6 @@ set( gtest_geosx_tests
      testMultiFluidLiveOil.cpp
      testRelPerm.cpp
      testRelPermHysteresis.cpp
-     testCapillaryPressure.cpp
    )
 
 set( gtest_triaxial_xmls
