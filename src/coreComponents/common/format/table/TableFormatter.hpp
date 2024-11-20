@@ -210,8 +210,11 @@ public:
 
 private:
 
-  /// symbol for separator construction
-  static constexpr char m_verticalLine = '|';
+  using RowsCellInput = std::vector< std::vector< TableData::CellData > >;
+  using RowsCellLayout = std::vector< std::vector< TableLayout::CellLayout > >
+
+                         /// symbol for separator construction
+                         static constexpr char m_verticalLine = '|';
   ///  for the extremity of a row
   static constexpr char m_horizontalLine = '-';
 
@@ -240,6 +243,15 @@ private:
                     string_view topSeparator ) const;
 
   /**
+   * @brief 
+   * @param columns 
+   * @param headersRows 
+   */
+  void computeHeaderRows( std::vector< TableLayout::Column > & columns,
+                          std::vector< TableLayout::Row > & headersRows ) const;
+
+
+  /**
    * @brief Populate all the tableColumnData values with values extracted from TableData.
    * @param columns  Vector of columns  to populate.
    * @param tableData Vector containing all rows filled with values
@@ -248,11 +260,6 @@ private:
   void populateColumnsFromTableData( std::vector< TableLayout::Column > & columns,
                                      std::vector< std::vector< TableData::CellData > > const & tableData ) const;
 
-  /**
-   * @brief Divides cells (header and values) by detecting the newline \\n character and set the same cell vector
-   * @param columns The vector containg all columns
-   */
-  void dividesCells( std::vector< TableLayout::Column > & columns ) const;
 
   /**
    * @brief For each tableColumnData find and set the column's longest string

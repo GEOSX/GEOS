@@ -31,11 +31,20 @@ void TableLayout::addToColumns( const std::vector< string > & columnNames )
 
 void TableLayout::addToColumns( string_view columnName )
 {
-  m_tableColumnsData.push_back( TableLayout::Column().setName( columnName ) );
+  Column column = TableLayout::Column().setName( columnName );
+  if( !m_tableColumnsData.empty( ))
+  {
+    m_tableColumnsData.end()->next = &column;
+  }
+  m_tableColumnsData.push_back( column );
 }
 
 void TableLayout::addToColumns( Column const & column )
 {
+  if( !m_tableColumnsData.empty( ))
+  {
+    m_tableColumnsData.end()->next = &column;
+  }
   m_tableColumnsData.push_back( column );
 }
 
@@ -116,16 +125,33 @@ integer const & TableLayout::getMarginTitle() const
   return m_titleMargin;
 }
 
-CellLayout::CellLayout( CellType type, string_view cellValue, Alignment cellAlignment ):
-  cellType( type ),
-  alignment( cellAlignment )
+integer & TableLayout::getTrackerHeaderRows() const
 {
-  std::istringstream strStream( cellValue );
+  return m_headerRows;
+}
+
+void divideCell( std::vector< string > & lines, string const & value )
+{
+  std::istringstream strStream( value );
   std::string line;
   while( getline( strStream, line, '\n' ))
   {
     lines.push_back( line );
   }
+}
+
+
+CellLayout::CellLayout( CellType type, string_view cellValue, Alignment cellAlignment ):
+  cellType( type ),
+  alignment( cellAlignment )
+{
+  divideCell( lines, cellValue );
+}
+
+CellLayout::CellLayout( CellType type, string_view cellValue ):
+  cellType( type )
+{
+  divideCell( lines, cellValue );
 }
 
 }

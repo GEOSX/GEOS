@@ -106,6 +106,7 @@ public:
     CellAlignment cellAlignment;
 
     Column()
+      : m_parent( nullptr ), m_m_next( nullptr )
     {
       enabled = true;
       columnName.value = "";
@@ -158,6 +159,11 @@ public:
       {
         Cell cell{'\x03', name};//TODO
         Column col{cell};
+        subColumns.parent = this;
+        if( !subColumns.empty())
+        {
+          subColumns.end()->next = &col;
+        }
         subColumns.emplace_back( col );
       }
       subColumn = subColumns;
@@ -177,16 +183,13 @@ public:
       return *this;
     }
 
-    // std::vector< CellLayout > & getCells()
-    // {
-    //   return cells;
-    // }
-
 private:
     // /// A vector containing all the values of a column
     // std::vector< CellLayout > cells;
     // /// TODO DOCS
     // size_t nbHeaderRows;
+    Column * m_parent;
+    Column * m_next;
     /// Vector of string containing the largest string for a column and its subColumns
     size_t maxStringSize; // TODO : Assigner cette stat
   };
@@ -197,13 +200,11 @@ private:
    */
   class SubColumnIterator
   {
-    SubColumnIterator() noexcept:
-      m_currentColumn( m_spRoot )
-      { }
 
     SubColumnIterator( Column const * columnPtr ) noexcept:
       m_currentColumn( columnPtr )
-      { }
+    {}
+
 
     SubColumnIterator & operator=( Column * columnPtr )
     {
@@ -214,9 +215,26 @@ private:
     // Prefix ++ overload
     SubColumnIterator & operator++()
     {
-      // TODO!
-      // if( m_currentColumn )
-      //   m_currentColumn= m_currentColumn>pNext;
+      m_currentColumn++;
+      if( m_currentColumn->m_next == nullptr ) GEOS_ERROR( "Column overflow" );
+      if( m_currentColumn->m_parent == nullptr )
+      {
+        while( !m_currentColumn->subColumn.empty() )
+        {
+          m_currentColumn = m_currentColumn.subColumn.begin();
+        }
+      }
+      else
+      {
+        if( m_currentColumn == m_currentColumn->m_parent->subColumn.end())
+        {
+          while( m_currentColumn->m_parent.empty() )
+          {
+            m_currentColumn = m_currentColumn->m_parent;
+          }
+        }
+      }
+      m_currentColumn = m_currentColumn->m_next;
       return *this;
     }
 
@@ -224,13 +242,8 @@ private:
     SubColumnIterator operator++( Column )
     {
       SubColumnIterator iterator = *this;
-      ++*this;
+      ++(*this);
       return iterator;
-    }
-
-    bool operator!=( SubColumnIterator const & iterator )
-    {
-      return m_currentColumn!= iterator.m_currentColumn
     }
 
     Column operator*()
@@ -238,14 +251,25 @@ private:
       return *m_currentColumn;
     }
 
+    friend bool operator== ( const SubColumnIterator & a, const SubColumnIterator & b )
+    {
+      return a.m_currentColumn == b.m_currentColumn;
+    };
+    friend bool operator!= ( const SubColumnIterator & a, const SubColumnIterator & b )
+    {
+      return a.m_currentColumn != b.m_currentColumn;
+    };
+
 private:
-    Column const * m_currentColumn
+    Column const * m_currentColumn;
   };
 
+  SubColumnIterator begin() { return SubColumnIterator( m_tableColumnsData.begin() );}
+  SubColumnIterator end() { return SubColumnIterator( m_tableColumnsData.end() );}
   struct Row
   {
     // maximum number of lines among the cells of a given row
-    size_t maxLineCount; // TODO : Assigner cette stat
+    size_t maxLineCount;   // TODO : Assigner cette stat
   };
 
   /// Alias for an initializer list of variants that can contain either a string or a layout column.
@@ -304,6 +328,17 @@ private:
     setMargin( MarginValue::medium );
     setTitle( title );
     addToColumns( args );
+  }
+
+  size_t getMaxHeaderRow()
+  {
+    size_t depthMax=1;
+    size_t maxLineCount=1;
+    for( auto it = m_tableColumnsData.begin(), end = m_tableColumnsData.end(); it!=end; ++it )
+    {
+      if( !it->subColumn.empty()) depthMax++;
+    }
+    return depthMax;
   }
 
   /**
@@ -376,6 +411,8 @@ private:
    */
   integer const & getMarginTitle() const;
 
+  std::vector< Row > & getTrackerHeaderRows();
+
 private:
 
   /**
@@ -387,8 +424,8 @@ private:
     for( auto const & arg : args )
     {
       std::visit( [this]( auto const & value ) {
-          addToColumns( value );
-        }, arg );
+        addToColumns( value );
+      }, arg );
     }
   }
 
@@ -422,6 +459,9 @@ private:
   void addToColumns( Column const & column );
 
   std::vector< Column > m_tableColumnsData;
+  // m_valueRows[0] = header then 1 line = 1 row.
+  std::vector< Row > m_valueRows;
+  std::vector< Row > m_headerRows;
 
   bool m_wrapLine = true;
   bool m_containSubColumn = false;

@@ -61,7 +61,7 @@ string TableCSVFormatter::headerToString() const
 string TableCSVFormatter::dataToString( TableData const & tableData ) const
 {
 
-  std::vector< std::vector< TableData::CellData > > const rowsValues( tableData.getTableDataRows() );
+  RowsCellInput const rowsValues( tableData.getTableDataRows() );
   std::ostringstream oss;
   for( const auto & row : rowsValues )
   {
@@ -109,7 +109,7 @@ string buildCell( TableLayout::Alignment const alignment, string_view value, siz
  * @param tableDataRows Vector built in TableData containing all rows values
  */
 void updateVisibleColumns( std::vector< TableLayout::Column > & columns,
-                           std::vector< std::vector< TableData::CellData > > & tableDataRows )
+                           RowsCellInput & tableDataRows )
 {
   integer idxColumn = 0;
   for( auto iterColumn = columns.begin(); iterColumn != columns.end(); )
@@ -169,10 +169,11 @@ void TableTextFormatter::prepareAndBuildTable( std::vector< TableLayout::Column 
                                                string & sectionSeparatingLine,
                                                string & topSeparator ) const
 {
-  std::vector< std::vector< TableData::CellData > > tableDataRows( tableData.getTableDataRows());
+  RowsCellInput tableDataRows( tableData.getTableDataRows());
   if( !tableDataRows.empty())
   {
     updateVisibleColumns( columns, tableDataRows );
+    computeHeaderRows(columns, m_tableLayout.getTrackerHeaderRows());
     populateColumnsFromTableData( columns, tableDataRows );
   }
   // dividesCells( columns );
@@ -203,160 +204,67 @@ void TableTextFormatter::outputTable( std::ostringstream & tableOutput,
   }
 }
 
-void populateSubColumnsFromTableData( TableLayout::Column & column,
-                                      std::vector< std::vector< TableLayout::CellLayout > > const & valuesByColumn,
-                                      size_t & idxColumn )
+void TableTextFormatter::computeHeaderRows( std::vector< TableLayout::Column > & columns,
+                                            std::vector< TableLayout::Row > & headersRows ) const
 {
-  size_t idxSubColumn = idxColumn;
-  for( auto & subColumn : column.subColumn )
+  size_t maxLines = 1;
+  for( auto & column : columns )
   {
-    subColumn.cells = valuesByColumn[idxSubColumn++];
+    if( !column.subColumn.empty())
+    {
+      computeHeaderRows( column.subColumn, headersRows );
+    }
   }
-
-  size_t nbSubColumns = column.subColumn.size();
-  auto subColumnStartIter = valuesByColumn.begin() + idxColumn;
-  std::vector< std::vector< TableLayout::CellLayout > > valuesBySubColumn( subColumnStartIter,
-                                                                           subColumnStartIter + nbSubColumns );
-  for( const auto & columnValues : valuesBySubColumn )
-  { // add all subcolumn values in parent column
-    column.cells.insert( column.cells.end(),
-                         columnValues.begin(),
-                         columnValues.end() );
-  }
-  idxColumn += nbSubColumns;
+  maxLines = std::max( maxLines, column.columnName.lines.size());
+  headersRows.insert( v.begin(), maxLines );
 }
 
-void TableTextFormatter::
-  populateColumnsFromTableData( std::vector< TableLayout::Column > & columns,
-                                std::vector< std::vector< TableLayout::CellLayout > > rowsCellsLayout,
-                                std::vector< std::vector< TableData::CellData > > const & rowsCellsInput ) const
+void TableTextFormatter::populateColumnsFromTableData( std::vector< TableLayout::Column > & columns,
+                                                       RowsCellLayout & rowsCellsLayout,
+                                                       RowsCellInput const & rowsCellsInput ) const
 {
-  size_t currentColumn = 0;
-  bool containSubColumn=  false;
-
   // let's reserve the layout cells buffer
-  std::vector< std::vector< TableLayout::CellLayout > > rowCellsLayout
+  RowsCellLayout initRowCellsLayout
   {
-    std::vector< TableLayout::CellLayout >( tableDataRows.size() ),
-    tableDataRows[0].size()
+    std::vector< TableLayout::CellLayout >( rowsCellsInput.size() ),
+    rowsCellsInput[0].size()
   };
 
   // to insert directly the values in each columns, we fill with the transposed rowsCells (row major->column major)
-  for( size_t idxRow = 0; idxRow < rowsCells.size(); ++idxRow )
+  for( size_t idxRow = 0; idxRow < rowsCellsInput.size(); ++idxRow )
   {
-    GEOS_ERROR_IF( columns.size() != rowsCells[idxRow].size(), "Dest matrix must have the number of rows equal to the number of columns in the" \
-                                                               "source matrix" );
+    GEOS_ERROR_IF( columns.size() != rowsCellsInput[idxRow].size(), "Dest matrix must have the number of rows equal to the number of columns in the" \
+                                                                    "source matrix" );
     size_t maxLineCount = 0;
 
-    for( size_t idxCol = 0; idxCol < rowsCells[idxRow].size(); ++idxCol )
+    for( size_t idxCol = 0; idxCol < rowsCellsInput[idxRow].size(); ++idxCol )
     {
-      TableData::CellData const & cell = rowsCells[idxRow][idxCol];
+      TableData::CellData const & cell = rowsCellsInput[idxRow][idxCol];
 
       TableLayout::CellAlignment const cellAlignement = columns[idxCol].cellAlignment;
       TableLayout::Alignment const alignement = cell.type == CellType::Header ?
                                                 cellAlignement.headerAlignment :
                                                 cellAlignement.valueAlignment;
 
-      TableLayout::CellLayout & layoutCell = rowCellsLayout[idxRow][idxCol];
+      TableLayout::CellLayout & layoutCell = initRowCellsLayout[idxRow][idxCol];
       layoutCell = TableLayout::CellLayout( cell.type, cell.value, alignement );
+
       maxLineCount = max( maxLineCount, layoutCell.lines.size() );
     }
-
-    m_rows.push_back( maxLineCount );
-  }
-
-  for( auto & column : columns )
-  {
-    if( column.subColumn.empty())
-    {
-      // column.cells = valuesByColumn[currentColumn++];
-      for( auto & cell : column.cells )  //todo
-      {
-        // cell.alignment = column.cellAlignment.valueAlignment;
-      }
-    }
-    else
-    {
-      containSubColumn = true;
-      populateSubColumnsFromTableData( column, valuesByColumn, currentColumn );
-    }
-  }
-
-  if( containSubColumn )
-  {
-    for( auto & column : columns )
-    {
-      if( column.subColumn.empty())
-      {
-        column.subColumn = std::vector< TableLayout::Column >{TableLayout::Column()};
-      }
-    }
+    m_tableLayout.m_valueRows.push_back( { maxLineCount } );
   }
 }
 
-
-void TableTextFormatter::dividesCells( std::vector< TableLayout::Column > & columns ) const
-{
-  size_t maxNbRow = 1;
-  size_t maxCellRow = 1;
-
-  auto splitValue = []( const std::string & value, std::vector< std::string > & dividedValue ) {
-      std::istringstream ss( value );
-      std::string subValue;
-      while( getline( ss, subValue, '\n' ))
-      {
-        dividedValue.push_back( subValue );
-      }
-    };
-
-  for( auto & column : columns )
-  {
-    splitValue( column.columnName.dividedValues );
-    maxNbRow = std::max( maxNbRow, column.columnName.dividedValues.size());
-
-    for( auto & cell : column.cells )
-    {
-      splitValue( cell.value, cell.dividedValues );
-      maxCellRow = std::max( maxCellRow, cell.dividedValues.size());
-    }
-
-    if( !column.subColumn.empty())
-    {
-      dividesCells( column.subColumn );
-    }
-  }
-
-  // set the same size for all cells
-  for( auto & column : columns )
-  {
-
-    if( column.columnName.dividedValues.size() < maxNbRow )
-    {
-      column.columnName.dividedValues.resize( maxNbRow, " " );
-    }
-    column.columnName.nbRows = maxNbRow;
-
-    for( auto & cell : column.cells )
-    {
-      if( cell.dividedValues.size() < maxCellRow )
-      {
-        cell.dividedValues.resize( maxCellRow, " " );
-
-      }
-      cell.nbRows = maxCellRow;
-    }
-  }
-}
-
+//itérator pour le find 
 void TableTextFormatter::findAndSetLongestColumnString( TableLayout::Column & column ) const
 {
   {   // header case
     auto maxCellIt = *std::max_element( column.columnName.dividedValues.begin(),
                                         column.columnName.dividedValues.end(),
                                         []( const auto & a, const auto & b )
-      {
-        return a.length() < b.length();
-      } );
+    {
+      return a.length() < b.length();
+    } );
     column.setMaxStringSize( maxCellIt.length());
   }
 
@@ -366,9 +274,9 @@ void TableTextFormatter::findAndSetLongestColumnString( TableLayout::Column & co
       auto maxCellIt = std::max_element( column.cells.begin(),
                                          column.cells.end(),
                                          []( const auto & a, const auto & b )
-        {
-          return a.value.length() < b.value.length();
-        } );
+      {
+        return a.value.length() < b.value.length();
+      } );
 
       if( column.getMaxStringSize() < maxCellIt->value.length() )
       {
