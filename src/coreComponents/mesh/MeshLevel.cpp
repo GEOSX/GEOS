@@ -353,7 +353,7 @@ void MeshLevel::generateAdjacencyLists( arrayView1d< localIndex const > const & 
       }
       for( localIndex const & fi: elems2dToFaces[ei] )
       {
-//        if( fi != -1 )
+        if( fi != -1 )
         {
           faceAdjacencySet.insert( fi );
         }

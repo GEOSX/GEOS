@@ -188,6 +188,10 @@ void FaceElementSubRegion::copyFromCellBlock( FaceBlockABC const & faceBlock )
     }
   }
   
+
+  /*
+  m_toFacesRelation.base() = faceBlock.get2dElemToFaces();
+  */
   m_toFacesRelation.resize( num2dElements, 2 );
   ArrayOfArrays< localIndex > const & elem2dToFaces = faceBlock.get2dElemToFaces();
   
@@ -308,35 +312,6 @@ localIndex FaceElementSubRegion::packUpDownMapsImpl( buffer_unit_type * & buffer
                                                localToGlobal,
                                                faceLocalToGlobal );
 
-  // for( int rank=0; rank<MpiWrapper::commSize(); ++rank )
-  // {
-  //   MpiWrapper::barrier();
-  //   if( rank == MpiWrapper::commRank() )
-  //   {
-  //     ElementRegionManager const & elementRegionManager = *m_2dElemToElems.getElementRegionManager();
-  //     std::cout<< "PACK: Rank " << rank <<" packing "<< packList.size() << "values" << std::endl;
-  //     std::cout<< " m_2dElemToElems "<<std::endl;
-  //     for( int k = 0; k < packList.size(); ++k )
-  //     {
-  //       localIndex packIndex = packList[k];
-  //       std::cout<<" packIndex: "<<packIndex<<std::endl;
-  //       for( int j = 0; j < 2; ++j )
-  //       {
-  //         localIndex const er = m_2dElemToElems.m_toElementRegion[packIndex][j];
-  //         localIndex const esr = m_2dElemToElems.m_toElementSubRegion[packIndex][j];
-  //         localIndex const ei = m_2dElemToElems.m_toElementIndex[packIndex][j];
-
-  //         arrayView1d< globalIndex const > const elemLocalToGlobal =
-  // elementRegionManager.getRegion(er).getSubRegion(esr).localToGlobalMap();
-
-  //         std::cout<<"  "<<j<<": ("<<m_localToGlobalMap(packIndex)<<"): "<<er<<" "<<esr<<" "<<ei<<"("<<elemLocalToGlobal(ei)<<")
-  // "<<std::endl;
-  //       }
-  //     }
-  //   }
-  // }
-  //   MpiWrapper::barrier();
-
   packedSize += bufferOps::Pack< DO_PACKING >( buffer, string( viewKeyStruct::surfaceElementsToCellRegionsString() ) );
   packedSize += bufferOps::Pack< DO_PACKING >( buffer,
                                                m_2dElemToElems,
@@ -355,7 +330,7 @@ localIndex FaceElementSubRegion::packUpDownMapsImpl( buffer_unit_type * & buffer
 
 localIndex FaceElementSubRegion::unpackUpDownMaps( buffer_unit_type const * & buffer,
                                                    localIndex_array & packList,
-                                                   bool const,
+                                                   bool const ,
                                                    bool const GEOS_UNUSED_PARAM( overwriteDownMaps ) )
 {
   localIndex unPackedSize = 0;
@@ -397,80 +372,11 @@ localIndex FaceElementSubRegion::unpackUpDownMaps( buffer_unit_type const * & bu
   unPackedSize += bufferOps::Unpack( buffer, elementListString );
   GEOS_ERROR_IF_NE( elementListString, viewKeyStruct::surfaceElementsToCellRegionsString() );
 
-
-  // for( int rank=0; rank<MpiWrapper::commSize(); ++rank )
-  // {
-  //   MpiWrapper::barrier();
-  //   if( rank == MpiWrapper::commRank() )
-  //   {
-  //     ElementRegionManager const & elementRegionManager = *m_2dElemToElems.getElementRegionManager();
-  //     std::cout<< "PREUNPACK...Rank " << rank << " unpacking " << packList.size() <<" values" << std::endl;
-  //     std::cout<< " all m_2dElemToElems: "<<std::endl;
-  //     for( int k = 0; k < m_2dElemToElems.size(0); ++k )
-  //     {
-  //       for( int j = 0; j < 2; ++j )
-  //       {
-  //         localIndex const er = m_2dElemToElems.m_toElementRegion[k][j];
-  //         localIndex const esr = m_2dElemToElems.m_toElementSubRegion[k][j];
-  //         localIndex const ei = m_2dElemToElems.m_toElementIndex[k][j];
-
-  //         if( er == -1 || esr == -1 || ei == -1 )
-  //         {
-  //           std::cout<<k<<" ("<<m_localToGlobalMap(k)<<"): "<<er<<" "<<esr<<" "<<ei<<"() "<<std::endl;
-  //         }
-  //         else
-  //         {
-  //           arrayView1d< globalIndex const > const elemLocalToGlobal =
-  // elementRegionManager.getRegion(er).getSubRegion(esr).localToGlobalMap();
-  //           std::cout<<k<<" ("<<m_localToGlobalMap(k)<<"): "<<er<<" "<<esr<<" "<<ei<<"("<<elemLocalToGlobal(ei)<<") "<<std::endl;
-  //         }
-  //       }
-  //     }
-  //   }
-  // }
-  //   MpiWrapper::barrier();
-
-
   unPackedSize += bufferOps::Unpack( buffer,
                                      m_2dElemToElems,
                                      packList.toViewConst(),
                                      m_2dElemToElems.getElementRegionManager(),
-                                     true );
-
-  //   MpiWrapper::barrier();
-
-  // for( int rank=0; rank<MpiWrapper::commSize(); ++rank )
-  // {
-  //   MpiWrapper::barrier();
-  //   if( rank == MpiWrapper::commRank() )
-  //   {
-  //     ElementRegionManager const & elementRegionManager = *m_2dElemToElems.getElementRegionManager();
-  //     std::cout<< "POSTUNPACK...Rank " << rank << " unpacking " << packList.size() <<" values" << std::endl;
-  //     std::cout<< " all m_2dElemToElems "<<std::endl;
-  //     for( int k = 0; k < m_2dElemToElems.size(0); ++k )
-  //     {
-  //       for( int j = 0; j < 2; ++j )
-  //       {
-  //         localIndex const er = m_2dElemToElems.m_toElementRegion[k][j];
-  //         localIndex const esr = m_2dElemToElems.m_toElementSubRegion[k][j];
-  //         localIndex const ei = m_2dElemToElems.m_toElementIndex[k][j];
-
-  //         if( er == -1 || esr == -1 || ei == -1 )
-  //         {
-  //           std::cout<<k<<" ("<<m_localToGlobalMap(k)<<"): "<<er<<" "<<esr<<" "<<ei<<"() "<<std::endl;
-  //         }
-  //         else
-  //         {
-  //           arrayView1d< globalIndex const > const elemLocalToGlobal =
-  // elementRegionManager.getRegion(er).getSubRegion(esr).localToGlobalMap();
-  //           std::cout<<k<<" ("<<m_localToGlobalMap(k)<<"): "<<er<<" "<<esr<<" "<<ei<<"("<<elemLocalToGlobal(ei)<<") "<<std::endl;
-  //         }
-  //       }
-  //     }
-  //     std::cout<<std::endl<<std::endl;
-  //   }
-  // }
-
+                                     false );
 
   string elem2dToCollocatedNodesBucketsString;
   unPackedSize += bufferOps::Unpack( buffer, elem2dToCollocatedNodesBucketsString );
@@ -547,9 +453,9 @@ void FaceElementSubRegion::fixUpDownMaps( bool const clearIfUnmapped )
                                     m_unmappedGlobalIndicesInToEdges,
                                     clearIfUnmapped );
 
-  // ObjectManagerBase::fixUpDownMaps( m_toFacesRelation,
-  //                                   m_unmappedGlobalIndicesInToFaces,
-  //                                   clearIfUnmapped );
+  ObjectManagerBase::fixUpDownMaps( m_toFacesRelation,
+                                    m_unmappedGlobalIndicesInToFaces,
+                                    clearIfUnmapped );
 
   fixNeighborMappingsInconsistency( getName(), m_2dElemToElems, m_toFacesRelation );
 }

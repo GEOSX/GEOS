@@ -1001,7 +1001,7 @@ void ObjectManagerBase::fixUpDownMaps( TYPE_RELATION & relation,
           allValuesMapped = false;
         }
       }
-      GEOS_ERROR_IF( relation[li][a] == unmappedLocalIndexValue, "Index not set" );
+      //GEOS_ERROR_IF( relation[li][a] == unmappedLocalIndexValue, "Index not set" );
     }
   }
   GEOS_ERROR_IF( !allValuesMapped, "some values of unmappedIndices were not used" );

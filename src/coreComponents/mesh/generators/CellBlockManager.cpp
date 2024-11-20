@@ -335,22 +335,6 @@ void populateFaceMaps( Group const & cellBlocks,
       ++curFaceID;
     }, faceBuilder.duplicateFaceEquality() );
   } );
-
-  // for( int rank=0; rank<MpiWrapper::commSize(); ++rank )
-  // {
-  //   MpiWrapper::barrier();
-  //   if( rank==MpiWrapper::commRank() )
-  //   {
-  //     std::cout<<"RANK "<<rank<<std::endl;
-  //     for( int i = 0; i < faceToBlocks.size(0); ++i )
-  //     {
-  //       std::cout<<"  faceToBlocks( "<<i<<" ) = ( "<<faceToBlocks( i, 0 )<<", "<<faceToBlocks( i, 1 )<<" )"<<std::endl;
-  //       std::cout<<"  faceToCells( "<<i<<" )  = ( "<<faceToCells( i, 0 )<<", "<<faceToCells( i, 1 )<<" )"<<std::endl<<std::endl;
-  //     }
-  //   }
-  // }
-
-
 }
 
 
