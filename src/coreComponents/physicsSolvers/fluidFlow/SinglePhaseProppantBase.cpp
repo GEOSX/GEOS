@@ -20,6 +20,7 @@
 
 #include "SinglePhaseProppantBase.hpp"
 
+#include "mesh/DomainPartition.hpp"
 #include "constitutive/ConstitutivePassThru.hpp"
 #include "constitutive/fluid/singlefluid/SlurryFluidSelector.hpp"
 #include "constitutive/fluid/singlefluid/SingleFluidFields.hpp"
@@ -27,7 +28,7 @@
 #include "constitutive/solid/ProppantSolid.hpp"
 #include "constitutive/solid/porosity/ProppantPorosity.hpp"
 #include "physicsSolvers/fluidFlow/proppantTransport/ProppantTransportFields.hpp"
-#include "physicsSolvers/fluidFlow/SinglePhaseProppantBaseKernels.hpp"
+#include "physicsSolvers/fluidFlow/kernels/singlePhase/proppant/ProppantBaseKernels.hpp"
 
 namespace geos
 {
@@ -66,7 +67,7 @@ SinglePhaseProppantBase::~SinglePhaseProppantBase()
 void SinglePhaseProppantBase::setConstitutiveNames( ElementSubRegionBase & subRegion ) const
 {
   string & fluidMaterialName = subRegion.getReference< string >( viewKeyStruct::fluidNamesString() );
-  fluidMaterialName = SolverBase::getConstitutiveName< SlurryFluidBase >( subRegion );
+  fluidMaterialName = PhysicsSolverBase::getConstitutiveName< SlurryFluidBase >( subRegion );
   GEOS_ERROR_IF( fluidMaterialName.empty(), GEOS_FMT( "{}: Fluid model not found on subregion {}",
                                                       getDataContext(), subRegion.getName() ) );
 }

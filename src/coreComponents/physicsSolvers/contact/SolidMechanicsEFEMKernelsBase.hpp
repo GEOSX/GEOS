@@ -107,6 +107,7 @@ public:
           inputDt,
           inputGravityVector ),
     m_w( embeddedSurfSubRegion.getField< fields::contact::dispJump >().toView() ),
+    m_effStress( inputConstitutiveType.getStress()),
     m_tractionVec( embeddedSurfSubRegion.getField< fields::contact::traction >().toViewConst() ),
     m_dTraction_dJump( embeddedSurfSubRegion.getField< fields::contact::dTraction_dJump >().toViewConst() ),
     m_nVec( embeddedSurfSubRegion.getNormalVector().toViewConst() ),
@@ -144,6 +145,7 @@ public:
       localKww{ { 0.0 } },
       localKwu{ { 0.0 } },
       localKuw{ { 0.0 } },
+      localEqMStress{ 0.0 },
       wLocal(),
       uLocal(),
       hInv(),
@@ -170,6 +172,9 @@ public:
 
     /// C-array storage for the element local Kuw matrix.
     real64 localKuw[numUdofs][numWdofs];
+
+    /// C-array storage for the element local EqM*effStress vector.
+    real64 localEqMStress[numWdofs];
 
     /// Stack storage for the element local jump vector
     real64 wLocal[3];
@@ -249,6 +254,9 @@ public:
     // Gauss contribution to Kww, Kwu and Kuw blocks
     real64 Kww_gauss[3][3], Kwu_gauss[3][nUdof], Kuw_gauss[nUdof][3];
 
+    // Gauss contirbution to eqMStress which is EqMatrix*effStress, all stresses are in Voigt notation
+    real64 eqMStress_gauss[3]{};
+
     //  Compatibility, equilibrium and strain operators. The compatibility operator is constructed as
     //  a 3 x 6 because it is more convenient for construction purposes (reduces number of local var).
     real64 compMatrix[3][6], strainMatrix[6][nUdof], eqMatrix[3][6];
@@ -292,16 +300,24 @@ public:
     LvArray::tensorOps::Rij_eq_AikBkj< 3, nUdof, 6 >( Kwu_gauss, matED, strainMatrix );
     // transp(B)DB
     LvArray::tensorOps::Rij_eq_AikBjk< nUdof, 3, 6 >( Kuw_gauss, matBD, compMatrix );
+    // EqMatrix * effStress
+    LvArray::tensorOps::Ri_eq_AijBj< 3, 6 >( eqMStress_gauss, eqMatrix, m_effStress[k][q] );
+
+    /// FIX: add old Equilibrium operator times oldStress (in Voigt notation)
 
     // multiply by determinant and add to element matrix
     LvArray::tensorOps::scaledAdd< 3, 3 >( stack.localKww, Kww_gauss, -detJ );
     LvArray::tensorOps::scaledAdd< 3, nUdof >( stack.localKwu, Kwu_gauss, -detJ );
     LvArray::tensorOps::scaledAdd< nUdof, 3 >( stack.localKuw, Kuw_gauss, -detJ );
+    LvArray::tensorOps::scaledAdd< 3 >( stack.localEqMStress, eqMStress_gauss, -detJ );
   }
 
 protected:
 
   arrayView2d< real64 > const m_w;
+
+  /// The effective stress at the current time
+  arrayView3d< real64 const, solid::STRESS_USD > m_effStress;
 
   arrayView2d< real64 const > const m_tractionVec;
 

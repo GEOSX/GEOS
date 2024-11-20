@@ -49,7 +49,7 @@ void BlackOilFluid::postInputInitialization()
 
 void BlackOilFluid::readInputDataFromTableFunctions()
 {
-  GEOS_THROW( GEOS_FMT( "{}: this option is not implemented yet, please provide PVT files in standard Eclipse format", getFullName() ),
+  GEOS_THROW( GEOS_FMT( "{}: this option is not implemented yet, please provide PVT files in standard text format", getFullName() ),
               InputError );
 }
 

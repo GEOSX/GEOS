@@ -8,6 +8,7 @@ set( gtest_geosx_tests
      testElasticIsotropic.cpp
      testKValueInitialization.cpp
      testImmiscibleWaterFlashModel.cpp
+     testImmiscibleWaterProperties.cpp
      testLohrenzBrayClarkViscosity.cpp
      testModifiedCamClay.cpp
      testMultiFluidSelector.cpp
