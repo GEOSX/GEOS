@@ -68,82 +68,82 @@ RegionCompStatsClass::RegionStatistics( const string & name,
 {
   registerWrapper( viewKeyStruct::averagePressureString(), &m_averagePressure ).
     setApplyDefaultValue( 0 ).
-    //setInputFlag( dataRepository::InputFlags::OPTIONAL ).
+    setInputFlag( dataRepository::InputFlags::OPTIONAL ).
     setDescription( "average region pressure" );
 
   registerWrapper( viewKeyStruct::minPressureString(), &m_minPressure ).
     setApplyDefaultValue( 0 ).
-    //setInputFlag( dataRepository::InputFlags::OPTIONAL ).
+    setInputFlag( dataRepository::InputFlags::OPTIONAL ).
     setDescription( "minimum region pressure" );
 
   registerWrapper( viewKeyStruct::maxPressureString(), &m_maxPressure ).
     setApplyDefaultValue( 0 ).
-    //setInputFlag( dataRepository::InputFlags::OPTIONAL ).
+    setInputFlag( dataRepository::InputFlags::OPTIONAL ).
     setDescription( "maximum region pressure" );
 
 
   registerWrapper( viewKeyStruct::minDeltaPressureString(), &m_minDeltaPressure ).
     setApplyDefaultValue( 0 ).
-    //setInputFlag( dataRepository::InputFlags::OPTIONAL ).
+    setInputFlag( dataRepository::InputFlags::OPTIONAL ).
     setDescription( "minimum region delta pressure" );
 
   registerWrapper( viewKeyStruct::maxDeltaPressureString(), &m_maxDeltaPressure ).
     setApplyDefaultValue( 0 ).
-    //setInputFlag( dataRepository::InputFlags::OPTIONAL ).
+    setInputFlag( dataRepository::InputFlags::OPTIONAL ).
     setDescription( "maximum region delta pressure" );
 
 
   registerWrapper( viewKeyStruct::averageTemperatureString(), &m_averageTemperature ).
     setApplyDefaultValue( 0 ).
-    //setInputFlag( dataRepository::InputFlags::OPTIONAL ).
+    setInputFlag( dataRepository::InputFlags::OPTIONAL ).
     setDescription( "average region temperature" );
 
   registerWrapper( viewKeyStruct::minTemperatureString(), &m_minTemperature ).
     setApplyDefaultValue( 0 ).
-    //setInputFlag( dataRepository::InputFlags::OPTIONAL ).
+    setInputFlag( dataRepository::InputFlags::OPTIONAL ).
     setDescription( "minimum region temperature" );
 
   registerWrapper( viewKeyStruct::maxTemperatureString(), &m_maxTemperature ).
     setApplyDefaultValue( 0 ).
-    //setInputFlag( dataRepository::InputFlags::OPTIONAL ).
+    setInputFlag( dataRepository::InputFlags::OPTIONAL ).
     setDescription( "maximum region temperature" );
 
 
   registerWrapper( viewKeyStruct::totalPoreVolumeString(), &m_totalPoreVolume ).
     setApplyDefaultValue( 0 ).
-    //setInputFlag( dataRepository::InputFlags::OPTIONAL ).
+    setInputFlag( dataRepository::InputFlags::OPTIONAL ).
     setDescription( "total region pore volume" );
 
   registerWrapper( viewKeyStruct::totalUncompactedPoreVolumeString(), &m_totalUncompactedPoreVolume ).
     setApplyDefaultValue( 0 ).
-    //setInputFlag( dataRepository::InputFlags::OPTIONAL ).
+    setInputFlag( dataRepository::InputFlags::OPTIONAL ).
     setDescription( "total region uncompacted pore volume" );
 
 
   registerWrapper( viewKeyStruct::phasePoreVolumeString(), &m_phasePoreVolume ).
     setApplyDefaultValue( 0 ).
-    //setInputFlag( dataRepository::InputFlags::OPTIONAL ).
+    setInputFlag( dataRepository::InputFlags::OPTIONAL ).
     setDescription( "Phase region phase pore volume" );
 
 
   registerWrapper( viewKeyStruct::phaseMassString(), &m_phaseMass ).
     setApplyDefaultValue( 0 ).
-    //setInputFlag( dataRepository::InputFlags::OPTIONAL ).
+    setInputFlag( dataRepository::InputFlags::OPTIONAL ).
     setDescription( "Region phase mass (trapped and non-trapped, immobile and mobile)" );
 
   registerWrapper( viewKeyStruct::trappedPhaseMassString(), &m_trappedPhaseMass ).
     setApplyDefaultValue( 0 ).
-    //setInputFlag( dataRepository::InputFlags::OPTIONAL ).
+    setInputFlag( dataRepository::InputFlags::OPTIONAL ).
     setDescription( "Trapped region phase mass" );
 
   registerWrapper( viewKeyStruct::immobilePhaseMassString(), &m_immobilePhaseMass ).
     setApplyDefaultValue( 0 ).
-    //setInputFlag( dataRepository::InputFlags::OPTIONAL ).
+    setInputFlag( dataRepository::InputFlags::OPTIONAL ).
     setDescription( "Immobile region phase mass" );
 
   registerWrapper( viewKeyStruct::dissolvedComponentMassString(), &m_dissolvedComponentMass ).
     setApplyDefaultValue( 0 ).
-    //setInputFlag( dataRepository::InputFlags::OPTIONAL ).
+    setInputFlag( dataRepository::InputFlags::OPTIONAL ).
     setDescription( "Dissolved region component mass" );
 }
 
