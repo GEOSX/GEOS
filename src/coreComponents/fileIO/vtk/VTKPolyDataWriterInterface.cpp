@@ -1317,6 +1317,7 @@ void VTKPolyDataWriterInterface::writeUnstructuredGrid( string const & path,
 
   if( MpiWrapper::commRank() == 0 )
   {
+    // any rank that does not hold data will not participate in the output  
     globalValues.erase( std::remove_if( globalValues.begin(),
                                         globalValues.end(),
                                         []( int x ) { return x == -1; } ),
@@ -1403,6 +1404,7 @@ void VTKPolyDataWriterInterface::write( real64 const time,
     string const vtmName = stepSubDir + ".vtm";
     VTKVTMWriter vtmWriter( joinPath( m_outputDir, vtmName ) );
     writeVtmFile( cycle, domain, vtmWriter );
+
     if( cycle != m_previousCycle )
     {
       m_pvd.addData( time, vtmName );

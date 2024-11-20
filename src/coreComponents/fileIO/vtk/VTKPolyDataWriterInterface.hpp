@@ -219,7 +219,7 @@ public:
   void clearData();
 
 
-protected:
+private:
 
   /**
    * @brief Check if plotting is enabled for this field
@@ -332,7 +332,7 @@ protected:
                               ObjectManagerBase const & region,
                               vtkUnstructuredGrid * ug );
 
-protected:
+private:
 
   /// Output directory name
   string m_outputDir;

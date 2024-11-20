@@ -59,7 +59,7 @@ VTKOutput::VTKOutput( string const & name,
   registerWrapper( viewKeysStruct::numberOfTargetProcesses, &m_numberOfTargetProcesses ).
     setApplyDefaultValue( MpiWrapper::commSize() ).
     setInputFlag( InputFlags::OPTIONAL ).
-    setDescription( "Aggregate output data to be written." );
+    setDescription( "Number of output aggregate files to be written." );
 
   registerWrapper( viewKeysStruct::writeGhostCells, &m_writeGhostCells ).
     setApplyDefaultValue( 0 ).
@@ -106,6 +106,13 @@ void VTKOutput::postInputInitialization()
   m_writer.setFieldNames( m_fieldNames.toViewConst() );
   m_writer.setLevelNames( m_levelNames.toViewConst() );
   m_writer.setOnlyPlotSpecifiedFieldNamesFlag( m_onlyPlotSpecifiedFieldNames );
+
+  GEOS_ERROR_IF_LT( m_numberOfTargetProcesses, 1,
+                    GEOS_FMT( "{}: processes count cannot be less than 1.",
+                              getWrapperDataContext( viewKeysStruct::numberOfTargetProcesses ) ) );
+  GEOS_ERROR_IF_GE( m_numberOfTargetProcesses, MpiWrapper::commSize(),
+                    GEOS_FMT( "{}: processes count cannot exceed the launched ranks count.",
+                              getWrapperDataContext( viewKeysStruct::numberOfTargetProcesses ) ) );
   m_writer.setNumberOfTargetProcesses( m_numberOfTargetProcesses );
 
   string const fieldNamesString = viewKeysStruct::fieldNames;
