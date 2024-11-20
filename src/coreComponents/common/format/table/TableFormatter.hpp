@@ -246,7 +246,7 @@ private:
    * @param isSubColumn Boolean indicating if the current tableColumnData is a subcolumn
    */
   void populateColumnsFromTableData( std::vector< TableLayout::Column > & columns,
-                                     std::vector< std::vector< TableData::DataType > > const & tableData ) const;
+                                     std::vector< std::vector< TableData::CellData > > const & tableData ) const;
 
   /**
    * @brief Divides cells (header and values) by detecting the newline \\n character and set the same cell vector

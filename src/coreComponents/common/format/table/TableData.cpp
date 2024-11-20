@@ -23,7 +23,7 @@
 namespace geos
 {
 
-void TableData::addRow( std::vector< TableData::DataType > & cells )
+void TableData::addRow( std::vector< TableData::CellData > & cells )
 {
   if( m_rows.size() != 0 && cells.size() != m_rows[m_rows.size() - 1].size() )
   {
@@ -45,7 +45,7 @@ void TableData::addSeparator()
   }
 
   integer rowSize = m_rows[0].size();
-  m_rows.emplace_back( std::vector< TableData::DataType >( rowSize, { CellType::SEPARATOR, "-" } ));
+  m_rows.emplace_back( std::vector< TableData::CellData >( rowSize, { CellType::SEPARATOR, "-" } ));
 
 }
 
@@ -55,7 +55,7 @@ void TableData::clear()
   m_errorsMsg.clear();
 }
 
-std::vector< std::vector< TableData::DataType > > const & TableData::getTableDataRows() const
+std::vector< std::vector< TableData::CellData > > const & TableData::getTableDataRows() const
 {
   return m_rows;
 }
@@ -113,7 +113,7 @@ TableData2D::TableDataHolder TableData2D::buildTableData( string_view targetUnit
   // insert row value and row cell values
   for( auto const & [rowValue, rowMap] : m_data )
   {
-    std::vector< TableData::DataType > currentRowValues;
+    std::vector< TableData::CellData > currentRowValues;
     currentRowValues.reserve( rowMap.size() );
     currentRowValues.push_back( {TableData::CellType::Value, GEOS_FMT( rowFmt, rowValue )} );
 

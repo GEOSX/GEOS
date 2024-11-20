@@ -23,13 +23,8 @@
 #ifndef GEOS_COMMON_FORMAT_TABLETYPES_HPP
 #define GEOS_COMMON_FORMAT_TABLETYPES_HPP
 
-#include "common/DataTypes.hpp"
-#include "common/format/Format.hpp"
-
 namespace geos
 {
-
-    
 
 enum class CellType : char  
 {
@@ -37,12 +32,6 @@ enum class CellType : char
   SEPARATOR = '\x02',
   Header = '\x03',
   Value = '\x04',
-};
-
-struct DataType
-{
-  CellType type;
-  string value;
 };
 
 }

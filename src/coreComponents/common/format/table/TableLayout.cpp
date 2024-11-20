@@ -116,10 +116,16 @@ integer const & TableLayout::getMarginTitle() const
   return m_titleMargin;
 }
 
-CellLayout::CellLayout( CellType type, string_view cellv, Alignement alignment ):
-  cellType( type ), d, alignment( alignment )
+CellLayout::CellLayout( CellType type, string_view cellValue, Alignment cellAlignment ):
+  cellType( type ),
+  alignment( cellAlignment )
 {
-  divi
+  std::istringstream strStream( cellValue );
+  std::string line;
+  while( getline( strStream, line, '\n' ))
+  {
+    lines.push_back( line );
+  }
 }
 
 }

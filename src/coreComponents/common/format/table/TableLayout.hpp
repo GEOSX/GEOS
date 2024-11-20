@@ -21,6 +21,7 @@
 #define GEOS_COMMON_FORMAT_TABLE_TABLELAYOUT_HPP
 
 #include "common/DataTypes.hpp"
+#include "TableTypes.hpp"
 #include <variant>
 
 namespace geos
@@ -64,11 +65,9 @@ public:
 
   struct CellLayout
   {
-    CellType type;
     /// Vector containing sub values name
-    std::vector< string > dividedValues;
-    /// Nb rows this cell is divided
-    size_t nbRows;
+    std::vector< string > lines;
+    CellType type;
     /// Cell alignment (left, right, center)
     Alignment alignment;
 
@@ -84,7 +83,7 @@ public:
       alignment = align;
     }
 
-    void setCellSize( size_t const size)
+    void setCellSize( size_t const size )
     {
       cellSize = size;
     }
@@ -94,12 +93,11 @@ public:
    * @brief Struct for a Column.
    * Each column contains its own parameters (such as name, alignment, etc.).
    */
-  struct Column
+  class Column
   {
+public:
     /// Name for a column
-    Cell columnName;
-    /// A vector containing all the values of a column
-    std::vector< Cell > cells;
+    CellLayout columnName;
     /// A boolean to display a colummn
     bool enabled;
     /// Vector containing all sub columns subdivison
@@ -142,7 +140,7 @@ public:
       return *this;
     }
 
-    Column & setMaxStringSize( size_t const size )
+    void setMaxStringSize( size_t const size )
     {
       maxStringSize = size;
       return *this;
@@ -179,12 +177,76 @@ public:
       return *this;
     }
 
+    // std::vector< CellLayout > & getCells()
+    // {
+    //   return cells;
+    // }
+
 private:
-    size_t nbHeaderRows;
+    // /// A vector containing all the values of a column
+    // std::vector< CellLayout > cells;
+    // /// TODO DOCS
+    // size_t nbHeaderRows;
     /// Vector of string containing the largest string for a column and its subColumns
-    size_t maxStringSize;
+    size_t maxStringSize; // TODO : Assigner cette stat
   };
 
+  /**
+   * @brief Allow to iterate among all deepest columns / sub columns.
+   * An exemple of an iteration: A -> B.A -> B.B -> B.C -> C.A.A -> C.A.B -> C.B.A -> C.B.B -> D
+   */
+  class SubColumnIterator
+  {
+    SubColumnIterator() noexcept:
+      m_currentColumn( m_spRoot )
+      { }
+
+    SubColumnIterator( Column const * columnPtr ) noexcept:
+      m_currentColumn( columnPtr )
+      { }
+
+    SubColumnIterator & operator=( Column * columnPtr )
+    {
+      this->m_currentColumn= columnPtr;
+      return *this;
+    }
+
+    // Prefix ++ overload
+    SubColumnIterator & operator++()
+    {
+      // TODO!
+      // if( m_currentColumn )
+      //   m_currentColumn= m_currentColumn>pNext;
+      return *this;
+    }
+
+    // Postfix ++ overload
+    SubColumnIterator operator++( Column )
+    {
+      SubColumnIterator iterator = *this;
+      ++*this;
+      return iterator;
+    }
+
+    bool operator!=( SubColumnIterator const & iterator )
+    {
+      return m_currentColumn!= iterator.m_currentColumn
+    }
+
+    Column operator*()
+    {
+      return *m_currentColumn;
+    }
+
+private:
+    Column const * m_currentColumn
+  };
+
+  struct Row
+  {
+    // maximum number of lines among the cells of a given row
+    size_t maxLineCount; // TODO : Assigner cette stat
+  };
 
   /// Alias for an initializer list of variants that can contain either a string or a layout column.
   using TableLayoutArgs = std::initializer_list< std::variant< string_view, TableLayout::Column > >;
@@ -325,8 +387,8 @@ private:
     for( auto const & arg : args )
     {
       std::visit( [this]( auto const & value ) {
-        addToColumns( value );
-      }, arg );
+          addToColumns( value );
+        }, arg );
     }
   }
 

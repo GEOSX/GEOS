@@ -23,6 +23,7 @@
 #include "common/Units.hpp"
 #include "common/DataTypes.hpp"
 #include "common/format/Format.hpp"
+#include "TableTypes.hpp"
 
 namespace geos
 {
@@ -33,6 +34,12 @@ namespace geos
 class TableData
 {
 public:
+
+  struct CellData
+  {
+    string value;
+    CellType type;
+  };
 
   /**
    * @brief Add a row to the table.
@@ -46,7 +53,7 @@ public:
    * @brief Add a row to the table
    * @param row A vector of string representing a row
    */
-  void addRow( std::vector< DataType > & row );
+  void addRow( std::vector< Cell > & row );
 
   /**
    * @brief Add a line separator to the table
@@ -62,7 +69,7 @@ public:
   /**
    * @return The rows of the table
    */
-  std::vector< std::vector< DataType > > const & getTableDataRows() const;
+  std::vector< std::vector< Cell > > const & getTableDataRows() const;
 
   /**
    * @brief Get all error messages
@@ -73,7 +80,7 @@ public:
 private:
 
   /// vector containing all rows with cell values
-  std::vector< std::vector< DataType > > m_rows;
+  std::vector< std::vector< Cell > > m_rows;
 
   /// store error if there are any inconsistencies related to the table
   std::vector< string > m_errorsMsg;
@@ -162,7 +169,7 @@ constexpr bool isCellType = std::is_same_v< T, TableData::CellType >;
 template< typename ... Args >
 void TableData::addRow( Args const &... args )
 {
-  std::vector< DataType > cells;
+  std::vector< Cell > cells;
   ( [&] {
     static_assert( has_formatter_v< decltype(args) > || isCellType< decltype(args) >, "Argument passed in addRow cannot be converted to string nor a CellType" );
     if constexpr (std::is_same_v< Args, TableData::CellType >) {
