@@ -103,9 +103,9 @@ decks = [
         restartcheck_params=RestartcheckParameters(**restartcheck_params)),
     TestDeck(
         name="LagrangeContactBubbleStab_FixedSlip_smoke",
-        description=
+        description="Lagrange multiplier with bubble stab and fixed jump on the fault. "
         "Fault with imposed slip",
-        partitions=((1, 1, 1), (2, 1, 2)),
+        partitions=((1, 1, 1), (2, 2, 1)),
         restart_step=1,
         check_step=2,
         restartcheck_params=RestartcheckParameters(**restartcheck_params))    
