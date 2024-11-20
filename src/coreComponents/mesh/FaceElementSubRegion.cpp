@@ -190,39 +190,6 @@ void FaceElementSubRegion::copyFromCellBlock( FaceBlockABC const & faceBlock )
   
   m_toFacesRelation.resize( num2dElements, 2 );
   ArrayOfArrays< localIndex > const & elem2dToFaces = faceBlock.get2dElemToFaces();
-
-  // for( int rank=0; rank<MpiWrapper::commSize(); ++rank )
-  // {
-  //   MpiWrapper::barrier();
-  //   if( rank==MpiWrapper::commRank() )
-  //   {
-  //     std::cout<<"RANK "<<rank<<std::endl;
-  //     for( int i = 0; i < elem2dToFaces.size(); ++i )
-  //     {
-  //       std::cout<<"  elem2dToFaces( "<<i<<" ) = ( ";
-  //       for( int j = 0; j < elem2dToFaces.sizeOfArray(i); ++j )
-  //       {
-  //         std::cout<<elem2dToFaces(i, j)<<" ";
-  //       }
-  //       std::cout<<")"<<std::endl;
-  //     }
-    
-  //   }
-  // }
-
-  // for( int rank=0; rank<MpiWrapper::commSize(); ++rank )
-  // {
-  //   MpiWrapper::barrier();
-  //   if( rank==MpiWrapper::commRank() )
-  //   {
-  //     std::cout<<"RANK "<<rank<<std::endl;
-  //     for( int i = 0; i < m_toFacesRelation.size(0); ++i )
-  //     {
-  //       std::cout<<"  m_toFacesRelation( "<<i<<" ) = ( "<<m_toFacesRelation( i, 0 )<<", "<<m_toFacesRelation( i, 1 )<<" )"<<std::endl;
-  //     }
-  //   }
-  // }
-
   
   for( localIndex kfe = 0; kfe < num2dElements; ++kfe )
   {
@@ -1008,6 +975,7 @@ void FaceElementSubRegion::fixSecondaryMappings( NodeManager const & nodeManager
                                                  FaceManager const & faceManager,
                                                  ElementRegionManager const & elemManager )
 {
+  std::cout<<"fixSecondaryMappings"<<std::endl;
   arrayView1d< globalIndex const > const nl2g = nodeManager.localToGlobalMap();
   ArrayOfArraysView< localIndex const > const faceToNodes = faceManager.nodeList().toViewConst();
 
@@ -1060,6 +1028,7 @@ void FaceElementSubRegion::fixSecondaryMappings( NodeManager const & nodeManager
     {
       for( auto const & face: elemToFaces[ei] )
       {
+        std::cout<<"face "<<face<<std::endl;
         // A set of the global indices of the nodes of the face is used as the "signature" of the face nodes.
         std::set< globalIndex > nodesOfFace;
         for( localIndex const & n: faceToNodes[face] )

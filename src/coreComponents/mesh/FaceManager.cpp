@@ -150,6 +150,8 @@ void FaceManager::setGeometricalRelations( CellBlockManagerABC const & cellBlock
 {
   GEOS_MARK_FUNCTION;
 
+  std::cout<<"FaceManager::setGeometricalRelations"<<std::endl;
+
   if( isBaseMeshLevel )
   {
     resize( cellBlockManager.numFaces() );
@@ -185,19 +187,22 @@ void FaceManager::setGeometricalRelations( CellBlockManagerABC const & cellBlock
     arrayView2d< localIndex const > const & elem2dToFaces = subRegion.faceList().toViewConst();
     for( localIndex ei = 0; ei < elem2dToFaces.size(0); ++ei )
     {
-      for( localIndex const & face: elem2dToFaces[ei] )
+      for( localIndex const & faceIndex: elem2dToFaces[ei] )
       {
-        GEOS_ERROR_IF_EQ_MSG( m_toElements.m_toElementRegion( face, 0 ), -1, GEOS_FMT( err, face ) );
-        GEOS_ERROR_IF_EQ_MSG( m_toElements.m_toElementSubRegion( face, 0 ), -1, GEOS_FMT( err, face ) );
-        GEOS_ERROR_IF_EQ_MSG( m_toElements.m_toElementIndex( face, 0 ), -1, GEOS_FMT( err, face ) );
+        if( faceIndex != -1 )
+        {
+          GEOS_ERROR_IF_EQ_MSG( m_toElements.m_toElementRegion( faceIndex, 0 ), -1, GEOS_FMT( err, faceIndex ) );
+          GEOS_ERROR_IF_EQ_MSG( m_toElements.m_toElementSubRegion( faceIndex, 0 ), -1, GEOS_FMT( err, faceIndex ) );
+          GEOS_ERROR_IF_EQ_MSG( m_toElements.m_toElementIndex( faceIndex, 0 ), -1, GEOS_FMT( err, faceIndex ) );
 
-        GEOS_ERROR_IF_NE_MSG( m_toElements.m_toElementRegion( face, 1 ), -1, GEOS_FMT( err, face ) );
-        GEOS_ERROR_IF_NE_MSG( m_toElements.m_toElementSubRegion( face, 1 ), -1, GEOS_FMT( err, face ) );
-        GEOS_ERROR_IF_NE_MSG( m_toElements.m_toElementIndex( face, 1 ), -1, GEOS_FMT( err, face ) );
+          GEOS_ERROR_IF_NE_MSG( m_toElements.m_toElementRegion( faceIndex, 1 ), -1, GEOS_FMT( err, faceIndex ) );
+          GEOS_ERROR_IF_NE_MSG( m_toElements.m_toElementSubRegion( faceIndex, 1 ), -1, GEOS_FMT( err, faceIndex ) );
+          GEOS_ERROR_IF_NE_MSG( m_toElements.m_toElementIndex( faceIndex, 1 ), -1, GEOS_FMT( err, faceIndex ) );
 
-        m_toElements.m_toElementRegion( face, 1 ) = er;
-        m_toElements.m_toElementSubRegion( face, 1 ) = esr;
-        m_toElements.m_toElementIndex( face, 1 ) = ei;
+          m_toElements.m_toElementRegion( faceIndex, 1 ) = er;
+          m_toElements.m_toElementSubRegion( faceIndex, 1 ) = esr;
+          m_toElements.m_toElementIndex( faceIndex, 1 ) = ei;
+        }
       }
     }
   };
