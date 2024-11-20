@@ -42,8 +42,7 @@ FaceElementSubRegion::FaceElementSubRegion( string const & name,
 
   registerWrapper( viewKeyStruct::detJString(), &m_detJ ).setSizedFromParent( 1 ).reference();
 
-  registerWrapper( viewKeyStruct::faceListString(), &(m_toFacesRelation.base()) ).
-    setApplyDefaultValue( -1 ).
+  registerWrapper( viewKeyStruct::faceListString(), &m_toFacesRelation ).
     setDescription( "Map to the faces attached to each FaceElement." ).
     reference().resize( 0, 2 );
 
@@ -192,7 +191,7 @@ void FaceElementSubRegion::copyFromCellBlock( FaceBlockABC const & faceBlock )
   /*
   m_toFacesRelation.base() = faceBlock.get2dElemToFaces();
   */
-  m_toFacesRelation.resize( num2dElements, 2 );
+  m_toFacesRelation.resizeDefault( num2dElements, -1 );
   ArrayOfArrays< localIndex > const & elem2dToFaces = faceBlock.get2dElemToFaces();
   
   for( localIndex kfe = 0; kfe < num2dElements; ++kfe )
@@ -881,7 +880,6 @@ void FaceElementSubRegion::fixSecondaryMappings( NodeManager const & nodeManager
                                                  FaceManager const & faceManager,
                                                  ElementRegionManager const & elemManager )
 {
-  std::cout<<"fixSecondaryMappings"<<std::endl;
   arrayView1d< globalIndex const > const nl2g = nodeManager.localToGlobalMap();
   ArrayOfArraysView< localIndex const > const faceToNodes = faceManager.nodeList().toViewConst();
 
@@ -934,7 +932,6 @@ void FaceElementSubRegion::fixSecondaryMappings( NodeManager const & nodeManager
     {
       for( auto const & face: elemToFaces[ei] )
       {
-        std::cout<<"face "<<face<<std::endl;
         // A set of the global indices of the nodes of the face is used as the "signature" of the face nodes.
         std::set< globalIndex > nodesOfFace;
         for( localIndex const & n: faceToNodes[face] )
