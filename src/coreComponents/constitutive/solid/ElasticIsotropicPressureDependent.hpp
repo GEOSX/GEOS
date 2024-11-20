@@ -337,7 +337,7 @@ void ElasticIsotropicPressureDependentUpdates::smallStrainUpdate( localIndex con
   real64 eps_v_elastic;
   real64 oldElasticStrainVol;
   real64 oldElasticStrainDev;
-  real64 bulkModulus = -p0/Cr;
+  real64 bulkModulus;
 
   for( localIndex i=0; i<6; ++i )
   {

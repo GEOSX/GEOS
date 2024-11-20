@@ -429,7 +429,7 @@ size_t findAttribute( string const & attName, string const & xmlBuffer, size_t c
         {
           return candidatePos;
         }
-        searchStart = candidatePos + attName.size();
+        //searchStart = candidatePos + attName.size();
       }
     }
     catch( std::regex_error const & )

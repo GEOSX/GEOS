@@ -84,6 +84,7 @@ public:
 
     StackVariables( real64 _localMinVal )
       :
+      localRow( -1 ),
       localMinVal( _localMinVal )
     { }
 
