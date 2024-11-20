@@ -99,8 +99,10 @@ set( constitutive_headers
      fluid/multifluid/compositional/models/CriticalVolume.hpp
      fluid/multifluid/compositional/models/EquationOfState.hpp
      fluid/multifluid/compositional/models/FunctionBase.hpp
+     fluid/multifluid/compositional/models/ImmiscibleWaterDensity.hpp
      fluid/multifluid/compositional/models/ImmiscibleWaterFlashModel.hpp
      fluid/multifluid/compositional/models/ImmiscibleWaterParameters.hpp
+     fluid/multifluid/compositional/models/ImmiscibleWaterViscosity.hpp
      fluid/multifluid/compositional/models/LohrenzBrayClarkViscosity.hpp
      fluid/multifluid/compositional/models/LohrenzBrayClarkViscosityImpl.hpp
      fluid/multifluid/compositional/models/NegativeTwoPhaseFlashModel.hpp
@@ -254,8 +256,10 @@ set( constitutive_sources
      fluid/multifluid/compositional/models/CompositionalDensity.cpp
      fluid/multifluid/compositional/models/ConstantViscosity.cpp
      fluid/multifluid/compositional/models/CriticalVolume.cpp
+     fluid/multifluid/compositional/models/ImmiscibleWaterDensity.cpp
      fluid/multifluid/compositional/models/ImmiscibleWaterFlashModel.cpp
      fluid/multifluid/compositional/models/ImmiscibleWaterParameters.cpp
+     fluid/multifluid/compositional/models/ImmiscibleWaterViscosity.cpp
      fluid/multifluid/compositional/models/LohrenzBrayClarkViscosity.cpp
      fluid/multifluid/compositional/models/NegativeTwoPhaseFlashModel.cpp
      fluid/multifluid/compositional/CompositionalMultiphaseFluid.cpp

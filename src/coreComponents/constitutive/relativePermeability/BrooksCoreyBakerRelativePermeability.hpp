@@ -86,7 +86,7 @@ private:
    * @param[in] maxValue the endpoint relative permeability value
    *
    * This function evaluates the relperm function and its derivative at a given phase saturation
-   * Reference: Eclipse technical description and Petrowiki
+   * Reference: Petrowiki
    */
   GEOS_HOST_DEVICE
   GEOS_FORCE_INLINE
