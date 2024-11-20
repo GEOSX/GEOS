@@ -1468,6 +1468,7 @@
 			<xsd:element name="CarmanKozenyPermeability" type="CarmanKozenyPermeabilityType" />
 			<xsd:element name="CeramicDamage" type="CeramicDamageType" />
 			<xsd:element name="CompositionalMultiphaseFluid" type="CompositionalMultiphaseFluidType" />
+			<xsd:element name="CompositionalThreePhaseFluidLohrenzBrayClark" type="CompositionalThreePhaseFluidLohrenzBrayClarkType" />
 			<xsd:element name="CompositionalTwoPhaseFluid" type="CompositionalTwoPhaseFluidType" />
 			<xsd:element name="CompositionalTwoPhaseFluidLohrenzBrayClark" type="CompositionalTwoPhaseFluidLohrenzBrayClarkType" />
 			<xsd:element name="CompressibleSinglePhaseFluid" type="CompressibleSinglePhaseFluidType" />
@@ -1946,6 +1947,56 @@
 		<!--useMass => (no description available)-->
 		<xsd:attribute name="useMass" type="integer" />
 	</xsd:complexType>
+	<xsd:complexType name="CompositionalThreePhaseFluidLohrenzBrayClarkType">
+		<!--dPhaseCompFraction => Derivative of phase component fraction with respect to pressure, temperature, and global component fractions-->
+		<xsd:attribute name="dPhaseCompFraction" type="LvArray_Array_lt_double_cm_-5_cm_-camp_int_seq_lt_long_cm_-0l_cm_-1l_cm_-2l_cm_-3l_cm_-4l_gt__cm_-int_cm_-LvArray_ChaiBuffer_gt_" />
+		<!--dPhaseDensity => Derivative of phase density with respect to pressure, temperature, and global component fractions-->
+		<xsd:attribute name="dPhaseDensity" type="real64_array4d" />
+		<!--dPhaseEnthalpy => Derivative of phase enthalpy with respect to pressure, temperature, and global component fractions-->
+		<xsd:attribute name="dPhaseEnthalpy" type="real64_array4d" />
+		<!--dPhaseFraction => Derivative of phase fraction with respect to pressure, temperature, and global component fractions-->
+		<xsd:attribute name="dPhaseFraction" type="real64_array4d" />
+		<!--dPhaseInternalEnergy => Derivative of phase internal energy with respect to pressure, temperature, and global component fractions-->
+		<xsd:attribute name="dPhaseInternalEnergy" type="real64_array4d" />
+		<!--dPhaseMassDensity => Derivative of phase mass density with respect to pressure, temperature, and global component fractions-->
+		<xsd:attribute name="dPhaseMassDensity" type="real64_array4d" />
+		<!--dPhaseViscosity => Derivative of phase viscosity with respect to pressure, temperature, and global component fractions-->
+		<xsd:attribute name="dPhaseViscosity" type="real64_array4d" />
+		<!--dTotalDensity => Derivative of total density with respect to pressure, temperature, and global component fractions-->
+		<xsd:attribute name="dTotalDensity" type="real64_array3d" />
+		<!--kValues => Phase equilibrium ratios-->
+		<xsd:attribute name="kValues" type="real64_array4d" />
+		<!--phaseCompFraction => Phase component fraction-->
+		<xsd:attribute name="phaseCompFraction" type="real64_array4d" />
+		<!--phaseCompFraction_n => Phase component fraction at the previous converged time step-->
+		<xsd:attribute name="phaseCompFraction_n" type="real64_array4d" />
+		<!--phaseDensity => Phase density-->
+		<xsd:attribute name="phaseDensity" type="real64_array3d" />
+		<!--phaseDensity_n => Phase density at the previous converged time step-->
+		<xsd:attribute name="phaseDensity_n" type="real64_array3d" />
+		<!--phaseEnthalpy => Phase enthalpy-->
+		<xsd:attribute name="phaseEnthalpy" type="real64_array3d" />
+		<!--phaseEnthalpy_n => Phase enthalpy at the previous converged time step-->
+		<xsd:attribute name="phaseEnthalpy_n" type="real64_array3d" />
+		<!--phaseFraction => Phase fraction-->
+		<xsd:attribute name="phaseFraction" type="real64_array3d" />
+		<!--phaseInternalEnergy => Phase internal energy-->
+		<xsd:attribute name="phaseInternalEnergy" type="real64_array3d" />
+		<!--phaseInternalEnergy_n => Phase internal energy at the previous converged time step-->
+		<xsd:attribute name="phaseInternalEnergy_n" type="real64_array3d" />
+		<!--phaseMassDensity => Phase mass density-->
+		<xsd:attribute name="phaseMassDensity" type="real64_array3d" />
+		<!--phaseOrder => (no description available)-->
+		<xsd:attribute name="phaseOrder" type="integer_array" />
+		<!--phaseViscosity => Phase viscosity-->
+		<xsd:attribute name="phaseViscosity" type="real64_array3d" />
+		<!--totalDensity => Total density-->
+		<xsd:attribute name="totalDensity" type="real64_array2d" />
+		<!--totalDensity_n => Total density at the previous converged time step-->
+		<xsd:attribute name="totalDensity_n" type="real64_array2d" />
+		<!--useMass => (no description available)-->
+		<xsd:attribute name="useMass" type="integer" />
+	</xsd:complexType>
 	<xsd:complexType name="CompositionalTwoPhaseFluidType">
 		<!--dPhaseCompFraction => Derivative of phase component fraction with respect to pressure, temperature, and global component fractions-->
 		<xsd:attribute name="dPhaseCompFraction" type="LvArray_Array_lt_double_cm_-5_cm_-camp_int_seq_lt_long_cm_-0l_cm_-1l_cm_-2l_cm_-3l_cm_-4l_gt__cm_-int_cm_-LvArray_ChaiBuffer_gt_" />
@@ -1985,6 +2036,8 @@
 		<xsd:attribute name="phaseInternalEnergy_n" type="real64_array3d" />
 		<!--phaseMassDensity => Phase mass density-->
 		<xsd:attribute name="phaseMassDensity" type="real64_array3d" />
+		<!--phaseOrder => (no description available)-->
+		<xsd:attribute name="phaseOrder" type="integer_array" />
 		<!--phaseViscosity => Phase viscosity-->
 		<xsd:attribute name="phaseViscosity" type="real64_array3d" />
 		<!--totalDensity => Total density-->
@@ -2033,6 +2086,8 @@
 		<xsd:attribute name="phaseInternalEnergy_n" type="real64_array3d" />
 		<!--phaseMassDensity => Phase mass density-->
 		<xsd:attribute name="phaseMassDensity" type="real64_array3d" />
+		<!--phaseOrder => (no description available)-->
+		<xsd:attribute name="phaseOrder" type="integer_array" />
 		<!--phaseViscosity => Phase viscosity-->
 		<xsd:attribute name="phaseViscosity" type="real64_array3d" />
 		<!--totalDensity => Total density-->

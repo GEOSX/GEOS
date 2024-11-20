@@ -427,7 +427,7 @@ void CompositionalMultiphaseStatistics::computeRegionStatistics( real64 const ti
                                 GEOS_FMT( "{} Phase mass: {} {}",
                                           statPrefix, regionStatistics.phaseMass, massUnit ) );
 
-    // metric 1: trapping computed with the Land trapping coefficient (similar to Eclipse)
+    // metric 1: trapping computed with the Land trapping coefficient
     GEOS_LOG_LEVEL_INFO_RANK_0( logInfo::Statistics,
                                 GEOS_FMT( "{} Trapped phase mass (metric 1): {} {}",
                                           statPrefix, regionStatistics.trappedPhaseMass, massUnit ) );
