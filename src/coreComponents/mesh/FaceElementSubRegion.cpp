@@ -43,6 +43,7 @@ FaceElementSubRegion::FaceElementSubRegion( string const & name,
   registerWrapper( viewKeyStruct::detJString(), &m_detJ ).setSizedFromParent( 1 ).reference();
 
   registerWrapper( viewKeyStruct::faceListString(), &m_toFacesRelation ).
+    setApplyDefaultValue( -1 ).
     setDescription( "Map to the faces attached to each FaceElement." ).
     reference().resize( 0, 2 );
 
@@ -102,7 +103,7 @@ FaceElementSubRegion::FaceElementSubRegion( string const & name,
 void FaceElementSubRegion::copyFromCellBlock( FaceBlockABC const & faceBlock )
 {
   localIndex const num2dElements = faceBlock.num2dElements();
-  resize( faceBlock.num2dElements() );
+  resize( num2dElements );
 
   m_toNodesRelation.base() = faceBlock.get2dElemToNodes();
   m_toEdgesRelation.base() = faceBlock.get2dElemToEdges();
@@ -177,7 +178,6 @@ void FaceElementSubRegion::copyFromCellBlock( FaceBlockABC const & faceBlock )
   // It will later be transformed into a sub regions mapping.
   // Last, we fill the regions mapping with dummy -1 values that should all be replaced eventually.
   auto const & elem2dToElems = faceBlock.get2dElemToElems();
-  m_2dElemToElems.resize( num2dElements, 2 );
   for( int kfe = 0; kfe < num2dElements; ++kfe )
   {
     for( localIndex k=0; k<elem2dToElems.toBlockIndex.sizeOfArray(kfe); ++k )
@@ -187,11 +187,6 @@ void FaceElementSubRegion::copyFromCellBlock( FaceBlockABC const & faceBlock )
     }
   }
   
-
-  /*
-  m_toFacesRelation.base() = faceBlock.get2dElemToFaces();
-  */
-  m_toFacesRelation.resizeDefault( num2dElements, -1 );
   ArrayOfArrays< localIndex > const & elem2dToFaces = faceBlock.get2dElemToFaces();
   
   for( localIndex kfe = 0; kfe < num2dElements; ++kfe )

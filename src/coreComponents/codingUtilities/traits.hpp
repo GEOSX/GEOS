@@ -96,6 +96,9 @@ HAS_MEMBER_FUNCTION( capacity, localIndex, );
  */
 HAS_MEMBER_FUNCTION_NO_RTYPE( resize, 0 );
 
+HAS_MEMBER_FUNCTION_NO_RTYPE( resizeDefault, 0, 0 );
+
+
 /**
  * @brief Defines a static constexpr bool HasMemberFunction_reserve< @p CLASS >
  *        that is true iff the method @p CLASS ::reserve( localIndex ) exists.
