@@ -2,10 +2,11 @@
  * ------------------------------------------------------------------------------------------------------------
  * SPDX-License-Identifier: LGPL-2.1-only
  *
- * Copyright (c) 2018-2020 Lawrence Livermore National Security LLC
- * Copyright (c) 2018-2020 The Board of Trustees of the Leland Stanford Junior University
- * Copyright (c) 2018-2020 TotalEnergies
- * Copyright (c) 2019-     GEOSX Contributors
+ * Copyright (c) 2016-2024 Lawrence Livermore National Security LLC
+ * Copyright (c) 2018-2024 Total, S.A
+ * Copyright (c) 2018-2024 The Board of Trustees of the Leland Stanford Junior University
+ * Copyright (c) 2023-2024 Chevron
+ * Copyright (c) 2019-     GEOS/GEOSX Contributors
  * All rights reserved
  *
  * See top level LICENSE, COPYRIGHT, CONTRIBUTORS, NOTICE, and ACKNOWLEDGEMENTS files for details.
@@ -110,7 +111,8 @@ typename std::enable_if< can_memcpy< T >, localIndex >::type
 UnpackByIndexDevice ( buffer_unit_type const * & buffer,
                       ArrayView< T, NDIM, USD > const & var,
                       T_INDICES const & indices,
-                      parallelDeviceEvents & events );
+                      parallelDeviceEvents & events,
+                      MPI_Op op=MPI_REPLACE );
 
 //------------------------------------------------------------------------------
 template< typename T, typename T_INDICES >
@@ -118,7 +120,8 @@ localIndex
 UnpackByIndexDevice( buffer_unit_type const * & GEOS_UNUSED_PARAM( buffer ),
                      T & GEOS_UNUSED_PARAM( var ),
                      T_INDICES const & GEOS_UNUSED_PARAM( indices ),
-                     parallelDeviceEvents & GEOS_UNUSED_PARAM( events ) )
+                     parallelDeviceEvents & GEOS_UNUSED_PARAM( events ),
+                     MPI_Op GEOS_UNUSED_PARAM( op ) )
 {
   GEOS_ERROR( "Trying to unpack data type (" << LvArray::system::demangleType< T >() << ") but type is not packable by index." );
   return 0;
@@ -206,7 +209,8 @@ typename std::enable_if< can_memcpy< T >, localIndex >::type
 UnpackDataByIndexDevice ( buffer_unit_type const * & buffer,
                           ArrayView< T, NDIM, USD > const & var,
                           T_INDICES const & indices,
-                          parallelDeviceEvents & events );
+                          parallelDeviceEvents & events,
+                          MPI_Op op=MPI_REPLACE );
 
 //------------------------------------------------------------------------------
 template< typename T, typename T_INDICES >
@@ -214,7 +218,8 @@ localIndex
 UnpackDataByIndexDevice( buffer_unit_type const * & GEOS_UNUSED_PARAM( buffer ),
                          T & GEOS_UNUSED_PARAM( var ),
                          T_INDICES const & GEOS_UNUSED_PARAM( indices ),
-                         parallelDeviceEvents & GEOS_UNUSED_PARAM( events ) )
+                         parallelDeviceEvents & GEOS_UNUSED_PARAM( events ),
+                         MPI_Op GEOS_UNUSED_PARAM( op ) )
 {
   GEOS_ERROR( "Trying to unpack data type (" << LvArray::system::demangleType< T >() << ") but type is not packable by index." );
   return 0;

@@ -2,10 +2,11 @@
  * ------------------------------------------------------------------------------------------------------------
  * SPDX-License-Identifier: LGPL-2.1-only
  *
- * Copyright (c) 2018-2020 Lawrence Livermore National Security LLC
- * Copyright (c) 2018-2020 The Board of Trustees of the Leland Stanford Junior University
- * Copyright (c) 2018-2020 TotalEnergies
- * Copyright (c) 2019-     GEOSX Contributors
+ * Copyright (c) 2016-2024 Lawrence Livermore National Security LLC
+ * Copyright (c) 2018-2024 Total, S.A
+ * Copyright (c) 2018-2024 The Board of Trustees of the Leland Stanford Junior University
+ * Copyright (c) 2023-2024 Chevron
+ * Copyright (c) 2019-     GEOS/GEOSX Contributors
  * All rights reserved
  *
  * See top level LICENSE, COPYRIGHT, CONTRIBUTORS, NOTICE, and ACKNOWLEDGEMENTS files for details.
@@ -49,7 +50,7 @@ DECLARE_FIELD( pressure_n,
                "Pressure at the previous converged time step" );
 
 DECLARE_FIELD( temperature,
-               "wellTemperature",
+               "temperature",
                array1d< real64 >,
                0,
                LEVEL_0,
@@ -57,7 +58,7 @@ DECLARE_FIELD( temperature,
                "Temperature" );
 
 DECLARE_FIELD( temperature_n,
-               "wellTemperature_n",
+               "temperature_n",
                array1d< real64 >,
                0,
                NOPLOT,
@@ -71,6 +72,22 @@ DECLARE_FIELD( gravityCoefficient,
                NOPLOT,
                WRITE_AND_READ,
                "Gravity coefficient (dot product of gravity acceleration by gravity vector)" );
+
+DECLARE_FIELD( pressureScalingFactor,
+               "pressureScalingFactor",
+               array1d< real64 >,
+               1,
+               NOPLOT,
+               NO_WRITE,
+               "Scaling factors for pressure" );
+
+DECLARE_FIELD( temperatureScalingFactor,
+               "temperatureScalingFactor",
+               array1d< real64 >,
+               1,
+               NOPLOT,
+               NO_WRITE,
+               "Scaling factors for temperature" );
 
 }
 

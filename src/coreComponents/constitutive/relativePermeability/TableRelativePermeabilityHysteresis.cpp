@@ -2,10 +2,11 @@
  * ------------------------------------------------------------------------------------------------------------
  * SPDX-License-Identifier: LGPL-2.1-only
  *
- * Copyright (c) 2018-2020 Lawrence Livermore National Security LLC
- * Copyright (c) 2018-2020 The Board of Trustees of the Leland Stanford Junior University
- * Copyright (c) 2018-2020 TotalEnergies
- * Copyright (c) 2019-     GEOSX Contributors
+ * Copyright (c) 2016-2024 Lawrence Livermore National Security LLC
+ * Copyright (c) 2018-2024 Total, S.A
+ * Copyright (c) 2018-2024 The Board of Trustees of the Leland Stanford Junior University
+ * Copyright (c) 2023-2024 Chevron
+ * Copyright (c) 2019-     GEOS/GEOSX Contributors
  * All rights reserved
  *
  * See top level LICENSE, COPYRIGHT, CONTRIBUTORS, NOTICE, and ACKNOWLEDGEMENTS files for details.
@@ -40,6 +41,7 @@ TableRelativePermeabilityHysteresis::TableRelativePermeabilityHysteresis( std::s
 
   registerWrapper( viewKeyStruct::drainageWettingNonWettingRelPermTableNamesString(),
                    &m_drainageWettingNonWettingRelPermTableNames ).
+    setRTTypeName( rtTypes::CustomTypes::groupNameRefArray ).
     setInputFlag( InputFlags::OPTIONAL ).
     setDescription(
     "List of drainage relative permeability tables for the pair (wetting phase, non-wetting phase)\n"
@@ -53,6 +55,7 @@ TableRelativePermeabilityHysteresis::TableRelativePermeabilityHysteresis( std::s
 
   registerWrapper( viewKeyStruct::drainageWettingIntermediateRelPermTableNamesString(),
                    &m_drainageWettingIntermediateRelPermTableNames ).
+    setRTTypeName( rtTypes::CustomTypes::groupNameRefArray ).
     setInputFlag( InputFlags::OPTIONAL ).
     setDescription(
     "List of drainage relative permeability tables for the pair (wetting phase, intermediate phase)\n"
@@ -64,6 +67,7 @@ TableRelativePermeabilityHysteresis::TableRelativePermeabilityHysteresis( std::s
 
   registerWrapper( viewKeyStruct::drainageNonWettingIntermediateRelPermTableNamesString(),
                    &m_drainageNonWettingIntermediateRelPermTableNames ).
+    setRTTypeName( rtTypes::CustomTypes::groupNameRefArray ).
     setInputFlag( InputFlags::OPTIONAL ).
     setDescription(
     "List of drainage relative permeability tables for the pair (non-wetting phase, intermediate phase)\n"
@@ -76,6 +80,7 @@ TableRelativePermeabilityHysteresis::TableRelativePermeabilityHysteresis( std::s
   // imbibition table names
 
   registerWrapper( viewKeyStruct::imbibitionWettingRelPermTableNameString(), &m_imbibitionWettingRelPermTableName ).
+    setRTTypeName( rtTypes::CustomTypes::groupNameRef ).
     setInputFlag(
     InputFlags::OPTIONAL ).
     setApplyDefaultValue(
@@ -86,6 +91,7 @@ TableRelativePermeabilityHysteresis::TableRelativePermeabilityHysteresis( std::s
 
   registerWrapper( viewKeyStruct::imbibitionNonWettingRelPermTableNameString(),
                    &m_imbibitionNonWettingRelPermTableName ).
+    setRTTypeName( rtTypes::CustomTypes::groupNameRef ).
     setInputFlag( InputFlags::OPTIONAL ).
     setApplyDefaultValue( "" ).
     setDescription(
@@ -156,11 +162,22 @@ TableRelativePermeabilityHysteresis::TableRelativePermeabilityHysteresis( std::s
     setDescription(
     "Curvature parameter introduced by Killough for wetting-phase hysteresis (see RTD documentation)." );
 
+  registerWrapper( viewKeyStruct::waterOilMaxRelPermString(), &m_waterOilMaxRelPerm ).
+    setInputFlag( InputFlags::FALSE ). // will be deduced from tables
+    setSizedFromParent( 0 );
+
+
+  registerWrapper( viewKeyStruct::threePhaseInterpolatorString(), &m_threePhaseInterpolator ).
+    setInputFlag( InputFlags::OPTIONAL ).
+    setApplyDefaultValue( ThreePhaseInterpolator::BAKER ).
+    setDescription( "Type of Three phase interpolator."
+                    "Valid options \n* " + EnumStrings< ThreePhaseInterpolator >::concat( "\n* " ) );
+
 }
 
-void TableRelativePermeabilityHysteresis::postProcessInput()
+void TableRelativePermeabilityHysteresis::postInputInitialization()
 {
-  RelativePermeabilityBase::postProcessInput();
+  RelativePermeabilityBase::postInputInitialization();
 
   using IPT = TableRelativePermeabilityHysteresis::ImbibitionPhasePairPhaseType;
 
@@ -171,6 +188,10 @@ void TableRelativePermeabilityHysteresis::postProcessInput()
                  InputError );
 
   m_phaseHasHysteresis.resize( 2 );
+
+  //initialize STONE-II only used var to avoid discrepancies in baselines
+  m_waterOilMaxRelPerm = 1.;
+
 
   if( numPhases == 2 )
   {
@@ -227,7 +248,7 @@ void TableRelativePermeabilityHysteresis::postProcessInput()
                                               m_imbibitionNonWettingRelPermTableName == m_drainageNonWettingIntermediateRelPermTableNames[0] )
       ? 0 : 1;
   }
-  
+
   GEOS_THROW_IF( m_phaseHasHysteresis[IPT::WETTING] == 0 && m_phaseHasHysteresis[IPT::NONWETTING] == 0,
                   GEOS_FMT( "{}: we must use {} or {} to specify at least one imbibition relative permeability table",
                              getFullName(),
@@ -461,7 +482,7 @@ void TableRelativePermeabilityHysteresis::computeLandCoefficient()
   // For two-phase flow, we make sure that they are equal
   m_landParam.resize( 2 );
 
-  // Note: for simplicity, the notations are taken from IX documentation (although this breaks our phaseVolFrac naming convention)
+  // Note: for simplicity, the notations are taken reservoir simulation literature (although this breaks our phaseVolFrac naming convention)
   using IPT = TableRelativePermeabilityHysteresis::ImbibitionPhasePairPhaseType;
   KilloughHysteresis::computeLandCoefficient( m_wettingCurve, m_landParam[IPT::WETTING] );
   KilloughHysteresis::computeLandCoefficient( m_nonWettingCurve, m_landParam[IPT::NONWETTING] );
@@ -554,6 +575,8 @@ TableRelativePermeabilityHysteresis::createKernelWrapper()
                         m_nonWettingCurve,
                         m_phaseTypes,
                         m_phaseOrder,
+                        m_threePhaseInterpolator,
+                        m_waterOilMaxRelPerm,
                         m_phaseMinHistoricalVolFraction,
                         m_phaseMaxHistoricalVolFraction,
                         m_phaseTrappedVolFrac,
@@ -594,22 +617,25 @@ void TableRelativePermeabilityHysteresis::saveConvergedPhaseVolFractionState( ar
 
 }
 
-TableRelativePermeabilityHysteresis::KernelWrapper::KernelWrapper( arrayView1d< TableFunction::KernelWrapper const > const & drainageRelPermKernelWrappers,
-                                                                   arrayView1d< TableFunction::KernelWrapper const > const & imbibitionRelPermKernelWrappers,
-                                                                   arrayView1d< integer const > const & phaseHasHysteresis,
-                                                                   arrayView1d< real64 const > const & landParam,
+TableRelativePermeabilityHysteresis::KernelWrapper::
+  KernelWrapper( arrayView1d< TableFunction::KernelWrapper const > const & drainageRelPermKernelWrappers,
+                 arrayView1d< TableFunction::KernelWrapper const > const & imbibitionRelPermKernelWrappers,
+                 arrayView1d< integer const > const & phaseHasHysteresis,
+                 arrayView1d< real64 const > const & landParam,
                                                                    real64 const & jerauldParam_a,
                                                                    real64 const & jerauldParam_b,
                                                                    real64 const & killoughCurvatureParamRelPerm,
                                                                    KilloughHysteresis::HysteresisCurve const & wettingCurve,
                                                                    KilloughHysteresis::HysteresisCurve const & nonWettingCurve,
-                                                                   arrayView1d< integer const > const & phaseTypes,
-                                                                   arrayView1d< integer const > const & phaseOrder,
-                                                                   arrayView2d< real64 const, compflow::USD_PHASE > const & phaseMinHistoricalVolFraction,
-                                                                   arrayView2d< real64 const, compflow::USD_PHASE > const & phaseMaxHistoricalVolFraction,
-                                                                   arrayView3d< real64, relperm::USD_RELPERM > const & phaseTrappedVolFrac,
-                                                                   arrayView3d< real64, relperm::USD_RELPERM > const & phaseRelPerm,
-                                                                   arrayView4d< real64, relperm::USD_RELPERM_DS > const & dPhaseRelPerm_dPhaseVolFrac )
+                 arrayView1d< integer const > const & phaseTypes,
+                 arrayView1d< integer const > const & phaseOrder,
+                 ThreePhaseInterpolator const & threePhaseInterpolator,
+                 real64 const & waterOilRelPermMaxValue,
+                 arrayView2d< real64 const, compflow::USD_PHASE > const & phaseMinHistoricalVolFraction,
+                 arrayView2d< real64 const, compflow::USD_PHASE > const & phaseMaxHistoricalVolFraction,
+                 arrayView3d< real64, relperm::USD_RELPERM > const & phaseTrappedVolFrac,
+                 arrayView3d< real64, relperm::USD_RELPERM > const & phaseRelPerm,
+                 arrayView4d< real64, relperm::USD_RELPERM_DS > const & dPhaseRelPerm_dPhaseVolFrac )
   :
   RelativePermeabilityBaseUpdate( phaseTypes,
                                   phaseOrder,
@@ -626,7 +652,9 @@ TableRelativePermeabilityHysteresis::KernelWrapper::KernelWrapper( arrayView1d< 
   m_wettingCurve( wettingCurve ),
   m_nonWettingCurve( nonWettingCurve ),
   m_phaseMinHistoricalVolFraction( phaseMinHistoricalVolFraction ),
-  m_phaseMaxHistoricalVolFraction( phaseMaxHistoricalVolFraction )
+  m_phaseMaxHistoricalVolFraction( phaseMaxHistoricalVolFraction ),
+  m_waterOilRelPermMaxValue( waterOilRelPermMaxValue ),
+  m_threePhaseInterpolator( threePhaseInterpolator )
 {}
 
 

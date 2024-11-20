@@ -1,0 +1,82 @@
+from geos.ats.test_builder import TestDeck, RestartcheckParameters, generate_geos_tests
+
+restartcheck_params = {}
+restartcheck_params["atol"] = 1.0E-6
+restartcheck_params["rtol"] = 1.0E-5
+
+decks = [
+    TestDeck(
+        name="compositional_multiphase_wells_1d",
+        description=
+        "Compositional multiphase well test (1D displacement, 2-phase 4-component, 2 wells)",
+        partitions=[(1, 1, 1), (2, 1, 1)],
+        restart_step=5,
+        check_step=10,
+        restartcheck_params=RestartcheckParameters(**restartcheck_params)),
+    TestDeck(
+        name="compositional_multiphase_wells_2d",
+        description=
+        "Compositional multiphase flow test (2D displacement, 2-phase 4-component, 3 wells)",
+        partitions=[(1, 1, 1), (2, 2, 1)],
+        restart_step=3,
+        check_step=7,
+        restartcheck_params=RestartcheckParameters(**restartcheck_params)),
+    TestDeck(
+        name="dead_oil_wells_2d",
+        description=
+        "Dead oil well test (2D displacement, 3-phase dead-oil, 3 wells)",
+        partitions=[(1, 1, 1), (2, 2, 1)],
+        restart_step=50,
+        check_step=100,
+        restartcheck_params=RestartcheckParameters(**restartcheck_params)),
+    TestDeck(
+        name="dead_oil_wells_hybrid_2d",
+        description=
+        "Dead oil well test (2D displacement, hybrid FVM, 3-phase dead-oil, 3 wells)",
+        partitions=[(1, 1, 1), (2, 2, 1)],
+        restart_step=50,
+        check_step=100,
+        restartcheck_params=RestartcheckParameters(**restartcheck_params)),
+    TestDeck(
+        name="black_oil_wells_saturated_3d",
+        description=
+        "Black oil well test (3D displacement, 3-phase black-oil, 2 wells)",
+        partitions=[(1, 1, 1), (2, 2, 1)],
+        restart_step=13,
+        check_step=25,
+        restartcheck_params=RestartcheckParameters(**restartcheck_params)),
+    TestDeck(
+        name="black_oil_wells_unsaturated_3d",
+        description=
+        "Black oil well test (3D displacement, hybrid FVM, 3-phase black-oil, 2 wells)",
+        partitions=[(1, 1, 1), (2, 2, 1)],
+        restart_step=8,
+        check_step=12,
+        restartcheck_params=RestartcheckParameters(**restartcheck_params)),
+    TestDeck(
+        name="staircase_co2_wells_3d",
+        description=
+        "CO2 well test (3D staircase, 2-phase 2-component, 2 wells)",
+        partitions=[(1, 1, 1), (2, 2, 2)],
+        restart_step=3,
+        check_step=5,
+        restartcheck_params=RestartcheckParameters(**restartcheck_params)),
+    TestDeck(
+        name="staircase_co2_wells_hybrid_3d",
+        description=
+        "CO2 well test (3D staircase, unstructured mesh, hybrid FVM, 2-phase 2-component, 2 wells)",
+        partitions=[(1, 1, 1), (2, 2, 2)],
+        restart_step=0,
+        check_step=17,
+        restartcheck_params=RestartcheckParameters(**restartcheck_params)),
+    TestDeck(
+        name="black_oil_wells_saturated_3d_stone2",
+        description=
+        "Black oil well test using stone2 interp (3D displacement, hybrid FVM, 3-phase black-oil, 2 wells)",
+        partitions=[(1, 1, 1), (2, 2, 1)],
+        restart_step=12,
+        check_step=25,
+        restartcheck_params=RestartcheckParameters(**restartcheck_params))
+]
+
+generate_geos_tests(decks)

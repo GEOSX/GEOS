@@ -18,11 +18,11 @@ import shutil
 
 # Add python modules to be documented
 python_root = './coreComponents/python/modules'
-python_modules = ('geosx_mesh_tools_package',
-                  'geosx_xml_tools_package',
-                  'hdf5_wrapper_package',
-                  'pygeosx_tools_package',
-                  'timehistory_package')
+python_modules = ('geos-mesh-tools',
+                  'geos-xml-tools',
+                  'hdf5-wrapper',
+                  'pygeos-tools',
+                  'geos-timehistory')
 for m in python_modules:
     sys.path.insert(0, os.path.abspath(os.path.join(python_root, m)))
 
@@ -49,17 +49,24 @@ if read_the_docs_build:
     config_src = os.path.join(docs_path, "GeosxConfig.hpp")
     config_dst = os.path.join(common_path, "GeosxConfig.hpp")
 
-    input_dirs = ["coreComponents/common",
-                  "coreComponents/dataRepository",
-                  "coreComponents/fileIO",
-                  "coreComponents/linearAlgebra",
-                  "coreComponents/mesh",
-                  "coreComponents/managers",
-                  "coreComponents/finiteElement/kernelInterface",
-                  "coreComponents/mesh/MeshFields.hpp",
-                  "coreComponents/physicsSolvers/simplePDE/LaplaceFEMKernels.hpp",
-                  "coreComponents/physicsSolvers/solidMechanics",
-                  "coreComponents/finiteVolume"]
+    input_dirs = [
+        "coreComponents/common",
+        "coreComponents/dataRepository",
+        "coreComponents/fileIO",
+        "coreComponents/linearAlgebra",
+        "coreComponents/mesh",
+        "coreComponents/finiteElement/elementFormulations",
+        "coreComponents/finiteElement/kernelInterface",
+        "coreComponents/mesh/MeshFields.hpp",
+        "coreComponents/physicsSolvers",
+        "coreComponents/finiteVolume",
+        "coreComponents/functions",
+        "coreComponents/fieldSpecification",
+        "coreComponents/discretizationMethods",
+        "coreComponents/events",
+        "coreComponents/mainInterface"
+        ]
+        
 
     # Write correct ReadtheDocs path and input directories
     shutil.copy(doxyfile_src, doxyfile_dst)
@@ -72,16 +79,18 @@ if read_the_docs_build:
     if not os.path.exists(config_dst):
         os.symlink(config_src, config_dst)
 
+    print("********** Running Doxygen in ReadtheDocs **********")
     # Call doxygen
-    from subprocess import call
-    call(['doxygen', doxyfile_dst])
+    from subprocess import run
+    run(['doxygen', doxyfile_dst])
+    print("********** Finished Running Doxygen in ReadtheDocs **********")
 
 
 # -- Project information -----------------------------------------------------
 
-project = u'GEOSX'
-copyright = u'2018-2021 Lawrence Livermore National Security, The Board of Trustees of the Leland Stanford Junior University, TotalEnergies, and GEOSX Contributors.'
-author = u'GEOSX Contributors'
+project = u'GEOS'
+copyright = u'2016-2024 Lawrence Livermore National Security LLC, 2018-2024 Total, S.A, The Board of Trustees of the Leland Stanford Junior University, 2023-2024 Chevron, 2019- GEOS/GEOSX Contributors'
+author = u'GEOS/GEOSX Contributors'
 
 # The short X.Y version
 version = u''
@@ -99,18 +108,20 @@ release = u''
 # extensions coming with Sphinx (named 'sphinx.ext.*') or your custom
 # ones.
 extensions = [
-    'sphinx.ext.imgmath',
+    'sphinx_design',
     'sphinx.ext.todo',
     'sphinx.ext.autodoc',
     'sphinx.ext.doctest',
     'sphinx.ext.inheritance_diagram',
+    'sphinx.ext.imgmath',
     'sphinxarg.ext',
     'matplotlib.sphinxext.plot_directive',
     'sphinx.ext.napoleon',
     'sphinxcontrib.plantuml',
+    'sphinxcontrib.programoutput'
 ]
 
-plantuml = "/usr/bin/plantuml"
+plantuml = "/usr/bin/java -Djava.awt.headless=true -jar /tmp/plantuml.jar"
 plantuml_output_format = "svg_img"
 
 plot_html_show_source_link = True
@@ -140,7 +151,7 @@ language = 'en'
 # List of patterns, relative to source directory, that match files and
 # directories to ignore when looking for source files.
 # This pattern also affects html_static_path and html_extra_path .
-exclude_patterns = [u'_build', 'Thumbs.db', '.DS_Store', 'cmake/*']
+exclude_patterns = [u'_build', 'Thumbs.db', '.DS_Store', 'cmake/*', '**/blt/**']
 
 todo_include_todos = True
 
@@ -148,21 +159,19 @@ todo_include_todos = True
 pygments_style = 'sphinx'
 
 
-# -- Options for HTML output -------------------------------------------------
+# -- Theme options ----------------------------------------------
+extensions += [
+    'sphinx_rtd_theme',
+]
 
-try:
-    import sphinx_rtd_theme
-except:
-    html_theme = 'classic'
-    html_theme_options = {
-        'codebgcolor': 'lightgrey',
-        'stickysidebar': 'true'
-    }
-    html_theme_path = []
-else:
-    html_theme = 'sphinx_rtd_theme'
-    html_theme_options = {}
-    html_theme_path = [sphinx_rtd_theme.get_html_theme_path()]
+html_theme = "sphinx_rtd_theme"
+# html_theme = "pydata_sphinx_theme"
+
+html_theme_options = {
+    'navigation_depth': -1,
+    'collapse_navigation': False
+}
+
 
 # The name for this set of Sphinx documents.  If None, it defaults to
 # "<project> v<release> documentation".
@@ -183,58 +192,15 @@ else:
 # Add any paths that contain custom static files (such as style sheets) here,
 # relative to this directory. They are copied after the builtin static files,
 # so a file named "default.css" will overwrite the builtin "default.css".
+
 html_static_path = ['./docs/sphinx/_static']
 
-html_context = {
-    'css_files': [
-        '_static/theme_overrides.css',  # override wide tables in RTD theme
-        ],
-     }
-
-# If not '', a 'Last updated on:' timestamp is inserted at every page bottom,
-# using the given strftime format.
-#html_last_updated_fmt = '%b %d, %Y'
-
-# If true, SmartyPants will be used to convert quotes and dashes to
-# typographically correct entities.
-#html_use_smartypants = True
-
-# Custom sidebar templates, maps document names to template names.
-#html_sidebars = {}
-
-# Additional templates that should be rendered to pages, maps page names to
-# template names.
-#html_additional_pages = {}
-
-# If false, no module index is generated.
-#html_domain_indices = True
-
-# If false, no index is generated.
-#html_use_index = True
-
-# If true, the index is split into individual pages for each letter.
-#html_split_index = False
-
-# If true, links to the reST sources are added to the pages.
-#html_show_sourcelink = True
-
-# If true, "Created using Sphinx" is shown in the HTML footer. Default is True.
-#html_show_sphinx = True
-
-# If true, "(C) Copyright ..." is shown in the HTML footer. Default is True.
-#html_show_copyright = True
-
-# If true, an OpenSearch description file will be output, and all pages will
-# contain a <link> tag referring to it.  The value of this option must be the
-# base URL from which the finished HTML is served.
-#html_use_opensearch = ''
-
-# This is the file name suffix for HTML files (e.g. ".xhtml").
-#html_file_suffix = None
+html_css_files = [
+    'theme_overrides.css',
+]
 
 
 # -- Options for HTMLHelp output ---------------------------------------------
-
 # Output file base name for HTML help builder.
 htmlhelp_basename = 'GEOSXdoc'
 
@@ -263,8 +229,8 @@ latex_elements = {
 # (source start file, target name, title,
 #  author, documentclass [howto, manual, or own class]).
 latex_documents = [
-    (master_doc, 'GEOSX.tex', u'GEOSX Documentation',
-     u'Randolph Settgast', 'manual'),
+    (master_doc, 'GEOS.tex', u'GEOS Documentation',
+     u'GEOS/GEOSX Developers', 'manual'),
 ]
 
 
@@ -273,7 +239,7 @@ latex_documents = [
 # One entry per manual page. List of tuples
 # (source start file, name, description, authors, manual section).
 man_pages = [
-    (master_doc, 'geosx', u'GEOSX Documentation',
+    (master_doc, 'geos', u'GEOS Documentation',
      [author], 1)
 ]
 
@@ -284,8 +250,8 @@ man_pages = [
 # (source start file, target name, title, author,
 #  dir menu entry, description, category)
 texinfo_documents = [
-    (master_doc, 'GEOSX', u'GEOSX Documentation',
-     author, 'GEOSX', 'One line description of project.',
+    (master_doc, 'GEOS', u'GEOS Documentation',
+     author, 'GEOS', 'GEOS simulation framework.',
      'Miscellaneous'),
 ]
 
@@ -298,21 +264,19 @@ numfig = True
 # Additional stuff for the LaTeX preamble.
 latex_elements['preamble'] = '\\usepackage{amsmath}\n\\usepackage{amssymb}\n\\usepackage[retainorgcmds]{IEEEtrantools}\n'
 
-imgmath_image_format='svg'
-imgmath_font_size=14
+
 #####################################################
 # add LaTeX macros
 
 f = open('docs/sphinx/latex_macros.sty')
-
-try:
-    imgmath_latex_preamble  # check whether this is already defined
-except NameError:
-    imgmath_latex_preamble = ""
+imgmath_latex_preamble = ""
+imgmath_image_format = 'svg'
+imgmath_font_size = 14
 
 for macro in f:
     # used when building latex and pdf versions
     latex_elements['preamble'] += macro + '\n'
     # used when building html version
     imgmath_latex_preamble += macro + '\n'
+
 #####################################################

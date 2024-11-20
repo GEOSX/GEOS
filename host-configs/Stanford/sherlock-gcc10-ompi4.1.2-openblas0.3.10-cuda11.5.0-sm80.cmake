@@ -15,14 +15,13 @@ set(CONFIG_NAME "sherlock-gcc10-ompi4.1.2-openblas0.3.10-cuda${CUDA_VERSION}-${C
 
 set(CMAKE_CUDA_HOST_COMPILER ${MPI_CXX_COMPILER} CACHE STRING "")
 set(CMAKE_CUDA_COMPILER ${CUDA_TOOLKIT_ROOT_DIR}/bin/nvcc CACHE STRING "")
-set(CMAKE_CUDA_STANDARD 14 CACHE STRING "")
 set(CMAKE_CUDA_FLAGS "-restrict -arch ${CUDA_ARCH} --expt-extended-lambda --expt-relaxed-constexpr -Werror cross-execution-space-call,reorder,deprecated-declarations " CACHE STRING "")
 set(CMAKE_CUDA_FLAGS_RELEASE "-O3 -DNDEBUG -Xcompiler -DNDEBUG -Xcompiler -O3" CACHE STRING "")
 set(CMAKE_CUDA_FLAGS_RELWITHDEBINFO "-g -lineinfo ${CMAKE_CUDA_FLAGS_RELEASE}" CACHE STRING "")
 set(CMAKE_CUDA_FLAGS_DEBUG "-g -G -O0 -Xcompiler -O0" CACHE STRING "")
 
 # LAI options
-set(GEOSX_LA_INTERFACE "Hypre" CACHE STRING "" FORCE)
+set(GEOS_LA_INTERFACE "Hypre" CACHE STRING "" FORCE)
 set(ENABLE_HYPRE ON CACHE BOOL "" FORCE)
 set(ENABLE_HYPRE_DEVICE "CUDA" CACHE STRING "" FORCE)
 set(ENABLE_PETSC OFF CACHE BOOL "" FORCE)

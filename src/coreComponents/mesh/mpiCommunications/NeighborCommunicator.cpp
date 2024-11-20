@@ -2,10 +2,11 @@
  * ------------------------------------------------------------------------------------------------------------
  * SPDX-License-Identifier: LGPL-2.1-only
  *
- * Copyright (c) 2018-2020 Lawrence Livermore National Security LLC
- * Copyright (c) 2018-2020 The Board of Trustees of the Leland Stanford Junior University
- * Copyright (c) 2018-2020 TotalEnergies
- * Copyright (c) 2019-     GEOSX Contributors
+ * Copyright (c) 2016-2024 Lawrence Livermore National Security LLC
+ * Copyright (c) 2018-2024 Total, S.A
+ * Copyright (c) 2018-2024 The Board of Trustees of the Leland Stanford Junior University
+ * Copyright (c) 2023-2024 Chevron
+ * Copyright (c) 2019-     GEOS/GEOSX Contributors
  * All rights reserved
  *
  * See top level LICENSE, COPYRIGHT, CONTRIBUTORS, NOTICE, and ACKNOWLEDGEMENTS files for details.
@@ -138,7 +139,7 @@ int NeighborCommunicator::postSizeRecv( int const commID,
                             1,
                             m_neighborRank,
                             recvTag,
-                            MPI_COMM_GEOSX,
+                            MPI_COMM_GEOS,
                             &mpiRecvSizeRequest );
 }
 
@@ -150,7 +151,7 @@ int NeighborCommunicator::postSizeSend( int const commID,
                             1,
                             m_neighborRank,
                             sendTag,
-                            MPI_COMM_GEOSX,
+                            MPI_COMM_GEOS,
                             &mpiSendSizeRequest );
 }
 
@@ -163,7 +164,7 @@ int NeighborCommunicator::postRecv( int const commID,
                             m_receiveBufferSize[commID],
                             m_neighborRank,
                             recvTag,
-                            MPI_COMM_GEOSX,
+                            MPI_COMM_GEOS,
                             &mpRecvRequest );
 }
 
@@ -175,7 +176,7 @@ int NeighborCommunicator::postSend( int const commID,
                             m_sendBufferSize[commID],
                             m_neighborRank,
                             sendTag,
-                            MPI_COMM_GEOSX,
+                            MPI_COMM_GEOS,
                             &mpiSendRequest );
 }
 
@@ -240,22 +241,21 @@ void NeighborCommunicator::prepareAndSendGhosts( bool const GEOS_UNUSED_PARAM( c
 {
   GEOS_MARK_FUNCTION;
 
-  this->postSizeRecv( commID,
-                      mpiRecvSizeRequest ); // post recv for buffer size from neighbor.
+  this->postSizeRecv( commID, mpiRecvSizeRequest ); // post recv for buffer size from neighbor.
 
   NodeManager & nodeManager = mesh.getNodeManager();
   EdgeManager & edgeManager = mesh.getEdgeManager();
   FaceManager & faceManager = mesh.getFaceManager();
   ElementRegionManager & elemManager = mesh.getElemManager();
 
-  localIndex_array & nodeAdjacencyList = nodeManager.getNeighborData( m_neighborRank ).adjacencyList();
-  localIndex_array & edgeAdjacencyList = edgeManager.getNeighborData( m_neighborRank ).adjacencyList();
-  localIndex_array & faceAdjacencyList = faceManager.getNeighborData( m_neighborRank ).adjacencyList();
+  array1d< localIndex > & nodeAdjacencyList = nodeManager.getNeighborData( m_neighborRank ).adjacencyList();
+  array1d< localIndex > & edgeAdjacencyList = edgeManager.getNeighborData( m_neighborRank ).adjacencyList();
+  array1d< localIndex > & faceAdjacencyList = faceManager.getNeighborData( m_neighborRank ).adjacencyList();
 
   {
     ElemAdjListRefWrapType elementAdjacencyList =
-      elemManager.constructReferenceAccessor< localIndex_array >( ObjectManagerBase::viewKeyStruct::adjacencyListString(),
-                                                                  std::to_string( this->m_neighborRank ) );
+      elemManager.constructReferenceAccessor< array1d< localIndex > >( ObjectManagerBase::viewKeyStruct::adjacencyListString(),
+                                                                       std::to_string( this->m_neighborRank ) );
 
     mesh.generateAdjacencyLists( nodeManager.getNeighborData( m_neighborRank ).matchedPartitionBoundary(),
                                  nodeAdjacencyList,
@@ -268,15 +268,13 @@ void NeighborCommunicator::prepareAndSendGhosts( bool const GEOS_UNUSED_PARAM( c
   ElemAdjListViewType const elemAdjacencyList =
     elemManager.constructViewAccessor< array1d< localIndex >, arrayView1d< localIndex > >( ObjectManagerBase::viewKeyStruct::adjacencyListString(),
                                                                                            std::to_string( this->m_neighborRank ) );
-
   int const bufferSize = GhostSize( nodeManager, nodeAdjacencyList,
                                     edgeManager, edgeAdjacencyList,
                                     faceManager, faceAdjacencyList,
                                     elemManager, elemAdjacencyList );
 
   this->resizeSendBuffer( commID, bufferSize );
-  this->postSizeSend( commID,
-                      mpiSendSizeRequest );
+  this->postSizeSend( commID, mpiSendSizeRequest );
 
   buffer_type & sendBuff = sendBuffer( commID );
   buffer_unit_type * sendBufferPtr = sendBuff.data();
@@ -504,7 +502,7 @@ int NeighborCommunicator::packCommSizeForSync( FieldIdentifiers const & fieldsTo
 
   for( auto const & iter : fieldsToBeSync.getFields() )
   {
-    FieldLocation location;
+    FieldLocation location{};
     fieldsToBeSync.getLocation( iter.first, location );
     switch( location )
     {
@@ -562,7 +560,7 @@ void NeighborCommunicator::packCommBufferForSync( FieldIdentifiers const & field
 
   for( auto const & iter : fieldsToBeSync.getFields() )
   {
-    FieldLocation location;
+    FieldLocation location{};
     fieldsToBeSync.getLocation( iter.first, location );
     switch( location )
     {
@@ -600,7 +598,8 @@ void NeighborCommunicator::unpackBufferForSync( FieldIdentifiers const & fieldsT
                                                 MeshLevel & mesh,
                                                 int const commID,
                                                 bool onDevice,
-                                                parallelDeviceEvents & events )
+                                                parallelDeviceEvents & events,
+                                                MPI_Op op )
 {
   GEOS_MARK_FUNCTION;
 
@@ -626,7 +625,7 @@ void NeighborCommunicator::unpackBufferForSync( FieldIdentifiers const & fieldsT
     {
       case FieldLocation::Node:
       {
-        unpackedSize += nodeManager.unpack( receiveBufferPtr, nodeGhostsToReceive, 0, onDevice, events );
+        unpackedSize += nodeManager.unpack( receiveBufferPtr, nodeGhostsToReceive, 0, onDevice, events, op );
         break;
       }
       case FieldLocation::Edge:

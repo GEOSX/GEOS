@@ -2,14 +2,27 @@ import sys
 import matplotlib
 import numpy as np
 import matplotlib.pyplot as plt
+import os
+import argparse
 
 
 def main():
-    eTime, eLength, eArea = np.loadtxt("experiment-data.txt", skiprows=0, unpack=True)
-    esTime, esArea = np.loadtxt("experiment-data2.txt", skiprows=0, unpack=True)
 
-    dTime, dLength, dArea = np.loadtxt("model-results.txt", skiprows=1, unpack=True)
-    sTime, sArea = np.loadtxt("model-results2.txt", skiprows=1, unpack=True)
+   # Initialize the argument parser
+    parser = argparse.ArgumentParser(description="Script to generate figure from tutorial.")
+
+    # Add arguments to accept individual file paths
+    parser.add_argument('--outputDir', help='Path to output directory', default='.')
+
+    # Parse the command-line arguments
+    args = parser.parse_args()
+    outputDir = args.outputDir
+
+    eTime, eLength, eArea = np.loadtxt(outputDir + "/experiment-data.txt", skiprows=0, unpack=True)
+    esTime, esArea = np.loadtxt(outputDir + "/experiment-data2.txt", skiprows=0, unpack=True)
+
+    dTime, dLength, dArea = np.loadtxt(outputDir + "/model-results.txt", skiprows=1, unpack=True)
+    sTime, sArea = np.loadtxt(outputDir + "/model-results2.txt", skiprows=1, unpack=True)
 
     # offSize is the size of the bounday cell which should be excluded from the model domain
     offSize = 0.0127

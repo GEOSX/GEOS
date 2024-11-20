@@ -17,9 +17,9 @@ RUN ln -fs /usr/share/zoneinfo/America/Los_Angeles /etc/localtime && \
     dpkg-reconfigure -f noninteractive tzdata
 
 # You will need cmake to build GEOSX.
-ARG CMAKE_VERSION=3.16.8
+ARG CMAKE_VERSION=3.23.3
 RUN apt-get install -y --no-install-recommends curl ca-certificates && \
-    curl -fsSL https://cmake.org/files/v${CMAKE_VERSION%.[0-9]*}/cmake-${CMAKE_VERSION}-Linux-x86_64.tar.gz | tar --directory=/usr/local --strip-components=1 -xzf - && \
+    curl -fsSL https://cmake.org/files/v${CMAKE_VERSION%.[0-9]*}/cmake-${CMAKE_VERSION}-linux-x86_64.tar.gz | tar --directory=/usr/local --strip-components=1 -xzf - && \
     apt-get purge --auto-remove -y curl ca-certificates
 RUN apt-get autoremove -y
 
@@ -33,7 +33,7 @@ RUN echo "PermitRootLogin prohibit-password" >> /etc/ssh/sshd_config
 RUN echo "PermitUserEnvironment yes" >> /etc/ssh/sshd_config
 RUN mkdir -p -m 700 /root/.ssh
 # Put your own public key here!
-RUN echo "ssh-rsa [#a public ssh key]" > /root/.ssh/authorized_keys
+RUN echo "ssh-rsa AAAAB... your public ssh key here ...EinP5Q== somebody@somewhere.org" > /root/.ssh/authorized_keys
 
 # Some important variables are provided through the environment.
 # You need to explicitly tell sshd to forward them.
@@ -47,11 +47,19 @@ RUN touch /root/.ssh/environment &&\
     echo "MPIEXEC=${MPIEXEC}" >> /root/.ssh/environment &&\
     echo "OMPI_CC=${CC}" >> /root/.ssh/environment &&\
     echo "OMPI_CXX=${CXX}" >> /root/.ssh/environment &&\
-    echo "GEOSX_TPL_DIR=${GEOSX_TPL_DIR}" >> /root/.ssh/environment
+    echo "GEOS_TPL_DIR=${GEOS_TPL_DIR}" >> /root/.ssh/environment
 # If you decide to work as root in your container, you may consider adding
 # `OMPI_ALLOW_RUN_AS_ROOT=1` and `OMPI_ALLOW_RUN_AS_ROOT_CONFIRM=1`
 # to your environment. This will prevent you from adding the `--allow-run-as-root` option
 # when you run mpi. Of course, weigh the benefits and risks and make your own decision.
+
+# In case you want to use `sccache` (https://github.com/mozilla/sccache) to make your builds faster,
+# you may configure the `sccache` config file at your convenience.
+# Meanwhile, we provide here a simple local configuration.
+RUN mkdir -p ${HOME}/.config/sccache
+RUN printf '[cache.disk]\n\
+dir = "/tmp/.cache/sccache"\n\
+size = 3221225472 # 3GB\n' > ${HOME}/.config/sccache/config
 
 # Default ssh port 22 is exposed. For _development_ purposes,
 # it can be useful to expose other ports for remote tools.

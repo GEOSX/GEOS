@@ -11,11 +11,11 @@ def main():
 	# File paths
 	hdf5FilePath = "displacementHistory.hdf5"
 
-	# Get GEOSX results
+	# Get GEOS results
 	hf = h5py.File(hdf5FilePath, 'r')
-	time = np.array( hf.get('totalDisplacement Time') )
-	center = np.array( hf.get('totalDisplacement ReferencePosition') )
-	displacement = np.array( hf.get('totalDisplacement') )
+	time = np.asarray( hf.get('totalDisplacement Time') )
+	center = np.asarray( hf.get('totalDisplacement ReferencePosition') )
+	displacement = np.asarray( hf.get('totalDisplacement') )
 
 	nNodes = center.shape[1]
 	xCoord = center[0, 0:nNodes, 0]
@@ -46,7 +46,7 @@ def main():
 	plt.plot( rCoord,
 			  ur_10000s,        
 			  'r+',
-			  label='GEOSX: t = 1e4 (s)')
+			  label='GEOS: t = 1e4 (s)')
 
 	plt.plot( displacement_radial_analytic_1e4s[:,0],
 		      displacement_radial_analytic_1e4s[:,1]*1e6, # converted to um       
@@ -57,7 +57,7 @@ def main():
 	plt.plot( rCoord,
 			  ur_100000s,        
 			  'b+',
-			  label='GEOSX: t = 1e5 (s)')
+			  label='GEOS: t = 1e5 (s)')
 	
 	plt.plot( displacement_radial_analytic_1e5s[:,0],
 		      displacement_radial_analytic_1e5s[:,1]*1e6, # converted to um       
@@ -70,7 +70,7 @@ def main():
 	plt.xlim(0.15,0.4)
 
 	plt.legend(loc='upper left')
-	plt.show()
+	plt.savefig('displacement.png')
 
 if __name__ == "__main__":
 	main()

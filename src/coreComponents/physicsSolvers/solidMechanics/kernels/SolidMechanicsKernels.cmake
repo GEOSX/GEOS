@@ -4,11 +4,11 @@
 
 set( kernelPath "coreComponents/physicsSolvers/solidMechanics/kernels" )
 
-set( ExplicitSmallStrainPolicy "geos::parallelDevicePolicy< ${GEOSX_BLOCK_SIZE} >" )
-set( ExplicitFiniteStrainPolicy "geos::parallelDevicePolicy< ${GEOSX_BLOCK_SIZE} >" )
-set( FixedStressThermoPoromechanicsPolicy "geos::parallelDevicePolicy< ${GEOSX_BLOCK_SIZE} >" )
-set( ImplicitSmallStrainNewmarkPolicy "geos::parallelDevicePolicy< ${GEOSX_BLOCK_SIZE} >" )
-set( ImplicitSmallStrainQuasiStaticPolicy "geos::parallelDevicePolicy< ${GEOSX_BLOCK_SIZE} >" )
+set( ExplicitSmallStrainPolicy "geos::parallelDevicePolicy< ${GEOS_BLOCK_SIZE} >" )
+set( ExplicitFiniteStrainPolicy "geos::parallelDevicePolicy< ${GEOS_BLOCK_SIZE} >" )
+set( FixedStressThermoPoromechanicsPolicy "geos::parallelDevicePolicy< ${GEOS_BLOCK_SIZE} >" )
+set( ImplicitSmallStrainNewmarkPolicy "geos::parallelDevicePolicy< ${GEOS_BLOCK_SIZE} >" )
+set( ImplicitSmallStrainQuasiStaticPolicy "geos::parallelDevicePolicy< ${GEOS_BLOCK_SIZE} >" )
 
 
 configure_file( ${CMAKE_SOURCE_DIR}/${kernelPath}/policies.hpp.in
@@ -20,6 +20,9 @@ set( subregionList CellElementSubRegion )
 set( solidBaseDispatch DamageSpectral<ElasticIsotropic>
                        DamageVolDev<ElasticIsotropic>
                        Damage<ElasticIsotropic>
+                       DuvautLionsSolid<DruckerPrager>
+                       DuvautLionsSolid<DruckerPragerExtended>
+                       DuvautLionsSolid<ModifiedCamClay>
                        DruckerPragerExtended
                        ModifiedCamClay
                        DelftEgg

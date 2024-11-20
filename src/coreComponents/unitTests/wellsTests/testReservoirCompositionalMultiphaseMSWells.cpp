@@ -2,10 +2,11 @@
  * ------------------------------------------------------------------------------------------------------------
  * SPDX-License-Identifier: LGPL-2.1-only
  *
- * Copyright (c) 2018-2020 Lawrence Livermore National Security LLC
- * Copyright (c) 2018-2020 The Board of Trustees of the Leland Stanford Junior University
- * Copyright (c) 2018-2020 TotalEnergies
- * Copyright (c) 2019-     GEOSX Contributors
+ * Copyright (c) 2016-2024 Lawrence Livermore National Security LLC
+ * Copyright (c) 2018-2024 Total, S.A
+ * Copyright (c) 2018-2024 The Board of Trustees of the Leland Stanford Junior University
+ * Copyright (c) 2023-2024 Chevron
+ * Copyright (c) 2019-     GEOS/GEOSX Contributors
  * All rights reserved
  *
  * See top level LICENSE, COPYRIGHT, CONTRIBUTORS, NOTICE, and ACKNOWLEDGEMENTS files for details.
@@ -25,7 +26,7 @@
 #include "physicsSolvers/multiphysics/CompositionalMultiphaseReservoirAndWells.hpp"
 #include "physicsSolvers/fluidFlow/CompositionalMultiphaseFVM.hpp"
 #include "physicsSolvers/fluidFlow/wells/CompositionalMultiphaseWell.hpp"
-#include "physicsSolvers/fluidFlow/wells/CompositionalMultiphaseWellKernels.hpp"
+#include "physicsSolvers/fluidFlow/wells/kernels/CompositionalMultiphaseWellKernels.hpp"
 #include "physicsSolvers/fluidFlow/wells/CompositionalMultiphaseWellFields.hpp"
 #include "physicsSolvers/fluidFlow/wells/WellSolverBaseFields.hpp"
 
@@ -86,31 +87,30 @@ char const * xmlInput =
                     nx="{3}"
                     ny="{1}"
                     nz="{1}"
-                    cellBlockNames="{cb1}"/>
-      <InternalWell name="well_producer1"
-                    wellRegionName="wellRegion1"
-                    wellControlsName="wellControls1"
-                    meshName="mesh1"
-                    polylineNodeCoords="{ {4.5, 0,  2  },
-                                           {4.5, 0,  0.5} }"
-                    polylineSegmentConn="{ {0, 1} }"
-                    radius="0.1"
-                    numElementsPerSegment="1">
-          <Perforation name="producer1_perf1"
-                       distanceFromHead="1.45"/>
-      </InternalWell>
-      <InternalWell name="well_injector1"
-                    wellRegionName="wellRegion2"
-                    wellControlsName="wellControls2"
-                    meshName="mesh1"
-                    polylineNodeCoords="{ {0.5, 0, 2  },
-                                           {0.5, 0, 0.5} }"
-                    polylineSegmentConn="{ {0, 1} }"
-                    radius="0.1"
-                    numElementsPerSegment="1">
-          <Perforation name="injector1_perf1"
-                       distanceFromHead="1.45"/>
-      </InternalWell>
+                    cellBlockNames="{cb1}">
+        <InternalWell name="well_producer1"
+                      wellRegionName="wellRegion1"
+                      wellControlsName="wellControls1"
+                      polylineNodeCoords="{ {4.5, 0,  2  },
+                                             {4.5, 0,  0.5} }"
+                      polylineSegmentConn="{ {0, 1} }"
+                      radius="0.1"
+                      numElementsPerSegment="1">
+            <Perforation name="producer1_perf1"
+                         distanceFromHead="1.45"/>
+        </InternalWell>
+        <InternalWell name="well_injector1"
+                      wellRegionName="wellRegion2"
+                      wellControlsName="wellControls2"
+                      polylineNodeCoords="{ {0.5, 0, 2  },
+                                             {0.5, 0, 0.5} }"
+                      polylineSegmentConn="{ {0, 1} }"
+                      radius="0.1"
+                      numElementsPerSegment="1">
+            <Perforation name="injector1_perf1"
+                         distanceFromHead="1.45"/>
+        </InternalWell>
+      </InternalMesh>
     </Mesh>
     <NumericalMethods>
       <FiniteVolume>
@@ -197,7 +197,7 @@ char const * xmlInput =
   )xml";
 
 template< typename LAMBDA >
-void testNumericalJacobian( CompositionalMultiphaseReservoirAndWells< CompositionalMultiphaseBase > & solver,
+void testNumericalJacobian( CompositionalMultiphaseReservoirAndWells<> & solver,
                             DomainPartition & domain,
                             real64 const perturbParameter,
                             real64 const relTol,
@@ -472,7 +472,7 @@ protected:
   void SetUp() override
   {
     setupProblemFromXML( state.getProblemManager(), xmlInput );
-    solver = &state.getProblemManager().getPhysicsSolverManager().getGroup< CompositionalMultiphaseReservoirAndWells< CompositionalMultiphaseBase > >( "reservoirSystem" );
+    solver = &state.getProblemManager().getPhysicsSolverManager().getGroup< CompositionalMultiphaseReservoirAndWells<> >( "reservoirSystem" );
 
     DomainPartition & domain = state.getProblemManager().getDomainPartition();
 
@@ -490,7 +490,7 @@ protected:
   static real64 constexpr eps = std::numeric_limits< real64 >::epsilon();
 
   GeosxState state;
-  CompositionalMultiphaseReservoirAndWells< CompositionalMultiphaseBase > * solver;
+  CompositionalMultiphaseReservoirAndWells<> * solver;
 };
 
 real64 constexpr CompositionalMultiphaseReservoirSolverTest::time;
@@ -533,20 +533,6 @@ TEST_F( CompositionalMultiphaseReservoirSolverTest, jacobianNumericalCheck_Flux 
 }
 
 
-TEST_F( CompositionalMultiphaseReservoirSolverTest, jacobianNumericalCheck_VolumeBalance )
-{
-  real64 const perturb = std::sqrt( eps );
-  real64 const tol = 1e-1; // 10% error margin
-
-  DomainPartition & domain = state.getProblemManager().getDomainPartition();
-
-  testNumericalJacobian( *solver, domain, perturb, tol,
-                         [&] ( CRSMatrixView< real64, globalIndex const > const & localMatrix,
-                               arrayView1d< real64 > const & localRhs )
-  {
-    solver->wellSolver()->assembleVolumeBalanceTerms( domain, solver->getDofManager(), localMatrix, localRhs );
-  } );
-}
 
 TEST_F( CompositionalMultiphaseReservoirSolverTest, jacobianNumericalCheck_PressureRel )
 {

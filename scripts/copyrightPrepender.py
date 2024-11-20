@@ -23,69 +23,47 @@
 #
 # Modified from an initial script by P. Sinha
 
+# this is a handy command to check if there are any files that have not be changed from HEAD
+# git ls-files --full-name | grep -v "$(git diff --name-only HEAD)"
+
 import os
 import sys
 import argparse
 
 
 copyright_str = \
-    """/*
+"""/*
+ * ------------------------------------------------------------------------------------------------------------
+ * SPDX-License-Identifier: LGPL-2.1-only
+ *
+ * Copyright (c) 2016-2024 Lawrence Livermore National Security LLC
+ * Copyright (c) 2018-2024 Total, S.A
+ * Copyright (c) 2018-2024 The Board of Trustees of the Leland Stanford Junior University
+ * Copyright (c) 2023-2024 Chevron 
+ * Copyright (c) 2019-     GEOS/GEOSX Contributors
+ * All rights reserved
+ *
+ * See top level LICENSE, COPYRIGHT, CONTRIBUTORS, NOTICE, and ACKNOWLEDGEMENTS files for details.
+ * ------------------------------------------------------------------------------------------------------------
+ */
+"""
+
+old_copyright_str = \
+"""
+/*
  * ------------------------------------------------------------------------------------------------------------
  * SPDX-License-Identifier: LGPL-2.1-only
  *
  * Copyright (c) 2018-2020 Lawrence Livermore National Security LLC
  * Copyright (c) 2018-2020 The Board of Trustees of the Leland Stanford Junior University
- * Copyright (c) 2018-2020 Total, S.A
+ * Copyright (c) 2018-2020 TotalEnergies
  * Copyright (c) 2019-     GEOSX Contributors
  * All rights reserved
  *
  * See top level LICENSE, COPYRIGHT, CONTRIBUTORS, NOTICE, and ACKNOWLEDGEMENTS files for details.
  * ------------------------------------------------------------------------------------------------------------
  */
-
 """
-
-old_copyright_str = \
-"""/*
- *~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
- * Copyright (c) 2019, Lawrence Livermore National Security, LLC.
- *
- * Produced at the Lawrence Livermore National Laboratory
- *
- * LLNL-CODE-746361
- *
- * All rights reserved. See COPYRIGHT for details.
- *
- * This file is part of the GEOSX Simulation Framework.
- *
- * GEOSX is a free software; you can redistribute it and/or modify it under
- * the terms of the GNU Lesser General Public License (as published by the
- * Free Software Foundation) version 2.1 dated February 1999.
- *~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
- */
-
-"""
-
-# old_copyright_str = \
-# """/*
-#  *~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
-#  * Copyright (c) 2018, Lawrence Livermore National Security, LLC.
-#  *
-#  * Produced at the Lawrence Livermore National Laboratory
-#  *
-#  * LLNL-CODE-746361
-#  *
-#  * All rights reserved. See COPYRIGHT for details.
-#  *
-#  * This file is part of the GEOSX Simulation Framework.
-#  *
-#  * GEOSX is a free software; you can redistribute it and/or modify it under
-#  * the terms of the GNU Lesser General Public License (as published by the
-#  * Free Software Foundation) version 2.1 dated February 1999.
-#  *~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
-#  */
-#
-# """
 
 copyright_str_arr = copyright_str.split("\n")[:-1]
 
@@ -114,10 +92,10 @@ def getLineToBeginAt(lines):
     # If the file has the copyright header check if it needs to be updated.
     if copyright_match:
         if lines[1][:-1] == copyright_str_arr[1]:
-            print "\t Already has copyright statement."
+            print( "\t Already has copyright statement." )
             return -1
 
-        print "\t Need to update copyright statement."
+        print( "\t Need to update copyright statement." )
         return len(copyright_str_arr)
 
     # Check if the file has the old header.
@@ -131,10 +109,10 @@ def getLineToBeginAt(lines):
                 break
 
     if old_copyright_match:
-        print "\t Has old copyright statement."
+        print( "\t Has old copyright statement." )
         return len(old_copyright_str_arr)
 
-    print "\t Missing copyright statement."
+    print( "\t Missing copyright statement." )
     return -2
 
 
@@ -143,7 +121,7 @@ def checkAndAddCopyrightHeader(filename, testOnly=False):
     """
 
     with open(filename, "r+") as f:
-        # print "  Processing file {}:".format(filename)
+        # print( "  Processing file {}:".format(filename) )
 
         lines = []
         for i in range(max_copyright_lines):
@@ -163,7 +141,7 @@ def checkAndAddCopyrightHeader(filename, testOnly=False):
             f.seek(0)
             f.write(copyright_str)
             f.writelines(lines[line_to_begin_at:])
-            print "\t Prepended copyright statement."
+            print ( "\t Prepended copyright statement." )
 
 
 def fileNameGenerator(rootDir, validExtensions, isRecursive=False):
@@ -215,6 +193,6 @@ if __name__ == "__main__":
     args = parser.parse_args()
 
     ## Iterate through files, check for and add copyright notice
-    print "Looking at directory {}".format(args.dir)
+    print( "Looking at directory {}".format(args.dir) )
     for fullFileName in fileNameGenerator(args.dir, valid_extensions, args.isRecursive):
         checkAndAddCopyrightHeader(fullFileName, args.test)

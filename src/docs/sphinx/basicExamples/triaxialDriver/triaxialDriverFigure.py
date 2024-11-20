@@ -5,6 +5,8 @@ import matplotlib.pyplot as plt
 import math
 from math import sin, cos, tan, exp, atan
 import xml.etree.ElementTree as ElementTree
+import os
+import argparse
 
 
 def yieldSurface(xmlFilePath, mechanicalParameters):
@@ -166,14 +168,27 @@ def getMechanicalParametersFromXML(xmlFilePath):
 
 
 def main():
+
+   # Initialize the argument parser
+    parser = argparse.ArgumentParser(description="Script to generate figure from tutorial.")
+
+    # Add arguments to accept individual file paths
+    parser.add_argument('--geosDir', help='Path to the GEOS repository ', default='../../../../..')
+    parser.add_argument('--outputDir', help='Path to output directory', default='.')
+
+    # Parse the command-line arguments
+    args = parser.parse_args()
+
     # File path
-    xmlFilePath = "../../../../../inputFiles/triaxialDriver/triaxialDriver_ExtendedDruckerPrager_basicExample.xml"
+    outputDir = args.outputDir
+    geosDir = args.geosDir
+    xmlFilePath = geosDir + "/inputFiles/triaxialDriver/triaxialDriver_ExtendedDruckerPrager_basicExample.xml"
 
     # Extract info from XML
     mechanicalParameters = getMechanicalParametersFromXML(xmlFilePath)
 
     # Load GEOSX results
-    path = "simulationResults.txt"
+    path = outputDir + "/simulationResults.txt"
     time, ax_strain, ra_strain1, ra_strain2, ax_stress, ra_stress1, ra_stress2, newton_iter, residual_norm = np.loadtxt(
         path, skiprows=5, unpack=True)
     p_num = -(ax_stress + 2.0 * ra_stress1) / 3.0 / 1.0e6

@@ -7,9 +7,8 @@
       name="poroSolver"
       targetRegions="{ Domain, Fracture }"
       initialDt="1e-3"
-      fracturesSolverName="fractureMechSolver"
       flowSolverName="flowSolver"
-      solidSolverName="matrixMechSolver"
+      solidSolverName="fractureMechSolver"
       logLevel="1">
       <NonlinearSolverParameters
         maxTimeStepCuts="1"/>
@@ -21,15 +20,9 @@
     <SolidMechanicsEmbeddedFractures
       name="fractureMechSolver"
       targetRegions="{ Domain, Fracture }"
-      solidSolverName="matrixMechSolver"
-      fractureRegionName="Fracture"
-      contactRelationName="fractureContact"/>
-
-    <SolidMechanicsLagrangianSSLE
-      name="matrixMechSolver"
       timeIntegrationOption="QuasiStatic"
       discretization="FE1"
-      targetRegions="{ Domain }"/>
+      contactPenaltyStiffness="0.0e8"/>
 
     <SinglePhaseFVM
       name="flowSolver"
@@ -41,6 +34,7 @@
       discretization="FE1"
       targetRegions="{ Domain, Fracture }"
       fractureRegion="Fracture"
+      targetObjects="{ FracturePlane }"
       logLevel="2"
       mpiCommOrder="1"/>
   </Solvers>
@@ -59,7 +53,11 @@
   </Mesh>
 
   <Geometry>
-    <BoundedPlane
+    <Box
+    name="fractureTip"
+    xMin="{ 1., -0.01, -0.1 }"
+    xMax="{ 2.,  .3,  1.1 }"/>
+    <Rectangle
       name="FracturePlane"
       normal="{ 1, 0, 0 }"
       origin="{ 1.5, 1.5, 1.5 }"
@@ -106,13 +104,13 @@
   <ElementRegions>
     <CellElementRegion
       name="Domain"
-      cellBlocks="{ cb1 }"
+      cellBlocks="{ * }"
       materialList="{ porousRock, water }"/>
 
     <SurfaceElementRegion
       name="Fracture"
       subRegionType="embeddedElement"
-      materialList="{ water, fractureFilling, fractureContact }"
+      materialList="{ water, fractureFilling, fractureContact, hApertureModel }"
       defaultAperture="1e-3"/>
   </ElementRegions>
 
@@ -144,7 +142,7 @@
 
     <BiotPorosity
       name="rockPorosity"
-      grainBulkModulus="1.0e27"
+      defaultGrainBulkModulus="1.0e27"
       defaultReferencePorosity="0.2"/>
 
     <CompressibleSolidParallelPlatesPermeability
@@ -166,9 +164,11 @@
       name="fracturePerm"/>
 
     <FrictionlessContact
-      name="fractureContact"
-      penaltyStiffness="0.0e8"
-      apertureTableName="apertureTable"/>
+      name="fractureContact"/>
+
+ <HydraulicApertureTable
+      name="hApertureModel"
+      apertureTableName="apertureTable"/>   
     
   </Constitutive>
 
@@ -191,7 +191,7 @@
 
     <FieldSpecification
       name="initialPressureFracture"
-      setNames="{ all }"
+      setNames="{ fractureTip }"
       objectPath="ElementRegions/Fracture"
       fieldName="pressure"
       scale="1.0e5"/>

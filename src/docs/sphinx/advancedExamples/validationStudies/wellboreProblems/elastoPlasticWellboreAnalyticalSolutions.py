@@ -8,18 +8,18 @@ def invariants(sr,s0,sz):
 def hardeningRate(dFdHardningParam,dHardningParamdPlasticVar,dPotentialdStressVar):
     return -dFdHardningParam*dHardningParamdPlasticVar*dPotentialdStressVar
     
-def compute_a(sr,s0,sz,sigma,dFdp, dFdq):
+def compute_a(sr,s0,sz,sigma,dGdp, dGdq):
     p,q = invariants(sr,s0,sz)
     dpdsigma = 1.0/3.0
     dqdsigma = 3.0*(sigma-p)/2.0/q
-    return dFdp*dpdsigma + dFdq*dqdsigma
+    return dGdp*dpdsigma + dGdq*dqdsigma
 
-def compute_bij(sr, s0, sz, dFdp, dFdq, E, nu, dFdpc,dpcdepsVp,dGdp):
-    h = hardeningRate(dFdpc,dpcdepsVp,dGdp)
+def compute_bij(sr, s0, sz, dGdp, dGdq, E, nu, dFdpc,dpcdepsVp,dPotentialdStressVar):
+    h = hardeningRate(dFdpc,dpcdepsVp,dPotentialdStressVar)
     
-    ar = compute_a(sr,s0,sz,sr,dFdp,dFdq)
-    a0 = compute_a(sr,s0,sz,s0,dFdp,dFdq)
-    az = compute_a(sr,s0,sz,sz,dFdp,dFdq)
+    ar = compute_a(sr,s0,sz,sr,dGdp,dGdq)
+    a0 = compute_a(sr,s0,sz,s0,dGdp,dGdq)
+    az = compute_a(sr,s0,sz,sz,dGdp,dGdq)
     
     y = 1/(h+1e-10) # 1e-10 to avoid division to zero
     
@@ -42,11 +42,11 @@ def compute_bij(sr, s0, sz, dFdp, dFdq, E, nu, dFdpc,dpcdepsVp,dGdp):
     return b11,b12,b13,b22,b23,b33,b21,b31,b32,delta
     
 
-def solution_plastic(sr, s0, sz, epsV, xd, dx, dFdp, dFdq, E, nu, dFdpc,dpcdepsVp,dGdp):
-    b11,b12,b13,b22,b23,b33,b21,b31,b32,delta = compute_bij(sr, s0, sz, dFdp, dFdq, E, nu, dFdpc,dpcdepsVp,dGdp)
+def solution_plastic(sr, s0, sz, epsV, xd, dx, dGdp, dGdq, E, nu, dFdpc,dpcdepsVp,dPotentialdStressVar):
+    b11,b12,b13,b22,b23,b33,b21,b31,b32,delta = compute_bij(sr, s0, sz, dGdp, dGdq, E, nu, dFdpc,dpcdepsVp,dPotentialdStressVar)
 
-    exp_epsilon_V = np.exp(epsV)# epsV is the volumetric strain from the elastic-plastic boundary
-    tmp = 1 - xd - exp_epsilon_V / (1 - xd)
+    exp_epsilon_V = np.exp(epsV) # epsV is the volumetric strain from the elastic-plastic boundary
+    tmp = 1.0 - 2.0*xd - exp_epsilon_V # Use natural logarithm form for large volume strain
     
     DrDx = -(sr - s0) / tmp
     sr += DrDx * dx
@@ -77,7 +77,7 @@ def compute_radialCoordinate(xi,epsV):
         dxi = xi[i-1]-xi[i]
         exp_epsilon_V = np.exp(epsV[i-1])
     
-        integral += dxi / (1 - xi[i - 1] - exp_epsilon_V / (1 - xi[i - 1]) ) 
+        integral += dxi / (1.0 - 2.0*xi[i - 1] - exp_epsilon_V) # Use natural logarithm form for large volume strain
         r[i - 1] = np.exp(integral)
         
     return r

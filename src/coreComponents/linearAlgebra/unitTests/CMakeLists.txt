@@ -1,39 +1,40 @@
 set( serial_tests
-     LinearSolverParametersEnums
-     ComponentMask )
+     testLinearSolverParametersEnums.cpp
+     testComponentMask.cpp )
 
 set( parallel_tests
-     Matrices
-     Vectors
-     ExternalSolvers
-     KrylovSolvers )
+     testMatrices.cpp
+     testVectors.cpp
+     testExternalSolvers.cpp
+     testKrylovSolvers.cpp
+     testReverseCutHillMcKeeOrdering.cpp )
 
 set( nranks 2 )
 
 set( dependencyList gtest linearAlgebra ${parallelDeps} )
 
-foreach(test_name ${serial_tests})
-  set( exec_name test${test_name} )
-  blt_add_executable( NAME ${exec_name}
-                      SOURCES ${exec_name}.cpp
+foreach(test ${serial_tests})
+  get_filename_component( test_name ${test} NAME_WE )
+  blt_add_executable( NAME ${test_name}
+                      SOURCES ${test}
                       OUTPUT_DIR ${TEST_OUTPUT_DIRECTORY}
                       DEPENDS_ON ${dependencyList} )
-  blt_add_test( NAME testLinearAlgebra_${test_name}
-                COMMAND ${exec_name} )
+  geos_add_test( NAME ${test_name}
+                 COMMAND ${test_name} )
 endforeach()
 
-foreach(test_name ${parallel_tests})
-  set( exec_name test${test_name} )
-  blt_add_executable( NAME ${exec_name}
-                      SOURCES ${exec_name}.cpp
+foreach(test ${parallel_tests})
+  get_filename_component( test_name ${test} NAME_WE )
+  blt_add_executable( NAME ${test_name}
+                      SOURCES ${test}
                       OUTPUT_DIR ${TEST_OUTPUT_DIRECTORY}
                       DEPENDS_ON ${dependencyList} )
   if ( ENABLE_MPI )
-    blt_add_test( NAME testLinearAlgebra_${test_name}
-                  COMMAND ${exec_name} -x ${nranks}
-                  NUM_MPI_TASKS ${nranks} )
+    geos_add_test( NAME ${test_name}
+                   COMMAND ${test_name} -x ${nranks}
+                   NUM_MPI_TASKS ${nranks} )
   else()
-    blt_add_test( NAME testLinearAlgebra_${test_name}
-                  COMMAND ${exec_name} )
+    geos_add_test( NAME _${test_name}
+                   COMMAND ${test_name} )
   endif()
 endforeach()

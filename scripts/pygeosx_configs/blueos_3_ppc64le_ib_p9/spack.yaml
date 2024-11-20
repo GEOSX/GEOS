@@ -1,0 +1,137 @@
+#------------------------------------------------------------------------------------------------------------
+# SPDX-License-Identifier: LGPL-2.1-only
+#
+# Copyright (c) 2018-2020 Lawrence Livermore National Security LLC
+# Copyright (c) 2018-2020 The Board of Trustees of the Leland Stanford Junior University
+# Copyright (c) 2018-2020 TotalEnergies
+# Copyright (c) 2019-     GEOSX Contributors
+# All rights reserved
+#
+# See top level LICENSE, COPYRIGHT, CONTRIBUTORS, NOTICE, and ACKNOWLEDGEMENTS files for details.
+#------------------------------------------------------------------------------------------------------------
+
+# %gcc@8.3.1
+#
+# Uberenv command to build pygeosx dependencies:
+# python3 ./scripts/uberenv/uberenv.py --spec="%gcc@8.3.1" --project-json="scripts/pygeosx_configs/pygeosx.json"
+
+spack:
+  config:
+    install_tree:
+      root: $spack/..
+      projections:
+        all: '{compiler.name}-{compiler.version}/{name}-{version}-{hash}'
+    misc_cache: $spack/../misc_cache
+    test_stage: $spack/../test_stage
+    build_stage::
+    - $spack/../build_stage
+
+  view:
+    default:
+      root: ../view
+      projections: 
+        all: '{name}-{version}'
+
+  compilers::
+  - compiler:
+      spec: gcc@8.3.1
+      paths:
+        cc: /usr/tce/packages/gcc/gcc-8.3.1/bin/gcc
+        cxx: /usr/tce/packages/gcc/gcc-8.3.1/bin/g++
+        f77: /usr/tce/packages/gcc/gcc-8.3.1/bin/gfortran
+        fc: /usr/tce/packages/gcc/gcc-8.3.1/bin/gfortran
+      flags:
+        # Fix for "undefined reference to `_gfortran_transfer_integer_write'"
+        ldlibs: -lgfortran
+      operating_system: rhel7
+      target: ppc64le
+      modules: []
+      environment: {}
+      extra_rpaths: []
+
+  packages:
+    all:
+      compiler: [gcc]
+      providers:
+        mpi: [spectrum-mpi]
+        blas: [openblas]
+        lapack: [openblas]
+
+    spectrum-mpi:
+      buildable: False
+      externals:
+        - spec: spectrum-mpi@release%gcc@8.3.1
+          prefix: /usr/tce/packages/spectrum-mpi/spectrum-mpi-rolling-release-gcc-8.3.1
+
+    cuda:
+      buildable: False
+      externals:
+      - spec: cuda@11.2.2 +allow-unsupported-compilers
+        prefix: /usr/tce/packages/cuda/cuda-11.2.0
+
+  # System level packages to not build
+    cmake:
+      buildable: False
+      externals:
+      - spec: cmake@3.21.1
+        prefix: /usr/tce/packages/cmake/cmake-3.21.1
+    readline:
+      buildable: False
+      externals:
+        - spec: readline@7.0
+          prefix: /collab/usr/gapps/python/build/spack-coralea.3/opt/spack/linux-rhel7-ppc64le/gcc-4.9.3/readline-7.0-owal6z2zh5zotgvdmwow6sgdn6cqfn43/
+    m4:
+      buildable: False
+      externals:
+        - spec: m4@1.4.16
+          prefix: /usr
+    perl:
+      buildable: false
+      externals:
+      - spec: perl@5.16.3
+        prefix: /usr
+    pkg-config:
+      buildable: false
+      externals:
+      - spec: pkg-config@0.27.1
+        prefix: /usr
+    diffutils:
+      buildable: False
+      externals:
+        - spec: diffutils@3.3
+          prefix: /usr/bin/
+    autoconf:
+      buildable: False
+      externals:
+        - spec: autoconf@2.69
+          prefix: /usr
+    automake:
+      buildable: False
+      externals:
+        - spec: automake@1.13.4
+          prefix: /usr
+    libtool:
+      buildable: False
+      externals:
+        - spec: libtool@2.4.2
+          prefix: /usr
+    bison:
+      buildable: False
+      externals:
+        - spec: bison@3.0.4
+          prefix: /usr
+    flex:
+      buildable: False
+      externals:
+        - spec: flex@2.5.37
+          prefix: /usr
+    tk:
+      buildable: False
+      externals:
+        - spec: tk@8.5
+          prefix: /usr
+    tcl:
+      buildable: False
+      externals:
+        - spec: tcl@8.5
+          prefix: /usr

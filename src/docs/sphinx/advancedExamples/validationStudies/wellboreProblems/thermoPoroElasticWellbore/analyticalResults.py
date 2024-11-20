@@ -32,17 +32,17 @@ def getDataFromXML(xmlFilePathPrefix):
 	
 	drainedBulkModulusRock = float( tree.find('Constitutive/ElasticIsotropic').get('defaultBulkModulus') )
 	defaultShearModulus = float( tree.find('Constitutive/ElasticIsotropic').get('defaultShearModulus') )
-	defaultThermalExpansionCoefficient = float( tree.find('Constitutive/ElasticIsotropic').get('defaultThermalExpansionCoefficient') )
+	defaultDrainedLinearTEC = float( tree.find('Constitutive/ElasticIsotropic').get('defaultDrainedLinearTEC') )
 	defaultReferencePorosity = float( tree.find('Constitutive/BiotPorosity').get('defaultReferencePorosity') )		
-	grainBulkModulus = float( tree.find('Constitutive/BiotPorosity').get('grainBulkModulus') )		
+	grainBulkModulus = float( tree.find('Constitutive/BiotPorosity').get('defaultGrainBulkModulus') )		
 	fluidCompressibility = float( tree.find('Constitutive/ThermalCompressibleSinglePhaseFluid').get('compressibility') )
 	fluidViscosity = float( tree.find('Constitutive/ThermalCompressibleSinglePhaseFluid').get('defaultViscosity') )
 	fluidThermalExpansionCoefficient = float( tree.find('Constitutive/ThermalCompressibleSinglePhaseFluid').get('thermalExpansionCoeff') )
-	thermalConductivity = float( extractDataFromXMLList( tree.find('Constitutive/SinglePhaseConstantThermalConductivity').get('thermalConductivityComponents') )[0] )
-	volumetricHeatCapacity = float( tree.find('Constitutive/SolidInternalEnergy').get('volumetricHeatCapacity') )	
+	thermalConductivity = float( extractDataFromXMLList( tree.find('Constitutive/SinglePhaseThermalConductivity').get('defaultThermalConductivityComponents') )[0] )
+	volumetricHeatCapacity = float( tree.find('Constitutive/SolidInternalEnergy').get('referenceVolumetricHeatCapacity') )	
 	permeability = float( extractDataFromXMLList( tree.find('Constitutive/ConstantPermeability').get('permeabilityComponents') )[0] )
 
-	return [ri, Ti, drainedBulkModulusRock, defaultShearModulus, defaultThermalExpansionCoefficient, defaultReferencePorosity, grainBulkModulus, fluidCompressibility, fluidViscosity, fluidThermalExpansionCoefficient, permeability, thermalConductivity, volumetricHeatCapacity]
+	return [ri, Ti, drainedBulkModulusRock, defaultShearModulus, defaultDrainedLinearTEC, defaultReferencePorosity, grainBulkModulus, fluidCompressibility, fluidViscosity, fluidThermalExpansionCoefficient, permeability, thermalConductivity, volumetricHeatCapacity]
 
 def analyticalResults(t):
 	xmlFilePathPrefix = "../../../../../../../inputFiles/wellbore/ThermoPoroElasticWellbore"
@@ -85,7 +85,7 @@ def analyticalResults(t):
 	Ku = K + M*alpha*alpha
 	S = (3.0*Ku + 4.0*G) /M /(3.0*K+4.0*G)
 
-	beta_s = beta_d
+	beta_s = beta_d # TODO: update for the case porosityTEC != drainedLinearTEC
 	beta_v = porosity*(beta_f - beta_s)
 	beta_e = beta_d*alpha + beta_v
 	

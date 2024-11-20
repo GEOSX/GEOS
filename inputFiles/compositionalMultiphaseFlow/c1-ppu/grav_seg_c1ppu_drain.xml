@@ -1,0 +1,74 @@
+<?xml version="1.0" ?>
+
+<Problem>
+  <Included>
+    <File name="grav_seg_c1ppu_base.xml"/>
+  </Included>
+
+  <Functions>
+    <TableFunction
+      name="drainageWaterRelativePermeabilityTable"
+      coordinateFiles="{ tables/drainagePhaseVolFraction_water.txt }"
+      voxelFile="tables/drainageRelPerm_water.txt"/>
+    <TableFunction
+      name="drainageGasRelativePermeabilityTable"
+      coordinateFiles="{ tables/drainagePhaseVolFraction_gas.txt }"
+      voxelFile="tables/drainageRelPerm_gas.txt"/>
+    <TableFunction
+      name="imbibitionWaterRelativePermeabilityTable"
+      coordinateFiles="{ tables/drainagePhaseVolFraction_water.txt }"
+      voxelFile="tables/drainageRelPerm_water.txt"/>
+    <TableFunction
+      name="imbibitionGasRelativePermeabilityTable"
+      coordinateFiles="{ tables/drainagePhaseVolFraction_gas.txt }"
+      voxelFile="tables/drainageRelPerm_gas.txt"/>
+  </Functions>
+
+  <!-- SPHINX_OUTPUT -->  
+  <Outputs>
+    <VTK
+      name="vtkOutput_drain"/>
+
+    <TimeHistory
+      name="timeHistoryOutput"
+      sources="{/Tasks/phaseVolumeFractionCollection}"
+      filename="saturationHistory_drain" />
+
+    <Restart
+      name="restartOutput_drain"/> 
+  </Outputs>
+  <!-- SPHINX_OUTPUT_END -->
+
+  <Events
+    maxTime="10000000">
+    
+    <PeriodicEvent
+      name="outputs"
+      cycleFrequency="10" 
+      targetExactTimestep="1"
+      target="/Outputs/vtkOutput_drain"/>
+
+    <PeriodicEvent
+      name="restart"
+      cycleFrequency="100" 
+      targetExactTimestep="1"
+      target="/Outputs/restartOutput_drain"/>
+
+    <PeriodicEvent
+      name="timeHistoryOutput"
+      cycleFrequency="10" 
+      targetExactTimestep="1"
+      target="/Outputs/timeHistoryOutput" />
+
+    <PeriodicEvent
+      name="timeHistoryCollection"
+      cycleFrequency="10" 
+      targetExactTimestep="1"
+      target="/Tasks/phaseVolumeFractionCollection" />
+
+    <PeriodicEvent
+      name="solverApplications"
+      maxEventDt="10000000"
+      target="/Solvers/compflow"/>    
+  </Events>
+</Problem>

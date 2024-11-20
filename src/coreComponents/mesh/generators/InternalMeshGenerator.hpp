@@ -2,10 +2,11 @@
  * ------------------------------------------------------------------------------------------------------------
  * SPDX-License-Identifier: LGPL-2.1-only
  *
- * Copyright (c) 2018-2020 Lawrence Livermore National Security LLC
- * Copyright (c) 2018-2020 The Board of Trustees of the Leland Stanford Junior University
- * Copyright (c) 2018-2020 TotalEnergies
- * Copyright (c) 2019-     GEOSX Contributors
+ * Copyright (c) 2016-2024 Lawrence Livermore National Security LLC
+ * Copyright (c) 2018-2024 Total, S.A
+ * Copyright (c) 2018-2024 The Board of Trustees of the Leland Stanford Junior University
+ * Copyright (c) 2023-2024 Chevron
+ * Copyright (c) 2019-     GEOS/GEOSX Contributors
  * All rights reserved
  *
  * See top level LICENSE, COPYRIGHT, CONTRIBUTORS, NOTICE, and ACKNOWLEDGEMENTS files for details.
@@ -19,13 +20,14 @@
 #ifndef GEOS_MESH_GENERATORS_INTERNALMESHGENERATOR_HPP
 #define GEOS_MESH_GENERATORS_INTERNALMESHGENERATOR_HPP
 
-#include "codingUtilities/EnumStrings.hpp"
+#include "common/format/EnumStrings.hpp"
 #include "mesh/generators/MeshGeneratorBase.hpp"
+#include "mesh/generators/CellBlockManager.hpp"
+#include "mesh/mpiCommunications/SpatialPartition.hpp"
 
 namespace geos
 {
 
-class SpatialPartition;
 
 /**
  * @class InternalMeshGenerator
@@ -50,7 +52,6 @@ public:
    */
   static string catalogName() { return "InternalMesh"; }
 
-  virtual void generateMesh( DomainPartition & domain ) override;
 
   void importFieldOnArray( Block block,
                            string const & blockName,
@@ -162,7 +163,7 @@ protected:
   };
   /// @endcond
 
-  void postProcessInput() override;
+  void postInputInitialization() override;
 
   /// Mesh number of dimension
   int m_dim;
@@ -263,13 +264,15 @@ private:
 
 
 
+  virtual void fillCellBlockManager( CellBlockManager & cellBlockManager, SpatialPartition & partition ) override;
+
   /**
    * @brief Convert ndim node spatialized index to node global index.
    * @param[in] node ndim spatialized array index
    */
   inline globalIndex nodeGlobalIndex( int const index[3] )
   {
-    return index[0]*(m_numElemsTotal[1]+1)*(m_numElemsTotal[2]+1) + index[1]*(m_numElemsTotal[2]+1) + index[2];
+    return index[0] + index[1]*(m_numElemsTotal[0]+1) + index[2]*(m_numElemsTotal[0]+1)*(m_numElemsTotal[1]+1);
   }
 
   /**
@@ -278,7 +281,7 @@ private:
    */
   inline globalIndex elemGlobalIndex( int const index[3] )
   {
-    return index[0]*m_numElemsTotal[1]*m_numElemsTotal[2] + index[1]*m_numElemsTotal[2] + index[2];
+    return index[0] + index[1]*m_numElemsTotal[0] + index[2]*m_numElemsTotal[0]*m_numElemsTotal[1];
   }
 
   /**
@@ -343,7 +346,11 @@ private:
           // Verify that the bias is non-zero and applied to more than one block:
           if( ( !isZero( m_nElemBias[i][block] ) ) && (m_nElems[i][block]>1))
           {
-            GEOS_ERROR_IF( fabs( m_nElemBias[i][block] ) >= 1, "Mesh bias must between -1 and 1!" );
+            GEOS_ERROR_IF( fabs( m_nElemBias[i][block] ) >= 1,
+                           getWrapperDataContext( i == 0 ? viewKeyStruct::xBiasString() :
+                                                  i == 1 ? viewKeyStruct::yBiasString() :
+                                                  viewKeyStruct::zBiasString() ) <<
+                           ", block index = " << block << " : Mesh bias must between -1 and 1!" );
 
             real64 len = max -  min;
             real64 xmean = len / m_nElems[i][block];
