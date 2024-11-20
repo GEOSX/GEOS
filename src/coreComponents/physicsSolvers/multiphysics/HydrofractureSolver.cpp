@@ -403,8 +403,8 @@ void HydrofractureSolver< POROMECHANICS_SOLVER >::setupCoupling( DomainPartition
         regions.emplace_back( region.getName() );
       } );
 
-      dispMeshTargets[std::make_pair( meshBodyName, solidDiscretizationName )] = std::move( regions );
-      presMeshTargets[std::make_pair( meshBodyName, flowDiscretizationName )] = std::move( regions );
+      dispMeshTargets[std::make_pair( meshBodyName, solidDiscretizationName )] = regions;
+      presMeshTargets[std::make_pair( meshBodyName, flowDiscretizationName )] = regions;
     } );
 
     dofManager.addCoupling( solidMechanics::totalDisplacement::key(),

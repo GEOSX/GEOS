@@ -2344,7 +2344,7 @@ bool SolidMechanicsLagrangeContact::updateConfiguration( DomainPartition & domai
 
 bool SolidMechanicsLagrangeContact::isFractureAllInStickCondition( DomainPartition const & domain ) const
 {
-  globalIndex numStick, numNewSlip, numSlip, numOpen;
+  globalIndex numStick = 0, numNewSlip = 0, numSlip = 0, numOpen = 0;
   forDiscretizationOnMeshTargets( domain.getMeshBodies(), [&] ( string const &,
                                                                 MeshLevel const & mesh,
                                                                 arrayView1d< string const > const & )

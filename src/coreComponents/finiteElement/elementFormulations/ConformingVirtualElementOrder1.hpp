@@ -85,18 +85,18 @@ public:
     {}
 
     /// The number of support points.
-    localIndex numSupportPoints;
+    localIndex numSupportPoints{};
     /// The quadrature weight.
-    real64 quadratureWeight;
+    real64 quadratureWeight{};
     /// Array holding the integral mean of basis functions in the first @ref numSupportPoints
     /// positions.
-    real64 basisFunctionsIntegralMean[MAXCELLNODES];
+    real64 basisFunctionsIntegralMean[MAXCELLNODES]{};
     /// The stabilization matrix. Valid values will be in the upper left @ref numSupportPoints x
     /// @ref numSupportPoints block.
-    real64 stabilizationMatrix[MAXCELLNODES][MAXCELLNODES];
+    real64 stabilizationMatrix[MAXCELLNODES][MAXCELLNODES]{};
     /// Array holding the integral mean of derivatives of basis functions in the first @ref
     /// numSupportPoints position of the first dimension.
-    real64 basisDerivativesIntegralMean[MAXCELLNODES][3];
+    real64 basisDerivativesIntegralMean[MAXCELLNODES][3]{};
   };
 
   /**
