@@ -559,7 +559,7 @@ void FlowSolverBase::initializeHydraulicAperture( MeshLevel & mesh, const arrayV
                                                                    [&]( localIndex const,
                                                                         SurfaceElementRegion & region )
   {
-    region.forElementSubRegions< FaceElementSubRegion >( [&]( FaceElementSubRegion & subRegion )
+    region.forElementSubRegions< SurfaceElementSubRegion >( [&]( SurfaceElementSubRegion & subRegion )
     { subRegion.getWrapper< real64_array >( fields::flow::hydraulicAperture::key()).setApplyDefaultValue( region.getDefaultAperture()); } );
   } );
 }
