@@ -59,6 +59,7 @@
 #include "physicsSolvers/fluidFlow/kernels/compositional/zFormulation/AccumulationZFormulationKernel.hpp"
 #include "physicsSolvers/fluidFlow/kernels/compositional/zFormulation/PhaseMobilityZFormulationKernel.hpp"
 #include "physicsSolvers/fluidFlow/kernels/compositional/zFormulation/SolutionScalingZFormulationKernel.hpp"
+#include "physicsSolvers/fluidFlow/kernels/compositional/zFormulation/DirichletFluxComputeZFormulationKernel.hpp"
 
 namespace geos
 {
@@ -1243,42 +1244,66 @@ void CompositionalMultiphaseFVM::applyFaceDirichletBC( real64 const time_n,
 
       string const & elemDofKey = dofManager.getKey( viewKeyStruct::elemDofFieldString() );
 
-      if( m_isThermal )
+      if( m_useZFormulation )
       {
-        //todo (jafranc) extend upwindScheme name if satisfied in isothermalCase
-        thermalCompositionalMultiphaseFVMKernels::
-          DirichletFluxComputeKernelFactory::
+        GEOS_ERROR_IF( m_isThermal, GEOS_FMT(
+                        "{}: Z Formulation is currently not available for thermal simulations", getDataContext() ) );
+        isothermalCompositionalMultiphaseFVMKernels::
+          DirichletFluxComputeZFormulationKernelFactory::
           createAndLaunch< parallelDevicePolicy<> >( m_numComponents,
-                                                     m_numPhases,
-                                                     dofManager.rankOffset(),
-                                                     m_useTotalMassEquation,
-                                                     elemDofKey,
-                                                     getName(),
-                                                     faceManager,
-                                                     elemManager,
-                                                     stencilWrapper,
-                                                     multiFluidBase,
-                                                     dt,
-                                                     localMatrix,
-                                                     localRhs );
+                                                      m_numPhases,
+                                                      dofManager.rankOffset(),
+                                                      m_useTotalMassEquation,
+                                                      elemDofKey,
+                                                      getName(),
+                                                      faceManager,
+                                                      elemManager,
+                                                      stencilWrapper,
+                                                      multiFluidBase,
+                                                      dt,
+                                                      localMatrix,
+                                                      localRhs );
+
       }
       else
       {
-        isothermalCompositionalMultiphaseFVMKernels::
-          DirichletFluxComputeKernelFactory::
-          createAndLaunch< parallelDevicePolicy<> >( m_numComponents,
-                                                     m_numPhases,
-                                                     dofManager.rankOffset(),
-                                                     m_useTotalMassEquation,
-                                                     elemDofKey,
-                                                     getName(),
-                                                     faceManager,
-                                                     elemManager,
-                                                     stencilWrapper,
-                                                     multiFluidBase,
-                                                     dt,
-                                                     localMatrix,
-                                                     localRhs );
+        if( m_isThermal )
+        {
+          //todo (jafranc) extend upwindScheme name if satisfied in isothermalCase
+          thermalCompositionalMultiphaseFVMKernels::
+            DirichletFluxComputeKernelFactory::
+            createAndLaunch< parallelDevicePolicy<> >( m_numComponents,
+                                                      m_numPhases,
+                                                      dofManager.rankOffset(),
+                                                      m_useTotalMassEquation,
+                                                      elemDofKey,
+                                                      getName(),
+                                                      faceManager,
+                                                      elemManager,
+                                                      stencilWrapper,
+                                                      multiFluidBase,
+                                                      dt,
+                                                      localMatrix,
+                                                      localRhs );
+        }
+        else
+        {
+          isothermalCompositionalMultiphaseFVMKernels::
+            DirichletFluxComputeKernelFactory::
+            createAndLaunch< parallelDevicePolicy<> >( m_numComponents,
+                                                      m_numPhases,
+                                                      dofManager.rankOffset(),
+                                                      m_useTotalMassEquation,
+                                                      elemDofKey,
+                                                      getName(),
+                                                      faceManager,
+                                                      elemManager,
+                                                      stencilWrapper,
+                                                      multiFluidBase,
+                                                      dt,
+                                                      localMatrix,
+                                                      localRhs );
+        }
       }
 
     } );
