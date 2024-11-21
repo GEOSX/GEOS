@@ -173,7 +173,7 @@ void TableTextFormatter::prepareAndBuildTable( std::vector< TableLayout::Column 
   if( !tableDataRows.empty())
   {
     updateVisibleColumns( columns, tableDataRows );
-    computeHeaderRows(columns, m_tableLayout.getTrackerHeaderRows());
+    computeHeaderRows( columns, m_tableLayout.getTrackerHeaderRows());
     populateColumnsFromTableData( columns, tableDataRows );
   }
   // dividesCells( columns );
@@ -255,57 +255,66 @@ void TableTextFormatter::populateColumnsFromTableData( std::vector< TableLayout:
   }
 }
 
-//itérator pour le find 
-void TableTextFormatter::findAndSetLongestColumnString( TableLayout::Column & column ) const
+void TableTextFormatter::findAndSetLongestColumnString( TableLayout::Column & column,
+                                                        RowsCellLayout & rowsCellsLayout ) const
 {
-  {   // header case
-    auto maxCellIt = *std::max_element( column.columnName.dividedValues.begin(),
-                                        column.columnName.dividedValues.end(),
-                                        []( const auto & a, const auto & b )
+  auto getMaxStringLen = [&]( std::vector< string > & lines )
+  {
+    if( lines.empty())
+      return 0;
+    return *std::max_element( lines.begin(),
+                              lines.end(),
+                              []( const auto & a, const auto & b )
     {
       return a.length() < b.length();
     } );
-    column.setMaxStringSize( maxCellIt.length());
-  }
+  };
 
-  {   // cells case
-    if( column.subColumn.empty() && !column.cells.empty())
+  std::vector< size_t > subColumnsLength;
+  std::vector< Column > columnsLayout = m_tableLayout.m_tableColumnsData;
+  for( auto it = columnsLayout.begin(); it != columnsLayout.end(); ++it )
+  {
+    Column * currentColumn = it;
+
+    //1. process cells first
+    size_t maxDataLength = 1;
+    size_t idxLine = currentColumn - columnsLayout.begin();
+    for( auto idxColumnData = 0; idxColumnData< rowsCellsLayout[idxLine].size(); idxColumnData++ )
     {
-      auto maxCellIt = std::max_element( column.cells.begin(),
-                                         column.cells.end(),
-                                         []( const auto & a, const auto & b )
-      {
-        return a.value.length() < b.value.length();
-      } );
-
-      if( column.getMaxStringSize() < maxCellIt->value.length() )
-      {
-        column.setMaxStringSize( maxCellIt->value.length() );
-      }
+      TableLayout::CellLayout & cell = rowsCellsLayout[idxColumnData][idxLine];
+      maxDataLength = std::max( maxDataLength, getMaxStringLen( cell.lines ))
     }
-  }
+    currentColumn->setMaxStringSize( std::max(
+                                       getMaxStringLen( currentColumn->columnName.lines ),
+                                       maxDataLength )
+                                     );
 
-  {   // subcolumn values case
-    size_t totalLengthSubColumns = 0;
-    if( !column.subColumn.empty() )
+    //2. then header
+    if( currentColumn.parent != nullptr )
     {
-      for( auto & subColumn : column.subColumn )
+      // subcolumns case, adding B.A/B.B/...
+      subColumnsLength.push_back( currentColumn->getMaxStringSize());
+
+      if( currentColumn->next == nullptr )
       {
-        findAndSetLongestColumnString( subColumn );  //todo
-        totalLengthSubColumns += subColumn.getMaxStringSize();
-        if( &subColumn != &column.subColumn[0] )
+        while( currentColumn.parent != nullptr )
         {
-          totalLengthSubColumns += m_tableLayout.getColumnMargin();
+          currentColumn->updateMaxStringSize( currentColumn.parent, subColumnsLength );
         }
       }
-    }
-
-    if( totalLengthSubColumns > column.getMaxStringSize() )
-    {
-      column.setMaxStringSize( totalLengthSubColumns );
+      // detect 2 differents column
+      while( currentColumn.parent != nullptr && currentColumn.parent != currentColumn->next.parent )
+      {
+        currentColumn = currentColumn->parent;
+        currentColumn->updateMaxStringSize( currentColumn, subColumnsLength );
+      }
+      //clear if we detect that we change column
+      if( currentColumn.parent == nullptr ||  currentColumn.parent != currentColumn->next.parent )
+      {
+        subColumnsLength.clear();
+      }
     }
   }
-
 }
 
 void TableTextFormatter::computeAndBuildTableSeparator( std::vector< TableLayout::Column > & columns,
