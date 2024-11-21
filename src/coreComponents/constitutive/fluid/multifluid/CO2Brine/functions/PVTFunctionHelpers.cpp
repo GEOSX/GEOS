@@ -45,7 +45,7 @@ BlackOilTables::readTable( string const & fileName,
     // Remove whitespace and end-of-line characters, if any
     str = stringutilities::trim( str, " \r" );
 
-    // Remove # and -- (Eclipse-style) comments
+    // Remove # and -- comments
     str = stringutilities::removeStringAndFollowingContent( str, "#" );
     str = stringutilities::removeStringAndFollowingContent( str, "--" );
 
