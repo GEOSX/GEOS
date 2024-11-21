@@ -18,8 +18,8 @@
  * @file SolidMechanicsEFEMKernels.hpp
  */
 
-#ifndef GEOS_PHYSICSSOLVERS_CONTACT_SOLIDMECHANICSEFEMSTATICCONDENSATIONKERNELS_HPP_
-#define GEOS_PHYSICSSOLVERS_CONTACT_SOLIDMECHANICSEFEMSTATICCONDENSATIONKERNELS_HPP_
+#ifndef GEOS_PHYSICSSOLVERS_CONTACT_KERNELS_SOLIDMECHANICSEFEMJUMPUPDATEKERNELS_HPP_
+#define GEOS_PHYSICSSOLVERS_CONTACT_KERNELS_SOLIDMECHANICSEFEMJUMPUPDATEKERNELS_HPP_
 
 #include "SolidMechanicsEFEMKernelsBase.hpp"
 
@@ -41,7 +41,7 @@ namespace solidMechanicsEFEMKernels
 template< typename SUBREGION_TYPE,
           typename CONSTITUTIVE_TYPE,
           typename FE_TYPE >
-class EFEMStaticCondensation :
+class EFEMJumpUpdate :
   public EFEMKernelsBase< SUBREGION_TYPE,
                           CONSTITUTIVE_TYPE,
                           FE_TYPE >
@@ -87,20 +87,20 @@ public:
    * @copydoc geos::finiteElement::ImplicitKernelBase::ImplicitKernelBase
    * @param inputGravityVector The gravity vector.
    */
-  EFEMStaticCondensation( NodeManager const & nodeManager,
-                          EdgeManager const & edgeManager,
-                          FaceManager const & faceManager,
-                          localIndex const targetRegionIndex,
-                          SUBREGION_TYPE const & elementSubRegion,
-                          FE_TYPE const & finiteElementSpace,
-                          CONSTITUTIVE_TYPE & inputConstitutiveType,
-                          EmbeddedSurfaceSubRegion & embeddedSurfSubRegion,
-                          arrayView1d< globalIndex const > const uDofNumber,
-                          globalIndex const rankOffset,
-                          CRSMatrixView< real64, globalIndex const > const inputMatrix,
-                          arrayView1d< real64 > const inputRhs,
-                          real64 const inputDt,
-                          real64 const (&inputGravityVector)[3] ):
+  EFEMJumpUpdate( NodeManager const & nodeManager,
+                  EdgeManager const & edgeManager,
+                  FaceManager const & faceManager,
+                  localIndex const targetRegionIndex,
+                  SUBREGION_TYPE const & elementSubRegion,
+                  FE_TYPE const & finiteElementSpace,
+                  CONSTITUTIVE_TYPE & inputConstitutiveType,
+                  EmbeddedSurfaceSubRegion & embeddedSurfSubRegion,
+                  arrayView1d< globalIndex const > const uDofNumber,
+                  globalIndex const rankOffset,
+                  CRSMatrixView< real64, globalIndex const > const inputMatrix,
+                  arrayView1d< real64 > const inputRhs,
+                  real64 const inputDt,
+                  real64 const (&inputGravityVector)[3] ):
     Base( nodeManager,
           edgeManager,
           faceManager,
@@ -122,7 +122,13 @@ public:
    * @copydoc finiteElement::KernelBase::StackVariables
    */
   struct StackVariables : public Base::StackVariables
-  {};
+  {
+    /// The number of displacement dofs per element.
+    static constexpr int numUdofs = numNodesPerElem * 3;
+
+    /// Stack storage for the element displacement vector.
+    real64 dUlocal[numUdofs];
+  };
   //***************************************************************************
 
   /**
@@ -164,6 +170,7 @@ public:
         stack.dispColIndices[a*3+i]    = m_dofNumber[localNodeIndex]+i;
         stack.X[ a ][ i ] = m_X[ localNodeIndex ][ i ];
         stack.uLocal[ a*3 + i ] = m_disp[localNodeIndex][i];
+        stack.dUlocal[ a*3 + i ] = m_uhat[localNodeIndex][i];
       }
     }
 
@@ -192,43 +199,30 @@ public:
 
     // Compute the local residuals
     LvArray::tensorOps::Ri_add_AijBj< 3, 3 >( stack.localRw, stack.localKww, stack.wLocal );
-    LvArray::tensorOps::Ri_add_AijBj< 3, nUdof >( stack.localRw, stack.localKwu, stack.uLocal );
-    LvArray::tensorOps::Ri_add_AijBj< nUdof, 3 >( stack.localRu, stack.localKuw, stack.wLocal );
+    // LvArray::tensorOps::Ri_add_AijBj< 3, nUdof >( stack.localRw, stack.localKwu, stack.uLocal );
 
     // Add traction contribution tranction
     LvArray::tensorOps::scaledAdd< 3 >( stack.localRw, stack.tractionVec, -1 );
     LvArray::tensorOps::scaledAdd< 3, 3 >( stack.localKww, stack.dTractiondw, -1 );
 
-    // Apply static condensation
-    real64 localJacobian[nUdof][nUdof];
+    // Compute dw given du
+    real64 dWlocal[3], InvKww[3][3], InvKwwKwu[3][nUdof];
 
-    real64 InvKww[3][3];
+    // compute inv(Kww)
     LvArray::tensorOps::invert< 3 >( InvKww, stack.localKww );
-
-    // Residual (Ru -= Kuw * Inv(Kww)Rw)
-    real64 KuwInvKww[nUdof][3], Ruw[nUdof];
-    LvArray::tensorOps::Rij_eq_AikBkj< nUdof, 3, 3 >( KuwInvKww, stack.localKuw, InvKww );
-    LvArray::tensorOps::Ri_eq_AijBj< nUdof, 3 >( Ruw, KuwInvKww, stack.localRw );
-    LvArray::tensorOps::scaledAdd< nUdof >( stack.localRu, Ruw, -1 );
-
-    // Jacobian to add to Kuu block  ( Kuu -= Kuw * Inv(Kww) * Kwu )
-    real64 InvKwwKwu[3][nUdof];
+    // compute inv(kww)Kwu
     LvArray::tensorOps::Rij_eq_AikBkj< 3, nUdof, 3 >( InvKwwKwu, InvKww, stack.localKwu );
-    LvArray::tensorOps::Rij_eq_AikBkj< nUdof, nUdof, 3 >( localJacobian, stack.localKuw, InvKwwKwu );
-    LvArray::tensorOps::scale< nUdof, nUdof >( localJacobian, -1 );
+    // add invKww Rw to dw
+    LvArray::tensorOps::Ri_eq_AijBj< 3, 3 >( dWlocal, InvKww, stack.localRw );
+    // add inv(kww)Kwu * du to dw
+    LvArray::tensorOps::Ri_add_AijBj< 3, nUdof >( dWlocal, InvKwwKwu, stack.dUlocal );
+    LvArray::tensorOps::scale< 3 >( dWlocal, -1 );
 
-    for( localIndex i = 0; i < nUdof; ++i )
+    localIndex const embSurfIndex = m_cellsToEmbeddedSurfaces[k][0];
+
+    for( int i=0; i<3; ++i )
     {
-      localIndex const dof = LvArray::integerConversion< localIndex >( stack.dispEqnRowIndices[ i ] );
-      if( dof < 0 || dof >= m_matrix.numRows() ) continue;
-
-      RAJA::atomicAdd< parallelDeviceAtomic >( &m_rhs[dof], stack.localRu[i] );
-
-      m_matrix.template addToRowBinarySearchUnsorted< parallelDeviceAtomic >( dof,
-                                                                              stack.dispColIndices,
-                                                                              localJacobian[i],
-                                                                              nUdof );
-
+      m_w[ embSurfIndex ][i] = stack.wLocal[ i ] + dWlocal[i];
     }
 
     return maxForce;
@@ -238,18 +232,18 @@ public:
 };
 
 /// The factory used to construct a QuasiStatic kernel.
-using EFEMStaticCondensationFactory = finiteElement::KernelFactory< EFEMStaticCondensation,
-                                                                    EmbeddedSurfaceSubRegion &,
-                                                                    arrayView1d< globalIndex const > const,
-                                                                    globalIndex const,
-                                                                    CRSMatrixView< real64, globalIndex const > const,
-                                                                    arrayView1d< real64 > const,
-                                                                    real64 const,
-                                                                    real64 const (&) [3] >;
+using EFEMJumpUpdateFactory = finiteElement::KernelFactory< EFEMJumpUpdate,
+                                                            EmbeddedSurfaceSubRegion &,
+                                                            arrayView1d< globalIndex const > const,
+                                                            globalIndex const,
+                                                            CRSMatrixView< real64, globalIndex const > const,
+                                                            arrayView1d< real64 > const,
+                                                            real64 const,
+                                                            real64 const (&) [3] >;
 
 } // namespace SolidMechanicsEFEMKernels
 
 } // namespace geos
 
 
-#endif /* GEOS_PHYSICSSOLVERS_CONTACT_SOLIDMECHANICSEFEMSTATICCONDENSATIONKERNELS_HPP_ */
+#endif /* GEOS_PHYSICSSOLVERS_CONTACT_KERNELS_SOLIDMECHANICSEFEMJUMPUPDATEKERNELS_HPP_ */
