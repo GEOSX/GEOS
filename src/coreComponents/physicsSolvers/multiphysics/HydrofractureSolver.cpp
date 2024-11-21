@@ -653,6 +653,12 @@ void HydrofractureSolver< POROMECHANICS_SOLVER >::assembleSystem( real64 const t
                                              dofManager,
                                              localMatrix,
                                              localRhs );
+
+    flowSolver()->assembleFluxTerms( dt,
+                                     domain,
+                                     dofManager,
+                                     localMatrix,
+                                     localRhs );
   }
 
   flowSolver()->assembleHydrofracFluxTerms( time,
