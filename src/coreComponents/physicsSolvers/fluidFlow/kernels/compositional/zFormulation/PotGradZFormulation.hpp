@@ -53,6 +53,7 @@ struct PotGradZFormulation
             real64 const ( &dTrans_dPres )[numFluxSupportPoints],
             ElementViewConst< arrayView1d< real64 const > > const & pres,
             ElementViewConst< arrayView1d< real64 const > > const & gravCoef,
+            ElementViewConst< arrayView2d< real64 const, compflow::USD_PHASE > > const & phaseVolFrac,
             ElementViewConst< arrayView3d< real64 const, compflow::USD_PHASE_DC > > const & dPhaseVolFrac,
             ElementViewConst< arrayView3d< real64 const, constitutive::multifluid::USD_PHASE > > const & phaseMassDens,
             ElementViewConst< arrayView4d< real64 const, constitutive::multifluid::USD_PHASE_DC > > const & dPhaseMassDens,
@@ -86,22 +87,42 @@ struct PotGradZFormulation
     real64 dCapPressure_dC[numComp]{};
 
     // calculate quantities on primary connected cells
+    integer denom = 0;
     for( integer i = 0; i < numFluxSupportPoints; ++i )
     {
       localIndex const er  = seri[i];
       localIndex const esr = sesri[i];
       localIndex const ei  = sei[i];
 
+      bool const phaseExists = (phaseVolFrac[er][esr][ei][ip] > 0);
+      if( !phaseExists )
+      {
+        continue;
+      }
+
       // density
       real64 const density  = phaseMassDens[er][esr][ei][0][ip];
       real64 const dDens_dP = dPhaseMassDens[er][esr][ei][0][ip][Deriv::dP];
 
       // average density and derivatives
-      densMean += 0.5 * density;
-      dDensMean_dP[i] = 0.5 * dDens_dP;
+      densMean += density;
+      dDensMean_dP[i] = dDens_dP;
       for( integer jc = 0; jc < numComp; ++jc )
       {
-        dDensMean_dC[i][jc] = 0.5 * dPhaseMassDens[er][esr][ei][0][ip][Deriv::dC+jc];
+        dDensMean_dC[i][jc] = dPhaseMassDens[er][esr][ei][0][ip][Deriv::dC+jc];
+      }
+      denom++;
+    }
+    if( denom > 1 )
+    {
+      densMean /= denom;
+      for( integer i = 0; i < numFluxSupportPoints; ++i )
+      {
+        dDensMean_dP[i] /= denom;
+        for( integer jc = 0; jc < numComp; ++jc )
+        {
+          dDensMean_dC[i][jc] /= denom;
+        }
       }
     }
 

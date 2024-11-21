@@ -284,7 +284,7 @@ public:
             m_pres,
             m_gravCoef,
             m_phaseMob, m_dPhaseMob,
-            m_dPhaseVolFrac,
+            m_phaseVolFrac, m_dPhaseVolFrac,
             m_phaseCompFrac, m_dPhaseCompFrac,
             m_phaseMassDens, m_dPhaseMassDens,
             m_phaseCapPressure, m_dPhaseCapPressure_dPhaseVolFrac,
