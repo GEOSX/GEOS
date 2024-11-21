@@ -1677,8 +1677,8 @@ void SolidMechanicsLagrangeContact::
                                                     elemDOF,
                                                     dRdT[idof].dataIfContiguous(),
                                                     3 );
+            }
           }
-        }
         }
       } );
     } );

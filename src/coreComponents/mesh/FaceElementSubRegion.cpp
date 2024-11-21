@@ -180,18 +180,18 @@ void FaceElementSubRegion::copyFromCellBlock( FaceBlockABC const & faceBlock )
   auto const & elem2dToElems = faceBlock.get2dElemToElems();
   for( int kfe = 0; kfe < num2dElements; ++kfe )
   {
-    for( localIndex k=0; k<elem2dToElems.toBlockIndex.sizeOfArray(kfe); ++k )
+    for( localIndex k=0; k<elem2dToElems.toBlockIndex.sizeOfArray( kfe ); ++k )
     {
       m_2dElemToElems.m_toElementSubRegion( kfe, k ) = elem2dToElems.toBlockIndex( kfe, k );
       m_2dElemToElems.m_toElementIndex( kfe, k ) = elem2dToElems.toCellIndex( kfe, k );
     }
   }
-  
+
   ArrayOfArrays< localIndex > const & elem2dToFaces = faceBlock.get2dElemToFaces();
-  
+
   for( localIndex kfe = 0; kfe < num2dElements; ++kfe )
   {
-    for( localIndex kf=0; kf<elem2dToFaces.sizeOfArray(kfe); ++kf )
+    for( localIndex kf=0; kf<elem2dToFaces.sizeOfArray( kfe ); ++kf )
     {
       m_toFacesRelation( kfe, kf ) = elem2dToFaces( kfe, kf );
     }
@@ -324,7 +324,7 @@ localIndex FaceElementSubRegion::packUpDownMapsImpl( buffer_unit_type * & buffer
 
 localIndex FaceElementSubRegion::unpackUpDownMaps( buffer_unit_type const * & buffer,
                                                    localIndex_array & packList,
-                                                   bool const ,
+                                                   bool const,
                                                    bool const GEOS_UNUSED_PARAM( overwriteDownMaps ) )
 {
   localIndex unPackedSize = 0;
@@ -399,7 +399,7 @@ void fixNeighborMappingsInconsistency( string const & fractureName,
     localIndex const num2dElems = elem2dToFaces.size( 0 );
     for( int e2d = 0; e2d < num2dElems; ++e2d )
     {
-      if( !( elem2dToFaces[e2d][0] == -1 || elem2dToFaces[e2d][1] == -1 || 
+      if( !( elem2dToFaces[e2d][0] == -1 || elem2dToFaces[e2d][1] == -1 ||
              elem2dToElems3d.m_toElementRegion[e2d][0] == -1 || elem2dToElems3d.m_toElementRegion[e2d][1] == -1 ||
              elem2dToElems3d.m_toElementSubRegion[e2d][0] == -1 || elem2dToElems3d.m_toElementSubRegion[e2d][1] == -1 ||
              elem2dToElems3d.m_toElementSubRegion[e2d][0] == -1 || elem2dToElems3d.m_toElementSubRegion[e2d][1] == -1 ) )
@@ -959,8 +959,10 @@ void FaceElementSubRegion::fixSecondaryMappings( NodeManager const & nodeManager
   // When there's neighbor missing, we search for a face that would lie on the collocated nodes of the fracture element.
   for( int e2d = 0; e2d < num2dElems; ++e2d )
   {
-    // std::cout<<"m_2dElemToElems("<<e2d<<") { "<<m_2dElemToElems.m_toElementRegion(e2d,0)<<", "<<m_2dElemToElems.m_toElementSubRegion(e2d,0)<<", "<<m_2dElemToElems.m_toElementIndex(e2d,0)<<"}"<<std::endl;
-    // std::cout<<"               ("<<e2d<<") { "<<m_2dElemToElems.m_toElementRegion(e2d,1)<<", "<<m_2dElemToElems.m_toElementSubRegion(e2d,1)<<", "<<m_2dElemToElems.m_toElementIndex(e2d,1)<<"}"<<std::endl;
+    // std::cout<<"m_2dElemToElems("<<e2d<<") { "<<m_2dElemToElems.m_toElementRegion(e2d,0)<<",
+    // "<<m_2dElemToElems.m_toElementSubRegion(e2d,0)<<", "<<m_2dElemToElems.m_toElementIndex(e2d,0)<<"}"<<std::endl;
+    // std::cout<<"               ("<<e2d<<") { "<<m_2dElemToElems.m_toElementRegion(e2d,1)<<",
+    // "<<m_2dElemToElems.m_toElementSubRegion(e2d,1)<<", "<<m_2dElemToElems.m_toElementIndex(e2d,1)<<"}"<<std::endl;
 
     std::set< globalIndex > refNodes;
     if( m_toNodesRelation[e2d].size() != 0 )

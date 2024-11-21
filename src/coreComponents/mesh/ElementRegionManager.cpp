@@ -170,7 +170,6 @@ void ElementRegionManager::generateMesh( CellBlockManagerABC const & cellBlockMa
       OrderedVariableToManyElementRelation & relation = embeddedSurfaceSubRegion->getToCellRelation();
       ToCellRelation< ArrayOfArrays< localIndex > > const tmp( relation.m_toElementSubRegion,
                                                                relation.m_toElementIndex );
-
       meshMapUtilities::transformCellBlockToRegionMap< parallelHostPolicy >( blockToSubRegion.toViewConst(),
                                                                              tmp,
                                                                              relation );

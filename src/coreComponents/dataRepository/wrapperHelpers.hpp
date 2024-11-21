@@ -201,15 +201,15 @@ resizeDefault( T & value,
 template< typename T >
 inline std::enable_if_t< !( traits::HasMemberFunction_resizeDefault< T > &&
                             DefaultValue< T >::has_default_value ) >
-resizeDefault( T & value, 
-               localIndex const newSize, 
+resizeDefault( T & value,
+               localIndex const newSize,
                DefaultValue< T > const & GEOS_UNUSED_PARAM( defaultValue ),
                string const & name )
-{ 
+{
   GEOS_LOG_RANK_0( GEOS_FMT( "Warning: For Wrapper<{}>::name() = {}:\n"
                              "  wrapperHelpers::resizeDefault<{}>() called, but the SFINAE filter failed:\n"
                              "    traits::HasMemberFunction_resizeDefault< {} > = {}\n "
-                             "    DefaultValue< {} >::has_default_value = {}", 
+                             "    DefaultValue< {} >::has_default_value = {}",
                              LvArray::system::demangleType< T >(),
                              name,
                              LvArray::system::demangleType< T >(),
@@ -217,7 +217,7 @@ resizeDefault( T & value,
                              traits::HasMemberFunction_resizeDefault< T >,
                              LvArray::system::demangleType< T >(),
                              DefaultValue< T >::has_default_value ) );
-  resize( value, newSize ); 
+  resize( value, newSize );
 }
 
 

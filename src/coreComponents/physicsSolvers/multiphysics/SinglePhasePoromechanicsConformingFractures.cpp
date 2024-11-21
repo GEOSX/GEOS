@@ -413,8 +413,6 @@ addTransmissibilityCouplingPattern( DomainPartition const & domain,
               localIndex const numNodesPerFace = faceToNodeMap.sizeOfArray( elem2dToFaces[fractureIndex][0] );
 
               // Loop over the two sides of each fracture element
-              // GEOS_ERROR_IF( elem2dToFaces.sizeOfArray( fractureIndex ) != 2,
-              //                "Fracture face " << fractureIndex << " has to be shared by two cells." );
               for( localIndex kf1 = 0; kf1 < 2; ++kf1 )
               {
                 localIndex const faceIndex = elem2dToFaces[fractureIndex][kf1];

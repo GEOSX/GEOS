@@ -66,8 +66,6 @@ struct DeformationUpdateKernel
     forAll< POLICY >( size,
                       [=] GEOS_HOST_DEVICE ( localIndex const kfe ) mutable
     {
-      // if( elemsToFaces.sizeOfArray( kfe ) != 2 )
-      // { return; }
 
       localIndex const kf0 = elemsToFaces[kfe][0];
       localIndex const kf1 = elemsToFaces[kfe][1];

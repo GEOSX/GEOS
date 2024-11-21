@@ -125,11 +125,10 @@ void FaceManager::setDomainBoundaryObjects( ElementRegionManager const & elemReg
 
     FaceElementSubRegion const & subRegion = region.getUniqueSubRegion< FaceElementSubRegion >();
     arrayView2d< localIndex const > const elem2dToFaces = subRegion.faceList().toViewConst();
-    for( int ei = 0; ei < elem2dToFaces.size(0); ++ei )
+    for( int ei = 0; ei < elem2dToFaces.size( 0 ); ++ei )
     {
-      if( !( elem2dToFaces[ei][0] == -1 || elem2dToFaces[ei][1] == -1 ) )
+      if( elem2dToFaces[ei][0] == -1 || elem2dToFaces[ei][1] == -1 )
       {
-
         for( localIndex const & face: elem2dToFaces[ei] )
         {
           if( face != -1 )
@@ -149,8 +148,6 @@ void FaceManager::setGeometricalRelations( CellBlockManagerABC const & cellBlock
                                            bool isBaseMeshLevel )
 {
   GEOS_MARK_FUNCTION;
-
-  std::cout<<"FaceManager::setGeometricalRelations"<<std::endl;
 
   if( isBaseMeshLevel )
   {
@@ -179,32 +176,16 @@ void FaceManager::setGeometricalRelations( CellBlockManagerABC const & cellBlock
 
     constexpr char err[] = "Internal error when trying to connect matrix mapping and fracture mapping. Face {} seems wrongly connected.";
 
-
-    // for( int rank=0; rank<MpiWrapper::commSize(); ++rank )
-    // {
-    //   MpiWrapper::barrier();
-    //   if( rank == MpiWrapper::commRank() )
-    //   {
-    //     std::cout<<"FaceManager::setGeometricalRelations rank="<<rank<<std::endl;
-    //     for( int i=0; i<m_toElements.m_toElementRegion.size(0); ++i )
-    //     {
-    //       std::cout<<"m_toElements.m_toElementRegion["<<i<<"] = ( "<<m_toElements.m_toElementRegion(i,0)<<", "<<m_toElements.m_toElementSubRegion(i,0)<<", "<<m_toElements.m_toElementIndex(i,0)<<"), ("
-    //                                                                <<m_toElements.m_toElementRegion(i,1)<<", "<<m_toElements.m_toElementSubRegion(i,1)<<", "<<m_toElements.m_toElementIndex(i,1)<<" )"<<std::endl;
-    //     }
-    //   }
-    // }
-
     FaceElementSubRegion const & subRegion = region.getUniqueSubRegion< FaceElementSubRegion >();
     int const esr = 0;  // Since there's only on unique subregion, the index is always 0.
     // The fracture subregion knows the faces it's connected to.
     // And since a 2d element is connected to a given face, and since a face can only have 2 neighbors,
     // then the second neighbor of the face is bound to be undefined (i.e. -1).
     arrayView2d< localIndex const > const & elem2dToFaces = subRegion.faceList().toViewConst();
-    for( localIndex ei = 0; ei < elem2dToFaces.size(0); ++ei )
+    for( localIndex ei = 0; ei < elem2dToFaces.size( 0 ); ++ei )
     {
       for( localIndex const & faceIndex: elem2dToFaces[ei] )
       {
-        // std::cout<<"FaceManager::setGeometricalRelations ei="<<ei<<", faceIndex="<<faceIndex<<std::endl;
         if( faceIndex != -1 )
         {
           GEOS_ERROR_IF_EQ_MSG( m_toElements.m_toElementRegion( faceIndex, 0 ), -1, GEOS_FMT( err, faceIndex ) );
