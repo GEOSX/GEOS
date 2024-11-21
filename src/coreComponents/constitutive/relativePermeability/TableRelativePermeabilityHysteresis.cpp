@@ -488,7 +488,7 @@ void TableRelativePermeabilityHysteresis::computeLandCoefficient()
     ipNonWetting = m_phaseOrder[PhaseType::GAS];
   }
 
-  // Note: for simplicity, the notations are taken from IX documentation (although this breaks our phaseVolFrac naming convention)
+  // Note: for simplicity, the notations are taken reservoir simulation literature (although this breaks our phaseVolFrac naming convention)
 
   // Step 1: Land parameter for the wetting phase
 
