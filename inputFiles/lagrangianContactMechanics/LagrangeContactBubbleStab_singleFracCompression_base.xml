@@ -5,11 +5,7 @@
     gravityVector="{0.0, 0.0, 0.0}">
 
     <SolidMechanicsLagrangeContactBubbleStab
-<<<<<<< HEAD
-      name="AugmentedLagrangian"
-=======
       name="contactSolver"
->>>>>>> origin/develop
       timeIntegrationOption="QuasiStatic"
       logLevel="2"
       writeLinearSystem="2"
@@ -135,10 +131,7 @@
       format="binary"
       plotFileRoot="bubbleStab"/>
     </Outputs>
-<<<<<<< HEAD
-=======
 
     <Restart
       name="restartOutput"/> 
->>>>>>> origin/develop
 </Problem>

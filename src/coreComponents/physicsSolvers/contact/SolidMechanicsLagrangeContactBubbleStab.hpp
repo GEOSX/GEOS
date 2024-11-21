@@ -52,14 +52,11 @@ public:
 
   virtual void registerDataOnMesh( Group & MeshBodies ) override final;
 
-<<<<<<< HEAD
-=======
   real64 solverStep( real64 const & time_n,
                      real64 const & dt,
                      const integer cycleNumber,
                      DomainPartition & domain ) override final;
 
->>>>>>> origin/develop
   virtual void
   setupDofs( DomainPartition const & domain,
              DofManager & dofManager ) const override;
@@ -104,18 +101,6 @@ public:
                        real64 const dt,
                        DomainPartition & domain ) override;
 
-<<<<<<< HEAD
-  // virtual void
-  // resetStateToBeginningOfStep( DomainPartition & domain ) override;
-
-  virtual real64
-  setNextDt( real64 const & currentDt,
-             DomainPartition & domain ) override;
-
-  void updateState( DomainPartition & domain ) override final;
-
-=======
->>>>>>> origin/develop
   void assembleContact( real64 const dt,
                         DomainPartition & domain,
                         DofManager const & dofManager,
@@ -180,11 +165,6 @@ public:
     }
   }
 
-<<<<<<< HEAD
-private:
-
-=======
->>>>>>> origin/develop
 /**
  * @brief Create the list of finite elements of the same type
  *   for each FaceElementSubRegion (Triangle or Quadrilateral)
@@ -208,8 +188,6 @@ private:
   void createBubbleCellList( DomainPartition & domain ) const;
 
   /**
-<<<<<<< HEAD
-=======
    * @brief Compute rotation matrices and unit normal vectors for Face elements.
    * @param domain The domain partition object
    */
@@ -218,7 +196,6 @@ private:
 
 private:
   /**
->>>>>>> origin/develop
    * @brief add the number of non-zero elements induced by the coupling between
    *   nodal and bubble displacement.
    * @param domain the physical domain object
