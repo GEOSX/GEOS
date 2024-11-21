@@ -107,12 +107,12 @@ void VTKOutput::postInputInitialization()
   m_writer.setLevelNames( m_levelNames.toViewConst() );
   m_writer.setOnlyPlotSpecifiedFieldNamesFlag( m_onlyPlotSpecifiedFieldNames );
 
-  GEOS_ERROR_IF_LT( m_numberOfTargetProcesses, 1,
-                    GEOS_FMT( "{}: processes count cannot be less than 1.",
-                              getWrapperDataContext( viewKeysStruct::numberOfTargetProcesses ) ) );
-  GEOS_ERROR_IF_GE( m_numberOfTargetProcesses, MpiWrapper::commSize(),
-                    GEOS_FMT( "{}: processes count cannot exceed the launched ranks count.",
-                              getWrapperDataContext( viewKeysStruct::numberOfTargetProcesses ) ) );
+  GEOS_ERROR_IF_LT_MSG( m_numberOfTargetProcesses, 1,
+                        GEOS_FMT( "{}: processes count cannot be less than 1.",
+                                  getWrapperDataContext( viewKeysStruct::numberOfTargetProcesses ) ) );
+  GEOS_ERROR_IF_GE_MSG( m_numberOfTargetProcesses, MpiWrapper::commSize(),
+                        GEOS_FMT( "{}: processes count cannot exceed the launched ranks count.",
+                                  getWrapperDataContext( viewKeysStruct::numberOfTargetProcesses ) ) );
   m_writer.setNumberOfTargetProcesses( m_numberOfTargetProcesses );
 
   string const fieldNamesString = viewKeysStruct::fieldNames;
