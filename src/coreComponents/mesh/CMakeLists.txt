@@ -169,6 +169,7 @@ set( mesh_sources
      generators/ParMETISInterface.cpp
      particleGenerators/ParticleMeshGeneratorBase.cpp
      particleGenerators/ParticleMeshGenerator.cpp
+     generators/PartitionDescriptor.cpp
      generators/WellGeneratorBase.cpp
      mpiCommunications/CommID.cpp
      mpiCommunications/CommunicationTools.cpp

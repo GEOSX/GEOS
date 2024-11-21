@@ -79,7 +79,7 @@ public:
    * @param partition The partitioning object
    * @param numNodes The number of nodes in each coordinate direction.
    */
-  virtual void reduceNumNodesForPeriodicBoundary( PartitionDescriptor & partition,
+  virtual void reduceNumNodesForPeriodicBoundary( array1d< int > const & partition,
                                                   integer (& numNodes) [3] )
   {
     GEOS_UNUSED_VAR( partition, numNodes );
@@ -91,9 +91,10 @@ public:
    * @param index The indices to be evaluated for periodic indexing merging.
    */
   virtual void
-  setNodeGlobalIndicesOnPeriodicBoundary( int (& index)[3] )
+  setNodeGlobalIndicesOnPeriodicBoundary( array1d< int > const & partition,
+                                          int (& index)[3] )
   {
-    GEOS_UNUSED_VAR( index );
+    GEOS_UNUSED_VAR( partition, index );
   }
 
   /**
@@ -263,8 +264,6 @@ private:
   real64 m_skewCenter[3] = { 0, 0, 0 };
 
   virtual void fillCellBlockManager( CellBlockManager & cellBlockManager, array1d< int > const & partition ) override;
-
-  virtual void fillCellBlockManager( CellBlockManager & cellBlockManager, SpatialPartition & partition ) override;
 
   /**
    * @brief Convert ndim node spatialized index to node global index.

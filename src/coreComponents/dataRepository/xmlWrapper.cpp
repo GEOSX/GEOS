@@ -373,6 +373,11 @@ xmlNodePos xmlDocument::getNodePosition( xmlNode const & node ) const
   return xmlNodePos( *this, filePath, line, offsetInLine, offset );
 }
 
+void xmlDocument::reset()
+{ 
+  return pugiDocument.reset();
+}
+
 xmlNodePos::xmlNodePos( xmlDocument const & document_, string const & filePath_, size_t line_,
                         size_t offsetInLine_, size_t offset_ ):
   xmlAttributePos( filePath_, line_, offsetInLine_, offset_ ),

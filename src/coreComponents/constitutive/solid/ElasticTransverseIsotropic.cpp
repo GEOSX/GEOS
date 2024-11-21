@@ -128,6 +128,14 @@ ElasticTransverseIsotropic::ElasticTransverseIsotropic( string const & name, Gro
 ElasticTransverseIsotropic::~ElasticTransverseIsotropic()
 {}
 
+void ElasticTransverseIsotropic::allocateConstitutiveData( dataRepository::Group & parent, 
+                                                           localIndex const numConstitutivePointsPerParentIndex )
+{
+  SolidBase::allocateConstitutiveData( parent, numConstitutivePointsPerParentIndex );
+
+  m_materialDirection.resize( 0, 3 );
+}
+
 void ElasticTransverseIsotropic::postInputInitialization()
 {
   SolidBase::postInputInitialization();

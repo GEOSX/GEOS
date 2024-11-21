@@ -20,8 +20,6 @@
 #ifndef GEOS_MESH_GENERATORS_VTKUTILITIES_HPP
 #define GEOS_MESH_GENERATORS_VTKUTILITIES_HPP
 
-#include "CellBlockManager.hpp"
-
 #include "common/DataTypes.hpp"
 #include "common/MpiWrapper.hpp"
 #include "mesh/generators/CellBlockManager.hpp"

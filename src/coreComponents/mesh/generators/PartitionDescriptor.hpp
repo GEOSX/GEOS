@@ -61,7 +61,7 @@ public:
    * @brief Sets the list of metis neighbor list.
    * @param metisNeighborList A reference to the Metis neighbor list.
    */
-  void setMetisNeighborList( std::vector< int > const & metisNeighborList )
+  void setMetisNeighborList( std::set< int > const & metisNeighborList )
   {
     m_metisNeighborList.clear();
     m_metisNeighborList.insert( metisNeighborList.cbegin(), metisNeighborList.cend() );
@@ -108,29 +108,29 @@ public:
   void setSizes( real64 const ( &min )[3],
                  real64 const ( &max )[3] );
 
-  /**
-   * @brief indicate if the partition is described using a spatial partition.
-   * @return A boolean indicating if the parition is described using a spatial partition.
-   */
-  bool hasSpatialPartition() const { return !m_hasMetisNeighborList; }
+  // /**
+  //  * @brief indicate if the partition is described using a spatial partition.
+  //  * @return A boolean indicating if the parition is described using a spatial partition.
+  //  */
+  // bool hasSpatialPartition() const { return !m_hasMetisNeighborList; }
 
-  /**
-   * @brief Sets the boolean that indicates if the partition is described using a Metis Neighbor list.
-   * @param hasSpatialPartition a boolean indicating if the parition is described using a spatial partition.
-   */
-  void setHasSpatialPartition( bool hasSpatialPartition ) { m_hasMetisNeighborList = !hasSpatialPartition; }
+  // /**
+  //  * @brief Sets the boolean that indicates if the partition is described using a Metis Neighbor list.
+  //  * @param hasSpatialPartition a boolean indicating if the parition is described using a spatial partition.
+  //  */
+  // void setHasSpatialPartition( bool hasSpatialPartition ) { m_hasMetisNeighborList = !hasSpatialPartition; }
 
-  /**
-   * @brief Returns a reference to the spatialPartition
-   * @return The spatial partiton.
-   */
-  SpatialPartition const & getSpatialPartition() const { return m_spatialPartition; }
+  // /**
+  //  * @brief Returns a reference to the spatialPartition
+  //  * @return The spatial partiton.
+  //  */
+  // SpatialPartition const & getSpatialPartition() const { return m_spatialPartition; }
 
-  /**
-   * @brief Sets the spatialPartition
-   * @param spatialPartition The spatial partiton.
-   */
-  void setSpatialPartition( SpatialPartition const & spatialPartition ) { m_spatialPartition = spatialPartition; }
+  // /**
+  //  * @brief Sets the spatialPartition
+  //  * @param spatialPartition The spatial partiton.
+  //  */
+  // void setSpatialPartition( SpatialPartition const & spatialPartition ) { m_spatialPartition = spatialPartition; }
 
 private:
 
@@ -187,9 +187,6 @@ private:
   /// Array of neighbor communicators.
 //  std::vector< NeighborCommunicator > m_neighbors;
 
-  /// The list of neighbors computed with metis
-  std::set< int > m_metisNeighborList;
-
   /// The (x, y , y) MPI split (in case we need it)
   array1d< int > m_partitions;
 
@@ -198,7 +195,7 @@ private:
 
   bool m_hasMetisNeighborList;         //< Indicate if we use metis neighbor list or spatial partition to describe the partition
   std::set< int > m_metisNeighborList;   //< The list of neighbors computed wwith metis
-  SpatialPartition m_spatialPartition; //< The spatial partition
+  // SpatialPartition m_spatialPartition; //< The spatial partition
 };
 
 }

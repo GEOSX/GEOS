@@ -558,7 +558,7 @@ static void getElemToNodesRelationInBox( ElementType const elementType,
 }
 
 void InternalMeshGenerator::fillCellBlockManager( CellBlockManager & cellBlockManager, array1d< int > const & partition )
-void InternalMeshGenerator::fillCellBlockManager( CellBlockManager & cellBlockManager, SpatialPartition & partition ) // develop branch
+// void InternalMeshGenerator::fillCellBlockManager( CellBlockManager & cellBlockManager, SpatialPartition & partition ) // develop branch
 {
   GEOS_MARK_FUNCTION;
   
@@ -749,7 +749,7 @@ void InternalMeshGenerator::fillCellBlockManager( CellBlockManager & cellBlockMa
   {
     numNodesInDir[dim] = lastElemIndexInPartition[dim] - firstElemIndexInPartition[dim] + 2;
   }
-  reduceNumNodesForPeriodicBoundary( m_partition, numNodesInDir );
+  reduceNumNodesForPeriodicBoundary( partition, numNodesInDir );
   numNodes = numNodesInDir[0] * numNodesInDir[1] * numNodesInDir[2];
 
   cellBlockManager.setNumNodes( numNodes );
@@ -776,7 +776,8 @@ void InternalMeshGenerator::fillCellBlockManager( CellBlockManager & cellBlockMa
           getNodePosition( globalIJK, m_trianglePattern, X[localNodeIndex] );
 
           // Alter global node map for radial mesh
-          setNodeGlobalIndicesOnPeriodicBoundary( globalIJK );
+          setNodeGlobalIndicesOnPeriodicBoundary( partition, 
+                                                  globalIJK );
 
           nodeLocalToGlobal[localNodeIndex] = nodeGlobalIndex( globalIJK );
 

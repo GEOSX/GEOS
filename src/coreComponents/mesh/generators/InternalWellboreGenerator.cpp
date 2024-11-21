@@ -302,25 +302,27 @@ void InternalWellboreGenerator::postInputInitialization()
   InternalMeshGenerator::postInputInitialization();
 }
 
-void InternalWellboreGenerator::reduceNumNodesForPeriodicBoundary( PartitionDescriptor & partition,
+void InternalWellboreGenerator::reduceNumNodesForPeriodicBoundary( array1d< int> const & partition,
                                                                    integer ( & numNodesInDir )[3] )
 {
   if( m_isFullAnnulus )
   {
-    if( partition.getPartitions()[1] == 1 )
+    if( partition[1] == 1 )
     {
       numNodesInDir[1] -= 1;
     }
-    else if( partition.getPartitions()[1] > 1 )
+    else if( partition[1] > 1 )
     {
-      partition.setPeriodic( 1, 1 );
+      m_partition.setPeriodic( 1, 1 );
     }
   }
 
 }
 
-void InternalWellboreGenerator::setNodeGlobalIndicesOnPeriodicBoundary( int ( & globalIJK )[3] )
+void InternalWellboreGenerator::setNodeGlobalIndicesOnPeriodicBoundary( array1d< int > const & partition,
+                                                                        int ( & globalIJK )[3] )
 {
+  GEOS_UNUSED_VAR(partition);
   if( m_isFullAnnulus )
   {
     if( globalIJK[1] == m_nElems[1].back() + 1 )

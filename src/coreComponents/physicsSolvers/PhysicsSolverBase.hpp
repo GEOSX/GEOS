@@ -750,10 +750,6 @@ public:
    */
   R1Tensor const gravityVector() const;
 
-  virtual bool checkSequentialSolutionIncrements( DomainPartition & domain ) const;
-
-  virtual void saveSequentialIterationState( DomainPartition & domain );
-
   /**
    * @brief Check if the solution increments are ok to use
    * @param domain the domain partition
@@ -802,10 +798,6 @@ public:
   {
     return m_nonlinearSolverParameters;
   }
-
-  virtual void
-  synchronizeNonlinearSolverParameters()
-  { /* empty here, overriden in CoupledSolver */ }
 
   /**
    * @brief syncronize the nonlinear solver parameters.
@@ -891,9 +883,6 @@ public:
    */
   virtual bool registerCallback( void * func, const std::type_info & funcType ) final override;
 
-  SolverStatistics & getSolverStatistics() { return m_solverStatistics; }
-  SolverStatistics const & getSolverStatistics() const { return m_solverStatistics; }
-
   /**
    * @brief accessor for the solver statistics.
    * @return reference to m_solverStatistics
@@ -963,9 +952,6 @@ protected:
   template< typename CONSTITUTIVE_BASE_TYPE >
   static string getConstitutiveName( ElementSubRegionBase const & subRegion );
 
-  template< typename CONSTITUTIVE_BASE_TYPE >
-  static string getConstitutiveName( ParticleSubRegionBase const & subRegion ); // particle overload
-
   /**
    * @brief Get the Constitutive Name object
    *
@@ -983,7 +969,7 @@ protected:
    *  names set.
    */
   virtual void setConstitutiveNamesCallSuper( ElementSubRegionBase & subRegion ) const { GEOS_UNUSED_VAR( subRegion ); }
-    virtual void setConstitutiveNamesCallSuper( ParticleSubRegionBase & subRegion ) const { GEOS_UNUSED_VAR( subRegion ); } // particle
+  virtual void setConstitutiveNamesCallSuper( ParticleSubRegionBase & subRegion ) const { GEOS_UNUSED_VAR( subRegion ); } // particle
                                                                                                                           // overload
 
 

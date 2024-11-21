@@ -21,7 +21,7 @@
 #include "common/TimingMacros.hpp"
 #include "mesh/mpiCommunications/CommunicationTools.hpp"
 #include "constitutive/ConstitutiveManager.hpp"
-#include "generators/ParticleBlockManager.hpp"
+#include "particleGenerators/ParticleBlockManager.hpp"
 #include "mesh/MeshManager.hpp"
 #include "schema/schemaUtilities.hpp"
 

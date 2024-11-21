@@ -179,18 +179,7 @@ public:
     return LvArray::math::max( m_c44[k], m_c66[k] );
   }
 
-  /**
-   * @brief Getter for apparent shear modulus.
-   * @return reference to shear modulus that will be used for computing stabilization scalling parameter.
-   */
-  GEOS_HOST_DEVICE
-  virtual real64 getShearModulus( localIndex const k ) const override final
-  {
-    return LvArray::math::max( m_c44[k], m_c66[k] );
-  }
-
-
-private:
+protected:
 
   /// A reference to the ArrayView holding c11 for each element.
   arrayView1d< real64 > const m_c11;

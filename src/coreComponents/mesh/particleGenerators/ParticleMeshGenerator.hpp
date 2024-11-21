@@ -19,7 +19,7 @@
 #include "ParticleBlockManager.hpp"
 
 #include "dataRepository/Group.hpp"
-#include "codingUtilities/EnumStrings.hpp"
+#include "common/format/EnumStrings.hpp"
 #include "mesh/generators/ExternalMeshGeneratorBase.hpp"
 
 template<typename Enum>

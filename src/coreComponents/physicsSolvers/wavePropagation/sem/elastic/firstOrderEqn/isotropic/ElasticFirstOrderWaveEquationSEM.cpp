@@ -370,6 +370,7 @@ void ElasticFirstOrderWaveEquationSEM::initializePostInitialConditionsPreSubGrou
                                                                           density,
                                                                           mass );
 
+
         ElasticMatricesSEM::DampingMatrix< FE_TYPE > kernelD( finiteElement );
 
         kernelD.template computeDampingMatrix< EXEC_POLICY, ATOMIC_POLICY >( elementSubRegion.size(),

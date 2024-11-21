@@ -23,8 +23,6 @@
 #include "common/format/EnumStrings.hpp"
 #include "dataRepository/Group.hpp"
 #include "InternalMeshGenerator.hpp"
-#include "dataRepository/Group.hpp"
-#include "codingUtilities/EnumStrings.hpp"
 
 namespace geos
 {
@@ -54,10 +52,11 @@ public:
 
 protected:
 
-  void reduceNumNodesForPeriodicBoundary( PartitionDescriptor & partition,
+  void reduceNumNodesForPeriodicBoundary( array1d< int > const & partition,
                                           integer ( &numNodes )[3] ) override final;
 
-  void setNodeGlobalIndicesOnPeriodicBoundary( int ( & index )[3] ) override final;
+  void setNodeGlobalIndicesOnPeriodicBoundary( array1d< int > const & partition,
+                                               int ( & index )[3] ) override final;
 
   void setConnectivityForPeriodicBoundaries( int ( & globalIJK )[3],
                                              integer const ( &numNodesInDir )[3],

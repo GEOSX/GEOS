@@ -103,6 +103,7 @@ void SinglePhaseBase::registerDataOnMesh( Group & meshBodies )
       subRegion.registerField< fields::flow::mass >( getName() );
       subRegion.registerField< fields::flow::mass_n >( getName() );
 
+
       if( m_isThermal )
       {
         subRegion.registerField< dMobility_dTemperature >( getName() );
@@ -265,60 +266,6 @@ void SinglePhaseBase::updateFluidModel( ObjectManagerBase & dataGroup ) const
   {
     typename TYPEOFREF( castedFluid ) ::KernelWrapper fluidWrapper = castedFluid.createKernelWrapper();
     singlePhaseBaseKernels::FluidUpdateKernel::launch( fluidWrapper, pres, temp );
-  } );
-}
-
-void SinglePhaseBase::updateMass( ElementSubRegionBase & subRegion ) const
-{
-  GEOS_MARK_FUNCTION;
-
-  arrayView1d< real64 > const mass = subRegion.getField< fields::flow::mass >();
-  arrayView1d< real64 > const mass_n = subRegion.getField< fields::flow::mass_n >();
-
-  CoupledSolidBase const & porousSolid =
-    getConstitutiveModel< CoupledSolidBase >( subRegion, subRegion.template getReference< string >( viewKeyStruct::solidNamesString() ) );
-  arrayView2d< real64 const > const porosity = porousSolid.getPorosity();
-  arrayView2d< real64 const > const porosity_n = porousSolid.getPorosity_n();
-
-  arrayView1d< real64 const > const volume = subRegion.getElementVolume();
-  arrayView1d< real64 > const deltaVolume = subRegion.getField< fields::flow::deltaVolume >();
-
-  SingleFluidBase & fluid =
-    getConstitutiveModel< SingleFluidBase >( subRegion, subRegion.getReference< string >( viewKeyStruct::fluidNamesString() ) );
-  arrayView2d< real64 const > const density = fluid.density();
-  arrayView2d< real64 const > const density_n = fluid.density_n();
-
-  forAll< parallelDevicePolicy<> >( subRegion.size(), [=] GEOS_HOST_DEVICE ( localIndex const ei )
-  {
-    mass[ei] = porosity[ei][0] * ( volume[ei] + deltaVolume[ei] ) * density[ei][0];
-    if( isZero( mass_n[ei] ) ) // this is a hack for hydrofrac cases
-      mass_n[ei] = porosity_n[ei][0] * volume[ei] * density_n[ei][0]; // initialize newly created element mass
-  } );
-}
-
-void SinglePhaseBase::updateEnergy( ElementSubRegionBase & subRegion ) const
-{
-  GEOS_MARK_FUNCTION;
-
-  arrayView1d< real64 > const energy = subRegion.getField< fields::flow::energy >();
-
-  CoupledSolidBase const & porousSolid =
-    getConstitutiveModel< CoupledSolidBase >( subRegion, subRegion.template getReference< string >( viewKeyStruct::solidNamesString() ) );
-  arrayView2d< real64 const > const porosity = porousSolid.getPorosity();
-  arrayView2d< real64 const > const rockInternalEnergy = porousSolid.getInternalEnergy();
-
-  arrayView1d< real64 const > const volume = subRegion.getElementVolume();
-  arrayView1d< real64 > const deltaVolume = subRegion.getField< fields::flow::deltaVolume >();
-
-  SingleFluidBase & fluid =
-    getConstitutiveModel< SingleFluidBase >( subRegion, subRegion.getReference< string >( viewKeyStruct::fluidNamesString() ) );
-  arrayView2d< real64 const > const density = fluid.density();
-  arrayView2d< real64 const > const fluidInternalEnergy = fluid.internalEnergy();
-
-  forAll< parallelDevicePolicy<> >( subRegion.size(), [=] GEOS_HOST_DEVICE ( localIndex const ei )
-  {
-    energy[ei] = ( volume[ei] + deltaVolume[ei] ) *
-                 ( porosity[ei][0] * density[ei][0] * fluidInternalEnergy[ei][0] + ( 1.0 - porosity[ei][0] ) * rockInternalEnergy[ei][0] );
   } );
 }
 

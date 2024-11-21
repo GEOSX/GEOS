@@ -19,7 +19,7 @@
 
 #include "ParticleSubRegionBase.hpp"
 #include "constitutive/ConstitutiveManager.hpp"
-
+#include "physicsSolvers/solidMechanics/MPMSolverFields.hpp"
 
 namespace geos
 {
@@ -184,7 +184,7 @@ void ParticleSubRegionBase::setActiveParticleIndices()
   forAll< serialPolicy >( this->size(), [&, particleRank, particleDeleteFlag] GEOS_HOST ( localIndex const p ) // This must be on host since we're dealing with
                                                                                                                // a sorted array. Parallelize with atomics?
     {
-      if( particleRank[p] == MpiWrapper::commRank( MPI_COMM_GEOSX ) && particleDeleteFlag[p] != 1 )
+      if( particleRank[p] == MpiWrapper::commRank( MPI_COMM_GEOS ) && particleDeleteFlag[p] != 1 )
       {
         m_activeParticleIndices.insert( p );
       }

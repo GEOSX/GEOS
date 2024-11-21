@@ -1083,17 +1083,12 @@ jacobianTransformation( real64 const (&coords)[3],
                                              real64 const (&X)[numNodes][3],
                                              real64 (& J)[3][3] )
   {
-    const int ka = k % 2;
-    const int kb = ( k % 4 ) / 2;
-    const int kc = k / 4;
-    for( int j = 0; j < 3; j++ )
+    real64 const * const GEOS_RESTRICT Xnode = X[nodeIndex];
+    for( int i = 0; i < 3; ++i )
     {
-      real64 jacCoeff = jacobianCoefficient1D( qa, 0, ka, j ) *
-                        jacobianCoefficient1D( qb, 1, kb, j ) *
-                        jacobianCoefficient1D( qc, 2, kc, j );
-      for( int i = 0; i < 3; i++ )
+      for( int j = 0; j < 3; ++j )
       {
-        J[i][j] +=  jacCoeff * X[k][i];
+        J[i][j] = J[i][j] + dNdXi[ j ] * Xnode[i];
       }
     }
   }, X, J );

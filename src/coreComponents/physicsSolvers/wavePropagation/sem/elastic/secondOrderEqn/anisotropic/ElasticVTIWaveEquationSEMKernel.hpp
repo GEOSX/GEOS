@@ -27,6 +27,7 @@
 
 namespace geos
 {
+
 /// Namespace to contain the elastic wave kernels.
 namespace elasticVTIWaveEquationSEMKernels
 {

@@ -21,6 +21,7 @@
 #include "mesh/mpiCommunications/SpatialPartition.hpp"
 #include "generators/CellBlockManagerABC.hpp"
 #include "generators/MeshGeneratorBase.hpp"
+#include "particleGenerators/ParticleMeshGeneratorBase.hpp"
 #include "mesh/mpiCommunications/CommunicationTools.hpp"
 #include "common/TimingMacros.hpp"
 

@@ -102,14 +102,14 @@ array2d< int > generateCombinations(array1d< array1d< int > > sets)
 
 SolidMechanicsMPM::SolidMechanicsMPM( const string & name,
                                       Group * const parent ):
-  SolverBase( name, parent ),
+  PhysicsSolverBase( name, parent ),
   m_solverProfiling( 0 ),
   m_plottableFields(),
   m_plottableFieldsSorted(),
   m_timeIntegrationOption( TimeIntegrationOption::ExplicitDynamic ),
   m_updateMethod( UpdateMethodOption::FLIP ),
   m_updateOrder( 2 ),
-  m_iComm( CommunicationTools::getInstance().getCommID() ),
+  m_iComm(),
   m_prescribedBcTable( 0 ),
   m_boundaryConditionTypes(),
   m_boundaryFaceCoefficientsOfRestitution(),
@@ -1006,9 +1006,11 @@ SolidMechanicsMPM::SolidMechanicsMPM( const string & name,
   m_mpmEventManager = &registerGroup< MPMEventManager >( groupKeys.mpmEventManager );
 }
 
+SolidMechanicsMPM::~SolidMechanicsMPM(){}
+
 void SolidMechanicsMPM::postRestartInitialization()
 {
-  SolverBase::postRestartInitialization();
+  PhysicsSolverBase::postRestartInitialization();
 
   // Initialize friction coefficient table
   if(m_numContactGroups > 0 )
@@ -1047,7 +1049,7 @@ void SolidMechanicsMPM::postRestartInitialization()
 void SolidMechanicsMPM::postInputInitialization()
 {
   GEOS_LOG_RANK("Started SolidMechanicsMPM::postInputInitialization");
-  SolverBase::postInputInitialization();
+  PhysicsSolverBase::postInputInitialization();
 
   if( m_overlapCorrection == OverlapCorrectionOption::SPH )
   {
@@ -1316,7 +1318,6 @@ void SolidMechanicsMPM::registerDataOnMesh( Group & meshBodies )
                                                                            ParticleSubRegionBase & subRegion )
       {
         setConstitutiveNamesCallSuper( subRegion );
-        setConstitutiveNames( subRegion );
       } );
     }
 
@@ -1629,7 +1630,7 @@ void SolidMechanicsMPM::registerDataOnMesh( Group & meshBodies )
 void SolidMechanicsMPM::initializePreSubGroups()
 {
   GEOS_LOG_RANK("Started SolidMechanicsMPM::initializePreSubGroups");
-  SolverBase::initializePreSubGroups();
+  PhysicsSolverBase::initializePreSubGroups();
 
   DomainPartition & domain = this->getGroupByPath< DomainPartition >( "/Problem/domain" );
 
@@ -1649,7 +1650,7 @@ void SolidMechanicsMPM::initializePreSubGroups()
                                                                                     ParticleSubRegion & subRegion )
       {
         string & solidMaterialName = subRegion.getReference< string >( viewKeyStruct::solidMaterialNamesString() );
-        solidMaterialName = SolverBase::getConstitutiveName< ContinuumBase >( subRegion );
+        solidMaterialName = PhysicsSolverBase::getConstitutiveName< ContinuumBase >( subRegion );
       } );
     }
   } );
@@ -1692,7 +1693,7 @@ real64 SolidMechanicsMPM::solverStep( real64 const & time_n,
   GEOS_MARK_FUNCTION;
   real64 dtReturn = dt;
 
-  SolverBase * const surfaceGenerator = this->getParent().getGroupPointer< SolverBase >( "SurfaceGen" );
+  PhysicsSolverBase * const surfaceGenerator = this->getParent().getGroupPointer< PhysicsSolverBase >( "SurfaceGen" );
 
   if( m_timeIntegrationOption == TimeIntegrationOption::ExplicitDynamic )
   {
@@ -4955,7 +4956,7 @@ void SolidMechanicsMPM::solverProfiling( std::string label )
 
 void SolidMechanicsMPM::setConstitutiveNamesCallSuper( ParticleSubRegionBase & subRegion ) const
 {
-  SolverBase::setConstitutiveNamesCallSuper( subRegion );
+  PhysicsSolverBase::setConstitutiveNamesCallSuper( subRegion );
 
   subRegion.registerWrapper< string >( viewKeyStruct::solidMaterialNamesString() ).
     setPlotLevel( PlotLevel::NOPLOT ).
@@ -4963,13 +4964,8 @@ void SolidMechanicsMPM::setConstitutiveNamesCallSuper( ParticleSubRegionBase & s
     setSizedFromParent( 0 );
 
   string & solidMaterialName = subRegion.getReference< string >( viewKeyStruct::solidMaterialNamesString() );
-  solidMaterialName = SolverBase::getConstitutiveName< ContinuumBase >( subRegion );
+  solidMaterialName = PhysicsSolverBase::getConstitutiveName< ContinuumBase >( subRegion );
   GEOS_ERROR_IF( solidMaterialName.empty(), GEOS_FMT( "ContinuumBase model not found on subregion {}", subRegion.getName() ) );
-}
-
-void SolidMechanicsMPM::setConstitutiveNames( ParticleSubRegionBase & subRegion ) const
-{
-  GEOS_UNUSED_VAR( subRegion );
 }
 
 real64 SolidMechanicsMPM::computeNeighborList( ParticleManager & particleManager )

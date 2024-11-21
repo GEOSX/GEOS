@@ -24,6 +24,8 @@
 #endif
 
 #include "common/TypeDispatch.hpp"
+#include "LvArray/src/tensorOps.hpp"
+#include "mesh/utilities/ComputationalGeometry.hpp"
 
 #include <vtkArrayDispatch.h>
 #include <vtkBoundingBox.h>

@@ -244,23 +244,6 @@ void SurfaceGenerator::postInputInitialization()
                  ": option can be either 0 (false) or 1 (true)" );
 }
 
-void SurfaceGenerator::postInputInitialization()
-{
-  static const std::set< integer > binaryOptions = { 0, 1 };
-
-  GEOS_ERROR_IF( binaryOptions.count( m_isPoroelastic ) == 0,
-                 getWrapperDataContext( viewKeyStruct::isPoroelasticString() ) <<
-                 ": option can be either 0 (false) or 1 (true)" );
-
-  GEOS_ERROR_IF( binaryOptions.count( m_nodeBasedSIF ) == 0,
-                 getWrapperDataContext( viewKeyStruct::nodeBasedSIFString() ) <<
-                 ": option can be either 0 (false) or 1 (true)" );
-
-  GEOS_ERROR_IF( binaryOptions.count( m_mpiCommOrder ) == 0,
-                 getWrapperDataContext( viewKeyStruct::mpiCommOrderString() ) <<
-                 ": option can be either 0 (false) or 1 (true)" );
-}
-
 SurfaceGenerator::~SurfaceGenerator()
 {
   // TODO Auto-generated destructor stub
@@ -498,8 +481,8 @@ real64 SurfaceGenerator::solverStep( real64 const & time_n,
                                                                 arrayView1d< string const > const & )
   {
     // SpatialPartition & partition = dynamicCast< SpatialPartition & >( domain.getReference< PartitionBase >( dataRepository::keys::partitionManager ) );
-      SpatialPartition & partition = dynamic_cast< SpatialPartition & >( domain.getGroup( domain.groupKeys.partitionManager ) );
-    
+    SpatialPartition & partition = dynamic_cast< SpatialPartition & >( domain.getGroup( domain.groupKeys.partitionManager ) );
+
     rval = separationDriver( domain,
                              meshLevel,
                              domain.getNeighbors(),

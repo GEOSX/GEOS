@@ -158,14 +158,6 @@ DECLARE_FIELD( globalCompDensityScalingFactor,
                "Scaling factors for global component densities" );
 
 
-DECLARE_FIELD( globalCompDensityScalingFactor,
-               "globalCompDensityScalingFactor",
-               array1d< real64 >,
-               1,
-               NOPLOT,
-               NO_WRITE,
-               "Scaling factors for global component densities" );
-
 }
 
 }

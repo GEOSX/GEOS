@@ -192,7 +192,7 @@ void PartitionDescriptor::setSizes( real64 const ( &min )[3],
 
   {
     //get size of problem and decomposition
-    m_size = MpiWrapper::commSize( MPI_COMM_GEOSX );
+    m_size = MpiWrapper::commSize( MPI_COMM_GEOS );
 
     //check to make sure our dimensions agree
     {
@@ -208,7 +208,7 @@ void PartitionDescriptor::setSizes( real64 const ( &min )[3],
     MPI_Comm cartcomm;
     {
       int reorder = 0;
-      MpiWrapper::cartCreate( MPI_COMM_GEOSX, 3, m_partitions.data(), m_periodic.data(), reorder, &cartcomm );
+      MpiWrapper::cartCreate( MPI_COMM_GEOS, 3, m_partitions.data(), m_periodic.data(), reorder, &cartcomm );
     }
     m_rank = MpiWrapper::commRank( cartcomm );
     MpiWrapper::cartCoords( cartcomm, m_rank, 3, m_coords.data());

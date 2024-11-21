@@ -71,7 +71,6 @@ void SolidMechanicsEmbeddedFractures::postInputInitialization()
   linParams.dofsPerNode = 3;
   if( m_useStaticCondensation )
   {
-    linParams.dofsPerNode = 3;
     linParams.isSymmetric = true;
     linParams.amg.separateComponents = true;
   }

@@ -151,30 +151,37 @@ public:
   bool isCoordInPartitionBoundingBox( const R1Tensor & elemCenter,
                                       const real64 & boundaryRadius ) const;
 
-  // real64 * getLocalMax()
+  array1d< real64 > const & getLocalMin()
+  {
+    return m_min;
+  }
+
   array1d< real64 > const & getLocalMax()
   {
     return m_max;
   }
 
-  real64 * getLocalMin()
-  {
-    return m_min;
-  }
-
-  real64 * getLocalMax()
-  {
-    return m_max;
-  }
-
-  real64 * getGlobalMin()
+  array1d< real64 > const & getGlobalMin()
   {
     return m_gridMin;
   }
 
-  real64 * getGlobalMax()
+  array1d< real64 > const & getGlobalMax()
   {
     return m_gridMax;
+  }
+
+  void setCoords( array1d< int > coords ) {
+    m_coords = coords;
+  }
+
+  /**
+   * @brief Get the ijk coordinates of the partition in the domain.
+   * @return An array containing number of partition in X, Y and Z directions.
+   */
+  array1d< int > const & getCoords() const
+  {
+    return m_coords;
   }
 
   void setPartitions( unsigned int xPartitions,
@@ -199,6 +206,11 @@ public:
   }
 
   int getColor() override;
+
+  void setPeriodicDomainBoundaryObjects( MeshBody & grid,
+                                         NodeManager & nodeManager,
+                                         EdgeManager & edgeManager,
+                                         FaceManager & faceManager );
 
   void repartitionMasterParticles( ParticleSubRegion & subRegion,
                                    MPI_iCommData & commData );
@@ -242,59 +254,10 @@ public:
    * @brief Sets the list of metis neighbor list.
    * @param metisNeighborList A reference to the Metis neighbor list.
    */
-  void setMetisNeighborList( std::vector< int > const & metisNeighborList )
+  void setMetisNeighborList( std::set< int > const & metisNeighborList )
   {
     m_metisNeighborList.clear();
     m_metisNeighborList.insert( metisNeighborList.cbegin(), metisNeighborList.cend() );
-  }
-
-  /**
-   * @brief Get the number of domains in each dimension for a regular partition with InternalMesh.
-   * @return An array containing number of partition in X, Y and Z directions.
-   */
-  array1d< int > const & getPartitions() const
-  {
-    return m_Partitions;
-  }
-
-  /**
-   * @brief Send coordinates to neighbors as part of repartition.
-   * @param[in] particleCoordinatesSendingToNeighbors Single list of coordinates sent to all neighbors
-   * @param[in] commData Solver's MPI communicator
-   * @param[in] particleCoordinatesReceivedFromNeighbors List of lists of coordinates received from each neighbor
-   */
-  void sendCoordinateListToNeighbors( arrayView1d< R1Tensor > const & particleCoordinatesSendingToNeighbors,
-                                      MPI_iCommData & commData,
-                                      std::vector< array1d< R1Tensor > > & particleCoordinatesReceivedFromNeighbors
-                                      );
-
-  template< typename indexType >
-  void sendListOfIndicesToNeighbors( std::vector< array1d< indexType > > & listSendingToEachNeighbor,
-                                     MPI_iCommData & commData,
-                                     std::vector< array1d< indexType > > & listReceivedFromEachNeighbor );
-
-  void sendParticlesToNeighbor( ParticleSubRegionBase & subRegion,
-                                std::vector< int > const & newParticleStartingIndices,
-                                std::vector< int > const & numberOfIncomingParticles,
-                                MPI_iCommData & commData,
-                                std::vector< array1d< localIndex > > const & particleLocalIndicesToSendToEachNeighbor );
-
-  /**
-   * @brief Get the metis neighbors indices, const version. @see DomainPartition#m_metisNeighborList
-   * @return Container of global indices.
-   */
-  std::set< int > const & getMetisNeighborList() const
-  {
-    return m_metisNeighborList;
-  }
-
-  /**
-   * @brief Sets the list of metis neighbor list.
-   * @param metisNeighborList A reference to the Metis neighbor list.
-   */
-  void setMetisNeighborList( std::set< int > const & metisNeighborList )
-  {
-    m_metisNeighborList = metisNeighborList;
   }
 
   void setGrid( std::array< real64, 9 > const & grid )

@@ -50,6 +50,9 @@ public:
    * @param[in] thermalExpansionCoefficient The ArrayView holding the thermal expansion coefficient data for each element.
    * @param[in] newStress The ArrayView holding the new stress data for each quadrature point.
    * @param[in] oldStress The ArrayView holding the old stress data for each quadrature point.
+   * @param[in] density The ArrayView holding the density data for each quadrature point.
+   * @param[in] wavepseed The ArrayView holding the wavespeed data for each quadrature point.
+   * @param[in] disableInelasticity Flag to disable plasticity for inelastic models
    */
   PerfectlyPlasticUpdates( arrayView1d< real64 const > const & yieldStress,
                            arrayView1d< real64 const > const & bulkModulus,
@@ -57,8 +60,17 @@ public:
                            arrayView1d< real64 const > const & thermalExpansionCoefficient,
                            arrayView3d< real64, solid::STRESS_USD > const & newStress,
                            arrayView3d< real64, solid::STRESS_USD > const & oldStress,
+                           arrayView2d< real64 > const & density,
+                           arrayView2d< real64 > const & wavespeed,
                            bool const & disableInelasticity ):
-    ElasticIsotropicUpdates( bulkModulus, shearModulus, thermalExpansionCoefficient, newStress, oldStress, disableInelasticity ),
+    ElasticIsotropicUpdates( bulkModulus,
+                             shearModulus,
+                             thermalExpansionCoefficient,
+                             newStress,
+                             oldStress,
+                             density,
+                             wavespeed,
+                             disableInelasticity ),
     m_yieldStress( yieldStress )
   {}
 
@@ -103,6 +115,15 @@ public:
   virtual void smallStrainUpdate_StressOnly( localIndex const k,
                                              localIndex const q,
                                              real64 const & timeIncrement,
+                                             real64 const ( &strainIncrement )[6],
+                                             real64 ( &stress )[6] ) const override;
+
+  GEOS_HOST_DEVICE
+  virtual void smallStrainUpdate_StressOnly( localIndex const k,
+                                             localIndex const q,
+                                             real64 const & timeIncrement,
+                                             real64 const ( & beginningRotation )[3][3],
+                                             real64 const ( & endRotation )[3][3],
                                              real64 const ( &strainIncrement )[6],
                                              real64 ( &stress )[6] ) const override;
 
@@ -227,6 +248,26 @@ void PerfectlyPlasticUpdates::smallStrainUpdate_StressOnly( localIndex const k,
   return;
 }
 
+GEOS_HOST_DEVICE
+GEOS_FORCE_INLINE
+void PerfectlyPlasticUpdates::smallStrainUpdate_StressOnly( localIndex const k,
+                                                     localIndex const q,
+                                                     real64 const & timeIncrement,
+                                                     real64 const ( & beginningRotation )[3][3],
+                                                     real64 const ( & endRotation )[3][3],
+                                                     real64 const ( & strainIncrement )[6],
+                                                     real64 ( & stress )[6] ) const
+{
+  GEOS_UNUSED_VAR( k );
+  GEOS_UNUSED_VAR( q );
+  GEOS_UNUSED_VAR( timeIncrement );
+  GEOS_UNUSED_VAR( beginningRotation);
+  GEOS_UNUSED_VAR( endRotation);
+  GEOS_UNUSED_VAR( strainIncrement );
+  GEOS_UNUSED_VAR( stress );
+  GEOS_ERROR( "smallStrainUpdate_StressOnly overload not implemented for PerfectlyPlastic" );
+}
+
 
 /**
  * @class PerfectlyPlastic
@@ -299,6 +340,8 @@ public:
                                     m_thermalExpansionCoefficient,
                                     m_newStress,
                                     m_oldStress,
+                                    m_density,
+                                    m_wavespeed,
                                     m_disableInelasticity );
   }
 
@@ -319,6 +362,8 @@ public:
                           m_thermalExpansionCoefficient,
                           m_newStress,
                           m_oldStress,
+                          m_density,
+                          m_wavespeed,
                           m_disableInelasticity );
   }
 

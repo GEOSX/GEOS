@@ -350,7 +350,13 @@ struct SolidUtilities
     Ddt[5] *= 2;
 
     // Stress increment
-    solid.smallStrainUpdate_StressOnly( k, q, timeIncrement, RotBeginning, RotEnd, Ddt, stress );
+    solid.smallStrainUpdate_StressOnly( k,
+                                        q,
+                                        timeIncrement,
+                                        RotBeginning,
+                                        RotEnd,
+                                        Ddt,
+                                        stress );
 
     // Rotate final stress to end-of-step (current) configuration
     LvArray::tensorOps::Rij_eq_AikSymBklAjl< 3 >( temp, RotEnd, solid.m_newStress[ k ][ q ] );

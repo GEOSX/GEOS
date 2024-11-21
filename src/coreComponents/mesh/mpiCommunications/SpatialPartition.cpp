@@ -315,7 +315,7 @@ void SpatialPartition::initializeNeighbors()
     MPI_Comm cartcomm;
     {
       int reorder = 0;
-      MpiWrapper::cartCreate( MPI_COMM_GEOS, nsdof, m_Partitions.data(), m_Periodic.data(), reorder, &cartcomm );
+      MpiWrapper::cartCreate( MPI_COMM_GEOS, nsdof, m_partitions.data(), m_periodic.data(), reorder, &cartcomm );
     }
     m_rank = MpiWrapper::commRank( cartcomm );
     MpiWrapper::cartCoords( cartcomm, m_rank, nsdof, m_coords.data());
@@ -483,7 +483,7 @@ void SpatialPartition::setPeriodicDomainBoundaryObjects( MeshBody & grid,
     MPI_Comm cartcomm;
     {
       int reorder = 0;
-      MpiWrapper::cartCreate( MPI_COMM_GEOSX, 3, m_partitions.data(), m_periodic.data(), reorder, &cartcomm );
+      MpiWrapper::cartCreate( MPI_COMM_GEOS, 3, m_partitions.data(), m_periodic.data(), reorder, &cartcomm );
       GEOS_ERROR_IF( cartcomm == MPI_COMM_NULL, "Fail to run MPI_Cart_create and establish communications" );
     }
 
@@ -571,13 +571,13 @@ void SpatialPartition::setPeriodicDomainBoundaryObjects( MeshBody & grid,
             MpiWrapper::iSend( mySortedGlobalIds,
                               neighbor_rank, 
                               neighborsTag, 
-                              MPI_COMM_GEOSX, 
+                              MPI_COMM_GEOS, 
                               &mpiRequest );
 
             MpiWrapper::recv( nbrSortedGlobalIds, 
                               neighbor_rank, 
                               neighborsTag, 
-                              MPI_COMM_GEOSX, 
+                              MPI_COMM_GEOS, 
                               &mpiStatus );
 
             MpiWrapper::waitAll( 1, &mpiRequest, &mpiStatus); //does the count refer to siz

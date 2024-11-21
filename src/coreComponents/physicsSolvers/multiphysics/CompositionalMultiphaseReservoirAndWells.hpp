@@ -91,11 +91,6 @@ public:
   integer numFluidPhases() { return flowSolver()->numFluidPhases(); }
   integer numFluidComponents() { return flowSolver()->numFluidComponents(); }
 
-  integer useSimpleAccumulation() const { return flowSolver()->useSimpleAccumulation(); }
-  integer useTotalMassEquation() const { return flowSolver()->useTotalMassEquation(); }
-  integer numFluidPhases() { return flowSolver()->numFluidPhases(); }
-  integer numFluidComponents() { return flowSolver()->numFluidComponents(); }
-
 protected:
 
   virtual void initializePreSubGroups() override;
