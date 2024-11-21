@@ -78,15 +78,17 @@ public:
      */
     CellLayout( CellType t, string_view val, Alignement alignment );
 
-    void setAlignment( Alignment const align )
-    {
-      alignment = align;
-    }
+    /**
+     * @brief Set the Alignment object
+     * @param align
+     */
+    void setAlignment( Alignment const align );
 
-    void setCellSize( size_t const size )
-    {
-      cellSize = size;
-    }
+    /**
+     * @brief Set the Cell Size object
+     * @param size
+     */
+    void setCellSize( size_t const size );
   };
 
   /**
@@ -105,93 +107,74 @@ public:
     /// struct containing alignment for the column (header and values)
     CellAlignment cellAlignment;
 
-    Column()
-      : m_parent( nullptr ), m_m_next( nullptr )
-    {
-      enabled = true;
-      columnName.value = "";
-      columnName.type  = '\x03';
-      columnName.alignment = Alignment::center;
-    }
-
-    Column( Cell cell )
-    {
-      columnName = cell;
-      columnName.alignment = Alignment::center;
-      enabled = true;
-    }
-
-
-    Column & setName( string_view name )
-    {
-      columnName.value = name;
-      columnName.type = '\x03';
-      return *this;
-    }
-
-    Column & setCells( std::vector< Cell > const & cellValues )
-    {
-      cells = cellValues;
-      return *this;
-    }
-
-    Column & hide()
-    {
-      enabled = false;
-      return *this;
-    }
-
-    void setMaxStringSize( size_t const size )
-    {
-      maxStringSize = size;
-      return *this;
-    }
-
-    size_t getMaxStringSize() const
-    {
-      return maxStringSize;
-    }
-
-    Column & addSubColumns( std::vector< string > const & subColName )
-    {
-      std::vector< Column > subColumns;
-      for( auto const & name : subColName )
-      {
-        Cell cell{'\x03', name};//TODO
-        Column col{cell};
-        subColumns.parent = this;
-        if( !subColumns.empty())
-        {
-          subColumns.end()->next = &col;
-        }
-        subColumns.emplace_back( col );
-      }
-      subColumn = subColumns;
-      return *this;
-    }
-
-    Column & setHeaderAlignment( Alignment headerAlignment )
-    {
-      cellAlignment.headerAlignment = headerAlignment;
-      columnName.alignment = headerAlignment;
-      return *this;
-    }
-
-    Column & setValuesAlignment( Alignment valueAlignment )
-    {
-      cellAlignment.valueAlignment = valueAlignment;
-      return *this;
-    }
-
-private:
-    // /// A vector containing all the values of a column
-    // std::vector< CellLayout > cells;
-    // /// TODO DOCS
-    // size_t nbHeaderRows;
     Column * m_parent;
     Column * m_next;
-    /// Vector of string containing the largest string for a column and its subColumns
-    size_t maxStringSize; // TODO : Assigner cette stat
+
+    Column();
+
+    Column( Cell cell );
+
+    /**
+     * @brief Set the Name object
+     * @param name
+     * @return Column&
+     */
+    Column & setName( string_view name );
+
+    /**
+     * @brief Set the Cells object
+     * @param cellValues
+     * @return Column&
+     */
+    Column & setCells( std::vector< Cell > const & cellValues );
+
+    /**
+     * @brief
+     * @return Column&
+     */
+    Column & hide();
+
+    /**
+     * @brief Set the Max String Size object
+     * @param size
+     */
+    void setMaxStringSize( size_t const size );
+
+    /**
+     * @brief Get the Max String Size object
+     * @return size_t
+     */
+    size_t getMaxStringSize() const;
+
+    /**
+     * @brief
+     * @param subColName
+     * @return Column&
+     */
+    Column & addSubColumns( std::vector< string > const & subColName );
+
+    /**
+     * @brief Set the Header Alignment object
+     * @param headerAlignment
+     * @return Column&
+     */
+    Column & setHeaderAlignment( Alignment headerAlignment );
+
+    /**
+     * @brief Set the Values Alignment object
+     * @param valueAlignment
+     * @return Column&
+     */
+    Column & setValuesAlignment( Alignment valueAlignment );
+
+    /**
+     * @brief
+     * @param column
+     */
+    void updateMaxStringSize( Column * column );
+
+private:
+    size_t maxStringSize;
   };
 
   /**
@@ -249,6 +232,11 @@ private:
     Column operator*()
     {
       return *m_currentColumn;
+    }
+
+    Column operator->()
+    {
+      return m_currentColumn;
     }
 
     friend bool operator== ( const SubColumnIterator & a, const SubColumnIterator & b )

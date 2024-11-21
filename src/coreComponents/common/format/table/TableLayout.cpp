@@ -140,18 +140,125 @@ void divideCell( std::vector< string > & lines, string const & value )
   }
 }
 
+//
+// CellLayout
+//
 
-CellLayout::CellLayout( CellType type, string_view cellValue, Alignment cellAlignment ):
+
+TableLayout::CellLayout::CellLayout( CellType type, string_view cellValue, Alignment cellAlignment ):
   cellType( type ),
   alignment( cellAlignment )
 {
   divideCell( lines, cellValue );
 }
 
-CellLayout::CellLayout( CellType type, string_view cellValue ):
+TableLayout::CellLayout::CellLayout( CellType type, string_view cellValue ):
   cellType( type )
 {
   divideCell( lines, cellValue );
+}
+
+void TableLayout::CellLayout: setAlignment( Alignment const align )
+{
+  alignment = align;
+}
+
+void TableLayout::setCellSize( size_t const size )
+{
+  cellSize = size;
+}
+
+//
+// COLUMN
+//
+
+TableLayout::Column()
+  : m_parent( nullptr ), m_m_next( nullptr )
+{
+  enabled = true;
+  columnName.value = "";
+  columnName.type  = '\x03';
+  columnName.alignment = Alignment::center;
+}
+
+TableLayout::Column( Cell cell )
+{
+  columnName = cell;
+  columnName.alignment = Alignment::center;
+  enabled = true;
+}
+
+
+TableLayout::Column & TableLayout::Column::setName( string_view name )
+{
+  columnName.value = name;
+  columnName.type = '\x03';
+  return *this;
+}
+
+TableLayout::Column & TableLayout::Column::setCells( std::vector< Cell > const & cellValues )
+{
+  cells = cellValues;
+  return *this;
+}
+
+TableLayout::Column & TableLayout::Column::hide()
+{
+  enabled = false;
+  return *this;
+}
+
+void TableLayout::Column::setMaxStringSize( size_t const size )
+{
+  maxStringSize = size;
+  return *this;
+}
+
+size_t TableLayout::Column::getMaxStringSize() const
+{
+  return maxStringSize;
+}
+
+TableLayout::Column & TableLayout::Column::addSubColumns( std::vector< string > const & subColName )
+{
+  std::vector< TableLayout::Column > subColumns;
+  for( auto const & name : subColName )
+  {
+    Cell cell{'\x03', name};    //TODO
+    TableLayout::Column col{cell};
+    subColumns.parent = this;
+    if( !subColumns.empty())
+    {
+      subColumns.end()->next = &col;
+    }
+    subColumns.emplace_back( col );
+  }
+  subColumn = subColumns;
+  return *this;
+}
+
+TableLayout::Column & TableLayout::Column::setHeaderAlignment( Alignment headerAlignment )
+{
+  cellAlignment.headerAlignment = headerAlignment;
+  columnName.alignment = headerAlignment;
+  return *this;
+}
+
+TableLayout::Column & TableLayout::Column::setValuesAlignment( Alignment valueAlignment )
+{
+  cellAlignment.valueAlignment = valueAlignment;
+  return *this;
+}
+
+void TableLayout::Column::updateMaxStringSizeForColumn( Column * currentColumn,
+                                                        std::vector< size_t > & subColumnsLength )//todo renaùme
+{
+  auto sumSubColumnsLen = std::reduce(
+    subColumnsLength.begin(),
+    subColumnsLength.end()).length();
+  currentColumn->setMaxStringSize( std::max(
+                                     sumSubColumnsLen,
+                                     getMaxStringLen( currentColumn->columnName.lines )));
 }
 
 }

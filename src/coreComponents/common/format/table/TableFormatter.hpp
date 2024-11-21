@@ -152,84 +152,37 @@ public:
   {
 public:
 
-    /**
-     * @brief Formats a table cell with appropriate padding, borders, and alignment.
-     * @param tableOutput The output stream
-     * @param column The column information for the cell
-     * @param tableLayout The table layout, used to get column margins and border margins.
-     * @param alignment The alignment for the cell content (left, center, right).
-     * @param cell The string content to be formatted.
-     * @param isFirstColumn A flag indicating whether the cell is in the first column.
-     * @param isNotLastColumn A flag indicating whether the cell is not in the last column.
-     * @param cellChar A string representing the character used for border formatting.
-     */
-    void formatCellCommon( std::ostringstream & tableOutput, TableLayout::Column const & column,
-                           TableLayout const & tableLayout, TableLayout::Cell const & cell, size_t const idxRowCell,
-                           bool isFirstColumn, bool isNotLastColumn,
-                           string const & cellChar );
 
     virtual void formatCell( std::ostringstream & tableOutput,
                              TableLayout::Column const & column,
                              TableLayout const & tableLayout,
                              TableLayout::Cell const & cell,
                              size_t const idxRowCell,
-                             bool isFirstColumn, bool isNotLastColumn ) = 0;
-  };
+                             bool isFirstColumn, bool isNotLastColumn );
 
-  class ValueCell : public CellFormatterStrategy
-  {
-public:
-    virtual void formatCell( std::ostringstream & tableOutput,
-                             TableLayout::Column const & column,
-                             TableLayout const & tableLayout,
-                             TableLayout::Cell const & cell,
-                             size_t const idxRowCell,
-                             bool isFirstColumn, bool isNotLastColumn ) override;
-  };
-  class MergingCell : public CellFormatterStrategy
-  {
-public:
-    virtual void formatCell( std::ostringstream & tableOutput,
-                             TableLayout::Column const & column,
-                             TableLayout const & tableLayout,
-                             TableLayout::Cell const & cell,
-                             size_t const idxRowCell,
-                             bool isFirstColumn, bool isNotLastColumn ) override;
-  };
-
-  class SeparatingCell : public CellFormatterStrategy
-  {
-public:
-    virtual void formatCell( std::ostringstream & tableOutput,
-                             TableLayout::Column const & column,
-                             TableLayout const & tableLayout,
-                             TableLayout::Cell const & cell,
-                             size_t const idxRowCell,
-                             bool isFirstColumn, bool isNotLastColumn ) override;
-  };
 
 private:
 
-  using RowsCellInput = std::vector< std::vector< TableData::CellData > >;
-  using RowsCellLayout = std::vector< std::vector< TableLayout::CellLayout > >
+    using RowsCellInput = std::vector< std::vector< TableData::CellData > >;
+    using RowsCellLayout = std::vector< std::vector< TableLayout::CellLayout > >
 
-                         /// symbol for separator construction
-                         static constexpr char m_verticalLine = '|';
-  ///  for the extremity of a row
-  static constexpr char m_horizontalLine = '-';
+                           /// symbol for separator construction
+                           static constexpr char m_verticalLine = '|';
+    ///  for the extremity of a row
+    static constexpr char m_horizontalLine = '-';
 
-  /**
-   * @brief Prepare all the columns  with the appropriate values and formatting separator
-   * @param columns  The vector containg all columns . Each tableColumnData contains its own
-   *        parameters (such as name, alignment, etc.).
-   * @param tableData Vector containing all rows filled with values
-   * @param sectionSeparatingLine Separator string used between sections of the table
-   * @param topSeparator The table top separator
-   */
-  void prepareAndBuildTable( std::vector< TableLayout::Column > & columns,
-                             TableData const & tableData,
-                             string & sectionSeparatingLine,
-                             string & topSeparator ) const;
+    /**
+     * @brief Prepare all the columns  with the appropriate values and formatting separator
+     * @param columns  The vector containg all columns . Each tableColumnData contains its own
+     *        parameters (such as name, alignment, etc.).
+     * @param tableData Vector containing all rows filled with values
+     * @param sectionSeparatingLine Separator string used between sections of the table
+     * @param topSeparator The table top separator
+     */
+    void prepareAndBuildTable( std::vector< TableLayout::Column > & columns,
+                               TableData const & tableData,
+                               string & sectionSeparatingLine,
+                               string & topSeparator ) const;
 /**
  * @brief Displays the complete table
  * @param tableOutput The output stream
@@ -237,96 +190,96 @@ private:
  * @param sectionSeparatingLine Separator string used between sections of the table
  * @param topSeparator The table top separator
  */
-  void outputTable( std::ostringstream & tableOutput,
-                    std::vector< TableLayout::Column > & columns,
-                    string_view sectionSeparatingLine,
-                    string_view topSeparator ) const;
+    void outputTable( std::ostringstream & tableOutput,
+                      std::vector< TableLayout::Column > & columns,
+                      string_view sectionSeparatingLine,
+                      string_view topSeparator ) const;
 
-  /**
-   * @brief 
-   * @param columns 
-   * @param headersRows 
-   */
-  void computeHeaderRows( std::vector< TableLayout::Column > & columns,
-                          std::vector< TableLayout::Row > & headersRows ) const;
-
-
-  /**
-   * @brief Populate all the tableColumnData values with values extracted from TableData.
-   * @param columns  Vector of columns  to populate.
-   * @param tableData Vector containing all rows filled with values
-   * @param isSubColumn Boolean indicating if the current tableColumnData is a subcolumn
-   */
-  void populateColumnsFromTableData( std::vector< TableLayout::Column > & columns,
-                                     std::vector< std::vector< TableData::CellData > > const & tableData ) const;
+    /**
+     * @brief
+     * @param columns
+     * @param headersRows
+     */
+    void computeHeaderRows( std::vector< TableLayout::Column > & columns,
+                            std::vector< TableLayout::Row > & headersRows ) const;
 
 
-  /**
-   * @brief For each tableColumnData find and set the column's longest string
-   * @param tableColumnData The tableColumnData to process.
-   * @note Compares the longest string from the header with the longest string from the column values.
-   * If the column contains subcolumns, it recursively applies the same logic to them
-   */
-  void findAndSetLongestColumnString( TableLayout::Column & tableColumnData ) const;
+    /**
+     * @brief Populate all the tableColumnData values with values extracted from TableData.
+     * @param columns  Vector of columns  to populate.
+     * @param tableData Vector containing all rows filled with values
+     * @param isSubColumn Boolean indicating if the current tableColumnData is a subcolumn
+     */
+    void populateColumnsFromTableData( std::vector< TableLayout::Column > & columns,
+                                       std::vector< std::vector< TableData::CellData > > const & tableData ) const;
 
-  /**
-   * @brief Compute the max table line length, taking into account the length of : title, columns  header/values
-   * Increase the size of the columns if necessary, then builds the table's separating lines
-   * @param columns Vector of tableColumnData containing containing the largest string for each tableColumnData
-   * @param sectionSeparatingLine Separator string used between sections of the table
-   * @param topSeparator The table top separator
-   */
-  void computeAndBuildTableSeparator( std::vector< TableLayout::Column > & columns,
-                                      string & sectionSeparatingLine,
-                                      string & topSeparator ) const;
 
-  /**
-   * @brief Increase each tableColumnData size if the title is larger than all the columns
-   * @param columns Vector containing all table columns
-   * @param extraCharacters ExtraCharacters to be distributed between each columns
-   */
-  void increaseColumnsSize( std::vector< TableLayout::Column > & columns,
-                            size_t const extraCharacters ) const;
+    /**
+     * @brief For each tableColumnData find and set the column's longest string
+     * @param tableColumnData The tableColumnData to process.
+     * @note Compares the longest string from the header with the longest string from the column values.
+     * If the column contains subcolumns, it recursively applies the same logic to them
+     */
+    void findAndSetLongestColumnString( TableLayout::Column & tableColumnData ) const;
 
-  /**
-   * @brief Output the title row in the table
-   * @param topSeparator The top separator string
-   */
-  void outputTitleRow( std::ostringstream & tableOutput,
-                       string_view topSeparator ) const;
+    /**
+     * @brief Compute the max table line length, taking into account the length of : title, columns  header/values
+     * Increase the size of the columns if necessary, then builds the table's separating lines
+     * @param columns Vector of tableColumnData containing containing the largest string for each tableColumnData
+     * @param sectionSeparatingLine Separator string used between sections of the table
+     * @param topSeparator The table top separator
+     */
+    void computeAndBuildTableSeparator( std::vector< TableLayout::Column > & columns,
+                                        string & sectionSeparatingLine,
+                                        string & topSeparator ) const;
 
-  void outputSubValues( std::vector< TableLayout::Column > const & columns,
-                        std::ostringstream & tableOutput,
-                        size_t idxRow ) const;
+    /**
+     * @brief Increase each tableColumnData size if the title is larger than all the columns
+     * @param columns Vector containing all table columns
+     * @param extraCharacters ExtraCharacters to be distributed between each columns
+     */
+    void increaseColumnsSize( std::vector< TableLayout::Column > & columns,
+                              size_t const extraCharacters ) const;
 
-  /**
-   * @brief Output the header rows in the table
-   * @param columns  Vector containing all table columns
-   * @param tableOutput The output stream
-   * @param sectionSeparatingLine Separator string used between sections of the table
-   */
-  void outputHeader( std::vector< TableLayout::Column > const & columns,
-                     std::ostringstream & tableOutput,
-                     string_view sectionSeparatingLine ) const;
+    /**
+     * @brief Output the title row in the table
+     * @param topSeparator The top separator string
+     */
+    void outputTitleRow( std::ostringstream & tableOutput,
+                         string_view topSeparator ) const;
 
-  /**
-   * @brief Output the values rows in the table
-   * @param columns  Vector containing all table columns
-   * @param tableOutput The output stream
-   * @param sectionSeparatingLine Separator string used between sections of the table
-   */
-  void outputValues( std::vector< TableLayout::Column > const & columns,
-                     std::ostringstream & tableOutput,
-                     string_view sectionSeparatingLine ) const;
-};
+    void outputSubValues( std::vector< TableLayout::Column > const & columns,
+                          std::ostringstream & tableOutput,
+                          size_t idxRow ) const;
+
+    /**
+     * @brief Output the header rows in the table
+     * @param columns  Vector containing all table columns
+     * @param tableOutput The output stream
+     * @param sectionSeparatingLine Separator string used between sections of the table
+     */
+    void outputHeader( std::vector< TableLayout::Column > const & columns,
+                       std::ostringstream & tableOutput,
+                       string_view sectionSeparatingLine ) const;
+
+    /**
+     * @brief Output the values rows in the table
+     * @param columns  Vector containing all table columns
+     * @param tableOutput The output stream
+     * @param sectionSeparatingLine Separator string used between sections of the table
+     */
+    void outputValues( std::vector< TableLayout::Column > const & columns,
+                       std::ostringstream & tableOutput,
+                       string_view sectionSeparatingLine ) const;
+  };
 
 /**
  * @brief Convert a TableData to a table string.
  * @param tableData The TableData to convert.
  * @return The table string representation of the TableData.
  */
-template<>
-string TableTextFormatter::toString< TableData >( TableData const & tableData ) const;
+  template<>
+  string TableTextFormatter::toString< TableData >( TableData const & tableData ) const;
 }
 
 #endif /* GEOS_COMMON_FORMAT_TABLE_TABLEFORMATTER_HPP */
