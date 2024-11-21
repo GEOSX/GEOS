@@ -29,39 +29,45 @@ We consider a two-component system, say gas and water, flow in a compressible po
 :math:`v`, respectively. The mass conservation laws are expressed as:
 
 .. math::
-  \frac{\partial}{\partial t} (\phi\rho_v S_v) + \nabla \cdot (\rho_v \boldsymbol{u}_v) = \rho_v q_v,
+  \frac{\partial}{\partial t} (\phi\rho_v S_v) + \nabla \cdot (\rho_v \boldsymbol{u}_v) = 
+  \rho_v q_v,
 
 and
+
 .. math::
-  \frac{\partial}{\partial t} (\phi\rho_\ell S_\ell) + \nabla \cdot (\rho_\ell \boldsymbol{u}_\ell) = \rho_\ell q_\ell,
+  \frac{\partial}{\partial t} (\phi\rho_\ell S_\ell) + \nabla \cdot (\rho_\ell 
+  \boldsymbol{u}_\ell) = \rho_\ell q_\ell,
 
 
 
-where :math:`\phi(\bold{x},p)` is the porosity of the medium which is a function of pressure,
-:math:`S_\ell(\bold{x},t)` is the saturation of the phase
+where :math:`\phi(\mathbf{x})` is the porosity of the medium which is a function of pressure,
+:math:`S_\ell(\mathbf{x},t)` is the saturation of the phase
 :math:`\ell` and similarly for the phase :math:`v`, and :math:`t` is the time. The source/sink terms :math:`q_{\ell}` and :math:`q_{v}` are
 positive for injection and negative for production. The phase
 velocity, :math:`\boldsymbol{u}_\ell`` and :math:`\boldsymbol{u}_v`$`, are defined using
 the multiphase extension of Darcy's law (conservation of momentum) as
 
-.. math::
-\boldsymbol{u}_\ell := -k\lambda_\ell(\nabla p_\ell - \rho_\ell g \nabla z),
+ .. math::
+  \boldsymbol{u}_\ell := -k\lambda_\ell(\nabla p_\ell - \rho_\ell g \nabla z),
 
 and
-.. math::
-\boldsymbol{u}_v := -k\lambda_v(\nabla p_v - \rho_v g \nabla z).
 
-Here, :math:`k(\bold{x})` is the scalar absolute permeability of the medium, :math:`\lambda_\ell` is the phase mobility of the liquid phase defined as :math:`k_{r\ell}/\mu_\ell`, where :math:`k_{r\ell}(\bold{x},S_\ell)` is the phase relative permeability, :math:`\mu_\ell` is the phase viscosity, and :math:`\rho_{\ell}` is the phase density. 
+ .. math::
+  \boldsymbol{u}_v := -k\lambda_v(\nabla p_v - \rho_v g \nabla z).
+
+Here, :math:`k(\mathbf{x})` is the scalar absolute permeability of the medium, :math:`\lambda_\ell` is the phase mobility of the liquid phase defined as :math:`k_{r\ell}/\mu_\ell`, where :math:`k_{r\ell}(\mathbf{x},S_\ell)` is the phase relative permeability, :math:`\mu_\ell` is the phase viscosity, and :math:`\rho_{\ell}` is the phase density. 
 These are also defined similarly for the vapor phase. In both cases we assume that the relative permeabilities are strictly increasing functions of their own saturation.
 The gravitational acceleration is denoted by :math:`g`, and the
 depth by :math:`z` (positive going downward).
 The conservation of mass equations are constrained by the volume contraint equation:
+
 .. math::
-S_{\ell} + S_v = 1,
+ S_{\ell} + S_v = 1,
 
 Moreover, the capillary pressure constraint relates the two phase pressures with
+
 .. math::
-P_{c}(S_{\ell}) = p_{v} - p_{\ell}.
+ P_{c}(S_{\ell}) = p_{v} - p_{\ell}.
 
 We assume that capillary pressure is a strictly decreasing function of the wetting-phase saturation.
 
@@ -89,6 +95,7 @@ There are two formulations implemented in GEOS for the Immiscible multiphsae sol
 :math:`n_p+1` primary variables, namely, one pressure, :math:`p`, and
 :math:`n_p` phase volume fractions, :math:`S_{p}`.
 
+
 =========================== ===========================
 Number of primary variables Variable type
 =========================== ===========================
@@ -103,49 +110,64 @@ Flow and Transport Equations
 To develop this formulation we use a flux approximation as required by the finite-volume numerical solution scheme.
 Thus, we choose to construct this approximation in fractional flow form, and with this we will be able to show the coupling between the different physical processes. This formulation is obtained by decomposing the governing equations into a flow problem for both phases and a transport problem for one of the two phases. 
 To obtain this decomposition,  we use a total-mass balance formulation by summing both components mass conversation equations and then using the mass constraint to result in the following elliptic PDE governing the temporal evolution of the pressure field:
+
 .. math::
   \frac{\partial}{\partial t}(\phi \rho_t) + \nabla \cdot (\rho_{\ell} \boldsymbol{u}_{\ell} + \rho_{v} \boldsymbol{u}_{v}) = \rho_{\ell} q_{\ell} + \rho_{v} q_{v}, 
 
 where 
+
 .. math::
   \rho_t = \rho_{\ell}S_{\ell}+\rho_{v}S_{v}
 
 and we defined a total mass flux as 
+
 .. math::
-\boldsymbol{U}_T := \rho_{\ell} \boldsymbol{u}_{\ell} + \rho_{v} \boldsymbol{u}_{v}= -k (\rho_{\ell} \lambda_{\ell} + \rho_{v} \lambda_{v}) \nabla p + k ( \lambda_{\ell} \rho^2_{\ell} + \lambda_{v} \rho^2_{v}) g \nabla z + k \rho_{\ell}\lambda_{\ell} \nabla P_{c}. 
+ \boldsymbol{U}_T := \rho_{\ell} \boldsymbol{u}_{\ell} + \rho_{v} \boldsymbol{u}_{v}= -k (\rho_{\ell} \lambda_{\ell} + \rho_{v} \lambda_{v}) \nabla p + k ( \lambda_{\ell} \rho^2_{\ell} + \lambda_{v} \rho^2_{v}) g \nabla z + k \rho_{\ell}\lambda_{\ell} \nabla P_{c}. 
 
 Next, the highly nonlinear parabolic transport equation is obtained by using  this total mass flux to formally eliminate the pressure variable from the individual components mass conservation equations, yielding
+
 .. math::
-{
-\frac{\partial}{\partial t}(\phi\rho_v S_v) + \nabla \cdot F_v
+ \frac{\partial}{\partial t}(\phi\rho_v S_v) + \nabla \cdot F_v
   = 
- \rho_v q_v,}
+ \rho_v q_v,
+
 and
+
 .. math::
-{
-\frac{\partial}{\partial t}(\phi\rho_\ell S_\ell) + \nabla \cdot F_\ell
+
+ \frac{\partial}{\partial t}(\phi\rho_\ell S_\ell) + \nabla \cdot F_\ell
   =  
-\rho_\ell q_\ell,}
+ \rho_\ell q_\ell,
 
 where the flow flux for each phase is defined as
+
 .. math::
-{
-F_{\ell} :=
-\underbrace{\frac{\rho_\ell \lambda_\ell}{\rho_\ell \lambda_\ell+\rho_v \lambda_v}\boldsymbol{U}_T}_{\substack{\text{viscous} \\ \text{term}}}  + 
-\underbrace{k \frac{\rho_\ell \lambda_\ell\rho_v \lambda_v}{\rho_\ell \lambda_\ell+\rho_v \lambda_v}(\rho_\ell - \rho_v) 
-g\nabla z}_{\substack{\text{buoyancy} \\ \text{term}}}
-+
-\underbrace{k \frac{\rho_\ell \lambda_\ell\rho_v \lambda_v}{\rho_\ell \lambda_\ell+\rho_v \lambda_v} ( \nabla P_{c})}_{\substack{\text{capillary} \\ \text{term}}},}
+ {
+ F_{\ell} :=
+ \frac{\rho_\ell \lambda_\ell}{\rho_\ell \lambda_\ell+\rho_v 
+ \lambda_v}\boldsymbol{U}_T}   + 
+ k \frac{\rho_\ell \lambda_\ell\rho_v \lambda_v}{\rho_\ell \lambda_\ell+\rho_v 
+ \lambda_v}(\rho_\ell - \rho_v) 
+ g\nabla z
+ +
+ k \frac{\rho_\ell \lambda_\ell\rho_v \lambda_v}{\rho_\ell \lambda_\ell+\rho_v 
+ \lambda_v} ( \nabla P_{c})
 
 and
+
 .. math::
-{
-F_{v} :=
-\underbrace{\frac{\rho_v \lambda_v}{\rho_\ell \lambda_\ell+\rho_v \lambda_v}\boldsymbol{U}_T}_{\substack{\text{viscous} \\ \text{term}}}  + 
-\underbrace{k \frac{\rho_\ell \lambda_\ell\rho_v \lambda_v}{\rho_\ell \lambda_\ell+\rho_v \lambda_v}(\rho_v - \rho_\ell) 
-g\nabla z}_{\substack{\text{buoyancy} \\ \text{term}}}
--
-\underbrace{k \frac{\rho_\ell \lambda_\ell\rho_v \lambda_v}{\rho_\ell \lambda_\ell+\rho_v \lambda_v} (\nabla P_{c})}_{\substack{\text{capillary} \\ \text{term}}},}
+ {
+ F_{v} :=
+ \frac{\rho_v \lambda_v}{\rho_\ell \lambda_\ell+\rho_v 
+ \lambda_v}\boldsymbol{U}_T}   + 
+ k \frac{\rho_\ell \lambda_\ell\rho_v \lambda_v}{\rho_\ell \lambda_\ell+\rho_v 
+ \lambda_v}(\rho_v - \rho_\ell) 
+ g\nabla z
+ -
+ k \frac{\rho_\ell \lambda_\ell\rho_v \lambda_v}{\rho_\ell \lambda_\ell+\rho_v 
+ \lambda_v} ( \nabla P_{c})
+
+
 
 
 .. _discretization:

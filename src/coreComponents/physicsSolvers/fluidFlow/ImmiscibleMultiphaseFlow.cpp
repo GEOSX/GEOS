@@ -603,17 +603,17 @@ void ImmiscibleMultiphaseFlow::assembleAccumulationTerm( DomainPartition & domai
       CoupledSolidBase const & solid = getConstitutiveModel< CoupledSolidBase >( subRegion, solidName );
 
       immiscibleMultiphaseKernels::
-          AccumulationKernelFactory::
-          createAndLaunch< parallelDevicePolicy<> >( m_numPhases,
-                                                     dofManager.rankOffset(),
-                                                     m_useTotalMassEquation,
-                                                     dofKey,
-                                                     subRegion,
-                                                     fluid,
-                                                     solid,
-                                                     localMatrix,
-                                                     localRhs );     
-    
+        AccumulationKernelFactory::
+        createAndLaunch< parallelDevicePolicy<> >( m_numPhases,
+                                                   dofManager.rankOffset(),
+                                                   m_useTotalMassEquation,
+                                                   dofKey,
+                                                   subRegion,
+                                                   fluid,
+                                                   solid,
+                                                   localMatrix,
+                                                   localRhs );
+
     } );
   } );
 

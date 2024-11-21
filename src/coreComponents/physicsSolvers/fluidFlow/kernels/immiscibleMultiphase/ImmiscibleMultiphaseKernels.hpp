@@ -44,7 +44,7 @@
 #include "physicsSolvers/fluidFlow/kernels/compositional/RelativePermeabilityUpdateKernel.hpp"
 #include "physicsSolvers/fluidFlow/kernels/compositional/CapillaryPressureUpdateKernel.hpp"
 #include "physicsSolvers/PhysicsSolverBaseKernels.hpp"
-#include "physicsSolvers/fluidFlow/kernels/compositional/KernelLaunchSelectors.hpp"
+#include "physicsSolvers/fluidFlow/kernels/immiscibleMultiphase/KernelLaunchSelectors.hpp"
 
 namespace geos
 {
@@ -226,7 +226,7 @@ public:
 
   /**
    * @brief Constructor for the kernel interface
-   * @param[in] numPhases number of fluid phases 
+   * @param[in] numPhases number of fluid phases
    * @param[in] rankOffset the offset of my MPI rank
    * @param[in] stencilWrapper reference to the stencil wrapper
    * @param[in] dofNumberAccessor
@@ -638,7 +638,7 @@ public:
       shiftBlockElementsAheadByOneAndReplaceFirstElementWithSum( m_numPhases, numEqn, stack.numFluxElems,
                                                                  stack.localFlux );
     }
-    
+
     // add contribution to residual and jacobian into:
     // - the mass balance equation
     // note that numDof includes derivatives wrt temperature if this class is derived in ThermalKernels
@@ -767,13 +767,12 @@ public:
 
 /******************************** AccumulationKernel ********************************/
 
-static constexpr real64 minDensForDivision = 1e-10;
-
 enum class KernelFlags
 {
-  // SimpleAccumulation = 1 << 0, // 1
-  TotalMassEquation = 1 << 1, // 2
+  TotalMassEquation = 1 << 0, // 1
+
   /// Add more flags like that if needed:
+  // Flag2 = 1 << 1, // 2
   // Flag3 = 1 << 2, // 4
   // Flag4 = 1 << 3, // 8
   // Flag5 = 1 << 4, // 16
@@ -783,7 +782,7 @@ enum class KernelFlags
 };
 /**
  * @class AccumulationKernel
- * @tparam NUM_COMP number of fluid phases
+ * @tparam NUM_EQN number of fluid phases
  * @tparam NUM_DOF number of degrees of freedom
  * @brief Define the interface for the assembly kernel in charge of accumulation
  */
@@ -800,7 +799,7 @@ public:
   static constexpr integer numDof = NUM_DOF;
 
   /// Compute time value for the number of equations
-  static constexpr integer numEqn = NUM_DOF;
+  static constexpr integer numEqn = NUM_EQN;
 
   /**
    * @brief Constructor
@@ -812,6 +811,7 @@ public:
    * @param[in] solid the solid model
    * @param[inout] localMatrix the local CRS matrix
    * @param[inout] localRhs the local right-hand side vector
+   * @param[inout] kernelFlags the kernel options
    */
   AccumulationKernel( localIndex const numPhases,
                       globalIndex const rankOffset,
@@ -846,7 +846,7 @@ public:
   {
 public:
 
-    // Pore volume information (used by both accumulation and volume balance)
+    // Pore volume information (used by both accumulation)
 
     /// Pore volume at time n+1
     real64 poreVolume = 0.0;
@@ -906,31 +906,30 @@ public:
    * @tparam FUNC the type of the function that can be used to customize the kernel
    * @param[in] ei the element index
    * @param[inout] stack the stack variables
-   * @param[in] phaseAmountKernelOp the function used to customize the kernel
    */
   template< typename FUNC = NoOpFunc >
   GEOS_HOST_DEVICE
   void computeAccumulation( localIndex const ei,
                             StackVariables & stack,
-                            FUNC && phaseAmountKernelOp = NoOpFunc{} ) const
+                            FUNC = NoOpFunc{} ) const
   {
-      int signPotDiff[2] = {1, -1};
-      // ic - index of component whose conservation equation is assembled
-      // (i.e. row number in local matrix)
-      for( integer ip = 0; ip < m_numPhases; ++ip )
-      {
-        real64 const phaseMass = stack.poreVolume * m_phaseVolFrac[ei][ip] * m_phaseDens[ei][0][ip];
-        real64 const phaseMass_n = m_phaseMass_n[ei][ip];
+    int signPotDiff[2] = {1, -1};
+    // ip - index of phase/component whose conservation equation is assembled
+    // (i.e. row number in local matrix)
+    for( integer ip = 0; ip < m_numPhases; ++ip )
+    {
+      real64 const phaseMass = stack.poreVolume * m_phaseVolFrac[ei][ip] * m_phaseDens[ei][0][ip];
+      real64 const phaseMass_n = m_phaseMass_n[ei][ip];
 
-        stack.localResidual[ip] += phaseMass - phaseMass_n;
+      stack.localResidual[ip] += phaseMass - phaseMass_n;
 
-        real64 const dPhaseMass_dP = stack.dPoreVolume_dPres * m_phaseVolFrac[ei][ip] * m_phaseDens[ei][0][ip]
-                                        + stack.poreVolume * m_phaseVolFrac[ei][ip] * m_dPhaseDens[ei][0][ip][0];
-        stack.localJacobian[ip][0] += dPhaseMass_dP;
+      real64 const dPhaseMass_dP = stack.dPoreVolume_dPres * m_phaseVolFrac[ei][ip] * m_phaseDens[ei][0][ip]
+                                   + stack.poreVolume * m_phaseVolFrac[ei][ip] * m_dPhaseDens[ei][0][ip][0];
+      stack.localJacobian[ip][0] += dPhaseMass_dP;
 
-        real64 const dPhaseMass_dS = stack.poreVolume * m_phaseDens[ei][0][ip];
-        stack.localJacobian[ip][1] += signPotDiff[ip] * dPhaseMass_dS;
-      }
+      real64 const dPhaseMass_dS = stack.poreVolume * m_phaseDens[ei][0][ip];
+      stack.localJacobian[ip][1] += signPotDiff[ip] * dPhaseMass_dS;
+    }
 
   }
 
@@ -954,8 +953,7 @@ public:
     }
 
     // add contribution to residual and jacobian into:
-    // - the component mass balance equations (i = 0 to i = numComp-1)
-    // - the volume balance equations (i = numComp)
+    // - the component mass balance equations (i = 0 to i = numPhase - 1)
     // note that numDof includes derivatives wrt temperature if this class is derived in ThermalKernels
     integer const numRows = m_numPhases;
     for( integer i = 0; i < numRows; ++i )
@@ -1045,6 +1043,7 @@ public:
    * @tparam POLICY the policy used in the RAJA kernel
    * @param[in] numPhases the number of fluid phases
    * @param[in] rankOffset the offset of my MPI rank
+   * @param[inout] useTotalMassEquation option for using total mass equation
    * @param[in] dofKey the string key to retrieve the degress of freedom numbers
    * @param[in] subRegion the element subregion
    * @param[in] fluid the fluid model
@@ -1064,10 +1063,8 @@ public:
                    CRSMatrixView< real64, globalIndex const > const & localMatrix,
                    arrayView1d< real64 > const & localRhs )
   {
-    
-    using namespace isothermalCompositionalMultiphaseBaseKernels::internal;
 
-    kernelLaunchSelectorCompSwitch( numPhases, [&] ( auto NP )
+    geos::immiscibleMultiphaseKernels::kernelLaunchSelectorPhaseSwitch( numPhases, [&] ( auto NP )
     {
       integer constexpr NUM_EQN = NP();
       integer constexpr NUM_DOF = NP();
@@ -1075,11 +1072,9 @@ public:
       BitFlags< KernelFlags > kernelFlags;
       if( useTotalMassEquation )
         kernelFlags.set( KernelFlags::TotalMassEquation );
-      // if( useSimpleAccumulation )
-      //   kernelFlags.set( KernelFlags::SimpleAccumulation );
 
       AccumulationKernel< NUM_EQN, NUM_DOF > kernel( numPhases, rankOffset, dofKey, subRegion,
-                                                      fluid, solid, localMatrix, localRhs, kernelFlags );
+                                                     fluid, solid, localMatrix, localRhs, kernelFlags );
       AccumulationKernel< NUM_EQN, NUM_DOF >::template launch< POLICY >( subRegion.size(), kernel );
     } );
   }
@@ -1179,6 +1174,7 @@ public:
       real64 const dRelPerm_dS = sign[ip] * m_dPhaseRelPerm_dPhaseVolFrac[ei][0][ip][ip];
       dPhaseMob[ip][Deriv::dS] = dRelPerm_dS * density / viscosity;
       // }
+
 
       // call the lambda in the phase loop to allow the reuse of the relperm, density, viscosity, and mobility
       // possible use: assemble the derivatives wrt temperature
