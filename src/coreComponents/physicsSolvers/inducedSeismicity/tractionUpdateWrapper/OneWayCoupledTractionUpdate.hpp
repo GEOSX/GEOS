@@ -58,7 +58,7 @@ virtual void updateFaultTraction( real64 const & time_n,
                                                                  MeshLevel & mesh,
                                                                  arrayView1d< string const > const & regionNames )
   {
-    
+
 
   } );
 }
@@ -71,12 +71,8 @@ FLOW_SOLVER_TYPE * getFlowSolver() const { return std::get<1>( m_solvers ); }
 
 };
 
-}
+} // namespace inducedSeismicity
 
-};
-
-}
-
-}
+} // namespace geos
 
 #endif /* GEOS_PHYSICSSOLVERS_INDUCED_SEISMICITY_FAULTTRACTIONUPDATE_HPP */

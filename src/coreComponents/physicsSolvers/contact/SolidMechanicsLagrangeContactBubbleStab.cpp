@@ -29,6 +29,10 @@
 
 #include "constitutive/ConstitutiveManager.hpp"
 #include "constitutive/contact/FrictionSelector.hpp"
+<<<<<<< HEAD
+=======
+#include "fieldSpecification/FieldSpecificationManager.hpp"
+>>>>>>> origin/develop
 
 
 namespace geos
@@ -52,6 +56,48 @@ SolidMechanicsLagrangeContactBubbleStab::~SolidMechanicsLagrangeContactBubbleSta
   // TODO Auto-generated destructor stub
 }
 
+<<<<<<< HEAD
+=======
+real64 SolidMechanicsLagrangeContactBubbleStab::solverStep( real64 const & time_n,
+                                                            real64 const & dt,
+                                                            const integer cycleNumber,
+                                                            DomainPartition & domain )
+{
+  if( cycleNumber == 0 )
+  {
+    /// Apply initial conditions to the Fault
+    FieldSpecificationManager & fieldSpecificationManager = FieldSpecificationManager::getInstance();
+
+    forDiscretizationOnMeshTargets ( domain.getMeshBodies(), [&]( string const &,
+                                                                  MeshLevel & mesh,
+                                                                  arrayView1d< string const > const & )
+
+    {
+      fieldSpecificationManager.applyInitialConditions( mesh );
+      // Would like to do it like this but it is not working. There is a cast in Object path that tries to cast
+      // all objects that derive from ElementSubRegionBase to the specified type so this obviously fails.
+      //   fieldSpecificationManager.forSubGroups< FieldSpecificationBase >( [&] ( FieldSpecificationBase const & fs )
+      //   {
+      //     if( fs.initialCondition() )
+      //     {
+      //       fs.apply< SurfaceElementSubRegion >( mesh,
+      //                                            [&]( FieldSpecificationBase const & bc,
+      //                                                 string const &,
+      //                                                 SortedArrayView< localIndex const > const & targetSet,
+      //                                                 SurfaceElementSubRegion & targetGroup,
+      //                                                 string const fieldName )
+      //       {
+      //         bc.applyFieldValue< FieldSpecificationEqual >( targetSet, 0.0, targetGroup, fieldName );
+      //       } );
+      //     }
+      //   } );
+    } );
+  }
+
+  return ContactSolverBase::solverStep( time_n, dt, cycleNumber, domain );
+}
+
+>>>>>>> origin/develop
 void SolidMechanicsLagrangeContactBubbleStab::registerDataOnMesh( Group & meshBodies )
 {
   ContactSolverBase::registerDataOnMesh( meshBodies );
@@ -207,6 +253,7 @@ void SolidMechanicsLagrangeContactBubbleStab::setupSystem( DomainPartition & dom
 
   solution.setName( this->getName() + "/solution" );
   solution.create( dofManager.numLocalDofs(), MPI_COMM_GEOS );
+<<<<<<< HEAD
 }
 
 void SolidMechanicsLagrangeContactBubbleStab::implicitStepSetup( real64 const & time_n,
@@ -216,6 +263,14 @@ void SolidMechanicsLagrangeContactBubbleStab::implicitStepSetup( real64 const & 
 
   SolidMechanicsLagrangianFEM::implicitStepSetup( time_n, dt, domain );
 
+=======
+
+  computeRotationMatrices( domain );
+}
+
+void SolidMechanicsLagrangeContactBubbleStab::computeRotationMatrices( DomainPartition & domain ) const
+{
+>>>>>>> origin/develop
   forDiscretizationOnMeshTargets( domain.getMeshBodies(), [&] ( string const &,
                                                                 MeshLevel & mesh,
                                                                 arrayView1d< string const > const & )
@@ -261,6 +316,16 @@ void SolidMechanicsLagrangeContactBubbleStab::implicitStepSetup( real64 const & 
   } );
 }
 
+<<<<<<< HEAD
+=======
+void SolidMechanicsLagrangeContactBubbleStab::implicitStepSetup( real64 const & time_n,
+                                                                 real64 const & dt,
+                                                                 DomainPartition & domain )
+{
+  SolidMechanicsLagrangianFEM::implicitStepSetup( time_n, dt, domain );
+}
+
+>>>>>>> origin/develop
 void SolidMechanicsLagrangeContactBubbleStab::assembleSystem( real64 const time,
                                                               real64 const dt,
                                                               DomainPartition & domain,
@@ -281,7 +346,10 @@ void SolidMechanicsLagrangeContactBubbleStab::assembleSystem( real64 const time,
 
   assembleContact( dt, domain, dofManager, localMatrix, localRhs );
 
+<<<<<<< HEAD
   // ParallelMatrix parallel_matrix;
+=======
+>>>>>>> origin/develop
   // parallel_matrix.create( localMatrix.toViewConst(), dofManager.numLocalDofs(), MPI_COMM_GEOS );
   // parallel_matrix.write("newMatrix.mtx");
   // std::cout << localRhs << std::endl;
@@ -577,6 +645,7 @@ void SolidMechanicsLagrangeContactBubbleStab::applySystemSolution( DofManager co
   } );
 }
 
+<<<<<<< HEAD
 void SolidMechanicsLagrangeContactBubbleStab::updateState( DomainPartition & domain )
 {
   GEOS_UNUSED_VAR( domain );
@@ -590,6 +659,8 @@ real64 SolidMechanicsLagrangeContactBubbleStab::setNextDt( real64 const & curren
   return currentDt;
 }
 
+=======
+>>>>>>> origin/develop
 void SolidMechanicsLagrangeContactBubbleStab::addCouplingNumNonzeros( DomainPartition & domain,
                                                                       DofManager & dofManager,
                                                                       arrayView1d< localIndex > const & rowLengths ) const

@@ -36,6 +36,7 @@
   </Solvers>
 
   <Mesh>
+<<<<<<< HEAD
     <!-- <InternalMesh
       name="mesh1"
       elementTypes="{ C3D8 }"
@@ -46,6 +47,8 @@
       ny="{ 100}"
       nz="{ 1 }"
       cellBlockNames="{ cb1 }"/> -->
+=======
+>>>>>>> origin/develop
     <InternalMesh
       name="mesh1"
       elementTypes="{ C3D8 }"
@@ -67,7 +70,11 @@
 
 
   <Events
+<<<<<<< HEAD
     maxTime="4.5e4"
+=======
+    maxTime="1.0"
+>>>>>>> origin/develop
     maxCycle="1">
 
     <SoloEvent 
@@ -82,22 +89,38 @@
       
     <PeriodicEvent
       name="solverApplications"
+<<<<<<< HEAD
       maxEventDt="1e4"
+=======
+      maxEventDt="1.0"
+>>>>>>> origin/develop
       target="/Solvers/stressSolver"/>
 
     <PeriodicEvent
       name="tractionHistoryCollect"
+<<<<<<< HEAD
       maxEventDt="1e4"
+=======
+      maxEventDt="1.0"
+>>>>>>> origin/develop
       target="/Tasks/tractionCollection"/>
       
     <PeriodicEvent
       name="tractionHistoryOutput"
+<<<<<<< HEAD
       maxEventDt="1e4"
+=======
+      maxEventDt="1.0"
+>>>>>>> origin/develop
       target="/Outputs/timeHistoryOutput"/>  
 
     <PeriodicEvent
       name="resarts"
+<<<<<<< HEAD
       timeFrequency="2e4"
+=======
+      timeFrequency="1.0"
+>>>>>>> origin/develop
       targetExactTimestep="0"
       target="/Outputs/restart"/>  
   </Events>

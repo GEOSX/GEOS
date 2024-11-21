@@ -291,4 +291,4 @@ void ContactSolverBase::setConstitutiveNamesCallSuper( ElementSubRegionBase & su
   }
 }
 
-} /* namespace geos */
+}   /* namespace geos */

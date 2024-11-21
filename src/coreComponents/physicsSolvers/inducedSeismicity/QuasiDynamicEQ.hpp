@@ -17,10 +17,15 @@
 #define GEOS_PHYSICSSOLVERS_INDUCED_QUASIDYNAMICEQ_HPP
 
 #include "physicsSolvers/PhysicsSolverBase.hpp"
+#include "physicsSolvers/inducedSeismicity/tractionUpdateWrapper/TractionUpdateBuilder.hpp"
 
 namespace geos
 {
 
+/**
+ * @class QuasiDynamicEQ
+ * @brief This class is a physics solver for quasi-dynamic earthquake simulations
+ */
 class QuasiDynamicEQ : public PhysicsSolverBase
 {
 public:
@@ -47,7 +52,9 @@ public:
   struct viewKeyStruct : public PhysicsSolverBase::viewKeyStruct
   {
     /// stress solver name
-    static constexpr char const * stressSolverNameString() { return "stressSolverName"; }
+    static constexpr char const * tractionUpdateTypeString() { return "tractionUpdateType"; }
+    static constexpr char const * contactSolverNameString() { return "contactSolverName"; }
+    static constexpr char const * flowSolverNameString() { return "flowSolverName"; }
     /// Friction law name string
     constexpr static char const * frictionLawNameString() { return "frictionLawName"; }
     /// Friction law name string
@@ -81,17 +88,16 @@ private:
 
   virtual void postInputInitialization() override;
 
-  /// pointer to stress solver
-  PhysicsSolverBase * m_stressSolver;
-
   /// stress solver name
-  string m_stressSolverName;
+  inducedSeismicity::TractionUpdateType m_tractionUpdateType;
 
   /// shear impedance
   real64 m_shearImpedance;
 
   /// target slip rate
   real64 m_targetSlipIncrement;
+
+  std::unique_ptr< FaultTractionUpdateBase > m_tractionUpdate;
 
   class SpringSliderParameters
   {

@@ -36,8 +36,6 @@ using namespace constitutive;
 QuasiDynamicEQ::QuasiDynamicEQ( const string & name,
                                 Group * const parent ):
   PhysicsSolverBase( name, parent ),
-  m_stressSolver( nullptr ),
-  m_stressSolverName( "SpringSlider" ),
   m_shearImpedance( 0.0 ),
   m_targetSlipIncrement( 1.0e-7 )
 {
@@ -45,9 +43,17 @@ QuasiDynamicEQ::QuasiDynamicEQ( const string & name,
     setInputFlag( InputFlags::REQUIRED ).
     setDescription( "Shear impedance." );
 
-  this->registerWrapper( viewKeyStruct::stressSolverNameString(), &m_stressSolverName ).
+  this->registerWrapper( viewKeyStruct::tractionUpdateTypeString(), &m_tractionUpdateType ).
+    setInputFlag( InputFlags::REQUIRED ).
+    setDescription( "." );
+
+  this->registerWrapper( viewKeyStruct::contactSolverNameString(), &m_contactSolverName ).
     setInputFlag( InputFlags::OPTIONAL ).
-    setDescription( "Name of solver for computing stress. If empty, the spring-slider model is run." );
+    setDescription( "." );
+
+  this->registerWrapper( viewKeyStruct::flowSolverNameString(), &m_flowSolverName ).
+    setInputFlag( InputFlags::OPTIONAL ).
+    setDescription( "." );  
 
   this->registerWrapper( viewKeyStruct::targetSlipIncrementString(), &m_targetSlipIncrement ).
     setInputFlag( InputFlags::OPTIONAL ).
@@ -59,10 +65,10 @@ void QuasiDynamicEQ::postInputInitialization()
 {
 
   // Initialize member stress solver as specified in XML input
-  if( !m_stressSolverName.empty() )
-  {
-    m_stressSolver = &this->getParent().getGroup< PhysicsSolverBase >( m_stressSolverName );
-  }
+  m_tractionUpdate = inducedSeismicity::tractionUpdateFactory( m_tractionUpdateType, 
+                                                               m_contactSolverName, 
+                                                               m_flowSolverName,
+                                                               this->getParent() );
 
   PhysicsSolverBase::postInputInitialization();
 }

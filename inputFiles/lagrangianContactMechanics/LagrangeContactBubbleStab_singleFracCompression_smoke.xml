@@ -46,10 +46,23 @@
       target="/Solvers/SurfaceGen"/>
 
     <PeriodicEvent
+<<<<<<< HEAD
       name="solverApplications"
       beginTime="0.0"
       forceDt="1.0"
       target="/Solvers/AugmentedLagrangian"/>
+=======
+      name="restarts"
+      timeFrequency="1"
+      targetExactTimestep="0"
+      target="/Outputs/restartOutput"/>   
+
+    <PeriodicEvent
+      name="solverApplications"
+      beginTime="0.0"
+      forceDt="1.0"
+      target="/Solvers/contactSolver"/>
+>>>>>>> origin/develop
 
     <PeriodicEvent
       name="outputs"

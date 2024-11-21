@@ -263,7 +263,11 @@ public:
                               localIndex const q,
                               StackVariables & stack ) const
   {
+<<<<<<< HEAD
     Base::quadraturePointKernel( k, q, stack, [ =, &stack ] GEOS_HOST_DEVICE ( real64 const detJ )
+=======
+    Base::quadraturePointKernel( k, q, stack, [ =, &stack ] ( real64 const detJ )
+>>>>>>> origin/develop
     {
       stack.localRt[0] -= detJ * ( m_dispJump[k][0] - m_targetIncrementalJump[k][0] );
       stack.localRt[1] -= detJ * ( ( m_dispJump[k][1] - m_oldDispJump[k][1] ) - m_targetIncrementalJump[k][1] );
@@ -307,10 +311,13 @@ public:
     // Force Balance for the bubble dofs
     LvArray::tensorOps::scaledAdd< numBdofs >( stack.localRb, tractionRb, 1.0 );
 
+<<<<<<< HEAD
     // // Constraint equations
     // LvArray::tensorOps::Ri_add_AijBj< numTdofs, numUdofs >( stack.localRt, stack.localAtu, stack.duLocal);
     // LvArray::tensorOps::Ri_add_AijBj< numTdofs, numBdofs >( stack.localRt, stack.localAtb, stack.dbLocal);
 
+=======
+>>>>>>> origin/develop
     fillGlobalMatrix( stack );
 
     return 0.0;
@@ -322,7 +329,11 @@ protected:
 
   arrayView1d< globalIndex const > const m_tDofNumber;
 
+<<<<<<< HEAD
   arrayView2d< real64 const > const m_incrDisp;
+=======
+  arrayView2d< real64 const, nodes::INCR_DISPLACEMENT_USD > const m_incrDisp;
+>>>>>>> origin/develop
 
   arrayView2d< real64 const > const m_incrBubbleDisp;
 
@@ -350,8 +361,17 @@ protected:
    */
   void createBubbleCellList( DomainPartition & domain ) const;
 
+<<<<<<< HEAD
 private:
 
+=======
+  /**
+   * @brief Fill global matrix and residual vector
+   *
+   * @param stack stack variables
+   */
+  GEOS_HOST_DEVICE
+>>>>>>> origin/develop
   void fillGlobalMatrix( StackVariables & stack ) const
   {
 
