@@ -37,7 +37,7 @@ TEST( FieldSpecification, Aquifer )
 
   AquiferBoundaryCondition & aquiferBC = dynamicCast< AquiferBoundaryCondition & >( *fieldSpecificationManager.createChild( "Aquifer", "aquiferBoundaryCondition" ) );
 
-  // set up the aquifer as in the simulation matched against IX
+  // set up the aquifer
 
   auto & aquiferPorosity = aquiferBC.getReference< real64 >( AquiferBoundaryCondition::viewKeyStruct::aquiferPorosityString() );
   aquiferPorosity = 2e-1;
@@ -89,7 +89,7 @@ TEST( FieldSpecification, Aquifer )
                                                           areaFraction,
                                                           dAquiferVolFlux_dPres );
 
-  // observed flux value in the simulation matched against IX
+  // observed flux value
   real64 const refAquiferVolFlux = -0.2043541482797776;
 
   ASSERT_NEAR( refAquiferVolFlux, aquiferVolFlux, 1e-10 );
