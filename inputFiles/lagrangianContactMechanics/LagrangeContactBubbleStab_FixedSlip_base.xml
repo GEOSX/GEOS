@@ -21,15 +21,6 @@
       defaultAperture="1e-3"/>  
     </ElementRegions>
   <Constitutive>
-<<<<<<< HEAD
-
-    <!-- <ElasticIsotropic
-     name="rock"
-     defaultDensity="2700"
-     defaultBulkModulus="1.666666666666666e4"
-     defaultShearModulus="1.0e4"/> -->
-=======
->>>>>>> origin/develop
     
     <ElasticIsotropic
      name="rock"
@@ -114,11 +105,7 @@
      name="dispJumpFunction"
      inputVarNames="{elementCenter}"
      coordinateFiles="{dataTables/x.csv, dataTables/y.csv, dataTables/z.csv}" 
-<<<<<<< HEAD
-     voxelFile="dataTables/gaussianSlip.csv"/>
-=======
      voxelFile="dataTables/singularCrackSlip.csv"/>
->>>>>>> origin/develop
   </Functions>
   
   <Tasks>
