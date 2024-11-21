@@ -28,6 +28,7 @@ set( gtest_pvt_xmls
      testPVT_CO2Brine.xml
      testPVT_CO2BrineTables.xml
      testPVT_PhaseComposition.xml
+     testPVT_ThreePhaseCompositional.xml
    )
 
 set( gtest_reactivefluid_xmls
