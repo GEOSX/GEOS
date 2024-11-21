@@ -120,7 +120,7 @@ DECLARE_FIELD( traction_n,
                0,
                NOPLOT,
                WRITE_AND_READ,
-               "Fracture traction vector in the local reference system at the current time-step." );
+               "Initial fracture traction vector in the local reference system at this time-step." );
 
 DECLARE_FIELD( deltaTraction,
                "deltaTraction",
