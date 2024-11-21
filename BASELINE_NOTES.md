@@ -7,6 +7,10 @@ Any developer who updates the baseline ID in the .integrated_tests.yaml file is 
 These notes should be in reverse-chronological order, and use the following time format: (YYYY-MM-DD).
 
 
+PR ##3440 (2024-11-18)
+=====================
+Added Lagrange multiplier with bubble functions stabilization (sli only) and possibility to specify a slip.
+
 PR #3339 (2024-11-14)
 =====================
 Hypre improvements, rebaseline is due to field value change (amgNumFunctions).
