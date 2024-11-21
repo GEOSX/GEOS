@@ -70,23 +70,15 @@ DECLARE_FIELD( stateVariable_n,
                0.6,
                NOPLOT,
                WRITE_AND_READ,
-               "Rate- and state-dependent friction state variable at previous time step" );
+               "Initial rate- and state-dependent friction state variable at this time step" );
 
-DECLARE_FIELD( dStateVariableStage1,
-               "dStateVariableStage1",
-               array1d< real64 >,
+DECLARE_FIELD( stateVariableRKStageRate,
+               "stateVariableStageRates",
+               array2d< real64 >,
                0.0,
                NOPLOT,
                WRITE_AND_READ,
-               "First Runge-Kutta stage rate for friction state variable" );
-
-DECLARE_FIELD( dStateVariableStage2,
-               "dStateVariableStage2",
-               array1d< real64 >,
-               0.0,
-               NOPLOT,
-               WRITE_AND_READ,
-               "Second Runge-Kutta stage rate for friction state variable" );
+               "Runge-Kutta stage rates for friction state variable" );
 
 DECLARE_FIELD( deltaSlip,
                "deltaSlip",
@@ -102,25 +94,16 @@ DECLARE_FIELD( deltaSlip_n,
                0.0,
                NOPLOT,
                WRITE_AND_READ,
-               "Slip increment at previous time step" );
+               "Initial slip increment at this time step" );
 
 
-DECLARE_FIELD( dDeltaSlipStage1,
+DECLARE_FIELD( deltaSlipRKStageRate,
                "dDeltaSlipStage1",
-               array2d< real64 >,
+               array3d< real64 >,
                0.0,
                NOPLOT,
                WRITE_AND_READ,
-               "First Runge-Kutta stage rate for slip increment" );  
-
-DECLARE_FIELD( dDeltaSlipStage2,
-               "dDeltaSlipStage2",
-               array2d< real64 >,
-               0.0,
-               NOPLOT,
-               WRITE_AND_READ,
-               "Second Runge-Kutta stage rate for slip increment" );  
-
+               "Runge-Kutta stage rates for slip increment" );  
 
 DECLARE_FIELD( error,
                "error",

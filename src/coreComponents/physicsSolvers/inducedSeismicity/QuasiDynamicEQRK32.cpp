@@ -84,12 +84,7 @@ QuasiDynamicEQRK32::~QuasiDynamicEQRK32()
 // slipVelocity_n
 // traction_n
 // deltaSlip_n
-// dDeltaSlipStage1
-// dDeltaSlipStage2
-// dDeltaSlipStage2
 // stateVariable_n
-// dStateVariableStage1
-// dStateVariableStage2
 void QuasiDynamicEQRK32::registerDataOnMesh( Group & meshBodies )
 {
   SolverBase::registerDataOnMesh( meshBodies );
@@ -107,8 +102,6 @@ void QuasiDynamicEQRK32::registerDataOnMesh( Group & meshBodies )
       // Scalar functions on fault
       subRegion.registerField< rateAndState::stateVariable >( getName() );
       subRegion.registerField< rateAndState::stateVariable_n >( getName() );
-      subRegion.registerField< rateAndState::dStateVariableStage1 >( getName() );
-      subRegion.registerField< rateAndState::dStateVariableStage2 >( getName() );
       subRegion.registerField< rateAndState::slipRate >( getName() );
       subRegion.registerField< rateAndState::error >( getName() );
     
@@ -122,10 +115,11 @@ void QuasiDynamicEQRK32::registerDataOnMesh( Group & meshBodies )
         setDimLabels( 1, labels2Comp ).reference().resizeDimension< 1 >( 2 );
       subRegion.registerField< rateAndState::deltaSlip_n >( getName() ).
         setDimLabels( 1, labels2Comp ).reference().resizeDimension< 1 >( 2 );  
-      subRegion.registerField< rateAndState::dDeltaSlipStage1 >( getName() ).
-        setDimLabels( 1, labels2Comp ).reference().resizeDimension< 1 >( 2 );
-      subRegion.registerField< rateAndState::dDeltaSlipStage2 >( getName() ).
-        setDimLabels( 1, labels2Comp ).reference().resizeDimension< 1 >( 2 );         
+
+      // Runge-Kutta stage rates
+      subRegion.registerField< rateAndState::stateVariableRKStageRate >( getName() ).reference().resizeDimension< 1 >( 2 ); 
+      subRegion.registerField< rateAndState::deltaSlipRKStageRate >( getName() ).reference().resizeDimension< 1, 2>( 2, 2 );
+      
 
       if( !subRegion.hasWrapper( contact::dispJump::key() ))
       {
@@ -212,19 +206,20 @@ real64 QuasiDynamicEQRK32::solverStep( real64 const & time_n,
         arrayView1d< real64 > const stateVariable         = subRegion.getField< rateAndState::stateVariable >();
         arrayView1d< real64 > const slipRate              = subRegion.getField< rateAndState::slipRate >();
         arrayView2d< real64 > const deltaSlip             = subRegion.getField< rateAndState::deltaSlip >();
-        arrayView1d< real64 > const dStateVariableStage1  = subRegion.getField< rateAndState::dStateVariableStage1 >();
-        arrayView2d< real64 > const dDeltaSlipStage1      = subRegion.getField< rateAndState::dDeltaSlipStage1 >();
         arrayView2d< real64 > const dispJump              = subRegion.getField< contact::dispJump >();
+        // Stage rates
+        arrayView2d< real64 > const stateVariableRKStageRate  = subRegion.getField< rateAndState::stateVariableRKStageRate >();
+        arrayView3d< real64 > const deltaSlipRKStageRate      = subRegion.getField< rateAndState::deltaSlipRKStageRate >();
         forAll< parallelDevicePolicy<> >( subRegion.size(), [=] GEOS_HOST_DEVICE ( localIndex const k )
         {   
             slipRate[k] = LvArray::math::sqrt(slipVelocity_n[k][0] * slipVelocity_n[k][0] + slipVelocity_n[k][1]*slipVelocity_n[k][1]);
             // Runge-Kutta stage rates for stage 1
-            dStateVariableStage1[k] = frictionKernelWrapper.stateEvolution(k, slipRate[k], stateVariable_n[k]);
-            LvArray::tensorOps::copy< 2 >( dDeltaSlipStage1[k], slipVelocity_n[k] );
+            stateVariableRKStageRate[k][0] = frictionKernelWrapper.stateEvolution(k, slipRate[k], stateVariable_n[k]);
+            LvArray::tensorOps::copy< 2 >( deltaSlipRKStageRate[k][0], slipVelocity_n[k] );
             // Runge-Kutta stage values for stage 1
-            stateVariable[k] = stateVariable_n[k] + 0.5*dtAdaptive*dStateVariableStage1[k];
-            deltaSlip[k][0]  = deltaSlip_n[k][0]  + 0.5*dtAdaptive*dDeltaSlipStage1[k][0];
-            deltaSlip[k][1]  = deltaSlip_n[k][1]  + 0.5*dtAdaptive*dDeltaSlipStage1[k][1];
+            stateVariable[k] = stateVariable_n[k] + 0.5*dtAdaptive*stateVariableRKStageRate[0][k];
+            deltaSlip[k][0]  = deltaSlip_n[k][0]  + 0.5*dtAdaptive*deltaSlipRKStageRate[k][0][0];
+            deltaSlip[k][1]  = deltaSlip_n[k][1]  + 0.5*dtAdaptive*deltaSlipRKStageRate[k][0][1];
             // Set tangential components of the displacement jump for stress solver and state variable for non-linear solve
             dispJump[k][1] = dispJump_n[k][1] + deltaSlip[k][0];
             dispJump[k][2] = dispJump_n[k][2] + deltaSlip[k][1];
@@ -264,26 +259,26 @@ real64 QuasiDynamicEQRK32::solverStep( real64 const & time_n,
         arrayView2d< real64 const > const dispJump_n            = subRegion.getField< contact::dispJump_n >();
         arrayView1d< real64 const > const slipRate              = subRegion.getField< rateAndState::slipRate >();
         arrayView2d< real64 const > const slipVelocity          = subRegion.getField< rateAndState::slipVelocity >();
-        arrayView1d< real64 const > const dStateVariableStage1  = subRegion.getField< rateAndState::dStateVariableStage1 >();
-        arrayView2d< real64 const > const dDeltaSlipStage1      = subRegion.getField< rateAndState::dDeltaSlipStage1 >();
         
         // Fields written for this stage
         arrayView1d< real64 > const stateVariable         = subRegion.getField< rateAndState::stateVariable >();
         arrayView2d< real64 > const deltaSlip             = subRegion.getField< rateAndState::deltaSlip >();
-        arrayView1d< real64 > const dStateVariableStage2  = subRegion.getField< rateAndState::dStateVariableStage2 >();
-        arrayView2d< real64 > const dDeltaSlipStage2      = subRegion.getField< rateAndState::dDeltaSlipStage2 >();
         arrayView2d< real64 > const dispJump              = subRegion.getField< contact::dispJump >();
+
+        // Stage rates
+        arrayView2d< real64 > const stateVariableRKStageRate  = subRegion.getField< rateAndState::stateVariableRKStageRate >();
+        arrayView3d< real64 > const deltaSlipRKStageRate      = subRegion.getField< rateAndState::deltaSlipRKStageRate >();
 
         forAll< parallelDevicePolicy<> >( subRegion.size(), [=] GEOS_HOST_DEVICE ( localIndex const k )
         {   
             // Runge-Kutta stage rates for stage 2
-            dStateVariableStage2[k] = frictionKernelWrapper.stateEvolution(k, slipRate[k], stateVariable[k]);
-            LvArray::tensorOps::copy< 2 >( dDeltaSlipStage2[k], slipVelocity[k] );
+            stateVariableRKStageRate[k][1] = frictionKernelWrapper.stateEvolution(k, slipRate[k], stateVariable[k]);
+            LvArray::tensorOps::copy< 2 >( deltaSlipRKStageRate[k][1], slipVelocity[k] );
             
             // Runge-Kutta stage values for stage 2
-            stateVariable[k] = stateVariable_n[k] + dtAdaptive*( -dStateVariableStage1[k] + 2*dStateVariableStage2[k] );
-            deltaSlip[k][0]  = deltaSlip_n[k][0]  + dtAdaptive*( -dDeltaSlipStage1[k][0]  + 2*dDeltaSlipStage2[k][0] );
-            deltaSlip[k][1]  = deltaSlip_n[k][1]  + dtAdaptive*( -dDeltaSlipStage1[k][1]  + 2*dDeltaSlipStage2[k][1] );
+            stateVariable[k] = stateVariable_n[k] + dtAdaptive*( -stateVariableRKStageRate[k][0] + 2*stateVariableRKStageRate[k][1] );
+            deltaSlip[k][0]  = deltaSlip_n[k][0]  + dtAdaptive*( -deltaSlipRKStageRate[k][0][0]  + 2*deltaSlipRKStageRate[k][1][0] );
+            deltaSlip[k][1]  = deltaSlip_n[k][1]  + dtAdaptive*( -deltaSlipRKStageRate[k][0][1]  + 2*deltaSlipRKStageRate[k][1][1] );
             // Set tangential components of the displacement jump for stress solver and state variable for non-linear solve
             dispJump[k][1] = dispJump_n[k][1] + deltaSlip[k][0];
             dispJump[k][2] = dispJump_n[k][2] + deltaSlip[k][1];
@@ -321,10 +316,6 @@ real64 QuasiDynamicEQRK32::solverStep( real64 const & time_n,
         arrayView1d< real64 const > const slipRate        = subRegion.getField< rateAndState::slipRate >();
         arrayView2d< real64 const > const slipVelocity    = subRegion.getField< rateAndState::slipVelocity >();
         arrayView2d< real64 const > const dispJump_n      = subRegion.getField< contact::dispJump_n >();
-        arrayView1d< real64 const > const dStateVariableStage1  = subRegion.getField< rateAndState::dStateVariableStage1 >();
-        arrayView1d< real64 const > const dStateVariableStage2  = subRegion.getField< rateAndState::dStateVariableStage2 >();
-        arrayView2d< real64 const > const dDeltaSlipStage1      = subRegion.getField< rateAndState::dDeltaSlipStage1 >();
-        arrayView2d< real64 const > const dDeltaSlipStage2      = subRegion.getField< rateAndState::dDeltaSlipStage2 >();
         
         // Fields written for this stage
         arrayView1d< real64 > const stateVariable         = subRegion.getField< rateAndState::stateVariable >();
@@ -332,24 +323,28 @@ real64 QuasiDynamicEQRK32::solverStep( real64 const & time_n,
         arrayView2d< real64 > const dispJump              = subRegion.getField< contact::dispJump >();
         arrayView1d< real64 > const rateStateError        = subRegion.getField< rateAndState::error >();
 
+        // Stage rates
+        arrayView2d< real64 const > const stateVariableRKStageRate  = subRegion.getField< rateAndState::stateVariableRKStageRate >();
+        arrayView3d< real64 const > const deltaSlipRKStageRate      = subRegion.getField< rateAndState::deltaSlipRKStageRate >();
+
         forAll< parallelDevicePolicy<> >( subRegion.size(), [=] GEOS_HOST_DEVICE ( localIndex const k )
         {   
             // Runge-Kutta stage rates for stage 3
-            real64 const dStateVariableStage3 = frictionKernelWrapper.stateEvolution(k, slipRate[k], stateVariable[k]);
-            real64 const dDeltaSlipStage3[2]  = {slipVelocity[k][0], slipVelocity[k][1]};
+            real64 const stateVariableRKStageRate3 = frictionKernelWrapper.stateEvolution(k, slipRate[k], stateVariable[k]);
+            real64 const deltaSlipRKStageRate3[2]  = {slipVelocity[k][0], slipVelocity[k][1]};
             
             // Third order update
-            stateVariable[k] = stateVariable_n[k] + dtAdaptive/6*( dStateVariableStage1[k] + 4*dStateVariableStage2[k] + dStateVariableStage3 );
-            deltaSlip[k][0]  = deltaSlip_n[k][0]  + dtAdaptive/6*( dDeltaSlipStage1[k][0]  + 4*dDeltaSlipStage2[k][0] + dDeltaSlipStage3[0] );
-            deltaSlip[k][1]  = deltaSlip_n[k][1]  + dtAdaptive/6*( dDeltaSlipStage1[k][1]  + 4*dDeltaSlipStage2[k][1] + dDeltaSlipStage3[1] );
+            stateVariable[k] = stateVariable_n[k] + dtAdaptive/6*( stateVariableRKStageRate[k][0] + 4*stateVariableRKStageRate[k][1] + stateVariableRKStageRate3 );
+            deltaSlip[k][0]  = deltaSlip_n[k][0]  + dtAdaptive/6*( deltaSlipRKStageRate[k][0][0]  + 4*deltaSlipRKStageRate[k][1][0] + deltaSlipRKStageRate3[0] );
+            deltaSlip[k][1]  = deltaSlip_n[k][1]  + dtAdaptive/6*( deltaSlipRKStageRate[k][0][1]  + 4*deltaSlipRKStageRate[k][1][1] + deltaSlipRKStageRate3[1] );
             
             dispJump[k][1] = dispJump_n[k][1] + deltaSlip[k][0];
             dispJump[k][2] = dispJump_n[k][2] + deltaSlip[k][1];
 
             // Second order updates used for adaptive error comparison
-            real64 const stateVariableRK2 = stateVariable_n[k] + dtAdaptive/2*(dStateVariableStage1[k] + dStateVariableStage3);
-            real64 const deltaSlipRK2[2] = { deltaSlip_n[k][0] + dtAdaptive/2*( dDeltaSlipStage1[k][1]  + dDeltaSlipStage3[0] ),
-                                             deltaSlip_n[k][1] + dtAdaptive/2*( dDeltaSlipStage1[k][1]  + dDeltaSlipStage3[1] ) }; 
+            real64 const stateVariableRK2 = stateVariable_n[k] + dtAdaptive/2*(stateVariableRKStageRate[k][0] + stateVariableRKStageRate3);
+            real64 const deltaSlipRK2[2] = { deltaSlip_n[k][0] + dtAdaptive/2*( deltaSlipRKStageRate[k][0][1]  + deltaSlipRKStageRate3[0] ),
+                                             deltaSlip_n[k][1] + dtAdaptive/2*( deltaSlipRKStageRate[k][0][1]  + deltaSlipRKStageRate3[1] ) }; 
             
             // Compute relative errors based on the maximum error in state or slip
             // TODO: Avoid division by zero in error comparison
