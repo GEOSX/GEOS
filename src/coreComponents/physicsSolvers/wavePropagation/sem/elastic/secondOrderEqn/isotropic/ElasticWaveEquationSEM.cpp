@@ -574,7 +574,7 @@ real64 ElasticWaveEquationSEM::computeTimeStep( real64 & dtOut )
 
       WaveSolverUtils::dotProduct( sizeNode, ux_n, stiffnessVectorx, dotProductUxUxaux );
       WaveSolverUtils::dotProduct( sizeNode, uy_n, stiffnessVectory, dotProductUyUyaux );
-      WaveSolverUtils::dotProduct( sizeNode, ux_n, stiffnessVectorz, dotProductUzUzaux );
+      WaveSolverUtils::dotProduct( sizeNode, uz_n, stiffnessVectorz, dotProductUzUzaux );
       dotProductUtotUtotAux = dotProductUxUxaux+dotProductUyUyaux+dotProductUzUzaux;
       WaveSolverUtils::dotProduct( sizeNode, ux_n, ux_n, normUx );
       WaveSolverUtils::dotProduct( sizeNode, uy_n, uy_n, normUy );
