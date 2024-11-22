@@ -17,15 +17,16 @@
  * @file SolidMechanicsALMUpdateKernels.hpp
  */
 
-#ifndef GEOS_PHYSICSSOLVERS_CONTACT_SOLIDMECHANICSALMUPDATEKERNELS_HPP_
-#define GEOS_PHYSICSSOLVERS_CONTACT_SOLIDMECHANICSALMUPDATEKERNELS_HPP_
+#ifndef GEOS_PHYSICSSOLVERS_CONTACT_KERNELS_SOLIDMECHANICSDISPLACEMENTJUPDATEKERNELS_HPP_
+#define GEOS_PHYSICSSOLVERS_CONTACT_KERNELS_SOLIDMECHANICSDISPLACEMENTJUPDATEKERNELS_HPP_
 
-#include "SolidMechanicsALMKernelsBase.hpp"
+#include "SolidMechanicsConformingContactKernelsBase.hpp"
+#include "mesh/MeshFields.hpp"
 
 namespace geos
 {
 
-namespace solidMechanicsALMKernels
+namespace solidMechanicsConformingContactKernels
 {
 
 /**
@@ -33,18 +34,27 @@ namespace solidMechanicsALMKernels
  */
 template< typename CONSTITUTIVE_TYPE,
           typename FE_TYPE >
-class ALMJumpUpdate :
-  public ALMKernelsBase< CONSTITUTIVE_TYPE,
-                         FE_TYPE >
+class DispJumpUpdate :
+  public ConformingContactKernelsBase< CONSTITUTIVE_TYPE,
+                                       FE_TYPE >
 {
 public:
   /// Alias for the base class;
-  using Base = ALMKernelsBase< CONSTITUTIVE_TYPE,
-                               FE_TYPE >;
+  using Base = ConformingContactKernelsBase< CONSTITUTIVE_TYPE,
+                                             FE_TYPE >;
 
   /// Maximum number of nodes per element, which is equal to the maxNumTestSupportPointPerElem and
   /// maxNumTrialSupportPointPerElem by definition.
   static constexpr int numNodesPerElem = Base::maxNumTestSupportPointsPerElem;
+
+  /// The number of displacement dofs per element.
+  static constexpr int numUdofs = Base::numUdofs;
+
+  /// The number of bubble dofs per element.
+  static constexpr int numBdofs = Base::numBdofs;
+
+  /// The number of lagrange multiplier dofs per element.
+  static constexpr int numTdofs = Base::numTdofs;
 
   using Base::m_X;
   using Base::m_finiteElementSpace;
@@ -59,20 +69,20 @@ public:
    * @brief Constructor
    * @copydoc geos::finiteElement::InterfaceKernelBase::InterfaceKernelBase
    */
-  ALMJumpUpdate( NodeManager const & nodeManager,
-                 EdgeManager const & edgeManager,
-                 FaceManager const & faceManager,
-                 localIndex const targetRegionIndex,
-                 FaceElementSubRegion & elementSubRegion,
-                 FE_TYPE const & finiteElementSpace,
-                 CONSTITUTIVE_TYPE & inputConstitutiveType,
-                 arrayView1d< globalIndex const > const uDofNumber,
-                 arrayView1d< globalIndex const > const bDofNumber,
-                 globalIndex const rankOffset,
-                 CRSMatrixView< real64, globalIndex const > const inputMatrix,
-                 arrayView1d< real64 > const inputRhs,
-                 real64 const inputDt,
-                 arrayView1d< localIndex const > const & faceElementList ):
+  DispJumpUpdate( NodeManager const & nodeManager,
+                  EdgeManager const & edgeManager,
+                  FaceManager const & faceManager,
+                  localIndex const targetRegionIndex,
+                  FaceElementSubRegion & elementSubRegion,
+                  FE_TYPE const & finiteElementSpace,
+                  CONSTITUTIVE_TYPE & inputConstitutiveType,
+                  arrayView1d< globalIndex const > const uDofNumber,
+                  arrayView1d< globalIndex const > const bDofNumber,
+                  globalIndex const rankOffset,
+                  CRSMatrixView< real64, globalIndex const > const inputMatrix,
+                  arrayView1d< real64 > const inputRhs,
+                  real64 const inputDt,
+                  arrayView1d< localIndex const > const & faceElementList ):
     Base( nodeManager,
           edgeManager,
           faceManager,
@@ -91,7 +101,9 @@ public:
     m_bubbleDisp( faceManager.getField< fields::solidMechanics::totalBubbleDisplacement >() ),
     m_incrDisp( nodeManager.getField< fields::solidMechanics::incrementalDisplacement >() ),
     m_incrBubbleDisp( faceManager.getField< fields::solidMechanics::incrementalBubbleDisplacement >() ),
-    m_deltaDispJump( elementSubRegion.getField< fields::contact::deltaDispJump >().toView() )
+    m_deltaDispJump( elementSubRegion.getField< fields::contact::deltaDispJump >().toView() ),
+    m_elementArea( elementSubRegion.getField< fields::elementArea >().toView() ),
+    m_slip( elementSubRegion.getField< fields::contact::slip >().toView() )
   {}
 
   //***************************************************************************
@@ -102,25 +114,16 @@ public:
   struct StackVariables : public Base::StackVariables
   {
 
-    /// The number of displacement dofs per element.
-    static constexpr int numUdofs = numNodesPerElem * 3 * 2;
-
-    /// The number of bubble dofs per element.
-    static constexpr int numBdofs = 3 * 2;
-
-    /// The number of lagrange multiplier dofs per element.
-    static constexpr int numTdofs = 3;
-
 public:
 
     GEOS_HOST_DEVICE
     StackVariables():
       Base::StackVariables(),
-            uLocal{},
-            bLocal{},
-            duLocal{},
-            dbLocal{},
-            deltaDispJumpLocal{}
+                                       uLocal{},
+                                       bLocal{},
+                                       duLocal{},
+                                       dbLocal{},
+                                       deltaDispJumpLocal{}
     {}
 
     /// Stack storage for the element local displacement vector
@@ -208,11 +211,6 @@ public:
   real64 complete( localIndex const k,
                    StackVariables & stack ) const
   {
-
-    constexpr int numUdofs = numNodesPerElem * 3 * 2;
-
-    constexpr int numBdofs = 3 * 2;
-
     real64 matRtAtu[3][numUdofs];
     real64 matRtAtb[3][numBdofs];
 
@@ -232,11 +230,16 @@ public:
     LvArray::tensorOps::Ri_add_AijBj< 3, numBdofs >( stack.deltaDispJumpLocal, matRtAtb, stack.dbLocal );
 
     // Store the results
+    real64 const scale = 1 / m_elementArea[k];
+
     for( int i=0; i<3; ++i )
     {
-      m_dispJump[ k ][ i ] = stack.dispJumpLocal[ i ];
-      m_deltaDispJump[ k ][ i ] = stack.deltaDispJumpLocal[ i ];
+      m_dispJump[ k ][ i ] = scale * stack.dispJumpLocal[ i ];
+      m_deltaDispJump[ k ][ i ] = scale * stack.deltaDispJumpLocal[ i ];
     }
+
+    m_slip[k] = LvArray::math::sqrt( LvArray::math::square( m_dispJump( k, 1 ) ) + LvArray::math::square( m_dispJump( k, 2 ) ) );
+
 
     return 0.0;
   }
@@ -258,19 +261,23 @@ protected:
   /// The rank-global delta displacement jump array.
   arrayView2d< real64 > const m_deltaDispJump;
 
+  arrayView1d< real64 const > const m_elementArea;
+
+  arrayView1d< real64 > const m_slip;
+
 };
 
-using ALMJumpUpdateFactory = finiteElement::InterfaceKernelFactory< ALMJumpUpdate,
-                                                                    arrayView1d< globalIndex const > const,
-                                                                    arrayView1d< globalIndex const > const,
-                                                                    globalIndex const,
-                                                                    CRSMatrixView< real64, globalIndex const > const,
-                                                                    arrayView1d< real64 > const,
-                                                                    real64 const,
-                                                                    arrayView1d< localIndex const > const >;
+using DispJumpUpdateFactory = finiteElement::InterfaceKernelFactory< DispJumpUpdate,
+                                                                     arrayView1d< globalIndex const > const,
+                                                                     arrayView1d< globalIndex const > const,
+                                                                     globalIndex const,
+                                                                     CRSMatrixView< real64, globalIndex const > const,
+                                                                     arrayView1d< real64 > const,
+                                                                     real64 const,
+                                                                     arrayView1d< localIndex const > const >;
 
 } // namespace SolidMechanicsALMKernels
 
 } // namespace geos
 
-#endif /* GEOS_PHYSICSSOLVERS_CONTACT_SOLIDMECHANICSALMUPDATEKERNELS_HPP_ */
+#endif /* GEOS_PHYSICSSOLVERS_CONTACT_KERNELS_SOLIDMECHANICSDISPLACEMENTJUPDATEKERNELS_HPP_ */
