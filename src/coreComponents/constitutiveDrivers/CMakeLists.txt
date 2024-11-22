@@ -39,6 +39,7 @@ set( constitutiveDrivers_sources
      fluid/multiFluid/CO2Brine/PVTDriverRunTestCO2BrinePhillipsThermalFluid.cpp
      fluid/multiFluid/CO2Brine/PVTDriverRunTestCO2BrineEzrokhiFluid.cpp
      fluid/multiFluid/CO2Brine/PVTDriverRunTestCO2BrineEzrokhiThermalFluid.cpp
+     fluid/multiFluid/compositional/PVTDriverRunTestCompositionalThreePhaseLohrenzBrayClarkViscosity.cpp
      fluid/multiFluid/compositional/PVTDriverRunTestCompositionalTwoPhaseConstantViscosity.cpp
      fluid/multiFluid/compositional/PVTDriverRunTestCompositionalTwoPhaseLohrenzBrayClarkViscosity.cpp
      fluid/multiFluid/reactive/ReactiveFluidDriver.cpp
