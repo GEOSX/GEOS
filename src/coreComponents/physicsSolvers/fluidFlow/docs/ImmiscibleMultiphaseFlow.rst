@@ -9,14 +9,14 @@ Introduction
 
 This flow solver is used to implement the finite-volume discretization for the problem of modeling multiphase flow in porous media under the influence of viscous, gravity, and capillary forces while neglecting miscibility and taking into account rock and fluid compressibility.
 
-In here, we go over the governing equations :ref:`equations` that covers two different formulation options, followed by the :ref:`discretization`, and we conclude by providing a list of the solver :ref:`parameters` and an input :ref:`input_example`.
+In here, we go over the governing equations :ref:`immiscible_equations` that covers two different formulation options, followed by the :ref:`immiscible_discretization`, and we conclude by providing a list of the solver :ref:`immiscible_parameters` and an input :ref:`immiscible_input_example`.
 
-.. _theory:
+.. _immiscible_theory:
 
 Theory
 =========================
 
-.. _equations:
+.. _immiscible_equations:
 
 Governing Equations
 -------------------
@@ -86,7 +86,7 @@ Number of equations  Equation type
 1                    Volume constraint
 ==================== ===========================
 
-.. _primary_variables:
+.. _immiscible_primary_variables:
 
 Primary Variables
 ------------------
@@ -170,7 +170,7 @@ and
 
 
 
-.. _discretization:
+.. _immiscible_discretization:
 
 Discretization
 --------------
@@ -197,7 +197,7 @@ Temporal Discretization
 
 The immiscible multiphase solver uses a fully implicit (backward Euler) temporal discretization.
 
-.. _solution_strategy:
+.. _immiscible_solution_strategy:
 
 Solution Strategy
 -----------------
@@ -207,7 +207,7 @@ At each Newton iteration, the solver assembles a residual vector, :math:`R`,
 collecting the :math:`n_p` discrete mass conservation equations and the volume
 constraint for all the control volumes.
 
-.. _parameters:
+.. _immiscible_parameters:
 
 Parameters
 ===========
@@ -216,7 +216,7 @@ The following attributes are supported:
 
 .. include:: /docs/sphinx/datastructure/ImmiscibleMultiphaseFlow.rst
 
-.. _input_example:
+.. _immiscible_input_example:
 
 Example
 =========================

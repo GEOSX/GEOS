@@ -17,6 +17,8 @@ physics solvers to be included in the simulation.
 
    fluidFlow/docs/SinglePhaseFlow
 
+   fluidFlow/docs/ImmiscibleMultiphaseFlow
+
    fluidFlow/docs/CompositionalMultiphaseFlow
 
    fluidFlow/wells/docs/CompositionalMultiphaseWell

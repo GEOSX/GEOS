@@ -1,6 +1,7 @@
 <?xml version="1.0" ?>
 
 <Problem>
+<!-- START_SPHINX_INCLUDE_SOLVER_BLOCK -->  
   <Solvers
     gravityVector="{ 0.0, 0.0, -9.81 }">
     <ImmiscibleMultiphaseFlow
@@ -17,7 +18,7 @@
         directParallel="0"/>
     </ImmiscibleMultiphaseFlow>
   </Solvers>
-
+<!-- END_SPHINX_INCLUDE_SOLVER_BLOCK -->  
   <Mesh>
     <InternalMesh
       name="mesh1"
