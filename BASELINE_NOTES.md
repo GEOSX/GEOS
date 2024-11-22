@@ -10,6 +10,10 @@ PR #3393 (XXXX-XX-XX)
 =====================
 Fix netToGross bug.
 
+PR #2637 (2024-11-21)
+=====================
+Added numberOfTargetProcesses.
+
 PR #3439 (2024-11-20)
 =====================
 EDFM bugfixes: derivatives sign, frac/cell element volume, fix apertures inconsistency in test cases.
