@@ -6,6 +6,17 @@ This file is designed to track changes to the integrated test baselines.
 Any developer who updates the baseline ID in the .integrated_tests.yaml file is expected to create an entry in this file with the pull request number, date, and their justification for rebaselining.
 These notes should be in reverse-chronological order, and use the following time format: (YYYY-MM-DD).
 
+PR #2637 (2024-11-21)
+=====================
+Added numberOfTargetProcesses.
+
+PR #3439 (2024-11-20)
+=====================
+EDFM bugfixes: derivatives sign, frac/cell element volume, fix apertures inconsistency in test cases.
+
+PR ##3440 (2024-11-18)
+=====================
+Added Lagrange multiplier with bubble functions stabilization (sli only) and possibility to specify a slip.
 
 PR #3339 (2024-11-14)
 =====================
