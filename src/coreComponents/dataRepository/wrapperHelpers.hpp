@@ -206,17 +206,17 @@ resizeDefault( T & value,
                DefaultValue< T > const & GEOS_UNUSED_PARAM( defaultValue ),
                string const & name )
 {
-  GEOS_LOG_RANK_0( GEOS_FMT( "Warning: For Wrapper<{}>::name() = {}:\n"
-                             "  wrapperHelpers::resizeDefault<{}>() called, but the SFINAE filter failed:\n"
-                             "    traits::HasMemberFunction_resizeDefault< {} > = {}\n "
-                             "    DefaultValue< {} >::has_default_value = {}",
-                             LvArray::system::demangleType< T >(),
-                             name,
-                             LvArray::system::demangleType< T >(),
-                             LvArray::system::demangleType< T >(),
-                             traits::HasMemberFunction_resizeDefault< T >,
-                             LvArray::system::demangleType< T >(),
-                             DefaultValue< T >::has_default_value ) );
+  // GEOS_LOG_RANK_0( GEOS_FMT( "Warning: For Wrapper<{}>::name() = {}:\n"
+  //                            "  wrapperHelpers::resizeDefault<{}>() called, but the SFINAE filter failed:\n"
+  //                            "    traits::HasMemberFunction_resizeDefault< {} > = {}\n "
+  //                            "    DefaultValue< {} >::has_default_value = {}",
+  //                            LvArray::system::demangleType< T >(),
+  //                            name,
+  //                            LvArray::system::demangleType< T >(),
+  //                            LvArray::system::demangleType< T >(),
+  //                            traits::HasMemberFunction_resizeDefault< T >,
+  //                            LvArray::system::demangleType< T >(),
+  //                            DefaultValue< T >::has_default_value ) );
   resize( value, newSize );
 }
 

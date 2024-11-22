@@ -286,7 +286,7 @@ template localIndex Pack< false >( buffer_unit_type * &,
                                    arrayView1d< localIndex const > const &,
                                    ElementRegionManager const * const );
 
-#if 1
+
 localIndex Unpack( buffer_unit_type const * & buffer,
                    FixedToManyElementRelation & var,
                    arrayView1d< localIndex const > const & packList,
@@ -362,77 +362,6 @@ localIndex Unpack( buffer_unit_type const * & buffer,
 
   return sizeOfUnpackedChars;
 }
-#else
 
-localIndex Unpack( buffer_unit_type const * & buffer,
-                   FixedToManyElementRelation & var,
-                   arrayView1d< localIndex const > const & packList,
-                   ElementRegionManager const * const elementRegionManager,
-                   bool const clearFlag )
-{
-  localIndex sizeOfUnpackedChars = 0;
-
-  localIndex numIndicesUnpacked;
-  sizeOfUnpackedChars += bufferOps::Unpack( buffer, numIndicesUnpacked );
-  GEOS_ERROR_IF( numIndicesUnpacked != packList.size(), "" );
-
-  for( localIndex a=0; a<packList.size(); ++a )
-  {
-    localIndex index = packList[a];
-    localIndex numSubIndicesUnpacked;
-
-    sizeOfUnpackedChars += bufferOps::Unpack( buffer, numSubIndicesUnpacked );
-    GEOS_ERROR_IF( numSubIndicesUnpacked != var.m_toElementRegion.size( 1 ), "" );
-
-    for( localIndex b=0; b<numSubIndicesUnpacked; ++b )
-    {
-      localIndex recvElemRegionIndex;
-      localIndex recvElemSubRegionIndex;
-      globalIndex globalElementIndex;
-
-      sizeOfUnpackedChars += bufferOps::Unpack( buffer, recvElemRegionIndex );
-      sizeOfUnpackedChars += bufferOps::Unpack( buffer, recvElemSubRegionIndex );
-      sizeOfUnpackedChars += bufferOps::Unpack( buffer, globalElementIndex );
-
-      if( recvElemRegionIndex!=-1 && recvElemSubRegionIndex!=-1 && globalElementIndex!=-1 )
-      {
-        ElementRegionBase const & elemRegion = elementRegionManager->getRegion( recvElemRegionIndex );
-
-        ElementSubRegionBase const & elemSubRegion = elemRegion.getSubRegion( recvElemSubRegionIndex );
-
-        localIndex const recvElemIndex = softMapLookup( elemSubRegion.globalToLocalMap(),
-                                                        globalElementIndex,
-                                                        localIndex( -1 ) );
-
-
-        localIndex & elemRegionIndex = var.m_toElementRegion[index][b];
-        localIndex & elemSubRegionIndex = var.m_toElementSubRegion[index][b];
-        localIndex & elemIndex = var.m_toElementIndex[index][b];
-
-        if( recvElemIndex!=-1 )
-        {
-          elemRegionIndex = recvElemRegionIndex;
-          elemSubRegionIndex = recvElemSubRegionIndex;
-          elemIndex = recvElemIndex;
-        }
-        else
-        {
-          elemRegionIndex = -1;
-          elemSubRegionIndex = -1;
-          elemIndex = -1;
-        }
-      }
-      else
-      {
-        var.m_toElementRegion[index][b] = -1;
-        var.m_toElementSubRegion[index][b] = -1;
-        var.m_toElementIndex[index][b] = -1;
-      }
-    }
-  }
-
-  return sizeOfUnpackedChars;
-}
-#endif
 }
 }
