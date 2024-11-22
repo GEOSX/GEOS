@@ -63,20 +63,6 @@ public:
                                     arraySlice1d< real64 const > const & tractionVector,
                                     integer & fractureState ) const override final;
 
-
-  /**
-   * @brief Evaluate the limit tangential traction norm and return the derivative wrt normal traction
-   * @param[in] normalTraction the normal traction
-   * @param[out] dLimitTangentialTractionNorm_dTraction the derivative of the limit tangential traction norm wrt normal traction
-   * @return the limit tangential traction norm
-   */
-  GEOS_HOST_DEVICE
-  inline
-  virtual real64 computeLimitTangentialTractionNorm( real64 const & normalTraction,
-                                                     real64 & dLimitTangentialTractionNorm_dTraction ) const override final
-  { GEOS_UNUSED_VAR( normalTraction, dLimitTangentialTractionNorm_dTraction ); return 0.0; }
-
-private:
 };
 
 
