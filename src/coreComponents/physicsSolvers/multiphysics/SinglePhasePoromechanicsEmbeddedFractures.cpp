@@ -20,7 +20,7 @@
 #include "SinglePhasePoromechanicsEmbeddedFractures.hpp"
 #include "constitutive/contact/HydraulicApertureRelationSelector.hpp"
 #include "constitutive/fluid/singlefluid/SingleFluidBase.hpp"
-#include "physicsSolvers/contact/SolidMechanicsEFEMKernelsHelper.hpp"
+#include "physicsSolvers/contact/kernels/SolidMechanicsEFEMKernelsHelper.hpp"
 #include "physicsSolvers/fluidFlow/SinglePhaseBase.hpp"
 #include "physicsSolvers/multiphysics/poromechanicsKernels/SinglePhasePoromechanicsEFEM.hpp"
 #include "physicsSolvers/multiphysics/poromechanicsKernels/SinglePhasePoromechanics.hpp"

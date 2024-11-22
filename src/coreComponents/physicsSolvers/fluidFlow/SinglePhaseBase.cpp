@@ -468,7 +468,7 @@ void SinglePhaseBase::initializePostInitialConditionsPreSubGroups()
                                                                      [&]( localIndex const,
                                                                           SurfaceElementRegion & region )
     {
-      region.forElementSubRegions< FaceElementSubRegion >( [&]( FaceElementSubRegion & subRegion )
+      region.forElementSubRegions< SurfaceElementSubRegion >( [&]( SurfaceElementSubRegion & subRegion )
       {
         subRegion.getWrapper< real64_array >( fields::flow::hydraulicAperture::key() ).
           setApplyDefaultValue( region.getDefaultAperture() );
@@ -704,8 +704,8 @@ void SinglePhaseBase::implicitStepSetup( real64 const & GEOS_UNUSED_PARAM( time_
 
     } );
 
-    mesh.getElemManager().forElementSubRegions< FaceElementSubRegion >( regionNames, [&]( localIndex const,
-                                                                                          FaceElementSubRegion & subRegion )
+    mesh.getElemManager().forElementSubRegions< SurfaceElementSubRegion >( regionNames, [&]( localIndex const,
+                                                                                             SurfaceElementSubRegion & subRegion )
     {
       arrayView1d< real64 const > const aper = subRegion.getField< fields::flow::hydraulicAperture >();
       arrayView1d< real64 > const aper0 = subRegion.getField< fields::flow::aperture0 >();
@@ -725,6 +725,7 @@ void SinglePhaseBase::implicitStepSetup( real64 const & GEOS_UNUSED_PARAM( time_
       fluid.saveConvergedState();
 
     } );
+
   } );
 }
 
@@ -788,8 +789,8 @@ void SinglePhaseBase::implicitStepComplete( real64 const & time,
 
     } );
 
-    mesh.getElemManager().forElementSubRegions< FaceElementSubRegion >( regionNames, [&]( localIndex const,
-                                                                                          FaceElementSubRegion & subRegion )
+    mesh.getElemManager().forElementSubRegions< SurfaceElementSubRegion >( regionNames, [&]( localIndex const,
+                                                                                             SurfaceElementSubRegion & subRegion )
     {
       arrayView1d< integer const > const elemGhostRank = subRegion.ghostRank();
       arrayView1d< real64 const > const volume = subRegion.getElementVolume();
@@ -814,7 +815,6 @@ void SinglePhaseBase::implicitStepComplete( real64 const & time,
         }
       } );
     } );
-
   } );
 }
 
