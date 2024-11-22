@@ -96,6 +96,7 @@ public:
                                arraySlice1d< real64 const > const & dispJump,
                                arraySlice1d< real64 const > const & penalty,
                                arraySlice1d< real64 const > const & traction,
+                               real64 const faceArea,
                                bool const symmetric,
                                bool const fixedLimitTau,
                                real64 const normalTractionTolerance,
@@ -111,6 +112,7 @@ public:
                                    arraySlice1d< real64 const > const & deltaDispJump,
                                    arraySlice1d< real64 const > const & penalty,
                                    arraySlice1d< real64 const > const & traction,
+                                   real64 const faceArea,
                                    arraySlice1d< real64 > const & tractionNew ) const override final;
 
   GEOS_HOST_DEVICE
@@ -169,20 +171,6 @@ public:
   virtual void allocateConstitutiveData( dataRepository::Group & parent,
                                          localIndex const numConstitutivePointsPerParentIndex ) override final;
 
-  /**
-   * @brief Const accessor for cohesion
-   * @return A const reference to arrayView1d<real64 const> containing the
-   *         cohesions (at every element).
-   */
-  real64 const & cohesion() const { return m_cohesion; }
-
-  /**
-   * @brief Const accessor for friction angle
-   * @return A const reference to arrayView1d<real64 const> containing the
-   *         friction coefficient (at every element).
-   */
-  real64 const & frictionCoefficient() const { return m_frictionCoefficient; }
-
   /// Type of kernel wrapper for in-kernel update
   using KernelWrapper = CoulombFrictionUpdates;
 
@@ -235,7 +223,7 @@ GEOS_HOST_DEVICE
 real64 CoulombFrictionUpdates::computeLimitTangentialTractionNorm( real64 const & normalTraction,
                                                                    real64 & dLimitTangentialTractionNorm_dTraction ) const
 {
-  dLimitTangentialTractionNorm_dTraction = m_frictionCoefficient;
+  dLimitTangentialTractionNorm_dTraction = -m_frictionCoefficient;
   return ( m_cohesion - normalTraction * m_frictionCoefficient );
 }
 
@@ -288,10 +276,10 @@ inline void CoulombFrictionUpdates::computeShearTraction( localIndex const k,
 
       dTractionVector_dJump[1][0] = dTractionVector_dJump[0][0] * dLimitTau_dNormalTraction * slip[0] / slipNorm;
       dTractionVector_dJump[1][1] = limitTau * pow( slip[1], 2 )  / pow( LvArray::tensorOps::l2NormSquared< 2 >( slip ), 1.5 );
-      dTractionVector_dJump[1][2] = limitTau * slip[0] * slip[1] / pow( LvArray::tensorOps::l2NormSquared< 2 >( slip ), 1.5 );
+      dTractionVector_dJump[1][2] = -limitTau * slip[0] * slip[1] / pow( LvArray::tensorOps::l2NormSquared< 2 >( slip ), 1.5 );
 
       dTractionVector_dJump[2][0] = dTractionVector_dJump[0][0] * dLimitTau_dNormalTraction * slip[1] / slipNorm;
-      dTractionVector_dJump[2][1] = limitTau * slip[0] * slip[1] / pow( LvArray::tensorOps::l2NormSquared< 2 >( slip ), 1.5 );
+      dTractionVector_dJump[2][1] = -limitTau * slip[0] * slip[1] / pow( LvArray::tensorOps::l2NormSquared< 2 >( slip ), 1.5 );
       dTractionVector_dJump[2][2] = limitTau * pow( slip[0], 2 )  / pow( LvArray::tensorOps::l2NormSquared< 2 >( slip ), 1.5 );
 
       // Compute elastic component of the slip for this case
@@ -342,6 +330,7 @@ inline void CoulombFrictionUpdates::updateTraction( arraySlice1d< real64 const >
                                                     arraySlice1d< real64 const > const & dispJump,
                                                     arraySlice1d< real64 const > const & penalty,
                                                     arraySlice1d< real64 const > const & traction,
+                                                    real64 const faceArea,
                                                     bool const symmetric,
                                                     bool const fixedLimitTau,
                                                     real64 const normalTractionTolerance,
@@ -358,9 +347,9 @@ inline void CoulombFrictionUpdates::updateTraction( arraySlice1d< real64 const >
 
   // Compute the trial traction
   real64 tractionTrial[ 3 ];
-  tractionTrial[ 0 ] = traction[0] + penalty[0] * dispJump[0];
-  tractionTrial[ 1 ] = traction[1] + penalty[1] * (dispJump[1] - oldDispJump[1]);
-  tractionTrial[ 2 ] = traction[2] + penalty[1] * (dispJump[2] - oldDispJump[2]);
+  tractionTrial[ 0 ] = traction[0] + penalty[0] * dispJump[0] * faceArea;
+  tractionTrial[ 1 ] = traction[1] + penalty[1] * (dispJump[1] - oldDispJump[1]) * faceArea;
+  tractionTrial[ 2 ] = traction[2] + penalty[1] * (dispJump[2] - oldDispJump[2]) * faceArea;
 
   // Compute tangential trial traction norm
   real64 const tau[2] = { tractionTrial[1],
@@ -476,15 +465,16 @@ inline void CoulombFrictionUpdates::updateTractionOnly( arraySlice1d< real64 con
                                                         arraySlice1d< real64 const > const & deltaDispJump,
                                                         arraySlice1d< real64 const > const & penalty,
                                                         arraySlice1d< real64 const > const & traction,
+                                                        real64 const faceArea,
                                                         arraySlice1d< real64 > const & tractionNew ) const
 {
 
   // TODO: Pass this tol as an argument or define a new class member
   real64 const zero = LvArray::NumericLimits< real64 >::epsilon;
 
-  tractionNew[0] = traction[0] + penalty[0] * dispJump[0];
-  tractionNew[1] = traction[1] + penalty[1] * deltaDispJump[1];
-  tractionNew[2] = traction[2] + penalty[1] * deltaDispJump[2];
+  tractionNew[0] = traction[0] + penalty[0] * dispJump[0] * faceArea;
+  tractionNew[1] = traction[1] + penalty[1] * deltaDispJump[1] * faceArea;
+  tractionNew[2] = traction[2] + penalty[1] * deltaDispJump[2] * faceArea;
 
   real64 const tau[2] = { tractionNew[1],
                           tractionNew[2] };

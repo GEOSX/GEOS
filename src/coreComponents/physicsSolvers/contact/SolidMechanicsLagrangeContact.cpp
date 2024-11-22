@@ -35,6 +35,7 @@
 #include "physicsSolvers/fluidFlow/FlowSolverBaseFields.hpp" // needed to register pressure(_n)
 #include "physicsSolvers/solidMechanics/SolidMechanicsLagrangianFEM.hpp"
 #include "physicsSolvers/contact/ContactFields.hpp"
+#include "physicsSolvers/contact/LogLevelsInfo.hpp"
 #include "common/GEOS_RAJA_Interface.hpp"
 #include "linearAlgebra/utilities/LAIHelperFunctions.hpp"
 #include "linearAlgebra/solvers/PreconditionerJacobi.hpp"
@@ -71,10 +72,11 @@ SolidMechanicsLagrangeContact::SolidMechanicsLagrangeContact( const string & nam
     setApplyDefaultValue( 1.0 ).
     setDescription( "It be used to increase the scale of the stabilization entries. A value < 1.0 results in larger entries in the stabilization matrix." );
 
+  addLogLevel< logInfo::Configuration >();
+
   LinearSolverParameters & linSolParams = m_linearSolverParameters.get();
   linSolParams.mgr.strategy = LinearSolverParameters::MGR::StrategyType::lagrangianContactMechanics;
   linSolParams.mgr.separateComponents = true;
-  linSolParams.mgr.displacementFieldName = solidMechanics::totalDisplacement::key();
   linSolParams.dofsPerNode = 3;
 }
 
@@ -184,7 +186,7 @@ void SolidMechanicsLagrangeContact::setupSystem( DomainPartition & domain,
   }
 
   // setup monolithic coupled system
-  SolverBase::setupSystem( domain, dofManager, localMatrix, rhs, solution, true ); // "true" is to force setSparsity
+  PhysicsSolverBase::setupSystem( domain, dofManager, localMatrix, rhs, solution, true ); // "true" is to force setSparsity
 
   if( !m_precond && m_linearSolverParameters.get().solverType != LinearSolverParameters::SolverType::direct )
   {
@@ -426,10 +428,11 @@ void SolidMechanicsLagrangeContact::computeTolerances( DomainPartition & domain 
     } );
   } );
 
-  GEOS_LOG_LEVEL_RANK_0( 2, GEOS_FMT( "{}: normal displacement tolerance = [{}, {}], sliding tolerance = [{}, {}], normal traction tolerance = [{}, {}]",
-                                      this->getName(), minNormalDisplacementTolerance, maxNormalDisplacementTolerance,
-                                      minSlidingTolerance, maxSlidingTolerance,
-                                      minNormalTractionTolerance, maxNormalTractionTolerance ) );
+  GEOS_LOG_LEVEL_INFO_RANK_0( logInfo::Configuration,
+                              GEOS_FMT( "{}: normal displacement tolerance = [{}, {}], sliding tolerance = [{}, {}], normal traction tolerance = [{}, {}]",
+                                        this->getName(), minNormalDisplacementTolerance, maxNormalDisplacementTolerance,
+                                        minSlidingTolerance, maxSlidingTolerance,
+                                        minNormalTractionTolerance, maxNormalTractionTolerance ) );
 }
 
 void SolidMechanicsLagrangeContact::resetStateToBeginningOfStep( DomainPartition & domain )
@@ -501,9 +504,9 @@ void SolidMechanicsLagrangeContact::computeFaceDisplacementJump( DomainPartition
         ArrayOfArraysView< localIndex const > const & elemsToFaces = subRegion.faceList().toViewConst();
         arrayView1d< real64 const > const & area = subRegion.getElementArea().toViewConst();
 
-        arrayView2d< real64 > const & dispJump = subRegion.getField< contact::dispJump >();
-        arrayView1d< real64 > const & slip = subRegion.getField< fields::contact::slip >();
-        arrayView1d< real64 > const & aperture = subRegion.getField< fields::elementAperture >();
+        arrayView2d< real64 > const dispJump = subRegion.getField< contact::dispJump >();
+        arrayView1d< real64 > const slip = subRegion.getField< fields::contact::slip >();
+        arrayView1d< real64 > const aperture = subRegion.getField< fields::elementAperture >();
 
         forAll< parallelHostPolicy >( subRegion.size(), [=] ( localIndex const kfe )
         {
@@ -1590,7 +1593,7 @@ void SolidMechanicsLagrangeContact::
                   {
                     elemRHS[i] = Ja * ( traction[kfe][i] - limitTau * sliding[ i-1 ] / slidingNorm );
 
-                    dRdT( i, 0 ) = Ja * dLimitTau_dNormalTraction * sliding[ i-1 ] / slidingNorm;
+                    dRdT( i, 0 ) = -Ja * dLimitTau_dNormalTraction * sliding[ i-1 ] / slidingNorm;
                     dRdT( i, i ) = Ja;
                   }
 
@@ -1638,7 +1641,7 @@ void SolidMechanicsLagrangeContact::
                     {
                       elemRHS[i] = Ja * traction[kfe][i] * ( 1.0 - limitTau / vauxNorm );
 
-                      dRdT( i, 0 ) = Ja * traction[kfe][i] * dLimitTau_dNormalTraction / vauxNorm;
+                      dRdT( i, 0 ) = -Ja * traction[kfe][i] * dLimitTau_dNormalTraction / vauxNorm;
                       dRdT( i, i ) = Ja;
                     }
                   }
@@ -2333,7 +2336,7 @@ bool SolidMechanicsLagrangeContact::updateConfiguration( DomainPartition & domai
   // and total area of fracture elements
   totalArea = MpiWrapper::sum( totalArea );
 
-  GEOS_LOG_LEVEL_RANK_0( 2, GEOS_FMT( "  {}: changed area {} out of {}", getName(), changedArea, totalArea ) );
+  GEOS_LOG_LEVEL_INFO_RANK_0( logInfo::Configuration, GEOS_FMT( "  {}: changed area {} out of {}", getName(), changedArea, totalArea ) );
 
   // Assume converged if changed area is below certain fraction of total area
   return changedArea <= m_nonlinearSolverParameters.m_configurationTolerance * totalArea;
@@ -2359,6 +2362,6 @@ real64 SolidMechanicsLagrangeContact::setNextDt( real64 const & currentDt,
   return currentDt;
 }
 
-REGISTER_CATALOG_ENTRY( SolverBase, SolidMechanicsLagrangeContact, string const &, Group * const )
+REGISTER_CATALOG_ENTRY( PhysicsSolverBase, SolidMechanicsLagrangeContact, string const &, Group * const )
 
 } /* namespace geos */

@@ -25,7 +25,6 @@ class xml_node;
 
 namespace geos
 {
-class SolverBase;
 
 class PhysicsSolverManager : public dataRepository::Group
 {

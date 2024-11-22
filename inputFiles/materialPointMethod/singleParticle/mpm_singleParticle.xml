@@ -29,7 +29,7 @@ srun -n 1 /usr/workspace/homel1/GEOS/build-quartz-gcc@12-release/bin/geosx -i mp
     <CellElementRegion
       name="CellRegion1"
       meshBody="backgroundGrid"
-      cellBlocks="{ cb1 }"
+      cellBlocks="{ * }"
       materialList="{ null }"/>
   </ElementRegions>
 
@@ -119,4 +119,3 @@ boundaryConditionTypes="{ 0, 0, 0, 0, 0, 0 }"
   </Outputs>
 
 </Problem>
-

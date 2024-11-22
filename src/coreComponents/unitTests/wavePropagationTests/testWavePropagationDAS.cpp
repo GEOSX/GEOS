@@ -41,7 +41,6 @@ char const * xmlInput =
     <Solvers>
       <ElasticSEM
         name="elasticSolver"
-        cflFactor="0.25"
         discretization="FE1"
         targetRegions="{ Region }"
         sourceCoordinates="{ { 50, 50, 50 } }"
@@ -54,6 +53,8 @@ char const * xmlInput =
         receiverCoordinates="{ { 0.1, 0.1, 0.1 }, { 0.1, 0.1, 99.9 }, { 0.1, 99.9, 0.1 }, { 0.1, 99.9, 99.9 },
                                 { 99.9, 0.1, 0.1 }, { 99.9, 0.1, 99.9 }, { 99.9, 99.9, 0.1 }, { 99.9, 99.9, 99.9 },
                                 { 50, 50, 50 } }"
+        timestepStabilityLimit="1"
+        cflFactor="0.95"
         outputSeismoTrace="0"
         dtSeismoTrace="0.1"/>
     </Solvers>
@@ -104,7 +105,7 @@ char const * xmlInput =
     <ElementRegions>
       <CellElementRegion
         name="Region"
-        cellBlocks="{ cb }"
+        cellBlocks="{ * }"
         materialList="{ nullModel }"/>
     </ElementRegions>
     <Constitutive>
@@ -184,6 +185,11 @@ TEST_F( ElasticWaveEquationSEMTest, SeismoTrace )
   }
   // cleanup (triggers calculation of the remaining seismograms data points)
   propagator->cleanup( 1.0, 10, 0, 0, domain );
+
+  //Assert on time-step computed with the automatci time-step routine
+  real64 const dtOut = propagator->getReference< real64 >( ElasticWaveEquationSEM::viewKeyStruct::timeStepString() );
+  ASSERT_TRUE( dtOut < 0.04 );
+
 
   // retrieve seismo
   arrayView2d< real32 > const dasReceivers = propagator->getReference< array2d< real32 > >( ElasticWaveEquationSEM::viewKeyStruct::dasSignalNp1AtReceiversString() ).toView();

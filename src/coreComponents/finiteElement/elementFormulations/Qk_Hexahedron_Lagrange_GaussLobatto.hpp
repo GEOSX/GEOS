@@ -122,8 +122,7 @@ public:
   USING_FINITEELEMENTBASE
   /** @endcond Doxygen_Suppress */
 
-  virtual ~Qk_Hexahedron_Lagrange_GaussLobatto() override
-  {}
+  ~Qk_Hexahedron_Lagrange_GaussLobatto() = default;
 
   GEOS_HOST_DEVICE
   virtual localIndex getNumQuadraturePoints() const override

@@ -41,7 +41,7 @@
   <ElementRegions>
     <CellElementRegion
       name="Omega"
-      cellBlocks="{ cb1 }"
+      cellBlocks="{ * }"
       materialList="{ water, porousRock }"/>
   </ElementRegions>
 

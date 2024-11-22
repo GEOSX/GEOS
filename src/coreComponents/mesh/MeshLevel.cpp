@@ -204,8 +204,8 @@ MeshLevel::MeshLevel( string const & name,
     // create element region with the same name as source element region "Region"
     CellElementRegion & region = *(dynamic_cast< CellElementRegion * >( m_elementManager->createChild( sourceRegion.getCatalogName(),
                                                                                                        sourceRegion.getName() ) ) );
-    // add cell block to the new element region with the same name as cell block name from source element region
-    region.addCellBlockNames( sourceRegion.getCellBlockNames() );
+    // set cell block to the new element region with the same name as cell block name from source element region
+    region.setCellBlockNames( sourceRegion.getCellBlockNames() );
 
     sourceRegion.forElementSubRegions< CellElementSubRegion >( [&]( CellElementSubRegion const & sourceSubRegion )
     {

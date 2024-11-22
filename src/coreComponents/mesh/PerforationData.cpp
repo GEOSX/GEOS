@@ -39,6 +39,8 @@ PerforationData::PerforationData( string const & name, Group * const parent )
   registerField( fields::perforation::reservoirElementRegion{}, &m_toMeshElements.m_toElementRegion );
   registerField( fields::perforation::reservoirElementSubRegion{}, &m_toMeshElements.m_toElementSubRegion );
   registerField( fields::perforation::reservoirElementIndex{}, &m_toMeshElements.m_toElementIndex );
+  registerField( fields::perforation::reservoirElementGlobalIndex{}, &m_reservoirElementGlobalIndex );
+
   registerField( fields::perforation::wellElementIndex{}, &m_wellElementIndex );
   registerField( fields::perforation::location{}, &m_location );
   registerField( fields::perforation::wellTransmissibility{}, &m_wellTransmissibility );

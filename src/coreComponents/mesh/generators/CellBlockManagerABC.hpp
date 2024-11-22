@@ -113,13 +113,18 @@ public:
    * @brief Returns a group containing the cell blocks as CellBlockABC instances
    * @return Const reference to the Group instance.
    */
-  virtual const Group & getCellBlocks() const = 0;
+  virtual Group const & getCellBlocks() const = 0;
 
   /**
    * @brief Returns a group containing the face blocks as FaceBlockABC instances
    * @return Const reference to the Group instance.
    */
-  virtual const Group & getFaceBlocks() const = 0;
+  virtual Group const & getFaceBlocks() const = 0;
+
+  /**
+   * @return A map of the cellblocks list for each region attribute values.
+   */
+  virtual std::map< integer, std::set< string > > const & getRegionAttributesCellBlocks() const = 0;
 
   /**
    * @brief Total number of nodes across all the cell blocks.

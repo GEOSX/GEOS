@@ -20,7 +20,7 @@
 #ifndef GEOS_CONSTITUTIVE_FLUID_REACTIVEBRINEFLUID_HPP_
 #define GEOS_CONSTITUTIVE_FLUID_REACTIVEBRINEFLUID_HPP_
 
-#include "codingUtilities/EnumStrings.hpp"
+#include "common/format/EnumStrings.hpp"
 #include "constitutive/fluid/multifluid/reactive/ReactiveMultiFluid.hpp"
 #include "constitutive/fluid/multifluid/MultiFluidUtils.hpp"
 #include "constitutive/fluid/multifluid/CO2Brine/PhaseModel.hpp"

@@ -50,6 +50,7 @@ Group::Group( string const & name,
   m_restart_flags( RestartFlags::WRITE_AND_READ ),
   m_input_flags( InputFlags::INVALID ),
   m_conduitNode( rootNode[ name ] ),
+  m_logLevelsRegistry( std::make_unique< LogLevelsRegistry >() ),
   m_dataContext( std::make_unique< GroupContext >( *this ) )
 {}
 
@@ -79,7 +80,6 @@ void Group::deregisterWrapper( string const & name )
   m_wrappers.erase( name );
   m_conduitNode.remove( name );
 }
-
 
 void Group::resize( indexType const newSize )
 {
@@ -245,6 +245,7 @@ void Group::processInputFile( xmlWrapper::xmlNode const & targetNode,
 
 void Group::postInputInitializationRecursive()
 {
+  m_logLevelsRegistry = nullptr;
   for( auto const & subGroupIter : m_subGroups )
   {
     subGroupIter.second->postInputInitializationRecursive();

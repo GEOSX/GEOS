@@ -24,7 +24,12 @@
 #include "mesh/DomainPartition.hpp"
 #include "mesh/mpiCommunications/CommunicationTools.hpp"
 #include "physicsSolvers/solidMechanics/SolidMechanicsLagrangianFEM.hpp"
-#include "SeismicityRateKernels.hpp"
+#include "kernels/SeismicityRateKernels.hpp"
+#include "physicsSolvers/inducedSeismicity/inducedSeismicityFields.hpp"
+#include "physicsSolvers/fluidFlow/FlowSolverBaseFields.hpp"
+
+#include "fieldSpecification/FieldSpecificationManager.hpp"
+
 
 namespace geos
 {
@@ -35,7 +40,7 @@ using namespace constitutive;
 
 SeismicityRate::SeismicityRate( const string & name,
                                 Group * const parent ):
-  SolverBase( name, parent ),
+  PhysicsSolverBase( name, parent ),
   m_stressSolver( nullptr )
 {
   this->registerWrapper( viewKeyStruct::directEffectString(), &m_directEffect ).
@@ -79,10 +84,10 @@ void SeismicityRate::postInputInitialization()
   // Initialize member stress solver as specified in XML input
   if( !m_stressSolverName.empty() )
   {
-    m_stressSolver = &this->getParent().getGroup< SolverBase >( m_stressSolverName );
+    m_stressSolver = &this->getParent().getGroup< PhysicsSolverBase >( m_stressSolverName );
   }
 
-  SolverBase::postInputInitialization();
+  PhysicsSolverBase::postInputInitialization();
 }
 
 SeismicityRate::~SeismicityRate()
@@ -92,7 +97,7 @@ SeismicityRate::~SeismicityRate()
 
 void SeismicityRate::registerDataOnMesh( Group & meshBodies )
 {
-  SolverBase::registerDataOnMesh( meshBodies );
+  PhysicsSolverBase::registerDataOnMesh( meshBodies );
 
   forDiscretizationOnMeshTargets( meshBodies, [&] ( string const &,
                                                     MeshLevel & mesh,
@@ -412,5 +417,5 @@ void SeismicityRate::integralSolverStep( real64 const & time_n,
   }
 }
 
-REGISTER_CATALOG_ENTRY( SolverBase, SeismicityRate, string const &, dataRepository::Group * const )
+REGISTER_CATALOG_ENTRY( PhysicsSolverBase, SeismicityRate, string const &, dataRepository::Group * const )
 } // namespace geos

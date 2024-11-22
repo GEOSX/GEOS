@@ -32,9 +32,9 @@
 #include "mesh/SurfaceElementRegion.hpp"
 #include "physicsSolvers/solidMechanics/SolidMechanicsFields.hpp"
 #include "physicsSolvers/solidMechanics/SolidMechanicsLagrangianFEM.hpp"
-#include "physicsSolvers/contact/SolidMechanicsEFEMKernels.hpp"
-#include "physicsSolvers/contact/SolidMechanicsEFEMStaticCondensationKernels.hpp"
-#include "physicsSolvers/contact/SolidMechanicsEFEMJumpUpdateKernels.hpp"
+#include "physicsSolvers/contact/kernels/SolidMechanicsEFEMKernels.hpp"
+#include "physicsSolvers/contact/kernels/SolidMechanicsEFEMStaticCondensationKernels.hpp"
+#include "physicsSolvers/contact/kernels/SolidMechanicsEFEMJumpUpdateKernels.hpp"
 
 namespace geos
 {
@@ -68,15 +68,16 @@ void SolidMechanicsEmbeddedFractures::postInputInitialization()
 
   LinearSolverParameters & linParams = m_linearSolverParameters.get();
 
+  linParams.dofsPerNode = 3;
   if( m_useStaticCondensation )
   {
-    linParams.dofsPerNode = 3;
     linParams.isSymmetric = true;
     linParams.amg.separateComponents = true;
   }
   else
   {
     linParams.mgr.strategy = LinearSolverParameters::MGR::StrategyType::solidMechanicsEmbeddedFractures;
+    linParams.mgr.separateComponents = true;
   }
 }
 
@@ -812,5 +813,5 @@ bool SolidMechanicsEmbeddedFractures::updateConfiguration( DomainPartition & dom
   return hasConfigurationConvergedGlobally;
 }
 
-REGISTER_CATALOG_ENTRY( SolverBase, SolidMechanicsEmbeddedFractures, string const &, Group * const )
+REGISTER_CATALOG_ENTRY( PhysicsSolverBase, SolidMechanicsEmbeddedFractures, string const &, Group * const )
 } /* namespace geos */

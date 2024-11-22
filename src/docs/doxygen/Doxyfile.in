@@ -767,7 +767,7 @@ INPUT = @PROJECT_SOURCE_DIR@/coreComponents/common \
         @PROJECT_SOURCE_DIR@/coreComponents/finiteElement/elementFormulations \
         @PROJECT_SOURCE_DIR@/coreComponents/finiteElement/kernelInterface \
         @PROJECT_SOURCE_DIR@/coreComponents/mesh/MeshFields.hpp \
-        @PROJECT_SOURCE_DIR@/coreComponents/physicsSolvers/SolverBase.hpp \
+        @PROJECT_SOURCE_DIR@/coreComponents/physicsSolvers/PhysicsSolverBase.hpp \
         @PROJECT_SOURCE_DIR@/coreComponents/physicsSolvers/simplePDE/LaplaceFEMKernels.hpp \
         @PROJECT_SOURCE_DIR@/coreComponents/physicsSolvers/solidMechanics/kernels/ExplicitFiniteStrain.hpp \
         @PROJECT_SOURCE_DIR@/coreComponents/physicsSolvers/solidMechanics/kernels/ExplicitSmallStrain.hpp \

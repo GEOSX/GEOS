@@ -178,6 +178,6 @@ void PhaseFieldPoromechanicsSolver::applyDamageOnTractionBC( DomainPartition & d
 
 }
 
-REGISTER_CATALOG_ENTRY( SolverBase, PhaseFieldPoromechanicsSolver, string const &, Group * const )
+REGISTER_CATALOG_ENTRY( PhysicsSolverBase, PhaseFieldPoromechanicsSolver, string const &, Group * const )
 
 } /* namespace geos */

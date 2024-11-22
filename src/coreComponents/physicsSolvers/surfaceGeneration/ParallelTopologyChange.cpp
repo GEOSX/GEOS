@@ -813,7 +813,7 @@ void parallelTopologyChange::synchronizeTopologyChange( MeshLevel * const mesh,
   //   b) the modified objects to the owning ranks.
 
   // pack the buffers, and send the size of the buffers
-  MPI_iCommData commData( CommunicationTools::getInstance().getCommID() );
+  MPI_iCommData commData;
   commData.resize( neighbors.size() );
   for( unsigned int neighborIndex=0; neighborIndex<neighbors.size(); ++neighborIndex )
   {
@@ -905,7 +905,7 @@ void parallelTopologyChange::synchronizeTopologyChange( MeshLevel * const mesh,
 
 
 
-  MPI_iCommData commData2( CommunicationTools::getInstance().getCommID() );
+  MPI_iCommData commData2;
   commData2.resize( neighbors.size());
   for( unsigned int neighborIndex=0; neighborIndex<neighbors.size(); ++neighborIndex )
   {

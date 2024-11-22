@@ -72,7 +72,7 @@ char const * xmlInput =
       </FiniteVolume>
     </NumericalMethods>
     <ElementRegions>
-      <CellElementRegion name="region" cellBlocks="{cb1}" materialList="{rock}" />
+      <CellElementRegion name="region" cellBlocks="{*}" materialList="{rock}" />
     </ElementRegions>
     <Constitutive>
       <CompressibleSolidConstantPermeability name="rock"

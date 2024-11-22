@@ -57,6 +57,7 @@ public:
    * @brief Copy Constructor
    * @param source The object to copy.
    */
+  GEOS_HOST_DEVICE
   FiniteElementBase( FiniteElementBase const & source ):
 #ifdef CALC_FEM_SHAPE_IN_KERNEL
     m_viewGradN(),
@@ -87,7 +88,9 @@ public:
   /**
    * @brief Destructor
    */
-  virtual ~FiniteElementBase() = default;
+  GEOS_HOST_DEVICE
+  virtual ~FiniteElementBase()
+  {}
 
   /**
    * @struct StackVariables

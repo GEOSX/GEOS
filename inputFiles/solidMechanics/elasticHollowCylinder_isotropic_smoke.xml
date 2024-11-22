@@ -10,7 +10,7 @@
   <ElementRegions>
     <CellElementRegion
       name="Region1"
-      cellBlocks="{ cb1 }"
+      cellBlocks="{ * }"
       materialList="{ isotropicMaterial }"/>
   </ElementRegions>
 

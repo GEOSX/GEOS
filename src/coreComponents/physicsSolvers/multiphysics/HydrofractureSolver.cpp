@@ -21,13 +21,16 @@
 
 #include "constitutive/contact/HydraulicApertureRelationSelector.hpp"
 #include "constitutive/fluid/singlefluid/SingleFluidBase.hpp"
+#include "constitutive/fluid/singlefluid/SingleFluidFields.hpp"
 #include "physicsSolvers/multiphysics/HydrofractureSolverKernels.hpp"
 #include "physicsSolvers/solidMechanics/SolidMechanicsFields.hpp"
 #include "physicsSolvers/multiphysics/SinglePhasePoromechanics.hpp"
 #include "physicsSolvers/multiphysics/MultiphasePoromechanics.hpp"
 #include "physicsSolvers/fluidFlow/SinglePhaseBase.hpp"
+#include "physicsSolvers/surfaceGeneration/LogLevelsInfo.hpp"
+#include "dataRepository/LogLevelsInfo.hpp"
 #include "mesh/MeshFields.hpp"
-#include "constitutive/fluid/singlefluid/SingleFluidFields.hpp"
+#include "finiteVolume/FluxApproximationBase.hpp"
 
 namespace geos
 {
@@ -70,6 +73,8 @@ HydrofractureSolver< POROMECHANICS_SOLVER >::HydrofractureSolver( const string &
     setApplyDefaultValue( 0 ).
     setInputFlag( InputFlags::OPTIONAL );
 
+  Base::template addLogLevel< logInfo::SurfaceGenerator >();
+
   registerWrapper( viewKeyStruct::isLaggingFractureStencilWeightsUpdateString(), &m_isLaggingFractureStencilWeightsUpdate ).
     setApplyDefaultValue( 0 ).
     setInputFlag( InputFlags::OPTIONAL ).
@@ -79,8 +84,7 @@ HydrofractureSolver< POROMECHANICS_SOLVER >::HydrofractureSolver( const string &
 
   // This may need to be different depending on whether poroelasticity is on or not.
   m_linearSolverParameters.get().mgr.strategy = LinearSolverParameters::MGR::StrategyType::hydrofracture;
-  m_linearSolverParameters.get().mgr.separateComponents = false;
-  m_linearSolverParameters.get().mgr.displacementFieldName = solidMechanics::totalDisplacement::key();
+  m_linearSolverParameters.get().mgr.separateComponents = true;
   m_linearSolverParameters.get().dofsPerNode = 3;
 
 }
@@ -206,7 +210,6 @@ real64 HydrofractureSolver< POROMECHANICS_SOLVER >::fullyCoupledSolverStep( real
 
     // currently the only method is implicit time integration
     dtReturn = nonlinearImplicitStep( time_n, dt, cycleNumber, domain );
-
 
     if( !this->m_performStressInitialization && m_surfaceGenerator->solverStep( time_n, dt, cycleNumber, domain ) > 0 )
     {
@@ -362,13 +365,12 @@ void HydrofractureSolver< POROMECHANICS_SOLVER >::updateHydraulicApertureAndFrac
   minHydraulicAperture  = MpiWrapper::min( minHydraulicAperture );
   maxHydraulicAperture  = MpiWrapper::max( maxHydraulicAperture );
 
-  GEOS_LOG_LEVEL_RANK_0( 1, GEOS_FMT( "        {}: Max aperture change: {} m, max hydraulic aperture change: {} m",
-                                      this->getName(), fmt::format( "{:.{}f}", maxApertureChange, 6 ), fmt::format( "{:.{}f}", maxHydraulicApertureChange, 6 ) ) );
-  GEOS_LOG_LEVEL_RANK_0( 1, GEOS_FMT( "        {}: Min aperture: {} m, max aperture: {} m",
-                                      this->getName(), fmt::format( "{:.{}f}", minAperture, 6 ), fmt::format( "{:.{}f}", maxAperture, 6 ) ) );
-  GEOS_LOG_LEVEL_RANK_0( 1, GEOS_FMT( "        {}: Min hydraulic aperture: {} m, max hydraulic aperture: {} m",
-                                      this->getName(), fmt::format( "{:.{}f}", minHydraulicAperture, 6 ), fmt::format( "{:.{}f}", maxHydraulicAperture, 6 ) ) );
-
+  GEOS_LOG_LEVEL_INFO_RANK_0( logInfo::Solution, GEOS_FMT( "        {}: Max aperture change: {} m, max hydraulic aperture change: {} m",
+                                                           this->getName(), fmt::format( "{:.{}f}", maxApertureChange, 6 ), fmt::format( "{:.{}f}", maxHydraulicApertureChange, 6 ) ) );
+  GEOS_LOG_LEVEL_INFO_RANK_0( logInfo::Solution, GEOS_FMT( "        {}: Min aperture: {} m, max aperture: {} m",
+                                                           this->getName(), fmt::format( "{:.{}f}", minAperture, 6 ), fmt::format( "{:.{}f}", maxAperture, 6 ) ) );
+  GEOS_LOG_LEVEL_INFO_RANK_0( logInfo::Solution, GEOS_FMT( "        {}: Min hydraulic aperture: {} m, max hydraulic aperture: {} m",
+                                                           this->getName(), fmt::format( "{:.{}f}", minHydraulicAperture, 6 ), fmt::format( "{:.{}f}", maxHydraulicAperture, 6 ) ) );
 }
 template< typename POROMECHANICS_SOLVER >
 void HydrofractureSolver< POROMECHANICS_SOLVER >::setupCoupling( DomainPartition const & domain,
@@ -903,6 +905,13 @@ void HydrofractureSolver< POROMECHANICS_SOLVER >::implicitStepComplete( real64 c
 }
 
 template< typename POROMECHANICS_SOLVER >
+void HydrofractureSolver< POROMECHANICS_SOLVER >::resetStateToBeginningOfStep( DomainPartition & domain )
+{
+  Base::resetStateToBeginningOfStep( domain );
+  updateState( domain );
+}
+
+template< typename POROMECHANICS_SOLVER >
 real64 HydrofractureSolver< POROMECHANICS_SOLVER >::setNextDt( real64 const & currentDt,
                                                                DomainPartition & domain )
 {
@@ -918,7 +927,6 @@ real64 HydrofractureSolver< POROMECHANICS_SOLVER >::setNextDt( real64 const & cu
     nextDt = m_surfaceGenerator->getTimestepRequest() < 1e99 ? m_surfaceGenerator->getTimestepRequest() : currentDt;
   }
 
-  GEOS_LOG_LEVEL_RANK_0( 3, this->getName() << ": nextDt request is "  << nextDt );
   return nextDt;
 }
 template< typename POROMECHANICS_SOLVER >
@@ -1110,8 +1118,9 @@ void HydrofractureSolver< POROMECHANICS_SOLVER >::initializeNewFractureFields( D
               aperture[newElemIndex] = 0;
             }
           }
-          GEOS_LOG_LEVEL_RANK_0( 1, GEOS_FMT( "New elem index = {:4d} , init aper = {:4.2e}, init press = {:4.2e} ",
-                                              newElemIndex, aperture[newElemIndex], fluidPressure[newElemIndex] ) );
+          GEOS_LOG_LEVEL_INFO_RANK_0( logInfo::SurfaceGenerator,
+                                      GEOS_FMT( "New elem index = {:4d} , init aper = {:4.2e}, init press = {:4.2e} ",
+                                                newElemIndex, aperture[newElemIndex], fluidPressure[newElemIndex] ) );
         } );
 
         if( m_newFractureInitializationType == InitializationType::Displacement )
@@ -1166,9 +1175,9 @@ void HydrofractureSolver< POROMECHANICS_SOLVER >::initializeNewFractureFields( D
 namespace
 {
 typedef HydrofractureSolver<> SinglePhaseHydrofracture;
-REGISTER_CATALOG_ENTRY( SolverBase, SinglePhaseHydrofracture, string const &, Group * const )
+REGISTER_CATALOG_ENTRY( PhysicsSolverBase, SinglePhaseHydrofracture, string const &, Group * const )
 // typedef HydrofractureSolver< MultiphasePoromechanics<> > MultiphaseHydrofracture;
-// REGISTER_CATALOG_ENTRY( SolverBase, MultiphaseHydrofracture, string const &, Group * const )
+// REGISTER_CATALOG_ENTRY( PhysicsSolverBase, MultiphaseHydrofracture, string const &, Group * const )
 }
 
 } /* namespace geos */
