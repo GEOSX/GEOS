@@ -2199,6 +2199,8 @@ the relative residual norm satisfies:
 		<xsd:attribute name="levelNames" type="string_array" default="{}" />
 		<!--logLevel => Log level-->
 		<xsd:attribute name="logLevel" type="integer" default="0" />
+		<!--numberOfTargetProcesses => Aggregate output data to be written.-->
+		<xsd:attribute name="numberOfTargetProcesses" type="integer" default="1" />
 		<!--onlyPlotSpecifiedFieldNames => If this flag is equal to 1, then we only plot the fields listed in `fieldNames`. Otherwise, we plot all the fields with the required `plotLevel`, plus the fields listed in `fieldNames`-->
 		<xsd:attribute name="onlyPlotSpecifiedFieldNames" type="integer" default="0" />
 		<!--outputRegionType => Output region types.  Valid options: ``cell``, ``well``, ``surface``, ``particle``, ``all``-->

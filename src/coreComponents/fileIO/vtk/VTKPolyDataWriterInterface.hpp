@@ -17,6 +17,7 @@
 #define GEOS_FILEIO_VTK_VTKPOLYDATAWRITERINTERFACE_HPP_
 
 #include "common/DataTypes.hpp"
+#include "mesh/ObjectManagerBase.hpp"
 #include "dataRepository/WrapperBase.hpp"
 #include "dataRepository/Wrapper.hpp"
 #include "fileIO/vtk/VTKPVDWriter.hpp"
@@ -167,6 +168,14 @@ public:
   {
     m_levelNames.insert( levelNames.begin(), levelNames.end() );
   }
+  /**
+   * @brief Set the Number Of Target Processes
+   * @param[in] numberOfTargetProcesses  the number of processes
+   */
+  void setNumberOfTargetProcesses( integer const numberOfTargetProcesses )
+  {
+    m_numberOfTargetProcesses = numberOfTargetProcesses;
+  }
 
   /**
    * @brief Main method of this class. Write all the files for one time step.
@@ -252,7 +261,18 @@ protected:
   void writeWellElementRegions( real64 time,
                                 ElementRegionManager const & elemManager,
                                 NodeManager const & nodeManager,
-                                string const & path ) const;
+                                string const & path );
+
+  /**
+   * @brief Writes the files containing the particle representation
+   * @details There will be one file written per ParticleRegion and per rank
+   * @param[in] time the time-step
+   * @param[in] particleManager the ParticleManager containing the ParticleRegions to be output
+   * @param[in] path the root path where the mesh will be written
+   */
+  void writeParticleRegions( real64 const time,
+                             ParticleManager const & particleManager,
+                             string const & path );
 
   /**
    * @brief Writes the files containing the faces elements
@@ -269,7 +289,7 @@ protected:
                                    NodeManager const & nodeManager,
                                    EmbeddedSurfaceNodeManager const & embSurfNodeManager,
                                    FaceManager const & faceManager,
-                                   string const & path ) const;
+                                   string const & path );
 
   /**
    * @brief Writes a VTM file for the time-step \p time.
@@ -312,11 +332,13 @@ protected:
    * @details The unstructured grid is the last element in the hierarchy of the output,
    * it contains the cells connectivities and the vertices coordinates as long as the
    * data fields associated with it
-   * @param[in] ug a VTK SmartPointer to the VTK unstructured grid.
    * @param[in] path directory path for the grid file
+   * @param[in] region ElementRegionBase beeing written
+   * @param[in] ug a VTK SmartPointer to the VTK unstructured grid.
    */
   void writeUnstructuredGrid( string const & path,
-                              vtkUnstructuredGrid * ug ) const;
+                              ObjectManagerBase const & region,
+                              vtkUnstructuredGrid * ug );
 
 protected:
 
@@ -359,6 +381,12 @@ protected:
 
   /// Defines whether to plot a faceElement as a 3D volumetric element or not.
   bool m_writeFaceElementsAs3D;
+
+  /// Number of target processes to aggregate the data to be written
+  integer m_numberOfTargetProcesses;
+
+  /// Map a region name to the array of ranks outputed for it
+  std::map< string, std::vector< integer > > m_targetProcessesId;
 };
 
 } // namespace vtk
