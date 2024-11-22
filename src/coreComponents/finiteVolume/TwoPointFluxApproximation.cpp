@@ -374,18 +374,18 @@ void TwoPointFluxApproximation::cleanMatrixMatrixConnectionsDFM( MeshLevel & mes
 
   FaceElementSubRegion::FaceMapType const & faceMap = fractureSubRegion.faceList();
 
-      forAll< serialPolicy >( newFaceElements.size(),
-                              [newFaceElements,
-                              &cellStencil,
-                              &faceMap]( localIndex const k )
-      {
-        localIndex const kfe = newFaceElements[k];
-        // Remove cell-to-cell connections from cell stencil and add in new connections.
-        // This is there to shut off previously connected cells
-        // that are not connected anymore due to dynamic fracturing.
-        cellStencil.zero( faceMap[kfe][0] );
-        cellStencil.zero( faceMap[kfe][1] );
-      } );
+  forAll< serialPolicy >( newFaceElements.size(),
+                          [newFaceElements,
+                           &cellStencil,
+                           &faceMap]( localIndex const k )
+  {
+    localIndex const kfe = newFaceElements[k];
+    // Remove cell-to-cell connections from cell stencil and add in new connections.
+    // This is there to shut off previously connected cells
+    // that are not connected anymore due to dynamic fracturing.
+    cellStencil.zero( faceMap[kfe][0] );
+    cellStencil.zero( faceMap[kfe][1] );
+  } );
 }
 
 
