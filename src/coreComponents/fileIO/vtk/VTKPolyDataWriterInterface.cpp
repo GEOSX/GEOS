@@ -1044,7 +1044,7 @@ void VTKPolyDataWriterInterface::writeElementFields( ElementRegionBase const & r
 void VTKPolyDataWriterInterface::writeCellElementRegions( real64 const time,
                                                           ElementRegionManager const & elemManager,
                                                           NodeManager const & nodeManager,
-                                                          string const & path ) const
+                                                          string const & path )
 {
   elemManager.forElementRegions< CellElementRegion >( [&]( CellElementRegion const & region )
   {

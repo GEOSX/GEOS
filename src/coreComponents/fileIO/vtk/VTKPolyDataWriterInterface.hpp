@@ -239,7 +239,7 @@ protected:
   void writeCellElementRegions( real64 time,
                                 ElementRegionManager const & elemManager,
                                 NodeManager const & nodeManager,
-                                string const & path ) const;
+                                string const & path );
   /**
    * @brief Writes the files for all the ParticleRegions.
    * @param[in] time the time-step
