@@ -43,6 +43,7 @@ CeramicDamage::CeramicDamage( string const & name, Group * const parent ):
   m_plasticStrain(),
   m_accumulatedModeIWork(),
   m_accumulatedModeIIWork(),
+  m_distanceToCrackTip(),
   m_surfaceFlag()
 {
   // register default values
@@ -134,6 +135,12 @@ CeramicDamage::CeramicDamage( string const & name, Group * const parent ):
     setInputFlag( InputFlags::FALSE ).
     setApplyDefaultValue( 0.0 ).
     setDescription( "Accumulated mode II work" );
+  
+  registerWrapper( viewKeyStruct::distanceToCrackTipString(), &m_distanceToCrackTip ).
+    setInputFlag( InputFlags::FALSE ).
+    setApplyDefaultValue( 0.0 ).
+    setPlotLevel( PlotLevel::LEVEL_0).
+    setDescription( "Distance to crack tip" );
 
   registerWrapper( viewKeyStruct::surfaceFlagString(), &m_surfaceFlag).
     setInputFlag( InputFlags::FALSE ).

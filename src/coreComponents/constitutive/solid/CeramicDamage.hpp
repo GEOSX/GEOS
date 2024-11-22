@@ -74,7 +74,7 @@ public:
   CeramicDamageUpdates( arrayView2d< real64 > const & damage,
                         arrayView2d< real64 > const & jacobian,
                         arrayView1d< real64 > const & lengthScale,
-                        arrayView1d< real64 > const & strengthScale,
+                        arrayView1d< real64 > const & strengthScale,                       
                         arrayView1d< real64 > const & porosity,
                         arrayView1d< real64 > const & referencePorosity,
                         real64 const & tensileStrength,
@@ -89,6 +89,7 @@ public:
                         real64 const & fractureEnergyReleaseRate,
                         arrayView1d< real64 > const & accumulatedModeIWork,
                         arrayView1d< real64 > const & accumulatedModeIIWork,
+                        arrayView1d< real64 > const & distanceToCrackTip,                         
                         arrayView1d< int > const & surfaceFlag,
                         arrayView1d< real64 const > const & bulkModulus,
                         arrayView1d< real64 const > const & shearModulus,
@@ -124,6 +125,7 @@ public:
     m_fractureEnergyReleaseRate( fractureEnergyReleaseRate ),
     m_accumulatedModeIWork( accumulatedModeIWork ),
     m_accumulatedModeIIWork( accumulatedModeIIWork ),
+    m_distanceToCrackTip( distanceToCrackTip ),
     m_surfaceFlag( surfaceFlag )
   {}
 
@@ -301,6 +303,9 @@ private:
 
   ///State variable: The accumulated work for Mode II fracture for each quadrature point
   arrayView1d< real64 > const m_accumulatedModeIIWork;
+
+  /// A reference to the ArrayView holding the distance to crack tip.
+  arrayView1d< real64 > const m_distanceToCrackTip;
 
   ///State variable: The particle surface flag
   arrayView1d< int > const m_surfaceFlag;
@@ -910,6 +915,9 @@ public:
     /// string/key for accumulated mode II work
     static constexpr char const * accumulatedModeIIWorkString() { return "accumulatedModeIIWork"; }
 
+    /// string/key for strength scale value
+    static constexpr char const * distanceToCrackTipString() { return "distanceToCrackTip"; }
+
     /// string/key for surface flag
     static constexpr char const * surfaceFlagString() { return "surfaceFlag"; }
   };
@@ -938,6 +946,7 @@ public:
                                  m_fractureEnergyReleaseRate,
                                  m_accumulatedModeIWork,
                                  m_accumulatedModeIIWork,
+                                 m_distanceToCrackTip,
                                  m_surfaceFlag,
                                  m_bulkModulus,
                                  m_shearModulus,
@@ -978,6 +987,7 @@ public:
                           m_fractureEnergyReleaseRate,
                           m_accumulatedModeIWork,
                           m_accumulatedModeIIWork,
+                          m_distanceToCrackTip,
                           m_surfaceFlag,
                           m_bulkModulus,
                           m_shearModulus,
@@ -1046,6 +1056,9 @@ protected:
 
   ///State variable: The accumulated work for Mode II fracture for each quadrature point
   array1d< real64 > m_accumulatedModeIIWork;
+
+  /// State variable: The distance to the crack tip.
+  array1d< real64 > m_distanceToCrackTip;
 
   ///State variable: The particle surface flag
   array1d< int > m_surfaceFlag;
