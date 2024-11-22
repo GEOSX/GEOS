@@ -13,6 +13,10 @@
  * ------------------------------------------------------------------------------------------------------------
  */
 
+/**
+ * @file FaultTractionUpdate.hpp
+ */
+
 #ifndef GEOS_PHYSICSSOLVERS_INDUCED_SEISMICITY_FAULTTRACTIONUPDATE_HPP
 #define GEOS_PHYSICSSOLVERS_INDUCED_SEISMICITY_FAULTTRACTIONUPDATE_HPP
 
@@ -36,8 +40,6 @@ FaultTractionUpdate( SOLVER_TYPE * ... solvers ):
 {}
 
 virtual ~FaultTractionUpdate() = default;
-
-virtual void registerMissingDataOnMesh() const = 0;
 
 private:
 

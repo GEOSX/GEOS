@@ -25,6 +25,7 @@
 #include "rateAndStateFields.hpp"
 #include "physicsSolvers/contact/ContactFields.hpp"
 #include "fieldSpecification/FieldSpecificationManager.hpp"
+#include "physicsSolvers/inducedSeismicity/tractionUpdateWrapper/TractionUpdateFactory.hpp"
 
 namespace geos
 {
@@ -100,30 +101,7 @@ void QuasiDynamicEQ::registerDataOnMesh( Group & meshBodies )
       subRegion.registerField< rateAndState::slipVelocity >( getName() ).
         setDimLabels( 1, labels2Comp ).reference().resizeDimension< 1 >( 2 );
 
-
-      if( !subRegion.hasWrapper( contact::dispJump::key() ))
-      {
-        // 3-component functions on fault
-        string const labels3Comp[3] = { "normal", "tangent1", "tangent2" };
-        subRegion.registerField< contact::dispJump >( getName() ).
-          setDimLabels( 1, labels3Comp ).
-          reference().resizeDimension< 1 >( 3 );
-        subRegion.registerField< contact::traction >( getName() ).
-          setDimLabels( 1, labels3Comp ).
-          reference().resizeDimension< 1 >( 3 );
-        subRegion.registerField< contact::deltaSlip >( getName() ).
-          setDimLabels( 1, labels2Comp ).reference().resizeDimension< 1 >( 2 );
-
-        subRegion.registerWrapper< string >( viewKeyStruct::frictionLawNameString() ).
-          setPlotLevel( PlotLevel::NOPLOT ).
-          setRestartFlags( RestartFlags::NO_WRITE ).
-          setSizedFromParent( 0 );
-
-        string & frictionLawName = subRegion.getReference< string >( viewKeyStruct::frictionLawNameString() );
-        frictionLawName = PhysicsSolverBase::getConstitutiveName< FrictionBase >( subRegion );
-        GEOS_ERROR_IF( frictionLawName.empty(), GEOS_FMT( "{}: FrictionBase model not found on subregion {}",
-                                                          getDataContext(), subRegion.getDataContext() ) );
-      }
+      m_tractionUpdate->registerMissingDataOnMesh( subRegion );  
     } );
   } );
 }
@@ -150,7 +128,7 @@ real64 QuasiDynamicEQ::solverStep( real64 const & time_n,
   /// 1. Compute shear and normal tractions
   GEOS_LOG_LEVEL_RANK_0( 1, "Stress solver" );
 
-  real64 const dtStress = updateStresses( time_n, dt, cycleNumber, domain );
+  real64 const dtStress = m_tractionUpdate->updateFaultTraction( time_n, dt, cycleNumber, domain );
 
   /// 2. Solve for slip rate and state variable and, compute slip
   GEOS_LOG_LEVEL_RANK_0( 1, "Rate and State solver" );
@@ -176,58 +154,6 @@ real64 QuasiDynamicEQ::solverStep( real64 const & time_n,
   return dtStress;
 }
 
-real64 QuasiDynamicEQ::updateStresses( real64 const & time_n,
-                                       real64 const & dt,
-                                       const int cycleNumber,
-                                       DomainPartition & domain ) const
-{
-  // Call member variable stress solver to update the stress state
-  if( m_stressSolver )
-  {
-    // 1. Solve the momentum balance
-    real64 const dtStress = m_stressSolver->solverStep( time_n, dt, cycleNumber, domain );
-
-    return dtStress;
-  }
-  else
-  {
-    // Spring-slider shear traction computation
-    forDiscretizationOnMeshTargets( domain.getMeshBodies(), [&]( string const &,
-                                                                 MeshLevel & mesh,
-                                                                 arrayView1d< string const > const & regionNames )
-
-    {
-      mesh.getElemManager().forElementSubRegions< SurfaceElementSubRegion >( regionNames,
-                                                                             [&]( localIndex const,
-                                                                                  SurfaceElementSubRegion & subRegion )
-      {
-
-        arrayView2d< real64 const > const deltaSlip = subRegion.getField< contact::deltaSlip >();
-        arrayView2d< real64 > const traction        = subRegion.getField< fields::contact::traction >();
-
-        string const & fricitonLawName = subRegion.template getReference< string >( viewKeyStruct::frictionLawNameString() );
-        RateAndStateFriction const & frictionLaw = getConstitutiveModel< RateAndStateFriction >( subRegion, fricitonLawName );
-
-        RateAndStateFriction::KernelWrapper frictionKernelWrapper = frictionLaw.createKernelUpdates();
-
-        forAll< parallelDevicePolicy<> >( subRegion.size(), [=] GEOS_HOST_DEVICE ( localIndex const k )
-        {
-          SpringSliderParameters springSliderParameters = SpringSliderParameters( traction[k][0],
-                                                                                  frictionKernelWrapper.getACoefficient( k ),
-                                                                                  frictionKernelWrapper.getBCoefficient( k ),
-                                                                                  frictionKernelWrapper.getDcCoefficient( k ) );
-
-
-          traction[k][1] = traction[k][1] + springSliderParameters.tauRate * dt
-                           - springSliderParameters.springStiffness * deltaSlip[k][0];
-          traction[k][2] = traction[k][2] + springSliderParameters.tauRate * dt
-                           - springSliderParameters.springStiffness * deltaSlip[k][1];
-        } );
-      } );
-    } );
-    return dt;
-  }
-}
 
 void QuasiDynamicEQ::saveOldStateAndUpdateSlip( ElementSubRegionBase & subRegion, real64 const dt ) const
 {

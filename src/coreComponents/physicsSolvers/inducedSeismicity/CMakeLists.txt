@@ -6,12 +6,18 @@ set( physicsSolvers_headers
      inducedSeismicity/QuasiDynamicEQ.hpp
      inducedSeismicity/SeismicityRate.hpp
      inducedSeismicity/kernels/RateAndStateKernels.hpp
-     inducedSeismicity/kernels/SeismicityRateKernels.hpp 
+     inducedSeismicity/kernels/SeismicityRateKernels.hpp
+     inducedSeismicity/tractionUpdateWrapper/FaultTractionUpdate.hpp
+     inducedSeismicity/tractionUpdateWrapper/FaultTractionUpdateBase.hpp
+     inducedSeismicity/tractionUpdateWrapper/OneWayCoupledTractionUpdate.hpp
+     inducedSeismicity/tractionUpdateWrapper/SpringSliderTractionUpdate.hpp 
+     inducedSeismicity/tractionUpdateWrapper/TractionUpdateFactory.hpp
      PARENT_SCOPE )
 
 # Specify solver sources
 set( physicsSolvers_sources
      ${physicsSolvers_sources}
      inducedSeismicity/QuasiDynamicEQ.cpp 
-     inducedSeismicity/SeismicityRate.cpp 
+     inducedSeismicity/SeismicityRate.cpp
+     inducedSeismicity/tractionUpdateWrapper/SpringSliderTractionUpdate.cpp 
      PARENT_SCOPE )

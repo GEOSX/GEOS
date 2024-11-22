@@ -13,11 +13,17 @@
  * ------------------------------------------------------------------------------------------------------------
  */
 
-#ifndef GEOS_PHYSICSSOLVERS_INDUCED_SEISMICITY_TRACTIONUPDATEBUILDER_HPP
-#define GEOS_PHYSICSSOLVERS_INDUCED_SEISMICITY_TRACTIONUPDATEBUILDER_HPP
+/**
+ * @file tractionUpdateFactory.hpp
+ */
+
+#ifndef GEOS_PHYSICSSOLVERS_INDUCED_SEISMICITY_TRACTIONUPDATEFACTORY_HPP
+#define GEOS_PHYSICSSOLVERS_INDUCED_SEISMICITY_TRACTIONUPDATEFACTORY_HPP
 
 #include "SpringSliderTractionUpdate.hpp"
 #include "OneWayCoupledTractionUpdate.hpp"
+#include "physicsSolvers/contact/ContactSolverBase.hpp"
+#include "physicsSolvers/fluidFlow/FlowSolverBase.hpp"
 
 namespace geos
 {
@@ -31,15 +37,20 @@ enum class TractionUpdateType : integer
     OneWayCoupled
 };
 
-std::unique_ptr< FaultTractionUpdateBase > tractionUpdateFactory ( TractionUpdateType const & tractionUpdateType )
+std::unique_ptr< FaultTractionUpdateBase > tractionUpdateFactory ( TractionUpdateType const & tractionUpdateType, 
+                                                                   string const & contactSolverName, 
+                                                                   string const & flowSolverName,
+                                                                   Group & const solversGroup );
 {
     switch (tractionUpdateType)
     {
     case TractionUpdateType::SpringSlider:
-        return std::make_unique<SpringSliderTractionUpdate>();
+        return std::make_unique< SpringSliderTractionUpdate >();
         break;
     case TractionUpdateType::OneWayCoupled:
-        return std::make_unique<OneWayCoupledTractionUpdate>();    
+        ContactSolverBase const * contactSolver = &solversGroup.getGroup< ContactSolverBase >( contactSolverName );
+        FlowSolverBase const * flowSolver = &solversGroup.getGroup< FlowSolverBase >( flowSolverName );
+        return std::make_unique< OneWayCoupledTractionUpdate >( contactSolver, flowSolver );    
     default:
         GEOS_ERROR( GEOS_FMT( "Traction update type {} not recognized", tractionUpdateType ) );
         return nullptr;
@@ -50,5 +61,7 @@ std::unique_ptr< FaultTractionUpdateBase > tractionUpdateFactory ( TractionUpdat
 ENUM_STRINGS( TractionUpdateType,
               "SpringSlider",
               "OneWayCoupled" );
-}
-}
+
+} // namespace inducedSeismicity
+
+} // namespace geos

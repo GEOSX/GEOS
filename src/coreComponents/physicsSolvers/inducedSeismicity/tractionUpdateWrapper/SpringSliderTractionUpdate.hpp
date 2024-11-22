@@ -13,8 +13,12 @@
  * ------------------------------------------------------------------------------------------------------------
  */
 
-#ifndef GEOS_PHYSICSSOLVERS_INDUCED_SEISMICITY_FAULTTRACTIONUPDATE_HPP
-#define GEOS_PHYSICSSOLVERS_INDUCED_SEISMICITY_FAULTTRACTIONUPDATE_HPP
+/**
+ * @file SpringSliderTractionUpdate.hpp
+ */
+
+#ifndef GEOS_PHYSICSSOLVERS_INDUCED_SEISMICITY_SPRINGSLIDERTRACTIONUPDATE_HPP
+#define GEOS_PHYSICSSOLVERS_INDUCED_SEISMICITY_SPRINGSLIDERTRACTIONUPDATE_HPP
 
 
 #include "physicsSolvers/inducedSeismicity/tractionUpdateWrapper/FaultTractionUpdateBase.hpp"
@@ -26,7 +30,7 @@ namespace geos
 namespace inducedSeismicity
 {  
 
-class SpringSliderTractionUpdate : FaultTractionUpdateBase
+class SpringSliderTractionUpdate : FaultTractionUpdate< QuasiDynamicEQ >
 {
 
 public:
@@ -38,8 +42,40 @@ virtual void updateFaultTraction( real64 const & time_n,
                                   int const cycleNumber,
                                   DomainPartition & domain ) const override final;
 
-virtual void registerMissingDataOnMesh() const = 0;
+virtual void registerMissingDataOnMesh( SurfaceElementSubRegion & subRegion ) const override final;
 
+ class SpringSliderParameters
+  {
+public:
+
+    GEOS_HOST_DEVICE
+    SpringSliderParameters( real64 const normalTraction, real64 const a, real64 const b, real64 const Dc ):
+      tauRate( 1e-4 ),
+      springStiffness( 0.0 )
+    {
+      real64 const criticalStiffness = normalTraction * (b - a) / Dc;
+      springStiffness = 0.9 * criticalStiffness;
+    }
+
+    /// Default copy constructor
+    SpringSliderParameters( SpringSliderParameters const & ) = default;
+
+    /// Default move constructor
+    SpringSliderParameters( SpringSliderParameters && ) = default;
+
+    /// Deleted default constructor
+    SpringSliderParameters() = delete;
+
+    /// Deleted copy assignment operator
+    SpringSliderParameters & operator=( SpringSliderParameters const & ) = delete;
+
+    /// Deleted move assignment operator
+    SpringSliderParameters & operator=( SpringSliderParameters && ) =  delete;
+
+    real64 tauRate;
+
+    real64 springStiffness;
+  };
 };
 
 }

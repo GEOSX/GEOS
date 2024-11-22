@@ -13,6 +13,10 @@
  * ------------------------------------------------------------------------------------------------------------
  */
 
+/**
+ * @file FaultTractionUpdateBase.hpp
+ */
+
 #ifndef GEOS_PHYSICSSOLVERS_INDUCED_SEISMICITY_FAULTTRACTIONUPDATE_BASE_HPP
 #define GEOS_PHYSICSSOLVERS_INDUCED_SEISMICITY_FAULTTRACTIONUPDATE_BASE_HPP
 
@@ -32,7 +36,16 @@ virtual ~FaultTractionUpdateBase() = default;
 virtual void updateFaultTraction( real64 const & time_n,
                                   real64 const & dt,
                                   const int cycleNumber,
-                                  DomainPartition & domain ) const = 0;
+                                  DomainPartition & domain ) const
+
+{
+    GEOS_UNUSED_VAR( time_n, dt, cycleNumber, domain );
+}
+
+virtual void registerMissingDataOnMesh( SurfaceElementSubRegion & subRegion ) const
+{
+    GEOS_UNUSED_VAR( subRegion );
+}
 
 };
 
