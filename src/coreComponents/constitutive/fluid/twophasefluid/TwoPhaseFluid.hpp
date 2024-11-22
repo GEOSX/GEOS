@@ -247,18 +247,6 @@ private:
                  array1d< array1d< real64 > > const & tableValues );
 
   /**
-   * @brief Read a table from file and check its row length
-   * @param[in] fileName the name of the file
-   * @param[in] minRowLength the expected minimum row length (typically 3: pressure, density, viscosity)
-   * @param[out] data the data from the table
-   */
-  void
-  readTable( string const & fileName,
-             integer minRowLength,
-             array1d< array1d< real64 > > & data );
-
-
-  /**
    * @brief Check the monotonicity of the PVT relationship
    */
   void checkTableConsistency() const;

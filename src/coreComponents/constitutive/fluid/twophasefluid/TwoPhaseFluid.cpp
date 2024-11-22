@@ -17,6 +17,7 @@
  * @file TwoPhaseFluid.cpp
  */
 
+#include "constitutive/fluid/multifluid/CO2Brine/functions/PVTFunctionHelpers.hpp" // for readTable
 #include "TwoPhaseFluid.hpp"
 #include "TwoPhaseFluidFields.hpp"
 
@@ -114,50 +115,6 @@ void TwoPhaseFluid::postInputInitialization()
 }
 
 
-void
-TwoPhaseFluid::readTable( string const & fileName,
-                          integer minRowLength,
-                          array1d< array1d< real64 > > & data )
-{
-  std::ifstream is( fileName );
-  GEOS_THROW_IF( !is.is_open(),
-                 GEOS_FMT( "{}: could not open file: {}", getFullName(), fileName ),
-                 InputError );
-
-  // Read line-by-line until eof
-  string str;
-  while( std::getline( is, str ) )
-  {
-    // Remove whitespace and end-of-line characters, if any
-    str = stringutilities::trim( str, " \r" );
-
-    // Remove # and -- (Eclipse-style) comments
-    str = stringutilities::removeStringAndFollowingContent( str, "#" );
-    str = stringutilities::removeStringAndFollowingContent( str, "--" );
-
-    // Skip empty or comment-only strings
-    if( str.empty() )
-      continue;
-
-    // Add and read a new line entry
-    array1d< real64 > newLine = stringutilities::fromStringToArray< real64 >( str );
-    if( !newLine.empty() )
-    {
-      data.emplace_back( std::move( newLine ) );
-    }
-  }
-
-  is.close();
-
-  for( localIndex i = 0; i < data.size(); ++i )
-  {
-    GEOS_THROW_IF( data[i].size() < minRowLength,
-                   GEOS_FMT( "{}: too few entries in row {} of table {}, minimum {} required", getFullName(), i, fileName, minRowLength ),
-                   InputError );
-  }
-}
-
-
 void TwoPhaseFluid::fillData( integer const ip,
                               array1d< array1d< real64 > > const & tableValues )
 {
@@ -215,7 +172,7 @@ void TwoPhaseFluid::readInputDataFromFileTableFunctions()
   for( integer ip = 0; ip < 2; ++ip )
   {
     tableValues.clear();
-    readTable( m_tableFiles[ip], 3, tableValues );
+    geos::constitutive::PVTProps::BlackOilTables::readTable( m_tableFiles[ip], 3, tableValues );
     fillData( ip, tableValues );
   }
 }
