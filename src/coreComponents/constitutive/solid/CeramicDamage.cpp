@@ -40,7 +40,10 @@ CeramicDamage::CeramicDamage( string const & name, Group * const parent ):
   m_damagedMaterialFrictionSlope(),
   m_thirdInvariantDependence(),
   m_velocityGradient(),
-  m_plasticStrain()
+  m_plasticStrain(),
+  m_accumulatedModeIWork(),
+  m_accumulatedModeIIWork(),
+  m_surfaceFlag()
 {
   // register default values
   registerWrapper( viewKeyStruct::tensileStrengthString(), &m_tensileStrength ).
@@ -109,6 +112,34 @@ CeramicDamage::CeramicDamage( string const & name, Group * const parent ):
     setApplyDefaultValue( 0.0 ).
     setPlotLevel( PlotLevel::NOPLOT ).
     setDescription( "Plastic strain" );
+
+  registerWrapper( viewKeyStruct::enableEnergyFailureCriterionString(), &m_enableEnergyFailureCriterion).
+    setInputFlag( InputFlags::OPTIONAL ).
+    setApplyDefaultValue( 0 ).
+    setPlotLevel( PlotLevel::NOPLOT ).
+    setDescription( "Enable energy failure criterion" );
+
+  registerWrapper( viewKeyStruct::fractureEnergyReleaseRateString(), &m_fractureEnergyReleaseRate).
+    setInputFlag( InputFlags::OPTIONAL ).
+    setApplyDefaultValue( DBL_MAX ).
+    setPlotLevel( PlotLevel::NOPLOT ).
+    setDescription( "Fracture energy release rate" );
+
+  registerWrapper( viewKeyStruct::accumulatedModeIWorkString(), &m_accumulatedModeIWork).
+    setInputFlag( InputFlags::FALSE ).
+    setApplyDefaultValue( 0.0 ).
+    setDescription( "Accumulated mode I work" );
+  
+  registerWrapper( viewKeyStruct::accumulatedModeIIWorkString(), &m_accumulatedModeIIWork).
+    setInputFlag( InputFlags::FALSE ).
+    setApplyDefaultValue( 0.0 ).
+    setDescription( "Accumulated mode II work" );
+
+  registerWrapper( viewKeyStruct::surfaceFlagString(), &m_surfaceFlag).
+    setInputFlag( InputFlags::FALSE ).
+    setApplyDefaultValue( 0 ).
+    setPlotLevel( PlotLevel::NOPLOT ).
+    setDescription( "Particle surface flag" );
 }
 
 
@@ -128,6 +159,8 @@ void CeramicDamage::allocateConstitutiveData( dataRepository::Group & parent,
   m_jacobian.resize( 0, numConstitutivePointsPerParentIndex );
   m_velocityGradient.resize( 0, 3, 3 );
   m_plasticStrain.resize( 0, numConstitutivePointsPerParentIndex, 6 );
+  m_accumulatedModeIWork.resize( 0 );
+  m_accumulatedModeIIWork.resize( 0 );
 }
 
 
@@ -140,6 +173,8 @@ void CeramicDamage::postInputInitialization()
   GEOS_THROW_IF( m_compressiveStrength < m_tensileStrength, "Compressive strength must be greater than tensile strength.", InputError );
   GEOS_THROW_IF( m_maximumStrength < m_compressiveStrength, "Maximum theoretical strength must be greater than compressive strength.", InputError );
   GEOS_THROW_IF( m_crackSpeed < 0.0, "Crack speed must be a positive number.", InputError );
+  GEOS_THROW_IF( m_fractureEnergyReleaseRate < 0.0, "Fracture energy release rate must be positive.", InputError );
+  
 }
 
 
