@@ -24,7 +24,7 @@
 #include "mesh/MeshFields.hpp"
 #include "physicsSolvers/wavePropagation/sem/elastic/shared/ElasticFields.hpp"
 #include "physicsSolvers/wavePropagation/shared/WaveSolverBase.hpp"
-
+#include "physicsSolvers/wavePropagation/shared/WaveSolverTypeDefSEM.hpp"
 
 namespace geos
 {

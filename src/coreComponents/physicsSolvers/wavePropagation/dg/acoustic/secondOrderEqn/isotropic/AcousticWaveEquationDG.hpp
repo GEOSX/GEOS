@@ -2,11 +2,10 @@
  * ------------------------------------------------------------------------------------------------------------
  * SPDX-License-Identifier: LGPL-2.1-only
  *
- * Copyright (c) 2016-2024 Lawrence Livermore National Security LLC
- * Copyright (c) 2018-2024 Total, S.A
- * Copyright (c) 2018-2024 The Board of Trustees of the Leland Stanford Junior University
- * Copyright (c) 2023-2024 Chevron
- * Copyright (c) 2019-     GEOS/GEOSX Contributors
+ * Copyright (c) 2018-2020 Lawrence Livermore National Security LLC
+ * Copyright (c) 2018-2020 The Board of Trustees of the Leland Stanford Junior University
+ * Copyright (c) 2018-2020 TotalEnergies
+ * Copyright (c) 2019-     GEOS Contributors
  * All rights reserved
  *
  * See top level LICENSE, COPYRIGHT, CONTRIBUTORS, NOTICE, and ACKNOWLEDGEMENTS files for details.
@@ -15,36 +14,43 @@
 
 
 /**
- * @file AcousticFirstOrderWaveEquationSEM.hpp
+ * @file AcousticWaveEquationDG.hpp
  */
 
-#ifndef GEOS_PHYSICSSOLVERS_WAVEPROPAGATION_ACOUSTICFIRSTORDERWAVEEQUATIONSEM_HPP_
-#define GEOS_PHYSICSSOLVERS_WAVEPROPAGATION_ACOUSTICFIRSTORDERWAVEEQUATIONSEM_HPP_
+#ifndef GEOS_PHYSICSSOLVERS_WAVEPROPAGATION_ACOUSTICWAVEEQUATIONDG_HPP_
+#define GEOS_PHYSICSSOLVERS_WAVEPROPAGATION_ACOUSTICWAVEEQUATIONDG_HPP_
 
 #include "mesh/MeshFields.hpp"
-#include "physicsSolvers/wavePropagation/sem/acoustic/shared/AcousticFields.hpp"
+#include "physicsSolvers/PhysicsSolverBase.hpp"
 #include "physicsSolvers/wavePropagation/shared/WaveSolverBase.hpp"
-#include "physicsSolvers/wavePropagation/shared/WaveSolverTypeDefSEM.hpp"
+#include "physicsSolvers/wavePropagation/dg/acoustic/shared/AcousticFieldsDG.hpp"
+#include "physicsSolvers/wavePropagation/shared/WaveSolverTypeDefDG.hpp"
 
 namespace geos
 {
 
-class AcousticFirstOrderWaveEquationSEM : public WaveSolverBase
+class AcousticWaveEquationDG : public WaveSolverBase
 {
 public:
 
-  using EXEC_POLICY = parallelDevicePolicy< >;
-  using ATOMIC_POLICY = parallelDeviceAtomic;
+  using EXEC_POLICY = parallelDevicePolicy< 32 >;
+  using ATOMIC_POLICY = AtomicPolicy< EXEC_POLICY >;
 
-  AcousticFirstOrderWaveEquationSEM( const std::string & name,
-                                     Group * const parent );
+  AcousticWaveEquationDG( const std::string & name,
+                          Group * const parent );
 
-  virtual ~AcousticFirstOrderWaveEquationSEM() override;
+  virtual ~AcousticWaveEquationDG() override;
 
-  static string catalogName() { return "AcousticFirstOrderSEM"; }
-  /**
-   * @copydoc PhysicsSolverBase::getCatalogName()
-   */
+  AcousticWaveEquationDG() = delete;                                           
+  AcousticWaveEquationDG( AcousticWaveEquationDG const & ) = delete;          
+  AcousticWaveEquationDG( AcousticWaveEquationDG && ) = default;              
+                                                                                  
+  AcousticWaveEquationDG & operator=( AcousticWaveEquationDG const & ) = delete;
+  AcousticWaveEquationDG & operator=( AcousticWaveEquationDG && ) = delete;   
+
+
+  static string catalogName() { return "AcousticDG"; }
+
   string getCatalogName() const override { return catalogName(); }
 
   virtual void initializePreSubGroups() override;
@@ -70,31 +76,32 @@ public:
                                        DomainPartition & domain,
                                        bool const computeGradient ) override;
 
+  /**@}*/
+
   /**
    * @brief Initialize Perfectly Matched Layer (PML) information
    */
   virtual void initializePML() override;
 
-
+ /**                                                                           
+  */                                                                           
+   virtual real64 computeTimeStep( real64 & dtOut ) override; 
+  
   /**
    * @brief Overridden from ExecutableGroup. Used to write last seismogram if needed.
    */
   virtual void cleanup( real64 const time_n, integer const cycleNumber, integer const eventCounter, real64 const eventProgress, DomainPartition & domain ) override;
 
-
   struct viewKeyStruct : WaveSolverBase::viewKeyStruct
   {
-
     static constexpr char const * pressureNp1AtReceiversString() { return "pressureNp1AtReceivers"; }
 
-    static constexpr char const * uxNp1AtReceiversString() { return "uxNp1AtReceivers"; }
-    static constexpr char const * uyNp1AtReceiversString() { return "uyNp1AtReceivers"; }
-    static constexpr char const * uzNp1AtReceiversString() { return "uzNp1AtReceivers"; }
-
     static constexpr char const * sourceElemString() { return "sourceElem"; }
-    static constexpr char const * sourceRegionString() { return "sourceRegion"; }
+    static constexpr char const * receiverElemString() { return "rcvElem"; }
+    static constexpr char const * receiverRegionString() { return "receiverRegion"; }
 
   } waveEquationViewKeys;
+
 
   /** internal function to the class to compute explicitStep either for backward or forward.
    * (requires not to be private because it is called from GEOS_HOST_DEVICE method)
@@ -109,10 +116,25 @@ public:
                                integer const cycleNumber,
                                DomainPartition & domain );
 
+  void computeUnknowns( real64 const & time_n,                                  
+                         real64 const & dt,                                      
+                         DomainPartition & domain,                               
+                         MeshLevel & mesh,                                       
+                         arrayView1d< string const > const & regionNames );      
+                                                                                 
+  void synchronizeUnknowns( real64 const & time_n,                              
+                             real64 const & dt,                                  
+                             DomainPartition & domain,                           
+                             MeshLevel & mesh,                                   
+                             arrayView1d< string const > const & regionNames );  
+                                                                                 
+  void prepareNextTimestep( MeshLevel & mesh );  
+
 protected:
 
-  virtual void postInputInitialization() override final;
+  //virtual void postProcessInput() override final;
 
+  //Nothing to do inside ? (no global mass or damping)
   virtual void initializePostInitialConditionsPreSubGroups() override final;
 
 private:
@@ -120,10 +142,9 @@ private:
   /**
    * @brief Locate sources and receivers position in the mesh elements, evaluate the basis functions at each point and save them to the
    * corresponding elements nodes.
-   * @param baseMesh the level-0 mesh
    * @param mesh mesh of the computational domain
    */
-  virtual void precomputeSourceAndReceiverTerm( MeshLevel & baseMesh, MeshLevel & mesh, arrayView1d< string const > const & regionNames ) override;
+  virtual void precomputeSourceAndReceiverTerm(  MeshLevel & baseMesh, MeshLevel & mesh, arrayView1d< string const > const & regionNames) override;
 
   /**
    * @brief Apply free surface condition to the face define in the geometry box from the xml
@@ -139,28 +160,20 @@ private:
    */
   virtual void applyPML( real64 const time, DomainPartition & domain ) override;
 
-  virtual real64 computeTimeStep( real64 & dtOut ) override;
-
   /// Pressure_np1 at the receiver location for each time step for each receiver
   array2d< real32 > m_pressureNp1AtReceivers;
-
-  /// Pressure_np1 at the receiver location for each time step for each receiver
-  array2d< real32 > m_uxNp1AtReceivers;
-
-  /// Pressure_np1 at the receiver location for each time step for each receiver
-  array2d< real32 > m_uyNp1AtReceivers;
-
-  /// Pressure_np1 at the receiver location for each time step for each receiver
-  array2d< real32 > m_uzNp1AtReceivers;
 
   /// Array containing the elements which contain a source
   array1d< localIndex > m_sourceElem;
 
-  /// Array containing the elements which contain the region which the source belongs
-  array1d< localIndex > m_sourceRegion;
-};
+  /// Array containing the elements which contain a receiver
+  array1d< localIndex > m_rcvElem;
 
+  /// Array containing the elements which contain the region which the receiver belongs
+  array1d< localIndex > m_receiverRegion;
+
+};
 
 } /* namespace geos */
 
-#endif /* GEOS_PHYSICSSOLVERS_WAVEPROPAGATION_ACOUSTICFIRSTORDERWAVEEQUATIONSEM_HPP_ */
+#endif /* GEOS_PHYSICSSOLVERS_WAVEPROPAGATION_ACOUSTICWAVEEQUATIONDG_HPP_ */
