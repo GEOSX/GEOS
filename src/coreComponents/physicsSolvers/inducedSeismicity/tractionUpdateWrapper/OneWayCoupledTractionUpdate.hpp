@@ -13,71 +13,48 @@
  * ------------------------------------------------------------------------------------------------------------
  */
 
+/**
+ * @file OneWayCoupledTractionUpdate.hpp
+ */
+
 #ifndef GEOS_PHYSICSSOLVERS_INDUCED_SEISMICITY_ONEWAYCOUPLEDTRACTIONUPDATE_HPP
 #define GEOS_PHYSICSSOLVERS_INDUCED_SEISMICITY_ONEWAYCOUPLEDTRACTIONUPDATE_HPP
 
 
 #include "physicsSolvers/inducedSeismicity/tractionUpdateWrapper/FaultTractionUpdate.hpp"
-#include "physicsSolvers/contact/ContactFields.hpp"
-#include "physicsSolvers/fluidFlow/FlowSolverBaseFields.hpp"
-#include "rajaInterface/GEOS_RAJA_Interface.hpp"
+#include "physicsSolvers/contact/ContactSolverBase.hpp"
+#include "physicsSolvers/fluidFlow/FlowSolverBase.hpp"
 
 namespace geos
 {
 
 namespace inducedSeismicity
-{  
+{
 
-template< >
-class OneWayCoupledTractionUpdate : FaultTractionUpdate< ContactSolverBase, FlowSolverBase>
+class OneWayCoupledTractionUpdate : public FaultTractionUpdate< ContactSolverBase, FlowSolverBase >
 {
 public:
 
-using Base = FaultTractionUpdate< ContactSolverBase, FlowSolverBase>;
+  using Base = FaultTractionUpdate< ContactSolverBase, FlowSolverBase >;
 
 
-OneWayCoupledTractionUpdate( CONTACT_SOLVER_TYPE * contactSolver, 
-                             FLOW_SOLVER_TYPE * flowSolver ) :
- Base( contactSolver, flowSolver )
-{}
+  OneWayCoupledTractionUpdate( ContactSolverBase * contactSolver,
+                               FlowSolverBase * flowSolver ):
+    Base( contactSolver, flowSolver )
+  {}
 
-virtual ~OneWayCoupledTractionUpdate() = default;
+  virtual ~OneWayCoupledTractionUpdate() = default;
 
-virtual void registerMissingDataOnMesh() const = 0;
-
-virtual void updateFaultTraction( real64 const & time_n,
-                                  real64 const & dt,
-                                  const int cycleNumber,
-                                  DomainPartition & domain ) const override final
-{
-
-  forEachArgInTuple( m_solvers, [&]( auto & solver, auto )
-  {
-    solver->solverStep( time_n, dt, cycleNumber, domain );
-  } );
-
- /// Now update the fault traction
- getContactSolver()-> forDiscretizationOnMeshTargets( domain.getMeshBodies(), [&]( string const &,
-                                                      MeshLevel & mesh,
-                                                      arrayView1d< string const > const & regionNames )
-  {
-    mesh.getElemManager().forElementSubRegions< SurfaceElementSubRegion >( regionNames, [&]( localIndex const, SurfaceElementSubRegion const & subRegion )
-    {
-      arrayView2d< real64 > traction = subregion.getField< fields::contact::traction >();
-      arrayView1d< real64 > pressure = subregion.getField< fields::flow::pressure >();
-      forAll< parallelDevicePolicy<> >( subRegion.size(), [=] GEOS_HOST_DEVICE ( localIndex const i )
-      {
-        // subtract pressure from the background normal stress
-        traction( i, 0 ) = backgroundNormalStress - pressure( i );
-      } );
-    } );
-}
+  virtual real64 updateFaultTraction( real64 const & time_n,
+                                    real64 const & dt,
+                                    const int cycleNumber,
+                                    DomainPartition & domain ) const override final;
 
 private:
 
-ContactSolverBase * getContactSolver() const { return std::get<0>( m_solvers ); }
+  ContactSolverBase * getContactSolver() const { return std::get< 0 >( m_solvers ); }
 
-FlowSolverBase * getFlowSolver() const { return std::get<1>( m_solvers ); }
+  FlowSolverBase * getFlowSolver() const { return std::get< 1 >( m_solvers ); }
 
 };
 

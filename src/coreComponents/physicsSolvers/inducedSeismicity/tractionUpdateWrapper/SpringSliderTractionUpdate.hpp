@@ -20,36 +20,44 @@
 #ifndef GEOS_PHYSICSSOLVERS_INDUCED_SEISMICITY_SPRINGSLIDERTRACTIONUPDATE_HPP
 #define GEOS_PHYSICSSOLVERS_INDUCED_SEISMICITY_SPRINGSLIDERTRACTIONUPDATE_HPP
 
-
-#include "physicsSolvers/inducedSeismicity/tractionUpdateWrapper/FaultTractionUpdateBase.hpp"
-
+#include "FaultTractionUpdate.hpp"
+#include "physicsSolvers/inducedSeismicity/QuasiDynamicEQ.hpp"
 
 namespace geos
 {
 
 namespace inducedSeismicity
-{  
-
-class SpringSliderTractionUpdate : FaultTractionUpdate< QuasiDynamicEQ >
 {
 
+class SpringSliderTractionUpdate : public FaultTractionUpdate< QuasiDynamicEQ >
+{
+
+friend PhysicsSolverBase;
+
 public:
+  
+   using Base = FaultTractionUpdate< QuasiDynamicEQ >;
 
-virtual ~SpringSliderTractionUpdate() = default;
 
-virtual void updateFaultTraction( real64 const & time_n,
-                                  real64 const & dt,
-                                  int const cycleNumber,
-                                  DomainPartition & domain ) const override final;
+  SpringSliderTractionUpdate( QuasiDynamicEQ * qdSolver ):
+    Base( qdSolver )
+  {}
 
-virtual void registerMissingDataOnMesh( SurfaceElementSubRegion & subRegion ) const override final;
+  virtual ~SpringSliderTractionUpdate() = default;
 
- class SpringSliderParameters
+  virtual real64 updateFaultTraction( real64 const & time_n,
+                                      real64 const & dt,
+                                      int const cycleNumber,
+                                      DomainPartition & domain ) const override final;
+
+  virtual void registerMissingDataOnMesh( SurfaceElementSubRegion & subRegion, string const & solverName ) const override final;
+
+  class SpringSliderParameters
   {
 public:
 
     GEOS_HOST_DEVICE
-    SpringSliderParameters( real64 const normalTraction, real64 const a, real64 const b, real64 const Dc ):
+    SpringSliderParameters( real64 const normalTraction, real64 const a, real64 const b, real64 const Dc ) :
       tauRate( 1e-4 ),
       springStiffness( 0.0 )
     {
@@ -82,4 +90,4 @@ public:
 
 }
 
-#endif /* GEOS_PHYSICSSOLVERS_INDUCED_SEISMICITY_STRESS_SOLVER_WRAPPER_HPP */
+#endif /* GEOS_PHYSICSSOLVERS_INDUCED_SEISMICITY_SPRINGSLIDERTRACTIONUPDATE_HPP */

@@ -22,33 +22,47 @@
 
 #include "common/DataTypes.hpp"
 
+// #include "mesh/SurfaceElementRegion.hpp"
+
 namespace geos
 {
 
-class DomainPartition; // Forward declaration
-
+class DomainPartition;
+class SurfaceElementSubRegion;
+namespace inducedSeismicity
+{
 class FaultTractionUpdateBase
 {
 public:
 
-virtual ~FaultTractionUpdateBase() = default;
+  virtual ~FaultTractionUpdateBase() = default;
 
-virtual void updateFaultTraction( real64 const & time_n,
-                                  real64 const & dt,
-                                  const int cycleNumber,
-                                  DomainPartition & domain ) const
+  virtual real64 updateFaultTraction( real64 const & time_n,
+                                      real64 const & dt,
+                                      const int cycleNumber,
+                                      DomainPartition & domain ) const
 
-{
-    GEOS_UNUSED_VAR( time_n, dt, cycleNumber, domain );
-}
+  {
+    GEOS_UNUSED_VAR( time_n, cycleNumber, domain );
+    return dt;
+  }
 
-virtual void registerMissingDataOnMesh( SurfaceElementSubRegion & subRegion ) const
-{
-    GEOS_UNUSED_VAR( subRegion );
-}
+  virtual void registerMissingDataOnMesh( SurfaceElementSubRegion & subRegion, string const & solverName ) const
+  {
+    GEOS_UNUSED_VAR( subRegion, solverName );
+  }
 
 };
 
-}
+enum class TractionUpdateType : integer
+{
+  SpringSlider,
+  OneWayCoupled
+};
+
+
+} // namespace inducedSeismicity 
+
+} // namespace geos
 
 #endif /* GEOS_PHYSICSSOLVERS_INDUCED_SEISMICITY_STRESS_SOLVER_WRAPPER_BASE_HPP */

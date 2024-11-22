@@ -28,22 +28,22 @@ namespace geos
 {
 
 namespace inducedSeismicity
-{  
+{
 
 template< typename ... SOLVER_TYPE >
-class FaultTractionUpdate : FaultTractionUpdateBase
+class FaultTractionUpdate : public FaultTractionUpdateBase
 {
 public:
 
-FaultTractionUpdate( SOLVER_TYPE * ... solvers ):
-  m_solvers( std::make_tuple( solvers ...) )
-{}
+  FaultTractionUpdate( SOLVER_TYPE * ... solvers ):
+    m_solvers( std::make_tuple( solvers ... ) )
+  {}
 
-virtual ~FaultTractionUpdate() = default;
+  virtual ~FaultTractionUpdate() = default;
 
-private:
+protected:
 
-std::tuple< SOLVER_TYPE * ...> m_solvers;
+  std::tuple< SOLVER_TYPE * ... > m_solvers;
 
 };
 

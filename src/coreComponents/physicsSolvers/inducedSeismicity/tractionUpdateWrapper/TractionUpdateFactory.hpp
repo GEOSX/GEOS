@@ -22,40 +22,35 @@
 
 #include "SpringSliderTractionUpdate.hpp"
 #include "OneWayCoupledTractionUpdate.hpp"
-#include "physicsSolvers/contact/ContactSolverBase.hpp"
-#include "physicsSolvers/fluidFlow/FlowSolverBase.hpp"
 
 namespace geos
 {
 
 namespace inducedSeismicity
-{  
-
-enum class TractionUpdateType : integer
 {
-    SpringSlider,
-    OneWayCoupled
-};
 
-std::unique_ptr< FaultTractionUpdateBase > tractionUpdateFactory ( TractionUpdateType const & tractionUpdateType, 
-                                                                   string const & contactSolverName, 
+std::unique_ptr< FaultTractionUpdateBase > tractionUpdateFactory ( TractionUpdateType const & tractionUpdateType,
+                                                                   string const & contactSolverName,
                                                                    string const & flowSolverName,
-                                                                   Group & const solversGroup );
+                                                                   QuasiDynamicEQ * qdSolver )
 {
-    switch (tractionUpdateType)
-    {
+
+  ContactSolverBase * contactSolver = nullptr;
+  FlowSolverBase  * flowSolver = nullptr;
+  switch( tractionUpdateType )
+  {
     case TractionUpdateType::SpringSlider:
-        return std::make_unique< SpringSliderTractionUpdate >();
-        break;
+      return std::make_unique< SpringSliderTractionUpdate >( qdSolver );
+      break;
     case TractionUpdateType::OneWayCoupled:
-        ContactSolverBase const * contactSolver = &solversGroup.getGroup< ContactSolverBase >( contactSolverName );
-        FlowSolverBase const * flowSolver = &solversGroup.getGroup< FlowSolverBase >( flowSolverName );
-        return std::make_unique< OneWayCoupledTractionUpdate >( contactSolver, flowSolver );    
+      contactSolver = &qdSolver->getParent().getGroup< ContactSolverBase >( contactSolverName );
+      flowSolver = &qdSolver->getParent().getGroup< FlowSolverBase >( flowSolverName );
+      return std::make_unique< OneWayCoupledTractionUpdate >( contactSolver, flowSolver );
     default:
-        GEOS_ERROR( GEOS_FMT( "Traction update type {} not recognized", tractionUpdateType ) );
-        return nullptr;
-        break;
-    } 
+      GEOS_ERROR( GEOS_FMT( "Traction update type {} not recognized", tractionUpdateType ) );
+      return nullptr;
+      break;
+  }
 }
 
 ENUM_STRINGS( TractionUpdateType,
@@ -65,3 +60,5 @@ ENUM_STRINGS( TractionUpdateType,
 } // namespace inducedSeismicity
 
 } // namespace geos
+
+#endif /* GEOS_PHYSICSSOLVERS_INDUCED_SEISMICITY_TRACTIONUPDATEFACTORY_HPP */   

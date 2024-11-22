@@ -13,34 +13,28 @@
  * ------------------------------------------------------------------------------------------------------------
  */
 
-#ifndef GEOS_PHYSICSSOLVERS_INDUCED_QUASIDYNAMICEQ_HPP
-#define GEOS_PHYSICSSOLVERS_INDUCED_QUASIDYNAMICEQ_HPP
+#ifndef GEOS_PHYSICSSOLVERS_INDUCED_QUASIDYNAMICEQBASE_HPP
+#define GEOS_PHYSICSSOLVERS_INDUCED_QUASIDYNAMICEQBASE_HPP
 
 #include "physicsSolvers/PhysicsSolverBase.hpp"
-#include "physicsSolvers/inducedSeismicity/tractionUpdateWrapper/FaultTractionUpdateBase.hpp"
-#include "constitutive/contact/RateAndStateFriction.hpp"
 
 namespace geos
 {
 
-/**
- * @class QuasiDynamicEQ
- * @brief This class is a physics solver for quasi-dynamic earthquake simulations
- */
-class QuasiDynamicEQ : public PhysicsSolverBase
+class QuasiDynamicEQBase : public PhysicsSolverBase
 {
 public:
   /// The default nullary constructor is disabled to avoid compiler auto-generation:
-  QuasiDynamicEQ() = delete;
+  QuasiDynamicEQBase() = delete;
 
   /// The constructor needs a user-defined "name" and a parent Group (to place this instance in the tree structure of classes)
-  QuasiDynamicEQ( const string & name,
+  QuasiDynamicEQBase( const string & name,
                   Group * const parent );
 
   /// Destructor
-  virtual ~QuasiDynamicEQ() override;
+  virtual ~QuasiDynamicEQBase() override;
 
-  static string catalogName() { return "QuasiDynamicEQ"; }
+  static string catalogName() { return "QuasiDynamicEQBase"; }
 
   /**
    * @return Get the final class Catalog name
@@ -53,9 +47,7 @@ public:
   struct viewKeyStruct : public PhysicsSolverBase::viewKeyStruct
   {
     /// stress solver name
-    static constexpr char const * tractionUpdateTypeString() { return "tractionUpdateType"; }
-    static constexpr char const * contactSolverNameString() { return "contactSolverName"; }
-    static constexpr char const * flowSolverNameString() { return "flowSolverName"; }
+    static constexpr char const * stressSolverNameString() { return "stressSolverName"; }
     /// Friction law name string
     constexpr static char const * frictionLawNameString() { return "frictionLawName"; }
     /// Friction law name string
@@ -83,48 +75,28 @@ public:
    */
   void saveOldStateAndUpdateSlip( ElementSubRegionBase & subRegion, real64 const dt ) const;
 
-  constitutive::RateAndStateFriction const & getFrictionLaw( SurfaceElementSubRegion & subRegion )
-  {
-    string const & frictionLawName = subRegion.getReference< string >( viewKeyStruct::frictionLawNameString() );
-    return PhysicsSolverBase::getConstitutiveModel< constitutive::RateAndStateFriction >( subRegion, 
-                                                                                          frictionLawName );
-  }
-  
-  string getFrictionLawName( SurfaceElementSubRegion & subRegion )
-  {
-    return PhysicsSolverBase::getConstitutiveName< constitutive::FrictionBase >( subRegion );
-  }
-
-  void setFrictionLawName( SurfaceElementSubRegion & subRegion )
-  {
-    string & frictionLawName = subRegion.getReference< string >( viewKeyStruct::frictionLawNameString() );
-    frictionLawName = getFrictionLawName( subRegion );
-    GEOS_ERROR_IF( frictionLawName.empty(), GEOS_FMT( "{}: FrictionBase model not found on subregion {}",
-                  this->getDataContext(), subRegion.getDataContext() ) );
-  }
 
 private:
 
+
+
   virtual void postInputInitialization() override;
 
-  /// traction update type
-  inducedSeismicity::TractionUpdateType m_tractionUpdateType;
 
-  ///
-  string m_contactSolverName;
 
-  string m_flowSolverName;
+  /// pointer to stress solver
+  PhysicsSolverBase * m_stressSolver;
+
+  /// stress solver name
+  string m_stressSolverName;
 
   /// shear impedance
   real64 m_shearImpedance;
 
   /// target slip rate
   real64 m_targetSlipIncrement;
-
-  std::unique_ptr< inducedSeismicity::FaultTractionUpdateBase > m_tractionUpdate;
-
 };
 
 } /* namespace geos */
 
-#endif /* GEOS_PHYSICSSOLVERS_INDUCED_QUASIDYNAMICEQ_HPP */
+#endif /* GEOS_PHYSICSSOLVERS_INDUCED_QUASIDYNAMICEQBASE_HPP */

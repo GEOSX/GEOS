@@ -19,5 +19,6 @@ set( physicsSolvers_sources
      ${physicsSolvers_sources}
      inducedSeismicity/QuasiDynamicEQ.cpp 
      inducedSeismicity/SeismicityRate.cpp
+     inducedSeismicity/tractionUpdateWrapper/OneWayCoupledTractionUpdate.cpp
      inducedSeismicity/tractionUpdateWrapper/SpringSliderTractionUpdate.cpp 
      PARENT_SCOPE )

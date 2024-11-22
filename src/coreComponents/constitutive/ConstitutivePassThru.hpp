@@ -86,23 +86,6 @@ struct ConstitutivePassThru< ElasticIsotropic >
 };
 
 /**
- * Specialization for models that derive from FrictionBase.
- */
-template<>
-struct ConstitutivePassThru< FrictionBase >
-{
-  template< typename LAMBDA >
-  static
-  void execute( ConstitutiveBase & constitutiveRelation, LAMBDA && lambda )
-  {
-    ConstitutivePassThruHandler< CoulombFriction,
-                                 RateAndStateFriction >::execute( constitutiveRelation,
-                                                                  std::forward< LAMBDA >( lambda ) );
-  }
-};
-
-
-/**
  * Specialization for models that derive from CoulombFriction.
  */
 template<>
