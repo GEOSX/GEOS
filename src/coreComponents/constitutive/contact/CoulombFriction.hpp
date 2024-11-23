@@ -221,9 +221,6 @@ private:
 
     /// string/key for the elastic slip
     static constexpr char const * elasticSlipString() { return "elasticSlip"; }
-
-    /// string/key for the plastic slip
-    static constexpr char const * plasticSlipString() { return "plasticSlip"; }
   };
 
 };
