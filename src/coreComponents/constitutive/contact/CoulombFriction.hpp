@@ -87,9 +87,16 @@ public:
   inline
   virtual void updateFractureState( localIndex const k,
                                     arraySlice1d< real64 const > const & dispJump,
-                                    arraySlice1d< real64 const > const & oldDispJump,
                                     arraySlice1d< real64 const > const & tractionVector,
                                     integer & fractureState ) const override final;
+
+  GEOS_HOST_DEVICE
+  inline
+  virtual void updateElasticSlip( localIndex const k,
+                                  arraySlice1d< real64 const > const & dispJump,
+                                  arraySlice1d< real64 const > const & oldDispJump,
+                                  arraySlice1d< real64 const > const & tractionVector,
+                                  integer const & fractureState ) const override final;
 
   GEOS_HOST_DEVICE
   inline
@@ -292,7 +299,6 @@ inline void CoulombFrictionUpdates::computeShearTraction( localIndex const k,
 GEOS_HOST_DEVICE
 inline void CoulombFrictionUpdates::updateFractureState( localIndex const k,
                                                          arraySlice1d< real64 const > const & dispJump,
-                                                         arraySlice1d< real64 const > const & oldDispJump,
                                                          arraySlice1d< real64 const > const & tractionVector,
                                                          integer & fractureState ) const
 {
@@ -320,16 +326,39 @@ inline void CoulombFrictionUpdates::updateFractureState( localIndex const k,
     if( yield < 0 )
     {
       fractureState = FractureState::Stick;
+    }
+    else
+    {
+      fractureState = FractureState::Slip;
+    }
+  }
+}
 
+GEOS_HOST_DEVICE
+inline void CoulombFrictionUpdates::updateElasticSlip( localIndex const k,
+                                                       arraySlice1d< real64 const > const & dispJump,
+                                                       arraySlice1d< real64 const > const & oldDispJump,
+                                                       arraySlice1d< real64 const > const & tractionVector,
+                                                       integer const & fractureState ) const
+{
+  using namespace fields::contact;
+
+  if( fractureState == FractureState::Open )
+  {
+    m_elasticSlip[k][0] = 0.0;
+    m_elasticSlip[k][1] = 0.0;
+  }
+  else
+  {
+    if( fractureState == FractureState::Stick )
+    {
       // The slip is only elastic: we add the full slip to the elastic one
       real64 const slip[2] = { dispJump[1] - oldDispJump[1],
                                dispJump[2] - oldDispJump[2] };
       LvArray::tensorOps::add< 2 >( m_elasticSlip[k], slip );
     }
-    else
+    else if( fractureState == FractureState::Slip )
     {
-      fractureState = FractureState::Slip;
-
       m_elasticSlip[k][0] = tractionVector[1] / m_shearStiffness;
       m_elasticSlip[k][1] = tractionVector[2] / m_shearStiffness;
     }

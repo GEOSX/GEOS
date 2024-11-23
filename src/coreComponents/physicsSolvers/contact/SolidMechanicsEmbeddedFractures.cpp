@@ -159,6 +159,25 @@ void SolidMechanicsEmbeddedFractures::implicitStepComplete( real64 const & time_
     {
       LvArray::tensorOps::copy< 3 >( oldDispJump[k], dispJump[k] );
     } );
+
+    string const & frictionLawName = subRegion.template getReference< string >( viewKeyStruct::frictionLawNameString() );
+    FrictionBase const & frictionLaw = getConstitutiveModel< FrictionBase >( subRegion, frictionLawName );
+    arrayView1d< integer const > const & ghostRank = subRegion.ghostRank();
+    arrayView2d< real64 const > const & traction = subRegion.getField< fields::contact::traction >();
+    arrayView1d< integer > const & fractureState = subRegion.getField< fields::contact::fractureState >();
+    constitutiveUpdatePassThru( frictionLaw, [&] ( auto & castedFrictionLaw )
+    {
+      using FrictionType = TYPEOFREF( castedFrictionLaw );
+      typename FrictionType::KernelWrapper frictionWrapper = castedFrictionLaw.createKernelUpdates();
+
+      forAll< parallelHostPolicy >( subRegion.size(), [=] ( localIndex const kfe )
+      {
+        if( ghostRank[kfe] < 0 )
+        {
+          frictionWrapper.updateElasticSlip( kfe, dispJump[kfe], oldDispJump[kfe], traction[kfe], fractureState[kfe] );
+        }
+      } );
+    } );
   } );
 }
 
@@ -768,7 +787,6 @@ bool SolidMechanicsEmbeddedFractures::updateConfiguration( DomainPartition & dom
     {
       arrayView1d< integer const > const & ghostRank = subRegion.ghostRank();
       arrayView2d< real64 const > const & dispJump = subRegion.getField< fields::contact::dispJump >();
-      arrayView2d< real64 const > const & oldJump = subRegion.getField< fields::contact::oldDispJump >();
       arrayView2d< real64 const > const & traction = subRegion.getField< fields::contact::traction >();
       arrayView1d< integer > const & fractureState = subRegion.getField< fields::contact::fractureState >();
 
@@ -787,7 +805,7 @@ bool SolidMechanicsEmbeddedFractures::updateConfiguration( DomainPartition & dom
           if( ghostRank[kfe] < 0 )
           {
             integer const originalFractureState = fractureState[kfe];
-            frictionWrapper.updateFractureState( kfe, dispJump[kfe], oldJump[kfe], traction[kfe], fractureState[kfe] );
+            frictionWrapper.updateFractureState( kfe, dispJump[kfe], traction[kfe], fractureState[kfe] );
             checkActiveSetSub.min( compareFractureStates( originalFractureState, fractureState[kfe] ) );
           }
         } );
