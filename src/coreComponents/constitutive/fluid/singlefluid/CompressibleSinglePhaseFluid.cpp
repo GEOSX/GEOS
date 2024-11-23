@@ -89,7 +89,7 @@ void CompressibleSinglePhaseFluid::allocateConstitutiveData( dataRepository::Gro
   getField< fields::singlefluid::density >().setApplyDefaultValue( m_defaultDensity );
   getField< fields::singlefluid::viscosity >().setApplyDefaultValue( m_defaultViscosity );
 
-  m_density.setValues< serialPolicy >( m_referenceDensity );
+  m_density.value.setValues< serialPolicy >( m_referenceDensity );
   m_viscosity.setValues< serialPolicy >( m_referenceViscosity );
 }
 
@@ -140,7 +140,7 @@ CompressibleSinglePhaseFluid::createKernelWrapper()
 {
   return KernelWrapper( KernelWrapper::DensRelationType( m_referencePressure, m_referenceDensity, m_compressibility ),
                         KernelWrapper::ViscRelationType( m_referencePressure, m_referenceViscosity, m_viscosibility ),
-                        m_density,
+                        m_density.value,
                         m_dDensity_dPressure,
                         m_viscosity,
                         m_dViscosity_dPressure );

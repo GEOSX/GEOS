@@ -32,10 +32,13 @@ namespace constitutive
 SingleFluidBase::SingleFluidBase( string const & name, Group * const parent )
   : ConstitutiveBase( name, parent )
 {
-  registerField( fields::singlefluid::density{}, &m_density );
+  //registerField( fields::singlefluid::density{}, &m_density.value );
   registerField( fields::singlefluid::dDensity_dPressure{}, &m_dDensity_dPressure );
   registerField( fields::singlefluid::dDensity_dTemperature{}, &m_dDensity_dTemperature );
   registerField( fields::singlefluid::density_n{}, &m_density_n );
+
+  registerField( fields::singlefluid::density{}, &m_density.value );
+  registerField( fields::singlefluid::dDensity{}, &m_density.derivs );
 
   registerField( fields::singlefluid::viscosity{}, &m_viscosity );
   registerField( fields::singlefluid::dViscosity_dPressure{}, &m_dViscosity_dPressure );
@@ -68,7 +71,7 @@ void SingleFluidBase::initializeState() const
 
 void SingleFluidBase::saveConvergedState() const
 {
-  m_density_n.setValues< parallelDevicePolicy<> >( m_density.toViewConst() );
+  m_density_n.setValues< parallelDevicePolicy<> >( m_density.value.toViewConst() );
   m_internalEnergy_n.setValues< parallelDevicePolicy<> >( m_internalEnergy.toViewConst() );
 }
 
@@ -80,10 +83,13 @@ void SingleFluidBase::allocateConstitutiveData( Group & parent,
 
   resize( parent.size() );
 
-  m_density.resize( parent.size(), numConstitutivePointsPerParentIndex );
+  //m_density.resize( parent.size(), numConstitutivePointsPerParentIndex );
   m_dDensity_dPressure.resize( parent.size(), numConstitutivePointsPerParentIndex );
   m_dDensity_dTemperature.resize( parent.size(), numConstitutivePointsPerParentIndex );
   m_density_n.resize( parent.size(), numConstitutivePointsPerParentIndex );
+
+  m_density.value.resize( parent.size(), numConstitutivePointsPerParentIndex );
+  m_density.derivs.resize( parent.size(), numConstitutivePointsPerParentIndex, 1 );
 
   m_viscosity.resize( parent.size(), numConstitutivePointsPerParentIndex );
   m_dViscosity_dPressure.resize( parent.size(), numConstitutivePointsPerParentIndex );

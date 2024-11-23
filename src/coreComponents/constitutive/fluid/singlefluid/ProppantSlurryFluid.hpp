@@ -34,7 +34,7 @@ namespace constitutive
 class ProppantSlurryFluidUpdate final : public SlurryFluidBaseUpdate
 {
 public:
-
+  using SingleFluidProp = SingleFluidVar< real64, 2, constitutive::singlefluid::LAYOUT_FLUID, constitutive::singlefluid::LAYOUT_FLUID_DC >;
   /**
    * @brief
    * @param compressibility
@@ -86,7 +86,7 @@ public:
                              arrayView3d< real64 > const & componentDensity,
                              arrayView3d< real64 > const & dCompDens_dPres,
                              arrayView4d< real64 > const & dCompDens_dCompConc,
-                             arrayView2d< real64 > const & fluidDensity,
+                             arrayView2d< real64, constitutive::singlefluid::USD_FLUID > const & fluidDensity,
                              arrayView2d< real64 > const & dFluidDens_dPres,
                              arrayView3d< real64 > const & dFluidDens_dCompConc,
                              arrayView2d< real64 > const & fluidViscosity,

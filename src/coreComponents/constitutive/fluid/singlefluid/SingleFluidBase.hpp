@@ -21,7 +21,8 @@
 #define GEOS_CONSTITUTIVE_FLUID_SINGLEFLUID_SINGLEFLUIDBASE_HPP
 
 #include "constitutive/ConstitutiveBase.hpp"
-
+#include "constitutive/fluid/singlefluid/SingleFluidLayouts.hpp"
+#include "constitutive/fluid/singlefluid/SingleFluidUtils.hpp"
 namespace geos
 {
 
@@ -34,6 +35,7 @@ namespace constitutive
 class SingleFluidBaseUpdate
 {
 public:
+  using SingleFluidProp = SingleFluidVar< real64, 2, constitutive::singlefluid::LAYOUT_FLUID, constitutive::singlefluid::LAYOUT_FLUID_DC >;
 
   /**
    * @brief Get number of elements in this wrapper.
@@ -58,7 +60,7 @@ protected:
    * @param viscosity   fluid viscosity
    * @param dVisc_dPres derivative of viscosity w.r.t. pressure
    */
-  SingleFluidBaseUpdate( arrayView2d< real64 > const & density,
+  SingleFluidBaseUpdate( arrayView2d< real64, constitutive::singlefluid::USD_FLUID >  const & density,
                          arrayView2d< real64 > const & dDens_dPres,
                          arrayView2d< real64 > const & viscosity,
                          arrayView2d< real64 > const & dVisc_dPres )
@@ -92,7 +94,7 @@ protected:
 
 
   /// Fluid density
-  arrayView2d< real64 > m_density;
+  arrayView2d< real64, constitutive::singlefluid::USD_FLUID >  m_density;
 
   /// Derivative of density w.r.t. pressure
   arrayView2d< real64 > m_dDens_dPres;
@@ -215,6 +217,7 @@ class SingleFluidBase : public ConstitutiveBase
 {
 public:
 
+  using SingleFluidProp = SingleFluidVar< real64, 2, constitutive::singlefluid::LAYOUT_FLUID, constitutive::singlefluid::LAYOUT_FLUID_DC >;
   /**
    * @brief Constructor.
    * @param name name of the group
@@ -236,7 +239,8 @@ public:
 
   // *** SingleFluid-specific interface
 
-  arrayView2d< real64 const > density() const { return m_density; }
+  arrayView2d< real64 const, constitutive::singlefluid::USD_FLUID > density() const { return m_density.value; }
+  arrayView2d< real64, constitutive::singlefluid::USD_FLUID > density() { return m_density.value; }
 
   arrayView2d< real64 const > dDensity_dPressure() const { return m_dDensity_dPressure; }
 
@@ -289,7 +293,12 @@ protected:
   virtual void postInputInitialization() override;
 
   //START_SPHINX_INCLUDE_00
-  array2d< real64 > m_density;
+  SingleFluidProp m_density;
+  //FluidProp m_viscosityXYZ;
+  //FluidProp m_internalEnergyXYZ;
+  //FluidProp m_enthalpyXYZ;
+
+  //array2d< real64 > m_density;
   array2d< real64 > m_dDensity_dPressure;
   array2d< real64 > m_dDensity_dTemperature;
 

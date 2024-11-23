@@ -17,8 +17,8 @@
  * @file Layouts.hpp
  */
 
-#ifndef GEOS_CONSTITUTIVE_FLUID_MULTIFLUID_LAYOUTS_HPP
-#define GEOS_CONSTITUTIVE_FLUID_MULTIFLUID_LAYOUTS_HPP
+#ifndef GEOS_CONSTITUTIVE_FLUID_SINGLEFLUID_LAYOUTS_HPP
+#define GEOS_CONSTITUTIVE_FLUID_SINGLEFLUID_LAYOUTS_HPP
 
 #include "common/DataTypes.hpp"
 #include "common/GeosxConfig.hpp"
@@ -31,46 +31,39 @@ namespace geos
 namespace constitutive
 {
 
-namespace multifluid
+namespace singlefluid
 {
-
-/// indices of pressure, temperature, and composition derivatives
-// Fix me - if the order is changed the code crashes
 struct DerivativeOffset
 {
   /// index of derivative wrt pressure
   static integer constexpr dP = 0;
   /// index of derivative wrt temperature
   static integer constexpr dT = 1;
-  /// index of first derivative wrt compositions
-  static integer constexpr dC = 2;
+
 };
 
-/// indices of pressure, temperature, and composition derivatives
-template< integer NC, integer IS_THERMAL >
+
+/// indices of pressure, temperature
+template< integer IS_THERMAL >
 struct DerivativeOffsetC {};
 
-template< integer NC >
-struct DerivativeOffsetC< NC, 1 >
+template<>
+struct DerivativeOffsetC< 1 >
 {
   /// index of derivative wrt pressure
   static integer constexpr dP = 0;
   /// index of derivative wrt temperature
   static integer constexpr dT = dP + 1;
-  /// index of first derivative wrt compositions
-  static integer constexpr dC = dP+2;
   /// number of derivatives
-  static integer constexpr nDer =  NC + 2;
+  static integer constexpr nDer =  2;
 };
-template< integer NC >
-struct DerivativeOffsetC< NC, 0 >
+template<>
+struct DerivativeOffsetC< 0 >
 {
   /// index of derivative wrt pressure
   static integer constexpr dP = 0;
-  /// index of first derivative wrt compositions
-  static integer constexpr dC = dP+1;
   /// number of derivatives
-  static integer constexpr nDer =  NC + 1;
+  static integer constexpr nDer = 1;
 };
 
 #if defined( GEOS_USE_DEVICE )
@@ -90,8 +83,12 @@ using LAYOUT_FLUID = RAJA::PERM_JI;
 /// Constitutive model fluid property compositional derivative array layout
 using LAYOUT_FLUID_DC = RAJA::PERM_JKI;
 
+///Constitutive model singe fluid property derivative array layout
+using LAYOUT_SINGLEFLUID_DC = RAJA::PERMJI;
+
 #else
 
+/// Constitutive model single phase  property array layout with derivatives
 /// Constitutive model phase property array layout
 using LAYOUT_PHASE = RAJA::PERM_IJK;
 /// Constitutive model phase property compositional derivative array layout
@@ -106,6 +103,9 @@ using LAYOUT_PHASE_COMP_DC = RAJA::PERM_IJKLM;
 using LAYOUT_FLUID = RAJA::PERM_IJ;
 /// Constitutive model fluid property compositional derivative array layout
 using LAYOUT_FLUID_DC = RAJA::PERM_IJK;
+
+/// Constitutive model singe fluid property derivative array layout
+using LAYOUT_SINGLEFLUID_DC = RAJA::PERM_IJ;
 
 #endif
 
@@ -124,8 +124,8 @@ static constexpr int USD_FLUID = LvArray::typeManipulation::getStrideOneDimensio
 /// Constitutive model fluid property compositional derivative unit stride dimension
 static constexpr int USD_FLUID_DC = LvArray::typeManipulation::getStrideOneDimension( LAYOUT_FLUID_DC{} );
 
-} // namespace multifluid
+} // namespace singefluid
 } // namespace constitutive
 } // namespace geos
 
-#endif //GEOS_CONSTITUTIVE_FLUID_LAYOUTS_HPP
+#endif //GEOS_CONSTITUTIVE_SINGLEFLUID_LAYOUTS_HPP

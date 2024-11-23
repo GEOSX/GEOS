@@ -34,6 +34,7 @@ namespace constitutive
 class SlurryFluidBaseUpdate
 {
 public:
+  using SingleFluidProp = SingleFluidVar< real64, 2, constitutive::singlefluid::LAYOUT_FLUID, constitutive::singlefluid::LAYOUT_FLUID_DC >;
 
   /**
    * @brief Get number of elements in this wrapper.
@@ -100,7 +101,7 @@ protected:
                          arrayView3d< real64 > const & componentDensity,
                          arrayView3d< real64 > const & dCompDens_dPres,
                          arrayView4d< real64 > const & dCompDens_dCompConc,
-                         arrayView2d< real64 > const & fluidDensity,
+                         arrayView2d< real64, constitutive::singlefluid::USD_FLUID > const & fluidDensity,
                          arrayView2d< real64 > const & dFluidDens_dPres,
                          arrayView3d< real64 > const & dFluidDens_dCompConc,
                          arrayView2d< real64 > const & fluidViscosity,
@@ -177,7 +178,7 @@ protected:
   arrayView3d< real64 > m_dCompDens_dPres;
   arrayView4d< real64 > m_dCompDens_dCompConc;
 
-  arrayView2d< real64 > m_fluidDensity;
+  arrayView2d< real64, constitutive::singlefluid::USD_FLUID > m_fluidDensity;
   arrayView2d< real64 > m_dFluidDens_dPres;
   arrayView3d< real64 > m_dFluidDens_dCompConc;
 
@@ -247,6 +248,7 @@ private:
 class SlurryFluidBase : public SingleFluidBase
 {
 public:
+  using SingleFluidProp = SingleFluidVar< real64, 2, constitutive::singlefluid::LAYOUT_FLUID, constitutive::singlefluid::LAYOUT_FLUID_DC >;
 
   SlurryFluidBase( string const & name, Group * const parent );
 
@@ -269,8 +271,8 @@ public:
   arrayView3d< real64 > dDensity_dComponentConcentration() { return m_dDensity_dCompConc; }
   arrayView3d< real64 const > dDensity_dComponentConcentration() const { return m_dDensity_dCompConc; }
 
-  arrayView2d< real64 > fluidDensity() { return m_fluidDensity; }
-  arrayView2d< real64 const > fluidDensity() const { return m_fluidDensity; }
+  arrayView2d< real64, constitutive::singlefluid::USD_FLUID >  fluidDensity() { return m_fluidDensity.value; }
+  arrayView2d< real64 const, constitutive::singlefluid::USD_FLUID > fluidDensity() const { return m_fluidDensity.value; }
 
   arrayView2d< real64 > dFluidDensity_dPressure() { return m_dFluidDens_dPres; }
   arrayView2d< real64 const > dFluidDensity_dPressure() const { return m_dFluidDens_dPres; }
@@ -324,7 +326,7 @@ protected:
   array3d< real64 > m_dCompDens_dPres;
   array4d< real64 > m_dCompDens_dCompConc;
 
-  array2d< real64 > m_fluidDensity;
+  SingleFluidProp m_fluidDensity;
   array2d< real64 > m_dFluidDens_dPres;
   array3d< real64 > m_dFluidDens_dCompConc;
 

@@ -39,13 +39,13 @@ template< ExponentApproximationType DENS_EAT, ExponentApproximationType VISC_EAT
 class CompressibleSinglePhaseUpdate : public SingleFluidBaseUpdate
 {
 public:
-
+  using SingleFluidProp = SingleFluidVar< real64, 2, constitutive::singlefluid::LAYOUT_FLUID, constitutive::singlefluid::LAYOUT_FLUID_DC >;
   using DensRelationType  = ExponentialRelation< real64, DENS_EAT >;
   using ViscRelationType  = ExponentialRelation< real64, VISC_EAT >;
 
   CompressibleSinglePhaseUpdate( DensRelationType const & densRelation,
                                  ViscRelationType const & viscRelation,
-                                 arrayView2d< real64 > const & density,
+                                 arrayView2d< real64, constitutive::singlefluid::USD_FLUID > const & density,
                                  arrayView2d< real64 > const & dDens_dPres,
                                  arrayView2d< real64 > const & viscosity,
                                  arrayView2d< real64 > const & dVisc_dPres )

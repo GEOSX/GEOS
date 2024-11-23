@@ -64,7 +64,7 @@ SlurryFluidBase::SlurryFluidBase( string const & name, Group * const parent ):
   registerField( fields::slurryfluid::dDensity_dProppantConcentration{}, &m_dDensity_dProppantConc );
   registerField( fields::slurryfluid::dDensity_dComponentConcentration{}, &m_dDensity_dCompConc );
 
-  registerField( fields::slurryfluid::fluidDensity{}, &m_fluidDensity );
+  registerField( fields::slurryfluid::fluidDensity{}, &m_fluidDensity.value );
   registerField( fields::slurryfluid::dFluidDensity_dPressure{}, &m_dFluidDens_dPres );
   registerField( fields::slurryfluid::dFluidDensity_dComponentConcentration{}, &m_dFluidDens_dCompConc );
 
@@ -120,7 +120,7 @@ void SlurryFluidBase::allocateConstitutiveData( Group & parent,
   m_dCompDens_dPres.resize( parent.size(), numConstitutivePointsPerParentIndex, NC );
   m_dCompDens_dCompConc.resize( parent.size(), numConstitutivePointsPerParentIndex, NC, NC );
 
-  m_fluidDensity.resize( parent.size(), numConstitutivePointsPerParentIndex );
+  m_fluidDensity.value.resize( parent.size(), numConstitutivePointsPerParentIndex );
   m_dFluidDens_dPres.resize( parent.size(), numConstitutivePointsPerParentIndex );
   m_dFluidDens_dCompConc.resize( parent.size(), numConstitutivePointsPerParentIndex, NC );
 

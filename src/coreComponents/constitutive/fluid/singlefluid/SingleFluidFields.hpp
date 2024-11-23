@@ -21,7 +21,8 @@
 #define GEOS_CONSTITUTIVE_FLUID_SINGLEFLUIDFIELDS_HPP_
 
 #include "mesh/MeshFields.hpp"
-
+#include "constitutive/fluid/singlefluid/SingleFluidLayouts.hpp"
+#include "constitutive/fluid/singlefluid/SingleFluidUtils.hpp"
 namespace geos
 {
 
@@ -31,13 +32,24 @@ namespace fields
 namespace singlefluid
 {
 
+using array2dLayoutFluid = array2d< real64, constitutive::singlefluid::LAYOUT_FLUID >;
+using array3dLayoutFluid_dC = array3d< real64, constitutive::singlefluid::LAYOUT_FLUID_DC >;
+
 DECLARE_FIELD( density,
                "density",
-               array2d< real64 >,
+               array2dLayoutFluid,
                0,
                LEVEL_0,
                WRITE_AND_READ,
                "Density" );
+
+DECLARE_FIELD( dDensity,
+               "dDensity",
+               array3dLayoutFluid_dC,
+               0,
+               LEVEL_0,
+               WRITE_AND_READ,
+               "dDensity" );
 
 DECLARE_FIELD( dDensity_dPressure,
                "dDensity_dPressure",
