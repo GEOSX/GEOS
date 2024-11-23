@@ -85,8 +85,7 @@ public:
 
   GEOS_HOST_DEVICE
   inline
-  virtual void updateFractureState( localIndex const k,
-                                    arraySlice1d< real64 const > const & dispJump,
+  virtual void updateFractureState( arraySlice1d< real64 const > const & dispJump,
                                     arraySlice1d< real64 const > const & tractionVector,
                                     integer & fractureState ) const override final;
 
@@ -297,8 +296,7 @@ inline void CoulombFrictionUpdates::computeShearTraction( localIndex const k,
 }
 
 GEOS_HOST_DEVICE
-inline void CoulombFrictionUpdates::updateFractureState( localIndex const k,
-                                                         arraySlice1d< real64 const > const & dispJump,
+inline void CoulombFrictionUpdates::updateFractureState( arraySlice1d< real64 const > const & dispJump,
                                                          arraySlice1d< real64 const > const & tractionVector,
                                                          integer & fractureState ) const
 {
@@ -307,8 +305,6 @@ inline void CoulombFrictionUpdates::updateFractureState( localIndex const k,
   if( dispJump[0] >  -m_displacementJumpThreshold )
   {
     fractureState = FractureState::Open;
-    m_elasticSlip[k][0] = 0.0;
-    m_elasticSlip[k][1] = 0.0;
   }
   else
   {
