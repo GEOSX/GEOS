@@ -121,6 +121,14 @@ DECLARE_FIELD( particleSPHJacobian,
                WRITE_AND_READ,
                "An array that stores particle SPH computed jacobian." );
 
+DECLARE_FIELD( particleCrackTipDistance,
+               "particleCrackTipDistance",
+               array1d< real64 >,
+               0.0,
+               LEVEL_1,
+               WRITE_AND_READ,
+               "An array that stores particle Crack Tip Distance." );
+
 DECLARE_FIELD( particleReferenceVolume,
                "particleReferenceVolume",
                array1d< real64 >,

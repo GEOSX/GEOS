@@ -150,7 +150,7 @@ public:
   arrayView1d< real64 > getParticlePorosity()
   { return m_particlePorosity; }
 
-    /**
+   /**
    * @brief Get the temperature of each particle in this subregion.
    * @return an arrayView1d of const particle temperature
    */
@@ -415,7 +415,7 @@ public:
     /// @return String key for the member level field for the particle porosity.
     static constexpr char const * particlePorosityString() { return "particlePorosity"; }
 
-        /// @return String key for the member level field for the particle temperature.
+    /// @return String key for the member level field for the particle temperature.
     static constexpr char const * particleTemperatureString() { return "particleTemperature"; }
 
     /// @return String key for the member level field for the particle strength scale.

@@ -1337,6 +1337,7 @@ void SolidMechanicsMPM::registerDataOnMesh( Group & meshBodies )
         subRegion.registerField< particleDensity >( getName() );
         subRegion.registerField< particleOverlap >( getName() );
         subRegion.registerField< particleSPHJacobian >( getName() );
+        subRegion.registerField< particleCrackTipDistance >( getName() );
         subRegion.registerField< particleCohesiveZoneFlag >( getName() );
         subRegion.registerField< particleCopyFlag >( getName() );
         subRegion.registerField< particleDomainScaledFlag >( getName() );
@@ -1884,7 +1885,7 @@ void SolidMechanicsMPM::initialize( NodeManager & nodeManager,
     arrayView1d< real64 const > const particleVolume = subRegion.getParticleVolume();
     arrayView2d< real64 const > const particlePosition = subRegion.getParticleCenter();
     arrayView1d< real64 const > const particlePorosity = subRegion.getParticlePorosity();
-    arrayView1d< real64 const > const particleTemperature = subRegion.getParticleTemperature();
+    arrayView1d< real64 const > const particleTemperature = subRegion.getParticleTemperature();  
     arrayView3d< real64 const > const particleRVectors = subRegion.getParticleRVectors();
     arrayView2d< real64 const > const particleMaterialDirection = subRegion.getParticleMaterialDirection();
     arrayView2d< real64 const > const particleSurfaceNormal = subRegion.getParticleSurfaceNormal();
@@ -1903,6 +1904,7 @@ void SolidMechanicsMPM::initialize( NodeManager & nodeManager,
     arrayView1d< int > const particleCopyFlag = subRegion.getField< fields::mpm::particleCopyFlag >();
     arrayView1d< int > const particleDeleteFlag = subRegion.getField< fields::mpm::particleDeleteFlag >();
     arrayView1d< real64 > const particleSPHJacobian = subRegion.getField< fields::mpm::particleSPHJacobian >();
+    arrayView1d< real64 > const particleCrackTipDistance = subRegion.getField< fields::mpm::particleCrackTipDistance >();
     arrayView1d< real64 > const particleHeatCapacity = subRegion.getField< fields::mpm::particleHeatCapacity >();
     arrayView1d< real64 > const particleInternalEnergy = subRegion.getField< fields::mpm::particleInternalEnergy >();
     arrayView1d< real64 > const particleKineticEnergy = subRegion.getField< fields::mpm::particleKineticEnergy >();
@@ -1948,10 +1950,13 @@ void SolidMechanicsMPM::initialize( NodeManager & nodeManager,
       particleKineticEnergy[p] = 0.0;
       particleArtificialViscosity[p] = 0.0;
       particleSPHJacobian[p] = 1.0;
+      particleCrackTipDistance[p] = 0.0;
       particleCohesiveZoneFlag[p] = 0;
       particleSubdivideFlag[p] = 0;
       particleCopyFlag[p] = -1;
       particleDomainScaledFlag[p] = 0;
+
+      
       
       // Initialize field from constitutive model
       particleHeatCapacity[p] = DBL_MAX; // CC: TODO Need to get this from constitutive model
@@ -5631,6 +5636,17 @@ void SolidMechanicsMPM::updateConstitutiveModelDependencies( ParticleManager & p
       } );
     }
 
+    if(  constitutiveModel.hasWrapper( "crackTipDistance" ) )
+    {
+      arrayView1d< real64 const > const particleCrackTipDistance = subRegion.getField< fields::mpm::particleCrackTipDistance >(); 
+      arrayView1d< real64 > const constitutiveCrackTipDistance = constitutiveModel.getReference< array1d< real64 > >( "crackTipDistance" );
+      forAll< serialPolicy >( activeParticleIndices.size(), [=] GEOS_HOST_DEVICE ( localIndex const pp )
+      {
+        localIndex const p = activeParticleIndices[pp];
+        constitutiveCrackTipDistance[p] = particleCrackTipDistance[p];
+      } );
+    }
+
     if(  constitutiveModel.hasWrapper( "volume" ) )
     {
       arrayView1d< real64 > const constitutiveVolume = constitutiveModel.getReference< array1d< real64 > >( "volume" );
@@ -9241,6 +9257,18 @@ void SolidMechanicsMPM::updateSolverDependencies( ParticleManager & particleMana
         particleTemperature[p] = constitutiveTemperature[p]; 
       } );
     }
+    
+    // crack tip distance shouldn't be changed in the constitutive model.
+    // if(  constitutiveModel.hasWrapper( "crackTipDistance" ) )
+    // {
+    //   arrayView1d< real64 > const particleCrackTipDistance = subRegion.getField< fields::mpm::particleCrackTipDistance >(); 
+    //   arrayView1d< real64 const > const constitutiveCrackTipDistance = constitutiveModel.getReference< array1d< real64 > >( "crackTipDistance" );
+    //   forAll< serialPolicy >( activeParticleIndices.size(), [=] GEOS_HOST_DEVICE ( localIndex const pp )
+    //   {
+    //     localIndex const p = activeParticleIndices[pp];
+    //     particleCrackTipDistance[p] = constitutiveCrackTipDistance[p]; 
+    //   } );
+    // }
 
     
     if(  constitutiveModel.hasWrapper( "wavespeed" ) )
