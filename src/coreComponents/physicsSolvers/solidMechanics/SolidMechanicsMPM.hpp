@@ -447,12 +447,24 @@ public:
                              arrayView2d< real64 const > const xp,    // List of neighbor particle locations.
                              arrayView1d< real64 const > const Vp,    // List of neighbor particle volumes.
                              arrayView1d< real64 const > const fp );  // scalar field values (e.g. damage) at neighbor particles
+  
+  real64 computeKernelField( arraySlice1d< real64 const > const x,  // query point
+                             std::vector< std::vector< real64 > > & xp,  // List of neighbor particle locations.
+                             std::vector< real64 > & Vp,                 // List of neighbor particle volumes.
+                             std::vector< real64 > & fp                 // scalar field values (e.g. damage) at
+                             );
 
   void computeKernelFieldGradient( arraySlice1d< real64 const > const x,       // query point
                                    std::vector< std::vector< real64 > > & xp,  // List of neighbor particle locations.
                                    std::vector< real64 > & Vp,                 // List of neighbor particle volumes.
                                    std::vector< real64 > & fp,                 // scalar field values (e.g. damage) at neighbor particles
                                    arraySlice1d< real64 > const result );
+  
+  void computeKernelFieldGradient( arraySlice1d< real64 const > const x,       // query point
+                                   std::vector< std::vector< real64 > > & xp,  // List of neighbor particle locations.
+                                   std::vector< real64 > & Vp,                 // List of neighbor particle volumes.
+                                   std::vector< real64 > & fp,                 // scalar field values (e.g. damage) at neighbor particles
+                                   real64 (& result)[3] );
 
   void computeKernelVectorGradient( arraySlice1d< real64 const > const x,       // query point
                                     std::vector< std::vector< real64 > > & xp,  // List of neighbor particle locations.

@@ -5213,12 +5213,114 @@ real64 SolidMechanicsMPM::computeKernelField( arraySlice1d< real64 const > const
   }
 }
 
+real64 SolidMechanicsMPM::computeKernelField( arraySlice1d< real64 const > const x,  // query point
+                                              std::vector< std::vector< real64 > > & xp,  // List of neighbor particle locations.
+                                                    std::vector< real64 > & Vp,                 // List of neighbor particle volumes.
+                                                    std::vector< real64 > & fp                 // scalar field values (e.g. damage) at
+                                                    )
+{
+  // Compute the kernel scalar field at a point, for a given list of neighbor particles.
+  // The lists xp, fp, and the length np could refer to all the particles in the patch,
+  // but generally this function will be evaluated with x equal to some particle center,
+  // and xp, fp, will be lists for just the neighbors of the particle.
+
+  // Initialize
+  real64 relativePosition[3];
+  real64 kernelVal,
+         f = 0.0,
+         k = 0.0,
+         r;
+
+  // Sum
+  for(  unsigned int p = 0; p < Vp.size(); ++p )
+  {
+    relativePosition[0] = x[0] - xp[p][0];
+    relativePosition[1] = x[1] - xp[p][1];
+    relativePosition[2] = x[2] - xp[p][2];
+    r = sqrt( relativePosition[0] * relativePosition[0] + relativePosition[1] * relativePosition[1] + relativePosition[2] * relativePosition[2] );
+    kernelVal = kernel( r );
+    k += Vp[p] * kernelVal;
+    f += Vp[p] * fp[p] * kernelVal;
+  }
+
+  // Return the normalized kernel field (which eliminates edge effects)
+  if( k > 0.0 )
+  {
+    return ( f / k );
+  }
+  else
+  {
+    return ( 0.0 );
+  }
+}
+
 void SolidMechanicsMPM::computeKernelFieldGradient( arraySlice1d< real64 const > const x,       // query point
                                                     std::vector< std::vector< real64 > > & xp,  // List of neighbor particle locations.
                                                     std::vector< real64 > & Vp,                 // List of neighbor particle volumes.
                                                     std::vector< real64 > & fp,                 // scalar field values (e.g. damage) at
                                                                                                 // neighbor particles
                                                     arraySlice1d< real64 > const result )
+{
+  // Compute the kernel scalar field at a point, for a given list of neighbor particles.
+  // The lists xp, fp, and the length np could refer to all the particles in the patch,
+  // but generally this function will be evaluated with x equal to some particle center,
+  // and xp, fp, will be lists for just the neighbors of the particle.
+  // TODO: Modify to also "return" the kernel field value
+
+  // Scalar kernel field values
+  real64 kernelVal,
+         f = 0.0,
+         k = 0.0,
+         r;
+
+  // Gradient of the scalar field
+  real64 relativePosition[3],
+         fGrad[3] = {0.0, 0.0, 0.0},
+         kGrad[3] = {0.0, 0.0, 0.0},
+         kernelGradVal[3];
+
+  for( unsigned int p = 0; p < Vp.size(); ++p )
+  {
+    relativePosition[0] = x[0] - xp[p][0];
+    relativePosition[1] = x[1] - xp[p][1];
+    relativePosition[2] = x[2] - xp[p][2];
+    r = sqrt( relativePosition[0] * relativePosition[0] + relativePosition[1] * relativePosition[1] + relativePosition[2] * relativePosition[2] );
+
+    kernelVal = kernel( r );
+    k += Vp[p] * kernelVal;
+    f += Vp[p] * fp[p] * kernelVal;
+
+    kernelGradient( x, xp[p], r, kernelGradVal );
+    kGrad[0] += kernelGradVal[0] * Vp[p];
+    kGrad[1] += kernelGradVal[1] * Vp[p];
+    kGrad[2] += kernelGradVal[2] * Vp[p];
+    fGrad[0] += kernelGradVal[0] * Vp[p] * fp[p];
+    fGrad[1] += kernelGradVal[1] * Vp[p] * fp[p];
+    fGrad[2] += kernelGradVal[2] * Vp[p] * fp[p];
+  }
+
+  // Return the normalized kernel field gradient (which eliminates edge effects)
+  if( k > 0.0 )
+  {
+    //kernelField = f/k;
+    result[0] = fGrad[0] / k - f * kGrad[0] / (k * k);
+    result[1] = fGrad[1] / k - f * kGrad[1] / (k * k);
+    result[2] = fGrad[2] / k - f * kGrad[2] / (k * k);
+  }
+  else
+  {
+    //kernelField = 0.0;
+    result[0] = 0.0;
+    result[1] = 0.0;
+    result[2] = 0.0;
+  }
+}
+
+void SolidMechanicsMPM::computeKernelFieldGradient( arraySlice1d< real64 const > const x,       // query point
+                                                    std::vector< std::vector< real64 > > & xp,  // List of neighbor particle locations.
+                                                    std::vector< real64 > & Vp,                 // List of neighbor particle volumes.
+                                                    std::vector< real64 > & fp,                 // scalar field values (e.g. damage) at neighbor particles
+                                                    real64 (& result)[3] )
 {
   // Compute the kernel scalar field at a point, for a given list of neighbor particles.
   // The lists xp, fp, and the length np could refer to all the particles in the patch,
@@ -5515,7 +5617,7 @@ void SolidMechanicsMPM::computeDistanceToCrackTip( ParticleManager & particleMan
 
         
         real64 damageFieldHessianTermL2NormSquared = 0.0;  //  This tensor will be: L2norm( -0.25*m_neighbor_radius^2*gradgradKD - IdentityMatrix[3] )^2
-        arraySlice1d< real64 > grad; // will hold columns of Hessian output from computeKernelFieldGradient
+        real64 grad[3]; // will hold columns of Hessian output from computeKernelFieldGradient
         real64 scaleFactor = -0.25*m_neighborRadius*m_neighborRadius;
 
         // x-component
