@@ -190,6 +190,8 @@ SolidMechanicsMPM::SolidMechanicsMPM( const string & name,
   m_overlapThreshold1( 1.00 ),
   m_overlapThreshold2( 1.10 ),
   m_computeSPHJacobian( 0 ),
+  m_useCrackTipDetection( 0 ),
+  m_crackTipDetectionThreshold( 0.5 ),
   m_shockHeating( 0 ),
   m_computeInternalEnergyAndTemperature( 0 ),
   m_useArtificialViscosity( 0 ),
@@ -722,6 +724,18 @@ SolidMechanicsMPM::SolidMechanicsMPM( const string & name,
     setDefaultValue( m_computeSPHJacobian ).
     setRestartFlags( RestartFlags::NO_WRITE ).
     setDescription( "Overlap correction flag (0=off, 1=increase normal force to remove gap. (not fully developed), 2=compute the SPH Jacobian and use it to scale particle density to improve the overlap. )" );
+  
+  registerWrapper( "useCrackTipDetection", &m_useCrackTipDetection ).
+    setApplyDefaultValue( m_useCrackTipDetection ).
+    setInputFlag( InputFlags::OPTIONAL ).
+    setRestartFlags( RestartFlags::NO_WRITE ).
+    setDescription( "Set to activate crack-tip detection and distance calc" );
+
+  registerWrapper( "crackTipDetectionThreshold", &m_crackTipDetectionThreshold ).
+    setApplyDefaultValue( m_crackTipDetectionThreshold ).
+    setInputFlag( InputFlags::OPTIONAL ).
+    setRestartFlags( RestartFlags::NO_WRITE ).
+    setDescription( "Set threshold for crack-tip detection" );
 
   registerWrapper( "shockHeating", &m_shockHeating ).
     setInputFlag( InputFlags::OPTIONAL ).
@@ -1052,7 +1066,7 @@ void SolidMechanicsMPM::postInputInitialization()
   }
 
   // Activate neighbor list if necessary
-  if( m_damageFieldPartitioning == 1 || m_surfaceDetection == 1 || m_computeSPHJacobian > 0 || m_LBar > 0 /*|| m_directionalOverlapCorrection == 1*/ )
+  if( m_damageFieldPartitioning == 1 || m_surfaceDetection == 1 || m_computeSPHJacobian > 0 || m_LBar > 0  || m_useCrackTipDetection == 1 /*|| m_directionalOverlapCorrection == 1*/ )
   {
     m_needsNeighborList = 1;
   }
@@ -2372,7 +2386,6 @@ real64 SolidMechanicsMPM::explicitStep( real64 const & time_n,
     computeSurfaceFlags( particleManager );
   }
   
-
   //#######################################################################################
   GEOS_LOG_RANK_IF( m_debugFlag == 1 && m_computeSurfaceNormals == 1, "Compute particle surface normals" );
   solverProfilingIf( "Compute particle surface normals", m_computeSurfaceNormals == 1 );
@@ -2494,6 +2507,15 @@ real64 SolidMechanicsMPM::explicitStep( real64 const & time_n,
     computeDamageFieldGradient( particleManager );
   }
 
+
+  //#######################################################################################
+  GEOS_LOG_RANK_IF( m_useCrackTipDetection == 1 && m_damageFieldPartitioning == 1, "Compute crack-tip distance field" );
+  solverProfilingIf( "Compute crack-tip distance field", m_useCrackTipDetection == 1 );
+  //#######################################################################################
+  if( m_useCrackTipDetection == 1 )
+  {
+    computeDistanceToCrackTip( particleManager );
+  }
 
   //#######################################################################################
   GEOS_LOG_RANK_IF( m_debugFlag == 1, "Update surface flag overload" );
@@ -5405,6 +5427,171 @@ void SolidMechanicsMPM::computeDamageFieldGradient( ParticleManager & particleMa
 
     } );
   } );
+}
+
+void SolidMechanicsMPM::computeDistanceToCrackTip( ParticleManager & particleManager )
+{  //TODO MAKE THIS WORK
+  GEOS_MARK_FUNCTION;
+  //  Tip identification
+  //  Loop over all particles p in np:
+  //    if (p_nonlocal_damage_field[p] > 0.1 and p_damage[p] < 1.0)
+  //      gradgradKD = computeHessianAtParticle(p)
+  //      if TensorL2Norm( -0.25*rho^2*gradgradKD - IdentityMatrix[3] ) < threshold
+  //         p_crackTipDistance[p] = kernelDamageFieldInverse(  p_nonlocal_damage_field[p]  )
+  //      else
+  //         p_crackTipDistance[p] = 0.0;  
+  // ------------------------------------------------------------------------------------------------ For Tip Detection
+
+  // Get accessors for volume, position, damage, surface flag
+  // This is needed because neigbors might be in different subregions
+  ParticleManager::ParticleViewAccessor< arrayView1d< real64 const > > particleVolumeAccessor = particleManager.constructArrayViewAccessor< real64, 1 >( "particleVolume" );
+  ParticleManager::ParticleViewAccessor< arrayView2d< real64 const > > particlePositionAccessor = particleManager.constructArrayViewAccessor< real64, 2 >( "particleCenter" );
+  ParticleManager::ParticleViewAccessor< arrayView1d< real64 const > > particleDamageAccessor = particleManager.constructArrayViewAccessor< real64, 1 >( "particleDamage" );
+  ParticleManager::ParticleViewAccessor< arrayView2d< real64 const > > particleDamageGradientAccessor = particleManager.constructArrayViewAccessor< real64, 2 >( "particleDamageGradient" );
+  ParticleManager::ParticleViewAccessor< arrayView1d< int const > > particleSurfaceFlagAccessor = particleManager.constructArrayViewAccessor< int, 1 >( "particleSurfaceFlag" );
+  ParticleManager::ParticleViewAccessor< arrayView1d< int const > > particleCohesiveZoneFlag = particleManager.constructArrayViewAccessor< int, 1 >( "particleCohesiveZoneFlag" );
+
+  // Perform neighbor operations
+  particleManager.forParticleSubRegions( [&]( ParticleSubRegion & subRegion )
+  {
+    // Get neighbor list
+    OrderedVariableToManyParticleRelation & neighborList = subRegion.neighborList();
+    arrayView1d< localIndex const > const numNeighborsAll = neighborList.m_numParticles.toViewConst();
+    ArrayOfArraysView< localIndex const > const neighborRegions = neighborList.m_toParticleRegion.toViewConst();
+    ArrayOfArraysView< localIndex const > const neighborSubRegions = neighborList.m_toParticleSubRegion.toViewConst();
+    ArrayOfArraysView< localIndex const > const neighborIndices = neighborList.m_toParticleIndex.toViewConst();
+
+    // Get particle position and damage field gradient
+    arrayView2d< real64 const > const particlePosition = subRegion.getParticleCenter();
+    arrayView2d< real64 > const particleDamageGradient = subRegion.getField< fields::mpm::particleDamageGradient >();
+    arrayView1d< real64 const > const particleDamage = subRegion.getParticleDamage();  // for use before loop over neighbors.
+
+    // crack tip distance will be set in this function, it will be 0 for non-tip particles.
+    arrayView1d< real64 > const particleCrackTipDistance = subRegion.getField< fields::mpm::particleCrackTipDistance >();
+
+    // Loop over neighbors
+    SortedArrayView< localIndex const > const activeParticleIndices = subRegion.activeParticleIndices();
+    forAll< serialPolicy >( activeParticleIndices.size(), [=] GEOS_HOST ( localIndex const pp ) // Must be on host since we call a 'this'
+                                                                                                // method which uses class variables
+    {
+      localIndex const p = activeParticleIndices[pp];
+
+      // Test for possible tip particles.  Tip particles will have a non-zero nonlocal particle damage
+      // but will have a damage < 1.  Since we haven't compute the actual kernel damage field but
+      // we have the damage gradient, we will use that.
+      if( ( LvArray::tensorOps::l2NormSquared< 3 >(particleDamageGradient[p]) >  0.01 / m_neighborRadius / m_neighborRadius ) and ( particleDamage[p] < 1.0 ) )  
+      { // Possible tip particles, compute damage field Hessian using loop over neighbors.
+        
+        // Get neighbor list for current particles.
+        localIndex numNeighbors = numNeighborsAll[p];
+        arraySlice1d< localIndex const > const regionIndices = neighborRegions[p];
+        arraySlice1d< localIndex const > const subRegionIndices = neighborSubRegions[p];
+        arraySlice1d< localIndex const > const particleIndices = neighborIndices[p];
+
+        // Declare and size neighbor data arrays - TODO: switch to std::array? But then we'd need to template computeKernelFieldGradient
+        std::vector< real64 > neighborVolumes( numNeighbors );
+        std::vector< std::vector< real64 > > neighborPositions;
+        neighborPositions.resize( numNeighbors, std::vector< real64 >( 3 ) );       
+        std::vector< real64  > neighborDamageGradientXComponents( numNeighbors );
+        std::vector< real64  > neighborDamageGradientYComponents( numNeighbors );
+        std::vector< real64  > neighborDamageGradientZComponents( numNeighbors );
+        std::vector< real64  > neighborDamages( numNeighbors );
+
+        // Populate neighbor data arrays
+        for( localIndex neighborIndex = 0; neighborIndex < numNeighbors; neighborIndex++ )
+        {
+          localIndex regionIndex = regionIndices[neighborIndex];
+          localIndex subRegionIndex = subRegionIndices[neighborIndex];
+          localIndex particleIndex = particleIndices[neighborIndex];
+          neighborVolumes[neighborIndex] = particleVolumeAccessor[regionIndex][subRegionIndex][particleIndex];
+          neighborPositions[neighborIndex][0] = particlePositionAccessor[regionIndex][subRegionIndex][particleIndex][0];
+          neighborPositions[neighborIndex][1] = particlePositionAccessor[regionIndex][subRegionIndex][particleIndex][1];
+          neighborPositions[neighborIndex][2] = particlePositionAccessor[regionIndex][subRegionIndex][particleIndex][2];
+          neighborDamageGradientXComponents[neighborIndex] = particleDamageGradientAccessor[regionIndex][subRegionIndex][particleIndex][0];
+          neighborDamageGradientYComponents[neighborIndex] = particleDamageGradientAccessor[regionIndex][subRegionIndex][particleIndex][1];
+          neighborDamageGradientZComponents[neighborIndex] = particleDamageGradientAccessor[regionIndex][subRegionIndex][particleIndex][2];
+          neighborDamages[neighborIndex] = particleDamageAccessor[regionIndex][subRegionIndex][particleIndex];
+        }
+
+        
+        real64 damageFieldHessianTermL2NormSquared = 0.0;  //  This tensor will be: L2norm( -0.25*m_neighbor_radius^2*gradgradKD - IdentityMatrix[3] )^2
+        arraySlice1d< real64 > grad; // will hold columns of Hessian output from computeKernelFieldGradient
+        real64 scaleFactor = -0.25*m_neighborRadius*m_neighborRadius;
+
+        // x-component
+        computeKernelFieldGradient( particlePosition[p],        // input
+                                    neighborPositions,          // input
+                                    neighborVolumes,            // input
+                                    neighborDamageGradientXComponents,            // input
+                                    grad ); // OUTPUT
+        damageFieldHessianTermL2NormSquared += (scaleFactor*grad[0] - 1.0)*(scaleFactor*grad[0] - 1.0); // [0][0]
+        damageFieldHessianTermL2NormSquared += (scaleFactor*grad[1]*scaleFactor*grad[1]);               // [0][1]
+        damageFieldHessianTermL2NormSquared += (scaleFactor*grad[2]*scaleFactor*grad[2]);               // [0][2]
+
+        // y-component
+        computeKernelFieldGradient( particlePosition[p],        // input
+                                    neighborPositions,          // input
+                                    neighborVolumes,            // input
+                                    neighborDamageGradientYComponents,            // input
+                                    grad ); // OUTPUT
+        damageFieldHessianTermL2NormSquared += (scaleFactor*grad[0]*scaleFactor*grad[0]);               // [1][0]
+        damageFieldHessianTermL2NormSquared += (scaleFactor*grad[1] - 1.0)*(scaleFactor*grad[1] - 1.0); // [1][1]
+        damageFieldHessianTermL2NormSquared += (scaleFactor*grad[2]*scaleFactor*grad[2]);               // [1][2]
+
+        // z-component
+        computeKernelFieldGradient( particlePosition[p],        // input
+                                    neighborPositions,          // input
+                                    neighborVolumes,            // input
+                                    neighborDamageGradientZComponents,            // input
+                                    grad ); // OUTPUT
+        damageFieldHessianTermL2NormSquared += (scaleFactor*grad[0]*scaleFactor*grad[0]);               // [2][0]
+        damageFieldHessianTermL2NormSquared += (scaleFactor*grad[1]*scaleFactor*grad[1]);               // [2][1]
+        damageFieldHessianTermL2NormSquared += (scaleFactor*grad[2] - 1.0)*(scaleFactor*grad[2] - 1.0); // [2][2]
+
+        // Compared to threshold.
+        if ( damageFieldHessianTermL2NormSquared < m_crackTipDetectionThreshold*m_crackTipDetectionThreshold )
+        { // This is a crack-tip particle, use inverse of kernel function to find distance.
+
+          // Evaluate kernel field
+          real64 particleNonlocalDamage = computeKernelField( particlePosition[p], // query point
+                                                              neighborPositions, // List of neighbor particle locations
+                                                              neighborVolumes,
+                                                              neighborDamages );
+                    
+           particleCrackTipDistance[p] = inverseKernel(particleNonlocalDamage);
+
+        }
+        else
+        { // Not a crack-tip particle, becuse threshold wasn't met
+          particleCrackTipDistance[p] = 0.0;
+        }
+      }
+      else
+      { // Not a possible tip particle, either because particle is fully damaged or not near enough
+        // a fracture to have a non-zero damage-field-gradient.
+        particleCrackTipDistance[p] = 0.0;
+      }
+    });
+  });
+}
+
+//-----------------------------------------------------------------------
+// Compute the value r from the w by inverting kernel w(r)
+real64 SolidMechanicsMPM::inverseKernel( const real64 & d ) // value of kernel function
+{
+	// This is a fast newton solver to invert the cubic kernel function, and return the
+	// distance from the value of the kernel field.
+    real64 x = 0.5; // initial guess
+    real64 x_prev = x - 1; // previous value of x
+    real64 eps = 1e-3;
+
+    while (fabs(x - x_prev) > eps) {
+        x_prev = x;
+        x -= (1 + 2 * x * x * x - 3 * x * x - d) / (6 * x * x - 6 * x);
+    }
+
+    // returns distance from crack tip:
+    return x*m_neighborRadius;
 }
 
 void SolidMechanicsMPM::updateSurfaceFlagOverload( ParticleManager & particleManager )

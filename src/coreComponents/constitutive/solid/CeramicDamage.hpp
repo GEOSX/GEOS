@@ -85,6 +85,8 @@ public:
                         int const & thirdInvariantDependence,
                         arrayView3d< real64 > const & velocityGradient,
                         arrayView3d< real64 > const & plasticStrain,
+                        int const & enableCrackTipStressConcentration,
+                        real64 const & fractureToughness,
                         int const & enableEnergyFailureCriterion,
                         real64 const & fractureEnergyReleaseRate,
                         arrayView1d< real64 > const & accumulatedModeIWork,
@@ -121,6 +123,8 @@ public:
     m_thirdInvariantDependence( thirdInvariantDependence ),
     m_velocityGradient( velocityGradient ),
     m_plasticStrain( plasticStrain ),
+    m_enableCrackTipStressConcentration( enableCrackTipStressConcentration ),
+    m_fractureToughness( fractureToughness ),
     m_enableEnergyFailureCriterion( enableEnergyFailureCriterion ),
     m_fractureEnergyReleaseRate( fractureEnergyReleaseRate ),
     m_accumulatedModeIWork( accumulatedModeIWork ),
@@ -310,6 +314,12 @@ private:
 
   /// State variable: The plastic strain values for each quadrature point
   arrayView3d< real64 > const m_plasticStrain;
+
+  /// Model parameter: Flag to enable stress concenration for crack-tip
+  int m_enableCrackTipStressConcentration;
+
+  ///Material parameter: The fracture toughness used to compute fracture process zone radius.
+  real64 m_fractureToughness;
 
   /// Model parameter: Flag to enable kinematic damage using energy criterion
   int const m_enableEnergyFailureCriterion;
@@ -538,10 +548,9 @@ void CeramicDamageUpdates::smallStrainUpdateHelper( localIndex const k,
   // If the particle is a crack-tip particle, the distanceToCrackTip will be greater than 0, and we compute the
   // stress concentration.
   real64 crackTipStressConcentration = 1.0;
-  if(m_distanceToCrackTip[k] > 0)
+  if( ( m_enableCrackTipStressConcentration == 1 ) and ( m_distanceToCrackTip[k] > 0 ) )
   {
-    real64 modeIFractureToughness = 1;
-    real64 fractureProcessZoneRadius = std::max(1.e-12, modeIFractureToughness * modeIFractureToughness /( 6.283185307179586 * std::max(1.e-12,nominalIntactStrength * nominalIntactStrength) ) );
+    real64 fractureProcessZoneRadius = std::max(1.e-12, m_fractureToughness * m_fractureToughness /( 6.283185307179586 * std::max(1.e-12,nominalIntactStrength * nominalIntactStrength) ) );
     crackTipStressConcentration = std::min( 1.0, sqrt( m_distanceToCrackTip[k] / fractureProcessZoneRadius ) );
   }
 
@@ -1118,6 +1127,12 @@ public:
     /// string/key for quadrature point plasticStrain value 
     static constexpr char const * plasticStrainString() { return "plasticStrain"; }
 
+    /// string/key for Flag to enable stress concenration for crack-tip
+    static constexpr char const * enableCrackTipStressConcentrationString() { return "enableCrackTipStressConcentration"; }
+
+    /// string/key for The fracture toughness used to compute fracture process zone radius.
+    static constexpr char const * fractureToughnessString() { return "fractureToughnessate"; }
+
     /// string/key for energy criterion flag
     static constexpr char const * enableEnergyFailureCriterionString() { return "enableEnergyFailureCriterion"; }
 
@@ -1157,6 +1172,8 @@ public:
                                  m_thirdInvariantDependence,
                                  m_velocityGradient,
                                  m_plasticStrain,
+                                 m_enableCrackTipStressConcentration,
+                                 m_fractureToughness,                                 
                                  m_enableEnergyFailureCriterion,
                                  m_fractureEnergyReleaseRate,
                                  m_accumulatedModeIWork,
@@ -1198,6 +1215,8 @@ public:
                           m_thirdInvariantDependence,
                           m_velocityGradient,
                           m_plasticStrain,
+                          m_enableCrackTipStressConcentration,
+                          m_fractureToughness,
                           m_enableEnergyFailureCriterion,
                           m_fractureEnergyReleaseRate,
                           m_accumulatedModeIWork,
@@ -1259,6 +1278,12 @@ protected:
 
   ///State variable: The plastic strain values for each quadrature point
   array3d< real64 > m_plasticStrain;
+
+  /// Model parameter: Flag to enable stress concenration for crack-tip
+  int m_enableCrackTipStressConcentration;
+
+  ///Material parameter: The fracture toughness used to compute fracture process zone radius.
+  real64 m_fractureToughness;
 
   /// Model parameter: Flag to enable kinematic damage using energy criterion
   int m_enableEnergyFailureCriterion;

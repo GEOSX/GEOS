@@ -114,6 +114,18 @@ CeramicDamage::CeramicDamage( string const & name, Group * const parent ):
     setPlotLevel( PlotLevel::NOPLOT ).
     setDescription( "Plastic strain" );
 
+  registerWrapper( viewKeyStruct::enableCrackTipStressConcentrationString(), &m_enableCrackTipStressConcentration).
+    setInputFlag( InputFlags::OPTIONAL ).
+    setApplyDefaultValue( 0 ).
+    setPlotLevel( PlotLevel::NOPLOT ).
+    setDescription( "Use crack-tip stress concentration" );
+
+  registerWrapper( viewKeyStruct::fractureToughnessString(), &m_fractureToughness).
+    setInputFlag( InputFlags::OPTIONAL ).
+    setApplyDefaultValue( 0 ).
+    setPlotLevel( PlotLevel::NOPLOT ).
+    setDescription( "Fracture toughness to compute fracture radius from crack-tip stress concentration" );
+
   registerWrapper( viewKeyStruct::enableEnergyFailureCriterionString(), &m_enableEnergyFailureCriterion).
     setInputFlag( InputFlags::OPTIONAL ).
     setApplyDefaultValue( 0 ).

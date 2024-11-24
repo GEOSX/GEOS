@@ -460,7 +460,11 @@ public:
                                     std::vector< std::vector< real64 > > & fp,  // vector field values (e.g. velocity) at neighbor particles
                                     arraySlice2d< real64 > const result );
 
+  real64 inverseKernel( const real64 & d ); // value of kernel function                                    
+
   void computeDamageFieldGradient( ParticleManager & particleManager );
+
+  void computeDistanceToCrackTip( ParticleManager & particleManager );
 
   void updateSurfaceFlagOverload( ParticleManager & particleManager );
 
@@ -871,6 +875,10 @@ protected:
   real64 m_overlapThreshold2;
   int m_computeSPHJacobian;
 
+  // parameters for crack-tip detection used for stress concentration factor
+  int m_useCrackTipDetection;
+  real64 m_crackTipDetectionThreshold;
+
   // Currently initializes all particles to this temperature
   // TODO: read in from particle file
   int m_shockHeating;
@@ -891,6 +899,8 @@ protected:
   int m_treatFullyDamagedAsSingleField;
   int m_surfaceDetection;
   int m_damageFieldPartitioning;
+
+
 
   int m_useSurfacePositionForContact;
   ContactNormalTypeOption m_contactNormalType;
