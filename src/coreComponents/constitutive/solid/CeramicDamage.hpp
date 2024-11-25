@@ -30,8 +30,8 @@
  * integrated and tracked by this model.
  */
 
-#ifndef GEOS_CONSTITUTIVE_SOLID_KINEMATICDAMAGE_HPP
-#define GEOS_CONSTITUTIVE_SOLID_KINEMATICDAMAGE_HPP
+#ifndef GEOS_CONSTITUTIVE_SOLID_CERAMICDAMAGE_HPP
+#define GEOS_CONSTITUTIVE_SOLID_CERAMICDAMAGE_HPP
 
 #include "ElasticIsotropic.hpp"
 #include "InvariantDecompositions.hpp"

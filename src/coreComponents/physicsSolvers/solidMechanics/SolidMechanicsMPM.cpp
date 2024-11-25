@@ -1006,8 +1006,6 @@ SolidMechanicsMPM::SolidMechanicsMPM( const string & name,
   m_mpmEventManager = &registerGroup< MPMEventManager >( groupKeys.mpmEventManager );
 }
 
-SolidMechanicsMPM::~SolidMechanicsMPM(){}
-
 void SolidMechanicsMPM::postRestartInitialization()
 {
   PhysicsSolverBase::postRestartInitialization();

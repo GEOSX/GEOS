@@ -180,7 +180,7 @@ public:
   /**
    * destructor
    */
-  virtual ~SolidMechanicsMPM() override;
+  virtual ~SolidMechanicsMPM() override {}
 
   /**
    * @return The string that may be used to generate a new instance from the PhysicsSolverBase::CatalogInterface::CatalogType
