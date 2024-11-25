@@ -97,6 +97,7 @@ void AcousticWaveEquationDG::registerDataOnMesh( Group & meshBodies )
     elemManager.forElementSubRegions< CellElementSubRegion >( [&]( CellElementSubRegion & subRegion )
     {
       subRegion.registerField< acousticfieldsdg::AcousticVelocity >( this->getName() );
+      subRegion.registerField< acousticfieldsdg::AcousticDensity >( this->getName() );
 
       subRegion.registerField< acousticfieldsdg::Pressure_nm1 >( this->getName() );
       subRegion.registerField< acousticfieldsdg::Pressure_n >( this->getName() );
