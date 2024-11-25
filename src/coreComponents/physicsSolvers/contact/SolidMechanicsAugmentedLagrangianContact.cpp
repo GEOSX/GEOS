@@ -734,6 +734,7 @@ void SolidMechanicsAugmentedLagrangianContact::applySystemSolution( DofManager c
                                scalingFactor );
 
 
+
   // Loop for updating the displacement jump
   forDiscretizationOnMeshTargets( domain.getMeshBodies(), [&] ( string const & meshName,
                                                                 MeshLevel & mesh,
@@ -780,6 +781,7 @@ void SolidMechanicsAugmentedLagrangianContact::applySystemSolution( DofManager c
 
       GEOS_UNUSED_VAR( maxTraction );
 
+/*
       solidMechanicsALMKernels::ALML2ErrorFactory kernelFactory1( dispDofNumber,
                                                                   dofManager.rankOffset(),
                                                                   voidMatrix.toViewConstSizes(),
@@ -798,12 +800,14 @@ void SolidMechanicsAugmentedLagrangianContact::applySystemSolution( DofManager c
                                                         kernelFactory1 );
       // Test case: verticalFaultOffset                                           
       //l2Error = sqrt(l2Error) / (25000000.0*225.0);
+      l2Error = sqrt(l2Error) / 225.0;
 
       // Test case: singleCrackCompression
-      //l2Error = sqrt(l2Error) / (50.0*2.0);
-      l2Error = sqrt(l2Error) / (100*2.0);
+      //l2Error = sqrt(l2Error) / (100*2.0);
+      //l2Error = sqrt(l2Error) / 2.0;
     
       GEOS_LOG_LEVEL_RANK_0( 1, GEOS_FMT( "  ALM l2-norm: {:.6e}\n", l2Error  ));
+*/
 
     } );
   } );
