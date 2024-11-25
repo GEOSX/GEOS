@@ -170,7 +170,7 @@ void SolidMechanicsEmbeddedFractures::implicitStepComplete( real64 const & time_
       using FrictionType = TYPEOFREF( castedFrictionLaw );
       typename FrictionType::KernelWrapper frictionWrapper = castedFrictionLaw.createKernelUpdates();
 
-      forAll< parallelHostPolicy >( subRegion.size(), [=] ( localIndex const kfe )
+      forAll< parallelDevicePolicy<> >( subRegion.size(), [=] GEOS_HOST_DEVICE ( localIndex const kfe )
       {
         if( ghostRank[kfe] < 0 )
         {
