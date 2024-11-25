@@ -67,28 +67,22 @@ public:
   {
     /// Vector containing sub values name
     std::vector< string > lines;
-    CellType type;
+    CellType cellType;
     /// Cell alignment (left, right, center)
     Alignment alignment;
+    size_t maxDataLength;
+
+    /**
+     * @brief Constructor to initialize a Cell with a specific type and value.
+     */
+    CellLayout();
 
     /**
      * @brief Constructor to initialize a Cell with a specific type and value.
      * @param t The type of the cell.
      * @param val The value to be assigned to the cell.
      */
-    CellLayout( CellType t, string_view val, Alignement alignment );
-
-    /**
-     * @brief Set the Alignment object
-     * @param align
-     */
-    void setAlignment( Alignment const align );
-
-    /**
-     * @brief Set the Cell Size object
-     * @param size
-     */
-    void setCellSize( size_t const size );
+    CellLayout( CellType t, string const & val, TableLayout::Alignment alignment );
   };
 
   /**
@@ -112,7 +106,7 @@ public:
 
     Column();
 
-    Column( Cell cell );
+    Column( TableLayout::CellLayout cellLayout );
 
     /**
      * @brief Set the Name object
@@ -120,13 +114,6 @@ public:
      * @return Column&
      */
     Column & setName( string_view name );
-
-    /**
-     * @brief Set the Cells object
-     * @param cellValues
-     * @return Column&
-     */
-    Column & setCells( std::vector< Cell > const & cellValues );
 
     /**
      * @brief
@@ -171,79 +158,83 @@ public:
      * @brief
      * @param column
      */
-    void updateMaxStringSize( Column * column );
+    void compareAndSetMaxStringSize( Column * column, std::vector< size_t > & subColumnsLength );
+
+
+    /**
+     * @brief
+     * @return Column&
+     */
+    bool hasChild() const;
+
+    /**
+     * @brief
+     * @return Column&
+     */
+    bool hasParent() const;
 
 private:
     size_t maxStringSize;
   };
 
-  /**
-   * @brief Allow to iterate among all deepest columns / sub columns.
+  /**_est columns / sub columns.
    * An exemple of an iteration: A -> B.A -> B.B -> B.C -> C.A.A -> C.A.B -> C.B.A -> C.B.B -> D
    */
-  class SubColumnIterator
-  {
 
-    SubColumnIterator( Column const * columnPtr ) noexcept:
+  class LeafIterator
+  {
+public:
+    LeafIterator( Column const * columnPtr ):
       m_currentColumn( columnPtr )
     {}
 
 
-    SubColumnIterator & operator=( Column * columnPtr )
+    LeafIterator & operator=( Column * columnPtr )
     {
       this->m_currentColumn= columnPtr;
       return *this;
     }
 
     // Prefix ++ overload
-    SubColumnIterator & operator++()
+    LeafIterator & operator++()
     {
-      m_currentColumn++;
-      if( m_currentColumn->m_next == nullptr ) GEOS_ERROR( "Column overflow" );
-      if( m_currentColumn->m_parent == nullptr )
+      if( m_currentColumn->m_next != nullptr )
       {
-        while( !m_currentColumn->subColumn.empty() )
-        {
-          m_currentColumn = m_currentColumn.subColumn.begin();
-        }
+        // chercher le dernier sous-enfant du suivant
+        m_currentColumn = m_currentColumn->m_next;
+        while( m_currentColumn->hasChild() ) m_currentColumn = &m_currentColumn->subColumn[0];
       }
       else
       {
-        if( m_currentColumn == m_currentColumn->m_parent->subColumn.end())
-        {
-          while( m_currentColumn->m_parent.empty() )
-          {
-            m_currentColumn = m_currentColumn->m_parent;
-          }
-        }
+        m_currentColumn = m_currentColumn->m_parent != nullptr ? m_currentColumn->m_parent : nullptr;
       }
-      m_currentColumn = m_currentColumn->m_next;
+
       return *this;
     }
 
-    // Postfix ++ overload
-    SubColumnIterator operator++( Column )
-    {
-      SubColumnIterator iterator = *this;
-      ++(*this);
-      return iterator;
-    }
+    // Postfix ++ overload //todo
+    // LeafIterator & operator++()
+    // {
+    //   LeafIterator iterator = *this;
+    //   ++(*this);
+    //   return iterator;
+    // }
 
-    Column operator*()
+    Column const & operator*()
     {
       return *m_currentColumn;
     }
 
-    Column operator->()
+    Column const * operator->()
     {
       return m_currentColumn;
     }
 
-    friend bool operator== ( const SubColumnIterator & a, const SubColumnIterator & b )
+    friend bool operator== ( LeafIterator const & a, LeafIterator const & b )
     {
       return a.m_currentColumn == b.m_currentColumn;
     };
-    friend bool operator!= ( const SubColumnIterator & a, const SubColumnIterator & b )
+    friend bool operator!= ( LeafIterator const & a, LeafIterator const & b )
     {
       return a.m_currentColumn != b.m_currentColumn;
     };
@@ -252,8 +243,133 @@ private:
     Column const * m_currentColumn;
   };
 
-  SubColumnIterator begin() { return SubColumnIterator( m_tableColumnsData.begin() );}
-  SubColumnIterator end() { return SubColumnIterator( m_tableColumnsData.end() );}
+  LeafIterator beginLeaf()
+  {
+    Column const * startColumn = &(*m_tableColumnsData.begin());
+    if( startColumn->hasChild() )
+    {
+      while( startColumn->hasChild() ) startColumn = &startColumn->subColumn[0];
+    }
+    return LeafIterator( startColumn );
+  }
+
+  LeafIterator endLeaf() { return LeafIterator( &(*m_tableColumnsData.end()) );}
+
+  //
+
+  class RootIterator
+  {
+public:
+    RootIterator( Column const * columnPtr ) noexcept:
+      m_currentColumn( columnPtr ), m_checkpointColumn( 0, nullptr )
+    {}
+
+
+    RootIterator & operator=( Column * columnPtr )
+    {
+      this->m_currentColumn= columnPtr;
+      return *this;
+    }
+
+    RootIterator & operator++()
+    {
+      if( m_currentColumn->hasChild())
+      {
+        this->setCheckpoint( m_currentColumn );
+        m_currentColumn = &m_currentColumn->subColumn[0];
+      }
+      else
+      {
+        if( m_currentColumn->m_next != nullptr )
+        {
+          m_currentColumn = m_currentColumn->m_next;
+        }
+        else
+        {
+          while( this->hasCheckPoint() && this->getLastCheckPoint()->m_next == nullptr )
+          {
+            m_currentColumn = this->getLastCheckPoint();
+            m_checkpointColumn.pop_back();
+          }
+          if( this->hasCheckPoint() )
+          {
+            m_currentColumn = this->getLastCheckPoint()->m_next;
+            m_checkpointColumn.pop_back();
+          }
+        }
+      }
+      return *this;
+    }
+
+    // Postfix ++ overload //todo
+    // RootIterator operator++( Column )
+    // {
+    //   RootIterator iterator = *this;
+    //   ++(*this);
+    //   return iterator;
+    // }
+
+    Column const & operator*()
+    {
+      return *m_currentColumn;
+    }
+
+    Column const * operator->()
+    {
+      return m_currentColumn;
+    }
+
+    friend bool operator== ( RootIterator const & a, RootIterator const & b )
+    {
+      return a.m_currentColumn == b.m_currentColumn;
+    };
+    friend bool operator!= ( RootIterator const & a, RootIterator const & b )
+    {
+      return a.m_currentColumn != b.m_currentColumn;
+    };
+
+    Column const * getLastCheckPoint() const
+    {
+      if( !m_checkpointColumn.empty())
+        return m_checkpointColumn.back();
+      return nullptr;
+    }
+
+    RootIterator & setCheckpoint( Column const * column )
+    {
+      this->m_checkpointColumn.push_back( column );
+      return *this;
+    }
+
+    bool hasCheckPoint()
+    {
+      return m_checkpointColumn.empty();
+    }
+
+private:
+    Column const * m_currentColumn;
+    std::vector< Column const * > m_checkpointColumn;
+  };
+
+  RootIterator beginRoot()
+  {return RootIterator( &(*m_tableColumnsData.begin()) );}
+
+  RootIterator endRoot()
+  {
+    Column const * startColumn = &(*m_tableColumnsData.end());
+    if( startColumn->hasChild() )
+    {
+      while( startColumn->hasChild() )
+      {
+        startColumn = &startColumn->subColumn[startColumn->subColumn.size() - 1];
+      }
+
+
+    }
+    return RootIterator( &(*m_tableColumnsData.end()) );
+  }
+
+
   struct Row
   {
     // maximum number of lines among the cells of a given row
@@ -275,7 +391,7 @@ private:
   {
     setMargin( MarginValue::medium );
     setTitle( title );
-    for( auto const & column :columns )
+    for( auto & column :columns )
     {
       addToColumns( column );
     }
@@ -318,16 +434,7 @@ private:
     addToColumns( args );
   }
 
-  size_t getMaxHeaderRow()
-  {
-    size_t depthMax=1;
-    size_t maxLineCount=1;
-    for( auto it = m_tableColumnsData.begin(), end = m_tableColumnsData.end(); it!=end; ++it )
-    {
-      if( !it->subColumn.empty()) depthMax++;
-    }
-    return depthMax;
-  }
+  size_t getMaxHeaderRow() const;
 
   /**
    * @return The columns vector
@@ -399,8 +506,6 @@ private:
    */
   integer const & getMarginTitle() const;
 
-  std::vector< Row > & getTrackerHeaderRows();
-
 private:
 
   /**
@@ -411,7 +516,7 @@ private:
   {
     for( auto const & arg : args )
     {
-      std::visit( [this]( auto const & value ) {
+      std::visit( [this]( auto & value ) {
         addToColumns( value );
       }, arg );
     }
@@ -444,7 +549,7 @@ private:
  * @brief Create and add a column to the columns vector given a Column
  * @param column Vector containing addition information on the column
  */
-  void addToColumns( Column const & column );
+  void addToColumns( Column & column );
 
   std::vector< Column > m_tableColumnsData;
   // m_valueRows[0] = header then 1 line = 1 row.

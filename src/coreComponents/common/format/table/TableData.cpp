@@ -115,7 +115,7 @@ TableData2D::TableDataHolder TableData2D::buildTableData( string_view targetUnit
   {
     std::vector< TableData::CellData > currentRowValues;
     currentRowValues.reserve( rowMap.size() );
-    currentRowValues.push_back( {TableData::CellType::Value, GEOS_FMT( rowFmt, rowValue )} );
+    currentRowValues.push_back( {CellType::Value, GEOS_FMT( rowFmt, rowValue )} );
 
     std::set< real64 >::const_iterator columnIt = m_columnValues.begin();
     for( auto const & [columnValue, cellValue] : rowMap )
@@ -123,9 +123,9 @@ TableData2D::TableDataHolder TableData2D::buildTableData( string_view targetUnit
       // if a column value(s) is/are missing, insert empty entry(ies)
       while( columnValue > *( columnIt++ ) && columnIt != m_columnValues.end() )
       {
-        currentRowValues.push_back( {TableData::CellType::Value, ""} );
+        currentRowValues.push_back( {CellType::Value, ""} );
       }
-      currentRowValues.push_back( {TableData::CellType::Value, GEOS_FMT( "{}", cellValue )} );
+      currentRowValues.push_back( {CellType::Value, GEOS_FMT( "{}", cellValue )} );
     }
 
     tableData1D.tableData.addRow( currentRowValues );

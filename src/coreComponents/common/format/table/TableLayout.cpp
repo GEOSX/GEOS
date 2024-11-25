@@ -17,6 +17,7 @@
  * @file TableData.hpp
  */
 #include "TableLayout.hpp"
+#include <numeric>
 
 namespace geos
 {
@@ -31,19 +32,19 @@ void TableLayout::addToColumns( const std::vector< string > & columnNames )
 
 void TableLayout::addToColumns( string_view columnName )
 {
-  Column column = TableLayout::Column().setName( columnName );
+  TableLayout::Column column = TableLayout::Column().setName( columnName );
   if( !m_tableColumnsData.empty( ))
   {
-    m_tableColumnsData.end()->next = &column;
+    m_tableColumnsData.end()->m_next = &column;
   }
   m_tableColumnsData.push_back( column );
 }
 
-void TableLayout::addToColumns( Column const & column )
+void TableLayout::addToColumns( TableLayout::Column & column )
 {
   if( !m_tableColumnsData.empty( ))
   {
-    m_tableColumnsData.end()->next = &column;
+    m_tableColumnsData.end()->m_next = &column;
   }
   m_tableColumnsData.push_back( column );
 }
@@ -95,6 +96,24 @@ void TableLayout::removeSubColumn()
   }
 }
 
+size_t TableLayout::getMaxHeaderRow() const
+{
+  size_t depthMax = 1;
+  size_t currDepth = 1;
+  for( auto const & column : m_tableColumnsData )
+  {
+    currDepth = 1;
+    TableLayout::Column const * currColumn = &column;
+    while( !currColumn->subColumn.empty())
+    {
+      currColumn = &currColumn->subColumn[0];
+      currDepth++;
+    }
+    depthMax = std::max( currDepth, depthMax );
+  }
+  return depthMax;
+}
+
 std::vector< TableLayout::Column > const & TableLayout::getColumns() const
 {
   return m_tableColumnsData;
@@ -125,11 +144,6 @@ integer const & TableLayout::getMarginTitle() const
   return m_titleMargin;
 }
 
-integer & TableLayout::getTrackerHeaderRows() const
-{
-  return m_headerRows;
-}
-
 void divideCell( std::vector< string > & lines, string const & value )
 {
   std::istringstream strStream( value );
@@ -140,65 +154,47 @@ void divideCell( std::vector< string > & lines, string const & value )
   }
 }
 
-//
-// CellLayout
-//
+TableLayout::CellLayout::CellLayout():
+  lines( {} ), cellType( CellType::Header ), alignment( TableLayout::Alignment::center )
+{}
 
-
-TableLayout::CellLayout::CellLayout( CellType type, string_view cellValue, Alignment cellAlignment ):
+TableLayout::CellLayout::CellLayout( CellType type, string const & cellValue, TableLayout::Alignment cellAlignment ):
   cellType( type ),
   alignment( cellAlignment )
 {
   divideCell( lines, cellValue );
+  maxDataLength = std::max_element( lines.begin(), lines.end(), []( const auto & a, const auto & b )
+  {
+    return a.length() < b.length();
+  } )->length();
 }
 
-TableLayout::CellLayout::CellLayout( CellType type, string_view cellValue ):
-  cellType( type )
-{
-  divideCell( lines, cellValue );
-}
-
-void TableLayout::CellLayout: setAlignment( Alignment const align )
-{
-  alignment = align;
-}
-
-void TableLayout::setCellSize( size_t const size )
-{
-  cellSize = size;
-}
 
 //
 // COLUMN
 //
 
-TableLayout::Column()
-  : m_parent( nullptr ), m_m_next( nullptr )
+TableLayout::Column::Column():
+  m_parent( nullptr ), m_next( nullptr )
 {
   enabled = true;
-  columnName.value = "";
-  columnName.type  = '\x03';
+  columnName.lines = {};
+  columnName.cellType  = CellType::Header;
   columnName.alignment = Alignment::center;
 }
 
-TableLayout::Column( Cell cell )
+TableLayout::Column::Column( TableLayout::CellLayout cell ):
+  m_parent( nullptr ), m_next( nullptr )
 {
   columnName = cell;
-  columnName.alignment = Alignment::center;
   enabled = true;
 }
 
 
 TableLayout::Column & TableLayout::Column::setName( string_view name )
 {
-  columnName.value = name;
-  columnName.type = '\x03';
-  return *this;
-}
-
-TableLayout::Column & TableLayout::Column::setCells( std::vector< Cell > const & cellValues )
-{
-  cells = cellValues;
+  columnName.lines.push_back( std::string( name ) );
+  columnName.cellType = CellType::Header;
   return *this;
 }
 
@@ -211,7 +207,6 @@ TableLayout::Column & TableLayout::Column::hide()
 void TableLayout::Column::setMaxStringSize( size_t const size )
 {
   maxStringSize = size;
-  return *this;
 }
 
 size_t TableLayout::Column::getMaxStringSize() const
@@ -224,12 +219,12 @@ TableLayout::Column & TableLayout::Column::addSubColumns( std::vector< string > 
   std::vector< TableLayout::Column > subColumns;
   for( auto const & name : subColName )
   {
-    Cell cell{'\x03', name};    //TODO
+    TableLayout::CellLayout cell{CellType::Header, name, TableLayout::Alignment::center};
     TableLayout::Column col{cell};
-    subColumns.parent = this;
+    col.m_parent = this;
     if( !subColumns.empty())
     {
-      subColumns.end()->next = &col;
+      subColumns.end()->m_next = &col;
     }
     subColumns.emplace_back( col );
   }
@@ -250,15 +245,31 @@ TableLayout::Column & TableLayout::Column::setValuesAlignment( Alignment valueAl
   return *this;
 }
 
-void TableLayout::Column::updateMaxStringSizeForColumn( Column * currentColumn,
-                                                        std::vector< size_t > & subColumnsLength )//todo renaùme
+void TableLayout::Column::compareAndSetMaxStringSize( TableLayout::Column * currentColumn,
+                                                      std::vector< size_t > & subColumnsLength )//todo renaùme
 {
-  auto sumSubColumnsLen = std::reduce(
-    subColumnsLength.begin(),
-    subColumnsLength.end()).length();
-  currentColumn->setMaxStringSize( std::max(
-                                     sumSubColumnsLen,
-                                     getMaxStringLen( currentColumn->columnName.lines )));
+  auto sumSubColumnsLen = std::reduce( subColumnsLength.begin(), subColumnsLength.end());
+
+  size_t columnNameLinesMaxLength = std::max_element(
+    currentColumn->columnName.lines.begin(),
+    currentColumn->columnName.lines.end(),
+    []( const auto & a, const auto & b ) {
+    return a.length() < b.length();
+  } )->length();
+
+  size_t maxSize = std::max( sumSubColumnsLen, columnNameLinesMaxLength );
+
+  currentColumn->columnName.maxDataLength = maxSize;
+  currentColumn->setMaxStringSize( maxSize );
+}
+
+bool TableLayout::Column::hasChild() const
+{
+  return !this->subColumn.empty();
+}
+bool TableLayout::Column::hasParent() const
+{
+  return this->m_parent != nullptr;
 }
 
 }
