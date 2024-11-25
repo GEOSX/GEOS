@@ -1,0 +1,99 @@
+<?xml version="1.0" ?>
+
+<Problem>
+  <Solvers>
+    <!-- define the solver -->
+    <!-- define the source coordinates -->
+    <!-- define the time source frequency -->
+    <!-- define the receiver coordinates -->
+    <AcousticDG
+      name="acousticSolver"
+      cflFactor="0.25"
+      discretization="FE1"
+      targetRegions="{ Region }"
+      sourceCoordinates="{ { 55, 55, 55 },
+                           { 10, 10, 14 } }"
+      timeSourceFrequency="5.0"
+      receiverCoordinates="{ { 5, 5, 11 },
+                             { 5, 50, 11 },
+                             { 5, 95, 11 } }"/>
+  </Solvers>
+
+  <Mesh>
+    <InternalMesh
+      name="mesh"
+      elementTypes="{ C3D4 }"
+      xCoords="{ 0, 1 }"
+      yCoords="{ 0, 1 }"
+      zCoords="{ 0, 1 }"
+      nx="{ 15 }"
+      ny="{ 5 }"
+      nz="{ 10 }"
+      cellBlockNames="{ cb }"/>
+  </Mesh>
+
+  <NumericalMethods>
+    <FiniteElements>
+      <FiniteElementSpace
+        name="FE1"
+        order="1"
+        formulation="DG"/>
+    </FiniteElements>
+  </NumericalMethods>
+
+  <ElementRegions>
+    <CellElementRegion
+      name="Region"
+      cellBlocks="{ * }"
+      materialList="{ nullModel }"/>
+  </ElementRegions>
+
+  <Constitutive>
+    <NullModel
+      name="nullModel"/>
+  </Constitutive>
+
+  <FieldSpecifications>
+    <!-- 1) The initial pressure field -->
+
+    <!-- 2) The velocity in the domain -->
+    <FieldSpecification
+      name="cellVelocity"
+      initialCondition="1"
+      objectPath="ElementRegions/Region/cb"
+      fieldName="acousticVelocity"
+      scale="1500"
+      setNames="{ all }"/>
+
+    <FieldSpecification
+      name="cellDensity"
+      initialCondition="1"
+      objectPath="ElementRegions/Region/cb"
+      fieldName="acousticDensity"
+      scale="1"
+      setNames="{ all }"/>
+
+    <!-- 3) The free surface condition the domain -->
+    <FieldSpecification
+      name="zposFreeSurface"
+      objectPath="faceManager"
+      fieldName="FreeSurface"
+      scale="0.0"
+      setNames="{ zpos }"/>
+  </FieldSpecifications>
+
+  <Events
+    maxTime="0.2">
+    <!-- trigger the application of the solver -->
+    <!-- control the timestepping here with forceDt -->
+    <PeriodicEvent
+      name="solverApplications"
+      forceDt="0.001"
+      target="/Solvers/acousticSolver"/>
+
+    <!-- two events to output pressure in an hdf5 file -->
+  </Events>
+
+  <!-- collect the pressure values at the nodes -->
+
+</Problem>
