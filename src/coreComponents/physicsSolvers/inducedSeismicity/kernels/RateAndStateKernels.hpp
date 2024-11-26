@@ -209,7 +209,7 @@ public:
     // Slip rate is bracketed between [0, shear traction magnitude / shear impedance] 
     // If slip rate is outside the bracket, re-initialize to the middle value
     real64 const upperBound = shearTractionMagnitude/m_shearImpedance;
-    real64 const bracketedSlipRate = m_slipRate[k] > upperBound ? upperBound/2 : m_slipRate[k];
+    real64 const bracketedSlipRate = m_slipRate[k] > upperBound ? 0.5*upperBound : m_slipRate[k];
   
     stack.rhs = shearTractionMagnitude - m_shearImpedance *bracketedSlipRate - normalTraction * m_frictionLaw.frictionCoefficient( k,bracketedSlipRate, m_stateVariable[k] );
     stack.jacobian = -m_shearImpedance - normalTraction * m_frictionLaw.dFrictionCoefficient_dSlipRate( k, bracketedSlipRate, m_stateVariable[k] );
@@ -220,6 +220,13 @@ public:
               StackVariables & stack) const
   {   
     m_slipRate[k] -= stack.rhs/stack.jacobian;
+
+    // Slip rate is bracketed between [0, shear traction magnitude / shear impedance] 
+    // Check that the update did not end outside of the bracket.
+    real64 const shearTractionMagnitude = LvArray::math::sqrt( m_traction[k][1] * m_traction[k][1] + m_traction[k][2] * m_traction[k][2] );
+    real64 const upperBound = shearTractionMagnitude/m_shearImpedance;
+    if ( m_slipRate[k] > upperBound ) m_slipRate[k] = 0.5*upperBound;
+
   }
 
   
