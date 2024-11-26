@@ -210,6 +210,7 @@ SinglePhaseBase::FluidPropViews SinglePhaseBase::getFluidProperties( Constitutiv
 {
   SingleFluidBase const & singleFluid = dynamicCast< SingleFluidBase const & >( fluid );
   return { singleFluid.density(),
+           singleFluid.dDensity(),
            singleFluid.dDensity_dPressure(),
            singleFluid.viscosity(),
            singleFluid.dViscosity_dPressure(),
@@ -377,6 +378,7 @@ void SinglePhaseBase::updateMobility( ObjectManagerBase & dataGroup ) const
 
     singlePhaseBaseKernels::MobilityKernel::launch< parallelDevicePolicy<> >( dataGroup.size(),
                                                                               fluidProps.dens,
+                                                                              fluidProps.dDens,
                                                                               fluidProps.dDens_dPres,
                                                                               thermalFluidProps.dDens_dTemp,
                                                                               fluidProps.visc,
@@ -390,6 +392,7 @@ void SinglePhaseBase::updateMobility( ObjectManagerBase & dataGroup ) const
   {
     singlePhaseBaseKernels::MobilityKernel::launch< parallelDevicePolicy<> >( dataGroup.size(),
                                                                               fluidProps.dens,
+                                                                              fluidProps.dDens,
                                                                               fluidProps.dDens_dPres,
                                                                               fluidProps.visc,
                                                                               fluidProps.dVisc_dPres,

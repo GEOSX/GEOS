@@ -61,7 +61,7 @@ void computeSinglePhaseFlux( localIndex const ( &seri )[2],
                              real64 ( & dFlux_dP )[2],
                              real64 & dFlux_dTrans )
 {
-  using DerivOffset = constitutive::singlefluid::DerivativeOffset;
+  //using DerivOffset = constitutive::singlefluid::DerivativeOffset;
   // average density
   real64 densMean = 0.0;
   real64 dDensMean_dP[2];
@@ -69,8 +69,8 @@ void computeSinglePhaseFlux( localIndex const ( &seri )[2],
   for( localIndex ke = 0; ke < 2; ++ke )
   {
     densMean        += 0.5 * dens[seri[ke]][sesri[ke]][sei[ke]][0];
-    //dDensMean_dP[ke] = 0.5 * dDens_dPres[seri[ke]][sesri[ke]][sei[ke]][0];
-    dDensMean_dP[ke] = 0.5 * dDens[seri[ke]][sesri[ke]][sei[ke]][0][DerivOffset::dP];
+    dDensMean_dP[ke] = 0.5 * dDens_dPres[seri[ke]][sesri[ke]][sei[ke]][0];
+    //dDensMean_dP[ke] = 0.5 * dDens[seri[ke]][sesri[ke]][sei[ke]][0][DerivOffset::dP];
   }
 
   // compute potential difference
@@ -88,7 +88,7 @@ void computeSinglePhaseFlux( localIndex const ( &seri )[2],
     real64 const pressure = pres[er][esr][ei];
     real64 const gravD = gravCoef[er][esr][ei];
     real64 const pot = transmissibility[ke] * ( pressure - densMean * gravD );
-
+  
     potGrad += pot;
     dpotGrad_dTrans += signpotGradf[ke] * ( pressure - densMean * gravD );
     sumWeightGrav += transmissibility[ke] * gravD;

@@ -299,7 +299,9 @@ public:
 protected:
 
   virtual void postInputInitialization() override;
-
+  
+  // Degrees of freedom in fluid characterization  
+  integer m_numDOF;  
   //START_SPHINX_INCLUDE_00
   SingleFluidProp m_density;
   //FluidProp m_viscosityXYZ;

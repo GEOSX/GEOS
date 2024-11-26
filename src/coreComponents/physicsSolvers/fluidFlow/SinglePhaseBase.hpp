@@ -393,6 +393,7 @@ protected:
   struct FluidPropViews
   {
     arrayView2d< real64 const > const dens;             ///< density
+    arrayView3d< real64 const > const dDens;             ///< density derivatives
     arrayView2d< real64 const > const dDens_dPres;      ///< derivative of density w.r.t. pressure
     arrayView2d< real64 const > const visc;             ///< viscosity
     arrayView2d< real64 const > const dVisc_dPres;      ///< derivative of viscosity w.r.t. pressure

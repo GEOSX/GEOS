@@ -38,6 +38,7 @@ struct MobilityKernel
   inline
   static void
   compute( real64 const & dens,
+           real64 const & dDens_dP,  //tjb
            real64 const & dDens_dPres,
            real64 const & visc,
            real64 const & dVisc_dPres,
@@ -46,6 +47,8 @@ struct MobilityKernel
   {
     mob = dens / visc;
     dMob_dPres = dDens_dPres / visc - mob / visc * dVisc_dPres;
+    dMob_dPres = dDens_dP / visc - mob / visc * dVisc_dPres;
+    assert( fabs( dDens_dP -dDens_dPres ) < FLT_EPSILON );
   }
 
 // Thermal version
@@ -53,6 +56,7 @@ struct MobilityKernel
   inline
   static void
   compute( real64 const & dens,
+           real64 const & dDens_dP,  // tjb
            real64 const & dDens_dPres,
            real64 const & dDens_dTemp,
            real64 const & visc,
@@ -64,6 +68,8 @@ struct MobilityKernel
   {
     mob = dens / visc;
     dMob_dPres = dDens_dPres / visc - mob / visc * dVisc_dPres;
+    dMob_dPres = dDens_dP / visc - mob / visc * dVisc_dPres;
+    assert( fabs( dDens_dP -dDens_dPres ) < FLT_EPSILON );
     dMob_dTemp = dDens_dTemp / visc - mob / visc * dVisc_dTemp;
   }
 
@@ -82,6 +88,7 @@ struct MobilityKernel
   template< typename POLICY >
   static void launch( localIndex const size,
                       arrayView2d< real64 const > const & dens,
+                      arrayView3d< real64 const > const & dDens,      
                       arrayView2d< real64 const > const & dDens_dPres,
                       arrayView2d< real64 const > const & visc,
                       arrayView2d< real64 const > const & dVisc_dPres,
@@ -91,7 +98,8 @@ struct MobilityKernel
     forAll< POLICY >( size, [=] GEOS_HOST_DEVICE ( localIndex const a )
     {
       compute( dens[a][0],
-               dDens_dPres[a][0],
+               dDens[a][0][0],   // tjb use deriv::dp
+               dDens_dPres[a][0],  
                visc[a][0],
                dVisc_dPres[a][0],
                mob[a],
@@ -103,6 +111,7 @@ struct MobilityKernel
   template< typename POLICY >
   static void launch( localIndex const size,
                       arrayView2d< real64 const > const & dens,
+                      arrayView3d< real64 const > const & dDens, // tjb
                       arrayView2d< real64 const > const & dDens_dPres,
                       arrayView2d< real64 const > const & dDens_dTemp,
                       arrayView2d< real64 const > const & visc,
@@ -115,6 +124,7 @@ struct MobilityKernel
     forAll< POLICY >( size, [=] GEOS_HOST_DEVICE ( localIndex const a )
     {
       compute( dens[a][0],
+               dDens[a][0][0], // tjb use deriv::dp
                dDens_dPres[a][0],
                dDens_dTemp[a][0],
                visc[a][0],

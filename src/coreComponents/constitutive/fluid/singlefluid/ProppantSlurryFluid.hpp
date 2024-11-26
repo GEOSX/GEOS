@@ -80,13 +80,14 @@ public:
                              arrayView1d< real64 const > const & Ks,
                              bool const isNewtonianFluid,
                              arrayView2d< real64 > const & density,
+                             arrayView3d< real64 > const & dDens,
                              arrayView2d< real64 > const & dDens_dPres,
                              arrayView2d< real64 > const & dDens_dProppantConc,
                              arrayView3d< real64 > const & dDens_dCompConc,
                              arrayView3d< real64 > const & componentDensity,
                              arrayView3d< real64 > const & dCompDens_dPres,
                              arrayView4d< real64 > const & dCompDens_dCompConc,
-                             arrayView2d< real64, constitutive::singlefluid::USD_FLUID > const & fluidDensity,
+                             arrayView2d< real64 > const & fluidDensity,
                              arrayView2d< real64 > const & dFluidDens_dPres,
                              arrayView3d< real64 > const & dFluidDens_dCompConc,
                              arrayView2d< real64 > const & fluidViscosity,
@@ -103,6 +104,7 @@ public:
                              Ks,
                              isNewtonianFluid,
                              density,
+                             dDens,
                              dDens_dPres,
                              dDens_dProppantConc,
                              dDens_dCompConc,
@@ -164,6 +166,7 @@ public:
              m_dFluidVisc_dCompConc[k][q],
              isProppantBoundary,
              m_density[k][q],
+             m_dDensity[k][q][0] , // tjb add deriv:dp
              m_dDensity_dPressure[k][q],
              m_dDensity_dProppantConc[k][q],
              m_dDensity_dCompConc[k][q],
@@ -260,6 +263,7 @@ private:
                 arraySlice1d< real64 const > const & dFluidViscosity_dComponentConcentration,
                 integer const & isProppantBoundary,
                 real64 & density,
+                real64 & dDensity_dp,  // tjb
                 real64 & dDensity_dPressure,
                 real64 & dDensity_dProppantConcentration,
                 arraySlice1d< real64 > const & dDensity_dComponentConcentration,
@@ -477,6 +481,7 @@ ProppantSlurryFluidUpdate::
            arraySlice1d< real64 const > const & GEOS_UNUSED_PARAM( dFluidViscosity_dComponentConcentration ),
            integer const & isProppantBoundary,
            real64 & density,
+           real64 & dDensity_dp, //tjb
            real64 & dDensity_dPressure,
            real64 & dDensity_dProppantConcentration,
            arraySlice1d< real64 > const & dDensity_dComponentConcentration,
@@ -495,7 +500,8 @@ ProppantSlurryFluidUpdate::
 
   density = (1.0 - effectiveConcentration) * fluidDensity + effectiveConcentration * m_referenceProppantDensity;
   dDensity_dPressure = (1.0 - effectiveConcentration) * dFluidDensity_dPressure;
-
+  dDensity_dp = (1.0 - effectiveConcentration) * dFluidDensity_dPressure;
+  
   dDensity_dProppantConcentration = 0.0;
   for( localIndex c = 0; c < NC; ++c )
   {

@@ -110,6 +110,7 @@ ProppantSlurryFluid::createKernelWrapper()
                         m_Ks,
                         m_isNewtonianFluid,
                         m_density.value,
+                        m_density.derivs,
                         m_dDensity_dPressure,
                         m_dDensity_dProppantConc,
                         m_dDensity_dCompConc,

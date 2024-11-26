@@ -166,8 +166,13 @@ public:
     // Residual contribution is mass conservation in the cell
     stack.localResidual[0] = stack.poreVolume * m_density[ei][0] - m_mass_n[ei];
     // Derivative of residual wrt to pressure in the cell
-    //stack.localJacobian[0][0] = stack.dPoreVolume_dPres * m_density[ei][0] + m_dDensity_dPres[ei][0] * stack.poreVolume;
-    stack.localJacobian[0][0] = stack.dPoreVolume_dPres * m_density[ei][0] + m_dDensity[ei][0][DerivOffset::dP] * stack.poreVolume;
+    std::cout << m_dDensity_dPres[ei][0]<< " " <<  m_dDensity[ei][0][DerivOffset::dP] << std::endl;
+        std::cout.flush();
+    //assert(fabs(m_dDensity_dPres[ei][0]-m_dDensity[ei][0][DerivOffset::dP])<FLT_EPSILON);
+
+    
+    stack.localJacobian[0][0] = stack.dPoreVolume_dPres * m_density[ei][0] + m_dDensity_dPres[ei][0] * stack.poreVolume;
+    //stack.localJacobian[0][0] = stack.dPoreVolume_dPres * m_density[ei][0] + m_dDensity[ei][0][DerivOffset::dP] * stack.poreVolume;
     // Customize the kernel with this lambda
     kernelOp();
   }

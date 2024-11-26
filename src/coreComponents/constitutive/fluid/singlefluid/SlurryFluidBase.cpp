@@ -107,11 +107,14 @@ localIndex SlurryFluidBase::numFluidComponents() const
 void SlurryFluidBase::allocateConstitutiveData( Group & parent,
                                                 localIndex const numConstitutivePointsPerParentIndex )
 {
+  localIndex const NC = numFluidComponents();
+  m_numDOF = 2 + NC;  // pressure,proppantconc, NC compconc
+
   SingleFluidBase::allocateConstitutiveData( parent, numConstitutivePointsPerParentIndex );
 
   this->resize( parent.size() );
 
-  localIndex const NC = numFluidComponents();
+  
 
   m_dDensity_dProppantConc.resize( parent.size(), numConstitutivePointsPerParentIndex );
   m_dDensity_dCompConc.resize( parent.size(), numConstitutivePointsPerParentIndex, NC );

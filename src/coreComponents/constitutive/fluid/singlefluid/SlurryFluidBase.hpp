@@ -95,13 +95,14 @@ protected:
                          arrayView1d< real64 const > const & Ks,
                          bool const isNewtonianFluid,
                          arrayView2d< real64 > const & density,
+                         arrayView3d< real64 > const & dDensity,
                          arrayView2d< real64 > const & dDens_dPres,
                          arrayView2d< real64 > const & dDens_dProppantConc,
                          arrayView3d< real64 > const & dDens_dCompConc,
                          arrayView3d< real64 > const & componentDensity,
                          arrayView3d< real64 > const & dCompDens_dPres,
                          arrayView4d< real64 > const & dCompDens_dCompConc,
-                         arrayView2d< real64, constitutive::singlefluid::USD_FLUID > const & fluidDensity,
+                         arrayView2d< real64 > const & fluidDensity,
                          arrayView2d< real64 > const & dFluidDens_dPres,
                          arrayView3d< real64 > const & dFluidDens_dCompConc,
                          arrayView2d< real64 > const & fluidViscosity,
@@ -118,6 +119,7 @@ protected:
     m_Ks( Ks ),
     m_isNewtonianFluid( isNewtonianFluid ),
     m_density( density ),
+    m_dDensity( dDensity ),
     m_dDensity_dPressure( dDens_dPres ),
     m_dDensity_dProppantConc( dDens_dProppantConc ),
     m_dDensity_dCompConc( dDens_dCompConc ),
@@ -170,6 +172,8 @@ protected:
   bool m_isNewtonianFluid;
 
   arrayView2d< real64 > m_density;
+  arrayView3d< real64 > m_dDensity;
+
   arrayView2d< real64 > m_dDensity_dPressure;
   arrayView2d< real64 > m_dDensity_dProppantConc;
   arrayView3d< real64 > m_dDensity_dCompConc;
@@ -319,6 +323,7 @@ protected:
   array1d< real64 > m_nIndices;
   array1d< real64 > m_Ks;
 
+  // these can be folded into base but specializations will need input into DOFS for sizing
   array2d< real64 > m_dDensity_dProppantConc;
   array3d< real64 > m_dDensity_dCompConc;
 

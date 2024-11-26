@@ -30,7 +30,8 @@ namespace constitutive
 {
 
 SingleFluidBase::SingleFluidBase( string const & name, Group * const parent )
-  : ConstitutiveBase( name, parent )
+  : ConstitutiveBase( name, parent ),
+    m_numDOF(1)
 {
   //registerField( fields::singlefluid::density{}, &m_density.value );
   registerField( fields::singlefluid::dDensity_dPressure{}, &m_dDensity_dPressure );
@@ -83,13 +84,12 @@ void SingleFluidBase::allocateConstitutiveData( Group & parent,
 
   resize( parent.size() );
 
-  //m_density.resize( parent.size(), numConstitutivePointsPerParentIndex );
   m_dDensity_dPressure.resize( parent.size(), numConstitutivePointsPerParentIndex );
   m_dDensity_dTemperature.resize( parent.size(), numConstitutivePointsPerParentIndex );
   m_density_n.resize( parent.size(), numConstitutivePointsPerParentIndex );
 
   m_density.value.resize( parent.size(), numConstitutivePointsPerParentIndex );
-  m_density.derivs.resize( parent.size(), numConstitutivePointsPerParentIndex, 1 );
+  m_density.derivs.resize( parent.size(), numConstitutivePointsPerParentIndex, m_numDOF );  // pressure deriv
 
   m_viscosity.resize( parent.size(), numConstitutivePointsPerParentIndex );
   m_dViscosity_dPressure.resize( parent.size(), numConstitutivePointsPerParentIndex );

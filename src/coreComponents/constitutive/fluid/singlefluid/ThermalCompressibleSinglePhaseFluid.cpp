@@ -34,7 +34,7 @@ ThermalCompressibleSinglePhaseFluid::ThermalCompressibleSinglePhaseFluid( string
   m_internalEnergyModelType( ExponentApproximationType::Linear )
 {
   m_densityModelType = ExponentApproximationType::Full;
-
+  m_numDOF=2;
   registerWrapper( viewKeyStruct::thermalExpansionCoeffString(), &m_thermalExpansionCoeff ).
     setApplyDefaultValue( 0.0 ).
     setInputFlag( InputFlags::OPTIONAL ).
