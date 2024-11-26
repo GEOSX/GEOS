@@ -13,6 +13,8 @@
  * ------------------------------------------------------------------------------------------------------------
  */
 
+/// THIS is an alternative implementation to avoid the use of the TractionUpdateWrapper 
+
 #ifndef GEOS_PHYSICSSOLVERS_INDUCED_QUASIDYNAMICEQBASE_HPP
 #define GEOS_PHYSICSSOLVERS_INDUCED_QUASIDYNAMICEQBASE_HPP
 
@@ -46,8 +48,6 @@ public:
 
   struct viewKeyStruct : public PhysicsSolverBase::viewKeyStruct
   {
-    /// stress solver name
-    static constexpr char const * stressSolverNameString() { return "stressSolverName"; }
     /// Friction law name string
     constexpr static char const * frictionLawNameString() { return "frictionLawName"; }
     /// Friction law name string
@@ -79,16 +79,7 @@ public:
 private:
 
 
-
   virtual void postInputInitialization() override;
-
-
-
-  /// pointer to stress solver
-  PhysicsSolverBase * m_stressSolver;
-
-  /// stress solver name
-  string m_stressSolverName;
 
   /// shear impedance
   real64 m_shearImpedance;

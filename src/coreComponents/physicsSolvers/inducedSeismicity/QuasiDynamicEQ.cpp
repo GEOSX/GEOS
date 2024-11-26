@@ -157,9 +157,9 @@ real64 QuasiDynamicEQ::solverStep( real64 const & time_n,
 
 void QuasiDynamicEQ::saveOldStateAndUpdateSlip( ElementSubRegionBase & subRegion, real64 const dt ) const
 {
-  arrayView1d< real64 > const stateVariable   = subRegion.getField< rateAndState::stateVariable >();
+  arrayView1d< real64 const > const stateVariable   = subRegion.getField< rateAndState::stateVariable >();
   arrayView1d< real64 > const stateVariable_n = subRegion.getField< rateAndState::stateVariable_n >();
-  arrayView2d< real64 > const slipVelocity    = subRegion.getField< rateAndState::slipVelocity >();
+  arrayView2d< real64 const > const slipVelocity    = subRegion.getField< rateAndState::slipVelocity >();
   arrayView2d< real64 > const deltaSlip       = subRegion.getField< contact::deltaSlip >();
 
   arrayView2d< real64 > const dispJump = subRegion.getField< contact::targetIncrementalJump >();

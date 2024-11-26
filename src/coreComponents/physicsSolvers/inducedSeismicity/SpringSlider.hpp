@@ -13,6 +13,8 @@
  * ------------------------------------------------------------------------------------------------------------
  */
 
+/// THIS is an alternative implementation to avoid the use of the TractionUpdateWrapper 
+
 #ifndef GEOS_PHYSICSSOLVERS_INDUCED_SPRINGSLIDER_HPP
 #define GEOS_PHYSICSSOLVERS_INDUCED_SPRINGSLIDER_HPP
 

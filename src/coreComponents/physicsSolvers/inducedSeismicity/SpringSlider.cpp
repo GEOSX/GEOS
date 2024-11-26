@@ -17,6 +17,8 @@
  * @file SpringSlider.cpp
  */
 
+/// THIS is an alternative implementation to avoid the use of the TractionUpdateWrapper 
+
 #include "SpringSlider.hpp"
 
 #include "dataRepository/InputFlags.hpp"

@@ -40,6 +40,9 @@ void SpringSliderTractionUpdate::registerMissingDataOnMesh( SurfaceElementSubReg
   subRegion.registerField< contact::dispJump >( solverName ).
     setDimLabels( 1, labels3Comp ).
     reference().resizeDimension< 1 >( 3 );
+  subRegion.registerField< contact::targetIncrementalJump >( solverName ).
+    setDimLabels( 1, labels3Comp ).
+    reference().resizeDimension< 1 >( 3 );  
   subRegion.registerField< contact::traction >( solverName ).
     setDimLabels( 1, labels3Comp ).
     reference().resizeDimension< 1 >( 3 );

@@ -1,15 +1,27 @@
 <?xml version="1.0" ?>
 <Problem>
-  <Solvers>
+  <Solvers
+    gravityVector="{0.0, 0.0, 0.0}">
     <QuasiDynamicEQ
       name="QDSolver"
       targetRegions="{ Domain, Fault }"
-      shearImpedance="4.41"
+      shearImpedance="4.6247113164e6"
       initialDt="1"
       logLevel="1"
       discretization="FE1"
-      stressSolverName="stressSolver">
-    </QuasiDynamicEQ>
+      contactSolverName="stressSolver"
+      flowSolverName="singlePhaseFlowSolver"
+      tractionUpdateType="OneWayCoupled"
+      targetSlipIncrement="1.0e-4">
+      <NonlinearSolverParameters
+        newtonTol="1.0e-8"
+        logLevel="2"
+        newtonMaxIter="20"
+        maxNumConfigurationAttempts="1"
+        lineSearchAction="Require"
+        lineSearchMaxCuts="2"
+        maxTimeStepCuts="1"/>
+     </QuasiDynamicEQ>
 
     <SolidMechanicsLagrangeContactBubbleStab
       name="stressSolver"
@@ -43,13 +55,13 @@
       name="singlePhaseFlowSolver"
       logLevel="1"
       discretization="singlePhaseTPFA"
-      targetRegions="{ Domain }"> 
+      targetRegions="{ Fault }"> 
       <NonlinearSolverParameters
         newtonTol = "1.0e-6"
-        newtonMaxIter = "8"/>
+        newtonMaxIter ="8"/>
       <LinearSolverParameters
-        solverType="gmres"
-        krylovTol="1.0e-12"/>   
+        solverType="direct"
+        directParallel="0"/>   
     </SinglePhaseFVM>
   </Solvers>
 
@@ -59,26 +71,36 @@
         name="FE1"
         order="1"/>
     </FiniteElements>
+
+    <FiniteVolume>
+      <TwoPointFluxApproximation
+        name="singlePhaseTPFA"/>
+    </FiniteVolume>
   </NumericalMethods>
 
   <Mesh>
     <InternalMesh
       name="mesh1"
       elementTypes="{ C3D8 }"
-      xCoords="{ -100, 100 }"
-      yCoords="{ -1, 1 }"
-      zCoords="{ -100, 100 }"
+      xCoords="{ -10.0e3, 10.0e3 }"
+      yCoords="{ -0.5e3, 0.5e3 }"
+      zCoords="{ -20.0e3, -10.0e3, 10.0e3, 20.0e3 }"
       nx="{ 100 }"
       ny="{ 1 }"
-      nz="{ 100 }"
+      nz="{ 20, 200, 20 }"
       cellBlockNames="{ cb1 }"/>
   </Mesh>
 
   <Geometry>    
     <Box
       name="faultPlane"
-      xMin="{ -0.01, -1.010, -100.0 }"
-      xMax="{ 0.01,   1.01,   100.0 }"/>
+      xMin="{ -0.01, -1.01e3, -10.0e3 }"
+      xMax="{ 0.01,   1.01e3,  10.0e3 }"/>
+    
+    <Box
+      name="source"
+      xMin="{ -0.01, -1.01e3, -200.1 }"
+      xMax="{ 0.01,   1.01e3,  200.1 }"/>
   </Geometry>
 
   <ElementRegions>
@@ -116,7 +138,7 @@
       fieldName="totalDisplacement"
       component="1"
       scale="0.0"
-      setNames="{ ypos, yneg, xneg, xpos }"/>
+      setNames="{ ypos, yneg }"/>
 
     <FieldSpecification
       name="zconstraint"
@@ -125,32 +147,38 @@
       component="2"
       scale="0.0"
       setNames="{ zpos, zneg }"/>
+
+    <FieldSpecification
+      name="initialSlipRate"
+      objectPath="ElementRegions/Fault"
+      fieldName="slipRate"
+      scale="1.0e-12"
+      setNames="{ all }"
+      initialCondition="1"/>
       
     <FieldSpecification
-      name="dispJump_normal"
-      fieldName="targetIncrementalJump"
+      name="slipVelocity1"
+      fieldName="slipVelocity"
       initialCondition="1"
       objectPath="ElementRegions/Fault/FractureSubRegion"
-      scale="0.0"
       component="0"
+      scale="0."
       setNames="{all}"/>
-      
+
     <FieldSpecification
-      name="dispJump_t1"
-      fieldName="targetIncrementalJump"
+      name="slipVelocity2"
+      fieldName="slipVelocity"
       initialCondition="1"
       objectPath="ElementRegions/Fault/FractureSubRegion"
-      scale="0.1"
       component="1"
-      setNames="{all}"/>
-    
-    <FieldSpecification
-      name="dispJump_t2"
-      fieldName="targetIncrementalJump"
-      initialCondition="1"
-      objectPath="ElementRegions/Fault/FractureSubRegion"
-      scale="0.0"
-      component="2"
-      setNames="{all}"/>  
+      scale="0."
+      setNames="{all}"/>                 
+
+    <SourceFlux
+      name="sourceTerm"
+      objectPath="ElementRegions/Fault"
+      scale="-1.25e-3"
+      setNames="{ source }"
+      endTime="8.64e6"/>
   </FieldSpecifications>
 </Problem>

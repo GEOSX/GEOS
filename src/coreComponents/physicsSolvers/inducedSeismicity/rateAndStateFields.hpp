@@ -51,7 +51,7 @@ DECLARE_FIELD( stateVariable,
 DECLARE_FIELD( slipVelocity,
                "slipVelocity",
                array2d< real64 >,
-               1.0e-6,
+               1.0e-12,
                LEVEL_0,
                WRITE_AND_READ,
                "Slip velocity" );

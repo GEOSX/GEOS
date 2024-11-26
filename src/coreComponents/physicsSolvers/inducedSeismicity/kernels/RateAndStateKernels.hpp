@@ -99,11 +99,31 @@ public:
   {
     /// Solve 2x2 system
     real64 solution[2] = {0.0, 0.0};
+     LvArray::tensorOps::scale< 2 >( stack.rhs, -1.0 );
     denseLinearAlgebra::solve< 2 >( stack.jacobian, stack.rhs, solution );
 
+     // Slip rate is bracketed between [0, shear traction magnitude / shear impedance] 
+    // Check that the update did not end outside of the bracket.
+    real64 const shearTractionMagnitude = LvArray::math::sqrt( m_traction[k][1] * m_traction[k][1] + m_traction[k][2] * m_traction[k][2] );
+    real64 const upperBound = shearTractionMagnitude / m_shearImpedance - m_slipRate[k];
+    real64 const lowerBound = - m_slipRate[k];
+
+    real64 scalingFactor = 1.0;
+    if ( solution[0] > upperBound ) 
+    {
+      std::cout << "Slip rate update outside of bracket. Scaling solution." << std::endl;
+      scalingFactor = 0.5 * upperBound / solution[0];
+    }else if ( solution[0] < lowerBound )
+    {
+      std::cout << "Slip rate update outside of bracket [lowerBound]. Scaling solution." << std::endl;
+      scalingFactor = 0.5 * lowerBound / solution[0];
+    }
+    
+    LvArray::tensorOps::scale< 2 >( solution, scalingFactor );
+
     // Update variables
-    m_stateVariable[k]  -=  solution[0];
-    m_slipRate[k]       -=  solution[1];
+    m_stateVariable[k]  +=  solution[0];
+    m_slipRate[k]       +=  solution[1];
   }
 
   GEOS_HOST_DEVICE

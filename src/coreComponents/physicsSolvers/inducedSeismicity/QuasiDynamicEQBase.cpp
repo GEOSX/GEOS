@@ -26,6 +26,8 @@
 #include "physicsSolvers/contact/ContactFields.hpp"
 #include "fieldSpecification/FieldSpecificationManager.hpp"
 
+/// THIS is an alternative implementation to avoid the use of the TractionUpdateWrapper 
+
 namespace geos
 {
 
@@ -44,10 +46,6 @@ QuasiDynamicEQBase::QuasiDynamicEQBase( const string & name,
   this->registerWrapper( viewKeyStruct::shearImpedanceString(), &m_shearImpedance ).
     setInputFlag( InputFlags::REQUIRED ).
     setDescription( "Shear impedance." );
-
-  this->registerWrapper( viewKeyStruct::stressSolverNameString(), &m_stressSolverName ).
-    setInputFlag( InputFlags::REQUIRED ).
-    setDescription( "Name of solver for computing stress. If empty, the spring-slider model is run." );
 
   this->registerWrapper( viewKeyStruct::targetSlipIncrementString(), &m_targetSlipIncrement ).
     setInputFlag( InputFlags::OPTIONAL ).
@@ -121,32 +119,10 @@ void QuasiDynamicEQBase::registerDataOnMesh( Group & meshBodies )
 }
 
 real64 QuasiDynamicEQBase::solverStep( real64 const & time_n,
-                                   real64 const & dt,
-                                   int const cycleNumber,
-                                   DomainPartition & domain )
+                                       real64 const & dt,
+                                       int const cycleNumber,
+                                       DomainPartition & domain )
 {
-  if( cycleNumber == 0 )
-  {
-    /// Apply initial conditions to the Fault
-    FieldSpecificationManager & fieldSpecificationManager = FieldSpecificationManager::getInstance();
-
-    forDiscretizationOnMeshTargets( domain.getMeshBodies(), [&]( string const &,
-                                                                 MeshLevel & mesh,
-                                                                 arrayView1d< string const > const & )
-
-    {
-      fieldSpecificationManager.applyInitialConditions( mesh );
-    } );
-  }
-
-  /// 1. Compute shear and normal tractions
-  GEOS_LOG_LEVEL_RANK_0( 1, "Stress solver" );
-
-  real64 const dtStress = updateStresses( time_n, dt, cycleNumber, domain );
-
-  /// 2. Solve for slip rate and state variable and, compute slip
-  GEOS_LOG_LEVEL_RANK_0( 1, "Rate and State solver" );
-
   integer const maxNewtonIter = m_nonlinearSolverParameters.m_maxIterNewton;
   forDiscretizationOnMeshTargets( domain.getMeshBodies(), [&]( string const &,
                                                                MeshLevel & mesh,
@@ -166,14 +142,6 @@ real64 QuasiDynamicEQBase::solverStep( real64 const & time_n,
 
   // return time step size achieved by stress solver
   return dtStress;
-}
-
-real64 QuasiDynamicEQBase::updateStresses( real64 const & time_n,
-                                       real64 const & dt,
-                                       const int cycleNumber,
-                                       DomainPartition & domain ) const
-{
-  return m_stressSolver->solverStep( time_n, dt, cycleNumber, domain );;
 }
 
 void QuasiDynamicEQBase::saveOldStateAndUpdateSlip( ElementSubRegionBase & subRegion, real64 const dt ) const
