@@ -223,6 +223,7 @@ public:
                                                               m_pres,
                                                               m_gravCoef,
                                                               m_dens,
+                                                              m_dDens,
                                                               m_dDens_dPres,
                                                               m_mob,
                                                               m_dMob_dPres,

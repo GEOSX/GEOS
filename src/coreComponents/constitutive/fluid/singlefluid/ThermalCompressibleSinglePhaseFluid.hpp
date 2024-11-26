@@ -49,6 +49,7 @@ public:
   ThermalCompressibleSinglePhaseUpdate( DensRelationType const & densRelation,
                                         ViscRelationType const & viscRelation,
                                         IntEnergyRelationType const & intEnergyRelation,
+                                        SingleFluidProp & density_c,
                                         arrayView2d< real64, constitutive::singlefluid::USD_FLUID > const & density,
                                         arrayView2d< real64 > const & dDens_dPres,
                                         arrayView2d< real64 > const & dDens_dTemp,
@@ -62,7 +63,8 @@ public:
                                         arrayView2d< real64 > const & dEnthalpy_dPres,
                                         arrayView2d< real64 > const & dEnthalpy_dTemp,
                                         real64 const & refIntEnergy )
-    : SingleFluidBaseUpdate( density,
+    : SingleFluidBaseUpdate( density_c,
+                             density,
                              dDens_dPres,
                              viscosity,
                              dVisc_dPres ),

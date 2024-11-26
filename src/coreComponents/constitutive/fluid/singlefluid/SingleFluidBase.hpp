@@ -60,11 +60,13 @@ protected:
    * @param viscosity   fluid viscosity
    * @param dVisc_dPres derivative of viscosity w.r.t. pressure
    */
-  SingleFluidBaseUpdate( arrayView2d< real64, constitutive::singlefluid::USD_FLUID >  const & density,
+  SingleFluidBaseUpdate( SingleFluidProp & density_c,
+                         arrayView2d< real64, constitutive::singlefluid::USD_FLUID >  const & density,
                          arrayView2d< real64 > const & dDens_dPres,
                          arrayView2d< real64 > const & viscosity,
                          arrayView2d< real64 > const & dVisc_dPres )
-    : m_density( density ),
+    : m_density_c( density_c ),
+    m_density( density ),
     m_dDens_dPres( dDens_dPres ),
     m_viscosity( viscosity ),
     m_dVisc_dPres( dVisc_dPres )
@@ -94,6 +96,7 @@ protected:
 
 
   /// Fluid density
+  SingleFluidProp & m_density_c;
   arrayView2d< real64, constitutive::singlefluid::USD_FLUID >  m_density;
 
   /// Derivative of density w.r.t. pressure
@@ -218,6 +221,8 @@ class SingleFluidBase : public ConstitutiveBase
 public:
 
   using SingleFluidProp = SingleFluidVar< real64, 2, constitutive::singlefluid::LAYOUT_FLUID, constitutive::singlefluid::LAYOUT_FLUID_DC >;
+  //using SingleFluidPropConst = SingleFluidVar< real64 const, 2, constitutive::singlefluid::LAYOUT_FLUID,
+  // constitutive::singlefluid::LAYOUT_FLUID_DC >;
   /**
    * @brief Constructor.
    * @param name name of the group
@@ -241,6 +246,9 @@ public:
 
   arrayView2d< real64 const, constitutive::singlefluid::USD_FLUID > density() const { return m_density.value; }
   arrayView2d< real64, constitutive::singlefluid::USD_FLUID > density() { return m_density.value; }
+
+  arrayView3d< real64 const, constitutive::singlefluid::USD_FLUID_DC > dDensity() const
+  { return m_density.derivs; }
 
   arrayView2d< real64 const > dDensity_dPressure() const { return m_dDensity_dPressure; }
 

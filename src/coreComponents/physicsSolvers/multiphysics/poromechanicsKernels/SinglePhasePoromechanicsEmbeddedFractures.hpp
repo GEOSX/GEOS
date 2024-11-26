@@ -61,6 +61,7 @@ public:
   using AbstractBase::m_mob;
   using AbstractBase::m_dMob_dPres;
   using AbstractBase::m_dens;
+  using AbstractBase::m_dDens;
   using AbstractBase::m_dDens_dPres;
 
   using Base = singlePhaseFVMKernels::FluxComputeKernel< NUM_EQN, NUM_DOF, SurfaceElementStencilWrapper >;
@@ -187,6 +188,7 @@ public:
                                                           m_pres,
                                                           m_gravCoef,
                                                           m_dens,
+                                                          m_dDens,
                                                           m_dDens_dPres,
                                                           m_mob,
                                                           m_dMob_dPres,

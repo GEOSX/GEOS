@@ -22,6 +22,7 @@
 
 #include "common/DataTypes.hpp"
 #include "mesh/ElementRegionManager.hpp"
+#include "constitutive/fluid/singlefluid/SingleFluidLayouts.hpp"
 
 namespace geos
 {
@@ -38,6 +39,7 @@ namespace singlePhaseFluxKernelsHelper
 template< typename VIEWTYPE >
 using ElementViewConst = ElementRegionManager::ElementViewConst< VIEWTYPE >;
 
+
 GEOS_HOST_DEVICE
 inline
 void computeSinglePhaseFlux( localIndex const ( &seri )[2],
@@ -48,6 +50,7 @@ void computeSinglePhaseFlux( localIndex const ( &seri )[2],
                              ElementViewConst< arrayView1d< real64 const > > const & pres,
                              ElementViewConst< arrayView1d< real64 const > > const & gravCoef,
                              ElementViewConst< arrayView2d< real64 const > > const & dens,
+                             ElementViewConst< arrayView3d< real64 const > > const & dDens,
                              ElementViewConst< arrayView2d< real64 const > > const & dDens_dPres,
                              ElementViewConst< arrayView1d< real64 const > > const & mob,
                              ElementViewConst< arrayView1d< real64 const > > const & dMob_dPres,
@@ -58,6 +61,7 @@ void computeSinglePhaseFlux( localIndex const ( &seri )[2],
                              real64 ( & dFlux_dP )[2],
                              real64 & dFlux_dTrans )
 {
+  using DerivOffset = constitutive::singlefluid::DerivativeOffset;
   // average density
   real64 densMean = 0.0;
   real64 dDensMean_dP[2];
@@ -65,7 +69,8 @@ void computeSinglePhaseFlux( localIndex const ( &seri )[2],
   for( localIndex ke = 0; ke < 2; ++ke )
   {
     densMean        += 0.5 * dens[seri[ke]][sesri[ke]][sei[ke]][0];
-    dDensMean_dP[ke] = 0.5 * dDens_dPres[seri[ke]][sesri[ke]][sei[ke]][0];
+    //dDensMean_dP[ke] = 0.5 * dDens_dPres[seri[ke]][sesri[ke]][sei[ke]][0];
+    dDensMean_dP[ke] = 0.5 * dDens[seri[ke]][sesri[ke]][sei[ke]][0][DerivOffset::dP];
   }
 
   // compute potential difference

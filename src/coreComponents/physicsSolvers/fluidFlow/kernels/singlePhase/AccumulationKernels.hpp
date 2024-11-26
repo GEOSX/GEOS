@@ -23,6 +23,8 @@
 #include "common/DataTypes.hpp"
 #include "common/GEOS_RAJA_Interface.hpp"
 #include "constitutive/fluid/singlefluid/SingleFluidBase.hpp"
+#include "constitutive/fluid/singlefluid/SingleFluidUtils.hpp"
+///#include "constitutive/fluid/singlefluid/SingleFluidLayouts.hpp"
 #include "constitutive/solid/CoupledSolidBase.hpp"
 #include "physicsSolvers/fluidFlow/FlowSolverBaseFields.hpp"
 #include "codingUtilities/Utilities.hpp"
@@ -44,7 +46,8 @@ class AccumulationKernel
 {
 
 public:
-
+  using SingleFluidProp = constitutive::SingleFluidVar< real64, 2, constitutive::singlefluid::LAYOUT_FLUID, constitutive::singlefluid::LAYOUT_FLUID_DC >;
+  using DerivOffset = constitutive::singlefluid::DerivativeOffset;
   /// Compute time value for the number of degrees of freedom
   static constexpr integer numDof = NUM_DOF;
 
@@ -77,6 +80,7 @@ public:
     m_porosity( solid.getPorosity() ),
     m_dPoro_dPres( solid.getDporosity_dPressure() ),
     m_density( fluid.density() ),
+    m_dDensity ( fluid.dDensity() ),
     m_dDensity_dPres( fluid.dDensity_dPressure() ),
     m_mass_n( subRegion.template getField< fields::flow::mass_n >() ),
     m_localMatrix( localMatrix ),
@@ -161,10 +165,9 @@ public:
   {
     // Residual contribution is mass conservation in the cell
     stack.localResidual[0] = stack.poreVolume * m_density[ei][0] - m_mass_n[ei];
-
     // Derivative of residual wrt to pressure in the cell
-    stack.localJacobian[0][0] = stack.dPoreVolume_dPres * m_density[ei][0] + m_dDensity_dPres[ei][0] * stack.poreVolume;
-
+    //stack.localJacobian[0][0] = stack.dPoreVolume_dPres * m_density[ei][0] + m_dDensity_dPres[ei][0] * stack.poreVolume;
+    stack.localJacobian[0][0] = stack.dPoreVolume_dPres * m_density[ei][0] + m_dDensity[ei][0][DerivOffset::dP] * stack.poreVolume;
     // Customize the kernel with this lambda
     kernelOp();
   }
@@ -236,7 +239,8 @@ protected:
   arrayView2d< real64 const > const m_dPoro_dPres;
 
   /// Views on density
-  arrayView2d< real64 const > const m_density;
+  arrayView2d< real64 const, constitutive::singlefluid::USD_FLUID >  const m_density;
+  arrayView3d< real64 const, constitutive::singlefluid::USD_FLUID_DC > const m_dDensity;
   arrayView2d< real64 const > const m_dDensity_dPres;
 
   /// View on mass

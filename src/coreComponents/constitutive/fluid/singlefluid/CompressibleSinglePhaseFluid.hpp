@@ -39,17 +39,19 @@ template< ExponentApproximationType DENS_EAT, ExponentApproximationType VISC_EAT
 class CompressibleSinglePhaseUpdate : public SingleFluidBaseUpdate
 {
 public:
-  using SingleFluidProp = SingleFluidVar< real64, 2, constitutive::singlefluid::LAYOUT_FLUID, constitutive::singlefluid::LAYOUT_FLUID_DC >;
+  using SingleFluidProp = SingleFluidVar< real64, 2, singlefluid::LAYOUT_FLUID, singlefluid::LAYOUT_FLUID_DC >;
   using DensRelationType  = ExponentialRelation< real64, DENS_EAT >;
   using ViscRelationType  = ExponentialRelation< real64, VISC_EAT >;
-
+  using DerivOffset = singlefluid::DerivativeOffset;
   CompressibleSinglePhaseUpdate( DensRelationType const & densRelation,
                                  ViscRelationType const & viscRelation,
-                                 arrayView2d< real64, constitutive::singlefluid::USD_FLUID > const & density,
+                                 SingleFluidProp & density_c,
+                                 arrayView2d< real64, singlefluid::USD_FLUID > const & density,
                                  arrayView2d< real64 > const & dDens_dPres,
                                  arrayView2d< real64 > const & viscosity,
                                  arrayView2d< real64 > const & dVisc_dPres )
-    : SingleFluidBaseUpdate( density,
+    : SingleFluidBaseUpdate( density_c,
+                             density,
                              dDens_dPres,
                              viscosity,
                              dVisc_dPres ),
@@ -114,6 +116,11 @@ public:
              m_dDens_dPres[k][q],
              m_viscosity[k][q],
              m_dVisc_dPres[k][q] );
+    compute( pressure,
+             m_density_c.value[k][q],
+             m_density_c.derivs[k][q][DerivOffset::dP],
+             m_viscosity[k][q],
+             m_dVisc_dPres[k][q] );
   }
 
   GEOS_HOST_DEVICE
@@ -126,6 +133,11 @@ public:
     compute( pressure,
              m_density[k][q],
              m_dDens_dPres[k][q],
+             m_viscosity[k][q],
+             m_dVisc_dPres[k][q] );
+    compute( pressure,
+             m_density_c.value[k][q],
+             m_density_c.derivs[k][q][DerivOffset::dP],
              m_viscosity[k][q],
              m_dVisc_dPres[k][q] );
   }
@@ -143,7 +155,7 @@ private:
 class CompressibleSinglePhaseFluid : public SingleFluidBase
 {
 public:
-
+  using DerivOffset = singlefluid::DerivativeOffset;
   CompressibleSinglePhaseFluid( string const & name, Group * const parent );
 
   virtual ~CompressibleSinglePhaseFluid() override;
