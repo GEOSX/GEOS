@@ -1001,6 +1001,9 @@ void ObjectManagerBase::fixUpDownMaps( TYPE_RELATION & relation,
           allValuesMapped = false;
         }
       }
+      // temporarily disabled this check to allow for the case where the index is not set
+      // this entire fixUpDownMaps will be removed in a future PR as the unpacking is modified
+      // s.t. there are no invalid unpacked values that are not expected.
       //GEOS_ERROR_IF( relation[li][a] == unmappedLocalIndexValue, "Index not set" );
     }
   }
