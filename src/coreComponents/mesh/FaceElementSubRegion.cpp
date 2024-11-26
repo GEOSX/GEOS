@@ -33,7 +33,8 @@ FaceElementSubRegion::FaceElementSubRegion( string const & name,
   m_unmappedGlobalIndicesInToEdges(),
   m_unmappedGlobalIndicesInToFaces(),
   m_newFaceElements(),
-  m_toFacesRelation()
+  m_toFacesRelation(),
+  m_2dElemToElems()
 {
   m_elementType = ElementType::Hexahedron;
 
@@ -42,6 +43,7 @@ FaceElementSubRegion::FaceElementSubRegion( string const & name,
   registerWrapper( viewKeyStruct::detJString(), &m_detJ ).setSizedFromParent( 1 ).reference();
 
   registerWrapper( viewKeyStruct::faceListString(), &m_toFacesRelation ).
+    setApplyDefaultValue( -1 ).
     setDescription( "Map to the faces attached to each FaceElement." ).
     reference().resize( 0, 2 );
 
@@ -65,6 +67,21 @@ FaceElementSubRegion::FaceElementSubRegion( string const & name,
     setDescription( "A map eventually containing all the collocated nodes." ).
     setSizedFromParent( 1 );
 
+  registerWrapper( viewKeyStruct::surfaceElementsToCellRegionsString(), &m_2dElemToElems.m_toElementRegion ).
+    setApplyDefaultValue( -1 ).
+    setPlotLevel( PlotLevel::NOPLOT ).
+    setDescription( "A map of face element local indices to the cell local indices" );
+
+  registerWrapper( viewKeyStruct::surfaceElementsToCellSubRegionsString(), &m_2dElemToElems.m_toElementSubRegion ).
+    setApplyDefaultValue( -1 ).
+    setPlotLevel( PlotLevel::NOPLOT ).
+    setDescription( "A map of face element local indices to the cell local indices" );
+
+  registerWrapper( viewKeyStruct::surfaceElementsToCellIndexString(), &m_2dElemToElems.m_toElementIndex ).
+    setApplyDefaultValue( -1 ).
+    setPlotLevel( PlotLevel::NOPLOT ).
+    setDescription( "A map of face element local indices to the cell local indices" );
+
 #ifdef GEOS_USE_SEPARATION_COEFFICIENT
   registerWrapper( viewKeyStruct::separationCoeffString(), &m_separationCoefficient ).
     setApplyDefaultValue( 0.0 ).
@@ -77,12 +94,16 @@ FaceElementSubRegion::FaceElementSubRegion( string const & name,
   m_2dElemToElems.resize( 0, 2 );
 
   m_numNodesPerElement = 8;
+
+
+  m_2dElemToElems.setElementRegionManager( dynamicCast< ElementRegionManager & >( getParent().getParent().getParent().getParent() ) );
+
 }
 
 void FaceElementSubRegion::copyFromCellBlock( FaceBlockABC const & faceBlock )
 {
   localIndex const num2dElements = faceBlock.num2dElements();
-  resize( faceBlock.num2dElements() );
+  resize( num2dElements );
 
   m_toNodesRelation.base() = faceBlock.get2dElemToNodes();
   m_toEdgesRelation.base() = faceBlock.get2dElemToEdges();
@@ -156,21 +177,25 @@ void FaceElementSubRegion::copyFromCellBlock( FaceBlockABC const & faceBlock )
   // we store the cell block mapping at the sub region mapping location.
   // It will later be transformed into a sub regions mapping.
   // Last, we fill the regions mapping with dummy -1 values that should all be replaced eventually.
-  auto const elem2dToElems = faceBlock.get2dElemToElems();
-  m_2dElemToElems.resize( num2dElements, 2 );
-  for( int i = 0; i < num2dElements; ++i )
+  auto const & elem2dToElems = faceBlock.get2dElemToElems();
+  for( int kfe = 0; kfe < num2dElements; ++kfe )
   {
-    for( localIndex const & j: elem2dToElems.toCellIndex[i] )
+    for( localIndex k=0; k<elem2dToElems.toBlockIndex.sizeOfArray( kfe ); ++k )
     {
-      m_2dElemToElems.m_toElementIndex.emplaceBack( i, j );
-    }
-    for( localIndex const & j: elem2dToElems.toBlockIndex[i] )
-    {
-      m_2dElemToElems.m_toElementSubRegion.emplaceBack( i, j );
+      m_2dElemToElems.m_toElementSubRegion( kfe, k ) = elem2dToElems.toBlockIndex( kfe, k );
+      m_2dElemToElems.m_toElementIndex( kfe, k ) = elem2dToElems.toCellIndex( kfe, k );
     }
   }
 
-  m_toFacesRelation.base() = faceBlock.get2dElemToFaces();
+  ArrayOfArrays< localIndex > const & elem2dToFaces = faceBlock.get2dElemToFaces();
+
+  for( localIndex kfe = 0; kfe < num2dElements; ++kfe )
+  {
+    for( localIndex kf=0; kf<elem2dToFaces.sizeOfArray( kfe ); ++kf )
+    {
+      m_toFacesRelation( kfe, kf ) = elem2dToFaces( kfe, kf );
+    }
+  }
 
   m_2dFaceToEdge = faceBlock.get2dFaceToEdge();
   m_2dFaceTo2dElems = faceBlock.get2dFaceTo2dElems();
@@ -299,7 +324,7 @@ localIndex FaceElementSubRegion::packUpDownMapsImpl( buffer_unit_type * & buffer
 
 localIndex FaceElementSubRegion::unpackUpDownMaps( buffer_unit_type const * & buffer,
                                                    localIndex_array & packList,
-                                                   bool const overwriteUpMaps,
+                                                   bool const GEOS_UNUSED_PARAM( overwriteUpMaps ),
                                                    bool const GEOS_UNUSED_PARAM( overwriteDownMaps ) )
 {
   localIndex unPackedSize = 0;
@@ -345,7 +370,7 @@ localIndex FaceElementSubRegion::unpackUpDownMaps( buffer_unit_type const * & bu
                                      m_2dElemToElems,
                                      packList.toViewConst(),
                                      m_2dElemToElems.getElementRegionManager(),
-                                     overwriteUpMaps );
+                                     false );
 
   string elem2dToCollocatedNodesBucketsString;
   unPackedSize += bufferOps::Unpack( buffer, elem2dToCollocatedNodesBucketsString );
@@ -367,52 +392,46 @@ localIndex FaceElementSubRegion::unpackUpDownMaps( buffer_unit_type const * & bu
  * @param[in,out] elem2dToFaces This mapping will be corrected if needed to match @p elem2dToElems3d.
  */
 void fixNeighborMappingsInconsistency( string const & fractureName,
-                                       OrderedVariableToManyElementRelation const & elem2dToElems3d,
+                                       FixedToManyElementRelation const & elem2dToElems3d,
                                        FaceElementSubRegion::FaceMapType & elem2dToFaces )
 {
   {
-    localIndex const num2dElems = elem2dToFaces.size();
+    localIndex const num2dElems = elem2dToFaces.size( 0 );
     for( int e2d = 0; e2d < num2dElems; ++e2d )
     {
-      std::set< localIndex > const sizes{
-        elem2dToFaces[e2d].size(),
-        elem2dToElems3d.m_toElementRegion[e2d].size(),
-        elem2dToElems3d.m_toElementSubRegion[e2d].size(),
-        elem2dToElems3d.m_toElementIndex[e2d].size()
-      };
-
-      if( sizes.size() != 1 || sizes.find( 2 ) == sizes.cend() )
+      if( !( elem2dToFaces[e2d][0] == -1 || elem2dToFaces[e2d][1] == -1 ||
+             elem2dToElems3d.m_toElementRegion[e2d][0] == -1 || elem2dToElems3d.m_toElementRegion[e2d][1] == -1 ||
+             elem2dToElems3d.m_toElementSubRegion[e2d][0] == -1 || elem2dToElems3d.m_toElementSubRegion[e2d][1] == -1 ||
+             elem2dToElems3d.m_toElementSubRegion[e2d][0] == -1 || elem2dToElems3d.m_toElementSubRegion[e2d][1] == -1 ) )
       {
-        continue;
-      }
+        localIndex const f0 = elem2dToFaces[e2d][0];
+        localIndex const er0 = elem2dToElems3d.m_toElementRegion[e2d][0];
+        localIndex const esr0 = elem2dToElems3d.m_toElementSubRegion[e2d][0];
+        localIndex const ei0 = elem2dToElems3d.m_toElementIndex[e2d][0];
+        auto const & faces0 = elem2dToElems3d.getElementRegionManager()->getRegion( er0 ).getSubRegion< CellElementSubRegion >( esr0 ).faceList()[ei0];
 
-      localIndex const f0 = elem2dToFaces[e2d][0];
-      localIndex const er0 = elem2dToElems3d.m_toElementRegion[e2d][0];
-      localIndex const esr0 = elem2dToElems3d.m_toElementSubRegion[e2d][0];
-      localIndex const ei0 = elem2dToElems3d.m_toElementIndex[e2d][0];
-      auto const & faces0 = elem2dToElems3d.getElementRegionManager()->getRegion( er0 ).getSubRegion< CellElementSubRegion >( esr0 ).faceList()[ei0];
+        localIndex const f1 = elem2dToFaces[e2d][1];
+        localIndex const er1 = elem2dToElems3d.m_toElementRegion[e2d][1];
+        localIndex const esr1 = elem2dToElems3d.m_toElementSubRegion[e2d][1];
+        localIndex const ei1 = elem2dToElems3d.m_toElementIndex[e2d][1];
+        auto const & faces1 = elem2dToElems3d.getElementRegionManager()->getRegion( er1 ).getSubRegion< CellElementSubRegion >( esr1 ).faceList()[ei1];
 
-      localIndex const f1 = elem2dToFaces[e2d][1];
-      localIndex const er1 = elem2dToElems3d.m_toElementRegion[e2d][1];
-      localIndex const esr1 = elem2dToElems3d.m_toElementSubRegion[e2d][1];
-      localIndex const ei1 = elem2dToElems3d.m_toElementIndex[e2d][1];
-      auto const & faces1 = elem2dToElems3d.getElementRegionManager()->getRegion( er1 ).getSubRegion< CellElementSubRegion >( esr1 ).faceList()[ei1];
+        bool const match00 = std::find( faces0.begin(), faces0.end(), f0 ) != faces0.end();
+        bool const match11 = std::find( faces1.begin(), faces1.end(), f1 ) != faces1.end();
+        bool const match01 = std::find( faces0.begin(), faces0.end(), f1 ) != faces0.end();
+        bool const match10 = std::find( faces1.begin(), faces1.end(), f0 ) != faces1.end();
 
-      bool const match00 = std::find( faces0.begin(), faces0.end(), f0 ) != faces0.end();
-      bool const match11 = std::find( faces1.begin(), faces1.end(), f1 ) != faces1.end();
-      bool const match01 = std::find( faces0.begin(), faces0.end(), f1 ) != faces0.end();
-      bool const match10 = std::find( faces1.begin(), faces1.end(), f0 ) != faces1.end();
+        bool const matchCrossed = !match00 && !match11 && match01 && match10;
+        bool const matchStraight = match00 && match11 && !match01 && !match10;
 
-      bool const matchCrossed = !match00 && !match11 && match01 && match10;
-      bool const matchStraight = match00 && match11 && !match01 && !match10;
-
-      if( matchCrossed )
-      {
-        std::swap( elem2dToFaces[e2d][0], elem2dToFaces[e2d][1] );
-      }
-      else if( !matchStraight )
-      {
-        GEOS_ERROR( "Mapping neighbor inconsistency detected for fracture " << fractureName );
+        if( matchCrossed )
+        {
+          std::swap( elem2dToFaces[e2d][0], elem2dToFaces[e2d][1] );
+        }
+        else if( !matchStraight )
+        {
+          GEOS_ERROR( "Mapping neighbor inconsistency detected for fracture " << fractureName );
+        }
       }
     }
   }
@@ -827,7 +846,7 @@ map< localIndex, localIndex > buildEdgesToFace2d( arrayView1d< localIndex const 
  * Even if we should have a more explicit design,
  * the current function resets this implicit information in our mappings.
  */
-void fixNodesOrder( ArrayOfArraysView< localIndex const > const elem2dToFaces,
+void fixNodesOrder( arrayView2d< localIndex const > const elem2dToFaces,
                     ArrayOfArraysView< localIndex const > const facesToNodes,
                     ArrayOfArrays< localIndex > & elem2dToNodes )
 {
@@ -837,9 +856,12 @@ void fixNodesOrder( ArrayOfArraysView< localIndex const > const elem2dToFaces,
     std::vector< localIndex > nodesOfFace;
     for( localIndex fi: elem2dToFaces[e2d] )
     {
-      for( localIndex ni: facesToNodes[fi] )
+      if( fi != -1 )
       {
-        nodesOfFace.push_back( ni );
+        for( localIndex ni: facesToNodes[fi] )
+        {
+          nodesOfFace.push_back( ni );
+        }
       }
     }
     elem2dToNodes.clearArray( e2d );
@@ -937,10 +959,6 @@ void FaceElementSubRegion::fixSecondaryMappings( NodeManager const & nodeManager
   // When there's neighbor missing, we search for a face that would lie on the collocated nodes of the fracture element.
   for( int e2d = 0; e2d < num2dElems; ++e2d )
   {
-    if( m_2dElemToElems.m_toElementIndex.sizeOfArray( e2d ) >= 2 )  // All the neighbors are known.
-    {
-      continue;
-    }
 
     std::set< globalIndex > refNodes;
     if( m_toNodesRelation[e2d].size() != 0 )
@@ -977,12 +995,12 @@ void FaceElementSubRegion::fixSecondaryMappings( NodeManager const & nodeManager
       for( ElemPath const & path: match->second )
       {
         // This `if` prevents from storing the same data twice.
-        if( m_2dElemToElems.m_toElementIndex.sizeOfArray( e2d ) == 0 || m_2dElemToElems.m_toElementIndex[e2d][0] != path.ei )
+        if( m_2dElemToElems.m_toElementIndex.size( 1 ) == 0 || m_2dElemToElems.m_toElementIndex[e2d][0] != path.ei )
         {
-          m_2dElemToElems.m_toElementRegion.emplaceBack( e2d, path.er );
-          m_2dElemToElems.m_toElementSubRegion.emplaceBack( e2d, path.esr );
-          m_2dElemToElems.m_toElementIndex.emplaceBack( e2d, path.ei );
-          m_toFacesRelation.emplaceBack( e2d, path.face );
+          m_2dElemToElems.m_toElementRegion( e2d, 1 ) = path.er;
+          m_2dElemToElems.m_toElementSubRegion( e2d, 1 ) = path.esr;
+          m_2dElemToElems.m_toElementIndex( e2d, 1 ) = path.ei;
+          m_toFacesRelation( e2d, 1 ) = path.face;
           for( localIndex const & n: path.nodes )
           {
             auto currentNodes = m_toNodesRelation[e2d];
@@ -1001,7 +1019,7 @@ void FaceElementSubRegion::fixSecondaryMappings( NodeManager const & nodeManager
   std::vector< localIndex > isolatedFractureElements;
   for( int e2d = 0; e2d < num2dElems; ++e2d )
   {
-    if( m_2dElemToElems.m_toElementIndex.sizeOfArray( e2d ) < 2 && m_ghostRank[e2d] < 0 )
+    if( m_2dElemToElems.m_toElementIndex.size( 1 )< 2 && m_ghostRank[e2d] < 0 )
     {
       isolatedFractureElements.push_back( e2d );
     }
@@ -1053,7 +1071,7 @@ std::set< std::set< globalIndex > > FaceElementSubRegion::getCollocatedNodes() c
 void FaceElementSubRegion::flipFaceMap( FaceManager & faceManager,
                                         ElementRegionManager const & elemManager )
 {
-  ArrayOfArraysView< localIndex > const & elems2dToFaces = faceList().toView();
+  arrayView2d< localIndex > const & elems2dToFaces = faceList().toView();
   arrayView2d< localIndex const > const & faceToElementRegionIndex    = faceManager.elementRegionList();
   arrayView2d< localIndex const > const & faceToElementSubRegionIndex = faceManager.elementSubRegionList();
   arrayView2d< localIndex const > const & faceToElementIndex          = faceManager.elementList();
@@ -1063,28 +1081,26 @@ void FaceElementSubRegion::flipFaceMap( FaceManager & faceManager,
 
   forAll< parallelHostPolicy >( this->size(), [=]( localIndex const kfe )
   {
-    if( elems2dToFaces.sizeOfArray( kfe ) != 2 )
+    if( !( elems2dToFaces[kfe][0] == -1 || elems2dToFaces[kfe][1] == -1 ) )
     {
-      return;
-    }
+      localIndex & f0 = elems2dToFaces[kfe][0];
+      localIndex & f1 = elems2dToFaces[kfe][1];
 
-    localIndex & f0 = elems2dToFaces[kfe][0];
-    localIndex & f1 = elems2dToFaces[kfe][1];
+      localIndex const er0  = faceToElementRegionIndex[f0][0];
+      localIndex const esr0 = faceToElementSubRegionIndex[f0][0];
+      localIndex const ek0  = faceToElementIndex[f0][0];
 
-    localIndex const er0  = faceToElementRegionIndex[f0][0];
-    localIndex const esr0 = faceToElementSubRegionIndex[f0][0];
-    localIndex const ek0  = faceToElementIndex[f0][0];
+      localIndex const er1  = faceToElementRegionIndex[f1][0];
+      localIndex const esr1 = faceToElementSubRegionIndex[f1][0];
+      localIndex const ek1  = faceToElementIndex[f1][0];
 
-    localIndex const er1  = faceToElementRegionIndex[f1][0];
-    localIndex const esr1 = faceToElementSubRegionIndex[f1][0];
-    localIndex const ek1  = faceToElementIndex[f1][0];
+      globalIndex const globalIndexElem0 = cellElemGlobalIndex[er0][esr0][ek0];
+      globalIndex const globalIndexElem1 = cellElemGlobalIndex[er1][esr1][ek1];
 
-    globalIndex const globalIndexElem0 = cellElemGlobalIndex[er0][esr0][ek0];
-    globalIndex const globalIndexElem1 = cellElemGlobalIndex[er1][esr1][ek1];
-
-    if( globalIndexElem0 > globalIndexElem1 )
-    {
-      std::swap( f0, f1 );
+      if( globalIndexElem0 > globalIndexElem1 )
+      {
+        std::swap( f0, f1 );
+      }
     }
   } );
 
@@ -1093,7 +1109,7 @@ void FaceElementSubRegion::flipFaceMap( FaceManager & faceManager,
 void FaceElementSubRegion::fixNeighboringFacesNormals( FaceManager & faceManager,
                                                        ElementRegionManager const & elemManager )
 {
-  ArrayOfArraysView< localIndex > const & elems2dToFaces = faceList().toView();
+  arrayView2d< localIndex > const & elems2dToFaces = faceList().toView();
   arrayView2d< localIndex const > const & faceToElementRegionIndex    = faceManager.elementRegionList();
   arrayView2d< localIndex const > const & faceToElementSubRegionIndex = faceManager.elementSubRegionList();
   arrayView2d< localIndex const > const & faceToElementIndex          = faceManager.elementList();
@@ -1107,44 +1123,42 @@ void FaceElementSubRegion::fixNeighboringFacesNormals( FaceManager & faceManager
   arrayView2d< real64 > const faceNormal = faceManager.faceNormal();
   forAll< parallelHostPolicy >( this->size(), [=, &faceToNodes]( localIndex const kfe )
   {
-    if( elems2dToFaces.sizeOfArray( kfe ) != 2 )
+    if( !( elems2dToFaces[kfe][0] == -1 || elems2dToFaces[kfe][1] == -1 ) )
     {
-      return;
-    }
+      localIndex const f0 = elems2dToFaces[kfe][0];
+      localIndex const f1 = elems2dToFaces[kfe][1];
 
-    localIndex const f0 = elems2dToFaces[kfe][0];
-    localIndex const f1 = elems2dToFaces[kfe][1];
+      /// Note: I am assuming that the 0 element is the elementSubregion one for faces
+      /// touching both a 3D and a 2D cell.
+      localIndex const er0  = faceToElementRegionIndex[f0][0];
+      localIndex const esr0 = faceToElementSubRegionIndex[f0][0];
+      localIndex const ek0  = faceToElementIndex[f0][0];
 
-    /// Note: I am assuming that the 0 element is the elementSubregion one for faces
-    /// touching both a 3D and a 2D cell.
-    localIndex const er0  = faceToElementRegionIndex[f0][0];
-    localIndex const esr0 = faceToElementSubRegionIndex[f0][0];
-    localIndex const ek0  = faceToElementIndex[f0][0];
+      localIndex const er1  = faceToElementRegionIndex[f1][0];
+      localIndex const esr1 = faceToElementSubRegionIndex[f1][0];
+      localIndex const ek1  = faceToElementIndex[f1][0];
 
-    localIndex const er1  = faceToElementRegionIndex[f1][0];
-    localIndex const esr1 = faceToElementSubRegionIndex[f1][0];
-    localIndex const ek1  = faceToElementIndex[f1][0];
+      real64 f0e0vector[3] = LVARRAY_TENSOROPS_INIT_LOCAL_3( faceCenter[f0] );
+      real64 f1e1vector[3] = LVARRAY_TENSOROPS_INIT_LOCAL_3( faceCenter[f1] );
 
-    real64 f0e0vector[3] = LVARRAY_TENSOROPS_INIT_LOCAL_3( faceCenter[f0] );
-    real64 f1e1vector[3] = LVARRAY_TENSOROPS_INIT_LOCAL_3( faceCenter[f1] );
+      LvArray::tensorOps::subtract< 3 >( f0e0vector, elemCenter[er0][esr0][ek0] );
+      LvArray::tensorOps::subtract< 3 >( f1e1vector, elemCenter[er1][esr1][ek1] );
 
-    LvArray::tensorOps::subtract< 3 >( f0e0vector, elemCenter[er0][esr0][ek0] );
-    LvArray::tensorOps::subtract< 3 >( f1e1vector, elemCenter[er1][esr1][ek1] );
-
-    // If the vector connecting the face center and the elem center is in the same
-    // direction as the unit normal, we flip the normal coz it should be pointing outward
-    // (i.e., towards the fracture element).
-    if( LvArray::tensorOps::AiBi< 3 >( faceNormal[f0], f0e0vector ) < 0.0 )
-    {
-      GEOS_WARNING( GEOS_FMT( "For fracture element {}, I had to flip the normal nf0 of face {}", kfe, f0 ) );
-      LvArray::tensorOps::scale< 3 >( faceNormal[f0], -1.0 );
-      std::reverse( faceToNodes[f0].begin(), faceToNodes[f0].end() );
-    }
-    if( LvArray::tensorOps::AiBi< 3 >( faceNormal[f1], f1e1vector ) < 0.0 )
-    {
-      GEOS_WARNING( GEOS_FMT( "For fracture element {}, I had to flip the normal nf1 of face {}", kfe, f1 ) );
-      LvArray::tensorOps::scale< 3 >( faceNormal[f1], -1.0 );
-      std::reverse( faceToNodes[f1].begin(), faceToNodes[f1].end() );
+      // If the vector connecting the face center and the elem center is in the same
+      // direction as the unit normal, we flip the normal coz it should be pointing outward
+      // (i.e., towards the fracture element).
+      if( LvArray::tensorOps::AiBi< 3 >( faceNormal[f0], f0e0vector ) < 0.0 )
+      {
+        GEOS_WARNING( GEOS_FMT( "For fracture element {}, I had to flip the normal nf0 of face {}", kfe, f0 ) );
+        LvArray::tensorOps::scale< 3 >( faceNormal[f0], -1.0 );
+        std::reverse( faceToNodes[f0].begin(), faceToNodes[f0].end() );
+      }
+      if( LvArray::tensorOps::AiBi< 3 >( faceNormal[f1], f1e1vector ) < 0.0 )
+      {
+        GEOS_WARNING( GEOS_FMT( "For fracture element {}, I had to flip the normal nf1 of face {}", kfe, f1 ) );
+        LvArray::tensorOps::scale< 3 >( faceNormal[f1], -1.0 );
+        std::reverse( faceToNodes[f1].begin(), faceToNodes[f1].end() );
+      }
     }
   } );
 
