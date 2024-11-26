@@ -33,6 +33,8 @@ class TableFormatter
 {
 
 protected:
+  using RowsCellInput = std::vector< std::vector< TableData::CellData > >;
+  using RowsCellLayout = std::vector< std::vector< TableLayout::CellLayout > >;
 
   /// Layout for a table
   TableLayout m_tableLayout;
@@ -82,8 +84,7 @@ public:
   string headerToString() const;
 
   /**
-   * @brief Convert the table data to a CSV string.
-   * @param tableData The 1D table data.
+   * @brief Convert the table data to a CSV string..
    * @return The CSV string representation of the table data.
    */
   string dataToString( TableData const & tableData ) const;
@@ -149,9 +150,6 @@ public:
   string toString( DATASOURCE const & tableData ) const;
 
 private:
-
-  using RowsCellInput = std::vector< std::vector< TableData::CellData > >;
-  using RowsCellLayout = std::vector< std::vector< TableLayout::CellLayout > >;
 
   /// symbol for separator construction
   static constexpr char m_verticalLine = '|';

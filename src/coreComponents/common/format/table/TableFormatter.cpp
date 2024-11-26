@@ -43,7 +43,7 @@ TableCSVFormatter::TableCSVFormatter( TableLayout const & tableLayout ):
 
 string TableCSVFormatter::headerToString() const //todo
 {
-   std::stringstream oss;
+  std::stringstream oss;
   // static constexpr string_view separator = ",";
 
   // for( std::size_t idxColumn = 0; idxColumn < m_tableLayout.getColumns().size(); ++idxColumn )
@@ -109,33 +109,36 @@ TableTextFormatter::TableTextFormatter( TableLayout const & tableLayout ):
 
 string TableTextFormatter::toString() const
 {
-  std::ostringstream tableOutput;
-  TableData tableData;
-  string sectionSeparatingLine;
-  string topSeparator;
+  std::ostringstream tableOutput;//todo
+  // TableData tableData;
+  // RowsCellLayout cellsHeaderLayout;
+  // RowsCellLayout cellsDataLayout;
+  // string sectionSeparatingLine;
+  // string topSeparator;
 
-  prepareAndBuildTable( tableData, sectionSeparatingLine, topSeparator );
-  tableOutput << '\n';
-  outputTitleRow( tableOutput, topSeparator );
-  tableOutput << GEOS_FMT( "{}\n", sectionSeparatingLine );
-  //outputHeader( tableOutput, sectionSeparatingLine ); todo
-
+  // prepareAndBuildTable( tableData, cellsHeaderLayout, cellsDataLayout,
+  //                       sectionSeparatingLine, topSeparator );
+  // tableOutput << '\n';
+  // outputTitleRow( tableOutput, topSeparator );
+  // tableOutput << GEOS_FMT( "{}\n", sectionSeparatingLine );
+  // outputTable( tableOutput, cellsHeaderLayout, cellsDataLayout,
+  //              sectionSeparatingLine, topSeparator );
   return tableOutput.str();
 }
 
 template<>
 string TableTextFormatter::toString< TableData >( TableData const & tableData ) const
 {
+  std::ostringstream tableOutput;
   RowsCellLayout cellsHeaderLayout;
   RowsCellLayout cellsDataLayout;
   string sectionSeparatingLine;
   string topSeparator;
 
-  prepareAndBuildTable( tableData,
-                        cellsHeaderLayout, cellsDataLayout,
+  prepareAndBuildTable( tableData, cellsHeaderLayout, cellsDataLayout,
                         sectionSeparatingLine, topSeparator );
-  std::ostringstream tableOutput;
-  outputTable( tableOutput, sectionSeparatingLine, topSeparator );
+  outputTable( tableOutput, cellsHeaderLayout, cellsDataLayout,
+               sectionSeparatingLine, topSeparator );
   return tableOutput.str();
 }
 
@@ -145,7 +148,7 @@ void TableTextFormatter::prepareAndBuildTable( TableData const & tableData,
                                                string & sectionSeparatingLine,
                                                string & topSeparator ) const
 {
-  if( !inputDataRows.empty())
+  if( !cellsDataLayout.empty())
   {
     updateVisibleColumns( inputDataRows );
     populateDataCellsLayout( cellsDataLayout, tableData );
@@ -215,13 +218,13 @@ void TableTextFormatter::gridifyHeaders()
 {
   size_t countNbLayer = 1;
   size_t nbHeaderDepth = m_tableLayout.getMaxHeaderRow();
-  for( auto it = m_tableLayout.beginTop(); it != m_tableLayout.endTop(), ++it )
+  for( auto it = m_tableLayout.beginRoot(); it != m_tableLayout.endRoot(); ++it )
   {
     if( !it->hasChild() )
     {
       for( size_t idxLayer = countNbLayer; idxLayer < nbHeaderDepth; idxLayer++ )
       {
-        Column const * column = it;
+        TableLayout::Column const * column = it;
         column.addSubColumn( "" );
       }
       countNbLayer = 1;
@@ -281,7 +284,7 @@ void TableTextFormatter::findAndSetLongestColumnString( RowsCellLayout & cellsDa
   for( auto it = m_tableLayout.beginLeaf(); it != m_tableLayout.endLeaf(); ++it )
   {
     size_t maxSize = 1;
-    Column * currentColumn = it;
+    TableLayout::Column * currentColumn = it;
     if( !it->hasChild() )
     {
       //1. currentColumn = max(subcolumn, dataColumn)
@@ -371,7 +374,7 @@ void TableTextFormatter::increaseColumnsSize( size_t const extraCharacters ) con
 
   for( auto it = m_tableLayout.beginLeaf(); it != m_tableLayout.endTop(); ++it )
   {
-    Column * currentColumn = it;
+    TableLayout::Column * currentColumn = it;
 
     size_t divider = currentColumn->hasParent() ? currentColumn->parent.subColumn.size() : columnsCount;
     size_t extraCharactersForCurrentColumn = std::floor( extraCharacters / divider );
