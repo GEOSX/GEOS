@@ -1593,7 +1593,7 @@ void SolidMechanicsLagrangeContact::
                   {
                     elemRHS[i] = Ja * ( traction[kfe][i] - limitTau * sliding[ i-1 ] / slidingNorm );
 
-                    dRdT( i, 0 ) = Ja * dLimitTau_dNormalTraction * sliding[ i-1 ] / slidingNorm;
+                    dRdT( i, 0 ) = -Ja * dLimitTau_dNormalTraction * sliding[ i-1 ] / slidingNorm;
                     dRdT( i, i ) = Ja;
                   }
 
@@ -1641,7 +1641,7 @@ void SolidMechanicsLagrangeContact::
                     {
                       elemRHS[i] = Ja * traction[kfe][i] * ( 1.0 - limitTau / vauxNorm );
 
-                      dRdT( i, 0 ) = Ja * traction[kfe][i] * dLimitTau_dNormalTraction / vauxNorm;
+                      dRdT( i, 0 ) = -Ja * traction[kfe][i] * dLimitTau_dNormalTraction / vauxNorm;
                       dRdT( i, i ) = Ja;
                     }
                   }
