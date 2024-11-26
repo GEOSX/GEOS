@@ -468,6 +468,28 @@ void SurfaceGenerator::postRestartInitialization()
   } );
 }
 
+bool SurfaceGenerator::execute( real64 const time_n,
+                                real64 const dt,
+                                integer const cycleNumber,
+                                integer const GEOS_UNUSED_PARAM( eventCounter ),
+                                real64 const GEOS_UNUSED_PARAM( eventProgress ),
+                                DomainPartition & domain )
+{
+  solverStep( time_n, dt, cycleNumber, domain );
+  forDiscretizationOnMeshTargets( domain.getMeshBodies(), [&] ( string const &,
+                                                                MeshLevel & meshLevel,
+                                                                arrayView1d< string const > const & )
+  {
+    ElementRegionManager & elemManager = meshLevel.getElemManager();
+    SurfaceElementRegion & fractureRegion = elemManager.getRegion< SurfaceElementRegion >( this->m_fractureRegionName );
+
+    FaceElementSubRegion & fractureSubRegion = fractureRegion.getUniqueSubRegion< FaceElementSubRegion >();
+    // without the clear of the following two fields, the initial fracture's f-m connections will be replicated later
+    fractureSubRegion.m_recalculateConnectionsFor2dFaces.clear();
+    fractureSubRegion.m_newFaceElements.clear();
+  });
+  return false;
+}
 
 real64 SurfaceGenerator::solverStep( real64 const & time_n,
                                      real64 const & dt,

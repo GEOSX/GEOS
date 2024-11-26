@@ -85,11 +85,7 @@ public:
                         integer const cycleNumber,
                         integer const GEOS_UNUSED_PARAM( eventCounter ),
                         real64 const GEOS_UNUSED_PARAM( eventProgress ),
-                        DomainPartition & domain ) override
-  {
-    solverStep( time_n, dt, cycleNumber, domain );
-    return false;
-  }
+                        DomainPartition & domain ) override;
 
   virtual real64 solverStep( real64 const & time_n,
                              real64 const & dt,
