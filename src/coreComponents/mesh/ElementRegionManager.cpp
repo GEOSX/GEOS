@@ -149,18 +149,31 @@ void ElementRegionManager::generateMesh( CellBlockManagerABC const & cellBlockMa
   array2d< localIndex > const blockToSubRegion = this->getCellBlockToSubRegionMap( cellBlockManager );
   this->forElementRegions< SurfaceElementRegion >( [&]( SurfaceElementRegion & elemRegion )
   {
-    SurfaceElementSubRegion & subRegion = elemRegion.getUniqueSubRegion< SurfaceElementSubRegion >();
+    SurfaceElementSubRegion & surfaceSubRegion = elemRegion.getUniqueSubRegion< SurfaceElementSubRegion >();
     // While indicated as containing element subregion information,
     // `relation` currently contains cell block information
     // that will be transformed into element subregion information.
     // This is why we copy the information into a temporary,
     // which frees space for the final information (of same size).
-    OrderedVariableToManyElementRelation & relation = subRegion.getToCellRelation();
-    ToCellRelation< ArrayOfArrays< localIndex > > const tmp( relation.m_toElementSubRegion,
-                                                             relation.m_toElementIndex );
-    meshMapUtilities::transformCellBlockToRegionMap< parallelHostPolicy >( blockToSubRegion.toViewConst(),
-                                                                           tmp,
-                                                                           relation );
+    if( auto * const faceElementSubRegion = dynamic_cast< FaceElementSubRegion * >( &surfaceSubRegion ) )
+    {
+      FixedToManyElementRelation & relation = faceElementSubRegion->getToCellRelation();
+      ToCellRelation< array2d< localIndex > > const tmp( relation.m_toElementSubRegion,
+                                                         relation.m_toElementIndex );
+
+      meshMapUtilities::transformCellBlockToRegionMap< parallelHostPolicy >( blockToSubRegion.toViewConst(),
+                                                                             tmp,
+                                                                             relation );
+    }
+    else if( auto * const embeddedSurfaceSubRegion = dynamic_cast< EmbeddedSurfaceSubRegion * >( &surfaceSubRegion ) )
+    {
+      OrderedVariableToManyElementRelation & relation = embeddedSurfaceSubRegion->getToCellRelation();
+      ToCellRelation< ArrayOfArrays< localIndex > > const tmp( relation.m_toElementSubRegion,
+                                                               relation.m_toElementIndex );
+      meshMapUtilities::transformCellBlockToRegionMap< parallelHostPolicy >( blockToSubRegion.toViewConst(),
+                                                                             tmp,
+                                                                             relation );
+    }
   } );
 }
 
