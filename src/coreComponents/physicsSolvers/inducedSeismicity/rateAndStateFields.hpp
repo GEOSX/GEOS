@@ -107,7 +107,7 @@ DECLARE_FIELD( deltaSlipRKStageRate,
 
 DECLARE_FIELD( error,
                "error",
-               array1d< real64 >,
+               array2d< real64 >,
                0.0,
                LEVEL_0,
                WRITE_AND_READ,

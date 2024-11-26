@@ -40,8 +40,14 @@ QuasiDynamicEQRK32::QuasiDynamicEQRK32( const string & name,
   m_stressSolver( nullptr ),
   m_stressSolverName( "SpringSlider" ),
   m_shearImpedance( 0.0 ),
-  m_timeStepTol( 5.0e-4 ),
-  m_timeStepError( 0.0 )
+  m_timestepAbsTol( 1.0e-5 ),
+  m_timestepRelTol( 1.0e-5 ),
+
+  m_timestepAcceptSafety( 0.81 ),
+  m_prevTimestepErrors{ 0.0, 0.0 } ,
+  m_beta{ 1.0/18.0, 1.0/9.0, 1.0/18.0 } ,
+  m_rkOrders{ 3, 2 },
+  m_successfulStep( false )
 {
   this->registerWrapper( viewKeyStruct::shearImpedanceString(), &m_shearImpedance ).
     setInputFlag( InputFlags::REQUIRED ).
@@ -50,11 +56,6 @@ QuasiDynamicEQRK32::QuasiDynamicEQRK32( const string & name,
   this->registerWrapper( viewKeyStruct::stressSolverNameString(), &m_stressSolverName ).
     setInputFlag( InputFlags::OPTIONAL ).
     setDescription( "Name of solver for computing stress. If empty, the spring-slider model is run." );
-
-  this->registerWrapper( viewKeyStruct::timeStepTol(), &m_timeStepTol ).
-    setInputFlag( InputFlags::OPTIONAL ).
-    setApplyDefaultValue( 5e-4 ).
-    setDescription( "Target slip incrmeent for timestep size selction" );
 }
 
 void QuasiDynamicEQRK32::postInputInitialization()
@@ -103,7 +104,6 @@ void QuasiDynamicEQRK32::registerDataOnMesh( Group & meshBodies )
       subRegion.registerField< rateAndState::stateVariable >( getName() );
       subRegion.registerField< rateAndState::stateVariable_n >( getName() );
       subRegion.registerField< rateAndState::slipRate >( getName() );
-      subRegion.registerField< rateAndState::error >( getName() );
     
       // Tangent (2-component) functions on fault
       string const labels2Comp[2] = {"tangent1", "tangent2" };
@@ -119,6 +119,10 @@ void QuasiDynamicEQRK32::registerDataOnMesh( Group & meshBodies )
       // Runge-Kutta stage rates
       subRegion.registerField< rateAndState::stateVariableRKStageRate >( getName() ).reference().resizeDimension< 1 >( 2 ); 
       subRegion.registerField< rateAndState::deltaSlipRKStageRate >( getName() ).reference().resizeDimension< 1, 2>( 2, 2 );
+      // Error
+      string const labelsError[3] = { "deltaSlip1", "deltaSlip2", "stateVariable"};
+      subRegion.registerField< rateAndState::error >( getName() ).
+        setDimLabels( 1, labelsError ).reference().resizeDimension< 1 >( 3 ); 
       
 
       if( !subRegion.hasWrapper( contact::dispJump::key() ))
@@ -321,7 +325,7 @@ real64 QuasiDynamicEQRK32::solverStep( real64 const & time_n,
         arrayView1d< real64 > const stateVariable         = subRegion.getField< rateAndState::stateVariable >();
         arrayView2d< real64 > const deltaSlip             = subRegion.getField< rateAndState::deltaSlip >();
         arrayView2d< real64 > const dispJump              = subRegion.getField< contact::dispJump >();
-        arrayView1d< real64 > const rateStateError        = subRegion.getField< rateAndState::error >();
+        arrayView2d< real64 > const rateStateError        = subRegion.getField< rateAndState::error >();
 
         // Stage rates
         arrayView2d< real64 const > const stateVariableRKStageRate  = subRegion.getField< rateAndState::stateVariableRKStageRate >();
@@ -346,33 +350,32 @@ real64 QuasiDynamicEQRK32::solverStep( real64 const & time_n,
             real64 const deltaSlipRK2[2] = { deltaSlip_n[k][0] + dtAdaptive/2*( deltaSlipRKStageRate[k][0][1]  + deltaSlipRKStageRate3[0] ),
                                              deltaSlip_n[k][1] + dtAdaptive/2*( deltaSlipRKStageRate[k][0][1]  + deltaSlipRKStageRate3[1] ) }; 
             
+            // TODO: Change error computation
             // Compute relative errors based on the maximum error in state or slip
-            // TODO: Avoid division by zero in error comparison
-            //       by adding small number to denominator. Better way to to this?
-            real64 const errorStateVariable = LvArray::math::abs(stateVariable[k] - stateVariableRK2)/(stateVariable[k] + 1e-13);
-            real64 const errorSlip[2] = { (deltaSlip[k][0] - deltaSlipRK2[0])/(deltaSlip[k][0] + 1e-13),
-                                          (deltaSlip[k][1] - deltaSlipRK2[1])/(deltaSlip[k][0] + 1e-13) };
-            real64 const errorDeltaSlip = LvArray::math::sqrt(errorSlip[0]*errorSlip[0] + errorSlip[1]*errorSlip[1]);
-            // Take maximum of slip and state error
-            rateStateError[k] = (errorStateVariable > errorDeltaSlip) ? errorStateVariable : errorDeltaSlip;
+            
+            rateStateError[k][0] = (deltaSlip[k][0] - deltaSlipRK2[0]) / 
+                                   ( m_timestepAbsTol + m_timestepRelTol * LvArray::math::max( LvArray::math::abs(deltaSlip[k][0]), LvArray::math::abs(deltaSlipRK2[0]) ));
+            rateStateError[k][1] = (deltaSlip[k][1] - deltaSlipRK2[1]) / 
+                                   ( m_timestepAbsTol + m_timestepRelTol * LvArray::math::max( LvArray::math::abs(deltaSlip[k][1]), LvArray::math::abs(deltaSlipRK2[1]) ));
+            rateStateError[k][2] = (stateVariable[k] - stateVariableRK2) / 
+                                   ( m_timestepAbsTol + m_timestepRelTol * LvArray::math::max( LvArray::math::abs(stateVariable[k]), LvArray::math::abs(stateVariableRK2) ));
+            // real64 const errorStateVariable = LvArray::math::abs( (stateVariable[k] - stateVariableRK2) /( stateVariable[k] + std::numeric_limits< real64 >::epsilon() ) );
+            // real64 const errorSlip[2] = { ( deltaSlip[k][0] - deltaSlipRK2[0] )/( deltaSlip[k][0] + std::numeric_limits< real64 >::epsilon() ),
+            //                               ( deltaSlip[k][1] - deltaSlipRK2[1] )/( deltaSlip[k][0] + std::numeric_limits< real64 >::epsilon() ) };
         } );
       } );
     } );
     // Update timestep based on the time step error 
     dtAdaptive = setNextDt(dtAdaptive, domain);
-    if (m_timeStepError <= m_timeStepTol) // m_timeStepError updated in setNextDt
+    if (m_successfulStep) // set in setNextDt
     {
       // Successful step. Compute stresses, and slip velocity and save results, then exit the adaptive time step loop
       dtStress = updateStresses( time_n, dt, cycleNumber, domain );
       updateSlipVelocity( time_n, dt, domain );
       saveState(domain);
-      GEOS_LOG_LEVEL_RANK_0( 1, "Adaptive time step successful" );
       break;
     }
-    else // Unsuccessful step. Retry with the updated time step
-    {
-      GEOS_LOG_LEVEL_RANK_0( 1, "Adaptive time step failed" );
-    }
+
   }
   
   // return time step size achieved by stress solver
@@ -495,31 +498,48 @@ real64 QuasiDynamicEQRK32::setNextDt( real64 const & currentDt, DomainPartition 
 {
 
   // Spring-slider shear traction computation
+  real64 scaledL2Error  = 0.0;
   forDiscretizationOnMeshTargets( domain.getMeshBodies(), [&]( string const &,
                                                                MeshLevel const & mesh,
                                                                arrayView1d< string const > const & regionNames )
 
   {
-    real64 maxErrorOnThisRank  = 0.0;
     mesh.getElemManager().forElementSubRegions< SurfaceElementSubRegion >( regionNames,
                                                                            [&]( localIndex const,
                                                                                 SurfaceElementSubRegion const & subRegion )
     {
-      arrayView1d< real64 const > const error = subRegion.getField< rateAndState::error >();
+      arrayView2d< real64 const > const error = subRegion.getField< rateAndState::error >();
 
-      RAJA::ReduceMax< parallelDeviceReduce, real64 > maxErrorOnThisRegion( 0.0 );
+      RAJA::ReduceSum< parallelDeviceReduce, real64 > scaledl2ErrorSquared( 0.0 );
+      integer const N = subRegion.size();
       forAll< parallelDevicePolicy<> >( subRegion.size(), [=] GEOS_HOST_DEVICE ( localIndex const k )
       {
-        maxErrorOnThisRegion.max( error[k] );
+        scaledl2ErrorSquared += LvArray::tensorOps::l2NormSquared<3>(error[k]);
       } );
-      if( maxErrorOnThisRegion.get() > maxErrorOnThisRank )
-        maxErrorOnThisRank = maxErrorOnThisRegion.get();
-    } );
-    m_timeStepError = MpiWrapper::max( maxErrorOnThisRank );
+      scaledL2Error = LvArray::math::sqrt(MpiWrapper::sum( scaledl2ErrorSquared.get() / (3.0*N) ));
   } );
-  real64 const nextDt = 0.9 * currentDt * pow( m_timeStepTol/m_timeStepError, 1.0 / 3.0 );
+  } );
 
-  GEOS_LOG_LEVEL_RANK_0( 1, GEOS_FMT( "The next dt will be {:.2e} s", nextDt ));
+  // PID error controller + limiter
+  real64 const k = LvArray::math::min(m_rkOrders[0], m_rkOrders[1]) + 1.0;
+  real64 const eps0 = 1.0/(scaledL2Error + std::numeric_limits< real64 >::epsilon()); // n + 1
+  real64 const eps1 =  1.0/(m_prevTimestepErrors[0] + std::numeric_limits< real64 >::epsilon()); // n
+  real64 const eps2 = 1.0/(m_prevTimestepErrors[1] + std::numeric_limits< real64 >::epsilon()); // n-1
+  // Limiter is 1.0 + atan(x - 1.0). Here use atan(x) = atan2(x, 1.0)
+  real64 const dtFactor = 1.0 + LvArray::math::atan2( pow(eps0, m_beta[0] / k ) *  pow(eps1, m_beta[1] / k ) *  pow(eps2, m_beta[2] / k ) - 1.0, 1.0);
+  
+  real64 const nextDt = dtFactor*currentDt;
+  m_successfulStep = (dtFactor >= m_timestepAcceptSafety) ? true : false;
+  if ( m_successfulStep )
+  {
+    m_prevTimestepErrors[1] = m_prevTimestepErrors[0];
+    m_prevTimestepErrors[0] = scaledL2Error;
+    GEOS_LOG_LEVEL_RANK_0( 1, GEOS_FMT( "Adaptive time step successful. The next dt will be {:.2e} s", nextDt ));  
+  }
+  else
+  {
+    GEOS_LOG_LEVEL_RANK_0( 1, GEOS_FMT( "Adaptive time step failed. The next dt will be {:.2e} s", nextDt ));  
+  }
 
   return nextDt;
 }

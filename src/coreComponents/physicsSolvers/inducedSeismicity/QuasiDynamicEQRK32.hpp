@@ -98,10 +98,20 @@ private:
   real64 m_shearImpedance;
 
   /// time step tolerance
-  real64 m_timeStepTol;
+  real64 m_timestepAbsTol;
+
+  real64 m_timestepRelTol;
+
+  real64 m_timestepAcceptSafety;
   
+  real64 m_prevTimestepErrors[2];
+
   /// time step error
-  real64 m_timeStepError;
+  real64 m_beta[3];
+
+  integer m_rkOrders[2];
+
+  bool m_successfulStep;
 
   class SpringSliderParameters
   {
