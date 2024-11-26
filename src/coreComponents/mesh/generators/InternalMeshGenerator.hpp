@@ -20,7 +20,7 @@
 #ifndef GEOS_MESH_GENERATORS_INTERNALMESHGENERATOR_HPP
 #define GEOS_MESH_GENERATORS_INTERNALMESHGENERATOR_HPP
 
-#include "codingUtilities/EnumStrings.hpp"
+#include "common/format/EnumStrings.hpp"
 #include "mesh/generators/MeshGeneratorBase.hpp"
 #include "mesh/generators/CellBlockManager.hpp"
 #include "mesh/mpiCommunications/SpatialPartition.hpp"

@@ -77,7 +77,6 @@ SolidMechanicsLagrangeContact::SolidMechanicsLagrangeContact( const string & nam
   LinearSolverParameters & linSolParams = m_linearSolverParameters.get();
   linSolParams.mgr.strategy = LinearSolverParameters::MGR::StrategyType::lagrangianContactMechanics;
   linSolParams.mgr.separateComponents = true;
-  linSolParams.mgr.displacementFieldName = solidMechanics::totalDisplacement::key();
   linSolParams.dofsPerNode = 3;
 }
 
@@ -505,9 +504,9 @@ void SolidMechanicsLagrangeContact::computeFaceDisplacementJump( DomainPartition
         ArrayOfArraysView< localIndex const > const & elemsToFaces = subRegion.faceList().toViewConst();
         arrayView1d< real64 const > const & area = subRegion.getElementArea().toViewConst();
 
-        arrayView2d< real64 > const & dispJump = subRegion.getField< contact::dispJump >();
-        arrayView1d< real64 > const & slip = subRegion.getField< fields::contact::slip >();
-        arrayView1d< real64 > const & aperture = subRegion.getField< fields::elementAperture >();
+        arrayView2d< real64 > const dispJump = subRegion.getField< contact::dispJump >();
+        arrayView1d< real64 > const slip = subRegion.getField< fields::contact::slip >();
+        arrayView1d< real64 > const aperture = subRegion.getField< fields::elementAperture >();
 
         forAll< parallelHostPolicy >( subRegion.size(), [=] ( localIndex const kfe )
         {
@@ -1594,7 +1593,7 @@ void SolidMechanicsLagrangeContact::
                   {
                     elemRHS[i] = Ja * ( traction[kfe][i] - limitTau * sliding[ i-1 ] / slidingNorm );
 
-                    dRdT( i, 0 ) = Ja * dLimitTau_dNormalTraction * sliding[ i-1 ] / slidingNorm;
+                    dRdT( i, 0 ) = -Ja * dLimitTau_dNormalTraction * sliding[ i-1 ] / slidingNorm;
                     dRdT( i, i ) = Ja;
                   }
 
@@ -1642,7 +1641,7 @@ void SolidMechanicsLagrangeContact::
                     {
                       elemRHS[i] = Ja * traction[kfe][i] * ( 1.0 - limitTau / vauxNorm );
 
-                      dRdT( i, 0 ) = Ja * traction[kfe][i] * dLimitTau_dNormalTraction / vauxNorm;
+                      dRdT( i, 0 ) = -Ja * traction[kfe][i] * dLimitTau_dNormalTraction / vauxNorm;
                       dRdT( i, i ) = Ja;
                     }
                   }

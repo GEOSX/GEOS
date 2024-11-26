@@ -20,7 +20,7 @@
 #ifndef GEOS_MESH_ELEMENTTYPE_HPP
 #define GEOS_MESH_ELEMENTTYPE_HPP
 
-#include "codingUtilities/EnumStrings.hpp"
+#include "common/format/EnumStrings.hpp"
 
 namespace geos
 {

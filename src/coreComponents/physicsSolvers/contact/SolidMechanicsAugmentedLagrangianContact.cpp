@@ -20,10 +20,12 @@
 #include "mesh/DomainPartition.hpp"
 #include "SolidMechanicsAugmentedLagrangianContact.hpp"
 
-#include "physicsSolvers/contact/SolidMechanicsALMKernels.hpp"
-#include "physicsSolvers/contact/SolidMechanicsALMSimultaneousKernels.hpp"
-#include "physicsSolvers/contact/SolidMechanicsALMJumpUpdateKernels.hpp"
-#include "physicsSolvers/contact/SolidMechanicsALMBubbleKernels.hpp"
+#include "physicsSolvers/contact/kernels/SolidMechanicsConformingContactKernelsBase.hpp"
+#include "physicsSolvers/contact/kernels/SolidMechanicsALMKernels.hpp"
+#include "physicsSolvers/contact/kernels/SolidMechanicsALMKernelsBase.hpp"
+#include "physicsSolvers/contact/kernels/SolidMechanicsALMSimultaneousKernels.hpp"
+#include "physicsSolvers/contact/kernels/SolidMechanicsDisplacementJumpUpdateKernels.hpp"
+#include "physicsSolvers/contact/kernels/SolidMechanicsContactFaceBubbleKernels.hpp"
 #include "physicsSolvers/contact/LogLevelsInfo.hpp"
 
 #include "constitutive/ConstitutiveManager.hpp"
@@ -44,15 +46,14 @@ SolidMechanicsAugmentedLagrangianContact::SolidMechanicsAugmentedLagrangianConta
   m_faceTypeToFiniteElements["Quadrilateral"] =  std::make_unique< finiteElement::H1_QuadrilateralFace_Lagrange1_GaussLegendre2 >();
   m_faceTypeToFiniteElements["Triangle"] =  std::make_unique< finiteElement::H1_TriangleFace_Lagrange1_Gauss1 >();
 
+  LinearSolverParameters & linParams = m_linearSolverParameters.get();
   addLogLevel< logInfo::Configuration >();
 
+  linParams.isSymmetric = true;
+  linParams.dofsPerNode = 3;
+  linParams.mgr.separateComponents = true;
   // TODO Implement the MGR strategy
-
-  // Set the default linear solver parameters
-  //LinearSolverParameters & linParams = m_linearSolverParameters.get();
-  //linParams.dofsPerNode = 3;
-  //linParams.isSymmetric = true;
-  //linParams.amg.separateComponents = true;
+  //linParams.mgr.strategy = LinearSolverParameters::MGR::StrategyType::solidMechanicsAugumentedLagrangianContact;
 }
 
 SolidMechanicsAugmentedLagrangianContact::~SolidMechanicsAugmentedLagrangianContact()
@@ -82,25 +83,12 @@ void SolidMechanicsAugmentedLagrangianContact::registerDataOnMesh( dataRepositor
   {
     fractureRegion.forElementSubRegions< SurfaceElementSubRegion >( [&]( SurfaceElementSubRegion & subRegion )
     {
+      subRegion.registerField< fields::contact::deltaTraction >( getName() ).
+        reference().resizeDimension< 1 >( 3 );
+
       // Register the rotation matrix
       subRegion.registerField< contact::rotationMatrix >( this->getName() ).
         reference().resizeDimension< 1, 2 >( 3, 3 );
-
-      // Register the traction field
-      subRegion.registerField< contact::traction >( this->getName() ).
-        reference().resizeDimension< 1 >( 3 );
-
-      // Register the displacement jump
-      subRegion.registerField< contact::dispJump >( this->getName() ).
-        reference().resizeDimension< 1 >( 3 );
-
-      // Register the delta displacement jump
-      subRegion.registerField< contact::deltaDispJump >( this->getName() ).
-        reference().resizeDimension< 1 >( 3 );
-
-      // Register the displacement jump old
-      subRegion.registerField< contact::oldDispJump >( this->getName() ).
-        reference().resizeDimension< 1 >( 3 );
 
       // Register the penalty coefficients for the iterative procedure
       subRegion.registerField< contact::iterativePenalty >( this->getName() ).
@@ -253,12 +241,19 @@ void SolidMechanicsAugmentedLagrangianContact::implicitStepSetup( real64 const &
     arrayView3d< real64 > const
     rotationMatrix = subRegion.getField< fields::contact::rotationMatrix >().toView();
 
+    arrayView2d< real64 > const unitNormal   = subRegion.getNormalVector();
+    arrayView2d< real64 > const unitTangent1 = subRegion.getTangentVector1();
+    arrayView2d< real64 > const unitTangent2 = subRegion.getTangentVector2();
+
     // Compute rotation matrices
-    solidMechanicsALMKernels::ComputeRotationMatricesKernel::
+    solidMechanicsConformingContactKernels::ComputeRotationMatricesKernel::
       launch< parallelDevicePolicy<> >( subRegion.size(),
                                         faceNormal,
                                         elemsToFaces,
-                                        rotationMatrix );
+                                        rotationMatrix,
+                                        unitNormal,
+                                        unitTangent1,
+                                        unitTangent2 );
 
     // Set the tollerances
     computeTolerances( domain );
@@ -493,13 +488,13 @@ void SolidMechanicsAugmentedLagrangianContact::assembleSystem( real64 const time
     real64 const gravityVectorData[3] = LVARRAY_TENSOROPS_INIT_LOCAL_3( gravityVector() );
 
 
-    solidMechanicsALMKernels::ALMBubbleFactory kernelFactory( dispDofNumber,
-                                                              bubbleDofNumber,
-                                                              dofManager.rankOffset(),
-                                                              localMatrix,
-                                                              localRhs,
-                                                              dt,
-                                                              gravityVectorData );
+    solidMechanicsConformingContactKernels::FaceBubbleFactory kernelFactory( dispDofNumber,
+                                                                             bubbleDofNumber,
+                                                                             dofManager.rankOffset(),
+                                                                             localMatrix,
+                                                                             localRhs,
+                                                                             dt,
+                                                                             gravityVectorData );
 
     real64 maxTraction = finiteElement::
                            regionBasedKernelApplication
@@ -700,13 +695,13 @@ void SolidMechanicsAugmentedLagrangianContact::applySystemSolution( DofManager c
                                                           arrayView1d< localIndex const > const & faceElementList )
     {
 
-      solidMechanicsALMKernels::ALMJumpUpdateFactory kernelFactory( dispDofNumber,
-                                                                    bubbleDofNumber,
-                                                                    dofManager.rankOffset(),
-                                                                    voidMatrix.toViewConstSizes(),
-                                                                    voidRhs.toView(),
-                                                                    dt,
-                                                                    faceElementList );
+      solidMechanicsConformingContactKernels::DispJumpUpdateFactory kernelFactory( dispDofNumber,
+                                                                                   bubbleDofNumber,
+                                                                                   dofManager.rankOffset(),
+                                                                                   voidMatrix.toViewConstSizes(),
+                                                                                   voidRhs.toView(),
+                                                                                   dt,
+                                                                                   faceElementList );
 
       real64 maxTraction = finiteElement::
                              interfaceBasedKernelApplication
@@ -788,7 +783,7 @@ bool SolidMechanicsAugmentedLagrangianContact::updateConfiguration( DomainPartit
       arrayView1d< real64 const > const & normalTractionTolerance =
         subRegion.getReference< array1d< real64 > >( viewKeyStruct::normalTractionToleranceString() );
 
-      arrayView1d< real64 const > const area = subRegion.getElementArea().toViewConst();
+      arrayView1d< real64 const > const faceElementArea = subRegion.getElementArea().toViewConst();
 
       std::ptrdiff_t const sizes[ 2 ] = {subRegion.size(), 3};
       traction_new.resize( 2, sizes );
@@ -811,6 +806,7 @@ bool SolidMechanicsAugmentedLagrangianContact::updateConfiguration( DomainPartit
                                               traction,
                                               dispJump,
                                               deltaDispJump,
+                                              faceElementArea,
                                               traction_new_v );
         }
         else
@@ -822,6 +818,7 @@ bool SolidMechanicsAugmentedLagrangianContact::updateConfiguration( DomainPartit
                                               traction,
                                               dispJump,
                                               deltaDispJump,
+                                              faceElementArea,
                                               traction_new_v );
         }
       } );
@@ -844,7 +841,6 @@ bool SolidMechanicsAugmentedLagrangianContact::updateConfiguration( DomainPartit
                                             normalDisplacementTolerance,
                                             slidingTolerance,
                                             slidingCheckTolerance,
-                                            area,
                                             fractureState,
                                             condConv_v );
       } );
@@ -968,6 +964,8 @@ bool SolidMechanicsAugmentedLagrangianContact::updateConfiguration( DomainPartit
 
         arrayView2d< real64 const > const deltaDispJump = subRegion.getField< contact::deltaDispJump >();
 
+        arrayView1d< real64 const > const faceElementArea = subRegion.getField< fields::elementArea >();
+
         constitutiveUpdatePassThru( frictionLaw, [&] ( auto & castedFrictionLaw )
         {
           using FrictionType = TYPEOFREF( castedFrictionLaw );
@@ -979,6 +977,7 @@ bool SolidMechanicsAugmentedLagrangianContact::updateConfiguration( DomainPartit
                                               oldDispJump,
                                               dispJump,
                                               iterativePenalty,
+                                              faceElementArea,
                                               m_symmetric,
                                               normalTractionTolerance,
                                               traction,

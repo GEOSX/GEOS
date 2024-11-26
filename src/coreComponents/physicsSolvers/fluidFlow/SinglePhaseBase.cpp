@@ -40,8 +40,15 @@
 #include "mesh/mpiCommunications/CommunicationTools.hpp"
 #include "physicsSolvers/fluidFlow/FlowSolverBaseFields.hpp"
 #include "physicsSolvers/fluidFlow/SinglePhaseBaseFields.hpp"
-#include "physicsSolvers/fluidFlow/kernels/SinglePhaseBaseKernels.hpp"
-#include "physicsSolvers/fluidFlow/kernels/ThermalSinglePhaseBaseKernels.hpp"
+#include "physicsSolvers/fluidFlow/kernels/singlePhase/AccumulationKernels.hpp"
+#include "physicsSolvers/fluidFlow/kernels/singlePhase/ThermalAccumulationKernels.hpp"
+#include "physicsSolvers/fluidFlow/kernels/singlePhase/MobilityKernel.hpp"
+#include "physicsSolvers/fluidFlow/kernels/singlePhase/SolutionCheckKernel.hpp"
+#include "physicsSolvers/fluidFlow/kernels/singlePhase/SolutionScalingKernel.hpp"
+#include "physicsSolvers/fluidFlow/kernels/singlePhase/StatisticsKernel.hpp"
+#include "physicsSolvers/fluidFlow/kernels/singlePhase/HydrostaticPressureKernel.hpp"
+#include "physicsSolvers/fluidFlow/kernels/singlePhase/FluidUpdateKernel.hpp"
+#include "physicsSolvers/fluidFlow/kernels/singlePhase/SolidInternalEnergyUpdateKernel.hpp"
 
 
 namespace geos
@@ -258,7 +265,7 @@ void SinglePhaseBase::updateFluidModel( ObjectManagerBase & dataGroup ) const
   constitutiveUpdatePassThru( fluid, [&]( auto & castedFluid )
   {
     typename TYPEOFREF( castedFluid ) ::KernelWrapper fluidWrapper = castedFluid.createKernelWrapper();
-    thermalSinglePhaseBaseKernels::FluidUpdateKernel::launch( fluidWrapper, pres, temp );
+    singlePhaseBaseKernels::FluidUpdateKernel::launch( fluidWrapper, pres, temp );
   } );
 }
 
@@ -368,16 +375,16 @@ void SinglePhaseBase::updateMobility( ObjectManagerBase & dataGroup ) const
 
     ThermalFluidPropViews thermalFluidProps = getThermalFluidProperties( fluid );
 
-    thermalSinglePhaseBaseKernels::MobilityKernel::launch< parallelDevicePolicy<> >( dataGroup.size(),
-                                                                                     fluidProps.dens,
-                                                                                     fluidProps.dDens_dPres,
-                                                                                     thermalFluidProps.dDens_dTemp,
-                                                                                     fluidProps.visc,
-                                                                                     fluidProps.dVisc_dPres,
-                                                                                     thermalFluidProps.dVisc_dTemp,
-                                                                                     mob,
-                                                                                     dMob_dPres,
-                                                                                     dMob_dTemp );
+    singlePhaseBaseKernels::MobilityKernel::launch< parallelDevicePolicy<> >( dataGroup.size(),
+                                                                              fluidProps.dens,
+                                                                              fluidProps.dDens_dPres,
+                                                                              thermalFluidProps.dDens_dTemp,
+                                                                              fluidProps.visc,
+                                                                              fluidProps.dVisc_dPres,
+                                                                              thermalFluidProps.dVisc_dTemp,
+                                                                              mob,
+                                                                              dMob_dPres,
+                                                                              dMob_dTemp );
   }
   else
   {
@@ -464,7 +471,7 @@ void SinglePhaseBase::initializePostInitialConditionsPreSubGroups()
                                                                      [&]( localIndex const,
                                                                           SurfaceElementRegion & region )
     {
-      region.forElementSubRegions< FaceElementSubRegion >( [&]( FaceElementSubRegion & subRegion )
+      region.forElementSubRegions< SurfaceElementSubRegion >( [&]( SurfaceElementSubRegion & subRegion )
       {
         subRegion.getWrapper< real64_array >( fields::flow::hydraulicAperture::key() ).
           setApplyDefaultValue( region.getDefaultAperture() );
@@ -700,8 +707,8 @@ void SinglePhaseBase::implicitStepSetup( real64 const & GEOS_UNUSED_PARAM( time_
 
     } );
 
-    mesh.getElemManager().forElementSubRegions< FaceElementSubRegion >( regionNames, [&]( localIndex const,
-                                                                                          FaceElementSubRegion & subRegion )
+    mesh.getElemManager().forElementSubRegions< SurfaceElementSubRegion >( regionNames, [&]( localIndex const,
+                                                                                             SurfaceElementSubRegion & subRegion )
     {
       arrayView1d< real64 const > const aper = subRegion.getField< fields::flow::hydraulicAperture >();
       arrayView1d< real64 > const aper0 = subRegion.getField< fields::flow::aperture0 >();
@@ -721,6 +728,7 @@ void SinglePhaseBase::implicitStepSetup( real64 const & GEOS_UNUSED_PARAM( time_
       fluid.saveConvergedState();
 
     } );
+
   } );
 }
 
@@ -784,8 +792,8 @@ void SinglePhaseBase::implicitStepComplete( real64 const & time,
 
     } );
 
-    mesh.getElemManager().forElementSubRegions< FaceElementSubRegion >( regionNames, [&]( localIndex const,
-                                                                                          FaceElementSubRegion & subRegion )
+    mesh.getElemManager().forElementSubRegions< SurfaceElementSubRegion >( regionNames, [&]( localIndex const,
+                                                                                             SurfaceElementSubRegion & subRegion )
     {
       arrayView1d< integer const > const elemGhostRank = subRegion.ghostRank();
       arrayView1d< real64 const > const volume = subRegion.getElementVolume();
@@ -810,7 +818,6 @@ void SinglePhaseBase::implicitStepComplete( real64 const & time,
         }
       } );
     } );
-
   } );
 }
 
@@ -1328,7 +1335,7 @@ real64 SinglePhaseBase::scalingForSystemSolution( DomainPartition & domain,
       arrayView1d< integer const > const ghostRank = subRegion.ghostRank();
 
       auto const subRegionData =
-        singlePhaseBaseKernels::ScalingForSystemSolutionKernel::
+        singlePhaseBaseKernels::SolutionScalingKernel::
           launch< parallelDevicePolicy<> >( localSolution, rankOffset, dofNumber, ghostRank, m_maxAbsolutePresChange );
 
       scalingFactor = std::min( scalingFactor, subRegionData.first );
