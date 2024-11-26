@@ -180,6 +180,7 @@ void CeramicDamage::allocateConstitutiveData( dataRepository::Group & parent,
   m_plasticStrain.resize( 0, numConstitutivePointsPerParentIndex, 6 );
   m_accumulatedModeIWork.resize( 0 );
   m_accumulatedModeIIWork.resize( 0 );
+  m_distanceToCrackTip.resize( 0 );
 }
 
 
