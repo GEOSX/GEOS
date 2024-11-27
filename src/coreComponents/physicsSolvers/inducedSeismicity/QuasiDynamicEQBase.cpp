@@ -136,18 +136,16 @@ real64 QuasiDynamicEQBase::solverStep( real64 const & time_n,
       // solve rate and state equations.
       rateAndStateKernels::createAndLaunch< parallelDevicePolicy<> >( subRegion, viewKeyStruct::frictionLawNameString(), m_shearImpedance, maxNewtonIter, time_n, dtStress );
       // save old state
-      saveOldStateAndUpdateSlip( subRegion, dtStress );
+      updateSlip( subRegion, dt );
     } );
   } );
 
   // return time step size achieved by stress solver
-  return dtStress;
+  return dt;
 }
 
-void QuasiDynamicEQBase::saveOldStateAndUpdateSlip( ElementSubRegionBase & subRegion, real64 const dt ) const
+void QuasiDynamicEQBase::updateSlip( ElementSubRegionBase & subRegion, real64 const dt ) const
 {
-  arrayView1d< real64 > const stateVariable   = subRegion.getField< rateAndState::stateVariable >();
-  arrayView1d< real64 > const stateVariable_n = subRegion.getField< rateAndState::stateVariable_n >();
   arrayView2d< real64 > const slipVelocity    = subRegion.getField< rateAndState::slipVelocity >();
   arrayView2d< real64 > const deltaSlip       = subRegion.getField< rateAndState::deltaSlip >();
 
@@ -155,7 +153,6 @@ void QuasiDynamicEQBase::saveOldStateAndUpdateSlip( ElementSubRegionBase & subRe
 
   forAll< parallelDevicePolicy<> >( subRegion.size(), [=] GEOS_HOST_DEVICE ( localIndex const k )
   {
-    stateVariable_n[k]  = stateVariable[k];
     deltaSlip[k][0]     = slipVelocity[k][0] * dt;
     deltaSlip[k][1]     = slipVelocity[k][1] * dt;
     // Update tangential components of the displacement jump

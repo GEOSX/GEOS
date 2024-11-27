@@ -73,7 +73,7 @@ public:
    * @brief save the old state
    * @param subRegion
    */
-  void saveOldStateAndUpdateSlip( ElementSubRegionBase & subRegion, real64 const dt ) const;
+  void updateSlip( ElementSubRegionBase & subRegion, real64 const dt ) const;
 
 
 private:
