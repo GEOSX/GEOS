@@ -49,7 +49,6 @@ SinglePhasePoromechanics< FLOW_SOLVER, MECHANICS_SOLVER >::SinglePhasePoromechan
   LinearSolverParameters & linearSolverParameters = this->m_linearSolverParameters.get();
   linearSolverParameters.mgr.strategy = LinearSolverParameters::MGR::StrategyType::singlePhasePoromechanics;
   linearSolverParameters.mgr.separateComponents = true;
-  linearSolverParameters.mgr.displacementFieldName = solidMechanics::totalDisplacement::key();
   linearSolverParameters.dofsPerNode = 3;
 }
 
@@ -195,7 +194,7 @@ void SinglePhasePoromechanics< FLOW_SOLVER, MECHANICS_SOLVER >::assembleElementB
     if( this->m_isThermal )
     {
       poromechanicsMaxForce =
-        assemblyLaunch< constitutive::PorousSolid< ElasticIsotropic >, // TODO: change once there is a cmake solution
+        assemblyLaunch< constitutive::PorousSolidBase,
                         thermalPoromechanicsKernels::ThermalSinglePhasePoromechanicsKernelFactory >( mesh,
                                                                                                      dofManager,
                                                                                                      regionNames,
@@ -289,31 +288,6 @@ void SinglePhasePoromechanics< FLOW_SOLVER, MECHANICS_SOLVER >::createPreconditi
     //TODO: Revisit this part such that is coherent across physics solver
     //m_precond = LAInterface::createPreconditioner( m_linearSolverParameters.get() );
   }
-}
-
-template< typename FLOW_SOLVER, typename MECHANICS_SOLVER >
-void SinglePhasePoromechanics< FLOW_SOLVER, MECHANICS_SOLVER >::updateState( DomainPartition & domain )
-{
-  GEOS_MARK_FUNCTION;
-
-  this->template forDiscretizationOnMeshTargets( domain.getMeshBodies(), [&] ( string const &,
-                                                                               MeshLevel & mesh,
-                                                                               arrayView1d< string const > const & regionNames )
-  {
-
-    ElementRegionManager & elemManager = mesh.getElemManager();
-
-    elemManager.forElementSubRegions< CellElementSubRegion >( regionNames,
-                                                              [&]( localIndex const,
-                                                                   CellElementSubRegion & subRegion )
-    {
-      this->flowSolver()->updateFluidState( subRegion );
-      if( this->m_isThermal )
-      {
-        this->flowSolver()->updateSolidInternalEnergyModel( subRegion );
-      }
-    } );
-  } );
 }
 
 template< typename FLOW_SOLVER, typename MECHANICS_SOLVER >

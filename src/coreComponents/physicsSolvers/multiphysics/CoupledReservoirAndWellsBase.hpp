@@ -254,8 +254,11 @@ public:
   void enableFixedStressPoromechanicsUpdate()
   { reservoirSolver()->enableFixedStressPoromechanicsUpdate(); }
 
-  void setKeepFlowVariablesConstantDuringInitStep( bool const keepFlowVariablesConstantDuringInitStep )
-  { reservoirSolver()->setKeepFlowVariablesConstantDuringInitStep( keepFlowVariablesConstantDuringInitStep ); }
+  void setKeepVariablesConstantDuringInitStep( bool const keepVariablesConstantDuringInitStep )
+  {
+    reservoirSolver()->setKeepVariablesConstantDuringInitStep( keepVariablesConstantDuringInitStep );
+    wellSolver()->setKeepVariablesConstantDuringInitStep( keepVariablesConstantDuringInitStep );
+  }
 
   virtual void saveSequentialIterationState( DomainPartition & domain ) override
   { reservoirSolver()->saveSequentialIterationState( domain ); }

@@ -399,6 +399,8 @@ inline HYPRE_Int getAMGCoarseType( LinearSolverParameters::AMG::CoarseType const
     { LinearSolverParameters::AMG::CoarseType::direct, 9 },
     { LinearSolverParameters::AMG::CoarseType::chebyshev, 16 },
     { LinearSolverParameters::AMG::CoarseType::l1jacobi, 18 },
+    { LinearSolverParameters::AMG::CoarseType::gsElimWPivoting, 99 },
+    { LinearSolverParameters::AMG::CoarseType::gsElimWInverse, 199 },
   };
   return findOption( typeMap, type, "multigrid coarse solver", "HyprePreconditioner" );
 }
