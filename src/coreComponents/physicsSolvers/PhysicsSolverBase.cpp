@@ -350,17 +350,17 @@ void PhysicsSolverBase::logEndOfCycleInformation( integer const cycleNumber,
                                                   std::vector< real64 > const & subStepDt ) const
 {
   // The formating here is a work in progress.
-  GEOS_LOG_RANK_0( "\n------------------------- TIMESTEP END -------------------------" );
-  GEOS_LOG_RANK_0( GEOS_FMT( "    - Cycle:      {}", cycleNumber ) );
-  GEOS_LOG_RANK_0( GEOS_FMT( "    - N substeps: {}", numOfSubSteps ) );
+  GEOS_LOG_LEVEL_INFO_RANK_0( logInfo::TimeStep, "\n------------------------- TIMESTEP END -------------------------" );
+  GEOS_LOG_LEVEL_INFO_RANK_0( logInfo::TimeStep, GEOS_FMT( "    - Cycle:      {}", cycleNumber ) );
+  GEOS_LOG_LEVEL_INFO_RANK_0( logInfo::TimeStep, GEOS_FMT( "    - N substeps: {}", numOfSubSteps ) );
   std::string logMessage = "    - dt:";
   for( integer i = 0; i < numOfSubSteps; ++i )
   {
     logMessage += "  " + units::TimeFormatInfo::fromSeconds( subStepDt[i] ).toString();
   }
   // Log the complete message once
-  GEOS_LOG_RANK_0( logMessage );
-  GEOS_LOG_RANK_0( "------------------------------------------------------------------\n" );
+  GEOS_LOG_LEVEL_INFO_RANK_0( logInfo::TimeStep, logMessage );
+  GEOS_LOG_LEVEL_INFO_RANK_0( logInfo::TimeStep, "------------------------------------------------------------------\n" );
 }
 
 real64 PhysicsSolverBase::setNextDt( real64 const & currentDt,

@@ -93,11 +93,6 @@ private:
 
   /// Pointers to hypre functions for the krylov solver
   std::unique_ptr< HypreSolverWrapper > m_solver;
-
-  /// Time of the most recent SC matrix construction
-  real64 m_componentFilterTime;
-  real64 m_makeRestrictorTime;
-  real64 m_computeAuuTime;
 };
 
 } // end geos namespace
