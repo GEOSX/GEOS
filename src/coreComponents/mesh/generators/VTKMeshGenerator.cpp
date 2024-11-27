@@ -91,6 +91,8 @@ VTKMeshGenerator::VTKMeshGenerator( string const & name,
 
 void VTKMeshGenerator::postInputInitialization()
 {
+  ExternalMeshGeneratorBase::postInputInitialization();
+
   GEOS_ERROR_IF( !this->m_filePath.empty() && !m_dataSourceName.empty(),
                  getDataContext() << ": Access to the mesh via file or data source are mutually exclusive. "
                                      "You can't set " << viewKeyStruct::dataSourceString() << " or " << viewKeyStruct::meshPathString() << " and " <<
