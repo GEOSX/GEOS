@@ -240,15 +240,6 @@ protected:
                                 ElementRegionManager const & elemManager,
                                 NodeManager const & nodeManager,
                                 string const & path );
-  /**
-   * @brief Writes the files for all the ParticleRegions.
-   * @param[in] time the time-step
-   * @param[in] particleManager the ParticleManager containing the ParticleRegions to be output
-   * @param[in] path The path to the file to output
-   */
-  void writeParticleRegions( real64 const time,
-                             ParticleManager const & particleManager,
-                             string const & path ) const;
 
   /**
    * @brief Writes the files containing the well representation

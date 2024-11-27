@@ -24,7 +24,6 @@
 #include "common/MpiWrapper.hpp"
 #include "mesh/generators/CellBlockManager.hpp"
 
-#include <vtkPartitionedDataSet.h>
 #include <vtkDataSet.h>
 #include <vtkMultiProcessController.h>
 #include <vtkSmartPointer.h>
@@ -136,14 +135,6 @@ private:
 AllMeshes loadAllMeshes( Path const & filePath,
                          string const & mainBlockName,
                          array1d< string > const & faceBlockNames );
-
-/**
- * @brief Load VTK partitions into the VTK data structure
- *
- * @param[in] partitions The partitioned dataset to be loaded
- * @return The compound of the main mesh and the face block meshes.
- */
-AllMeshes loadPartitions( vtkSmartPointer< vtkPartitionedDataSet > & partitions );
 
 /**
  * @brief Compute the rank neighbor candidate list.

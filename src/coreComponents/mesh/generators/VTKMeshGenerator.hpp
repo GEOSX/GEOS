@@ -24,7 +24,6 @@
 #include "mesh/generators/VTKUtilities.hpp"
 #include "mesh/generators/VTKHierarchicalDataSource.hpp"
 #include "mesh/mpiCommunications/SpatialPartition.hpp"
-#include "mesh/generators/Region.hpp"
 #include <vtkDataSet.h>
 
 namespace geos

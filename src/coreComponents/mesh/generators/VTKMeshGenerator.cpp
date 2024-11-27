@@ -23,8 +23,8 @@
 #include "mesh/generators/VTKFaceBlockUtilities.hpp"
 #include "mesh/generators/VTKMeshGeneratorTools.hpp"
 #include "mesh/generators/CellBlockManager.hpp"
+#include "mesh/generators/Region.hpp"
 #include "common/DataTypes.hpp"
-
 
 #include <vtkXMLUnstructuredGridWriter.h>
 #include <vtkAppendFilter.h>
