@@ -587,11 +587,13 @@ real64 CompositionalMultiphaseFVM::scalingForSystemSolution( DomainPartition & d
                                         getName(),
                                         globalDeltaPresMax.value,
                                         globalDeltaPresMax.location ) );
+
   GEOS_LOG_LEVEL_INFO_RANK_0( logInfo::Solution,
-                              GEOS_FMT( "        {}: Max component density change = {} (before scaling) at cell {}",
+                              GEOS_FMT( "        {}: Max component density change = {:.3f} {} (before scaling) at cell {}",
                                         getName(),
-                                        GEOS_FMT( "{:.3f}", globalDeltaCompDensMax.value, massUnit ),
-                                        globalDeltaCompDensMax.location ));
+                                        globalDeltaCompDensMax.value,
+                                        massUnit,
+                                        globalDeltaCompDensMax.location ) );
 
   if( m_isThermal )
   {
