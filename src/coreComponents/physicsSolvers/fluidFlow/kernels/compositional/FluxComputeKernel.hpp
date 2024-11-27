@@ -355,7 +355,8 @@ public:
 
           // call the lambda in the phase loop to allow the reuse of the phase fluxes and their derivatives
           // possible use: assemble the derivatives wrt temperature, and the flux term of the energy equation for this phase
-          compFluxKernelOp( ip, k, seri, sesri, sei, connectionIndex,
+          compFluxKernelOp( ip, m_kernelFlags.isSet( KernelFlags::NewGravity ),
+                            k, seri, sesri, sei, connectionIndex,
                             k_up, seri[k_up], sesri[k_up], sei[k_up], potGrad,
                             phaseFlux, dPhaseFlux_dP, dPhaseFlux_dC );
 
