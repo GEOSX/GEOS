@@ -135,7 +135,7 @@
 /* #undef chai_VERSION */
 
 /// Version information for adiak
-/* #undef adiak_VERSION */
+#define adiak_VERSION ..
 
 /// Version information for caliper
 #define caliper_VERSION 2.8.0

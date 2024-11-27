@@ -80,7 +80,7 @@ add_subdirectory( thirdparty )
 ################################
 # Add components
 ################################
-# unset( externalComponentsLinkList )
+unset( externalComponentsLinkList )
 add_subdirectory( coreComponents )
 add_subdirectory( externalComponents )
 add_subdirectory( main )
