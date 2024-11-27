@@ -399,7 +399,7 @@ void packNewObjectsToGhosts( NeighborCommunicator & neighbor,
     elemRegion.forElementSubRegionsIndex< FaceElementSubRegion >( [&]( localIndex const esr,
                                                                        FaceElementSubRegion & subRegion )
     {
-      ArrayOfArraysView< localIndex const > const faceList = subRegion.faceList().toViewConst();
+      arrayView2d< localIndex const > const faceList = subRegion.faceList().toViewConst();
       localIndex_array & elemGhostsToSend = subRegion.getNeighborData( neighbor.neighborRank() ).ghostsToSend();
       elemGhostsToSend.move( hostMemorySpace );
       for( localIndex const & k : modifiedObjects.newElements.at( {er, esr} ) )

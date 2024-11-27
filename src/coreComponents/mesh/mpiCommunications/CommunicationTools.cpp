@@ -906,15 +906,11 @@ void CommunicationTools::setupGhosts( MeshLevel & meshLevel,
   MpiWrapper::waitAll( commData.size(), commData.mpiSendBufferSizeRequest(), commData.mpiSendBufferSizeStatus() );
   MpiWrapper::waitAll( commData.size(), commData.mpiSendBufferRequest(), commData.mpiSendBufferStatus() );
 
-  //nodeManager.fixUpDownMaps( false );
   verifyGhostingConsistency( nodeManager, neighbors );
-  //edgeManager.fixUpDownMaps( false );
   verifyGhostingConsistency( edgeManager, neighbors );
-  //faceManager.fixUpDownMaps( false );
   verifyGhostingConsistency( faceManager, neighbors );
   elemManager.forElementSubRegions< ElementSubRegionBase >( [&]( ElementSubRegionBase & subRegion )
   {
-    //subRegion.fixUpDownMaps( false );
     verifyGhostingConsistency( subRegion, neighbors );
   } );
   elemManager.forElementSubRegions< FaceElementSubRegion >( [&]( FaceElementSubRegion & subRegion )
