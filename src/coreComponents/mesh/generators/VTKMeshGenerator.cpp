@@ -123,6 +123,8 @@ void VTKMeshGenerator::fillCellBlockManager( CellBlockManager & cellBlockManager
   {
     vtk::AllMeshes allMeshes;
 
+    GEOS_LOG_LEVEL_RANK_0( 2, "  reading the dataset..." );
+
     if( !m_filePath.empty())
     {
       GEOS_LOG_RANK_0( GEOS_FMT( "{} '{}': reading mesh from {}", catalogName(), getName(), m_filePath ) );
@@ -178,8 +180,6 @@ void VTKMeshGenerator::fillCellBlockManager( CellBlockManager & cellBlockManager
         allMeshes.setMainMesh( result );
       }
     }
-    GEOS_LOG_LEVEL_RANK_0( 2, "  reading the dataset..." );
-
 
     GEOS_LOG_LEVEL_RANK_0( 2, "  redistributing mesh..." );
     vtk::AllMeshes redistributedMeshes =
