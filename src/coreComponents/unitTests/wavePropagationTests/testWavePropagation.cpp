@@ -200,7 +200,7 @@ TEST_F( AcousticWaveEquationSEMTest, SeismoTrace )
   real64 const dtOut = propagator->getReference< real64 >( AcousticWaveEquationSEM::viewKeyStruct::timeStepString() );
   real64 const Vp = 1500.0;
   real64 const h = 100.0;
-  real64 const cflConstant = 1/sqrt(3);
+  real64 const cflConstant = 1/sqrt( 3 );
   real64 const dtTheo = (cflConstant*h)/Vp;
   ASSERT_TRUE( dtOut < dtTheo );
 
