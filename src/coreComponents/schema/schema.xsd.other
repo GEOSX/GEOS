@@ -1011,7 +1011,7 @@
 		<!--maxStableDt => Value of the Maximum Stable Timestep for this solver.-->
 		<xsd:attribute name="maxStableDt" type="real64" />
 		<!--meshTargets => MeshBody/Region combinations that the solver will be applied to.-->
-		<xsd:attribute name="meshTargets" type="geos_mapBase_lt_std_pair_lt_string_cm_-string-_gt__cm_-LvArray_Array_lt_string_cm_-1_cm_-camp_int_seq_lt_long_cm_-0l_gt__cm_-int_cm_-LvArray_ChaiBuffer_gt__cm_-std_integral_constant_lt_bool_cm_-true_gt_-_gt_" />
+		<xsd:attribute name="meshTargets" type="geos_mapBase_lt_std___1_pair_lt_std___1_basic_string_lt_char_cm_-std___1_char_traits_lt_char_gt__cm_-std___1_allocator_lt_char_gt__gt__cm_-std___1_basic_string_lt_char_cm_-std___1_char_traits_lt_char_gt__cm_-std___1_allocator_lt_char_gt__gt__gt__cm_-LvArray_Array_lt_std___1_basic_string_lt_char_cm_-std___1_char_traits_lt_char_gt__cm_-std___1_allocator_lt_char_gt__gt__cm_-1_cm_-camp_int_seq_lt_long_cm_-0l_gt__cm_-int_cm_-LvArray_ChaiBuffer_gt__cm_-std___1_integral_constant_lt_bool_cm_-true_gt__gt_" />
 	</xsd:complexType>
 	<xsd:complexType name="ReactiveCompositionalMultiphaseOBLType">
 		<xsd:choice minOccurs="0" maxOccurs="unbounded">
