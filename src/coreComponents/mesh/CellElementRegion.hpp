@@ -123,6 +123,9 @@ public:
    */
   virtual void generateMesh( Group const & cellBlocks ) override;
 
+
+  void generateMesh( Group const & cellBlocks, map< string, array1d< localIndex > > const & cellsInRegion );
+
   ///@}
 
   /**

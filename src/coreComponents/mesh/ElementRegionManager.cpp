@@ -25,7 +25,11 @@
 #include "constitutive/ConstitutiveManager.hpp"
 #include "mesh/NodeManager.hpp"
 #include "mesh/MeshLevel.hpp"
+#include "mesh/generators/CellBlock.hpp"
+#include "mesh/generators/CellBlockManager.hpp"
 #include "mesh/utilities/MeshMapUtilities.hpp"
+#include "functions/FunctionManager.hpp"
+#include "functions/TableFunction.hpp"
 #include "schema/schemaUtilities.hpp"
 #include "mesh/generators/LineBlockABC.hpp"
 #include "mesh/CellElementRegionSelector.hpp"
@@ -121,19 +125,92 @@ void ElementRegionManager::setSchemaDeviations( xmlWrapper::xmlNode schemaRoot,
 }
 
 
-void ElementRegionManager::generateMesh( CellBlockManagerABC const & cellBlockManager )
+void ElementRegionManager::generateMesh( CellBlockManagerABC const & cellBlockManagerABC )
 {
+  CellBlockManager const & cellBlockManager = dynamic_cast< CellBlockManager const & >( cellBlockManagerABC );
+  
   { // cellBlocks loading
     Group const & cellBlocks = cellBlockManager.getCellBlocks();
     CellElementRegionSelector cellBlockSelector{ cellBlocks,
                                                  cellBlockManager.getRegionAttributesCellBlocks() };
-    this->forElementRegions< CellElementRegion >( [&]( CellElementRegion & elemRegion )
+
+    string const & regionTableName = cellBlockManager.getRegionTableName();
+    array1d< string > const & regionTableKey = cellBlockManager.getRegionTableKey();
+
+    if( !( regionTableName.empty() || regionTableKey.empty() ) )
     {
-      elemRegion.setCellBlockNames( cellBlockSelector.buildCellBlocksSelection( elemRegion ) );
-      elemRegion.generateMesh( cellBlocks );
-    } );
+      FunctionManager const & functionManager = FunctionManager::getInstance();
+      TableFunction const & regionTable = functionManager.getGroup< TableFunction >( regionTableName );
+
+      // this contains the data for which cells are in what region
+      // outer key = region name
+      // inner key = cellBlockName
+      // inner value = array of cell indices in cell block
+      map< string, map< string, array1d< localIndex > > > cellsInRegion;
+
+      // fill the container cellInRegion
+      auto const & vertexCoords = cellBlockManager.getNodePositions();
+      cellBlocks.forSubGroups<CellBlock>( [&]( CellBlock const & cellBlock )
+      {
+        string const & cellBlockName = cellBlock.getName();
+        auto const & cellToNodes = cellBlock.getElemToNodes();
+
+        for( localIndex k=0; k<cellBlock.size(); ++k )
+        {
+          real64 centroid[3] = {0};
+          for( localIndex a=0; a<cellBlock.numNodesPerElement(); ++a )
+          {
+            centroid[0] += vertexCoords( cellToNodes( k, a ), 0 ) / cellBlock.numNodesPerElement();
+            centroid[1] += vertexCoords( cellToNodes( k, a ), 1 ) / cellBlock.numNodesPerElement();
+            centroid[2] += vertexCoords( cellToNodes( k, a ), 2 ) / cellBlock.numNodesPerElement();
+          }
+          real64 value = regionTable.evaluate( centroid );
+          std::cout<<"Cell "<<k<<" centroid "<<centroid[0]<<" "<<centroid[1]<<" "<<centroid[2]<<" value "<<value<<std::endl;
+          localIndex const regionOfCell = static_cast<localIndex>( std::round( value ));
+          string const & regionName = regionTableKey[ regionOfCell ];
+          cellsInRegion[ regionName ][ cellBlockName ].emplace_back( k );
+        }
+      });
+
+      for( auto const & [regionName, cellBlocksMap] : cellsInRegion )
+      {
+        std::cout<<"Region "<<regionName<<std::endl;
+        for( auto const & [cellBlockName, cellIndices] : cellBlocksMap )
+        {
+          std::cout<<"  CellBlock: "<<cellBlockName<<std::endl;
+          for( localIndex const & cellIndex : cellIndices )
+          {
+            std::cout<<cellIndex<<" ";
+          }
+          std::cout<<std::endl;
+        }
+      }
+      
+      this->forElementRegions< CellElementRegion >( [&]( CellElementRegion & elemRegion )
+      {
+        elemRegion.setCellBlockNames( cellBlockSelector.buildCellBlocksSelection( elemRegion ) );
+        elemRegion.generateMesh( cellBlocks, cellsInRegion[ elemRegion.getName() ] );
+
+        std::cout<<"Region "<<elemRegion.getName()<<" has "<<elemRegion.getNumberOfElements()<<" elements"<<std::endl;
+        elemRegion.forElementSubRegions( [&]( ElementSubRegionBase const & subRegion )
+        {
+          std::cout<<"  subregion "<<subRegion.getName()<<" has "<<subRegion.size()<<" elements"<<std::endl;
+        } );
+      } );
+
+    }
+    else
+    {
+      this->forElementRegions< CellElementRegion >( [&]( CellElementRegion & elemRegion )
+      {
+        elemRegion.setCellBlockNames( cellBlockSelector.buildCellBlocksSelection( elemRegion ) );
+        elemRegion.generateMesh( cellBlocks );
+      } );    
+    }
+
+
     // selecting all cellblocks is mandatory
-    cellBlockSelector.checkSelectionConsistency();
+//    cellBlockSelector.checkSelectionConsistency();
   }
 
 
@@ -695,9 +772,9 @@ ElementRegionManager::getCellBlockToSubRegionMap( CellBlockManagerABC const & ce
     GEOS_ERROR_IF( blockIndex == Group::subGroupMap::KeyIndex::invalid_index,
                    GEOS_FMT( "{}, subregion {}: Cell block not found at index {}.",
                              region.getDataContext().toString(), subRegion.getName(), blockIndex ) );
-    GEOS_ERROR_IF( blockMap( blockIndex, 1 ) != -1,
-                   GEOS_FMT( "{}, subregion {}: Cell block at index {} is mapped to more than one subregion.",
-                             region.getDataContext().toString(), subRegion.getName(), blockIndex ) );
+    // GEOS_ERROR_IF( blockMap( blockIndex, 1 ) != -1,
+    //                GEOS_FMT( "{}, subregion {}: Cell block at index {} is mapped to more than one subregion.",
+    //                          region.getDataContext().toString(), subRegion.getName(), blockIndex ) );
 
     blockMap( blockIndex, 0 ) = er;
     blockMap( blockIndex, 1 ) = esr;

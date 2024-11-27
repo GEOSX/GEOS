@@ -84,6 +84,7 @@ public:
    * @param cellBlock the CellBlock which properties (connectivity info) will be copied.
    */
   void copyFromCellBlock( CellBlockABC const & cellBlock );
+  void copyFromCellBlock( CellBlockABC const & cellBlock, arrayView1d< localIndex const > const & cellList );
 
   ///@}
 

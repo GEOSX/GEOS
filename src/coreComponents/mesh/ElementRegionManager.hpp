@@ -1120,8 +1120,6 @@ public:
   int unpackFracturedElements( buffer_unit_type const * & buffer,
                                ElementReferenceAccessor< localIndex_array > & packList,
                                string const fractureRegionName );
-
-
 private:
 
   /**
@@ -1186,6 +1184,7 @@ private:
    * @return reference to this object
    */
   ElementRegionManager & operator=( const ElementRegionManager & );
+
 };
 
 

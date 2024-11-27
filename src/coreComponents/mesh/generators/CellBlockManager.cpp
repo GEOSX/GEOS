@@ -151,7 +151,6 @@ void CellBlockManager::buildToCellMap( localIndex const numObjects,
       }
     } );
   }
-  ;
 
   // Allocate memory
   ArrayOfArrays< CellBlockIndexPair > cellBlockPairList;
@@ -175,7 +174,6 @@ void CellBlockManager::buildToCellMap( localIndex const numObjects,
       }
     } );
   }
-  ;
 
   // Sort each element list to ensure unique race-condition-free map order
   forAll< parallelHostPolicy >( numObjects, [cellBlockPairList = cellBlockPairList.toView()]( localIndex const objIndex )
