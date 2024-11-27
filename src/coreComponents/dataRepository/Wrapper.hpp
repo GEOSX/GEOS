@@ -54,7 +54,7 @@ namespace dataRepository
  * @tparam T is any type that is to be wrapped by Wrapper
  */
 template< typename T >
-class Wrapper final : public WrapperBase
+class Wrapper : public WrapperBase
 {
 public:
 
