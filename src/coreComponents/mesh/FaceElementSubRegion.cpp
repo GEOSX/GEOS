@@ -383,7 +383,7 @@ localIndex FaceElementSubRegion::unpackUpDownMaps( buffer_unit_type const * & bu
 
   GEOS_ERROR_IF_NE( m_unmappedGlobalIndicesInToNodes.size(), 0 );
   GEOS_ERROR_IF_NE( m_unmappedGlobalIndicesInToEdges.size(), 0 );
-  GEOS_ERROR_IF_NE( m_unmappedGlobalIndicesInToFaces.size(), 0 );
+//  GEOS_ERROR_IF_NE( m_unmappedGlobalIndicesInToFaces.size(), 0 );
 
   return unPackedSize;
 }
@@ -510,6 +510,11 @@ void FaceElementSubRegion::fixUpDownMaps( bool const clearIfUnmapped )
                                     clearIfUnmapped );
 
   fixNeighborMappingsInconsistency( getName(), m_2dElemToElems, m_toFacesRelation );
+
+  GEOS_ERROR_IF_NE( m_unmappedGlobalIndicesInToNodes.size(), 0 );
+  GEOS_ERROR_IF_NE( m_unmappedGlobalIndicesInToEdges.size(), 0 );
+  GEOS_ERROR_IF_NE( m_unmappedGlobalIndicesInToFaces.size(), 0 );
+
 }
 
 /**
