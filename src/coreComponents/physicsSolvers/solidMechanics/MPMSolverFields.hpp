@@ -121,6 +121,14 @@ DECLARE_FIELD( particleSPHJacobian,
                WRITE_AND_READ,
                "An array that stores particle SPH computed jacobian." );
 
+DECLARE_FIELD( particleCrackTipDistance,
+               "particleCrackTipDistance",
+               array1d< real64 >,
+               0.0,
+               LEVEL_1,
+               WRITE_AND_READ,
+               "An array that stores particle Crack Tip Distance." );
+
 DECLARE_FIELD( particleReferenceVolume,
                "particleReferenceVolume",
                array1d< real64 >,
@@ -329,6 +337,7 @@ DECLARE_FIELD( particleCohesiveFieldMapping,
                WRITE_AND_READ,
                "particleCohesiveFieldMapping" );     
 
+
 DECLARE_FIELD( particleSubdivideFlag, 
                "particleSubdivideFlag", 
                array1d< int >,
@@ -343,15 +352,15 @@ DECLARE_FIELD( particleCopyFlag,
                -1,
                LEVEL_1,
                WRITE_AND_READ,
-               "particleCopyFlag" );      
+               "particleCopyFlag" );
 
-DECLARE_FIELD( particleDistanceToCrackTip,
-               "particleDistanceToCrackTip",
-               array1d< real64 >,
-               0.0,
+DECLARE_FIELD( particleDomainScaledFlag, 
+               "particleDomainScaledFlag", 
+               array1d< int >,
+               -1,
                LEVEL_1,
                WRITE_AND_READ,
-               "An array that stores particle distances to a crack tip ( 0: not relevant, > 0: relevant )." );                            
+               "particleDomainScaledFlag" );            
 }
 
 }

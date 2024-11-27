@@ -21,6 +21,10 @@ stages:
     - git submodule set-url integratedTests git@github.com:GEOS-DEV/integratedTests.git
     - git submodule set-url src/coreComponents/fileIO/coupling/hdf5_interface https://github.com/GEOS-DEV/hdf5_interface.git
 
+    # Clean up directory and submodules when pre-initialized from previous CI run
+    - git clean -x -f -d
+    - git submodule foreach --recursive git clean -x -f -d
+
     # Update submodules
     - git submodule update --init --recursive src/cmake/blt
     - git submodule update --init --recursive src/coreComponents/LvArray
@@ -28,32 +32,35 @@ stages:
     - git submodule update --init --recursive integratedTests
     - git submodule update --init --recursive src/coreComponents/fileIO/coupling/hdf5_interface
 
-    - mkdir ${SYSTEM}
+    - mkdir ${SYSTEM_COMPILER}
 
-    # geosxats needs python2 to run
-    - module load python/2
+    # newer geosxats needs python3 to run
+    - module load python/3
+
+    # GEOS requires CMake >=3.23
+    - module load cmake/3.23.1
 
     # CONFIGURE
     - echo "~~~~~~~~~~ START - configure ~~~~~~~~~~~"
     - config_code=0
-    - python scripts/config-build.py -hc host-configs/LLNL/${HOST_CONFIG} -bt Release -bp build -DENABLE_DOXYGEN=OFF 2>&1 | tee ${SYSTEM}/${SYSTEM}_configure.log || config_code=$?
-    - mv ${SYSTEM}/${SYSTEM}_configure.log ${SYSTEM}/${SYSTEM}_configure_$([ $config_code == 0 ] && echo "SUCCESS" || echo "FAILURE").log
+    - python scripts/config-build.py -hc host-configs/LLNL/${HOST_CONFIG} -bt Release -bp build -DENABLE_DOXYGEN=OFF 2>&1 | tee ${SYSTEM_COMPILER}/${SYSTEM_COMPILER}_configure.log || config_code=$?
+    - mv ${SYSTEM_COMPILER}/${SYSTEM_COMPILER}_configure.log ${SYSTEM_COMPILER}/${SYSTEM_COMPILER}_configure_$([ $config_code == 0 ] && echo "SUCCESS" || echo "FAILURE").log
     - echo "~~~~~~~~~~ END - configure ~~~~~~~~~~~~~"
 
     # BUILD
     - echo "~~~~~~~~~~ START - build ~~~~~~~~~~~"
     - build_code=0
-    - ${ALLOC_COMMAND} make VERBOSE=1 -C build -j ${NPROC:-16} 2>&1 | tee ${SYSTEM}/${SYSTEM}_build.log || build_code=$?
-    - mv ${SYSTEM}/${SYSTEM}_build.log ${SYSTEM}/${SYSTEM}_build_$([ $build_code == 0 ] && echo "SUCCESS" || echo "FAILURE").log
+    - ${ALLOC_COMMAND} make VERBOSE=1 -C build -j ${NPROC:-16} 2>&1 | tee ${SYSTEM_COMPILER}/${SYSTEM_COMPILER}_build.log || build_code=$?
+    - mv ${SYSTEM_COMPILER}/${SYSTEM_COMPILER}_build.log ${SYSTEM_COMPILER}/${SYSTEM_COMPILER}_build_$([ $build_code == 0 ] && echo "SUCCESS" || echo "FAILURE").log
     - echo "~~~~~~~~~~ END - build ~~~~~~~~~~~~~"
 
     # UNIT TEST
     - echo "~~~~~~~~~~ START - unit tests ~~~~~~~~~~~"
     - unit_code=0
     - cd build
-    - ${ALLOC_COMMAND} ctest --output-on-failure  2>&1 | tee ../${SYSTEM}/${SYSTEM}_unit_test.log || unit_code=$?
+    - ${ALLOC_COMMAND} ctest --output-on-failure  2>&1 | tee ../${SYSTEM_COMPILER}/${SYSTEM_COMPILER}_unit_test.log || unit_code=$?
     - cd ..
-    - mv ${SYSTEM}/${SYSTEM}_unit_test.log ${SYSTEM}/${SYSTEM}_unit_test_$([ $unit_code == 0 ] && echo "SUCCESS" || echo "FAILURE").log
+    - mv ${SYSTEM_COMPILER}/${SYSTEM_COMPILER}_unit_test.log ${SYSTEM_COMPILER}/${SYSTEM_COMPILER}_unit_test_$([ $unit_code == 0 ] && echo "SUCCESS" || echo "FAILURE").log
     - echo "~~~~~~~~~~ END - unit tests ~~~~~~~~~~~~~"
 
     # INTEGRATED TEST
@@ -63,11 +70,11 @@ stages:
     - make ats_environment
     # Hard code integrated test failure status until optional fail flag fixed
     - integrated_code=1
-    - ${INTEGRATED_ALLOC_COMMAND} ./integratedTests/geos_ats.sh --failIfTestsFail 2>&1 | tee ../${SYSTEM}/${SYSTEM}_integrated_test.log || integrated_code=1
-    #- ${INTEGRATED_ALLOC_COMMAND} ./integratedTests/geos_ats.sh --failIfTestsFail 2>&1 | tee ../${SYSTEM}/${SYSTEM}_integrated_test.log || integrated_code=$?
+    - ${INTEGRATED_ALLOC_COMMAND} ./integratedTests/geos_ats.sh --failIfTestsFail 2>&1 | tee ../${SYSTEM_COMPILER}/${SYSTEM_COMPILER}_integrated_test.log || integrated_code=1
+    #- ${INTEGRATED_ALLOC_COMMAND} ./integratedTests/geos_ats.sh --failIfTestsFail 2>&1 | tee ../${SYSTEM_COMPILER}/${SYSTEM_COMPILER}_integrated_test.log || integrated_code=$?
     - cd ..
-    - mv ${SYSTEM}/${SYSTEM}_integrated_test.log ${SYSTEM}/${SYSTEM}_integrated_test_$([ $integrated_code == 0 ] && echo "SUCCESS" || echo "FAILURE").log
-    - cp -rL build/integratedTests/TestResults ${SYSTEM}/
+    - mv ${SYSTEM_COMPILER}/${SYSTEM_COMPILER}_integrated_test.log ${SYSTEM_COMPILER}/${SYSTEM_COMPILER}_integrated_test_$([ $integrated_code == 0 ] && echo "SUCCESS" || echo "FAILURE").log
+    - cp -rL build/integratedTests/TestResults ${SYSTEM_COMPILER}/
     - echo "~~~~~~~~~~ END - integrated tests ~~~~~~~~~~~~~"
 
     # CLEANUP + PRINT SUCCESS/FAILURES
@@ -92,8 +99,9 @@ stages:
   artifacts:
     when: always
     paths:
-      - quartz/
-      - lassen/
+      - quartz*/
+      - lassen*/
+      - tioga*/
   # Allow job to always fail, so nightly-job in next stage will run
   allow_failure: true
 
@@ -104,10 +112,25 @@ stages:
   variables:
     ALLOC_COMMAND: "salloc -N1 -ppdebug"
     INTEGRATED_ALLOC_COMMAND: "salloc -N1 -n 36 -ppdebug"
-    SYSTEM: "quartz"
   tags:
     - shell
     - quartz
+  extends: [.build_script]
+
+####
+# tioga template
+.build_on_tioga:
+  stage: build
+  variables:
+    ALLOC_COMMAND: "salloc -N1 -ppdebug"
+    INTEGRATED_ALLOC_COMMAND: "salloc -N 10 -p pbatch"
+  before_script:
+    - module load rocm/5.4.3
+    - module load cce/15.0.0
+    - module load cmake/3.23.1
+  tags:
+    - shell
+    - tioga
   extends: [.build_script]
 
 ####
@@ -117,36 +140,64 @@ stages:
   variables:
     ALLOC_COMMAND: "lalloc 1"
     INTEGRATED_ALLOC_COMMAND: "lalloc 10"
-    SYSTEM: "lassen"
   tags:
     - shell
     - lassen
   extends: [.build_script]
 
 ####
-# quartz job
+# quartz jobs
 quartz_clang_14_build:
   variables:
-    HOST_CONFIG: "quartz-clang@14.cmake"
+    HOST_CONFIG: "quartz-clang-14.cmake"
+    SYSTEM_COMPILER: "quartz-clang-14"
+  extends: [.build_on_quartz]
+
+quartz_gcc_12_build:
+  variables:
+    HOST_CONFIG: "quartz-gcc-12.cmake"
+    SYSTEM_COMPILER: "quartz-gcc-12"
   extends: [.build_on_quartz]
 
 ####
-# lassen job
-lassen_clang_upstream_build:
+# tioga job
+tioga_cce_15_build:
   variables:
-    HOST_CONFIG: "lassen-clang@upstream.cmake"
+    HOST_CONFIG: "tioga-cce-15.cmake"
+    SYSTEM_COMPILER: "tioga-cce-15"
+  extends: [.build_on_tioga]
+
+####
+# lassen jobs
+lassen_clang_10_cuda_11_build:
+  variables:
+    HOST_CONFIG: "lassen-clang-10-cuda-11.cmake"
+    SYSTEM_COMPILER: "lassen-clang-10-cuda-11"
+  extends: [.build_on_lassen]
+
+lassen_gcc_8_cuda_11_build:
+  variables:
+    HOST_CONFIG: "lassen-gcc-8-cuda-11.cmake"
+    SYSTEM_COMPILER: "lassen-gcc-8-cuda-11"
   extends: [.build_on_lassen]
 
 ####
 # Pull nightlyTests repo and update files
+# Note: Arguments to update.sh need to be kept updated with build jobs
 nightly-job:
   stage: nightly
   script:
-    - echo "~~~~~~~~~~ START - write to nightlyTests Repo ~~~~~~~~~~~~~"
-    - git clone git@github.com:GEOS-DEV/nightlyTests.git
-    - cd nightlyTests
-    - ./update.sh
-    - echo "~~~~~~~~~~ END - write to nightlyTests Repo ~~~~~~~~~~~~~"
+    - |
+      echo "~~~~~~~~~~ START - write to nightlyTests Repo ~~~~~~~~~~~~~"
+      git clone git@github.com:GEOS-DEV/nightlyTests.git
+      cd nightlyTests
+      ./update.sh \
+          quartz-clang-14 \
+          quartz-gcc-12 \
+          lassen-clang-10-cuda-11 \
+          lassen-gcc-8-cuda-11 \
+          tioga-cce-15
+      echo "~~~~~~~~~~ END - write to nightlyTests Repo ~~~~~~~~~~~~~"
   only:
     refs:
       - schedules

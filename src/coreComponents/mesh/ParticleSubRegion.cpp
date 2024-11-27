@@ -60,7 +60,6 @@ void ParticleSubRegion::copyFromParticleBlock( ParticleBlockABC & particleBlock 
   m_particleStrengthScale = particleBlock.getParticleStrengthScale();
   m_particleCenter = particleBlock.getParticleCenter();
   m_particleVelocity = particleBlock.getParticleVelocity();
-  m_particleAcceleration = particleBlock.getParticleAcceleration();
   m_particleMaterialDirection = particleBlock.getParticleMaterialDirection();
   m_particleVolume = particleBlock.getParticleVolume();
   m_particleRVectors = particleBlock.getParticleRVectors();
@@ -68,7 +67,6 @@ void ParticleSubRegion::copyFromParticleBlock( ParticleBlockABC & particleBlock 
   m_particleSurfaceNormal = particleBlock.getParticleSurfaceNormal();
   m_particleSurfacePosition = particleBlock.getParticleSurfacePosition();
   m_particleSurfaceTraction = particleBlock.getParticleSurfaceTraction();
-  m_particleDistanceToCrackTip = particleBlock.getParticleDistanceToCrackTip();
 
   // We call the `resize` member function of the cell to (nodes, edges, faces) relations,
   // before calling the `ParticleSubRegion::resize` in order to keep the first dimension.

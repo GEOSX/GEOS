@@ -223,8 +223,8 @@ void HyperelasticUpdates::getElasticStiffness( localIndex const k,
 GEOS_HOST_DEVICE
 inline
 void HyperelasticUpdates::getElasticStrain( localIndex const k,
-                                               localIndex const q,
-                                               real64 ( & elasticStrain)[6] ) const
+                                            localIndex const q,
+                                            real64 ( & elasticStrain)[6] ) const
 {
   real64 const E = conversions::bulkModAndShearMod::toYoungMod( m_bulkModulus[k], m_shearModulus[k] );
   real64 const nu = conversions::bulkModAndShearMod::toPoissonRatio( m_bulkModulus[k], m_shearModulus[k] );
@@ -374,7 +374,7 @@ void HyperelasticUpdates::hyperUpdate( localIndex const k,
   F[1][1] += 1;
   F[2][2] += 1;
 
-  real64 C[3][3] = { { 0 } };
+  real64 C[3][3] = { { 0.0 } };
   for(int i = 0; i < 3; i++)
   {
     for(int j = 0; j < 3; j++)
@@ -386,7 +386,7 @@ void HyperelasticUpdates::hyperUpdate( localIndex const k,
     }
   }
 
-  real64 trFtF = LvArray::tensorOps::trace< 3 >( C ); // C[0][0] * C[0][0] + C[1][1] * C[1][1] + C[2][2] * C[2][2];
+  real64 trFtF = LvArray::tensorOps::trace< 3 >( C );
 
   real64 J = F[0][0] * ( F[1][1] * F[2][2] - F[1][2] * F[2][1] ) -
              F[0][1] * ( F[1][0] * F[2][2] - F[1][2] * F[2][0] ) +

@@ -30,7 +30,7 @@ namespace geos
 
 class ParticleManager;
 class SpatialPartition;
-  
+
 /**
  * @class ParticleMeshGenerator
  * @brief The ParticleMeshGenerator class is a class handling import of particle data from an externel particle file.
@@ -55,7 +55,7 @@ public:
     VelocityZ,
     AccelerationX,
     AccelerationY,
-    AccelerationZ,    
+    AccelerationZ,
     MaterialType,
     ParticleType,
     ContactGroup,
@@ -86,7 +86,7 @@ public:
     SurfaceTractionY,
     SurfaceTractionZ,
     DistanceToCrackTip,
-    Count
+    COUNT   // holds the number of particle column header options e.g. 30 for [0-29]
   };
 
   /**

@@ -109,15 +109,20 @@ public:
    * @param particleVelocity The input list of velocities
    */
   void setParticleVelocity( array2d< real64 > const particleVelocity )
-  { m_particleVelocity = particleVelocity; }  
-
-  array2d< real64 > getParticleAcceleration() const override
-  { return m_particleAcceleration; }  
 
   /**
    * @brief Set the list of particle velocities in this subregion.
    * @param particleAcceleration The input list of velocities
-   */
+  */
+  { m_particleVelocity = particleVelocity; }
+
+  array2d< real64 > getParticleAcceleration() const override
+  { return m_particleAcceleration; }
+
+  /**
+   * @brief Set the list of particle accelerations in this subregion.
+   * @param particleAcceleration The input list of accelerations
+  */
   void setParticleAcceleration( array2d< real64 > const particleAcceleration )
   { m_particleAcceleration = particleAcceleration; }  
 
@@ -221,16 +226,6 @@ public:
   void setParticleRVectors( array3d< real64 > const particleRVectors )
   { m_particleRVectors = particleRVectors; }
 
-    array1d< real64 > getParticleDistanceToCrackTip() const override
-  { return m_particleDistanceToCrackTip; }
-
-  /**
-   * @brief Set the list of particle distances to a crack tip in this subregion.
-   * @param particleDistanceToCrackTip The input list of distances to a crack tip
-   */
-  void setParticleDistanceToCrackTip( array1d< real64 > const particleDistanceToCrackTip )
-  { m_particleDistanceToCrackTip = particleDistanceToCrackTip; }  
-
   bool hasRVectors() const override
   { return m_hasRVectors; }
 
@@ -294,6 +289,16 @@ public:
   void setParticleSurfaceTraction( array2d< real64 > const particleSurfaceTraction )
   { m_particleSurfaceTraction = particleSurfaceTraction; }
 
+  array1d< real64 > getParticleDistanceToCrackTip() const override
+  { return m_particleDistanceToCrackTip; }
+
+  /**
+   * @brief Set the list of particle distances to a crack tip in this subregion.
+   * @param particleDistanceToCrackTip The input list of distances to a crack tip
+   */
+  void setParticleDistanceToCrackTip( array1d< real64 > const particleDistanceToCrackTip )
+  { m_particleDistanceToCrackTip = particleDistanceToCrackTip; }  
+
   localIndex numParticles() const override
   { return size(); }
 
@@ -306,9 +311,6 @@ public:
    */
   arrayView1d< globalIndex > localToGlobalMap()
   { return m_localToGlobalMap; }
-
-  /// Member level field for the particle distances to a crack tip.
-  array1d< real64 > m_particleDistanceToCrackTip;
 
   array1d< globalIndex > localToGlobalMap() const override
   { return m_localToGlobalMap; }

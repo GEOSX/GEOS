@@ -303,7 +303,7 @@ void ElasticIsotropicUpdates::smallStrainUpdate_StressOnly( localIndex const k,
 {
   GEOS_UNUSED_VAR( timeIncrement );
   smallStrainNoStateUpdate_StressOnly( k, q, strainIncrement, stress ); // stress  = incrementalStress
-  m_wavespeed[k][0] = ( m_bulkModulus[k] + (4.0/3.0) * m_shearModulus[k] ) / m_density[k][0];
+  m_wavespeed[k][0] = sqrt(( m_bulkModulus[k] + (4.0/3.0) * m_shearModulus[k] ) / m_density[k][0]);
   LvArray::tensorOps::add< 6 >( stress, m_oldStress[k][q] );            // stress += m_oldStress
   saveStress( k, q, stress );                                           // m_newStress = stress
 }

@@ -11,7 +11,6 @@
 *.nfs*
 *.vscode/*.json
 *.vscode-codespaces*
-*.devcontainer*
 *.out
 *.core
 *.DS_Store
@@ -23,4 +22,9 @@ spack-*.txt
 *~
 __pycache__
 
+# ignore all folders except the template one
+/src/externalComponents/*
+!/src/externalComponents/newComponentTemplate/
+
+# ignore possible locally built tpl collections
 /tplInstall*/

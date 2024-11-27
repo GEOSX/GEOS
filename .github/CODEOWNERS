@@ -1,0 +1,134 @@
+
+
+
+# These owners will be the default owners for everything in
+# the repo. Unless a later match takes precedence,
+# @global-owner1 and @global-owner2 will be requested for
+# review when someone opens a pull request.
+*       @rrsettgast
+
+/.github/ @rrsettgast
+
+/inputFiles/ @CusiniM @cssherman @jhuang2601
+/src/coreComponents/LvArray                           @rrsettgast @wrtobin @corbett5 @CusiniM 
+/src/coreComponents/codingUtilities                   @rrsettgast @untereiner @corbett5
+/src/coreComponents/common                            @rrsettgast @MelReyCG @corbett5
+/src/coreComponents/constitutive                      @rrsettgast @CusiniM @dkachuma 
+/src/coreComponents/dataRepository                    @rrsettgast @wrtobin @corbett5
+/src/coreComponents/denseLinearAlgebra                @rrsettgast @CusiniM @castelletto1 
+/src/coreComponents/discretizationMethods             @rrsettgast @CusiniM @castelletto1 
+/src/coreComponents/events                            @rrsettgast @corbett5 @cssherman 
+/src/coreComponents/fieldSpecification                @rrsettgast @CusiniM @corbett5
+/src/coreComponents/fileIO                            @rrsettgast @wrtobin @MelReyCG @untereiner
+/src/coreComponents/finiteElement                     @rrsettgast @castelletto1
+/src/coreComponents/finiteVolume                      @rrsettgast @castelletto1
+/src/coreComponents/functions                         @cssherman  @wrtobin
+/src/coreComponents/linearAlgebra                     @rrsettgast @castelletto1 @victorapm 
+/src/coreComponents/mainInterface                     @rrsettgast @corbett5
+/src/coreComponents/math                              @rrsettgast @corbett5
+/src/coreComponents/mesh                              @rrsettgast @wrtobin @untereiner @CusiniM 
+/src/coreComponents/physicsSolvers                    @rrsettgast
+/src/coreComponents/physicsSolvers/contact            @CusiniM @rrsettgast
+/src/coreComponents/physicsSolvers/fluidFlow          @CusiniM @paveltomin @klevzoff @francoishamon
+/src/coreComponents/physicsSolvers/inducedSeismicity  @CusiniM @rrsettgast
+/src/coreComponents/physicsSolvers/multiphysics       @CusiniM @paveltomin @castelletto1 
+/src/coreComponents/physicsSolvers/python             @cssherman @corbett5
+/src/coreComponents/physicsSolvers/simplePDE          @castelletto1 @rrsettgast
+/src/coreComponents/physicsSolvers/solidMechanics     @rrsettgast @castelletto1 @CusiniM 
+/src/coreComponents/physicsSolvers/surfaceGeneration  @rrsettgast @CusiniM @jhuang2601
+/src/coreComponents/physicsSolvers/wavePropagation    @sframba @acitrain
+!/src/coreComponents/schema
+/src/coreComponents/unitTests                         @rrsettgast @corbett5 @wrtobin
+
+# Here is a list of GEOS-DEV members as of 2024-07-02
+# username           name
+# acitrain   
+# aguitton   
+# AL0230162          Éric Cassagnard
+# Algiane            Algiane Froehly
+# andrea-borio       Andrea Borio
+# andrea-francesch   Andrea Franceschini
+# annavarapusr1   
+# AntoineMazuyer     Antoine Mazuyer
+# arng40             Arnaud DUDES
+# Bertbk             Bertrand Thierry
+# binw1   
+# bmhan12            Brian Han
+# Bubusch            Gaetan
+# castelletto1       Nicola Castelletto
+# chakshinglee       Chak Shing Lee
+# cmcrook5   
+# cmorency1          Christina Morency
+# corbett5           Ben Corbett
+# cssherman          Christopher Sherman
+# CusiniM            Matteo Cusini
+# dkachuma           Dickson Kachuma
+# drmichaeltcvx      Michael E. Thomadakis
+# estelledirand      Estelle Dirand
+# francoishamon      Francois Hamon
+# frankfeifan   
+# fuyuli123456       Fuyu Li
+# geosxCI   
+# Guotong-Ren        Guotong
+# henricalandra64   
+# herve-gross        Herve Gross
+# homel1             Michael Homel
+# IsaacJu-debug      Isaac Ju
+# jafranc            Jacques Franc
+# jameshcorbett      James Corbett
+# Jay-A              Jay Appleton
+# jeannepellerin     Jeanne Pellerin
+# jedbrown           Jed Brown
+# jessielu001   
+# jhuang2601         Jian Huang
+# jiemeng-total   
+# jiyer28   
+# jkwashbourne       John Washbourne
+# johnbowen42        John Bowen
+# joshua-white       Joshua White
+# jschen83           Jinsong Chen
+# juliat-camargo   
+# karimifard         Mohammad Karimi-Fard
+# kimtaeho07   
+# klevzoff           Sergey Klevtsov
+# ktnihei            Kurt Nihei
+# labesse40   
+# matteofrigo5       Matteo Frigo
+# MatthiasCremon     Matthias Cremon
+# MelReyCG   
+# MichaelSekachev    Michael Sekachev
+# mndiaye24          Mamadou N'diaye
+# npillardou         Nicolas Pillardou
+# ol-n-ga   
+# oseikuffuor1       Daniel Osei-Kuffuor
+# ouassimkh   
+# paloma-martinez   
+# paveltomin         Pavel Tomin
+# philippeVerney     Philippe Verney
+# raminammour        Rami
+# rasimHZ   
+# rmadec-cs          Ronan Madec
+# rrsettgast         Randolph Settgast
+# ryanhaagenson      Ryan Haagenson
+# ryar9534           Ryan Aronson
+# samtkaplan         Sam Kaplan
+# samuelpmishLLNL   
+# sframba            Stefano Frambati
+# shabnamjs   
+# sohailwaziri   
+# sytuannguyen       Sy-Tuan Nguyen
+# tang39             Hewei Tang
+# tbeltzun   
+# TheLastBlockbend   Phillip Chacon
+# tjb-ltk            Tom Byer
+# TNemethCVX   
+# TotoGaz            TotoGaz
+# txlx   
+# untereiner         Lionel Untereiner
+# victorapm          Victor A. P. Magri
+# VidarStiernstrom   Vidar Stiernström
+# wcy41gtc           Chaoyi Wang
+# wrtobin            William R Tobin
+# yue-2018           Yue Hao
+# yylicvx   
+# zhishuaizhang      Zhishuai Zhang

@@ -13,6 +13,7 @@ set( events_headers
      mpmEvents/MPMEventBase.hpp
      mpmEvents/MaterialSwapMPMEvent.hpp
      mpmEvents/AnnealMPMEvent.hpp
+     mpmEvents/InitializeStressMPMEvent.hpp
      mpmEvents/HealMPMEvent.hpp
      mpmEvents/CrystalHealMPMEvent.hpp
      mpmEvents/InsertPeriodicContactSurfacesMPMEvent.hpp
@@ -20,6 +21,8 @@ set( events_headers
      mpmEvents/FrictionCoefficientSwapMPMEvent.hpp
      mpmEvents/BodyForceUpdateMPMEvent.hpp
      mpmEvents/DeformationUpdateMPMEvent.hpp
+     mpmEvents/BoreholePressureMPMEvent.hpp
+     mpmEvents/ConfiningPressureMPMEvent.hpp
      mpmEvents/CohesiveZoneReferenceMPMEvent.hpp
    )
 
@@ -38,6 +41,7 @@ set( events_sources
      mpmEvents/MPMEventBase.cpp
      mpmEvents/MaterialSwapMPMEvent.cpp
      mpmEvents/AnnealMPMEvent.cpp
+     mpmEvents/InitializeStressMPMEvent.cpp
      mpmEvents/HealMPMEvent.cpp
      mpmEvents/CrystalHealMPMEvent.cpp
      mpmEvents/InsertPeriodicContactSurfacesMPMEvent.cpp
@@ -45,6 +49,8 @@ set( events_sources
      mpmEvents/FrictionCoefficientSwapMPMEvent.cpp
      mpmEvents/BodyForceUpdateMPMEvent.cpp
      mpmEvents/DeformationUpdateMPMEvent.cpp
+     mpmEvents/BoreholePressureMPMEvent.cpp
+     mpmEvents/ConfiningPressureMPMEvent.cpp
      mpmEvents/CohesiveZoneReferenceMPMEvent.cpp
    )
 

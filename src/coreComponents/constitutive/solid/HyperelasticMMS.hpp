@@ -50,13 +50,13 @@ public:
    * @param[in] disableInelasticity Flag to disable plasticity for inelastic models
    */
   HyperelasticMMSUpdates( arrayView1d< real64 const > const & lambda,
-                           arrayView1d< real64 const > const & shearModulus,
-                           arrayView1d< real64 const > const & thermalExpansionCoefficient,
-                           arrayView3d< real64, solid::STRESS_USD > const & newStress,
-                           arrayView3d< real64, solid::STRESS_USD > const & oldStress,
-                           arrayView2d< real64 > const & density,
-                           arrayView2d< real64 > const & wavespeed,
-                           const bool & disableInelasticity ):
+                          arrayView1d< real64 const > const & shearModulus,
+                          arrayView1d< real64 const > const & thermalExpansionCoefficient,
+                          arrayView3d< real64, solid::STRESS_USD > const & newStress,
+                          arrayView3d< real64, solid::STRESS_USD > const & oldStress,
+                          arrayView2d< real64 > const & density,
+                          arrayView2d< real64 > const & wavespeed,
+                          const bool & disableInelasticity ):
     SolidBaseUpdates( newStress,
                       oldStress,
                       density,
@@ -92,21 +92,21 @@ public:
   virtual void smallStrainNoStateUpdate_StressOnly( localIndex const k,
                                                     localIndex const q,
                                                     real64 const ( &totalStrain )[6],
-                                                    real64 ( &stress )[6] ) const override final;
+                                                    real64 ( &stress )[6] ) const override;
 
   GEOS_HOST_DEVICE
   virtual void smallStrainNoStateUpdate( localIndex const k,
                                          localIndex const q,
                                          real64 const ( &totalStrain )[6],
                                          real64 ( &stress )[6],
-                                         real64 ( &stiffness )[6][6] ) const override final;
+                                         real64 ( &stiffness )[6][6] ) const override;
 
   GEOS_HOST_DEVICE
-  virtual void smallStrainNoStateUpdate( localIndex const k,
+  void smallStrainNoStateUpdate( localIndex const k,
                                          localIndex const q,
                                          real64 const ( &totalStrain )[6],
                                          real64 ( &stress )[6],
-                                         DiscretizationOps & stiffness ) const final;
+                                         DiscretizationOps & stiffness ) const;
 
   GEOS_HOST_DEVICE
   virtual void smallStrainUpdate_StressOnly( localIndex const k,
@@ -125,12 +125,12 @@ public:
                                              real64 ( &stress )[6] ) const override;
 
   GEOS_HOST_DEVICE
-  void smallStrainUpdate( localIndex const k,
-                          localIndex const q,
-                          real64 const & timeIncrement,
-                          real64 const ( &strainIncrement )[6],
-                          real64 ( &stress )[6],
-                          real64 ( &stiffness )[6][6] ) const;
+  virtual void smallStrainUpdate( localIndex const k,
+                                  localIndex const q,
+                                  real64 const & timeIncrement,
+                                  real64 const ( &strainIncrement )[6],
+                                  real64 ( &stress )[6],
+                                  real64 ( &stiffness )[6][6] ) const;
 
   GEOS_HOST_DEVICE
   virtual void smallStrainUpdate( localIndex const k,
@@ -148,7 +148,7 @@ public:
   GEOS_HOST_DEVICE
   virtual void getElasticStrain( localIndex const k,
                                  localIndex const q,
-                                 real64 ( &elasticStrain )[6] ) const override final;
+                                 real64 ( &elasticStrain )[6] ) const override;
 
   GEOS_HOST_DEVICE
   virtual real64 getLambda( localIndex const k ) const final
@@ -171,14 +171,14 @@ public:
   virtual void hyperUpdate( localIndex const k,
                             localIndex const q,
                             real64 const ( & FminusI )[3][3],
-                            real64 ( & stress )[6] ) const override final;
+                            real64 ( & stress )[6] ) const override;
 
   GEOS_HOST_DEVICE
   virtual void hyperUpdate( localIndex const k,
                             localIndex const q,
                             real64 const ( & FminusI )[3][3],
                             real64 ( & stress )[6],
-                            real64 ( & stiffness )[6][6] ) const override final;
+                            real64 ( & stiffness )[6][6] ) const override;
 
 protected:
 
@@ -224,7 +224,7 @@ GEOS_HOST_DEVICE
 inline
 void HyperelasticMMSUpdates::getElasticStrain( localIndex const k,
                                                localIndex const q,
-                                               real64 ( & elasticStrain)[6] ) const
+                                               real64 ( & elasticStrain )[6] ) const
 {
   real64 const E = conversions::lameConstants::toYoungMod( m_lambda[k], m_shearModulus[k] );
   real64 const nu = conversions::lameConstants::toPoissonRatio( m_lambda[k], m_shearModulus[k] );
@@ -400,6 +400,8 @@ void HyperelasticMMSUpdates::hyperUpdate( localIndex const k,
   stress[3] = x2 * C[1][2];
   stress[4] = x2 * C[0][2];
   stress[5] = x2 * C[0][1];
+
+  m_wavespeed[k][0] = sqrt( (conversions::lameConstants::toBulkMod( m_lambda[k], m_shearModulus[k] ) + (4.0/3.0) * m_shearModulus[k] ) / m_density[k][0] );
 }
 
 // CC: hyperelastic update for model
@@ -541,8 +543,8 @@ public:
                                      m_thermalExpansionCoefficient,
                                      m_newStress,
                                      m_oldStress,
-                                     m_wavespeed,
                                      m_density,
+                                     m_wavespeed,
                                      m_disableInelasticity );
     }
     else // for "no state" updates, pass empty views to avoid transfer of stress data to device

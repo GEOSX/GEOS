@@ -1,0 +1,386 @@
+name: GEOS CI 
+
+on: 
+  push:
+    branches: 
+      - develop
+  pull_request:
+      types: [opened, synchronize, reopened, edited]
+  workflow_dispatch:
+
+# Cancels in-progress workflows for a PR when updated
+concurrency:
+  group: ${{ github.workflow }}-${{ github.ref }}
+  cancel-in-progress: true
+
+# Please define `build.args.GEOS_TPL_TAG` in `.devcontainer/devcontainer.json`
+
+jobs:
+  # Checks if PR title follows conventional semantics
+  semantic_pull_request:    
+    permissions:
+      pull-requests: write  # for amannn/action-semantic-pull-request to analyze PRs and 
+      statuses: write  # for amannn/action-semantic-pull-request to mark status of analyzed PR
+      contents: read    
+    runs-on: ubuntu-latest
+    
+    steps:
+      - name: Check if the PR name has conventional semantics
+        if: github.event_name == 'pull_request'
+        uses: amannn/action-semantic-pull-request@v5.5.3
+        id: lint_pr_title
+        env:
+          GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+        with:
+          wip: true
+          # Configure that a scope doesn't need to be provided.
+          requireScope: false
+    
+      - name: Skip the check on develop branch
+        if:  github.ref_name == 'develop'
+        run: |
+          echo "This in't a Pull-Request, skipping"
+
+  # Jobs will be cancelled if PR is a draft.
+  # PR status must be "Open" to run CI.
+  is_not_draft_pull_request:
+    # if: ${{ always() }}
+    needs: [semantic_pull_request]
+    # Everywhere in this workflow, we use the most recent ubuntu distribution available in Github Actions
+    # to ensure maximum support of google cloud's sdk.
+    runs-on: ubuntu-22.04
+    outputs:
+      DOCKER_IMAGE_TAG: ${{ steps.extract_docker_image_tag.outputs.DOCKER_IMAGE_TAG }}
+    steps:
+    - name: Check that the PR is not a draft (cancel rest of jobs otherwise)
+      id: extract_pr_info
+      run: |
+        if [[ ${{github.event_name}} == 'pull_request' ]]; then 
+          # We do not rely on the `github.event.pull_request.labels` information since it's cached at the job.
+          # Changing labels or assignee in the PR would not allow to simply re-run the job with a different outcome.
+          pr_json=$(curl -H "Accept: application/vnd.github+json" https://api.github.com/repos/${{ github.repository }}/pulls/${{ github.event.number }})
+          
+          # We stop the workflow if the pr is draft
+          draft_status=$(echo ${pr_json} | jq '.draft')
+          echo "Draft status of PR is ${draft_status}."
+          if [[ $draft_status == true ]]; then exit 1 ; fi
+        fi
+
+        
+    # The TPL tag is contained in the codespaces configuration to avoid duplications.
+    - name: Checkout .devcontainer/devcontainer.json
+      uses: actions/checkout@v4.1.7
+      with:
+        sparse-checkout: |
+          .devcontainer/devcontainer.json
+        sparse-checkout-cone-mode: false
+        submodules: false
+        lfs: false
+        fetch-depth: 1
+    - name: Extract docker image tag
+      id: extract_docker_image_tag
+      run: |
+        echo "DOCKER_IMAGE_TAG=$(jq '.build.args.GEOS_TPL_TAG' -r .devcontainer/devcontainer.json)" >> "$GITHUB_OUTPUT"
+
+  # PR must be assigned to be merged.
+  # This job will fail if this is not the case.
+  if_not_unassigned_pull_request:
+    needs: [is_not_draft_pull_request]
+    runs-on: ubuntu-22.04
+    steps:
+    - name: If this is a PR, Check that it is assigned
+      run: |
+        if [[ ${{github.event_name}} != 'pull_request' ]]; then exit 0 ; fi
+        pr_json=$(curl -H "Accept: application/vnd.github+json" https://api.github.com/repos/${{ github.repository }}/pulls/${{ github.event.number }})
+        NUM_ASSIGNEES=$(echo ${pr_json} | jq '.assignees | length')
+        echo "There are ${NUM_ASSIGNEES} assignees on this PR."
+        if [[ $NUM_ASSIGNEES == 0 ]]; then exit 1 ; fi
+
+  # Validates that the PR is still pointing to the HEAD of the main branch of the submodules repositories.
+  # (There are exceptions, read the script about those).
+  are_submodules_in_sync:
+    needs: [is_not_draft_pull_request]
+    runs-on: ubuntu-22.04
+    steps:
+    # The integrated test submodule repository contains large data (using git lfs).
+    # To save time (and money) we do not let Github Actions automatically clone all our (lfs) subrepositories and do it by hand.
+    - name: Checkout Repository
+      uses: actions/checkout@v4.1.7
+      with:
+        # Let script update submodules; Github Actions submodule history causes error
+        submodules: false
+        lfs: false
+        fetch-depth: 1
+    - name: Check that submodules are up to date
+      run: "scripts/test_submodule_updated.sh"
+
+  check_code_style_and_documentation:
+    name: ${{ matrix.name }}
+    needs: [is_not_draft_pull_request]
+    strategy:
+      fail-fast : false
+      matrix:
+        include:
+        # Validates the code-style using uncrustify
+        - name: Check code style
+          BUILD_AND_TEST_ARGS: --test-code-style
+        # Validates that the documentation generated using doxygen has no hole.
+        - name: Check documentation
+          BUILD_AND_TEST_ARGS: --test-documentation
+    uses: ./.github/workflows/build_and_test.yml
+    with:
+      BUILD_AND_TEST_CLI_ARGS: ${{ matrix.BUILD_AND_TEST_ARGS }}
+      CMAKE_BUILD_TYPE: Release
+      DOCKER_IMAGE_TAG: ${{ needs.is_not_draft_pull_request.outputs.DOCKER_IMAGE_TAG }}
+      DOCKER_REPOSITORY: geosx/ubuntu20.04-gcc9
+      RUNS_ON: ubuntu-22.04
+      USE_SCCACHE: false
+
+  # Matrix containing all the CPU build.
+  # Those are quite fast and can efficiently benefit from the `sccache' tool to make them even faster.
+  cpu_builds:
+    name: ${{ matrix.name }}
+    needs: [is_not_draft_pull_request]
+    strategy:
+      # In-progress jobs will not be cancelled if there is a failure
+      fail-fast : false
+      matrix:
+        include:
+          - name: Ubuntu (20.04, gcc 9.4.0, open-mpi 4.0.3)
+            CMAKE_BUILD_TYPE: Release
+            DOCKER_REPOSITORY: geosx/ubuntu20.04-gcc9
+
+          - name: Ubuntu debug (20.04, gcc 10.5.0, open-mpi 4.0.3) - github codespaces
+            CMAKE_BUILD_TYPE: Debug
+            DOCKER_REPOSITORY: geosx/ubuntu20.04-gcc10
+
+          - name: Ubuntu (20.04, gcc 10.5.0, open-mpi 4.0.3) - github codespaces
+            CMAKE_BUILD_TYPE: Release
+            DOCKER_REPOSITORY: geosx/ubuntu20.04-gcc10
+
+          - name: Ubuntu (22.04, gcc 11.4.0, open-mpi 4.1.2)
+            CMAKE_BUILD_TYPE: Release
+            DOCKER_REPOSITORY: geosx/ubuntu22.04-gcc11
+            ENABLE_HYPRE: ON
+            ENABLE_TRILINOS: OFF
+            GCP_BUCKET: geosx/ubuntu22.04-gcc11
+
+          - name: Ubuntu (22.04, gcc 12.3.0, open-mpi 4.1.2)
+            CMAKE_BUILD_TYPE: Release
+            DOCKER_REPOSITORY: geosx/ubuntu22.04-gcc12
+            ENABLE_HYPRE: ON
+            ENABLE_TRILINOS: OFF
+
+          - name: Ubuntu (22.04, clang 15.0.7, open-mpi 4.1.2)
+            CMAKE_BUILD_TYPE: Release
+            DOCKER_REPOSITORY: geosx/ubuntu22.04-clang15
+            ENABLE_HYPRE: ON
+            ENABLE_TRILINOS: OFF
+
+          - name: Sherlock CPU (centos 7.9.2009, gcc 10.1.0, open-mpi 4.1.2, openblas 0.3.10)
+            CMAKE_BUILD_TYPE: Release
+            DOCKER_REPOSITORY: geosx/sherlock-gcc10.1.0-openmpi4.1.2-openblas0.3.10-zlib1.2.11
+            ENABLE_HYPRE: ON
+            ENABLE_TRILINOS: OFF
+            GCP_BUCKET: geosx/Sherlock-CPU
+            HOST_CONFIG: host-configs/Stanford/sherlock-gcc10-ompi4.1.2-openblas0.3.10.cmake
+
+    uses: ./.github/workflows/build_and_test.yml
+    with:
+      CMAKE_BUILD_TYPE: ${{ matrix.CMAKE_BUILD_TYPE }}
+      DOCKER_IMAGE_TAG: ${{ needs.is_not_draft_pull_request.outputs.DOCKER_IMAGE_TAG }}
+      DOCKER_REPOSITORY: ${{ matrix.DOCKER_REPOSITORY }}
+      ENABLE_HYPRE: ${{ matrix.ENABLE_HYPRE }}
+      ENABLE_TRILINOS: ${{ matrix.ENABLE_TRILINOS }}
+      GCP_BUCKET: ${{ matrix.GCP_BUCKET }}
+      HOST_CONFIG: ${{ matrix.HOST_CONFIG }}
+      RUNS_ON: ubuntu-22.04
+    secrets: inherit
+
+  # If the 'ci: run integrated tests' PR label is found, the integrated tests will be run immediately after the cpu jobs.
+  # Note: The integrated tests are optional and are (for the moment) run for convenience only.
+  run_integrated_tests:
+    needs:
+      - is_not_draft_pull_request
+      - cpu_builds
+    uses: ./.github/workflows/build_and_test.yml
+    secrets: inherit
+    with:
+      BUILD_AND_TEST_CLI_ARGS: --build-exe-only
+      BUILD_TYPE: integrated_tests
+      CMAKE_BUILD_TYPE: Release
+      DOCKER_IMAGE_TAG: ${{ needs.is_not_draft_pull_request.outputs.DOCKER_IMAGE_TAG }}
+      DOCKER_REPOSITORY: geosx/ubuntu22.04-gcc11
+      ENABLE_HYPRE: ON
+      ENABLE_TRILINOS: OFF
+      GCP_BUCKET: geosx/integratedTests
+      RUNS_ON: streak2-32core
+      NPROC: 32
+      DOCKER_RUN_ARGS: "--cpus=32 --memory=384g -v /etc/pki/ca-trust/source/anchors/:/usr/local/share/ca-certificates/llnl:ro"
+      DOCKER_CERTS_DIR: "/usr/local/share/ca-certificates"
+      DOCKER_CERTS_UPDATE_COMMAND: "update-ca-certificates"
+      REQUIRED_LABEL: "ci: run integrated tests"
+      LOCAL_BASELINE_DIR: /data/GEOS/baselines
+
+  baseline_log:
+    needs: [is_not_draft_pull_request]
+    runs-on: ubuntu-22.04
+    steps:
+    - name: Checkout Repository
+      uses: actions/checkout@v4.1.7
+      with:
+        submodules: false
+        lfs: false
+        fetch-depth: 0
+        sparse-checkout: |
+          scripts
+    - name: Check that the baseline logs are modified if rebaselines are detected
+      run: "scripts/check_baseline_log.sh"
+
+  code_coverage:
+    needs:
+      - is_not_draft_pull_request
+    uses: ./.github/workflows/build_and_test.yml
+    secrets: inherit
+    with:
+      BUILD_AND_TEST_CLI_ARGS: "--no-run-unit-tests"
+      CMAKE_BUILD_TYPE: Debug
+      CODE_COVERAGE: true
+      DOCKER_IMAGE_TAG: ${{ needs.is_not_draft_pull_request.outputs.DOCKER_IMAGE_TAG }}
+      DOCKER_REPOSITORY: geosx/ubuntu22.04-gcc11
+      ENABLE_HYPRE: ON
+      ENABLE_TRILINOS: OFF
+      GCP_BUCKET: geosx/ubuntu22.04-gcc11
+      RUNS_ON: Runner_4core_16GB
+
+  # mac_builds:
+  #   needs:
+  #     - is_not_draft_pull_request
+  #   runs-on: macos-14-xlarge
+  #   steps:
+  #     - run: sysctl -n hw.physicalcpu
+  #     - run: sysctl -h hw.memsize
+  #     - run: sysctl -n machdep.cpu.brand_string
+
+
+  # If the 'ci: run CUDA builds' PR label is found, the cuda jobs run immediately along side linux jobs.
+  # Note: CUDA jobs should only be run if PR is ready to merge.
+  cuda_builds:
+    name: ${{ matrix.name }}
+    needs:
+      - is_not_draft_pull_request
+    strategy:
+      # In-progress jobs will not be cancelled if there is a failure
+      fail-fast : false
+      matrix:
+        include:
+          - name: Ubuntu CUDA debug (20.04, clang 10.0.0 + gcc 9.4.0, open-mpi 4.0.3, cuda-11.8.89)
+            BUILD_AND_TEST_CLI_ARGS: "--build-exe-only --no-install-schema"
+            CMAKE_BUILD_TYPE: Debug
+            DOCKER_REPOSITORY: geosx/ubuntu20.04-clang10.0.0-cuda11.8.89
+            ENABLE_HYPRE_DEVICE: CUDA
+            ENABLE_HYPRE: ON
+            ENABLE_TRILINOS: OFF
+            RUNS_ON: streak2
+            NPROC: 8
+            DOCKER_RUN_ARGS: "--cpus=8 --memory=128g --runtime=nvidia -v /etc/pki/ca-trust/source/anchors/:/usr/local/share/ca-certificates/llnl:ro"
+            DOCKER_CERTS_DIR: "/usr/local/share/ca-certificates"
+            DOCKER_CERTS_UPDATE_COMMAND: "update-ca-certificates"
+      
+          - name: Ubuntu CUDA (20.04, clang 10.0.0 + gcc 9.4.0, open-mpi 4.0.3, cuda-11.8.89)
+            BUILD_AND_TEST_CLI_ARGS: "--no-install-schema"
+            CMAKE_BUILD_TYPE: Release
+            DOCKER_REPOSITORY: geosx/ubuntu20.04-clang10.0.0-cuda11.8.89
+            ENABLE_HYPRE_DEVICE: CUDA
+            ENABLE_HYPRE: ON
+            ENABLE_TRILINOS: OFF
+            RUNS_ON: streak
+            NPROC: 8
+            DOCKER_RUN_ARGS: "--cpus=8 --memory=256g --runtime=nvidia --gpus all -v /etc/pki/ca-trust/source/anchors/:/usr/local/share/ca-certificates/llnl:ro"
+            DOCKER_CERTS_DIR: "/usr/local/share/ca-certificates"
+            DOCKER_CERTS_UPDATE_COMMAND: "update-ca-certificates"
+          
+          # compiler error in ElasticFirstOrderWaveEquationSEMKernel::StressComputation::launch in call to FE_TYPE::computeFirstOrderStiffnessTermX
+          # - name: Rockylinux (8, clang 17.0.6, cuda 12.5)
+          #   BUILD_AND_TEST_CLI_ARGS: "--no-run-unit-tests --no-install-schema"
+          #   CMAKE_BUILD_TYPE: Release
+          #   DOCKER_REPOSITORY: geosx/rockylinux8-clang17-cuda12.5
+          #   RUNS_ON: streak2
+          #   NPROC: 2
+          #   DOCKER_RUN_ARGS: "--cpus=1 --memory=128g --runtime=nvidia -v /etc/pki/ca-trust/source/anchors/:/etc/pki/ca-trust/source/anchors/llnl:ro"
+          #   DOCKER_CERTS_DIR: "/etc/pki/ca-trust/source/anchors"
+          #   DOCKER_CERTS_UPDATE_COMMAND: "update-ca-trust"
+          
+          # compiler error in ElasticFirstOrderWaveEquationSEMKernel::StressComputation::launch in call to FE_TYPE::computeFirstOrderStiffnessTermX
+          # - name: Rockylinux (8, gcc 8.5, cuda 12.5)
+          #   BUILD_AND_TEST_CLI_ARGS: "--no-run-unit-tests --no-install-schema"
+          #   CMAKE_BUILD_TYPE: Release
+          #   DOCKER_REPOSITORY: geosx/rockylinux8-gcc8-cuda12.5
+          #   RUNS_ON: streak2
+          #   NPROC: 2
+          #   DOCKER_RUN_ARGS: "--cpus=1 --memory=128g --runtime=nvidia -v /etc/pki/ca-trust/source/anchors/:/etc/pki/ca-trust/source/anchors/llnl:ro"
+          #   DOCKER_CERTS_DIR: "/etc/pki/ca-trust/source/anchors"
+          #   DOCKER_CERTS_UPDATE_COMMAND: "update-ca-trust"  
+
+          # Below this line, jobs that deploy to Google Cloud.
+          - name: Sherlock GPU (centos 7.9.2009, gcc 10.1.0, open-mpi 4.1.2, openblas 0.3.10, cuda 11.7.1,)
+            BUILD_AND_TEST_CLI_ARGS: "--no-run-unit-tests --no-install-schema"
+            CMAKE_BUILD_TYPE: Release
+            DOCKER_REPOSITORY: geosx/sherlock-gcc10.1.0-openmpi4.1.2-cuda11.7.1-openblas0.3.10-zlib1.2.11
+            ENABLE_HYPRE_DEVICE: CUDA
+            ENABLE_HYPRE: ON
+            ENABLE_TRILINOS: OFF
+            GCP_BUCKET: geosx/Sherlock-GPU
+            HOST_CONFIG: host-configs/Stanford/sherlock-gcc10-ompi4.1.2-openblas0.3.10-cuda11.7.1-sm70.cmake
+            RUNS_ON: streak2
+            NPROC: 8
+            DOCKER_RUN_ARGS: "--cpus=8 --memory=128g --runtime=nvidia -v /etc/pki/ca-trust/source/anchors/:/etc/pki/ca-trust/source/anchors/llnl:ro"
+            DOCKER_CERTS_DIR: "/etc/pki/ca-trust/source/anchors"
+            DOCKER_CERTS_UPDATE_COMMAND: "update-ca-trust"
+
+    uses: ./.github/workflows/build_and_test.yml
+    with:
+      BUILD_AND_TEST_CLI_ARGS: ${{ matrix.BUILD_AND_TEST_CLI_ARGS }}
+      CMAKE_BUILD_TYPE: ${{ matrix.CMAKE_BUILD_TYPE }}
+      DOCKER_CERTS_DIR: ${{ matrix.DOCKER_CERTS_DIR }}
+      DOCKER_CERTS_UPDATE_COMMAND: ${{ matrix.DOCKER_CERTS_UPDATE_COMMAND }}
+      DOCKER_IMAGE_TAG: ${{ needs.is_not_draft_pull_request.outputs.DOCKER_IMAGE_TAG }}
+      DOCKER_REPOSITORY: ${{ matrix.DOCKER_REPOSITORY }}
+      DOCKER_RUN_ARGS: ${{ matrix.DOCKER_RUN_ARGS }}
+      ENABLE_HYPRE_DEVICE: ${{ matrix.ENABLE_HYPRE_DEVICE }}
+      ENABLE_HYPRE: ${{ matrix.ENABLE_HYPRE }}
+      ENABLE_TRILINOS: ${{ matrix.ENABLE_TRILINOS }}
+      GCP_BUCKET: ${{ matrix.GCP_BUCKET }}
+      HOST_CONFIG: ${{ matrix.HOST_CONFIG }}
+      NPROC: ${{ matrix.NPROC }}
+      RUNS_ON: ${{ matrix.RUNS_ON }}
+      REQUIRED_LABEL: "ci: run CUDA builds"
+    secrets: inherit
+
+  # Convenience job - passes when all other jobs have passed (must pass the CUDA jobs).
+  check_that_all_jobs_succeeded:
+    runs-on: ubuntu-22.04
+    needs:
+    - if_not_unassigned_pull_request
+    - are_submodules_in_sync
+    - check_code_style_and_documentation
+    - cpu_builds
+    - cuda_builds
+    - run_integrated_tests
+    if: ${{ always() }}
+    steps:
+    - run: |
+        echo "if_not_unassigned_pull_request: ${{needs.if_not_unassigned_pull_request.result}}"
+        echo "are_submodules_in_sync: ${{needs.are_submodules_in_sync.result}}"
+        echo "check_code_style_and_documentation: ${{needs.check_code_style_and_documentation.result}}"
+        echo "cpu_builds: ${{needs.cpu_builds.result}}"
+        echo "cuda_builds: ${{needs.cuda_builds.result}}"
+        echo "run_integrated_tests: ${{needs.run_integrated_tests.result}} "
+        ${{
+          needs.if_not_unassigned_pull_request.result == 'success' &&
+          needs.are_submodules_in_sync.result == 'success' &&
+          needs.check_code_style_and_documentation.result == 'success' &&
+          needs.cpu_builds.result == 'success' &&
+          needs.cuda_builds.result == 'success' && 
+          needs.run_integrated_tests.result == 'success'
+        }}

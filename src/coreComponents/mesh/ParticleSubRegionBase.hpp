@@ -150,7 +150,7 @@ public:
   arrayView1d< real64 > getParticlePorosity()
   { return m_particlePorosity; }
 
-    /**
+   /**
    * @brief Get the temperature of each particle in this subregion.
    * @return an arrayView1d of const particle temperature
    */
@@ -222,19 +222,6 @@ public:
    */
   arrayView2d< real64 > getParticleVelocity()
   { return m_particleVelocity; }
-
-  /**
-   * @brief Get the acceleration of each particle in this subregion.
-   * @return an arrayView1d of const particle accelerations
-   */
-  arrayView2d< real64 const > getParticleAcceleration() const
-  { return m_particleAcceleration; }
-
-  /**
-   * @copydoc getParticleAcceleration() const
-   */
-  arrayView2d< real64 > getParticleAcceleration()
-  { return m_particleAcceleration; }  
 
   /**
    * @brief Get the material direction of each particle in this subregion.
@@ -313,19 +300,6 @@ public:
    */
   arrayView2d< real64 > getParticleSurfaceTraction()
   { return m_particleSurfaceTraction; }
-
-  /**
-   * @brief Get the distance to crack tip of each particle in this subregion.
-   * @return an arrayView1d of const particle distances to crack tip
-   */
-  arrayView1d< real64 const > getParticleDistanceToCrackTip() const
-  { return m_particleDistanceToCrackTip; }
-
-  /**
-   * @copydoc getParticleDistanceToCrackTip() const
-   */
-  arrayView1d< real64 > getParticleDistanceToCrackTip()
-  { return m_particleDistanceToCrackTip; }  
 
   /**
    * @brief Get the group in which the constitutive models of this subregion are registered.
@@ -441,7 +415,7 @@ public:
     /// @return String key for the member level field for the particle porosity.
     static constexpr char const * particlePorosityString() { return "particlePorosity"; }
 
-        /// @return String key for the member level field for the particle temperature.
+    /// @return String key for the member level field for the particle temperature.
     static constexpr char const * particleTemperatureString() { return "particleTemperature"; }
 
     /// @return String key for the member level field for the particle strength scale.
@@ -455,9 +429,6 @@ public:
 
     /// @return String key for the member level field for the particle velocity.
     static constexpr char const * particleVelocityString() { return "particleVelocity"; }
-
-    /// @return String key for the member level field for the particle acceleration.
-    static constexpr char const * particleAccelerationString() { return "particleAcceleration"; }    
 
     /// @return String key for the member level field for the particle material direction.
     static constexpr char const * particleMaterialDirectionString() { return "particleMaterialDirection"; }
@@ -476,9 +447,6 @@ public:
   
     /// @return String key for the member level field for the particle surface traction.
     static constexpr char const * particleSurfaceTractionString() { return "particleSurfaceTraction"; }
-
-    /// @return String key for the member level field for the particle distance to crack tip.
-    static constexpr char const * particleDistanceToCrackTipString() { return "particleDistanceToCrackTip"; }  
   };
 
   /**
@@ -587,9 +555,6 @@ protected:
   /// Member level field for the particle velocity.
   array2d< real64 > m_particleVelocity;
 
-  /// Member level field for the particle acceleration.
-  array2d< real64 > m_particleAcceleration;
-
   /// Member level field for the particle material direction.
   array2d< real64 > m_particleMaterialDirection;
 
@@ -619,9 +584,6 @@ protected:
 
   /// Neighbor list
   OrderedVariableToManyParticleRelation m_neighborList;
-
-  /// Member level field for the particle distance to crack tip.
-  array1d< real64 > m_particleDistanceToCrackTip;
 
 };
 

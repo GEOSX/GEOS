@@ -1,19 +1,50 @@
 {
     "build": {
-        "dockerfile": "Dockerfile"
+        "dockerfile": "Dockerfile",
+        "args": {
+            "GEOS_TPL_TAG": "275-480"
+        }
     },
     "runArgs": [
-        "--cap-add=ALL"
+        "--cap-add=SYS_PTRACE",
+        "--security-opt",
+        "seccomp=unconfined"
     ],
     "customizations": {
         "vscode": {
             "extensions": [
-                "ms-vscode.cpptools-extension-pack",
-                "GitHub.vscode-pull-request-github",
                 "eamodio.gitlens",
                 "fredericbonnet.cmake-test-adapter",
+                "GitHub.vscode-github-actions",
+                "GitHub.vscode-pull-request-github",
+                "ms-vscode.cpptools-extension-pack",
                 "redhat.vscode-xml"
             ]
+        },
+        "codespaces": {
+            "repositories": {
+                "GEOS-DEV/hdf5_interface": {
+                    "permissions": {
+                        "contents": "write"
+                    }
+                },
+                "GEOS-DEV/integratedTests": {
+                    "permissions": {
+                        "contents": "write"
+                    }
+                },
+                "GEOS-DEV/LvArray": {
+                    "permissions": {
+                        "contents": "write"
+                    }
+                },
+                "GEOS-DEV/PVTPackage": {
+                    "permissions": {
+                        "contents": "write"
+                    }
+                }
+            },
+            "openFiles": []
         }
     },
     "features": {
@@ -21,5 +52,5 @@
             "version": "latest"
         }
     },
-    "postCreateCommand": "/usr/bin/ln -s /workspaces/GEOS/.vscode-codespaces /workspaces/GEOS/.vscode"
+    "postCreateCommand": "bash .devcontainer/postCreateCommand.sh"
 }

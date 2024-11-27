@@ -52,9 +52,18 @@ Geomechanics::Geomechanics( string const & name, Group * const parent ):
   m_cr( 0.0 ),
   m_fluidBulkModulus(0.0 ),
   m_fluidInitialPressure( 0.0 ),
-  m_creep( 0 ),
+  m_enableCreep( 0 ),
   m_creepC0( 0.0),
   m_creepC1( 0.0 ),
+  m_creepA( 0.0 ),
+  m_creepB( 0.0 ),
+  m_creepC( 0.0 ),
+  m_strainHardeningN( 0.0 ),
+  m_strainHardeningK( 0.0 ),
+  m_plasticStrainTolerance( 1.0e-10 ),
+  m_stressReturnTolerance( 1.0e-6 ),
+  m_maxAllowedSubcycles( 256 ),
+  m_failedStepResponse( 0 ),
   m_bulkModulus(),
   m_shearModulus(),
   m_velocityGradient(),
@@ -163,7 +172,7 @@ Geomechanics::Geomechanics( string const & name, Group * const parent ):
     setInputFlag( InputFlags::REQUIRED ).
     setDescription( "Nonassociativity parameter" );
 
-  registerWrapper( viewKeyStruct::creepString(), &m_creep ).
+  registerWrapper( viewKeyStruct::creepString(), &m_enableCreep ).
     setInputFlag( InputFlags::OPTIONAL ).
     setDescription( "Creep flag" );
 
@@ -174,6 +183,42 @@ Geomechanics::Geomechanics( string const & name, Group * const parent ):
   registerWrapper( viewKeyStruct::creepC1String(), &m_creepC1 ).
     setInputFlag( InputFlags::OPTIONAL ).
     setDescription( "Creep C1 parameter" );
+
+  registerWrapper( viewKeyStruct::creepAString(), &m_creepA ).
+    setInputFlag( InputFlags::OPTIONAL ).
+    setDescription( "Creep A parameter" );
+  
+  registerWrapper( viewKeyStruct::creepBString(), &m_creepB ).
+    setInputFlag( InputFlags::OPTIONAL ).
+    setDescription( "Creep B parameter" );
+
+  registerWrapper( viewKeyStruct::creepCString(), &m_creepC ).
+    setInputFlag( InputFlags::OPTIONAL ).
+    setDescription( "Creep C parameter" );
+
+  registerWrapper( viewKeyStruct::strainHardeningNString(), &m_strainHardeningN ).
+    setInputFlag( InputFlags::OPTIONAL ).
+    setDescription( "Strain Hardening n parameter" );
+
+  registerWrapper( viewKeyStruct::strainHardeningKString(), &m_strainHardeningK ).
+    setInputFlag( InputFlags::OPTIONAL ).
+    setDescription( "Strain Hardening K parameter" );
+
+  registerWrapper( viewKeyStruct::plasticStrainToleranceString(), &m_plasticStrainTolerance ).
+    setInputFlag( InputFlags::OPTIONAL ).
+    setDescription( "Tolerance in the volumetric plastic strain consistency bisection - units of strain" );
+
+  registerWrapper( viewKeyStruct::stressReturnToleranceString(), &m_stressReturnTolerance ).
+    setInputFlag( InputFlags::OPTIONAL ).
+    setDescription( "Dimensionless precision of the non-hardening return relative to the trial stress increment" );
+
+  registerWrapper( viewKeyStruct::maxAllowedSubcyclesString(), &m_maxAllowedSubcycles ).
+    setInputFlag( InputFlags::OPTIONAL ).
+    setDescription( "Number of subcycles allowed before step is deemed to fail" );
+
+  registerWrapper( viewKeyStruct::failedStepResponseString(), &m_failedStepResponse ).
+    setInputFlag( InputFlags::OPTIONAL ).
+    setDescription( "Treatment if step fails, 0: accept solution, 1: log error and continue, 2: abort run, 3: log error and delete particle" );
 
   // register fields
   registerWrapper( viewKeyStruct::bulkModulusString(), &m_bulkModulus ).
@@ -232,34 +277,33 @@ void Geomechanics::allocateConstitutiveData( dataRepository::Group & parent,
 void Geomechanics::postInputInitialization()
 {
     SolidBase::postInputInitialization();
-
-    // GEOS_THROW_IF( m_b0 <= 0.0, "b0 must be greater than 0", InputError );
+    GEOS_THROW_IF( m_b0 <= 0.0, "b0 must be greater than 0", InputError );
     // GEOS_THROW_IF( m_b1 <= 0.0, "b1 must be greater than 0", InputError );
     // GEOS_THROW_IF( m_b2 <= 0.0, "b2 must be greater than 0", InputError );
     // GEOS_THROW_IF( m_b3 <= 0.0, "b3 must be greater than 0", InputError );
     // GEOS_THROW_IF( m_b4 <= 0.0, "b4 must be greater than 0", InputError );
 
-    // GEOS_THROW_IF( m_g0 <= 0.0, "g0 must be greater than 0", InputError );
+    GEOS_THROW_IF( m_g0 < 0.0, "g0 must be greater than or equalt to 0", InputError );
     // GEOS_THROW_IF( m_g1 <= 0.0, "g1 must be greater than 0", InputError );
     // GEOS_THROW_IF( m_g2 <= 0.0, "g2 must be greater than 0", InputError );
     // GEOS_THROW_IF( m_g3 <= 0.0, "g3 must be greater than 0", InputError );
     // GEOS_THROW_IF( m_g4 <= 0.0, "g4 must be greater than 0", InputError );
 
-    // GEOS_THROW_IF( m_p0 <= 0.0, "p0 must be greater than 0", InputError );
+    GEOS_THROW_IF( m_p0 > 0.0, "p0 must be less than 0", InputError );
     // GEOS_THROW_IF( m_p1 <= 0.0, "p1 must be greater than 0", InputError );
     // GEOS_THROW_IF( m_p2 <= 0.0, "p2 must be greater than 0", InputError );
-    // GEOS_THROW_IF( m_p3 <= 0.0, "p3 must be greater than 0", InputError );
+    GEOS_THROW_IF( m_p3 <= 0.0, "p3 must be greater than 0", InputError );
     // GEOS_THROW_IF( m_p4 <= 0.0, "p4 must be greater than 0", InputError );
 
     // GEOS_THROW_IF( m_peakT1 <= 0.0, "peakT1 must be greater than 0", InputError );
-    // GEOS_THROW_IF( m_fSlope <= 0.0, "fSlope must be greater than 0", InputError );
+    GEOS_THROW_IF( m_fSlope < 0.0, "fSlope must be greater than 0", InputError );
     // GEOS_THROW_IF( m_ySlope <= 0.0, "ySlope must be greater than 0", InputError );
     // GEOS_THROW_IF( m_stren <= 0.0, "stren must be greater than 0", InputError );
-    // GEOS_THROW_IF( m_beta <= 0.0, "beta must be greater than 0", InputError );
+    GEOS_THROW_IF( m_beta <= 0.0, "beta must be greater than 0", InputError );
     // GEOS_THROW_IF( m_t1RateDependence <= 0.0, "t1RateDependence must be greater than 0", InputError );
     // GEOS_THROW_IF( m_t2RateDependence <= 0.0, "t2RateDependence must be greater than 0", InputError );
     // GEOS_THROW_IF( m_fractureEnergyReleaseRate <= 0.0, "fractureEnergyReleaseRate must be greater than 0", InputError );
-    // GEOS_THROW_IF( m_cr <= 0.0, "cr must be greater than 0", InputError );
+    GEOS_THROW_IF( m_cr <= 0.0, "cr must be 0 < CR < 1", InputError );
     // GEOS_THROW_IF( m_fluidBulkModulus <= 0.0, "fluidBulkModulus must be greater than 0", InputError );
     // GEOS_THROW_IF( m_initialFluidPressure <= 0.0, "initialFluidPressure must be greater than 0", InputError );
 }
