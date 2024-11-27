@@ -23,6 +23,8 @@
 #include "common/DataTypes.hpp"
 #include "TableTypes.hpp"
 #include <variant>
+#include "common/logger/Logger.hpp"
+
 
 namespace geos
 {
@@ -71,6 +73,9 @@ public:
     /// Cell alignment (left, right, center)
     Alignment alignment;
     size_t maxDataLength;
+    ///
+    size_t cellWidth = 0;
+
 
     /**
      * @brief Constructor to initialize a Cell with a specific type and value.
@@ -83,6 +88,8 @@ public:
      * @param val The value to be assigned to the cell.
      */
     CellLayout( CellType t, string const & val, TableLayout::Alignment alignment );
+
+    void setMaxCellSize( size_t size );
   };
 
   /**
@@ -138,21 +145,28 @@ public:
      * @param subColName
      * @return Column&
      */
-    Column & addSubColumns( std::vector< string > const & subColName );
+    TableLayout::Column & addSubColumns( std::initializer_list< string > subColName );
+
+    /**
+     * @brief
+     * @param subColName
+     * @return Column&
+     */
+    TableLayout::Column & addSubColumns( string const & subColName );
 
     /**
      * @brief Set the Header Alignment object
      * @param headerAlignment
      * @return Column&
      */
-    Column & setHeaderAlignment( Alignment headerAlignment );
+    TableLayout::Column & setHeaderAlignment( Alignment headerAlignment );
 
     /**
      * @brief Set the Values Alignment object
      * @param valueAlignment
      * @return Column&
      */
-    Column & setValuesAlignment( Alignment valueAlignment );
+    TableLayout::Column & setValuesAlignment( Alignment valueAlignment );
 
     /**
      * @brief
@@ -180,12 +194,13 @@ private:
   /**_est columns / sub columns.
    * An exemple of an iteration: A -> B.A -> B.B -> B.C -> C.A.A -> C.A.B -> C.B.A -> C.B.B -> D
    */
-
   class LeafIterator
   {
 public:
-    LeafIterator( Column const * columnPtr ):
-      m_currentColumn( columnPtr )
+    using ColumnType = Column;
+
+    LeafIterator( ColumnType * columnPtr, size_t idxLayer ):
+      m_currentColumn( columnPtr ), m_currentLayer( idxLayer )
     {}
 
 
@@ -200,13 +215,19 @@ public:
     {
       if( m_currentColumn->m_next != nullptr )
       {
-        // chercher le dernier sous-enfant du suivant
+        // chercher le dernier sous-enfant du suivant //todo
         m_currentColumn = m_currentColumn->m_next;
-        while( m_currentColumn->hasChild() ) m_currentColumn = &m_currentColumn->subColumn[0];
+        while( m_currentColumn->hasChild() )
+        {
+          m_currentLayer++;
+          m_currentColumn = &m_currentColumn->subColumn[0];
+        }
       }
       else
       {
-        m_currentColumn = m_currentColumn->m_parent != nullptr ? m_currentColumn->m_parent : nullptr;
+        bool const hasParent = (m_currentColumn->m_parent != nullptr);
+        m_currentLayer -= size_t( hasParent );
+        m_currentColumn = hasParent ? m_currentColumn->m_parent : nullptr;
       }
 
       return *this;
@@ -220,12 +241,12 @@ public:
     //   return iterator;
     // }
 
-    Column const & operator*()
+    ColumnType & operator*()
     {
       return *m_currentColumn;
     }
 
-    Column const * operator->()
+    ColumnType * operator->()
     {
       return m_currentColumn;
     }
@@ -239,29 +260,41 @@ public:
       return a.m_currentColumn != b.m_currentColumn;
     };
 
+    size_t getCurrentLayer() const
+    {
+      return m_currentLayer;
+    }
+
 private:
-    Column const * m_currentColumn;
+    ColumnType * m_currentColumn;
+    size_t m_currentLayer;
   };
 
   LeafIterator beginLeaf()
   {
-    Column const * startColumn = &(*m_tableColumnsData.begin());
+    Column * startColumn = &(*m_tableColumnsData.begin());
+    size_t idxLayer = 0;
     if( startColumn->hasChild() )
     {
-      while( startColumn->hasChild() ) startColumn = &startColumn->subColumn[0];
+      while( startColumn->hasChild() )
+      {
+        idxLayer++;
+        startColumn = &startColumn->subColumn[0];
+      }
     }
-    return LeafIterator( startColumn );
+    return LeafIterator( startColumn, idxLayer );
   }
 
-  LeafIterator endLeaf() { return LeafIterator( &(*m_tableColumnsData.end()) );}
+  LeafIterator endLeaf() { return LeafIterator( &(*m_tableColumnsData.end()), 0 );}
 
   //
-
   class RootIterator
   {
 public:
-    RootIterator( Column const * columnPtr ) noexcept:
-      m_currentColumn( columnPtr ), m_checkpointColumn( 0, nullptr )
+    using ColumnType = Column;
+
+    RootIterator( ColumnType * columnPtr ) noexcept:
+      m_currentColumn( columnPtr )
     {}
 
 
@@ -275,7 +308,6 @@ public:
     {
       if( m_currentColumn->hasChild())
       {
-        this->setCheckpoint( m_currentColumn );
         m_currentColumn = &m_currentColumn->subColumn[0];
       }
       else
@@ -284,20 +316,19 @@ public:
         {
           m_currentColumn = m_currentColumn->m_next;
         }
+        else if( m_currentColumn->m_parent->m_next == nullptr )
+        {
+          return *this;
+        }
         else
         {
-          while( this->hasCheckPoint() && this->getLastCheckPoint()->m_next == nullptr )
+          while( this->m_currentColumn->m_parent->m_next == nullptr )
           {
-            m_currentColumn = this->getLastCheckPoint();
-            m_checkpointColumn.pop_back();
-          }
-          if( this->hasCheckPoint() )
-          {
-            m_currentColumn = this->getLastCheckPoint()->m_next;
-            m_checkpointColumn.pop_back();
+            m_currentColumn = m_currentColumn->m_parent->m_next;
           }
         }
       }
+
       return *this;
     }
 
@@ -309,12 +340,12 @@ public:
     //   return iterator;
     // }
 
-    Column const & operator*()
+    ColumnType & operator*()
     {
       return *m_currentColumn;
     }
 
-    Column const * operator->()
+    ColumnType * operator->()
     {
       return m_currentColumn;
     }
@@ -328,35 +359,15 @@ public:
       return a.m_currentColumn != b.m_currentColumn;
     };
 
-    Column const * getLastCheckPoint() const
-    {
-      if( !m_checkpointColumn.empty())
-        return m_checkpointColumn.back();
-      return nullptr;
-    }
-
-    RootIterator & setCheckpoint( Column const * column )
-    {
-      this->m_checkpointColumn.push_back( column );
-      return *this;
-    }
-
-    bool hasCheckPoint()
-    {
-      return m_checkpointColumn.empty();
-    }
-
 private:
-    Column const * m_currentColumn;
-    std::vector< Column const * > m_checkpointColumn;
+    ColumnType * m_currentColumn;
   };
 
-  RootIterator beginRoot()
-  {return RootIterator( &(*m_tableColumnsData.begin()) );}
+  RootIterator beginRoot() { return RootIterator( &(*m_tableColumnsData.begin()) ); }
 
   RootIterator endRoot()
   {
-    Column const * startColumn = &(*m_tableColumnsData.end());
+    Column * startColumn = &(*m_tableColumnsData.end());
     if( startColumn->hasChild() )
     {
       while( startColumn->hasChild() )
@@ -380,6 +391,9 @@ private:
   using TableLayoutArgs = std::initializer_list< std::variant< string_view, TableLayout::Column > >;
 
   TableLayout() = default;
+
+  // delete copy construct//todo
+  //default move construct//tdo
 
   /**
    * @brief Construct a new Table Layout object
@@ -516,14 +530,16 @@ private:
   {
     for( auto const & arg : args )
     {
-      std::visit( [this]( auto & value ) {
-        addToColumns( value );
-      }, arg );
+      std::visit( [this]( auto const & value ) {
+                  addToColumns( value );
+        }
+      , arg );
     }
   }
 
   /**
-   * @brief Recursively processes a variable number of arguments and adds them to the table data.
+   * @brief
+   *
    * @tparam Ts The remaining arguments
    * @param args The remaining arguments to be processed
    */
@@ -546,10 +562,11 @@ private:
   void addToColumns( string_view columnName );
 
 /**
+ * 
  * @brief Create and add a column to the columns vector given a Column
  * @param column Vector containing addition information on the column
  */
-  void addToColumns( Column & column );
+  void addToColumns( TableLayout::Column const & column );
 
   std::vector< Column > m_tableColumnsData;
   // m_valueRows[0] = header then 1 line = 1 row.

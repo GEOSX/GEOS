@@ -179,7 +179,7 @@ void TableData::addRow( Args const &... args )
       }
       else
       {
-        cells.push_back( {CellType::MERGE, " "} );
+        cells.push_back( {CellType::Merge, " "} );
       }
     }
     else

@@ -22,9 +22,9 @@
 namespace geos
 {
 
-void TableLayout::addToColumns( const std::vector< string > & columnNames )
+void TableLayout::addToColumns( std::vector< string > const & columnNames )
 {
-  for( const auto & columnName : columnNames )
+  for( auto const & columnName : columnNames )
   {
     addToColumns( columnName );
   }
@@ -33,19 +33,11 @@ void TableLayout::addToColumns( const std::vector< string > & columnNames )
 void TableLayout::addToColumns( string_view columnName )
 {
   TableLayout::Column column = TableLayout::Column().setName( columnName );
-  if( !m_tableColumnsData.empty( ))
-  {
-    m_tableColumnsData.end()->m_next = &column;
-  }
   m_tableColumnsData.push_back( column );
 }
 
-void TableLayout::addToColumns( TableLayout::Column & column )
+void TableLayout::addToColumns( TableLayout::Column const & column )
 {
-  if( !m_tableColumnsData.empty( ))
-  {
-    m_tableColumnsData.end()->m_next = &column;
-  }
   m_tableColumnsData.push_back( column );
 }
 
@@ -98,11 +90,11 @@ void TableLayout::removeSubColumn()
 
 size_t TableLayout::getMaxHeaderRow() const
 {
-  size_t depthMax = 1;
-  size_t currDepth = 1;
+  size_t depthMax = 0;
+  size_t currDepth = 0;
   for( auto const & column : m_tableColumnsData )
   {
-    currDepth = 1;
+    currDepth = 0;
     TableLayout::Column const * currColumn = &column;
     while( !currColumn->subColumn.empty())
     {
@@ -169,6 +161,11 @@ TableLayout::CellLayout::CellLayout( CellType type, string const & cellValue, Ta
   } )->length();
 }
 
+void TableLayout::CellLayout::setMaxCellSize( size_t size )
+{
+  maxDataLength = size;
+}
+
 
 //
 // COLUMN
@@ -214,21 +211,24 @@ size_t TableLayout::Column::getMaxStringSize() const
   return maxStringSize;
 }
 
-TableLayout::Column & TableLayout::Column::addSubColumns( std::vector< string > const & subColName )
+TableLayout::Column & TableLayout::Column::addSubColumns( std::initializer_list< string > subColName )
 {
   std::vector< TableLayout::Column > subColumns;
   for( auto const & name : subColName )
   {
     TableLayout::CellLayout cell{CellType::Header, name, TableLayout::Alignment::center};
     TableLayout::Column col{cell};
-    col.m_parent = this;
-    if( !subColumns.empty())
-    {
-      subColumns.end()->m_next = &col;
-    }
     subColumns.emplace_back( col );
   }
   subColumn = subColumns;
+  return *this;
+}
+
+TableLayout::Column & TableLayout::Column::addSubColumns( string const & subColName )
+{
+  TableLayout::CellLayout cell{CellType::Header, subColName, TableLayout::Alignment::center};
+  TableLayout::Column col{cell};
+  this->subColumn.push_back( col );
   return *this;
 }
 

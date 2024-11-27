@@ -28,7 +28,7 @@ namespace geos
 
 enum class CellType : char
 {
-  MERGE = '\x01',
+  Merge = '\x01',
   SEPARATOR = '\x02',
   Header = '\x03',
   Value = '\x04',

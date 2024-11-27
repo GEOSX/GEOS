@@ -32,9 +32,12 @@ namespace geos
 class TableFormatter
 {
 
-protected:
+public:
   using RowsCellInput = std::vector< std::vector< TableData::CellData > >;
   using RowsCellLayout = std::vector< std::vector< TableLayout::CellLayout > >;
+
+
+protected:
 
   /// Layout for a table
   TableLayout m_tableLayout;
@@ -164,7 +167,8 @@ private:
    * @param sectionSeparatingLine Separator string used between sections of the table
    * @param topSeparator The table top separator
    */
-  void prepareAndBuildTable( TableData const & tableData,
+  void initalizeTableLayout( TableLayout & tableLayout,
+                             TableData const & tableData,
                              RowsCellLayout & cellsDataLayout,
                              RowsCellLayout & cellsHeaderLayout,
                              string & sectionSeparatingLine,
@@ -176,7 +180,8 @@ private:
  * @param sectionSeparatingLine Separator string used between sections of the table
  * @param topSeparator The table top separator
  */
-  void outputTable( std::ostringstream & tableOutput,
+  void outputTable( TableLayout & tableLayout,
+                    std::ostringstream & tableOutput,
                     RowsCellLayout const & cellsHeader,
                     RowsCellLayout const & cellsData,
                     string_view sectionSeparatingLine,
@@ -186,12 +191,14 @@ private:
    * @brief Detect columns who are not displayed from TableLayout and therefore modify columns / inputDataRows vectors
    * @param inputDataRows Vector built in TableData containing all rows values
    */
-  void updateVisibleColumns( RowsCellInput & inputDataRows ) const;
+  void updateVisibleColumns( TableLayout & tableLayout,
+                             RowsCellInput & inputDataValues ) const;
 
   /**
    * @brief
    */
-  void gridifyHeaders();
+  void gridifyHeaders( TableLayout & tableLayout,
+                       RowsCellLayout & cellsDataLayout ) const;
 
   /**
    * @brief Populate all the tableColumnData values with values extracted from TableData.
@@ -199,9 +206,9 @@ private:
    * @param tableData Vector containing all rows filled with values
    * @param isSubColumn Boolean indicating if the current tableColumnData is a subcolumn
    */
-  void populateDataCellsLayout( RowsCellLayout & cellsDataLayout,
-                                TableData const & tableData ) const;
-
+  void populateDataCellsLayout( TableLayout & tableLayout,
+                                RowsCellLayout & cellsDataLayout,
+                                RowsCellInput & inputDataValues ) const;
 
   /**
    * @brief For each tableColumnData find and set the column's longest string
@@ -209,7 +216,7 @@ private:
    * @note Compares the longest string from the header with the longest string from the column values.
    * If the column contains subcolumns, it recursively applies the same logic to them
    */
-  void findAndSetLongestColumnString( TableLayout::Column & tableColumnData,
+  void findAndSetLongestColumnString( TableLayout & tableLayout,
                                       RowsCellLayout & cellsDataLayout ) const;
 
   /**
@@ -235,10 +242,12 @@ private:
    * @brief Output the title row in the table
    * @param topSeparator The top separator string
    */
-  void outputTitleRow( std::ostringstream & tableOutput,
+  void outputTitleRow( TableLayout & tableLayout,
+                       std::ostringstream & tableOutput,
                        string_view topSeparator ) const;
 
-  void formatCell( std::ostringstream & tableOutput,
+  void formatCell( TableLayout & tableLayout,
+                   std::ostringstream & tableOutput,
                    TableLayout::CellLayout const & cell ) const;
 
   /**
@@ -247,7 +256,8 @@ private:
    * @param tableOutput The output stream
    * @param sectionSeparatingLine Separator string used between sections of the table
    */
-  void outputLines( RowsCellLayout & cellsLayout,
+  void outputLines( TableLayout & tableLayout,
+                    RowsCellLayout const & cellsLayout,
                     std::ostringstream & tableOutput,
                     string_view sectionSeparatingLine ) const;
 };
