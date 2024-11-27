@@ -47,9 +47,9 @@ public:
   virtual ~OneWayCoupledTractionUpdate() = default;
 
   virtual real64 updateFaultTraction( real64 const & time_n,
-                                    real64 const & dt,
-                                    const int cycleNumber,
-                                    DomainPartition & domain ) const override final;
+                                      real64 const & dt,
+                                      const int cycleNumber,
+                                      DomainPartition & domain ) const override final;
 
 private:
 

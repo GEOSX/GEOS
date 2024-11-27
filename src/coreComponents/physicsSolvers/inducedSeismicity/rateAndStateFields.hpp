@@ -40,6 +40,14 @@ DECLARE_FIELD( slipRate,
                WRITE_AND_READ,
                "Slip rate" );
 
+DECLARE_FIELD( slipRate_n,
+               "slipRate_n",
+               array1d< real64 >,
+               1.0e-6,
+               NOPLOT,
+               WRITE_AND_READ,
+               "Slip rate at timestep n." );
+
 DECLARE_FIELD( stateVariable,
                "stateVariable",
                array1d< real64 >,

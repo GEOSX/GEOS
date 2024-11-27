@@ -26,7 +26,7 @@
 #include "physicsSolvers/contact/ContactFields.hpp"
 #include "fieldSpecification/FieldSpecificationManager.hpp"
 
-/// THIS is an alternative implementation to avoid the use of the TractionUpdateWrapper 
+/// THIS is an alternative implementation to avoid the use of the TractionUpdateWrapper
 
 namespace geos
 {
@@ -36,7 +36,7 @@ using namespace fields;
 using namespace constitutive;
 
 QuasiDynamicEQBase::QuasiDynamicEQBase( const string & name,
-                                Group * const parent ):
+                                        Group * const parent ):
   PhysicsSolverBase( name, parent ),
   m_stressSolver( nullptr ),
   m_stressSolverName( "SpringSlider" ),

@@ -12,7 +12,7 @@
       contactSolverName="stressSolver"
       flowSolverName="singlePhaseFlowSolver"
       tractionUpdateType="OneWayCoupled"
-      targetSlipIncrement="1.0e-4">
+      targetSlipIncrement="1.0e-5">
       <NonlinearSolverParameters
         newtonTol="1.0e-8"
         logLevel="2"
@@ -155,6 +155,14 @@
       scale="1.0e-12"
       setNames="{ all }"
       initialCondition="1"/>
+
+    <FieldSpecification
+      name="initialStateVariable"
+      objectPath="ElementRegions/Fault"
+      fieldName="stateVariable"
+      scale="0.68070857"
+      setNames="{ all }"
+      initialCondition="1"/>  
       
     <FieldSpecification
       name="slipVelocity1"

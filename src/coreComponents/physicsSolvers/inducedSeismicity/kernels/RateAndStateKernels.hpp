@@ -44,6 +44,7 @@ public:
     m_slipRate( subRegion.getField< fields::rateAndState::slipRate >() ),
     m_stateVariable( subRegion.getField< fields::rateAndState::stateVariable >() ),
     m_stateVariable_n( subRegion.getField< fields::rateAndState::stateVariable_n >() ),
+    m_slipRate_n( subRegion.getField< fields::rateAndState::slipRate_n >() ),
     m_traction( subRegion.getField< fields::contact::traction >() ),
     m_slipVelocity( subRegion.getField< fields::rateAndState::slipVelocity >() ),
     m_shearImpedance( shearImpedance ),
@@ -75,6 +76,7 @@ public:
   {
     real64 const normalTraction = m_traction[k][0];
     real64 const shearTractionMagnitude = LvArray::math::sqrt( m_traction[k][1] * m_traction[k][1] + m_traction[k][2] * m_traction[k][2] );
+
     // Eq 1: Scalar force balance for slipRate and shear traction magnitude
     stack.rhs[0] = shearTractionMagnitude - m_shearImpedance * m_slipRate[k]
                    - normalTraction * m_frictionLaw.frictionCoefficient( k, m_slipRate[k], m_stateVariable[k] );
@@ -99,26 +101,25 @@ public:
   {
     /// Solve 2x2 system
     real64 solution[2] = {0.0, 0.0};
-     LvArray::tensorOps::scale< 2 >( stack.rhs, -1.0 );
+    LvArray::tensorOps::scale< 2 >( stack.rhs, -1.0 );
     denseLinearAlgebra::solve< 2 >( stack.jacobian, stack.rhs, solution );
 
-     // Slip rate is bracketed between [0, shear traction magnitude / shear impedance] 
+    // Slip rate is bracketed between [0, shear traction magnitude / shear impedance]
     // Check that the update did not end outside of the bracket.
     real64 const shearTractionMagnitude = LvArray::math::sqrt( m_traction[k][1] * m_traction[k][1] + m_traction[k][2] * m_traction[k][2] );
     real64 const upperBound = shearTractionMagnitude / m_shearImpedance - m_slipRate[k];
-    real64 const lowerBound = - m_slipRate[k];
+    real64 const lowerBound = -m_slipRate[k];
 
     real64 scalingFactor = 1.0;
-    if ( solution[0] > upperBound ) 
+    if( solution[1] > upperBound )
     {
-      std::cout << "Slip rate update outside of bracket. Scaling solution." << std::endl;
-      scalingFactor = 0.5 * upperBound / solution[0];
-    }else if ( solution[0] < lowerBound )
-    {
-      std::cout << "Slip rate update outside of bracket [lowerBound]. Scaling solution." << std::endl;
-      scalingFactor = 0.5 * lowerBound / solution[0];
+      scalingFactor = 0.5 * upperBound / solution[1];
     }
-    
+    else if( solution[1] < lowerBound )
+    {
+      scalingFactor = 0.5 * lowerBound / solution[1];
+    }
+
     LvArray::tensorOps::scale< 2 >( solution, scalingFactor );
 
     // Update variables
@@ -137,6 +138,14 @@ public:
   }
 
   GEOS_HOST_DEVICE
+  void udpateVariables( localIndex const k ) const
+  {
+    projectSlipRate( k );
+    m_stateVariable_n[k] = m_stateVariable[k];
+    m_slipRate_n[k] = m_slipRate[k];
+  }
+
+  GEOS_HOST_DEVICE
   camp::tuple< int, real64 > checkConvergence( StackVariables const & stack,
                                                real64 const tol ) const
   {
@@ -146,13 +155,22 @@ public:
     return result;
   }
 
+  GEOS_HOST_DEVICE
+  void resetState( localIndex const k ) const
+  {
+    m_stateVariable[k] = m_stateVariable_n[k];
+    m_slipRate[k] = m_slipRate_n[k];
+  }
+
 private:
 
   arrayView1d< real64 > const m_slipRate;
 
   arrayView1d< real64 > const m_stateVariable;
 
-  arrayView1d< real64 const > const m_stateVariable_n;
+  arrayView1d< real64 > const m_stateVariable_n;
+
+  arrayView1d< real64 > const m_slipRate_n;
 
   arrayView2d< real64 const > const m_traction;
 
@@ -165,29 +183,12 @@ private:
 };
 
 
-
-/**
- * @brief Performs the kernel launch
- * @tparam POLICY the policy used in the RAJA kernels
- */
 template< typename POLICY >
-static void
-createAndLaunch( SurfaceElementSubRegion & subRegion,
-                 string const & frictionLawNameKey,
-                 real64 const shearImpedance,
-                 integer const maxNewtonIter,
-                 real64 const time_n,
-                 real64 const dt )
+static bool newtonSolve( SurfaceElementSubRegion & subRegion,
+                         RateAndStateKernel & kernel,
+                         real64 const dt,
+                         integer const maxNewtonIter )
 {
-  GEOS_MARK_FUNCTION;
-
-  GEOS_UNUSED_VAR( time_n );
-
-  string const & frictionaLawName = subRegion.getReference< string >( frictionLawNameKey );
-  constitutive::RateAndStateFriction const & frictionLaw = subRegion.getConstitutiveModel< constitutive::RateAndStateFriction >( frictionaLawName );
-  RateAndStateKernel kernel( subRegion, frictionLaw, shearImpedance );
-
-  // Newton loop (outside of the kernel launch)
   bool allConverged = false;
   for( integer iter = 0; iter < maxNewtonIter; iter++ )
   {
@@ -212,14 +213,82 @@ createAndLaunch( SurfaceElementSubRegion & subRegion,
       break;
     }
   }
-  if( !allConverged )
+  return allConverged;
+}
+
+template< typename POLICY >
+static real64 solveRateAndStateEquation( SurfaceElementSubRegion & subRegion,
+                                         RateAndStateKernel & kernel,
+                                         real64 dt,
+                                         integer const maxNewtonIter )
+{
+  bool converged = false;
+  for( integer attempt = 0; attempt < 5; attempt++ )
   {
-    GEOS_ERROR( " Failed to converge" );
+    if( attempt > 0 )
+    {
+      forAll< POLICY >( subRegion.size(), [=] GEOS_HOST_DEVICE ( localIndex const k )
+      {
+        kernel.resetState( k );
+      } );
+    }
+    GEOS_LOG_RANK_0( GEOS_FMT( "--attempt {} ", attempt ) );
+    converged = newtonSolve< POLICY >( subRegion, kernel, dt, maxNewtonIter );
+    if( converged )
+    {
+      forAll< POLICY >( subRegion.size(), [=] GEOS_HOST_DEVICE ( localIndex const k )
+      {
+        kernel.udpateVariables( k );
+      } );
+      return dt;
+    }
+    else
+    {
+      GEOS_LOG_RANK_0( GEOS_FMT( "--attempt {} failed. Halving dt and retrying.", attempt ) );
+      dt *= 0.5;
+    }
   }
-  forAll< POLICY >( subRegion.size(), [=] GEOS_HOST_DEVICE ( localIndex const k )
+  if( !converged )
   {
-    kernel.projectSlipRate( k );
-  } );
+    GEOS_ERROR( "Maximum number of attempts reached without convergence." );
+  }
+  return dt;
+}
+
+/**
+ * @brief Performs the kernel launch
+ * @tparam POLICY the policy used in the RAJA kernels
+ */
+template< typename POLICY >
+static void
+createAndLaunch( SurfaceElementSubRegion & subRegion,
+                 string const & frictionLawNameKey,
+                 real64 const shearImpedance,
+                 integer const maxNewtonIter,
+                 real64 const time_n,
+                 real64 const totalDt )
+{
+  GEOS_MARK_FUNCTION;
+
+  GEOS_UNUSED_VAR( time_n );
+
+  string const & frictionaLawName = subRegion.getReference< string >( frictionLawNameKey );
+  constitutive::RateAndStateFriction const & frictionLaw = subRegion.getConstitutiveModel< constitutive::RateAndStateFriction >( frictionaLawName );
+  RateAndStateKernel kernel( subRegion, frictionLaw, shearImpedance );
+
+  real64 dtRemaining = totalDt;
+  real64 dt = totalDt;
+  for( integer subStep = 0; subStep < 5 && dtRemaining > 0.0; ++subStep )
+  {
+    real64 dtAccepted = solveRateAndStateEquation< POLICY >( subRegion, kernel, dt, maxNewtonIter );
+    dtRemaining -= dtAccepted;
+
+    if( dtRemaining > 0.0 )
+    {
+      dt = dtAccepted;     
+    }
+    GEOS_LOG_RANK_0( GEOS_FMT( "-sub-step = {} completed, dt = {}, remaining dt = {}", subStep, dt, dtRemaining ) );
+  }
 }
 
 } /* namespace rateAndStateKernels */

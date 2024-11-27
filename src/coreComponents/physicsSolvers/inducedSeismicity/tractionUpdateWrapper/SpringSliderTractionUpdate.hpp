@@ -32,11 +32,11 @@ namespace inducedSeismicity
 class SpringSliderTractionUpdate : public FaultTractionUpdate< QuasiDynamicEQ >
 {
 
-friend PhysicsSolverBase;
+  friend PhysicsSolverBase;
 
 public:
-  
-   using Base = FaultTractionUpdate< QuasiDynamicEQ >;
+
+  using Base = FaultTractionUpdate< QuasiDynamicEQ >;
 
 
   SpringSliderTractionUpdate( QuasiDynamicEQ * qdSolver ):
@@ -57,7 +57,7 @@ public:
 public:
 
     GEOS_HOST_DEVICE
-    SpringSliderParameters( real64 const normalTraction, real64 const a, real64 const b, real64 const Dc ) :
+    SpringSliderParameters( real64 const normalTraction, real64 const a, real64 const b, real64 const Dc ):
       tauRate( 1e-4 ),
       springStiffness( 0.0 )
     {

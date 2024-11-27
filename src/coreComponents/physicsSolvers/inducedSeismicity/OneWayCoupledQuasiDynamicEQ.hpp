@@ -23,20 +23,20 @@
 namespace geos
 {
 
-class SpringSlider : public QuasiDynamicEQBase
+class OneWayCoupledQuasiDynamicEQ : public QuasiDynamicEQBase
 {
 public:
   /// The default nullary constructor is disabled to avoid compiler auto-generation:
-  SpringSlider() = delete;
+  OneWayCoupledQuasiDynamicEQ() = delete;
 
   /// The constructor needs a user-defined "name" and a parent Group (to place this instance in the tree structure of classes)
-  SpringSlider( const string & name,
-                Group * const parent );
+  OneWayCoupledQuasiDynamicEQ( const string & name,
+                               Group * const parent );
 
   /// Destructor
-  virtual ~SpringSlider() override;
+  virtual ~OneWayCoupledQuasiDynamicEQ() override;
 
-  static string catalogName() { return "SpringSlider"; }
+  static string catalogName() { return "OneWayCoupledQuasiDynamicEQ"; }
 
   /**
    * @return Get the final class Catalog name
@@ -52,8 +52,6 @@ public:
     constexpr static char const * frictionLawNameString() { return "frictionLawName"; }
   };
 
-
-
 private:
 
   real64 updateStresses( real64 const & time_n,
@@ -63,38 +61,7 @@ private:
 
   virtual void postInputInitialization() override;
 
-  class SpringSliderParameters
-  {
-public:
 
-    GEOS_HOST_DEVICE
-    SpringSliderParameters( real64 const normalTraction, real64 const a, real64 const b, real64 const Dc ):
-      tauRate( 1e-4 ),
-      springStiffness( 0.0 )
-    {
-      real64 const criticalStiffness = normalTraction * (b - a) / Dc;
-      springStiffness = 0.9 * criticalStiffness;
-    }
-
-    /// Default copy constructor
-    SpringSliderParameters( SpringSliderParameters const & ) = default;
-
-    /// Default move constructor
-    SpringSliderParameters( SpringSliderParameters && ) = default;
-
-    /// Deleted default constructor
-    SpringSliderParameters() = delete;
-
-    /// Deleted copy assignment operator
-    SpringSliderParameters & operator=( SpringSliderParameters const & ) = delete;
-
-    /// Deleted move assignment operator
-    SpringSliderParameters & operator=( SpringSliderParameters && ) =  delete;
-
-    real64 tauRate;
-
-    real64 springStiffness;
-  };
 };
 
 } /* namespace geos */

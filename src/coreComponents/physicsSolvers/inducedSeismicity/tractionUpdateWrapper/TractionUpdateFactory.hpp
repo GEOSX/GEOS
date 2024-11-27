@@ -36,7 +36,7 @@ std::unique_ptr< FaultTractionUpdateBase > tractionUpdateFactory ( TractionUpdat
 {
 
   ContactSolverBase * contactSolver = nullptr;
-  FlowSolverBase  * flowSolver = nullptr;
+  FlowSolverBase * flowSolver = nullptr;
   switch( tractionUpdateType )
   {
     case TractionUpdateType::SpringSlider:
@@ -61,4 +61,4 @@ ENUM_STRINGS( TractionUpdateType,
 
 } // namespace geos
 
-#endif /* GEOS_PHYSICSSOLVERS_INDUCED_SEISMICITY_TRACTIONUPDATEFACTORY_HPP */   
+#endif /* GEOS_PHYSICSSOLVERS_INDUCED_SEISMICITY_TRACTIONUPDATEFACTORY_HPP */

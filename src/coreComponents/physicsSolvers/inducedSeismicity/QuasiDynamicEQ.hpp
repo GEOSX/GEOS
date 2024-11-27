@@ -81,15 +81,15 @@ public:
    * @brief save the old state
    * @param subRegion
    */
-  void saveOldStateAndUpdateSlip( ElementSubRegionBase & subRegion, real64 const dt ) const;
+  void updateSlip( ElementSubRegionBase & subRegion, real64 const dt ) const;
 
   constitutive::RateAndStateFriction const & getFrictionLaw( SurfaceElementSubRegion & subRegion )
   {
     string const & frictionLawName = subRegion.getReference< string >( viewKeyStruct::frictionLawNameString() );
-    return PhysicsSolverBase::getConstitutiveModel< constitutive::RateAndStateFriction >( subRegion, 
+    return PhysicsSolverBase::getConstitutiveModel< constitutive::RateAndStateFriction >( subRegion,
                                                                                           frictionLawName );
   }
-  
+
   string getFrictionLawName( SurfaceElementSubRegion & subRegion )
   {
     return PhysicsSolverBase::getConstitutiveName< constitutive::FrictionBase >( subRegion );
@@ -100,7 +100,7 @@ public:
     string & frictionLawName = subRegion.getReference< string >( viewKeyStruct::frictionLawNameString() );
     frictionLawName = getFrictionLawName( subRegion );
     GEOS_ERROR_IF( frictionLawName.empty(), GEOS_FMT( "{}: FrictionBase model not found on subregion {}",
-                  this->getDataContext(), subRegion.getDataContext() ) );
+                                                      this->getDataContext(), subRegion.getDataContext() ) );
   }
 
 private:

@@ -23,20 +23,37 @@
 namespace geos
 {
 
-class QuasiDynamicEQBase : public PhysicsSolverBase
+template< typename RESERVOIR_SOLVER >
+class CoupledReservoirEQ : public CoupledSolver< RESERVOIR_SOLVER, QuasiDynamicEQBase >
 {
 public:
+
+  using Base = CoupledReservoirEQ< RESERVOIR_SOLVER, QuasiDynamicEQBase >;
+  using Base::m_solvers;
+  using Base::m_dofManager;
+  using Base::m_localMatrix;
+  using Base::m_rhs;
+  using Base::m_solution;
+
+  enum class SolverType : integer
+  {
+    Reservoir = 0,
+    Earthquake = 1
+  };
+
+  static string coupledSolverAttributePrefix() { return "Coupled"; }
+
   /// The default nullary constructor is disabled to avoid compiler auto-generation:
-  QuasiDynamicEQBase() = delete;
+  CoupledReservoirEQ() = delete;
 
   /// The constructor needs a user-defined "name" and a parent Group (to place this instance in the tree structure of classes)
-  QuasiDynamicEQBase( const string & name,
+  CoupledReservoirEQ( const string & name,
                       Group * const parent );
 
   /// Destructor
-  virtual ~QuasiDynamicEQBase() override;
+  virtual ~CoupledReservoirEQ() override;
 
-  static string catalogName() { return "QuasiDynamicEQBase"; }
+  static string catalogName() { return "CoupledReservoirEQ"; }
 
   /**
    * @return Get the final class Catalog name
@@ -46,46 +63,49 @@ public:
   /// This method ties properties with their supporting mesh
   virtual void registerDataOnMesh( Group & meshBodies ) override;
 
-  struct viewKeyStruct : public PhysicsSolverBase::viewKeyStruct
-  {
-    /// Friction law name string
-    constexpr static char const * frictionLawNameString() { return "frictionLawName"; }
-    /// Friction law name string
-    constexpr static char const * shearImpedanceString() { return "shearImpedance"; }
-    /// target slip increment
-    constexpr static char const * targetSlipIncrementString() { return "targetSlipIncrement"; }
-  };
-
   virtual real64 solverStep( real64 const & time_n,
                              real64 const & dt,
                              integer const cycleNumber,
-                             DomainPartition & domain ) override final;
+                             DomainPartition & domain ) override final
+
+  {
+    /// 1. Compute shear and normal tractions
+    GEOS_LOG_LEVEL_RANK_0( 1, "Stress solver" );
+
+    real64 const dtStress = reservoirSolver()->solverStep( time_n, dt, cycleNumber, domain );
+
+    /// 2. Solve for slip rate and state variable and, compute slip
+    GEOS_LOG_LEVEL_RANK_0( 1, "Earthquake solver" );
+    earthquakeSolver()->solverStep( time_n, dt, cycleNumber, domain );
+  }
 
   virtual real64 setNextDt( real64 const & currentDt,
-                            DomainPartition & domain ) override final;
+                            DomainPartition & domain ) override final
 
-  real64 updateStresses( real64 const & time_n,
-                         real64 const & dt,
-                         const int cycleNumber,
-                         DomainPartition & domain ) const;
+  {
+    return earthquakeSolver()->setNextDt( currentDt, domain );
+  }
 
   /**
-   * @brief save the old state
-   * @param subRegion
+   * @brief accessor for the pointer to the reservoir solver
+   * @return a pointer to the reservoir solver
    */
-  void saveOldStateAndUpdateSlip( ElementSubRegionBase & subRegion, real64 const dt ) const;
+  RESERVOIR_SOLVER * reservoirSolver() const
+  {
+    return std::get< toUnderlying( SolverType::Reservoir ) >( m_solvers );
+  }
 
+  /**
+   * @brief accessor for the pointer to the earthquake solver
+   * @return a pointer to the earthquake solver
+   */
+  QuasiDynamicEQBase * earthquakeSolver() const
+  {
+    return std::get< toUnderlying( SolverType::Earthquake ) >( m_solvers );
+  }
 
 private:
 
-
-  virtual void postInputInitialization() override;
-
-  /// shear impedance
-  real64 m_shearImpedance;
-
-  /// target slip rate
-  real64 m_targetSlipIncrement;
 };
 
 } /* namespace geos */

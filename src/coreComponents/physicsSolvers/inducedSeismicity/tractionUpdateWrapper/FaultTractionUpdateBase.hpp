@@ -61,7 +61,7 @@ enum class TractionUpdateType : integer
 };
 
 
-} // namespace inducedSeismicity 
+} // namespace inducedSeismicity
 
 } // namespace geos
 

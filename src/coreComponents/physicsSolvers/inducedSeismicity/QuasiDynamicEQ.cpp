@@ -95,6 +95,7 @@ void QuasiDynamicEQ::registerDataOnMesh( Group & meshBodies )
       subRegion.registerField< rateAndState::stateVariable >( getName() );
       subRegion.registerField< rateAndState::stateVariable_n >( getName() );
       subRegion.registerField< rateAndState::slipRate >( getName() );
+      subRegion.registerField< rateAndState::slipRate_n >( getName() );
 
       // Tangent (2-component) functions on fault
       string const labels2Comp[2] = {"tangent1", "tangent2" };
@@ -118,10 +119,25 @@ real64 QuasiDynamicEQ::solverStep( real64 const & time_n,
 
     forDiscretizationOnMeshTargets( domain.getMeshBodies(), [&]( string const &,
                                                                  MeshLevel & mesh,
-                                                                 arrayView1d< string const > const & )
+                                                                 arrayView1d< string const > const & regionNames )
 
     {
       fieldSpecificationManager.applyInitialConditions( mesh );
+      mesh.getElemManager().forElementSubRegions< SurfaceElementSubRegion >( regionNames,
+                                                                             [&]( localIndex const,
+                                                                                  SurfaceElementSubRegion & subRegion )
+      {
+        arrayView1d< real64 const > const slipRate        = subRegion.getField< rateAndState::slipRate >();
+        arrayView1d< real64 const > const stateVariable   = subRegion.getField< rateAndState::stateVariable >();
+        arrayView1d< real64 > const stateVariable_n       = subRegion.getField< rateAndState::stateVariable_n >();
+        arrayView1d< real64 > const slipRate_n            = subRegion.getField< rateAndState::slipRate_n >();
+
+        forAll< parallelDevicePolicy<> >( subRegion.size(), [=] GEOS_HOST_DEVICE ( localIndex const k )
+        {
+          slipRate_n [k]     = slipRate[k];
+          stateVariable_n[k] = stateVariable[k];
+        } );
+      } );
     } );
   }
 
@@ -146,7 +162,7 @@ real64 QuasiDynamicEQ::solverStep( real64 const & time_n,
       // solve rate and state equations.
       rateAndStateKernels::createAndLaunch< parallelDevicePolicy<> >( subRegion, viewKeyStruct::frictionLawNameString(), m_shearImpedance, maxNewtonIter, time_n, dtStress );
       // save old state
-      saveOldStateAndUpdateSlip( subRegion, dtStress );
+      updateSlip( subRegion, dtStress );
     } );
   } );
 
@@ -155,18 +171,15 @@ real64 QuasiDynamicEQ::solverStep( real64 const & time_n,
 }
 
 
-void QuasiDynamicEQ::saveOldStateAndUpdateSlip( ElementSubRegionBase & subRegion, real64 const dt ) const
+void QuasiDynamicEQ::updateSlip( ElementSubRegionBase & subRegion, real64 const dt ) const
 {
-  arrayView1d< real64 const > const stateVariable   = subRegion.getField< rateAndState::stateVariable >();
-  arrayView1d< real64 > const stateVariable_n = subRegion.getField< rateAndState::stateVariable_n >();
   arrayView2d< real64 const > const slipVelocity    = subRegion.getField< rateAndState::slipVelocity >();
-  arrayView2d< real64 > const deltaSlip       = subRegion.getField< contact::deltaSlip >();
+  arrayView2d< real64 > const deltaSlip             = subRegion.getField< contact::deltaSlip >();
 
   arrayView2d< real64 > const dispJump = subRegion.getField< contact::targetIncrementalJump >();
 
   forAll< parallelDevicePolicy<> >( subRegion.size(), [=] GEOS_HOST_DEVICE ( localIndex const k )
   {
-    stateVariable_n[k]  = stateVariable[k];
     deltaSlip[k][0]     = slipVelocity[k][0] * dt;
     deltaSlip[k][1]     = slipVelocity[k][1] * dt;
     // Update tangential components of the displacement jump

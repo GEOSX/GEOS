@@ -32,57 +32,57 @@ namespace inducedSeismicity
 {
 
 
-  real64 OneWayCoupledTractionUpdate::updateFaultTraction( real64 const & time_n,
-                                                           real64 const & dt,
-                                                           const int cycleNumber,
-                                                           DomainPartition & domain ) const 
+real64 OneWayCoupledTractionUpdate::updateFaultTraction( real64 const & time_n,
+                                                         real64 const & dt,
+                                                         const int cycleNumber,
+                                                         DomainPartition & domain ) const
+{
+
+  /// Now update the fault traction
+  getContactSolver()->forDiscretizationOnMeshTargets( domain.getMeshBodies(), [&]( string const &,
+                                                                                   MeshLevel & mesh,
+                                                                                   arrayView1d< string const > const & regionNames )
   {
-
-    /// Now update the fault traction
-    getContactSolver()->forDiscretizationOnMeshTargets( domain.getMeshBodies(), [&]( string const &,
-                                                                                     MeshLevel & mesh,
-                                                                                     arrayView1d< string const > const & regionNames )
+    mesh.getElemManager().forElementSubRegions< SurfaceElementSubRegion >( regionNames, [&]( localIndex const, SurfaceElementSubRegion & subRegion )
     {
-      mesh.getElemManager().forElementSubRegions< SurfaceElementSubRegion >( regionNames, [&]( localIndex const, SurfaceElementSubRegion & subRegion )
+      arrayView2d< real64 > traction = subRegion.getField< fields::contact::traction >();
+      forAll< parallelDevicePolicy<> >( subRegion.size(), [=] GEOS_HOST_DEVICE ( localIndex const i )
       {
-        arrayView2d< real64 > traction = subRegion.getField< fields::contact::traction >();
-        forAll< parallelDevicePolicy<> >( subRegion.size(), [=] GEOS_HOST_DEVICE ( localIndex const i )
+        for( int dim = 0; dim < 3; dim++ )
         {
-          for (int dim = 0; dim < 3; dim++)
-          {
-            traction(i, dim) = 0.0; 
-          }
-        } );
+          traction( i, dim ) = 0.0;
+        }
       } );
     } );
+  } );
 
-    forEachArgInTuple( m_solvers, [&]( auto & solver, auto )
-    {
-      solver->solverStep( time_n, dt, cycleNumber, domain );
-    } );
+  forEachArgInTuple( m_solvers, [&]( auto & solver, auto )
+  {
+    solver->solverStep( time_n, dt, cycleNumber, domain );
+  } );
 
-    /// Now update the fault traction
-    getContactSolver()->forDiscretizationOnMeshTargets( domain.getMeshBodies(), [&]( string const &,
-                                                                                     MeshLevel & mesh,
-                                                                                     arrayView1d< string const > const & regionNames )
+  /// Now update the fault traction
+  getContactSolver()->forDiscretizationOnMeshTargets( domain.getMeshBodies(), [&]( string const &,
+                                                                                   MeshLevel & mesh,
+                                                                                   arrayView1d< string const > const & regionNames )
+  {
+    mesh.getElemManager().forElementSubRegions< SurfaceElementSubRegion >( regionNames, [&]( localIndex const, SurfaceElementSubRegion & subRegion )
     {
-      mesh.getElemManager().forElementSubRegions< SurfaceElementSubRegion >( regionNames, [&]( localIndex const, SurfaceElementSubRegion & subRegion )
+      arrayView2d< real64 > traction = subRegion.getField< fields::contact::traction >();
+      arrayView1d< real64 > pressure = subRegion.getField< fields::flow::pressure >();
+      real64 const initialNormalTraction = 50.0e6;
+      real64 const initialShearTraction = 29.2e6;
+      forAll< parallelDevicePolicy<> >( subRegion.size(), [=] GEOS_HOST_DEVICE ( localIndex const i )
       {
-        arrayView2d< real64 > traction = subRegion.getField< fields::contact::traction >();
-        arrayView1d< real64 > pressure = subRegion.getField< fields::flow::pressure >();
-        real64 const initialNormalTraction = 50.0e6;
-        real64 const initialShearTraction = 29.2e6;
-        forAll< parallelDevicePolicy<> >( subRegion.size(), [=] GEOS_HOST_DEVICE ( localIndex const i )
-        {
-          // subtract pressure from the background normal stress
-          traction( i, 0 ) = initialNormalTraction - pressure[i];
-          traction( i, 1 ) = LvArray::math::abs( traction( i, 1 ) ) + initialShearTraction;
-          traction( i, 2 ) = 0.0;
-        } );
+        // subtract pressure from the background normal stress
+        traction( i, 0 ) = initialNormalTraction - pressure[i];
+        traction( i, 1 ) = LvArray::math::abs( traction( i, 1 ) ) + initialShearTraction;
+        traction( i, 2 ) = 0.0;
       } );
     } );
-    return dt;
-  }
+  } );
+  return dt;
+}
 
 
 } // namespace inducedSeismicity

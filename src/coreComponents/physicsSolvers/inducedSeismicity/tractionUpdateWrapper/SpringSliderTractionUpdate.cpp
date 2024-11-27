@@ -42,7 +42,7 @@ void SpringSliderTractionUpdate::registerMissingDataOnMesh( SurfaceElementSubReg
     reference().resizeDimension< 1 >( 3 );
   subRegion.registerField< contact::targetIncrementalJump >( solverName ).
     setDimLabels( 1, labels3Comp ).
-    reference().resizeDimension< 1 >( 3 );  
+    reference().resizeDimension< 1 >( 3 );
   subRegion.registerField< contact::traction >( solverName ).
     setDimLabels( 1, labels3Comp ).
     reference().resizeDimension< 1 >( 3 );
@@ -53,7 +53,7 @@ void SpringSliderTractionUpdate::registerMissingDataOnMesh( SurfaceElementSubReg
     setPlotLevel( PlotLevel::NOPLOT ).
     setRestartFlags( RestartFlags::NO_WRITE ).
     setSizedFromParent( 0 );
-  
+
   std::get< 0 >( m_solvers )->setFrictionLawName( subRegion );
 }
 

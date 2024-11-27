@@ -93,7 +93,7 @@ void ContactSolverBase::registerDataOnMesh( dataRepository::Group & meshBodies )
       subRegion.registerField< fields::contact::oldFractureState >( getName() );
 
       subRegion.registerField< fields::contact::slip >( getName() );
-      
+
       string const labels2Comp[2] = {"tangent1", "tangent2" };
       subRegion.registerField< fields::contact::deltaSlip >( getName() ).
         setDimLabels( 1, labels2Comp ).reference().resizeDimension< 1 >( 2 );
