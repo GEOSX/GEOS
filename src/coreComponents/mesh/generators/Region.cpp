@@ -41,12 +41,6 @@ Region::Region( string const & name,
 Region::~Region()
 {}
 
-// Region::CatalogInterface::CatalogType & Region::getCatalog()
-// {
-//   static Region::CatalogInterface::CatalogType catalog;
-//   return catalog;
-// }
-
 REGISTER_CATALOG_ENTRY( MeshComponentBase, Region, string const &, Group * const )
 
 }
