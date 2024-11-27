@@ -487,7 +487,7 @@ bool SurfaceGenerator::execute( real64 const time_n,
     // without the clear of the following two fields, the initial fracture's f-m connections will be replicated later
     fractureSubRegion.m_recalculateConnectionsFor2dFaces.clear();
     fractureSubRegion.m_newFaceElements.clear();
-  });
+  } );
   return false;
 }
 
