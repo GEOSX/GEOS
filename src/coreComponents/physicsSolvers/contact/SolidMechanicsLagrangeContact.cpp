@@ -2289,7 +2289,7 @@ bool SolidMechanicsLagrangeContact::updateConfiguration( DomainPartition & domai
                                                                     dLimitTangentialTractionNorm_dTraction );
 
               // store to use in acceleration when enabled
-              real64 currentTau_unscaled = currentTau;
+              real64 const currentTau_unscaled = currentTau;
 
               if( originalFractureState == FractureState::Stick && currentTau >= limitTau )
               {
@@ -2367,14 +2367,14 @@ void SolidMechanicsLagrangeContact::tryLocalYieldAcceleration( integer const con
   {
     m_x1_tilde[kfe] = currentTau_unscaled - limitTau;
     m_x1[kfe] = m_x1_tilde[kfe];
-    m_omega0[kfe] = 1;
+    m_omega0[kfe] = 1.0;
   }
   else
   {
     // only apply acceleration if within a fraction of the limitTau
     real64 acceleration_buffer = (limitTau - currentTau) / limitTau;
 
-    if( acceleration_buffer > (0.1 / (configurationLoopIter - 1)))
+    if( acceleration_buffer > 0.1 / (configurationLoopIter - 1) )
     {
       // do not apply acceleration, just update previous values
       m_x0[kfe] = m_x1_tilde[kfe];

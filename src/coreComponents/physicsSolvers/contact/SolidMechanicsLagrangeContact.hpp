@@ -218,9 +218,9 @@ private:
   array1d< real64 > m_x1_tilde; // Unaccelerated variable @ outer iteration v + 1 ( previous iteration )
   array1d< real64 > m_x2; // Accelerated variable @ outer iteration v + 2 ( current iteration )
   array1d< real64 > m_x2_tilde; // Unaccelerated variable @ outer iteration v + 1 ( current iteration )
-  array1d< real64 > m_omega0; // Old Aitken relaxation factor
-  array1d< real64 > m_omega1; // New Aitken relaxation factor
-  integer m_useLocalYieldAcceleration; // flag for applying modified Aitken acceleration to yield
+  array1d< real64 > m_omega0; // Old relaxation factor
+  array1d< real64 > m_omega1; // New relaxation factor
+  integer m_useLocalYieldAcceleration; // flag for applying acceleration to yield
 
   void initializeAccelerationVariables( DomainPartition & domain );
 
