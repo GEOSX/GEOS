@@ -268,6 +268,7 @@ public:
     static constexpr char const * allowLocalCompDensChoppingString() { return "allowLocalCompDensityChopping"; }
     static constexpr char const * useTotalMassEquationString() { return "useTotalMassEquation"; }
     static constexpr char const * useSimpleAccumulationString() { return "useSimpleAccumulation"; }
+    static constexpr char const * useNewGravityString() { return "useNewGravity"; }
     static constexpr char const * minCompDensString() { return "minCompDens"; }
     static constexpr char const * maxSequentialCompDensChangeString() { return "maxSequentialCompDensChange"; }
     static constexpr char const * minScalingFactorString() { return "minScalingFactor"; }
@@ -481,6 +482,9 @@ protected:
 
   /// flag indicating whether simple accumulation form is used
   integer m_useSimpleAccumulation;
+
+  /// flag indicating whether new gravity treatment is used
+  integer m_useNewGravity;
 
   /// minimum allowed global component density
   real64 m_minCompDens;

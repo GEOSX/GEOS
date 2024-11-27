@@ -277,6 +277,7 @@ public:
               ( m_numPhases,
               ip,
               m_kernelFlags.isSet( KernelFlags::CapPressure ),
+              m_kernelFlags.isSet( KernelFlags::NewGravity ),
               seri, sesri, sei,
               trans,
               dTrans_dPres,
@@ -303,6 +304,7 @@ public:
               ( m_numPhases,
               ip,
               m_kernelFlags.isSet( KernelFlags::CapPressure ),
+              m_kernelFlags.isSet( KernelFlags::NewGravity ),
               seri, sesri, sei,
               trans,
               dTrans_dPres,
@@ -329,6 +331,7 @@ public:
               ( m_numPhases,
               ip,
               m_kernelFlags.isSet( KernelFlags::CapPressure ),
+              m_kernelFlags.isSet( KernelFlags::NewGravity ),
               seri, sesri, sei,
               trans,
               dTrans_dPres,
@@ -525,6 +528,7 @@ public:
                    string const & dofKey,
                    integer const hasCapPressure,
                    integer const useTotalMassEquation,
+                   integer const useNewGravity,
                    UpwindingParameters upwindingParams,
                    string const & solverName,
                    ElementRegionManager const & elemManager,
@@ -547,6 +551,8 @@ public:
         kernelFlags.set( KernelFlags::CapPressure );
       if( useTotalMassEquation )
         kernelFlags.set( KernelFlags::TotalMassEquation );
+      if( useNewGravity )
+        kernelFlags.set( KernelFlags::NewGravity );
       if( upwindingParams.upwindingScheme == UpwindingScheme::C1PPU &&
           isothermalCompositionalMultiphaseFVMKernelUtilities::epsC1PPU > 0 )
         kernelFlags.set( KernelFlags::C1PPU );
