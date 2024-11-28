@@ -63,6 +63,15 @@ public:
                                      real64 const & dt,
                                      DomainPartition & domain ) override final;
 
+  template< typename WRAPPER_TYPE >
+  static void updateElasticSlip( EmbeddedSurfaceSubRegion const & subRegion,
+                                 WRAPPER_TYPE & frictionWrapper,
+                                 arrayView1d< integer const > const & ghostRank,
+                                 arrayView2d< real64 const > const & dispJump,
+                                 arrayView2d< real64 const > const & oldDispJump,
+                                 arrayView2d< real64 const > const & traction,
+                                 arrayView1d< integer > const & fractureState );
+
   virtual void assembleSystem( real64 const time,
                                real64 const dt,
                                DomainPartition & domain,

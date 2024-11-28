@@ -165,13 +165,7 @@ void SolidMechanicsEmbeddedFractures::implicitStepComplete( real64 const & time_
       using FrictionType = TYPEOFREF( castedFrictionLaw );
       typename FrictionType::KernelWrapper frictionWrapper = castedFrictionLaw.createKernelUpdates();
 
-      forAll< parallelHostPolicy >( subRegion.size(), [=] ( localIndex const kfe )
-      {
-        if( ghostRank[kfe] < 0 )
-        {
-          frictionWrapper.updateElasticSlip( kfe, dispJump[kfe], oldDispJump[kfe], traction[kfe], fractureState[kfe] );
-        }
-      } );
+      updateElasticSlip( subRegion, frictionWrapper, ghostRank, dispJump, oldDispJump, traction, fractureState );
     } );
 
     // now update oldDispJump = dispJump
@@ -180,6 +174,24 @@ void SolidMechanicsEmbeddedFractures::implicitStepComplete( real64 const & time_
     {
       LvArray::tensorOps::copy< 3 >( oldDispJump[k], dispJump[k] );
     } );
+  } );
+}
+
+template< typename WRAPPER_TYPE >
+void SolidMechanicsEmbeddedFractures::updateElasticSlip( EmbeddedSurfaceSubRegion const & subRegion,
+                                                         WRAPPER_TYPE & frictionWrapper,
+                                                         arrayView1d< integer const > const & ghostRank,
+                                                         arrayView2d< real64 const > const & dispJump,
+                                                         arrayView2d< real64 const > const & oldDispJump,
+                                                         arrayView2d< real64 const > const & traction,
+                                                         arrayView1d< integer > const & fractureState )
+{
+  forAll< parallelDevicePolicy<> >( subRegion.size(), [=] GEOS_HOST_DEVICE ( localIndex const kfe )
+  {
+    if( ghostRank[kfe] < 0 )
+    {
+      frictionWrapper.updateElasticSlip( kfe, dispJump[kfe], oldDispJump[kfe], traction[kfe], fractureState[kfe] );
+    }
   } );
 }
 
