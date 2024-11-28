@@ -154,12 +154,7 @@ void SolidMechanicsEmbeddedFractures::implicitStepComplete( real64 const & time_
     arrayView2d< real64 > oldDispJump = subRegion.getField< contact::oldDispJump >();
     arrayView2d< real64 const > const dispJump = subRegion.getField< contact::dispJump >();
 
-    forAll< parallelDevicePolicy<> >( subRegion.size(),
-                                      [=] GEOS_HOST_DEVICE ( localIndex const k )
-    {
-      LvArray::tensorOps::copy< 3 >( oldDispJump[k], dispJump[k] );
-    } );
-
+    // update elastic slip before copying dispJump to oldDispJump
     string const & frictionLawName = subRegion.template getReference< string >( viewKeyStruct::frictionLawNameString() );
     FrictionBase const & frictionLaw = getConstitutiveModel< FrictionBase >( subRegion, frictionLawName );
     arrayView1d< integer const > const & ghostRank = subRegion.ghostRank();
@@ -177,6 +172,13 @@ void SolidMechanicsEmbeddedFractures::implicitStepComplete( real64 const & time_
           frictionWrapper.updateElasticSlip( kfe, dispJump[kfe], oldDispJump[kfe], traction[kfe], fractureState[kfe] );
         }
       } );
+    } );
+
+    // now update oldDispJump = dispJump
+    forAll< parallelDevicePolicy<> >( subRegion.size(),
+                                      [=] GEOS_HOST_DEVICE ( localIndex const k )
+    {
+      LvArray::tensorOps::copy< 3 >( oldDispJump[k], dispJump[k] );
     } );
   } );
 }
