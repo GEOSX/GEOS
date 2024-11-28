@@ -320,8 +320,153 @@ createAndLaunch( SurfaceElementSubRegion & subRegion,
   } );
 }
 
+
+struct RK32Table
+{   
+    integer const algHighOrder = 3;
+    integer const algLowOrder = 2;
+    integer const numStages = 3;
+    real64 const a[2][2] = { { 1.0/2.0, 0.0},           // Coefficients for stage value updates
+                             { -1.0,    2.0} };         // (lower-triangular part of table).
+    real64 const c[3] = { 0.0, 1.0/2.0, 1.0};           // Coefficients for time increments of substages
+    real64 const b[3] = { 1.0/6.0, 4.0/6.0, 1.0/6.0 };  // Quadrature weights used to evolve the solution to next time
+    real64 const bStar[3] = { 1.0/2.0, 0.0, 1.0/2.0 }; // Quadrature weights used for low-order comparision solution
+};
+
+template <typename Table> class EmbeddedRungeKuttaKernel
+{
+
+public:
+    EmbeddedRungeKuttaKernel(SurfaceElementSubRegion & subRegion,
+                              constitutive::RateAndStateFriction const & frictionLaw,
+                              Table butcherTable):
+            m_stateVariable( subRegion.getField< fields::rateAndState::stateVariable >() ),
+            m_stateVariable_n( subRegion.getField< fields::rateAndState::stateVariable_n >() ),
+            m_slipRate( subRegion.getField< fields::rateAndState::slipRate >() ),
+            m_slipVelocity( subRegion.getField< fields::rateAndState::slipVelocity >() ),
+            m_slipVelocity_n( subRegion.getField< fields::rateAndState::slipVelocity_n >() ),
+            m_deltaSlip( subRegion.getField< fields::rateAndState::deltaSlip >() ),
+            m_deltaSlip_n( subRegion.getField< fields::rateAndState::deltaSlip_n >() ),
+            m_dispJump( subRegion.getField< fields::contact::dispJump >() ),
+            m_dispJump_n( subRegion.getField< fields::contact::dispJump_n >() ),
+            m_error( subRegion.getField< fields::rateAndState::error >() ),
+            m_stageRates( subRegion.getField< fields::rateAndState::rungeKuttaStageRates >() ),
+            m_frictionLaw( frictionLaw.createKernelUpdates() ),
+            m_butcherTable( butcherTable )
+{}
+
+    GEOS_HOST_DEVICE
+    void initialize(localIndex const k) const
+    {   
+        LvArray::tensorOps::copy<2>(m_slipVelocity[k], m_slipVelocity_n[k]);
+        m_slipRate[k] =  LvArray::tensorOps::l2Norm<2>(m_slipVelocity_n[k]);
+        m_stateVariable[k] = m_stateVariable_n[k];
+    }
+    
+    GEOS_HOST_DEVICE
+    void updateStageRates(localIndex const k, localIndex const stageIndex) const
+    {           
+        m_stageRates[k][stageIndex][0] =  m_slipVelocity[k][0];
+        m_stageRates[k][stageIndex][1] =  m_slipVelocity[k][1];
+        m_stageRates[k][stageIndex][2] =  m_frictionLaw.stateEvolution(k, m_slipRate[k], m_stateVariable[k]);
+    }
+
+    GEOS_HOST_DEVICE
+    void updateStageValues(localIndex const k, localIndex const stageIndex,  real64 const dt) const
+    {   
+        
+        real64 stateVariableIncrement = 0.0;
+        real64 deltaSlipIncrement[2] = {0.0, 0.0};
+        
+        for (localIndex i = 0; i < stageIndex; i++)
+        {   
+            deltaSlipIncrement[0] += m_butcherTable.a[stageIndex-1][i] * m_stageRates[k][i][0];
+            deltaSlipIncrement[1] += m_butcherTable.a[stageIndex-1][i] * m_stageRates[k][i][1];
+            stateVariableIncrement += m_butcherTable.a[stageIndex-1][i] * m_stageRates[k][i][2];
+        }
+        m_deltaSlip[k][0] = m_deltaSlip_n[k][0] + dt*deltaSlipIncrement[0];
+        m_deltaSlip[k][1] = m_deltaSlip_n[k][1] + dt*deltaSlipIncrement[1];
+        m_stateVariable[k] = m_stateVariable_n[k] + dt*stateVariableIncrement;
+
+        m_dispJump[k][1] = m_dispJump_n[k][1] + m_deltaSlip[k][0];
+        m_dispJump[k][2] = m_dispJump_n[k][2] + m_deltaSlip[k][1];
+    }
+
+    GEOS_HOST_DEVICE
+    void updateSolutionAndLocalError(localIndex const k, real64 const dt, real64 const absTol, real64 const relTol) const
+    {
+        
+        real64 deltaSlipIncrement[2] = {0.0, 0.0};
+        real64 deltaSlipIncrementLowOrder[2] = {0.0, 0.0};
+        
+        real64 stateVariableIncrement = 0.0;
+        real64 stateVariableIncrementLowOrder = 0.0;
+       
+        for (localIndex i = 0; i < m_butcherTable.numStages; i++)
+        {   
+
+            // High order update of solution
+            deltaSlipIncrement[0]   += m_butcherTable.b[i] * m_stageRates[k][i][0];
+            deltaSlipIncrement[1]   += m_butcherTable.b[i] * m_stageRates[k][i][1];
+            stateVariableIncrement  += m_butcherTable.b[i] * m_stageRates[k][i][2];
+            
+            // Low order update for error
+            deltaSlipIncrementLowOrder[0]   += m_butcherTable.bStar[i] * m_stageRates[k][i][0];
+            deltaSlipIncrementLowOrder[1]   += m_butcherTable.bStar[i] * m_stageRates[k][i][1];
+            stateVariableIncrementLowOrder  += m_butcherTable.bStar[i] * m_stageRates[k][i][2];
+        }
+
+        m_deltaSlip[k][0]  = m_deltaSlip_n[k][0]  + dt * deltaSlipIncrement[0];
+        m_deltaSlip[k][1]  = m_deltaSlip_n[k][1]  + dt * deltaSlipIncrement[1];
+        m_stateVariable[k] = m_stateVariable_n[k] + dt * stateVariableIncrement;
+
+        real64 const deltaSlipLowOrder[2]  = {m_deltaSlip_n[k][0]  + dt * deltaSlipIncrementLowOrder[0],
+                                              m_deltaSlip_n[k][1]  + dt * deltaSlipIncrementLowOrder[1]};
+        real64 const stateVariableLowOrder = m_stateVariable_n[k] + dt * stateVariableIncrementLowOrder;
+
+        m_dispJump[k][1] = m_dispJump_n[k][1] + m_deltaSlip[k][0];
+        m_dispJump[k][2] = m_dispJump_n[k][2] + m_deltaSlip[k][1];
+
+        // Compute error
+        m_error[k][0] = (m_deltaSlip[k][0] - deltaSlipLowOrder[0]) / 
+                                ( absTol + relTol * LvArray::math::max( LvArray::math::abs(m_deltaSlip[k][0]), LvArray::math::abs(deltaSlipLowOrder[0]) ));
+        m_error[k][1] = (m_deltaSlip[k][1] - deltaSlipLowOrder[1]) / 
+                                ( absTol + relTol * LvArray::math::max( LvArray::math::abs(m_deltaSlip[k][1]), LvArray::math::abs(deltaSlipLowOrder[1]) ));
+        m_error[k][2] = (m_stateVariable[k] - stateVariableLowOrder) / 
+                                ( absTol + relTol * LvArray::math::max( LvArray::math::abs(m_stateVariable[k]), LvArray::math::abs(stateVariableLowOrder) ));
+    }
+
+    private:
+    
+    arrayView1d< real64 > const m_stateVariable;
+
+    arrayView1d< real64  > const m_stateVariable_n;
+
+    arrayView1d< real64 > const m_slipRate;
+    
+    arrayView2d< real64 > const m_slipVelocity;
+
+    arrayView2d< real64 > const m_slipVelocity_n;
+    
+    arrayView2d< real64 > const m_deltaSlip;
+    
+    arrayView2d< real64 > const m_deltaSlip_n;
+
+    arrayView2d< real64 > const m_dispJump;
+
+    arrayView2d< real64 > const m_dispJump_n;
+    
+    arrayView2d< real64 > const m_error;
+    
+    arrayView3d< real64 > const m_stageRates;
+
+    constitutive::RateAndStateFriction::KernelWrapper m_frictionLaw;
+
+    Table m_butcherTable;
+};
+
 } /* namespace rateAndStateKernels */
 
-}/* namespace geos */
+} /* namespace geos */
 
 #endif /* GEOS_PHYSICSSOLVERS_RATEANDSTATEKERNELS_HPP_ */

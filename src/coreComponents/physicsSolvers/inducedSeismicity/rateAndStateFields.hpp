@@ -72,13 +72,6 @@ DECLARE_FIELD( stateVariable_n,
                WRITE_AND_READ,
                "Initial rate- and state-dependent friction state variable at this time step" );
 
-DECLARE_FIELD( stateVariableRKStageRate,
-               "stateVariableStageRates",
-               array2d< real64 >,
-               0.0,
-               NOPLOT,
-               WRITE_AND_READ,
-               "Runge-Kutta stage rates for friction state variable" );
 
 DECLARE_FIELD( deltaSlip,
                "deltaSlip",
@@ -97,13 +90,14 @@ DECLARE_FIELD( deltaSlip_n,
                "Initial slip increment at this time step" );
 
 
-DECLARE_FIELD( deltaSlipRKStageRate,
-               "dDeltaSlipStage1",
+DECLARE_FIELD( rungeKuttaStageRates,
+               "rungeKuttaStageRates",
                array3d< real64 >,
                0.0,
                NOPLOT,
                WRITE_AND_READ,
-               "Runge-Kutta stage rates for slip increment" );  
+               "Runge-Kutta stage rates for rate-and-state variables" );               
+
 
 DECLARE_FIELD( error,
                "error",

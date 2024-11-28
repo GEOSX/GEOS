@@ -17,6 +17,7 @@
 #define GEOS_PHYSICSSOLVERS_INDUCED_QUASIDYNAMICEQRK32_HPP
 
 #include "physicsSolvers/SolverBase.hpp"
+#include "kernels/RateAndStateKernels.hpp"
 
 namespace geos
 {
@@ -68,6 +69,13 @@ private:
 
   virtual void postInputInitialization() override;
 
+  void stepRateStateODESubstage( integer const stageIndex,
+                                                     real64 const dt,
+                                                     DomainPartition & domain ) const;
+
+  void stepRateStateODEAndComputeError(real64 const dt,
+                                                             DomainPartition & domain ) const;
+
   real64 updateStresses( real64 const & time_n,
                          real64 const & dt,
                          const int cycleNumber,
@@ -109,9 +117,9 @@ private:
   /// time step error
   real64 m_beta[3];
 
-  integer m_rkOrders[2];
-
   bool m_successfulStep;
+
+  rateAndStateKernels::RK32Table m_butcherTable;
 
   class SpringSliderParameters
   {
