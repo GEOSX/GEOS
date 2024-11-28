@@ -112,25 +112,25 @@ void AcousticVTIWaveEquationSEM::postInputInitialization()
   m_pressureNp1AtReceivers.resize( m_nsamplesSeismoTrace, numReceiversGlobal + 1 );
 }
 
-real32 AcousticVTIWaveEquationSEM::getGlobalMaxWavespeed( MeshLevel & mesh, arrayView1d< string const > const & regionNames )
+real32 AcousticVTIWaveEquationSEM::getGlobalMinWavespeed( MeshLevel & mesh, arrayView1d< string const > const & regionNames )
 {
 
-  real32 localMaxWavespeed = 0;
+  real32 localMinWavespeed = 1e8;
 
   mesh.getElemManager().forElementSubRegions< CellElementSubRegion >( regionNames, [&]( localIndex const,
                                                                                         CellElementSubRegion & elementSubRegion )
   {
     arrayView1d< real32 const > const velocity = elementSubRegion.getField< acousticfields::AcousticVelocity >();
-    real32 subRegionMaxWavespeed = *std::max_element( velocity.begin(), velocity.end());
-    if( localMaxWavespeed < subRegionMaxWavespeed )
+    real32 subRegionMinWavespeed = *std::min_element( velocity.begin(), velocity.end());
+    if( localMinWavespeed > subRegionMinWavespeed )
     {
-      localMaxWavespeed = subRegionMaxWavespeed;
+      localMinWavespeed = subRegionMinWavespeed;
     }
   } );
 
-  real32 const globalMaxWavespeed = MpiWrapper::max( localMaxWavespeed );
+  real32 const globalMinWavespeed = MpiWrapper::min( localMinWavespeed );
 
-  return globalMaxWavespeed;
+  return globalMinWavespeed;
 
 }
 

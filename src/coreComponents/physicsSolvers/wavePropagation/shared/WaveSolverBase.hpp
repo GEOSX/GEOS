@@ -121,8 +121,6 @@ public:
 
     static constexpr char const * useTaperString() {return "useTaper";}
     static constexpr char const * reflectivityCoeffString() {return "reflectivityCoeff";}
-    static constexpr char const * xMinTaperString() {return "xMinTaper";}
-    static constexpr char const * xMaxTaperString() {return "xMaxTaper";}
     static constexpr char const * thicknessMinXYZTaperString() {return "thicknessMinXYZTaper";}
     static constexpr char const * thicknessMaxXYZTaperString() {return "thicknessMaxXYZTaper";}
 
@@ -259,7 +257,7 @@ protected:
   /**
    * @brief Method to get the maximum wavespeed on a mesh (usually the P-wavespeed)
    */
-  virtual real32 getGlobalMaxWavespeed( MeshLevel & mesh, arrayView1d< string const > const & regionNames ) = 0;
+  virtual real32 getGlobalMinWavespeed( MeshLevel & mesh, arrayView1d< string const > const & regionNames ) = 0;
 
 
   virtual void registerDataOnMesh( Group & meshBodies ) override;

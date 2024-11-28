@@ -217,16 +217,6 @@ WaveSolverBase::WaveSolverBase( const std::string & name,
     setApplyDefaultValue( 0.001 ).
     setDescription( "Reflectivity coeff for taper" );
 
-  registerWrapper( viewKeyStruct::xMinTaperString(), &m_xMinTaper ).
-    setInputFlag( InputFlags::OPTIONAL ).
-    setApplyDefaultValue( {0, 0, 0} ).
-    setDescription( "Minimal coordinates for taper (left,bottom,front)" );
-
-  registerWrapper( viewKeyStruct::xMaxTaperString(), &m_xMaxTaper ).
-    setInputFlag( InputFlags::OPTIONAL ).
-    setApplyDefaultValue( {0, 0, 0} ).
-    setDescription( "Maximal coordinates for taper (right,top,back)" );
-
   registerWrapper( viewKeyStruct::thicknessMinXYZTaperString(), &m_thicknessMinXYZTaper ).
     setInputFlag( InputFlags::OPTIONAL ).
     setApplyDefaultValue( {0, 0, 0} ).

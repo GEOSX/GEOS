@@ -224,25 +224,25 @@ void ElasticWaveEquationSEM::postInputInitialization()
   }
 }
 
-real32 ElasticWaveEquationSEM::getGlobalMaxWavespeed( MeshLevel & mesh, arrayView1d< string const > const & regionNames )
+real32 ElasticWaveEquationSEM::getGlobalMinWavespeed( MeshLevel & mesh, arrayView1d< string const > const & regionNames )
 {
 
-  real32 localMaxWavespeed = 0;
+  real32 localMinWavespeed = 1e8;
 
   mesh.getElemManager().forElementSubRegions< CellElementSubRegion >( regionNames, [&]( localIndex const,
                                                                                         CellElementSubRegion & elementSubRegion )
   {
-    arrayView1d< real32 const > const velocity = elementSubRegion.getField< elasticfields::ElasticVelocityVp >();
-    real32 subRegionMaxWavespeed = *std::max_element( velocity.begin(), velocity.end());
-    if( localMaxWavespeed < subRegionMaxWavespeed )
+    arrayView1d< real32 const > const velocity = elementSubRegion.getField< elasticfields::ElasticVelocityVs >();
+    real32 subRegionMinWavespeed = *std::min_element( velocity.begin(), velocity.end());
+    if( localMinWavespeed > subRegionMinWavespeed )
     {
-      localMaxWavespeed = subRegionMaxWavespeed;
+      localMinWavespeed = subRegionMinWavespeed;
     }
   } );
 
-  real32 const globalMaxWavespeed = MpiWrapper::max( localMaxWavespeed );
+  real32 const globalMinWavespeed = MpiWrapper::min( localMinWavespeed );
 
-  return globalMaxWavespeed;
+  return globalMinWavespeed;
 
 }
 
@@ -507,11 +507,11 @@ void ElasticWaveEquationSEM::initializePostInitialConditionsPreSubGroups()
 
     if( m_useTaper==1 )
     {
-      real32 vMax;
-      vMax = getGlobalMaxWavespeed( mesh, regionNames );
+      real32 vMin;
+      vMin = getGlobalMinWavespeed( mesh, regionNames );
 
       arrayView1d< real32 > const taperCoeff = nodeManager.getField< fields::taperCoeff >();
-      TaperKernel::computeTaperCoeff< EXEC_POLICY >( nodeManager.size(), nodeCoords, m_xMinTaper, m_xMaxTaper, m_thicknessMinXYZTaper, m_thicknessMaxXYZTaper, m_timeStep, vMax, m_reflectivityCoeff,
+      TaperKernel::computeTaperCoeff< EXEC_POLICY >( nodeManager.size(), nodeCoords, m_thicknessMinXYZTaper, m_thicknessMaxXYZTaper, m_timeStep, vMin, m_reflectivityCoeff,
                                                      taperCoeff );
     }
 
