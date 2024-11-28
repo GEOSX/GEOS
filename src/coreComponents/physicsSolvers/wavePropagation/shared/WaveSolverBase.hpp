@@ -121,8 +121,7 @@ public:
 
     static constexpr char const * useTaperString() {return "useTaper";}
     static constexpr char const * reflectivityCoeffString() {return "reflectivityCoeff";}
-    static constexpr char const * thicknessMinXYZTaperString() {return "thicknessMinXYZTaper";}
-    static constexpr char const * thicknessMaxXYZTaperString() {return "thicknessMaxXYZTaper";}
+    static constexpr char const * thicknessTaperString() {return "thicknessTaper";}
 
     static constexpr char const * receiverElemString() { return "receiverElem"; }
     static constexpr char const * receiverRegionString() { return "receiverRegion"; }
@@ -383,15 +382,8 @@ protected:
   /// A set of target nodes IDs that will be handled by the current solver
   SortedArray< localIndex > m_solverTargetNodesSet;
 
-  /// Mininum (x,y,z) coordinates of inner PML boundaries
-  R1Tensor32 m_xMinTaper;
-
-  /// Maximum (x,y,z) coordinates of inner PML boundaries
-  R1Tensor32 m_xMaxTaper;
-
-  /// Thickness of the PML region, used to compute the damping profile
-  R1Tensor32 m_thicknessMinXYZTaper;
-  R1Tensor32 m_thicknessMaxXYZTaper;
+  /// Thickness of the Taper region, used to compute the damping profile
+  real32 m_thicknessTaper;
 
   real32 m_reflectivityCoeff;
 

@@ -511,7 +511,7 @@ void ElasticWaveEquationSEM::initializePostInitialConditionsPreSubGroups()
       vMin = getGlobalMinWavespeed( mesh, regionNames );
 
       arrayView1d< real32 > const taperCoeff = nodeManager.getField< fields::taperCoeff >();
-      TaperKernel::computeTaperCoeff< EXEC_POLICY >( nodeManager.size(), nodeCoords, m_thicknessMinXYZTaper, m_thicknessMaxXYZTaper, m_timeStep, vMin, m_reflectivityCoeff,
+      TaperKernel::computeTaperCoeff< EXEC_POLICY >( nodeManager.size(), nodeCoords, m_thicknessTaper, m_timeStep, vMin, m_reflectivityCoeff,
                                                      taperCoeff );
     }
 

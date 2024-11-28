@@ -217,15 +217,10 @@ WaveSolverBase::WaveSolverBase( const std::string & name,
     setApplyDefaultValue( 0.001 ).
     setDescription( "Reflectivity coeff for taper" );
 
-  registerWrapper( viewKeyStruct::thicknessMinXYZTaperString(), &m_thicknessMinXYZTaper ).
+  registerWrapper( viewKeyStruct::thicknessTaperString(), &m_thicknessTaper ).
     setInputFlag( InputFlags::OPTIONAL ).
-    setApplyDefaultValue( {0, 0, 0} ).
-    setDescription( "Size for the taper layer (left,bottom,front)" );
-
-  registerWrapper( viewKeyStruct::thicknessMaxXYZTaperString(), &m_thicknessMaxXYZTaper ).
-    setInputFlag( InputFlags::OPTIONAL ).
-    setApplyDefaultValue( {0, 0, 0} ).
-    setDescription( "Size for the taper layer (left,bottom,front)" );
+    setApplyDefaultValue( 0.0).
+    setDescription( "Size for the taper layer " );
 
   registerWrapper( viewKeyStruct::slsReferenceAngularFrequenciesString(), &m_slsReferenceAngularFrequencies ).
     setInputFlag( InputFlags::OPTIONAL ).

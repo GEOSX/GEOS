@@ -33,8 +33,7 @@ struct TaperKernel
    * @brief Compute coefficients for the taper layers
    * @tparam EXEC_POLICY the execution policy
    * @param[in] size the number of nodes
-   * @param[in] dMin Taper thickness, left-front-top
-   * @param[in] dMax Taper thickness, right-back-bottom
+   * @param[in] sizeT Taper thickness
    * @param[in] dt time-step
    * @param[in] vMin Min wavespeed (P-wavespeed for acoustic, S-wavespeed for elastic)
    * @param[in] r desired reflectivity of the Taper
@@ -45,8 +44,7 @@ struct TaperKernel
   static void
   computeTaperCoeff( localIndex const size,
                      arrayView2d< wsCoordType const, nodes::REFERENCE_POSITION_USD > const nodeCoords,
-                     R1Tensor32 const dMin,
-                     R1Tensor32 const dMax,
+                     real32 const sizeT,
                      real32 const dt,
                      real32 const vMax,
                      real32 const r,
@@ -116,9 +114,9 @@ struct TaperKernel
 
       real32 dist = taperCoeff[a];
 
-      if( dist<dMin[0] )
+      if( dist<sizeT )
       {
-        taperCoeff[a] = LvArray::math::exp((((3*vMax)/(2*dMin[0]))*log( r )*pow((dMin[0]-dist)/dMin[0], 2 ))*dt );
+        taperCoeff[a] = LvArray::math::exp((((3*vMax)/(2*sizeT))*log( r )*pow((sizeT-dist)/sizeT, 2 ))*dt );
       }
       else
       {
