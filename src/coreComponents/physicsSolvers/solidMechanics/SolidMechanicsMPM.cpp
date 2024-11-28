@@ -103,40 +103,6 @@ array2d< int > generateCombinations(array1d< array1d< int > > sets)
   return combinations;
 }
 
-// Flattened combinations function to avoid performance hit from recursive calls
-GEOS_HOST_DEVICE
-array2d< int > generateCombinations(array1d< array1d< int > > sets)
-{
-  int numSets = sets.size();
-  int numCombinations = 1;
-  array1d< int > m(numSets);
-  for( int s=0; s < numSets; s++)
-  {
-    numCombinations *= sets[s].size();
-    m[s] = numCombinations;
-  }
-
-  array2d< int > combinations( numCombinations, numSets);
-  for( int c = 0; c < numCombinations; c++ )
-  {
-    for( int s = 0; s < numSets; s++ )
-    {
-      int i = 0;
-      if ( s == 0 )
-      {
-        i = c % m[s];
-      }
-      else
-      {
-        i = ( c % m[s] ) / m[s-1];
-      }
-      combinations[c][s] = sets[s][i];
-    }
-  }
-
-  return combinations;
-}
-
 SolidMechanicsMPM::SolidMechanicsMPM( const string & name,
                                       Group * const parent ):
   SolverBase( name, parent ),
@@ -618,7 +584,6 @@ SolidMechanicsMPM::SolidMechanicsMPM( const string & name,
     setRestartFlags( RestartFlags::NO_WRITE ).
     setDescription( "Polymer cohesive law max stretch" );
 
->>>>>>> feature/homel1/mpmFracture
   registerWrapper( "cohesiveNodeGlobalIndices", &m_cohesiveNodeGlobalIndices ).
     setInputFlag( InputFlags::FALSE ).
     setRestartFlags( RestartFlags::WRITE_AND_READ ).
@@ -4160,31 +4125,6 @@ void SolidMechanicsMPM::normalizeGridSurfaceNormals( NodeManager & nodeManager )
   } );
 }
 
-void SolidMechanicsMPM::normalizeGridSurfacePositions( NodeManager & nodeManager )
-{
-  // arrayView2d< real64 const > const gridMass = nodeManager.getReference< array2d< real64 > >( viewKeyStruct::gridMassString() );
-  arrayView2d< real64 const > const gridSurfaceFieldMass = nodeManager.getReference< array2d< real64 > >( viewKeyStruct::gridSurfaceFieldMassString() );
-  arrayView3d< real64 > const gridSurfacePosition = nodeManager.getReference< array3d< real64 > >( viewKeyStruct::gridSurfacePositionString() );
-
-  int const numNodes = nodeManager.size();
-  int const numVelocityFields = m_numVelocityFields;
-  real64 const smallMass = m_smallMass;
-
-  forAll< serialPolicy >( numNodes, [=] GEOS_HOST_DEVICE ( localIndex const g )
-  {
-    for( localIndex fieldIndex = 0; fieldIndex < numVelocityFields; fieldIndex++ )
-    {
-      if( gridSurfaceFieldMass[g][fieldIndex] > smallMass ) // small mass threshold
-      {
-        LvArray::tensorOps::scale< 3 >( gridSurfacePosition[g][fieldIndex], 1 / gridSurfaceFieldMass[g][fieldIndex] );
-        continue;
-      }
-
-      LvArray::tensorOps::fill< 3 >( gridSurfacePosition[g][fieldIndex], 0.0 );
-    }
-  } );
-}
-
 void SolidMechanicsMPM::computeGridSurfaceNormalWeights( ParticleManager & particleManager,
                                                          NodeManager & nodeManager )
 {
@@ -4293,18 +4233,23 @@ void SolidMechanicsMPM::normalizeGridSurfacePositions( NodeManager & nodeManager
   } );
 }
 
-void SolidMechanicsMPM::computeGridSurfaceNormalWeights( ParticleManager & particleManager,
-                                                         NodeManager & nodeManager )
+void SolidMechanicsMPM::initializeFrictionCoefficients()
 {
-  // Grid fields
-  arrayView2d< real64 > const gridSurfaceNormalWeights = nodeManager.getReference< array2d< real64 > >( viewKeyStruct::gridSurfaceNormalWeightsString() );
-  arrayView2d< real64 > const gridSurfaceNormalWeightNormalization = nodeManager.getReference< array2d< real64 > >( viewKeyStruct::gridSurfaceNormalWeightNormalizationString() );
-  arrayView3d< real64 const > const gridSurfaceNormal = nodeManager.getReference< array3d< real64 > >( viewKeyStruct::gridSurfaceNormalString() );
-  // arrayView1d< real64 const > const gridSurfaceMass = nodeManager.getReference< array1d< real64 > >( viewKeyStruct::gridSurfaceMassString() );
-  arrayView2d< real64 const > const gridDamageGradient = nodeManager.getReference< array2d< real64 > >( viewKeyStruct::gridDamageGradientString() );
+  if( m_frictionCoefficientTable.size(0) != 0 )
+  {
+    GEOS_ERROR_IF( m_frictionCoefficientTable.size(0) != m_frictionCoefficientTable.size(1), "frictionCoefficientTable must be square.");
+    GEOS_ERROR_IF( m_frictionCoefficientTable.size(0) != m_numContactGroups, "frictionCoefficientTable must have the same number of rows and columns as the number of contact groups.");
 
-  localIndex subRegionIndex = 0;
-  particleManager.forParticleSubRegions( [&]( ParticleSubRegion & subRegion )
+    for(int i = 0; i < m_numContactGroups; i++)
+    {
+      for(int j = i+1; i < m_numContactGroups; j++)
+      {
+        GEOS_ERROR_IF( std::abs(m_frictionCoefficientTable[i][j] - m_frictionCoefficientTable[j][i]) > DBL_EPSILON, "Off-diagonal friction coefficients must match" );
+      }
+    }
+    return;
+  }
+  else
   {
     if( compareFloat( m_frictionCoefficient, -1.0, 1e-12) )
     // if( static_cast<int>( m_frictionCoefficient ) == -1 )
@@ -4312,22 +4257,12 @@ void SolidMechanicsMPM::computeGridSurfaceNormalWeights( ParticleManager & parti
       m_frictionCoefficient = 0.0;
     }
 
-    // Get views to mapping arrays
-    int const numberOfVerticesPerParticle = subRegion.numberOfVerticesPerParticle();
-    arrayView2d< localIndex const > const mappedNodes = m_mappedNodes[subRegionIndex];
-    arrayView2d< real64 const > const shapeFunctionValues = m_shapeFunctionValues[subRegionIndex];
-    // arrayView3d< real64 const > const shapeFunctionGradientValues = m_shapeFunctionGradientValues[subRegionIndex];
+    GEOS_ERROR_IF( m_frictionCoefficient < 0.0, "Friction coefficient must be positive.");
 
-    SortedArrayView< localIndex const > const activeParticleIndices = subRegion.activeParticleIndices();
-    // int const numDims = m_numDims;
-    int const damageFieldPartitioning = m_damageFieldPartitioning;
-    int const numContactGroups = m_numContactGroups;
-    forAll< serialPolicy >( activeParticleIndices.size(), [=] GEOS_HOST ( localIndex const pp ) // Can parallelize with atomics
+    m_frictionCoefficientTable.resize( m_numContactGroups, m_numContactGroups );
+    for(int i = 0; i < m_numContactGroups; i++)
     {
-      localIndex const p = activeParticleIndices[pp];
-
-      // Map to grid
-      for( int g = 0; g < 8 * numberOfVerticesPerParticle; g++ )
+      for(int j = 0; j < m_numContactGroups; j++)
       {
         m_frictionCoefficientTable[i][j] = m_frictionCoefficient;
       }
@@ -4359,7 +4294,9 @@ void SolidMechanicsMPM::computeContactForces( real64 const dt,
   // Get number of nodes
   int numNodes = nodeManager.size(); //gridMass.size( 0 ); // get size from nodeManager instead?
 
-  forAll< serialPolicy >( numNodes, [&, gridMass, gridVelocity, gridMomentum, gridSurfaceNormal, gridCenterOfMass, gridContactForce] GEOS_HOST ( localIndex const g )
+  forAll< serialPolicy >( numNodes, 
+                          [&, gridMass, gridVelocity, gridMomentum, 
+                           gridSurfaceNormal, gridCenterOfMass, gridContactForce] GEOS_HOST ( localIndex const g )
     {
       // Initialize gridContactForce[g] to zero. TODO: This shouldn't be necessary?
       // This looks to be zeroed every timestep in initializeGridFields, need to test if removing this breaks anything
@@ -4440,7 +4377,7 @@ void SolidMechanicsMPM::computeContactForces( real64 const dt,
                                               gridContactForce[g][B] );
           }
         }
-      // }
+      }
     } );
 }
 
@@ -7701,32 +7638,32 @@ void SolidMechanicsMPM::computeDistanceToParticleSurface( real64 (& normal)[3],
   real64 tolerance = 1e-16;
 
   distanceToSurface = DBL_MAX;
-  if( abs( dN1 ) > tolerance && dS1 / dN1 > 0 )
+  if( fabs( dN1 ) > tolerance && dS1 / dN1 > 0 )
   {
     distanceToSurface = fmin( distanceToSurface, dS1 / dN1 );
   }
 
-  if( abs( dN2 ) > tolerance && dS2 / dN2 > 0 )
+  if( fabs( dN2 ) > tolerance && dS2 / dN2 > 0 )
   {
     distanceToSurface = fmin( distanceToSurface, dS2 / dN2 );
   }
 
-  if( abs( dN3 ) > tolerance && dS3 / dN3 > 0 )
+  if( fabs( dN3 ) > tolerance && dS3 / dN3 > 0 )
   {
     distanceToSurface = fmin( distanceToSurface, dS3 / dN3 );
   }
 
-  if( abs( dN4 ) > tolerance && dS4 / dN4 > 0 )
+  if( fabs( dN4 ) > tolerance && dS4 / dN4 > 0 )
   {
     distanceToSurface = fmin( distanceToSurface, dS4 / dN4 );
   }
 
-  if( abs( dN5 ) > tolerance && dS5 / dN5 > 0 )
+  if( fabs( dN5 ) > tolerance && dS5 / dN5 > 0 )
   {
     distanceToSurface = fmin( distanceToSurface, dS5 / dN5 );
   }
 
-  if( abs( dN6 ) > tolerance && dS6 / dN6 > 0 )
+  if( fabs( dN6 ) > tolerance && dS6 / dN6 > 0 )
   {
     distanceToSurface = fmin( distanceToSurface, dS6 / dN6 );
   }

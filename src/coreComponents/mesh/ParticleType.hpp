@@ -35,7 +35,7 @@ enum class ParticleType : integer
   CPDI,                 ///< Convected particle domain interpolation, parallelepiped domain
   CPTI,                 ///< Convected particle tetrahedral-domain interpolation, tet domain
   CPDI2,                 ///< "2nd-order" CPDI, hexahedral domain
-  Count
+  COUNT
 };
 
 /// Strings for ParticleType

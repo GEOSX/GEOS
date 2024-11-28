@@ -209,6 +209,15 @@ void ParticleMeshGenerator::fillParticleBlockManager( ParticleBlockManager & par
         case ParticleColumnHeaders::VelocityX:
         case ParticleColumnHeaders::VelocityY:
         case ParticleColumnHeaders::VelocityZ:
+        case ParticleColumnHeaders::AccelerationX:
+          defaultValue = 2.0;
+          break;
+        case ParticleColumnHeaders::AccelerationY:
+          defaultValue = 2.0;
+          break;
+        case ParticleColumnHeaders::AccelerationZ:
+          defaultValue = 2.0;
+          break;
         case ParticleColumnHeaders::MaterialDirectionY:
         case ParticleColumnHeaders::MaterialDirectionZ:
         case ParticleColumnHeaders::SurfaceNormalY:
@@ -259,6 +268,7 @@ void ParticleMeshGenerator::fillParticleBlockManager( ParticleBlockManager & par
     array1d< globalIndex > particleID( npInBlock );
     array2d< real64 > particleCenter( npInBlock, 3 );
     array2d< real64 > particleVelocity( npInBlock, 3 );
+    array2d< real64 > particleAcceleration( npInBlock, 3 );
     array2d< real64 > particleMaterialDirection( npInBlock, 3 );
     array1d< int > particleGroup( npInBlock );
     array1d< int > particleSurfaceFlag( npInBlock );
@@ -287,6 +297,11 @@ void ParticleMeshGenerator::fillParticleBlockManager( ParticleBlockManager & par
       particleVelocity[i][0] = particleData[b][i][static_cast< int >( ParticleColumnHeaders::VelocityX )];
       particleVelocity[i][1] = particleData[b][i][static_cast< int >( ParticleColumnHeaders::VelocityY )];
       particleVelocity[i][2] = particleData[b][i][static_cast< int >( ParticleColumnHeaders::VelocityZ )];
+
+      // Acceleration
+      particleAcceleration[i][0] = particleData[b][i][static_cast< int >( ParticleColumnHeaders::AccelerationX )];
+      particleAcceleration[i][1] = particleData[b][i][static_cast< int >( ParticleColumnHeaders::AccelerationY )];
+      particleAcceleration[i][2] = particleData[b][i][static_cast< int >( ParticleColumnHeaders::AccelerationZ )];
   
       // Material (set above) is [10]
 
@@ -390,6 +405,7 @@ void ParticleMeshGenerator::fillParticleBlockManager( ParticleBlockManager & par
     particleBlock.setParticleID( particleID );
     particleBlock.setParticleCenter( particleCenter );
     particleBlock.setParticleVelocity( particleVelocity );
+    particleBlock.setParticleAcceleration( particleAcceleration );
     particleBlock.setParticleMaterialDirection( particleMaterialDirection );
     particleBlock.setParticleGroup( particleGroup );
     particleBlock.setParticleSurfaceFlag( particleSurfaceFlag );

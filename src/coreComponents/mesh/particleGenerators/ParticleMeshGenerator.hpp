@@ -23,7 +23,7 @@
 #include "mesh/generators/ExternalMeshGeneratorBase.hpp"
 
 template<typename Enum>
-constexpr auto EnumSize = static_cast< int >(Enum::Count);
+constexpr auto EnumSize = static_cast< int >(Enum::COUNT);
 
 namespace geos
 {
@@ -85,7 +85,7 @@ public:
     SurfaceTractionX,
     SurfaceTractionY,
     SurfaceTractionZ,
-    DistanceToCrackTip,
+    // DistanceToCrackTip,
     COUNT   // holds the number of particle column header options e.g. 30 for [0-29]
   };
 
@@ -185,7 +185,7 @@ ENUM_STRINGS( ParticleMeshGenerator::ParticleColumnHeaders,
               "SurfaceTractionX",
               "SurfaceTractionY",
               "SurfaceTractionZ",
-              "DistanceToCrackTip",
+              // "DistanceToCrackTip",
               "COUNT" );
 
 } /* namespace geos */

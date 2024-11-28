@@ -109,20 +109,15 @@ public:
    * @param particleVelocity The input list of velocities
    */
   void setParticleVelocity( array2d< real64 > const particleVelocity )
+  { m_particleVelocity = particleVelocity; }  
+
+  array2d< real64 > getParticleAcceleration() const override
+  { return m_particleAcceleration; }  
 
   /**
    * @brief Set the list of particle velocities in this subregion.
    * @param particleAcceleration The input list of velocities
-  */
-  { m_particleVelocity = particleVelocity; }
-
-  array2d< real64 > getParticleAcceleration() const override
-  { return m_particleAcceleration; }
-
-  /**
-   * @brief Set the list of particle accelerations in this subregion.
-   * @param particleAcceleration The input list of accelerations
-  */
+   */
   void setParticleAcceleration( array2d< real64 > const particleAcceleration )
   { m_particleAcceleration = particleAcceleration; }  
 
@@ -288,16 +283,6 @@ public:
    */
   void setParticleSurfaceTraction( array2d< real64 > const particleSurfaceTraction )
   { m_particleSurfaceTraction = particleSurfaceTraction; }
-
-  array1d< real64 > getParticleDistanceToCrackTip() const override
-  { return m_particleDistanceToCrackTip; }
-
-  /**
-   * @brief Set the list of particle distances to a crack tip in this subregion.
-   * @param particleDistanceToCrackTip The input list of distances to a crack tip
-   */
-  void setParticleDistanceToCrackTip( array1d< real64 > const particleDistanceToCrackTip )
-  { m_particleDistanceToCrackTip = particleDistanceToCrackTip; }  
 
   localIndex numParticles() const override
   { return size(); }
