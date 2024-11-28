@@ -52,10 +52,7 @@ char const * xmlInput =
         dtSeismoTrace="0.1"
         useTaper="1"
         reflectivityCoeff="0.000001"
-        xMinTaper="{50.0,50.0,50.0}"
-        xMaxTaper="{50.0,50.0,50.0}"
-        thicknessMinXYZTaper="{50.0,50.0,50.0}"
-        thicknessMaxXYZTaper="{50.0,50.0,50.0}"
+        thicknessTaper="{50.0}"
         />
     </Solvers>
     <Mesh>
