@@ -40,13 +40,13 @@ QuasiDynamicEQRK32::QuasiDynamicEQRK32( const string & name,
   m_stressSolver( nullptr ),
   m_stressSolverName( "SpringSlider" ),
   m_shearImpedance( 0.0 ),
+  m_butcherTable(RK32Table()),
   m_timestepAbsTol( 1.0e-5 ),
   m_timestepRelTol( 1.0e-5 ),
   m_timestepAcceptSafety( 0.81 ),
   m_prevTimestepErrors{ 0.0, 0.0 } ,
   m_beta{ 1.0/18.0, 1.0/9.0, 1.0/18.0 },
-  m_successfulStep( false ),
-  m_butcherTable(RK32Table())
+  m_successfulStep( false )
 {
   this->registerWrapper( viewKeyStruct::shearImpedanceString(), &m_shearImpedance ).
     setInputFlag( InputFlags::REQUIRED ).

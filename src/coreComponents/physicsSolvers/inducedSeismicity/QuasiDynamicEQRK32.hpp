@@ -105,21 +105,24 @@ private:
   /// shear impedance
   real64 m_shearImpedance;
 
-  /// time step tolerance
-  real64 m_timestepAbsTol;
-
-  real64 m_timestepRelTol;
-
-  real64 m_timestepAcceptSafety;
-  
-  real64 m_prevTimestepErrors[2];
-
-  /// time step error
-  real64 m_beta[3];
-
-  bool m_successfulStep;
-
+  /// Runge-Kutta Butcher table (specifies the embedded RK method)
+  // TODO: The specific type should not be hardcoded!
+  // Should be possible to change RK-method based on the table.
   rateAndStateKernels::RK32Table m_butcherTable;
+
+  /// Parameters for the PID error controller
+  real64 m_timestepAbsTol; // absolut tolerence
+
+  real64 m_timestepRelTol; // relative tolerence
+
+  real64 m_timestepAcceptSafety; // Acceptance safety
+  
+  real64 m_prevTimestepErrors[2]; // Errors from last two time steps
+
+  real64 m_beta[3]; // Controller parameters
+
+  bool m_successfulStep; // Flag indicating if the adative time step was accepted
+
 
   class SpringSliderParameters
   {
