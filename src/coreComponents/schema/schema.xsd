@@ -185,6 +185,12 @@
 					<xsd:field xpath="@name" />
 				</xsd:unique>
 			</xsd:element>
+			<xsd:element name="ExternalDataSource" type="ExternalDataSourceType" minOccurs="1" maxOccurs="1">
+				<xsd:unique name="ExternalDataSourceVTKHierarchicalDataSourceUniqueName">
+					<xsd:selector xpath="VTKHierarchicalDataSource" />
+					<xsd:field xpath="@name" />
+				</xsd:unique>
+			</xsd:element>
 			<xsd:element name="FieldSpecifications" type="FieldSpecificationsType" maxOccurs="1">
 				<xsd:unique name="FieldSpecificationsAquiferUniqueName">
 					<xsd:selector xpath="Aquifer" />
@@ -1083,6 +1089,25 @@
 			<xsd:pattern value=".*[\[\]`$].*|seconds|minutes|hours|days|years|full" />
 		</xsd:restriction>
 	</xsd:simpleType>
+	<xsd:complexType name="ExternalDataSourceType">
+		<xsd:choice minOccurs="0" maxOccurs="unbounded">
+			<xsd:element name="VTKHierarchicalDataSource" type="VTKHierarchicalDataSourceType">
+				<xsd:unique name="ExternalDataSourceVTKHierarchicalDataSourceVTKHierarchicalDataSourceUniqueName">
+					<xsd:selector xpath="VTKHierarchicalDataSource" />
+					<xsd:field xpath="@name" />
+				</xsd:unique>
+			</xsd:element>
+		</xsd:choice>
+	</xsd:complexType>
+	<xsd:complexType name="VTKHierarchicalDataSourceType">
+		<xsd:choice minOccurs="0" maxOccurs="unbounded">
+			<xsd:element name="VTKHierarchicalDataSource" type="VTKHierarchicalDataSourceType" />
+		</xsd:choice>
+		<!--file => Path to the mesh file-->
+		<xsd:attribute name="file" type="groupNameRef" use="required" />
+		<!--name => A name is required for any non-unique nodes-->
+		<xsd:attribute name="name" type="groupName" use="required" />
+	</xsd:complexType>
 	<xsd:complexType name="FieldSpecificationsType">
 		<xsd:choice minOccurs="0" maxOccurs="unbounded">
 			<xsd:element name="Aquifer" type="AquiferType" />
@@ -1502,6 +1527,10 @@ stress - traction is applied to the faces as specified by the inner product of i
 					<xsd:selector xpath="InternalWell" />
 					<xsd:field xpath="@name" />
 				</xsd:unique>
+				<xsd:unique name="MeshInternalMeshRegionUniqueName">
+					<xsd:selector xpath="Region" />
+					<xsd:field xpath="@name" />
+				</xsd:unique>
 				<xsd:unique name="MeshInternalMeshVTKWellUniqueName">
 					<xsd:selector xpath="VTKWell" />
 					<xsd:field xpath="@name" />
@@ -1510,6 +1539,10 @@ stress - traction is applied to the faces as specified by the inner product of i
 			<xsd:element name="InternalWellbore" type="InternalWellboreType">
 				<xsd:unique name="MeshInternalWellboreInternalWellUniqueName">
 					<xsd:selector xpath="InternalWell" />
+					<xsd:field xpath="@name" />
+				</xsd:unique>
+				<xsd:unique name="MeshInternalWellboreRegionUniqueName">
+					<xsd:selector xpath="Region" />
 					<xsd:field xpath="@name" />
 				</xsd:unique>
 				<xsd:unique name="MeshInternalWellboreVTKWellUniqueName">
@@ -1521,6 +1554,10 @@ stress - traction is applied to the faces as specified by the inner product of i
 			<xsd:element name="VTKMesh" type="VTKMeshType">
 				<xsd:unique name="MeshVTKMeshInternalWellUniqueName">
 					<xsd:selector xpath="InternalWell" />
+					<xsd:field xpath="@name" />
+				</xsd:unique>
+				<xsd:unique name="MeshVTKMeshRegionUniqueName">
+					<xsd:selector xpath="Region" />
 					<xsd:field xpath="@name" />
 				</xsd:unique>
 				<xsd:unique name="MeshVTKMeshVTKWellUniqueName">
@@ -1538,6 +1575,7 @@ stress - traction is applied to the faces as specified by the inner product of i
 					<xsd:field xpath="@name" />
 				</xsd:unique>
 			</xsd:element>
+			<xsd:element name="Region" type="RegionType" />
 			<xsd:element name="VTKWell" type="VTKWellType">
 				<xsd:unique name="MeshInternalMeshVTKWellPerforationUniqueName">
 					<xsd:selector xpath="Perforation" />
@@ -1609,6 +1647,14 @@ stress - traction is applied to the faces as specified by the inner product of i
 		<!--name => A name is required for any non-unique nodes-->
 		<xsd:attribute name="name" type="groupName" use="required" />
 	</xsd:complexType>
+	<xsd:complexType name="RegionType">
+		<!--id => Interval region identifier-->
+		<xsd:attribute name="id" type="integer" use="required" />
+		<!--pathInRepository => Path of the dataset in the repository-->
+		<xsd:attribute name="pathInRepository" type="string" use="required" />
+		<!--name => A name is required for any non-unique nodes-->
+		<xsd:attribute name="name" type="groupName" use="required" />
+	</xsd:complexType>
 	<xsd:complexType name="VTKWellType">
 		<xsd:choice minOccurs="0" maxOccurs="unbounded">
 			<xsd:element name="Perforation" type="PerforationType" />
@@ -1638,6 +1684,7 @@ stress - traction is applied to the faces as specified by the inner product of i
 					<xsd:field xpath="@name" />
 				</xsd:unique>
 			</xsd:element>
+			<xsd:element name="Region" type="RegionType" />
 			<xsd:element name="VTKWell" type="VTKWellType">
 				<xsd:unique name="MeshInternalWellboreVTKWellPerforationUniqueName">
 					<xsd:selector xpath="Perforation" />
@@ -1706,6 +1753,7 @@ stress - traction is applied to the faces as specified by the inner product of i
 					<xsd:field xpath="@name" />
 				</xsd:unique>
 			</xsd:element>
+			<xsd:element name="Region" type="RegionType" />
 			<xsd:element name="VTKWell" type="VTKWellType">
 				<xsd:unique name="MeshVTKMeshVTKWellPerforationUniqueName">
 					<xsd:selector xpath="Perforation" />
@@ -1720,7 +1768,7 @@ stress - traction is applied to the faces as specified by the inner product of i
 		<!--fieldsToImport => Volumic fields to be imported from the external mesh file-->
 		<xsd:attribute name="fieldsToImport" type="groupNameRef_array" default="{}" />
 		<!--file => Path to the mesh file-->
-		<xsd:attribute name="file" type="path" use="required" />
+		<xsd:attribute name="file" type="path" default="" />
 		<!--logLevel => Log level-->
 		<xsd:attribute name="logLevel" type="integer" default="0" />
 		<!--mainBlockName => For multi-block files, name of the 3d mesh block.-->
@@ -1733,6 +1781,8 @@ stress - traction is applied to the faces as specified by the inner product of i
 		<xsd:attribute name="partitionRefinement" type="integer" default="1" />
 		<!--regionAttribute => Name of the VTK cell attribute to use as region marker-->
 		<xsd:attribute name="regionAttribute" type="groupNameRef" default="attribute" />
+		<!--repositoryName => Name of the VTK Repository-->
+		<xsd:attribute name="repositoryName" type="string" default="" />
 		<!--scale => Scale the coordinates of the vertices by given scale factors (after translation)-->
 		<xsd:attribute name="scale" type="R1Tensor" default="{1,1,1}" />
 		<!--surfacicFieldsInGEOS => Names of the surfacic fields in GEOS to import into-->
