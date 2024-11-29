@@ -111,18 +111,65 @@ private:
   // Should be possible to change RK-method based on the table.
   rateAndStateKernels::BogackiShampine32Table m_butcherTable;
 
-  /// Parameters for the PID error controller
-  real64 m_timestepAbsTol; // absolut tolerence
-
-  real64 m_timestepRelTol; // relative tolerence
-
-  real64 m_timestepAcceptSafety; // Acceptance safety
-  
-  real64 m_prevTimestepErrors[2]; // Errors from last two time steps
-
-  real64 m_beta[3]; // Controller parameters
-
   bool m_successfulStep; // Flag indicating if the adative time step was accepted
+
+  class PIDController
+  {
+public:
+
+    GEOS_HOST_DEVICE
+    PIDController(std::array<const real64, 3> const & controlParameters, real64 absTol, real64 relTol, real64 acceptSafety):
+      controlParameters{controlParameters},
+      absTol(absTol),
+      relTol(relTol),
+      acceptSafety(acceptSafety),
+      errors{{0.0, 0.0, 0.0}}
+    {}
+
+    /// Default copy constructor
+    PIDController( PIDController const & ) = default;
+
+    /// Default move constructor
+    PIDController( PIDController && ) = default;
+
+    /// Deleted default constructor
+    PIDController() = delete;
+
+    /// Deleted copy assignment operator
+    PIDController & operator=( PIDController const & ) = delete;
+
+    /// Deleted move assignment operator
+    PIDController & operator=( PIDController && ) =  delete;
+
+    /// Parameters for the PID error controller
+    const std::array<const real64,3> controlParameters; // Controller parameters
+
+    real64 const absTol; // absolut tolerence
+
+    real64 const relTol; // relative tolerence
+
+    real64 const acceptSafety; // Acceptance safety
+    
+    std::array<real64, 3> errors; // Errors for current and two previous updates
+                                  // stored as [n+1, n, n-1]
+
+    real64 computeUpdateFactor(integer const algHighOrder, integer const algLowOrder)
+    {
+      // PID error controller + limiter
+      real64 const k = LvArray::math::min(algHighOrder, algLowOrder) + 1.0;
+      real64 const eps0 = 1.0/(errors[0] + std::numeric_limits< real64 >::epsilon()); // n + 1
+      real64 const eps1 = 1.0/(errors[1] + std::numeric_limits< real64 >::epsilon()); // n
+      real64 const eps2 = 1.0/(errors[2] + std::numeric_limits< real64 >::epsilon()); // n-1
+      // Compute update factor eps0^(beta0/k)*eps1^(beta1/k)*eps2^(beta2/k) where
+      // beta0 - beta2 are the control parameters. Also apply limiter to smoothen changes.
+      // Limiter is 1.0 + atan(x - 1.0). Here use atan(x) = atan2(x, 1.0).
+      return 1.0 + LvArray::math::atan2( pow(eps0, controlParameters[0] / k ) *  
+                                         pow(eps1, controlParameters[1] / k ) *  
+                                         pow(eps2, controlParameters[2] / k ) - 1.0, 1.0);
+    }                              
+  };
+
+  PIDController m_controller;
 
 
   class SpringSliderParameters

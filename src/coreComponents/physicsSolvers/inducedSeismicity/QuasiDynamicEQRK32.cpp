@@ -40,13 +40,10 @@ QuasiDynamicEQRK32::QuasiDynamicEQRK32( const string & name,
   m_stressSolver( nullptr ),
   m_stressSolverName( "SpringSlider" ),
   m_shearImpedance( 0.0 ),
-  m_butcherTable(BogackiShampine32Table()),
-  m_timestepAbsTol( 1.0e-6 ),
-  m_timestepRelTol( 1.0e-6 ),
-  m_timestepAcceptSafety( 0.81 ),
-  m_prevTimestepErrors{ 0.0, 0.0 } ,
-  m_beta{ 1.0/18.0, 1.0/9.0, 1.0/18.0 },
-  m_successfulStep( false )
+  m_butcherTable(BogackiShampine32Table()), // TODO: The butcher table should be specified in the XML input.
+  m_successfulStep( false ),
+  m_controller(PIDController({ 1.0/18.0, 1.0/9.0, 1.0/18.0 },
+                               1.0e-6, 1.0e-6, 0.81)) // TODO: The control parameters should be specified in the XML input
 {
   this->registerWrapper( viewKeyStruct::shearImpedanceString(), &m_shearImpedance ).
     setInputFlag( InputFlags::REQUIRED ).
@@ -302,7 +299,7 @@ void QuasiDynamicEQRK32::stepRateStateODEAndComputeError(real64 const dt, Domain
               // Perform last stage rate update
               rkKernel.updateStageRates(k, m_butcherTable.numStages-1);
               // Update solution to final time and compute errors
-              rkKernel.updateSolutionAndLocalErrorFSAL(k, dt, m_timestepAbsTol, m_timestepRelTol);
+              rkKernel.updateSolutionAndLocalErrorFSAL(k, dt, m_controller.absTol, m_controller.relTol);
           } );
         }
         else
@@ -312,7 +309,7 @@ void QuasiDynamicEQRK32::stepRateStateODEAndComputeError(real64 const dt, Domain
               // Perform last stage rate update
               rkKernel.updateStageRates(k, m_butcherTable.numStages-1);
               // Update solution to final time and compute errors
-              rkKernel.updateSolutionAndLocalError(k, dt, m_timestepAbsTol, m_timestepRelTol);
+              rkKernel.updateSolutionAndLocalError(k, dt, m_controller.absTol, m_controller.relTol);
           } );
         }
       } );
@@ -435,7 +432,6 @@ real64 QuasiDynamicEQRK32::setNextDt( real64 const & currentDt, DomainPartition 
 {
 
   // Spring-slider shear traction computation
-  real64 scaledL2Error  = 0.0;
   forDiscretizationOnMeshTargets( domain.getMeshBodies(), [&]( string const &,
                                                                MeshLevel const & mesh,
                                                                arrayView1d< string const > const & regionNames )
@@ -453,24 +449,19 @@ real64 QuasiDynamicEQRK32::setNextDt( real64 const & currentDt, DomainPartition 
       {
         scaledl2ErrorSquared += LvArray::tensorOps::l2NormSquared<3>(error[k]);
       } );
-      scaledL2Error = LvArray::math::sqrt(MpiWrapper::sum( scaledl2ErrorSquared.get() / (3.0*N) ));
+      m_controller.errors[0] = LvArray::math::sqrt(MpiWrapper::sum( scaledl2ErrorSquared.get() / (3.0*N) ));
   } );
   } );
 
-  // PID error controller + limiter
-  real64 const k = LvArray::math::min(m_butcherTable.algHighOrder, m_butcherTable.algLowOrder) + 1.0;
-  real64 const eps0 = 1.0/(scaledL2Error + std::numeric_limits< real64 >::epsilon()); // n + 1
-  real64 const eps1 =  1.0/(m_prevTimestepErrors[0] + std::numeric_limits< real64 >::epsilon()); // n
-  real64 const eps2 = 1.0/(m_prevTimestepErrors[1] + std::numeric_limits< real64 >::epsilon()); // n-1
-  // Limiter is 1.0 + atan(x - 1.0). Here use atan(x) = atan2(x, 1.0)
-  real64 const dtFactor = 1.0 + LvArray::math::atan2( pow(eps0, m_beta[0] / k ) *  pow(eps1, m_beta[1] / k ) *  pow(eps2, m_beta[2] / k ) - 1.0, 1.0);
-  
+  // Compute update factor to currentDt using PID error controller + limiter
+  real64 const dtFactor = m_controller.computeUpdateFactor(m_butcherTable.algHighOrder, m_butcherTable.algLowOrder);
   real64 const nextDt = dtFactor*currentDt;
-  m_successfulStep = (dtFactor >= m_timestepAcceptSafety) ? true : false;
+  // Check if step was acceptable
+  m_successfulStep = (dtFactor >= m_controller.acceptSafety) ? true : false;
   if ( m_successfulStep )
   {
-    m_prevTimestepErrors[1] = m_prevTimestepErrors[0];
-    m_prevTimestepErrors[0] = scaledL2Error;
+    m_controller.errors[2] = m_controller.errors[1];
+    m_controller.errors[1] = m_controller.errors[0];
     GEOS_LOG_LEVEL_RANK_0( 1, GEOS_FMT( "Adaptive time step successful. The next dt will be {:.2e} s", nextDt ));  
   }
   else
