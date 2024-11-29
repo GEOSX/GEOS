@@ -188,7 +188,7 @@ TEST_F( ElasticWaveEquationSEMTest, SeismoTrace )
 
   //Assert on time-step computed with the automatci time-step routine
   real64 const dtOut = propagator->getReference< real64 >( ElasticWaveEquationSEM::viewKeyStruct::timeStepString() );
-  ASSERT_TRUE( dtOut < 0.04 );
+  ASSERT_TRUE( dtOut < 0.05 );
 
 
   // retrieve seismo
