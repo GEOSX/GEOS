@@ -320,32 +320,39 @@ createAndLaunch( SurfaceElementSubRegion & subRegion,
   } );
 }
 
-
-struct RK32Table
+/**
+ * @brief Butcher table for embedded RK3(2) method using Kuttas third order
+ *        method for the high-order update, and an explicit trapezoidal rule
+ *        based on the first and third stage rates for the low-order update.
+ */
+struct Kutta32Table
 {   
-    integer const algHighOrder = 3;
-    integer const algLowOrder = 2;
-    integer const numStages = 3;
-    real64 const a[2][2] = { { 1.0/2.0, 0.0 },           // Coefficients for stage value updates
-                             { -1.0,    2.0 } };         // (lower-triangular part of table).
-    real64 const c[3] = { 0.0, 1.0/2.0, 1.0 };           // Coefficients for time increments of substages
-    real64 const b[3] = { 1.0/6.0, 4.0/6.0, 1.0/6.0 };  // Quadrature weights used to evolve the solution to next time
+    integer const algHighOrder = 3;                    // High-order update order 
+    integer const algLowOrder = 2;                     // Low-order update order
+    integer const numStages = 3;                       // Number of stages
+    real64 const a[2][2] = { { 1.0/2.0, 0.0 },         // Coefficients for stage value updates
+                             { -1.0,    2.0 } };       // (lower-triangular part of table).
+    real64 const c[3] = { 0.0, 1.0/2.0, 1.0 };         // Coefficients for time increments of substages
+    real64 const b[3] = { 1.0/6.0, 4.0/6.0, 1.0/6.0 }; // Quadrature weights used to step the solution to next time
     real64 const bStar[3] = { 1.0/2.0, 0.0, 1.0/2.0 }; // Quadrature weights used for low-order comparision solution
-    real64 const FSAL = false;
+    real64 const FSAL = false;                         // Not first same as last 
 };
 
+/**
+ * @brief Butcher table for the BogackiShampine 3(2) method.
+ */
 struct BogackiShampine32Table
 {   
-    integer const algHighOrder = 3;
-    integer const algLowOrder = 2;
-    integer const numStages = 4;
-    real64 const a[3][3] = { { 1.0/2.0, 0.0,     0.0     },           // Coefficients for stage value updates
-                             { 0.0,     3.0/4.0, 0.0     },
-                             { 2.0/9.0, 1.0/3.0, 4.0/9.0 } };     // (lower-triangular part of table).
-    real64 const c[4] = { 0.0, 1.0/2.0, 3.0/4.0, 1.0 };           // Coefficients for time increments of substages
-    real64 const b[4] = { 2.0/9.0, 1.0/3.0, 4.0/9.0, 0.0 };  // Quadrature weights used to evolve the solution to next time
+    integer const algHighOrder = 3;                                 // High-order update order 
+    integer const algLowOrder = 2;                                  // Low-order update order
+    integer const numStages = 4;                                    // Number of stages
+    real64 const a[3][3] = { { 1.0/2.0, 0.0,     0.0     },         // Coefficients for stage value updates
+                             { 0.0,     3.0/4.0, 0.0     },         // (lower-triangular part of table).
+                             { 2.0/9.0, 1.0/3.0, 4.0/9.0 } };     
+    real64 const c[4] = { 0.0, 1.0/2.0, 3.0/4.0, 1.0 };             // Coefficients for time increments of substages
+    real64 const b[4] = { 2.0/9.0, 1.0/3.0, 4.0/9.0, 0.0 };         // Quadrature weights used to step the solution to next time
     real64 const bStar[4] = { 7.0/24.0, 1.0/4.0, 1.0/3.0, 1.0/8.0}; // Quadrature weights used for low-order comparision solution
-    bool FSAL = true;                                   // first same as last (can reuse the last stage rate)
+    bool FSAL = true;                                               // First same as last (can reuse the last stage rate in next update)
 };
 
 template <typename Table> class EmbeddedRungeKuttaKernel
