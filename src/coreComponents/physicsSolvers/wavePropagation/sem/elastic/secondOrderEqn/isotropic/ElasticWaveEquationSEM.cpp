@@ -250,11 +250,6 @@ void ElasticWaveEquationSEM::precomputeSourceAndReceiverTerm( MeshLevel & baseMe
 {
   GEOS_MARK_FUNCTION;
 
-  //This two variables are used for for Taper
-  NodeManager & nodeManager = mesh.getNodeManager();
-  arrayView2d< wsCoordType const, nodes::REFERENCE_POSITION_USD > const nodeCoords32 =
-    nodeManager.getField< fields::referencePosition32 >().toViewConst();
-
   arrayView1d< globalIndex const > const nodeLocalToGlobal = baseMesh.getNodeManager().localToGlobalMap().toViewConst();
   ArrayOfArraysView< localIndex const > const nodesToElements = baseMesh.getNodeManager().elementList().toViewConst();
   ArrayOfArraysView< localIndex const > const facesToNodes = baseMesh.getFaceManager().nodeList().toViewConst();
