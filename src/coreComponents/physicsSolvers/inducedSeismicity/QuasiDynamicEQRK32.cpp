@@ -40,9 +40,9 @@ QuasiDynamicEQRK32::QuasiDynamicEQRK32( const string & name,
   m_stressSolver( nullptr ),
   m_stressSolverName( "SpringSlider" ),
   m_shearImpedance( 0.0 ),
-  m_butcherTable(RK32Table()),
-  m_timestepAbsTol( 1.0e-5 ),
-  m_timestepRelTol( 1.0e-5 ),
+  m_butcherTable(BogackiShampine32Table()),
+  m_timestepAbsTol( 1.0e-6 ),
+  m_timestepRelTol( 1.0e-6 ),
   m_timestepAcceptSafety( 0.81 ),
   m_prevTimestepErrors{ 0.0, 0.0 } ,
   m_beta{ 1.0/18.0, 1.0/9.0, 1.0/18.0 },
@@ -75,16 +75,6 @@ QuasiDynamicEQRK32::~QuasiDynamicEQRK32()
 }
 
 
-// TODO The vectors listed below are only temporary memory buffers used within an adaptive
-// time step in the solverStep function. They don't need to persist between time steps,
-// and could be allocated in the beginning of each call to solverStep, instead of 
-// being managed by the region manager. This would of course result in more heap allocations.
-// Not sure what is preferable. 
-// 
-// slipVelocity_n
-// traction_n
-// deltaSlip_n
-// stateVariable_n
 void QuasiDynamicEQRK32::registerDataOnMesh( Group & meshBodies )
 {
   SolverBase::registerDataOnMesh( meshBodies );
@@ -115,12 +105,10 @@ void QuasiDynamicEQRK32::registerDataOnMesh( Group & meshBodies )
       subRegion.registerField< rateAndState::deltaSlip_n >( getName() ).
         setDimLabels( 1, labels2Comp ).reference().resizeDimension< 1 >( 2 );  
 
-      // Runge-Kutta stage rates
-      subRegion.registerField< rateAndState::rungeKuttaStageRates >( getName() ).reference().resizeDimension< 1, 2>( 3, 3 );
-      // Error
-      string const labelsError[3] = { "deltaSlip1", "deltaSlip2", "stateVariable"};
-      subRegion.registerField< rateAndState::error >( getName() ).
-        setDimLabels( 1, labelsError ).reference().resizeDimension< 1 >( 3 ); 
+      // Runge-Kutta stage rates and error
+      integer const numRKComponents = 3;
+      subRegion.registerField< rateAndState::rungeKuttaStageRates >( getName() ).reference().resizeDimension< 1, 2>( m_butcherTable.numStages, numRKComponents);
+      subRegion.registerField< rateAndState::error >( getName() ).reference().resizeDimension< 1 >( numRKComponents ); 
       
 
       if( !subRegion.hasWrapper( contact::dispJump::key() ))
@@ -180,25 +168,36 @@ real64 QuasiDynamicEQRK32::solverStep( real64 const & time_n,
   GEOS_LOG_LEVEL_RANK_0( 1, "Begin adaptive time step" );
   while (true) // Adaptive time step loop. Performs a Runge-Kutta time stepping with error control on state and slip
   {
-    real64 dtStress;
-    GEOS_UNUSED_VAR( dtStress );
-    for (integer stageIndex = 0; stageIndex < m_butcherTable.numStages-1; stageIndex++)
-    {
+    real64 dtStress;GEOS_UNUSED_VAR( dtStress );
+
+    // Initial Runge-Kutta stage
+    stepRateStateODEInitialSubstage(dtAdaptive, domain );
+    real64 dtStage = m_butcherTable.c[1]*dtAdaptive;
+    dtStress = updateStresses( time_n, dtStage, cycleNumber, domain );
+    updateSlipVelocity( time_n, dtStage, domain );
+    
+    // Remaining stages
+    for (integer stageIndex = 1; stageIndex < m_butcherTable.numStages-1; stageIndex++)
+    { 
       stepRateStateODESubstage( stageIndex, dtAdaptive, domain );
-      real64 dtStage = m_butcherTable.c[stageIndex+1]*dtAdaptive;
+      dtStage = m_butcherTable.c[stageIndex+1]*dtAdaptive; 
       dtStress = updateStresses( time_n, dtStage, cycleNumber, domain );
       updateSlipVelocity( time_n, dtStage, domain );
     }
+    
     stepRateStateODEAndComputeError(dtAdaptive, domain);
     // Update timestep based on the time step error 
     real64 const dtNext = setNextDt(dtAdaptive, domain);
     if (m_successfulStep) // set in setNextDt
     {
       // Compute stresses, and slip velocity and save results at updated time,
-      dtStress = updateStresses( time_n, dtAdaptive, cycleNumber, domain );
-      updateSlipVelocity( time_n, dtAdaptive, domain );
+      if (!m_butcherTable.FSAL)
+      {
+        dtStress = updateStresses( time_n, dtAdaptive, cycleNumber, domain );
+        updateSlipVelocity( time_n, dtAdaptive, domain );
+      }  
       saveState(domain);
-      // pdate the time step and exit the adaptive time step loop
+      // update the time step and exit the adaptive time step loop
       dtAdaptive = dtNext;
       break;
     }
@@ -212,6 +211,44 @@ real64 QuasiDynamicEQRK32::solverStep( real64 const & time_n,
   return dtAdaptive;
 }
 
+void QuasiDynamicEQRK32::stepRateStateODEInitialSubstage(real64 const dt, DomainPartition & domain ) const
+{
+  
+  forDiscretizationOnMeshTargets( domain.getMeshBodies(), [&]( string const &,
+                                                                MeshLevel & mesh,
+                                                                arrayView1d< string const > const & regionNames )
+
+    {
+      mesh.getElemManager().forElementSubRegions< SurfaceElementSubRegion >( regionNames,
+                                                                            [&]( localIndex const,
+                                                                                  SurfaceElementSubRegion & subRegion )
+      {
+        
+        string const & fricitonLawName = subRegion.template getReference< string >( viewKeyStruct::frictionLawNameString() );
+        RateAndStateFriction const & frictionLaw = getConstitutiveModel< RateAndStateFriction >( subRegion, fricitonLawName );
+        rateAndStateKernels::EmbeddedRungeKuttaKernel rkKernel( subRegion, frictionLaw, m_butcherTable);
+        arrayView3d< real64 > const rkStageRates      = subRegion.getField< rateAndState::rungeKuttaStageRates >();
+        
+        if (m_butcherTable.FSAL && m_successfulStep)
+        {
+          forAll< parallelDevicePolicy<> >( subRegion.size(), [=] GEOS_HOST_DEVICE ( localIndex const k )
+          {   
+            rkKernel.updateStageRatesFSAL(k);          
+            rkKernel.updateStageValues(k, 1, dt);
+          } );
+        }
+        else
+        {
+        forAll< parallelDevicePolicy<> >( subRegion.size(), [=] GEOS_HOST_DEVICE ( localIndex const k )
+        {   
+            rkKernel.initialize(k);
+            rkKernel.updateStageRates(k, 0); 
+            rkKernel.updateStageValues(k, 1, dt);
+        } );
+        }
+      } );
+    } );
+}
 
 void QuasiDynamicEQRK32::stepRateStateODESubstage( integer const stageIndex,
                                                    real64 const dt,
@@ -235,10 +272,6 @@ void QuasiDynamicEQRK32::stepRateStateODESubstage( integer const stageIndex,
         
         forAll< parallelDevicePolicy<> >( subRegion.size(), [=] GEOS_HOST_DEVICE ( localIndex const k )
         {   
-            if (stageIndex == 0)
-            {
-              rkKernel.initialize(k);
-            }
             rkKernel.updateStageRates(k, stageIndex);
             rkKernel.updateStageValues(k, stageIndex+1, dt);
         } );
@@ -262,14 +295,26 @@ void QuasiDynamicEQRK32::stepRateStateODEAndComputeError(real64 const dt, Domain
         RateAndStateFriction const & frictionLaw = getConstitutiveModel< RateAndStateFriction >( subRegion, fricitonLawName );
         rateAndStateKernels::EmbeddedRungeKuttaKernel rkKernel( subRegion, frictionLaw, m_butcherTable);
         arrayView3d< real64 > const rkStageRates      = subRegion.getField< rateAndState::rungeKuttaStageRates >();
-
-        forAll< parallelDevicePolicy<> >( subRegion.size(), [=] GEOS_HOST_DEVICE ( localIndex const k )
-        {               
-            // Perform last stage rate update
-            rkKernel.updateStageRates(k, m_butcherTable.numStages-1);
-            // Update solution to final time and compute errors
-            rkKernel.updateSolutionAndLocalError(k, dt, m_timestepAbsTol, m_timestepRelTol);
-        } );
+        if (m_butcherTable.FSAL)
+        {
+          forAll< parallelDevicePolicy<> >( subRegion.size(), [=] GEOS_HOST_DEVICE ( localIndex const k )
+          {               
+              // Perform last stage rate update
+              rkKernel.updateStageRates(k, m_butcherTable.numStages-1);
+              // Update solution to final time and compute errors
+              rkKernel.updateSolutionAndLocalErrorFSAL(k, dt, m_timestepAbsTol, m_timestepRelTol);
+          } );
+        }
+        else
+        {
+          forAll< parallelDevicePolicy<> >( subRegion.size(), [=] GEOS_HOST_DEVICE ( localIndex const k )
+          {               
+              // Perform last stage rate update
+              rkKernel.updateStageRates(k, m_butcherTable.numStages-1);
+              // Update solution to final time and compute errors
+              rkKernel.updateSolutionAndLocalError(k, dt, m_timestepAbsTol, m_timestepRelTol);
+          } );
+        }
       } );
     } ); 
 }

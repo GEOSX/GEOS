@@ -326,11 +326,26 @@ struct RK32Table
     integer const algHighOrder = 3;
     integer const algLowOrder = 2;
     integer const numStages = 3;
-    real64 const a[2][2] = { { 1.0/2.0, 0.0},           // Coefficients for stage value updates
-                             { -1.0,    2.0} };         // (lower-triangular part of table).
-    real64 const c[3] = { 0.0, 1.0/2.0, 1.0};           // Coefficients for time increments of substages
+    real64 const a[2][2] = { { 1.0/2.0, 0.0 },           // Coefficients for stage value updates
+                             { -1.0,    2.0 } };         // (lower-triangular part of table).
+    real64 const c[3] = { 0.0, 1.0/2.0, 1.0 };           // Coefficients for time increments of substages
     real64 const b[3] = { 1.0/6.0, 4.0/6.0, 1.0/6.0 };  // Quadrature weights used to evolve the solution to next time
     real64 const bStar[3] = { 1.0/2.0, 0.0, 1.0/2.0 }; // Quadrature weights used for low-order comparision solution
+    real64 const FSAL = false;
+};
+
+struct BogackiShampine32Table
+{   
+    integer const algHighOrder = 3;
+    integer const algLowOrder = 2;
+    integer const numStages = 4;
+    real64 const a[3][3] = { { 1.0/2.0, 0.0,     0.0     },           // Coefficients for stage value updates
+                             { 0.0,     3.0/4.0, 0.0     },
+                             { 2.0/9.0, 1.0/3.0, 4.0/9.0 } };     // (lower-triangular part of table).
+    real64 const c[4] = { 0.0, 1.0/2.0, 3.0/4.0, 1.0 };           // Coefficients for time increments of substages
+    real64 const b[4] = { 2.0/9.0, 1.0/3.0, 4.0/9.0, 0.0 };  // Quadrature weights used to evolve the solution to next time
+    real64 const bStar[4] = { 7.0/24.0, 1.0/4.0, 1.0/3.0, 1.0/8.0}; // Quadrature weights used for low-order comparision solution
+    bool FSAL = true;                                   // first same as last (can reuse the last stage rate)
 };
 
 template <typename Table> class EmbeddedRungeKuttaKernel
@@ -362,8 +377,13 @@ public:
         m_slipRate[k] =  LvArray::tensorOps::l2Norm<2>(m_slipVelocity_n[k]);
         m_stateVariable[k] = m_stateVariable_n[k];
     }
-    
-    GEOS_HOST_DEVICE
+
+        GEOS_HOST_DEVICE
+    void updateStageRatesFSAL(localIndex const k) const
+    {           
+        LvArray::tensorOps::copy<3>(m_stageRates[k][0],m_stageRates[k][m_butcherTable.numStages-1]);
+    }
+     
     void updateStageRates(localIndex const k, localIndex const stageIndex) const
     {           
         m_stageRates[k][stageIndex][0] =  m_slipVelocity[k][0];
@@ -401,7 +421,7 @@ public:
         
         real64 stateVariableIncrement = 0.0;
         real64 stateVariableIncrementLowOrder = 0.0;
-       
+
         for (localIndex i = 0; i < m_butcherTable.numStages; i++)
         {   
 
@@ -428,12 +448,45 @@ public:
         m_dispJump[k][2] = m_dispJump_n[k][2] + m_deltaSlip[k][1];
 
         // Compute error
-        m_error[k][0] = (m_deltaSlip[k][0] - deltaSlipLowOrder[0]) / 
-                                ( absTol + relTol * LvArray::math::max( LvArray::math::abs(m_deltaSlip[k][0]), LvArray::math::abs(deltaSlipLowOrder[0]) ));
-        m_error[k][1] = (m_deltaSlip[k][1] - deltaSlipLowOrder[1]) / 
-                                ( absTol + relTol * LvArray::math::max( LvArray::math::abs(m_deltaSlip[k][1]), LvArray::math::abs(deltaSlipLowOrder[1]) ));
-        m_error[k][2] = (m_stateVariable[k] - stateVariableLowOrder) / 
-                                ( absTol + relTol * LvArray::math::max( LvArray::math::abs(m_stateVariable[k]), LvArray::math::abs(stateVariableLowOrder) ));
+        m_error[k][0] = computeError(m_deltaSlip[k][0], deltaSlipLowOrder[0], absTol, relTol);
+        m_error[k][1] = computeError(m_deltaSlip[k][1], deltaSlipLowOrder[1], absTol, relTol);
+        m_error[k][2] = computeError(m_stateVariable[k], stateVariableLowOrder, absTol, relTol);
+    }
+
+    GEOS_HOST_DEVICE
+    void updateSolutionAndLocalErrorFSAL(localIndex const k, real64 const dt, real64 const absTol, real64 const relTol) const
+    {
+        
+        real64 deltaSlipIncrementLowOrder[2] = {0.0, 0.0};
+        real64 stateVariableIncrementLowOrder = 0.0;
+
+        for (localIndex i = 0; i < m_butcherTable.numStages; i++)
+        {   
+          // In FSAL algorithms the last RK substage update coincides with the 
+          // high-order update. Only need to compute increments for the the 
+          // low-order updates for error computation.
+          deltaSlipIncrementLowOrder[0]   += m_butcherTable.bStar[i] * m_stageRates[k][i][0];
+          deltaSlipIncrementLowOrder[1]   += m_butcherTable.bStar[i] * m_stageRates[k][i][1];
+          stateVariableIncrementLowOrder  += m_butcherTable.bStar[i] * m_stageRates[k][i][2];
+        }
+
+        real64 const deltaSlipLowOrder[2]  = {m_deltaSlip_n[k][0]  + dt * deltaSlipIncrementLowOrder[0],
+                                              m_deltaSlip_n[k][1]  + dt * deltaSlipIncrementLowOrder[1]};
+        real64 const stateVariableLowOrder = m_stateVariable_n[k] + dt * stateVariableIncrementLowOrder;
+
+        m_dispJump[k][1] = m_dispJump_n[k][1] + m_deltaSlip[k][0];
+        m_dispJump[k][2] = m_dispJump_n[k][2] + m_deltaSlip[k][1];
+
+        // Compute error
+        m_error[k][0] = computeError(m_deltaSlip[k][0], deltaSlipLowOrder[0], absTol, relTol);
+        m_error[k][1] = computeError(m_deltaSlip[k][1], deltaSlipLowOrder[1], absTol, relTol);
+        m_error[k][2] = computeError(m_stateVariable[k], stateVariableLowOrder, absTol, relTol);
+    }
+
+    real64 computeError(real64 const highOrderApprox, real64 const lowOrderApprox, real64 const absTol, real64 const relTol) const
+    {
+        return (highOrderApprox - lowOrderApprox) / 
+               ( absTol + relTol * LvArray::math::max( LvArray::math::abs(highOrderApprox), LvArray::math::abs(lowOrderApprox) ));
     }
 
     private:

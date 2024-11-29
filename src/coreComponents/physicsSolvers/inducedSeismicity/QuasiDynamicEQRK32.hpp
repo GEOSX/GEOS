@@ -69,12 +69,13 @@ private:
 
   virtual void postInputInitialization() override;
 
+  void stepRateStateODEInitialSubstage( real64 const dt, DomainPartition & domain ) const;
+  
   void stepRateStateODESubstage( integer const stageIndex,
-                                                     real64 const dt,
-                                                     DomainPartition & domain ) const;
+                                 real64 const dt,
+                                 DomainPartition & domain ) const;
 
-  void stepRateStateODEAndComputeError(real64 const dt,
-                                                             DomainPartition & domain ) const;
+  void stepRateStateODEAndComputeError(real64 const dt, DomainPartition & domain ) const;
 
   real64 updateStresses( real64 const & time_n,
                          real64 const & dt,
@@ -108,7 +109,7 @@ private:
   /// Runge-Kutta Butcher table (specifies the embedded RK method)
   // TODO: The specific type should not be hardcoded!
   // Should be possible to change RK-method based on the table.
-  rateAndStateKernels::RK32Table m_butcherTable;
+  rateAndStateKernels::BogackiShampine32Table m_butcherTable;
 
   /// Parameters for the PID error controller
   real64 m_timestepAbsTol; // absolut tolerence
