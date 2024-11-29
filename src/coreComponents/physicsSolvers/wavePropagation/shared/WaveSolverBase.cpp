@@ -219,7 +219,7 @@ WaveSolverBase::WaveSolverBase( const std::string & name,
 
   registerWrapper( viewKeyStruct::thicknessTaperString(), &m_thicknessTaper ).
     setInputFlag( InputFlags::OPTIONAL ).
-    setApplyDefaultValue( 0.0).
+    setApplyDefaultValue( 0.0 ).
     setDescription( "Size for the taper layer " );
 
   registerWrapper( viewKeyStruct::slsReferenceAngularFrequenciesString(), &m_slsReferenceAngularFrequencies ).
