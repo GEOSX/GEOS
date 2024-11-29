@@ -146,12 +146,6 @@ void AcousticWaveEquationSEM::precomputeSourceAndReceiverTerm( MeshLevel & baseM
                                                                arrayView1d< string const > const & regionNames )
 {
 
-  //This two variables are used for for Taper
-  NodeManager & nodeManager = mesh.getNodeManager();
-  arrayView2d< wsCoordType const, nodes::REFERENCE_POSITION_USD > const nodeCoords32 =
-    nodeManager.getField< fields::referencePosition32 >().toViewConst();
-
-
   GEOS_MARK_FUNCTION;
 
   arrayView1d< globalIndex const > const nodeLocalToGlobalMap = baseMesh.getNodeManager().localToGlobalMap().toViewConst();
