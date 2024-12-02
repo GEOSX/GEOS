@@ -750,8 +750,8 @@ real64 PhysicsSolverBase::eisenstatWalker( real64 const newNewtonNorm,
   real64 altKrylovTol = std::pow( krylovParams.relTolerance, 2.0 );
 
   real64 krylovTol = std::max( newKrylovTol, altKrylovTol );
-  krylovTol = std::min( krylovTol, krylovParams.weakestTol );
-  krylovTol = std::max( krylovTol, krylovParams.strongestTol );
+  krylovTol = std::max( krylovTol, krylovParams.weakestTol );
+  krylovTol = std::min( krylovTol, krylovParams.strongestTol );
 
   GEOS_LOG_LEVEL_INFO_RANK_0( logInfo::LinearSolver,
                               GEOS_FMT( "        Adaptive linear tolerance = {:4.2e} (norm ratio = {:4.2e}, old tolerance = {:4.2e}, new tolerance = {:4.2e}, safeguard = {:4.2e})",
