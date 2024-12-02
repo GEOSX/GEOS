@@ -138,7 +138,7 @@
 #define adiak_VERSION ..
 
 /// Version information for caliper
-#define caliper_VERSION 2.8.0
+#define caliper_VERSION 2.4.0
 
 /// Version information for Metis
 #define metis_VERSION 5.1.0

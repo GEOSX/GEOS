@@ -2867,6 +2867,10 @@
 		<xsd:attribute name="waterOilMaxRelPerm" type="real64" />
 	</xsd:complexType>
 	<xsd:complexType name="TableRelativePermeabilityHysteresisType">
+		<!--KilloughModel => (no description available)-->
+		<xsd:attribute name="KilloughModel" type="geosx_constitutive_KilloughHysteresis" />
+		<!--KilloughWrappers => (no description available)-->
+		<xsd:attribute name="KilloughWrappers" type="geosx_constitutive_KilloughHysteresis_KernelKilloughHysteresisBase" />
 		<!--dPhaseRelPerm_dPhaseVolFraction => Derivative of phase relative permeability with respect to phase volume fraction-->
 		<xsd:attribute name="dPhaseRelPerm_dPhaseVolFraction" type="real64_array4d" />
 		<!--drainagePhaseMaxVolumeFraction => (no description available)-->
@@ -2887,6 +2891,8 @@
 		<xsd:attribute name="imbibitionRelPermWrappers" type="LvArray_Array_lt_geos_TableFunction_KernelWrapper_cm_-1_cm_-camp_int_seq_lt_long_cm_-0l_gt__cm_-int_cm_-LvArray_ChaiBuffer_gt_" />
 		<!--landParameter => (no description available)-->
 		<xsd:attribute name="landParameter" type="real64_array" />
+		<!--nonWettingCurve => (no description available)-->
+		<xsd:attribute name="nonWettingCurve" type="geosx_constitutive_KilloughHysteresis_HysteresisCurve" />
 		<!--phaseHasHysteresis => (no description available)-->
 		<xsd:attribute name="phaseHasHysteresis" type="integer_array" />
 		<!--phaseMaxHistoricalVolFraction => Phase max historical phase volume fraction-->
@@ -2903,8 +2909,8 @@
 		<xsd:attribute name="phaseTrappedVolFraction" type="real64_array3d" />
 		<!--phaseTypes => (no description available)-->
 		<xsd:attribute name="phaseTypes" type="integer_array" />
-		<!--waterOilMaxRelPerm => (no description available)-->
-		<xsd:attribute name="waterOilMaxRelPerm" type="real64" />
+		<!--wettingCurve => (no description available)-->
+		<xsd:attribute name="wettingCurve" type="geosx_constitutive_KilloughHysteresis_HysteresisCurve" />
 	</xsd:complexType>
 	<xsd:complexType name="ThermalCompressibleSinglePhaseFluidType">
 		<!--dDensity_dPressure => Derivative of density with respect to pressure-->

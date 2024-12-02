@@ -24,6 +24,7 @@
 #include "constitutive/capillaryPressure/BrooksCoreyCapillaryPressure.hpp"
 #include "constitutive/capillaryPressure/JFunctionCapillaryPressure.hpp"
 #include "constitutive/capillaryPressure/TableCapillaryPressure.hpp"
+#include "constitutive/capillaryPressure/TableCapillaryPressureHysteresis.hpp"
 #include "constitutive/capillaryPressure/VanGenuchtenCapillaryPressure.hpp"
 
 namespace geos
@@ -39,6 +40,7 @@ void constitutiveUpdatePassThru( CapillaryPressureBase const & capPres,
   ConstitutivePassThruHandler< BrooksCoreyCapillaryPressure,
                                JFunctionCapillaryPressure,
                                TableCapillaryPressure,
+                               TableCapillaryPressureHysteresis,
                                VanGenuchtenCapillaryPressure >::execute( capPres, std::forward< LAMBDA >( lambda ) );
 }
 
@@ -49,6 +51,7 @@ void constitutiveUpdatePassThru( CapillaryPressureBase & capPres,
   ConstitutivePassThruHandler< BrooksCoreyCapillaryPressure,
                                JFunctionCapillaryPressure,
                                TableCapillaryPressure,
+                               TableCapillaryPressureHysteresis,
                                VanGenuchtenCapillaryPressure >::execute( capPres, std::forward< LAMBDA >( lambda ) );
 }
 

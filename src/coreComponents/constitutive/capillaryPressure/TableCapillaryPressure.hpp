@@ -57,6 +57,7 @@ public:
     KernelWrapper( arrayView1d< TableFunction::KernelWrapper const > const & capPresKernelWrappers,
                    arrayView1d< integer const > const & phaseTypes,
                    arrayView1d< integer const > const & phaseOrder,
+                   arrayView3d< real64, cappres::USD_CAPPRES > const & phaseTrapped,
                    arrayView3d< real64, cappres::USD_CAPPRES > const & phaseCapPres,
                    arrayView4d< real64, cappres::USD_CAPPRES_DS > const & dPhaseCapPres_dPhaseVolFrac );
 
@@ -183,6 +184,9 @@ TableCapillaryPressure::KernelWrapper::
   compute( phaseVolFraction,
            m_phaseCapPressure[k][q],
            m_dPhaseCapPressure_dPhaseVolFrac[k][q] );
+
+  std::cerr << "cell :" << k << "\n phaseCap " << m_phaseCapPressure[k][q] << std::endl;
+  std::cerr << "dPhaseCap_dS" << m_phaseCapPressure[k][q] << std::endl;
 }
 
 } // namespace constitutive

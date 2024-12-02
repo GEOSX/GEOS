@@ -316,10 +316,12 @@ JFunctionCapillaryPressure::KernelWrapper::
                  arrayView2d< real64 const > const & jFuncMultiplier,
                  arrayView1d< integer const > const & phaseTypes,
                  arrayView1d< integer const > const & phaseOrder,
+                 arrayView3d< real64, cappres::USD_CAPPRES > const & phaseTrapped,
                  arrayView3d< real64, cappres::USD_CAPPRES > const & phaseCapPres,
                  arrayView4d< real64, cappres::USD_CAPPRES_DS > const & dPhaseCapPres_dPhaseVolFrac )
   : CapillaryPressureBaseUpdate( phaseTypes,
                                  phaseOrder,
+                                 phaseTrapped,
                                  phaseCapPres,
                                  dPhaseCapPres_dPhaseVolFrac ),
   m_jFuncKernelWrappers( jFuncKernelWrappers ),
@@ -334,6 +336,7 @@ JFunctionCapillaryPressure::createKernelWrapper()
                         m_jFuncMultiplier,
                         m_phaseTypes,
                         m_phaseOrder,
+                        m_phaseTrappedVolFrac,
                         m_phaseCapPressure,
                         m_dPhaseCapPressure_dPhaseVolFrac );
 }

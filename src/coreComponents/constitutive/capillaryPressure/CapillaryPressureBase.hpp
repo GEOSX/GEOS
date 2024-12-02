@@ -22,7 +22,7 @@
 
 #include "common/DataLayouts.hpp"
 #include "constitutive/ConstitutiveBase.hpp"
-#include "constitutive/capillaryPressure/layouts.hpp"
+#include "constitutive/capillaryPressure/Layouts.hpp"
 #include "common/GEOS_RAJA_Interface.hpp"
 
 namespace geos
@@ -60,16 +60,19 @@ protected:
 
   CapillaryPressureBaseUpdate( arrayView1d< integer const > const & phaseTypes,
                                arrayView1d< integer const > const & phaseOrder,
+                               arrayView3d< real64, cappres::USD_CAPPRES > const & phaseTrapped,
                                arrayView3d< real64, cappres::USD_CAPPRES > const & phaseCapPressure,
                                arrayView4d< real64, cappres::USD_CAPPRES_DS > const & dPhaseCapPressure_dPhaseVolFrac )
     : m_phaseTypes( phaseTypes ),
     m_phaseOrder( phaseOrder ),
+    m_phaseTrappedVolFrac( phaseTrapped ),
     m_phaseCapPressure( phaseCapPressure ),
     m_dPhaseCapPressure_dPhaseVolFrac( dPhaseCapPressure_dPhaseVolFrac )
   {}
 
   arrayView1d< integer const > m_phaseTypes;
   arrayView1d< integer const > m_phaseOrder;
+  arrayView3d< real64, cappres::USD_CAPPRES > m_phaseTrappedVolFrac;
 
   arrayView3d< real64, cappres::USD_CAPPRES > m_phaseCapPressure;
   arrayView4d< real64, cappres::USD_CAPPRES_DS > m_dPhaseCapPressure_dPhaseVolFrac;
@@ -130,6 +133,14 @@ public:
                                        arrayView3d< real64 const > const & convergedPermeability ) const
   { GEOS_UNUSED_VAR( convergedPorosity, convergedPermeability ); }
 
+
+  /**
+   * @brief Save converged phase volume fraction at the end of a time step (needed for hysteresis)
+   * @param[in] phaseVolFraction an array containing the phase volume fractions at the end of a converged time step
+   */
+  virtual void saveConvergedPhaseVolFractionState( arrayView2d< real64 const, compflow::USD_PHASE > const & phaseVolFraction ) const
+  { GEOS_UNUSED_VAR( phaseVolFraction ); }
+
   /*
    * @brief Getter for the number of fluid phases
    * @return the number of fluid phases
@@ -164,20 +175,21 @@ public:
 private:
 
   /**
-   * @brief Function called internally to resize member arrays
-   * @param size primary dimension (e.g. number of cells)
-   * @param numPts secondary dimension (e.g. number of gauss points per cell)
-   */
-  void resizeFields( localIndex const size, localIndex const numPts );
-
-  /**
    * @brief Called internally to set array dim labels.
    */
   void setLabels();
 
 protected:
+/**
+ * @brief Function called internally to resize member arrays
+ * @param size primary dimension (e.g. number of cells)
+ * @param numPts secondary dimension (e.g. number of gauss points per cell)
+ */
+  virtual void resizeFields( localIndex const size, localIndex const numPts );
 
   virtual void postInputInitialization() override;
+
+  std::tuple<integer, integer> phaseIndex(const arrayView1d<const integer> &phaseOrder);
 
   // phase names read from input
   string_array m_phaseNames;
@@ -190,7 +202,44 @@ protected:
   array3d< real64, cappres::LAYOUT_CAPPRES >  m_phaseCapPressure;
   array4d< real64, cappres::LAYOUT_CAPPRES_DS >  m_dPhaseCapPressure_dPhaseVolFrac;
 
+  // trapped fraction
+  array3d< real64, cappres::LAYOUT_CAPPRES > m_phaseTrappedVolFrac;
+
 };
+
+    inline std::tuple< integer, integer > CapillaryPressureBase::phaseIndex( arrayView1d< integer const > const & phaseOrder )
+    {
+        using PT = PhaseType;
+        integer const ipWater = phaseOrder[PT::WATER];
+        integer const ipOil = phaseOrder[PT::OIL];
+        integer const ipGas = phaseOrder[PT::GAS];
+
+        integer ipWetting = -1, ipNonWetting = -1;
+
+        if( ipWater >= 0 && ipOil >= 0 && ipGas >= 0 )
+        {
+            ipWetting = ipWater;
+            ipNonWetting = ipGas;
+        }
+        else if( ipWater < 0 )
+        {
+            ipWetting = ipOil;
+            ipNonWetting = ipGas;
+        }
+        else if( ipOil < 0 )
+        {
+            ipWetting = ipWater;
+            ipNonWetting = ipGas;
+        }
+        else if( ipGas < 0 )
+        {
+            ipWetting = ipWater;
+            ipNonWetting = ipOil;
+        }
+
+        //maybe a bit too pythonic
+        return std::make_tuple( ipWetting, ipNonWetting );
+    }
 
 } // namespace constitutive
 

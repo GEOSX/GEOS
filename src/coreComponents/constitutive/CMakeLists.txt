@@ -27,15 +27,17 @@ set( constitutive_headers
      ConstitutivePassThruHandler.hpp
      ExponentialRelation.hpp
      NullModel.hpp
+     KilloughHysteresis.hpp
      capillaryPressure/BrooksCoreyCapillaryPressure.hpp
      capillaryPressure/CapillaryPressureBase.hpp
      capillaryPressure/CapillaryPressureFields.hpp
      capillaryPressure/JFunctionCapillaryPressure.hpp
      capillaryPressure/TableCapillaryPressure.hpp
+     capillaryPressure/TableCapillaryPressureHysteresis.hpp
      capillaryPressure/TableCapillaryPressureHelpers.hpp
      capillaryPressure/VanGenuchtenCapillaryPressure.hpp
-     capillaryPressure/capillaryPressureSelector.hpp
-     capillaryPressure/layouts.hpp
+     capillaryPressure/CapillaryPressureSelector.hpp
+     capillaryPressure/Layouts.hpp
      contact/BartonBandis.hpp
      contact/CoulombFriction.hpp
      contact/FrictionSelector.hpp
@@ -148,7 +150,7 @@ set( constitutive_headers
      relativePermeability/TableRelativePermeabilityHysteresis.hpp
      relativePermeability/VanGenuchtenBakerRelativePermeability.hpp
      relativePermeability/VanGenuchtenStone2RelativePermeability.hpp
-     relativePermeability/layouts.hpp
+     relativePermeability/Layouts.hpp
      relativePermeability/RelativePermeabilitySelector.hpp
      solid/CompressibleSolid.hpp
      solid/ProppantSolid.hpp
@@ -203,10 +205,12 @@ set( constitutive_sources
      ConstitutiveBase.cpp
      ConstitutiveManager.cpp
      NullModel.cpp
+     KilloughHysteresis.cpp
      capillaryPressure/BrooksCoreyCapillaryPressure.cpp
      capillaryPressure/CapillaryPressureBase.cpp
      capillaryPressure/JFunctionCapillaryPressure.cpp
      capillaryPressure/TableCapillaryPressure.cpp
+     capillaryPressure/TableCapillaryPressureHysteresis.cpp
      capillaryPressure/TableCapillaryPressureHelpers.cpp
      capillaryPressure/VanGenuchtenCapillaryPressure.cpp
      contact/BartonBandis.cpp

@@ -524,6 +524,7 @@ struct InputError : public std::runtime_error
   InputError( std::exception const & subException, std::string const & msgToInsert );
 };
 
+
 /**
  * @brief Exception class used to report errors in user input.
  */

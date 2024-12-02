@@ -46,6 +46,7 @@ CapillaryPressureBase::CapillaryPressureBase( string const & name,
 
   registerField( fields::cappres::phaseCapPressure{}, &m_phaseCapPressure );
   registerField( fields::cappres::dPhaseCapPressure_dPhaseVolFraction{}, &m_dPhaseCapPressure_dPhaseVolFrac );
+  registerField( fields::cappres::phaseTrappedVolFraction{}, &m_phaseTrappedVolFrac );
 
 }
 
@@ -92,13 +93,17 @@ void CapillaryPressureBase::resizeFields( localIndex const size,
                                           localIndex const numPts )
 {
   integer const NP = numFluidPhases();
-
+  //phase trapped for stats
+  m_phaseTrappedVolFrac.resize( size, numPts, NP );
+  m_phaseTrappedVolFrac.zero();
   m_phaseCapPressure.resize( size, numPts, NP );
   m_dPhaseCapPressure_dPhaseVolFrac.resize( size, numPts, NP, NP );
 }
 
 void CapillaryPressureBase::setLabels()
 {
+  getField< fields::cappres::phaseTrappedVolFraction >().
+    setDimLabels( 2, m_phaseNames );
   getField< fields::cappres::phaseCapPressure >().
     setDimLabels( 2, m_phaseNames );
 }

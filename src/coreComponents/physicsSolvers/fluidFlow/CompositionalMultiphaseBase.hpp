@@ -20,6 +20,11 @@
 #ifndef GEOS_PHYSICSSOLVERS_FLUIDFLOW_COMPOSITIONALMULTIPHASEBASE_HPP_
 #define GEOS_PHYSICSSOLVERS_FLUIDFLOW_COMPOSITIONALMULTIPHASEBASE_HPP_
 
+#include "common/DataLayouts.hpp"
+#include "constitutive/fluid/multifluid/Layouts.hpp"
+#include "constitutive/relativePermeability/Layouts.hpp"
+#include "constitutive/capillaryPressure/Layouts.hpp"
+#include "fieldSpecification/FieldSpecificationManager.hpp"
 #include "physicsSolvers/fluidFlow/FlowSolverBase.hpp"
 #include "fieldSpecification/FieldSpecificationManager.hpp"
 
