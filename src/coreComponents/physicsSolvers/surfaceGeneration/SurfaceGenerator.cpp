@@ -18,7 +18,6 @@
  */
 
 #include "SurfaceGenerator.hpp"
-#include "ParallelTopologyChange.hpp"
 
 #include "mesh/mpiCommunications/CommunicationTools.hpp"
 #include "mesh/mpiCommunications/NeighborCommunicator.hpp"
@@ -36,6 +35,7 @@
 #include "physicsSolvers/fluidFlow/FlowSolverBaseFields.hpp"
 #include "kernels/surfaceGenerationKernels.hpp"
 
+#include "ParallelTopologyChange.hpp"
 
 #include <algorithm>
 
@@ -1013,9 +1013,9 @@ bool SurfaceGenerator::findFracturePlanes( localIndex const nodeID,
 
   ArrayOfArraysView< localIndex const > const & faceToEdgeMap = faceManager.edgeList().toViewConst();
 
-  arraySlice1d< localIndex const > const & nodeToRegionMap = nodeManager.elementRegionList()[nodeID];
-  arraySlice1d< localIndex const > const & nodeToSubRegionMap = nodeManager.elementSubRegionList()[nodeID];
-  arraySlice1d< localIndex const > const & nodeToElementMap = nodeManager.elementList()[nodeID];
+  arraySlice1d< localIndex const > const nodeToRegionMap = nodeManager.elementRegionList()[nodeID];
+  arraySlice1d< localIndex const > const nodeToSubRegionMap = nodeManager.elementSubRegionList()[nodeID];
+  arraySlice1d< localIndex const > const nodeToElementMap = nodeManager.elementList()[nodeID];
 
   // BACKWARDS COMPATIBILITY HACK!
   //
@@ -1936,6 +1936,7 @@ void SurfaceGenerator::performFracture( const localIndex nodeID,
                                                                     this->m_originalFaceToEdges.toViewConst(),
                                                                     faceIndices );
           m_faceElemsRupturedThisSolve.insert( newFaceElement );
+          GEOS_LOG_LEVEL_INFO_BY_RANK( logInfo::SurfaceGenerator, GEOS_FMT ( "Created new FaceElement {} when creating face {} from {}", newFaceElement, newFaceIndex, faceIndex ) );
           modifiedObjects.newElements[ {fractureElementRegion.getIndexInParent(), 0} ].insert( newFaceElement );
         }
       } // if( faceManager.SplitObject( faceIndex, newFaceIndex ) )
