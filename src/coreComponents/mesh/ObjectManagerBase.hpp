@@ -930,6 +930,15 @@ public:
     return m_domainBoundaryIndicator.toViewConst();
   }
 
+  /**
+   * @brief Function to output connectivity in order to assist debugging issues
+   *        with object connectivity.
+   */
+  virtual void outputObjectConnectivity() const
+  {
+    GEOS_ERROR( "Called outputObjectConnectivity in ObjectManagerBase. Function should be implemented." );
+  }
+
 protected:
   /// Group that holds object sets.
   Group m_sets;
