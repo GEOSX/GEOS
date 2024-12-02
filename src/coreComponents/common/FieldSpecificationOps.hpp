@@ -68,6 +68,26 @@ struct OpAdd
 };
 
 /**
+ * @brief OpMultiply Operator that multiplies by a value
+ */
+struct OpMultiply
+{
+  /**
+   * @brief Pointwise update of a value
+   * @tparam T type of the left-hand side
+   * @tparam U type of the right-hand side
+   * @param[in] lhs value to update
+   * @param[in] rhs input value
+   */
+  template< typename T, typename U >
+  GEOS_HOST_DEVICE static inline
+  void apply( T & lhs, U const & rhs )
+  {
+    lhs *= static_cast< T >( rhs );
+  }
+};
+
+/**
  * @brief FieldSpecificationOp
  */
 template< typename OP >
@@ -680,6 +700,70 @@ struct FieldSpecificationAdd : public FieldSpecificationOp< OpAdd >
   }
 
 };
+
+
+/**
+ * @struct FieldSpecificationMultiply
+ * this struct a collection of static functions which adhere to an assumed interface for multiplying
+ * a value for a field.
+ */
+struct FieldSpecificationMultiply : public FieldSpecificationOp< OpMultiply >
+{
+  /// Alias for FieldSpecificationOp< OpMultiply >
+  using base_type = FieldSpecificationOp< OpMultiply >;
+  using base_type::SpecifyFieldValue;
+
+  /**
+   * @brief Function to apply a value to a vector field for a single dof.
+   * @param[in] dof The degree of freedom that is to be modified.
+   * @param[in] dofRankOffset offset of dof indices on current rank
+   * @param[in] matrix A ParalleMatrix object: the system matrix.
+   * @param[out] rhs The rhs contribution to be modified
+   * @param[in] bcValue The value to multiply to rhs
+   * @param[in] fieldValue unused.
+   *
+   */
+  GEOS_HOST_DEVICE
+  static inline void
+  SpecifyFieldValue( globalIndex const dof,
+                     globalIndex const dofRankOffset,
+                     CRSMatrixView< real64, globalIndex const > const & matrix,
+                     real64 & rhs,
+                     real64 const bcValue,
+                     real64 const fieldValue )
+  {
+    GEOS_UNUSED_VAR( dof );
+    GEOS_UNUSED_VAR( dofRankOffset );
+    GEOS_UNUSED_VAR( matrix );
+    GEOS_UNUSED_VAR( fieldValue );
+    rhs *= bcValue;
+  }
+
+  /**
+   * @brief Function to add some values of a vector.
+   * @tparam POLICY the execution policy to use when setting values
+   * @param rhs the target right-hand side vector
+   * @param dof a list of global DOF indices to be set
+   * @param dofRankOffset offset of dof indices on current rank
+   * @param values a list of values corresponding to \p dof that will be added to \p rhs.
+   */
+  template< typename POLICY >
+  static inline void prescribeRhsValues( arrayView1d< real64 > const & rhs,
+                                         arrayView1d< globalIndex const > const & dof,
+                                         globalIndex const dofRankOffset,
+                                         arrayView1d< real64 const > const & values )
+  {
+    GEOS_ASSERT_EQ( dof.size(), values.size() );
+    forAll< POLICY >( dof.size(), [rhs, dof, dofRankOffset, values] GEOS_HOST_DEVICE ( localIndex const a )
+    {
+      globalIndex const localRow = dof[ a ] - dofRankOffset;
+      if( localRow >= 0 && localRow < rhs.size() )
+      { rhs[ localRow ] *= values[ a ]; }
+    } );
+  }
+
+};
+
 
 } //namespace geos
 

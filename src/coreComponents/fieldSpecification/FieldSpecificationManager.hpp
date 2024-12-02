@@ -251,7 +251,13 @@ FieldSpecificationManager::
               Group & targetGroup,
               string const & targetField )
   {
-    fs.applyFieldValue< FieldSpecificationEqual, POLICY >( targetSet, time, targetGroup, targetField );
+    if (fs.isScaling())
+    {
+      fs.applyFieldValue< FieldSpecificationMultiply, POLICY >( targetSet, time, targetGroup, targetField );
+    }
+    else{
+      fs.applyFieldValue< FieldSpecificationEqual, POLICY >( targetSet, time, targetGroup, targetField );
+    }
     lambda( fs, targetSet );
   } );
 }
@@ -275,7 +281,13 @@ FieldSpecificationManager::
               string const & targetField )
   {
     preLambda( fs, targetSet );
-    fs.applyFieldValue< FieldSpecificationEqual, POLICY >( targetSet, time, targetGroup, targetField );
+    if (fs.isScaling())
+    {
+      fs.applyFieldValue< FieldSpecificationMultiply, POLICY >( targetSet, time, targetGroup, targetField );
+    }
+    else{
+      fs.applyFieldValue< FieldSpecificationEqual, POLICY >( targetSet, time, targetGroup, targetField );
+    }
     postLambda( fs, targetSet );
   } );
 }

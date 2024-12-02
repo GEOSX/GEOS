@@ -83,6 +83,11 @@ FieldSpecificationBase::FieldSpecificationBase( string const & name, Group * par
     setInputFlag( InputFlags::OPTIONAL ).
     setDescription( "Time at which the boundary condition will stop being applied." );
 
+  registerWrapper( viewKeyStruct::isScalingString(), &m_isScaling ).
+    setApplyDefaultValue( 0 ).
+    setInputFlag( InputFlags::OPTIONAL ).
+    setDescription( "Boundary condition is a multiplicative scaling of the values already present." );
+
   enableLogLevelInput();
 }
 
