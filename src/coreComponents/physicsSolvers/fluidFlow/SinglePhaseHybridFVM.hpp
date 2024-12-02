@@ -151,8 +151,6 @@ public:
                               arrayView1d< real64 > const & localRhs,
                               CRSMatrixView< real64, localIndex const > const & dR_dAper ) override final;
 
-protected:
-
   virtual void
   applyAquiferBC( real64 const time,
                   real64 const dt,

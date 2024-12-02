@@ -191,7 +191,8 @@ protected:
 
   virtual void postInputInitialization() override;
 
-  virtual void initializePreSubGroups() override;
+  virtual void
+  initializePreSubGroups() override;
 
   struct DBCParameters
   {

@@ -224,6 +224,28 @@ public:
                               arrayView1d< real64 > const & localRhs,
                               CRSMatrixView< real64, localIndex const > const & dR_dAper ) = 0;
 
+  struct viewKeyStruct : FlowSolverBase::viewKeyStruct
+  {
+    static constexpr char const * elemDofFieldString() { return "singlePhaseVariables"; }
+  };
+
+  /**
+   * @brief Function to perform the Application of Dirichlet type BC's
+   * @param time current time
+   * @param dt time step
+   * @param dofManager degree-of-freedom manager associated with the linear system
+   * @param domain the domain
+   * @param localMatrix local system matrix
+   * @param localRhs local system right-hand side vector
+   */
+  void
+  applyDirichletBC( real64 const time_n,
+                    real64 const dt,
+                    DomainPartition & domain,
+                    DofManager const & dofManager,
+                    CRSMatrixView< real64, globalIndex const > const & localMatrix,
+                    arrayView1d< real64 > const & localRhs ) const;
+
   /**
    * @brief Apply source flux boundary conditions to the system
    * @param time current time
@@ -241,10 +263,22 @@ public:
                      CRSMatrixView< real64, globalIndex const > const & localMatrix,
                      arrayView1d< real64 > const & localRhs ) const;
 
-  struct viewKeyStruct : FlowSolverBase::viewKeyStruct
-  {
-    static constexpr char const * elemDofFieldString() { return "singlePhaseVariables"; }
-  };
+  /**
+   * @brief Apply aquifer boundary conditions to the system
+   * @param time current time
+   * @param dt time step
+   * @param domain the domain
+   * @param dofManager degree-of-freedom manager associated with the linear system
+   * @param localMatrix local system matrix
+   * @param localRhs local system right-hand side vector
+   */
+  virtual void
+  applyAquiferBC( real64 const time,
+                  real64 const dt,
+                  DomainPartition & domain,
+                  DofManager const & dofManager,
+                  CRSMatrixView< real64, globalIndex const > const & localMatrix,
+                  arrayView1d< real64 > const & localRhs ) const = 0;
 
   virtual void
   updateState ( DomainPartition & domain ) override final;
@@ -256,13 +290,13 @@ public:
   real64
   updateFluidState( ElementSubRegionBase & subRegion ) const;
 
-  /**
-   * @brief Update all relevant solid internal energy models using current values of temperature
-   * @param dataGroup the group storing the required fields
-   */
-  void updateSolidInternalEnergyModel( ObjectManagerBase & dataGroup ) const;
 
-  virtual void initializeFluid( MeshLevel & mesh, arrayView1d< string const > const & regionNames ) override;
+  /**
+   * @brief Function to update all constitutive models
+   * @param dataGroup group that contains the fields
+   */
+  virtual void
+  updateFluidModel( ObjectManagerBase & dataGroup ) const;
 
   /**
    * @brief Function to update fluid mass
@@ -277,6 +311,33 @@ public:
    */
   void
   updateEnergy( ElementSubRegionBase & subRegion ) const;
+
+  /**
+   * @brief Update all relevant solid internal energy models using current values of temperature
+   * @param dataGroup the group storing the required fields
+   */
+  void updateSolidInternalEnergyModel( ObjectManagerBase & dataGroup ) const;
+
+  /**
+   * @brief Update thermal conductivity
+   * @param subRegion the group storing the required fields
+   */
+  void updateThermalConductivity( ElementSubRegionBase & subRegion ) const;
+
+  /**
+   * @brief Function to update fluid mobility
+   * @param dataGroup group that contains the fields
+   */
+  void
+  updateMobility( ObjectManagerBase & dataGroup ) const;
+
+  virtual void initializePreSubGroups() override;
+
+  virtual void initializePostInitialConditionsPreSubGroups() override;
+
+  virtual void initializeFluid( MeshLevel & mesh, arrayView1d< string const > const & regionNames ) override;
+
+  virtual void initializeThermal( MeshLevel & mesh, arrayView1d< string const > const & regionNames ) override;
 
   /**
    * @brief Compute the hydrostatic equilibrium using the compositions and temperature input tables
@@ -303,12 +364,6 @@ public:
 
 protected:
 
-  virtual void initializePreSubGroups() override;
-
-  virtual void initializePostInitialConditionsPreSubGroups() override;
-
-  virtual void initializeThermal( MeshLevel & mesh, arrayView1d< string const > const & regionNames ) override;
-
   /**
    * @brief Checks constitutive models for consistency
    * @param[in] domain the domain partition
@@ -323,64 +378,10 @@ protected:
   virtual void setConstitutiveNamesCallSuper( ElementSubRegionBase & subRegion ) const override;
 
   /**
-   * @brief Function to update all constitutive models
-   * @param dataGroup group that contains the fields
-   */
-  virtual void
-  updateFluidModel( ObjectManagerBase & dataGroup ) const;
-
-  /**
-   * @brief Update thermal conductivity
-   * @param subRegion the group storing the required fields
-   */
-  void updateThermalConductivity( ElementSubRegionBase & subRegion ) const;
-
-  /**
-   * @brief Function to update fluid mobility
-   * @param dataGroup group that contains the fields
-   */
-  void
-  updateMobility( ObjectManagerBase & dataGroup ) const;
-
-  /**
    * @brief Utility function to save the converged state
    * @param[in] subRegion the element subRegion
    */
   virtual void saveConvergedState( ElementSubRegionBase & subRegion ) const override;
-
-  /**
-   * @brief Function to perform the Application of Dirichlet type BC's
-   * @param time current time
-   * @param dt time step
-   * @param dofManager degree-of-freedom manager associated with the linear system
-   * @param domain the domain
-   * @param localMatrix local system matrix
-   * @param localRhs local system right-hand side vector
-   */
-  void
-  applyDirichletBC( real64 const time_n,
-                    real64 const dt,
-                    DomainPartition & domain,
-                    DofManager const & dofManager,
-                    CRSMatrixView< real64, globalIndex const > const & localMatrix,
-                    arrayView1d< real64 > const & localRhs ) const;
-
-  /**
-   * @brief Apply aquifer boundary conditions to the system
-   * @param time current time
-   * @param dt time step
-   * @param domain the domain
-   * @param dofManager degree-of-freedom manager associated with the linear system
-   * @param localMatrix local system matrix
-   * @param localRhs local system right-hand side vector
-   */
-  virtual void
-  applyAquiferBC( real64 const time,
-                  real64 const dt,
-                  DomainPartition & domain,
-                  DofManager const & dofManager,
-                  CRSMatrixView< real64, globalIndex const > const & localMatrix,
-                  arrayView1d< real64 > const & localRhs ) const = 0;
 
   /**
    * @brief Structure holding views into fluid properties used by the base solver.

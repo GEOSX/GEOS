@@ -169,14 +169,6 @@ public:
   virtual void updateState( DomainPartition & domain ) override final;
 
   /**
-   * @brief Sets all the negative component densities (if any) to zero.
-   * @param domain the physical domain object
-   */
-  void chopNegativeDensities( DomainPartition & domain );
-
-  void chopNegativeDensities( ElementSubRegionBase & subRegion );
-
-  /**
    * @brief Getter for the number of fluid components (species)
    * @return the number of components
    */
@@ -244,39 +236,6 @@ public:
                                DofManager const & dofManager,
                                CRSMatrixView< real64, globalIndex const > const & localMatrix,
                                arrayView1d< real64 > const & localRhs ) const = 0;
-
-  /**
-   * @brief Apply source flux boundary conditions to the system
-   * @param time current time
-   * @param dt time step
-   * @param dofManager degree-of-freedom manager associated with the linear system
-   * @param domain the domain
-   * @param localMatrix local system matrix
-   * @param localRhs local system right-hand side vector
-   */
-  void applySourceFluxBC( real64 const time,
-                          real64 const dt,
-                          DofManager const & dofManager,
-                          DomainPartition & domain,
-                          CRSMatrixView< real64, globalIndex const > const & localMatrix,
-                          arrayView1d< real64 > const & localRhs ) const;
-
-  /**
-   * @brief Function to perform the Application of Dirichlet type BC's
-   * @param time current time
-   * @param dt time step
-   * @param dofManager degree-of-freedom manager associated with the linear system
-   * @param domain the domain
-   * @param localMatrix local system matrix
-   * @param localRhs local system right-hand side vector
-   */
-  void applyDirichletBC( real64 const time,
-                         real64 const dt,
-                         DofManager const & dofManager,
-                         DomainPartition & domain,
-                         CRSMatrixView< real64, globalIndex const > const & localMatrix,
-                         arrayView1d< real64 > const & localRhs ) const;
-
   /**@}*/
 
   struct viewKeyStruct : FlowSolverBase::viewKeyStruct
@@ -317,6 +276,79 @@ public:
 
   };
 
+  /**
+   * @brief Initialize all variables from initial conditions
+   * @param domain the domain containing the mesh and fields
+   *
+   * Initialize all variables from initial conditions. This calculating primary variable values
+   * from prescribed intermediate values (i.e. global densities from global fractions)
+   * and any applicable hydrostatic equilibration of the domain
+   */
+  virtual void initializeFluid( MeshLevel & mesh, arrayView1d< string const > const & regionNames ) override;
+
+  /**
+   * @brief Compute the hydrostatic equilibrium using the compositions and temperature input tables
+   */
+  virtual void computeHydrostaticEquilibrium( DomainPartition & domain ) override;
+
+  /**
+   * @brief Apply source flux boundary conditions to the system
+   * @param time current time
+   * @param dt time step
+   * @param dofManager degree-of-freedom manager associated with the linear system
+   * @param domain the domain
+   * @param localMatrix local system matrix
+   * @param localRhs local system right-hand side vector
+   */
+  void applySourceFluxBC( real64 const time,
+                          real64 const dt,
+                          DofManager const & dofManager,
+                          DomainPartition & domain,
+                          CRSMatrixView< real64, globalIndex const > const & localMatrix,
+                          arrayView1d< real64 > const & localRhs ) const;
+
+  /**
+   * @brief Function to perform the Application of Dirichlet type BC's
+   * @param time current time
+   * @param dt time step
+   * @param dofManager degree-of-freedom manager associated with the linear system
+   * @param domain the domain
+   * @param localMatrix local system matrix
+   * @param localRhs local system right-hand side vector
+   */
+  void applyDirichletBC( real64 const time,
+                         real64 const dt,
+                         DofManager const & dofManager,
+                         DomainPartition & domain,
+                         CRSMatrixView< real64, globalIndex const > const & localMatrix,
+                         arrayView1d< real64 > const & localRhs ) const;
+
+  /**
+   * @brief Function to fix the initial state during the initialization step in coupled problems
+   * @param[in] time current time
+   * @param[in] dt time step
+   * @param[in] dofManager degree-of-freedom manager associated with the linear system
+   * @param[in] domain the domain
+   * @param[in] localMatrix local system matrix
+   * @param[in] localRhs local system right-hand side vector
+   * @detail This function is meant to be called when the flag m_keepVariablesConstantDuringInitStep is on
+   *         The main use case is the initialization step in coupled problems during which we solve an elastic problem for a fixed pressure
+   */
+  void keepVariablesConstantDuringInitStep( real64 const time,
+                                            real64 const dt,
+                                            DofManager const & dofManager,
+                                            DomainPartition & domain,
+                                            CRSMatrixView< real64, globalIndex const > const & localMatrix,
+                                            arrayView1d< real64 > const & localRhs ) const;
+
+  /**
+   * @brief Sets all the negative component densities (if any) to zero.
+   * @param domain the physical domain object
+   */
+  void chopNegativeDensities( DomainPartition & domain );
+
+  void chopNegativeDensities( ElementSubRegionBase & subRegion );
+
   virtual real64 setNextDtBasedOnStateChange( real64 const & currentDt,
                                               DomainPartition & domain ) override;
 
@@ -339,39 +371,6 @@ public:
   integer useTotalMassEquation() const { return m_useTotalMassEquation; }
 
   virtual bool checkSequentialSolutionIncrements( DomainPartition & domain ) const override;
-
-  /**
-   * @brief Initialize all variables from initial conditions
-   * @param domain the domain containing the mesh and fields
-   *
-   * Initialize all variables from initial conditions. This calculating primary variable values
-   * from prescribed intermediate values (i.e. global densities from global fractions)
-   * and any applicable hydrostatic equilibration of the domain
-   */
-  virtual void initializeFluid( MeshLevel & mesh, arrayView1d< string const > const & regionNames ) override;
-
-  /**
-   * @brief Compute the hydrostatic equilibrium using the compositions and temperature input tables
-   */
-  virtual void computeHydrostaticEquilibrium( DomainPartition & domain ) override;
-
-  /**
-   * @brief Function to fix the initial state during the initialization step in coupled problems
-   * @param[in] time current time
-   * @param[in] dt time step
-   * @param[in] dofManager degree-of-freedom manager associated with the linear system
-   * @param[in] domain the domain
-   * @param[in] localMatrix local system matrix
-   * @param[in] localRhs local system right-hand side vector
-   * @detail This function is meant to be called when the flag m_keepVariablesConstantDuringInitStep is on
-   *         The main use case is the initialization step in coupled problems during which we solve an elastic problem for a fixed pressure
-   */
-  void keepVariablesConstantDuringInitStep( real64 const time,
-                                            real64 const dt,
-                                            DofManager const & dofManager,
-                                            DomainPartition & domain,
-                                            CRSMatrixView< real64, globalIndex const > const & localMatrix,
-                                            arrayView1d< real64 > const & localRhs ) const;
 
 protected:
 

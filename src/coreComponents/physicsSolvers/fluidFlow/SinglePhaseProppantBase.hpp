@@ -55,13 +55,13 @@ public:
    */
   virtual ~SinglePhaseProppantBase();
 
+  virtual void updateFluidModel( ObjectManagerBase & dataGroup ) const override;
+
   virtual void updatePorosityAndPermeability( SurfaceElementSubRegion & subRegion ) const override;
 
 protected:
 
   virtual void validateConstitutiveModels( DomainPartition & domain ) const override;
-
-  virtual void updateFluidModel( ObjectManagerBase & dataGroup ) const override;
 
   virtual FluidPropViews getFluidProperties( constitutive::ConstitutiveBase const & fluid ) const override;
 
