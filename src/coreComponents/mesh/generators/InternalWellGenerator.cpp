@@ -63,5 +63,5 @@ void InternalWellGenerator::postInputInitialization()
 }
 
 
-REGISTER_CATALOG_ENTRY( WellGeneratorBase, InternalWellGenerator, string const &, Group * const )
+REGISTER_CATALOG_ENTRY( MeshComponentBase, InternalWellGenerator, string const &, Group * const )
 }

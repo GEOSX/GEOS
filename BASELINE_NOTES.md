@@ -10,6 +10,18 @@ PR #3393 (XXXX-XX-XX)
 =====================
 Fix netToGross bug.
 
+PR #3381 (2024-12-01)
+=====================
+A few baseline diffs for order FaceElementSubRegion::m_toFacesRelation map. Not sure why this was changed by this PR, but the previous order seems incorrect for a couple of cases.
+
+PR #2957 (2024-11-27)
+=====================
+Added ExternalDataRepository.
+
+PR #3448 (2024-11-21)
+=====================
+Switched the FaceElementSubRegion::m_toFacesRelation and FaceElementSubRegion::m_2dElemToElems back to array2d instead of ArrayOfArray. This results in a reordering m_toFacesRelation back to the "correct" assumed order of "original face first". This fixes a bug that failed to remove the CellStencil entry when a FaceElement splits two cells.
+
 PR #2637 (2024-11-21)
 =====================
 Added numberOfTargetProcesses.
