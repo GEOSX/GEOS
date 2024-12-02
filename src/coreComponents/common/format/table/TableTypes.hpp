@@ -32,6 +32,7 @@ enum class CellType : char
   SEPARATOR = '\x02',
   Header = '\x03',
   Value = '\x04',
+  Hidden ='\x05'
 };
 
 }

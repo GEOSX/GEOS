@@ -67,16 +67,6 @@ bool TableLayout::isLineBreakEnabled() const
   return m_wrapLine;
 }
 
-void TableLayout::setContainingSubColumn()
-{
-  m_containSubColumn = true;
-}
-
-bool TableLayout::isContainingSubColumn() const
-{
-  return m_containSubColumn;
-}
-
 void TableLayout::removeSubColumn()
 {
   for( auto & column : m_tableColumnsData )
@@ -90,23 +80,25 @@ void TableLayout::removeSubColumn()
 
 size_t TableLayout::getMaxHeaderRow() const
 {
-  size_t depthMax = 0;
-  size_t currDepth = 0;
+  size_t depthMax = 1;
+  size_t currDepth = 1;
   for( auto const & column : m_tableColumnsData )
   {
-    currDepth = 0;
+    currDepth = 1;
     TableLayout::Column const * currColumn = &column;
     while( !currColumn->subColumn.empty())
     {
       currColumn = &currColumn->subColumn[0];
+      std::cout << "currDepth" << currDepth << std::endl;
       currDepth++;
     }
     depthMax = std::max( currDepth, depthMax );
+    std::cout << "depthMax amx" << depthMax << std::endl;
   }
   return depthMax;
 }
 
-std::vector< TableLayout::Column > const & TableLayout::getColumns() const
+std::vector< TableLayout::Column > & TableLayout::getColumns()
 {
   return m_tableColumnsData;
 }
@@ -136,18 +128,37 @@ integer const & TableLayout::getMarginTitle() const
   return m_titleMargin;
 }
 
+std::vector< size_t > & TableLayout::getNbSubHeaderLines()
+{
+  return m_nbSubHeaderLines;
+}
+
+std::vector< size_t > & TableLayout::getNbSubDataLines()
+{
+  return m_nbSubDataLines;
+}
+
 void divideCell( std::vector< string > & lines, string const & value )
 {
   std::istringstream strStream( value );
   std::string line;
+  lines.clear();
   while( getline( strStream, line, '\n' ))
   {
     lines.push_back( line );
   }
+
+  if( line.empty())
+  {
+    lines.push_back( "" );
+  }
 }
 
 TableLayout::CellLayout::CellLayout():
-  lines( {} ), cellType( CellType::Header ), alignment( TableLayout::Alignment::center )
+  lines( {""} ),
+  cellType( CellType::Header ),
+  alignment( TableLayout::Alignment::center ),
+  maxDataLength( 0 )
 {}
 
 TableLayout::CellLayout::CellLayout( CellType type, string const & cellValue, TableLayout::Alignment cellAlignment ):
@@ -155,10 +166,17 @@ TableLayout::CellLayout::CellLayout( CellType type, string const & cellValue, Ta
   alignment( cellAlignment )
 {
   divideCell( lines, cellValue );
-  maxDataLength = std::max_element( lines.begin(), lines.end(), []( const auto & a, const auto & b )
+  if( !lines.empty())
   {
-    return a.length() < b.length();
-  } )->length();
+    maxDataLength = std::max_element( lines.begin(), lines.end(), []( const auto & a, const auto & b )
+    {
+      return a.length() < b.length();
+    } )->length();
+  }
+  else
+  {
+    maxDataLength = 0;
+  }
 }
 
 void TableLayout::CellLayout::setMaxCellSize( size_t size )
@@ -172,7 +190,7 @@ void TableLayout::CellLayout::setMaxCellSize( size_t size )
 //
 
 TableLayout::Column::Column():
-  m_parent( nullptr ), m_next( nullptr )
+  m_parent( nullptr ), m_next( nullptr ), maxStringSize( 0 )
 {
   enabled = true;
   columnName.lines = {};
@@ -181,7 +199,7 @@ TableLayout::Column::Column():
 }
 
 TableLayout::Column::Column( TableLayout::CellLayout cell ):
-  m_parent( nullptr ), m_next( nullptr )
+  m_parent( nullptr ), m_next( nullptr ), maxStringSize( cell.maxDataLength )
 {
   columnName = cell;
   enabled = true;
@@ -191,13 +209,14 @@ TableLayout::Column::Column( TableLayout::CellLayout cell ):
 TableLayout::Column & TableLayout::Column::setName( string_view name )
 {
   columnName.lines.push_back( std::string( name ) );
+  divideCell( columnName.lines, columnName.lines[0] );
   columnName.cellType = CellType::Header;
   return *this;
 }
 
 TableLayout::Column & TableLayout::Column::hide()
 {
-  enabled = false;
+  columnName.cellType = CellType::Hidden;
   return *this;
 }
 
@@ -243,24 +262,6 @@ TableLayout::Column & TableLayout::Column::setValuesAlignment( Alignment valueAl
 {
   cellAlignment.valueAlignment = valueAlignment;
   return *this;
-}
-
-void TableLayout::Column::compareAndSetMaxStringSize( TableLayout::Column * currentColumn,
-                                                      std::vector< size_t > & subColumnsLength )//todo renaùme
-{
-  auto sumSubColumnsLen = std::reduce( subColumnsLength.begin(), subColumnsLength.end());
-
-  size_t columnNameLinesMaxLength = std::max_element(
-    currentColumn->columnName.lines.begin(),
-    currentColumn->columnName.lines.end(),
-    []( const auto & a, const auto & b ) {
-    return a.length() < b.length();
-  } )->length();
-
-  size_t maxSize = std::max( sumSubColumnsLen, columnNameLinesMaxLength );
-
-  currentColumn->columnName.maxDataLength = maxSize;
-  currentColumn->setMaxStringSize( maxSize );
 }
 
 bool TableLayout::Column::hasChild() const

@@ -187,12 +187,7 @@ private:
                     string_view sectionSeparatingLine,
                     string_view topSeparator ) const;
 
-  /**
-   * @brief Detect columns who are not displayed from TableLayout and therefore modify columns / inputDataRows vectors
-   * @param inputDataRows Vector built in TableData containing all rows values
-   */
-  void updateVisibleColumns( TableLayout & tableLayout,
-                             RowsCellInput & inputDataValues ) const;
+  void setLinks( std::vector< TableLayout::Column > & columns ) const;
 
   /**
    * @brief
@@ -227,6 +222,7 @@ private:
    * @param topSeparator The table top separator
    */
   void computeAndBuildTableSeparator( TableLayout & tableLayout,
+                                      RowsCellLayout & cellsDataLayout,
                                       string & sectionSeparatingLine,
                                       string & topSeparator ) const;
 
@@ -236,6 +232,8 @@ private:
    * @param extraCharacters ExtraCharacters to be distributed between each columns
    */
   void increaseColumnsSize( TableLayout & tableLayout,
+                            RowsCellLayout & cellsHeaderLayout,
+                            size_t const nbColumns,
                             size_t const extraCharacters ) const;
 
   /**
@@ -248,7 +246,8 @@ private:
 
   void formatCell( TableLayout & tableLayout,
                    std::ostringstream & tableOutput,
-                   TableLayout::CellLayout const & cell ) const;
+                   TableLayout::CellLayout const & cell,
+                   size_t idxLine ) const;
 
   /**
    * @brief Output the values rows in the table
@@ -259,6 +258,8 @@ private:
   void outputLines( TableLayout & tableLayout,
                     RowsCellLayout const & cellsLayout,
                     std::ostringstream & tableOutput,
+                    std::vector< size_t > const & nbLinesRow,
+                    CellType sectionType,
                     string_view sectionSeparatingLine ) const;
 };
 

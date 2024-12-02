@@ -170,13 +170,6 @@ public:
 
     /**
      * @brief
-     * @param column
-     */
-    void compareAndSetMaxStringSize( Column * column, std::vector< size_t > & subColumnsLength );
-
-
-    /**
-     * @brief
      * @return Column&
      */
     bool hasChild() const;
@@ -285,7 +278,10 @@ private:
     return LeafIterator( startColumn, idxLayer );
   }
 
-  LeafIterator endLeaf() { return LeafIterator( &(*m_tableColumnsData.end()), 0 );}
+  LeafIterator endLeaf()
+  {
+    return LeafIterator( nullptr, 0 );
+  }
 
   //
   class RootIterator
@@ -316,13 +312,13 @@ public:
         {
           m_currentColumn = m_currentColumn->m_next;
         }
-        else if( m_currentColumn->m_parent->m_next == nullptr )
+        else if( m_currentColumn->m_parent == nullptr )
         {
-          return *this;
+          m_currentColumn = nullptr;
         }
         else
         {
-          while( this->m_currentColumn->m_parent->m_next == nullptr )
+          while( m_currentColumn->m_parent->m_next == nullptr )
           {
             m_currentColumn = m_currentColumn->m_parent->m_next;
           }
@@ -367,17 +363,7 @@ private:
 
   RootIterator endRoot()
   {
-    Column * startColumn = &(*m_tableColumnsData.end());
-    if( startColumn->hasChild() )
-    {
-      while( startColumn->hasChild() )
-      {
-        startColumn = &startColumn->subColumn[startColumn->subColumn.size() - 1];
-      }
-
-
-    }
-    return RootIterator( &(*m_tableColumnsData.end()) );
+    return RootIterator( nullptr );
   }
 
 
@@ -453,7 +439,7 @@ private:
   /**
    * @return The columns vector
    */
-  std::vector< Column > const & getColumns() const;
+  std::vector< Column > & getColumns();
 
   /**
    * @return The table name
@@ -485,16 +471,6 @@ private:
   bool isLineBreakEnabled() const;
 
   /**
-   * @brief
-   */
-  void setContainingSubColumn();
-
-  /**
-   * @return
-   */
-  bool isContainingSubColumn() const;
-
-  /**
    * @brief Remove all subcolumn in all columns
    * Can be used if we want to reuse a TableLayout without keep subcolumns
    */
@@ -520,6 +496,19 @@ private:
    */
   integer const & getMarginTitle() const;
 
+/**
+ * @brief Get the Nb Rows object
+ * @return std::vector< integer >&
+ */
+  std::vector< size_t > & getNbSubHeaderLines();
+
+/**
+ * @brief Get the Nb Rows object
+ * @return std::vector< integer >&
+ */
+  std::vector< size_t > & getNbSubDataLines();
+
+
 private:
 
   /**
@@ -531,9 +520,9 @@ private:
     for( auto const & arg : args )
     {
       std::visit( [this]( auto const & value ) {
-                  addToColumns( value );
-        }
-      , arg );
+        addToColumns( value );
+      }
+                  , arg );
     }
   }
 
@@ -562,17 +551,15 @@ private:
   void addToColumns( string_view columnName );
 
 /**
- * 
+ *
  * @brief Create and add a column to the columns vector given a Column
  * @param column Vector containing addition information on the column
  */
   void addToColumns( TableLayout::Column const & column );
 
   std::vector< Column > m_tableColumnsData;
-  // m_valueRows[0] = header then 1 line = 1 row.
-  std::vector< Row > m_valueRows;
-  std::vector< Row > m_headerRows;
-
+  std::vector< size_t > m_nbSubHeaderLines;
+  std::vector< size_t > m_nbSubDataLines;
   bool m_wrapLine = true;
   bool m_containSubColumn = false;
 
