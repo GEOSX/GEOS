@@ -484,20 +484,20 @@ void WaveSolverBase::computeTargetNodeSet( arrayView2d< localIndex const, cells:
 
 void WaveSolverBase::incrementIndexSeismoTrace( real64 const time_n )
 {
-  if (m_forward)
-   {
-     while( (m_dtSeismoTrace * m_indexSeismoTrace) <= (time_n + epsilonLoc) && m_indexSeismoTrace < m_nsamplesSeismoTrace )
-     { 
-       m_indexSeismoTrace++;
-     }
-   }
+  if( m_forward )
+  {
+    while( (m_dtSeismoTrace * m_indexSeismoTrace) <= (time_n + epsilonLoc) && m_indexSeismoTrace < m_nsamplesSeismoTrace )
+    {
+      m_indexSeismoTrace++;
+    }
+  }
   else
-   {
-     while( (m_dtSeismoTrace * m_indexSeismoTrace) >= (time_n - epsilonLoc) && m_indexSeismoTrace > 0 )
-     { 
-       m_indexSeismoTrace--;
-     }
-   }
+  {
+    while( (m_dtSeismoTrace * m_indexSeismoTrace) >= (time_n - epsilonLoc) && m_indexSeismoTrace > 0 )
+    {
+      m_indexSeismoTrace--;
+    }
+  }
 }
 
 void WaveSolverBase::computeAllSeismoTraces( real64 const time_n,
