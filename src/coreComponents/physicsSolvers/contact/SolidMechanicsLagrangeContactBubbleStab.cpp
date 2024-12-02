@@ -265,7 +265,7 @@ void SolidMechanicsLagrangeContactBubbleStab::computeRotationMatrices( DomainPar
     FaceElementSubRegion & subRegion = region.getUniqueSubRegion< FaceElementSubRegion >();
 
     arrayView2d< real64 const > const faceNormal = faceManager.faceNormal();
-    ArrayOfArraysView< localIndex const > const elemsToFaces = subRegion.faceList().toViewConst();
+    arrayView2d< localIndex const > const elemsToFaces = subRegion.faceList().toViewConst();
 
     arrayView2d< real64 > const incrBubbleDisp =
       faceManager.getField< fields::solidMechanics::incrementalBubbleDisplacement >();
@@ -686,7 +686,7 @@ void SolidMechanicsLagrangeContactBubbleStab::addCouplingNumNonzeros( DomainPart
 
     SurfaceElementRegion const & region = elemManager.getRegion< SurfaceElementRegion >( getUniqueFractureRegionName() );
     FaceElementSubRegion const & subRegion = region.getUniqueSubRegion< FaceElementSubRegion >();
-    ArrayOfArraysView< localIndex const > const elemsToFaces = subRegion.faceList().toViewConst();
+    arrayView2d< localIndex const > const elemsToFaces = subRegion.faceList().toViewConst();
 
     for( localIndex kfe=0; kfe<subRegion.size(); ++kfe )
     {
@@ -814,7 +814,7 @@ void SolidMechanicsLagrangeContactBubbleStab::addCouplingSparsityPattern( Domain
 
     SurfaceElementRegion const & region = elemManager.getRegion< SurfaceElementRegion >( getUniqueFractureRegionName() );
     FaceElementSubRegion const & subRegion = region.getUniqueSubRegion< FaceElementSubRegion >();
-    ArrayOfArraysView< localIndex const > const elemsToFaces = subRegion.faceList().toViewConst();
+    arrayView2d< localIndex const > const elemsToFaces = subRegion.faceList().toViewConst();
     ArrayOfArraysView< localIndex const > const faceToNodeMap = faceManager.nodeList().toViewConst();
 
     static constexpr int maxNumDispFaceDof = 3 * 4;
@@ -1067,7 +1067,7 @@ void SolidMechanicsLagrangeContactBubbleStab::createBubbleCellList( DomainPartit
     arrayView1d< localIndex > const tmpSpace_v = tmpSpace.toView();
     // Store indexes of faces in the temporany array.
     {
-      ArrayOfArraysView< localIndex const > const elemsToFaces = subRegion.faceList().toViewConst();
+      arrayView2d< localIndex const > const elemsToFaces = subRegion.faceList().toViewConst();
 
       forAll< parallelDevicePolicy<> >( subRegion.size(), [ = ] GEOS_HOST_DEVICE ( localIndex const kfe )
       {

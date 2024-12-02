@@ -17,5 +17,6 @@ set( physicsSolvers_sources
      surfaceGeneration/EmbeddedSurfaceGenerator.cpp
      surfaceGeneration/EmbeddedSurfacesParallelSynchronization.cpp
      surfaceGeneration/ParallelTopologyChange.cpp
+     surfaceGeneration/ParallelTopologyChangeNoFixup.cpp
      surfaceGeneration/SurfaceGenerator.cpp
      PARENT_SCOPE )
