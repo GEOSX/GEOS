@@ -68,8 +68,6 @@ public:
 
   virtual void registerDataOnMesh( Group & meshBodies ) override;
 
-  virtual void initializePostInitialConditionsPreSubGroups() override;
-
   /**
    * @defgroup Solver Interface Functions
    *
@@ -284,12 +282,30 @@ public:
    * from prescribed intermediate values (i.e. global densities from global fractions)
    * and any applicable hydrostatic equilibration of the domain
    */
-  virtual void initializeFluid( MeshLevel & mesh, arrayView1d< string const > const & regionNames ) override;
+  virtual void initializeFluidState( MeshLevel & mesh, arrayView1d< string const > const & regionNames ) override;
+
+  virtual void initializeThermalState( MeshLevel & mesh, arrayView1d< string const > const & regionNames ) override;
 
   /**
    * @brief Compute the hydrostatic equilibrium using the compositions and temperature input tables
    */
   virtual void computeHydrostaticEquilibrium( DomainPartition & domain ) override;
+
+  /**
+   * @brief Function to perform the Application of Dirichlet type BC's
+   * @param time current time
+   * @param dt time step
+   * @param dofManager degree-of-freedom manager associated with the linear system
+   * @param domain the domain
+   * @param localMatrix local system matrix
+   * @param localRhs local system right-hand side vector
+   */
+  void applyDirichletBC( real64 const time,
+                         real64 const dt,
+                         DofManager const & dofManager,
+                         DomainPartition & domain,
+                         CRSMatrixView< real64, globalIndex const > const & localMatrix,
+                         arrayView1d< real64 > const & localRhs ) const;
 
   /**
    * @brief Apply source flux boundary conditions to the system
@@ -308,7 +324,7 @@ public:
                           arrayView1d< real64 > const & localRhs ) const;
 
   /**
-   * @brief Function to perform the Application of Dirichlet type BC's
+   * @brief Apply aquifer boundary conditions to the system
    * @param time current time
    * @param dt time step
    * @param dofManager degree-of-freedom manager associated with the linear system
@@ -316,12 +332,12 @@ public:
    * @param localMatrix local system matrix
    * @param localRhs local system right-hand side vector
    */
-  void applyDirichletBC( real64 const time,
-                         real64 const dt,
-                         DofManager const & dofManager,
-                         DomainPartition & domain,
-                         CRSMatrixView< real64, globalIndex const > const & localMatrix,
-                         arrayView1d< real64 > const & localRhs ) const;
+  virtual void applyAquiferBC( real64 const time,
+                               real64 const dt,
+                               DofManager const & dofManager,
+                               DomainPartition & domain,
+                               CRSMatrixView< real64, globalIndex const > const & localMatrix,
+                               arrayView1d< real64 > const & localRhs ) const = 0;
 
   /**
    * @brief Function to fix the initial state during the initialization step in coupled problems
@@ -341,6 +357,7 @@ public:
                                             CRSMatrixView< real64, globalIndex const > const & localMatrix,
                                             arrayView1d< real64 > const & localRhs ) const;
 
+
   /**
    * @brief Sets all the negative component densities (if any) to zero.
    * @param domain the physical domain object
@@ -351,6 +368,8 @@ public:
 
   virtual real64 setNextDtBasedOnStateChange( real64 const & currentDt,
                                               DomainPartition & domain ) override;
+
+  void computeCFLNumbers( DomainPartition & domain, real64 const & dt, real64 & maxPhaseCFL, real64 & maxCompCFL );
 
   /**
    * @brief function to set the next time step size
@@ -364,7 +383,7 @@ public:
   virtual real64 setNextDtBasedOnCFL( real64 const & currentDt,
                                       DomainPartition & domain ) override;
 
-  void computeCFLNumbers( DomainPartition & domain, real64 const & dt, real64 & maxPhaseCFL, real64 & maxCompCFL );
+  virtual void initializePostInitialConditionsPreSubGroups() override;
 
   integer useSimpleAccumulation() const { return m_useSimpleAccumulation; }
 
@@ -378,6 +397,7 @@ protected:
 
   virtual void initializePreSubGroups() override;
 
+
   /**
    * @brief Utility function that checks the consistency of the constitutive models
    * @param[in] domain the domain partition
@@ -386,29 +406,11 @@ protected:
    */
   void validateConstitutiveModels( DomainPartition const & domain ) const;
 
-  virtual void initializeThermal( MeshLevel & mesh, arrayView1d< string const > const & regionNames ) override;
-
   /**
    * @brief Initialize the aquifer boundary condition (gravity vector, water phase index)
    * @param[in] cm reference to the global constitutive model manager
    */
   void initializeAquiferBC( constitutive::ConstitutiveManager const & cm ) const;
-
-  /**
-   * @brief Apply aquifer boundary conditions to the system
-   * @param time current time
-   * @param dt time step
-   * @param dofManager degree-of-freedom manager associated with the linear system
-   * @param domain the domain
-   * @param localMatrix local system matrix
-   * @param localRhs local system right-hand side vector
-   */
-  virtual void applyAquiferBC( real64 const time,
-                               real64 const dt,
-                               DofManager const & dofManager,
-                               DomainPartition & domain,
-                               CRSMatrixView< real64, globalIndex const > const & localMatrix,
-                               arrayView1d< real64 > const & localRhs ) const = 0;
 
   /**
    * @brief Utility function that encapsulates the call to FieldSpecificationBase::applyFieldValue in BC application

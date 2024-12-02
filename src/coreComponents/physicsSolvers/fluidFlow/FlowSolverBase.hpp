@@ -146,7 +146,9 @@ public:
                            real64 const & timeAtBeginningOfStep,
                            real64 const & dt );
 
-  virtual void initializeFluid( MeshLevel & mesh, const arrayView1d< const string > & regionNames ) { GEOS_UNUSED_VAR( mesh, regionNames ); }
+  virtual void initializeFluidState( MeshLevel & mesh, const arrayView1d< const string > & regionNames ) { GEOS_UNUSED_VAR( mesh, regionNames ); }
+
+  virtual void initializeThermalState( MeshLevel & mesh, const arrayView1d< const string > & regionNames ) { GEOS_UNUSED_VAR( mesh, regionNames ); }
 
   /**
    * @brief For each equilibrium initial condition, loop over all the target cells and compute the min/max elevation
@@ -215,8 +217,6 @@ protected:
   void initializePorosityAndPermeability( MeshLevel & mesh, arrayView1d< string const > const & regionNames );
 
   void initializeHydraulicAperture( MeshLevel & mesh, const arrayView1d< const string > & regionNames );
-
-  virtual void initializeThermal( MeshLevel & mesh, const arrayView1d< const string > & regionNames ) { GEOS_UNUSED_VAR( mesh, regionNames ); }
 
   void saveInitialPressureAndTemperature( MeshLevel & mesh, const arrayView1d< const string > & regionNames );
 

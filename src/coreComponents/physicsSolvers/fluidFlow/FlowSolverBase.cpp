@@ -500,7 +500,7 @@ void FlowSolverBase::initialize( DomainPartition & domain )
     initializeHydraulicAperture( mesh, regionNames );
 
     // Initialize primary variables from applied initial conditions
-    initializeFluid( mesh, regionNames );
+    initializeFluidState( mesh, regionNames );
 
     // Initialize the rock thermal quantities: conductivity and solid internal energy
     // Note:
@@ -508,7 +508,7 @@ void FlowSolverBase::initialize( DomainPartition & domain )
     // - This step depends on porosity and phaseVolFraction
     if( m_isThermal )
     {
-      initializeThermal( mesh, regionNames );
+      initializeThermalState( mesh, regionNames );
     }
 
     // Save initial pressure and temperature fields

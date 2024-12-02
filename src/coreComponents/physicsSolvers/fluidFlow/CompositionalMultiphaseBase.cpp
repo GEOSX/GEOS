@@ -830,8 +830,8 @@ real64 CompositionalMultiphaseBase::updateFluidState( ElementSubRegionBase & sub
   return maxDeltaPhaseVolFrac;
 }
 
-void CompositionalMultiphaseBase::initializeFluid( MeshLevel & mesh,
-                                                   arrayView1d< string const > const & regionNames )
+void CompositionalMultiphaseBase::initializeFluidState( MeshLevel & mesh,
+                                                        arrayView1d< string const > const & regionNames )
 {
   GEOS_MARK_FUNCTION;
 
@@ -954,7 +954,7 @@ void CompositionalMultiphaseBase::initializeFluid( MeshLevel & mesh,
   } );
 }
 
-void CompositionalMultiphaseBase::initializeThermal( MeshLevel & mesh, arrayView1d< string const > const & regionNames )
+void CompositionalMultiphaseBase::initializeThermalState( MeshLevel & mesh, arrayView1d< string const > const & regionNames )
 {
   mesh.getElemManager().forElementSubRegions< CellElementSubRegion,
                                               SurfaceElementSubRegion >( regionNames, [&]( localIndex const,
