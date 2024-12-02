@@ -159,14 +159,16 @@ private:
   ///  for the extremity of a row
   static constexpr char m_horizontalLine = '-';
 
-  /**
-   * @brief Prepare all the columns  with the appropriate values and formatting separator
-   * @param columns  The vector containg all columns . Each tableColumnData contains its own
-   *        parameters (such as name, alignment, etc.).
-   * @param tableData Vector containing all rows filled with values
-   * @param sectionSeparatingLine Separator string used between sections of the table
-   * @param topSeparator The table top separator
-   */
+
+/**
+ * @brief Initializes the table layout with the given table data and prepares necessary layouts for headers and data cells.
+ * @param tableLayout A reference to the `TableLayout` object.
+ * @param tableData A constant reference to the `TableData` object, which contains the actual data for the table.
+ * @param cellsHeaderLayout A reference to a `RowsCellLayout` where the header cells will be populated.
+ * @param cellsDataLayout A reference to a `RowsCellLayout` where the data cells will be populated.
+ * @param sectionSeparatingLine A string that will be used as the separator line between sections in the table.
+ * @param topSeparator A string that will be used as the separator at the top of the table.
+ */
   void initalizeTableLayout( TableLayout & tableLayout,
                              TableData const & tableData,
                              RowsCellLayout & cellsDataLayout,
@@ -174,11 +176,13 @@ private:
                              string & sectionSeparatingLine,
                              string & topSeparator ) const;
 /**
- * @brief Displays the complete table
- * @param tableOutput The output stream
- * @param columns  Vector containg all columns
- * @param sectionSeparatingLine Separator string used between sections of the table
- * @param topSeparator The table top separator
+ * @brief Outputs the formatted table to the provided output stream.
+ * @param tableLayout The layout of the table
+ * @param tableOutput A reference to an `std::ostringstream` where the formatted table will be written.
+ * @param cellsHeader The layout of the header rows
+ * @param cellsData The layout of the data rows
+ * @param sectionSeparatingLine The string to be used as a separator between different sections of the table.
+ * @param topSeparator The string to be used as the separator at the top of the table.
  */
   void outputTable( TableLayout & tableLayout,
                     std::ostringstream & tableOutput,
@@ -187,73 +191,93 @@ private:
                     string_view sectionSeparatingLine,
                     string_view topSeparator ) const;
 
+  /**
+   * @brief Sets parent-child relationships between columns and sub-columns.
+   * @param columns A reference to a vector of `TableLayout::Column` objects.
+   */
   void setLinks( std::vector< TableLayout::Column > & columns ) const;
 
   /**
-   * @brief
+   * @brief Adjusts the header layout by ensuring all header layers have consistent row sizes and formats.
+   * @param tableLayout The layout of the table, containing information about columns, headers, and their layers.
+   * @param cellsHeaderLayout A reference to the collection of header cells that will be updated with the gridified layout.
    */
   void gridifyHeaders( TableLayout & tableLayout,
                        RowsCellLayout & cellsDataLayout ) const;
 
-  /**
-   * @brief Populate all the tableColumnData values with values extracted from TableData.
-   * @param columns  Vector of columns  to populate.
-   * @param tableData Vector containing all rows filled with values
-   * @param isSubColumn Boolean indicating if the current tableColumnData is a subcolumn
-   */
+/**
+ * @brief Populates the data cells layout based on input data values.
+ * @param tableLayout The layout of the table,
+ * @param cellsDataLayout A reference to the layout for the data cells that will be populated.
+ * @param inputDataValues A 2D vector containing the actual input data values.
+ */
   void populateDataCellsLayout( TableLayout & tableLayout,
                                 RowsCellLayout & cellsDataLayout,
                                 RowsCellInput & inputDataValues ) const;
 
   /**
-   * @brief For each tableColumnData find and set the column's longest string
-   * @param tableColumnData The tableColumnData to process.
-   * @note Compares the longest string from the header with the longest string from the column values.
-   * If the column contains subcolumns, it recursively applies the same logic to them
+   * @brief Finds and sets the longest string for each column in the table.
+   * @param tableLayout The layout of the table,
+   * @param cellsDataLayout A reference to the collection of data cells. The function updates the maximum string
+   *        length for each cell based on the longest string found in the column.
    */
-  void findAndSetLongestColumnString( TableLayout & tableLayout,
-                                      RowsCellLayout & cellsDataLayout ) const;
+  void updateColumnMaxLength( TableLayout & tableLayout,
+                              RowsCellLayout & cellsDataLayout ) const;
 
   /**
-   * @brief Compute the max table line length, taking into account the length of : title, columns  header/values
-   * Increase the size of the columns if necessary, then builds the table's separating lines
-   * @param columns Vector of tableColumnData containing containing the largest string for each tableColumnData
-   * @param sectionSeparatingLine Separator string used between sections of the table
-   * @param topSeparator The table top separator
+   * @brief Computes and constructs the separator lines for the table.
+   * @param tableLayout The layout of the table,
+   * @param cellsDataLayout A reference to the collection of data cells that will be affected by column resizing.
+   * @param sectionSeparatingLine A string reference where the separator line between sections will be stored.
+   * @param topSeparator A string reference where the top separator line will be stored.
    */
-  void computeAndBuildTableSeparator( TableLayout & tableLayout,
-                                      RowsCellLayout & cellsDataLayout,
-                                      string & sectionSeparatingLine,
-                                      string & topSeparator ) const;
+  void calculateTableSeparators( TableLayout & tableLayout,
+                                 RowsCellLayout & cellsDataLayout,
+                                 string & sectionSeparatingLine,
+                                 string & topSeparator ) const;
 
   /**
-   * @brief Increase each tableColumnData size if the title is larger than all the columns
-   * @param columns Vector containing all table columns
-   * @param extraCharacters ExtraCharacters to be distributed between each columns
+   * @brief Increases the size of columns to accommodate extra characters.
+   * @param tableLayout The layout of the table
+   * @param cellsDataLayout A reference to the collection of data cells, which will be updated with the new column sizes.
+   * @param nbColumns The total number of columns in the table.
+   * @param extraCharacters The total number of extra characters to be distributed across the columns.
    */
-  void increaseColumnsSize( TableLayout & tableLayout,
+  void adjustColumnWidths( TableLayout & tableLayout,
                             RowsCellLayout & cellsHeaderLayout,
                             size_t const nbColumns,
                             size_t const extraCharacters ) const;
 
   /**
    * @brief Output the title row in the table
+   * @param tableLayout The layout of the table
+   * @param tableOutput The output stream
    * @param topSeparator The top separator string
    */
   void outputTitleRow( TableLayout & tableLayout,
                        std::ostringstream & tableOutput,
                        string_view topSeparator ) const;
 
+  /**
+   * @brief Formats a table cell and appends it to the table output.
+   * @param tableLayout The layout of the table
+   * @param tableOutput The output stream
+   * @param cell The cell to format
+   * @param idxLine The current line index used to access the specific content for the cell.
+   */
   void formatCell( TableLayout & tableLayout,
                    std::ostringstream & tableOutput,
                    TableLayout::CellLayout const & cell,
                    size_t idxLine ) const;
 
   /**
-   * @brief Output the values rows in the table
-   * @param columns  Vector containing all table columns
+   * @brief Outputs the formatted table lines to the output stream.
+   * @param tableLayout The layout of the table
+   * @param cellsLayout A collection of rows, each containing a layout of cells to be processed and formatted.
    * @param tableOutput The output stream
-   * @param sectionSeparatingLine Separator string used between sections of the table
+   * @param nbLinesRow A vector containing the number of sub-lines for each row.
+   * @param sectionType The type of the section being processed (Header, Value, etc.).
+   * @param sectionSeparatingLine A separator line to be added.
    */
   void outputLines( TableLayout & tableLayout,
                     RowsCellLayout const & cellsLayout,

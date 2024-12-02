@@ -55,7 +55,7 @@ public:
   enum Section { header, values };
 
   /**
-   * @brief Structure to set up values alignment for each colum.
+   * @brief Structure to set up values m_alignment for each colum.
    */
   struct CellAlignment
   {
@@ -65,16 +65,23 @@ public:
     Alignment valueAlignment = Alignment::right;
   };
 
+/**
+ * @struct CellLayout
+ * @brief Structure representing a cell in a table.
+ * This structure contains information about the cell such as its type, alignment, maximum data length, and width.
+ */
   struct CellLayout
   {
-    /// Vector containing sub values name
-    std::vector< string > lines;
-    CellType cellType;
-    /// Cell alignment (left, right, center)
-    Alignment alignment;
-    size_t maxDataLength;
-    ///
-    size_t cellWidth = 0;
+    /// vector containing the cell name separated by a '\n'.
+    std::vector< string > m_lines;
+    /// The type of the cell (Header,Value, Merge, ...).
+    CellType m_cellType;
+    /// The alignment of the cell (left, center, right).
+    Alignment m_alignment;
+    /// Maximum length of the data in the cell.
+    size_t m_maxDataLength;
+    /// The width of the cell (e.g., for cell containing subColumns).
+    size_t m_cellWidth = 0;
 
 
     /**
@@ -83,105 +90,119 @@ public:
     CellLayout();
 
     /**
-     * @brief Constructor to initialize a Cell with a specific type and value.
-     * @param t The type of the cell.
-     * @param val The value to be assigned to the cell.
+     * @brief Constructor to initialize a cell given celltype, value and alignment.
+     * @param cellType The type of the cell.
+     * @param value The value to be assigned to the cell.
+     * @param alignment The alignment of the cell (left, right, or center).
      */
-    CellLayout( CellType t, string const & val, TableLayout::Alignment alignment );
+    CellLayout( CellType cellType, string const & value, TableLayout::Alignment alignment );
 
+    /**
+     * @brief Sets the maximum size for the cell.
+     * @param size The maximum size to set for the cell.
+     */
     void setMaxCellSize( size_t size );
   };
 
   /**
-   * @brief Struct for a Column.
-   * Each column contains its own parameters (such as name, alignment, etc.).
+   * @class Column
+   * @brief Class representing a column in a table layout.
    */
   class Column
   {
 public:
-    /// Name for a column
-    CellLayout columnName;
-    /// A boolean to display a colummn
-    bool enabled;
-    /// Vector containing all sub columns subdivison
-    std::vector< Column > subColumn;
-    /// struct containing alignment for the column (header and values)
-    CellAlignment cellAlignment;
-
+    /// The name of the column.
+    CellLayout m_columName;
+    /// A vector containing all sub-columns in the column.
+    std::vector< Column > m_subColumn;
+    /// struct containing m_alignment for the column (header and values)
+    CellAlignment m_cellAlignment;
+    /// Pointer to the parent column (if any).
     Column * m_parent;
+    /// Pointer to the next column (if any).
     Column * m_next;
 
+    /**
+     * @brief Default constructor.
+     * Initializes a column with default values.
+     */
     Column();
 
+    /**
+     * @brief Constructor to initialize a column with a specific `CellLayout`.
+     * @param cell The `CellLayout` object to initialize the column.
+     *
+     */
     Column( TableLayout::CellLayout cellLayout );
 
     /**
-     * @brief Set the Name object
-     * @param name
-     * @return Column&
+     * @brief Sets the name of the column.
+     * @param name The name to set for the column.
+     * @return The current column object.
      */
     Column & setName( string_view name );
 
     /**
-     * @brief
-     * @return Column&
+     * @brief Hides the column.
+     * @return The current column objec.
      */
     Column & hide();
 
     /**
-     * @brief Set the Max String Size object
-     * @param size
+     * @brief Sets the maximum string size for the column.
+     * @param size The size to set as the maximum string length.
      */
     void setMaxStringSize( size_t const size );
 
     /**
-     * @brief Get the Max String Size object
-     * @return size_t
+     * @brief Gets the maximum string size of the column.
+     * @return size_t The maximum string size of the column.
      */
     size_t getMaxStringSize() const;
 
     /**
-     * @brief
-     * @param subColName
-     * @return Column&
+     * @brief Adds multiple sub-columns to the column.
+     * @param subColName A list of sub-column names to add.
+     * @return The current column object
      */
     TableLayout::Column & addSubColumns( std::initializer_list< string > subColName );
 
     /**
-     * @brief
-     * @param subColName
-     * @return Column&
+     * @brief Adds a single sub-column to the column.
+     * @param subColName The name of the sub-column to add.
+     * @return The current column object.
      */
     TableLayout::Column & addSubColumns( string const & subColName );
 
     /**
-     * @brief Set the Header Alignment object
-     * @param headerAlignment
-     * @return Column&
+     * @brief Sets the header alignment for the column.
+     * @param headerAlignment The alignment to set for the column header (left, right, or center).
+     * @return The current column object
      */
     TableLayout::Column & setHeaderAlignment( Alignment headerAlignment );
 
     /**
-     * @brief Set the Values Alignment object
-     * @param valueAlignment
-     * @return Column&
+     * @brief Sets the values alignment for the column.
+     * @param headerAlignment The alignment to set for the column values (left, right, or center).
+     * @return The current column object
      */
     TableLayout::Column & setValuesAlignment( Alignment valueAlignment );
 
     /**
-     * @brief
-     * @return Column&
+     * @brief Checks if the column has any child columns.
+     * @return bool True if the column has child columns, otherwise false.
      */
     bool hasChild() const;
 
     /**
-     * @brief
-     * @return Column&
+     * @brief Checks if the column has a parent column.
+     * @return bool True if the column has a parent, otherwise false.
      */
     bool hasParent() const;
 
 private:
-    size_t maxStringSize;
+    /// The maximum string size of the column.
+    size_t m_maxStringSize;
   };
 
   /**_est columns / sub columns.
@@ -213,7 +234,7 @@ public:
         while( m_currentColumn->hasChild() )
         {
           m_currentLayer++;
-          m_currentColumn = &m_currentColumn->subColumn[0];
+          m_currentColumn = &m_currentColumn->m_subColumn[0];
         }
       }
       else
@@ -272,7 +293,7 @@ private:
       while( startColumn->hasChild() )
       {
         idxLayer++;
-        startColumn = &startColumn->subColumn[0];
+        startColumn = &startColumn->m_subColumn[0];
       }
     }
     return LeafIterator( startColumn, idxLayer );
@@ -304,7 +325,7 @@ public:
     {
       if( m_currentColumn->hasChild())
       {
-        m_currentColumn = &m_currentColumn->subColumn[0];
+        m_currentColumn = &m_currentColumn->m_subColumn[0];
       }
       else
       {
@@ -521,8 +542,7 @@ private:
     {
       std::visit( [this]( auto const & value ) {
         addToColumns( value );
-      }
-                  , arg );
+      }, arg );
     }
   }
 
@@ -546,9 +566,9 @@ private:
 
   /**
    * @brief Create and add a column to the columns vector given a string
-   * @param columnName The column name
+   * @param m_columName The column name
    */
-  void addToColumns( string_view columnName );
+  void addToColumns( string_view m_columName );
 
 /**
  *

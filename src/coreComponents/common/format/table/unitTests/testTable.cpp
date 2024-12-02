@@ -36,15 +36,12 @@ TEST( testTable, tableEmptyRow )
 
   TableData tableData;
   tableData.addRow( "value1", "[30.21543]", "3.0", 54, 0 );
-  tableData.addRow( "", "", "", "", "" );
+  tableData.addRow( "4", "5 ", "6", "7", "8" );
   tableData.addRow( "Duis fringilla, ligula sed porta fringilla, ligula wisi commodo felis,ut adipiscing felis dui in enim. Suspendisse malesuada ultrices ante", "[30.21543]", "30.45465142",
                     787442, 10 );
-  std::cout << " ici1 " << std::endl;
   TableTextFormatter const tableText( tableLayout );
-  std::cout << " ici2 " << std::endl;
   tableText.toString( tableData );
-  EXPECT_EQ( tableText.toString(
-               tableData ),
+  EXPECT_EQ( tableText.toString( tableData ),
              "\n-------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------\n"
              "|                                                                                InternalWellGenerator well_injector1                                                                                 |\n"
              "-------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------\n"
@@ -71,11 +68,10 @@ TEST( testTable, tableClassic )
 
   TableData tableData;
   tableData.addRow( "value1", "[30.21543]", "3.0", 54, 0 );
-  tableData.addRow( "", "", "", "", "" );
+  tableData.addRow( "1", "2", "3", "4", "5" );
   tableData.addRow( "value23", "[30.21543]", "30.45465142", 787442, 10 );
 
   TableTextFormatter const tableText( tableLayout );
-  std::cout << tableText.toString( tableData ) << std::endl;
   EXPECT_EQ( tableText.toString( tableData ),
              "\n-----------------------------------------------------------------------------------------------------------------------------------------------------------\n"
              "|                                                          InternalWellGenerator well_injector1                                                           |\n"
@@ -113,7 +109,7 @@ TEST( testTable, tableColumnParamClassic ) //TODO
       .setHeaderAlignment( TableLayout::Alignment::right )} );
 
   TableData tableData;
-  tableData.addRow( "value1", " ", "3.0", 3.0129877, 2.0f, 1 );
+  tableData.addRow( "value1", "5.0", "3.0", 3.0129877, 2.0f, 1 );
   tableData.addRow( "val1", "v", "[3.045,42.02,89.25]", 3.0, 10.0f, 3 );
 
   TableTextFormatter const tableText( tableLayout );
@@ -128,7 +124,7 @@ TEST( testTable, tableColumnParamClassic ) //TODO
              );
 }
 
-TEST( testTable, tableHiddenColumn ) // TODO
+TEST( testTable, tableHiddenColumn )
 {
   string const title = "Cras egestas ipsum a nisl. Vivamus variu dolor utsisicdis parturient montes, nascetur ridiculus mus. Duis";
   TableLayout tableLayout( title,
@@ -140,7 +136,8 @@ TEST( testTable, tableHiddenColumn ) // TODO
     TableLayout::Column()
       .setName( "CoordX" )
       .setValuesAlignment( TableLayout::Alignment::left )
-      .setHeaderAlignment( TableLayout::Alignment::right ),
+      .setHeaderAlignment( TableLayout::Alignment::right )
+      .hide(),
     TableLayout::Column()
       .setName( "C" )
       .setValuesAlignment( TableLayout::Alignment::left )
@@ -158,7 +155,7 @@ TEST( testTable, tableHiddenColumn ) // TODO
   } );
 
   TableData tableData;
-  tableData.addRow( "value1", " ", "3.0", 3.0129877, 2.0f, 1 );
+  tableData.addRow( "value1", "6", "3.0", 3.0129877, 2.0f, 1 );
   tableData.addRow( "val1", "v", "[3.045,42.02,89.25]", 3.0, 10.0f, 3 );
 
   TableTextFormatter const tableText( tableLayout );
@@ -307,11 +304,10 @@ TEST( testTable, subColumns )
     } );
 
     TableData tableData;
-    tableData.addRow( "min", "125", "375,0001", " YES", 2354654, 562, 43.0, 43.0, 562, 5 );
-    tableData.addRow( "max", "360", "390,1", " YES", 383213213, 712, 48.0, 47.0, 72, 2 );
+    tableData.addRow( "min", "125", "375,0001", " YES", 2354654, 562, 43.0, 43.0, 562 );
+    tableData.addRow( "max", "360", "390,1", " YES", 383213213, 712, 48.0, 47.0, 72 );
 
     TableTextFormatter tableText( tableLayout );
-    std::cout <<tableText.toString( tableData ) << std::endl;
     EXPECT_EQ( tableText.toString( tableData ),
                "\n--------------------------------------------------------------------------------------------------------\n"
                "|       |  Column1  |                             Nodes  |  Column3  |            Column4  |  Column5  |\n"
@@ -363,6 +359,7 @@ TEST( testTable, variadicTest )
                );
   }
 }
+
 TEST( testTable, testLineBreak )
 {
   TableLayout tableLayout( {"Cras egestas", "CoordX", "C", "CoordZ", "Prev\nelement", "Next\nelement"} );
