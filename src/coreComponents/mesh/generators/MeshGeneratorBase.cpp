@@ -16,7 +16,7 @@
 #include "MeshGeneratorBase.hpp"
 #include "mesh/generators/CellBlockManager.hpp"
 #include "mesh/generators/ParticleBlockManager.hpp"
-
+#include "mesh/generators/MeshComponentBase.hpp"
 namespace geos
 {
 using namespace dataRepository;
@@ -30,14 +30,14 @@ MeshGeneratorBase::MeshGeneratorBase( string const & name, Group * const parent 
 Group * MeshGeneratorBase::createChild( string const & childKey, string const & childName )
 {
   GEOS_LOG_RANK_0( "Adding Mesh attribute: " << childKey << ", " << childName );
-  std::unique_ptr< WellGeneratorBase > wellGen = WellGeneratorBase::CatalogInterface::factory( childKey, childName, this );
-  return &this->registerGroup< WellGeneratorBase >( childName, std::move( wellGen ) );
+  std::unique_ptr< MeshComponentBase > comp = MeshComponentBase::CatalogInterface::factory( childKey, childName, this );
+  return &this->registerGroup< MeshComponentBase >( childName, std::move( comp ) );
 }
 
 void MeshGeneratorBase::expandObjectCatalogs()
 {
-  // During schema generation, register one of each type derived from WellGeneratorBase here
-  for( auto & catalogIter: WellGeneratorBase::getCatalog())
+  // During schema generation, register one of each type derived from MeshComponentBase here
+  for( auto & catalogIter: MeshComponentBase::getCatalog())
   {
     createChild( catalogIter.first, catalogIter.first );
   }
