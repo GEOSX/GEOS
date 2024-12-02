@@ -164,9 +164,9 @@ Adaptive tolerance
 
 This feature is available for iterative solvers and can be enabled using `krylovAdaptiveTol` flag in `LinearSolverParameters`. It follows the Eisenstat-Walker inexact Newton approach described in [Eisenstat and Walker 1996]. The key idea is to relax the linear solver tolerance at the beginning of the nonlinear iterations loop and tighten it when getting closer to the final solution. The initial tolerance is defined by `krylovWeakestTol` and starting from second nonlinear iteration the tolerance is chosen using the following steps:
 
-- compute the current to previous nonlinear norm ratio: :math:`\mathsf{nr} = \mathsf{min}( mathsf{norm}^{curr} / mathsf{norm}^{prev}, 1.0 )`
+- compute the current to previous nonlinear norm ratio: :math:`\mathsf{nr} = \mathsf{min}( \mathsf{norm}^{curr} / \mathsf{norm}^{prev}, 1.0 )`
 - estimate the new linear solver tolerance: :math:`\mathsf{tol}_{new} = \mathsf{\gamma} \cdot \mathsf{nr}^{ax}`
-- compute a safeguard to avoid too sharp tolerance reduction: :math:`\mathsf{tol}_{alt} = \mathsf{tol}_old^{2}`, the bound is the quadratic reduction with respect to the previous tolerance value
-- apply safeguards and compute the final tolerance: :math:`\mathsf{tol} = max( \mathsf{tol}_{new}, \mathsf{tol}_{alt} )`, :math:`\mathsf{tol} = min( \mathsf{tol}_max, max( \mathsf{tol}_min, \mathsf{tol} ) )`
+- compute a safeguard to avoid too sharp tolerance reduction: :math:`\mathsf{tol}_{alt} = \mathsf{tol}_{old}^{2}`, the bound is the quadratic reduction with respect to the previous tolerance value
+- apply safeguards and compute the final tolerance: :math:`\mathsf{tol} = max( \mathsf{tol}_{new}, \mathsf{tol}_{alt} )`, :math:`\mathsf{tol} = min( \mathsf{tol}_{max}, max( \mathsf{tol}_{min}, \mathsf{tol} ) )`
 
-Here :math:`\mathsf{\gamma}` is the forcing term, `ax` is the adaptivity exponent, :math:`\mathsf{tol}_min` and :math:`\mathsf{tol}_max` are prescribed tolerance bounds (defined by `krylovStrongestTol` and `krylovWeakestTol`, respectively).
+Here :math:`\mathsf{\gamma}` is the forcing term, :math:`ax` is the adaptivity exponent, :math:`\mathsf{tol}_min` and :math:`\mathsf{tol}_{max}` are prescribed tolerance bounds (defined by `krylovStrongestTol` and `krylovWeakestTol`, respectively).
