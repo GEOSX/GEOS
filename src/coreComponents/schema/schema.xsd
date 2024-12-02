@@ -1761,6 +1761,8 @@ stress - traction is applied to the faces as specified by the inner product of i
 				</xsd:unique>
 			</xsd:element>
 		</xsd:choice>
+		<!--dataSourceName => Name of the VTK data source-->
+		<xsd:attribute name="dataSourceName" type="string" default="" />
 		<!--faceBlocks => For multi-block files, names of the face mesh block.-->
 		<xsd:attribute name="faceBlocks" type="groupNameRef_array" default="{}" />
 		<!--fieldNamesInGEOS => Names of the volumic fields in GEOS to import into-->
@@ -1781,8 +1783,6 @@ stress - traction is applied to the faces as specified by the inner product of i
 		<xsd:attribute name="partitionRefinement" type="integer" default="1" />
 		<!--regionAttribute => Name of the VTK cell attribute to use as region marker-->
 		<xsd:attribute name="regionAttribute" type="groupNameRef" default="attribute" />
-		<!--repositoryName => Name of the VTK Repository-->
-		<xsd:attribute name="repositoryName" type="string" default="" />
 		<!--scale => Scale the coordinates of the vertices by given scale factors (after translation)-->
 		<xsd:attribute name="scale" type="R1Tensor" default="{1,1,1}" />
 		<!--surfacicFieldsInGEOS => Names of the surfacic fields in GEOS to import into-->
