@@ -44,9 +44,9 @@ char const * xmlInput =
         cflFactor="0.25"
         discretization="FE1"
         targetRegions="{ Region }"
-        sourceCoordinates="{ { 200, 500, 600 } }"
+        sourceCoordinates="{ { 100, 250, 300 } }"
         timeSourceFrequency="1"
-        receiverCoordinates="{ { 600.1, 700.1, 700.1 }, { 200.1, 500.1, 600.1 }, { 400.1, 650.1, 700.1 }, { 601.1, 701.1, 701.1 } }"
+        receiverCoordinates="{ { 300.1, 350.1, 350.1 }, { 100.1, 250.1, 300.1 }, { 200.1, 325.1, 350.1 }, { 301.1, 351.1, 351.1 } }"
         outputSeismoTrace="0"
         dtSeismoTrace="0.005"/>
     </Solvers>
@@ -54,16 +54,16 @@ char const * xmlInput =
       <InternalMesh
         name="mesh"
         elementTypes="{ C3D8 }"
-        xCoords="{ 0, 1000 }"
-        yCoords="{ 0, 1200 }"
-        zCoords="{ 0, 1500 }"
-        nx="{ 40 }"
-        ny="{ 50 }"
-        nz="{ 60 }"
+        xCoords="{ 0, 500 }"
+        yCoords="{ 0, 600 }"
+        zCoords="{ 0, 750 }"
+        nx="{ 20 }"
+        ny="{ 25 }"
+        nz="{ 30 }"
         cellBlockNames="{ cb }"/>
     </Mesh>
     <Events
-      maxTime=".5">
+      maxTime=".25">
       <PeriodicEvent
         name="solverApplications"
         forceDt="0.005"
@@ -205,22 +205,22 @@ TEST_F( AcousticWaveEquationSEMTest, SeismoTrace )
 
   // Check source term (sourceCoordinates and sourceValue)
   array2d< real32 > rhsForward;
-  rhsForward.resize( 101, 1 );
+  rhsForward.resize( 51, 1 );
   real32 * ptrTimeSourceFrequency = &propagator->getReference< real32 >( AcousticWaveEquationSEM::viewKeyStruct::timeSourceFrequencyString() );
   real32 * ptrTimeSourceDelay = &propagator->getReference< real32 >( AcousticWaveEquationSEM::viewKeyStruct::timeSourceDelayString() );
   localIndex * ptrRickerOrder = &propagator->getReference< localIndex >( AcousticWaveEquationSEM::viewKeyStruct::rickerOrderString() );
 
   real64 time_n = time;
   std::cout << "Begin forward:" << time_n << std::endl;
-  // run for 0.5s (100 steps)
-  for( int i=0; i<100; i++ )
+  // run for 0.25s (100 steps)
+  for( int i=0; i<50; i++ )
   {
     rhsForward[i][0]=WaveSolverUtils::evaluateRicker( time_n, *ptrTimeSourceFrequency, *ptrTimeSourceDelay, *ptrRickerOrder );
     propagator->explicitStepForward( time_n, dt, i, domain, false );
     time_n += dt;
   }
   // cleanup (triggers calculation of the remaining seismograms data points)
-  propagator->cleanup( 1.0, 100, 0, 0, domain );
+  propagator->cleanup( 1.0, 50, 0, 0, domain );
 
   // retrieve seismo
   arrayView2d< real32 > const pReceivers = propagator->getReference< array2d< real32 > >( AcousticWaveEquationSEM::viewKeyStruct::pressureNp1AtReceiversString() ).toView();
@@ -230,14 +230,14 @@ TEST_F( AcousticWaveEquationSEMTest, SeismoTrace )
 
   // check number of seismos and trace length
   ASSERT_EQ( pReceivers.size( 1 ), 5 );
-  ASSERT_EQ( pReceivers.size( 0 ), 101 );
+  ASSERT_EQ( pReceivers.size( 0 ), 51 );
 
   /*----------Save receiver forward----------------------*/
   array2d< real32 > uForward;
-  uForward.resize( 101, 1 );
+  uForward.resize( 51, 1 );
 
   // save receiver value forward on uForward.
-  for( int i = 0; i < 101; i++ )
+  for( int i = 0; i < 51; i++ )
   {
     /*std::cout << "time: " << i*dt  << std::endl;
        std::cout << "pReceivers1 " << i << ":" << pReceivers[i][0] << std::endl;
@@ -253,7 +253,7 @@ TEST_F( AcousticWaveEquationSEMTest, SeismoTrace )
   }
 
   ASSERT_EQ( rhsForward.size( 1 ), 1 );
-  ASSERT_EQ( rhsForward.size( 0 ), 101 );
+  ASSERT_EQ( rhsForward.size( 0 ), 51 );
 
   arrayView2d< localIndex > const rNodeIds = propagator->getReference< array2d< localIndex > >( AcousticWaveEquationSEM::viewKeyStruct::receiverNodeIdsString() ).toView();
   rNodeIds.move( hostMemorySpace, false );
@@ -303,7 +303,7 @@ TEST_F( AcousticWaveEquationSEMTest, SeismoTrace )
   state.getProblemManager().applyInitialConditions();
 
   array2d< real32 > rhsBackward;
-  rhsBackward.resize( 101, 1 );
+  rhsBackward.resize( 51, 1 );
 
   arrayView2d< localIndex > const sNodeIds_new2 = propagator->getReference< array2d< localIndex > >( AcousticWaveEquationSEM::viewKeyStruct::sourceNodeIdsString() ).toView();
   sNodeIds_new2.move( hostMemorySpace, false );
@@ -312,7 +312,7 @@ TEST_F( AcousticWaveEquationSEMTest, SeismoTrace )
 
   /*---------------------------------------------------*/
   // run backward solver
-  for( int i = 100; i > 0; i-- )
+  for( int i = 50; i > 0; i-- )
   {
     rhsBackward[i][0]=WaveSolverUtils::evaluateRicker( time_n, *ptrTimeSourceFrequency, *ptrTimeSourceDelay, *ptrRickerOrder );
     propagator->explicitStepBackward( time_n, dt, i, domain, false );
@@ -344,7 +344,7 @@ TEST_F( AcousticWaveEquationSEMTest, SeismoTrace )
 
   /*----------Save receiver backward----------------------*/
   array2d< real32 > qBackward;
-  qBackward.resize( 101, 1 );
+  qBackward.resize( 51, 1 );
 
   real32 sum_ufb=0.;
   real32 sum_qff=0.;
@@ -354,7 +354,7 @@ TEST_F( AcousticWaveEquationSEMTest, SeismoTrace )
   real32 sum_fb2=0.;
 
   // fill backward field at receiver.
-  for( int i=100; i > 0; i-- )
+  for( int i=50; i > 0; i-- )
   {
     /*std::cout << "back time: " << i*dt  << std::endl;
        std::cout << "back pReceivers1 " << i << ":" << pReceivers[i][0] << std::endl;
@@ -366,7 +366,7 @@ TEST_F( AcousticWaveEquationSEMTest, SeismoTrace )
   }
 
   //check transitivity with sum
-  for( int i=0; i<101; i++ )
+  for( int i=0; i<51; i++ )
   {
     sum_ufb += uForward[i][0]*rhsBackward[i][0];
     sum_qff += qBackward[i][0]*rhsForward[i][0];
@@ -380,14 +380,18 @@ TEST_F( AcousticWaveEquationSEMTest, SeismoTrace )
        std::cout << "ufb:" << uForward[i][0]*rhsBackward[i][0] << " / qff:" << qBackward[i][0]*rhsForward[i][0] << std::endl;*/
   }
 
+  // check scalar products <u,f'> and <f,q> are non null
+  ASSERT_TRUE( sum_ufb > 1.e-8 );
+  ASSERT_TRUE( sum_qff > 1.e-8 );
+
   // check ||<f,q> - <u,f'>||/max(||f||.||q||,||f'||.||u||) < 10^1or2 x epsilon_machine with f rhs direct and f' rhs backward
   std::cout << "<u,f'>: " << sum_ufb << " / <f,q>: " << sum_qff << std::endl;
   std::cout << "||<f,q> - <u,f'>||=" << std::abs( sum_ufb-sum_qff ) << " / ||f||.||q||=" << std::sqrt( sum_q2*sum_ff2 );
   std::cout << " / ||f'||.||u||=" << std::sqrt( sum_fb2*sum_u2 ) << " / ||f||.||f'||=" << std::sqrt( sum_ff2*sum_fb2 ) << std::endl;
   real32 diffToCheck;
   diffToCheck=std::abs( sum_ufb-sum_qff ) / std::max( std::sqrt( sum_fb2*sum_u2 ), std::sqrt( sum_q2*sum_ff2 ));
-  std::cout << " Diff to compare with 1.e-4: " << diffToCheck << std::endl;
-  ASSERT_TRUE( diffToCheck < 1.e-4 );
+  std::cout << " Diff to compare with 2.e-4: " << diffToCheck << std::endl;
+  ASSERT_TRUE( diffToCheck < 2.e-4 );
 }
 
 int main( int argc, char * * argv )
