@@ -157,3 +157,16 @@ Moreover, a block scaling is available. Feasible options are:
 * none: keep the original scaling;
 * Frobenius norm: equilibrate Frobenius norm of the diagonal blocks;
 * user provided.
+
+********************
+Adaptive tolerance
+********************
+
+This feature is available for iterative solvers and can be enabled using `krylovAdaptiveTol` flag in `LinearSolverParameters` and follows the Eisenstat-Walker inexact Newton approach described in [Eisenstat and Walker 1996]. The idea is to relax the linear solver tolerance at the beginning of the nonlinear iterations loop and tighten it when getting closer to the final solution. The initial tolerance is defined by `krylovWeakestTol` and starting from second nonlinear iteration the tolerance is chosen using the following steps:
+
+- compute current to previous nonlinear norm ratio: :math:`\mathsf{nr} = \mathsf{min}( mathsf{norm}^{curr} / mathsf{norm}^{prev}, 1.0 )`
+- estimate linear solver tolerance: :math:`\mathsf{tol}_{new} = \mathsf{\gamma} * \mathsf{nr}^{ax}`
+- compute safeguard to avoid too sharp tolerance reduction: :math:`\mathsf{tol}_{alt} = \mathsf{tol}_old^{2}`, the bound is the quadratic reduction with respect to the previous tolerance value
+- apply safeguards and compute final tolerance: :math:`\mathsf{tol} = max( \mathsf{tol}_{new}, \mathsf{tol}_{alt} )`, :math:`\mathsf{tol} = min( \mathsf{tol}_max, max( \mathsf{tol}_min, \mathsf{tol} ) )
+
+Here :math:`\mathsf{\gamma}` is the forcing term, `ax` the adaptivity exponent, :math:`\mathsf{tol}_min` and :math:`\mathsf{tol}_max` are prescribed tolerance bounds (defined by `krylovStrongestTol` and `krylovWeakestTol`, respectively).
