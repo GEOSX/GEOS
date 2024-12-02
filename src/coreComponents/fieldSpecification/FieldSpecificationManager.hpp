@@ -251,11 +251,13 @@ FieldSpecificationManager::
               Group & targetGroup,
               string const & targetField )
   {
+
     if (fs.isScaling())
     {
       fs.applyFieldValue< FieldSpecificationMultiply, POLICY >( targetSet, time, targetGroup, targetField );
     }
-    else{
+    else
+    {
       fs.applyFieldValue< FieldSpecificationEqual, POLICY >( targetSet, time, targetGroup, targetField );
     }
     lambda( fs, targetSet );

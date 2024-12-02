@@ -224,7 +224,14 @@ void FieldSpecificationManager::applyInitialConditions( MeshLevel & mesh ) const
                                               Group & targetGroup,
                                               string const fieldName )
       {
-        bc.applyFieldValue< FieldSpecificationEqual >( targetSet, 0.0, targetGroup, fieldName );
+        if (fs.isScaling())
+        {
+          bc.applyFieldValue< FieldSpecificationMultiply >( targetSet, 0.0, targetGroup, fieldName );
+        }
+        else
+        {
+          bc.applyFieldValue< FieldSpecificationEqual >( targetSet, 0.0, targetGroup, fieldName );
+        }
       } );
     }
   } );
