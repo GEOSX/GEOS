@@ -15,7 +15,7 @@
   <Mesh>
     <VTKMesh
       name="SyntheticMesh"
-      repositoryName="synthetic">
+      dataSourceName="synthetic">
       <Region
         name="Region1"
         id="1"
