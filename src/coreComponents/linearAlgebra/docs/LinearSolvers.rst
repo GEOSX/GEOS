@@ -166,7 +166,7 @@ This feature is available for iterative solvers and can be enabled using `krylov
 
 - compute the current to previous nonlinear norm ratio: :math:`\mathsf{nr} = \mathsf{min}( \mathsf{norm}^{curr} / \mathsf{norm}^{prev}, 1.0 )`
 - estimate the new linear solver tolerance: :math:`\mathsf{tol}_{new} = \mathsf{\gamma} \cdot \mathsf{nr}^{ax}`
-- compute a safeguard to avoid too sharp tolerance reduction: :math:`\mathsf{tol}_{alt} = \mathsf{tol}_{old}^{2}`, the bound is the quadratic reduction with respect to the previous tolerance value
-- apply safeguards and compute the final tolerance: :math:`\mathsf{tol} = max( \mathsf{tol}_{new}, \mathsf{tol}_{alt} )`, :math:`\mathsf{tol} = min( \mathsf{tol}_{max}, max( \mathsf{tol}_{min}, \mathsf{tol} ) )`
+- compute a safeguard to avoid too sharp tolerance reduction: :math:`\mathsf{tol}_{alt} = \mathsf{tol}_{old}^{2}` (the bound is the quadratic reduction with respect to the previous tolerance value)
+- apply safeguards and compute the final tolerance: :math:`\mathsf{tol} = \mathsf{max}( \mathsf{tol}_{new}, \mathsf{tol}_{alt} )`, :math:`\mathsf{tol} = \mathsf{min}( \mathsf{tol}_{max}, \mathsf{max}( \mathsf{tol}_{min}, \mathsf{tol} ) )`
 
-Here :math:`\mathsf{\gamma}` is the forcing term, :math:`ax` is the adaptivity exponent, :math:`\mathsf{tol}_min` and :math:`\mathsf{tol}_{max}` are prescribed tolerance bounds (defined by `krylovStrongestTol` and `krylovWeakestTol`, respectively).
+Here :math:`\mathsf{\gamma}` is the forcing term, :math:`ax` is the adaptivity exponent, :math:`\mathsf{tol}_{min}` and :math:`\mathsf{tol}_{max}` are prescribed tolerance bounds (defined by `krylovStrongestTol` and `krylovWeakestTol`, respectively).
