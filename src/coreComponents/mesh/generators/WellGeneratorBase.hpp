@@ -21,7 +21,7 @@
 #ifndef GEOS_MESH_GENERATORS_WELLGENERATORBASE_HPP_
 #define GEOS_MESH_GENERATORS_WELLGENERATORBASE_HPP_
 
-#include "mesh/generators/WellGeneratorABC.hpp"
+#include "mesh/generators/MeshComponentBase.hpp"
 #include "dataRepository/Group.hpp"
 #include "codingUtilities/Utilities.hpp"
 #include "common/DataTypes.hpp"
@@ -35,7 +35,7 @@ namespace geos
  *
  * This class processes the data of a single well from the XML and generates the well geometry
  */
-class WellGeneratorBase : public WellGeneratorABC
+class WellGeneratorBase : public MeshComponentBase
 {
 public:
 
@@ -50,10 +50,6 @@ public:
   /// This function is used to expand any catalogs in the data structure
   virtual void expandObjectCatalogs() override;
 
-  /// using alias for templated Catalog meshGenerator type
-  using CatalogInterface = dataRepository::CatalogInterface< WellGeneratorBase, string const &, Group * const >;
-
-
   /**
    * @brief Create a new geometric object (box, plane, etc) as a child of this group.
    * @param childKey the catalog key of the new geometric object to create
@@ -63,15 +59,9 @@ public:
   virtual Group * createChild( string const & childKey, string const & childName ) override;
 
   /**
-   * @brief Accessor for the singleton Catalog object
-   * @return a static reference to the Catalog object
-   */
-  static CatalogInterface::CatalogType & getCatalog();
-
-  /**
    * @brief Main function of the class that generates the well geometry
    */
-  void generateWellGeometry( ) override;
+  void generateWellGeometry( );
 
 
   /**
@@ -85,76 +75,76 @@ public:
    * @brief Get the global number of well elements.
    * @return the global number of elements
    */
-  globalIndex numElements() const override { return m_numElems; }
+  globalIndex numElements() const { return m_numElems; }
 
   /**
    * @brief Getter to the Segment to PolyNode mapping
    * @return The Segment to PolyNode mapping as a 2D array
    */
-  const array2d< globalIndex > & getSegmentToPolyNodeMap() const override { return m_segmentToPolyNodeMap; };
+  const array2d< globalIndex > & getSegmentToPolyNodeMap() const { return m_segmentToPolyNodeMap; };
 
   /**
    * @brief Get the number of nodes per well element
    * @return the number of nodes per well element
    */
-  globalIndex numNodesPerElement() const override { return m_numNodesPerElem; }
+  globalIndex numNodesPerElement() const { return m_numNodesPerElem; }
 
   /**
    * @brief Get the Coordinates of the polyline nodes
    * @return the Coordinates of the polyline nodes
    */
-  const array2d< real64 > & getPolyNodeCoord() const override { return m_polyNodeCoords; }
+  const array2d< real64 > & getPolyNodeCoord() const { return m_polyNodeCoords; }
 
   /**
    * @return The minimum segment length
    */
-  real64 getMinSegmentLength() const override { return m_minSegmentLength; }
+  real64 getMinSegmentLength() const { return m_minSegmentLength; }
 
   /**
    * @return The minimum element length
    */
-  real64 getMinElemLength() const override { return m_minElemLength; }
+  real64 getMinElemLength() const { return m_minElemLength; }
 
   /**
    * @return The list of perforation names
    */
-  const string_array & getPerforationList() const override { return m_perforationList; }
+  const string_array & getPerforationList() const { return m_perforationList; }
 
   /**
    * @brief Get the physical location of the centers of well elements.
    * @return list of center locations of the well elements
    */
-  arrayView2d< real64 const > getElemCoords() const override { return m_elemCenterCoords; }
+  arrayView2d< real64 const > getElemCoords() const { return m_elemCenterCoords; }
 
   /**
    * @brief Get the global indices mapping an element to the next.
    * @return list providing the global index of the next element for each element
    */
-  arrayView1d< globalIndex const > getNextElemIndex() const override { return m_nextElemId; }
+  arrayView1d< globalIndex const > getNextElemIndex() const { return m_nextElemId; }
 
   /**
    * @brief Get the global indices mapping an element to the previous ones.
    * @return list providing the global indices of the previous elements for each element
    */
-  arrayView1d< arrayView1d< globalIndex const > const > getPrevElemIndices() const override { return m_prevElemId.toNestedViewConst(); }
+  arrayView1d< arrayView1d< globalIndex const > const > getPrevElemIndices() const { return m_prevElemId.toNestedViewConst(); }
 
   /**
    * @brief Get the global indices of the well nodes nodes connected to each element.
    * @return list providing the global index of the well nodes for each well element
    */
-  arrayView2d< globalIndex const > getElemToNodesMap() const override { return m_elemToNodesMap; }
+  arrayView2d< globalIndex const > getElemToNodesMap() const { return m_elemToNodesMap; }
 
   /**
    * @brief Get the volume of the well elements.
    * @return list of volumes of the well elements
    */
-  arrayView1d< real64 const > getElemVolume() const override { return m_elemVolume; }
+  arrayView1d< real64 const > getElemVolume() const { return m_elemVolume; }
 
   /**
    * @brief Get the radius in the well.
    * @return the radius in the well
    */
-  real64 getElementRadius() const override { return m_radius; }
+  real64 getElementRadius() const { return m_radius; }
 
   // getters for node data
 
@@ -162,61 +152,61 @@ public:
    * @brief Get the global number of well nodes.
    * @return the global number of nodes
    */
-  globalIndex numNodes() const override { return m_numNodes; }
+  globalIndex numNodes() const { return m_numNodes; }
 
   /**
    * @brief Get the physical location of the centers of well elements.
    * @return list of center locations of the well elements
    */
-  arrayView2d< real64 const > getNodeCoords() const override { return m_nodeCoords; }
+  arrayView2d< real64 const > getNodeCoords() const { return m_nodeCoords; }
 
   // getters for perforation data
   /**
    * @brief Get the global number of perforations on this well.
    * @return the global number of elements
    */
-  globalIndex numPerforations() const override { return m_numPerforations; }
+  globalIndex numPerforations() const { return m_numPerforations; }
 
   /**
    * @brief Get the locations of the perforations.
    * @return list of locations of all the perforations on the well
    */
-  arrayView2d< real64 const > getPerfCoords() const override { return m_perfCoords; }
+  arrayView2d< real64 const > getPerfCoords() const { return m_perfCoords; }
 
   /**
    * @brief Get the well transmissibility at the perforations.
    * @return list of well transmissibility at all the perforations on the well
    */
-  arrayView1d< real64 const > getPerfTransmissibility() const override { return m_perfTransmissibility; }
+  arrayView1d< real64 const > getPerfTransmissibility() const { return m_perfTransmissibility; }
 
   /**
    * @brief Get the skin factor at a perforation.
    * @return the skin factor at a perforation
    */
-  arrayView1d< real64 const > getPerfSkinFactor() const override { return m_perfSkinFactor; };
+  arrayView1d< real64 const > getPerfSkinFactor() const { return m_perfSkinFactor; };
 
   /**
    * @brief Get the global indices of the well elements connected to each perforation.
    * @return list providing the global index of the connected well element for each perforation
    */
-  arrayView1d< globalIndex const > getPerfElemIndex() const override { return m_perfElemId; }
+  arrayView1d< globalIndex const > getPerfElemIndex() const { return m_perfElemId; }
 
   /**
    * @returns The number of physical dimensions
    */
-  int getPhysicalDimensionsNumber() const override { return m_nDims; }
+  int getPhysicalDimensionsNumber() const { return m_nDims; }
 
   /**
    * Getter for the associated well region name
    * @return  the associated well region name
    */
-  const string getWellRegionName() const override { return m_wellRegionName; }
+  const string getWellRegionName() const { return m_wellRegionName; }
 
   /**
    * Getter for the associated well control name
    * @return  the associated well control name
    */
-  const string getWellControlsName() const override { return m_wellControlsName; }
+  const string getWellControlsName() const { return m_wellControlsName; }
 
   ///@cond DO_NOT_DOCUMENT
   struct viewKeyStruct
