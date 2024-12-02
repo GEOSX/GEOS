@@ -22,6 +22,7 @@
 #include "common/GEOS_RAJA_Interface.hpp"
 #include "common/logger/Logger.hpp"
 #include "common/TimingMacros.hpp"
+#include "common/MpiWrapper.hpp"
 #include "LvArray/src/tensorOps.hpp"
 #include "mesh/BufferOps.hpp"
 #include "mesh/ElementRegionManager.hpp"
@@ -123,17 +124,18 @@ void FaceManager::setDomainBoundaryObjects( ElementRegionManager const & elemReg
     }
 
     FaceElementSubRegion const & subRegion = region.getUniqueSubRegion< FaceElementSubRegion >();
-    ArrayOfArraysView< localIndex const > const elem2dToFaces = subRegion.faceList().toViewConst();
-    for( int ei = 0; ei < elem2dToFaces.size(); ++ei )
+    arrayView2d< localIndex const > const elem2dToFaces = subRegion.faceList().toViewConst();
+    for( int ei = 0; ei < elem2dToFaces.size( 0 ); ++ei )
     {
-      if( elem2dToFaces.sizeOfArray( ei ) == 2 )
+      if( elem2dToFaces[ei][0] == -1 || elem2dToFaces[ei][1] == -1 )
       {
-        continue;
-      }
-
-      for( localIndex const & face: elem2dToFaces[ei] )
-      {
-        isFaceOnDomainBoundary[face] = 1;
+        for( localIndex const & face: elem2dToFaces[ei] )
+        {
+          if( face != -1 )
+          {
+            isFaceOnDomainBoundary[face] = 1;
+          }
+        }
       }
     }
   };
@@ -179,22 +181,25 @@ void FaceManager::setGeometricalRelations( CellBlockManagerABC const & cellBlock
     // The fracture subregion knows the faces it's connected to.
     // And since a 2d element is connected to a given face, and since a face can only have 2 neighbors,
     // then the second neighbor of the face is bound to be undefined (i.e. -1).
-    ArrayOfArraysView< localIndex const > const & elem2dToFaces = subRegion.faceList().toViewConst();
-    for( localIndex ei = 0; ei < elem2dToFaces.size(); ++ei )
+    arrayView2d< localIndex const > const & elem2dToFaces = subRegion.faceList().toViewConst();
+    for( localIndex ei = 0; ei < elem2dToFaces.size( 0 ); ++ei )
     {
-      for( localIndex const & face: elem2dToFaces[ei] )
+      for( localIndex const & faceIndex: elem2dToFaces[ei] )
       {
-        GEOS_ERROR_IF_EQ_MSG( m_toElements.m_toElementRegion( face, 0 ), -1, GEOS_FMT( err, face ) );
-        GEOS_ERROR_IF_EQ_MSG( m_toElements.m_toElementSubRegion( face, 0 ), -1, GEOS_FMT( err, face ) );
-        GEOS_ERROR_IF_EQ_MSG( m_toElements.m_toElementIndex( face, 0 ), -1, GEOS_FMT( err, face ) );
+        if( faceIndex != -1 )
+        {
+          GEOS_ERROR_IF_EQ_MSG( m_toElements.m_toElementRegion( faceIndex, 0 ), -1, GEOS_FMT( err, faceIndex ) );
+          GEOS_ERROR_IF_EQ_MSG( m_toElements.m_toElementSubRegion( faceIndex, 0 ), -1, GEOS_FMT( err, faceIndex ) );
+          GEOS_ERROR_IF_EQ_MSG( m_toElements.m_toElementIndex( faceIndex, 0 ), -1, GEOS_FMT( err, faceIndex ) );
 
-        GEOS_ERROR_IF_NE_MSG( m_toElements.m_toElementRegion( face, 1 ), -1, GEOS_FMT( err, face ) );
-        GEOS_ERROR_IF_NE_MSG( m_toElements.m_toElementSubRegion( face, 1 ), -1, GEOS_FMT( err, face ) );
-        GEOS_ERROR_IF_NE_MSG( m_toElements.m_toElementIndex( face, 1 ), -1, GEOS_FMT( err, face ) );
+          GEOS_ERROR_IF_NE_MSG( m_toElements.m_toElementRegion( faceIndex, 1 ), -1, GEOS_FMT( err, faceIndex ) );
+          GEOS_ERROR_IF_NE_MSG( m_toElements.m_toElementSubRegion( faceIndex, 1 ), -1, GEOS_FMT( err, faceIndex ) );
+          GEOS_ERROR_IF_NE_MSG( m_toElements.m_toElementIndex( faceIndex, 1 ), -1, GEOS_FMT( err, faceIndex ) );
 
-        m_toElements.m_toElementRegion( face, 1 ) = er;
-        m_toElements.m_toElementSubRegion( face, 1 ) = esr;
-        m_toElements.m_toElementIndex( face, 1 ) = ei;
+          m_toElements.m_toElementRegion( faceIndex, 1 ) = er;
+          m_toElements.m_toElementSubRegion( faceIndex, 1 ) = esr;
+          m_toElements.m_toElementIndex( faceIndex, 1 ) = ei;
+        }
       }
     }
   };
@@ -513,6 +518,9 @@ localIndex FaceManager::unpackUpDownMaps( buffer_unit_type const * & buffer,
                                      packList,
                                      m_toElements.getElementRegionManager(),
                                      overwriteUpMaps );
+
+  GEOS_ERROR_IF_NE( m_unmappedGlobalIndicesInToNodes.size(), 0 );
+  GEOS_ERROR_IF_NE( m_unmappedGlobalIndicesInToEdges.size(), 0 );
 
   return unPackedSize;
 }

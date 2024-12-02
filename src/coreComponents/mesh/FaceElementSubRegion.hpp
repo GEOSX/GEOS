@@ -39,7 +39,7 @@ class FaceElementSubRegion : public SurfaceElementSubRegion
 public:
 
   /// Face element to faces map type
-  using FaceMapType = InterObjectRelation< ArrayOfArrays< localIndex > >;
+  using FaceMapType = FixedOneToManyRelation;
 
   /**
    * @name Static factory catalog functions
@@ -109,6 +109,38 @@ public:
                                        array1d< localIndex > & packList,
                                        bool const overwriteUpMaps,
                                        bool const overwriteDownMaps ) override;
+
+
+  /**
+   * @brief Size of packing of the FaceElement to face relation.
+   * @param packList The list of face elements to pack
+   * @return The size of the packed data
+   */
+  localIndex packToFaceRelationSize( arrayView1d< localIndex const > const & packList ) const;
+
+  /**
+   * @brief Pack the FaceElement to face relation.
+   * @param buffer The buffer to pack the data into
+   * @param packList The list of face elements to pack
+   * @return The size of the packed data
+   */
+  localIndex packToFaceRelation( buffer_unit_type * & buffer,
+                                 arrayView1d< localIndex const > const & packList ) const;
+
+  /**
+   * @brief Unpack the FaceElement to face relation.
+   * @param buffer The buffer to unpack the data from
+   * @param packList The list of face elements to unpack
+   * @param overwriteUpMaps Flag to overwrite the up maps
+   * @param overwriteDownMaps Flag to overwrite the down maps
+   * @return The size of the unpacked data
+   */
+  localIndex unpackToFaceRelation( buffer_unit_type const * & buffer,
+                                   array1d< localIndex > & packList,
+                                   bool const overwriteUpMaps,
+                                   bool const overwriteDownMaps );
+
+
 
   virtual void fixUpDownMaps( bool const clearIfUnmapped ) override;
 
@@ -311,6 +343,23 @@ public:
     return m_2dElemToCollocatedNodesBuckets.toViewConst();
   }
 
+  /**
+   * @brief Get the surface element to cells map.
+   * @return The surface element to cells map
+   */
+  FixedToManyElementRelation & getToCellRelation()
+  {
+    return m_2dElemToElems;
+  }
+
+  /**
+   * @copydoc getToCellRelation()
+   */
+  FixedToManyElementRelation const & getToCellRelation() const
+  {
+    return m_2dElemToElems;
+  }
+
 private:
 
   /**
@@ -323,6 +372,11 @@ private:
   template< bool DO_PACKING >
   localIndex packUpDownMapsImpl( buffer_unit_type * & buffer,
                                  arrayView1d< localIndex const > const & packList ) const;
+
+
+  template< bool DO_PACKING >
+  localIndex packToFaceRelationImpl( buffer_unit_type * & buffer,
+                                     arrayView1d< localIndex const > const & packList ) const;
 
   /// The array of shape function derivaties.
   array4d< real64 > m_dNdX;
@@ -338,6 +392,9 @@ private:
    * @see FaceElementSubRegion::get2dElemToCollocatedNodesBuckets
    */
   ArrayOfArrays< array1d< globalIndex > > m_2dElemToCollocatedNodesBuckets;
+
+  /// Map between the surface elements and the cells
+  FixedToManyElementRelation m_2dElemToElems;
 
 #ifdef GEOS_USE_SEPARATION_COEFFICIENT
   /// Separation coefficient
