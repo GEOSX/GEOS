@@ -101,5 +101,5 @@ void VTKWellGenerator::fillPolylineDataStructure( )
   }
 }
 
-REGISTER_CATALOG_ENTRY( WellGeneratorBase, VTKWellGenerator, string const &, Group * const )
+REGISTER_CATALOG_ENTRY( MeshComponentBase, VTKWellGenerator, string const &, Group * const )
 }
