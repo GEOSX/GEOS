@@ -1761,6 +1761,8 @@ stress - traction is applied to the faces as specified by the inner product of i
 				</xsd:unique>
 			</xsd:element>
 		</xsd:choice>
+		<!--dataSourceName => Name of the VTK data source-->
+		<xsd:attribute name="dataSourceName" type="string" default="" />
 		<!--faceBlocks => For multi-block files, names of the face mesh block.-->
 		<xsd:attribute name="faceBlocks" type="groupNameRef_array" default="{}" />
 		<!--fieldNamesInGEOS => Names of the volumic fields in GEOS to import into-->
@@ -1781,8 +1783,6 @@ stress - traction is applied to the faces as specified by the inner product of i
 		<xsd:attribute name="partitionRefinement" type="integer" default="1" />
 		<!--regionAttribute => Name of the VTK cell attribute to use as region marker-->
 		<xsd:attribute name="regionAttribute" type="groupNameRef" default="attribute" />
-		<!--repositoryName => Name of the VTK Repository-->
-		<xsd:attribute name="repositoryName" type="string" default="" />
 		<!--scale => Scale the coordinates of the vertices by given scale factors (after translation)-->
 		<xsd:attribute name="scale" type="R1Tensor" default="{1,1,1}" />
 		<!--surfacicFieldsInGEOS => Names of the surfacic fields in GEOS to import into-->
@@ -2392,10 +2392,8 @@ Level 0 outputs no specific information for this solver. Higher levels require m
 		<xsd:attribute name="sourceWaveletTableNames" type="string_array" default="{}" />
 		<!--targetRegions => Allowable regions that the solver may be applied to. Note that this does not indicate that the solver will be applied to these regions, only that allocation will occur such that the solver may be applied to these regions. The decision about what regions this solver will beapplied to rests in the EventManager.-->
 		<xsd:attribute name="targetRegions" type="groupNameRef_array" use="required" />
-		<!--thicknessMaxXYZTaper => Size for the taper layer (left,bottom,front)-->
-		<xsd:attribute name="thicknessMaxXYZTaper" type="R1Tensor32" default="{0,0,0}" />
-		<!--thicknessMinXYZTaper => Size for the taper layer (left,bottom,front)-->
-		<xsd:attribute name="thicknessMinXYZTaper" type="R1Tensor32" default="{0,0,0}" />
+		<!--thicknessTaper => Size for the taper layer -->
+		<xsd:attribute name="thicknessTaper" type="real32" default="0" />
 		<!--timeSourceDelay => Source time delay (1 / f0 by default)-->
 		<xsd:attribute name="timeSourceDelay" type="real32" default="-1" />
 		<!--timeSourceFrequency => Central frequency for the time source-->
@@ -2408,10 +2406,6 @@ Level 0 outputs no specific information for this solver. Higher levels require m
 		<xsd:attribute name="useTaper" type="integer" default="0" />
 		<!--writeLinearSystem => Write matrix, rhs, solution to screen ( = 1) or file ( = 2).-->
 		<xsd:attribute name="writeLinearSystem" type="integer" default="0" />
-		<!--xMaxTaper => Maximal coordinates for taper (right,top,back)-->
-		<xsd:attribute name="xMaxTaper" type="R1Tensor32" default="{0,0,0}" />
-		<!--xMinTaper => Minimal coordinates for taper (left,bottom,front)-->
-		<xsd:attribute name="xMinTaper" type="R1Tensor32" default="{0,0,0}" />
 		<!--name => A name is required for any non-unique nodes-->
 		<xsd:attribute name="name" type="groupName" use="required" />
 	</xsd:complexType>
@@ -2489,10 +2483,8 @@ Level 0 outputs no specific information for this solver. Higher levels require m
 		<xsd:attribute name="sourceWaveletTableNames" type="string_array" default="{}" />
 		<!--targetRegions => Allowable regions that the solver may be applied to. Note that this does not indicate that the solver will be applied to these regions, only that allocation will occur such that the solver may be applied to these regions. The decision about what regions this solver will beapplied to rests in the EventManager.-->
 		<xsd:attribute name="targetRegions" type="groupNameRef_array" use="required" />
-		<!--thicknessMaxXYZTaper => Size for the taper layer (left,bottom,front)-->
-		<xsd:attribute name="thicknessMaxXYZTaper" type="R1Tensor32" default="{0,0,0}" />
-		<!--thicknessMinXYZTaper => Size for the taper layer (left,bottom,front)-->
-		<xsd:attribute name="thicknessMinXYZTaper" type="R1Tensor32" default="{0,0,0}" />
+		<!--thicknessTaper => Size for the taper layer -->
+		<xsd:attribute name="thicknessTaper" type="real32" default="0" />
 		<!--timeSourceDelay => Source time delay (1 / f0 by default)-->
 		<xsd:attribute name="timeSourceDelay" type="real32" default="-1" />
 		<!--timeSourceFrequency => Central frequency for the time source-->
@@ -2505,10 +2497,6 @@ Level 0 outputs no specific information for this solver. Higher levels require m
 		<xsd:attribute name="useTaper" type="integer" default="0" />
 		<!--writeLinearSystem => Write matrix, rhs, solution to screen ( = 1) or file ( = 2).-->
 		<xsd:attribute name="writeLinearSystem" type="integer" default="0" />
-		<!--xMaxTaper => Maximal coordinates for taper (right,top,back)-->
-		<xsd:attribute name="xMaxTaper" type="R1Tensor32" default="{0,0,0}" />
-		<!--xMinTaper => Minimal coordinates for taper (left,bottom,front)-->
-		<xsd:attribute name="xMinTaper" type="R1Tensor32" default="{0,0,0}" />
 		<!--name => A name is required for any non-unique nodes-->
 		<xsd:attribute name="name" type="groupName" use="required" />
 	</xsd:complexType>
@@ -2576,10 +2564,8 @@ Level 0 outputs no specific information for this solver. Higher levels require m
 		<xsd:attribute name="sourceWaveletTableNames" type="string_array" default="{}" />
 		<!--targetRegions => Allowable regions that the solver may be applied to. Note that this does not indicate that the solver will be applied to these regions, only that allocation will occur such that the solver may be applied to these regions. The decision about what regions this solver will beapplied to rests in the EventManager.-->
 		<xsd:attribute name="targetRegions" type="groupNameRef_array" use="required" />
-		<!--thicknessMaxXYZTaper => Size for the taper layer (left,bottom,front)-->
-		<xsd:attribute name="thicknessMaxXYZTaper" type="R1Tensor32" default="{0,0,0}" />
-		<!--thicknessMinXYZTaper => Size for the taper layer (left,bottom,front)-->
-		<xsd:attribute name="thicknessMinXYZTaper" type="R1Tensor32" default="{0,0,0}" />
+		<!--thicknessTaper => Size for the taper layer -->
+		<xsd:attribute name="thicknessTaper" type="real32" default="0" />
 		<!--timeSourceDelay => Source time delay (1 / f0 by default)-->
 		<xsd:attribute name="timeSourceDelay" type="real32" default="-1" />
 		<!--timeSourceFrequency => Central frequency for the time source-->
@@ -2592,10 +2578,6 @@ Level 0 outputs no specific information for this solver. Higher levels require m
 		<xsd:attribute name="useTaper" type="integer" default="0" />
 		<!--writeLinearSystem => Write matrix, rhs, solution to screen ( = 1) or file ( = 2).-->
 		<xsd:attribute name="writeLinearSystem" type="integer" default="0" />
-		<!--xMaxTaper => Maximal coordinates for taper (right,top,back)-->
-		<xsd:attribute name="xMaxTaper" type="R1Tensor32" default="{0,0,0}" />
-		<!--xMinTaper => Minimal coordinates for taper (left,bottom,front)-->
-		<xsd:attribute name="xMinTaper" type="R1Tensor32" default="{0,0,0}" />
 		<!--name => A name is required for any non-unique nodes-->
 		<xsd:attribute name="name" type="groupName" use="required" />
 	</xsd:complexType>
@@ -3049,10 +3031,8 @@ Level 0 outputs no specific information for this solver. Higher levels require m
 		<xsd:attribute name="sourceWaveletTableNames" type="string_array" default="{}" />
 		<!--targetRegions => Allowable regions that the solver may be applied to. Note that this does not indicate that the solver will be applied to these regions, only that allocation will occur such that the solver may be applied to these regions. The decision about what regions this solver will beapplied to rests in the EventManager.-->
 		<xsd:attribute name="targetRegions" type="groupNameRef_array" use="required" />
-		<!--thicknessMaxXYZTaper => Size for the taper layer (left,bottom,front)-->
-		<xsd:attribute name="thicknessMaxXYZTaper" type="R1Tensor32" default="{0,0,0}" />
-		<!--thicknessMinXYZTaper => Size for the taper layer (left,bottom,front)-->
-		<xsd:attribute name="thicknessMinXYZTaper" type="R1Tensor32" default="{0,0,0}" />
+		<!--thicknessTaper => Size for the taper layer -->
+		<xsd:attribute name="thicknessTaper" type="real32" default="0" />
 		<!--timeSourceDelay => Source time delay (1 / f0 by default)-->
 		<xsd:attribute name="timeSourceDelay" type="real32" default="-1" />
 		<!--timeSourceFrequency => Central frequency for the time source-->
@@ -3065,10 +3045,6 @@ Level 0 outputs no specific information for this solver. Higher levels require m
 		<xsd:attribute name="useTaper" type="integer" default="0" />
 		<!--writeLinearSystem => Write matrix, rhs, solution to screen ( = 1) or file ( = 2).-->
 		<xsd:attribute name="writeLinearSystem" type="integer" default="0" />
-		<!--xMaxTaper => Maximal coordinates for taper (right,top,back)-->
-		<xsd:attribute name="xMaxTaper" type="R1Tensor32" default="{0,0,0}" />
-		<!--xMinTaper => Minimal coordinates for taper (left,bottom,front)-->
-		<xsd:attribute name="xMinTaper" type="R1Tensor32" default="{0,0,0}" />
 		<!--name => A name is required for any non-unique nodes-->
 		<xsd:attribute name="name" type="groupName" use="required" />
 	</xsd:complexType>
@@ -3140,10 +3116,8 @@ Level 0 outputs no specific information for this solver. Higher levels require m
 		<xsd:attribute name="sourceWaveletTableNames" type="string_array" default="{}" />
 		<!--targetRegions => Allowable regions that the solver may be applied to. Note that this does not indicate that the solver will be applied to these regions, only that allocation will occur such that the solver may be applied to these regions. The decision about what regions this solver will beapplied to rests in the EventManager.-->
 		<xsd:attribute name="targetRegions" type="groupNameRef_array" use="required" />
-		<!--thicknessMaxXYZTaper => Size for the taper layer (left,bottom,front)-->
-		<xsd:attribute name="thicknessMaxXYZTaper" type="R1Tensor32" default="{0,0,0}" />
-		<!--thicknessMinXYZTaper => Size for the taper layer (left,bottom,front)-->
-		<xsd:attribute name="thicknessMinXYZTaper" type="R1Tensor32" default="{0,0,0}" />
+		<!--thicknessTaper => Size for the taper layer -->
+		<xsd:attribute name="thicknessTaper" type="real32" default="0" />
 		<!--timeSourceDelay => Source time delay (1 / f0 by default)-->
 		<xsd:attribute name="timeSourceDelay" type="real32" default="-1" />
 		<!--timeSourceFrequency => Central frequency for the time source-->
@@ -3158,10 +3132,6 @@ Level 0 outputs no specific information for this solver. Higher levels require m
 		<xsd:attribute name="useVTI" type="integer" default="0" />
 		<!--writeLinearSystem => Write matrix, rhs, solution to screen ( = 1) or file ( = 2).-->
 		<xsd:attribute name="writeLinearSystem" type="integer" default="0" />
-		<!--xMaxTaper => Maximal coordinates for taper (right,top,back)-->
-		<xsd:attribute name="xMaxTaper" type="R1Tensor32" default="{0,0,0}" />
-		<!--xMinTaper => Minimal coordinates for taper (left,bottom,front)-->
-		<xsd:attribute name="xMinTaper" type="R1Tensor32" default="{0,0,0}" />
 		<!--name => A name is required for any non-unique nodes-->
 		<xsd:attribute name="name" type="groupName" use="required" />
 	</xsd:complexType>

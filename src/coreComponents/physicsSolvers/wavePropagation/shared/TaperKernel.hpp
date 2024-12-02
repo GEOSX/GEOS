@@ -33,6 +33,7 @@ struct TaperKernel
    * @brief Compute coefficients for the taper layers
    * @tparam EXEC_POLICY the execution policy
    * @param[in] size the number of nodes
+   * @param[in] nodeCoords Coordinates of the nodes of the mesh (included interior degrees of freedom)
    * @param[in] sizeT Taper thickness
    * @param[in] dt time-step
    * @param[in] vMin Min wavespeed (P-wavespeed for acoustic, S-wavespeed for elastic)
@@ -46,7 +47,7 @@ struct TaperKernel
                      arrayView2d< wsCoordType const, nodes::REFERENCE_POSITION_USD > const nodeCoords,
                      real32 const sizeT,
                      real32 const dt,
-                     real32 const vMax,
+                     real32 const vMin,
                      real32 const r,
                      arrayView1d< real32 > const taperCoeff )
   {
@@ -116,7 +117,7 @@ struct TaperKernel
 
       if( dist<sizeT )
       {
-        taperCoeff[a] = LvArray::math::exp((((3*vMax)/(2*sizeT))*log( r )*pow((sizeT-dist)/sizeT, 2 ))*dt );
+        taperCoeff[a] = LvArray::math::exp((((3*vMin)/(2*sizeT))*log( r )*pow((sizeT-dist)/sizeT, 2 ))*dt );
       }
       else
       {
