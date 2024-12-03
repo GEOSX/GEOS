@@ -969,6 +969,12 @@ void CompositionalMultiphaseWell::initializeWells( DomainPartition & domain, rea
   // TODO: change the way we access the flowSolver here
   CompositionalMultiphaseBase const & flowSolver = getParent().getGroup< CompositionalMultiphaseBase >( getFlowSolverName() );
 
+  auto hasNonZeroCompRate = []( arrayView2d< real64 > const & arr ) {
+    return std::any_of( arr.begin(), arr.end(), []( real64 value ) {
+      return value > 0 || value < 0;       // Check if the value is non-zero
+    } );
+  };
+
   // loop over the wells
   forDiscretizationOnMeshTargets( domain.getMeshBodies(), [&] ( string const &,
                                                                 MeshLevel & mesh,
@@ -984,13 +990,11 @@ void CompositionalMultiphaseWell::initializeWells( DomainPartition & domain, rea
                                                                    WellElementSubRegion & subRegion )
     {
       WellControls const & wellControls = getWellControls( subRegion );
+      PerforationData & perforationData = *subRegion.getPerforationData();
+      arrayView2d< real64 > const compPerfRate = perforationData.getField< fields::well::compPerforationRate >();
 
-      if( time_n <= 0.0 ||
-          ( !wellControls.isWellOpen( time_n ) && wellControls.isWellOpen( time_n + dt ) )  )
+      if( time_n <= 0.0  || (wellControls.isWellOpen( time_n ) && !hasNonZeroCompRate( compPerfRate ) ) )
       {
-
-        PerforationData const & perforationData = *subRegion.getPerforationData();
-
         // get well primary variables on well elements
         arrayView1d< real64 > const & wellElemPressure = subRegion.getField< fields::well::pressure >();
         arrayView1d< real64 > const & wellElemTemp = subRegion.getField< fields::well::temperature >();

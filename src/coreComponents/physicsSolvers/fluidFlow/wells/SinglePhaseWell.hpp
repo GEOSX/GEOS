@@ -168,6 +168,22 @@ public:
   virtual real64 updateSubRegionState( WellElementSubRegion & subRegion ) override;
 
   /**
+   * @brief function to assemble the linear system matrix and rhs
+   * @param time the time at the beginning of the step
+   * @param dt the desired timestep
+   * @param domain the domain partition
+   * @param dofManager degree-of-freedom manager associated with the linear system
+   * @param matrix the system matrix
+   * @param rhs the system right-hand side vector
+   */
+  virtual void assembleSystem( real64 const time,
+                               real64 const dt,
+                               DomainPartition & domain,
+                               DofManager const & dofManager,
+                               CRSMatrixView< real64, globalIndex const > const & localMatrix,
+                               arrayView1d< real64 > const & localRhs ) override;
+
+  /**
    * @brief assembles the flux terms for all connections between well elements
    * @param time_n previous time value
    * @param dt time step
@@ -224,6 +240,21 @@ public:
                                           CRSMatrixView< real64, globalIndex const > const & localMatrix,
                                           arrayView1d< real64 > const & localRhs ) override;
 
+  /*
+   * @brief apply a special treatment to the wells that are shut
+   * @param time_n the time at the previous converged time step
+   * @param dt the time step size
+   * @param domain the physical domain object
+   * @param dofManager degree-of-freedom manager associated with the linear system
+   * @param matrix the system matrix
+   * @param rhs the system right-hand side vector
+   */
+  void shutDownWell( real64 const time_n,
+                     real64 const dt,
+                     DomainPartition const & domain,
+                     DofManager const & dofManager,
+                     CRSMatrixView< real64, globalIndex const > const & localMatrix,
+                     arrayView1d< real64 > const & localRhs );
   struct viewKeyStruct : WellSolverBase::viewKeyStruct
   {
     static constexpr char const * dofFieldString() { return "singlePhaseWellVars"; }
