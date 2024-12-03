@@ -742,8 +742,6 @@ assembleForceResidualDerivativeWrtPressure( DomainPartition & domain,
         for( localIndex kf=0; kf<2; ++kf )
         {
           localIndex const faceIndex = elemsToFaces[kfe][kf];
-          std::cout << "kfe " << kfe << " faceindex " << faceIndex << std::endl;
-
           for( localIndex a=0; a<numNodesPerFace; ++a )
           {
 
@@ -1166,7 +1164,6 @@ void HydrofractureSolver< POROMECHANICS_SOLVER >::initializeNewFractureFields( D
             }
           } );
         }
-        std::cout << "init new frac field " <<subRegion.m_newFaceElements.size() << std::endl;
         subRegion.m_recalculateConnectionsFor2dFaces.clear();
         subRegion.m_newFaceElements.clear();
       } );
