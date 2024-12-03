@@ -2,10 +2,11 @@
  * ------------------------------------------------------------------------------------------------------------
  * SPDX-License-Identifier: LGPL-2.1-only
  *
- * Copyright (c) 2018-2020 Lawrence Livermore National Security LLC
- * Copyright (c) 2018-2020 The Board of Trustees of the Leland Stanford Junior University
- * Copyright (c) 2018-2020 TotalEnergies
- * Copyright (c) 2019-     GEOSX Contributors
+ * Copyright (c) 2016-2024 Lawrence Livermore National Security LLC
+ * Copyright (c) 2018-2024 Total, S.A
+ * Copyright (c) 2018-2024 The Board of Trustees of the Leland Stanford Junior University
+ * Copyright (c) 2023-2024 Chevron
+ * Copyright (c) 2019-     GEOS/GEOSX Contributors
  * All rights reserved
  *
  * See top level LICENSE, COPYRIGHT, CONTRIBUTORS, NOTICE, and ACKNOWLEDGEMENTS files for details.
@@ -38,7 +39,7 @@ using StabilityData = std::tuple<
   real64 const    // expected tangent plane distance
   >;
 
-template< typename EOS_TYPE >
+template< EquationOfStateType EOS_TYPE >
 class StabilityTestTest2CompFixture :  public ::testing::TestWithParam< StabilityData >
 {
   static constexpr real64 relTol = 1.0e-5;
@@ -67,13 +68,14 @@ public:
     real64 tangentPlaneDistance = LvArray::NumericLimits< real64 >::max;
     stackArray1d< real64, numComps > kValues( numComps );
 
-    bool const stabilityStatus = StabilityTest::compute< EOS_TYPE >( numComps,
-                                                                     pressure,
-                                                                     temperature,
-                                                                     composition.toSliceConst(),
-                                                                     componentProperties,
-                                                                     tangentPlaneDistance,
-                                                                     kValues.toSlice() );
+    bool const stabilityStatus = StabilityTest::compute( numComps,
+                                                         pressure,
+                                                         temperature,
+                                                         composition.toSliceConst(),
+                                                         componentProperties,
+                                                         EOS_TYPE,
+                                                         tangentPlaneDistance,
+                                                         kValues.toSlice() );
 
     // Expect this to succeed
     ASSERT_EQ( stabilityStatus, true );
@@ -94,8 +96,8 @@ private:
   }
 };
 
-using PengRobinson = StabilityTestTest2CompFixture< CubicEOSPhaseModel< PengRobinsonEOS > >;
-using SoaveRedlichKwong = StabilityTestTest2CompFixture< CubicEOSPhaseModel< SoaveRedlichKwongEOS > >;
+using PengRobinson = StabilityTestTest2CompFixture< EquationOfStateType::PengRobinson >;
+using SoaveRedlichKwong = StabilityTestTest2CompFixture< EquationOfStateType::SoaveRedlichKwong >;
 TEST_P( PengRobinson, testStabilityTest )
 {
   testStability( GetParam() );
@@ -116,8 +118,8 @@ INSTANTIATE_TEST_SUITE_P(
   ::testing::Values(
     StabilityData{ 1.00000e+06, 297.15, 0.2,   1.1102230e-16 },
     StabilityData{ 1.00000e+06, 353.15, 0.2,  -2.2204460e-16 },
-    StabilityData{ 5.00000e+06, 297.15, 0.2,  -1.0438517e+00 },
-    StabilityData{ 5.00000e+06, 353.15, 0.2,  -2.0228439e-03 },
+    StabilityData{ 5.00000e+06, 297.15, 0.2,  -1.0160710e+00 },
+    StabilityData{ 5.00000e+06, 353.15, 0.2,  -1.4627298e-03 },
     StabilityData{ 2.00000e+07, 297.15, 0.2,  -3.3306691e-16 },
     StabilityData{ 2.00000e+07, 353.15, 0.2,  -6.6613381e-16 }    
   )
@@ -128,8 +130,8 @@ INSTANTIATE_TEST_SUITE_P(
   ::testing::Values(
     StabilityData{ 1.00000e+06, 297.15, 0.2,  -2.2204460e-16 },
     StabilityData{ 1.00000e+06, 353.15, 0.2,  -3.3306691e-16 },
-    StabilityData{ 5.00000e+06, 297.15, 0.2,  -1.0966021e+00 },
-    StabilityData{ 5.00000e+06, 353.15, 0.2,  -3.6652014e-03 },
+    StabilityData{ 5.00000e+06, 297.15, 0.2,  -1.0780446e+00 },
+    StabilityData{ 5.00000e+06, 353.15, 0.2,  -3.1421339e-03 },
     StabilityData{ 2.00000e+07, 297.15, 0.2,  -2.4424907e-15 },
     StabilityData{ 2.00000e+07, 353.15, 0.2,  -7.7715612e-16 }
   )

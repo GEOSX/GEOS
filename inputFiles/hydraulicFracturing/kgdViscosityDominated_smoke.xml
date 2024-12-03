@@ -38,7 +38,7 @@
   </Geometry>
 
   <Events
-    maxTime="40.0">
+    maxTime="2.0">
     <SoloEvent
       name="preFracture"
       target="/Solvers/SurfaceGen"/>
@@ -52,21 +52,21 @@
 
     <PeriodicEvent
       name="sourcePressureCollection"
-      beginTime="2.0"
+      beginTime="0.1"
       targetExactTimestep="0"
       target="/Tasks/sourcePressureCollection"/>
 
     <PeriodicEvent
       name="sourceHydraulicApertureCollection"
-      beginTime="2.0"
+      beginTime="0.1"
       targetExactTimestep="0"
       target="/Tasks/sourceHydraulicApertureCollection"/>
 
     <PeriodicEvent
       name="curveOutput"
-      timeFrequency="20.0"
+      timeFrequency="0.1"
       targetExactTimestep="0"
-      beginTime="2.0"
+      beginTime="0.1"
       target="/Outputs/curveOutput"/>
 
     <PeriodicEvent
@@ -75,7 +75,7 @@
 
     <PeriodicEvent
       name="restarts"
-      timeFrequency="20.0"
+      cycleFrequency="2"
       targetExactTimestep="1"
       target="/Outputs/restartOutput"/>
   </Events> 

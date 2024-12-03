@@ -2,11 +2,12 @@
  * ------------------------------------------------------------------------------------------------------------
  * SPDX-License-Identifier: LGPL-2.1-only
  *
- * Copyright (c) 2018-2019 Lawrence Livermore National Security LLC
- * Copyright (c) 2018-2019 The Board of Trustees of the Leland Stanford Junior University
- * Copyright (c) 2018-2019 TotalEnergies
- * Copyright (c) 2019-     GEOSX Contributors
- * All right reserved
+ * Copyright (c) 2016-2024 Lawrence Livermore National Security LLC
+ * Copyright (c) 2018-2024 Total, S.A
+ * Copyright (c) 2018-2024 The Board of Trustees of the Leland Stanford Junior University
+ * Copyright (c) 2023-2024 Chevron
+ * Copyright (c) 2019-     GEOS/GEOSX Contributors
+ * All rights reserved
  *
  * See top level LICENSE, COPYRIGHT, CONTRIBUTORS, NOTICE, and ACKNOWLEDGEMENTS files for details.
  * ------------------------------------------------------------------------------------------------------------
@@ -72,6 +73,23 @@ public:
    *             is a shortcut that should eventually be fixed by keeping this information in the HDF5 buffer.
    */
   virtual localIndex getBufferedCount() = 0;
+
+  /**
+   * @brief Get the log-level for BufferedHistoryIO classes
+   * @return the current log-level
+   */
+  int getLogLevel() const { return m_logLevel; }
+
+  /**
+   * @brief Set the log-level for BufferedHistoryIO classes
+   * @param[in] logLevel the log-level to set
+   */
+  void setLogLevel( int logLevel ) { m_logLevel = logLevel; }
+
+private:
+
+  /// the log-level
+  int m_logLevel = 0;
 };
 
 }

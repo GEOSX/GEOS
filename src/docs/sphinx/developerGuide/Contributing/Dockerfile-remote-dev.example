@@ -47,7 +47,7 @@ RUN touch /root/.ssh/environment &&\
     echo "MPIEXEC=${MPIEXEC}" >> /root/.ssh/environment &&\
     echo "OMPI_CC=${CC}" >> /root/.ssh/environment &&\
     echo "OMPI_CXX=${CXX}" >> /root/.ssh/environment &&\
-    echo "GEOSX_TPL_DIR=${GEOSX_TPL_DIR}" >> /root/.ssh/environment
+    echo "GEOS_TPL_DIR=${GEOS_TPL_DIR}" >> /root/.ssh/environment
 # If you decide to work as root in your container, you may consider adding
 # `OMPI_ALLOW_RUN_AS_ROOT=1` and `OMPI_ALLOW_RUN_AS_ROOT_CONFIRM=1`
 # to your environment. This will prevent you from adding the `--allow-run-as-root` option

@@ -182,7 +182,7 @@ Parameters
 
 The following attributes are supported:
 
-.. include:: /coreComponents/schema/docs/CompositionalMultiphaseFVM.rst
+.. include:: /docs/sphinx/datastructure/CompositionalMultiphaseFVM.rst
 
 .. _input_example:
 

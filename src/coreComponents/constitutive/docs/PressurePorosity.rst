@@ -23,7 +23,7 @@ Parameters
 
 The following attributes are supported:
 
-.. include:: /coreComponents/schema/docs/PressurePorosity.rst
+.. include:: /docs/sphinx/datastructure/PressurePorosity.rst
 
 Example
 =======================

@@ -2,10 +2,11 @@
  * ------------------------------------------------------------------------------------------------------------
  * SPDX-License-Identifier: LGPL-2.1-only
  *
- * Copyright (c) 2018-2020 Lawrence Livermore National Security LLC
- * Copyright (c) 2018-2020 The Board of Trustees of the Leland Stanford Junior University
- * Copyright (c) 2018-2020 TotalEnergies
- * Copyright (c) 2019-     GEOSX Contributors
+ * Copyright (c) 2016-2024 Lawrence Livermore National Security LLC
+ * Copyright (c) 2018-2024 Total, S.A
+ * Copyright (c) 2018-2024 The Board of Trustees of the Leland Stanford Junior University
+ * Copyright (c) 2023-2024 Chevron
+ * Copyright (c) 2019-     GEOS/GEOSX Contributors
  * All rights reserved
  *
  * See top level LICENSE, COPYRIGHT, CONTRIBUTORS, NOTICE, and ACKNOWLEDGEMENTS files for details.
@@ -138,7 +139,7 @@ int NeighborCommunicator::postSizeRecv( int const commID,
                             1,
                             m_neighborRank,
                             recvTag,
-                            MPI_COMM_GEOSX,
+                            MPI_COMM_GEOS,
                             &mpiRecvSizeRequest );
 }
 
@@ -150,7 +151,7 @@ int NeighborCommunicator::postSizeSend( int const commID,
                             1,
                             m_neighborRank,
                             sendTag,
-                            MPI_COMM_GEOSX,
+                            MPI_COMM_GEOS,
                             &mpiSendSizeRequest );
 }
 
@@ -163,7 +164,7 @@ int NeighborCommunicator::postRecv( int const commID,
                             m_receiveBufferSize[commID],
                             m_neighborRank,
                             recvTag,
-                            MPI_COMM_GEOSX,
+                            MPI_COMM_GEOS,
                             &mpRecvRequest );
 }
 
@@ -175,18 +176,15 @@ int NeighborCommunicator::postSend( int const commID,
                             m_sendBufferSize[commID],
                             m_neighborRank,
                             sendTag,
-                            MPI_COMM_GEOSX,
+                            MPI_COMM_GEOS,
                             &mpiSendRequest );
 }
 
-using ElemAdjListViewType = ElementRegionManager::ElementViewAccessor< arrayView1d< localIndex > >;
-using ElemAdjListRefWrapType = ElementRegionManager::ElementViewAccessor< ReferenceWrapper< localIndex_array > >;
-using ElemAdjListRefType = ElementRegionManager::ElementReferenceAccessor< localIndex_array >;
 
 inline int GhostSize( NodeManager & nodeManager, arrayView1d< localIndex const > const nodeAdjacencyList,
                       EdgeManager & edgeManager, arrayView1d< localIndex const > const edgeAdjacencyList,
                       FaceManager & faceManager, arrayView1d< localIndex const > const faceAdjacencyList,
-                      ElementRegionManager & elemManager, ElemAdjListViewType const & elementAdjacencyList )
+                      ElementRegionManager & elemManager, NeighborCommunicator::ElemAdjListViewType const & elementAdjacencyList )
 {
   int bufferSize = 0;
   bufferSize += nodeManager.packGlobalMapsSize( nodeAdjacencyList, 0 );
@@ -210,7 +208,7 @@ inline int PackGhosts( buffer_unit_type * sendBufferPtr,
                        NodeManager & nodeManager, arrayView1d< localIndex const > const nodeAdjacencyList,
                        EdgeManager & edgeManager, arrayView1d< localIndex const > const edgeAdjacencyList,
                        FaceManager & faceManager, arrayView1d< localIndex const > const faceAdjacencyList,
-                       ElementRegionManager & elemManager, ElemAdjListViewType const & elementAdjacencyList )
+                       ElementRegionManager & elemManager, NeighborCommunicator::ElemAdjListViewType const & elementAdjacencyList )
 {
   int packedSize = 0;
   packedSize += nodeManager.packGlobalMaps( sendBufferPtr, nodeAdjacencyList, 0 );
@@ -300,43 +298,55 @@ void NeighborCommunicator::unpackGhosts( MeshLevel & mesh,
   ElementRegionManager & elemManager = mesh.getElemManager();
 
   buffer_type const & receiveBuff = receiveBuffer( commID );
-  buffer_unit_type const * receiveBufferPtr = receiveBuff.data();
+  m_receiveBufferPtr = receiveBuff.data();
 
-  buffer_type::size_type unpackedSize = 0;
+  m_unpackedSize = 0;
 
-  localIndex_array nodeUnpackList;
-  unpackedSize += nodeManager.unpackGlobalMaps( receiveBufferPtr, nodeUnpackList, 0 );
+  m_nodeUnpackList.resize( 0 );
+  m_unpackedSize += nodeManager.unpackGlobalMaps( m_receiveBufferPtr, m_nodeUnpackList, 0 );
 
-  localIndex_array edgeUnpackList;
-  unpackedSize += edgeManager.unpackGlobalMaps( receiveBufferPtr, edgeUnpackList, 0 );
+  m_edgeUnpackList.resize( 0 );
+  m_unpackedSize += edgeManager.unpackGlobalMaps( m_receiveBufferPtr, m_edgeUnpackList, 0 );
 
-  localIndex_array faceUnpackList;
-  unpackedSize += faceManager.unpackGlobalMaps( receiveBufferPtr, faceUnpackList, 0 );
+  m_faceUnpackList.resize( 0 );
+  m_unpackedSize += faceManager.unpackGlobalMaps( m_receiveBufferPtr, m_faceUnpackList, 0 );
 
-  ElemAdjListRefType elementAdjacencyReceiveListArray =
-    elemManager.constructReferenceAccessor< localIndex_array >( ObjectManagerBase::viewKeyStruct::ghostsToReceiveString(),
-                                                                std::to_string( this->m_neighborRank ) );
-  unpackedSize += elemManager.unpackGlobalMaps( receiveBufferPtr,
-                                                elementAdjacencyReceiveListArray );
+  m_elementAdjacencyReceiveListArray = elemManager.constructReferenceAccessor< localIndex_array >( ObjectManagerBase::viewKeyStruct::ghostsToReceiveString(),
+                                                                                                   std::to_string( this->m_neighborRank ) );
+
+  m_unpackedSize += elemManager.unpackGlobalMaps( m_receiveBufferPtr,
+                                                  m_elementAdjacencyReceiveListArray );
+
+}
+
+void NeighborCommunicator::unpackGhostsData( MeshLevel & mesh,
+                                             int const commID )
+{
+  NodeManager & nodeManager = mesh.getNodeManager();
+  EdgeManager & edgeManager = mesh.getEdgeManager();
+  FaceManager & faceManager = mesh.getFaceManager();
+  ElementRegionManager & elemManager = mesh.getElemManager();
 
   ElemAdjListViewType elementAdjacencyReceiveList =
     elemManager.constructViewAccessor< array1d< localIndex >, arrayView1d< localIndex > >( ObjectManagerBase::viewKeyStruct::ghostsToReceiveString(),
                                                                                            std::to_string( this->m_neighborRank ) );
 
-  unpackedSize += nodeManager.unpackUpDownMaps( receiveBufferPtr, nodeUnpackList, false, false );
-  unpackedSize += edgeManager.unpackUpDownMaps( receiveBufferPtr, edgeUnpackList, false, false );
-  unpackedSize += faceManager.unpackUpDownMaps( receiveBufferPtr, faceUnpackList, false, false );
-  unpackedSize += elemManager.unpackUpDownMaps( receiveBufferPtr, elementAdjacencyReceiveListArray, false );
+
+  m_unpackedSize += nodeManager.unpackUpDownMaps( m_receiveBufferPtr, m_nodeUnpackList, false, false );
+  m_unpackedSize += edgeManager.unpackUpDownMaps( m_receiveBufferPtr, m_edgeUnpackList, false, false );
+  m_unpackedSize += faceManager.unpackUpDownMaps( m_receiveBufferPtr, m_faceUnpackList, false, false );
+  m_unpackedSize += elemManager.unpackUpDownMaps( m_receiveBufferPtr, m_elementAdjacencyReceiveListArray, false );
 
   parallelDeviceEvents events;
-  unpackedSize += nodeManager.unpack( receiveBufferPtr, nodeUnpackList, 0, false, events );
-  unpackedSize += edgeManager.unpack( receiveBufferPtr, edgeUnpackList, 0, false, events );
-  unpackedSize += faceManager.unpack( receiveBufferPtr, faceUnpackList, 0, false, events );
-  unpackedSize += elemManager.unpack( receiveBufferPtr, elementAdjacencyReceiveList );
+  m_unpackedSize += nodeManager.unpack( m_receiveBufferPtr, m_nodeUnpackList, 0, false, events );
+  m_unpackedSize += edgeManager.unpack( m_receiveBufferPtr, m_edgeUnpackList, 0, false, events );
+  m_unpackedSize += faceManager.unpack( m_receiveBufferPtr, m_faceUnpackList, 0, false, events );
+  m_unpackedSize += elemManager.unpack( m_receiveBufferPtr, elementAdjacencyReceiveList );
+
   waitAllDeviceEvents( events );
 
-  GEOS_ERROR_IF_NE( receiveBuff.size(), unpackedSize );
-
+  buffer_type const & receiveBuff = receiveBuffer( commID );
+  GEOS_ERROR_IF_NE( receiveBuff.size(), m_unpackedSize );
 }
 
 void NeighborCommunicator::prepareAndSendSyncLists( MeshLevel const & mesh,

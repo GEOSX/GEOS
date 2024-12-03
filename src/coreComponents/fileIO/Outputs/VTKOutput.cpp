@@ -2,10 +2,11 @@
  * ------------------------------------------------------------------------------------------------------------
  * SPDX-License-Identifier: LGPL-2.1-only
  *
- * Copyright (c) 2018-2020 Lawrence Livermore National Security LLC
- * Copyright (c) 2018-2020 The Board of Trustees of the Leland Stanford Junior University
- * Copyright (c) 2018-2020 TotalEnergies
- * Copyright (c) 2019-     GEOSX Contributors
+ * Copyright (c) 2016-2024 Lawrence Livermore National Security LLC
+ * Copyright (c) 2018-2024 Total, S.A
+ * Copyright (c) 2018-2024 The Board of Trustees of the Leland Stanford Junior University
+ * Copyright (c) 2023-2024 Chevron
+ * Copyright (c) 2019-     GEOS/GEOSX Contributors
  * All rights reserved
  *
  * See top level LICENSE, COPYRIGHT, CONTRIBUTORS, NOTICE, and ACKNOWLEDGEMENTS files for details.
@@ -17,9 +18,9 @@
  */
 
 #include "VTKOutput.hpp"
+#include "common/MpiWrapper.hpp"
 
-
-#if defined(GEOSX_USE_PYGEOSX)
+#if defined(GEOS_USE_PYGEOSX)
 #include "fileIO/python/PyVTKOutputType.hpp"
 #endif
 
@@ -54,6 +55,11 @@ VTKOutput::VTKOutput( string const & name,
     setApplyDefaultValue( 1 ).
     setInputFlag( InputFlags::OPTIONAL ).
     setDescription( "Level detail plot. Only fields with lower of equal plot level will be output." );
+
+  registerWrapper( viewKeysStruct::numberOfTargetProcesses, &m_numberOfTargetProcesses ).
+    setApplyDefaultValue( MpiWrapper::commSize() ).
+    setInputFlag( InputFlags::OPTIONAL ).
+    setDescription( "Number of output aggregate files to be written." );
 
   registerWrapper( viewKeysStruct::writeGhostCells, &m_writeGhostCells ).
     setApplyDefaultValue( 0 ).
@@ -94,12 +100,20 @@ VTKOutput::VTKOutput( string const & name,
 VTKOutput::~VTKOutput()
 {}
 
-void VTKOutput::postProcessInput()
+void VTKOutput::postInputInitialization()
 {
   m_writer.setOutputLocation( getOutputDirectory(), m_plotFileRoot );
   m_writer.setFieldNames( m_fieldNames.toViewConst() );
   m_writer.setLevelNames( m_levelNames.toViewConst() );
   m_writer.setOnlyPlotSpecifiedFieldNamesFlag( m_onlyPlotSpecifiedFieldNames );
+
+  GEOS_ERROR_IF_LT_MSG( m_numberOfTargetProcesses, 1,
+                        GEOS_FMT( "{}: processes count cannot be less than 1.",
+                                  getWrapperDataContext( viewKeysStruct::numberOfTargetProcesses ) ) );
+  GEOS_ERROR_IF_GT_MSG( m_numberOfTargetProcesses, MpiWrapper::commSize(),
+                        GEOS_FMT( "{}: processes count cannot exceed the launched ranks count.",
+                                  getWrapperDataContext( viewKeysStruct::numberOfTargetProcesses ) ) );
+  m_writer.setNumberOfTargetProcesses( m_numberOfTargetProcesses );
 
   string const fieldNamesString = viewKeysStruct::fieldNames;
   string const onlyPlotSpecifiedFieldNamesString = viewKeysStruct::onlyPlotSpecifiedFieldNames;
@@ -157,7 +171,7 @@ bool VTKOutput::execute( real64 const time_n,
   return false;
 }
 
-#if defined(GEOSX_USE_PYGEOSX)
+#if defined(GEOS_USE_PYGEOSX)
 PyTypeObject * VTKOutput::getPythonType() const
 {
   return python::getPyVTKOutputType();

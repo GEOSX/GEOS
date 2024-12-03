@@ -2,10 +2,11 @@
  * ------------------------------------------------------------------------------------------------------------
  * SPDX-License-Identifier: LGPL-2.1-only
  *
- * Copyright (c) 2018-2020 Lawrence Livermore National Security LLC
- * Copyright (c) 2018-2020 The Board of Trustees of the Leland Stanford Junior University
- * Copyright (c) 2018-2020 TotalEnergies
- * Copyright (c) 2019-     GEOSX Contributors
+ * Copyright (c) 2016-2024 Lawrence Livermore National Security LLC
+ * Copyright (c) 2018-2024 Total, S.A
+ * Copyright (c) 2018-2024 The Board of Trustees of the Leland Stanford Junior University
+ * Copyright (c) 2023-2024 Chevron
+ * Copyright (c) 2019-     GEOS/GEOSX Contributors
  * All rights reserved
  *
  * See top level LICENSE, COPYRIGHT, CONTRIBUTORS, NOTICE, and ACKNOWLEDGEMENTS files for details.
@@ -38,7 +39,7 @@ class FaceElementSubRegion : public SurfaceElementSubRegion
 public:
 
   /// Face element to faces map type
-  using FaceMapType = InterObjectRelation< ArrayOfArrays< localIndex > >;
+  using FaceMapType = FixedOneToManyRelation;
 
   /**
    * @name Static factory catalog functions
@@ -109,6 +110,38 @@ public:
                                        bool const overwriteUpMaps,
                                        bool const overwriteDownMaps ) override;
 
+
+  /**
+   * @brief Size of packing of the FaceElement to face relation.
+   * @param packList The list of face elements to pack
+   * @return The size of the packed data
+   */
+  localIndex packToFaceRelationSize( arrayView1d< localIndex const > const & packList ) const;
+
+  /**
+   * @brief Pack the FaceElement to face relation.
+   * @param buffer The buffer to pack the data into
+   * @param packList The list of face elements to pack
+   * @return The size of the packed data
+   */
+  localIndex packToFaceRelation( buffer_unit_type * & buffer,
+                                 arrayView1d< localIndex const > const & packList ) const;
+
+  /**
+   * @brief Unpack the FaceElement to face relation.
+   * @param buffer The buffer to unpack the data from
+   * @param packList The list of face elements to unpack
+   * @param overwriteUpMaps Flag to overwrite the up maps
+   * @param overwriteDownMaps Flag to overwrite the down maps
+   * @return The size of the unpacked data
+   */
+  localIndex unpackToFaceRelation( buffer_unit_type const * & buffer,
+                                   array1d< localIndex > & packList,
+                                   bool const overwriteUpMaps,
+                                   bool const overwriteDownMaps );
+
+
+
   virtual void fixUpDownMaps( bool const clearIfUnmapped ) override;
 
   /**
@@ -176,7 +209,7 @@ public:
     /// @return String key to collocated nodes buckets.
     static constexpr char const * elem2dToCollocatedNodesBucketsString() { return "elem2dToCollocatedNodesBuckets"; }
 
-#if GEOSX_USE_SEPARATION_COEFFICIENT
+#if GEOS_USE_SEPARATION_COEFFICIENT
     /// Separation coefficient string.
     constexpr static char const * separationCoeffString() { return "separationCoeff"; }
     /// dSepCoeffdAper string.
@@ -224,7 +257,7 @@ public:
    */
   //virtual localIndex numNodesPerElement( localIndex const k ) const override { return m_toNodesRelation[k].size(); }
 
-#ifdef GEOSX_USE_SEPARATION_COEFFICIENT
+#ifdef GEOS_USE_SEPARATION_COEFFICIENT
   /**
    * @brief Get separation coefficient.
    * @return the separation coefficient
@@ -310,6 +343,23 @@ public:
     return m_2dElemToCollocatedNodesBuckets.toViewConst();
   }
 
+  /**
+   * @brief Get the surface element to cells map.
+   * @return The surface element to cells map
+   */
+  FixedToManyElementRelation & getToCellRelation()
+  {
+    return m_2dElemToElems;
+  }
+
+  /**
+   * @copydoc getToCellRelation()
+   */
+  FixedToManyElementRelation const & getToCellRelation() const
+  {
+    return m_2dElemToElems;
+  }
+
 private:
 
   /**
@@ -322,6 +372,11 @@ private:
   template< bool DO_PACKING >
   localIndex packUpDownMapsImpl( buffer_unit_type * & buffer,
                                  arrayView1d< localIndex const > const & packList ) const;
+
+
+  template< bool DO_PACKING >
+  localIndex packToFaceRelationImpl( buffer_unit_type * & buffer,
+                                     arrayView1d< localIndex const > const & packList ) const;
 
   /// The array of shape function derivaties.
   array4d< real64 > m_dNdX;
@@ -338,7 +393,10 @@ private:
    */
   ArrayOfArrays< array1d< globalIndex > > m_2dElemToCollocatedNodesBuckets;
 
-#ifdef GEOSX_USE_SEPARATION_COEFFICIENT
+  /// Map between the surface elements and the cells
+  FixedToManyElementRelation m_2dElemToElems;
+
+#ifdef GEOS_USE_SEPARATION_COEFFICIENT
   /// Separation coefficient
   array1d< real64 > m_separationCoefficient;
 #endif

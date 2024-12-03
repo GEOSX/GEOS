@@ -2,10 +2,11 @@
  * ------------------------------------------------------------------------------------------------------------
  * SPDX-License-Identifier: LGPL-2.1-only
  *
- * Copyright (c) 2018-2020 Lawrence Livermore National Security LLC
- * Copyright (c) 2018-2020 The Board of Trustees of the Leland Stanford Junior University
- * Copyright (c) 2018-2020 TotalEnergies
- * Copyright (c) 2019-     GEOSX Contributors
+ * Copyright (c) 2016-2024 Lawrence Livermore National Security LLC
+ * Copyright (c) 2018-2024 Total, S.A
+ * Copyright (c) 2018-2024 The Board of Trustees of the Leland Stanford Junior University
+ * Copyright (c) 2023-2024 Chevron
+ * Copyright (c) 2019-     GEOS/GEOSX Contributors
  * All rights reserved
  *
  * See top level LICENSE, COPYRIGHT, CONTRIBUTORS, NOTICE, and ACKNOWLEDGEMENTS files for details.
@@ -180,7 +181,7 @@ void SpatialPartition::setSizes( real64 const ( &min )[ 3 ],
 
   {
     //get size of problem and decomposition
-    m_size = MpiWrapper::commSize( MPI_COMM_GEOSX );
+    m_size = MpiWrapper::commSize( MPI_COMM_GEOS );
 
     //check to make sure our dimensions agree
     {
@@ -196,7 +197,7 @@ void SpatialPartition::setSizes( real64 const ( &min )[ 3 ],
     MPI_Comm cartcomm;
     {
       int reorder = 0;
-      MpiWrapper::cartCreate( MPI_COMM_GEOSX, nsdof, m_Partitions.data(), m_Periodic.data(), reorder, &cartcomm );
+      MpiWrapper::cartCreate( MPI_COMM_GEOS, nsdof, m_Partitions.data(), m_Periodic.data(), reorder, &cartcomm );
     }
     m_rank = MpiWrapper::commRank( cartcomm );
     MpiWrapper::cartCoords( cartcomm, m_rank, nsdof, m_coords.data());
@@ -794,7 +795,7 @@ void SpatialPartition::sendCoordinateListToNeighbors( arrayView1d< R1Tensor > co
                                       1,
                                       receiveRequest[n],
                                       commData.commID(),
-                                      MPI_COMM_GEOSX );
+                                      MPI_COMM_GEOS );
     }
     MPI_Waitall( nn, sendRequest.data(), sendStatus.data());
     MPI_Waitall( nn, receiveRequest.data(), receiveStatus.data());
@@ -823,7 +824,7 @@ void SpatialPartition::sendCoordinateListToNeighbors( arrayView1d< R1Tensor > co
                                       sizeOfReceived[n],
                                       receiveRequest[n],
                                       commData.commID(),
-                                      MPI_COMM_GEOSX );
+                                      MPI_COMM_GEOS );
     }
     MPI_Waitall( nn, sendRequest.data(), sendStatus.data());
     MPI_Waitall( nn, receiveRequest.data(), receiveStatus.data());
@@ -893,7 +894,7 @@ void SpatialPartition::sendListOfIndicesToNeighbors( std::vector< array1d< index
                                       1,
                                       receiveRequest[n],
                                       commData.commID(),
-                                      MPI_COMM_GEOSX );
+                                      MPI_COMM_GEOS );
     }
     MPI_Waitall( nn, sendRequest.data(), sendStatus.data());
     MPI_Waitall( nn, receiveRequest.data(), receiveStatus.data());
@@ -922,7 +923,7 @@ void SpatialPartition::sendListOfIndicesToNeighbors( std::vector< array1d< index
                                       sizeOfReceived[n],
                                       receiveRequest[n],
                                       commData.commID(),
-                                      MPI_COMM_GEOSX );
+                                      MPI_COMM_GEOS );
     }
     MPI_Waitall( nn, sendRequest.data(), sendStatus.data());
     MPI_Waitall( nn, receiveRequest.data(), receiveStatus.data());
@@ -983,7 +984,7 @@ void SpatialPartition::sendParticlesToNeighbor( ParticleSubRegionBase & subRegio
                                       1,
                                       receiveRequest[n],
                                       commData.commID(),
-                                      MPI_COMM_GEOSX );
+                                      MPI_COMM_GEOS );
     }
     MPI_Waitall( nn, sendRequest.data(), sendStatus.data() );
     MPI_Waitall( nn, receiveRequest.data(), receiveStatus.data() );
@@ -1011,7 +1012,7 @@ void SpatialPartition::sendParticlesToNeighbor( ParticleSubRegionBase & subRegio
                                       sizeOfReceived[n],
                                       receiveRequest[n],
                                       commData.commID(),
-                                      MPI_COMM_GEOSX );
+                                      MPI_COMM_GEOS );
     }
     MPI_Waitall( nn, sendRequest.data(), sendStatus.data());
     MPI_Waitall( nn, receiveRequest.data(), receiveStatus.data());

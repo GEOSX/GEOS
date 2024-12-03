@@ -2,10 +2,11 @@
  * ------------------------------------------------------------------------------------------------------------
  * SPDX-License-Identifier: LGPL-2.1-only
  *
- * Copyright (c) 2018-2020 Lawrence Livermore National Security LLC
- * Copyright (c) 2018-2020 The Board of Trustees of the Leland Stanford Junior University
- * Copyright (c) 2018-2020 TotalEnergies
- * Copyright (c) 2019-     GEOSX Contributors
+ * Copyright (c) 2016-2024 Lawrence Livermore National Security LLC
+ * Copyright (c) 2018-2024 Total, S.A
+ * Copyright (c) 2018-2024 The Board of Trustees of the Leland Stanford Junior University
+ * Copyright (c) 2023-2024 Chevron
+ * Copyright (c) 2019-     GEOS/GEOSX Contributors
  * All rights reserved
  *
  * See top level LICENSE, COPYRIGHT, CONTRIBUTORS, NOTICE, and ACKNOWLEDGEMENTS files for details.
@@ -23,6 +24,7 @@
 #include "physicsSolvers/surfaceGeneration/SurfaceGenerator.hpp"
 #include "physicsSolvers/multiphysics/SinglePhasePoromechanics.hpp"
 #include "physicsSolvers/fluidFlow/SinglePhaseBase.hpp"
+#include "dataRepository/LogLevelsInfo.hpp"
 
 namespace geos
 {
@@ -55,6 +57,7 @@ public:
   using Base::flowSolver;
   using Base::solidMechanicsSolver;
   using Base::assembleElementBasedTerms;
+  using Base::resetStateToBeginningOfStep;
 
 
   /**
@@ -82,7 +85,7 @@ public:
 //  }
   }
   /**
-   * @copydoc SolverBase::getCatalogName()
+   * @copydoc PhysicsSolverBase::getCatalogName()
    */
   string getCatalogName() const override { return catalogName(); }
 
@@ -124,6 +127,12 @@ public:
 
   virtual void updateState( DomainPartition & domain ) override final;
 
+  virtual void implicitStepComplete( real64 const & time_n,
+                                     real64 const & dt,
+                                     DomainPartition & domain ) override final;
+
+  virtual void resetStateToBeginningOfStep( DomainPartition & domain ) override final;
+
   /**@}*/
 
   void updateHydraulicApertureAndFracturePermeability( DomainPartition & domain );
@@ -158,8 +167,6 @@ public:
 
   struct viewKeyStruct : Base::viewKeyStruct
   {
-    constexpr static char const * contactRelationNameString() { return "contactRelationName"; }
-
     constexpr static char const * surfaceGeneratorNameString() { return "surfaceGeneratorName"; }
 
     constexpr static char const * maxNumResolvesString() { return "maxNumResolves"; }
@@ -170,7 +177,9 @@ public:
 
     constexpr static char const * useQuasiNewtonString() { return "useQuasiNewton"; }
 
-#ifdef GEOSX_USE_SEPARATION_COEFFICIENT
+    constexpr static char const * isLaggingFractureStencilWeightsUpdateString() { return "isLaggingFractureStencilWeightsUpdate"; }
+
+#ifdef GEOS_USE_SEPARATION_COEFFICIENT
     constexpr static char const * separationCoeff0String() { return "separationCoeff0"; }
     constexpr static char const * apertureAtFailureString() { return "apertureAtFailure"; }
 #endif
@@ -178,7 +187,7 @@ public:
 
 protected:
 
-  virtual void postProcessInput() override final;
+  virtual void postInputInitialization() override final;
 
   /**
    * @Brief add the nnz induced by the flux-aperture coupling
@@ -242,6 +251,9 @@ private:
   InitializationType m_newFractureInitializationType;
 
   integer m_useQuasiNewton;   // use Quasi-Newton (see https://arxiv.org/abs/2111.00264)
+
+  // flag to determine whether or not to apply lagging update for the fracture stencil weights
+  integer m_isLaggingFractureStencilWeightsUpdate;
 
 };
 

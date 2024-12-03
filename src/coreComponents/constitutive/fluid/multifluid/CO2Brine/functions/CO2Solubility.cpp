@@ -2,10 +2,11 @@
  * ------------------------------------------------------------------------------------------------------------
  * SPDX-License-Identifier: LGPL-2.1-only
  *
- * Copyright (c) 2018-2020 Lawrence Livermore National Security LLC
- * Copyright (c) 2018-2020 The Board of Trustees of the Leland Stanford Junior University
- * Copyright (c) 2018-2020 TotalEnergies
- * Copyright (c) 2019-     GEOSX Contributors
+ * Copyright (c) 2016-2024 Lawrence Livermore National Security LLC
+ * Copyright (c) 2018-2024 Total, S.A
+ * Copyright (c) 2018-2024 The Board of Trustees of the Leland Stanford Junior University
+ * Copyright (c) 2023-2024 Chevron
+ * Copyright (c) 2019-     GEOS/GEOSX Contributors
  * All rights reserved
  *
  * See top level LICENSE, COPYRIGHT, CONTRIBUTORS, NOTICE, and ACKNOWLEDGEMENTS files for details.
@@ -220,7 +221,7 @@ CO2Solubility::CO2Solubility( string const & name,
                               string_array const & phaseNames,
                               string_array const & componentNames,
                               array1d< real64 > const & componentMolarWeight,
-                              bool const printTable ):
+                              TableFunction::OutputOptions const pvtOutputOpts ):
   FlashModelBase( name,
                   componentNames,
                   componentMolarWeight )
@@ -256,11 +257,9 @@ CO2Solubility::CO2Solubility( string const & name,
 
   std::tie( m_CO2SolubilityTable, m_WaterVapourisationTable ) = makeSolubilityTables( m_modelName, inputParams, solubilityModel );
 
-  if( printTable )
-  {
-    m_CO2SolubilityTable->print( m_CO2SolubilityTable->getName() );
-    m_WaterVapourisationTable->print( m_WaterVapourisationTable->getName() );
-  }
+  m_CO2SolubilityTable->outputPVTTableData( pvtOutputOpts );
+  m_WaterVapourisationTable->outputPVTTableData( pvtOutputOpts );
+
 }
 
 void CO2Solubility::checkTablesParameters( real64 const pressure,

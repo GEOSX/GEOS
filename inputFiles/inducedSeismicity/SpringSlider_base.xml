@@ -1,0 +1,167 @@
+<?xml version="1.0" ?>
+<Problem>
+  <Solvers>
+    <QuasiDynamicEQ
+      name="SpringSlider"
+      targetRegions="{ Fault }"
+      shearImpedance="4.41"
+      initialDt="1"
+      logLevel="1"
+      discretization="FE1">
+    </QuasiDynamicEQ>
+    
+    <SurfaceGenerator
+      name="SurfaceGen"
+      targetRegions="{ Domain }"
+      rockToughness="1.0"
+      mpiCommOrder="1"
+      fractureRegion="Fault"/>  
+  </Solvers>
+
+  <NumericalMethods>
+    <FiniteElements>
+      <FiniteElementSpace
+        name="FE1"
+        order="1"/>
+    </FiniteElements>
+  </NumericalMethods>
+
+  <Mesh>
+    <InternalMesh
+      name="mesh"
+      elementTypes="{ C3D8 }"
+      xCoords="{ 0, 1 }"
+      yCoords="{ 0, 2 }"
+      zCoords="{ 0, 1 }"
+      nx="{ 1 }"
+      ny="{ 2 }"
+      nz="{ 1 }"
+      cellBlockNames="{ cb1 }"/>
+  </Mesh>
+
+  <Geometry>    
+    <ThickPlane
+      name="faultPlane"
+      normal="{ 0, 1, 0 }"
+      origin="{ 0, 1, 0 }"
+      thickness="0.1"/>
+  </Geometry>
+
+  <ElementRegions>
+    <CellElementRegion
+      name="Domain"
+      cellBlocks="{ cb1 }"
+      materialList="{}"/>
+
+    <SurfaceElementRegion
+      name="Fault"
+      materialList="{frictionLaw}"
+      defaultAperture="1e-3"/>  
+    </ElementRegions>
+
+  <Constitutive>
+    <RateAndStateFriction
+      name="frictionLaw"
+      defaultA="0.01"
+      defaultB="0.015"
+      defaultDc="1.0e-5"  
+      defaultReferenceVelocity="1.0e-6"
+      defaultReferenceFrictionCoefficient="0.6"/>  
+  </Constitutive>
+
+  <FieldSpecifications>
+    <FieldSpecification
+      name="fault"
+      fieldName="ruptureState"
+      initialCondition="1"
+      objectPath="faceManager"
+      scale="1"
+      setNames="{ faultPlane }"/>
+
+    <FieldSpecification
+      name="normalTraction"
+      fieldName="traction"
+      initialCondition="1"
+      objectPath="ElementRegions/Fault/FractureSubRegion"
+      component="0"
+      scale="50"
+      setNames="{all}"/>
+    
+    <FieldSpecification
+      name="shearTraction1"
+      fieldName="traction"
+      initialCondition="1"
+      objectPath="ElementRegions/Fault/FractureSubRegion"
+      component="1"
+      scale="21.2132034356"
+      setNames="{all}"/>
+    <FieldSpecification
+      name="shearTraction2"
+      fieldName="traction"
+      initialCondition="1"
+      objectPath="ElementRegions/Fault/FractureSubRegion"
+      component="2"
+      scale="21.2132034356"
+      setNames="{all}"/>  
+    <FieldSpecification
+      name="stateVariable"
+      fieldName="stateVariable"
+      initialCondition="1"
+      objectPath="ElementRegions/Fault/FractureSubRegion"
+      scale="0.6"
+      setNames="{all}"/>
+    <FieldSpecification
+      name="slipRate"
+      fieldName="slipRate"
+      initialCondition="1"
+      objectPath="ElementRegions/Fault/FractureSubRegion"
+      scale="1.0e-6"
+      setNames="{all}"/>
+    <FieldSpecification
+      name="slipVelocity1"
+      fieldName="slipVelocity"
+      initialCondition="1"
+      objectPath="ElementRegions/Fault/FractureSubRegion"
+      component="0"
+      scale="0."
+      setNames="{all}"/>               
+    <FieldSpecification
+      name="slipVelocity2"
+      fieldName="slipVelocity"
+      initialCondition="1"
+      objectPath="ElementRegions/Fault/FractureSubRegion"
+      component="1"
+      scale="0."
+      setNames="{all}"/>               
+  </FieldSpecifications>
+
+  <Outputs>
+    <VTK
+      name="vtkOutput"
+      plotFileRoot="springSlider"/>
+    <Restart
+      name="restart"/>  
+
+    <TimeHistory
+      name="timeHistoryOutput"
+      sources="{/Tasks/slipCollection,/Tasks/slipRateCollection,/Tasks/stateVariableCollection}"
+      filename="springSlider"/>
+  </Outputs>
+
+  <Tasks>
+    <PackCollection
+      name="slipCollection"
+      objectPath="ElementRegions/Fault/FractureSubRegion"
+      fieldName="displacementJump"/>
+    
+    <PackCollection
+      name="slipRateCollection"
+      objectPath="ElementRegions/Fault/FractureSubRegion"
+      fieldName="slipRate"/>
+      
+    <PackCollection
+      name="stateVariableCollection"
+      objectPath="ElementRegions/Fault/FractureSubRegion"
+      fieldName="stateVariable"/>  
+  </Tasks>
+</Problem>

@@ -2,10 +2,11 @@
  * ------------------------------------------------------------------------------------------------------------
  * SPDX-License-Identifier: LGPL-2.1-only
  *
- * Copyright (c) 2018-2020 Lawrence Livermore National Security LLC
- * Copyright (c) 2018-2020 The Board of Trustees of the Leland Stanford Junior University
- * Copyright (c) 2018-2020 TotalEnergies
- * Copyright (c) 2019-     GEOSX Contributors
+ * Copyright (c) 2016-2024 Lawrence Livermore National Security LLC
+ * Copyright (c) 2018-2024 Total, S.A
+ * Copyright (c) 2018-2024 The Board of Trustees of the Leland Stanford Junior University
+ * Copyright (c) 2023-2024 Chevron
+ * Copyright (c) 2019-     GEOS/GEOSX Contributors
  * All rights reserved
  *
  * See top level LICENSE, COPYRIGHT, CONTRIBUTORS, NOTICE, and ACKNOWLEDGEMENTS files for details.
@@ -22,6 +23,7 @@
 
 using namespace geos;
 using namespace geos::testing;
+using namespace geos::dataRepository;
 using namespace geos::constitutive;
 
 static constexpr char const * pvdgTableContent = "# Pg(Pa) Bg(m3/sm3) Visc(Pa.s)\n"
@@ -130,7 +132,7 @@ DeadOilFluid * MultiFluidDeadOilTest< false >::makeDeadOilFluid( string const & 
   path_array & tableNames = fluid.getReference< path_array >( BlackOilFluidBase::viewKeyStruct::tableFilesString() );
   fill< 3 >( tableNames, {"pvdo.txt", "pvdw.txt", "pvdg.txt"} );
 
-  fluid.postProcessInputRecursive();
+  fluid.postInputInitializationRecursive();
   return &fluid;
 }
 
@@ -198,7 +200,7 @@ DeadOilFluid * MultiFluidDeadOilTest< true >::makeDeadOilFluid( string const & n
   real64 & waterViscosity = fluid.getReference< real64 >( DeadOilFluid::viewKeyStruct::waterViscosityString() );
   waterViscosity = 0.0003;
 
-  fluid.postProcessInputRecursive();
+  fluid.postInputInitializationRecursive();
   return &fluid;
 }
 
