@@ -98,7 +98,6 @@ HAS_MEMBER_FUNCTION( checkTouch, bool, );
 template< typename CLASS >
 static constexpr bool HasMemorySpaceFunctions = HasMemberFunction_move< CLASS > &&
                                                 HasMemberFunction_registerTouch< CLASS > &&
-                                                HasMemberFunction_checkTouch< CLASS > &&
                                                 HasMemberFunction_getPreviousSpace< CLASS >;
 
 /**
