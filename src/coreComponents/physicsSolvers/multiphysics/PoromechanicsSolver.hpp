@@ -114,6 +114,10 @@ public:
                    GEOS_FMT( "{} {}: The attribute `{}` of the flow solver `{}` must be set to 1 since the poromechanics solver is thermal",
                              this->getCatalogName(), this->getName(), FlowSolverBase::viewKeyStruct::isThermalString(), this->flowSolver()->getName() ),
                    InputError );
+
+    DomainPartition & domain = this->template getGroupByPath< DomainPartition >( "/Problem/domain" );
+    flowSolver()->initializeState( domain );
+    updateBulkDensity( domain );
   }
 
   virtual void setConstitutiveNamesCallSuper( ElementSubRegionBase & subRegion ) const override final
