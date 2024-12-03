@@ -21,7 +21,6 @@
 #define SRC_CORECOMPONENTS_PHYSICSSOLVERS_MULTIPHYSICS_POROMECHANICSINITIALIZATION_HPP_
 
 #include "events/tasks/TaskBase.hpp"
-#include "physicsSolvers/multiphysics/HydrofractureSolver.hpp"
 #include "physicsSolvers/solidMechanics/SolidMechanicsStateReset.hpp"
 
 namespace geos
@@ -58,14 +57,7 @@ public:
   /// Accessor for the catalog name
   static string catalogName()
   {
-    if constexpr ( std::is_same_v< POROMECHANICS_SOLVER, HydrofractureSolver<> > )   // special case
-    {
-      return "HydrofractureInitialization";
-    }
-    else   // default
-    {
-      return "PoromechanicsInitialization";
-    }
+    POROMECHANICS_SOLVER::catalogName() + "Initialization";
   }
 
   /**
