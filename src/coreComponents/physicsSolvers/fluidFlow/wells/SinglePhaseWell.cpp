@@ -339,13 +339,13 @@ void SinglePhaseWell::initializeWells( DomainPartition & domain, real64 const & 
   GEOS_MARK_FUNCTION;
   GEOS_UNUSED_VAR( time_n );
   GEOS_UNUSED_VAR( dt );
-  // different functionality than for compositional
-  // compositional has better treatment of well initialization in cases where well starts later in sim
-  // logic will be incorporated into single phase in different push
-  if( time_n > 0 )
-  {
-    return;
-  }
+
+  auto hasNonZeroCompRate = []( arrayView1d< real64 > const & arr ) {
+    return std::any_of( arr.begin(), arr.end(), []( real64 value ) {
+      return value > 0 || value < 0;       // Check if the value is non-zero
+    } );
+  };
+
   // loop over the wells
   forDiscretizationOnMeshTargets( domain.getMeshBodies(), [&] ( string const &,
                                                                 MeshLevel & meshLevel,
@@ -381,44 +381,48 @@ void SinglePhaseWell::initializeWells( DomainPartition & domain, real64 const & 
       arrayView1d< real64 const > const & perfGravCoef =
         perforationData.getField< fields::well::gravityCoefficient >();
 
-      // TODO: change the way we access the flowSolver here
-      SinglePhaseBase const & flowSolver = getParent().getGroup< SinglePhaseBase >( getFlowSolverName() );
-      PresInitializationKernel::SinglePhaseFlowAccessors resSinglePhaseFlowAccessors( meshLevel.getElemManager(), flowSolver.getName() );
-      PresInitializationKernel::SingleFluidAccessors resSingleFluidAccessors( meshLevel.getElemManager(), flowSolver.getName() );
 
-      // 1) Loop over all perforations to compute an average density
-      // 2) Initialize the reference pressure
-      // 3) Estimate the pressures in the well elements using the average density
-      PresInitializationKernel::
-        launch( perforationData.size(),
-                subRegion.size(),
-                perforationData.getNumPerforationsGlobal(),
-                wellControls,
-                0.0,   // initialization done at t = 0
-                resSinglePhaseFlowAccessors.get( fields::flow::pressure{} ),
-                resSingleFluidAccessors.get( fields::singlefluid::density{} ),
-                resElementRegion,
-                resElementSubRegion,
-                resElementIndex,
-                perfGravCoef,
-                wellElemGravCoef,
-                wellElemPressure );
+      if( time_n <= 0.0  || (wellControls.isWellOpen( time_n ) && !hasNonZeroCompRate( connRate ) ) )
+      {
+        // TODO: change the way we access the flowSolver here
+        SinglePhaseBase const & flowSolver = getParent().getGroup< SinglePhaseBase >( getFlowSolverName() );
+        PresInitializationKernel::SinglePhaseFlowAccessors resSinglePhaseFlowAccessors( meshLevel.getElemManager(), flowSolver.getName() );
+        PresInitializationKernel::SingleFluidAccessors resSingleFluidAccessors( meshLevel.getElemManager(), flowSolver.getName() );
 
-      // 4) Recompute the pressure-dependent properties
-      // Note: I am leaving that here because I would like to use the perforationRates (computed in UpdateState)
-      //       to better initialize the rates
-      updateSubRegionState( subRegion );
+        // 1) Loop over all perforations to compute an average density
+        // 2) Initialize the reference pressure
+        // 3) Estimate the pressures in the well elements using the average density
+        PresInitializationKernel::
+          launch( perforationData.size(),
+                  subRegion.size(),
+                  perforationData.getNumPerforationsGlobal(),
+                  wellControls,
+                  0.0, // initialization done at t = 0
+                  resSinglePhaseFlowAccessors.get( fields::flow::pressure{} ),
+                  resSingleFluidAccessors.get( fields::singlefluid::density{} ),
+                  resElementRegion,
+                  resElementSubRegion,
+                  resElementIndex,
+                  perfGravCoef,
+                  wellElemGravCoef,
+                  wellElemPressure );
 
-      string const & fluidName = subRegion.getReference< string >( viewKeyStruct::fluidNamesString() );
-      SingleFluidBase & fluid = subRegion.getConstitutiveModel< SingleFluidBase >( fluidName );
-      arrayView2d< real64 const > const & wellElemDens = fluid.density();
+        // 4) Recompute the pressure-dependent properties
+        // Note: I am leaving that here because I would like to use the perforationRates (computed in UpdateState)
+        //       to better initialize the rates
+        updateSubRegionState( subRegion );
 
-      // 5) Estimate the well rates
-      RateInitializationKernel::launch( subRegion.size(),
-                                        wellControls,
-                                        0.0,   // initialization done at t = 0
-                                        wellElemDens,
-                                        connRate );
+        string const & fluidName = subRegion.getReference< string >( viewKeyStruct::fluidNamesString() );
+        SingleFluidBase & fluid = subRegion.getConstitutiveModel< SingleFluidBase >( fluidName );
+        arrayView2d< real64 const > const & wellElemDens = fluid.density();
+
+        // 5) Estimate the well rates
+        RateInitializationKernel::launch( subRegion.size(),
+                                          wellControls,
+                                          0.0, // initialization done at t = 0
+                                          wellElemDens,
+                                          connRate );
+      }
 
     } );
 

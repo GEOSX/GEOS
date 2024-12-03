@@ -993,7 +993,7 @@ void CompositionalMultiphaseWell::initializeWells( DomainPartition & domain, rea
       PerforationData & perforationData = *subRegion.getPerforationData();
       arrayView2d< real64 > const compPerfRate = perforationData.getField< fields::well::compPerforationRate >();
 
-      if( time_n <= 0.0  || (wellControls.isWellOpen( time_n ) && hasNonZeroCompRate( compPerfRate ) ) )
+      if( time_n <= 0.0  || (wellControls.isWellOpen( time_n ) && !hasNonZeroCompRate( compPerfRate ) ) )
       {
         // get well primary variables on well elements
         arrayView1d< real64 > const & wellElemPressure = subRegion.getField< fields::well::pressure >();
