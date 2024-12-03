@@ -57,7 +57,7 @@ public:
   /// Accessor for the catalog name
   static string catalogName()
   {
-    POROMECHANICS_SOLVER::catalogName() + "Initialization";
+    return POROMECHANICS_SOLVER::catalogName() + "Initialization";
   }
 
   /**
