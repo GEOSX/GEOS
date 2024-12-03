@@ -424,6 +424,107 @@ void SinglePhaseWell::initializeWells( DomainPartition & domain, real64 const & 
 
   } );
 }
+void SinglePhaseWell::shutDownWell( real64 const time_n,
+                                    real64 const dt,
+                                    DomainPartition const & domain,
+                                    DofManager const & dofManager,
+                                    CRSMatrixView< real64, globalIndex const > const & localMatrix,
+                                    arrayView1d< real64 > const & localRhs )
+{
+  GEOS_MARK_FUNCTION;
+
+  string const wellDofKey = dofManager.getKey( wellElementDofName() );
+
+  forDiscretizationOnMeshTargets( domain.getMeshBodies(), [&] ( string const &,
+                                                                MeshLevel const & mesh,
+                                                                arrayView1d< string const > const & regionNames )
+  {
+
+    ElementRegionManager const & elemManager = mesh.getElemManager();
+
+    elemManager.forElementSubRegions< WellElementSubRegion >( regionNames,
+                                                              [&]( localIndex const,
+                                                                   WellElementSubRegion const & subRegion )
+    {
+
+      // if the well is open, we don't have to do anything, so we just return
+      WellControls const & wellControls = getWellControls( subRegion );
+      if( wellControls.isWellOpen( time_n ) )
+      {
+        return;
+      }
+
+      globalIndex const rankOffset = dofManager.rankOffset();
+
+      arrayView1d< integer const > const ghostRank =
+        subRegion.getReference< array1d< integer > >( ObjectManagerBase::viewKeyStruct::ghostRankString() );
+      arrayView1d< globalIndex const > const dofNumber =
+        subRegion.getReference< array1d< globalIndex > >( wellDofKey );
+
+      arrayView1d< real64 const > const pres =
+        subRegion.getField< fields::well::pressure >();
+      arrayView1d< real64 const > const connRate =
+        subRegion.getField< fields::well::connectionRate >();
+
+      forAll< parallelDevicePolicy<> >( subRegion.size(), [=] GEOS_HOST_DEVICE ( localIndex const ei )
+      {
+        if( ghostRank[ei] >= 0 )
+        {
+          return;
+        }
+
+        globalIndex const dofIndex = dofNumber[ei];
+        localIndex const localRow = dofIndex - rankOffset;
+        real64 rhsValue;
+
+        // 4.1. Apply pressure value to the matrix/rhs
+        FieldSpecificationEqual::SpecifyFieldValue( dofIndex,
+                                                    rankOffset,
+                                                    localMatrix,
+                                                    rhsValue,
+                                                    pres[ei],   // freeze the current pressure value
+                                                    pres[ei] );
+        localRhs[localRow] = rhsValue;
+
+        // 4.2. Apply rate value to the matrix/rhs
+        FieldSpecificationEqual::SpecifyFieldValue( dofIndex + 1,
+                                                    rankOffset,
+                                                    localMatrix,
+                                                    rhsValue,
+                                                    connRate[ei],   // freeze the current pressure value
+                                                    connRate[ei] );
+        localRhs[localRow + 1] = rhsValue;
+
+      } );
+    } );
+  } );
+}
+
+void SinglePhaseWell::assembleSystem( real64 const time,
+                                      real64 const dt,
+                                      DomainPartition & domain,
+                                      DofManager const & dofManager,
+                                      CRSMatrixView< real64, globalIndex const > const & localMatrix,
+                                      arrayView1d< real64 > const & localRhs )
+{
+  string const wellDofKey = dofManager.getKey( wellElementDofName());
+
+  // assemble the accumulation term in the mass balance equations
+  assembleAccumulationTerms( time, dt, domain, dofManager, localMatrix, localRhs );
+
+  // then assemble the pressure relations between well elements
+  assemblePressureRelations( time, dt, domain, dofManager, localMatrix, localRhs );
+  // then compute the perforation rates (later assembled by the coupled solver)
+  computePerforationRates( time, dt, domain );
+
+  // then assemble the flux terms in the mass balance equations
+  // get a reference to the degree-of-freedom numbers
+  // then assemble the flux terms in the mass balance equations
+  assembleFluxTerms( time, dt, domain, dofManager, localMatrix, localRhs );
+
+  // then apply a special treatment to the wells that are shut
+  shutDownWell( time, dt, domain, dofManager, localMatrix, localRhs );
+}
 
 void SinglePhaseWell::assembleFluxTerms( real64 const & time_n,
                                          real64 const & dt,

@@ -943,7 +943,6 @@ void CompositionalMultiphaseWell::updateState( DomainPartition & domain )
 real64 CompositionalMultiphaseWell::updateSubRegionState( WellElementSubRegion & subRegion )
 {
   // update properties
-  std::cout << "updateSubRegionState " << subRegion.getName() << std::endl;
   updateGlobalComponentFraction( subRegion );
 
   // update volumetric rates for the well constraints
@@ -960,36 +959,6 @@ real64 CompositionalMultiphaseWell::updateSubRegionState( WellElementSubRegion &
   return maxPhaseVolChange;
 }
 
-bool CompositionalMultiphaseWell::anyNonZeroCompPerfRate( arrayView2d< real64 > const compPerfRate )
-{
-  auto hasNonZero = []( arrayView2d< real64 > const & arr ) {
-    return std::any_of( arr.begin(), arr.end(), []( real64 value ) {
-      return value > 0 || value < 0;       // Check if the value is non-zero
-    } );
-  };
-
-  //      auto any_rate_nonzero = [](arrayView2d< real64> const & arr) {
-  //      return std::any_of(arr.begin(), arr.end(), [](arrayView1d< real64 > const & row) {
-  //          return std::any_of(row.begin(), row.end(), [](double value) {
-  //              return value > 0.0 || value < 0.0; // Check if the value is non-zero
-  //          });
-  //      });
-  //    };
-  bool anyNonZero=false;
-  anyNonZero = hasNonZero( compPerfRate );
-  for( integer iperf=0; iperf<compPerfRate.size( 0 ); iperf++ )
-  {
-    for( integer ic = 0; ic < compPerfRate.size( 1 ); ++ic )
-    {
-      if( compPerfRate[iperf][ic]> 0.0 || compPerfRate[iperf][ic] <  0.0 )
-      {
-        anyNonZero=true;
-        break;
-      }
-    }
-  }
-  return anyNonZero;
-}
 void CompositionalMultiphaseWell::initializeWells( DomainPartition & domain, real64 const & time_n, real64 const & dt )
 {
   GEOS_MARK_FUNCTION;
