@@ -335,18 +335,14 @@ public:
 
   virtual void initializePostInitialConditionsPreSubGroups() override;
 
+  virtual void initializeFluidState( MeshLevel & mesh, arrayView1d< string const > const & regionNames ) override;
+
+  virtual void initializeThermalState( MeshLevel & mesh, arrayView1d< string const > const & regionNames ) override;
+
   /**
    * @brief Compute the hydrostatic equilibrium using the compositions and temperature input tables
    */
-  void computeHydrostaticEquilibrium();
-
-  /**
-   * @brief Update the cell-wise pressure gradient
-   */
-  virtual void updatePressureGradient( DomainPartition & domain )
-  {
-    GEOS_UNUSED_VAR( domain );
-  }
+  virtual void computeHydrostaticEquilibrium( DomainPartition & domain ) override;
 
   /**
    * @brief Function to fix the initial state during the initialization step in coupled problems
