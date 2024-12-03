@@ -404,11 +404,7 @@ void SinglePhaseBase::initializePostInitialConditionsPreSubGroups()
 
   DomainPartition & domain = this->getGroupByPath< DomainPartition >( "/Problem/domain" );
 
-    << << <<< HEAD
-    FlowSolverBase::initializeState( domain );
-  =======
-    FlowSolverBase::initialize( domain );
-  >> >> >>> origin/develop
+  FlowSolverBase::initializeState( domain );
 }
 
 void SinglePhaseBase::computeHydrostaticEquilibrium( DomainPartition & domain )

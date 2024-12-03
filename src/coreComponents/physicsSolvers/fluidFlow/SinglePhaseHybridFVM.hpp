@@ -164,6 +164,8 @@ public:
                              real64 const & dt,
                              DomainPartition & domain ) override;
 
+  virtual void updatePressureGradient( DomainPartition & domain ) override final;
+
   /**
    * @brief Function to perform the application of Dirichlet BCs on faces
    * @param[in] time_n current time
