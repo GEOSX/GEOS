@@ -91,7 +91,10 @@ spack:
       require: "@git.5a792c1775e7a7628d84dcde31652a689f1df7b5=develop"
 
     hypre:
-      require: "@git.57bfb26e268ddf003668c5d0b5938ae258922a83"
+      require: "@git.eab5f9f7f18e5a5c6de34b7652b6ee5b9407d597"
+
+    chai:
+      require: "@git.6fe3470ad020303530af2f3dbbfe18826bd3319b=develop"
 
     umpire:
       require: "@git.4bd9b2ded81d3216b3f62e2aad62d0e34fe2c256=develop"
@@ -184,13 +187,18 @@ spack:
       externals:
         - spec: libtool@2.4.2
           prefix: /usr
-    bison:
-      buildable: False
-      externals:
-        - spec: bison@3.0.4
-          prefix: /usr
     flex:
       buildable: False
       externals:
         - spec: flex@2.5.37
           prefix: /usr
+    gettext:
+      buildable: False
+      externals:
+        - spec: gettext@0.19.8.1
+          prefix: /usr/bin/
+    zlib:
+      buildable: false
+      externals:
+      - spec: zlib@1.2.7
+        prefix: /usr

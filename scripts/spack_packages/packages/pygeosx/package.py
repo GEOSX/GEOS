@@ -6,7 +6,10 @@
 from spack import *
 
 class Pygeosx(BundlePackage):
-    """This is a set of libraries necessary for the pygeosx ATS environment"""
+    """This is a set of libraries necessary for the pygeosx ATS environment.
+    NOTE: It is recommended to download and install python3 and package
+    dependencies using your Linux distribution's package manager (Spack
+    builds of python tend to be much slower). """
 
     version('fakeversion')
 
@@ -19,3 +22,4 @@ class Pygeosx(BundlePackage):
     depends_on("py-matplotlib")
     depends_on("py-sphinx")
     depends_on("py-sphinx-argparse")
+    depends_on("py-test")

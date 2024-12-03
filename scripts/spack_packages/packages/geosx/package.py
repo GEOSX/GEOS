@@ -58,7 +58,6 @@ class Geosx(CMakePackage, CudaPackage):
     variant('shared', default=True, description='Build Shared Libs.')
     variant('caliper', default=True, description='Build Caliper support.')
     variant('vtk', default=True, description='Build VTK support.')
-    variant('fesapi', default=False, description='Build fesapi support.')
     variant('trilinos', default=True, description='Build Trilinos support.')
     variant('hypre', default=True, description='Build HYPRE support.')
     variant('petsc', default=False, description='Build PETSc support.')
@@ -101,7 +100,7 @@ class Geosx(CMakePackage, CudaPackage):
 
     depends_on('umpire +c+openmp~examples+fortran~device_alloc~shared')
 
-    depends_on('chai@2023.06.0 +raja+openmp~examples~shared')
+    depends_on('chai +raja+openmp~examples~shared')
 
     depends_on('camp')
 
@@ -109,7 +108,7 @@ class Geosx(CMakePackage, CudaPackage):
         for sm_ in CudaPackage.cuda_arch_values:
             depends_on('raja+cuda cuda_arch={0}'.format(sm_), when='cuda_arch={0}'.format(sm_))
             depends_on('umpire+cuda cuda_arch={0}'.format(sm_), when='cuda_arch={0}'.format(sm_))
-            depends_on('chai+cuda cuda_arch={0}'.format(sm_), when='cuda_arch={0}'.format(sm_))
+            depends_on('chai+cuda~separable_compilation cuda_arch={0}'.format(sm_), when='cuda_arch={0}'.format(sm_))
             depends_on('camp+cuda cuda_arch={0}'.format(sm_), when='cuda_arch={0}'.format(sm_))
 
     #
@@ -127,8 +126,6 @@ class Geosx(CMakePackage, CudaPackage):
 
     depends_on('fmt@10.0.0 cxxstd=14')
     depends_on('vtk@9.2.6', when='+vtk')
-
-    depends_on('fesapi', when='+fesapi')
 
     #
     # Math
@@ -386,7 +383,6 @@ class Geosx(CMakePackage, CudaPackage):
                 ('silo', 'SILO', True),
                 ('pugixml', 'PUGIXML', True),
                 ('vtk', 'VTK', '+vtk' in spec),
-                ('fesapi', 'FESAPI', '+fesapi' in spec),
                 ('fmt', 'FMT', True)
             )
             # yapf: enable
