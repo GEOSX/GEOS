@@ -70,7 +70,7 @@ public:
                                        bool const GEOS_UNUSED_PARAM( computeGradient ) ) override;
 
   /**
-   * @brief Method to get the minimum wavespeed on a mesh
+   * @brief Get the minimum wavespeed on a mesh
    */
   virtual real32 getGlobalMinWavespeed( MeshLevel & mesh, arrayView1d< string const > const & regionNames ) override;
 

@@ -158,7 +158,7 @@ public:
   void prepareNextTimestep( MeshLevel & mesh );
 
   /**
-   * @brief Method to get the minimum wavespeed on a mesh (S-wavespeed in the elastic case)
+   * @brief Get the minimum wavespeed on a mesh (S-wavespeed in the elastic case)
    */
   virtual real32 getGlobalMinWavespeed( MeshLevel & mesh, arrayView1d< string const > const & regionNames ) override;
 

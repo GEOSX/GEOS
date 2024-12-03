@@ -70,7 +70,7 @@ public:
                                        bool const computeGradient ) override;
 
   /**
-   * @brief Method to get the minimum wavespeed on a mesh (usually the P-wavespeed)
+   * @brief Get the minimum wavespeed on a mesh 
    */
   virtual real32 getGlobalMinWavespeed( MeshLevel & mesh, arrayView1d< string const > const & regionNames ) override;
 
