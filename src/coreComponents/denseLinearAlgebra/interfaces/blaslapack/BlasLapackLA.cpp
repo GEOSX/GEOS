@@ -2,10 +2,11 @@
  * ------------------------------------------------------------------------------------------------------------
  * SPDX-License-Identifier: LGPL-2.1-only
  *
- * Copyright (c) 2018-2020 Lawrence Livermore National Security LLC
- * Copyright (c) 2018-2020 The Board of Trustees of the Leland Stanford Junior University
- * Copyright (c) 2018-2020 TotalEnergies
- * Copyright (c) 2019-     GEOSX Contributors
+ * Copyright (c) 2016-2024 Lawrence Livermore National Security LLC
+ * Copyright (c) 2018-2024 Total, S.A
+ * Copyright (c) 2018-2024 The Board of Trustees of the Leland Stanford Junior University
+ * Copyright (c) 2023-2024 Chevron
+ * Copyright (c) 2019-     GEOS/GEOSX Contributors
  * All rights reserved
  *
  * See top level LICENSE, COPYRIGHT, CONTRIBUTORS, NOTICE, and ACKNOWLEDGEMENTS files for details.
@@ -22,9 +23,11 @@
 // BLAS and LAPACK function declaration
 #include "denseLinearAlgebra/interfaces/blaslapack/BlasLapackFunctions.h"
 
+#include "common/logger/Logger.hpp"
+
 #include <random>
 
-// Put everything under the geosx namespace.
+// Put everything under the geos namespace.
 namespace geos
 {
 
@@ -347,6 +350,181 @@ void matrixInverse( arraySlice2d< real64 const, USD > const & A,
 {
   real64 detA;
   matrixInverse( A, Ainv, detA );
+}
+
+template< int USD >
+void matrixLeastSquaresSolutionSolve( arraySlice2d< real64, USD > const & A,
+                                      arraySlice1d< real64 > const & B,
+                                      arraySlice1d< real64 > const & X )
+{
+  GEOS_ASSERT_MSG( A.size( 1 ) == X.size() && A.size( 0 ) == B.size(),
+                   "Matrix, unknown vector and rhs vector not compatible" );
+
+  GEOS_ASSERT_MSG( X.size() <= B.size(),
+                   "Matrix, unknown vector and rhs vector not compatible" );
+
+  int const M = LvArray::integerConversion< int >( A.size( 0 ) );
+  int const N = LvArray::integerConversion< int >( A.size( 1 ) );
+  int const NRHS = 1;
+
+  int const LWORK = N + N;
+  array1d< double > WORK( LWORK );
+
+  int INFO = 0;
+
+  GEOS_dgels( "N", &M, &N, &NRHS, A.dataIfContiguous(), &M, B.dataIfContiguous(), &M, WORK.data(), &LWORK, &INFO );
+
+  for( int i = 0; i < N; ++i )
+  {
+    X[i] = B[i];
+  }
+
+  GEOS_ERROR_IF( INFO != 0, "The algorithm computing matrix linear system failed to converge." );
+}
+
+template< int USD1, int USD2 >
+GEOS_FORCE_INLINE
+void matrixCopy( int const N,
+                 int const M,
+                 arraySlice2d< real64, USD1 > const & A,
+                 arraySlice2d< real64, USD2 > const & B )
+{
+  for( int i = 0; i < N; i++ )
+  {
+    for( int j = 0; j < M; j++ )
+    {
+      B( i, j ) = A( i, j );
+    }
+  }
+}
+
+template< int USD >
+GEOS_FORCE_INLINE
+void matrixTranspose( int const N,
+                      arraySlice2d< real64, USD > const & A )
+{
+  for( int i = 0; i < N; i++ )
+  {
+    for( int j = i+1; j < N; j++ )
+    {
+      std::swap( A( i, j ), A( j, i ) );
+    }
+  }
+}
+
+template< typename T, int USD >
+void solveLinearSystem( arraySlice2d< T, USD > const & A,
+                        arraySlice2d< real64 const, USD > const & B,
+                        arraySlice2d< real64, USD > const & X )
+{
+  // --- Check that source matrix is square
+  int const N = LvArray::integerConversion< int >( A.size( 0 ) );
+  GEOS_ASSERT_MSG( N > 0 &&
+                   N == A.size( 1 ),
+                   "Matrix must be square" );
+
+  // --- Check that rhs B has appropriate dimensions
+  GEOS_ASSERT_MSG( B.size( 0 ) == N,
+                   "right-hand-side matrix has wrong dimensions" );
+  int const M = LvArray::integerConversion< int >( B.size( 1 ) );
+
+  // --- Check that solution X has appropriate dimensions
+  GEOS_ASSERT_MSG( X.size( 0 ) == N &&
+                   X.size( 1 ) == M,
+                   "solution matrix has wrong dimensions" );
+
+  // --- Check that everything is contiguous
+  GEOS_ASSERT_MSG( A.isContiguous(), "Matrix is not contiguous" );
+  GEOS_ASSERT_MSG( B.isContiguous(), "right-hand-side matrix is not contiguous" );
+  GEOS_ASSERT_MSG( X.isContiguous(), "solution matrix is not contiguous" );
+
+  real64 * matrixData = nullptr;
+  array2d< real64 > LU;   // Space for LU-factors
+  if constexpr ( !std::is_const< T >::value )
+  {
+    matrixData = A.dataIfContiguous();
+  }
+  else
+  {
+    LU.resize( N, N );
+    matrixData = LU.data();
+    // Direct copy here ignoring permutation
+    int const INCX = 1;
+    int const INCY = 1;
+    int const K = LvArray::integerConversion< int >( A.size( ) );
+    GEOS_dcopy( &K, A.dataIfContiguous(), &INCX, matrixData, &INCY );
+  }
+
+  array1d< int > IPIV( N );
+  int INFO;
+  char const TRANS = (USD == MatrixLayout::ROW_MAJOR) ? 'T' : 'N';
+
+  GEOS_dgetrf( &N, &N, matrixData, &N, IPIV.data(), &INFO );
+
+  GEOS_ASSERT_MSG( INFO == 0, "LAPACK dgetrf error code: " << INFO );
+
+  if constexpr ( std::is_const< T >::value )
+  {
+    int const INCX = 1;
+    int const INCY = 1;
+    int const K = LvArray::integerConversion< int >( B.size( ) );
+    GEOS_dcopy( &K, B.dataIfContiguous(), &INCX, X.dataIfContiguous(), &INCY );
+  }
+
+  // For row-major form, we need to reorder into col-major form
+  // This might require an extra allocation
+  real64 * solutionData = X.dataIfContiguous();
+  array2d< real64, MatrixLayout::COL_MAJOR_PERM > X0;
+  if constexpr ( USD == MatrixLayout::ROW_MAJOR )
+  {
+    if( 1 < M && M == N )
+    {
+      // Square case: swap in place
+      matrixTranspose( N, X );
+    }
+    else if( 1 < M )
+    {
+      X0.resize( N, M );
+      matrixCopy( N, M, X, X0.toSlice() );
+      solutionData = X0.data();
+    }
+  }
+
+  GEOS_dgetrs( &TRANS, &N, &M, matrixData, &N, IPIV.data(), solutionData, &N, &INFO );
+
+  GEOS_ASSERT_MSG( INFO == 0, "LAPACK dgetrs error code: " << INFO );
+
+  if constexpr ( USD == MatrixLayout::ROW_MAJOR )
+  {
+    if( 1 < M && M == N )
+    {
+      // Square case: swap in place
+      matrixTranspose( N, X );
+    }
+    else if( 1 < M )
+    {
+      matrixCopy( N, M, X0.toSlice(), X );
+    }
+  }
+}
+
+template< typename T, int USD >
+void solveLinearSystem( arraySlice2d< T, USD > const & A,
+                        arraySlice1d< real64 const > const & b,
+                        arraySlice1d< real64 > const & x )
+{
+  // --- Check that b and x have the same size
+  int const N = LvArray::integerConversion< int >( b.size( 0 ) );
+  GEOS_ASSERT_MSG( 0 < N && x.size() == N,
+                   "right-hand-side and/or solution has wrong dimensions" );
+
+  // Create 2d slices
+  int const dims[2] = {N, 1};
+  int const strides[2] = {1, 1};
+  arraySlice2d< real64 const, USD > B( b.dataIfContiguous(), dims, strides );
+  arraySlice2d< real64, USD > X( x.dataIfContiguous(), dims, strides );
+
+  solveLinearSystem( A, B, X );
 }
 
 } // namespace detail
@@ -855,51 +1033,65 @@ void BlasLapackLA::matrixEigenvalues( MatRowMajor< real64 const > const & A,
   matrixEigenvalues( AT.toSliceConst(), lambda );
 }
 
-void BlasLapackLA::solveLinearSystem( MatColMajor< real64 const > const & A,
-                                      arraySlice1d< real64 const > const & rhs,
-                                      arraySlice1d< real64 > const & solution )
+void BlasLapackLA::solveLinearSystem( MatRowMajor< real64 const > const & A,
+                                      Vec< real64 const > const & rhs,
+                                      Vec< real64 > const & solution )
 {
-  // --- Check that source matrix is square
-  int const NN = LvArray::integerConversion< int >( A.size( 0 ));
-  GEOS_ASSERT_MSG( NN > 0 &&
-                   NN == A.size( 1 ),
-                   "Matrix must be square" );
+  detail::solveLinearSystem( A, rhs, solution );
+}
 
-  // --- Check that rhs and solution have appropriate dimension
-  GEOS_ASSERT_MSG( rhs.size( 0 ) == NN,
-                   "right-hand-side vector has wrong dimensions" );
+void BlasLapackLA::solveLinearSystem( MatColMajor< real64 const > const & A,
+                                      Vec< real64 const > const & rhs,
+                                      Vec< real64 > const & solution )
+{
+  detail::solveLinearSystem( A, rhs, solution );
+}
 
-  GEOS_ASSERT_MSG( solution.size( 0 ) == NN,
-                   "solution vector has wrong dimensions" );
+void BlasLapackLA::solveLinearSystem( MatRowMajor< real64 > const & A,
+                                      Vec< real64 > const & rhs )
+{
+  detail::solveLinearSystem( A, rhs.toSliceConst(), rhs );
+}
 
-  array1d< int > IPIV;
-  IPIV.resize( NN );
-  int const NRHS = 1; // we only allow for 1 rhs vector.
-  int INFO;
-
-  // make a copy of A, since dgeev destroys contents
-  array2d< real64, MatrixLayout::COL_MAJOR_PERM > ACOPY( A.size( 0 ), A.size( 1 ) );
-  BlasLapackLA::matrixCopy( A, ACOPY );
-
-  // copy the rhs in the solution vector
-  BlasLapackLA::vectorCopy( rhs, solution );
-
-  GEOS_dgetrf( &NN, &NN, ACOPY.data(), &NN, IPIV.data(), &INFO );
-
-  GEOS_ASSERT_MSG( INFO == 0, "LAPACK dgetrf error code: " << INFO );
-
-  GEOS_dgetrs( "N", &NN, &NRHS, ACOPY.data(), &NN, IPIV.data(), solution.dataIfContiguous(), &NN, &INFO );
-
-  GEOS_ASSERT_MSG( INFO == 0, "LAPACK dgetrs error code: " << INFO );
+void BlasLapackLA::solveLinearSystem( MatColMajor< real64 > const & A,
+                                      Vec< real64 > const & rhs )
+{
+  detail::solveLinearSystem( A, rhs.toSliceConst(), rhs );
 }
 
 void BlasLapackLA::solveLinearSystem( MatRowMajor< real64 const > const & A,
-                                      arraySlice1d< real64 const > const & rhs,
-                                      arraySlice1d< real64 > const & solution )
+                                      MatRowMajor< real64 const > const & rhs,
+                                      MatRowMajor< real64 > const & solution )
+{
+  detail::solveLinearSystem( A, rhs, solution );
+}
+
+void BlasLapackLA::solveLinearSystem( MatColMajor< real64 const > const & A,
+                                      MatColMajor< real64 const > const & rhs,
+                                      MatColMajor< real64 > const & solution )
+{
+  detail::solveLinearSystem( A, rhs, solution );
+}
+
+void BlasLapackLA::solveLinearSystem( MatRowMajor< real64 > const & A,
+                                      MatRowMajor< real64 > const & rhs )
+{
+  detail::solveLinearSystem( A, rhs.toSliceConst(), rhs );
+}
+
+void BlasLapackLA::solveLinearSystem( MatColMajor< real64 > const & A,
+                                      MatColMajor< real64 > const & rhs )
+{
+  detail::solveLinearSystem( A, rhs.toSliceConst(), rhs );
+}
+
+void BlasLapackLA::matrixLeastSquaresSolutionSolve( arraySlice2d< real64 const, MatrixLayout::ROW_MAJOR > const & A,
+                                                    arraySlice1d< real64 const > const & B,
+                                                    arraySlice1d< real64 > const & X )
 {
   array2d< real64, MatrixLayout::COL_MAJOR_PERM > AT( A.size( 0 ), A.size( 1 ) );
 
-  // convert A to a column major format
+  // convert A to a row major format
   for( int i = 0; i < A.size( 0 ); ++i )
   {
     for( int j = 0; j < A.size( 1 ); ++j )
@@ -908,9 +1100,22 @@ void BlasLapackLA::solveLinearSystem( MatRowMajor< real64 const > const & A,
     }
   }
 
-  solveLinearSystem( AT.toSliceConst(), rhs, solution );
+  matrixLeastSquaresSolutionSolve( AT.toSliceConst(), B, X );
 }
 
+void BlasLapackLA::matrixLeastSquaresSolutionSolve( arraySlice2d< real64 const, MatrixLayout::COL_MAJOR > const & A,
+                                                    arraySlice1d< real64 const > const & B,
+                                                    arraySlice1d< real64 > const & X )
+{
+  // make a copy of A, since dgels modifies the components in A
+  array2d< real64, MatrixLayout::COL_MAJOR_PERM > ACOPY( A.size( 0 ), A.size( 1 ) );
+  BlasLapackLA::matrixCopy( A, ACOPY );
 
+  // make a copy of B, since dgels modifies the components in B
+  array1d< real64 > BCOPY( B.size() );
+  BlasLapackLA::vectorCopy( B, BCOPY );
 
-} // end geosx namespace
+  detail::matrixLeastSquaresSolutionSolve( ACOPY.toSlice(), BCOPY.toSlice(), X );
+}
+
+} // end geos namespace

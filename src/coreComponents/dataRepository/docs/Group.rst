@@ -119,3 +119,9 @@ Looping Interface
    :language: c++
    :start-after: //START_SPHINX_INCLUDE_LOOP_INTERFACE
    :end-before: //END_SPHINX_INCLUDE_LOOP_INTERFACE
+
+
+Doxygen API documentation
+-------------------------
+
+`Group API <../../../doxygen_output/html/classgeos_1_1data_repository_1_1_group.html>`_

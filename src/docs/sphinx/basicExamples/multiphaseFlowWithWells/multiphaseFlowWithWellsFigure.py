@@ -18,9 +18,9 @@ def main():
         # Read HDF5
         hf = h5py.File(hdf5FilePath, 'r')
         time = hf.get('Time')
-        time = np.array(time)
+        time = np.asarray(time)
         massRate = hf.get('wellElementMixtureConnectionRate')
-        massRate = np.array(massRate)
+        massRate = np.asarray(massRate)
 
         # Some comments about the computation of the volumetric rate here:
         # A proper oil rate constraint for individual wells is currently being implemented

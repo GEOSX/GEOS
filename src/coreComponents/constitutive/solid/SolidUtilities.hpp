@@ -2,10 +2,11 @@
  * ------------------------------------------------------------------------------------------------------------
  * SPDX-License-Identifier: LGPL-2.1-only
  *
- * Copyright (c) 2018-2020 Lawrence Livermore National Security LLC
- * Copyright (c) 2018-2020 The Board of Trustees of the Leland Stanford Junior University
- * Copyright (c) 2018-2020 TotalEnergies
- * Copyright (c) 2019-     GEOSX Contributors
+ * Copyright (c) 2016-2024 Lawrence Livermore National Security LLC
+ * Copyright (c) 2018-2024 Total, S.A
+ * Copyright (c) 2018-2024 The Board of Trustees of the Leland Stanford Junior University
+ * Copyright (c) 2023-2024 Chevron
+ * Copyright (c) 2019-     GEOS/GEOSX Contributors
  * All rights reserved
  *
  * See top level LICENSE, COPYRIGHT, CONTRIBUTORS, NOTICE, and ACKNOWLEDGEMENTS files for details.
@@ -204,6 +205,76 @@ struct SolidUtilities
     solid.saveStress( k, q, stress );
   }
 
+  /**
+   * @brief Hypo update 2 (large total strain but small incremental strain, large rotation).
+   *
+   * Taken from http://www.sci.utah.edu/publications/Kam2011a/Kamojjala_ECTC2011.pdf
+   *
+   * The base class rotates the beginning-of-step stress and rate-of-deformation back
+   * to the reference configuration using the beginning-of-step rotation (found via
+   * polar decomposition of the beginning-of-step deformation gradient). It then calls
+   * the small strain update to incrementally update the stress, followed by a rotation
+   * of stress back to the end-of-step configuration (found using polar decomposition
+   * of the end-of-step deformation gradient). This should be valid for most constitutive
+   * models being explicitly integrated since the time steps are small enough that any given
+   * step can be assumed to behave like a small-strain deformation with pre-stress.
+   *
+   * Note that if the derived class has tensorial state variables (beyond the
+   * stress itself) care must be taken to rotate these as well.
+   *
+   * This method should work as-is for anisotropic properties and yield functions.
+   *
+   * @param solid the solid kernel wrapper
+   * @param[in] k The element index.
+   * @param[in] q The quadrature point index.
+   * @param[in] timeIncrement The time increment
+   * @param[in] Ddt The incremental deformation tensor (rate of deformation tensor * dt) WITHOUT factors of 2 on the shear terms
+   * @param[in] RotBeginning Beginning-of-step rotation tensor (obtained via polar decomposition)
+   * @param[in] RotEnd End-of-step rotation tensor (obtained via polar decomposition)
+   * @param[out] stress New stress value (Cauchy stress)
+   * @param[out] stiffness New stiffness value
+   */
+  template< typename SOLID_TYPE >
+  GEOS_HOST_DEVICE
+  static void
+  hypoUpdate2( SOLID_TYPE const & solid,
+               localIndex const k,
+               localIndex const q,
+               real64 const timeIncrement,
+               real64 ( & Ddt )[6],
+               real64 const ( &RotBeginning )[3][3],
+               real64 const ( &RotEnd )[3][3],
+               real64 ( & stress )[6],
+               real64 ( & stiffness )[6][6] )
+  {
+    // Prepare strain increment for rotation
+    Ddt[3] *= 0.5;
+    Ddt[4] *= 0.5;
+    Ddt[5] *= 0.5;
+
+    // Rotate m_oldStress and Ddt from beginning-of-step configuration to reference configuration.
+    real64 temp[6] = { 0 };
+    real64 RotBeginningTranpose[3][3] = { {0} };
+    LvArray::tensorOps::transpose< 3, 3 >( RotBeginningTranpose, RotBeginning ); // We require the transpose since we're un-rotating
+    LvArray::tensorOps::copy< 6 >( temp, solid.m_oldStress[ k ][ q ] );
+    LvArray::tensorOps::Rij_eq_AikSymBklAjl< 3 >( solid.m_oldStress[ k ][ q ], RotBeginningTranpose, temp );
+    LvArray::tensorOps::copy< 6 >( temp, Ddt );
+    LvArray::tensorOps::Rij_eq_AikSymBklAjl< 3 >( Ddt, RotBeginningTranpose, temp );
+
+    // Convert strain increment to Voigt notation by re-introducing factors of 2 on shear terms
+    Ddt[3] *= 2;
+    Ddt[4] *= 2;
+    Ddt[5] *= 2;
+
+    // Stress increment
+    solid.smallStrainUpdate( k, q, timeIncrement, Ddt, stress, stiffness );
+
+    // Rotate final stress to end-of-step (current) configuration
+    LvArray::tensorOps::Rij_eq_AikSymBklAjl< 3 >( temp, RotEnd, solid.m_newStress[ k ][ q ] );
+    LvArray::tensorOps::copy< 6 >( stress, temp );
+    solid.saveStress( k, q, stress );
+  }
+
 /**
  * @brief Hypo update, returning only stress
  *
@@ -230,6 +301,59 @@ struct SolidUtilities
 
     real64 temp[6]{};
     LvArray::tensorOps::Rij_eq_AikSymBklAjl< 3 >( temp, Rot, stress );
+    LvArray::tensorOps::copy< 6 >( stress, temp );
+    solid.saveStress( k, q, stress );
+  }
+
+/**
+ * @brief Hypo update 2, returning only stress
+ *
+ * @param solid the solid kernel wrapper
+ * @param[in] k The element index.
+ * @param[in] q The quadrature point index.
+ * @param[in] timeIncrement The time increment
+ * @param[in] Ddt The incremental deformation tensor (rate of deformation tensor * dt) WITHOUT factors of 2 on the shear terms
+ * @param[in] RotBeginning Beginning-of-step rotation tensor (obtained via polar decomposition)
+ * @param[in] RotEnd End-of-step rotation tensor (obtained via polar decomposition)
+ * @param[out] stress New stress value (Cauchy stress)
+ * @param[out] stiffness New stiffness value
+ */
+  template< typename SOLID_TYPE >
+  GEOS_HOST_DEVICE
+  static void
+  hypoUpdate2_StressOnly( SOLID_TYPE const & solid,
+                          localIndex const k,
+                          localIndex const q,
+                          real64 const timeIncrement,
+                          real64 ( & Ddt )[6],
+                          real64 const ( &RotBeginning )[3][3],
+                          real64 const ( &RotEnd )[3][3],
+                          real64 ( & stress )[6] )
+  {
+    // Prepare strain increment for rotation
+    Ddt[3] *= 0.5;
+    Ddt[4] *= 0.5;
+    Ddt[5] *= 0.5;
+
+    // Rotate m_oldStress and Ddt from beginning-of-step configuration to reference configuration.
+    real64 temp[6] = { 0 };
+    real64 RotBeginningTranpose[3][3] = { {0} };
+    LvArray::tensorOps::transpose< 3, 3 >( RotBeginningTranpose, RotBeginning ); // We require the transpose since we're un-rotating
+    LvArray::tensorOps::copy< 6 >( temp, solid.m_oldStress[ k ][ q ] );
+    LvArray::tensorOps::Rij_eq_AikSymBklAjl< 3 >( solid.m_oldStress[ k ][ q ], RotBeginningTranpose, temp );
+    LvArray::tensorOps::copy< 6 >( temp, Ddt );
+    LvArray::tensorOps::Rij_eq_AikSymBklAjl< 3 >( Ddt, RotBeginningTranpose, temp );
+
+    // Convert strain increment to Voigt notation by re-introducing factors of 2 on shear terms
+    Ddt[3] *= 2;
+    Ddt[4] *= 2;
+    Ddt[5] *= 2;
+
+    // Stress increment
+    solid.smallStrainUpdate_StressOnly( k, q, timeIncrement, Ddt, stress );
+
+    // Rotate final stress to end-of-step (current) configuration
+    LvArray::tensorOps::Rij_eq_AikSymBklAjl< 3 >( temp, RotEnd, solid.m_newStress[ k ][ q ] );
     LvArray::tensorOps::copy< 6 >( stress, temp );
     solid.saveStress( k, q, stress );
   }

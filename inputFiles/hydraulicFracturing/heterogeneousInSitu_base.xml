@@ -11,23 +11,25 @@
       surfaceGeneratorName="SurfaceGen"
       logLevel="1"
       targetRegions="{ Fracture }"
-      contactRelationName="fractureContact"
       maxNumResolves="2">
       <NonlinearSolverParameters
-        newtonTol="1.0e-6"
+        newtonTol="1.0e-5"
         newtonMaxIter="40"
         lineSearchMaxCuts="3"/>
       <LinearSolverParameters
+        logLevel="1"
         solverType="gmres"
-        preconditionerType="amg"/>
+        preconditionerType="mgr"/>
     </Hydrofracture>
 
     <SolidMechanicsLagrangianSSLE
       name="lagsolve"
+      logLevel="1"
       timeIntegrationOption="QuasiStatic"
       discretization="FE1"
       targetRegions="{ Domain, Fracture }"
-      contactRelationName="fractureContact">
+      contactRelationName="fractureContact"
+      contactPenaltyStiffness="1e12">
       <NonlinearSolverParameters
         newtonTol="1.0e-6"/>
       <LinearSolverParameters
@@ -37,6 +39,7 @@
 
     <SinglePhaseFVM
       name="SinglePhaseFlow"
+      logLevel="1"
       discretization="singlePhaseTPFA"
       targetRegions="{ Fracture }">
       <NonlinearSolverParameters
@@ -113,13 +116,13 @@
   <ElementRegions>
     <CellElementRegion
       name="Domain"
-      cellBlocks="{ cb1 }"
+      cellBlocks="{ * }"
       materialList="{ water, rock }"/>
 
     <SurfaceElementRegion
       name="Fracture"
       defaultAperture="1.0e-4"
-      materialList="{ water, rock, fractureFilling, fractureContact }"/>
+      materialList="{ water, fractureFilling, fractureContact, hApertureModel }"/>
   </ElementRegions>
 
   <Constitutive>
@@ -154,9 +157,11 @@
       compressibility="0.0"/>
 
     <FrictionlessContact
-      name="fractureContact"
-      penaltyStiffness="0.0e8"
-      apertureTableName="apertureTable"/>
+      name="fractureContact"/>
+
+     <HydraulicApertureTable
+      name="hApertureModel"
+      apertureTableName="apertureTable"/>  
 
     <ParallelPlatesPermeability
       name="fracturePerm"/>

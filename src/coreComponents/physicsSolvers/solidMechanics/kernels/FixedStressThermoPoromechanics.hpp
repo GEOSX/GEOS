@@ -2,10 +2,11 @@
  * ------------------------------------------------------------------------------------------------------------
  * SPDX-License-Identifier: LGPL-2.1-only
  *
- * Copyright (c) 2018-2020 Lawrence Livermore National Security LLC
- * Copyright (c) 2018-2020 The Board of Trustees of the Leland Stanford Junior University
- * Copyright (c) 2018-2020 TotalEnergies
- * Copyright (c) 2019-     GEOSX Contributors
+ * Copyright (c) 2016-2024 Lawrence Livermore National Security LLC
+ * Copyright (c) 2018-2024 Total, S.A
+ * Copyright (c) 2018-2024 The Board of Trustees of the Leland Stanford Junior University
+ * Copyright (c) 2023-2024 Chevron
+ * Copyright (c) 2019-     GEOS/GEOSX Contributors
  * All rights reserved
  *
  * See top level LICENSE, COPYRIGHT, CONTRIBUTORS, NOTICE, and ACKNOWLEDGEMENTS files for details.
@@ -188,19 +189,19 @@ protected:
   /// The gravity vector.
   real64 const m_gravityVector[3];
 
-  /// The rank global bulk densities
+  /// The rank global bulk density
   arrayView2d< real64 const > const m_bulkDensity;
 
   /// The rank-global fluid pressure arrays.
-  arrayView1d< real64 const > const m_pressure_n;
   arrayView1d< real64 const > const m_pressure;
+  arrayView1d< real64 const > const m_pressure_n;
 
   /// The rank-global initial temperature array
   arrayView1d< real64 const > const m_initialTemperature;
 
   /// The rank-global temperature arrays.
-  arrayView1d< real64 const > const m_temperature_n;
   arrayView1d< real64 const > const m_temperature;
+  arrayView1d< real64 const > const m_temperature_n;
 
   /**
    * @brief Get a parameter representative of the stiffness, used as physical scaling for the

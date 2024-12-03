@@ -2,10 +2,11 @@
  * ------------------------------------------------------------------------------------------------------------
  * SPDX-License-Identifier: LGPL-2.1-only
  *
- * Copyright (c) 2018-2020 Lawrence Livermore National Security LLC
- * Copyright (c) 2018-2020 The Board of Trustees of the Leland Stanford Junior University
- * Copyright (c) 2018-2020 TotalEnergies
- * Copyright (c) 2019-     GEOSX Contributors
+ * Copyright (c) 2016-2024 Lawrence Livermore National Security LLC
+ * Copyright (c) 2018-2024 Total, S.A
+ * Copyright (c) 2018-2024 The Board of Trustees of the Leland Stanford Junior University
+ * Copyright (c) 2023-2024 Chevron
+ * Copyright (c) 2019-     GEOS/GEOSX Contributors
  * All rights reserved
  *
  * See top level LICENSE, COPYRIGHT, CONTRIBUTORS, NOTICE, and ACKNOWLEDGEMENTS files for details.
@@ -20,6 +21,7 @@
 
 #include "common/MpiWrapper.hpp"
 #include "mesh/WellElementSubRegion.hpp"
+#include "mesh/generators/InternalWellGenerator.hpp"
 
 namespace geos
 {
@@ -31,8 +33,11 @@ WellElementRegion::WellElementRegion( string const & name, Group * const parent 
   m_wellControlsName( "" ),
   m_wellGeneratorName( "" )
 {
-  registerWrapper( viewKeyStruct::wellControlsString(), &m_wellControlsName );
-  registerWrapper( viewKeyStruct::wellGeneratorString(), &m_wellGeneratorName );
+  registerWrapper( viewKeyStruct::wellControlsString(), &m_wellControlsName ).
+    setRTTypeName( rtTypes::CustomTypes::groupNameRef );
+
+  registerWrapper( viewKeyStruct::wellGeneratorString(), &m_wellGeneratorName ).
+    setRTTypeName( rtTypes::CustomTypes::groupNameRef );
 
   this->getGroup( viewKeyStruct::elementSubRegions() ).registerGroup< WellElementSubRegion >( m_subRegionName );
 
@@ -64,7 +69,8 @@ void WellElementRegion::generateWell( MeshLevel & mesh,
 
   globalIndex const matchedPerforations = MpiWrapper::sum( perforationData->size() );
   GEOS_THROW_IF( matchedPerforations != numPerforationsGlobal,
-                 "Invalid mapping perforation-to-element in well " << lineBlock.getName() << "." <<
+                 "Invalid mapping perforation-to-element in "<<
+                 InternalWellGenerator::catalogName() << " " << getWellGeneratorName() << "." <<
                  " This happens when GEOSX cannot match a perforation with a reservoir element." <<
                  " There are two common reasons for this error:\n" <<
                  " 1- The most common reason for this error is that a perforation is on a section of " <<

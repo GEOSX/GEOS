@@ -12,7 +12,7 @@ obviously reflect the OS and the compiler flavour used.
 For each image, the unique tag ``${PULL_REQUEST_NUMBER}-${BUILD_NUMBER}`` (defined as ``${{ github.event.number }}-${{ github.run_number }}`` in github actions) is used so we can connect the related code source in a rather convenient way.
 Each docker contains the ``org.opencontainers.image.created`` and ``org.opencontainers.image.revision`` labels to provide additional information.
 
-It is necessary to define the global environment ``GEOSX_TPL_TAG`` (`e.g.` something like ``235-52``) in the `.github/workflows/ci_tests.yml <https://github.com/GEOS-DEV/GEOS/blob/develop/.github/workflows/ci_tests.yml>`_ file, to build against one selected version of the TPL.
+It is necessary to set ``build.args.GEOS_TPL_TAG`` (`e.g.` something like ``235-52``) in the `.devcontainer/devcontainer.json <https://github.com/GEOS-DEV/GEOS/blob/develop/.devcontainer/devcontainer.json>`_ file, to build against one selected version of the TPL.
 
 It must be mentioned that one and only one version of the compiled TPL tarball is stored per pull request (older ones are removed automatically).
 Therefore, a client building against a work in progress PR may experience a 404 error sooner or later.
@@ -41,7 +41,7 @@ The
 
 .. code-block:: sh
 
-    GEOSX_TPL_DIR
+    GEOS_TPL_DIR
 
 variable contains the absolute path of the installation root directory of the third party libraries.
 GEOS must use it when building.

@@ -67,7 +67,7 @@ two will be internally calculated.  The "default" keyword in front of certain pr
 is the default value adopted for a region unless the user separately specifies a heterogeneous field via the
 ``FieldSpecification`` mechanism. 
 
-.. include:: /coreComponents/schema/docs/ElasticIsotropic.rst
+.. include:: /docs/sphinx/datastructure/ElasticIsotropic.rst
 
 Example
 =========================

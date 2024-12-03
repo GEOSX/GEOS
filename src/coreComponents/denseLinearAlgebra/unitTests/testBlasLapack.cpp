@@ -2,10 +2,11 @@
  * ------------------------------------------------------------------------------------------------------------
  * SPDX-License-Identifier: LGPL-2.1-only
  *
- * Copyright (c) 2018-2020 Lawrence Livermore National Security LLC
- * Copyright (c) 2018-2020 The Board of Trustees of the Leland Stanford Junior University
- * Copyright (c) 2018-2020 TotalEnergies
- * Copyright (c) 2019-     GEOSX Contributors
+ * Copyright (c) 2016-2024 Lawrence Livermore National Security LLC
+ * Copyright (c) 2018-2024 Total, S.A
+ * Copyright (c) 2018-2024 The Board of Trustees of the Leland Stanford Junior University
+ * Copyright (c) 2023-2024 Chevron
+ * Copyright (c) 2019-     GEOS/GEOSX Contributors
  * All rights reserved
  *
  * See top level LICENSE, COPYRIGHT, CONTRIBUTORS, NOTICE, and ACKNOWLEDGEMENTS files for details.
@@ -1139,6 +1140,47 @@ void matrix_svd_test()
   }
 }
 
+template< typename LAI >
+void matrix_linear_system_least_square_solve_test()
+{
+  INDEX_TYPE M = 3;
+  INDEX_TYPE N = 2;
+
+  array2d< real64 > A( M, N );
+  array1d< real64 > B( M );
+  array1d< real64 > X( N );
+
+  array1d< real64 > vecResult( N );
+
+  // Assign component values to A
+  A( 0, 0 ) = 0.0;
+  A( 0, 1 ) = 1.0;
+  A( 1, 0 ) = 1.0;
+  A( 1, 1 ) = 1.0;
+  A( 2, 0 ) = 2.0;
+  A( 2, 1 ) = 1.0;
+
+  // Assign component values to B
+  B( 0 ) = 6.0;
+  B( 1 ) = 0.0;
+  B( 2 ) = 0.0;
+
+  // Compute X
+  LAI::matrixLeastSquaresSolutionSolve( A, B, X );
+
+  // Assign component values to the reference solution
+  vecResult( 0 ) = -3.0;
+  vecResult( 1 ) = 5.0;
+
+  // Check
+  for( INDEX_TYPE i = 0; i < N; ++i )
+  {
+    EXPECT_NEAR( vecResult( i ),
+                 X( i ),
+                 machinePrecision );
+  }
+}
+
 TEST( Array1D, vectorNorm1 )
 {
   vector_norm1_test< BlasLapackLA >();
@@ -1263,6 +1305,12 @@ TEST( DenseLAInterface, matrixSVD )
 {
   matrix_svd_test< BlasLapackLA >();
 }
+
+TEST( Array2D, matrixLinearSystemSolve )
+{
+  matrix_linear_system_least_square_solve_test< BlasLapackLA >();
+}
+
 
 int main( int argc, char * * argv )
 {

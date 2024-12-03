@@ -2,10 +2,11 @@
  * ------------------------------------------------------------------------------------------------------------
  * SPDX-License-Identifier: LGPL-2.1-only
  *
- * Copyright (c) 2018-2020 Lawrence Livermore National Security LLC
- * Copyright (c) 2018-2020 The Board of Trustees of the Leland Stanford Junior University
- * Copyright (c) 2018-2020 TotalEnergies
- * Copyright (c) 2019-     GEOSX Contributors
+ * Copyright (c) 2016-2024 Lawrence Livermore National Security LLC
+ * Copyright (c) 2018-2024 Total, S.A
+ * Copyright (c) 2018-2024 The Board of Trustees of the Leland Stanford Junior University
+ * Copyright (c) 2023-2024 Chevron
+ * Copyright (c) 2019-     GEOS/GEOSX Contributors
  * All rights reserved
  *
  * See top level LICENSE, COPYRIGHT, CONTRIBUTORS, NOTICE, and ACKNOWLEDGEMENTS files for details.
@@ -167,6 +168,21 @@ public:
   }
 
   /**
+   * @brief Get whether meshbody has particles
+   * @return whether meshbody has particles
+   */
+  bool hasParticles() const
+  {
+    return m_hasParticles;
+  }
+
+  /**
+   * @brief Set whether meshbody has particles
+   * @param hasParticles Boolean indicating whether the meshbody has particles
+   */
+  void setHasParticles( bool hasParticles );
+
+  /**
    * @brief Get the Abstract representation of the CellBlockManager attached to the MeshBody.
    * @return The CellBlockManager.
    */
@@ -201,13 +217,17 @@ public:
     static constexpr char const * baseDiscretizationString() { return "Level0"; }
   } groupKeys; ///< groupKeys
 
+
 private:
+
   Group & m_meshLevels;
 
   /// Mesh length scale used to define an absolute length tolerance
   /// The default value can be set to another value
   real64 m_globalLengthScale { 0. };
 
+  /// flag for whether MeshBody has particles
+  bool m_hasParticles;
 
   static string intToMeshLevelString( localIndex const meshLevel );
 

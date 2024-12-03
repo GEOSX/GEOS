@@ -2,14 +2,8 @@ import numpy as np
 import os
 import sys
 
-# Check for the file containing hydraulic fracturing solutions
-pwd = os.path.abspath(os.getcwd())
-if not os.path.isfile(os.path.join(pwd, 'HydrofractureSolutions.py')):
-    check_path = os.path.abspath(os.path.join(pwd, '../../../../inputFiles/hydraulicFracturing/scripts/'))
-    if os.path.isfile(os.path.join(check_path, 'HydrofractureSolutions.py')):
-        sys.path.append(check_path)
-    else:
-        raise Exception('Could not find HydrofractureSolutions.py')
+search_root = os.path.dirname(os.path.abspath(__file__))
+sys.path.append(search_root)
 
 import HydrofractureSolutions
 

@@ -2,10 +2,11 @@
  * ------------------------------------------------------------------------------------------------------------
  * SPDX-License-Identifier: LGPL-2.1-only
  *
- * Copyright (c) 2018-2020 Lawrence Livermore National Security LLC
- * Copyright (c) 2018-2020 The Board of Trustees of the Leland Stanford Junior University
- * Copyright (c) 2018-2020 TotalEnergies
- * Copyright (c) 2019-     GEOSX Contributors
+ * Copyright (c) 2016-2024 Lawrence Livermore National Security LLC
+ * Copyright (c) 2018-2024 Total, S.A
+ * Copyright (c) 2018-2024 The Board of Trustees of the Leland Stanford Junior University
+ * Copyright (c) 2023-2024 Chevron
+ * Copyright (c) 2019-     GEOS/GEOSX Contributors
  * All rights reserved
  *
  * See top level LICENSE, COPYRIGHT, CONTRIBUTORS, NOTICE, and ACKNOWLEDGEMENTS files for details.
@@ -18,7 +19,7 @@
 
 #include "CompositionalMultiphaseHybridFVM.hpp"
 
-#include "common/TimingMacros.hpp"
+#include "mesh/DomainPartition.hpp"
 #include "constitutive/ConstitutivePassThru.hpp"
 #include "constitutive/fluid/multifluid/MultiFluidBase.hpp"
 #include "constitutive/relativePermeability/RelativePermeabilityBase.hpp"
@@ -27,14 +28,15 @@
 #include "finiteVolume/HybridMimeticDiscretization.hpp"
 #include "finiteVolume/MimeticInnerProductDispatch.hpp"
 #include "mesh/mpiCommunications/CommunicationTools.hpp"
-#include "physicsSolvers/fluidFlow/CompositionalMultiphaseBaseFields.hpp"
-#include "physicsSolvers/fluidFlow/CompositionalMultiphaseHybridFVMKernels.hpp"
 #include "physicsSolvers/fluidFlow/FlowSolverBaseFields.hpp"
-#include "physicsSolvers/fluidFlow/IsothermalCompositionalMultiphaseBaseKernels.hpp"
-#include "physicsSolvers/fluidFlow/SinglePhaseHybridFVMKernels.hpp"
+#include "physicsSolvers/fluidFlow/CompositionalMultiphaseBaseFields.hpp"
+#include "physicsSolvers/fluidFlow/kernels/compositional/CompositionalMultiphaseHybridFVMKernels.hpp"
+#include "physicsSolvers/fluidFlow/kernels/compositional/SolutionScalingKernel.hpp"
+#include "physicsSolvers/fluidFlow/kernels/compositional/SolutionCheckKernel.hpp"
+#include "physicsSolvers/fluidFlow/kernels/compositional/ResidualNormKernel.hpp"
 
 /**
- * @namespace the geosx namespace that encapsulates the majority of the code
+ * @namespace the geos namespace that encapsulates the majority of the code
  */
 namespace geos
 {
@@ -85,12 +87,12 @@ void CompositionalMultiphaseHybridFVM::initializePreSubGroups()
   FiniteVolumeManager const & fvManager = numericalMethodManager.getFiniteVolumeManager();
 
   GEOS_THROW_IF( !fvManager.hasGroup< HybridMimeticDiscretization >( m_discretizationName ),
-                 catalogName() << " " << getDataContext() <<
+                 getCatalogName() << " " << getDataContext() <<
                  ": the HybridMimeticDiscretization must be selected with CompositionalMultiphaseHybridFVM",
                  InputError );
 
   GEOS_THROW_IF( m_hasCapPressure,
-                 catalogName() << " " << getDataContext() <<
+                 getCatalogName() << " " << getDataContext() <<
                  ": capillary pressure is not yet supported by CompositionalMultiphaseHybridFVM",
                  InputError );
 }
@@ -110,7 +112,7 @@ void CompositionalMultiphaseHybridFVM::initializePostInitialConditionsPreSubGrou
       dynamicCast< QuasiTPFAInnerProduct const * >( &mimeticInnerProductBase )  ||
       dynamicCast< SimpleInnerProduct const * >( &mimeticInnerProductBase ) )
   {
-    GEOS_ERROR( catalogName() << " " << getDataContext() <<
+    GEOS_ERROR( getCatalogName() << " " << getDataContext() <<
                 "The QuasiRT, QuasiTPFA, and Simple inner products are only available in SinglePhaseHybridFVM" );
   }
 
@@ -143,14 +145,14 @@ void CompositionalMultiphaseHybridFVM::initializePostInitialConditionsPreSubGrou
     } );
 
     GEOS_THROW_IF( minVal.get() <= 0.0,
-                   catalogName() << " " << getDataContext() <<
+                   getCatalogName() << " " << getDataContext() <<
                    ": the transmissibility multipliers used in SinglePhaseHybridFVM must strictly larger than 0.0",
                    std::runtime_error );
 
     FieldSpecificationManager & fsManager = FieldSpecificationManager::getInstance();
     fsManager.forSubGroups< AquiferBoundaryCondition >( [&] ( AquiferBoundaryCondition const & bc )
     {
-      GEOS_LOG_RANK_0( catalogName() << " " << getDataContext() << ": An aquifer boundary condition named " <<
+      GEOS_LOG_RANK_0( getCatalogName() << " " << getDataContext() << ": An aquifer boundary condition named " <<
                        bc.getName() << " was requested in the XML file. \n" <<
                        "This type of boundary condition is not yet supported by CompositionalMultiphaseHybridFVM and will be ignored" );
     } );
@@ -407,6 +409,7 @@ void CompositionalMultiphaseHybridFVM::assembleFluxTerms( real64 const dt,
                                          dofManager.rankOffset(),
                                          lengthTolerance,
                                          dt,
+                                         m_useTotalMassEquation,
                                          localMatrix,
                                          localRhs );
 
@@ -423,7 +426,8 @@ void CompositionalMultiphaseHybridFVM::assembleStabilizedFluxTerms( real64 const
                                                                     arrayView1d< real64 > const & localRhs ) const
 {
   // stab not implemented
-  assembleFluxTerms( dt, domain, dofManager, localMatrix, localRhs );
+  GEOS_UNUSED_VAR( dt, domain, dofManager, localMatrix, localRhs );
+  GEOS_ERROR( "Stabilized flux not available for this flow solver" );
 }
 
 real64 CompositionalMultiphaseHybridFVM::scalingForSystemSolution( DomainPartition & domain,
@@ -431,16 +435,6 @@ real64 CompositionalMultiphaseHybridFVM::scalingForSystemSolution( DomainPartiti
                                                                    arrayView1d< real64 const > const & localSolution )
 {
   GEOS_MARK_FUNCTION;
-
-  bool const skipCompFracDamping = m_maxCompFracChange >= 1.0;
-  bool const skipPresDamping = m_maxRelativePresChange >= 1.0;
-
-  // check if we want to rescale the Newton update
-  if( skipCompFracDamping && skipPresDamping )
-  {
-    // no rescaling wanted, we just return 1.0;
-    return 1.0;
-  }
 
   string const dofKey = dofManager.getKey( viewKeyStruct::elemDofFieldString() );
 
@@ -453,11 +447,21 @@ real64 CompositionalMultiphaseHybridFVM::scalingForSystemSolution( DomainPartiti
     mesh.getElemManager().forElementSubRegions< ElementSubRegionBase >( regionNames, [&]( localIndex const,
                                                                                           ElementSubRegionBase & subRegion )
     {
+      arrayView1d< real64 const > const pressure = subRegion.getField< fields::flow::pressure >();
+      arrayView2d< real64 const, compflow::USD_COMP > const compDens = subRegion.getField< fields::flow::globalCompDensity >();
+      arrayView1d< real64 > pressureScalingFactor = subRegion.getField< fields::flow::pressureScalingFactor >();
+      arrayView1d< real64 > compDensScalingFactor = subRegion.getField< fields::flow::globalCompDensityScalingFactor >();
       auto const subRegionData =
         isothermalCompositionalMultiphaseBaseKernels::
-          ScalingForSystemSolutionKernelFactory::
+          SolutionScalingKernelFactory::
           createAndLaunch< parallelDevicePolicy<> >( m_maxRelativePresChange,
+                                                     m_maxAbsolutePresChange,
                                                      m_maxCompFracChange,
+                                                     m_maxRelativeCompDensChange,
+                                                     pressure,
+                                                     compDens,
+                                                     pressureScalingFactor,
+                                                     compDensScalingFactor,
                                                      dofManager.rankOffset(),
                                                      m_numComponents,
                                                      dofKey,
@@ -524,20 +528,32 @@ bool CompositionalMultiphaseHybridFVM::checkSystemSolution( DomainPartition & do
     mesh.getElemManager().forElementSubRegions< ElementSubRegionBase >( regionNames, [&]( localIndex const,
                                                                                           ElementSubRegionBase & subRegion )
     {
+      arrayView1d< real64 const > const pressure =
+        subRegion.getField< fields::flow::pressure >();
+      arrayView2d< real64 const, compflow::USD_COMP > const compDens =
+        subRegion.getField< fields::flow::globalCompDensity >();
+      arrayView1d< real64 > pressureScalingFactor = subRegion.getField< fields::flow::pressureScalingFactor >();
+      arrayView1d< real64 > temperatureScalingFactor = subRegion.getField< fields::flow::temperatureScalingFactor >();
+      arrayView1d< real64 > compDensScalingFactor = subRegion.getField< fields::flow::globalCompDensityScalingFactor >();
       // check that pressure and component densities are non-negative
-      integer const subRegionSolutionCheck =
+      auto const subRegionData =
         isothermalCompositionalMultiphaseBaseKernels::
           SolutionCheckKernelFactory::
           createAndLaunch< parallelDevicePolicy<> >( m_allowCompDensChopping,
+                                                     m_allowNegativePressure,
                                                      CompositionalMultiphaseFVM::ScalingType::Global,
                                                      scalingFactor,
+                                                     pressure,
+                                                     compDens,
+                                                     pressureScalingFactor,
+                                                     compDensScalingFactor,
                                                      dofManager.rankOffset(),
                                                      m_numComponents,
                                                      elemDofKey,
                                                      subRegion,
                                                      localSolution );
 
-      localCheck = std::min( localCheck, subRegionSolutionCheck );
+      localCheck = std::min( localCheck, subRegionData.localMinVal );
     } );
   } );
 
@@ -592,7 +608,7 @@ real64 CompositionalMultiphaseHybridFVM::calculateResidualNorm( real64 const & G
   real64 localResidualNorm = 0.0;
   real64 localResidualNormalizer = 0.0;
 
-  solverBaseKernels::NormType const normType = getNonlinearSolverParameters().normType();
+  physicsSolverBaseKernels::NormType const normType = getNonlinearSolverParameters().normType();
 
   // local residual
   globalIndex const rankOffset = dofManager.rankOffset();
@@ -615,8 +631,8 @@ real64 CompositionalMultiphaseHybridFVM::calculateResidualNorm( real64 const & G
                                                               [&]( localIndex const,
                                                                    ElementSubRegionBase const & subRegion )
     {
-      real64 subRegionResidualNorm[1]{};
-      real64 subRegionResidualNormalizer[1]{};
+      real64 subRegionResidualNorm[2]{};
+      real64 subRegionResidualNormalizer[2]{};
 
       string const & fluidName = subRegion.getReference< string >( viewKeyStruct::fluidNamesString() );
       MultiFluidBase const & fluid = getConstitutiveModel< MultiFluidBase >( subRegion, fluidName );
@@ -636,13 +652,16 @@ real64 CompositionalMultiphaseHybridFVM::calculateResidualNorm( real64 const & G
                                                    subRegion,
                                                    fluid,
                                                    solid,
+                                                   m_nonlinearSolverParameters.m_minNormalizer,
                                                    subRegionResidualNorm,
                                                    subRegionResidualNormalizer );
 
       // step 1.2: reduction across meshBodies/regions/subRegions
 
-      if( normType == solverBaseKernels::NormType::Linf )
+      if( normType == physicsSolverBaseKernels::NormType::Linf )
       {
+        // take max between mass and volume residual
+        subRegionResidualNorm[0] = LvArray::math::max( subRegionResidualNorm[0], subRegionResidualNorm[1] );
         if( subRegionResidualNorm[0] > localResidualNorm )
         {
           localResidualNorm = subRegionResidualNorm[0];
@@ -650,6 +669,8 @@ real64 CompositionalMultiphaseHybridFVM::calculateResidualNorm( real64 const & G
       }
       else
       {
+        // sum up mass and volume residual
+        subRegionResidualNorm[0] = subRegionResidualNorm[0] + subRegionResidualNorm[1];
         localResidualNorm += subRegionResidualNorm[0];
         localResidualNormalizer += subRegionResidualNormalizer[0];
       }
@@ -673,12 +694,13 @@ real64 CompositionalMultiphaseHybridFVM::calculateResidualNorm( real64 const & G
                                                  elemManager,
                                                  faceManager,
                                                  dt,
+                                                 m_nonlinearSolverParameters.m_minNormalizer,
                                                  faceResidualNorm,
                                                  faceResidualNormalizer );
 
     // step 2.2: reduction across meshBodies/regions/subRegions
 
-    if( normType == solverBaseKernels::NormType::Linf )
+    if( normType == physicsSolverBaseKernels::NormType::Linf )
     {
       if( faceResidualNorm[0] > localResidualNorm )
       {
@@ -695,13 +717,13 @@ real64 CompositionalMultiphaseHybridFVM::calculateResidualNorm( real64 const & G
   // step 3: second reduction across MPI ranks
 
   real64 residualNorm = 0.0;
-  if( normType == solverBaseKernels::NormType::Linf )
+  if( normType == physicsSolverBaseKernels::NormType::Linf )
   {
-    solverBaseKernels::LinfResidualNormHelper::computeGlobalNorm( localResidualNorm, residualNorm );
+    physicsSolverBaseKernels::LinfResidualNormHelper::computeGlobalNorm( localResidualNorm, residualNorm );
   }
   else
   {
-    solverBaseKernels::L2ResidualNormHelper::computeGlobalNorm( localResidualNorm, localResidualNormalizer, residualNorm );
+    physicsSolverBaseKernels::L2ResidualNormHelper::computeGlobalNorm( localResidualNorm, localResidualNormalizer, residualNorm );
   }
 
   if( getLogLevel() >= 1 && logger::internal::rank == 0 )
@@ -814,5 +836,5 @@ void CompositionalMultiphaseHybridFVM::updatePhaseMobility( ObjectManagerBase & 
                                                relperm );
 }
 
-REGISTER_CATALOG_ENTRY( SolverBase, CompositionalMultiphaseHybridFVM, std::string const &, Group * const )
+REGISTER_CATALOG_ENTRY( PhysicsSolverBase, CompositionalMultiphaseHybridFVM, std::string const &, Group * const )
 } /* namespace geos */

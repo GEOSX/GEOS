@@ -7,7 +7,8 @@ from mpmath import *
 import math
 from math import sin, cos, tan, exp, atan, asin
 from scipy.optimize import newton
-
+import os
+import argparse
 
 class Mandel:
 
@@ -90,7 +91,7 @@ def getHydromechanicalParametersFromXML(xmlFilePath):
     G = hydromechanicalParameters["shearModulus"]
     E = (9.0 * K * G) / (3.0 * K + G)
     nu = E / (2.0 * G) - 1.0
-    Ks = float(param2.get("grainBulkModulus"))
+    Ks = float(param2.get("defaultGrainBulkModulus"))
 
     hydromechanicalParameters["biotCoefficient"] = 1.0 - K / Ks
     hydromechanicalParameters["porosity"] = float(param2.get("defaultReferencePorosity"))
@@ -140,11 +141,25 @@ def getGeometryFromXML(xmlFilePath):
 
 
 def main():
+
+   # Initialize the argument parser
+    parser = argparse.ArgumentParser(description="Script to generate figure from tutorial.")
+
+    # Add arguments to accept individual file paths
+    parser.add_argument('--geosDir', help='Path to the GEOS repository ', default='../../../../../../..')
+    parser.add_argument('--outputDir', help='Path to output directory', default='.')
+
+    # Parse the command-line arguments
+    args = parser.parse_args()
+
+
     # File path
-    hdf5File1Path = "pressure_history.hdf5"
-    hdf5File2Path = "displacement_history.hdf5"
-    xmlFile1Path = "../../../../../../../inputFiles/poromechanics/PoroElastic_Mandel_base.xml"
-    xmlFile2Path = "../../../../../../../inputFiles/poromechanics/PoroElastic_Mandel_benchmark_fim.xml"
+    outputDir = args.outputDir
+    geosDir = args.geosDir
+    hdf5File1Path = outputDir + "/pressure_history.hdf5"
+    hdf5File2Path = outputDir + "/displacement_history.hdf5"
+    xmlFile1Path = geosDir + "/inputFiles/poromechanics/PoroElastic_Mandel_base.xml"
+    xmlFile2Path = geosDir + "/inputFiles/poromechanics/PoroElastic_Mandel_benchmark_fim.xml"
 
     # Read HDF5
     # Global Coordinate of Element Center

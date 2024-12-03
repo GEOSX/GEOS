@@ -2,10 +2,11 @@
  * ------------------------------------------------------------------------------------------------------------
  * SPDX-License-Identifier: LGPL-2.1-only
  *
- * Copyright (c) 2018-2020 Lawrence Livermore National Security LLC
- * Copyright (c) 2018-2020 The Board of Trustees of the Leland Stanford Junior University
- * Copyright (c) 2018-2020 TotalEnergies
- * Copyright (c) 2019-     GEOSX Contributors
+ * Copyright (c) 2016-2024 Lawrence Livermore National Security LLC
+ * Copyright (c) 2018-2024 Total, S.A
+ * Copyright (c) 2018-2024 The Board of Trustees of the Leland Stanford Junior University
+ * Copyright (c) 2023-2024 Chevron
+ * Copyright (c) 2019-     GEOS/GEOSX Contributors
  * All rights reserved
  *
  * See top level LICENSE, COPYRIGHT, CONTRIBUTORS, NOTICE, and ACKNOWLEDGEMENTS files for details.
@@ -20,9 +21,9 @@
 #define GEOS_DATAREPOSITORY_DATACONTEXT_HPP_
 
 #include "common/DataTypes.hpp"
-#include "common/Logger.hpp"
+#include "common/logger/Logger.hpp"
 #include "xmlWrapper.hpp"
-#include "common/Format.hpp"
+#include "common/format/Format.hpp"
 
 namespace geos
 {
@@ -217,32 +218,10 @@ struct GEOS_FMT_NS::formatter< geos::dataRepository::DataContext > : GEOS_FMT_NS
    * @param ctx formatting state consisting of the formatting arguments and the output iterator
    * @return iterator to the output buffer
    */
-  auto format( geos::dataRepository::DataContext const & dataContext, format_context & ctx )
+  auto format( geos::dataRepository::DataContext const & dataContext, format_context & ctx ) const
   {
     return GEOS_FMT_NS::formatter< std::string >::format( dataContext.toString(), ctx );
   }
 };
-
-// The following workaround is needed to fix compilation with NVCC on some PowerPC machines.
-// The issue causes the following assertion error message:
-// "Cannot format an argument. To make type T formattable provide a formatter<T> specialization"
-// The standard definition of the has_const_formatter check of fmt fails due to a compiler bug, see the issue below:
-// https://github.com/fmtlib/fmt/issues/2746
-// The workaround was originally implemented in fmt:
-// https://github.com/fmtlib/fmt/commit/70de324aa801eaf52e94c402d526a3849797c620
-// but later removed:
-// https://github.com/fmtlib/fmt/commit/466e0650ec2d153d255a40ec230eb77d7f1c3334
-// This workaround provides a specialization of the const formatter check for the DataContext object.
-// The formatter is defined within this file, and therefore the check is not needed.
-// The scope of the check override is as small as possible to solve the current issue.
-#ifdef GEOS_USE_FMT_CONST_FORMATTER_WORKAROUND
-template<>
-constexpr auto GEOS_FMT_NS::detail::has_const_formatter< geos::dataRepository::DataContext, GEOS_FMT_NS::format_context >() -> bool
-{
-  return true;
-}
-#endif
-// End of the workaround for fmt compilation issues
-
 
 #endif /* GEOS_DATAREPOSITORY_DATACONTEXT_HPP_ */

@@ -1,0 +1,228 @@
+<?xml version="1.0"?>
+
+<Problem>
+  <Solvers
+    gravityVector="{ 0.0, 0.0, -9.81 }">
+    <!-- SPHINX_POROMECHANICSSOLVER -->
+    <SinglePhasePoromechanics
+      name="poroSolve"
+      solidSolverName="lagsolve"
+      flowSolverName="SinglePhaseFlow"
+      logLevel="1"
+      targetRegions="{ Domain }">
+      <NonlinearSolverParameters
+        newtonMaxIter="2"
+        newtonTol="1.0e-2"
+        maxTimeStepCuts="1"
+        lineSearchMaxCuts="0" />
+      <LinearSolverParameters
+        directParallel="0" />
+    </SinglePhasePoromechanics>
+    <!-- SPHINX_POROMECHANICSSOLVER_END -->
+
+    <!-- SPHINX_MECHANICALSOLVER -->
+    <SolidMechanicsLagrangianSSLE
+      name="lagsolve"
+      timeIntegrationOption="QuasiStatic"
+      logLevel="1"
+      discretization="FE1"
+      targetRegions="{ Domain }" />
+    <!-- SPHINX_MECHANICALSOLVER_END -->
+
+    <!-- SPHINX_SINGLEPHASEFVM -->
+    <SinglePhaseFVM
+      name="SinglePhaseFlow"
+      logLevel="1"
+      discretization="fluidTPFA"
+      targetRegions="{ Domain }" />
+    <!-- SPHINX_SINGLEPHASEFVM_END -->
+  </Solvers>
+
+  <!-- SPHINX_NUMERICAL -->
+  <NumericalMethods>
+    <FiniteElements>
+      <FiniteElementSpace
+        name="FE1"
+        order="1" />
+    </FiniteElements>
+
+    <FiniteVolume>
+      <TwoPointFluxApproximation
+        name="fluidTPFA" />
+    </FiniteVolume>
+  </NumericalMethods>
+  <!-- SPHINX_NUMERICAL_END -->
+
+  <!-- SPHINX_ELEMENTREGIONS -->
+  <ElementRegions>
+    <CellElementRegion
+      name="Domain"
+      cellBlocks="{ cb1 }"
+      materialList="{ water, rock }" />
+  </ElementRegions>
+  <!-- SPHINX_ELEMENTREGIONS_END -->
+
+  <!-- SPHINX_MATERIAL -->
+  <Constitutive>
+    <PorousElasticIsotropic
+      name="rock"
+      solidModelName="rockSolid"
+      porosityModelName="rockPorosity"
+      permeabilityModelName="rockPerm" />
+
+    <!-- SPHINX_Modify_Density -->
+    <ElasticIsotropic
+      name="rockSolid"
+      defaultDensity="3302.752294"
+      defaultPoissonRatio="0.25"
+      defaultYoungModulus="100.0e6" />
+    <!-- SPHINX_Modify_Density_END -->
+
+    <BiotPorosity
+      name="rockPorosity"
+      defaultGrainBulkModulus="1.0e27"
+      defaultReferencePorosity="0.375" />
+
+    <ConstantPermeability
+      name="rockPerm"
+      permeabilityComponents="{ 1.0e-12, 1.0e-12, 1.0e-12 }" />
+
+    <!-- SPHINX_Modify_FluidDensity -->    
+    <CompressibleSinglePhaseFluid
+      name="water"
+      defaultDensity="1019.36799"
+      defaultViscosity="0.001"
+      referencePressure="0.000"
+      referenceDensity="1000"
+      compressibility="4.4e-10"
+      referenceViscosity="0.001"
+      viscosibility="0.0" />
+    <!-- SPHINX_Modify_FluidDensity_END -->
+
+  </Constitutive>
+  <!-- SPHINX_MATERIAL_END -->
+
+
+  <!-- SPHINX_BC -->
+  <FieldSpecifications>
+    <FieldSpecification
+      name="xconstraint"
+      objectPath="nodeManager"
+      fieldName="totalDisplacement"
+      component="0"
+      scale="0.0"
+      setNames="{ xneg, xpos }" />
+
+    <FieldSpecification
+      name="yconstraint"
+      objectPath="nodeManager"
+      fieldName="totalDisplacement"
+      component="1"
+      scale="0.0"
+      setNames="{ yneg, ypos }" />
+
+    <FieldSpecification
+      name="zconstraint"
+      objectPath="nodeManager"
+      fieldName="totalDisplacement"
+      component="2"
+      scale="0.0"
+      setNames="{ zneg }" />
+
+    <!-- SPHINX_USER_TABLES -->
+    <FieldSpecification 
+      component="0" 
+      fieldName="rockSolid_stress" 
+      functionName="sigma_xx"
+      initialCondition="1" 
+      name="init_sigma_xx" 
+      objectPath="ElementRegions/Domain" 
+      scale="1.0"
+      setNames="{ all }" />
+
+    <FieldSpecification
+      component="1" 
+      fieldName="rockSolid_stress" 
+      functionName="sigma_yy"
+      initialCondition="1" 
+      name="init_sigma_yy" 
+      objectPath="ElementRegions/Domain" 
+      scale="1.0"
+      setNames="{ all }" />
+
+    <FieldSpecification 
+      component="2" 
+      fieldName="rockSolid_stress" 
+      functionName="sigma_zz"
+      initialCondition="1" 
+      name="init_sigma_zz" 
+      objectPath="ElementRegions/Domain" 
+      scale="1.0"
+      setNames="{ all }" />
+
+    <FieldSpecification 
+      fieldName="pressure" 
+      functionName="init_pressure" 
+      initialCondition="1"
+      name="init_pressure" 
+      objectPath="ElementRegions/Domain" 
+      scale="1.0" 
+      setNames="{ all }" />
+    <!-- SPHINX_USER_TABLES_END -->
+
+  </FieldSpecifications>
+  <!-- SPHINX_BC_END -->
+  
+  <!-- SPHINX_FUNCTIONS -->
+  <Functions>
+
+    <TableFunction 
+      coordinateFiles="{userTables/x.csv, userTables/y.csv, userTables/z.csv}"
+      inputVarNames="{elementCenter}" 
+      interpolation="linear" 
+      name="sigma_xx"
+      voxelFile="userTables/effectiveSigma_xx.csv" />
+
+    <TableFunction 
+      coordinateFiles="{userTables/x.csv, userTables/y.csv,userTables/z.csv}"
+      inputVarNames="{elementCenter}" 
+      interpolation="linear" 
+      name="sigma_yy"
+      voxelFile="userTables/effectiveSigma_yy.csv" />
+
+    <TableFunction 
+      coordinateFiles="{userTables/x.csv, userTables/y.csv, userTables/z.csv}"
+      inputVarNames="{elementCenter}" 
+      interpolation="linear" 
+      name="sigma_zz"
+      voxelFile="userTables/effectiveSigma_zz.csv" />
+
+    <TableFunction 
+      coordinateFiles="{userTables/x.csv, userTables/y.csv, userTables/z.csv}"
+      inputVarNames="{elementCenter}" 
+      interpolation="linear" 
+      name="init_pressure"
+      voxelFile="userTables/porePressure.csv" />
+  </Functions>
+  <!-- SPHINX_FUNCTIONS_END -->
+
+
+  <!-- SPHINX_TASKS -->
+  <Tasks>
+    <SinglePhasePoromechanicsInitialization 
+      logLevel="1"
+      name="singlephasePoromechanicsPreEquilibrationStep"
+      poromechanicsSolverName="poroSolve" />
+  </Tasks>
+  <!-- SPHINX_TASKS_END -->
+
+  <!-- SPHINX_OUTPUT -->
+  <Outputs>
+    <VTK
+      name="vtkOutput" />
+
+    <Restart
+      name="restartOutput"/>
+  </Outputs>
+  <!-- SPHINX_OUTPUT_END -->
+</Problem>

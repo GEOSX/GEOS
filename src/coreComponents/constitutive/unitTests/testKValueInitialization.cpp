@@ -2,10 +2,11 @@
  * ------------------------------------------------------------------------------------------------------------
  * SPDX-License-Identifier: LGPL-2.1-only
  *
- * Copyright (c) 2018-2020 Lawrence Livermore National Security LLC
- * Copyright (c) 2018-2020 The Board of Trustees of the Leland Stanford Junior University
- * Copyright (c) 2018-2020 TotalEnergies
- * Copyright (c) 2019-     GEOSX Contributors
+ * Copyright (c) 2016-2024 Lawrence Livermore National Security LLC
+ * Copyright (c) 2018-2024 Total, S.A
+ * Copyright (c) 2018-2024 The Board of Trustees of the Leland Stanford Junior University
+ * Copyright (c) 2023-2024 Chevron
+ * Copyright (c) 2019-     GEOS/GEOSX Contributors
  * All rights reserved
  *
  * See top level LICENSE, COPYRIGHT, CONTRIBUTORS, NOTICE, and ACKNOWLEDGEMENTS files for details.
@@ -19,6 +20,8 @@
 
 // TPL includes
 #include <gtest/gtest.h>
+
+using namespace geos::constitutive::compositional;
 
 namespace geos
 {
@@ -49,21 +52,18 @@ public:
 
   void testKValues()
   {
-    real64 const pressure = std::get< 0 >( GetParam());
-    real64 const temperature = std::get< 1 >( GetParam());
-    integer const compIndex = std::get< 2 >( GetParam());
-    real64 const expectedKValue = std::get< 3 >( GetParam());
+    real64 const pressure = std::get< 0 >( GetParam() );
+    real64 const temperature = std::get< 1 >( GetParam() );
+    integer const compIndex = std::get< 2 >( GetParam() );
+    real64 const expectedKValue = std::get< 3 >( GetParam() );
 
-    array1d< real64 > kValues( numComps );
+    stackArray1d< real64, NC > kValues( numComps );
 
-    constitutive::KValueInitialization::
-      computeWilsonGasLiquidKvalue( numComps,
-                                    pressure,
-                                    temperature,
-                                    criticalPressure,
-                                    criticalTemperature,
-                                    acentricFactor,
-                                    kValues );
+    KValueInitialization::computeWilsonGasLiquidKvalue( numComps,
+                                                        pressure,
+                                                        temperature,
+                                                        createKernelWrapper(),
+                                                        kValues.toSlice() );
 
     ASSERT_EQ( kValues.size(), NC );
     checkRelativeError( expectedKValue, kValues[compIndex], relTol );
@@ -78,11 +78,24 @@ private:
     }
   }
 
+  ComponentProperties::KernelWrapper createKernelWrapper() const
+  {
+    return ComponentProperties::KernelWrapper(
+      discarded,
+      criticalPressure,
+      criticalTemperature,
+      acentricFactor,
+      discarded,
+      discarded2d );
+  }
+
 protected:
   const integer numComps;
   array1d< real64 > criticalPressure;
   array1d< real64 > criticalTemperature;
   array1d< real64 > acentricFactor;
+  array1d< real64 > discarded;
+  array2d< real64 > discarded2d;
 };
 
 class WilsonKValues2CompFixture : public WilsonKValueInitializationTestFixture< 2 >
@@ -182,11 +195,11 @@ public:
 
   void testKValues()
   {
-    real64 const pressure = std::get< 0 >( GetParam());
-    real64 const temperature = std::get< 1 >( GetParam());
-    real64 const expectedKValue = std::get< 2 >( GetParam());
+    real64 const pressure = std::get< 0 >( GetParam() );
+    real64 const temperature = std::get< 1 >( GetParam() );
+    real64 const expectedKValue = std::get< 2 >( GetParam() );
 
-    real64 calculatedKValue = constitutive::KValueInitialization::computeWaterGasKvalue( pressure, temperature );
+    real64 calculatedKValue = KValueInitialization::computeWaterGasKvalue( pressure, temperature );
     checkRelativeError( expectedKValue, calculatedKValue, relTol );
   }
 };

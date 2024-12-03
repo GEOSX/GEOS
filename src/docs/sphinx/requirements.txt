@@ -5,14 +5,9 @@ h5py
 mpmath
 docutils>=0.18
 pandas
-# using plantuml for diagrams
 Sphinx>=7.0.0
-# pydata-sphinx-theme
 sphinx_rtd_theme
 sphinxcontrib-plantuml
 sphinx-argparse
 sphinx-design
-# Running CLI programs and capture outputs
 sphinxcontrib-programoutput>=0.17
-# Installing the mesh_doctor requirements to be able to load all the modules and run the help.
--r ../../coreComponents/python/modules/geosx_mesh_doctor/requirements.txt

@@ -2,10 +2,11 @@
  * ------------------------------------------------------------------------------------------------------------
  * SPDX-License-Identifier: LGPL-2.1-only
  *
- * Copyright (c) 2018-2020 Lawrence Livermore National Security LLC
- * Copyright (c) 2018-2020 The Board of Trustees of the Leland Stanford Junior University
- * Copyright (c) 2018-2020 TotalEnergies
- * Copyright (c) 2019-     GEOSX Contributors
+ * Copyright (c) 2016-2024 Lawrence Livermore National Security LLC
+ * Copyright (c) 2018-2024 Total, S.A
+ * Copyright (c) 2018-2024 The Board of Trustees of the Leland Stanford Junior University
+ * Copyright (c) 2023-2024 Chevron
+ * Copyright (c) 2019-     GEOS/GEOSX Contributors
  * All rights reserved
  *
  * See top level LICENSE, COPYRIGHT, CONTRIBUTORS, NOTICE, and ACKNOWLEDGEMENTS files for details.
@@ -20,7 +21,7 @@
 
 #include "xmlWrapper.hpp"
 
-#include "codingUtilities/StringUtilities.hpp"
+#include "common/format/StringUtilities.hpp"
 #include "common/MpiWrapper.hpp"
 #include "dataRepository/KeyNames.hpp"
 
@@ -31,13 +32,60 @@ using namespace dataRepository;
 namespace xmlWrapper
 {
 
-template< typename T, int SIZE >
-void stringToInputVariable( Tensor< T, SIZE > & target, string const & inputValue )
+void validateString( string const & value, Regex const & regex )
 {
+  std::smatch m;
+  bool inputValidated = std::regex_match( value, m, std::regex( regex.m_regexStr ) );
+  if( !inputValidated )
+  {
+    ptrdiff_t errorId = ( m.size()>0 && m.position( 0 )==0 ) ? m.length() : 0;
+    GEOS_THROW( GEOS_FMT( "Input string validation failed at:\n"
+                          "  \"{}\"\n"
+                          "   {:>{}}\n"
+                          "  Expected format: {}",
+                          value, '^', errorId+1, regex.m_formatDescription ),
+                InputError );
+  }
+}
+
+void processInputException( std::exception const & ex, string const & targetAttributeName,
+                            xmlNode const & targetNode,
+                            xmlNodePos const & nodePos )
+{
+  xmlAttribute const attribute = targetNode.attribute( targetAttributeName.c_str() );
+  string const inputStr = string( attribute.value() );
+  std::ostringstream oss;
+  string const exStr = ex.what();
+
+  oss << "***** XML parsing error at node ";
+  if( nodePos.isFound() )
+  {
+    xmlAttributePos const attPos = nodePos.getAttributeLine( targetAttributeName );
+    string const & filePath = attPos.isFound() ? attPos.filePath : nodePos.filePath;
+    int const line = attPos.isFound() ? attPos.line : nodePos.line;
+    oss << "named " << targetNode.name() << ", attribute " << targetAttributeName
+        << " (" << splitPath( filePath ).second << ", l." << line << ").";
+  }
+  else
+  {
+    oss << targetNode.path() << " (name='" << targetNode.attribute( "name" ).value() << "')/"
+        << targetAttributeName;
+  }
+  oss << "\n***** Input value: '" << inputStr << '\'';
+  oss << ( exStr[0]=='\n' ? exStr : "\n" + exStr );
+
+  throw InputError( oss.str() );
+}
+
+template< typename T, int SIZE >
+void stringToInputVariable( Tensor< T, SIZE > & target, string const & inputValue, Regex const & regex )
+{
+  validateString( inputValue, regex );
+
   std::istringstream ss( inputValue );
   auto const errorMsg = [&]( auto const & msg )
   {
-    return GEOS_FMT( "{} for Tensor<{}> at position {} in input: {}", msg, SIZE, static_cast< int >( ss.tellg() ), inputValue );
+    return GEOS_FMT( "{} for Tensor<{}> at position {} in input: \"{}\"", msg, SIZE, static_cast< int >( ss.tellg() ), inputValue );
   };
 
   // Read the head
@@ -69,9 +117,9 @@ void stringToInputVariable( Tensor< T, SIZE > & target, string const & inputValu
   GEOS_THROW_IF( ss.peek() != std::char_traits< char >::eof(), errorMsg( "Unparsed characters" ), InputError );
 }
 
-template void stringToInputVariable( Tensor< real32, 3 > & target, string const & inputValue );
-template void stringToInputVariable( Tensor< real64, 3 > & target, string const & inputValue );
-template void stringToInputVariable( Tensor< real64, 6 > & target, string const & inputValue );
+template void stringToInputVariable( Tensor< real32, 3 > & target, string const & inputValue, Regex const & regex );
+template void stringToInputVariable( Tensor< real64, 3 > & target, string const & inputValue, Regex const & regex );
+template void stringToInputVariable( Tensor< real64, 6 > & target, string const & inputValue, Regex const & regex );
 
 /**
  * @brief Adds the filePath and character offset info on the node in filePathString
@@ -122,6 +170,8 @@ void xmlDocument::addIncludedXML( xmlNode & targetNode, int const level )
                        InputError );
         return isAbsolutePath( fileName ) ? fileName : joinPath( splitPath( currentFilePath ).first, fileName );
       }();
+
+      GEOS_LOG_RANK_0( "Included additionnal XML file: " << getAbsolutePath( includedFilePath ) );
 
       xmlDocument includedXmlDocument;
       xmlResult const result = includedXmlDocument.loadFile( includedFilePath, hasNodeFileInfo() );

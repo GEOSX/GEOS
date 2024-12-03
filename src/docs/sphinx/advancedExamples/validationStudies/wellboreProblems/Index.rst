@@ -25,13 +25,21 @@ Wellbore Problems
 
    verticalPoroElastoPlasticWellbore/Example
 
-   pureThermalDiffusion/Example
+   linearThermalDiffusion/Example
+
+   nonLinearThermalDiffusion_TemperatureDependentVolumetricHeatCapacity/Example
+   
+   nonLinearThermalDiffusion_TemperatureDependentSinglePhaseThermalConductivity/Example
 
    casedThermoElasticWellbore/Example
 
    thermoPoroElasticWellbore/Example
 
    casedContactElasticWellbore/Example
+
+   casedContactThermoElasticWellbore/Example
+
+   
 
 
 

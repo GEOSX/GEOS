@@ -1,0 +1,35 @@
+from geos.ats.test_builder import generate_geos_tests, TestDeck, RestartcheckParameters
+
+restartcheck_params = {}
+restartcheck_params["atol"] = 1.0E-5
+restartcheck_params["rtol"] = 1.0E-5
+
+partitions = ((1, 1, 1), (2, 2, 1))
+
+decks = [
+    TestDeck(
+        name="elasticHollowCylinder_isotropic_smoke",
+        description=
+        "Test the elastic hollow cylinder with an isotropic material",
+        partitions=partitions,
+        restart_step=0,
+        check_step=2,
+        restartcheck_params=RestartcheckParameters(**restartcheck_params)),
+    TestDeck(
+        name="elasticHollowCylinder_transverseIsotropic_smoke",
+        description=
+        "Test the elastic hollow cylinder with a transverse isotropic material",
+        partitions=partitions,
+        restart_step=0,
+        check_step=2,
+        restartcheck_params=RestartcheckParameters(**restartcheck_params)),
+    TestDeck(name="elasticHollowCylinder_orthotropic_smoke",
+             description=
+             "Test the elastic hollow cylinder with an orthotropic material",
+             partitions=partitions,
+             restart_step=0,
+             check_step=2,
+             restartcheck_params=RestartcheckParameters(**restartcheck_params))
+]
+
+generate_geos_tests(decks)

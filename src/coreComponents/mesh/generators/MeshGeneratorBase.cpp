@@ -2,10 +2,11 @@
  * ------------------------------------------------------------------------------------------------------------
  * SPDX-License-Identifier: LGPL-2.1-only
  *
- * Copyright (c) 2018-2020 Lawrence Livermore National Security LLC
- * Copyright (c) 2018-2020 The Board of Trustees of the Leland Stanford Junior University
- * Copyright (c) 2018-2020 TotalEnergies
- * Copyright (c) 2019-     GEOSX Contributors
+ * Copyright (c) 2016-2024 Lawrence Livermore National Security LLC
+ * Copyright (c) 2018-2024 Total, S.A
+ * Copyright (c) 2018-2024 The Board of Trustees of the Leland Stanford Junior University
+ * Copyright (c) 2023-2024 Chevron
+ * Copyright (c) 2019-     GEOS/GEOSX Contributors
  * All rights reserved
  *
  * See top level LICENSE, COPYRIGHT, CONTRIBUTORS, NOTICE, and ACKNOWLEDGEMENTS files for details.
@@ -14,7 +15,8 @@
 
 #include "MeshGeneratorBase.hpp"
 #include "mesh/generators/CellBlockManager.hpp"
-
+#include "mesh/generators/ParticleBlockManager.hpp"
+#include "mesh/generators/MeshComponentBase.hpp"
 namespace geos
 {
 using namespace dataRepository;
@@ -28,14 +30,14 @@ MeshGeneratorBase::MeshGeneratorBase( string const & name, Group * const parent 
 Group * MeshGeneratorBase::createChild( string const & childKey, string const & childName )
 {
   GEOS_LOG_RANK_0( "Adding Mesh attribute: " << childKey << ", " << childName );
-  std::unique_ptr< WellGeneratorBase > wellGen = WellGeneratorBase::CatalogInterface::factory( childKey, childName, this );
-  return &this->registerGroup< WellGeneratorBase >( childName, std::move( wellGen ) );
+  std::unique_ptr< MeshComponentBase > comp = MeshComponentBase::CatalogInterface::factory( childKey, childName, this );
+  return &this->registerGroup< MeshComponentBase >( childName, std::move( comp ) );
 }
 
 void MeshGeneratorBase::expandObjectCatalogs()
 {
-  // During schema generation, register one of each type derived from WellGeneratorBase here
-  for( auto & catalogIter: WellGeneratorBase::getCatalog())
+  // During schema generation, register one of each type derived from MeshComponentBase here
+  for( auto & catalogIter: MeshComponentBase::getCatalog())
   {
     createChild( catalogIter.first, catalogIter.first );
   }
@@ -47,15 +49,26 @@ MeshGeneratorBase::CatalogInterface::CatalogType & MeshGeneratorBase::getCatalog
   return catalog;
 }
 
-CellBlockManagerABC & MeshGeneratorBase::generateMesh( Group & parent, array1d< int > const & partition )
+void MeshGeneratorBase::generateMesh( Group & parent, SpatialPartition & partition )
 {
-  CellBlockManager & cellBlockManager = parent.registerGroup< CellBlockManager >( keys::cellManager );
+  MeshBody & meshBody = dynamic_cast< MeshBody & >( parent );
+  if( meshBody.hasParticles() )
+  {
+    ParticleBlockManager & particleBlockManager = parent.registerGroup< ParticleBlockManager >( keys::particleManager );
 
-  fillCellBlockManager( cellBlockManager, partition );
+    MeshLevel & meshLevel0 = meshBody.getBaseDiscretization();
+    ParticleManager & particleManager = meshLevel0.getParticleManager();
 
-  this->attachWellInfo( cellBlockManager );
+    fillParticleBlockManager( particleBlockManager, particleManager, partition );
+  }
+  else
+  {
+    CellBlockManager & cellBlockManager = parent.registerGroup< CellBlockManager >( keys::cellManager );
 
-  return cellBlockManager;
+    fillCellBlockManager( cellBlockManager, partition );
+
+    this->attachWellInfo( cellBlockManager );
+  }
 }
 
 void MeshGeneratorBase::attachWellInfo( CellBlockManager & cellBlockManager )
@@ -75,6 +88,7 @@ void MeshGeneratorBase::attachWellInfo( CellBlockManager & cellBlockManager )
     lb.setNumPerforations( wellGen.numPerforations() );
     lb.setPerfCoords( wellGen.getPerfCoords() );
     lb.setPerfTransmissibility( wellGen.getPerfTransmissibility() );
+    lb.setPerfSkinFactor( wellGen.getPerfSkinFactor() );
     lb.setPerfElemIndex( wellGen.getPerfElemIndex() );
     lb.setWellControlsName( wellGen.getWellControlsName() );
     lb.setWellGeneratorName( wellGen.getName() );

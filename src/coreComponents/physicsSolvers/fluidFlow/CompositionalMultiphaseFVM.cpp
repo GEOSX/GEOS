@@ -2,15 +2,18 @@
  * ------------------------------------------------------------------------------------------------------------
  * SPDX-License-Identifier: LGPL-2.1-only
  *
- * Copyright (c) 2018-2020 Lawrence Livermore National Security LLC
- * Copyright (c) 2018-2020 The Board of Trustees of the Leland Stanford Junior University
- * Copyright (c) 2018-2020 TotalEnergies
- * Copyright (c) 2019-     GEOSX Contributors
+ * Copyright (c) 2016-2024 Lawrence Livermore National Security LLC
+ * Copyright (c) 2018-2024 Total, S.A
+ * Copyright (c) 2018-2024 The Board of Trustees of the Leland Stanford Junior University
+ * Copyright (c) 2023-2024 Chevron
+ * Copyright (c) 2019-     GEOS/GEOSX Contributors
  * All rights reserved
  *
  * See top level LICENSE, COPYRIGHT, CONTRIBUTORS, NOTICE, and ACKNOWLEDGEMENTS files for details.
  * ------------------------------------------------------------------------------------------------------------
  */
+
+
 
 /**
  * @file CompositionalMultiphaseFVM.cpp
@@ -18,9 +21,7 @@
 
 #include "CompositionalMultiphaseFVM.hpp"
 
-#include "common/DataTypes.hpp"
 #include "common/MpiWrapper.hpp"
-#include "common/TimingMacros.hpp"
 #include "constitutive/fluid/multifluid/MultiFluidBase.hpp"
 #include "constitutive/relativePermeability/RelativePermeabilityBase.hpp"
 #include "constitutive/solid/CoupledSolidBase.hpp"
@@ -33,13 +34,25 @@
 #include "finiteVolume/FluxApproximationBase.hpp"
 #include "mesh/DomainPartition.hpp"
 #include "mesh/mpiCommunications/CommunicationTools.hpp"
-#include "physicsSolvers/fluidFlow/CompositionalMultiphaseBaseFields.hpp"
 #include "physicsSolvers/fluidFlow/FlowSolverBaseFields.hpp"
-#include "physicsSolvers/fluidFlow/StabilizedCompositionalMultiphaseFVMKernels.hpp"
-#include "physicsSolvers/fluidFlow/IsothermalCompositionalMultiphaseBaseKernels.hpp"
-#include "physicsSolvers/fluidFlow/ThermalCompositionalMultiphaseBaseKernels.hpp"
-#include "physicsSolvers/fluidFlow/IsothermalCompositionalMultiphaseFVMKernels.hpp"
-#include "physicsSolvers/fluidFlow/ThermalCompositionalMultiphaseFVMKernels.hpp"
+#include "physicsSolvers/fluidFlow/CompositionalMultiphaseBaseFields.hpp"
+#include "physicsSolvers/fluidFlow/kernels/compositional/ResidualNormKernel.hpp"
+#include "physicsSolvers/fluidFlow/kernels/compositional/ThermalResidualNormKernel.hpp"
+#include "physicsSolvers/fluidFlow/kernels/compositional/SolutionScalingKernel.hpp"
+#include "physicsSolvers/fluidFlow/kernels/compositional/ThermalSolutionScalingKernel.hpp"
+#include "physicsSolvers/fluidFlow/kernels/compositional/SolutionCheckKernel.hpp"
+#include "physicsSolvers/fluidFlow/kernels/compositional/ThermalSolutionCheckKernel.hpp"
+#include "physicsSolvers/fluidFlow/kernels/compositional/FluxComputeKernel.hpp"
+#include "physicsSolvers/fluidFlow/kernels/compositional/ThermalFluxComputeKernel.hpp"
+#include "physicsSolvers/fluidFlow/kernels/compositional/DiffusionDispersionFluxComputeKernel.hpp"
+#include "physicsSolvers/fluidFlow/kernels/compositional/ThermalDiffusionDispersionFluxComputeKernel.hpp"
+#include "physicsSolvers/fluidFlow/kernels/compositional/StabilizedFluxComputeKernel.hpp"
+#include "physicsSolvers/fluidFlow/kernels/compositional/DissipationFluxComputeKernel.hpp"
+#include "physicsSolvers/fluidFlow/kernels/compositional/DirichletFluxComputeKernel.hpp"
+#include "physicsSolvers/fluidFlow/kernels/compositional/ThermalDirichletFluxComputeKernel.hpp"
+#include "physicsSolvers/fluidFlow/kernels/compositional/PhaseMobilityKernel.hpp"
+#include "physicsSolvers/fluidFlow/kernels/compositional/ThermalPhaseMobilityKernel.hpp"
+#include "physicsSolvers/fluidFlow/kernels/compositional/AquiferBCKernel.hpp"
 
 namespace geos
 {
@@ -52,6 +65,36 @@ CompositionalMultiphaseFVM::CompositionalMultiphaseFVM( const string & name,
   :
   CompositionalMultiphaseBase( name, parent )
 {
+  registerWrapper( viewKeyStruct::useDBCString(), &m_dbcParams.useDBC ).
+    setInputFlag( InputFlags::OPTIONAL ).
+    setApplyDefaultValue( 0 ).
+    setDescription( "Enable Dissipation-based continuation flux" );
+
+  registerWrapper( viewKeyStruct::omegaDBCString(), &m_dbcParams.omega ).
+    setApplyDefaultValue( 1 ).
+    setInputFlag( InputFlags::OPTIONAL ).
+    setDescription( "Factor by which DBC flux is multiplied" );
+
+  registerWrapper( viewKeyStruct::continuationDBCString(), &m_dbcParams.continuation ).
+    setApplyDefaultValue( 1 ).
+    setInputFlag( InputFlags::OPTIONAL ).
+    setDescription( "Flag for enabling continuation parameter" );
+
+  registerWrapper( viewKeyStruct::miscibleDBCString(), &m_dbcParams.miscible ).
+    setApplyDefaultValue( 0 ).
+    setInputFlag( InputFlags::OPTIONAL ).
+    setDescription( "Flag for enabling DBC formulation with/without miscibility" );
+
+  registerWrapper( viewKeyStruct::kappaminDBCString(), &m_dbcParams.kappamin ).
+    setApplyDefaultValue( 1e-20 ).
+    setInputFlag( InputFlags::OPTIONAL ).
+    setDescription( "Factor that controls how much dissipation is kept in the system when continuation is used" );
+
+  registerWrapper( viewKeyStruct::contMultiplierDBCString(), &m_dbcParams.contMultiplier ).
+    setApplyDefaultValue( 0.5 ).
+    setInputFlag( InputFlags::OPTIONAL ).
+    setDescription( "Factor by which continuation parameter is changed every newton when DBC is used" );
+
   registerWrapper( viewKeyStruct::scalingTypeString(), &m_scalingType ).
     setInputFlag( dataRepository::InputFlags::OPTIONAL ).
     setApplyDefaultValue( ScalingType::Global ).
@@ -59,9 +102,9 @@ CompositionalMultiphaseFVM::CompositionalMultiphaseFVM( const string & name,
                     "Valid options:\n* " + EnumStrings< ScalingType >::concat( "\n* " ) );
 }
 
-void CompositionalMultiphaseFVM::postProcessInput()
+void CompositionalMultiphaseFVM::postInputInitialization()
 {
-  CompositionalMultiphaseBase::postProcessInput();
+  CompositionalMultiphaseBase::postInputInitialization();
 
   if( m_scalingType == ScalingType::Local && m_nonlinearSolverParameters.m_lineSearchAction != NonlinearSolverParameters::LineSearchAction::None )
   {
@@ -74,8 +117,8 @@ void CompositionalMultiphaseFVM::initializePreSubGroups()
   CompositionalMultiphaseBase::initializePreSubGroups();
 
   m_linearSolverParameters.get().mgr.strategy = m_isThermal
-    ? LinearSolverParameters::MGR::StrategyType::thermalCompositionalMultiphaseFVM
-    : LinearSolverParameters::MGR::StrategyType::compositionalMultiphaseFVM;
+                                                ? LinearSolverParameters::MGR::StrategyType::thermalCompositionalMultiphaseFVM
+                                                : LinearSolverParameters::MGR::StrategyType::compositionalMultiphaseFVM;
 
   DomainPartition & domain = this->getGroupByPath< DomainPartition >( "/Problem/domain" );
   NumericalMethodsManager const & numericalMethodManager = domain.getNumericalMethodManager();
@@ -97,8 +140,8 @@ void CompositionalMultiphaseFVM::setupDofs( DomainPartition const & domain,
                        getMeshTargets() );
 
   // this call with instruct GEOS to reorder the dof numbers
-  //dofManager.setLocalReorderingType( viewKeyStruct::elemDofFieldString(),
-  //                                   DofManager::LocalReorderingType::ReverseCutHillMcKee );
+  dofManager.setLocalReorderingType( viewKeyStruct::elemDofFieldString(),
+                                     DofManager::LocalReorderingType::ReverseCutHillMcKee );
 
   // for the volume balance equation, disable global coupling
   // this equation is purely local (not coupled to neighbors or other physics)
@@ -135,16 +178,17 @@ void CompositionalMultiphaseFVM::assembleFluxTerms( real64 const dt,
     {
       typename TYPEOFREF( stencil ) ::KernelWrapper stencilWrapper = stencil.createKernelWrapper();
 
-
+      // Convective flux
       if( m_isThermal )
       {
         thermalCompositionalMultiphaseFVMKernels::
-          FaceBasedAssemblyKernelFactory::
+          FluxComputeKernelFactory::
           createAndLaunch< parallelDevicePolicy<> >( m_numComponents,
                                                      m_numPhases,
                                                      dofManager.rankOffset(),
                                                      elemDofKey,
                                                      m_hasCapPressure,
+                                                     m_useTotalMassEquation,
                                                      getName(),
                                                      mesh.getElemManager(),
                                                      stencilWrapper,
@@ -154,20 +198,89 @@ void CompositionalMultiphaseFVM::assembleFluxTerms( real64 const dt,
       }
       else
       {
-        isothermalCompositionalMultiphaseFVMKernels::
-          FaceBasedAssemblyKernelFactory::
-          createAndLaunch< parallelDevicePolicy<> >( m_numComponents,
-                                                     m_numPhases,
-                                                     dofManager.rankOffset(),
-                                                     elemDofKey,
-                                                     m_hasCapPressure,
-                                                     fluxApprox.upwindingParams(),
-                                                     getName(),
-                                                     mesh.getElemManager(),
-                                                     stencilWrapper,
-                                                     dt,
-                                                     localMatrix.toViewConstSizes(),
-                                                     localRhs.toView() );
+        if( m_dbcParams.useDBC )
+        {
+          dissipationCompositionalMultiphaseFVMKernels::
+            FluxComputeKernelFactory::
+            createAndLaunch< parallelDevicePolicy<> >( m_numComponents,
+                                                       m_numPhases,
+                                                       dofManager.rankOffset(),
+                                                       elemDofKey,
+                                                       m_hasCapPressure,
+                                                       m_useTotalMassEquation,
+                                                       getName(),
+                                                       mesh.getElemManager(),
+                                                       stencilWrapper,
+                                                       dt,
+                                                       localMatrix.toViewConstSizes(),
+                                                       localRhs.toView(),
+                                                       m_dbcParams.omega,
+                                                       getNonlinearSolverParameters().m_numNewtonIterations,
+                                                       m_dbcParams.continuation,
+                                                       m_dbcParams.miscible,
+                                                       m_dbcParams.kappamin,
+                                                       m_dbcParams.contMultiplier );
+        }
+        else
+        {
+          isothermalCompositionalMultiphaseFVMKernels::
+            FluxComputeKernelFactory::
+            createAndLaunch< parallelDevicePolicy<> >( m_numComponents,
+                                                       m_numPhases,
+                                                       dofManager.rankOffset(),
+                                                       elemDofKey,
+                                                       m_hasCapPressure,
+                                                       m_useTotalMassEquation,
+                                                       fluxApprox.upwindingParams(),
+                                                       getName(),
+                                                       mesh.getElemManager(),
+                                                       stencilWrapper,
+                                                       dt,
+                                                       localMatrix.toViewConstSizes(),
+                                                       localRhs.toView() );
+        }
+      }
+
+      // Diffusive and dispersive flux
+      if( m_hasDiffusion || m_hasDispersion )
+      {
+
+        if( m_isThermal )
+        {
+          thermalCompositionalMultiphaseFVMKernels::
+            DiffusionDispersionFluxComputeKernelFactory::
+            createAndLaunch< parallelDevicePolicy<> >( m_numComponents,
+                                                       m_numPhases,
+                                                       dofManager.rankOffset(),
+                                                       elemDofKey,
+                                                       m_hasDiffusion,
+                                                       m_hasDispersion,
+                                                       m_useTotalMassEquation,
+                                                       getName(),
+                                                       mesh.getElemManager(),
+                                                       stencilWrapper,
+                                                       dt,
+                                                       localMatrix.toViewConstSizes(),
+                                                       localRhs.toView() );
+        }
+        else
+        {
+          isothermalCompositionalMultiphaseFVMKernels::
+            DiffusionDispersionFluxComputeKernelFactory::
+            createAndLaunch< parallelDevicePolicy<> >( m_numComponents,
+                                                       m_numPhases,
+                                                       dofManager.rankOffset(),
+                                                       elemDofKey,
+                                                       m_hasDiffusion,
+                                                       m_hasDispersion,
+                                                       m_useTotalMassEquation,
+                                                       getName(),
+                                                       mesh.getElemManager(),
+                                                       stencilWrapper,
+                                                       dt,
+                                                       localMatrix.toViewConstSizes(),
+                                                       localRhs.toView() );
+        }
       }
 
     } );
@@ -202,12 +315,13 @@ void CompositionalMultiphaseFVM::assembleStabilizedFluxTerms( real64 const dt,
       // Thermal implementation not supported yet
 
       stabilizedCompositionalMultiphaseFVMKernels::
-        FaceBasedAssemblyKernelFactory::
+        FluxComputeKernelFactory::
         createAndLaunch< parallelDevicePolicy<> >( m_numComponents,
                                                    m_numPhases,
                                                    dofManager.rankOffset(),
                                                    elemDofKey,
                                                    m_hasCapPressure,
+                                                   m_useTotalMassEquation,
                                                    getName(),
                                                    mesh.getElemManager(),
                                                    stencilWrapper,
@@ -227,13 +341,13 @@ real64 CompositionalMultiphaseFVM::calculateResidualNorm( real64 const & GEOS_UN
 {
   GEOS_MARK_FUNCTION;
 
-  integer constexpr numNorm = 2; // mass balance and energy balance
+  integer constexpr numNorm = 3; // mass/volume balance and energy balance
   array1d< real64 > localResidualNorm;
   array1d< real64 > localResidualNormalizer;
   localResidualNorm.resize( numNorm );
   localResidualNormalizer.resize( numNorm );
 
-  solverBaseKernels::NormType const normType = getNonlinearSolverParameters().normType();
+  physicsSolverBaseKernels::NormType const normType = getNonlinearSolverParameters().normType();
 
   globalIndex const rankOffset = dofManager.rankOffset();
   string const dofKey = dofManager.getKey( viewKeyStruct::elemDofFieldString() );
@@ -274,13 +388,14 @@ real64 CompositionalMultiphaseFVM::calculateResidualNorm( real64 const & GEOS_UN
                                                      fluid,
                                                      solid,
                                                      solidInternalEnergy,
+                                                     m_nonlinearSolverParameters.m_minNormalizer,
                                                      subRegionResidualNorm,
                                                      subRegionResidualNormalizer );
       }
       else
       {
-        real64 subRegionFlowResidualNorm[1]{};
-        real64 subRegionFlowResidualNormalizer[1]{};
+        real64 subRegionFlowResidualNorm[2]{};
+        real64 subRegionFlowResidualNormalizer[2]{};
         isothermalCompositionalMultiphaseBaseKernels::
           ResidualNormKernelFactory::
           createAndLaunch< parallelDevicePolicy<> >( normType,
@@ -291,22 +406,27 @@ real64 CompositionalMultiphaseFVM::calculateResidualNorm( real64 const & GEOS_UN
                                                      subRegion,
                                                      fluid,
                                                      solid,
+                                                     m_nonlinearSolverParameters.m_minNormalizer,
                                                      subRegionFlowResidualNorm,
                                                      subRegionFlowResidualNormalizer );
+        // mass
         subRegionResidualNorm[0] = subRegionFlowResidualNorm[0];
         subRegionResidualNormalizer[0] = subRegionFlowResidualNormalizer[0];
+        // volume
+        subRegionResidualNorm[1] = subRegionFlowResidualNorm[1];
+        subRegionResidualNormalizer[1] = subRegionFlowResidualNormalizer[1];
       }
 
       // step 2: first reduction across meshBodies/regions/subRegions
 
-      if( normType == solverBaseKernels::NormType::Linf )
+      if( normType == physicsSolverBaseKernels::NormType::Linf )
       {
-        solverBaseKernels::LinfResidualNormHelper::
+        physicsSolverBaseKernels::LinfResidualNormHelper::
           updateLocalNorm< numNorm >( subRegionResidualNorm, localResidualNorm );
       }
       else
       {
-        solverBaseKernels::L2ResidualNormHelper::
+        physicsSolverBaseKernels::L2ResidualNormHelper::
           updateLocalNorm< numNorm >( subRegionResidualNorm, subRegionResidualNormalizer, localResidualNorm, localResidualNormalizer );
       }
     } );
@@ -315,46 +435,43 @@ real64 CompositionalMultiphaseFVM::calculateResidualNorm( real64 const & GEOS_UN
   // step 3: second reduction across MPI ranks
 
   real64 residualNorm = 0.0;
+  array1d< real64 > globalResidualNorm;
+  globalResidualNorm.resize( numNorm );
   if( m_isThermal )
   {
-
-    array1d< real64 > globalResidualNorm;
-    globalResidualNorm.resize( numNorm );
-    if( normType == solverBaseKernels::NormType::Linf )
+    if( normType == physicsSolverBaseKernels::NormType::Linf )
     {
-      solverBaseKernels::LinfResidualNormHelper::
+      physicsSolverBaseKernels::LinfResidualNormHelper::
         computeGlobalNorm( localResidualNorm, globalResidualNorm );
     }
     else
     {
-      solverBaseKernels::L2ResidualNormHelper::
+      physicsSolverBaseKernels::L2ResidualNormHelper::
+        computeGlobalNorm( localResidualNorm, localResidualNormalizer, globalResidualNorm );
+    }
+    residualNorm = sqrt( globalResidualNorm[0] * globalResidualNorm[0] + globalResidualNorm[1] * globalResidualNorm[1]  + globalResidualNorm[2] * globalResidualNorm[2] );
+
+    GEOS_LOG_LEVEL_INFO_RANK_0_NLR( logInfo::Convergence, GEOS_FMT( "        ( Rmass Rvol ) = ( {:4.2e} {:4.2e} )        ( Renergy ) = ( {:4.2e} )",
+                                                                    globalResidualNorm[0], globalResidualNorm[1], globalResidualNorm[2] ));
+  }
+  else
+  {
+    if( normType == physicsSolverBaseKernels::NormType::Linf )
+    {
+      physicsSolverBaseKernels::LinfResidualNormHelper::
+        computeGlobalNorm( localResidualNorm, globalResidualNorm );
+    }
+    else
+    {
+      physicsSolverBaseKernels::L2ResidualNormHelper::
         computeGlobalNorm( localResidualNorm, localResidualNormalizer, globalResidualNorm );
     }
     residualNorm = sqrt( globalResidualNorm[0] * globalResidualNorm[0] + globalResidualNorm[1] * globalResidualNorm[1] );
 
-    if( getLogLevel() >= 1 && logger::internal::rank == 0 )
-    {
-      std::cout << GEOS_FMT( "        ( R{} ) = ( {:4.2e} )        ( Renergy ) = ( {:4.2e} )",
-                             coupledSolverAttributePrefix(), globalResidualNorm[0], globalResidualNorm[1] );
-    }
+    GEOS_LOG_LEVEL_INFO_RANK_0_NLR( logInfo::Convergence, GEOS_FMT( "        ( Rmass Rvol ) = ( {:4.2e} {:4.2e} )",
+                                                                    globalResidualNorm[0], globalResidualNorm[1] ) );
   }
-  else
-  {
 
-    if( normType == solverBaseKernels::NormType::Linf )
-    {
-      solverBaseKernels::LinfResidualNormHelper::computeGlobalNorm( localResidualNorm[0], residualNorm );
-    }
-    else
-    {
-      solverBaseKernels::L2ResidualNormHelper::computeGlobalNorm( localResidualNorm[0], localResidualNormalizer[0], residualNorm );
-    }
-
-    if( getLogLevel() >= 1 && logger::internal::rank == 0 )
-    {
-      std::cout << GEOS_FMT( "        ( R{} ) = ( {:4.2e} )", coupledSolverAttributePrefix(), residualNorm );
-    }
-  }
   return residualNorm;
 }
 
@@ -364,21 +481,14 @@ real64 CompositionalMultiphaseFVM::scalingForSystemSolution( DomainPartition & d
 {
   GEOS_MARK_FUNCTION;
 
-  bool const skipCompFracDamping = m_maxCompFracChange >= 1.0;
-  bool const skipPresDamping = m_maxRelativePresChange >= 1.0;
-  bool const skipTempDamping = m_maxRelativeTempChange >= 1.0 || !m_isThermal;
-
-  // check if we want to rescale the Newton update
-  if( skipCompFracDamping && skipPresDamping && skipTempDamping )
-  {
-    // no rescaling wanted, we just return 1.0;
-    return 1.0;
-  }
-
   string const dofKey = dofManager.getKey( viewKeyStruct::elemDofFieldString() );
   real64 scalingFactor = 1.0;
-  real64 maxDeltaPres = 0.0, maxDeltaCompDens = 0.0, maxDeltaTemp = 0.0;
   real64 minPresScalingFactor = 1.0, minCompDensScalingFactor = 1.0, minTempScalingFactor = 1.0;
+
+
+  std::vector< valueAndLocationType > regionDeltaPresMaxLoc;
+  std::vector< valueAndLocationType > regionDeltaTempMaxLoc;
+  std::vector< valueAndLocationType > regionDeltaCompDensMaxLoc;
 
   forDiscretizationOnMeshTargets( domain.getMeshBodies(), [&]( string const &,
                                                                MeshLevel & mesh,
@@ -388,61 +498,124 @@ real64 CompositionalMultiphaseFVM::scalingForSystemSolution( DomainPartition & d
                                                 [&]( localIndex const,
                                                      ElementSubRegionBase & subRegion )
     {
+      arrayView1d< globalIndex const > const localToGlobalMap = subRegion.localToGlobalMap();
+      arrayView1d< real64 const > const pressure = subRegion.getField< fields::flow::pressure >();
+      arrayView1d< real64 const > const temperature = subRegion.getField< fields::flow::temperature >();
+      arrayView2d< real64 const, compflow::USD_COMP > const compDens = subRegion.getField< fields::flow::globalCompDensity >();
+      arrayView1d< real64 > pressureScalingFactor = subRegion.getField< fields::flow::pressureScalingFactor >();
+      arrayView1d< real64 > temperatureScalingFactor = subRegion.getField< fields::flow::temperatureScalingFactor >();
+      arrayView1d< real64 > compDensScalingFactor = subRegion.getField< fields::flow::globalCompDensityScalingFactor >();
+
+      const integer temperatureOffset = m_numComponents+1;
+
       auto const subRegionData =
         m_isThermal
   ? thermalCompositionalMultiphaseBaseKernels::
-          ScalingForSystemSolutionKernelFactory::
+          SolutionScalingKernelFactory::
           createAndLaunch< parallelDevicePolicy<> >( m_maxRelativePresChange,
+                                                     m_maxAbsolutePresChange,
                                                      m_maxRelativeTempChange,
                                                      m_maxCompFracChange,
+                                                     m_maxRelativeCompDensChange,
+                                                     pressure,
+                                                     temperature,
+                                                     compDens,
+                                                     pressureScalingFactor,
+                                                     compDensScalingFactor,
+                                                     temperatureScalingFactor,
                                                      dofManager.rankOffset(),
                                                      m_numComponents,
                                                      dofKey,
                                                      subRegion,
-                                                     localSolution )
+                                                     localSolution,
+                                                     temperatureOffset )
   : isothermalCompositionalMultiphaseBaseKernels::
-          ScalingForSystemSolutionKernelFactory::
+          SolutionScalingKernelFactory::
           createAndLaunch< parallelDevicePolicy<> >( m_maxRelativePresChange,
+                                                     m_maxAbsolutePresChange,
                                                      m_maxCompFracChange,
+                                                     m_maxRelativeCompDensChange,
+                                                     pressure,
+                                                     compDens,
+                                                     pressureScalingFactor,
+                                                     compDensScalingFactor,
                                                      dofManager.rankOffset(),
                                                      m_numComponents,
                                                      dofKey,
                                                      subRegion,
                                                      localSolution );
+      if( subRegion.size() > 0 || subRegion.size() !=  subRegion.getNumberOfGhosts() )
+      {
+        if( m_scalingType == ScalingType::Global )
+        {
+          scalingFactor = std::min( scalingFactor, subRegionData.localMinVal );
+        }
 
-      if( m_scalingType == ScalingType::Global )
-        scalingFactor = std::min( scalingFactor, subRegionData.localMinVal );
-      maxDeltaPres  = std::max( maxDeltaPres, subRegionData.localMaxDeltaPres );
-      maxDeltaCompDens = std::max( maxDeltaCompDens, subRegionData.localMaxDeltaCompDens );
-      maxDeltaTemp = std::max( maxDeltaTemp, subRegionData.localMaxDeltaTemp );
-      minPresScalingFactor = std::min( minPresScalingFactor, subRegionData.localMinPresScalFac );
-      minCompDensScalingFactor = std::min( minCompDensScalingFactor, subRegionData.localMinCompDensScalFac );
-      minTempScalingFactor = std::min( minTempScalingFactor, subRegionData.localMinTempScalFac );
+        regionDeltaPresMaxLoc.push_back( valueAndLocationType( subRegionData.localMaxDeltaPres, localToGlobalMap[subRegionData.localMaxDeltaPresLoc] ) );
+        minPresScalingFactor = std::min( minPresScalingFactor, subRegionData.localMinPresScalingFactor );
+
+        regionDeltaCompDensMaxLoc.push_back( valueAndLocationType( subRegionData.localMaxDeltaCompDens, localToGlobalMap[subRegionData.localMaxDeltaCompDensLoc] ) );
+        minCompDensScalingFactor = std::min( minCompDensScalingFactor, subRegionData.localMinCompDensScalingFactor );
+
+        if( m_isThermal )
+        {
+          regionDeltaTempMaxLoc.push_back( valueAndLocationType( subRegionData.localMaxDeltaTemp, localToGlobalMap[subRegionData.localMaxDeltaTempLoc] ) );
+          minTempScalingFactor = std::min( minTempScalingFactor, subRegionData.localMinTempScalingFactor );
+        }
+      }
     } );
   } );
 
+  auto [localDeltaPresMax, localPresMaxLoc] = *std::max_element( begin( regionDeltaPresMaxLoc ), end( regionDeltaPresMaxLoc ), []( auto & lhs, auto & rhs )   {
+    return lhs.value   < rhs.value;
+  } );
+  auto globalDeltaPresMax = MpiWrapper::maxValLoc( valueAndLocationType( localDeltaPresMax, localPresMaxLoc ));
+  auto [ localDeltaCompDensMax, localCompDensMaxLoc ] = *std::max_element( begin( regionDeltaCompDensMaxLoc ), end( regionDeltaCompDensMaxLoc ), []( auto & lhs, auto & rhs )   {
+    return lhs.value   < rhs.value;
+  } );
+  auto globalDeltaCompDensMax = MpiWrapper::maxValLoc( valueAndLocationType( localDeltaCompDensMax, localCompDensMaxLoc ));
+
   scalingFactor = MpiWrapper::min( scalingFactor );
-  maxDeltaPres  = MpiWrapper::max( maxDeltaPres );
-  maxDeltaCompDens = MpiWrapper::max( maxDeltaCompDens );
-  maxDeltaTemp = MpiWrapper::max( maxDeltaTemp );
   minPresScalingFactor = MpiWrapper::min( minPresScalingFactor );
   minCompDensScalingFactor = MpiWrapper::min( minCompDensScalingFactor );
-  minTempScalingFactor = MpiWrapper::min( minTempScalingFactor );
+
+  string const massUnit = m_useMass ? "kg/m3" : "mol/m3";
+  GEOS_LOG_LEVEL_INFO_RANK_0( logInfo::Solution,
+                              GEOS_FMT( "        {}: Max pressure change = {:.3f} Pa (before scaling) at cell {}",
+                                        getName(),
+                                        globalDeltaPresMax.value,
+                                        globalDeltaPresMax.location ) );
+
+  GEOS_LOG_LEVEL_INFO_RANK_0( logInfo::Solution,
+                              GEOS_FMT( "        {}: Max component density change = {:.3f} {} (before scaling) at cell {}",
+                                        getName(),
+                                        globalDeltaCompDensMax.value,
+                                        massUnit,
+                                        globalDeltaCompDensMax.location ) );
 
   if( m_isThermal )
   {
-    GEOS_LOG_LEVEL_RANK_0( 1, GEOS_FMT( "        {}: Max deltaPres  = {}, Max deltaCompDens = {}, Max deltaTemp = {} (before scaling)", getName(), maxDeltaPres, maxDeltaCompDens, maxDeltaTemp ) );
+    auto [localDeltaTempMax, localDeltaTempMaxLoc  ] = *std::max_element( begin( regionDeltaTempMaxLoc ), end( regionDeltaTempMaxLoc ), []( auto & lhs, auto & rhs )   {
+      return lhs.value   < rhs.value;
+    } );
+    auto globalMaxDeltaTemp = MpiWrapper::maxValLoc( valueAndLocationType( localDeltaTempMax, localDeltaTempMaxLoc ));
+
+    minTempScalingFactor = MpiWrapper::min( minTempScalingFactor );
+    GEOS_LOG_LEVEL_INFO_RANK_0( logInfo::Solution,
+                                GEOS_FMT( "        {}: Max temperature change = {:.3f} K (before scaling) at cell maxRegionDeltaTempLoc {}",
+                                          getName(),
+                                          globalMaxDeltaTemp.value,
+                                          globalMaxDeltaTemp.location ) );
   }
-  else
-  {
-    GEOS_LOG_LEVEL_RANK_0( 1, GEOS_FMT( "        {}: Max deltaPres  = {}, Max deltaCompDens = {} (before scaling)", getName(), maxDeltaPres, maxDeltaCompDens ) );
-  }
+
   if( m_scalingType == ScalingType::Local )
   {
-    GEOS_LOG_LEVEL_RANK_0( 1, GEOS_FMT( "        {}: Min pressure scaling factor = {}", getName(), minPresScalingFactor ) );
-    GEOS_LOG_LEVEL_RANK_0( 1, GEOS_FMT( "        {}: Min comp dens scaling factor = {}", getName(), minCompDensScalingFactor ) );
+    GEOS_LOG_LEVEL_INFO_RANK_0( logInfo::Solution, GEOS_FMT( "        {}: Min pressure scaling factor = {}", getName(), minPresScalingFactor ) );
+    GEOS_LOG_LEVEL_INFO_RANK_0( logInfo::Solution, GEOS_FMT( "        {}: Min component density scaling factor = {}", getName(), minCompDensScalingFactor ) );
     if( m_isThermal )
-      GEOS_LOG_LEVEL_RANK_0( 1, GEOS_FMT( "        {}: Min temperature scaling factor = {}", getName(), minTempScalingFactor ) );
+    {
+      GEOS_LOG_LEVEL_INFO_RANK_0( logInfo::Solution, GEOS_FMT( "        {}: Min temperature scaling factor = {}", getName(), minTempScalingFactor ) );
+    }
   }
 
   return LvArray::math::max( scalingFactor, m_minScalingFactor );
@@ -457,6 +630,8 @@ bool CompositionalMultiphaseFVM::checkSystemSolution( DomainPartition & domain,
 
   string const dofKey = dofManager.getKey( viewKeyStruct::elemDofFieldString() );
   integer localCheck = 1;
+  real64 minPres = 0.0, minDens = 0.0, minTotalDens = 0.0;
+  integer numNegPres = 0, numNegDens = 0, numNegTotalDens = 0;
 
   forDiscretizationOnMeshTargets( domain.getMeshBodies(), [&]( string const &,
                                                                MeshLevel & mesh,
@@ -466,34 +641,82 @@ bool CompositionalMultiphaseFVM::checkSystemSolution( DomainPartition & domain,
                                                 [&]( localIndex const,
                                                      ElementSubRegionBase & subRegion )
     {
+      arrayView1d< real64 const > const pressure =
+        subRegion.getField< fields::flow::pressure >();
+      arrayView1d< real64 const > const temperature =
+        subRegion.getField< fields::flow::temperature >();
+      arrayView2d< real64 const, compflow::USD_COMP > const compDens =
+        subRegion.getField< fields::flow::globalCompDensity >();
+      arrayView1d< real64 > pressureScalingFactor = subRegion.getField< fields::flow::pressureScalingFactor >();
+      arrayView1d< real64 > temperatureScalingFactor = subRegion.getField< fields::flow::temperatureScalingFactor >();
+      arrayView1d< real64 > compDensScalingFactor = subRegion.getField< fields::flow::globalCompDensityScalingFactor >();
       // check that pressure and component densities are non-negative
       // for thermal, check that temperature is above 273.15 K
-      integer const subRegionSolutionCheck =
+      const integer temperatureOffset = m_numComponents+1;
+      auto const subRegionData =
         m_isThermal
   ? thermalCompositionalMultiphaseBaseKernels::
           SolutionCheckKernelFactory::
           createAndLaunch< parallelDevicePolicy<> >( m_allowCompDensChopping,
+                                                     m_allowNegativePressure,
                                                      m_scalingType,
                                                      scalingFactor,
+                                                     pressure,
+                                                     temperature,
+                                                     compDens,
+                                                     pressureScalingFactor,
+                                                     temperatureScalingFactor,
+                                                     compDensScalingFactor,
                                                      dofManager.rankOffset(),
                                                      m_numComponents,
                                                      dofKey,
                                                      subRegion,
-                                                     localSolution )
+                                                     localSolution,
+                                                     temperatureOffset )
   : isothermalCompositionalMultiphaseBaseKernels::
           SolutionCheckKernelFactory::
           createAndLaunch< parallelDevicePolicy<> >( m_allowCompDensChopping,
+                                                     m_allowNegativePressure,
                                                      m_scalingType,
                                                      scalingFactor,
+                                                     pressure,
+                                                     compDens,
+                                                     pressureScalingFactor,
+                                                     compDensScalingFactor,
                                                      dofManager.rankOffset(),
                                                      m_numComponents,
                                                      dofKey,
                                                      subRegion,
                                                      localSolution );
 
-      localCheck = std::min( localCheck, subRegionSolutionCheck );
+      localCheck = std::min( localCheck, subRegionData.localMinVal );
+
+      minPres  = std::min( minPres, subRegionData.localMinPres );
+      minDens = std::min( minDens, subRegionData.localMinDens );
+      minTotalDens = std::min( minTotalDens, subRegionData.localMinTotalDens );
+      numNegPres += subRegionData.localNumNegPressures;
+      numNegDens += subRegionData.localNumNegDens;
+      numNegTotalDens += subRegionData.localNumNegTotalDens;
     } );
   } );
+
+  minPres  = MpiWrapper::min( minPres );
+  minDens = MpiWrapper::min( minDens );
+  minTotalDens = MpiWrapper::min( minTotalDens );
+  numNegPres = MpiWrapper::sum( numNegPres );
+  numNegDens = MpiWrapper::sum( numNegDens );
+  numNegTotalDens = MpiWrapper::sum( numNegTotalDens );
+
+  if( numNegPres > 0 )
+    GEOS_LOG_LEVEL_INFO_RANK_0( logInfo::Solution, GEOS_FMT( "        {}: Number of negative pressure values: {}, minimum value: {} Pa",
+                                                             getName(), numNegPres, fmt::format( "{:.{}f}", minPres, 3 ) ) );
+  string const massUnit = m_useMass ? "kg/m3" : "mol/m3";
+  if( numNegDens > 0 )
+    GEOS_LOG_LEVEL_INFO_RANK_0( logInfo::Solution, GEOS_FMT( "        {}: Number of negative component density values: {}, minimum value: {} {}}",
+                                                             getName(), numNegDens, fmt::format( "{:.{}f}", minDens, 3 ), massUnit ) );
+  if( minTotalDens > 0 )
+    GEOS_LOG_LEVEL_INFO_RANK_0( logInfo::Solution, GEOS_FMT( "        {}: Number of negative total density values: {}, minimum value: {} {}}",
+                                                             getName(), minTotalDens, fmt::format( "{:.{}f}", minDens, 3 ), massUnit ) );
 
   return MpiWrapper::min( localCheck );
 }
@@ -631,7 +854,7 @@ void CompositionalMultiphaseFVM::applyBoundaryConditions( real64 time_n,
 {
   GEOS_MARK_FUNCTION;
   CompositionalMultiphaseBase::applyBoundaryConditions( time_n, dt, domain, dofManager, localMatrix, localRhs );
-  if( !m_keepFlowVariablesConstantDuringInitStep )
+  if( !m_keepVariablesConstantDuringInitStep )
   {
     applyFaceDirichletBC( time_n, dt, dofManager, domain, localMatrix, localRhs );
   }
@@ -840,11 +1063,13 @@ void CompositionalMultiphaseFVM::applyFaceDirichletBC( real64 const time_n,
 
       if( m_isThermal )
       {
+        //todo (jafranc) extend upwindScheme name if satisfied in isothermalCase
         thermalCompositionalMultiphaseFVMKernels::
-          DirichletFaceBasedAssemblyKernelFactory::
+          DirichletFluxComputeKernelFactory::
           createAndLaunch< parallelDevicePolicy<> >( m_numComponents,
                                                      m_numPhases,
                                                      dofManager.rankOffset(),
+                                                     m_useTotalMassEquation,
                                                      elemDofKey,
                                                      getName(),
                                                      faceManager,
@@ -858,10 +1083,11 @@ void CompositionalMultiphaseFVM::applyFaceDirichletBC( real64 const time_n,
       else
       {
         isothermalCompositionalMultiphaseFVMKernels::
-          DirichletFaceBasedAssemblyKernelFactory::
+          DirichletFluxComputeKernelFactory::
           createAndLaunch< parallelDevicePolicy<> >( m_numComponents,
                                                      m_numPhases,
                                                      dofManager.rankOffset(),
+                                                     m_useTotalMassEquation,
                                                      elemDofKey,
                                                      getName(),
                                                      faceManager,
@@ -921,8 +1147,8 @@ void CompositionalMultiphaseFVM::applyAquiferBC( real64 const time,
       {
         globalIndex const numTargetFaces = MpiWrapper::sum< globalIndex >( stencil.size() );
         GEOS_LOG_RANK_0( GEOS_FMT( faceBcLogMessage,
-                                   getName(), time+dt, AquiferBoundaryCondition::catalogName(),
-                                   bc.getName(), setName, faceManager.getName(), bc.getScale(), numTargetFaces ) );
+                                   getName(), time+dt, bc.getCatalogName(), bc.getName(),
+                                   setName, faceManager.getName(), bc.getScale(), numTargetFaces ) );
       }
 
       if( stencil.size() == 0 )
@@ -942,6 +1168,7 @@ void CompositionalMultiphaseFVM::applyAquiferBC( real64 const time,
                                                                         m_numPhases,
                                                                         waterPhaseIndex,
                                                                         allowAllPhasesIntoAquifer,
+                                                                        m_useTotalMassEquation,
                                                                         stencil,
                                                                         dofManager.rankOffset(),
                                                                         elemDofNumber.toNestedViewConst(),
@@ -969,6 +1196,6 @@ void CompositionalMultiphaseFVM::applyAquiferBC( real64 const time,
 }
 
 //START_SPHINX_INCLUDE_01
-REGISTER_CATALOG_ENTRY( SolverBase, CompositionalMultiphaseFVM, string const &, Group * const )
+REGISTER_CATALOG_ENTRY( PhysicsSolverBase, CompositionalMultiphaseFVM, string const &, Group * const )
 //END_SPHINX_INCLUDE_01
 }// namespace geos

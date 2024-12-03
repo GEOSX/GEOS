@@ -2,10 +2,11 @@
  * ------------------------------------------------------------------------------------------------------------
  * SPDX-License-Identifier: LGPL-2.1-only
  *
- * Copyright (c) 2018-2020 Lawrence Livermore National Security LLC
- * Copyright (c) 2018-2020 The Board of Trustees of the Leland Stanford Junior University
- * Copyright (c) 2018-2020 TotalEnergies
- * Copyright (c) 2019-     GEOSX Contributors
+ * Copyright (c) 2016-2024 Lawrence Livermore National Security LLC
+ * Copyright (c) 2018-2024 Total, S.A
+ * Copyright (c) 2018-2024 The Board of Trustees of the Leland Stanford Junior University
+ * Copyright (c) 2023-2024 Chevron
+ * Copyright (c) 2019-     GEOS/GEOSX Contributors
  * All rights reserved
  *
  * See top level LICENSE, COPYRIGHT, CONTRIBUTORS, NOTICE, and ACKNOWLEDGEMENTS files for details.
@@ -17,9 +18,9 @@
  */
 
 #include "VTKOutput.hpp"
+#include "common/MpiWrapper.hpp"
 
-
-#if defined(GEOSX_USE_PYGEOSX)
+#if defined(GEOS_USE_PYGEOSX)
 #include "fileIO/python/PyVTKOutputType.hpp"
 #endif
 
@@ -36,8 +37,11 @@ VTKOutput::VTKOutput( string const & name,
   m_plotLevel(),
   m_onlyPlotSpecifiedFieldNames(),
   m_fieldNames(),
+  m_levelNames(),
   m_writer( getOutputDirectory() + '/' + m_plotFileRoot )
 {
+  enableLogLevelInput();
+
   registerWrapper( viewKeysStruct::plotFileRoot, &m_plotFileRoot ).
     setDefaultValue( m_plotFileRoot ).
     setInputFlag( InputFlags::OPTIONAL ).
@@ -52,10 +56,20 @@ VTKOutput::VTKOutput( string const & name,
     setInputFlag( InputFlags::OPTIONAL ).
     setDescription( "Level detail plot. Only fields with lower of equal plot level will be output." );
 
+  registerWrapper( viewKeysStruct::numberOfTargetProcesses, &m_numberOfTargetProcesses ).
+    setApplyDefaultValue( MpiWrapper::commSize() ).
+    setInputFlag( InputFlags::OPTIONAL ).
+    setDescription( "Number of output aggregate files to be written." );
+
   registerWrapper( viewKeysStruct::writeGhostCells, &m_writeGhostCells ).
     setApplyDefaultValue( 0 ).
     setInputFlag( InputFlags::OPTIONAL ).
     setDescription( "Should the vtk files contain the ghost cells or not." );
+
+  registerWrapper( viewKeysStruct::writeFaceElementsAs3D, &m_writeFaceElementsAs3D ).
+    setApplyDefaultValue( 0 ).
+    setInputFlag( InputFlags::OPTIONAL ).
+    setDescription( "Should the face elements be written as 3d volumes or not." );
 
   registerWrapper( viewKeysStruct::onlyPlotSpecifiedFieldNames, &m_onlyPlotSpecifiedFieldNames ).
     setApplyDefaultValue( 0 ).
@@ -64,8 +78,13 @@ VTKOutput::VTKOutput( string const & name,
     "If this flag is equal to 1, then we only plot the fields listed in `fieldNames`. Otherwise, we plot all the fields with the required `plotLevel`, plus the fields listed in `fieldNames`" );
 
   registerWrapper( viewKeysStruct::fieldNames, &m_fieldNames ).
+    setRTTypeName( rtTypes::CustomTypes::groupNameRefArray ).
     setInputFlag( InputFlags::OPTIONAL ).
     setDescription( "Names of the fields to output. If this attribute is specified, GEOSX outputs all the fields specified by the user, regardless of their `plotLevel`" );
+
+  registerWrapper( viewKeysStruct::levelNames, &m_levelNames ).
+    setInputFlag( InputFlags::OPTIONAL ).
+    setDescription( "Names of mesh levels to output." );
 
   registerWrapper( viewKeysStruct::binaryString, &m_writeBinaryData ).
     setApplyDefaultValue( m_writeBinaryData ).
@@ -81,11 +100,20 @@ VTKOutput::VTKOutput( string const & name,
 VTKOutput::~VTKOutput()
 {}
 
-void VTKOutput::postProcessInput()
+void VTKOutput::postInputInitialization()
 {
   m_writer.setOutputLocation( getOutputDirectory(), m_plotFileRoot );
   m_writer.setFieldNames( m_fieldNames.toViewConst() );
+  m_writer.setLevelNames( m_levelNames.toViewConst() );
   m_writer.setOnlyPlotSpecifiedFieldNamesFlag( m_onlyPlotSpecifiedFieldNames );
+
+  GEOS_ERROR_IF_LT_MSG( m_numberOfTargetProcesses, 1,
+                        GEOS_FMT( "{}: processes count cannot be less than 1.",
+                                  getWrapperDataContext( viewKeysStruct::numberOfTargetProcesses ) ) );
+  GEOS_ERROR_IF_GT_MSG( m_numberOfTargetProcesses, MpiWrapper::commSize(),
+                        GEOS_FMT( "{}: processes count cannot exceed the launched ranks count.",
+                                  getWrapperDataContext( viewKeysStruct::numberOfTargetProcesses ) ) );
+  m_writer.setNumberOfTargetProcesses( m_numberOfTargetProcesses );
 
   string const fieldNamesString = viewKeysStruct::fieldNames;
   string const onlyPlotSpecifiedFieldNamesString = viewKeysStruct::onlyPlotSpecifiedFieldNames;
@@ -107,6 +135,9 @@ void VTKOutput::postProcessInput()
                         "{} `{}`: found {} fields to plot in `{}`, in addition to all fields with `plotLevel` smaller or equal to {}.",
                         catalogName(), getDataContext(),
                         std::to_string( m_fieldNames.size() ), fieldNamesString, m_plotLevel ) );
+
+  GEOS_ERROR_IF( m_writeFaceElementsAs3D, GEOS_FMT( "{} `{}`: 3D vtk plot of faceElements is not yet supported.",
+                                                    catalogName(), getDataContext() ) );
 }
 
 
@@ -122,13 +153,16 @@ void VTKOutput::reinit()
 }
 
 bool VTKOutput::execute( real64 const time_n,
-                         real64 const GEOS_UNUSED_PARAM( dt ),
+                         real64 const dt,
                          integer const cycleNumber,
                          integer const GEOS_UNUSED_PARAM( eventCounter ),
                          real64 const GEOS_UNUSED_PARAM ( eventProgress ),
                          DomainPartition & domain )
 {
+  GEOS_LOG_LEVEL_RANK_0( 1, GEOS_FMT( "{}: writing {} at time {} s (cycle number {})", getName(), m_fieldNames, time_n + dt, cycleNumber ));
+
   m_writer.setWriteGhostCells( m_writeGhostCells );
+  m_writer.setWriteFaceElementsAs3D ( m_writeFaceElementsAs3D );
   m_writer.setOutputMode( m_writeBinaryData );
   m_writer.setOutputRegionType( m_outputRegionType );
   m_writer.setPlotLevel( m_plotLevel );
@@ -137,7 +171,7 @@ bool VTKOutput::execute( real64 const time_n,
   return false;
 }
 
-#if defined(GEOSX_USE_PYGEOSX)
+#if defined(GEOS_USE_PYGEOSX)
 PyTypeObject * VTKOutput::getPythonType() const
 {
   return python::getPyVTKOutputType();

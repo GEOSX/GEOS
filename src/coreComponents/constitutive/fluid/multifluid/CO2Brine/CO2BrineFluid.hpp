@@ -2,10 +2,11 @@
  * ------------------------------------------------------------------------------------------------------------
  * SPDX-License-Identifier: LGPL-2.1-only
  *
- * Copyright (c) 2018-2020 Lawrence Livermore National Security LLC
- * Copyright (c) 2018-2020 The Board of Trustees of the Leland Stanford Junior University
- * Copyright (c) 2018-2020 TotalEnergies
- * Copyright (c) 2019-     GEOSX Contributors
+ * Copyright (c) 2016-2024 Lawrence Livermore National Security LLC
+ * Copyright (c) 2018-2024 Total, S.A
+ * Copyright (c) 2018-2024 The Board of Trustees of the Leland Stanford Junior University
+ * Copyright (c) 2023-2024 Chevron
+ * Copyright (c) 2019-     GEOS/GEOSX Contributors
  * All rights reserved
  *
  * See top level LICENSE, COPYRIGHT, CONTRIBUTORS, NOTICE, and ACKNOWLEDGEMENTS files for details.
@@ -19,7 +20,7 @@
 #ifndef GEOS_CONSTITUTIVE_FLUID_MULTIFLUID_CO2BRINE_CO2BRINEFLUID_HPP_
 #define GEOS_CONSTITUTIVE_FLUID_MULTIFLUID_CO2BRINE_CO2BRINEFLUID_HPP_
 
-#include "codingUtilities/EnumStrings.hpp"
+#include "common/format/EnumStrings.hpp"
 #include "constitutive/fluid/multifluid/MultiFluidBase.hpp"
 #include "constitutive/fluid/multifluid/MultiFluidUtils.hpp"
 #include "constitutive/fluid/multifluid/CO2Brine/PhaseModel.hpp"
@@ -33,6 +34,7 @@
 #include "constitutive/fluid/multifluid/CO2Brine/functions/PhillipsBrineDensity.hpp"
 #include "constitutive/fluid/multifluid/CO2Brine/functions/PhillipsBrineViscosity.hpp"
 #include "constitutive/fluid/multifluid/CO2Brine/functions/SpanWagnerCO2Density.hpp"
+#include "common/Units.hpp"
 
 
 #include <memory>
@@ -61,7 +63,19 @@ public:
 
   virtual string getCatalogName() const override { return catalogName(); }
 
-  virtual bool isThermal() const override;
+  static constexpr bool isThermalType()
+  {
+    return !( std::is_same_v< typename PHASE1::Enthalpy, PVTProps::NoOpPVTFunction > ||
+              std::is_same_v< typename PHASE2::Enthalpy, PVTProps::NoOpPVTFunction > );
+  }
+
+  static constexpr integer min_n_components = 2;
+  static constexpr integer max_n_components = 2;
+
+  virtual bool isThermal() const override
+  {
+    return isThermalType();
+  }
 
   /**
    * @brief Kernel wrapper class for CO2BrineFluid.
@@ -69,20 +83,6 @@ public:
   class KernelWrapper final : public MultiFluidBase::KernelWrapper
   {
 public:
-
-    GEOS_HOST_DEVICE
-    virtual void compute( real64 const pressure,
-                          real64 const temperature,
-                          arraySlice1d< real64 const, compflow::USD_COMP - 1 > const & composition,
-                          arraySlice1d< real64, multifluid::USD_PHASE - 2 > const & phaseFraction,
-                          arraySlice1d< real64, multifluid::USD_PHASE - 2 > const & phaseDensity,
-                          arraySlice1d< real64, multifluid::USD_PHASE - 2 > const & phaseMassDensity,
-                          arraySlice1d< real64, multifluid::USD_PHASE - 2 > const & phaseViscosity,
-                          arraySlice1d< real64, multifluid::USD_PHASE - 2 > const & phaseEnthalpy,
-                          arraySlice1d< real64, multifluid::USD_PHASE - 2 > const & phaseInternalEnergy,
-                          arraySlice2d< real64, multifluid::USD_PHASE_COMP-2 > const & phaseCompFraction,
-                          real64 & totalDensity ) const override;
-
     GEOS_HOST_DEVICE
     virtual void compute( real64 const pressure,
                           real64 const temperature,
@@ -146,6 +146,11 @@ private:
   virtual integer getWaterPhaseIndex() const override final;
 
   /**
+   * @copydoc MultiFluidBase::checkTablesParameters( real64 pressure, real64 temperature )
+   */
+  void checkTablesParameters( real64 pressure, real64 temperature ) const override final;
+
+  /**
    * @brief Names of the submodels for input
    */
   enum class SubModelInputNames : integer
@@ -164,17 +169,22 @@ private:
   struct viewKeyStruct : MultiFluidBase::viewKeyStruct
   {
     static constexpr char const * flashModelParaFileString() { return "flashModelParaFile"; }
+    static constexpr char const * solubilityTablesString() { return "solubilityTableNames"; }
     static constexpr char const * phasePVTParaFilesString() { return "phasePVTParaFiles"; }
+    static constexpr char const * writeCSVFlagString() { return "writeCSV"; }
   };
 
 protected:
 
-  virtual void postProcessInput() override;
+  virtual void postInputInitialization() override;
 
   virtual void initializePreSubGroups() override;
 
 private:
 
+  /**
+   * @brief Create a PVT Model and output them
+   */
   void createPVTModels();
 
   /// Names of the files defining the viscosity and density models
@@ -183,12 +193,17 @@ private:
   /// Name of the file defining the flash model
   Path m_flashModelParaFile;
 
+  /// Names of solubility tables for each phase
+  string_array m_solubilityTables;
+
   /// Index of the liquid phase
   integer m_p1Index;
 
   /// Index of the gas phase
   integer m_p2Index;
 
+  /// Output csv file containing informations about PVT
+  integer m_writeCSV;
 
   /// Brine constitutive models
   std::unique_ptr< PHASE1 > m_phase1;
@@ -198,7 +213,6 @@ private:
 
   // Flash model
   std::unique_ptr< FLASH > m_flash;
-
 };
 
 // these aliases are useful in constitutive dispatch
@@ -219,158 +233,6 @@ using CO2BrineEzrokhiThermalFluid =
   CO2BrineFluid< PhaseModel< PVTProps::EzrokhiBrineDensity, PVTProps::EzrokhiBrineViscosity, PVTProps::BrineEnthalpy >,
                  PhaseModel< PVTProps::SpanWagnerCO2Density, PVTProps::FenghourCO2Viscosity, PVTProps::CO2Enthalpy >,
                  PVTProps::CO2Solubility >;
-
-template< typename PHASE1, typename PHASE2, typename FLASH >
-GEOS_HOST_DEVICE
-GEOS_FORCE_INLINE
-void
-CO2BrineFluid< PHASE1, PHASE2, FLASH >::KernelWrapper::
-  compute( real64 pressure,
-           real64 temperature,
-           arraySlice1d< real64 const, compflow::USD_COMP - 1 > const & composition,
-           arraySlice1d< real64, multifluid::USD_PHASE - 2 > const & phaseFraction,
-           arraySlice1d< real64, multifluid::USD_PHASE - 2 > const & phaseDensity,
-           arraySlice1d< real64, multifluid::USD_PHASE - 2 > const & phaseMassDensity,
-           arraySlice1d< real64, multifluid::USD_PHASE - 2 > const & phaseViscosity,
-           arraySlice1d< real64, multifluid::USD_PHASE - 2 > const & phaseEnthalpy,
-           arraySlice1d< real64, multifluid::USD_PHASE - 2 > const & phaseInternalEnergy,
-           arraySlice2d< real64, multifluid::USD_PHASE_COMP-2 > const & phaseCompFraction,
-           real64 & totalDensity ) const
-{
-  integer constexpr numComp = 2;
-  integer constexpr numPhase = 2;
-  integer const ip1 = m_p1Index;
-  integer const ip2 = m_p2Index;
-
-  // 1. Convert input mass fractions to mole fractions and keep derivatives
-
-  stackArray1d< real64, numComp > compMoleFrac( numComp );
-  if( m_useMass )
-  {
-    // convert mass fractions to mole fractions
-    convertToMoleFractions< numComp >( composition, compMoleFrac );
-  }
-  else
-  {
-    for( integer ic = 0; ic < numComp; ++ic )
-    {
-      compMoleFrac[ic] = composition[ic];
-    }
-  }
-
-  // 2. Compute phase fractions and phase component fractions
-
-  real64 const temperatureInCelsius = temperature - 273.15;
-  m_flash.compute( pressure,
-                   temperatureInCelsius,
-                   compMoleFrac.toSliceConst(),
-                   phaseFraction,
-                   phaseCompFraction );
-
-  // 3. Compute phase densities and phase viscosities
-
-  m_phase1.density.compute( pressure,
-                            temperatureInCelsius,
-                            phaseCompFraction[ip1].toSliceConst(),
-                            phaseDensity[ip1],
-                            m_useMass );
-  m_phase1.viscosity.compute( pressure,
-                              temperatureInCelsius,
-                              phaseCompFraction[ip1].toSliceConst(),
-                              phaseViscosity[ip1],
-                              m_useMass );
-
-  m_phase2.density.compute( pressure,
-                            temperatureInCelsius,
-                            phaseCompFraction[ip2].toSliceConst(),
-                            phaseDensity[ip2],
-                            m_useMass );
-  m_phase2.viscosity.compute( pressure,
-                              temperatureInCelsius,
-                              phaseCompFraction[ip2].toSliceConst(),
-                              phaseViscosity[ip2],
-                              m_useMass );
-
-  // 4. Depending on the m_useMass flag, convert to mass variables or simply compute mass density
-
-  // TODO: for now the treatment of molar/mass density requires too many interpolations in the tables, it needs to be fixed
-  //       we should modify the PVT functions so that they can return phaseMassDens, phaseDens, and phaseMW in one call
-
-  if( m_useMass )
-  {
-    // compute the phase molecular weights (ultimately, get that from the PVT function)
-    real64 phaseMolecularWeight[numPhase]{};
-    real64 phaseMolarDens{};
-    m_phase1.density.compute( pressure,
-                              temperatureInCelsius,
-                              phaseCompFraction[ip1].toSliceConst(),
-                              phaseMolarDens,
-                              false );
-    phaseMolecularWeight[ip1] = phaseDensity[ip1] / phaseMolarDens;
-
-    m_phase2.density.compute( pressure,
-                              temperatureInCelsius,
-                              phaseCompFraction[ip2].toSliceConst(),
-                              phaseMolarDens,
-                              false );
-    phaseMolecularWeight[ip2] = phaseDensity[ip2] / phaseMolarDens;
-
-    // copy the densities into the mass densities
-    for( integer ip = 0; ip < numPhase; ++ip )
-    {
-      phaseMassDensity[ip] = phaseDensity[ip];
-    }
-
-    // convert mole fractions to mass fractions
-    convertToMassFractions< numComp >( phaseMolecularWeight,
-                                       phaseFraction,
-                                       phaseCompFraction );
-  }
-  else
-  {
-    // for now, we have to compute the phase mass density here
-    m_phase1.density.compute( pressure,
-                              temperatureInCelsius,
-                              phaseCompFraction[ip1].toSliceConst(),
-                              phaseMassDensity[ip1],
-                              true );
-    m_phase2.density.compute( pressure,
-                              temperatureInCelsius,
-                              phaseCompFraction[ip2].toSliceConst(),
-                              phaseMassDensity[ip2],
-                              true );
-  }
-
-  // 5. Compute enthalpy and internal energy
-
-  if( m_isThermal )
-  {
-
-    m_phase1.enthalpy.compute( pressure,
-                               temperatureInCelsius,
-                               phaseCompFraction[ip1].toSliceConst(),
-                               phaseEnthalpy[ip1],
-                               m_useMass );
-    m_phase2.enthalpy.compute( pressure,
-                               temperatureInCelsius,
-                               phaseCompFraction[ip2].toSliceConst(),
-                               phaseEnthalpy[ip2],
-                               m_useMass );
-
-    computeInternalEnergy< numComp, numPhase >( pressure,
-                                                phaseFraction,
-                                                phaseMassDensity,
-                                                phaseEnthalpy,
-                                                phaseInternalEnergy );
-
-  }
-
-  // 6. Compute total fluid mass/molar density
-
-  computeTotalDensity< numComp, numPhase >( phaseFraction,
-                                            phaseDensity,
-                                            totalDensity );
-}
 
 template< typename PHASE1, typename PHASE2, typename FLASH >
 GEOS_HOST_DEVICE
@@ -415,7 +277,7 @@ CO2BrineFluid< PHASE1, PHASE2, FLASH >::KernelWrapper::
 
   // 2. Compute phase fractions and phase component fractions
 
-  real64 const temperatureInCelsius = temperature - 273.15;
+  real64 const temperatureInCelsius = units::convertKToC( temperature );
   m_flash.compute( pressure,
                    temperatureInCelsius,
                    compMoleFrac.toSliceConst(),
@@ -524,7 +386,6 @@ CO2BrineFluid< PHASE1, PHASE2, FLASH >::KernelWrapper::
 
   if( m_isThermal )
   {
-
     m_phase1.enthalpy.compute( pressure,
                                temperatureInCelsius,
                                phaseCompFraction.value[ip1].toSliceConst(), phaseCompFraction.derivs[ip1].toSliceConst(),
@@ -573,7 +434,6 @@ CO2BrineFluid< PHASE1, PHASE2, FLASH >::KernelWrapper::
            m_phaseCompFraction( k, q ),
            m_totalDensity( k, q ) );
 }
-
 
 } // namespace constitutive
 

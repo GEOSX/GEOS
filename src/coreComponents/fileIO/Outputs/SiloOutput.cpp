@@ -2,10 +2,11 @@
  * ------------------------------------------------------------------------------------------------------------
  * SPDX-License-Identifier: LGPL-2.1-only
  *
- * Copyright (c) 2018-2020 Lawrence Livermore National Security LLC
- * Copyright (c) 2018-2020 The Board of Trustees of the Leland Stanford Junior University
- * Copyright (c) 2018-2020 TotalEnergies
- * Copyright (c) 2019-     GEOSX Contributors
+ * Copyright (c) 2016-2024 Lawrence Livermore National Security LLC
+ * Copyright (c) 2018-2024 Total, S.A
+ * Copyright (c) 2018-2024 The Board of Trustees of the Leland Stanford Junior University
+ * Copyright (c) 2023-2024 Chevron
+ * Copyright (c) 2019-     GEOS/GEOSX Contributors
  * All rights reserved
  *
  * See top level LICENSE, COPYRIGHT, CONTRIBUTORS, NOTICE, and ACKNOWLEDGEMENTS files for details.
@@ -76,6 +77,7 @@ SiloOutput::SiloOutput( string const & name,
     "If this flag is equal to 1, then we only plot the fields listed in `fieldNames`. Otherwise, we plot all the fields with the required `plotLevel`, plus the fields listed in `fieldNames`" );
 
   registerWrapper( viewKeysStruct::fieldNames, &m_fieldNames ).
+    setRTTypeName( rtTypes::CustomTypes::groupNameRefArray ).
     setInputFlag( InputFlags::OPTIONAL ).
     setDescription( "Names of the fields to output. If this attribute is specified, GEOSX outputs all (and only) the fields specified by the user, regardless of their plotLevel" );
 
@@ -84,7 +86,7 @@ SiloOutput::SiloOutput( string const & name,
 SiloOutput::~SiloOutput()
 {}
 
-void SiloOutput::postProcessInput()
+void SiloOutput::postInputInitialization()
 {
   string const fieldNamesString = viewKeysStruct::fieldNames;
   string const onlyPlotSpecifiedFieldNamesString = viewKeysStruct::onlyPlotSpecifiedFieldNames;
@@ -122,9 +124,9 @@ bool SiloOutput::execute( real64 const time_n,
 
   SiloFile silo;
 
-  int const size = MpiWrapper::commSize( MPI_COMM_GEOSX );
-  int const rank = MpiWrapper::commRank( MPI_COMM_GEOSX );
-  MpiWrapper::barrier( MPI_COMM_GEOSX );
+  int const size = MpiWrapper::commSize( MPI_COMM_GEOS );
+  int const rank = MpiWrapper::commRank( MPI_COMM_GEOS );
+  MpiWrapper::barrier( MPI_COMM_GEOS );
 
   integer const numFiles = parallelThreads() == 0 ? size : parallelThreads();
 

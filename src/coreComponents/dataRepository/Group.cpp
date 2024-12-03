@@ -2,10 +2,11 @@
  * ------------------------------------------------------------------------------------------------------------
  * SPDX-License-Identifier: LGPL-2.1-only
  *
- * Copyright (c) 2018-2020 Lawrence Livermore National Security LLC
- * Copyright (c) 2018-2020 The Board of Trustees of the Leland Stanford Junior University
- * Copyright (c) 2018-2020 TotalEnergies
- * Copyright (c) 2019-     GEOSX Contributors
+ * Copyright (c) 2016-2024 Lawrence Livermore National Security LLC
+ * Copyright (c) 2018-2024 Total, S.A
+ * Copyright (c) 2018-2024 The Board of Trustees of the Leland Stanford Junior University
+ * Copyright (c) 2023-2024 Chevron
+ * Copyright (c) 2019-     GEOS/GEOSX Contributors
  * All rights reserved
  *
  * See top level LICENSE, COPYRIGHT, CONTRIBUTORS, NOTICE, and ACKNOWLEDGEMENTS files for details.
@@ -15,11 +16,11 @@
 // Source includes
 #include "Group.hpp"
 #include "ConduitRestart.hpp"
-#include "codingUtilities/StringUtilities.hpp"
+#include "common/format/StringUtilities.hpp"
 #include "codingUtilities/Utilities.hpp"
 #include "common/TimingMacros.hpp"
 #include "GroupContext.hpp"
-#if defined(GEOSX_USE_PYGEOSX)
+#if defined(GEOS_USE_PYGEOSX)
 #include "python/PyGroupType.hpp"
 #endif
 
@@ -49,6 +50,7 @@ Group::Group( string const & name,
   m_restart_flags( RestartFlags::WRITE_AND_READ ),
   m_input_flags( InputFlags::INVALID ),
   m_conduitNode( rootNode[ name ] ),
+  m_logLevelsRegistry( std::make_unique< LogLevelsRegistry >() ),
   m_dataContext( std::make_unique< GroupContext >( *this ) )
 {}
 
@@ -78,7 +80,6 @@ void Group::deregisterWrapper( string const & name )
   m_wrappers.erase( name );
   m_conduitNode.remove( name );
 }
-
 
 void Group::resize( indexType const newSize )
 {
@@ -137,23 +138,43 @@ string Group::getPath() const
 void Group::processInputFileRecursive( xmlWrapper::xmlDocument & xmlDocument,
                                        xmlWrapper::xmlNode & targetNode )
 {
+  xmlWrapper::xmlNodePos nodePos = xmlDocument.getNodePosition( targetNode );
+  processInputFileRecursive( xmlDocument, targetNode, nodePos );
+}
+void Group::processInputFileRecursive( xmlWrapper::xmlDocument & xmlDocument,
+                                       xmlWrapper::xmlNode & targetNode,
+                                       xmlWrapper::xmlNodePos const & nodePos )
+{
   xmlDocument.addIncludedXML( targetNode );
 
   // Handle the case where the node was imported from a different input file
   // Set the path prefix to make sure all relative Path variables are interpreted correctly
-  string const oldPrefix = Path::pathPrefix();
+  string const oldPrefix = std::string( Path::getPathPrefix() );
   xmlWrapper::xmlAttribute filePath = targetNode.attribute( xmlWrapper::filePathString );
   if( filePath )
   {
-    Path::pathPrefix() = getAbsolutePath( splitPath( filePath.value() ).first );
+    Path::setPathPrefix( getAbsolutePath( splitPath( filePath.value() ).first ) );
   }
 
   // Loop over the child nodes of the targetNode
   array1d< string > childNames;
   for( xmlWrapper::xmlNode childNode : targetNode.children() )
   {
+    xmlWrapper::xmlNodePos childNodePos = xmlDocument.getNodePosition( childNode );
+
     // Get the child tag and name
-    string childName = childNode.attribute( "name" ).value();
+    string childName;
+
+    try
+    {
+      xmlWrapper::readAttributeAsType( childName, "name",
+                                       rtTypes::getTypeRegex< string >( rtTypes::CustomTypes::groupName ),
+                                       childNode, string( "" ) );
+    } catch( std::exception const & ex )
+    {
+      xmlWrapper::processInputException( ex, "name", childNode, childNodePos );
+    }
+
     if( childName.empty() )
     {
       childName = childNode.name();
@@ -178,21 +199,19 @@ void Group::processInputFileRecursive( xmlWrapper::xmlDocument & xmlDocument,
     }
     if( newChild != nullptr )
     {
-      newChild->processInputFileRecursive( xmlDocument, childNode );
+      newChild->processInputFileRecursive( xmlDocument, childNode, childNodePos );
     }
   }
 
-  processInputFile( xmlDocument, targetNode );
+  processInputFile( targetNode, nodePos );
 
   // Restore original prefix once the node is processed
-  Path::pathPrefix() = oldPrefix;
+  Path::setPathPrefix( oldPrefix );
 }
 
-void Group::processInputFile( xmlWrapper::xmlDocument const & xmlDocument,
-                              xmlWrapper::xmlNode const & targetNode )
+void Group::processInputFile( xmlWrapper::xmlNode const & targetNode,
+                              xmlWrapper::xmlNodePos const & nodePos )
 {
-  xmlWrapper::xmlNodePos nodePos = xmlDocument.getNodePosition( targetNode );
-
   if( nodePos.isFound() )
   {
     m_dataContext = std::make_unique< DataFileContext >( targetNode, nodePos );
@@ -224,16 +243,15 @@ void Group::processInputFile( xmlWrapper::xmlDocument const & xmlDocument,
   }
 }
 
-void Group::postProcessInputRecursive()
+void Group::postInputInitializationRecursive()
 {
+  m_logLevelsRegistry = nullptr;
   for( auto const & subGroupIter : m_subGroups )
   {
-    subGroupIter.second->postProcessInputRecursive();
+    subGroupIter.second->postInputInitializationRecursive();
   }
-  postProcessInput();
+  postInputInitialization();
 }
-
-
 
 void Group::registerDataOnMeshRecursive( Group & meshBodies )
 {
@@ -244,7 +262,6 @@ void Group::registerDataOnMeshRecursive( Group & meshBodies )
   }
 }
 
-
 Group * Group::createChild( string const & childKey, string const & childName )
 {
   GEOS_ERROR_IF( !(CatalogInterface::hasKeyName( childKey )),
@@ -254,8 +271,7 @@ Group * Group::createChild( string const & childKey, string const & childName )
                          CatalogInterface::factory( childKey, childName, this ) );
 }
 
-
-void Group::printDataHierarchy( integer const indent )
+void Group::printDataHierarchy( integer const indent ) const
 {
   GEOS_LOG( string( indent, '\t' ) << getName() << " : " << LvArray::system::demangleType( *this ) );
   for( auto & view : wrappers() )
@@ -502,7 +518,8 @@ localIndex Group::unpack( buffer_unit_type const * & buffer,
                           arrayView1d< localIndex > & packList,
                           integer const recursive,
                           bool onDevice,
-                          parallelDeviceEvents & events )
+                          parallelDeviceEvents & events,
+                          MPI_Op GEOS_UNUSED_PARAM( op ) )
 {
   localIndex unpackedSize = 0;
   string groupName;
@@ -625,9 +642,8 @@ void Group::postRestartInitializationRecursive()
 
 void Group::enableLogLevelInput()
 {
-  string const logLevelString = "logLevel";
-
-  registerWrapper( logLevelString, &m_logLevel ).
+  // TODO : Improve the Log Level description to clearly assign a usecase per log level (incoming PR).
+  registerWrapper( viewKeyStruct::logLevelString(), &m_logLevel ).
     setApplyDefaultValue( 0 ).
     setInputFlag( InputFlags::OPTIONAL ).
     setDescription( "Log level" );
@@ -691,7 +707,7 @@ localIndex Group::getSubGroupIndex( keyType const & key ) const
   return getSubGroups().getIndex( key );
 }
 
-#if defined(GEOSX_USE_PYGEOSX)
+#if defined(GEOS_USE_PYGEOSX)
 PyTypeObject * Group::getPythonType() const
 { return geos::python::getPyGroupType(); }
 #endif

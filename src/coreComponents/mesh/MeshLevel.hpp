@@ -2,10 +2,11 @@
  * ------------------------------------------------------------------------------------------------------------
  * SPDX-License-Identifier: LGPL-2.1-only
  *
- * Copyright (c) 2018-2020 Lawrence Livermore National Security LLC
- * Copyright (c) 2018-2020 The Board of Trustees of the Leland Stanford Junior University
- * Copyright (c) 2018-2020 TotalEnergies
- * Copyright (c) 2019-     GEOSX Contributors
+ * Copyright (c) 2016-2024 Lawrence Livermore National Security LLC
+ * Copyright (c) 2018-2024 Total, S.A
+ * Copyright (c) 2018-2024 The Board of Trustees of the Leland Stanford Junior University
+ * Copyright (c) 2023-2024 Chevron
+ * Copyright (c) 2019-     GEOS/GEOSX Contributors
  * All rights reserved
  *
  * See top level LICENSE, COPYRIGHT, CONTRIBUTORS, NOTICE, and ACKNOWLEDGEMENTS files for details.
@@ -20,6 +21,7 @@
 #define GEOS_MESH_MESHLEVEL_HPP_
 
 #include "NodeManager.hpp"
+#include "ParticleManager.hpp"
 #include "EmbeddedSurfaceNodeManager.hpp"
 #include "EdgeManager.hpp"
 #include "ElementRegionManager.hpp"
@@ -125,11 +127,13 @@ public:
 
     // This key is defined in problem manager:
     static constexpr char const * elemManagerString() { return "ElementRegions"; }
+    static constexpr char const * particleManagerString() { return "ParticleRegions"; }
 
     static constexpr auto embSurfNodeManagerString = "embeddedSurfacesNodeManager";
     static constexpr auto embSurfEdgeManagerString = "embeddedSurfacesEdgeManager";
 
     dataRepository::GroupKey nodeManager = {nodeManagerString()};
+    dataRepository::GroupKey particleManager = {particleManagerString()};
     dataRepository::GroupKey edgeManager = {edgeManagerString()};
     dataRepository::GroupKey faceManager = {faceManagerString()};
     dataRepository::GroupKey elemManager = {elemManagerString()};
@@ -156,6 +160,19 @@ public:
    */
   NodeManager & getNodeManager()
   { return *m_nodeManager; }
+
+  /**
+   * @brief Get the particle manager.
+   * @return a reference to the particleManager object
+   */
+  ParticleManager const & getParticleManager() const
+  { return *m_particleManager; }
+
+  /**
+   * @copydoc getParticleManager() const
+   */
+  ParticleManager & getParticleManager()
+  { return *m_particleManager; }
 
   /**
    * @brief Get the edge manager.
@@ -269,6 +286,8 @@ private:
 
   /// Manager for node data
   NodeManager * const m_nodeManager;
+  /// Manager for particle data
+  ParticleManager * const m_particleManager;
   /// Manager for edge data
   EdgeManager * const m_edgeManager;
   /// Manager for face data

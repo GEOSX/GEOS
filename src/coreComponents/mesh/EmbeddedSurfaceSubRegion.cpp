@@ -2,10 +2,11 @@
  * ------------------------------------------------------------------------------------------------------------
  * SPDX-License-Identifier: LGPL-2.1-only
  *
- * Copyright (c) 2018-2020 Lawrence Livermore National Security LLC
- * Copyright (c) 2018-2020 The Board of Trustees of the Leland Stanford Junior University
- * Copyright (c) 2018-2020 TotalEnergies
- * Copyright (c) 2019-     GEOSX Contributors
+ * Copyright (c) 2016-2024 Lawrence Livermore National Security LLC
+ * Copyright (c) 2018-2024 Total, S.A
+ * Copyright (c) 2018-2024 The Board of Trustees of the Leland Stanford Junior University
+ * Copyright (c) 2023-2024 Chevron
+ * Copyright (c) 2019-     GEOS/GEOSX Contributors
  * All rights reserved
  *
  * See top level LICENSE, COPYRIGHT, CONTRIBUTORS, NOTICE, and ACKNOWLEDGEMENTS files for details.
@@ -40,23 +41,12 @@ void surfaceWithGhostNodes::insert( globalIndex const & edgeIndex )
 EmbeddedSurfaceSubRegion::EmbeddedSurfaceSubRegion( string const & name,
                                                     dataRepository::Group * const parent ):
   SurfaceElementSubRegion( name, parent ),
-  m_normalVector(),
-  m_tangentVector1(),
-  m_tangentVector2(),
   m_numOfJumpEnrichments( 3 ),
   m_connectivityIndex(),
-  m_parentPlaneName()
+  m_parentPlaneName(),
+  m_2dElemToElems()
 {
   m_elementType = ElementType::Polygon;
-
-  registerWrapper( viewKeyStruct::normalVectorString(), &m_normalVector ).
-    setDescription( "Unit normal vector to the embedded surface." );
-
-  registerWrapper( viewKeyStruct::t1VectorString(), &m_tangentVector1 ).
-    setDescription( "Unit vector in the first tangent direction to the embedded surface." );
-
-  registerWrapper( viewKeyStruct::t2VectorString(), &m_tangentVector2 ).
-    setDescription( "Unit vector in the second tangent direction to the embedded surface." );
 
   registerWrapper( viewKeyStruct::elementCenterString(), &m_elementCenter ).
     setDescription( "The center of each EmbeddedSurface element." );
@@ -71,12 +61,28 @@ EmbeddedSurfaceSubRegion::EmbeddedSurfaceSubRegion( string const & name,
     setDescription( "Connectivity index of each EmbeddedSurface." );
 
   registerWrapper( viewKeyStruct::surfaceElementToParentPlaneString(), &m_parentPlaneName ).
+    setRTTypeName( rtTypes::CustomTypes::groupNameRefArray ).
     setDescription( "A map of surface element to the parent fracture name" );
+
+  registerWrapper( viewKeyStruct::surfaceElementsToCellRegionsString(), &m_2dElemToElems.m_toElementRegion ).
+    setPlotLevel( PlotLevel::NOPLOT ).
+    setDescription( "A map of face element local indices to the cell local indices" );
+
+  registerWrapper( viewKeyStruct::surfaceElementsToCellSubRegionsString(), &m_2dElemToElems.m_toElementSubRegion ).
+    setPlotLevel( PlotLevel::NOPLOT ).
+    setDescription( "A map of face element local indices to the cell local indices" );
+
+  registerWrapper( viewKeyStruct::surfaceElementsToCellIndexString(), &m_2dElemToElems.m_toElementIndex ).
+    setPlotLevel( PlotLevel::NOPLOT ).
+    setDescription( "A map of face element local indices to the cell local indices" );
 
   m_normalVector.resizeDimension< 1 >( 3 );
   m_tangentVector1.resizeDimension< 1 >( 3 );
   m_tangentVector2.resizeDimension< 1 >( 3 );
   m_2dElemToElems.resize( 0, 1 );
+
+  m_2dElemToElems.setElementRegionManager( dynamicCast< ElementRegionManager & >( getParent().getParent().getParent().getParent() ) );
+
 }
 
 void EmbeddedSurfaceSubRegion::calculateElementGeometricQuantities( NodeManager const & GEOS_UNUSED_PARAM( nodeManager ),

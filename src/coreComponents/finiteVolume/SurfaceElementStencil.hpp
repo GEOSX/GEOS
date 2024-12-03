@@ -2,10 +2,11 @@
  * ------------------------------------------------------------------------------------------------------------
  * SPDX-License-Identifier: LGPL-2.1-only
  *
- * Copyright (c) 2018-2020 Lawrence Livermore National Security LLC
- * Copyright (c) 2018-2020 The Board of Trustees of the Leland Stanford Junior University
- * Copyright (c) 2018-2020 TotalEnergies
- * Copyright (c) 2019-     GEOSX Contributors
+ * Copyright (c) 2016-2024 Lawrence Livermore National Security LLC
+ * Copyright (c) 2018-2024 Total, S.A
+ * Copyright (c) 2018-2024 The Board of Trustees of the Leland Stanford Junior University
+ * Copyright (c) 2023-2024 Chevron
+ * Copyright (c) 2019-     GEOS/GEOSX Contributors
  * All rights reserved
  *
  * See top level LICENSE, COPYRIGHT, CONTRIBUTORS, NOTICE, and ACKNOWLEDGEMENTS files for details.
@@ -23,25 +24,6 @@
 
 namespace geos
 {
-
-/// @cond DO_NOT_DOCUMENT
-// TODO remove! This option allows for the creation of new mass inside a newly
-// created FaceElement. The new mass will be equal to:
-// creationMass = defaultDensity * defaultAperture * faceArea.
-// If 0, then the beginning of step density is artificially set to zero...which
-// may cause some newton convergence problems.
-#define ALLOW_CREATION_MASS 1
-
-
-// TODO remove! This option sets the pressure in a newly created FaceElement to
-// be the lowest value of all attached non-new FaceElements.
-#define SET_CREATION_PRESSURE 1
-
-// TODO remove! This option sets the nodal displacements attached a newly
-// created FaceElement to some scalar fraction of the aperture of the
-// lowest attached non-new FaceElements.
-#define SET_CREATION_DISPLACEMENT 0
-/// @endcond
 
 /**
  * @brief Describes properties of SurfaceElementStencil.

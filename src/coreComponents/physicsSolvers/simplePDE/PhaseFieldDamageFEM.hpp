@@ -2,10 +2,11 @@
  * ------------------------------------------------------------------------------------------------------------
  * SPDX-License-Identifier: LGPL-2.1-only
  *
- * Copyright (c) 2018-2020 Lawrence Livermore National Security LLC
- * Copyright (c) 2018-2020 The Board of Trustees of the Leland Stanford Junior University
- * Copyright (c) 2018-2020 TotalEnergies
- * Copyright (c) 2019-     GEOSX Contributors
+ * Copyright (c) 2016-2024 Lawrence Livermore National Security LLC
+ * Copyright (c) 2018-2024 Total, S.A
+ * Copyright (c) 2018-2024 The Board of Trustees of the Leland Stanford Junior University
+ * Copyright (c) 2023-2024 Chevron
+ * Copyright (c) 2019-     GEOS/GEOSX Contributors
  * All rights reserved
  *
  * See top level LICENSE, COPYRIGHT, CONTRIBUTORS, NOTICE, and ACKNOWLEDGEMENTS files for details.
@@ -22,7 +23,7 @@
 #include "linearAlgebra/DofManager.hpp"
 #include "linearAlgebra/interfaces/InterfaceTypes.hpp"
 #include "fieldSpecification/FieldSpecificationManager.hpp"
-#include "physicsSolvers/SolverBase.hpp"
+#include "physicsSolvers/PhysicsSolverBase.hpp"
 
 struct stabledt
 {
@@ -39,7 +40,7 @@ class FieldSpecificationBase;
 class FiniteElementBase;
 class DomainPartition;
 
-class PhaseFieldDamageFEM : public SolverBase
+class PhaseFieldDamageFEM : public PhysicsSolverBase
 {
 public:
   PhaseFieldDamageFEM( const string & name, Group * const parent );
@@ -50,6 +51,10 @@ public:
   {
     return "PhaseFieldDamageFEM";
   }
+  /**
+   * @copydoc PhysicsSolverBase::getCatalogName()
+   */
+  string getCatalogName() const override { return catalogName(); }
 
   static string coupledSolverAttributePrefix() { return "damage"; }
 
@@ -127,14 +132,22 @@ public:
                                        CRSMatrixView< real64, globalIndex const > const & localMatrix,
                                        arrayView1d< real64 > const & localRhs );
 
-  enum class timeIntegrationOption
+  virtual void saveSequentialIterationState( DomainPartition & domain ) override;
+
+  enum class TimeIntegrationOption
   {
     SteadyState,
     ImplicitTransient,
     ExplicitTransient
   };
 
-  struct viewKeyStruct : public SolverBase::viewKeyStruct
+  enum class LocalDissipation
+  {
+    Linear,
+    Quadratic,
+  };
+
+  struct viewKeyStruct : public PhysicsSolverBase::viewKeyStruct
   {
     static constexpr char const * coeffNameString() { return "coeffField"; }
     static constexpr char const * localDissipationOptionString() { return "localDissipation"; }
@@ -162,13 +175,13 @@ public:
   }
 
 protected:
-  virtual void postProcessInput() override final;
+  virtual void postInputInitialization() override final;
 
 private:
   string m_fieldName;
   stabledt m_stabledt;
-  timeIntegrationOption m_timeIntegrationOption;
-  string m_localDissipationOption;
+  TimeIntegrationOption m_timeIntegrationOption;
+  LocalDissipation m_localDissipationOption;
   integer m_irreversibilityFlag;
   real64 m_damageUpperBound;
 
@@ -176,6 +189,15 @@ private:
 
   PhaseFieldDamageFEM();
 };
+
+/// Declare strings associated with enumeration values.
+ENUM_STRINGS( PhaseFieldDamageFEM::LocalDissipation,
+              "Linear",
+              "Quadratic" );
+ENUM_STRINGS( PhaseFieldDamageFEM::TimeIntegrationOption,
+              "SteadyState",
+              "ImplicitTransient",
+              "ExplicitTransient" );
 
 } /* namespace geos */
 

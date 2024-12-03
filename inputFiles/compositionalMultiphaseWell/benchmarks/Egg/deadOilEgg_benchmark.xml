@@ -11,9 +11,9 @@
   <Mesh>
     <VTKMesh
       name="mesh"
-      file="../../../../../GEOSXDATA/DataSets/Egg/egg.vtu"
+      file="../../../../../GEOSDATA/DataSets/Egg/egg.vtu"
       fieldsToImport="{ PERM }"
-      fieldNamesInGEOSX="{ rockPerm_permeability }">
+      fieldNamesInGEOS="{ rockPerm_permeability }">
 
       <InternalWell
         name="wellProducer1"

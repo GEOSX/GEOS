@@ -173,7 +173,7 @@ Schema Components
 The first entry in the schema are a set of headers the file type and version.
 Following this, the set of available simple types for attributes are laid out.
 Each of these includes a variable type name, which mirrors those used in the main code, and a regular expression, which is designed to match valid inputs.
-These patterns are defined and documented in ``DataTypes::typeRegex``.
+These patterns are defined and documented in ``rtTypes`` (in ``DataTypes.hpp``.
 The final part of the schema is the file layout, beginning with the root ``Problem``.
 Each complex type defines an element, its children, and its attributes.
 Each attribute defines the input name, type, default value, and/or usage.
@@ -198,7 +198,7 @@ Advanced XML Features
 =================================
 
 The `geosx_xml_tools` python package adds a set of advanced features to the GEOS xml format: units, parameters, and symbolic expressions.
-See :ref:`PythonToolsSetup` for details on setup instructions, and :ref:`XMLToolsPackage` for package API details.
+See`Python Tools Setup <https://geosx-geosx.readthedocs-hosted.com/projects/geosx-geospythonpackages/en/latest/>`_ for details on setup instructions, and `XML Parser Documentation <https://geosx-geosx.readthedocs-hosted.com/projects/geosx-geospythonpackages/en/latest/geosx_xml_tools.html>`_ for package API details.
 
 
 Usage

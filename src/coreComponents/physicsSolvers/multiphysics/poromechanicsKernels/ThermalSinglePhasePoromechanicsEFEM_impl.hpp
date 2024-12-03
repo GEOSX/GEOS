@@ -2,10 +2,11 @@
  * ------------------------------------------------------------------------------------------------------------
  * SPDX-License-Identifier: LGPL-2.1-only
  *
- * Copyright (c) 2018-2020 Lawrence Livermore National Security LLC
- * Copyright (c) 2018-2020 The Board of Trustees of the Leland Stanford Junior University
- * Copyright (c) 2018-2020 TotalEnergies
- * Copyright (c) 2019-     GEOSX Contributors
+ * Copyright (c) 2016-2024 Lawrence Livermore National Security LLC
+ * Copyright (c) 2018-2024 Total, S.A
+ * Copyright (c) 2018-2024 The Board of Trustees of the Leland Stanford Junior University
+ * Copyright (c) 2023-2024 Chevron
+ * Copyright (c) 2019-     GEOS/GEOSX Contributors
  * All rights reserved
  *
  * See top level LICENSE, COPYRIGHT, CONTRIBUTORS, NOTICE, and ACKNOWLEDGEMENTS files for details.
@@ -174,8 +175,8 @@ complete( localIndex const k,
 
   localIndex const embSurfIndex = m_cellsToEmbeddedSurfaces[k][0];
   // Energy balance accumulation
-  real64 const volume        =  m_elementVolume( embSurfIndex ) + m_deltaVolume( embSurfIndex );
-  real64 const volume_n      =  m_elementVolume( embSurfIndex );
+  real64 const volume        =  m_elementVolumeFrac( embSurfIndex ) + m_deltaVolume( embSurfIndex );
+  real64 const volume_n      =  m_elementVolumeFrac( embSurfIndex );
   real64 const fluidEnergy   =  m_fluidDensity( embSurfIndex, 0 ) * m_fluidInternalEnergy( embSurfIndex, 0 ) * volume;
   real64 const fluidEnergy_n =  m_fluidDensity_n( embSurfIndex, 0 ) * m_fluidInternalEnergy_n( embSurfIndex, 0 ) * volume_n;
 

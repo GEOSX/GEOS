@@ -2,10 +2,11 @@
  * ------------------------------------------------------------------------------------------------------------
  * SPDX-License-Identifier: LGPL-2.1-only
  *
- * Copyright (c) 2018-2020 Lawrence Livermore National Security LLC
- * Copyright (c) 2018-2020 The Board of Trustees of the Leland Stanford Junior University
- * Copyright (c) 2018-2020 TotalEnergies
- * Copyright (c) 2019-     GEOSX Contributors
+ * Copyright (c) 2016-2024 Lawrence Livermore National Security LLC
+ * Copyright (c) 2018-2024 Total, S.A
+ * Copyright (c) 2018-2024 The Board of Trustees of the Leland Stanford Junior University
+ * Copyright (c) 2023-2024 Chevron
+ * Copyright (c) 2019-     GEOS/GEOSX Contributors
  * All rights reserved
  *
  * See top level LICENSE, COPYRIGHT, CONTRIBUTORS, NOTICE, and ACKNOWLEDGEMENTS files for details.
@@ -16,11 +17,12 @@
 #define GEOS_FILEIO_VTK_VTKPOLYDATAWRITERINTERFACE_HPP_
 
 #include "common/DataTypes.hpp"
+#include "mesh/ObjectManagerBase.hpp"
 #include "dataRepository/WrapperBase.hpp"
 #include "dataRepository/Wrapper.hpp"
 #include "fileIO/vtk/VTKPVDWriter.hpp"
 #include "fileIO/vtk/VTKVTMWriter.hpp"
-#include "codingUtilities/EnumStrings.hpp"
+#include "common/format/EnumStrings.hpp"
 
 class vtkUnstructuredGrid;
 class vtkPointData;
@@ -31,9 +33,12 @@ namespace geos
 
 class DomainPartition;
 class ElementRegionBase;
+class ParticleRegionBase;
 class EmbeddedSurfaceNodeManager;
 class ElementRegionManager;
 class NodeManager;
+class ParticleManager;
+class FaceManager;
 
 namespace vtk
 {
@@ -49,6 +54,7 @@ enum struct VTKRegionTypes
   CELL,
   WELL,
   SURFACE,
+  PARTICLE,
   ALL
 };
 
@@ -62,6 +68,7 @@ ENUM_STRINGS( VTKRegionTypes,
               "cell",
               "well",
               "surface",
+              "particle",
               "all" );
 
 /**
@@ -83,6 +90,15 @@ public:
   void setWriteGhostCells( bool writeGhostCells )
   {
     m_writeGhostCells = writeGhostCells;
+  }
+
+  /**
+   * @brief Defines whether in the vtk output facelements should be 2D or 3D
+   * @param writeFaceElementsAs3D The boolean flag.
+   */
+  void setWriteFaceElementsAs3D( bool writeFaceElementsAs3D )
+  {
+    m_writeFaceElementsAs3D = writeFaceElementsAs3D;
   }
 
   /**
@@ -144,6 +160,22 @@ public:
     m_fieldNames.insert( fieldNames.begin(), fieldNames.end() );
   }
 
+  /**
+   * @brief Set the names of the mesh levels to output
+   * @param[in] levelNames the mesh levels to output (an empty array means all levels are saved)
+   */
+  void setLevelNames( arrayView1d< string const > const & levelNames )
+  {
+    m_levelNames.insert( levelNames.begin(), levelNames.end() );
+  }
+  /**
+   * @brief Set the Number Of Target Processes
+   * @param[in] numberOfTargetProcesses  the number of processes
+   */
+  void setNumberOfTargetProcesses( integer const numberOfTargetProcesses )
+  {
+    m_numberOfTargetProcesses = numberOfTargetProcesses;
+  }
 
   /**
    * @brief Main method of this class. Write all the files for one time step.
@@ -187,7 +219,7 @@ public:
   void clearData();
 
 
-private:
+protected:
 
   /**
    * @brief Check if plotting is enabled for this field
@@ -200,54 +232,63 @@ private:
    * @brief Writes the files for all the CellElementRegions.
    * @details There will be one file written per CellElementRegion and per rank.
    * @param[in] time the time-step
-   * @param[in] cycle the current cycle number
    * @param[in] elemManager the ElementRegionManager containing the CellElementRegions to be output
    * @param[in] nodeManager the NodeManager containing the nodes of the domain to be output
-   * @param[in] meshLevelName the name of the MeshLevel containing the nodes and elements to be output
-   * @param[in] meshBodyName the name of the MeshBody containing the nodes and elements to be output
+   * @param[in] path the path to the file to output
    */
   void writeCellElementRegions( real64 time,
                                 ElementRegionManager const & elemManager,
                                 NodeManager const & nodeManager,
-                                string const & path ) const;
+                                string const & path );
 
   /**
    * @brief Writes the files containing the well representation
    * @details There will be one file written per WellElementRegion and per rank
    * @param[in] time the time-step
-   * @param[in] cycle the current cycle number
    * @param[in] elemManager the ElementRegionManager containing the WellElementRegions to be output
    * @param[in] nodeManager the NodeManager containing the nodes of the domain to be output
+   * @param[in] path The path to the file to output
    */
   void writeWellElementRegions( real64 time,
                                 ElementRegionManager const & elemManager,
                                 NodeManager const & nodeManager,
-                                string const & path ) const;
+                                string const & path );
+
+  /**
+   * @brief Writes the files containing the particle representation
+   * @details There will be one file written per ParticleRegion and per rank
+   * @param[in] time the time-step
+   * @param[in] particleManager the ParticleManager containing the ParticleRegions to be output
+   * @param[in] path the root path where the mesh will be written
+   */
+  void writeParticleRegions( real64 const time,
+                             ParticleManager const & particleManager,
+                             string const & path );
 
   /**
    * @brief Writes the files containing the faces elements
    * @details There will be one file written per FaceElementRegion and per rank
    * @param[in] time the time-step
-   * @param[in] cycle the current cycle number
    * @param[in] elemManager the ElementRegionManager containing the FaceElementRegions to be output
    * @param[in] nodeManager the NodeManager containing the nodes of the domain to be output
-   * @param[in] meshLevelName the name of the MeshLevel containing the nodes and elements to be output
-   * @param[in] meshBodyName the name of the MeshBody containing the nodes and elements to be output
+   * @param[in] embSurfNodeManager the embedded surface node Manager.
+   * @param[in] faceManager the faceManager.
+   * @param[in] path the path to the output file.
    */
   void writeSurfaceElementRegions( real64 time,
                                    ElementRegionManager const & elemManager,
                                    NodeManager const & nodeManager,
                                    EmbeddedSurfaceNodeManager const & embSurfNodeManager,
-                                   string const & path ) const;
+                                   FaceManager const & faceManager,
+                                   string const & path );
 
   /**
    * @brief Writes a VTM file for the time-step \p time.
    * @details a VTM file is a VTK Multiblock file. It contains relative path to different files organized in blocks.
    * @param[in] cycle the current cycle number
-   * @param[in] elemManager the ElementRegionManager containing all the regions to be output and referred to in the VTM file
+   * @param[in] domain the DomainPartition containing all the regions to be output and referred to in the VTM file
    * @param[in] vtmWriter a writer specialized for the VTM file format
    */
-
   void writeVtmFile( integer const cycle,
                      DomainPartition const & domain,
                      VTKVTMWriter const & vtmWriter ) const;
@@ -270,17 +311,27 @@ private:
                            vtkCellData * cellData ) const;
 
   /**
+   * @brief Writes all the fields associated to the elements of \p region if their plotlevel is <= m_plotLevel
+   * @param[in] region ParticleRegion being written
+   * @param[in] cellData a VTK object containing all the fields associated with the elements
+   */
+  void writeParticleFields( ParticleRegionBase const & region,
+                            vtkCellData * cellData ) const;
+
+  /**
    * @brief Writes an unstructured grid
    * @details The unstructured grid is the last element in the hierarchy of the output,
    * it contains the cells connectivities and the vertices coordinates as long as the
    * data fields associated with it
-   * @param[in] ug a VTK SmartPointer to the VTK unstructured grid.
    * @param[in] path directory path for the grid file
+   * @param[in] region ElementRegionBase beeing written
+   * @param[in] ug a VTK SmartPointer to the VTK unstructured grid.
    */
   void writeUnstructuredGrid( string const & path,
-                              vtkUnstructuredGrid * ug ) const;
+                              ObjectManagerBase const & region,
+                              vtkUnstructuredGrid * ug );
 
-private:
+protected:
 
   /// Output directory name
   string m_outputDir;
@@ -307,6 +358,9 @@ private:
   /// Names of the fields to output
   std::set< string > m_fieldNames;
 
+  /// Names of the mesh levels to output (an empty array means all levels are saved)
+  std::set< string > m_levelNames;
+
   /// The previousCycle
   integer m_previousCycle;
 
@@ -315,6 +369,15 @@ private:
 
   /// Region output type, could be CELL, WELL, SURFACE, or ALL
   VTKRegionTypes m_outputRegionType;
+
+  /// Defines whether to plot a faceElement as a 3D volumetric element or not.
+  bool m_writeFaceElementsAs3D;
+
+  /// Number of target processes to aggregate the data to be written
+  integer m_numberOfTargetProcesses;
+
+  /// Map a region name to the array of ranks outputed for it
+  std::map< string, std::vector< integer > > m_targetProcessesId;
 };
 
 } // namespace vtk

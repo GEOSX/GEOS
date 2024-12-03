@@ -2,10 +2,11 @@
  * ------------------------------------------------------------------------------------------------------------
  * SPDX-License-Identifier: LGPL-2.1-only
  *
- * Copyright (c) 2018-2020 Lawrence Livermore National Security LLC
- * Copyright (c) 2018-2020 The Board of Trustees of the Leland Stanford Junior University
- * Copyright (c) 2018-2020 TotalEnergies
- * Copyright (c) 2019-     GEOSX Contributors
+ * Copyright (c) 2016-2024 Lawrence Livermore National Security LLC
+ * Copyright (c) 2018-2024 Total, S.A
+ * Copyright (c) 2018-2024 The Board of Trustees of the Leland Stanford Junior University
+ * Copyright (c) 2023-2024 Chevron
+ * Copyright (c) 2019-     GEOS/GEOSX Contributors
  * All rights reserved
  *
  * See top level LICENSE, COPYRIGHT, CONTRIBUTORS, NOTICE, and ACKNOWLEDGEMENTS files for details.
@@ -20,7 +21,7 @@
 #ifndef GEOS_MAININTERFACE_PROBLEMMANAGER_HPP_
 #define GEOS_MAININTERFACE_PROBLEMMANAGER_HPP_
 
-#include "events/EventManager.hpp"
+#include "dataRepository/Group.hpp"
 
 namespace geos
 {
@@ -34,10 +35,13 @@ namespace constitutive
 {
 class ConstitutiveManager;
 }
+class EventManager;
+class TasksManager;
 class FunctionManager;
 class FieldSpecificationManager;
 struct CommandLineOptions;
 class CellBlockManagerABC;
+class ParticleBlockManagerABC;
 
 /**
  * @class ProblemManager
@@ -239,6 +243,7 @@ public:
     dataRepository::GroupKey constitutiveManager = { "Constitutive" };                    ///< Constitutive key
     dataRepository::GroupKey domain    = { "domain" };                                    ///< Domain key
     dataRepository::GroupKey eventManager = { "Events" };                                 ///< Events key
+    dataRepository::GroupKey externalDataSourceManager = { "ExternalDataSource" };        ///< External Data Source key
     dataRepository::GroupKey fieldSpecificationManager = { "FieldSpecifications" };       ///< Field specification key
     dataRepository::GroupKey functionManager = { "Functions" };                           ///< Functions key
     dataRepository::GroupKey geometricObjectManager = { "Geometry" };                     ///< Geometry key
@@ -307,19 +312,25 @@ public:
     return *m_fieldSpecificationManager;
   }
 
-
   /**
-   * @brief Returns the const EventManager.
-   * @return The const EventManager.
+   * @brief Returns the EventManager.
+   * @return The EventManager.
    */
   EventManager & getEventManager()
   {return *m_eventManager;}
+
+  /**
+   * @brief Returns the TasksManager.
+   * @return The TasksManager.
+   */
+  TasksManager & getTasksManager()
+  {return *m_tasksManager;}
 
 protected:
   /**
    * @brief Post process the command line input
    */
-  virtual void postProcessInput() override final;
+  virtual void postInputInitialization() override final;
 
 private:
 
@@ -344,6 +355,10 @@ private:
                           Group const * const discretization,
                           arrayView1d< string const > const & targetRegions );
 
+  void generateMeshLevel( MeshLevel & meshLevel,
+                          ParticleBlockManagerABC & particleBlockManager,
+                          arrayView1d< string const > const & );
+
   /**
    * @brief Allocate constitutive relations on each subregion with appropriate
    *   number of quadrature point.
@@ -361,6 +376,9 @@ private:
 
   /// The EventManager
   EventManager * m_eventManager;
+
+  /// The TasksManager
+  TasksManager * m_tasksManager;
 
   /// The FunctionManager
   FunctionManager * m_functionManager;

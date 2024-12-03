@@ -2,10 +2,11 @@
  * ------------------------------------------------------------------------------------------------------------
  * SPDX-License-Identifier: LGPL-2.1-only
  *
- * Copyright (c) 2018-2020 Lawrence Livermore National Security LLC
- * Copyright (c) 2018-2020 The Board of Trustees of the Leland Stanford Junior University
- * Copyright (c) 2018-2020 TotalEnergies
- * Copyright (c) 2019-     GEOSX Contributors
+ * Copyright (c) 2016-2024 Lawrence Livermore National Security LLC
+ * Copyright (c) 2018-2024 Total, S.A
+ * Copyright (c) 2018-2024 The Board of Trustees of the Leland Stanford Junior University
+ * Copyright (c) 2023-2024 Chevron
+ * Copyright (c) 2019-     GEOS/GEOSX Contributors
  * All rights reserved
  *
  * See top level LICENSE, COPYRIGHT, CONTRIBUTORS, NOTICE, and ACKNOWLEDGEMENTS files for details.
@@ -61,6 +62,7 @@ public:
   /// The number of quadrature points per element.
   constexpr static localIndex numQuadraturePoints = 1;
 
+  GEOS_HOST_DEVICE
   virtual ~H1_TriangleFace_Lagrange1_Gauss1() override
   {}
 
@@ -143,6 +145,42 @@ public:
                      real64 ( &N )[numNodes] );
 
   /**
+   * @brief Calculate shape bubble functions values at a given point in the parent space.
+   * @param pointCoord coordinates of the given point.
+   * @param N An array to pass back the shape function values.
+   */
+  GEOS_HOST_DEVICE
+  GEOS_FORCE_INLINE
+  static void calcBubbleN( real64 const (&pointCoord)[2],
+                           real64 (& N)[1] )
+  {
+
+    real64 const r  = pointCoord[0];
+    real64 const s  = pointCoord[1];
+
+    N[0] = (1.0 - r - s) * r * s;
+
+  }
+
+  /**
+   * @brief Calculate shape bubble functions values at a
+   *   quadrature point.
+   * @param q Index of the quadrature point.
+   * @param N An array to pass back the shape function values.
+   */
+  GEOS_HOST_DEVICE
+  inline
+  static void calcBubbleN( localIndex const q,
+                           real64 (& N)[1] )
+  {
+    GEOS_UNUSED_VAR( q );
+
+    // single quadrature point (centroid), i.e.  r = s = 1/3
+    real64 const qCoords[2] = { 1.0 / 3.0, 1.0 / 3.0};
+    calcBubbleN( qCoords, N );
+  }
+
+  /**
    * @brief Calculate the integration weights for a quadrature point.
    * @param q Index of the quadrature point.
    * @param X Array containing the coordinates of the support points.
@@ -170,6 +208,20 @@ public:
                                         [maxSupportPoints * NUMDOFSPERTRIALSUPPORTPOINT]
                                         [maxSupportPoints * NUMDOFSPERTRIALSUPPORTPOINT],
                                         real64 const & scaleFactor );
+
+  /**
+   * @brief Calculate the node permutation between the parent element and the geometric element.
+   *   Note: The optimal location for this calculation is yet to be determined.
+   * @param permutation An array to return the node permutation.
+   */
+  GEOS_HOST_DEVICE
+  inline
+  static void getPermutation( int (& permutation)[numNodes] )
+  {
+    permutation[0] = 0;
+    permutation[1] = 1;
+    permutation[2] = 2;
+  }
 
 private:
   /// The area of the element in the parent configuration.

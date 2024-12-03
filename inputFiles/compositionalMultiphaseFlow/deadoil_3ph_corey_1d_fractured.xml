@@ -10,7 +10,8 @@
       useMass="0"
       targetRegions="{ Domain, Fracture }">
       <NonlinearSolverParameters
-        newtonTol="1.0e-10"
+        lineSearchAction="None"
+        newtonTol="1.0e-8"
         newtonMaxIter="15"
         maxTimeStepCuts="2"
         lineSearchMaxCuts="2"/>
@@ -23,7 +24,7 @@
     <EmbeddedSurfaceGenerator
       name="SurfaceGenerator"
       logLevel="1"
-      discretization="fluidTPFA"
+      discretization="FE1"
       targetRegions="{ Domain, Fracture }"
       targetObjects="{ FracturePlane }"
       fractureRegion="Fracture"/>
@@ -87,11 +88,11 @@
       beginTime="1e5"
       target="/Solvers/compflow"/>
 
-    <!--  <PeriodicEvent
+    <PeriodicEvent
       name="restarts"
       timeFrequency="1e7"
       targetExactTimestep="0"
-      target="/Outputs/restartOutput"/>-->
+      target="/Outputs/restartOutput"/>
   </Events>
 
   <NumericalMethods>
@@ -99,12 +100,17 @@
       <TwoPointFluxApproximation
         name="fluidTPFA"/>
     </FiniteVolume>
+    <FiniteElements>
+    <FiniteElementSpace
+        name="FE1"
+        order="1"/>
+    </FiniteElements>
   </NumericalMethods>
 
   <ElementRegions>
     <CellElementRegion
       name="Domain"
-      cellBlocks="{ block1 }"
+      cellBlocks="{ * }"
       materialList="{ fluid1, rock, relperm }"/>
 
     <SurfaceElementRegion
@@ -306,7 +312,8 @@
 
   <Outputs>
     <VTK
-      name="vtkOutput"/>
+      name="vtkOutput"
+      plotFileRoot="deadoil_3ph_corey_1d_fractured"/>
 
     <Restart
       name="restartOutput"/>

@@ -41,7 +41,7 @@ block.
 
 The following attributes are supported:
 
-.. include:: /coreComponents/schema/docs/WillisRichardsPermeability.rst
+.. include:: /docs/sphinx/datastructure/WillisRichardsPermeability.rst
 
 
 Example

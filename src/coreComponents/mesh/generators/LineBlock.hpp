@@ -2,21 +2,21 @@
  * ------------------------------------------------------------------------------------------------------------
  * SPDX-License-Identifier: LGPL-2.1-only
  *
- * Copyright (c) 2018-2020 Lawrence Livermore National Security LLC
- * Copyright (c) 2018-2020 The Board of Trustees of the Leland Stanford Junior University
- * Copyright (c) 2018-2020 TotalEnergies
- * Copyright (c) 2020-     GEOSX Contributors
+ * Copyright (c) 2016-2024 Lawrence Livermore National Security LLC
+ * Copyright (c) 2018-2024 Total, S.A
+ * Copyright (c) 2018-2024 The Board of Trustees of the Leland Stanford Junior University
+ * Copyright (c) 2023-2024 Chevron
+ * Copyright (c) 2019-     GEOS/GEOSX Contributors
  * All rights reserved
  *
  * See top level LICENSE, COPYRIGHT, CONTRIBUTORS, NOTICE, and ACKNOWLEDGEMENTS files for details.
  * ------------------------------------------------------------------------------------------------------------
  */
 
-#ifndef GEOSX_WELLBLOCK_HPP
-#define GEOSX_WELLBLOCK_HPP
+#ifndef GEOS_WELLBLOCK_HPP
+#define GEOS_WELLBLOCK_HPP
 
 #include "mesh/generators/LineBlockABC.hpp"
-#include "mesh/generators/InternalWellGenerator.hpp"
 
 
 namespace geos
@@ -152,6 +152,15 @@ public:
    */
   void setPerfTransmissibility( arrayView1d< real64 const > perfTransmissibility ) { m_perfTransmissibility = perfTransmissibility; }
 
+  arrayView1d< real64 const > getPerfSkinFactor() const override final { return m_perfSkinFactor; }
+
+
+  /**
+   * @brief Set the well skin factor at the perforations.
+   * @param perfSkinFactor list of well skin factor at all the perforations on the well
+   */
+  void setPerfSkinFactor( arrayView1d< real64 const > perfSkinFactor ) { m_perfSkinFactor = perfSkinFactor; }
+
   arrayView1d< globalIndex const > getPerfElemIndex() const override final { return m_perfElemId; }
 
   /**
@@ -229,6 +238,9 @@ private:
 
   /// Well Peaceman index at the perforation
   array1d< real64 > m_perfTransmissibility;
+
+  /// Well skin factor at the perforation
+  array1d< real64 > m_perfSkinFactor;
 
   /// Global index of the well element
   array1d< globalIndex > m_perfElemId;

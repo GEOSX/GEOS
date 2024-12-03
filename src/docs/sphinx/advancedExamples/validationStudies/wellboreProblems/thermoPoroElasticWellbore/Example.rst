@@ -144,8 +144,8 @@ It is important to remark that the initial effective stress of rock must be set 
 
 .. literalinclude:: ../../../../../../../inputFiles/wellbore/ThermoPoroElasticWellbore_base.xml
   :language: xml
-  :start-after: <!-- SPHINX_StressCasingInit -->
-  :end-before: <!-- SPHINX_StressCasingInitEnd -->
+  :start-after: <!-- SPHINX_StressInit -->
+  :end-before: <!-- SPHINX_StressInitEnd -->
 
 The initial and boundary conditions for pore pressure are defined in the block below:
 
@@ -208,8 +208,6 @@ Results and benchmark
 
 A good agreement between the GEOS results and analytical results for temperature and pore pressure distribution around the wellbore is shown in the figures below:
 
-.. plot:: docs/sphinx/advancedExamples/validationStudies/wellboreProblems/thermoPoroElasticWellbore/THM_wellbore_temperature_pressure.py
-
 .. _problemThermoPoroElasticWellbore_Temperature_Pressure_Fig:
 .. figure:: temperature_pressure.png
    :align: center
@@ -220,8 +218,6 @@ A good agreement between the GEOS results and analytical results for temperature
 
 and the validation for the radial displacement around the cased wellbore is shown below:
 
-.. plot:: docs/sphinx/advancedExamples/validationStudies/wellboreProblems/thermoPoroElasticWellbore/THM_wellbore_displacement.py
-
 .. _problemThermoPoroElasticWellbore_Displacement_Fig:
 .. figure:: displacement.png
    :align: center
@@ -231,8 +227,6 @@ and the validation for the radial displacement around the cased wellbore is show
    Validation of the radial displacement.
 
 The validations of the total radial and hoop stress (tangent stress) components computed by GEOS against reference results are shown in the figure below:
-
-.. plot:: docs/sphinx/advancedExamples/validationStudies/wellboreProblems/thermoPoroElasticWellbore/THM_wellbore_stress.py
 
 .. _problemThermoPoroElasticWellbore_Stress_Fig:
 .. figure:: stress.png

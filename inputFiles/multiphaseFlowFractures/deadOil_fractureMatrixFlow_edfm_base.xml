@@ -10,16 +10,18 @@
       temperature="300"
       useMass="0"
       targetRegions="{ Domain, Fracture }"
-      targetRelativePressureChangeInTimeStep="1"
+      targetRelativePressureChangeInTimeStep="1000"
       targetPhaseVolFractionChangeInTimeStep="1"
       maxCompFractionChange="1"
-      maxRelativePressureChange="1"
+      maxRelativePressureChange="1000"
+      scalingType="Local"
       initialDt="1e2">
       <NonlinearSolverParameters
         newtonTol="1.0e-5"
         newtonMaxIter="15"
         maxTimeStepCuts="2"
-        lineSearchMaxCuts="2"/>
+        lineSearchMaxCuts="2"
+        lineSearchAction="None"/>
       <LinearSolverParameters
         solverType="direct"
         directParallel="0"
@@ -88,7 +90,7 @@
   <ElementRegions>
     <CellElementRegion
       name="Domain"
-      cellBlocks="{ cb1 }"
+      cellBlocks="{ * }"
       materialList="{ fluid1, rock, relperm }"/>
 
     <SurfaceElementRegion

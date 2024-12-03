@@ -2,10 +2,11 @@
  * ------------------------------------------------------------------------------------------------------------
  * SPDX-License-Identifier: LGPL-2.1-only
  *
- * Copyright (c) 2018-2020 Lawrence Livermore National Security LLC
- * Copyright (c) 2018-2020 The Board of Trustees of the Leland Stanford Junior University
- * Copyright (c) 2018-2020 TotalEnergies
- * Copyright (c) 2019-     GEOSX Contributors
+ * Copyright (c) 2016-2024 Lawrence Livermore National Security LLC
+ * Copyright (c) 2018-2024 Total, S.A
+ * Copyright (c) 2018-2024 The Board of Trustees of the Leland Stanford Junior University
+ * Copyright (c) 2023-2024 Chevron
+ * Copyright (c) 2019-     GEOS/GEOSX Contributors
  * All rights reserved
  *
  * See top level LICENSE, COPYRIGHT, CONTRIBUTORS, NOTICE, and ACKNOWLEDGEMENTS files for details.
@@ -28,7 +29,8 @@ namespace dataRepository
 
 
 WrapperBase::WrapperBase( string const & name,
-                          Group & parent ):
+                          Group & parent,
+                          string const & rtTypeName ):
   m_name( name ),
   m_parent( &parent ),
   m_sizedFromParent( 1 ),
@@ -37,6 +39,7 @@ WrapperBase::WrapperBase( string const & name,
   m_inputFlag( InputFlags::INVALID ),
   m_successfulReadFromInput( false ),
   m_description(),
+  m_rtTypeName( rtTypeName ),
   m_registeringObjects(),
   m_conduitNode( parent.getConduitNode()[ name ] ),
   m_dataContext( std::make_unique< WrapperContext >( *this ) )
@@ -58,6 +61,7 @@ void WrapperBase::copyWrapperAttributes( WrapperBase const & source )
   m_plotLevel  = source.m_plotLevel;
   m_inputFlag = source.m_inputFlag;
   m_description = source.m_description;
+  m_rtTypeName = source.m_rtTypeName;
 }
 
 string WrapperBase::getPath() const
@@ -115,34 +119,6 @@ void WrapperBase::createDataContext( xmlWrapper::xmlNode const & targetNode,
   {
     m_dataContext = std::make_unique< DataFileContext >( targetNode, att, attPos );
   }
-}
-
-void WrapperBase::processInputException( std::exception const & ex,
-                                         xmlWrapper::xmlNode const & targetNode,
-                                         xmlWrapper::xmlNodePos const & nodePos ) const
-{
-  xmlWrapper::xmlAttribute const & attribute = targetNode.attribute( getName().c_str() );
-  string const inputStr = string( attribute.value() );
-  xmlWrapper::xmlAttributePos const attPos = nodePos.getAttributeLine( getName() );
-  std::ostringstream oss;
-  string const exStr = ex.what();
-
-  oss << "***** XML parsing error at node ";
-  if( nodePos.isFound() )
-  {
-    string const & filePath = attPos.isFound() ? attPos.filePath : nodePos.filePath;
-    int const line = attPos.isFound() ? attPos.line : nodePos.line;
-    oss << "named " << m_parent->getName() << ", attribute " << getName()
-        << " (" << splitPath( filePath ).second << ", l." << line << ").";
-  }
-  else
-  {
-    oss << targetNode.path() << " (name=" << targetNode.attribute( "name" ).value() << ")/" << getName();
-  }
-  oss << "\n***** Input value: '" << inputStr << '\'';
-  oss << ( exStr[0]=='\n' ? exStr : "'\n" + exStr );
-
-  throw InputError( oss.str() );
 }
 
 
