@@ -223,8 +223,6 @@ public:
     }
   }
 
-  void initialize( DomainPartition & domain ) const { return reservoirSolver()->initialize( domain ); }
-
   void
   assembleFluxTerms( real64 const dt,
                      DomainPartition const & domain,

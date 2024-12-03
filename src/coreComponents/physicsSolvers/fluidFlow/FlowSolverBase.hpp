@@ -138,8 +138,6 @@ public:
 
   void enableLaggingFractureStencilWeightsUpdate(){ m_isLaggingFractureStencilWeightsUpdate = 1; };
 
-  void initialize( DomainPartition & domain );
-
   real64 sumAquiferFluxes( BoundaryStencil const & stencil,
                            AquiferBoundaryCondition::KernelWrapper const & aquiferBCWrapper,
                            ElementViewConst< arrayView1d< real64 const > > const & pres,
@@ -211,6 +209,8 @@ protected:
   virtual void initializePreSubGroups() override;
 
   virtual void initializePostInitialConditionsPreSubGroups() override;
+
+  void initialize( DomainPartition & domain );
 
   virtual void computeHydrostaticEquilibrium( DomainPartition & domain ) { GEOS_UNUSED_VAR( domain ); }
 

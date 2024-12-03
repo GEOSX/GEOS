@@ -114,10 +114,6 @@ public:
                    GEOS_FMT( "{} {}: The attribute `{}` of the flow solver `{}` must be set to 1 since the poromechanics solver is thermal",
                              this->getCatalogName(), this->getName(), FlowSolverBase::viewKeyStruct::isThermalString(), this->flowSolver()->getName() ),
                    InputError );
-
-    DomainPartition & domain = this->template getGroupByPath< DomainPartition >( "/Problem/domain" );
-    flowSolver()->initialize( domain );
-    updateBulkDensity( domain );
   }
 
   virtual void setConstitutiveNamesCallSuper( ElementSubRegionBase & subRegion ) const override final
@@ -298,9 +294,10 @@ public:
    * @brief Utility function to set the stress initialization flag
    * @param[in] performStressInitialization true if the solver has to initialize stress, false otherwise
    */
-  void setStressInitialization( integer const performStressInitialization )
+  void setStressInitialization( bool const performStressInitialization )
   {
     m_performStressInitialization = performStressInitialization;
+    solidMechanicsSolver()->setStressInitialization( performStressInitialization );
   }
 
   struct viewKeyStruct : Base::viewKeyStruct

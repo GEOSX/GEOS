@@ -42,7 +42,7 @@ class SolidMechanicsLagrangianFEM;
  */
 class SolidMechanicsStateReset : public TaskBase
 {
-  friend class PoromechanicsInitialization;
+  template< typename > friend class PoromechanicsInitialization;
 
 public:
 

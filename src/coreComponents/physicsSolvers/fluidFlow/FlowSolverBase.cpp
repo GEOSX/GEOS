@@ -92,7 +92,7 @@ FlowSolverBase::FlowSolverBase( string const & name,
   m_numDofPerCell( 0 ),
   m_isThermal( 0 ),
   m_keepVariablesConstantDuringInitStep( 0 ),
-  m_isFixedStressPoromechanicsUpdate( false ),
+  m_isFixedStressPoromechanicsUpdate( 0 ),
   m_isJumpStabilized( false ),
   m_isLaggingFractureStencilWeightsUpdate( 0 )
 {

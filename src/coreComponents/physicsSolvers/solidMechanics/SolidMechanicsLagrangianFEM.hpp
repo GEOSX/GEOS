@@ -283,7 +283,7 @@ public:
    * @brief Utility function to set the stress initialization flag
    * @param[in] performStressInitialization true if the solver has to initialize stress, false otherwise
    */
-  void setStressInitialization( integer const performStressInitialization )
+  void setStressInitialization( bool const performStressInitialization )
   {
     m_performStressInitialization = performStressInitialization;
   }
