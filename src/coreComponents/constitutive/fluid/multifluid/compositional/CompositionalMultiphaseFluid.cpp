@@ -22,6 +22,7 @@
 #include "constitutive/fluid/multifluid/CO2Brine/functions/PVTFunctionHelpers.hpp"
 #include "constitutive/fluid/multifluid/MultiFluidFields.hpp"
 #include "codingUtilities/Utilities.hpp"
+#include "common/format/StringUtilities.hpp"
 
 namespace geos
 {
@@ -51,6 +52,7 @@ CompositionalMultiphaseFluid( string const & name, Group * const parent )
   m_parameters( createModelParameters() )
 {
   using InputFlags = dataRepository::InputFlags;
+  using RestartFlags = dataRepository::RestartFlags;
 
   getWrapperBase( viewKeyStruct::componentNamesString() ).setInputFlag( InputFlags::REQUIRED );
   getWrapperBase( viewKeyStruct::componentMolarWeightString() ).setInputFlag( InputFlags::REQUIRED );
@@ -80,13 +82,18 @@ CompositionalMultiphaseFluid( string const & name, Group * const parent )
 
   // Link parameters specific to each model
   m_parameters->registerParameters( this );
+
+  // Register extra wrappers to enable auto-cloning
+  registerWrapper( "phaseOrder", &m_phaseOrder )
+    .setSizedFromParent( 0 )
+    .setRestartFlags( RestartFlags::NO_WRITE );
 }
 
 template< typename FLASH, typename PHASE1, typename PHASE2, typename PHASE3 >
 integer CompositionalMultiphaseFluid< FLASH, PHASE1, PHASE2, PHASE3 >::getWaterPhaseIndex() const
 {
-  string const expectedWaterPhaseNames[] = { "water" };
-  return PVTProps::PVTFunctionHelpers::findName( m_phaseNames, expectedWaterPhaseNames, viewKeyStruct::phaseNamesString() );
+  integer const aqueous = static_cast< integer >(PhaseType::AQUEOUS);
+  return m_phaseOrder.size() > aqueous ? m_phaseOrder[aqueous] : -1;
 }
 
 template< typename FLASH, typename PHASE1, typename PHASE2, typename PHASE3 >
@@ -170,6 +177,12 @@ void CompositionalMultiphaseFluid< FLASH, PHASE1, PHASE2, PHASE3 >::postInputIni
     }
   }
 
+  // Determine the phase ordering
+  m_phaseOrder.resize( 3 );
+  m_phaseOrder[PhaseType::LIQUID] = findPhaseIndex( "oil,liq,liquid" );
+  m_phaseOrder[PhaseType::VAPOUR] = findPhaseIndex( "gas,vap,vapor,vapour" );
+  m_phaseOrder[PhaseType::AQUEOUS] = findPhaseIndex( "wat,water,aqueous" );
+
   m_parameters->postInputInitialization( this, *m_componentProperties );
 }
 
@@ -210,6 +223,7 @@ CompositionalMultiphaseFluid< FLASH, PHASE1, PHASE2, PHASE3 >::createKernelWrapp
                         *m_phase1,
                         *m_phase2,
                         *m_phase3,
+                        m_phaseOrder.toViewConst(),
                         m_componentMolarWeight,
                         m_useMass,
                         m_phaseFraction.toView(),
@@ -247,6 +261,22 @@ void CompositionalMultiphaseFluid< FLASH, PHASE1, PHASE2, PHASE3 >::createModels
                                          *m_parameters );
 }
 
+template< typename FLASH, typename PHASE1, typename PHASE2, typename PHASE3 >
+integer CompositionalMultiphaseFluid< FLASH, PHASE1, PHASE2, PHASE3 >::findPhaseIndex( string names ) const
+{
+  auto const nameContainer = stringutilities::tokenize( names, ",", true, false );
+
+  for( integer ip = 0; ip < numFluidPhases(); ++ip )
+  {
+    std::string const phaseName = stringutilities::toLower( m_phaseNames[ip] );
+    if( std::find( nameContainer.begin(), nameContainer.end(), phaseName ) != nameContainer.end())
+    {
+      return ip;
+    }
+  }
+  return -1;
+}
+
 // Create the fluid models
 template< typename FLASH, typename PHASE1, typename PHASE2, typename PHASE3 >
 std::unique_ptr< compositional::ModelParameters >
@@ -269,6 +299,11 @@ template class CompositionalMultiphaseFluid<
     compositional::NegativeTwoPhaseFlashModel,
     compositional::PhaseModel< compositional::CompositionalDensity, compositional::LohrenzBrayClarkViscosity, compositional::NullModel >,
     compositional::PhaseModel< compositional::CompositionalDensity, compositional::LohrenzBrayClarkViscosity, compositional::NullModel > >;
+template class CompositionalMultiphaseFluid<
+    compositional::ImmiscibleWaterFlashModel,
+    compositional::PhaseModel< compositional::CompositionalDensity, compositional::LohrenzBrayClarkViscosity, compositional::NullModel >,
+    compositional::PhaseModel< compositional::CompositionalDensity, compositional::LohrenzBrayClarkViscosity, compositional::NullModel >,
+    compositional::PhaseModel< compositional::ImmiscibleWaterDensity, compositional::ImmiscibleWaterViscosity, compositional::NullModel > >;
 
 REGISTER_CATALOG_ENTRY( ConstitutiveBase,
                         CompositionalTwoPhaseConstantViscosity,
@@ -277,6 +312,11 @@ REGISTER_CATALOG_ENTRY( ConstitutiveBase,
 
 REGISTER_CATALOG_ENTRY( ConstitutiveBase,
                         CompositionalTwoPhaseLohrenzBrayClarkViscosity,
+                        string const &,
+                        dataRepository::Group * const )
+
+REGISTER_CATALOG_ENTRY( ConstitutiveBase,
+                        CompositionalThreePhaseLohrenzBrayClarkViscosity,
                         string const &,
                         dataRepository::Group * const )
 

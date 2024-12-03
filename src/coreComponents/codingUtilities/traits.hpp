@@ -129,6 +129,14 @@ HAS_MEMBER_FUNCTION( capacity, localIndex, );
 HAS_MEMBER_FUNCTION_NO_RTYPE( resize, 0 );
 
 /**
+ * @brief Defines a static constexpr bool HasMemberFunction_resizeDefault< @p CLASS >
+ *        that is true iff the method @p CLASS ::resizeDefault( int, int, int) exists.
+ * @tparam CLASS The type to test.
+ */
+HAS_MEMBER_FUNCTION_NO_RTYPE( resizeDefault, 0, 0 );
+
+
+/**
  * @brief Defines a static constexpr bool HasMemberFunction_reserve< @p CLASS >
  *        that is true iff the method @p CLASS ::reserve( localIndex ) exists.
  * @tparam CLASS The type to test.

@@ -92,6 +92,8 @@ void ContactSolverBase::registerDataOnMesh( dataRepository::Group & meshBodies )
       subRegion.registerField< fields::contact::oldFractureState >( getName() );
 
       subRegion.registerField< fields::contact::slip >( getName() );
+
+      subRegion.registerField< fields::contact::deltaSlip >( getName() );
     } );
 
   } );
@@ -250,4 +252,4 @@ void ContactSolverBase::setConstitutiveNamesCallSuper( ElementSubRegionBase & su
   }
 }
 
-} /* namespace geos */
+}   /* namespace geos */

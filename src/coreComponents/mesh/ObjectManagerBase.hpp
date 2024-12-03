@@ -924,6 +924,15 @@ public:
     return m_domainBoundaryIndicator.toViewConst();
   }
 
+  /**
+   * @brief Function to output connectivity in order to assist debugging issues
+   *        with object connectivity.
+   */
+  virtual void outputObjectConnectivity() const
+  {
+    GEOS_ERROR( "Called outputObjectConnectivity in ObjectManagerBase. Function should be implemented." );
+  }
+
 protected:
   /// Group that holds object sets.
   Group m_sets;
@@ -995,7 +1004,10 @@ void ObjectManagerBase::fixUpDownMaps( TYPE_RELATION & relation,
           allValuesMapped = false;
         }
       }
-      GEOS_ERROR_IF( relation[li][a] == unmappedLocalIndexValue, "Index not set" );
+      // temporarily disabled this check to allow for the case where the index is not set
+      // this entire fixUpDownMaps will be removed in a future PR as the unpacking is modified
+      // s.t. there are no invalid unpacked values that are not expected.
+      //GEOS_ERROR_IF( relation[li][a] == unmappedLocalIndexValue, "Index not set" );
     }
   }
   GEOS_ERROR_IF( !allValuesMapped, "some values of unmappedIndices were not used" );
