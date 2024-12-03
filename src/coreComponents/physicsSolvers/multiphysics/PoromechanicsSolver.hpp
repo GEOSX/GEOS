@@ -219,12 +219,9 @@ public:
           setRestartFlags( dataRepository::RestartFlags::NO_WRITE ).
           setSizedFromParent( 0 );
 
-        //if( this->getNonlinearSolverParameters().m_couplingType == NonlinearSolverParameters::CouplingType::Sequential )
-        {
-          // register the bulk density for use in the solid mechanics solver
-          // ideally we would resize it here as well, but the solid model name is not available yet (see below)
-          subRegion.registerField< fields::poromechanics::bulkDensity >( this->getName() );
-        }
+        // register the bulk density for use in the solid mechanics solver
+        // ideally we would resize it here as well, but the solid model name is not available yet (see below)
+        subRegion.registerField< fields::poromechanics::bulkDensity >( this->getName() );
 
         if( m_stabilizationType == stabilization::StabilizationType::Global || m_stabilizationType == stabilization::StabilizationType::Local )
         {

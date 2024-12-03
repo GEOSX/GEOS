@@ -25,6 +25,7 @@
 
 namespace geos
 {
+class SolidMechanicsLagrangianFEM;
 class SolidMechanicsStatistics;
 
 /**
@@ -38,7 +39,6 @@ class SolidMechanicsStatistics;
  * (4) run a normal simulation
  *
  */
-template< typename POROMECHANICS_SOLVER >
 class PoromechanicsInitialization : public TaskBase
 {
 public:
@@ -48,8 +48,7 @@ public:
    * @param[in] name the name of the task coming from the xml
    * @param[in] parent the parent group of the task
    */
-  PoromechanicsInitialization( const string & name,
-                               Group * const parent );
+  PoromechanicsInitialization( const string & name, Group * const parent );
 
   /// Destructor for the class
   ~PoromechanicsInitialization() override;
@@ -57,7 +56,7 @@ public:
   /// Accessor for the catalog name
   static string catalogName()
   {
-    return POROMECHANICS_SOLVER::catalogName() + "Initialization";
+    return "PoromechanicsInitialization";
   }
 
   /**
@@ -83,8 +82,8 @@ private:
    */
   struct viewKeyStruct
   {
-    /// String for the poromechanics solver name
-    constexpr static char const * poromechanicsSolverNameString() { return "poromechanicsSolverName"; }
+    /// String for the solid mechanics solver name
+    constexpr static char const * solidMechanicsSolverNameString() { return "solidMechanicsSolverName"; }
     /// String for the solid mechanics statistics name
     constexpr static char const * solidMechanicsStatisticsNameString() { return "solidMechanicsStatisticsName"; }
   };
@@ -93,14 +92,14 @@ private:
 
 //  void registerDataOnMesh( Group & meshBodies ) override;
 
-  /// Name of the poromechanics solver
-  string m_poromechanicsSolverName;
+  /// Name of the solid mechanics solver
+  string m_solidMechanicsSolverName;
 
   /// Name of the solid mechanics statistics
   string m_solidMechanicsStatisticsName;
 
-  /// Pointer to the poromechanics solver
-  POROMECHANICS_SOLVER * m_poromechanicsSolver;
+  /// Pointer to the solid mechanics solver
+  SolidMechanicsLagrangianFEM * m_solidMechanicsSolver;
 
   /// Pointer to the solid mechanics statistics
   SolidMechanicsStatistics * m_solidMechanicsStatistics;
