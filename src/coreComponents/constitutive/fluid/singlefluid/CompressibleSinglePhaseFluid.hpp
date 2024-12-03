@@ -121,7 +121,7 @@ public:
              m_density_c.derivs[k][q][DerivOffset::dP],
              m_viscosity[k][q],
              m_dVisc_dPres[k][q] );
-      //           std::cout << m_dDens_dPres[k][q]<< " " <<  m_density_c.derivs[k][q][DerivOffset::dP] << std::endl;
+      //   tjb        std::cout << m_dDens_dPres[k][q]<< " " <<  m_density_c.derivs[k][q][DerivOffset::dP] << std::endl;
       //  std::cout.flush();
       //   assert(fabs(m_dDens_dPres[k][q]-m_density_c.derivs[k][q][DerivOffset::dP])<FLT_EPSILON);
   }
@@ -143,9 +143,9 @@ public:
              m_density_c.derivs[k][q][DerivOffset::dP],
              m_viscosity[k][q],
              m_dVisc_dPres[k][q] );
-                 std::cout << m_dDens_dPres[k][q]<< " " <<  m_density_c.derivs[k][q][DerivOffset::dP] << std::endl;
-                 std::cout.flush();
-                   assert(fabs(m_dDens_dPres[k][q]-m_density_c.derivs[k][q][DerivOffset::dP])<FLT_EPSILON);
+             // tjb   std::cout << m_dDens_dPres[k][q]<< " " <<  m_density_c.derivs[k][q][DerivOffset::dP] << std::endl;
+             //    std::cout.flush();
+              //     assert(fabs(m_dDens_dPres[k][q]-m_density_c.derivs[k][q][DerivOffset::dP])<FLT_EPSILON);
   }
 
 private:

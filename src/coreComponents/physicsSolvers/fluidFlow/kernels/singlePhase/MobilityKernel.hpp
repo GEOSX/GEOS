@@ -41,14 +41,16 @@ struct MobilityKernel
            real64 const & dDens_dP,  //tjb
            real64 const & dDens_dPres,
            real64 const & visc,
+           real64 const & dVisc_dP,  //tjb
            real64 const & dVisc_dPres,
            real64 & mob,
            real64 & dMob_dPres )
   {
     mob = dens / visc;
     dMob_dPres = dDens_dPres / visc - mob / visc * dVisc_dPres;
-    dMob_dPres = dDens_dP / visc - mob / visc * dVisc_dPres;
+    dMob_dPres = dDens_dP / visc - mob / visc * dVisc_dP;  // tjb keep
     assert( fabs( dDens_dP -dDens_dPres ) < FLT_EPSILON );
+    assert( fabs( dVisc_dP -dVisc_dPres ) < FLT_EPSILON );
   }
 
 // Thermal version
@@ -60,6 +62,7 @@ struct MobilityKernel
            real64 const & dDens_dPres,
            real64 const & dDens_dTemp,
            real64 const & visc,
+           real64 const & dVisc_dP,  // tjb
            real64 const & dVisc_dPres,
            real64 const & dVisc_dTemp,
            real64 & mob,
@@ -68,7 +71,7 @@ struct MobilityKernel
   {
     mob = dens / visc;
     dMob_dPres = dDens_dPres / visc - mob / visc * dVisc_dPres;
-    dMob_dPres = dDens_dP / visc - mob / visc * dVisc_dPres;
+    dMob_dPres = dDens_dP / visc - mob / visc * dVisc_dP;  // tjb keep
     assert( fabs( dDens_dP -dDens_dPres ) < FLT_EPSILON );
     dMob_dTemp = dDens_dTemp / visc - mob / visc * dVisc_dTemp;
   }
@@ -91,6 +94,7 @@ struct MobilityKernel
                       arrayView3d< real64 const > const & dDens,      
                       arrayView2d< real64 const > const & dDens_dPres,
                       arrayView2d< real64 const > const & visc,
+                      arrayView3d< real64 const > const & dVisc,
                       arrayView2d< real64 const > const & dVisc_dPres,
                       arrayView1d< real64 > const & mob,
                       arrayView1d< real64 > const & dMob_dPres )
@@ -101,6 +105,7 @@ struct MobilityKernel
                dDens[a][0][0],   // tjb use deriv::dp
                dDens_dPres[a][0],  
                visc[a][0],
+               dVisc[a][0][0],   // tjb use deriv::dp
                dVisc_dPres[a][0],
                mob[a],
                dMob_dPres[a] );
@@ -115,6 +120,7 @@ struct MobilityKernel
                       arrayView2d< real64 const > const & dDens_dPres,
                       arrayView2d< real64 const > const & dDens_dTemp,
                       arrayView2d< real64 const > const & visc,
+                      arrayView3d< real64 const > const & dVisc, // tjb
                       arrayView2d< real64 const > const & dVisc_dPres,
                       arrayView2d< real64 const > const & dVisc_dTemp,
                       arrayView1d< real64 > const & mob,
@@ -128,6 +134,7 @@ struct MobilityKernel
                dDens_dPres[a][0],
                dDens_dTemp[a][0],
                visc[a][0],
+               dVisc[a][0][0], // tjb use deriv::dp
                dVisc_dPres[a][0],
                dVisc_dTemp[a][0],
                mob[a],

@@ -41,16 +41,21 @@ SingleFluidBase::SingleFluidBase( string const & name, Group * const parent )
   registerField( fields::singlefluid::density{}, &m_density.value );
   registerField( fields::singlefluid::dDensity{}, &m_density.derivs );
 
-  registerField( fields::singlefluid::viscosity{}, &m_viscosity );
+  registerField( fields::singlefluid::viscosity{}, &m_viscosity.value );
+  registerField( fields::singlefluid::dViscosity{}, &m_viscosity.derivs );
+
   registerField( fields::singlefluid::dViscosity_dPressure{}, &m_dViscosity_dPressure );
   registerField( fields::singlefluid::dViscosity_dTemperature{}, &m_dViscosity_dTemperature );
 
-  registerField( fields::singlefluid::internalEnergy{}, &m_internalEnergy );
+  registerField( fields::singlefluid::internalEnergy{}, &m_internalEnergy.value );
+  registerField( fields::singlefluid::dInternalEnergy{}, &m_internalEnergy.derivs );
+
   registerField( fields::singlefluid::internalEnergy_n{}, &m_internalEnergy_n );
   registerField( fields::singlefluid::dInternalEnergy_dPressure{}, &m_dInternalEnergy_dPressure );
   registerField( fields::singlefluid::dInternalEnergy_dTemperature{}, &m_dInternalEnergy_dTemperature );
 
-  registerField( fields::singlefluid::enthalpy{}, &m_enthalpy );
+  registerField( fields::singlefluid::enthalpy{}, &m_enthalpy.value );
+  registerField( fields::singlefluid::dEnthalpy{}, &m_enthalpy.derivs );
   registerField( fields::singlefluid::dEnthalpy_dPressure{}, &m_dEnthalpy_dPressure );
   registerField( fields::singlefluid::dEnthalpy_dTemperature{}, &m_dEnthalpy_dTemperature );
 
@@ -73,7 +78,7 @@ void SingleFluidBase::initializeState() const
 void SingleFluidBase::saveConvergedState() const
 {
   m_density_n.setValues< parallelDevicePolicy<> >( m_density.value.toViewConst() );
-  m_internalEnergy_n.setValues< parallelDevicePolicy<> >( m_internalEnergy.toViewConst() );
+  m_internalEnergy_n.setValues< parallelDevicePolicy<> >( m_internalEnergy.value.toViewConst() );
 }
 
 //START_SPHINX_INCLUDE_00
@@ -88,19 +93,29 @@ void SingleFluidBase::allocateConstitutiveData( Group & parent,
   m_dDensity_dTemperature.resize( parent.size(), numConstitutivePointsPerParentIndex );
   m_density_n.resize( parent.size(), numConstitutivePointsPerParentIndex );
 
+  // tjb new density
   m_density.value.resize( parent.size(), numConstitutivePointsPerParentIndex );
-  m_density.derivs.resize( parent.size(), numConstitutivePointsPerParentIndex, m_numDOF );  // pressure deriv
+  m_density.derivs.resize( parent.size(), numConstitutivePointsPerParentIndex, m_numDOF );   
 
-  m_viscosity.resize( parent.size(), numConstitutivePointsPerParentIndex );
+  // tjb new viscosity
+  m_viscosity.value.resize( parent.size(), numConstitutivePointsPerParentIndex );
+  m_viscosity.derivs.resize( parent.size(), numConstitutivePointsPerParentIndex, m_numDOF );  
+
   m_dViscosity_dPressure.resize( parent.size(), numConstitutivePointsPerParentIndex );
   m_dViscosity_dTemperature.resize( parent.size(), numConstitutivePointsPerParentIndex );
 
-  m_internalEnergy.resize( parent.size(), numConstitutivePointsPerParentIndex );
+  // tjb new internal energy
+  m_internalEnergy.value.resize( parent.size(), numConstitutivePointsPerParentIndex );
+  m_internalEnergy.derivs.resize( parent.size(), numConstitutivePointsPerParentIndex, m_numDOF );   
+
   m_internalEnergy_n.resize( parent.size(), numConstitutivePointsPerParentIndex );
   m_dInternalEnergy_dPressure.resize( parent.size(), numConstitutivePointsPerParentIndex );
   m_dInternalEnergy_dTemperature.resize( parent.size(), numConstitutivePointsPerParentIndex );
 
-  m_enthalpy.resize( parent.size(), numConstitutivePointsPerParentIndex );
+  // tjb new enthalpy
+  m_enthalpy.value.resize( parent.size(), numConstitutivePointsPerParentIndex );
+  m_enthalpy.derivs.resize( parent.size(), numConstitutivePointsPerParentIndex, m_numDOF ); 
+
   m_dEnthalpy_dPressure.resize( parent.size(), numConstitutivePointsPerParentIndex );
   m_dEnthalpy_dTemperature.resize( parent.size(), numConstitutivePointsPerParentIndex );
 }

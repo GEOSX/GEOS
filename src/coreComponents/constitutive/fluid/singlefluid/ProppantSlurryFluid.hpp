@@ -80,7 +80,7 @@ public:
                              arrayView1d< real64 const > const & Ks,
                              bool const isNewtonianFluid,
                              arrayView2d< real64 > const & density,
-                             arrayView3d< real64 > const & dDens,
+                             arrayView3d< real64 > const & dDensity,
                              arrayView2d< real64 > const & dDens_dPres,
                              arrayView2d< real64 > const & dDens_dProppantConc,
                              arrayView3d< real64 > const & dDens_dCompConc,
@@ -94,6 +94,7 @@ public:
                              arrayView2d< real64 > const & dFluidVisc_dPres,
                              arrayView3d< real64 > const & dFluidVisc_dCompConc,
                              arrayView2d< real64 > const & viscosity,
+                             arrayView3d< real64 > const & dViscosity,
                              arrayView2d< real64 > const & dVisc_dPres,
                              arrayView2d< real64 > const & dVisc_dProppantConc,
                              arrayView3d< real64 > const & dVisc_dCompConc )
@@ -104,7 +105,7 @@ public:
                              Ks,
                              isNewtonianFluid,
                              density,
-                             dDens,
+                             dDensity,
                              dDens_dPres,
                              dDens_dProppantConc,
                              dDens_dCompConc,
@@ -118,6 +119,7 @@ public:
                              dFluidVisc_dPres,
                              dFluidVisc_dCompConc,
                              viscosity,
+                             dViscosity,
                              dVisc_dPres,
                              dVisc_dProppantConc,
                              dVisc_dCompConc ),
@@ -171,6 +173,7 @@ public:
              m_dDensity_dProppantConc[k][q],
              m_dDensity_dCompConc[k][q],
              m_viscosity[k][q],
+             m_dViscosity[k][q][0],// tjb add deriv:dp
              m_dViscosity_dPressure[k][q],
              m_dViscosity_dProppantConc[k][q],
              m_dViscosity_dCompConc[k][q] );
@@ -268,6 +271,7 @@ private:
                 real64 & dDensity_dProppantConcentration,
                 arraySlice1d< real64 > const & dDensity_dComponentConcentration,
                 real64 & viscosity,
+                real64 & dViscosity_dp,  // tjb
                 real64 & dViscosity_dPressure,
                 real64 & dViscosity_dProppantConcentration,
                 arraySlice1d< real64 > const & dViscosity_dComponentConcentration ) const;
@@ -486,6 +490,7 @@ ProppantSlurryFluidUpdate::
            real64 & dDensity_dProppantConcentration,
            arraySlice1d< real64 > const & dDensity_dComponentConcentration,
            real64 & viscosity,
+           real64 & dViscosity_dp, //tjb
            real64 & dViscosity_dPressure,
            real64 & dViscosity_dProppantConcentration,
            arraySlice1d< real64 > const & dViscosity_dComponentConcentration ) const
@@ -511,7 +516,7 @@ ProppantSlurryFluidUpdate::
   real64 const coef = pow( 1.0 + 1.25 *  effectiveConcentration / (1.0 - effectiveConcentration / m_maxProppantConcentration), 2.0 );
   viscosity = fluidViscosity * coef;
   dViscosity_dPressure = dFluidViscosity_dPressure * coef;
-
+  dViscosity_dp = dFluidViscosity_dPressure * coef;
   dViscosity_dProppantConcentration = 0.0;
   for( localIndex c = 0; c < NC; ++c )
   {

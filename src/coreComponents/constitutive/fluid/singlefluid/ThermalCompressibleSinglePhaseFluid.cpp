@@ -69,7 +69,7 @@ void ThermalCompressibleSinglePhaseFluid::allocateConstitutiveData( dataReposito
 {
   CompressibleSinglePhaseFluid::allocateConstitutiveData( parent, numConstitutivePointsPerParentIndex );
 
-  m_internalEnergy.setValues< serialPolicy >( m_referenceInternalEnergy );
+  m_internalEnergy.value.setValues< serialPolicy >( m_referenceInternalEnergy );
 }
 
 void ThermalCompressibleSinglePhaseFluid::postInputInitialization()
@@ -107,13 +107,13 @@ ThermalCompressibleSinglePhaseFluid::createKernelWrapper()
                         m_density.value,
                         m_dDensity_dPressure,
                         m_dDensity_dTemperature,
-                        m_viscosity,
+                        m_viscosity.value,
                         m_dViscosity_dPressure,
                         m_dViscosity_dTemperature,
-                        m_internalEnergy,
+                        m_internalEnergy.value,
                         m_dInternalEnergy_dPressure,
                         m_dInternalEnergy_dTemperature,
-                        m_enthalpy,
+                        m_enthalpy.value,
                         m_dEnthalpy_dPressure,
                         m_dEnthalpy_dTemperature,
                         m_referenceInternalEnergy );

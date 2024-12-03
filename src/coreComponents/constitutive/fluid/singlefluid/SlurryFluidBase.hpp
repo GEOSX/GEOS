@@ -109,6 +109,7 @@ protected:
                          arrayView2d< real64 > const & dFluidVisc_dPres,
                          arrayView3d< real64 > const & dFluidVisc_dCompConc,
                          arrayView2d< real64 > const & viscosity,
+                         arrayView3d< real64 > const & dViscosity,
                          arrayView2d< real64 > const & dVisc_dPres,
                          arrayView2d< real64 > const & dVisc_dProppantConc,
                          arrayView3d< real64 > const & dVisc_dCompConc )
@@ -133,6 +134,7 @@ protected:
     m_dFluidVisc_dPres( dFluidVisc_dPres ),
     m_dFluidVisc_dCompConc( dFluidVisc_dCompConc ),
     m_viscosity( viscosity ),
+    m_dViscosity( dViscosity ),
     m_dViscosity_dPressure( dVisc_dPres ),
     m_dViscosity_dProppantConc( dVisc_dProppantConc ),
     m_dViscosity_dCompConc( dVisc_dCompConc )
@@ -191,6 +193,8 @@ protected:
   arrayView3d< real64 > m_dFluidVisc_dCompConc;
 
   arrayView2d< real64 > m_viscosity;
+  arrayView3d< real64 > m_dViscosity;
+
   arrayView2d< real64 > m_dViscosity_dPressure;
   arrayView2d< real64 > m_dViscosity_dProppantConc;
   arrayView3d< real64 > m_dViscosity_dCompConc;

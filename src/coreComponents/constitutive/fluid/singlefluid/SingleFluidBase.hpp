@@ -257,15 +257,22 @@ public:
 
   arrayView2d< real64 const > density_n() const { return m_density_n; }
 
-  arrayView2d< real64 const > viscosity() const { return m_viscosity; }
+  arrayView2d< real64 const, constitutive::singlefluid::USD_FLUID > viscosity() const { return m_viscosity.value; }
+  arrayView2d< real64, constitutive::singlefluid::USD_FLUID > viscosity() { return m_viscosity.value; }
+
+  arrayView3d< real64 const, constitutive::singlefluid::USD_FLUID_DC > dViscosity() const
+  { return m_viscosity.derivs; }
 
   arrayView2d< real64 const > dViscosity_dPressure() const { return m_dViscosity_dPressure; }
 
   arrayView2d< real64 > dViscosity_dTemperature() { return m_dViscosity_dTemperature; }
   arrayView2d< real64 const > dViscosity_dTemperature() const { return m_dViscosity_dTemperature; }
 
-  arrayView2d< real64 > internalEnergy() { return m_internalEnergy; }
-  arrayView2d< real64 const > internalEnergy() const { return m_internalEnergy; }
+  arrayView2d< real64 const, constitutive::singlefluid::USD_FLUID > internalEnergy() const { return m_internalEnergy.value; }
+  arrayView2d< real64, constitutive::singlefluid::USD_FLUID > internalEnergy() { return m_internalEnergy.value; }
+
+  arrayView3d< real64 const, constitutive::singlefluid::USD_FLUID_DC > dInternalEnergy() const
+  { return m_internalEnergy.derivs; }
 
   arrayView2d< real64 > internalEnergy_n() { return m_internalEnergy_n; }
   arrayView2d< real64 const > internalEnergy_n() const { return m_internalEnergy_n; }
@@ -276,8 +283,11 @@ public:
   arrayView2d< real64 > dInternalEnergy_dTemperature() { return m_dInternalEnergy_dTemperature; }
   arrayView2d< real64 const > dInternalEnergy_dTemperature() const { return m_dInternalEnergy_dTemperature; }
 
-  arrayView2d< real64 > enthalpy() { return m_enthalpy; }
-  arrayView2d< real64 const > enthalpy() const { return m_enthalpy; }
+  arrayView2d< real64 const, constitutive::singlefluid::USD_FLUID > enthalpy() const { return m_enthalpy.value; }
+  arrayView2d< real64, constitutive::singlefluid::USD_FLUID > enthalpy() { return m_enthalpy.value; }
+
+  arrayView3d< real64 const, constitutive::singlefluid::USD_FLUID_DC > dEnthalpy() const
+  { return m_enthalpy.derivs; }
 
   arrayView2d< real64 > dEnthalpy_dPressure() { return m_dEnthalpy_dPressure; }
   arrayView2d< real64 const > dEnthalpy_dPressure() const { return m_dEnthalpy_dPressure; }
@@ -304,9 +314,9 @@ protected:
   integer m_numDOF;  
   //START_SPHINX_INCLUDE_00
   SingleFluidProp m_density;
-  //FluidProp m_viscosityXYZ;
-  //FluidProp m_internalEnergyXYZ;
-  //FluidProp m_enthalpyXYZ;
+  SingleFluidProp m_viscosity;
+  SingleFluidProp m_internalEnergy;
+  SingleFluidProp m_enthalpy;
 
   //array2d< real64 > m_density;
   array2d< real64 > m_dDensity_dPressure;
@@ -314,16 +324,16 @@ protected:
 
   array2d< real64 > m_density_n;
 
-  array2d< real64 > m_viscosity;
+  //array2d< real64 > m_viscosity;
   array2d< real64 > m_dViscosity_dPressure;
   array2d< real64 > m_dViscosity_dTemperature;
 
-  array2d< real64 > m_internalEnergy;
+  //array2d< real64 > m_internalEnergy;
   array2d< real64 > m_internalEnergy_n;
   array2d< real64 > m_dInternalEnergy_dPressure;
   array2d< real64 > m_dInternalEnergy_dTemperature;
 
-  array2d< real64 > m_enthalpy;
+  //array2d< real64 > m_enthalpy;
   array2d< real64 > m_dEnthalpy_dPressure;
   array2d< real64 > m_dEnthalpy_dTemperature;
   //END_SPHINX_INCLUDE_00

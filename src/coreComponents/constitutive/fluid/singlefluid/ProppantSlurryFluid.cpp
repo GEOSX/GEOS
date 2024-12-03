@@ -70,7 +70,7 @@ void ProppantSlurryFluid::allocateConstitutiveData( dataRepository::Group & pare
   SlurryFluidBase::allocateConstitutiveData( parent, numConstitutivePointsPerParentIndex );
 
   m_density.value.setValues< serialPolicy >( m_referenceDensity );
-  m_viscosity.setValues< serialPolicy >( m_referenceViscosity );
+  m_viscosity.value.setValues< serialPolicy >( m_referenceViscosity );
 }
 
 
@@ -123,7 +123,8 @@ ProppantSlurryFluid::createKernelWrapper()
                         m_fluidViscosity,
                         m_dFluidVisc_dPres,
                         m_dFluidVisc_dCompConc,
-                        m_viscosity,
+                        m_viscosity.value,
+                        m_viscosity.derivs,
                         m_dViscosity_dPressure,
                         m_dViscosity_dProppantConc,
                         m_dViscosity_dCompConc );

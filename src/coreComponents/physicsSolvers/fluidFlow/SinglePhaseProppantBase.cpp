@@ -99,6 +99,7 @@ SinglePhaseBase::FluidPropViews SinglePhaseProppantBase::getFluidProperties( con
            slurryFluid.dDensity(),
            slurryFluid.dDensity_dPressure(),
            slurryFluid.viscosity(),
+           slurryFluid.dViscosity(),
            slurryFluid.dViscosity_dPressure(),
            slurryFluid.getField< fields::singlefluid::density >().getDefaultValue(),
            slurryFluid.getField< fields::singlefluid::viscosity >().getDefaultValue() };

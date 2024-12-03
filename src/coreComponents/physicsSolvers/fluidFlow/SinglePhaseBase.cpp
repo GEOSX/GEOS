@@ -213,6 +213,7 @@ SinglePhaseBase::FluidPropViews SinglePhaseBase::getFluidProperties( Constitutiv
            singleFluid.dDensity(),
            singleFluid.dDensity_dPressure(),
            singleFluid.viscosity(),
+           singleFluid.dViscosity(),
            singleFluid.dViscosity_dPressure(),
            singleFluid.defaultDensity(),
            singleFluid.defaultViscosity() };
@@ -382,6 +383,7 @@ void SinglePhaseBase::updateMobility( ObjectManagerBase & dataGroup ) const
                                                                               fluidProps.dDens_dPres,
                                                                               thermalFluidProps.dDens_dTemp,
                                                                               fluidProps.visc,
+                                                                              fluidProps.dVisc,
                                                                               fluidProps.dVisc_dPres,
                                                                               thermalFluidProps.dVisc_dTemp,
                                                                               mob,
@@ -395,6 +397,7 @@ void SinglePhaseBase::updateMobility( ObjectManagerBase & dataGroup ) const
                                                                               fluidProps.dDens,
                                                                               fluidProps.dDens_dPres,
                                                                               fluidProps.visc,
+                                                                              fluidProps.dVisc,
                                                                               fluidProps.dVisc_dPres,
                                                                               mob,
                                                                               dMob_dPres );
