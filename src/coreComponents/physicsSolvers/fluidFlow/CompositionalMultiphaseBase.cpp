@@ -1263,7 +1263,7 @@ void CompositionalMultiphaseBase::initializePostInitialConditionsPreSubGroups()
     } );
   } );
 
-  initialize( domain );
+  initializeState( domain );
 }
 
 void

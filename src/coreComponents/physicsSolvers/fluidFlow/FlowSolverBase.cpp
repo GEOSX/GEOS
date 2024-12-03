@@ -487,7 +487,7 @@ void FlowSolverBase::precomputeData( MeshLevel & mesh,
   }
 }
 
-void FlowSolverBase::initialize( DomainPartition & domain )
+void FlowSolverBase::initializeState( DomainPartition & domain )
 {
   // Compute hydrostatic equilibrium in the regions for which corresponding field specification tag has been specified
   computeHydrostaticEquilibrium( domain );

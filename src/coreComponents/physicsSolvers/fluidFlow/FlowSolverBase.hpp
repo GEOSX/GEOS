@@ -210,7 +210,7 @@ protected:
 
   virtual void initializePostInitialConditionsPreSubGroups() override;
 
-  void initialize( DomainPartition & domain );
+  void initializeState( DomainPartition & domain );
 
   virtual void computeHydrostaticEquilibrium( DomainPartition & domain ) { GEOS_UNUSED_VAR( domain ); }
 
