@@ -229,90 +229,6 @@ public:
     static constexpr char const * elemDofFieldString() { return "singlePhaseVariables"; }
   };
 
-  virtual void
-  updateState ( DomainPartition & domain ) override final;
-
-  /**
-   * @brief Function to update all constitutive state and dependent variables
-   * @param subRegion subregion that contains the fields
-   */
-  real64
-  updateFluidState( ElementSubRegionBase & subRegion ) const;
-
-  /**
-   * @brief Update all relevant solid internal energy models using current values of temperature
-   * @param dataGroup the group storing the required fields
-   */
-  void updateSolidInternalEnergyModel( ObjectManagerBase & dataGroup ) const;
-
-protected:
-
-  virtual void initializePreSubGroups() override;
-
-  virtual void initializePostInitialConditionsPreSubGroups() override;
-
-  /**
-   * @brief Compute the hydrostatic equilibrium using the compositions and temperature input tables
-   */
-  virtual void computeHydrostaticEquilibrium( DomainPartition & domain ) override;
-
-  virtual void initializeFluid( MeshLevel & mesh, arrayView1d< string const > const & regionNames ) override;
-
-  virtual void initializeThermal( MeshLevel & mesh, arrayView1d< string const > const & regionNames ) override;
-
-  /**
-   * @brief Checks constitutive models for consistency
-   * @param[in] domain the domain partition
-   */
-  virtual void validateConstitutiveModels( DomainPartition & domain ) const;
-
-  /**
-   * @brief Initialize the aquifer boundary condition (gravity vector, water phase index)
-   */
-  void initializeAquiferBC() const;
-
-  virtual void setConstitutiveNamesCallSuper( ElementSubRegionBase & subRegion ) const override;
-
-  /**
-   * @brief Function to update all constitutive models
-   * @param dataGroup group that contains the fields
-   */
-  virtual void
-  updateFluidModel( ObjectManagerBase & dataGroup ) const;
-
-  /**
-   * @brief Function to update fluid mass
-   * @param subRegion subregion that contains the fields
-   */
-  void
-  updateMass( ElementSubRegionBase & subRegion ) const;
-
-  /**
-   * @brief Function to update energy
-   * @param subRegion subregion that contains the fields
-   */
-  void
-  updateEnergy( ElementSubRegionBase & subRegion ) const;
-
-  /**
-   * @brief Update thermal conductivity
-   * @param subRegion the group storing the required fields
-   */
-  void updateThermalConductivity( ElementSubRegionBase & subRegion ) const;
-
-  /**
-   * @brief Function to update fluid mobility
-   * @param dataGroup group that contains the fields
-   */
-  void
-  updateMobility( ObjectManagerBase & dataGroup ) const;
-
-  /**
-   * @brief Utility function to save the converged state
-   * @param[in] subRegion the element subRegion
-   */
-  virtual void saveConvergedState( ElementSubRegionBase & subRegion ) const override;
-
   /**
    * @brief Function to perform the Application of Dirichlet type BC's
    * @param time current time
@@ -364,6 +280,70 @@ protected:
                   CRSMatrixView< real64, globalIndex const > const & localMatrix,
                   arrayView1d< real64 > const & localRhs ) const = 0;
 
+  virtual void
+  updateState ( DomainPartition & domain ) override final;
+
+  /**
+   * @brief Function to update all constitutive state and dependent variables
+   * @param subRegion subregion that contains the fields
+   */
+  real64
+  updateFluidState( ElementSubRegionBase & subRegion ) const;
+
+
+  /**
+   * @brief Function to update all constitutive models
+   * @param dataGroup group that contains the fields
+   */
+  virtual void
+  updateFluidModel( ObjectManagerBase & dataGroup ) const;
+
+  /**
+   * @brief Function to update fluid mass
+   * @param subRegion subregion that contains the fields
+   */
+  void
+  updateMass( ElementSubRegionBase & subRegion ) const;
+
+  /**
+   * @brief Function to update energy
+   * @param subRegion subregion that contains the fields
+   */
+  void
+  updateEnergy( ElementSubRegionBase & subRegion ) const;
+
+  /**
+   * @brief Update all relevant solid internal energy models using current values of temperature
+   * @param dataGroup the group storing the required fields
+   */
+  void updateSolidInternalEnergyModel( ObjectManagerBase & dataGroup ) const;
+
+  /**
+   * @brief Update thermal conductivity
+   * @param subRegion the group storing the required fields
+   */
+  void updateThermalConductivity( ElementSubRegionBase & subRegion ) const;
+
+  /**
+   * @brief Function to update fluid mobility
+   * @param dataGroup group that contains the fields
+   */
+  void
+  updateMobility( ObjectManagerBase & dataGroup ) const;
+
+  virtual void initializePreSubGroups() override;
+
+  virtual void initializePostInitialConditionsPreSubGroups() override;
+
+  virtual void initializeFluidState( MeshLevel & mesh, arrayView1d< string const > const & regionNames ) override;
+
+  virtual void initializeThermalState( MeshLevel & mesh, arrayView1d< string const > const & regionNames ) override;
+
+  /**
+   * @brief Compute the hydrostatic equilibrium using the compositions and temperature input tables
+   */
+  virtual void computeHydrostaticEquilibrium( DomainPartition & domain ) override;
+
   /**
    * @brief Function to fix the initial state during the initialization step in coupled problems
    * @param[in] time current time
@@ -381,6 +361,27 @@ protected:
                                             DomainPartition & domain,
                                             CRSMatrixView< real64, globalIndex const > const & localMatrix,
                                             arrayView1d< real64 > const & localRhs ) const;
+
+protected:
+
+  /**
+   * @brief Checks constitutive models for consistency
+   * @param[in] domain the domain partition
+   */
+  virtual void validateConstitutiveModels( DomainPartition & domain ) const;
+
+  /**
+   * @brief Initialize the aquifer boundary condition (gravity vector, water phase index)
+   */
+  void initializeAquiferBC() const;
+
+  virtual void setConstitutiveNamesCallSuper( ElementSubRegionBase & subRegion ) const override;
+
+  /**
+   * @brief Utility function to save the converged state
+   * @param[in] subRegion the element subRegion
+   */
+  virtual void saveConvergedState( ElementSubRegionBase & subRegion ) const override;
 
   /**
    * @brief Structure holding views into fluid properties used by the base solver.

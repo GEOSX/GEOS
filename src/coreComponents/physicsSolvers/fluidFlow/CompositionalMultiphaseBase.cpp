@@ -830,8 +830,8 @@ real64 CompositionalMultiphaseBase::updateFluidState( ElementSubRegionBase & sub
   return maxDeltaPhaseVolFrac;
 }
 
-void CompositionalMultiphaseBase::initializeFluid( MeshLevel & mesh,
-                                                   arrayView1d< string const > const & regionNames )
+void CompositionalMultiphaseBase::initializeFluidState( MeshLevel & mesh,
+                                                        arrayView1d< string const > const & regionNames )
 {
   GEOS_MARK_FUNCTION;
 
@@ -848,7 +848,7 @@ void CompositionalMultiphaseBase::initializeFluid( MeshLevel & mesh,
     // Back-calculate global component densities from fractions and total fluid density
     // in order to initialize the primary solution variables
     string const & fluidName = subRegion.template getReference< string >( viewKeyStruct::fluidNamesString() );
-    MultiFluidBase & fluid = getConstitutiveModel< MultiFluidBase >( subRegion, fluidName );
+    MultiFluidBase const & fluid = getConstitutiveModel< MultiFluidBase >( subRegion, fluidName );
     arrayView2d< real64 const, multifluid::USD_FLUID > const totalDens = fluid.totalDensity();
     arrayView2d< real64 const, compflow::USD_COMP > const compFrac =
       subRegion.getField< fields::flow::globalCompFraction >();
@@ -954,7 +954,7 @@ void CompositionalMultiphaseBase::initializeFluid( MeshLevel & mesh,
   } );
 }
 
-void CompositionalMultiphaseBase::initializeThermal( MeshLevel & mesh, arrayView1d< string const > const & regionNames )
+void CompositionalMultiphaseBase::initializeThermalState( MeshLevel & mesh, arrayView1d< string const > const & regionNames )
 {
   mesh.getElemManager().forElementSubRegions< CellElementSubRegion,
                                               SurfaceElementSubRegion >( regionNames, [&]( localIndex const,

@@ -40,8 +40,6 @@
 #include "mesh/mpiCommunications/CommunicationTools.hpp"
 #include "physicsSolvers/fluidFlow/FlowSolverBaseFields.hpp"
 #include "physicsSolvers/fluidFlow/SinglePhaseBaseFields.hpp"
-#include "physicsSolvers/fluidFlow/kernels/singlePhase/AccumulationKernels.hpp"
-#include "physicsSolvers/fluidFlow/kernels/singlePhase/ThermalAccumulationKernels.hpp"
 #include "physicsSolvers/fluidFlow/kernels/singlePhase/MobilityKernel.hpp"
 #include "physicsSolvers/fluidFlow/kernels/singlePhase/SolutionCheckKernel.hpp"
 #include "physicsSolvers/fluidFlow/kernels/singlePhase/SolutionScalingKernel.hpp"
@@ -585,7 +583,7 @@ void SinglePhaseBase::computeHydrostaticEquilibrium( DomainPartition & domain )
   } );
 }
 
-void SinglePhaseBase::initializeFluid( MeshLevel & mesh, arrayView1d< string const > const & regionNames )
+void SinglePhaseBase::initializeFluidState( MeshLevel & mesh, arrayView1d< string const > const & regionNames )
 {
   mesh.getElemManager().forElementSubRegions< CellElementSubRegion, SurfaceElementSubRegion >( regionNames, [&]( localIndex const,
                                                                                                                  auto & subRegion )
@@ -601,7 +599,7 @@ void SinglePhaseBase::initializeFluid( MeshLevel & mesh, arrayView1d< string con
   } );
 }
 
-void SinglePhaseBase::initializeThermal( MeshLevel & mesh, arrayView1d< string const > const & regionNames )
+void SinglePhaseBase::initializeThermalState( MeshLevel & mesh, arrayView1d< string const > const & regionNames )
 {
   mesh.getElemManager().forElementSubRegions< CellElementSubRegion, SurfaceElementSubRegion >( regionNames, [&]( localIndex const,
                                                                                                                  auto & subRegion )
@@ -656,8 +654,8 @@ void SinglePhaseBase::implicitStepSetup( real64 const & GEOS_UNUSED_PARAM( time_
 
     } );
 
-    mesh.getElemManager().forElementSubRegions< FaceElementSubRegion >( regionNames, [&]( localIndex const,
-                                                                                          FaceElementSubRegion & subRegion )
+    mesh.getElemManager().forElementSubRegions< SurfaceElementSubRegion >( regionNames, [&]( localIndex const,
+                                                                                             SurfaceElementSubRegion & subRegion )
     {
       arrayView1d< real64 const > const aper = subRegion.getField< fields::flow::hydraulicAperture >();
       arrayView1d< real64 > const aper0 = subRegion.getField< fields::flow::aperture0 >();
@@ -667,7 +665,7 @@ void SinglePhaseBase::implicitStepSetup( real64 const & GEOS_UNUSED_PARAM( time_
       CoupledSolidBase const & porousSolid = getConstitutiveModel< CoupledSolidBase >( subRegion, subRegion.getReference< string >( viewKeyStruct::solidNamesString() ) );
       porousSolid.saveConvergedState();
 
-      saveConvergedState( subRegion );   // necessary for a meaningful porosity update in sequential schemes
+      saveConvergedState( subRegion ); // necessary for a meaningful porosity update in sequential schemes
       updatePorosityAndPermeability( subRegion );
       updateFluidState( subRegion );
 
@@ -677,6 +675,7 @@ void SinglePhaseBase::implicitStepSetup( real64 const & GEOS_UNUSED_PARAM( time_
       fluid.saveConvergedState();
 
     } );
+
   } );
 }
 
@@ -721,11 +720,11 @@ void SinglePhaseBase::implicitStepComplete( real64 const & time,
         getConstitutiveModel< CoupledSolidBase >( subRegion, subRegion.template getReference< string >( viewKeyStruct::solidNamesString() ) );
       if( m_keepVariablesConstantDuringInitStep )
       {
-        porousSolid.ignoreConvergedState();   // newPorosity <- porosity_n
+        porousSolid.ignoreConvergedState(); // newPorosity <- porosity_n
       }
       else
       {
-        porousSolid.saveConvergedState();   // porosity_n <- porosity
+        porousSolid.saveConvergedState(); // porosity_n <- porosity
       }
 
       if( m_isThermal )
@@ -740,8 +739,8 @@ void SinglePhaseBase::implicitStepComplete( real64 const & time,
 
     } );
 
-    mesh.getElemManager().forElementSubRegions< FaceElementSubRegion >( regionNames, [&]( localIndex const,
-                                                                                          FaceElementSubRegion & subRegion )
+    mesh.getElemManager().forElementSubRegions< SurfaceElementSubRegion >( regionNames, [&]( localIndex const,
+                                                                                             SurfaceElementSubRegion & subRegion )
     {
       arrayView1d< integer const > const elemGhostRank = subRegion.ghostRank();
       arrayView1d< real64 const > const volume = subRegion.getElementVolume();
@@ -766,7 +765,6 @@ void SinglePhaseBase::implicitStepComplete( real64 const & time,
         }
       } );
     } );
-
   } );
 }
 
@@ -1081,8 +1079,7 @@ void SinglePhaseBase::applySourceFluxBC( real64 const time_n,
           // add the value to the mass balance equation
           globalIndex const massRowIndex   = dofNumber[ei] - rankOffset;
           globalIndex const energyRowIndex = massRowIndex + 1;
-          real64 const rhsValue = rhsContributionArrayView[a] / sizeScalingFactor;   // scale the contribution by the sizeScalingFactor
-                                                                                     // here!
+          real64 const rhsValue = rhsContributionArrayView[a] / sizeScalingFactor; // scale the contribution by the sizeScalingFactor here!
           localRhs[massRowIndex] += rhsValue;
           massProd += rhsValue;
           //add the value to the energy balance equation if the flux is positive (i.e., it's a producer)
@@ -1186,7 +1183,7 @@ void SinglePhaseBase::keepVariablesConstantDuringInitStep( real64 const time,
                                                     rankOffset,
                                                     localMatrix,
                                                     rhsValue,
-                                                    pres[ei],   // freeze the current pressure value
+                                                    pres[ei], // freeze the current pressure value
                                                     pres[ei] );
         localRhs[localRow] = rhsValue;
 
@@ -1197,7 +1194,7 @@ void SinglePhaseBase::keepVariablesConstantDuringInitStep( real64 const time,
                                                       rankOffset,
                                                       localMatrix,
                                                       rhsValue,
-                                                      temp[ei],   // freeze the current temperature value
+                                                      temp[ei], // freeze the current temperature value
                                                       temp[ei] );
           localRhs[localRow + 1] = rhsValue;
         }

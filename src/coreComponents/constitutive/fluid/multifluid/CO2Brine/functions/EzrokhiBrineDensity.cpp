@@ -59,7 +59,7 @@ EzrokhiBrineDensity::EzrokhiBrineDensity( string const & name,
 
 void EzrokhiBrineDensity::makeCoefficients( string_array const & inputPara )
 {
-  // compute brine density following Ezrokhi`s method (referenced in Eclipse TD, Aqueous phase properties)
+  // compute brine density following Ezrokhi`s method
   // Reference : Zaytsev, I.D. and Aseyev, G.G. Properties of Aqueous Solutions of Electrolytes, Boca Raton, Florida, USA CRC Press (1993).
 
   m_waterCompressibility = 4.5e-10; // Pa-1
