@@ -176,7 +176,7 @@ real64 HydrofractureSolver< POROMECHANICS_SOLVER >::fullyCoupledSolverStep( real
                                                                             int const cycleNumber,
                                                                             DomainPartition & domain )
 {
-  // for initial fracture initialization 
+  // for initial fracture initialization
   if( time_n <= 0 )
   {
     initializeNewFractureFields( domain );
@@ -738,7 +738,7 @@ assembleForceResidualDerivativeWrtPressure( DomainPartition & domain,
         real64 nodalForceMag = fluidPressure[kfe] * Ja;
         real64 nodalForce[3] = LVARRAY_TENSOROPS_INIT_LOCAL_3( Nbar );
         LvArray::tensorOps::scale< 3 >( nodalForce, nodalForceMag );
-     
+
         for( localIndex kf=0; kf<2; ++kf )
         {
           localIndex const faceIndex = elemsToFaces[kfe][kf];
