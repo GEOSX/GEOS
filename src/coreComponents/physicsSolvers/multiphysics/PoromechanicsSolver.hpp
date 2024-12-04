@@ -115,6 +115,7 @@ public:
                              this->getCatalogName(), this->getName(), FlowSolverBase::viewKeyStruct::isThermalString(), this->flowSolver()->getName() ),
                    InputError );
 
+    // the following is needed for proper geomechanics initialization
     DomainPartition & domain = this->template getGroupByPath< DomainPartition >( "/Problem/domain" );
     flowSolver()->initializeState( domain );
     updateBulkDensity( domain );
