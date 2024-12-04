@@ -59,6 +59,15 @@ bool isZero( T const val, T const tol = LvArray::NumericLimits< T >::epsilon )
   return -tol <= val && val <= tol;
 }
 
+template< typename ARRAY_TYPE >
+GEOS_FORCE_INLINE GEOS_HOST_DEVICE
+bool hasNonZero( ARRAY_TYPE const & array )
+{
+  return std::any_of( array.begin(), array.end(), []( real64 value ) {
+    return !isZero(value);  // Check if the value is non-zero
+  } );
+};
+
 template< typename T >
 GEOS_FORCE_INLINE GEOS_HOST_DEVICE constexpr
 bool isOdd( T x )

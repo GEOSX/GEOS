@@ -243,14 +243,12 @@ public:
   /*
    * @brief apply a special treatment to the wells that are shut
    * @param time_n the time at the previous converged time step
-   * @param dt the time step size
    * @param domain the physical domain object
    * @param dofManager degree-of-freedom manager associated with the linear system
    * @param matrix the system matrix
    * @param rhs the system right-hand side vector
    */
   void shutDownWell( real64 const time_n,
-                     real64 const dt,
                      DomainPartition const & domain,
                      DofManager const & dofManager,
                      CRSMatrixView< real64, globalIndex const > const & localMatrix,
@@ -284,7 +282,7 @@ private:
    * @brief Initialize all the primary and secondary variables in all the wells
    * @param domain the domain containing the well manager to access individual wells
    */
-  void initializeWells( DomainPartition & domain, real64 const & time_n, real64 const & dt ) override;
+  void initializeWells( DomainPartition & domain, real64 const & time_n ) override;
 
   /**
    * @brief Make sure that the well constraints are compatible

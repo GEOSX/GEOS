@@ -334,17 +334,10 @@ real64 SinglePhaseWell::updateSubRegionState( WellElementSubRegion & subRegion )
   return 0.0;  // change in phasevolume fraction doesnt apply
 }
 
-void SinglePhaseWell::initializeWells( DomainPartition & domain, real64 const & time_n, real64 const & dt )
+void SinglePhaseWell::initializeWells( DomainPartition & domain, real64 const & time_n )
 {
   GEOS_MARK_FUNCTION;
   GEOS_UNUSED_VAR( time_n );
-  GEOS_UNUSED_VAR( dt );
-
-  auto hasNonZeroCompRate = []( arrayView1d< real64 > const & arr ) {
-    return std::any_of( arr.begin(), arr.end(), []( real64 value ) {
-      return value > 0 || value < 0;       // Check if the value is non-zero
-    } );
-  };
 
   // loop over the wells
   forDiscretizationOnMeshTargets( domain.getMeshBodies(), [&] ( string const &,
@@ -382,7 +375,7 @@ void SinglePhaseWell::initializeWells( DomainPartition & domain, real64 const & 
         perforationData.getField< fields::well::gravityCoefficient >();
 
 
-      if( time_n <= 0.0  || (wellControls.isWellOpen( time_n ) && !hasNonZeroCompRate( connRate ) ) )
+      if( time_n <= 0.0  || (wellControls.isWellOpen( time_n ) && !hasNonZero( connRate ) ) )
       {
         // TODO: change the way we access the flowSolver here
         SinglePhaseBase const & flowSolver = getParent().getGroup< SinglePhaseBase >( getFlowSolverName() );
@@ -429,7 +422,6 @@ void SinglePhaseWell::initializeWells( DomainPartition & domain, real64 const & 
   } );
 }
 void SinglePhaseWell::shutDownWell( real64 const time_n,
-                                    real64 const dt,
                                     DomainPartition const & domain,
                                     DofManager const & dofManager,
                                     CRSMatrixView< real64, globalIndex const > const & localMatrix,
@@ -527,7 +519,7 @@ void SinglePhaseWell::assembleSystem( real64 const time,
   assembleFluxTerms( time, dt, domain, dofManager, localMatrix, localRhs );
 
   // then apply a special treatment to the wells that are shut
-  shutDownWell( time, dt, domain, dofManager, localMatrix, localRhs );
+  shutDownWell( time, domain, dofManager, localMatrix, localRhs );
 }
 
 void SinglePhaseWell::assembleFluxTerms( real64 const & time_n,

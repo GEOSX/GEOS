@@ -207,12 +207,12 @@ void WellSolverBase::setupDofs( DomainPartition const & domain,
 }
 
 void WellSolverBase::implicitStepSetup( real64 const & time_n,
-                                        real64 const & dt,
+                                        real64 const & GEOS_UNUSED_PARAM( dt ),
                                         DomainPartition & domain )
 {
   // Initialize the primary and secondary variables for the first time step
 
-  initializeWells( domain, time_n, dt );
+  initializeWells( domain, time_n );
 }
 
 void WellSolverBase::updateState( DomainPartition & domain )

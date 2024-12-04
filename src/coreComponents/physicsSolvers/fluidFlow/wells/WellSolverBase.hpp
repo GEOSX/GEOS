@@ -304,7 +304,7 @@ protected:
    * @brief Initialize all the primary and secondary variables in all the wells
    * @param domain the domain containing the well manager to access individual wells
    */
-  virtual void initializeWells( DomainPartition & domain, real64 const & time_n, real64 const & dt ) = 0;
+  virtual void initializeWells( DomainPartition & domain, real64 const & time_n ) = 0;
 
   /**
    * @brief Make sure that the well constraints are compatible
