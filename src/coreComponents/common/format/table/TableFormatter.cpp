@@ -237,8 +237,6 @@ void TableTextFormatter::populateDataCellsLayout( TableLayout & tableLayout,
         {
           cell.type = it->m_columName.m_cellType;
         }
-        bool temp = cell.type == CellType::Merge;
-
         cellsDataLayout[idxRow][idxColumn] = TableLayout::CellLayout( cell.type, cell.value, alignement );
         maxLinesPerRow  = std::max( maxLinesPerRow, cellsDataLayout[idxRow][idxColumn].m_lines.size() );
 
@@ -281,7 +279,7 @@ void TableTextFormatter::updateColumnMaxLength( TableLayout & tableLayout,
       // update all current data cell
       for( size_t rowIdx = 0; rowIdx < cellsDataLayout.size(); ++rowIdx )
       {
-        TableLayout::CellLayout & cell = cellsDataLayout[rowIdx][idxColumn] ;
+        TableLayout::CellLayout & cell = cellsDataLayout[rowIdx][idxColumn];
         bool isPreviousCellMerged = (idxColumn != 0) && (cellsDataLayout[rowIdx][idxColumn - 1].m_cellType == CellType::Merge);
         if( isPreviousCellMerged )
         {
@@ -457,7 +455,6 @@ void TableTextFormatter::gridifyHeaders( TableLayout & tableLayout,
     }
   }
 
-  //fonction resize;
   size_t idxLayer = 0;
   for( auto & lines: cellsHeaderLayout )
   {
@@ -517,25 +514,19 @@ void TableTextFormatter::outputLines( TableLayout & tableLayout,
       for( auto const & cell : line )
       {
 
-        if( cell.m_cellType != CellType::Hidden && cell.m_cellType != CellType::Merge )//todo supp la 2eme condition
+        if( cell.m_cellType != CellType::Hidden && cell.m_cellType != CellType::Merge )
         {
           formatCell( tableLayout, tableOutput, cell, idxSubLine );
         }
 
         if( cell.m_cellType  == CellType::Header || cell.m_cellType  == CellType::Value )
         {
-          if( &cell == &(*(line.end() - 1)))
-          {
-            tableOutput << GEOS_FMT( "{:>{}}", m_verticalLine, tableLayout.getBorderMargin() + 1 );
-          }
-          else
-          {
-            tableOutput << GEOS_FMT( "{:^{}}", m_verticalLine, tableLayout.getColumnMargin());
-          }
+          integer const endMargin =  &cell == &(line.back()) ?
+                                    tableLayout.getBorderMargin() + 1 :
+                                    tableLayout.getColumnMargin();
+          tableOutput << GEOS_FMT( "{:>{}}", m_verticalLine, endMargin );
         }
-        
       }
-
       tableOutput << "\n";
     }
 
@@ -543,7 +534,6 @@ void TableTextFormatter::outputLines( TableLayout & tableLayout,
     {
       tableOutput << GEOS_FMT( "{}\n", sectionSeparatingLine );
     }
-
     idxLine++;
   }
 
