@@ -146,12 +146,17 @@ public:
     {
       m_avgStrain[k][icomp] += detJxW*strain[icomp]/m_elementVolume[k];
 
-      // This is maybe bad on gpu
-      // How to hamdle magnitudes?
-      if ((std::abs(strainInc[icomp]) > std::abs(elasticStrainInc[icomp]) ) && (std::abs(strainInc[icomp]) > 1.0e-8 ))
+      if (std::abs(strainInc[icomp]) > 1.0e-8)
       {
         m_avgPlasticStrain[k][icomp] += detJxW*(strainInc[icomp] - elasticStrainInc[icomp])/m_elementVolume[k];
       }
+
+      // This is maybe bad on gpu
+      // How to hamdle magnitudes?
+      //if ((std::abs(strainInc[icomp]) > std::abs(elasticStrainInc[icomp]) ) && (std::abs(strainInc[icomp]) > 1.0e-8 ))
+      //{
+       // m_avgPlasticStrain[k][icomp] += detJxW*(strainInc[icomp] - elasticStrainInc[icomp])/m_elementVolume[k];
+      //}
       //m_avgStrain[k][icomp] += detJxW*(strainInc[icomp])/m_elementVolume[k];
       //m_avgPlasticStrain[k][icomp] += detJxW*(elasticStrainInc[icomp])/m_elementVolume[k];
     }
