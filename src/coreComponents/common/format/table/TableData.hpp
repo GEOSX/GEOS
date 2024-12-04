@@ -171,7 +171,7 @@ void TableData::addRow( Args const &... args )
 {
   std::vector< CellData > cells;
   ( [&] {
-    static_assert( has_formatter_v< decltype(args) > || isCellType< decltype(args) >, "Argument passed in addRow cannot be converted to string nor a CellType" );
+    static_assert( has_formatter_v< decltype(args) > || isCellType< std::decay_t< decltype(args) > >, "Argument passed in addRow cannot be converted to string nor a CellType" );
     if constexpr (std::is_same_v< Args, CellType >) {
       if( args == CellType::SEPARATOR )
       {

@@ -22,6 +22,7 @@
 
 #include "TableData.hpp"
 #include "TableLayout.hpp"
+#include "TableTypes.hpp"
 
 namespace geos
 {

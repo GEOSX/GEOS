@@ -56,7 +56,7 @@ TableLayout & TableLayout::disableLineBreak()
 TableLayout & TableLayout::setMargin( MarginValue marginValue )
 {
   m_marginValue = marginValue;
-  m_borderMargin = marginValue + 1; // margin + border character
+  m_borderMargin = marginValue;
   m_columnMargin = integer( marginValue ) * 2 + 1;
 
   return *this;
@@ -89,11 +89,9 @@ size_t TableLayout::getMaxHeaderRow() const
     while( !currColumn->m_subColumn.empty())
     {
       currColumn = &currColumn->m_subColumn[0];
-      std::cout << "currDepth" << currDepth << std::endl;
       currDepth++;
     }
     depthMax = std::max( currDepth, depthMax );
-    std::cout << "depthMax amx" << depthMax << std::endl;
   }
   return depthMax;
 }
@@ -128,14 +126,14 @@ integer const & TableLayout::getMarginTitle() const
   return m_titleMargin;
 }
 
-std::vector< size_t > & TableLayout::getNbSubHeaderLines()
+std::vector< size_t > & TableLayout::getSublineInHeaderCounts()
 {
-  return m_nbSubHeaderLines;
+  return m_sublineHeaderCounts ;
 }
 
 std::vector< size_t > & TableLayout::getNbSubDataLines()
 {
-  return m_nbSubDataLines;
+  return m_sublineDataCounts ;
 }
 
 void divideCell( std::vector< string > & lines, string const & value )

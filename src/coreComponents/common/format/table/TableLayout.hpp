@@ -243,7 +243,6 @@ public:
         m_currentLayer -= size_t( hasParent );
         m_currentColumn = hasParent ? m_currentColumn->m_parent : nullptr;
       }
-
       return *this;
     }
 
@@ -310,12 +309,12 @@ private:
 public:
     using ColumnType = Column;
 
-    RootIterator( ColumnType * columnPtr ) noexcept:
-      m_currentColumn( columnPtr )
+    RootIterator( ColumnType * columnPtr, size_t idxLayer ):
+      m_currentColumn( columnPtr ), m_currentLayer( idxLayer )
     {}
 
 
-    RootIterator & operator=( Column * columnPtr )
+    RootIterator & operator=( ColumnType * columnPtr )
     {
       this->m_currentColumn= columnPtr;
       return *this;
@@ -326,26 +325,28 @@ public:
       if( m_currentColumn->hasChild())
       {
         m_currentColumn = &m_currentColumn->m_subColumn[0];
+        m_currentLayer++;
+      }
+      else if( m_currentColumn->m_next != nullptr )
+      {
+        m_currentColumn = m_currentColumn->m_next;
       }
       else
       {
+        while( m_currentColumn->m_next == nullptr && m_currentColumn->m_parent != nullptr )
+        {
+          m_currentColumn = m_currentColumn->m_parent;
+          m_currentLayer--;
+        }
         if( m_currentColumn->m_next != nullptr )
         {
           m_currentColumn = m_currentColumn->m_next;
         }
-        else if( m_currentColumn->m_parent == nullptr )
+        else
         {
           m_currentColumn = nullptr;
         }
-        else
-        {
-          while( m_currentColumn->m_parent->m_next == nullptr )
-          {
-            m_currentColumn = m_currentColumn->m_parent->m_next;
-          }
-        }
       }
-
       return *this;
     }
 
@@ -376,15 +377,21 @@ public:
       return a.m_currentColumn != b.m_currentColumn;
     };
 
+    size_t getCurrentLayer() const
+    {
+      return m_currentLayer;
+    }
+
 private:
     ColumnType * m_currentColumn;
+    size_t m_currentLayer;
   };
 
-  RootIterator beginRoot() { return RootIterator( &(*m_tableColumnsData.begin()) ); }
+  RootIterator beginRoot() { return RootIterator( &(*m_tableColumnsData.begin()), 0 ); }
 
   RootIterator endRoot()
   {
-    return RootIterator( nullptr );
+    return RootIterator( nullptr, 0 );
   }
 
 
@@ -521,7 +528,7 @@ private:
  * @brief Get the Nb Rows object
  * @return std::vector< integer >&
  */
-  std::vector< size_t > & getNbSubHeaderLines();
+  std::vector< size_t > & getSublineInHeaderCounts();
 
 /**
  * @brief Get the Nb Rows object
@@ -578,8 +585,10 @@ private:
   void addToColumns( TableLayout::Column const & column );
 
   std::vector< Column > m_tableColumnsData;
-  std::vector< size_t > m_nbSubHeaderLines;
-  std::vector< size_t > m_nbSubDataLines;
+  /// Contains the subdivision (line) counts for each line in header.
+  std::vector< size_t > m_sublineHeaderCounts ;
+  /// Contains the subdivision (line) counts for each line in data.
+  std::vector< size_t > m_sublineDataCounts ;
   bool m_wrapLine = true;
   bool m_containSubColumn = false;
 
