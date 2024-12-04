@@ -114,10 +114,6 @@ public:
                    GEOS_FMT( "{} {}: The attribute `{}` of the flow solver `{}` must be set to 1 since the poromechanics solver is thermal",
                              this->getCatalogName(), this->getName(), FlowSolverBase::viewKeyStruct::isThermalString(), this->flowSolver()->getName() ),
                    InputError );
-
-    DomainPartition & domain = this->template getGroupByPath< DomainPartition >( "/Problem/domain" );
-    flowSolver()->initializeState( domain );
-    updateBulkDensity( domain );
   }
 
   virtual void setConstitutiveNamesCallSuper( ElementSubRegionBase & subRegion ) const override final
@@ -388,6 +384,23 @@ public:
 
   }
 
+  void updateBulkDensity( DomainPartition & domain )
+  {
+    this->template forDiscretizationOnMeshTargets( domain.getMeshBodies(), [&]( string const &,
+                                                                                MeshLevel & mesh,
+                                                                                arrayView1d< string const > const & regionNames )
+    {
+      mesh.getElemManager().forElementSubRegions< CellElementSubRegion >( regionNames, [&]( localIndex const,
+                                                                                            auto & subRegion )
+      {
+        // update the bulk density
+        // TODO: ideally, we would not recompute the bulk density, but a more general "rhs" containing the body force and the
+        // pressure/temperature terms
+        updateBulkDensity( subRegion );
+      } );
+    } );
+  }
+
 protected:
 
   /* Implementation of Nonlinear Acceleration (Aitken) of averageMeanTotalStressIncrement */
@@ -592,23 +605,6 @@ protected:
                                                        meanTotalStressIncrement_k,
                                                        averageMeanTotalStressIncrement_k );
         } );
-      } );
-    } );
-  }
-
-  void updateBulkDensity( DomainPartition & domain )
-  {
-    this->template forDiscretizationOnMeshTargets( domain.getMeshBodies(), [&]( string const &,
-                                                                                MeshLevel & mesh,
-                                                                                arrayView1d< string const > const & regionNames )
-    {
-      mesh.getElemManager().forElementSubRegions< CellElementSubRegion >( regionNames, [&]( localIndex const,
-                                                                                            auto & subRegion )
-      {
-        // update the bulk density
-        // TODO: ideally, we would not recompute the bulk density, but a more general "rhs" containing the body force and the
-        // pressure/temperature terms
-        updateBulkDensity( subRegion );
       } );
     } );
   }

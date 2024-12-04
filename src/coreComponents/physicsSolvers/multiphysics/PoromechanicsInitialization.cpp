@@ -122,6 +122,8 @@ execute( real64 const time_n,
   }
   else     // default
   {
+    m_poromechanicsSolver->flowSolver()->initializeState( domain );
+    m_poromechanicsSolver->updateBulkDensity( domain );
     m_poromechanicsSolver->solidMechanicsSolver()->execute( time_n, dt, cycleNumber, eventCounter, eventProgress, domain );
   }
 
