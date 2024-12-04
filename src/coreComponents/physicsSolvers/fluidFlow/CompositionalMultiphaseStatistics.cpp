@@ -420,17 +420,17 @@ void CompositionalMultiphaseStatistics::computeRegionStatistics( real64 const ti
     compPhaseStatsData.addRow( "Temperature [K]", stats.minTemperature, stats.averageTemperature, stats.maxTemperature );
     compPhaseStatsData.addSeparator();
 
-    compPhaseStatsData.addRow( "Total dynamic pore volume [rm^3]", stats.totalPoreVolume, TableData::CellType::MERGE, TableData::CellType::MERGE );
-    compPhaseStatsData.addRow( "Phase dynamic pore volume: {} rm^3", stats.phasePoreVolume, TableData::CellType::MERGE, TableData::CellType::MERGE );
-    compPhaseStatsData.addRow( GEOS_FMT( "Phase mass {}", massUnit ), stats.phaseMass, TableData::CellType::MERGE, TableData::CellType::MERGE );
+    compPhaseStatsData.addRow( "Total dynamic pore volume [rm^3]", stats.totalPoreVolume, CellType::Merge, CellType::Merge );
+    compPhaseStatsData.addRow( "Phase dynamic pore volume: {} rm^3", stats.phasePoreVolume, CellType::Merge, CellType::Merge );
+    compPhaseStatsData.addRow( GEOS_FMT( "Phase mass {}", massUnit ), stats.phaseMass, CellType::Merge, CellType::Merge );
 
-    compPhaseStatsData.addRow( GEOS_FMT( "Trapped phase mass (metric 1) {}", massUnit ), stats.trappedPhaseMass, TableData::CellType::MERGE, TableData::CellType::MERGE );
-    compPhaseStatsData.addRow( GEOS_FMT( "nonTrappedPhaseMass {}", massUnit ), nonTrappedPhaseMass, TableData::CellType::MERGE, TableData::CellType::MERGE );
+    compPhaseStatsData.addRow( GEOS_FMT( "Trapped phase mass (metric 1) {}", massUnit ), stats.trappedPhaseMass, CellType::Merge, CellType::Merge );
+    compPhaseStatsData.addRow( GEOS_FMT( "nonTrappedPhaseMass {}", massUnit ), nonTrappedPhaseMass, CellType::Merge, CellType::Merge );
 
-    compPhaseStatsData.addRow( GEOS_FMT( "Immobile phase mass (metric 2) {}", massUnit ), stats.immobilePhaseMass, TableData::CellType::MERGE, TableData::CellType::MERGE );
-    compPhaseStatsData.addRow( GEOS_FMT( "Mobile phase mass (metric 2) {}", massUnit ), mobilePhaseMass, TableData::CellType::MERGE, TableData::CellType::MERGE );
+    compPhaseStatsData.addRow( GEOS_FMT( "Immobile phase mass (metric 2) {}", massUnit ), stats.immobilePhaseMass, CellType::Merge, CellType::Merge );
+    compPhaseStatsData.addRow( GEOS_FMT( "Mobile phase mass (metric 2) {}", massUnit ), mobilePhaseMass, CellType::Merge, CellType::Merge );
 
-    compPhaseStatsData.addRow( GEOS_FMT( "Component mass {}", massUnit ), stats.componentMass, TableData::CellType::MERGE, TableData::CellType::MERGE );
+    compPhaseStatsData.addRow( GEOS_FMT( "Component mass {}", massUnit ), stats.componentMass, CellType::Merge, CellType::Merge );
 
     string const title = GEOS_FMT( "{}, {} (time {} s):", getName(), regionNames[i], time );
     TableLayout const compPhaseStatsLayout( title, { "statistics", "min", "average", "max" } );

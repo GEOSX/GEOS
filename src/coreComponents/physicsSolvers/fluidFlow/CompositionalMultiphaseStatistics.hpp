@@ -118,8 +118,6 @@ private:
     array1d< real64 > immobilePhaseMass;
     /// region component mass
     array2d< real64 > componentMass;
-
-
   };
 
   /**

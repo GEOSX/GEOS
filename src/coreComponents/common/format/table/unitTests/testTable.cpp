@@ -36,12 +36,13 @@ TEST( testTable, tableEmptyRow )
 
   TableData tableData;
   tableData.addRow( "value1", "[30.21543]", "3.0", 54, 0 );
-  tableData.addRow( "4", "5 ", "6", "7", "8" );
+  tableData.addRow( "", " ", "", "", "" );
   tableData.addRow( "Duis fringilla, ligula sed porta fringilla, ligula wisi commodo felis,ut adipiscing felis dui in enim. Suspendisse malesuada ultrices ante", "[30.21543]", "30.45465142",
                     787442, 10 );
   TableTextFormatter const tableText( tableLayout );
   tableText.toString( tableData );
-  EXPECT_EQ( tableText.toString( tableData ),
+  EXPECT_EQ( tableText.toString(
+               tableData ),
              "\n-------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------\n"
              "|                                                                                InternalWellGenerator well_injector1                                                                                 |\n"
              "-------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------\n"
@@ -68,7 +69,7 @@ TEST( testTable, tableClassic )
 
   TableData tableData;
   tableData.addRow( "value1", "[30.21543]", "3.0", 54, 0 );
-  tableData.addRow( "1", "2", "3", "4", "5" );
+  tableData.addRow( "", "", "", "", "" );
   tableData.addRow( "value23", "[30.21543]", "30.45465142", 787442, 10 );
 
   TableTextFormatter const tableText( tableLayout );
@@ -109,7 +110,7 @@ TEST( testTable, tableColumnParamClassic ) //TODO
       .setHeaderAlignment( TableLayout::Alignment::right )} );
 
   TableData tableData;
-  tableData.addRow( "value1", "5.0", "3.0", 3.0129877, 2.0f, 1 );
+  tableData.addRow( "value1", "", "3.0", 3.0129877, 2.0f, 1 );
   tableData.addRow( "val1", "v", "[3.045,42.02,89.25]", 3.0, 10.0f, 3 );
 
   TableTextFormatter const tableText( tableLayout );
@@ -155,7 +156,7 @@ TEST( testTable, tableHiddenColumn )
   } );
 
   TableData tableData;
-  tableData.addRow( "value1", "6", "3.0", 3.0129877, 2.0f, 1 );
+  tableData.addRow( "value1", "", "3.0", 3.0129877, 2.0f, 1 );
   tableData.addRow( "val1", "v", "[3.045,42.02,89.25]", 3.0, 10.0f, 3 );
 
   TableTextFormatter const tableText( tableLayout );
@@ -163,10 +164,11 @@ TEST( testTable, tableHiddenColumn )
              "\n---------------------------------------------------------------------------------------------------------------\n"
              "|  Cras egestas ipsum a nisl. Vivamus variu dolor utsisicdis parturient montes, nascetur ridiculus mus. Duis  |\n"
              "---------------------------------------------------------------------------------------------------------------\n"
-             "|       Cras egestas        |             CoordX  |                C                 |  CoordZ                |\n"
+             "|           Cras egestas           |                    C                    |  CoordZ                        |\n"
+             "|                                  |                                         |                                |\n"
              "---------------------------------------------------------------------------------------------------------------\n"
-             "|  value1                   |                     |  3.0                             |  3.0129877             |\n"
-             "|  val1                     |  v                  |  [3.045,42.02,89.25]             |  3                     |\n"
+             "|  value1                          |  3.0                                    |  3.0129877                     |\n"
+             "|  val1                            |  [3.045,42.02,89.25]                    |  3                             |\n"
              "---------------------------------------------------------------------------------------------------------------\n\n" );
 }
 
@@ -267,13 +269,12 @@ TEST( testTable, table2DTable )
 TEST( testTable, layoutTable )
 {
   string filename = "fluid1_phaseModel1_PhillipsBrineDensity_table";
-  string log = GEOS_FMT( "The {} PVT table exceeding 500 rows.\nTo visualize the tables, go to the generated csv \n", filename );
+  string log = GEOS_FMT( "The {} PVT table exceeding 500 rows.\nTo visualize the tables, go to the generated csv", filename );
   TableLayout const tableLayoutInfos( filename,
   {
     TableLayout::Column()
       .setName( log )
       .setHeaderAlignment( TableLayout::Alignment::left )} );
-
   TableTextFormatter const tableText( tableLayoutInfos );
   EXPECT_EQ( tableText.toString(),
              "\n-------------------------------------------------------------------------------------\n"
@@ -281,7 +282,7 @@ TEST( testTable, layoutTable )
              "-------------------------------------------------------------------------------------\n"
              "|  The fluid1_phaseModel1_PhillipsBrineDensity_table PVT table exceeding 500 rows.  |\n"
              "|  To visualize the tables, go to the generated csv                                 |\n"
-             "-------------------------------------------------------------------------------------\n"
+             "-------------------------------------------------------------------------------------\n\n"
              );
 }
 
@@ -327,7 +328,6 @@ TEST( testTable, variadicTest )
     TableLayout const layoutTest( "Cras egestas ipsum a nisl. Vivamus variu dolor utsisicdis parturient montes, nascetur ridiculus mus. Duis nascetur ridiculus mus",
     {
       "Rank",
-      "Column1",
       TableLayout::Column()
         .setName( "Nodes" )
         .addSubColumns( {"Locales", "Ghost" } ),
@@ -338,7 +338,6 @@ TEST( testTable, variadicTest )
       TableLayout::Column()
         .setName( "Elems" )
         .addSubColumns( {"Locales", "Ghost"} ),
-      "Column5"
     } );
 
     TableData tableData;
@@ -349,12 +348,12 @@ TEST( testTable, variadicTest )
                "\n--------------------------------------------------------------------------------------------------------------------------------------\n"
                "|  Cras egestas ipsum a nisl. Vivamus variu dolor utsisicdis parturient montes, nascetur ridiculus mus. Duis nascetur ridiculus mus  |\n"
                "--------------------------------------------------------------------------------------------------------------------------------------\n"
-               "|             Rank              |           Nodes           |      Edge      |           Faces           |           Elems           |\n"
+               "|           Rank            |           Nodes            |     Edge      |           Faces            |            Elems             |\n"
                "--------------------------------------------------------------------------------------------------------------------------------------\n"
-               "|                               |    local    |    ghost    |                |    local    |    ghost    |    local    |    ghost    |\n"
+               "|                           |   Locales    |    Ghost    |               |   Locales    |    Ghost    |   Locales    |     Ghost     |\n"
                "--------------------------------------------------------------------------------------------------------------------------------------\n"
-               "|             min(local/total)  |          1  |          2  |             3  |          4  |          5  |          6  |          7  |\n"
-               "|             min(local/total)  |          1  |          2  |             3  |          4  |          5  |          6  |          7  |\n"
+               "|         min(local/total)  |           1  |          2  |            3  |           4  |          5  |           6  |            7  |\n"
+               "|         min(local/total)  |           1  |          2  |            3  |           4  |          5  |           6  |            7  |\n"
                "--------------------------------------------------------------------------------------------------------------------------------------\n\n"
                );
   }
@@ -381,6 +380,41 @@ TEST( testTable, testLineBreak )
              "|           1|     2|3.0|3.0129877|      2|      1|\n"
              "|           1|     2|3.0|3.0129877|      2|      1|\n"
              "---------------------------------------------------\n"
+             );
+}
+
+TEST( testTable, testCellMerging )
+{
+  TableLayout const tableLayout( {
+    TableLayout::Column()
+      .setName( "Cras egestas" ),
+    TableLayout::Column()
+      .setName( "CoordX" ),
+    "C",
+    TableLayout::Column()
+      .setName( "CoordZ" ),
+    TableLayout::Column()
+      .setName( "Prev\nelement" ),
+    TableLayout::Column()
+      .setName( "Next\nelement" )} );
+
+  TableData tableData;
+  tableData.addRow( "value1", " ", "3.0", 3.0129877, 2.0f, 1 );
+  tableData.addRow( "val1", "valp", "[3.045,42.02,89.25]", 3.0, 10.0f, 3 );
+  tableData.addSeparator();
+  tableData.addRow( "Valeurdfgfdgdgxcxc", CellType::Merge, CellType::Merge, CellType::Merge, CellType::Merge, 9111 );
+  TableTextFormatter const tableText( tableLayout );
+  std::cout <<  tableText.toString( tableData ) << std::endl;
+  EXPECT_EQ( tableText.toString( tableData ),
+             "\n-------------------------------------------------------------------------------------------\n"
+             "|  Cras egestas  |  CoordX  |           C           |  CoordZ     |  Prev     |   Next    |\n"
+             "|                |          |                       |             |  element  |  element  |\n"
+             "-------------------------------------------------------------------------------------------\n"
+             "|        value1  |          |                  3.0  |  3.0129877  |        2  |        1  |\n"
+             "|          val1  |       v  |  [3.045,42.02,89.25]  |          3  |       10  |        3  |\n"
+             "|------------------------------------------------------------------------------------------\n"
+             "|                                                                                      9  |\n"
+             "-------------------------------------------------------------------------------------------\n\n"
              );
 }
 

@@ -238,7 +238,6 @@ void TableTextFormatter::populateDataCellsLayout( TableLayout & tableLayout,
           cell.type = it->m_columName.m_cellType;
         }
         bool temp = cell.type == CellType::Merge;
-        std::cout << "cell.type " <<  temp << " cell.value " << cell.value <<std::endl;
 
         cellsDataLayout[idxRow][idxColumn] = TableLayout::CellLayout( cell.type, cell.value, alignement );
         maxLinesPerRow  = std::max( maxLinesPerRow, cellsDataLayout[idxRow][idxColumn].m_lines.size() );
@@ -248,11 +247,6 @@ void TableTextFormatter::populateDataCellsLayout( TableLayout & tableLayout,
       }
     }
     subDataLineCounts.push_back( { maxLinesPerRow } );
-  }
-  std::cout << "a.size()"<< std::endl;
-  for( auto const & a : cellsDataLayout )
-  {
-    std::cout << a.size()<< std::endl;
   }
 }
 
@@ -276,23 +270,23 @@ void TableTextFormatter::updateColumnMaxLength( TableLayout & tableLayout,
     if( !it->hasChild())
     {
       // find max cell length between cell data column and current cell layout
-      size_t columnNameLength = getMaxLineLength( currentColumn->m_columName.m_lines );
+      size_t cellLayoutLength = getMaxLineLength( currentColumn->m_columName.m_lines );
       for( size_t rowIdx = 0; rowIdx < cellsDataLayout.size(); ++rowIdx )
       {
         TableLayout::CellLayout & cell = cellsDataLayout[rowIdx][idxColumn];
         size_t const cellDataLength = getMaxLineLength( cell.m_lines );
-        cell.m_maxDataLength = std::max( columnNameLength, cellDataLength );
+        cell.m_maxDataLength = std::max( cellLayoutLength, cellDataLength );
         maxColumnSize = std::max( cell.m_maxDataLength, maxColumnSize );
       }
       // update all current data cell
       for( size_t rowIdx = 0; rowIdx < cellsDataLayout.size(); ++rowIdx )
       {
-        TableLayout::CellLayout & cell = cellsDataLayout[rowIdx][idxColumn];
+        TableLayout::CellLayout & cell = cellsDataLayout[rowIdx][idxColumn] ;
         bool isPreviousCellMerged = (idxColumn != 0) && (cellsDataLayout[rowIdx][idxColumn - 1].m_cellType == CellType::Merge);
         if( isPreviousCellMerged )
         {
           size_t const previousCellMaxLength = cellsDataLayout[rowIdx][idxColumn - 1].m_maxDataLength;
-          size_t const additionalMargin = (cell.m_cellType != CellType::Value) ? tableLayout.getColumnMargin() : 0;
+          size_t const additionalMargin = tableLayout.getColumnMargin();
           cell.m_maxDataLength = maxColumnSize + previousCellMaxLength + additionalMargin;
           cellsDataLayout[rowIdx][idxColumn - 1].m_maxDataLength = 0;
         }
@@ -301,8 +295,7 @@ void TableTextFormatter::updateColumnMaxLength( TableLayout & tableLayout,
           cell.m_maxDataLength = maxColumnSize;
         }
       }
-
-      currentColumn->setMaxStringSize( std::max( columnNameLength, maxColumnSize ));
+      currentColumn->setMaxStringSize( maxColumnSize );
       ++idxColumn;
     }
     else
@@ -502,7 +495,6 @@ void TableTextFormatter::formatCell( TableLayout & tableLayout,
                                      size_t idxLine ) const
 {
   GEOS_UNUSED_VAR( tableLayout );
-  std::cout << "format cell "<<cell.m_maxDataLength;
   tableOutput << buildCell( cell.m_alignment,
                             cell.m_lines[idxLine],
                             cell.m_maxDataLength );
@@ -525,7 +517,7 @@ void TableTextFormatter::outputLines( TableLayout & tableLayout,
       for( auto const & cell : line )
       {
 
-        if( cell.m_cellType != CellType::Hidden )
+        if( cell.m_cellType != CellType::Hidden && cell.m_cellType != CellType::Merge )//todo supp la 2eme condition
         {
           formatCell( tableLayout, tableOutput, cell, idxSubLine );
         }

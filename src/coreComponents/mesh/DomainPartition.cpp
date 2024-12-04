@@ -412,10 +412,18 @@ void DomainPartition::outputPartitionInformation() const
 
         TableLayout layoutPartition( "Rank",
                                      {" ",
-                                      TableLayout::Column{"Nodes", {"local", "ghost"}},
-                                      TableLayout::Column{"Edges", {"local", "ghost"}},
-                                      TableLayout::Column{"Faces", {"local", "ghost"}},
-                                      TableLayout::Column{"Elems", {"local", "ghost"}}} );
+                                      TableLayout::Column()
+                                        .setName( "Nodes" )
+                                        .addSubColumns( {  "Locales", "Ghost" } ),
+                                      TableLayout::Column()
+                                        .setName( "Edges" )
+                                        .addSubColumns( {  "Locales", "Ghost" } ),
+                                      TableLayout::Column()
+                                        .setName( "Faces" )
+                                        .addSubColumns( {  "Locales", "Ghost" } ),
+                                      TableLayout::Column()
+                                        .setName( "Elems" )
+                                        .addSubColumns( {  "Locales", "Ghost" } )} );
         layoutPartition.setMargin( TableLayout::MarginValue::large ).disableLineBreak();
 
         TableData dataPartition;
