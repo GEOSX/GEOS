@@ -615,8 +615,7 @@ void SolidMechanicsLagrangeContactBubbleStab::applySystemSolution( DofManager co
 
     CommunicationTools::getInstance().synchronizeFields( fieldsToBeSync,
                                                          mesh,
-                                                         domain.getNeighbors(),
-                                                         true );
+                                                         domain.getNeighbors() );
   } );
 }
 

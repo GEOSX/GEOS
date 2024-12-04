@@ -428,7 +428,7 @@ localIndex FaceElementSubRegion::unpackToFaceRelation( buffer_unit_type const * 
   localIndex unPackedSize = 0;
 
   string faceListString;
-  unPackedSize += bufferOps::Unpack( buffer, faceListString );
+  unPackedSize += bufferOps::Unpack( buffer, faceListString, MPI_REPLACE );
   GEOS_ERROR_IF_NE( faceListString, viewKeyStruct::faceListString() );
 
   unPackedSize += bufferOps::Unpack( buffer,

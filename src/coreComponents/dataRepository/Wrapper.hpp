@@ -952,7 +952,7 @@ private:
     return bufferOps::is_host_packable_by_index_v< U >;
   }
 
-  localIndex unpackDeviceImpl( buffer_unit_type const * & buffer, bool withMetadata, parallelDeviceEvents & events )
+  localIndex unpackDeviceImpl( buffer_unit_type const * & buffer, bool withMetadata, parallelDeviceEvents & events, MPI_Op op )
   {
     localIndex unpackedSize = 0;
     if( withMetadata )
@@ -960,11 +960,11 @@ private:
       string name;
       unpackedSize += bufferOps::Unpack( buffer, name, MPI_REPLACE );
       GEOS_ERROR_IF( name != getName(), "buffer unpack leads to wrapper names that don't match" );
-      unpackedSize += wrapperHelpers::UnpackDevice( buffer, referenceAsView(), events, MPI_REPLACE );
+      unpackedSize += wrapperHelpers::UnpackDevice( buffer, referenceAsView(), events, op );
     }
     else
     {
-      unpackedSize += wrapperHelpers::UnpackDataDevice( buffer, referenceAsView(), events, MPI_REPLACE );
+      unpackedSize += wrapperHelpers::UnpackDataDevice( buffer, referenceAsView(), events, op );
     }
     return unpackedSize;
   }
