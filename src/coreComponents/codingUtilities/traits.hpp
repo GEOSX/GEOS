@@ -83,14 +83,6 @@ HAS_MEMBER_FUNCTION( getPreviousSpace, LvArray::MemorySpace, );
 HAS_MEMBER_FUNCTION_NO_RTYPE( registerTouch, LvArray::MemorySpace() );
 
 /**
- * @brief Defines a static constexpr bool HasMemberFunction_checkTouch< @p CLASS >
- *        that is true iff the method @p CLASS :checkTouch( ) exists and the return value is converatble to bool.
- * @tparam CLASS The type to test.
- */
-HAS_MEMBER_FUNCTION( checkTouch, bool, );
-
-
-/**
  * @brief Defines a static constexpr bool HasMemorySpaceFunctions< @p CLASS >
  *        that is true iff the class exposes the set a memory space movement functions defined above.
  * @tparam CLASS The type to test.
