@@ -450,7 +450,7 @@ void FlowSolverBase::initializePostInitialConditionsPreSubGroups()
     fieldsToBeSync.addElementFields( { fields::flow::pressure::key(), fields::flow::temperature::key() },
                                      regionNames );
 
-    CommunicationTools::getInstance().synchronizeFields( fieldsToBeSync, mesh, domain.getNeighbors(), false );
+    CommunicationTools::getInstance().synchronizeFields( fieldsToBeSync, mesh, domain.getNeighbors() );
   } );
 }
 
