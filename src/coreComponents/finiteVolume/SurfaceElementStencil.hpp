@@ -334,8 +334,8 @@ SurfaceElementStencilWrapper::
       localIndex const esr1 =  m_elementSubRegionIndices[iconn][k[1]];
       localIndex const ei1  =  m_elementIndices[iconn][k[1]];
 
-      real64 const t0 = m_weights[iconn][0] * coefficient[er0][esr0][ei0][0][0]; // this is a bit insane to access perm
-      real64 const t1 = m_weights[iconn][1] * coefficient[er1][esr1][ei1][0][0];
+      real64 const t0 = m_weights[iconn][k[0]] * coefficient[er0][esr0][ei0][0][0]; // this is a bit insane to access perm
+      real64 const t1 = m_weights[iconn][k[1]] * coefficient[er1][esr1][ei1][0][0];
 
       real64 const harmonicWeight   = t0*t1 / sumOfTrans;
       real64 const arithmeticWeight = 0.25 * (t0+t1);
@@ -345,8 +345,8 @@ SurfaceElementStencilWrapper::
       weight[connectionIndex][0] = value;
       weight[connectionIndex][1] = -value;
 
-      real64 const dt0 = m_weights[iconn][0] * dCoeff_dVar[er0][esr0][ei0][0][0];
-      real64 const dt1 = m_weights[iconn][1] * dCoeff_dVar[er1][esr1][ei1][0][0];
+      real64 const dt0 = m_weights[iconn][k[0]] * dCoeff_dVar[er0][esr0][ei0][0][0];
+      real64 const dt1 = m_weights[iconn][k[1]] * dCoeff_dVar[er1][esr1][ei1][0][0];
 
       real64 dHarmonic[2];
       dHarmonic[0] = ( dt0 * t1 * sumOfTrans - dt0 * t0 * t1 ) / ( sumOfTrans * sumOfTrans );
@@ -384,8 +384,8 @@ SurfaceElementStencilWrapper::
   {
     for( k[1]=k[0]+1; k[1]<numPointsInFlux( iconn ); ++k[1] )
     {
-      real64 const t0 = m_weights[iconn][0];
-      real64 const t1 = m_weights[iconn][1];
+      real64 const t0 = m_weights[iconn][k[0]];
+      real64 const t1 = m_weights[iconn][k[1]];
 
       real64 const harmonicWeight   = t0*t1 / sumOfTrans;
       real64 const arithmeticWeight = 0.25 * (t0+t1);
@@ -395,8 +395,8 @@ SurfaceElementStencilWrapper::
       weight[connectionIndex][0] = value;
       weight[connectionIndex][1] = -value;
 
-      real64 const dt0 = m_weights[iconn][0];
-      real64 const dt1 = m_weights[iconn][1];
+      real64 const dt0 = m_weights[iconn][k[0]];
+      real64 const dt1 = m_weights[iconn][k[1]];
 
       real64 dHarmonic[2];
       dHarmonic[0] = ( dt0 * t1 * sumOfTrans - dt0 * t0 * t1 ) / ( sumOfTrans * sumOfTrans );
@@ -451,8 +451,8 @@ SurfaceElementStencilWrapper::
       localIndex const esr1 =  m_elementSubRegionIndices[iconn][k[1]];
       localIndex const ei1  =  m_elementIndices[iconn][k[1]];
 
-      real64 const t0 = m_weights[iconn][0] * coefficient[er0][esr0][ei0][0][0]; // this is a bit insane to access perm
-      real64 const t1 = m_weights[iconn][1] * coefficient[er1][esr1][ei1][0][0];
+      real64 const t0 = m_weights[iconn][k[0]] * coefficient[er0][esr0][ei0][0][0]; // this is a bit insane to access perm
+      real64 const t1 = m_weights[iconn][k[1]] * coefficient[er1][esr1][ei1][0][0];
 
       real64 const harmonicWeight   = t0*t1 / sumOfTrans;
       real64 const arithmeticWeight = 0.25 * (t0+t1);
@@ -462,8 +462,8 @@ SurfaceElementStencilWrapper::
       weight[connectionIndex][0] = value;
       weight[connectionIndex][1] = -value;
 
-      real64 const dt0_dvar1 = m_weights[iconn][0] * dCoeff_dVar1[er0][esr0][ei0][0][0];
-      real64 const dt1_dvar1 = m_weights[iconn][1] * dCoeff_dVar1[er1][esr1][ei1][0][0];
+      real64 const dt0_dvar1 = m_weights[iconn][k[0]] * dCoeff_dVar1[er0][esr0][ei0][0][0];
+      real64 const dt1_dvar1 = m_weights[iconn][k[1]] * dCoeff_dVar1[er1][esr1][ei1][0][0];
 
       real64 dHarmonic_dvar1[2];
       dHarmonic_dvar1[0] = ( dt0_dvar1 * t1 * sumOfTrans - dt0_dvar1 * t0 * t1 ) / ( sumOfTrans * sumOfTrans );
@@ -476,8 +476,8 @@ SurfaceElementStencilWrapper::
       dWeight_dVar1[connectionIndex][0] =    m_meanPermCoefficient * dHarmonic_dvar1[0] + (1 - m_meanPermCoefficient) * dArithmetic_dvar1[0];
       dWeight_dVar1[connectionIndex][1] = -( m_meanPermCoefficient * dHarmonic_dvar1[1] + (1 - m_meanPermCoefficient) * dArithmetic_dvar1[1] );
 
-      real64 const dt0_dvar2 = m_weights[iconn][0] * dCoeff_dVar2[er0][esr0][ei0][0][0][0];
-      real64 const dt1_dvar2 = m_weights[iconn][1] * dCoeff_dVar2[er1][esr1][ei1][0][0][0];
+      real64 const dt0_dvar2 = m_weights[iconn][k[0]] * dCoeff_dVar2[er0][esr0][ei0][0][0][0];
+      real64 const dt1_dvar2 = m_weights[iconn][k[1]] * dCoeff_dVar2[er1][esr1][ei1][0][0][0];
 
       real64 dHarmonic_dvar2[2];
       dHarmonic_dvar2[0] = ( dt0_dvar2 * t1 * sumOfTrans - dt0_dvar2 * t0 * t1 ) / ( sumOfTrans * sumOfTrans );
@@ -538,8 +538,8 @@ SurfaceElementStencilWrapper::
       real64 const mult1 = ( LvArray::math::abs( LvArray::tensorOps::AiBi< 3 >( m_cellCenterToEdgeCenters[iconn][k[1]], gravityVector ) ) > MULTIPLIER_THRESHOLD )
   ? coefficientMultiplier[er1][esr1][ei1][0][1] : coefficientMultiplier[er1][esr1][ei1][0][0];
 
-      real64 const t0 = mult0 * m_weights[iconn][0] * coefficient[er0][esr0][ei0][0][0];
-      real64 const t1 = mult1 * m_weights[iconn][1] * coefficient[er1][esr1][ei1][0][0];
+      real64 const t0 = mult0 * m_weights[iconn][k[0]] * coefficient[er0][esr0][ei0][0][0];
+      real64 const t1 = mult1 * m_weights[iconn][k[1]] * coefficient[er1][esr1][ei1][0][0];
 
       real64 const harmonicWeight   = t0*t1 / sumOfTrans;
       real64 const arithmeticWeight = 0.25 * (t0+t1);
