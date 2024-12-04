@@ -415,6 +415,13 @@ public:
 
   ///@}
 
+  /**
+   * @brief Function to output connectivity in order to assist debugging issues
+   *        with object connectivity.
+   */
+  virtual void outputObjectConnectivity() const override final;
+
+
 private:
 
   /**

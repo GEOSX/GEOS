@@ -1078,7 +1078,6 @@ void VTKPolyDataWriterInterface::writeParticleRegions( real64 const time,
     writeTimestamp( ug.GetPointer(), time );
     writeParticleFields( region, ug->GetCellData() );
 
-    // string const regionDir = joinPath( path, region.getName() );
     writeUnstructuredGrid( path, region, ug.GetPointer() );
   } );
 }
@@ -1184,8 +1183,6 @@ void VTKPolyDataWriterInterface::writeVtmFile( integer const cycle,
       ParticleManager const & particleManager = meshLevel.getParticleManager();
 
       string const meshPath = joinPath( getCycleSubFolder( cycle ), meshBodyName, meshLevelName );
-
-      // int const mpiSize = MpiWrapper::commSize();
 
       auto addElementRegion = [&]( ElementRegionBase const & region )
       {

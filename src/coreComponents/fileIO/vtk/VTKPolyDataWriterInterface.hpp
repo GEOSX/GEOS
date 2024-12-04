@@ -219,7 +219,7 @@ public:
   void clearData();
 
 
-private:
+protected:
 
   /**
    * @brief Check if plotting is enabled for this field
@@ -234,7 +234,7 @@ private:
    * @param[in] time the time-step
    * @param[in] elemManager the ElementRegionManager containing the CellElementRegions to be output
    * @param[in] nodeManager the NodeManager containing the nodes of the domain to be output
-   * @param[in] path the root path where the mesh will be written
+   * @param[in] path the path to the file to output
    */
   void writeCellElementRegions( real64 time,
                                 ElementRegionManager const & elemManager,
@@ -247,7 +247,7 @@ private:
    * @param[in] time the time-step
    * @param[in] elemManager the ElementRegionManager containing the WellElementRegions to be output
    * @param[in] nodeManager the NodeManager containing the nodes of the domain to be output
-   * @param[in] path the root path where the mesh will be written
+   * @param[in] path The path to the file to output
    */
   void writeWellElementRegions( real64 time,
                                 ElementRegionManager const & elemManager,
@@ -289,7 +289,6 @@ private:
    * @param[in] domain the DomainPartition containing all the regions to be output and referred to in the VTM file
    * @param[in] vtmWriter a writer specialized for the VTM file format
    */
-
   void writeVtmFile( integer const cycle,
                      DomainPartition const & domain,
                      VTKVTMWriter const & vtmWriter ) const;
@@ -312,7 +311,7 @@ private:
                            vtkCellData * cellData ) const;
 
   /**
-   * @brief Writes all the fields associated to the elements of \p er if their plotlevel is <= m_plotLevel
+   * @brief Writes all the fields associated to the elements of \p region if their plotlevel is <= m_plotLevel
    * @param[in] region ParticleRegion being written
    * @param[in] cellData a VTK object containing all the fields associated with the elements
    */
@@ -332,7 +331,7 @@ private:
                               ObjectManagerBase const & region,
                               vtkUnstructuredGrid * ug );
 
-private:
+protected:
 
   /// Output directory name
   string m_outputDir;
