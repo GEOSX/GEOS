@@ -521,10 +521,14 @@ void TableTextFormatter::outputLines( TableLayout & tableLayout,
 
         if( cell.m_cellType  == CellType::Header || cell.m_cellType  == CellType::Value )
         {
-          integer const endMargin =  &cell == &(line.back()) ?
-                                    tableLayout.getBorderMargin() + 1 :
-                                    tableLayout.getColumnMargin();
-          tableOutput << GEOS_FMT( "{:>{}}", m_verticalLine, endMargin );
+          if( &cell == &(line.back()))
+          {
+            tableOutput << GEOS_FMT( "{:>{}}", m_verticalLine, tableLayout.getBorderMargin() + 1 );
+          }
+          else
+          {
+            tableOutput << GEOS_FMT( "{:^{}}", m_verticalLine, tableLayout.getColumnMargin());
+          }
         }
       }
       tableOutput << "\n";
