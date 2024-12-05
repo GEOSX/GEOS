@@ -35,7 +35,7 @@ class TableFormatter
 
 public:
   using RowsCellInput = std::vector< std::vector< TableData::CellData > >;
-  using RowsCellLayout = std::vector< std::vector< TableLayout::CellLayout > >;
+  using CellLayoutRows = std::vector< std::vector< TableLayout::CellLayout > >;
 
 
 protected:
@@ -50,11 +50,6 @@ protected:
    * @param tableLayout Contain all tableColumnData names and optionnaly the table title
    */
   TableFormatter( TableLayout const & tableLayout );
-
-  /**
-   * @brief Destroy the Table Formatter object
-   */
-  virtual ~TableFormatter() = default;
 };
 
 /**
@@ -76,11 +71,6 @@ public:
    * @param tableLayout Contain all tableColumnData names and optionnaly the table title
    */
   TableCSVFormatter( TableLayout const & tableLayout );
-
-  /**
-   * @brief Destroy the TableCSVFormatter object
-   */
-  virtual ~TableCSVFormatter() = default;
 
   /**
    * @return The string with all tableColumnData names.
@@ -133,12 +123,6 @@ public:
    */
   TableTextFormatter( TableLayout const & tableLayout );
 
-
-  /**
-   * @brief Destroy the Table Text Formatter object
-   */
-  virtual ~TableTextFormatter() = default;
-
   /**
    * @return A TableLayout string representation,
    * The TableTextFormatter receives hasn't receive any data, so only the header part is returned.
@@ -165,15 +149,15 @@ private:
  * @brief Initializes the table layout with the given table data and prepares necessary layouts for headers and data cells.
  * @param tableLayout A reference to the `TableLayout` object.
  * @param tableData A constant reference to the `TableData` object, which contains the actual data for the table.
- * @param cellsHeaderLayout A reference to a `RowsCellLayout` where the header cells will be populated.
- * @param cellsDataLayout A reference to a `RowsCellLayout` where the data cells will be populated.
+ * @param cellsHeaderLayout A reference to a `CellLayoutRows` where the header cells will be populated.
+ * @param cellsDataLayout A reference to a `CellLayoutRows` where the data cells will be populated.
  * @param sectionSeparatingLine A string that will be used as the separator line between sections in the table.
  * @param topSeparator A string that will be used as the separator at the top of the table.
  */
   void initalizeTableLayout( TableLayout & tableLayout,
                              TableData const & tableData,
-                             RowsCellLayout & cellsDataLayout,
-                             RowsCellLayout & cellsHeaderLayout,
+                             CellLayoutRows & cellsDataLayout,
+                             CellLayoutRows & cellsHeaderLayout,
                              string & sectionSeparatingLine,
                              string & topSeparator ) const;
 /**
@@ -187,8 +171,8 @@ private:
  */
   void outputTable( TableLayout & tableLayout,
                     std::ostringstream & tableOutput,
-                    RowsCellLayout const & cellsHeader,
-                    RowsCellLayout const & cellsData,
+                    CellLayoutRows const & cellsHeader,
+                    CellLayoutRows const & cellsData,
                     string_view sectionSeparatingLine,
                     string_view topSeparator ) const;
 
@@ -204,7 +188,7 @@ private:
    * @param cellsHeaderLayout A reference to the collection of header cells that will be updated with the gridified layout.
    */
   void gridifyHeaders( TableLayout & tableLayout,
-                       RowsCellLayout & cellsDataLayout ) const;
+                       CellLayoutRows & cellsDataLayout ) const;
 
 /**
  * @brief Populates the data cells layout based on input data values.
@@ -213,7 +197,7 @@ private:
  * @param inputDataValues A 2D vector containing the actual input data values.
  */
   void populateDataCellsLayout( TableLayout & tableLayout,
-                                RowsCellLayout & cellsDataLayout,
+                                CellLayoutRows & cellsDataLayout,
                                 RowsCellInput & inputDataValues ) const;
 
   /**
@@ -223,7 +207,7 @@ private:
    *        length for each cell based on the longest string found in the column.
    */
   void updateColumnMaxLength( TableLayout & tableLayout,
-                              RowsCellLayout & cellsDataLayout ) const;
+                              CellLayoutRows & cellsDataLayout ) const;
 
   /**
    * @brief Computes and constructs the separator lines for the table.
@@ -233,7 +217,7 @@ private:
    * @param topSeparator A string reference where the top separator line will be stored.
    */
   void calculateTableSeparators( TableLayout & tableLayout,
-                                 RowsCellLayout & cellsDataLayout,
+                                 CellLayoutRows & cellsDataLayout,
                                  string & sectionSeparatingLine,
                                  string & topSeparator ) const;
 
@@ -245,7 +229,7 @@ private:
    * @param extraCharacters The total number of extra characters to be distributed across the columns.
    */
   void adjustColumnWidths( TableLayout & tableLayout,
-                            RowsCellLayout & cellsHeaderLayout,
+                            CellLayoutRows & cellsHeaderLayout,
                             size_t const nbColumns,
                             size_t const extraCharacters ) const;
 
@@ -281,7 +265,7 @@ private:
    * @param sectionSeparatingLine A separator line to be added.
    */
   void outputLines( TableLayout & tableLayout,
-                    RowsCellLayout const & cellsLayout,
+                    CellLayoutRows const & cellsLayout,
                     std::ostringstream & tableOutput,
                     std::vector< size_t > const & nbLinesRow,
                     CellType sectionType,

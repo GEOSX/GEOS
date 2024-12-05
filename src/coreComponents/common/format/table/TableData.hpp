@@ -173,13 +173,13 @@ void TableData::addRow( Args const &... args )
   ( [&] {
     static_assert( has_formatter_v< decltype(args) > || isCellType< std::decay_t< decltype(args) > >, "Argument passed in addRow cannot be converted to string nor a CellType" );
     if constexpr (std::is_same_v< Args, CellType >) {
-      if( args == CellType::SEPARATOR )
+      if( args == CellType::Separator )
       {
-        cells.push_back( {CellType::SEPARATOR, "-"} );
+        cells.push_back( {CellType::Separator, "-"} );
       }
       else
       {
-        cells.push_back( {CellType::Merge, " "} );
+        cells.push_back( {CellType::MergeNext, " "} );
       }
     }
     else

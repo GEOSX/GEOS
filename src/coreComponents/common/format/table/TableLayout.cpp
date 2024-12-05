@@ -234,6 +234,12 @@ TableLayout::Column & TableLayout::Column::addSubColumns( std::initializer_list<
   return *this;
 }
 
+TableLayout::Column & TableLayout::Column::addSubColumns( std::initializer_list< TableLayout::Column > subCol )
+{
+  m_subColumn = subCol;
+  return *this;
+}
+
 TableLayout::Column & TableLayout::Column::addSubColumns( string const & subColName )
 {
   TableLayout::CellLayout cell{CellType::Header, subColName, TableLayout::Alignment::center};

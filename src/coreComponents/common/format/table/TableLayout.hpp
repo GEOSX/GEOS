@@ -165,6 +165,13 @@ public:
      * @param subColName A list of sub-column names to add.
      * @return The current column object
      */
+    TableLayout::Column & addSubColumns( std::initializer_list< TableLayout::Column > subCol );
+
+    /**
+     * @brief Adds multiple sub-columns to the column.
+     * @param subColName A list of sub-column names to add.
+     * @return The current column object
+     */
     TableLayout::Column & addSubColumns( std::initializer_list< string > subColName );
 
     /**

@@ -26,13 +26,13 @@
 namespace geos
 {
 
-enum class CellType : char
+enum class CellType : integer
 {
-  Merge = '\x01',
-  SEPARATOR = '\x02',
-  Header = '\x03',
-  Value = '\x04',
-  Hidden ='\x05'
+  Header,
+  Value,
+  Separator,
+  MergeNext,
+  Hidden
 };
 
 }

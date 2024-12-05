@@ -294,21 +294,30 @@ TEST( testTable, subColumns )
       "Column1",
       TableLayout::Column()
         .setName( "Nodes" )
-        .setHeaderAlignment( TableLayout::Alignment::right )
-        .addSubColumns( {"Locales", "Ghost", "Active" } ),
+        .addSubColumns( {"LocalesNodes", "GhostNodes", "ActiveNodes" } ),
       "Column3",
       TableLayout::Column()
         .setName( "Column4" )
-        .setHeaderAlignment( TableLayout::Alignment::right )
-        .addSubColumns( { "Locales", "Ghost" } ),
+        .addSubColumns( { TableLayout::Column()
+                            .setName( "Locales" ).addSubColumns( {"SubLocales1", "SubLocales2"} ),
+                          TableLayout::Column()
+                            .setName( "Ghost" ).addSubColumns( {"SubGhost1", "SubGhost2"} ),
+                          TableLayout::Column()
+                            .setName( "Active" ).addSubColumns( {"SubActive1", "SubActive2"} )
+                        } ),
       "Column5"
     } );
 
     TableData tableData;
-    tableData.addRow( "min", "125", "375,0001", " YES", 2354654, 562, 43.0, 43.0, 562 );
-    tableData.addRow( "max", "360", "390,1", " YES", 383213213, 712, 48.0, 47.0, 72 );
+    tableData.addRow( "3547", "1289", "7534", "6901", "4832", "9281", "1154", "5360", "2739", "9004", "1497", "6", "7" );
+    tableData.addRow( "5142", "8290", "364", "2310", "7011", "1427", "2574", "9043", "5305", "608", "980", "6", "7" );
+    tableData.addRow( "3174", "8259", "6092", "1783", "7435", "2891", "914", "178", "4635", "5839", "8124", "6", "7" );
+    tableData.addRow( "6193", "7481", "1305", "9037", "4306.1", "6157", "1849", "2753", "910", "2369", "9992", "6", "7" );
+    tableData.addRow( "8012", "5729.2112", "6975", "3201.213", "9448", "1820", "4125", "182.12", "7453", "5069", "3912", "6", "7" );
+    tableData.addRow( "4381", "6728", "5204", "8663", "2035", "7804", "6310", "9621", "4158", "789", "2537", "6", "7" );
 
     TableTextFormatter tableText( tableLayout );
+    std::cout <<  tableText.toString( tableData ) << std::endl;
     EXPECT_EQ( tableText.toString( tableData ),
                "\n--------------------------------------------------------------------------------------------------------\n"
                "|       |  Column1  |                             Nodes  |  Column3  |            Column4  |  Column5  |\n"
@@ -399,12 +408,21 @@ TEST( testTable, testCellMerging )
       .setName( "Next\nelement" )} );
 
   TableData tableData;
-  tableData.addRow( "value1", " ", "3.0", 3.0129877, 2.0f, 1 );
-  tableData.addRow( "val1", "valp", "[3.045,42.02,89.25]", 3.0, 10.0f, 3 );
+  tableData.addRow( "ProductA", 1234, 40, "ProductName", 5678, 60 );
   tableData.addSeparator();
-  tableData.addRow( "Valeurdfgfdgdgxcxc", CellType::Merge, CellType::Merge, CellType::Merge, CellType::Merge, 9111 );
+  tableData.addRow( 1001, 2002, CellType::MergeNext, 3003, 4004, CellType::MergeNext );
+  tableData.addRow( 3.14f, 2.718f, CellType::MergeNext, 1.618f, 0.577f, CellType::MergeNext );
+  tableData.addSeparator();
+  tableData.addRow( CellType::MergeNext, CellType::MergeNext, CellType::MergeNext, CellType::MergeNext, CellType::MergeNext,"Item2" );
+  tableData.addSeparator();
+  tableData.addRow( 1500, 2500, CellType::MergeNext, CellType::MergeNext, CellType::MergeNext, CellType::MergeNext );
+  tableData.addSeparator();
+  tableData.addRow( 1.23f, 4.56f, CellType::MergeNext, 7.89f, 0.12f, 40);
+  tableData.addSeparator();
+  tableData.addRow( "Alpha", 1001, 8, "Beta\nwater", "2002\n1.0", CellType::MergeNext);
+  
   TableTextFormatter const tableText( tableLayout );
-  std::cout <<  tableText.toString( tableData ) << std::endl;
+  //std::cout <<  tableText.toString( tableData ) << std::endl;
   EXPECT_EQ( tableText.toString( tableData ),
              "\n-------------------------------------------------------------------------------------------\n"
              "|  Cras egestas  |  CoordX  |           C           |  CoordZ     |  Prev     |   Next    |\n"
