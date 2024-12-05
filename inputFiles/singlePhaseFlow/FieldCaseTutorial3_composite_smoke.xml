@@ -1,0 +1,47 @@
+<?xml version="1.0" ?>
+
+<Problem>
+  <Included>
+    <File name="./FieldCaseTutorial3_base.xml" />
+  </Included>
+
+  <!-- SPHINX_FIELD_CASE_COMPOSITE_MESH -->
+  <ExternalDataSource>
+    <VTKHierarchicalDataSource
+      name="synthetic"
+      file="synthetic.vtpc"/>
+  </ExternalDataSource>
+
+  <Mesh>
+    <VTKMesh
+      name="SyntheticMesh"
+      dataSourceName="synthetic">
+      <Region
+        name="Region1"
+        id="1"
+        pathInRepository="/Root/Mesh/Region1"/>
+      <Region
+        name="Region2"
+        id="2"
+        pathInRepository="/Root/Mesh/Region2"/>
+      <Region
+        name="Region3"
+        id="3"
+        pathInRepository="/Root/Mesh/Region3"/>
+    </VTKMesh>
+  </Mesh>
+  <!-- SPHINX_FIELD_CASE_COMPOSITE_MESH -->
+
+  <!-- SPHINX_FIELD_CASE_EVENTS -->
+  <Events maxTime="100.0e6">
+    <PeriodicEvent name="solverApplications"
+                   forceDt="10.0e6"
+                   target="/Solvers/SinglePhaseFlow" />
+
+    <PeriodicEvent name="outputs"
+                   timeFrequency="10.0e6"
+                   target="/Outputs/reservoir_with_properties" />
+  </Events>
+  <!-- SPHINX_FIELD_CASE_EVENTS_END -->
+
+</Problem>

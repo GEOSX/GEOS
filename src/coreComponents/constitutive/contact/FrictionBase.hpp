@@ -83,11 +83,26 @@ public:
    */
   GEOS_HOST_DEVICE
   inline
-  virtual void updateFractureState( localIndex const k,
-                                    arraySlice1d< real64 const > const & dispJump,
+  virtual void updateFractureState( arraySlice1d< real64 const > const & dispJump,
                                     arraySlice1d< real64 const > const & tractionVector,
                                     integer & fractureState ) const
-  { GEOS_UNUSED_VAR( k, dispJump, tractionVector, fractureState ); }
+  { GEOS_UNUSED_VAR( dispJump, tractionVector, fractureState ); }
+
+  /**
+   * @brief Evaluate and store the elastic slip
+   * @param[in] dispJump the displacement jump
+   * @param[in] oldDispJump the previous displacement jump
+   * @param[in] tractionVector the traction vector
+   * @param[out] fractureState the fracture state
+   */
+  GEOS_HOST_DEVICE
+  inline
+  virtual void updateElasticSlip( localIndex const k,
+                                  arraySlice1d< real64 const > const & dispJump,
+                                  arraySlice1d< real64 const > const & oldDispJump,
+                                  arraySlice1d< real64 const > const & tractionVector,
+                                  integer const & fractureState ) const
+  { GEOS_UNUSED_VAR( k, dispJump, oldDispJump, tractionVector, fractureState ); }
 
   /**
    * @brief Update the trial traction vector ( return mapping )

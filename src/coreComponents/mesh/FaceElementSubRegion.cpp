@@ -380,6 +380,64 @@ localIndex FaceElementSubRegion::unpackUpDownMaps( buffer_unit_type const * & bu
                                      packList,
                                      this->globalToLocalMap() );
 
+
+  GEOS_ERROR_IF_NE( m_unmappedGlobalIndicesInToNodes.size(), 0 );
+  GEOS_ERROR_IF_NE( m_unmappedGlobalIndicesInToEdges.size(), 0 );
+//  GEOS_ERROR_IF_NE( m_unmappedGlobalIndicesInToFaces.size(), 0 );
+
+  return unPackedSize;
+}
+
+localIndex FaceElementSubRegion::packToFaceRelationSize( arrayView1d< localIndex const > const & packList ) const
+{
+  buffer_unit_type * junk = nullptr;
+  return packToFaceRelationImpl< false >( junk, packList );
+}
+
+localIndex FaceElementSubRegion::packToFaceRelation( buffer_unit_type * & buffer,
+                                                     arrayView1d< localIndex const > const & packList ) const
+{
+  return packToFaceRelationImpl< true >( buffer, packList );
+}
+
+
+template< bool DO_PACKING >
+localIndex FaceElementSubRegion::packToFaceRelationImpl( buffer_unit_type * & buffer,
+                                                         arrayView1d< localIndex const > const & packList ) const
+{
+  arrayView1d< globalIndex const > const localToGlobal = this->localToGlobalMap();
+  arrayView1d< globalIndex const > const faceLocalToGlobal = m_toFacesRelation.relatedObjectLocalToGlobal();
+
+  localIndex packedSize = 0;
+  packedSize += bufferOps::Pack< DO_PACKING >( buffer, string( viewKeyStruct::faceListString() ) );
+  packedSize += bufferOps::Pack< DO_PACKING >( buffer,
+                                               m_toFacesRelation.toViewConst(),
+                                               m_unmappedGlobalIndicesInToFaces,
+                                               packList,
+                                               localToGlobal,
+                                               faceLocalToGlobal );
+  return packedSize;
+}
+
+
+localIndex FaceElementSubRegion::unpackToFaceRelation( buffer_unit_type const * & buffer,
+                                                       localIndex_array & packList,
+                                                       bool const GEOS_UNUSED_PARAM( overwriteUpMaps ),
+                                                       bool const GEOS_UNUSED_PARAM( overwriteDownMaps ) )
+{
+  localIndex unPackedSize = 0;
+
+  string faceListString;
+  unPackedSize += bufferOps::Unpack( buffer, faceListString );
+  GEOS_ERROR_IF_NE( faceListString, viewKeyStruct::faceListString() );
+
+  unPackedSize += bufferOps::Unpack( buffer,
+                                     m_toFacesRelation,
+                                     packList,
+                                     m_unmappedGlobalIndicesInToFaces,
+                                     this->globalToLocalMap(),
+                                     m_toFacesRelation.relatedObjectGlobalToLocal() );
+
   return unPackedSize;
 }
 
@@ -452,6 +510,11 @@ void FaceElementSubRegion::fixUpDownMaps( bool const clearIfUnmapped )
                                     clearIfUnmapped );
 
   fixNeighborMappingsInconsistency( getName(), m_2dElemToElems, m_toFacesRelation );
+
+  GEOS_ERROR_IF_NE( m_unmappedGlobalIndicesInToNodes.size(), 0 );
+  GEOS_ERROR_IF_NE( m_unmappedGlobalIndicesInToEdges.size(), 0 );
+  GEOS_ERROR_IF_NE( m_unmappedGlobalIndicesInToFaces.size(), 0 );
+
 }
 
 /**

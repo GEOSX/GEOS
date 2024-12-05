@@ -26,7 +26,7 @@
 #include "mesh/mpiCommunications/CommunicationTools.hpp"
 #include "mesh/mpiCommunications/MPI_iCommData.hpp"
 
-
+#if PARALLEL_TOPOLOGY_CHANGE_METHOD==0
 namespace geos
 {
 
@@ -1024,3 +1024,4 @@ void parallelTopologyChange::synchronizeTopologyChange( MeshLevel * const mesh,
 
 
 } /* namespace geos */
+#endif // PARALLEL_TOPOLOGY_CHANGE_METHOD==0
