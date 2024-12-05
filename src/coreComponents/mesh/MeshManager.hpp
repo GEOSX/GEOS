@@ -80,6 +80,7 @@ public:
    * @param[in] generator reference to mesh generator
    * @param[in] regionName name of the region
    * @param[in] subRegion reference to the subregion
+   * @param[in] block block type
    * @param[in] fieldsMapping mapping for fields
    * @param[out] fieldsToBeSync list of fields to synchronize
    */
