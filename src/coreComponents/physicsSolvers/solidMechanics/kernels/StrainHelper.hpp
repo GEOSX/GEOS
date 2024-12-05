@@ -146,19 +146,12 @@ public:
     {
       m_avgStrain[k][icomp] += detJxW*strain[icomp]/m_elementVolume[k];
 
+      // This is a hack to handle boundary conditions such as those seen in plane-strain wellbore problems
+      // Essentially, if bcs are constraining the strain (and thus total displacement), we do not accumulate any plastic strain (regardless of stresses in material law)
       if (std::abs(strainInc[icomp]) > 1.0e-8)
       {
         m_avgPlasticStrain[k][icomp] += detJxW*(strainInc[icomp] - elasticStrainInc[icomp])/m_elementVolume[k];
       }
-
-      // This is maybe bad on gpu
-      // How to hamdle magnitudes?
-      //if ((std::abs(strainInc[icomp]) > std::abs(elasticStrainInc[icomp]) ) && (std::abs(strainInc[icomp]) > 1.0e-8 ))
-      //{
-       // m_avgPlasticStrain[k][icomp] += detJxW*(strainInc[icomp] - elasticStrainInc[icomp])/m_elementVolume[k];
-      //}
-      //m_avgStrain[k][icomp] += detJxW*(strainInc[icomp])/m_elementVolume[k];
-      //m_avgPlasticStrain[k][icomp] += detJxW*(elasticStrainInc[icomp])/m_elementVolume[k];
     }
   }
 
