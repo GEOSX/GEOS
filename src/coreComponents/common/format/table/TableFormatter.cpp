@@ -138,7 +138,6 @@ string TableTextFormatter::toString< TableData >( TableData const & tableData ) 
                         sectionSeparatingLine, topSeparator );
   outputTable( tableLayout, tableOutput, cellsHeaderLayout, cellsDataLayout,
                sectionSeparatingLine, topSeparator );
-  std::cout <<  tableOutput.str()<< std::endl;
   return tableOutput.str();
 }
 
@@ -180,7 +179,6 @@ void TableTextFormatter::outputTable( TableLayout & tableLayout,
   }
   outputTitleRow( tableLayout, tableOutput, topSeparator );
   tableOutput << GEOS_FMT( "{}\n", sectionSeparatingLine );
-
   outputLines( tableLayout, cellsHeader, tableOutput, tableLayout.getSublineInHeaderCounts(), CellType::Header, sectionSeparatingLine );
   outputLines( tableLayout, cellsData, tableOutput, tableLayout.getNbSubDataLines(), CellType::Value, sectionSeparatingLine );
   if( tableLayout.isLineBreakEnabled())
@@ -248,6 +246,20 @@ void TableTextFormatter::populateDataCellsLayout( TableLayout & tableLayout,
     }
     subDataLineCounts.push_back( { maxLinesPerRow } );
   }
+
+  size_t idxLayer = 0;
+  for( auto & lines: cellsDataLayout )
+  {
+    size_t nbLinesInLayer =  subDataLineCounts[idxLayer];
+    if( nbLinesInLayer != 1 )
+    {
+      for( auto & cell : lines )
+      {
+        cell.m_lines.resize( nbLinesInLayer, "" );
+      }
+    }
+    idxLayer++;
+  }
 }
 
 void TableTextFormatter::updateColumnMaxLength( TableLayout & tableLayout,
@@ -270,13 +282,13 @@ void TableTextFormatter::updateColumnMaxLength( TableLayout & tableLayout,
     if( !it->hasChild())
     {
       // find max cell length between cell data column and current cell layout
-      size_t cellLayoutLength = getMaxLineLength( currentColumn->m_columName.m_lines );
+      maxColumnSize = getMaxLineLength( currentColumn->m_columName.m_lines );
       for( size_t rowIdx = 0; rowIdx < cellsDataLayout.size(); ++rowIdx )
       {
         TableLayout::CellLayout & cell = cellsDataLayout[rowIdx][idxColumn];
         size_t const cellDataLength = getMaxLineLength( cell.m_lines );
-        cell.m_maxDataLength = std::max( cellLayoutLength, cellDataLength );
-        maxColumnSize = std::max( cell.m_maxDataLength, maxColumnSize );
+        maxColumnSize = std::max( cellDataLength, maxColumnSize );
+        cell.m_maxDataLength = maxColumnSize;
       }
 
       // update all current data cell, route by column
@@ -299,7 +311,7 @@ void TableTextFormatter::updateColumnMaxLength( TableLayout & tableLayout,
         if( cellsDataLayout[rowIdx][idxColumn].m_cellType == CellType::Separator )
         {
           size_t separatorLength = cell.m_maxDataLength;//
-          separatorLength += idxColumn ==  cellsDataLayout[0].size() - 1 ? 
+          separatorLength += idxColumn ==  cellsDataLayout[0].size() - 1 ?
                              tableLayout.getBorderMargin() * 2 + 2:
                              tableLayout.getColumnMargin();
 
@@ -454,18 +466,6 @@ void TableTextFormatter::gridifyHeaders( TableLayout & tableLayout,
 
     sublineHeaderCounts[currentLayer] = std::max( sublineHeaderCounts[currentLayer], currentCell.m_lines.size() );
     cellsHeaderLayout[currentLayer].push_back( currentCell );
-
-    //subdivision of parent cell = current cell + subColumns - 1
-    if( currentCell.m_cellWidth > 1 )
-    {
-      currentCell.m_cellWidth--;
-    }
-
-    for( size_t idxColumn = 0; idxColumn < currentCell.m_cellWidth; idxColumn++ )
-    {
-      TableLayout::CellLayout mergingCell{ CellType::MergeNext, "", TableLayout::Alignment::center };
-      cellsHeaderLayout[currentLayer].push_back( mergingCell );
-    }
   }
 
   size_t idxLayer = 0;
@@ -520,9 +520,9 @@ void TableTextFormatter::outputLines( TableLayout & tableLayout,
   size_t idxLine = 0;
   for( auto const & line : cellsLayout )
   {
+
     for( size_t idxSubLine = 0; idxSubLine < nbLinesRow[idxLine]; idxSubLine++ )
     {
-
       for( auto const & cell : line )
       {
 

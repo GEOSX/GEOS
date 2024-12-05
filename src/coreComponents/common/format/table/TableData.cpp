@@ -79,7 +79,6 @@ void TableData2D::collectTableValues( arraySlice1d< real64 const > rowAxisValues
       addCell( rowAxisValues[i], columnAxisValues[y], values[ y*nX + i ] );
     }
   }
-  std::cout <<" casse pas collectTableValues\n";
 }
 
 TableData2D::TableDataHolder TableData2D::convertTable2D( arrayView1d< real64 const > const values,
@@ -90,7 +89,6 @@ TableData2D::TableDataHolder TableData2D::convertTable2D( arrayView1d< real64 co
 {
   string const rowFmt = GEOS_FMT( "{} = {{}}", rowAxisDescription );
   string const columnFmt = GEOS_FMT( "{} = {{}}", columnAxisDescription );
-  std::cout <<" casse pas convertTable2D\n";
   collectTableValues( coordinates[0], coordinates[1], values );
   return buildTableData( string( units::getDescription( valueUnit )),
                          rowFmt,
@@ -130,7 +128,6 @@ TableData2D::TableDataHolder TableData2D::buildTableData( string_view targetUnit
 
     tableData1D.tableData.addRow( currentRowValues );
   }
-  std::cout <<" casse pas buildTableData\n";
 
   return tableData1D;
 }

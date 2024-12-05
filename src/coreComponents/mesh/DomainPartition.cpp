@@ -424,7 +424,7 @@ void DomainPartition::outputPartitionInformation() const
                                       TableLayout::Column()
                                         .setName( "Elems" )
                                         .addSubColumns( {  "Locales", "Ghost" } )} );
-        layoutPartition.setMargin( TableLayout::MarginValue::large ).disableLineBreak();
+       // layoutPartition.setMargin( TableLayout::MarginValue::large ).disableLineBreak();
 
         TableData dataPartition;
         dataPartition.addRow( "min",
