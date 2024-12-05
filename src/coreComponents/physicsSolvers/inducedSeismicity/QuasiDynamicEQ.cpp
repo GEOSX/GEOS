@@ -36,7 +36,7 @@ using namespace rateAndStateKernels;
 
 QuasiDynamicEQ::QuasiDynamicEQ( const string & name,
                                 Group * const parent ):
-  SolverBase( name, parent ),
+  PhysicsSolverBase( name, parent ),
   m_stressSolver( nullptr ),
   m_stressSolverName( "SpringSlider" ),
   m_shearImpedance( 0.0 ),
@@ -62,10 +62,10 @@ void QuasiDynamicEQ::postInputInitialization()
   // Initialize member stress solver as specified in XML input
   if( !m_stressSolverName.empty() )
   {
-    m_stressSolver = &this->getParent().getGroup< SolverBase >( m_stressSolverName );
+    m_stressSolver = &this->getParent().getGroup< PhysicsSolverBase >( m_stressSolverName );
   }
 
-  SolverBase::postInputInitialization();
+  PhysicsSolverBase::postInputInitialization();
 }
 
 QuasiDynamicEQ::~QuasiDynamicEQ()
@@ -75,7 +75,7 @@ QuasiDynamicEQ::~QuasiDynamicEQ()
 
 void QuasiDynamicEQ::registerDataOnMesh( Group & meshBodies )
 {
-  SolverBase::registerDataOnMesh( meshBodies );
+  PhysicsSolverBase::registerDataOnMesh( meshBodies );
 
   forDiscretizationOnMeshTargets( meshBodies, [&] ( string const &,
                                                     MeshLevel & mesh,
@@ -116,7 +116,7 @@ void QuasiDynamicEQ::registerDataOnMesh( Group & meshBodies )
           setSizedFromParent( 0 );
 
         string & frictionLawName = subRegion.getReference< string >( viewKeyStruct::frictionLawNameString() );
-        frictionLawName = SolverBase::getConstitutiveName< FrictionBase >( subRegion );
+        frictionLawName =PhysicsSolverBase::getConstitutiveName< FrictionBase >( subRegion );
         GEOS_ERROR_IF( frictionLawName.empty(), GEOS_FMT( "{}: FrictionBase model not found on subregion {}",
                                                           getDataContext(), subRegion.getDataContext() ) );
       }
@@ -281,6 +281,6 @@ real64 QuasiDynamicEQ::setNextDt( real64 const & currentDt, DomainPartition & do
   return nextDt;
 }
 
-REGISTER_CATALOG_ENTRY( SolverBase, QuasiDynamicEQ, string const &, dataRepository::Group * const )
+REGISTER_CATALOG_ENTRY( PhysicsSolverBase, QuasiDynamicEQ, string const &, dataRepository::Group * const )
 
 } // namespace geos

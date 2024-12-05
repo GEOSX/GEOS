@@ -21,7 +21,7 @@
 #define GEOS_CONSTITUTIVE_FLUID_MULTIFLUID_REACTIVE_REACTIVEMULTIFLUID_HPP_
 
 
-#include "codingUtilities/EnumStrings.hpp"
+#include "common/format/EnumStrings.hpp"
 #include "constitutive/fluid/multifluid/MultiFluidBase.hpp"
 #include "constitutive/fluid/multifluid/reactive/chemicalReactions/EquilibriumReactions.hpp"
 #include "constitutive/fluid/multifluid/reactive/chemicalReactions/KineticReactions.hpp"

@@ -23,7 +23,7 @@
 #include "common/DataTypes.hpp"
 #include "common/GEOS_RAJA_Interface.hpp"
 #include "constitutive/fluid/multifluid/Layouts.hpp"
-#include "physicsSolvers/fluidFlow/wells/CompositionalMultiphaseWellKernels.hpp"
+#include "physicsSolvers/fluidFlow/wells/kernels/CompositionalMultiphaseWellKernels.hpp"
 #include "physicsSolvers/fluidFlow/wells/CompositionalMultiphaseWellFields.hpp"
 #include "physicsSolvers/fluidFlow/wells/WellTags.hpp"
 #include "physicsSolvers/fluidFlow/wells/WellFields.hpp"
@@ -94,7 +94,7 @@ public:
                                                CRSMatrixView< real64, globalIndex const > const & localMatrix,
                                                bool const & detectCrossflow,
                                                integer & numCrossFlowPerforations,
-                                               BitFlags< isothermalCompositionalMultiphaseBaseKernels::ElementBasedAssemblyKernelFlags > kernelFlags )
+                                               BitFlags< isothermalCompositionalMultiphaseBaseKernels::KernelFlags > kernelFlags )
     :
     m_dt( dt ),
     m_numPhases ( fluid.numFluidPhases()),
@@ -111,7 +111,7 @@ public:
     m_localMatrix( localMatrix ),
     m_detectCrossflow( detectCrossflow ),
     m_numCrossFlowPerforations( numCrossFlowPerforations ),
-    m_useTotalMassEquation ( kernelFlags.isSet( isothermalCompositionalMultiphaseBaseKernels::ElementBasedAssemblyKernelFlags::TotalMassEquation ) )
+    m_useTotalMassEquation ( kernelFlags.isSet( isothermalCompositionalMultiphaseBaseKernels::KernelFlags::TotalMassEquation ) )
   { }
 
 
@@ -317,9 +317,9 @@ public:
       integer constexpr NUM_COMP = NC();
 
 
-      BitFlags< isothermalCompositionalMultiphaseBaseKernels::ElementBasedAssemblyKernelFlags > kernelFlags;
+      BitFlags< isothermalCompositionalMultiphaseBaseKernels::KernelFlags > kernelFlags;
       if( useTotalMassEquation )
-        kernelFlags.set( isothermalCompositionalMultiphaseBaseKernels::ElementBasedAssemblyKernelFlags::TotalMassEquation );
+        kernelFlags.set( isothermalCompositionalMultiphaseBaseKernels::KernelFlags::TotalMassEquation );
 
 
       using kernelType = IsothermalCompositionalMultiPhaseFluxKernel< NUM_COMP, 0 >;
@@ -397,7 +397,7 @@ public:
                                             CRSMatrixView< real64, globalIndex const > const & localMatrix,
                                             bool const & detectCrossflow,
                                             integer & numCrossFlowPerforations,
-                                            BitFlags< isothermalCompositionalMultiphaseBaseKernels::ElementBasedAssemblyKernelFlags > kernelFlags )
+                                            BitFlags< isothermalCompositionalMultiphaseBaseKernels::KernelFlags > kernelFlags )
     : Base( dt,
             rankOffset,
             wellDofKey,
@@ -570,9 +570,9 @@ public:
       integer constexpr NUM_COMP = NC();
 
 
-      BitFlags< isothermalCompositionalMultiphaseBaseKernels::ElementBasedAssemblyKernelFlags > kernelFlags;
+      BitFlags< isothermalCompositionalMultiphaseBaseKernels::KernelFlags > kernelFlags;
       if( useTotalMassEquation )
-        kernelFlags.set( isothermalCompositionalMultiphaseBaseKernels::ElementBasedAssemblyKernelFlags::TotalMassEquation );
+        kernelFlags.set( isothermalCompositionalMultiphaseBaseKernels::KernelFlags::TotalMassEquation );
 
 
       using kernelType = ThermalCompositionalMultiPhaseFluxKernel< NUM_COMP, 1 >;

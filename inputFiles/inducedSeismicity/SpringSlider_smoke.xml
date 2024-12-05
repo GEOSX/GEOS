@@ -24,23 +24,9 @@
       target="/Solvers/SpringSlider"/>
 
     <PeriodicEvent
-      name="seismicRateCollection"
-      cycleFrequency="1"
-      target="/Tasks/slipCollection"/>
-
-    <PeriodicEvent
-      name="slipRateCollection"
-      cycleFrequency="1"
-      target="/Tasks/slipRateCollection"/>
-      
-    <PeriodicEvent
-      name="stateVariableCollection"
-      cycleFrequency="1"
-      target="/Tasks/stateVariableCollection"/>  
-      
-    <PeriodicEvent
-      name="timeHistoryOutput"
-      cycleFrequency="1"
-      target="/Outputs/timeHistoryOutput" />    
+      name="resarts"
+      timeFrequency="2e4"
+      targetExactTimestep="0"
+      target="/Outputs/restart"/>  
   </Events>
 </Problem>

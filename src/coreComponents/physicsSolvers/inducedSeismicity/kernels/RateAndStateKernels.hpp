@@ -296,9 +296,9 @@ createAndLaunch( SurfaceElementSubRegion & subRegion,
       typename KernelType::StackVariables stack;
       kernel.setup( k, dt, stack );
       kernel.solve( k, stack );
-      auto result = kernel.checkConvergence( stack, newtonTol );
-      converged.min( std::get< 0 >( result ) );
-      residualNorm.max( std::get< 1 >( result ) );
+      auto const [elementConverged, elementResidualNorm] = kernel.checkConvergence( stack, newtonTol );
+      converged.min( elementConverged );
+      residualNorm.max( elementResidualNorm );
     } );
 
     real64 const maxResidualNorm = MpiWrapper::max( residualNorm.get() );

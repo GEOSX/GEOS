@@ -16,13 +16,13 @@
 #ifndef GEOS_PHYSICSSOLVERS_INDUCED_QUASIDYNAMICEQRK32_HPP
 #define GEOS_PHYSICSSOLVERS_INDUCED_QUASIDYNAMICEQRK32_HPP
 
-#include "physicsSolvers/SolverBase.hpp"
+#include "physicsSolvers/PhysicsSolverBase.hpp"
 #include "kernels/RateAndStateKernels.hpp"
 
 namespace geos
 {
 
-class QuasiDynamicEQRK32 : public SolverBase
+class QuasiDynamicEQRK32 : public PhysicsSolverBase
 {
 public:
   /// The default nullary constructor is disabled to avoid compiler auto-generation:
@@ -45,7 +45,7 @@ public:
   /// This method ties properties with their supporting mesh
   virtual void registerDataOnMesh( Group & meshBodies ) override;
 
-  struct viewKeyStruct : public SolverBase::viewKeyStruct
+  struct viewKeyStruct : public PhysicsSolverBase::viewKeyStruct
   {
     /// stress solver name
     static constexpr char const * stressSolverNameString() { return "stressSolverName"; }
@@ -98,7 +98,7 @@ private:
 
 
   /// pointer to stress solver
-  SolverBase * m_stressSolver;
+  PhysicsSolverBase * m_stressSolver;
 
   /// stress solver name
   string m_stressSolverName;
@@ -118,7 +118,10 @@ private:
 public:
 
     GEOS_HOST_DEVICE
-    PIDController(std::array<const real64, 3> const & controlParameters, real64 absTol, real64 relTol, real64 acceptSafety):
+    PIDController(std::array<const real64, 3> const & controlParameters, 
+                                              const real64 absTol,
+                                              const real64 relTol,
+                                              const real64 acceptSafety):
       controlParameters{controlParameters},
       absTol(absTol),
       relTol(relTol),

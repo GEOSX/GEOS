@@ -1,17 +1,15 @@
 <?xml version="1.0" ?>
 <Problem>
   <Solvers>
-    <QuasiDynamicEQRK32
+    <QuasiDynamicEQ
       name="SpringSlider"
       targetRegions="{ Fault }"
       shearImpedance="4.41"
-      initialDt="1.0e-5"
+      initialDt="1"
       logLevel="1"
       discretization="FE1">
-      <NonlinearSolverParameters
-        newtonTol="1.0e-6"
-        newtonMaxIter="10"/>
-    </QuasiDynamicEQRK32>
+    </QuasiDynamicEQ>
+    
     <SurfaceGenerator
       name="SurfaceGen"
       targetRegions="{ Domain }"
@@ -141,6 +139,8 @@
     <VTK
       name="vtkOutput"
       plotFileRoot="springSlider"/>
+    <Restart
+      name="restart"/>  
 
     <TimeHistory
       name="timeHistoryOutput"
