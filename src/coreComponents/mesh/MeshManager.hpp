@@ -22,6 +22,7 @@
 
 #include "dataRepository/Group.hpp"
 #include "mesh/DomainPartition.hpp"
+#include "generators/MeshGeneratorBase.hpp"
 
 namespace geos
 {
@@ -73,6 +74,13 @@ public:
    * @param[in] domain a reference to the physical domain
    */
   void importFields( DomainPartition & domain );
+
+  static void importFields( MeshGeneratorBase const & generator,
+                            ElementRegionBase const & region,
+                            ElementSubRegionBase & subRegion,
+                            MeshGeneratorBase::Block block,
+                            std::map< string, string > const & fieldsMapping,
+                            FieldIdentifiers & fieldsToBeSync );
 
 private:
 

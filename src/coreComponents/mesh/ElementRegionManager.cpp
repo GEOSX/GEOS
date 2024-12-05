@@ -75,7 +75,7 @@ Group * ElementRegionManager::createChild( string const & childKey, string const
 {
   GEOS_ERROR_IF( !(CatalogInterface::hasKeyName( childKey )),
                  "KeyName ("<<childKey<<") not found in ObjectManager::Catalog" );
-  GEOS_LOG_RANK_0( "Adding Object " << childKey<<" named "<< childName<<" from ObjectManager::Catalog." );
+  GEOS_LOG_RANK_0( GEOS_FMT( "{}: adding {} {}", getName(), childKey, childName ) );
 
   Group & elementRegions = this->getGroup( ElementRegionManager::groupKeyStruct::elementRegionsGroup() );
   return &elementRegions.registerGroup( childName,

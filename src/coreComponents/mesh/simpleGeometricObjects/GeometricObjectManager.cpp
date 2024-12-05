@@ -53,7 +53,7 @@ GeometricObjectManager & GeometricObjectManager::getInstance()
 
 Group * GeometricObjectManager::createChild( string const & childKey, string const & childName )
 {
-  GEOS_LOG_RANK_0( "Adding Geometric Object: " << childKey << ", " << childName );
+  GEOS_LOG_RANK_0( GEOS_FMT( "{}: adding {} {}", getName(), childKey, childName ) );
   std::unique_ptr< SimpleGeometricObjectBase > geometriObject = SimpleGeometricObjectBase::CatalogInterface::factory( childKey, childName, this );
   return &this->registerGroup< SimpleGeometricObjectBase >( childName, std::move( geometriObject ) );
 }
