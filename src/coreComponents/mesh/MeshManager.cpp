@@ -195,6 +195,6 @@ void MeshManager::importFields( MeshGeneratorBase const & generator,
     bool const isMaterialField = materialWrapperNames.count( geosFieldName ) > 0 && wrapper.numArrayDims() > 1;
     generator.importFieldOnArray( block, subRegion.getName(), meshFieldName, isMaterialField, wrapper );
   }
-};
+}
 
 } /* namespace geos */
