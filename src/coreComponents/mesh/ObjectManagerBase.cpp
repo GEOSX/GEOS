@@ -44,6 +44,7 @@ ObjectManagerBase::ObjectManagerBase( string const & name,
 
   registerWrapper( viewKeyStruct::localToGlobalMapString(), &m_localToGlobalMap ).
     setApplyDefaultValue( -1 ).
+    setPlotLevel( PlotLevel::LEVEL_0 ).
     setDescription( "Array that contains a map from localIndex to globalIndex." );
 
   registerWrapper( viewKeyStruct::globalToLocalMapString(), &m_globalToLocalMap );

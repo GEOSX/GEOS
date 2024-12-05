@@ -482,7 +482,7 @@ public:
                               MultiFluidBase const & fluid,
                               CRSMatrixView< real64, globalIndex const > const & localMatrix,
                               arrayView1d< real64 > const & localRhs,
-                              BitFlags< isothermalCompositionalMultiphaseBaseKernels::ElementBasedAssemblyKernelFlags > const kernelFlags )
+                              BitFlags< isothermalCompositionalMultiphaseBaseKernels::KernelFlags > const kernelFlags )
     : Base( numPhases, isProducer, rankOffset, dofKey, subRegion, fluid, localMatrix, localRhs, kernelFlags ),
     m_phaseInternalEnergy_n( fluid.phaseInternalEnergy_n()),
     m_phaseInternalEnergy( fluid.phaseInternalEnergy()),
@@ -650,9 +650,9 @@ public:
       localIndex constexpr NUM_COMP = NC();
 
 
-      BitFlags< isothermalCompositionalMultiphaseBaseKernels::ElementBasedAssemblyKernelFlags > kernelFlags;
+      BitFlags< isothermalCompositionalMultiphaseBaseKernels::KernelFlags > kernelFlags;
       if( useTotalMassEquation )
-        kernelFlags.set( isothermalCompositionalMultiphaseBaseKernels::ElementBasedAssemblyKernelFlags::TotalMassEquation );
+        kernelFlags.set( isothermalCompositionalMultiphaseBaseKernels::KernelFlags::TotalMassEquation );
 
       ElementBasedAssemblyKernel< NUM_COMP >
       kernel( numPhases, isProducer, rankOffset, dofKey, subRegion, fluid, localMatrix, localRhs, kernelFlags );
@@ -722,7 +722,7 @@ public:
                            MultiFluidBase const & fluid,
                            CRSMatrixView< real64, globalIndex const > const & localMatrix,
                            arrayView1d< real64 > const & localRhs,
-                           BitFlags< isothermalCompositionalMultiphaseBaseKernels::ElementBasedAssemblyKernelFlags > kernelFlags )
+                           BitFlags< isothermalCompositionalMultiphaseBaseKernels::KernelFlags > kernelFlags )
     : Base( dt
             , rankOffset
             , wellDofKey
@@ -1101,9 +1101,9 @@ public:
       integer constexpr NUM_COMP = NC();
 
 
-      BitFlags< isothermalCompositionalMultiphaseBaseKernels::ElementBasedAssemblyKernelFlags > kernelFlags;
+      BitFlags< isothermalCompositionalMultiphaseBaseKernels::KernelFlags > kernelFlags;
       if( useTotalMassEquation )
-        kernelFlags.set( isothermalCompositionalMultiphaseBaseKernels::ElementBasedAssemblyKernelFlags::TotalMassEquation );
+        kernelFlags.set( isothermalCompositionalMultiphaseBaseKernels::KernelFlags::TotalMassEquation );
 
 
       using kernelType = FaceBasedAssemblyKernel< NUM_COMP >;

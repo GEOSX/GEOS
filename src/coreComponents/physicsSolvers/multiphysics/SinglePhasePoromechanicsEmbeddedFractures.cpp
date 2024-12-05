@@ -20,7 +20,7 @@
 #include "SinglePhasePoromechanicsEmbeddedFractures.hpp"
 #include "constitutive/contact/HydraulicApertureRelationSelector.hpp"
 #include "constitutive/fluid/singlefluid/SingleFluidBase.hpp"
-#include "physicsSolvers/contact/SolidMechanicsEFEMKernelsHelper.hpp"
+#include "physicsSolvers/contact/kernels/SolidMechanicsEFEMKernelsHelper.hpp"
 #include "physicsSolvers/fluidFlow/SinglePhaseBase.hpp"
 #include "physicsSolvers/multiphysics/poromechanicsKernels/SinglePhasePoromechanicsEFEM.hpp"
 #include "physicsSolvers/multiphysics/poromechanicsKernels/SinglePhasePoromechanics.hpp"
@@ -28,6 +28,7 @@
 #include "physicsSolvers/multiphysics/poromechanicsKernels/ThermalSinglePhasePoromechanicsEFEM.hpp"
 #include "physicsSolvers/solidMechanics/SolidMechanicsLagrangianFEM.hpp"
 #include "physicsSolvers/solidMechanics/SolidMechanicsFields.hpp"
+#include "finiteVolume/FluxApproximationBase.hpp"
 
 
 namespace geos
@@ -43,8 +44,7 @@ SinglePhasePoromechanicsEmbeddedFractures::SinglePhasePoromechanicsEmbeddedFract
 {
   LinearSolverParameters & params = m_linearSolverParameters.get();
   params.mgr.strategy = LinearSolverParameters::MGR::StrategyType::singlePhasePoromechanicsEmbeddedFractures;
-  params.mgr.separateComponents = false;
-  params.mgr.displacementFieldName = solidMechanics::totalDisplacement::key();
+  params.mgr.separateComponents = true;
   params.dofsPerNode = 3;
 }
 

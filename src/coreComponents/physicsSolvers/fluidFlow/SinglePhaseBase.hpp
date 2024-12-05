@@ -21,8 +21,8 @@
 #define GEOS_PHYSICSSOLVERS_FLUIDFLOW_SINGLEPHASEBASE_HPP_
 
 #include "physicsSolvers/fluidFlow/FlowSolverBase.hpp"
-#include "physicsSolvers/fluidFlow/kernels/SinglePhaseBaseKernels.hpp"
-#include "physicsSolvers/fluidFlow/kernels/ThermalSinglePhaseBaseKernels.hpp"
+#include "physicsSolvers/fluidFlow/kernels/singlePhase/AccumulationKernels.hpp"
+#include "physicsSolvers/fluidFlow/kernels/singlePhase/ThermalAccumulationKernels.hpp"
 #include "constitutive/fluid/singlefluid/SingleFluidBase.hpp"
 #include "constitutive/solid/CoupledSolidBase.hpp"
 
@@ -335,10 +335,14 @@ public:
 
   virtual void initializePostInitialConditionsPreSubGroups() override;
 
+  virtual void initializeFluidState( MeshLevel & mesh, arrayView1d< string const > const & regionNames ) override;
+
+  virtual void initializeThermalState( MeshLevel & mesh, arrayView1d< string const > const & regionNames ) override;
+
   /**
    * @brief Compute the hydrostatic equilibrium using the compositions and temperature input tables
    */
-  void computeHydrostaticEquilibrium();
+  virtual void computeHydrostaticEquilibrium( DomainPartition & domain ) override;
 
   /**
    * @brief Update the cell-wise pressure gradient
@@ -446,7 +450,7 @@ void SinglePhaseBase::accumulationAssemblyLaunch( DofManager const & dofManager,
   if( m_isThermal )
   {
     thermalSinglePhaseBaseKernels::
-      ElementBasedAssemblyKernelFactory::
+      AccumulationKernelFactory::
       createAndLaunch< parallelDevicePolicy<> >( dofManager.rankOffset(),
                                                  dofKey,
                                                  subRegion,
@@ -458,7 +462,7 @@ void SinglePhaseBase::accumulationAssemblyLaunch( DofManager const & dofManager,
   else
   {
     singlePhaseBaseKernels::
-      ElementBasedAssemblyKernelFactory::
+      AccumulationKernelFactory::
       createAndLaunch< parallelDevicePolicy<> >( dofManager.rankOffset(),
                                                  dofKey,
                                                  subRegion,

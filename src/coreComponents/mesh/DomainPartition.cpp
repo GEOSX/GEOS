@@ -330,21 +330,6 @@ void DomainPartition::outputPartitionInformation() const
     return std::make_pair( objectManager.getNumberOfLocalIndices(), objectManager.getNumberOfGhosts() );
   };
 
-  auto addCommaSeparators = []( localIndex const num )
-  {
-    std::string const numStr = std::to_string( num );
-    std::string result;
-    for( std::size_t i = 0; i < numStr.size(); ++i )
-    {
-      result += numStr[i];
-      if( ( numStr.size() - i - 1 ) % 3 == 0 && i != numStr.size() - 1 )
-      {
-        result += ",";
-      }
-    }
-    return result;
-  };
-
   GEOS_LOG_RANK_0( "MPI Partition information:" );
 
   forMeshBodies( [&]( MeshBody const & meshBody )

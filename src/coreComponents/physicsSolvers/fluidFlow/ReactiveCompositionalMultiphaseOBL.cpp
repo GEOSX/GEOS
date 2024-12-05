@@ -32,7 +32,7 @@
 #include "mesh/mpiCommunications/CommunicationTools.hpp"
 #include "physicsSolvers/fluidFlow/FlowSolverBaseFields.hpp"
 #include "physicsSolvers/fluidFlow/ReactiveCompositionalMultiphaseOBLFields.hpp"
-#include "physicsSolvers/fluidFlow/kernels/ReactiveCompositionalMultiphaseOBLKernels.hpp"
+#include "physicsSolvers/fluidFlow/kernels/compositional/ReactiveCompositionalMultiphaseOBLKernels.hpp"
 
 
 namespace geos
@@ -737,7 +737,7 @@ void ReactiveCompositionalMultiphaseOBL::assembleFluxTerms( real64 const dt,
     {
       typename TYPEOFREF( stencil ) ::KernelWrapper stencilWrapper = stencil.createKernelWrapper();
 
-      FaceBasedAssemblyKernelFactory::
+      FluxComputeKernelFactory::
         createAndLaunch< parallelDevicePolicy<> >( m_numPhases,
                                                    m_numComponents,
                                                    m_enableEnergyBalance,
