@@ -481,7 +481,7 @@ void WellGeneratorBase::checkPerforationLocationsValidity()
   }
 }
 
-void WellGeneratorBase::MergeNextPerforations( array1d< array1d< localIndex > > const & elemToPerfMap )
+void WellGeneratorBase::mergePerforations( array1d< array1d< localIndex > > const & elemToPerfMap )
 {
 
   for( globalIndex iwelem = 0; iwelem < m_numElems; ++iwelem )

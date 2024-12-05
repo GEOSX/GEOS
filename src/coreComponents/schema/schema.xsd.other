@@ -615,8 +615,8 @@
 		<xsd:attribute name="sourceNodeIds" type="integer_array2d" />
 		<!--sourceRegion => Region containing the sources-->
 		<xsd:attribute name="sourceRegion" type="integer_array" />
-		<!--sourceValue => Source Value of the sources-->
-		<xsd:attribute name="sourceValue" type="real32_array2d" />
+		<!--timeStep => TimeStep computed with the power iteration method (if we don't want to compute it, it is initialized with the XML value-->
+		<xsd:attribute name="timeStep" type="real64" />
 		<!--usePML => Flag to apply PML-->
 		<xsd:attribute name="usePML" type="integer" />
 		<!--uxNp1AtReceivers => Ux value at each receiver for each timestep-->
@@ -662,8 +662,8 @@
 		<xsd:attribute name="sourceIsAccessible" type="integer_array" />
 		<!--sourceNodeIds => Indices of the nodes (in the right order) for each source point-->
 		<xsd:attribute name="sourceNodeIds" type="integer_array2d" />
-		<!--sourceValue => Source Value of the sources-->
-		<xsd:attribute name="sourceValue" type="real32_array2d" />
+		<!--timeStep => TimeStep computed with the power iteration method (if we don't want to compute it, it is initialized with the XML value-->
+		<xsd:attribute name="timeStep" type="real64" />
 		<!--usePML => Flag to apply PML-->
 		<xsd:attribute name="usePML" type="integer" />
 	</xsd:complexType>
@@ -703,8 +703,8 @@
 		<xsd:attribute name="sourceIsAccessible" type="integer_array" />
 		<!--sourceNodeIds => Indices of the nodes (in the right order) for each source point-->
 		<xsd:attribute name="sourceNodeIds" type="integer_array2d" />
-		<!--sourceValue => Source Value of the sources-->
-		<xsd:attribute name="sourceValue" type="real32_array2d" />
+		<!--timeStep => TimeStep computed with the power iteration method (if we don't want to compute it, it is initialized with the XML value-->
+		<xsd:attribute name="timeStep" type="real64" />
 		<!--usePML => Flag to apply PML-->
 		<xsd:attribute name="usePML" type="integer" />
 	</xsd:complexType>
@@ -837,8 +837,8 @@
 		<xsd:attribute name="sourceNodeIds" type="integer_array2d" />
 		<!--sourceRegion => Region containing the sources-->
 		<xsd:attribute name="sourceRegion" type="integer_array" />
-		<!--sourceValue => Source Value of the sources-->
-		<xsd:attribute name="sourceValue" type="real32_array2d" />
+		<!--timeStep => TimeStep computed with the power iteration method (if we don't want to compute it, it is initialized with the XML value-->
+		<xsd:attribute name="timeStep" type="real64" />
 		<!--usePML => Flag to apply PML-->
 		<xsd:attribute name="usePML" type="integer" />
 	</xsd:complexType>
@@ -884,8 +884,8 @@
 		<xsd:attribute name="sourceIsAccessible" type="integer_array" />
 		<!--sourceNodeIds => Indices of the nodes (in the right order) for each source point-->
 		<xsd:attribute name="sourceNodeIds" type="integer_array2d" />
-		<!--sourceValue => Source Value of the sources-->
-		<xsd:attribute name="sourceValue" type="real32_array2d" />
+		<!--timeStep => TimeStep computed with the power iteration method (if we don't want to compute it, it is initialized with the XML value-->
+		<xsd:attribute name="timeStep" type="real64" />
 		<!--usePML => Flag to apply PML-->
 		<xsd:attribute name="usePML" type="integer" />
 	</xsd:complexType>
@@ -1008,12 +1008,10 @@
 			<xsd:element name="NonlinearSolverParameters" type="NonlinearSolverParametersType" maxOccurs="1" />
 			<xsd:element name="SolverStatistics" type="SolverStatisticsType" />
 		</xsd:choice>
-		<!--discretization => Name of discretization object (defined in the :ref:`NumericalMethodsManager`) to use for this solver. For instance, if this is a Finite Element Solver, the name of a :ref:`FiniteElement` should be specified. If this is a Finite Volume Method, the name of a :ref:`FiniteVolume` discretization should be specified.-->
-		<xsd:attribute name="discretization" type="groupNameRef" />
 		<!--maxStableDt => Value of the Maximum Stable Timestep for this solver.-->
 		<xsd:attribute name="maxStableDt" type="real64" />
 		<!--meshTargets => MeshBody/Region combinations that the solver will be applied to.-->
-		<xsd:attribute name="meshTargets" type="geos_mapBase_lt_std___1_pair_lt_std___1_basic_string_lt_char_cm_-std___1_char_traits_lt_char_gt__cm_-std___1_allocator_lt_char_gt__gt__cm_-std___1_basic_string_lt_char_cm_-std___1_char_traits_lt_char_gt__cm_-std___1_allocator_lt_char_gt__gt__gt__cm_-LvArray_Array_lt_std___1_basic_string_lt_char_cm_-std___1_char_traits_lt_char_gt__cm_-std___1_allocator_lt_char_gt__gt__cm_-1_cm_-camp_int_seq_lt_long_cm_-0l_gt__cm_-int_cm_-LvArray_ChaiBuffer_gt__cm_-std___1_integral_constant_lt_bool_cm_-true_gt__gt_" />
+		<xsd:attribute name="meshTargets" type="geos_mapBase_lt_std_pair_lt_string_cm_-string-_gt__cm_-LvArray_Array_lt_string_cm_-1_cm_-camp_int_seq_lt_long_cm_-0l_gt__cm_-int_cm_-LvArray_ChaiBuffer_gt__cm_-std_integral_constant_lt_bool_cm_-true_gt_-_gt_" />
 	</xsd:complexType>
 	<xsd:complexType name="ReactiveCompositionalMultiphaseOBLType">
 		<xsd:choice minOccurs="0" maxOccurs="unbounded">
@@ -2587,7 +2585,20 @@
 		<xsd:attribute name="viscosity" type="real64_array2d" />
 	</xsd:complexType>
 	<xsd:complexType name="ProppantSolidProppantPermeabilityType" />
-	<xsd:complexType name="RateAndStateFrictionType" />
+	<xsd:complexType name="RateAndStateFrictionType">
+		<!--Dc => Rate- and State-dependent friction characteristic length.-->
+		<xsd:attribute name="Dc" type="real64_array" />
+		<!--a => Rate- and State-dependent friction coefficient a.-->
+		<xsd:attribute name="a" type="real64_array" />
+		<!--b => Rate- and State-dependent friction coefficient b.-->
+		<xsd:attribute name="b" type="real64_array" />
+		<!--frictionCoefficient => Friction coefficient-->
+		<xsd:attribute name="frictionCoefficient" type="real64_array" />
+		<!--referenceFrictionCoefficient => Rate- and State-dependent friction reference friction coefficient.-->
+		<xsd:attribute name="referenceFrictionCoefficient" type="real64_array" />
+		<!--referenceVelocity => Rate- and State-dependent friction reference slip rate.-->
+		<xsd:attribute name="referenceVelocity" type="real64_array" />
+	</xsd:complexType>
 	<xsd:complexType name="ReactiveBrineType">
 		<!--dPhaseCompFraction => Derivative of phase component fraction with respect to pressure, temperature, and global component fractions-->
 		<xsd:attribute name="dPhaseCompFraction" type="LvArray_Array_lt_double_cm_-5_cm_-camp_int_seq_lt_long_cm_-0l_cm_-1l_cm_-2l_cm_-3l_cm_-4l_gt__cm_-int_cm_-LvArray_ChaiBuffer_gt_" />

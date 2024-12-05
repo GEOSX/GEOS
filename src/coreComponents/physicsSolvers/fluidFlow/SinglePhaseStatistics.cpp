@@ -258,8 +258,8 @@ void SinglePhaseStatistics::computeRegionStatistics( real64 const time,
     singPhaseStatsData.addRow( "Temperature [K]", stats.minTemperature, stats.averageTemperature, stats.maxTemperature );
     singPhaseStatsData.addSeparator();
 
-    singPhaseStatsData.addRow( "Total dynamic pore volume [rm^3]", CellType::Merge, CellType::Merge, stats.totalPoreVolume );
-    singPhaseStatsData.addRow( "Total fluid mass [kg]", CellType::Merge, CellType::Merge, stats.totalMass );
+    singPhaseStatsData.addRow( "Total dynamic pore volume [rm^3]", CellType::MergeNext, CellType::MergeNext, stats.totalPoreVolume );
+    singPhaseStatsData.addRow( "Total fluid mass [kg]", CellType::MergeNext, CellType::MergeNext, stats.totalMass );
 
     string const title = GEOS_FMT( "{}, {} (time {} s):", getName(), regionNames[i], time );
     TableLayout const singPhaseStatsLayout( title, { "statistics", "min", "average", "max" } );
