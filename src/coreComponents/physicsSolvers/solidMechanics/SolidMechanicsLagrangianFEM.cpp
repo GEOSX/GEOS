@@ -949,30 +949,30 @@ void SolidMechanicsLagrangianFEM::implicitStepComplete( real64 const & GEOS_UNUS
       string const & solidMaterialName = subRegion.template getReference< string >( viewKeyStruct::solidMaterialNamesString() );
       SolidBase & constitutiveRelation = getConstitutiveModel< SolidBase >( subRegion, solidMaterialName );
 
-      
+
       solidMechanics::arrayView2dLayoutStrain strain = subRegion.getField< solidMechanics::strain >();
       solidMechanics::arrayView2dLayoutStrain plasticStrain = subRegion.getField< solidMechanics::plasticStrain >();
 
-      constitutive::ConstitutivePassThru< SolidBase >::execute(constitutiveRelation, [&] (auto & solidModel)
+      constitutive::ConstitutivePassThru< SolidBase >::execute( constitutiveRelation, [&] ( auto & solidModel )
       {
 
         using SOLID_TYPE = TYPEOFREF( solidModel );
 
-      finiteElement::FiniteElementBase & subRegionFE = subRegion.template getReference< finiteElement::FiniteElementBase >( this->getDiscretizationName());
-      finiteElement::FiniteElementDispatchHandler< BASE_FE_TYPES >::dispatch3D( subRegionFE, [&] ( auto const finiteElement )
-      {
-        using FE_TYPE = decltype( finiteElement );
-        AverageStrainOverQuadraturePointsKernelFactory::createAndLaunch< FE_TYPE, SOLID_TYPE, parallelDevicePolicy<> >( nodeManager,
-                                                                                                                                  mesh.getEdgeManager(),
-                                                                                                                                  mesh.getFaceManager(),
-                                                                                                                                  subRegion,
-                                                                                                                                  finiteElement,
-                                                                                                                                  solidModel,
-                                                                                                                                  disp,
-                                                                                                                                  uhat,
-                                                                                                                                  strain,
-                                                                                                                                  plasticStrain );
-      } );
+        finiteElement::FiniteElementBase & subRegionFE = subRegion.template getReference< finiteElement::FiniteElementBase >( this->getDiscretizationName());
+        finiteElement::FiniteElementDispatchHandler< BASE_FE_TYPES >::dispatch3D( subRegionFE, [&] ( auto const finiteElement )
+        {
+          using FE_TYPE = decltype( finiteElement );
+          AverageStrainOverQuadraturePointsKernelFactory::createAndLaunch< FE_TYPE, SOLID_TYPE, parallelDevicePolicy<> >( nodeManager,
+                                                                                                                          mesh.getEdgeManager(),
+                                                                                                                          mesh.getFaceManager(),
+                                                                                                                          subRegion,
+                                                                                                                          finiteElement,
+                                                                                                                          solidModel,
+                                                                                                                          disp,
+                                                                                                                          uhat,
+                                                                                                                          strain,
+                                                                                                                          plasticStrain );
+        } );
 
 
       } );

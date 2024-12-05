@@ -71,13 +71,13 @@ public:
                                      fields::solidMechanics::arrayViewConst2dLayoutTotalDisplacement const displacement,
                                      fields::solidMechanics::arrayViewConst2dLayoutIncrDisplacement const displacementInc,
                                      fields::solidMechanics::arrayView2dLayoutStrain const avgStrain,
-                                     fields::solidMechanics::arrayView2dLayoutStrain const avgPlasticStrain):
+                                     fields::solidMechanics::arrayView2dLayoutStrain const avgPlasticStrain ):
     Base( nodeManager,
           edgeManager,
           faceManager,
           elementSubRegion,
           finiteElementSpace ),
-    m_solidUpdate(solidModel.createKernelUpdates()),
+    m_solidUpdate( solidModel.createKernelUpdates()),
     m_displacement( displacement ),
     m_displacementInc( displacementInc ),
     m_avgStrain( avgStrain ),
@@ -140,15 +140,16 @@ public:
     FE_TYPE::symmetricGradient( dNdX, stack.uHatLocal, strainInc );
 
     real64 elasticStrainInc[6] = {0.0};
-    m_solidUpdate.getElasticStrainInc(k, q, elasticStrainInc);
+    m_solidUpdate.getElasticStrainInc( k, q, elasticStrainInc );
 
     for( int icomp = 0; icomp < 6; ++icomp )
     {
       m_avgStrain[k][icomp] += detJxW*strain[icomp]/m_elementVolume[k];
 
       // This is a hack to handle boundary conditions such as those seen in plane-strain wellbore problems
-      // Essentially, if bcs are constraining the strain (and thus total displacement), we do not accumulate any plastic strain (regardless of stresses in material law)
-      if (std::abs(strainInc[icomp]) > 1.0e-8)
+      // Essentially, if bcs are constraining the strain (and thus total displacement), we do not accumulate any plastic strain (regardless
+      // of stresses in material law)
+      if( std::abs( strainInc[icomp] ) > 1.0e-8 )
       {
         m_avgPlasticStrain[k][icomp] += detJxW*(strainInc[icomp] - elasticStrainInc[icomp])/m_elementVolume[k];
       }
@@ -237,7 +238,7 @@ public:
                    fields::solidMechanics::arrayViewConst2dLayoutTotalDisplacement const displacement,
                    fields::solidMechanics::arrayViewConst2dLayoutIncrDisplacement const displacementInc,
                    fields::solidMechanics::arrayView2dLayoutStrain const avgStrain,
-                   fields::solidMechanics::arrayView2dLayoutStrain const avgPlasticStrain)
+                   fields::solidMechanics::arrayView2dLayoutStrain const avgPlasticStrain )
   {
     AverageStrainOverQuadraturePoints< FE_TYPE, SOLID_TYPE >
     kernel( nodeManager, edgeManager, faceManager, elementSubRegion, finiteElementSpace,

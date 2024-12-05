@@ -139,7 +139,7 @@ public:
   virtual void getElasticStrainInc( localIndex const k,
                                     localIndex const q,
                                     real64 ( &elasticStrainInc )[6] ) const override final;
-  
+
   GEOS_HOST_DEVICE
   virtual real64 getBulkModulus( localIndex const k ) const override final
   {

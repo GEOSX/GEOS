@@ -117,9 +117,9 @@ public:
 
   GEOS_HOST_DEVICE
   virtual void getElasticStrainInc( localIndex const k,
-                                 localIndex const q,
-                                 real64 ( &elasticStrainInc )[6] ) const override final;
-  
+                                    localIndex const q,
+                                    real64 ( &elasticStrainInc )[6] ) const override final;
+
   GEOS_HOST_DEVICE
   virtual void viscousStateUpdate( localIndex const k,
                                    localIndex const q,
@@ -231,8 +231,8 @@ void ElasticIsotropicPressureDependentUpdates::getElasticStrain( localIndex cons
 GEOS_HOST_DEVICE
 inline
 void ElasticIsotropicPressureDependentUpdates::getElasticStrainInc( localIndex const k,
-                                                                 localIndex const q,
-                                                                 real64 ( & elasticStrainInc)[6] ) const
+                                                                    localIndex const q,
+                                                                    real64 ( & elasticStrainInc)[6] ) const
 {
   real64 const mu     = m_shearModulus[k];
   real64 const p0     = m_refPressure;
@@ -282,7 +282,7 @@ void ElasticIsotropicPressureDependentUpdates::getElasticStrainInc( localIndex c
                                      deviator,
                                      oldStrain );
 
-  for (localIndex i = 0; i<6; ++i)
+  for( localIndex i = 0; i<6; ++i )
   {
     elasticStrainInc[i] -= oldStrain[i];
   }

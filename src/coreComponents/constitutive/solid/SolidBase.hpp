@@ -346,8 +346,8 @@ public:
    */
   GEOS_HOST_DEVICE
   virtual void getElasticStrainInc( localIndex const k,
-                                 localIndex const q,
-                                 real64 ( & elasticStrainInc )[6] ) const
+                                    localIndex const q,
+                                    real64 ( & elasticStrainInc )[6] ) const
   {
     GEOS_UNUSED_VAR( k );
     GEOS_UNUSED_VAR( q );
