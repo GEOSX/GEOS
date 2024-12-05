@@ -75,8 +75,16 @@ public:
    */
   void importFields( DomainPartition & domain );
 
+  /**
+   * @brief Import fields data
+   * @param[in] generator reference to mesh generator
+   * @param[in] regionName name of the region
+   * @param[in] subRegion reference to the subregion
+   * @param[in] fieldsMapping mapping for fields
+   * @param[out] fieldsToBeSync list of fields to synchronize
+   */
   static void importFields( MeshGeneratorBase const & generator,
-                            ElementRegionBase const & region,
+                            string const & regionName,
                             ElementSubRegionBase & subRegion,
                             MeshGeneratorBase::Block block,
                             std::map< string, string > const & fieldsMapping,

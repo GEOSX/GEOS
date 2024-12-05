@@ -137,7 +137,7 @@ void MeshManager::importFields( DomainPartition & domain )
              CellElementSubRegion & subRegion )
       {
         GEOS_LOG_RANK_0( GEOS_FMT( "  volumic fields on {}/{}", region.getName(), subRegion.getName() ) );
-        importFields( generator, region, subRegion, MeshGeneratorBase::Block::VOLUMIC, generator.getVolumicFieldsMapping(), fieldsToBeSync );
+        importFields( generator, region.getName(), subRegion, MeshGeneratorBase::Block::VOLUMIC, generator.getVolumicFieldsMapping(), fieldsToBeSync );
       } );
       meshLevel.getElemManager().forElementSubRegionsComplete< FaceElementSubRegion >(
         [&]( localIndex,
@@ -146,7 +146,7 @@ void MeshManager::importFields( DomainPartition & domain )
              FaceElementSubRegion & subRegion )
       {
         GEOS_LOG_RANK_0( GEOS_FMT( "  surfaic fields on {}/{}", region.getName(), subRegion.getName() ) );
-        importFields( generator, region, subRegion, MeshGeneratorBase::Block::SURFACIC, generator.getSurfacicFieldsMapping(), fieldsToBeSync );
+        importFields( generator, region.getName(), subRegion, MeshGeneratorBase::Block::SURFACIC, generator.getSurfacicFieldsMapping(), fieldsToBeSync );
       } );
       CommunicationTools::getInstance().synchronizeFields( fieldsToBeSync, meshLevel, domain.getNeighbors(), false ); // TODO Validate this.
     } );
@@ -159,7 +159,7 @@ void MeshManager::importFields( DomainPartition & domain )
 }
 
 void MeshManager::importFields( MeshGeneratorBase const & generator,
-                                ElementRegionBase const & region,
+                                string const & regionName,
                                 ElementSubRegionBase & subRegion,
                                 MeshGeneratorBase::Block const block,
                                 std::map< string, string > const & fieldsMapping,
@@ -185,7 +185,7 @@ void MeshManager::importFields( MeshGeneratorBase const & generator,
 
     // Now that we know that the subRegion has this wrapper,
     // we can add the geosFieldName to the list of fields to synchronize
-    fieldsToBeSync.addElementFields( { geosFieldName }, { region.getName() } );
+    fieldsToBeSync.addElementFields( { geosFieldName }, { regionName } );
     WrapperBase & wrapper = subRegion.getWrapperBase( geosFieldName );
     if( generator.getLogLevel() >= 1 )
     {
