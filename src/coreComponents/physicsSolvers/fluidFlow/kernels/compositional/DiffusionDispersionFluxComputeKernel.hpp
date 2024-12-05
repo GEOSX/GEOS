@@ -33,7 +33,6 @@
 #include "mesh/ElementRegionManager.hpp"
 #include "physicsSolvers/fluidFlow/CompositionalMultiphaseUtilities.hpp"
 #include "physicsSolvers/fluidFlow/StencilAccessors.hpp"
-#include "physicsSolvers/fluidFlow/kernels/compositional/KernelLaunchSelectors.hpp"
 
 namespace geos
 {
