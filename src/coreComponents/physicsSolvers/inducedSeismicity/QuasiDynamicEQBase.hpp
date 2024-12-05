@@ -56,18 +56,8 @@ public:
     constexpr static char const * targetSlipIncrementString() { return "targetSlipIncrement"; }
   };
 
-  virtual real64 solverStep( real64 const & time_n,
-                             real64 const & dt,
-                             integer const cycleNumber,
-                             DomainPartition & domain ) override final;
-
   virtual real64 setNextDt( real64 const & currentDt,
                             DomainPartition & domain ) override final;
-
-  real64 updateStresses( real64 const & time_n,
-                         real64 const & dt,
-                         const int cycleNumber,
-                         DomainPartition & domain ) const;
 
   /**
    * @brief save the old state
@@ -76,10 +66,14 @@ public:
   void updateSlip( ElementSubRegionBase & subRegion, real64 const dt ) const;
 
 
-private:
+protected:
 
+  void solveRateAndStateEquations( real64 const time_n,
+                                   real64 const dt,
+                                   DomainPartition & domain ) const;
 
-  virtual void postInputInitialization() override;
+  void applyInitialConditionsToFault( int const cycleNumber,
+                                      DomainPartition & domain) const;                                 
 
   /// shear impedance
   real64 m_shearImpedance;

@@ -37,16 +37,8 @@ using namespace constitutive;
 
 SpringSlider::SpringSlider( const string & name,
                             Group * const parent ):
-  QuasiDynamicEQBase( name, parent ),
-{
-  this->getWrapper< string >( viewKeyStruct::stressSolverName() ).
-    setInputFlag( dataRepository::InputFlags::FALSE );
-}
-
-void SpringSlider::postInputInitialization()
-{
-  PhysicsSolverBase::postInputInitialization();
-}
+  QuasiDynamicEQBase( name, parent )
+{}
 
 SpringSlider::~SpringSlider()
 {
@@ -75,6 +67,9 @@ void SpringSlider::registerDataOnMesh( Group & meshBodies )
       subRegion.registerField< contact::traction >( getName() ).
         setDimLabels( 1, labels3Comp ).
         reference().resizeDimension< 1 >( 3 );
+      subRegion.registerField< contact::deltaSlip >( getName() ).
+        setDimLabels( 1, labels3Comp ).
+        reference().resizeDimension< 1 >( 3 );  
 
       subRegion.registerWrapper< string >( viewKeyStruct::frictionLawNameString() ).
         setPlotLevel( PlotLevel::NOPLOT ).
@@ -89,9 +84,18 @@ void SpringSlider::registerDataOnMesh( Group & meshBodies )
   } );
 }
 
-real64 SpringSlider::updateStresses( real64 const & time_n,
-                                     real64 const & dt,
-                                     int const cycleNumber,
+real64 SpringSlider::solverStep( real64 const & time_n,
+                                   real64 const & dt,
+                                   int const cycleNumber,
+                                   DomainPartition & domain )
+{ 
+  applyInitialConditionsToFault( cycleNumber, domain );
+  updateStresses( dt, domain );
+  solveRateAndStateEquations( time_n, dt, domain );
+  return dt;
+}
+
+real64 SpringSlider::updateStresses( real64 const dt,
                                      DomainPartition & domain ) const
 {
   // Spring-slider shear traction computation
@@ -105,7 +109,7 @@ real64 SpringSlider::updateStresses( real64 const & time_n,
                                                                                 SurfaceElementSubRegion & subRegion )
     {
 
-      arrayView2d< real64 const > const deltaSlip = subRegion.getField< rateAndState::deltaSlip >();
+      arrayView2d< real64 const > const deltaSlip = subRegion.getField< fields::contact::deltaSlip >();
       arrayView2d< real64 > const traction        = subRegion.getField< fields::contact::traction >();
 
       string const & fricitonLawName = subRegion.template getReference< string >( viewKeyStruct::frictionLawNameString() );

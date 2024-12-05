@@ -15,55 +15,47 @@
 
 /// THIS is an alternative implementation to avoid the use of the TractionUpdateWrapper
 
-#ifndef GEOS_PHYSICSSOLVERS_INDUCED_SPRINGSLIDER_HPP
-#define GEOS_PHYSICSSOLVERS_INDUCED_SPRINGSLIDER_HPP
+#ifndef GEOS_PHYSICSSOLVERS_INDUCED_QUASIDYNAMICEARTHQUAKE_HPP
+#define GEOS_PHYSICSSOLVERS_INDUCED_QUASIDYNAMICEARTHQUAKE_HPP
 
-#include "physicsSolvers/QuasiDynamicEQBase.hpp"
+#include "physicsSolvers/inducedSeismicity/QuasiDynamicEQBase.hpp"
 
 namespace geos
 {
 
-class OneWayCoupledQuasiDynamicEQ : public QuasiDynamicEQBase
+class QuasiDynamicEarthQuake : public QuasiDynamicEQBase 
 {
 public:
+
   /// The default nullary constructor is disabled to avoid compiler auto-generation:
-  OneWayCoupledQuasiDynamicEQ() = delete;
+  QuasiDynamicEarthQuake() = delete;
 
   /// The constructor needs a user-defined "name" and a parent Group (to place this instance in the tree structure of classes)
-  OneWayCoupledQuasiDynamicEQ( const string & name,
-                               Group * const parent );
+  QuasiDynamicEarthQuake( const string & name,
+                      Group * const parent );
 
   /// Destructor
-  virtual ~OneWayCoupledQuasiDynamicEQ() override;
+  virtual ~QausiDynamicEarthQuake() override;
 
-  static string catalogName() { return "OneWayCoupledQuasiDynamicEQ"; }
+  static string catalogName() { return "QuasiDynamicEarthQuake"; }
 
   /**
    * @return Get the final class Catalog name
    */
   virtual string getCatalogName() const override { return catalogName(); }
 
-  /// This method ties properties with their supporting mesh
-  virtual void registerDataOnMesh( Group & meshBodies ) override;
-
-  struct viewKeyStruct : public PhysicsSolverBase::viewKeyStruct
+  struct viewKeyStruct : public QuasiDynamicEQBase::viewKeyStruct
   {
-    /// Friction law name string
-    constexpr static char const * frictionLawNameString() { return "frictionLawName"; }
+    /// stress solver name
+    static constexpr char const * contactSolverNameString() { return "stressSolverName"; }
   };
 
 private:
 
-  real64 updateStresses( real64 const & time_n,
-                         real64 const & dt,
-                         const int cycleNumber,
-                         DomainPartition & domain ) const override final;
-
-  virtual void postInputInitialization() override;
-
+PhysicsSolverBase * m_stressSolver;
 
 };
 
 } /* namespace geos */
 
-#endif /* GEOS_PHYSICSSOLVERS_INDUCED_SPRINGSLIDER_HPP */
+#endif /* GEOS_PHYSICSSOLVERS_INDUCED_QUASIDYNAMICEQBASE_HPP */

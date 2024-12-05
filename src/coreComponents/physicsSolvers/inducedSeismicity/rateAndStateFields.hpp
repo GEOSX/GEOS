@@ -72,6 +72,14 @@ DECLARE_FIELD( stateVariable_n,
                WRITE_AND_READ,
                "Rate- and state-dependent friction state variable at previous time step" );
 
+DECLARE_FIELD( shearTraction,
+               "shearTraction",
+               array2d< real64 >,
+               29.2e6,
+               LEVEL_0,
+               WRITE_AND_READ,
+               "shear Traction" );               
+
 }
 
 }

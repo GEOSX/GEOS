@@ -22,6 +22,7 @@
 #include "OneWayCoupledTractionUpdate.hpp"
 #include "mesh/DomainPartition.hpp"
 #include "physicsSolvers/contact/ContactFields.hpp"
+#include "physicsSolvers/inducedSeismicity/rateAndStateFields.hpp"
 #include "physicsSolvers/fluidFlow/FlowSolverBaseFields.hpp"
 #include "common/GEOS_RAJA_Interface.hpp"
 
@@ -70,14 +71,17 @@ real64 OneWayCoupledTractionUpdate::updateFaultTraction( real64 const & time_n,
     {
       arrayView2d< real64 > traction = subRegion.getField< fields::contact::traction >();
       arrayView1d< real64 > pressure = subRegion.getField< fields::flow::pressure >();
+      arrayView2d< real64 > shearTraction = subRegion.getField< fields::rateAndState::shearTraction >();
       real64 const initialNormalTraction = 50.0e6;
-      real64 const initialShearTraction = 29.2e6;
       forAll< parallelDevicePolicy<> >( subRegion.size(), [=] GEOS_HOST_DEVICE ( localIndex const i )
       {
         // subtract pressure from the background normal stress
         traction( i, 0 ) = initialNormalTraction - pressure[i];
-        traction( i, 1 ) = LvArray::math::abs( traction( i, 1 ) ) + initialShearTraction;
+        traction( i, 1 ) = LvArray::math::abs( traction( i, 1 ) ) + shearTraction( i, 0 );
         traction( i, 2 ) = 0.0;
+
+        shearTraction( i, 0 ) = traction( i, 1 );
+        shearTraction( i, 1 ) = traction( i, 2 );
       } );
     } );
   } );

@@ -96,10 +96,13 @@ void QuasiDynamicEQ::registerDataOnMesh( Group & meshBodies )
       subRegion.registerField< rateAndState::stateVariable_n >( getName() );
       subRegion.registerField< rateAndState::slipRate >( getName() );
       subRegion.registerField< rateAndState::slipRate_n >( getName() );
+      
 
       // Tangent (2-component) functions on fault
       string const labels2Comp[2] = {"tangent1", "tangent2" };
       subRegion.registerField< rateAndState::slipVelocity >( getName() ).
+        setDimLabels( 1, labels2Comp ).reference().resizeDimension< 1 >( 2 );
+      subRegion.registerField< rateAndState::shearTraction >( getName() ).
         setDimLabels( 1, labels2Comp ).reference().resizeDimension< 1 >( 2 );
 
       m_tractionUpdate->registerMissingDataOnMesh( subRegion, this->getName() );

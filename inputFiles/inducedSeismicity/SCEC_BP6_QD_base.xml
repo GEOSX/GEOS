@@ -6,13 +6,13 @@
       name="QDSolver"
       targetRegions="{ Domain, Fault }"
       shearImpedance="4.6247113164e6"
-      initialDt="1"
+      initialDt="1000"
       logLevel="1"
       discretization="FE1"
       contactSolverName="stressSolver"
       flowSolverName="singlePhaseFlowSolver"
       tractionUpdateType="OneWayCoupled"
-      targetSlipIncrement="1.0e-5">
+      targetSlipIncrement="1.0e-6">
       <NonlinearSolverParameters
         newtonTol="1.0e-8"
         logLevel="2"
@@ -87,7 +87,7 @@
       zCoords="{ -20.0e3, -10.0e3, 10.0e3, 20.0e3 }"
       nx="{ 100 }"
       ny="{ 1 }"
-      nz="{ 20, 200, 20 }"
+      nz="{ 20, 201, 20 }"
       cellBlockNames="{ cb1 }"/>
   </Mesh>
 
@@ -99,8 +99,8 @@
     
     <Box
       name="source"
-      xMin="{ -0.01, -1.01e3, -200.1 }"
-      xMax="{ 0.01,   1.01e3,  200.1 }"/>
+      xMin="{ -0.01, -1.01e3, -50.0 }"
+      xMax="{ 0.01,   1.01e3,  50.0 }"/>
   </Geometry>
 
   <ElementRegions>

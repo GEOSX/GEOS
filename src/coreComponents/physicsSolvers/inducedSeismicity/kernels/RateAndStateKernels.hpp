@@ -85,7 +85,7 @@ public:
 
     // Eq 2: slip law
     stack.rhs[1] = (m_stateVariable[k] - m_stateVariable_n[k]) / dt - m_frictionLaw.stateEvolution( k, m_slipRate[k], m_stateVariable[k] );
-    real64 const dStateEvolutionLaw[2] = { 1 / dt - m_frictionLaw.dStateEvolution_dStateVariable( k, m_slipRate[k], m_stateVariable[k] ),
+    real64 const dStateEvolutionLaw[2] = { 1.0 / dt - m_frictionLaw.dStateEvolution_dStateVariable( k, m_slipRate[k], m_stateVariable[k] ),
                                            -m_frictionLaw.dStateEvolution_dSlipRate( k, m_slipRate[k], m_stateVariable[k] ) };
 
     // Assemble Jacobian matrix
@@ -205,7 +205,7 @@ static bool newtonSolve( SurfaceElementSubRegion & subRegion,
     } );
 
     real64 const maxResidualNorm = MpiWrapper::max( residualNorm.get() );
-    GEOS_LOG_RANK_0( GEOS_FMT( "-----iter {} : residual = {:.10e} ", iter, maxResidualNorm ) );
+    GEOS_LOG_RANK_0( GEOS_FMT( "   Newton iter {} : residual = {:.10e} ", iter, maxResidualNorm ) );
 
     if( converged.get() )
     {
@@ -232,7 +232,7 @@ static real64 solveRateAndStateEquation( SurfaceElementSubRegion & subRegion,
         kernel.resetState( k );
       } );
     }
-    GEOS_LOG_RANK_0( GEOS_FMT( "--attempt {} ", attempt ) );
+    GEOS_LOG_RANK_0( GEOS_FMT( "  Attempt {} ", attempt ) );
     converged = newtonSolve< POLICY >( subRegion, kernel, dt, maxNewtonIter );
     if( converged )
     {
@@ -244,7 +244,7 @@ static real64 solveRateAndStateEquation( SurfaceElementSubRegion & subRegion,
     }
     else
     {
-      GEOS_LOG_RANK_0( GEOS_FMT( "--attempt {} failed. Halving dt and retrying.", attempt ) );
+      GEOS_LOG_RANK_0( GEOS_FMT( "  Attempt {} failed. Halving dt and retrying.", attempt ) );
       dt *= 0.5;
     }
   }
@@ -287,7 +287,7 @@ createAndLaunch( SurfaceElementSubRegion & subRegion,
     {
       dt = dtAccepted;     
     }
-    GEOS_LOG_RANK_0( GEOS_FMT( "-sub-step = {} completed, dt = {}, remaining dt = {}", subStep, dt, dtRemaining ) );
+    GEOS_LOG_RANK_0( GEOS_FMT( "  sub-step = {} completed, dt = {}, remaining dt = {}", subStep, dt, dtRemaining ) );
   }
 }
 

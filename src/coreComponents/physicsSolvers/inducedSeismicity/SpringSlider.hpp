@@ -18,7 +18,7 @@
 #ifndef GEOS_PHYSICSSOLVERS_INDUCED_SPRINGSLIDER_HPP
 #define GEOS_PHYSICSSOLVERS_INDUCED_SPRINGSLIDER_HPP
 
-#include "physicsSolvers/QuasiDynamicEQBase.hpp"
+#include "physicsSolvers/inducedSeismicity/QuasiDynamicEQBase.hpp"
 
 namespace geos
 {
@@ -26,10 +26,8 @@ namespace geos
 class SpringSlider : public QuasiDynamicEQBase
 {
 public:
-  /// The default nullary constructor is disabled to avoid compiler auto-generation:
   SpringSlider() = delete;
 
-  /// The constructor needs a user-defined "name" and a parent Group (to place this instance in the tree structure of classes)
   SpringSlider( const string & name,
                 Group * const parent );
 
@@ -38,30 +36,21 @@ public:
 
   static string catalogName() { return "SpringSlider"; }
 
-  /**
-   * @return Get the final class Catalog name
-   */
   virtual string getCatalogName() const override { return catalogName(); }
 
-  /// This method ties properties with their supporting mesh
   virtual void registerDataOnMesh( Group & meshBodies ) override;
 
-  struct viewKeyStruct : public PhysicsSolverBase::viewKeyStruct
-  {
-    /// Friction law name string
-    constexpr static char const * frictionLawNameString() { return "frictionLawName"; }
-  };
-
-
+  virtual real64 solverStep( real64 const & time_n,
+                             real64 const & dt,
+                             integer const cycleNumber,
+                             DomainPartition & domain ) override final;
+  struct viewKeyStruct : public QuasiDynamicEQBase::viewKeyStruct
+  {};
 
 private:
 
-  real64 updateStresses( real64 const & time_n,
-                         real64 const & dt,
-                         const int cycleNumber,
-                         DomainPartition & domain ) const override final;
-
-  virtual void postInputInitialization() override;
+  real64 updateStresses( real64 const dt,
+                         DomainPartition & domain ) const;
 
   class SpringSliderParameters
   {
