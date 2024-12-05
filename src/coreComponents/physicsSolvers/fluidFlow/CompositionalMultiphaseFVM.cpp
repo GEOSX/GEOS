@@ -36,8 +36,6 @@
 #include "mesh/mpiCommunications/CommunicationTools.hpp"
 #include "physicsSolvers/fluidFlow/FlowSolverBaseFields.hpp"
 #include "physicsSolvers/fluidFlow/CompositionalMultiphaseBaseFields.hpp"
-#include "physicsSolvers/fluidFlow/kernels/compositional/AccumulationKernel.hpp"
-#include "physicsSolvers/fluidFlow/kernels/compositional/ThermalAccumulationKernel.hpp"
 #include "physicsSolvers/fluidFlow/kernels/compositional/ResidualNormKernel.hpp"
 #include "physicsSolvers/fluidFlow/kernels/compositional/ThermalResidualNormKernel.hpp"
 #include "physicsSolvers/fluidFlow/kernels/compositional/SolutionScalingKernel.hpp"
@@ -50,10 +48,10 @@
 #include "physicsSolvers/fluidFlow/kernels/compositional/ThermalDiffusionDispersionFluxComputeKernel.hpp"
 #include "physicsSolvers/fluidFlow/kernels/compositional/StabilizedFluxComputeKernel.hpp"
 #include "physicsSolvers/fluidFlow/kernels/compositional/DissipationFluxComputeKernel.hpp"
-#include "physicsSolvers/fluidFlow/kernels/compositional/PhaseMobilityKernel.hpp"
-#include "physicsSolvers/fluidFlow/kernels/compositional/ThermalPhaseMobilityKernel.hpp"
 #include "physicsSolvers/fluidFlow/kernels/compositional/DirichletFluxComputeKernel.hpp"
 #include "physicsSolvers/fluidFlow/kernels/compositional/ThermalDirichletFluxComputeKernel.hpp"
+#include "physicsSolvers/fluidFlow/kernels/compositional/PhaseMobilityKernel.hpp"
+#include "physicsSolvers/fluidFlow/kernels/compositional/ThermalPhaseMobilityKernel.hpp"
 #include "physicsSolvers/fluidFlow/kernels/compositional/AquiferBCKernel.hpp"
 
 namespace geos
@@ -437,10 +435,10 @@ real64 CompositionalMultiphaseFVM::calculateResidualNorm( real64 const & GEOS_UN
   // step 3: second reduction across MPI ranks
 
   real64 residualNorm = 0.0;
+  array1d< real64 > globalResidualNorm;
+  globalResidualNorm.resize( numNorm );
   if( m_isThermal )
   {
-    array1d< real64 > globalResidualNorm;
-    globalResidualNorm.resize( numNorm );
     if( normType == physicsSolverBaseKernels::NormType::Linf )
     {
       physicsSolverBaseKernels::LinfResidualNormHelper::
@@ -458,8 +456,6 @@ real64 CompositionalMultiphaseFVM::calculateResidualNorm( real64 const & GEOS_UN
   }
   else
   {
-    array1d< real64 > globalResidualNorm;
-    globalResidualNorm.resize( numNorm - 1 );
     if( normType == physicsSolverBaseKernels::NormType::Linf )
     {
       physicsSolverBaseKernels::LinfResidualNormHelper::
@@ -472,11 +468,8 @@ real64 CompositionalMultiphaseFVM::calculateResidualNorm( real64 const & GEOS_UN
     }
     residualNorm = sqrt( globalResidualNorm[0] * globalResidualNorm[0] + globalResidualNorm[1] * globalResidualNorm[1] );
 
-    if( getLogLevel() >= 1 && logger::internal::rank == 0 )
-    {
-      std::cout << GEOS_FMT( "        ( Rmass Rvol ) = ( {:4.2e} {:4.2e} )",
-                             globalResidualNorm[0], globalResidualNorm[1] );
-    }
+    GEOS_LOG_LEVEL_INFO_RANK_0_NLR( logInfo::Convergence, GEOS_FMT( "        ( Rmass Rvol ) = ( {:4.2e} {:4.2e} )",
+                                                                    globalResidualNorm[0], globalResidualNorm[1] ) );
   }
 
   return residualNorm;
@@ -592,8 +585,9 @@ real64 CompositionalMultiphaseFVM::scalingForSystemSolution( DomainPartition & d
                                         getName(),
                                         globalDeltaPresMax.value,
                                         globalDeltaPresMax.location ) );
+
   GEOS_LOG_LEVEL_INFO_RANK_0( logInfo::Solution,
-                              GEOS_FMT( "        {}: Max component density change = {:.3f} (before scaling) at cell {}",
+                              GEOS_FMT( "        {}: Max component density change = {:.3f} {} (before scaling) at cell {}",
                                         getName(),
                                         globalDeltaCompDensMax.value,
                                         massUnit,

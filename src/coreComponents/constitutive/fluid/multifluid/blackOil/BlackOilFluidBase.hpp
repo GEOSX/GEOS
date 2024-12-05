@@ -144,7 +144,7 @@ protected:
   virtual void readInputDataFromTableFunctions() = 0;
 
   /**
-   * @brief Read all the PVT table provided by the user in Eclipse format
+   * @brief Read all the PVT table provided by the user in text format
    */
   virtual void readInputDataFromPVTFiles() = 0;
 
