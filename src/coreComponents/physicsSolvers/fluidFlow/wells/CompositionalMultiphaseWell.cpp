@@ -548,6 +548,7 @@ void CompositionalMultiphaseWell::outputWellDebug( real64 const time,
                                                    CRSMatrixView< real64, globalIndex const > const & localMatrix,
                                                    arrayView1d< real64 > const & localRhs )
 {
+  GEOS_UNUSED_VAR( time );
   GEOS_UNUSED_VAR( dofManager );
   GEOS_UNUSED_VAR( localMatrix );
   GEOS_UNUSED_VAR( localRhs );
@@ -564,7 +565,7 @@ void CompositionalMultiphaseWell::outputWellDebug( real64 const time,
       {
         CompositionalMultiphaseBase const & flowSolver = getParent().getGroup< CompositionalMultiphaseBase >( getFlowSolverName() );
         auto solver_names = getParent().getSubGroupsNames();
-        integer n = solver_names.size();
+        //integer n = solver_names.size();
         // Bit of a hack, cases with > 3 solvers we need to find the base solver for wells
         // Assume that solver definition order follows coupledreswell, res, and then well
         //std::string coupled_solver_name = solver_names[n-3];
@@ -576,7 +577,7 @@ void CompositionalMultiphaseWell::outputWellDebug( real64 const time,
 
         EventManager const & event = getGroupByPath< EventManager >( "/Problem/Events" );
         real64 const & ctime = event.getReference< real64 >( EventManager::viewKeyStruct::timeString() );
-        real64 const & dt = event.getReference< real64 >( EventManager::viewKeyStruct::dtString() );
+        //real64 const  dt = event.getReference< real64 >( EventManager::viewKeyStruct::dtString() );
         integer const & cycle = event.getReference< integer >( EventManager::viewKeyStruct::cycleString() );
         integer const & subevent = event.getReference< integer >( EventManager::viewKeyStruct::currentSubEventString() );
 
