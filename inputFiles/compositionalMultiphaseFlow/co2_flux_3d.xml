@@ -7,17 +7,15 @@
       logLevel="1"
       discretization="fluidTPFA"
       temperature="368.15"
-      useMass="1"
       useTotalMassEquation="0"
-      useSimpleAccumulation="1"
       targetRegions="{ region }">
       <NonlinearSolverParameters
         newtonTol="1.0e-5"
-        newtonMaxIter="100"
-        maxTimeStepCuts="5"
         lineSearchAction="None"/>
       <LinearSolverParameters
-        directParallel="0"/>
+        solverType="fgmres"
+        preconditionerType="mgr"
+        krylovTol="1.0e-6"/>
     </CompositionalMultiphaseFVM>
   </Solvers>
 
@@ -92,7 +90,7 @@
 
     <PeriodicEvent
       name="outputs"
-      timeFrequency="1e5"
+      timeFrequency="5e5"
       target="/Outputs/vtkOutput"/>
 
     <PeriodicEvent
@@ -136,7 +134,7 @@
     <PressurePorosity
       name="rockPorosity"
       defaultReferencePorosity="0.2"
-      referencePressure="0.0"
+      referencePressure="1.1e7"
       compressibility="1.0e-9"/>
     <ConstantPermeability
       name="rockPerm"
