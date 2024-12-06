@@ -29,9 +29,22 @@ namespace geos
 
 namespace logInfo
 {
+/**
+ * @brief Log information structure for output timing data
+ * @details Provides configuration for logging output operation timing information
+ */
 struct OutputTimers
 {
+  /**
+   * @brief Get the minimum log level for output timing information
+   * @return The minimum log level
+   */
   static constexpr int getMinLogLevel() { return 1; }
+
+  /**
+   * @brief Get the description of this timing category
+   * @return Description string for output timing information
+   */
   static constexpr std::string_view getDescription() { return "Output timers information"; }
 };
 }
@@ -112,7 +125,7 @@ protected:
    **/
   virtual void initializePreSubGroups() override;
 
-  // Timer used to track duration of output operations
+  /// Timer used to track duration of file writing operations
   std::chrono::system_clock::duration m_outputTimer;
 
   /// @copydoc geos::ExecutableGroup::cleanup
