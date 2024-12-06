@@ -93,12 +93,6 @@ public:
      * @param alignment The alignment of the cell (left, right, or center).
      */
     CellLayout( CellType cellType, string const & value, TableLayout::Alignment alignment );
-
-    /**
-     * @brief Sets the maximum size for the cell.
-     * @param size The maximum size to set for the cell.
-     */
-    void setMaxCellSize( size_t size );//todo supp
   };
 
   /**
@@ -413,11 +407,6 @@ private:
    */
   bool isLineBreakEnabled() const;
 
-  /**
-   * @brief Remove all subcolumn in all columns
-   * Can be used if we want to reuse a TableLayout without keep subcolumns
-   */
-  void removeSubColumn();
 
   /**
    * @return The border margin, number of spaces at both left and right table sides plus vertical character
