@@ -18,7 +18,7 @@
  */
 
 #include "VTKOutput.hpp"
-
+#include "common/MpiWrapper.hpp"
 
 #if defined(GEOS_USE_PYGEOSX)
 #include "fileIO/python/PyVTKOutputType.hpp"
@@ -55,6 +55,11 @@ VTKOutput::VTKOutput( string const & name,
     setApplyDefaultValue( 1 ).
     setInputFlag( InputFlags::OPTIONAL ).
     setDescription( "Level detail plot. Only fields with lower of equal plot level will be output." );
+
+  registerWrapper( viewKeysStruct::numberOfTargetProcesses, &m_numberOfTargetProcesses ).
+    setApplyDefaultValue( MpiWrapper::commSize() ).
+    setInputFlag( InputFlags::OPTIONAL ).
+    setDescription( "Number of output aggregate files to be written." );
 
   registerWrapper( viewKeysStruct::writeGhostCells, &m_writeGhostCells ).
     setApplyDefaultValue( 0 ).
@@ -101,6 +106,14 @@ void VTKOutput::postInputInitialization()
   m_writer.setFieldNames( m_fieldNames.toViewConst() );
   m_writer.setLevelNames( m_levelNames.toViewConst() );
   m_writer.setOnlyPlotSpecifiedFieldNamesFlag( m_onlyPlotSpecifiedFieldNames );
+
+  GEOS_ERROR_IF_LT_MSG( m_numberOfTargetProcesses, 1,
+                        GEOS_FMT( "{}: processes count cannot be less than 1.",
+                                  getWrapperDataContext( viewKeysStruct::numberOfTargetProcesses ) ) );
+  GEOS_ERROR_IF_GT_MSG( m_numberOfTargetProcesses, MpiWrapper::commSize(),
+                        GEOS_FMT( "{}: processes count cannot exceed the launched ranks count.",
+                                  getWrapperDataContext( viewKeysStruct::numberOfTargetProcesses ) ) );
+  m_writer.setNumberOfTargetProcesses( m_numberOfTargetProcesses );
 
   string const fieldNamesString = viewKeysStruct::fieldNames;
   string const onlyPlotSpecifiedFieldNamesString = viewKeysStruct::onlyPlotSpecifiedFieldNames;

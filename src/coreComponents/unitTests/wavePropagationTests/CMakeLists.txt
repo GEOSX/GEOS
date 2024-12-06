@@ -8,7 +8,9 @@ set( gtest_geosx_tests
      testWavePropagationAttenuationElastic.cpp
      testWavePropagationAttenuationAcoustic.cpp
      testWavePropagationAttenuationAcousticVTI.cpp
-     testWavePropagationAcousticFirstOrder.cpp )
+     testWavePropagationAcousticFirstOrder.cpp
+     testWavePropagationAdjoint1.cpp
+   )
 
 set( tplDependencyList ${parallelDeps} gtest )
 
