@@ -87,8 +87,8 @@ struct CFLFluxKernel
   template< integer NC >
   GEOS_HOST_DEVICE inline static void
   compute( integer const numPhases,
-           localIndex const stencilSize,
            integer const useNewGravity,
+           localIndex const stencilSize,
            real64 const dt,
            arraySlice1d< localIndex const > const seri,
            arraySlice1d< localIndex const > const sesri,
