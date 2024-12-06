@@ -8768,7 +8768,20 @@ void SolidMechanicsMPM::interpolateFTable( real64 dt, real64 time_n )
 {
   GEOS_MARK_FUNCTION;
 
+  // The time step can be changed from the stable time step if there is a plot
+  // or restart event, so we can't assume that m_fTable actually happened
+  // at t-dt.  So we compute two values of F and use that to compute Fdot
+  // using the current time step.
+
+  array1d< real64 > Fii_old(3);
   array1d< real64 > Fii_new(3);
+
+  interpolateTable( time_n - 0.001*dt, 
+                    dt,
+                    m_fTable,
+                    Fii_old,
+                    m_fTableInterpType );
+
   interpolateTable( time_n, 
                     dt,
                     m_fTable,
@@ -8779,7 +8792,7 @@ void SolidMechanicsMPM::interpolateFTable( real64 dt, real64 time_n )
   {
     if( m_stressControl[i] != 1 )
     {
-      real64 Fii_dot = ( Fii_new[i] - m_domainF[i] ) / dt;
+      real64 Fii_dot = ( Fii_new[i] - Fii_old[i] ) / (0.001*dt);
       m_domainL[i] = Fii_dot / Fii_new[i]; // L = Fdot.Finv
       m_domainF[i] = Fii_new[i];
     }
