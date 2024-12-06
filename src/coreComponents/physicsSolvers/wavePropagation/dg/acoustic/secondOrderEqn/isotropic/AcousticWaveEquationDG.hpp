@@ -97,7 +97,7 @@ public:
     static constexpr char const * pressureNp1AtReceiversString() { return "pressureNp1AtReceivers"; }
 
     static constexpr char const * sourceElemString() { return "sourceElem"; }
-    static constexpr char const * receiverElemString() { return "rcvElem"; }
+    static constexpr char const * receiverElemString() { return "receiverElem"; }
     static constexpr char const * receiverRegionString() { return "receiverRegion"; }
 
   } waveEquationViewKeys;
@@ -167,10 +167,19 @@ private:
   array1d< localIndex > m_sourceElem;
 
   /// Array containing the elements which contain a receiver
-  array1d< localIndex > m_rcvElem;
+  array1d< localIndex > m_receiverElem;
 
   /// Array containing the elements which contain the region which the receiver belongs
   array1d< localIndex > m_receiverRegion;
+
+  /// Inverse of the mass matrix in the reference element for each subregion
+  array1d< array2d< real64 > > m_referenceInvMassMatrix
+
+  /// Inverse of the mass plus damping matrix in the reference element for each boundary element
+  array3d< real64 > m_boundaryInvMassPlusDamping
+
+  /// Index for each boundary element to m_boundaryInvMassPlusDamping
+  array3d< real64 > m_indexToBoundaryMatrix
 
 };
 

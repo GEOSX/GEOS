@@ -67,21 +67,21 @@ DECLARE_FIELD( Pressure_np1,
 //               WRITE_AND_READ,
 //               "RHS" );
 
-DECLARE_FIELD( AcousticMassMatrix,
-               "acousticMassVector",
-               array2d< real32 >,
-               0,
-               NOPLOT,
-               WRITE_AND_READ,
-               "Diagonal of the Mass Matrix." );
-
-DECLARE_FIELD( StiffnessVector,
-               "stiffnessVector",
-               array2d< real32 >,
-               0,
-               NOPLOT,
-               WRITE_AND_READ,
-               "Stiffness vector contains R_h*Pressure_n." );
+//DECLARE_FIELD( AcousticMassMatrix,
+//               "acousticMassVector",
+//               array2d< real32 >,
+//               0,
+//               NOPLOT,
+//               WRITE_AND_READ,
+//               "Diagonal of the Mass Matrix." );
+//
+//DECLARE_FIELD( StiffnessVector,
+//               "stiffnessVector",
+//               array2d< real32 >,
+//               0,
+//               NOPLOT,
+//               WRITE_AND_READ,
+//               "Stiffness vector contains R_h*Pressure_n." );
 
 //DECLARE_FIELD( DampingVector,
 //               "dampingVector",
@@ -115,13 +115,29 @@ DECLARE_FIELD( AcousticFreeSurfaceFaceIndicator,
                WRITE_AND_READ,
                "Free surface indicator, 1 if a face is on free surface 0 otherwise." );
 
-DECLARE_FIELD( AcousticFreeSurfaceNodeIndicator,
-               "acousticFreeSurfaceNodeIndicator",
-               array1d< localIndex >,
-               0,
+DECLARE_FIELD( ElementToOpposite,
+               "elementToOpposite",
+               array2d< localIndex >,
+               -1,
                NOPLOT,
                WRITE_AND_READ,
-               "Free surface indicator, 1 if a node is on free surface 0 otherwise." );
+               "Map from elements to the neighbor opposite to each vertex. -1 for boundary, -2 for free surface" );
+
+DECLARE_FIELD( ElementToOppositePermutation,
+               "elementToOppositePermutation",
+               array2d< unsigned short >,
+               -1,
+               NOPLOT,
+               WRITE_AND_READ,
+               "Map from elements to the permutation of the neighboring element, opposite to each vertex." );
+
+//DECLARE_FIELD( AcousticFreeSurfaceNodeIndicator,
+//               "acousticFreeSurfaceNodeIndicator",
+//               array1d< localIndex >,
+//               0,
+//               NOPLOT,
+//               WRITE_AND_READ,
+//               "Free surface indicator, 1 if a node is on free surface 0 otherwise." );
 
 }
 

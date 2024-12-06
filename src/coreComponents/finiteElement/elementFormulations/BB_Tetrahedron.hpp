@@ -169,7 +169,7 @@ public:
   static void calcN( localIndex const,
                      real64 (&)[numNodes] )
   {
-    GEOS_ERROR( "Bernstein-Bézier basis is modal, not nodal." );
+    GEOS_ERROR( "Bernstein-Bézier basis is modal, not nodal. No quadrature points are defined." );
   }
 
   /**
@@ -491,7 +491,7 @@ public:
                            real64 const (&X)[numNodes][3],
                            real64 ( &gradN )[numNodes][3] )
   {
-    GEOS_ERROR( "Bernstein-Bézier basis is modal, not nodal." );
+    GEOS_ERROR( "Bernstein-Bézier basis is modal, not nodal. No quadrature points are defined." );
     return 0;
   }
   /**

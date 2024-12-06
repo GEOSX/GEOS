@@ -16,13 +16,10 @@
  * @file AcousticFirstOrderWaveEquationSEMKernel.hpp
  */
 
-#ifndef GEOS_PHYSICSSOLVERS_WAVEPROPAGATION_ACOUSTICFIRSTTORDERWAVEEQUATIONSEMKERNEL_HPP_
-#define GEOS_PHYSICSSOLVERS_WAVEPROPAGATION_ACOUSTICFIRSTTORDERWAVEEQUATIONSEMKERNEL_HPP_
+#ifndef GEOS_PHYSICSSOLVERS_WAVEPROPAGATION_ACOUSTICWAVEEQUATIONDGKERNEL_HPP_
+#define GEOS_PHYSICSSOLVERS_WAVEPROPAGATION_ACOUSTICWAVEEQUATIONDGKERNEL_HPP_
 
 #include "finiteElement/kernelInterface/KernelBase.hpp"
-#include "WaveSolverUtils.hpp"
-
-
 
 namespace geos
 {
@@ -55,7 +52,7 @@ struct PrecomputeSourceAndReceiverKernel
    * @param[out] sourceConstants constant part of the source terms
    * @param[in] receiverCoordinates coordinates of the receiver terms
    * @param[out] receiverIsLocal flag indicating whether the receiver is local or not
-   * @param[out] rcvElem element where a receiver is located
+   * @param[out] receiverElem element where a receiver is located
    * @param[out] receiverNodeIds indices of the nodes of the element where the receiver is located
    * @param[out] receiverConstants constant part of the receiver term
    * @param[out] sourceValue value of the temporal source (eg. Ricker)
@@ -64,17 +61,20 @@ struct PrecomputeSourceAndReceiverKernel
    * @param[in] rickerOrder order of the Ricker wavelet
    */
   template< typename EXEC_POLICY, typename FE_TYPE >
+  GEOS_FORCE_INLINE
+  GEOS_HOST_DEVICE
   static void
   launch( localIndex const size,
-          localIndex const numNodesPerElem,
-          localIndex const numFacesPerElem,
-          arrayView2d< real64 const, nodes::REFERENCE_POSITION_USD > const X,
+          ArrayOfArraysView< localIndex const > const baseFacesToNodes,
+          arrayView2d< real64 const, nodes::REFERENCE_POSITION_USD > const baseNodeCoords,
+          arrayView1d< globalIndex const > const baseNodeLocalToGlobal,
+          arrayView1d< globalIndex const > const elementLocalToGlobal,
+          ArrayOfArraysView< localIndex const > const baseNodesToElements,
+          arrayView2d< localIndex const, cells::NODE_MAP_USD > const & baseElemsToNodes,
           arrayView1d< integer const > const elemGhostRank,
           arrayView2d< localIndex const, cells::NODE_MAP_USD > const & elemsToNodes,
           arrayView2d< localIndex const > const elemsToFaces,
           arrayView2d< real64 const > const & elemCenter,
-          arrayView2d< real64 const > const faceNormal,
-          arrayView2d< real64 const > const faceCenter,
           arrayView2d< real64 const > const sourceCoordinates,
           arrayView1d< localIndex > const sourceIsAccessible,
           arrayView1d< localIndex > const sourceElem,
@@ -82,13 +82,9 @@ struct PrecomputeSourceAndReceiverKernel
           arrayView2d< real64 > const sourceConstants,
           arrayView2d< real64 const > const receiverCoordinates,
           arrayView1d< localIndex > const receiverIsLocal,
-          arrayView1d< localIndex > const rcvElem,
+          arrayView1d< localIndex > const receiverElem,
           arrayView2d< localIndex > const receiverNodeIds,
-          arrayView2d< real64 > const receiverConstants,
-          arrayView2d< real32 > const sourceValue,
-          real64 const dt,
-          real32 const timeSourceFrequency,
-          localIndex const rickerOrder )
+          arrayView2d< real64 > const receiverConstants )
   {
 
     forAll< EXEC_POLICY >( size, [=] GEOS_HOST_DEVICE ( localIndex const k )
@@ -107,39 +103,37 @@ struct PrecomputeSourceAndReceiverKernel
           real64 const coords[3] = { sourceCoordinates[isrc][0],
                                      sourceCoordinates[isrc][1],
                                      sourceCoordinates[isrc][2] };
-
           bool const sourceFound =
-            WaveSolverUtils::locateSourceElement( numFacesPerElem,
-                                                  center,
-                                                  faceNormal,
-                                                  faceCenter,
-                                                  elemsToFaces[k],
-                                                  coords );
-
+            computationalGeometry::isPointInsideConvexPolyhedronRobust( k,
+                                                                        baseNodeCoords,
+                                                                        elemsToFaces,
+                                                                        baseFacesToNodes,
+                                                                        baseNodesToElements,
+                                                                        baseNodeLocalToGlobal,
+                                                                        elementLocalToGlobal,
+                                                                        center,
+                                                                        coords );
           if( sourceFound )
           {
-            real64 coordsOnRefElem[3]{};
-
-            WaveSolverUtils::computeCoordinatesOnReferenceElement< FE_TYPE >( coords,
-                                                                              elemsToNodes[k],
-                                                                              X,
-                                                                              coordsOnRefElem );
-
             sourceIsAccessible[isrc] = 1;
             sourceElem[isrc] = k;
             real64 Ntest[FE_TYPE::numNodes];
-            FE_TYPE::calcN( coordsOnRefElem, Ntest );
+            constexpr localIndex numNodesPerElem = FE_TYPE::numNodes;
+
+            real64 xLocal[4][3];
+            for( localIndex a=0; a<4; ++a )
+            {
+              for( localIndex i=0; i<3; ++i )
+              {
+                xLocal[a][i] = baseNodeCoords( baseElemsToNodes( k, a ), i );
+              }
+            }
+            FE_TYPE::calcN( xLocal, coords, Ntest );
 
             for( localIndex a = 0; a < numNodesPerElem; ++a )
             {
               sourceNodeIds[isrc][a] = elemsToNodes[k][a];
               sourceConstants[isrc][a] = Ntest[a];
-            }
-
-            for( localIndex cycle = 0; cycle < sourceValue.size( 0 ); ++cycle )
-            {
-              real64 const time = cycle*dt;
-              sourceValue[cycle][isrc] = WaveSolverUtils::evaluateRicker( time, timeSourceFrequency, rickerOrder );
             }
           }
         }
@@ -157,26 +151,34 @@ struct PrecomputeSourceAndReceiverKernel
                                      receiverCoordinates[ircv][1],
                                      receiverCoordinates[ircv][2] };
 
-          real64 coordsOnRefElem[3]{};
           bool const receiverFound =
-            WaveSolverUtils::locateSourceElement( numFacesPerElem,
-                                                  center,
-                                                  faceNormal,
-                                                  faceCenter,
-                                                  elemsToFaces[k],
-                                                  coords );
+            computationalGeometry::isPointInsideConvexPolyhedronRobust( k,
+                                                                        baseNodeCoords,
+                                                                        elemsToFaces,
+                                                                        baseFacesToNodes,
+                                                                        baseNodesToElements,
+                                                                        baseNodeLocalToGlobal,
+                                                                        elementLocalToGlobal,
+                                                                        center,
+                                                                        coords );
 
           if( receiverFound && elemGhostRank[k] < 0 )
           {
-            WaveSolverUtils::computeCoordinatesOnReferenceElement< FE_TYPE >( coords,
-                                                                              elemsToNodes[k],
-                                                                              X,
-                                                                              coordsOnRefElem );
             receiverIsLocal[ircv] = 1;
-            rcvElem[ircv] = k;
+            receiverElem[ircv] = k;
 
             real64 Ntest[FE_TYPE::numNodes];
-            FE_TYPE::calcN( coordsOnRefElem, Ntest );
+            constexpr localIndex numNodesPerElem = FE_TYPE::numNodes;
+
+            real64 xLocal[4][3];
+            for( localIndex a=0; a< 4; ++a )
+            {
+              for( localIndex i=0; i<3; ++i )
+              {
+                xLocal[a][i] = baseNodeCoords( baseElemsToNodes( k, a ), i );
+              }
+            }
+            FE_TYPE::calcN( xLocal, coords, Ntest );
 
             for( localIndex a = 0; a < numNodesPerElem; ++a )
             {
@@ -192,144 +194,236 @@ struct PrecomputeSourceAndReceiverKernel
   }
 };
 
-template< typename FE_TYPE >
-struct PressureComputation
+struct PrecomputeNeighborhoodKernel
 {
 
-  PressureComputation( FE_TYPE const & finiteElement )
-    : m_finiteElement( finiteElement )
-  {}
-
   /**
-   * @brief Launches the computation of the pressure for one iteration
-   * @tparam EXEC_POLICY the execution policy
-   * @tparam ATOMIC_POLICY the atomic policy
-   * @param[in] size the number of cells in the subRegion
-   * @param[in] X coordinates of the nodes
-   * @param[in] p_nm1 pressure  array at time n-1 (only used here)
-   * @param[in] p_n pressure array at time n (only used here)
-   * @param[in] sourceConstants constant part of the source terms
-   * @param[in] sourceValue value of the temporal source (eg. Ricker)
-   * @param[in] sourceIsAccessible flag indicating whether the source is accessible or not
-   * @param[in] sourceElem element where a source is located
-   * @param[in] cycleNumber the number of cycle
-   * @param[in] dt time-step
-   * @param[out] p_np1 pressure array at time n+1 (updated here)
+   * @brief Launches the precomputation of the element neighborhood information needed by DG
+   * @tparam EXEC_POLICY execution policy
+   * @tparam FE_TYPE finite element type
+   * @param[in]
+   * @param[out]
    */
-  //List is not complete, it will need several GEOS maps to add
-  template< typename EXEC_POLICY, typename ATOMIC_POLICY >
-  void
-  launch( localIndex const size,
-          localindex const numFacesPerElem
-          arrayView2d< real64 const, nodes::REFERENCE_POSITION_USD > const X,
-          arrayView2d< real32 const > const p_n,
-          arrayView2d< real32 const > const p_nm1,
-          arrayView2d< real64 const > const sourceConstants,
-          arrayView2d< real32 const > const sourceValue,
-          arrayView1d< localIndex const > const sourceIsAccessible,
-          arrayView1d< localIndex const > const sourceElem,
-          real64 const dt,
-          integer const cycleNumber,
-          arrayView2d< real32 > const p_np1 )
-
+  template< typename EXEC_POLICY, typename FE_TYPE >
+  GEOS_FORCE_INLINE
+  GEOS_HOST_DEVICE
+  static void
+  launch( 
+          arrayView2d< localIndex const, cells::NODE_MAP_USD > const & elemsToNodes,
+          arrayView2d< localIndex const > const & elemsToFaces,
+          arrayView2d< localIndex const > const & facesToElems,
+          ArrayOfArraysView< localIndex const > const facesToNodes,
+          arrayView1d< localIndex const > const & freeSurfaceFaceIndicator,
+          arrayView2d< localIndex > const elemsToOpposite,
+          arrayView2d< short int > const elemsToOppositePermutation )
   {
 
-    //For now lots of comments with ideas  + needed array to add to the method prototype
-    forAll< EXEC_POLICY >( size, [=] GEOS_HOST_DEVICE ( localIndex const k )
+    forAll< EXEC_POLICY >( size, [=] GEOS_HOST_DEVICE ( localIndex const k1 )
     {
-      constexpr localIndex numNodesPerElem = FE_TYPE::numNodes;
-      constexpr localIndex numQuadraturePointsPerElem = FE_TYPE::numQuadraturePoints;
-
-      real64 xLocal[numNodesPerElem][3];
-      for( localIndex a=0; a< numNodesPerElem; ++a )
+      std::vector< localIndex > vertices = { elemsToNodes( k1, 0 ), elemsToNodes( k1, 1 ), elemsToNodes( k1, 2 ), elemsToNodes( k1, 3 ) };
+ 
+      for( int i = 0; i < 4; i++ )
       {
-        for( localIndex i=0; i<3; ++i )
-        {
-          xLocal[a][i] = X( elemsToNodes( k, a ), i );
-        }
+         std::vector< localIndex > k1OrderedVertices;
+         localIndex f = elemsToFaces( k1, i );
+         std::vector< localIndex > faceVertices = { facesToNodes( f, 0 ), facesToNodes( f, 1 ), facesToNodes( f, 2 ) };
+         // find neighboring element, if any
+         localIndex k2 = facesToElems( f, 0 );
+         if( k2 == k1 )
+         {
+           k2 = facesToElems( f, 1 );
+         }
+         // find opposite vertex in first element
+         std::unordered_set<int> faceSet(faceVertices.begin(), faceVertices.end());
+         int o1 = -1;
+         for ( localIndex vertex : vertices) {
+           if (faceSet.find(vertex) == faceSet.end()) {
+             o1 = vertex;
+           }
+           else
+           {
+             k1OrderedVertices.push_back( vertex );
+           }
+         }
+         GEOS_ERROR_IF( o1 < 0, "Topological error in mesh: a face and its adjacent element share all vertices.");
+         if( k2 < 0 )
+         {
+           // boundary element, either free surface, or absorbing boundary
+           elemsToOpposite( k1, o1 ) = freeSurfaceFaceIndicator( f ) == 1 ? -2 : -1;  
+           elemsToOppositePermutation( k1, o1 ) = 0;
+         }
+         else
+         {
+           elemsToOpposite( k1, o ) = k2;
+           std::vector< localIndex > oppositeElemVertices = { elemsToNodes( k2, 0 ), elemsToNodes( k2, 1 ), elemsToNodes( k2, 2 ), elemsToNodes( k2, 3 ) };
+           std::vector< localIndex > k2OrderedVertices;
+           // find opposite vertex in second element
+           int o2 = -1;
+           for ( localIndex vertex : oppositeElemVerties) {
+             if (faceSet.find(vertex) == faceSet.end()) {
+               o2 = vertex;
+             }
+             else
+             {
+               k2OrderedVertices.push_back( vertex );
+             }
+           }
+           GEOS_ERROR_IF( o2 < 0, "Topological error in mesh: a face and its adjacent element share all vertices.");
+           // compute permutation
+           unsigned short permutation = 0;
+           int c = 1;
+           for (localIndex k2OrderedVertex : k2OrderedVertices) {
+               auto it = std::find(k1OrderedVertices.begin(), k1OrderedVertices.end(), k2OrderedVertex);
+               int position = it - vertices.begin();
+               permutation = permutation + c * position;
+               c = c * 3;
+           }
+           elemsToOppositePermutation( k1, o ) = permutation;
+           
+         }
       }
-
-      real32 flow[numNodesPerElem]  = {0.0};
-
-
-      // Volume  + fluxes computation integration
-      for( localIndex q=0; q<numQuadraturePointsPerElem; ++q )
-      {
-
-
-        //Stiffness terms
-        m_finiteElement.template computeStiffnessTerm( q, xLocal, [&] ( int i, int j, real64 val )
-        {
-          //Maybe reverse j and i
-          flow[i] += val * p_n[k][j];
-        } );
-
-        //Fluxes
-        for( localIndex f = 0; f < numFacesPerElem; ++f )
-        {
-          //Possible way:
-          //Get the global number of face using elemeToFaces :
-          localIndex face_glob = elemToFaces[k][f];
-          //Use faceToElemIndex map to know which element shared this global face: faceToElemIndex is a 2d array which knowing a face and a
-          // index between 0 and 1 can give you the two
-          // element which share the face and if you get -1 it means that the element will be in the boundary.
-          // Initialize the storage value for contributions: 
-          real32 fp = 0.0;
-          for( localIndex m = 0; m < 2; ++m )
-          {
-            localIndex elem = faceToElemIndex[face_glob][m];
-            //We start by the test on the boundaries to skip it directly:
-            if( elem == -1 )
-            {
-              //Nothing we continue the loop
-            }
-            else if( elem == k )
-            {
-              //Here we compute the fluxes part corresponding to the element itself (the (K,K) part seen in the latex document). We can both
-              // compute the "classical" flux part + the penalization one:
-              //PS: Not sure about how to include the normals so I'll just put "normals" (surely missing something with the gradient inside
-              // the flux matrix)
-              // Inside the matrix computation: we need the volumic Jacobian (its inverse) and the surface determinant. Due to the
-              // fact that we take the inverse of the jacobian
-              // we will have the ratio surface/volume.
-
-              m_finiteElement.template computeKKFluxMatrix(q,xLocal,f [&] (int i, int j, real64 val)
-              {
-                fp += 0.5* val *  p_n[k][i] + gamma[k]* val * p_n[k][i];
-              //Needs normals at some point 
-              //flow[j] += fp*faceNormal
-              } );
-            }
-            else
-            {
-              //It remains the case where we look at the neighbour element and we need to add the (K,L) contribution.
-              //It will be transparent here, but inside the mathematical computation we need to be careful on which degrees of freedom we
-              // send back for the pressure as we get the contribution
-              //of the neighbour so we need to get the correct dof (can be taken in account inside the math stuff)
-              m_finiteElement.template computeKLFluxMatrix(q, xLocal,f [&] (int i, int j, real32 val)
-              {
-                fp += 0.5* val * p_n[k][i] - gamma[k]* val * p_n[elem][j];
-                //Again, needs normals at some point
-                //flow[j] += fp*normals
-              } );
-            }
-          }
-
-        }
-
-
-
-      }
-
     } );
-
-
   }
-
-  /// The finite element space/discretization object for the element type in the subRegion
-  FE_TYPE const & m_finiteElement;
-
 };
+
+//emplate< typename FE_TYPE >
+//truct PressureComputation
+//
+//
+// PressureComputation( FE_TYPE const & finiteElement )
+//   : m_finiteElement( finiteElement )
+// {}
+//
+// /**
+//  * @brief Launches the computation of the pressure for one iteration
+//  * @tparam EXEC_POLICY the execution policy
+//  * @tparam ATOMIC_POLICY the atomic policy
+//  * @param[in] size the number of cells in the subRegion
+//  * @param[in] X coordinates of the nodes
+//  * @param[in] p_nm1 pressure  array at time n-1 (only used here)
+//  * @param[in] p_n pressure array at time n (only used here)
+//  * @param[in] sourceConstants constant part of the source terms
+//  * @param[in] sourceValue value of the temporal source (eg. Ricker)
+//  * @param[in] sourceIsAccessible flag indicating whether the source is accessible or not
+//  * @param[in] sourceElem element where a source is located
+//  * @param[in] cycleNumber the number of cycle
+//  * @param[in] dt time-step
+//  * @param[out] p_np1 pressure array at time n+1 (updated here)
+//  */
+// //List is not complete, it will need several GEOS maps to add
+// template< typename EXEC_POLICY, typename ATOMIC_POLICY >
+// void
+// launch( localIndex const size,
+//         localIndex const numFacesPerElem,
+//         arrayView2d< real64 const, nodes::REFERENCE_POSITION_USD > const X,
+//         arrayView2d< real32 const > const p_n,
+//         arrayView2d< real32 const > const p_nm1,
+//         arrayView2d< real64 const > const sourceConstants,
+//         arrayView2d< real32 const > const sourceValue,
+//         arrayView1d< localIndex const > const sourceIsAccessible,
+//         arrayView1d< localIndex const > const sourceElem,
+//         real64 const dt,
+//         integer const cycleNumber,
+//         arrayView2d< real32 > const p_np1 )
+//
+// {
+//
+//   //For now lots of comments with ideas  + needed array to add to the method prototype
+//   forAll< EXEC_POLICY >( size, [=] GEOS_HOST_DEVICE ( localIndex const k )
+//   {
+//     constexpr localIndex numNodesPerElem = FE_TYPE::numNodes;
+//     constexpr localIndex numQuadraturePointsPerElem = FE_TYPE::numQuadraturePoints;
+//
+//     real64 xLocal[numNodesPerElem][3];
+//     for( localIndex a=0; a< numNodesPerElem; ++a )
+//     {
+//       for( localIndex i=0; i<3; ++i )
+//       {
+//         xLocal[a][i] = X( elemsToNodes( k, a ), i );
+//       }
+//     }
+//
+//     real32 flow[numNodesPerElem]  = {0.0};
+//
+//
+//     // Volume  + fluxes computation integration
+//     for( localIndex q=0; q<numQuadraturePointsPerElem; ++q )
+//     {
+//
+//
+//       //Stiffness terms
+//       m_finiteElement.template computeStiffnessTerm( q, xLocal, [&] ( int i, int j, real64 val )
+//       {
+//         //Maybe reverse j and i
+//         flow[i] += val * p_n[k][j];
+//       } );
+//
+//       //Fluxes
+//       for( localIndex f = 0; f < numFacesPerElem; ++f )
+//       {
+//         //Possible way:
+//         //Get the global number of face using elemeToFaces :
+//         localIndex face_glob = elemToFaces[k][f];
+//         //Use faceToElemIndex map to know which element shared this global face: faceToElemIndex is a 2d array which knowing a face and a
+//         // index between 0 and 1 can give you the two
+//         // element which share the face and if you get -1 it means that the element will be in the boundary.
+//         // Initialize the storage value for contributions: 
+//         real32 fp = 0.0;
+//         for( localIndex m = 0; m < 2; ++m )
+//         {
+//           localIndex elem = faceToElemIndex[face_glob][m];
+//           //We start by the test on the boundaries to skip it directly:
+//           if( elem == -1 )
+//           {
+//             //Nothing we continue the loop
+//           }
+//           else if( elem == k )
+//           {
+//             //Here we compute the fluxes part corresponding to the element itself (the (K,K) part seen in the latex document). We can both
+//             // compute the "classical" flux part + the penalization one:
+//             //PS: Not sure about how to include the normals so I'll just put "normals" (surely missing something with the gradient inside
+//             // the flux matrix)
+//             // Inside the matrix computation: we need the volumic Jacobian (its inverse) and the surface determinant. Due to the
+//             // fact that we take the inverse of the jacobian
+//             // we will have the ratio surface/volume.
+//
+//             m_finiteElement.template computeKKFluxMatrix(q,xLocal,f [&] (int i, int j, real64 val)
+//             {
+//               fp += 0.5* val *  p_n[k][i] + gamma[k]* val * p_n[k][i];
+//             //Needs normals at some point 
+//             //flow[j] += fp*faceNormal
+//             } );
+//           }
+//           else
+//           {
+//             //It remains the case where we look at the neighbour element and we need to add the (K,L) contribution.
+//             //It will be transparent here, but inside the mathematical computation we need to be careful on which degrees of freedom we
+//             // send back for the pressure as we get the contribution
+//             //of the neighbour so we need to get the correct dof (can be taken in account inside the math stuff)
+//             m_finiteElement.template computeKLFluxMatrix(q, xLocal,f [&] (int i, int j, real32 val)
+//             {
+//               fp += 0.5* val * p_n[k][i] - gamma[k]* val * p_n[elem][j];
+//               //Again, needs normals at some point
+//               //flow[j] += fp*normals
+//             } );
+//           }
+//         }
+//
+//       }
+//
+//
+//
+//     }
+//
+//   } );
+//
+//
+// }
+//
+// /// The finite element space/discretization object for the element type in the subRegion
+// FE_TYPE const & m_finiteElement;
+//
+//;
 
 } // namespace AcousticWaveEquationDGKernels
 
