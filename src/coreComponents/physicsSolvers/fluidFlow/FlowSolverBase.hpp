@@ -100,9 +100,9 @@ public:
    */
   void updateStencilWeights( DomainPartition & domain ) const;
 
-  void enableFixedStressPoromechanicsUpdate();
+  void enableFixedStressPoromechanicsUpdate() { m_isFixedStressPoromechanicsUpdate = true; }
 
-  void enableJumpStabilization();
+  void enableJumpStabilization() { m_isJumpStabilized = true; }
 
   void updatePorosityAndPermeability( CellElementSubRegion & subRegion ) const;
 
@@ -113,6 +113,42 @@ public:
    * @param[in] domain the domain partition
    */
   virtual void saveSequentialIterationState( DomainPartition & domain ) override;
+
+  integer & isThermal() { return m_isThermal; }
+
+  /**
+   * @return The unit in which we evaluate the amount of fluid per element (Mass or Mole).
+   */
+  virtual units::Unit getMassUnit() const { return units::Unit::Mass; }
+
+  /**
+   * @brief Function to activate the flag allowing negative pressure
+   */
+  void allowNegativePressure() { m_allowNegativePressure = 1; }
+
+  /**
+   * @brief Utility function to keep the flow variables during a time step (used in poromechanics simulations)
+   * @param[in] keepVariablesConstantDuringInitStep flag to tell the solver to freeze its primary variables during a time step
+   * @detail This function is meant to be called by a specific task before/after the initialization step
+   */
+  void setKeepVariablesConstantDuringInitStep( bool const keepVariablesConstantDuringInitStep )
+  { m_keepVariablesConstantDuringInitStep = keepVariablesConstantDuringInitStep; }
+
+  virtual bool checkSequentialSolutionIncrements( DomainPartition & domain ) const override;
+
+  void enableLaggingFractureStencilWeightsUpdate(){ m_isLaggingFractureStencilWeightsUpdate = 1; };
+
+  real64 sumAquiferFluxes( BoundaryStencil const & stencil,
+                           AquiferBoundaryCondition::KernelWrapper const & aquiferBCWrapper,
+                           ElementViewConst< arrayView1d< real64 const > > const & pres,
+                           ElementViewConst< arrayView1d< real64 const > > const & presOld,
+                           ElementViewConst< arrayView1d< real64 const > > const & gravCoef,
+                           real64 const & timeAtBeginningOfStep,
+                           real64 const & dt );
+
+  virtual void initializeFluidState( MeshLevel & mesh, const arrayView1d< const string > & regionNames ) { GEOS_UNUSED_VAR( mesh, regionNames ); }
+
+  virtual void initializeThermalState( MeshLevel & mesh, const arrayView1d< const string > & regionNames ) { GEOS_UNUSED_VAR( mesh, regionNames ); }
 
   /**
    * @brief For each equilibrium initial condition, loop over all the target cells and compute the min/max elevation
@@ -139,39 +175,6 @@ public:
                                            DomainPartition & domain, // cannot be const...
                                            std::map< string, localIndex > const & bcNameToBcId,
                                            arrayView1d< globalIndex > const & bcAllSetsSize ) const;
-
-  integer & isThermal() { return m_isThermal; }
-
-  /**
-   * @return The unit in which we evaluate the amount of fluid per element (Mass or Mole).
-   */
-  virtual units::Unit getMassUnit() const
-  { return units::Unit::Mass; }
-
-  /**
-   * @brief Function to activate the flag allowing negative pressure
-   */
-  void allowNegativePressure() { m_allowNegativePressure = 1; }
-
-  /**
-   * @brief Utility function to keep the flow variables during a time step (used in poromechanics simulations)
-   * @param[in] keepVariablesConstantDuringInitStep flag to tell the solver to freeze its primary variables during a time step
-   * @detail This function is meant to be called by a specific task before/after the initialization step
-   */
-  void setKeepVariablesConstantDuringInitStep( bool const keepVariablesConstantDuringInitStep )
-  { m_keepVariablesConstantDuringInitStep = keepVariablesConstantDuringInitStep; }
-
-  virtual bool checkSequentialSolutionIncrements( DomainPartition & domain ) const override;
-
-  void enableLaggingFractureStencilWeightsUpdate(){ m_isLaggingFractureStencilWeightsUpdate = 1; };
-
-  real64 sumAquiferFluxes( BoundaryStencil const & stencil,
-                           AquiferBoundaryCondition::KernelWrapper const & aquiferBCWrapper,
-                           ElementViewConst< arrayView1d< real64 const > > const & pres,
-                           ElementViewConst< arrayView1d< real64 const > > const & presOld,
-                           ElementViewConst< arrayView1d< real64 const > > const & gravCoef,
-                           real64 const & timeAtBeginningOfStep,
-                           real64 const & dt );
 
 protected:
 
@@ -206,6 +209,16 @@ protected:
   virtual void initializePreSubGroups() override;
 
   virtual void initializePostInitialConditionsPreSubGroups() override;
+
+  void initializeState( DomainPartition & domain );
+
+  virtual void computeHydrostaticEquilibrium( DomainPartition & domain ) { GEOS_UNUSED_VAR( domain ); }
+
+  void initializePorosityAndPermeability( MeshLevel & mesh, arrayView1d< string const > const & regionNames );
+
+  void initializeHydraulicAperture( MeshLevel & mesh, const arrayView1d< const string > & regionNames );
+
+  void saveInitialPressureAndTemperature( MeshLevel & mesh, const arrayView1d< const string > & regionNames );
 
   virtual void setConstitutiveNamesCallSuper( ElementSubRegionBase & subRegion ) const override;
 

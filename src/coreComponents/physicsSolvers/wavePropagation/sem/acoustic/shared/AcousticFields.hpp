@@ -59,13 +59,13 @@ DECLARE_FIELD( Pressure_np1,
                WRITE_AND_READ,
                "Scalar pressure at time n+1." );
 
-DECLARE_FIELD( PressureDoubleDerivative,
-               "pressureDoubleDerivative",
+DECLARE_FIELD( PressureForward,
+               "pressureForward",
                array1d< real32 >,
                0,
                NOPLOT,
                WRITE_AND_READ,
-               "Double derivative of the pressure for each node to compute the gradient" );
+               "Pressure field from forward pass on each node to compute the gradient" );
 
 DECLARE_FIELD( Velocity_x,
                "velocity_x",
@@ -98,6 +98,14 @@ DECLARE_FIELD( PartialGradient,
                NOPLOT,
                WRITE_AND_READ,
                "Partiel gradient computed during backward propagation" );
+
+DECLARE_FIELD( PartialGradient2,
+               "partialGradient2",
+               array1d< real32 >,
+               0,
+               NOPLOT,
+               WRITE_AND_READ,
+               "Partial gradient for density/velocity computed during backward propagation" );
 
 DECLARE_FIELD( ForcingRHS,
                "rhs",
