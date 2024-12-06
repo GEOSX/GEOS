@@ -78,7 +78,7 @@ void AcousticWaveEquationSEM::registerDataOnMesh( Group & meshBodies )
     nodeManager.registerField< acousticfields::Pressure_nm1,
                                acousticfields::Pressure_n,
                                acousticfields::Pressure_np1,
-                               acousticfields::PressureDoubleDerivative,
+                               acousticfields::PressureForward,
                                acousticfields::ForcingRHS,
                                acousticfields::AcousticMassVector,
                                acousticfields::DampingVector,
@@ -107,6 +107,7 @@ void AcousticWaveEquationSEM::registerDataOnMesh( Group & meshBodies )
       subRegion.registerField< acousticfields::AcousticVelocity >( getName() );
       subRegion.registerField< acousticfields::AcousticDensity >( getName() );
       subRegion.registerField< acousticfields::PartialGradient >( getName() );
+      subRegion.registerField< acousticfields::PartialGradient2 >( getName() );
     } );
 
   } );
@@ -322,6 +323,8 @@ void AcousticWaveEquationSEM::initializePostInitialConditionsPreSubGroups()
       arrayView1d< real32 > grad = elementSubRegion.getField< acousticfields::PartialGradient >();
 
       grad.zero();
+      arrayView1d< real32 > grad2 = elementSubRegion.getField< acousticfields::PartialGradient2 >();
+      grad2.zero();
 
       finiteElement::FiniteElementDispatchHandler< SEM_FE_TYPES >::dispatch3D( fe, [&] ( auto const finiteElement )
       {
@@ -928,43 +931,35 @@ real64 AcousticWaveEquationSEM::explicitStepForward( real64 const & time_n,
   {
     NodeManager & nodeManager = mesh.getNodeManager();
 
-    arrayView1d< real32 > const p_nm1 = nodeManager.getField< acousticfields::Pressure_nm1 >();
     arrayView1d< real32 > const p_n = nodeManager.getField< acousticfields::Pressure_n >();
-    arrayView1d< real32 > const p_np1 = nodeManager.getField< acousticfields::Pressure_np1 >();
 
     if( computeGradient && cycleNumber >= 0 )
     {
-
-      arrayView1d< real32 > const p_dt2 = nodeManager.getField< acousticfields::PressureDoubleDerivative >();
 
       if( m_enableLifo )
       {
         if( !m_lifo )
         {
           int const rank = MpiWrapper::commRank( MPI_COMM_GEOS );
-          std::string lifoPrefix = GEOS_FMT( "lifo/rank_{:05}/pdt2_shot{:06}", rank, m_shotIndex );
-          m_lifo = std::make_unique< LifoStorage< real32, localIndex > >( lifoPrefix, p_dt2, m_lifoOnDevice, m_lifoOnHost, m_lifoSize );
+          std::string lifoPrefix = GEOS_FMT( "lifo/rank_{:05}/p_forward_shot{:06}", rank, m_shotIndex );
+          m_lifo = std::make_unique< LifoStorage< real32, localIndex > >( lifoPrefix, p_n, m_lifoOnDevice, m_lifoOnHost, m_lifoSize );
         }
 
         m_lifo->pushWait();
       }
-      forAll< EXEC_POLICY >( nodeManager.size(), [=] GEOS_HOST_DEVICE ( localIndex const nodeIdx )
-      {
-        p_dt2[nodeIdx] = (p_np1[nodeIdx] - 2*p_n[nodeIdx] + p_nm1[nodeIdx]) / pow( dt, 2 );
-      } );
 
       if( m_enableLifo )
       {
         // Need to tell LvArray data is on GPU to avoir HtoD copy
-        p_dt2.move( LvArray::MemorySpace::cuda, false );
-        m_lifo->pushAsync( p_dt2 );
+        p_n.move( LvArray::MemorySpace::cuda, false );
+        m_lifo->pushAsync( p_n );
       }
       else
       {
         GEOS_MARK_SCOPE ( DirectWrite );
-        p_dt2.move( LvArray::MemorySpace::host, false );
+        p_n.move( LvArray::MemorySpace::host, false );
         int const rank = MpiWrapper::commRank( MPI_COMM_GEOS );
-        std::string fileName = GEOS_FMT( "lifo/rank_{:05}/pressuredt2_{:06}_{:08}.dat", rank, m_shotIndex, cycleNumber );
+        std::string fileName = GEOS_FMT( "lifo/rank_{:05}/pressure_forward_{:06}_{:08}.dat", rank, m_shotIndex, cycleNumber );
         int lastDirSeparator = fileName.find_last_of( "/\\" );
         std::string dirName = fileName.substr( 0, lastDirSeparator );
         if( string::npos != (size_t)lastDirSeparator && !directoryExists( dirName ))
@@ -976,7 +971,7 @@ real64 AcousticWaveEquationSEM::explicitStepForward( real64 const & time_n,
         GEOS_THROW_IF( !wf,
                        getDataContext() << ": Could not open file "<< fileName << " for writing",
                        InputError );
-        wf.write( (char *)&p_dt2[0], p_dt2.size()*sizeof( real32 ) );
+        wf.write( (char *)&p_n[0], p_n.size()*sizeof( real32 ) );
         wf.close( );
         GEOS_THROW_IF( !wf.good(),
                        getDataContext() << ": An error occured while writing "<< fileName,
@@ -1006,11 +1001,17 @@ real64 AcousticWaveEquationSEM::explicitStepBackward( real64 const & time_n,
   {
     NodeManager & nodeManager = mesh.getNodeManager();
 
-    arrayView1d< real32 const > const mass = nodeManager.getField< acousticfields::AcousticMassVector >();
-
     arrayView1d< real32 > const p_nm1 = nodeManager.getField< acousticfields::Pressure_nm1 >();
     arrayView1d< real32 > const p_n = nodeManager.getField< acousticfields::Pressure_n >();
     arrayView1d< real32 > const p_np1 = nodeManager.getField< acousticfields::Pressure_np1 >();
+
+    //// Compute q_dt2 and store it in p_nm1
+    SortedArrayView< localIndex const > const solverTargetNodesSet = m_solverTargetNodesSet.toViewConst();
+    forAll< EXEC_POLICY >( solverTargetNodesSet.size(), [=] GEOS_HOST_DEVICE ( localIndex const n )
+    {
+      localIndex const a = solverTargetNodesSet[n];
+      p_nm1[a] = (p_np1[a] - 2*p_n[a] + p_nm1[a]) / pow( dt, 2 );
+    } );
 
     EventManager const & event = getGroupByPath< EventManager >( "/Problem/Events" );
     real64 const & maxTime = event.getReference< real64 >( EventManager::viewKeyStruct::maxTimeString() );
@@ -1020,11 +1021,11 @@ real64 AcousticWaveEquationSEM::explicitStepBackward( real64 const & time_n,
     {
       ElementRegionManager & elemManager = mesh.getElemManager();
 
-      arrayView1d< real32 > const p_dt2 = nodeManager.getField< acousticfields::PressureDoubleDerivative >();
+      arrayView1d< real32 > const p_forward = nodeManager.getField< acousticfields::PressureForward >();
 
       if( m_enableLifo )
       {
-        m_lifo->pop( p_dt2 );
+        m_lifo->pop( p_forward );
         if( m_lifo->empty() )
           delete m_lifo.release();
       }
@@ -1033,37 +1034,60 @@ real64 AcousticWaveEquationSEM::explicitStepBackward( real64 const & time_n,
         GEOS_MARK_SCOPE ( DirectRead );
 
         int const rank = MpiWrapper::commRank( MPI_COMM_GEOS );
-        std::string fileName = GEOS_FMT( "lifo/rank_{:05}/pressuredt2_{:06}_{:08}.dat", rank, m_shotIndex, cycleNumber );
+        std::string fileName = GEOS_FMT( "lifo/rank_{:05}/pressure_forward_{:06}_{:08}.dat", rank, m_shotIndex, cycleNumber );
         std::ifstream wf( fileName, std::ios::in | std::ios::binary );
         GEOS_THROW_IF( !wf,
                        getDataContext() << ": Could not open file "<< fileName << " for reading",
                        InputError );
 
-        p_dt2.move( LvArray::MemorySpace::host, true );
-        wf.read( (char *)&p_dt2[0], p_dt2.size()*sizeof( real32 ) );
+        p_forward.move( LvArray::MemorySpace::host, true );
+        wf.read( (char *)&p_forward[0], p_forward.size()*sizeof( real32 ) );
         wf.close( );
         remove( fileName.c_str() );
       }
       elemManager.forElementSubRegions< CellElementSubRegion >( regionNames, [&]( localIndex const,
                                                                                   CellElementSubRegion & elementSubRegion )
       {
-        arrayView1d< real32 const > const velocity = elementSubRegion.getField< acousticfields::AcousticVelocity >();
+        arrayView2d< wsCoordType const, nodes::REFERENCE_POSITION_USD > const nodeCoords = nodeManager.getField< fields::referencePosition32 >().toViewConst();
         arrayView1d< real32 > grad = elementSubRegion.getField< acousticfields::PartialGradient >();
+        arrayView1d< real32 > grad2 = elementSubRegion.getField< acousticfields::PartialGradient2 >();
         arrayView2d< localIndex const, cells::NODE_MAP_USD > const & elemsToNodes = elementSubRegion.nodeList();
-        constexpr localIndex numNodesPerElem = 8;
         arrayView1d< integer const > const elemGhostRank = elementSubRegion.ghostRank();
         GEOS_MARK_SCOPE ( updatePartialGradient );
-        forAll< EXEC_POLICY >( elementSubRegion.size(), [=] GEOS_HOST_DEVICE ( localIndex const eltIdx )
+
+        //COMPUTE GRADIENTS with respect to K=1/rho*c2 (grad) and b=1/rho (grad2)
+        finiteElement::FiniteElementBase const &
+        fe = elementSubRegion.getReference< finiteElement::FiniteElementBase >( getDiscretizationName() );
+
+        finiteElement::FiniteElementDispatchHandler< SEM_FE_TYPES >::dispatch3D( fe, [&] ( auto const finiteElement )
         {
-          if( elemGhostRank[eltIdx]<0 )
-          {
-            for( localIndex i = 0; i < numNodesPerElem; ++i )
-            {
-              localIndex nodeIdx = elemsToNodes[eltIdx][i];
-              grad[eltIdx] += (-2/velocity[eltIdx]) * mass[nodeIdx]/8.0 * (p_dt2[nodeIdx] * p_n[nodeIdx]);
-            }
-          }
+          using FE_TYPE = TYPEOFREF( finiteElement );
+
+          AcousticMatricesSEM::GradientKappaBuoyancy< FE_TYPE > kernelG( finiteElement );
+          kernelG.template computeGradient< EXEC_POLICY, ATOMIC_POLICY >( elementSubRegion.size(),
+                                                                          nodeCoords,
+                                                                          elemsToNodes,
+                                                                          elemGhostRank,
+                                                                          p_nm1,
+                                                                          p_n,
+                                                                          p_forward,
+                                                                          grad,
+                                                                          grad2 );
+
+
         } );
+
+        // // Change of variables to return grad with respect to c and rho
+        // arrayView1d< real32 const > const velocity = elementSubRegion.getField< acousticfields::AcousticVelocity >();
+        // arrayView1d< real32 const > const density = elementSubRegion.getField< acousticfields::AcousticDensity >();
+        // forAll< EXEC_POLICY >( elementSubRegion.size(), [=] GEOS_HOST_DEVICE ( localIndex const eltIdx )
+        // {
+        //   if( elemGhostRank[eltIdx]<0 )
+        //   {
+        //     grad2[eltIdx] = -1/(pow(density[eltIdx]*velocity[eltIdx],2)) * grad[eltIdx] - 1/pow(density[eltIdx],2) * grad2[eltIdx];
+        //     grad[eltIdx]= -2/(density[eltIdx]*pow(velocity[eltIdx],3)) * grad[eltIdx];
+        //   }
+        // } );
       } );
     }
 
