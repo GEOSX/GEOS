@@ -176,11 +176,8 @@ real64 HydrofractureSolver< POROMECHANICS_SOLVER >::fullyCoupledSolverStep( real
                                                                             int const cycleNumber,
                                                                             DomainPartition & domain )
 {
-  // for initial fracture initialization
-  if( time_n <= 0 )
-  {
-    initializeNewFractureFields( domain );
-  }
+  // for initial fracture initialization in case when surface generator was called outside of the solver
+  initializeNewFractureFields( domain );
 
   real64 dtReturn = dt;
 
