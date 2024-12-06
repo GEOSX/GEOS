@@ -138,14 +138,14 @@ private:
 public:
 
     GEOS_HOST_DEVICE
-    PIDController( std::array< const real64, 3 > const & controlParameters,
-                   const real64 absTol,
-                   const real64 relTol,
-                   const real64 acceptSafety ):
-      controlParameters{ controlParameters },
-      absTol( absTol ),
-      relTol( relTol ),
-      acceptSafety( acceptSafety ),
+    PIDController( std::array< const real64, 3 > const & cparams,
+                   const real64 atol,
+                   const real64 rtol,
+                   const real64 safety ):
+      controlParameters{ cparams },
+      absTol( atol ),
+      relTol( rtol ),
+      acceptSafety( safety ),
       errors{ {0.0, 0.0, 0.0} }
     {}
 
