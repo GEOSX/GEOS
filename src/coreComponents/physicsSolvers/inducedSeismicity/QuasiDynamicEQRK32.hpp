@@ -69,12 +69,28 @@ private:
 
   virtual void postInputInitialization() override;
 
+  /**
+   * @brief Computes stage rates for the initial Runge-Kutta substage and updates slip and state
+   * @param dt
+   * @param domain 
+   */
   void stepRateStateODEInitialSubstage( real64 const dt, DomainPartition & domain ) const;
   
+  /**
+   * @brief Computes stage rates at the Runge-Kutta substage specified by stageIndex and updates slip and state
+   * @param stageIndex
+   * @param dt
+   * @param domain
+   */
   void stepRateStateODESubstage( integer const stageIndex,
                                  real64 const dt,
                                  DomainPartition & domain ) const;
 
+  /**
+   * @brief Updates slip and state to t + dt and approximates the error
+   * @param dt
+   * @param domain
+   */
   void stepRateStateODEAndComputeError(real64 const dt, DomainPartition & domain ) const;
 
   real64 updateStresses( real64 const & time_n,
@@ -83,7 +99,7 @@ private:
                          DomainPartition & domain ) const;
 
    /**
-   * @brief updates rate-and-state slip velocity and slip rate
+   * @brief Updates rate-and-state slip velocity
    * @param domain
    */
   void updateSlipVelocity( real64 const & time_n,
@@ -113,6 +129,10 @@ private:
 
   bool m_successfulStep; // Flag indicating if the adative time step was accepted
 
+  /**
+   * @brief Proportional-integral-derivative controller used for updating time step
+   * based error estimate in the current and previous time steps.
+   */
   class PIDController
   {
 public:

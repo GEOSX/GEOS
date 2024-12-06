@@ -265,6 +265,7 @@ private:
 
 /**
  * @brief Performs the kernel launch
+ * @tparam KernelType The Rate-and-state kernel to launch
  * @tparam POLICY the policy used in the RAJA kernels
  */
 template< typename KernelType, typename POLICY >
@@ -355,6 +356,13 @@ struct BogackiShampine32Table
     bool FSAL = true;                                               // First same as last (can reuse the last stage rate in next update)
 };
 
+/**
+ * @brief Runge-Kutta method used to time integrate slip and state. Uses of a high order
+ * update used to integrate the solutions, and a lower order update to estimate the error
+ * in the time step.
+ * 
+ * @tparam Butcher table defining the Runge-Kutta method. 
+ */
 template <typename Table> class EmbeddedRungeKuttaKernel
 {
 
@@ -377,6 +385,9 @@ public:
             m_butcherTable( butcherTable )
 {}
 
+    /**
+     * @brief Initialize slip and state buffers
+     */
     GEOS_HOST_DEVICE
     void initialize(localIndex const k) const
     {   
@@ -385,27 +396,38 @@ public:
         m_stateVariable[k] = m_stateVariable_n[k];
     }
 
-        GEOS_HOST_DEVICE
+    /**
+     * @brief Re-uses the last stage rate from the previous time step as the first
+     * in the next update. Only valid for FSAL (first-same-as-last) Runge-Kutta methods.
+     */
+    GEOS_HOST_DEVICE
     void updateStageRatesFSAL(localIndex const k) const
     {           
         LvArray::tensorOps::copy<3>(m_stageRates[k][0],m_stageRates[k][m_butcherTable.numStages-1]);
     }
-     
-    void updateStageRates(localIndex const k, localIndex const stageIndex) const
+
+    /**
+     * @brief Updates the stage rates rates (the right-hand-side of the ODEs for slip and state)
+     */
+    GEOS_HOST_DEVICE 
+    void updateStageRates(localIndex const k, integer const stageIndex) const
     {           
         m_stageRates[k][stageIndex][0] =  m_slipVelocity[k][0];
         m_stageRates[k][stageIndex][1] =  m_slipVelocity[k][1];
         m_stageRates[k][stageIndex][2] =  m_frictionLaw.stateEvolution(k, m_slipRate[k], m_stateVariable[k]);
     }
 
+    /**
+     * @brief Update stage values (slip, state and displacement jump) to a Runge-Kutta substage.
+     */ 
     GEOS_HOST_DEVICE
-    void updateStageValues(localIndex const k, localIndex const stageIndex,  real64 const dt) const
+    void updateStageValues(localIndex const k, integer const stageIndex,  real64 const dt) const
     {   
         
         real64 stateVariableIncrement = 0.0;
         real64 deltaSlipIncrement[2] = {0.0, 0.0};
         
-        for (localIndex i = 0; i < stageIndex; i++)
+        for (integer i = 0; i < stageIndex; i++)
         {   
             deltaSlipIncrement[0] += m_butcherTable.a[stageIndex-1][i] * m_stageRates[k][i][0];
             deltaSlipIncrement[1] += m_butcherTable.a[stageIndex-1][i] * m_stageRates[k][i][1];
@@ -419,6 +441,10 @@ public:
         m_dispJump[k][2] = m_dispJump_n[k][2] + m_deltaSlip[k][1];
     }
 
+    /**
+     * @brief Updates slip, state and displacement jump to the next time computes error the local error
+     * in the time step
+     */ 
     GEOS_HOST_DEVICE
     void updateSolutionAndLocalError(localIndex const k, real64 const dt, real64 const absTol, real64 const relTol) const
     {
@@ -460,6 +486,10 @@ public:
         m_error[k][2] = computeError(m_stateVariable[k], stateVariableLowOrder, absTol, relTol);
     }
 
+    /**
+     * @brief Updates slip, state and displacement jump to the next time computes error the local error
+     * in the time step. Uses the FSAL (first-same-as-last) property.
+     */ 
     GEOS_HOST_DEVICE
     void updateSolutionAndLocalErrorFSAL(localIndex const k, real64 const dt, real64 const absTol, real64 const relTol) const
     {
@@ -490,6 +520,9 @@ public:
         m_error[k][2] = computeError(m_stateVariable[k], stateVariableLowOrder, absTol, relTol);
     }
 
+    /**
+     * @brief Computes the relative error scaled by error tolerances
+     */ 
     real64 computeError(real64 const highOrderApprox, real64 const lowOrderApprox, real64 const absTol, real64 const relTol) const
     {
         return (highOrderApprox - lowOrderApprox) / 
@@ -498,30 +531,43 @@ public:
 
     private:
     
+    /// Current state variable
     arrayView1d< real64 > const m_stateVariable;
 
+    /// State variable at t = t_n
     arrayView1d< real64  > const m_stateVariable_n;
 
+    /// Current slip rate (magnitude of slip velocity)
     arrayView1d< real64 > const m_slipRate;
     
+    /// Current slip velocity
     arrayView2d< real64 > const m_slipVelocity;
 
+    /// Slip velocity at time t_n
     arrayView2d< real64 > const m_slipVelocity_n;
     
+    /// Current slip change
     arrayView2d< real64 > const m_deltaSlip;
     
+    /// Slip change at time t_n
     arrayView2d< real64 > const m_deltaSlip_n;
 
+    /// Current displacment jump
     arrayView2d< real64 > const m_dispJump;
-
+    
+    /// Displacment jump at time t_n
     arrayView2d< real64 > const m_dispJump_n;
     
+    /// Local error for each solution component stored as slip1, slip2, state
     arrayView2d< real64 > const m_error;
     
-    arrayView3d< real64 > const m_stageRates;
+    /// Stage rates for each solution component stored as slip1, slip2, state
+    arrayView3d< real64 > const m_stageRates; 
 
+    /// Friction law used for rate-and-state updates
     constitutive::RateAndStateFriction::KernelWrapper m_frictionLaw;
 
+    /// Butcher table used for explicit time stepping of rate and state
     Table m_butcherTable;
 };
 
