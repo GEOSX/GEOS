@@ -162,7 +162,8 @@ real64 QuasiDynamicEQ::solverStep( real64 const & time_n,
                                                                                 SurfaceElementSubRegion & subRegion )
     {
       // solve rate and state equations.
-      createAndLaunch<ImplicitFixedStressRateAndStateKernel, parallelDevicePolicy<> >( subRegion, viewKeyStruct::frictionLawNameString(), m_shearImpedance, maxIterNewton, newtonTol, time_n, dtStress );
+      createAndLaunch< ImplicitFixedStressRateAndStateKernel, parallelDevicePolicy<> >( subRegion, viewKeyStruct::frictionLawNameString(), m_shearImpedance, maxIterNewton, newtonTol, time_n,
+                                                                                        dtStress );
       // save old state
       saveOldStateAndUpdateSlip( subRegion, dtStress );
     } );

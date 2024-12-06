@@ -30,7 +30,7 @@ public:
 
   /// The constructor needs a user-defined "name" and a parent Group (to place this instance in the tree structure of classes)
   QuasiDynamicEQRK32( const string & name,
-                  Group * const parent );
+                      Group * const parent );
 
   /// Destructor
   virtual ~QuasiDynamicEQRK32() override;
@@ -48,7 +48,7 @@ public:
   struct viewKeyStruct : public PhysicsSolverBase::viewKeyStruct
   {
     /// stress solver name
-    static constexpr char const * stressSolverNameString() { return "stressSolverName"; }
+    constexpr static char const * stressSolverNameString() { return "stressSolverName"; }
     /// Friction law name string
     constexpr static char const * frictionLawNameString() { return "frictionLawName"; }
     /// Friction law name string
@@ -72,10 +72,10 @@ private:
   /**
    * @brief Computes stage rates for the initial Runge-Kutta substage and updates slip and state
    * @param dt
-   * @param domain 
+   * @param domain
    */
   void stepRateStateODEInitialSubstage( real64 const dt, DomainPartition & domain ) const;
-  
+
   /**
    * @brief Computes stage rates at the Runge-Kutta substage specified by stageIndex and updates slip and state
    * @param stageIndex
@@ -91,26 +91,26 @@ private:
    * @param dt
    * @param domain
    */
-  void stepRateStateODEAndComputeError(real64 const dt, DomainPartition & domain ) const;
+  void stepRateStateODEAndComputeError( real64 const dt, DomainPartition & domain ) const;
 
   real64 updateStresses( real64 const & time_n,
                          real64 const & dt,
                          const int cycleNumber,
                          DomainPartition & domain ) const;
 
-   /**
+  /**
    * @brief Updates rate-and-state slip velocity
    * @param domain
    */
   void updateSlipVelocity( real64 const & time_n,
                            real64 const & dt,
-                           DomainPartition & domain ) const;                        
+                           DomainPartition & domain ) const;
 
   /**
    * @brief save the current state
    * @param domain
    */
-  void saveState( DomainPartition & domain) const;
+  void saveState( DomainPartition & domain ) const;
 
 
   /// pointer to stress solver
@@ -138,15 +138,15 @@ private:
 public:
 
     GEOS_HOST_DEVICE
-    PIDController(std::array<const real64, 3> const & controlParameters, 
-                                              const real64 absTol,
-                                              const real64 relTol,
-                                              const real64 acceptSafety):
-      controlParameters{controlParameters},
-      absTol(absTol),
-      relTol(relTol),
-      acceptSafety(acceptSafety),
-      errors{{0.0, 0.0, 0.0}}
+    PIDController( std::array< const real64, 3 > const & controlParameters,
+                   const real64 absTol,
+                   const real64 relTol,
+                   const real64 acceptSafety ):
+      controlParameters{ controlParameters },
+      absTol( absTol ),
+      relTol( relTol ),
+      acceptSafety( acceptSafety ),
+      errors{ {0.0, 0.0, 0.0} }
     {}
 
     /// Default copy constructor
@@ -165,31 +165,31 @@ public:
     PIDController & operator=( PIDController && ) =  delete;
 
     /// Parameters for the PID error controller
-    const std::array<const real64,3> controlParameters; // Controller parameters
+    const std::array< const real64, 3 > controlParameters; // Controller parameters
 
     real64 const absTol; // absolut tolerence
 
     real64 const relTol; // relative tolerence
 
     real64 const acceptSafety; // Acceptance safety
-    
-    std::array<real64, 3> errors; // Errors for current and two previous updates
-                                  // stored as [n+1, n, n-1]
 
-    real64 computeUpdateFactor(integer const algHighOrder, integer const algLowOrder)
+    std::array< real64, 3 > errors; // Errors for current and two previous updates
+                                    // stored as [n+1, n, n-1]
+
+    real64 computeUpdateFactor( integer const algHighOrder, integer const algLowOrder )
     {
       // PID error controller + limiter
-      real64 const k = LvArray::math::min(algHighOrder, algLowOrder) + 1.0;
+      real64 const k = LvArray::math::min( algHighOrder, algLowOrder ) + 1.0;
       real64 const eps0 = 1.0/(errors[0] + std::numeric_limits< real64 >::epsilon()); // n + 1
       real64 const eps1 = 1.0/(errors[1] + std::numeric_limits< real64 >::epsilon()); // n
       real64 const eps2 = 1.0/(errors[2] + std::numeric_limits< real64 >::epsilon()); // n-1
       // Compute update factor eps0^(beta0/k)*eps1^(beta1/k)*eps2^(beta2/k) where
       // beta0 - beta2 are the control parameters. Also apply limiter to smoothen changes.
       // Limiter is 1.0 + atan(x - 1.0). Here use atan(x) = atan2(x, 1.0).
-      return 1.0 + LvArray::math::atan2( pow(eps0, controlParameters[0] / k ) *  
-                                         pow(eps1, controlParameters[1] / k ) *  
-                                         pow(eps2, controlParameters[2] / k ) - 1.0, 1.0);
-    }                              
+      return 1.0 + LvArray::math::atan2( pow( eps0, controlParameters[0] / k ) *
+                                         pow( eps1, controlParameters[1] / k ) *
+                                         pow( eps2, controlParameters[2] / k ) - 1.0, 1.0 );
+    }
   };
 
   PIDController m_controller;

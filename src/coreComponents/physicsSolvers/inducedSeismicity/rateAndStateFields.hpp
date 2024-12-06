@@ -54,7 +54,7 @@ DECLARE_FIELD( slipVelocity_n,
                0.70710678118e-6,
                NOPLOT,
                WRITE_AND_READ,
-               "Slip velocity at previous time step" );                 
+               "Slip velocity at previous time step" );
 
 DECLARE_FIELD( stateVariable,
                "stateVariable",
@@ -96,7 +96,7 @@ DECLARE_FIELD( rungeKuttaStageRates,
                0.0,
                NOPLOT,
                WRITE_AND_READ,
-               "Runge-Kutta stage rates for rate-and-state variables" );               
+               "Runge-Kutta stage rates for rate-and-state variables" );
 
 
 DECLARE_FIELD( error,
@@ -105,7 +105,7 @@ DECLARE_FIELD( error,
                0.0,
                LEVEL_0,
                WRITE_AND_READ,
-               "Error for rate-and-state fields" );                              
+               "Error for rate-and-state fields" );
 
 }
 
