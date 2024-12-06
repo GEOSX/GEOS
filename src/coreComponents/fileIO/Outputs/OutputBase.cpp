@@ -123,8 +123,8 @@ void OutputBase::cleanup( real64 const GEOS_UNUSED_PARAM( time_n ),
   if( maxTime > 0 )
   {
     GEOS_LOG_LEVEL_INFO_RANK_0( logInfo::OutputTimers,
-                               GEOS_FMT( "{}: file writing time = {} s (min), {} s (max)",
-                                        getName(), minTime, maxTime ) );
+                                GEOS_FMT( "{}: file writing time = {} s (min), {} s (max)",
+                                          getName(), minTime, maxTime ) );
   }
 }
 
