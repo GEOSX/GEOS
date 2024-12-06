@@ -11,7 +11,7 @@
       targetRegions="{ region }">
       <NonlinearSolverParameters
         newtonTol="1.0e-4"
-        newtonMaxIter="10"
+        newtonMaxIter="20"
         lineSearchAction="None"/>
       <LinearSolverParameters
         solverType="fgmres"
