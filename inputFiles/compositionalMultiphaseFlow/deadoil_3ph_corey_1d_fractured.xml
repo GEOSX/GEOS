@@ -114,7 +114,7 @@
     <SurfaceElementRegion
       name="Fracture"
       defaultAperture="1.0e-4"
-      materialList="{ fluid1, fractureFilling, relperm }"
+      materialList="{ fluid, fractureFilling, relperm }"
       subRegionType="embeddedElement"/>
   </ElementRegions>
 
