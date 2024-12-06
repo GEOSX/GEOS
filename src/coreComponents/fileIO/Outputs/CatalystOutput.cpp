@@ -67,8 +67,7 @@ void SanitizeSimpleNode(conduit::Node& channel) {
 
 void SanitizeMultiNodeInSitu(conduit::Node& channel) {
   auto& blueprintNode = channel["data"];
-  for (conduit::index_t iTopo = 0;
-       iTopo < blueprintNode["topologies"].number_of_children(); ++iTopo) {
+  for (conduit::index_t iTopo = 0; iTopo < blueprintNode["topologies"].number_of_children(); ++iTopo) {
     auto& topology = blueprintNode["topologies"].child(iTopo);
     std::string topoName = topology.name();
     auto& iMesh = blueprintNode[topoName];
@@ -77,11 +76,12 @@ void SanitizeMultiNodeInSitu(conduit::Node& channel) {
 
     iMesh["coordsets"].update(blueprintNode["coordsets"]);
     iMesh["topologies/" + topoName].update(topology);
+    iMesh["fields"].update(topology["fields"]);
 
+    // Deprec ?
     auto& dstFields = iMesh["fields"];
     const auto& srcFields = blueprintNode["fields"];
-    for (conduit::index_t iField = 0; iField < srcFields.number_of_children();
-         ++iField) {
+    for (conduit::index_t iField = 0; iField < srcFields.number_of_children(); ++iField) {
       const auto& srcField = srcFields.child(iField);
       if (srcField["topology"].as_char8_str() == std::string("nodes")) {
         auto& dstField = dstFields[srcField.name()];
@@ -347,6 +347,7 @@ void SanitizeNode(conduit::Node& channel, bool isInTransit,
       SanitizeMultiNodeInTransit(channel, dataContainer);
       return;
     }
+    channel.remove("data/fields"); // fields info to use is inside each topologies
     SanitizeMultiNodeInSitu(channel);
     return;
   }

@@ -175,17 +175,18 @@ void BlueprintOutput::mapMesh( real64 const time,
 
   conduit::Node & coordset = mesh[ "coordsets/nodes" ];
   conduit::Node & topologies = mesh[ "topologies" ];
+  conduit::Node & fields = mesh[ "fields" ];
 
   mesh[ "state/time" ] = time;
   mesh[ "state/cycle" ] = cycle;
 
-  addNodalData( meshLevel.getNodeManager(), coordset, topologies, mesh[ "fields" ] );
+  addNodalData( meshLevel.getNodeManager(), coordset, topologies, fields );
 
   dataRepository::Group averagedElementData( "averagedElementData", this );
-  addElementData( meshLevel.getElemManager(), coordset, topologies, mesh[ "fields" ], averagedElementData );
+  addElementData( meshLevel.getElemManager(), coordset, topologies, fields, averagedElementData );
 
   /// The Blueprint will complain if the fields node is present but empty.
-  if( mesh[ "fields" ].number_of_children() == 0 )
+  if( fields.number_of_children() == 0 )
   {
     mesh.remove( "fields" );
   }
@@ -268,6 +269,18 @@ void BlueprintOutput::addElementData( ElementRegionManager const & elemRegionMan
         writeOutWrappersAsFields( constitutiveModel, fields, topologyName, constitutiveModel.getName() );
       }
     } );
+
+    /// Migrate fields associated with this topology
+    for (conduit::index_t iTopo = 0; iTopo < fields.number_of_children(); ++iTopo)
+    {
+      auto& field = fields.child(iTopo);
+      if (field["topology"].as_char8_str() == topologyName)
+      {
+         topology["fields/"+field.name()] = field;
+	 // fields.remove(field.name());
+      }
+    }
+
   } );
 }
 
