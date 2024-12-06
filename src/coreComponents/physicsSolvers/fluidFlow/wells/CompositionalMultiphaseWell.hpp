@@ -247,8 +247,6 @@ public:
    */
   void chopNegativeDensities( DomainPartition & domain );
 
-  arrayView1d< string const > relPermModelNames() const { return m_relPermModelNames; }
-
   struct viewKeyStruct : WellSolverBase::viewKeyStruct
   {
     static constexpr char const * dofFieldString() { return "compositionalWellVars"; }
@@ -258,8 +256,6 @@ public:
     static constexpr char const * useMassFlagString() { return CompositionalMultiphaseBase::viewKeyStruct::useMassFlagString(); }
 
     static constexpr char const * useTotalMassEquationString() { return CompositionalMultiphaseBase::viewKeyStruct::useTotalMassEquationString(); }
-
-    static constexpr char const * relPermNamesString() { return CompositionalMultiphaseBase::viewKeyStruct::relPermNamesString(); }
 
     static constexpr char const * maxCompFracChangeString() { return CompositionalMultiphaseBase::viewKeyStruct::maxCompFracChangeString(); }
 
@@ -317,7 +313,7 @@ protected:
    * @param[in] domain the domain partition
    * @detail
    * This function will produce an error if one of the well constitutive models
-   * (fluid, relperm) is incompatible with the corresponding models in reservoir
+   * is incompatible with the corresponding models in reservoir
    * regions connected to that particular well.
    */
   void validateConstitutiveModels( DomainPartition const & domain ) const;
@@ -366,9 +362,6 @@ private:
 
   /// flag indicating whether total mass equation should be used
   integer m_useTotalMassEquation;
-
-  /// list of relative permeability model names per target region
-  array1d< string > m_relPermModelNames;
 
   /// maximum (absolute) change in a component fraction between two Newton iterations
   real64 m_maxCompFracChange;

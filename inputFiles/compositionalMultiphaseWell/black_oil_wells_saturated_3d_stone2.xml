@@ -149,10 +149,10 @@
       materialList="{ fluid, rock, relperm, cappres }"/>
     <WellElementRegion
       name="wellRegion1"
-      materialList="{ fluid, relperm }"/>
+      materialList="{ fluid }"/>
     <WellElementRegion
       name="wellRegion2"
-      materialList="{ fluid, relperm }"/> 
+      materialList="{ fluid }"/> 
   </ElementRegions>
 
   <Constitutive>

@@ -230,53 +230,53 @@
 
     <WellElementRegion
       name="wellRegion1"
-      materialList="{ fluid, relperm }"/>
+      materialList="{ fluid }"/>
 
     <WellElementRegion
       name="wellRegion2"
-      materialList="{ fluid, relperm }"/>
+      materialList="{ fluid }"/>
 
     <!-- SPHINX_TUT_DEAD_OIL_EGG_ELEMENT_REGIONS_END -->
 
     <WellElementRegion
       name="wellRegion3"
-      materialList="{ fluid, relperm }"/>
+      materialList="{ fluid }"/>
 
     <WellElementRegion
       name="wellRegion4"
-      materialList="{ fluid, relperm }"/>
+      materialList="{ fluid }"/>
 
     <WellElementRegion
       name="wellRegion5"
-      materialList="{ fluid, relperm }"/>
+      materialList="{ fluid }"/>
 
     <WellElementRegion
       name="wellRegion6"
-      materialList="{ fluid, relperm }"/>
+      materialList="{ fluid }"/>
 
     <WellElementRegion
       name="wellRegion7"
-      materialList="{ fluid, relperm }"/>
+      materialList="{ fluid }"/>
 
     <WellElementRegion
       name="wellRegion8"
-      materialList="{ fluid, relperm }"/>
+      materialList="{ fluid }"/>
 
     <WellElementRegion
       name="wellRegion9"
-      materialList="{ fluid, relperm }"/>
+      materialList="{ fluid }"/>
 
     <WellElementRegion
       name="wellRegion10"
-      materialList="{ fluid, relperm }"/>
+      materialList="{ fluid }"/>
 
     <WellElementRegion
       name="wellRegion11"
-      materialList="{ fluid, relperm }"/>
+      materialList="{ fluid }"/>
 
     <WellElementRegion
       name="wellRegion12"
-      materialList="{ fluid, relperm }"/>
+      materialList="{ fluid }"/>
   </ElementRegions>
 
   <!-- SPHINX_TUT_DEAD_OIL_EGG_CONSTITUTIVE -->

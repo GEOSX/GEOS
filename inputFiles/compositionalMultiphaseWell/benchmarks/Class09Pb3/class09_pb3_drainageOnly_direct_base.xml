@@ -56,7 +56,7 @@
 
     <WellElementRegion
       name="wellRegion"
-      materialList="{ fluid, relperm, cappres }"/>
+      materialList="{ fluid }"/>
   </ElementRegions>
  
   <NumericalMethods>
