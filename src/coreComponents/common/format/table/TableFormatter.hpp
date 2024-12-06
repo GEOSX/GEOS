@@ -187,8 +187,8 @@ private:
    * @param tableLayout The layout of the table, containing information about columns, headers, and their layers.
    * @param cellsHeaderLayout A reference to the collection of header cells that will be updated with the gridified layout.
    */
-  void gridifyHeaders( TableLayout & tableLayout,
-                       CellLayoutRows & cellsDataLayout ) const;
+  void populateHeaderCellsLayout( TableLayout & tableLayout,
+                                  CellLayoutRows & cellsDataLayout ) const;
 
 /**
  * @brief Populates the data cells layout based on input data values.
@@ -207,6 +207,7 @@ private:
    *        length for each cell based on the longest string found in the column.
    */
   void updateColumnMaxLength( TableLayout & tableLayout,
+                              CellLayoutRows & cellHeaderLength,
                               CellLayoutRows & cellsDataLayout ) const;
 
   /**
@@ -217,6 +218,7 @@ private:
    * @param topSeparator A string reference where the top separator line will be stored.
    */
   void calculateTableSeparators( TableLayout & tableLayout,
+                                 CellLayoutRows & cellsHeaderLayout,
                                  CellLayoutRows & cellsDataLayout,
                                  string & sectionSeparatingLine,
                                  string & topSeparator ) const;
@@ -228,10 +230,9 @@ private:
    * @param nbColumns The total number of columns in the table.
    * @param extraCharacters The total number of extra characters to be distributed across the columns.
    */
-  void adjustColumnWidths( TableLayout & tableLayout,
-                            CellLayoutRows & cellsHeaderLayout,
-                            size_t const nbColumns,
-                            size_t const extraCharacters ) const;
+  void adjustColumnWidths( CellLayoutRows & cells,
+                           size_t nbHiddenColumns,
+                           size_t const paddingCharacters ) const;
 
   /**
    * @brief Output the title row in the table

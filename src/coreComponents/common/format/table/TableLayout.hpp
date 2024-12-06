@@ -80,9 +80,6 @@ public:
     Alignment m_alignment;
     /// Maximum length of the data in the cell.
     size_t m_maxDataLength;
-    /// The width of the cell (e.g., for cell containing subColumns).
-    size_t m_cellWidth = 0;
-
 
     /**
      * @brief Constructor to initialize a Cell with a specific type and value.
@@ -101,7 +98,7 @@ public:
      * @brief Sets the maximum size for the cell.
      * @param size The maximum size to set for the cell.
      */
-    void setMaxCellSize( size_t size );
+    void setMaxCellSize( size_t size );//todo supp
   };
 
   /**
@@ -121,6 +118,9 @@ public:
     Column * m_parent;
     /// Pointer to the next column (if any).
     Column * m_next;
+
+    /// The width of the cell (e.g., for cell containing subColumns).
+    size_t m_cellWidth = 0;
 
     /**
      * @brief Default constructor.
@@ -309,98 +309,6 @@ private:
   {
     return LeafIterator( nullptr, 0 );
   }
-
-  //
-  class RootIterator
-  {
-public:
-    using ColumnType = Column;
-
-    RootIterator( ColumnType * columnPtr, size_t idxLayer ):
-      m_currentColumn( columnPtr ), m_currentLayer( idxLayer )
-    {}
-
-
-    RootIterator & operator=( ColumnType * columnPtr )
-    {
-      this->m_currentColumn= columnPtr;
-      return *this;
-    }
-
-    RootIterator & operator++()
-    {
-      if( m_currentColumn->hasChild())
-      {
-        m_currentColumn = &m_currentColumn->m_subColumn[0];
-        m_currentLayer++;
-      }
-      else if( m_currentColumn->m_next != nullptr )
-      {
-        m_currentColumn = m_currentColumn->m_next;
-      }
-      else
-      {
-        while( m_currentColumn->m_next == nullptr && m_currentColumn->m_parent != nullptr )
-        {
-          m_currentColumn = m_currentColumn->m_parent;
-          m_currentLayer--;
-        }
-        if( m_currentColumn->m_next != nullptr )
-        {
-          m_currentColumn = m_currentColumn->m_next;
-        }
-        else
-        {
-          m_currentColumn = nullptr;
-        }
-      }
-      return *this;
-    }
-
-    // Postfix ++ overload //todo
-    // RootIterator operator++( Column )
-    // {
-    //   RootIterator iterator = *this;
-    //   ++(*this);
-    //   return iterator;
-    // }
-
-    ColumnType & operator*()
-    {
-      return *m_currentColumn;
-    }
-
-    ColumnType * operator->()
-    {
-      return m_currentColumn;
-    }
-
-    friend bool operator== ( RootIterator const & a, RootIterator const & b )
-    {
-      return a.m_currentColumn == b.m_currentColumn;
-    };
-    friend bool operator!= ( RootIterator const & a, RootIterator const & b )
-    {
-      return a.m_currentColumn != b.m_currentColumn;
-    };
-
-    size_t getCurrentLayer() const
-    {
-      return m_currentLayer;
-    }
-
-private:
-    ColumnType * m_currentColumn;
-    size_t m_currentLayer;
-  };
-
-  RootIterator beginRoot() { return RootIterator( &(*m_tableColumnsData.begin()), 0 ); }
-
-  RootIterator endRoot()
-  {
-    return RootIterator( nullptr, 0 );
-  }
-
 
   struct Row
   {
@@ -593,9 +501,9 @@ private:
 
   std::vector< Column > m_tableColumnsData;
   /// Contains the subdivision (line) counts for each line in header.
-  std::vector< size_t > m_sublineHeaderCounts ;
+  std::vector< size_t > m_sublineHeaderCounts;
   /// Contains the subdivision (line) counts for each line in data.
-  std::vector< size_t > m_sublineDataCounts ;
+  std::vector< size_t > m_sublineDataCounts;
   bool m_wrapLine = true;
   bool m_containSubColumn = false;
 
