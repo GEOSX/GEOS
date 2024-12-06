@@ -113,6 +113,9 @@ public:
 #endif
 
 protected:
+  /**
+   * @copydoc OutputBase::getTimerCategory
+   */
   logInfo::OutputTimerBase const & getTimerCategory() const override;
 
 private:

@@ -35,7 +35,16 @@ namespace logInfo
  */
 struct OutputTimers
 {
+  /**
+   * @brief Get the description of this timer
+   * @return String view containing the timer description
+   */
   static std::string_view getDescription() { return "Output timing information"; }
+
+  /**
+   * @brief Get the minimum log level for this timer
+   * @return Integer representing the minimum log level
+   */
   static constexpr int getMinLogLevel() { return 1; }
 };
 
@@ -48,8 +57,11 @@ struct OutputTimers
  */
 struct OutputTimerBase
 {
+  /**
+   * @brief Get the description of this timer
+   * @return String view containing the timer description
+   */
   virtual std::string_view getDescription() const = 0;
-  virtual ~OutputTimerBase() = default;
 };
 }
 
@@ -132,7 +144,10 @@ protected:
   /// Timer used to track duration of file writing operations for this specific output type
   std::chrono::system_clock::duration m_outputTimer;
 
-  /// Get the timer category for this specific output type
+  /**
+   * @brief Get the timer category for this output type
+   * @return Reference to the output timer base for timing statistics
+   */
   virtual logInfo::OutputTimerBase const & getTimerCategory() const = 0;
 
   /// @copydoc geos::ExecutableGroup::cleanup

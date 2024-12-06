@@ -80,6 +80,9 @@ public:
   /// @endcond
 
 protected:
+  /**
+   * @copydoc OutputBase::getTimerCategory
+   */
   logInfo::OutputTimerBase const & getTimerCategory() const override;
 };
 
