@@ -25,8 +25,8 @@
 #include "physicsSolvers/KernelLaunchSelectors.hpp"
 #include "physicsSolvers/fluidFlow/SinglePhaseFVM.hpp"
 #include "physicsSolvers/fluidFlow/wells/SinglePhaseWellFields.hpp"
-#include "physicsSolvers/fluidFlow/wells/SinglePhaseWellKernels.hpp"
 #include "physicsSolvers/fluidFlow/wells/WellControls.hpp"
+#include "physicsSolvers/fluidFlow/wells/kernels/SinglePhaseWellKernels.hpp"
 #include "physicsSolvers/multiphysics/SinglePhasePoromechanics.hpp"
 #include "physicsSolvers/multiphysics/SinglePhasePoromechanicsConformingFractures.hpp"
 
@@ -132,7 +132,7 @@ addCouplingSparsityPattern( DomainPartition const & domain,
   {
     ElementRegionManager const & elemManager = mesh.getElemManager();
 
-    // TODO: remove this and just call SolverBase::setupSystem when DofManager can handle the coupling
+    // TODO: remove this and just call PhysicsSolverBase::setupSystem when DofManager can handle the coupling
 
     // Populate off-diagonal sparsity between well and reservoir
 
@@ -352,11 +352,11 @@ template class SinglePhaseReservoirAndWells< SinglePhasePoromechanicsConformingF
 namespace
 {
 typedef SinglePhaseReservoirAndWells<> SinglePhaseFlowAndWells;
-REGISTER_CATALOG_ENTRY( SolverBase, SinglePhaseFlowAndWells, string const &, Group * const )
+REGISTER_CATALOG_ENTRY( PhysicsSolverBase, SinglePhaseFlowAndWells, string const &, Group * const )
 typedef SinglePhaseReservoirAndWells< SinglePhasePoromechanics<> > SinglePhasePoromechanicsAndWells;
-REGISTER_CATALOG_ENTRY( SolverBase, SinglePhasePoromechanicsAndWells, string const &, Group * const )
+REGISTER_CATALOG_ENTRY( PhysicsSolverBase, SinglePhasePoromechanicsAndWells, string const &, Group * const )
 typedef SinglePhaseReservoirAndWells< SinglePhasePoromechanicsConformingFractures<> > SinglePhasePoromechanicsConformingFracturesAndWells;
-REGISTER_CATALOG_ENTRY( SolverBase, SinglePhasePoromechanicsConformingFracturesAndWells, string const &, Group * const )
+REGISTER_CATALOG_ENTRY( PhysicsSolverBase, SinglePhasePoromechanicsConformingFracturesAndWells, string const &, Group * const )
 }
 
 } /* namespace geos */

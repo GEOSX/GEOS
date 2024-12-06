@@ -507,7 +507,7 @@ real64 ElasticWaveEquationSEM::computeTimeStep( real64 & dtOut )
     {
       ux_n[a] = (real64)rand()/(real64) RAND_MAX;
       uy_n[a] = (real64)rand()/(real64) RAND_MAX;
-      uy_n[a] = (real64)rand()/(real64) RAND_MAX;
+      uz_n[a] = (real64)rand()/(real64) RAND_MAX;
     }
 
     //Step 1: Normalize randomized pressure
@@ -565,20 +565,20 @@ real64 ElasticWaveEquationSEM::computeTimeStep( real64 & dtOut )
       lambdaOld = lambdaNew;
 
       //Compute lambdaNew using two dotProducts
-      dotProductUzUzaux = 0.0;
       dotProductUxUxaux = 0.0;
       dotProductUyUyaux = 0.0;
+      dotProductUzUzaux = 0.0;
       normUx= 0.0;
       normUy= 0.0;
       normUz= 0.0;
 
       WaveSolverUtils::dotProduct( sizeNode, ux_n, stiffnessVectorx, dotProductUxUxaux );
       WaveSolverUtils::dotProduct( sizeNode, uy_n, stiffnessVectory, dotProductUyUyaux );
-      WaveSolverUtils::dotProduct( sizeNode, ux_n, stiffnessVectorz, dotProductUzUzaux );
+      WaveSolverUtils::dotProduct( sizeNode, uz_n, stiffnessVectorz, dotProductUzUzaux );
       dotProductUtotUtotAux = dotProductUxUxaux+dotProductUyUyaux+dotProductUzUzaux;
       WaveSolverUtils::dotProduct( sizeNode, ux_n, ux_n, normUx );
-      WaveSolverUtils::dotProduct( sizeNode, uy_n, ux_n, normUy );
-      WaveSolverUtils::dotProduct( sizeNode, uz_n, ux_n, normUz );
+      WaveSolverUtils::dotProduct( sizeNode, uy_n, uy_n, normUy );
+      WaveSolverUtils::dotProduct( sizeNode, uz_n, uz_n, normUz );
       normUtot = normUx+normUy+normUz;
 
       lambdaNew = dotProductUtotUtotAux/normUtot;
@@ -980,7 +980,7 @@ void ElasticWaveEquationSEM::cleanup( real64 const time_n,
                                       DomainPartition & domain )
 {
   // call the base class cleanup (for reporting purposes)
-  SolverBase::cleanup( time_n, cycleNumber, eventCounter, eventProgress, domain );
+  PhysicsSolverBase::cleanup( time_n, cycleNumber, eventCounter, eventProgress, domain );
 
   // compute the remaining seismic traces, if needed
   forDiscretizationOnMeshTargets( domain.getMeshBodies(), [&] ( string const &,
@@ -1034,6 +1034,6 @@ void ElasticWaveEquationSEM::applyPML( real64 const, DomainPartition & )
   GEOS_ERROR( getDataContext() << ": PML for the elastic wave propagator not yet implemented" );
 }
 
-REGISTER_CATALOG_ENTRY( SolverBase, ElasticWaveEquationSEM, string const &, dataRepository::Group * const )
+REGISTER_CATALOG_ENTRY( PhysicsSolverBase, ElasticWaveEquationSEM, string const &, dataRepository::Group * const )
 
 } /* namespace geos */

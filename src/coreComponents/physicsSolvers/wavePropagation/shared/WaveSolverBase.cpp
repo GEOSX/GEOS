@@ -40,8 +40,8 @@ using namespace dataRepository;
 
 WaveSolverBase::WaveSolverBase( const std::string & name,
                                 Group * const parent ):
-  SolverBase( name,
-              parent )
+  PhysicsSolverBase( name,
+                     parent )
 {
 
   registerWrapper( viewKeyStruct::sourceCoordinatesString(), &m_sourceCoordinates ).
@@ -270,7 +270,7 @@ void WaveSolverBase::registerDataOnMesh( Group & meshBodies )
 
 void WaveSolverBase::initializePreSubGroups()
 {
-  SolverBase::initializePreSubGroups();
+  PhysicsSolverBase::initializePreSubGroups();
 
   localIndex const numNodesPerElem = WaveSolverBase::getNumNodesPerElem();
 
@@ -299,7 +299,7 @@ void WaveSolverBase::initializePreSubGroups()
 
 void WaveSolverBase::postInputInitialization()
 {
-  SolverBase::postInputInitialization();
+  PhysicsSolverBase::postInputInitialization();
 
   /// set flag PML to one if a PML field is specified in the xml
   /// if counter>1, an error will be thrown as one single PML field is allowed
@@ -484,9 +484,19 @@ void WaveSolverBase::computeTargetNodeSet( arrayView2d< localIndex const, cells:
 
 void WaveSolverBase::incrementIndexSeismoTrace( real64 const time_n )
 {
-  while( (m_dtSeismoTrace * m_indexSeismoTrace) <= (time_n + epsilonLoc) && m_indexSeismoTrace < m_nsamplesSeismoTrace )
+  if( m_forward )
   {
-    m_indexSeismoTrace++;
+    while( (m_dtSeismoTrace * m_indexSeismoTrace) <= (time_n + epsilonLoc) && m_indexSeismoTrace < m_nsamplesSeismoTrace )
+    {
+      m_indexSeismoTrace++;
+    }
+  }
+  else
+  {
+    while( (m_dtSeismoTrace * m_indexSeismoTrace) >= (time_n - epsilonLoc) && m_indexSeismoTrace > 0 )
+    {
+      m_indexSeismoTrace--;
+    }
   }
 }
 
@@ -515,12 +525,14 @@ void WaveSolverBase::computeAllSeismoTraces( real64 const time_n,
   if( m_nsamplesSeismoTrace == 0 )
     return;
   integer const dir = m_forward ? +1 : -1;
-  for( localIndex iSeismo = m_indexSeismoTrace; iSeismo < m_nsamplesSeismoTrace; iSeismo++ )
+  integer const beginIndex = m_forward ? m_indexSeismoTrace : m_nsamplesSeismoTrace-m_indexSeismoTrace;
+  for( localIndex iSeismo = beginIndex; iSeismo < m_nsamplesSeismoTrace; iSeismo++ )
   {
-    real64 const timeSeismo = m_dtSeismoTrace * (m_forward ? iSeismo : (m_nsamplesSeismoTrace - 1) - iSeismo);
-    if( dir * timeSeismo > dir * (time_n + epsilonLoc) )
+    localIndex seismoIndex = m_forward ? iSeismo : m_nsamplesSeismoTrace-iSeismo;
+    real64 const timeSeismo = m_dtSeismoTrace * seismoIndex;
+    if( dir * timeSeismo > dir * time_n + epsilonLoc )
       break;
-    WaveSolverUtils::computeSeismoTrace( time_n, dir * dt, timeSeismo, iSeismo, m_receiverNodeIds,
+    WaveSolverUtils::computeSeismoTrace( time_n, dir * dt, timeSeismo, seismoIndex, m_receiverNodeIds,
                                          m_receiverConstants, m_receiverIsLocal, var_np1, var_n, varAtReceivers, coeffs, add );
   }
 }
@@ -535,12 +547,14 @@ void WaveSolverBase::compute2dVariableAllSeismoTraces( localIndex const regionIn
   if( m_nsamplesSeismoTrace == 0 )
     return;
   integer const dir = m_forward ? +1 : -1;
-  for( localIndex iSeismo = m_indexSeismoTrace; iSeismo < m_nsamplesSeismoTrace; iSeismo++ )
+  integer const beginIndex = m_forward ? m_indexSeismoTrace : m_nsamplesSeismoTrace-m_indexSeismoTrace;
+  for( localIndex iSeismo = beginIndex; iSeismo < m_nsamplesSeismoTrace; iSeismo++ )
   {
-    real64 const timeSeismo = m_dtSeismoTrace * (m_forward ? iSeismo : (m_nsamplesSeismoTrace - 1) - iSeismo);
-    if( dir * timeSeismo > dir * (time_n + epsilonLoc))
+    localIndex seismoIndex = m_forward ? iSeismo : m_nsamplesSeismoTrace-iSeismo;
+    real64 const timeSeismo = m_dtSeismoTrace * seismoIndex;
+    if( dir * timeSeismo > dir * time_n + epsilonLoc )
       break;
-    WaveSolverUtils::compute2dVariableSeismoTrace( time_n, dir * dt, regionIndex, m_receiverRegion, timeSeismo, iSeismo, m_receiverElem,
+    WaveSolverUtils::compute2dVariableSeismoTrace( time_n, dir * dt, regionIndex, m_receiverRegion, timeSeismo, seismoIndex, m_receiverElem,
                                                    m_receiverConstants, m_receiverIsLocal, var_np1, var_n, varAtReceivers );
   }
 }

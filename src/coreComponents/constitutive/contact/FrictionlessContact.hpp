@@ -58,25 +58,10 @@ public:
 
   GEOS_HOST_DEVICE
   inline
-  virtual void updateFractureState( localIndex const k,
-                                    arraySlice1d< real64 const > const & dispJump,
+  virtual void updateFractureState( arraySlice1d< real64 const > const & dispJump,
                                     arraySlice1d< real64 const > const & tractionVector,
                                     integer & fractureState ) const override final;
 
-
-  /**
-   * @brief Evaluate the limit tangential traction norm and return the derivative wrt normal traction
-   * @param[in] normalTraction the normal traction
-   * @param[out] dLimitTangentialTractionNorm_dTraction the derivative of the limit tangential traction norm wrt normal traction
-   * @return the limit tangential traction norm
-   */
-  GEOS_HOST_DEVICE
-  inline
-  virtual real64 computeLimitTangentialTractionNorm( real64 const & normalTraction,
-                                                     real64 & dLimitTangentialTractionNorm_dTraction ) const override final
-  { GEOS_UNUSED_VAR( normalTraction, dLimitTangentialTractionNorm_dTraction ); return 0.0; }
-
-private:
 };
 
 
@@ -132,12 +117,11 @@ protected:
 
 
 GEOS_HOST_DEVICE
-inline void FrictionlessContactUpdates::updateFractureState( localIndex const k,
-                                                             arraySlice1d< real64 const > const & dispJump,
+inline void FrictionlessContactUpdates::updateFractureState( arraySlice1d< real64 const > const & dispJump,
                                                              arraySlice1d< real64 const > const & tractionVector,
                                                              integer & fractureState ) const
 {
-  GEOS_UNUSED_VAR( k, tractionVector );
+  GEOS_UNUSED_VAR( tractionVector );
   using namespace fields::contact;
   fractureState = dispJump[0] > m_displacementJumpThreshold ? FractureState::Open : FractureState::Stick;
 }

@@ -27,7 +27,7 @@
 #include "physicsSolvers/fluidFlow/SinglePhaseBase.hpp"
 #include "physicsSolvers/fluidFlow/SinglePhaseFVM.hpp"
 #include "physicsSolvers/fluidFlow/wells/SinglePhaseWell.hpp"
-#include "physicsSolvers/fluidFlow/wells/SinglePhaseWellKernels.hpp"
+#include "physicsSolvers/fluidFlow/wells/kernels/SinglePhaseWellKernels.hpp"
 #include "physicsSolvers/fluidFlow/wells/SinglePhaseWellFields.hpp"
 #include "physicsSolvers/fluidFlow/wells/WellSolverBaseFields.hpp"
 

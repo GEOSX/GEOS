@@ -44,6 +44,27 @@ public:
 
   static integer getWaterComponentIndex( ComponentProperties const & componentProperties );
 
+  struct viewKeyStruct
+  {
+    static constexpr char const * waterReferencePressureString() { return "waterReferencePressure"; }
+    static constexpr char const * waterReferenceTemperatureString() { return "waterReferenceTemperature"; }
+    static constexpr char const * waterDensityString() { return "waterDensity"; }
+    static constexpr char const * waterViscosityString() { return "waterViscosity"; }
+    static constexpr char const * waterCompressibilityString() { return "waterCompressibility"; }
+    static constexpr char const * waterViscosityCompressibilityString() { return "waterViscosityCompressibility"; }
+    static constexpr char const * waterExpansionCoefficientString() { return "waterExpansionCoefficient"; }
+    static constexpr char const * waterViscosityExpansionCoefficientString() { return "waterViscosityExpansionCoefficient"; }
+  };
+
+  real64 m_waterReferencePressure;
+  real64 m_waterReferenceTemperature{293.15};
+  real64 m_waterDensity;
+  real64 m_waterViscosity;
+  real64 m_waterCompressibility;
+  real64 m_waterViscosityCompressibility{0.0};
+  real64 m_waterExpansionCoefficient{0.0};
+  real64 m_waterViscosityExpansionCoefficient{0.0};
+
 protected:
   void registerParametersImpl( MultiFluidBase * fluid ) override;
 

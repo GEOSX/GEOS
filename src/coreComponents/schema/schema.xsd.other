@@ -173,6 +173,7 @@
 		<xsd:choice minOccurs="0" maxOccurs="unbounded">
 			<xsd:element name="Benchmarks" type="BenchmarksType" maxOccurs="1" />
 			<xsd:element name="Events" type="EventsType" minOccurs="1" maxOccurs="1" />
+			<xsd:element name="ExternalDataSource" type="ExternalDataSourceType" minOccurs="1" maxOccurs="1" />
 			<xsd:element name="FieldSpecifications" type="FieldSpecificationsType" maxOccurs="1" />
 			<xsd:element name="Functions" type="FunctionsType" maxOccurs="1" />
 			<xsd:element name="Geometry" type="GeometryType" maxOccurs="1" />
@@ -279,6 +280,16 @@
 		<!--lastTime => Last event occurrence (time)-->
 		<xsd:attribute name="lastTime" type="real64" />
 	</xsd:complexType>
+	<xsd:complexType name="ExternalDataSourceType">
+		<xsd:choice minOccurs="0" maxOccurs="unbounded">
+			<xsd:element name="VTKHierarchicalDataSource" type="VTKHierarchicalDataSourceType" />
+		</xsd:choice>
+	</xsd:complexType>
+	<xsd:complexType name="VTKHierarchicalDataSourceType">
+		<xsd:choice minOccurs="0" maxOccurs="unbounded">
+			<xsd:element name="VTKHierarchicalDataSource" type="VTKHierarchicalDataSourceType" />
+		</xsd:choice>
+	</xsd:complexType>
 	<xsd:complexType name="FieldSpecificationsType">
 		<xsd:choice minOccurs="0" maxOccurs="unbounded">
 			<xsd:element name="Aquifer" type="AquiferType" />
@@ -380,6 +391,7 @@
 	<xsd:complexType name="InternalMeshType">
 		<xsd:choice minOccurs="0" maxOccurs="unbounded">
 			<xsd:element name="InternalWell" type="InternalWellType" />
+			<xsd:element name="Region" type="RegionType" />
 			<xsd:element name="VTKWell" type="VTKWellType" />
 			<xsd:element name="meshLevels" type="meshLevelsType" />
 		</xsd:choice>
@@ -390,6 +402,7 @@
 		</xsd:choice>
 	</xsd:complexType>
 	<xsd:complexType name="PerforationType" />
+	<xsd:complexType name="RegionType" />
 	<xsd:complexType name="VTKWellType">
 		<xsd:choice minOccurs="0" maxOccurs="unbounded">
 			<xsd:element name="Perforation" type="PerforationType" />
@@ -398,6 +411,7 @@
 	<xsd:complexType name="InternalWellboreType">
 		<xsd:choice minOccurs="0" maxOccurs="unbounded">
 			<xsd:element name="InternalWell" type="InternalWellType" />
+			<xsd:element name="Region" type="RegionType" />
 			<xsd:element name="VTKWell" type="VTKWellType" />
 			<xsd:element name="meshLevels" type="meshLevelsType" />
 		</xsd:choice>
@@ -418,6 +432,7 @@
 	<xsd:complexType name="VTKMeshType">
 		<xsd:choice minOccurs="0" maxOccurs="unbounded">
 			<xsd:element name="InternalWell" type="InternalWellType" />
+			<xsd:element name="Region" type="RegionType" />
 			<xsd:element name="VTKWell" type="VTKWellType" />
 			<xsd:element name="meshLevels" type="meshLevelsType" />
 		</xsd:choice>
@@ -443,9 +458,9 @@
 		<!--normType => Norm used by the flow solver to check nonlinear convergence. Valid options:
 * Linfinity
 * L2-->
-		<xsd:attribute name="normType" type="geos_solverBaseKernels_NormType" />
+		<xsd:attribute name="normType" type="geos_physicsSolverBaseKernels_NormType" />
 	</xsd:complexType>
-	<xsd:simpleType name="geos_solverBaseKernels_NormType">
+	<xsd:simpleType name="geos_physicsSolverBaseKernels_NormType">
 		<xsd:restriction base="xsd:string">
 			<xsd:pattern value=".*[\[\]`$].*|Linfinity|L2" />
 		</xsd:restriction>
@@ -522,6 +537,7 @@
 			<xsd:element name="PhaseFieldDamageFEM" type="PhaseFieldDamageFEMType" />
 			<xsd:element name="PhaseFieldFracture" type="PhaseFieldFractureType" />
 			<xsd:element name="ProppantTransport" type="ProppantTransportType" />
+			<xsd:element name="QuasiDynamicEQ" type="QuasiDynamicEQType" />
 			<xsd:element name="ReactiveCompositionalMultiphaseOBL" type="ReactiveCompositionalMultiphaseOBLType" />
 			<xsd:element name="SeismicityRate" type="SeismicityRateType" />
 			<xsd:element name="SinglePhaseFVM" type="SinglePhaseFVMType" />
@@ -539,6 +555,7 @@
 			<xsd:element name="SolidMechanicsAugmentedLagrangianContact" type="SolidMechanicsAugmentedLagrangianContactType" />
 			<xsd:element name="SolidMechanicsEmbeddedFractures" type="SolidMechanicsEmbeddedFracturesType" />
 			<xsd:element name="SolidMechanicsLagrangeContact" type="SolidMechanicsLagrangeContactType" />
+			<xsd:element name="SolidMechanicsLagrangeContactBubbleStab" type="SolidMechanicsLagrangeContactBubbleStabType" />
 			<xsd:element name="SolidMechanicsLagrangianSSLE" type="SolidMechanicsLagrangianSSLEType" />
 			<xsd:element name="SolidMechanics_LagrangianFEM" type="SolidMechanics_LagrangianFEMType" />
 			<xsd:element name="SolidMechanics_MPM" type="SolidMechanics_MPMType" />
@@ -614,8 +631,8 @@
 		<xsd:attribute name="sourceNodeIds" type="integer_array2d" />
 		<!--sourceRegion => Region containing the sources-->
 		<xsd:attribute name="sourceRegion" type="integer_array" />
-		<!--sourceValue => Source Value of the sources-->
-		<xsd:attribute name="sourceValue" type="real32_array2d" />
+		<!--timeStep => TimeStep computed with the power iteration method (if we don't want to compute it, it is initialized with the XML value-->
+		<xsd:attribute name="timeStep" type="real64" />
 		<!--usePML => Flag to apply PML-->
 		<xsd:attribute name="usePML" type="integer" />
 		<!--uxNp1AtReceivers => Ux value at each receiver for each timestep-->
@@ -661,8 +678,8 @@
 		<xsd:attribute name="sourceIsAccessible" type="integer_array" />
 		<!--sourceNodeIds => Indices of the nodes (in the right order) for each source point-->
 		<xsd:attribute name="sourceNodeIds" type="integer_array2d" />
-		<!--sourceValue => Source Value of the sources-->
-		<xsd:attribute name="sourceValue" type="real32_array2d" />
+		<!--timeStep => TimeStep computed with the power iteration method (if we don't want to compute it, it is initialized with the XML value-->
+		<xsd:attribute name="timeStep" type="real64" />
 		<!--usePML => Flag to apply PML-->
 		<xsd:attribute name="usePML" type="integer" />
 	</xsd:complexType>
@@ -702,8 +719,8 @@
 		<xsd:attribute name="sourceIsAccessible" type="integer_array" />
 		<!--sourceNodeIds => Indices of the nodes (in the right order) for each source point-->
 		<xsd:attribute name="sourceNodeIds" type="integer_array2d" />
-		<!--sourceValue => Source Value of the sources-->
-		<xsd:attribute name="sourceValue" type="real32_array2d" />
+		<!--timeStep => TimeStep computed with the power iteration method (if we don't want to compute it, it is initialized with the XML value-->
+		<xsd:attribute name="timeStep" type="real64" />
 		<!--usePML => Flag to apply PML-->
 		<xsd:attribute name="usePML" type="integer" />
 	</xsd:complexType>
@@ -836,8 +853,8 @@
 		<xsd:attribute name="sourceNodeIds" type="integer_array2d" />
 		<!--sourceRegion => Region containing the sources-->
 		<xsd:attribute name="sourceRegion" type="integer_array" />
-		<!--sourceValue => Source Value of the sources-->
-		<xsd:attribute name="sourceValue" type="real32_array2d" />
+		<!--timeStep => TimeStep computed with the power iteration method (if we don't want to compute it, it is initialized with the XML value-->
+		<xsd:attribute name="timeStep" type="real64" />
 		<!--usePML => Flag to apply PML-->
 		<xsd:attribute name="usePML" type="integer" />
 	</xsd:complexType>
@@ -883,8 +900,8 @@
 		<xsd:attribute name="sourceIsAccessible" type="integer_array" />
 		<!--sourceNodeIds => Indices of the nodes (in the right order) for each source point-->
 		<xsd:attribute name="sourceNodeIds" type="integer_array2d" />
-		<!--sourceValue => Source Value of the sources-->
-		<xsd:attribute name="sourceValue" type="real32_array2d" />
+		<!--timeStep => TimeStep computed with the power iteration method (if we don't want to compute it, it is initialized with the XML value-->
+		<xsd:attribute name="timeStep" type="real64" />
 		<!--usePML => Flag to apply PML-->
 		<xsd:attribute name="usePML" type="integer" />
 	</xsd:complexType>
@@ -991,6 +1008,17 @@
 		<xsd:attribute name="meshTargets" type="geos_mapBase_lt_std_pair_lt_string_cm_-string-_gt__cm_-LvArray_Array_lt_string_cm_-1_cm_-camp_int_seq_lt_long_cm_-0l_gt__cm_-int_cm_-LvArray_ChaiBuffer_gt__cm_-std_integral_constant_lt_bool_cm_-true_gt_-_gt_" />
 	</xsd:complexType>
 	<xsd:complexType name="ProppantTransportType">
+		<xsd:choice minOccurs="0" maxOccurs="unbounded">
+			<xsd:element name="LinearSolverParameters" type="LinearSolverParametersType" maxOccurs="1" />
+			<xsd:element name="NonlinearSolverParameters" type="NonlinearSolverParametersType" maxOccurs="1" />
+			<xsd:element name="SolverStatistics" type="SolverStatisticsType" />
+		</xsd:choice>
+		<!--maxStableDt => Value of the Maximum Stable Timestep for this solver.-->
+		<xsd:attribute name="maxStableDt" type="real64" />
+		<!--meshTargets => MeshBody/Region combinations that the solver will be applied to.-->
+		<xsd:attribute name="meshTargets" type="geos_mapBase_lt_std_pair_lt_string_cm_-string-_gt__cm_-LvArray_Array_lt_string_cm_-1_cm_-camp_int_seq_lt_long_cm_-0l_gt__cm_-int_cm_-LvArray_ChaiBuffer_gt__cm_-std_integral_constant_lt_bool_cm_-true_gt_-_gt_" />
+	</xsd:complexType>
+	<xsd:complexType name="QuasiDynamicEQType">
 		<xsd:choice minOccurs="0" maxOccurs="unbounded">
 			<xsd:element name="LinearSolverParameters" type="LinearSolverParametersType" maxOccurs="1" />
 			<xsd:element name="NonlinearSolverParameters" type="NonlinearSolverParametersType" maxOccurs="1" />
@@ -1237,6 +1265,23 @@
 		<!--surfaceGeneratorName => Name of the surface generator to use-->
 		<xsd:attribute name="surfaceGeneratorName" type="string" />
 	</xsd:complexType>
+	<xsd:complexType name="SolidMechanicsLagrangeContactBubbleStabType">
+		<xsd:choice minOccurs="0" maxOccurs="unbounded">
+			<xsd:element name="LinearSolverParameters" type="LinearSolverParametersType" maxOccurs="1" />
+			<xsd:element name="NonlinearSolverParameters" type="NonlinearSolverParametersType" maxOccurs="1" />
+			<xsd:element name="SolverStatistics" type="SolverStatisticsType" />
+		</xsd:choice>
+		<!--contactRelationName => Name of contact relation to enforce constraints on fracture boundary.-->
+		<xsd:attribute name="contactRelationName" type="groupNameRef" />
+		<!--maxForce => The maximum force contribution in the problem domain.-->
+		<xsd:attribute name="maxForce" type="real64" />
+		<!--maxStableDt => Value of the Maximum Stable Timestep for this solver.-->
+		<xsd:attribute name="maxStableDt" type="real64" />
+		<!--meshTargets => MeshBody/Region combinations that the solver will be applied to.-->
+		<xsd:attribute name="meshTargets" type="geos_mapBase_lt_std_pair_lt_string_cm_-string-_gt__cm_-LvArray_Array_lt_string_cm_-1_cm_-camp_int_seq_lt_long_cm_-0l_gt__cm_-int_cm_-LvArray_ChaiBuffer_gt__cm_-std_integral_constant_lt_bool_cm_-true_gt_-_gt_" />
+		<!--surfaceGeneratorName => Name of the surface generator to use-->
+		<xsd:attribute name="surfaceGeneratorName" type="string" />
+	</xsd:complexType>
 	<xsd:complexType name="SolidMechanicsLagrangianSSLEType">
 		<xsd:choice minOccurs="0" maxOccurs="unbounded">
 			<xsd:element name="LinearSolverParameters" type="LinearSolverParametersType" maxOccurs="1" />
@@ -1441,6 +1486,7 @@
 			<xsd:element name="CarmanKozenyPermeability" type="CarmanKozenyPermeabilityType" />
 			<xsd:element name="CeramicDamage" type="CeramicDamageType" />
 			<xsd:element name="CompositionalMultiphaseFluid" type="CompositionalMultiphaseFluidType" />
+			<xsd:element name="CompositionalThreePhaseFluidLohrenzBrayClark" type="CompositionalThreePhaseFluidLohrenzBrayClarkType" />
 			<xsd:element name="CompositionalTwoPhaseFluid" type="CompositionalTwoPhaseFluidType" />
 			<xsd:element name="CompositionalTwoPhaseFluidLohrenzBrayClark" type="CompositionalTwoPhaseFluidLohrenzBrayClarkType" />
 			<xsd:element name="CompressibleSinglePhaseFluid" type="CompressibleSinglePhaseFluidType" />
@@ -1496,6 +1542,7 @@
 			<xsd:element name="ProppantPorosity" type="ProppantPorosityType" />
 			<xsd:element name="ProppantSlurryFluid" type="ProppantSlurryFluidType" />
 			<xsd:element name="ProppantSolidProppantPermeability" type="ProppantSolidProppantPermeabilityType" />
+			<xsd:element name="RateAndStateFriction" type="RateAndStateFrictionType" />
 			<xsd:element name="ReactiveBrine" type="ReactiveBrineType" />
 			<xsd:element name="ReactiveBrineThermal" type="ReactiveBrineThermalType" />
 			<xsd:element name="SinglePhaseThermalConductivity" type="SinglePhaseThermalConductivityType" />
@@ -1918,6 +1965,56 @@
 		<!--useMass => (no description available)-->
 		<xsd:attribute name="useMass" type="integer" />
 	</xsd:complexType>
+	<xsd:complexType name="CompositionalThreePhaseFluidLohrenzBrayClarkType">
+		<!--dPhaseCompFraction => Derivative of phase component fraction with respect to pressure, temperature, and global component fractions-->
+		<xsd:attribute name="dPhaseCompFraction" type="LvArray_Array_lt_double_cm_-5_cm_-camp_int_seq_lt_long_cm_-0l_cm_-1l_cm_-2l_cm_-3l_cm_-4l_gt__cm_-int_cm_-LvArray_ChaiBuffer_gt_" />
+		<!--dPhaseDensity => Derivative of phase density with respect to pressure, temperature, and global component fractions-->
+		<xsd:attribute name="dPhaseDensity" type="real64_array4d" />
+		<!--dPhaseEnthalpy => Derivative of phase enthalpy with respect to pressure, temperature, and global component fractions-->
+		<xsd:attribute name="dPhaseEnthalpy" type="real64_array4d" />
+		<!--dPhaseFraction => Derivative of phase fraction with respect to pressure, temperature, and global component fractions-->
+		<xsd:attribute name="dPhaseFraction" type="real64_array4d" />
+		<!--dPhaseInternalEnergy => Derivative of phase internal energy with respect to pressure, temperature, and global component fractions-->
+		<xsd:attribute name="dPhaseInternalEnergy" type="real64_array4d" />
+		<!--dPhaseMassDensity => Derivative of phase mass density with respect to pressure, temperature, and global component fractions-->
+		<xsd:attribute name="dPhaseMassDensity" type="real64_array4d" />
+		<!--dPhaseViscosity => Derivative of phase viscosity with respect to pressure, temperature, and global component fractions-->
+		<xsd:attribute name="dPhaseViscosity" type="real64_array4d" />
+		<!--dTotalDensity => Derivative of total density with respect to pressure, temperature, and global component fractions-->
+		<xsd:attribute name="dTotalDensity" type="real64_array3d" />
+		<!--kValues => Phase equilibrium ratios-->
+		<xsd:attribute name="kValues" type="real64_array4d" />
+		<!--phaseCompFraction => Phase component fraction-->
+		<xsd:attribute name="phaseCompFraction" type="real64_array4d" />
+		<!--phaseCompFraction_n => Phase component fraction at the previous converged time step-->
+		<xsd:attribute name="phaseCompFraction_n" type="real64_array4d" />
+		<!--phaseDensity => Phase density-->
+		<xsd:attribute name="phaseDensity" type="real64_array3d" />
+		<!--phaseDensity_n => Phase density at the previous converged time step-->
+		<xsd:attribute name="phaseDensity_n" type="real64_array3d" />
+		<!--phaseEnthalpy => Phase enthalpy-->
+		<xsd:attribute name="phaseEnthalpy" type="real64_array3d" />
+		<!--phaseEnthalpy_n => Phase enthalpy at the previous converged time step-->
+		<xsd:attribute name="phaseEnthalpy_n" type="real64_array3d" />
+		<!--phaseFraction => Phase fraction-->
+		<xsd:attribute name="phaseFraction" type="real64_array3d" />
+		<!--phaseInternalEnergy => Phase internal energy-->
+		<xsd:attribute name="phaseInternalEnergy" type="real64_array3d" />
+		<!--phaseInternalEnergy_n => Phase internal energy at the previous converged time step-->
+		<xsd:attribute name="phaseInternalEnergy_n" type="real64_array3d" />
+		<!--phaseMassDensity => Phase mass density-->
+		<xsd:attribute name="phaseMassDensity" type="real64_array3d" />
+		<!--phaseOrder => (no description available)-->
+		<xsd:attribute name="phaseOrder" type="integer_array" />
+		<!--phaseViscosity => Phase viscosity-->
+		<xsd:attribute name="phaseViscosity" type="real64_array3d" />
+		<!--totalDensity => Total density-->
+		<xsd:attribute name="totalDensity" type="real64_array2d" />
+		<!--totalDensity_n => Total density at the previous converged time step-->
+		<xsd:attribute name="totalDensity_n" type="real64_array2d" />
+		<!--useMass => (no description available)-->
+		<xsd:attribute name="useMass" type="integer" />
+	</xsd:complexType>
 	<xsd:complexType name="CompositionalTwoPhaseFluidType">
 		<!--dPhaseCompFraction => Derivative of phase component fraction with respect to pressure, temperature, and global component fractions-->
 		<xsd:attribute name="dPhaseCompFraction" type="LvArray_Array_lt_double_cm_-5_cm_-camp_int_seq_lt_long_cm_-0l_cm_-1l_cm_-2l_cm_-3l_cm_-4l_gt__cm_-int_cm_-LvArray_ChaiBuffer_gt_" />
@@ -1957,6 +2054,8 @@
 		<xsd:attribute name="phaseInternalEnergy_n" type="real64_array3d" />
 		<!--phaseMassDensity => Phase mass density-->
 		<xsd:attribute name="phaseMassDensity" type="real64_array3d" />
+		<!--phaseOrder => (no description available)-->
+		<xsd:attribute name="phaseOrder" type="integer_array" />
 		<!--phaseViscosity => Phase viscosity-->
 		<xsd:attribute name="phaseViscosity" type="real64_array3d" />
 		<!--totalDensity => Total density-->
@@ -2005,6 +2104,8 @@
 		<xsd:attribute name="phaseInternalEnergy_n" type="real64_array3d" />
 		<!--phaseMassDensity => Phase mass density-->
 		<xsd:attribute name="phaseMassDensity" type="real64_array3d" />
+		<!--phaseOrder => (no description available)-->
+		<xsd:attribute name="phaseOrder" type="integer_array" />
 		<!--phaseViscosity => Phase viscosity-->
 		<xsd:attribute name="phaseViscosity" type="real64_array3d" />
 		<!--totalDensity => Total density-->
@@ -2572,6 +2673,20 @@
 		<xsd:attribute name="viscosity" type="real64_array2d" />
 	</xsd:complexType>
 	<xsd:complexType name="ProppantSolidProppantPermeabilityType" />
+	<xsd:complexType name="RateAndStateFrictionType">
+		<!--Dc => Rate- and State-dependent friction characteristic length.-->
+		<xsd:attribute name="Dc" type="real64_array" />
+		<!--a => Rate- and State-dependent friction coefficient a.-->
+		<xsd:attribute name="a" type="real64_array" />
+		<!--b => Rate- and State-dependent friction coefficient b.-->
+		<xsd:attribute name="b" type="real64_array" />
+		<!--frictionCoefficient => Friction coefficient-->
+		<xsd:attribute name="frictionCoefficient" type="real64_array" />
+		<!--referenceFrictionCoefficient => Rate- and State-dependent friction reference friction coefficient.-->
+		<xsd:attribute name="referenceFrictionCoefficient" type="real64_array" />
+		<!--referenceVelocity => Rate- and State-dependent friction reference slip rate.-->
+		<xsd:attribute name="referenceVelocity" type="real64_array" />
+	</xsd:complexType>
 	<xsd:complexType name="ReactiveBrineType">
 		<!--dPhaseCompFraction => Derivative of phase component fraction with respect to pressure, temperature, and global component fractions-->
 		<xsd:attribute name="dPhaseCompFraction" type="LvArray_Array_lt_double_cm_-5_cm_-camp_int_seq_lt_long_cm_-0l_cm_-1l_cm_-2l_cm_-3l_cm_-4l_gt__cm_-int_cm_-LvArray_ChaiBuffer_gt_" />

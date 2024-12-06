@@ -83,13 +83,13 @@ DECLARE_FIELD( DivPsi_q,
                WRITE_AND_READ,
                "q-type memory variable for acoustic VTI attenuation." );
 
-DECLARE_FIELD( PressureDoubleDerivative,
-               "pressureDoubleDerivative",
+DECLARE_FIELD( PressureForward,
+               "pressureForward",
                array1d< real32 >,
                0,
                NOPLOT,
                WRITE_AND_READ,
-               "Double derivative of the pressure for each node to compute the gradient" );
+               "Pressure field from forward pass on each node to compute the gradient" );
 
 DECLARE_FIELD( Velocity_x,
                "velocity_x",
@@ -122,6 +122,14 @@ DECLARE_FIELD( PartialGradient,
                NOPLOT,
                WRITE_AND_READ,
                "Partiel gradient computed during backward propagation" );
+
+DECLARE_FIELD( PartialGradient2,
+               "partialGradient2",
+               array1d< real32 >,
+               0,
+               NOPLOT,
+               WRITE_AND_READ,
+               "Partial gradient for density/velocity computed during backward propagation" );
 
 DECLARE_FIELD( ForcingRHS,
                "rhs",

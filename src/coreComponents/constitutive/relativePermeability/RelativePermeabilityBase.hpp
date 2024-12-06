@@ -24,7 +24,7 @@
 #include "constitutive/ConstitutiveBase.hpp"
 #include "constitutive/relativePermeability/layouts.hpp"
 #include "common/GEOS_RAJA_Interface.hpp"
-#include "codingUtilities/EnumStrings.hpp"
+#include "common/format/EnumStrings.hpp"
 
 namespace geos
 {

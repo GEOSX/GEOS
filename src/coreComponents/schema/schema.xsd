@@ -185,6 +185,12 @@
 					<xsd:field xpath="@name" />
 				</xsd:unique>
 			</xsd:element>
+			<xsd:element name="ExternalDataSource" type="ExternalDataSourceType" minOccurs="1" maxOccurs="1">
+				<xsd:unique name="ExternalDataSourceVTKHierarchicalDataSourceUniqueName">
+					<xsd:selector xpath="VTKHierarchicalDataSource" />
+					<xsd:field xpath="@name" />
+				</xsd:unique>
+			</xsd:element>
 			<xsd:element name="FieldSpecifications" type="FieldSpecificationsType" maxOccurs="1">
 				<xsd:unique name="FieldSpecificationsAquiferUniqueName">
 					<xsd:selector xpath="Aquifer" />
@@ -389,6 +395,10 @@
 					<xsd:selector xpath="ProppantTransport" />
 					<xsd:field xpath="@name" />
 				</xsd:unique>
+				<xsd:unique name="SolversQuasiDynamicEQUniqueName">
+					<xsd:selector xpath="QuasiDynamicEQ" />
+					<xsd:field xpath="@name" />
+				</xsd:unique>
 				<xsd:unique name="SolversReactiveCompositionalMultiphaseOBLUniqueName">
 					<xsd:selector xpath="ReactiveCompositionalMultiphaseOBL" />
 					<xsd:field xpath="@name" />
@@ -455,6 +465,10 @@
 				</xsd:unique>
 				<xsd:unique name="SolversSolidMechanicsLagrangeContactUniqueName">
 					<xsd:selector xpath="SolidMechanicsLagrangeContact" />
+					<xsd:field xpath="@name" />
+				</xsd:unique>
+				<xsd:unique name="SolversSolidMechanicsLagrangeContactBubbleStabUniqueName">
+					<xsd:selector xpath="SolidMechanicsLagrangeContactBubbleStab" />
 					<xsd:field xpath="@name" />
 				</xsd:unique>
 				<xsd:unique name="SolversSolidMechanicsLagrangianSSLEUniqueName">
@@ -603,6 +617,10 @@
 				</xsd:unique>
 				<xsd:unique name="domainConstitutiveCompositionalMultiphaseFluidUniqueName">
 					<xsd:selector xpath="CompositionalMultiphaseFluid" />
+					<xsd:field xpath="@name" />
+				</xsd:unique>
+				<xsd:unique name="domainConstitutiveCompositionalThreePhaseFluidLohrenzBrayClarkUniqueName">
+					<xsd:selector xpath="CompositionalThreePhaseFluidLohrenzBrayClark" />
 					<xsd:field xpath="@name" />
 				</xsd:unique>
 				<xsd:unique name="domainConstitutiveCompositionalTwoPhaseFluidUniqueName">
@@ -825,6 +843,10 @@
 					<xsd:selector xpath="ProppantSolidProppantPermeability" />
 					<xsd:field xpath="@name" />
 				</xsd:unique>
+				<xsd:unique name="domainConstitutiveRateAndStateFrictionUniqueName">
+					<xsd:selector xpath="RateAndStateFriction" />
+					<xsd:field xpath="@name" />
+				</xsd:unique>
 				<xsd:unique name="domainConstitutiveReactiveBrineUniqueName">
 					<xsd:selector xpath="ReactiveBrine" />
 					<xsd:field xpath="@name" />
@@ -957,7 +979,7 @@
 		<!--maxCycle => Maximum simulation cycle for the global event loop. Disabled by default.-->
 		<xsd:attribute name="maxCycle" type="integer" default="2147483647" />
 		<!--maxTime => Maximum simulation time for the global event loop. Disabled by default.-->
-		<xsd:attribute name="maxTime" type="real64" default="1.79769e+308" />
+		<xsd:attribute name="maxTime" type="real64" default="3.1557e+11" />
 		<!--minTime => Start simulation time for the global event loop.-->
 		<xsd:attribute name="minTime" type="real64" default="0" />
 		<!--timeOutputFormat => Format of the time in the GEOS log.-->
@@ -1067,6 +1089,25 @@
 			<xsd:pattern value=".*[\[\]`$].*|seconds|minutes|hours|days|years|full" />
 		</xsd:restriction>
 	</xsd:simpleType>
+	<xsd:complexType name="ExternalDataSourceType">
+		<xsd:choice minOccurs="0" maxOccurs="unbounded">
+			<xsd:element name="VTKHierarchicalDataSource" type="VTKHierarchicalDataSourceType">
+				<xsd:unique name="ExternalDataSourceVTKHierarchicalDataSourceVTKHierarchicalDataSourceUniqueName">
+					<xsd:selector xpath="VTKHierarchicalDataSource" />
+					<xsd:field xpath="@name" />
+				</xsd:unique>
+			</xsd:element>
+		</xsd:choice>
+	</xsd:complexType>
+	<xsd:complexType name="VTKHierarchicalDataSourceType">
+		<xsd:choice minOccurs="0" maxOccurs="unbounded">
+			<xsd:element name="VTKHierarchicalDataSource" type="VTKHierarchicalDataSourceType" />
+		</xsd:choice>
+		<!--file => Path to the mesh file-->
+		<xsd:attribute name="file" type="groupNameRef" use="required" />
+		<!--name => A name is required for any non-unique nodes-->
+		<xsd:attribute name="name" type="groupName" use="required" />
+	</xsd:complexType>
 	<xsd:complexType name="FieldSpecificationsType">
 		<xsd:choice minOccurs="0" maxOccurs="unbounded">
 			<xsd:element name="Aquifer" type="AquiferType" />
@@ -1486,6 +1527,10 @@ stress - traction is applied to the faces as specified by the inner product of i
 					<xsd:selector xpath="InternalWell" />
 					<xsd:field xpath="@name" />
 				</xsd:unique>
+				<xsd:unique name="MeshInternalMeshRegionUniqueName">
+					<xsd:selector xpath="Region" />
+					<xsd:field xpath="@name" />
+				</xsd:unique>
 				<xsd:unique name="MeshInternalMeshVTKWellUniqueName">
 					<xsd:selector xpath="VTKWell" />
 					<xsd:field xpath="@name" />
@@ -1494,6 +1539,10 @@ stress - traction is applied to the faces as specified by the inner product of i
 			<xsd:element name="InternalWellbore" type="InternalWellboreType">
 				<xsd:unique name="MeshInternalWellboreInternalWellUniqueName">
 					<xsd:selector xpath="InternalWell" />
+					<xsd:field xpath="@name" />
+				</xsd:unique>
+				<xsd:unique name="MeshInternalWellboreRegionUniqueName">
+					<xsd:selector xpath="Region" />
 					<xsd:field xpath="@name" />
 				</xsd:unique>
 				<xsd:unique name="MeshInternalWellboreVTKWellUniqueName">
@@ -1505,6 +1554,10 @@ stress - traction is applied to the faces as specified by the inner product of i
 			<xsd:element name="VTKMesh" type="VTKMeshType">
 				<xsd:unique name="MeshVTKMeshInternalWellUniqueName">
 					<xsd:selector xpath="InternalWell" />
+					<xsd:field xpath="@name" />
+				</xsd:unique>
+				<xsd:unique name="MeshVTKMeshRegionUniqueName">
+					<xsd:selector xpath="Region" />
 					<xsd:field xpath="@name" />
 				</xsd:unique>
 				<xsd:unique name="MeshVTKMeshVTKWellUniqueName">
@@ -1522,6 +1575,7 @@ stress - traction is applied to the faces as specified by the inner product of i
 					<xsd:field xpath="@name" />
 				</xsd:unique>
 			</xsd:element>
+			<xsd:element name="Region" type="RegionType" />
 			<xsd:element name="VTKWell" type="VTKWellType">
 				<xsd:unique name="MeshInternalMeshVTKWellPerforationUniqueName">
 					<xsd:selector xpath="Perforation" />
@@ -1593,6 +1647,14 @@ stress - traction is applied to the faces as specified by the inner product of i
 		<!--name => A name is required for any non-unique nodes-->
 		<xsd:attribute name="name" type="groupName" use="required" />
 	</xsd:complexType>
+	<xsd:complexType name="RegionType">
+		<!--id => Interval region identifier-->
+		<xsd:attribute name="id" type="integer" use="required" />
+		<!--pathInRepository => Path of the dataset in the repository-->
+		<xsd:attribute name="pathInRepository" type="string" use="required" />
+		<!--name => A name is required for any non-unique nodes-->
+		<xsd:attribute name="name" type="groupName" use="required" />
+	</xsd:complexType>
 	<xsd:complexType name="VTKWellType">
 		<xsd:choice minOccurs="0" maxOccurs="unbounded">
 			<xsd:element name="Perforation" type="PerforationType" />
@@ -1622,6 +1684,7 @@ stress - traction is applied to the faces as specified by the inner product of i
 					<xsd:field xpath="@name" />
 				</xsd:unique>
 			</xsd:element>
+			<xsd:element name="Region" type="RegionType" />
 			<xsd:element name="VTKWell" type="VTKWellType">
 				<xsd:unique name="MeshInternalWellboreVTKWellPerforationUniqueName">
 					<xsd:selector xpath="Perforation" />
@@ -1690,6 +1753,7 @@ stress - traction is applied to the faces as specified by the inner product of i
 					<xsd:field xpath="@name" />
 				</xsd:unique>
 			</xsd:element>
+			<xsd:element name="Region" type="RegionType" />
 			<xsd:element name="VTKWell" type="VTKWellType">
 				<xsd:unique name="MeshVTKMeshVTKWellPerforationUniqueName">
 					<xsd:selector xpath="Perforation" />
@@ -1697,6 +1761,8 @@ stress - traction is applied to the faces as specified by the inner product of i
 				</xsd:unique>
 			</xsd:element>
 		</xsd:choice>
+		<!--dataSourceName => Name of the VTK data source-->
+		<xsd:attribute name="dataSourceName" type="string" default="" />
 		<!--faceBlocks => For multi-block files, names of the face mesh block.-->
 		<xsd:attribute name="faceBlocks" type="groupNameRef_array" default="{}" />
 		<!--fieldNamesInGEOS => Names of the volumic fields in GEOS to import into-->
@@ -1704,7 +1770,7 @@ stress - traction is applied to the faces as specified by the inner product of i
 		<!--fieldsToImport => Volumic fields to be imported from the external mesh file-->
 		<xsd:attribute name="fieldsToImport" type="groupNameRef_array" default="{}" />
 		<!--file => Path to the mesh file-->
-		<xsd:attribute name="file" type="path" use="required" />
+		<xsd:attribute name="file" type="path" default="" />
 		<!--logLevel => Log level-->
 		<xsd:attribute name="logLevel" type="integer" default="0" />
 		<!--mainBlockName => For multi-block files, name of the 3d mesh block.-->
@@ -1788,7 +1854,7 @@ stress - traction is applied to the faces as specified by the inner product of i
 		<xsd:attribute name="amgAggressiveCoarseningPaths" type="integer" default="1" />
 		<!--amgAggressiveInterpType => AMG aggressive interpolation algorithm. Available options are: ``default|extendedIStage2|standardStage2|extendedStage2|multipass|modifiedExtended|modifiedExtendedI|modifiedExtendedE|modifiedMultipass``-->
 		<xsd:attribute name="amgAggressiveInterpType" type="geos_LinearSolverParameters_AMG_AggInterpType" default="multipass" />
-		<!--amgCoarseSolver => AMG coarsest level solver/smoother type. Available options are: ``default|jacobi|l1jacobi|fgs|sgs|l1sgs|chebyshev|direct|bgs``-->
+		<!--amgCoarseSolver => AMG coarsest level solver/smoother type. Available options are: ``default|jacobi|l1jacobi|fgs|sgs|l1sgs|chebyshev|direct|bgs|gsElimWPivoting|gsElimWInverse``-->
 		<xsd:attribute name="amgCoarseSolver" type="geos_LinearSolverParameters_AMG_CoarseType" default="direct" />
 		<!--amgCoarseningType => AMG coarsening algorithm. Available options are: ``default|CLJP|RugeStueben|Falgout|PMIS|HMIS``-->
 		<xsd:attribute name="amgCoarseningType" type="geos_LinearSolverParameters_AMG_CoarseningType" default="HMIS" />
@@ -1859,7 +1925,7 @@ the relative residual norm satisfies:
 	</xsd:simpleType>
 	<xsd:simpleType name="geos_LinearSolverParameters_AMG_CoarseType">
 		<xsd:restriction base="xsd:string">
-			<xsd:pattern value=".*[\[\]`$].*|default|jacobi|l1jacobi|fgs|sgs|l1sgs|chebyshev|direct|bgs" />
+			<xsd:pattern value=".*[\[\]`$].*|default|jacobi|l1jacobi|fgs|sgs|l1sgs|chebyshev|direct|bgs|gsElimWPivoting|gsElimWInverse" />
 		</xsd:restriction>
 	</xsd:simpleType>
 	<xsd:simpleType name="geos_LinearSolverParameters_AMG_CoarseningType">
@@ -1970,7 +2036,7 @@ the relative residual norm satisfies:
 		<!--normType => Norm used by the flow solver to check nonlinear convergence. Valid options:
 * Linfinity
 * L2-->
-		<xsd:attribute name="normType" type="geos_solverBaseKernels_NormType" default="Linfinity" />
+		<xsd:attribute name="normType" type="geos_physicsSolverBaseKernels_NormType" default="Linfinity" />
 	</xsd:complexType>
 	<xsd:simpleType name="geos_NonlinearSolverParameters_CouplingType">
 		<xsd:restriction base="xsd:string">
@@ -2137,6 +2203,8 @@ the relative residual norm satisfies:
 		<xsd:attribute name="levelNames" type="string_array" default="{}" />
 		<!--logLevel => Log level-->
 		<xsd:attribute name="logLevel" type="integer" default="0" />
+		<!--numberOfTargetProcesses => Number of output aggregate files to be written.-->
+		<xsd:attribute name="numberOfTargetProcesses" type="integer" default="1" />
 		<!--onlyPlotSpecifiedFieldNames => If this flag is equal to 1, then we only plot the fields listed in `fieldNames`. Otherwise, we plot all the fields with the required `plotLevel`, plus the fields listed in `fieldNames`-->
 		<xsd:attribute name="onlyPlotSpecifiedFieldNames" type="integer" default="0" />
 		<!--outputRegionType => Output region types.  Valid options: ``cell``, ``well``, ``surface``, ``particle``, ``all``-->
@@ -2193,6 +2261,7 @@ the relative residual norm satisfies:
 			<xsd:element name="PhaseFieldDamageFEM" type="PhaseFieldDamageFEMType" />
 			<xsd:element name="PhaseFieldFracture" type="PhaseFieldFractureType" />
 			<xsd:element name="ProppantTransport" type="ProppantTransportType" />
+			<xsd:element name="QuasiDynamicEQ" type="QuasiDynamicEQType" />
 			<xsd:element name="ReactiveCompositionalMultiphaseOBL" type="ReactiveCompositionalMultiphaseOBLType" />
 			<xsd:element name="SeismicityRate" type="SeismicityRateType" />
 			<xsd:element name="SinglePhaseFVM" type="SinglePhaseFVMType" />
@@ -2215,6 +2284,7 @@ the relative residual norm satisfies:
 			<xsd:element name="SolidMechanicsAugmentedLagrangianContact" type="SolidMechanicsAugmentedLagrangianContactType" />
 			<xsd:element name="SolidMechanicsEmbeddedFractures" type="SolidMechanicsEmbeddedFracturesType" />
 			<xsd:element name="SolidMechanicsLagrangeContact" type="SolidMechanicsLagrangeContactType" />
+			<xsd:element name="SolidMechanicsLagrangeContactBubbleStab" type="SolidMechanicsLagrangeContactBubbleStabType" />
 			<xsd:element name="SolidMechanicsLagrangianSSLE" type="SolidMechanicsLagrangianSSLEType" />
 			<xsd:element name="SolidMechanics_LagrangianFEM" type="SolidMechanics_LagrangianFEMType" />
 			<xsd:element name="SolidMechanics_MPM" type="SolidMechanics_MPMType" />
@@ -2316,12 +2386,16 @@ Level 0 outputs no specific information for this solver. Higher levels require m
 		<xsd:attribute name="slsReferenceAngularFrequencies" type="real32_array" default="{0}" />
 		<!--sourceCoordinates => Coordinates (x,y,z) of the sources-->
 		<xsd:attribute name="sourceCoordinates" type="real64_array2d" default="{{0}}" />
+		<!--sourceWaveletTableNames => Names of the table functions, one for each source, that are used to define the source wavelets. If a list is given, it overrides the Ricker wavelet definitions.The default value is an empty list, which means that a Ricker wavelet is used everywhere.-->
+		<xsd:attribute name="sourceWaveletTableNames" type="string_array" default="{}" />
 		<!--targetRegions => Allowable regions that the solver may be applied to. Note that this does not indicate that the solver will be applied to these regions, only that allocation will occur such that the solver may be applied to these regions. The decision about what regions this solver will beapplied to rests in the EventManager.-->
 		<xsd:attribute name="targetRegions" type="groupNameRef_array" use="required" />
 		<!--timeSourceDelay => Source time delay (1 / f0 by default)-->
 		<xsd:attribute name="timeSourceDelay" type="real32" default="-1" />
 		<!--timeSourceFrequency => Central frequency for the time source-->
 		<xsd:attribute name="timeSourceFrequency" type="real32" default="0" />
+		<!--timestepStabilityLimit => Set to 1 to apply a stability limit to the simulation timestep. The timestep used is that given by the CFL condition times the cflFactor parameter.-->
+		<xsd:attribute name="timestepStabilityLimit" type="integer" default="0" />
 		<!--useDAS => Flag to indicate if DAS data will be modeled, and which DAS type to use: "none" to deactivate DAS, "strainIntegration" for strain integration, "dipole" for displacement difference-->
 		<xsd:attribute name="useDAS" type="geos_WaveSolverUtils_DASType" default="none" />
 		<!--writeLinearSystem => Write matrix, rhs, solution to screen ( = 1) or file ( = 2).-->
@@ -2397,12 +2471,16 @@ Level 0 outputs no specific information for this solver. Higher levels require m
 		<xsd:attribute name="slsReferenceAngularFrequencies" type="real32_array" default="{0}" />
 		<!--sourceCoordinates => Coordinates (x,y,z) of the sources-->
 		<xsd:attribute name="sourceCoordinates" type="real64_array2d" default="{{0}}" />
+		<!--sourceWaveletTableNames => Names of the table functions, one for each source, that are used to define the source wavelets. If a list is given, it overrides the Ricker wavelet definitions.The default value is an empty list, which means that a Ricker wavelet is used everywhere.-->
+		<xsd:attribute name="sourceWaveletTableNames" type="string_array" default="{}" />
 		<!--targetRegions => Allowable regions that the solver may be applied to. Note that this does not indicate that the solver will be applied to these regions, only that allocation will occur such that the solver may be applied to these regions. The decision about what regions this solver will beapplied to rests in the EventManager.-->
 		<xsd:attribute name="targetRegions" type="groupNameRef_array" use="required" />
 		<!--timeSourceDelay => Source time delay (1 / f0 by default)-->
 		<xsd:attribute name="timeSourceDelay" type="real32" default="-1" />
 		<!--timeSourceFrequency => Central frequency for the time source-->
 		<xsd:attribute name="timeSourceFrequency" type="real32" default="0" />
+		<!--timestepStabilityLimit => Set to 1 to apply a stability limit to the simulation timestep. The timestep used is that given by the CFL condition times the cflFactor parameter.-->
+		<xsd:attribute name="timestepStabilityLimit" type="integer" default="0" />
 		<!--useDAS => Flag to indicate if DAS data will be modeled, and which DAS type to use: "none" to deactivate DAS, "strainIntegration" for strain integration, "dipole" for displacement difference-->
 		<xsd:attribute name="useDAS" type="geos_WaveSolverUtils_DASType" default="none" />
 		<!--writeLinearSystem => Write matrix, rhs, solution to screen ( = 1) or file ( = 2).-->
@@ -2468,12 +2546,16 @@ Level 0 outputs no specific information for this solver. Higher levels require m
 		<xsd:attribute name="slsReferenceAngularFrequencies" type="real32_array" default="{0}" />
 		<!--sourceCoordinates => Coordinates (x,y,z) of the sources-->
 		<xsd:attribute name="sourceCoordinates" type="real64_array2d" default="{{0}}" />
+		<!--sourceWaveletTableNames => Names of the table functions, one for each source, that are used to define the source wavelets. If a list is given, it overrides the Ricker wavelet definitions.The default value is an empty list, which means that a Ricker wavelet is used everywhere.-->
+		<xsd:attribute name="sourceWaveletTableNames" type="string_array" default="{}" />
 		<!--targetRegions => Allowable regions that the solver may be applied to. Note that this does not indicate that the solver will be applied to these regions, only that allocation will occur such that the solver may be applied to these regions. The decision about what regions this solver will beapplied to rests in the EventManager.-->
 		<xsd:attribute name="targetRegions" type="groupNameRef_array" use="required" />
 		<!--timeSourceDelay => Source time delay (1 / f0 by default)-->
 		<xsd:attribute name="timeSourceDelay" type="real32" default="-1" />
 		<!--timeSourceFrequency => Central frequency for the time source-->
 		<xsd:attribute name="timeSourceFrequency" type="real32" default="0" />
+		<!--timestepStabilityLimit => Set to 1 to apply a stability limit to the simulation timestep. The timestep used is that given by the CFL condition times the cflFactor parameter.-->
+		<xsd:attribute name="timestepStabilityLimit" type="integer" default="0" />
 		<!--useDAS => Flag to indicate if DAS data will be modeled, and which DAS type to use: "none" to deactivate DAS, "strainIntegration" for strain integration, "dipole" for displacement difference-->
 		<xsd:attribute name="useDAS" type="geos_WaveSolverUtils_DASType" default="none" />
 		<!--writeLinearSystem => Write matrix, rhs, solution to screen ( = 1) or file ( = 2).-->
@@ -2574,7 +2656,7 @@ Level 0 outputs no specific information for this solver. Higher levels require m
 		<!--name => A name is required for any non-unique nodes-->
 		<xsd:attribute name="name" type="groupName" use="required" />
 	</xsd:complexType>
-	<xsd:simpleType name="geos_solverBaseKernels_NormType">
+	<xsd:simpleType name="geos_physicsSolverBaseKernels_NormType">
 		<xsd:restriction base="xsd:string">
 			<xsd:pattern value=".*[\[\]`$].*|Linfinity|L2" />
 		</xsd:restriction>
@@ -2925,12 +3007,16 @@ Level 0 outputs no specific information for this solver. Higher levels require m
 		<xsd:attribute name="slsReferenceAngularFrequencies" type="real32_array" default="{0}" />
 		<!--sourceCoordinates => Coordinates (x,y,z) of the sources-->
 		<xsd:attribute name="sourceCoordinates" type="real64_array2d" default="{{0}}" />
+		<!--sourceWaveletTableNames => Names of the table functions, one for each source, that are used to define the source wavelets. If a list is given, it overrides the Ricker wavelet definitions.The default value is an empty list, which means that a Ricker wavelet is used everywhere.-->
+		<xsd:attribute name="sourceWaveletTableNames" type="string_array" default="{}" />
 		<!--targetRegions => Allowable regions that the solver may be applied to. Note that this does not indicate that the solver will be applied to these regions, only that allocation will occur such that the solver may be applied to these regions. The decision about what regions this solver will beapplied to rests in the EventManager.-->
 		<xsd:attribute name="targetRegions" type="groupNameRef_array" use="required" />
 		<!--timeSourceDelay => Source time delay (1 / f0 by default)-->
 		<xsd:attribute name="timeSourceDelay" type="real32" default="-1" />
 		<!--timeSourceFrequency => Central frequency for the time source-->
 		<xsd:attribute name="timeSourceFrequency" type="real32" default="0" />
+		<!--timestepStabilityLimit => Set to 1 to apply a stability limit to the simulation timestep. The timestep used is that given by the CFL condition times the cflFactor parameter.-->
+		<xsd:attribute name="timestepStabilityLimit" type="integer" default="0" />
 		<!--useDAS => Flag to indicate if DAS data will be modeled, and which DAS type to use: "none" to deactivate DAS, "strainIntegration" for strain integration, "dipole" for displacement difference-->
 		<xsd:attribute name="useDAS" type="geos_WaveSolverUtils_DASType" default="none" />
 		<!--writeLinearSystem => Write matrix, rhs, solution to screen ( = 1) or file ( = 2).-->
@@ -3000,12 +3086,16 @@ Level 0 outputs no specific information for this solver. Higher levels require m
 		<xsd:attribute name="sourceForce" type="R1Tensor" default="{0,0,0}" />
 		<!--sourceMoment => Moment of the source: 6 real values describing a symmetric tensor in Voigt notation.The default value is { 1, 1, 1, 0, 0, 0 } (diagonal moment, corresponding to a seismic charge).-->
 		<xsd:attribute name="sourceMoment" type="R2SymTensor" default="{1,1,1,0,0,0}" />
+		<!--sourceWaveletTableNames => Names of the table functions, one for each source, that are used to define the source wavelets. If a list is given, it overrides the Ricker wavelet definitions.The default value is an empty list, which means that a Ricker wavelet is used everywhere.-->
+		<xsd:attribute name="sourceWaveletTableNames" type="string_array" default="{}" />
 		<!--targetRegions => Allowable regions that the solver may be applied to. Note that this does not indicate that the solver will be applied to these regions, only that allocation will occur such that the solver may be applied to these regions. The decision about what regions this solver will beapplied to rests in the EventManager.-->
 		<xsd:attribute name="targetRegions" type="groupNameRef_array" use="required" />
 		<!--timeSourceDelay => Source time delay (1 / f0 by default)-->
 		<xsd:attribute name="timeSourceDelay" type="real32" default="-1" />
 		<!--timeSourceFrequency => Central frequency for the time source-->
 		<xsd:attribute name="timeSourceFrequency" type="real32" default="0" />
+		<!--timestepStabilityLimit => Set to 1 to apply a stability limit to the simulation timestep. The timestep used is that given by the CFL condition times the cflFactor parameter.-->
+		<xsd:attribute name="timestepStabilityLimit" type="integer" default="0" />
 		<!--useDAS => Flag to indicate if DAS data will be modeled, and which DAS type to use: "none" to deactivate DAS, "strainIntegration" for strain integration, "dipole" for displacement difference-->
 		<xsd:attribute name="useDAS" type="geos_WaveSolverUtils_DASType" default="none" />
 		<!--useVTI => Flag to apply VTI anisotropy. The default is to use isotropic physic.-->
@@ -3406,6 +3496,43 @@ Level 0 outputs no specific information for this solver. Higher levels require m
 		<xsd:attribute name="targetRegions" type="groupNameRef_array" use="required" />
 		<!--updateProppantPacking => Flag that enables/disables proppant-packing update-->
 		<xsd:attribute name="updateProppantPacking" type="integer" default="0" />
+		<!--writeLinearSystem => Write matrix, rhs, solution to screen ( = 1) or file ( = 2).-->
+		<xsd:attribute name="writeLinearSystem" type="integer" default="0" />
+		<!--name => A name is required for any non-unique nodes-->
+		<xsd:attribute name="name" type="groupName" use="required" />
+	</xsd:complexType>
+	<xsd:complexType name="QuasiDynamicEQType">
+		<xsd:choice minOccurs="0" maxOccurs="unbounded">
+			<xsd:element name="LinearSolverParameters" type="LinearSolverParametersType" maxOccurs="1" />
+			<xsd:element name="NonlinearSolverParameters" type="NonlinearSolverParametersType" maxOccurs="1" />
+		</xsd:choice>
+		<!--cflFactor => Factor to apply to the `CFL condition <http://en.wikipedia.org/wiki/Courant-Friedrichs-Lewy_condition>`_ when calculating the maximum allowable time step. Values should be in the interval (0,1] -->
+		<xsd:attribute name="cflFactor" type="real64" default="0.5" />
+		<!--discretization => Name of discretization object (defined in the :ref:`NumericalMethodsManager`) to use for this solver. For instance, if this is a Finite Element Solver, the name of a :ref:`FiniteElement` should be specified. If this is a Finite Volume Method, the name of a :ref:`FiniteVolume` discretization should be specified.-->
+		<xsd:attribute name="discretization" type="groupNameRef" use="required" />
+		<!--initialDt => Initial time-step value required by the solver to the event manager.-->
+		<xsd:attribute name="initialDt" type="real64" default="1e+99" />
+		<!--logLevel => Sets the level of information to write in the standard output (the console typically).
+Level 0 outputs no specific information for this solver. Higher levels require more outputs.
+1
+ - Line search information
+ - Solution information (scaling, maximum changes, quality check)
+ - Convergence information
+ - Time step information
+ - Linear solver information
+ - Nonlinear solver information
+ - Solver timers information
+2
+ - The summary of declared fields and coupling-->
+		<xsd:attribute name="logLevel" type="integer" default="0" />
+		<!--shearImpedance => Shear impedance.-->
+		<xsd:attribute name="shearImpedance" type="real64" use="required" />
+		<!--stressSolverName => Name of solver for computing stress. If empty, the spring-slider model is run.-->
+		<xsd:attribute name="stressSolverName" type="string" default="" />
+		<!--targetRegions => Allowable regions that the solver may be applied to. Note that this does not indicate that the solver will be applied to these regions, only that allocation will occur such that the solver may be applied to these regions. The decision about what regions this solver will beapplied to rests in the EventManager.-->
+		<xsd:attribute name="targetRegions" type="groupNameRef_array" use="required" />
+		<!--targetSlipIncrement => Target slip incrmeent for timestep size selction-->
+		<xsd:attribute name="targetSlipIncrement" type="real64" default="1e-07" />
 		<!--writeLinearSystem => Write matrix, rhs, solution to screen ( = 1) or file ( = 2).-->
 		<xsd:attribute name="writeLinearSystem" type="integer" default="0" />
 		<!--name => A name is required for any non-unique nodes-->
@@ -4186,6 +4313,58 @@ Level 0 outputs no specific information for this solver. Higher levels require m
 		<!--name => A name is required for any non-unique nodes-->
 		<xsd:attribute name="name" type="groupName" use="required" />
 	</xsd:complexType>
+	<xsd:complexType name="SolidMechanicsLagrangeContactBubbleStabType">
+		<xsd:choice minOccurs="0" maxOccurs="unbounded">
+			<xsd:element name="LinearSolverParameters" type="LinearSolverParametersType" maxOccurs="1" />
+			<xsd:element name="NonlinearSolverParameters" type="NonlinearSolverParametersType" maxOccurs="1" />
+		</xsd:choice>
+		<!--cflFactor => Factor to apply to the `CFL condition <http://en.wikipedia.org/wiki/Courant-Friedrichs-Lewy_condition>`_ when calculating the maximum allowable time step. Values should be in the interval (0,1] -->
+		<xsd:attribute name="cflFactor" type="real64" default="0.5" />
+		<!--contactPenaltyStiffness => Value of the penetration penalty stiffness. Units of Pressure/length-->
+		<xsd:attribute name="contactPenaltyStiffness" type="real64" default="0" />
+		<!--discretization => Name of discretization object (defined in the :ref:`NumericalMethodsManager`) to use for this solver. For instance, if this is a Finite Element Solver, the name of a :ref:`FiniteElement` should be specified. If this is a Finite Volume Method, the name of a :ref:`FiniteVolume` discretization should be specified.-->
+		<xsd:attribute name="discretization" type="groupNameRef" use="required" />
+		<!--initialDt => Initial time-step value required by the solver to the event manager.-->
+		<xsd:attribute name="initialDt" type="real64" default="1e+99" />
+		<!--logLevel => Sets the level of information to write in the standard output (the console typically).
+Level 0 outputs no specific information for this solver. Higher levels require more outputs.
+1
+ - Line search information
+ - Solution information (scaling, maximum changes, quality check)
+ - Convergence information
+ - Time step information
+ - Linear solver information
+ - Nonlinear solver information
+ - Solver timers information
+2
+ - The summary of declared fields and coupling-->
+		<xsd:attribute name="logLevel" type="integer" default="0" />
+		<!--massDamping => Value of mass based damping coefficient. -->
+		<xsd:attribute name="massDamping" type="real64" default="0" />
+		<!--maxNumResolves => Value to indicate how many resolves may be executed after some other event is executed. For example, if a SurfaceGenerator is specified, it will be executed after the mechanics solve. However if a new surface is generated, then the mechanics solve must be executed again due to the change in topology.-->
+		<xsd:attribute name="maxNumResolves" type="integer" default="10" />
+		<!--newmarkBeta => Value of :math:`\beta` in the Newmark Method for Implicit Dynamic time integration option. This should be pow(newmarkGamma+0.5,2.0)/4.0 unless you know what you are doing.-->
+		<xsd:attribute name="newmarkBeta" type="real64" default="0.25" />
+		<!--newmarkGamma => Value of :math:`\gamma` in the Newmark Method for Implicit Dynamic time integration option-->
+		<xsd:attribute name="newmarkGamma" type="real64" default="0.5" />
+		<!--stiffnessDamping => Value of stiffness based damping coefficient. -->
+		<xsd:attribute name="stiffnessDamping" type="real64" default="0" />
+		<!--strainTheory => Indicates whether or not to use `Infinitesimal Strain Theory <https://en.wikipedia.org/wiki/Infinitesimal_strain_theory>`_, or `Finite Strain Theory <https://en.wikipedia.org/wiki/Finite_strain_theory>`_. Valid Inputs are:
+ 0 - Infinitesimal Strain 
+ 1 - Finite Strain-->
+		<xsd:attribute name="strainTheory" type="integer" default="0" />
+		<!--targetRegions => Allowable regions that the solver may be applied to. Note that this does not indicate that the solver will be applied to these regions, only that allocation will occur such that the solver may be applied to these regions. The decision about what regions this solver will beapplied to rests in the EventManager.-->
+		<xsd:attribute name="targetRegions" type="groupNameRef_array" use="required" />
+		<!--timeIntegrationOption => Time integration method. Options are:
+* QuasiStatic
+* ImplicitDynamic
+* ExplicitDynamic-->
+		<xsd:attribute name="timeIntegrationOption" type="geos_SolidMechanicsLagrangianFEM_TimeIntegrationOption" default="ExplicitDynamic" />
+		<!--writeLinearSystem => Write matrix, rhs, solution to screen ( = 1) or file ( = 2).-->
+		<xsd:attribute name="writeLinearSystem" type="integer" default="0" />
+		<!--name => A name is required for any non-unique nodes-->
+		<xsd:attribute name="name" type="groupName" use="required" />
+	</xsd:complexType>
 	<xsd:complexType name="SolidMechanicsLagrangianSSLEType">
 		<xsd:choice minOccurs="0" maxOccurs="unbounded">
 			<xsd:element name="LinearSolverParameters" type="LinearSolverParametersType" maxOccurs="1" />
@@ -4751,6 +4930,7 @@ Level 0 outputs no specific information for this solver. Higher levels require m
 			<xsd:element name="CarmanKozenyPermeability" type="CarmanKozenyPermeabilityType" />
 			<xsd:element name="CeramicDamage" type="CeramicDamageType" />
 			<xsd:element name="CompositionalMultiphaseFluid" type="CompositionalMultiphaseFluidType" />
+			<xsd:element name="CompositionalThreePhaseFluidLohrenzBrayClark" type="CompositionalThreePhaseFluidLohrenzBrayClarkType" />
 			<xsd:element name="CompositionalTwoPhaseFluid" type="CompositionalTwoPhaseFluidType" />
 			<xsd:element name="CompositionalTwoPhaseFluidLohrenzBrayClark" type="CompositionalTwoPhaseFluidLohrenzBrayClarkType" />
 			<xsd:element name="CompressibleSinglePhaseFluid" type="CompressibleSinglePhaseFluidType" />
@@ -4806,6 +4986,7 @@ Level 0 outputs no specific information for this solver. Higher levels require m
 			<xsd:element name="ProppantPorosity" type="ProppantPorosityType" />
 			<xsd:element name="ProppantSlurryFluid" type="ProppantSlurryFluidType" />
 			<xsd:element name="ProppantSolidProppantPermeability" type="ProppantSolidProppantPermeabilityType" />
+			<xsd:element name="RateAndStateFriction" type="RateAndStateFrictionType" />
 			<xsd:element name="ReactiveBrine" type="ReactiveBrineType" />
 			<xsd:element name="ReactiveBrineThermal" type="ReactiveBrineThermalType" />
 			<xsd:element name="SinglePhaseThermalConductivity" type="SinglePhaseThermalConductivityType" />
@@ -5079,6 +5260,55 @@ The expected format is "{ waterMax, oilMax }", in that order-->
 		<xsd:attribute name="equationsOfState" type="string_array" use="required" />
 		<!--phaseNames => List of fluid phases-->
 		<xsd:attribute name="phaseNames" type="groupNameRef_array" use="required" />
+		<!--name => A name is required for any non-unique nodes-->
+		<xsd:attribute name="name" type="groupName" use="required" />
+	</xsd:complexType>
+	<xsd:complexType name="CompositionalThreePhaseFluidLohrenzBrayClarkType">
+		<!--checkPVTTablesRanges => Enable (1) or disable (0) an error when the input pressure or temperature of the PVT tables is out of range.-->
+		<xsd:attribute name="checkPVTTablesRanges" type="integer" default="1" />
+		<!--componentAcentricFactor => Component acentric factors-->
+		<xsd:attribute name="componentAcentricFactor" type="real64_array" use="required" />
+		<!--componentBinaryCoeff => Table of binary interaction coefficients-->
+		<xsd:attribute name="componentBinaryCoeff" type="real64_array2d" default="{{0}}" />
+		<!--componentCriticalPressure => Component critical pressures-->
+		<xsd:attribute name="componentCriticalPressure" type="real64_array" use="required" />
+		<!--componentCriticalTemperature => Component critical temperatures-->
+		<xsd:attribute name="componentCriticalTemperature" type="real64_array" use="required" />
+		<!--componentCriticalVolume => Component critical volumes-->
+		<xsd:attribute name="componentCriticalVolume" type="real64_array" default="{0}" />
+		<!--componentMolarWeight => Component molar weights-->
+		<xsd:attribute name="componentMolarWeight" type="real64_array" use="required" />
+		<!--componentNames => List of component names-->
+		<xsd:attribute name="componentNames" type="string_array" use="required" />
+		<!--componentVolumeShift => Component volume shifts-->
+		<xsd:attribute name="componentVolumeShift" type="real64_array" default="{0}" />
+		<!--equationsOfState => List of equation of state types for each phase. Valid options:
+* pr
+* srk-->
+		<xsd:attribute name="equationsOfState" type="string_array" use="required" />
+		<!--phaseNames => List of fluid phases-->
+		<xsd:attribute name="phaseNames" type="groupNameRef_array" use="required" />
+		<!--viscosityMixingRule => Viscosity mixing rule to be used for Lohrenz-Bray-Clark computation. Valid options:
+* HerningZipperer
+* Wilke
+* Brokaw-->
+		<xsd:attribute name="viscosityMixingRule" type="string" default="HerningZipperer" />
+		<!--waterCompressibility => The compressibility of water-->
+		<xsd:attribute name="waterCompressibility" type="real64" use="required" />
+		<!--waterDensity => The water density at the reference pressure and temperature-->
+		<xsd:attribute name="waterDensity" type="real64" use="required" />
+		<!--waterExpansionCoefficient => The volumetric coefficient of thermal expansion of water-->
+		<xsd:attribute name="waterExpansionCoefficient" type="real64" default="0" />
+		<!--waterReferencePressure => The reference pressure for water density and viscosity-->
+		<xsd:attribute name="waterReferencePressure" type="real64" use="required" />
+		<!--waterReferenceTemperature => The reference temperature for water density and viscosity-->
+		<xsd:attribute name="waterReferenceTemperature" type="real64" default="293.15" />
+		<!--waterViscosity => The water viscosity at the reference pressure and temperature-->
+		<xsd:attribute name="waterViscosity" type="real64" use="required" />
+		<!--waterViscosityCompressibility => The compressibility (normalized derivative with respect to pressure) of the water viscosity-->
+		<xsd:attribute name="waterViscosityCompressibility" type="real64" default="0" />
+		<!--waterViscosityExpansionCoefficient => The coefficient of thermal expansion (normalized derivative with respect to temperature) of water viscosity-->
+		<xsd:attribute name="waterViscosityExpansionCoefficient" type="real64" default="0" />
 		<!--name => A name is required for any non-unique nodes-->
 		<xsd:attribute name="name" type="groupName" use="required" />
 	</xsd:complexType>
@@ -6016,6 +6246,22 @@ If you want to do a three-phase simulation, please use instead wettingIntermedia
 		<xsd:attribute name="solidInternalEnergyModelName" type="groupNameRef" default="" />
 		<!--solidModelName => Name of the solid model.-->
 		<xsd:attribute name="solidModelName" type="groupNameRef" use="required" />
+		<!--name => A name is required for any non-unique nodes-->
+		<xsd:attribute name="name" type="groupName" use="required" />
+	</xsd:complexType>
+	<xsd:complexType name="RateAndStateFrictionType">
+		<!--defaultA => Default value of the Rate- and State-dependent friction coefficient a.-->
+		<xsd:attribute name="defaultA" type="real64" use="required" />
+		<!--defaultB => Default value of the Rate- and State-dependent friction coefficient b.-->
+		<xsd:attribute name="defaultB" type="real64" use="required" />
+		<!--defaultDc => Default value of the Rate- and State-dependent friction characteristic length.-->
+		<xsd:attribute name="defaultDc" type="real64" use="required" />
+		<!--defaultReferenceFrictionCoefficient => Default value of the Rate- and State-dependent friction reference friction coefficient.-->
+		<xsd:attribute name="defaultReferenceFrictionCoefficient" type="real64" use="required" />
+		<!--defaultReferenceVelocity => Default value of the Rate- and State-dependent friction reference slip rate.-->
+		<xsd:attribute name="defaultReferenceVelocity" type="real64" use="required" />
+		<!--displacementJumpThreshold => A threshold valued to determine whether a fracture is open or not.-->
+		<xsd:attribute name="displacementJumpThreshold" type="real64" default="2.22045e-16" />
 		<!--name => A name is required for any non-unique nodes-->
 		<xsd:attribute name="name" type="groupName" use="required" />
 	</xsd:complexType>
