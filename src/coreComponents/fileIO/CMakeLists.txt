@@ -56,10 +56,12 @@ set( fileIO_sources
 set( dependencyList ${parallelDeps} events mesh HDF5::HDF5 )
 if( ENABLE_PYGEOSX )
   list( APPEND fileIO_headers
+        python/PyCatalystOutputType.hpp
         python/PyHistoryCollectionType.hpp
         python/PyHistoryOutputType.hpp
         python/PyVTKOutputType.hpp )
   list( APPEND fileIO_sources
+        python/PyCatalystOutput.cpp
         python/PyHistoryCollection.cpp
         python/PyHistoryOutput.cpp
         python/PyVTKOutput.cpp )
@@ -102,6 +104,13 @@ endif()
 
 if( ENABLE_CUDA AND ENABLE_CUDA_NVTOOLSEXT )
   list( APPEND dependencyList CUDA::nvToolsExt )
+endif()
+
+if ( ENABLE_CATALYST )
+  add_subdirectory(Catalyst)
+  list( APPEND fileIO_headers Outputs/CatalystOutput.hpp )
+  list( APPEND fileIO_sources Outputs/CatalystOutput.cpp )
+  list( APPEND dependencyList fileIOCatalyst ) 
 endif()
 
 geos_decorate_link_dependencies( LIST decoratedDependencies

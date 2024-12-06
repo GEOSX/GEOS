@@ -23,6 +23,7 @@ Name          Version    Enable option               Path variable              
 ============= ========== =========================== ============================= =====================================
 Adiak_        0.2.0      :code:`ENABLE_CALIPER`      :code:`ADIAK_DIR`             Library for collecting metadata from HPC application runs, and distributing that metadata to subscriber tools.
 Caliper_      2.4.0      :code:`ENABLE_CALIPER`      :code:`CALIPER_DIR`           Instrumentation and performance profiling library.
+catalyst_     2.0..0-rc3 :code:`ENABLE_CATALYST`     :code:`CATALYST_DIR`          Open source API specification developed for simulations to analyze and visualize data in situ.
 conduit_      0.5.0      *mandatory*                 :code:`CONDUIT_DIR`           Simplified Data Exchange for HPC Simulations.
 CHAI_         2.2.2      *mandatory*                 :code:`CHAI_DIR`              Copy-hiding array abstraction to automatically migrate data between memory spaces.
 RAJA_         0.12.1     *mandatory*                 :code:`RAJA_DIR`              Collection of C++ software abstractions that enable architecture portability for HPC applications.
@@ -54,6 +55,7 @@ uncrustify_   401a409    :code:`ENABLE_UNCRUSTIFY`   :code:`UNCRUSTIFY_EXECUTABL
 
 .. _Adiak : https://github.com/LLNL/Adiak
 .. _Caliper: https://github.com/LLNL/Caliper
+.. _catalyst: https://gitlab.kitware.com/paraview/catalyst
 .. _conduit: https://github.com/LLNL/conduit
 .. _CHAI : https://github.com/LLNL/CHAI
 .. _RAJA : https://github.com/LLNL/RAJA

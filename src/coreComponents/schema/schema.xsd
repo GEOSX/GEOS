@@ -289,6 +289,10 @@
 					<xsd:selector xpath="Blueprint" />
 					<xsd:field xpath="@name" />
 				</xsd:unique>
+				<xsd:unique name="OutputsCatalystUniqueName">
+					<xsd:selector xpath="Catalyst" />
+					<xsd:field xpath="@name" />
+				</xsd:unique>
 				<xsd:unique name="OutputsChomboIOUniqueName">
 					<xsd:selector xpath="ChomboIO" />
 					<xsd:field xpath="@name" />
@@ -2098,6 +2102,7 @@ the relative residual norm satisfies:
 	<xsd:complexType name="OutputsType">
 		<xsd:choice minOccurs="0" maxOccurs="unbounded">
 			<xsd:element name="Blueprint" type="BlueprintType" />
+			<xsd:element name="Catalyst" type="CatalystType" />
 			<xsd:element name="ChomboIO" type="ChomboIOType" />
 			<xsd:element name="Python" type="PythonType" />
 			<xsd:element name="Restart" type="RestartType" />
@@ -2117,6 +2122,22 @@ the relative residual norm satisfies:
 		<xsd:attribute name="plotLevel" type="geos_dataRepository_PlotLevel" default="1" />
 		<!--name => A name is required for any non-unique nodes-->
 		<xsd:attribute name="name" type="groupName" use="required" />
+	</xsd:complexType>
+	<xsd:complexType name="CatalystType">
+		<!--adiosConfig => Path to the adios configuration file when using the catalyst-adios implementation.-->
+		<xsd:attribute name="adiosConfig" type="string" default="" />
+		<!--childDirectory => Child directory path-->
+		<xsd:attribute name="childDirectory" type="string" default="" />
+		<!--fieldNames => Names of the fields to output.-->
+		<xsd:attribute name="fieldNames" type="groupNameRef_array" default="{}" />
+		<!--implementation => Name of the catalyst implementation to use.-->
+		<xsd:attribute name="implementation" type="string" default="" />
+		<!--implementationPath => Path to the catalyst the implementation to use.-->
+		<xsd:attribute name="implementationPath" type="string" default="" />
+		<!--scripts => Column separated paths to the catalyst scripts.-->
+		<xsd:attribute name="scripts" type="string" use="required" />
+		<!--name => A name is required for any non-unique nodes-->
+		<xsd:attribute name="name" type="string" use="required" />
 	</xsd:complexType>
 	<xsd:complexType name="ChomboIOType">
 		<!--beginCycle => Cycle at which the coupling will commence.-->

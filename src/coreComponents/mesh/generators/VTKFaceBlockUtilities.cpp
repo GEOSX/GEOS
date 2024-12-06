@@ -574,6 +574,43 @@ Elem2dTo3dInfo buildElem2dTo3dElemAndFaces( vtkSmartPointer< vtkDataSet > faceMe
 
 
 /**
+ * @brief Computes the 2d element to nodes mapping.
+ * @param num2dElements Number of (2d) elements in the fracture.
+ * @param faceToNodes The face to nodes mapping.
+ * @param elem2dToFaces The 2d element to faces mapping.
+ * @return The computed mapping.
+ */
+ArrayOfArrays< localIndex > buildElem2dToNodes( vtkIdType num2dElements,
+                                                ArrayOfArraysView< localIndex const > faceToNodes,
+                                                ArrayOfArraysView< localIndex const > elem2dToFaces )
+{
+  ArrayOfArrays< localIndex > elem2dToNodes( LvArray::integerConversion< localIndex >( num2dElements ) );
+  for( localIndex elem2dIndex = 0; elem2dIndex < elem2dToFaces.size(); ++elem2dIndex )
+  {
+    for( localIndex const & faceIndex: elem2dToFaces[elem2dIndex] )
+    {
+      if( faceIndex < 0 )
+      {
+        continue;
+      }
+      std::set< localIndex > tmp;
+      for( auto j = 0; j < faceToNodes[faceIndex].size(); ++j )
+      {
+        localIndex const nodeIndex = faceToNodes[faceIndex][j];
+        tmp.insert( nodeIndex );
+      }
+      for( localIndex const & nodeIndex: tmp )
+      {
+        elem2dToNodes.emplaceBack( elem2dIndex, nodeIndex );
+      }
+    }
+  }
+
+  return elem2dToNodes;
+}
+
+
+/**
  * @brief Computes the local to global mappings for the 2d elements of the face mesh.
  * @param faceMeshCellGlobalIds The cell global ids for the face mesh.
  * @param meshCellGlobalIds The cell global ids for the volumic mesh.

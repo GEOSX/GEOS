@@ -32,6 +32,10 @@ if(EXISTS ${GEOS_TPL_DIR}/conduit)
   set(CONDUIT_DIR ${GEOS_TPL_DIR}/conduit CACHE PATH "" FORCE)
 endif()
 
+if(EXISTS ${GEOS_TPL_DIR}/catalyst)
+  set(CATALYST_DIR ${GEOS_TPL_DIR}/catalyst CACHE PATH "" FORCE)
+endif()
+
 if(EXISTS ${GEOS_TPL_DIR}/silo)
   set(SILO_DIR ${GEOS_TPL_DIR}/silo CACHE PATH "" FORCE)
 endif()

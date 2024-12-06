@@ -1,4 +1,4 @@
-####################################
+###################################
 #
 # 3rd Party Dependencies
 #
@@ -828,6 +828,48 @@ else()
     message(STATUS "Not using VTK")
 endif()
 
+################################
+# Catalyst
+################################
+if(DEFINED CATALYST_DIR)
+  message(STATUS "CATALYST_DIR = ${CATALYST_DIR}")
+
+  set(CATALYST_CMAKE_PREFIX ${CATALYST_DIR}/lib/cmake/catalyst-2.0)
+  if(NOT EXISTS ${CATALYST_CMAKE_PREFIX})
+    set(CATALYST_CMAKE_PREFIX ${CATALYST_DIR}/lib64/cmake/catalyst-2.0)
+  endif()
+
+  find_package(catalyst REQUIRED
+    PATHS ${CATALYST_CMAKE_PREFIX}
+               NO_DEFAULT_PATH)
+
+  if (NOT CATALYST_ABI_VERSION STREQUAL "2")
+    message(WARNING "CATALYST_DIR was set but catalyst with ABI version 2 was not found")
+  endif()
+
+  set(CATALYST_TARGETS catalyst::catalyst)
+  foreach( targetName ${CATALYST_TARGETS} )
+
+    get_target_property( includeDirs ${targetName}  INTERFACE_INCLUDE_DIRECTORIES)
+
+    set_property(TARGET ${targetName}
+                 APPEND PROPERTY INTERFACE_SYSTEM_INCLUDE_DIRECTORIES
+                 ${includeDirs})
+  endforeach()
+
+  set(ENABLE_CATALYST ON CACHE BOOL "Boolean defining whether or not to build with catalyst")
+  set(thirdPartyLibs ${thirdPartyLibs} catalyst)
+
+else()
+
+  if(ENABLE_CATALYST)
+    message(WARNING "ENABLE_CATALYST is ON but CATALYST_DIR is not defined")
+  endif()
+
+  set(ENABLE_CATALYST OFF CACHE BOOL "Boolean defining whether or not to build with catalyst")
+  message(STATUS "Not using catalyst")
+
+endif()
 
 ################################
 # uncrustify
@@ -867,7 +909,7 @@ if( ${CMAKE_VERSION} VERSION_LESS "3.19" )
     set( PYTHON_AND_VERSION Python3 )
     set( PYTHON_OPTIONAL_COMPONENTS)
 else()
-    set( PYTHON_AND_VERSION Python3 3.6.0...3.12.2 )
+    set( PYTHON_AND_VERSION Python3 3.6.0...3.12.3 )
     set( PYTHON_OPTIONAL_COMPONENTS OPTIONAL_COMPONENTS Development NumPy)
 endif()
 if(ENABLE_PYGEOSX)

@@ -24,9 +24,13 @@
 #include "fileIO/vtk/VTKVTMWriter.hpp"
 #include "common/format/EnumStrings.hpp"
 
+#include <vtkABINamespace.h> // for mangled namespace
+
+VTK_ABI_NAMESPACE_BEGIN
 class vtkUnstructuredGrid;
 class vtkPointData;
 class vtkCellData;
+VTK_ABI_NAMESPACE_END
 
 namespace geos
 {

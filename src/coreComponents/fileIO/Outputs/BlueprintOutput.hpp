@@ -80,6 +80,20 @@ public:
                         DomainPartition & domain ) override
   { execute( time_n, 0, cycleNumber, eventCounter, eventProgress, domain ); }
 
+protected:
+
+  /**
+   * @brief Map the mesh to the conduit blueprint.
+   * @param time The time value associated with the mesh
+   * @param cycle The cycle from the execute method.
+   * @param domain the domain from the execute method
+   * @param meshRoot the conduit node to map the mesh to.
+   */
+  virtual void mapMesh( real64 const time,
+                integer const cycle,
+                DomainPartition & domain,
+                conduit::Node & meshRoot );
+
 private:
 
   /**
