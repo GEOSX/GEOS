@@ -18,7 +18,6 @@
  */
 
 #include "OutputBase.hpp"
-#include "common/Timer.hpp"
 #include "common/MpiWrapper.hpp"
 #include "functions/FunctionBase.hpp"
 
