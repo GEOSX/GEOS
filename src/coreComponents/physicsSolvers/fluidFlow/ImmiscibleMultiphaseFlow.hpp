@@ -125,7 +125,7 @@ public:
 
   void updateFluidState( ElementSubRegionBase & subRegion ) const;
 
-  void updatePhaseVolumeFraction( ElementSubRegionBase & subRegion ) const;
+  void updateVolumeConstraint( ElementSubRegionBase & subRegion ) const;
 
   virtual void saveConvergedState( ElementSubRegionBase & subRegion ) const override final;
 
@@ -204,8 +204,12 @@ public:
    * @param[in] domain the domain object
    * @return the prescribed time step size
    */
-  real64 setNextDt( real64 const & currentDt,
-                    DomainPartition & domain ) override;
+
+  virtual real64 setNextDtBasedOnStateChange( real64 const & currentDt,
+                                              DomainPartition & domain ) override;  
+
+    real64 setNextDt( real64 const & currentDt,
+                    DomainPartition & domain ) override;            
 
   virtual void initializePostInitialConditionsPreSubGroups() override;
 
@@ -217,9 +221,18 @@ public:
 
   struct viewKeyStruct : public FlowSolverBase::viewKeyStruct
   {
+    // inputs
     static constexpr char const * capPressureNamesString() { return "capPressureNames"; }
     static constexpr char const * relPermNamesString() { return "relPermNames"; }
     static constexpr char const * elemDofFieldString() { return "elemDofField"; }
+
+    // time stepping controls
+    static constexpr char const * solutionChangeScalingFactorString() { return "solutionChangeScalingFactor"; }
+    static constexpr char const * targetRelativePresChangeString() { return "targetRelativePressureChangeInTimeStep"; }
+    static constexpr char const * targetPhaseVolFracChangeString() { return "targetPhaseVolFractionChangeInTimeStep"; }
+
+    // nonlinear solver parameters
+    static constexpr char const * maxRelativePresChangeString() { return "maxRelativePressureChange"; }
     static constexpr char const * useTotalMassEquationString() { return "useTotalMassEquation"; }
   };
 
@@ -280,6 +293,14 @@ private:
   /// flag to determine whether or not to use total velocity formulation
   integer m_useTotalMassEquation;
 
+  /// target (relative) change in pressure in a time step
+  real64 m_targetRelativePresChange;
+
+  /// target (absolute) change in phase volume fraction in a time step
+  real64 m_targetPhaseVolFracChange;
+
+  /// damping factor for solution change targets
+  real64 m_solutionChangeScalingFactor;
 
 
 private:

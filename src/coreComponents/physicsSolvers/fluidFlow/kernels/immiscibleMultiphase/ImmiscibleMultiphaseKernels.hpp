@@ -78,6 +78,7 @@ public:
     StencilAccessors< fields::ghostRank,
                       fields::flow::pressure,
                       fields::flow::gravityCoefficient,
+                      fields::immiscibleMultiphaseFlow::phaseVolumeFraction,
                       fields::immiscibleMultiphaseFlow::phaseMobility,
                       fields::immiscibleMultiphaseFlow::dPhaseMobility >;
 
@@ -134,6 +135,7 @@ public:
     m_ghostRank( multiPhaseFlowAccessors.get( fields::ghostRank {} ) ),
     m_gravCoef( multiPhaseFlowAccessors.get( fields::flow::gravityCoefficient {} ) ),
     m_pres( multiPhaseFlowAccessors.get( fields::flow::pressure {} ) ),
+    m_phaseVolFrac( multiPhaseFlowAccessors.get( fields::immiscibleMultiphaseFlow::phaseVolumeFraction {} ) ),
     m_mob( multiPhaseFlowAccessors.get( fields::immiscibleMultiphaseFlow::phaseMobility {} ) ),
     m_dMob( multiPhaseFlowAccessors.get( fields::immiscibleMultiphaseFlow::dPhaseMobility {} ) ),
     m_dens( fluidAccessors.get( fields::twophasefluid::phaseDensity {} ) ),
@@ -169,8 +171,9 @@ protected:
   ElementViewConst< arrayView1d< real64 const > > const m_gravCoef;
 
   // Primary and secondary variables
-  /// Views on pressure
+  /// Views on pressure and phase volume fraction
   ElementViewConst< arrayView1d< real64 const > > const m_pres;
+  ElementViewConst< arrayView2d< real64 const, immiscibleFlow::USD_PHASE > > const m_phaseVolFrac;
 
   /// Views on fluid mobility
   ElementViewConst< arrayView2d< real64 const, immiscibleFlow::USD_PHASE > > const m_mob;
@@ -421,15 +424,33 @@ public:
         for( integer ip = 0; ip < m_numPhases; ++ip )
         {
           // calculate quantities on primary connected cells
+          integer denom = 0;
           for( integer ke = 0; ke < 2; ++ke )
           {
             // density
-            real64 const density  = m_dens[seri[ke]][sesri[ke]][sei[ke]][0][ip];         // r = rho1 || rho2
+            bool const phaseExists = (m_phaseVolFrac[seri[ke]][sesri[ke]][sei[ke]][ip] > 0);
+            if( !phaseExists )
+            {
+              continue;
+            }
+
+            real64 const density  = m_dens[seri[ke]][sesri[ke]][sei[ke]][0][ip];                    // r = rho1 || rho2
             real64 const dDens_dP = m_dDens_dPres[seri[ke]][sesri[ke]][sei[ke]][0][ip][Deriv::dP];  // dr/dP = dr1/dP1 || dr2/dP
 
             // average density and derivatives
-            densMean[ip] += 0.5 * density;          // rho = (rho1 + rho2) / 2
-            dDensMean_dP[ip][ke] = 0.5 * dDens_dP;  // drho/dP = { (dr1/dP1)/2 , (dr2/dP2)/2 }
+            densMean[ip] += density;          // rho = (rho1 + rho2)
+            dDensMean_dP[ip][ke] = dDens_dP;  // drho/dP = { (dr1/dP1) , (dr2/dP2) }
+
+            denom++;
+          }
+
+          if( denom > 1 )
+          {
+            densMean[ip] /= denom; // rho = (rho1 + rho2) / denom
+            for( integer ke = 0; ke < 2; ++ke )
+            {
+              dDensMean_dP[ip][ke] /= denom; // drho/dP = { (dr1/dP1) / denom , (dr2/dP2) / denom }
+            }
           }
 
           //***** calculation of flux *****
@@ -439,7 +460,7 @@ public:
           real64 dPresGrad_dTrans = 0.0;
           real64 dGravHead_dTrans = 0.0;
           real64 dCapGrad_dTrans = 0.0;
-          int signPotDiff[2] = {1, -1};
+          constexpr int signPotDiff[2] = {1, -1};
 
           for( integer ke = 0; ke < 2; ++ke )
           {
@@ -903,17 +924,14 @@ public:
 
   /**
    * @brief Compute the local accumulation contributions to the residual and Jacobian
-   * @tparam FUNC the type of the function that can be used to customize the kernel
    * @param[in] ei the element index
    * @param[inout] stack the stack variables
    */
-  template< typename FUNC = NoOpFunc >
   GEOS_HOST_DEVICE
   void computeAccumulation( localIndex const ei,
-                            StackVariables & stack,
-                            FUNC = NoOpFunc{} ) const
+                            StackVariables & stack ) const
   {
-    int signPotDiff[2] = {1, -1};
+    constexpr int sign[2] = {1, -1};
     // ip - index of phase/component whose conservation equation is assembled
     // (i.e. row number in local matrix)
     for( integer ip = 0; ip < m_numPhases; ++ip )
@@ -928,9 +946,8 @@ public:
       stack.localJacobian[ip][0] += dPhaseMass_dP;
 
       real64 const dPhaseMass_dS = stack.poreVolume * m_phaseDens[ei][0][ip];
-      stack.localJacobian[ip][1] += signPotDiff[ip] * dPhaseMass_dS;
+      stack.localJacobian[ip][1] += sign[ip] * dPhaseMass_dS;
     }
-
   }
 
   /**
@@ -1153,7 +1170,7 @@ public:
 
     arraySlice1d< real64, immiscibleFlow::USD_PHASE - 1 > const phaseMob = m_phaseMob[ei];
     arraySlice2d< real64, immiscibleFlow::USD_PHASE_DS - 1 > const dPhaseMob = m_dPhaseMob[ei];
-    int sign[2] = {1, -1};
+    constexpr int sign[2] = {1, -1};
 
     for( integer ip = 0; ip < numPhase; ++ip )
     {
@@ -1171,6 +1188,7 @@ public:
 
       // for( integer jp = 0; jp < numPhase-1; ++jp )
       // {
+      // Derivative matrix is currently diagonal. Implementation below handles missing off-diagonal entry.
       real64 const dRelPerm_dS = sign[ip] * m_dPhaseRelPerm_dPhaseVolFrac[ei][0][ip][ip];
       dPhaseMob[ip][Deriv::dS] = dRelPerm_dS * density / viscosity;
       // }

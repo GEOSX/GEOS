@@ -67,6 +67,22 @@ ImmiscibleMultiphaseFlow::ImmiscibleMultiphaseFlow( const string & name,
     setInputFlag( InputFlags::OPTIONAL ).
     setApplyDefaultValue( 1 ).
     setDescription( "Flag indicating whether total mass equation is used" );
+
+  this->registerWrapper( viewKeyStruct::solutionChangeScalingFactorString(), &m_solutionChangeScalingFactor ).
+    setSizedFromParent( 0 ).
+    setInputFlag( InputFlags::OPTIONAL ).
+    setApplyDefaultValue( 0.5 ).
+    setDescription( "Damping factor for solution change targets" );
+  this->registerWrapper( viewKeyStruct::targetRelativePresChangeString(), &m_targetRelativePresChange ).
+    setSizedFromParent( 0 ).
+    setInputFlag( InputFlags::OPTIONAL ).
+    setApplyDefaultValue( 0.2 ).
+    setDescription( "Target (relative) change in pressure in a time step (expected value between 0 and 1)" );
+  this->registerWrapper( viewKeyStruct::targetPhaseVolFracChangeString(), &m_targetPhaseVolFracChange ).
+    setSizedFromParent( 0 ).
+    setInputFlag( InputFlags::OPTIONAL ).
+    setApplyDefaultValue( 0.2 ).
+    setDescription( "Target (absolute) change in phase volume fraction in a time step" );
 }
 
 void ImmiscibleMultiphaseFlow::postInputInitialization()
@@ -288,7 +304,7 @@ void ImmiscibleMultiphaseFlow::updateFluidState( ElementSubRegionBase & subRegio
   GEOS_MARK_FUNCTION;
 
   updateFluidModel( subRegion );
-  updatePhaseVolumeFraction( subRegion );
+  updateVolumeConstraint( subRegion );
   updatePhaseMass( subRegion );
   updateRelPermModel( subRegion );
   updatePhaseMobility( subRegion );
@@ -401,7 +417,7 @@ void ImmiscibleMultiphaseFlow::initializeFluidState( MeshLevel & mesh,
     //     Also, initialize the fluid model
     //
     // Note:
-    // - This must be called after updatePhaseVolumeFraction
+    // - This must be called after updateVolumeConstraint
     // - This step depends on phaseVolFraction
 
     // initialized phase volume fraction
@@ -533,7 +549,7 @@ ImmiscibleMultiphaseFlow::implicitStepSetup( real64 const & GEOS_UNUSED_PARAM( t
       // update porosity, permeability
       updatePorosityAndPermeability( subRegion );
       // update all fluid properties
-      updatePhaseVolumeFraction( subRegion );
+      updateVolumeConstraint( subRegion );
       updateFluidState( subRegion );
 
       // after the update, save the new saturation
@@ -1107,7 +1123,7 @@ void ImmiscibleMultiphaseFlow::applySystemSolution( DofManager const & dofManage
 }
 
 
-void ImmiscibleMultiphaseFlow::updatePhaseVolumeFraction( ElementSubRegionBase & subRegion ) const
+void ImmiscibleMultiphaseFlow::updateVolumeConstraint( ElementSubRegionBase & subRegion ) const
 {
   GEOS_MARK_FUNCTION;
 
@@ -1261,10 +1277,86 @@ void ImmiscibleMultiphaseFlow::updateState( DomainPartition & domain )
       // update porosity, permeability, and solid internal energy
       updatePorosityAndPermeability( subRegion );
       // update all fluid properties
-      updatePhaseVolumeFraction( subRegion );
+      updateVolumeConstraint( subRegion );
       updateFluidState( subRegion );
     } );
   } );
+}
+
+real64 ImmiscibleMultiphaseFlow::setNextDtBasedOnStateChange( real64 const & currentDt,
+                                                              DomainPartition & domain )
+{
+  if( m_targetRelativePresChange >= 1.0 &&
+      m_targetPhaseVolFracChange >= 1.0 )
+  {
+    return LvArray::NumericLimits< real64 >::max;
+  }
+
+  real64 maxRelativePresChange = 0.0;
+  real64 maxAbsolutePhaseVolFracChange = 0.0;
+
+  integer const numPhase = m_numPhases;
+
+  forDiscretizationOnMeshTargets( domain.getMeshBodies(), [&]( string const &,
+                                                               MeshLevel & mesh,
+                                                               arrayView1d< string const > const & regionNames )
+  {
+    mesh.getElemManager().forElementSubRegions( regionNames,
+                                                [&]( localIndex const,
+                                                     ElementSubRegionBase & subRegion )
+    {
+      arrayView1d< integer const > const ghostRank = subRegion.ghostRank();
+
+      arrayView1d< real64 const > const pres = subRegion.getField< fields::flow::pressure >();
+      arrayView1d< real64 const > const pres_n = subRegion.getField< fields::flow::pressure_n >();
+      arrayView2d< real64 const, immiscibleFlow::USD_PHASE > const phaseVolFrac =
+        subRegion.getField< fields::immiscibleMultiphaseFlow::phaseVolumeFraction >();
+      arrayView2d< real64, immiscibleFlow::USD_PHASE > const phaseVolFrac_n =
+        subRegion.getField< fields::immiscibleMultiphaseFlow::phaseVolumeFraction_n >();
+
+      RAJA::ReduceMax< parallelDeviceReduce, real64 > subRegionMaxPresChange( 0.0 );
+      RAJA::ReduceMax< parallelDeviceReduce, real64 > subRegionMaxPhaseVolFracChange( 0.0 );
+
+      forAll< parallelDevicePolicy<> >( subRegion.size(), [=] GEOS_HOST_DEVICE ( localIndex const ei )
+      {
+        if( ghostRank[ei] < 0 )
+        {
+          // switch from relative to absolute when values less than 1
+          subRegionMaxPresChange.max( LvArray::math::abs( pres[ei] - pres_n[ei] ) / LvArray::math::max( LvArray::math::abs( pres_n[ei] ), 1.0 ) );
+          for( integer ip = 0; ip < numPhase; ++ip )
+          {
+            subRegionMaxPhaseVolFracChange.max( LvArray::math::abs( phaseVolFrac[ei][ip] - phaseVolFrac_n[ei][ip] ) );
+          }
+        }
+      } );
+
+      maxRelativePresChange = LvArray::math::max( maxRelativePresChange, subRegionMaxPresChange.get() );
+      maxAbsolutePhaseVolFracChange = LvArray::math::max( maxAbsolutePhaseVolFracChange, subRegionMaxPhaseVolFracChange.get() );
+
+    } );
+  } );
+
+  maxRelativePresChange = MpiWrapper::max( maxRelativePresChange );
+  maxAbsolutePhaseVolFracChange = MpiWrapper::max( maxAbsolutePhaseVolFracChange );
+
+  GEOS_LOG_LEVEL_INFO_RANK_0( logInfo::TimeStep, GEOS_FMT( "{}: max relative pressure change during time step = {} %",
+                                                           getName(), GEOS_FMT( "{:.{}f}", 100*maxRelativePresChange, 3 ) ) );
+  GEOS_LOG_LEVEL_INFO_RANK_0( logInfo::TimeStep, GEOS_FMT( "{}: max absolute phase volume fraction change during time step = {}",
+                                                           getName(), GEOS_FMT( "{:.{}f}", maxAbsolutePhaseVolFracChange, 3 ) ) );
+
+  real64 const eps = LvArray::NumericLimits< real64 >::epsilon;
+
+  real64 const nextDtPressure = currentDt * ( 1.0 + m_solutionChangeScalingFactor ) * m_targetRelativePresChange
+                                / std::max( eps, maxRelativePresChange + m_solutionChangeScalingFactor * m_targetRelativePresChange );
+  if( m_nonlinearSolverParameters.getLogLevel() > 0 )
+    GEOS_LOG_RANK_0( GEOS_FMT( "{}: next time step based on pressure change = {}", getName(), nextDtPressure ));
+  real64 const nextDtPhaseVolFrac = currentDt * ( 1.0 + m_solutionChangeScalingFactor ) * m_targetPhaseVolFracChange
+                                    / std::max( eps, maxAbsolutePhaseVolFracChange + m_solutionChangeScalingFactor * m_targetPhaseVolFracChange );
+  if( m_nonlinearSolverParameters.getLogLevel() > 0 )
+    GEOS_LOG_RANK_0( GEOS_FMT( "{}: next time step based on phase volume fraction change = {}", getName(), nextDtPhaseVolFrac ));
+
+  return std::min( nextDtPressure, nextDtPhaseVolFrac );
+
 }
 
 real64 ImmiscibleMultiphaseFlow::setNextDt( const geos::real64 & currentDt, geos::DomainPartition & domain )
