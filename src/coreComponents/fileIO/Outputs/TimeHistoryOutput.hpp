@@ -114,6 +114,9 @@ public:
   virtual PyTypeObject * getPythonType() const override;
 #endif
 
+protected:
+  logInfo::OutputTimerBase const & getTimerCategory() const override;
+
 private:
 
   /**

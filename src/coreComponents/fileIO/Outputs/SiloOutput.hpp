@@ -85,6 +85,9 @@ public:
   } siloOutputViewKeys;
   /// @endcond
 
+protected:
+  logInfo::OutputTimerBase const & getTimerCategory() const override;
+
 private:
 
   void postInputInitialization() override;

@@ -89,6 +89,9 @@ public:
   } viewKeys;
   /// @endcond
 
+protected:
+  logInfo::OutputTimerBase const & getTimerCategory() const override;
+
 private:
   ChomboCoupler * m_coupler;
   string m_outputPath;

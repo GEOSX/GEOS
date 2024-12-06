@@ -36,6 +36,9 @@ class ElementRegionManager;
  */
 class BlueprintOutput : public OutputBase
 {
+protected:
+  logInfo::OutputTimerBase const & getTimerCategory() const override;
+
 public:
 
   /**

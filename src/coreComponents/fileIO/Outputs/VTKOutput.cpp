@@ -29,6 +29,20 @@ namespace geos
 
 using namespace dataRepository;
 
+namespace logInfo
+{
+struct VTKOutputTimer : public OutputTimerBase
+{
+  std::string_view getDescription() const override { return "VTK output timing"; }
+};
+}
+
+logInfo::OutputTimerBase const & VTKOutput::getTimerCategory() const
+{
+  static logInfo::VTKOutputTimer timer;
+  return timer;
+}
+
 VTKOutput::VTKOutput( string const & name,
                       Group * const parent ):
   OutputBase( name, parent ),

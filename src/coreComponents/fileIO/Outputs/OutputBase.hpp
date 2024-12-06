@@ -30,22 +30,26 @@ namespace geos
 namespace logInfo
 {
 /**
- * @brief Log information structure for output timing data
+ * @brief Base timer category for output operations
  * @details Provides configuration for logging output operation timing information
  */
 struct OutputTimers
 {
-  /**
-   * @brief Get the minimum log level for output timing information
-   * @return The minimum log level
-   */
+  static std::string_view getDescription() { return "Output timing information"; }
   static constexpr int getMinLogLevel() { return 1; }
+};
 
-  /**
-   * @brief Get the description of this timing category
-   * @return Description string for output timing information
-   */
-  static constexpr std::string_view getDescription() { return "Output timers information"; }
+/**
+ * @brief Base interface for specific output type timers
+ * @details Each output type (VTK, Silo, etc.) implements this interface to provide
+ *          its own timing category. This is used in conjunction with OutputTimers:
+ *          - OutputTimerBase: For polymorphic behavior in derived output classes
+ *          - OutputTimers: For the general output timing logging infrastructure
+ */
+struct OutputTimerBase
+{
+  virtual std::string_view getDescription() const = 0;
+  virtual ~OutputTimerBase() = default;
 };
 }
 
@@ -125,8 +129,11 @@ protected:
    **/
   virtual void initializePreSubGroups() override;
 
-  /// Timer used to track duration of file writing operations
+  /// Timer used to track duration of file writing operations for this specific output type
   std::chrono::system_clock::duration m_outputTimer;
+
+  /// Get the timer category for this specific output type
+  virtual logInfo::OutputTimerBase const & getTimerCategory() const = 0;
 
   /// @copydoc geos::ExecutableGroup::cleanup
   virtual void cleanup( real64 const time_n,
