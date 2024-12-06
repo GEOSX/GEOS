@@ -2,7 +2,7 @@
 <Problem>
   <Included>
     <File
-      name="./SpringSlider_base.xml"/>
+      name="./SpringSlider_new_base.xml"/>
   </Included>
 
   <Events
@@ -22,6 +22,32 @@
       name="solverApplications"
       maxEventDt="1e4"
       target="/Solvers/SpringSlider"/>
+    
+    <!-- Time history collection -->
+    <PeriodicEvent
+      name="slipRateCollection"
+      cycleFrequency="1"
+      targetExactTimestep="0"
+      target="/Tasks/slipRateCollection"/>
+
+    <PeriodicEvent
+      name="slipCollection"
+      cycleFrequency="1"
+      targetExactTimestep="0"
+      target="/Tasks/slipCollection"/>
+
+    <PeriodicEvent
+      name="stateVariableCollection"
+      cycleFrequency="1"
+      targetExactTimestep="0"
+      target="/Tasks/stateVariableCollection"/>    
+
+    <!-- Time history output -->
+   <PeriodicEvent
+      name="timeHistoryOutput"
+      cycleFrequency="100"
+      targetExactTimestep="0"
+      target="/Outputs/timeHistoryOutput"/>    
 
     <PeriodicEvent
       name="resarts"

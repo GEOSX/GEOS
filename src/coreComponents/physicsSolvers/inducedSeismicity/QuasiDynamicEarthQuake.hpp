@@ -23,7 +23,8 @@
 namespace geos
 {
 
-class QuasiDynamicEarthQuake : public QuasiDynamicEQBase 
+template< typename QDEQBASE >
+class QuasiDynamicEarthQuake : public QDEQBASE 
 {
 public:
 

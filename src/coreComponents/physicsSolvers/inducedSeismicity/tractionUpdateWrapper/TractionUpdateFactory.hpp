@@ -20,7 +20,6 @@
 #ifndef GEOS_PHYSICSSOLVERS_INDUCED_SEISMICITY_TRACTIONUPDATEFACTORY_HPP
 #define GEOS_PHYSICSSOLVERS_INDUCED_SEISMICITY_TRACTIONUPDATEFACTORY_HPP
 
-#include "SpringSliderTractionUpdate.hpp"
 #include "OneWayCoupledTractionUpdate.hpp"
 
 namespace geos
@@ -39,9 +38,6 @@ std::unique_ptr< FaultTractionUpdateBase > tractionUpdateFactory ( TractionUpdat
   FlowSolverBase * flowSolver = nullptr;
   switch( tractionUpdateType )
   {
-    case TractionUpdateType::SpringSlider:
-      return std::make_unique< SpringSliderTractionUpdate >( qdSolver );
-      break;
     case TractionUpdateType::OneWayCoupled:
       contactSolver = &qdSolver->getParent().getGroup< ContactSolverBase >( contactSolverName );
       flowSolver = &qdSolver->getParent().getGroup< FlowSolverBase >( flowSolverName );

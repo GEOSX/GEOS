@@ -60,9 +60,9 @@ QuasiDynamicEarthQuake::~QuasiDynamicEarthQuake()
 }
 
 real64 QuasiDynamicEarthQuake::updateStresses( real64 const & time_n,
-                                       real64 const & dt,
-                                       const int cycleNumber,
-                                       DomainPartition & domain ) const
+                                               real64 const & dt,
+                                               const int cycleNumber,
+                                               DomainPartition & domain ) const
 {
   // 1. Solve the momentum balance
   return m_stressSolver->solverStep( time_n, dt, cycleNumber, domain );

@@ -1,15 +1,14 @@
 <?xml version="1.0" ?>
 <Problem>
   <Solvers>
-    <QuasiDynamicEQ
+    <SpringSlider
       name="SpringSlider"
       targetRegions="{ Fault }"
       shearImpedance="4.41"
       initialDt="1"
       logLevel="1"
-      discretization="FE1"
-      tractionUpdateType="SpringSlider">
-    </QuasiDynamicEQ>
+      discretization="FE1">
+    </SpringSlider>
     
     <SurfaceGenerator
       name="SurfaceGen"
