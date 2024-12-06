@@ -413,23 +413,23 @@ void DomainPartition::outputPartitionInformation() const
 
         TableData dataPartition;
         dataPartition.addRow( "min",
-                              addCommaSeparators( minNumLocalNodes ),
-                              addCommaSeparators( minNumGhostNodes ),
-                              addCommaSeparators( minNumLocalEdges ),
-                              addCommaSeparators( minNumGhostEdges ),
-                              addCommaSeparators( minNumLocalFaces ),
-                              addCommaSeparators( minNumGhostFaces ),
-                              addCommaSeparators( minNumLocalElems ),
-                              addCommaSeparators( minNumGhostElems ));
+                              stringutilities::addCommaSeparators( minNumLocalNodes ),
+                              stringutilities::addCommaSeparators( minNumGhostNodes ),
+                              stringutilities::addCommaSeparators( minNumLocalEdges ),
+                              stringutilities::addCommaSeparators( minNumGhostEdges ),
+                              stringutilities::addCommaSeparators( minNumLocalFaces ),
+                              stringutilities::addCommaSeparators( minNumGhostFaces ),
+                              stringutilities::addCommaSeparators( minNumLocalElems ),
+                              stringutilities::addCommaSeparators( minNumGhostElems ));
         dataPartition.addRow( "max",
-                              addCommaSeparators( maxNumLocalNodes ),
-                              addCommaSeparators( maxNumGhostNodes ),
-                              addCommaSeparators( maxNumLocalEdges ),
-                              addCommaSeparators( maxNumGhostEdges ),
-                              addCommaSeparators( maxNumLocalFaces ),
-                              addCommaSeparators( maxNumGhostFaces ),
-                              addCommaSeparators( maxNumLocalElems ),
-                              addCommaSeparators( maxNumGhostElems ));
+                              stringutilities::addCommaSeparators( maxNumLocalNodes ),
+                              stringutilities::addCommaSeparators( maxNumGhostNodes ),
+                              stringutilities::addCommaSeparators( maxNumLocalEdges ),
+                              stringutilities::addCommaSeparators( maxNumGhostEdges ),
+                              stringutilities::addCommaSeparators( maxNumLocalFaces ),
+                              stringutilities::addCommaSeparators( maxNumGhostFaces ),
+                              stringutilities::addCommaSeparators( maxNumLocalElems ),
+                              stringutilities::addCommaSeparators( maxNumGhostElems ));
 
         // output in rank order
         int const thisRank = MpiWrapper::commRank();
@@ -438,14 +438,14 @@ void DomainPartition::outputPartitionInformation() const
           if( rank == thisRank )
           {
             dataPartition.addRow( rank,
-                                  addCommaSeparators( numLocalNodes ),
-                                  addCommaSeparators( numGhostNodes ),
-                                  addCommaSeparators( numLocalEdges ),
-                                  addCommaSeparators( numGhostEdges ),
-                                  addCommaSeparators( numLocalFaces ),
-                                  addCommaSeparators( numGhostFaces ),
-                                  addCommaSeparators( numLocalElems ),
-                                  addCommaSeparators( numGhostElems ));
+                                  stringutilities::addCommaSeparators( numLocalNodes ),
+                                  stringutilities::addCommaSeparators( numGhostNodes ),
+                                  stringutilities::addCommaSeparators( numLocalEdges ),
+                                  stringutilities::addCommaSeparators( numGhostEdges ),
+                                  stringutilities::addCommaSeparators( numLocalFaces ),
+                                  stringutilities::addCommaSeparators( numGhostFaces ),
+                                  stringutilities::addCommaSeparators( numLocalElems ),
+                                  stringutilities::addCommaSeparators( numGhostElems ));
           }
           MpiWrapper::barrier();
         }
