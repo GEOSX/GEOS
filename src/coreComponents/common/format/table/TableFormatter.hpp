@@ -203,6 +203,8 @@ private:
   /**
    * @brief Finds and sets the longest string for each column in the table.
    * @param tableLayout The layout of the table,
+   * @param cellHeaderLength A reference to the collection of data cells. The function updates the maximum string
+   *        length for each cell based on the longest string found in the column.
    * @param cellsDataLayout A reference to the collection of data cells. The function updates the maximum string
    *        length for each cell based on the longest string found in the column.
    */
@@ -211,9 +213,10 @@ private:
                               CellLayoutRows & cellsDataLayout ) const;
 
   /**
-   * @brief Computes and constructs the separator lines for the table.
+   * @brief Computes and constructs the separator lines for the table. Adjust columns if the title is the largest row
    * @param tableLayout The layout of the table,
-   * @param cellsDataLayout A reference to the collection of data cells that will be affected by column resizing.
+   * @param cellsHeaderLayout A reference to the collection of header cells that can be affected by column resizing.
+   * @param cellsDataLayout A reference to the collection of data cells that can be affected by column resizing.
    * @param sectionSeparatingLine A string reference where the separator line between sections will be stored.
    * @param topSeparator A string reference where the top separator line will be stored.
    */
@@ -225,9 +228,8 @@ private:
 
   /**
    * @brief Increases the size of columns to accommodate extra characters.
-   * @param tableLayout The layout of the table
-   * @param cellsDataLayout A reference to the collection of data cells, which will be updated with the new column sizes.
-   * @param nbColumns The total number of columns in the table.
+   * @param cells A reference to the collection of data/header cells
+   * @param nbHiddenColumns The total number of hidden columns in the table.
    * @param extraCharacters The total number of extra characters to be distributed across the columns.
    */
   void adjustColumnWidths( CellLayoutRows & cells,

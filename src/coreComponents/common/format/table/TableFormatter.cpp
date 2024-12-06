@@ -158,7 +158,6 @@ void TableTextFormatter::initalizeTableLayout( TableLayout & tableLayout,
     populateDataCellsLayout( tableLayout, cellsDataLayout, inputDataValues );
   }
 
-
   updateColumnMaxLength( tableLayout, cellsHeaderLayout, cellsDataLayout );
 
   calculateTableSeparators( tableLayout, cellsHeaderLayout, cellsDataLayout, sectionSeparatingLine, topSeparator );
