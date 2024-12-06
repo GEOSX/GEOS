@@ -77,6 +77,9 @@ public:
                         DomainPartition & domain ) override
   {
     execute( time_n, 0, cycleNumber, eventCounter, eventProgress, domain );
+
+    // Call parent class cleanup to get the timing statistics
+    OutputBase::cleanup(time_n, cycleNumber, eventCounter, eventProgress, domain);
   }
 
   /**

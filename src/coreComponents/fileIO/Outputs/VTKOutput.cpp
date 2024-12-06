@@ -80,7 +80,7 @@ VTKOutput::VTKOutput( string const & name,
   registerWrapper( viewKeysStruct::fieldNames, &m_fieldNames ).
     setRTTypeName( rtTypes::CustomTypes::groupNameRefArray ).
     setInputFlag( InputFlags::OPTIONAL ).
-    setDescription( "Names of the fields to output. If this attribute is specified, GEOSX outputs all the fields specified by the user, regardless of their `plotLevel`" );
+    setDescription( "Names of the fields to output. If this attribute is specified, GEOS outputs all the fields specified by the user, regardless of their `plotLevel`" );
 
   registerWrapper( viewKeysStruct::levelNames, &m_levelNames ).
     setInputFlag( InputFlags::OPTIONAL ).
@@ -159,14 +159,20 @@ bool VTKOutput::execute( real64 const time_n,
                          real64 const GEOS_UNUSED_PARAM ( eventProgress ),
                          DomainPartition & domain )
 {
-  GEOS_LOG_LEVEL_RANK_0( 1, GEOS_FMT( "{}: writing {} at time {} s (cycle number {})", getName(), m_fieldNames, time_n + dt, cycleNumber ));
+  GEOS_MARK_FUNCTION;
 
-  m_writer.setWriteGhostCells( m_writeGhostCells );
-  m_writer.setWriteFaceElementsAs3D ( m_writeFaceElementsAs3D );
-  m_writer.setOutputMode( m_writeBinaryData );
-  m_writer.setOutputRegionType( m_outputRegionType );
-  m_writer.setPlotLevel( m_plotLevel );
-  m_writer.write( time_n, cycleNumber, domain );
+  GEOS_LOG_LEVEL_RANK_0( 2, GEOS_FMT( "{}: writing {} at time {} s (cycle number {})", getName(), m_fieldNames, time_n + dt, cycleNumber ));
+
+  {
+    Timer timer( m_outputTimer );
+
+    m_writer.setWriteGhostCells( m_writeGhostCells );
+    m_writer.setWriteFaceElementsAs3D ( m_writeFaceElementsAs3D );
+    m_writer.setOutputMode( m_writeBinaryData );
+    m_writer.setOutputRegionType( m_outputRegionType );
+    m_writer.setPlotLevel( m_plotLevel );
+    m_writer.write( time_n, cycleNumber, domain );
+  }
 
   return false;
 }

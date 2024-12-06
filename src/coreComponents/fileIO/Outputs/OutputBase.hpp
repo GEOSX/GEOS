@@ -21,10 +21,20 @@
 
 #include "dataRepository/Group.hpp"
 #include "dataRepository/ExecutableGroup.hpp"
-
+#include "dataRepository/LogLevelsInfo.hpp"  // For logInfo namespace
+#include "common/Timer.hpp"
 
 namespace geos
 {
+
+namespace logInfo
+{
+struct OutputTimers
+{
+  static constexpr int getMinLogLevel() { return 1; }
+  static constexpr std::string_view getDescription() { return "Output timers information"; }
+};
+}
 
 /**
  * @class OutputBase
@@ -101,6 +111,16 @@ protected:
    * @param group The root group
    **/
   virtual void initializePreSubGroups() override;
+
+  // Timer used to track duration of output operations
+  std::chrono::system_clock::duration m_outputTimer;
+
+  /// @copydoc geos::ExecutableGroup::cleanup
+  virtual void cleanup( real64 const time_n,
+                        integer const cycleNumber,
+                        integer const eventCounter,
+                        real64 const eventProgress,
+                        DomainPartition & domain ) override;
 
 private:
   string m_childDirectory;
