@@ -283,7 +283,7 @@ FieldSpecificationManager::
   {
     preLambda( fs, targetSet );
     fs.applyFieldValue< FieldSpecificationEqual, POLICY >( targetSet, time, targetGroup, targetField );
-
+    postLambda( fs, targetSet );
   } );
 }
 
