@@ -8,6 +8,10 @@ These notes should be in reverse-chronological order, and use the following time
 
 PR #3361 (2024-12-03)
 =====================
+Revert default gravity treatment to old version. Make the way introduced in #3337 optional.
+
+PR #3361 (2024-12-03)
+=====================
 Baseline diffs after reimplementation of wave equation acoustic gradient for velocity and density parameters: new field "partialGradient2" and "pressureForward" field replacing "pressureDoubleDerivative".
 
 PR #3393 (2024-12-02)
