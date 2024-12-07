@@ -206,10 +206,10 @@ public:
    */
 
   virtual real64 setNextDtBasedOnStateChange( real64 const & currentDt,
-                                              DomainPartition & domain ) override;  
+                                              DomainPartition & domain ) override;
 
-    real64 setNextDt( real64 const & currentDt,
-                    DomainPartition & domain ) override;            
+  real64 setNextDt( real64 const & currentDt,
+                    DomainPartition & domain ) override;
 
   virtual void initializePostInitialConditionsPreSubGroups() override;
 
