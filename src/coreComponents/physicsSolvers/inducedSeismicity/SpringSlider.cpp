@@ -86,18 +86,6 @@ void SpringSlider< RSSOLVER_TYPE >::registerDataOnMesh( Group & meshBodies )
 }
 
 template< typename RSSOLVER_TYPE >
-real64 SpringSlider< RSSOLVER_TYPE >::solverStep( real64 const & time_n,
-                                   real64 const & dt,
-                                   int const cycleNumber,
-                                   DomainPartition & domain )
-{ 
-  this->applyInitialConditionsToFault( cycleNumber, domain );
-  this->updateStresses( dt, domain );
-  this->solveRateAndStateEquations( time_n, dt, domain );
-  return dt;
-}
-
-template< typename RSSOLVER_TYPE >
 real64 SpringSlider< RSSOLVER_TYPE >::updateStresses( real64 const dt,
                                      DomainPartition & domain ) const
 {

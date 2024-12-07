@@ -58,8 +58,16 @@ public:
    */
   void updateSlip( ElementSubRegionBase & subRegion, real64 const dt ) const;
 
+  virtual real64 solverStep( real64 const & time_n,
+                             real64 const & dt,
+                             integer const cycleNumber,
+                             DomainPartition & domain ) override final;
+
 
 protected:
+
+  virtual real64 updateStresses( real64 const dt,
+                               DomainPartition & domain ) const = 0;
 
   virtual void solveRateAndStateEquations( real64 const time_n,
                                            real64 const dt,

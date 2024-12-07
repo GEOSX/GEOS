@@ -42,17 +42,13 @@ public:
 
   virtual void registerDataOnMesh( dataRepository::Group & meshBodies ) override;
 
-  virtual real64 solverStep( real64 const & time_n,
-                             real64 const & dt,
-                             integer const cycleNumber,
-                             DomainPartition & domain ) override final;
   struct viewKeyStruct : public RSSOLVER_TYPE::viewKeyStruct
   {};
 
 private:
 
   real64 updateStresses( real64 const dt,
-                         DomainPartition & domain ) const;
+                         DomainPartition & domain ) const override final;
 
   class SpringSliderParameters
   {

@@ -141,6 +141,17 @@ void ImplicitQDRateAndState::solveRateAndStateEquations( real64 const time_n,
   } );
 }
 
+real64 ImplicitQDRateAndState::solverStep( real64 const & time_n,
+                                           real64 const & dt,
+                                           int const cycleNumber,
+                                           DomainPartition & domain )
+{ 
+  applyInitialConditionsToFault( cycleNumber, domain );
+  updateStresses( dt, domain );
+  solveRateAndStateEquations( time_n, dt, domain );
+  return dt;
+}
+
 void ImplicitQDRateAndState::updateSlip( ElementSubRegionBase & subRegion, real64 const dt ) const
 {
   arrayView2d< real64 const > const slipVelocity    = subRegion.getField< rateAndState::slipVelocity >();
