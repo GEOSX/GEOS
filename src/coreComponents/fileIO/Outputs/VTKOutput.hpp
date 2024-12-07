@@ -77,6 +77,9 @@ public:
                         DomainPartition & domain ) override
   {
     execute( time_n, 0, cycleNumber, eventCounter, eventProgress, domain );
+
+    // Call parent class cleanup to get the timing statistics
+    OutputBase::cleanup( time_n, cycleNumber, eventCounter, eventProgress, domain );
   }
 
   /**
@@ -108,6 +111,12 @@ public:
 #if defined(GEOS_USE_PYGEOSX)
   virtual PyTypeObject * getPythonType() const override;
 #endif
+
+protected:
+  /**
+   * @copydoc OutputBase::getTimerCategory
+   */
+  logInfo::OutputTimerBase const & getTimerCategory() const override;
 
 private:
 
