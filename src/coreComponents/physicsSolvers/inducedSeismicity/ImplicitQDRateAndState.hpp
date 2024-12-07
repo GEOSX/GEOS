@@ -13,35 +13,28 @@
  * ------------------------------------------------------------------------------------------------------------
  */
 
-/// THIS is an alternative implementation to avoid the use of the TractionUpdateWrapper
-
-#ifndef GEOS_PHYSICSSOLVERS_INDUCED_QUASIDYNAMICEQBASE_HPP
-#define GEOS_PHYSICSSOLVERS_INDUCED_QUASIDYNAMICEQBASE_HPP
+#ifndef GEOS_PHYSICSSOLVERS_INDUCED_IMPLICITQDRATEANDSTATE_HPP
+#define GEOS_PHYSICSSOLVERS_INDUCED_IMPLICITQDRATEANDSTATE_HPP
 
 #include "physicsSolvers/PhysicsSolverBase.hpp"
 
 namespace geos
 {
 
-class QuasiDynamicEQBase : public PhysicsSolverBase
+class ImplicitQDRateAndState : public PhysicsSolverBase
 {
 public:
   /// The default nullary constructor is disabled to avoid compiler auto-generation:
-  QuasiDynamicEQBase() = delete;
+  ImplicitQDRateAndState() = delete;
 
   /// The constructor needs a user-defined "name" and a parent Group (to place this instance in the tree structure of classes)
-  QuasiDynamicEQBase( const string & name,
-                      Group * const parent );
+  ImplicitQDRateAndState( const string & name,
+                          Group * const parent );
 
   /// Destructor
-  virtual ~QuasiDynamicEQBase() override;
+  virtual ~ImplicitQDRateAndState() override;
 
-  static string catalogName() { return "QuasiDynamicEQBase"; }
-
-  /**
-   * @return Get the final class Catalog name
-   */
-  virtual string getCatalogName() const override { return catalogName(); }
+  static string derivedSolverPrefix() { return "Implicit";};
 
   /// This method ties properties with their supporting mesh
   virtual void registerDataOnMesh( Group & meshBodies ) override;
@@ -68,12 +61,12 @@ public:
 
 protected:
 
-  void solveRateAndStateEquations( real64 const time_n,
-                                   real64 const dt,
-                                   DomainPartition & domain ) const;
+  virtual void solveRateAndStateEquations( real64 const time_n,
+                                           real64 const dt,
+                                           DomainPartition & domain ) const;
 
-  void applyInitialConditionsToFault( int const cycleNumber,
-                                      DomainPartition & domain) const;                                 
+  virtual void applyInitialConditionsToFault( int const cycleNumber,
+                                              DomainPartition & domain) const;                                 
 
   /// shear impedance
   real64 m_shearImpedance;
@@ -84,4 +77,4 @@ protected:
 
 } /* namespace geos */
 
-#endif /* GEOS_PHYSICSSOLVERS_INDUCED_QUASIDYNAMICEQBASE_HPP */
+#endif /* GEOS_PHYSICSSOLVERS_INDUCED_IMPLICITQDRATEANDSTATE_HPP */

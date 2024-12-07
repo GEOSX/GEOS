@@ -15,36 +15,38 @@
 
 /// THIS is an alternative implementation to avoid the use of the TractionUpdateWrapper
 
-#ifndef GEOS_PHYSICSSOLVERS_INDUCED_SPRINGSLIDER_HPP
-#define GEOS_PHYSICSSOLVERS_INDUCED_SPRINGSLIDER_HPP
+#ifndef GEOS_PHYSICSSOLVERS_INDUCEDSEISMICITY_SPRINGSLIDER_HPP
+#define GEOS_PHYSICSSOLVERS_INDUCEDSEISMICITY_SPRINGSLIDER_HPP
 
-#include "physicsSolvers/inducedSeismicity/QuasiDynamicEQBase.hpp"
+#include "physicsSolvers/inducedSeismicity/ImplicitQDRateAndState.hpp"
 
 namespace geos
 {
 
-class SpringSlider : public QuasiDynamicEQBase
+template< typename RSSOLVER_TYPE = ImplicitQDRateAndState >
+class SpringSlider : public RSSOLVER_TYPE
 {
 public:
+
   SpringSlider() = delete;
 
   SpringSlider( const string & name,
-                Group * const parent );
+                dataRepository::Group * const parent );
 
   /// Destructor
   virtual ~SpringSlider() override;
 
-  static string catalogName() { return "SpringSlider"; }
+  static string catalogName() { return RSSOLVER_TYPE::derivedSolverPrefix() + "SpringSlider"; }
 
   virtual string getCatalogName() const override { return catalogName(); }
 
-  virtual void registerDataOnMesh( Group & meshBodies ) override;
+  virtual void registerDataOnMesh( dataRepository::Group & meshBodies ) override;
 
   virtual real64 solverStep( real64 const & time_n,
                              real64 const & dt,
                              integer const cycleNumber,
                              DomainPartition & domain ) override final;
-  struct viewKeyStruct : public QuasiDynamicEQBase::viewKeyStruct
+  struct viewKeyStruct : public RSSOLVER_TYPE::viewKeyStruct
   {};
 
 private:
@@ -88,4 +90,4 @@ public:
 
 } /* namespace geos */
 
-#endif /* GEOS_PHYSICSSOLVERS_INDUCED_SPRINGSLIDER_HPP */
+#endif /* GEOS_PHYSICSSOLVERS_INDUCEDSEISMICITY_SPRINGSLIDER_HPP */

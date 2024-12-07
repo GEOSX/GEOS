@@ -36,9 +36,9 @@ using namespace rateAndStateKernels;
 
 QuasiDynamicEarthQuake::QuasiDynamicEarthQuake( const string & name,
                                                 Group * const parent ):
-  QuasiDynamicEQBase( name, parent ),
+  ImplicitQDRateAndState( name, parent ),
   m_stressSolver( nullptr ),
-  m_stressSolverName( "SpringSlider" )
+  m_stressSolverName()
 {
   this->registerWrapper( viewKeyStruct::stressSolverNameString(), &m_stressSolverName ).
     setInputFlag( InputFlags::REQUIRED ).
@@ -77,11 +77,11 @@ void QuasiDynamicEarthQuake::saveOldStateAndUpdateSlip( ElementSubRegionBase & s
 
   forAll< parallelDevicePolicy<> >( subRegion.size(), [=] GEOS_HOST_DEVICE ( localIndex const k )
   {
-    deltaSlip[k][0]     = slipVelocity[k][0] * dt;
-    deltaSlip[k][1]     = slipVelocity[k][1] * dt;
+    deltaSlip[k][0] = slipVelocity[k][0] * dt;
+    deltaSlip[k][1] = slipVelocity[k][1] * dt;
     // Update tangential components of the displacement jump
-    dispJump[k][1]      = slipVelocity[k][0] * dt;
-    dispJump[k][2]      = slipVelocity[k][1] * dt;
+    dispJump[k][1] = slipVelocity[k][0] * dt;
+    dispJump[k][2] = slipVelocity[k][1] * dt;
   } );
 }
 

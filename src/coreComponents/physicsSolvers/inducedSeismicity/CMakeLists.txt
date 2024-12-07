@@ -4,7 +4,7 @@ set( physicsSolvers_headers
      inducedSeismicity/inducedSeismicityFields.hpp
      inducedSeismicity/rateAndStateFields.hpp
      inducedSeismicity/QuasiDynamicEQ.hpp
-     inducedSeismicity/QuasiDynamicEQBase.hpp
+     inducedSeismicity/ImplicitQDRateAndState.hpp
      inducedSeismicity/SeismicityRate.hpp
      inducedSeismicity/SpringSlider.hpp
      inducedSeismicity/kernels/RateAndStateKernels.hpp
@@ -12,7 +12,6 @@ set( physicsSolvers_headers
      inducedSeismicity/tractionUpdateWrapper/FaultTractionUpdate.hpp
      inducedSeismicity/tractionUpdateWrapper/FaultTractionUpdateBase.hpp
      inducedSeismicity/tractionUpdateWrapper/OneWayCoupledTractionUpdate.hpp
-     inducedSeismicity/tractionUpdateWrapper/SpringSliderTractionUpdate.hpp 
      inducedSeismicity/tractionUpdateWrapper/TractionUpdateFactory.hpp
      PARENT_SCOPE )
 
@@ -20,9 +19,8 @@ set( physicsSolvers_headers
 set( physicsSolvers_sources
      ${physicsSolvers_sources}
      inducedSeismicity/QuasiDynamicEQ.cpp
-     inducedSeismicity/QuasiDynamicEQBase.cpp 
+     inducedSeismicity/ImplicitQDRateAndState.cpp 
      inducedSeismicity/SeismicityRate.cpp
      inducedSeismicity/SpringSlider.cpp
      inducedSeismicity/tractionUpdateWrapper/OneWayCoupledTractionUpdate.cpp
-     inducedSeismicity/tractionUpdateWrapper/SpringSliderTractionUpdate.cpp 
      PARENT_SCOPE )

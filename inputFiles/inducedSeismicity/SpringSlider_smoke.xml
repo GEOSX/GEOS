@@ -2,7 +2,7 @@
 <Problem>
   <Included>
     <File
-      name="./SpringSlider_new_base.xml"/>
+      name="./SpringSlider_base.xml"/>
   </Included>
 
   <Events

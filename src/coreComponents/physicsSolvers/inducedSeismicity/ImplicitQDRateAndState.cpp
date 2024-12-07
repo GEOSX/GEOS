@@ -14,10 +14,10 @@
  */
 
 /**
- * @file QuasiDynamicEQBase.cpp
+ * @file ImplicitQDRateAndState.cpp
  */
 
-#include "QuasiDynamicEQBase.hpp"
+#include "ImplicitQDRateAndState.hpp"
 
 #include "dataRepository/InputFlags.hpp"
 #include "mesh/DomainPartition.hpp"
@@ -35,7 +35,7 @@ using namespace dataRepository;
 using namespace fields;
 using namespace constitutive;
 
-QuasiDynamicEQBase::QuasiDynamicEQBase( const string & name,
+ImplicitQDRateAndState::ImplicitQDRateAndState( const string & name,
                                         Group * const parent ):
   PhysicsSolverBase( name, parent ),
   m_shearImpedance( 0.0 ),
@@ -51,12 +51,12 @@ QuasiDynamicEQBase::QuasiDynamicEQBase( const string & name,
     setDescription( "Target slip incrmeent for timestep size selction" );
 }
 
-QuasiDynamicEQBase::~QuasiDynamicEQBase()
+ImplicitQDRateAndState::~ImplicitQDRateAndState()
 {
   // TODO Auto-generated destructor stub
 }
 
-void QuasiDynamicEQBase::registerDataOnMesh( Group & meshBodies )
+void ImplicitQDRateAndState::registerDataOnMesh( Group & meshBodies )
 {
   PhysicsSolverBase::registerDataOnMesh( meshBodies );
 
@@ -86,7 +86,7 @@ void QuasiDynamicEQBase::registerDataOnMesh( Group & meshBodies )
   } );
 }
 
-void QuasiDynamicEQBase::applyInitialConditionsToFault( int const cycleNumber,
+void ImplicitQDRateAndState::applyInitialConditionsToFault( int const cycleNumber,
                                                         DomainPartition & domain ) const
 {
   if( cycleNumber == 0 )
@@ -119,7 +119,7 @@ void QuasiDynamicEQBase::applyInitialConditionsToFault( int const cycleNumber,
   } 
 }
 
-void QuasiDynamicEQBase::solveRateAndStateEquations( real64 const time_n,
+void ImplicitQDRateAndState::solveRateAndStateEquations( real64 const time_n,
                                                      real64 const dt,
                                                      DomainPartition & domain ) const
 {
@@ -141,7 +141,7 @@ void QuasiDynamicEQBase::solveRateAndStateEquations( real64 const time_n,
   } );
 }
 
-void QuasiDynamicEQBase::updateSlip( ElementSubRegionBase & subRegion, real64 const dt ) const
+void ImplicitQDRateAndState::updateSlip( ElementSubRegionBase & subRegion, real64 const dt ) const
 {
   arrayView2d< real64 const > const slipVelocity    = subRegion.getField< rateAndState::slipVelocity >();
   arrayView2d< real64 > const deltaSlip             = subRegion.getField< contact::deltaSlip >();
@@ -153,7 +153,7 @@ void QuasiDynamicEQBase::updateSlip( ElementSubRegionBase & subRegion, real64 co
   } );
 }
 
-real64 QuasiDynamicEQBase::setNextDt( real64 const & currentDt, DomainPartition & domain )
+real64 ImplicitQDRateAndState::setNextDt( real64 const & currentDt, DomainPartition & domain )
 {
   GEOS_UNUSED_VAR( currentDt );
 

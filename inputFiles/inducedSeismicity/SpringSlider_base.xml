@@ -1,14 +1,14 @@
 <?xml version="1.0" ?>
 <Problem>
   <Solvers>
-    <SpringSlider
+    <ImplicitSpringSlider
       name="SpringSlider"
       targetRegions="{ Fault }"
       shearImpedance="4.41"
       initialDt="1"
       logLevel="1"
       discretization="FE1">
-    </SpringSlider>
+    </ImplicitSpringSlider>
     
     <SurfaceGenerator
       name="SurfaceGen"

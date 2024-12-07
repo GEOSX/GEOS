@@ -17,8 +17,6 @@
  * @file SpringSlider.cpp
  */
 
-/// THIS is an alternative implementation to avoid the use of the TractionUpdateWrapper
-
 #include "SpringSlider.hpp"
 
 #include "dataRepository/InputFlags.hpp"
@@ -35,21 +33,24 @@ using namespace dataRepository;
 using namespace fields;
 using namespace constitutive;
 
-SpringSlider::SpringSlider( const string & name,
-                            Group * const parent ):
-  QuasiDynamicEQBase( name, parent )
+template< typename RSSOLVER_TYPE >
+SpringSlider< RSSOLVER_TYPE >::SpringSlider( const string & name,
+                                             Group * const parent ):
+  RSSOLVER_TYPE( name, parent )
 {}
 
-SpringSlider::~SpringSlider()
+template< typename RSSOLVER_TYPE >
+SpringSlider< RSSOLVER_TYPE >::~SpringSlider()
 {
   // TODO Auto-generated destructor stub
 }
 
-void SpringSlider::registerDataOnMesh( Group & meshBodies )
+template< typename RSSOLVER_TYPE >
+void SpringSlider< RSSOLVER_TYPE >::registerDataOnMesh( Group & meshBodies )
 {
-  QuasiDynamicEQBase::registerDataOnMesh( meshBodies );
+  RSSOLVER_TYPE::registerDataOnMesh( meshBodies );
 
-  forDiscretizationOnMeshTargets( meshBodies, [&] ( string const &,
+  this->forDiscretizationOnMeshTargets( meshBodies, [&] ( string const &,
                                                     MeshLevel & mesh,
                                                     arrayView1d< string const > const & regionNames )
   {
@@ -61,15 +62,15 @@ void SpringSlider::registerDataOnMesh( Group & meshBodies )
     {
       // 3-component functions on fault
       string const labels3Comp[3] = { "normal", "tangent1", "tangent2" };
-      subRegion.registerField< contact::dispJump >( getName() ).
+      subRegion.registerField< contact::dispJump >( this->getName() ).
+      setDimLabels( 1, labels3Comp ).
+      reference().template resizeDimension< 1 >( 3 );
+      subRegion.registerField< contact::traction >( this->getName() ).
         setDimLabels( 1, labels3Comp ).
-        reference().resizeDimension< 1 >( 3 );
-      subRegion.registerField< contact::traction >( getName() ).
+        reference().template resizeDimension< 1 >( 3 );
+      subRegion.registerField< contact::deltaSlip >( this->getName() ).
         setDimLabels( 1, labels3Comp ).
-        reference().resizeDimension< 1 >( 3 );
-      subRegion.registerField< contact::deltaSlip >( getName() ).
-        setDimLabels( 1, labels3Comp ).
-        reference().resizeDimension< 1 >( 3 );  
+        reference().template resizeDimension< 1 >( 3 );  
 
       subRegion.registerWrapper< string >( viewKeyStruct::frictionLawNameString() ).
         setPlotLevel( PlotLevel::NOPLOT ).
@@ -79,27 +80,29 @@ void SpringSlider::registerDataOnMesh( Group & meshBodies )
       string & frictionLawName = subRegion.getReference< string >( viewKeyStruct::frictionLawNameString() );
       frictionLawName =PhysicsSolverBase::getConstitutiveName< FrictionBase >( subRegion );
       GEOS_ERROR_IF( frictionLawName.empty(), GEOS_FMT( "{}: FrictionBase model not found on subregion {}",
-                                                        getDataContext(), subRegion.getDataContext() ) );
+                                                        this->getDataContext(), subRegion.getDataContext() ) );
     } );
   } );
 }
 
-real64 SpringSlider::solverStep( real64 const & time_n,
+template< typename RSSOLVER_TYPE >
+real64 SpringSlider< RSSOLVER_TYPE >::solverStep( real64 const & time_n,
                                    real64 const & dt,
                                    int const cycleNumber,
                                    DomainPartition & domain )
 { 
-  applyInitialConditionsToFault( cycleNumber, domain );
-  updateStresses( dt, domain );
-  solveRateAndStateEquations( time_n, dt, domain );
+  this->applyInitialConditionsToFault( cycleNumber, domain );
+  this->updateStresses( dt, domain );
+  this->solveRateAndStateEquations( time_n, dt, domain );
   return dt;
 }
 
-real64 SpringSlider::updateStresses( real64 const dt,
+template< typename RSSOLVER_TYPE >
+real64 SpringSlider< RSSOLVER_TYPE >::updateStresses( real64 const dt,
                                      DomainPartition & domain ) const
 {
   // Spring-slider shear traction computation
-  forDiscretizationOnMeshTargets( domain.getMeshBodies(), [&]( string const &,
+  this->forDiscretizationOnMeshTargets( domain.getMeshBodies(), [&]( string const &,
                                                                MeshLevel & mesh,
                                                                arrayView1d< string const > const & regionNames )
 
@@ -113,7 +116,7 @@ real64 SpringSlider::updateStresses( real64 const dt,
       arrayView2d< real64 > const traction        = subRegion.getField< fields::contact::traction >();
 
       string const & fricitonLawName = subRegion.template getReference< string >( viewKeyStruct::frictionLawNameString() );
-      RateAndStateFriction const & frictionLaw = getConstitutiveModel< RateAndStateFriction >( subRegion, fricitonLawName );
+      RateAndStateFriction const & frictionLaw = this->template getConstitutiveModel< RateAndStateFriction >( subRegion, fricitonLawName );
 
       RateAndStateFriction::KernelWrapper frictionKernelWrapper = frictionLaw.createKernelUpdates();
 
@@ -135,6 +138,12 @@ real64 SpringSlider::updateStresses( real64 const dt,
   return dt;
 }
 
-REGISTER_CATALOG_ENTRY( PhysicsSolverBase, SpringSlider, string const &, dataRepository::Group * const )
+template class SpringSlider< ImplicitQDRateAndState >;
+
+namespace
+{
+typedef SpringSlider< ImplicitQDRateAndState > ImplicitSpringSlider;
+REGISTER_CATALOG_ENTRY( PhysicsSolverBase, ImplicitSpringSlider, string const &, dataRepository::Group * const )
+}
 
 } // namespace geos

@@ -18,7 +18,7 @@
 #ifndef GEOS_PHYSICSSOLVERS_INDUCED_QUASIDYNAMICEARTHQUAKE_HPP
 #define GEOS_PHYSICSSOLVERS_INDUCED_QUASIDYNAMICEARTHQUAKE_HPP
 
-#include "physicsSolvers/inducedSeismicity/QuasiDynamicEQBase.hpp"
+#include "physicsSolvers/inducedSeismicity/ImplicitQDRateAndState.hpp"
 
 namespace geos
 {
@@ -45,7 +45,7 @@ public:
    */
   virtual string getCatalogName() const override { return catalogName(); }
 
-  struct viewKeyStruct : public QuasiDynamicEQBase::viewKeyStruct
+  struct viewKeyStruct : public ImplicitQDRateAndState::viewKeyStruct
   {
     /// stress solver name
     static constexpr char const * contactSolverNameString() { return "stressSolverName"; }
