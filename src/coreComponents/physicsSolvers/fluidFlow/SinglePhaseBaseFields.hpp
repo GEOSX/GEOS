@@ -33,6 +33,46 @@ namespace fields
 namespace flow
 {
 
+DECLARE_FIELD( mass,
+               "mass",
+               array1d< real64 >,
+               0,
+               LEVEL_0,
+               WRITE_AND_READ,
+               "Fluid mass" );
+
+DECLARE_FIELD( dMass_dPressure,
+               "dMass_dPressure",
+               array1d< real64 >,
+               0,
+               NOPLOT,
+               NO_WRITE,
+               "Derivative of mass with respect to pressure" );
+
+DECLARE_FIELD( dMass_dTemperature,
+               "dMass_dTemperature",
+               array1d< real64 >,
+               0,
+               NOPLOT,
+               NO_WRITE,
+               "Derivative of mass with respect to temperature" );
+
+DECLARE_FIELD( mass_n,
+               "mass_n",
+               array1d< real64 >,
+               0,
+               NOPLOT,
+               NO_WRITE,
+               "Fluid mass at the previous converged time step" );
+
+DECLARE_FIELD( massCreated,
+               "massCreated",
+               array1d< real64 >,
+               0,
+               LEVEL_1,
+               WRITE_AND_READ,
+               "The amount of remaining mass that was introduced when the SurfaceElement was created." );
+
 DECLARE_FIELD( mobility,
                "mobility",
                array1d< real64 >,

@@ -438,13 +438,6 @@ void SinglePhaseBase::accumulationAssemblyLaunch( DofManager const & dofManager,
                                                   CRSMatrixView< real64, globalIndex const > const & localMatrix,
                                                   arrayView1d< real64 > const & localRhs )
 {
-  geos::constitutive::SingleFluidBase const & fluid =
-    getConstitutiveModel< geos::constitutive::SingleFluidBase >( subRegion, subRegion.template getReference< string >( viewKeyStruct::fluidNamesString() ) );
-  //START_SPHINX_INCLUDE_COUPLEDSOLID
-  geos::constitutive::CoupledSolidBase const & solid =
-    getConstitutiveModel< geos::constitutive::CoupledSolidBase >( subRegion, subRegion.template getReference< string >( viewKeyStruct::solidNamesString() ) );
-  //END_SPHINX_INCLUDE_COUPLEDSOLID
-
   string const dofKey = dofManager.getKey( viewKeyStruct::elemDofFieldString() );
 
   if( m_isThermal )
@@ -454,8 +447,6 @@ void SinglePhaseBase::accumulationAssemblyLaunch( DofManager const & dofManager,
       createAndLaunch< parallelDevicePolicy<> >( dofManager.rankOffset(),
                                                  dofKey,
                                                  subRegion,
-                                                 fluid,
-                                                 solid,
                                                  localMatrix,
                                                  localRhs );
   }
@@ -466,8 +457,6 @@ void SinglePhaseBase::accumulationAssemblyLaunch( DofManager const & dofManager,
       createAndLaunch< parallelDevicePolicy<> >( dofManager.rankOffset(),
                                                  dofKey,
                                                  subRegion,
-                                                 fluid,
-                                                 solid,
                                                  localMatrix,
                                                  localRhs );
   }

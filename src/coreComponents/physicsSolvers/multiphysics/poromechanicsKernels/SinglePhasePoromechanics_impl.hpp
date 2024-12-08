@@ -69,8 +69,10 @@ SinglePhasePoromechanics( NodeManager const & nodeManager,
         inputFlowDofKey,
         fluidModelKey ),
   m_fluidDensity( elementSubRegion.template getConstitutiveModel< constitutive::SingleFluidBase >( elementSubRegion.template getReference< string >( fluidModelKey ) ).density() ),
-  m_fluidDensity_n( elementSubRegion.template getConstitutiveModel< constitutive::SingleFluidBase >( elementSubRegion.template getReference< string >( fluidModelKey ) ).density_n() ),
   m_dFluidDensity_dPressure( elementSubRegion.template getConstitutiveModel< constitutive::SingleFluidBase >( elementSubRegion.template getReference< string >( fluidModelKey ) ).dDensity_dPressure() ),
+  m_fluidMass( elementSubRegion.template getField< fields::flow::mass >() ),
+  m_dFluidMass_dPressure( elementSubRegion.template getField< fields::flow::dMass_dPressure >() ),
+  m_fluidMass_n( elementSubRegion.template getField< fields::flow::mass_n >() ),
   m_performStressInitialization( performStressInitialization )
 {}
 
@@ -122,11 +124,7 @@ smallStrainUpdate( localIndex const k,
 
   // Step 3: compute fluid mass increment
   computeFluidIncrement( k, q,
-                         porosity,
-                         porosity_n,
                          dPorosity_dVolStrain,
-                         dPorosity_dPressure,
-                         dPorosity_dTemperature,
                          stack );
 }
 
@@ -166,18 +164,12 @@ GEOS_FORCE_INLINE
 void SinglePhasePoromechanics< SUBREGION_TYPE, CONSTITUTIVE_TYPE, FE_TYPE >::
 computeFluidIncrement( localIndex const k,
                        localIndex const q,
-                       real64 const & porosity,
-                       real64 const & porosity_n,
                        real64 const & dPorosity_dVolStrain,
-                       real64 const & dPorosity_dPressure,
-                       real64 const & dPorosity_dTemperature,
                        StackVariables & stack ) const
 {
-  GEOS_UNUSED_VAR( dPorosity_dTemperature );
-
-  stack.fluidMassIncrement = porosity * m_fluidDensity( k, q ) - porosity_n * m_fluidDensity_n( k, q );
+  stack.fluidMassIncrement = m_fluidMass[k] - m_fluidMass_n[k];
   stack.dFluidMassIncrement_dVolStrainIncrement = dPorosity_dVolStrain * m_fluidDensity( k, q );
-  stack.dFluidMassIncrement_dPressure = dPorosity_dPressure * m_fluidDensity( k, q ) + porosity * m_dFluidDensity_dPressure( k, q );
+  stack.dFluidMassIncrement_dPressure = m_dFluidMass_dPressure[k];
 }
 
 template< typename SUBREGION_TYPE,

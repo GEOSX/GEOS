@@ -241,22 +241,6 @@ DECLARE_FIELD( temperatureScalingFactor,
                NO_WRITE,
                "Scaling factors for temperature" );
 
-DECLARE_FIELD( mass,
-               "mass",
-               array1d< real64 >,
-               0,
-               LEVEL_0,
-               WRITE_AND_READ,
-               "Mass" );
-
-DECLARE_FIELD( mass_n,
-               "mass_n",
-               array1d< real64 >,
-               0,
-               NOPLOT,
-               WRITE_AND_READ,
-               "Mass at the previous converged time step" );
-
 DECLARE_FIELD( energy,
                "energy",
                array1d< real64 >,
@@ -265,21 +249,29 @@ DECLARE_FIELD( energy,
                WRITE_AND_READ,
                "Energy" );
 
+DECLARE_FIELD( dEnergy_dPressure,
+               "dEnergy_dPressure",
+               array1d< real64 >,
+               0,
+               NOPLOT,
+               NO_WRITE,
+               "Derivative of energy with respect to pressure" );
+
+DECLARE_FIELD( dEnergy_dTemperature,
+               "dEnergy_dTemperature",
+               array1d< real64 >,
+               0,
+               NOPLOT,
+               NO_WRITE,
+               "Derivative of energy with respect to temperature" );
+
 DECLARE_FIELD( energy_n,
                "energy_n",
                array1d< real64 >,
                0,
                NOPLOT,
-               WRITE_AND_READ,
+               NO_WRITE,
                "Energy at the previous converged time step" );
-
-DECLARE_FIELD( massCreated,
-               "massCreated",
-               array1d< real64 >,
-               0,
-               LEVEL_1,
-               WRITE_AND_READ,
-               "The amount of remaining mass that was introduced when the SurfaceElement was created." );
 
 }
 

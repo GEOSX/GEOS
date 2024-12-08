@@ -76,8 +76,6 @@ SinglePhaseBase::SinglePhaseBase( const string & name,
 
 void SinglePhaseBase::registerDataOnMesh( Group & meshBodies )
 {
-  using namespace fields::flow;
-
   FlowSolverBase::registerDataOnMesh( meshBodies );
 
   m_numDofPerCell = m_isThermal ? 2 : 1;
@@ -93,18 +91,19 @@ void SinglePhaseBase::registerDataOnMesh( Group & meshBodies )
                                                               [&]( localIndex const,
                                                                    ElementSubRegionBase & subRegion )
     {
-      subRegion.registerField< deltaVolume >( getName() );
+      subRegion.registerField< fields::flow::deltaVolume >( getName() );
 
-      subRegion.registerField< mobility >( getName() );
-      subRegion.registerField< dMobility_dPressure >( getName() );
+      subRegion.registerField< fields::flow::mobility >( getName() );
+      subRegion.registerField< fields::flow::dMobility_dPressure >( getName() );
 
       subRegion.registerField< fields::flow::mass >( getName() );
+      subRegion.registerField< fields::flow::dMass_dPressure >( getName() );
       subRegion.registerField< fields::flow::mass_n >( getName() );
-
 
       if( m_isThermal )
       {
-        subRegion.registerField< dMobility_dTemperature >( getName() );
+        subRegion.registerField< fields::flow::dMobility_dTemperature >( getName() );
+        subRegion.registerField< fields::flow::dMass_dTemperature >( getName() );
       }
     } );
 
@@ -117,11 +116,11 @@ void SinglePhaseBase::registerDataOnMesh( Group & meshBodies )
 
     FaceManager & faceManager = mesh.getFaceManager();
     {
-      faceManager.registerField< facePressure >( getName() );
+      faceManager.registerField< fields::flow::facePressure >( getName() );
 
       if( m_isThermal )
       {
-        faceManager.registerField< faceTemperature >( getName() );
+        faceManager.registerField< fields::flow::faceTemperature >( getName() );
       }
     }
   } );
@@ -272,11 +271,13 @@ void SinglePhaseBase::updateMass( ElementSubRegionBase & subRegion ) const
   GEOS_MARK_FUNCTION;
 
   arrayView1d< real64 > const mass = subRegion.getField< fields::flow::mass >();
+  arrayView1d< real64 > const dMass_dP = subRegion.getField< fields::flow::dMass_dPressure >();
   arrayView1d< real64 > const mass_n = subRegion.getField< fields::flow::mass_n >();
 
   CoupledSolidBase const & porousSolid =
     getConstitutiveModel< CoupledSolidBase >( subRegion, subRegion.template getReference< string >( viewKeyStruct::solidNamesString() ) );
   arrayView2d< real64 const > const porosity = porousSolid.getPorosity();
+  arrayView2d< real64 const > const dPorosity_dP = porousSolid.getDporosity_dPressure();
   arrayView2d< real64 const > const porosity_n = porousSolid.getPorosity_n();
 
   arrayView1d< real64 const > const volume = subRegion.getElementVolume();
@@ -285,14 +286,31 @@ void SinglePhaseBase::updateMass( ElementSubRegionBase & subRegion ) const
   SingleFluidBase & fluid =
     getConstitutiveModel< SingleFluidBase >( subRegion, subRegion.getReference< string >( viewKeyStruct::fluidNamesString() ) );
   arrayView2d< real64 const > const density = fluid.density();
+  arrayView2d< real64 const > const dDensity_dP = fluid.dDensity_dPressure();
   arrayView2d< real64 const > const density_n = fluid.density_n();
 
   forAll< parallelDevicePolicy<> >( subRegion.size(), [=] GEOS_HOST_DEVICE ( localIndex const ei )
   {
-    mass[ei] = porosity[ei][0] * ( volume[ei] + deltaVolume[ei] ) * density[ei][0];
+    real64 const vol = volume[ei] + deltaVolume[ei];
+    mass[ei] = porosity[ei][0] * density[ei][0] * vol;
+    dMass_dP[ei] = ( dPorosity_dP[ei][0] * density[ei][0] + porosity[ei][0] * dDensity_dP[ei][0] ) * vol;
     if( isZero( mass_n[ei] ) ) // this is a hack for hydrofrac cases
+    {
       mass_n[ei] = porosity_n[ei][0] * volume[ei] * density_n[ei][0]; // initialize newly created element mass
+    }
   } );
+
+  if( m_isThermal )
+  {
+    arrayView1d< real64 > const dMass_dT = subRegion.getField< fields::flow::dMass_dTemperature >();
+    arrayView2d< real64 const > const dPorosity_dT = porousSolid.getDporosity_dTemperature();
+    arrayView2d< real64 const > const dDensity_dT = fluid.dDensity_dTemperature();
+    forAll< parallelDevicePolicy<> >( subRegion.size(), [=] GEOS_HOST_DEVICE ( localIndex const ei )
+    {
+      real64 const vol = volume[ei] + deltaVolume[ei];
+      dMass_dT[ei] = ( dPorosity_dT[ei][0] * density[ei][0] + dDensity_dT[ei][0] * dDensity_dP[ei][0] ) * vol;
+    } );
+  }
 }
 
 void SinglePhaseBase::updateEnergy( ElementSubRegionBase & subRegion ) const
@@ -300,24 +318,46 @@ void SinglePhaseBase::updateEnergy( ElementSubRegionBase & subRegion ) const
   GEOS_MARK_FUNCTION;
 
   arrayView1d< real64 > const energy = subRegion.getField< fields::flow::energy >();
-
-  CoupledSolidBase const & porousSolid =
-    getConstitutiveModel< CoupledSolidBase >( subRegion, subRegion.template getReference< string >( viewKeyStruct::solidNamesString() ) );
-  arrayView2d< real64 const > const porosity = porousSolid.getPorosity();
-  arrayView2d< real64 const > const rockInternalEnergy = porousSolid.getInternalEnergy();
+  arrayView1d< real64 > const dEnergy_dP = subRegion.getField< fields::flow::dEnergy_dPressure >();
+  arrayView1d< real64 > const dEnergy_dT = subRegion.getField< fields::flow::dEnergy_dTemperature >();
 
   arrayView1d< real64 const > const volume = subRegion.getElementVolume();
   arrayView1d< real64 > const deltaVolume = subRegion.getField< fields::flow::deltaVolume >();
 
+  CoupledSolidBase const & porousSolid =
+    getConstitutiveModel< CoupledSolidBase >( subRegion, subRegion.template getReference< string >( viewKeyStruct::solidNamesString() ) );
+  arrayView2d< real64 const > const porosity = porousSolid.getPorosity();
+  arrayView2d< real64 const > const dPorosity_dP = porousSolid.getDporosity_dPressure();
+  arrayView2d< real64 const > const dPorosity_dT = porousSolid.getDporosity_dTemperature();
+  arrayView2d< real64 const > const rockInternalEnergy = porousSolid.getInternalEnergy();
+  arrayView2d< real64 const > const dRockInternalEnergy_dT = porousSolid.getDinternalEnergy_dTemperature();
+
   SingleFluidBase & fluid =
     getConstitutiveModel< SingleFluidBase >( subRegion, subRegion.getReference< string >( viewKeyStruct::fluidNamesString() ) );
   arrayView2d< real64 const > const density = fluid.density();
+  arrayView2d< real64 const > const dDensity_dP = fluid.dDensity_dPressure();
+  arrayView2d< real64 const > const dDensity_dT = fluid.dDensity_dTemperature();
   arrayView2d< real64 const > const fluidInternalEnergy = fluid.internalEnergy();
+  arrayView2d< real64 const > const dFluidInternalEnergy_dP = fluid.dInternalEnergy_dPressure();
+  arrayView2d< real64 const > const dFluidInternalEnergy_dT = fluid.dInternalEnergy_dTemperature();
 
   forAll< parallelDevicePolicy<> >( subRegion.size(), [=] GEOS_HOST_DEVICE ( localIndex const ei )
   {
-    energy[ei] = ( volume[ei] + deltaVolume[ei] ) *
-                 ( porosity[ei][0] * density[ei][0] * fluidInternalEnergy[ei][0] + ( 1.0 - porosity[ei][0] ) * rockInternalEnergy[ei][0] );
+    real64 const vol = volume[ei] + deltaVolume[ei];
+    energy[ei] = vol *
+                 ( porosity[ei][0] * density[ei][0] * fluidInternalEnergy[ei][0] +
+                   ( 1.0 - porosity[ei][0] ) * rockInternalEnergy[ei][0] );
+    dEnergy_dP[ei] = vol *
+                     ( dPorosity_dP[ei][0] * density[ei][0] * fluidInternalEnergy[ei][0] +
+                       porosity[ei][0] * dDensity_dP[ei][0] * fluidInternalEnergy[ei][0] +
+                       porosity[ei][0] * density[ei][0] * dFluidInternalEnergy_dP[ei][0] -
+                       dPorosity_dP[ei][0] * rockInternalEnergy[ei][0] );
+    dEnergy_dT[ei] = vol *
+                     ( dPorosity_dT[ei][0] * density[ei][0] * fluidInternalEnergy[ei][0] +
+                       porosity[ei][0] * dDensity_dT[ei][0] * fluidInternalEnergy[ei][0] +
+                       porosity[ei][0] * density[ei][0] * dFluidInternalEnergy_dT[ei][0] -
+                       dPorosity_dT[ei][0] * rockInternalEnergy[ei][0] +
+                       ( 1.0 - porosity[ei][0] ) * dRockInternalEnergy_dT[ei][0] );
   } );
 }
 
@@ -594,8 +634,6 @@ void SinglePhaseBase::initializeFluidState( MeshLevel & mesh, arrayView1d< strin
 
     // 2. save the initial density (for use in the single-phase poromechanics solver to compute the deltaBodyForce)
     fluid.initializeState();
-
-    updateMass( subRegion );
   } );
 }
 

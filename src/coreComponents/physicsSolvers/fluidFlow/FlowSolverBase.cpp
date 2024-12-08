@@ -168,6 +168,8 @@ void FlowSolverBase::registerDataOnMesh( Group & meshBodies )
       if( m_isThermal )
       {
         subRegion.registerField< fields::flow::energy >( getName() );
+        subRegion.registerField< fields::flow::dEnergy_dPressure >( getName() );
+        subRegion.registerField< fields::flow::dEnergy_dTemperature >( getName() );
         subRegion.registerField< fields::flow::energy_n >( getName() );
       }
     } );

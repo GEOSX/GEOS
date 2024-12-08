@@ -247,10 +247,13 @@ protected:
 
   arrayView1d< globalIndex const > const m_wDofNumber;
 
+  /// The rank global fluid mass
+  arrayView1d< real64 const > const m_fluidMass;
+  arrayView1d< real64 const > const m_fluidMass_n;
+  arrayView1d< real64 const > const m_dFluidMass_dPressure;
+
   /// The rank global densities
-  arrayView2d< real64 const > const m_solidDensity;
   arrayView2d< real64 const > const m_fluidDensity;
-  arrayView2d< real64 const > const m_fluidDensity_n;
   arrayView2d< real64 const > const m_dFluidDensity_dPressure;
 
   /// The rank-global fluid pressure array.
