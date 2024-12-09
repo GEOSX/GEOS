@@ -197,7 +197,7 @@ public:
     // such as potGrad, phaseFlux, and the indices of the upwind cell
     // We use the lambda below (called **inside** the phase loop of the base computeFlux) to access these variables
     Base::computeFlux( iconn, stack, [&] ( integer const ip,
-                                           integer const useNewGravity,
+                                           integer const checkPhasePresenceInGravity,
                                            localIndex const (&k)[2],
                                            localIndex const (&seri)[2],
                                            localIndex const (&sesri)[2],
@@ -235,7 +235,7 @@ public:
         localIndex const ei  = sei[i];
 
         bool const phaseExists = (m_phaseVolFrac[er_up][esr_up][ei_up][ip] > 0);
-        if( useNewGravity && !phaseExists )
+        if( checkPhasePresenceInGravity && !phaseExists )
         {
           continue;
         }

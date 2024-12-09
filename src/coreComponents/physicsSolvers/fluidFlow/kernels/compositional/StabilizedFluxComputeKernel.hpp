@@ -193,7 +193,7 @@ public:
     //
     // We use the lambda below (called **inside** the phase loop of the base computeFlux) to compute stabilization terms
     Base::computeFlux( iconn, stack, [&] ( integer const ip,
-                                           integer const GEOS_UNUSED_PARAM( useNewGravity ),
+                                           integer const GEOS_UNUSED_PARAM( checkPhasePresenceInGravity ),
                                            localIndex const (&k)[2],
                                            localIndex const (&seri)[2],
                                            localIndex const (&sesri)[2],

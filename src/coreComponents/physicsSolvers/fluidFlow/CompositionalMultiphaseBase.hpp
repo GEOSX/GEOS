@@ -26,6 +26,22 @@
 namespace geos
 {
 
+/**
+ * @brief Options for density treatment in gravity
+ */
+enum class GravityDensityScheme : integer
+{
+  ArithmeticAverage, ///< density is computed using simple arithmetic average
+  PhasePresence,     ///< density computation with checking for phase presence
+};
+
+/**
+ * @brief Strings for options for density treatment in gravity
+ */
+ENUM_STRINGS( GravityDensityScheme,
+              "ArithmeticAverage",
+              "PhasePresence" );
+
 //START_SPHINX_INCLUDE_00
 /**
  * @class CompositionalMultiphaseBase
@@ -268,7 +284,7 @@ public:
     static constexpr char const * allowLocalCompDensChoppingString() { return "allowLocalCompDensityChopping"; }
     static constexpr char const * useTotalMassEquationString() { return "useTotalMassEquation"; }
     static constexpr char const * useSimpleAccumulationString() { return "useSimpleAccumulation"; }
-    static constexpr char const * useNewGravityString() { return "useNewGravity"; }
+    static constexpr char const * gravityDensitySchemeString() { return "gravityDensityScheme"; }
     static constexpr char const * minCompDensString() { return "minCompDens"; }
     static constexpr char const * maxSequentialCompDensChangeString() { return "maxSequentialCompDensChange"; }
     static constexpr char const * minScalingFactorString() { return "minScalingFactor"; }
@@ -487,8 +503,8 @@ protected:
   /// flag indicating whether simple accumulation form is used
   integer m_useSimpleAccumulation;
 
-  /// flag indicating whether new gravity treatment is used
-  integer m_useNewGravity;
+  /// scheme for density treatment in gravity
+  GravityDensityScheme m_gravityDensityScheme;
 
   /// minimum allowed global component density
   real64 m_minCompDens;

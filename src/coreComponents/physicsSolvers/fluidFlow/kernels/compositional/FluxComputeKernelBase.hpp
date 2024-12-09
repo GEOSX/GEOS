@@ -47,8 +47,8 @@ enum class KernelFlags
   CapPressure = 1 << 0, // 1
   /// Flag indicating whether total mass equation is formed or not
   TotalMassEquation = 1 << 1, // 2
-  /// Flag indicating whether new gravity treatment is used or not
-  NewGravity = 1 << 2, // 4
+  /// Flag indicating whether gravity treatment is checking phase presence or not
+  CheckPhasePresenceInGravity = 1 << 2, // 4
   /// Flag indicating whether C1-PPU is used or not
   C1PPU = 1 << 3, // 8
   /// Flag indicating whether IHU is used or not
