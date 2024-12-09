@@ -55,7 +55,7 @@ public:
    * @brief Gets a reference to the list of metis neighbor list.
    * @return A reference to the Metis neighbor list.
    */
-  std::set< int > const & getMetisNeighborList() const { return m_metisNeighborList; }
+  std::set< int > const & getMetisNeighborList() const override { return m_metisNeighborList; }
 
   /**
    * @brief Sets the list of metis neighbor list.

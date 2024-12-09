@@ -1904,6 +1904,7 @@ void SolidMechanicsMPM::initialize( NodeManager & nodeManager,
   // GEOS_LOG_RANK_0( "Get boundary nodes");
 
   // Initialize particle fields that weren't intialized by reading the particle input file
+  RAJA::ReduceMin< parallelDeviceReduce, real64 > minMassLocal( LvArray::NumericLimits< real64 >::max );
   particleManager.forParticleSubRegions( [&]( ParticleSubRegion & subRegion )
   {
     string const & solidMaterialName = subRegion.template getReference< string >( viewKeyStruct::solidMaterialNamesString() );
@@ -1964,7 +1965,6 @@ void SolidMechanicsMPM::initialize( NodeManager & nodeManager,
     int const numberOfVerticesPerParticle = subRegion.numberOfVerticesPerParticle();
 
     // real64 localMinMass = 0.0;
-    RAJA::ReduceMin< parallelDeviceReduce, real64 > minMassLocal( LvArray::NumericLimits< real64 >::max );
     forAll< parallelDevicePolicy<> >( subRegion.size(), [=] GEOS_HOST_DEVICE ( localIndex const p )
     {
       particleMaterialType[p] = regionIndexOfSubRegion;
@@ -2022,10 +2022,10 @@ void SolidMechanicsMPM::initialize( NodeManager & nodeManager,
 
       // LvArray::tensorOps::fill< 6 >( particlePlasticStrain[p], 0.0 );
     } );
-
-    // Set small mass threshold
-    m_smallMass = fmin( MpiWrapper::min( minMassLocal.get() ) * 1.0e-12, m_smallMass );
   } );
+
+  // Set small mass threshold
+  m_smallMass = fmin( MpiWrapper::min( minMassLocal.get() ) * 1.0e-12, m_smallMass );
 
   // GEOS_LOG_RANK_0( "Initialized particle fields");
 
@@ -3558,6 +3558,13 @@ void SolidMechanicsMPM::singleFaceVectorFieldSymmetryBC( const int face,
   // solver:
   //   * enforceGridVectorFieldSymmetryBC calls this on all grid faces
   //   * applyEssentialBCs calls this on faces that aren't moving (moving faces due to F-table need special treatment)
+  int nEl[3] = { 0 };
+  LvArray::tensorOps::copy< 3 >( nEl, m_nEl );
+  real64 hEl[3] = { 0.0 };
+  LvArray::tensorOps::copy< 3 >( hEl, m_hEl );
+  real64 xLocalMin[3] = { 0.0 };
+  LvArray::tensorOps::copy< 3 >( xLocalMin, m_xLocalMin );
+  arrayView3d< int const > const ijkMap = m_ijkMap;
 
   array1d< SortedArray< localIndex > > & boundaryNodes = nodeSets.getReference< array1d< SortedArray< localIndex > > >( viewKeyStruct::boundaryNodesString() );
   array1d< SortedArray< localIndex > > & bufferNodes = nodeSets.getReference< array1d< SortedArray< localIndex > > >( viewKeyStruct::bufferNodesString() );
@@ -3574,7 +3581,8 @@ void SolidMechanicsMPM::singleFaceVectorFieldSymmetryBC( const int face,
     SortedArrayView< localIndex const > const boundaryNodesView = boundaryNodes[face].toView();
     int const numBoundaryNodes = boundaryNodesView.size();
     // Probably not a big enough loop to warrant parallelization
-    forAll< serialPolicy >( numBoundaryNodes, [&, vectorMultiField, dVectorMultiField] GEOS_HOST ( localIndex const gg ) 
+    // forAll< serialPolicy >( numBoundaryNodes, [&, vectorMultiField, dVectorMultiField] GEOS_HOST ( localIndex const gg ) 
+    forAll< serialPolicy >( numBoundaryNodes, [=] GEOS_HOST ( localIndex const gg ) 
     {
       int const g = boundaryNodesView[gg];
       dVectorMultiField[g][fieldIndex][dir0] = -vectorMultiField[g][fieldIndex][dir0];
@@ -3585,15 +3593,16 @@ void SolidMechanicsMPM::singleFaceVectorFieldSymmetryBC( const int face,
     SortedArrayView< localIndex const > const bufferNodesView = bufferNodes[face].toView();
     int const numBufferNodes = bufferNodesView.size();
     // Probably not a big enough loop to warrant parallelization
-    forAll< serialPolicy >( numBufferNodes, [&, vectorMultiField, dVectorMultiField, gridPosition] GEOS_HOST ( localIndex const gg )
+    // forAll< serialPolicy >( numBufferNodes, [&, vectorMultiField, dVectorMultiField, gridPosition] GEOS_HOST ( localIndex const gg )
+    forAll< serialPolicy >( numBufferNodes, [=] GEOS_HOST ( localIndex const gg )
     {
       int const g = bufferNodesView[gg];
       int ijk[3];
-      ijk[dir0] = positiveNormal * ( m_nEl[dir0] - 2 ) + ( 1 - positiveNormal ) * ( 2 );
-      ijk[dir1] = std::round( ( gridPosition[g][dir1] - m_xLocalMin[dir1] ) / m_hEl[dir1] );
-      ijk[dir2] = std::round( ( gridPosition[g][dir2] - m_xLocalMin[dir2] ) / m_hEl[dir2] );
+      ijk[dir0] = positiveNormal * ( nEl[dir0] - 2 ) + ( 1 - positiveNormal ) * ( 2 );
+      ijk[dir1] = std::round( ( gridPosition[g][dir1] - xLocalMin[dir1] ) / hEl[dir1] );
+      ijk[dir2] = std::round( ( gridPosition[g][dir2] - xLocalMin[dir2] ) / hEl[dir2] );
 
-      localIndex gFrom = m_ijkMap[ijk[0]][ijk[1]][ijk[2]];
+      localIndex gFrom = ijkMap[ijk[0]][ijk[1]][ijk[2]];
 
       real64 previousVectorMultiField[3] = { 0 };
       previousVectorMultiField[dir0] = vectorMultiField[g][fieldIndex][dir0];
@@ -3875,10 +3884,10 @@ void SolidMechanicsMPM::computeGridSurfaceNormals( ParticleManager & particleMan
   int const numDims = m_numDims;
   int const damageFieldPartitioning = m_damageFieldPartitioning;
   int const numContactGroups = m_numContactGroups;
-  real64 xLocalMin[3] = {0};
-  LvArray::tensorOps::copy< 3 >( xLocalMin, m_xLocalMin );
-  real64 hEl[3] = {0};
+  real64 hEl[3] = { 0.0 };
   LvArray::tensorOps::copy< 3 >( hEl, m_hEl );
+  real64 xLocalMin[3] = { 0.0 };
+  LvArray::tensorOps::copy< 3 >( xLocalMin, m_xLocalMin );
   arrayView3d< int const > const ijkMap = m_ijkMap;
 
   // Grid fields
@@ -3973,9 +3982,10 @@ void SolidMechanicsMPM::computeGridSurfacePositions( ParticleManager & particleM
   int const numDims = m_numDims;
   int const damageFieldPartitioning = m_damageFieldPartitioning;
   int const numContactGroups = m_numContactGroups;
-  real64 hEl[3] = {0};
+  real64 hEl[3] = { 0.0 };
   LvArray::tensorOps::copy< 3 >( hEl, m_hEl );
-  real64 xLocalMin[3] = {0};
+  real64 xLocalMin[3] = { 0.0 };
+  LvArray::tensorOps::copy< 3 >( xLocalMin, m_xLocalMin);
   arrayView3d< int const > const ijkMap = m_ijkMap;
 
   // Grid fields
@@ -4141,10 +4151,10 @@ void SolidMechanicsMPM::computeGridSurfaceNormalWeights( ParticleManager & parti
   int const damageFieldPartitioning = m_damageFieldPartitioning;
   int const numVelocityFields = m_numVelocityFields;
   int const numContactGroups = m_numContactGroups;
-  real64 xLocalMin[3] = {0};
-  LvArray::tensorOps::copy< 3 >( xLocalMin, m_xLocalMin );
-  real64 hEl[3] = {0};
+  real64 hEl[3] = { 0.0 };
   LvArray::tensorOps::copy< 3 >( hEl, m_hEl );
+  real64 xLocalMin[3] = { 0.0 };
+  LvArray::tensorOps::copy< 3 >( xLocalMin, m_xLocalMin );
   // arrayView3d< int const > const ijkMap = m_ijkMap;
 
   // Grid fields
@@ -5788,20 +5798,20 @@ void SolidMechanicsMPM::updateStress( real64 dt,
     {
       hyperelasticUpdate = 1;
     }
-
+    
     // Call constitutive model
     ConstitutivePassThruMPM< ContinuumBase >::execute( solid, [&] ( auto & castedSolid )
     {
       using SolidType = TYPEOFREF( castedSolid );
       typename SolidType::KernelWrapper constitutiveModelWrapper = castedSolid.createKernelUpdates();
       solidMechanicsMPMKernels::StateUpdateKernel::launch< parallelDevicePolicy<> >( subRegion.activeParticleIndices(),
-                                                                                     constitutiveModelWrapper,
-                                                                                     dt,
-                                                                                     hyperelasticUpdate,
-                                                                                     particleDeformationGradient,
-                                                                                     particleFDot,
-                                                                                     particleVelocityGradient,
-                                                                                     particleStress );
+                                                                           constitutiveModelWrapper,
+                                                                           dt,
+                                                                           hyperelasticUpdate,
+                                                                           particleDeformationGradient,
+                                                                           particleFDot,
+                                                                           particleVelocityGradient,
+                                                                           particleStress );
     } );
   } );
 }
@@ -5810,6 +5820,7 @@ void SolidMechanicsMPM::particleKinematicUpdate( ParticleManager & particleManag
 {
   GEOS_MARK_FUNCTION;
 
+  int const numDims = m_numDims;
   real64 const minParticleJacobian = m_minParticleJacobian;
   real64 const maxParticleJacobian = m_maxParticleJacobian;
   real64 const maxParticleVelocitySquared = m_maxParticleVelocitySquared;
@@ -5863,7 +5874,7 @@ void SolidMechanicsMPM::particleKinematicUpdate( ParticleManager & particleManag
       // With body forces and surface tractions, particles that become detached can accelerate sufficiently to overflow the velocity squared
       // Here we detect if particle velocities will overflow when squared and flag them for deletion to avoid erroring out
       real64 particleSpeedSquared = 0;
-      for( int d = 0; d < m_numDims; d++  )
+      for( int d = 0; d < numDims; d++  )
       {
         real64 addSqr = particleVelocity[p][d] * particleVelocity[p][d]; 
         if( particleSpeedSquared > std::numeric_limits< real64 >::max() - addSqr )
@@ -5966,14 +5977,24 @@ void SolidMechanicsMPM::computeAndWriteBoxAverage( const real64 dt,
 {
   GEOS_MARK_FUNCTION;
 
-  real64 boxPlasticStrain[6] = { 0.0 };
-  real64 boxStress[6] = { 0.0 }; // we sum stress * volume in particles, additive sync, then divide by box volume.
-  real64 boxMass = 0.0; // we sum particle mass, additive sync, then divide by box volume
-  real64 boxParticleReferenceVolume = 0.0;
-  real64 boxDamage = 0.0; // we sum damage * reference volume, additive sync, then divide by total reference volume in box
-  real64 boxInternalEnergy = 0.0;
-  real64 boxKineticEnergy = 0.0;
-  real64 boxMatVolume = 0.0; // Sum volume of all particles
+  // real64 boxPlasticStrain[6] = { 0.0 };
+  // real64 boxStress[6] = { 0.0 }; // we sum stress * volume in particles, additive sync, then divide by box volume.
+
+  // real64 boxMass = 0.0; // we sum particle mass, additive sync, then divide by box volume
+  // real64 boxParticleReferenceVolume = 0.0;
+  // real64 boxDamage = 0.0; // we sum damage * reference volume, additive sync, then divide by total reference volume in box
+  // real64 boxInternalEnergy = 0.0;
+  // real64 boxKineticEnergy = 0.0;
+  // real64 boxMatVolume = 0.0; // Sum volume of all particles
+
+  RAJA::MultiReduceSum< RAJA::seq_multi_reduce, real64 > boxPlasticStrain(6, 0.0);
+  RAJA::MultiReduceSum< RAJA::seq_multi_reduce, real64 > boxStress(6, 0.0);
+  RAJA::ReduceSum< parallelDeviceReduce, real64 > boxMass( 0.0 );
+  RAJA::ReduceSum< parallelDeviceReduce, real64 > boxParticleReferenceVolume( 0.0 );
+  RAJA::ReduceSum< parallelDeviceReduce, real64 > boxDamage( 0.0 );
+  RAJA::ReduceSum< parallelDeviceReduce, real64 > boxInternalEnergy( 0.0 );
+  RAJA::ReduceSum< parallelDeviceReduce, real64 > boxKineticEnergy( 0.0 );
+  RAJA::ReduceSum< parallelDeviceReduce, real64 > boxMatVolume( 0.0 );
 
   // real64 boxInternalForce[3] = { 0.0 };
   // real64 boxCohesiveForce[3] = { 0.0 };
@@ -6027,25 +6048,25 @@ void SolidMechanicsMPM::computeAndWriteBoxAverage( const real64 dt,
 
   // Additive sync: sxx, syy, szz, sxy, syz, sxz, mass, particle volume, damage
   // Check the voigt indexing of stress
-  real64 boxSums[18];
-  boxSums[0] = boxStress[0];       // sig_xx * volume
-  boxSums[1] = boxStress[1];       // sig_yy * volume
-  boxSums[2] = boxStress[2];       // sig_zz * volume
-  boxSums[3] = boxStress[3];       // sig_yz * volume
-  boxSums[4] = boxStress[4];       // sig_xz * volume
-  boxSums[5] = boxStress[5];       // sig_xy * volume
-  boxSums[6] = boxMass;            // total mass in box
-  boxSums[7] = boxParticleReferenceVolume > 0.0 ? boxParticleReferenceVolume : 1.0;  // total particle reference volume in box; prevent div0 error
-  boxSums[8] = boxDamage;          // damage * volume
-  boxSums[9] = boxInternalEnergy;          // internal energy * volume
-  boxSums[10] = boxKineticEnergy; // kinetic energy * volume
-  boxSums[11] = boxPlasticStrain[0]; // plasticStrain_xx
-  boxSums[12] = boxPlasticStrain[1]; // plasticStrain_yy
-  boxSums[13] = boxPlasticStrain[2]; // plasticStrain_zz
-  boxSums[14] = boxPlasticStrain[3]; // plasticStrain_yz
-  boxSums[15] = boxPlasticStrain[4]; // plasticStrain_xz
-  boxSums[16] = boxPlasticStrain[5]; // plasticStrain_xy
-  boxSums[17] = boxMatVolume;
+  real64 boxSums[18] = { 0.0 };
+  boxSums[0] = boxStress[0].get();       // sig_xx * volume
+  boxSums[1] = boxStress[1].get();       // sig_yy * volume
+  boxSums[2] = boxStress[2].get();       // sig_zz * volume
+  boxSums[3] = boxStress[3].get();       // sig_yz * volume
+  boxSums[4] = boxStress[4].get();       // sig_xz * volume
+  boxSums[5] = boxStress[5].get();       // sig_xy * volume
+  boxSums[6] = boxMass.get();            // total mass in box
+  boxSums[7] = boxParticleReferenceVolume.get() > 0.0 ? boxParticleReferenceVolume : 1.0;  // total particle reference volume in box; prevent div0 error
+  boxSums[8] = boxDamage.get();          // damage * volume
+  boxSums[9] = boxInternalEnergy.get();          // internal energy * volume
+  boxSums[10] = boxKineticEnergy.get(); // kinetic energy * volume
+  boxSums[11] = boxPlasticStrain[0].get(); // plasticStrain_xx
+  boxSums[12] = boxPlasticStrain[1].get(); // plasticStrain_yy
+  boxSums[13] = boxPlasticStrain[2].get(); // plasticStrain_zz
+  boxSums[14] = boxPlasticStrain[3].get(); // plasticStrain_yz
+  boxSums[15] = boxPlasticStrain[4].get(); // plasticStrain_xz
+  boxSums[16] = boxPlasticStrain[5].get(); // plasticStrain_xy
+  boxSums[17] = boxMatVolume.get();
       
   // Do an MPI sync to total these values and write from proc0 to a file.  Also compute global F
   // so file is directly plottable in excel as CSV or something.
@@ -6158,24 +6179,25 @@ void SolidMechanicsMPM::computeBoxMetrics( ParticleManager & particleManager,
                                            arrayView1d< real64 > currentStress,
                                            real64 & boxMaterialVolume )
 {
-  real64 boxStress[3] = { 0.0 }; // we sum stress * volume in particles, additive sync, then divide by box volume.
-  boxMaterialVolume = 0.0;
+  // real64 boxStress[3] = { 0.0 }; // we sum stress * volume in particles, additive sync, then divide by box volume.
+  // boxMaterialVolume = 0.0;
+
+  RAJA::MultiReduceSum< RAJA::seq_multi_reduce, real64 > boxStress ( 3, 0.0 );
+  RAJA::ReduceSum< parallelDeviceReduce, real64 > boxMaterialVolumeReduce( 0.0 );
 
   particleManager.forParticleSubRegions( [&]( ParticleSubRegion & subRegion )
   {
     // Get fields
-    arrayView1d< real64 > const particleVolume = subRegion.getParticleVolume();
-    arrayView2d< real64 > const particleStress = subRegion.getField< fields::mpm::particleStress >();
+    arrayView1d< real64 const > const particleVolume = subRegion.getParticleVolume();
+    arrayView2d< real64 const > const particleStress = subRegion.getField< fields::mpm::particleStress >();
 
     // Accumulate values
     SortedArrayView< localIndex const > const activeParticleIndices = subRegion.activeParticleIndices();
-
-    // CC: TODO parallelize via reduction
-    forAll< serialPolicy >( activeParticleIndices.size(), [=, &boxStress, &boxMaterialVolume] GEOS_HOST ( localIndex const pp )
+    forAll< parallelDevicePolicy<> >( activeParticleIndices.size(), [=] GEOS_HOST_DEVICE ( localIndex const pp )
     {
       localIndex const p = activeParticleIndices[pp];
 
-      boxMaterialVolume += particleVolume[p];
+      boxMaterialVolumeReduce += particleVolume[p];
 
       // Only need diagonal components
       for( int i=0; i < 3; i++ )
@@ -6186,11 +6208,11 @@ void SolidMechanicsMPM::computeBoxMetrics( ParticleManager & particleManager,
   } );
 
   // Additive sync: sxx, syy, szz, sxy, syz, sxz, mass, particle volume, damage
-  real64 boxSums[4];
-  boxSums[0] = boxStress[0];       // sig_xx * volume
-  boxSums[1] = boxStress[1];       // sig_yy * volume
-  boxSums[2] = boxStress[2];       // sig_zz * volume
-  boxSums[3] = boxMaterialVolume;
+  real64 boxSums[4] = { 0.0 };
+  boxSums[0] = boxStress[0].get();       // sig_xx * volume
+  boxSums[1] = boxStress[1].get();       // sig_yy * volume
+  boxSums[2] = boxStress[2].get();       // sig_zz * volume
+  boxSums[3] = boxMaterialVolumeReduce.get();
 
   // Do an MPI sync to total these values and write from proc0 to a file.  Also compute global F
   // so file is directly plottable in excel as CSV or something.
@@ -8195,10 +8217,10 @@ void SolidMechanicsMPM::particleToGrid( real64 const time_n,
   int const useArtificialViscosity = m_useArtificialViscosity;
   int const computeXProfile = m_computeXProfile == 1 && ( ( m_nextXProfileWriteTime <= time_n ) || ( cycleNumber == 0 ) );
   int voigtMap[3][3] = { {0, 5, 4}, {5, 1, 3}, {4, 3, 2} };
-  real64 xLocalMin[3] = { 0 };
-  LvArray::tensorOps::copy< 3 >( xLocalMin, m_xLocalMin );
-  real64 hEl[3] = {0};
+  real64 hEl[3] = { 0.0 };
   LvArray::tensorOps::copy< 3 >( hEl, m_hEl );
+  real64 xLocalMin[3] = { 0.0 };
+  LvArray::tensorOps::copy< 3 >( xLocalMin, m_xLocalMin );
   arrayView3d< int const > const ijkMap = m_ijkMap;
 
   // Grid fields
@@ -8725,7 +8747,7 @@ void SolidMechanicsMPM::performFLIPUpdate( real64 dt,
                                            NodeManager & nodeManager )
 {
   // On-the-fly grid shape function computations
-  real64 xLocalMin[3] = {0};
+  real64 xLocalMin[3] = { 0 };
   LvArray::tensorOps::copy< 3 >( xLocalMin, m_xLocalMin );
   real64 hEl[3] = {0};
   LvArray::tensorOps::copy< 3 >( hEl, m_hEl );
@@ -8853,10 +8875,10 @@ void SolidMechanicsMPM::performPICUpdate(  real64 dt,
                                            NodeManager & nodeManager )
 {
   // On-the-fly grid shape function computations
-  real64 xLocalMin[3] = {0};
-  LvArray::tensorOps::copy< 3 >( xLocalMin, m_xLocalMin );
-  real64 hEl[3] = {0};
+  real64 hEl[3] = { 0.0  };
   LvArray::tensorOps::copy< 3 >( hEl, m_hEl );
+  real64 xLocalMin[3] = { 0.0 };
+  LvArray::tensorOps::copy< 3 >( xLocalMin, m_xLocalMin );
   arrayView3d< int const > const ijkMap = m_ijkMap;
 
   // Grid fields
@@ -8960,11 +8982,11 @@ void SolidMechanicsMPM::performXPICUpdate( real64 dt,
                                            MeshLevel & mesh )
 {
   arrayView3d< int const > const ijkMap = m_ijkMap;
-  real64 hEl[3] = {0};
+  real64 hEl[3] = { 0.0 };
   LvArray::tensorOps::copy< 3 >( hEl, m_hEl );
-  real64 xLocalMin[3] = {0};
+  real64 xLocalMin[3] = { 0.0 };
   LvArray::tensorOps::copy< 3 >( xLocalMin, m_xLocalMin );
-  real64 xLocalMax[3] = {0};
+  real64 xLocalMax[3] = { 0.0 };
   LvArray::tensorOps::copy< 3 >( xLocalMax, m_xLocalMax);
 
   // Grid fields
@@ -9306,13 +9328,13 @@ void SolidMechanicsMPM::performFMPMUpdate(  real64 dt,
                                             DomainPartition & domain, 
                                             MeshLevel & mesh )
 {
-  arrayView3d< int const > const ijkMap = m_ijkMap;
-  real64 hEl[3] = {0};
+  real64 hEl[3] = { 0.0 };
   LvArray::tensorOps::copy< 3 >( hEl, m_hEl );
-  real64 xLocalMin[3] = {0};
+  real64 xLocalMin[3] = { 0.0 };
   LvArray::tensorOps::copy< 3 >( xLocalMin, m_xLocalMin );
-  real64 xLocalMax[3] = {0};
+  real64 xLocalMax[3] = { 0.0 };
   LvArray::tensorOps::copy< 3 >( xLocalMax, m_xLocalMax);
+  arrayView3d< int const > const ijkMap = m_ijkMap;
 
   // Grid fields
   arrayView2d< real64 const, nodes::REFERENCE_POSITION_USD > const gridPosition = nodeManager.referencePosition();
@@ -10811,13 +10833,13 @@ void SolidMechanicsMPM::populateMappingArrays( ParticleManager & particleManager
 {
   GEOS_MARK_FUNCTION;
 
-  arrayView3d< int const > const ijkMap = m_ijkMap;
-  real64 hEl[3] = {0};
+  real64 hEl[3] = { 0.0 };
   LvArray::tensorOps::copy< 3 >( hEl, m_hEl );
-  real64 xLocalMin[3] = {0};
+  real64 xLocalMin[3] = { 0.0 };
   LvArray::tensorOps::copy< 3 >( xLocalMin, m_xLocalMin );
-  real64 xLocalMax[3] = {0};
+  real64 xLocalMax[3] = { 0.0 };
   LvArray::tensorOps::copy< 3 >( xLocalMax, m_xLocalMax);
+  arrayView3d< int const > const ijkMap = m_ijkMap;
 
   arrayView2d< real64 const, nodes::REFERENCE_POSITION_USD > const gridPosition = nodeManager.referencePosition();
 

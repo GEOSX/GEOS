@@ -710,18 +710,6 @@ protected:
   /// Post-process XML input
   virtual void postInputInitialization() override;
 
-  /// The current stress at a quadrature point (i.e. at timestep n, global newton iteration k)
-  array3d< real64, solid::STRESS_PERMUTATION > m_newStress;
-
-  /// The previous stress at a quadrature point (i.e. at timestep (n-1))
-  array3d< real64, solid::STRESS_PERMUTATION > m_oldStress;
-
-  /// The material density at a quadrature point.
-  array2d< real64 > m_density;
-
-  /// The default density for new allocations.
-  real64 m_defaultDensity = 0;
-
   /// The thermal expansion coefficient for each upper level dimension (i.e. cell) of *this
   array1d< real64 > m_thermalExpansionCoefficient;
 

@@ -213,7 +213,7 @@ void transformCellBlockToRegionMap( arrayView2d< localIndex const > const & bloc
 } // namespace meshMapUtilities
 
 /**
- * @brief Strucure used to hash interpolation arrays representing high-order nodes.
+ * @brief Structure used to hash interpolation arrays representing high-order nodes.
  * @tparam T type of node index, usually a local or global index
  */
 template< typename T >

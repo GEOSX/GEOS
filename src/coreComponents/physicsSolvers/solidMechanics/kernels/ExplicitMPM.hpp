@@ -114,8 +114,7 @@ struct StateUpdateKernel
       // Particle index
       localIndex const p = indices[k];
 
-      // Copy the beginning-of-step particle stress into the constitutive model's m_oldStress - this fixes the MPI sync issue on Lassen for
-      // some reason
+      // Copy the beginning-of-step particle stress into the constitutive model's m_oldStress - this fixes the MPI sync issue on Lassen for some reason
       #if defined(GEOS_USE_CUDA)
       LvArray::tensorOps::copy< 6 >( oldStress[p][0], particleStress[p] );
       #endif
@@ -144,7 +143,7 @@ struct StateUpdateKernel
       else //Hypoeleastic stress update
       {
         // Determine the strain increment in Voigt notation
-        real64 strainIncrement[6];
+        real64 strainIncrement[6] = { 0.0 };
         strainIncrement[0] = velocityGradient[p][0][0] * dt;
         strainIncrement[1] = velocityGradient[p][1][1] * dt;
         strainIncrement[2] = velocityGradient[p][2][2] * dt;
@@ -153,15 +152,15 @@ struct StateUpdateKernel
         strainIncrement[5] = (velocityGradient[p][0][1] + velocityGradient[p][1][0]) * dt;
 
         // Get old F by incrementing backwards
-        real64 fOld[3][3] = { {0} };
-        real64 fNew[3][3] = { {0} };
+        real64 fOld[3][3] = { { 0.0} };
+        real64 fNew[3][3] = { { 0.0} };
         LvArray::tensorOps::copy< 3, 3 >( fNew, deformationGradient[p] );
         LvArray::tensorOps::copy< 3, 3 >( fOld, deformationGradient[p] );
         LvArray::tensorOps::scaledAdd< 3, 3 >( fOld, fDot[p], -dt );
 
         // Polar decompositions
-        real64 rotBeginning[3][3] = { {0} };
-        real64 rotEnd[3][3] = { {0} };
+        real64 rotBeginning[3][3] = { { 0.0 } };
+        real64 rotEnd[3][3] = { { 0.0 } };
         polarDecomposition( rotBeginning, fOld );
         polarDecomposition( rotEnd, fNew );
 

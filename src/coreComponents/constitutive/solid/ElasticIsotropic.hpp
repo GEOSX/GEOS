@@ -534,6 +534,14 @@ public:
   };
 
   /**
+   * @brief Allocate constitutive arrays
+   * @param parent Object's parent group (element subregion)
+   * @param numConstitutivePointsPerParentIndex Number of quadrature points per element
+   */
+  virtual void allocateConstitutiveData( dataRepository::Group & parent,
+                                         localIndex const numConstitutivePointsPerParentIndex ) override;
+
+  /**
    * @brief Accessor for bulk modulus
    * @return A const reference to arrayView1d<real64> containing the bulk
    *         modulus (at every element).

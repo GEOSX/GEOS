@@ -336,8 +336,8 @@ struct SolidUtilities
     Ddt[5] *= 0.5;
 
     // Rotate m_oldStress and Ddt from beginning-of-step configuration to reference configuration.
-    real64 temp[6] = { 0 };
-    real64 RotBeginningTranpose[3][3] = { {0} };
+    real64 temp[6] = { 0.0 };
+    real64 RotBeginningTranpose[3][3] = { { 0.0 } };
     LvArray::tensorOps::transpose< 3, 3 >( RotBeginningTranpose, RotBeginning ); // We require the transpose since we're un-rotating
     LvArray::tensorOps::copy< 6 >( temp, solid.m_oldStress[ k ][ q ] );
     LvArray::tensorOps::Rij_eq_AikSymBklAjl< 3 >( solid.m_oldStress[ k ][ q ], RotBeginningTranpose, temp );

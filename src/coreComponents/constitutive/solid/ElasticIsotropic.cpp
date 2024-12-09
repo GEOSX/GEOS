@@ -154,6 +154,15 @@ void ElasticIsotropic::postInputInitialization()
     setApplyDefaultValue( sqrt( ( m_defaultBulkModulus + (4.0/3.0) * m_defaultShearModulus ) / m_defaultDensity ) );
 }
 
+void ElasticIsotropic::allocateConstitutiveData( dataRepository::Group & parent,
+                                                 localIndex const numConstitutivePointsPerParentIndex )
+{
+  ContinuumBase::allocateConstitutiveData( parent, numConstitutivePointsPerParentIndex );
+
+  m_bulkModulus.resize( 0 );
+  m_shearModulus.resize( 0 );
+}
+
 REGISTER_CATALOG_ENTRY( ConstitutiveBase, ElasticIsotropic, string const &, Group * const )
 }
 } /* namespace geos */
