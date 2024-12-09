@@ -68,7 +68,7 @@ public:
 
   virtual void registerDataOnMesh( Group & meshBodies ) override;
 
-  virtual void registerDataForCFL( Group & meshBodies ) { GEOS_UNUSED_VAR(meshBodies); }
+  virtual void registerDataForCFL( Group & meshBodies ) { GEOS_UNUSED_VAR( meshBodies ); }
 
   /**
    * @defgroup Solver Interface Functions
@@ -374,7 +374,7 @@ public:
 
   virtual void computeCFLNumbers( DomainPartition & domain, real64 const & dt, real64 & maxPhaseCFL, real64 & maxCompCFL )
   {
-    GEOS_UNUSED_VAR(domain, dt, maxPhaseCFL, maxCompCFL);
+    GEOS_UNUSED_VAR( domain, dt, maxPhaseCFL, maxCompCFL );
     GEOS_ERROR( GEOS_FMT( "{}: computeCFLNumbers is not implemented for {}", getDataContext(), getCatalogName() ) );
   }
 
