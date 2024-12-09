@@ -183,7 +183,11 @@ public:
   GEOS_HOST_DEVICE
   void computeFluidIncrement( localIndex const k,
                               localIndex const q,
+                              real64 const & porosity,
+                              real64 const & porosity_n,
                               real64 const & dPorosity_dVolStrain,
+                              real64 const & dPorosity_dPressure,
+                              real64 const & dPorosity_dTemperature,
                               StackVariables & stack ) const;
 
   /**
@@ -248,13 +252,12 @@ public:
 
 protected:
 
-  /// Fluid density and derivatives
+  /// Fluid density
   arrayView2d< real64 const > const m_fluidDensity;
+  /// Fluid density at the previous converged time step
+  arrayView2d< real64 const > const m_fluidDensity_n;
+  /// Derivative of fluid density wrt pressure
   arrayView2d< real64 const > const m_dFluidDensity_dPressure;
-  /// Fluid mass and derivatives
-  arrayView1d< real64 const > const m_fluidMass;
-  arrayView1d< real64 const > const m_dFluidMass_dPressure;
-  arrayView1d< real64 const > const m_fluidMass_n;
 
   integer const m_performStressInitialization;
 };

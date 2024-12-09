@@ -66,6 +66,8 @@ public:
   using Base::m_pressure;
   using Base::m_pressure_n;
   using Base::m_fluidDensity;
+  using Base::m_fluidDensity_n;
+  using Base::m_dFluidDensity_dPressure;
   using Base::m_solidDensity;
   using Base::m_flowDofNumber;
   using Base::m_dt;
@@ -210,7 +212,11 @@ public:
   GEOS_HOST_DEVICE
   void computeFluidIncrement( localIndex const k,
                               localIndex const q,
+                              real64 const & porosity,
+                              real64 const & porosity_n,
                               real64 const & dPorosity_dVolStrain,
+                              real64 const & dPorosity_dPressure,
+                              real64 const & dPorosity_dTemperature,
                               StackVariables & stack ) const;
 
   /**
@@ -273,27 +279,23 @@ public:
 
 protected:
 
-  /// Views on fluid mass derivative wrt temperature
-  arrayView1d< real64 const > const m_dFluidMass_dTemperature;
-
   /// Views on fluid density derivative wrt temperature
   arrayView2d< real64 const > const m_dFluidDensity_dTemperature;
 
   /// Views on fluid internal energy
+  arrayView2d< real64 const > const m_fluidInternalEnergy_n;
   arrayView2d< real64 const > const m_fluidInternalEnergy;
+  arrayView2d< real64 const > const m_dFluidInternalEnergy_dPressure;
+  arrayView2d< real64 const > const m_dFluidInternalEnergy_dTemperature;
 
   /// Views on rock internal energy
+  arrayView2d< real64 const > const m_rockInternalEnergy_n;
   arrayView2d< real64 const > const m_rockInternalEnergy;
-
-  /// Views on energy
-  arrayView1d< real64 const > const m_energy;
-  arrayView1d< real64 const > const m_dEnergy_dPressure;
-  arrayView1d< real64 const > const m_dEnergy_dTemperature;
-  arrayView1d< real64 const > const m_energy_n;
+  arrayView2d< real64 const > const m_dRockInternalEnergy_dTemperature;
 
   /// Views on temperature
-  arrayView1d< real64 const > const m_temperature;
   arrayView1d< real64 const > const m_temperature_n;
+  arrayView1d< real64 const > const m_temperature;
 
 };
 

@@ -65,17 +65,19 @@ ThermalSinglePhasePoromechanics( NodeManager const & nodeManager,
         inputFlowDofKey,
         performStressInitialization,
         fluidModelKey ),
-  m_dFluidMass_dTemperature( elementSubRegion.template getField< fields::flow::dMass_dTemperature >() ),
   m_dFluidDensity_dTemperature( elementSubRegion.template getConstitutiveModel< constitutive::SingleFluidBase >( elementSubRegion.template getReference< string >(
                                                                                                                    fluidModelKey ) ).dDensity_dTemperature() ),
+  m_fluidInternalEnergy_n( elementSubRegion.template getConstitutiveModel< constitutive::SingleFluidBase >( elementSubRegion.template getReference< string >( fluidModelKey ) ).internalEnergy_n() ),
   m_fluidInternalEnergy( elementSubRegion.template getConstitutiveModel< constitutive::SingleFluidBase >( elementSubRegion.template getReference< string >( fluidModelKey ) ).internalEnergy() ),
+  m_dFluidInternalEnergy_dPressure( elementSubRegion.template getConstitutiveModel< constitutive::SingleFluidBase >( elementSubRegion.template getReference< string >(
+                                                                                                                       fluidModelKey ) ).dInternalEnergy_dPressure() ),
+  m_dFluidInternalEnergy_dTemperature( elementSubRegion.template getConstitutiveModel< constitutive::SingleFluidBase >( elementSubRegion.template getReference< string >(
+                                                                                                                          fluidModelKey ) ).dInternalEnergy_dTemperature() ),
+  m_rockInternalEnergy_n( inputConstitutiveType.getInternalEnergy_n() ),
   m_rockInternalEnergy( inputConstitutiveType.getInternalEnergy() ),
-  m_energy( elementSubRegion.template getField< fields::flow::energy >() ),
-  m_dEnergy_dPressure( elementSubRegion.template getField< fields::flow::dEnergy_dPressure >() ),
-  m_dEnergy_dTemperature( elementSubRegion.template getField< fields::flow::dEnergy_dTemperature >() ),
-  m_energy_n( elementSubRegion.template getField< fields::flow::energy_n >() ),
-  m_temperature( elementSubRegion.template getField< fields::flow::temperature >() ),
-  m_temperature_n( elementSubRegion.template getField< fields::flow::temperature_n >() )
+  m_dRockInternalEnergy_dTemperature( inputConstitutiveType.getDinternalEnergy_dTemperature() ),
+  m_temperature_n( elementSubRegion.template getField< fields::flow::temperature_n >() ),
+  m_temperature( elementSubRegion.template getField< fields::flow::temperature >() )
 {}
 
 template< typename SUBREGION_TYPE,
@@ -141,7 +143,11 @@ smallStrainUpdate( localIndex const k,
 
   // Step 3: compute fluid mass increment
   computeFluidIncrement( k, q,
+                         porosity,
+                         porosity_n,
                          dPorosity_dVolStrain,
+                         dPorosity_dPressure,
+                         dPorosity_dTemperature,
                          stack );
 }
 
@@ -183,23 +189,45 @@ GEOS_FORCE_INLINE
 void ThermalSinglePhasePoromechanics< SUBREGION_TYPE, CONSTITUTIVE_TYPE, FE_TYPE >::
 computeFluidIncrement( localIndex const k,
                        localIndex const q,
+                       real64 const & porosity,
+                       real64 const & porosity_n,
                        real64 const & dPorosity_dVolStrain,
+                       real64 const & dPorosity_dPressure,
+                       real64 const & dPorosity_dTemperature,
                        StackVariables & stack ) const
 {
   // Step 1: compute fluid mass increment and its derivatives wrt vol strain and pressure
   Base::computeFluidIncrement( k, q,
+                               porosity,
+                               porosity_n,
                                dPorosity_dVolStrain,
+                               dPorosity_dPressure,
+                               dPorosity_dTemperature,
                                stack );
 
   // Step 2: compute derivative of fluid mass increment wrt temperature
-  stack.dFluidMassIncrement_dTemperature = m_dFluidMass_dTemperature[k];
+  stack.dFluidMassIncrement_dTemperature = dPorosity_dTemperature * m_fluidDensity( k, q ) + porosity * m_dFluidDensity_dTemperature( k, q );
 
-  // Step 3: compute energy increment and its derivatives wrt pressure, and temperature, vol strain
-  stack.energyIncrement = m_energy[k] - m_energy_n[k];
-  stack.dEnergyIncrement_dPressure = m_dEnergy_dPressure[k];
-  stack.dEnergyIncrement_dTemperature = m_dEnergy_dTemperature[k];
-  stack.dEnergyIncrement_dVolStrainIncrement = stack.dFluidMassIncrement_dVolStrainIncrement * m_fluidInternalEnergy( k, q ) -
-                                               dPorosity_dVolStrain * m_rockInternalEnergy( k, 0 ); // no volume here, will be multiplied later
+  // Step 3: compute fluid energy increment and its derivatives wrt vol strain, pressure, and temperature
+  real64 const fluidMass = porosity * m_fluidDensity( k, q );
+  real64 const fluidEnergy = fluidMass * m_fluidInternalEnergy( k, q );
+  real64 const fluidEnergy_n = porosity_n * m_fluidDensity_n( k, q ) * m_fluidInternalEnergy_n( k, q );
+  stack.energyIncrement = fluidEnergy - fluidEnergy_n;
+
+  stack.dEnergyIncrement_dVolStrainIncrement = stack.dFluidMassIncrement_dVolStrainIncrement * m_fluidInternalEnergy( k, q );
+  stack.dEnergyIncrement_dPressure = stack.dFluidMassIncrement_dPressure * m_fluidInternalEnergy( k, q )
+                                     + fluidMass * m_dFluidInternalEnergy_dPressure( k, q );
+  stack.dEnergyIncrement_dTemperature = stack.dFluidMassIncrement_dTemperature * m_fluidInternalEnergy( k, q )
+                                        + fluidMass * m_dFluidInternalEnergy_dTemperature( k, q );
+
+
+  // Step 4: assemble the solid part of the accumulation term
+  real64 const oneMinusPoro = 1 - porosity;
+
+  stack.energyIncrement += oneMinusPoro * m_rockInternalEnergy( k, 0 ) - ( 1 - porosity_n ) * m_rockInternalEnergy_n( k, 0 );
+  stack.dEnergyIncrement_dVolStrainIncrement += -dPorosity_dVolStrain * m_rockInternalEnergy( k, 0 );
+  stack.dEnergyIncrement_dPressure += -dPorosity_dPressure * m_rockInternalEnergy( k, 0 );
+  stack.dEnergyIncrement_dTemperature += -dPorosity_dTemperature * m_rockInternalEnergy( k, 0 ) + oneMinusPoro * m_dRockInternalEnergy_dTemperature( k, 0 );
 }
 
 template< typename SUBREGION_TYPE,
@@ -276,7 +304,7 @@ assembleElementBasedFlowTerms( real64 const ( &dNdX )[numNodesPerElem][3],
     1.0,
     stack.dFluidMassIncrement_dTemperature,
     1.0,
-    1.0 );
+    detJxW );
 
   // Step 2: compute local energy balance residual and its derivatives
 
@@ -286,7 +314,7 @@ assembleElementBasedFlowTerms( real64 const ( &dNdX )[numNodesPerElem][3],
     stack.localResidualEnergy,
     1.0,
     stack.energyIncrement,
-    1.0 );
+    detJxW );
 
   BilinearFormUtilities::compute< pressureTestSpace,
                                   displacementTrialSpace,
@@ -308,7 +336,7 @@ assembleElementBasedFlowTerms( real64 const ( &dNdX )[numNodesPerElem][3],
     1.0,
     stack.dEnergyIncrement_dPressure,
     1.0,
-    1.0 );
+    detJxW );
 
   BilinearFormUtilities::compute< pressureTestSpace,
                                   pressureTrialSpace,
@@ -319,7 +347,7 @@ assembleElementBasedFlowTerms( real64 const ( &dNdX )[numNodesPerElem][3],
     1.0,
     stack.dEnergyIncrement_dTemperature,
     1.0,
-    1.0 );
+    detJxW );
 }
 
 template< typename SUBREGION_TYPE,
