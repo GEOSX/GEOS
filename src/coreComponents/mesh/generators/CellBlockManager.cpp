@@ -669,7 +669,6 @@ void CellBlockManager::buildMaps()
   buildNodeToEdges();
 
   fillElementToEdgesOfCellBlocks( m_faceToEdges.toViewConst(), this->getCellBlocks() );
-
 }
 
 ArrayOfArrays< localIndex > CellBlockManager::getFaceToNodes() const
@@ -747,7 +746,6 @@ localIndex CellBlockManager::numFaces() const
 {
   return m_numFaces;
 }
-
 
 ArrayOfArrays< localIndex > CellBlockManager::getEdgeToFaces() const
 {
