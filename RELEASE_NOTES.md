@@ -4,8 +4,8 @@
 [comment]: # (Copyright 2018-2020 Lawrence Livermore National Security LLC)
 [comment]: # (Copyright 2018-2020 The Board of Trustees of the Leland Stanford)
 [comment]: # (                    Junior University)
-[comment]: # (Copyright 2018-2020 Total, S.A)
-[comment]: # (Copyright 2019-     GEOSX Contributors)
+[comment]: # (Copyright 2018-2020 TotalEnergies)
+[comment]: # (Copyright 2019-     GEOS/GEOSX Contributors)
 [comment]: # (All right reserved)
 [comment]: # 
 [comment]: # (For more details see:)
