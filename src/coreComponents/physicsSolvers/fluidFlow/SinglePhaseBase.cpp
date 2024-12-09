@@ -308,7 +308,7 @@ void SinglePhaseBase::updateMass( ElementSubRegionBase & subRegion ) const
     forAll< parallelDevicePolicy<> >( subRegion.size(), [=] GEOS_HOST_DEVICE ( localIndex const ei )
     {
       real64 const vol = volume[ei] + deltaVolume[ei];
-      dMass_dT[ei] = ( dPorosity_dT[ei][0] * density[ei][0] + dDensity_dT[ei][0] * dDensity_dP[ei][0] ) * vol;
+      dMass_dT[ei] = ( dPorosity_dT[ei][0] * density[ei][0] + porosity[ei][0] * dDensity_dT[ei][0] ) * vol;
     } );
   }
 }
