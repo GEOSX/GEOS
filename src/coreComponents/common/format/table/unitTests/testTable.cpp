@@ -354,10 +354,10 @@ TEST( testTable, variadicTest )
         .setName( "Elems" )
         .addSubColumns( {"Locales", "Ghost"} ),
     } );
-
+    std::cout << std::endl;
     TableData tableData;
     tableData.addRow( "min(local/total)", 1, 2, 3, 4, 5, 6, 7 );
-    tableData.addRow( "min(local/total)", 1, 2, 3, 4, 5, 6, 7 );
+    tableData.addRow( "min(local/total)", 1, 2, 3, 4, 5, 6, 7 ) ;
     TableTextFormatter log( layoutTest );
     EXPECT_EQ( log.toString( tableData ),
                "\n--------------------------------------------------------------------------------------------------------------------------------------\n"

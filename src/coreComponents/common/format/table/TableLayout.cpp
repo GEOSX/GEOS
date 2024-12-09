@@ -67,17 +67,6 @@ bool TableLayout::isLineBreakEnabled() const
   return m_wrapLine;
 }
 
-void TableLayout::removeSubColumn()
-{
-  for( auto & column : m_tableColumnsData )
-  {
-    if( !column.m_subColumn.empty() )
-    {
-      column.m_subColumn.clear();
-    }
-  }
-}
-
 size_t TableLayout::getMaxHeaderRow() const
 {
   size_t depthMax = 1;
@@ -97,6 +86,11 @@ size_t TableLayout::getMaxHeaderRow() const
 }
 
 std::vector< TableLayout::Column > & TableLayout::getColumns()
+{
+  return m_tableColumnsData;
+}
+
+std::vector< TableLayout::Column > const & TableLayout::getColumns() const
 {
   return m_tableColumnsData;
 }
@@ -175,11 +169,6 @@ TableLayout::CellLayout::CellLayout( CellType type, string const & cellValue, Ta
   {
     m_maxDataLength = 0;
   }
-}
-
-void TableLayout::CellLayout::setMaxCellSize( size_t size )
-{
-  m_maxDataLength = size;
 }
 
 TableLayout::Column::Column():

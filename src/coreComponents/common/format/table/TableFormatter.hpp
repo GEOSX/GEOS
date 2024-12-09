@@ -151,30 +151,26 @@ private:
  * @param tableData A constant reference to the `TableData` object, which contains the actual data for the table.
  * @param cellsHeaderLayout A reference to a `CellLayoutRows` where the header cells will be populated.
  * @param cellsDataLayout A reference to a `CellLayoutRows` where the data cells will be populated.
- * @param sectionSeparatingLine A string that will be used as the separator line between sections in the table.
- * @param topSeparator A string that will be used as the separator at the top of the table.
+ * @param separatorLine A string that will be used as the table separator line
  */
   void initalizeTableLayout( TableLayout & tableLayout,
                              TableData const & tableData,
                              CellLayoutRows & cellsDataLayout,
                              CellLayoutRows & cellsHeaderLayout,
-                             string & sectionSeparatingLine,
-                             string & topSeparator ) const;
+                             string & separatorLine ) const;
 /**
  * @brief Outputs the formatted table to the provided output stream.
  * @param tableLayout The layout of the table
  * @param tableOutput A reference to an `std::ostringstream` where the formatted table will be written.
  * @param cellsHeader The layout of the header rows
  * @param cellsData The layout of the data rows
- * @param sectionSeparatingLine The string to be used as a separator between different sections of the table.
- * @param topSeparator The string to be used as the separator at the top of the table.
+ * @param separatorLine The string to be used as the table separator line
  */
   void outputTable( TableLayout & tableLayout,
                     std::ostringstream & tableOutput,
                     CellLayoutRows const & cellsHeader,
                     CellLayoutRows const & cellsData,
-                    string_view sectionSeparatingLine,
-                    string_view topSeparator ) const;
+                    string_view separatorLine ) const;
 
   /**
    * @brief Sets parent-child relationships between columns and sub-columns.
@@ -217,14 +213,12 @@ private:
    * @param tableLayout The layout of the table,
    * @param cellsHeaderLayout A reference to the collection of header cells that can be affected by column resizing.
    * @param cellsDataLayout A reference to the collection of data cells that can be affected by column resizing.
-   * @param sectionSeparatingLine A string reference where the separator line between sections will be stored.
-   * @param topSeparator A string reference where the top separator line will be stored.
+   * @param separatorLine A string reference where the table separator line will be created
    */
   void calculateTableSeparators( TableLayout & tableLayout,
                                  CellLayoutRows & cellsHeaderLayout,
                                  CellLayoutRows & cellsDataLayout,
-                                 string & sectionSeparatingLine,
-                                 string & topSeparator ) const;
+                                 string & separatorLine ) const;
 
   /**
    * @brief Increases the size of columns to accommodate extra characters.
@@ -240,11 +234,11 @@ private:
    * @brief Output the title row in the table
    * @param tableLayout The layout of the table
    * @param tableOutput The output stream
-   * @param topSeparator The top separator string
+   * @param separatorLine The table separator line string
    */
   void outputTitleRow( TableLayout & tableLayout,
                        std::ostringstream & tableOutput,
-                       string_view topSeparator ) const;
+                       string_view separatorLine ) const;
 
   /**
    * @brief Formats a table cell and appends it to the table output.
@@ -265,14 +259,14 @@ private:
    * @param tableOutput The output stream
    * @param nbLinesRow A vector containing the number of sub-lines for each row.
    * @param sectionType The type of the section being processed (Header, Value, etc.).
-   * @param sectionSeparatingLine A separator line to be added.
+   * @param separatorLine The table separator line string
    */
   void outputLines( TableLayout & tableLayout,
                     CellLayoutRows const & cellsLayout,
                     std::ostringstream & tableOutput,
                     std::vector< size_t > const & nbLinesRow,
                     CellType sectionType,
-                    string_view sectionSeparatingLine ) const;
+                    string_view separatorLine ) const;
 };
 
 /**

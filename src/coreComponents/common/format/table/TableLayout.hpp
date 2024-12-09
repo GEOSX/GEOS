@@ -247,13 +247,13 @@ public:
       return *this;
     }
 
-    // Postfix ++ overload //todo
-    // LeafIterator & operator++()
-    // {
-    //   LeafIterator iterator = *this;
-    //   ++(*this);
-    //   return iterator;
-    // }
+    // Postfix ++ overload
+    LeafIterator operator++( int )
+    {
+      LeafIterator temp = *this;
+      ++(*this);
+      return temp;
+    }
 
     ColumnType & operator*()
     {
@@ -377,6 +377,11 @@ private:
    * @return The columns vector
    */
   std::vector< Column > & getColumns();
+
+  /**
+   * @return The columns vector
+   */
+  std::vector< Column > const & getColumns() const;
 
   /**
    * @return The table name
