@@ -163,7 +163,7 @@ DECLARE_FIELD( dEnthalpy,
                LEVEL_0,
                WRITE_AND_READ,
                "dEnthalpy" );
-
+#if 0
 DECLARE_FIELD( dEnthalpy_dPressure,
                "dEnthalpy_dPressure",
                array2d< real64 >,
@@ -179,7 +179,7 @@ DECLARE_FIELD( dEnthalpy_dTemperature,
                NOPLOT,
                WRITE_AND_READ,
                "Derivative of enthalpy with respect to temperature" );
-
+#endif
 }
 
 }

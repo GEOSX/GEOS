@@ -60,15 +60,18 @@ protected:
    * @param viscosity   fluid viscosity
    * @param dVisc_dPres derivative of viscosity w.r.t. pressure
    */
-  SingleFluidBaseUpdate( SingleFluidProp & density_c,
-                         arrayView2d< real64, constitutive::singlefluid::USD_FLUID >  const & density,
+  SingleFluidBaseUpdate( arrayView2d< real64 >  const & density,
+                         arrayView3d< real64 >  const & dDensity,
                          arrayView2d< real64 > const & dDens_dPres,
                          arrayView2d< real64 > const & viscosity,
+                         arrayView3d< real64 >  const & dViscosity,
                          arrayView2d< real64 > const & dVisc_dPres )
-    : m_density_c( density_c ),
+    :  
     m_density( density ),
+    m_dDensity( dDensity ),
     m_dDens_dPres( dDens_dPres ),
     m_viscosity( viscosity ),
+    m_dViscosity( dViscosity),
     m_dVisc_dPres( dVisc_dPres )
   {}
 
@@ -96,15 +99,16 @@ protected:
 
 
   /// Fluid density
-  SingleFluidProp & m_density_c;
-  arrayView2d< real64, constitutive::singlefluid::USD_FLUID >  m_density;
+  arrayView2d< real64 >  m_density;
+  arrayView3d< real64 >  m_dDensity;
 
   /// Derivative of density w.r.t. pressure
   arrayView2d< real64 > m_dDens_dPres;
 
   /// Fluid viscosity
   arrayView2d< real64 > m_viscosity;
-
+  arrayView3d< real64 > m_dViscosity;
+  
   /// Derivative of viscosity w.r.t. pressure
   arrayView2d< real64 > m_dVisc_dPres;
 

@@ -145,10 +145,11 @@ CompressibleSinglePhaseFluid::createKernelWrapper()
 {
   return KernelWrapper( KernelWrapper::DensRelationType( m_referencePressure, m_referenceDensity, m_compressibility ),
                         KernelWrapper::ViscRelationType( m_referencePressure, m_referenceViscosity, m_viscosibility ),
-                        m_density,
                         m_density.value,
+                        m_density.derivs,
                         m_dDensity_dPressure,
                         m_viscosity.value,
+                        m_viscosity.derivs,
                         m_dViscosity_dPressure );
 }
 

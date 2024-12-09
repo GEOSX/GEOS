@@ -51,29 +51,36 @@ public:
                                         IntEnergyRelationType const & intEnergyRelation,
                                         SingleFluidProp & density_c,
                                         arrayView2d< real64 > const & density,
+                                        arrayView3d< real64 > const & dDensity,
                                         arrayView2d< real64 > const & dDens_dPres,
                                         arrayView2d< real64 > const & dDens_dTemp,
                                         arrayView2d< real64 > const & viscosity,
+                                        arrayView3d< real64 > const & dViscosity,
                                         arrayView2d< real64 > const & dVisc_dPres,
                                         arrayView2d< real64 > const & dVisc_dTemp,
                                         arrayView2d< real64 > const & internalEnergy,
+                                        arrayView3d< real64 > const & dInternalEnergy,
                                         arrayView2d< real64 > const & dIntEnergy_dPres,
                                         arrayView2d< real64 > const & dIntEnergy_dTemp,
                                         arrayView2d< real64 > const & enthalpy,
+                                        arrayView3d< real64 > const & dEnthalpy,
                                         arrayView2d< real64 > const & dEnthalpy_dPres,
                                         arrayView2d< real64 > const & dEnthalpy_dTemp,
                                         real64 const & refIntEnergy )
-    : SingleFluidBaseUpdate( density_c,
-                             density,
+    : SingleFluidBaseUpdate( density,
+                             dDensity,
                              dDens_dPres,
                              viscosity,
+                             dViscosity,
                              dVisc_dPres ),
     m_dDens_dTemp( dDens_dTemp ),
     m_dVisc_dTemp( dVisc_dTemp ),
     m_internalEnergy( internalEnergy ),
+    m_dInternalEnergy(dInternalEnergy),
     m_dIntEnergy_dPres( dIntEnergy_dPres ),
     m_dIntEnergy_dTemp( dIntEnergy_dTemp ),
     m_enthalpy( enthalpy ),
+    m_dEnthalpy(dEnthalpy),
     m_dEnthalpy_dPres( dEnthalpy_dPres ),
     m_dEnthalpy_dTemp( dEnthalpy_dTemp ),
     m_densRelation( densRelation ),
@@ -184,6 +191,7 @@ private:
 
   /// Fluid internal energy
   arrayView2d< real64 > m_internalEnergy;
+  arrayView3d< real64 > m_dInternalEnergy;
 
   /// Derivative of internal energy w.r.t. pressure
   arrayView2d< real64 > m_dIntEnergy_dPres;
@@ -193,7 +201,7 @@ private:
 
   /// Fluid enthalpy
   arrayView2d< real64 > m_enthalpy;
-
+  arrayView3d< real64 > m_dEnthalpy;
   /// Derivative of enthalpy w.r.t. pressure
   arrayView2d< real64 > m_dEnthalpy_dPres;
 
