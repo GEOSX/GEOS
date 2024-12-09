@@ -166,23 +166,22 @@ void ProblemManager::problemSetup()
 
   postInputInitializationRecursive();
 
-  LogPart logPart( "Mesh generation" );
-  logPart.begin();
+  LogPart meshLogPart( "Mesh generation" );
+  meshLogPart.begin();
   generateMesh();
-  logPart.end();
+  meshLogPart.end();
 
 //  initialize_postMeshGeneration();
-  LogPart logPart( "NumericalMethods" );
-  logPart.begin();
+  LogPart nmLogPart( "NumericalMethods" );
+  nmLogPart.begin();
   applyNumericalMethods();
 
-  LogPart logPart( "Mesh data registration :" );
-  logPart.begin();
+  LogPart meshDataLogPart( "Mesh data registration :" );
+  meshDataLogPart.begin();
   registerDataOnMeshRecursive( getDomainPartition().getMeshBodies() );
 
-  LogPart logPart( "Group & subgroups initializatf:H6svfHYlX:KJr!@gIqya-3J8GYGj\yz9;GAg?~
-  ion" );
-  logPart.begin();
+  LogPart grpLogPart( "Group & subgroups initialization" );
+  grpLogPart.begin();
   initialize();
 
   importFields();
