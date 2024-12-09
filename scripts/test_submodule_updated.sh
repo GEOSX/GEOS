@@ -30,7 +30,7 @@ declare -Ar main_branches=(
   ["LvArray"]="origin/develop"
   ["integratedTests"]="origin/develop"
   ["hdf5_interface"]="origin/master"
-  ["PVTPackage"]="origin/master"
+  ["PVTPackage"]="origin/develop"
 )
 
 

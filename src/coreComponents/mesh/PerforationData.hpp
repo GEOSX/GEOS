@@ -150,6 +150,20 @@ public:
    */
   arrayView1d< localIndex const > getWellElements() const { return m_wellElementIndex; }
 
+  /**
+   * @brief Get perforation-to-reservoir-element connectivity.
+   * @return list of global reservoir element index connected to each perforation
+   */
+  arrayView1d< globalIndex > getReservoirElementGlobalIndex() { return m_reservoirElementGlobalIndex; }
+
+
+
+  /**
+   * @brief Provide an immutable accessor to a const perforation-to-reservoir-element connectivity.
+   * @return list of well element index connected to each perforation
+   */
+  arrayView1d< globalIndex const > getReservoirElementGlobalIndex() const { return m_reservoirElementGlobalIndex; }
+
 
   /**
    * @brief Get perforation locations.
@@ -274,6 +288,9 @@ private:
 
   /// Indices of the well elements to which perforations are attached
   array1d< localIndex > m_wellElementIndex;
+
+  /// Global indices of reservoir cell containing perforation
+  array1d< globalIndex > m_reservoirElementGlobalIndex;
 
   /// Location of the perforations
   array2d< real64 > m_location;

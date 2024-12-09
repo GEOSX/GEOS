@@ -19,7 +19,7 @@
 
 #ifndef COMPONENTS_NEWCOMPONENTTEMPLATE_SRC_NEWCOMPONENT_HPP_
 #define COMPONENTS_NEWCOMPONENTTEMPLATE_SRC_NEWCOMPONENT_HPP_
-#include "physicsSolvers/SolverBase.hpp"
+#include "physicsSolvers/PhysicsSolverBase.hpp"
 
 
 namespace geos
@@ -30,7 +30,7 @@ class Group;
 }
 class DomainPartition;
 
-class NewComponent final : public SolverBase
+class NewComponent final : public PhysicsSolverBase
 {
 public:
   NewComponent( string const & name,
