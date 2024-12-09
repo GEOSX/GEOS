@@ -36,8 +36,6 @@
 #include "mesh/mpiCommunications/CommunicationTools.hpp"
 #include "physicsSolvers/fluidFlow/FlowSolverBaseFields.hpp"
 #include "physicsSolvers/fluidFlow/CompositionalMultiphaseBaseFields.hpp"
-#include "physicsSolvers/fluidFlow/kernels/compositional/AccumulationKernel.hpp"
-#include "physicsSolvers/fluidFlow/kernels/compositional/ThermalAccumulationKernel.hpp"
 #include "physicsSolvers/fluidFlow/kernels/compositional/ResidualNormKernel.hpp"
 #include "physicsSolvers/fluidFlow/kernels/compositional/ThermalResidualNormKernel.hpp"
 #include "physicsSolvers/fluidFlow/kernels/compositional/SolutionScalingKernel.hpp"
@@ -50,10 +48,10 @@
 #include "physicsSolvers/fluidFlow/kernels/compositional/ThermalDiffusionDispersionFluxComputeKernel.hpp"
 #include "physicsSolvers/fluidFlow/kernels/compositional/StabilizedFluxComputeKernel.hpp"
 #include "physicsSolvers/fluidFlow/kernels/compositional/DissipationFluxComputeKernel.hpp"
-#include "physicsSolvers/fluidFlow/kernels/compositional/PhaseMobilityKernel.hpp"
-#include "physicsSolvers/fluidFlow/kernels/compositional/ThermalPhaseMobilityKernel.hpp"
 #include "physicsSolvers/fluidFlow/kernels/compositional/DirichletFluxComputeKernel.hpp"
 #include "physicsSolvers/fluidFlow/kernels/compositional/ThermalDirichletFluxComputeKernel.hpp"
+#include "physicsSolvers/fluidFlow/kernels/compositional/PhaseMobilityKernel.hpp"
+#include "physicsSolvers/fluidFlow/kernels/compositional/ThermalPhaseMobilityKernel.hpp"
 #include "physicsSolvers/fluidFlow/kernels/compositional/AquiferBCKernel.hpp"
 
 namespace geos
@@ -233,6 +231,7 @@ void CompositionalMultiphaseFVM::assembleFluxTerms( real64 const dt,
                                                        elemDofKey,
                                                        m_hasCapPressure,
                                                        m_useTotalMassEquation,
+                                                       m_useNewGravity,
                                                        fluxApprox.upwindingParams(),
                                                        getName(),
                                                        mesh.getElemManager(),
@@ -437,10 +436,10 @@ real64 CompositionalMultiphaseFVM::calculateResidualNorm( real64 const & GEOS_UN
   // step 3: second reduction across MPI ranks
 
   real64 residualNorm = 0.0;
+  array1d< real64 > globalResidualNorm;
+  globalResidualNorm.resize( numNorm );
   if( m_isThermal )
   {
-    array1d< real64 > globalResidualNorm;
-    globalResidualNorm.resize( numNorm );
     if( normType == physicsSolverBaseKernels::NormType::Linf )
     {
       physicsSolverBaseKernels::LinfResidualNormHelper::
@@ -458,8 +457,6 @@ real64 CompositionalMultiphaseFVM::calculateResidualNorm( real64 const & GEOS_UN
   }
   else
   {
-    array1d< real64 > globalResidualNorm;
-    globalResidualNorm.resize( numNorm - 1 );
     if( normType == physicsSolverBaseKernels::NormType::Linf )
     {
       physicsSolverBaseKernels::LinfResidualNormHelper::
@@ -472,11 +469,8 @@ real64 CompositionalMultiphaseFVM::calculateResidualNorm( real64 const & GEOS_UN
     }
     residualNorm = sqrt( globalResidualNorm[0] * globalResidualNorm[0] + globalResidualNorm[1] * globalResidualNorm[1] );
 
-    if( getLogLevel() >= 1 && logger::internal::rank == 0 )
-    {
-      std::cout << GEOS_FMT( "        ( Rmass Rvol ) = ( {:4.2e} {:4.2e} )",
-                             globalResidualNorm[0], globalResidualNorm[1] );
-    }
+    GEOS_LOG_LEVEL_INFO_RANK_0_NLR( logInfo::Convergence, GEOS_FMT( "        ( Rmass Rvol ) = ( {:4.2e} {:4.2e} )",
+                                                                    globalResidualNorm[0], globalResidualNorm[1] ) );
   }
 
   return residualNorm;
@@ -490,8 +484,12 @@ real64 CompositionalMultiphaseFVM::scalingForSystemSolution( DomainPartition & d
 
   string const dofKey = dofManager.getKey( viewKeyStruct::elemDofFieldString() );
   real64 scalingFactor = 1.0;
-  real64 maxDeltaPres = 0.0, maxDeltaCompDens = 0.0, maxDeltaTemp = 0.0;
   real64 minPresScalingFactor = 1.0, minCompDensScalingFactor = 1.0, minTempScalingFactor = 1.0;
+
+
+  std::vector< valueAndLocationType > regionDeltaPresMaxLoc;
+  std::vector< valueAndLocationType > regionDeltaTempMaxLoc;
+  std::vector< valueAndLocationType > regionDeltaCompDensMaxLoc;
 
   forDiscretizationOnMeshTargets( domain.getMeshBodies(), [&]( string const &,
                                                                MeshLevel & mesh,
@@ -501,6 +499,7 @@ real64 CompositionalMultiphaseFVM::scalingForSystemSolution( DomainPartition & d
                                                 [&]( localIndex const,
                                                      ElementSubRegionBase & subRegion )
     {
+      arrayView1d< globalIndex const > const localToGlobalMap = subRegion.localToGlobalMap();
       arrayView1d< real64 const > const pressure = subRegion.getField< fields::flow::pressure >();
       arrayView1d< real64 const > const temperature = subRegion.getField< fields::flow::temperature >();
       arrayView2d< real64 const, compflow::USD_COMP > const compDens = subRegion.getField< fields::flow::globalCompDensity >();
@@ -509,6 +508,7 @@ real64 CompositionalMultiphaseFVM::scalingForSystemSolution( DomainPartition & d
       arrayView1d< real64 > compDensScalingFactor = subRegion.getField< fields::flow::globalCompDensityScalingFactor >();
 
       const integer temperatureOffset = m_numComponents+1;
+
       auto const subRegionData =
         m_isThermal
   ? thermalCompositionalMultiphaseBaseKernels::
@@ -545,38 +545,68 @@ real64 CompositionalMultiphaseFVM::scalingForSystemSolution( DomainPartition & d
                                                      dofKey,
                                                      subRegion,
                                                      localSolution );
-
-      if( m_scalingType == ScalingType::Global )
+      if( subRegion.size() > 0 || subRegion.size() !=  subRegion.getNumberOfGhosts() )
       {
-        scalingFactor = std::min( scalingFactor, subRegionData.localMinVal );
+        if( m_scalingType == ScalingType::Global )
+        {
+          scalingFactor = std::min( scalingFactor, subRegionData.localMinVal );
+        }
+
+        regionDeltaPresMaxLoc.push_back( valueAndLocationType( subRegionData.localMaxDeltaPres, localToGlobalMap[subRegionData.localMaxDeltaPresLoc] ) );
+        minPresScalingFactor = std::min( minPresScalingFactor, subRegionData.localMinPresScalingFactor );
+
+        regionDeltaCompDensMaxLoc.push_back( valueAndLocationType( subRegionData.localMaxDeltaCompDens, localToGlobalMap[subRegionData.localMaxDeltaCompDensLoc] ) );
+        minCompDensScalingFactor = std::min( minCompDensScalingFactor, subRegionData.localMinCompDensScalingFactor );
+
+        if( m_isThermal )
+        {
+          regionDeltaTempMaxLoc.push_back( valueAndLocationType( subRegionData.localMaxDeltaTemp, localToGlobalMap[subRegionData.localMaxDeltaTempLoc] ) );
+          minTempScalingFactor = std::min( minTempScalingFactor, subRegionData.localMinTempScalingFactor );
+        }
       }
-      maxDeltaPres  = std::max( maxDeltaPres, subRegionData.localMaxDeltaPres );
-      maxDeltaCompDens = std::max( maxDeltaCompDens, subRegionData.localMaxDeltaCompDens );
-      maxDeltaTemp = std::max( maxDeltaTemp, subRegionData.localMaxDeltaTemp );
-      minPresScalingFactor = std::min( minPresScalingFactor, subRegionData.localMinPresScalingFactor );
-      minCompDensScalingFactor = std::min( minCompDensScalingFactor, subRegionData.localMinCompDensScalingFactor );
-      minTempScalingFactor = std::min( minTempScalingFactor, subRegionData.localMinTempScalingFactor );
     } );
   } );
 
+  auto [localDeltaPresMax, localPresMaxLoc] = *std::max_element( begin( regionDeltaPresMaxLoc ), end( regionDeltaPresMaxLoc ), []( auto & lhs, auto & rhs )   {
+    return lhs.value   < rhs.value;
+  } );
+  auto globalDeltaPresMax = MpiWrapper::maxValLoc( valueAndLocationType( localDeltaPresMax, localPresMaxLoc ));
+  auto [ localDeltaCompDensMax, localCompDensMaxLoc ] = *std::max_element( begin( regionDeltaCompDensMaxLoc ), end( regionDeltaCompDensMaxLoc ), []( auto & lhs, auto & rhs )   {
+    return lhs.value   < rhs.value;
+  } );
+  auto globalDeltaCompDensMax = MpiWrapper::maxValLoc( valueAndLocationType( localDeltaCompDensMax, localCompDensMaxLoc ));
+
   scalingFactor = MpiWrapper::min( scalingFactor );
-  maxDeltaPres  = MpiWrapper::max( maxDeltaPres );
-  maxDeltaCompDens = MpiWrapper::max( maxDeltaCompDens );
   minPresScalingFactor = MpiWrapper::min( minPresScalingFactor );
   minCompDensScalingFactor = MpiWrapper::min( minCompDensScalingFactor );
 
   string const massUnit = m_useMass ? "kg/m3" : "mol/m3";
-  GEOS_LOG_LEVEL_INFO_RANK_0( logInfo::Solution, GEOS_FMT( "        {}: Max pressure change = {} Pa (before scaling)",
-                                                           getName(), GEOS_FMT( "{:.{}f}", maxDeltaPres, 3 ) ) );
-  GEOS_LOG_LEVEL_INFO_RANK_0( logInfo::Solution, GEOS_FMT( "        {}: Max component density change = {} {} (before scaling)",
-                                                           getName(), GEOS_FMT( "{:.{}f}", maxDeltaCompDens, 3 ), massUnit ) );
+  GEOS_LOG_LEVEL_INFO_RANK_0( logInfo::Solution,
+                              GEOS_FMT( "        {}: Max pressure change = {:.3f} Pa (before scaling) at cell {}",
+                                        getName(),
+                                        globalDeltaPresMax.value,
+                                        globalDeltaPresMax.location ) );
+
+  GEOS_LOG_LEVEL_INFO_RANK_0( logInfo::Solution,
+                              GEOS_FMT( "        {}: Max component density change = {:.3f} {} (before scaling) at cell {}",
+                                        getName(),
+                                        globalDeltaCompDensMax.value,
+                                        massUnit,
+                                        globalDeltaCompDensMax.location ) );
 
   if( m_isThermal )
   {
-    maxDeltaTemp = MpiWrapper::max( maxDeltaTemp );
+    auto [localDeltaTempMax, localDeltaTempMaxLoc  ] = *std::max_element( begin( regionDeltaTempMaxLoc ), end( regionDeltaTempMaxLoc ), []( auto & lhs, auto & rhs )   {
+      return lhs.value   < rhs.value;
+    } );
+    auto globalMaxDeltaTemp = MpiWrapper::maxValLoc( valueAndLocationType( localDeltaTempMax, localDeltaTempMaxLoc ));
+
     minTempScalingFactor = MpiWrapper::min( minTempScalingFactor );
-    GEOS_LOG_LEVEL_INFO_RANK_0( logInfo::Solution, GEOS_FMT( "        {}: Max temperature change = {} K (before scaling)",
-                                                             getName(), GEOS_FMT( "{:.{}f}", maxDeltaTemp, 3 ) ) );
+    GEOS_LOG_LEVEL_INFO_RANK_0( logInfo::Solution,
+                                GEOS_FMT( "        {}: Max temperature change = {:.3f} K (before scaling) at cell maxRegionDeltaTempLoc {}",
+                                          getName(),
+                                          globalMaxDeltaTemp.value,
+                                          globalMaxDeltaTemp.location ) );
   }
 
   if( m_scalingType == ScalingType::Local )

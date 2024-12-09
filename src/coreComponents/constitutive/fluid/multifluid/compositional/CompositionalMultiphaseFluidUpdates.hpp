@@ -46,6 +46,7 @@ public:
                                        PHASE1 const & phase1,
                                        PHASE2 const & phase2,
                                        PHASE3 const & phase3,
+                                       arrayView1d< integer const > const & phaseOrder,
                                        arrayView1d< real64 const > const & componentMolarWeight,
                                        bool const useMass,
                                        MultiFluidBase::PhaseProp::ViewType phaseFrac,
@@ -122,6 +123,9 @@ private:
   // Flash kernel wrapper
   typename FLASH::KernelWrapper m_flash;
 
+  // The ordering of phases
+  arrayView1d< integer const > const m_phaseOrder;
+
   // Phase model kernel wrappers
   typename PHASE1::KernelWrapper m_phase1;
   typename PHASE2::KernelWrapper m_phase2;
@@ -138,6 +142,7 @@ CompositionalMultiphaseFluidUpdates( compositional::ComponentProperties const & 
                                      PHASE1 const & phase1,
                                      PHASE2 const & phase2,
                                      PHASE3 const & phase3,
+                                     arrayView1d< integer const > const & phaseOrder,
                                      arrayView1d< real64 const > const & componentMolarWeight,
                                      bool const useMass,
                                      MultiFluidBase::PhaseProp::ViewType phaseFrac,
@@ -161,6 +166,7 @@ CompositionalMultiphaseFluidUpdates( compositional::ComponentProperties const & 
                                  std::move( totalDensity ) ),
   m_componentProperties( componentProperties.createKernelWrapper() ),
   m_flash( flash.createKernelWrapper() ),
+  m_phaseOrder( phaseOrder ),
   m_phase1( phase1.createKernelWrapper() ),
   m_phase2( phase2.createKernelWrapper() ),
   m_phase3( phase3.createKernelWrapper() ),
@@ -262,31 +268,31 @@ CompositionalMultiphaseFluidUpdates< FLASH, PHASE1, PHASE2, PHASE3 >::compute(
   m_phase1.density.compute( m_componentProperties,
                             pressure,
                             temperature,
-                            phaseCompFrac.value[0].toSliceConst(),
-                            phaseDens.value[0],
-                            phaseDens.derivs[0],
-                            phaseMassDensity.value[0],
-                            phaseMassDensity.derivs[0],
+                            phaseCompFrac.value[m_phaseOrder[0]].toSliceConst(),
+                            phaseDens.value[m_phaseOrder[0]],
+                            phaseDens.derivs[m_phaseOrder[0]],
+                            phaseMassDensity.value[m_phaseOrder[0]],
+                            phaseMassDensity.derivs[m_phaseOrder[0]],
                             m_useMass );
   m_phase2.density.compute( m_componentProperties,
                             pressure,
                             temperature,
-                            phaseCompFrac.value[1].toSliceConst(),
-                            phaseDens.value[1],
-                            phaseDens.derivs[1],
-                            phaseMassDensity.value[1],
-                            phaseMassDensity.derivs[1],
+                            phaseCompFrac.value[m_phaseOrder[1]].toSliceConst(),
+                            phaseDens.value[m_phaseOrder[1]],
+                            phaseDens.derivs[m_phaseOrder[1]],
+                            phaseMassDensity.value[m_phaseOrder[1]],
+                            phaseMassDensity.derivs[m_phaseOrder[1]],
                             m_useMass );
   if constexpr (2 < FLASH::KernelWrapper::getNumberOfPhases())
   {
     m_phase3.density.compute( m_componentProperties,
                               pressure,
                               temperature,
-                              phaseCompFrac.value[2].toSliceConst(),
-                              phaseDens.value[2],
-                              phaseDens.derivs[2],
-                              phaseMassDensity.value[2],
-                              phaseMassDensity.derivs[2],
+                              phaseCompFrac.value[m_phaseOrder[2]].toSliceConst(),
+                              phaseDens.value[m_phaseOrder[2]],
+                              phaseDens.derivs[m_phaseOrder[2]],
+                              phaseMassDensity.value[m_phaseOrder[2]],
+                              phaseMassDensity.derivs[m_phaseOrder[2]],
                               m_useMass );
   }
 
@@ -294,31 +300,31 @@ CompositionalMultiphaseFluidUpdates< FLASH, PHASE1, PHASE2, PHASE3 >::compute(
   m_phase1.viscosity.compute( m_componentProperties,
                               pressure,
                               temperature,
-                              phaseCompFrac.value[0].toSliceConst(),
-                              phaseMassDensity.value[0],
-                              phaseMassDensity.derivs[0].toSliceConst(),
-                              phaseVisc.value[0],
-                              phaseVisc.derivs[0],
+                              phaseCompFrac.value[m_phaseOrder[0]].toSliceConst(),
+                              phaseMassDensity.value[m_phaseOrder[0]],
+                              phaseMassDensity.derivs[m_phaseOrder[0]].toSliceConst(),
+                              phaseVisc.value[m_phaseOrder[0]],
+                              phaseVisc.derivs[m_phaseOrder[0]],
                               m_useMass );
   m_phase2.viscosity.compute( m_componentProperties,
                               pressure,
                               temperature,
-                              phaseCompFrac.value[1].toSliceConst(),
-                              phaseMassDensity.value[1],
-                              phaseMassDensity.derivs[1].toSliceConst(),
-                              phaseVisc.value[1],
-                              phaseVisc.derivs[1],
+                              phaseCompFrac.value[m_phaseOrder[1]].toSliceConst(),
+                              phaseMassDensity.value[m_phaseOrder[1]],
+                              phaseMassDensity.derivs[m_phaseOrder[1]].toSliceConst(),
+                              phaseVisc.value[m_phaseOrder[1]],
+                              phaseVisc.derivs[m_phaseOrder[1]],
                               m_useMass );
   if constexpr (2 < FLASH::KernelWrapper::getNumberOfPhases())
   {
     m_phase3.viscosity.compute( m_componentProperties,
                                 pressure,
                                 temperature,
-                                phaseCompFrac.value[2].toSliceConst(),
-                                phaseMassDensity.value[2],
-                                phaseMassDensity.derivs[2].toSliceConst(),
-                                phaseVisc.value[2],
-                                phaseVisc.derivs[2],
+                                phaseCompFrac.value[m_phaseOrder[2]].toSliceConst(),
+                                phaseMassDensity.value[m_phaseOrder[2]],
+                                phaseMassDensity.derivs[m_phaseOrder[2]].toSliceConst(),
+                                phaseVisc.value[m_phaseOrder[2]],
+                                phaseVisc.derivs[m_phaseOrder[2]],
                                 m_useMass );
   }
 

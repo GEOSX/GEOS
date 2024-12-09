@@ -21,6 +21,7 @@
 #define GEOS_PHYSICSSOLVERS_FLUIDFLOW_COMPOSITIONAL_SOLUTIONSCALINGKERNEL_HPP
 
 #include "physicsSolvers/fluidFlow/kernels/compositional/SolutionScalingAndCheckingKernelBase.hpp"
+#include "physicsSolvers/fluidFlow/kernels/compositional/AccumulationKernel.hpp"
 #include "physicsSolvers/fluidFlow/CompositionalMultiphaseFVM.hpp"
 
 namespace geos
@@ -106,24 +107,33 @@ public:
 
     StackVariables( real64 _localMinVal,
                     real64 _localMaxDeltaPres,
+                    localIndex _localMaxDeltaPresLoc,
                     real64 _localMaxDeltaTemp,
+                    localIndex _localMaxDeltaTempLoc,
                     real64 _localMaxDeltaCompDens,
+                    localIndex _localMaxDeltaCompDensLoc,
                     real64 _localMinPresScalingFactor,
                     real64 _localMinTempScalingFactor,
                     real64 _localMinCompDensScalingFactor )
       :
       Base::StackVariables( _localMinVal ),
       localMaxDeltaPres( _localMaxDeltaPres ),
+      localMaxDeltaPresLoc( _localMaxDeltaPresLoc ),
       localMaxDeltaTemp( _localMaxDeltaTemp ),
+      localMaxDeltaTempLoc( _localMaxDeltaTempLoc ),
       localMaxDeltaCompDens( _localMaxDeltaCompDens ),
+      localMaxDeltaCompDensLoc( _localMaxDeltaCompDensLoc ),
       localMinPresScalingFactor( _localMinPresScalingFactor ),
       localMinTempScalingFactor( _localMinTempScalingFactor ),
       localMinCompDensScalingFactor( _localMinCompDensScalingFactor )
     { }
 
     real64 localMaxDeltaPres;
+    localIndex localMaxDeltaPresLoc;
     real64 localMaxDeltaTemp;
+    localIndex localMaxDeltaTempLoc;
     real64 localMaxDeltaCompDens;
+    localIndex localMaxDeltaCompDensLoc;
 
     real64 localMinPresScalingFactor;
     real64 localMinTempScalingFactor;
@@ -145,9 +155,9 @@ public:
   {
     RAJA::ReduceMin< ReducePolicy< POLICY >, real64 > globalScalingFactor( 1.0 );
 
-    RAJA::ReduceMax< ReducePolicy< POLICY >, real64 > maxDeltaPres( 0.0 );
-    RAJA::ReduceMax< ReducePolicy< POLICY >, real64 > maxDeltaTemp( 0.0 );
-    RAJA::ReduceMax< ReducePolicy< POLICY >, real64 > maxDeltaCompDens( 0.0 );
+    RAJA::ReduceMaxLoc< ReducePolicy< POLICY >, real64 > maxDeltaPres( std::numeric_limits< real64 >::min(), -1 );
+    RAJA::ReduceMaxLoc< ReducePolicy< POLICY >, real64 > maxDeltaTemp( std::numeric_limits< real64 >::min(), -1 );
+    RAJA::ReduceMaxLoc< ReducePolicy< POLICY >, real64 > maxDeltaCompDens( std::numeric_limits< real64 >::min(), -1 );
 
     RAJA::ReduceMin< ReducePolicy< POLICY >, real64 > minPresScalingFactor( 1.0 );
     RAJA::ReduceMin< ReducePolicy< POLICY >, real64 > minTempScalingFactor( 1.0 );
@@ -166,9 +176,9 @@ public:
 
       globalScalingFactor.min( stack.localMinVal );
 
-      maxDeltaPres.max( stack.localMaxDeltaPres );
-      maxDeltaTemp.max( stack.localMaxDeltaTemp );
-      maxDeltaCompDens.max( stack.localMaxDeltaCompDens );
+      maxDeltaPres.maxloc( stack.localMaxDeltaPres, ei );
+      maxDeltaTemp.maxloc( stack.localMaxDeltaTemp, ei );
+      maxDeltaCompDens.maxloc( stack.localMaxDeltaCompDens, ei );
 
       minPresScalingFactor.min( stack.localMinPresScalingFactor );
       minTempScalingFactor.min( stack.localMinTempScalingFactor );
@@ -177,8 +187,11 @@ public:
 
     return StackVariables( globalScalingFactor.get(),
                            maxDeltaPres.get(),
+                           maxDeltaPres.getLoc(),
                            maxDeltaTemp.get(),
+                           maxDeltaTemp.getLoc(),
                            maxDeltaCompDens.get(),
+                           maxDeltaCompDens.getLoc(),
                            minPresScalingFactor.get(),
                            minTempScalingFactor.get(),
                            minCompDensScalingFactor.get() );
@@ -191,8 +204,11 @@ public:
     Base::setup( ei, stack );
 
     stack.localMaxDeltaPres = 0.0;
+    stack.localMaxDeltaPresLoc = -1;
     stack.localMaxDeltaTemp = 0.0;
+    stack.localMaxDeltaTempLoc = -1;
     stack.localMaxDeltaCompDens = 0.0;
+    stack.localMaxDeltaCompDensLoc =-1;
 
     stack.localMinPresScalingFactor = 1.0;
     stack.localMinTempScalingFactor = 1.0;

@@ -33,7 +33,6 @@
 #include "physicsSolvers/PhysicsSolverBaseKernels.hpp"
 #include "physicsSolvers/fluidFlow/CompositionalMultiphaseBaseFields.hpp"
 #include "physicsSolvers/fluidFlow/StencilAccessors.hpp"
-#include "physicsSolvers/fluidFlow/kernels/compositional/AccumulationKernel.hpp"
 #include "physicsSolvers/fluidFlow/kernels/compositional/PropertyKernelBase.hpp"
 #include "physicsSolvers/fluidFlow/kernels/compositional/KernelLaunchSelectors.hpp"
 
