@@ -103,6 +103,11 @@ template string addCommaSeparators( long long int const & num );
 template< typename T >
 string toMetricPrefixString( T const & value )
 {
+  if( std::fpclassify( value ) == FP_ZERO )
+  {
+    return " 0.0  ";
+  }
+
   // These are the metric prefixes corrosponding to kilo, mega, giga...etc.
   char const prefixes[12] = { 'f', 'p', 'n', 'u', 'm', ' ', 'K', 'M', 'G', 'T', 'P', 'E'};
   string rval;

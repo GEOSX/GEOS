@@ -75,6 +75,9 @@ public:
     GEOS_UNUSED_VAR( domain );
     return true;
   }
+
+protected:
+  logInfo::OutputTimerBase const & getTimerCategory() const override;
 };
 
 
