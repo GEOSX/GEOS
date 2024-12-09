@@ -62,12 +62,9 @@ public:
                              integer const cycleNumber,
                              DomainPartition & domain ) override final;
 
-private:
 
   virtual real64 setNextDt( real64 const & currentDt,
                             DomainPartition & domain ) override final;
-
-  virtual void postInputInitialization() override;
 
   /**
    * @brief Computes stage rates for the initial Runge-Kutta substage and updates slip and state
@@ -92,6 +89,10 @@ private:
    * @param domain
    */
   void stepRateStateODEAndComputeError( real64 const dt, DomainPartition & domain ) const;
+
+private:
+
+  virtual void postInputInitialization() override;
 
   real64 updateStresses( real64 const & time_n,
                          real64 const & dt,
