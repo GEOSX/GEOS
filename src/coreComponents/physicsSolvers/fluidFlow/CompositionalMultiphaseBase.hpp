@@ -32,7 +32,7 @@ namespace geos
 enum class GravityDensityScheme : integer
 {
   ArithmeticAverage, ///< density is computed using simple arithmetic average
-  PhasePresence,     ///< density computation with checking for phase presence
+  PhasePresence,     ///< density is computed using checking for phase presence
 };
 
 /**
