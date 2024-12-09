@@ -511,8 +511,7 @@ int NeighborCommunicator::packCommSizeForSync( FieldIdentifiers const & fieldsTo
 
   for( auto const & iter : fieldsToBeSync.getFields() )
   {
-    FieldLocation location{};
-    fieldsToBeSync.getLocation( iter.first, location );
+    FieldLocation const location = fieldsToBeSync.getLocation( iter.first );
     switch( location )
     {
       case FieldLocation::Node:
@@ -537,10 +536,6 @@ int NeighborCommunicator::packCommSizeForSync( FieldIdentifiers const & fieldsTo
           bufferSize += subRegion.packSize( iter.second, subRegion.getNeighborData( m_neighborRank ).ghostsToSend(), 0, onDevice, events );
         } );
         break;
-      }
-      default:
-      {
-        GEOS_ERROR( "Invalid field location" );
       }
     }
   }
@@ -573,8 +568,7 @@ void NeighborCommunicator::packCommBufferForSync( FieldIdentifiers const & field
 
   for( auto const & iter : fieldsToBeSync.getFields() )
   {
-    FieldLocation location{};
-    fieldsToBeSync.getLocation( iter.first, location );
+    FieldLocation const location = fieldsToBeSync.getLocation( iter.first );
     switch( location )
     {
       case FieldLocation::Node:
@@ -599,10 +593,6 @@ void NeighborCommunicator::packCommBufferForSync( FieldIdentifiers const & field
           packedSize += subRegion.pack( sendBufferPtr, iter.second, subRegion.getNeighborData( m_neighborRank ).ghostsToSend(), 0, onDevice, events );
         } );
         break;
-      }
-      default:
-      {
-        GEOS_ERROR( "Invalid field location" );
       }
     }
   }
@@ -636,8 +626,7 @@ void NeighborCommunicator::unpackBufferForSync( FieldIdentifiers const & fieldsT
 
   for( auto const & iter : fieldsToBeSync.getFields() )
   {
-    FieldLocation location{};
-    fieldsToBeSync.getLocation( iter.first, location );
+    FieldLocation const location = fieldsToBeSync.getLocation( iter.first );
     switch( location )
     {
       case FieldLocation::Node:
@@ -662,10 +651,6 @@ void NeighborCommunicator::unpackBufferForSync( FieldIdentifiers const & fieldsT
           unpackedSize += subRegion.unpack( receiveBufferPtr, subRegion.getNeighborData( m_neighborRank ).ghostsToReceive(), 0, onDevice, events );
         } );
         break;
-      }
-      default:
-      {
-        GEOS_ERROR( "Invalid field location" );
       }
     }
   }
