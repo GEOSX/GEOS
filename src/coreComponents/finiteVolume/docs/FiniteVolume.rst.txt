@@ -25,9 +25,9 @@ For :ref:`CompositionalMultiphaseFlow` there are different options how :math:`\r
 #. `ArithmeticAverage`: :math:`\rho^{avg}` is computed using simple arithmetic average: math:`\rho^{avg} = 0.5 \cdot (rho_K + rho_L)`, where :math:`rho_K` and :math:`rho_K` are densities in the two cells.
 
 #. `PhasePresence`: average phase density is computed using checking for phase presence:
-   * math:`\rho^{avg} = 0.5 \cdot (rho_K + rho_L)` if phase is present in both cells i:math:`K` and :math:`L`
-   * math:`\rho^{avg} = rho_K` if phase is present in only cell i:math:`K`
-   * math:`\rho^{avg} = rho_L` if phase is present in only cell i:math:`L`
+   * math:`\rho^{avg} = 0.5 \cdot (rho_K + rho_L)` if phase is present in both cells :math:`K` and :math:`L`
+   * math:`\rho^{avg} = rho_K` if phase is present only in cell :math:`K`
+   * math:`\rho^{avg} = rho_L` if phase is present only in cell :math:`L`
 
 Hybrid FVM
 ~~~~~~~~~~
