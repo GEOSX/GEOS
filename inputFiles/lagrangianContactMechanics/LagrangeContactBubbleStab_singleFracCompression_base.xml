@@ -130,8 +130,8 @@
       plotLevel="2"
       format="binary"
       plotFileRoot="bubbleStab"/>
-    </Outputs>
-
     <Restart
       name="restartOutput"/> 
+  </Outputs>
+
 </Problem>
