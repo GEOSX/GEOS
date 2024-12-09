@@ -419,10 +419,10 @@ bool KValueFlashParameters< NUM_PHASE >::validateKValues( MultiFluidBase const *
     if( hasAtLeastOneOneSided )
     {
       message += "The provided tables of k-values have a pressure and temperature at "
-                 "which all k-values are greater than unity or all k-values are less than unity";
+                 "which all k-values are greater than unity or all k-values are less than unity. ";
     }
 
-    GEOS_WARNING( GEOS_FMT( "{}: {}.\n{}",
+    GEOS_WARNING( GEOS_FMT( "{}: {}\n{}",
                             fluid->getFullName(), message, tableText.toString( tableData ) ));
 
     GEOS_THROW_IF( hasAtLeastOneNegative, GEOS_FMT( "{}: negative k-value found. ", fluid->getFullName() ),

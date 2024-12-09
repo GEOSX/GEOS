@@ -4,10 +4,10 @@ set( gtest_geosx_tests
      testCO2BrinePVTModels.cpp
      testCO2SpycherPruessModels.cpp
      testDamage.cpp
-     testKValueFlashModel.cpp
      testMultiFluidCO2Brine.cpp
      testMultiFluidCompositionalMultiphase.cpp
      testMultiFluidDeadOil.cpp
+     testMultiFluidKValueFlashModel.cpp
      testMultiFluidLiveOil.cpp
      testRelPerm.cpp
      testRelPermHysteresis.cpp )

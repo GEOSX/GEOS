@@ -23,7 +23,9 @@
 #include "FunctionBase.hpp"
 
 #include "constitutive/fluid/multifluid/Layouts.hpp"
+#include "constitutive/fluid/multifluid/MultiFluidConstants.hpp"
 #include "constitutive/fluid/multifluid/MultiFluidUtils.hpp"
+#include "constitutive/fluid/multifluid/compositional/functions/RachfordRice.hpp"
 
 #include "functions/TableFunction.hpp"
 
@@ -49,10 +51,12 @@ class KValueFlashModelUpdate final : public FunctionBaseUpdate
 public:
   using PhaseProp = MultiFluidVar< real64, 3, multifluid::LAYOUT_PHASE, multifluid::LAYOUT_PHASE_DC >;
   using PhaseComp = MultiFluidVar< real64, 4, multifluid::LAYOUT_PHASE_COMP, multifluid::LAYOUT_PHASE_COMP_DC >;
+  using Deriv = constitutive::multifluid::DerivativeOffset;
 
   KValueFlashModelUpdate( integer const numComponents,
                           TableFunction const & pressureTable,
                           TableFunction const & temperatureTable,
+                          arrayView1d< integer const > const & presentComponents,
                           arrayView4d< real64 const > const & kValues );
 
   // Mark as a 2-phase or 3-phase flash
@@ -70,6 +74,10 @@ public:
                 PhaseComp::SliceType const phaseCompFraction ) const;
 
 private:
+  static integer constexpr m_liquidIndex = 0;
+  static integer constexpr m_vapourIndex = 1;
+  static integer constexpr m_aqueousIndex = 2;
+
   integer const m_numComponents{0};
   integer const m_numPressurePoints{0};
   integer const m_numTemperaturePoints{0};
@@ -79,6 +87,9 @@ private:
 
   /// Table with temperature indices
   TableFunction::KernelWrapper m_temperatureTable;
+
+  /// Index of available components
+  arrayView1d< integer const > m_presentComponents;
 
   /// Hypercube of k-values
   arrayView4d< real64 const > m_kValues;
@@ -112,6 +123,9 @@ public:
   static std::unique_ptr< ModelParameters > createParameters( std::unique_ptr< ModelParameters > parameters );
 
 private:
+  /// Index of present componenyt
+  array1d< integer > m_presentComponents;
+
   KValueFlashParameters< NUM_PHASE > const * m_parameters{};
 };
 
@@ -128,28 +142,107 @@ KValueFlashModelUpdate< NUM_PHASE >::compute( ComponentProperties::KernelWrapper
                                               PhaseComp::SliceType const phaseCompFraction ) const
 {
   GEOS_UNUSED_VAR( componentProperties );
-  GEOS_UNUSED_VAR( pressure );
-  GEOS_UNUSED_VAR( temperature );
-  GEOS_UNUSED_VAR( kValues );
 
-  // Zero derivatives
-  LvArray::forValuesInSlice( phaseFraction.derivs, setZero );
-  LvArray::forValuesInSlice( phaseCompFraction.derivs, setZero );
+  integer const numDofs = 2 + m_numComponents;
 
-  // 1) Compute phase fractions
+  // Calculate k-values at p,t
+  real64 pa = 0.0;
+  real64 pa_dp = 0.0;
+  pa = m_pressureTable.compute( &pressure, &pa_dp );
+  integer const pn = LvArray::math::min( static_cast< integer >(pa), m_numPressurePoints - 2 );
+  pa -= pn;
 
-  for( integer phaseIndex = 0; phaseIndex < numPhases; phaseIndex++ )
+  real64 ta = 0.0;
+  real64 ta_dt = 0.0;
+  ta = m_temperatureTable.compute( &temperature, &ta_dt );
+  integer const tn = LvArray::math::min( static_cast< integer >(ta), m_numTemperaturePoints - 2 );
+  ta -= tn;
+
+  stackArray3d< real64, 2*(NUM_PHASE-1)*MultiFluidConstants::MAX_NUM_COMPONENTS > kValueDerivatives( 2, NUM_PHASE-1, m_numComponents );
+  arraySlice2d< real64 > dKValue_dP = kValueDerivatives[0];
+  arraySlice2d< real64 > dKValue_dT = kValueDerivatives[1];
+  for( integer ip = 0; ip < NUM_PHASE-1; ++ip )
   {
-    phaseFraction.value[phaseIndex] = 1.0/numPhases;
+    for( integer ic = 0; ic < m_numComponents; ic++ )
+    {
+      real64 const k00 = m_kValues( ip, ic, pn, tn );
+      real64 const k01 = m_kValues( ip, ic, pn, tn+1 );
+      real64 const k10 = m_kValues( ip, ic, pn+1, tn );
+      real64 const k11 = m_kValues( ip, ic, pn+1, tn+1 );
+      kValues( ip, ic ) = (1.0-pa)*(1.0-ta)*k00 + (1.0-pa)*ta*k01 + pa*(1.0-ta)*k10 + pa*ta*k11;
+      dKValue_dP( ip, ic ) = pa_dp*( -(1.0-ta)*k00 - ta*k01 + (1.0-ta)*k10 + ta*k11 );
+      dKValue_dT( ip, ic ) = ta_dt*( -(1.0-pa)*k00 + (1.0-pa)*k01 - pa*k10 + pa*k11 );
+    }
   }
 
-  // 2) Compute phase component fractions
-  for( integer phaseIndex = 0; phaseIndex < numPhases; phaseIndex++ )
+  if constexpr (NUM_PHASE == 2)
   {
-    for( integer ic = 0; ic < m_numComponents; ++ic )
+    real64 vapourFraction = RachfordRice::solve( kValues[0].toSliceConst(), compFraction, m_presentComponents.toSliceConst() );
+
+    // Test for single phase
+    if( vapourFraction < MultiFluidConstants::epsilon || 1.0-vapourFraction < MultiFluidConstants::epsilon )
     {
-      phaseCompFraction.value[phaseIndex][ic] = compFraction[ic];
+      vapourFraction = LvArray::math::min( LvArray::math::max( vapourFraction, 0.0 ), 1.0 );
+      phaseFraction.value[m_vapourIndex] = vapourFraction;
+
+      LvArray::forValuesInSlice( phaseFraction.derivs[m_vapourIndex], setZero );
+      LvArray::forValuesInSlice( phaseCompFraction.derivs[m_liquidIndex], setZero );
+      LvArray::forValuesInSlice( phaseCompFraction.derivs[m_vapourIndex], setZero );
+      for( integer ic = 0; ic < m_numComponents; ++ic )
+      {
+        phaseCompFraction.value( m_vapourIndex, ic ) = compFraction[ic];
+        phaseCompFraction.value( m_liquidIndex, ic ) = compFraction[ic];
+        phaseCompFraction.derivs( m_vapourIndex, ic, Deriv::dC + ic ) = 1.0;
+        phaseCompFraction.derivs( m_liquidIndex, ic, Deriv::dC + ic ) = 1.0;
+      }
     }
+    else
+    {
+      // Calculate derivatives implicitly from the Rachford-Rice equation
+      real64 denominator = 0.0;
+      real64 pressureNumerator = 0.0;
+      real64 temperatureNumerator = 0.0;
+      for( integer ic = 0; ic < m_numComponents; ++ic )
+      {
+        real64 const k = kValues( 0, ic ) - 1.0;
+        real64 const r = 1.0 / ( 1.0 + vapourFraction*k );
+        pressureNumerator += compFraction[ic] * dKValue_dP( 0, ic ) * r * r;
+        temperatureNumerator += compFraction[ic] * dKValue_dT( 0, ic ) * r * r;
+        denominator += compFraction[ic] * k * k * r * r;
+        phaseFraction.derivs( m_vapourIndex, Deriv::dC + ic ) = k * r;
+      }
+      GEOS_ERROR_IF( denominator < MultiFluidConstants::epsilon,
+                     "Failed to calculate derivatives for the Rachford-Rice equation." );
+      real64 const invDenominator = 1.0 / denominator;
+      phaseFraction.derivs( m_vapourIndex, Deriv::dP ) = pressureNumerator * invDenominator;
+      phaseFraction.derivs( m_vapourIndex, Deriv::dT ) = temperatureNumerator * invDenominator;
+      for( integer ic = 0; ic < m_numComponents; ++ic )
+      {
+        phaseFraction.derivs( m_vapourIndex, Deriv::dC + ic ) *= invDenominator;
+      }
+
+      // Calculate phase compositions
+      for( integer ic = 0; ic < m_numComponents; ++ic )
+      {
+        real64 const k = kValues( 0, ic ) - 1.0;
+        real64 const r = 1.0 / ( 1.0 + vapourFraction*k );
+        real64 const xi = compFraction[ic] * r *;
+        real64 const yi = xi * kValues( 0, ic );
+        phaseCompFraction.value( m_liquidIndex, ic ) = xi;
+        phaseCompFraction.value( m_vapourIndex, ic ) = yi;
+      }
+    }
+
+    // Complete by calculating liquid phase fraction
+    phaseFraction.value[m_liquidIndex] = 1.0 - phaseFraction.value[m_vapourIndex];
+    for( integer ic = 0; ic < numDofs; ic++ )
+    {
+      phaseFraction.derivs[m_liquidIndex][ic] = -phaseFraction.derivs[m_vapourIndex][ic];
+    }
+  }
+  else
+  {
+    GEOS_ERROR( GEOS_FMT( "Rachford-Rice solve for {} phases not implemented.", NUM_PHASE ));
   }
 }
 

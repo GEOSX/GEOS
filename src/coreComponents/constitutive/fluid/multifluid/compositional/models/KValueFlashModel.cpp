@@ -60,6 +60,12 @@ KValueFlashModel< NUM_PHASE >::KValueFlashModel( string const & name,
   FunctionBase( name, componentProperties )
 {
   m_parameters = modelParameters.get< KValueFlashParameters< NUM_PHASE > >();
+  integer const numComps = m_componentProperties.getNumberOfComponents();
+  m_presentComponents.resize( numComps );
+  for( integer ic =0; ic < numComps; ++ic )
+  {
+    m_presentComponents[ic] = ic;
+  }
 }
 
 template< integer NUM_PHASE >
@@ -79,6 +85,7 @@ KValueFlashModel< NUM_PHASE >::createKernelWrapper() const
   return KernelWrapper( m_componentProperties.getNumberOfComponents(),
                         *pressureTable,
                         *temperatureTable,
+                        m_presentComponents,
                         m_parameters->m_kValueHyperCube );
 }
 
@@ -86,12 +93,14 @@ template< integer NUM_PHASE >
 KValueFlashModelUpdate< NUM_PHASE >::KValueFlashModelUpdate( integer const numComponents,
                                                              TableFunction const & pressureTable,
                                                              TableFunction const & temperatureTable,
+                                                             arrayView1d< integer const > const & presentComponents,
                                                              arrayView4d< real64 const > const & kValues ):
   m_numComponents( numComponents ),
   m_numPressurePoints( pressureTable.getCoordinates()[0].size()),
   m_numTemperaturePoints( temperatureTable.getCoordinates()[0].size()),
   m_pressureTable( pressureTable.createKernelWrapper()),
   m_temperatureTable( temperatureTable.createKernelWrapper()),
+  m_presentComponents( presentComponents ),
   m_kValues( kValues )
 {}
 

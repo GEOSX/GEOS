@@ -56,16 +56,16 @@ public:
   array1d< array1d< real64 > > m_temperatureValues;
   array4d< real64 > m_kValueHyperCube;
 
-protected:
-  void registerParametersImpl( MultiFluidBase * fluid ) override;
-  void postInputInitializationImpl( MultiFluidBase const * fluid, ComponentProperties const & componentProperties ) override;
-
   struct viewKeyStruct
   {
     static constexpr char const * pressureCoordinatesString() { return "pressureCoordinates"; }
     static constexpr char const * temperatureCoordinatesString() { return "temperatureCoordinates"; }
     static constexpr char const * kValueTablesString() { return "kValueTables"; }
   };
+
+protected:
+  void registerParametersImpl( MultiFluidBase * fluid ) override;
+  void postInputInitializationImpl( MultiFluidBase const * fluid, ComponentProperties const & componentProperties ) override;
 
 private:
   static bool isIncreasing( arraySlice1d< real64 const > const & array );
