@@ -168,7 +168,7 @@ computeFluidIncrement( localIndex const k,
                        StackVariables & stack ) const
 {
   stack.fluidMassIncrement = m_fluidMass[k] - m_fluidMass_n[k];
-  stack.dFluidMassIncrement_dVolStrainIncrement = dPorosity_dVolStrain * m_fluidDensity( k, q );
+  stack.dFluidMassIncrement_dVolStrainIncrement = dPorosity_dVolStrain * m_fluidDensity( k, q ); // no volume here, will be multiplied later
   stack.dFluidMassIncrement_dPressure = m_dFluidMass_dPressure[k];
 }
 
@@ -276,7 +276,7 @@ assembleElementBasedFlowTerms( real64 const ( &dNdX )[numNodesPerElem][3],
     stack.localResidualMass,
     1.0,
     stack.fluidMassIncrement,
-    detJxW );
+    1.0 );
 
   // Step 2: compute local mass balance residual derivatives with respect to displacement
   BilinearFormUtilities::compute< pressureTestSpace,
@@ -300,7 +300,7 @@ assembleElementBasedFlowTerms( real64 const ( &dNdX )[numNodesPerElem][3],
     1.0,
     stack.dFluidMassIncrement_dPressure,
     1.0,
-    detJxW );
+    1.0 );
 }
 
 template< typename SUBREGION_TYPE,

@@ -199,7 +199,7 @@ computeFluidIncrement( localIndex const k,
   stack.dEnergyIncrement_dPressure = m_dEnergy_dPressure[k];
   stack.dEnergyIncrement_dTemperature = m_dEnergy_dTemperature[k];
   stack.dEnergyIncrement_dVolStrainIncrement = stack.dFluidMassIncrement_dVolStrainIncrement * m_fluidInternalEnergy( k, q ) -
-                                               dPorosity_dVolStrain * m_rockInternalEnergy( k, 0 );
+                                               dPorosity_dVolStrain * m_rockInternalEnergy( k, 0 ); // no volume here, will be multiplied later
 }
 
 template< typename SUBREGION_TYPE,
@@ -276,7 +276,7 @@ assembleElementBasedFlowTerms( real64 const ( &dNdX )[numNodesPerElem][3],
     1.0,
     stack.dFluidMassIncrement_dTemperature,
     1.0,
-    detJxW );
+    1.0 );
 
   // Step 2: compute local energy balance residual and its derivatives
 
@@ -286,7 +286,7 @@ assembleElementBasedFlowTerms( real64 const ( &dNdX )[numNodesPerElem][3],
     stack.localResidualEnergy,
     1.0,
     stack.energyIncrement,
-    detJxW );
+    1.0 );
 
   BilinearFormUtilities::compute< pressureTestSpace,
                                   displacementTrialSpace,
@@ -308,7 +308,7 @@ assembleElementBasedFlowTerms( real64 const ( &dNdX )[numNodesPerElem][3],
     1.0,
     stack.dEnergyIncrement_dPressure,
     1.0,
-    detJxW );
+    1.0 );
 
   BilinearFormUtilities::compute< pressureTestSpace,
                                   pressureTrialSpace,
@@ -319,7 +319,7 @@ assembleElementBasedFlowTerms( real64 const ( &dNdX )[numNodesPerElem][3],
     1.0,
     stack.dEnergyIncrement_dTemperature,
     1.0,
-    detJxW );
+    1.0 );
 }
 
 template< typename SUBREGION_TYPE,
