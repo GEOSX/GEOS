@@ -176,8 +176,7 @@ complete( localIndex const k,
 
   // Energy balance accumulation
   stack.energyIncrement               = m_energy[embSurfIndex] - m_energy_n[embSurfIndex];
-  stack.dEnergyIncrement_dJump        = // TODO solid part
-                                        m_fluidDensity( embSurfIndex, 0 ) * m_fluidInternalEnergy( embSurfIndex, 0 ) * m_surfaceArea[ embSurfIndex ];
+  stack.dEnergyIncrement_dJump        = m_fluidDensity( embSurfIndex, 0 ) * m_fluidInternalEnergy( embSurfIndex, 0 ) * m_surfaceArea[ embSurfIndex ];
   stack.dEnergyIncrement_dPressure    = m_dEnergy_dPressure[ embSurfIndex ];
   stack.dEnergyIncrement_dTemperature = m_dEnergy_dTemperature[ embSurfIndex ];
 
