@@ -90,10 +90,6 @@ public:
    */
   void stepRateStateODEAndComputeError( real64 const dt, DomainPartition & domain ) const;
 
-private:
-
-  virtual void postInputInitialization() override;
-
   real64 updateStresses( real64 const & time_n,
                          real64 const & dt,
                          const int cycleNumber,
@@ -112,6 +108,10 @@ private:
    * @param domain
    */
   void saveState( DomainPartition & domain ) const;
+
+private:
+
+  virtual void postInputInitialization() override;
 
 
   /// pointer to stress solver
