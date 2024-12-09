@@ -333,11 +333,11 @@ struct Kutta32Table
   integer constexpr static algHighOrder = 3;                      // High-order update order
   integer constexpr static algLowOrder = 2;                       // Low-order update order
   integer constexpr static numStages = 3;                         // Number of stages
-  real64 constexpr static a[2][2] = { { 1.0/2.0, 0.0 },           // Coefficients for stage value updates
+  real64 const a[2][2] = { { 1.0/2.0, 0.0 },           // Coefficients for stage value updates
     { -1.0, 2.0 } };                                              // (lower-triangular part of table).
-  real64 constexpr static c[3] = { 0.0, 1.0/2.0, 1.0 };           // Coefficients for time increments of substages
-  real64 constexpr static b[3] = { 1.0/6.0, 4.0/6.0, 1.0/6.0 };   // Quadrature weights used to step the solution to next time
-  real64 constexpr static bStar[3] = { 1.0/2.0, 0.0, 1.0/2.0 };   // Quadrature weights used for low-order comparision solution
+  real64 const c[3] = { 0.0, 1.0/2.0, 1.0 };           // Coefficients for time increments of substages
+  real64 const b[3] = { 1.0/6.0, 4.0/6.0, 1.0/6.0 };   // Quadrature weights used to step the solution to next time
+  real64 const bStar[3] = { 1.0/2.0, 0.0, 1.0/2.0 };   // Quadrature weights used for low-order comparision solution
   real64 constexpr static FSAL = false;                           // Not first same as last
 };
 
@@ -349,12 +349,12 @@ struct BogackiShampine32Table
   integer constexpr static algHighOrder = 3;                                   // High-order update order
   integer constexpr static algLowOrder = 2;                                    // Low-order update order
   integer constexpr static numStages = 4;                                      // Number of stages
-  real64 constexpr static a[3][3] = { { 1.0/2.0, 0.0, 0.0     },               // Coefficients for stage value updates
+  real64 const a[3][3] = { { 1.0/2.0, 0.0, 0.0     },               // Coefficients for stage value updates
     { 0.0, 3.0/4.0, 0.0     },                                                 // (lower-triangular part of table).
     { 2.0/9.0, 1.0/3.0, 4.0/9.0 } };
-  real64 constexpr static c[4] = { 0.0, 1.0/2.0, 3.0/4.0, 1.0 };               // Coefficients for time increments of substages
-  real64 constexpr static b[4] = { 2.0/9.0, 1.0/3.0, 4.0/9.0, 0.0 };           // Quadrature weights used to step the solution to next time
-  real64 constexpr static bStar[4] = { 7.0/24.0, 1.0/4.0, 1.0/3.0, 1.0/8.0};   // Quadrature weights used for low-order comparision solution
+  real64 const c[4] = { 0.0, 1.0/2.0, 3.0/4.0, 1.0 };               // Coefficients for time increments of substages
+  real64 const b[4] = { 2.0/9.0, 1.0/3.0, 4.0/9.0, 0.0 };           // Quadrature weights used to step the solution to next time
+  real64 const bStar[4] = { 7.0/24.0, 1.0/4.0, 1.0/3.0, 1.0/8.0};   // Quadrature weights used for low-order comparision solution
   bool constexpr static FSAL = true;                                           // First same as last (can reuse the last stage rate in next
                                                                                // update)
 };
@@ -526,6 +526,7 @@ public:
   /**
    * @brief Computes the relative error scaled by error tolerances
    */
+  GEOS_HOST_DEVICE
   real64 computeError( real64 const highOrderApprox, real64 const lowOrderApprox, real64 const absTol, real64 const relTol ) const
   {
     return (highOrderApprox - lowOrderApprox) /
