@@ -458,15 +458,6 @@ real64 PhysicsSolverBase::setNextDtBasedOnNewtonIter( real64 const & currentDt )
   return nextDt;
 }
 
-
-real64 PhysicsSolverBase::setNextDtBasedOnCFL( const geos::real64 & currentDt, geos::DomainPartition & domain )
-{
-  GEOS_UNUSED_VAR( currentDt, domain );
-  return LvArray::NumericLimits< real64 >::max;       // i.e., not implemented
-}
-
-
-
 real64 PhysicsSolverBase::linearImplicitStep( real64 const & time_n,
                                               real64 const & dt,
                                               integer const GEOS_UNUSED_PARAM( cycleNumber ),

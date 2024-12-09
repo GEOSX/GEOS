@@ -26,22 +26,6 @@
 namespace geos
 {
 
-/**
- * @brief Options for density treatment in gravity
- */
-enum class GravityDensityScheme : integer
-{
-  ArithmeticAverage, ///< density is computed using simple arithmetic average
-  PhasePresence,     ///< density computation with checking for phase presence
-};
-
-/**
- * @brief Strings for options for density treatment in gravity
- */
-ENUM_STRINGS( GravityDensityScheme,
-              "ArithmeticAverage",
-              "PhasePresence" );
-
 //START_SPHINX_INCLUDE_00
 /**
  * @class CompositionalMultiphaseBase
@@ -83,6 +67,8 @@ public:
 //START_SPHINX_INCLUDE_01
 
   virtual void registerDataOnMesh( Group & meshBodies ) override;
+
+  virtual void registerDataForCFL( Group & meshBodies ) { GEOS_UNUSED_VAR(meshBodies); }
 
   /**
    * @defgroup Solver Interface Functions
@@ -284,7 +270,6 @@ public:
     static constexpr char const * allowLocalCompDensChoppingString() { return "allowLocalCompDensityChopping"; }
     static constexpr char const * useTotalMassEquationString() { return "useTotalMassEquation"; }
     static constexpr char const * useSimpleAccumulationString() { return "useSimpleAccumulation"; }
-    static constexpr char const * gravityDensitySchemeString() { return "gravityDensityScheme"; }
     static constexpr char const * minCompDensString() { return "minCompDens"; }
     static constexpr char const * maxSequentialCompDensChangeString() { return "maxSequentialCompDensChange"; }
     static constexpr char const * minScalingFactorString() { return "minScalingFactor"; }
@@ -386,19 +371,12 @@ public:
   virtual real64 setNextDtBasedOnStateChange( real64 const & currentDt,
                                               DomainPartition & domain ) override;
 
-  void computeCFLNumbers( DomainPartition & domain, real64 const & dt, real64 & maxPhaseCFL, real64 & maxCompCFL );
 
-  /**
-   * @brief function to set the next time step size
-   * @param[in] currentDt the current time step size
-   * @param[in] domain the domain object
-   * @return the prescribed time step size
-   */
-  real64 setNextDt( real64 const & currentDt,
-                    DomainPartition & domain ) override;
-
-  virtual real64 setNextDtBasedOnCFL( real64 const & currentDt,
-                                      DomainPartition & domain ) override;
+  virtual void computeCFLNumbers( DomainPartition & domain, real64 const & dt, real64 & maxPhaseCFL, real64 & maxCompCFL )
+  {
+    GEOS_UNUSED_VAR(domain, dt, maxPhaseCFL, maxCompCFL);
+    GEOS_ERROR( GEOS_FMT( "{}: computeCFLNumbers is not implemented for {}", getDataContext(), getCatalogName() ) );
+  }
 
   virtual void initializePostInitialConditionsPreSubGroups() override;
 
@@ -503,9 +481,6 @@ protected:
   /// flag indicating whether simple accumulation form is used
   integer m_useSimpleAccumulation;
 
-  /// scheme for density treatment in gravity
-  GravityDensityScheme m_gravityDensityScheme;
-
   /// minimum allowed global component density
   real64 m_minCompDens;
 
@@ -515,9 +490,6 @@ protected:
   /// maximum (absolute) component density change in a sequential iteration
   real64 m_sequentialCompDensChange;
   real64 m_maxSequentialCompDensChange;
-
-  /// the targeted CFL for timestep
-  real64 m_targetFlowCFL;
 
 private:
 

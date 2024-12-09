@@ -240,17 +240,6 @@ public:
                                               DomainPartition & domain );
 
   /**
-   * @brief function to set the next dt based on state change
-   * @param [in]  currentDt the current time step size
-   * @param[in] domain the domain object
-   * @return the prescribed time step size
-   */
-  virtual real64 setNextDtBasedOnCFL( real64 const & currentDt,
-                                      DomainPartition & domain );
-
-
-
-  /**
    * @brief Entry function for an explicit time integration step
    * @param time_n time at the beginning of the step
    * @param dt the perscribed timestep
