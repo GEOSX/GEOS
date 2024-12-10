@@ -32,6 +32,7 @@ namespace geos
 using namespace dataRepository;
 using namespace fields;
 using namespace constitutive;
+using namespace rateAndStateKernels;
 
 QuasiDynamicEQ::QuasiDynamicEQ( const string & name,
                                 Group * const parent ):
@@ -149,8 +150,8 @@ real64 QuasiDynamicEQ::solverStep( real64 const & time_n,
 
   /// 2. Solve for slip rate and state variable and, compute slip
   GEOS_LOG_LEVEL_RANK_0( 1, "Rate and State solver" );
-
-  integer const maxNewtonIter = m_nonlinearSolverParameters.m_maxIterNewton;
+  integer const maxIterNewton = m_nonlinearSolverParameters.m_maxIterNewton;
+  real64 const newtonTol = m_nonlinearSolverParameters.m_newtonTol;
   forDiscretizationOnMeshTargets( domain.getMeshBodies(), [&]( string const &,
                                                                MeshLevel & mesh,
                                                                arrayView1d< string const > const & regionNames )
@@ -161,7 +162,8 @@ real64 QuasiDynamicEQ::solverStep( real64 const & time_n,
                                                                                 SurfaceElementSubRegion & subRegion )
     {
       // solve rate and state equations.
-      rateAndStateKernels::createAndLaunch< parallelDevicePolicy<> >( subRegion, viewKeyStruct::frictionLawNameString(), m_shearImpedance, maxNewtonIter, time_n, dtStress );
+      createAndLaunch< ImplicitFixedStressRateAndStateKernel, parallelDevicePolicy<> >( subRegion, viewKeyStruct::frictionLawNameString(), m_shearImpedance, maxIterNewton, newtonTol, time_n,
+                                                                                        dtStress );
       // save old state
       saveOldStateAndUpdateSlip( subRegion, dtStress );
     } );
