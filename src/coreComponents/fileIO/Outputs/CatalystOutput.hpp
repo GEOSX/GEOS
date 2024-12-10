@@ -77,7 +77,7 @@ public:
    * @brief Return PyCatalystOutput type.
    * @return Return PyCatalystOutput type.
    */
-#if defined(GEOSX_USE_PYGEOSX)
+#if defined(GEOS_USE_PYGEOSX)
   virtual PyTypeObject * getPythonType() const override;
 #endif
 

@@ -19,7 +19,7 @@
 // GEOS
 #include "CatalystOutput.hpp"
 
-#if defined(GEOSX_USE_PYGEOSX)
+#if defined(GEOS_USE_PYGEOSX)
 #include "fileIO/python/PyCatalystOutputType.hpp"
 #endif
 
@@ -530,7 +530,7 @@ void CatalystOutput::cleanup(real64 const time_n, integer const cycleNumber,
   this->internal->initialized = false;
 }
 
-#if defined(GEOSX_USE_PYGEOSX)
+#if defined(GEOS_USE_PYGEOSX)
 PyTypeObject * CatalystOutput::getPythonType() const
 {
   return python::getPyCatalystOutputType();
