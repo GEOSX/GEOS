@@ -26,103 +26,128 @@ LogPart::LogPart( string_view logPartTitle ):
   m_logPartTitle( string( logPartTitle ) ),
   m_logPartWidth( std::max((size_t)m_rowMinWidth, logPartTitle.length()) )
 {
-  m_footerTitle = GEOS_FMT( "End of {}", m_logPartTitle );
+  m_footerTitle = GEOS_FMT( "{}", m_logPartTitle );
 }
 
-void LogPart::addDescription( string_view description )
+void LogPart::addDescription( string const & description )
 {
-  m_beginningDescs.push_back( string( description ) );
+  m_descriptionNames.push_back( description );
+  m_descriptionValues.push_back( std::vector< string >() );
 }
 
-void LogPart::addEndDescription( string_view description )
-{
-  m_endDescs.push_back( string( description ) );
-}
 
-void LogPart::setMinWidth( integer const & minWidth )
+void LogPart::setMinWidth( size_t const & minWidth )
 {
   m_rowMinWidth = minWidth;
   m_logPartWidth = std::max( m_rowMinWidth, m_logPartWidth );
 }
 
-void LogPart::formatAndInsertDescriptions( std::vector< string > & formattedDescriptions,
-                                           string_view name,
-                                           std::vector< string > const & descriptionValues )
+void LogPart::formatDescriptions()
 {
-  string const nameFormatted =  GEOS_FMT( "- {}: ", string( name ));
-
-  // format each description with name and the first value
-  string const descriptionFormatted = GEOS_FMT( "{}{}", nameFormatted, descriptionValues[0] );
-
-  integer const spacesFromBorder = m_marginBorder * 2 + m_nbBorderChar * 2;
-  integer const rowLength = descriptionFormatted.length() + spacesFromBorder;
-
-  formattedDescriptions.push_back( descriptionFormatted );
-
-  m_logPartWidth = std::max( rowLength, m_logPartWidth );
-
-  //format remaining description lines
-  for( size_t idxValue = 1; idxValue < descriptionValues.size(); idxValue++ )
+  size_t maxNameSize = 1;
+  for( auto const & name : m_descriptionNames )
   {
-    size_t const spaces = descriptionValues[idxValue].length() + nameFormatted.length();
-    formattedDescriptions.push_back( GEOS_FMT( "{:>{}}", descriptionValues[idxValue], spaces ) );
+    size_t idx = &name - &(*m_descriptionNames.begin());
+    if( !m_descriptionValues[idx].empty())
+    {
+      maxNameSize = std::max( maxNameSize, name.size() );
+    }
   }
+
+  size_t const spacesFromBorder = m_borderMargin * 2 + m_nbBorderChar * 2;
+  for( size_t idxName = 0; idxName < m_descriptionNames.size(); idxName++ )
+  {
+    if( m_descriptionValues[idxName].empty())
+    {
+      m_formattedDescriptions.push_back( m_descriptionNames[idxName] );
+    }
+    else
+    {
+      string name = m_descriptionNames[idxName];
+      string spaces = string( maxNameSize - name.size(), ' ' );
+      string nameFormatted = GEOS_FMT( "{}{} ", name, spaces );
+
+      m_formattedDescriptions.push_back( GEOS_FMT( "{}{}", nameFormatted, m_descriptionValues[idxName][0] ));
+      m_logPartWidth = m_formattedDescriptions[idxName].size() + spacesFromBorder;
+
+      for( size_t idxValue = 1; idxValue < m_descriptionValues[idxName].size(); idxValue++ )
+      {
+        m_formattedDescriptions.push_back( GEOS_FMT( "{:>{}}", m_descriptionValues[idxName][idxValue],
+                                                     nameFormatted.size() + m_descriptionValues[idxName][idxValue].size()  ));
+        m_logPartWidth = std::max( m_logPartWidth,
+                                   m_formattedDescriptions[idxValue].size() + spacesFromBorder );
+      }
+    }
+
+  }
+
+  m_logPartWidth = std::max( m_rowMinWidth, m_logPartWidth );
 }
 
-string LogPart::buildDescriptionPart( std::vector< string > const & formattedDescriptions ) const
+string LogPart::buildDescriptionPart()
 {
   std::ostringstream oss;
-  for( auto const & description : formattedDescriptions )
+  for( auto const & description : m_formattedDescriptions )
   {
     // length of white space to add after the formatted description
-    integer const remainingLength = m_logPartWidth - m_nbBorderChar * 2 - m_marginBorder;
+    size_t const remainingLength = m_logPartWidth - m_nbBorderChar * 2 - m_borderMargin;
     string const borderCharacters = string( m_nbBorderChar, m_borderCharacter );
     oss << borderCharacters;
-    oss << GEOS_FMT( "{:<{}}{:<{}}", " ", m_marginBorder, description, remainingLength );
+    oss << GEOS_FMT( "{:<{}}{:<{}}", " ", m_borderMargin, description, remainingLength );
     oss << borderCharacters << '\n';
   }
   return oss.str();
 }
 
-string LogPart::buildTitlePart( string_view title ) const
+void LogPart::clear()
+{
+  m_formattedDescriptions.clear();
+  m_descriptionNames.clear();
+  m_descriptionValues.clear();
+}
+
+string LogPart::buildTitlePart()
 {
   std::ostringstream oss;
-  integer const titleRowLength = m_logPartWidth - m_nbBorderChar * 2;
+  size_t const titleRowLength = m_logPartWidth - m_nbBorderChar * 2;
   string const borderCharacters =  string( m_nbBorderChar, m_borderCharacter );
   oss <<  GEOS_FMT( "{}{:^{}}{}\n",
                     borderCharacters,
-                    title,
+                    m_footerTitle,
                     titleRowLength,
                     borderCharacters );
   return oss.str();
 }
 
-void LogPart::begin( std::ostream & os ) const
+void LogPart::begin( std::ostream & os )
 {
-  string bottomPart;
-  if( !m_beginningDescs.empty())
+  string bottomPart = "";
+  if( !m_descriptionNames.empty())
   {
-    bottomPart = buildDescriptionPart( m_beginningDescs );
+    formatDescriptions();
   }
+  bottomPart = buildDescriptionPart();
 
-  string const horizontalBorder = string( m_logPartWidth, m_borderCharacter );
+  string const line = string( m_logPartWidth, m_borderCharacter );
   string const topPart =  GEOS_FMT( "{}\n{}{}\n",
-                                    horizontalBorder,
-                                    buildTitlePart( m_logPartTitle ),
-                                    horizontalBorder );
+                                    line,
+                                    buildTitlePart(),
+                                    line );
   os << GEOS_FMT( "\n{}{}\n", topPart, bottomPart );
+  clear();
 }
 
-void LogPart::end( std::ostream & os ) const
+void LogPart::end( std::ostream & os )
 {
-  string topPart;
-  string const horizontalBorder =  string( m_logPartWidth, m_borderCharacter );
-  if( !m_endDescs.empty() )
+  string topPart = "";
+  string const line =  string( m_logPartWidth, m_borderCharacter );
+  if( !m_descriptionNames.empty() )
   {
-    topPart =  GEOS_FMT( "{}{}\n", buildDescriptionPart( m_endDescs ), horizontalBorder );
+    formatDescriptions();
+    topPart = GEOS_FMT( "{}{}\n", buildDescriptionPart(), line );
   }
 
-  string const bottomPart = GEOS_FMT( "{}{}\n", buildTitlePart( m_footerTitle ), horizontalBorder );
+  string const bottomPart = GEOS_FMT( "{}{}\n", buildTitlePart(), line );
   os << GEOS_FMT( "\n{}{}\n", topPart, bottomPart );
 }
 

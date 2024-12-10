@@ -45,46 +45,31 @@ public:
    * Descriptions values can be be any types and will be aligned
    */
   template< typename ... Args >
-  void addDescription( string_view name, Args const & ... args );
+  void addDescription( string const & name, Args const & ... args );
 
   /**
    * @brief Add a description to the logPart
    * @param description The string value of the description
    */
-  void addDescription( string_view description );
-
-  /**
-   * @brief Add a description to the end of the logPart by concatening a description name and descriptions values.
-   * @param name The description name
-   * @param args Descriptions values to be concatened.
-   * Descriptions values can be be any types and will be aligned
-   */
-  template< typename ... Args >
-  void addEndDescription( string_view name, Args const & ... args );
-
-  /**
-   * @brief Add a description to the end of the logPart
-   * @param description The string value of the description
-   */
-  void addEndDescription( string_view description );
+  void addDescription( string const & description );
 
   /**
    * @brief Set the minimal width of a row
    * @param minWidth The minimal width of the table
    */
-  void setMinWidth( integer const & minWidth );
+  void setMinWidth( size_t const & minWidth );
 
   /**
    * @brief Draw the first part of the logPart. It include the title and optionnaly, the end description(s).
    * @param os An output stream (by default, std::cout)
    */
-  void begin( std::ostream & os = std::cout ) const;
+  void begin( std::ostream & os = std::cout );
 
   /**
    * @brief Draw the last part of the logPart. It include the title
    * @param oss An output stream (by default, std::cout)
    */
-  void end( std::ostream & oss = std::cout ) const;
+  void end( std::ostream & oss = std::cout );
 
 private:
 
@@ -93,49 +78,52 @@ private:
    * @param name The decription name
    * @param decriptionsValues The description values
    */
-  void formatAndInsertDescriptions( std::vector< string > & formattedDescriptions,
-                                    string_view name,
-                                    std::vector< string > const & decriptionsValues );
+  void formatDescriptions();
 
   /**
    * @brief Constructs the string logPart title of the log part.
-   * @param title The title to be set
    */
-  string buildTitlePart( string_view title ) const;
+  string buildTitlePart();
 
   /**
    * @brief Constructs the string logPart descriptions of the log part.
-   * @param descriptions The description to be formatted
    */
-  string buildDescriptionPart( std::vector< string > const & formattedDescriptions ) const;
+  string buildDescriptionPart();
 
-  /// Vector containing all descriptions
-  std::vector< string > m_beginningDescs;
-  /// title of logPart
-  std::vector< string > m_endDescs;
+  /**
+   * @brief Clear all buffer
+   */
+  void clear();
+
+  /// Vector containing formatted description
+  std::vector< string > m_formattedDescriptions;
+  /// Name of the description, formatted to be : [Name] : [Values1]\n[Values2]
+  std::vector< string > m_descriptionNames;
+  /// Values in the descrpption the description
+  std::vector< std::vector< string > > m_descriptionValues;
 
   /// title of logPart
   string m_logPartTitle;
-  /// Start title footer string
+  /// Title footer string
   string m_footerTitle;
   /// min width of logPart length
-  integer m_rowMinWidth = 70;
+  size_t m_rowMinWidth = 70;
   /// logPart length
-  integer m_logPartWidth;
+  size_t m_logPartWidth;
 
   /// description border margin
-  static constexpr integer m_marginBorder = 2;
+  static constexpr size_t m_borderMargin = 2;
   /// numbers of character used as border
-  static constexpr integer m_nbBorderChar = 2;
+  static constexpr size_t m_nbBorderChar = 2;
   /// character used for logPart construction
-  static constexpr integer m_borderCharacter = '#';
+  static constexpr size_t m_borderCharacter = '#';
 
   /// String containing horizontal border
   string m_horizontalBorder;
 };
 
 template< typename ... Args >
-void LogPart::addDescription( string_view name, Args const &... args )
+void LogPart::addDescription( string const & name, Args const &... args )
 {
   std::vector< string > values;
   ( [&] {
@@ -143,22 +131,10 @@ void LogPart::addDescription( string_view name, Args const &... args )
     string const value = GEOS_FMT( "{}", args );
     values.push_back( value );
   } (), ...);
-
-  formatAndInsertDescriptions( m_beginningDescs, name, values );
+  m_descriptionNames.push_back( name );
+  m_descriptionValues.push_back( values );
 }
 
-template< typename ... Args >
-void LogPart::addEndDescription( string_view name, Args const &... args )
-{
-  std::vector< string > values;
-  ( [&] {
-    static_assert( has_formatter_v< decltype(args) >, "Argument passed in addRow cannot be converted to string" );
-    string const value = GEOS_FMT( "{}", args );
-    values.push_back( value );
-  } (), ...);
-
-  formatAndInsertDescriptions( m_endDescs, name, values );
-}
 }
 
 #endif

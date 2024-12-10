@@ -254,9 +254,9 @@ void EventManager::outputTime( LogPart & logPart ) const
   string const timeInfosUnfolded = timeInfo.toUnfoldedString() + timeCompletionUnfolded;
   string const timeCompletionSeconds = timeInfo.toSecondsString() + timeCompletionSecond;
 
-  logPart.addDescription( "Time", timeInfosUnfolded, timeCompletionSeconds );
-  logPart.addDescription( "Delta Time", units::TimeFormatInfo::fromSeconds( m_dt ).toString() );
-  logPart.addDescription( "Cycle", m_cycle, cycleLimited );
+  logPart.addDescription( "- Time :", timeInfosUnfolded, timeCompletionSeconds );
+  logPart.addDescription( "- Delta Time :", units::TimeFormatInfo::fromSeconds( m_dt ).toString() );
+  logPart.addDescription( "- Cycle :", m_cycle, cycleLimited );
   logPart.setMinWidth( 70 );
 
   // We are keeping the old outputs to keep compatibility with current log reading scripts.

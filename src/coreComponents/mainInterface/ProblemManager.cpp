@@ -178,14 +178,17 @@ void ProblemManager::problemSetup()
   LogPart nmLogPart( "NumericalMethods" );
   nmLogPart.begin();
   applyNumericalMethods();
+  nmLogPart.end();
 
   LogPart meshDataLogPart( "Mesh data registration :" );
   meshDataLogPart.begin();
   registerDataOnMeshRecursive( getDomainPartition().getMeshBodies() );
+  meshDataLogPart.end();
 
   LogPart grpLogPart( "Group & subgroups initialization" );
   grpLogPart.begin();
   initialize();
+  grpLogPart.end();
 
   importFields();
 }

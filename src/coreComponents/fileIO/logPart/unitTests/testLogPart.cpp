@@ -33,7 +33,7 @@ TEST( testSection, sectionWithTitle )
 
   logPart.end( oss );
   EXPECT_EQ( oss.str(),
-             "\n##                       End of section name                        ##\n"
+             "\n##                           section name                           ##\n"
              "######################################################################\n\n"
              );
   oss.clear();
@@ -74,7 +74,7 @@ TEST( testSection, sectionWithSetWidth )
 
   logPart.end( oss );
   EXPECT_EQ( oss.str(),
-             "\n##                                      End of section name                                       ##\n"
+             "\n##                                          section name                                          ##\n"
              "####################################################################################################\n\n"
              );
   oss.clear();
@@ -84,26 +84,26 @@ TEST( testSection, sectionMultipleDescriptions )
 {
   std::ostringstream oss;
   LogPart logPart( "TIMESTEP START" );
-  logPart.addDescription( "Time", "00h08m20s out of 2d, 21h26m40s (0% completed)", "500 s / 250000 s" );
-  logPart.addDescription( "Delta Time", "00h16m40s (1000 s)" );
-  logPart.addDescription( "- Cycle: 1" );
+  logPart.addDescription( "- Time :", "00h08m20s out of 2d, 21h26m40s (0% completed)", "500 s / 250000 s" );
+  logPart.addDescription( "- Delta Time :", "00h16m40s (1000 s)" );
+  logPart.addDescription( "Description test" );
   logPart.setMinWidth( 70 );
   logPart.begin( oss );
   EXPECT_EQ ( oss.str(),
               "\n######################################################################\n"
               "##                          TIMESTEP START                          ##\n"
               "######################################################################\n"
-              "##  - Time: 00h08m20s out of 2d, 21h26m40s (0% completed)           ##\n"
-              "##          500 s / 250000 s                                        ##\n"
-              "##  - Delta Time: 00h16m40s (1000 s)                                ##\n"
-              "##  - Cycle: 1                                                      ##\n\n"
+              "##  - Time :       00h08m20s out of 2d, 21h26m40s (0% completed)    ##\n"
+              "##                 500 s / 250000 s                                 ##\n"
+              "##  - Delta Time : 00h16m40s (1000 s)                               ##\n"
+              "##  Description test                                                ##\n\n"
               );
   oss.clear();
   oss.str( "" );
 
   logPart.end( oss );
   EXPECT_EQ( oss.str(),
-             "\n##                      End of TIMESTEP START                       ##\n"
+             "\n##                          TIMESTEP START                          ##\n"
              "######################################################################\n\n"
              );
   oss.clear();
@@ -114,18 +114,18 @@ TEST( testSection, sectionEndDescription )
   std::ostringstream oss;
   LogPart logPart( "TIMESTEP START" );
   logPart.addDescription( "description" );
-  logPart.addEndDescription( "test end description" );
   logPart.setMinWidth( 70 );
   logPart.begin( oss );
   oss.clear();
   oss.str( "" );
 
+  logPart.addDescription( "test end description" );
   logPart.end( oss );
 
   EXPECT_EQ( oss.str(),
              "\n##  test end description                                            ##\n"
              "######################################################################\n"
-             "##                      End of TIMESTEP START                       ##\n"
+             "##                          TIMESTEP START                          ##\n"
              "######################################################################\n\n"
              );
   oss.clear();
