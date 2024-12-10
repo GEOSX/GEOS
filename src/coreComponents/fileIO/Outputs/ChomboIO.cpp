@@ -30,6 +30,20 @@ namespace geos
 
 using namespace dataRepository;
 
+namespace logInfo
+{
+struct ChomboOutputTimer : public OutputTimerBase
+{
+  std::string_view getDescription() const override { return "Chombo output timing"; }
+};
+}
+
+logInfo::OutputTimerBase const & ChomboIO::getTimerCategory() const
+{
+  static logInfo::ChomboOutputTimer timer;
+  return timer;
+}
+
 ChomboIO::ChomboIO( string const & name, Group * const parent ):
   OutputBase( name, parent ),
   m_coupler( nullptr ),
