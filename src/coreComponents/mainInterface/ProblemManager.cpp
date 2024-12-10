@@ -39,6 +39,7 @@
 #include "fileIO/Outputs/OutputBase.hpp"
 #include "fileIO/Outputs/OutputManager.hpp"
 #include "functions/FunctionManager.hpp"
+#include "mesh/ExternalDataSourceManager.hpp"
 #include "mesh/DomainPartition.hpp"
 #include "mesh/MeshBody.hpp"
 #include "mesh/MeshManager.hpp"
@@ -72,6 +73,8 @@ ProblemManager::ProblemManager( conduit::Node & root ):
   commandLine.setRestartFlags( RestartFlags::WRITE );
 
   setInputFlags( InputFlags::PROBLEM_ROOT );
+
+  registerGroup< ExternalDataSourceManager >( groupKeys.externalDataSourceManager );
 
   m_fieldSpecificationManager = &registerGroup< FieldSpecificationManager >( groupKeys.fieldSpecificationManager );
 

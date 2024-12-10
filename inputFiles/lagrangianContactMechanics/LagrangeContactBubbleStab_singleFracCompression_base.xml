@@ -131,7 +131,7 @@
       format="binary"
       plotFileRoot="bubbleStab"/>
     <Restart
-      name="restartOutput"/>   
-    </Outputs>
-   
+      name="restartOutput"/> 
+  </Outputs>
+
 </Problem>

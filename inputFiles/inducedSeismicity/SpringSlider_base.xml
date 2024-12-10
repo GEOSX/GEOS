@@ -123,7 +123,7 @@
       initialCondition="1"
       objectPath="ElementRegions/Fault/FractureSubRegion"
       component="0"
-      scale="0."
+      scale="0.70710678118e-6"
       setNames="{all}"/>               
     <FieldSpecification
       name="slipVelocity2"
@@ -131,7 +131,7 @@
       initialCondition="1"
       objectPath="ElementRegions/Fault/FractureSubRegion"
       component="1"
-      scale="0."
+      scale="0.70710678118e-6"
       setNames="{all}"/>               
   </FieldSpecifications>
 

@@ -411,7 +411,7 @@ public:
   virtual void resize( localIndex const newSize ) override
   {
     wrapperHelpers::move( *m_data, hostMemorySpace, true );
-    wrapperHelpers::resizeDefault( reference(), newSize, m_default );
+    wrapperHelpers::resizeDefault( reference(), newSize, m_default, this->getName() );
   }
 
   /// @cond DO_NOT_DOCUMENT

@@ -120,10 +120,11 @@ void ImplicitQDRateAndState::applyInitialConditionsToFault( int const cycleNumbe
 }
 
 void ImplicitQDRateAndState::solveRateAndStateEquations( real64 const time_n,
-                                                     real64 const dt,
-                                                     DomainPartition & domain ) const
+                                                         real64 const dt,
+                                                         DomainPartition & domain ) const
 {
   integer const maxNewtonIter = m_nonlinearSolverParameters.m_maxIterNewton;
+  real64 const newtonTol = m_nonlinearSolverParameters.m_newtonTol;
   forDiscretizationOnMeshTargets( domain.getMeshBodies(), [&]( string const &,
                                                                MeshLevel & mesh,
                                                                arrayView1d< string const > const & regionNames )
@@ -134,8 +135,12 @@ void ImplicitQDRateAndState::solveRateAndStateEquations( real64 const time_n,
                                                                                 SurfaceElementSubRegion & subRegion )
     {
       // solve rate and state equations.
-      rateAndStateKernels::createAndLaunch< parallelDevicePolicy<> >( subRegion, viewKeyStruct::frictionLawNameString(), m_shearImpedance, maxNewtonIter, time_n, dt );
-      // save old state
+      createAndLaunch< ImplicitFixedStressRateAndStateKernel, parallelDevicePolicy<> >( subRegion, 
+                                                                                        viewKeyStruct::frictionLawNameString(), 
+                                                                                        m_shearImpedance, 
+                                                                                        maxIterNewton, newtonTol, 
+                                                                                        time_n,
+                                                                                        dt );      // save old state
       updateSlip( subRegion, dt );
     } );
   } );

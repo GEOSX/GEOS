@@ -78,6 +78,12 @@ public:
     dataRepository::ViewKey writeFEMFaces = { "writeFEMFaces" };
   } viewKeys;
   /// @endcond
+
+protected:
+  /**
+   * @copydoc OutputBase::getTimerCategory
+   */
+  logInfo::OutputTimerBase const & getTimerCategory() const override;
 };
 
 

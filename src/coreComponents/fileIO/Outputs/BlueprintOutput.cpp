@@ -129,53 +129,57 @@ BlueprintOutput::BlueprintOutput( string const & name,
 }
 
 ///////////////////////////////////////////////////////////////////////////////////////////////////
-bool BlueprintOutput::execute( real64 const time,
-                               real64 const,
-                               integer const cycle,
-                               integer const,
-                               real64 const,
+bool BlueprintOutput::execute( real64 const time_n,
+                               real64 const GEOS_UNUSED_PARAM( dt ),
+                               integer const cycleNumber,
+                               integer const GEOS_UNUSED_PARAM( eventCounter ),
+                               real64 const GEOS_UNUSED_PARAM( eventProgress ),
                                DomainPartition & domain )
 {
   GEOS_MARK_FUNCTION;
 
-  MeshLevel const & meshLevel = domain.getMeshBody( 0 ).getBaseDiscretization();
-
-  conduit::Node meshRoot;
-  conduit::Node & mesh = meshRoot[ "mesh" ];
-  conduit::Node & coordset = mesh[ "coordsets/nodes" ];
-  conduit::Node & topologies = mesh[ "topologies" ];
-
-  mesh[ "state/time" ] = time;
-  mesh[ "state/cycle" ] = cycle;
-
-  addNodalData( meshLevel.getNodeManager(), coordset, topologies, mesh[ "fields" ] );
-
-  dataRepository::Group averagedElementData( "averagedElementData", this );
-  addElementData( meshLevel.getElemManager(), coordset, topologies, mesh[ "fields" ], averagedElementData );
-
-  /// The Blueprint will complain if the fields node is present but empty.
-  if( mesh[ "fields" ].number_of_children() == 0 )
   {
-    mesh.remove( "fields" );
+    Timer timer( m_outputTimer );
+
+    MeshLevel const & meshLevel = domain.getMeshBody( 0 ).getBaseDiscretization();
+
+    conduit::Node meshRoot;
+    conduit::Node & mesh = meshRoot[ "mesh" ];
+    conduit::Node & coordset = mesh[ "coordsets/nodes" ];
+    conduit::Node & topologies = mesh[ "topologies" ];
+
+    mesh[ "state/time" ] = time_n;
+    mesh[ "state/cycle" ] = cycleNumber;
+
+    addNodalData( meshLevel.getNodeManager(), coordset, topologies, mesh[ "fields" ] );
+
+    dataRepository::Group averagedElementData( "averagedElementData", this );
+    addElementData( meshLevel.getElemManager(), coordset, topologies, mesh[ "fields" ], averagedElementData );
+
+    /// The Blueprint will complain if the fields node is present but empty.
+    if( mesh[ "fields" ].number_of_children() == 0 )
+    {
+      mesh.remove( "fields" );
+    }
+
+    /// Verify that the mesh conforms to the Blueprint.
+    conduit::Node info;
+    GEOS_ASSERT_MSG( conduit::blueprint::verify( "mesh", meshRoot, info ), info.to_json() );
+
+    /// Generate the Blueprint index.
+    conduit::Node fileRoot;
+    conduit::Node & index = fileRoot[ "blueprint_index/mesh" ];
+    conduit::blueprint::mesh::generate_index( mesh, "mesh", MpiWrapper::commSize(), index );
+
+    /// Verify that the index conforms to the Blueprint.
+    info.reset();
+    GEOS_ASSERT_MSG( conduit::blueprint::mesh::index::verify( index, info ), info.to_json() );
+
+    /// Write out the root index file, then write out the mesh.
+    string const completePath = GEOS_FMT( "{}/blueprintFiles/cycle_{:07}", OutputBase::getOutputDirectory(), cycleNumber );
+    string const filePathForRank = dataRepository::writeRootFile( fileRoot, completePath );
+    conduit::relay::io::save( meshRoot, filePathForRank, "hdf5" );
   }
-
-  /// Verify that the mesh conforms to the Blueprint.
-  conduit::Node info;
-  GEOS_ASSERT_MSG( conduit::blueprint::verify( "mesh", meshRoot, info ), info.to_json() );
-
-  /// Generate the Blueprint index.
-  conduit::Node fileRoot;
-  conduit::Node & index = fileRoot[ "blueprint_index/mesh" ];
-  conduit::blueprint::mesh::generate_index( mesh, "mesh", MpiWrapper::commSize(), index );
-
-  /// Verify that the index conforms to the Blueprint.
-  info.reset();
-  GEOS_ASSERT_MSG( conduit::blueprint::mesh::index::verify( index, info ), info.to_json() );
-
-  /// Write out the root index file, then write out the mesh.
-  string const completePath = GEOS_FMT( "{}/blueprintFiles/cycle_{:07}", OutputBase::getOutputDirectory(), cycle );
-  string const filePathForRank = dataRepository::writeRootFile( fileRoot, completePath );
-  conduit::relay::io::save( meshRoot, filePathForRank, "hdf5" );
 
   return false;
 }
@@ -307,7 +311,19 @@ void BlueprintOutput::writeOutConstitutiveData( dataRepository::Group const & co
   } );
 }
 
+namespace logInfo
+{
+struct BlueprintOutputTimer : public OutputTimerBase
+{
+  std::string_view getDescription() const override { return "Blueprint output timing"; }
+};
+}
 
+logInfo::OutputTimerBase const & BlueprintOutput::getTimerCategory() const
+{
+  static logInfo::BlueprintOutputTimer timer;
+  return timer;
+}
 
 REGISTER_CATALOG_ENTRY( OutputBase, BlueprintOutput, string const &, dataRepository::Group * const )
 

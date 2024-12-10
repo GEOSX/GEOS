@@ -36,8 +36,6 @@
 #include "mesh/mpiCommunications/CommunicationTools.hpp"
 #include "physicsSolvers/fluidFlow/FlowSolverBaseFields.hpp"
 #include "physicsSolvers/fluidFlow/CompositionalMultiphaseBaseFields.hpp"
-#include "physicsSolvers/fluidFlow/kernels/compositional/AccumulationKernel.hpp"
-#include "physicsSolvers/fluidFlow/kernels/compositional/ThermalAccumulationKernel.hpp"
 #include "physicsSolvers/fluidFlow/kernels/compositional/ResidualNormKernel.hpp"
 #include "physicsSolvers/fluidFlow/kernels/compositional/ThermalResidualNormKernel.hpp"
 #include "physicsSolvers/fluidFlow/kernels/compositional/SolutionScalingKernel.hpp"
@@ -50,10 +48,10 @@
 #include "physicsSolvers/fluidFlow/kernels/compositional/ThermalDiffusionDispersionFluxComputeKernel.hpp"
 #include "physicsSolvers/fluidFlow/kernels/compositional/StabilizedFluxComputeKernel.hpp"
 #include "physicsSolvers/fluidFlow/kernels/compositional/DissipationFluxComputeKernel.hpp"
-#include "physicsSolvers/fluidFlow/kernels/compositional/PhaseMobilityKernel.hpp"
-#include "physicsSolvers/fluidFlow/kernels/compositional/ThermalPhaseMobilityKernel.hpp"
 #include "physicsSolvers/fluidFlow/kernels/compositional/DirichletFluxComputeKernel.hpp"
 #include "physicsSolvers/fluidFlow/kernels/compositional/ThermalDirichletFluxComputeKernel.hpp"
+#include "physicsSolvers/fluidFlow/kernels/compositional/PhaseMobilityKernel.hpp"
+#include "physicsSolvers/fluidFlow/kernels/compositional/ThermalPhaseMobilityKernel.hpp"
 #include "physicsSolvers/fluidFlow/kernels/compositional/AquiferBCKernel.hpp"
 
 namespace geos
@@ -233,6 +231,7 @@ void CompositionalMultiphaseFVM::assembleFluxTerms( real64 const dt,
                                                        elemDofKey,
                                                        m_hasCapPressure,
                                                        m_useTotalMassEquation,
+                                                       m_useNewGravity,
                                                        fluxApprox.upwindingParams(),
                                                        getName(),
                                                        mesh.getElemManager(),
@@ -587,8 +586,9 @@ real64 CompositionalMultiphaseFVM::scalingForSystemSolution( DomainPartition & d
                                         getName(),
                                         globalDeltaPresMax.value,
                                         globalDeltaPresMax.location ) );
+
   GEOS_LOG_LEVEL_INFO_RANK_0( logInfo::Solution,
-                              GEOS_FMT( "        {}: Max component density change = {:.3f} (before scaling) at cell {}",
+                              GEOS_FMT( "        {}: Max component density change = {:.3f} {} (before scaling) at cell {}",
                                         getName(),
                                         globalDeltaCompDensMax.value,
                                         massUnit,
