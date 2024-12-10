@@ -159,8 +159,7 @@ KValueFlashModelUpdate< NUM_PHASE >::compute( ComponentProperties::KernelWrapper
   ta -= tn;
 
   stackArray3d< real64, 2*(NUM_PHASE-1)*MultiFluidConstants::MAX_NUM_COMPONENTS > kValueDerivatives( 2, NUM_PHASE-1, m_numComponents );
-  arraySlice2d< real64 > dKValue_dP = kValueDerivatives[0];
-  arraySlice2d< real64 > dKValue_dT = kValueDerivatives[1];
+  arraySlice3d< real64 > dK = kValueDerivatives.toSlice();
   for( integer ip = 0; ip < NUM_PHASE-1; ++ip )
   {
     for( integer ic = 0; ic < m_numComponents; ic++ )
@@ -170,8 +169,8 @@ KValueFlashModelUpdate< NUM_PHASE >::compute( ComponentProperties::KernelWrapper
       real64 const k10 = m_kValues( ip, ic, pn+1, tn );
       real64 const k11 = m_kValues( ip, ic, pn+1, tn+1 );
       kValues( ip, ic ) = (1.0-pa)*(1.0-ta)*k00 + (1.0-pa)*ta*k01 + pa*(1.0-ta)*k10 + pa*ta*k11;
-      dKValue_dP( ip, ic ) = pa_dp*( -(1.0-ta)*k00 - ta*k01 + (1.0-ta)*k10 + ta*k11 );
-      dKValue_dT( ip, ic ) = ta_dt*( -(1.0-pa)*k00 + (1.0-pa)*k01 - pa*k10 + pa*k11 );
+      dK( Deriv::dP, ip, ic ) = pa_dp*( -(1.0-ta)*k00 - ta*k01 + (1.0-ta)*k10 + ta*k11 );
+      dK( Deriv::dT, ip, ic ) = ta_dt*( -(1.0-pa)*k00 + (1.0-pa)*k01 - pa*k10 + pa*k11 );
     }
   }
 
@@ -198,6 +197,8 @@ KValueFlashModelUpdate< NUM_PHASE >::compute( ComponentProperties::KernelWrapper
     }
     else
     {
+      phaseFraction.value[m_vapourIndex] = vapourFraction;
+
       // Calculate derivatives implicitly from the Rachford-Rice equation
       real64 denominator = 0.0;
       real64 pressureNumerator = 0.0;
@@ -206,8 +207,8 @@ KValueFlashModelUpdate< NUM_PHASE >::compute( ComponentProperties::KernelWrapper
       {
         real64 const k = kValues( 0, ic ) - 1.0;
         real64 const r = 1.0 / ( 1.0 + vapourFraction*k );
-        pressureNumerator += compFraction[ic] * dKValue_dP( 0, ic ) * r * r;
-        temperatureNumerator += compFraction[ic] * dKValue_dT( 0, ic ) * r * r;
+        pressureNumerator += compFraction[ic] * dK( Deriv::dP, 0, ic ) * r * r;
+        temperatureNumerator += compFraction[ic] * dK( Deriv::dT, 0, ic ) * r * r;
         denominator += compFraction[ic] * k * k * r * r;
         phaseFraction.derivs( m_vapourIndex, Deriv::dC + ic ) = k * r;
       }
@@ -226,10 +227,29 @@ KValueFlashModelUpdate< NUM_PHASE >::compute( ComponentProperties::KernelWrapper
       {
         real64 const k = kValues( 0, ic ) - 1.0;
         real64 const r = 1.0 / ( 1.0 + vapourFraction*k );
-        real64 const xi = compFraction[ic] * r *;
+        real64 const xi = compFraction[ic] * r;
         real64 const yi = xi * kValues( 0, ic );
         phaseCompFraction.value( m_liquidIndex, ic ) = xi;
         phaseCompFraction.value( m_vapourIndex, ic ) = yi;
+
+        for( integer const idof : {Deriv::dP, Deriv::dT} )
+        {
+          real64 const dV = phaseFraction.derivs( m_vapourIndex, idof );
+          real64 const dKi = dK( idof, 0, ic );
+          real64 const dxi = r*(-vapourFraction*xi*dKi + (xi-yi)*dV);
+          phaseCompFraction.derivs( m_liquidIndex, ic, idof ) = dxi;
+          phaseCompFraction.derivs( m_vapourIndex, ic, idof ) = xi*dKi + dxi*kValues( 0, ic );
+        }
+        for( integer jc = 0; jc < m_numComponents; ++jc )
+        {
+          integer const idof = Deriv::dC + jc;
+
+          real64 const dV = phaseFraction.derivs( m_vapourIndex, idof );
+          real64 const dz = (jc == ic) ? 1.0 : 0.0;
+          real64 const dxi = r*(dz + (xi-yi)*dV);
+          phaseCompFraction.derivs( m_liquidIndex, ic, idof ) = dxi;
+          phaseCompFraction.derivs( m_vapourIndex, ic, idof ) = dxi*kValues( 0, ic );
+        }
       }
     }
 
