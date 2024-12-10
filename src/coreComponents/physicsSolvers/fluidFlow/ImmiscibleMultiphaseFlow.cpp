@@ -363,7 +363,6 @@ void ImmiscibleMultiphaseFlow::updatePhaseMobility( ObjectManagerBase & dataGrou
 }
 
 void ImmiscibleMultiphaseFlow::initializeFluidState( MeshLevel & mesh,
-                                                     DomainPartition & GEOS_UNUSED_PARAM( domain ),
                                                      arrayView1d< string const > const & regionNames )
 {
   GEOS_MARK_FUNCTION;
@@ -477,6 +476,7 @@ void ImmiscibleMultiphaseFlow::initializeFluidState( MeshLevel & mesh,
   } );
 }
 
+
 void ImmiscibleMultiphaseFlow::initializePostInitialConditionsPreSubGroups()
 {
   GEOS_MARK_FUNCTION;
@@ -495,40 +495,11 @@ void ImmiscibleMultiphaseFlow::initializePostInitialConditionsPreSubGroups()
                                      regionNames );
 
     CommunicationTools::getInstance().synchronizeFields( fieldsToBeSync, mesh, domain.getNeighbors(), false );
-
-    mesh.getElemManager().forElementSubRegions< CellElementSubRegion, SurfaceElementSubRegion >( regionNames,
-                                                                                                 [&]( localIndex const,
-                                                                                                      auto & subRegion )
-    {
-      saveConvergedState( subRegion ); // necessary for a meaningful porosity update in sequential schemes
-      updatePorosityAndPermeability( subRegion );
-
-      CoupledSolidBase const & porousSolid =
-        getConstitutiveModel< CoupledSolidBase >( subRegion,
-                                                  subRegion.template getReference< string >( viewKeyStruct::solidNamesString() ) );
-      porousSolid.initializeState();
-    } );
-
-    // Initialize primary variables from applied initial conditions
-    initializeFluidState( mesh, domain, regionNames );
-
-    mesh.getElemManager().forElementRegions< SurfaceElementRegion >( regionNames,
-                                                                     [&]( localIndex const,
-                                                                          SurfaceElementRegion & region )
-    {
-      region.forElementSubRegions< FaceElementSubRegion >( [&]( FaceElementSubRegion & subRegion )
-      {
-        subRegion.getWrapper< real64_array >( fields::flow::hydraulicAperture::key() ).
-          setApplyDefaultValue( region.getDefaultAperture() );
-      } );
-    } );
-
   } );
 
-  // report to the user if some pore volumes are very small
-  // note: this function is here because: 1) porosity has been initialized and 2) NTG has been applied
-  validatePoreVolumes( domain );
+   initializeState( domain );
 }
+
 
 void
 ImmiscibleMultiphaseFlow::implicitStepSetup( real64 const & GEOS_UNUSED_PARAM( time_n ),
@@ -632,8 +603,6 @@ void ImmiscibleMultiphaseFlow::assembleAccumulationTerm( DomainPartition & domai
 
     } );
   } );
-
-
 }
 
 void ImmiscibleMultiphaseFlow::assembleFluxTerms( real64 const dt,

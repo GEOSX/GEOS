@@ -166,15 +166,6 @@ public:
                      DofManager const & dofManager,
                      CRSMatrixView< real64, globalIndex const > const & localMatrix,
                      arrayView1d< real64 > const & localRhs ) const;
-  /**
-   * @brief Initialize all variables from initial conditions
-   * @param domain the domain containing the mesh and fields
-   *
-   * Initialize all variables from initial conditions. This calculating primary variable values
-   * from prescribed intermediate values (i.e. global densities from global fractions)
-   * and any applicable hydrostatic equilibration of the domain
-   */
-  void initializeFluidState( MeshLevel & mesh, DomainPartition & domain, arrayView1d< string const > const & regionNames );
 
   /**
    * @brief Function to perform the Application of Dirichlet type BC's
@@ -211,7 +202,12 @@ public:
   real64 setNextDt( real64 const & currentDt,
                     DomainPartition & domain ) override;
 
+  virtual void initializePreSubGroups() override;
+
   virtual void initializePostInitialConditionsPreSubGroups() override;
+
+  virtual void initializeFluidState( MeshLevel & mesh, arrayView1d< string const > const & regionNames ) override;
+
 
   /**
    * @brief Function to update fluid mass
@@ -240,8 +236,6 @@ public:
 private:
 
   virtual void postInputInitialization() override;
-
-  virtual void initializePreSubGroups() override;
 
   /**
    * @brief Update all relevant fluid models using current values of pressure and phase volume fraction
