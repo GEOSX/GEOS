@@ -72,13 +72,6 @@ set(PYTHON_EXECUTABLE /usr/gapps/GEOSX/thirdPartyLibs/python/lassen-gcc-python/p
 set(Python3_ROOT_DIR /usr/gapps/GEOSX/thirdPartyLibs/python/lassen-gcc-python/python CACHE PATH "")
 set(Python3_EXECUTABLE /usr/gapps/GEOSX/thirdPartyLibs/python/lassen-gcc-python/python/bin/python3 CACHE PATH "")
 
-# Fortran
-set(CMAKE_Fortran_COMPILER /usr/tce/packages/gcc/gcc-8.3.1/bin/gfortran  CACHE PATH "")
-set(CMAKE_Fortran_FLAGS_RELEASE "-O3 -DNDEBUG -mtune=power9" CACHE STRING "")
-set(FORTRAN_MANGLE_NO_UNDERSCORE ON CACHE BOOL "")
-set(OpenMP_Fortran_FLAGS "-fopenmp" CACHE STRING "")
-set(OpenMP_Fortran_LIB_NAMES "" CACHE STRING "")
-
 # ATS
 set(ATS_ARGUMENTS "--ats jsrun_omp --ats jsrun_bind=packed"  CACHE STRING "")
 
