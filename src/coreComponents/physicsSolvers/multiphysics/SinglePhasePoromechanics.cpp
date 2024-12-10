@@ -194,7 +194,7 @@ void SinglePhasePoromechanics< FLOW_SOLVER, MECHANICS_SOLVER >::assembleElementB
     if( this->m_isThermal )
     {
       poromechanicsMaxForce =
-        assemblyLaunch< constitutive::PorousSolidBase,
+        this->template assemblyLaunch< constitutive::PorousSolidBase,
                         thermalPoromechanicsKernels::ThermalSinglePhasePoromechanicsKernelFactory >( mesh,
                                                                                                      dofManager,
                                                                                                      regionNames,
@@ -209,7 +209,7 @@ void SinglePhasePoromechanics< FLOW_SOLVER, MECHANICS_SOLVER >::assembleElementB
     else
     {
       poromechanicsMaxForce =
-        assemblyLaunch< constitutive::PorousSolidBase,
+        this->template assemblyLaunch< constitutive::PorousSolidBase,
                         poromechanicsKernels::SinglePhasePoromechanicsKernelFactory >( mesh,
                                                                                        dofManager,
                                                                                        regionNames,
@@ -248,7 +248,7 @@ void SinglePhasePoromechanics< FLOW_SOLVER, MECHANICS_SOLVER >::assembleElementB
     }
 
     mechanicsMaxForce =
-      assemblyLaunch< constitutive::SolidBase,
+      this->template assemblyLaunch< constitutive::SolidBase,
                       solidMechanicsLagrangianFEMKernels::QuasiStaticFactory >( mesh,
                                                                                 dofManager,
                                                                                 filteredRegionNames.toViewConst(),
