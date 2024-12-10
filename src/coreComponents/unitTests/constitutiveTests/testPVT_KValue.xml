@@ -12,7 +12,7 @@
       outputMassDensity="1"
       outputCompressibility="1"
       outputPhaseComposition="1"
-      output="testPVT_KValue_kValue2Phase.txt"
+      baseline="testPVT_KValue_kValue2Phase.txt"
       logLevel="1"/>
   </Tasks>
 
