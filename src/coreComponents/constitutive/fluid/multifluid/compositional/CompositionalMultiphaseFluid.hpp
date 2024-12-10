@@ -92,7 +92,6 @@ public:
     static constexpr char const * componentCriticalPressureString() { return "componentCriticalPressure"; }
     static constexpr char const * componentCriticalTemperatureString() { return "componentCriticalTemperature"; }
     static constexpr char const * componentAcentricFactorString() { return "componentAcentricFactor"; }
-    static constexpr char const * componentVolumeShiftString() { return "componentVolumeShift"; }
     static constexpr char const * componentBinaryCoeffString() { return "componentBinaryCoeff"; }
   };
 

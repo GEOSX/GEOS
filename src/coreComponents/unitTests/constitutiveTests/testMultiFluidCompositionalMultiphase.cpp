@@ -171,7 +171,7 @@ struct Fluid< FluidModel, 5 >
     fill< 5 >( criticalTemperature, {304.1280, 126.1920, 190.5640, 305.3300, 504.2160} );
     array1d< real64 > & acentricFactor = fluid.getReference< array1d< real64 > >( FluidModel::viewKeyStruct::componentAcentricFactorString() );
     fill< 5 >( acentricFactor, {0.223000, 0.037200, 0.010400, 0.099100, 0.250274} );
-    array1d< real64 > & volumeShift = fluid.getReference< array1d< real64 > >( FluidModel::viewKeyStruct::componentVolumeShiftString() );
+    array1d< real64 > & volumeShift = fluid.getReference< array1d< real64 > >( CompositionalDensity::Parameters::viewKeyStruct::componentVolumeShiftString() );
     fill< 5 >( volumeShift, {1.845465e-01, -1.283880e-01, 9.225800e-02, 6.458060e-02, 0.000000e+00} );
     array2d< real64 > & binaryCoeff = fluid.getReference< array2d< real64 > >( FluidModel::viewKeyStruct::componentBinaryCoeffString() );
     fillBinaryCoeffs< 5 >( binaryCoeff, {0.0, 0.1, 0.03, 0.139, 0.032, 0.0, 0.12, 0.03, 0.0, 0.0} );

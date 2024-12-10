@@ -50,9 +50,8 @@ struct Fluid
   static constexpr integer Vc = 2;    // Critical colume
   static constexpr integer Ac = 3;    // Accentric factor
   static constexpr integer Mw = 4;    // Molecular weight
-  static constexpr integer Vs = 5;    // Volume shift
 
-  static std::array< real64, 66 > data;
+  static std::array< real64, 55 > data;
 };
 
 template< int NC >
@@ -81,7 +80,6 @@ public:
     createArray( testFluid->criticalVolume, components, Fluid::Vc, Fluid::data );
     createArray( testFluid->acentricFactor, components, Fluid::Ac, Fluid::data );
     createArray( testFluid->molecularWeight, components, Fluid::Mw, Fluid::data );
-    createArray( testFluid->volumeShift, components, Fluid::Vs, Fluid::data );
     testFluid->binaryCoeff.resize( NC, NC );
     return testFluid;
   }
@@ -111,7 +109,6 @@ public:
       createArray( m_component_properties->m_componentCriticalPressure, criticalPressure );
       createArray( m_component_properties->m_componentCriticalTemperature, criticalTemperature );
       createArray( m_component_properties->m_componentAcentricFactor, acentricFactor );
-      createArray( m_component_properties->m_componentVolumeShift, volumeShift );
       m_component_properties->m_componentBinaryCoeff.resize( NC, NC );
       for( integer ic = 0; ic < NC; ++ic )
       {
@@ -139,7 +136,6 @@ public:
   array1d< real64 > criticalVolume;
   array1d< real64 > acentricFactor;
   array1d< real64 > molecularWeight;
-  array1d< real64 > volumeShift;
   array2d< real64 > binaryCoeff;
 
 private:
@@ -174,7 +170,7 @@ public:
   }
 };
 
-std::array< real64, 66 > Fluid::data = {
+std::array< real64, 55 > Fluid::data = {
   // -- Pc
   2.2050e+07, 7.3750e+06, 3.4000e+06, 8.9630e+06, 1.2960e+06, 4.8721e+06,
   4.2481e+06, 3.6400e+06, 4.5990e+06, 2.5300e+06, 1.4600e+06,
@@ -190,9 +186,6 @@ std::array< real64, 66 > Fluid::data = {
   // -- Mw
   1.8015e-02, 4.4010e-02, 2.8013e-02, 3.4100e-02, 1.6043e-02, 3.0070e-02,
   4.4097e-02, 5.8124e-02, 7.2151e-02, 1.1423e-01, 1.4228e-01,
-  // -- Vs
-  0.0000e+00, 0.0000e+00, 0.0000e+00, 0.0000e+00, 0.0000e+00, 0.0000e+00,
-  0.0000e+00, 0.0000e+00, 0.0000e+00, 0.0000e+00, 0.0000e+00,
 };
 
 }// testing

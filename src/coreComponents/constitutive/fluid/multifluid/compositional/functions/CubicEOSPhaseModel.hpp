@@ -155,10 +155,12 @@ public:
    * @details Computes the dimensional form of the volume shifts given the user defined non-dimensional form.
    * @param[in] numComps The number of components
    * @param[in] componentProperties The compositional model properties
+   * @param[in] volumeShift The input non-dimensional volume shifts
    * @param[out] dimensionalVolumeShift The calculated dimensional volume shifts
    */
   GEOS_FORCE_INLINE
   static void calculateDimensionalVolumeShift( ComponentProperties const & componentProperties,
+                                               arraySlice1d< real64 const > const & volumeShift,
                                                arraySlice1d< real64 > const & dimensionalVolumeShift );
 
   /**
@@ -645,12 +647,13 @@ template< typename EOS_TYPE >
 void
 CubicEOSPhaseModel< EOS_TYPE >::
 calculateDimensionalVolumeShift( ComponentProperties const & componentProperties,
+                                 arraySlice1d< real64 const > const & volumeShift,
                                  arraySlice1d< real64 > const & dimensionalVolumeShift )
 {
   integer const numComps = componentProperties.getNumberOfComponents();
   for( integer ic = 0; ic < numComps; ++ic )
   {
-    real64 const Vs = componentProperties.getComponentVolumeShift()[ic];
+    real64 const Vs = volumeShift[ic];
     real64 const Pc = componentProperties.getComponentCriticalPressure()[ic];
     real64 const Tc = componentProperties.getComponentCriticalTemperature()[ic];
     real64 constexpr omegaB = EOS_TYPE::omegaB;

@@ -70,10 +70,6 @@ CompositionalMultiphaseFluid( string const & name, Group * const parent )
     setInputFlag( InputFlags::REQUIRED ).
     setDescription( "Component acentric factors" );
 
-  registerWrapper( viewKeyStruct::componentVolumeShiftString(), &m_componentProperties->m_componentVolumeShift ).
-    setInputFlag( InputFlags::OPTIONAL ).
-    setDescription( "Component volume shifts" );
-
   registerWrapper( viewKeyStruct::componentBinaryCoeffString(), &m_componentProperties->m_componentBinaryCoeff ).
     setInputFlag( InputFlags::OPTIONAL ).
     setDescription( "Table of binary interaction coefficients" );
@@ -132,18 +128,10 @@ void CompositionalMultiphaseFluid< FLASH, PHASE1, PHASE2, PHASE3 >::postInputIni
     GEOS_THROW_IF_NE_MSG( array.size(), expected,
                           GEOS_FMT( "{}: invalid number of values in attribute '{}'", getFullName(), attribute ),
                           InputError );
-
   };
   checkInputSize( m_componentProperties->m_componentCriticalPressure, NC, viewKeyStruct::componentCriticalPressureString() );
   checkInputSize( m_componentProperties->m_componentCriticalTemperature, NC, viewKeyStruct::componentCriticalTemperatureString() );
   checkInputSize( m_componentProperties->m_componentAcentricFactor, NC, viewKeyStruct::componentAcentricFactorString() );
-
-  if( m_componentProperties->m_componentVolumeShift.empty() )
-  {
-    m_componentProperties->m_componentVolumeShift.resize( NC );
-    m_componentProperties->m_componentVolumeShift.zero();
-  }
-  checkInputSize( m_componentProperties->m_componentVolumeShift, NC, viewKeyStruct::componentVolumeShiftString() );
 
   array2d< real64 > & componentBinaryCoeff = m_componentProperties->m_componentBinaryCoeff;
   if( componentBinaryCoeff.empty() )
