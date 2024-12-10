@@ -1,9 +1,10 @@
 # Specify list of tests
 set( gtest_geosx_tests
-     testSinglePhaseBaseKernels.cpp
+     testSinglePhaseMobilityKernel.cpp
      testThermalCompMultiphaseFlow.cpp
      testThermalSinglePhaseFlow.cpp
      testFlowStatistics.cpp
+     testStatOutputController.cpp
      testTransmissibility.cpp )
 
 if( ENABLE_PVTPackage )

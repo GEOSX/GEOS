@@ -19,12 +19,13 @@
 
 #include "SinglePhaseStatistics.hpp"
 
+#include "mesh/DomainPartition.hpp"
 #include "mainInterface/ProblemManager.hpp"
 #include "physicsSolvers/PhysicsSolverManager.hpp"
 #include "physicsSolvers/fluidFlow/SinglePhaseBase.hpp"
-#include "physicsSolvers/fluidFlow/SinglePhaseBaseFields.hpp"
-#include "physicsSolvers/fluidFlow/SinglePhaseBaseKernels.hpp"
 #include "physicsSolvers/fluidFlow/FlowSolverBaseFields.hpp"
+#include "physicsSolvers/fluidFlow/SinglePhaseBaseFields.hpp"
+#include "physicsSolvers/fluidFlow/kernels/singlePhase/StatisticsKernel.hpp"
 #include "physicsSolvers/fluidFlow/LogLevelsInfo.hpp"
 
 namespace geos
@@ -46,59 +47,59 @@ RegionSingStatsClass::RegionStatistics( string const & name,
 {
   registerWrapper( viewKeyStruct::averagePressureString(), &m_averagePressure ).
     setApplyDefaultValue( 0 ).
-    //setInputFlag( dataRepository::InputFlags::OPTIONAL ).
+    setInputFlag( dataRepository::InputFlags::OPTIONAL ).
     setDescription( "average region pressure" );
 
   registerWrapper( viewKeyStruct::minPressureString(), &m_minPressure ).
     setApplyDefaultValue( 0 ).
-    //setInputFlag( dataRepository::InputFlags::OPTIONAL ).
+    setInputFlag( dataRepository::InputFlags::OPTIONAL ).
     setDescription( "minimum region pressure" );
 
   registerWrapper( viewKeyStruct::maxPressureString(), &m_maxPressure ).
     setApplyDefaultValue( 0 ).
-    //setInputFlag( dataRepository::InputFlags::OPTIONAL ).
+    setInputFlag( dataRepository::InputFlags::OPTIONAL ).
     setDescription( "maximum region pressure" );
 
   registerWrapper( viewKeyStruct::minDeltaPressureString(), &m_minDeltaPressure ).
     setApplyDefaultValue( 0 ).
-    //setInputFlag( dataRepository::InputFlags::OPTIONAL ).
+    setInputFlag( dataRepository::InputFlags::OPTIONAL ).
     setDescription( "minimum region delta pressure" );
 
   registerWrapper( viewKeyStruct::maxDeltaPressureString(), &m_maxDeltaPressure ).
     setApplyDefaultValue( 0 ).
-    //setInputFlag( dataRepository::InputFlags::OPTIONAL ).
+    setInputFlag( dataRepository::InputFlags::OPTIONAL ).
     setDescription( "maximum region delta pressure" );
 
   registerWrapper( viewKeyStruct::totalMassString(), &m_totalMass ).
     setApplyDefaultValue( 0 ).
-    //setInputFlag( dataRepository::InputFlags::OPTIONAL ).
+    setInputFlag( dataRepository::InputFlags::OPTIONAL ).
     setDescription( "fluid mass" );
 
 
   registerWrapper( viewKeyStruct::averageTemperatureString(), &m_averageTemperature ).
     setApplyDefaultValue( 0 ).
-    //setInputFlag( dataRepository::InputFlags::OPTIONAL ).
+    setInputFlag( dataRepository::InputFlags::OPTIONAL ).
     setDescription( "average region temperature" );
 
   registerWrapper( viewKeyStruct::minTemperatureString(), &m_minTemperature ).
     setApplyDefaultValue( 0 ).
-    //setInputFlag( dataRepository::InputFlags::OPTIONAL ).
+    setInputFlag( dataRepository::InputFlags::OPTIONAL ).
     setDescription( "minimum region temperature" );
 
   registerWrapper( viewKeyStruct::maxTemperatureString(), &m_maxTemperature ).
     setApplyDefaultValue( 0 ).
-    //setInputFlag( dataRepository::InputFlags::OPTIONAL ).
+    setInputFlag( dataRepository::InputFlags::OPTIONAL ).
     setDescription( "maximum region temperature" );
 
 
   registerWrapper( viewKeyStruct::totalPoreVolumeString(), &m_totalPoreVolume ).
     setApplyDefaultValue( 0 ).
-    //setInputFlag( dataRepository::InputFlags::OPTIONAL ).
+    setInputFlag( dataRepository::InputFlags::OPTIONAL ).
     setDescription( "total region pore volume" );
 
   registerWrapper( viewKeyStruct::totalUncompactedPoreVolumeString(), &m_totalUncompactedPoreVolume ).
     setApplyDefaultValue( 0 ).
-    //setInputFlag( dataRepository::InputFlags::OPTIONAL ).
+    setInputFlag( dataRepository::InputFlags::OPTIONAL ).
     setDescription( "total region uncompacted pore volume" );
 
 }

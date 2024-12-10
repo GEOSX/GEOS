@@ -43,7 +43,7 @@ public:
     return "SolidMechanicsAugmentedLagrangianContact";
   }
   /**
-   * @copydoc SolverBase::getCatalogName()
+   * @copydoc PhysicsSolverBase::getCatalogName()
    */
   string getCatalogName() const override { return catalogName(); }
 

@@ -180,6 +180,12 @@ void MultiFluidBase::postInputInitialization()
   GEOS_THROW_IF_NE_MSG( m_componentMolarWeight.size(), numComp,
                         GEOS_FMT( "{}: invalid number of values in attribute '{}'", getFullName(), viewKeyStruct::componentMolarWeightString() ),
                         InputError );
+  for( integer ic = 0; ic < numComp; ++ic )
+  {
+    GEOS_THROW_IF_LT_MSG( m_componentMolarWeight[ic], LvArray::NumericLimits< real64 >::epsilon,
+                          GEOS_FMT( "{}: zero molecular weight found for component {}", getFullName(), m_componentNames[ic] ),
+                          InputError );
+  }
 
   // call to correctly set member array tertiary sizes on the 'main' material object
   resizeFields( 0, 0 );

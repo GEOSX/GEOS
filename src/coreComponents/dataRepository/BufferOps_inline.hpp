@@ -1787,7 +1787,10 @@ Unpack( buffer_unit_type const * & buffer,
                                    relatedObjectGlobalToLocalMap,
                                    clearFlag );
 
-    unmappedGlobalIndices[li].insert( unmappedIndices.data(), unmappedIndices.size() );
+    if( unmappedIndices.size() > 0 )
+    {
+      unmappedGlobalIndices[li].insert( unmappedIndices.data(), unmappedIndices.size() );
+    }
   }
   return sizeOfUnpackedChars;
 }
@@ -1904,7 +1907,10 @@ Unpack( buffer_unit_type const * & buffer,
 
     // insert unknown global indices related to the local index into an additional mapping to resolve externally
     unmapped.resize( LvArray::sortedArrayManipulation::makeSortedUnique( unmapped.begin(), unmapped.end() ) );
-    unmappedGlobalIndices[li].insert( unmapped.begin(), unmapped.end() );
+    if( unmapped.size() > 0 )
+    {
+      unmappedGlobalIndices[li].insert( unmapped.begin(), unmapped.end() );
+    }
   }
 
   // If there were element lists that didn't fit in the map, rebuild the whole thing
@@ -2022,7 +2028,11 @@ Pack( buffer_unit_type * & buffer,
       arraySlice1d< globalIndex const > const & relatedObjectLocalToGlobalMap )
 {
   localIndex sizeOfPackedChars = 0;
-  array1d< globalIndex > junk;
+  array1d< globalIndex > invalidGlobalIndices( var.size( 1 ) );
+  for( localIndex a=0; a<var.size( 1 ); ++a )
+  {
+    invalidGlobalIndices[a] = -1;
+  }
 
   sizeOfPackedChars += Pack< DO_PACKING >( buffer, indices.size() );
   for( localIndex a=0; a<indices.size(); ++a )
@@ -2034,7 +2044,7 @@ Pack( buffer_unit_type * & buffer,
       iterUnmappedGI = unmappedGlobalIndices.find( li );
 
     array1d< globalIndex > const & unmappedGI = iterUnmappedGI==unmappedGlobalIndices.end() ?
-                                                junk :
+                                                invalidGlobalIndices :
                                                 iterUnmappedGI->second;
 
     sizeOfPackedChars += Pack< DO_PACKING >( buffer,

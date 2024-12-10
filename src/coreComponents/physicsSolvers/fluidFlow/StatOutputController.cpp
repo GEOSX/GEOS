@@ -34,7 +34,7 @@ void StatOutputController::generatePackCollection( TasksManager & taskManager,
                                                    string_view fieldName,
                                                    string_array & packCollectionPaths )
 {
-  string const taskManagerKey = GEOS_FMT( "packCollection{}{}", regionName, fieldName );
+  string const taskManagerKey = GEOS_FMT( "packCollection_{}_{}", regionName, fieldName );
   PackCollection * packCollection = &taskManager.registerGroup< PackCollection >( taskManagerKey );
   string & pcObjectPath = packCollection->getReference< string >( PackCollection::viewKeysStruct::objectPathString());
   pcObjectPath = path;
@@ -88,10 +88,9 @@ void StatOutputController::initializePreSubGroups()
   Group & meshBodies = domain.getMeshBodies();
   std::vector< string > const groupNames = this->getSubGroupsNames();
 
-  GEOS_ERROR_IF( groupNames.size() != 1,//
-                 GEOS_FMT( "{} {} must have one of the following components : {}",
-                           getCatalogName(), getDataContext(),
-                           stringutilities::join( allowedChildTypes, "," ) ) );
+  GEOS_ERROR_IF( groupNames.size() != 1,
+                 GEOS_FMT( "{} must have exactly one of the following components : {}",
+                           getDataContext(), stringutilities::join( allowedChildTypes, "," ) ) );
 
   m_statistics = &this->getGroup< TaskBase >( groupNames[0] );
 
@@ -108,7 +107,8 @@ void StatOutputController::initializePreSubGroups()
       for( string const & regionName : regionNames )
       {
         ElementRegionBase & region = elemManager.getRegion( regionName );
-        string const regionStatPath = GEOS_FMT( "{}/regionStatistics", region.getPath() );
+        string const regionStatPath = GEOS_FMT( "{}/{}", region.getPath(),
+                                                SinglePhaseStatistics::viewKeyStruct::regionStatisticsString() );
         typename STATSTYPE::RegionStatistics & regionStats =
           this->getGroupByPath< typename STATSTYPE::RegionStatistics >( regionStatPath );
 

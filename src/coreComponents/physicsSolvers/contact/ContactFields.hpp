@@ -21,7 +21,7 @@
 #define GEOS_PHYSICSSOLVERS_CONTACT_CONTACTFIELDS_HPP_
 
 #include "mesh/MeshFields.hpp"
-#include "codingUtilities/EnumStrings.hpp"
+#include "common/format/EnumStrings.hpp"
 
 namespace geos
 {
@@ -81,6 +81,14 @@ DECLARE_FIELD( slip,
                LEVEL_0,
                NO_WRITE,
                "Slip." );
+
+DECLARE_FIELD( deltaSlip,
+               "deltaSlip",
+               array2d< real64 >,
+               0.0,
+               LEVEL_0,
+               WRITE_AND_READ,
+               "Slip increment" );
 
 DECLARE_FIELD( deltaDispJump,
                "deltaDisplacementJump",
@@ -145,6 +153,14 @@ DECLARE_FIELD( oldFractureState,
                NOPLOT,
                NO_WRITE,
                "Fracture state at the previous timestep." );
+
+DECLARE_FIELD( targetIncrementalJump,
+               "targetIncrementalJump",
+               array2d< real64 >,
+               0,
+               NOPLOT,
+               WRITE_AND_READ,
+               "It's the target incremental jump in a timestep (e.g., slip coming from RS)." );
 
 
 ENUM_STRINGS( FractureState::State, "stick", "new_slip", "slip", "open" );

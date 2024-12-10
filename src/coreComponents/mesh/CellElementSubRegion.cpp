@@ -192,6 +192,11 @@ localIndex CellElementSubRegion::unpackUpDownMaps( buffer_unit_type const * & bu
                                      this->globalToLocalMap(),
                                      faceList().relatedObjectGlobalToLocal() );
 
+
+  GEOS_ERROR_IF_NE( m_unmappedGlobalIndicesInNodelist.size(), 0 );
+  GEOS_ERROR_IF_NE( m_unmappedGlobalIndicesInEdgelist.size(), 0 );
+  GEOS_ERROR_IF_NE( m_unmappedGlobalIndicesInFacelist.size(), 0 );
+
   return unPackedSize;
 }
 

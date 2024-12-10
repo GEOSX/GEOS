@@ -365,7 +365,7 @@ public:
   virtual void resize( localIndex const newSize ) override
   {
     wrapperHelpers::move( *m_data, hostMemorySpace, true );
-    wrapperHelpers::resizeDefault( reference(), newSize, m_default );
+    wrapperHelpers::resizeDefault( reference(), newSize, m_default, this->getName() );
   }
 
   /// @cond DO_NOT_DOCUMENT
@@ -910,7 +910,7 @@ private:
     if( reference().getPreviousSpace() == LvArray::MemorySpace::host )
     {
       // a type with the mem-space functions, that is not packable on device (e.g. array<string> ), should never be moved to device,
-      //  so it should always have previousSpace == host and checkTouch == true, and we can then host-pack it if possible (should always be
+      //  so it should always have previousSpace == host, and we can then host-pack it if possible (should always be
       // possible)
       // if the value *is* device-packable, but we have modified it on host, we have to host-pack
       return bufferOps::is_host_packable_v< U >;
@@ -952,7 +952,7 @@ private:
     return bufferOps::is_host_packable_by_index_v< U >;
   }
 
-  localIndex unpackDeviceImpl( buffer_unit_type const * & buffer, bool withMetadata, parallelDeviceEvents & events )
+  localIndex unpackDeviceImpl( buffer_unit_type const * & buffer, bool withMetadata, parallelDeviceEvents & events, MPI_Op op )
   {
     localIndex unpackedSize = 0;
     if( withMetadata )
@@ -960,11 +960,11 @@ private:
       string name;
       unpackedSize += bufferOps::Unpack( buffer, name, MPI_REPLACE );
       GEOS_ERROR_IF( name != getName(), "buffer unpack leads to wrapper names that don't match" );
-      unpackedSize += wrapperHelpers::UnpackDevice( buffer, referenceAsView(), events, MPI_REPLACE );
+      unpackedSize += wrapperHelpers::UnpackDevice( buffer, referenceAsView(), events, op );
     }
     else
     {
-      unpackedSize += wrapperHelpers::UnpackDataDevice( buffer, referenceAsView(), events, MPI_REPLACE );
+      unpackedSize += wrapperHelpers::UnpackDataDevice( buffer, referenceAsView(), events, op );
     }
     return unpackedSize;
   }

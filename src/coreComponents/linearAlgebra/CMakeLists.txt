@@ -1,4 +1,29 @@
+# SPDX-License-Identifier: LGPL-2.1-only
+#
+# Copyright (c) 2016-2024 Lawrence Livermore National Security LLC
+# Copyright (c) 2018-2024 Total, S.A
+# Copyright (c) 2018-2024 The Board of Trustees of the Leland Stanford Junior University
+# Copyright (c) 2023-2024 Chevron
+# Copyright (c) 2019-     GEOS/GEOSX Contributors
+# All rights reserved
+#
+# See top level LICENSE, COPYRIGHT, CONTRIBUTORS, NOTICE, and ACKNOWLEDGEMENTS files for details.
+#
+#--------------------------------------------------------------------------------------------------
+
+#[[
+Package: linearAlgebra
+
+Contains:
+ - management implementations to handle all degrees of freedom associated with field element on
+    mesh elements.
+ - linear solvers implementations.
+ - interfaces to different external linear solvers libraries (hypre, Petsc, trilinos).
+#]]
+
+#
 # Specify all headers
+#
 set( linearAlgebra_headers
      DofManager.hpp
      DofManagerHelpers.hpp
@@ -35,8 +60,9 @@ set( linearAlgebra_headers
      utilities/NormalOperator.hpp
      utilities/ReverseCutHillMcKeeOrdering.hpp
      utilities/TransposeOperator.hpp )
-
+#
 # Specify all sources
+#
 set( linearAlgebra_sources
      DofManager.cpp
      solvers/BicgstabSolver.cpp
@@ -110,6 +136,7 @@ if( ENABLE_HYPRE )
           interfaces/hypre/mgrStrategies/SinglePhaseReservoirHybridFVM.hpp
           interfaces/hypre/mgrStrategies/SolidMechanicsEmbeddedFractures.hpp
           interfaces/hypre/mgrStrategies/ThermalCompositionalMultiphaseFVM.hpp
+          interfaces/hypre/mgrStrategies/ThermalCompositionalMultiphaseReservoirFVM.hpp
           interfaces/hypre/mgrStrategies/ThermalMultiphasePoromechanics.hpp
           interfaces/hypre/mgrStrategies/ThermalSinglePhasePoromechanics.hpp )
     list( APPEND linearAlgebra_sources
