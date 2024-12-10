@@ -25,7 +25,7 @@ namespace geos
 using namespace dataRepository;
 
 WellGeneratorBase::WellGeneratorBase( string const & name, Group * const parent ):
-  WellGeneratorABC( name, parent )
+  MeshComponentBase( name, parent )
   , m_numPerforations( 0 )
   , m_numElemsPerSegment( 0 )
   , m_minSegmentLength( 1e-2 )
@@ -39,8 +39,6 @@ WellGeneratorBase::WellGeneratorBase( string const & name, Group * const parent 
   , m_nDims( 3 )
   , m_polylineHeadNodeId( -1 )
 {
-  setInputFlags( InputFlags::OPTIONAL_NONUNIQUE );
-
   registerWrapper( viewKeyStruct::radiusString(), &m_radius ).
     setInputFlag( InputFlags::REQUIRED ).
     setSizedFromParent( 0 ).
@@ -95,12 +93,6 @@ Group * WellGeneratorBase::createChild( string const & childKey, string const & 
 void WellGeneratorBase::expandObjectCatalogs()
 {
   createChild( viewKeyStruct::perforationString(), viewKeyStruct::perforationString() );
-}
-
-WellGeneratorBase::CatalogInterface::CatalogType & WellGeneratorBase::getCatalog()
-{
-  static WellGeneratorBase::CatalogInterface::CatalogType catalog;
-  return catalog;
 }
 
 void WellGeneratorBase::generateWellGeometry( )
@@ -572,7 +564,7 @@ void WellGeneratorBase::logPerforationTable() const
     tablePerfoData.addRow( iperf, m_perfCoords[iperf], m_perfElemId[iperf] );
   }
 
-  TableLayout const tableLayoutPerfo ( {"Perforation no.", "Coordinates", "connected to"},
+  TableLayout const tableLayoutPerfo ( {"Perforation no.", "Coordinates", "Well element no."},
                                        GEOS_FMT( "Well '{}' Perforation Table", getName() ) );
   TableTextFormatter const tablePerfoLog( tableLayoutPerfo );
   GEOS_LOG_RANK_0( tablePerfoLog.toString( tablePerfoData ));

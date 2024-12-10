@@ -35,6 +35,7 @@
 #include "physicsSolvers/fluidFlow/FlowSolverBaseFields.hpp" // needed to register pressure(_n)
 #include "physicsSolvers/solidMechanics/SolidMechanicsLagrangianFEM.hpp"
 #include "physicsSolvers/contact/ContactFields.hpp"
+#include "physicsSolvers/contact/LogLevelsInfo.hpp"
 #include "common/GEOS_RAJA_Interface.hpp"
 #include "linearAlgebra/utilities/LAIHelperFunctions.hpp"
 #include "linearAlgebra/solvers/PreconditionerJacobi.hpp"
@@ -71,10 +72,11 @@ SolidMechanicsLagrangeContact::SolidMechanicsLagrangeContact( const string & nam
     setApplyDefaultValue( 1.0 ).
     setDescription( "It be used to increase the scale of the stabilization entries. A value < 1.0 results in larger entries in the stabilization matrix." );
 
+  addLogLevel< logInfo::Configuration >();
+
   LinearSolverParameters & linSolParams = m_linearSolverParameters.get();
   linSolParams.mgr.strategy = LinearSolverParameters::MGR::StrategyType::lagrangianContactMechanics;
   linSolParams.mgr.separateComponents = true;
-  linSolParams.mgr.displacementFieldName = solidMechanics::totalDisplacement::key();
   linSolParams.dofsPerNode = 3;
 }
 
@@ -184,7 +186,7 @@ void SolidMechanicsLagrangeContact::setupSystem( DomainPartition & domain,
   }
 
   // setup monolithic coupled system
-  SolverBase::setupSystem( domain, dofManager, localMatrix, rhs, solution, true ); // "true" is to force setSparsity
+  PhysicsSolverBase::setupSystem( domain, dofManager, localMatrix, rhs, solution, true ); // "true" is to force setSparsity
 
   if( !m_precond && m_linearSolverParameters.get().solverType != LinearSolverParameters::SolverType::direct )
   {
@@ -301,7 +303,7 @@ void SolidMechanicsLagrangeContact::computeTolerances( DomainPartition & domain 
         arrayView1d< integer const > const & ghostRank = subRegion.ghostRank();
         arrayView1d< real64 const > const & faceArea = subRegion.getElementArea().toViewConst();
         arrayView3d< real64 const > const & faceRotationMatrix = subRegion.getReference< array3d< real64 > >( viewKeyStruct::rotationMatrixString() );
-        ArrayOfArraysView< localIndex const > const & elemsToFaces = subRegion.faceList().toViewConst();
+        arrayView2d< localIndex const > const & elemsToFaces = subRegion.faceList().toViewConst();
 
         arrayView1d< real64 > const & normalTractionTolerance =
           subRegion.getReference< array1d< real64 > >( viewKeyStruct::normalTractionToleranceString() );
@@ -331,7 +333,7 @@ void SolidMechanicsLagrangeContact::computeTolerances( DomainPartition & domain 
             real64 averageConstrainedModulus = 0.0;
             real64 averageBoxSize0 = 0.0;
 
-            for( localIndex i = 0; i < elemsToFaces.sizeOfArray( kfe ); ++i )
+            for( localIndex i = 0; i < 2; ++i )
             {
               localIndex const faceIndex = elemsToFaces[kfe][i];
               localIndex const er = faceToElemRegion[faceIndex][0];
@@ -426,10 +428,11 @@ void SolidMechanicsLagrangeContact::computeTolerances( DomainPartition & domain 
     } );
   } );
 
-  GEOS_LOG_LEVEL_RANK_0( 2, GEOS_FMT( "{}: normal displacement tolerance = [{}, {}], sliding tolerance = [{}, {}], normal traction tolerance = [{}, {}]",
-                                      this->getName(), minNormalDisplacementTolerance, maxNormalDisplacementTolerance,
-                                      minSlidingTolerance, maxSlidingTolerance,
-                                      minNormalTractionTolerance, maxNormalTractionTolerance ) );
+  GEOS_LOG_LEVEL_INFO_RANK_0( logInfo::Configuration,
+                              GEOS_FMT( "{}: normal displacement tolerance = [{}, {}], sliding tolerance = [{}, {}], normal traction tolerance = [{}, {}]",
+                                        this->getName(), minNormalDisplacementTolerance, maxNormalDisplacementTolerance,
+                                        minSlidingTolerance, maxSlidingTolerance,
+                                        minNormalTractionTolerance, maxNormalTractionTolerance ) );
 }
 
 void SolidMechanicsLagrangeContact::resetStateToBeginningOfStep( DomainPartition & domain )
@@ -498,19 +501,15 @@ void SolidMechanicsLagrangeContact::computeFaceDisplacementJump( DomainPartition
       {
         arrayView3d< real64 > const &
         rotationMatrix = subRegion.getReference< array3d< real64 > >( viewKeyStruct::rotationMatrixString() );
-        ArrayOfArraysView< localIndex const > const & elemsToFaces = subRegion.faceList().toViewConst();
+        arrayView2d< localIndex const > const & elemsToFaces = subRegion.faceList().toViewConst();
         arrayView1d< real64 const > const & area = subRegion.getElementArea().toViewConst();
 
-        arrayView2d< real64 > const & dispJump = subRegion.getField< contact::dispJump >();
-        arrayView1d< real64 > const & slip = subRegion.getField< fields::contact::slip >();
-        arrayView1d< real64 > const & aperture = subRegion.getField< fields::elementAperture >();
+        arrayView2d< real64 > const dispJump = subRegion.getField< contact::dispJump >();
+        arrayView1d< real64 > const slip = subRegion.getField< fields::contact::slip >();
+        arrayView1d< real64 > const aperture = subRegion.getField< fields::elementAperture >();
 
         forAll< parallelHostPolicy >( subRegion.size(), [=] ( localIndex const kfe )
         {
-          if( elemsToFaces.sizeOfArray( kfe ) != 2 )
-          {
-            return;
-          }
 
           // Contact constraints
           localIndex const numNodesPerFace = faceToNodeMap.sizeOfArray( elemsToFaces[kfe][0] );
@@ -687,7 +686,7 @@ void SolidMechanicsLagrangeContact::
                                                                  FaceElementSubRegion const & subRegion )
   {
     arrayView1d< real64 const > const & pressure = subRegion.getReference< array1d< real64 > >( flow::pressure::key() );
-    ArrayOfArraysView< localIndex const > const & elemsToFaces = subRegion.faceList().toViewConst();
+    arrayView2d< localIndex const > const & elemsToFaces = subRegion.faceList().toViewConst();
 
     forAll< serialPolicy >( subRegion.size(), [=]( localIndex const kfe )
     {
@@ -944,7 +943,7 @@ void SolidMechanicsLagrangeContact::computeRotationMatrices( DomainPartition & d
                                                                         [&]( localIndex const,
                                                                              FaceElementSubRegion & subRegion )
     {
-      ArrayOfArraysView< localIndex const > const & elemsToFaces = subRegion.faceList().toViewConst();
+      arrayView2d< localIndex const > const & elemsToFaces = subRegion.faceList().toViewConst();
 
       arrayView3d< real64 > const &
       rotationMatrix = subRegion.getReference< array3d< real64 > >( viewKeyStruct::rotationMatrixString() );
@@ -954,10 +953,7 @@ void SolidMechanicsLagrangeContact::computeRotationMatrices( DomainPartition & d
 
       forAll< parallelHostPolicy >( subRegion.size(), [=]( localIndex const kfe )
       {
-        if( elemsToFaces.sizeOfArray( kfe ) != 2 )
-        {
-          return;
-        }
+
 
         localIndex const f0 = elemsToFaces[kfe][0];
         localIndex const f1 = elemsToFaces[kfe][1];
@@ -1345,14 +1341,11 @@ void SolidMechanicsLagrangeContact::
     arrayView1d< globalIndex const > const & tracDofNumber = subRegion.getReference< globalIndex_array >( tracDofKey );
     arrayView2d< real64 const > const & traction = subRegion.getReference< array2d< real64 > >( contact::traction::key() );
     arrayView3d< real64 const > const & rotationMatrix = subRegion.getReference< array3d< real64 > >( viewKeyStruct::rotationMatrixString() );
-    ArrayOfArraysView< localIndex const > const & elemsToFaces = subRegion.faceList().toViewConst();
+    arrayView2d< localIndex const > const & elemsToFaces = subRegion.faceList().toViewConst();
 
     forAll< parallelHostPolicy >( subRegion.size(), [=] ( localIndex const kfe )
     {
-      if( elemsToFaces.sizeOfArray( kfe ) != 2 )
-      {
-        return;
-      }
+
       localIndex const numNodesPerFace = faceToNodeMap.sizeOfArray( elemsToFaces[kfe][0] );
 
       globalIndex rowDOF[3 * m_maxFaceNodes]; // this needs to be changed when dealing with arbitrary element types
@@ -1466,7 +1459,7 @@ void SolidMechanicsLagrangeContact::
     arrayView1d< real64 const > const & area = subRegion.getElementArea();
     arrayView3d< real64 const > const &
     rotationMatrix = subRegion.getReference< array3d< real64 > >( viewKeyStruct::rotationMatrixString() );
-    ArrayOfArraysView< localIndex const > const & elemsToFaces = subRegion.faceList().toViewConst();
+    arrayView2d< localIndex const > const & elemsToFaces = subRegion.faceList().toViewConst();
     arrayView2d< real64 const > const & traction = subRegion.getField< contact::traction >();
     arrayView1d< integer const > const & fractureState = subRegion.getField< contact::fractureState >();
     arrayView2d< real64 const > const & dispJump = subRegion.getField< contact::dispJump >();
@@ -1480,10 +1473,7 @@ void SolidMechanicsLagrangeContact::
 
       forAll< parallelHostPolicy >( subRegion.size(), [=] ( localIndex const kfe )
       {
-        if( elemsToFaces.sizeOfArray( kfe ) != 2 )
-        {
-          return;
-        }
+
 
         if( ghostRank[kfe] < 0 )
         {
@@ -1590,7 +1580,7 @@ void SolidMechanicsLagrangeContact::
                   {
                     elemRHS[i] = Ja * ( traction[kfe][i] - limitTau * sliding[ i-1 ] / slidingNorm );
 
-                    dRdT( i, 0 ) = Ja * dLimitTau_dNormalTraction * sliding[ i-1 ] / slidingNorm;
+                    dRdT( i, 0 ) = -Ja * dLimitTau_dNormalTraction * sliding[ i-1 ] / slidingNorm;
                     dRdT( i, i ) = Ja;
                   }
 
@@ -1638,7 +1628,7 @@ void SolidMechanicsLagrangeContact::
                     {
                       elemRHS[i] = Ja * traction[kfe][i] * ( 1.0 - limitTau / vauxNorm );
 
-                      dRdT( i, 0 ) = Ja * traction[kfe][i] * dLimitTau_dNormalTraction / vauxNorm;
+                      dRdT( i, 0 ) = -Ja * traction[kfe][i] * dLimitTau_dNormalTraction / vauxNorm;
                       dRdT( i, i ) = Ja;
                     }
                   }
@@ -1725,7 +1715,7 @@ void SolidMechanicsLagrangeContact::assembleStabilization( MeshLevel const & mes
   FaceElementSubRegion const & fractureSubRegion = fractureRegion.getUniqueSubRegion< FaceElementSubRegion >();
 
   GEOS_ERROR_IF( !fractureSubRegion.hasField< contact::traction >(), "The fracture subregion must contain traction field." );
-  ArrayOfArraysView< localIndex const > const elem2dToFaces = fractureSubRegion.faceList().toViewConst();
+  arrayView2d< localIndex const > const elem2dToFaces = fractureSubRegion.faceList().toViewConst();
 
   // Get the state of fracture elements
   arrayView1d< integer const > const & fractureState =
@@ -2333,7 +2323,7 @@ bool SolidMechanicsLagrangeContact::updateConfiguration( DomainPartition & domai
   // and total area of fracture elements
   totalArea = MpiWrapper::sum( totalArea );
 
-  GEOS_LOG_LEVEL_RANK_0( 2, GEOS_FMT( "  {}: changed area {} out of {}", getName(), changedArea, totalArea ) );
+  GEOS_LOG_LEVEL_INFO_RANK_0( logInfo::Configuration, GEOS_FMT( "  {}: changed area {} out of {}", getName(), changedArea, totalArea ) );
 
   // Assume converged if changed area is below certain fraction of total area
   return changedArea <= m_nonlinearSolverParameters.m_configurationTolerance * totalArea;
@@ -2359,6 +2349,6 @@ real64 SolidMechanicsLagrangeContact::setNextDt( real64 const & currentDt,
   return currentDt;
 }
 
-REGISTER_CATALOG_ENTRY( SolverBase, SolidMechanicsLagrangeContact, string const &, Group * const )
+REGISTER_CATALOG_ENTRY( PhysicsSolverBase, SolidMechanicsLagrangeContact, string const &, Group * const )
 
 } /* namespace geos */

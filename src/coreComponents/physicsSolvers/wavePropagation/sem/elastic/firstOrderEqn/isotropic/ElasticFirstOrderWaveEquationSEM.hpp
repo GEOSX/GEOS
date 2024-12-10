@@ -43,7 +43,7 @@ public:
 
   static string catalogName() { return "ElasticFirstOrderSEM"; }
   /**
-   * @copydoc SolverBase::getCatalogName()
+   * @copydoc PhysicsSolverBase::getCatalogName()
    */
   string getCatalogName() const override { return catalogName(); }
 
@@ -83,7 +83,7 @@ public:
   virtual void cleanup( real64 const time_n, integer const cycleNumber, integer const eventCounter, real64 const eventProgress, DomainPartition & domain ) override;
 
 
-  struct viewKeyStruct : SolverBase::viewKeyStruct
+  struct viewKeyStruct : PhysicsSolverBase::viewKeyStruct
   {
     static constexpr char const * displacementxNp1AtReceiversString() { return "displacementxNp1AtReceivers"; }
     static constexpr char const * displacementyNp1AtReceiversString() { return "displacementyNp1AtReceivers"; }
@@ -144,6 +144,8 @@ private:
    * @param domain the partition domain
    */
   virtual void applyPML( real64 const time, DomainPartition & domain ) override;
+
+  virtual real64 computeTimeStep( real64 & dtOut ) override;
 
   /// Displacement_np1 at the receiver location for each time step for each receiver
   array2d< real32 > m_displacementxNp1AtReceivers;

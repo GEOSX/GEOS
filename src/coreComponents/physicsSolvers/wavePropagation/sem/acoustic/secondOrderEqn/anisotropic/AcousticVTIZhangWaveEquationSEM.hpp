@@ -23,7 +23,12 @@
 
 #include "physicsSolvers/wavePropagation/shared/WaveSolverBase.hpp"
 #include "mesh/MeshFields.hpp"
+<<<<<<< HEAD:src/coreComponents/physicsSolvers/wavePropagation/sem/acoustic/secondOrderEqn/anisotropic/AcousticVTIZhangWaveEquationSEM.hpp
 #include "physicsSolvers/SolverBase.hpp"
+=======
+#include "physicsSolvers/PhysicsSolverBase.hpp"
+#include "physicsSolvers/wavePropagation/shared/WaveSolverBase.hpp"
+>>>>>>> develop:src/coreComponents/physicsSolvers/wavePropagation/sem/acoustic/secondOrderEqn/anisotropic/AcousticVTIWaveEquationSEM.hpp
 #include "physicsSolvers/wavePropagation/sem/acoustic/shared/AcousticFields.hpp"
 #include "AcousticVTIFields.hpp"
 
@@ -54,7 +59,7 @@ public:
 
   static string catalogName() { return "AcousticVTIZhangSEM"; }
   /**
-   * @copydoc SolverBase::getCatalogName()
+   * @copydoc PhysicsSolverBase::getCatalogName()
    */
   string getCatalogName() const override { return catalogName(); }
 
@@ -88,7 +93,7 @@ public:
    * @param cycleNumber the cycle number/step number of evaluation of the source
    * @param rhs the right hand side vector to be computed
    */
-  virtual void addSourceToRightHandSide( integer const & cycleNumber, arrayView1d< real32 > const rhs );
+  virtual void addSourceToRightHandSide( real64 const & time_n, arrayView1d< real32 > const rhs );
 
 
   /**
@@ -119,9 +124,13 @@ public:
    */
   real64 explicitStepInternal( real64 const & time_n,
                                real64 const & dt,
+<<<<<<< HEAD:src/coreComponents/physicsSolvers/wavePropagation/sem/acoustic/secondOrderEqn/anisotropic/AcousticVTIZhangWaveEquationSEM.hpp
                                integer const cycleNumber,
                                DomainPartition & domain,
                                bool const isForward );
+=======
+                               DomainPartition & domain );
+>>>>>>> develop:src/coreComponents/physicsSolvers/wavePropagation/sem/acoustic/secondOrderEqn/anisotropic/AcousticVTIWaveEquationSEM.hpp
 
   void computeUnknowns( real64 const & time_n,
                         real64 const & dt,
@@ -169,6 +178,7 @@ private:
    */
   virtual void applyFreeSurfaceBC( real64 const time, DomainPartition & domain ) override;
 
+<<<<<<< HEAD:src/coreComponents/physicsSolvers/wavePropagation/sem/acoustic/secondOrderEqn/anisotropic/AcousticVTIZhangWaveEquationSEM.hpp
   /**
    * @brief Apply Perfectly Matched Layer (PML) to the regions defined in the geometry box from the xml
    * @param time the time to apply the BC
@@ -177,6 +187,11 @@ private:
   virtual void applyPML( real64 const time, DomainPartition & domain ) override;
 
   /// Pressure_np1 at the receiver location for each time step for each receiver
+=======
+  virtual real64 computeTimeStep( real64 & dtOut ) override;
+
+  /// Pressure_p_np1 at the receiver location for each time step for each receiver
+>>>>>>> develop:src/coreComponents/physicsSolvers/wavePropagation/sem/acoustic/secondOrderEqn/anisotropic/AcousticVTIWaveEquationSEM.hpp
   array2d< real32 > m_pressureNp1AtReceivers;
 
   /// Array of size the number of receivers and full of 0.5 (used for calculating the seismos)

@@ -33,7 +33,7 @@
   <ElementRegions>
     <CellElementRegion
       name="Region"
-      cellBlocks="{ cb1 }"
+      cellBlocks="{ * }"
       materialList="{ rock }"/>
 
     <SurfaceElementRegion

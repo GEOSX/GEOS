@@ -396,6 +396,34 @@ struct WaveSolverUtils
     }
   }
 
+  /**
+   * @brief Compute dotProduct between two vectors
+   * @param numFacesPerElem number of face on an element
+   * @param elemCenter array containing the center of the elements
+   * @param faceNormal array containing the normal of all faces
+   * @param faceCenter array containing the center of all faces
+   * @param elemsToFaces map to get the global faces from element index and local face index
+   * @param coords coordinate of the point
+   * @return true if coords is inside the element
+   */
+
+
+  static void dotProduct( localIndex const size,
+                          arrayView1d< real32 > const & vector1,
+                          arrayView1d< real32 > const & vector2,
+                          real64 & res )
+  {
+
+    RAJA::ReduceSum< parallelDeviceReduce, real64 > tmp( 0.0 );
+    forAll< EXEC_POLICY >( size, [=] GEOS_HOST_DEVICE ( localIndex const a )
+    {
+      tmp+= vector1[a]*vector2[a];
+    } );
+
+    res = tmp.get();
+
+  }
+
 /**
  * @brief Converts the DAS direction from dip/azimuth to a 3D unit vector
  * @param[in] dip the dip of the linear DAS

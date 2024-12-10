@@ -23,6 +23,7 @@
 #include "constitutive/contact/FrictionBase.hpp"
 #include "mesh/DomainPartition.hpp"
 #include "mesh/SurfaceElementRegion.hpp"
+#include "physicsSolvers/contact/LogLevelsInfo.hpp"
 #include "physicsSolvers/solidMechanics/SolidMechanicsLagrangianFEM.hpp"
 #include "common/GEOS_RAJA_Interface.hpp"
 
@@ -91,6 +92,8 @@ void ContactSolverBase::registerDataOnMesh( dataRepository::Group & meshBodies )
       subRegion.registerField< fields::contact::oldFractureState >( getName() );
 
       subRegion.registerField< fields::contact::slip >( getName() );
+
+      subRegion.registerField< fields::contact::deltaSlip >( getName() );
     } );
 
   } );
@@ -244,10 +247,10 @@ void ContactSolverBase::setConstitutiveNamesCallSuper( ElementSubRegionBase & su
       setSizedFromParent( 0 );
 
     string & frictionLawName = subRegion.getReference< string >( viewKeyStruct::frictionLawNameString() );
-    frictionLawName = SolverBase::getConstitutiveName< FrictionBase >( subRegion );
+    frictionLawName = PhysicsSolverBase::getConstitutiveName< FrictionBase >( subRegion );
     GEOS_ERROR_IF( frictionLawName.empty(), GEOS_FMT( "{}: FrictionBase model not found on subregion {}",
                                                       getDataContext(), subRegion.getDataContext() ) );
   }
 }
 
-} /* namespace geos */
+}   /* namespace geos */

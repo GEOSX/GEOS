@@ -6,6 +6,7 @@ set( physicsSolvers_headers
      surfaceGeneration/ParallelTopologyChange.hpp
      surfaceGeneration/SurfaceGenerator.hpp
      surfaceGeneration/SurfaceGeneratorFields.hpp
+     surfaceGeneration/LogLevelsInfo.hpp
      surfaceGeneration/kernels/surfaceGenerationKernels.hpp
      surfaceGeneration/kernels/surfaceGenerationKernelsHelpers.hpp
      PARENT_SCOPE )
@@ -16,5 +17,6 @@ set( physicsSolvers_sources
      surfaceGeneration/EmbeddedSurfaceGenerator.cpp
      surfaceGeneration/EmbeddedSurfacesParallelSynchronization.cpp
      surfaceGeneration/ParallelTopologyChange.cpp
+     surfaceGeneration/ParallelTopologyChangeNoFixup.cpp
      surfaceGeneration/SurfaceGenerator.cpp
      PARENT_SCOPE )

@@ -85,16 +85,15 @@ public:
 
 
   /**
-   * @brief Getter for m_cellBlockNames
-   * @return The array of cell block names.
+   * @return List of user-requested mesh cellBlocks names.
+   * @note the list may be incomplete / illegible if CellElementRegionSelectorhas not been used on
+   *       the instance.
    */
   arrayView1d< string const > getCellBlockNames() const
-  {
-    return m_cellBlockNames.toViewConst();
-  }
+  { return m_cellBlockNames.toViewConst(); }
 
   /**
-   * @brief Add a cellBlockRegion name to the list.
+   * @brief Select a cellBlock by its name for generateMesh().
    * @param cellBlockName string containing the cell block region name.
    */
   void addCellBlockName( string const & cellBlockName )
@@ -103,17 +102,25 @@ public:
   }
 
   /**
-   * @brief Add an array cellBlockRegion name to the list.
+   * @brief Select cellBlocks by their names for generateMesh().
    * @param cellBlockNames array of string containing the cell block region names.
    */
-  void addCellBlockNames( arrayView1d< string const > const & cellBlockNames )
+  template< typename StringContainerType >
+  void setCellBlockNames( StringContainerType const & cellBlockNames )
   {
+    m_cellBlockNames.clear();
     for( auto const & name: cellBlockNames )
     {
       m_cellBlockNames.emplace_back( name );
     }
   }
 
+  /**
+   * @brief register every cellBlocks that is requested in the cellBlockNames list.
+   * @note Assume that the cellBlockNames list is filled valid `cellBlocks` names
+   *       (use CellElementRegionSelector to verify & fill this list after the user-requests).
+   * @param cellBlocks Cell blocks from where the mesh is extracted.
+   */
   virtual void generateMesh( Group const & cellBlocks ) override;
 
   ///@}
@@ -127,18 +134,25 @@ public:
     /// @return String key for the coarsening ratio
     static constexpr char const * coarseningRatioString() {return "coarseningRatio"; }
 
-    /// @return String key for the cell block names
+    /// @return String key for the user-requested mesh cellBlocks qualifiers: cellblock names, cellblock match patterns, attribute values.
     static constexpr char const * sourceCellBlockNamesString() {return "cellBlocks"; }
   };
 
-
 private:
 
-  // Cell block names
+  /// @brief List of user-requested mesh cellBlocks qualifiers: cellblock names, cellblock match patterns, attribute values.
   string_array m_cellBlockNames;
 
-  // Coarsening ratio
+  /// @brief Coarsening ratio
   real64 m_coarseningRatio;
+
+
+  /**
+   * @return all cell-block names entries from m_cellBlockAttributeValues,
+   * m_cellBlockMatchPatterns and m_cellBlockNames.
+   * @param cellBlocks the input mesh cell-block list
+   */
+  std::set< string > computeSelectedCellBlocks( std::set< string > const & cellBlocksNames ) const;
 
 };
 

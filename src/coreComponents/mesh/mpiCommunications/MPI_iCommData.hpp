@@ -36,7 +36,7 @@ public:
    * @param inputCommID The CommID integer that indicates what communication
    *   pipeline to use for a set of neighbor communications.
    */
-  MPI_iCommData( int const inputCommID );
+  MPI_iCommData();
 
   /// Default destructor
   ~MPI_iCommData();
@@ -96,7 +96,7 @@ private:
   int m_size;
 
   /// The integer ID for the set of communication pipelines
-  int m_commID;
+  CommID m_commID;
 
   /// A collection of field names keyed on object keys to pack/unpack from
   /// communication pipeline.
