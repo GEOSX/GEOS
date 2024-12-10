@@ -24,7 +24,7 @@
   </Events>
 
   <Constitutive>
-    <CompositionalKValueFluid
+    <CompositionalKValueFluidLohrenzBrayClark
       name="kValue2Phase"
       phaseNames="{ oil, gas }"
       equationsOfState="{ pr, pr }"

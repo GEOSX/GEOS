@@ -95,10 +95,10 @@ private:
 
   static void removeFile( string const & fileName );
 
-  static CompositionalKValueConstantViscosity * makeFluid( string const & name,
-                                                           Group * parent,
-                                                           TestFluid< numComps > const * testFluid,
-                                                           FlashModelParamType const * parameters );
+  static CompositionalKValueLohrenzBrayClarkViscosity * makeFluid( string const & name,
+                                                                   Group * parent,
+                                                                   TestFluid< numComps > const * testFluid,
+                                                                   FlashModelParamType const * parameters );
 
 private:
   string_array m_fileNames;
@@ -146,9 +146,9 @@ struct MakeFluid;
 template<>
 struct MakeFluid< 9 >
 {
-  static void populate( CompositionalKValueConstantViscosity & fluid, TestFluid< 9 > const * testFluid )
+  static void populate( CompositionalKValueLohrenzBrayClarkViscosity & fluid, TestFluid< 9 > const * testFluid )
   {
-    using FluidModel = CompositionalKValueConstantViscosity;
+    using FluidModel = CompositionalKValueLohrenzBrayClarkViscosity;
 
     string_array & componentNames = fluid.getReference< string_array >( MultiFluidBase::viewKeyStruct::componentNamesString() );
     TestFluid< 9 >::createArray( componentNames, testFluid->componentNames );
@@ -168,13 +168,13 @@ struct MakeFluid< 9 >
 };
 
 template< integer numPhases, integer numComps >
-CompositionalKValueConstantViscosity *
+CompositionalKValueLohrenzBrayClarkViscosity *
 KValueFlashTestFixture< numPhases, numComps >::makeFluid( string const & name,
                                                           Group * parent,
                                                           TestFluid< numComps > const * testFluid,
                                                           FlashModelParamType const * parameters )
 {
-  CompositionalKValueConstantViscosity & compositionalFluid = parent->registerGroup< CompositionalKValueConstantViscosity >( name );
+  CompositionalKValueLohrenzBrayClarkViscosity & compositionalFluid = parent->registerGroup< CompositionalKValueLohrenzBrayClarkViscosity >( name );
 
   Group & fluid = compositionalFluid;
 

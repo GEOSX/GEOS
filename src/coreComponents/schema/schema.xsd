@@ -619,8 +619,8 @@
 					<xsd:selector xpath="CeramicDamage" />
 					<xsd:field xpath="@name" />
 				</xsd:unique>
-				<xsd:unique name="domainConstitutiveCompositionalKValueFluidUniqueName">
-					<xsd:selector xpath="CompositionalKValueFluid" />
+				<xsd:unique name="domainConstitutiveCompositionalKValueFluidLohrenzBrayClarkUniqueName">
+					<xsd:selector xpath="CompositionalKValueFluidLohrenzBrayClark" />
 					<xsd:field xpath="@name" />
 				</xsd:unique>
 				<xsd:unique name="domainConstitutiveCompositionalMultiphaseFluidUniqueName">
@@ -5002,7 +5002,7 @@ Level 0 outputs no specific information for this solver. Higher levels require m
 			<xsd:element name="CO2BrinePhillipsThermalFluid" type="CO2BrinePhillipsThermalFluidType" />
 			<xsd:element name="CarmanKozenyPermeability" type="CarmanKozenyPermeabilityType" />
 			<xsd:element name="CeramicDamage" type="CeramicDamageType" />
-			<xsd:element name="CompositionalKValueFluid" type="CompositionalKValueFluidType" />
+			<xsd:element name="CompositionalKValueFluidLohrenzBrayClark" type="CompositionalKValueFluidLohrenzBrayClarkType" />
 			<xsd:element name="CompositionalMultiphaseFluid" type="CompositionalMultiphaseFluidType" />
 			<xsd:element name="CompositionalThreePhaseFluidLohrenzBrayClark" type="CompositionalThreePhaseFluidLohrenzBrayClarkType" />
 			<xsd:element name="CompositionalTwoPhaseFluid" type="CompositionalTwoPhaseFluidType" />
@@ -5311,7 +5311,7 @@ The expected format is "{ waterMax, oilMax }", in that order-->
 		<!--name => A name is required for any non-unique nodes-->
 		<xsd:attribute name="name" type="groupName" use="required" />
 	</xsd:complexType>
-	<xsd:complexType name="CompositionalKValueFluidType">
+	<xsd:complexType name="CompositionalKValueFluidLohrenzBrayClarkType">
 		<!--checkPVTTablesRanges => Enable (1) or disable (0) an error when the input pressure or temperature of the PVT tables is out of range.-->
 		<xsd:attribute name="checkPVTTablesRanges" type="integer" default="1" />
 		<!--componentAcentricFactor => Component acentric factors-->
@@ -5322,14 +5322,14 @@ The expected format is "{ waterMax, oilMax }", in that order-->
 		<xsd:attribute name="componentCriticalPressure" type="real64_array" use="required" />
 		<!--componentCriticalTemperature => Component critical temperatures-->
 		<xsd:attribute name="componentCriticalTemperature" type="real64_array" use="required" />
+		<!--componentCriticalVolume => Component critical volumes-->
+		<xsd:attribute name="componentCriticalVolume" type="real64_array" default="{0}" />
 		<!--componentMolarWeight => Component molar weights-->
 		<xsd:attribute name="componentMolarWeight" type="real64_array" use="required" />
 		<!--componentNames => List of component names-->
 		<xsd:attribute name="componentNames" type="string_array" use="required" />
 		<!--componentVolumeShift => Component volume shifts-->
 		<xsd:attribute name="componentVolumeShift" type="real64_array" default="{0}" />
-		<!--constantPhaseViscosity => Constant phase viscosity-->
-		<xsd:attribute name="constantPhaseViscosity" type="real64_array" default="{0}" />
 		<!--equationsOfState => List of equation of state types for each phase. Valid options:
 * pr
 * srk-->
@@ -5342,6 +5342,11 @@ The expected format is "{ waterMax, oilMax }", in that order-->
 		<xsd:attribute name="pressureCoordinates" type="real64_array" default="{0}" />
 		<!--temperatureCoordinates => List of temperature values for interpolation of k-values.-->
 		<xsd:attribute name="temperatureCoordinates" type="real64_array" default="{0}" />
+		<!--viscosityMixingRule => Viscosity mixing rule to be used for Lohrenz-Bray-Clark computation. Valid options:
+* HerningZipperer
+* Wilke
+* Brokaw-->
+		<xsd:attribute name="viscosityMixingRule" type="string" default="HerningZipperer" />
 		<!--name => A name is required for any non-unique nodes-->
 		<xsd:attribute name="name" type="groupName" use="required" />
 	</xsd:complexType>
