@@ -98,15 +98,6 @@ private:
 
   string m_outputDir;
 
-/**
- * @struct viewKeyStruct holds char strings and viewKeys for fast lookup
- */
-  struct viewKeyStruct
-  {
-    /// String for the flag deciding the computation of the CFL numbers
-    constexpr static char const * outputDirString() { return "outputDirectory"; }
-  };
-
   void initializePreSubGroups() override;
 
   /**

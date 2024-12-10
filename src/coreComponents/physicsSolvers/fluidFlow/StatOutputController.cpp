@@ -68,7 +68,7 @@ StatOutputController::StatOutputController( const string & name,
   TaskBase( name, parent ),
   m_statistics( nullptr )
 {
-  registerWrapper( viewKeyStruct::outputDirString(), &m_outputDir ).
+  registerWrapper(FieldSpecificationBase::viewKeyStruct::outputDirString(), &m_outputDir ).
     setApplyDefaultValue( "." ).
     setInputFlag( InputFlags::OPTIONAL ).
     setDescription( "Output directory for statistics HDF regions file" );

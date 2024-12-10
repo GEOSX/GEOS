@@ -364,7 +364,7 @@ void CompositionalMultiphaseStatistics::computeRegionStatistics( real64 const ti
     array1d< real64 > subRegionTrappedPhaseMass( numPhases );
     array1d< real64 > subRegionImmobilePhaseMass( numPhases );
     array1d< real64 > subRegionRelpermPhaseMass( numPhases );
-    array2d< real64 > subRegiondissolvedComponentMass( numPhases, numComps );
+    array2d< real64 > subRegionDissolvedComponentMass( numPhases, numComps );
 
     isothermalCompositionalMultiphaseBaseKernels::
       StatisticsKernel::
@@ -397,7 +397,7 @@ void CompositionalMultiphaseStatistics::computeRegionStatistics( real64 const ti
                                         subRegionPhaseMass.toView(),
                                         subRegionTrappedPhaseMass.toView(),
                                         subRegionImmobilePhaseMass.toView(),
-                                        subRegiondissolvedComponentMass.toView() );
+                                        subRegionDissolvedComponentMass.toView() );
 
     ElementRegionBase & region = elemManager.getRegion( ElementRegionBase::getParentRegion( subRegion ).getName() );
     RegionStatistics & stats = region.getGroup< RegionStatistics >( viewKeyStruct::regionStatisticsString() );
@@ -439,7 +439,7 @@ void CompositionalMultiphaseStatistics::computeRegionStatistics( real64 const ti
 
       for( integer ic = 0; ic < numComps; ++ic )
       {
-        stats.m_dissolvedComponentMass[ip][ic] += subRegiondissolvedComponentMass[ip][ic];
+        stats.m_dissolvedComponentMass[ip][ic] += subRegionDissolvedComponentMass[ip][ic];
       }
     }
 
