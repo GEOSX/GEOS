@@ -268,6 +268,7 @@ public:
     static constexpr char const * allowLocalCompDensChoppingString() { return "allowLocalCompDensityChopping"; }
     static constexpr char const * useTotalMassEquationString() { return "useTotalMassEquation"; }
     static constexpr char const * useSimpleAccumulationString() { return "useSimpleAccumulation"; }
+    static constexpr char const * useNewGravityString() { return "useNewGravity"; }
     static constexpr char const * minCompDensString() { return "minCompDens"; }
     static constexpr char const * maxSequentialCompDensChangeString() { return "maxSequentialCompDensChange"; }
     static constexpr char const * minScalingFactorString() { return "minScalingFactor"; }
@@ -282,12 +283,14 @@ public:
    * from prescribed intermediate values (i.e. global densities from global fractions)
    * and any applicable hydrostatic equilibration of the domain
    */
-  void initializeFluidState( MeshLevel & mesh, DomainPartition & domain, arrayView1d< string const > const & regionNames );
+  virtual void initializeFluidState( MeshLevel & mesh, arrayView1d< string const > const & regionNames ) override;
+
+  virtual void initializeThermalState( MeshLevel & mesh, arrayView1d< string const > const & regionNames ) override;
 
   /**
    * @brief Compute the hydrostatic equilibrium using the compositions and temperature input tables
    */
-  void computeHydrostaticEquilibrium();
+  virtual void computeHydrostaticEquilibrium( DomainPartition & domain ) override;
 
   /**
    * @brief Function to perform the Application of Dirichlet type BC's
@@ -361,6 +364,8 @@ public:
    * @param domain the physical domain object
    */
   void chopNegativeDensities( DomainPartition & domain );
+
+  void chopNegativeDensities( ElementSubRegionBase & subRegion );
 
   virtual real64 setNextDtBasedOnStateChange( real64 const & currentDt,
                                               DomainPartition & domain ) override;
@@ -481,6 +486,9 @@ protected:
 
   /// flag indicating whether simple accumulation form is used
   integer m_useSimpleAccumulation;
+
+  /// flag indicating whether new gravity treatment is used
+  integer m_useNewGravity;
 
   /// minimum allowed global component density
   real64 m_minCompDens;

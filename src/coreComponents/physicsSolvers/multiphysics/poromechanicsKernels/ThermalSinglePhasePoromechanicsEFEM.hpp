@@ -61,7 +61,7 @@ public:
   using Base::m_dFluidDensity_dPressure;
   using Base::m_porosity_n;
   using Base::m_surfaceArea;
-  using Base::m_elementVolume;
+  using Base::m_elementVolumeFrac;
   using Base::m_deltaVolume;
   using Base::m_cellsToEmbeddedSurfaces;
   using Base::m_dt;
