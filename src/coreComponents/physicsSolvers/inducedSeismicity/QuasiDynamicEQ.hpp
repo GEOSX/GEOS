@@ -47,7 +47,7 @@ public:
   struct viewKeyStruct : public PhysicsSolverBase::viewKeyStruct
   {
     /// stress solver name
-    static constexpr char const * stressSolverNameString() { return "stressSolverName"; }
+    constexpr static char const * stressSolverNameString() { return "stressSolverName"; }
     /// Friction law name string
     constexpr static char const * frictionLawNameString() { return "frictionLawName"; }
     /// Friction law name string
