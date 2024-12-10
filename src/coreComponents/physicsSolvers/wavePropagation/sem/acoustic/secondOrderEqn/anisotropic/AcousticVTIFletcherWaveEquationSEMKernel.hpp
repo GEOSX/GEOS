@@ -26,18 +26,17 @@
 #include "finiteElement/elementFormulations/Qk_Hexahedron_Lagrange_GaussLobatto.hpp"
 #endif
 #include "physicsSolvers/wavePropagation/sem/acoustic/shared/AcousticFields.hpp"
+#include "AcousticVTIFields.hpp"
 
 namespace geos
 {
-
-using namespace fields;
 
 /// Namespace to contain the acoustic wave kernels.
 namespace acousticVTIFletcherWaveEquationSEMKernels
 {
 
 /**
- * @brief Implements kernels for solving the acoustic wave equations
+ * @brief Implements kernels for solving the pseudo-acoustic VTI wave equations
  *   explicit central FD method and SEM
  * @copydoc geos::finiteElement::KernelBase
  * @tparam SUBREGION_TYPE The type of subregion that the kernel will act on.
@@ -56,11 +55,11 @@ namespace acousticVTIFletcherWaveEquationSEMKernels
 template< typename SUBREGION_TYPE,
           typename CONSTITUTIVE_TYPE,
           typename FE_TYPE >
-class ExplicitAcousticVTIFletcherSEM : public finiteElement::KernelBase< SUBREGION_TYPE,
-                                                                         CONSTITUTIVE_TYPE,
-                                                                         FE_TYPE,
-                                                                         1,
-                                                                         1 >
+class ExplicitAcousticSEM : public finiteElement::KernelBase< SUBREGION_TYPE,
+                                                              CONSTITUTIVE_TYPE,
+                                                              FE_TYPE,
+                                                              1,
+                                                              1 >
 {
 public:
 
@@ -94,14 +93,14 @@ public:
    * @param dt The time interval for the step.
    *   elements to be processed during this kernel launch.
    */
-  ExplicitAcousticVTIFletcherSEM( NodeManager & nodeManager,
-                                  EdgeManager const & edgeManager,
-                                  FaceManager const & faceManager,
-                                  localIndex const targetRegionIndex,
-                                  SUBREGION_TYPE const & elementSubRegion,
-                                  FE_TYPE const & finiteElementSpace,
-                                  CONSTITUTIVE_TYPE & inputConstitutiveType,
-                                  real64 const dt ):
+  ExplicitAcousticSEM( NodeManager & nodeManager,
+                       EdgeManager const & edgeManager,
+                       FaceManager const & faceManager,
+                       localIndex const targetRegionIndex,
+                       SUBREGION_TYPE const & elementSubRegion,
+                       FE_TYPE const & finiteElementSpace,
+                       CONSTITUTIVE_TYPE & inputConstitutiveType,
+                       real64 const dt ):
     Base( elementSubRegion,
           finiteElementSpace,
           inputConstitutiveType ),
@@ -125,7 +124,7 @@ public:
   /**
    * @copydoc geos::finiteElement::KernelBase::StackVariables
    *
-   * ### ExplicitAcousticVTIFletcherSEM Description
+   * ### ExplicitAcousticSEM Description
    * Adds a stack arrays for the nodal force, primary displacement variable, etc.
    */
   struct StackVariables : Base::StackVariables
@@ -202,7 +201,7 @@ public:
   /**
    * @copydoc geos::finiteElement::KernelBase::quadraturePointKernel
    *
-   * ### ExplicitAcousticVTIFletcherSEM Description
+   * ### ExplicitAcousticSEM Description
    * Calculates stiffness vector
    *
    */
@@ -212,17 +211,17 @@ public:
                               localIndex const q,
                               StackVariables & stack ) const
   {
-    // Pseudo Stiffness xy
+    // (A_xy nabla u)((A_xy nabla v)
     m_finiteElementSpace.template computeStiffnessxyTerm( q, stack.xLocal, [&] ( int i, int j, real64 val )
     {
       real32 const localIncrement_p = val * stack.invDensity *(-stack.vti_epsi) * m_p_n[m_elemsToNodes( k, j )];
       stack.stiffnessVectorLocal_p[i] += localIncrement_p;
+
       real32 const localIncrement_q = val * stack.invDensity * ((-stack.vti_2delta-stack.vti_f) * m_p_n[m_elemsToNodes( k, j )] +(stack.vti_f-1)*m_q_n[m_elemsToNodes( k, j )]);
       stack.stiffnessVectorLocal_q[i] += localIncrement_q;
     } );
 
-    // Pseudo-Stiffness z
-
+    // (A_z nabla u)((A_z nabla v)
     m_finiteElementSpace.template computeStiffnesszTerm( q, stack.xLocal, [&] ( int i, int j, real64 val )
     {
       real32 const localIncrement_p = val * stack.invDensity * ((stack.vti_f-1)*m_p_n[m_elemsToNodes( k, j )] - stack.vti_f*m_q_n[m_elemsToNodes( k, j )]);
@@ -267,9 +266,9 @@ protected:
 
 
 
-/// The factory used to construct a ExplicitAcousticWaveEquation kernel.
+/// The factory used to construct a ExplicitAcousticVTIFletcher kernel.
 using ExplicitAcousticVTIFletcherSEMFactory = finiteElement::KernelFactory< ExplicitAcousticVTIFletcherSEM,
-                                                                            real64 >;
+                                                                        real64 >;
 
 
 } // namespace acousticVTIFletcherWaveEquationSEMKernels

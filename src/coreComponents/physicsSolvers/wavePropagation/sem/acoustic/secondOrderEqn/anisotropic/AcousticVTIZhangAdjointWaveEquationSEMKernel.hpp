@@ -26,25 +26,24 @@
 #include "finiteElement/elementFormulations/Qk_Hexahedron_Lagrange_GaussLobatto.hpp"
 #endif
 #include "physicsSolvers/wavePropagation/sem/acoustic/shared/AcousticFields.hpp"
+#include "AcousticVTIFields.hpp"
 
 namespace geos
 {
 
-using namespace fields;
-
 /// Namespace to contain the acoustic wave kernels.
-namespace acousticVTIZhangAdjointWaveEquationSEMKernels
+namespace acousticVTIZhangWaveEquationSEMKernels
 {
 
 /**
- * @brief Implements kernels for solving the acoustic wave equations
+ * @brief Implements kernels for solving the pseudo-acoustic VTI wave equations
  *   explicit central FD method and SEM
  * @copydoc geos::finiteElement::KernelBase
  * @tparam SUBREGION_TYPE The type of subregion that the kernel will act on.
  *
- * ### AcousticVTIZhangAdjointWaveEquationSEMKernels Description
+ * ### AcousticVTIZhangWaveEquationSEMKernel Description
  * Implements the KernelBase interface functions required for solving
- * the Adjoint of the VTI pseudo-acoustic wave Zhang's set of equations using the
+ * the VTI pseudo-acoustic wave Zhang's set of equations using the
  * "finite element kernel application" functions such as
  * geos::finiteElement::RegionBasedKernelApplication.
  *
@@ -56,11 +55,11 @@ namespace acousticVTIZhangAdjointWaveEquationSEMKernels
 template< typename SUBREGION_TYPE,
           typename CONSTITUTIVE_TYPE,
           typename FE_TYPE >
-class ExplicitAcousticVTIZhangAdjointSEM : public finiteElement::KernelBase< SUBREGION_TYPE,
-                                                                             CONSTITUTIVE_TYPE,
-                                                                             FE_TYPE,
-                                                                             1,
-                                                                             1 >
+class ExplicitAcousticSEM : public finiteElement::KernelBase< SUBREGION_TYPE,
+                                                              CONSTITUTIVE_TYPE,
+                                                              FE_TYPE,
+                                                              1,
+                                                              1 >
 {
 public:
 
@@ -94,14 +93,14 @@ public:
    * @param dt The time interval for the step.
    *   elements to be processed during this kernel launch.
    */
-  ExplicitAcousticVTIZhangAdjointSEM( NodeManager & nodeManager,
-                                      EdgeManager const & edgeManager,
-                                      FaceManager const & faceManager,
-                                      localIndex const targetRegionIndex,
-                                      SUBREGION_TYPE const & elementSubRegion,
-                                      FE_TYPE const & finiteElementSpace,
-                                      CONSTITUTIVE_TYPE & inputConstitutiveType,
-                                      real64 const dt ):
+  ExplicitAcousticSEM( NodeManager & nodeManager,
+                       EdgeManager const & edgeManager,
+                       FaceManager const & faceManager,
+                       localIndex const targetRegionIndex,
+                       SUBREGION_TYPE const & elementSubRegion,
+                       FE_TYPE const & finiteElementSpace,
+                       CONSTITUTIVE_TYPE & inputConstitutiveType,
+                       real64 const dt ):
     Base( elementSubRegion,
           finiteElementSpace,
           inputConstitutiveType ),
@@ -124,7 +123,7 @@ public:
   /**
    * @copydoc geos::finiteElement::KernelBase::StackVariables
    *
-   * ### ExplicitAcousticVTIZhangAdjointSEM Description
+   * ### ExplicitAcousticSEM Description
    * Adds a stack arrays for the nodal force, primary displacement variable, etc.
    */
   struct StackVariables : Base::StackVariables
@@ -199,7 +198,7 @@ public:
   /**
    * @copydoc geos::finiteElement::KernelBase::quadraturePointKernel
    *
-   * ### ExplicitAcousticVTIZhangAdjointSEM Description
+   * ### ExplicitAcousticSEM Description
    * Calculates stiffness vector
    *
    */
@@ -209,7 +208,7 @@ public:
                               localIndex const q,
                               StackVariables & stack ) const
   {
-    // Pseudo Stiffness xy
+    // (A_xy nabla u)((A_xy nabla v)
     m_finiteElementSpace.template computeStiffnessxyTerm( q, stack.xLocal, [&] ( int i, int j, real64 val )
     {
       real32 const localIncrement_pp = -val * stack.invDensity * stack.vti_epsi * m_p_n[m_elemsToNodes( k, j )];
@@ -219,7 +218,7 @@ public:
       stack.stiffnessVectorLocal_p[i] += localIncrement_pq;
     } );
 
-    // Pseudo-Stiffness z
+    // (A_z nabla u)((A_z nabla v)
     m_finiteElementSpace.template computeStiffnesszTerm( q, stack.xLocal, [&] ( int i, int j, real64 val )
     {
       real32 const localIncrement_qp = -val * stack.invDensity * stack.vti_sqrtDelta * m_p_n[m_elemsToNodes( k, j )];
@@ -261,12 +260,12 @@ protected:
 
 
 
-/// The factory used to construct a ExplicitAcousticWaveEquation kernel.
+/// The factory used to construct a ExplicitAcousticVTIZhangAdjoint kernel.
 using ExplicitAcousticVTIZhangAdjointSEMFactory = finiteElement::KernelFactory< ExplicitAcousticVTIZhangAdjointSEM,
                                                                                 real64 >;
 
 
-} // namespace acousticVTIZhangAdjointWaveEquationSEMKernels
+} // namespace acousticVTIZhangWaveEquationSEMKernels
 
 } // namespace geos
 

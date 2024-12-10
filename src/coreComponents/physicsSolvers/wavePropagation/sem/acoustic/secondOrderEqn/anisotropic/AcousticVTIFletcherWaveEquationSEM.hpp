@@ -23,7 +23,7 @@
 
 #include "physicsSolvers/wavePropagation/shared/WaveSolverBase.hpp"
 #include "mesh/MeshFields.hpp"
-#include "physicsSolvers/SolverBase.hpp"
+#include "physicsSolvers/PhysicsSolverBase.hpp"
 #include "physicsSolvers/wavePropagation/sem/acoustic/shared/AcousticFields.hpp"
 #include "AcousticVTIFields.hpp"
 
@@ -38,7 +38,7 @@ public:
   using ATOMIC_POLICY = AtomicPolicy< EXEC_POLICY >;
 
   AcousticVTIFletcherWaveEquationSEM( const std::string & name,
-                                      Group * const parent );
+                           Group * const parent );
 
   virtual ~AcousticVTIFletcherWaveEquationSEM() override;
 
@@ -54,7 +54,7 @@ public:
 
   static string catalogName() { return "AcousticVTIFletcherSEM"; }
   /**
-   * @copydoc SolverBase::getCatalogName()
+   * @copydoc PhysicsSolverBase::getCatalogName()
    */
   string getCatalogName() const override { return catalogName(); }
 
@@ -88,13 +88,18 @@ public:
    * @param cycleNumber the cycle number/step number of evaluation of the source
    * @param rhs the right hand side vector to be computed
    */
-  virtual void addSourceToRightHandSide( integer const & cycleNumber, arrayView1d< real32 > const rhs );
+  virtual void addSourceToRightHandSide( real64 const & time_n, arrayView1d< real32 > const rhs );
 
 
   /**
    * @brief Initialize Perfectly Matched Layer (PML) information
    */
   virtual void initializePML() override;
+
+  /**
+   */
+  virtual real64 computeTimeStep( real64 & dtOut ) override;
+
 
 
   /**
@@ -119,13 +124,11 @@ public:
    */
   real64 explicitStepInternal( real64 const & time_n,
                                real64 const & dt,
-                               integer const cycleNumber,
                                DomainPartition & domain,
                                bool const isForward );
 
   void computeUnknowns( real64 const & time_n,
                         real64 const & dt,
-                        integer const cycleNumber,
                         DomainPartition & domain,
                         MeshLevel & mesh,
                         arrayView1d< string const > const & regionNames,
@@ -133,7 +136,6 @@ public:
 
   void synchronizeUnknowns( real64 const & time_n,
                             real64 const & dt,
-                            integer const cycleNumber,
                             DomainPartition & domain,
                             MeshLevel & mesh,
                             arrayView1d< string const > const & regionNames );
@@ -157,12 +159,6 @@ private:
   virtual void precomputeSourceAndReceiverTerm( MeshLevel & baseMesh, MeshLevel & mesh, arrayView1d< string const > const & regionNames ) override;
 
   /**
-   * @brief Compute the lateral and bottom surface Field indicators of the boxed domain
-   * @param domain the partition domain
-   */
-  virtual void precomputeSurfaceFieldIndicator( DomainPartition & domain );
-
-  /**
    * @brief Apply free surface condition to the face define in the geometry box from the xml
    * @param time the time to apply the BC
    * @param domain the partition domain
@@ -179,7 +175,7 @@ private:
   /// Pressure_np1 at the receiver location for each time step for each receiver
   array2d< real32 > m_pressureNp1AtReceivers;
 
-  /// Array of size the number of receivers and full of 0.5 (used for calculating the seismos)
+  /// Array of size the number of receivers and filled with 0.5 (used for calculating the seismos)
   array1d< real32 > m_seismoCoeff;
 };
 

@@ -14,7 +14,7 @@
  */
 
 /**
- * @file AcousticVTIFletcherAdjointWaveEquationSEMKernel.hpp
+ * @file AcousticVTIFletcherWaveEquationSEMKernel.hpp
  */
 
 #ifndef GEOS_PHYSICSSOLVERS_WAVEPROPAGATION_ACOUSTICVTIFLETCHERADJOINTWAVEEQUATIONSEMKERNEL_HPP_
@@ -26,25 +26,24 @@
 #include "finiteElement/elementFormulations/Qk_Hexahedron_Lagrange_GaussLobatto.hpp"
 #endif
 #include "physicsSolvers/wavePropagation/sem/acoustic/shared/AcousticFields.hpp"
+#include "AcousticVTIFields.hpp"
 
 namespace geos
 {
 
-using namespace fields;
-
 /// Namespace to contain the acoustic wave kernels.
-namespace acousticVTIFletcherAdjointWaveEquationSEMKernels
+namespace acousticVTIFletcherWaveEquationSEMKernels
 {
 
 /**
- * @brief Implements kernels for solving the acoustic wave equations
+ * @brief Implements kernels for solving the pseudo-acoustic VTI wave equations
  *   explicit central FD method and SEM
  * @copydoc geos::finiteElement::KernelBase
  * @tparam SUBREGION_TYPE The type of subregion that the kernel will act on.
  *
- * ### AcousticWaveEquationSEMKernel Description
+ * ### AcousticVTIFletcherWaveEquationSEMKernel Description
  * Implements the KernelBase interface functions required for solving
- * the acoustic wave equations using the
+ * the VTI pseudo-acoustic wave Fletcher's set of equations using the
  * "finite element kernel application" functions such as
  * geos::finiteElement::RegionBasedKernelApplication.
  *
@@ -56,11 +55,11 @@ namespace acousticVTIFletcherAdjointWaveEquationSEMKernels
 template< typename SUBREGION_TYPE,
           typename CONSTITUTIVE_TYPE,
           typename FE_TYPE >
-class ExplicitAcousticVTIFletcherAdjointSEM : public finiteElement::KernelBase< SUBREGION_TYPE,
-                                                                                CONSTITUTIVE_TYPE,
-                                                                                FE_TYPE,
-                                                                                1,
-                                                                                1 >
+class ExplicitAcousticSEM : public finiteElement::KernelBase< SUBREGION_TYPE,
+                                                              CONSTITUTIVE_TYPE,
+                                                              FE_TYPE,
+                                                              1,
+                                                              1 >
 {
 public:
 
@@ -94,14 +93,14 @@ public:
    * @param dt The time interval for the step.
    *   elements to be processed during this kernel launch.
    */
-  ExplicitAcousticVTIFletcherAdjointSEM( NodeManager & nodeManager,
-                                         EdgeManager const & edgeManager,
-                                         FaceManager const & faceManager,
-                                         localIndex const targetRegionIndex,
-                                         SUBREGION_TYPE const & elementSubRegion,
-                                         FE_TYPE const & finiteElementSpace,
-                                         CONSTITUTIVE_TYPE & inputConstitutiveType,
-                                         real64 const dt ):
+  ExplicitAcousticSEM( NodeManager & nodeManager,
+                       EdgeManager const & edgeManager,
+                       FaceManager const & faceManager,
+                       localIndex const targetRegionIndex,
+                       SUBREGION_TYPE const & elementSubRegion,
+                       FE_TYPE const & finiteElementSpace,
+                       CONSTITUTIVE_TYPE & inputConstitutiveType,
+                       real64 const dt ):
     Base( elementSubRegion,
           finiteElementSpace,
           inputConstitutiveType ),
@@ -125,7 +124,7 @@ public:
   /**
    * @copydoc geos::finiteElement::KernelBase::StackVariables
    *
-   * ### ExplicitAcousticVTIFletcherAdjointSEM Description
+   * ### ExplicitAcousticSEM Description
    * Adds a stack arrays for the nodal force, primary displacement variable, etc.
    */
   struct StackVariables : Base::StackVariables
@@ -143,7 +142,7 @@ public:
     real32 stiffnessVectorLocal_p[ numNodesPerElem ]{};
     real32 stiffnessVectorLocal_q[ numNodesPerElem ]{};
     real32 invDensity;
-    real32 vti_epsi; //  (1 + 2*epsilon)
+    real32 vti_epsi; // (1 + 2*epsilon)
     real32 vti_2delta; // 2*delta
     real32 vti_f; // f parameter
   };
@@ -202,7 +201,7 @@ public:
   /**
    * @copydoc geos::finiteElement::KernelBase::quadraturePointKernel
    *
-   * ### ExplicitAcousticVTIFletcherAdjointSEM Description
+   * ### ExplicitAcousticSEM Description
    * Calculates stiffness vector
    *
    */
@@ -212,7 +211,7 @@ public:
                               localIndex const q,
                               StackVariables & stack ) const
   {
-    // Pseudo Stiffness xy
+    // (A_xy nabla u)((A_xy nabla v)
     m_finiteElementSpace.template computeStiffnessxyTerm( q, stack.xLocal, [&] ( int i, int j, real64 val )
     {
       real32 const localIncrement_pp = val * stack.invDensity *(-stack.vti_epsi) * m_p_n[m_elemsToNodes( k, j )];
@@ -224,7 +223,7 @@ public:
       stack.stiffnessVectorLocal_q[i] += localIncrement_qq;
     } );
 
-    // Pseudo-Stiffness z
+    // (A_z nabla u)((A_z nabla v)
     m_finiteElementSpace.template computeStiffnesszTerm( q, stack.xLocal, [&] ( int i, int j, real64 val )
     {
       real32 const localIncrement_pp = val * stack.invDensity * (stack.vti_f-1) * m_p_n[m_elemsToNodes( k, j )];
@@ -270,12 +269,14 @@ protected:
   real64 const m_dt;
 };
 
-/// The factory used to construct a ExplicitAcousticWaveEquation kernel.
+
+
+/// The factory used to construct a ExplicitAcousticVTIFletcherAdjoint kernel.
 using ExplicitAcousticVTIFletcherAdjointSEMFactory = finiteElement::KernelFactory< ExplicitAcousticVTIFletcherAdjointSEM,
-                                                                                   real64 >;
+                                                                                real64 >;
 
 
-} // namespace acousticVTIFletcherAdjointWaveEquationSEMKernels
+} // namespace acousticVTIFletcherWaveEquationSEMKernels
 
 } // namespace geos
 

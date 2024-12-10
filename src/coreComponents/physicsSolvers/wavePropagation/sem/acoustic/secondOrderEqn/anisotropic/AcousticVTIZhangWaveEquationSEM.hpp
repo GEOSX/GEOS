@@ -23,12 +23,7 @@
 
 #include "physicsSolvers/wavePropagation/shared/WaveSolverBase.hpp"
 #include "mesh/MeshFields.hpp"
-<<<<<<< HEAD:src/coreComponents/physicsSolvers/wavePropagation/sem/acoustic/secondOrderEqn/anisotropic/AcousticVTIZhangWaveEquationSEM.hpp
-#include "physicsSolvers/SolverBase.hpp"
-=======
 #include "physicsSolvers/PhysicsSolverBase.hpp"
-#include "physicsSolvers/wavePropagation/shared/WaveSolverBase.hpp"
->>>>>>> develop:src/coreComponents/physicsSolvers/wavePropagation/sem/acoustic/secondOrderEqn/anisotropic/AcousticVTIWaveEquationSEM.hpp
 #include "physicsSolvers/wavePropagation/sem/acoustic/shared/AcousticFields.hpp"
 #include "AcousticVTIFields.hpp"
 
@@ -43,7 +38,7 @@ public:
   using ATOMIC_POLICY = AtomicPolicy< EXEC_POLICY >;
 
   AcousticVTIZhangWaveEquationSEM( const std::string & name,
-                                   Group * const parent );
+                           Group * const parent );
 
   virtual ~AcousticVTIZhangWaveEquationSEM() override;
 
@@ -101,6 +96,11 @@ public:
    */
   virtual void initializePML() override;
 
+  /**
+   */
+  virtual real64 computeTimeStep( real64 & dtOut ) override;
+
+
 
   /**
    * @brief Overridden from ExecutableGroup. Used to write last seismogram if needed.
@@ -124,17 +124,11 @@ public:
    */
   real64 explicitStepInternal( real64 const & time_n,
                                real64 const & dt,
-<<<<<<< HEAD:src/coreComponents/physicsSolvers/wavePropagation/sem/acoustic/secondOrderEqn/anisotropic/AcousticVTIZhangWaveEquationSEM.hpp
-                               integer const cycleNumber,
                                DomainPartition & domain,
                                bool const isForward );
-=======
-                               DomainPartition & domain );
->>>>>>> develop:src/coreComponents/physicsSolvers/wavePropagation/sem/acoustic/secondOrderEqn/anisotropic/AcousticVTIWaveEquationSEM.hpp
 
   void computeUnknowns( real64 const & time_n,
                         real64 const & dt,
-                        integer const cycleNumber,
                         DomainPartition & domain,
                         MeshLevel & mesh,
                         arrayView1d< string const > const & regionNames,
@@ -142,7 +136,6 @@ public:
 
   void synchronizeUnknowns( real64 const & time_n,
                             real64 const & dt,
-                            integer const cycleNumber,
                             DomainPartition & domain,
                             MeshLevel & mesh,
                             arrayView1d< string const > const & regionNames );
@@ -166,19 +159,12 @@ private:
   virtual void precomputeSourceAndReceiverTerm( MeshLevel & baseMesh, MeshLevel & mesh, arrayView1d< string const > const & regionNames ) override;
 
   /**
-   * @brief Compute the lateral and bottom surface Field indicators of the boxed domain
-   * @param domain the partition domain
-   */
-  virtual void precomputeSurfaceFieldIndicator( DomainPartition & domain );
-
-  /**
    * @brief Apply free surface condition to the face define in the geometry box from the xml
    * @param time the time to apply the BC
    * @param domain the partition domain
    */
   virtual void applyFreeSurfaceBC( real64 const time, DomainPartition & domain ) override;
 
-<<<<<<< HEAD:src/coreComponents/physicsSolvers/wavePropagation/sem/acoustic/secondOrderEqn/anisotropic/AcousticVTIZhangWaveEquationSEM.hpp
   /**
    * @brief Apply Perfectly Matched Layer (PML) to the regions defined in the geometry box from the xml
    * @param time the time to apply the BC
@@ -187,14 +173,9 @@ private:
   virtual void applyPML( real64 const time, DomainPartition & domain ) override;
 
   /// Pressure_np1 at the receiver location for each time step for each receiver
-=======
-  virtual real64 computeTimeStep( real64 & dtOut ) override;
-
-  /// Pressure_p_np1 at the receiver location for each time step for each receiver
->>>>>>> develop:src/coreComponents/physicsSolvers/wavePropagation/sem/acoustic/secondOrderEqn/anisotropic/AcousticVTIWaveEquationSEM.hpp
   array2d< real32 > m_pressureNp1AtReceivers;
 
-  /// Array of size the number of receivers and full of 0.5 (used for calculating the seismos)
+  /// Array of size the number of receivers and filled with 0.5 (used for calculating the seismos)
   array1d< real32 > m_seismoCoeff;
 };
 
