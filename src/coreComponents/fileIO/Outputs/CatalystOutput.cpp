@@ -368,6 +368,9 @@ struct CatalystOutput::CatalystInternals {
   std::string adiosConfig = "";
   std::string channelName = "fullfield";
   std::string sstFileName = "gs.bp";
+  integer onlyPlotSpecifiedFieldNames = 0;
+  array1d<std::string> fieldNames = {};
+
 
   void initializeCatalyst() {
     std::string scriptsCopy = this->scripts;
@@ -420,6 +423,18 @@ struct CatalystOutput::CatalystInternals {
       GEOS_ERROR("CatalystOutput: Constructor: catalyst failed to initialize.");
     }
 
+    GEOS_ERROR_IF((this->onlyPlotSpecifiedFieldNames != 0 ) && this->fieldNames.empty(),
+                  GEOS_FMT("{}: the flag onlyPlotSpecifiedFieldNames is different from zero, but fieldNames is empty, which is inconsistent",
+                          catalogName()));
+
+    GEOS_LOG_RANK_0_IF(!this->fieldNames.empty() && this->onlyPlotSpecifiedFieldNames != 0,
+                  GEOS_FMT("{}: found {} fields to plot in fieldNames. These fields will be output regardless of the `plotLevel` specified by the user. No other field will be output.",
+                          catalogName(), std::to_string(this->fieldNames.size())));
+
+    GEOS_LOG_RANK_0_IF(!this->fieldNames.empty() && this->onlyPlotSpecifiedFieldNames == 0,
+                  GEOS_FMT("{}: found {} fields to plot in fieldNames, in addition to all fields with `plotLevel` smaller or equal to the settings.",
+                          catalogName(), std::to_string(this->fieldNames.size())));
+
     this->initialized = true;
   }
 };
@@ -456,6 +471,17 @@ CatalystOutput::CatalystOutput(std::string const& name, Group* const parent)
       .setInputFlag(dataRepository::InputFlags::OPTIONAL)
       .setDescription(
           "Name to give to the channel passing the full field data.");
+
+  this->registerWrapper("onlyPlotSpecifiedFieldNames", &this->internal->onlyPlotSpecifiedFieldNames)
+      .setApplyDefaultValue(0)
+      .setInputFlag(dataRepository::InputFlags::OPTIONAL)
+      .setDescription("If this flag is equal to 1, then we only plot the fields listed in `fieldNames`. Otherwise, we plot all the fields with the required `plotLevel`, plus the fields listed in `fieldNames`");
+
+  this->registerWrapper( "fieldNames", &this->internal->fieldNames)
+      .setRTTypeName(rtTypes::CustomTypes::groupNameRefArray )
+      .setInputFlag(dataRepository::InputFlags::OPTIONAL )
+      .setDescription("Names of the fields to output. If this attribute is specified, GEOSX outputs all the fields specified by the user, regardless of their `plotLevel`");
+
 }
 
 ///////////////////////////////////////////////////////////////////////////////////////////////////
@@ -528,6 +554,71 @@ void CatalystOutput::cleanup(real64 const time_n, integer const cycleNumber,
   }
 
   this->internal->initialized = false;
+}
+
+///////////////////////////////////////////////////////////////////////////////////////////////////
+bool CatalystOutput::isFieldDefined(const std::string& name)
+{
+  for (std::string fieldName : this->internal->fieldNames)
+  {
+    if (fieldName == name)
+    {
+      return true;
+    }
+  }
+  return false;
+}
+
+///////////////////////////////////////////////////////////////////////////////////////////////////
+void CatalystOutput::writeOutWrappersAsFields( Group const & group,
+                                                conduit::Node & fields,
+                                                string const & topology,
+                                                string const & prefix )
+{
+  GEOS_MARK_FUNCTION;
+
+  group.forWrappers( [&] ( dataRepository::WrapperBase const & wrapper )
+  {
+    string const fieldName = prefix.empty() ? wrapper.getName() : prefix + "-" + wrapper.getName();
+
+    bool plotLevelValid = !this->internal->onlyPlotSpecifiedFieldNames && wrapper.getPlotLevel() <= this->getPlotLevel();
+
+    if((isFieldDefined(fieldName) || plotLevelValid) && wrapper.sizedFromParent())
+    {
+      // conduit::Node & field = fields[ fieldName ];
+      // field[ "association" ] = "element";
+      // field[ "volume_dependent" ] = "false";
+      // field[ "topology" ] = topology;
+      // wrapper.populateMCArray( field[ "values" ] );
+
+      /// TODO: Replace with code above once https://github.com/visit-dav/visit/issues/4637 is fixed and released.
+      wrapper.addBlueprintField( fields, fieldName, topology );
+    }
+  } );
+}
+
+///////////////////////////////////////////////////////////////////////////////////////////////////
+void CatalystOutput::writeOutConstitutiveData( dataRepository::Group const & constitutiveModel,
+                                                conduit::Node & fields,
+                                                string const & topology,
+                                                dataRepository::Group & averagedSubRegionData )
+{
+  GEOS_MARK_FUNCTION;
+
+  Group & averagedConstitutiveData = averagedSubRegionData.registerGroup( constitutiveModel.getName() );
+
+  constitutiveModel.forWrappers( [&] ( dataRepository::WrapperBase const & wrapper )
+  {
+    string const fieldName = constitutiveModel.getName() + "-quadrature-averaged-" + wrapper.getName();
+
+    bool plotLevelValid = !this->internal->onlyPlotSpecifiedFieldNames && wrapper.getPlotLevel() <= this->getPlotLevel();
+
+    if((isFieldDefined(fieldName) || plotLevelValid) && wrapper.sizedFromParent())
+    {
+      averagedConstitutiveData.registerWrapper( wrapper.averageOverSecondDim( fieldName, averagedConstitutiveData ) ).
+        addBlueprintField( fields, fieldName, topology );
+    }
+  } );
 }
 
 #if defined(GEOS_USE_PYGEOSX)

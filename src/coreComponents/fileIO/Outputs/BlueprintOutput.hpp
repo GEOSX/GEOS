@@ -94,6 +94,26 @@ protected:
                 DomainPartition & domain,
                 conduit::Node & meshRoot );
 
+  /**
+   * @brief Write out all the children with the appropriate plot level of @p group.
+   * @param group The group that contains the children to write out.
+   * @param fields The Blueprint "fields" Node.
+   * @param topology The name of the Blueprint "topology" that @p group is associated with.
+   * @param prefix The string to prepend to the name of the field. If not specified no prefix is used.
+   */
+  virtual void writeOutWrappersAsFields( Group const & group,
+                                 conduit::Node & fields,
+                                 string const & topology,
+                                 string const & prefix="" );
+
+
+  virtual void writeOutConstitutiveData( dataRepository::Group const & constitutiveModel,
+                                 conduit::Node & fields,
+                                 string const & topology,
+                                 dataRepository::Group & averagedElementData );
+
+  dataRepository::PlotLevel getPlotLevel() { return m_plotLevel; }                  
+
 private:
 
   /**
@@ -120,23 +140,6 @@ private:
                        conduit::Node & topologies,
                        conduit::Node & fields,
                        dataRepository::Group & averagedElementData );
-
-  /**
-   * @brief Write out all the children with the appropriate plot level of @p group.
-   * @param group The group that contains the children to write out.
-   * @param fields The Blueprint "fields" Node.
-   * @param topology The name of the Blueprint "topology" that @p group is associated with.
-   * @param prefix The string to prepend to the name of the field. If not specified no prefix is used.
-   */
-  void writeOutWrappersAsFields( Group const & group,
-                                 conduit::Node & fields,
-                                 string const & topology,
-                                 string const & prefix="" );
-
-  void writeOutConstitutiveData( dataRepository::Group const & constitutiveModel,
-                                 conduit::Node & fields,
-                                 string const & topology,
-                                 dataRepository::Group & averagedElementData );
 
   // Used to determine which fields to write out.
   dataRepository::PlotLevel m_plotLevel = dataRepository::PlotLevel::LEVEL_1;

@@ -89,6 +89,18 @@ private:
   struct CatalystInternals;
   std::unique_ptr<CatalystInternals> internal;
   ///@}
+
+  bool isFieldDefined(const std::string& name);
+
+  void writeOutWrappersAsFields( Group const & group,
+                                 conduit::Node & fields,
+                                 string const & topology,
+                                 string const & prefix="" ) override;
+
+  void writeOutConstitutiveData( dataRepository::Group const & constitutiveModel,
+                                 conduit::Node & fields,
+                                 string const & topology,
+                                 dataRepository::Group & averagedElementData ) override;
 };
 
 }
