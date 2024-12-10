@@ -497,7 +497,7 @@ void ImmiscibleMultiphaseFlow::initializePostInitialConditionsPreSubGroups()
     CommunicationTools::getInstance().synchronizeFields( fieldsToBeSync, mesh, domain.getNeighbors(), false );
   } );
 
-   initializeState( domain );
+  initializeState( domain );
 }
 
 
