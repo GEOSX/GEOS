@@ -68,6 +68,12 @@ ImmiscibleMultiphaseFlow::ImmiscibleMultiphaseFlow( const string & name,
     setApplyDefaultValue( 1 ).
     setDescription( "Flag indicating whether total mass equation is used" );
 
+  this->registerWrapper( viewKeyStruct::gravityDensitySchemeString(), &m_gravityDensityScheme ).
+    setSizedFromParent( 0 ).
+    setInputFlag( InputFlags::OPTIONAL ).
+    setApplyDefaultValue( GravityDensityScheme::ArithmeticAverage ).
+    setDescription( "Scheme for density treatment in gravity" );
+
   this->registerWrapper( viewKeyStruct::solutionChangeScalingFactorString(), &m_solutionChangeScalingFactor ).
     setSizedFromParent( 0 ).
     setInputFlag( InputFlags::OPTIONAL ).
@@ -632,6 +638,7 @@ void ImmiscibleMultiphaseFlow::assembleFluxTerms( real64 const dt,
                                                                                    dofKey,
                                                                                    m_hasCapPressure,
                                                                                    m_useTotalMassEquation,
+                                                                                   m_gravityDensityScheme == GravityDensityScheme::PhasePresence,
                                                                                    getName(),
                                                                                    mesh.getElemManager(),
                                                                                    stencilWrapper,

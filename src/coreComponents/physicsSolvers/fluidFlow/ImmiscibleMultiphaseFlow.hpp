@@ -27,6 +27,27 @@
 namespace geos
 {
 
+/**
+ * @brief Options for density treatment in gravity
+ */
+enum class GravityDensityScheme : integer
+{
+  ArithmeticAverage, ///< average phase density is computed using simple arithmetic average:
+                     ///  rho_ave = 0.5 * (rho_i + rho_j)
+  PhasePresence,     ///< average phase density is computed using checking for phase presence:
+                     ///  rho_ave = 0.5 * (rho_i + rho_j) if phase is present in both cells i and j
+                     ///          = rho_i if phase is present in only cell i
+                     ///          = rho_j if phase is present in only cell j
+};
+
+/**
+ * @brief Strings for options for density treatment in gravity
+ */
+ENUM_STRINGS( GravityDensityScheme,
+              "ArithmeticAverage",
+              "PhasePresence" );
+
+
 //START_SPHINX_INCLUDE_00
 /**
  * @class ImmiscibleMultiphaseFlow
@@ -222,6 +243,9 @@ public:
     static constexpr char const * relPermNamesString() { return "relPermNames"; }
     static constexpr char const * elemDofFieldString() { return "elemDofField"; }
 
+    // density averaging scheme
+    static constexpr char const * gravityDensitySchemeString()    { return "gravityDensityScheme"; }
+
     // time stepping controls
     static constexpr char const * solutionChangeScalingFactorString() { return "solutionChangeScalingFactor"; }
     static constexpr char const * targetRelativePresChangeString() { return "targetRelativePressureChangeInTimeStep"; }
@@ -286,6 +310,9 @@ private:
 
   /// flag to determine whether or not to use total velocity formulation
   integer m_useTotalMassEquation;
+
+  /// scheme for density treatment in gravity
+  GravityDensityScheme m_gravityDensityScheme;
 
   /// target (relative) change in pressure in a time step
   real64 m_targetRelativePresChange;

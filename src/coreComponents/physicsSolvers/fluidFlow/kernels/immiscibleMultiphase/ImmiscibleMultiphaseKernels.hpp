@@ -125,7 +125,8 @@ public:
                                CRSMatrixView< real64, globalIndex const > const & localMatrix,
                                arrayView1d< real64 > const & localRhs,
                                integer const hasCapPressure,
-                               integer const useTotalMassEquation )
+                               integer const useTotalMassEquation,
+                               integer const checkPhasePresenceInGravity )
     : m_numPhases ( numPhases ),
     m_rankOffset( rankOffset ),
     m_dt( dt ),
@@ -145,7 +146,8 @@ public:
     m_localMatrix( localMatrix ),
     m_localRhs( localRhs ),
     m_hasCapPressure ( hasCapPressure ),
-    m_useTotalMassEquation ( useTotalMassEquation )
+    m_useTotalMassEquation ( useTotalMassEquation ),
+    m_checkPhasePresenceInGravity ( checkPhasePresenceInGravity )
   {}
 
 protected:
@@ -197,6 +199,7 @@ protected:
   // Flags
   integer const m_hasCapPressure;
   integer const m_useTotalMassEquation;
+  integer const m_checkPhasePresenceInGravity;
 };
 
 /***************************************** */
@@ -255,7 +258,8 @@ public:
                            CRSMatrixView< real64, globalIndex const > const & localMatrix,
                            arrayView1d< real64 > const & localRhs,
                            integer const hasCapPressure,
-                           integer const useTotalMassEquation )
+                           integer const useTotalMassEquation,
+                           integer const checkPhasePresenceInGravity )
     : FaceBasedAssemblyKernelBase( numPhases,
                                    rankOffset,
                                    dofNumberAccessor,
@@ -267,7 +271,8 @@ public:
                                    localMatrix,
                                    localRhs,
                                    hasCapPressure,
-                                   useTotalMassEquation ),
+                                   useTotalMassEquation,
+                                   checkPhasePresenceInGravity ),
     m_stencilWrapper( stencilWrapper ),
     m_seri( stencilWrapper.getElementRegionIndices() ),
     m_sesri( stencilWrapper.getElementSubRegionIndices() ),
@@ -429,7 +434,7 @@ public:
           {
             // density
             bool const phaseExists = (m_phaseVolFrac[seri[ke]][sesri[ke]][sei[ke]][ip] > 0);
-            if( !phaseExists )
+            if( m_checkPhasePresenceInGravity && !phaseExists )
             {
               continue;
             }
@@ -758,6 +763,7 @@ public:
                    string const & dofKey,
                    integer const hasCapPressure,
                    integer const useTotalMassEquation,
+                   integer const checkPhasePresenceInGravity,
                    string const & solverName,
                    ElementRegionManager const & elemManager,
                    STENCILWRAPPER const & stencilWrapper,
@@ -780,7 +786,8 @@ public:
 
     kernelType kernel( numPhases, rankOffset, stencilWrapper, dofNumberAccessor,
                        flowAccessors, fluidAccessors, capPressureAccessors, permAccessors,
-                       dt, localMatrix, localRhs, hasCapPressure, useTotalMassEquation );
+                       dt, localMatrix, localRhs, hasCapPressure, useTotalMassEquation,
+                       checkPhasePresenceInGravity );
     kernelType::template launch< POLICY >( stencilWrapper.size(), kernel );
   }
 };
