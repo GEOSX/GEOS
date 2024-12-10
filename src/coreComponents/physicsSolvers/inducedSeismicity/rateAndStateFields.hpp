@@ -36,9 +36,25 @@ DECLARE_FIELD( slipRate,
                "slipRate",
                array1d< real64 >,
                1.0e-6,
-               LEVEL_0,
+               NOPLOT,
                WRITE_AND_READ,
                "Slip rate" );
+
+DECLARE_FIELD( slipVelocity,
+               "slipVelocity",
+               array2d< real64 >,
+               0.70710678118e-6,
+               LEVEL_0,
+               WRITE_AND_READ,
+               "Slip velocity" );
+
+DECLARE_FIELD( slipVelocity_n,
+               "slipVelocity_n",
+               array2d< real64 >,
+               0.70710678118e-6,
+               NOPLOT,
+               WRITE_AND_READ,
+               "Slip velocity at previous time step" );
 
 DECLARE_FIELD( stateVariable,
                "stateVariable",
@@ -48,21 +64,14 @@ DECLARE_FIELD( stateVariable,
                WRITE_AND_READ,
                "Rate- and state-dependent friction state variable" );
 
-DECLARE_FIELD( slipVelocity,
-               "slipVelocity",
-               array2d< real64 >,
-               1.0e-6,
-               LEVEL_0,
-               WRITE_AND_READ,
-               "Slip velocity" );
-
 DECLARE_FIELD( stateVariable_n,
                "stateVariable_n",
                array1d< real64 >,
                0.6,
                NOPLOT,
                WRITE_AND_READ,
-               "Rate- and state-dependent friction state variable at previous time step" );
+               "Initial rate- and state-dependent friction state variable at this time step" );
+
 
 DECLARE_FIELD( deltaSlip,
                "deltaSlip",
@@ -72,6 +81,31 @@ DECLARE_FIELD( deltaSlip,
                WRITE_AND_READ,
                "Slip increment" );
 
+DECLARE_FIELD( deltaSlip_n,
+               "deltaSlip_n",
+               array2d< real64 >,
+               0.0,
+               NOPLOT,
+               WRITE_AND_READ,
+               "Initial slip increment at this time step" );
+
+
+DECLARE_FIELD( rungeKuttaStageRates,
+               "rungeKuttaStageRates",
+               array3d< real64 >,
+               0.0,
+               NOPLOT,
+               WRITE_AND_READ,
+               "Runge-Kutta stage rates for rate-and-state variables" );
+
+
+DECLARE_FIELD( error,
+               "error",
+               array2d< real64 >,
+               0.0,
+               LEVEL_0,
+               WRITE_AND_READ,
+               "Error for rate-and-state fields" );
 
 }
 
