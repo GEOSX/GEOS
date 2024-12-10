@@ -67,7 +67,7 @@ public:
 protected:
 
   virtual real64 updateStresses( real64 const dt,
-                               DomainPartition & domain ) const = 0;
+                                 DomainPartition & domain ) const = 0;
 
   virtual void solveRateAndStateEquations( real64 const time_n,
                                            real64 const dt,
