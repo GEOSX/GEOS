@@ -97,8 +97,6 @@ protected:
 
   virtual void initializePostSubGroups() override final;
 
-  virtual void initializePostInitialConditionsPreSubGroups() override final;
-
   virtual void postRestartInitialization() override final
   {
     GEOS_ERROR( "Restarting is not supported for cases involving EmbeddedSurfaceGenerator" );

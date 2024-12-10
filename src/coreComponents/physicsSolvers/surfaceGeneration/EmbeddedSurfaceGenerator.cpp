@@ -308,9 +308,6 @@ void EmbeddedSurfaceGenerator::initializePostSubGroups()
   embSurfNodeManager.compressRelationMaps();
 }
 
-void EmbeddedSurfaceGenerator::initializePostInitialConditionsPreSubGroups()
-{}
-
 real64 EmbeddedSurfaceGenerator::solverStep( real64 const & GEOS_UNUSED_PARAM( time_n ),
                                              real64 const & GEOS_UNUSED_PARAM( dt ),
                                              const int GEOS_UNUSED_PARAM( cycleNumber ),
