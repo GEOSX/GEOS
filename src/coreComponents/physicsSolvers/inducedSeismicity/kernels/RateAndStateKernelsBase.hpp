@@ -33,15 +33,16 @@ GEOS_HOST_DEVICE
 static void projectSlipRateBase( localIndex const k,
                                  real64 const frictionCoefficient,
                                  real64 const shearImpedance,
-                                 arrayView2d< real64 const > const traction,
+                                 arrayView1d< real64 const > const normalTraction,
+                                 arrayView2d< real64 const > const shearTraction,
                                  arrayView1d< real64 const > const slipRate,
                                  arrayView2d< real64 > const slipVelocity )
 {
   // Project slip rate onto shear traction to get slip velocity components
-  real64 const frictionForce = traction[k][0] * frictionCoefficient;
+  real64 const frictionForce = normalTraction[k] * frictionCoefficient;
   real64 const projectionScaling = 1.0 / ( shearImpedance +  frictionForce / slipRate[k] );
-  slipVelocity[k][0] = projectionScaling * traction[k][1];
-  slipVelocity[k][1] = projectionScaling * traction[k][2];
+  slipVelocity[k][0] = projectionScaling * shearTraction[k][0];
+  slipVelocity[k][1] = projectionScaling * shearTraction[k][1];
 }
 
 template< typename POLICY, typename KERNEL_TYPE >

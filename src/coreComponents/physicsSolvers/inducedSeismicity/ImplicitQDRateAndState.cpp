@@ -24,9 +24,7 @@
 #include "kernels/ImplicitRateAndStateKernels.hpp"
 #include "rateAndStateFields.hpp"
 #include "physicsSolvers/contact/ContactFields.hpp"
-#include "fieldSpecification/FieldSpecificationManager.hpp"
 
-/// THIS is an alternative implementation to avoid the use of the TractionUpdateWrapper
 
 namespace geos
 {
@@ -37,14 +35,9 @@ using namespace constitutive;
 
 ImplicitQDRateAndState::ImplicitQDRateAndState( const string & name,
                                         Group * const parent ):
-  PhysicsSolverBase( name, parent ),
-  m_shearImpedance( 0.0 ),
+  QDRateAndStateBase( name, parent ),
   m_targetSlipIncrement( 1.0e-7 )
 {
-  this->registerWrapper( viewKeyStruct::shearImpedanceString(), &m_shearImpedance ).
-    setInputFlag( InputFlags::REQUIRED ).
-    setDescription( "Shear impedance." );
-
   this->registerWrapper( viewKeyStruct::targetSlipIncrementString(), &m_targetSlipIncrement ).
     setInputFlag( InputFlags::OPTIONAL ).
     setApplyDefaultValue( 1.0e-7 ).
@@ -54,74 +47,6 @@ ImplicitQDRateAndState::ImplicitQDRateAndState( const string & name,
 ImplicitQDRateAndState::~ImplicitQDRateAndState()
 {
   // TODO Auto-generated destructor stub
-}
-
-void ImplicitQDRateAndState::registerDataOnMesh( Group & meshBodies )
-{
-  PhysicsSolverBase::registerDataOnMesh( meshBodies );
-
-  forDiscretizationOnMeshTargets( meshBodies, [&] ( string const &,
-                                                    MeshLevel & mesh,
-                                                    arrayView1d< string const > const & regionNames )
-  {
-    ElementRegionManager & elemManager = mesh.getElemManager();
-
-    elemManager.forElementSubRegions< SurfaceElementSubRegion >( regionNames,
-                                                                 [&]( localIndex const,
-                                                                      SurfaceElementSubRegion & subRegion )
-    {
-      // Scalar functions on fault
-      subRegion.registerField< rateAndState::stateVariable >( getName() );
-      subRegion.registerField< rateAndState::stateVariable_n >( getName() );
-      subRegion.registerField< rateAndState::slipRate >( getName() );
-      subRegion.registerField< rateAndState::slipRate_n >( getName() );
-
-      // Tangent (2-component) functions on fault
-      string const labels2Comp[2] = {"tangent1", "tangent2" };
-      subRegion.registerField< rateAndState::slipVelocity >( getName() ).
-        setDimLabels( 1, labels2Comp ).reference().resizeDimension< 1 >( 2 );
-      subRegion.registerField< rateAndState::slipVelocity_n >( getName() ).
-        setDimLabels( 1, labels2Comp ).reference().resizeDimension< 1 >( 2 );  
-      subRegion.registerField< rateAndState::shearTraction >( getName() ).
-        setDimLabels( 1, labels2Comp ).reference().resizeDimension< 1 >( 2 );
-    } );
-  } );
-}
-
-void ImplicitQDRateAndState::applyInitialConditionsToFault( int const cycleNumber,
-                                                        DomainPartition & domain ) const
-{
-  if( cycleNumber == 0 )
-  {
-    /// Apply initial conditions to the Fault
-    FieldSpecificationManager & fieldSpecificationManager = FieldSpecificationManager::getInstance();
-
-    forDiscretizationOnMeshTargets( domain.getMeshBodies(), [&]( string const &,
-                                                                 MeshLevel & mesh,
-                                                                 arrayView1d< string const > const & regionNames )
-
-    {
-      fieldSpecificationManager.applyInitialConditions( mesh );
-      mesh.getElemManager().forElementSubRegions< SurfaceElementSubRegion >( regionNames,
-                                                                             [&]( localIndex const,
-                                                                                  SurfaceElementSubRegion & subRegion )
-      {
-        arrayView1d< real64 const > const slipRate        = subRegion.getField< rateAndState::slipRate >();
-        arrayView1d< real64 const > const stateVariable   = subRegion.getField< rateAndState::stateVariable >();
-        arrayView2d< real64 const > const traction        = subRegion.getField< contact::traction >();
-        arrayView1d< real64 > const stateVariable_n       = subRegion.getField< rateAndState::stateVariable_n >();
-        arrayView1d< real64 > const slipRate_n            = subRegion.getField< rateAndState::slipRate_n >();
-        arrayView2d< real64 > const traction_n            = subRegion.getField< contact::traction_n >();
-
-        forAll< parallelDevicePolicy<> >( subRegion.size(), [=] GEOS_HOST_DEVICE ( localIndex const k )
-        {
-          slipRate_n [k]     = slipRate[k];
-          stateVariable_n[k] = stateVariable[k];
-          LvArray::tensorOps::copy< 3 >( traction_n[k], traction[k] );
-        } );
-      } );
-    } );
-  } 
 }
 
 void ImplicitQDRateAndState::solveRateAndStateEquations( real64 const time_n,
@@ -175,47 +100,11 @@ void ImplicitQDRateAndState::updateSlip( ElementSubRegionBase & subRegion, real6
   } );
 }
 
-void ImplicitQDRateAndState::saveState( DomainPartition & domain ) const
-{
-  forDiscretizationOnMeshTargets( domain.getMeshBodies(), [&]( string const &,
-                                                               MeshLevel & mesh,
-                                                               arrayView1d< string const > const & regionNames )
-
-  {
-    mesh.getElemManager().forElementSubRegions< SurfaceElementSubRegion >( regionNames,
-                                                                           [&]( localIndex const,
-                                                                                SurfaceElementSubRegion & subRegion )
-    {
-      arrayView1d< real64 const > const stateVariable = subRegion.getField< rateAndState::stateVariable >();
-      arrayView2d< real64 const > const slipVelocity  = subRegion.getField< rateAndState::slipVelocity >();
-      arrayView2d< real64 const > const deltaSlip     = subRegion.getField< contact::deltaSlip >();
-      arrayView2d< real64 const > const dispJump      = subRegion.getField< contact::dispJump >();
-      arrayView2d< real64 const > const traction      = subRegion.getField< contact::traction >();
-
-      arrayView1d< real64 > const stateVariable_n = subRegion.getField< rateAndState::stateVariable_n >();
-      arrayView2d< real64 > const slipVelocity_n  = subRegion.getField< rateAndState::slipVelocity_n >();
-      arrayView2d< real64 > const deltaSlip_n     = subRegion.getField< contact::deltaSlip >();
-      arrayView2d< real64 > const dispJump_n      = subRegion.getField< contact::dispJump_n >();
-      arrayView2d< real64 > const traction_n      = subRegion.getField< contact::traction_n >();
-
-      forAll< parallelDevicePolicy<> >( subRegion.size(), [=] GEOS_HOST_DEVICE ( localIndex const k )
-      {
-        stateVariable_n[k]  = stateVariable[k];
-        LvArray::tensorOps::copy< 2 >( deltaSlip_n[k], deltaSlip[k] );
-        LvArray::tensorOps::copy< 2 >( slipVelocity_n[k], slipVelocity[k] );
-        LvArray::tensorOps::copy< 3 >( dispJump_n[k], dispJump[k] );
-        LvArray::tensorOps::copy< 3 >( traction_n[k], traction[k] );
-      } );
-    } );
-  } );
-}
-
 real64 ImplicitQDRateAndState::setNextDt( real64 const & currentDt, DomainPartition & domain )
 {
   GEOS_UNUSED_VAR( currentDt );
 
   real64 maxSlipRate = 0.0;
-  // Spring-slider shear traction computation
   forDiscretizationOnMeshTargets( domain.getMeshBodies(), [&]( string const &,
                                                                MeshLevel const & mesh,
                                                                arrayView1d< string const > const & regionNames )

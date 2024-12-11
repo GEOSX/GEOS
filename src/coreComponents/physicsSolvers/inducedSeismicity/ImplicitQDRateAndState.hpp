@@ -13,15 +13,15 @@
  * ------------------------------------------------------------------------------------------------------------
  */
 
-#ifndef GEOS_PHYSICSSOLVERS_INDUCED_IMPLICITQDRATEANDSTATE_HPP
-#define GEOS_PHYSICSSOLVERS_INDUCED_IMPLICITQDRATEANDSTATE_HPP
+#ifndef GEOS_PHYSICSSOLVERS_INDUCEDSEISMICITY_IMPLICITQDRATEANDSTATE_HPP
+#define GEOS_PHYSICSSOLVERS_INDUCEDSEISMICITY_IMPLICITQDRATEANDSTATE_HPP
 
-#include "physicsSolvers/PhysicsSolverBase.hpp"
+#include "QDRateAndStateBase.hpp"
 
 namespace geos
 {
 
-class ImplicitQDRateAndState : public PhysicsSolverBase
+class ImplicitQDRateAndState : public QDRateAndStateBase
 {
 public:
   /// The default nullary constructor is disabled to avoid compiler auto-generation:
@@ -36,15 +36,8 @@ public:
 
   static string derivedSolverPrefix() { return "Implicit";};
 
-  /// This method ties properties with their supporting mesh
-  virtual void registerDataOnMesh( Group & meshBodies ) override;
-
-  struct viewKeyStruct : public PhysicsSolverBase::viewKeyStruct
+  struct viewKeyStruct : public QDRateAndStateBase::viewKeyStruct
   {
-    /// Friction law name string
-    constexpr static char const * frictionLawNameString() { return "frictionLawName"; }
-    /// Friction law name string
-    constexpr static char const * shearImpedanceString() { return "shearImpedance"; }
     /// target slip increment
     constexpr static char const * targetSlipIncrementString() { return "targetSlipIncrement"; }
   };
@@ -62,29 +55,11 @@ public:
                              real64 const & dt,
                              integer const cycleNumber,
                              DomainPartition & domain ) override final;
-
-  /**
-  * @brief save the current state
-  * @param domain
-  */
-  void saveState( DomainPartition & domain ) const;                           
-
 protected:
 
-  virtual real64 updateStresses( real64 const & time_n,
-                                 real64 const & dt,
-                                 const int cycleNumber,
-                                 DomainPartition & domain ) const = 0;
-
-  virtual void solveRateAndStateEquations( real64 const time_n,
-                                           real64 const dt,
-                                           DomainPartition & domain ) const;
-
-  virtual void applyInitialConditionsToFault( int const cycleNumber,
-                                              DomainPartition & domain) const;                                 
-
-  /// shear impedance
-  real64 m_shearImpedance;
+  void solveRateAndStateEquations( real64 const time_n,
+                                   real64 const dt,
+                                   DomainPartition & domain ) const;                               
 
   /// target slip rate
   real64 m_targetSlipIncrement;
@@ -92,4 +67,4 @@ protected:
 
 } /* namespace geos */
 
-#endif /* GEOS_PHYSICSSOLVERS_INDUCED_IMPLICITQDRATEANDSTATE_HPP */
+#endif /* GEOS_PHYSICSSOLVERS_INDUCEDSEISMICITY_IMPLICITQDRATEANDSTATE_HPP */

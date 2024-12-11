@@ -43,7 +43,8 @@ public:
     m_stateVariable( subRegion.getField< fields::rateAndState::stateVariable >() ),
     m_stateVariable_n( subRegion.getField< fields::rateAndState::stateVariable_n >() ),
     m_slipRate_n( subRegion.getField< fields::rateAndState::slipRate_n >() ),
-    m_traction( subRegion.getField< fields::contact::traction >() ),
+    m_normalTraction( subRegion.getField< fields::rateAndState::normalTraction >() ),
+    m_shearTraction( subRegion.getField< fields::rateAndState::shearTraction >() ),
     m_slipVelocity( subRegion.getField< fields::rateAndState::slipVelocity >() ),
     m_shearImpedance( shearImpedance ),
     m_frictionLaw( frictionLaw.createKernelUpdates()  )
@@ -72,8 +73,8 @@ public:
               real64 const dt,
               StackVariables & stack ) const
   {
-    real64 const normalTraction = m_traction[k][0];
-    real64 const shearTractionMagnitude = LvArray::math::sqrt( m_traction[k][1] * m_traction[k][1] + m_traction[k][2] * m_traction[k][2] );
+    real64 const normalTraction = m_normalTraction[k];
+    real64 const shearTractionMagnitude = LvArray::math::sqrt( m_shearTraction[k][0] * m_shearTraction[k][0] + m_shearTraction[k][1] * m_shearTraction[k][1] );
 
     // Eq 1: Scalar force balance for slipRate and shear traction magnitude
     stack.rhs[0] = shearTractionMagnitude - m_shearImpedance * m_slipRate[k]
@@ -104,7 +105,7 @@ public:
 
     // Slip rate is bracketed between [0, shear traction magnitude / shear impedance]
     // Check that the update did not end outside of the bracket.
-    real64 const shearTractionMagnitude = LvArray::math::sqrt( m_traction[k][1] * m_traction[k][1] + m_traction[k][2] * m_traction[k][2] );
+    real64 const shearTractionMagnitude = LvArray::math::sqrt( m_shearTraction[k][0] * m_shearTraction[k][0] + m_shearTraction[k][1] * m_shearTraction[k][1] );
     real64 const upperBound = shearTractionMagnitude / m_shearImpedance - m_slipRate[k];
     real64 const lowerBound = -m_slipRate[k];
 
@@ -129,7 +130,7 @@ public:
   void projectSlipRate( localIndex const k ) const
   {
     real64 const frictionCoefficient = m_frictionLaw.frictionCoefficient( k, m_slipRate[k], m_stateVariable[k] );
-    projectSlipRateBase( k, frictionCoefficient, m_shearImpedance, m_traction, m_slipRate, m_slipVelocity );
+    projectSlipRateBase( k, frictionCoefficient, m_shearImpedance, m_normalTraction, m_shearTraction, m_slipRate, m_slipVelocity );
   }
 
   GEOS_HOST_DEVICE
@@ -207,7 +208,9 @@ private:
 
   arrayView1d< real64 > const m_slipRate_n;
 
-  arrayView2d< real64 const > const m_traction;
+  arrayView1d< real64 > const m_normalTraction;
+
+  arrayView2d< real64 > const m_shearTraction;
 
   arrayView2d< real64 > const m_slipVelocity;
 

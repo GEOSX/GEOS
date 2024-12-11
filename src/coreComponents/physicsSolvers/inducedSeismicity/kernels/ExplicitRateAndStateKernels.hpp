@@ -41,7 +41,8 @@ public:
                               real64 const shearImpedance ):
     m_slipRate( subRegion.getField< fields::rateAndState::slipRate >() ),
     m_stateVariable( subRegion.getField< fields::rateAndState::stateVariable >() ),
-    m_traction( subRegion.getField< fields::contact::traction >() ),
+    m_normalTraction( subRegion.getField< fields::rateAndState::normalTraction >() ),
+    m_shearTraction( subRegion.getField< fields::rateAndState::shearTraction >() ),    
     m_slipVelocity( subRegion.getField< fields::rateAndState::slipVelocity >() ),
     m_shearImpedance( shearImpedance ),
     m_frictionLaw( frictionLaw.createKernelUpdates()  )
@@ -70,8 +71,8 @@ public:
               StackVariables & stack ) const
   {
     GEOS_UNUSED_VAR( dt );
-    real64 const normalTraction = m_traction[k][0];
-    real64 const shearTractionMagnitude = LvArray::math::sqrt( m_traction[k][1] * m_traction[k][1] + m_traction[k][2] * m_traction[k][2] );
+    real64 const normalTraction = m_normalTraction[k];
+    real64 const shearTractionMagnitude = LvArray::math::sqrt( m_shearTraction[k][0] * m_shearTraction[k][0] + m_shearTraction[k][1] * m_shearTraction[k][1] );
 
     // Slip rate is bracketed between [0, shear traction magnitude / shear impedance]
     // If slip rate is outside the bracket, re-initialize to the middle value
@@ -90,7 +91,7 @@ public:
 
     // Slip rate is bracketed between [0, shear traction magnitude / shear impedance]
     // Check that the update did not end outside of the bracket.
-    real64 const shearTractionMagnitude = LvArray::math::sqrt( m_traction[k][1] * m_traction[k][1] + m_traction[k][2] * m_traction[k][2] );
+    real64 const shearTractionMagnitude = LvArray::math::sqrt( m_shearTraction[k][0] * m_shearTraction[k][0] + m_shearTraction[k][1] * m_shearTraction[k][1] );
     real64 const upperBound = shearTractionMagnitude/m_shearImpedance;
     if( m_slipRate[k] > upperBound ) m_slipRate[k] = 0.5*upperBound;
 
@@ -111,7 +112,7 @@ public:
   void projectSlipRate( localIndex const k ) const
   {
     real64 const frictionCoefficient = m_frictionLaw.frictionCoefficient( k, m_slipRate[k], m_stateVariable[k] );
-    projectSlipRateBase( k, frictionCoefficient, m_shearImpedance, m_traction, m_slipRate, m_slipVelocity );
+    projectSlipRateBase( k, frictionCoefficient, m_shearImpedance, m_normalTraction, m_shearTraction, m_slipRate, m_slipVelocity );
   }
 
   GEOS_HOST_DEVICE
@@ -140,7 +141,7 @@ solveRateAndStateEquation( SurfaceElementSubRegion & subRegion,
                            real64 const newtonTol )
 {
   GEOS_MARK_FUNCTION;
-  
+
   newtonSolve< POLICY >( subRegion, kernel, dt, maxNewtonIter, newtonTol );
 
   forAll< POLICY >( subRegion.size(), [=] GEOS_HOST_DEVICE ( localIndex const k )
@@ -156,7 +157,9 @@ private:
 
   arrayView1d< real64 > const m_stateVariable;
 
-  arrayView2d< real64 const > const m_traction;
+  arrayView1d< real64 const > const m_normalTraction;
+
+  arrayView2d< real64 const > const m_shearTraction;
 
   arrayView2d< real64 > const m_slipVelocity;
 

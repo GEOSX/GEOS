@@ -13,16 +13,16 @@
  * ------------------------------------------------------------------------------------------------------------
  */
 
-#ifndef GEOS_PHYSICSSOLVERS_INDUCED_QUASIDYNAMICEQRK32_HPP
-#define GEOS_PHYSICSSOLVERS_INDUCED_QUASIDYNAMICEQRK32_HPP
+#ifndef GEOS_PHYSICSSOLVERS_INDUCEDSEISMICITY_QUASIDYNAMICEQRK32_HPP
+#define GEOS_PHYSICSSOLVERS_INDUCEDSEISMICITY_QUASIDYNAMICEQRK32_HPP
 
-#include "physicsSolvers/PhysicsSolverBase.hpp"
+#include "QDRateAndStateBase.hpp"
 #include "kernels/ExplicitRateAndStateKernels.hpp"
 
 namespace geos
 {
 
-class ExplicitQDRateAndState : public PhysicsSolverBase
+class ExplicitQDRateAndState : public QDRateAndStateBase
 {
 public:
   /// The default nullary constructor is disabled to avoid compiler auto-generation:
@@ -40,14 +40,8 @@ public:
   /// This method ties properties with their supporting mesh
   virtual void registerDataOnMesh( Group & meshBodies ) override;
 
-  struct viewKeyStruct : public PhysicsSolverBase::viewKeyStruct
+  struct viewKeyStruct : public QDRateAndStateBase::viewKeyStruct
   {
-    /// stress solver name
-    constexpr static char const * stressSolverNameString() { return "stressSolverName"; }
-    /// Friction law name string
-    constexpr static char const * frictionLawNameString() { return "frictionLawName"; }
-    /// Friction law name string
-    constexpr static char const * shearImpedanceString() { return "shearImpedance"; }
     /// target slip increment
     constexpr static char const * timeStepTol() { return "timeStepTol"; }
   };
@@ -93,22 +87,7 @@ public:
                            real64 const & dt,
                            DomainPartition & domain ) const;
 
-  /**
-   * @brief save the current state
-   * @param domain
-   */
-  void saveState( DomainPartition & domain ) const;
-
 protected:
-
-  virtual void postInputInitialization() override;
-
-  virtual real64 updateStresses( real64 const & time_n,
-                                 real64 const & dt,
-                                 const int cycleNumber,
-                                 DomainPartition & domain ) const = 0;
-  /// shear impedance
-  real64 m_shearImpedance;
 
   /// Runge-Kutta Butcher table (specifies the embedded RK method)
   // TODO: The specific type should not be hardcoded!
@@ -182,41 +161,8 @@ public:
 
   PIDController m_controller;
 
-
-  class SpringSliderParameters
-  {
-public:
-
-    GEOS_HOST_DEVICE
-    SpringSliderParameters( real64 const normalTraction, real64 const a, real64 const b, real64 const Dc ):
-      tauRate( 1e-4 ),
-      springStiffness( 0.0 )
-    {
-      real64 const criticalStiffness = normalTraction * (b - a) / Dc;
-      springStiffness = 0.9 * criticalStiffness;
-    }
-
-    /// Default copy constructor
-    SpringSliderParameters( SpringSliderParameters const & ) = default;
-
-    /// Default move constructor
-    SpringSliderParameters( SpringSliderParameters && ) = default;
-
-    /// Deleted default constructor
-    SpringSliderParameters() = delete;
-
-    /// Deleted copy assignment operator
-    SpringSliderParameters & operator=( SpringSliderParameters const & ) = delete;
-
-    /// Deleted move assignment operator
-    SpringSliderParameters & operator=( SpringSliderParameters && ) =  delete;
-
-    real64 tauRate;
-
-    real64 springStiffness;
-  };
 };
 
 } /* namespace geos */
 
-#endif /* GEOS_PHYSICSSOLVERS_INDUCED_QUASIDYNAMICEQRK32_HPP */
+#endif /* GEOS_PHYSICSSOLVERS_INDUCEDSEISMICITY_QUASIDYNAMICEQRK32_HPP */

@@ -64,25 +64,22 @@ void SpringSlider< RSSOLVER_TYPE >::registerDataOnMesh( Group & meshBodies )
       // 3-component functions on fault
       string const labels3Comp[3] = { "normal", "tangent1", "tangent2" };
       subRegion.registerField< contact::dispJump >( this->getName() ).
-      setDimLabels( 1, labels3Comp ).
-      reference().template resizeDimension< 1 >( 3 );
-      subRegion.registerField< contact::dispJump_n >( this->getName() ).
-          setDimLabels( 1, labels3Comp ).
-          reference().template resizeDimension< 1 >( 3 );  
-      subRegion.registerField< contact::traction >( this->getName() ).
         setDimLabels( 1, labels3Comp ).
         reference().template resizeDimension< 1 >( 3 );
-      subRegion.registerField< contact::traction_n >( this->getName() ).
-          setDimLabels( 1, labels3Comp ).
-          reference().template resizeDimension< 1 >( 3 );
 
-      subRegion.registerField< contact::deltaSlip >( this->getName() ).
+      subRegion.registerField< contact::dispJump_n >( this->getName() ).
         setDimLabels( 1, labels3Comp ).
-        reference().template resizeDimension< 1 >( 3 );
+        reference().template resizeDimension< 1 >( 3 );   
+
+      string const labels2Comp[2] = { "tangent1", "tangent2" };
+      
+      subRegion.registerField< contact::deltaSlip >( this->getName() ).
+        setDimLabels( 1, labels2Comp ).
+        reference().template resizeDimension< 1 >( 2 );
 
       subRegion.registerField< contact::deltaSlip_n >( this->getName() ).
-        setDimLabels( 1, labels3Comp ).
-        reference().template resizeDimension< 1 >( 3 );      
+        setDimLabels( 1, labels2Comp ).
+        reference().template resizeDimension< 1 >( 2 );      
 
       subRegion.registerWrapper< string >( viewKeyStruct::frictionLawNameString() ).
         setPlotLevel( PlotLevel::NOPLOT ).
@@ -117,8 +114,10 @@ real64 SpringSlider< RSSOLVER_TYPE >::updateStresses( real64 const & time_n,
     {
 
       arrayView2d< real64 const > const deltaSlip = subRegion.getField< fields::contact::deltaSlip >();
-      arrayView2d< real64 > const traction        = subRegion.getField< fields::contact::traction >();
-      arrayView2d< real64 > const traction_n      = subRegion.getField< fields::contact::traction_n >();
+      arrayView2d< real64 > const shearTraction   = subRegion.getField< fields::rateAndState::shearTraction >();
+      arrayView2d< real64 > const shearTraction_n      = subRegion.getField< fields::rateAndState::shearTraction_n >();
+
+      arrayView1d< real64 > const normalTraction   = subRegion.getField< fields::rateAndState::normalTraction >();
 
 
       string const & fricitonLawName = subRegion.template getReference< string >( viewKeyStruct::frictionLawNameString() );
@@ -128,7 +127,7 @@ real64 SpringSlider< RSSOLVER_TYPE >::updateStresses( real64 const & time_n,
 
       forAll< parallelDevicePolicy<> >( subRegion.size(), [=] GEOS_HOST_DEVICE ( localIndex const k )
       {
-        SpringSliderParameters springSliderParameters = SpringSliderParameters( traction[k][0],
+        SpringSliderParameters springSliderParameters = SpringSliderParameters( normalTraction[k],
                                                                                 frictionKernelWrapper.getACoefficient( k ),
                                                                                 frictionKernelWrapper.getBCoefficient( k ),
                                                                                 frictionKernelWrapper.getDcCoefficient( k ) );
@@ -137,9 +136,9 @@ real64 SpringSlider< RSSOLVER_TYPE >::updateStresses( real64 const & time_n,
         
 
 
-        traction[k][1] = traction_n[k][1] + springSliderParameters.tauRate * dt
+        shearTraction[k][0] = shearTraction_n[k][0] + springSliderParameters.tauRate * dt
                            - springSliderParameters.springStiffness * deltaSlip[k][0];
-        traction[k][2] = traction_n[k][2] + springSliderParameters.tauRate * dt
+        shearTraction[k][1] = shearTraction_n[k][1] + springSliderParameters.tauRate * dt
                            - springSliderParameters.springStiffness * deltaSlip[k][1];
       } );
     } );

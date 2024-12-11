@@ -71,7 +71,35 @@ real64 QuasiDynamicEarthQuake< RSSOLVER_TYPE >::updateStresses( real64 const & t
 {
   // 1. Solve the momentum balance
   real64 const dtAccepted = m_stressSolver->solverStep( time_n, dt, cycleNumber, domain );
+
   // 2. Add background stress and possible forcing. 
+  this->forDiscretizationOnMeshTargets( domain.getMeshBodies(), [&]( string const &,
+                                                               MeshLevel & mesh,
+                                                               arrayView1d< string const > const & regionNames )
+  {
+    mesh.getElemManager().forElementSubRegions< SurfaceElementSubRegion >( regionNames,
+                                                                           [&]( localIndex const,
+                                                                                SurfaceElementSubRegion & subRegion )
+    {
+      arrayView2d< real64 const > const traction = subRegion.getField< contact::traction >();
+      
+      arrayView2d< real64 > const shearTraction   = subRegion.getField< rateAndState::shearTraction >();
+      arrayView1d< real64 > const normalTraction  = subRegion.getField< rateAndState::normalTraction >();
+      
+      arrayView2d< real64 > const backgroundShearStress = subRegion.getField< rateAndState::backgroundShearStress >();
+      arrayView1d< real64 > const backgroundNormalStress = subRegion.getField< rateAndState::backgroundNormalStress >();
+
+      forAll< parallelDevicePolicy<> >( subRegion.size(), [=] GEOS_HOST_DEVICE ( localIndex const k )
+      {
+        normalTraction[k] = backgroundNormalStress[k] + traction[k][0];
+         for( int i = 0; i < 2; ++i )
+        {
+          shearTraction(k, i) = backgroundShearStress(k, i) + traction(k, i+1); 
+        }
+      } );
+    } );
+  } );
+
   return dtAccepted;
 }
 

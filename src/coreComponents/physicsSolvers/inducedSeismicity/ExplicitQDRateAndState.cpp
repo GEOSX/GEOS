@@ -36,22 +36,12 @@ using namespace rateAndStateKernels;
 
 ExplicitQDRateAndState::ExplicitQDRateAndState( const string & name,
                                         Group * const parent ):
-  PhysicsSolverBase( name, parent ),
-  m_shearImpedance( 0.0 ),
+  QDRateAndStateBase( name, parent ),
   m_butcherTable( BogackiShampine32Table()), // TODO: The butcher table should be specified in the XML input.
   m_successfulStep( false ),
   m_controller( PIDController( { 1.0/18.0, 1.0/9.0, 1.0/18.0 },
                                1.0e-6, 1.0e-6, 0.81 )) // TODO: The control parameters should be specified in the XML input
-{
-  this->registerWrapper( viewKeyStruct::shearImpedanceString(), &m_shearImpedance ).
-    setInputFlag( InputFlags::REQUIRED ).
-    setDescription( "Shear impedance." );
-}
-
-void ExplicitQDRateAndState::postInputInitialization()
-{
-  PhysicsSolverBase::postInputInitialization();
-}
+{}
 
 ExplicitQDRateAndState::~ExplicitQDRateAndState()
 {
@@ -60,7 +50,7 @@ ExplicitQDRateAndState::~ExplicitQDRateAndState()
 
 void ExplicitQDRateAndState::registerDataOnMesh( Group & meshBodies )
 {
-  PhysicsSolverBase::registerDataOnMesh( meshBodies );
+  QDRateAndStateBase::registerDataOnMesh( meshBodies );
 
   forDiscretizationOnMeshTargets( meshBodies, [&] ( string const &,
                                                     MeshLevel & mesh,
@@ -72,18 +62,6 @@ void ExplicitQDRateAndState::registerDataOnMesh( Group & meshBodies )
                                                                  [&]( localIndex const,
                                                                       SurfaceElementSubRegion & subRegion )
     {
-      // Scalar functions on fault
-      subRegion.registerField< rateAndState::stateVariable >( getName() );
-      subRegion.registerField< rateAndState::stateVariable_n >( getName() );
-      subRegion.registerField< rateAndState::slipRate >( getName() );
-
-      // Tangent (2-component) functions on fault
-      string const labels2Comp[2] = {"tangent1", "tangent2" };
-      subRegion.registerField< rateAndState::slipVelocity >( getName() ).
-        setDimLabels( 1, labels2Comp ).reference().resizeDimension< 1 >( 2 );
-      subRegion.registerField< rateAndState::slipVelocity_n >( getName() ).
-        setDimLabels( 1, labels2Comp ).reference().resizeDimension< 1 >( 2 );
-
       // Runge-Kutta stage rates and error
       integer const numRKComponents = 3;
       subRegion.registerField< rateAndState::rungeKuttaStageRates >( getName() ).reference().resizeDimension< 1, 2 >( m_butcherTable.numStages, numRKComponents );
@@ -97,21 +75,8 @@ real64 ExplicitQDRateAndState::solverStep( real64 const & time_n,
                                            int const cycleNumber,
                                            DomainPartition & domain )
 {
-  if( cycleNumber == 0 )
-  {
-    /// Apply initial conditions to the Fault
-    FieldSpecificationManager & fieldSpecificationManager = FieldSpecificationManager::getInstance();
-
-    forDiscretizationOnMeshTargets( domain.getMeshBodies(), [&]( string const &,
-                                                                 MeshLevel & mesh,
-                                                                 arrayView1d< string const > const & )
-
-    {
-      fieldSpecificationManager.applyInitialConditions( mesh );
-
-    } );
-    saveState( domain );
-  }
+  applyInitialConditionsToFault( cycleNumber, domain ); 
+  saveState( domain );
 
   real64 dtAdaptive = dt;
 
@@ -292,45 +257,8 @@ void ExplicitQDRateAndState::updateSlipVelocity( real64 const & time_n,
   } );
 }
 
-void ExplicitQDRateAndState::saveState( DomainPartition & domain ) const
-{
-  forDiscretizationOnMeshTargets( domain.getMeshBodies(), [&]( string const &,
-                                                               MeshLevel & mesh,
-                                                               arrayView1d< string const > const & regionNames )
-
-  {
-    mesh.getElemManager().forElementSubRegions< SurfaceElementSubRegion >( regionNames,
-                                                                           [&]( localIndex const,
-                                                                                SurfaceElementSubRegion & subRegion )
-    {
-      arrayView1d< real64 const > const stateVariable = subRegion.getField< rateAndState::stateVariable >();
-      arrayView2d< real64 const > const slipVelocity  = subRegion.getField< rateAndState::slipVelocity >();
-      arrayView2d< real64 const > const deltaSlip     = subRegion.getField< contact::deltaSlip >();
-      arrayView2d< real64 const > const dispJump      = subRegion.getField< contact::dispJump >();
-      arrayView2d< real64 const > const traction      = subRegion.getField< contact::traction >();
-
-      arrayView1d< real64 > const stateVariable_n = subRegion.getField< rateAndState::stateVariable_n >();
-      arrayView2d< real64 > const slipVelocity_n  = subRegion.getField< rateAndState::slipVelocity_n >();
-      arrayView2d< real64 > const deltaSlip_n     = subRegion.getField< contact::deltaSlip >();
-      arrayView2d< real64 > const dispJump_n      = subRegion.getField< contact::dispJump_n >();
-      arrayView2d< real64 > const traction_n      = subRegion.getField< contact::traction_n >();
-
-      forAll< parallelDevicePolicy<> >( subRegion.size(), [=] GEOS_HOST_DEVICE ( localIndex const k )
-      {
-        stateVariable_n[k]  = stateVariable[k];
-        LvArray::tensorOps::copy< 2 >( deltaSlip_n[k], deltaSlip[k] );
-        LvArray::tensorOps::copy< 2 >( slipVelocity_n[k], slipVelocity[k] );
-        LvArray::tensorOps::copy< 3 >( dispJump_n[k], dispJump[k] );
-        LvArray::tensorOps::copy< 3 >( traction_n[k], traction[k] );
-      } );
-    } );
-  } );
-}
-
 real64 ExplicitQDRateAndState::setNextDt( real64 const & currentDt, DomainPartition & domain )
 {
-
-  // Spring-slider shear traction computation
   forDiscretizationOnMeshTargets( domain.getMeshBodies(), [&]( string const &,
                                                                MeshLevel const & mesh,
                                                                arrayView1d< string const > const & regionNames )

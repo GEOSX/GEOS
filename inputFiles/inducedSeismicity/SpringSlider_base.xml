@@ -80,27 +80,26 @@
 
     <FieldSpecification
       name="normalTraction"
-      fieldName="traction"
+      fieldName="normalTraction"
       initialCondition="1"
       objectPath="ElementRegions/Fault/FractureSubRegion"
-      component="0"
       scale="50"
       setNames="{all}"/>
     
     <FieldSpecification
       name="shearTraction1"
-      fieldName="traction"
+      fieldName="shearTraction"
       initialCondition="1"
       objectPath="ElementRegions/Fault/FractureSubRegion"
-      component="1"
+      component="0"
       scale="21.2132034356"
       setNames="{all}"/>
     <FieldSpecification
       name="shearTraction2"
-      fieldName="traction"
+      fieldName="shearTraction"
       initialCondition="1"
       objectPath="ElementRegions/Fault/FractureSubRegion"
-      component="2"
+      component="1"
       scale="21.2132034356"
       setNames="{all}"/>  
     <FieldSpecification

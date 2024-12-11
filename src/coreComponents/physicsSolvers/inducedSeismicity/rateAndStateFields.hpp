@@ -80,13 +80,53 @@ DECLARE_FIELD( stateVariable_n,
                WRITE_AND_READ,
                "Initial rate- and state-dependent friction state variable at this time step" );
 
+DECLARE_FIELD( normalTraction,
+               "normalTraction",
+               array1d< real64 >,
+               0.0,
+               LEVEL_0,
+               WRITE_AND_READ,
+               "Normal traction" );  
+
 DECLARE_FIELD( shearTraction,
                "shearTraction",
                array2d< real64 >,
-               29.2e6,
+               0.0,
                LEVEL_0,
                WRITE_AND_READ,
-               "shear Traction" );              
+               "Shear traction" );
+
+DECLARE_FIELD( normalTraction_n,
+               "normalTraction_n",
+               array1d< real64 >,
+               0.0,
+               LEVEL_0,
+               WRITE_AND_READ,
+               "Normal traction at previous timestep n." );  
+
+DECLARE_FIELD( shearTraction_n,
+               "shearTraction_n",
+               array2d< real64 >,
+               0.0,
+               LEVEL_0,
+               WRITE_AND_READ,
+               "Shear traction at previous timestep n." );
+
+DECLARE_FIELD( backgroundNormalStress,
+               "backgroundNormalStress",
+               array1d< real64 >,
+               0.0,
+               LEVEL_0,
+               WRITE_AND_READ,
+               "Background Normal Stress" );  
+
+DECLARE_FIELD( backgroundShearStress,
+               "backgroundShearStress",
+               array2d< real64 >,
+               0.0,
+               LEVEL_0,
+               WRITE_AND_READ,
+               "Background Shear Stress" );                                    
 
 DECLARE_FIELD( rungeKuttaStageRates,
                "rungeKuttaStageRates",
