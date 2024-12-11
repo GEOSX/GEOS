@@ -146,8 +146,6 @@ void AcousticWaveEquationSEM::precomputeSourceAndReceiverTerm( MeshLevel & baseM
   receiverConstants.setValues< EXEC_POLICY >( -1 );
   receiverIsLocal.zero();
 
-  arrayView2d< real32 > const sourceValue = m_sourceValue.toView();
-
   //Correct size for sourceValue
   EventManager const & event = getGroupByPath< EventManager >( "/Problem/Events" );
   real64 const & maxTime = event.getReference< real64 >( EventManager::viewKeyStruct::maxTimeString() );
@@ -170,8 +168,9 @@ void AcousticWaveEquationSEM::precomputeSourceAndReceiverTerm( MeshLevel & baseM
   localIndex const nsamples = int( (maxTime - minTime) / dtCompute) + 1;               
                                                                                 
   localIndex const numSourcesGlobal = m_sourceCoordinates.size( 0 );            
-  m_sourceValue.resize( nsamples, numSourcesGlobal );                           
+  m_sourceValue.resize( nsamples, numSourcesGlobal );                
 
+  arrayView2d< real32 > const sourceValue = m_sourceValue.toView();
 
   mesh.getElemManager().forElementSubRegionsComplete< CellElementSubRegion >( regionNames, [&]( localIndex const,
                                                                                                 localIndex const er,
@@ -1145,8 +1144,14 @@ void AcousticWaveEquationSEM::computeUnknowns( real64 const & time_n,
                                                           getDiscretizationName(),
                                                           "",
                                                           kernelFactory );
+
   //Modification of cycleNember useful when minTime < 0
-  addSourceToRightHandSide( time_n, rhs );
+  EventManager const & event = getGroupByPath< EventManager >( "/Problem/Events" );
+  real64 const & minTime = event.getReference< real64 >( EventManager::viewKeyStruct::minTimeString() );
+  localIndex const cycleNumber = time_n*dt;
+  integer const cycleForSource = int(round( -minTime / dt + cycleNumber ));
+
+  addSourceToRightHandSide( cycleForSource, rhs );
 
   /// calculate your time integrators
   real64 const dt2 = pow( dt, 2 );
