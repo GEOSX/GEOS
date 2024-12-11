@@ -1,6 +1,7 @@
 # Specify solver headers
 set( physicsSolvers_headers
      ${physicsSolvers_headers}
+     inducedSeismicity/LogLevelsInfo.hpp
      inducedSeismicity/inducedSeismicityFields.hpp
      inducedSeismicity/rateAndStateFields.hpp
      inducedSeismicity/QuasiDynamicEQ.hpp

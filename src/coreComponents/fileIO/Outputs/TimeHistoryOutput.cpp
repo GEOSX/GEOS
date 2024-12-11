@@ -16,6 +16,7 @@
 #include "TimeHistoryOutput.hpp"
 
 #include "fileIO/timeHistory/HDFFile.hpp"
+#include "fileIO/LogLevelsInfo.hpp"
 
 #if defined(GEOS_USE_PYGEOSX)
 #include "fileIO/python/PyHistoryOutputType.hpp"
@@ -57,6 +58,7 @@ TimeHistoryOutput::TimeHistoryOutput( string const & name,
     setRestartFlags( RestartFlags::WRITE_AND_READ ).
     setDescription( "The current history record to be written, on restart from an earlier time allows use to remove invalid future history." );
 
+  addLogLevel< logInfo::Initialization >();
 }
 
 void TimeHistoryOutput::initCollectorParallel( DomainPartition const & domain, HistoryCollection & collector )
@@ -129,7 +131,7 @@ void TimeHistoryOutput::initializePostInitialConditionsPostSubGroups()
   }
 
   DomainPartition & domain = this->getGroupByPath< DomainPartition >( "/Problem/domain" );
-  GEOS_LOG_LEVEL_BY_RANK( 3, GEOS_FMT( "TimeHistory: '{}' initializing data collectors.", this->getName() ) );
+  GEOS_LOG_LEVEL_INFO_BY_RANK( logInfo::Initialization, GEOS_FMT( "TimeHistory: '{}' initializing data collectors.", this->getName() ) );
   for( auto collectorPath : m_collectorPaths )
   {
     try

@@ -25,6 +25,7 @@
 #include "mesh/ObjectManagerBase.hpp"
 #include "mesh/mpiCommunications/CommunicationTools.hpp"
 #include "mesh/mpiCommunications/SpatialPartition.hpp"
+#include "mesh/LogLevelsInfo.hpp"
 
 
 namespace geos
@@ -45,6 +46,8 @@ DomainPartition::DomainPartition( string const & name,
 
   registerGroup( groupKeys.meshBodies );
   registerGroup< constitutive::ConstitutiveManager >( groupKeys.constitutiveManager );
+
+  addLogLevel< logInfo::PartitionCommunication >();
 }
 
 
@@ -262,7 +265,7 @@ void DomainPartition::setupCommunications( bool use_nonblocking )
         }
         else
         {
-          GEOS_LOG_LEVEL_RANK_0( 3, "No communication setup is needed since it is a shallow copy of the base discretization." );
+          GEOS_LOG_LEVEL_INFO_RANK_0( logInfo::PartitionCommunication, "No communication setup is needed since it is a shallow copy of the base discretization." );
         }
       }
     } );

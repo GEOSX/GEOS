@@ -18,6 +18,7 @@
  */
 
 #include "VTKOutput.hpp"
+#include "fileIO/LogLevelsInfo.hpp"
 
 
 #if defined(GEOS_USE_PYGEOSX)
@@ -90,6 +91,8 @@ VTKOutput::VTKOutput( string const & name,
     setApplyDefaultValue( m_outputRegionType ).
     setInputFlag( InputFlags::OPTIONAL ).
     setDescription( "Output region types.  Valid options: ``" + EnumStrings< vtk::VTKRegionTypes >::concat( "``, ``" ) + "``" );
+
+  addLogLevel< logInfo::OutputEvents >();
 }
 
 VTKOutput::~VTKOutput()
@@ -146,7 +149,7 @@ bool VTKOutput::execute( real64 const time_n,
                          real64 const GEOS_UNUSED_PARAM ( eventProgress ),
                          DomainPartition & domain )
 {
-  GEOS_LOG_LEVEL_RANK_0( 1, GEOS_FMT( "{}: writing {} at time {} s (cycle number {})", getName(), m_fieldNames, time_n + dt, cycleNumber ));
+  GEOS_LOG_LEVEL_INFO( logInfo::OutputEvents, GEOS_FMT( "{}: writing {} at time {} s (cycle number {})", getName(), m_fieldNames, time_n + dt, cycleNumber ));
 
   m_writer.setWriteGhostCells( m_writeGhostCells );
   m_writer.setWriteFaceElementsAs3D ( m_writeFaceElementsAs3D );

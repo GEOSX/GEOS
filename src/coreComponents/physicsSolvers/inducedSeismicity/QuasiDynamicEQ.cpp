@@ -23,6 +23,8 @@
 #include "mesh/DomainPartition.hpp"
 #include "kernels/RateAndStateKernels.hpp"
 #include "rateAndStateFields.hpp"
+#include "LogLevelsInfo.hpp"
+#include "physicsSolvers/inducedSeismicity/LogLevelsInfo.hpp"
 #include "physicsSolvers/contact/ContactFields.hpp"
 #include "fieldSpecification/FieldSpecificationManager.hpp"
 
@@ -53,6 +55,8 @@ QuasiDynamicEQ::QuasiDynamicEQ( const string & name,
     setInputFlag( InputFlags::OPTIONAL ).
     setApplyDefaultValue( 1.0e-7 ).
     setDescription( "Target slip incrmeent for timestep size selction" );
+
+  addLogLevel< logInfo::SolverSteps >();
 }
 
 void QuasiDynamicEQ::postInputInitialization()
@@ -143,12 +147,12 @@ real64 QuasiDynamicEQ::solverStep( real64 const & time_n,
   }
 
   /// 1. Compute shear and normal tractions
-  GEOS_LOG_LEVEL_RANK_0( 1, "Stress solver" );
+  GEOS_LOG_LEVEL_INFO_RANK_0( logInfo::SolverSteps, "Stress solver" );
 
   real64 const dtStress = updateStresses( time_n, dt, cycleNumber, domain );
 
   /// 2. Solve for slip rate and state variable and, compute slip
-  GEOS_LOG_LEVEL_RANK_0( 1, "Rate and State solver" );
+  GEOS_LOG_LEVEL_INFO_RANK_0( logInfo::SolverSteps, "Rate and State solver" );
 
   integer const maxNewtonIter = m_nonlinearSolverParameters.m_maxIterNewton;
   forDiscretizationOnMeshTargets( domain.getMeshBodies(), [&]( string const &,
@@ -275,7 +279,7 @@ real64 QuasiDynamicEQ::setNextDt( real64 const & currentDt, DomainPartition & do
 
   real64 const nextDt = m_targetSlipIncrement / maxSlipRate;
 
-  GEOS_LOG_LEVEL_RANK_0( 1, GEOS_FMT( "The next dt will be {:.2e} s", nextDt ));
+  GEOS_LOG_LEVEL_INFO_RANK_0( logInfo::TimeStep, GEOS_FMT( "The next dt will be {:.2e} s", nextDt ));
 
   return nextDt;
 }

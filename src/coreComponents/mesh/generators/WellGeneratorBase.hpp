@@ -25,6 +25,7 @@
 #include "dataRepository/Group.hpp"
 #include "codingUtilities/Utilities.hpp"
 #include "common/DataTypes.hpp"
+#include "mesh/LogLevelsInfo.hpp"
 
 
 namespace geos

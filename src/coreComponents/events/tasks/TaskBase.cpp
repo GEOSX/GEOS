@@ -29,6 +29,9 @@ TaskBase::TaskBase( string const & name,
   ExecutableGroup( name, parent )
 {
   setInputFlags( InputFlags::OPTIONAL_NONUNIQUE );
+
+  addLogLevel< logInfo::Initialization >();
+  addLogLevel< logInfo::EventExecution >();
 }
 
 TaskBase::~TaskBase()

@@ -1,6 +1,7 @@
 # Specify solver headers
 set( physicsSolvers_headers
      ${physicsSolvers_headers}
+     fluidFlow/LogLevelsInfo.hpp
      fluidFlow/CompositionalMultiphaseBase.hpp
      fluidFlow/CompositionalMultiphaseBaseFields.hpp
      fluidFlow/CompositionalMultiphaseStatistics.hpp
@@ -42,10 +43,10 @@ set( physicsSolvers_headers
      fluidFlow/StencilDataCollection.hpp
      fluidFlow/kernels/ThermalSinglePhaseBaseKernels.hpp
      fluidFlow/kernels/ThermalSinglePhaseFVMKernels.hpp
-     fluidFlow/LogLevelsInfo.hpp
      fluidFlow/wells/CompositionalMultiphaseWell.hpp
      fluidFlow/wells/CompositionalMultiphaseWellFields.hpp
      fluidFlow/wells/kernels/CompositionalMultiphaseWellKernels.hpp
+     fluidFlow/wells/LogLevelsInfo.hpp
      fluidFlow/wells/SinglePhaseWell.hpp
      fluidFlow/wells/SinglePhaseWellFields.hpp
      fluidFlow/wells/kernels/SinglePhaseWellKernels.hpp
@@ -53,7 +54,6 @@ set( physicsSolvers_headers
      fluidFlow/wells/WellControls.hpp
      fluidFlow/wells/WellSolverBase.hpp
      fluidFlow/wells/WellSolverBaseFields.hpp
-     fluidFlow/wells/LogLevelsInfo.hpp
      PARENT_SCOPE )
 
 # Specify solver sources

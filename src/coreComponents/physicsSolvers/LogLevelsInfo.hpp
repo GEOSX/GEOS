@@ -83,12 +83,6 @@ struct Timers
   static constexpr std::string_view getDescription() { return "Solver timers information"; }
 };
 
-struct Initialization
-{
-  static constexpr int getMinLogLevel() { return 1; }
-  static constexpr std::string_view getDescription() { return "Initialization information"; }
-};
-
 /// @endcond
 ///@}
 

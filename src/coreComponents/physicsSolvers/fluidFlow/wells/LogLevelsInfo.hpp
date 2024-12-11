@@ -35,16 +35,34 @@ namespace logInfo
 
 /// @cond DO_NOT_DOCUMENT
 
+struct Crossflow
+{
+  static constexpr int getMinLogLevel() { return 1; }
+  static constexpr std::string_view getDescription() { return "Crossflow information"; }
+};
+
+struct WellComponents
+{
+  static constexpr int getMinLogLevel() { return 1; }
+  static constexpr std::string_view getDescription() { return "Well components information"; }
+};
+
 struct WellControl
 {
   static constexpr int getMinLogLevel() { return 1; }
   static constexpr std::string_view getDescription() { return "Well control information"; }
 };
 
-struct Crossflow
+struct WellValidity
+{
+  static constexpr int getMinLogLevel() { return 2; }
+  static constexpr std::string_view getDescription() { return "Well validity information"; }
+};
+
+struct SystemSolution
 {
   static constexpr int getMinLogLevel() { return 1; }
-  static constexpr std::string_view getDescription() { return "Crossflow information"; }
+  static constexpr std::string_view getDescription() { return "Log single phase well system solution"; }
 };
 
 /// @endcond

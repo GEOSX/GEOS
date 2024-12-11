@@ -1,5 +1,6 @@
 # Specify all headers
 set( fileIO_headers
+     LogLevelsInfo.hpp
      Outputs/BlueprintOutput.hpp
      Outputs/OutputBase.hpp
      Outputs/OutputManager.hpp

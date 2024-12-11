@@ -31,12 +31,12 @@
 #include "mesh/PerforationFields.hpp"
 #include "mesh/mpiCommunications/CommunicationTools.hpp"
 #include "physicsSolvers/fluidFlow/SinglePhaseBase.hpp"
+#include "physicsSolvers/fluidFlow/wells/LogLevelsInfo.hpp"
 #include "physicsSolvers/fluidFlow/FlowSolverBaseFields.hpp"
 #include "physicsSolvers/fluidFlow/wells/WellSolverBaseFields.hpp"
 #include "physicsSolvers/fluidFlow/wells/SinglePhaseWellFields.hpp"
 #include "physicsSolvers/fluidFlow/wells/WellControls.hpp"
 #include "physicsSolvers/fluidFlow/wells/kernels/SinglePhaseWellKernels.hpp"
-#include "physicsSolvers/fluidFlow/wells/LogLevelsInfo.hpp"
 
 namespace geos
 {
@@ -58,6 +58,8 @@ SinglePhaseWell::SinglePhaseWell( const string & name,
     setApplyDefaultValue( 1 ). // negative pressure is allowed by default
     setInputFlag( InputFlags::OPTIONAL ).
     setDescription( "Flag indicating if negative pressure is allowed" );
+
+  addLogLevel< logInfo::SystemSolution >();
 }
 
 void SinglePhaseWell::registerDataOnMesh( Group & meshBodies )
@@ -886,8 +888,11 @@ bool SinglePhaseWell::checkSystemSolution( DomainPartition & domain,
   numNegativePressures = MpiWrapper::sum( numNegativePressures );
 
   if( numNegativePressures > 0 )
-    GEOS_LOG_LEVEL_RANK_0( 1, GEOS_FMT( "        {}: Number of negative pressure values: {}, minimum value: {} Pa",
-                                        getName(), numNegativePressures, fmt::format( "{:.{}f}", minPressure, 3 ) ) );
+  {
+    GEOS_LOG_LEVEL_INFO_RANK_0( logInfo::SystemSolution,
+                                GEOS_FMT( "        {}: Number of negative pressure values: {}, minimum value: {} Pa",
+                                          getName(), numNegativePressures, fmt::format( "{:.{}f}", minPressure, 3 ) ) );
+  }
 
   return (m_allowNegativePressure || numNegativePressures == 0) ?  1 : 0;
 }

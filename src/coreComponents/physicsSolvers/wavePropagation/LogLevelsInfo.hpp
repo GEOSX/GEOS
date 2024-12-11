@@ -14,11 +14,11 @@
 
 /**
  * @file LogLevelsInfo.hpp
- * This file contains log level informations for flow solvers
+ * This file contains common log level informations for physics solvers
  */
 
-#ifndef GEOS_PHYSICSSOLVERS_FLUIDFLOW_LOGLEVELSINFO_HPP
-#define GEOS_PHYSICSSOLVERS_FLUIDFLOW_LOGLEVELSINFO_HPP
+#ifndef GEOS_PHYSICSSOLVERS_WAVEPROPAGATION_LOGLEVELSINFO_HPP
+#define GEOS_PHYSICSSOLVERS_WAVEPROPAGATION_LOGLEVELSINFO_HPP
 
 #include "common/DataTypes.hpp"
 
@@ -29,34 +29,22 @@ namespace logInfo
 {
 
 /**
- * @name Wells LogLevels info structures. They must comply with the `is_log_level_info` trait.
+ * @name Common LogLevels info structures. They must comply with the `is_log_level_info` trait.
  */
 ///@{
 
 /// @cond DO_NOT_DOCUMENT
 
-struct Crossflow
+struct PMLParameters
 {
   static constexpr int getMinLogLevel() { return 1; }
-  static constexpr std::string_view getDescription() { return "Crossflow information"; }
+  static constexpr std::string_view getDescription() { return "Information on Perfectly match layers parameters"; }
 };
 
-struct CFL
+struct DASType
 {
   static constexpr int getMinLogLevel() { return 1; }
-  static constexpr std::string_view getDescription() { return "CFL information"; }
-};
-
-struct Statistics
-{
-  static constexpr int getMinLogLevel() { return 1; }
-  static constexpr std::string_view getDescription() { return "Print statistics"; }
-};
-
-struct StencilConnection
-{
-  static constexpr int getMinLogLevel() { return 1; }
-  static constexpr std::string_view getDescription() { return "Log strencil stored connection"; }
+  static constexpr std::string_view getDescription() { return "DAS type information"; }
 };
 
 /// @endcond
@@ -66,4 +54,4 @@ struct StencilConnection
 
 }
 
-#endif // GEOS_PHYSICSSOLVERS_FLUIDFLOW_LOGLEVELSINFO_HPP
+#endif // GEOS_PHYSICSSOLVERS_WAVEPROPAGATION_LOGLEVELSINFO_HPP

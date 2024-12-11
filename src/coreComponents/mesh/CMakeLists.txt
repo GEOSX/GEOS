@@ -12,6 +12,7 @@ set( mesh_headers
      ElementType.hpp
      EmbeddedSurfaceNodeManager.hpp
      EmbeddedSurfaceSubRegion.hpp
+     LogLevelsInfo.hpp
      MeshFields.hpp
      FaceElementSubRegion.hpp
      FaceManager.hpp

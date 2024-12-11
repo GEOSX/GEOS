@@ -25,9 +25,9 @@
 #include "mesh/WellElementSubRegion.hpp"
 #include "physicsSolvers/fluidFlow/FlowSolverBase.hpp"
 #include "physicsSolvers/fluidFlow/FlowSolverBaseFields.hpp"
+#include "physicsSolvers/fluidFlow/wells/LogLevelsInfo.hpp"
 #include "physicsSolvers/fluidFlow/wells/WellControls.hpp"
 #include "physicsSolvers/fluidFlow/wells/WellSolverBaseFields.hpp"
-#include "physicsSolvers/fluidFlow/wells/LogLevelsInfo.hpp"
 #include "physicsSolvers/fluidFlow/wells/kernels/ThermalCompositionalMultiphaseWellKernels.hpp"
 #include "fileIO/Outputs/OutputBase.hpp"
 
@@ -61,7 +61,6 @@ WellSolverBase::WellSolverBase( string const & name,
     setDescription( "Write rates into a CSV file" );
 
   addLogLevel< logInfo::WellControl >();
-  addLogLevel< logInfo::Crossflow >();
 }
 
 Group *WellSolverBase::createChild( string const & childKey, string const & childName )
