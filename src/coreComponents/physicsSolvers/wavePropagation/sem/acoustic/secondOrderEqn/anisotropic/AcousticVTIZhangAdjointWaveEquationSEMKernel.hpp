@@ -56,10 +56,10 @@ template< typename SUBREGION_TYPE,
           typename CONSTITUTIVE_TYPE,
           typename FE_TYPE >
 class ExplicitAcousticVTIZhangAdjointSEM : public finiteElement::KernelBase< SUBREGION_TYPE,
-                                                              CONSTITUTIVE_TYPE,
-                                                              FE_TYPE,
-                                                              1,
-                                                              1 >
+                                                                             CONSTITUTIVE_TYPE,
+                                                                             FE_TYPE,
+                                                                             1,
+                                                                             1 >
 {
 public:
 
@@ -94,13 +94,13 @@ public:
    *   elements to be processed during this kernel launch.
    */
   ExplicitAcousticVTIZhangAdjointSEM( NodeManager & nodeManager,
-                       EdgeManager const & edgeManager,
-                       FaceManager const & faceManager,
-                       localIndex const targetRegionIndex,
-                       SUBREGION_TYPE const & elementSubRegion,
-                       FE_TYPE const & finiteElementSpace,
-                       CONSTITUTIVE_TYPE & inputConstitutiveType,
-                       real64 const dt ):
+                                      EdgeManager const & edgeManager,
+                                      FaceManager const & faceManager,
+                                      localIndex const targetRegionIndex,
+                                      SUBREGION_TYPE const & elementSubRegion,
+                                      FE_TYPE const & finiteElementSpace,
+                                      CONSTITUTIVE_TYPE & inputConstitutiveType,
+                                      real64 const dt ):
     Base( elementSubRegion,
           finiteElementSpace,
           inputConstitutiveType ),

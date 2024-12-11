@@ -56,10 +56,10 @@ template< typename SUBREGION_TYPE,
           typename CONSTITUTIVE_TYPE,
           typename FE_TYPE >
 class ExplicAcousticVTIFletcherWaveEquationSEM : public finiteElement::KernelBase< SUBREGION_TYPE,
-                                                              CONSTITUTIVE_TYPE,
-                                                              FE_TYPE,
-                                                              1,
-                                                              1 >
+                                                                                   CONSTITUTIVE_TYPE,
+                                                                                   FE_TYPE,
+                                                                                   1,
+                                                                                   1 >
 {
 public:
   /// Alias for the base class;
@@ -80,8 +80,8 @@ public:
   using Base::m_elemGhostRank;
   using Base::m_constitutiveUpdate;
   using Base::m_finiteElementSpace;
-  
-  
+
+
 
 //*****************************************************************************
   /**
@@ -95,13 +95,13 @@ public:
    *   elements to be processed during this kernel launch.
    */
   ExplicAcousticVTIFletcherWaveEquationSEM ( NodeManager & nodeManager,
-                       EdgeManager const & edgeManager,
-                       FaceManager const & faceManager,
-                       localIndex const targetRegionIndex,
-                       SUBREGION_TYPE const & elementSubRegion,
-                       FE_TYPE const & finiteElementSpace,
-                       CONSTITUTIVE_TYPE & inputConstitutiveType,
-                       real64 const dt ):
+                                             EdgeManager const & edgeManager,
+                                             FaceManager const & faceManager,
+                                             localIndex const targetRegionIndex,
+                                             SUBREGION_TYPE const & elementSubRegion,
+                                             FE_TYPE const & finiteElementSpace,
+                                             CONSTITUTIVE_TYPE & inputConstitutiveType,
+                                             real64 const dt ):
     Base( elementSubRegion,
           finiteElementSpace,
           inputConstitutiveType ),
@@ -268,8 +268,8 @@ protected:
 
 
 /// The factory used to construct a ExplicitAcousticVTIFletcher kernel.
-using ExplicitAcousticVTIFletcherSEMFactory = finiteElement::KernelFactory< ExplicAcousticVTIFletcherWaveEquationSEM ,
-                                                                        real64 >;
+using ExplicitAcousticVTIFletcherSEMFactory = finiteElement::KernelFactory< ExplicAcousticVTIFletcherWaveEquationSEM,
+                                                                            real64 >;
 
 
 } // namespace acousticVTIFletcherWaveEquationSEMKernels

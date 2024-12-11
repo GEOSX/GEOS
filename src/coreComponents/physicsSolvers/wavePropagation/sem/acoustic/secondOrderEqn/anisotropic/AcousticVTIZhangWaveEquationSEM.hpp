@@ -38,7 +38,7 @@ public:
   using ATOMIC_POLICY = AtomicPolicy< EXEC_POLICY >;
 
   AcousticVTIZhangWaveEquationSEM( const std::string & name,
-                           Group * const parent );
+                                   Group * const parent );
 
   virtual ~AcousticVTIZhangWaveEquationSEM() override;
 
