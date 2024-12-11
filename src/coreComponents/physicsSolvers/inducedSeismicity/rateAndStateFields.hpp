@@ -86,16 +86,7 @@ DECLARE_FIELD( shearTraction,
                29.2e6,
                LEVEL_0,
                WRITE_AND_READ,
-               "shear Traction" );               
-
-DECLARE_FIELD( deltaSlip_n,
-               "deltaSlip_n",
-               array2d< real64 >,
-               0.0,
-               NOPLOT,
-               WRITE_AND_READ,
-               "Initial slip increment at this time step" );
-
+               "shear Traction" );              
 
 DECLARE_FIELD( rungeKuttaStageRates,
                "rungeKuttaStageRates",

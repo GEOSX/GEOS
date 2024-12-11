@@ -47,8 +47,10 @@ public:
 
 private:
 
-  real64 updateStresses( real64 const dt,
-                         DomainPartition & domain ) const override final;
+  virtual real64 updateStresses( real64 const & time_n,
+                                 real64 const & dt,
+                                 const int cycleNumber,
+                                 DomainPartition & domain ) const override final;
 
   class SpringSliderParameters
   {

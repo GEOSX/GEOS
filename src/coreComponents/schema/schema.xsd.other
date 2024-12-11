@@ -539,7 +539,7 @@
 			<xsd:element name="PhaseFieldFracture" type="PhaseFieldFractureType" />
 			<xsd:element name="ProppantTransport" type="ProppantTransportType" />
 			<xsd:element name="QuasiDynamicEQ" type="QuasiDynamicEQType" />
-			<xsd:element name="QuasiDynamicEQRK32" type="QuasiDynamicEQRK32Type" />
+			<xsd:element name="ExplicitQDRateAndState" type="ExplicitQDRateAndStateType" />
 			<xsd:element name="ReactiveCompositionalMultiphaseOBL" type="ReactiveCompositionalMultiphaseOBLType" />
 			<xsd:element name="SeismicityRate" type="SeismicityRateType" />
 			<xsd:element name="SinglePhaseFVM" type="SinglePhaseFVMType" />
@@ -1044,7 +1044,7 @@
 <<<<<<< HEAD
 =======
 	</xsd:complexType>
-	<xsd:complexType name="QuasiDynamicEQRK32Type">
+	<xsd:complexType name="ExplicitQDRateAndStateType">
 		<xsd:choice minOccurs="0" maxOccurs="unbounded">
 			<xsd:element name="LinearSolverParameters" type="LinearSolverParametersType" maxOccurs="1" />
 			<xsd:element name="NonlinearSolverParameters" type="NonlinearSolverParametersType" maxOccurs="1" />

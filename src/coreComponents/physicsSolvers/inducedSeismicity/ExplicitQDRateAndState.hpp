@@ -17,31 +17,26 @@
 #define GEOS_PHYSICSSOLVERS_INDUCED_QUASIDYNAMICEQRK32_HPP
 
 #include "physicsSolvers/PhysicsSolverBase.hpp"
-#include "kernels/RateAndStateKernels.hpp"
+#include "kernels/ExplicitRateAndStateKernels.hpp"
 
 namespace geos
 {
 
-class QuasiDynamicEQRK32 : public PhysicsSolverBase
+class ExplicitQDRateAndState : public PhysicsSolverBase
 {
 public:
   /// The default nullary constructor is disabled to avoid compiler auto-generation:
-  QuasiDynamicEQRK32() = delete;
+  ExplicitQDRateAndState() = delete;
 
   /// The constructor needs a user-defined "name" and a parent Group (to place this instance in the tree structure of classes)
-  QuasiDynamicEQRK32( const string & name,
+  ExplicitQDRateAndState( const string & name,
                       Group * const parent );
 
   /// Destructor
-  virtual ~QuasiDynamicEQRK32() override;
+  virtual ~ExplicitQDRateAndState() override;
 
-  static string catalogName() { return "QuasiDynamicEQRK32"; }
-
-  /**
-   * @return Get the final class Catalog name
-   */
-  virtual string getCatalogName() const override { return catalogName(); }
-
+  static string derivedSolverPrefix() { return "Explicit";};   
+  
   /// This method ties properties with their supporting mesh
   virtual void registerDataOnMesh( Group & meshBodies ) override;
 
@@ -90,11 +85,6 @@ public:
    */
   void stepRateStateODEAndComputeError( real64 const dt, DomainPartition & domain ) const;
 
-  real64 updateStresses( real64 const & time_n,
-                         real64 const & dt,
-                         const int cycleNumber,
-                         DomainPartition & domain ) const;
-
   /**
    * @brief Updates rate-and-state slip velocity
    * @param domain
@@ -109,17 +99,14 @@ public:
    */
   void saveState( DomainPartition & domain ) const;
 
-private:
+protected:
 
   virtual void postInputInitialization() override;
 
-
-  /// pointer to stress solver
-  PhysicsSolverBase * m_stressSolver;
-
-  /// stress solver name
-  string m_stressSolverName;
-
+  virtual real64 updateStresses( real64 const & time_n,
+                                 real64 const & dt,
+                                 const int cycleNumber,
+                                 DomainPartition & domain ) const = 0;
   /// shear impedance
   real64 m_shearImpedance;
 

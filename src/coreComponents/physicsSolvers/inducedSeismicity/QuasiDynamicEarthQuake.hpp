@@ -18,13 +18,13 @@
 #ifndef GEOS_PHYSICSSOLVERS_INDUCED_QUASIDYNAMICEARTHQUAKE_HPP
 #define GEOS_PHYSICSSOLVERS_INDUCED_QUASIDYNAMICEARTHQUAKE_HPP
 
-#include "physicsSolvers/inducedSeismicity/ImplicitQDRateAndState.hpp"
+#include "ImplicitQDRateAndState.hpp"
 
 namespace geos
 {
 
-template< typename QDEQBASE >
-class QuasiDynamicEarthQuake : public QDEQBASE 
+template< typename RSSOLVER_TYPE = ImplicitQDRateAndState >
+class QuasiDynamicEarthQuake : public RSSOLVER_TYPE 
 {
 public:
 
@@ -33,25 +33,34 @@ public:
 
   /// The constructor needs a user-defined "name" and a parent Group (to place this instance in the tree structure of classes)
   QuasiDynamicEarthQuake( const string & name,
-                      Group * const parent );
+                          dataRepository::Group * const parent );
 
   /// Destructor
-  virtual ~QausiDynamicEarthQuake() override;
+  virtual ~QuasiDynamicEarthQuake() override;
 
-  static string catalogName() { return "QuasiDynamicEarthQuake"; }
+  static string catalogName() { return RSSOLVER_TYPE::derivedSolverPrefix() + "QuasiDynamicEQ"; }
 
   /**
    * @return Get the final class Catalog name
    */
   virtual string getCatalogName() const override { return catalogName(); }
 
-  struct viewKeyStruct : public ImplicitQDRateAndState::viewKeyStruct
+  struct viewKeyStruct : public RSSOLVER_TYPE::viewKeyStruct
   {
     /// stress solver name
-    static constexpr char const * contactSolverNameString() { return "stressSolverName"; }
+    static constexpr char const * stressSolverNameString() { return "stressSolverName"; }
   };
 
+  void postInputInitialization() override final;
+
 private:
+
+virtual real64 updateStresses( real64 const & time_n,
+                                 real64 const & dt,
+                                 const int cycleNumber,
+                                 DomainPartition & domain ) const override final;
+
+string m_stressSolverName;
 
 PhysicsSolverBase * m_stressSolver;
 

@@ -1,14 +1,16 @@
 # Specify solver headers
 set( physicsSolvers_headers
      ${physicsSolvers_headers}
-     inducedSeismicity/inducedSeismicityFields.hpp
-     inducedSeismicity/rateAndStateFields.hpp
-     inducedSeismicity/QuasiDynamicEQ.hpp
+     inducedSeismicity/ExplicitQDRateAndState.hpp
      inducedSeismicity/ImplicitQDRateAndState.hpp
-     inducedSeismicity/QuasiDynamicEQRK32.hpp
+     inducedSeismicity/inducedSeismicityFields.hpp
+     inducedSeismicity/QuasiDynamicEarthQuake.hpp
+     inducedSeismicity/rateAndStateFields.hpp
      inducedSeismicity/SeismicityRate.hpp
      inducedSeismicity/SpringSlider.hpp
-     inducedSeismicity/kernels/RateAndStateKernels.hpp
+     inducedSeismicity/kernels/ExplicitRateAndStateKernels.hpp
+     inducedSeismicity/kernels/ImplicitRateAndStateKernels.hpp
+     inducedSeismicity/kernels/RateAndStateKernelsBase.hpp
      inducedSeismicity/kernels/SeismicityRateKernels.hpp
      inducedSeismicity/tractionUpdateWrapper/FaultTractionUpdate.hpp
      inducedSeismicity/tractionUpdateWrapper/FaultTractionUpdateBase.hpp
@@ -19,9 +21,9 @@ set( physicsSolvers_headers
 # Specify solver sources
 set( physicsSolvers_sources
      ${physicsSolvers_sources}
-     inducedSeismicity/QuasiDynamicEQ.cpp
+     inducedSeismicity/ExplicitQDRateAndState.cpp 
      inducedSeismicity/ImplicitQDRateAndState.cpp 
-     inducedSeismicity/QuasiDynamicEQRK32.cpp 
+     inducedSeismicity/QuasiDynamicEarthQuake.cpp
      inducedSeismicity/SeismicityRate.cpp
      inducedSeismicity/SpringSlider.cpp
      inducedSeismicity/tractionUpdateWrapper/OneWayCoupledTractionUpdate.cpp

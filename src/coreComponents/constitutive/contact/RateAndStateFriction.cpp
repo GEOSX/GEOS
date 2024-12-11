@@ -31,12 +31,15 @@ RateAndStateFriction::RateAndStateFriction( string const & name, Group * const p
   FrictionBase( name, parent )
 {
   registerWrapper( viewKeyStruct::aCoefficientString(), &m_a ).
+    setPlotLevel( PlotLevel::LEVEL_0 ).
     setDescription( "Rate- and State-dependent friction coefficient a." );
 
   registerWrapper( viewKeyStruct::bCoefficientString(), &m_b ).
+    setPlotLevel( PlotLevel::LEVEL_0 ).
     setDescription( "Rate- and State-dependent friction coefficient b." );
 
   registerWrapper( viewKeyStruct::DcCoefficientString(), &m_Dc ).
+    setPlotLevel( PlotLevel::LEVEL_0 ).
     setDescription( "Rate- and State-dependent friction characteristic length." );
 
   registerWrapper( viewKeyStruct::referenceVelocityString(), &m_V0 ).

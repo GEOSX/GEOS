@@ -403,8 +403,8 @@
 					<xsd:selector xpath="QuasiDynamicEQ" />
 					<xsd:field xpath="@name" />
 				</xsd:unique>
-				<xsd:unique name="SolversQuasiDynamicEQRK32UniqueName">
-					<xsd:selector xpath="QuasiDynamicEQRK32" />
+				<xsd:unique name="SolversExplicitQDRateAndStateUniqueName">
+					<xsd:selector xpath="ExplicitQDRateAndState" />
 					<xsd:field xpath="@name" />
 				</xsd:unique>
 				<xsd:unique name="SolversReactiveCompositionalMultiphaseOBLUniqueName">
@@ -2296,7 +2296,7 @@ Level 0 outputs no specific information for this solver. Higher levels require m
 			<xsd:element name="PhaseFieldFracture" type="PhaseFieldFractureType" />
 			<xsd:element name="ProppantTransport" type="ProppantTransportType" />
 			<xsd:element name="QuasiDynamicEQ" type="QuasiDynamicEQType" />
-			<xsd:element name="QuasiDynamicEQRK32" type="QuasiDynamicEQRK32Type" />
+			<xsd:element name="ExplicitQDRateAndState" type="ExplicitQDRateAndStateType" />
 			<xsd:element name="ReactiveCompositionalMultiphaseOBL" type="ReactiveCompositionalMultiphaseOBLType" />
 			<xsd:element name="SeismicityRate" type="SeismicityRateType" />
 			<xsd:element name="SinglePhaseFVM" type="SinglePhaseFVMType" />
@@ -3623,7 +3623,7 @@ Level 0 outputs no specific information for this solver. Higher levels require m
 		</xsd:restriction>
 	</xsd:simpleType>
 =======
-	<xsd:complexType name="QuasiDynamicEQRK32Type">
+	<xsd:complexType name="ExplicitQDRateAndStateType">
 		<xsd:choice minOccurs="0" maxOccurs="unbounded">
 			<xsd:element name="LinearSolverParameters" type="LinearSolverParametersType" maxOccurs="1" />
 			<xsd:element name="NonlinearSolverParameters" type="NonlinearSolverParametersType" maxOccurs="1" />

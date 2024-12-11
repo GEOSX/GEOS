@@ -21,10 +21,11 @@
 
 #include "dataRepository/InputFlags.hpp"
 #include "mesh/DomainPartition.hpp"
-#include "kernels/RateAndStateKernels.hpp"
 #include "rateAndStateFields.hpp"
 #include "physicsSolvers/contact/ContactFields.hpp"
 #include "fieldSpecification/FieldSpecificationManager.hpp"
+
+#include "ExplicitQDRateAndState.hpp"
 
 namespace geos
 {
@@ -34,57 +35,71 @@ using namespace fields;
 using namespace constitutive;
 using namespace rateAndStateKernels;
 
-QuasiDynamicEarthQuake::QuasiDynamicEarthQuake( const string & name,
-                                                Group * const parent ):
-  ImplicitQDRateAndState( name, parent ),
-  m_stressSolver( nullptr ),
-  m_stressSolverName()
+template< typename RSSOLVER_TYPE >
+QuasiDynamicEarthQuake< RSSOLVER_TYPE >::QuasiDynamicEarthQuake( const string & name,
+                                                                 Group * const parent ):
+  RSSOLVER_TYPE( name, parent ),
+  m_stressSolverName(),
+  m_stressSolver( nullptr )
 {
   this->registerWrapper( viewKeyStruct::stressSolverNameString(), &m_stressSolverName ).
     setInputFlag( InputFlags::REQUIRED ).
     setDescription( "Name of solver for computing stress." );
 }
 
-void QuasiDynamicEarthQuake::postInputInitialization()
+template< typename RSSOLVER_TYPE >
+void QuasiDynamicEarthQuake< RSSOLVER_TYPE >::postInputInitialization()
 {
 
   // Initialize member stress solver as specified in XML input
-  m_stressSolver = &this->getParent().getGroup< SolverBase >( m_stressSolverName );
+  m_stressSolver = &this->getParent().template getGroup< PhysicsSolverBase >( m_stressSolverName );
 
   PhysicsSolverBase::postInputInitialization();
 }
 
-QuasiDynamicEarthQuake::~QuasiDynamicEarthQuake()
+template< typename RSSOLVER_TYPE >
+QuasiDynamicEarthQuake< RSSOLVER_TYPE >::~QuasiDynamicEarthQuake()
 {
   // TODO Auto-generated destructor stub
 }
 
-real64 QuasiDynamicEarthQuake::updateStresses( real64 const & time_n,
-                                               real64 const & dt,
-                                               const int cycleNumber,
-                                               DomainPartition & domain ) const
+template< typename RSSOLVER_TYPE >
+real64 QuasiDynamicEarthQuake< RSSOLVER_TYPE >::updateStresses( real64 const & time_n,
+                                                                real64 const & dt,
+                                                                const int cycleNumber,
+                                                                DomainPartition & domain ) const
 {
   // 1. Solve the momentum balance
-  return m_stressSolver->solverStep( time_n, dt, cycleNumber, domain );
+  real64 const dtAccepted = m_stressSolver->solverStep( time_n, dt, cycleNumber, domain );
+  // 2. Add background stress and possible forcing. 
+  return dtAccepted;
 }
 
-void QuasiDynamicEarthQuake::saveOldStateAndUpdateSlip( ElementSubRegionBase & subRegion, real64 const dt ) const
+// void QuasiDynamicEarthQuake::updateSlip( ElementSubRegionBase & subRegion, real64 const dt ) const
+// {
+//   arrayView2d< real64 const > const slipVelocity    = subRegion.getField< rateAndState::slipVelocity >();
+//   arrayView2d< real64 > const deltaSlip             = subRegion.getField< contact::deltaSlip >();
+
+//   arrayView2d< real64 > const dispJump = subRegion.getField< contact::targetIncrementalJump >();
+
+//   forAll< parallelDevicePolicy<> >( subRegion.size(), [=] GEOS_HOST_DEVICE ( localIndex const k )
+//   {
+//     deltaSlip[k][0] = slipVelocity[k][0] * dt;
+//     deltaSlip[k][1] = slipVelocity[k][1] * dt;
+//     // Update tangential components of the displacement jump
+//     dispJump[k][1] = slipVelocity[k][0] * dt;
+//     dispJump[k][2] = slipVelocity[k][1] * dt;
+//   } );
+// }
+template class QuasiDynamicEarthQuake< ImplicitQDRateAndState >;
+template class QuasiDynamicEarthQuake< ExplicitQDRateAndState >;
+
+namespace
 {
-  arrayView2d< real64 const > const slipVelocity    = subRegion.getField< rateAndState::slipVelocity >();
-  arrayView2d< real64 > const deltaSlip             = subRegion.getField< contact::deltaSlip >();
-
-  arrayView2d< real64 > const dispJump = subRegion.getField< contact::targetIncrementalJump >();
-
-  forAll< parallelDevicePolicy<> >( subRegion.size(), [=] GEOS_HOST_DEVICE ( localIndex const k )
-  {
-    deltaSlip[k][0] = slipVelocity[k][0] * dt;
-    deltaSlip[k][1] = slipVelocity[k][1] * dt;
-    // Update tangential components of the displacement jump
-    dispJump[k][1] = slipVelocity[k][0] * dt;
-    dispJump[k][2] = slipVelocity[k][1] * dt;
-  } );
+typedef QuasiDynamicEarthQuake< ImplicitQDRateAndState > ImplicitQuasiDynamicEarthQuake;
+typedef QuasiDynamicEarthQuake< ExplicitQDRateAndState > ExplicitQuasiDynamicEarthQuake;
+REGISTER_CATALOG_ENTRY( PhysicsSolverBase, ImplicitQuasiDynamicEarthQuake, string const &, dataRepository::Group * const )
+REGISTER_CATALOG_ENTRY( PhysicsSolverBase, ExplicitQuasiDynamicEarthQuake, string const &, dataRepository::Group * const )
 }
-
-REGISTER_CATALOG_ENTRY( SolverBase, QuasiDynamicEarthQuake, string const &, dataRepository::Group * const )
 
 } // namespace geos

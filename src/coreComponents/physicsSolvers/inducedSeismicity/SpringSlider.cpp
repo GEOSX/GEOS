@@ -21,10 +21,11 @@
 
 #include "dataRepository/InputFlags.hpp"
 #include "mesh/DomainPartition.hpp"
-#include "kernels/RateAndStateKernels.hpp"
 #include "rateAndStateFields.hpp"
 #include "physicsSolvers/contact/ContactFields.hpp"
 #include "fieldSpecification/FieldSpecificationManager.hpp"
+#include "constitutive/contact/RateAndStateFriction.hpp"
+#include "ExplicitQDRateAndState.hpp"
 
 namespace geos
 {
@@ -65,12 +66,23 @@ void SpringSlider< RSSOLVER_TYPE >::registerDataOnMesh( Group & meshBodies )
       subRegion.registerField< contact::dispJump >( this->getName() ).
       setDimLabels( 1, labels3Comp ).
       reference().template resizeDimension< 1 >( 3 );
+      subRegion.registerField< contact::dispJump_n >( this->getName() ).
+          setDimLabels( 1, labels3Comp ).
+          reference().template resizeDimension< 1 >( 3 );  
       subRegion.registerField< contact::traction >( this->getName() ).
         setDimLabels( 1, labels3Comp ).
         reference().template resizeDimension< 1 >( 3 );
+      subRegion.registerField< contact::traction_n >( this->getName() ).
+          setDimLabels( 1, labels3Comp ).
+          reference().template resizeDimension< 1 >( 3 );
+
       subRegion.registerField< contact::deltaSlip >( this->getName() ).
         setDimLabels( 1, labels3Comp ).
-        reference().template resizeDimension< 1 >( 3 );  
+        reference().template resizeDimension< 1 >( 3 );
+
+      subRegion.registerField< contact::deltaSlip_n >( this->getName() ).
+        setDimLabels( 1, labels3Comp ).
+        reference().template resizeDimension< 1 >( 3 );      
 
       subRegion.registerWrapper< string >( viewKeyStruct::frictionLawNameString() ).
         setPlotLevel( PlotLevel::NOPLOT ).
@@ -86,9 +98,13 @@ void SpringSlider< RSSOLVER_TYPE >::registerDataOnMesh( Group & meshBodies )
 }
 
 template< typename RSSOLVER_TYPE >
-real64 SpringSlider< RSSOLVER_TYPE >::updateStresses( real64 const dt,
-                                     DomainPartition & domain ) const
+real64 SpringSlider< RSSOLVER_TYPE >::updateStresses( real64 const & time_n,
+                                                      real64 const & dt,
+                                                      const int cycleNumber,
+                                                      DomainPartition & domain ) const
+
 {
+  GEOS_UNUSED_VAR( cycleNumber, time_n);
   // Spring-slider shear traction computation
   this->forDiscretizationOnMeshTargets( domain.getMeshBodies(), [&]( string const &,
                                                                MeshLevel & mesh,
@@ -102,6 +118,8 @@ real64 SpringSlider< RSSOLVER_TYPE >::updateStresses( real64 const dt,
 
       arrayView2d< real64 const > const deltaSlip = subRegion.getField< fields::contact::deltaSlip >();
       arrayView2d< real64 > const traction        = subRegion.getField< fields::contact::traction >();
+      arrayView2d< real64 > const traction_n      = subRegion.getField< fields::contact::traction_n >();
+
 
       string const & fricitonLawName = subRegion.template getReference< string >( viewKeyStruct::frictionLawNameString() );
       RateAndStateFriction const & frictionLaw = this->template getConstitutiveModel< RateAndStateFriction >( subRegion, fricitonLawName );
@@ -116,10 +134,13 @@ real64 SpringSlider< RSSOLVER_TYPE >::updateStresses( real64 const dt,
                                                                                 frictionKernelWrapper.getDcCoefficient( k ) );
 
 
-        traction[k][1] = traction[k][1] + springSliderParameters.tauRate * dt
-                         - springSliderParameters.springStiffness * deltaSlip[k][0];
-        traction[k][2] = traction[k][2] + springSliderParameters.tauRate * dt
-                         - springSliderParameters.springStiffness * deltaSlip[k][1];
+        
+
+
+        traction[k][1] = traction_n[k][1] + springSliderParameters.tauRate * dt
+                           - springSliderParameters.springStiffness * deltaSlip[k][0];
+        traction[k][2] = traction_n[k][2] + springSliderParameters.tauRate * dt
+                           - springSliderParameters.springStiffness * deltaSlip[k][1];
       } );
     } );
   } );
@@ -127,11 +148,14 @@ real64 SpringSlider< RSSOLVER_TYPE >::updateStresses( real64 const dt,
 }
 
 template class SpringSlider< ImplicitQDRateAndState >;
+template class SpringSlider< ExplicitQDRateAndState >;
 
 namespace
 {
 typedef SpringSlider< ImplicitQDRateAndState > ImplicitSpringSlider;
+typedef SpringSlider< ExplicitQDRateAndState > ExplicitSpringSlider;
 REGISTER_CATALOG_ENTRY( PhysicsSolverBase, ImplicitSpringSlider, string const &, dataRepository::Group * const )
+REGISTER_CATALOG_ENTRY( PhysicsSolverBase, ExplicitSpringSlider, string const &, dataRepository::Group * const )
 }
 
 } // namespace geos

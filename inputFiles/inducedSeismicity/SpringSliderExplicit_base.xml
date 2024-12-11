@@ -1,14 +1,14 @@
 <?xml version="1.0" ?>
 <Problem>
   <Solvers>
-    <QuasiDynamicEQRK32
+    <ExplicitSpringSlider
       name="SpringSlider"
       targetRegions="{ Fault }"
       shearImpedance="4.41"
       initialDt="1e-5"
       logLevel="1"
       discretization="FE1">
-    </QuasiDynamicEQRK32>
+    </ExplicitSpringSlider>
     
     <SurfaceGenerator
       name="SurfaceGen"
@@ -145,7 +145,7 @@
     <TimeHistory
       name="timeHistoryOutput"
       sources="{/Tasks/slipCollection,/Tasks/slipRateCollection,/Tasks/stateVariableCollection}"
-      filename="springSliderExplicit"/>
+      filename="springSlider"/>
   </Outputs>
 
   <Tasks>

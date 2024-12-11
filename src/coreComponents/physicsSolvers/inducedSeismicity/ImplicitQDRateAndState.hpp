@@ -63,10 +63,17 @@ public:
                              integer const cycleNumber,
                              DomainPartition & domain ) override final;
 
+  /**
+  * @brief save the current state
+  * @param domain
+  */
+  void saveState( DomainPartition & domain ) const;                           
 
 protected:
 
-  virtual real64 updateStresses( real64 const dt,
+  virtual real64 updateStresses( real64 const & time_n,
+                                 real64 const & dt,
+                                 const int cycleNumber,
                                  DomainPartition & domain ) const = 0;
 
   virtual void solveRateAndStateEquations( real64 const time_n,
