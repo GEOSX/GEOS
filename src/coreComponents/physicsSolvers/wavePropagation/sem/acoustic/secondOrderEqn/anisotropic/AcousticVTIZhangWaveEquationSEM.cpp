@@ -544,106 +544,10 @@ void AcousticVTIZhangWaveEquationSEM::initializePML()
 
 
 
-void AcousticVTIZhangWaveEquationSEM::applyPML( real64 const time, DomainPartition & domain )
+void AcousticVTIZhangWaveEquationSEM::applyPML( real64 const GEOS_UNUSED_PARAM( time ), DomainPartition & GEOS_UNUSED_PARAM( domain ) )
 {
-  GEOS_MARK_FUNCTION;
-  GEOS_UNUSED_VAR(time, domain);
-
-#if 0
-  FieldSpecificationManager & fsManager = FieldSpecificationManager::getInstance();
-  parametersPML const & param = getReference< parametersPML >( viewKeyStruct::parametersPMLString() );
-
-  /// Loop over the different mesh bodies; for wave propagation, there is only one mesh body
-  /// which is the whole mesh
-  forDiscretizationOnMeshTargets( domain.getMeshBodies(), [&] ( string const &,
-                                                                MeshLevel & mesh,
-                                                                arrayView1d< string const > const & )
-  {
-
-    NodeManager & nodeManager = mesh.getNodeManager();
-
-    /// Array views of the pressure p, PML auxiliary variables, and node coordinates
-    arrayView1d< real32 const > const p_n = nodeManager.getField< acousticfields::Pressure_n >();
-    arrayView2d< real32 const > const v_n = nodeManager.getField< acousticfields::AuxiliaryVar1PML >();
-    arrayView2d< real32 > const grad_n = nodeManager.getField< acousticfields::AuxiliaryVar2PML >();
-    arrayView1d< real32 > const divV_n = nodeManager.getField< acousticfields::AuxiliaryVar3PML >();
-    arrayView1d< real32 const > const u_n = nodeManager.getField< acousticfields::AuxiliaryVar4PML >();
-    arrayView2d< wsCoordType const, nodes::REFERENCE_POSITION_USD > const nodeCoords32 = nodeManager.getField< fields::referencePosition32 >().toViewConst();
-
-    /// Select the subregions concerned by the PML (specified in the xml by the Field Specification)
-    /// 'targetSet' contains the indices of the elements in a given subregion
-    fsManager.apply< ElementSubRegionBase,
-                     PerfectlyMatchedLayer >( time,
-                                              mesh,
-                                              PerfectlyMatchedLayer::catalogName(),
-                                              [&]( PerfectlyMatchedLayer const &,
-                                                   string const &,
-                                                   SortedArrayView< localIndex const > const & targetSet,
-                                                   ElementSubRegionBase & subRegion,
-                                                   string const & )
-
-    {
-
-      /// Get the element to nodes mapping in the subregion
-      CellElementSubRegion::NodeMapType const & elemToNodes =
-        subRegion.getReference< CellElementSubRegion::NodeMapType >( CellElementSubRegion::viewKeyStruct::nodeListString() );
-
-      /// Get a const ArrayView of the mapping above
-      traits::ViewTypeConst< CellElementSubRegion::NodeMapType > const elemToNodesViewConst = elemToNodes.toViewConst();
-
-      /// Array view of the wave speed
-      arrayView1d< real32 const > const vel = subRegion.getReference< array1d< real32 > >( acousticfields::AcousticVelocity::key());
-
-      /// Get the object needed to determine the type of the element in the subregion
-      finiteElement::FiniteElementBase const &
-      fe = subRegion.getReference< finiteElement::FiniteElementBase >( getDiscretizationName() );
-
-      real32 xMin[3];
-      real32 xMax[3];
-      real32 dMin[3];
-      real32 dMax[3];
-      real32 cMin[3];
-      real32 cMax[3];
-      for( integer i=0; i<3; ++i )
-      {
-        xMin[i] = param.xMinPML[i];
-        xMax[i] = param.xMaxPML[i];
-        dMin[i] = param.thicknessMinXYZPML[i];
-        dMax[i] = param.thicknessMaxXYZPML[i];
-        cMin[i] = param.waveSpeedMinXYZPML[i];
-        cMax[i] = param.waveSpeedMaxXYZPML[i];
-      }
-      real32 const r = param.reflectivityPML;
-
-      /// Get the type of the elements in the subregion
-      finiteElement::FiniteElementDispatchHandler< SEM_FE_TYPES >::dispatch3D( fe, [&] ( auto const finiteElement )
-      {
-        using FE_TYPE = TYPEOFREF( finiteElement );
-
-        /// apply the PML kernel
-        AcousticPMLSEM::
-          PMLKernel< FE_TYPE > kernel( finiteElement );
-        kernel.template launch< EXEC_POLICY, ATOMIC_POLICY >
-          ( targetSet,
-          nodeCoords32,
-          elemToNodesViewConst,
-          vel,
-          p_n,
-          v_n,
-          u_n,
-          xMin,
-          xMax,
-          dMin,
-          dMax,
-          cMin,
-          cMax,
-          r,
-          grad_n,
-          divV_n );
-      } );
-    } );
-  } );
-#endif
+  GEOS_ERROR( "This option is not supported yet" );
+  return;
 }
 
 real64 AcousticVTIZhangWaveEquationSEM::explicitStepForward( real64 const & time_n,
@@ -811,15 +715,17 @@ if( isForward )
                                                             kernelFactory );
 
   }
-  //Modification of cycleNember useful when minTime < 0
+  //Modification of cycleNumber useful when minTime < 0
   addSourceToRightHandSide( time_n, rhs );
 
   SortedArrayView< localIndex const > const solverTargetNodesSet = m_solverTargetNodesSet.toViewConst();
   if( !m_usePML )
   {
     GEOS_MARK_SCOPE ( updateP );
-    AcousticTimeSchemeSEM::LeapFrogWithoutPML( dt, p_np1, p_n, p_nm1, mass, stiffnessVector_p, damping_pp,
-                                               rhs, freeSurfaceNodeIndicator, solverTargetNodesSet );
+    AcousticTimeSchemeSEM::LeapFrogVTIWithoutPML( dt, p_np1, p_n, p_nm1, q_np1, q_n, q_nm1, mass, stiffnessVector_p,
+                                                  stiffnessVector_q, damping_pp, damping_pq, damping_qp, damping_qq,
+                                                  rhs, freeSurfaceNodeIndicator, lateralSurfaceNodeIndicator,
+                                                  bottomSurfaceNodeIndicator, solverTargetNodesSet );
   }
   else
   {

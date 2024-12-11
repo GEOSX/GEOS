@@ -41,10 +41,10 @@ namespace acousticVTIFletcherAdjointWaveEquationSEMKernels
  * @copydoc geos::finiteElement::KernelBase
  * @tparam SUBREGION_TYPE The type of subregion that the kernel will act on.
  *
- * ### AcousticVTIFletcherWaveEquationSEMKernel Description
+ * ### AcousticVTIFletcherAdjointWaveEquationSEMKernel Description
  * Implements the KernelBase interface functions required for solving
- * the VTI pseudo-acoustic wave Fletcher's set of equations using the
- * "finite element kernel application" functions such as
+ * the adjoint of the VTI pseudo-acoustic wave Fletcher's set of equations
+ *  using the "finite element kernel application" functions such as
  * geos::finiteElement::RegionBasedKernelApplication.
  *
  * The number of degrees of freedom per support point for both
