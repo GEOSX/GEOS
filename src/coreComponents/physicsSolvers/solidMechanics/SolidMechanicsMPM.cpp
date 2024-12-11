@@ -3831,7 +3831,7 @@ void SolidMechanicsMPM::applyEssentialBCs( const real64 dt,
                 { // This isn't actually a reaction, it's the average traction in the material at the boundary and may neglect
                   // important dynamic effects.  However, for quasistatic loading, this will be (probably) accurate, and
                   // won't give errors in cases with very small dt.
-                  localFaceReactions[face] += gridInternalForce[g][fieldIndex][dir0];
+                  localFaceReactions[face] -= gridInternalForce[g][fieldIndex][dir0];
                 }
 
                 // std::cout<<"localFaceReactions[face] = "<<localFaceReactions[face]<<std::endl;
