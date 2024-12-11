@@ -114,6 +114,7 @@ void AcousticVTIFletcherWaveEquationSEM::registerDataOnMesh( Group & meshBodies 
 
       subRegion.registerField< acousticvtifields::AcousticDelta >( getName() );
       subRegion.registerField< acousticvtifields::AcousticEpsilon >( getName() );
+      subRegion.registerField< acousticvtifields::AcousticSigma >( getName() );
     } );
 
   } );
