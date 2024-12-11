@@ -1,14 +1,14 @@
 <?xml version="1.0" ?>
 <Problem>
   <Solvers>
-    <QuasiDynamicEQ
+    <QuasiDynamicEQRK32
       name="SpringSlider"
       targetRegions="{ Fault }"
       shearImpedance="4.41"
-      initialDt="1"
+      initialDt="1e-5"
       logLevel="1"
       discretization="FE1">
-    </QuasiDynamicEQ>
+    </QuasiDynamicEQRK32>
     
     <SurfaceGenerator
       name="SurfaceGen"
@@ -138,14 +138,14 @@
   <Outputs>
     <VTK
       name="vtkOutput"
-      plotFileRoot="springSlider"/>
+      plotFileRoot="springSliderExplicit"/>
     <Restart
       name="restart"/>  
 
     <TimeHistory
       name="timeHistoryOutput"
       sources="{/Tasks/slipCollection,/Tasks/slipRateCollection,/Tasks/stateVariableCollection}"
-      filename="springSlider"/>
+      filename="springSliderExplicit"/>
   </Outputs>
 
   <Tasks>
