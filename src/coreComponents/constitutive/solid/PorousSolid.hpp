@@ -54,14 +54,14 @@ public:
   {}
 
   GEOS_HOST_DEVICE
-  virtual void updateStateFromPressureAndTemperature( localIndex const k,
-                                                      localIndex const q,
-                                                      real64 const & pressure,
-                                                      real64 const & pressure_k,
-                                                      real64 const & pressure_n,
-                                                      real64 const & temperature,
-                                                      real64 const & temperature_k,
-                                                      real64 const & temperature_n ) const override final
+  virtual void updateStateFixedStress( localIndex const k,
+                                       localIndex const q,
+                                       real64 const & pressure,
+                                       real64 const & pressure_k,
+                                       real64 const & pressure_n,
+                                       real64 const & temperature,
+                                       real64 const & temperature_k,
+                                       real64 const & temperature_n ) const override final
   {
     updateBiotCoefficientAndAssignModuli( k );
 
