@@ -1,7 +1,7 @@
 include(${CMAKE_CURRENT_LIST_DIR}/../../src/coreComponents/LvArray/host-configs/LLNL/lassen-clang-13-cuda-12.cmake)
 
 # Fortran
-set(CMAKE_Fortran_COMPILER /usr/tce/packages/xl/xl-2023.06.28/xlf/16.1.1/bin/xlf  CACHE PATH "")
+set(CMAKE_Fortran_COMPILER /usr/tce/packages/gcc/gcc-8.3.1/bin/gfortran  CACHE PATH "")
 set(CMAKE_Fortran_FLAGS_RELEASE "-O3 -DNDEBUG -mtune=power9" CACHE STRING "")
 set(FORTRAN_MANGLE_NO_UNDERSCORE ON CACHE BOOL "")
 set(OpenMP_Fortran_FLAGS "-fopenmp" CACHE STRING "")
