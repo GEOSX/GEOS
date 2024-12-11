@@ -602,7 +602,7 @@ real64 AcousticVTIFletcherWaveEquationSEM::explicitStepBackward( real64 const & 
   {
     NodeManager & nodeManager = mesh.getNodeManager();
 
-    arrayView1d< real32 const > const mass = nodeManager.getField< acousticfields::AcousticMassVector >();
+//     arrayView1d< real32 const > const mass = nodeManager.getField< acousticfields::AcousticMassVector >();
 
     arrayView1d< real32 > const p_nm1 = nodeManager.getField< acousticvtifields::Pressure_p_nm1 >();
     arrayView1d< real32 > const p_n = nodeManager.getField< acousticvtifields::Pressure_p_n >();
