@@ -3773,7 +3773,11 @@ void SolidMechanicsMPM::applyEssentialBCs( const real64 dt,
               }
               else 
               {
-                prescribedVelocity = m_domainL[dir0] * gridPosition[g][dir0];
+                // maybe the issue is that we are using beginning of step grid position to compute this.
+                // prescribedVelocity = m_domainL[dir0] * gridPosition[g][dir0];
+
+                real64 endOfStepGridPosition = ( 1. + m_domainL[dir0]*dt )*gridPosition[g][dir0];
+                prescribedVelocity = m_domainL[dir0] * endOfStepGridPosition;
 
                 if(m_enablePrescribedBoundaryTransverseVelocities[face] == 1)
                 {
@@ -3792,14 +3796,29 @@ void SolidMechanicsMPM::applyEssentialBCs( const real64 dt,
               }
 
               gridDVelocity[g][fieldIndex][dir0] = prescribedVelocity - gridVelocity[g][fieldIndex][dir0]; // CC: TODO double check this, because it overrides the change in velocity that might have been written during enforceContact
-              real64 accelerationForBC = gridDVelocity[g][fieldIndex][dir0] / dt; // acceleration needed to satisfy BC
+              //real64 accelerationForBC = gridDVelocity[g][fieldIndex][dir0] / dt; // acceleration needed to satisfy BC
+              real64 accelerationForBC = prescribedVelocity / dt - gridVelocity[g][fieldIndex][dir0] / dt;  // seeing if this is better for small dt.
+                            
+              if( gridGhostRank[g] <= -1 && gridMass[g][fieldIndex] > m_smallMass ) // so we don't double count reactions at partition boundaries
+              {
+                // std::cout<<"---------------------------------------"<<std::endl;
+                // std::cout<<"face = "<<face<<std::endl;
+                // std::cout<<"localFaceReactions[face] = "<<localFaceReactions[face]<<std::endl;
+                // std::cout<<"prescribedVelocity = "<<prescribedVelocity<<std::endl;
+                // std::cout<<"gridVelocity[g][fieldIndex][dir0] = "<<gridVelocity[g][fieldIndex][dir0]<<std::endl;
+                // std::cout<<"gridMass[g][fieldIndex] = "<<gridMass[g][fieldIndex]<<std::endl;
+                // std::cout<<"dt = "<<dt<<std::endl;
+                // std::cout<<"prescribedVelocity * gridMass[g][fieldIndex] / dt = "<<prescribedVelocity * gridMass[g][fieldIndex] / dt<<std::endl;
+                // std::cout<<"gridVelocity[g][fieldIndex][dir0] * gridMass[g][fieldIndex] / dt = "<<gridVelocity[g][fieldIndex][dir0] * gridMass[g][fieldIndex] / dt<<std::endl;
+                // std::cout<<"prescribedVelocity * gridMass[g][fieldIndex] / dt - gridVelocity[g][fieldIndex][dir0] * gridMass[g][fieldIndex] / dt = "<<prescribedVelocity * gridMass[g][fieldIndex] / dt - gridVelocity[g][fieldIndex][dir0] * gridMass[g][fieldIndex] / dt<<std::endl;
+                localFaceReactions[face] += prescribedVelocity * gridMass[g][fieldIndex] / dt - gridVelocity[g][fieldIndex][dir0] * gridMass[g][fieldIndex] / dt;
+                // std::cout<<"localFaceReactions[face] = "<<localFaceReactions[face]<<std::endl;
+                //localFaceReactions[face] += accelerationForBC * gridMass[g][fieldIndex];
+              }
+
               gridVelocity[g][fieldIndex][dir0] = prescribedVelocity;
               gridAcceleration[g][fieldIndex][dir0] += accelerationForBC;
-                            
-              if( gridGhostRank[g] <= -1 ) // so we don't double count reactions at partition boundaries
-              {
-                localFaceReactions[face] += accelerationForBC * gridMass[g][fieldIndex];
-              }
+
             } );
 
             // Perform field reflection on buffer nodes - accounts for moving boundary effects
@@ -8537,11 +8556,19 @@ void SolidMechanicsMPM::gridTrialUpdate( real64 dt,
         gridDamage[g][fieldIndex] /= gridMass[g][fieldIndex];
         for( int i=0; i<numDims; i++ )
         {
+          gridVelocity[g][fieldIndex][i] = gridMomentum[g][fieldIndex][i] / gridMass[g][fieldIndex];
+          
           real64 totalForce = gridInternalForce[g][fieldIndex][i] + gridExternalForce[g][fieldIndex][i];
           gridAcceleration[g][fieldIndex][i] = totalForce / gridMass[g][fieldIndex];
           gridDVelocity[g][fieldIndex][i] = gridAcceleration[g][fieldIndex][i] * dt;
+
           gridMomentum[g][fieldIndex][i] += totalForce * dt;
-          gridVelocity[g][fieldIndex][i] = gridMomentum[g][fieldIndex][i] / gridMass[g][fieldIndex];
+          
+          // gridVelocity[g][fieldIndex][i] = gridMomentum[g][fieldIndex][i] / gridMass[g][fieldIndex];
+          // This was the old geos way, should be equivalent, but testing for reaction spike
+          // debugging:
+          gridVelocity[g][fieldIndex][i] += gridAcceleration[g][fieldIndex][i] * dt;
+
           gridCenterOfMass[g][fieldIndex][i] /= gridMass[g][fieldIndex];
           gridCenterOfVolume[g][fieldIndex][i] /= gridMaterialVolume[g][fieldIndex];
         }
@@ -8776,7 +8803,7 @@ void SolidMechanicsMPM::interpolateFTable( real64 dt, real64 time_n )
   array1d< real64 > Fii_old(3);
   array1d< real64 > Fii_new(3);
 
-  interpolateTable( time_n - 0.001*dt, 
+  interpolateTable( time_n - dt, 
                     dt,
                     m_fTable,
                     Fii_old,
@@ -8792,7 +8819,7 @@ void SolidMechanicsMPM::interpolateFTable( real64 dt, real64 time_n )
   {
     if( m_stressControl[i] != 1 )
     {
-      real64 Fii_dot = ( Fii_new[i] - Fii_old[i] ) / (0.001*dt);
+      real64 Fii_dot = ( Fii_new[i] - Fii_old[i] ) / (dt);
       m_domainL[i] = Fii_dot / Fii_new[i]; // L = Fdot.Finv
       m_domainF[i] = Fii_new[i];
     }
@@ -9608,8 +9635,7 @@ real64 SolidMechanicsMPM::getStableTimeStep( ParticleManager & particleManager )
 
   real64 dtReturn = maxWavespeed > 1.0e-16 ? m_cflFactor * length / maxWavespeed : DBL_MAX; // This partitions's dt, make it huge if wavespeed=0.0
                                                                                       // (this happens when there are no particles on this
-                                                                                      // partition)
-  
+                                                                                      // partition)  
   // CC: TODO add check to make sure that next time step won't skip a MPM event
   return dtReturn;
 }
