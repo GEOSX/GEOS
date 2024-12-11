@@ -253,8 +253,8 @@ void ElasticIsotropicPressureDependentUpdates::getElasticStrainInc( localIndex c
                                      Q,
                                      deviator );
 
-  real64 const elasticStrainVol = LvArray::math::log( P/p0 ) * Cr * (-1.0) + eps_v0;
-  real64 const elasticStrainDev = Q/3./mu;
+  real64 elasticStrainVol = LvArray::math::log( P/p0 ) * Cr * (-1.0) + eps_v0;
+  real64 elasticStrainDev = Q/3./mu;
 
   twoInvariant::strainRecomposition( elasticStrainVol,
                                      elasticStrainDev,
@@ -273,7 +273,7 @@ void ElasticIsotropicPressureDependentUpdates::getElasticStrainInc( localIndex c
                                      deviator );
 
   elasticStrainVol = std::log( P/p0 ) * Cr * (-1.0) + eps_v0;
-  real64 const elasticStrainDev = Q/3./mu;
+  elasticStrainDev = Q/3./mu;
 
   twoInvariant::strainRecomposition( elasticStrainVol,
                                      elasticStrainDev,
