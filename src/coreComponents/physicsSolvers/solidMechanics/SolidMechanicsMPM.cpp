@@ -182,6 +182,8 @@ SolidMechanicsMPM::SolidMechanicsMPM( const string & name,
   m_LBar( 0 ),
   m_LBarScale( 0.0 ),
   m_exactJIntegration( 0 ),
+  m_useAPIC( 0 ),
+  m_useInteralForceAsFaceReaction( 0 ),
   m_maxParticleVelocity( 1e6 ), // Floating point exception if this is set to DBL_MAX when squared
   m_maxParticleVelocitySquared( DBL_MAX ),
   m_minParticleJacobian( 0.1 ),
@@ -677,6 +679,18 @@ SolidMechanicsMPM::SolidMechanicsMPM( const string & name,
     setApplyDefaultValue( m_exactJIntegration ).
     setRestartFlags( RestartFlags::NO_WRITE ).
     setDescription( "Will force integration of F to have an exact integral of J." );
+
+  registerWrapper( "useAPIC", &m_useAPIC ).
+    setInputFlag( InputFlags::OPTIONAL ).
+    setApplyDefaultValue( m_useAPIC ).
+    setRestartFlags( RestartFlags::NO_WRITE ).
+    setDescription( "Will use APIC in particle to grid mapping of momentum" );
+
+  registerWrapper( "useInteralForceAsFaceReaction", &m_useInteralForceAsFaceReaction ).
+    setInputFlag( InputFlags::OPTIONAL ).
+    setApplyDefaultValue( m_useInteralForceAsFaceReaction ).
+    setRestartFlags( RestartFlags::NO_WRITE ).
+    setDescription( "Will use internal force component at boundary node as reaction" );
 
   registerWrapper( "maxParticleVelocity", &m_maxParticleVelocity ).
     setInputFlag( InputFlags::OPTIONAL ).
@@ -3686,6 +3700,8 @@ void SolidMechanicsMPM::applyEssentialBCs( const real64 dt,
   arrayView3d< real64 const > const gridSurfacePosition = nodeManager.getReference< array3d< real64 > >( viewKeyStruct::gridSurfacePositionString() ); 
   arrayView3d< real64 const > const gridCenterOfVolume = nodeManager.getReference< array3d< real64 > >( viewKeyStruct::gridCenterOfVolumeString() );
 
+  arrayView3d< real64 > const gridInternalForce = nodeManager.getReference< array3d< real64 > >( viewKeyStruct::gridInternalForceString() );
+
   // Get node sets
   Group & nodeSets = nodeManager.sets();
   array1d< SortedArray< localIndex > > & m_boundaryNodes = nodeSets.getReference< array1d< SortedArray< localIndex > > >( viewKeyStruct::boundaryNodesString() );
@@ -3801,17 +3817,23 @@ void SolidMechanicsMPM::applyEssentialBCs( const real64 dt,
                             
               if( gridGhostRank[g] <= -1 && gridMass[g][fieldIndex] > m_smallMass ) // so we don't double count reactions at partition boundaries
               {
-                // std::cout<<"---------------------------------------"<<std::endl;
-                // std::cout<<"face = "<<face<<std::endl;
-                // std::cout<<"localFaceReactions[face] = "<<localFaceReactions[face]<<std::endl;
-                // std::cout<<"prescribedVelocity = "<<prescribedVelocity<<std::endl;
-                // std::cout<<"gridVelocity[g][fieldIndex][dir0] = "<<gridVelocity[g][fieldIndex][dir0]<<std::endl;
-                // std::cout<<"gridMass[g][fieldIndex] = "<<gridMass[g][fieldIndex]<<std::endl;
-                // std::cout<<"dt = "<<dt<<std::endl;
-                // std::cout<<"prescribedVelocity * gridMass[g][fieldIndex] / dt = "<<prescribedVelocity * gridMass[g][fieldIndex] / dt<<std::endl;
-                // std::cout<<"gridVelocity[g][fieldIndex][dir0] * gridMass[g][fieldIndex] / dt = "<<gridVelocity[g][fieldIndex][dir0] * gridMass[g][fieldIndex] / dt<<std::endl;
-                // std::cout<<"prescribedVelocity * gridMass[g][fieldIndex] / dt - gridVelocity[g][fieldIndex][dir0] * gridMass[g][fieldIndex] / dt = "<<prescribedVelocity * gridMass[g][fieldIndex] / dt - gridVelocity[g][fieldIndex][dir0] * gridMass[g][fieldIndex] / dt<<std::endl;
-                localFaceReactions[face] += prescribedVelocity * gridMass[g][fieldIndex] / dt - gridVelocity[g][fieldIndex][dir0] * gridMass[g][fieldIndex] / dt;
+                if(m_useInteralForceAsFaceReaction == 0 )
+                { // This computes the acceleration needed to bring the nodal velocity to the prescribed value, and the associated force.
+                  // But in cases where there is a significant velocity change across the boundary grid cell, the mapped velocity
+                  // can differ significantly from the prescribed value (unless APIC or similar accounting for p_velGrad is used)
+                  // in the p2g mapping.  As a result, the error in velocity is constant (an effect of g2p and p2g mapping, not
+                  // due to change in velocity over the time increment) but the acceleration and force needed to correct this
+                  // error increases with (1/dt).  This causes spikes in reactions when dt is tiny...at t=0, after restart (maybe)
+                  // or when the event manage picks a small dt to align better with the plotTime or restartTime interval.
+                  localFaceReactions[face] += prescribedVelocity * gridMass[g][fieldIndex] / dt - gridVelocity[g][fieldIndex][dir0] * gridMass[g][fieldIndex] / dt;
+                }
+                else
+                { // This isn't actually a reaction, it's the average traction in the material at the boundary and may neglect
+                  // important dynamic effects.  However, for quasistatic loading, this will be (probably) accurate, and
+                  // won't give errors in cases with very small dt.
+                  localFaceReactions[face] += gridInternalForce[g][fieldIndex][dir0];
+                }
+
                 // std::cout<<"localFaceReactions[face] = "<<localFaceReactions[face]<<std::endl;
                 //localFaceReactions[face] += accelerationForBC * gridMass[g][fieldIndex];
               }
@@ -8417,6 +8439,8 @@ void SolidMechanicsMPM::particleToGrid( real64 const time_n,
     arrayView1d< int const > const particleCohesiveZoneFlag = subRegion.getField< fields::mpm::particleCohesiveZoneFlag >();
     arrayView2d< real64 const > const particleSurfaceNormal = subRegion.getParticleSurfaceNormal();
     arrayView2d< real64 const > const particleSurfaceTraction = subRegion.getParticleSurfaceTraction();
+
+    arrayView3d< real64 > const particleVelocityGradient = subRegion.getField< fields::mpm::particleVelocityGradient >();
     
     // Get views to mapping arrays
     int const numberOfVerticesPerParticle = subRegion.numberOfVerticesPerParticle();
@@ -8469,7 +8493,15 @@ void SolidMechanicsMPM::particleToGrid( real64 const time_n,
       
         for( int i=0; i<numDims; i++ )
         {
-          gridMomentum[mappedNode][fieldIndex][i] += particleMass[p] * particleVelocity[p][i] * shapeFunctionValue;
+          real64 particleVelocityComponent = particleVelocity[p][i];
+          if ( m_useAPIC == 1)
+          { 
+            for( int j=0; j<numDims; j++ )
+            {
+              particleVelocityComponent += particleVelocityGradient[p][i][j] * ( gridPosition[mappedNode][j] - particlePosition[p][j] );
+            }
+          }
+          gridMomentum[mappedNode][fieldIndex][i] += particleMass[p] * particleVelocityComponent * shapeFunctionValue;
           gridExternalForce[mappedNode][fieldIndex][i] += ( particleBodyForce[p][i] * particleMass[p] + particleSurfaceTraction[p][i] + particleCohesiveForce[p][i] ) * shapeFunctionValue;
 
           gridCenterOfVolume[mappedNode][fieldIndex][i] += particleVolume[p] * ( particlePosition[p][i] - gridPosition[mappedNode][i] ) * shapeFunctionValue;
@@ -11007,6 +11039,10 @@ void SolidMechanicsMPM::computeCPDIShapeFunctions( arrayView2d< real64 const > c
   alpha[7][0]=oneOverV*(-(p_r1[2]*p_r2[1]) + p_r1[1]*p_r2[2] + p_r1[2]*p_r3[1] + p_r2[2]*p_r3[1] - p_r1[1]*p_r3[2] - p_r2[1]*p_r3[2]);
   alpha[7][1]=oneOverV*(p_r1[2]*p_r2[0] - p_r1[0]*p_r2[2] - p_r1[2]*p_r3[0] - p_r2[2]*p_r3[0] + p_r1[0]*p_r3[2] + p_r2[0]*p_r3[2]);
   alpha[7][2]=oneOverV*(-(p_r1[1]*p_r2[0]) + p_r1[0]*p_r2[1] + p_r1[1]*p_r3[0] + p_r2[1]*p_r3[0] - p_r1[0]*p_r3[1] - p_r2[0]*p_r3[1]);
+
+  // TODO: try storing the relative corner position, then when doing the p2g momentum map, we can have
+  // q_ia += 0.25*p_m*( S_ia *v_p + L_p*(x_alpha-x_p) 
+  //  This might be better for grid cells with one particle in them.  
 
   // get IJK associated with each corner
   int cornerIJK[8][3]; // CPDI can map to up to 8 cells
