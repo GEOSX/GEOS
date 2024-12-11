@@ -74,6 +74,14 @@ DECLARE_FIELD( dispJump,
                WRITE_AND_READ,
                "Displacement jump vector in the local reference system" );
 
+DECLARE_FIELD( dispJump_n,
+               "displacementJump",
+               array2d< real64 >,
+               0,
+               NOPLOT,
+               WRITE_AND_READ,
+               "Displacement jump vector in the local reference system at the current time-step" );
+
 DECLARE_FIELD( slip,
                "slip",
                array1d< real64 >,
@@ -113,6 +121,14 @@ DECLARE_FIELD( traction,
                LEVEL_0,
                WRITE_AND_READ,
                "Fracture traction vector in the local reference system." );
+
+DECLARE_FIELD( traction_n,
+               "traction_n",
+               array2d< real64 >,
+               0,
+               NOPLOT,
+               WRITE_AND_READ,
+               "Initial fracture traction vector in the local reference system at this time-step." );
 
 DECLARE_FIELD( deltaTraction,
                "deltaTraction",
