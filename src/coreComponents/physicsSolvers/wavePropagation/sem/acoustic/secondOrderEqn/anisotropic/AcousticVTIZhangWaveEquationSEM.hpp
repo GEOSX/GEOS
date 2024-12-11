@@ -90,6 +90,8 @@ public:
    */
   virtual void addSourceToRightHandSide( real64 const & time_n, arrayView1d< real32 > const rhs );
 
+  void precomputeSurfaceFieldIndicator( DomainPartition & domain );
+
 
   /**
    * @brief Initialize Perfectly Matched Layer (PML) information

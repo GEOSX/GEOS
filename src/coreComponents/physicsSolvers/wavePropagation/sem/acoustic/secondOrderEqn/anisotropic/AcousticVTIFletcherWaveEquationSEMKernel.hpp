@@ -55,14 +55,13 @@ namespace acousticVTIFletcherWaveEquationSEMKernels
 template< typename SUBREGION_TYPE,
           typename CONSTITUTIVE_TYPE,
           typename FE_TYPE >
-class ExplicitAcousticSEM : public finiteElement::KernelBase< SUBREGION_TYPE,
+class ExplicAcousticVTIFletcherWaveEquationSEM : public finiteElement::KernelBase< SUBREGION_TYPE,
                                                               CONSTITUTIVE_TYPE,
                                                               FE_TYPE,
                                                               1,
                                                               1 >
 {
 public:
-
   /// Alias for the base class;
   using Base = finiteElement::KernelBase< SUBREGION_TYPE,
                                           CONSTITUTIVE_TYPE,
@@ -81,6 +80,8 @@ public:
   using Base::m_elemGhostRank;
   using Base::m_constitutiveUpdate;
   using Base::m_finiteElementSpace;
+  
+  
 
 //*****************************************************************************
   /**
@@ -93,7 +94,7 @@ public:
    * @param dt The time interval for the step.
    *   elements to be processed during this kernel launch.
    */
-  ExplicitAcousticSEM( NodeManager & nodeManager,
+  ExplicAcousticVTIFletcherWaveEquationSEM ( NodeManager & nodeManager,
                        EdgeManager const & edgeManager,
                        FaceManager const & faceManager,
                        localIndex const targetRegionIndex,
@@ -105,14 +106,14 @@ public:
           finiteElementSpace,
           inputConstitutiveType ),
     m_nodeCoords( nodeManager.getField< fields::referencePosition32 >() ),
-    m_p_n( nodeManager.getField< acousticvtifields::Pressure_p_n >() ),
-    m_q_n( nodeManager.getField< acousticvtifields::Pressure_q_n >() ),
-    m_stiffnessVector_p( nodeManager.getField< acousticvtifields::StiffnessVector_p >() ),
-    m_stiffnessVector_q( nodeManager.getField< acousticvtifields::StiffnessVector_q >() ),
-    m_density( elementSubRegion.template getField< acousticfields::AcousticDensity >() ),
-    m_vti_epsilon( elementSubRegion.template getField< acousticvtifields::AcousticEpsilon >() ),
-    m_vti_delta( elementSubRegion.template getField< acousticvtifields::AcousticDelta >() ),
-    m_vti_sigma( elementSubRegion.template getField< acousticvtifields::AcousticSigma >() ),
+    m_p_n( nodeManager.getField< geos::fields::acousticvtifields::Pressure_p_n >() ),
+    m_q_n( nodeManager.getField< geos::fields::acousticvtifields::Pressure_q_n >() ),
+    m_stiffnessVector_p( nodeManager.getField< geos::fields::acousticvtifields::StiffnessVector_p >() ),
+    m_stiffnessVector_q( nodeManager.getField< geos::fields::acousticvtifields::StiffnessVector_q >() ),
+    m_density( elementSubRegion.template getField< geos::fields::acousticfields::AcousticDensity >() ),
+    m_vti_epsilon( elementSubRegion.template getField< geos::fields::acousticvtifields::AcousticEpsilon >() ),
+    m_vti_delta( elementSubRegion.template getField< geos::fields::acousticvtifields::AcousticDelta >() ),
+    m_vti_sigma( elementSubRegion.template getField< geos::fields::acousticvtifields::AcousticSigma >() ),
     m_dt( dt )
   {
     GEOS_UNUSED_VAR( edgeManager );
@@ -267,7 +268,7 @@ protected:
 
 
 /// The factory used to construct a ExplicitAcousticVTIFletcher kernel.
-using ExplicitAcousticVTIFletcherSEMFactory = finiteElement::KernelFactory< ExplicitAcousticVTIFletcherSEM,
+using ExplicitAcousticVTIFletcherSEMFactory = finiteElement::KernelFactory< ExplicAcousticVTIFletcherWaveEquationSEM ,
                                                                         real64 >;
 
 

@@ -376,6 +376,10 @@ real64 AcousticVTIFletcherWaveEquationSEM::computeTimeStep( real64 & dtOut )
 {
   // TODO: adapt to VTI
   GEOS_ERROR( "This option (Time Step computation) is not supported" );
+  dtOut = 0.;
+
+  return m_timeStep * m_cflFactor;
+
 }
 
 
@@ -391,14 +395,14 @@ void AcousticVTIFletcherWaveEquationSEM::precomputeSurfaceFieldIndicator( Domain
   ArrayOfArraysView< localIndex const > const faceToNodeMap = faceManager.nodeList().toViewConst();
 
   /// array of indicators: 1 if a face is on on lateral surface; 0 otherwise
-  arrayView1d< localIndex > const lateralSurfaceFaceIndicator = faceManager.getField< acoustivtifields::AcousticLateralSurfaceFaceIndicator >();
+  arrayView1d< localIndex > const lateralSurfaceFaceIndicator = faceManager.getField< acousticvtifields::AcousticLateralSurfaceFaceIndicator >();
   /// array of indicators: 1 if a node is on on lateral surface; 0 otherwise
-  arrayView1d< localIndex > const lateralSurfaceNodeIndicator = nodeManager.getField< acoustivtifields::AcousticLateralSurfaceNodeIndicator >();
+  arrayView1d< localIndex > const lateralSurfaceNodeIndicator = nodeManager.getField< acousticvtifields::AcousticLateralSurfaceNodeIndicator >();
 
   /// array of indicators: 1 if a face is on on bottom surface; 0 otherwise
-  arrayView1d< localIndex > const bottomSurfaceFaceIndicator = faceManager.getField< acoustivtifields::AcousticBottomSurfaceFaceIndicator >();
+  arrayView1d< localIndex > const bottomSurfaceFaceIndicator = faceManager.getField< acousticvtifields::AcousticBottomSurfaceFaceIndicator >();
   /// array of indicators: 1 if a node is on on bottom surface; 0 otherwise
-  arrayView1d< localIndex > const bottomSurfaceNodeIndicator = nodeManager.getField< acoustivtifields::AcousticBottomSurfaceNodeIndicator >();
+  arrayView1d< localIndex > const bottomSurfaceNodeIndicator = nodeManager.getField< acousticvtifields::AcousticBottomSurfaceNodeIndicator >();
 
   // Lateral surfaces
   fsManager.apply< FaceManager >( time,
@@ -544,8 +548,9 @@ void AcousticVTIFletcherWaveEquationSEM::initializePML()
 
 void AcousticVTIFletcherWaveEquationSEM::applyPML( real64 const time, DomainPartition & domain )
 {
+  GEOS_UNUSED_VAR(time, domain);
   GEOS_MARK_FUNCTION;
-
+#if 0
   FieldSpecificationManager & fsManager = FieldSpecificationManager::getInstance();
   parametersPML const & param = getReference< parametersPML >( viewKeyStruct::parametersPMLString() );
 
@@ -617,6 +622,7 @@ void AcousticVTIFletcherWaveEquationSEM::applyPML( real64 const time, DomainPart
         using FE_TYPE = TYPEOFREF( finiteElement );
 
         /// apply the PML kernel
+
         AcousticPMLSEM::
           PMLKernel< FE_TYPE > kernel( finiteElement );
         kernel.template launch< EXEC_POLICY, ATOMIC_POLICY >
@@ -636,10 +642,11 @@ void AcousticVTIFletcherWaveEquationSEM::applyPML( real64 const time, DomainPart
           r,
           grad_n,
           divV_n );
+        
       } );
     } );
   } );
-
+#endif
 }
 
 real64 AcousticVTIFletcherWaveEquationSEM::explicitStepForward( real64 const & time_n,
@@ -687,7 +694,7 @@ real64 AcousticVTIFletcherWaveEquationSEM::explicitStepBackward( real64 const & 
   forDiscretizationOnMeshTargets( domain.getMeshBodies(),
                                   [&] ( string const &,
                                         MeshLevel & mesh,
-                                        arrayView1d< string const > const & regionNames )
+                                        arrayView1d< string const > const & GEOS_UNUSED_PARAM( regionNames ) )
   {
     NodeManager & nodeManager = mesh.getNodeManager();
 
@@ -705,6 +712,7 @@ real64 AcousticVTIFletcherWaveEquationSEM::explicitStepBackward( real64 const & 
     EventManager const & event = getGroupByPath< EventManager >( "/Problem/Events" );
     real64 const & maxTime = event.getReference< real64 >( EventManager::viewKeyStruct::maxTimeString() );
     int const maxCycle = int(round( maxTime / dt ));
+    GEOS_UNUSED_VAR(maxCycle);
 
     if( computeGradient && cycleNumber >= 0 )
     {
@@ -752,7 +760,7 @@ void AcousticVTIFletcherWaveEquationSEM::prepareNextTimestep( MeshLevel & mesh )
 
 void AcousticVTIFletcherWaveEquationSEM::computeUnknowns( real64 const & time_n,
                                                real64 const & dt,
-                                               DomainPartition & domain,
+                                               DomainPartition & GEOS_UNUSED_PARAM( domain),
                                                MeshLevel & mesh,
                                                arrayView1d< string const > const & regionNames,
                                                bool const isForward )
@@ -772,10 +780,6 @@ void AcousticVTIFletcherWaveEquationSEM::computeUnknowns( real64 const & time_n,
   arrayView1d< real32 > const q_nm1 = nodeManager.getField< acousticvtifields::Pressure_q_nm1 >();
   arrayView1d< real32 > const q_n = nodeManager.getField< acousticvtifields::Pressure_q_n >();
   arrayView1d< real32 > const q_np1 = nodeManager.getField< acousticvtifields::Pressure_q_np1 >();
-
-  arrayView1d< real32 > const p_nm1 = nodeManager.getField< acousticfields::Pressure_nm1 >();
-  arrayView1d< real32 > const p_n = nodeManager.getField< acousticfields::Pressure_n >();
-  arrayView1d< real32 > const p_np1 = nodeManager.getField< acousticfields::Pressure_np1 >();
 
   arrayView1d< localIndex const > const freeSurfaceNodeIndicator = nodeManager.getField< acousticfields::AcousticFreeSurfaceNodeIndicator >();
   arrayView1d< localIndex const > const lateralSurfaceNodeIndicator = nodeManager.getField< acousticvtifields::AcousticLateralSurfaceNodeIndicator >();
@@ -813,14 +817,12 @@ if( isForward )
   //Modification of cycleNember useful when minTime < 0
   addSourceToRightHandSide( time_n, rhs );
 
-  /// calculate your time integrators
-  real64 const dt2 = pow( dt, 2 );
 
   SortedArrayView< localIndex const > const solverTargetNodesSet = m_solverTargetNodesSet.toViewConst();
   if( !m_usePML )
   {
     GEOS_MARK_SCOPE ( updateP );
-    AcousticTimeSchemeSEM::LeapFrogWithoutPML( dt, p_np1, p_n, p_nm1, mass, stiffnessVector, damping,
+    AcousticTimeSchemeSEM::LeapFrogWithoutPML( dt, p_np1, p_n, p_nm1, mass, stiffnessVector_p, damping_pp,
                                                rhs, freeSurfaceNodeIndicator, solverTargetNodesSet );
   }
   else

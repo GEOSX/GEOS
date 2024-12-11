@@ -172,6 +172,8 @@ private:
    */
   virtual void applyPML( real64 const time, DomainPartition & domain ) override;
 
+  void precomputeSurfaceFieldIndicator( DomainPartition & domain );
+
   /// Pressure_np1 at the receiver location for each time step for each receiver
   array2d< real32 > m_pressureNp1AtReceivers;
 

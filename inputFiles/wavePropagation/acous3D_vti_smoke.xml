@@ -89,7 +89,7 @@
     <!-- define the source coordinates -->
     <!-- define the time source frequency -->
     <!-- define the receiver coordinates -->
-    <AcousticVTISEM
+    <AcousticVTIFletcherSEM
       name="acousticSolver"
       cflFactor="0.25"
       discretization="FE1"
