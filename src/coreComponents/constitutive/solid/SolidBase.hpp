@@ -352,7 +352,7 @@ public:
     GEOS_UNUSED_VAR( k );
     GEOS_UNUSED_VAR( q );
     GEOS_UNUSED_VAR( elasticStrainInc );
-    GEOS_ERROR( "getElasticStrainInc() not implemented for this model (called when computing plastic strains)" );
+    GEOS_ERROR( "getElasticStrainInc() of SolidBase was called." );
   }
 
   /**
