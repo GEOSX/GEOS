@@ -243,10 +243,7 @@ void ElasticIsotropicPressureDependentUpdates::getElasticStrainInc( localIndex c
   real64 P;
   real64 Q;
 
-  for( localIndex i=0; i<6; ++i )
-  {
-    stress[i] = m_newStress[k][q][i];
-  }
+  LvArray::tensorOps::copy<6>( stress, m_newStress[k][q] );
 
   twoInvariant::stressDecomposition( stress,
                                      P,
@@ -262,17 +259,15 @@ void ElasticIsotropicPressureDependentUpdates::getElasticStrainInc( localIndex c
                                      elasticStrainInc );
 
   real64 oldStrain[6]{};
-  for( localIndex i=0; i<6; ++i )
-  {
-    stress[i] = m_oldStress[k][q][i];
-  }
+
+  LvArray::tensorOps::copy<6>( stress, m_oldStress[k][q] );
 
   twoInvariant::stressDecomposition( stress,
                                      P,
                                      Q,
                                      deviator );
 
-  elasticStrainVol = std::log( P/p0 ) * Cr * (-1.0) + eps_v0;
+  elasticStrainVol = lvArray::math::log( P/p0 ) * Cr * (-1.0) + eps_v0;
   elasticStrainDev = Q/3./mu;
 
   twoInvariant::strainRecomposition( elasticStrainVol,
