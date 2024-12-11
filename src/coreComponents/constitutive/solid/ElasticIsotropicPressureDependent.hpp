@@ -267,7 +267,7 @@ void ElasticIsotropicPressureDependentUpdates::getElasticStrainInc( localIndex c
                                      Q,
                                      deviator );
 
-  elasticStrainVol = lvArray::math::log( P/p0 ) * Cr * (-1.0) + eps_v0;
+  elasticStrainVol = LvArray::math::log( P/p0 ) * Cr * (-1.0) + eps_v0;
   elasticStrainDev = Q/3./mu;
 
   twoInvariant::strainRecomposition( elasticStrainVol,
