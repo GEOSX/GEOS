@@ -242,8 +242,6 @@ void ElasticIsotropicPressureDependentUpdates::getElasticStrainInc( localIndex c
   real64 stress[6]{};
   real64 P;
   real64 Q;
-  real64 elasticStrainVol;
-  real64 elasticStrainDev;
 
   for( localIndex i=0; i<6; ++i )
   {
