@@ -118,7 +118,8 @@ extensions = [
     'matplotlib.sphinxext.plot_directive',
     'sphinx.ext.napoleon',
     'sphinxcontrib.plantuml',
-    'sphinxcontrib.programoutput'
+    'sphinxcontrib.programoutput',
+    'sphinxcontrib.bibtex'
 ]
 
 plantuml = "/usr/bin/java -Djava.awt.headless=true -jar /tmp/plantuml.jar"
@@ -262,20 +263,20 @@ texinfo_documents = [
 numfig = True
 
 # Additional stuff for the LaTeX preamble.
-latex_elements['preamble'] = '\\usepackage{amsmath}\n\\usepackage{amssymb}\n\\usepackage[retainorgcmds]{IEEEtrantools}\n'
+latex_elements['preamble'] = '\\usepackage{amsmath}\n\\usepackage{amssymb}\n\\usepackage[retainorgcmds]{IEEEtrantools}\n\\usepackage{mathtools}\n'
+latex_additional_files = ['docs/sphinx/latex_macros.sty']
 
+bibtex_bibfiles = ['docs/sphinx/biblio_wave.bib']
 
 #####################################################
 # add LaTeX macros
 
 f = open('docs/sphinx/latex_macros.sty')
-imgmath_latex_preamble = ""
+imgmath_latex_preamble = "\\usepackage{mathtools}"
 imgmath_image_format = 'svg'
 imgmath_font_size = 14
 
 for macro in f:
-    # used when building latex and pdf versions
-    latex_elements['preamble'] += macro + '\n'
     # used when building html version
     imgmath_latex_preamble += macro + '\n'
 

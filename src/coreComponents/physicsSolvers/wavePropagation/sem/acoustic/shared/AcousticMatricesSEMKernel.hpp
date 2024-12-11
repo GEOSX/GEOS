@@ -147,6 +147,232 @@ struct AcousticMatricesSEM
       } );
     }
 
+    /**
+     * @brief Launches the precomputation of the damping matrices
+     * @tparam EXEC_POLICY the execution policy
+     * @tparam ATOMIC_POLICY the atomic policy
+     * @param[in] size the number of cells in the subRegion
+     * @param[in] nodeCoords coordinates of the nodes
+     * @param[in] elemsToFaces map from elements to faces
+     * @param[in] facesToNodes map from face to nodes
+     * @param[in] facesDomainBoundaryIndicator flag equal to 1 if the face is on the boundary, and to 0 otherwise
+     * @param[in] freeSurfaceFaceIndicator flag equal to 1 if the face is on the free surface, and to 0 otherwise
+     * @param[in] lateralSurfaceFaceIndicator flag equal to 1 if the face is on the lateral surface, and to 0 otherwise
+     * @param[in] bottomSurfaceFaceIndicator flag equal to 1 if the face is on the bottom surface, and to 0 otherwise
+     * @param[in] velocity cell-wise velocity
+     * @param[in] density cell-wise density
+     * @param[in] vti_epsilon cell-wise epsilon (Thomsen parameter)
+     * @param[in] vti_delta density cell-wise delta (Thomsen parameter)
+     * @param[in] vti_sigma sigma cell-wise parameter
+     * @param[out] damping_pp Damping matrix D^{pp}
+     * @param[out] damping_pq Damping matrix D^{pq}
+     * @param[out] damping_qp Damping matrix D^{qp}
+     * @param[out] damping_qq Damping matrix D^{qq}
+     */
+    template< typename EXEC_POLICY, typename ATOMIC_POLICY >
+    void
+    computeVTIFletcherDampingMatrices( localIndex const size,
+                                       arrayView2d< WaveSolverBase::wsCoordType const, nodes::REFERENCE_POSITION_USD > const nodeCoords,
+                                       arrayView2d< localIndex const > const elemsToFaces,
+                                       ArrayOfArraysView< localIndex const > const facesToNodes,
+                                       arrayView1d< integer const > const facesDomainBoundaryIndicator,
+                                       arrayView1d< localIndex const > const freeSurfaceFaceIndicator,
+                                       arrayView1d< localIndex const > const lateralSurfaceFaceIndicator,
+                                       arrayView1d< localIndex const > const bottomSurfaceFaceIndicator,
+                                       arrayView1d< real32 const > const velocity,
+                                       arrayView1d< real32 const > const density,
+                                       arrayView1d< real32 const > const vti_epsilon,
+                                       arrayView1d< real32 const > const vti_delta,
+                                       arrayView1d< real32 const > const vti_sigma,
+                                       arrayView1d< real32 > const damping_pp,
+                                       arrayView1d< real32 > const damping_pq,
+                                       arrayView1d< real32 > const damping_qp,
+                                       arrayView1d< real32 > const damping_qq )
+    {
+      forAll< EXEC_POLICY >( size, [=] GEOS_HOST_DEVICE ( localIndex const e )
+      {
+        for( localIndex i = 0; i < elemsToFaces.size( 1 ); ++i )
+        {
+          localIndex const f = elemsToFaces( e, i );
+          // face on the domain boundary and not on free surface
+          if( facesDomainBoundaryIndicator[f] == 1 && freeSurfaceFaceIndicator[f] != 1 )
+          {
+            // only the four corners of the mesh face are needed to compute the Jacobian
+            real64 xLocal[ 4 ][ 3 ];
+            for( localIndex a = 0; a < 4; ++a )
+            {
+              localIndex const nodeIndex = facesToNodes( f, FE_TYPE::meshIndexToLinearIndex2D( a ) );
+              for( localIndex d = 0; d < 3; ++d )
+              {
+                xLocal[a][d] = nodeCoords( nodeIndex, d );
+              }
+            }
+            constexpr localIndex numNodesPerFace = FE_TYPE::numNodesPerFace;
+            real32 vti_f = 1 - (vti_epsilon[e] - vti_delta[e]) / vti_sigma[e];
+            if( lateralSurfaceFaceIndicator[f] == 1 )
+            {
+              // ABC coefficients
+              real32 alpha = 1.0 / (velocity[e] * density[e] * sqrt( 1+2*vti_epsilon[e] ));
+              // VTI coefficients
+              real32 vti_p_xy = 0;
+              real32 vti_q_xy = 0;
+              real32 vti_qp_xy= 0;
+
+              vti_p_xy  = (1+2*vti_epsilon[e]);
+              vti_q_xy  = -(vti_f - 1);
+              vti_qp_xy = (vti_f+2*vti_delta[e]);
+              for( localIndex q = 0; q < numNodesPerFace; ++q )
+              {
+                real32 const aux = m_finiteElement.computeDampingTerm( q, xLocal );
+                real32 const localIncrement_p = alpha * vti_p_xy  * aux;
+                RAJA::atomicAdd< ATOMIC_POLICY >( &damping_pp[facesToNodes( f, q )], localIncrement_p );
+
+                real32 const localIncrement_q = alpha*vti_q_xy * aux;
+                RAJA::atomicAdd< ATOMIC_POLICY >( &damping_qq[facesToNodes( f, q )], localIncrement_q );
+
+                real32 const localIncrement_qp = alpha*vti_qp_xy * aux;
+                RAJA::atomicAdd< ATOMIC_POLICY >( &damping_qp[facesToNodes( f, q )], localIncrement_qp );
+              }
+            }
+            if( bottomSurfaceFaceIndicator[f] == 1 )
+            {
+              // ABC coefficients updated to fit horizontal velocity
+              real32 alpha = 1.0 / (velocity[e] * density[e]);
+              // VTI coefficients
+              real32 vti_p_z  = 0;
+              real32 vti_pq_z = 0;
+              real32 vti_q_z  = 0;
+              vti_p_z  = -(vti_f - 1);
+              vti_pq_z = vti_f;
+              vti_q_z  = 1;
+              for( localIndex q = 0; q < numNodesPerFace; ++q )
+              {
+                real32 const aux = m_finiteElement.computeDampingTerm( q, xLocal );
+                real32 const localIncrement_p = alpha * vti_p_z * aux;
+                RAJA::atomicAdd< ATOMIC_POLICY >( &damping_pp[facesToNodes( f, q )], localIncrement_p );
+
+                real32 const localIncrement_pq = alpha*vti_pq_z * aux;
+                RAJA::atomicAdd< ATOMIC_POLICY >( &damping_pq[facesToNodes( f, q )], localIncrement_pq );
+
+                real32 const localIncrement_q = alpha * vti_q_z * aux;
+                RAJA::atomicAdd< ATOMIC_POLICY >( &damping_qq[facesToNodes( f, q )], localIncrement_q );
+              }
+            }
+          }
+        }
+      } );
+    }
+
+    /**
+     * @brief Launches the precomputation of the damping matrices
+     * @tparam EXEC_POLICY the execution policy
+     * @tparam ATOMIC_POLICY the atomic policy
+     * @param[in] size the number of cells in the subRegion
+     * @param[in] nodeCoords coordinates of the nodes
+     * @param[in] elemsToFaces map from elements to faces
+     * @param[in] facesToNodes map from face to nodes
+     * @param[in] facesDomainBoundaryIndicator flag equal to 1 if the face is on the boundary, and to 0 otherwise
+     * @param[in] freeSurfaceFaceIndicator flag equal to 1 if the face is on the free surface, and to 0 otherwise
+     * @param[in] lateralSurfaceFaceIndicator flag equal to 1 if the face is on the lateral surface, and to 0 otherwise
+     * @param[in] bottomSurfaceFaceIndicator flag equal to 1 if the face is on the bottom surface, and to 0 otherwise
+     * @param[in] velocity cell-wise velocity
+     * @param[in] density cell-wise density
+     * @param[in] vti_epsilon cell-wise epsilon (Thomsen parameter)
+     * @param[in] vti_delta density cell-wise delta (Thomsen parameter)
+     * @param[out] damping_pp Damping matrix D^{pp}
+     * @param[out] damping_pq Damping matrix D^{pq}
+     * @param[out] damping_qp Damping matrix D^{qp}
+     * @param[out] damping_qq Damping matrix D^{qq}
+     */
+    template< typename EXEC_POLICY, typename ATOMIC_POLICY >
+    void
+    computeVTIZhangDampingMatrices( localIndex const size,
+                                    arrayView2d< WaveSolverBase::wsCoordType const, nodes::REFERENCE_POSITION_USD > const nodeCoords,
+                                    arrayView2d< localIndex const > const elemsToFaces,
+                                    ArrayOfArraysView< localIndex const > const facesToNodes,
+                                    arrayView1d< integer const > const facesDomainBoundaryIndicator,
+                                    arrayView1d< localIndex const > const freeSurfaceFaceIndicator,
+                                    arrayView1d< localIndex const > const lateralSurfaceFaceIndicator,
+                                    arrayView1d< localIndex const > const bottomSurfaceFaceIndicator,
+                                    arrayView1d< real32 const > const velocity,
+                                    arrayView1d< real32 const > const density,
+                                    arrayView1d< real32 const > const vti_epsilon,
+                                    arrayView1d< real32 const > const vti_delta,
+                                    arrayView1d< real32 > const damping_pp,
+                                    arrayView1d< real32 > const damping_pq,
+                                    arrayView1d< real32 > const damping_qp,
+                                    arrayView1d< real32 > const damping_qq )
+    {
+      forAll< EXEC_POLICY >( size, [=] GEOS_HOST_DEVICE ( localIndex const e )
+      {
+        for( localIndex i = 0; i < elemsToFaces.size( 1 ); ++i )
+        {
+          localIndex const f = elemsToFaces( e, i );
+          // face on the domain boundary and not on free surface
+          if( facesDomainBoundaryIndicator[f] == 1 && freeSurfaceFaceIndicator[f] != 1 )
+          {
+            // only the four corners of the mesh face are needed to compute the Jacobian
+            real64 xLocal[ 4 ][ 3 ];
+            for( localIndex a = 0; a < 4; ++a )
+            {
+              localIndex const nodeIndex = facesToNodes( f, FE_TYPE::meshIndexToLinearIndex2D( a ) );
+              for( localIndex d = 0; d < 3; ++d )
+              {
+                xLocal[a][d] = nodeCoords( nodeIndex, d );
+              }
+            }
+            constexpr localIndex numNodesPerFace = FE_TYPE::numNodesPerFace;
+            real32 epsi = std::fabs( vti_epsilon[e] );
+            if( std::fabs( epsi ) < 1e-5 )
+              epsi = 0;
+            real32 delt = std::fabs( vti_delta[e] );
+            if( std::fabs( delt ) < 1e-5 )
+              delt = 0;
+            if( delt > epsi )
+              delt = epsi;
+            real32 sqrtEpsi = sqrt( 1 + 2 * epsi );
+            real32 sqrtDelta = sqrt( 1 + 2 * vti_delta[e] );
+            if( lateralSurfaceFaceIndicator[f] == 1 )
+            {
+              // ABC coefficients updated to fit horizontal velocity
+              real32 alpha = 1.0 / (velocity[e] * density[e] * sqrtEpsi);
+              // VTI coefficients
+              real32 vti_p_xy  = 1 + 2 * epsi;
+              real32 vti_qp_xy = sqrtDelta;
+
+              for( localIndex q = 0; q < numNodesPerFace; ++q )
+              {
+                real32 const aux = m_finiteElement.computeDampingTerm( q, xLocal );
+                real32 const localIncrement_p = alpha* vti_p_xy  * aux;
+                RAJA::atomicAdd< ATOMIC_POLICY >( &damping_pp[facesToNodes( f, q )], localIncrement_p );
+
+                real32 const localIncrement_qp = alpha * vti_qp_xy * aux;
+                RAJA::atomicAdd< ATOMIC_POLICY >( &damping_qp[facesToNodes( f, q )], localIncrement_qp );
+              }
+            }
+            if( bottomSurfaceFaceIndicator[f] == 1 )
+            {
+              // ABC coefficients updated to fit horizontal velocity
+              real32 alpha = 1.0 / (velocity[e] * density[e]);
+              // VTI coefficients
+              real32 vti_pq_z = sqrtDelta;
+              real32 vti_q_z  = 1;
+              for( localIndex q = 0; q < numNodesPerFace; ++q )
+              {
+                real32 const aux = m_finiteElement.computeDampingTerm( q, xLocal );
+
+                real32 const localIncrement_pq = alpha * vti_pq_z * aux;
+                RAJA::atomicAdd< ATOMIC_POLICY >( &damping_pq[facesToNodes( f, q )], localIncrement_pq );
+
+                real32 const localIncrement_q = alpha * vti_q_z * aux;
+                RAJA::atomicAdd< ATOMIC_POLICY >( &damping_qq[facesToNodes( f, q )], localIncrement_q );
+              }
+            }
+          }
+        }
+      } );
+    }
+
     /// The finite element space/discretization object for the element type in the subRegion
     FE_TYPE const & m_finiteElement;
 

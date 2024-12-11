@@ -47,50 +47,43 @@
     <FieldSpecification
       name="zposFreeSurface"
       objectPath="faceManager"
-      fieldName="FreeSurface"
+      fieldName="AcousticFreeSurface"
       scale="0.0"
       setNames="{ zpos }"/>
     <FieldSpecification
       name="znegBottomSurface"
       objectPath="faceManager"
-      fieldName="BottomSurface"
+      fieldName="AcousticBottomSurface"
       scale="0.0"
       setNames="{ zneg }"/>
     <FieldSpecification
       name="LateralFreeSurface"
       objectPath="faceManager"
-      fieldName="LateralSurface"
+      fieldName="AcousticLateralSurface"
       scale="0.0"
       setNames="{ xpos, xneg, ypos, yneg }"/>
     <FieldSpecification
-      name="Epsilon"
+      name="acousticEpsilon"
       initialCondition="1"
       objectPath="ElementRegions/Region/cb"
-      fieldName="epsilon"
+      fieldName="acousticEpsilon"
       scale="0.24"
       setNames="{ all }"/>
     <FieldSpecification
-      name="Delta"
+      name="acousticDelta"
       initialCondition="1"
       objectPath="ElementRegions/Region/cb"
-      fieldName="delta"
+      fieldName="acousticDelta"
       scale="0.1"
       setNames="{ all }"/>
-    <FieldSpecification
-      name="f"
-      initialCondition="1"
-      objectPath="ElementRegions/Region/cb"
-      fieldName="f"
-      scale="1.0"
-      setNames="{ all }"/>
-    </FieldSpecifications>
+  </FieldSpecifications>
   <Solvers>
     <!-- define the solver -->
     <!-- define the source coordinates -->
     <!-- define the time source frequency -->
     <!-- define the receiver coordinates -->
-    <AcousticVTISEM
-      name="acousticSolver"
+    <AcousticVTIZhangSEM
+      name="acousticVTIZhangSolver"
       cflFactor="0.25"
       discretization="FE1"
       targetRegions="{ Region }"
@@ -114,7 +107,7 @@
   <ElementRegions>
     <CellElementRegion
       name="Region"
-      cellBlocks="{ * }"
+      cellBlocks="{ cb }"
       materialList="{ nullModel }"/>
   </ElementRegions>
 
@@ -157,13 +150,21 @@
       fieldName="pressure_q_nm1"
       scale="0.0"/>
 
-    <!-- 2) The velocity in the domain -->
+    <!-- 2) The velocity and density in the domain -->
     <FieldSpecification
       name="cellVelocity"
       initialCondition="1"
       objectPath="ElementRegions/Region/cb"
       fieldName="acousticVelocity"
       scale="1500"
+      setNames="{ all }"/>
+
+    <FieldSpecification
+      name="cellDensity"
+      initialCondition="1"
+      objectPath="ElementRegions/Region/cb"
+      fieldName="acousticDensity"
+      scale="1.5"
       setNames="{ all }"/>
 
     <!-- 3) The free surface condition the domain -->
@@ -182,7 +183,7 @@
     <PeriodicEvent
       name="solverApplications"
       forceDt="0.001"
-      target="/Solvers/acousticSolver"/>
+      target="/Solvers/acousticVTIZhangSolver"/>
 
     <!-- generate an output that can be read from VTK -->
     <PeriodicEvent

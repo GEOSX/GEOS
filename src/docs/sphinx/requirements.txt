@@ -11,3 +11,4 @@ sphinxcontrib-plantuml
 sphinx-argparse
 sphinx-design
 sphinxcontrib-programoutput>=0.17
+sphinxcontrib-bibtex

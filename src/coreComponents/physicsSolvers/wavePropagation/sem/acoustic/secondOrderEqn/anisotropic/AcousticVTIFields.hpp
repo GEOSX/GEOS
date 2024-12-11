@@ -13,7 +13,6 @@
  * ------------------------------------------------------------------------------------------------------------
  */
 
-
 /**
  * @file AcousticVTIFields.hpp
  */
@@ -24,7 +23,6 @@
 #include "common/DataLayouts.hpp"
 #include "mesh/MeshFields.hpp"
 
-
 namespace geos
 {
 
@@ -34,29 +32,29 @@ namespace fields
 namespace acousticvtifields
 {
 
-DECLARE_FIELD( Delta,
-               "delta",
+DECLARE_FIELD( AcousticDelta,
+               "acousticDelta",
                array1d< real32 >,
                0,
                NOPLOT,
                WRITE_AND_READ,
                "Delta thomsen anisotropy parameter" );
 
-DECLARE_FIELD( Epsilon,
-               "epsilon",
+DECLARE_FIELD( AcousticEpsilon,
+               "acousticEpsilon",
                array1d< real32 >,
                0,
                NOPLOT,
                WRITE_AND_READ,
                "Epsilon thomsen anisotropy parameter" );
 
-DECLARE_FIELD( F,
-               "f",
+DECLARE_FIELD( AcousticSigma,
+               "acousticSigma",
                array1d< real32 >,
-               0,
+               0.75,
                NOPLOT,
                WRITE_AND_READ,
-               "f quantity in VTI/TTI Fletcher's equations" );
+               "Sigma quantity in VTI/TTI Fletcher's equations" );
 
 DECLARE_FIELD( StiffnessVector_p,
                "stiffnessVector_p",
@@ -64,7 +62,7 @@ DECLARE_FIELD( StiffnessVector_p,
                0,
                NOPLOT,
                WRITE_AND_READ,
-               "Stiffness vector contains R_h*Pressure_n." );
+               "Stiffness vector contains R_h*Pressure_p_n." );
 
 DECLARE_FIELD( StiffnessVector_q,
                "stiffnessVector_q",
@@ -72,7 +70,7 @@ DECLARE_FIELD( StiffnessVector_q,
                0,
                NOPLOT,
                WRITE_AND_READ,
-               "Stiffness vector contains R_h*Pressure_n." );
+               "Stiffness vector contains R_h*Pressure_q_n." );
 
 DECLARE_FIELD( Pressure_p_nm1,
                "pressure_p_nm1",
@@ -80,7 +78,7 @@ DECLARE_FIELD( Pressure_p_nm1,
                0,
                NOPLOT,
                WRITE_AND_READ,
-               "Scalar pressure at time n-1." );
+               "Scalar pressure p at time n-1." );
 
 DECLARE_FIELD( Pressure_p_n,
                "pressure_p_n",
@@ -88,7 +86,7 @@ DECLARE_FIELD( Pressure_p_n,
                0,
                NOPLOT,
                WRITE_AND_READ,
-               "Scalar pressure at time n." );
+               "Scalar pressure p at time n." );
 
 DECLARE_FIELD( Pressure_p_np1,
                "pressure_p_np1",
@@ -96,7 +94,7 @@ DECLARE_FIELD( Pressure_p_np1,
                0,
                LEVEL_0,
                WRITE_AND_READ,
-               "Scalar pressure at time n+1." );
+               "Scalar pressure p at time n+1." );
 
 DECLARE_FIELD( Pressure_q_nm1,
                "pressure_q_nm1",
@@ -122,13 +120,13 @@ DECLARE_FIELD( Pressure_q_np1,
                WRITE_AND_READ,
                "Scalar auxiliary pressure q at time n+1." );
 
-DECLARE_FIELD( DampingVector_p,
+DECLARE_FIELD( DampingVector_pp,
                "dampingVector_p",
                array1d< real32 >,
                0,
                NOPLOT,
                WRITE_AND_READ,
-               "Diagonal of the Damping Matrix for p terms in p equation." );
+               "Diagonal block D_{p,p} of the Damping Matrix for p terms in p equation." );
 
 DECLARE_FIELD( DampingVector_pq,
                "dampingVector_pq",
@@ -136,15 +134,7 @@ DECLARE_FIELD( DampingVector_pq,
                0,
                NOPLOT,
                WRITE_AND_READ,
-               "Diagonal of the Damping Matrix for q terms in p equation." );
-
-DECLARE_FIELD( DampingVector_q,
-               "dampingVector_q",
-               array1d< real32 >,
-               0,
-               NOPLOT,
-               WRITE_AND_READ,
-               "Diagonal of the Damping Matrix for q terms in q equation." );
+               "Off-Diagonal block D_{p,q} of the Damping Matrix for q terms in p equation." );
 
 DECLARE_FIELD( DampingVector_qp,
                "dampingVector_qp",
@@ -152,9 +142,17 @@ DECLARE_FIELD( DampingVector_qp,
                0,
                NOPLOT,
                WRITE_AND_READ,
-               "Diagonal of the Damping Matrix for p terms in q equation." );
+               "Off-Diagonal block D_{q,q} of the Damping Matrix for p terms in q equation." );
 
-DECLARE_FIELD( LateralSurfaceFaceIndicator,
+DECLARE_FIELD( DampingVector_qq,
+               "dampingVector_q",
+               array1d< real32 >,
+               0,
+               NOPLOT,
+               WRITE_AND_READ,
+               "Diagonal block D_{q,q} of the Damping Matrix for q terms in q equation." );
+
+DECLARE_FIELD( AcousticLateralSurfaceFaceIndicator,
                "lateralSurfaceFaceIndicator",
                array1d< localIndex >,
                0,
@@ -162,7 +160,7 @@ DECLARE_FIELD( LateralSurfaceFaceIndicator,
                WRITE_AND_READ,
                "Free surface indicator, 1 if a face is on a lateral surface 0 otherwise." );
 
-DECLARE_FIELD( LateralSurfaceNodeIndicator,
+DECLARE_FIELD( AcousticLateralSurfaceNodeIndicator,
                "lateralSurfaceNodeIndicator",
                array1d< localIndex >,
                0,
@@ -170,7 +168,7 @@ DECLARE_FIELD( LateralSurfaceNodeIndicator,
                WRITE_AND_READ,
                "Lateral surface indicator, 1 if a face is on a lateral surface 0 otherwise." );
 
-DECLARE_FIELD( BottomSurfaceFaceIndicator,
+DECLARE_FIELD( AcousticBottomSurfaceFaceIndicator,
                "bottomSurfaceFaceIndicator",
                array1d< localIndex >,
                0,
@@ -178,13 +176,14 @@ DECLARE_FIELD( BottomSurfaceFaceIndicator,
                WRITE_AND_READ,
                "Bottom surface indicator, 1 if a face is on the bottom surface 0 otherwise." );
 
-DECLARE_FIELD( BottomSurfaceNodeIndicator,
+DECLARE_FIELD( AcousticBottomSurfaceNodeIndicator,
                "bottomSurfaceNodeIndicator",
                array1d< localIndex >,
                0,
                NOPLOT,
                WRITE_AND_READ,
                "Bottom surface indicator, 1 if a face is on the bottom surface 0 otherwise." );
+
 }
 
 }
