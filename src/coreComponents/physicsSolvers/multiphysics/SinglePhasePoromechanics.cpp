@@ -194,32 +194,32 @@ void SinglePhasePoromechanics< FLOW_SOLVER, MECHANICS_SOLVER >::assembleElementB
     if( this->m_isThermal )
     {
       poromechanicsMaxForce =
-        assemblyLaunch< constitutive::PorousSolidBase,
-                        thermalPoromechanicsKernels::ThermalSinglePhasePoromechanicsKernelFactory >( mesh,
-                                                                                                     dofManager,
-                                                                                                     regionNames,
-                                                                                                     viewKeyStruct::porousMaterialNamesString(),
-                                                                                                     localMatrix,
-                                                                                                     localRhs,
-                                                                                                     dt,
-                                                                                                     flowDofKey,
-                                                                                                     this->m_performStressInitialization,
-                                                                                                     FlowSolverBase::viewKeyStruct::fluidNamesString() );
+        this->template assemblyLaunch< constitutive::PorousSolidBase,
+                                       thermalPoromechanicsKernels::ThermalSinglePhasePoromechanicsKernelFactory >( mesh,
+                                                                                                                    dofManager,
+                                                                                                                    regionNames,
+                                                                                                                    viewKeyStruct::porousMaterialNamesString(),
+                                                                                                                    localMatrix,
+                                                                                                                    localRhs,
+                                                                                                                    dt,
+                                                                                                                    flowDofKey,
+                                                                                                                    this->m_performStressInitialization,
+                                                                                                                    FlowSolverBase::viewKeyStruct::fluidNamesString() );
     }
     else
     {
       poromechanicsMaxForce =
-        assemblyLaunch< constitutive::PorousSolidBase,
-                        poromechanicsKernels::SinglePhasePoromechanicsKernelFactory >( mesh,
-                                                                                       dofManager,
-                                                                                       regionNames,
-                                                                                       viewKeyStruct::porousMaterialNamesString(),
-                                                                                       localMatrix,
-                                                                                       localRhs,
-                                                                                       dt,
-                                                                                       flowDofKey,
-                                                                                       this->m_performStressInitialization,
-                                                                                       FlowSolverBase::viewKeyStruct::fluidNamesString() );
+        this->template assemblyLaunch< constitutive::PorousSolidBase,
+                                       poromechanicsKernels::SinglePhasePoromechanicsKernelFactory >( mesh,
+                                                                                                      dofManager,
+                                                                                                      regionNames,
+                                                                                                      viewKeyStruct::porousMaterialNamesString(),
+                                                                                                      localMatrix,
+                                                                                                      localRhs,
+                                                                                                      dt,
+                                                                                                      flowDofKey,
+                                                                                                      this->m_performStressInitialization,
+                                                                                                      FlowSolverBase::viewKeyStruct::fluidNamesString() );
     }
   } );
 
@@ -248,14 +248,14 @@ void SinglePhasePoromechanics< FLOW_SOLVER, MECHANICS_SOLVER >::assembleElementB
     }
 
     mechanicsMaxForce =
-      assemblyLaunch< constitutive::SolidBase,
-                      solidMechanicsLagrangianFEMKernels::QuasiStaticFactory >( mesh,
-                                                                                dofManager,
-                                                                                filteredRegionNames.toViewConst(),
-                                                                                SolidMechanicsLagrangianFEM::viewKeyStruct::solidMaterialNamesString(),
-                                                                                localMatrix,
-                                                                                localRhs,
-                                                                                dt );
+      this->template assemblyLaunch< constitutive::SolidBase,
+                                     solidMechanicsLagrangianFEMKernels::QuasiStaticFactory >( mesh,
+                                                                                               dofManager,
+                                                                                               filteredRegionNames.toViewConst(),
+                                                                                               SolidMechanicsLagrangianFEM::viewKeyStruct::solidMaterialNamesString(),
+                                                                                               localMatrix,
+                                                                                               localRhs,
+                                                                                               dt );
   } );
 
   this->solidMechanicsSolver()->applyContactConstraint( dofManager, domain, localMatrix, localRhs );
