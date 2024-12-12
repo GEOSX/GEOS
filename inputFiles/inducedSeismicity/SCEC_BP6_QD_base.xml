@@ -2,7 +2,7 @@
 <Problem>
   <Solvers
     gravityVector="{0.0, 0.0, 0.0}">
-    <!-- <ImplicitQuasiDynamicEQ
+    <ImplicitQuasiDynamicEQ
       name="QDSolver"
       targetRegions="{ Domain, Fault }"
       shearImpedance="4.6247113164e6"
@@ -18,7 +18,7 @@
         maxNumConfigurationAttempts="1"
         lineSearchMaxCuts="2"
         maxTimeStepCuts="1"/>
-     </ImplicitQuasiDynamicEQ> -->
+     </ImplicitQuasiDynamicEQ>
 
     <OneWayCoupledFractureFlowContactMechanics
       name="stressSolver"
@@ -161,7 +161,7 @@
       scale="0.0"
       setNames="{ zpos, zneg }"/>
 
-    <!-- <FieldSpecification
+    <FieldSpecification
       name="initialSlipRate"
       objectPath="ElementRegions/Fault"
       fieldName="slipRate"
@@ -193,7 +193,7 @@
       objectPath="ElementRegions/Fault/FractureSubRegion"
       component="1"
       scale="0."
-      setNames="{all}"/>                  -->
+      setNames="{all}"/>                 
 
     <SourceFlux
       name="sourceTerm"

@@ -77,7 +77,6 @@ public:
                                                 int const cycleNumber,
                                                 DomainPartition & domain ) override final;
 
-                                                virtual void
   virtual void postInputInitialization() override final;
 
   /**@}*/
