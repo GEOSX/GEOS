@@ -44,7 +44,7 @@ where :math:`\phi(\mathbf{x})` is the porosity of the medium which is a function
 :math:`S_\ell(\mathbf{x},t)` is the saturation of the phase
 :math:`\ell` and similarly for the phase :math:`v`, and :math:`t` is the time. The source/sink terms :math:`q_{\ell}` and :math:`q_{v}` are
 positive for injection and negative for production. The phase
-velocity, :math:`\boldsymbol{u}_\ell`` and :math:`\boldsymbol{u}_v`$`, are defined using
+velocity, :math:`\boldsymbol{u}_\ell` and :math:`\boldsymbol{u}_v`, are defined using
 the multiphase extension of Darcy's law (conservation of momentum) as
 
  .. math::
