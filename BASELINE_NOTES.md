@@ -6,6 +6,10 @@ This file is designed to track changes to the integrated test baselines.
 Any developer who updates the baseline ID in the .integrated_tests.yaml file is expected to create an entry in this file with the pull request number, date, and their justification for rebaselining.
 These notes should be in reverse-chronological order, and use the following time format: (YYYY-MM-DD).
 
+PR #3251 (2024 12 12)
+=====================
+Added tests for the newly introduced immiscible fluild solver
+
 PR #3450 (2024-12-08)
 =====================
 Added test for explicit runge kutta sprinslider.
