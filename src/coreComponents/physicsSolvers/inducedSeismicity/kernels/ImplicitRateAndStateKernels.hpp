@@ -158,45 +158,45 @@ public:
     m_slipRate[k] = m_slipRate_n[k];
   }
 
-template< typename POLICY >
-static real64 solveRateAndStateEquation( SurfaceElementSubRegion & subRegion,
-                                         ImplicitFixedStressRateAndStateKernel & kernel,
-                                         real64 dt,
-                                         integer const maxNewtonIter,
-                                         real64 const newtonTol )
-{
-  bool converged = false;
-  for( integer attempt = 0; attempt < 5; attempt++ )
+  template< typename POLICY >
+  static real64 solveRateAndStateEquation( SurfaceElementSubRegion & subRegion,
+                                           ImplicitFixedStressRateAndStateKernel & kernel,
+                                           real64 dt,
+                                           integer const maxNewtonIter,
+                                           real64 const newtonTol )
   {
-    if( attempt > 0 )
+    bool converged = false;
+    for( integer attempt = 0; attempt < 5; attempt++ )
     {
-      forAll< POLICY >( subRegion.size(), [=] GEOS_HOST_DEVICE ( localIndex const k )
+      if( attempt > 0 )
       {
-        kernel.resetState( k );
-      } );
-    }
-    GEOS_LOG_RANK_0( GEOS_FMT( "  Attempt {} ", attempt ) );
-    converged = newtonSolve< POLICY >( subRegion, kernel, dt, maxNewtonIter, newtonTol );
-    if( converged )
-    {
-      forAll< POLICY >( subRegion.size(), [=] GEOS_HOST_DEVICE ( localIndex const k )
+        forAll< POLICY >( subRegion.size(), [=] GEOS_HOST_DEVICE ( localIndex const k )
+        {
+          kernel.resetState( k );
+        } );
+      }
+      GEOS_LOG_RANK_0( GEOS_FMT( "  Attempt {} ", attempt ) );
+      converged = newtonSolve< POLICY >( subRegion, kernel, dt, maxNewtonIter, newtonTol );
+      if( converged )
       {
-        kernel.udpateVariables( k );
-      } );
-      return dt;
+        forAll< POLICY >( subRegion.size(), [=] GEOS_HOST_DEVICE ( localIndex const k )
+        {
+          kernel.udpateVariables( k );
+        } );
+        return dt;
+      }
+      else
+      {
+        GEOS_LOG_RANK_0( GEOS_FMT( "  Attempt {} failed. Halving dt and retrying.", attempt ) );
+        dt *= 0.5;
+      }
     }
-    else
+    if( !converged )
     {
-      GEOS_LOG_RANK_0( GEOS_FMT( "  Attempt {} failed. Halving dt and retrying.", attempt ) );
-      dt *= 0.5;
+      GEOS_ERROR( "Maximum number of attempts reached without convergence." );
     }
+    return dt;
   }
-  if( !converged )
-  {
-    GEOS_ERROR( "Maximum number of attempts reached without convergence." );
-  }
-  return dt;
-}
 
 private:
 

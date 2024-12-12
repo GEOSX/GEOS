@@ -35,7 +35,7 @@ using namespace constitutive;
 using namespace rateAndStateKernels;
 
 ExplicitQDRateAndState::ExplicitQDRateAndState( const string & name,
-                                        Group * const parent ):
+                                                Group * const parent ):
   QDRateAndStateBase( name, parent ),
   m_butcherTable( BogackiShampine32Table()), // TODO: The butcher table should be specified in the XML input.
   m_successfulStep( false ),
@@ -75,7 +75,7 @@ real64 ExplicitQDRateAndState::solverStep( real64 const & time_n,
                                            int const cycleNumber,
                                            DomainPartition & domain )
 {
-  applyInitialConditionsToFault( cycleNumber, domain ); 
+  applyInitialConditionsToFault( cycleNumber, domain );
   saveState( domain );
 
   real64 dtAdaptive = dt;
@@ -166,8 +166,8 @@ void ExplicitQDRateAndState::stepRateStateODEInitialSubstage( real64 const dt, D
 }
 
 void ExplicitQDRateAndState::stepRateStateODESubstage( integer const stageIndex,
-                                                   real64 const dt,
-                                                   DomainPartition & domain ) const
+                                                       real64 const dt,
+                                                       DomainPartition & domain ) const
 {
 
   forDiscretizationOnMeshTargets( domain.getMeshBodies(), [&]( string const &,
@@ -235,8 +235,8 @@ void ExplicitQDRateAndState::stepRateStateODEAndComputeError( real64 const dt, D
 }
 
 void ExplicitQDRateAndState::updateSlipVelocity( real64 const & time_n,
-                                             real64 const & dt,
-                                             DomainPartition & domain ) const
+                                                 real64 const & dt,
+                                                 DomainPartition & domain ) const
 {
   GEOS_LOG_LEVEL_RANK_0( 1, "Rate and State solver" );
   integer const maxIterNewton = m_nonlinearSolverParameters.m_maxIterNewton;

@@ -42,7 +42,7 @@ public:
     m_slipRate( subRegion.getField< fields::rateAndState::slipRate >() ),
     m_stateVariable( subRegion.getField< fields::rateAndState::stateVariable >() ),
     m_normalTraction( subRegion.getField< fields::rateAndState::normalTraction >() ),
-    m_shearTraction( subRegion.getField< fields::rateAndState::shearTraction >() ),    
+    m_shearTraction( subRegion.getField< fields::rateAndState::shearTraction >() ),
     m_slipVelocity( subRegion.getField< fields::rateAndState::slipVelocity >() ),
     m_shearImpedance( shearImpedance ),
     m_frictionLaw( frictionLaw.createKernelUpdates()  )
@@ -128,28 +128,28 @@ public:
   }
 
   /**
- * @brief Performs the kernel launch
- * @tparam KernelType The Rate-and-state kernel to launch
- * @tparam POLICY the policy used in the RAJA kernels
- */
-template< typename POLICY >
-static real64
-solveRateAndStateEquation( SurfaceElementSubRegion & subRegion,
-                           ExplicitRateAndStateKernel & kernel,
-                           real64 dt,
-                           integer const maxNewtonIter,
-                           real64 const newtonTol )
-{
-  GEOS_MARK_FUNCTION;
-
-  newtonSolve< POLICY >( subRegion, kernel, dt, maxNewtonIter, newtonTol );
-
-  forAll< POLICY >( subRegion.size(), [=] GEOS_HOST_DEVICE ( localIndex const k )
+   * @brief Performs the kernel launch
+   * @tparam KernelType The Rate-and-state kernel to launch
+   * @tparam POLICY the policy used in the RAJA kernels
+   */
+  template< typename POLICY >
+  static real64
+  solveRateAndStateEquation( SurfaceElementSubRegion & subRegion,
+                             ExplicitRateAndStateKernel & kernel,
+                             real64 dt,
+                             integer const maxNewtonIter,
+                             real64 const newtonTol )
   {
-    kernel.projectSlipRate( k );
-  } );
-  return dt;
-}
+    GEOS_MARK_FUNCTION;
+
+    newtonSolve< POLICY >( subRegion, kernel, dt, maxNewtonIter, newtonTol );
+
+    forAll< POLICY >( subRegion.size(), [=] GEOS_HOST_DEVICE ( localIndex const k )
+    {
+      kernel.projectSlipRate( k );
+    } );
+    return dt;
+  }
 
 private:
 
@@ -212,7 +212,7 @@ struct BogackiShampine32Table
  *
  * @tparam Butcher table defining the Runge-Kutta method.
  */
-template< typename TABLE_TYPE > 
+template< typename TABLE_TYPE >
 class EmbeddedRungeKuttaKernel
 {
 

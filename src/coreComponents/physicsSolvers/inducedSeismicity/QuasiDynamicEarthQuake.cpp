@@ -69,32 +69,35 @@ real64 QuasiDynamicEarthQuake< RSSOLVER_TYPE >::updateStresses( real64 const & t
                                                                 const int cycleNumber,
                                                                 DomainPartition & domain ) const
 {
-  // 1. Solve the momentum balance
+  // 1. Setup variables for stress solver
+  setTargetDispJump( domain );
+
+  // 2. Solve the momentum balance
   real64 const dtAccepted = m_stressSolver->solverStep( time_n, dt, cycleNumber, domain );
 
-  // 2. Add background stress and possible forcing. 
+  // 3. Add background stress and possible forcing.
   this->forDiscretizationOnMeshTargets( domain.getMeshBodies(), [&]( string const &,
-                                                               MeshLevel & mesh,
-                                                               arrayView1d< string const > const & regionNames )
+                                                                     MeshLevel & mesh,
+                                                                     arrayView1d< string const > const & regionNames )
   {
     mesh.getElemManager().forElementSubRegions< SurfaceElementSubRegion >( regionNames,
                                                                            [&]( localIndex const,
                                                                                 SurfaceElementSubRegion & subRegion )
     {
       arrayView2d< real64 const > const traction = subRegion.getField< contact::traction >();
-      
+
       arrayView2d< real64 > const shearTraction   = subRegion.getField< rateAndState::shearTraction >();
       arrayView1d< real64 > const normalTraction  = subRegion.getField< rateAndState::normalTraction >();
-      
+
       arrayView2d< real64 > const backgroundShearStress = subRegion.getField< rateAndState::backgroundShearStress >();
       arrayView1d< real64 > const backgroundNormalStress = subRegion.getField< rateAndState::backgroundNormalStress >();
 
       forAll< parallelDevicePolicy<> >( subRegion.size(), [=] GEOS_HOST_DEVICE ( localIndex const k )
       {
         normalTraction[k] = backgroundNormalStress[k] + traction[k][0];
-         for( int i = 0; i < 2; ++i )
+        for( int i = 0; i < 2; ++i )
         {
-          shearTraction(k, i) = backgroundShearStress(k, i) + traction(k, i+1); 
+          shearTraction( k, i ) = backgroundShearStress( k, i ) + traction( k, i+1 );
         }
       } );
     } );
@@ -103,22 +106,30 @@ real64 QuasiDynamicEarthQuake< RSSOLVER_TYPE >::updateStresses( real64 const & t
   return dtAccepted;
 }
 
-// void QuasiDynamicEarthQuake::updateSlip( ElementSubRegionBase & subRegion, real64 const dt ) const
-// {
-//   arrayView2d< real64 const > const slipVelocity    = subRegion.getField< rateAndState::slipVelocity >();
-//   arrayView2d< real64 > const deltaSlip             = subRegion.getField< contact::deltaSlip >();
+template< typename RSSOLVER_TYPE >
+void QuasiDynamicEarthQuake< RSSOLVER_TYPE >::setTargetDispJump( DomainPartition & domain ) const
+{
+  this->forDiscretizationOnMeshTargets( domain.getMeshBodies(), [&]( string const &,
+                                                                     MeshLevel & mesh,
+                                                                     arrayView1d< string const > const & regionNames )
+  {
+    mesh.getElemManager().forElementSubRegions< SurfaceElementSubRegion >( regionNames,
+                                                                           [&]( localIndex const,
+                                                                                SurfaceElementSubRegion & subRegion )
+    {
+      arrayView2d< real64 > const deltaSlip      = subRegion.getField< contact::deltaSlip >();
+      arrayView2d< real64 > const targetDispJump = subRegion.getField< contact::targetIncrementalJump >();
 
-//   arrayView2d< real64 > const dispJump = subRegion.getField< contact::targetIncrementalJump >();
+      forAll< parallelDevicePolicy<> >( subRegion.size(), [=] GEOS_HOST_DEVICE ( localIndex const k )
+      {
+        targetDispJump( k, 0 ) = 0.0;
+        targetDispJump( k, 1 ) = deltaSlip( k, 0 );
+        targetDispJump( k, 2 ) = deltaSlip( k, 1 );
+      } );
+    } );
+  } );
+}
 
-//   forAll< parallelDevicePolicy<> >( subRegion.size(), [=] GEOS_HOST_DEVICE ( localIndex const k )
-//   {
-//     deltaSlip[k][0] = slipVelocity[k][0] * dt;
-//     deltaSlip[k][1] = slipVelocity[k][1] * dt;
-//     // Update tangential components of the displacement jump
-//     dispJump[k][1] = slipVelocity[k][0] * dt;
-//     dispJump[k][2] = slipVelocity[k][1] * dt;
-//   } );
-// }
 template class QuasiDynamicEarthQuake< ImplicitQDRateAndState >;
 template class QuasiDynamicEarthQuake< ExplicitQDRateAndState >;
 

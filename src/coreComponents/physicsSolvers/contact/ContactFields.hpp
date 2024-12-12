@@ -104,7 +104,7 @@ DECLARE_FIELD( deltaSlip_n,
                0.0,
                NOPLOT,
                WRITE_AND_READ,
-               "Initial slip increment at this time step" );               
+               "Initial slip increment at this time step" );
 
 DECLARE_FIELD( deltaDispJump,
                "deltaDisplacementJump",

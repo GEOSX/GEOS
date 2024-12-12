@@ -49,7 +49,7 @@ template< typename POLICY, typename KERNEL_TYPE >
 static bool newtonSolve( SurfaceElementSubRegion & subRegion,
                          KERNEL_TYPE & kernel,
                          real64 const dt,
-                         integer const maxNewtonIter, 
+                         integer const maxNewtonIter,
                          real64 const newtonTol )
 {
   bool allConverged = false;
@@ -129,7 +129,7 @@ createAndLaunch( SurfaceElementSubRegion & subRegion,
                  string const & frictionLawNameKey,
                  real64 const shearImpedance,
                  integer const maxNewtonIter,
-                 real64 const newtonTol, 
+                 real64 const newtonTol,
                  real64 const time_n,
                  real64 const totalDt )
 {
@@ -150,7 +150,7 @@ createAndLaunch( SurfaceElementSubRegion & subRegion,
 
     if( dtRemaining > 0.0 )
     {
-      dt = dtAccepted;     
+      dt = dtAccepted;
     }
     GEOS_LOG_RANK_0( GEOS_FMT( "  sub-step = {} completed, dt = {}, remaining dt = {}", subStep, dt, dtRemaining ) );
   }

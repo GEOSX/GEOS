@@ -52,8 +52,8 @@ void SpringSlider< RSSOLVER_TYPE >::registerDataOnMesh( Group & meshBodies )
   RSSOLVER_TYPE::registerDataOnMesh( meshBodies );
 
   this->forDiscretizationOnMeshTargets( meshBodies, [&] ( string const &,
-                                                    MeshLevel & mesh,
-                                                    arrayView1d< string const > const & regionNames )
+                                                          MeshLevel & mesh,
+                                                          arrayView1d< string const > const & regionNames )
   {
     ElementRegionManager & elemManager = mesh.getElemManager();
 
@@ -69,17 +69,17 @@ void SpringSlider< RSSOLVER_TYPE >::registerDataOnMesh( Group & meshBodies )
 
       subRegion.registerField< contact::dispJump_n >( this->getName() ).
         setDimLabels( 1, labels3Comp ).
-        reference().template resizeDimension< 1 >( 3 );   
+        reference().template resizeDimension< 1 >( 3 );
 
       string const labels2Comp[2] = { "tangent1", "tangent2" };
-      
+
       subRegion.registerField< contact::deltaSlip >( this->getName() ).
         setDimLabels( 1, labels2Comp ).
         reference().template resizeDimension< 1 >( 2 );
 
       subRegion.registerField< contact::deltaSlip_n >( this->getName() ).
         setDimLabels( 1, labels2Comp ).
-        reference().template resizeDimension< 1 >( 2 );      
+        reference().template resizeDimension< 1 >( 2 );
 
       subRegion.registerWrapper< string >( viewKeyStruct::frictionLawNameString() ).
         setPlotLevel( PlotLevel::NOPLOT ).
@@ -101,11 +101,11 @@ real64 SpringSlider< RSSOLVER_TYPE >::updateStresses( real64 const & time_n,
                                                       DomainPartition & domain ) const
 
 {
-  GEOS_UNUSED_VAR( cycleNumber, time_n);
+  GEOS_UNUSED_VAR( cycleNumber, time_n );
   // Spring-slider shear traction computation
   this->forDiscretizationOnMeshTargets( domain.getMeshBodies(), [&]( string const &,
-                                                               MeshLevel & mesh,
-                                                               arrayView1d< string const > const & regionNames )
+                                                                     MeshLevel & mesh,
+                                                                     arrayView1d< string const > const & regionNames )
 
   {
     mesh.getElemManager().forElementSubRegions< SurfaceElementSubRegion >( regionNames,
@@ -133,13 +133,11 @@ real64 SpringSlider< RSSOLVER_TYPE >::updateStresses( real64 const & time_n,
                                                                                 frictionKernelWrapper.getDcCoefficient( k ) );
 
 
-        
-
 
         shearTraction[k][0] = shearTraction_n[k][0] + springSliderParameters.tauRate * dt
-                           - springSliderParameters.springStiffness * deltaSlip[k][0];
+                              - springSliderParameters.springStiffness * deltaSlip[k][0];
         shearTraction[k][1] = shearTraction_n[k][1] + springSliderParameters.tauRate * dt
-                           - springSliderParameters.springStiffness * deltaSlip[k][1];
+                              - springSliderParameters.springStiffness * deltaSlip[k][1];
       } );
     } );
   } );

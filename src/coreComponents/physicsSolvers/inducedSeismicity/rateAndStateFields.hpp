@@ -86,7 +86,7 @@ DECLARE_FIELD( normalTraction,
                0.0,
                LEVEL_0,
                WRITE_AND_READ,
-               "Normal traction" );  
+               "Normal traction" );
 
 DECLARE_FIELD( shearTraction,
                "shearTraction",
@@ -102,7 +102,7 @@ DECLARE_FIELD( normalTraction_n,
                0.0,
                LEVEL_0,
                WRITE_AND_READ,
-               "Normal traction at previous timestep n." );  
+               "Normal traction at previous timestep n." );
 
 DECLARE_FIELD( shearTraction_n,
                "shearTraction_n",
@@ -118,7 +118,7 @@ DECLARE_FIELD( backgroundNormalStress,
                0.0,
                LEVEL_0,
                WRITE_AND_READ,
-               "Background Normal Stress" );  
+               "Background Normal Stress" );
 
 DECLARE_FIELD( backgroundShearStress,
                "backgroundShearStress",
@@ -126,7 +126,7 @@ DECLARE_FIELD( backgroundShearStress,
                0.0,
                LEVEL_0,
                WRITE_AND_READ,
-               "Background Shear Stress" );                                    
+               "Background Shear Stress" );
 
 DECLARE_FIELD( rungeKuttaStageRates,
                "rungeKuttaStageRates",

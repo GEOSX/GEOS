@@ -59,7 +59,7 @@ protected:
 
   void solveRateAndStateEquations( real64 const time_n,
                                    real64 const dt,
-                                   DomainPartition & domain ) const;                               
+                                   DomainPartition & domain ) const;
 
   /// target slip rate
   real64 m_targetSlipIncrement;

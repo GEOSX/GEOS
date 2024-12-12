@@ -2,29 +2,42 @@
 <Problem>
   <Solvers
     gravityVector="{0.0, 0.0, 0.0}">
-    <QuasiDynamicEQ
+    <!-- <ImplicitQuasiDynamicEQ
       name="QDSolver"
       targetRegions="{ Domain, Fault }"
       shearImpedance="4.6247113164e6"
       initialDt="1000"
       logLevel="1"
       discretization="FE1"
-      contactSolverName="stressSolver"
-      flowSolverName="singlePhaseFlowSolver"
-      tractionUpdateType="OneWayCoupled"
+      stressSolverName="stressSolver"
       targetSlipIncrement="1.0e-6">
       <NonlinearSolverParameters
         newtonTol="1.0e-8"
         logLevel="2"
         newtonMaxIter="20"
         maxNumConfigurationAttempts="1"
-        lineSearchAction="Require"
         lineSearchMaxCuts="2"
         maxTimeStepCuts="1"/>
-     </QuasiDynamicEQ>
+     </ImplicitQuasiDynamicEQ> -->
+
+    <OneWayCoupledFractureFlowContactMechanics
+      name="stressSolver"
+      logLevel="1"
+      solidSolverName="contactSolver"
+      flowSolverName="singlePhaseFlowSolver"
+      targetRegions="{ Domain, Fault }">
+       <NonlinearSolverParameters
+        newtonMaxIter="2"
+        newtonTol="1.0e-2"
+	      couplingType="Sequential"  
+        lineSearchAction="None"
+	      subcycling="0"
+        maxTimeStepCuts="1"
+        lineSearchMaxCuts="0"/>
+    </OneWayCoupledFractureFlowContactMechanics> 
 
     <SolidMechanicsLagrangeContactBubbleStab
-      name="stressSolver"
+      name="contactSolver"
       timeIntegrationOption="QuasiStatic"
       logLevel="2"
       writeLinearSystem="0"
@@ -85,9 +98,9 @@
       xCoords="{ -10.0e3, 10.0e3 }"
       yCoords="{ -0.5e3, 0.5e3 }"
       zCoords="{ -20.0e3, -10.0e3, 10.0e3, 20.0e3 }"
-      nx="{ 100 }"
+      nx="{ 10 }"
       ny="{ 1 }"
-      nz="{ 20, 201, 20 }"
+      nz="{ 20, 21, 20 }"
       cellBlockNames="{ cb1 }"/>
   </Mesh>
 
@@ -148,7 +161,7 @@
       scale="0.0"
       setNames="{ zpos, zneg }"/>
 
-    <FieldSpecification
+    <!-- <FieldSpecification
       name="initialSlipRate"
       objectPath="ElementRegions/Fault"
       fieldName="slipRate"
@@ -180,7 +193,7 @@
       objectPath="ElementRegions/Fault/FractureSubRegion"
       component="1"
       scale="0."
-      setNames="{all}"/>                 
+      setNames="{all}"/>                  -->
 
     <SourceFlux
       name="sourceTerm"

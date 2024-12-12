@@ -30,13 +30,13 @@ public:
 
   /// The constructor needs a user-defined "name" and a parent Group (to place this instance in the tree structure of classes)
   ExplicitQDRateAndState( const string & name,
-                      Group * const parent );
+                          Group * const parent );
 
   /// Destructor
   virtual ~ExplicitQDRateAndState() override;
 
-  static string derivedSolverPrefix() { return "Explicit";};   
-  
+  static string derivedSolverPrefix() { return "Explicit";};
+
   /// This method ties properties with their supporting mesh
   virtual void registerDataOnMesh( Group & meshBodies ) override;
 

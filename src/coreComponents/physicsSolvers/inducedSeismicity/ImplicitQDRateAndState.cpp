@@ -34,7 +34,7 @@ using namespace fields;
 using namespace constitutive;
 
 ImplicitQDRateAndState::ImplicitQDRateAndState( const string & name,
-                                        Group * const parent ):
+                                                Group * const parent ):
   QDRateAndStateBase( name, parent ),
   m_targetSlipIncrement( 1.0e-7 )
 {
@@ -65,12 +65,14 @@ void ImplicitQDRateAndState::solveRateAndStateEquations( real64 const time_n,
                                                                                 SurfaceElementSubRegion & subRegion )
     {
       // solve rate and state equations.
-      rateAndStateKernels::createAndLaunch< rateAndStateKernels::ImplicitFixedStressRateAndStateKernel, parallelDevicePolicy<> >( subRegion, 
-                                                                                        viewKeyStruct::frictionLawNameString(), 
-                                                                                        m_shearImpedance, 
-                                                                                        maxNewtonIter, newtonTol, 
-                                                                                        time_n,
-                                                                                        dt );      // save old state
+      rateAndStateKernels::createAndLaunch< rateAndStateKernels::ImplicitFixedStressRateAndStateKernel, parallelDevicePolicy<> >( subRegion,
+                                                                                                                                  viewKeyStruct::frictionLawNameString(),
+                                                                                                                                  m_shearImpedance,
+                                                                                                                                  maxNewtonIter, newtonTol,
+                                                                                                                                  time_n,
+                                                                                                                                  dt ); // save
+                                                                                                                                        // old
+                                                                                                                                        // state
       updateSlip( subRegion, dt );
     } );
   } );
@@ -80,9 +82,11 @@ real64 ImplicitQDRateAndState::solverStep( real64 const & time_n,
                                            real64 const & dt,
                                            int const cycleNumber,
                                            DomainPartition & domain )
-{ 
+{
   applyInitialConditionsToFault( cycleNumber, domain );
+  GEOS_LOG_LEVEL_RANK_0( 1, "Stress solver" );
   updateStresses( time_n, dt, cycleNumber, domain );
+  GEOS_LOG_LEVEL_RANK_0( 1, "Rate and state solver" );
   solveRateAndStateEquations( time_n, dt, domain );
   saveState( domain );
   return dt;

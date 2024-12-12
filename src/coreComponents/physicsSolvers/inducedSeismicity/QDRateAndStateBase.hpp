@@ -46,10 +46,10 @@ public:
   };
 
   /**
-  * @brief save the current state
-  * @param domain
-  */
-  void saveState( DomainPartition & domain ) const;                           
+   * @brief save the current state
+   * @param domain
+   */
+  void saveState( DomainPartition & domain ) const;
 
 protected:
 
@@ -59,7 +59,7 @@ protected:
                                  DomainPartition & domain ) const = 0;
 
   virtual void applyInitialConditionsToFault( int const cycleNumber,
-                                              DomainPartition & domain) const;                                 
+                                              DomainPartition & domain ) const;
 
   /// shear impedance
   real64 m_shearImpedance;

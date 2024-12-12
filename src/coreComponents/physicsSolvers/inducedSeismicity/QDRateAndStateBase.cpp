@@ -69,16 +69,16 @@ void QDRateAndStateBase::registerDataOnMesh( Group & meshBodies )
 
       // Tangent (2-component) functions on fault
       string const labels2Comp[2] = {"tangent1", "tangent2" };
-      
+
       subRegion.registerField< rateAndState::slipVelocity >( getName() ).
         setDimLabels( 1, labels2Comp ).reference().resizeDimension< 1 >( 2 );
       subRegion.registerField< rateAndState::slipVelocity_n >( getName() ).
-        setDimLabels( 1, labels2Comp ).reference().resizeDimension< 1 >( 2 );  
-      
+        setDimLabels( 1, labels2Comp ).reference().resizeDimension< 1 >( 2 );
+
       subRegion.registerField< rateAndState::shearTraction >( getName() ).
         setDimLabels( 1, labels2Comp ).reference().resizeDimension< 1 >( 2 );
       subRegion.registerField< rateAndState::normalTraction >( getName() );
-      
+
       subRegion.registerField< rateAndState::shearTraction_n >( getName() ).
         setDimLabels( 1, labels2Comp ).reference().resizeDimension< 1 >( 2 );
       subRegion.registerField< rateAndState::normalTraction_n >( getName() );
@@ -127,7 +127,7 @@ void QDRateAndStateBase::applyInitialConditionsToFault( int const cycleNumber,
         } );
       } );
     } );
-  } 
+  }
 }
 
 void QDRateAndStateBase::saveState( DomainPartition & domain ) const
@@ -160,7 +160,7 @@ void QDRateAndStateBase::saveState( DomainPartition & domain ) const
       forAll< parallelDevicePolicy<> >( subRegion.size(), [=] GEOS_HOST_DEVICE ( localIndex const k )
       {
         stateVariable_n[k]  = stateVariable[k];
-        normalTraction_n[k] = normalTraction[k]; 
+        normalTraction_n[k] = normalTraction[k];
         LvArray::tensorOps::copy< 2 >( deltaSlip_n[k], deltaSlip[k] );
         LvArray::tensorOps::copy< 2 >( slipVelocity_n[k], slipVelocity[k] );
         LvArray::tensorOps::copy< 3 >( dispJump_n[k], dispJump[k] );

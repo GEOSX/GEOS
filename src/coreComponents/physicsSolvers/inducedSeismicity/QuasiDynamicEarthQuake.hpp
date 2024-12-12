@@ -23,7 +23,7 @@ namespace geos
 {
 
 template< typename RSSOLVER_TYPE = ImplicitQDRateAndState >
-class QuasiDynamicEarthQuake : public RSSOLVER_TYPE 
+class QuasiDynamicEarthQuake : public RSSOLVER_TYPE
 {
 public:
 
@@ -52,16 +52,18 @@ public:
 
   void postInputInitialization() override final;
 
+  void setTargetDispJump( DomainPartition & domain ) const;
+
 private:
 
-virtual real64 updateStresses( real64 const & time_n,
+  virtual real64 updateStresses( real64 const & time_n,
                                  real64 const & dt,
                                  const int cycleNumber,
                                  DomainPartition & domain ) const override final;
 
-string m_stressSolverName;
+  string m_stressSolverName;
 
-PhysicsSolverBase * m_stressSolver;
+  PhysicsSolverBase * m_stressSolver;
 
 };
 
