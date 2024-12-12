@@ -70,7 +70,7 @@ void computeSinglePhaseFlux( localIndex const ( &seri )[2],
   {
     densMean        += 0.5 * dens[seri[ke]][sesri[ke]][sei[ke]][0];
     dDensMean_dP[ke] = 0.5 * dDens_dPres[seri[ke]][sesri[ke]][sei[ke]][0];
-    //dDensMean_dP[ke] = 0.5 * dDens[seri[ke]][sesri[ke]][sei[ke]][0][DerivOffset::dP];
+    assert(fabs(dDens_dPres[seri[ke]][sesri[ke]][sei[ke]][0]-dDens[seri[ke]][sesri[ke]][sei[ke]][0][0])<FLT_EPSILON);
   }
 
   // compute potential difference

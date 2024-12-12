@@ -156,6 +156,9 @@ public:
              m_dDens_dPres[k][q],
              m_viscosity[k][q],
              m_dVisc_dPres[k][q] );
+    // tjb
+    m_dDensity[k][q][0]   = m_dDens_dPres[k][q];
+    m_dViscosity[k][q][0] = m_dVisc_dPres[k][q];
   }
 
   GEOS_HOST_DEVICE
@@ -179,6 +182,16 @@ public:
              m_enthalpy[k][q],
              m_dEnthalpy_dPres[k][q],
              m_dEnthalpy_dTemp[k][q] );
+    // tjb
+    m_dDensity[k][q][0] = m_dDens_dPres[k][q];
+    m_dDensity[k][q][1] = m_dDens_dTemp[k][q];
+    m_dViscosity[k][q][0] = m_dVisc_dPres[k][q];
+    m_dViscosity[k][q][1] = m_dVisc_dTemp[k][q];
+    m_dInternalEnergy[k][q][0] = m_dIntEnergy_dPres[k][q];
+    m_dInternalEnergy[k][q][1] = m_dIntEnergy_dTemp[k][q];
+    m_dEnthalpy[k][q][0] = m_dEnthalpy_dPres[k][q];
+    m_dEnthalpy[k][q][1] = m_dEnthalpy_dTemp[k][q];
+  
   }
 
 private:

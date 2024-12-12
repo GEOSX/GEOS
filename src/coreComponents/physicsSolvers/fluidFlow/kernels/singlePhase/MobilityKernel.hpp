@@ -59,10 +59,12 @@ struct MobilityKernel
   static void
   compute( real64 const & dens,
            real64 const & dDens_dP,  // tjb
+           real64 const & dDens_dT,  // tjb
            real64 const & dDens_dPres,
            real64 const & dDens_dTemp,
            real64 const & visc,
            real64 const & dVisc_dP,  // tjb
+           real64 const & dVisc_dT,  // tjb
            real64 const & dVisc_dPres,
            real64 const & dVisc_dTemp,
            real64 & mob,
@@ -73,7 +75,11 @@ struct MobilityKernel
     dMob_dPres = dDens_dPres / visc - mob / visc * dVisc_dPres;
     dMob_dPres = dDens_dP / visc - mob / visc * dVisc_dP;  // tjb keep
     assert( fabs( dDens_dP -dDens_dPres ) < FLT_EPSILON );
+    assert( fabs( dVisc_dP -dVisc_dPres ) < FLT_EPSILON );
     dMob_dTemp = dDens_dTemp / visc - mob / visc * dVisc_dTemp;
+    dMob_dTemp = dDens_dT / visc - mob / visc * dVisc_dT;  // tjb keep
+    assert( fabs( dDens_dT - dDens_dTemp ) < FLT_EPSILON );
+    assert( fabs( dVisc_dT - dVisc_dTemp ) < FLT_EPSILON );
   }
 
 // Value-only (no derivatives) version
@@ -131,10 +137,12 @@ struct MobilityKernel
     {
       compute( dens[a][0],
                dDens[a][0][0], // tjb use deriv::dp
+               dDens[a][0][1], // tjb use deriv::dt
                dDens_dPres[a][0],
                dDens_dTemp[a][0],
                visc[a][0],
                dVisc[a][0][0], // tjb use deriv::dp
+               dVisc[a][0][1], // tjb use deriv::dt
                dVisc_dPres[a][0],
                dVisc_dTemp[a][0],
                mob[a],

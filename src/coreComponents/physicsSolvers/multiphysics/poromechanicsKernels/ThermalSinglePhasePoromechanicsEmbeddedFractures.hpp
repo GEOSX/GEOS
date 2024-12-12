@@ -332,6 +332,7 @@ private:
 
   /// Views on enthalpies
   ElementViewConst< arrayView2d< real64 const > > const m_enthalpy;
+  ElementViewConst< arrayView3d< real64 const > > const m_dEnthalpy;
   ElementViewConst< arrayView2d< real64 const > > const m_dEnthalpy_dPres;
   ElementViewConst< arrayView2d< real64 const > > const m_dEnthalpy_dTemp;
 

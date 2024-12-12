@@ -54,10 +54,12 @@ SingleFluidBase::SingleFluidBase( string const & name, Group * const parent )
   registerField( fields::singlefluid::dInternalEnergy_dPressure{}, &m_dInternalEnergy_dPressure );
   registerField( fields::singlefluid::dInternalEnergy_dTemperature{}, &m_dInternalEnergy_dTemperature );
 
-  registerField( fields::singlefluid::enthalpy{}, &m_enthalpy.value );
+  registerField( fields::singlefluid::enthalpy{}, &m_enthalpy.value );  
   registerField( fields::singlefluid::dEnthalpy{}, &m_enthalpy.derivs );
-  //registerField( fields::singlefluid::dEnthalpy_dPressure{}, &m_dEnthalpy_dPressure );
-  //registerField( fields::singlefluid::dEnthalpy_dTemperature{}, &m_dEnthalpy_dTemperature );
+#if 1 
+  registerField( fields::singlefluid::dEnthalpy_dPressure{}, &m_dEnthalpy_dPressure );
+  registerField( fields::singlefluid::dEnthalpy_dTemperature{}, &m_dEnthalpy_dTemperature );
+#endif
 
 }
 

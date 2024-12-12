@@ -163,7 +163,7 @@ DECLARE_FIELD( dEnthalpy,
                LEVEL_0,
                WRITE_AND_READ,
                "dEnthalpy" );
-#if 0
+#if 1
 DECLARE_FIELD( dEnthalpy_dPressure,
                "dEnthalpy_dPressure",
                array2d< real64 >,
