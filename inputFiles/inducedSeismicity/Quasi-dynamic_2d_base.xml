@@ -1,7 +1,7 @@
 <?xml version="1.0" ?>
 <Problem>
   <Solvers>
-    <QuasiDynamicEQ
+    <ImplicitQuasiDynamicEQ
       name="QDSolver"
       targetRegions="{ Domain, Fault }"
       shearImpedance="4.41"
@@ -9,7 +9,7 @@
       logLevel="1"
       discretization="FE1"
       stressSolverName="stressSolver">
-    </QuasiDynamicEQ>
+    </ImplicitQuasiDynamicEQ>
 
     <SolidMechanicsLagrangeContactBubbleStab
       name="stressSolver"
