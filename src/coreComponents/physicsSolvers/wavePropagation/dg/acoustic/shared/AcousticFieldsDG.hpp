@@ -125,7 +125,7 @@ DECLARE_FIELD( ElementToOpposite,
 
 DECLARE_FIELD( ElementToOppositePermutation,
                "elementToOppositePermutation",
-               array2d< unsigned short >,
+               array2d< integer >,
                0,
                NOPLOT,
                WRITE_AND_READ,

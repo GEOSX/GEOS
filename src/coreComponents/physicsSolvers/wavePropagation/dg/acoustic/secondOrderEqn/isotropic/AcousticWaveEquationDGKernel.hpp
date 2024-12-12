@@ -214,7 +214,7 @@ struct PrecomputeNeighborhoodKernel
           ArrayOfArraysView< localIndex const > const & facesToNodes,
           arrayView1d< localIndex const > const & freeSurfaceFaceIndicator,
           arrayView2d< localIndex > const & elemsToOpposite,
-          arrayView2d< unsigned short > const & elemsToOppositePermutation )
+          arrayView2d< integer > const & elemsToOppositePermutation )
   {
     forAll< EXEC_POLICY >( size, [=] GEOS_HOST_DEVICE ( localIndex const k1 )
     {
@@ -289,7 +289,7 @@ struct PrecomputeNeighborhoodKernel
           }
           GEOS_ERROR_IF( o2 < 0, "Topological error in mesh: a face and its adjacent element share all vertices.");
           // compute permutation
-          unsigned short permutation = 0;
+          integer permutation = 0;
           int c = 1;
           for (localIndex k2OrderedVertex : k2OrderedVertices) {
             int position = -1;

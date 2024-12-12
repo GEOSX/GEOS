@@ -265,7 +265,7 @@ void AcousticWaveEquationDG::initializePostInitialConditionsPreSubGroups()
       //  arrayView1d< real32 const > const density = elementSubRegion.getField< acousticfieldsdgdgdg::AcousticDensity >();
 
       arrayView2d< localIndex > const & elemsToOpposite = elementSubRegion.getField< acousticfieldsdg::ElementToOpposite >();
-      arrayView2d< unsigned short > const & elemsToOppositePermutation = elementSubRegion.getField< acousticfieldsdg::ElementToOppositePermutation >();
+      arrayView2d< integer > const & elemsToOppositePermutation = elementSubRegion.getField< acousticfieldsdg::ElementToOppositePermutation >();
 
       /// Partial gradient if gradient as to be computed
 
