@@ -3,7 +3,7 @@
  * SPDX-License-Identifier: LGPL-2.1-only
  *
  * Copyright (c) 2016-2024 Lawrence Livermore National Security LLC
- * Copyright (c) 2018-2024 Total, S.A
+ * Copyright (c) 2018-2024 TotalEnergies
  * Copyright (c) 2018-2024 The Board of Trustees of the Leland Stanford Junior University
  * Copyright (c) 2023-2024 Chevron
  * Copyright (c) 2019-     GEOS/GEOSX Contributors
@@ -78,6 +78,7 @@ CompositionalMultiphaseBase::CompositionalMultiphaseBase( const string & name,
   m_allowCompDensChopping( 1 ),
   m_useTotalMassEquation( 1 ),
   m_useSimpleAccumulation( 1 ),
+  m_useNewGravity( 0 ),
   m_minCompDens( isothermalCompositionalMultiphaseBaseKernels::minDensForDivision )
 {
 //START_SPHINX_INCLUDE_00
@@ -163,6 +164,12 @@ CompositionalMultiphaseBase::CompositionalMultiphaseBase( const string & name,
     setInputFlag( InputFlags::OPTIONAL ).
     setApplyDefaultValue( 1 ).
     setDescription( "Flag indicating whether simple accumulation form is used" );
+
+  this->registerWrapper( viewKeyStruct::useNewGravityString(), &m_useNewGravity ).
+    setSizedFromParent( 0 ).
+    setInputFlag( InputFlags::OPTIONAL ).
+    setApplyDefaultValue( 0 ).
+    setDescription( "Flag indicating whether new gravity treatment is used" );
 
   this->registerWrapper( viewKeyStruct::minCompDensString(), &m_minCompDens ).
     setSizedFromParent( 0 ).
@@ -2245,6 +2252,7 @@ void CompositionalMultiphaseBase::computeCFLNumbers( geos::DomainPartition & dom
       isothermalCompositionalMultiphaseBaseKernels::KernelLaunchSelector1
       < isothermalCompositionalMultiphaseFVMKernels::CFLFluxKernel >( numComps,
                                                                       numPhases,
+                                                                      m_useNewGravity,
                                                                       dt,
                                                                       stencilWrapper,
                                                                       compFlowAccessors.get( fields::flow::pressure{} ),

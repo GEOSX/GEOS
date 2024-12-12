@@ -3,7 +3,7 @@
  * SPDX-License-Identifier: LGPL-2.1-only
  *
  * Copyright (c) 2016-2024 Lawrence Livermore National Security LLC
- * Copyright (c) 2018-2024 Total, S.A
+ * Copyright (c) 2018-2024 TotalEnergies
  * Copyright (c) 2018-2024 The Board of Trustees of the Leland Stanford Junior University
  * Copyright (c) 2023-2024 Chevron
  * Copyright (c) 2019-     GEOS/GEOSX Contributors
@@ -197,6 +197,7 @@ public:
     // such as potGrad, phaseFlux, and the indices of the upwind cell
     // We use the lambda below (called **inside** the phase loop of the base computeFlux) to access these variables
     Base::computeFlux( iconn, stack, [&] ( integer const ip,
+                                           integer const useNewGravity,
                                            localIndex const (&k)[2],
                                            localIndex const (&seri)[2],
                                            localIndex const (&sesri)[2],
@@ -234,7 +235,7 @@ public:
         localIndex const ei  = sei[i];
 
         bool const phaseExists = (m_phaseVolFrac[er_up][esr_up][ei_up][ip] > 0);
-        if( !phaseExists )
+        if( useNewGravity && !phaseExists )
         {
           continue;
         }
