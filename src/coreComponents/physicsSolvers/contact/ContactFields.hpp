@@ -75,7 +75,7 @@ DECLARE_FIELD( dispJump,
                "Displacement jump vector in the local reference system" );
 
 DECLARE_FIELD( dispJump_n,
-               "displacementJum_n",
+               "displacementJump_n",
                array2d< real64 >,
                0,
                NOPLOT,
