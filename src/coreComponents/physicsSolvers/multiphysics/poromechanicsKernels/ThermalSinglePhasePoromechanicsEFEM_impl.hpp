@@ -176,7 +176,7 @@ complete( localIndex const k,
   // Energy balance accumulation
   real64 const volume        =  m_elementVolumeFrac( embSurfIndex ) + m_deltaVolume( embSurfIndex );
   real64 const fluidEnergy   =  m_fluidDensity( embSurfIndex, 0 ) * m_fluidInternalEnergy( embSurfIndex, 0 ) * volume;
-  real64 const fluidEnergy_n =  m_energy_n[embSurfIndex]; // TODO where is solid energy?
+  real64 const fluidEnergy_n =  m_energy_n[embSurfIndex];
 
   stack.dFluidMassIncrement_dTemperature =  m_dFluidDensity_dTemperature( embSurfIndex, 0 ) * volume;
 
