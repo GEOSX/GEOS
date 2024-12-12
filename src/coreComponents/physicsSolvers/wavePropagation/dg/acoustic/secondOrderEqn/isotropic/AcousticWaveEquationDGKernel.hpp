@@ -30,6 +30,7 @@ namespace AcousticWaveEquationDGKernels
 
 struct PrecomputeSourceAndReceiverKernel
 {
+  using EXEC_POLICY = parallelDevicePolicy< >;
 
   /**
    * @brief Launches the precomputation of the source and receiver terms
@@ -61,8 +62,6 @@ struct PrecomputeSourceAndReceiverKernel
    * @param[in] rickerOrder order of the Ricker wavelet
    */
   template< typename EXEC_POLICY, typename FE_TYPE >
-  GEOS_FORCE_INLINE
-  GEOS_HOST_DEVICE
   static void
   launch( localIndex const size,
           ArrayOfArraysView< localIndex const > const baseFacesToNodes,
@@ -197,6 +196,8 @@ struct PrecomputeSourceAndReceiverKernel
 struct PrecomputeNeighborhoodKernel
 {
 
+  using EXEC_POLICY = parallelDevicePolicy< >;
+
   /**
    * @brief Launches the precomputation of the element neighborhood information needed by DG
    * @tparam EXEC_POLICY execution policy
@@ -205,82 +206,106 @@ struct PrecomputeNeighborhoodKernel
    * @param[out]
    */
   template< typename EXEC_POLICY, typename FE_TYPE >
-  GEOS_FORCE_INLINE
-  GEOS_HOST_DEVICE
   static void
-  launch( 
+  launch( localIndex const size, 
           arrayView2d< localIndex const, cells::NODE_MAP_USD > const & elemsToNodes,
           arrayView2d< localIndex const > const & elemsToFaces,
           arrayView2d< localIndex const > const & facesToElems,
-          ArrayOfArraysView< localIndex const > const facesToNodes,
+          ArrayOfArraysView< localIndex const > const & facesToNodes,
           arrayView1d< localIndex const > const & freeSurfaceFaceIndicator,
-          arrayView2d< localIndex > const elemsToOpposite,
-          arrayView2d< short int > const elemsToOppositePermutation )
+          arrayView2d< localIndex > const & elemsToOpposite,
+          arrayView2d< unsigned short > const & elemsToOppositePermutation )
   {
-
     forAll< EXEC_POLICY >( size, [=] GEOS_HOST_DEVICE ( localIndex const k1 )
     {
-      std::vector< localIndex > vertices = { elemsToNodes( k1, 0 ), elemsToNodes( k1, 1 ), elemsToNodes( k1, 2 ), elemsToNodes( k1, 3 ) };
+      localIndex vertices[ 4 ] = { elemsToNodes( k1, 0 ), elemsToNodes( k1, 1 ), elemsToNodes( k1, 2 ), elemsToNodes( k1, 3 ) };
  
       for( int i = 0; i < 4; i++ )
       {
-         std::vector< localIndex > k1OrderedVertices;
-         localIndex f = elemsToFaces( k1, i );
-         std::vector< localIndex > faceVertices = { facesToNodes( f, 0 ), facesToNodes( f, 1 ), facesToNodes( f, 2 ) };
-         // find neighboring element, if any
-         localIndex k2 = facesToElems( f, 0 );
-         if( k2 == k1 )
-         {
-           k2 = facesToElems( f, 1 );
-         }
-         // find opposite vertex in first element
-         std::unordered_set<int> faceSet(faceVertices.begin(), faceVertices.end());
-         int o1 = -1;
-         for ( localIndex vertex : vertices) {
-           if (faceSet.find(vertex) == faceSet.end()) {
-             o1 = vertex;
-           }
-           else
-           {
-             k1OrderedVertices.push_back( vertex );
-           }
-         }
-         GEOS_ERROR_IF( o1 < 0, "Topological error in mesh: a face and its adjacent element share all vertices.");
-         if( k2 < 0 )
-         {
-           // boundary element, either free surface, or absorbing boundary
-           elemsToOpposite( k1, o1 ) = freeSurfaceFaceIndicator( f ) == 1 ? -2 : -1;  
-           elemsToOppositePermutation( k1, o1 ) = 0;
-         }
-         else
-         {
-           elemsToOpposite( k1, o ) = k2;
-           std::vector< localIndex > oppositeElemVertices = { elemsToNodes( k2, 0 ), elemsToNodes( k2, 1 ), elemsToNodes( k2, 2 ), elemsToNodes( k2, 3 ) };
-           std::vector< localIndex > k2OrderedVertices;
-           // find opposite vertex in second element
-           int o2 = -1;
-           for ( localIndex vertex : oppositeElemVerties) {
-             if (faceSet.find(vertex) == faceSet.end()) {
-               o2 = vertex;
-             }
-             else
-             {
-               k2OrderedVertices.push_back( vertex );
-             }
-           }
-           GEOS_ERROR_IF( o2 < 0, "Topological error in mesh: a face and its adjacent element share all vertices.");
-           // compute permutation
-           unsigned short permutation = 0;
-           int c = 1;
-           for (localIndex k2OrderedVertex : k2OrderedVertices) {
-               auto it = std::find(k1OrderedVertices.begin(), k1OrderedVertices.end(), k2OrderedVertex);
-               int position = it - vertices.begin();
-               permutation = permutation + c * position;
-               c = c * 3;
-           }
-           elemsToOppositePermutation( k1, o ) = permutation;
-           
-         }
+        localIndex  k1OrderedVertices[ 3 ];
+        localIndex f = elemsToFaces( k1, i );
+        localIndex faceVertices[ 3 ] = { facesToNodes( f, 0 ), facesToNodes( f, 1 ), facesToNodes( f, 2 ) };
+        // find neighboring element, if any
+        localIndex k2 = facesToElems( f, 0 );
+        if( k2 == k1 )
+        {
+          k2 = facesToElems( f, 1 );
+        }
+        // find opposite vertex in first element
+        int o1 = -1;
+        int count = 0;
+        for ( localIndex vertex : vertices) {
+          bool found = false;
+          for ( int j = 0; j < 3; j++ )
+          {
+            if ( vertex == faceVertices[ j ] )
+            {
+              found = true;
+              break;
+            } 
+          }
+          if( !found )
+          {
+            o1 = vertex;
+          }
+          else
+          {
+            k1OrderedVertices[ count++ ] = vertex;
+          }
+        }
+        GEOS_ERROR_IF( o1 < 0, "Topological error in mesh: a face and its adjacent element share all vertices.");
+        if( k2 < 0 )
+        {
+          // boundary element, either free surface, or absorbing boundary
+          elemsToOpposite( k1, o1 ) = freeSurfaceFaceIndicator( f ) == 1 ? -2 : -1;  
+          elemsToOppositePermutation( k1, o1 ) = 0;
+        }
+        else
+        {
+          elemsToOpposite( k1, o1 ) = k2;
+          localIndex oppositeElemVertices[ 4 ] = { elemsToNodes( k2, 0 ), elemsToNodes( k2, 1 ), elemsToNodes( k2, 2 ), elemsToNodes( k2, 3 ) };
+          localIndex k2OrderedVertices[ 3 ];
+          // find opposite vertex in second element
+          int o2 = -1;
+          count = 0;
+          for ( localIndex vertex : oppositeElemVertices) {
+            bool found = false;
+            for ( int j = 0; j < 3; j++ )
+            {
+              if ( vertex == faceVertices[ j ] )
+              {
+                found = true;
+                break;
+              } 
+            }
+            if( !found )
+            {
+              o2 = vertex;
+            }
+            else
+            {
+              k2OrderedVertices[ count++ ] = vertex;
+            }
+          }
+          GEOS_ERROR_IF( o2 < 0, "Topological error in mesh: a face and its adjacent element share all vertices.");
+          // compute permutation
+          unsigned short permutation = 0;
+          int c = 1;
+          for (localIndex k2OrderedVertex : k2OrderedVertices) {
+            int position = -1;
+            for( int j = 0; j < 3; j++ )
+            {
+              if( k1OrderedVertices[ j ] == k2OrderedVertex )
+              {
+                position = j;
+                break;
+              }
+            }
+            permutation = permutation + c * position;
+            c = c * 3;
+          }
+          elemsToOppositePermutation( k1, o1 ) = permutation;
+        }
       }
     } );
   }

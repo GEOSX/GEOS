@@ -126,7 +126,7 @@ DECLARE_FIELD( ElementToOpposite,
 DECLARE_FIELD( ElementToOppositePermutation,
                "elementToOppositePermutation",
                array2d< unsigned short >,
-               -1,
+               0,
                NOPLOT,
                WRITE_AND_READ,
                "Map from elements to the permutation of the neighboring element, opposite to each vertex." );

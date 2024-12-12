@@ -237,9 +237,6 @@ void AcousticWaveEquationDG::initializePostInitialConditionsPreSubGroups()
     arrayView2d< localIndex const > const & facesToElems = faceManager.elementList();
     arrayView2d< wsCoordType const, nodes::REFERENCE_POSITION_USD > const nodeCoords = nodeManager.getField< fields::referencePosition32 >().toViewConst();
 
-    /// get face to node map
-    ArrayOfArraysView< localIndex const > const facesToNodes = faceManager.nodeList().toViewConst();
-
     // mass matrix to be computed in this function
 
     /// damping matrix to be computed for each dof in the boundary of the mesh
@@ -254,7 +251,7 @@ void AcousticWaveEquationDG::initializePostInitialConditionsPreSubGroups()
                      "Invalid type of element, the acoustic DG solver is designed for tetrahedral meshes only  ",
                      InputError );
 
-      forAll< EXEC_POLICY >
+      
       finiteElement::FiniteElementBase const &
       fe = elementSubRegion.getReference< finiteElement::FiniteElementBase >( getDiscretizationName() );
 
@@ -263,27 +260,32 @@ void AcousticWaveEquationDG::initializePostInitialConditionsPreSubGroups()
 
       computeTargetNodeSet( elemsToNodes, elementSubRegion.size(), fe.getNumQuadraturePoints() );
 
-      // Compute auxiliary element to neighbor (opposite to vertex) maps
-
-      AcousticWaveEquationDGKernels::
-        PrecomputeNeighborhoodKernel::
-        launch< EXEC_POLICY, FE_TYPE >
-        ( elemsToNodes,
-          elemsToFaces,
-          facesToElems,
-          facesToNodes,
-          freeSurfaceFaceIndicator,
-          elemsToOpposite,
-          elemsToOppositePermutation ); 
 
       //  arrayView1d< real32 const > const velocity = elementSubRegion.getField< acousticfieldsdgdgdg::AcousticVelocity >();
       //  arrayView1d< real32 const > const density = elementSubRegion.getField< acousticfieldsdgdgdg::AcousticDensity >();
+
+      arrayView2d< localIndex > const & elemsToOpposite = elementSubRegion.getField< acousticfieldsdg::ElementToOpposite >();
+      arrayView2d< unsigned short > const & elemsToOppositePermutation = elementSubRegion.getField< acousticfieldsdg::ElementToOppositePermutation >();
 
       /// Partial gradient if gradient as to be computed
 
       finiteElement::FiniteElementDispatchHandler< DG_FE_TYPES >::dispatch3D( fe, [&] ( auto const finiteElement )
       {
         using FE_TYPE = TYPEOFREF( finiteElement );
+
+        // Compute auxiliary element to neighbor (opposite to vertex) maps
+
+        AcousticWaveEquationDGKernels::
+          PrecomputeNeighborhoodKernel::
+          launch< EXEC_POLICY, FE_TYPE >
+          ( elementSubRegion.size(),
+            elemsToNodes,
+            elemsToFaces,
+            facesToElems,
+            facesToNodes,
+            freeSurfaceFaceIndicator,
+            elemsToOpposite,
+            elemsToOppositePermutation ); 
 
         // AcousticMatricesSEM::MassMatrix< FE_TYPE > kernelM( finiteElement );
         // kernelM.template computeMassMatrix< EXEC_POLICY, ATOMIC_POLICY >( elementSubRegion.size(),
