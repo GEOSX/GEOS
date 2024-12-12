@@ -56,6 +56,12 @@ public:
                             DomainPartition & domain ) override final;
 
   /**
+   * @brief Evaluates whether an adaptive time step was successful
+   * @param domain
+   */
+  void evalTimestep(DomainPartition & domain );
+
+  /**
    * @brief Computes stage rates for the initial Runge-Kutta substage and updates slip and state
    * @param dt
    * @param domain
@@ -95,6 +101,8 @@ protected:
   rateAndStateKernels::BogackiShampine32Table m_butcherTable;
 
   bool m_successfulStep; // Flag indicating if the adative time step was accepted
+
+  real64 m_stepUpdateFactor; // Factor to update timestep with
 
   /**
    * @brief Proportional-integral-derivative controller used for updating time step

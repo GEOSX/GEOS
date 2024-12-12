@@ -39,7 +39,8 @@ ExplicitQDRateAndState::ExplicitQDRateAndState( const string & name,
   QDRateAndStateBase( name, parent ),
   m_butcherTable( BogackiShampine32Table()), // TODO: The butcher table should be specified in the XML input.
   m_successfulStep( false ),
-  m_controller( PIDController( { 1.0/18.0, 1.0/9.0, 1.0/18.0 },
+  m_stepUpdateFactor( 1.0 ),
+  m_controller( PIDController( { 0.6, -0.2, 0.0 },
                                1.0e-6, 1.0e-6, 0.81 )) // TODO: The control parameters should be specified in the XML input
 {}
 
@@ -102,27 +103,25 @@ real64 ExplicitQDRateAndState::solverStep( real64 const & time_n,
 
     stepRateStateODEAndComputeError( dtAdaptive, domain );
     // Update timestep based on the time step error
-    real64 const dtNext = setNextDt( dtAdaptive, domain );
-    if( m_successfulStep ) // set in setNextDt
+    evalTimestep( domain );
+    if( m_successfulStep ) // set in evalTimestep
     {
-      // Compute stresses, and slip velocity and save results at updated time,
+      // Compute stresses, and slip velocity and save results at time_n + dtAdapitve
       if( !m_butcherTable.FSAL )
       {
         dtStress = updateStresses( time_n, dtAdaptive, cycleNumber, domain );
         updateSlipVelocity( time_n, dtAdaptive, domain );
       }
       saveState( domain );
-      // update the time step and exit the adaptive time step loop
-      dtAdaptive = dtNext;
       break;
     }
     else
     {
       // Retry with updated time step
-      dtAdaptive = dtNext;
+      dtAdaptive = setNextDt(dtAdaptive, domain);
     }
   }
-  // return time step size achieved by stress solver
+  // return last successful adaptive time step (passed along to setNextDt)
   return dtAdaptive;
 }
 
@@ -257,7 +256,7 @@ void ExplicitQDRateAndState::updateSlipVelocity( real64 const & time_n,
   } );
 }
 
-real64 ExplicitQDRateAndState::setNextDt( real64 const & currentDt, DomainPartition & domain )
+void ExplicitQDRateAndState::evalTimestep(DomainPartition & domain )
 {
   forDiscretizationOnMeshTargets( domain.getMeshBodies(), [&]( string const &,
                                                                MeshLevel const & mesh,
@@ -281,21 +280,28 @@ real64 ExplicitQDRateAndState::setNextDt( real64 const & currentDt, DomainPartit
   } );
 
   // Compute update factor to currentDt using PID error controller + limiter
-  real64 const dtFactor = m_controller.computeUpdateFactor( m_butcherTable.algHighOrder, m_butcherTable.algLowOrder );
-  real64 const nextDt = dtFactor*currentDt;
+  m_stepUpdateFactor = m_controller.computeUpdateFactor( m_butcherTable.algHighOrder, m_butcherTable.algLowOrder );
   // Check if step was acceptable
-  m_successfulStep = (dtFactor >= m_controller.acceptSafety) ? true : false;
+  m_successfulStep = (m_stepUpdateFactor >= m_controller.acceptSafety) ? true : false;
   if( m_successfulStep )
   {
     m_controller.errors[2] = m_controller.errors[1];
     m_controller.errors[1] = m_controller.errors[0];
+  }
+}
+
+real64 ExplicitQDRateAndState::setNextDt( real64 const & currentDt, DomainPartition & domain )
+{
+  GEOS_UNUSED_VAR(domain);
+  real64 const nextDt = m_stepUpdateFactor*currentDt;
+  if( m_successfulStep )
+  {
     GEOS_LOG_LEVEL_RANK_0( 1, GEOS_FMT( "Adaptive time step successful. The next dt will be {:.2e} s", nextDt ));
   }
   else
   {
-    GEOS_LOG_LEVEL_RANK_0( 1, GEOS_FMT( "Adaptive time step failed. The next dt will be {:.2e} s", nextDt ));
+    GEOS_LOG_LEVEL_RANK_0( 1, GEOS_FMT( "Adaptive time step failed. Retry step with dt {:.2e} s", nextDt ));
   }
-
   return nextDt;
 }
 
