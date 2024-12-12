@@ -3,7 +3,7 @@
  * SPDX-License-Identifier: LGPL-2.1-only
  *
  * Copyright (c) 2016-2024 Lawrence Livermore National Security LLC
- * Copyright (c) 2018-2024 Total, S.A
+ * Copyright (c) 2018-2024 TotalEnergies
  * Copyright (c) 2018-2024 The Board of Trustees of the Leland Stanford Junior University
  * Copyright (c) 2023-2024 Chevron
  * Copyright (c) 2019-     GEOS/GEOSX Contributors
@@ -233,7 +233,7 @@ void SolidMechanicsAugmentedLagrangianContact::implicitStepSetup( real64 const &
     FaceElementSubRegion & subRegion = region.getUniqueSubRegion< FaceElementSubRegion >();
 
     arrayView2d< real64 const > const faceNormal = faceManager.faceNormal();
-    ArrayOfArraysView< localIndex const > const elemsToFaces = subRegion.faceList().toViewConst();
+    arrayView2d< localIndex const > const elemsToFaces = subRegion.faceList().toViewConst();
 
     arrayView2d< real64 > const incrBubbleDisp =
       faceManager.getField< fields::solidMechanics::incrementalBubbleDisplacement >();
@@ -581,7 +581,7 @@ real64 SolidMechanicsAugmentedLagrangianContact::calculateResidualNorm( real64 c
 
     arrayView1d< integer const > const ghostRank = subRegion.ghostRank();
 
-    ArrayOfArraysView< localIndex const > const elemsToFaces = subRegion.faceList().toViewConst();
+    arrayView2d< localIndex const > const elemsToFaces = subRegion.faceList().toViewConst();
 
     arrayView1d< globalIndex const > const bubbleDofNumber = faceManager.getReference< globalIndex_array >( bubbleDofKey );
 
@@ -1195,7 +1195,7 @@ void SolidMechanicsAugmentedLagrangianContact::createBubbleCellList( DomainParti
     arrayView1d< localIndex > const tmpSpace_v = tmpSpace.toView();
     // Store indexes of faces in the temporany array.
     {
-      ArrayOfArraysView< localIndex const > const elemsToFaces = subRegion.faceList().toViewConst();
+      arrayView2d< localIndex const > const elemsToFaces = subRegion.faceList().toViewConst();
 
       forAll< parallelDevicePolicy<> >( subRegion.size(), [ = ] GEOS_HOST_DEVICE ( localIndex const kfe )
       {
@@ -1369,7 +1369,7 @@ void SolidMechanicsAugmentedLagrangianContact::addCouplingNumNonzeros( DomainPar
 
     SurfaceElementRegion const & region = elemManager.getRegion< SurfaceElementRegion >( getUniqueFractureRegionName() );
     FaceElementSubRegion const & subRegion = region.getUniqueSubRegion< FaceElementSubRegion >();
-    ArrayOfArraysView< localIndex const > const elemsToFaces = subRegion.faceList().toViewConst();
+    arrayView2d< localIndex const > const elemsToFaces = subRegion.faceList().toViewConst();
 
     for( localIndex kfe=0; kfe<subRegion.size(); ++kfe )
     {
@@ -1497,7 +1497,7 @@ void SolidMechanicsAugmentedLagrangianContact::addCouplingSparsityPattern( Domai
 
     SurfaceElementRegion const & region = elemManager.getRegion< SurfaceElementRegion >( getUniqueFractureRegionName() );
     FaceElementSubRegion const & subRegion = region.getUniqueSubRegion< FaceElementSubRegion >();
-    ArrayOfArraysView< localIndex const > const elemsToFaces = subRegion.faceList().toViewConst();
+    arrayView2d< localIndex const > const elemsToFaces = subRegion.faceList().toViewConst();
     ArrayOfArraysView< localIndex const > const faceToNodeMap = faceManager.nodeList().toViewConst();
 
     static constexpr int maxNumDispFaceDof = 3 * 4;
@@ -1606,7 +1606,7 @@ void SolidMechanicsAugmentedLagrangianContact::computeTolerances( DomainPartitio
       {
         arrayView1d< real64 const > const faceArea = subRegion.getElementArea().toViewConst();
         arrayView3d< real64 const > const faceRotationMatrix = subRegion.getField< fields::contact::rotationMatrix >().toView();
-        ArrayOfArraysView< localIndex const > const elemsToFaces = subRegion.faceList().toViewConst();
+        arrayView2d< localIndex const > const elemsToFaces = subRegion.faceList().toViewConst();
 
         arrayView1d< real64 > const normalTractionTolerance =
           subRegion.getReference< array1d< real64 > >( viewKeyStruct::normalTractionToleranceString() );
@@ -1635,7 +1635,7 @@ void SolidMechanicsAugmentedLagrangianContact::computeTolerances( DomainPartitio
             real64 averageConstrainedModulus = 0.0;
             real64 averageBoxSize0 = 0.0;
 
-            for( localIndex i = 0; i < elemsToFaces.sizeOfArray( kfe ); ++i )
+            for( localIndex i = 0; i < 2; ++i )
             {
               localIndex const faceIndex = elemsToFaces[kfe][i];
               localIndex const er = faceToElemRegion[faceIndex][0];

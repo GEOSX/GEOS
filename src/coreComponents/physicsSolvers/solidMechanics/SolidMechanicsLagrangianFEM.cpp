@@ -3,7 +3,7 @@
  * SPDX-License-Identifier: LGPL-2.1-only
  *
  * Copyright (c) 2016-2024 Lawrence Livermore National Security LLC
- * Copyright (c) 2018-2024 Total, S.A
+ * Copyright (c) 2018-2024 TotalEnergies
  * Copyright (c) 2018-2024 The Board of Trustees of the Leland Stanford Junior University
  * Copyright (c) 2023-2024 Chevron
  * Copyright (c) 2019-     GEOS/GEOSX Contributors
@@ -1389,7 +1389,7 @@ void SolidMechanicsLagrangianFEM::applyContactConstraint( DofManager const & dof
         real64 const contactStiffness = m_contactPenaltyStiffness;
 
         arrayView1d< real64 > const area = subRegion.getElementArea();
-        ArrayOfArraysView< localIndex const > const elemsToFaces = subRegion.faceList().toViewConst();
+        arrayView2d< localIndex const > const elemsToFaces = subRegion.faceList().toViewConst();
 
         // TODO: use parallel policy?
         forAll< serialPolicy >( subRegion.size(), [=] ( localIndex const kfe )

@@ -3,7 +3,7 @@
  * SPDX-License-Identifier: LGPL-2.1-only
  *
  * Copyright (c) 2016-2024 Lawrence Livermore National Security LLC
- * Copyright (c) 2018-2024 Total, S.A
+ * Copyright (c) 2018-2024 TotalEnergies
  * Copyright (c) 2018-2024 The Board of Trustees of the Leland Stanford Junior University
  * Copyright (c) 2023-2024 Chevron
  * Copyright (c) 2019-     GEOS/GEOSX Contributors
@@ -25,7 +25,7 @@ namespace geos
 using namespace dataRepository;
 
 WellGeneratorBase::WellGeneratorBase( string const & name, Group * const parent ):
-  WellGeneratorABC( name, parent )
+  MeshComponentBase( name, parent )
   , m_numPerforations( 0 )
   , m_numElemsPerSegment( 0 )
   , m_minSegmentLength( 1e-2 )
@@ -39,8 +39,6 @@ WellGeneratorBase::WellGeneratorBase( string const & name, Group * const parent 
   , m_nDims( 3 )
   , m_polylineHeadNodeId( -1 )
 {
-  setInputFlags( InputFlags::OPTIONAL_NONUNIQUE );
-
   registerWrapper( viewKeyStruct::radiusString(), &m_radius ).
     setInputFlag( InputFlags::REQUIRED ).
     setSizedFromParent( 0 ).
@@ -95,12 +93,6 @@ Group * WellGeneratorBase::createChild( string const & childKey, string const & 
 void WellGeneratorBase::expandObjectCatalogs()
 {
   createChild( viewKeyStruct::perforationString(), viewKeyStruct::perforationString() );
-}
-
-WellGeneratorBase::CatalogInterface::CatalogType & WellGeneratorBase::getCatalog()
-{
-  static WellGeneratorBase::CatalogInterface::CatalogType catalog;
-  return catalog;
 }
 
 void WellGeneratorBase::generateWellGeometry( )

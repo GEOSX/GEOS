@@ -6,6 +6,38 @@ This file is designed to track changes to the integrated test baselines.
 Any developer who updates the baseline ID in the .integrated_tests.yaml file is expected to create an entry in this file with the pull request number, date, and their justification for rebaselining.
 These notes should be in reverse-chronological order, and use the following time format: (YYYY-MM-DD).
 
+PR #3450 (2024-12-08)
+=====================
+Added test for explicit runge kutta sprinslider.
+
+PR #3480 (2024-12-06)
+=====================
+Add "logLevel" parameter under /Problem/Outputs in baseline files
+
+PR #3361 (2024-12-03)
+=====================
+Revert default gravity treatment to old version. Make the way introduced in #3337 optional.
+
+PR #3361 (2024-12-03)
+=====================
+Baseline diffs after reimplementation of wave equation acoustic gradient for velocity and density parameters: new field "partialGradient2" and "pressureForward" field replacing "pressureDoubleDerivative".
+
+PR #3393 (2024-12-02)
+=====================
+Fix netToGross bug.
+
+PR #3381 (2024-12-01)
+=====================
+A few baseline diffs for order FaceElementSubRegion::m_toFacesRelation map. Not sure why this was changed by this PR, but the previous order seems incorrect for a couple of cases.
+
+PR #2957 (2024-11-27)
+=====================
+Added ExternalDataRepository.
+
+PR #3448 (2024-11-21)
+=====================
+Switched the FaceElementSubRegion::m_toFacesRelation and FaceElementSubRegion::m_2dElemToElems back to array2d instead of ArrayOfArray. This results in a reordering m_toFacesRelation back to the "correct" assumed order of "original face first". This fixes a bug that failed to remove the CellStencil entry when a FaceElement splits two cells.
+
 PR #2637 (2024-11-21)
 =====================
 Added numberOfTargetProcesses.

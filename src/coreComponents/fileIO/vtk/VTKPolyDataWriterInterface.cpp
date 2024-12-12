@@ -3,7 +3,7 @@
  * SPDX-License-Identifier: LGPL-2.1-only
  *
  * Copyright (c) 2016-2024 Lawrence Livermore National Security LLC
- * Copyright (c) 2018-2024 Total, S.A
+ * Copyright (c) 2018-2024 TotalEnergies
  * Copyright (c) 2018-2024 The Board of Trustees of the Leland Stanford Junior University
  * Copyright (c) 2023-2024 Chevron
  * Copyright (c) 2019-     GEOS/GEOSX Contributors
@@ -1078,7 +1078,6 @@ void VTKPolyDataWriterInterface::writeParticleRegions( real64 const time,
     writeTimestamp( ug.GetPointer(), time );
     writeParticleFields( region, ug->GetCellData() );
 
-    // string const regionDir = joinPath( path, region.getName() );
     writeUnstructuredGrid( path, region, ug.GetPointer() );
   } );
 }
@@ -1184,8 +1183,6 @@ void VTKPolyDataWriterInterface::writeVtmFile( integer const cycle,
       ParticleManager const & particleManager = meshLevel.getParticleManager();
 
       string const meshPath = joinPath( getCycleSubFolder( cycle ), meshBodyName, meshLevelName );
-
-      // int const mpiSize = MpiWrapper::commSize();
 
       auto addElementRegion = [&]( ElementRegionBase const & region )
       {

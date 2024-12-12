@@ -3,7 +3,7 @@
  * SPDX-License-Identifier: LGPL-2.1-only
  *
  * Copyright (c) 2016-2024 Lawrence Livermore National Security LLC
- * Copyright (c) 2018-2024 Total, S.A
+ * Copyright (c) 2018-2024 TotalEnergies
  * Copyright (c) 2018-2024 The Board of Trustees of the Leland Stanford Junior University
  * Copyright (c) 2023-2024 Chevron
  * Copyright (c) 2019-     GEOS/GEOSX Contributors
@@ -77,6 +77,9 @@ public:
                         DomainPartition & domain ) override
   {
     execute( time_n, 0, cycleNumber, eventCounter, eventProgress, domain );
+
+    // Call parent class cleanup to get the timing statistics
+    OutputBase::cleanup( time_n, cycleNumber, eventCounter, eventProgress, domain );
   }
 
   /**
@@ -108,6 +111,12 @@ public:
 #if defined(GEOS_USE_PYGEOSX)
   virtual PyTypeObject * getPythonType() const override;
 #endif
+
+protected:
+  /**
+   * @copydoc OutputBase::getTimerCategory
+   */
+  logInfo::OutputTimerBase const & getTimerCategory() const override;
 
 private:
 
