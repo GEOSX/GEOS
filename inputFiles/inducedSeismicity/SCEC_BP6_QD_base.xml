@@ -98,9 +98,9 @@
       xCoords="{ -10.0e3, 10.0e3 }"
       yCoords="{ -0.5e3, 0.5e3 }"
       zCoords="{ -20.0e3, -10.0e3, 10.0e3, 20.0e3 }"
-      nx="{ 10 }"
+      nx="{ 100 }"
       ny="{ 1 }"
-      nz="{ 20, 21, 20 }"
+      nz="{ 20, 201, 20 }"
       cellBlockNames="{ cb1 }"/>
   </Mesh>
 
@@ -193,7 +193,24 @@
       objectPath="ElementRegions/Fault/FractureSubRegion"
       component="1"
       scale="0."
-      setNames="{all}"/>                 
+      setNames="{all}"/>
+
+    <FieldSpecification
+      name="backgroundShearStress"
+      fieldName="backgroundShearStress"
+      initialCondition="1"
+      objectPath="ElementRegions/Fault/FractureSubRegion"
+      component="0"
+      scale="29.2e6"
+      setNames="{all}"/> 
+
+    <FieldSpecification
+      name="backgroundNormalStress"
+      fieldName="backgroundNormalStress"
+      initialCondition="1"
+      objectPath="ElementRegions/Fault/FractureSubRegion"
+      scale="50.0e6"
+      setNames="{all}"/>                      
 
     <SourceFlux
       name="sourceTerm"

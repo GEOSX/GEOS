@@ -94,7 +94,7 @@ real64 QuasiDynamicEarthQuake< RSSOLVER_TYPE >::updateStresses( real64 const & t
 
       forAll< parallelDevicePolicy<> >( subRegion.size(), [=] GEOS_HOST_DEVICE ( localIndex const k )
       {
-        normalTraction[k] = backgroundNormalStress[k] + traction[k][0];
+        normalTraction[k] = backgroundNormalStress[k] - traction[k][0]; // compressive traction is negative in geos
         for( int i = 0; i < 2; ++i )
         {
           shearTraction( k, i ) = backgroundShearStress( k, i ) + traction( k, i+1 );

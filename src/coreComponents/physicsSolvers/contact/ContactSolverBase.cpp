@@ -84,6 +84,10 @@ void ContactSolverBase::registerDataOnMesh( dataRepository::Group & meshBodies )
         setDimLabels( 1, labels ).
         reference().resizeDimension< 1 >( 3 );
 
+      subRegion.registerField< fields::contact::dispJump_n >( getName() ).
+        setDimLabels( 1, labels ).
+        reference().template resizeDimension< 1 >( 3 );  
+
       subRegion.registerField< fields::contact::traction >( getName() ).
         setDimLabels( 1, labels ).
         reference().resizeDimension< 1 >( 3 );

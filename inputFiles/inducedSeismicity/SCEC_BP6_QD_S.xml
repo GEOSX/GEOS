@@ -68,7 +68,7 @@
 
     <TimeHistory
       name="timeHistoryOutput"
-      sources="{/Tasks/pressureCollection}"
+      sources="{/Tasks/pressureCollection, /Tasks/slipRateCollection}"
       filename="BP6_DQ_S" />  
   </Outputs>
 
