@@ -5,6 +5,15 @@
       name="./SpringSlider_base.xml"/>
   </Included>
 
+   <ImplicitSpringSlider
+      name="SpringSlider"
+      targetRegions="{ Fault }"
+      shearImpedance="4.41"
+      initialDt="1"
+      logLevel="1"
+      discretization="FE1">
+    </ImplicitSpringSlider>
+
   <Events
     maxTime="4.5e4">
 

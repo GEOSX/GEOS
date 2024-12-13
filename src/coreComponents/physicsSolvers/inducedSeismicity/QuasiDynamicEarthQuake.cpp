@@ -90,12 +90,15 @@ real64 QuasiDynamicEarthQuake< RSSOLVER_TYPE >::updateStresses( real64 const & t
       arrayView2d< real64 > const shearTraction   = subRegion.getField< rateAndState::shearTraction >();
       arrayView1d< real64 > const normalTraction  = subRegion.getField< rateAndState::normalTraction >();
 
+      arrayView2d< real64 const > const shearTraction_n  = subRegion.getField< rateAndState::shearTraction_n >();
+      arrayView1d< real64 const > const normalTraction_n = subRegion.getField< rateAndState::normalTraction_n >();
+
       forAll< parallelDevicePolicy<> >( subRegion.size(), [=] GEOS_HOST_DEVICE ( localIndex const k )
       {
-        normalTraction[k] -= traction[k][0]; // compressive traction is negative in geos
+        normalTraction[k] = normalTraction_n[k] - traction[k][0]; // compressive traction is negative in geos
         for( int i = 0; i < 2; ++i )
         {
-          shearTraction( k, i ) += LvArray::math::abs( traction( k, i+1 ) );
+          shearTraction( k, i ) = shearTraction_n( k, i ) + LvArray::math::abs( traction( k, i+1 ) );
         }
       } );
     } );

@@ -23,7 +23,7 @@ decks = [
         check_step=100,
         curvecheck_params=CurveCheckParameters(**curvecheck_params)),
     TestDeck(
-        name="SpringSlider_smoke",
+        name="SpringSliderImplicit_smoke",
         description="Spring slider 0D system",
         partitions=((1, 1, 1), ),
         restart_step=0,

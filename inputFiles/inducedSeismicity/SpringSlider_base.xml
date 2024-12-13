@@ -1,14 +1,7 @@
 <?xml version="1.0" ?>
 <Problem>
   <Solvers>
-    <ImplicitSpringSlider
-      name="SpringSlider"
-      targetRegions="{ Fault }"
-      shearImpedance="4.41"
-      initialDt="1"
-      logLevel="1"
-      discretization="FE1">
-    </ImplicitSpringSlider>
+   
     
     <SurfaceGenerator
       name="SurfaceGen"
@@ -80,7 +73,7 @@
 
     <FieldSpecification
       name="normalTraction"
-      fieldName="normalTraction"
+      fieldName="backgroundNormalStress"
       initialCondition="1"
       objectPath="ElementRegions/Fault/FractureSubRegion"
       scale="50"
@@ -88,7 +81,7 @@
     
     <FieldSpecification
       name="shearTraction1"
-      fieldName="shearTraction"
+      fieldName="backgroundShearStress"
       initialCondition="1"
       objectPath="ElementRegions/Fault/FractureSubRegion"
       component="0"
@@ -96,7 +89,7 @@
       setNames="{all}"/>
     <FieldSpecification
       name="shearTraction2"
-      fieldName="shearTraction"
+      fieldName="backgroundShearStress"
       initialCondition="1"
       objectPath="ElementRegions/Fault/FractureSubRegion"
       component="1"
