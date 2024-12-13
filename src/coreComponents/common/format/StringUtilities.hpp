@@ -3,7 +3,7 @@
  * SPDX-License-Identifier: LGPL-2.1-only
  *
  * Copyright (c) 2016-2024 Lawrence Livermore National Security LLC
- * Copyright (c) 2018-2024 Total, S.A
+ * Copyright (c) 2018-2024 TotalEnergies
  * Copyright (c) 2018-2024 The Board of Trustees of the Leland Stanford Junior University
  * Copyright (c) 2023-2024 Chevron
  * Copyright (c) 2019-     GEOS/GEOSX Contributors
@@ -226,6 +226,15 @@ string_view trimSpaces( string_view str );
  */
 string removeStringAndFollowingContent( string_view str,
                                         string_view strToRemove );
+
+/**
+ * @brief Add comma separators to an integral number for readability.
+ * @tparam T the integral type of the number to format.
+ * @param[in] num the integral number to format.
+ * @return a string representation of the number with comma separators.
+ */
+template< typename T >
+string addCommaSeparators( T const & num );
 
 /**
  * @brief Take a string, and return a array1d with the cast values

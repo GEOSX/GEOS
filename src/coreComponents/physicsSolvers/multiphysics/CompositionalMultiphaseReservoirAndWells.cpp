@@ -3,7 +3,7 @@
  * SPDX-License-Identifier: LGPL-2.1-only
  *
  * Copyright (c) 2016-2024 Lawrence Livermore National Security LLC
- * Copyright (c) 2018-2024 Total, S.A
+ * Copyright (c) 2018-2024 TotalEnergies
  * Copyright (c) 2018-2024 The Board of Trustees of the Leland Stanford Junior University
  * Copyright (c) 2023-2024 Chevron
  * Copyright (c) 2019-     GEOS/GEOSX Contributors
@@ -77,10 +77,15 @@ void
 CompositionalMultiphaseReservoirAndWells<>::
 setMGRStrategy()
 {
+  LinearSolverParameters & linearSolverParameters = this->m_linearSolverParameters.get();
+
+  linearSolverParameters.mgr.separateComponents = true;
+  linearSolverParameters.dofsPerNode = 3;
+
   if( flowSolver()->getLinearSolverParameters().mgr.strategy == LinearSolverParameters::MGR::StrategyType::compositionalMultiphaseHybridFVM )
   {
     // add Reservoir
-    m_linearSolverParameters.get().mgr.strategy = LinearSolverParameters::MGR::StrategyType::compositionalMultiphaseReservoirHybridFVM;
+    linearSolverParameters.mgr.strategy = LinearSolverParameters::MGR::StrategyType::compositionalMultiphaseReservoirHybridFVM;
   }
   else if( isThermal() )
   {
@@ -90,7 +95,7 @@ setMGRStrategy()
   else
   {
     // add Reservoir
-    m_linearSolverParameters.get().mgr.strategy = LinearSolverParameters::MGR::StrategyType::compositionalMultiphaseReservoirFVM;
+    linearSolverParameters.mgr.strategy = LinearSolverParameters::MGR::StrategyType::compositionalMultiphaseReservoirFVM;
   }
 }
 
@@ -99,6 +104,11 @@ void
 CompositionalMultiphaseReservoirAndWells< MultiphasePoromechanics<> >::
 setMGRStrategy()
 {
+  LinearSolverParameters & linearSolverParameters = this->m_linearSolverParameters.get();
+
+  linearSolverParameters.mgr.separateComponents = true;
+  linearSolverParameters.dofsPerNode = 3;
+
   // flow solver here is indeed flow solver, not poromechanics solver
   if( flowSolver()->getLinearSolverParameters().mgr.strategy == LinearSolverParameters::MGR::StrategyType::compositionalMultiphaseHybridFVM )
   {
@@ -107,7 +117,7 @@ setMGRStrategy()
   else
   {
     // add Reservoir
-    m_linearSolverParameters.get().mgr.strategy = LinearSolverParameters::MGR::StrategyType::multiphasePoromechanicsReservoirFVM;
+    linearSolverParameters.mgr.strategy = LinearSolverParameters::MGR::StrategyType::multiphasePoromechanicsReservoirFVM;
   }
 }
 
