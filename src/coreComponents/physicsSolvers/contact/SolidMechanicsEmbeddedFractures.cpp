@@ -3,7 +3,7 @@
  * SPDX-License-Identifier: LGPL-2.1-only
  *
  * Copyright (c) 2016-2024 Lawrence Livermore National Security LLC
- * Copyright (c) 2018-2024 Total, S.A
+ * Copyright (c) 2018-2024 TotalEnergies
  * Copyright (c) 2018-2024 The Board of Trustees of the Leland Stanford Junior University
  * Copyright (c) 2023-2024 Chevron
  * Copyright (c) 2019-     GEOS/GEOSX Contributors
@@ -32,9 +32,9 @@
 #include "mesh/SurfaceElementRegion.hpp"
 #include "physicsSolvers/solidMechanics/SolidMechanicsFields.hpp"
 #include "physicsSolvers/solidMechanics/SolidMechanicsLagrangianFEM.hpp"
-#include "physicsSolvers/contact/SolidMechanicsEFEMKernels.hpp"
-#include "physicsSolvers/contact/SolidMechanicsEFEMStaticCondensationKernels.hpp"
-#include "physicsSolvers/contact/SolidMechanicsEFEMJumpUpdateKernels.hpp"
+#include "physicsSolvers/contact/kernels/SolidMechanicsEFEMKernels.hpp"
+#include "physicsSolvers/contact/kernels/SolidMechanicsEFEMStaticCondensationKernels.hpp"
+#include "physicsSolvers/contact/kernels/SolidMechanicsEFEMJumpUpdateKernels.hpp"
 
 namespace geos
 {
@@ -168,11 +168,39 @@ void SolidMechanicsEmbeddedFractures::implicitStepComplete( real64 const & time_
     arrayView2d< real64 > oldDispJump = subRegion.getField< contact::oldDispJump >();
     arrayView2d< real64 const > const dispJump = subRegion.getField< contact::dispJump >();
 
+    // update elastic slip before copying dispJump to oldDispJump
+    string const & frictionLawName = subRegion.template getReference< string >( viewKeyStruct::frictionLawNameString() );
+    FrictionBase const & frictionLaw = getConstitutiveModel< FrictionBase >( subRegion, frictionLawName );
+    arrayView2d< real64 const > const & traction = subRegion.getField< fields::contact::traction >();
+    arrayView1d< integer > const & fractureState = subRegion.getField< fields::contact::fractureState >();
+    constitutiveUpdatePassThru( frictionLaw, [&] ( auto & castedFrictionLaw )
+    {
+      using FrictionType = TYPEOFREF( castedFrictionLaw );
+      typename FrictionType::KernelWrapper frictionWrapper = castedFrictionLaw.createKernelUpdates();
+
+      updateElasticSlip( subRegion, frictionWrapper, dispJump, oldDispJump, traction, fractureState );
+    } );
+
+    // now update oldDispJump = dispJump
     forAll< parallelDevicePolicy<> >( subRegion.size(),
                                       [=] GEOS_HOST_DEVICE ( localIndex const k )
     {
       LvArray::tensorOps::copy< 3 >( oldDispJump[k], dispJump[k] );
     } );
+  } );
+}
+
+template< typename WRAPPER_TYPE >
+void SolidMechanicsEmbeddedFractures::updateElasticSlip( EmbeddedSurfaceSubRegion const & subRegion,
+                                                         WRAPPER_TYPE & frictionWrapper,
+                                                         arrayView2d< real64 const > const & dispJump,
+                                                         arrayView2d< real64 const > const & oldDispJump,
+                                                         arrayView2d< real64 const > const & traction,
+                                                         arrayView1d< integer > const & fractureState )
+{
+  forAll< parallelDevicePolicy<> >( subRegion.size(), [=] GEOS_HOST_DEVICE ( localIndex const kfe )
+  {
+    frictionWrapper.updateElasticSlip( kfe, dispJump[kfe], oldDispJump[kfe], traction[kfe], fractureState[kfe] );
   } );
 }
 
@@ -800,7 +828,7 @@ bool SolidMechanicsEmbeddedFractures::updateConfiguration( DomainPartition & dom
           if( ghostRank[kfe] < 0 )
           {
             integer const originalFractureState = fractureState[kfe];
-            frictionWrapper.updateFractureState( kfe, dispJump[kfe], traction[kfe], fractureState[kfe] );
+            frictionWrapper.updateFractureState( dispJump[kfe], traction[kfe], fractureState[kfe] );
             checkActiveSetSub.min( compareFractureStates( originalFractureState, fractureState[kfe] ) );
           }
         } );

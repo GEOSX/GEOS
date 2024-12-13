@@ -3,7 +3,7 @@
  * SPDX-License-Identifier: LGPL-2.1-only
  *
  * Copyright (c) 2016-2024 Lawrence Livermore National Security LLC
- * Copyright (c) 2018-2024 Total, S.A
+ * Copyright (c) 2018-2024 TotalEnergies
  * Copyright (c) 2018-2024 The Board of Trustees of the Leland Stanford Junior University
  * Copyright (c) 2023-2024 Chevron
  * Copyright (c) 2019-     GEOS/GEOSX Contributors
@@ -93,8 +93,9 @@ string addCommaSeparators( T const & num )
   return result;
 }
 
-template string addCommaSeparators( localIndex const & num );
-template string addCommaSeparators( globalIndex const & num );
+template string addCommaSeparators( int const & num );
+template string addCommaSeparators( long int const & num );
+template string addCommaSeparators( long long int const & num );
 
 // put definition here so we can control the allowable values of T and
 // modication of this function triggers a whole code recompile...which
@@ -102,6 +103,11 @@ template string addCommaSeparators( globalIndex const & num );
 template< typename T >
 string toMetricPrefixString( T const & value )
 {
+  if( std::fpclassify( value ) == FP_ZERO )
+  {
+    return " 0.0  ";
+  }
+
   // These are the metric prefixes corrosponding to kilo, mega, giga...etc.
   char const prefixes[12] = { 'f', 'p', 'n', 'u', 'm', ' ', 'K', 'M', 'G', 'T', 'P', 'E'};
   string rval;
