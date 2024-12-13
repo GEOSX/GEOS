@@ -32,6 +32,7 @@
 #include "physicsSolvers/solidMechanics/kernels/ImplicitSmallStrainQuasiStatic.hpp"
 #include "physicsSolvers/contact/SolidMechanicsLagrangeContact.hpp"
 #include "physicsSolvers/contact/SolidMechanicsEmbeddedFractures.hpp"
+#include "physicsSolvers/fluidFlow/SinglePhaseHybridFVM.hpp"
 
 namespace geos
 {
@@ -45,17 +46,14 @@ template< typename FLOW_SOLVER, typename MECHANICS_SOLVER >
 SinglePhasePoromechanics< FLOW_SOLVER, MECHANICS_SOLVER >::SinglePhasePoromechanics( const string & name,
                                                                                      Group * const parent )
   : Base( name, parent )
-{
-  LinearSolverParameters & linearSolverParameters = this->m_linearSolverParameters.get();
-  linearSolverParameters.mgr.strategy = LinearSolverParameters::MGR::StrategyType::singlePhasePoromechanics;
-  linearSolverParameters.mgr.separateComponents = true;
-  linearSolverParameters.dofsPerNode = 3;
-}
+{}
 
 template< typename FLOW_SOLVER, typename MECHANICS_SOLVER >
 void SinglePhasePoromechanics< FLOW_SOLVER, MECHANICS_SOLVER >::postInputInitialization()
 {
   Base::postInputInitialization();
+
+  setMGRStrategy();
 
   GEOS_ERROR_IF( this->flowSolver()->getCatalogName() == "SinglePhaseReservoir" &&
                  this->getNonlinearSolverParameters().couplingType() != NonlinearSolverParameters::CouplingType::Sequential,
@@ -113,18 +111,44 @@ void SinglePhasePoromechanics< FLOW_SOLVER, MECHANICS_SOLVER >::initializePostIn
                              getCatalogName(), this->getDataContext(), poromechanicsTargetRegionNames[i], this->flowSolver()->getDataContext() ),
                    InputError );
   }
+}
 
-  if( this->m_isThermal )
+template<>
+void SinglePhasePoromechanics<>::setMGRStrategy()
+{
+  LinearSolverParameters & linearSolverParameters = this->m_linearSolverParameters.get();
+
+  if( linearSolverParameters.preconditionerType != LinearSolverParameters::PreconditionerType::mgr )
+    return;
+
+  linearSolverParameters.mgr.separateComponents = true;
+  linearSolverParameters.dofsPerNode = 3;
+
+  if( dynamic_cast< SinglePhaseHybridFVM * >( this->flowSolver() ) )
   {
-    this->m_linearSolverParameters.get().mgr.strategy = LinearSolverParameters::MGR::StrategyType::thermalSinglePhasePoromechanics;
+    if( this->m_isThermal )
+    {
+      GEOS_ERROR( GEOS_FMT( "{}: MGR strategy is not implemented for thermal {}/{}",
+                            this->getName(), this->getCatalogName(), this->flowSolver()->getCatalogName() ));
+    }
+    else
+    {
+      linearSolverParameters.mgr.strategy = LinearSolverParameters::MGR::StrategyType::hybridSinglePhasePoromechanics;
+    }
   }
   else
   {
-    if( this->flowSolver()->getLinearSolverParameters().mgr.strategy == LinearSolverParameters::MGR::StrategyType::singlePhaseHybridFVM )
+    if( this->m_isThermal )
     {
-      this->m_linearSolverParameters.get().mgr.strategy = LinearSolverParameters::MGR::StrategyType::hybridSinglePhasePoromechanics;
+      linearSolverParameters.mgr.strategy = LinearSolverParameters::MGR::StrategyType::thermalSinglePhasePoromechanics;
+    }
+    else
+    {
+      linearSolverParameters.mgr.strategy = LinearSolverParameters::MGR::StrategyType::singlePhasePoromechanics;
     }
   }
+  GEOS_LOG_LEVEL_RANK_0( 1, GEOS_FMT( "{}: MGR strategy set to {}", getName(),
+                                      EnumStrings< LinearSolverParameters::MGR::StrategyType >::toString( linearSolverParameters.mgr.strategy )));
 }
 
 template< typename FLOW_SOLVER, typename MECHANICS_SOLVER >
