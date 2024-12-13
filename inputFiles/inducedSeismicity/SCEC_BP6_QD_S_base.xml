@@ -1,83 +1,5 @@
 <?xml version="1.0" ?>
 <Problem>
-  <Solvers
-    gravityVector="{0.0, 0.0, 0.0}">
-    <ImplicitQuasiDynamicEQ
-      name="QDSolver"
-      targetRegions="{ Domain, Fault }"
-      shearImpedance="4.6247113164e6"
-      initialDt="1000"
-      logLevel="1"
-      discretization="FE1"
-      stressSolverName="stressSolver"
-      targetSlipIncrement="1.0e-6">
-      <NonlinearSolverParameters
-        newtonTol="1.0e-8"
-        logLevel="2"
-        newtonMaxIter="20"
-        maxNumConfigurationAttempts="1"
-        lineSearchMaxCuts="2"
-        maxTimeStepCuts="1"/>
-     </ImplicitQuasiDynamicEQ>
-
-    <OneWayCoupledFractureFlowContactMechanics
-      name="stressSolver"
-      logLevel="1"
-      solidSolverName="contactSolver"
-      flowSolverName="singlePhaseFlowSolver"
-      targetRegions="{ Domain, Fault }">
-       <NonlinearSolverParameters
-        newtonMaxIter="2"
-        newtonTol="1.0e-2"
-	      couplingType="Sequential"  
-        lineSearchAction="None"
-	      subcycling="0"
-        maxTimeStepCuts="1"
-        lineSearchMaxCuts="0"/>
-    </OneWayCoupledFractureFlowContactMechanics> 
-
-    <SolidMechanicsLagrangeContactBubbleStab
-      name="contactSolver"
-      timeIntegrationOption="QuasiStatic"
-      logLevel="2"
-      writeLinearSystem="0"
-      discretization="FE1"
-      targetRegions="{ Domain, Fault }">
-      <NonlinearSolverParameters
-        newtonTol="1.0e-8"
-        logLevel="2"
-        newtonMaxIter="10"
-        maxNumConfigurationAttempts="1"
-        lineSearchAction="Require"
-        lineSearchMaxCuts="2"
-        maxTimeStepCuts="1"/>
-      <LinearSolverParameters
-        solverType="direct"
-        directParallel="0"
-        logLevel="0"/>
-    </SolidMechanicsLagrangeContactBubbleStab>
-    
-    <SurfaceGenerator
-      name="SurfaceGen"
-      targetRegions="{ Domain }"
-      rockToughness="1.0"
-      mpiCommOrder="1"
-      fractureRegion="Fault"/>  
-
-    <SinglePhaseFVM 
-      name="singlePhaseFlowSolver"
-      logLevel="1"
-      discretization="singlePhaseTPFA"
-      targetRegions="{ Fault }"> 
-      <NonlinearSolverParameters
-        newtonTol = "1.0e-6"
-        newtonMaxIter ="8"/>
-      <LinearSolverParameters
-        solverType="direct"
-        directParallel="0"/>   
-    </SinglePhaseFVM>
-  </Solvers>
-
   <NumericalMethods>
     <FiniteElements>
       <FiniteElementSpace
@@ -115,6 +37,87 @@
       xMin="{ -0.01, -1.01e3, -50.0 }"
       xMax="{ 0.01,   1.01e3,  50.0 }"/>
   </Geometry>
+
+  <ElementRegions>
+    <CellElementRegion
+      name="Domain"
+      cellBlocks="{ cb1 }"
+      materialList="{rock}"/>
+
+    <SurfaceElementRegion
+      name="Fault"
+      materialList="{frictionLaw, faultMaterial, water}"
+      defaultAperture="1e-3"/>  
+    </ElementRegions>
+  
+    <Constitutive>
+
+    <CompressibleSinglePhaseFluid
+      name="water"
+      defaultDensity="1000"
+      defaultViscosity="1.0e-3"
+      referencePressure="0.0"
+      compressibility="1.0e-8"
+      viscosibility="0.0"/>
+
+    <CompressibleSolidConstantPermeability
+      name="faultMaterial"
+      solidModelName="nullSolid"
+      porosityModelName="faultPorosity"
+      permeabilityModelName="faultPermeability"/>  
+    
+    <PressurePorosity
+      name="faultPorosity"
+      defaultReferencePorosity="0.100"
+      referencePressure="0.0"
+      compressibility="0.0"/>
+      
+    <NullModel
+      name="nullSolid"/>  
+
+    <ConstantPermeability
+      name="faultPermeability"
+      permeabilityComponents="{ 1.0e-13, 1.0e-13, 1.0e-13 }"/>
+
+    <ElasticIsotropic
+     name="rock"
+     defaultDensity="2670"
+     defaultBulkModulus="50.0e9"
+     defaultShearModulus="32.04e9"/>
+
+    <RateAndStateFriction
+      name="frictionLaw"
+      defaultA="0.007"
+      defaultB="0.005"
+      defaultDc="4.0e-3"  
+      defaultReferenceVelocity="1.0e-6"
+      defaultReferenceFrictionCoefficient="0.6"/>  
+  </Constitutive>
+
+  <Outputs>
+    <VTK
+      name="vtkOutput"
+      plotFileRoot="BP6_QD_S"/>
+
+    <TimeHistory
+      name="timeHistoryOutput"
+      sources="{/Tasks/pressureCollection, /Tasks/slipRateCollection}"
+      filename="BP6_DQ_S" />  
+  </Outputs>
+
+  <Tasks>
+    <PackCollection
+      name="slipRateCollection"
+      objectPath="ElementRegions/Fault/FractureSubRegion"
+      fieldName="slipRate"
+      setNames="{source}"/>
+
+    <PackCollection
+      name="pressureCollection"
+      objectPath="ElementRegions/Fault/FractureSubRegion"
+      fieldName="pressure"
+      setNames="{source}"/>    
+   </Tasks>
 
   <ElementRegions>
     <CellElementRegion
