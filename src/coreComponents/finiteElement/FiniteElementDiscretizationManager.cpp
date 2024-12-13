@@ -40,6 +40,7 @@ FiniteElementDiscretizationManager::~FiniteElementDiscretizationManager()
 Group * FiniteElementDiscretizationManager::createChild( string const & childKey, string const & childName )
 {
   // These objects should probably not be registered on managed group...
+  GEOS_LOG_RANK_0( GEOS_FMT( "{}: adding {} {}", getName(), childKey, childName ) );
   std::unique_ptr< Group > fem = Group::CatalogInterface::factory( childKey, childName, this );
   return &this->registerGroup( childName, std::move( fem ) );
 }
