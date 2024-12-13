@@ -200,6 +200,7 @@ registerWrapper( viewKeyStruct::jacobianString(), &m_jacobian ).
     setDescription( "Array of quadrature point strength scale values" );
 
   registerWrapper( viewKeyStruct::effectiveBulkModulusString(), &m_effectiveBulkModulus ).
+    setApplyDefaultValue( 1.0 ).
     setInputFlag( InputFlags::FALSE ).
     setDescription( "Effective bulk modulus for stress control and wavespeed calculations" );
   
@@ -238,6 +239,9 @@ void Graphite::allocateConstitutiveData( dataRepository::Group & parent,
 void Graphite::postInputInitialization()
 {
   SolidBase::postInputInitialization();
+
+  // TODO: initialize m_effectiveBulkModulus here. it might be needed by stress control before first updateStress.
+
 
   // GEOS_LOG_RANK_0( "Ez: " << m_defaultYoungModulusAxial << "\n" << 
   //                  "Ep: " << m_defaultYoungModulusTransverse << "\n" << 

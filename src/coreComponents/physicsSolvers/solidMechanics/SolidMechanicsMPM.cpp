@@ -1283,7 +1283,7 @@ void SolidMechanicsMPM::postInputInitialization()
     LvArray::tensorOps::fill< 3 >( m_stressControlITerm, 0.0 );
   }
     
-  if( m_stressControl[0] == 1 || m_stressControl[1] == 1 || m_stressControl[2] == 1 )
+  if( m_stressControl[0] > 0 || m_stressControl[1] > 0 || m_stressControl[2] > 0 )
   {
     GEOS_ERROR_IF(m_stressTable.size(0) == 0, "Stress table cannot be empty if stress control is enabled");
     GEOS_ERROR_IF(m_stressTable.size(1) == 0, "Stress table must have 4 columns");
@@ -2620,10 +2620,10 @@ real64 SolidMechanicsMPM::explicitStep( real64 const & time_n,
   }
 
   //#######################################################################################
-  GEOS_LOG_RANK_IF( m_debugFlag == 1 && ( m_stressControl[0] == 1 || m_stressControl[1] == 1 || m_stressControl[2] == 1 ), "Interpolate stress table" );
-  solverProfilingIf( "Interpolate stress table", m_stressControl[0] == 1 || m_stressControl[1] == 1 || m_stressControl[2] == 1 );
+  GEOS_LOG_RANK_IF( m_debugFlag == 1 && ( m_stressControl[0] > 0 || m_stressControl[1] > 0 || m_stressControl[2] > 0 ), "Interpolate stress table" );
+  solverProfilingIf( "Interpolate stress table", m_stressControl[0] > 0 || m_stressControl[1] > 0 || m_stressControl[2] > 0 );
   //#######################################################################################
-  if( m_stressControl[0] == 1 || m_stressControl[1] == 1 || m_stressControl[2] == 1 )
+  if( m_stressControl[0] > 0 || m_stressControl[1] > 0 || m_stressControl[2] > 0 )
   {
     interpolateStressTable( dt, time_n );
   }
@@ -2633,11 +2633,31 @@ real64 SolidMechanicsMPM::explicitStep( real64 const & time_n,
   GEOS_LOG_RANK_IF( m_debugFlag == 1 && ( !( m_stressControl[0] && m_stressControl[1]&& m_stressControl[2] ) && ( m_prescribedBoundaryFTable == 1 || m_prescribedFTable == 1 ) ), "Interpolate F table" );
   solverProfilingIf( "Interpolate F table", !( m_stressControl[0] && m_stressControl[1]&& m_stressControl[2] ) && ( m_prescribedBoundaryFTable == 1 || m_prescribedFTable == 1 ) );
   //#######################################################################################
-  if( !( m_stressControl[0] && m_stressControl[1]&& m_stressControl[2] ) && ( m_prescribedBoundaryFTable == 1 || m_prescribedFTable == 1 ) )
+  if( !( m_stressControl[0]==1 && m_stressControl[1]==1 && m_stressControl[2]==1 ) && ( m_prescribedBoundaryFTable == 1 || m_prescribedFTable == 1 ) )
   {
     interpolateFTable( dt, time_n );
   }
 
+  //#######################################################################################
+  GEOS_LOG_RANK_IF( m_debugFlag == 1 && ( m_stressControl[0] > 0 || m_stressControl[1] > 0 || m_stressControl[2] > 0 ), "Stress control" );
+  solverProfilingIf("Stress control",  m_stressControl[0] > 0 || m_stressControl[1] > 0 || m_stressControl[2] > 0 );
+  //#######################################################################################
+  // stress control reads a principal stress table.  we compute the
+  // difference between most recent box sum and the prescribed value and increment
+  // the domain strain rate accordingly.  This is a simple control loop.
+  // If done here it uses beginning-of-step stresses.
+  if( m_stressControl[0] > 0 || m_stressControl[1] > 0 || m_stressControl[2] > 0 )
+  {
+    stressControl( dt,
+                   particleManager,
+                   partition );
+  }
+
+  // Integrate domainF:
+  for(int i=0; i < m_numDims; i++ )
+	{
+			m_domainF[i] += m_domainL[i]*m_domainF[i]*dt;
+  }
 
   //#######################################################################################
   GEOS_LOG_RANK_IF( m_debugFlag == 1, "Apply essential boundary conditions" );
@@ -2793,21 +2813,6 @@ real64 SolidMechanicsMPM::explicitStep( real64 const & time_n,
       m_nextParticleDataWriteTime += m_particleDataWriteInterval;
     }
   }
-
-  //#######################################################################################
-  GEOS_LOG_RANK_IF( m_debugFlag == 1 && ( m_stressControl[0] == 1 || m_stressControl[1] == 1 || m_stressControl[2] == 1 ), "Stress control" );
-  solverProfilingIf("Stress control",  m_stressControl[0] == 1 || m_stressControl[1] == 1 || m_stressControl[2] == 1 );
-  //#######################################################################################
-  // stress control reads a principal stress table.  we compute the
-  // difference between most recent box sum and the prescribed value and increment
-  // the domain strain rate accordingly.  This is a simple control loop.
-  if( m_stressControl[0] == 1 || m_stressControl[1] == 1 || m_stressControl[2] == 1 )
-  {
-    stressControl( dt,
-                   particleManager,
-                   partition );
-  }
-
 
   //#######################################################################################
   GEOS_LOG_RANK_IF( m_debugFlag == 1, "Calculate stable time step" );
@@ -6636,8 +6641,19 @@ void SolidMechanicsMPM::stressControl( real64 dt,
 		if( m_stressControl[i] == 1 )
 		{
 			m_domainL[i] = L_new[i];
-			m_domainF[i] += m_domainL[i]*m_domainF[i]*dt;
 		}
+    else if( m_stressControl[i] == 2 )
+    {
+      // Don't allow compression if over target stress, don't allow
+      if ( error[i] > 0 ) // Less tensile than limit, don't allow compression 
+      {
+        m_domainL[i] = fmax(m_domainL[i], 0 );
+      }
+      else
+      { // Less compressive than limit, don't allow tension 
+        m_domainL[i] = fmin(m_domainL[i], 0 );
+      }
+    }
 	}
 }
 
@@ -7673,32 +7689,32 @@ void SolidMechanicsMPM::computeDistanceToParticleSurface( real64 (& normal)[3],
   real64 tolerance = 1e-16;
 
   distanceToSurface = DBL_MAX;
-  if( abs( dN1 ) > tolerance && dS1 / dN1 > 0 )
+  if( std::abs( dN1 ) > tolerance && dS1 / dN1 > 0 )
   {
     distanceToSurface = fmin( distanceToSurface, dS1 / dN1 );
   }
 
-  if( abs( dN2 ) > tolerance && dS2 / dN2 > 0 )
+  if( std::abs( dN2 ) > tolerance && dS2 / dN2 > 0 )
   {
     distanceToSurface = fmin( distanceToSurface, dS2 / dN2 );
   }
 
-  if( abs( dN3 ) > tolerance && dS3 / dN3 > 0 )
+  if( std::abs( dN3 ) > tolerance && dS3 / dN3 > 0 )
   {
     distanceToSurface = fmin( distanceToSurface, dS3 / dN3 );
   }
 
-  if( abs( dN4 ) > tolerance && dS4 / dN4 > 0 )
+  if( std::abs( dN4 ) > tolerance && dS4 / dN4 > 0 )
   {
     distanceToSurface = fmin( distanceToSurface, dS4 / dN4 );
   }
 
-  if( abs( dN5 ) > tolerance && dS5 / dN5 > 0 )
+  if( std::abs( dN5 ) > tolerance && dS5 / dN5 > 0 )
   {
     distanceToSurface = fmin( distanceToSurface, dS5 / dN5 );
   }
 
-  if( abs( dN6 ) > tolerance && dS6 / dN6 > 0 )
+  if( std::abs( dN6 ) > tolerance && dS6 / dN6 > 0 )
   {
     distanceToSurface = fmin( distanceToSurface, dS6 / dN6 );
   }
@@ -8853,7 +8869,6 @@ void SolidMechanicsMPM::interpolateFTable( real64 dt, real64 time_n )
     {
       real64 Fii_dot = ( Fii_new[i] - Fii_old[i] ) / (dt);
       m_domainL[i] = Fii_dot / Fii_new[i]; // L = Fdot.Finv
-      m_domainF[i] = Fii_new[i];
     }
   }
 }
