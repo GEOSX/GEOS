@@ -97,8 +97,6 @@ void ImplicitQDRateAndState::updateSlip( ElementSubRegionBase & subRegion, real6
   arrayView2d< real64 const > const slipVelocity    = subRegion.getField< rateAndState::slipVelocity >();
   arrayView2d< real64 > const deltaSlip             = subRegion.getField< contact::deltaSlip >();
 
-  std::cout << "slipVelocity: " << slipVelocity << std::endl;
-
   forAll< parallelDevicePolicy<> >( subRegion.size(), [=] GEOS_HOST_DEVICE ( localIndex const k )
   {
     deltaSlip[k][0] = slipVelocity[k][0] * dt;
