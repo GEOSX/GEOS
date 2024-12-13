@@ -8,7 +8,19 @@ These notes should be in reverse-chronological order, and use the following time
 
 PR #3479 (2024-12-06)
 =====================
-Refine inputFiles/compositionalMultiphaseFlow a bit.
+Refine inputFiles/compositionalMultiphaseFlow: shift reference pressures to initial pressures, make more nonlinear tuning more reasonable, minimize output
+
+PR #3450 (2024-12-08)
+=====================
+Added test for explicit runge kutta sprinslider.
+
+PR #3480 (2024-12-06)
+=====================
+Add "logLevel" parameter under /Problem/Outputs in baseline files
+
+PR #3361 (2024-12-03)
+=====================
+Revert default gravity treatment to old version. Make the way introduced in #3337 optional.
 
 PR #3361 (2024-12-03)
 =====================
