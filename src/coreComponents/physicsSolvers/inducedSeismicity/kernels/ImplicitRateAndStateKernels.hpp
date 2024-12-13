@@ -59,8 +59,7 @@ public:
 public:
 
     GEOS_HOST_DEVICE
-    StackVariables( )
-    {}
+    StackVariables( ) = default;
 
     real64 jacobian[2][2]{};
 

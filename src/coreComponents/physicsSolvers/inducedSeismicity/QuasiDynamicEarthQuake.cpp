@@ -24,6 +24,7 @@
 #include "rateAndStateFields.hpp"
 #include "physicsSolvers/contact/ContactFields.hpp"
 #include "fieldSpecification/FieldSpecificationManager.hpp"
+#include "physicsSolvers/fluidFlow/FlowSolverBaseFields.hpp"
 
 #include "ExplicitQDRateAndState.hpp"
 
@@ -89,15 +90,12 @@ real64 QuasiDynamicEarthQuake< RSSOLVER_TYPE >::updateStresses( real64 const & t
       arrayView2d< real64 > const shearTraction   = subRegion.getField< rateAndState::shearTraction >();
       arrayView1d< real64 > const normalTraction  = subRegion.getField< rateAndState::normalTraction >();
 
-      arrayView2d< real64 > const backgroundShearStress = subRegion.getField< rateAndState::backgroundShearStress >();
-      arrayView1d< real64 > const backgroundNormalStress = subRegion.getField< rateAndState::backgroundNormalStress >();
-
       forAll< parallelDevicePolicy<> >( subRegion.size(), [=] GEOS_HOST_DEVICE ( localIndex const k )
       {
-        normalTraction[k] = backgroundNormalStress[k] - traction[k][0]; // compressive traction is negative in geos
+        normalTraction[k] -= traction[k][0]; // compressive traction is negative in geos
         for( int i = 0; i < 2; ++i )
         {
-          shearTraction( k, i ) = backgroundShearStress( k, i ) + traction( k, i+1 );
+          shearTraction( k, i ) += LvArray::math::abs( traction( k, i+1 ) );
         }
       } );
     } );

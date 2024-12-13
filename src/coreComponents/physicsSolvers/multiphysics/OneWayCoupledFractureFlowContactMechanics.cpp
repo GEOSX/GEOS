@@ -64,8 +64,8 @@ real64 OneWayCoupledFractureFlowContactMechanics< FLOW_SOLVER >::sequentiallyCou
                                                                            [&]( localIndex const,
                                                                                 SurfaceElementSubRegion & subRegion )
     {
-      auto traction = subRegion.getField< fields::contact::traction >();
-      auto pressure = subRegion.getField< fields::flow::pressure >();
+      arrayView2d< real64 > const traction = subRegion.getField< fields::contact::traction >();
+      arrayView1d< real64 > const pressure = subRegion.getField< fields::flow::pressure >();
       
       forAll< parallelDevicePolicy<> >( subRegion.size(), [=] GEOS_HOST_DEVICE ( localIndex const k )
       {

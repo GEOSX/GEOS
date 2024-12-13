@@ -99,8 +99,8 @@ void ImplicitQDRateAndState::updateSlip( ElementSubRegionBase & subRegion, real6
 
   forAll< parallelDevicePolicy<> >( subRegion.size(), [=] GEOS_HOST_DEVICE ( localIndex const k )
   {
-    deltaSlip[k][0]     = slipVelocity[k][0] * dt;
-    deltaSlip[k][1]     = slipVelocity[k][1] * dt;
+    deltaSlip[k][0] = slipVelocity[k][0] * dt;
+    deltaSlip[k][1] = slipVelocity[k][1] * dt;
   } );
 }
 

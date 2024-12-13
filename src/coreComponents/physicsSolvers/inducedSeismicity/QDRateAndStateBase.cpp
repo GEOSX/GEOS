@@ -110,18 +110,25 @@ void QDRateAndStateBase::applyInitialConditionsToFault( int const cycleNumber,
       {
         arrayView1d< real64 const > const slipRate        = subRegion.getField< rateAndState::slipRate >();
         arrayView1d< real64 const > const stateVariable   = subRegion.getField< rateAndState::stateVariable >();
-        arrayView1d< real64 const > const normalTraction  = subRegion.getField< rateAndState::normalTraction >();
-        arrayView2d< real64 const > const shearTraction   = subRegion.getField< rateAndState::shearTraction >();
+        arrayView1d< real64 > const normalTraction  = subRegion.getField< rateAndState::normalTraction >();
+        arrayView2d< real64 > const shearTraction   = subRegion.getField< rateAndState::shearTraction >();
 
         arrayView1d< real64 > const stateVariable_n       = subRegion.getField< rateAndState::stateVariable_n >();
         arrayView1d< real64 > const slipRate_n            = subRegion.getField< rateAndState::slipRate_n >();
         arrayView1d< real64 > const normalTraction_n      = subRegion.getField< rateAndState::normalTraction_n >();
         arrayView2d< real64 > const shearTraction_n       = subRegion.getField< rateAndState::shearTraction_n >();
 
+        arrayView2d< real64 > const backgroundShearStress = subRegion.getField< rateAndState::backgroundShearStress >();
+        arrayView1d< real64 > const backgroundNormalStress = subRegion.getField< rateAndState::backgroundNormalStress >();
+
         forAll< parallelDevicePolicy<> >( subRegion.size(), [=] GEOS_HOST_DEVICE ( localIndex const k )
         {
           slipRate_n [k]       = slipRate[k];
           stateVariable_n[k]   = stateVariable[k];
+          
+          normalTraction[k] = backgroundNormalStress[k];
+          LvArray::tensorOps::copy< 2 >( shearTraction[k], backgroundShearStress[k] );
+          
           normalTraction_n[k]  = normalTraction[k];
           LvArray::tensorOps::copy< 2 >( shearTraction_n[k], shearTraction[k] );
         } );
