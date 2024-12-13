@@ -168,7 +168,7 @@ public:
              m_dFluidVisc_dCompConc[k][q],
              isProppantBoundary,
              m_density[k][q],
-             m_dDensity[k][q][0] , // tjb add deriv:dp
+             m_dDensity[k][q][0],  // tjb add deriv:dp
              m_dDensity_dPressure[k][q],
              m_dDensity_dProppantConc[k][q],
              m_dDensity_dCompConc[k][q],
@@ -506,7 +506,7 @@ ProppantSlurryFluidUpdate::
   density = (1.0 - effectiveConcentration) * fluidDensity + effectiveConcentration * m_referenceProppantDensity;
   dDensity_dPressure = (1.0 - effectiveConcentration) * dFluidDensity_dPressure;
   dDensity_dp = (1.0 - effectiveConcentration) * dFluidDensity_dPressure;
-  
+
   dDensity_dProppantConcentration = 0.0;
   for( localIndex c = 0; c < NC; ++c )
   {

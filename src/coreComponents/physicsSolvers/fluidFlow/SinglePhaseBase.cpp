@@ -38,6 +38,7 @@
 #include "mainInterface/ProblemManager.hpp"
 #include "mesh/DomainPartition.hpp"
 #include "mesh/mpiCommunications/CommunicationTools.hpp"
+#include "physicsSolvers/KernelLaunchSelectors.hpp"
 #include "physicsSolvers/fluidFlow/FlowSolverBaseFields.hpp"
 #include "physicsSolvers/fluidFlow/SinglePhaseBaseFields.hpp"
 #include "physicsSolvers/fluidFlow/kernels/singlePhase/AccumulationKernels.hpp"
@@ -97,7 +98,12 @@ void SinglePhaseBase::registerDataOnMesh( Group & meshBodies )
     {
       subRegion.registerField< deltaVolume >( getName() );
 
+      //registerField( fields::flow::mobility{}, &m_mobility.value );
+      //registerField(  fields::flow::dMobility{}, &m_mobility.derivs );
       subRegion.registerField< mobility >( getName() );
+      // tjb new mobility
+      subRegion.registerField< dMobility >( getName()).reference().resizeDimension< 1 >( m_numDofPerCell );
+
       subRegion.registerField< dMobility_dPressure >( getName() );
 
       subRegion.registerField< fields::flow::mass >( getName() );
@@ -108,6 +114,8 @@ void SinglePhaseBase::registerDataOnMesh( Group & meshBodies )
       {
         subRegion.registerField< dMobility_dTemperature >( getName() );
       }
+
+
     } );
 
     elemManager.forElementSubRegions< SurfaceElementSubRegion >( regionNames,
@@ -362,6 +370,7 @@ void SinglePhaseBase::updateMobility( ObjectManagerBase & dataGroup ) const
   // output
 
   arrayView1d< real64 > const mob = dataGroup.getField< fields::flow::mobility >();
+  arrayView2d< real64 > const dMobility = dataGroup.getField< fields::flow::dMobility >(); // tjb
   arrayView1d< real64 > const dMob_dPres = dataGroup.getField< fields::flow::dMobility_dPressure >();
 
   // input
@@ -370,6 +379,17 @@ void SinglePhaseBase::updateMobility( ObjectManagerBase & dataGroup ) const
     getConstitutiveModel< SingleFluidBase >( dataGroup, dataGroup.getReference< string >( viewKeyStruct::fluidNamesString() ) );
   FluidPropViews fluidProps = getFluidProperties( fluid );
 
+  geos::internal::kernelLaunchSelectorThermalSwitch( m_isThermal, [&] ( auto ISTHERMAL ) {
+    integer constexpr NUMDOF = ISTHERMAL() + 1;
+    singlePhaseBaseKernels::MobilityKernel::compute_value_and_derivatives< parallelDevicePolicy<>, NUMDOF >( dataGroup.size(),
+                                                                                                             fluidProps.dens,
+                                                                                                             fluidProps.dDens,
+                                                                                                             fluidProps.visc,
+                                                                                                             fluidProps.dVisc,
+                                                                                                             mob,
+                                                                                                             dMobility );
+  } );
+  // tjb delete these
   if( m_isThermal )
   {
     arrayView1d< real64 > const dMob_dTemp =
@@ -402,6 +422,7 @@ void SinglePhaseBase::updateMobility( ObjectManagerBase & dataGroup ) const
                                                                               mob,
                                                                               dMob_dPres );
   }
+
 }
 
 void SinglePhaseBase::initializePostInitialConditionsPreSubGroups()

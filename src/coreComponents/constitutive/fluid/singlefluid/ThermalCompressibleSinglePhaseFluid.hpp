@@ -76,11 +76,11 @@ public:
     m_dDens_dTemp( dDens_dTemp ),
     m_dVisc_dTemp( dVisc_dTemp ),
     m_internalEnergy( internalEnergy ),
-    m_dInternalEnergy(dInternalEnergy),
+    m_dInternalEnergy( dInternalEnergy ),
     m_dIntEnergy_dPres( dIntEnergy_dPres ),
     m_dIntEnergy_dTemp( dIntEnergy_dTemp ),
     m_enthalpy( enthalpy ),
-    m_dEnthalpy(dEnthalpy),
+    m_dEnthalpy( dEnthalpy ),
     m_dEnthalpy_dPres( dEnthalpy_dPres ),
     m_dEnthalpy_dTemp( dEnthalpy_dTemp ),
     m_densRelation( densRelation ),
@@ -191,7 +191,7 @@ public:
     m_dInternalEnergy[k][q][1] = m_dIntEnergy_dTemp[k][q];
     m_dEnthalpy[k][q][0] = m_dEnthalpy_dPres[k][q];
     m_dEnthalpy[k][q][1] = m_dEnthalpy_dTemp[k][q];
-  
+
   }
 
 private:

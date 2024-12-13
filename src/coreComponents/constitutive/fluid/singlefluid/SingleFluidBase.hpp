@@ -66,12 +66,12 @@ protected:
                          arrayView2d< real64 > const & viscosity,
                          arrayView3d< real64 >  const & dViscosity,
                          arrayView2d< real64 > const & dVisc_dPres )
-    :  
+    :
     m_density( density ),
     m_dDensity( dDensity ),
     m_dDens_dPres( dDens_dPres ),
     m_viscosity( viscosity ),
-    m_dViscosity( dViscosity),
+    m_dViscosity( dViscosity ),
     m_dVisc_dPres( dVisc_dPres )
   {}
 
@@ -108,7 +108,7 @@ protected:
   /// Fluid viscosity
   arrayView2d< real64 > m_viscosity;
   arrayView3d< real64 > m_dViscosity;
-  
+
   /// Derivative of viscosity w.r.t. pressure
   arrayView2d< real64 > m_dVisc_dPres;
 
@@ -313,9 +313,9 @@ public:
 protected:
 
   virtual void postInputInitialization() override;
-  
-  // Degrees of freedom in fluid characterization  
-  integer m_numDOF;  
+
+  // Degrees of freedom in fluid characterization
+  integer m_numDOF;
   //START_SPHINX_INCLUDE_00
   SingleFluidProp m_density;
   SingleFluidProp m_viscosity;

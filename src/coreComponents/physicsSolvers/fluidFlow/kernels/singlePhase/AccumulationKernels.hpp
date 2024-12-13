@@ -169,9 +169,9 @@ public:
     //std::cout << m_dDensity_dPres[ei][0]<< " " <<  m_dDensity[ei][0][DerivOffset::dP] << std::endl;
     //tjb  use DerivOffset::dP
     //    std::cout.flush();
-    assert(fabs(m_dDensity_dPres[ei][0]-m_dDensity[ei][0][0])<FLT_EPSILON);
+    assert( fabs( m_dDensity_dPres[ei][0]-m_dDensity[ei][0][0] )<FLT_EPSILON );
 
-    
+
     //stack.localJacobian[0][0] = stack.dPoreVolume_dPres * m_density[ei][0] + m_dDensity_dPres[ei][0] * stack.poreVolume;
     stack.localJacobian[0][0] = stack.dPoreVolume_dPres * m_density[ei][0] + m_dDensity[ei][0][0] * stack.poreVolume;
     // Customize the kernel with this lambda

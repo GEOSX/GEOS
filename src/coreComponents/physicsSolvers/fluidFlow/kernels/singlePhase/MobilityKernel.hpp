@@ -57,19 +57,19 @@ struct MobilityKernel
   GEOS_HOST_DEVICE
   inline
   static void
-  compute( real64 const & dens,
-           real64 const & dDens_dP,  // tjb
-           real64 const & dDens_dT,  // tjb
-           real64 const & dDens_dPres,
-           real64 const & dDens_dTemp,
-           real64 const & visc,
-           real64 const & dVisc_dP,  // tjb
-           real64 const & dVisc_dT,  // tjb
-           real64 const & dVisc_dPres,
-           real64 const & dVisc_dTemp,
-           real64 & mob,
-           real64 & dMob_dPres,
-           real64 & dMob_dTemp )
+  old_compute( real64 const & dens,
+               real64 const & dDens_dP, // tjb
+               real64 const & dDens_dT, // tjb
+               real64 const & dDens_dPres,
+               real64 const & dDens_dTemp,
+               real64 const & visc,
+               real64 const & dVisc_dP, // tjb
+               real64 const & dVisc_dT, // tjb
+               real64 const & dVisc_dPres,
+               real64 const & dVisc_dTemp,
+               real64 & mob,
+               real64 & dMob_dPres,
+               real64 & dMob_dTemp )
   {
     mob = dens / visc;
     dMob_dPres = dDens_dPres / visc - mob / visc * dVisc_dPres;
@@ -97,7 +97,7 @@ struct MobilityKernel
   template< typename POLICY >
   static void launch( localIndex const size,
                       arrayView2d< real64 const > const & dens,
-                      arrayView3d< real64 const > const & dDens,      
+                      arrayView3d< real64 const > const & dDens,
                       arrayView2d< real64 const > const & dDens_dPres,
                       arrayView2d< real64 const > const & visc,
                       arrayView3d< real64 const > const & dVisc,
@@ -109,12 +109,33 @@ struct MobilityKernel
     {
       compute( dens[a][0],
                dDens[a][0][0],   // tjb use deriv::dp
-               dDens_dPres[a][0],  
+               dDens_dPres[a][0],
                visc[a][0],
                dVisc[a][0][0],   // tjb use deriv::dp
                dVisc_dPres[a][0],
                mob[a],
                dMob_dPres[a] );
+    } );
+  }
+
+  // Generic version
+  template< typename POLICY, integer NUMDOF >
+  static void compute_value_and_derivatives( localIndex const size,
+                                             arrayView2d< real64 const > const & density,
+                                             arrayView3d< real64 const > const & dDensity,
+                                             arrayView2d< real64 const > const & viscosity,
+                                             arrayView3d< real64 const > const & dViscosity,
+                                             arrayView1d< real64 > const & mobility,
+                                             arrayView2d< real64 > const & dMobility )
+  {
+    forAll< POLICY >( size, [=] GEOS_HOST_DEVICE ( localIndex const a )
+    {
+      mobility[a] = density[a][0] / viscosity[a][0];
+      for( int i=0; i<NUMDOF; i++ )
+      {
+        dMobility[a][i] = dDensity[a][0][i]/viscosity[a][0] - mobility[a]/viscosity[a][0]*dDensity[a][0][i];
+      }
+
     } );
   }
 
@@ -135,19 +156,28 @@ struct MobilityKernel
   {
     forAll< POLICY >( size, [=] GEOS_HOST_DEVICE ( localIndex const a )
     {
-      compute( dens[a][0],
-               dDens[a][0][0], // tjb use deriv::dp
-               dDens[a][0][1], // tjb use deriv::dt
-               dDens_dPres[a][0],
-               dDens_dTemp[a][0],
-               visc[a][0],
-               dVisc[a][0][0], // tjb use deriv::dp
-               dVisc[a][0][1], // tjb use deriv::dt
-               dVisc_dPres[a][0],
-               dVisc_dTemp[a][0],
-               mob[a],
-               dMob_dPres[a],
-               dMob_dTemp[a] );
+      old_compute( dens[a][0],
+                   dDens[a][0][0], // tjb use deriv::dp
+                   dDens[a][0][1], // tjb use deriv::dt
+                   dDens_dPres[a][0],
+                   dDens_dTemp[a][0],
+                   visc[a][0],
+                   dVisc[a][0][0], // tjb use deriv::dp
+                   dVisc[a][0][1], // tjb use deriv::dt
+                   dVisc_dPres[a][0],
+                   dVisc_dTemp[a][0],
+                   mob[a],
+                   dMob_dPres[a],
+                   dMob_dTemp[a] );
+      /*
+         compute( dens[a][0],
+         dDens[a][0],
+         visc[a][0],
+         dVisc[a][0],
+         mob[a],
+         dMob_dPres[a],
+         dMob_dTemp[a] );
+       */
     } );
   }
 
