@@ -45,7 +45,11 @@ SolidMechanicsLagrangeContactBubbleStab::SolidMechanicsLagrangeContactBubbleStab
 {
   m_faceTypeToFiniteElements["Quadrilateral"] =  std::make_unique< finiteElement::H1_QuadrilateralFace_Lagrange1_GaussLegendre2 >();
   m_faceTypeToFiniteElements["Triangle"] =  std::make_unique< finiteElement::H1_TriangleFace_Lagrange1_Gauss1 >();
-
+  
+  LinearSolverParameters & linSolParams = m_linearSolverParameters.get();
+  linSolParams.mgr.strategy = LinearSolverParameters::MGR::StrategyType::lagrangianContactMechanicsBubbleStab;
+  linSolParams.mgr.separateComponents = true;
+  linSolParams.dofsPerNode = 3;
 }
 
 SolidMechanicsLagrangeContactBubbleStab::~SolidMechanicsLagrangeContactBubbleStab()
@@ -249,6 +253,8 @@ void SolidMechanicsLagrangeContactBubbleStab::setupSystem( DomainPartition & dom
   solution.create( dofManager.numLocalDofs(), MPI_COMM_GEOS );
 
   computeRotationMatrices( domain );
+
+  dofManager.printFieldInfo();
 }
 
 void SolidMechanicsLagrangeContactBubbleStab::computeRotationMatrices( DomainPartition & domain ) const

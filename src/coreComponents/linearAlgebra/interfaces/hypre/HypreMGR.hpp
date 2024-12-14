@@ -269,6 +269,32 @@ protected:
     setDisplacementAMG( mgrData.mechSolver, separateComponents );
     HYPRE_MGRSetFSolver( precond.ptr, mgrData.mechSolver.solve, mgrData.mechSolver.setup, mgrData.mechSolver.ptr );
   }
+  /**
+   * @brief 
+   * 
+   * @param solver 
+   */
+  void setILUCoarseSolver( HyprePrecWrapper & solver )
+  {
+    /* (Required) Create ILU solver */
+    HYPRE_ILUCreate(&solver.ptr);
+
+    /* (Recommended) General solver options */
+    int const ilu_type = 0; /* 0, 1, 10, 11, 20, 21, 30, 31, 40, 41, 50 */
+    int const max_iter = 1;
+    double const tol = 0.0;
+    int const reordering = 0; /* 0: none, 1: RCM */
+    int const print_level = 0;
+    HYPRE_ILUSetType(solver.ptr, ilu_type); 
+    HYPRE_ILUSetMaxIter(solver.ptr, max_iter); 
+    HYPRE_ILUSetTol(solver.ptr, tol);
+    HYPRE_ILUSetLocalReordering(solver.ptr, reordering); 
+    HYPRE_ILUSetPrintLevel(solver.ptr, print_level);
+
+    solver.setup = HYPRE_ILUSetup;
+    solver.solve = HYPRE_ILUSolve;
+    solver.destroy = HYPRE_ILUDestroy;
+  }
 
 };
 
