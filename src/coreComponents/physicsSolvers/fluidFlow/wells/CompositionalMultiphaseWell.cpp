@@ -454,6 +454,7 @@ void CompositionalMultiphaseWell::validateWellConstraints( real64 const & time_n
   WellControls::Control const currentControl = wellControls.getControl();
   real64 const & targetTotalRate = wellControls.getTargetTotalRate( time_n + dt );
   real64 const & targetPhaseRate = wellControls.getTargetPhaseRate( time_n + dt );
+  real64 const & targetMassRate = wellControls.getTargetMassRate( time_n + dt );
 
   GEOS_THROW_IF( wellControls.isInjector() && currentControl == WellControls::Control::PHASEVOLRATE,
                  "WellControls " << wellControls.getDataContext() <<
@@ -471,6 +472,18 @@ void CompositionalMultiphaseWell::validateWellConstraints( real64 const & time_n
   GEOS_THROW_IF( wellControls.isInjector() && !isZero( targetPhaseRate ),
                  "WellControls " << wellControls.getDataContext() <<
                  ": Target phase rate cannot be used for injectors",
+                 InputError );
+  GEOS_THROW_IF( wellControls.isProducer() && !isZero( targetTotalRate ),
+                 "WellControls " << wellControls.getDataContext() <<
+                 ": Target total rate cannot be used for producers",
+                 InputError );
+  GEOS_THROW_IF( wellControls.isProducer() && !isZero( targetMassRate ),
+                 "WellControls " << wellControls.getDataContext() <<
+                 ": Target mass rate cannot be used for producers",
+                 InputError );
+  GEOS_THROW_IF( !m_useMass && !isZero( targetMassRate ),
+                 "WellControls " << wellControls.getDataContext() <<
+                 ": Target mass rate cannot with m_useMass=0",
                  InputError );
 
   // The user always provides positive rates, but these rates are later multiplied by -1 internally for producers
