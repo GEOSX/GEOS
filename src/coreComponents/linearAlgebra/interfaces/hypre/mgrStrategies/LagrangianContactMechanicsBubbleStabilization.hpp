@@ -47,7 +47,7 @@ namespace mgr
  * dofLabel: 8 = face-centered lagrange multiplier (tt2)
  *
  * Ingredients:
- * 1. F-points displacement (0,1,2), C-points  (3,4,5)
+ * 1. F-points displacement (0,1,2,3,4,5), C-points  (6,7,8)
  * 2. F-points smoother: AMG, single V-cycle, separate displacemente components
  * 3. C-points coarse-grid/Schur complement solver: boomer AMG
  * 4. Global smoother: none
