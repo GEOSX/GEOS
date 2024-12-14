@@ -13,7 +13,7 @@
       temperature="300">
       <NonlinearSolverParameters
         newtonTol="1.0e-9"
-        newtonMaxIter="10"/>
+        newtonMaxIter="15"/>
       <LinearSolverParameters
         directParallel="0"/>
     </CompositionalMultiphaseFVM>
