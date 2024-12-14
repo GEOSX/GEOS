@@ -98,8 +98,8 @@ decks = [
         description=
         "Compositional multiphase flow test (3D staircase, no-flow BC, 2-phase dead-oil, hysteresis)",
         partitions=((1, 1, 1), (2, 2, 2)),
-        restart_step=61,
-        check_step=121,
+        restart_step=64,
+        check_step=120,
         restartcheck_params=RestartcheckParameters(**restartcheck_params)),
     TestDeck(
         name="co2_flux_3d",
