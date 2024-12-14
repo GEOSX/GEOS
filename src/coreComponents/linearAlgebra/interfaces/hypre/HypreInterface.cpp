@@ -55,7 +55,13 @@ void HypreInterface::initialize()
   HYPRE_Initialize();
 #if GEOS_USE_HYPRE_DEVICE == GEOS_USE_HYPRE_CUDA || GEOS_USE_HYPRE_DEVICE == GEOS_USE_HYPRE_HIP
   HYPRE_SetExecutionPolicy( HYPRE_EXEC_DEVICE );
+#if defined(HYPRE_USING_HIP)
+  HYPRE_SetSpGemmUseVendor( 1 );
+#else
+  // TODO: Is it better to use vendor's SpGEMM with CUDA?
   HYPRE_SetSpGemmUseVendor( 0 );
+#endif
+
   HYPRE_DeviceInitialize();
 #endif
   HYPRE_SetMemoryLocation( hypre::memoryLocation );
