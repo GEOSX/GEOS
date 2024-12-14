@@ -24,6 +24,7 @@
 #include "dataRepository/LogLevelsInfo.hpp"
 #include "constitutive/fluid/multifluid/MultiFluidBase.hpp"
 #include "constitutive/solid/PorousSolid.hpp"
+#include "physicsSolvers/fluidFlow/CompositionalMultiphaseHybridFVM.hpp"
 #include "physicsSolvers/fluidFlow/FlowSolverBaseFields.hpp"
 #include "physicsSolvers/fluidFlow/CompositionalMultiphaseHybridFVM.hpp"
 #include "physicsSolvers/multiphysics/poromechanicsKernels/MultiphasePoromechanics.hpp"
@@ -54,13 +55,6 @@ void MultiphasePoromechanics< FLOW_SOLVER, MECHANICS_SOLVER >::postInputInitiali
   Base::postInputInitialization();
 
   setMGRStrategy();
-
-  GEOS_ERROR_IF( this->flowSolver()->getCatalogName() == "CompositionalMultiphaseReservoir" &&
-                 this->getNonlinearSolverParameters().couplingType() != NonlinearSolverParameters::CouplingType::Sequential,
-                 GEOS_FMT( "{}: {} solver is only designed to work for {} = {}",
-                           this->getDataContext(), catalogName(), NonlinearSolverParameters::viewKeysStruct::couplingTypeString(),
-                           EnumStrings< NonlinearSolverParameters::CouplingType >::toString( NonlinearSolverParameters::CouplingType::Sequential )
-                           ));
 }
 
 template< typename FLOW_SOLVER, typename MECHANICS_SOLVER >
@@ -82,6 +76,7 @@ void MultiphasePoromechanics< FLOW_SOLVER, MECHANICS_SOLVER >::assembleSystem( r
 {
   GEOS_MARK_FUNCTION;
 
+  // Steps 1 and 2: compute element-based terms (mechanics and local flow terms)
   assembleElementBasedTerms( time,
                              dt,
                              domain,
@@ -108,6 +103,50 @@ void MultiphasePoromechanics< FLOW_SOLVER, MECHANICS_SOLVER >::assembleSystem( r
                                            localMatrix,
                                            localRhs );
   }
+}
+
+template<>
+void MultiphasePoromechanics< CompositionalMultiphaseReservoirAndWells<>, SolidMechanicsLagrangianFEM >::assembleSystem( real64 const time,
+                                                                                                                         real64 const dt,
+                                                                                                                         DomainPartition & domain,
+                                                                                                                         DofManager const & dofManager,
+                                                                                                                         CRSMatrixView< real64, globalIndex const > const & localMatrix,
+                                                                                                                         arrayView1d< real64 > const & localRhs )
+{
+  GEOS_MARK_FUNCTION;
+
+  // Steps 1 and 2: compute element-based terms (mechanics and local flow terms)
+  assembleElementBasedTerms( time,
+                             dt,
+                             domain,
+                             dofManager,
+                             localMatrix,
+                             localRhs );
+
+  // step 3: compute the fluxes (face-based contributions)
+
+  if( m_stabilizationType == StabilizationType::Global ||
+      m_stabilizationType == StabilizationType::Local )
+  {
+    this->flowSolver()->assembleStabilizedFluxTerms( dt,
+                                                     domain,
+                                                     dofManager,
+                                                     localMatrix,
+                                                     localRhs );
+  }
+  else
+  {
+    this->flowSolver()->assembleFluxTerms( dt,
+                                           domain,
+                                           dofManager,
+                                           localMatrix,
+                                           localRhs );
+  }
+
+  // step 4: assemble well contributions
+
+  this->flowSolver()->wellSolver()->assembleSystem( time, dt, domain, dofManager, localMatrix, localRhs );
+  this->flowSolver()->assembleCouplingTerms( time, dt, domain, dofManager, localMatrix, localRhs );
 }
 
 template< typename FLOW_SOLVER, typename MECHANICS_SOLVER >
@@ -270,6 +309,32 @@ void MultiphasePoromechanics<>::setMGRStrategy()
     {
       linearSolverParameters.mgr.strategy = LinearSolverParameters::MGR::StrategyType::multiphasePoromechanics;
     }
+  }
+  GEOS_LOG_LEVEL_RANK_0( 1, GEOS_FMT( "{}: MGR strategy set to {}", getName(),
+                                      EnumStrings< LinearSolverParameters::MGR::StrategyType >::toString( linearSolverParameters.mgr.strategy )));
+}
+
+template<>
+void MultiphasePoromechanics< CompositionalMultiphaseReservoirAndWells<>, SolidMechanicsLagrangianFEM >::setMGRStrategy()
+{
+  // same as CompositionalMultiphaseReservoirAndWells< MultiphasePoromechanics<> >::setMGRStrategy
+
+  LinearSolverParameters & linearSolverParameters = m_linearSolverParameters.get();
+
+  if( linearSolverParameters.preconditionerType != LinearSolverParameters::PreconditionerType::mgr )
+    return;
+
+  linearSolverParameters.mgr.separateComponents = true;
+  linearSolverParameters.dofsPerNode = 3;
+
+  if( dynamic_cast< CompositionalMultiphaseHybridFVM * >( this->flowSolver() ) )
+  {
+    GEOS_ERROR( GEOS_FMT( "{}: MGR strategy is not implemented for {}/{}",
+                          this->getName(), this->getCatalogName(), this->flowSolver()->getCatalogName() ) );
+  }
+  else
+  {
+    linearSolverParameters.mgr.strategy = LinearSolverParameters::MGR::StrategyType::multiphasePoromechanicsReservoirFVM;
   }
   GEOS_LOG_LEVEL_RANK_0( 1, GEOS_FMT( "{}: MGR strategy set to {}", getName(),
                                       EnumStrings< LinearSolverParameters::MGR::StrategyType >::toString( linearSolverParameters.mgr.strategy )));
