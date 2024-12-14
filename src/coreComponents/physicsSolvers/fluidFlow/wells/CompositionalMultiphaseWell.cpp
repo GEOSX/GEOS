@@ -260,6 +260,8 @@ void CompositionalMultiphaseWell::registerDataOnMesh( Group & meshBodies )
 
       wellControls.registerWrapper< real64 >( viewKeyStruct::massDensityString() );
 
+      wellControls.registerWrapper< real64 >( viewKeyStruct::currentMassRateString() );
+
       // write rates output header
       // the rank that owns the reference well element is responsible
       if( m_writeCSV > 0 && subRegion.isLocallyOwned() )
@@ -686,6 +688,10 @@ void CompositionalMultiphaseWell::updateVolRatesForConstraint( WellElementSubReg
 
   real64 & currentTotalVolRate =
     wellControls.getReference< real64 >( CompositionalMultiphaseWell::viewKeyStruct::currentTotalVolRateString() );
+
+  real64 & currentMassRate =
+    wellControls.getReference< real64 >( CompositionalMultiphaseWell::viewKeyStruct::currentMassRateString() );
+
   arrayView1d< real64 > const & dCurrentTotalVolRate =
     wellControls.getReference< array1d< real64 > >( CompositionalMultiphaseWell::viewKeyStruct::dCurrentTotalVolRateString() );
 
@@ -721,6 +727,7 @@ void CompositionalMultiphaseWell::updateVolRatesForConstraint( WellElementSubReg
                                   dCurrentTotalVolRate,
                                   currentPhaseVolRate,
                                   dCurrentPhaseVolRate,
+                                  &currentMassRate,
                                   &iwelemRef,
                                   &logLevel,
                                   &wellControlsName,
@@ -757,7 +764,8 @@ void CompositionalMultiphaseWell::updateVolRatesForConstraint( WellElementSubReg
         // Step 2: update the total volume rate
 
         real64 const currentTotalRate = connRate[iwelemRef];
-
+        // Assumes useMass is true
+        currentMassRate = currentTotalRate;
         // Step 2.1: compute the inverse of the total density and derivatives
         massDensity = totalDens[iwelemRef][0];
         real64 const totalDensInv = 1.0 / totalDens[iwelemRef][0];
@@ -1950,6 +1958,12 @@ void CompositionalMultiphaseWell::assemblePressureRelations( real64 const & time
               wellControls.switchToPhaseRateControl( wellControls.getTargetPhaseRate( timeAtEndOfStep ) );
               GEOS_LOG_LEVEL_INFO_RANK_0( logInfo::WellControl,
                                           GEOS_FMT( "Control switch for well {} from BHP constraint to phase volumetric rate constraint", subRegion.getName() ) );
+            }
+            else if( wellControls.getInputControl() == WellControls::Control::MASSRATE )
+            {
+              wellControls.switchToMassRateControl( wellControls.getTargetMassRate( timeAtEndOfStep ) );
+              GEOS_LOG_LEVEL_INFO_RANK_0( logInfo::WellControl,
+                                          GEOS_FMT( "Control switch for well {} from BHP constraint to mass rate constraint", subRegion.getName()) );
             }
             else
             {
