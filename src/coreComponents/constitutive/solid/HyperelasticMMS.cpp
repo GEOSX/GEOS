@@ -186,6 +186,10 @@ void HyperelasticMMS::postInputInitialization()
 
   this->getWrapper< array1d< real64 > >( viewKeyStruct::shearModulusString() ).
     setApplyDefaultValue( m_defaultShearModulus );
+
+  // This may not be needed since these are computed every call
+  this->getWrapper< array2d< real64 > >( viewKeyStruct::wavespeedString() ).
+    setApplyDefaultValue( sqrt( ( conversions::lameConstants::toBulkMod( m_defaultLambda, m_defaultShearModulus ) + (4.0/3.0) * m_defaultShearModulus ) / m_defaultDensity ) );
 }
 
 REGISTER_CATALOG_ENTRY( ConstitutiveBase, HyperelasticMMS, string const &, Group * const )

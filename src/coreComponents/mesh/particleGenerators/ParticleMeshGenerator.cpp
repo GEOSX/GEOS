@@ -209,6 +209,15 @@ void ParticleMeshGenerator::fillParticleBlockManager( ParticleBlockManager & par
         case ParticleColumnHeaders::VelocityX:
         case ParticleColumnHeaders::VelocityY:
         case ParticleColumnHeaders::VelocityZ:
+        case ParticleColumnHeaders::AccelerationX:
+          defaultValue = 2.0;
+          break;
+        case ParticleColumnHeaders::AccelerationY:
+          defaultValue = 2.0;
+          break;
+        case ParticleColumnHeaders::AccelerationZ:
+          defaultValue = 2.0;
+          break;
         case ParticleColumnHeaders::MaterialDirectionY:
         case ParticleColumnHeaders::MaterialDirectionZ:
         case ParticleColumnHeaders::SurfaceNormalY:
@@ -219,15 +228,6 @@ void ParticleMeshGenerator::fillParticleBlockManager( ParticleBlockManager & par
         case ParticleColumnHeaders::SurfaceTractionX:
         case ParticleColumnHeaders::SurfaceTractionY:
         case ParticleColumnHeaders::SurfaceTractionZ:
-          defaultValue = 0.0;
-          break;
-        case ParticleColumnHeaders::AccelerationX:
-          defaultValue = 0.0;
-          break;
-        case ParticleColumnHeaders::AccelerationY:
-          defaultValue = 0.0;
-          break;
-        case ParticleColumnHeaders::AccelerationZ:
           defaultValue = 0.0;
           break;
         default:

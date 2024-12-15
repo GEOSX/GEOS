@@ -63,6 +63,7 @@ public:
    * @param[in] jacobian The ArrayView holding the jacobian for each quardrature point.
    * @param[in] materialDirection The ArrayView holding the material direction for each element/particle.
    * @param[in] lengthScale The ArrayView holding the length scale for each element.
+   * @param[in] strengthScale The ArrayView holding the strength scale for each element.
    * @param[in] failureStrength The failure strength.
    * @param[in] crackSpeed The crack speed velocity.
    * @param[in] thermalExpansionCoefficient The ArrayView holding the thermal expansion coefficient data for each element.
@@ -86,6 +87,7 @@ public:
                    arrayView2d< real64 > const & damage,
                    arrayView2d< real64 > const & jacobian,
                    arrayView1d< real64 > const & lengthScale,
+                   arrayView1d< real64 > const & strengthScale,
                    real64 const & failureStrength,
                    real64 const & crackSpeed,
                    real64 const & damagedMaterialFrictionalSlope,
@@ -131,6 +133,7 @@ public:
     m_damage( damage ),
     m_jacobian( jacobian ),
     m_lengthScale( lengthScale ),
+    m_strengthScale( strengthScale ),
     m_failureStrength( failureStrength ),
     m_crackSpeed( crackSpeed ),
     m_damagedMaterialFrictionalSlope( damagedMaterialFrictionalSlope ),
@@ -334,6 +337,9 @@ private:
 
   /// A reference to the ArrayView holding the length scale for each element/particle.
   arrayView1d< real64 > const m_lengthScale;
+
+  /// Discretization-sized variable: The strength scale for each element/particle
+  arrayView1d< real64 > const m_strengthScale;
 
   /// The maximum theoretical strength
   real64 const m_failureStrength;
@@ -614,8 +620,10 @@ void GraphiteUpdates::smallStrainUpdateHelper( localIndex const k,
     LvArray::tensorOps::Ri_eq_symAijBj< 3 >( temp, stress, unrotatedMaterialDirection );
     real64 planeNormalStress = LvArray::tensorOps::AiBi< 3 >( unrotatedMaterialDirection, temp );
 
+    real64 failureStrength = m_failureStrength * m_strengthScale[k];
+
     // increment damage, but enforce 0<=d<=1
-    if ( planeNormalStress > m_failureStrength )
+    if ( planeNormalStress > failureStrength )
     {
         real64 timeToFailure = m_lengthScale[k] / m_crackSpeed;
         m_damage[k][q] = std::min( m_damage[k][q] + timeIncrement / timeToFailure, 1.0 );
@@ -669,8 +677,8 @@ void GraphiteUpdates::smallStrainUpdateHelper( localIndex const k,
     // "distortion" shear relating sigma normal and in-plane iso"
     x1 = 0;
     x2 = m_distortionShearResponseX2;
-    y1 = m_distortionShearResponseY1;
-    y2 = m_distortionShearResponseY2;
+    y1 = m_distortionShearResponseY1 * m_strengthScale[k];
+    y2 = m_distortionShearResponseY2 * m_strengthScale[k];
     m1 = m_distortionShearResponseM1;
 
     // damage or softening reduces cohesion and reduces slope to failed value.
@@ -694,8 +702,8 @@ void GraphiteUpdates::smallStrainUpdateHelper( localIndex const k,
     // Coupled shear response (slip on weak plane)
     x1 = 0;
     x2 = m_coupledShearResponseX2;
-    y1 = m_coupledShearResponseY1;
-    y2 = m_coupledShearResponseY2;
+    y1 = m_coupledShearResponseY1 * m_strengthScale[k];
+    y2 = m_coupledShearResponseY2 * m_strengthScale[k];
     m1 = m_coupledShearResponseM1;
 
     // damage or softening reduces cohesion and reduces slope to failed value.
@@ -719,8 +727,8 @@ void GraphiteUpdates::smallStrainUpdateHelper( localIndex const k,
     // In-plane shear response
     x1 = 0;
     x2 = m_inPlaneShearResponseX2; 
-    y1 = m_inPlaneShearResponseY1;
-    y2 = m_inPlaneShearResponseY2;
+    y1 = m_inPlaneShearResponseY1 * m_strengthScale[k];
+    y2 = m_inPlaneShearResponseY2 * m_strengthScale[k];
     m1 = m_inPlaneShearResponseM1;
 
     // damage or softening reduces cohesion and reduces slope to failed value.
@@ -1215,6 +1223,9 @@ public:
     /// string/key for element/particle length scale
     static constexpr char const * lengthScaleString() { return "lengthScale"; }
 
+    /// string/key for element/particle length scale
+    static constexpr char const * strengthScaleString() { return "strengthScale"; }
+
     /// string/key for maximum strength
     static constexpr char const * failureStrengthString() { return "failureStrength"; }
 
@@ -1296,6 +1307,7 @@ public:
                             m_damage,
                             m_jacobian,
                             m_lengthScale,
+                            m_strengthScale,
                             m_failureStrength,
                             m_crackSpeed,
                             m_damagedMaterialFrictionalSlope,
@@ -1348,6 +1360,7 @@ public:
                           m_damage,
                           m_jacobian,
                           m_lengthScale,
+                          m_strengthScale,
                           m_failureStrength,
                           m_crackSpeed,
                           m_damagedMaterialFrictionalSlope,
@@ -1565,6 +1578,9 @@ protected:
   /// Discretization-sized variable: The length scale for each element/particle
   array1d< real64 > m_lengthScale;
 
+  /// Discretization-sized variable: The strength scale for each element/particle
+  array1d< real64 > m_strengthScale;
+
   /// Material parameter: The value of the failure strength
   real64 m_failureStrength;
 
@@ -1597,4 +1613,4 @@ protected:
 
 } /* namespace geos */
 
-#endif /* GEOSX_CONSTITUTIVE_SOLID_KINEMATICDAMAGE_HPP_ */
+#endif /* GEOSX_CONSTITUTIVE_SOLID_GRAPHITE_HPP_ */

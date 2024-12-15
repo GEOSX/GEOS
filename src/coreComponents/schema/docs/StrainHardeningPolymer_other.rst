@@ -13,6 +13,7 @@ plasticStrain               real64_array3d Array of element/particle plastic str
 shearModulus                real64_array   Elastic Shear Modulus Field                           
 stress                      real64_array3d Current Material Stress                               
 thermalExpansionCoefficient real64_array   Linear Thermal Expansion Coefficient Field            
+wavespeed                   real64_array2d Current Material Wavespeed                            
 yieldStrength               real64_array   Array of element/particle yield strength values       
 =========================== ============== ===================================================== 
 

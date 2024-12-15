@@ -40,6 +40,7 @@ Graphite::Graphite( string const & name, Group * const parent ):
   m_damage(),
   m_jacobian(),
   m_lengthScale(),
+  m_strengthScale(),
   m_failureStrength(),
   m_crackSpeed(),
   m_damagedMaterialFrictionalSlope(),
@@ -191,7 +192,12 @@ registerWrapper( viewKeyStruct::jacobianString(), &m_jacobian ).
   registerWrapper( viewKeyStruct::lengthScaleString(), &m_lengthScale ).
     setApplyDefaultValue( DBL_MIN ).
     setPlotLevel( PlotLevel::NOPLOT ).
-    setDescription( "Array of quadrature point damage values" );
+    setDescription( "Array of quadrature point length scale values" );
+
+  registerWrapper( viewKeyStruct::strengthScaleString(), &m_strengthScale ).
+    setApplyDefaultValue( 1.0 ).
+    setPlotLevel( PlotLevel::NOPLOT ).
+    setDescription( "Array of quadrature point strength scale values" );
 
   registerWrapper( viewKeyStruct::effectiveBulkModulusString(), &m_effectiveBulkModulus ).
     setInputFlag( InputFlags::FALSE ).
@@ -225,6 +231,7 @@ void Graphite::allocateConstitutiveData( dataRepository::Group & parent,
   m_damage.resize( 0, numConstitutivePointsPerParentIndex );
   m_jacobian.resize( 0, numConstitutivePointsPerParentIndex );
   m_lengthScale.resize( 0 );
+  m_strengthScale.resize( 0 );
 }
 
 

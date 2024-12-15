@@ -148,17 +148,19 @@ bool EventManager::run( DomainPartition & domain )
   // Note: if currentSubEvent > 0, then we are resuming from a restart file
   while((m_time < m_maxTime) && (m_cycle < m_maxCycle) && (exitFlag == 0))
   {
+
     // Determine the cycle timestep
     if( m_currentSubEvent == 0 )
     {
       // The max dt request
-      m_dt = m_maxTime - m_time;
+      m_dt = m_maxTime - m_time;  
 
       // Determine the dt requests for each event
       for(; m_currentSubEvent<this->numSubGroups(); ++m_currentSubEvent )
       {
         EventBase * subEvent = static_cast< EventBase * >( this->getSubGroups()[m_currentSubEvent] );
         m_dt = std::min( subEvent->getTimestepRequest( m_time ), m_dt );
+        GEOS_LOG_RANK_0( "m_currentSubEvent: " << m_currentSubEvent << ", subEvent name: " << subEvent->getEventName() );
       }
       m_currentSubEvent = 0;
 
@@ -183,7 +185,7 @@ bool EventManager::run( DomainPartition & domain )
       // Print debug information for logLevel >= 1
       GEOS_LOG_LEVEL_RANK_0( 1, GEOS_FMT( "Event: {} ({}), dt_request={}, forecast={}",
                                           m_currentSubEvent, subEvent->getName(), subEvent->getCurrentEventDtRequest(), subEvent->getForecast() ) );
-
+      
       // Execute, signal events
       bool earlyReturn = false;
       if( subEvent->hasToPrepareForExec() )

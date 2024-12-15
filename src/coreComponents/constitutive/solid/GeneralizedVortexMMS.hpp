@@ -29,8 +29,8 @@
  * integrated and tracked by this model.
  */
 
-#ifndef GEOSX_CONSTITUTIVE_SOLID_KINEMATICDAMAGE_HPP
-#define GEOSX_CONSTITUTIVE_SOLID_KINEMATICDAMAGE_HPP
+#ifndef GEOSX_GENERALIZEDVORTEXMMS_HPP
+#define GEOSX_GENERALIZEDVORTEXMMS_HPP
 
 #include "ElasticIsotropic.hpp"
 #include "InvariantDecompositions.hpp"
@@ -393,4 +393,4 @@ protected:
 
 } /* namespace geos */
 
-#endif /* GEOSX_CONSTITUTIVE_SOLID_KINEMATICDAMAGE_HPP_ */
+#endif /* GEOSX_CONSTITUTIVE_SOLID_GENERALIZEDVORTEXMMS_HPP_ */

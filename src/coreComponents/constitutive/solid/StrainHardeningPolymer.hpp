@@ -390,7 +390,7 @@ void StrainHardeningPolymerUpdates::smallStrainUpdateHelper( localIndex const k,
     real64 unrotatedDeformationGradient[3][3] = { { 0 } };
     LvArray::tensorOps::Rij_eq_AikBkj< 3, 3, 3>( unrotatedDeformationGradient, rotationTranspose, m_deformationGradient[k] );
 
-    real64 U[6];
+    real64 U[6] = { 0.0 };
     LvArray::tensorOps::denseToSymmetric< 3 >( U, unrotatedDeformationGradient );
 
     real64 stretch[3] = { 0 };
@@ -475,7 +475,7 @@ void StrainHardeningPolymerUpdates::smallStrainUpdateHelper( localIndex const k,
         LvArray::tensorOps::copy< 6 >(unrotatedNewPlasticStrain, unrotatedOldPlasticStrain);
         LvArray::tensorOps::add< 6 >(unrotatedNewPlasticStrain, plasticStrainIncrement);
 
-        if(std::abs(yieldStrength - oldYieldStrength) < tol)
+        if( std::abs(yieldStrength - oldYieldStrength) < tol)
         {
           unrotatedNewPlasticStrain[3] *= 0.5;
           unrotatedNewPlasticStrain[4] *= 0.5;
@@ -739,4 +739,4 @@ protected:
 
 } /* namespace geos */
 
-#endif /* GEOSX_CONSTITUTIVE_SOLID_KINEMATICDAMAGE_HPP_ */
+#endif /* GEOSX_CONSTITUTIVE_SOLID_STRAINHARDENINGPOLYMER_HPP_ */

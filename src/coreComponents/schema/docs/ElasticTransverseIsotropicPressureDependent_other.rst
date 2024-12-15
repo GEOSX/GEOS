@@ -25,6 +25,7 @@ refC44                      real64         Reference elastic Stiffness Field C44
 refC66                      real64         Reference elastic Stiffness Field C66 at 0 pressure                   
 stress                      real64_array3d Current Material Stress                                               
 thermalExpansionCoefficient real64_array   Linear Thermal Expansion Coefficient Field                            
+wavespeed                   real64_array2d Current Material Wavespeed                                            
 =========================== ============== ===================================================================== 
 
 

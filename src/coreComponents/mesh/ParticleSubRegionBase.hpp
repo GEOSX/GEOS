@@ -150,7 +150,7 @@ public:
   arrayView1d< real64 > getParticlePorosity()
   { return m_particlePorosity; }
 
-    /**
+   /**
    * @brief Get the temperature of each particle in this subregion.
    * @return an arrayView1d of const particle temperature
    */
@@ -234,7 +234,7 @@ public:
    * @copydoc getParticleAcceleration() const
    */
   arrayView2d< real64 > getParticleAcceleration()
-  { return m_particleAcceleration; }  
+  { return m_particleAcceleration; }
 
   /**
    * @brief Get the material direction of each particle in this subregion.
@@ -428,7 +428,7 @@ public:
     /// @return String key for the member level field for the particle porosity.
     static constexpr char const * particlePorosityString() { return "particlePorosity"; }
 
-        /// @return String key for the member level field for the particle temperature.
+    /// @return String key for the member level field for the particle temperature.
     static constexpr char const * particleTemperatureString() { return "particleTemperature"; }
 
     /// @return String key for the member level field for the particle strength scale.
@@ -442,9 +442,6 @@ public:
 
     /// @return String key for the member level field for the particle velocity.
     static constexpr char const * particleVelocityString() { return "particleVelocity"; }
-
-    /// @return String key for the member level field for the particle acceleration.
-    static constexpr char const * particleAccelerationString() { return "particleAcceleration"; }    
 
     /// @return String key for the member level field for the particle material direction.
     static constexpr char const * particleMaterialDirectionString() { return "particleMaterialDirection"; }

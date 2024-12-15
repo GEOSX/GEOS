@@ -23,14 +23,14 @@
 #include "mesh/generators/ExternalMeshGeneratorBase.hpp"
 
 template<typename Enum>
-constexpr auto EnumSize = static_cast< int >(Enum::Count);
+constexpr auto EnumSize = static_cast< int >(Enum::COUNT);
 
 namespace geos
 {
 
 class ParticleManager;
 class SpatialPartition;
-  
+
 /**
  * @class ParticleMeshGenerator
  * @brief The ParticleMeshGenerator class is a class handling import of particle data from an externel particle file.
@@ -55,7 +55,7 @@ public:
     VelocityZ,
     AccelerationX,
     AccelerationY,
-    AccelerationZ,    
+    AccelerationZ,
     MaterialType,
     ParticleType,
     ContactGroup,
@@ -85,7 +85,8 @@ public:
     SurfaceTractionX,
     SurfaceTractionY,
     SurfaceTractionZ,
-    Count
+    // DistanceToCrackTip,
+    COUNT   // holds the number of particle column header options e.g. 30 for [0-29]
   };
 
   /**
@@ -184,6 +185,7 @@ ENUM_STRINGS( ParticleMeshGenerator::ParticleColumnHeaders,
               "SurfaceTractionX",
               "SurfaceTractionY",
               "SurfaceTractionZ",
+              // "DistanceToCrackTip",
               "COUNT" );
 
 } /* namespace geos */
