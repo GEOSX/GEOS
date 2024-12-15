@@ -877,6 +877,9 @@ protected:
   int m_LBar;
   real64 m_LBarScale;
   int m_exactJIntegration;
+  int m_useAPIC;
+  int m_useInteralForceAsFaceReaction;
+  
   real64 m_maxParticleVelocity;
   real64 m_maxParticleVelocitySquared;
   real64 m_minParticleJacobian;
@@ -911,6 +914,7 @@ protected:
   int m_treatFullyDamagedAsSingleField;
   int m_surfaceDetection;
   int m_damageFieldPartitioning;
+
 
 
   int m_useSurfacePositionForContact;

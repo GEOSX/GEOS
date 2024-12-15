@@ -38,7 +38,7 @@ pfw["zmin"] =-0.5*domainLength # mm
 pfw["zmax"] = 0.5*domainLength # mm
 
 refine=2  # partitions in each direction
-cpp=3     # cells per partition in each direction
+cpp=6     # cells per partition in each direction
 
 pfw["xpar"]=refine
 pfw["ypar"]=refine
@@ -54,14 +54,14 @@ pfw["ppc"]=2               # particles per cell in each direction
 pfw["mBatch"]=True
 pfw["mWallTime"]="00:30:00"
 pfw["mCores"]=pfw["xpar"]*pfw["ypar"]*pfw["zpar"]
-pfw["mNodes"]=int(np.ceil(float(pfw["mCores"])/36.)) 
+pfw["mNodes"]=int(np.ceil(float(pfw["mCores"])/112.)) 
 pfw["mSubmitJobs"]=False
 
 # GEOSX MPM SOLVER PARAMETERS -------------------------------------------------------------------
 
 pfw["endTime"]=stopTime
-pfw["plotInterval"]=stopTime/100
-pfw["restartInterval"]=stopTime
+pfw["plotInterval"] = stopTime / 12.0
+pfw["restartInterval"] = stopTime / 1
 pfw['lastRestartBufferInSeconds'] = 0.
 
 pfw["timeIntegrationOption"]="ExplicitDynamic"
@@ -83,14 +83,15 @@ pfw["updateOrder"]=2
 pfw["fTableInterpType"]='Smoothstep'
 pfw["prescribedBoundaryFTable"]=1
 pfw["fTable"]=[[0,	 1,	    1,	1],
-               [10,	 1.001,	1,	1],
-               [20,	 1.002,	1,	1],
-               [25,	 1,	    1,	1]
+               # [10,	 1.0125,	1,	1],
+               # [20,	 1.025,	1,	1],
+               [25,	 0.9925,	    1,	1]
                ]
 
 pfw["prescribedBcTable"]=1    
 pfw["bcTable"]=[[0,   2, 2, 2, 2, 2, 2],
-                [10,  2, 2, 0, 0, 0, 0],
+                # [10,  2, 2, 0, 0, 0, 0],
+                [20,  2, 2, 0, 0, 0, 0],
                 [100, 2, 2, 0, 0, 0, 0]]
 
 # MATERIAL PROPERTIES --------------------------------------------------------------------

@@ -1807,7 +1807,7 @@ int GeomechanicsUpdates::computeSubstep( real64 const ( & D )[6],         // str
     //if(fabs(I1_trial - I1_new)>(m_mat_geo_B0[p_mat]*TOL) && Sign(I1_trial - I1_new)!=Sign(I1_trial - I1_0)){
     real64 sgnI1tmn = ( (I1_trial - I1_new) < 0.0 ) ? ( -1.0 ) : ( 1.0 );
     real64 sgnI1tm0 = ( (I1_trial - I1_0) < 0.0 ) ? ( -1.0 ) : ( 1.0 );
-    if( fabs( sgnI1tmn - sgnI1tm0 ) > 1e-12 ){
+    if( std::abs( sgnI1tmn - sgnI1tm0 ) > 1e-12 ){
       eta_out = eta_mid;
       if( i >= imax ){
         // solution failed to converge within the allowable iterations, which means
