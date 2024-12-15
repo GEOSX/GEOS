@@ -1,0 +1,7 @@
+// config.h.in
+#pragma once
+
+namespace config{
+	constexpr int mpmProfiler = @MPMPROFILER_OPTION@;
+	constexpr int mpmP2GChoice = @MPMP2G_OPTION@;
+}
