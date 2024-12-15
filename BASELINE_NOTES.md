@@ -12,7 +12,7 @@ Refine inputFiles/compositionalMultiphaseFlow: shift reference pressures to init
 
 PR #3450 (2024-12-14)
 =====================
-Fix time step selecor flaw in SolidMechanicsLagrangeContact.
+Fix timestep selector flaw in SolidMechanicsLagrangeContact.
 
 PR #3450 (2024-12-08)
 =====================
