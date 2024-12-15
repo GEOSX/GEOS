@@ -35,3 +35,8 @@ set( ENABLE_HYPRE_MIXINT ON CACHE STRING "" )
 
 # TPLs
 include(${CMAKE_CURRENT_LIST_DIR}/../tpls.cmake)
+
+# ATS
+set(USER $ENV{USER} CACHE STRING "")
+set(ATS_WORKING_DIR "/p/lustre2/${USER}/integratedTestsGEOS/${CONFIG_NAME}"  CACHE PATH "")
+set(ATS_BASELINE_DIR "/p/lustre2/${USER}/integratedTestsGEOS/baselines"  CACHE PATH "")
