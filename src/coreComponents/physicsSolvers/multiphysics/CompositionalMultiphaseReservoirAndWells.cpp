@@ -77,26 +77,39 @@ void
 CompositionalMultiphaseReservoirAndWells<>::
 setMGRStrategy()
 {
-  LinearSolverParameters & linearSolverParameters = this->m_linearSolverParameters.get();
+  LinearSolverParameters & linearSolverParameters = m_linearSolverParameters.get();
+
+  if( linearSolverParameters.preconditionerType != LinearSolverParameters::PreconditionerType::mgr )
+    return;
 
   linearSolverParameters.mgr.separateComponents = true;
   linearSolverParameters.dofsPerNode = 3;
 
-  if( flowSolver()->getLinearSolverParameters().mgr.strategy == LinearSolverParameters::MGR::StrategyType::compositionalMultiphaseHybridFVM )
+  if( dynamic_cast< CompositionalMultiphaseHybridFVM * >( this->flowSolver() ) )
   {
-    // add Reservoir
-    linearSolverParameters.mgr.strategy = LinearSolverParameters::MGR::StrategyType::compositionalMultiphaseReservoirHybridFVM;
-  }
-  else if( isThermal() )
-  {
-    m_linearSolverParameters.get().mgr.strategy = LinearSolverParameters::MGR::StrategyType::thermalCompositionalMultiphaseReservoirFVM;
-
+    if( isThermal() )
+    {
+      GEOS_ERROR( GEOS_FMT( "{}: MGR strategy is not implemented for thermal {}/{}",
+                            this->getName(), this->getCatalogName(), this->flowSolver()->getCatalogName()));
+    }
+    else
+    {
+      linearSolverParameters.mgr.strategy = LinearSolverParameters::MGR::StrategyType::compositionalMultiphaseReservoirHybridFVM;
+    }
   }
   else
   {
-    // add Reservoir
-    linearSolverParameters.mgr.strategy = LinearSolverParameters::MGR::StrategyType::compositionalMultiphaseReservoirFVM;
+    if( isThermal() )
+    {
+      m_linearSolverParameters.get().mgr.strategy = LinearSolverParameters::MGR::StrategyType::thermalCompositionalMultiphaseReservoirFVM;
+    }
+    else
+    {
+      linearSolverParameters.mgr.strategy = LinearSolverParameters::MGR::StrategyType::compositionalMultiphaseReservoirFVM;
+    }
   }
+  GEOS_LOG_LEVEL_RANK_0( 1, GEOS_FMT( "{}: MGR strategy set to {}", getName(),
+                                      EnumStrings< LinearSolverParameters::MGR::StrategyType >::toString( linearSolverParameters.mgr.strategy )));
 }
 
 template<>
@@ -104,21 +117,25 @@ void
 CompositionalMultiphaseReservoirAndWells< MultiphasePoromechanics<> >::
 setMGRStrategy()
 {
-  LinearSolverParameters & linearSolverParameters = this->m_linearSolverParameters.get();
+  LinearSolverParameters & linearSolverParameters = m_linearSolverParameters.get();
+
+  if( linearSolverParameters.preconditionerType != LinearSolverParameters::PreconditionerType::mgr )
+    return;
 
   linearSolverParameters.mgr.separateComponents = true;
   linearSolverParameters.dofsPerNode = 3;
 
-  // flow solver here is indeed flow solver, not poromechanics solver
-  if( flowSolver()->getLinearSolverParameters().mgr.strategy == LinearSolverParameters::MGR::StrategyType::compositionalMultiphaseHybridFVM )
+  if( dynamic_cast< CompositionalMultiphaseHybridFVM * >( this->flowSolver() ) )
   {
-    GEOS_ERROR( "The poromechanics MGR strategy for hybrid FVM is not implemented" );
+    GEOS_ERROR( GEOS_FMT( "{}: MGR strategy is not implemented for {}/{}",
+                          this->getName(), this->getCatalogName(), this->flowSolver()->getCatalogName() ) );
   }
   else
   {
-    // add Reservoir
     linearSolverParameters.mgr.strategy = LinearSolverParameters::MGR::StrategyType::multiphasePoromechanicsReservoirFVM;
   }
+  GEOS_LOG_LEVEL_RANK_0( 1, GEOS_FMT( "{}: MGR strategy set to {}", getName(),
+                                      EnumStrings< LinearSolverParameters::MGR::StrategyType >::toString( linearSolverParameters.mgr.strategy )));
 }
 
 template< typename RESERVOIR_SOLVER >
@@ -138,15 +155,6 @@ initializePreSubGroups()
                            this->getDataContext(), CompositionalMultiphaseBase::viewKeyStruct::useMassFlagString(),
                            Base::reservoirSolver()->getDataContext(), Base::wellSolver()->getDataContext() ),
                  InputError );
-}
-
-template< typename RESERVOIR_SOLVER >
-void
-CompositionalMultiphaseReservoirAndWells< RESERVOIR_SOLVER >::
-initializePostInitialConditionsPreSubGroups()
-{
-  Base::initializePostInitialConditionsPreSubGroups();
-  setMGRStrategy();
 }
 
 template< typename RESERVOIR_SOLVER >
