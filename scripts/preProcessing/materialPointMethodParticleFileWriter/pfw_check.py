@@ -2,11 +2,23 @@
 from __future__ import print_function    # (at top of module)
 from __future__ import division
 from __future__ import unicode_literals
+import numpy as np                   # math stuff
+from sklearn.neighbors import KDTree # nearest neighbor search with KDTree
+from mpl_toolkits.mplot3d import Axes3D
+import matplotlib.pyplot as plt
+import datetime
+import time
 import datetime                               # used for date stamp
 import os                                     # operating sys commands, pwd, etc.
-import subprocess                             # lets you call msub and get jobid etc
+from subprocess import call                   # lets you call shell commands, i.e. call(["ln", "-s",".","run_dir"])
+import subprocess                             # lets you call msub and get jobid
 import sys                                    # to access command arguments.
-import importlib                              # to import userDefs
+import platform                               # gives access to node name for machine-specific changes.
+import importlib
+import random                                 # used to define a random material type
+import pfw_geometryObjects as geom            # this contains all the geometry object functions for pfw
+import re
+import getpass
 
 def reverse_readline(filename, buf_size=8192):
     """A generator that returns the lines of a file in reverse order"""
@@ -40,10 +52,35 @@ def reverse_readline(filename, buf_size=8192):
         if segment is not None:
             yield segment
 
+
+# ============================================================================================
+# MACHINE-SPECIFIC Calculations.
+# ============================================================================================
+
+# List of cores per node of LC (or other) machines.  
+machineList = {
+  'lassen':44,
+  'dane':112,
+  'ruby':56,
+  'rzhound':56,
+  'tioga':64
+}
+
+node = platform.node()
+for key, value in machineList.items():
+  if key in node:
+    machine = key
+    coresPerNode = value
+    # This could be unsafe if someone added a machines name we use elsewhere.
+    # Currently we test if lassen=True for various MPI tasks.
+    exec(key+'=True')
+  else:
+    exec(key+'=False')
+
 # ##################################################################
 # # READ IN JOB FILE TO GET USER PARAMETERS FOR THE SIMULATION
 # ##################################################################
-username = os.getenv('LOGNAME') or os.getenv('USER') or os.getenv('LNAME') or os.getenv('USERNAME')
+username = getpass.getuser()
 userDefsFile = str('userDefs_'+str(username))
 
 try:
@@ -71,16 +108,26 @@ job = importlib.import_module(inputFile)
 
 pfw = job.pfw
 
+
+
 # parameters for batch job:
 mBatch = pfw["mBatch"]
 mBank = pfw["mBank"]
 mWallTime = pfw["mWallTime"]
-mNodes = pfw["mNodes"]
+
 mCores = pfw["mCores"]
+# We used to set this manually, but coresPerNode changes with each machine.
+# This will ensure consistency since we now have that value for each platform.
+#mNodes = pfw["mNodes"]
+mNodes= int(np.ceil(float(mCores)/float(coresPerNode))) 
+print('machine = ',machine,', mNodes = ',mNodes,', mCores = ',mCores,', coresPerNode = ',coresPerNode)
+
+
 xpar = pfw["xpar"]
 ypar = pfw["ypar"]
 zpar = pfw["zpar"]
-# stopTime = pfw["stopTime"]
+
+
 
 [wH,wM,wS]=mWallTime.split(":")
 mWallTimeMinutes=int(wH)*60+int(wM)
@@ -103,10 +150,19 @@ for line in reverse_readline(slurmFile):
     jobExitedForUnknownReason = False
     break
 
-  if 'Job exited early' in line or 'TIME LIMIT' in line:
+  if 'Job exited early' in line or 'TIME LIMIT' in line or 'NODE FAILURE' in line:
     jobExitedForUnknownReason = False
     needsRestart= True
     break
+
+  # if 'Time:' in line:
+  #   line_terms = re.split(": |, |\s", line)
+  #   print(line_terms)
+  #   lastTimestep = float(line_terms[1])
+  #   print("Last timestep was", lastTimestep)
+  #   jobExitedForUnknownReason = False
+  #   break
+
 
 if jobExitedForUnknownReason:
   print("Job interrupted for unknown reason.")
@@ -167,7 +223,7 @@ srun -n """+str(mCores)+""" """+geosPath+""" -i """+geosInputFileName+""" -x """
   print('run_check output = ',output.strip())
 
   slurmScript = """#!/bin/bash
-#SBATCH -t 00:15:00
+#SBATCH -t 00:02:00
 #SBATCH -N 1
 #SBATCH -p """+ partition +"""
 #SBATCH -A """+mBank+"""
@@ -181,5 +237,5 @@ python3 pfw_check.py """+inputFile+""" """+jobID+"""
   file.write(slurmScript)
   file.close()
   
-  subprocess.call(["sbatch",fileName], cwd=PWD)
+  call(["sbatch",fileName], cwd=PWD)
 

@@ -3,28 +3,59 @@
 Created on Wed Mar 1 09:00:00 2017
 
 @author: homel1
+         crook5
 
-Script to automate generation of a GEOS-MPM input file and particle file
+Script to automate generation of a GEOSX-MPM input file and particle file
 based on geometric objects.
+
+Particle file format depends on specified plotting fields.
+
 """
 from __future__ import print_function    # (at top of module)
 from __future__ import division
 from __future__ import unicode_literals
 import numpy as np                   # math stuff
 from sklearn.neighbors import KDTree # nearest neighbor search with KDTree
+from mpl_toolkits.mplot3d import Axes3D
+import matplotlib.pyplot as plt
+import datetime
 import time
 import datetime                               # used for date stamp
 import os                                     # operating sys commands, pwd, etc.
+from subprocess import call                   # lets you call shell commands, i.e. call(["ln", "-s",".","run_dir"])
 import subprocess                             # lets you call msub and get jobid
 import sys                                    # to access command arguments.
 import importlib
 import random                                 # used to define a random material type
 import pfw_geometryObjects as geom            # this contains all the geometry object functions for pfw
 import math
+import getpass
 import platform
+import difflib
 
-lassen = 'lassen' in platform.node()
-username = os.getenv('LOGNAME') or os.getenv('USER') or os.getenv('LNAME') or os.getenv('USERNAME')
+# ============================================================================================
+# MACHINE-SPECIFIC Calculations.
+# ============================================================================================
+
+# List of cores per node of LC (or other) machines.  TODO: allow user to append this in user defs.
+machineList = {
+  'lassen':44,
+  'dane':112,
+  'ruby':56,
+  'rzhound':56,
+  'tioga':64
+}
+
+node = platform.node()
+for key, value in machineList.items():
+  if key in node:
+    machine = key
+    coresPerNode = value
+    # This could be unsafe if someone added a machines name we use elsewhere.
+    # Currently we test if lassen=True for various MPI tasks.
+    exec(key+'=True')
+  else:
+    exec(key+'=False')
 
 # # MPI specific variables
 # there seems to be an issue with mpi4py and subprocess launching 
@@ -42,17 +73,29 @@ else:
   rank = comm.Get_rank()  # gets rank of current process 
   num_ranks = comm.Get_size() # total number of processes
 
+
 # ============================================================================================
 # BEGIN FUNCTION DEFINITIONS
 # ============================================================================================
 
+#This code calculates the similarity between two strings using the ndiff method from the difflib library. 
+def compute_similarity(input_string, reference_string):
+#The ndiff method returns a list of strings representing the differences between the two input strings.
+    diff = difflib.ndiff(input_string, reference_string)
+    diff_count = 0
+    for line in diff:
+      # a "-", indicating that it is a deleted character from the input string.
+        if line.startswith("-"):
+            diff_count += 1
+# calculates the similarity by subtracting the ratio of the number of deleted characters to the length of the input string from 1
+    return 1 - (diff_count / len(input_string))
 
 # ============================================================================================
 # END FUNCTION DEFINITIONS
 # ============================================================================================
 
-# There are places where we compare numpy array to string, currently works, 
-# might not in the future fix it, but for now so we don't spam the log file:
+# There are places where we compare numpy array to string, currently works, might not in the future
+# fix it, but for now so we don't spam the log file:
 # https://stackoverflow.com/questions/40659212/futurewarning-elementwise-comparison-failed-returning-scalar-but-in-the-futur
 import warnings
 warnings.simplefilter(action='ignore', category=FutureWarning)
@@ -61,19 +104,23 @@ warnings.simplefilter(action='ignore', category=FutureWarning)
 # READ FROM USER INPUT FILE
 # ===========================================
 
+username = getpass.getuser()
 userDefsFile = str('userDefs_'+str(username))
 
-if not os.path.exists(userDefsFile + ".py"):
-    raise FileNotFoundError("Please create a version of {} consistent with "
-      "your user name and geosx location".format(userDefsFile))
+try:
+  f = open(userDefsFile+".py")
+  # Do something with the file
+except IOError:
+  print("Please create a version of userDefs_OUN.py consistent with your user name and geosx location")
+finally:
+  f.close()
 
 userDefs = importlib.import_module(userDefsFile)
 geosPath = userDefs.geosPath
 
 # read timeStamp as argument.  If it's missing give a warning.
 if len(sys.argv) < 2:
-  print("usage : particleFileWriter.py fileName")
-  print("You must specify the fileName as arguments")
+  print("usage : particleFileWriter.py fileName \nYou must specify the fileName as arguments")
   sys.exit(1)
 
 # inputFile name (strip the extension just in case it was called that way)
@@ -97,17 +144,14 @@ timeStamp = str(now.year)[-2:]+str(now.month).zfill(2)+str(now.day).zfill(2) + \
 PWD = os.getcwd()
 
 # Variable Info
-# sortObjects: This is useful for large simulations with many object.  
-#              It constructs a subset of objects for each slice, and only 
-#              searches those. For granular asseblies of objects this should be
-#              much faster.  Not all objects have the necessary xmin and xmax 
-#              attribute, so this isn't default behavior. This shouldn't change 
-#              order of objects for first-in priority.
+# sortObjects: This is useful for large simulations with many object.  It constructs a subset of objects
+#              for each slice, and only searches those. For granular asseblies of objects this should be
+#              much faster.  Not all objects have the necessary xmin and xmax attribute, so this isnn't
+#              default behavior.  This shouldn't change order of objects for first-in priority.
 
 
-# If a specific variable needs a check before being written to solver string a 
-# handle to that function is added as a value in the dictionary below.
-# Value contains ( default value, flag to include in xml mpm solver parameter string or not )
+# If a specific variable needs a check before being written to solver string a handle to that function is added as a value in the dictionary below
+# Value contains ( default value, flag to include in xml mpm solver parameter string if not specified or not )
 parameters = { 'runDebug' : ( False, False ),
                'stopTime' : ( False, False),
                'mBank' : ( None, False ),
@@ -135,7 +179,7 @@ parameters = { 'runDebug' : ( False, False ),
                'ymax' : ( 1.0, False ),
                'zmin' : ( -0.5, False ),
                'zmax' : ( 0.5, False ),
-               'lastRestartBufferInSeconds' : ( 60, False ),
+               'lastRestartBufferInSeconds' : ( 10, False ),
                'objects' : ( None, False ),
                'sortObjects' : ( False, False ),
                'timeIntegrationOption': ( None, True ),
@@ -182,22 +226,47 @@ parameters = { 'runDebug' : ( False, False ),
                'endTime' : ( 1.0, False ),
                'plotInterval' : ( None, False ),
                'restartInterval' : ( None, False ),
-               'useSinusoidalDamageField' : ( False, False),  # TODO: maybe should disappear
+               'useSinusoidalDamageField' : ( False, False),
                'wavyCrack' : ( False, False),
                'particleRefinement' : ( None, False ),
                'mpmEventsString' : ( '', False ),
-               'particleFileFields' : (["Velocity",
-                                        "MaterialType",
-                                        "ContactGroup",
-                                        "SurfaceFlag",
-                                        "Damage",
-                                        "StrengthScale",
-                                        "RVectors"] , False) } 
-# TODO: SurfacePosition wasn't working with any of my GEOS builds so it's been
-#   commented out.
+               'maxParticleVelocity' : ( 10.0, True ),
+               'cohesiveFieldPartitioning' : ( 0, True),
+               'enableCohesiveFailure' : ( 0, True ),
+               'maxCohesiveNormalStress' : ( 0.01, True ),
+               'maxCohesiveShearStress' : ( 0.01, True ),
+               'characteristicNormalDisplacement' : ( 0.01, True ),
+               'characteristicTangentialDisplacement' : ( 0.01, True ),
+               'maxCohesiveNormalDisplacement' : ( 0.01, True ),
+               'maxCohesiveTangentialDisplacement' : ( 0.01, True ),
+               'prescribedBoundaryTransverseVelocities' : ( [[0.0, 0.0], [0.0, 0.0], [0.0, 0.0]], False ),
+               'particleFileFields' : (["Velocity",  # +3
+                                        "MaterialType", # +1
+                                        "ContactGroup", # +1
+                                        "SurfaceFlag", # +1
+                                        "RVector"] , False) } # +9
+
+# This must correspond to the order in which fields are written in the particle file below
+particleFieldOrder=["Velocity",
+                    "MaterialType",
+                    "ContactGroup",
+                    "SurfaceFlag",
+                    "Damage",
+                    "Porosity",
+                    "Temperature",
+                    "StrengthScale",
+                    "RVector",
+                    "MaterialDirection",
+                    "SurfaceNormal",
+                    "SurfacePosition",
+                    "SurfaceTraction",
+                    "ShrinkageFlag"]
+
 
 # New dictionary input approach
 pfw = job.pfw if hasattr(job, 'pfw') else {}
+
+
 
 tabIndent = 3*"  "  
 parameterStrings = []
@@ -212,15 +281,32 @@ for paramName, paramTuple in parameters.items():
   # Add global variable to be used by particle file writer
   globals()[paramName] = paramValue 
 
-# Add all remaining variables to mpmSolverParameterString that aren't specified 
-# here, but don't add them as global variables for script
+# Add all remaining variables to mpmSolverParameterString that aren't specified here, but don't add them as global variables for script
 for paramName, paramValue in pfw.items():
   if paramName not in parameters:
-    parameterStrings.append(tabIndent + paramName + '="' + str(paramValue).replace('[','{').replace(']','}') + '"' + '\n')
+
+    maxDiff = 0.0
+    closestParam = ""
+    for p, paramTuple in parameters.items():
+      newDiff = compute_similarity( paramName, p )
+      if newDiff > 0.5 and newDiff > maxDiff:
+        maxDiff = newDiff
+        closestParam = p
+
+    if maxDiff != 0.0:
+      print( paramName + " parameter not found, did you mean " + closestParam +  "?")
+    else:
+      print( paramName + " parameter not found")
+
+    parameterStrings.append(tabIndent + paramName + '="' + str(paramValue).replace('[','{').replace(']','}').replace('\'','') + '"' + '\n')
+    
 
 # Remove new line from last parameter to be added (for xml formatting)
 parameterStrings[-1] = parameterStrings[-1].replace('\n','')
 mpmSolverParameterString = ''.join(parameterStrings)
+
+# Remove fields form particleFileOrder the user does not wish to write to particle field (particleFieldOrder preseveres the correct header order for values written to the particle file)
+particleFieldOrder = [ f for f in particleFieldOrder if f in particleFileFields ]
 
 # Interior Domain
 # The geosx input xml file specifies and xmin,xmax, ni, etc. based on the total domain
@@ -244,11 +330,20 @@ if objects == None:
 # for a given run, that run will have its results ommited from the Hugoniot analysis.
 mPartition = mPartition if not runDebug else "pdebug" 
 
+# We used to set this manually, but coresPerNode changes with each machine.
+# This will ensure consistency since we now have that value for each platform.
+mNodes= int(np.ceil(float(mCores)/float(coresPerNode))) 
+print('machine = ',machine,', mNodes = ',mNodes,', mCores = ',mCores,', coresPerNode = ',coresPerNode)
+
+
 if mBank == None:
   # Get default bank from userdefs
+  username = getpass.getuser()
   userDefsFile = str('userDefs_'+str(username))
   userDefs = importlib.import_module(userDefsFile)
   mBank = userDefs.defaultBank
+
+
 
 
 [wH,wM,wS]=mWallTime.split(":")
@@ -258,8 +353,12 @@ if wallTimeMinutes > 60 and runDebug:
   wallTimeMinutes = 60
   mWallTime="01:00:00"
 
+maxRestartTime = wallTimeMinutes*60 - min(wallTimeMinutes,lastRestartBufferInSeconds)
 mWallTimeMinutes=str(wallTimeMinutes)
-maxRestartTime = wallTimeMinutes*60 - lastRestartBufferInSeconds
+
+coreHours = float(int(mCores))*(float(int(wH))+float(int(wM))/60.+float(int(wS))/3600.)
+cpuTimeCost = (23295./2000000.)*coreHours
+print('Approximate LC bank time cost for this simulation is $',cpuTimeCost,'.')
 
 # Material array
 if materials == None:
@@ -271,6 +370,8 @@ matsOrig = materials
 mats = str(matsOrig).replace("[",'"{')
 mats = mats.replace("]",'}"')
 mats = mats.replace("'","")
+
+particleTypesPerMat = [set() for m in materials]
 
 particleRefinement = particleRefinement if particleRefinement != None else [ 1 for i in range(len(materials)) ]# Create list of size materials all ones
 
@@ -300,7 +401,6 @@ if rank == 0:
 
 timer = time.time()
 particleFileName = 'mpmParticleFile_'+inputFile.replace('pfw_input_',"")
-headerFileName = 'mpmHeaderFile_'+inputFile.replace('pfw_input_',"")
 
 # interior discretizatiom
 nI = NI if periodic[0] else NI-2   # interior grid cells in the x-direction
@@ -329,6 +429,11 @@ nk = 1 if planeStrain else ppcz*nK
 dx = dX/ppcx
 dy = dY/ppcy
 dz = dZ if planeStrain else dZ/ppcz
+
+
+# Sum particle volume to compute volume fraction.
+particleVolume = 0.
+domainVolume = ( pfw["xmax"] - pfw["xmin"] )*( pfw["ymax"] - pfw["ymin"] )*( pfw["zmax"] - pfw["zmin"] ) 
 
 if generateParticleFile:
   print('Writing particle file...')
@@ -389,16 +494,23 @@ if generateParticleFile:
           z = zmin + (k - 0.5)*dz
 
           match = False
-          ob = 0;
+          ob = 0
 
           while (ob < len(sliceObjects) and match == False):
             object = sliceObjects[ob]
             ob = ob+1
             pt = np.array([x,y,z])
-            if( object.isInterior( pt ) ):
+            voxelFlag = object.isInterior( pt, surfaceDepth ) # Voxel flags greater than or equal to 0 denote interior regions of object
+            if( voxelFlag >= 0 ):
               match = True
 
-              # set the particle velocity to be the object velocity unless
+              # Get the particle type, default is CPDI
+              if hasattr(object, 'getParticleType'):
+                particleType = object.getParticleType( pt )
+              else:
+                particleType = object.particleType( object, pt ) if callable( object.particleType ) else object.particleType
+
+              # set the particle damage to be the object damage unless
               # overwritten by surface flags.
               if "Velocity" in particleFileFields:
                 if hasattr(object, 'getVelocity'):
@@ -409,8 +521,7 @@ if generateParticleFile:
               if "Damage" in particleFileFields:
                 # set the particle damage to be the object damage unless
                 # overwritten by surface flags.
-                # some internal function defines spatially varing initial damage
-                if hasattr(object, 'getDamage' ): 
+                if hasattr(object, 'getDamage' ): # some internal function defines spatially varing initial damage
                   damage = object.getDamage( pt )
                 else: # damage is constant for the object:
                   damage = object.damage(object, pt ) if callable( object.damage ) else object.damage
@@ -421,36 +532,53 @@ if generateParticleFile:
 
                 if(wavyCrack):
                   h = 2*dy
-                  val = 0.25 * (ymax - ymin) * np.cos(2.0*np.pi*(x-xmin)/(xmax-xmin)) + ymin + 0.5 * (ymax - ymin)
+                  val = 0.25 * (ymax - ymin) * np.cos(2.0*3.1415926535*(x-xmin)/(xmax-xmin)) + ymin + 0.5 * (ymax - ymin)
                   if( val - h < y and y < val + h ):
                     damage = 1
                   else:
                     damage = 0
 
+              if "Porosity" in particleFileFields:
+                if hasattr(object, 'getPorosity' ):
+                  porosity = object.getPorosity( pt )
+                else: # damage is constant for the object:
+                  porosity = object.porosity(object, pt ) if callable( object.porosity ) else object.porosity
+
+              if "Temperature" in particleFileFields:
+                if hasattr(object, 'getTemperature' ):
+                  temperature = object.getTemperature( pt )
+                else: # temperature is constant for the object:
+                  temperature = object.temperature(object, pt ) if callable( object.temperature ) else object.temperature
+
+
+              # Particle Surface Flags:
+              #  enum struct SurfaceFlag : integer
+              #  {
+              #    0: Interior,
+              #    1: FullyDamaged,
+              #    2: Surface,
+              #    3: Cohesive    
+              #  };
+
+
               if "SurfaceFlag" in particleFileFields:
                 # Surface flags need to be 2 for polymer model to not crash
-                surfaceFlag = object.isSurface( pt, surfaceDepth ) 
-                if isinstance(surfaceFlag, tuple):
-                  surfaceFlag = surfaceFlag[0]
-                elif surfaceFlag is None and not surfaceFlagError:
-                  print("SurfaceFlag value was not defined by", object.name)
-                  surfaceFlagError = True
+                surfaceFlag = voxelFlag #object.isSurface( pt, surfaceDepth ) 
 
-                surfacePosition = np.array([0.0, 0.0, 0.0])
-                if surfaceFlag != 0 and "SurfacePosition" in particleFileFields:
-                  if hasattr( object, 'surfacePosition' ):
-                    surfacePosition = object.surfacePosition( pt )
-                  elif surfacePosition is None and not surfacePositionError:
-                    print(" surfacePosition value is not defined by ", object.name)
-                    surfacePositionError = True
+              surfacePosition = np.array([0.0, 0.0, 0.0])
+              if "SurfacePosition" in particleFileFields and surfaceFlag != 0:
+                 surfacePosition = object.getSurfacePosition( pt )
+                
+              surfaceNormal = np.array([0.0, 0.0, 0.0])
+              if "SurfaceNormal" in particleFileFields and surfaceFlag != 0:
+                surfaceNormal = object.getSurfaceNormal( pt )
 
-                surfaceNormal = np.array([0.0, 0.0, 0.0])
-                if surfaceFlag != 0 and "SurfaceNormal" in particleFileFields:
-                  if hasattr( object, 'surfaceNormal' ):
-                    surfacePosition = object.surfaceNormal( pt )
-                  elif surfaceNormal is None and not surfaceNormalError:
-                    print(" surfaceNormal value is not defined by ", object.name)
-                    surfaceNormalError = True              
+              surfaceTraction = np.array([0.0,0.0,0.0])  
+              if "SurfaceTraction" in particleFileFields and surfaceFlag != 0:
+                if hasattr(object, 'getSurfaceTraction'):
+                  surfaceTraction = object.getSurfaceTraction( pt )
+                else:
+                  surfaceTraction = object.surfaceTraction(object, pt) if callable(object.surfaceTraction) else object.surfaceTraction
 
               if "MaterialType" in particleFileFields:
                 if hasattr(object, 'getMat'):
@@ -460,23 +588,23 @@ if generateParticleFile:
 
               if "ContactGroup" in particleFileFields:
                 if hasattr(object,'getGroup'):
-                  group = object.getGroup( pt )
+                    group = object.getGroup( pt )
                 else:
-                  try:
-                    group = object.group(object, pt)
-                  except:
-                    group = object.group
+                    if hasattr(object, 'group'):
+                      group = object.group
+                    else:
+                      group = 0
 
               if "MaterialDirection" in particleFileFields:
-                # material direction, These will be read from object, will 
-                #     default to [1,0,0] if not specified.
+                # material direction, These will be read from object, will default to [1,0,0] if not 
+                # specified.
                 if hasattr( object, 'getMatDir' ):
                   matDir = object.getMatDir( pt )
                 else:
                   if hasattr( object, 'matDir' ):
                     matDir = object.matDir( object, matDir ) if callable( object.matDir ) else object.matDir
                   else:
-                    matDir = [1.0, 0.0, 0.0]
+                    matDir = np.array([[1.0, 0.0, 0.0],[0.0, 1.0, 0.0],[0.0, 0.0, 1.0]])
   
               if "StrengthScale" in particleFileFields:
                 # object may have some constant or spatially varying strength scale.
@@ -492,6 +620,62 @@ if generateParticleFile:
                     else:
                       strengthScale = 1.0
 
+              # Check for fields with None values
+              # Get the particle type, default is CPDI
+              if particleType == None:
+                print("ParticleType value from", object.name,"was None!")
+                sys.exit(0)
+
+              if "Velocity" in particleFileFields and all(v is None for v in velocity):
+                print("Velocity value from", object.name,"was None!")
+                sys.exit(0)
+
+              if "Damage" in particleFileFields and damage == None:
+                print("Damage value from", object.name,"was None!")
+                sys.exit(0)
+
+              if "Porosity" in particleFileFields and porosity == None:
+                print("Porosity value from", object.name,"was None!")
+                sys.exit(0)
+
+              if "Temperature" in particleFileFields and temperature == None:
+                print("Temperature value from", object.name,"was None!")
+                sys.exit(0)
+
+              if "SurfaceFlag" in particleFileFields and surfaceFlag == None:
+                print("SurfaceFlag value from", object.name,"was None!")
+                sys.exit(0)
+
+              if "SurfacePosition" in particleFileFields and surfaceFlag != 0 and all(v is None for v in surfacePosition):
+                print("SurfacePosition value from", object.name,"was None!")
+                sys.exit(0)
+
+              if "SurfaceNormal" in particleFileFields and surfaceFlag != 0 and all(v is None for v in surfaceNormal):
+                print("SurfaceNormal value from", object.name,"was None!")
+                sys.exit(0)
+
+              if "SurfaceTraction" in particleFileFields and surfaceFlag != 0 and all(v is None for v in surfaceTraction):
+                print("SurfaceTraction value from", object.name,"was None!")
+                sys.exit(0)
+
+              if "MaterialType" in particleFileFields and mat == None:
+                print("MaterialType value from", object.name,"was None!")
+                sys.exit(0)
+
+              if "ContactGroup" in particleFileFields and group == None:
+                print("ContactGroup value from", object.name,"was None!")
+                sys.exit(0)
+
+              if "MaterialDirection" in particleFileFields and all(v is None for v in matDir):
+                print("MaterialDirection value from", object.name,"was None!")
+                sys.exit(0)
+  
+              if "StrengthScale" in particleFileFields and strengthScale == None:
+                print("Strengthscale value from", object.name,"was None!")
+                sys.exit(0)
+
+              particleTypesPerMat[mat].add( particleType )
+
               dxr = dx/particleRefinement[mat]
               dyr = dy/particleRefinement[mat]
               dzr = dz if planeStrain else dz/particleRefinement[mat]
@@ -503,62 +687,89 @@ if generateParticleFile:
                     yr = y - 0.5*dy + (rj + 0.5)*dyr
                     zr = z - 0.5*dz + (rk + 0.5)*dzr
                     
-                    # only create particle if mat>=0, that way we can specify 
-                    #     mat=-1 to generate a defect or void.
+                    # only create particle if mat>=0, that way we can specify mat=-1 to generate a 
+                    # defect or void.
                     if(mat>=0):
                       n_p = n_p + 1
+
+                      particleVolume += dxr*dyr*dzr
 
                       pString = str(n_p) + delim \
                                 + str(xr) + delim \
                                 + str(yr) + delim \
-                                + str(zr)
+                                + str(zr) + delim \
+                                + str(particleType)
 
-                      for field in particleFileFields:
-                        if field == "Velocity":
-                          pString = pString + delim + str(velocity[0]) + delim \
-                                                    + str(velocity[1]) + delim \
-                                                    + str(velocity[2])
+                      if "Velocity" in particleFileFields:
+                        pString = pString + delim + str(velocity[0]) + delim \
+                                                  + str(velocity[1]) + delim \
+                                                  + str(velocity[2])
 
-                        if field == "MaterialType":
-                          pString = pString + delim + str(mat)
-                          
-                        if field == "ContactGroup":
-                          pString = pString + delim + str(group)
+                      if "MaterialType" in particleFileFields:
+                        pString = pString + delim + str(mat)
+                        
+                      if "ContactGroup" in particleFileFields:
+                        pString = pString + delim + str(group)
 
-                        if field == "SurfaceFlag":
-                          pString = pString + delim + str(surfaceFlag)
+                      if "SurfaceFlag" in particleFileFields:
+                        pString = pString + delim + str(surfaceFlag)
 
-                        if field == "Damage":
-                          pString = pString + delim + str(damage)
+                      if "Damage" in particleFileFields:
+                        pString = pString + delim + str(damage)
 
-                        if field == "StrengthScale":
-                          pString = pString + delim + str(strengthScale)
+                      if "Porosity" in particleFileFields:
+                        pString = pString + delim + str(porosity)
 
-                        if field == "RVectors":
-                          pString = pString + delim + str(dxr*0.5) + delim \
-                                                    + str(0) + delim \
-                                                    + str(0) + delim \
-                                                    + str(0) + delim \
-                                                    + str(dyr*0.5) + delim \
-                                                    + str(0) + delim \
-                                                    + str(0) + delim \
-                                                    + str(0) + delim \
-                                                    + str(dzr*0.5)
+                      if "Temperature" in particleFileFields:
+                        pString = pString + delim + str(temperature)
 
-                        if field == "MaterialDirection":
-                          pString = pString + delim + str(matDir[0]) + delim \
-                                                    + str(matDir[1]) + delim \
-                                                    + str(matDir[2])
+                      if "StrengthScale" in particleFileFields:
+                        pString = pString + delim + str(strengthScale)
 
-                        if field == "SurfaceNormal":
-                          pString = pString + delim + str(surfaceNormal[0]) + delim \
-                                                    + str(surfaceNormal[1]) + delim \
-                                                    + str(surfaceNormal[2])
+                      if "RVector" in particleFileFields:
+                        pString = pString + delim + str(dxr*0.5) + delim \
+                                                  + str(0) + delim \
+                                                  + str(0) + delim \
+                                                  + str(0) + delim \
+                                                  + str(dyr*0.5) + delim \
+                                                  + str(0) + delim \
+                                                  + str(0) + delim \
+                                                  + str(0) + delim \
+                                                  + str(dzr*0.5)
 
-                        if field == "SurfacePosition":
-                          pString = pString + delim + str(surfacePosition[0]) + delim \
-                                                    + str(surfacePosition[1]) + delim \
-                                                    + str(surfacePosition[2])
+                      if "MaterialDirection" in particleFileFields:
+                        pString = pString + delim + str(matDir[0][0]) + delim \
+                                                  + str(matDir[0][1]) + delim \
+                                                  + str(matDir[0][2]) 
+
+                      # if "MaterialDirection" in particleFileFields:
+                      #   pString = pString + delim + str(matDir[0][0]) + delim \
+                      #                             + str(matDir[0][1]) + delim \
+                      #                             + str(matDir[0][2]) + delim \
+                      #                             + str(matDir[1][0]) + delim \
+                      #                             + str(matDir[1][1]) + delim \
+                      #                             + str(matDir[1][2]) + delim \
+                      #                             + str(matDir[2][0]) + delim \
+                      #                             + str(matDir[2][1]) + delim \
+                      #                             + str(matDir[2][2])
+
+                      if "SurfaceNormal" in particleFileFields:
+                        pString = pString + delim + str(surfaceNormal[0]) + delim \
+                                                  + str(surfaceNormal[1]) + delim \
+                                                  + str(surfaceNormal[2])
+                      
+                      if "SurfacePosition" in particleFileFields:
+                        pString = pString + delim + str(surfacePosition[0]) + delim \
+                                                  + str(surfacePosition[1]) + delim \
+                                                  + str(surfacePosition[2])
+
+                      if "SurfaceTraction" in particleFileFields:
+                        pString = pString + delim + str(surfaceTraction[0]) + delim \
+                                                  + str(surfaceTraction[1]) + delim \
+                                                  + str(surfaceTraction[2])
+
+                      if "ShrinkageFlag" in particleFileFields:
+                        pString = pString + delim + str( object.flag if hasattr( object, 'flag') else 0)
 
                       pString = pString +'\n'
                       particleFile.write(pString)
@@ -577,23 +788,37 @@ if generateParticleFile:
     # TODO: may be faster to use linux command
     with open(particleFileName, 'w') as outfile:
       # Write column headers
-      columnNames = "ID" + delim + "PositionX" + delim + "PositionY" + delim + "PositionZ"
-      for field in particleFileFields:
+      columnNames = "ID" + delim + "PositionX" + delim + "PositionY" + delim + "PositionZ" + delim + "ParticleType"
+      for field in particleFieldOrder:
         fieldString = field
 
-        if field == "Velocity" or field == "SurfaceNormal" or field == "MaterialDirection" or field == "SurfacePosition":
+        if field == "Velocity" or field == "SurfaceNormal" or field == "SurfacePosition" or field == "SurfaceTraction" or field == "MaterialDirection":
           fieldString = field + "X" + delim + field + "Y" + delim + field + "Z"
 
-        if field == "RVectors":
-          fieldString = "RVectorXX" + delim + \
-                        "RVectorXY" + delim + \
-                        "RVectorXZ" + delim + \
-                        "RVectorYX" + delim + \
-                        "RVectorYY" + delim + \
-                        "RVectorYZ" + delim + \
-                        "RVectorZX" + delim + \
-                        "RVectorZY" + delim + \
-                        "RVectorZZ"
+        if field == "RVector":
+          fieldString =  field + "XX" + delim + \
+                         field + "XY" + delim + \
+                         field + "XZ" + delim + \
+                         field + "YX" + delim + \
+                         field + "YY" + delim + \
+                         field + "YZ" + delim + \
+                         field + "ZX" + delim + \
+                         field + "ZY" + delim + \
+                         field + "ZZ"
+
+        # if field == "Velocity" or field == "SurfaceNormal" or field == "SurfacePosition":
+        #   fieldString = field + "X" + delim + field + "Y" + delim + field + "Z"
+
+        # if field == "RVector" or field == "MaterialDirection":
+        #   fieldString =  field + "XX" + delim + \
+        #                  field + "XY" + delim + \
+        #                  field + "XZ" + delim + \
+        #                  field + "YX" + delim + \
+        #                  field + "YY" + delim + \
+        #                  field + "YZ" + delim + \
+        #                  field + "ZX" + delim + \
+        #                  field + "ZY" + delim + \
+        #                  field + "ZZ"
 
         columnNames = columnNames + delim + fieldString
 
@@ -605,32 +830,17 @@ if generateParticleFile:
           for line in infile:
             n_p = n_p + 1
             # replace the per-rank id with an ordered global particle id:
-            outfile.write(str(n_p) + delim + line.split(delim, 1)[1])
-        subprocess.call(["rm",particleFileName+'_'+str(r)],cwd=PWD)
+            outfile.write(str(n_p) + ' ' + line.split(delim, 1)[1])
+        call(["rm",particleFileName+'_'+str(r)],cwd=PWD)
 
     print('Created n_p = ',n_p,' particles in t = ',time.time()-timer)
-
-
-  # ===========================================
-  # CREATE HEADER FILE
-  # ===========================================
-  if rank == 0:
-    print('Writing header file...')
-    headerFile = open(headerFileName, 'w')
-
-    # We hard-code in a single particle type (CPDI) for now
-    headerFile.write(str(len(matsOrig))+'\t'+'1'+'\n')
-    for i in range(len(matsOrig)):
-      headerFile.write(matsOrig[i]+'\t'+str(i)+'\n')
-    headerFile.write('CPDI\t'+str(n_p))
-
-    headerFile.close()
+    print('Particle volume = ',particleVolume,', Domain volume = ',domainVolume )
+    print('Particle volume fraction = ',particleVolume/domainVolume )
 
 
 # ===========================================
 # CREATE INPUT FILE
 # ===========================================
-
 print('rank = ',rank)
 if rank == 0:
   print('Writing input file...')
@@ -639,20 +849,47 @@ if rank == 0:
   particleTypeString=""
   particleRegionString=""
   targetRegionsString=""
-  for i in range(len(matsOrig)):
-    particleBlockString+="pb"+str(i+1)
-    particleTypeString+="CPDI"
-    targetRegionsString+="particles/ParticleRegion"+str(i+1)
-    if i<len(matsOrig)-1:
+  blockIndex = 0
+  numMats = len(matsOrig)
+  for i in range(numMats):
+    numTypes = len(particleTypesPerMat[i])
+    types = list(particleTypesPerMat[i])
+    regionBlocksStr = ""
+    for j in range(numTypes):
+      regionBlocksStr += "pb"+str(blockIndex)
+      
+      if types[j] == 0: # Single point
+        particleTypeString+="SinglePoint"
+      if types[j] == 1: # Single point with B-splines
+        particleTypeString+="SinglePointBSpline"
+      if types[j] == 2: # CPDI
+        particleTypeString+="CPDI"
+      if types[j] == 3: #CPTI
+        particleTypeString+="CPTI"
+      if types[j] == 4: #CPDI2
+        particleTypeString+="CPDI2"
+      if types[j] < 0 or types[j] > 4:
+        print("Unknown particle type!")
+        sys.exit(0)
+      
+      if j < numTypes-1:
+        regionBlocksStr+=", "
+      if i < numMats-1:
+        particleTypeString+=", "
+
+      blockIndex += 1
+    
+    particleBlockString += regionBlocksStr
+    targetRegionsString += "particles/ParticleRegion"+str(i+1)
+    if i < numMats-1:
       particleBlockString+=", "
-      particleTypeString+=", "
       targetRegionsString+=", "
     particleRegionString+="""
     <ParticleRegion
         name="ParticleRegion"""+str(i+1)+""""
         meshBody="particles"
-        particleBlocks="{ pb"""+str(i+1)+""" }"
-        materialList="""+'"{'+matsOrig[i]+'}"'+"""/>"""
+        particleBlocks="{ """+ regionBlocksStr + """ }"
+        materialList="{ """ + matsOrig[i] + """ }"/>"""
 
   geosxInputFileName = 'mpm_'+inputFile.replace('pfw_input_',"")+'.xml'
   geosxInputFile = open(geosxInputFileName, 'w')
@@ -674,18 +911,15 @@ srun -n """+str(mCores)+""" """+geosPath+""" -i """+geosxInputFileName+"""
       nx="""+'"{'+str(NI)+'}"'+"""
       ny="""+'"{'+str(NJ)+'}"'+"""
       nz="""+'"{'+str(NK)+'}"'+"""
+      periodic=""" + '"{ ' + str(int(periodic[0])) + ', ' + str(int(periodic[1])) + ', ' + str(int(periodic[2])) + '}"' + """
       cellBlockNames="{ cb1 }"/>
       
     <ParticleMesh
       name="particles"
       particleFile="""+'"'+particleFileName+'"'+"""
-      headerFile="""+'"'+headerFileName+'"'+"""
       particleBlockNames="{ """+particleBlockString+""" }"
       particleTypes="{ """+particleTypeString+""" }"/>
   </Mesh>
-
-  <SpatialPartition 
-    periodic=""" + '"{ ' + str(int(periodic[0])) + ', ' + str(int(periodic[1])) + ', ' + str(int(periodic[2])) + '}"' + """/>
 
   <ElementRegions>
     <CellElementRegion
@@ -757,6 +991,9 @@ srun -n """+str(mCores)+""" """+geosPath+""" -i """+geosxInputFileName+"""
 
   geosxInputFile.write(geosxInputFileString)
   geosxInputFile.close()
+
+
+
 
   # ===========================================
   #  Make a SLURM script to run GEOSX.
@@ -834,4 +1071,4 @@ echo "pfw_check script has completed, good bye."
     file = open(fileName, 'w')
     file.write(slurmScript)
     file.close()    
-    subprocess.call(["sbatch",fileName], cwd=PWD)
+    call(["sbatch",fileName], cwd=PWD)

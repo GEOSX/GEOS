@@ -1,0 +1,25 @@
+To use this you will need to have a working copy of GEOSX.  
+
+***Running***
+(1) create a copy of userDefs_username.py where username is your LC name (i.e. userDefs_homel1.py) and which points to your version of GEOSX executable.
+
+(2) modify/create an input file named "pfw_input_fileName.py", where "fileName" is whatever you want it to be.
+
+(3) create a copy of runClean.sh (e.g. runClean_homel1.sh), change fileName (line 5) and runLocation (line 10). The run location should be on lscratche or somewhere that can handle a large file.
+
+Note: when using git, don't add your vesions of userDefs_homel1.py or runClean_homel1.sh to the repo. These are specific to your file system and you don't want to have to change these everytime you checkout a different branch or merge with the MPMmerge branch.
+
+(4) to run from the directory "./runClean_username.sh"
+
+You will see some text splash as it creates the input files and it will indicate the number of particles created. If you see an "OOM" error you ran out of memory.
+
+change to the runDirectory to see the created files.
+
+type "squeue -u username " to see when the job will start.
+
+***Post processing***
+
+Open visit and load the set of output_*
+
+*You can add mesh (v_mesh for grid, p_mesh for particles), or add pseudocolor of particle data.
+*Vector plots are possible but seem to be buggy.
