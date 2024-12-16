@@ -13,8 +13,7 @@
       temperature="300">
       <NonlinearSolverParameters
         newtonTol="1.0e-9"
-        newtonMaxIter="15"
-        lineSearchMaxCuts="2"/>
+        newtonMaxIter="15"/>
       <LinearSolverParameters
         directParallel="0"/>
     </CompositionalMultiphaseFVM>
@@ -108,7 +107,7 @@
     <PressurePorosity
       name="rockPorosity"
       defaultReferencePorosity="0.2"
-      referencePressure="0.0"
+      referencePressure="5e6"
       compressibility="1.0e-9"/>
     <ConstantPermeability
       name="rockPerm"

@@ -16,7 +16,7 @@
       OBLOperatorsTableFile="obl_do_static.txt">
       <NonlinearSolverParameters
         newtonTol="1.0e-10"
-        newtonMaxIter="15"/>
+        newtonMaxIter="10"/>
       <LinearSolverParameters
         directParallel="0"/>
     </ReactiveCompositionalMultiphaseOBL>
@@ -60,7 +60,7 @@
     maxTime="2e8">
     <PeriodicEvent
       name="outputs"
-      timeFrequency="1e7"
+      timeFrequency="1e8"
       target="/Outputs/vtkOutput"/>
 
     <PeriodicEvent
@@ -128,7 +128,7 @@
     <PressurePorosity
       name="rockPorosity"
       defaultReferencePorosity="0.2"
-      referencePressure="0.0"
+      referencePressure="5e6"
       compressibility="1.0e-9"/>
 
     <ConstantPermeability
