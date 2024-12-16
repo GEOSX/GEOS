@@ -11,8 +11,7 @@
       targetRegions="{ region }">
       <NonlinearSolverParameters
         newtonTol="1.0e-4"
-        newtonMaxIter="100"
-        maxTimeStepCuts="5"
+        newtonMaxIter="20"
         lineSearchAction="None"/>
       <LinearSolverParameters
         solverType="fgmres"
@@ -61,7 +60,7 @@
 
     <PeriodicEvent
       name="outputs"
-      timeFrequency="1e5"
+      timeFrequency="5e5"
       targetExactTimestep="1"
       target="/Outputs/vtkOutput" />
 
