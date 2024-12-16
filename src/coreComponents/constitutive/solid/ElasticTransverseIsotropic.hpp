@@ -213,14 +213,16 @@ void ElasticTransverseIsotropicUpdates::getElasticStiffness( localIndex const k,
 GEOS_HOST_DEVICE
 inline
 void ElasticTransverseIsotropicUpdates::getElasticStrain( localIndex const k,
-                                                localIndex const q,
-                                                real64 ( & elasticStrain)[6] ) const
+                                                          localIndex const q,
+                                                          real64 ( & elasticStrain)[6] ) const
 {
   real64 const c12 = ( m_c11[k] - 2.0 * m_c66[k] );
   real64 const detC = m_c11[k]*(m_c11[k]*m_c33[k] - m_c13[k]*m_c13[k]) - c12*(c12*m_c33[k] - m_c13[k]*m_c13[k]) + m_c13[k]*(c12*m_c13[k] - m_c11[k]*m_c13[k]);
 
-  elasticStrain[0] = ( (m_c11[k]*m_c33[k] - m_c13[k]*m_c13[k])*m_newStress[k][q][0] + (m_c13[k]*m_c13[k] - c12*m_c33[k])*m_newStress[k][q][1] + (c12*m_c13[k] - m_c13[k]*m_c11[k])*m_newStress[k][q][2] ) / detC;
-  elasticStrain[1] = ( (m_c13[k]*m_c13[k] - c12*m_c33[k])*m_newStress[k][q][0] + (m_c11[k]*m_c33[k] - m_c13[k]*m_c13[k])*m_newStress[k][q][1] + (m_c13[k]*c12 - m_c11[k]*m_c13[k])*m_newStress[k][q][2] ) / detC;
+  elasticStrain[0] =
+    ( (m_c11[k]*m_c33[k] - m_c13[k]*m_c13[k])*m_newStress[k][q][0] + (m_c13[k]*m_c13[k] - c12*m_c33[k])*m_newStress[k][q][1] + (c12*m_c13[k] - m_c13[k]*m_c11[k])*m_newStress[k][q][2] ) / detC;
+  elasticStrain[1] =
+    ( (m_c13[k]*m_c13[k] - c12*m_c33[k])*m_newStress[k][q][0] + (m_c11[k]*m_c33[k] - m_c13[k]*m_c13[k])*m_newStress[k][q][1] + (m_c13[k]*c12 - m_c11[k]*m_c13[k])*m_newStress[k][q][2] ) / detC;
   elasticStrain[2] = ( (c12*m_c13[k] - m_c11[k]*m_c13[k])*m_newStress[k][q][0] + (c12*m_c13[k] - m_c11[k]*m_c13[k])*m_newStress[k][q][1] + (m_c11[k]*m_c11[k] - c12*c12)*m_newStress[k][q][2] ) / detC;
 
   elasticStrain[3] = m_newStress[k][q][3] / m_c44[k];
@@ -231,16 +233,22 @@ void ElasticTransverseIsotropicUpdates::getElasticStrain( localIndex const k,
 GEOS_HOST_DEVICE
 inline
 void ElasticTransverseIsotropicUpdates::getElasticStrainInc( localIndex const k,
-                                                   localIndex const q,
-                                                   real64 ( & elasticStrainInc)[6] ) const
+                                                             localIndex const q,
+                                                             real64 ( & elasticStrainInc)[6] ) const
 {
 
   real64 const c12 = ( m_c11[k] - 2.0 * m_c66[k] );
   real64 const detC = m_c11[k]*(m_c11[k]*m_c33[k] - m_c13[k]*m_c13[k]) - c12*(c12*m_c33[k] - m_c13[k]*m_c13[k]) + m_c13[k]*(c12*m_c13[k] - m_c11[k]*m_c13[k]);
 
-  elasticStrainInc[0] = ( (m_c11[k]*m_c33[k] - m_c13[k]*m_c13[k])*(m_newStress[k][q][0] - m_oldStress[k][q][0]) + (m_c13[k]*m_c13[k] - c12*m_c33[k])*(m_newStress[k][q][1] - m_oldStress[k][q][1]) + (c12*m_c13[k] - m_c13[k]*m_c11[k])*(m_newStress[k][q][2] - m_oldStress[k][q][2]) ) / detC;
-  elasticStrainInc[1] = ( (m_c13[k]*m_c13[k] - c12*m_c33[k])*(m_newStress[k][q][0] - m_oldStress[k][q][0]) + (m_c11[k]*m_c33[k] - m_c13[k]*m_c13[k])*(m_newStress[k][q][1] - m_oldStress[k][q][1]) + (m_c13[k]*c12 - m_c11[k]*m_c13[k])*(m_newStress[k][q][2] - m_oldStress[k][q][2]) ) / detC;
-  elasticStrainInc[2] = ( (c12*m_c13[k] - m_c11[k]*m_c13[k])*(m_newStress[k][q][0] - m_oldStress[k][q][0]) + (c12*m_c13[k] - m_c11[k]*m_c13[k])*(m_newStress[k][q][1] - m_oldStress[k][q][1]) + (m_c11[k]*m_c11[k] - c12*c12)*(m_newStress[k][q][2] - m_oldStress[k][q][2]) ) / detC;
+  elasticStrainInc[0] =
+    ( (m_c11[k]*m_c33[k] - m_c13[k]*m_c13[k])*(m_newStress[k][q][0] - m_oldStress[k][q][0]) + (m_c13[k]*m_c13[k] - c12*m_c33[k])*(m_newStress[k][q][1] - m_oldStress[k][q][1]) +
+      (c12*m_c13[k] - m_c13[k]*m_c11[k])*(m_newStress[k][q][2] - m_oldStress[k][q][2]) ) / detC;
+  elasticStrainInc[1] =
+    ( (m_c13[k]*m_c13[k] - c12*m_c33[k])*(m_newStress[k][q][0] - m_oldStress[k][q][0]) + (m_c11[k]*m_c33[k] - m_c13[k]*m_c13[k])*(m_newStress[k][q][1] - m_oldStress[k][q][1]) +
+      (m_c13[k]*c12 - m_c11[k]*m_c13[k])*(m_newStress[k][q][2] - m_oldStress[k][q][2]) ) / detC;
+  elasticStrainInc[2] =
+    ( (c12*m_c13[k] - m_c11[k]*m_c13[k])*(m_newStress[k][q][0] - m_oldStress[k][q][0]) + (c12*m_c13[k] - m_c11[k]*m_c13[k])*(m_newStress[k][q][1] - m_oldStress[k][q][1]) +
+      (m_c11[k]*m_c11[k] - c12*c12)*(m_newStress[k][q][2] - m_oldStress[k][q][2]) ) / detC;
 
   elasticStrainInc[3] = (m_newStress[k][q][3] - m_oldStress[k][q][3]) / m_c44[k];
   elasticStrainInc[4] = (m_newStress[k][q][4] - m_oldStress[k][q][4]) / m_c44[k];
