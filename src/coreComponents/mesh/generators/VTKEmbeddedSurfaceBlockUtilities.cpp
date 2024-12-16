@@ -33,7 +33,7 @@ void importEmbeddedFractureNetwork( string const & embeddedSurfaceBlockName,
   //1.Get EDFM vertices
   vtkUnstructuredGrid * grid = vtkUnstructuredGrid::SafeDownCast( embeddedSurfaceMesh );
   vtkPoints * const nodes = grid->GetPoints();
-  vtkIdType numNodes = nodes->GetNumberOfPoints();
+  vtkIdType numNodes = nodes ? nodes->GetNumberOfPoints() : 0;
 
   ArrayOfArrays< localIndex > elem2dToNodes( numEdfmFracs );
   for( vtkIdType i = 0; i < numEdfmFracs; ++i )
