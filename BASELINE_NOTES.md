@@ -6,9 +6,17 @@ This file is designed to track changes to the integrated test baselines.
 Any developer who updates the baseline ID in the .integrated_tests.yaml file is expected to create an entry in this file with the pull request number, date, and their justification for rebaselining.
 These notes should be in reverse-chronological order, and use the following time format: (YYYY-MM-DD).
 
-PR #3384 (2024-12-11)
+PR #3384 (2024-12-16)
 =====================
 Added plastic strain output.
+
+PR #3479 (2024-12-15)
+=====================
+Refine inputFiles/compositionalMultiphaseFlow: shift reference pressures to initial pressures, make nonlinear tuning more reasonable, minimize output.
+
+PR #3450 (2024-12-14)
+=====================
+Fix timestep selector flaw in SolidMechanicsLagrangeContact.
 
 PR #3450 (2024-12-08)
 =====================

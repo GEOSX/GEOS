@@ -130,6 +130,7 @@ void SolidMechanicsLagrangianFEM::postInputInitialization()
 {
   PhysicsSolverBase::postInputInitialization();
 
+  // configure AMG
   LinearSolverParameters & linParams = m_linearSolverParameters.get();
   linParams.isSymmetric = true;
   linParams.dofsPerNode = 3;

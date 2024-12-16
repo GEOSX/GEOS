@@ -98,11 +98,11 @@ public:
  * @brief Get the Location object
  *
  * @param key key used to store the list of fields in the map.
- * @param location mesh location where fields defined by the key provided were registered.
+ * @return mesh location where fields defined by the key provided were registered.
  */
-  void getLocation( string const & key,
-                    FieldLocation & location ) const
+  FieldLocation getLocation( string const & key ) const
   {
+    FieldLocation location{};
     if( key.find( m_locationKeys.nodesKey() ) != string::npos )
     {
       location = FieldLocation::Node;
@@ -123,6 +123,7 @@ public:
     {
       GEOS_ERROR( GEOS_FMT( "Invalid key, {}, was provided. Location cannot be retrieved.", key ) );
     }
+    return location;
   }
 
 private:
