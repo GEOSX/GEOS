@@ -24,15 +24,15 @@ namespace geos
 
 void TableLayout::addToColumns( std::vector< string > const & columnNames )
 {
-  for( auto const & m_columName : columnNames )
+  for( auto const & m_header : columnNames )
   {
-    addToColumns( m_columName );
+    addToColumns( m_header );
   }
 }
 
-void TableLayout::addToColumns( string_view m_columName )
+void TableLayout::addToColumns( string_view m_header )
 {
-  TableLayout::Column column = TableLayout::Column().setName( m_columName );
+  TableLayout::Column column = TableLayout::Column().setName( m_header );
   m_tableColumnsData.push_back( column );
 }
 
@@ -150,53 +150,53 @@ TableLayout::CellLayout::CellLayout():
   m_lines( {""} ),
   m_cellType( CellType::Header ),
   m_alignment( TableLayout::Alignment::center ),
-  m_maxDataLength( 0 )
+  m_maxLineWidth( 0 )
 {}
 
-TableLayout::CellLayout::CellLayout( CellType type, string const & cellValue, TableLayout::Alignment m_cellAlignment ):
+TableLayout::CellLayout::CellLayout( CellType type, string const & cellValue, TableLayout::Alignment alignment ):
   m_cellType( type ),
-  m_alignment( m_cellAlignment )
+  m_alignment( alignment )
 {
   divideCell( m_lines, cellValue );
   if( !m_lines.empty())
   {
-    m_maxDataLength = std::max_element( m_lines.begin(), m_lines.end(), []( const auto & a, const auto & b )
+    m_maxLineWidth = std::max_element( m_lines.begin(), m_lines.end(), []( const auto & a, const auto & b )
     {
       return a.length() < b.length();
     } )->length();
   }
   else
   {
-    m_maxDataLength = 0;
+    m_maxLineWidth = 0;
   }
 }
 
 TableLayout::Column::Column():
   m_parent( nullptr ), m_next( nullptr ), m_maxStringSize( 0 )
 {
-  m_columName.m_lines = {};
-  m_columName.m_cellType  = CellType::Header;
-  m_columName.m_alignment = Alignment::center;
+  m_header.m_lines = {};
+  m_header.m_cellType  = CellType::Header;
+  m_header.m_alignment = Alignment::center;
 }
 
 TableLayout::Column::Column( TableLayout::CellLayout cell ):
-  m_parent( nullptr ), m_next( nullptr ), m_maxStringSize( cell.m_maxDataLength )
+  m_parent( nullptr ), m_next( nullptr ), m_maxStringSize( cell.m_maxLineWidth )
 {
-  m_columName = cell;
+  m_header = cell;
 }
 
 
 TableLayout::Column & TableLayout::Column::setName( string_view name )
 {
-  m_columName.m_lines.push_back( std::string( name ) );
-  divideCell( m_columName.m_lines, m_columName.m_lines[0] );
-  m_columName.m_cellType = CellType::Header;
+  m_header.m_lines.push_back( std::string( name ) );
+  divideCell( m_header.m_lines, m_header.m_lines[0] );
+  m_header.m_cellType = CellType::Header;
   return *this;
 }
 
 TableLayout::Column & TableLayout::Column::hide()
 {
-  m_columName.m_cellType = CellType::Hidden;
+  m_header.m_cellType = CellType::Hidden;
   return *this;
 }
 
@@ -239,14 +239,14 @@ TableLayout::Column & TableLayout::Column::addSubColumns( string const & subColN
 
 TableLayout::Column & TableLayout::Column::setHeaderAlignment( Alignment headerAlignment )
 {
-  m_cellAlignment.headerAlignment = headerAlignment;
-  m_columName.m_alignment = headerAlignment;
+  m_alignment.headerAlignment = headerAlignment;
+  m_header.m_alignment = headerAlignment;
   return *this;
 }
 
 TableLayout::Column & TableLayout::Column::setValuesAlignment( Alignment valueAlignment )
 {
-  m_cellAlignment.valueAlignment = valueAlignment;
+  m_alignment.valueAlignment = valueAlignment;
   return *this;
 }
 

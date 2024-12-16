@@ -57,7 +57,7 @@ public:
   /**
    * @brief Structure to set up values m_alignment for each colum.
    */
-  struct CellAlignment
+  struct ColumnAlignement
   {
     /// Alignment for column name. By default aligned to center
     Alignment headerAlignment = Alignment::center;
@@ -71,17 +71,17 @@ public:
  */
   struct CellLayout
   {
-    /// vector containing each cell content, separated by lines.  
+    /// vector containing each cell content, separated by lines.
     std::vector< string > m_lines;
     /// The type of the cell (Header,Value, Merge, ...).
     CellType m_cellType;
     /// The alignment of the cell (left, center, right).
     Alignment m_alignment;
     /// Maximum length of the data in the cell.
-    size_t m_maxDataLength;
+    size_t m_maxLineWidth;
 
     /**
-     * @brief Constructor to initialize a Cell with a specific type and value.
+     * @brief Constructor to initialize a Cell with a default settings.
      */
     CellLayout();
 
@@ -101,19 +101,19 @@ public:
   class Column
   {
 public:
-    /// The name of the column.
-    CellLayout m_columName;
+    /// The header cell layout.
+    CellLayout m_header;
     /// A vector containing all sub-columns in the column.
     std::vector< Column > m_subColumn;
     /// struct containing m_alignment for the column (header and values)
-    CellAlignment m_cellAlignment;
+    ColumnAlignement m_alignment;
     /// Pointer to the parent column (if any).
     Column * m_parent;
     /// Pointer to the next column (if any).
     Column * m_next;
 
     /// The width of the cell (e.g., for cell containing subColumns).
-    size_t m_cellWidth = 0;
+    size_t m_headerMergeCount  = 0;
 
     /**
      * @brief Default constructor.
@@ -255,28 +255,18 @@ public:
     }
 
     ColumnType & operator*()
-    {
-      return *m_currentColumn;
-    }
+    { return *m_currentColumn; }
 
     ColumnType * operator->()
-    {
-      return m_currentColumn;
-    }
+    { return m_currentColumn; }
 
     friend bool operator== ( LeafIterator const & a, LeafIterator const & b )
-    {
-      return a.m_currentColumn == b.m_currentColumn;
-    };
+    { return a.m_currentColumn == b.m_currentColumn; };
     friend bool operator!= ( LeafIterator const & a, LeafIterator const & b )
-    {
-      return a.m_currentColumn != b.m_currentColumn;
-    };
+    { return a.m_currentColumn != b.m_currentColumn; };
 
     size_t getCurrentLayer() const
-    {
-      return m_currentLayer;
-    }
+    { return m_currentLayer; }
 
 private:
     ColumnType * m_currentColumn;
@@ -481,9 +471,9 @@ private:
 
   /**
    * @brief Create and add a column to the columns vector given a string
-   * @param m_columName The column name
+   * @param m_header The column name
    */
-  void addToColumns( string_view m_columName );
+  void addToColumns( string_view m_header );
 
 /**
  *
