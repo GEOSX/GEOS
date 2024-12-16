@@ -253,14 +253,20 @@ void SinglePhaseStatistics::computeRegionStatistics( real64 const time,
       GEOS_WARNING( GEOS_FMT( "{}, {}: Cannot compute average pressure & temperature because region pore volume is zero.", getName(), regionNames[i] ) );
     }
 
+    string_view massUnit = units::getSymbol( m_solver->getMassUnit() );
+
     TableData singPhaseStatsData;
     singPhaseStatsData.addRow( "Pressure[Pa]", stats.minPressure, stats.averagePressure, stats.maxPressure );
     singPhaseStatsData.addRow( "Delta pressure [Pa]", stats.minDeltaPressure, "/", stats.maxDeltaPressure );
     singPhaseStatsData.addRow( "Temperature [K]", stats.minTemperature, stats.averageTemperature, stats.maxTemperature );
     singPhaseStatsData.addSeparator();
+    singPhaseStatsData.addSeparator();
+    singPhaseStatsData.addRow( "statistics", "phase", CellType::MergeNext, "value" );
+    singPhaseStatsData.addSeparator();
 
-    singPhaseStatsData.addRow( "Total dynamic pore volume [rm^3]", CellType::MergeNext, CellType::MergeNext, stats.totalPoreVolume );
-    singPhaseStatsData.addRow( "Total fluid mass [kg]", CellType::MergeNext, CellType::MergeNext, stats.totalMass );
+    singPhaseStatsData.addRow( "Total dynamic pore volume [rm^3]", "all", CellType::MergeNext, stats.totalPoreVolume );
+    singPhaseStatsData.addSeparator();
+    singPhaseStatsData.addRow( GEOS_FMT("Total fluid mass [{}]", massUnit), "all", CellType::MergeNext, stats.totalMass );
 
     string const title = GEOS_FMT( "{}, {} (time {} s):", getName(), regionNames[i], time );
     TableLayout const singPhaseStatsLayout( title, { "statistics", "min", "average", "max" } );
