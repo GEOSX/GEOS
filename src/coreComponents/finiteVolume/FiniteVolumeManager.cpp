@@ -42,6 +42,7 @@ FiniteVolumeManager::~FiniteVolumeManager()
 
 Group * FiniteVolumeManager::createChild( string const & childKey, string const & childName )
 {
+  GEOS_LOG_RANK_0( GEOS_FMT( "{}: adding {} {}", getName(), childKey, childName ) );
   if( childKey == HybridMimeticDiscretization::catalogName() )
   {
     std::unique_ptr< HybridMimeticDiscretization > hm = std::make_unique< HybridMimeticDiscretization >( childName, this );
