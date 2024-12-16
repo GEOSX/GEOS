@@ -44,11 +44,22 @@ template< typename FLOW_SOLVER >
 SinglePhasePoromechanicsConformingFractures< FLOW_SOLVER >::SinglePhasePoromechanicsConformingFractures( const string & name,
                                                                                                          Group * const parent )
   : Base( name, parent )
+{}
+
+template<>
+void SinglePhasePoromechanicsConformingFractures<>::setMGRStrategy()
 {
-  LinearSolverParameters & params = this->m_linearSolverParameters.get();
-  params.mgr.strategy = LinearSolverParameters::MGR::StrategyType::singlePhasePoromechanicsConformingFractures;
-  params.mgr.separateComponents = true;
-  params.dofsPerNode = 3;
+  LinearSolverParameters & linearSolverParameters = this->m_linearSolverParameters.get();
+
+  if( linearSolverParameters.preconditionerType != LinearSolverParameters::PreconditionerType::mgr )
+    return;
+
+  linearSolverParameters.mgr.separateComponents = true;
+  linearSolverParameters.dofsPerNode = 3;
+
+  linearSolverParameters.mgr.strategy = LinearSolverParameters::MGR::StrategyType::singlePhasePoromechanicsConformingFractures;
+  GEOS_LOG_LEVEL_RANK_0( 1, GEOS_FMT( "{}: MGR strategy set to {}", getName(),
+                                      EnumStrings< LinearSolverParameters::MGR::StrategyType >::toString( linearSolverParameters.mgr.strategy )));
 }
 
 template< typename FLOW_SOLVER >
