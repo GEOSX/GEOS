@@ -26,6 +26,9 @@
 namespace geos
 {
 
+/**
+ * @brief The different type a cell can handle
+ */
 enum class CellType : integer
 {
   Header,

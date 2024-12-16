@@ -65,7 +65,7 @@ TableLayout & TableLayout::setMargin( MarginValue marginValue )
 bool TableLayout::isLineBreakEnabled() const
 { return m_wrapLine; }
 
-size_t TableLayout::getMaxHeaderRow() const
+size_t TableLayout::getMaxDepth() const
 {
   size_t depthMax = 1;
   size_t currDepth = 1;

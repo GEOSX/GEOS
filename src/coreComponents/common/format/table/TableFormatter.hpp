@@ -34,7 +34,9 @@ class TableFormatter
 {
 
 public:
+  /// Represent the TableData values
   using RowsCellInput = std::vector< std::vector< TableData::CellData > >;
+  /// Represent the Table (header or values) structured 
   using CellLayoutRows = std::vector< std::vector< TableLayout::CellLayout > >;
 
 
@@ -79,6 +81,7 @@ public:
 
   /**
    * @brief Convert the table data to a CSV string..
+   * @param tableData The table data
    * @return The CSV string representation of the table data.
    */
   string dataToString( TableData const & tableData ) const;

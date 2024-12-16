@@ -35,9 +35,14 @@ class TableData
 {
 public:
 
+  /**
+   * @brief Representing a data in TableData
+   */
   struct CellData
   {
+    /// The cell type
     CellType type;
+    /// The cell value
     string value = "";
   };
 
@@ -163,6 +168,10 @@ private:
   std::set< real64 > m_columnValues;
 };
 
+/**
+ * @brief Trait to check is the args is a special type of cell
+ * @tparam T The type of a cell
+ */
 template< typename T >
 constexpr bool isCellType = std::is_same_v< T, CellType >;
 

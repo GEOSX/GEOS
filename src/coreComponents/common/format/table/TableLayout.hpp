@@ -116,20 +116,36 @@ public:
 
     /**
      * @brief Constructor to initialize a column with a specific `CellLayout`.
-     * @param cell The `CellLayout` object to initialize the column.
+     * @param cellLayout The `CellLayout` object to initialize the column.
      *
      */
     Column( TableLayout::CellLayout cellLayout );
 
+    /**
+     * @brief Get the parent column.
+     * @return Pointer to the parent column, or `nullptr` if no parent is set.
+     */
     Column * getParent()
     { return m_parent; }
 
+    /**
+     * @brief Set the parent column.
+     * @param parent Pointer to the parent column to set.
+     */
     void setParent( Column * parent )
     { m_parent = parent; }
 
+    /**
+     * @brief GGet the next column in the layout.
+     * @return  Pointer to the next column or `nullptr` if no next column exists.
+     */
     Column * getNextCell()
     { return m_next; }
 
+    /**
+     * @brief Set the next column in the layout.
+     * @param nextCell  The next column in the table layout.
+     */
     void setNextCell( Column * nextCell )
     {  m_next = nextCell; }
 
@@ -142,13 +158,14 @@ public:
 
     /**
      * @brief Set the column visibility.
+     * @param CellType Cell type to apply to hide the colmun 
      * @return The current column .
      */
     Column & setVisibility( CellType celltype );
 
     /**
      * @brief Adds multiple sub-columns to the column.
-     * @param subColName A list of sub-column names to add.
+     * @param subCol A list of sub-column names to add.
      * @return The current column object
      */
     TableLayout::Column & addSubColumns( std::initializer_list< TableLayout::Column > subCol );
@@ -237,7 +254,7 @@ public:
 
     /**
      * @brief Copy assignment operator
-     * @param[in] source Coulmn  to copy
+     * @param[in] columnPtr Coulmn  to copy
      * @return Leaf iterator
      */
     LeafIterator & operator=( Column * columnPtr )
@@ -357,12 +374,6 @@ private:
     return LeafIterator( nullptr, 0 );
   }
 
-  struct Row
-  {
-    // maximum number of lines among the cells of a given row
-    size_t maxLineCount;   // TODO : Assigner cette stat
-  };
-
   /// Alias for an initializer list of variants that can contain either a string or a layout column.
   using TableLayoutArgs = std::initializer_list< std::variant< string_view, TableLayout::Column > >;
 
@@ -421,7 +432,11 @@ private:
     addToColumns( args );
   }
 
-  size_t getMaxHeaderRow() const;
+  /**
+   * @brief Get the max depth of a column
+   * @return The max column depth 
+   */
+  size_t getMaxDepth() const;
 
   /**
    * @return The columns vector
@@ -552,7 +567,6 @@ private:
   /// Contains the subdivision (line) counts for each line in data.
   std::vector< size_t > m_sublineDataCounts;
   bool m_wrapLine = true;
-  bool m_containSubColumn = false;
 
   string m_tableTitle;
 

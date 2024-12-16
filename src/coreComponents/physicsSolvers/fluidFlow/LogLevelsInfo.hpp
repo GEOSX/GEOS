@@ -50,19 +50,19 @@ struct Statistics
 
 struct sourceFluxRegionsStatistics
 {
-   static constexpr int getMinLogLevel() { return 3; }
+  static constexpr int getMinLogLevel() { return 3; }
   static constexpr std::string_view getDescription() { return "Print source flux statistics for each regions "; }
 };
 
 struct sourceFluxStatistics
 {
-   static constexpr int getMinLogLevel() { return 2; }
+  static constexpr int getMinLogLevel() { return 2; }
   static constexpr std::string_view getDescription() { return "Print source flux statistics for each flux in a mesh"; }
 };
 
 struct sourceFluxMeshStatistics
 {
-   static constexpr int getMinLogLevel() { return 1; }
+  static constexpr int getMinLogLevel() { return 1; }
   static constexpr std::string_view getDescription() { return "Print source flux statistics resulting from all flux in a mesh"; }
 };
 

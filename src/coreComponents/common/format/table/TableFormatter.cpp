@@ -3,7 +3,7 @@
  * SPDX-License-Identifier: LGPL-2.1-only
  *
  * Copyright (c) 2016-2024 Lawrence Livermore National Security LLC
- * Copyright (c) 2018-2024 TotalEnergies
+ * Copyright (c) 2018-2024 Total, S.A
  * Copyright (c) 2018-2024 The Board of Trustees of the Leland Stanford Junior University
  * Copyright (c) 2023-2024 Chevron
  * Copyright (c) 2019-     GEOS/GEOSX Contributors
@@ -237,8 +237,8 @@ void TableTextFormatter::setLinks( std::vector< TableLayout::Column > & columns 
 void TableTextFormatter::populateHeaderCellsLayout( TableLayout & tableLayout,
                                                     CellLayoutRows & cellsHeaderLayout ) const
 {
-  cellsHeaderLayout.resize( tableLayout.getMaxHeaderRow() );
-  size_t const headerLayersCount = tableLayout.getMaxHeaderRow();
+  cellsHeaderLayout.resize( tableLayout.getMaxDepth() );
+  size_t const headerLayersCount = tableLayout.getMaxDepth();
   std::vector< size_t > & sublineHeaderCounts = tableLayout.getSublineInHeaderCounts();
   sublineHeaderCounts.resize( headerLayersCount, 1 );
 

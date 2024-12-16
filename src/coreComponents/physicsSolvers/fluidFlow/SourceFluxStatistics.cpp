@@ -185,7 +185,7 @@ void SourceFluxStatsAggregator::outputStatsToLog( bool logLevelActive, string_vi
   {
     m_logLayout.setTitle( GEOS_FMT( "Source flux statistics in {}", elementSetName ));
     TableTextFormatter const tableStatFormatter( m_logLayout );
-    GEOS_LOG_RANK(  tableStatFormatter.toString( tableMeshData ) );
+    GEOS_LOG_RANK( tableStatFormatter.toString( tableMeshData ) );
   }
 }
 void SourceFluxStatsAggregator::outputStatsToCSV( string_array const & filenames, TableData & csvData )
