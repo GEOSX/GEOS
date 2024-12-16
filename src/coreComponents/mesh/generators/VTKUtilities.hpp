@@ -129,7 +129,7 @@ public:
 
   /**
    * @brief Defines the face blocks/fractures.
-   * @param edfmSurBlocks A map which connects each name of the face block to its mesh.
+   * @param edfmSurfBlocks A map which connects each name of the face block to its mesh.
    */
   void setEmbeddedSurfaceBlocks( std::map< string, vtkSmartPointer< vtkDataSet > > const & edfmSurfBlocks )
   {
