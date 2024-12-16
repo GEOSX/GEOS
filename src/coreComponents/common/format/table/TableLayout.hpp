@@ -67,12 +67,11 @@ public:
 
 /**
  * @struct CellLayout
- * @brief Structure representing a cell in a table.
- * This structure contains information about the cell such as its type, alignment, maximum data length, and width.
+ * @brief Structure grouping the cell information to display it in a table (content, type, alignment, ...).
  */
   struct CellLayout
   {
-    /// vector containing the cell name separated by a '\n'.
+    /// vector containing each cell content, separated by lines.  
     std::vector< string > m_lines;
     /// The type of the cell (Header,Value, Merge, ...).
     CellType m_cellType;

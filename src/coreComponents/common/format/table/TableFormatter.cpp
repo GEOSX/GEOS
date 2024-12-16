@@ -102,7 +102,7 @@ string TableCSVFormatter::dataToString( TableData const & tableData ) const
     result.append( stringutilities::join( rowConverted.cbegin(), rowConverted.cend(), "," ));
     result.append( "\n" );
   }
-  
+
   return result;
 }
 
@@ -256,21 +256,19 @@ void TableTextFormatter::populateHeaderCellsLayout( TableLayout & tableLayout,
         cellsHeaderLayout[idxRow + 1].push_back( emptyCell );
       }
     }
-
     currentCell.m_maxDataLength = it->getMaxStringSize();
+
     if( it->hasParent() )
     {
       it->m_parent->m_cellWidth += it->m_cellWidth == 0 ? 1 : it->m_cellWidth;
     }
-
-    sublineHeaderCounts[currentLayer] = std::max( sublineHeaderCounts[currentLayer],
-                                                  currentCell.m_lines.size() );
-
     if( it->m_cellWidth > 1 )
     {
       it->m_cellWidth--;
     }
 
+    sublineHeaderCounts[currentLayer] = std::max( sublineHeaderCounts[currentLayer],
+                                                  currentCell.m_lines.size() );
     for( size_t idxColumn = 0; idxColumn < it->m_cellWidth; idxColumn++ )
     {
       TableLayout::CellLayout mergingCell{ CellType::MergeNext, "", TableLayout::Alignment::center };
@@ -324,10 +322,13 @@ void TableTextFormatter::populateDataCellsLayout( TableLayout & tableLayout,
         {
           cell.type = it->m_columName.m_cellType;
         }
+        if( it->m_columName.m_cellType == CellType::Separator )
+        {
+          cell.value = m_horizontalLine;
+        }
         cellsDataLayout[idxRow][idxColumn] = TableLayout::CellLayout( cell.type, cell.value, alignement );
         maxLinesPerRow  = std::max( maxLinesPerRow, cellsDataLayout[idxRow][idxColumn].m_lines.size() );
         idxColumn++;
-
       }
     }
     subDataLineCounts.push_back( { maxLinesPerRow } );
@@ -378,25 +379,69 @@ void TableTextFormatter::updateColumnMaxLength( TableLayout & tableLayout,
   };
 
   size_t const numColumns = cellsHeaderLayout[0].size();
+  //each idx per row
+  std::vector< size_t > accMaxStringColumn( cellsDataLayout.size(), 0 );
   for( size_t idxColumn = 0; idxColumn < numColumns; ++idxColumn )
   {
     size_t maxColumnSize = 1;
 
+    // init header column max length
     for( size_t rowIdx = 0; rowIdx < cellsDataLayout.size(); ++rowIdx )
     {
       size_t const cellDataLength = getMaxLineLength( cellsDataLayout[rowIdx][idxColumn].m_lines );
       maxColumnSize = std::max( {maxColumnSize, cellDataLength} );
     }
+
     for( size_t rowIdx = 0; rowIdx < cellsHeaderLayout.size(); ++rowIdx )
     {
       size_t const cellHeaderLength = getMaxLineLength( cellsHeaderLayout[rowIdx][idxColumn].m_lines );
       maxColumnSize = std::max( {maxColumnSize, cellHeaderLength} );
+      cellsHeaderLayout[rowIdx][idxColumn].m_maxDataLength = maxColumnSize;
     }
 
+    // update maxColumnSize for data cell
     for( size_t rowIdx = 0; rowIdx < cellsDataLayout.size(); ++rowIdx )
     {
       TableLayout::CellLayout & dataCell = cellsDataLayout[rowIdx][idxColumn];
       TableLayout::CellLayout * previousDataCell = (idxColumn > 0) ? &cellsDataLayout[rowIdx][idxColumn - 1] : nullptr;
+
+      if( dataCell.m_cellType == CellType::MergeNext )
+      {
+        accMaxStringColumn[rowIdx] += cellsHeaderLayout[0][idxColumn].m_maxDataLength + tableLayout.getColumnMargin();
+      }
+
+      if( idxColumn > 0 &&
+          previousDataCell->m_cellType == CellType::MergeNext && dataCell.m_cellType != CellType::MergeNext )
+      {
+        size_t sumOfMergingCell = accMaxStringColumn[rowIdx] + cellsHeaderLayout[0][idxColumn].m_maxDataLength;
+        if( sumOfMergingCell <  dataCell.m_maxDataLength )
+        {
+          maxColumnSize += dataCell.m_maxDataLength - sumOfMergingCell;
+          for( size_t rowIdx2 = 0; rowIdx2 < rowIdx; rowIdx2++ )
+          {
+            TableLayout::CellLayout * previousDataCellTemp = (idxColumn > 0) ? &cellsDataLayout[rowIdx2][idxColumn - 1] : nullptr;
+            if( previousDataCellTemp )
+            {
+              previousDataCellTemp->m_maxDataLength = cellsHeaderLayout[0][idxColumn - 1].m_maxDataLength;
+            }
+            updateCellMaxLength( cellsDataLayout[rowIdx2][idxColumn], maxColumnSize, previousDataCellTemp );
+            if( cellsDataLayout[rowIdx2][idxColumn].m_cellType == CellType::Separator )
+            {
+              size_t const additionnalMargin = (idxColumn == numColumns - 1) ?
+                                               tableLayout.getBorderMargin() * 2 + 2 :
+                                               tableLayout.getColumnMargin();
+              cellsDataLayout[rowIdx2][idxColumn].m_lines[0]  = std::string( maxColumnSize + additionnalMargin, '-' );
+            }
+          }
+        }
+
+        accMaxStringColumn[rowIdx] = 0;
+      }
+      else
+      {
+        size_t const cellDataLength = getMaxLineLength( cellsDataLayout[rowIdx][idxColumn].m_lines );
+        maxColumnSize = std::max( {maxColumnSize, cellDataLength} );
+      }
 
       updateCellMaxLength( dataCell, maxColumnSize, previousDataCell );
 
@@ -411,6 +456,7 @@ void TableTextFormatter::updateColumnMaxLength( TableLayout & tableLayout,
       }
     }
 
+    // last pass for updating cells header
     for( size_t rowIdx = 0; rowIdx < cellsHeaderLayout.size(); ++rowIdx )
     {
       TableLayout::CellLayout & headerCell = cellsHeaderLayout[rowIdx][idxColumn];

@@ -23,18 +23,19 @@
 namespace geos
 {
 
-void TableData::addRow( std::vector< TableData::CellData > & cells )
+void TableData::addRow( std::vector< TableData::CellData > const & rows )
 {
-  if( m_rows.size() != 0 && cells.size() != m_rows[m_rows.size() - 1].size() )
+  if( m_rows.size() != 0 && rows.size() != m_rows[m_rows.size() - 1].size() )
   {
     string msg = "Remarks : some cells may be missing";
+    std::cout << '\n';
     if( std::find( m_errorsMsg.begin(), m_errorsMsg.end(), msg ) == m_errorsMsg.end())
     {
       m_errorsMsg.push_back( msg );
     }
   }
 
-  m_rows.push_back( cells );
+  m_rows.push_back( rows );
 }
 
 void TableData::addSeparator()

@@ -87,39 +87,35 @@ TEST( testTable, tableClassic )
              );
 }
 
-TEST( testTable, tableColumnParamClassic ) //TODO
+TEST( testTable, tableColumnParamClassic )
 {
-  TableLayout tableLayout( {
+  TableLayout const tableLayout( {
     TableLayout::Column()
-      .setName( "Cras egestas" )
-      .setHeaderAlignment( TableLayout::Alignment::left ),
+      .setName( "Cras egestas" ),
     TableLayout::Column()
-      .setName( "CoordX" )
-      .setHeaderAlignment( TableLayout::Alignment::left ),
+      .setName( "CoordX" ),
     TableLayout::Column()
-      .setName( "C" )
-      .setHeaderAlignment( TableLayout::Alignment::left ),
+      .setName( "C" ),
     TableLayout::Column()
-      .setName( "CoordZ" )
-      .setHeaderAlignment( TableLayout::Alignment::left ),
+      .setName( "CoordZ" ),
     TableLayout::Column()
-      .setName( "Prev\nelement" )
-      .setHeaderAlignment( TableLayout::Alignment::right ),
+      .setName( "Prev\nelement" ),
     TableLayout::Column()
-      .setName( "Next\nelement" )
-      .setHeaderAlignment( TableLayout::Alignment::right )} );
+      .setName( "Next\nelement" )} );
 
   TableData tableData;
-  tableData.addRow( "value1", "", "3.0", 3.0129877, 2.0f, 1 );
+  tableData.addRow( "value1", "gaz\nwater", "3.0\n42.0", "3.0129877\n0.0123456", "2\n3", "1\n4" );
   tableData.addRow( "val1", "v", "[3.045,42.02,89.25]", 3.0, 10.0f, 3 );
 
   TableTextFormatter const tableText( tableLayout );
+  std::cout << tableText.toString( tableData )<< std::endl;
   EXPECT_EQ( tableText.toString( tableData ),
              "\n-------------------------------------------------------------------------------------------\n"
              "|  Cras egestas  |  CoordX  |  C                    |  CoordZ     |     Prev  |     Next  |\n"
              "|                |          |                       |             |  element  |  element  |\n"
              "-------------------------------------------------------------------------------------------\n"
-             "|        value1  |          |                  3.0  |  3.0129877  |        2  |        1  |\n"
+             "|        value1  |     gaz  |                  3.0  |  3.0129877  |        2  |        1  |\n"
+             "|                |   water  |                 42.0  |  0.0123456  |        3  |        4  |\n"
              "|          val1  |       v  |  [3.045,42.02,89.25]  |          3  |       10  |        3  |\n"
              "-------------------------------------------------------------------------------------------\n\n"
              );
@@ -357,7 +353,7 @@ TEST( testTable, variadicTest )
     std::cout << std::endl;
     TableData tableData;
     tableData.addRow( "min(local/total)", 1, 2, 3, 4, 5, 6, 7 );
-    tableData.addRow( "min(local/total)", 1, 2, 3, 4, 5, 6, 7 ) ;
+    tableData.addRow( "min(local/total)", 1, 2, 3, 4, 5, 6, 7 );
     TableTextFormatter log( layoutTest );
     EXPECT_EQ( log.toString( tableData ),
                "\n--------------------------------------------------------------------------------------------------------------------------------------\n"
@@ -415,8 +411,13 @@ TEST( testTable, testCellMerging )
 
   TableData tableData;
   tableData.addRow( "ProductA", 1234, 40, "ProductName", 5678, 60 );
+  tableData.addRow( "ProductA", 54, 4564575, "long size value", 5454554512, 60 );
   tableData.addSeparator();
-  tableData.addRow( "P1\nP2\nP3", "2002\n2003\n2004", CellType::MergeNext, 3003, 4004, CellType::MergeNext );
+  tableData.addRow( "ProductA", 54, 4564575, "long size value", 5454554512, 60 );
+  tableData.addRow( 3.14f, 2.718f, CellType::MergeNext, 1.618f, 0.577f, CellType::MergeNext );
+  tableData.addRow( "P1\nP2\nP3", "2002\n2003\n2004", CellType::MergeNext, "1212121245452145454545", 4004, CellType::MergeNext );
+  tableData.addRow( "Long product size", 54, 4564575, "long size value", 5454554512, 60 );
+  tableData.addRow( "ProductAfdggfd", 5445, 4565, "PrName", 5454512, 64650 );
   tableData.addRow( 3.14f, 2.718f, CellType::MergeNext, 1.618f, 0.577f, CellType::MergeNext );
   tableData.addSeparator();
   tableData.addRow( CellType::MergeNext, CellType::MergeNext, CellType::MergeNext, CellType::MergeNext, CellType::MergeNext, "Item2" );
@@ -424,10 +425,15 @@ TEST( testTable, testCellMerging )
   tableData.addRow( 1500, 2500, CellType::MergeNext, CellType::MergeNext, CellType::MergeNext, CellType::MergeNext );
   tableData.addSeparator();
   tableData.addRow( 1.23f, 4.56f, CellType::MergeNext, 7.89f, 0.12f, 40 );
+  tableData.addRow( "Long product size", 54, 4564575, "long size value", 5454554512, 60 );
+  tableData.addRow( "ProductA", 54, 4564575, "long size value", 5454554512, 60 );
+  tableData.addSeparator();
+  tableData.addRow( "P1", "2002", CellType::MergeNext,  CellType::MergeNext, CellType::MergeNext, "1212121245452145454545" );
   tableData.addSeparator();
   tableData.addRow( "Alpha", 1001, 8, "Beta\nwater", "2002\n1.0", CellType::MergeNext );
 
   TableTextFormatter const tableText( tableLayout );
+  std::cout <<tableText.toString( tableData ) << std::endl;
   EXPECT_EQ( tableText.toString( tableData ),
              "\n----------------------------------------------------------------------------\n"
              "|  Cras egestas  |  CoordX  |  C   |    CoordZ     |   Prev    |   Next    |\n"
@@ -435,7 +441,7 @@ TEST( testTable, testCellMerging )
              "----------------------------------------------------------------------------\n"
              "|      ProductA  |    1234  |  40  |  ProductName  |     5678  |       60  |\n"
              "----------------------------------------------------------------------------\n"
-             "|            P1  |    2002  |                3003  |     4004  |           |\n"
+             "|            P1  |    2002  |  1212121245452145454545  |     4004  |           |\n"
              "|            P2  |    2003  |                      |           |           |\n"
              "|            P3  |    2004  |                      |           |           |\n"
              "|          3.14  |   2.718  |               1.618  |    0.577  |           |\n"

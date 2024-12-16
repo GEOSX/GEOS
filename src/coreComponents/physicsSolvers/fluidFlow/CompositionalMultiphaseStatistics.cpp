@@ -410,23 +410,76 @@ void CompositionalMultiphaseStatistics::computeRegionStatistics( real64 const ti
 
     string_view massUnit = units::getSymbol( m_solver->getMassUnit() );
 
+    std::vector< string > phaseCompName;
+    phaseCompName.reserve( numPhases*numComps );
+    std::vector< string > massValues;
+    phaseCompName.reserve( numPhases*numComps );
+
+    ConstitutiveManager const & constitutiveManager = this->getGroupByPath< ConstitutiveManager >( "/Problem/domain/Constitutive" );
+    MultiFluidBase const & baseFluid = constitutiveManager.getGroup< MultiFluidBase >( m_solver->referenceFluidModelName() );
+    auto const phaseNames = baseFluid.phaseNames();
+    auto const componentNames = baseFluid.componentNames();
+    for( integer ip = 0; ip < numPhases; ++ip )
+    {
+      for( integer ic = 0; ic < numComps; ++ic )
+      {
+        std::stringstream ss;
+        ss << phaseNames[ip]<< ", " <<componentNames[ic];
+        phaseCompName.push_back( ss.str() );
+        massValues.push_back( GEOS_FMT( "{}", stats.componentMass[ip][ic] ) );
+      }
+    }
+
     TableData compPhaseStatsData;
     compPhaseStatsData.addRow( "Pressure[Pa]", stats.minPressure, stats.averagePressure, stats.maxPressure );
     compPhaseStatsData.addRow( "Delta pressure [Pa]", stats.minDeltaPressure, "/", stats.maxDeltaPressure );
     compPhaseStatsData.addRow( "Temperature [K]", stats.minTemperature, stats.averageTemperature, stats.maxTemperature );
     compPhaseStatsData.addSeparator();
 
-    compPhaseStatsData.addRow( "Total dynamic pore volume [rm^3]", CellType::MergeNext, CellType::MergeNext, stats.totalPoreVolume );
-    compPhaseStatsData.addRow( "Phase dynamic pore volume: {} rm^3", CellType::MergeNext, CellType::MergeNext, stats.phasePoreVolume );
-    compPhaseStatsData.addRow( GEOS_FMT( "Phase mass {}", massUnit ), CellType::MergeNext, CellType::MergeNext, stats.phaseMass );
+    compPhaseStatsData.addSeparator();
+    compPhaseStatsData.addRow( "statistics", "phase", CellType::MergeNext, "value" );
+    compPhaseStatsData.addSeparator();
 
-    compPhaseStatsData.addRow( GEOS_FMT( "Trapped phase mass (metric 1) {}", massUnit ), CellType::MergeNext, CellType::MergeNext, stats.trappedPhaseMass );
-    compPhaseStatsData.addRow( GEOS_FMT( "nonTrappedPhaseMass {}", massUnit ), CellType::MergeNext, CellType::MergeNext, nonTrappedPhaseMass );
+    compPhaseStatsData.addRow( "Total dynamic pore volume [rm^3]", "all", CellType::MergeNext, stats.totalPoreVolume );
+    compPhaseStatsData.addSeparator();
+    compPhaseStatsData.addRow( "Phase dynamic pore volume: [rm^3]",
+                               stringutilities::joinLamda( phaseNames, "\n", []( auto data ) { return data[0]; } ),
+                               CellType::MergeNext,
+                               stringutilities::joinLamda( stats.phasePoreVolume, "\n", []( auto data ) { return data[0]; } ) );
+    compPhaseStatsData.addSeparator();
 
-    compPhaseStatsData.addRow( GEOS_FMT( "Immobile phase mass (metric 2) {}", massUnit ), CellType::MergeNext, CellType::MergeNext, stats.immobilePhaseMass );
-    compPhaseStatsData.addRow( GEOS_FMT( "Mobile phase mass (metric 2) {}", massUnit ), CellType::MergeNext, CellType::MergeNext, mobilePhaseMass );
+    compPhaseStatsData.addRow( GEOS_FMT( "Phase mass [{}]", massUnit ),
+                               stringutilities::joinLamda( phaseNames, "\n", []( auto data ) { return data[0]; } ),
+                               CellType::MergeNext,
+                               stringutilities::joinLamda( stats.phaseMass, "\n", []( auto data ) { return data[0]; } ) );
+    compPhaseStatsData.addSeparator();
 
-    compPhaseStatsData.addRow( GEOS_FMT( "Component mass {}", massUnit ), CellType::MergeNext, CellType::MergeNext, stats.componentMass );
+    compPhaseStatsData.addRow( GEOS_FMT( "Trapped phase mass (metric 1) [{}]", massUnit ),
+                               stringutilities::joinLamda( phaseNames, "\n", []( auto value ) { return value[0]; } ),
+                               CellType::MergeNext,
+                               stringutilities::joinLamda( stats.trappedPhaseMass, "\n", []( auto value ) { return value[0]; } ) );
+    compPhaseStatsData.addSeparator();
+    compPhaseStatsData.addRow( GEOS_FMT( "nonTrappedPhaseMass [{}]", massUnit ),
+                               stringutilities::joinLamda( phaseNames, "\n", []( auto value ) { return value[0]; } ),
+                               CellType::MergeNext,
+                               stringutilities::joinLamda( nonTrappedPhaseMass, "\n", []( auto value ) { return value[0]; } ) );
+    compPhaseStatsData.addSeparator();
+
+    compPhaseStatsData.addRow( GEOS_FMT( "Immobile phase mass (metric 2) [{}]", massUnit ),
+                               stringutilities::joinLamda( phaseNames, "\n", []( auto value ) { return value[0]; } ),
+                               CellType::MergeNext,
+                               stringutilities::joinLamda( stats.immobilePhaseMass, "\n", []( auto value ) { return value[0]; } )  );
+    compPhaseStatsData.addSeparator();
+    compPhaseStatsData.addRow( GEOS_FMT( "Mobile phase mass (metric 2) [{}]", massUnit ),
+                               stringutilities::joinLamda( phaseNames, "\n", []( auto value ) { return value[0]; } ),
+                               CellType::MergeNext,
+                               stringutilities::joinLamda( mobilePhaseMass, "\n", []( auto value ) { return value[0]; } ) );
+    compPhaseStatsData.addSeparator();
+
+    compPhaseStatsData.addRow( GEOS_FMT( "Component mass [{}]", massUnit ),
+                               stringutilities::join( phaseCompName, '\n' ),
+                               CellType::MergeNext,
+                               stringutilities::join( massValues, '\n' ) );
 
     string const title = GEOS_FMT( "{}, {} (time {} s):", getName(), regionNames[i], time );
     TableLayout const compPhaseStatsLayout( title, { "statistics", "min", "average", "max" } );

@@ -38,7 +38,7 @@ public:
   struct CellData
   {
     CellType type;
-    string value;
+    string value = "";
   };
 
   /**
@@ -53,7 +53,7 @@ public:
    * @brief Add a row to the table
    * @param row A vector of string representing a row
    */
-  void addRow( std::vector< CellData > & row );
+  void addRow( std::vector< CellData > const & row );
 
   /**
    * @brief Add a line separator to the table
@@ -175,11 +175,11 @@ void TableData::addRow( Args const &... args )
     if constexpr (std::is_same_v< Args, CellType >) {
       if( args == CellType::Separator )
       {
-        cells.push_back( {CellType::Separator, "-"} );
+        cells.push_back( {CellType::Separator} );
       }
       else
       {
-        cells.push_back( {CellType::MergeNext, " "} );
+        cells.push_back( {CellType::MergeNext} );
       }
     }
     else
