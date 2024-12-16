@@ -122,12 +122,12 @@ integer const & TableLayout::getMarginTitle() const
 
 std::vector< size_t > & TableLayout::getSublineInHeaderCounts()
 {
-  return m_sublineHeaderCounts ;
+  return m_sublineHeaderCounts;
 }
 
 std::vector< size_t > & TableLayout::getNbSubDataLines()
 {
-  return m_sublineDataCounts ;
+  return m_sublineDataCounts;
 }
 
 void divideCell( std::vector< string > & lines, string const & value )
@@ -172,7 +172,7 @@ TableLayout::CellLayout::CellLayout( CellType type, string const & cellValue, Ta
 }
 
 TableLayout::Column::Column():
-  m_parent( nullptr ), m_next( nullptr ), m_maxStringSize( 0 )
+  m_parent( nullptr ), m_next( nullptr )
 {
   m_header.m_lines = {};
   m_header.m_cellType  = CellType::Header;
@@ -180,7 +180,7 @@ TableLayout::Column::Column():
 }
 
 TableLayout::Column::Column( TableLayout::CellLayout cell ):
-  m_parent( nullptr ), m_next( nullptr ), m_maxStringSize( cell.m_maxLineWidth )
+  m_parent( nullptr ), m_next( nullptr )
 {
   m_header = cell;
 }
@@ -198,16 +198,6 @@ TableLayout::Column & TableLayout::Column::hide()
 {
   m_header.m_cellType = CellType::Hidden;
   return *this;
-}
-
-void TableLayout::Column::setMaxStringSize( size_t const size )
-{
-  m_maxStringSize = size;
-}
-
-size_t TableLayout::Column::getMaxStringSize() const
-{
-  return m_maxStringSize;
 }
 
 TableLayout::Column & TableLayout::Column::addSubColumns( std::initializer_list< string > subColName )
@@ -250,13 +240,18 @@ TableLayout::Column & TableLayout::Column::setValuesAlignment( Alignment valueAl
   return *this;
 }
 
+size_t TableLayout::Column::getNumberCellMerge()
+{ return m_headerMergeCount; }
+
+void  TableLayout::Column::incrementMergeHeaderCount()
+{ m_headerMergeCount++;}
+
+void TableLayout::Column::decrementMergeHeaderCount()
+{ m_headerMergeCount--; }
+
 bool TableLayout::Column::hasChild() const
-{
-  return !this->m_subColumn.empty();
-}
+{ return !this->m_subColumn.empty(); }
 bool TableLayout::Column::hasParent() const
-{
-  return this->m_parent != nullptr;
-}
+{ return this->m_parent != nullptr; }
 
 }

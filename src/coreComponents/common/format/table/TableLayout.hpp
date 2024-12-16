@@ -107,13 +107,6 @@ public:
     std::vector< Column > m_subColumn;
     /// struct containing m_alignment for the column (header and values)
     ColumnAlignement m_alignment;
-    /// Pointer to the parent column (if any).
-    Column * m_parent;
-    /// Pointer to the next column (if any).
-    Column * m_next;
-
-    /// The width of the cell (e.g., for cell containing subColumns).
-    size_t m_headerMergeCount  = 0;
 
     /**
      * @brief Default constructor.
@@ -128,6 +121,18 @@ public:
      */
     Column( TableLayout::CellLayout cellLayout );
 
+    Column * getParent()
+    { return m_parent; }
+
+    void setParent( Column * parent )
+    { m_parent = parent; }
+
+    Column * getNextCell()
+    { return m_next; }
+
+    void setNextCell( Column * nextCell )
+    {  m_next = nextCell; }
+
     /**
      * @brief Sets the name of the column.
      * @param name The name to set for the column.
@@ -140,18 +145,6 @@ public:
      * @return The current column objec.
      */
     Column & hide();
-
-    /**
-     * @brief Sets the maximum string size for the column.
-     * @param size The size to set as the maximum string length.
-     */
-    void setMaxStringSize( size_t const size );
-
-    /**
-     * @brief Gets the maximum string size of the column.
-     * @return size_t The maximum string size of the column.
-     */
-    size_t getMaxStringSize() const;
 
     /**
      * @brief Adds multiple sub-columns to the column.
@@ -189,6 +182,21 @@ public:
     TableLayout::Column & setValuesAlignment( Alignment valueAlignment );
 
     /**
+     * @return number of times we will divide the current cell
+     */
+    size_t getNumberCellMerge();
+
+    /**
+     * @brief Increment number of times we will divide the current cell
+     */
+    void incrementMergeHeaderCount();
+
+    /**
+     * @brief Decremente number of times we will divide the current cell
+     */
+    void decrementMergeHeaderCount();
+
+    /**
      * @brief Checks if the column has any child columns.
      * @return bool True if the column has child columns, otherwise false.
      */
@@ -201,36 +209,52 @@ public:
     bool hasParent() const;
 
 private:
-    /// The maximum string size of the column.
-    size_t m_maxStringSize;
+    /// Pointer to the parent cell (if any).
+    Column * m_parent;
+    /// Pointer to the next cell (if any).
+    Column * m_next;
+    /// The width of the cell (e.g., for cell containing subColumns).
+    size_t m_headerMergeCount  = 0;
   };
 
-  /**_est columns / sub columns.
-   * An exemple of an iteration: A -> B.A -> B.B -> B.C -> C.A.A -> C.A.B -> C.B.A -> C.B.B -> D
+  /**
+   * @brief An iterator for navigating through the leaf columns of a hierarchical column structure.
    */
   class LeafIterator
   {
 public:
     using ColumnType = Column;
 
+    /**
+     * @brief Construct a new Leaf Iterator object
+     * @param columnPtr The first column/subColumn of the column vector
+     * @param idxLayer the layer associated with the column
+     */
     LeafIterator( ColumnType * columnPtr, size_t idxLayer ):
       m_currentColumn( columnPtr ), m_currentLayer( idxLayer )
     {}
 
-
+    /**
+     * @brief Copy assignment operator
+     * @param[in] source Coulmn  to copy
+     * @return Leaf iterator
+     */
     LeafIterator & operator=( Column * columnPtr )
     {
       this->m_currentColumn= columnPtr;
       return *this;
     }
 
-    // Prefix ++ overload
+    /**
+     * @brief Prefix ++ overload
+     * @return Leaf iterator
+     */
     LeafIterator & operator++()
     {
-      if( m_currentColumn->m_next != nullptr )
+      if( m_currentColumn->getNextCell() != nullptr )
       {
         // chercher le dernier sous-enfant du suivant //todo
-        m_currentColumn = m_currentColumn->m_next;
+        m_currentColumn = m_currentColumn->getNextCell();
         while( m_currentColumn->hasChild() )
         {
           m_currentLayer++;
@@ -239,14 +263,17 @@ public:
       }
       else
       {
-        bool const hasParent = (m_currentColumn->m_parent != nullptr);
+        bool const hasParent = (m_currentColumn->getParent() != nullptr);
         m_currentLayer -= size_t( hasParent );
-        m_currentColumn = hasParent ? m_currentColumn->m_parent : nullptr;
+        m_currentColumn = hasParent ? m_currentColumn->getParent() : nullptr;
       }
       return *this;
     }
 
-    // Postfix ++ overload
+    /**
+     * @brief Postfix ++ overload
+     * @return Leaf iterator
+     */
     LeafIterator operator++( int )
     {
       LeafIterator temp = *this;
@@ -254,25 +281,56 @@ public:
       return temp;
     }
 
+    /**
+     * @brief Dereference operator.
+     * @return Reference to the current Column object pointed to by the iterator.
+     */
     ColumnType & operator*()
     { return *m_currentColumn; }
 
+    /**
+     * @brief Arrow operator.
+     * @return Pointer to the current Column object.
+     */
     ColumnType * operator->()
     { return m_currentColumn; }
 
+    /**
+     * @brief Equality comparison operator.
+     * @param a The first iterator.
+     * @param b The second iterator.
+     * @return True if both iterators point to the same column; false otherwise.
+     */
     friend bool operator== ( LeafIterator const & a, LeafIterator const & b )
     { return a.m_currentColumn == b.m_currentColumn; };
+    /**
+     * @brief Inequality comparison operator.
+     * @param a The first iterator.
+     * @param b The second iterator.
+     * @return True if the iterators point to different columns; false otherwise.
+     */
     friend bool operator!= ( LeafIterator const & a, LeafIterator const & b )
     { return a.m_currentColumn != b.m_currentColumn; };
 
+    /**
+     * @brief Gets the current layer (depth) of the iterator.
+     * @return The current layer (depth) of the iterator.
+     */
     size_t getCurrentLayer() const
     { return m_currentLayer; }
 
 private:
+    /// Pointer to the current column
     ColumnType * m_currentColumn;
+    /// The current depth of the iterator
     size_t m_currentLayer;
   };
 
+  /**
+   * @return Return an itarator pointing on the first leaf of the first columns vector
+   * Example on 2 column with Column A : 2 layer and Column B : 3 layers
+   * A.A -> A-B -> A-C -> A -> B-A-A -> B-A-B -> B-A -> B-B-A -> B-B-B -> B-B -> B
+   */
   LeafIterator beginLeaf()
   {
     Column * startColumn = &(*m_tableColumnsData.begin());
@@ -288,6 +346,11 @@ private:
     return LeafIterator( startColumn, idxLayer );
   }
 
+  /**
+   * @return Return a end itarator
+   * This iterator is initialized with a null pointer
+   * representing a position after the last valid element
+   */
   LeafIterator endLeaf()
   {
     return LeafIterator( nullptr, 0 );
@@ -304,20 +367,17 @@ private:
 
   TableLayout() = default;
 
-  // delete copy construct//todo
-  //default move construct//tdo
-
   /**
    * @brief Construct a new Table Layout object
    * @param title The table title
    * @param columns A vector containing all column initialized
    */
   TableLayout( string_view title,
-               std::vector< TableLayout::Column > & columns )
+               std::vector< TableLayout::Column > const & columns )
   {
     setMargin( MarginValue::medium );
     setTitle( title );
-    for( auto & column :columns )
+    for( auto const & column :columns )
     {
       addToColumns( column );
     }
@@ -482,6 +542,7 @@ private:
  */
   void addToColumns( TableLayout::Column const & column );
 
+  /// Contains the columns layout
   std::vector< Column > m_tableColumnsData;
   /// Contains the subdivision (line) counts for each line in header.
   std::vector< size_t > m_sublineHeaderCounts;

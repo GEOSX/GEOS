@@ -219,14 +219,14 @@ void TableTextFormatter::setLinks( std::vector< TableLayout::Column > & columns 
   {
     if( idxColumn < columns.size() - 1 )
     {
-      columns[idxColumn].m_next = &columns[idxColumn + 1];
+      columns[idxColumn].setNextCell( &columns[idxColumn + 1] );
     }
 
     if( !columns[idxColumn].m_subColumn.empty())
     {
       for( auto & subCol : columns[idxColumn].m_subColumn )
       {
-        subCol.m_parent = &columns[idxColumn];
+        subCol.setParent( &columns[idxColumn] );
       }
 
       setLinks( columns[idxColumn].m_subColumn );
@@ -252,24 +252,26 @@ void TableTextFormatter::populateHeaderCellsLayout( TableLayout & tableLayout,
       for( size_t idxRow = currentLayer; idxRow < headerLayersCount - 1; idxRow++ )
       {
         TableLayout::CellLayout emptyCell{CellType::Header, "", TableLayout::Alignment::center};
-        emptyCell.m_maxLineWidth = it->getMaxStringSize();
+        emptyCell.m_maxLineWidth = it->m_header.m_maxLineWidth;
         cellsHeaderLayout[idxRow + 1].push_back( emptyCell );
       }
     }
-    currentCell.m_maxLineWidth = it->getMaxStringSize();
+    currentCell.m_maxLineWidth = it->m_header.m_maxLineWidth;
 
-    if( it->hasParent() )
+    if( it->hasParent() && it->getParent()->getNumberCellMerge() == 0 )
     {
-      it->m_parent->m_headerMergeCount  += it->m_headerMergeCount  == 0 ? 1 : it->m_headerMergeCount ;
+
+      it->getParent()->incrementMergeHeaderCount();
     }
-    if( it->m_headerMergeCount  > 1 )
+
+    if( it->getNumberCellMerge()  > 1 )
     {
-      it->m_headerMergeCount --;
+      it->getParent()->decrementMergeHeaderCount();
     }
 
     sublineHeaderCounts[currentLayer] = std::max( sublineHeaderCounts[currentLayer],
                                                   currentCell.m_lines.size() );
-    for( size_t idxColumn = 0; idxColumn < it->m_headerMergeCount ; idxColumn++ )
+    for( size_t idxColumn = 0; idxColumn < it->getNumberCellMerge(); idxColumn++ )
     {
       TableLayout::CellLayout mergingCell{ CellType::MergeNext, "", TableLayout::Alignment::center };
       cellsHeaderLayout[currentLayer].push_back( mergingCell );
