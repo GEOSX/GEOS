@@ -409,6 +409,13 @@ void SinglePhaseBase::updateMobility( ObjectManagerBase & dataGroup ) const
                                                                               mob,
                                                                               dMob_dPres,
                                                                               dMob_dTemp );
+    for( localIndex i=0; i<dataGroup.size(); i++ )
+    {
+      //std::cout << dMobility[i][0] << " " << dMob_dPres[i] << std::endl;
+      //std::cout << dMobility[i][1] << " " << dMob_dTemp[i] << std::endl;
+      assert( fabs( dMobility[i][0] -dMob_dPres[i] ) < FLT_EPSILON );
+      assert( fabs( dMobility[i][1] -dMob_dTemp[i] ) < FLT_EPSILON );
+    }
   }
   else
   {
@@ -421,6 +428,12 @@ void SinglePhaseBase::updateMobility( ObjectManagerBase & dataGroup ) const
                                                                               fluidProps.dVisc_dPres,
                                                                               mob,
                                                                               dMob_dPres );
+
+    for( localIndex i=0; i<dataGroup.size(); i++ )
+    {
+      assert( fabs( dMobility[i][0] -dMob_dPres[i] ) < FLT_EPSILON );
+    }
+
   }
 
 }

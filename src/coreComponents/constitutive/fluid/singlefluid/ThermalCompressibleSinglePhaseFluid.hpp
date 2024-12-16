@@ -49,7 +49,6 @@ public:
   ThermalCompressibleSinglePhaseUpdate( DensRelationType const & densRelation,
                                         ViscRelationType const & viscRelation,
                                         IntEnergyRelationType const & intEnergyRelation,
-                                        SingleFluidProp & density_c,
                                         arrayView2d< real64 > const & density,
                                         arrayView3d< real64 > const & dDensity,
                                         arrayView2d< real64 > const & dDens_dPres,

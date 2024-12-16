@@ -59,6 +59,7 @@ public:
   using AbstractBase::m_gravCoef;
   using AbstractBase::m_pres;
   using AbstractBase::m_mob;
+  using AbstractBase::m_dMob;
   using AbstractBase::m_dMob_dPres;
   using AbstractBase::m_dens;
   using AbstractBase::m_dDens;
@@ -191,6 +192,7 @@ public:
                                                           m_dDens,
                                                           m_dDens_dPres,
                                                           m_mob,
+                                                          m_dMob,
                                                           m_dMob_dPres,
                                                           alpha,
                                                           mobility,

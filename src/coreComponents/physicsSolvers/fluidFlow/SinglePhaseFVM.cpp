@@ -432,6 +432,7 @@ void SinglePhaseFVM< SinglePhaseProppantBase >::assembleFluxTerms( real64 const 
                                                                      fluidAccessors.get< fields::singlefluid::dDensity >(),
                                                                      fluidAccessors.get< fields::singlefluid::dDensity_dPressure >(),
                                                                      flowAccessors.get< fields::flow::mobility >(),
+                                                                     flowAccessors.get< fields::flow::dMobility >(),
                                                                      flowAccessors.get< fields::flow::dMobility_dPressure >(),
                                                                      permAccessors.get< fields::permeability::permeability >(),
                                                                      permAccessors.get< fields::permeability::dPerm_dPressure >(),

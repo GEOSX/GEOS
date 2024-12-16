@@ -71,6 +71,7 @@ public:
                       fields::flow::pressure_n,
                       fields::flow::gravityCoefficient,
                       fields::flow::mobility,
+                      fields::flow::dMobility,
                       fields::flow::dMobility_dPressure >;
 
   using SinglePhaseFluidAccessors =
@@ -125,6 +126,7 @@ public:
     m_gravCoef( singlePhaseFlowAccessors.get( fields::flow::gravityCoefficient {} ) ),
     m_pres( singlePhaseFlowAccessors.get( fields::flow::pressure {} ) ),
     m_mob( singlePhaseFlowAccessors.get( fields::flow::mobility {} ) ),
+    m_dMob( singlePhaseFlowAccessors.get( fields::flow::dMobility {} ) ),
     m_dMob_dPres( singlePhaseFlowAccessors.get( fields::flow::dMobility_dPressure {} ) ),
     m_dens( singlePhaseFluidAccessors.get( fields::singlefluid::density {} ) ),
     m_dDens( singlePhaseFluidAccessors.get( fields::singlefluid::dDensity {} ) ),
@@ -158,6 +160,7 @@ protected:
 
   /// Views on fluid mobility
   ElementViewConst< arrayView1d< real64 const > > const m_mob;
+  ElementViewConst< arrayView2d< real64 const > > const m_dMob;
   ElementViewConst< arrayView1d< real64 const > > const m_dMob_dPres;
 
   /// Views on fluid density

@@ -226,6 +226,7 @@ public:
                                                               m_dDens,
                                                               m_dDens_dPres,
                                                               m_mob,
+                                                              m_dMob,
                                                               m_dMob_dPres,
                                                               alpha,
                                                               mobility,

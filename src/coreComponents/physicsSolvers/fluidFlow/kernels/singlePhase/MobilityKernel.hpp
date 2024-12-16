@@ -133,7 +133,7 @@ struct MobilityKernel
       mobility[a] = density[a][0] / viscosity[a][0];
       for( int i=0; i<NUMDOF; i++ )
       {
-        dMobility[a][i] = dDensity[a][0][i]/viscosity[a][0] - mobility[a]/viscosity[a][0]*dDensity[a][0][i];
+        dMobility[a][i] = dDensity[a][0][i]/viscosity[a][0] - mobility[a]/viscosity[a][0]*dViscosity[a][0][i];
       }
 
     } );

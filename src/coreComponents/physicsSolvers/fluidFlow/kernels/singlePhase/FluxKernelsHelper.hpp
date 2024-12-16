@@ -53,6 +53,7 @@ void computeSinglePhaseFlux( localIndex const ( &seri )[2],
                              ElementViewConst< arrayView3d< real64 const > > const & dDens,
                              ElementViewConst< arrayView2d< real64 const > > const & dDens_dPres,
                              ElementViewConst< arrayView1d< real64 const > > const & mob,
+                             ElementViewConst< arrayView2d< real64 const > > const & dMob,
                              ElementViewConst< arrayView1d< real64 const > > const & dMob_dPres,
                              real64 & alpha,
                              real64 & mobility,
@@ -111,7 +112,10 @@ void computeSinglePhaseFlux( localIndex const ( &seri )[2],
     // happy path: single upwind direction
     localIndex const ke = 1 - localIndex( fmax( fmin( alpha, 1.0 ), 0.0 ) );
     mobility = mob[seri[ke]][sesri[ke]][sei[ke]];
+    dMobility_dP[ke] = dMob[seri[ke]][sesri[ke]][sei[ke]][0];
+    //tjb remove
     dMobility_dP[ke] = dMob_dPres[seri[ke]][sesri[ke]][sei[ke]];
+    assert( fabs( dMob[seri[ke]][sesri[ke]][sei[ke]][0]-dMob_dPres[seri[ke]][sesri[ke]][sei[ke]] )<FLT_EPSILON );
   }
   else
   {
@@ -120,7 +124,10 @@ void computeSinglePhaseFlux( localIndex const ( &seri )[2],
     for( localIndex ke = 0; ke < 2; ++ke )
     {
       mobility += mobWeights[ke] * mob[seri[ke]][sesri[ke]][sei[ke]];
+      dMobility_dP[ke] = mobWeights[ke] * dMob[seri[ke]][sesri[ke]][sei[ke]][0];
+      //tjb remove
       dMobility_dP[ke] = mobWeights[ke] * dMob_dPres[seri[ke]][sesri[ke]][sei[ke]];
+      assert( fabs( dMob[seri[ke]][sesri[ke]][sei[ke]][0]-dMob_dPres[seri[ke]][sesri[ke]][sei[ke]] )<FLT_EPSILON );
     }
   }
 
