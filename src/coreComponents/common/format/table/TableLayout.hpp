@@ -78,7 +78,7 @@ public:
     /// The alignment of the cell (left, center, right).
     Alignment m_alignment;
     /// Maximum length of the data in the cell.
-    size_t m_maxLineWidth;
+    size_t m_cellWidth;
 
     /**
      * @brief Constructor to initialize a Cell with a default settings.
@@ -141,10 +141,10 @@ public:
     Column & setName( string_view name );
 
     /**
-     * @brief Hides the column.
-     * @return The current column objec.
+     * @brief Set the column visibility.
+     * @return The current column .
      */
-    Column & hide();
+    Column & setVisibility( CellType celltype );
 
     /**
      * @brief Adds multiple sub-columns to the column.
@@ -218,7 +218,8 @@ private:
   };
 
   /**
-   * @brief An iterator for navigating through the leaf columns of a hierarchical column structure.
+   * @brief Iterator to loop over all columns, starting by the deepest sub columns,
+   * then to their parents, then to their siblings.
    */
   class LeafIterator
   {
@@ -227,7 +228,7 @@ public:
 
     /**
      * @brief Construct a new Leaf Iterator object
-     * @param columnPtr The first column/subColumn of the column vector
+     * @param columnPtr The first deepest column of vector
      * @param idxLayer the layer associated with the column
      */
     LeafIterator( ColumnType * columnPtr, size_t idxLayer ):
@@ -463,12 +464,14 @@ private:
 
 
   /**
-   * @return The border margin, number of spaces at both left and right table sides plus vertical character
+   * @return The border margin,
+   * number of spaces at both left and right table sides plus vertical character
    */
   integer const & getBorderMargin() const;
 
   /**
-   * @return The column margin, numbers of spaces separating both left and right side from a vertical line
+   * @return The column margin,
+   * numbers of spaces separating both left and right side from a vertical line
    */
   integer const & getColumnMargin() const;
 

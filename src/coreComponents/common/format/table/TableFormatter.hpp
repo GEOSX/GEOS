@@ -141,7 +141,7 @@ private:
 
   /// symbol for separator construction
   static constexpr char m_verticalLine = '|';
-  ///  for the extremity of a row
+  /// for the extremity of a row
   static constexpr char m_horizontalLine = '-';
 
 
@@ -199,9 +199,11 @@ private:
   /**
    * @brief Finds and sets the longest string for each column in the table.
    * @param tableLayout The layout of the table,
-   * @param cellHeaderLength A reference to the collection of data cells. The function updates the maximum string
+   * @param cellHeaderLength A reference to the collection of data cells.
+   * The function updates the maximum string
    *        length for each cell based on the longest string found in the column.
-   * @param cellsDataLayout A reference to the collection of data cells. The function updates the maximum string
+   * @param cellsDataLayout A reference to the collection of data cells.
+   * The function updates the maximum string
    *        length for each cell based on the longest string found in the column.
    */
   void updateColumnMaxLength( TableLayout & tableLayout,
@@ -209,7 +211,8 @@ private:
                               CellLayoutRows & cellsDataLayout ) const;
 
   /**
-   * @brief Computes and constructs the separator lines for the table. Adjust columns if the title is the largest row
+   * @brief Computes and constructs the separator lines for the table.
+   * Adjust columns if the title is the largest row
    * @param tableLayout The layout of the table,
    * @param cellsHeaderLayout A reference to the collection of header cells that can be affected by column resizing.
    * @param cellsDataLayout A reference to the collection of data cells that can be affected by column resizing.

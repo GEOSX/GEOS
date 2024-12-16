@@ -63,9 +63,7 @@ TableLayout & TableLayout::setMargin( MarginValue marginValue )
 }
 
 bool TableLayout::isLineBreakEnabled() const
-{
-  return m_wrapLine;
-}
+{ return m_wrapLine; }
 
 size_t TableLayout::getMaxHeaderRow() const
 {
@@ -86,49 +84,31 @@ size_t TableLayout::getMaxHeaderRow() const
 }
 
 std::vector< TableLayout::Column > & TableLayout::getColumns()
-{
-  return m_tableColumnsData;
-}
+{ return m_tableColumnsData; }
 
 std::vector< TableLayout::Column > const & TableLayout::getColumns() const
-{
-  return m_tableColumnsData;
-}
+{ return m_tableColumnsData; }
 
 string_view TableLayout::getTitle() const
-{
-  return m_tableTitle;
-}
+{ return m_tableTitle; }
 
 integer const & TableLayout::getBorderMargin() const
-{
-  return m_borderMargin;
-}
+{ return m_borderMargin; }
 
 integer const & TableLayout::getColumnMargin() const
-{
-  return m_columnMargin;
-}
+{ return m_columnMargin; }
 
 integer const & TableLayout::getMarginValue() const
-{
-  return m_marginValue;
-}
+{ return m_marginValue; }
 
 integer const & TableLayout::getMarginTitle() const
-{
-  return m_titleMargin;
-}
+{ return m_titleMargin; }
 
 std::vector< size_t > & TableLayout::getSublineInHeaderCounts()
-{
-  return m_sublineHeaderCounts;
-}
+{ return m_sublineHeaderCounts; }
 
 std::vector< size_t > & TableLayout::getNbSubDataLines()
-{
-  return m_sublineDataCounts;
-}
+{ return m_sublineDataCounts; }
 
 void divideCell( std::vector< string > & lines, string const & value )
 {
@@ -150,7 +130,7 @@ TableLayout::CellLayout::CellLayout():
   m_lines( {""} ),
   m_cellType( CellType::Header ),
   m_alignment( TableLayout::Alignment::center ),
-  m_maxLineWidth( 0 )
+  m_cellWidth( 0 )
 {}
 
 TableLayout::CellLayout::CellLayout( CellType type, string const & cellValue, TableLayout::Alignment alignment ):
@@ -160,14 +140,14 @@ TableLayout::CellLayout::CellLayout( CellType type, string const & cellValue, Ta
   divideCell( m_lines, cellValue );
   if( !m_lines.empty())
   {
-    m_maxLineWidth = std::max_element( m_lines.begin(), m_lines.end(), []( const auto & a, const auto & b )
+    m_cellWidth = std::max_element( m_lines.begin(), m_lines.end(), []( const auto & a, const auto & b )
     {
       return a.length() < b.length();
     } )->length();
   }
   else
   {
-    m_maxLineWidth = 0;
+    m_cellWidth = 0;
   }
 }
 
@@ -181,9 +161,7 @@ TableLayout::Column::Column():
 
 TableLayout::Column::Column( TableLayout::CellLayout cell ):
   m_parent( nullptr ), m_next( nullptr )
-{
-  m_header = cell;
-}
+{ m_header = cell; }
 
 
 TableLayout::Column & TableLayout::Column::setName( string_view name )
@@ -194,9 +172,9 @@ TableLayout::Column & TableLayout::Column::setName( string_view name )
   return *this;
 }
 
-TableLayout::Column & TableLayout::Column::hide()
+TableLayout::Column & TableLayout::Column::setVisibility( CellType celltype )
 {
-  m_header.m_cellType = CellType::Hidden;
+  m_header.m_cellType = celltype;
   return *this;
 }
 
@@ -243,7 +221,7 @@ TableLayout::Column & TableLayout::Column::setValuesAlignment( Alignment valueAl
 size_t TableLayout::Column::getNumberCellMerge()
 { return m_headerMergeCount; }
 
-void  TableLayout::Column::incrementMergeHeaderCount()
+void TableLayout::Column::incrementMergeHeaderCount()
 { m_headerMergeCount++;}
 
 void TableLayout::Column::decrementMergeHeaderCount()

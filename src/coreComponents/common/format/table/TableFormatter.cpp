@@ -252,15 +252,14 @@ void TableTextFormatter::populateHeaderCellsLayout( TableLayout & tableLayout,
       for( size_t idxRow = currentLayer; idxRow < headerLayersCount - 1; idxRow++ )
       {
         TableLayout::CellLayout emptyCell{CellType::Header, "", TableLayout::Alignment::center};
-        emptyCell.m_maxLineWidth = it->m_header.m_maxLineWidth;
+        emptyCell.m_cellWidth = it->m_header.m_cellWidth;
         cellsHeaderLayout[idxRow + 1].push_back( emptyCell );
       }
     }
-    currentCell.m_maxLineWidth = it->m_header.m_maxLineWidth;
+    currentCell.m_cellWidth = it->m_header.m_cellWidth;
 
     if( it->hasParent() && it->getParent()->getNumberCellMerge() == 0 )
     {
-
       it->getParent()->incrementMergeHeaderCount();
     }
 
@@ -369,14 +368,14 @@ void TableTextFormatter::updateColumnMaxLength( TableLayout & tableLayout,
   {
     if( previousCell && previousCell->m_cellType == CellType::MergeNext )
     {
-      size_t const previousCellMaxLength = previousCell->m_maxLineWidth;
+      size_t const previousCellMaxLength = previousCell->m_cellWidth;
       size_t const additionalMargin = tableLayout.getColumnMargin();
-      cell.m_maxLineWidth = maxColumnSize + previousCellMaxLength + additionalMargin;
-      previousCell->m_maxLineWidth = 0;
+      cell.m_cellWidth = maxColumnSize + previousCellMaxLength + additionalMargin;
+      previousCell->m_cellWidth = 0;
     }
     else
     {
-      cell.m_maxLineWidth = maxColumnSize;
+      cell.m_cellWidth = maxColumnSize;
     }
   };
 
@@ -398,33 +397,37 @@ void TableTextFormatter::updateColumnMaxLength( TableLayout & tableLayout,
     {
       size_t const cellHeaderLength = getMaxLineLength( cellsHeaderLayout[rowIdx][idxColumn].m_lines );
       maxColumnSize = std::max( {maxColumnSize, cellHeaderLength} );
-      cellsHeaderLayout[rowIdx][idxColumn].m_maxLineWidth = maxColumnSize;
+      cellsHeaderLayout[rowIdx][idxColumn].m_cellWidth = maxColumnSize;
     }
 
     // update maxColumnSize for data cell
     for( size_t rowIdx = 0; rowIdx < cellsDataLayout.size(); ++rowIdx )
     {
       TableLayout::CellLayout & dataCell = cellsDataLayout[rowIdx][idxColumn];
-      TableLayout::CellLayout * previousDataCell = (idxColumn > 0) ? &cellsDataLayout[rowIdx][idxColumn - 1] : nullptr;
+      TableLayout::CellLayout * previousDataCell = (idxColumn > 0) ?
+                                                   &cellsDataLayout[rowIdx][idxColumn - 1] :
+                                                   nullptr;
 
       if( dataCell.m_cellType == CellType::MergeNext )
       {
-        accMaxStringColumn[rowIdx] += cellsHeaderLayout[0][idxColumn].m_maxLineWidth + tableLayout.getColumnMargin();
+        accMaxStringColumn[rowIdx] += cellsHeaderLayout[0][idxColumn].m_cellWidth + tableLayout.getColumnMargin();
       }
 
       if( idxColumn > 0 &&
           previousDataCell->m_cellType == CellType::MergeNext && dataCell.m_cellType != CellType::MergeNext )
       {
-        size_t sumOfMergingCell = accMaxStringColumn[rowIdx] + cellsHeaderLayout[0][idxColumn].m_maxLineWidth;
-        if( sumOfMergingCell <  dataCell.m_maxLineWidth )
+        size_t sumOfMergingCell = accMaxStringColumn[rowIdx] + cellsHeaderLayout[0][idxColumn].m_cellWidth;
+        if( sumOfMergingCell <  dataCell.m_cellWidth )
         {
-          maxColumnSize += dataCell.m_maxLineWidth - sumOfMergingCell;
+          maxColumnSize += dataCell.m_cellWidth - sumOfMergingCell;
           for( size_t rowIdx2 = 0; rowIdx2 < rowIdx; rowIdx2++ )
           {
-            TableLayout::CellLayout * previousDataCellTemp = (idxColumn > 0) ? &cellsDataLayout[rowIdx2][idxColumn - 1] : nullptr;
+            TableLayout::CellLayout * previousDataCellTemp = (idxColumn > 0) ?
+                                                             &cellsDataLayout[rowIdx2][idxColumn - 1] :
+                                                             nullptr;
             if( previousDataCellTemp )
             {
-              previousDataCellTemp->m_maxLineWidth = cellsHeaderLayout[0][idxColumn - 1].m_maxLineWidth;
+              previousDataCellTemp->m_cellWidth = cellsHeaderLayout[0][idxColumn - 1].m_cellWidth;
             }
             updateCellMaxLength( cellsDataLayout[rowIdx2][idxColumn], maxColumnSize, previousDataCellTemp );
             if( cellsDataLayout[rowIdx2][idxColumn].m_cellType == CellType::Separator )
@@ -449,7 +452,7 @@ void TableTextFormatter::updateColumnMaxLength( TableLayout & tableLayout,
 
       if( dataCell.m_cellType == CellType::Separator )
       {
-        size_t separatorLength = dataCell.m_maxLineWidth;
+        size_t separatorLength = dataCell.m_cellWidth;
         separatorLength += (idxColumn == numColumns - 1) ?
                            tableLayout.getBorderMargin() * 2 + 2 :
                            tableLayout.getColumnMargin();
@@ -492,7 +495,7 @@ void TableTextFormatter::calculateTableSeparators( TableLayout & tableLayout,
     }
     if( column.m_cellType != CellType::Hidden && column.m_cellType != CellType::MergeNext )
     {
-      sectionlineLength += column.m_maxLineWidth;
+      sectionlineLength += column.m_cellWidth;
       nbColumns++;
     }
   }
@@ -541,15 +544,15 @@ void TableTextFormatter::adjustColumnWidths( CellLayoutRows & cells,
         if( idxColumn > 0 && cells[idxRow][idxColumn - 1].m_cellType == CellType::MergeNext )
         {
           auto * previousCell = &cells[idxRow][idxColumn - 1];
-          currentCell.m_maxLineWidth += previousCell->m_maxLineWidth;
-          previousCell->m_maxLineWidth = 0;
+          currentCell.m_cellWidth += previousCell->m_cellWidth;
+          previousCell->m_cellWidth = 0;
         }
 
         size_t const additionalPadding = (isLastVisibleColumn || idxColumn == nbColumns - 1) ?
                                          remainingPaddingForLastColumn :
                                          0;
 
-        currentCell.m_maxLineWidth += paddingPerColumn + additionalPadding;
+        currentCell.m_cellWidth += paddingPerColumn + additionalPadding;
       }
     }
   }
@@ -580,7 +583,7 @@ void TableTextFormatter::formatCell( TableLayout & tableLayout,
   GEOS_UNUSED_VAR( tableLayout );
   tableOutput << buildCell( cell.m_alignment,
                             cell.m_lines[idxLine],
-                            cell.m_maxLineWidth );
+                            cell.m_cellWidth );
 }
 
 void TableTextFormatter::outputLines( TableLayout & tableLayout,
