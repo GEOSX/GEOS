@@ -23,18 +23,8 @@
 namespace geos
 {
 
-void TableData::addRow( std::vector< TableData::CellData > const & rows )
+void TableData::addRow( std::vector< TableData::CellData > const & row )
 {
-  if( m_rows.size() != 0 && rows.size() != m_rows[m_rows.size() - 1].size() )
-  {
-    string msg = "Remarks : some cells may be missing";
-    std::cout << '\n';
-    if( std::find( m_errorsMsg.begin(), m_errorsMsg.end(), msg ) == m_errorsMsg.end())
-    {
-      m_errorsMsg.push_back( msg );
-    }
-  }
-
   m_rows.push_back( rows );
 }
 
@@ -59,11 +49,6 @@ void TableData::clear()
 std::vector< std::vector< TableData::CellData > > const & TableData::getTableDataRows() const
 {
   return m_rows;
-}
-
-std::vector< string > const & TableData::getErrorMsgs() const
-{
-  return m_errorsMsg;
 }
 
 void TableData2D::collectTableValues( arraySlice1d< real64 const > rowAxisValues,

@@ -158,7 +158,7 @@ public:
 
     /**
      * @brief Set the column visibility.
-     * @param CellType Cell type to apply to hide the colmun 
+     * @param CellType Cell type to apply to hide the colmun
      * @return The current column .
      */
     Column & setVisibility( CellType celltype );
@@ -434,7 +434,7 @@ private:
 
   /**
    * @brief Get the max depth of a column
-   * @return The max column depth 
+   * @return The max column depth
    */
   size_t getMaxDepth() const;
 

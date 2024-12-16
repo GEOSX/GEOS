@@ -87,9 +87,6 @@ private:
   /// vector containing all rows with cell values
   std::vector< std::vector< CellData > > m_rows;
 
-  /// store error if there are any inconsistencies related to the table
-  std::vector< string > m_errorsMsg;
-
 };
 
 /**

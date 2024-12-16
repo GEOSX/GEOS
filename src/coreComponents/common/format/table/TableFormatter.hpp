@@ -36,7 +36,7 @@ class TableFormatter
 public:
   /// Represent the TableData values
   using RowsCellInput = std::vector< std::vector< TableData::CellData > >;
-  /// Represent the Table (header or values) structured 
+  /// Represent the Table (header or values) structured
   using CellLayoutRows = std::vector< std::vector< TableLayout::CellLayout > >;
 
 
