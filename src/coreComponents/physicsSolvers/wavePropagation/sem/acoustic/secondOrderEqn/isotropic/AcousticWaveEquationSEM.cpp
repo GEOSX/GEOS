@@ -150,25 +150,25 @@ void AcousticWaveEquationSEM::precomputeSourceAndReceiverTerm( MeshLevel & baseM
   EventManager const & event = getGroupByPath< EventManager >( "/Problem/Events" );
   real64 const & maxTime = event.getReference< real64 >( EventManager::viewKeyStruct::maxTimeString() );
   real64 const & minTime = event.getReference< real64 >( EventManager::viewKeyStruct::minTimeString() );
-  real64 dt = 0;                                                                
+  real64 dt = 0;
   for( localIndex numSubEvent = 0; numSubEvent < event.numSubGroups(); ++numSubEvent )
-  {                                                                             
+  {
     EventBase const * subEvent = static_cast< EventBase const * >( event.getSubGroups()[numSubEvent] );
-    if( subEvent->getEventName() == "/Solvers/" + this->getName() )             
-    {                                                                           
+    if( subEvent->getEventName() == "/Solvers/" + this->getName() )
+    {
       dt = subEvent->getReference< real64 >( EventBase::viewKeyStruct::forceDtString() );
-    }                                                                           
-  }                                                                             
+    }
+  }
 
   real64 dtCompute;
-  
+
   localIndex nSubSteps = (int) ceil( dt/m_timeStep );
   dtCompute = dt/nSubSteps;
 
-  localIndex const nsamples = int( (maxTime - minTime) / dtCompute) + 1;               
-                                                                                
-  localIndex const numSourcesGlobal = m_sourceCoordinates.size( 0 );            
-  m_sourceValue.resize( nsamples, numSourcesGlobal );                
+  localIndex const nsamples = int( (maxTime - minTime) / dtCompute) + 1;
+
+  localIndex const numSourcesGlobal = m_sourceCoordinates.size( 0 );
+  m_sourceValue.resize( nsamples, numSourcesGlobal );
 
   arrayView2d< real32 > const sourceValue = m_sourceValue.toView();
 
@@ -1148,7 +1148,7 @@ void AcousticWaveEquationSEM::computeUnknowns( real64 const & time_n,
   //Modification of cycleNember useful when minTime < 0
   EventManager const & event = getGroupByPath< EventManager >( "/Problem/Events" );
   real64 const & minTime = event.getReference< real64 >( EventManager::viewKeyStruct::minTimeString() );
-  localIndex const cycleNumber = time_n*dt;
+  localIndex const cycleNumber = time_n/dt;
   integer const cycleForSource = int(round( -minTime / dt + cycleNumber ));
 
   addSourceToRightHandSide( cycleForSource, rhs );
