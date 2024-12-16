@@ -3,7 +3,7 @@
  * SPDX-License-Identifier: LGPL-2.1-only
  *
  * Copyright (c) 2016-2024 Lawrence Livermore National Security LLC
- * Copyright (c) 2018-2024 Total, S.A
+ * Copyright (c) 2018-2024 TotalEnergies
  * Copyright (c) 2018-2024 The Board of Trustees of the Leland Stanford Junior University
  * Copyright (c) 2023-2024 Chevron
  * Copyright (c) 2019-     GEOS/GEOSX Contributors
@@ -29,6 +29,7 @@ using namespace dataRepository;
 OutputBase::OutputBase( string const & name,
                         Group * const parent ):
   ExecutableGroup( name, parent ),
+  m_outputTimer(),
   m_childDirectory(),
   m_parallelThreads( 1 )
 {
@@ -43,6 +44,8 @@ OutputBase::OutputBase( string const & name,
     setInputFlag( InputFlags::OPTIONAL ).
     setDescription( "Number of plot files." );
 
+  // Add the Timers log level
+  addLogLevel< logInfo::OutputTimers >();
 }
 
 OutputBase::~OutputBase()
@@ -103,6 +106,24 @@ void OutputBase::setupDirectoryStructure()
     {
       makeDirsForPath( childDirectory );
     }
+  }
+}
+
+void OutputBase::cleanup( real64 const GEOS_UNUSED_PARAM( time_n ),
+                          integer const GEOS_UNUSED_PARAM( cycleNumber ),
+                          integer const GEOS_UNUSED_PARAM( eventCounter ),
+                          real64 const GEOS_UNUSED_PARAM( eventProgress ),
+                          DomainPartition & GEOS_UNUSED_PARAM( domain ) )
+{
+  // Report timing statistics
+  real64 const time = std::chrono::duration< double >( m_outputTimer ).count();
+  real64 const minTime = MpiWrapper::min( time );
+  real64 const maxTime = MpiWrapper::max( time );
+  if( maxTime > 0 )
+  {
+    GEOS_LOG_LEVEL_INFO_RANK_0( logInfo::OutputTimers,
+                                GEOS_FMT( "{}: file writing time = {} s (min), {} s (max)",
+                                          getName(), minTime, maxTime ) );
   }
 }
 
