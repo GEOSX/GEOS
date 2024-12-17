@@ -120,7 +120,7 @@ void importEmbeddedFractureNetwork( string const & embeddedSurfaceBlockName,
   ArrayOfArrays< localIndex > toCellIndex( numEdfmFracs );
   for( vtkIdType i = 0; i < numEdfmFracs; ++i )
   {
-    auto fidmid =fid_mid->GetTuple2( i );
+    auto fidmid = fid_mid->GetTuple2( i ); // TODO these indexes are global and needs to be converted to local
     toBlockIndex.emplaceBack( fidmid[0], 0 );// cell block is set to 0 for now
     toCellIndex.emplaceBack( fidmid[0], fidmid[1] );
   }

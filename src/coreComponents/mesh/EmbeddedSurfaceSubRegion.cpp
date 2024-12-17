@@ -107,11 +107,10 @@ void EmbeddedSurfaceSubRegion::calculateElementGeometricQuantities( arrayView2d<
   {
     LvArray::tensorOps::add< 3 >( m_elementCenter[k], intersectionPoints[ p ] );
   }
+  LvArray::tensorOps::scale< 3 >( m_elementCenter[ k ], 1.0 / intersectionPoints.size( 0 ) );
 
   // update area
   m_elementArea[ k ] = computationalGeometry::ComputeSurfaceArea( intersectionPoints, m_normalVector[k] );
-
-  LvArray::tensorOps::scale< 3 >( m_elementCenter[ k ], 1.0 / intersectionPoints.size( 0 ) );
 
   // update volume
   m_elementVolume[k] = m_elementAperture[k] * m_elementArea[k];
