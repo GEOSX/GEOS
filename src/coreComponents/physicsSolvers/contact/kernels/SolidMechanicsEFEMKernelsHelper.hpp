@@ -3,7 +3,7 @@
  * SPDX-License-Identifier: LGPL-2.1-only
  *
  * Copyright (c) 2016-2024 Lawrence Livermore National Security LLC
- * Copyright (c) 2018-2024 Total, S.A
+ * Copyright (c) 2018-2024 TotalEnergies
  * Copyright (c) 2018-2024 The Board of Trustees of the Leland Stanford Junior University
  * Copyright (c) 2023-2024 Chevron
  * Copyright (c) 2019-     GEOS/GEOSX Contributors
@@ -18,8 +18,8 @@
  * @file EFEMKernelsHelper.hpp
  */
 
-#ifndef GEOS_PHYSICSSOLVERS_CONTACT_SOLIDMECHANICSEFEMKERNELSHELPER_HPP_
-#define GEOS_PHYSICSSOLVERS_CONTACT_SOLIDMECHANICSEFEMKERNELSHELPER_HPP_
+#ifndef GEOS_PHYSICSSOLVERS_CONTACT_KERNELS_SOLIDMECHANICSEFEMKERNELSHELPER_HPP_
+#define GEOS_PHYSICSSOLVERS_CONTACT_KERNELS_SOLIDMECHANICSEFEMKERNELSHELPER_HPP_
 
 
 #include "common/DataTypes.hpp"
@@ -152,4 +152,4 @@ void assembleEquilibriumOperator( real64 ( & eqMatrix )[3][6],
 } // geos
 
 
-#endif /* SRC_CORECOMPONENTS_PHYSICSSOLVERS_CONTACT_EFEMKERNELSHELPER_HPP_ */
+#endif /* SRC_CORECOMPONENTS_PHYSICSSOLVERS_CONTACT_KERNELS_EFEMKERNELSHELPER_HPP_ */

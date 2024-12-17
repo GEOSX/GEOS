@@ -3,7 +3,7 @@
  * SPDX-License-Identifier: LGPL-2.1-only
  *
  * Copyright (c) 2016-2024 Lawrence Livermore National Security LLC
- * Copyright (c) 2018-2024 Total, S.A
+ * Copyright (c) 2018-2024 TotalEnergies
  * Copyright (c) 2018-2024 The Board of Trustees of the Leland Stanford Junior University
  * Copyright (c) 2023-2024 Chevron
  * Copyright (c) 2019-     GEOS/GEOSX Contributors
@@ -606,7 +606,7 @@ public:
 
   static constexpr real64 secondsToDaysMult = 1.0 / (60 * 60 * 24);
 
-  // transmissibility in DARTS is the same as in Eclipse (Metric):
+  // transmissibility in DARTS is Metric:
   // T = c * (k * A) / d, where c is Darcy constant, k is permeability [mD], A is area [m2] and d is distance [m]
   // Darcy constant takes care of unit translation (from SI to Metric), it includes conversion of [s]->[day], [cp->Pa * s], [Pa]->[bar] and
   // [mD->m2]:
