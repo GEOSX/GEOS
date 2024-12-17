@@ -16,5 +16,8 @@ set(MPI_Fortran_COMPILER ${MPI_HOME}/bin/mpifort CACHE PATH "")
 
 set(ENABLE_CUDA_NVTOOLSEXT ON CACHE BOOL "")
 
-include(${CMAKE_CURRENT_LIST_DIR}/lassen-base.cmake)
+# PYGEOSX
+set(ENABLE_PYGEOSX ON CACHE BOOL "")
+set(Python3_EXECUTABLE /usr/gapps/GEOSX/thirdPartyLibs/python/python3-lassen/python/bin/python CACHE PATH "")
 
+include(${CMAKE_CURRENT_LIST_DIR}/lassen-base.cmake)

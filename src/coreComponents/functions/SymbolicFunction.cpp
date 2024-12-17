@@ -37,7 +37,7 @@ using namespace dataRepository;
 SymbolicFunction::SymbolicFunction( const string & name,
                                     Group * const parent ):
   FunctionBase( name, parent )
-  #ifdef GEOSX_USE_MATHPRESSO
+  #ifdef GEOS_USE_MATHPRESSO
   ,
   parserContext(),
   parserExpression(),
@@ -60,7 +60,7 @@ SymbolicFunction::~SymbolicFunction()
 {}
 
 
-#ifdef GEOSX_USE_MATHPRESSO
+#ifdef GEOS_USE_MATHPRESSO
 class GeosxMathpressoLogger : public mathpresso::OutputLog
 {
 public:
@@ -115,7 +115,7 @@ private:
 
 void SymbolicFunction::initializeFunction()
 {
-  #ifdef GEOSX_USE_MATHPRESSO
+  #ifdef GEOS_USE_MATHPRESSO
   // Register variables
   for( localIndex ii=0; ii<m_variableNames.size(); ++ii )
   {
@@ -130,9 +130,9 @@ void SymbolicFunction::initializeFunction()
     GeosxMathpressoLogger outputLog( getName() );
     return parserExpression.compile( parserContext, m_expression.c_str(), mathpresso::kNoOptions, &outputLog );
   }();
-  GEOSX_ERROR_IF( err != mathpresso::kErrorOk, "MathPresso JIT Compiler Error" );
+  GEOS_ERROR_IF( err != mathpresso::kErrorOk, "MathPresso JIT Compiler Error" );
   #else
-  GEOSX_LOG_RANK_0("Skipping SymbolicFunction evaluation");
+  GEOS_LOG_RANK_0("Skipping SymbolicFunction evaluation");
   #endif
 }
 
