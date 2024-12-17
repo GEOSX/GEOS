@@ -1,0 +1,21 @@
+<?xml version="1.0" ?>
+
+<Problem>
+  <Included>
+    <File name="./elas3D_vti_small_base.xml"/>
+  </Included>
+
+  <!-- hexahedral mesh generated internally by GEOSX -->
+  <Mesh>
+    <InternalMesh
+      name="mesh"
+      elementTypes="{ C3D8 }"
+      xCoords="{ 0, 101 }"
+      yCoords="{ 0, 101 }"
+      zCoords="{ 0, 101 }"
+      nx="{ 5 }"
+      ny="{ 5 }"
+      nz="{ 5 }"
+      cellBlockNames="{ cb }"/>
+  </Mesh>
+</Problem>

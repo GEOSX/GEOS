@@ -41,7 +41,7 @@ The
 
 .. code-block:: sh
 
-    GEOSX_TPL_DIR
+    GEOS_TPL_DIR
 
 variable contains the absolute path of the installation root directory of the third party libraries.
 GEOS must use it when building.

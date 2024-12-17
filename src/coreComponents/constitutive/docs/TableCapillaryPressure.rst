@@ -46,7 +46,7 @@ node.
 
 The following attributes are supported:
 
-.. include:: /coreComponents/schema/docs/TableCapillaryPressure.rst
+.. include:: /docs/sphinx/datastructure/TableCapillaryPressure.rst
 
 Below are some comments on the model parameters.
 

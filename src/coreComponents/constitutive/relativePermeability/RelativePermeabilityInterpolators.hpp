@@ -2,10 +2,11 @@
  * ------------------------------------------------------------------------------------------------------------
  * SPDX-License-Identifier: LGPL-2.1-only
  *
- * Copyright (c) 2018-2020 Lawrence Livermore National Security LLC
- * Copyright (c) 2018-2020 The Board of Trustees of the Leland Stanford Junior University
- * Copyright (c) 2018-2020 TotalEnergies
- * Copyright (c) 2019-     GEOSX Contributors
+ * Copyright (c) 2016-2024 Lawrence Livermore National Security LLC
+ * Copyright (c) 2018-2024 TotalEnergies
+ * Copyright (c) 2018-2024 The Board of Trustees of the Leland Stanford Junior University
+ * Copyright (c) 2023-2024 Chevron
+ * Copyright (c) 2019-     GEOS/GEOSX Contributors
  * All rights reserved
  *
  * See top level LICENSE, COPYRIGHT, CONTRIBUTORS, NOTICE, and ACKNOWLEDGEMENTS files for details.
@@ -45,8 +46,8 @@ struct Baker
    * @param[in] dGoRelPerm_dOilVolFrac
    *
    * This function interpolates the two-phase relperms to compute the three-phase relperm
-   * The interpolation is based on the modified Baker method, also used as default in Eclipse
-   * Reference: Eclipse technical description and PetroWiki
+   * The interpolation is based on the modified Baker method
+   * Reference: PetroWiki
    */
   GEOS_HOST_DEVICE
   GEOS_FORCE_INLINE
@@ -59,7 +60,7 @@ struct Baker
            real64 const & goRelPerm,
            real64 const & dGoRelPerm_dOilVolFrac,
            real64 & threePhaseRelPerm,
-           arraySlice1d< real64, relperm::USD_RELPERM_DS - 3 > const & dThreePhaseRelPerm_dVolFrac )
+           arraySlice1d< real64, constitutive::relperm::USD_RELPERM_DS - 3 > const & dThreePhaseRelPerm_dVolFrac )
   {
     using PT = RelativePermeabilityBase::PhaseType;
     integer const ipWater = phaseOrder[PT::WATER];
@@ -130,7 +131,6 @@ struct Stone2
    *
    * This function interpolates the two-phase relperms to compute the three-phase relperm
    * The interpolation is based on the modified Stone 2 method
-   * Reference: Eclipse technical description
    */
   GEOS_HOST_DEVICE
   GEOS_FORCE_INLINE
@@ -147,7 +147,7 @@ struct Stone2
                        real64 const & gRelPerm,
                        real64 const & dGRelPerm_dGasVolFrac,
                        real64 & threePhaseRelPerm,
-                       arraySlice1d< real64, relperm::USD_RELPERM_DS - 3 > const & dThreePhaseRelPerm_dVolFrac )
+                       arraySlice1d< real64, constitutive::relperm::USD_RELPERM_DS - 3 > const & dThreePhaseRelPerm_dVolFrac )
   {
 
     using PT = RelativePermeabilityBase::PhaseType;

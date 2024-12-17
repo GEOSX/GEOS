@@ -1,0 +1,65 @@
+from geos.ats.test_builder import TestDeck, RestartcheckParameters, generate_geos_tests
+
+restartcheck_params = {}
+restartcheck_params['atol'] = 0.0001
+restartcheck_params['rtol'] = 0.0001
+
+decks = [
+    TestDeck(
+        name="CasedElasticWellbore_smoke",
+        description='test of cased wellbore mesh generation and simple loading',
+        partitions=((1, 1, 1), (2, 2, 1)),
+        restart_step=0,
+        check_step=1,
+        restartcheck_params=RestartcheckParameters(**restartcheck_params)),
+    TestDeck(
+        name="CasedElasticWellbore_ImperfectInterfaces_smoke",
+        description=
+        'test of cased wellbore mesh generation and contact mechanics',
+        partitions=[
+            (1, 1, 1),
+        ],
+        restart_step=0,
+        check_step=1,
+        restartcheck_params=RestartcheckParameters(**restartcheck_params)),
+    TestDeck(
+        name="CasedThermoElasticWellbore_ImperfectInterfaces_smoke",
+        description=
+        'test the debonding of cased wellbore with thermoelastic solver',
+        partitions=[(1, 1, 1),],
+        restart_step=0,
+        check_step=1,
+        restartcheck_params=RestartcheckParameters(**restartcheck_params)),
+    TestDeck(
+        name="DeviatedElasticWellbore_smoke",
+        description=
+        'test a deviated wellbore problem with open hole completion',
+        partitions=((1, 1, 1), (3, 1, 1)),
+        restart_step=0,
+        check_step=1,
+        restartcheck_params=RestartcheckParameters(**restartcheck_params)),
+    TestDeck(
+        name="DeviatedPoroElasticWellbore_Injection_smoke",
+        description=
+        'a deviated wellbore subjected to a fluid pressure loaded at wellbore wall',
+        partitions=((1, 1, 1), (2, 2, 1)),
+        restart_step=0,
+        check_step=1,
+        restartcheck_params=RestartcheckParameters(**restartcheck_params)),
+    TestDeck(
+        name="DeviatedPoroElasticWellbore_Drilling_smoke",
+        description=
+        'drilling a deviated poro-elastic wellbore with in-situ stresses',
+        partitions=((1, 1, 1), (2, 2, 1)),
+        restart_step=0,
+        check_step=1,
+        restartcheck_params=RestartcheckParameters(**restartcheck_params)),
+    TestDeck(
+        name="ThermoPoroElasticWellbore_smoke",
+        description='single-phase thermo-hydro-mechanical wellbore',
+        partitions=((1, 1, 1), (2, 2, 1)),
+        restart_step=0,
+        check_step=1,
+        restartcheck_params=RestartcheckParameters(**restartcheck_params))
+]
+generate_geos_tests(decks)

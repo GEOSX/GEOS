@@ -8,19 +8,23 @@ BIN_DIR=
 PACKAGE_DIR=
 TMP_CLONE_DIR=
 PIP_CMD="pip --disable-pip-version-check"
+PACKAGE_BRANCH=main
 
 
-declare -a TARGET_PACKAGES=("geosx_mesh_tools_package"
-                            "geosx_mesh_doctor"
-                            "geosx_xml_tools_package"
-                            "hdf5_wrapper_package"
-                            "pygeosx_tools_package"
-                            "geos_ats_package")
+declare -a TARGET_PACKAGES=("geos-mesh"
+                            "geos-xml-tools"
+                            "hdf5-wrapper"
+                            "pygeos-tools"
+                            "geos-ats")
 declare -a LINK_SCRIPTS=("preprocess_xml"
                          "format_xml"
                          "convert_abaqus"
                          "run_geos_ats"
                          "setup_ats_environment"
+                         "geos_ats_log_check"
+                         "geos_ats_restart_check"
+                         "geos_ats_curve_check"
+                         "mesh-doctor"
                          "activate"
                          "python")
 
@@ -51,6 +55,10 @@ case $key in
     PACKAGE_DIR="$2"
     shift # past argument
     ;;
+    -r|--python-pkg-branch)
+    PACKAGE_BRANCH="$2"
+    shift # past argument
+    ;;
     -v|--verbose)
     VERBOSE=true
     shift # past argument
@@ -61,6 +69,7 @@ case $key in
     echo "-p/--python-target \"Target parent python bin\""
     echo "-b/--bin-dir \"Directory to link new scripts\""
     echo "-d/--pkg-dir \"Directory containing target python packages\""
+    echo "-t/--tool-branch \"Target branch for geosPythonPackages (default=main) \""
     echo "-v/--verbose \"Increase verbosity level\""
     echo ""
     exit
@@ -95,10 +104,10 @@ fi
 echo "Checking for python packages..."
 if [[ -z "${PACKAGE_DIR}" ]]
 then
-    echo "Cloning the GEOS python package repository..."
+    echo "Cloning the GEOS python package repository (branch=$PACKAGE_BRANCH)..."
     TMP_CLONE_DIR=$(mktemp -d)
     PACKAGE_DIR=$TMP_CLONE_DIR/geosPythonPackages
-    git clone --depth 1 --branch feature/sherman/addCodeFormatChecks --single-branch https://github.com/GEOS-DEV/geosPythonPackages.git $PACKAGE_DIR
+    git clone --depth 1 --branch $PACKAGE_BRANCH --single-branch https://github.com/GEOS-DEV/geosPythonPackages.git $PACKAGE_DIR
 elif [ ! -d "${PACKAGE_DIR}/geosx_xml_tools_package" ]
 then
     echo "The specified package directory does not contain the expected targets."
@@ -106,6 +115,10 @@ then
     exit 1
 fi
 
+
+# Updating pip
+echo "Updating pip"
+$PYTHON_TARGET -m pip install --upgrade pip
 
 # Install packages
 echo "Installing python packages..."
@@ -117,10 +130,10 @@ do
 
         # Try installing the package
         if $VERBOSE
-            INSTALL_MSG=$($PYTHON_TARGET -m $PIP_CMD install $PACKAGE_DIR/$p)
+            INSTALL_MSG=$($PYTHON_TARGET -m $PIP_CMD install --upgrade $PACKAGE_DIR/$p)
             INSTALL_RC=$?
         then
-            INSTALL_MSG=$($PYTHON_TARGET -m $PIP_CMD install $PACKAGE_DIR/$p 2>&1)
+            INSTALL_MSG=$($PYTHON_TARGET -m $PIP_CMD install --upgrade $PACKAGE_DIR/$p 2>&1)
             INSTALL_RC=$?
         fi
 

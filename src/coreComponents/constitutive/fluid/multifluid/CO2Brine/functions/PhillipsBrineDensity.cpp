@@ -2,10 +2,11 @@
  * ------------------------------------------------------------------------------------------------------------
  * SPDX-License-Identifier: LGPL-2.1-only
  *
- * Copyright (c) 2018-2020 Lawrence Livermore National Security LLC
- * Copyright (c) 2018-2020 The Board of Trustees of the Leland Stanford Junior University
- * Copyright (c) 2018-2020 TotalEnergies
- * Copyright (c) 2019-     GEOSX Contributors
+ * Copyright (c) 2016-2024 Lawrence Livermore National Security LLC
+ * Copyright (c) 2018-2024 TotalEnergies
+ * Copyright (c) 2018-2024 The Board of Trustees of the Leland Stanford Junior University
+ * Copyright (c) 2023-2024 Chevron
+ * Copyright (c) 2019-     GEOS/GEOSX Contributors
  * All rights reserved
  *
  * See top level LICENSE, COPYRIGHT, CONTRIBUTORS, NOTICE, and ACKNOWLEDGEMENTS files for details.
@@ -113,49 +114,54 @@ TableFunction const * makeDensityTable( string_array const & inputParams,
                                         string const & functionName,
                                         FunctionManager & functionManager )
 {
-  GEOS_THROW_IF_LT_MSG( inputParams.size(), 9,
-                        GEOS_FMT( "{}: insufficient number of model parameters", functionName ),
-                        InputError );
-
-  // initialize the (p,T) coordinates
-  PTTableCoordinates tableCoords;
-  PVTFunctionHelpers::initializePropertyTable( inputParams, tableCoords );
-
-  // initialize salinity
-  real64 salinity;
-  try
-  {
-    salinity = stod( inputParams[8] );
-  }
-  catch( std::invalid_argument const & e )
-  {
-    GEOS_THROW( GEOS_FMT( "{}: invalid model parameter value: {}", functionName, e.what() ), InputError );
-  }
-
-  array1d< real64 > densities( tableCoords.nPressures() * tableCoords.nTemperatures() );
-  if( !isZero( salinity ) )
-  {
-    // if we are in the range of validity of the Phillips method, everything is good
-    // if we are not, we issue a warning message
-    calculateBrineDensity( tableCoords, salinity, densities );
-    GEOS_LOG_RANK_0_IF( salinity < 0.25,
-                        GEOS_FMT( "{}: Warning! The salinity value of {} is below the range of validity of the Phillips model, results may be inaccurate",
-                                  functionName, salinity ) );
-  }
-  else
-  {
-    // the Phillips correlation is inaccurate in the absence of salinity.
-    // since this is a very frequent case, we implement an alternate (more accurate) method below
-    calculatePureWaterDensity( tableCoords, functionName, densities );
-  }
-
   string const tableName = functionName + "_table";
+
   if( functionManager.hasGroup< TableFunction >( tableName ) )
   {
-    return functionManager.getGroupPointer< TableFunction >( tableName );
+    TableFunction * const densityTable = functionManager.getGroupPointer< TableFunction >( tableName );
+    densityTable->initializeFunction();
+    densityTable->setDimUnits( { units::Pressure, units::TemperatureInC } );
+    densityTable->setValueUnits( units::Density );
+    return densityTable;
   }
   else
   {
+    GEOS_THROW_IF_LT_MSG( inputParams.size(), 9,
+                          GEOS_FMT( "{}: insufficient number of model parameters", functionName ),
+                          InputError );
+
+    // initialize the (p,T) coordinates
+    PTTableCoordinates tableCoords;
+    PVTFunctionHelpers::initializePropertyTable( inputParams, tableCoords );
+
+    // initialize salinity
+    real64 salinity;
+    try
+    {
+      salinity = stod( inputParams[8] );
+    }
+    catch( std::invalid_argument const & e )
+    {
+      GEOS_THROW( GEOS_FMT( "{}: invalid model parameter value: {}", functionName, e.what() ), InputError );
+    }
+
+    array1d< real64 > densities( tableCoords.nPressures() * tableCoords.nTemperatures() );
+    if( !isZero( salinity ) )
+    {
+      // if we are in the range of validity of the Phillips method, everything is good
+      // if we are not, we issue a warning message
+      calculateBrineDensity( tableCoords, salinity, densities );
+      GEOS_LOG_RANK_0_IF( salinity < 0.25,
+                          GEOS_FMT( "{}: Warning! The salinity value of {} is below the range of validity of the Phillips model, results may be inaccurate",
+                                    functionName, salinity ) );
+    }
+    else
+    {
+      // the Phillips correlation is inaccurate in the absence of salinity.
+      // since this is a very frequent case, we implement an alternate (more accurate) method below
+      calculatePureWaterDensity( tableCoords, functionName, densities );
+    }
+
     TableFunction * const densityTable = dynamicCast< TableFunction * >( functionManager.createChild( "TableFunction", tableName ) );
     densityTable->setTableCoordinates( tableCoords.getCoords(),
                                        { units::Pressure, units::TemperatureInC } );
@@ -171,7 +177,7 @@ PhillipsBrineDensity::PhillipsBrineDensity( string const & name,
                                             string_array const & inputParams,
                                             string_array const & componentNames,
                                             array1d< real64 > const & componentMolarWeight,
-                                            bool const printTable ):
+                                            TableFunction::OutputOptions const pvtOutputOpts ):
   PVTFunctionBase( name,
                    componentNames,
                    componentMolarWeight )
@@ -183,8 +189,8 @@ PhillipsBrineDensity::PhillipsBrineDensity( string const & name,
   m_waterIndex = PVTFunctionHelpers::findName( componentNames, expectedWaterComponentNames, "componentNames" );
 
   m_brineDensityTable = makeDensityTable( inputParams, m_functionName, FunctionManager::getInstance() );
-  if( printTable )
-    m_brineDensityTable->print( m_brineDensityTable->getName() );
+
+  m_brineDensityTable->outputPVTTableData( pvtOutputOpts );
 }
 
 PhillipsBrineDensity::KernelWrapper
@@ -202,8 +208,6 @@ void PhillipsBrineDensity::checkTablesParameters( real64 const pressure,
   m_brineDensityTable->checkCoord( pressure, 0 );
   m_brineDensityTable->checkCoord( temperature, 1 );
 }
-
-REGISTER_CATALOG_ENTRY( PVTFunctionBase, PhillipsBrineDensity, string const &, string_array const &, string_array const &, array1d< real64 > const &, bool const )
 
 } // namespace PVTProps
 

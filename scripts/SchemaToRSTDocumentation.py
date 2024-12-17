@@ -1,7 +1,7 @@
 import os
 import re
-import sys
-#import numpy as np
+import shutil
+import argparse
 from xml.etree import ElementTree as etree
 
 
@@ -13,9 +13,11 @@ class TreeBuilderWithComments(etree.TreeBuilder):
         self.end(etree.Comment)
 
 
-def writeTableRST(file_name, values):
+def writeTableRST(type_name, file_name, title_prefix, values):
+
+    element_header = '%s: %s' % (title_prefix, type_name)
+
     L = [[len(x) for x in row] for row in values]
-    #  M = tuple(np.amax(np.array(L), axis=0))
 
     # np isn't in the docker images for our CI
     MAX = [None] * len(L[0])
@@ -55,7 +57,9 @@ def writeTableRST(file_name, values):
 
     # Build table
     with open(file_name, 'w') as f:
-        f.write('\n\n')
+        f.write('%s\n' % (element_header))
+        f.write('=' * len(element_header) + '\n')
+        f.write('\n')
         f.write(boundary)
         f.write(formatted_lines[0])
         f.write(boundary)
@@ -191,6 +195,10 @@ def buildTableValues(type_map, link_string='XML', include_defaults=True):
                 if k in type_map[att_name]:
                     table_row[jj] = type_map[att_name][k]
 
+                    # Fix type strings
+                    if ('Type' in k):
+                        table_row[jj] = table_row[jj].replace('_lt_', '<').replace('_gt_', '>').replace('_cm_', ',').replace('-', ' ')
+
                     # Format any registration entries as links
                     if ('Registered' in k):
                         table_row[jj] = ", ".join([':ref:`%s_%s`' % (link_string, x) for x in table_row[jj]])
@@ -207,107 +215,91 @@ def buildTableValues(type_map, link_string='XML', include_defaults=True):
     return table_values
 
 
-# Config
-if len(sys.argv) < 2:
-    print("Usage: %s <schema_dir>" % sys.argv[0])
-    sys.exit(1)
-schema_dir = sys.argv[1]
-schema_name = os.path.join(schema_dir, 'schema.xsd')
-additional_documentation_name = os.path.join(schema_dir, 'schema.xsd.other')
-complete_output = os.path.join(schema_dir, '../../docs/sphinx/CompleteXMLSchema')
-output_folder = os.path.join(schema_dir, 'docs')
-sphinx_path = '../../coreComponents/schema/docs'
-xsd = '{http://www.w3.org/2001/XMLSchema}'
+def main(schema_name='schema.xsd', output_folder='./', xsd='{http://www.w3.org/2001/XMLSchema}'):
+    """
+    Build RST Documentation Tables
+    """
+    # Setup folders
+    additional_documentation_name = f'{schema_name}.other'
+    output_folder = os.path.abspath(os.path.expanduser(output_folder))
+    datastructure_folder = os.path.join(output_folder, 'datastructure')
+    summary_file = os.path.join(datastructure_folder, 'CompleteXMLSchema.rst')
+    os.makedirs(datastructure_folder, exist_ok=True)
+    shutil.copy(schema_name, os.path.join(datastructure_folder, 'schema.xsd'))
+    shutil.copy(additional_documentation_name, os.path.join(datastructure_folder, 'schema.xsd.other'))
 
-# Parse the input/non-input schemas
-parser = etree.XMLParser(target=TreeBuilderWithComments())
-include_tree = etree.parse(schema_name, parser=parser)
-include_root = include_tree.getroot()
-input_attribute_map = buildAttributeMap(include_root)
+    # Parse the input/non-input schemas
+    parser = etree.XMLParser(target=TreeBuilderWithComments())
+    include_tree = etree.parse(schema_name, parser=parser)
+    include_root = include_tree.getroot()
+    input_attribute_map = buildAttributeMap(include_root)
 
-parser = etree.XMLParser(target=TreeBuilderWithComments())
-include_tree = etree.parse(additional_documentation_name, parser=parser)
-include_root = include_tree.getroot()
-other_attribute_map = buildAttributeMap(include_root)
+    parser = etree.XMLParser(target=TreeBuilderWithComments())
+    include_tree = etree.parse(additional_documentation_name, parser=parser)
+    include_root = include_tree.getroot()
+    other_attribute_map = buildAttributeMap(include_root)
 
-# Check for non-unique (ignoring case) links
-input_keys = sorted(input_attribute_map.keys())
-input_keys_lower = [k.lower() for k in input_keys]
-input_keys_count = [input_keys_lower.count(k) for k in input_keys_lower]
-input_repeated_keys = [input_keys[ii] for ii in range(0, len(input_keys)) if input_keys_count[ii] > 1]
+    # Check for non-unique (ignoring case) links
+    input_keys = sorted(input_attribute_map.keys())
+    input_keys_lower = [k.lower() for k in input_keys]
+    input_keys_count = [input_keys_lower.count(k) for k in input_keys_lower]
+    input_repeated_keys = [input_keys[ii] for ii in range(0, len(input_keys)) if input_keys_count[ii] > 1]
 
-other_keys = sorted(other_attribute_map.keys())
-other_keys_lower = [k.lower() for k in other_keys]
-other_keys_count = [other_keys_lower.count(k) for k in other_keys_lower]
-other_repeated_keys = [other_keys[ii] for ii in range(0, len(other_keys)) if other_keys_count[ii] > 1]
+    other_keys = sorted(other_attribute_map.keys())
+    other_keys_lower = [k.lower() for k in other_keys]
+    other_keys_count = [other_keys_lower.count(k) for k in other_keys_lower]
+    other_repeated_keys = [other_keys[ii] for ii in range(0, len(other_keys)) if other_keys_count[ii] > 1]
 
-if ((len(input_repeated_keys) > 0) | (len(other_repeated_keys) > 0)):
-    print('Duplicate input documentation table names:')
-    print(input_repeated_keys)
-    print('Duplicate other documentation table names:')
-    print(other_repeated_keys)
-    raise ValueError('Duplicate data structure names are not allowed due to .rst limitations (case-insensitive)!')
+    if ((len(input_repeated_keys) > 0) | (len(other_repeated_keys) > 0)):
+        print('Duplicate input documentation table names:')
+        print(input_repeated_keys)
+        print('Duplicate other documentation table names:')
+        print(other_repeated_keys)
+        raise ValueError('Duplicate data structure names are not allowed due to .rst limitations (case-insensitive)!')
 
-# Setup directory
-os.system('mkdir -p %s' % (output_folder))
+    # Build documentation tables
+    with open(summary_file, 'w') as output_handle:
+        # Write the file header
+        output_handle.write('###################\n')
+        output_handle.write('Datastructure Index\n')
+        output_handle.write('###################\n\n')
 
-# Keep track of existing/touched files
-old_files = [f for f in os.listdir(output_folder) if '.rst' in f]
-touched_files = []
+        # Parse the input schema definitions
+        output_handle.write('************************\n')
+        output_handle.write('Input Schema Definitions\n')
+        output_handle.write('************************\n\n')
 
-# Build documentation tables
-with open('%s.rst' % (complete_output), 'w') as output_handle:
-    # Write the file header
-    output_handle.write('######################\n')
-    output_handle.write('Datastructure Index\n')
-    output_handle.write('######################\n\n')
+        output_handle.write(':download:`XML Schema <schema.xsd>`\n\n')
 
-    # Parse the input schema definitions
-    output_handle.write('**************************\n\n')
-    output_handle.write('Input Schema Definitions\n')
-    output_handle.write('**************************\n\n')
+        for type_name in sorted(input_attribute_map.keys()):
+            # Write the individual tables
+            table_values = buildTableValues(input_attribute_map[type_name])
+            writeTableRST( type_name, '%s/%s.rst' % (datastructure_folder, type_name), 'XML Element', table_values)
 
-    output_handle.write(':download:`XML Schema <%s/../schema.xsd>`\n\n' % (sphinx_path))
+            # Write to the master list
+            output_handle.write('\n.. _XML_%s:\n\n' % (type_name))
+            output_handle.write('.. include:: %s.rst\n\n' % (type_name))
 
-    for type_name in sorted(input_attribute_map.keys()):
-        # Write the individual tables
-        table_values = buildTableValues(input_attribute_map[type_name])
-        writeTableRST('%s/%s.rst' % (output_folder, type_name), table_values)
-        touched_files.append('%s.rst' % (type_name))
+        # Parse the non-input schema definitions
+        output_handle.write('*************************\n')
+        output_handle.write('Datastructure Definitions\n')
+        output_handle.write('*************************\n\n')
 
-        # Write to the master list
-        element_header = 'Element: %s' % (type_name)
-        output_handle.write('\n.. _XML_%s:\n\n' % (type_name))
-        output_handle.write('%s\n' % (element_header))
-        output_handle.write('=' * len(element_header) + '\n')
-        output_handle.write('.. include:: %s/%s.rst\n\n' % (sphinx_path, type_name))
+        for type_name in sorted(other_attribute_map.keys()):
+            # Write the individual tables
+            table_values = buildTableValues(other_attribute_map[type_name],
+                                            link_string='DATASTRUCTURE',
+                                            include_defaults=False)
+            writeTableRST( type_name, '%s/%s_other.rst' % (datastructure_folder, type_name), 'Datastructure', table_values)
 
-    # Parse the non-input schema definitions
-    output_handle.write('********************************\n')
-    output_handle.write('Datastructure Definitions\n')
-    output_handle.write('********************************\n\n')
+            # Write to the master list
+            output_handle.write('\n.. _DATASTRUCTURE_%s:\n\n' % (type_name))
+            output_handle.write('.. include:: %s_other.rst\n\n' % (type_name))
 
-    for type_name in sorted(other_attribute_map.keys()):
-        # Write the individual tables
-        table_values = buildTableValues(other_attribute_map[type_name],
-                                        link_string='DATASTRUCTURE',
-                                        include_defaults=False)
-        writeTableRST('%s/%s_other.rst' % (output_folder, type_name), table_values)
-        touched_files.append('%s_other.rst' % (type_name))
 
-        # Write to the master list
-        element_header = 'Datastructure: %s' % (type_name)
-        output_handle.write('\n.. _DATASTRUCTURE_%s:\n\n' % (type_name))
-        output_handle.write('%s\n' % (element_header))
-        output_handle.write('=' * len(element_header) + '\n')
-        output_handle.write('.. include:: %s/%s_other.rst\n\n' % (sphinx_path, type_name))
-
-# Check for any untouched tables
-untouched_files = []
-for f in old_files:
-    if f not in touched_files:
-        untouched_files.append(f)
-
-if len(untouched_files):
-    tmp = '\n  '.join(untouched_files)
-    raise ValueError('Obsolete autogenerated .rst table files detected:%s' % (tmp))
+if __name__ == '__main__':
+    parser = argparse.ArgumentParser()
+    parser.add_argument('-s', '--schema', type=str, help='GEOS schema file', default='schema.xsd')
+    parser.add_argument('-o', '--output', type=str, help='Output directory', default='./')
+    args = parser.parse_args()
+    main(schema_name=args.schema, output_folder=args.output)

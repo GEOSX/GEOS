@@ -15,7 +15,8 @@
       nx="{ 1, 1 }"
       ny="{ 1, 1 }"
       nz="{ 1, 1 }"
-      cellBlockNames="{ cb1, cb2, cb3, cb4, cb5, cb6, cb7, cb8 }"/>
+      cellBlockNames="{ cb-0_0_0,  cb-1_0_0,  cb-0_1_0,  cb-1_1_0, 
+                        cb-0_0_1,  cb-1_0_1,  cb-0_1_1,  cb-1_1_1 }"/>
   </Mesh>
 
   <Events

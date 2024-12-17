@@ -1,0 +1,16 @@
+from geos.ats.test_builder import TestDeck, RestartcheckParameters, generate_geos_tests
+
+restartcheck_params = {'atol': 1e-06, 'rtol': 4e-06}
+
+decks = [
+    TestDeck(
+        name="CasedThermoElasticWellbore_smoke",
+        description=
+        'Near wellbore thermo elastic case simulated as a single-phase poromechanics case',
+        partitions=((1, 1, 1), (2, 2, 1)),
+        restart_step=5,
+        check_step=10,
+        restartcheck_params=RestartcheckParameters(**restartcheck_params)),
+]
+
+generate_geos_tests(decks)

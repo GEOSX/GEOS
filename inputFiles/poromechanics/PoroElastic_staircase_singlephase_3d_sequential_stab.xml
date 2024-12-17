@@ -1,0 +1,107 @@
+<?xml version="1.0" ?>
+
+<Problem>
+
+  <Included>
+    <File name="./PoroElastic_staircase_singlephase_3d_base_stab.xml"/>
+  </Included>  
+
+  <Solvers
+	  gravityVector="{0,0,0}">
+
+    <SinglePhasePoromechanics
+      name="singlePhasePoromechanics"
+      solidSolverName="linearElasticity"
+      flowSolverName="singlePhaseFlow"
+      logLevel="1"
+	    targetRegions="{ channel, barrier }"
+	    stabilizationType="Global"
+	    stabilizationRegionNames="{channel, barrier}"
+	    stabilizationMultiplier="1">
+      <NonlinearSolverParameters
+        couplingType="Sequential"
+        subcycling="1"
+        newtonTol="1.0e-8"
+        lineSearchAction="None"
+        newtonMaxIter="100"/>
+      <LinearSolverParameters
+        directParallel="0"/>
+    </SinglePhasePoromechanics>
+    
+    <SolidMechanicsLagrangianSSLE
+      name="linearElasticity"
+      timeIntegrationOption="QuasiStatic"
+      logLevel="1"
+      discretization="FE1"
+      targetRegions="{ channel, barrier  }"/>
+
+    <SinglePhaseFVM
+      name="singlePhaseFlow"
+      logLevel="1"
+      discretization="fluidTPFA"
+      targetRegions="{ channel, barrier }"
+      temperature="300"/>
+   
+  </Solvers>
+
+  <Events
+      minTime="-1e11"
+      maxTime="15552000">
+    
+    <PeriodicEvent
+      name="outputs"
+      timeFrequency="15552000"
+      target="/Outputs/vtkOutput_seq"/>
+
+    <SoloEvent
+      name="singlePhasePoroelasticityEquilibrationStep"
+      targetTime="-1e11"
+      beginTime="-1e11"
+      target="/Tasks/singlePhasePoroelasticityEquilibrationStep"/>
+    
+    <PeriodicEvent
+      name="solverApplications"
+      forceDt="2592000"
+      target="/Solvers/singlePhasePoromechanics"/>
+
+    <PeriodicEvent
+      name="linearElasticityStatistics"
+      timeFrequency="15552000"
+      target="/Tasks/linearElasticityStatistics"/>
+    <PeriodicEvent
+      name="singlePhaseFlowStatistics"
+      timeFrequency="15552000"
+      target="/Tasks/singlePhaseFlowStatistics"/>
+    
+    <PeriodicEvent
+      name="restarts"
+      timeFrequency="7776000"
+      target="/Outputs/restartOutput"/>
+
+  </Events>
+
+  <Tasks>
+    <SolidMechanicsStatistics
+      name="linearElasticityStatistics"
+      solidSolverName="linearElasticity"
+      logLevel="1"/>
+    <SinglePhaseStatistics
+      name="singlePhaseFlowStatistics"
+      flowSolverName="singlePhaseFlow"
+      logLevel="1"/>
+
+    <SinglePhasePoromechanicsInitialization 
+      logLevel="1"      
+      name="singlePhasePoroelasticityEquilibrationStep"
+      poromechanicsSolverName="singlePhasePoromechanics"/>
+  </Tasks>
+  
+  <Outputs>
+    <VTK
+      name="vtkOutput_seq"
+      fieldNames="{ initialPressure, skeletonChannel_density }"/>
+    <Restart
+      name="restartOutput"/>
+  </Outputs>
+</Problem>
+

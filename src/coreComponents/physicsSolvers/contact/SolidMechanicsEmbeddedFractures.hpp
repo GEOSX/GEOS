@@ -2,10 +2,11 @@
  * ------------------------------------------------------------------------------------------------------------
  * SPDX-License-Identifier: LGPL-2.1-only
  *
- * Copyright (c) 2018-2020 Lawrence Livermore National Security LLC
- * Copyright (c) 2018-2020 The Board of Trustees of the Leland Stanford Junior University
- * Copyright (c) 2018-2020 TotalEnergies
- * Copyright (c) 2019-     GEOSX Contributors
+ * Copyright (c) 2016-2024 Lawrence Livermore National Security LLC
+ * Copyright (c) 2018-2024 TotalEnergies
+ * Copyright (c) 2018-2024 The Board of Trustees of the Leland Stanford Junior University
+ * Copyright (c) 2023-2024 Chevron
+ * Copyright (c) 2019-     GEOS/GEOSX Contributors
  * All rights reserved
  *
  * See top level LICENSE, COPYRIGHT, CONTRIBUTORS, NOTICE, and ACKNOWLEDGEMENTS files for details.
@@ -24,9 +25,6 @@
 
 namespace geos
 {
-using namespace constitutive;
-
-class SolidMechanicsLagrangianFEM;
 
 class SolidMechanicsEmbeddedFractures : public ContactSolverBase
 {
@@ -45,7 +43,7 @@ public:
     return "SolidMechanicsEmbeddedFractures";
   }
   /**
-   * @copydoc SolverBase::getCatalogName()
+   * @copydoc PhysicsSolverBase::getCatalogName()
    */
   string getCatalogName() const override { return catalogName(); }
 
@@ -61,14 +59,17 @@ public:
                             ParallelVector & solution,
                             bool const setSparsity = true ) override;
 
-  virtual void
-  implicitStepSetup( real64 const & time_n,
-                     real64 const & dt,
-                     DomainPartition & domain ) override final;
-
   virtual void implicitStepComplete( real64 const & time_n,
                                      real64 const & dt,
                                      DomainPartition & domain ) override final;
+
+  template< typename WRAPPER_TYPE >
+  static void updateElasticSlip( EmbeddedSurfaceSubRegion const & subRegion,
+                                 WRAPPER_TYPE & frictionWrapper,
+                                 arrayView2d< real64 const > const & dispJump,
+                                 arrayView2d< real64 const > const & oldDispJump,
+                                 arrayView2d< real64 const > const & traction,
+                                 arrayView1d< integer > const & fractureState );
 
   virtual void assembleSystem( real64 const time,
                                real64 const dt,
@@ -83,6 +84,10 @@ public:
                          DomainPartition const & domain,
                          DofManager const & dofManager,
                          arrayView1d< real64 const > const & localRhs ) override;
+
+  real64 calculateFractureResidualNorm( DomainPartition const & domain,
+                                        DofManager const & dofManager,
+                                        arrayView1d< real64 const > const & localRhs ) const;
 
   virtual void
   applySystemSolution( DofManager const & dofManager,
@@ -113,14 +118,24 @@ public:
                         real64 const dt,
                         DomainPartition & domain );
 
-
   virtual bool updateConfiguration( DomainPartition & domain ) override final;
+
+  bool useStaticCondensation() const { return m_useStaticCondensation; }
+
+  struct viewKeyStruct : ContactSolverBase::viewKeyStruct
+  {
+    constexpr static char const * useStaticCondensationString() { return "useStaticCondensation"; }
+
+    constexpr static char const * contactPenaltyStiffnessString() { return "contactPenaltyStiffness"; }
+  };
 
 protected:
 
   virtual void initializePostInitialConditionsPreSubGroups() override final;
 
-  virtual void postProcessInput() override final;
+  virtual void postInputInitialization() override final;
+
+  void setMGRStrategy();
 
 private:
 
@@ -131,10 +146,9 @@ private:
   /// decide whether to use static condensation or not
   integer m_useStaticCondensation;
 
-  struct viewKeyStruct : ContactSolverBase::viewKeyStruct
-  {
-    constexpr static char const * useStaticCondensationString() { return "useStaticCondensation"; }
-  };
+  // TODO: activate when solidMechanicsPenalty contact is used and this is removed from base solver.
+  // real64 m_contactPenaltyStiffness;
+
 };
 
 

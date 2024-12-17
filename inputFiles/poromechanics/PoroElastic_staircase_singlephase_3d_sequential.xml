@@ -86,23 +86,18 @@
       name="outputs"
       timeFrequency="1e6"
       target="/Outputs/vtkOutput_seq"/>
-    <SoloEvent
-      name="singlePhasePoroelasticityPreEquilibrationStep"
-      targetTime="-1e11"
-      beginTime="-1e11"
-      target="/Tasks/singlePhasePoroelasticityPreEquilibrationStep"/>
-    
-    <PeriodicEvent
-      name="solverApplicationsEquilibration"
-      beginTime="-1e11"
-      endTime="0"
-      maxEventDt="1e11"
-      target="/Solvers/reservoirPoromechanics"/>
 
     <SoloEvent
-      name="singlePhasePoroelasticityPostEquilibrationStep"
-      targetTime="0"
-      target="/Tasks/singlePhasePoroelasticityPostEquilibrationStep"/>
+      name="singlePhasePoroelasticityEquilibrationStep"
+      targetTime="-1e11"
+      beginTime="-1e11"
+      target="/Tasks/singlePhasePoroelasticityEquilibrationStep"/>
+    
+    <PeriodicEvent
+      name="solverApplications"
+      maxEventDt="1e6"
+      target="/Solvers/reservoirPoromechanics"/>
+
     <PeriodicEvent
       name="linearElasticityStatistics"
       timeFrequency="1e6"
@@ -111,11 +106,6 @@
       name="singlePhaseFlowStatistics"
       timeFrequency="1e6"
       target="/Tasks/singlePhaseFlowStatistics"/>
-
-    <PeriodicEvent
-      name="solverApplications"
-      maxEventDt="1e6"
-      target="/Solvers/reservoirPoromechanics"/>
     
     <PeriodicEvent
       name="restarts"
@@ -136,16 +126,9 @@
 
     <SinglePhaseReservoirPoromechanicsInitialization 
       logLevel="1"      
-      name="singlePhasePoroelasticityPreEquilibrationStep"
-      performStressInitialization="1"
-      poromechanicsSolverName="reservoirPoromechanics"/>
-    
-    <SinglePhaseReservoirPoromechanicsInitialization 
-      logLevel="1"      
-      name="singlePhasePoroelasticityPostEquilibrationStep"
-      performStressInitialization="0"
-      poromechanicsSolverName="reservoirPoromechanics"/>
-
+      name="singlePhasePoroelasticityEquilibrationStep"
+      poromechanicsSolverName="reservoirPoromechanics"
+      solidMechanicsStatisticsName="linearElasticityStatistics"/>
   </Tasks>
   
   <Outputs>

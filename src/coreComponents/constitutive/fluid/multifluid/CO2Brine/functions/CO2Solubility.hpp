@@ -2,10 +2,11 @@
  * ------------------------------------------------------------------------------------------------------------
  * SPDX-License-Identifier: LGPL-2.1-only
  *
- * Copyright (c) 2018-2020 Lawrence Livermore National Security LLC
- * Copyright (c) 2018-2020 The Board of Trustees of the Leland Stanford Junior University
- * Copyright (c) 2018-2020 TotalEnergies
- * Copyright (c) 2019-     GEOSX Contributors
+ * Copyright (c) 2016-2024 Lawrence Livermore National Security LLC
+ * Copyright (c) 2018-2024 TotalEnergies
+ * Copyright (c) 2018-2024 The Board of Trustees of the Leland Stanford Junior University
+ * Copyright (c) 2023-2024 Chevron
+ * Copyright (c) 2019-     GEOS/GEOSX Contributors
  * All rights reserved
  *
  * See top level LICENSE, COPYRIGHT, CONTRIBUTORS, NOTICE, and ACKNOWLEDGEMENTS files for details.
@@ -20,10 +21,10 @@
 #define GEOS_CONSTITUTIVE_FLUID_MULTIFLUID_CO2BRINE_FUNCTIONS_CO2SOLUBILITY_HPP_
 
 #include "FlashModelBase.hpp"
-
 #include "constitutive/fluid/multifluid/CO2Brine/functions/PVTFunctionHelpers.hpp"
 #include "constitutive/fluid/multifluid/Layouts.hpp"
 #include "constitutive/fluid/multifluid/MultiFluidUtils.hpp"
+#include "fileIO/Outputs/OutputBase.hpp"
 #include "functions/TableFunction.hpp"
 
 namespace geos
@@ -41,8 +42,8 @@ class CO2SolubilityUpdate final : public FlashModelBaseUpdate
 {
 public:
 
-  using PhaseProp = MultiFluidVar< real64, 3, multifluid::LAYOUT_PHASE, multifluid::LAYOUT_PHASE_DC >;
-  using PhaseComp = MultiFluidVar< real64, 4, multifluid::LAYOUT_PHASE_COMP, multifluid::LAYOUT_PHASE_COMP_DC >;
+  using PhaseProp = MultiFluidVar< real64, 3, constitutive::multifluid::LAYOUT_PHASE, constitutive::multifluid::LAYOUT_PHASE_DC >;
+  using PhaseComp = MultiFluidVar< real64, 4, constitutive::multifluid::LAYOUT_PHASE_COMP, constitutive::multifluid::LAYOUT_PHASE_COMP_DC >;
 
   CO2SolubilityUpdate( arrayView1d< real64 const > const & componentMolarWeight,
                        TableFunction const & CO2SolubilityTable,
@@ -53,14 +54,12 @@ public:
                        integer const phaseLiquidIndex )
     : FlashModelBaseUpdate( componentMolarWeight ),
     m_CO2SolubilityTable( CO2SolubilityTable.createKernelWrapper() ),
-    //m_WaterVapourisationTable( waterVapourisationTable.createKernelWrapper() ),
+    m_WaterVapourisationTable( waterVapourisationTable.createKernelWrapper() ),
     m_CO2Index( CO2Index ),
     m_waterIndex( waterIndex ),
     m_phaseGasIndex( phaseGasIndex ),
     m_phaseLiquidIndex( phaseLiquidIndex )
-  {
-    GEOS_UNUSED_VAR( waterVapourisationTable );
-  }
+  {}
 
   template< int USD1 >
   GEOS_HOST_DEVICE
@@ -74,7 +73,7 @@ public:
   {
     FlashModelBaseUpdate::move( space, touch );
     m_CO2SolubilityTable.move( space, touch );
-    //m_WaterVapourisationTable.move( space, touch );
+    m_WaterVapourisationTable.move( space, touch );
   }
 
 protected:
@@ -86,7 +85,7 @@ protected:
   TableFunction::KernelWrapper m_CO2SolubilityTable;
 
   /// Table with water vapourisation as a function (P,T)
-  //TableFunction::KernelWrapper m_WaterVapourisationTable;
+  TableFunction::KernelWrapper m_WaterVapourisationTable;
 
   /// Index of the CO2 phase
   integer m_CO2Index;
@@ -105,13 +104,20 @@ protected:
 class CO2Solubility : public FlashModelBase
 {
 public:
+  enum class SolubilityModel : integer
+  {
+    DuanSun,
+    SpycherPruess,
+    Tables
+  };
 
+public:
   CO2Solubility( string const & name,
                  string_array const & inputParams,
                  string_array const & phaseNames,
                  string_array const & componentNames,
                  array1d< real64 > const & componentMolarWeight,
-                 bool const printTable );
+                 TableFunction::OutputOptions const pvtOutputOpts );
 
   static string catalogName() { return "CO2Solubility"; }
 
@@ -132,7 +138,6 @@ public:
   KernelWrapper createKernelWrapper() const;
 
 private:
-
   /// Table to compute solubility as a function of pressure and temperature
   TableFunction const * m_CO2SolubilityTable;
 
@@ -162,16 +167,16 @@ CO2SolubilityUpdate::compute( real64 const & pressure,
                               PhaseProp::SliceType const phaseFraction,
                               PhaseComp::SliceType const phaseCompFraction ) const
 {
-  using Deriv = multifluid::DerivativeOffset;
+  using Deriv = constitutive::multifluid::DerivativeOffset;
 
   // Solubility of CO2 is read from the tables in the form of moles of CO2 per kg of water
   // Solubility of water is read from the tables in the form of moles of water per kg of CO2
   real64 const input[2] = { pressure, temperature };
 
-  real64 co2SolubilityDeriv[2]{};
-  real64 watSolubilityDeriv[2]{0.0, 0.0};
+  real64 co2SolubilityDeriv[2]{ 0.0, 0.0 };
+  real64 watSolubilityDeriv[2]{ 0.0, 0.0 };
   real64 co2Solubility = m_CO2SolubilityTable.compute( input, co2SolubilityDeriv );
-  real64 watSolubility = 0.0; //m_WaterVapourisationTable.compute( input, watSolubilityDeriv );
+  real64 watSolubility = m_WaterVapourisationTable.compute( input, watSolubilityDeriv );
 
   // Convert the solubility to mole/mole
   co2Solubility *= m_componentMolarWeight[m_waterIndex];
@@ -191,7 +196,7 @@ CO2SolubilityUpdate::compute( real64 const & pressure,
                          GEOS_FMT( "Failed to calculate solubility at pressure {} Pa and temperature {} C.", pressure, temperature ) );
 
   real64 invDeterminant = 0.0;
-  real64 invDeterminantDeriv[] = { 0.0, 0.0 };
+  real64 invDeterminantDeriv[2]{ 0.0, 0.0 };
 
   invDeterminant = 1.0 / determinant;
   for( integer const ic : {Deriv::dP, Deriv::dT} )
@@ -333,6 +338,11 @@ CO2SolubilityUpdate::compute( real64 const & pressure,
     }
   }
 }
+
+ENUM_STRINGS( CO2Solubility::SolubilityModel,
+              "DuanSun",
+              "SpycherPruess",
+              "Tables" );
 
 } // end namespace PVTProps
 

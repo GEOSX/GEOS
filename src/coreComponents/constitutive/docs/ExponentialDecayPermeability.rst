@@ -30,7 +30,7 @@ block.
 
 The following attributes are supported:
 
-.. include:: /coreComponents/schema/docs/ExponentialDecayPermeability.rst
+.. include:: /docs/sphinx/datastructure/ExponentialDecayPermeability.rst
 
 
 Example

@@ -2,10 +2,11 @@
  * ------------------------------------------------------------------------------------------------------------
  * SPDX-License-Identifier: LGPL-2.1-only
  *
- * Copyright (c) 2018-2020 Lawrence Livermore National Security LLC
- * Copyright (c) 2018-2020 The Board of Trustees of the Leland Stanford Junior University
- * Copyright (c) 2018-2020 TotalEnergies
- * Copyright (c) 2019-     GEOSX Contributors
+ * Copyright (c) 2016-2024 Lawrence Livermore National Security LLC
+ * Copyright (c) 2018-2024 TotalEnergies
+ * Copyright (c) 2018-2024 The Board of Trustees of the Leland Stanford Junior University
+ * Copyright (c) 2023-2024 Chevron
+ * Copyright (c) 2019-     GEOS/GEOSX Contributors
  * All rights reserved
  *
  * See top level LICENSE, COPYRIGHT, CONTRIBUTORS, NOTICE, and ACKNOWLEDGEMENTS files for details.
@@ -19,7 +20,7 @@
 #ifndef GEOS_CONSTITUTIVE_FLUID_MULTIFLUID_CO2BRINE_CO2BRINEFLUID_HPP_
 #define GEOS_CONSTITUTIVE_FLUID_MULTIFLUID_CO2BRINE_CO2BRINEFLUID_HPP_
 
-#include "codingUtilities/EnumStrings.hpp"
+#include "common/format/EnumStrings.hpp"
 #include "constitutive/fluid/multifluid/MultiFluidBase.hpp"
 #include "constitutive/fluid/multifluid/MultiFluidUtils.hpp"
 #include "constitutive/fluid/multifluid/CO2Brine/PhaseModel.hpp"
@@ -62,7 +63,19 @@ public:
 
   virtual string getCatalogName() const override { return catalogName(); }
 
-  virtual bool isThermal() const override;
+  static constexpr bool isThermalType()
+  {
+    return !( std::is_same_v< typename PHASE1::Enthalpy, PVTProps::NoOpPVTFunction > ||
+              std::is_same_v< typename PHASE2::Enthalpy, PVTProps::NoOpPVTFunction > );
+  }
+
+  static constexpr integer min_n_components = 2;
+  static constexpr integer max_n_components = 2;
+
+  virtual bool isThermal() const override
+  {
+    return isThermalType();
+  }
 
   /**
    * @brief Kernel wrapper class for CO2BrineFluid.
@@ -156,17 +169,22 @@ private:
   struct viewKeyStruct : MultiFluidBase::viewKeyStruct
   {
     static constexpr char const * flashModelParaFileString() { return "flashModelParaFile"; }
+    static constexpr char const * solubilityTablesString() { return "solubilityTableNames"; }
     static constexpr char const * phasePVTParaFilesString() { return "phasePVTParaFiles"; }
+    static constexpr char const * writeCSVFlagString() { return "writeCSV"; }
   };
 
 protected:
 
-  virtual void postProcessInput() override;
+  virtual void postInputInitialization() override;
 
   virtual void initializePreSubGroups() override;
 
 private:
 
+  /**
+   * @brief Create a PVT Model and output them
+   */
   void createPVTModels();
 
   /// Names of the files defining the viscosity and density models
@@ -175,12 +193,17 @@ private:
   /// Name of the file defining the flash model
   Path m_flashModelParaFile;
 
+  /// Names of solubility tables for each phase
+  string_array m_solubilityTables;
+
   /// Index of the liquid phase
   integer m_p1Index;
 
   /// Index of the gas phase
   integer m_p2Index;
 
+  /// Output csv file containing informations about PVT
+  integer m_writeCSV;
 
   /// Brine constitutive models
   std::unique_ptr< PHASE1 > m_phase1;
@@ -190,7 +213,6 @@ private:
 
   // Flash model
   std::unique_ptr< FLASH > m_flash;
-
 };
 
 // these aliases are useful in constitutive dispatch
@@ -364,7 +386,6 @@ CO2BrineFluid< PHASE1, PHASE2, FLASH >::KernelWrapper::
 
   if( m_isThermal )
   {
-
     m_phase1.enthalpy.compute( pressure,
                                temperatureInCelsius,
                                phaseCompFraction.value[ip1].toSliceConst(), phaseCompFraction.derivs[ip1].toSliceConst(),

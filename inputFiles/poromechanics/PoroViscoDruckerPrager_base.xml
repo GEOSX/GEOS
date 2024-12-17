@@ -41,7 +41,7 @@
   />
   <BiotPorosity
     name="rockPorosity"
-    grainBulkModulus="1.0e27"
+    defaultGrainBulkModulus="1.0e27"
     defaultReferencePorosity="0.3"
   />    
   <ConstantPermeability
@@ -55,7 +55,7 @@
 <ElementRegions>
   <CellElementRegion 
     name="Omega" 
-    cellBlocks="{cb1}" 
+    cellBlocks="{ * }" 
     materialList="{ water, porousRock }"
   />
 </ElementRegions>

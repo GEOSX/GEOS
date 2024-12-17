@@ -1,0 +1,58 @@
+<?xml version="1.0" ?>
+
+<Problem>
+  <Included>
+    <File
+      name="./UnstructuredCrack_smoke.xml"/>
+  </Included>
+
+  <Solvers
+    gravityVector="{0.0, 0.0, 0.0}">
+    <SolidMechanicsAugmentedLagrangianContact
+      name="AugmentedLagrangian"
+      timeIntegrationOption="QuasiStatic"
+      logLevel="2"
+      discretization="FE1"
+      targetRegions="{ Region, Fracture }">
+      <NonlinearSolverParameters
+        newtonTol="1.0e-8"
+        logLevel="2"
+        maxNumConfigurationAttempts="50"
+        newtonMaxIter="20"
+        lineSearchAction="None"
+        lineSearchMaxCuts="4"/>
+      <LinearSolverParameters
+        solverType="direct"
+        directParallel="0"
+        logLevel="0"/>
+    </SolidMechanicsAugmentedLagrangianContact>
+  </Solvers>
+
+  <Events
+    maxTime="2.0">
+    <SoloEvent
+      name="preFracture"
+      target="/Solvers/SurfaceGen"/>
+
+    <PeriodicEvent
+      name="solverApplications"
+      beginTime="0.0"
+      endTime="2.0"
+      forceDt="1.0"
+      target="/Solvers/AugmentedLagrangian"/>
+
+    <PeriodicEvent
+      name="restarts"
+      timeFrequency="1.0"
+      targetExactTimestep="0"
+      target="/Outputs/restartOutput"/>
+
+    <PeriodicEvent
+      name="outputs"
+      timeFrequency="1"
+      targetExactTimestep="0"
+      target="/Outputs/siloOutput"/>
+
+  </Events>
+
+</Problem>
