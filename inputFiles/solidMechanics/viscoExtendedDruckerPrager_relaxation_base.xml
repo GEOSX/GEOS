@@ -38,7 +38,7 @@
   <ElementRegions>
     <CellElementRegion
       name="Domain"
-      cellBlocks="{ cb1, cb2, cb3, cb4, cb5, cb6, cb7, cb8 }"
+      cellBlocks="{ * }"
       materialList="{ rock }"/>
   </ElementRegions>
 <!-- SPHINX_ELEMENTREGIONS_END -->
@@ -155,7 +155,7 @@
   <Tasks>
     <PackCollection
       name="stressCollection"
-      objectPath="ElementRegions/Domain/cb8"
+      objectPath="ElementRegions/Domain/cb-1_1_1"
       fieldName="rock_stress"/> 
 
     <PackCollection

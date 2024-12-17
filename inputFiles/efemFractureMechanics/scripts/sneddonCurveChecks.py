@@ -99,7 +99,7 @@ def debug():
     # Read HDF5
     data = hdf5_wrapper.hdf5_wrapper(hdf5File1Path).get_copy()
     jump = data['displacementJump']
-    jump = np.array(jump)
+    jump = np.asarray(jump)
     aperture_EmbeddeFrac = jump[0, :, 0]
     x = data['displacementJump elementCenter']
     loc_EmbeddeFrac = x[0, :, 0]

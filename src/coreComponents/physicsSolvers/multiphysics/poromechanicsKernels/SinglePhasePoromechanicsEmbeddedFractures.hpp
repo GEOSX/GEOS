@@ -2,10 +2,11 @@
  * ------------------------------------------------------------------------------------------------------------
  * SPDX-License-Identifier: LGPL-2.1-only
  *
- * Copyright (c) 2018-2020 Lawrence Livermore National Security LLC
- * Copyright (c) 2018-2020 The Board of Trustees of the Leland Stanford Junior University
- * Copyright (c) 2018-2020 TotalEnergies
- * Copyright (c) 2019-     GEOS Contributors
+ * Copyright (c) 2016-2024 Lawrence Livermore National Security LLC
+ * Copyright (c) 2018-2024 TotalEnergies
+ * Copyright (c) 2018-2024 The Board of Trustees of the Leland Stanford Junior University
+ * Copyright (c) 2023-2024 Chevron
+ * Copyright (c) 2019-     GEOS/GEOSX Contributors
  * All rights reserved
  *
  * See top level LICENSE, COPYRIGHT, CONTRIBUTORS, NOTICE, and ACKNOWLEDGEMENTS files for details.
@@ -19,8 +20,9 @@
 #ifndef GEOS_PHYSICSSOLVERS_MULTIPHYSICS_POROMECHANICSKERNELS_SINGLEPHASEPOROMECHANICSEMBEDDEDFRACTURES_HPP
 #define GEOS_PHYSICSSOLVERS_MULTIPHYSICS_POROMECHANICSKERNELS_SINGLEPHASEPOROMECHANICSEMBEDDEDFRACTURES_HPP
 
-#include "physicsSolvers/fluidFlow/SinglePhaseFVMKernels.hpp"
-#include "physicsSolvers/fluidFlow/FluxKernelsHelper.hpp"
+#include "physicsSolvers/fluidFlow/kernels/singlePhase/FluxComputeKernel.hpp"
+#include "physicsSolvers/fluidFlow/kernels/singlePhase/FluxKernelsHelper.hpp"
+#include "codingUtilities/Utilities.hpp"
 
 namespace geos
 {
@@ -28,11 +30,8 @@ namespace geos
 namespace singlePhasePoromechanicsEmbeddedFracturesKernels
 {
 
-using namespace fluxKernelsHelper;
-using namespace constitutive;
-
 template< integer NUM_EQN, integer NUM_DOF >
-class ConnectorBasedAssemblyKernel : public singlePhaseFVMKernels::FaceBasedAssemblyKernel< NUM_EQN, NUM_DOF, SurfaceElementStencilWrapper >
+class ConnectorBasedAssemblyKernel : public singlePhaseFVMKernels::FluxComputeKernel< NUM_EQN, NUM_DOF, SurfaceElementStencilWrapper >
 {
 public:
 
@@ -45,12 +44,12 @@ public:
   template< typename VIEWTYPE >
   using ElementViewConst = ElementRegionManager::ElementViewConst< VIEWTYPE >;
 
-  using AbstractBase = singlePhaseFVMKernels::FaceBasedAssemblyKernelBase;
+  using AbstractBase = singlePhaseFVMKernels::FluxComputeKernelBase;
   using DofNumberAccessor = AbstractBase::DofNumberAccessor;
   using SinglePhaseFlowAccessors = AbstractBase::SinglePhaseFlowAccessors;
   using SinglePhaseFluidAccessors = AbstractBase::SinglePhaseFluidAccessors;
   using PermeabilityAccessors = AbstractBase::PermeabilityAccessors;
-  using FracturePermeabilityAccessors = StencilMaterialAccessors< PermeabilityBase,
+  using FracturePermeabilityAccessors = StencilMaterialAccessors< constitutive::PermeabilityBase,
                                                                   fields::permeability::dPerm_dDispJump >;
   using AbstractBase::m_dt;
   using AbstractBase::m_rankOffset;
@@ -64,7 +63,7 @@ public:
   using AbstractBase::m_dens;
   using AbstractBase::m_dDens_dPres;
 
-  using Base = singlePhaseFVMKernels::FaceBasedAssemblyKernel< NUM_EQN, NUM_DOF, SurfaceElementStencilWrapper >;
+  using Base = singlePhaseFVMKernels::FluxComputeKernel< NUM_EQN, NUM_DOF, SurfaceElementStencilWrapper >;
   using Base::numDof;
   using Base::numEqn;
   using Base::maxNumElems;
@@ -152,11 +151,11 @@ public:
    * @param[inout] stack the stack variables
    * @param[in] NoOpFunc the function used to customize the computation of the flux
    */
-  template< typename FUNC = singlePhaseBaseKernels::NoOpFunc >
+  template< typename FUNC = NoOpFunc >
   GEOS_HOST_DEVICE
   void computeFlux( localIndex const iconn,
                     StackVariables & stack,
-                    FUNC && kernelOp = singlePhaseBaseKernels::NoOpFunc{} ) const
+                    FUNC && kernelOp = NoOpFunc{} ) const
 
   {
 
@@ -182,21 +181,21 @@ public:
     real64 mobility = 0.0;
     real64 potGrad = 0.0;
 
-    computeSinglePhaseFlux( regionIndex, subRegionIndex, elementIndex,
-                            trans,
-                            dTrans,
-                            m_pres,
-                            m_gravCoef,
-                            m_dens,
-                            m_dDens_dPres,
-                            m_mob,
-                            m_dMob_dPres,
-                            alpha,
-                            mobility,
-                            potGrad,
-                            fluxVal,
-                            dFlux_dP,
-                            dFlux_dTrans );
+    singlePhaseFluxKernelsHelper::computeSinglePhaseFlux( regionIndex, subRegionIndex, elementIndex,
+                                                          trans,
+                                                          dTrans,
+                                                          m_pres,
+                                                          m_gravCoef,
+                                                          m_dens,
+                                                          m_dDens_dPres,
+                                                          m_mob,
+                                                          m_dMob_dPres,
+                                                          alpha,
+                                                          mobility,
+                                                          potGrad,
+                                                          fluxVal,
+                                                          dFlux_dP,
+                                                          dFlux_dTrans );
 
 
 
@@ -240,7 +239,7 @@ private:
 
 
 /**
- * @class FaceBasedAssemblyKernelFactory
+ * @class ConnectorBasedAssemblyKernelFactory
  */
 class ConnectorBasedAssemblyKernelFactory
 {

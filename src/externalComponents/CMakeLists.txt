@@ -25,7 +25,7 @@ if( ${BUILD_SHARED_LIBS} )
   set( externalComponentsLinkList ${externalComponentsList} )
 else()
  foreach(component ${externalComponentsList})
-   set( externalComponentsLinkList ${externalComponentsLinkList} ${GEOSX_LINK_PREPEND_FLAG} ${component} ${GEOSX_LINK_POSTPEND_FLAG} )
+   set( externalComponentsLinkList ${externalComponentsLinkList} ${GEOS_LINK_PREPEND_FLAG} ${component} ${GEOS_LINK_POSTPEND_FLAG} )
  endforeach()
 endif()
 

@@ -1,0 +1,32 @@
+<Problem>
+  <Mesh>
+    <InternalWellbore
+      name="mesh1"
+      elementTypes="{ C3D8, C3D8, C3D8 }"
+      radius="{0.057, 0.063, 0.1, 0.2}"
+      theta="{0, 180}"
+      zCoords="{-10,0}"
+      trajectory="{ { -0.0, 0.0, 0.0 },
+                    {  0.0, 0.0, -1.0 } }"
+      nr="{ 1, 18, 14 }"
+      nt="{ 64 }"
+      nz="{ 3125 }"
+      hardRadialCoords="{ 0.057, 0.063, 0.0646667, 0.0663333, 0.068, 0.0696667, 0.0713333, 0.073, 0.075594, 0.0782794, 0.0810593, 0.083937, 0.0869161, 0.09, 0.0916667, 0.0933333, 0.095, 0.0966667, 0.0983333, 0.1, 0.101667, 0.103333, 0.105, 0.106667, 0.108333, 0.11, 0.118447, 0.127574, 0.137435, 0.14809, 0.159602, 0.17204, 0.185479, 0.2 }"
+      useCartesianOuterBoundary="2"
+      cartesianMappingInnerRadius="0.12"
+      cellBlockNames="{ casing, cement, rock }"
+      />
+  </Mesh>
+
+  <Geometry>
+    <Box
+      name="sourceLeak"
+      xMin="{ -0.51, -0.51, -10.00001 }"
+      xMax="{  0.51,  0.51, -9.99999 }"/>
+    <Box
+      name="output"
+      xMin="{ -0.51,  -0.51, -0.00001 }"
+      xMax="{  0.51,   0.51,  0.00001 }"/>
+  </Geometry>
+
+</Problem>

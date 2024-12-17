@@ -27,7 +27,7 @@ If applicable, add screenshots to help explain your problem.
 **Platform (please complete the following information):**
 - Machine [e.g. LLNL/Quartz] 
 - Compiler: [e.g. gcc 8.1.0]
-- GEOSX Version [e.g. 0.2]
+- GEOS Version [e.g. 0.2]
 
 **Additional context**
 Add any other context about the problem here.

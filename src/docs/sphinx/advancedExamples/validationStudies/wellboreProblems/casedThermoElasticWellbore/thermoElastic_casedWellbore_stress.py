@@ -31,13 +31,13 @@ def main():
 		
 		# Get stress, time and element center
 		hf_stress = h5py.File(filePath_stress, 'r')
-		time = np.array( hf_stress.get(stress_field_name + ' Time') )
-		center = np.array( hf_stress.get(stress_field_name + ' elementCenter') )
-		stress = np.array( hf_stress.get(stress_field_name) )
+		time = np.asarray( hf_stress.get(stress_field_name + ' Time') )
+		center = np.asarray( hf_stress.get(stress_field_name + ' elementCenter') )
+		stress = np.asarray( hf_stress.get(stress_field_name) )
 
 		# Get temperature
 		hf_temperature = h5py.File(filePath_temperature, 'r')
-		temperature = np.array( hf_temperature.get('temperature') )
+		temperature = np.asarray( hf_temperature.get('temperature') )
 
 		# Compute total stress: 
 		# With the actual version of GEOS, the output stress need to be combined with the temperature contribution to obtain the total tress as follows: 

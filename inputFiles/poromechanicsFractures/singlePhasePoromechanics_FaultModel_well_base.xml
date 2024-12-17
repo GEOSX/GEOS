@@ -1,0 +1,234 @@
+<Problem>
+  <Constitutive>
+    <PorousElasticIsotropic
+      name="porousRock"
+      permeabilityModelName="rockPerm"
+      porosityModelName="rockPorosity"
+      solidModelName="rock" />
+
+    <ElasticIsotropic
+      name="rock"
+      defaultDensity="2927"
+      defaultPoissonRatio="0.15"
+      defaultYoungModulus="14950000000" />
+
+    <CompressibleSinglePhaseFluid
+      name="water"
+      compressibility="2.09028227021e-10"
+      defaultDensity="1325"
+      defaultViscosity="0.001"
+      referenceDensity="1325"
+      referencePressure="0e6"
+      referenceViscosity="0.001"
+      viscosibility="0.0" />
+
+    <BiotPorosity
+      name="rockPorosity"
+      defaultReferencePorosity="0.3"
+      defaultGrainBulkModulus="7.12e30" />
+
+    <ConstantPermeability
+      name="rockPerm"
+      permeabilityComponents="{ 1.0e-18, 1.0e-18, 1.0e-18 }" />
+      <!-- Material inside the fault -->
+    <CompressibleSolidParallelPlatesPermeability
+      name="faultFilling"
+      solidModelName="nullSolid"
+      porosityModelName="fracturePorosity"
+      permeabilityModelName="fracturePerm"/>
+
+    <PressurePorosity
+      name="fracturePorosity"
+      defaultReferencePorosity="1.00"
+      referencePressure="0e6"
+      compressibility="0.0"/>
+
+    <ParallelPlatesPermeability
+      name="fracturePerm"/>
+
+    <Coulomb
+      name="fractureContact"
+      cohesion="40.0e6"
+      frictionCoefficient="0.01"/>
+
+    <HydraulicApertureTable
+    name="hApertureModel"
+    apertureTableName="apertureTable"/>   
+
+    <NullModel
+      name="nullSolid"/>
+
+  </Constitutive>
+
+  <FieldSpecifications>
+
+    <FieldSpecification
+      name="fracPorosity"
+      initialCondition="1"
+      setNames="{ all }"
+      objectPath="ElementRegions/Fault"
+      fieldName="fracturePorosity_porosity"
+      scale="1.00"/>
+
+    <FieldSpecification
+      name="xconstraint"
+      component="0"
+      fieldName="totalDisplacement"
+      objectPath="nodeManager"
+      scale="0.0"
+      setNames="{ xnegFace, xposFace }" />
+
+    <FieldSpecification
+      name="yconstraint"
+      component="1"
+      fieldName="totalDisplacement"
+      objectPath="nodeManager"
+      scale="0.0"
+      setNames="{ ynegFace, yposFace }" />
+
+    <FieldSpecification
+      name="zconstraint"
+      component="2"
+      fieldName="totalDisplacement"
+      objectPath="nodeManager"
+      scale="0.0"
+      setNames="{ znegFace }" /> 
+
+    <Traction
+      name="tractionTop"
+      objectPath="faceManager"
+      tractionType="normal"
+      scale="-4e7"      
+      setNames="{ zposFace }"/>
+
+    <FieldSpecification
+      name="init_pressure"
+      initialCondition="1"
+      setNames="{ all }"
+      objectPath="ElementRegions"
+      fieldName="pressure"
+      scale="4e7"/>
+  </FieldSpecifications>
+
+  <ElementRegions>
+    <CellElementRegion
+      name="Region"
+      cellBlocks="{ 2_hexahedra, 1_hexahedra, 0_hexahedra }"
+      materialList="{ water, porousRock }"/>  
+
+    <SurfaceElementRegion
+      name="Fault"
+      faceBlock="fracture"
+      materialList="{ water, faultFilling, fractureContact, hApertureModel }"
+      defaultAperture="1e-3"/>
+
+    <WellElementRegion
+      name="wellRegion1"
+      materialList="{ water }"/>
+
+    <WellElementRegion
+      name="wellRegion2"
+      materialList="{ water }"/>
+  </ElementRegions>
+
+  <NumericalMethods>
+    <FiniteElements>
+      <FiniteElementSpace
+        name="FE1"
+        order="1" />
+    </FiniteElements>
+
+    <FiniteVolume>
+      <TwoPointFluxApproximation
+        name="singlePhaseTPFA"/>
+      <TwoPointFluxApproximation
+        name="singlePhaseTPFA_stab"/>  
+    </FiniteVolume>
+  </NumericalMethods>
+
+  <Outputs>
+    <VTK
+      name="vtkOutput" />
+
+    <Restart
+      name="restartOutput"/>
+  </Outputs>
+
+  <Functions>
+    <TableFunction
+      name="apertureTable"
+      coordinates="{ -1.0e-3, 0.0 }"
+      values="{ 1.0e-3, 1.0e-3 }"
+    />
+  </Functions>
+
+  <Mesh>
+    <VTKMesh
+      name="mesh1"
+      useGlobalIds="1"
+      faceBlocks="{ fracture }"
+      file="verticalFault_ExternalMesh.vtm">
+      <InternalWell
+        name="well_producer1"
+        logLevel="1"
+        wellRegionName="wellRegion1"
+        wellControlsName="wellControls1"
+        polylineNodeCoords="{ { 5400, 5400, 0 },
+                              { 5400, 5400, -2500 } }"
+        polylineSegmentConn="{ { 0, 1 } }"
+        radius="0.1"
+        numElementsPerSegment="1">
+        <Perforation
+          name="producer1_perf1"
+          distanceFromHead="2500"/>
+      </InternalWell>
+      <InternalWell
+        name="well_injector1"
+        logLevel="1"
+        wellRegionName="wellRegion2"
+        wellControlsName="wellControls2"
+        polylineNodeCoords="{ { -5400, -5400, 0 },
+                              { -5400, -5400, -2500 } }"
+        polylineSegmentConn="{ { 0, 1 } }"
+        radius="0.1"
+        numElementsPerSegment="1">
+        <Perforation
+          name="injector1_perf1"
+          distanceFromHead="2500"/>
+      </InternalWell>
+    </VTKMesh>
+  </Mesh>
+
+  <Geometry>
+    <Box
+      name="xposFace"
+      xMin="{ 5999.99,  -6000.01,  -4000.01 }"
+      xMax="{ 6000.01,   6000.01,      0.01 }"/>
+
+    <Box
+      name="xnegFace"
+      xMin="{-6000.01,  -6000.01,  -4000.01 }"
+      xMax="{-5999.99,   6000.01,      0.01 }"/>
+
+    <Box
+      name="yposFace"
+      xMin="{-6000.01,   5999.99,  -4000.01 }"
+      xMax="{ 6000.01,   6000.01,      0.01 }"/>
+
+    <Box
+      name="ynegFace"
+      xMin="{-6000.01,  -6000.01,  -4000.01 }"
+      xMax="{ 6000.01,  -5999.99,      0.01 }"/>
+
+    <Box
+      name="zposFace"
+      xMin="{-6000.01,  -6000.01,     -0.01 }"
+      xMax="{ 6000.01,   6000.01,      0.01 }"/>
+
+    <Box
+      name="znegFace"
+      xMin="{-6000.01,  -6000.01,  -4000.01 }"
+      xMax="{ 6000.01,   6000.01,  -3999.99 }"/>
+  </Geometry>
+
+</Problem>

@@ -2,10 +2,11 @@
  * ------------------------------------------------------------------------------------------------------------
  * SPDX-License-Identifier: LGPL-2.1-only
  *
- * Copyright (c) 2018-2020 Lawrence Livermore National Security LLC
- * Copyright (c) 2018-2020 The Board of Trustees of the Leland Stanford Junior University
- * Copyright (c) 2018-2020 TotalEnergies
- * Copyright (c) 2019-     GEOSX Contributors
+ * Copyright (c) 2016-2024 Lawrence Livermore National Security LLC
+ * Copyright (c) 2018-2024 TotalEnergies
+ * Copyright (c) 2018-2024 The Board of Trustees of the Leland Stanford Junior University
+ * Copyright (c) 2023-2024 Chevron
+ * Copyright (c) 2019-     GEOS/GEOSX Contributors
  * All rights reserved
  *
  * See top level LICENSE, COPYRIGHT, CONTRIBUTORS, NOTICE, and ACKNOWLEDGEMENTS files for details.
@@ -23,15 +24,17 @@
 #include "physicsSolvers/multiphysics/CoupledSolver.hpp"
 #include "physicsSolvers/contact/SolidMechanicsLagrangeContact.hpp"
 #include "physicsSolvers/fluidFlow/SinglePhaseBase.hpp"
+#include "dataRepository/Group.hpp"
 
 namespace geos
 {
 
-class SinglePhasePoromechanicsConformingFractures : public SinglePhasePoromechanics< SinglePhaseBase, SolidMechanicsLagrangeContact >
+template< typename FLOW_SOLVER = SinglePhaseBase >
+class SinglePhasePoromechanicsConformingFractures : public SinglePhasePoromechanics< FLOW_SOLVER, SolidMechanicsLagrangeContact >
 {
 public:
 
-  using Base = SinglePhasePoromechanics< SinglePhaseBase, SolidMechanicsLagrangeContact >;
+  using Base = SinglePhasePoromechanics< FLOW_SOLVER, SolidMechanicsLagrangeContact >;
   using Base::m_solvers;
   using Base::m_dofManager;
   using Base::m_localMatrix;
@@ -47,7 +50,7 @@ public:
    * @param parent the parent group of this instantiation of SinglePhasePoromechanicsConformingFractures
    */
   SinglePhasePoromechanicsConformingFractures( const string & name,
-                                               Group * const parent );
+                                               dataRepository::Group * const parent );
 
   /// Destructor for the class
   ~SinglePhasePoromechanicsConformingFractures() override {}
@@ -57,9 +60,20 @@ public:
    * @return string that contains the catalog name to generate a new SinglePhasePoromechanicsConformingFractures object through the object
    * catalog.
    */
-  static string catalogName() { return "SinglePhasePoromechanicsConformingFractures"; }
+  static string catalogName()
+  {
+    if constexpr ( std::is_same_v< FLOW_SOLVER, SinglePhaseBase > )
+    {
+      return "SinglePhasePoromechanicsConformingFractures";
+    }
+    else
+    {
+      return FLOW_SOLVER::catalogName() + "PoromechanicsConformingFractures";
+    }
+  }
+
   /**
-   * @copydoc SolverBase::getCatalogName()
+   * @copydoc PhysicsSolverBase::getCatalogName()
    */
   string getCatalogName() const override { return catalogName(); }
 
@@ -89,15 +103,20 @@ public:
 
   virtual void updateState( DomainPartition & domain ) override final;
 
-  bool resetConfigurationToDefault( DomainPartition & domain ) const override final;
-
-  bool updateConfiguration( DomainPartition & domain ) override final;
-
-  void outputConfigurationStatistics( DomainPartition const & domain ) const override final;
+  virtual void setMGRStrategy() override
+  {
+    if( this->m_linearSolverParameters.get().preconditionerType == LinearSolverParameters::PreconditionerType::mgr )
+      GEOS_ERROR( GEOS_FMT( "{}: MGR strategy is not implemented for {}", this->getName(), this->getCatalogName()));
+  }
 
   /**@}*/
 
 private:
+
+  struct viewKeyStruct : public Base::viewKeyStruct
+  {};
+
+  static const localIndex m_maxFaceNodes=11; // Maximum number of nodes on a contact face
 
   void assembleElementBasedContributions( real64 const time_n,
                                           real64 const dt,
@@ -162,7 +181,6 @@ private:
    * @param domain
    */
   void updateHydraulicApertureAndFracturePermeability( DomainPartition & domain );
-
 
   std::unique_ptr< CRSMatrix< real64, localIndex > > & getRefDerivativeFluxResidual_dAperture()
   {

@@ -1,0 +1,68 @@
+<?xml version="1.0" ?>
+
+<Problem>
+
+  <NumericalMethods>
+    <FiniteVolume>
+      <TwoPointFluxApproximation
+        name="fluidTPFA"/>
+    </FiniteVolume>
+  </NumericalMethods>
+
+  <ElementRegions>
+    <CellElementRegion
+      name="Domain"
+      cellBlocks="{ cb1 }"
+      materialList="{ rock, fluid }"/>
+  </ElementRegions>
+
+  <Constitutive>
+    <CompressibleSinglePhaseFluid
+      name="fluid"
+      defaultDensity="1000"
+      defaultViscosity="0.001"
+      referencePressure="0.0"
+      referenceDensity="1000"
+      compressibility="5e-10"
+      referenceViscosity="0.001"
+      viscosibility="0.0"/>
+
+    <CompressibleSolidPressurePermeability
+      name="rock"
+      solidModelName="nullSolid"
+      porosityModelName="rockPorosity"
+      permeabilityModelName="rockPerm"/>
+
+    <NullModel
+      name="nullSolid"/>
+    <PressurePermeability
+      name="rockPerm"
+      referencePermeabilityComponents="{ 4.0e-16, 4.0e-16, 4.0e-16 }"
+      pressureDependenceConstants="{ 1e-6, 4e-7, 1e-6 }"
+      referencePressure="5e6"
+      pressureModelType="Hyperbolic"/>
+    <PressurePorosity
+      name="rockPorosity"
+      defaultReferencePorosity="0.1"
+      referencePressure="5e6"
+      compressibility="1.0e-9"/>
+  </Constitutive>
+
+  <FieldSpecifications>
+    <FieldSpecification
+      name="initialPressure"
+      initialCondition="1"
+      setNames="{ all }"
+      objectPath="ElementRegions/Domain/cb1"
+      fieldName="pressure"
+      scale="5.0e6"/>
+
+    <SourceFlux
+      name="sourceTerm"
+      objectPath="ElementRegions/Domain/cb1"
+      scale="-0.001"
+      setNames="{ source }"/>
+  </FieldSpecifications>
+  
+</Problem>
+

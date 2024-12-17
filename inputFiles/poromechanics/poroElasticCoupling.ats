@@ -1,5 +1,4 @@
-import geos_ats
-from geos_ats.test_builder import TestDeck, RestartcheckParameters, generate_geos_tests
+from geos.ats.test_builder import TestDeck, RestartcheckParameters, generate_geos_tests
 
 
 class Description(object):
@@ -222,6 +221,43 @@ def _build_PoroStaircaseCO2PeacemanWell_sequential_cases():
         "PoroElastic_staircase_co2_3d_sequential.xml", (22, 33),
         ((1, 1, 1), (2, 2, 1)), description, restartcheck_params)
 
+
+def _build_PoroStaircaseSinglePhaseStabilized_fim_cases():
+    description = Description(
+        "Staircase single-phase poroelastic problem with pressure jump stabilization ",
+        "auto", "Ryan Aronson", True)
+    restartcheck_params = {"atol": 1.0e-5, "rtol": 2.0e-7}
+    return _build_poro_elastic_coupling_case(
+        "PoroElastic_staircase_singlephase_3d_fim_stab.xml", (4, 7),
+        ((1, 1, 1), (2, 2, 1)), description, restartcheck_params)
+
+
+def _build_PoroStaircaseSinglePhaseStabilized_seq_cases():
+    description = Description(
+        "Staircase single-phase poroelastic problem with pressure jump stabilization ",
+        "auto", "Ryan Aronson", True)
+    restartcheck_params = {"atol": 1.0e-5, "rtol": 2.0e-7}
+    return _build_poro_elastic_coupling_case(
+        "PoroElastic_staircase_singlephase_3d_sequential_stab.xml", (4, 7),
+        ((1, 1, 1), (2, 2, 1)), description, restartcheck_params)
+
+def _build_PoroStaircaseCO2Stabilized_fim_cases():
+    description = Description(
+        "Staircase CO2 poroelastic problem with pressure jump stabilization ",
+        "auto", "Ryan Aronson", True)
+    restartcheck_params = {"atol": 1.0e-5, "rtol": 2.0e-7}
+    return _build_poro_elastic_coupling_case(
+        "PoroElastic_staircase_co2_3d_fim_stab.xml", (4, 7),
+        ((1, 1, 1), (2, 2, 1)), description, restartcheck_params)
+
+def _build_PoroStaircaseCO2Stabilized_seq_cases():
+    description = Description(
+        "Staircase CO2 poroelastic problem with pressure jump stabilization ",
+        "auto", "Ryan Aronson", True)
+    restartcheck_params = {"atol": 1.0e-5, "rtol": 2.0e-7}
+    return _build_poro_elastic_coupling_case(
+        "PoroElastic_staircase_co2_3d_sequential_stab.xml", (4, 7),
+        ((1, 1, 1), (2, 2, 1)), description, restartcheck_params)
 
 def _build_PoroElasticPEBICO2FIM_cases():
     description = Description(

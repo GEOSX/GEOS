@@ -28,7 +28,6 @@
       surfaceGeneratorName="SurfaceGen"
       logLevel="1"
       targetRegions="{Fracture}"
-      contactRelationName="fractureContact"
       maxNumResolves="5"
       initialDt="0.1">
 

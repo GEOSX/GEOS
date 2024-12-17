@@ -1,5 +1,4 @@
-import geos_ats
-from geos_ats.test_builder import TestDeck, RestartcheckParameters, generate_geos_tests
+from geos.ats.test_builder import TestDeck, RestartcheckParameters, generate_geos_tests
 
 
 class Description(object):
@@ -77,7 +76,7 @@ def _build_NonlinearAccelerationValidation_cases():
     description = Description("Nonlinear acceleration validation problem ",
                               "auto", "Sohail Waziri", True)
     restartcheck_params = {"atol": 1.0e-4, "rtol": 2.0e-6}
-    return _build_poro_elastic_coupling_case("validationCase.xml", (3, 6),
+    return _build_poro_elastic_coupling_case("validationCase.xml", (1, 2),
                                              ((1, 1, 1), ), description,
                                              restartcheck_params)
 

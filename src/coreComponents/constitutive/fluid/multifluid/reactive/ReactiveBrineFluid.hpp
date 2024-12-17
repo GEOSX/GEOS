@@ -2,10 +2,11 @@
  * ------------------------------------------------------------------------------------------------------------
  * SPDX-License-Identifier: LGPL-2.1-only
  *
- * Copyright (c) 2018-2020 Lawrence Livermore National Security LLC
- * Copyright (c) 2018-2020 The Board of Trustees of the Leland Stanford Junior University
- * Copyright (c) 2018-2020 TotalEnergies
- * Copyright (c) 2019-     GEOSX Contributors
+ * Copyright (c) 2016-2024 Lawrence Livermore National Security LLC
+ * Copyright (c) 2018-2024 TotalEnergies
+ * Copyright (c) 2018-2024 The Board of Trustees of the Leland Stanford Junior University
+ * Copyright (c) 2023-2024 Chevron
+ * Copyright (c) 2019-     GEOS/GEOSX Contributors
  * All rights reserved
  *
  * See top level LICENSE, COPYRIGHT, CONTRIBUTORS, NOTICE, and ACKNOWLEDGEMENTS files for details.
@@ -19,7 +20,7 @@
 #ifndef GEOS_CONSTITUTIVE_FLUID_REACTIVEBRINEFLUID_HPP_
 #define GEOS_CONSTITUTIVE_FLUID_REACTIVEBRINEFLUID_HPP_
 
-#include "codingUtilities/EnumStrings.hpp"
+#include "common/format/EnumStrings.hpp"
 #include "constitutive/fluid/multifluid/reactive/ReactiveMultiFluid.hpp"
 #include "constitutive/fluid/multifluid/MultiFluidUtils.hpp"
 #include "constitutive/fluid/multifluid/CO2Brine/PhaseModel.hpp"
@@ -151,18 +152,25 @@ private:
   struct viewKeyStruct : ReactiveMultiFluid::viewKeyStruct
   {
     static constexpr char const * phasePVTParaFilesString() { return "phasePVTParaFiles"; }
+    static constexpr char const * writeCSVFlagString() { return "writeCSV"; }
   };
 
 protected:
 
-  virtual void postProcessInput() override;
+  virtual void postInputInitialization() override;
 
 private:
 
+  /**
+   * @brief Create a PVT Model and output them
+   */
   void createPVTModels();
 
   /// Names of the files defining the viscosity and density models
   path_array m_phasePVTParaFiles;
+
+  /// Output csv file containing informations about PVT
+  integer m_writeCSV;
 
   /// Brine constitutive models
   std::unique_ptr< PHASE > m_phase;

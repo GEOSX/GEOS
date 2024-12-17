@@ -60,9 +60,9 @@
        specificHeatCapacity="4.2e6"
        referenceInternalEnergy="0.99"/>
 
-     <SinglePhaseConstantThermalConductivity
+     <SinglePhaseThermalConductivity
        name="thermalCond"
-       thermalConductivityComponents="{ 3.81, 3.81, 3.81 }"/>  
+       defaultThermalConductivityComponents="{ 3.81, 3.81, 3.81 }"/>  
 
      <CompressibleSolidParallelPlatesPermeability
        name="fractureFilling"
@@ -80,7 +80,7 @@
 
      <SolidInternalEnergy
        name="rockInternalEnergy"
-       volumetricHeatCapacity="2.3345e6"
+       referenceVolumetricHeatCapacity="2.3345e6"
        referenceTemperature="0"
        referenceInternalEnergy="0"/>  
 

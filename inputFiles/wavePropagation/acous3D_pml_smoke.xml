@@ -31,15 +31,15 @@
       nx="{ 1, 3, 1}"
       ny="{ 1, 3, 1}"
       nz="{ 1, 3, 1}"
-      cellBlockNames="{ pmlLeftFrontBottom, pmlLeftFrontMid, pmlLeftFrontTop,
-                        pmlLeftMidBottom, pmlLeftMidMid, pmlLeftMidTop,
-                        pmlLeftBackBottom, pmlLeftBackMid, pmlLeftBackTop,
-                        pmlMidFrontBottom, pmlMidFrontMid, pmlMidFrontTop,
-                        pmlMidMidBottom, interiorMidMidMid, pmlMidMidTop,
-                        pmlMidBackBottom, pmlMidBackMid, pmlMidBackTop,
-                        pmlRightFrontBottom, pmlRightFrontMid, pmlRightFrontTop,
-                        pmlRightMidBottom, pmlRightMidMid, pmlRightMidTop,
-                        pmlRightBackBottom, pmlRightBackMid, pmlRightBackTop }"/>
+      cellBlockNames="{ cb-0_0_0, cb-1_0_0, cb-2_0_0, 
+                        cb-0_1_0, cb-1_1_0, cb-2_1_0, 
+                        cb-0_2_0, cb-1_2_0, cb-2_2_0, 
+                        cb-0_0_1, cb-1_0_1, cb-2_0_1, 
+                        cb-0_1_1, cb-1_1_1, cb-2_1_1, 
+                        cb-0_2_1, cb-1_2_1, cb-2_2_1, 
+                        cb-0_0_2, cb-1_0_2, cb-2_0_2, 
+                        cb-0_1_2, cb-1_1_2, cb-2_1_2, 
+			cb-0_2_2, cb-1_2_2, cb-2_2_2 }"/>
   </Mesh>
 
   <Geometry>
@@ -115,20 +115,20 @@
     <!-- assign the interior and PML blocks to separate cell element regions -->
     <CellElementRegion
       name="interiorDomain"
-      cellBlocks="{ interiorMidMidMid }"
+      cellBlocks="{ cb-1_1_1 }"
       materialList="{ nullModel }"/>
 
     <CellElementRegion
       name="pmlDomain"
-      cellBlocks="{ pmlLeftFrontBottom, pmlLeftFrontMid, pmlLeftFrontTop,
-                        pmlLeftMidBottom, pmlLeftMidMid, pmlLeftMidTop,
-                        pmlLeftBackBottom, pmlLeftBackMid, pmlLeftBackTop,
-                        pmlMidFrontBottom, pmlMidFrontMid, pmlMidFrontTop,
-                        pmlMidMidBottom, pmlMidMidTop,
-                        pmlMidBackBottom, pmlMidBackMid, pmlMidBackTop,
-                        pmlRightFrontBottom, pmlRightFrontMid, pmlRightFrontTop,
-                        pmlRightMidBottom, pmlRightMidMid, pmlRightMidTop,
-                        pmlRightBackBottom, pmlRightBackMid, pmlRightBackTop }"
+      cellBlocks="{ cb-0_0_0, cb-1_0_0, cb-2_0_0, 
+                    cb-0_1_0, cb-1_1_0, cb-2_1_0, 
+                    cb-0_2_0, cb-1_2_0, cb-2_2_0, 
+                    cb-0_0_1, cb-1_0_1, cb-2_0_1, 
+                    cb-0_1_1,           cb-2_1_1, 
+                    cb-0_2_1, cb-1_2_1, cb-2_2_1, 
+                    cb-0_0_2, cb-1_0_2, cb-2_0_2, 
+                    cb-0_1_2, cb-1_1_2, cb-2_1_2, 
+                    cb-0_2_2, cb-1_2_2, cb-2_2_2 }"
       materialList="{ nullModel }"/>
   </ElementRegions>
 
