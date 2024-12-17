@@ -92,7 +92,8 @@ if( NOT DEFINED ENV{MKLROOT} )
 endif()
 
 if ( NOT DEFINED ENV{GOMP_ROOT} )
-    set( GOMP_ROOT $ENV{GCC_PATH}/lib/gcc/x86_64-redhat-linux/12/libgomp.so )
+    message( STATUS "GOMP_ROOT is not set. Setting it to $ENV{GCC_PATH}/lib/gcc/x86_64-redhat-linux/12" )
+    set( ENV{GOMP_ROOT} $ENV{GCC_PATH}/lib/gcc/x86_64-redhat-linux/12 )
 endif()
 
 set( MKL_INCLUDE_DIRS $ENV{MKLROOT}/include CACHE STRING "" )
