@@ -23,7 +23,7 @@
 #include "constitutive/relativePermeability/BrooksCoreyRelativePermeability.hpp"
 #include "constitutive/relativePermeability/BrooksCoreyBakerRelativePermeability.hpp"
 #include "constitutive/relativePermeability/TableRelativePermeability.hpp"
-//#include "constitutive/relativePermeability/TableRelativePermeabilityHysteresis.hpp"
+#include "constitutive/relativePermeability/TableRelativePermeabilityHysteresis.hpp"
 #include "constitutive/relativePermeability/BrooksCoreyStone2RelativePermeability.hpp"
 #include "constitutive/relativePermeability/VanGenuchtenBakerRelativePermeability.hpp"
 #include "constitutive/relativePermeability/VanGenuchtenStone2RelativePermeability.hpp"
@@ -49,7 +49,7 @@ void constitutiveUpdatePassThru( RelativePermeabilityBase const & relPerm,
   ConstitutivePassThruHandler< BrooksCoreyRelativePermeability,
                                BrooksCoreyBakerRelativePermeability,
                                TableRelativePermeability,
-//                               TableRelativePermeabilityHysteresis,
+                               TableRelativePermeabilityHysteresis,
                                VanGenuchtenBakerRelativePermeability,
                                BrooksCoreyStone2RelativePermeability,
                                VanGenuchtenBakerRelativePermeability,
@@ -66,7 +66,7 @@ void constitutiveUpdatePassThru( RelativePermeabilityBase & relPerm,
                                VanGenuchtenBakerRelativePermeability,
                                VanGenuchtenStone2RelativePermeability,
                                TableRelativePermeability,
-//                               TableRelativePermeabilityHysteresis,
+                               TableRelativePermeabilityHysteresis,
                                VanGenuchtenBakerRelativePermeability >::execute( relPerm, std::forward< LAMBDA >( lambda ) );
 }
 

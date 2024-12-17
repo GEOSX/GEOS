@@ -268,7 +268,7 @@ public:
   {
     MpiWrapper::allReduce( localResidualNorm.data(),
                            globalResidualNorm.data(),
-                           localResidualNorm.size(),
+                           globalResidualNorm.size(),
                            MpiWrapper::getMpiOp( MpiWrapper::Reduction::Max ),
                            MPI_COMM_GEOSX );
   }

@@ -670,8 +670,11 @@ AssemblerKernelHelper::
           dPhaseGravDif_dCompDens[ic] = dPhaseMassDens_dC[ip][ic] * gravCoefDif;
         }
         // no density evaluated at the face center
+        // OV begin
+	// real64 faceNormal[3];
         real64 faceNormal[3];
-        assert( true ); // should not got there for now
+	// OV end
+	assert( true ); // should not got there for now
 
         // potential difference
         real64 const phasePotDif = presDif - phaseGravDif;

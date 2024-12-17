@@ -619,7 +619,10 @@ public:
         localIndex const sesri[numFluxSupportPoints] = {m_sesri( iconn, k[0] ), m_sesri( iconn, k[1] )};
         localIndex const sei[numFluxSupportPoints] = {m_sei( iconn, k[0] ), m_sei( iconn, k[1] )};
 
-        real64 faceNormal[3];
+        // OV
+        // real64 faceNormal[3];
+        real64 faceNormal[3] = {.33,.33,.33};
+	
         m_stencilWrapper.getFaceNormal( iconn, faceNormal );
 
         // clear working arrays

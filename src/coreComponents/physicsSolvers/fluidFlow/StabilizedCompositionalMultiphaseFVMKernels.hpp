@@ -242,7 +242,10 @@ public:
       localIndex const esr_up_stab = sesri[k_up_stab];
       localIndex const ei_up_stab  = sei[k_up_stab];
 
-      real64 faceNormal[3];
+      // OV
+      // real64 faceNormal[3];
+      real64 faceNormal[3] = {.33, .33, .33};
+      // OV end
       m_stencilWrapper.getFaceNormal( iconn, faceNormal );
 
       bool const areInSameMacroElement = stencilMacroElements[0] == stencilMacroElements[1];

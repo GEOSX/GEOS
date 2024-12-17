@@ -241,6 +241,9 @@ getVtkPoints( NodeManager const & nodeManager,
 {
   localIndex const numNodes = LvArray::integerConversion< localIndex >( nodeIndices.size() );
   auto points = vtkSmartPointer< vtkPoints >::New();
+  // OV 
+  points->SetDataTypeToDouble();
+  // OV end
   points->SetNumberOfPoints( numNodes );
   auto const coord = nodeManager.referencePosition().toViewConst();
   forAll< parallelHostPolicy >( numNodes, [=, pts = points.GetPointer()]( localIndex const k )
@@ -266,6 +269,9 @@ getVtkPoints( ParticleRegion const & particleRegion ) // TODO: Loop over the sub
   localIndex const numCornersPerParticle = 8; // Each CPDI particle has 8 corners. TODO: add support for other particle types.
   localIndex const numCorners = numCornersPerParticle * particleRegion.getNumberOfParticles();
   auto points = vtkSmartPointer< vtkPoints >::New();
+  // OV
+  points->SetDataTypeToDouble();
+  // end OV
   points->SetNumberOfPoints( numCorners );
   array2d< real64 > const coord = particleRegion.getParticleCorners();
   forAll< parallelHostPolicy >( numCorners, [=, pts = points.GetPointer()]( localIndex const k )
@@ -298,6 +304,9 @@ getWell( WellElementSubRegion const & subRegion,
   // - otherwise, esr.size() is equal to the number of well elements of the well on this rank
   // Each well element has two nodes, shared with the previous and next well elements, respectively
   auto points = vtkSmartPointer< vtkPoints >::New();
+  // OV
+  points->SetDataTypeToDouble();
+  // end OV
   // if esr.size() == 0, we set the number of points and cells to zero
   // if not, we set the number of points to esr.size()+1 and the number of cells to esr.size()
   localIndex const numPoints = subRegion.size() > 0 ? subRegion.size() + 1 : 0;
@@ -393,8 +402,10 @@ getSurface( FaceElementSubRegion const & subRegion,
     cellArray->InsertNextCell( vtkOrdering.size(), connectivity.data() );
     cellTypes.emplace_back( toVTKCellType( elementType, numNodes ) );
   }
-
   auto points = vtkSmartPointer< vtkPoints >::New();
+  // OV
+  points->SetDataTypeToDouble();
+  // end OV
   points->SetNumberOfPoints( geosx2VTKIndexing.size() );
   arrayView2d< real64 const, nodes::REFERENCE_POSITION_USD > const referencePosition = nodeManager.referencePosition();
 

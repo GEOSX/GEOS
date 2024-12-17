@@ -249,8 +249,18 @@ CellElementStencilTPFAWrapper::
 
     real64 faceConormal[3];
     LvArray::tensorOps::hadamardProduct< 3 >( faceConormal, coefficient[er][esr][ei][0], faceNormal );
-    halfWeight[i] *= LvArray::tensorOps::AiBi< 3 >( m_cellToFaceVec[iconn][i], faceConormal );
-
+    // halfWeight[i] *= LvArray::tensorOps::AiBi< 3 >( m_cellToFaceVec[iconn][i], faceConormal );
+    // OV -- begin replacement
+    real64 maxnormal = 0;
+    for (int dir = 0; dir < 3; ++dir)
+    {
+      if (fabs(faceNormal[dir]) > maxnormal)
+      {
+        maxnormal = fabs(faceNormal[dir]);
+        halfWeight[i] = m_weights[iconn][i] * coefficient[er][esr][ei][0][dir];
+      }
+    }
+    // OV -- end replacement
     // correct negative weight issue arising from non-K-orthogonal grids
     if( halfWeight[i] < 0.0 )
     {

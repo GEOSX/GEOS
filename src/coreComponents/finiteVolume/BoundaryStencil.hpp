@@ -210,7 +210,20 @@ BoundaryStencilWrapper::
   {
     real64 faceConormal[3];
     LvArray::tensorOps::hadamardProduct< 3 >( faceConormal, coef, faceNormal );
-    weight = LvArray::tensorOps::AiBi< 3 >( cellToFace, faceConormal );
+    // weight = LvArray::tensorOps::AiBi< 3 >( cellToFace, faceConormal );
+    // OV -- begin replacement
+    real64 maxnormal = 0;
+    for (int dir = 0; dir < 3; ++dir)
+    {
+      if (fabs(faceNormal[dir]) > maxnormal)
+      {
+        maxnormal = fabs(faceNormal[dir]);
+        weight = coef[dir];
+      }
+    }
+    //                           OV -- end replacement    
+    
+
     LvArray::tensorOps::hadamardProduct< 3 >( dWeight_dCoef, cellToFace, faceNormal );
   };
 

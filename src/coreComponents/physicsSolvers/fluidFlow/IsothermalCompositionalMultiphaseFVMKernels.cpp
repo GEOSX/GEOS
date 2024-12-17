@@ -193,7 +193,9 @@ CFLFluxKernel::
                                    transmissibility,
                                    dTrans_dPres );
 
-    real64 faceNormal[3];
+    //OV
+    // real64 faceNormal[3];
+    real64 faceNormal[3] = {.33,.33,.33};
     stencilWrapper.getFaceNormal( iconn, faceNormal );
 
     CFLFluxKernel::compute< NC, numElems, maxStencilSize >( numPhases,

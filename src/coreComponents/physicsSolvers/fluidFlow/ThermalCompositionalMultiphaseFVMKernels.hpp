@@ -403,7 +403,11 @@ public:
       //       computing the following quantities: potGrad, phaseFlux, k_up, er_up, esr_up, ei_up
 
       real64 dPhaseFlux_dT[numFluxSupportPoints]{};
-      real64 faceNormal[3];
+      // OV
+      // 
+      // real64 faceNormal[3];
+      real64 faceNormal[3] = {.33,.33,.33};
+      // end OV
       m_stencilWrapper.getFaceNormal( connectionIndex, faceNormal );
 
       // Step 3.1: compute the derivative of phase flux wrt temperature
@@ -1228,7 +1232,11 @@ public:
       // It is easier to hard-code the if/else because it is difficult to address elem and face variables in a uniform way
 
 
-      real64 faceNormal[3];
+      // OV
+      //
+      // real64 faceNormal[3];
+      real64 faceNormal[3] = {.33,.33,.33};
+      // end OV
       m_stencilWrapper.getFaceNormal( kf, faceNormal );
 
       if( f >= 0 )              // the element is upstream
