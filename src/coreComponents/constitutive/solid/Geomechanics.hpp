@@ -915,8 +915,21 @@ int GeomechanicsUpdates::computeStep( real64 const ( & D )[6],               // 
     ep_iso[2] = ep_iso_old;
 
    	real64 sigma_vm_old = sqrt( 3.0 * J2_old );
-		computeElasticProperties( bulk,
-                              shear );
+
+  // Compute actual elastic properties, above we computed the "conservative" upper limit
+  // for elastic properties to be used in the step division calc.
+   computeElasticProperties( sigma_old,
+                              ep_old,
+                              m_p3,
+                              fluid_pressure_initial,
+                              Km,             // Matrix bulk modulus
+                              Kf,             // Fluid bulk modulus
+                              C1,             // Term to simplify the fluid model expressions
+                              ev0,            // Zero fluid pressure vol. strain.  (will equal zero if pfi=0)
+                              phi_i,			    // Initial porosity (inferred from crush curve, used for fluid model/
+                              bulk,
+                              shear
+    );
 		real64 elasticVMShearStrain = sigma_vm_old / ( 3 * shear ); // This is equivalent to sqrt(2/3) * J2 invariant of sigma_dev/(2*shear)
 
 		if ( elasticVMShearStrain > 1.e-12 )
@@ -941,8 +954,6 @@ int GeomechanicsUpdates::computeStep( real64 const ( & D )[6],               // 
 		}
 
 	  // volumetric creep ----------------
-
-
     real64 p = -iso_old;  // hydrostatic pressure, positive in compression
 
     // volumetric plastic strain, negative in compression
@@ -955,14 +966,29 @@ int GeomechanicsUpdates::computeStep( real64 const ( & D )[6],               // 
     // uncomment for debugging:
     //		  std::cout<<"evp = "<<evp<<", phi_p = "<<phi_p<<", phi_e = "<<phi_e<<std::endl;
 
-    if ( (phi_p > phi_e) && (p > 1.e-12) && (C > 0) )
+    // TODO: have the creep model use actual bulk, not the conservative bulk=b0+b1
+
+    if ( (phi_p - phi_e > 1.e-10) && (p > 1.e-12) && (C > 0) && ( evp + m_p3 > 1.e-10 ) )
  		  {  // creep compaction
  			  real64 dphidt = -1.0*p*C*( phi_p - phi_e );  // creep compaction rate:
  			  real64 phi_c = std::max( phi_e, phi_p + dphidt*dt ); // unloaded porosity after creep, don't let it go below equilibrium level
  			  real64 evp_c = log( (phi_i - 1. ) / ( phi_c - 1. ) ); // vol. strain after creep.
- 			  real64 devp = evp_c - evp;  // creep vol. strain increment
- 			  real64 p_c = std::max( 0., p + bulk*devp );  // relaxed pressure after creep.
+ 			  evp_c = std::max( evp_c, - m_p3 ); // don't let porosity go negative.
+        real64 devp = evp_c - evp;  // creep vol. strain increment
 
+        real64 p_c;  // pressure after relaxation.
+        // We don't want to allow more plastic vol strain than the current elastic vol strain.
+        if ( devp < - p / bulk )
+        { // increment in p. vol strain is greater than current elastic vol strain.
+           devp = -p/bulk;
+           p_c = 0.;
+           evp_c = evp + devp;
+        }
+        else
+        {
+          p_c = std::max( 0., p + bulk*devp );  // relaxed pressure after creep.
+        }
+ 			  
         // uncomment for debugging:
         // real64 evp_0 = log( (phi_i - 1. ) / ( phi_p - 1. ) ); // vol. strain before creep, computed from porosity (uncomment for debugging)
         // std::cout<<"creep compaction:phi_p = "<<phi_p<<", phi_e = "<<phi_e<<", phi_c = "<<phi_c<<", dphiDt = "<<dphidt
@@ -1168,6 +1194,7 @@ void GeomechanicsUpdates::computeElasticProperties( real64 const ( &stress )[6],
             bulk = bulk - m_b3 * exp( m_b4 / evp );
         }
 	}
+
 
 
     // In  compression, or with fluid effects if the strain is more compressive
