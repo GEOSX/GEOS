@@ -263,7 +263,7 @@ texinfo_documents = [
 numfig = True
 
 # Additional stuff for the LaTeX preamble.
-latex_elements['preamble'] = '\\usepackage{amsmath}\n\\usepackage{amssymb}\n\\usepackage[retainorgcmds]{IEEEtrantools}\n\\usepackage{mathtools}\n'
+latex_elements['preamble'] = '\\usepackage{amsmath}\n\\usepackage{amssymb}\n\\usepackage[retainorgcmds]{IEEEtrantools}\n\\usepackage{mathtools}\\input{docs/sphinx/latex_macros.sty}\n'
 latex_additional_files = ['docs/sphinx/latex_macros.sty']
 
 bibtex_bibfiles = ['docs/sphinx/biblio_wave.bib']
