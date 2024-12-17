@@ -475,7 +475,7 @@ void StrainHardeningPolymerUpdates::smallStrainUpdateHelper( localIndex const k,
         LvArray::tensorOps::copy< 6 >(unrotatedNewPlasticStrain, unrotatedOldPlasticStrain);
         LvArray::tensorOps::add< 6 >(unrotatedNewPlasticStrain, plasticStrainIncrement);
 
-        if(std::abs(yieldStrength - oldYieldStrength) < tol)
+        if( std::abs(yieldStrength - oldYieldStrength) < tol)
         {
           unrotatedNewPlasticStrain[3] *= 0.5;
           unrotatedNewPlasticStrain[4] *= 0.5;
