@@ -21,7 +21,6 @@
       discretization="FE1"
       targetRegions="{ RockMatrix, Fracture }"
       fractureRegion="Fracture"
-      targetObjects="{ FracturePlane }"
       mpiCommOrder="1"/>
   </Solvers>
 

@@ -75,7 +75,7 @@ EmbeddedSurfaceGenerator::EmbeddedSurfaceGenerator( const string & name,
 
   registerWrapper( viewKeyStruct::targetObjectsNameString(), &m_targetObjectsName ).
     setRTTypeName( rtTypes::CustomTypes::groupNameRefArray ).
-    setInputFlag( dataRepository::InputFlags::REQUIRED ).
+    setInputFlag( dataRepository::InputFlags::OPTIONAL ).
     setDescription( "List of geometric objects that will be used to initialized the embedded surfaces/fractures." );
 
   registerWrapper( viewKeyStruct::mpiCommOrderString(), &m_mpiCommOrder ).
@@ -113,7 +113,6 @@ void EmbeddedSurfaceGenerator::initializePostSubGroups()
   GeometricObjectManager & geometricObjManager = GeometricObjectManager::getInstance();
 
   // Get meshLevel
-  MeshBody & meshBody = domain.getMeshBody( 0 );
   MeshLevel & meshLevel = domain.getMeshBody( 0 ).getBaseDiscretization();
 
   // Get managers
@@ -131,12 +130,12 @@ void EmbeddedSurfaceGenerator::initializePostSubGroups()
 
   NewObjectLists newObjects;
 
-  string const & faceBlockName = embeddedSurfaceRegion.getFaceBlockName();
-
-  if( !faceBlockName.empty() )
+  if( m_targetObjectsName.empty() ) // when targetObjects were not provided - try to import from vtk
   {
+    MeshBody & meshBody = domain.getMeshBody( 0 );
     CellBlockManagerABC const & cellBlockManager = meshBody.getCellBlockManager();
     Group const & embSurfBlocks = cellBlockManager.getEmbeddedSurfaceBlocks();
+    string const & faceBlockName = embeddedSurfaceRegion.getFaceBlockName();
     if( embSurfBlocks.hasGroup( faceBlockName ))
     {
       EmbeddedSurfaceBlockABC const & embSurf = embSurfBlocks.getGroup< EmbeddedSurfaceBlockABC >( faceBlockName );
@@ -242,9 +241,9 @@ void EmbeddedSurfaceGenerator::initializePostSubGroups()
               }
             }
           }
-        } ); // end loop over subregions
-      } );
-    } );
+        } );// end loop over cells
+      } );// end loop over subregions
+    } );// end loop over planes
   }
 
   // Launch kernel to compute connectivity index of each fractured element.
