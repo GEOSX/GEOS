@@ -2,11 +2,12 @@
  * ------------------------------------------------------------------------------------------------------------
  * SPDX-License-Identifier: LGPL-2.1-only
  *
- * Copyright (c) 2018-2019 Lawrence Livermore National Security LLC
- * Copyright (c) 2018-2019 The Board of Trustees of the Leland Stanford Junior University
- * Copyright (c) 2018-2019 TotalEnergies
- * Copyright (c) 2019-     GEOSX Contributors
- * All right reserved
+ * Copyright (c) 2016-2024 Lawrence Livermore National Security LLC
+ * Copyright (c) 2018-2024 TotalEnergies
+ * Copyright (c) 2018-2024 The Board of Trustees of the Leland Stanford Junior University
+ * Copyright (c) 2023-2024 Chevron
+ * Copyright (c) 2019-     GEOS/GEOSX Contributors
+ * All rights reserved
  *
  * See top level LICENSE, COPYRIGHT, CONTRIBUTORS, NOTICE, and ACKNOWLEDGEMENTS files for details.
  * ------------------------------------------------------------------------------------------------------------
@@ -16,14 +17,15 @@
  * @file HistoryDataSpec.hpp
  */
 
-#ifndef GEOSX_DATAREPOSITORY_HISTORYDATASPEC_HPP_
-#define GEOSX_DATAREPOSITORY_HISTORYDATASPEC_HPP_
+#ifndef GEOS_DATAREPOSITORY_HISTORYDATASPEC_HPP_
+#define GEOS_DATAREPOSITORY_HISTORYDATASPEC_HPP_
 
 #include "codingUtilities/traits.hpp"
 #include "common/DataTypes.hpp"
+#include "common/logger/Logger.hpp"
 #include "LvArray/src/Array.hpp"
 
-namespace geosx
+namespace geos
 {
 /// A constexpr bool to determine wether a type is compatible with the history collected and IO operations.
 template< typename T >
@@ -178,7 +180,7 @@ inline
 typename std::enable_if< can_history_io< T >, HistoryMetadata >::type
 getHistoryMetadata( string const & name, ArrayView< T const, 1, 0 > const & arr, localIndex const numComps, localIndex sizeOverride = -1 )
 {
-  GEOSX_UNUSED_VAR( numComps );
+  GEOS_UNUSED_VAR( numComps );
   localIndex size = sizeOverride < 0 ? arr.size( ) : sizeOverride;
   return HistoryMetadata( name, size, std::type_index( typeid( T )));
 }
@@ -198,7 +200,7 @@ inline
 typename std::enable_if< can_history_io< T >, HistoryMetadata >::type
 getHistoryMetadata( string const & name, SortedArrayView< T const > const & arr, localIndex const numComps, localIndex sizeOverride = -1 )
 {
-  GEOSX_UNUSED_VAR( numComps );
+  GEOS_UNUSED_VAR( numComps );
   localIndex size = sizeOverride < 0 ? arr.size( ) : sizeOverride;
   return HistoryMetadata( name, size, std::type_index( typeid(T)));
 }
@@ -238,7 +240,7 @@ template< typename T >
 inline typename std::enable_if< can_history_io< T >, HistoryMetadata >::type
 getHistoryMetadata( string const & name, const T & type, localIndex const numComps, localIndex sizeOverride = -1 )
 {
-  GEOSX_UNUSED_VAR( type, numComps );
+  GEOS_UNUSED_VAR( type, numComps );
   localIndex size = sizeOverride < 0 ? 0 : sizeOverride;
   return HistoryMetadata( name, size, std::type_index( typeid(T)));
 }
@@ -256,8 +258,8 @@ template< typename T >
 inline typename std::enable_if< can_history_io_container< T > && !can_history_io< typename T::value_type >, HistoryMetadata >::type
 getHistoryMetadata( string const & name, const T & type, localIndex const numComps, localIndex sizeOverride )
 {
-  GEOSX_ERROR( "Trying to use time history output on an unsupported type." );
-  GEOSX_UNUSED_VAR( name, type, numComps, sizeOverride );
+  GEOS_ERROR( "Trying to use time history output on an unsupported type." );
+  GEOS_UNUSED_VAR( name, type, numComps, sizeOverride );
   return HistoryMetadata( );
 }
 
@@ -274,8 +276,8 @@ template< typename T >
 inline typename std::enable_if< !can_history_io_container< T > && !can_history_io< T >, HistoryMetadata >::type
 getHistoryMetadata( string const & name, const T & type, localIndex const numComps, localIndex sizeOverride )
 {
-  GEOSX_ERROR( "Trying to use time history output on an unsupported type." );
-  GEOSX_UNUSED_VAR( name, type, numComps, sizeOverride );
+  GEOS_ERROR( "Trying to use time history output on an unsupported type." );
+  GEOS_UNUSED_VAR( name, type, numComps, sizeOverride );
   return HistoryMetadata( );
 }
 

@@ -2,10 +2,11 @@
  * ------------------------------------------------------------------------------------------------------------
  * SPDX-License-Identifier: LGPL-2.1-only
  *
- * Copyright (c) 2018-2020 Lawrence Livermore National Security LLC
- * Copyright (c) 2018-2020 The Board of Trustees of the Leland Stanford Junior University
- * Copyright (c) 2018-2020 TotalEnergies
- * Copyright (c) 2019-     GEOSX Contributors
+ * Copyright (c) 2016-2024 Lawrence Livermore National Security LLC
+ * Copyright (c) 2018-2024 TotalEnergies
+ * Copyright (c) 2018-2024 The Board of Trustees of the Leland Stanford Junior University
+ * Copyright (c) 2023-2024 Chevron
+ * Copyright (c) 2019-     GEOS/GEOSX Contributors
  * All rights reserved
  *
  * See top level LICENSE, COPYRIGHT, CONTRIBUTORS, NOTICE, and ACKNOWLEDGEMENTS files for details.
@@ -16,12 +17,12 @@
  * @file BilinearFormUtilities.hpp
  */
 
-#ifndef GEOSX_FINITEELEMENT_BILINEARFORMUTILITIES_HPP_
-#define GEOSX_FINITEELEMENT_BILINEARFORMUTILITIES_HPP_
+#ifndef GEOS_FINITEELEMENT_BILINEARFORMUTILITIES_HPP_
+#define GEOS_FINITEELEMENT_BILINEARFORMUTILITIES_HPP_
 
 #include "finiteElement/PDEUtilities.hpp"
 
-namespace geosx
+namespace geos
 {
 
 namespace BilinearFormUtilities
@@ -41,14 +42,14 @@ struct Helper< PDEUtilities::FunctionSpace::P0,
                PDEUtilities::DifferentialOperator::Divergence >
 {
   template< int numTestDOF, int numTrialDOF >
-  GEOSX_HOST_DEVICE
+  GEOS_HOST_DEVICE
   void static compute( real64 (& mat)[numTestDOF][numTrialDOF],
                        real64 const & Nv,
                        real64 const A,
                        real64 const (&dNudX)[numTrialDOF/3][3],
                        real64 const weight )
   {
-    GEOSX_UNUSED_VAR( Nv );
+    GEOS_UNUSED_VAR( Nv );
     for( int a = 0; a < numTestDOF; ++a )
     {
       for( int b = 0; b < numTrialDOF/3; ++b )
@@ -61,14 +62,14 @@ struct Helper< PDEUtilities::FunctionSpace::P0,
   }
 
   template< int numTestDOF, int numTrialDOF >
-  GEOSX_HOST_DEVICE
+  GEOS_HOST_DEVICE
   void static compute( real64 (& mat)[numTestDOF][numTrialDOF],
                        real64 const & Nv,
                        real64 const (&A)[numTestDOF],
                        real64 const (&dNudX)[numTrialDOF/3][3],
                        real64 const weight )
   {
-    GEOSX_UNUSED_VAR( Nv );
+    GEOS_UNUSED_VAR( Nv );
     for( int a = 0; a < numTestDOF; ++a )
     {
       for( int b = 0; b < numTrialDOF/3; ++b )
@@ -89,15 +90,15 @@ struct Helper< PDEUtilities::FunctionSpace::P0,
                PDEUtilities::DifferentialOperator::Identity >
 {
   template< int numTestDOF, int numTrialDOF >
-  GEOSX_HOST_DEVICE
+  GEOS_HOST_DEVICE
   void static compute( double (& mat)[numTestDOF][numTrialDOF],
                        double const & Nv,
                        double const A,
                        double const & Nu,
                        real64 const weight )
   {
-    GEOSX_UNUSED_VAR( Nv );
-    GEOSX_UNUSED_VAR( Nu );
+    GEOS_UNUSED_VAR( Nv );
+    GEOS_UNUSED_VAR( Nu );
     for( int a = 0; a < numTestDOF; ++a )
     {
       for( int b = 0; b < numTrialDOF; ++b )
@@ -108,15 +109,15 @@ struct Helper< PDEUtilities::FunctionSpace::P0,
   }
 
   template< int numTestDOF, int numTrialDOF >
-  GEOSX_HOST_DEVICE
+  GEOS_HOST_DEVICE
   void static compute( double (& mat)[numTestDOF][numTrialDOF],
                        double const & Nv,
                        double const A[numTestDOF],
                        double const & Nu,
                        real64 const weight )
   {
-    GEOSX_UNUSED_VAR( Nv );
-    GEOSX_UNUSED_VAR( Nu );
+    GEOS_UNUSED_VAR( Nv );
+    GEOS_UNUSED_VAR( Nu );
     for( int a = 0; a < numTestDOF; ++a )
     {
       for( int b = 0; b < numTrialDOF; ++b )
@@ -127,15 +128,15 @@ struct Helper< PDEUtilities::FunctionSpace::P0,
   }
 
   template< int numTestDOF, int numTrialDOF >
-  GEOSX_HOST_DEVICE
+  GEOS_HOST_DEVICE
   void static compute( double (& mat)[numTestDOF][numTrialDOF],
                        double const & Nv,
                        double const A[numTestDOF][numTrialDOF],
                        double const & Nu,
                        real64 const weight )
   {
-    GEOSX_UNUSED_VAR( Nv );
-    GEOSX_UNUSED_VAR( Nu );
+    GEOS_UNUSED_VAR( Nv );
+    GEOS_UNUSED_VAR( Nu );
     for( int a = 0; a < numTestDOF; ++a )
     {
       for( int b = 0; b < numTrialDOF; ++b )
@@ -153,14 +154,14 @@ struct Helper< PDEUtilities::FunctionSpace::H1vector,
                PDEUtilities::DifferentialOperator::Identity >
 {
   template< int numTestDOF, int numTrialDOF >
-  GEOSX_HOST_DEVICE
+  GEOS_HOST_DEVICE
   void static compute( real64 (& mat)[numTestDOF][numTrialDOF],
                        real64 const (&N)[numTestDOF/3],
                        real64 const (&A)[3],
                        real64 const & Np,
                        real64 const weight )
   {
-    GEOSX_UNUSED_VAR( Np );
+    GEOS_UNUSED_VAR( Np );
     for( int a = 0; a < numTestDOF/3; ++a )
     {
       for( int b = 0; b < numTrialDOF; ++b )
@@ -173,14 +174,14 @@ struct Helper< PDEUtilities::FunctionSpace::H1vector,
   }
 
   template< int numTestDOF, int numTrialDOF >
-  GEOSX_HOST_DEVICE
+  GEOS_HOST_DEVICE
   void static compute( real64 (& mat)[numTestDOF][numTrialDOF],
                        real64 const (&N)[numTestDOF/3],
                        real64 const (&A)[3][numTrialDOF],
                        real64 const & Np,
                        real64 const weight )
   {
-    GEOSX_UNUSED_VAR( Np );
+    GEOS_UNUSED_VAR( Np );
     for( int a = 0; a < numTestDOF/3; ++a )
     {
       for( int b = 0; b < numTrialDOF; ++b )
@@ -201,14 +202,14 @@ struct Helper< PDEUtilities::FunctionSpace::H1vector,
 {
   // symmetric second-order tensor A
   template< int numTestDOF, int numTrialDOF >
-  GEOSX_HOST_DEVICE
+  GEOS_HOST_DEVICE
   void static compute( real64 (& mat)[numTestDOF][numTrialDOF],
                        real64 const (&dNdX)[numTestDOF/3][3],
                        real64 const (&A)[6],
                        real64 const & Np,
                        real64 const weight )
   {
-    GEOSX_UNUSED_VAR( Np );
+    GEOS_UNUSED_VAR( Np );
     for( int a = 0; a < numTestDOF/3; ++a )
     {
       for( int b = 0; b < numTrialDOF; ++b )
@@ -222,14 +223,14 @@ struct Helper< PDEUtilities::FunctionSpace::H1vector,
 
   // diagonal second-order tensor
   template< int numTestDOF, int numTrialDOF >
-  GEOSX_HOST_DEVICE
+  GEOS_HOST_DEVICE
   void static compute( real64 (& mat)[numTestDOF][numTrialDOF],
                        real64 const (&dNdX)[numTestDOF/3][3],
                        real64 const (&A)[3],
                        real64 const & Np,
                        real64 const weight )
   {
-    GEOSX_UNUSED_VAR( Np );
+    GEOS_UNUSED_VAR( Np );
     for( int a = 0; a < numTestDOF/3; ++a )
     {
       for( int b = 0; b < numTrialDOF; ++b )
@@ -243,14 +244,14 @@ struct Helper< PDEUtilities::FunctionSpace::H1vector,
 
   // scalar*identity second-order tensor
   template< int numTestDOF, int numTrialDOF >
-  GEOSX_HOST_DEVICE
+  GEOS_HOST_DEVICE
   void static compute( real64 (& mat)[numTestDOF][numTrialDOF],
                        real64 const (&dNdX)[numTestDOF/3][3],
                        real64 const A,
                        real64 const & Np,
                        real64 const weight )
   {
-    GEOSX_UNUSED_VAR( Np );
+    GEOS_UNUSED_VAR( Np );
     for( int a = 0; a < numTestDOF/3; ++a )
     {
       for( int b = 0; b < numTrialDOF; ++b )
@@ -271,14 +272,14 @@ struct Helper< PDEUtilities::FunctionSpace::H1vector,
 {
   // Fourth-order tensor A
   template< int numTestDOF, int numTrialDOF, typename DISCRETIZATION_OPS >
-  GEOSX_HOST_DEVICE
+  GEOS_HOST_DEVICE
   void static compute( real64 (& mat)[numTestDOF][numTrialDOF],
                        real64 const (&dNvdX)[numTestDOF/3][3],
                        DISCRETIZATION_OPS const & A,
                        real64 const (&dNudX)[numTrialDOF/3][3],
                        real64 const weight )
   {
-    GEOSX_UNUSED_VAR( dNvdX );
+    GEOS_UNUSED_VAR( dNvdX );
     const_cast< DISCRETIZATION_OPS & >(A).template BTDB< numTestDOF/3 >( dNudX, weight, mat );
   }
 };
@@ -290,7 +291,7 @@ struct Helper< PDEUtilities::FunctionSpace::H1vector,
                PDEUtilities::DifferentialOperator::Divergence >
 {
   template< int numTestDOF, int numTrialDOF >
-  GEOSX_HOST_DEVICE
+  GEOS_HOST_DEVICE
   void static compute( real64 (& mat)[numTestDOF][numTrialDOF],
                        real64 const (&Nv)[numTestDOF/3],
                        real64 const (&A)[3],
@@ -359,7 +360,7 @@ template< PDEUtilities::FunctionSpace V,
           typename FE_VALUES_V,
           typename TENSOR,
           typename FE_VALUES_U >
-GEOSX_HOST_DEVICE
+GEOS_HOST_DEVICE
 static void compute( MATRIX && matrix,
                      FE_VALUES_V const & feValuesV,
                      TENSOR const & tensor,
@@ -371,6 +372,6 @@ static void compute( MATRIX && matrix,
 
 } // namespace BilinearFormUtilities
 
-} // namespace geosx
+} // namespace geos
 
-#endif //GEOSX_FINITEELEMENT_BILINEARFORMUTILITIES_HPP_
+#endif //GEOS_FINITEELEMENT_BILINEARFORMUTILITIES_HPP_

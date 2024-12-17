@@ -13,11 +13,15 @@ In this example, a single fracture is simulated using a Lagrange contact model i
 
 **Input file**
 
-Everything required is contained within two GEOSX input files and one mesh file located at:
+Everything required is contained within these GEOS input files and one mesh file located at:
 
 .. code-block:: console
 
-  inputFiles/lagrangianContactMechanics/ContactMechanics_SingleFracCompression_base.xml
+  inputFiles/lagrangianContactMechanics/SingleFracCompression_base.xml
+
+.. code-block:: console
+
+  inputFiles/lagrangianContactMechanics/SingleFracCompression_benchmark.xml
 
 .. code-block:: console
 
@@ -76,10 +80,10 @@ The following figure shows the mesh used in this problem.
 
 Here, we load the mesh with ``VTKMesh`` (see :ref:`ImportingExternalMesh`).
 The syntax to import external meshes is simple: in the XML file,
-the mesh file ``crackInPlane_benchmark.vtu`` is included with its relative or absolute path to the location of the GEOSX XML file and a user-specified label (here ``CubeHex``) is given to the mesh object. This unstructured mesh contains quadrilaterals elements and interface elements. Refinement is performed to conform with the fracture geometry specified in the ``Geometry`` section.
+the mesh file ``crackInPlane_benchmark.vtu`` is included with its relative or absolute path to the location of the GEOS XML file and a user-specified label (here ``CubeHex``) is given to the mesh object. This unstructured mesh contains quadrilaterals elements and interface elements. Refinement is performed to conform with the fracture geometry specified in the ``Geometry`` section.
 
 
-.. literalinclude:: ../../../../../../../inputFiles/lagrangianContactMechanics/ContactMechanics_SingleFracCompression_benchmark.xml
+.. literalinclude:: ../../../../../../../inputFiles/lagrangianContactMechanics/SingleFracCompression_benchmark.xml
     :language: xml
     :start-after: <!-- SPHINX_MESH -->
     :end-before: <!-- SPHINX_MESH_END -->
@@ -89,7 +93,7 @@ the mesh file ``crackInPlane_benchmark.vtu`` is included with its relative or ab
 Solid mechanics solver
 ------------------------
 
-GEOSX is a multi-physics platform. Different combinations of
+GEOS is a multi-physics platform. Different combinations of
 physics solvers available in the code can be applied
 in different regions of the domain and be functional at different stages of the simulation.
 The ``Solvers`` tag in the XML file is used to list and parameterize these solvers.
@@ -98,7 +102,7 @@ To specify a coupling between two different solvers, we define and characterize 
 Then, we customize a *coupling solver* between these single-physics
 solvers as an additional solver.
 This approach allows for generality and flexibility in constructing multi-physics solvers.
-Each single-physics solver should be given a meaningful and distinct name because GEOSX recognizes these single-physics solvers
+Each single-physics solver should be given a meaningful and distinct name because GEOS recognizes these single-physics solvers
 based on their given names to create the coupling.
 
 To setup a coupling between rock and fracture deformations, we define three different solvers:
@@ -110,7 +114,7 @@ To setup a coupling between rock and fracture deformations, we define three diff
 - The solver ``SurfaceGenerator`` defines the fracture region and rock toughness.
 
 
-.. literalinclude:: ../../../../../../../inputFiles/lagrangianContactMechanics/ContactMechanics_SingleFracCompression_base.xml
+.. literalinclude:: ../../../../../../../inputFiles/lagrangianContactMechanics/ContactMechanics_SingleFracCompression_benchmark.xml
   :language: xml
   :start-after: <!-- SPHINX_SOLVER -->
   :end-before: <!-- SPHINX_SOLVER_END -->
@@ -124,7 +128,7 @@ For this specific problem, we simulate the elastic deformation and fracture slip
 
 Fracture surface slippage is assumed to be governed by the Coulomb failure criterion. The contact constitutive behavior is named ``fractureMaterial`` in the ``Coulomb`` block, where cohesion ``cohesion="0.0"`` and friction coefficient ``frictionCoefficient="0.577350269"`` are specified. 
 
-.. literalinclude:: ../../../../../../../inputFiles/lagrangianContactMechanics/ContactMechanics_SingleFracCompression_base.xml
+.. literalinclude:: ../../../../../../../inputFiles/lagrangianContactMechanics/SingleFracCompression_base.xml
     :language: xml
     :start-after: <!-- SPHINX_MATERIAL -->
     :end-before: <!-- SPHINX_MATERIAL_END -->
@@ -145,13 +149,13 @@ In the ``Tasks`` section, ``PackCollection`` tasks are defined to collect time h
 Either the entire field or specified named sets of indices in the field can be collected. 
 In this example, ``tractionCollection`` and ``displacementJumpCollection`` tasks are specified to output the local traction ``fieldName="traction"`` and relative displacement ``fieldName="displacementJump"`` on the fracture surface.
 
-.. literalinclude:: ../../../../../../../inputFiles/lagrangianContactMechanics/ContactMechanics_SingleFracCompression_base.xml
+.. literalinclude:: ../../../../../../../inputFiles/lagrangianContactMechanics/SingleFracCompression_base.xml
     :language: xml
     :start-after: <!-- SPHINX_TASKS -->
     :end-before: <!-- SPHINX_TASKS_END -->
 
 These two tasks are triggered using the ``Event`` management, with ``PeriodicEvent`` defined for these recurring tasks. 
-GEOSX writes two files named after the string defined in the ``filename`` keyword and formatted as HDF5 files (displacementJump_history.hdf5 and traction_history.hdf5). The TimeHistory file contains the collected time history information from each specified time history collector.
+GEOS writes two files named after the string defined in the ``filename`` keyword and formatted as HDF5 files (displacementJump_history.hdf5 and traction_history.hdf5). The TimeHistory file contains the collected time history information from each specified time history collector.
 This information includes datasets for the simulation time, element center defined in the local coordinate system, and the time history information.
 Then, a Python script is used to access and plot any specified subset of the time history data for verification and visualization. 
 
@@ -170,13 +174,13 @@ The remaining parts of the outer boundaries are subjected to roller constraints.
 These boundary conditions are set up through the ``FieldSpecifications`` section.
 
 
-.. literalinclude:: ../../../../../../../inputFiles/lagrangianContactMechanics/ContactMechanics_SingleFracCompression_base.xml
+.. literalinclude:: ../../../../../../../inputFiles/lagrangianContactMechanics/SingleFracCompression_base.xml
     :language: xml
     :start-after: <!-- SPHINX_BC -->
     :end-before: <!-- SPHINX_BC_END -->
 
 
-Note that the remote stress has a negative value, due to the negative sign convention for compressive stresses in GEOSX. 
+Note that the remote stress has a negative value, due to the negative sign convention for compressive stresses in GEOS. 
 
  
 The parameters used in the simulation are summarized in the following table.
@@ -225,7 +229,7 @@ The next figure shows the distribution of relative shear displacement values on 
    Simulation result of fracture slip 
 
 
-The figure below shows a comparison between the numerical predictions (marks) and the corresponding analytical solutions (solid curves) for the normal traction (:math:`t_N`) and slip (:math:`g_T`) distributions on the fracture surface. One can observe that the numerical results obtained by GEOSX and the analytical solutions are nearly identical.
+The figure below shows a comparison between the numerical predictions (marks) and the corresponding analytical solutions (solid curves) for the normal traction (:math:`t_N`) and slip (:math:`g_T`) distributions on the fracture surface. One can observe that the numerical results obtained by GEOS and the analytical solutions are nearly identical.
 
 
 
@@ -241,7 +245,7 @@ To go further
 
 **Feedback on this example**
 
-For any feedback on this example, please submit a `GitHub issue on the project's GitHub page <https://github.com/GEOSX/GEOSX/issues>`_.
+For any feedback on this example, please submit a `GitHub issue on the project's GitHub page <https://github.com/GEOS-DEV/GEOS/issues>`_.
 
 
 

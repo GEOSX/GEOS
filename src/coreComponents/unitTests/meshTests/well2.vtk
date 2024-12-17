@@ -1,0 +1,11 @@
+# vtk DataFile Version 5.1
+vtk output
+ASCII
+DATASET POLYDATA
+POINTS 2 float
+0.5 0 2 0.5 0 0.5 
+LINES 2 2
+OFFSETS vtktypeint64
+0 2 
+CONNECTIVITY vtktypeint64
+0 1 

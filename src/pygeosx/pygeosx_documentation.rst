@@ -1,12 +1,12 @@
 .. _pygeosxInterface:
 
-:mod:`pygeosx` --- GEOSX in Python
+:mod:`pygeosx` --- GEOS in Python
 ==================================
-GEOSX can be manipulated and executed through a Python script.
+GEOS can be manipulated and executed through a Python script.
 
-High-level control of GEOSX is managed through the top-level ``pygeosx`` functions,
-like ``initialize`` and ``run``. GEOSX's data can be manipulated by getting
-:ref:`pylvarray <pylvarray>` views of LvArray objects living in GEOSX's data repository.
+High-level control of GEOS is managed through the top-level ``pygeosx`` functions,
+like ``initialize`` and ``run``. GEOS's data can be manipulated by getting
+`pylvarray <https://lvarray.readthedocs.io/en/latest/python/index.html>`_ views of LvArray objects living in GEOS's data repository.
 These ``pylvarray`` views are fetched by calling ``Wrapper.value()`` after getting
 a ``Wrapper`` out of the data repository.
 
@@ -21,7 +21,7 @@ Module Functions
 
 .. py:function:: pygeosx.initialize(rank, args)
 
-  Initialize GEOSX for the first time, with a rank and command-line arguments.
+  Initialize GEOS for the first time, with a rank and command-line arguments.
 
   This function should only be called **once**. To reinitialize, use the ``reinit`` function.
 
@@ -32,7 +32,7 @@ Module Functions
 
 .. py:function:: pygeosx.reinit(args)
 
-  Reinitialize GEOSX with a new set of command-line arguments.
+  Reinitialize GEOS with a new set of command-line arguments.
 
   Returns a ``Group`` representing the ``ProblemManager`` instance.
 
@@ -42,18 +42,18 @@ Module Functions
 
 .. py:function:: pygeosx.finalize()
 
-  Finalize GEOSX. After this no calls into pygeosx or to MPI are allowed.
+  Finalize GEOS. After this no calls into pygeosx or to MPI are allowed.
 
 .. py:function:: pygeosx.run()
 
-  Enter the GEOSX event loop.
+  Enter the GEOS event loop.
 
   Runs until hitting a breakpoint defined in the input deck, or until the simulation
   is complete.
 
   Returns one of the state constants defined below.
 
-GEOSX State
+GEOS State
 -----------
 
 .. py:data:: pygeosx.UNINITIALIZED
@@ -62,18 +62,18 @@ GEOSX State
 
 .. py:data:: pygeosx.READY_TO_RUN
 
-  This state indicates that GEOSX still has time steps left to run.
+  This state indicates that GEOS still has time steps left to run.
 
 .. py:data:: pygeosx.COMPLETED
 
-  This state indicates that GEOSX has completed the current simulation.
+  This state indicates that GEOS has completed the current simulation.
 
 Module Classes
 --------------
 
 .. py:class:: pygeosx.Group
 
-  Python interface to geosx::dataRepository::Group.
+  Python interface to geos::dataRepository::Group.
 
   Used to get access to other groups, and ultimately to get wrappers
   and convert them into Python views of C++ objects.
@@ -114,7 +114,7 @@ Module Classes
 
 .. py:class:: pygeosx.Wrapper
 
-  Python interface to geosx::dataRepository::WrapperBase.
+  Python interface to geos::dataRepository::WrapperBase.
 
   Wraps a generic C++ object. Use ``repr`` to get a description of the type.
 

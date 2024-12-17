@@ -20,7 +20,7 @@ The structure of the single-phase well solver is analogous and will not be descr
 Theory
 =========================
 
-Here, we give an overview of the well formulation implemented in GEOSX.
+Here, we give an overview of the well formulation implemented in GEOS.
 We review the set of :ref:`well_equations`, and then we describe the :ref:`well_primary_variables` used the well solvers.
 
 .. _well_equations:
@@ -127,7 +127,7 @@ Parameters
 
 The following attributes are supported:
 
-.. include:: /coreComponents/schema/docs/CompositionalMultiphaseWell.rst
+.. include:: /docs/sphinx/datastructure/CompositionalMultiphaseWell.rst
 
 .. _well_input_example:
 

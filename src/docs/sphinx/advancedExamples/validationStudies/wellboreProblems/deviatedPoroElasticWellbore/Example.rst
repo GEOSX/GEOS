@@ -28,7 +28,7 @@ where :math:`s` is the Laplace variable normalized by the fluid diffusion coeffi
 **Input file**
 
 Everything required is
-contained within two GEOSX xml files that are located at:
+contained within two GEOS xml files that are located at:
 
 .. code-block:: console
 
@@ -113,7 +113,7 @@ Result of the fluid pressure distribution after 78 s injection is shown in the f
    :figclass: align-center
 
 
-A good agreement between the GEOSX results and the corresponding analytical solutions is shown in the figure below:
+A good agreement between the GEOS results and the corresponding analytical solutions is shown in the figure below:
 
 
 .. plot:: docs/sphinx/advancedExamples/validationStudies/wellboreProblems/deviatedPoroElasticWellbore/deviatedPoroElasticWellboreExample1Figure.py
@@ -125,4 +125,4 @@ To go further
 **Feedback on this example**
 
 This concludes the deviated poro-elastic wellbore example.
-For any feedback on this example, please submit a `GitHub issue on the project's GitHub page <https://github.com/GEOSX/GEOSX/issues>`_.
+For any feedback on this example, please submit a `GitHub issue on the project's GitHub page <https://github.com/GEOS-DEV/GEOS/issues>`_.

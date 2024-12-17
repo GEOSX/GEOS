@@ -2,22 +2,24 @@
  * ------------------------------------------------------------------------------------------------------------
  * SPDX-License-Identifier: LGPL-2.1-only
  *
- * Copyright (c) 2018-2020 Lawrence Livermore National Security LLC
- * Copyright (c) 2018-2020 The Board of Trustees of the Leland Stanford Junior University
- * Copyright (c) 2018-2020 TotalEnergies
- * Copyright (c) 2019-     GEOSX Contributors
+ * Copyright (c) 2016-2024 Lawrence Livermore National Security LLC
+ * Copyright (c) 2018-2024 TotalEnergies
+ * Copyright (c) 2018-2024 The Board of Trustees of the Leland Stanford Junior University
+ * Copyright (c) 2023-2024 Chevron
+ * Copyright (c) 2019-     GEOS/GEOSX Contributors
  * All rights reserved
  *
  * See top level LICENSE, COPYRIGHT, CONTRIBUTORS, NOTICE, and ACKNOWLEDGEMENTS files for details.
  * ------------------------------------------------------------------------------------------------------------
  */
+
 /**
  * @file ConformingVirtualElementOrder1_impl.hpp
  */
 
 #include "mesh/utilities/ComputationalGeometry.hpp"
 
-namespace geosx
+namespace geos
 {
 namespace finiteElement
 {
@@ -26,12 +28,12 @@ namespace finiteElement
  */
 template< localIndex MCN, localIndex MFN >
 template< typename SUBREGION_TYPE >
-GEOSX_HOST_DEVICE
+GEOS_HOST_DEVICE
 void ConformingVirtualElementOrder1< MCN, MFN >::
 computeProjectors( localIndex const & cellIndex,
                    InputNodeCoords const & nodesCoords,
                    InputCellToNodeMap< SUBREGION_TYPE > const & cellToNodeMap,
-                   InputCellToFaceMap const & elementToFaceMap,
+                   InputCellToFaceMap< SUBREGION_TYPE > const & elementToFaceMap,
                    InputFaceToNodeMap const & faceToNodeMap,
                    InputFaceToEdgeMap const & faceToEdgeMap,
                    InputEdgeToNodeMap const & edgeToNodeMap,
@@ -277,7 +279,7 @@ computeProjectors( localIndex const & cellIndex,
 }
 
 template< localIndex MCN, localIndex MFN >
-GEOSX_HOST_DEVICE
+GEOS_HOST_DEVICE
 void ConformingVirtualElementOrder1< MCN, MFN >::
 computeFaceIntegrals( InputNodeCoords const & nodesCoords,
                       localIndex const (&faceToNodes)[MFN],

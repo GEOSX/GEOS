@@ -2,10 +2,11 @@
  * ------------------------------------------------------------------------------------------------------------
  * SPDX-License-Identifier: LGPL-2.1-only
  *
- * Copyright (c) 2018-2020 Lawrence Livermore National Security LLC
- * Copyright (c) 2018-2020 The Board of Trustees of the Leland Stanford Junior University
- * Copyright (c) 2018-2020 TotalEnergies
- * Copyright (c) 2019-     GEOSX Contributors
+ * Copyright (c) 2016-2024 Lawrence Livermore National Security LLC
+ * Copyright (c) 2018-2024 TotalEnergies
+ * Copyright (c) 2018-2024 The Board of Trustees of the Leland Stanford Junior University
+ * Copyright (c) 2023-2024 Chevron
+ * Copyright (c) 2019-     GEOS/GEOSX Contributors
  * All rights reserved
  *
  * See top level LICENSE, COPYRIGHT, CONTRIBUTORS, NOTICE, and ACKNOWLEDGEMENTS files for details.
@@ -21,7 +22,7 @@
 
 #include "physicsSolvers/FieldStatisticsBase.hpp"
 
-namespace geosx
+namespace geos
 {
 
 class CompositionalMultiphaseBase;
@@ -77,6 +78,8 @@ private:
     constexpr static char const * computeRegionStatisticsString() { return "computeRegionStatistics"; }
     /// String for the region statistics
     constexpr static char const * regionStatisticsString() { return "regionStatistics"; }
+    /// String for the relperm threshold
+    constexpr static char const * relpermThresholdString() { return "relpermThreshold"; }
   };
 
   struct RegionStatistics
@@ -107,33 +110,39 @@ private:
     /// phase region phase pore volume
     array1d< real64 > phasePoreVolume;
 
-    /// region phase mass (trapped and non-trapped)
+    /// region phase mass (trapped and non-trapped, immobile and mobile)
     array1d< real64 > phaseMass;
     /// trapped region phase mass
     array1d< real64 > trappedPhaseMass;
-    /// dissolved region component mass
-    array2d< real64 > dissolvedComponentMass;
+    /// immobile region phase mass
+    array1d< real64 > immobilePhaseMass;
+    /// region component mass
+    array2d< real64 > componentMass;
 
 
   };
 
   /**
    * @brief Compute some statistics on the reservoir (average field pressure, etc)
+   * @param[in] time current time
    * @param[in] mesh the mesh level object
    * @param[in] regionNames the array of target region names
    */
-  void computeRegionStatistics( MeshLevel & mesh,
+  void computeRegionStatistics( real64 const time,
+                                MeshLevel & mesh,
                                 arrayView1d< string const > const & regionNames ) const;
 
   /**
    * @brief Compute CFL numbers
+   * @param[in] time current time
    * @param[in] dt the time step size
    * @param[in] domain the domain partition
    */
-  void computeCFLNumbers( real64 const & dt,
+  void computeCFLNumbers( real64 const time,
+                          real64 const dt,
                           DomainPartition & domain ) const;
 
-  void postProcessInput() override;
+  void postInputInitialization() override;
 
   void registerDataOnMesh( Group & meshBodies ) override;
 
@@ -143,9 +152,12 @@ private:
   /// Flag to decide whether region statistics are computed or not
   integer m_computeRegionStatistics;
 
+  /// Threshold to decide whether a phase is considered "mobile" or not
+  real64 m_relpermThreshold;
+
 };
 
 
-} /* namespace geosx */
+} /* namespace geos */
 
 #endif /* SRC_CORECOMPONENTS_PHYSICSSOLVERS_FLUIDFLOW_COMPOSITIONALMULTIPHASESTATISTICS_HPP_ */

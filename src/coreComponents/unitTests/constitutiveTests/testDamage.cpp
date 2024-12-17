@@ -2,11 +2,12 @@
  * ------------------------------------------------------------------------------------------------------------
  * SPDX-License-Identifier: LGPL-2.1-only
  *
- * Copyright (c) 2018-2019 Lawrence Livermore National Security LLC
- * Copyright (c) 2018-2019 The Board of Trustees of the Leland Stanford Junior University
- * Copyright (c) 2018-2019 TotalEnergies
- * Copyright (c) 2019-     GEOSX Contributors
- * All right reserved
+ * Copyright (c) 2016-2024 Lawrence Livermore National Security LLC
+ * Copyright (c) 2018-2024 TotalEnergies
+ * Copyright (c) 2018-2024 The Board of Trustees of the Leland Stanford Junior University
+ * Copyright (c) 2023-2024 Chevron
+ * Copyright (c) 2019-     GEOS/GEOSX Contributors
+ * All rights reserved
  *
  * See top level LICENSE, COPYRIGHT, CONTRIBUTORS, NOTICE, and ACKNOWLEDGEMENTS files for details.
  * ------------------------------------------------------------------------------------------------------------
@@ -17,11 +18,12 @@
 #include "constitutive/ConstitutiveManager.hpp"
 #include "constitutive/solid/ElasticIsotropic.hpp"
 #include "constitutive/solid/DamageSpectral.hpp"
+#include "constitutive/solid/SolidUtilities.hpp"
 
 #include "dataRepository/xmlWrapper.hpp"
 
-using namespace geosx;
-using namespace ::geosx::constitutive;
+using namespace geos;
+using namespace ::geos::constitutive;
 
 TEST( DamageTests, testDamageSpectral )
 {
@@ -45,18 +47,17 @@ TEST( DamageTests, testDamageSpectral )
     "</Constitutive>";
 
   xmlWrapper::xmlDocument xmlDocument;
-  xmlWrapper::xmlResult xmlResult = xmlDocument.load_buffer( inputStream.c_str(),
-                                                             inputStream.size() );
+  xmlWrapper::xmlResult xmlResult = xmlDocument.loadString( inputStream );
   if( !xmlResult )
   {
-    GEOSX_LOG_RANK_0( "XML parsed with errors!" );
-    GEOSX_LOG_RANK_0( "Error description: " << xmlResult.description());
-    GEOSX_LOG_RANK_0( "Error offset: " << xmlResult.offset );
+    GEOS_LOG_RANK_0( "XML parsed with errors!" );
+    GEOS_LOG_RANK_0( "Error description: " << xmlResult.description());
+    GEOS_LOG_RANK_0( "Error offset: " << xmlResult.offset );
   }
 
-  xmlWrapper::xmlNode xmlConstitutiveNode = xmlDocument.child( "Constitutive" );
-  constitutiveManager.processInputFileRecursive( xmlConstitutiveNode );
-  constitutiveManager.postProcessInputRecursive();
+  xmlWrapper::xmlNode xmlConstitutiveNode = xmlDocument.getChild( "Constitutive" );
+  constitutiveManager.processInputFileRecursive( xmlDocument, xmlConstitutiveNode );
+  constitutiveManager.postInputInitializationRecursive();
 
   localIndex constexpr numElem = 2;
   localIndex constexpr numQuad = 4;
@@ -77,17 +78,17 @@ TEST( DamageTests, testDamageSpectral )
   DamageSpectral< ElasticIsotropic >::KernelWrapper cmw = cm.createKernelUpdates();
 
   real64 strainIncrement[6] = {1e-4, 0, 0, 0, 0, 0};
-  real64 stress[6];
-  real64 stiffness[6][6];
+  real64 timeIncrement =0;
+  real64 stress[6]{};
+  real64 stiffness[6][6]{};
 
   for( localIndex loadstep=0; loadstep < 50; ++loadstep )
   {
-    cmw.smallStrainUpdate( 0, 0, strainIncrement, stress, stiffness );
+    cmw.smallStrainUpdate( 0, 0, timeIncrement, strainIncrement, stress, stiffness );
     cm.saveConvergedState();
   }
 
   // we now use a finite-difference check of tangent stiffness to confirm
   // the analytical form is working properly.
-  //cmw.checkSmallStrainStiffness( 0, 0, strainIncrement, true );
-  EXPECT_TRUE( cmw.checkSmallStrainStiffness( 0, 0, strainIncrement ) );
+  EXPECT_TRUE( SolidUtilities::checkSmallStrainStiffness( cmw, 0, 0, timeIncrement, strainIncrement ) );
 }

@@ -2,11 +2,12 @@
  * ------------------------------------------------------------------------------------------------------------
  * SPDX-License-Identifier: LGPL-2.1-only
  *
- * Copyright (c) 2018-2020 Lawrence Livermore National Security LLC
- * Copyright (c) 2018-2020 The Board of Trustees of the Leland Stanford Junior University
- * Copyright (c) 2018-2020 Total, S.A
- * Copyright (c) 2020-     GEOSX Contributors
- * All right reserved
+ * Copyright (c) 2016-2024 Lawrence Livermore National Security LLC
+ * Copyright (c) 2018-2024 TotalEnergies
+ * Copyright (c) 2018-2024 The Board of Trustees of the Leland Stanford Junior University
+ * Copyright (c) 2023-2024 Chevron
+ * Copyright (c) 2019-     GEOS/GEOSX Contributors
+ * All rights reserved
  *
  * See top level LICENSE, COPYRIGHT, CONTRIBUTORS, NOTICE, and ACKNOWLEDGEMENTS files for details.
  * ------------------------------------------------------------------------------------------------------------
@@ -15,140 +16,151 @@
 // using some utility classes from the following unit test
 #include "unitTests/fluidFlowTests/testCompFlowUtils.hpp"
 
+#include <iostream>
+#include <cstdio>
 #include "common/DataTypes.hpp"
 #include "mainInterface/initialization.hpp"
 #include "mainInterface/ProblemManager.hpp"
 #include "mesh/DomainPartition.hpp"
 #include "mainInterface/GeosxState.hpp"
 #include "physicsSolvers/PhysicsSolverManager.hpp"
-#include "physicsSolvers/wavePropagation/WaveSolverBase.hpp"
-#include "physicsSolvers/wavePropagation/AcousticWaveEquationSEM.hpp"
+#include "physicsSolvers/wavePropagation/shared/WaveSolverBase.hpp"
+#include "physicsSolvers/wavePropagation/sem/acoustic/secondOrderEqn/isotropic/AcousticWaveEquationSEM.hpp"
 
 #include <gtest/gtest.h>
 
-using namespace geosx;
-using namespace geosx::dataRepository;
-using namespace geosx::testing;
+using namespace geos;
+using namespace geos::dataRepository;
+using namespace geos::testing;
 
 CommandLineOptions g_commandLineOptions;
 
 // This unit test checks the interpolation done to extract seismic traces from a wavefield.
 // It computes a seismogram at a receiver co-located with the source and compares it to the surrounding receivers.
 char const * xmlInput =
-  "<?xml version=\"1.0\" ?>\n"
-  "<Problem>\n"
-  "  <Solvers>\n"
-  "    <AcousticSEM\n"
-  "      name=\"acousticSolver\"\n"
-  "      cflFactor=\"0.25\"\n"
-  "      discretization=\"FE1\"\n"
-  "      targetRegions=\"{ Region }\"\n"
-  "      sourceCoordinates=\"{ { 50, 50, 50 } }\"\n"
-  "      timeSourceFrequency=\"2\"\n"
-  "      receiverCoordinates=\"{ { 0.1, 0.1, 0.1 }, { 0.1, 0.1, 99.9 }, { 0.1, 99.9, 0.1 }, { 0.1, 99.9, 99.9 },\n"
-  "                              { 99.9, 0.1, 0.1 }, { 99.9, 0.1, 99.9 }, { 99.9, 99.9, 0.1 }, { 99.9, 99.9, 99.9 },\n"
-  "                              { 50, 50, 50 } }\"\n"
-  "      outputSeismoTrace=\"0\"\n"
-  "      dtSeismoTrace=\"0.1\"/>\n"
-  "  </Solvers>\n"
-  "  <Mesh>\n"
-  "    <InternalMesh\n"
-  "      name=\"mesh\"\n"
-  "      elementTypes=\"{ C3D8 }\"\n"
-  "      xCoords=\"{ 0, 100 }\"\n"
-  "      yCoords=\"{ 0, 100 }\"\n"
-  "      zCoords=\"{ 0, 100 }\"\n"
-  "      nx=\"{ 1 }\"\n"
-  "      ny=\"{ 1 }\"\n"
-  "      nz=\"{ 1 }\"\n"
-  "      cellBlockNames=\"{ cb }\"/>\n"
-  "  </Mesh>\n"
-  "  <Events\n"
-  "    maxTime=\"1\">\n"
-  "    <PeriodicEvent\n"
-  "      name=\"solverApplications\"\n"
-  "      forceDt=\"0.1\"\n"
-  "      targetExactStartStop=\"0\"\n"
-  "      targetExactTimestep=\"0\"\n"
-  "      target=\"/Solvers/acousticSolver\"/>\n"
-  "    <PeriodicEvent\n"
-  "      name=\"waveFieldNp1Collection\"\n"
-  "      timeFrequency=\"0.1\"\n"
-  "      targetExactTimestep=\"0\"\n"
-  "      target=\"/Tasks/waveFieldNp1Collection\" />\n"
-  "    <PeriodicEvent\n"
-  "      name=\"waveFieldNCollection\"\n"
-  "      timeFrequency=\"0.1\"\n"
-  "      targetExactTimestep=\"0\"\n"
-  "      target=\"/Tasks/waveFieldNCollection\" />\n"
-  "    <PeriodicEvent\n"
-  "      name=\"waveFieldNm1Collection\"\n"
-  "      timeFrequency=\"0.1\"\n"
-  "      targetExactTimestep=\"0\"\n"
-  "      target=\"/Tasks/waveFieldNm1Collection\" />\n"
-  "  </Events>\n"
-  "  <NumericalMethods>\n"
-  "    <FiniteElements>\n"
-  "      <FiniteElementSpace\n"
-  "        name=\"FE1\"\n"
-  "        order=\"1\"\n"
-  "        formulation=\"SEM\"/>\n"
-  "    </FiniteElements>\n"
-  "  </NumericalMethods>\n"
-  "  <ElementRegions>\n"
-  "    <CellElementRegion\n"
-  "      name=\"Region\"\n"
-  "      cellBlocks=\"{ cb }\"\n"
-  "      materialList=\"{ nullModel }\"/>\n"
-  "  </ElementRegions>\n"
-  "  <Constitutive>\n"
-  "    <NullModel\n"
-  "      name=\"nullModel\"/>\n"
-  "  </Constitutive>\n"
-  "  <FieldSpecifications>\n"
-  "    <FieldSpecification\n"
-  "      name=\"initialPressureN\"\n"
-  "      initialCondition=\"1\"\n"
-  "      setNames=\"{ all }\"\n"
-  "      objectPath=\"nodeManager\"\n"
-  "      fieldName=\"pressure_n\"\n"
-  "      scale=\"0.0\"/>\n"
-  "    <FieldSpecification\n"
-  "      name=\"initialPressureNm1\"\n"
-  "      initialCondition=\"1\"\n"
-  "      setNames=\"{ all }\"\n"
-  "      objectPath=\"nodeManager\"\n"
-  "      fieldName=\"pressure_nm1\"\n"
-  "      scale=\"0.0\"/>\n"
-  "    <FieldSpecification\n"
-  "      name=\"cellVelocity\"\n"
-  "      initialCondition=\"1\"\n"
-  "      objectPath=\"ElementRegions/Region/cb\"\n"
-  "      fieldName=\"mediumVelocity\"\n"
-  "      scale=\"1500\"\n"
-  "      setNames=\"{ all }\"/>\n"
-  "    <FieldSpecification\n"
-  "      name=\"zposFreeSurface\"\n"
-  "      objectPath=\"faceManager\"\n"
-  "      fieldName=\"FreeSurface\"\n"
-  "      scale=\"0.0\"\n"
-  "      setNames=\"{ zpos }\"/>\n"
-  "  </FieldSpecifications>\n"
-  "  <Tasks>\n"
-  "    <PackCollection\n"
-  "      name=\"waveFieldNp1Collection\"\n"
-  "      objectPath=\"nodeManager\"\n"
-  "      fieldName=\"pressure_np1\"/>\n"
-  "    <PackCollection\n"
-  "      name=\"waveFieldNCollection\"\n"
-  "      objectPath=\"nodeManager\"\n"
-  "      fieldName=\"pressure_n\"/>\n"
-  "    <PackCollection\n"
-  "      name=\"waveFieldNm1Collection\"\n"
-  "      objectPath=\"nodeManager\"\n"
-  "      fieldName=\"pressure_nm1\"/>\n"
-  "  </Tasks>\n"
-  "</Problem>\n";
+  R"xml(
+  <Problem>
+    <Solvers>
+      <AcousticSEM
+        name="acousticSolver"
+        discretization="FE1"
+        targetRegions="{ Region }"
+        sourceCoordinates="{ { 50, 50, 50 } }"
+        timeSourceFrequency="2"
+        receiverCoordinates="{ { 0.1, 0.1, 0.1 }, { 0.1, 0.1, 99.9 }, { 0.1, 99.9, 0.1 }, { 0.1, 99.9, 99.9 },
+                                { 99.9, 0.1, 0.1 }, { 99.9, 0.1, 99.9 }, { 99.9, 99.9, 0.1 }, { 99.9, 99.9, 99.9 },
+                                { 50, 50, 50 } }"
+        outputSeismoTrace="0"
+        timestepStabilityLimit="1"
+        cflFactor="0.95"
+        dtSeismoTrace="0.1"/>
+    </Solvers>
+    <Mesh>
+      <InternalMesh
+        name="mesh"
+        elementTypes="{ C3D8 }"
+        xCoords="{ 0, 100 }"
+        yCoords="{ 0, 100 }"
+        zCoords="{ 0, 100 }"
+        nx="{ 1 }"
+        ny="{ 1 }"
+        nz="{ 1 }"
+        cellBlockNames="{ cb }"/>
+    </Mesh>
+    <Events
+      maxTime="1">
+      <PeriodicEvent
+        name="solverApplications"
+        forceDt="0.1"
+        targetExactStartStop="0"
+        targetExactTimestep="0"
+        target="/Solvers/acousticSolver"/>
+      <PeriodicEvent
+        name="waveFieldNp1Collection"
+        timeFrequency="0.1"
+        targetExactTimestep="0"
+        target="/Tasks/waveFieldNp1Collection" />
+      <PeriodicEvent
+        name="waveFieldNCollection"
+        timeFrequency="0.1"
+        targetExactTimestep="0"
+        target="/Tasks/waveFieldNCollection" />
+      <PeriodicEvent
+        name="waveFieldNm1Collection"
+        timeFrequency="0.1"
+        targetExactTimestep="0"
+        target="/Tasks/waveFieldNm1Collection" />
+    </Events>
+    <NumericalMethods>
+      <FiniteElements>
+        <FiniteElementSpace
+          name="FE1"
+          order="1"
+          formulation="SEM"/>
+      </FiniteElements>
+    </NumericalMethods>
+    <ElementRegions>
+      <CellElementRegion
+        name="Region"
+        cellBlocks="{ * }"
+        materialList="{ nullModel }"/>
+    </ElementRegions>
+    <Constitutive>
+      <NullModel
+        name="nullModel"/>
+    </Constitutive>
+    <FieldSpecifications>
+      <FieldSpecification
+        name="initialPressureN"
+        initialCondition="1"
+        setNames="{ all }"
+        objectPath="nodeManager"
+        fieldName="pressure_n"
+        scale="0.0"/>
+      <FieldSpecification
+        name="initialPressureNm1"
+        initialCondition="1"
+        setNames="{ all }"
+        objectPath="nodeManager"
+        fieldName="pressure_nm1"
+        scale="0.0"/>
+      <FieldSpecification
+        name="cellVelocity"
+        initialCondition="1"
+        objectPath="ElementRegions/Region/cb"
+        fieldName="acousticVelocity"
+        scale="1500"
+        setNames="{ all }"/>
+      <FieldSpecification
+        name="cellDensity"
+        initialCondition="1"
+        objectPath="ElementRegions/Region/cb"
+        fieldName="acousticDensity"
+        scale="1"
+        setNames="{ all }"/>
+      <FieldSpecification
+        name="zposFreeSurface"
+        objectPath="faceManager"
+        fieldName="FreeSurface"
+        scale="0.0"
+        setNames="{ zpos }"/>
+    </FieldSpecifications>
+    <Tasks>
+      <PackCollection
+        name="waveFieldNp1Collection"
+        objectPath="nodeManager"
+        fieldName="pressure_np1"/>
+      <PackCollection
+        name="waveFieldNCollection"
+        objectPath="nodeManager"
+        fieldName="pressure_n"/>
+      <PackCollection
+        name="waveFieldNm1Collection"
+        objectPath="nodeManager"
+        fieldName="pressure_nm1"/>
+    </Tasks>
+  </Problem>
+  )xml";
 
 class AcousticWaveEquationSEMTest : public ::testing::Test
 {
@@ -182,6 +194,16 @@ TEST_F( AcousticWaveEquationSEMTest, SeismoTrace )
 
   DomainPartition & domain = state.getProblemManager().getDomainPartition();
   propagator = &state.getProblemManager().getPhysicsSolverManager().getGroup< AcousticWaveEquationSEM >( "acousticSolver" );
+
+
+  //Assert on time-step computed with the automatci time-step routine
+  real64 const dtOut = propagator->getReference< real64 >( AcousticWaveEquationSEM::viewKeyStruct::timeStepString() );
+  real64 const Vp = 1500.0;
+  real64 const h = 100.0;
+  real64 const cflConstant = 1/sqrt( 3 );
+  real64 const dtTheo = (cflConstant*h)/Vp;
+  ASSERT_TRUE( dtOut < dtTheo );
+
   real64 time_n = time;
   // run for 1s (10 steps)
   for( int i=0; i<10; i++ )
@@ -196,16 +218,16 @@ TEST_F( AcousticWaveEquationSEMTest, SeismoTrace )
   arrayView2d< real32 > const pReceivers = propagator->getReference< array2d< real32 > >( AcousticWaveEquationSEM::viewKeyStruct::pressureNp1AtReceiversString() ).toView();
 
   // move it to CPU, if needed
-  pReceivers.move( LvArray::MemorySpace::host, false );
+  pReceivers.move( hostMemorySpace, false );
 
   // check number of seismos and trace length
-  ASSERT_EQ( pReceivers.size( 1 ), 9 );
+  ASSERT_EQ( pReceivers.size( 1 ), 10 );
   ASSERT_EQ( pReceivers.size( 0 ), 11 );
 
   // check seismo content. The pressure values cannot be directly checked as the problem is too small.
   // Since the basis is linear, check that the seismograms are nonzero (for t>0) and the seismogram at the center is equal
   // to the average of the others.
-  for( int i=0; i<11; i++ )
+  for( int i = 0; i < 11; i++ )
   {
     if( i > 0 )
     {
@@ -216,17 +238,17 @@ TEST_F( AcousticWaveEquationSEMTest, SeismoTrace )
     {
       avg += pReceivers[i][r];
     }
-    avg /=8.0;
+    avg /= 8.0;
     ASSERT_TRUE( std::abs( pReceivers[i][8] - avg ) < 0.00001 );
   }
   // run adjoint solver
-  for( int i=0; i<10; i++ )
+  for( int i = 0; i < 10; i++ )
   {
     propagator->explicitStepBackward( time_n, dt, i, domain, false );
     time_n += dt;
   }
   // check again the seismo content.
-  for( int i=0; i<11; i++ )
+  for( int i = 0; i < 11; i++ )
   {
     if( i > 0 )
     {
@@ -237,7 +259,7 @@ TEST_F( AcousticWaveEquationSEMTest, SeismoTrace )
     {
       avg += pReceivers[i][r];
     }
-    avg /=8.0;
+    avg /= 8.0;
     ASSERT_TRUE( std::abs( pReceivers[i][8] - avg ) < 0.00001 );
   }
 }
@@ -245,8 +267,8 @@ TEST_F( AcousticWaveEquationSEMTest, SeismoTrace )
 int main( int argc, char * * argv )
 {
   ::testing::InitGoogleTest( &argc, argv );
-  g_commandLineOptions = *geosx::basicSetup( argc, argv );
+  g_commandLineOptions = *geos::basicSetup( argc, argv );
   int const result = RUN_ALL_TESTS();
-  geosx::basicCleanup();
+  geos::basicCleanup();
   return result;
 }

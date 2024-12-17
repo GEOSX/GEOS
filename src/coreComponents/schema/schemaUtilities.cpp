@@ -2,10 +2,11 @@
  * ------------------------------------------------------------------------------------------------------------
  * SPDX-License-Identifier: LGPL-2.1-only
  *
- * Copyright (c) 2018-2020 Lawrence Livermore National Security LLC
- * Copyright (c) 2018-2020 The Board of Trustees of the Leland Stanford Junior University
- * Copyright (c) 2018-2020 TotalEnergies
- * Copyright (c) 2019-     GEOSX Contributors
+ * Copyright (c) 2016-2024 Lawrence Livermore National Security LLC
+ * Copyright (c) 2018-2024 TotalEnergies
+ * Copyright (c) 2018-2024 The Board of Trustees of the Leland Stanford Junior University
+ * Copyright (c) 2023-2024 Chevron
+ * Copyright (c) 2019-     GEOS/GEOSX Contributors
  * All rights reserved
  *
  * See top level LICENSE, COPYRIGHT, CONTRIBUTORS, NOTICE, and ACKNOWLEDGEMENTS files for details.
@@ -19,7 +20,7 @@
 /// Source includes
 #include "schemaUtilities.hpp"
 
-#include "codingUtilities/StringUtilities.hpp"
+#include "common/format/StringUtilities.hpp"
 #include "common/DataTypes.hpp"
 #include "dataRepository/Group.hpp"
 #include "dataRepository/InputFlags.hpp"
@@ -28,7 +29,7 @@
 /// System includes
 #include <regex>
 
-namespace geosx
+namespace geos
 {
 
 using namespace dataRepository;
@@ -41,7 +42,7 @@ void ConvertDocumentationToSchema( string const & fname,
                                    Group * const group,
                                    integer documentationType )
 {
-  GEOSX_LOG_RANK_0( "Generating XML Schema..." );
+  GEOS_LOG_RANK_0( "Generating XML Schema..." );
 
   string schemaBase=
     "<?xml version=\"1.1\" encoding=\"ISO-8859-1\" ?>\
@@ -52,22 +53,41 @@ void ConvertDocumentationToSchema( string const & fname,
   </xsd:schema>";
 
   xmlWrapper::xmlDocument schemaTree;
-  schemaTree.load_string( schemaBase.c_str());
-  xmlWrapper::xmlNode schemaRoot = schemaTree.child( "xsd:schema" );
+  schemaTree.loadString( schemaBase );
+  xmlWrapper::xmlNode schemaRoot = schemaTree.getChild( "xsd:schema" );
 
   // Build the simple schema types
-  GEOSX_LOG_RANK_0( "  Basic datatypes" );
+  GEOS_LOG_RANK_0( "  Basic datatypes" );
   BuildSimpleSchemaTypes( schemaRoot );
 
   // Recursively build the schema from the data structure skeleton
-  GEOSX_LOG_RANK_0( "  Data structure layout" );
+  GEOS_LOG_RANK_0( "  Data structure layout" );
   SchemaConstruction( *group, schemaRoot, schemaRoot, documentationType );
 
   // Write the schema to file
-  GEOSX_LOG_RANK_0( "  Saving file" );
-  schemaTree.save_file( fname.c_str());
+  GEOS_LOG_RANK_0( "  Saving file" );
+  schemaTree.saveFile( fname );
 
-  GEOSX_LOG_RANK_0( "  Done!" );
+  GEOS_LOG_RANK_0( "  Done!" );
+}
+
+string getSchemaTypeName( string_view rtTypeName )
+{
+  string const sanitizedName = std::regex_replace( string( rtTypeName ), std::regex( "::" ), "_" );
+
+  // Note: Some type names involving strings can vary on compiler and be ugly.  Convert these to "string"
+  auto constexpr typeMergingRegex = "std_(__cxx11_basic_)?string(<\\s*char,\\s*std_char_traits<char>,\\s*std_allocator<char>\\s*>)?";
+  string xmlSafeName = std::regex_replace( sanitizedName,
+                                           std::regex( typeMergingRegex ),
+                                           "string" );
+
+  // Replace '<', '>', spaces and ',' because the schema does not like them
+  xmlSafeName = std::regex_replace( xmlSafeName, std::regex( "<" ), "_lt_" );
+  xmlSafeName = std::regex_replace( xmlSafeName, std::regex( ">" ), "_gt_" );
+  xmlSafeName = std::regex_replace( xmlSafeName, std::regex( "," ), "_cm_" );
+  xmlSafeName = std::regex_replace( xmlSafeName, std::regex( " " ), "-" );
+
+  return xmlSafeName;
 }
 
 void AppendSimpleType( xmlWrapper::xmlNode & schemaRoot,
@@ -85,7 +105,7 @@ void AppendSimpleType( xmlWrapper::xmlNode & schemaRoot,
   // Handle the default regex
   if( regex.empty() )
   {
-    GEOSX_WARNING( "schema regex not defined for " << name );
+    GEOS_WARNING( "schema regex not defined for " << name );
     patternNode.append_attribute( "value" ) = "(?s).*";
   }
   else
@@ -97,10 +117,10 @@ void AppendSimpleType( xmlWrapper::xmlNode & schemaRoot,
 
 void BuildSimpleSchemaTypes( xmlWrapper::xmlNode schemaRoot )
 {
-  rtTypes::typeRegex typeRegex;
-  for( auto const & regex : typeRegex )
+  auto const regexes = rtTypes::createBasicTypesRegexMap();
+  for( auto const & [typeName, regex] : regexes )
   {
-    AppendSimpleType( schemaRoot, regex.first, regex.second );
+    AppendSimpleType( schemaRoot, getSchemaTypeName( typeName ), regex.m_regexStr );
   }
 }
 
@@ -176,7 +196,8 @@ void SchemaConstruction( Group & group,
             // Enforce uniqueness of element names
             // Note: this must be done at the parent element level
             xmlWrapper::xmlNode uniqueNameNode = targetIncludeNode.append_child( "xsd:unique" );
-            string uniqueNameNodeStr = targetName + subName + "UniqueName";
+            string path = std::regex_replace( group.getPath(), std::regex( "/" ), "" );
+            string uniqueNameNodeStr =  path + subName + "UniqueName";
             uniqueNameNode.append_attribute( "name" ) = uniqueNameNodeStr.c_str();
             xmlWrapper::xmlNode uniqueNameSelector = uniqueNameNode.append_child( "xsd:selector" );
             uniqueNameSelector.append_attribute( "xpath" ) = subName.c_str();
@@ -232,7 +253,7 @@ void SchemaConstruction( Group & group,
               commentString += " => " + stringutilities::join( registrars.begin(), registrars.end(), ", " );
             }
 
-            xmlWrapper::xmlNode commentNode = targetTypeDefNode.append_child( xmlWrapper::xmlTypes::node_comment );
+            xmlWrapper::xmlNode commentNode = targetTypeDefNode.append_child( xmlWrapper::xmlNodeType::node_comment );
             commentNode.set_value( commentString.c_str());
 
 
@@ -241,31 +262,26 @@ void SchemaConstruction( Group & group,
             xmlWrapper::xmlNode attributeNode = targetTypeDefNode.append_child( "xsd:attribute" );
             attributeNode.append_attribute( "name" ) = attributeName.c_str();
 
-            string const wrappedTypeName = rtTypes::typeNames( wrapper.getTypeId() );
-            string const sanitizedName = std::regex_replace( wrappedTypeName, std::regex( "::" ), "_" );
-
-            // Note: Some type names involving strings can vary on compiler and be ugly.  Convert these to "string"
-            string const xmlSafeName = std::regex_replace( sanitizedName, std::regex( "std_(__cxx11_basic_)?string(<\\s*char,\\s*std_char_traits<char>,\\s*std_allocator<char>\\s*>)?" ), "string" );
-            GEOSX_LOG_VAR( wrappedTypeName );
-            GEOSX_LOG_VAR( xmlSafeName );
-            attributeNode.append_attribute( "type" ) = xmlSafeName.c_str();
+            string const schemaTypeName = getSchemaTypeName( wrapper.getRTTypeName() );
+            GEOS_LOG_VAR( schemaTypeName );
+            attributeNode.append_attribute( "type" ) = schemaTypeName.c_str();
 
             // Check if the attribute has a previously unseen non-simple type with a custom validation regex
-            if( schemaRoot.find_child_by_attribute( "xsd:simpleType", "name", xmlSafeName.c_str() ).empty() )
+            if( schemaRoot.find_child_by_attribute( "xsd:simpleType", "name", schemaTypeName.c_str() ).empty() )
             {
-              string const regex = wrapper.typeRegex();
+              string const & regex = wrapper.getTypeRegex().m_regexStr;
               if( !regex.empty() )
               {
                 // Append a new simpleType with a custom regex
-                AppendSimpleType( schemaRoot, xmlSafeName, regex );
+                AppendSimpleType( schemaRoot, schemaTypeName, regex );
               }
             }
 
             // (Optional) Default Value
             if( (flag == InputFlags::OPTIONAL_NONUNIQUE) || (flag == InputFlags::REQUIRED_NONUNIQUE))
             {
-              GEOSX_LOG_RANK_0( attributeName << " has an invalid input flag" );
-              GEOSX_ERROR( "SchemaConstruction: duplicate xml attributes are not allowed" );
+              GEOS_LOG_RANK_0( attributeName << " has an invalid input flag" );
+              GEOS_ERROR( "SchemaConstruction: duplicate xml attributes are not allowed" );
             }
             else if( flag == InputFlags::OPTIONAL )
             {
@@ -288,12 +304,13 @@ void SchemaConstruction( Group & group,
         // Only add this attribute if not present
         if( targetTypeDefNode.find_child_by_attribute( "xsd:attribute", "name", "name" ).empty())
         {
-          xmlWrapper::xmlNode commentNode = targetTypeDefNode.append_child( xmlWrapper::xmlTypes::node_comment );
+          xmlWrapper::xmlNode commentNode = targetTypeDefNode.append_child( xmlWrapper::xmlNodeType::node_comment );
           commentNode.set_value( "name => A name is required for any non-unique nodes" );
 
           xmlWrapper::xmlNode attributeNode = targetTypeDefNode.append_child( "xsd:attribute" );
+          string const schemaTypeName = getSchemaTypeName( rtTypes::CustomTypes::groupName );
           attributeNode.append_attribute( "name" ) = "name";
-          attributeNode.append_attribute( "type" ) = "string";
+          attributeNode.append_attribute( "type" ) = schemaTypeName.c_str();
           attributeNode.append_attribute( "use" ) = "required";
         }
       }
@@ -302,4 +319,4 @@ void SchemaConstruction( Group & group,
 }
 
 } /// namespace schemaUtilities
-} /// namespace geosx
+} /// namespace geos

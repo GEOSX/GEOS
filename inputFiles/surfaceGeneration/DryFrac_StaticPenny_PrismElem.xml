@@ -9,6 +9,7 @@
       logLevel="1"
       discretization="FE1"
       targetRegions="{ Region2 }"
+      surfaceGeneratorName="SurfaceGen"
       >
       <NonlinearSolverParameters
         newtonTol="1.0e-3"
@@ -42,9 +43,9 @@
   <Geometry>
     <Cylinder
       name="fracPlane"
-      point1="{ 0.0, 0.0, -0.1 }"
-      point2="{ 0.0, 0.0, 0.1 }"
-      radius="11"/>
+      firstFaceCenter="{ 0.0, 0.0, -0.1 }"
+      secondFaceCenter="{ 0.0, 0.0, 0.1 }"
+      outerRadius="11"/>
 
     <Box
       name="core"
@@ -83,7 +84,7 @@
   <ElementRegions>
     <CellElementRegion
       name="Region2"
-      cellBlocks="{ cb1 }"
+      cellBlocks="{ * }"
       materialList="{ granite }"/>
 
     <SurfaceElementRegion

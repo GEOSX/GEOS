@@ -2,11 +2,12 @@
  * ------------------------------------------------------------------------------------------------------------
  * SPDX-License-Identifier: LGPL-2.1-only
  *
- * Copyright (c) 2018-2019 Lawrence Livermore National Security LLC
- * Copyright (c) 2018-2019 The Board of Trustees of the Leland Stanford Junior University
- * Copyright (c) 2018-2019 TotalEnergies
- * Copyright (c) 2019-     GEOSX Contributors
- * All right reserved
+ * Copyright (c) 2016-2024 Lawrence Livermore National Security LLC
+ * Copyright (c) 2018-2024 TotalEnergies
+ * Copyright (c) 2018-2024 The Board of Trustees of the Leland Stanford Junior University
+ * Copyright (c) 2023-2024 Chevron
+ * Copyright (c) 2019-     GEOS/GEOSX Contributors
+ * All rights reserved
  *
  * See top level LICENSE, COPYRIGHT, CONTRIBUTORS, NOTICE, and ACKNOWLEDGEMENTS files for details.
  * ------------------------------------------------------------------------------------------------------------
@@ -22,7 +23,7 @@
 
 #include <gtest/gtest.h>
 
-using namespace geosx;
+using namespace geos;
 
 /** ---------------------- Helpers ---------------------- **/
 
@@ -33,13 +34,13 @@ void createAndAssemble( localIndex const startSize, VEC & x )
   // - startSize      on rank 0;
   // - startSize + 1  on rank 1;
   // - etc.
-  int const rank = MpiWrapper::commRank( MPI_COMM_GEOSX );
+  int const rank = MpiWrapper::commRank( MPI_COMM_GEOS );
   localIndex const localSize = rank + startSize;
   globalIndex const rankOffset = rank * ( rank - 1 ) / 2 + rank * startSize;
 
-  x.create( localSize, MPI_COMM_GEOSX );
+  x.create( localSize, MPI_COMM_GEOS );
   arrayView1d< real64 > const values = x.open();
-  forAll< POLICY >( localSize, [=] GEOSX_HOST_DEVICE ( localIndex const i )
+  forAll< POLICY >( localSize, [=] GEOS_HOST_DEVICE ( localIndex const i )
   {
     globalIndex const row = rankOffset + i;
     values[i] = std::pow( -1.0, row ) * ( 1.0 + row );
@@ -71,8 +72,8 @@ void compareValues( arrayView1d< real64 const > const & x,
                     OP_Y const op_y = ops::identity )
 {
   EXPECT_EQ( x.size(), y.size() );
-  x.move( LvArray::MemorySpace::host, false );
-  y.move( LvArray::MemorySpace::host, false );
+  x.move( hostMemorySpace, false );
+  y.move( hostMemorySpace, false );
   for( localIndex i = 0; i < x.size(); ++i )
   {
     if( exact )
@@ -126,7 +127,7 @@ TYPED_TEST_P( VectorTest, create )
 {
   using Vector = typename TypeParam::ParallelVector;
 
-  MPI_Comm const comm = MPI_COMM_GEOSX;
+  MPI_Comm const comm = MPI_COMM_GEOS;
   int const rank = MpiWrapper::commRank( comm );
   int const nproc = MpiWrapper::commSize( comm );
 
@@ -150,7 +151,7 @@ TYPED_TEST_P( VectorTest, copyConstruction )
   using Vector = typename TypeParam::ParallelVector;
 
   Vector x;
-  createAndAssemble< parallelDevicePolicy<> >( 3, x );
+  createAndAssemble< geos::parallelDevicePolicy<> >( 3, x );
   Vector y( x );
 
   // Test that values are equal after copy construction
@@ -168,17 +169,17 @@ TYPED_TEST_P( VectorTest, moveConstruction )
   using Vector = typename TypeParam::ParallelVector;
 
   Vector x;
-  createAndAssemble< parallelDevicePolicy<> >( 3, x );
+  createAndAssemble< geos::parallelDevicePolicy<> >( 3, x );
   localIndex const localSize = x.localSize();
   globalIndex const globalSize = x.globalSize();
 
   array1d< real64 > values( x.localSize() );
-  values.template setValues< parallelDevicePolicy<> >( x.values() );
+  values.template setValues< geos::parallelDevicePolicy<> >( x.values() );
 
   Vector y( std::move( x ) );
 
   EXPECT_TRUE( y.ready() );
-  EXPECT_TRUE( MpiWrapper::commCompare( y.comm(), MPI_COMM_GEOSX ) );
+  EXPECT_TRUE( MpiWrapper::commCompare( y.comm(), MPI_COMM_GEOS ) );
   EXPECT_EQ( y.localSize(), localSize );
   EXPECT_EQ( y.globalSize(), globalSize );
   compareValues( y.values(), values );
@@ -189,7 +190,7 @@ TYPED_TEST_P( VectorTest, copy )
   using Vector = typename TypeParam::ParallelVector;
 
   Vector x;
-  createAndAssemble< parallelDevicePolicy<> >( 3, x );
+  createAndAssemble< geos::parallelDevicePolicy<> >( 3, x );
 
   Vector y;
   y.create( x.localSize(), x.comm() );
@@ -206,11 +207,11 @@ TYPED_TEST_P( VectorTest, setAllValues )
   real64 const value = 1.23;
 
   Vector x;
-  x.create( localSize, MPI_COMM_GEOSX );
+  x.create( localSize, MPI_COMM_GEOS );
   x.set( value );
 
   arrayView1d< real64 const > const values = x.values();
-  values.move( LvArray::MemorySpace::host, false );
+  values.move( hostMemorySpace, false );
   for( localIndex i = 0; i < localSize; ++i )
   {
     EXPECT_EQ( values[i], value );
@@ -222,12 +223,12 @@ TYPED_TEST_P( VectorTest, zeroAllValues )
   using Vector = typename TypeParam::ParallelVector;
 
   Vector x;
-  createAndAssemble< parallelDevicePolicy<> >( 3, x );
+  createAndAssemble< geos::parallelDevicePolicy<> >( 3, x );
 
   x.zero();
 
   arrayView1d< real64 const > const values = x.values();
-  values.move( LvArray::MemorySpace::host, false );
+  values.move( hostMemorySpace, false );
   for( localIndex i = 0; i < values.size(); ++i )
   {
     EXPECT_EQ( values[i], 0.0 );
@@ -239,10 +240,10 @@ TYPED_TEST_P( VectorTest, scaleValues )
   using Vector = typename TypeParam::ParallelVector;
 
   Vector x;
-  createAndAssemble< parallelDevicePolicy<> >( 3, x );
+  createAndAssemble< geos::parallelDevicePolicy<> >( 3, x );
 
   array1d< real64 > values( x.localSize() );
-  values.template setValues< parallelDevicePolicy<> >( x.values() );
+  values.template setValues< geos::parallelDevicePolicy<> >( x.values() );
 
   real64 const factor = 0.5;
   Vector y( x );
@@ -256,7 +257,7 @@ TYPED_TEST_P( VectorTest, reciprocal )
   using Vector = typename TypeParam::ParallelVector;
 
   Vector x;
-  createAndAssemble< parallelDevicePolicy<> >( 3, x );
+  createAndAssemble< geos::parallelDevicePolicy<> >( 3, x );
 
   Vector y( x );
   y.reciprocal();
@@ -269,7 +270,7 @@ TYPED_TEST_P( VectorTest, dotProduct )
   using Vector = typename TypeParam::ParallelVector;
 
   Vector x;
-  createAndAssemble< parallelDevicePolicy<> >( 3, x );
+  createAndAssemble< geos::parallelDevicePolicy<> >( 3, x );
 
   Vector y( x );
   y.reciprocal();
@@ -285,7 +286,7 @@ TYPED_TEST_P( VectorTest, axpy )
   real64 const alpha = 1.23;
 
   Vector x;
-  createAndAssemble< parallelDevicePolicy<> >( 3, x );
+  createAndAssemble< geos::parallelDevicePolicy<> >( 3, x );
 
   Vector y( x );
   x.axpy( alpha, y );
@@ -301,7 +302,7 @@ TYPED_TEST_P( VectorTest, axpby )
   real64 const beta = 3.0;
 
   Vector x;
-  createAndAssemble< parallelDevicePolicy<> >( 3, x );
+  createAndAssemble< geos::parallelDevicePolicy<> >( 3, x );
 
   Vector y( x );
   x.axpby( alpha, y, beta );
@@ -314,7 +315,7 @@ TYPED_TEST_P( VectorTest, norm1 )
   using Vector = typename TypeParam::ParallelVector;
 
   Vector x;
-  createAndAssemble< parallelDevicePolicy<> >( 3, x );
+  createAndAssemble< geos::parallelDevicePolicy<> >( 3, x );
 
   real64 const normTrue = ( x.globalSize() + 1 ) * x.globalSize() / 2;
   EXPECT_DOUBLE_EQ( x.norm1(), normTrue );
@@ -327,7 +328,7 @@ TYPED_TEST_P( VectorTest, norm2 )
   using Vector = typename TypeParam::ParallelVector;
 
   Vector x;
-  createAndAssemble< parallelDevicePolicy<> >( 3, x );
+  createAndAssemble< geos::parallelDevicePolicy<> >( 3, x );
 
   real64 const normTrue = std::sqrt( ( 2 * x.globalSize() + 1 ) * ( x.globalSize() + 1 ) * x.globalSize() / 6 );
   EXPECT_DOUBLE_EQ( x.norm2(), normTrue );
@@ -340,7 +341,7 @@ TYPED_TEST_P( VectorTest, normInf )
   using Vector = typename TypeParam::ParallelVector;
 
   Vector x;
-  createAndAssemble< parallelDevicePolicy<> >( 3, x );
+  createAndAssemble< geos::parallelDevicePolicy<> >( 3, x );
 
   real64 const normTrue = x.globalSize();
   EXPECT_DOUBLE_EQ( x.normInf(), normTrue );
@@ -364,20 +365,20 @@ REGISTER_TYPED_TEST_SUITE_P( VectorTest,
                              norm2,
                              normInf );
 
-#ifdef GEOSX_USE_TRILINOS
+#ifdef GEOS_USE_TRILINOS
 INSTANTIATE_TYPED_TEST_SUITE_P( Trilinos, VectorTest, TrilinosInterface, );
 #endif
 
-#ifdef GEOSX_USE_HYPRE
+#ifdef GEOS_USE_HYPRE
 INSTANTIATE_TYPED_TEST_SUITE_P( Hypre, VectorTest, HypreInterface, );
 #endif
 
-#ifdef GEOSX_USE_PETSC
+#ifdef GEOS_USE_PETSC
 INSTANTIATE_TYPED_TEST_SUITE_P( Petsc, VectorTest, PetscInterface, );
 #endif
 
 int main( int argc, char * * argv )
 {
-  geosx::testing::LinearAlgebraTestScope scope( argc, argv );
+  geos::testing::LinearAlgebraTestScope scope( argc, argv );
   return RUN_ALL_TESTS();
 }

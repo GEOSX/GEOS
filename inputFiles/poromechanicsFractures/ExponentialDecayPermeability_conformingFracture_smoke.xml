@@ -1,0 +1,79 @@
+<?xml version="1.0" ?>
+
+<Problem>
+  <Included>
+    <File
+      name="./ExponentialDecayPermeability_conformingFracture_base.xml"/>
+  </Included> 
+
+  <Mesh>
+    <InternalMesh
+      name="mesh1"
+      elementTypes="{ C3D8 }"
+      xCoords="{ -1, 1 }"
+      yCoords="{  -1, 1 }"
+      zCoords="{ 0, 1 }"
+      nx="{ 20 }"
+      ny="{ 20 }"
+      nz="{ 2 }"
+      cellBlockNames="{ cb1 }"/>
+  </Mesh>
+
+  <Events
+    maxTime="1.0e3">
+    <SoloEvent
+      name="preFracture"
+      target="/Solvers/SurfaceGen"/>
+
+    <PeriodicEvent
+      name="solverApplication0"
+      forceDt="50.0"
+      target="/Solvers/poroSolver"/>
+
+    <PeriodicEvent
+      name="outputs"
+      target="/Outputs/vtkOutput"/>
+
+   <PeriodicEvent
+      name="timeHistoryCollection"      
+      target="/Tasks/tractionCollection" />
+
+    <PeriodicEvent
+      name="timeHistoryOutput"
+      targetExactTimestep="0"
+      target="/Outputs/timeHistoryOutput"/>
+
+    <PeriodicEvent
+      name="timeHistoryCollection1"
+      target="/Tasks/displacementJumpCollection" />
+
+    <PeriodicEvent
+      name="timeHistoryOutput1"
+      targetExactTimestep="0"
+      target="/Outputs/timeHistoryOutput1"/> 
+
+    <PeriodicEvent
+      name="timeHistoryCollection2"
+      target="/Tasks/fracPermeabilityCollection" />
+
+    <PeriodicEvent
+      name="timeHistoryOutput2"
+      targetExactTimestep="0"
+      target="/Outputs/timeHistoryOutput2"/> 
+
+    <PeriodicEvent
+      name="timeHistoryCollection3"
+      target="/Tasks/pressureCollection" />
+
+    <PeriodicEvent
+      name="timeHistoryOutput3"
+      targetExactTimestep="0"
+      target="/Outputs/timeHistoryOutput3"/> 
+
+    <PeriodicEvent
+      name="restart"
+      timeFrequency="2.e2"
+      target="/Outputs/restarts"/>  
+  </Events>
+
+</Problem>

@@ -2,24 +2,25 @@
  * ------------------------------------------------------------------------------------------------------------
  * SPDX-License-Identifier: LGPL-2.1-only
  *
- * Copyright (c) 2018-2020 Lawrence Livermore National Security LLC
- * Copyright (c) 2018-2020 The Board of Trustees of the Leland Stanford Junior University
- * Copyright (c) 2018-2020 TotalEnergies
- * Copyright (c) 2019-     GEOSX Contributors
+ * Copyright (c) 2016-2024 Lawrence Livermore National Security LLC
+ * Copyright (c) 2018-2024 TotalEnergies
+ * Copyright (c) 2018-2024 The Board of Trustees of the Leland Stanford Junior University
+ * Copyright (c) 2023-2024 Chevron
+ * Copyright (c) 2019-     GEOS/GEOSX Contributors
  * All rights reserved
  *
  * See top level LICENSE, COPYRIGHT, CONTRIBUTORS, NOTICE, and ACKNOWLEDGEMENTS files for details.
  * ------------------------------------------------------------------------------------------------------------
  */
 
-#ifndef GEOSX_MESH_MPICOMMUNICATIONS_MPI_ICOMMDATA_HPP_
-#define GEOSX_MESH_MPICOMMUNICATIONS_MPI_ICOMMDATA_HPP_
+#ifndef GEOS_MESH_MPICOMMUNICATIONS_MPI_ICOMMDATA_HPP_
+#define GEOS_MESH_MPICOMMUNICATIONS_MPI_ICOMMDATA_HPP_
 
 #include "CommID.hpp"
 
 #include "mesh/FieldIdentifiers.hpp"
 
-namespace geosx
+namespace geos
 {
 
 /**
@@ -35,10 +36,10 @@ public:
    * @param inputCommID The CommID integer that indicates what communication
    *   pipeline to use for a set of neighbor communications.
    */
-  MPI_iCommData( int const inputCommID );
+  MPI_iCommData();
 
   /// Default destructor
-  ~MPI_iCommData() = default;
+  ~MPI_iCommData();
 
   /**
    * Resize all the arrays of requests and status'.
@@ -95,7 +96,7 @@ private:
   int m_size;
 
   /// The integer ID for the set of communication pipelines
-  int m_commID;
+  CommID m_commID;
 
   /// A collection of field names keyed on object keys to pack/unpack from
   /// communication pipeline.
@@ -111,6 +112,6 @@ private:
   array1d< MPI_Status >  m_mpiSendBufferSizeStatus;
   array1d< MPI_Status >  m_mpiRecvBufferSizeStatus;
 };
-} /* namespace geosx */
+} /* namespace geos */
 
-#endif /* GEOSX_MESH_MPICOMMUNICATIONS_MPI_ICOMMDATA_HPP_ */
+#endif /* GEOS_MESH_MPICOMMUNICATIONS_MPI_ICOMMDATA_HPP_ */

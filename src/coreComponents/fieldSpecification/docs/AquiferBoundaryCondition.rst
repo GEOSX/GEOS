@@ -8,13 +8,13 @@ Overview
 ======================
 
 Aquifer boundary conditions allow simulating flow between the computational domain (the reservoir) and one or multiple aquifers.
-In GEOSX, we use a Carter-Tracy aquifer model parameterized in **Aquifer** tags of the **FieldSpecifications** XML input file blocks.
+In GEOS, we use a Carter-Tracy aquifer model parameterized in **Aquifer** tags of the **FieldSpecifications** XML input file blocks.
 
 Aquifer model
 ======================
 
 An aquifer :math:`A` is a source of volumetric flow rate :math:`q^A_f`, where :math:`f` is the index of a face connecting the aquifer and the reservoir.
-We use a Carter-Tracy model in GEOSX to compute this volumetric flow rate.
+We use a Carter-Tracy model in GEOS to compute this volumetric flow rate.
 
 Once :math:`q^A_f` is computed, the aquifer mass contribution :math:`F^A_f` is assembled and added to the mass conservation equations of the reservoir cell :math:`K` connected to face :math:`f`.
 The computation of :math:`F^A_f` depends on the sign of the volumetric flow rate :math:`q^A_f`.
@@ -152,11 +152,11 @@ The main Carter-Tracy parameters and the expected units are listed below:
 * `setNames`: the names of the face sets on which the aquifer boundary condition is applied.
 
 .. note::
-   Following the GEOSX convention, the z-coordinate is increasing upward. This convention must be taken into account when providing the `aquiferElevation`. In other words, the z-value is not a depth.
+   Following the GEOS convention, the z-coordinate is increasing upward. This convention must be taken into account when providing the `aquiferElevation`. In other words, the z-value is not a depth.
 
 The full list of parameters is provided below:
 
-.. include:: /coreComponents/schema/docs/Aquifer.rst
+.. include:: /docs/sphinx/datastructure/Aquifer.rst
 
 Examples
 ===============
@@ -177,7 +177,7 @@ Setting up the **Aquifer** boundary condition requires two additional pieces of 
    </Geometry>
    
 .. note::
-   This step captures *faces*, not *cells*. For now, the user must ensure that the box actually contains faces (GEOSX will proceed even if the face set is empty).
+   This step captures *faces*, not *cells*. For now, the user must ensure that the box actually contains faces (GEOS will proceed even if the face set is empty).
    
 For more complex meshes, sch as those imported using the **VTKMesh**, using a **Box** to perform a face selection is challenging.
 We recommend using a surface in the ``vtk`` file instead, which will be used to locate the face set.
@@ -247,4 +247,4 @@ Finally, for both single-phase and multiphase flow, if a ``pressureInfluenceFunc
    </Functions>
 
 .. note::
-   The values provided in the table above are the default values used internally in GEOSX when the user does not specify the pressure influence function in the XML file.
+   The values provided in the table above are the default values used internally in GEOS when the user does not specify the pressure influence function in the XML file.

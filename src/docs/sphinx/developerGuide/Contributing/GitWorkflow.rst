@@ -4,14 +4,14 @@
 Git Workflow
 **************************************
 
-The GEOSX project is hosted on github `here <https://github.com/GEOSX>`__.
-For instructions on how to clone and build GEOSX, please refer to the :ref:`QuickStart`.
+The GEOS project is hosted on github `here <https://github.com/GEOS-DEV>`__.
+For instructions on how to clone and build GEOS, please refer to the :ref:`QuickStart`.
 Consider consulting `https://try.github.io/ <https://try.github.io/>`_ for practical references on how to use git.
 
 Git Credentials
 =======================================
 
-Those who want to contribute to GEOSX should setup SSH keys for authentication, and connect
+Those who want to contribute to GEOS should setup SSH keys for authentication, and connect
 to github through SSH as discussed `in this article <https://help.github.com/en/github/authenticating-to-github/connecting-to-github-with-ssh>`_.
 Before going further, you should `test your ssh connection <https://help.github.com/en/github/authenticating-to-github/testing-your-ssh-connection>`_.
 If it fails (perhaps because of your institution's proxy),
@@ -25,31 +25,31 @@ the code through SSH.  The following steps clone the repository into ``your_geos
 
 .. code-block:: console
 
-   git clone git@github.com:GEOSX/GEOSX.git your_geosx_dir
+   git clone git@github.com:GEOS-DEV/GEOS.git your_geosx_dir
    cd your_geosx_dir
    git lfs install
    git submodule init
    git submodule update
 
-If all goes well, you should have a complete copy of the GEOSX source at this point.
+If all goes well, you should have a complete copy of the GEOS source at this point.
 The most common errors people encounter here have to do with Github not recognizing
 their authentication settings.
 
 Branching Model
 ===============
-The branching model used in GEOSX is a modified
+The branching model used in GEOS is a modified
 `Gitflow <https://nvie.com/posts/a-successful-git-branching-model/>`_ approach,
 with some modifications to the merging strategy, and the treatment of release
 branches, and hotfix branches.
 
-In GEOSX, there are two main branches, ``release`` and ``develop``.
+In GEOS, there are two main branches, ``release`` and ``develop``.
 The ``develop`` branch serves as the main branch for the development of new
 features.
 The ``release`` branch serves as the "stable release" branch.
 The remaining branch types are described in the following subsections.
 
 .. note::
-   The early commits in GEOSX (up to version 0.2) used a pure
+   The early commits in GEOS (up to version 0.2) used a pure
    `Gitflow <https://nvie.com/posts/a-successful-git-branching-model/>`_
    approach for merging feature branches into develop.
    This was done without cleaning the commit history in each feature
@@ -188,7 +188,7 @@ An example lifecycle diagram for hotfix branchs:
 
 Documentation Branches
 ----------------------
-A ``docs`` branch is focused on writing and improving the documentation for GEOSX.
+A ``docs`` branch is focused on writing and improving the documentation for GEOS.
 The use of the ``docs`` branch name root applies to both sphinx documentation
 and doxygen documentation.
 The ``docs`` branch follows the same naming conventions as described in the :ref:`Feature_Branches`
@@ -291,7 +291,7 @@ current with ``develop``.
 Submitting a Pull Request
 ======================================
 Once you have created your branch and pushed changes to Github, you can create a
-`Pull Request <https://github.com/GEOSX/GEOSX/pulls>`_ on Github.
+`Pull Request <https://github.com/GEOS-DEV/GEOS/pulls>`_ on Github.
 The PR creates a central place to review and discuss the ongoing work on the branch.
 Creating a pull request early in the development process is preferred as it allows
 for developers to collaborate on the branch more readily.
@@ -332,6 +332,22 @@ also add any appropriate `flags`.
 Once you are satisfied with your work on the branch, you may promote the PR out of
 draft status, which will allow our integrated testing suite to execute on the PR branch
 to ensure all tests are passing prior to merging.
+
+.. note::
+   The title of a PR has to follow the `conventional commit specification <https://www.conventionalcommits.org/en/v1.0.0/>`_.
+   The allowed prefixes are:
+
+   - feat: A new feature
+   - fix: A bug fix,
+   - docs: Documentation only changes,
+   - style: Changes that do not affect the meaning of the code (white-space, formatting, missing semi-colons, etc),
+   - refactor: A code change that neither fixes a bug nor adds a feature,
+   - perf: A code change that improves performance,
+   - test: Adding missing tests or correcting existing tests,
+   - build: Changes that affect the build system or external dependencies (example scopes: cmake),
+   - ci: Changes to our CI configuration files and scripts (example scopes: github),
+   - chore: Other changes that don't modify src or test files,
+   - revert: Reverts a previous commit,
 
 Once the tests are passing -- or in some cases immediately -- add the `flag: ready for review`
 label to the PR, and be sure to tag any relevant developers to review the PR. The PR
@@ -399,10 +415,10 @@ create a pull request using the same process discussed above in :ref:`Submitting
 Resolving Submodule Changes in Primary Branch PRs
 =================================================
 
-When you conduct work on a submodule during work on a primary GEOSX
+When you conduct work on a submodule during work on a primary GEOS
 branch with an open PR, the merging procedure requires that the submodule referenced
-by the GEOSX PR branch be consistent with the submodule in the main branch of the project.
-This is checked and enforced via TravisCI.
+by the GEOS PR branch be consistent with the submodule in the main branch of the project.
+This is checked and enforced via our CI.
 
 Thus, in order to merge a PR that includes modifications to submodules, the various PRs for
 each repository should be staged and finalized, to the point they are all ready to be merged,

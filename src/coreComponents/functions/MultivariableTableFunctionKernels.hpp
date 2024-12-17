@@ -2,10 +2,11 @@
  * ------------------------------------------------------------------------------------------------------------
  * SPDX-License-Identifier: LGPL-2.1-only
  *
- * Copyright (c) 2018-2020 Lawrence Livermore National Security LLC
- * Copyright (c) 2018-2020 The Board of Trustees of the Leland Stanford Junior University
- * Copyright (c) 2018-2020 TotalEnergies
- * Copyright (c) 2019-     GEOSX Contributors
+ * Copyright (c) 2016-2024 Lawrence Livermore National Security LLC
+ * Copyright (c) 2018-2024 TotalEnergies
+ * Copyright (c) 2018-2024 The Board of Trustees of the Leland Stanford Junior University
+ * Copyright (c) 2023-2024 Chevron
+ * Copyright (c) 2019-     GEOS/GEOSX Contributors
  * All rights reserved
  *
  * See top level LICENSE, COPYRIGHT, CONTRIBUTORS, NOTICE, and ACKNOWLEDGEMENTS files for details.
@@ -16,10 +17,10 @@
  * @file MultivariableTableFunctionKernels.hpp
  */
 
-#ifndef GEOSX_FUNCTIONS_MULTIVARIABLETABLEFUNCTIONKERNELS_HPP_
-#define GEOSX_FUNCTIONS_MULTIVARIABLETABLEFUNCTIONKERNELS_HPP_
+#ifndef GEOS_FUNCTIONS_MULTIVARIABLETABLEFUNCTIONKERNELS_HPP_
+#define GEOS_FUNCTIONS_MULTIVARIABLETABLEFUNCTIONKERNELS_HPP_
 
-namespace geosx
+namespace geos
 {
 
 
@@ -88,7 +89,7 @@ public:
  * @param[out] values interpolated operator values
  */
   template< typename IN_ARRAY, typename OUT_ARRAY >
-  GEOSX_HOST_DEVICE
+  GEOS_HOST_DEVICE
   void
   compute( IN_ARRAY const & coordinates,
            OUT_ARRAY && values ) const
@@ -121,7 +122,7 @@ public:
    * @param[out] derivatives derivatives of interpolated operators
    */
   template< typename IN_ARRAY, typename OUT_ARRAY, typename OUT_2D_ARRAY >
-  GEOSX_HOST_DEVICE
+  GEOS_HOST_DEVICE
   void
   compute( IN_ARRAY const & coordinates,
            OUT_ARRAY && values,
@@ -157,7 +158,7 @@ protected:
    * @param[in] hypercubeIndex
    * @return pointer to hypercube data
    */
-  GEOSX_HOST_DEVICE
+  GEOS_HOST_DEVICE
   inline
   real64 const *
   getHypercubeData( globalIndex const hypercubeIndex ) const
@@ -178,7 +179,7 @@ protected:
    * @param[out] axisMult weight of the right coordinate of target axis interval
    * @return integer target axis interval index
    */
-  GEOSX_HOST_DEVICE
+  GEOS_HOST_DEVICE
   inline
   integer
   getAxisIntervalIndexLowMult( real64 const axisCoordinate,
@@ -228,7 +229,7 @@ protected:
    * @param[out] values interpolated operator values
    */
   template< typename IN_ARRAY, typename OUT_ARRAY >
-  GEOSX_HOST_DEVICE
+  GEOS_HOST_DEVICE
   inline
   void
   interpolatePoint( IN_ARRAY const & axisCoordinates,
@@ -282,7 +283,7 @@ protected:
    * @param[out] derivatives derivatives of interpolated operators
    */
   template< typename IN_ARRAY, typename OUT_ARRAY, typename OUT_2D_ARRAY >
-  GEOSX_HOST_DEVICE
+  GEOS_HOST_DEVICE
   inline
   void
   interpolatePointWithDerivatives( IN_ARRAY const & axisCoordinates,
@@ -386,6 +387,6 @@ protected:
   arrayView1d< real64 > m_derivatives;
 };
 
-} /* namespace geosx */
+} /* namespace geos */
 
-#endif /* GEOSX_FUNCTIONS_MULTIVARIABLETABLEFUNCTIONKERNELS_HPP_ */
+#endif /* GEOS_FUNCTIONS_MULTIVARIABLETABLEFUNCTIONKERNELS_HPP_ */

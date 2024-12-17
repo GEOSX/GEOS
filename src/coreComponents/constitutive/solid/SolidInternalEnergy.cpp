@@ -2,10 +2,11 @@
  * ------------------------------------------------------------------------------------------------------------
  * SPDX-License-Identifier: LGPL-2.1-only
  *
- * Copyright (c) 2018-2020 Lawrence Livermore National Security LLC
- * Copyright (c) 2018-2020 The Board of Trustees of the Leland Stanford Junior University
- * Copyright (c) 2018-2020 TotalEnergies
- * Copyright (c) 2019-     GEOSX Contributors
+ * Copyright (c) 2016-2024 Lawrence Livermore National Security LLC
+ * Copyright (c) 2018-2024 TotalEnergies
+ * Copyright (c) 2018-2024 The Board of Trustees of the Leland Stanford Junior University
+ * Copyright (c) 2023-2024 Chevron
+ * Copyright (c) 2019-     GEOS/GEOSX Contributors
  * All rights reserved
  *
  * See top level LICENSE, COPYRIGHT, CONTRIBUTORS, NOTICE, and ACKNOWLEDGEMENTS files for details.
@@ -18,7 +19,7 @@
 
 #include "SolidInternalEnergy.hpp"
 
-namespace geosx
+namespace geos
 {
 
 using namespace dataRepository;
@@ -30,7 +31,8 @@ SolidInternalEnergy::SolidInternalEnergy( string const & name, Group * const par
   ConstitutiveBase( name, parent ),
   m_internalEnergy(),
   m_dInternalEnergy_dTemperature(),
-  m_volumetricHeatCapacity(),
+  m_referenceVolumetricHeatCapacity(),
+  m_dVolumetricHeatCapacity_dTemperature(),
   m_referenceTemperature(),
   m_referenceInternalEnergy()
 {
@@ -47,9 +49,14 @@ SolidInternalEnergy::SolidInternalEnergy( string const & name, Group * const par
     setApplyDefaultValue( 0.0 ).
     setDescription( "Derivative of the solid internal energy w.r.t. temperature [J/(m^3.K)]" );
 
-  registerWrapper( viewKeyStruct::volumetricHeatCapacityString(), &m_volumetricHeatCapacity ).
+  registerWrapper( viewKeyStruct::referenceVolumetricHeatCapacityString(), &m_referenceVolumetricHeatCapacity ).
     setInputFlag( InputFlags::REQUIRED ).
-    setDescription( "Solid volumetric heat capacity [J/(kg.K)]" );
+    setDescription( "Reference solid volumetric heat capacity [J/(kg.K)]" );
+
+  registerWrapper( viewKeyStruct::dVolumetricHeatCapacity_dTemperatureString(), &m_dVolumetricHeatCapacity_dTemperature ).
+    setInputFlag( InputFlags::OPTIONAL ).
+    setApplyDefaultValue( 0.0 ).
+    setDescription( "Derivative of the solid volumetric heat capacity w.r.t. temperature [J/(m^3.K^2)]" );
 
   registerWrapper( viewKeyStruct::referenceTemperatureString(), &m_referenceTemperature ).
     setInputFlag( InputFlags::REQUIRED ).
@@ -75,7 +82,7 @@ void SolidInternalEnergy::saveConvergedState() const
   arrayView2d< real64 const > internalEnergy   = m_internalEnergy;
   arrayView2d< real64 >       internalEnergy_n = m_internalEnergy_n;
 
-  forAll< parallelDevicePolicy<> >( internalEnergy.size( 0 ), [=] GEOSX_HOST_DEVICE ( localIndex const k )
+  forAll< parallelDevicePolicy<> >( internalEnergy.size( 0 ), [=] GEOS_HOST_DEVICE ( localIndex const k )
   {
     internalEnergy_n[k][0] = internalEnergy[k][0];
   } );
@@ -85,4 +92,4 @@ REGISTER_CATALOG_ENTRY( ConstitutiveBase, SolidInternalEnergy, string const &, G
 
 } /* namespace constitutive */
 
-} /* namespace geosx */
+} /* namespace geos */

@@ -2,10 +2,11 @@
  * ------------------------------------------------------------------------------------------------------------
  * SPDX-License-Identifier: LGPL-2.1-only
  *
- * Copyright (c) 2018-2020 Lawrence Livermore National Security LLC
- * Copyright (c) 2018-2020 The Board of Trustees of the Leland Stanford Junior University
- * Copyright (c) 2018-2020 TotalEnergies
- * Copyright (c) 2019-     GEOSX Contributors
+ * Copyright (c) 2016-2024 Lawrence Livermore National Security LLC
+ * Copyright (c) 2018-2024 TotalEnergies
+ * Copyright (c) 2018-2024 The Board of Trustees of the Leland Stanford Junior University
+ * Copyright (c) 2023-2024 Chevron
+ * Copyright (c) 2019-     GEOS/GEOSX Contributors
  * All rights reserved
  *
  * See top level LICENSE, COPYRIGHT, CONTRIBUTORS, NOTICE, and ACKNOWLEDGEMENTS files for details.
@@ -16,13 +17,13 @@
  * @file BlockVectorView.hpp
  */
 
-#ifndef GEOSX_LINEARALGEBRA_UTILITIES_BLOCKVECTORVIEW_HPP_
-#define GEOSX_LINEARALGEBRA_UTILITIES_BLOCKVECTORVIEW_HPP_
+#ifndef GEOS_LINEARALGEBRA_UTILITIES_BLOCKVECTORVIEW_HPP_
+#define GEOS_LINEARALGEBRA_UTILITIES_BLOCKVECTORVIEW_HPP_
 
 #include "common/common.hpp"
 #include "linearAlgebra/common/common.hpp"
 
-namespace geosx
+namespace geos
 {
 
 /**
@@ -171,7 +172,7 @@ public:
    */
   VECTOR const & block( localIndex const blockIndex ) const
   {
-    GEOSX_LAI_ASSERT( m_vectors[blockIndex] != nullptr );
+    GEOS_LAI_ASSERT( m_vectors[blockIndex] != nullptr );
     return *m_vectors[blockIndex];
   }
 
@@ -180,7 +181,7 @@ public:
    */
   VECTOR & block( localIndex const blockIndex )
   {
-    GEOSX_LAI_ASSERT( m_vectors[blockIndex] != nullptr );
+    GEOS_LAI_ASSERT( m_vectors[blockIndex] != nullptr );
     return *m_vectors[blockIndex];
   }
 
@@ -260,7 +261,7 @@ private:
 template< typename VECTOR >
 void BlockVectorView< VECTOR >::copy( BlockVectorView const & src )
 {
-  GEOSX_LAI_ASSERT_EQ( blockSize(), src.blockSize() );
+  GEOS_LAI_ASSERT_EQ( blockSize(), src.blockSize() );
   for( localIndex i = 0; i < blockSize(); i++ )
   {
     block( i ).copy( src.block( i ) );
@@ -297,7 +298,7 @@ void BlockVectorView< VECTOR >::rand( unsigned const seed )
 template< typename VECTOR >
 real64 BlockVectorView< VECTOR >::dot( BlockVectorView const & src ) const
 {
-  GEOSX_LAI_ASSERT_EQ( blockSize(), src.blockSize() );
+  GEOS_LAI_ASSERT_EQ( blockSize(), src.blockSize() );
   real64 accum = 0;
   for( localIndex i = 0; i < blockSize(); i++ )
   {
@@ -333,7 +334,7 @@ template< typename VECTOR >
 void BlockVectorView< VECTOR >::axpy( real64 const alpha,
                                       BlockVectorView const & x )
 {
-  GEOSX_LAI_ASSERT_EQ( blockSize(), x.blockSize() );
+  GEOS_LAI_ASSERT_EQ( blockSize(), x.blockSize() );
   for( localIndex i = 0; i < blockSize(); i++ )
   {
     block( i ).axpy( alpha, x.block( i ) );
@@ -345,7 +346,7 @@ void BlockVectorView< VECTOR >::axpby( real64 const alpha,
                                        BlockVectorView const & x,
                                        real64 const beta )
 {
-  GEOSX_LAI_ASSERT_EQ( blockSize(), x.blockSize() );
+  GEOS_LAI_ASSERT_EQ( blockSize(), x.blockSize() );
   for( localIndex i = 0; i < blockSize(); i++ )
   {
     block( i ).axpby( alpha, x.block( i ), beta );
@@ -405,7 +406,7 @@ std::ostream & operator<<( std::ostream & os,
   return os;
 }
 
-} // end geosx namespace
+} // end geos namespace
 
 
-#endif /* GEOSX_LINEARALGEBRA_UTILITIES_BLOCKVECTORVIEW_HPP_ */
+#endif /* GEOS_LINEARALGEBRA_UTILITIES_BLOCKVECTORVIEW_HPP_ */

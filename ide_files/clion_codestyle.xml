@@ -1,4 +1,4 @@
-<code_scheme name="GEOSX" version="173">
+<code_scheme name="GEOS" version="173">
   <Objective-C>
     <option name="INDENT_NAMESPACE_MEMBERS" value="0" />
     <option name="INDENT_C_STRUCT_MEMBERS" value="2" />
@@ -85,6 +85,7 @@
     </indentOptions>
   </codeStyleSettings>
   <codeStyleSettings language="ObjectiveC">
+    <option name="RIGHT_MARGIN" value="200" />
     <option name="BRACE_STYLE" value="2" />
     <option name="CLASS_BRACE_STYLE" value="2" />
     <option name="ELSE_ON_NEW_LINE" value="true" />

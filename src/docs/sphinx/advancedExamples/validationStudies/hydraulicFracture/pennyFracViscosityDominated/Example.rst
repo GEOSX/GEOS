@@ -8,12 +8,12 @@ Viscosity-Storage-Dominated Penny Shaped Hydraulic Fracture
 
 **Context**
 
-In this example, we simulate the propagation of a radial hydraulic fracture in viscosity-storage-dominated regime, another classic benchmark in hydraulic fracturing `(Settgast et al., 2016)  <https://onlinelibrary.wiley.com/doi/full/10.1002/nag.2557>`__. The fracture develops as a planar fracture with an elliptical cross-section perpendicular to the fracture plane and a circular fracture tip. Unlike the toughness-storage-dominated fractures, fluid frictional loss during the transport of viscous fracturing fluids governs the growth of viscosity-storage-dominated fractures. We solve this problem using the hydrofracture solver in GEOSX. We simulate the change in length, aperture, and pressure of the fracture, and compare them against the corresponding analytical solutions `(Savitski and Detournay, 2002)  <https://www.sciencedirect.com/science/article/pii/S0020768302004924>`__. 
+In this example, we simulate the propagation of a radial hydraulic fracture in viscosity-storage-dominated regime, another classic benchmark in hydraulic fracturing `(Settgast et al., 2016)  <https://onlinelibrary.wiley.com/doi/full/10.1002/nag.2557>`__. The fracture develops as a planar fracture with an elliptical cross-section perpendicular to the fracture plane and a circular fracture tip. Unlike the toughness-storage-dominated fractures, fluid frictional loss during the transport of viscous fracturing fluids governs the growth of viscosity-storage-dominated fractures. We solve this problem using the hydrofracture solver in GEOS. We simulate the change in length, aperture, and pressure of the fracture, and compare them against the corresponding analytical solutions `(Savitski and Detournay, 2002)  <https://www.sciencedirect.com/science/article/pii/S0020768302004924>`__. 
 
 
 **Input file**
 
-This example uses no external input files. Everything we need is contained within two GEOSX input files:
+This example uses no external input files. Everything we need is contained within two GEOS input files:
 
 .. code-block:: console
 
@@ -39,11 +39,11 @@ Python scripts for post-processing and visualizing the simulation results are al
 Description of the case
 ------------------------------------------------------------------
 
-We model a radial fracture emerging from a point source and forming a perfect circular shape in an infinite, isotropic, and homogenous elastic domain. As with the viscosity-dominated KGD problem, we restrict the model to a radial fracture developed in a viscosity-storage-dominated propagation regime. For viscosity-dominated fractures, more energy is applied to move the fracturing fluid than to split the intact rock. If we neglect fluid leak-off, the storage-dominated propagation occurs from most of the injected fluid confined within the opened surfaces. We use a low rock toughness (:math:`0.3 MPa { \sqrt{m} }`), and the slickwater we inject has a constant viscosity value (:math:`1.0 cp`) and zero compressibility. In addition, we assume that the fracture surfaces are impermeable, thus eliminating fluid leak-off. With this configuration, our GEOSX simulations meet the requirements of the viscosity-storage-dominated assumptions.
+We model a radial fracture emerging from a point source and forming a perfect circular shape in an infinite, isotropic, and homogenous elastic domain. As with the viscosity-dominated KGD problem, we restrict the model to a radial fracture developed in a viscosity-storage-dominated propagation regime. For viscosity-dominated fractures, more energy is applied to move the fracturing fluid than to split the intact rock. If we neglect fluid leak-off, the storage-dominated propagation occurs from most of the injected fluid confined within the opened surfaces. We use a low rock toughness (:math:`0.3 MPa { \sqrt{m} }`), and the slickwater we inject has a constant viscosity value (:math:`1.0 cp`) and zero compressibility. In addition, we assume that the fracture surfaces are impermeable, thus eliminating fluid leak-off. With this configuration, our GEOS simulations meet the requirements of the viscosity-storage-dominated assumptions.
 
 The fluid injected in the fracture follows the lubrication equation resulting from mass conservation and Poiseuille's law. The fracture propagates by creating new surfaces if the stress intensity factor exceeds the local rock toughness :math:`K_{IC}`. By symmetry, the simulation is reduced to a quarter-scale to save computational cost. For verification purposes, a plane strain deformation is considered in the numerical model. 
 
-We set up and solve a hydraulic fracture model to obtain the evolution with time of the fracture radius :math:`R`, the net pressure :math:`p_0` and the fracture aperture :math:`w_0` at the injection point for the penny-shaped fracture developed in viscosity-storage-dominated regime. `Savitski and Detournay (2002)  <https://www.sciencedirect.com/science/article/pii/S0020768302004924>`__ presented the corresponding asymptotic solutions, used here to validate the results of our GEOSX simulations:
+We set up and solve a hydraulic fracture model to obtain the evolution with time of the fracture radius :math:`R`, the net pressure :math:`p_0` and the fracture aperture :math:`w_0` at the injection point for the penny-shaped fracture developed in viscosity-storage-dominated regime. `Savitski and Detournay (2002)  <https://www.sciencedirect.com/science/article/pii/S0020768302004924>`__ presented the corresponding asymptotic solutions, used here to validate the results of our GEOS simulations:
 
 .. math:: R(t) = 0.6955 (\frac{ E_p Q_0^3 t^4 }{ M_p })^{ 1/9 }
 
@@ -112,7 +112,7 @@ The fracture plane is defined by a nodeset occupying a small region within the c
 Solid mechanics solver
 ------------------------
 
-GEOSX is a multi-physics platform. Different combinations of
+GEOS is a multi-physics platform. Different combinations of
 physics solvers available in the code can be applied
 in different regions of the domain and be functional at different stages of the simulation.
 The ``Solvers`` tag in the XML file is used to list and parameterize these solvers.
@@ -186,7 +186,7 @@ In this example, ``pressureCollection``, ``apertureCollection``, ``hydraulicAper
     :end-before: <!-- SPHINX_TASKS_END -->
 
 These tasks are triggered using the ``Event`` manager with a ``PeriodicEvent`` defined for the recurring tasks. 
-GEOSX writes one file named after the string defined in the ``filename`` keyword and formatted as a HDF5 file (``pennyShapedViscosityDominated_output.hdf5``). This TimeHistory file contains the collected time history information from specified time history collector.
+GEOS writes one file named after the string defined in the ``filename`` keyword and formatted as a HDF5 file (``pennyShapedViscosityDominated_output.hdf5``). This TimeHistory file contains the collected time history information from specified time history collector.
 This file includes datasets for the simulation time, fluid pressure, element aperture, hydraulic aperture and element area for the propagating hydraulic fracture.
 A Python script is prepared to read and query any specified subset of the time history data for verification and visualization. 
 
@@ -263,9 +263,9 @@ the HDF5 output is postprocessed and temporal evolution of fracture characterisc
            8 1.005e+06 0.0007918     13.73
           10 9.482e+05 0.0008189     15.14
 
-Note: GEOSX python tools ``geosx_xml_tools`` should be installed to run the query script (See :ref:`PythonToolsSetup` for details). 
+Note: GEOS python tools ``geosx_xml_tools`` should be installed to run the query script (See `Python Tools Setup <https://geosx-geosx.readthedocs-hosted.com/projects/geosx-geospythonpackages/en/latest/>`_ for details). 
  
-Next, GEOSX simulation results (markers) and asymptotic solutions (curves) for the case with viscosity-storage
+Next, GEOS simulation results (markers) and asymptotic solutions (curves) for the case with viscosity-storage
 dominated assumptions are plotted together in the following figure, which is generated using the visualization script:
 
 .. code-block:: console
@@ -273,7 +273,7 @@ dominated assumptions are plotted together in the following figure, which is gen
    python ./pennyShapedViscosityDominatedFigure.py
 
 
-As seen, GEOSX predictions of the temporal evolution of fracture radius, wellbore aperture and pressure at fluid inlet are nearly identical to the asymptotic solutions.
+As seen, GEOS predictions of the temporal evolution of fracture radius, wellbore aperture and pressure at fluid inlet are nearly identical to the asymptotic solutions.
 
 .. plot:: docs/sphinx/advancedExamples/validationStudies/hydraulicFracture/pennyFracViscosityDominated/pennyShapedViscosityDominatedFigure.py
 
@@ -285,4 +285,4 @@ To go further
 
 **Feedback on this example**
 
-For any feedback on this example, please submit a `GitHub issue on the project's GitHub page <https://github.com/GEOSX/GEOSX/issues>`_.
+For any feedback on this example, please submit a `GitHub issue on the project's GitHub page <https://github.com/GEOS-DEV/GEOS/issues>`_.

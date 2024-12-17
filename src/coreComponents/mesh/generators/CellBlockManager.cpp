@@ -2,10 +2,11 @@
  * ------------------------------------------------------------------------------------------------------------
  * SPDX-License-Identifier: LGPL-2.1-only
  *
- * Copyright (c) 2018-2020 Lawrence Livermore National Security LLC
- * Copyright (c) 2018-2020 The Board of Trustees of the Leland Stanford Junior University
- * Copyright (c) 2018-2020 TotalEnergies
- * Copyright (c) 2019-     GEOSX Contributors
+ * Copyright (c) 2016-2024 Lawrence Livermore National Security LLC
+ * Copyright (c) 2018-2024 TotalEnergies
+ * Copyright (c) 2018-2024 The Board of Trustees of the Leland Stanford Junior University
+ * Copyright (c) 2023-2024 Chevron
+ * Copyright (c) 2019-     GEOS/GEOSX Contributors
  * All rights reserved
  *
  * See top level LICENSE, COPYRIGHT, CONTRIBUTORS, NOTICE, and ACKNOWLEDGEMENTS files for details.
@@ -15,11 +16,12 @@
 #include "CellBlockManager.hpp"
 
 #include "mesh/generators/CellBlockUtilities.hpp"
+#include "mesh/generators/LineBlock.hpp"
 #include "mesh/utilities/MeshMapUtilities.hpp"
 
 #include <algorithm>
 
-namespace geosx
+namespace geos
 {
 using namespace dataRepository;
 
@@ -29,6 +31,7 @@ CellBlockManager::CellBlockManager( string const & name, Group * const parent ):
 {
   this->registerGroup< Group >( viewKeyStruct::cellBlocks() );
   this->registerGroup< Group >( viewKeyStruct::faceBlocks() );
+  this->registerGroup< Group >( viewKeyStruct::lineBlocks() );
 }
 
 void CellBlockManager::resize( integer_array const & numElements,
@@ -41,7 +44,7 @@ void CellBlockManager::resize( integer_array const & numElements,
   }
 }
 
-Group * CellBlockManager::createChild( string const & GEOSX_UNUSED_PARAM( childKey ), string const & GEOSX_UNUSED_PARAM( childName ) )
+Group * CellBlockManager::createChild( string const & GEOS_UNUSED_PARAM( childKey ), string const & GEOS_UNUSED_PARAM( childName ) )
 {
   return nullptr;
 }
@@ -84,8 +87,8 @@ void convertFromCellBlockPairMap( ArrayOfArraysView< CellBlockIndexPair const > 
   localIndex const numObjects = srcMap.size();
   localIndex const maxNumElem = toCell.size( 1 );
 
-  GEOSX_ERROR_IF_NE( toBlock.size( 1 ), maxNumElem );
-  GEOSX_ERROR_IF_NE( toCell.size( 1 ), maxNumElem );
+  GEOS_ERROR_IF_NE( toBlock.size( 1 ), maxNumElem );
+  GEOS_ERROR_IF_NE( toCell.size( 1 ), maxNumElem );
 
   toBlock.resizeDimension< 0 >( numObjects );
   toCell.resizeDimension< 0 >( numObjects );
@@ -101,7 +104,7 @@ void convertFromCellBlockPairMap( ArrayOfArraysView< CellBlockIndexPair const > 
                                              toCell = toCell.toView()]( localIndex const objIndex )
   {
     arraySlice1d< CellBlockIndexPair const > const cells = srcMap[ objIndex ];
-    GEOSX_ASSERT_GE( maxNumElem, cells.size() );
+    GEOS_ASSERT_GE( maxNumElem, cells.size() );
     localIndex count = 0;
     for( CellBlockIndexPair const & e : cells )
     {
@@ -205,26 +208,17 @@ ToCellRelation< ArrayOfArrays< localIndex > > CellBlockManager::getNodeToElement
  */
 struct NodesAndElementOfFace
 {
-  NodesAndElementOfFace( Span< localIndex const > const sortedNodes,
-                         localIndex const cell,
-                         localIndex const block,
+  NodesAndElementOfFace( localIndex const duplicateFaceNodesIdx,
+                         localIndex const cellIdx,
+                         localIndex const blockIdx,
                          localIndex const faceNum ):
-    n1( sortedNodes[1] ),
-    n2( sortedNodes[2] ),
-    numNodes( static_cast< localIndex >( sortedNodes.size() ) ),
-    cellIndex( cell ),
-    blockIndex( block ),
+    duplicateFaceNodesIndex( duplicateFaceNodesIdx ),
+    cellIndex( cellIdx ),
+    blockIndex( blockIdx ),
     faceNumber( faceNum )
   {}
 
-  /// Second highest node index in the face
-  localIndex n1;
-
-  /// Third highest node index in the face
-  localIndex n2;
-
-  /// Number of nodes in the face (saved here to simplify map resizing)
-  localIndex numNodes;
+  localIndex duplicateFaceNodesIndex;
 
   /**
    * @brief Index of the cell to which this face belongs.
@@ -241,55 +235,72 @@ struct NodesAndElementOfFace
 
   /// Face number within a cell
   localIndex faceNumber;
+};
 
-private:
-
+/**
+ * @brief Holds all the information used to build up the face maps.
+ */
+struct FaceBuilder
+{
   /**
-   * @brief Equality comparison operator.
-   * @param [in] lhs left-hand side of the comparison
-   * @param [in] rhs right-hand side of the comparison
-   * @return true iff objects represent the same face
-   *
-   * Two faces are considered equal if they share 3 nodes (in a conforming mesh).
-   * Because the other data structure already groups entries by lowest node,
-   * here we only store and compare the second and third lowest index nodes.
+   * @brief Return a functor used to compare if two duplicate faces are the same.
+   * @return A comparator that takes in two @c NodesAndElementOfFace and compares
+   *   the nodes that make up the two faces.
    */
-  friend bool operator==( NodesAndElementOfFace const & lhs, NodesAndElementOfFace const & rhs )
+  auto duplicateFaceEquality() const
   {
-    return lhs.n1 == rhs.n1 && lhs.n2 == rhs.n2;
+    return [faces = duplicateFaces.toViewConst()]
+             ( NodesAndElementOfFace const & lhs, NodesAndElementOfFace const & rhs )
+    {
+      return std::equal( faces[ lhs.duplicateFaceNodesIndex ].begin(),
+                         faces[ lhs.duplicateFaceNodesIndex ].end(),
+                         faces[ rhs.duplicateFaceNodesIndex ].begin(),
+                         faces[ rhs.duplicateFaceNodesIndex ].end() );
+    };
   }
+
+  /// An array of size numNodes that lists for each node the (possibly duplicate)
+  /// faces for which the node has lowest index.
+  ArrayOfArrays< NodesAndElementOfFace > lowestNodeToFaces;
+
+  /// Contains the entire node list of each duplicate face.
+  ArrayOfArrays< localIndex > duplicateFaces;
 };
 
 /**
  * @brief Fills the face to nodes map and face to element maps
- * @param [in] lowestNodeToFaces and array of size numNodes of arrays of NodesAndElementOfFace associated with each node.
+ * @param [in] lowestNodeToFaces an array of size numNodes of arrays of NodesAndElementOfFace associated with each node.
  * @param [in] uniqueFaceOffsets an array containing the unique ID of the first face associated with each node.
  * @param [inout] faceToCells the face to element map.
  * @param [inout] faceToNodes the face to node map.
  */
 void populateFaceMaps( Group const & cellBlocks,
-                       ArrayOfArraysView< NodesAndElementOfFace const > const & lowestNodeToFaces,
+                       FaceBuilder const & faceBuilder,
                        arrayView1d< localIndex const > const & uniqueFaceOffsets,
                        ArrayOfArraysView< localIndex > const & faceToNodes,
                        arrayView2d< localIndex > const & faceToCells,
                        arrayView2d< localIndex > const & faceToBlocks )
 {
+  ArrayOfArraysView< NodesAndElementOfFace const > const & lowestNodeToFaces =
+    faceBuilder.lowestNodeToFaces.toViewConst();
+
   localIndex const numNodes = lowestNodeToFaces.size();
   localIndex const numUniqueFaces = uniqueFaceOffsets.back();
-  GEOSX_ERROR_IF_NE( uniqueFaceOffsets.size() - 1, numNodes );
-  GEOSX_ERROR_IF_NE( faceToNodes.size(), numUniqueFaces );
-  GEOSX_ERROR_IF_NE( faceToCells.size( 0 ), numUniqueFaces );
-  GEOSX_ERROR_IF_NE( faceToCells.size( 1 ), 2 );
-  GEOSX_ERROR_IF_NE( faceToBlocks.size( 0 ), numUniqueFaces );
-  GEOSX_ERROR_IF_NE( faceToBlocks.size( 1 ), 2 );
+  GEOS_ERROR_IF_NE( uniqueFaceOffsets.size() - 1, numNodes );
+  GEOS_ERROR_IF_NE( faceToNodes.size(), numUniqueFaces );
+  GEOS_ERROR_IF_NE( faceToCells.size( 0 ), numUniqueFaces );
+  GEOS_ERROR_IF_NE( faceToCells.size( 1 ), 2 );
+  GEOS_ERROR_IF_NE( faceToBlocks.size( 0 ), numUniqueFaces );
+  GEOS_ERROR_IF_NE( faceToBlocks.size( 1 ), 2 );
 
   // loop over all the nodes.
-  forAll< parallelHostPolicy >( numNodes, [uniqueFaceOffsets,
-                                           lowestNodeToFaces,
-                                           faceToNodes,
-                                           faceToCells,
-                                           faceToBlocks,
-                                           &cellBlocks]( localIndex const nodeIndex )
+  forAll< parallelHostPolicy >( numNodes, [ uniqueFaceOffsets,
+                                            lowestNodeToFaces,
+                                            faceToNodes,
+                                            faceToCells,
+                                            faceToBlocks,
+                                            &cellBlocks,
+                                            &faceBuilder ]( localIndex const nodeIndex )
   {
     localIndex nodesInFace[ CellBlockManager::maxNodesPerFace() ];
     localIndex curFaceID = uniqueFaceOffsets[nodeIndex];
@@ -299,7 +310,6 @@ void populateFaceMaps( Group const & cellBlocks,
       NodesAndElementOfFace const & f0 = *first;
       CellBlock const & cb = cellBlocks.getGroup< CellBlock >( f0.blockIndex );
       localIndex const numNodesInFace = cb.getFaceNodes( f0.cellIndex, f0.faceNumber, nodesInFace );
-      GEOSX_ASSERT_EQ( numNodesInFace, f0.numNodes );
 
       for( localIndex i = 0; i < numNodesInFace; ++i )
       {
@@ -320,43 +330,45 @@ void populateFaceMaps( Group const & cellBlocks,
         faceToCells( curFaceID, 1 ) = -1;
         faceToBlocks( curFaceID, 1 ) = -1;
       }
-      GEOSX_ASSERT( first == last ); // Should not be more than 2 faces
+      GEOS_ASSERT( first == last ); // Should not be more than 2 faces
 
       ++curFaceID;
-    } );
+    }, faceBuilder.duplicateFaceEquality() );
   } );
 }
 
 
 /**
  * @brief Resize the face maps
- * @param [in] lowestNodeToFaces and array of size numNodes of arrays of NodesAndElementOfFace associated with each node.
+ * @param [in] lowestNodeToFaces an array of size numNodes of arrays of NodesAndElementOfFace associated with each node.
  * @param [in] uniqueFaceOffsets an containing the unique face IDs for each node in lowestNodeToFaces.
  * @param [out] faceToNodeMap the map from faces to nodes. This function resizes the array appropriately.
  * @param [out] faceToCellMap the map from faces to elements. This function resizes the array appropriately.
  */
-void resizeFaceMaps( ArrayOfArraysView< NodesAndElementOfFace const > const & lowestNodeToFaces,
+void resizeFaceMaps( FaceBuilder const & faceBuilder,
                      arrayView1d< localIndex const > const & uniqueFaceOffsets,
                      ArrayOfArrays< localIndex > & faceToNodeMap,
                      ArrayOfArrays< localIndex > & faceToEdgesMap,
                      array2d< localIndex > & faceToCellMap,
                      array2d< localIndex > & faceToBlockMap )
 {
-  localIndex const numNodes = lowestNodeToFaces.size();
+  localIndex const numNodes = faceBuilder.lowestNodeToFaces.size();
   localIndex const numUniqueFaces = uniqueFaceOffsets.back();
   array1d< localIndex > numNodesPerFace( numUniqueFaces );
 
   // loop over all the nodes.
   forAll< parallelHostPolicy >( numNodes, [uniqueFaceOffsets,
-                                           lowestNodeToFaces,
-                                           numNodesPerFace = numNodesPerFace.toView()]( localIndex const nodeIndex )
+                                           numNodesPerFace = numNodesPerFace.toView(),
+                                           lowestNodeToFaces = faceBuilder.lowestNodeToFaces.toViewConst(),
+                                           duplicateFaces = faceBuilder.duplicateFaces.toViewConst(),
+                                           &faceBuilder]( localIndex const nodeIndex )
   {
     localIndex curFaceID = uniqueFaceOffsets[ nodeIndex ];
     arraySlice1d< NodesAndElementOfFace const > const faces = lowestNodeToFaces[ nodeIndex ];
     forUniqueValues( faces.begin(), faces.end(), [&]( NodesAndElementOfFace const & f, localIndex )
     {
-      numNodesPerFace[ curFaceID++ ] = f.numNodes + CellBlockManager::nodeMapExtraSpacePerFace();
-    } );
+      numNodesPerFace[ curFaceID++ ] = duplicateFaces.sizeOfArray( f.duplicateFaceNodesIndex ) + CellBlockManager::nodeMapExtraSpacePerFace();
+    }, faceBuilder.duplicateFaceEquality() );
   } );
 
   faceToNodeMap.resizeFromCapacities< parallelHostPolicy >( numUniqueFaces, numNodesPerFace.data() );
@@ -373,7 +385,7 @@ void resizeFaceMaps( ArrayOfArraysView< NodesAndElementOfFace const > const & lo
 
 /**
  * @brief Populate the lowestNodeToFaces map.
- * @param [in] numNodes Number of nodes
+ * @param [in] numNodes Number of nodes on the partition.
  * @param [in] cellBlocks The cell blocks on which we need to operate.
  *
  * For each face of each element of each cell blocks,
@@ -382,11 +394,20 @@ void resizeFaceMaps( ArrayOfArraysView< NodesAndElementOfFace const > const & lo
  * The key of this mapping is the lowest node index of the face.
  * E.g. faces {3, 5, 6, 2} and {4, 2, 9, 7} will both be stored in "bucket" of node 2.
  * Also, bucket of faces information are sorted (@see NodesAndElementOfFace) to make specific computations possible.
+ *
+ * If we note \a count the number of faces for which a given node is
+ * the node of lowest index, at the end, \a lowestNodeToFaces is an
+ * array of size \p numNodes of arrays of variable sizes \a count.
+ *
+ * \remark Faces at the interface of two elements are duplicated and
+ * stored from each element with a unique \a duplicateFaceIndex index.
+ *
  */
-ArrayOfArrays< NodesAndElementOfFace >
-createLowestNodeToFaces( localIndex const numNodes, const Group & cellBlocks )
+FaceBuilder createLowestNodeToFaces( localIndex const numNodes, const Group & cellBlocks )
 {
   array1d< localIndex > faceCounts( numNodes );
+  localIndex totalDuplicateFaces = 0;
+  localIndex totalDuplicateFaceNodes = 0;
   for( localIndex blockIndex = 0; blockIndex < cellBlocks.numSubGroups(); ++blockIndex )
   {
     CellBlock const & cb = cellBlocks.getGroup< CellBlock >( blockIndex );
@@ -405,69 +426,123 @@ createLowestNodeToFaces( localIndex const numNodes, const Group & cellBlocks )
         RAJA::atomicInc< parallelHostAtomic >( &counts[ lowestNode ] );
       }
     } );
+
+    totalDuplicateFaces += numFacesPerElement * numElements;
+    totalDuplicateFaceNodes += numElements * cb.maxNodesPerFace() * cb.numFacesPerElement();
   }
 
-  ArrayOfArrays< NodesAndElementOfFace > lowestNodeToFaces;
-  lowestNodeToFaces.resizeFromCapacities< parallelHostPolicy >( numNodes, faceCounts.data() );
+  FaceBuilder faceBuilder;
+  faceBuilder.lowestNodeToFaces.resizeFromCapacities< parallelHostPolicy >( numNodes, faceCounts.data() );
 
-  for( localIndex blockIndex = 0; blockIndex < cellBlocks.numSubGroups(); ++blockIndex )
+  faceBuilder.duplicateFaces.reserve( totalDuplicateFaces );
+  faceBuilder.duplicateFaces.reserveValues( totalDuplicateFaceNodes );
+
   {
-    CellBlock const & cb = cellBlocks.getGroup< CellBlock >( blockIndex );
-    localIndex const numFacesPerElement = cb.numFacesPerElement();
-    localIndex const numElements = cb.numElements();
 
-    forAll< parallelHostPolicy >( numElements, [&cb, numFacesPerElement, blockIndex,
-                                                lowestNodeToFaces = lowestNodeToFaces.toView()]( localIndex const elemID )
+    for( localIndex blockIndex = 0; blockIndex < cellBlocks.numSubGroups(); ++blockIndex )
     {
-      localIndex nodesInFace[ CellBlockManager::maxNodesPerFace() ];
-      for( localIndex faceNum = 0; faceNum < numFacesPerElement; ++faceNum )
+      CellBlock const & cb = cellBlocks.getGroup< CellBlock >( blockIndex );
+      localIndex const numFacesPerElement = cb.numFacesPerElement();
+      localIndex const numElements = cb.numElements();
+
+      localIndex const prevFaceOffset = faceBuilder.duplicateFaces.size();
+      faceBuilder.duplicateFaces.resize( faceBuilder.duplicateFaces.size() + numFacesPerElement * numElements, cb.maxNodesPerFace() );
+
+      forAll< parallelHostPolicy >( numElements, [&cb, numFacesPerElement, blockIndex, prevFaceOffset,
+                                                  lowestNodeToFaces = faceBuilder.lowestNodeToFaces.toView(),
+                                                  duplicateFaces = faceBuilder.duplicateFaces.toView()]( localIndex const elemID )
       {
-        // Get all the nodes of the face and find 3 lowest indices
-        localIndex const numNodesInFace = cb.getFaceNodes( elemID, faceNum, nodesInFace );
-        std::partial_sort( nodesInFace, nodesInFace + 3, nodesInFace + numNodesInFace );
+        localIndex nodesInFace[ CellBlockManager::maxNodesPerFace() ];
+        for( localIndex faceNum = 0; faceNum < numFacesPerElement; ++faceNum )
+        {
+          // Computation of a unique face index for each face
+          // (including the duplicate faces at the interface of 2
+          // elements)
+          localIndex const duplicateFaceIndex = prevFaceOffset + elemID * numFacesPerElement + faceNum;
 
-        lowestNodeToFaces.emplaceBackAtomic< parallelHostAtomic >( nodesInFace[0],
-                                                                   Span< localIndex >( nodesInFace, numNodesInFace ),
-                                                                   elemID,
-                                                                   blockIndex,
-                                                                   faceNum );
-      }
-    } );
+          // Get indices of the nodes on the face and sort theses indices
+          localIndex const numNodesInFace = cb.getFaceNodes( elemID, faceNum, nodesInFace );
+          std::sort( nodesInFace, nodesInFace + numNodesInFace );
+
+          // Add the current face to the array of the duplicate faces
+          // (list of all the element faces so a boundary face is
+          // listed once, a face at the interface of 2 elements is
+          // added twice, once from each elemennt to which the face
+          // belongs)
+          duplicateFaces.appendToArray( duplicateFaceIndex, nodesInFace, nodesInFace + numNodesInFace );
+
+          // Add the face to the array of faces of its lowest node (\a nodesInFace[0])
+          lowestNodeToFaces.emplaceBackAtomic< parallelHostAtomic >( nodesInFace[ 0 ],
+                                                                     duplicateFaceIndex,
+                                                                     elemID,
+                                                                     blockIndex,
+                                                                     faceNum );
+        }
+      } );
+    }
   }
-
-  auto const comp = []( NodesAndElementOfFace const & lhs, NodesAndElementOfFace const & rhs )
-  {
-    return std::tie( lhs.n1, lhs.n2, lhs.blockIndex, lhs.cellIndex ) < std::tie( rhs.n1, rhs.n2, rhs.blockIndex, rhs.cellIndex );
-  };
 
   // Loop over all the nodes and sort the associated faces.
-  forAll< parallelHostPolicy >( numNodes, [lowestNodeToFaces = lowestNodeToFaces.toView(),
-                                           comp]( localIndex const nodeIndex )
+  forAll< parallelHostPolicy >( numNodes, [lowestNodeToFaces = faceBuilder.lowestNodeToFaces.toView(),
+                                           duplicateFaces = faceBuilder.duplicateFaces.toViewConst()]( localIndex const nodeIndex )
   {
     arraySlice1d< NodesAndElementOfFace > const faces = lowestNodeToFaces[ nodeIndex ];
-    std::sort( faces.begin(), faces.end(), comp );
+    std::sort( faces.begin(), faces.end(), [&]( NodesAndElementOfFace const & lhs, NodesAndElementOfFace const & rhs )
+    {
+      // With C++20 this can all be replaced with std::lexicographical_compare_three_way
+      auto const pairOfIters = std::mismatch( duplicateFaces[ lhs.duplicateFaceNodesIndex ].begin(),
+                                              duplicateFaces[ lhs.duplicateFaceNodesIndex ].end(),
+                                              duplicateFaces[ rhs.duplicateFaceNodesIndex ].begin(),
+                                              duplicateFaces[ rhs.duplicateFaceNodesIndex ].end() );
+
+      // If the ranges are equal
+      if( pairOfIters.first == duplicateFaces[ lhs.duplicateFaceNodesIndex ].end() &&
+          pairOfIters.second == duplicateFaces[ rhs.duplicateFaceNodesIndex ].end() )
+      {
+        return std::tie( lhs.blockIndex, lhs.cellIndex ) < std::tie( rhs.blockIndex, rhs.cellIndex );
+      }
+
+      // If the second range is a prefix of the first, the first is greater than the secondd.
+      if( pairOfIters.first == duplicateFaces[ lhs.duplicateFaceNodesIndex ].end() )
+      {
+        return false;
+      }
+
+      // If the first range is a prefix of the second, the first is less than the second.
+      if( pairOfIters.second == duplicateFaces[ rhs.duplicateFaceNodesIndex ].end() )
+      {
+        return true;
+      }
+
+      // Otherwise simply compare the first non-equal values.
+      return *pairOfIters.first < *pairOfIters.second;
+    } );
   } );
 
-  return lowestNodeToFaces;
+  return faceBuilder;
 }
 
 
 /**
  * @brief Filling the elements to faces maps in the cell blocks.
- * @param lowestNodeToFaces The lowest node to faces information array.
+ * @param lowestNodeToFaces The array of size numNodes of arrays of (duplicate) faces for which the node has lowest index.
  * @param uniqueFaceOffsets The unique face offsets.
  * @param cellBlocks The cell blocks for which we need to compute the element to faces mappings.
  *
  * @note @p lowestNodeToFaces and @p uniqueFaceOffsets are better described in the documentations of the functions that build them.
  */
-void fillElementToFacesOfCellBlocks( ArrayOfArraysView< NodesAndElementOfFace const > const & lowestNodeToFaces,
+void fillElementToFacesOfCellBlocks( FaceBuilder const & faceBuilder,
                                      arrayView1d< localIndex const > const & uniqueFaceOffsets,
                                      Group & cellBlocks )
 {
+  ArrayOfArraysView< NodesAndElementOfFace const > const & lowestNodeToFaces
+    = faceBuilder.lowestNodeToFaces.toViewConst();
+
   localIndex const numNodes = lowestNodeToFaces.size();
   forAll< parallelHostPolicy >( numNodes, [lowestNodeToFaces,
                                            uniqueFaceOffsets,
-                                           &cellBlocks]( localIndex const nodeIndex )
+                                           &cellBlocks,
+                                           &faceBuilder]( localIndex const nodeIndex )
   {
     arraySlice1d< NodesAndElementOfFace const > const faces = lowestNodeToFaces[ nodeIndex ];
     localIndex curFaceID = uniqueFaceOffsets[nodeIndex];
@@ -481,7 +556,7 @@ void fillElementToFacesOfCellBlocks( ArrayOfArraysView< NodesAndElementOfFace co
         cb0.setElementToFaces( f.cellIndex, f.faceNumber, curFaceID );
       }
       ++curFaceID;
-    } );
+    }, faceBuilder.duplicateFaceEquality() );
   } );
 }
 
@@ -542,16 +617,19 @@ void fillElementToEdgesOfCellBlocks( ArrayOfArraysView< localIndex const > const
 
 void CellBlockManager::buildFaceMaps()
 {
-  GEOSX_MARK_FUNCTION;
+  GEOS_MARK_FUNCTION;
 
-  ArrayOfArrays< NodesAndElementOfFace > const lowestNodeToFaces =
+  FaceBuilder const faceBuilder =
     createLowestNodeToFaces( m_numNodes, this->getCellBlocks() );
 
   array1d< localIndex > const uniqueFaceOffsets =
-    computeUniqueValueOffsets< parallelHostPolicy >( lowestNodeToFaces.toViewConst() );
+    computeUniqueValueOffsets< parallelHostPolicy >( faceBuilder.lowestNodeToFaces.toViewConst(),
+                                                     faceBuilder.duplicateFaceEquality() );
+
+
   m_numFaces = uniqueFaceOffsets.back();
 
-  resizeFaceMaps( lowestNodeToFaces.toViewConst(),
+  resizeFaceMaps( faceBuilder,
                   uniqueFaceOffsets,
                   m_faceToNodes,
                   m_faceToEdges,
@@ -559,13 +637,13 @@ void CellBlockManager::buildFaceMaps()
                   m_faceToCells.toBlockIndex );
 
   populateFaceMaps( getCellBlocks(),
-                    lowestNodeToFaces.toViewConst(),
+                    faceBuilder,
                     uniqueFaceOffsets,
                     m_faceToNodes.toView(),
                     m_faceToCells.toCellIndex,
                     m_faceToCells.toBlockIndex );
 
-  fillElementToFacesOfCellBlocks( lowestNodeToFaces.toViewConst(),
+  fillElementToFacesOfCellBlocks( faceBuilder,
                                   uniqueFaceOffsets,
                                   this->getCellBlocks() );
 }
@@ -579,7 +657,7 @@ void CellBlockManager::buildNodeToEdges()
 
 void CellBlockManager::buildMaps()
 {
-  GEOSX_MARK_FUNCTION;
+  GEOS_MARK_FUNCTION;
 
   buildFaceMaps();
   m_numEdges = buildEdgeMaps( m_numNodes,
@@ -619,9 +697,24 @@ Group & CellBlockManager::getCellBlocks()
   return this->getGroup( viewKeyStruct::cellBlocks() );
 }
 
+Group const & CellBlockManager::getFaceBlocks() const
+{
+  return this->getGroup( viewKeyStruct::faceBlocks() );
+}
+
 Group & CellBlockManager::getFaceBlocks()
 {
   return this->getGroup( viewKeyStruct::faceBlocks() );
+}
+
+Group & CellBlockManager::getLineBlocks()
+{
+  return this->getGroup( viewKeyStruct::lineBlocks() );
+}
+
+LineBlockABC const & CellBlockManager::getLineBlock( string name ) const
+{
+  return this->getGroup( viewKeyStruct::lineBlocks() ).getGroup< LineBlockABC >( name );
 }
 
 localIndex CellBlockManager::numNodes() const
@@ -676,9 +769,22 @@ CellBlock & CellBlockManager::registerCellBlock( string const & name )
   return this->getCellBlocks().registerGroup< CellBlock >( name );
 }
 
+CellBlock & CellBlockManager::registerCellBlock( string const & cellBlockName,
+                                                 integer regionAttribute )
+{
+  CellBlock & cb = this->getCellBlocks().registerGroup< CellBlock >( cellBlockName );
+  m_regionAttributesCellBlocks[ regionAttribute ].emplace( cellBlockName );
+  return cb;
+}
+
 FaceBlock & CellBlockManager::registerFaceBlock( string const & name )
 {
   return this->getFaceBlocks().registerGroup< FaceBlock >( name );
+}
+
+LineBlock & CellBlockManager::registerLineBlock( string const & name )
+{
+  return this->getLineBlocks().registerGroup< LineBlock >( name );
 }
 
 array2d< real64, nodes::REFERENCE_POSITION_PERM > CellBlockManager::getNodePositions() const
@@ -719,4 +825,432 @@ std::map< string, SortedArray< localIndex > > & CellBlockManager::getNodeSets()
   return m_nodeSets;
 }
 
+static array1d< real64 > gaussLobattoPoints( int order )
+{
+  array1d< real64 > GaussLobattoPts( order+1 );
+
+  switch( order )
+  {
+    case 2:
+      GaussLobattoPts[0] = 0;
+      break;
+    case 3:
+      static constexpr real64 sqrt5 = 2.2360679774997897;
+      GaussLobattoPts[0] = -1./sqrt5;
+      GaussLobattoPts[1] = 1./sqrt5;
+      break;
+    case 4:
+      static constexpr real64 sqrt3_7 = 0.6546536707079771;
+      GaussLobattoPts[0] = -sqrt3_7;
+      GaussLobattoPts[1] = 0.0;
+      GaussLobattoPts[2] = sqrt3_7;
+      break;
+    case 5:
+      static constexpr real64 sqrt__7_plus_2sqrt7__ = 3.50592393273573196;
+      static constexpr real64 sqrt__7_mins_2sqrt7__ = 1.30709501485960033;
+      static constexpr real64 sqrt_inv21 = 0.218217890235992381;
+      GaussLobattoPts[0] = -sqrt_inv21*sqrt__7_plus_2sqrt7__;
+      GaussLobattoPts[1] = -sqrt_inv21*sqrt__7_mins_2sqrt7__;
+      GaussLobattoPts[2] = sqrt_inv21*sqrt__7_mins_2sqrt7__;
+      GaussLobattoPts[3] = sqrt_inv21*sqrt__7_plus_2sqrt7__;
+      break;
+  }
+  return GaussLobattoPts;
 }
+
+static void linearInterp( real64 const alpha,
+                          arrayView2d< real64, nodes::REFERENCE_POSITION_USD > const refPos,
+                          localIndex const vi[2],
+                          arrayView2d< real64, nodes::REFERENCE_POSITION_USD > refPosNew,
+                          localIndex const v )
+{
+  for( int i=0; i<3; i++ )
+  {
+    refPosNew( v, i ) = refPos( vi[0], i )*( 1.0-alpha )+
+                        refPos( vi[1], i )*    alpha;
+  }
+}
+static void bilinearInterp( real64 const alpha,
+                            real64 const beta,
+                            arrayView2d< real64, nodes::REFERENCE_POSITION_USD > const refPos,
+                            localIndex const vi[4],
+                            arrayView2d< real64, nodes::REFERENCE_POSITION_USD > refPosNew,
+                            localIndex const v )
+{
+  for( int i=0; i<3; i++ )
+  {
+    refPosNew( v, i ) = refPos( vi[0], i )*( 1.0-alpha )*( 1.0-beta )+
+                        refPos( vi[1], i )*    alpha    *( 1.0-beta )+
+                        refPos( vi[2], i )*( 1.0-alpha )*    beta    +
+                        refPos( vi[3], i )*    alpha    *    beta;
+  }
+}
+static void trilinearInterp( real64 const alpha,
+                             real64 const beta,
+                             real64 const gamma,
+                             arrayView2d< real64, nodes::REFERENCE_POSITION_USD > const refPos,
+                             localIndex const vi[8],
+                             arrayView2d< real64, nodes::REFERENCE_POSITION_USD > refPosNew,
+                             localIndex const v )
+{
+  for( int i=0; i<3; i++ )
+  {
+    refPosNew( v, i ) = refPos( vi[0], i ) *( 1.0-alpha )*( 1.0-beta )*( 1.0-gamma )+
+                        refPos( vi[1], i ) *    alpha    *( 1.0-beta )*( 1.0-gamma )+
+                        refPos( vi[2], i ) *( 1.0-alpha )*    beta    *( 1.0-gamma )+
+                        refPos( vi[3], i ) *    alpha    *    beta    *( 1.0-gamma )+
+                        refPos( vi[4], i ) *( 1.0-alpha )*( 1.0-beta )*  gamma+
+                        refPos( vi[5], i ) *    alpha    *( 1.0-beta )*  gamma+
+                        refPos( vi[6], i ) *( 1.0-alpha )*    beta    *  gamma+
+                        refPos( vi[7], i ) *    alpha    *    beta    *  gamma;
+  }
+}
+
+void CellBlockManager::generateHighOrderMaps( localIndex const order,
+                                              globalIndex const maxVertexGlobalID,
+                                              globalIndex const maxEdgeGlobalID,
+                                              globalIndex const maxFaceGlobalID,
+                                              arrayView1d< globalIndex const > const edgeLocalToGlobal,
+                                              arrayView1d< globalIndex const > const faceLocalToGlobal )
+{
+
+  // The general idea for building higher-order nodes is as follows:
+  // 1. Original mesh-level 0 nodes are added, keeping their global IDs;
+  // 2. Nodes internal to edges, faces and elements are added in this order.
+  //    Their global IDs are computed based on the global IDs of the edge, face or element containing them.
+  // 3. The edge, face and element-to-node maps are created by adding nodes in a hierarchical order:
+  //    Endpoints/vertices, then edge nodes, face nodes and element nodes last
+  // 4. The maps are then re-ordered in the usual tensor-product ordering using a hash map, using nodeKeys as the keys of the map.
+  // 5. Finally, global orientation consistency across MPI ranks is guaranteed by using a consistent global face/edge orientation
+  //    to create node global IDs. This is obtained using nodeKeys, which always order nodes in a consistent manner.
+  //
+  // nodeKeys identify each high-order node with a list of 6 integers [i1, i2, i3, i4, a, b], as follows:
+  // - nodes on a mesh vertex v are identified by the vector [v, -1, -1, -1, -1, -1];
+  // - nodes internal to an edge are given by a linear interpolation between vertices v1 and v2, 'a' steps away from v1.
+  //   The edge erndpoints are oriented such that v1 < v2, and the vertex is and identified with [v1, v2, -1, -1, a, -1]);
+  // - nodes internal to a face are given by a bilinear interpolation between edges v1->v2 and v3->v4
+  //   (v1-v4 and v2-v3 are the diagonals), with interpolation parameters 'a' and 'b' respectively.
+  //   Faces are oriented so that v1 is always the smallest index, and v2 < v3. Then face nodes are identified with [v1, v2, v3, v4, a, b];
+  // - Nodes internal to mesh cells do not need to be oriented, as they are not used for global data exchange.
+
+  GEOS_MARK_FUNCTION;
+
+  // constants for hex mesh
+  localIndex const numEdgesPerFace = 4;
+  localIndex const numFacesPerCell = 6;
+  localIndex const numEdgesPerCell = 12;
+  localIndex const numVerticesPerFace = 4;
+  localIndex const numVerticesPerCell = 8;
+
+  localIndex const numNodesPerEdge = ( order+1 );
+  localIndex const numNodesPerFace = ( order+1 )*( order+1 );
+  localIndex const numNodesPerCell = ( order+1 )*( order+1 )*( order+1 );
+
+  localIndex const numInternalNodesPerEdge = ( order-1 );
+  localIndex const numInternalNodesPerFace = ( order-1 )*( order-1 );
+  localIndex const numInternalNodesPerCell = ( order-1 )*( order-1 )*( order-1 );
+
+  localIndex const numLocalVertices = this->numNodes();
+  localIndex const numLocalEdges = this->numEdges();
+  localIndex const numLocalFaces = this->numFaces();
+
+  localIndex numLocalCells = 0;
+  this->getCellBlocks().forSubGroups< CellBlock >( [&]( CellBlock & cellBlock )
+  {
+    numLocalCells += cellBlock.numElements();
+  } );
+
+  ////////////////////////////////
+  // Get the new number of nodes
+  ////////////////////////////////
+
+  localIndex numLocalNodes = numLocalVertices
+                             + numLocalEdges * numInternalNodesPerEdge
+                             + numLocalFaces * numInternalNodesPerFace
+                             + numLocalCells * numInternalNodesPerCell;
+
+  array1d< globalIndex > const nodeLocalToGlobalSource ( m_nodeLocalToGlobal );
+  array2d< localIndex > const edgeToNodesMapSource( m_edgeToNodes );
+  ArrayOfArrays< localIndex > const faceToNodesMapSource( m_faceToNodes );
+  array2d< real64, nodes::REFERENCE_POSITION_PERM > const refPosSource ( m_nodesPositions );
+
+  m_numNodes = numLocalNodes;
+  m_nodeLocalToGlobal.resize( m_numNodes );
+  m_edgeToNodes.resize( m_numEdges, order+1 );
+  m_nodesPositions.resize( m_numNodes );
+
+  // also assign node coordinates using trilinear interpolation in th elements
+  arrayView2d< real64, nodes::REFERENCE_POSITION_USD > refPosNew = this->getNodePositions();
+  refPosNew.setValues< parallelHostPolicy >( -1.0 );
+  array1d< real64 > glCoords = gaussLobattoPoints( order );
+
+  arrayView1d< globalIndex > nodeLocalToGlobalNew = m_nodeLocalToGlobal.toView();
+  localIndex localNodeOffset = 0;
+
+  forAll< parallelHostPolicy >( numLocalVertices,
+                                [ nodeLocalToGlobalSource=nodeLocalToGlobalSource.toView(),
+                                  nodeLocalToGlobalNew=nodeLocalToGlobalNew.toView(),
+                                  refPosSource=refPosSource.toView(),
+                                  refPosNew=refPosNew.toView() ]( localIndex const iter_vertex )
+  {
+    nodeLocalToGlobalNew[ iter_vertex ] = nodeLocalToGlobalSource[ iter_vertex ];
+    refPosNew[ iter_vertex ][0] = refPosSource[ iter_vertex ][0];
+    refPosNew[ iter_vertex ][1] = refPosSource[ iter_vertex ][1];
+    refPosNew[ iter_vertex ][2] = refPosSource[ iter_vertex ][2];
+  } );
+  localNodeOffset = numLocalVertices;
+
+  //////////////////////////
+  // Edges
+  //////////////////////////
+
+  // -------------------------------------
+  // ---- initialize edge-to-node map ----
+  // -------------------------------------
+
+  arrayView2d< localIndex > edgeToNodeMapNew = m_edgeToNodes.toView();
+  // create / retrieve nodes on edges
+  localIndex globalNodeOffset = maxVertexGlobalID;
+
+  forAll< parallelHostPolicy >( numLocalEdges,
+                                [ edgeToNodesMapSource=edgeToNodesMapSource.toView(),
+                                  edgeToNodeMapNew=edgeToNodeMapNew.toView(),
+                                  refPosSrc=refPosSource.toView(),
+                                  refPosNew=refPosNew.toView(),
+                                  edgeLocalToGlobal=edgeLocalToGlobal.toView(),
+                                  nodeLocalToGlobalNew=nodeLocalToGlobalNew.toView(),
+                                  numInternalNodesPerEdge, numNodesPerEdge, globalNodeOffset, glCoords, localNodeOffset, order]( localIndex const iter_edge )
+  {
+    std::unordered_map< std::array< localIndex, 6 >, localIndex, NodeKeyHasher< localIndex > > nodeIDs;
+    localIndex edgeHeadNode = edgeToNodesMapSource[ iter_edge ][ 0 ];
+    localIndex edgeEndNode = edgeToNodesMapSource[ iter_edge ][ 1 ];
+    globalIndex edgeHeadNodeG = nodeLocalToGlobalNew[ edgeHeadNode ];
+    globalIndex edgeEndNodeG = nodeLocalToGlobalNew[ edgeEndNode ];
+    array1d< localIndex > const edgeToNodeMapWork( numNodesPerEdge );
+    edgeToNodeMapWork[ 0 ] = edgeHeadNode;
+    edgeToNodeMapWork[ 1 ] = edgeEndNode;
+    nodeIDs[ createNodeKey( edgeHeadNode ) ] = 0;
+    nodeIDs[ createNodeKey( edgeEndNode ) ] = 1;
+
+    for( localIndex iter_node = 0; iter_node < numInternalNodesPerEdge; iter_node++ )
+    {
+      real64 alpha = ( glCoords[ iter_node ] + 1.0 ) / 2.0;
+      localIndex nodeLocalID = localNodeOffset + iter_edge * ( numInternalNodesPerEdge ) + iter_node;
+      edgeToNodeMapWork[ iter_node + 2 ] = nodeLocalID;
+      nodeIDs[ createNodeKey( edgeHeadNode, edgeEndNode, iter_node + 1, order ) ] = iter_node + 2;
+      std::array< globalIndex, 6 > referenceOrientation = createNodeKey( edgeHeadNodeG, edgeEndNodeG, iter_node + 1, order );
+      int gq = referenceOrientation[4] - 1;
+      nodeLocalToGlobalNew[ nodeLocalID ] = globalNodeOffset + edgeLocalToGlobal[ iter_edge ] * numInternalNodesPerEdge + gq;
+      localIndex e[2] = { edgeHeadNode, edgeEndNode };
+      linearInterp( alpha, refPosSrc, e, refPosNew, nodeLocalID );
+    }
+    // reorder map
+    for( localIndex q = 0; q < numNodesPerEdge; q++ )
+    {
+      edgeToNodeMapNew[ iter_edge ][ q ] = edgeToNodeMapWork[ nodeIDs[ createNodeKey( edgeHeadNode, edgeEndNode, q, order ) ] ];
+    }
+  } );
+  localNodeOffset += numInternalNodesPerEdge * numLocalEdges;
+
+  /////////////////////////
+  // Faces
+  //////////////////////////
+
+  // initialize faceToNodeMap for the high-order mesh-level
+  ArrayOfArrays< localIndex > & faceToNodeMapNew = m_faceToNodes;
+  // number of elements in each row of the map as capacity
+  array1d< localIndex > counts( faceToNodeMapNew.size());
+  counts.setValues< parallelHostPolicy >( numNodesPerFace );
+  //  reconstructs the faceToNodeMap with the provided capacity in counts
+  faceToNodeMapNew.resizeFromCapacities< parallelHostPolicy >( faceToNodeMapNew.size(), counts.data() );
+  // setup initial values of the faceToNodeMap using emplaceBack
+  forAll< parallelHostPolicy >( faceToNodeMapNew.size(),
+                                [ faceToNodeMapNew = faceToNodeMapNew.toView() ]( localIndex const faceIndex )
+  {
+    for( localIndex i = 0; i < faceToNodeMapNew.capacityOfArray( faceIndex ); ++i )
+    {
+      faceToNodeMapNew.emplaceBack( faceIndex, -1 );
+    }
+  } );
+
+  globalNodeOffset = maxVertexGlobalID + maxEdgeGlobalID * numInternalNodesPerEdge;
+
+  forAll< parallelHostPolicy >( numLocalFaces,
+                                [ =, faceToNodesMapSource=faceToNodesMapSource.toView(),
+                                  edgeToNodeMapNew=edgeToNodeMapNew.toView(),
+                                  faceToNodeMapNew=faceToNodeMapNew.toView(),
+                                  faceToEdges=m_faceToEdges.toView(),
+                                  refPosSrc=refPosSource.toView(),
+                                  refPosNew=refPosNew.toView(),
+                                  faceLocalToGlobal=faceLocalToGlobal.toView(),
+                                  nodeLocalToGlobalNew=nodeLocalToGlobalNew.toView() ]( localIndex const iter_face )
+  {
+    std::unordered_map< std::array< localIndex, 6 >, localIndex, NodeKeyHasher< localIndex > > nodeIDs;
+    localIndex faceVertID[ numVerticesPerFace ];
+    globalIndex faceVertGID[ numVerticesPerFace ];
+    array1d< localIndex > const faceToNodeMapWork( numNodesPerFace );
+    for( localIndex iter_node=0; iter_node<numVerticesPerFace; iter_node++ )
+    {
+      faceVertID[ iter_node ] = faceToNodesMapSource[ iter_face ][ iter_node ];
+    }
+    std::swap( faceVertID[ 2 ], faceVertID[ 3 ] );
+    for( localIndex iter_node=0; iter_node<numVerticesPerFace; iter_node++ )
+    {
+      faceVertGID[ iter_node ] = nodeLocalToGlobalNew[ faceVertID[ iter_node ] ];
+      faceToNodeMapWork[ iter_node ] = faceVertID[ iter_node ];
+      // store location of nodes for later reordering
+      nodeIDs[ createNodeKey( faceVertID[ iter_node ] ) ] = iter_node;
+    }
+
+    for( localIndex iter_edge=0; iter_edge<numEdgesPerFace; iter_edge++ )
+    {
+      for( localIndex iter_node=0; iter_node<numInternalNodesPerEdge; iter_node++ )
+      {
+        localIndex nodeIdxInMap = numVerticesPerFace + iter_edge * numInternalNodesPerEdge + iter_node;
+        localIndex edge = faceToEdges[ iter_face ][ iter_edge ];
+        faceToNodeMapWork[ nodeIdxInMap ] = edgeToNodeMapNew[ edge ][ iter_node + 1 ];
+        nodeIDs[ createNodeKey( edgeToNodeMapNew[ edge ][ 0 ], edgeToNodeMapNew[ edge ][ numNodesPerEdge - 1 ], iter_node + 1, order ) ] = nodeIdxInMap;
+      }
+    }
+    for( localIndex iter_node=0; iter_node<numInternalNodesPerFace; iter_node++ )
+    {
+      localIndex q1 = iter_node % numInternalNodesPerEdge;
+      localIndex q2 = ( iter_node / numInternalNodesPerEdge ) % numInternalNodesPerEdge;
+      real64 alpha = ( glCoords[ q1 ] + 1.0 ) / 2.0;
+      real64 beta = ( glCoords[ q2 ] + 1.0 ) / 2.0;
+
+      localIndex nodeLocalID = localNodeOffset + iter_face * numInternalNodesPerFace + iter_node;
+      faceToNodeMapNew[ iter_face ][ (q2 + 1) * numNodesPerEdge + (q1 + 1) ] = nodeLocalID;
+      std::array< globalIndex, 6 > referenceOrientation = createNodeKey( faceVertGID[ 0 ], faceVertGID[ 1 ], faceVertGID[ 2 ], faceVertGID[ 3 ],
+                                                                         q1 + 1, q2 + 1, order );
+      int gq1 = referenceOrientation[4] - 1;
+      int gq2 = referenceOrientation[5] - 1;
+      nodeLocalToGlobalNew[ nodeLocalID ] = globalNodeOffset + faceLocalToGlobal[ iter_face ] * numInternalNodesPerFace + gq2 * numInternalNodesPerEdge + gq1;
+
+      bilinearInterp( alpha, beta, refPosSrc, faceVertID, refPosNew, nodeLocalID );
+    }
+    // reorder map
+    for( localIndex q = 0; q < numNodesPerFace; q++ )
+    {
+      localIndex q1 = q % numNodesPerEdge;
+      localIndex q2 = ( q / numNodesPerEdge ) % numNodesPerEdge;
+      if( q1 == 0  || q1 == numNodesPerEdge - 1 || q2 == 0 || q2 == numNodesPerEdge - 1 )
+      {
+        faceToNodeMapNew[ iter_face ][ q ] = faceToNodeMapWork[
+          nodeIDs[ createNodeKey( faceVertID[0], faceVertID[1], faceVertID[2], faceVertID[3], q1, q2, order ) ] ];
+      }
+    }
+  } );
+
+  localNodeOffset += numInternalNodesPerFace * numLocalFaces;
+
+  // add all nodes to the target set "all"
+  SortedArray< localIndex > & allNodesSet = this->getNodeSets()[ "all" ];
+  allNodesSet.reserve( numLocalNodes );
+
+  for( localIndex iter_nodes=0; iter_nodes< numLocalNodes; ++iter_nodes )
+  {
+    allNodesSet.insert( iter_nodes );
+  }
+
+
+  /////////////////////////
+  // Elements
+  //////////////////////////
+
+  globalNodeOffset = maxVertexGlobalID + maxEdgeGlobalID * numInternalNodesPerEdge + maxFaceGlobalID * numInternalNodesPerFace;
+
+  // initialize the elements-to-nodes map
+  arrayView2d< localIndex, cells::NODE_MAP_USD > elemsToNodesNew;
+
+  this->getCellBlocks().forSubGroups< CellBlock >( [&]( CellBlock & cellBlock )
+  {
+    arrayView1d< globalIndex > elementLocalToGlobal( cellBlock.localToGlobalMap() );
+    array2d< localIndex, cells::NODE_MAP_PERMUTATION > elemsToNodesSource ( cellBlock.getElemToNodes() );
+
+    array2d< localIndex > elemsToEdges ( cellBlock.getElemToEdges() );
+    array2d< localIndex > elemsToFaces ( cellBlock.getElemToFaces() );
+
+    cellBlock.resizeNumNodes( numNodesPerCell );
+    elemsToNodesNew = cellBlock.getElemToNode();
+    localIndex const numCellElements = cellBlock.numElements();
+
+    forAll< parallelHostPolicy >( numCellElements,
+                                  [ =,
+                                    elemsToNodesSource=elemsToNodesSource.toView(),
+                                    elemsToNodesNew=elemsToNodesNew.toView(),
+                                    elemsToEdges=elemsToEdges.toView(),
+                                    elemsToFaces=elemsToFaces.toView(),
+                                    edgeToNodeMapNew=edgeToNodeMapNew.toView(),
+                                    faceToNodeMapNew=faceToNodeMapNew.toView(),
+                                    refPosSrc=refPosSource.toView(),
+                                    refPosNew=refPosNew.toView(),
+                                    elementLocalToGlobal=elementLocalToGlobal.toView(),
+                                    nodeLocalToGlobalNew=nodeLocalToGlobalNew.toView() ]( localIndex const iter_elem )
+    {
+      std::unordered_map< std::array< localIndex, 6 >, localIndex, NodeKeyHasher< localIndex > > nodeIDs;
+      localIndex elemVertID[ numVerticesPerCell];
+      array1d< localIndex > const elemToNodeMapWork( numNodesPerCell );
+      for( localIndex iter_node=0; iter_node < numVerticesPerCell; iter_node++ )
+      {
+        elemVertID[ iter_node ] = elemsToNodesSource[ iter_elem ][ iter_node ];
+        elemToNodeMapWork[ iter_node ] = elemVertID[ iter_node ];
+        nodeIDs[ createNodeKey( elemVertID[ iter_node ] ) ] = iter_node;
+      }
+
+      for( localIndex iter_edge=0; iter_edge < numEdgesPerCell; iter_edge++ )
+      {
+        for( localIndex iter_node=0; iter_node < numInternalNodesPerEdge; iter_node++ )
+        {
+          localIndex nodeIdxInMap = numVerticesPerCell + iter_edge * numInternalNodesPerEdge + iter_node;
+          localIndex edge = elemsToEdges[iter_elem][iter_edge];
+          elemToNodeMapWork[ nodeIdxInMap ] = edgeToNodeMapNew[ edge ][iter_node+1];
+          nodeIDs[ createNodeKey( edgeToNodeMapNew[ edge ][ 0 ], edgeToNodeMapNew[ edge ][ numNodesPerEdge - 1 ], iter_node + 1, order ) ] = nodeIdxInMap;
+        }
+      }
+      for( localIndex iter_face=0; iter_face < numFacesPerCell; iter_face++ )
+      {
+        for( localIndex iter_node=0; iter_node < numInternalNodesPerFace; iter_node++ )
+        {
+          localIndex q1 = iter_node % numInternalNodesPerEdge;
+          localIndex q2 = ( iter_node / numInternalNodesPerEdge ) % numInternalNodesPerEdge;
+          localIndex nodeIdxInMap = numVerticesPerCell + numEdgesPerCell * numInternalNodesPerEdge + iter_face * numInternalNodesPerFace + iter_node;
+          localIndex face = elemsToFaces[iter_elem][iter_face];
+          elemToNodeMapWork[ nodeIdxInMap ] = faceToNodeMapNew[face][(q2 + 1) * numNodesPerEdge + (q1 + 1 )];
+          nodeIDs[ createNodeKey( faceToNodeMapNew[ face ][ 0 ], faceToNodeMapNew[ face ][ numNodesPerEdge - 1 ],
+                                  faceToNodeMapNew[ face ][ numNodesPerFace - numNodesPerEdge ], faceToNodeMapNew[ face ][ numNodesPerFace- 1 ], q1 + 1, q2 + 1, order ) ] = nodeIdxInMap;
+        }
+      }
+      for( localIndex iter_node=0; iter_node < numInternalNodesPerCell; iter_node++ )
+      {
+        localIndex q1 = iter_node % numInternalNodesPerEdge;
+        localIndex q2 = ( iter_node / numInternalNodesPerEdge ) % numInternalNodesPerEdge;
+        localIndex q3 = ( iter_node / numInternalNodesPerEdge ) / numInternalNodesPerEdge;
+        real64 alpha = ( glCoords[ q1 ] + 1.0 ) / 2.0;
+        real64 beta = ( glCoords[ q2 ] + 1.0 ) / 2.0;
+        real64 gamma = ( glCoords[ q3 ] + 1.0 ) / 2.0;
+
+        localIndex nodeLocalID = localNodeOffset + iter_elem * numInternalNodesPerCell + iter_node;
+        elemsToNodesNew[ iter_elem ][ (q3 + 1) * numNodesPerFace + (q2 + 1) * numNodesPerEdge + (q1 + 1) ] = nodeLocalID;
+        nodeLocalToGlobalNew[ nodeLocalID ] = globalNodeOffset + elementLocalToGlobal[ iter_elem ] * numInternalNodesPerCell + iter_node;
+        trilinearInterp( alpha, beta, gamma, refPosSrc, elemVertID, refPosNew, nodeLocalID );
+
+      }
+      // reorder map
+      for( localIndex q = 0; q < numNodesPerCell; q++ )
+      {
+        localIndex q1 = q % numNodesPerEdge;
+        localIndex q2 = ( q / numNodesPerEdge ) % numNodesPerEdge;
+        localIndex q3 = ( q / numNodesPerEdge ) / numNodesPerEdge;
+        if( q1 == 0  || q1 == numNodesPerEdge - 1 || q2 == 0 || q2 == numNodesPerEdge - 1 || q3 == 0 || q3 == numNodesPerEdge - 1 )
+        {
+          elemsToNodesNew[ iter_elem ][ q ] = elemToNodeMapWork[
+            nodeIDs[ createNodeKey( elemVertID, q1, q2, q3, order ) ] ];
+        }
+      }
+    } );
+    localNodeOffset += numCellElements;
+  } );
+}
+
+} // namespace geos

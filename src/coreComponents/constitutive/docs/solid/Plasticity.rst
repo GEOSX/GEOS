@@ -60,7 +60,7 @@ Stress and strain tensors can then be recomposed from the invariants as:
 
 in which :math:`\hat{\boldsymbol{n}} = \boldsymbol{e}/\|\boldsymbol{e}\|`.
 
-The following two-invariant models are currently implemented in GEOSX:
+The following two-invariant models are currently implemented in GEOS:
 
   - :ref:`DruckerPrager <DruckerPrager>`
 

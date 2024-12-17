@@ -1,5 +1,5 @@
-build-*
-install-*
+/build*/
+/install*/
 .cproject
 .project
 .pydevproject
@@ -9,16 +9,20 @@ install-*
 *.swo
 *.swn
 *.nfs*
-*.vscode*
-*.devcontainer*
+*.vscode/*.json
+*.vscode-codespaces*
 *.out
 *.core
 *.DS_Store
-/build/
 /Default/
 /debugTests/
 /Debug/
 uberenv_libs
 spack-*.txt
+/src/docs/sphinx/datastructure
 *~
 __pycache__
+
+# ignore all folders except the template one
+/src/externalComponents/*
+!/src/externalComponents/newComponentTemplate/

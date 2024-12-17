@@ -2,10 +2,11 @@
  * ------------------------------------------------------------------------------------------------------------
  * SPDX-License-Identifier: LGPL-2.1-only
  *
- * Copyright (c) 2018-2020 Lawrence Livermore National Security LLC
- * Copyright (c) 2018-2020 The Board of Trustees of the Leland Stanford Junior University
- * Copyright (c) 2018-2020 TotalEnergies
- * Copyright (c) 2019-     GEOSX Contributors
+ * Copyright (c) 2016-2024 Lawrence Livermore National Security LLC
+ * Copyright (c) 2018-2024 TotalEnergies
+ * Copyright (c) 2018-2024 The Board of Trustees of the Leland Stanford Junior University
+ * Copyright (c) 2023-2024 Chevron
+ * Copyright (c) 2019-     GEOS/GEOSX Contributors
  * All rights reserved
  *
  * See top level LICENSE, COPYRIGHT, CONTRIBUTORS, NOTICE, and ACKNOWLEDGEMENTS files for details.
@@ -16,13 +17,13 @@
  * @file BlockVectorWrapper.hpp
  */
 
-#ifndef GEOSX_LINEARALGEBRA_UTILITIES_BLOCKVECTORWRAPPER_HPP_
-#define GEOSX_LINEARALGEBRA_UTILITIES_BLOCKVECTORWRAPPER_HPP_
+#ifndef GEOS_LINEARALGEBRA_UTILITIES_BLOCKVECTORWRAPPER_HPP_
+#define GEOS_LINEARALGEBRA_UTILITIES_BLOCKVECTORWRAPPER_HPP_
 
 #include "linearAlgebra/utilities/BlockVectorView.hpp"
 #include "common/common.hpp"
 
-namespace geosx
+namespace geos
 {
 
 /**
@@ -73,12 +74,12 @@ public:
    */
   void set( localIndex const blockIndex, VECTOR & vec )
   {
-    GEOSX_LAI_ASSERT_GE( blockIndex, 0 );
-    GEOSX_LAI_ASSERT_GT( this->blockSize(), blockIndex );
+    GEOS_LAI_ASSERT_GE( blockIndex, 0 );
+    GEOS_LAI_ASSERT_GT( this->blockSize(), blockIndex );
     this->setPointer( blockIndex, &vec );
   }
 };
 
-} //namespace geosx
+} //namespace geos
 
-#endif //GEOSX_LINEARALGEBRA_UTILITIES_BLOCKVECTORWRAPPER_HPP_
+#endif //GEOS_LINEARALGEBRA_UTILITIES_BLOCKVECTORWRAPPER_HPP_

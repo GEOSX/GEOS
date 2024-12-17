@@ -1,10 +1,10 @@
 .. _InstallWin:
 
-[Unsupported] Installing GEOSX on Windows machines using Docker
+[Best effort] Installing GEOS on Windows machines using Docker
 =================================================================
 
-In this section, we will install GEOSX on a Windows machine using a ``Docker`` container with a precompiled version of
-GEOSX's third party libraries (TPL). These steps are an adaptation of `ref:UsingDocker` for the Windows environment.
+In this section, we will install GEOS on a Windows machine using a ``Docker`` container with a precompiled version of
+GEOS's third party libraries (TPL). These steps are an adaptation of `ref:UsingDocker` for the Windows environment.
 In the following sections, we will be using *Ubuntu* based image as an example.
 
 1. Install *Docker Desktop*
@@ -71,8 +71,8 @@ Let us edit the ``Dockerfile``, which is the declarative file for out container:
 .. literalinclude:: Dockerfile-remote-dev.example
    :linenos:
 
-This file enriches a base image already containing the GEOSX's TPL as well as extra utils, such as ``cmake`` and preparing for ssh connexion.
-In the end, we will be able to run it in a detached mode, and connect to it to run and develop in GEOSX.
+This file enriches a base image already containing the GEOS's TPL as well as extra utils, such as ``cmake`` and preparing for ssh connexion.
+In the end, we will be able to run it in a detached mode, and connect to it to run and develop in GEOS.
 
 There are two things you may have noticed reading through the ``Dockerfile`` :
 
@@ -81,13 +81,13 @@ There are two things you may have noticed reading through the ``Dockerfile`` :
 
 .. code:: shell
 
-    PS> $env:VERSION='164-677'
-    PS> $env:IMG='ubuntu18.04-gcc8'
+    PS> $env:VERSION='224-965'
+    PS> $env:IMG='ubuntu20.04-gcc9'
     PS> $env:REMOTE_DEV_IMG="remote-dev-${env:IMG}"
 
 
 Please note the preposition of ``env:`` in the windows formalisme. The ``${ORG}`` variable will be hard-coded as ``geosx``. The last variable will be use
-as the image name. ``164-677`` refers to a specific version of the TPLs which may not be up to date. Please refer to :ref:`Continuous_Integration_process` for further info.
+as the image name. ``224-965`` refers to a specific version of the TPLs which may not be up to date. Please refer to :ref:`Continuous_Integration_process` for further info.
 
 - You'll need to generate a ssh-key to be able to access the container without the need for defining a password. This can be done from the *PowerShell*,
 
@@ -110,7 +110,7 @@ The preliminary tasks are now done. Let us build the image that will be containe
 .. code:: shell
 
     PS> cd [path-to-dockerfile-folder]/
-    PS > docker build --build-arg ORG=geosx --build-arg IMG=${env:IMG} --build-arg VERSION=${env:VERSION} -t ${env:REMOTE_DEV_IMG}:${env:VERSION} -f Dockerfile
+    PS > docker build --build-arg ORG=geosx --build-arg IMG=${env:IMG} --build-arg VERSION=${env:VERSION} -t ${env:REMOTE_DEV_IMG}:${env:VERSION} -f Dockerfile .
 
 As described above, we are passing our environment variables in the building stage, which offer the flexibility of changing the version or image by a simple redefinition.
 A log updating or pulling the different layers should be displayed afterwards and on the last line the *image id*. We can check that the image is created using ``PowerShell`` CLI:
@@ -130,8 +130,8 @@ Now that we have the image build, let us run a container from,
 
     PS > docker run --cap-add=SYS_PTRACE  -d --name ${env:REMOTE_DEV_IMG}-${env:VERSION} -p 64000:22 --mount 'type=bind,source=D:/install_geosx_docker/,target=/app' ${env:REMOTE_DEV_IMG}:${env:VERSION}
 
-Note that in addition to the detached flag (*-d*) and the name tage (*--name*), we provide ``Docker`` with the port the container should be associated to
-communicate with ssh port 22, as well as a binding between a host mount point (*D:/install_geosx_docker/*) and a container mount point (*/app*) to have a peristent storage
+Note that in addition to the detached flag (``-d``) and the name tage (``--name``), we provide ``Docker`` with the port the container should be associated to
+communicate with ssh port 22, as well as a binding between a host mount point (``D:/install_geosx_docker/``) and a container mount point (``/app``) to have a peristent storage
 for our development/geosx builds. More details on the `--mount options <https://docs.docker.com/storage/bind-mounts/>`_
 
 A similar step can be achieved using the *Docker Desktop* GUI in the image tabs, clicking on the *run* button and filling the same information in the interface,
@@ -145,7 +145,7 @@ Coming back to our ``PowerShell`` terminal, we can check that our container is r
 
     PS > docker ps -a
     CONTAINER ID   IMAGE                                 COMMAND               CREATED                  STATUS          PORTS                                     NAMES
-    1efffac66c4c   remote-dev-ubuntu18.04-gcc8:156-642   "/usr/sbin/sshd -D"   Less than a second ago   Up 18 seconds   0.0.0.0:64000->22/tcp, :::64000->22/tcp   remote-dev-ubuntu18.04-gcc8-156-642
+    1efffac66c4c   remote-dev-ubuntu20.04-gcc9:224-965   "/usr/sbin/sshd -D"   Less than a second ago   Up 18 seconds   0.0.0.0:64000->22/tcp, :::64000->22/tcp   remote-dev-ubuntu20.04-gcc9-224-965
 
     PS > ssh root@localhost -p 64000
     Enter passphrase for key 'C:\***********/.ssh/id_rsa':
@@ -193,11 +193,11 @@ Once the code is configured and compiled, let us check the status of the build,
 
     root@b105f9ead860:~# cd [path-to-build]/ && ./bin/geosx --help
 
-Trying to launch a case using *mpirun*, you might get the following warning
+Trying to launch a case using ``mpirun``, you might get the following warning
 
 .. code:: console
 
-    root@b105f9ead860:/tmp# mpirun -np 4 /app/code/GEOSX/build-environment-debug/bin/geosx -i [geosx-case].xml -x 4 -y1 -z1
+    root@b105f9ead860:/tmp# mpirun -np 4 /app/code/GEOS/build-environment-debug/bin/geosx -i [geosx-case].xml -x 4 -y1 -z1
     --------------------------------------------------------------------------
     mpirun has detected an attempt to run as root.
     Running at root is *strongly* discouraged as any mistake (e.g., in
@@ -217,7 +217,7 @@ A possible workaround is to create a new user account and a run folder from this
     root@b105f9ead860:~# su runner
     runner@b105f9ead860:/root$ mkdir -p /tmp/geosx && cd /tmp/geosx/
     runner@b105f9ead860:/tmp/geosx$ cp [path-to-case]/[geosx-case].xml .
-    runner@b105f9ead860:/tmp/geosx$ ${MPIEXEC} -np 4 /app/code/GEOSX/build-environment-debug/bin/geosx -i [geosx-case].xml -x 4 -y 1 -z 1
+    runner@b105f9ead860:/tmp/geosx$ ${MPIEXEC} -np 4 /app/code/GEOS/build-environment-debug/bin/geosx -i [geosx-case].xml -x 4 -y 1 -z 1
 
 
 .. GPU ?? https://docs.docker.com/desktop/windows/wsl/#gpu-support

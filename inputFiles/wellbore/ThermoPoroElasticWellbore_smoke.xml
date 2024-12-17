@@ -1,0 +1,92 @@
+<?xml version="1.0" ?>
+
+<Problem>
+  <Included>
+    <File name="./ThermoPoroElasticWellbore_base.xml" />
+  </Included>
+
+  <!-- SPHINX_WellboreMesh -->
+  <Mesh>
+    <InternalWellbore
+      name="mesh1"
+      elementTypes="{ C3D8 }"
+      radius="{ 0.1, 5.0 }"
+      theta="{ 0, 90 }"
+      zCoords="{ 0, 0.1 }"
+      nr="{ 4 }"
+      nt="{ 4 }"
+      nz="{ 1 }"
+      trajectory="{ { 0.0, 0.0, 0.0 },
+                    { 0.0, 0.0, 0.1 } }"
+      autoSpaceRadialElems="{ 1 }"
+      cellBlockNames="{ rock }"
+      />
+  </Mesh>
+  <!-- SPHINX_WellboreMeshEnd -->
+
+  <Events
+    maxTime="12">
+
+    <PeriodicEvent
+      name="stressHistoryCollection_rock"
+      endTime="12"
+      forceDt="12"
+      target="/Tasks/stressCollection_rock"/>
+    <PeriodicEvent
+      name="stressTimeHistoryOutput_rock"
+      endTime="12"
+      forceDt="12"
+      target="/Outputs/stressHistoryOutput_rock"/>
+
+    <PeriodicEvent
+      name="temperatureHistoryCollection_rock"
+      endTime="12"
+      forceDt="12"
+      target="/Tasks/temperatureCollection_rock"/>
+    <PeriodicEvent
+      name="temperatureTimeHistoryOutput_rock"
+      endTime="12"
+      forceDt="12"
+      target="/Outputs/temperatureHistoryOutput_rock"/>
+
+    <PeriodicEvent
+      name="pressureHistoryCollection_rock"
+      endTime="12"
+      forceDt="12"
+      target="/Tasks/pressureCollection_rock"/>
+    <PeriodicEvent
+      name="pressureTimeHistoryOutput_rock"
+      endTime="12"
+      forceDt="12"
+      target="/Outputs/pressureHistoryOutput_rock"/>
+
+    <!-- SPHINX_DisplacementPeriodicEvent -->
+    <PeriodicEvent
+      name="displacementHistoryCollection"
+      endTime="12"
+      forceDt="12"
+      target="/Tasks/displacementCollection"/>
+    <PeriodicEvent
+      name="displacementTimeHistoryOutput"
+      endTime="12"
+      forceDt="12"
+      target="/Outputs/displacementHistoryOutput"/>
+    <!-- SPHINX_DisplacementPeriodicEventEnd -->
+
+    <PeriodicEvent
+      name="outputs"
+      timeFrequency="12"
+      target="/Outputs/vtkOutput"/>
+
+    <PeriodicEvent
+      name="solverApplications"
+      maxEventDt="6"
+      target="/Solvers/THMSolver"/>
+
+    <PeriodicEvent
+      name="restarts"
+      timeFrequency="6"
+      target="/Outputs/restartOutput"/>
+  </Events>
+
+</Problem>

@@ -2,10 +2,11 @@
  * ------------------------------------------------------------------------------------------------------------
  * SPDX-License-Identifier: LGPL-2.1-only
  *
- * Copyright (c) 2018-2020 Lawrence Livermore National Security LLC
- * Copyright (c) 2018-2020 The Board of Trustees of the Leland Stanford Junior University
- * Copyright (c) 2018-2020 TotalEnergies
- * Copyright (c) 2019-     GEOSX Contributors
+ * Copyright (c) 2016-2024 Lawrence Livermore National Security LLC
+ * Copyright (c) 2018-2024 TotalEnergies
+ * Copyright (c) 2018-2024 The Board of Trustees of the Leland Stanford Junior University
+ * Copyright (c) 2023-2024 Chevron
+ * Copyright (c) 2019-     GEOS/GEOSX Contributors
  * All rights reserved
  *
  * See top level LICENSE, COPYRIGHT, CONTRIBUTORS, NOTICE, and ACKNOWLEDGEMENTS files for details.
@@ -19,7 +20,7 @@
 #include "CapillaryPressureBase.hpp"
 #include "CapillaryPressureFields.hpp"
 
-namespace geosx
+namespace geos
 {
 
 using namespace dataRepository;
@@ -32,6 +33,7 @@ CapillaryPressureBase::CapillaryPressureBase( string const & name,
   : ConstitutiveBase( name, parent )
 {
   registerWrapper( viewKeyStruct::phaseNamesString(), &m_phaseNames ).
+    setRTTypeName( rtTypes::CustomTypes::groupNameRefArray ).
     setSizedFromParent( 0 ).
     setInputFlag( InputFlags::REQUIRED ).
     setDescription( "List of fluid phases" );
@@ -47,17 +49,17 @@ CapillaryPressureBase::CapillaryPressureBase( string const & name,
 
 }
 
-void CapillaryPressureBase::postProcessInput()
+void CapillaryPressureBase::postInputInitialization()
 {
-  ConstitutiveBase::postProcessInput();
+  ConstitutiveBase::postInputInitialization();
 
   integer const numPhases = numFluidPhases();
-  GEOSX_THROW_IF_LT_MSG( numPhases, 2,
-                         GEOSX_FMT( "{}: invalid number of phases", getFullName() ),
-                         InputError );
-  GEOSX_THROW_IF_GT_MSG( numPhases, MAX_NUM_PHASES,
-                         GEOSX_FMT( "{}: invalid number of phases", getFullName() ),
-                         InputError );
+  GEOS_THROW_IF_LT_MSG( numPhases, 2,
+                        GEOS_FMT( "{}: invalid number of phases", getFullName() ),
+                        InputError );
+  GEOS_THROW_IF_GT_MSG( numPhases, MAX_NUM_PHASES,
+                        GEOS_FMT( "{}: invalid number of phases", getFullName() ),
+                        InputError );
 
   m_phaseTypes.resize( numPhases );
   m_phaseOrder.resizeDefault( MAX_NUM_PHASES, -1 );
@@ -110,4 +112,4 @@ void CapillaryPressureBase::allocateConstitutiveData( dataRepository::Group & pa
 
 } // namespace constitutive
 
-} // namespace geosx
+} // namespace geos

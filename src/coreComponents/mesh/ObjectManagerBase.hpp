@@ -2,10 +2,11 @@
  * ------------------------------------------------------------------------------------------------------------
  * SPDX-License-Identifier: LGPL-2.1-only
  *
- * Copyright (c) 2018-2020 Lawrence Livermore National Security LLC
- * Copyright (c) 2018-2020 The Board of Trustees of the Leland Stanford Junior University
- * Copyright (c) 2018-2020 TotalEnergies
- * Copyright (c) 2019-     GEOSX Contributors
+ * Copyright (c) 2016-2024 Lawrence Livermore National Security LLC
+ * Copyright (c) 2018-2024 TotalEnergies
+ * Copyright (c) 2018-2024 The Board of Trustees of the Leland Stanford Junior University
+ * Copyright (c) 2023-2024 Chevron
+ * Copyright (c) 2019-     GEOS/GEOSX Contributors
  * All rights reserved
  *
  * See top level LICENSE, COPYRIGHT, CONTRIBUTORS, NOTICE, and ACKNOWLEDGEMENTS files for details.
@@ -16,14 +17,14 @@
  * @file ObjectManagerBase.hpp
  */
 
-#ifndef GEOSX_MESH_OBJECTMANAGERBASE_HPP_
-#define GEOSX_MESH_OBJECTMANAGERBASE_HPP_
+#ifndef GEOS_MESH_OBJECTMANAGERBASE_HPP_
+#define GEOS_MESH_OBJECTMANAGERBASE_HPP_
 
 #include "dataRepository/Group.hpp"
 #include "common/TimingMacros.hpp"
 #include "mpiCommunications/NeighborData.hpp"
 
-namespace geosx
+namespace geos
 {
 
 /**
@@ -90,7 +91,8 @@ public:
                              arrayView1d< localIndex > & packList,
                              integer const recursive,
                              bool onDevice,
-                             parallelDeviceEvents & events ) override;
+                             parallelDeviceEvents & events,
+                             MPI_Op op=MPI_REPLACE ) override;
 
   /**
    * @brief Packs the elements of each set that actually are in @p packList.
@@ -150,7 +152,7 @@ public:
    */
   virtual localIndex packUpDownMapsSize( arrayView1d< localIndex const > const & packList ) const
   {
-    GEOSX_UNUSED_VAR( packList );
+    GEOS_UNUSED_VAR( packList );
     return 0;
   }
 
@@ -163,8 +165,8 @@ public:
   virtual localIndex packUpDownMaps( buffer_unit_type * & buffer,
                                      arrayView1d< localIndex const > const & packList ) const
   {
-    GEOSX_UNUSED_VAR( buffer );
-    GEOSX_UNUSED_VAR( packList );
+    GEOS_UNUSED_VAR( buffer );
+    GEOS_UNUSED_VAR( packList );
     return 0;
   }
 
@@ -181,10 +183,10 @@ public:
                                        bool const overwriteUpMaps,
                                        bool const overwriteDownMaps )
   {
-    GEOSX_UNUSED_VAR( buffer );
-    GEOSX_UNUSED_VAR( packList );
-    GEOSX_UNUSED_VAR( overwriteUpMaps );
-    GEOSX_UNUSED_VAR( overwriteDownMaps );
+    GEOS_UNUSED_VAR( buffer );
+    GEOS_UNUSED_VAR( packList );
+    GEOS_UNUSED_VAR( overwriteUpMaps );
+    GEOS_UNUSED_VAR( overwriteDownMaps );
     return 0;
   }
 
@@ -288,7 +290,7 @@ public:
   void moveSets( LvArray::MemorySpace const targetSpace );
 
   /**
-   * @copydoc geosx::dataRepository::Group::resize(indexType const)
+   * @copydoc geos::dataRepository::Group::resize(indexType const)
    * @return Always 0, whatever the new size is.
    */
   localIndex resize( localIndex const newSize,
@@ -356,7 +358,7 @@ public:
   virtual ArrayOfSets< globalIndex >
   extractMapFromObjectForAssignGlobalIndexNumbers( ObjectManagerBase const & nodeManager )
   {
-    GEOSX_UNUSED_VAR( nodeManager );
+    GEOS_UNUSED_VAR( nodeManager );
     return {};
   }
 
@@ -422,6 +424,12 @@ public:
    * @param destination The destination index.
    */
   void copyObject( localIndex const source, localIndex const destination );
+
+  /**
+   * @brief Erase object from this object manager
+   * @param indicesToErase The local indices of the object to be erased.
+   */
+  void eraseObject( std::set< localIndex > const & indicesToErase );
 
   /**
    * @brief Computes the maximum global index allong all the MPI ranks.
@@ -616,7 +624,7 @@ public:
    * @return A const reference to a view to const field.
    */
   template< typename FIELD_TRAIT >
-  GEOSX_DECLTYPE_AUTO_RETURN getField() const
+  GEOS_DECLTYPE_AUTO_RETURN getField() const
   {
     return this->getWrapper< typename FIELD_TRAIT::type >( FIELD_TRAIT::key() ).reference();
   }
@@ -628,7 +636,7 @@ public:
    * @return A reference to the field.
    */
   template< typename FIELD_TRAIT >
-  GEOSX_DECLTYPE_AUTO_RETURN getField()
+  GEOS_DECLTYPE_AUTO_RETURN getField()
   {
     return this->getWrapper< typename FIELD_TRAIT::type >( FIELD_TRAIT::key() ).reference();
   }
@@ -676,6 +684,12 @@ public:
 
     /// @return String key to the local->global map
     static constexpr char const * localToGlobalMapString() { return "localToGlobalMap"; }
+
+    /// @return String key for m_localMaxGlobalIndexString
+    static constexpr char const * localMaxGlobalIndexString() { return "localMaxGlobalIndex"; }
+
+    /// @return String key for m_maxGlobalIndexString
+    static constexpr char const * maxGlobalIndexString() { return "maxGlobalIndex"; }
 
     /// View key to external set
     dataRepository::ViewKey externalSet = { externalSetString() };
@@ -901,8 +915,9 @@ public:
 
   /**
    * @brief Get the domain boundary indicator
-   * @return The information in an array of integers, mainly treated as booleans
-   *         (1 meaning the "index" is on the boundary).
+   * @return The information in an array of integers, mainly treated as booleans.
+   * @note Domain boundary is to be understood as the boundary of the domain <em>on the current rank</em>,
+   * not the whole physical domain which spans all the ranks.
    */
   array1d< integer > & getDomainBoundaryIndicator()
   {
@@ -913,6 +928,15 @@ public:
   arrayView1d< integer const > getDomainBoundaryIndicator() const
   {
     return m_domainBoundaryIndicator.toViewConst();
+  }
+
+  /**
+   * @brief Function to output connectivity in order to assist debugging issues
+   *        with object connectivity.
+   */
+  virtual void outputObjectConnectivity() const
+  {
+    GEOS_ERROR( "Called outputObjectConnectivity in ObjectManagerBase. Function should be implemented." );
   }
 
 protected:
@@ -965,17 +989,15 @@ void ObjectManagerBase::fixUpDownMaps( TYPE_RELATION & relation,
                                        map< localIndex, array1d< globalIndex > > & unmappedIndices,
                                        bool const )
 {
-  GEOSX_MARK_FUNCTION;
+  GEOS_MARK_FUNCTION;
 
   bool allValuesMapped = true;
   unordered_map< globalIndex, localIndex > const & globalToLocal = relation.relatedObjectGlobalToLocal();
-  for( map< localIndex, array1d< globalIndex > >::iterator iter = unmappedIndices.begin();
-       iter != unmappedIndices.end();
-       ++iter )
+  for( auto & unmappedIndex: unmappedIndices )
   {
-    localIndex const li = iter->first;
-    array1d< globalIndex > const & globalIndices = iter->second;
-    for( localIndex a=0; a<globalIndices.size(); ++a )
+    localIndex const li = unmappedIndex.first;
+    array1d< globalIndex > const & globalIndices = unmappedIndex.second;
+    for( localIndex a = 0; a < globalIndices.size(); ++a )
     {
       if( globalIndices[a] != unmappedLocalIndexValue )
       {
@@ -988,10 +1010,13 @@ void ObjectManagerBase::fixUpDownMaps( TYPE_RELATION & relation,
           allValuesMapped = false;
         }
       }
-      GEOSX_ERROR_IF( relation[li][a]==unmappedLocalIndexValue, "Index not set" );
+      // temporarily disabled this check to allow for the case where the index is not set
+      // this entire fixUpDownMaps will be removed in a future PR as the unpacking is modified
+      // s.t. there are no invalid unpacked values that are not expected.
+      //GEOS_ERROR_IF( relation[li][a] == unmappedLocalIndexValue, "Index not set" );
     }
   }
-  GEOSX_ERROR_IF( !allValuesMapped, "some values of unmappedIndices were not used" );
+  GEOS_ERROR_IF( !allValuesMapped, "some values of unmappedIndices were not used" );
   unmappedIndices.clear();
 }
 
@@ -1001,7 +1026,7 @@ void ObjectManagerBase::fixUpDownMaps( TYPE_RELATION & relation,
                                        map< localIndex, SortedArray< globalIndex > > & unmappedIndices,
                                        bool const clearIfUnmapped )
 {
-  GEOSX_MARK_FUNCTION;
+  GEOS_MARK_FUNCTION;
 
   unordered_map< globalIndex, localIndex > const & globalToLocal = relation.RelatedObjectGlobalToLocal();
   for( map< localIndex, SortedArray< globalIndex > >::iterator iter = unmappedIndices.begin();
@@ -1038,7 +1063,7 @@ void ObjectManagerBase::fixUpDownMaps( ArrayOfSets< localIndex > & relation,
                                        map< localIndex, SortedArray< globalIndex > > & unmappedIndices,
                                        bool const clearIfUnmapped )
 {
-  GEOSX_MARK_FUNCTION;
+  GEOS_MARK_FUNCTION;
 
   for( map< localIndex, SortedArray< globalIndex > >::iterator iter = unmappedIndices.begin();
        iter != unmappedIndices.end();
@@ -1068,12 +1093,12 @@ void ObjectManagerBase::fixUpDownMaps( ArrayOfSets< localIndex > & relation,
   unmappedIndices.clear();
 }
 
-} /* namespace geosx */
+} /* namespace geos */
 
 
 /**
  * @brief Alias to ObjectManagerBase
  */
-typedef geosx::ObjectManagerBase ObjectDataStructureBaseT;
+typedef geos::ObjectManagerBase ObjectDataStructureBaseT;
 
-#endif /* GEOSX_MESH_OBJECTMANAGERBASE_HPP_ */
+#endif /* GEOS_MESH_OBJECTMANAGERBASE_HPP_ */

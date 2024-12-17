@@ -2,10 +2,11 @@
  * ------------------------------------------------------------------------------------------------------------
  * SPDX-License-Identifier: LGPL-2.1-only
  *
- * Copyright (c) 2018-2020 Lawrence Livermore National Security LLC
- * Copyright (c) 2018-2020 The Board of Trustees of the Leland Stanford Junior University
- * Copyright (c) 2018-2020 TotalEnergies
- * Copyright (c) 2019-     GEOSX Contributors
+ * Copyright (c) 2016-2024 Lawrence Livermore National Security LLC
+ * Copyright (c) 2018-2024 TotalEnergies
+ * Copyright (c) 2018-2024 The Board of Trustees of the Leland Stanford Junior University
+ * Copyright (c) 2023-2024 Chevron
+ * Copyright (c) 2019-     GEOS/GEOSX Contributors
  * All rights reserved
  *
  * See top level LICENSE, COPYRIGHT, CONTRIBUTORS, NOTICE, and ACKNOWLEDGEMENTS files for details.
@@ -16,15 +17,15 @@
  * @file PerforationData.hpp
  */
 
-#ifndef GEOSX_MESH_PERFORATIONDATA_HPP
-#define GEOSX_MESH_PERFORATIONDATA_HPP
+#ifndef GEOS_MESH_PERFORATIONDATA_HPP
+#define GEOS_MESH_PERFORATIONDATA_HPP
 
 #include "dataRepository/Group.hpp"
 #include "mesh/ObjectManagerBase.hpp"
 #include "mesh/ToElementRelation.hpp"
-#include "mesh/generators/InternalWellGenerator.hpp"
+#include "mesh/generators/LineBlockABC.hpp"
 
-namespace geosx
+namespace geos
 {
 
 class DomainPartition;
@@ -110,7 +111,7 @@ public:
 
   /**
    * @brief Set the global number of perforations used for well initialization.
-   * @param[in] nPerfs global number of perforations (obtained from InternalWellGenerator)
+   * @param[in] nPerfs global number of perforations (obtained from LineBlockABC)
    */
   void setNumPerforationsGlobal( globalIndex nPerfs ) { m_numPerforationsGlobal = nPerfs; }
 
@@ -149,6 +150,20 @@ public:
    */
   arrayView1d< localIndex const > getWellElements() const { return m_wellElementIndex; }
 
+  /**
+   * @brief Get perforation-to-reservoir-element connectivity.
+   * @return list of global reservoir element index connected to each perforation
+   */
+  arrayView1d< globalIndex > getReservoirElementGlobalIndex() { return m_reservoirElementGlobalIndex; }
+
+
+
+  /**
+   * @brief Provide an immutable accessor to a const perforation-to-reservoir-element connectivity.
+   * @return list of well element index connected to each perforation
+   */
+  arrayView1d< globalIndex const > getReservoirElementGlobalIndex() const { return m_reservoirElementGlobalIndex; }
+
 
   /**
    * @brief Get perforation locations.
@@ -177,6 +192,21 @@ public:
    */
   arrayView1d< real64 > getWellTransmissibility() { return m_wellTransmissibility; }
 
+
+  /**
+   * @brief Provide an immutable accessor to a const perforation skin factor array.
+   * @return list of perforation well skin factors
+   */
+  arrayView1d< real64 const > getWellSkinFactor() const { return m_wellSkinFactor; }
+
+
+  /**
+   * @brief Get perforation well skin factors.
+   * @return list of perforation well skin factors
+   */
+  arrayView1d< real64 > getWellSkinFactor() { return m_wellSkinFactor; }
+
+
   ///@}
 
   /**
@@ -203,11 +233,11 @@ public:
 
   /**
    * @brief Connect each perforation to a local wellbore element.
-   * @param[in] wellGeometry InternalWellGenerator containing the global well topology
+   * @param[in] lineBlock LineBlockABC containing the global well topology
    * @param[in] globalToLocalWellElementMap  global-to-local map of wellbore elements
    * @param[in] elemOffsetGlobal the offset of the first global well element ( = offset of last global mesh elem + 1 )
    */
-  void connectToWellElements( InternalWellGenerator const & wellGeometry,
+  void connectToWellElements( LineBlockABC const & lineBlock,
                               unordered_map< globalIndex, localIndex > const & globalToLocalWellElementMap,
                               globalIndex elemOffsetGlobal );
 
@@ -259,14 +289,20 @@ private:
   /// Indices of the well elements to which perforations are attached
   array1d< localIndex > m_wellElementIndex;
 
+  /// Global indices of reservoir cell containing perforation
+  array1d< globalIndex > m_reservoirElementGlobalIndex;
+
   /// Location of the perforations
   array2d< real64 > m_location;
 
   /// Well transmissibility at the perforations
   array1d< real64 > m_wellTransmissibility;
 
+  /// Well skin factor at the perforations
+  array1d< real64 > m_wellSkinFactor;
+
 };
 
-} //namespace geosx
+} //namespace geos
 
-#endif //GEOSX_MESH_PERFORATIONDATA_HPP
+#endif //GEOS_MESH_PERFORATIONDATA_HPP

@@ -15,7 +15,7 @@ Using a simplified miscible two-phase setup, this test case illustrates the mode
 (with gas relative permeability hysteresis) in CO2-brine systems.
 
 Our goal is to review the different sections of the XML file reproducing the benchmark configuration
-and to demonstrate that the GEOSX results (i.e., mass of CO2 dissolved and mobile for both hysteretic and non-hysteretic configurations) are in agreement with the reference
+and to demonstrate that the GEOS results (i.e., mass of CO2 dissolved and mobile for both hysteretic and non-hysteretic configurations) are in agreement with the reference
 results published in `(Class et al., 2009) <https://link.springer.com/article/10.1007/s10596-009-9146-x>`__ Problems 3.1 and 3.2.
 
 
@@ -25,7 +25,7 @@ This benchmark test is based on the XML file located below:
 
 .. code-block:: console
 
-  ../../../../../../../inputFiles/compositionalMultiphaseWell/benchmarks/Class09Pb3/class09_pb3_smoke.xml
+  ../../../../../../../inputFiles/compositionalMultiphaseWell/benchmarks/Class09Pb3/class09_pb3_smoke_3d.xml
   ../../../../../../../inputFiles/compositionalMultiphaseWell/benchmarks/Class09Pb3/class09_pb3_drainageOnly_iterative_base.xml
 
 ------------------------------------------------------------------------
@@ -37,7 +37,7 @@ presented in
 `(Class et al., 2009) <https://link.springer.com/article/10.1007/s10596-009-9146-x>`__.
 
 The setup is illustrated in the figure below.
-The mesh can be found in `GEOSXDATA <https://github.com/GEOSX/GEOSXDATA>`__ and
+The mesh can be found in `GEOSDATA <https://github.com/GEOS-DEV/GEOSDATA>`__ and
 was provided for the benchmark. It discretizes the widely-used `Johansen` reservoir,
 which consists in a tilted reservoir with a main fault.
 The model domain has the following dimensions: 9600 x 8900 x [90-140] m.
@@ -71,12 +71,12 @@ values over the cell.
 The structured mesh is generated using some helpers python scripts from the formatted Point/Cells list provided.
 It is then imported using ``meshImport``
 
-.. literalinclude:: ../../../../../../../inputFiles/compositionalMultiphaseWell/benchmarks/Class09Pb3/class09_pb3_smoke.xml
+.. literalinclude:: ../../../../../../../inputFiles/compositionalMultiphaseWell/benchmarks/Class09Pb3/class09_pb3_smoke_3d.xml
     :language: xml
     :start-after: <!-- SPHINX_MESH -->
     :end-before: <!-- SPHINX_MESH_END -->
 
-The central wellbore is discretized internally by GEOSX  (see :ref:`TutorialCO2FieldCase`).
+The central wellbore is discretized internally by GEOS  (see :ref:`TutorialCO2FieldCase`).
 It includes five segments with a perforation in each segment. It has its own region ``wellRegion`` and control labeled ``wellControls``
 defined and detailed respectively in **ElementRegions** and **Solvers** (see below).
 In the **ElementRegions** block,
@@ -94,7 +94,7 @@ All those regions define materials to be specified inside the **Constitutive** b
 Coupled solver
 ------------------------
 
-The simulation is performed by the GEOSX coupled solver for multiphase
+The simulation is performed by the GEOS coupled solver for multiphase
 flow and well defined in the XML block **CompositionalMultiphaseReservoir**:
 
 .. literalinclude:: ../../../../../../../inputFiles/compositionalMultiphaseWell/benchmarks/Class09Pb3/class09_pb3_drainageOnly_iterative_base.xml
@@ -232,11 +232,11 @@ the value of ``functionName``. In order to have those imposed on the boundary fa
 Outputing reservoir statistics
 ---------------------------------
 
-In order to output partitioning of CO2 mass, we use reservoir statistics implemented in GEOSX. This is done by defining a **Task**, with
+In order to output partitioning of CO2 mass, we use reservoir statistics implemented in GEOS. This is done by defining a **Task**, with
 ``flowSolverName`` pointing to the dedicated solver and ``computeRegionStatistics`` set to 1 to compute statistics by regions.
 The ``setNames`` field is set to 3 as it is its attribute tag in the input *vtu* mesh.
 
-.. literalinclude:: ../../../../../../../inputFiles/compositionalMultiphaseWell/benchmarks/Class09Pb3/class09_pb3_smoke.xml
+.. literalinclude:: ../../../../../../../inputFiles/compositionalMultiphaseWell/benchmarks/Class09Pb3/class09_pb3_smoke_3d.xml
     :language: xml
     :start-after: <!-- SPHINX_STATS -->
     :end-before: <!-- SPHINX_STATS_END -->
@@ -244,7 +244,7 @@ The ``setNames`` field is set to 3 as it is its attribute tag in the input *vtu*
 and an **Event** for this to occur recursively with a `forceDt` argument for the period over which statistics are output and
 `target` pointing towards the aforementioned **Task**.
 
-.. literalinclude:: ../../../../../../../inputFiles/compositionalMultiphaseWell/benchmarks/Class09Pb3/class09_pb3_smoke.xml
+.. literalinclude:: ../../../../../../../inputFiles/compositionalMultiphaseWell/benchmarks/Class09Pb3/class09_pb3_smoke_3d.xml
     :language: xml
     :start-after: <!-- SPHINX_STAT_EV -->
     :end-before: <!-- SPHINX_STAT_EV_END -->
@@ -292,7 +292,7 @@ We observe the importance of hysteresis modeling in CO2 plume migration. Indeed,
 the tail of the plume are switching from drainage to imbibition and the residual CO2 is trapped. This results in a slower migration
 and expansion of the plume.
 
-To validate the GEOSX results, we consider the metrics used in
+To validate the GEOS results, we consider the metrics used in
 `(Class et al., 2009) <https://link.springer.com/article/10.1007/s10596-009-9146-x>`__.
 The reporting values are the dissolved and gaseous CO2 with respect to time using only the drainage relative permeability and using 
 hysteretic relative permeabilities.
@@ -316,7 +316,7 @@ hysteretic relative permeabilities.
 
 We can see that at the end of the injection period the mass of CO2 in the gaseous phase stops increasing and starts
 decreasing due to dissolution of CO2 in the brine phase.
-These curves confirm the agreement between GEOSX and the results of `(Class et al., 2009) <https://link.springer.com/article/10.1007/s10596-009-9146-x>`__.
+These curves confirm the agreement between GEOS and the results of `(Class et al., 2009) <https://link.springer.com/article/10.1007/s10596-009-9146-x>`__.
 
 ------------------------------------------------------------------
 To go further
@@ -324,7 +324,7 @@ To go further
 
 **Feedback on this example**
 
-For any feedback on this example, please submit a `GitHub issue on the project's GitHub page <https://github.com/GEOSX/GEOSX/issues>`_.
+For any feedback on this example, please submit a `GitHub issue on the project's GitHub page <https://github.com/GEOS-DEV/GEOS/issues>`_.
 
 
 

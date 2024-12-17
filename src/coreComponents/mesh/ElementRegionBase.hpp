@@ -2,18 +2,19 @@
  * ------------------------------------------------------------------------------------------------------------
  * SPDX-License-Identifier: LGPL-2.1-only
  *
- * Copyright (c) 2018-2020 Lawrence Livermore National Security LLC
- * Copyright (c) 2018-2020 The Board of Trustees of the Leland Stanford Junior University
- * Copyright (c) 2018-2020 TotalEnergies
- * Copyright (c) 2019-     GEOSX Contributors
+ * Copyright (c) 2016-2024 Lawrence Livermore National Security LLC
+ * Copyright (c) 2018-2024 TotalEnergies
+ * Copyright (c) 2018-2024 The Board of Trustees of the Leland Stanford Junior University
+ * Copyright (c) 2023-2024 Chevron
+ * Copyright (c) 2019-     GEOS/GEOSX Contributors
  * All rights reserved
  *
  * See top level LICENSE, COPYRIGHT, CONTRIBUTORS, NOTICE, and ACKNOWLEDGEMENTS files for details.
  * ------------------------------------------------------------------------------------------------------------
  */
 
-#ifndef GEOSX_MESH_ELEMENTREGIONBASE_HPP
-#define GEOSX_MESH_ELEMENTREGIONBASE_HPP
+#ifndef GEOS_MESH_ELEMENTREGIONBASE_HPP
+#define GEOS_MESH_ELEMENTREGIONBASE_HPP
 
 #include "CellElementSubRegion.hpp"
 #include "FaceElementSubRegion.hpp"
@@ -21,7 +22,7 @@
 #include "mesh/ObjectManagerBase.hpp"
 #include "EmbeddedSurfaceSubRegion.hpp"
 
-namespace geosx
+namespace geos
 {
 
 class FaceManager;
@@ -102,7 +103,7 @@ public:
    * @brief Generate mesh.
    * @param blocks Cell or face blocks from where the mesh is extracted.
    */
-  virtual void generateMesh( Group & blocks ) = 0;
+  virtual void generateMesh( Group const & blocks ) = 0;
 
   ///@}
 
@@ -135,6 +136,7 @@ public:
    * @tparam KEY_TYPE The type of the key used to lookup the subregion.
    * @param key The key to the subregion.
    * @return A reference to the subregion
+   * @throw std::domain_error if the the requested sub-region doesn't exist.
    */
   template< typename SUBREGIONTYPE=ElementSubRegionBase, typename KEY_TYPE=void >
   SUBREGIONTYPE const & getSubRegion( KEY_TYPE const & key ) const
@@ -212,6 +214,20 @@ public:
    */
   template< typename CONSTITUTIVE_TYPE >
   string_array getConstitutiveNames() const;
+
+  /**
+   * @return the parent region of the given sub-region.
+   * @param subRegion the sub-region that we want the parent.
+   */
+  static ElementRegionBase & getParentRegion( ElementSubRegionBase & subRegion )
+  { return dynamicCast< ElementRegionBase & >( subRegion.getParent().getParent() ); }
+
+  /**
+   * @return the parent region of the given sub-region.
+   * @param subRegion the sub-region that we want the parent.
+   */
+  static ElementRegionBase const & getParentRegion( ElementSubRegionBase const & subRegion )
+  { return dynamicCast< ElementRegionBase const & >( subRegion.getParent().getParent() ); }
 
 
   ///@}
@@ -384,4 +400,4 @@ SUBREGION_TYPE & ElementRegionBase::createElementSubRegion( string const & name 
 
 
 
-#endif /* GEOSX_MESH_ELEMENTREGIONBASE_HPP */
+#endif /* GEOS_MESH_ELEMENTREGIONBASE_HPP */

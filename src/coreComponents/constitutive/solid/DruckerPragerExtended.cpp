@@ -2,11 +2,12 @@
  * ------------------------------------------------------------------------------------------------------------
  * SPDX-License-Identifier: LGPL-2.1-only
  *
- * Copyright (c) 2018-2019 Lawrence Livermore National Security LLC
- * Copyright (c) 2018-2019 The Board of Trustees of the Leland Stanford Junior University
- * Copyright (c) 2018-2019 TotalEnergies
- * Copyright (c) 2019-     GEOSX Contributors
- * All right reserved
+ * Copyright (c) 2016-2024 Lawrence Livermore National Security LLC
+ * Copyright (c) 2018-2024 TotalEnergies
+ * Copyright (c) 2018-2024 The Board of Trustees of the Leland Stanford Junior University
+ * Copyright (c) 2023-2024 Chevron
+ * Copyright (c) 2019-     GEOS/GEOSX Contributors
+ * All rights reserved
  *
  * See top level LICENSE, COPYRIGHT, CONTRIBUTORS, NOTICE, and ACKNOWLEDGEMENTS files for details.
  * ------------------------------------------------------------------------------------------------------------
@@ -18,7 +19,7 @@
 
 #include "DruckerPragerExtended.hpp"
 
-namespace geosx
+namespace geos
 {
 using namespace dataRepository;
 namespace constitutive
@@ -113,16 +114,22 @@ void DruckerPragerExtended::allocateConstitutiveData( dataRepository::Group & pa
 }
 
 
-void DruckerPragerExtended::postProcessInput()
+void DruckerPragerExtended::postInputInitialization()
 {
-  ElasticIsotropic::postProcessInput();
+  ElasticIsotropic::postInputInitialization();
 
-  GEOSX_THROW_IF( m_defaultCohesion < 0, "Negative cohesion value detected", InputError );
-  GEOSX_THROW_IF( m_defaultInitialFrictionAngle < 0, "Negative initial friction angle detected", InputError );
-  GEOSX_THROW_IF( m_defaultResidualFrictionAngle < 0, "Negative residual friction angle detected", InputError );
-  GEOSX_THROW_IF( m_defaultDilationRatio < 0, "Dilation ratio out of [0,1] range detected", InputError );
-  GEOSX_THROW_IF( m_defaultDilationRatio > 1, "Dilation ratio out of [0,1] range detected", InputError );
-  GEOSX_THROW_IF( m_defaultHardening < 0, "Negative hardening parameter detected", InputError );
+  GEOS_THROW_IF( m_defaultCohesion < 0,
+                 getFullName() << ": Negative cohesion value detected", InputError );
+  GEOS_THROW_IF( m_defaultInitialFrictionAngle < 0,
+                 getFullName() << ": Negative initial friction angle detected", InputError );
+  GEOS_THROW_IF( m_defaultResidualFrictionAngle < 0,
+                 getFullName() << ": Negative residual friction angle detected", InputError );
+  GEOS_THROW_IF( m_defaultDilationRatio < 0,
+                 getFullName() << ": Dilation ratio out of [0,1] range detected", InputError );
+  GEOS_THROW_IF( m_defaultDilationRatio > 1,
+                 getFullName() << ": Dilation ratio out of [0,1] range detected", InputError );
+  GEOS_THROW_IF( m_defaultHardening < 0,
+                 getFullName() << ": Negative hardening parameter detected", InputError );
 
   // convert from Mohr-Coulomb constants to Drucker-Prager constants, assuming DP
   // passes through the triaxial tension corners of the MC surface.
@@ -164,7 +171,7 @@ void DruckerPragerExtended::saveConvergedState() const
   arrayView2d< real64 const > newState = m_newState;
   arrayView2d< real64 > oldState = m_oldState;
 
-  forAll< parallelDevicePolicy<> >( numE, [=] GEOSX_HOST_DEVICE ( localIndex const k )
+  forAll< parallelDevicePolicy<> >( numE, [=] GEOS_HOST_DEVICE ( localIndex const k )
   {
     for( localIndex q = 0; q < numQ; ++q )
     {
@@ -176,4 +183,4 @@ void DruckerPragerExtended::saveConvergedState() const
 
 REGISTER_CATALOG_ENTRY( ConstitutiveBase, DruckerPragerExtended, string const &, Group * const )
 }
-} /* namespace geosx */
+} /* namespace geos */

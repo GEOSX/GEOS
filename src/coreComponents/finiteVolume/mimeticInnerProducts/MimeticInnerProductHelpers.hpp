@@ -2,10 +2,11 @@
  * ------------------------------------------------------------------------------------------------------------
  * SPDX-License-Identifier: LGPL-2.1-only
  *
- * Copyright (c) 2018-2020 Lawrence Livermore National Security LLC
- * Copyright (c) 2018-2020 The Board of Trustees of the Leland Stanford Junior University
- * Copyright (c) 2018-2020 TotalEnergies
- * Copyright (c) 2019-     GEOSX Contributors
+ * Copyright (c) 2016-2024 Lawrence Livermore National Security LLC
+ * Copyright (c) 2018-2024 TotalEnergies
+ * Copyright (c) 2018-2024 The Board of Trustees of the Leland Stanford Junior University
+ * Copyright (c) 2023-2024 Chevron
+ * Copyright (c) 2019-     GEOS/GEOSX Contributors
  * All rights reserved
  *
  * See top level LICENSE, COPYRIGHT, CONTRIBUTORS, NOTICE, and ACKNOWLEDGEMENTS files for details.
@@ -16,10 +17,10 @@
  * @file MimeticInnerProductHelpers.hpp
  */
 
-#ifndef GEOSX_FINITEVOLUME_MIMETICINNERPRODUCTS_MIMETICINNERPRODUCTHELPERS_HPP
-#define GEOSX_FINITEVOLUME_MIMETICINNERPRODUCTS_MIMETICINNERPRODUCTHELPERS_HPP
+#ifndef GEOS_FINITEVOLUME_MIMETICINNERPRODUCTS_MIMETICINNERPRODUCTHELPERS_HPP
+#define GEOS_FINITEVOLUME_MIMETICINNERPRODUCTS_MIMETICINNERPRODUCTHELPERS_HPP
 
-namespace geosx
+namespace geos
 {
 namespace mimeticInnerProduct
 {
@@ -36,7 +37,7 @@ struct MimeticInnerProductHelpers
    * @param[in] values the input array
    * @param[out] result the full tensor
    */
-  GEOSX_HOST_DEVICE
+  GEOS_HOST_DEVICE
   static
   void makeFullTensor( real64 const (&values)[ 3 ],
                        real64 (& result)[ 3 ][ 3 ] )
@@ -56,7 +57,7 @@ struct MimeticInnerProductHelpers
    * @param[out] cellToFaceMat a copy of in/out vectors stacked into a matrix
    */
   template< localIndex NF >
-  GEOSX_HOST_DEVICE
+  GEOS_HOST_DEVICE
   static
   void orthonormalize( real64 (& q0)[ NF ],
                        real64 (& q1)[ NF ],
@@ -100,7 +101,7 @@ struct MimeticInnerProductHelpers
    * @param[out] tpTransInv the TPFA entry incorporating the multiplier
    */
   template< localIndex NF >
-  GEOSX_HOST_DEVICE
+  GEOS_HOST_DEVICE
   static void
   computeInvTPFATransWithMultiplier( real64 const (&elemPerm)[ 3 ],
                                      real64 const (&faceNormal)[ 3 ],
@@ -135,7 +136,7 @@ struct MimeticInnerProductHelpers
    * @param[in,out] transMatrix transmissibility matrix
    */
   template< localIndex NF >
-  GEOSX_HOST_DEVICE
+  GEOS_HOST_DEVICE
   static void
   computeTransMatrixWithMultipliers( real64 const (&tpTransInv)[ NF ],
                                      arraySlice2d< real64 > const & transMatrix )
@@ -165,6 +166,6 @@ struct MimeticInnerProductHelpers
 
 } // namespace mimeticInnerProduct
 
-} // namespace geosx
+} // namespace geos
 
-#endif //GEOSX_FINITEVOLUME_MIMETICINNERPRODUCTS_MIMETICINNERPRODUCTHELPERS_HPP
+#endif //GEOS_FINITEVOLUME_MIMETICINNERPRODUCTS_MIMETICINNERPRODUCTHELPERS_HPP

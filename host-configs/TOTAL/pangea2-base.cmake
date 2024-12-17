@@ -22,7 +22,7 @@ set( ENABLE_BENCHMARKS OFF CACHE BOOL "" FORCE )
 option( RAJA_ENABLE_TBB "" OFF )
 option( ENABLE_CALIPER "Enables CALIPER" ON )
 
-set( CUDA_ENABLED      "OFF"       CACHE PATH "" FORCE )
+set( ENABLE_CUDA      "OFF"       CACHE PATH "" FORCE )
 set( CHAI_BUILD_TYPE   "cpu-no-rm" CACHE PATH "" FORCE )
 set( CHAI_ARGS         ""          CACHE PATH "" FORCE )
 

@@ -1,44 +1,25 @@
-#
 # Specify list of tests
-#
+set( testSources
+     testConformingVirtualElementOrder1.cpp )
 
-set(testSources
-  testConformingVirtualElementOrder1.cpp
-   )
+set( tplDependencyList ${parallelDeps} gtest )
 
-set( dependencyList gtest )
+set( dependencyList mainInterface )
 
-if ( GEOSX_BUILD_SHARED_LIBS )
-  set (dependencyList ${dependencyList} geosx_core)
-else()
-  set (dependencyList ${dependencyList} ${geosx_core_libs} )
-endif()
+geos_decorate_link_dependencies( LIST decoratedDependencies
+                                 DEPENDENCIES ${dependencyList} )
 
-if ( ENABLE_CUDA )
-  set( dependencyList ${dependencyList} cuda )
-endif()
 
-if( ENABLE_CUDA_NVTOOLSEXT )
-  set( dependencyList ${dependencyList} CUDA::nvToolsExt )
-endif()
-
-if ( ENABLE_OPENMP )
-  set( dependencyList ${dependencyList} openmp )
-endif()
-
-#
 # Add gtest C++ based tests
-#
 foreach(test ${testSources})
     get_filename_component( test_name ${test} NAME_WE )
     blt_add_executable( NAME ${test_name}
                         SOURCES ${test}
                         OUTPUT_DIR ${TEST_OUTPUT_DIRECTORY}
-                        DEPENDS_ON ${dependencyList} )
+                        DEPENDS_ON ${decoratedDependencies} ${tplDependencyList} )
 
-    blt_add_test( NAME ${test_name}
-                  COMMAND ${test_name}
-                  )
+    geos_add_test( NAME ${test_name}
+                  COMMAND ${test_name} )
 
     if( ( NOT ${ENABLE_CUDA} ) AND ( CMAKE_CXX_COMPILER_ID STREQUAL "Clang" ) )
         set_target_properties(${test_name} PROPERTIES COMPILE_FLAGS "-Wno-everything")

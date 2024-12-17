@@ -2,10 +2,11 @@
  * ------------------------------------------------------------------------------------------------------------
  * SPDX-License-Identifier: LGPL-2.1-only
  *
- * Copyright (c) 2018-2020 Lawrence Livermore National Security LLC
- * Copyright (c) 2018-2020 The Board of Trustees of the Leland Stanford Junior University
- * Copyright (c) 2018-2020 TotalEnergies
- * Copyright (c) 2019-     GEOSX Contributors
+ * Copyright (c) 2016-2024 Lawrence Livermore National Security LLC
+ * Copyright (c) 2018-2024 TotalEnergies
+ * Copyright (c) 2018-2024 The Board of Trustees of the Leland Stanford Junior University
+ * Copyright (c) 2023-2024 Chevron
+ * Copyright (c) 2019-     GEOS/GEOSX Contributors
  * All rights reserved
  *
  * See top level LICENSE, COPYRIGHT, CONTRIBUTORS, NOTICE, and ACKNOWLEDGEMENTS files for details.
@@ -17,8 +18,8 @@
  * @file KernelBase.hpp
  */
 
-#ifndef GEOSX_FINITEELEMENT_KERNELBASE_HPP_
-#define GEOSX_FINITEELEMENT_KERNELBASE_HPP_
+#ifndef GEOS_FINITEELEMENT_KERNELBASE_HPP_
+#define GEOS_FINITEELEMENT_KERNELBASE_HPP_
 
 #include "common/DataTypes.hpp"
 #include "common/TimingMacros.hpp"
@@ -35,7 +36,7 @@
 #define SELECTED_FE_TYPES BASE_FE_TYPES
 #endif
 
-namespace geosx
+namespace geos
 {
 
 /**
@@ -74,7 +75,7 @@ namespace finiteElement
  * a value of 1. In contrast, when solving a solid mechanics problem, with
  * vector displacement as the primary variable at the support point, these
  * will have a value of 3. Note that the interface provided by
- * geosx::finiteElement::RegionBasedKernelApplication will construct a
+ * geos::finiteElement::RegionBasedKernelApplication will construct a
  * kernel assuming only the first 4 template arguments.
  */
 template< typename SUBREGION_TYPE,
@@ -148,13 +149,13 @@ public:
    * The operations typically found in setup are thing such as the collection
    * of global data into local stack storage.
    */
-  GEOSX_HOST_DEVICE
-  GEOSX_FORCE_INLINE
+  GEOS_HOST_DEVICE
+  inline
   void setup( localIndex const k,
               StackVariables & stack ) const
   {
-    GEOSX_UNUSED_VAR( k );
-    GEOSX_UNUSED_VAR( stack );
+    GEOS_UNUSED_VAR( k );
+    GEOS_UNUSED_VAR( stack );
   }
 
   /**
@@ -173,15 +174,15 @@ public:
    * state of the constitutive model is updated if required by the physics
    * package.
    */
-  GEOSX_HOST_DEVICE
-  GEOSX_FORCE_INLINE
+  GEOS_HOST_DEVICE
+  GEOS_FORCE_INLINE
   void quadraturePointKernel( localIndex const k,
                               localIndex const q,
                               StackVariables & stack ) const
   {
-    GEOSX_UNUSED_VAR( k );
-    GEOSX_UNUSED_VAR( q );
-    GEOSX_UNUSED_VAR( stack );
+    GEOS_UNUSED_VAR( k );
+    GEOS_UNUSED_VAR( q );
+    GEOS_UNUSED_VAR( stack );
   }
 
   /**
@@ -198,13 +199,13 @@ public:
    * The operations typically found in complete are the mapping of the local
    * Jacobian and Residual into the global Jacobian and Residual.
    */
-  GEOSX_HOST_DEVICE
-  GEOSX_FORCE_INLINE
+  GEOS_HOST_DEVICE
+  inline
   real64 complete( localIndex const k,
                    StackVariables & stack ) const
   {
-    GEOSX_UNUSED_VAR( k );
-    GEOSX_UNUSED_VAR( stack );
+    GEOS_UNUSED_VAR( k );
+    GEOS_UNUSED_VAR( stack );
     return 0;
   }
 
@@ -229,17 +230,18 @@ public:
   kernelLaunch( localIndex const numElems,
                 KERNEL_TYPE const & kernelComponent )
   {
-    GEOSX_MARK_FUNCTION;
+    GEOS_MARK_FUNCTION;
 
     // Define a RAJA reduction variable to get the maximum residual contribution.
     RAJA::ReduceMax< ReducePolicy< POLICY >, real64 > maxResidual( 0 );
 
     forAll< POLICY >( numElems,
-                      [=] GEOSX_HOST_DEVICE ( localIndex const k )
+                      [=] GEOS_HOST_DEVICE ( localIndex const k )
     {
       typename KERNEL_TYPE::StackVariables stack;
 
       kernelComponent.setup( k, stack );
+      // #pragma unroll
       for( integer q=0; q<numQuadraturePointsPerElem; ++q )
       {
         kernelComponent.quadraturePointKernel( k, q, stack );
@@ -263,7 +265,7 @@ protected:
 
   /// The finite element space/discretization object for the element type in
   /// the SUBREGION_TYPE.
-  FE_TYPE const & m_finiteElementSpace;
+  FE_TYPE const m_finiteElementSpace;
 };
 
 /**
@@ -360,7 +362,7 @@ private:
  * @return The maximum contribution to the residual, which may be used to scale the residual.
  *
  * @details Loops over all regions Applies/Launches a kernel specified by the @p KERNEL_TEMPLATE through
- * #::geosx::finiteElement::KernelBase::kernelLaunch().
+ * #::geos::finiteElement::KernelBase::kernelLaunch().
  */
 template< typename POLICY,
           typename CONSTITUTIVE_BASE,
@@ -373,7 +375,7 @@ real64 regionBasedKernelApplication( MeshLevel & mesh,
                                      string const & constitutiveStringName,
                                      KERNEL_FACTORY & kernelFactory )
 {
-  GEOSX_MARK_FUNCTION;
+  GEOS_MARK_FUNCTION;
   // save the maximum residual contribution for scaling residuals for convergence criteria.
   real64 maxResidualContribution = 0;
 
@@ -467,8 +469,8 @@ real64 regionBasedKernelApplication( MeshLevel & mesh,
 //END_regionBasedKernelApplication
 
 } // namespace finiteElement
-} // namespace geosx
+} // namespace geos
 
 
 
-#endif /* GEOSX_FINITEELEMENT_KERNELBASE_HPP_ */
+#endif /* GEOS_FINITEELEMENT_KERNELBASE_HPP_ */

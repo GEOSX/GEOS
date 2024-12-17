@@ -2,10 +2,11 @@
  * ------------------------------------------------------------------------------------------------------------
  * SPDX-License-Identifier: LGPL-2.1-only
  *
- * Copyright (c) 2018-2020 Lawrence Livermore National Security LLC
- * Copyright (c) 2018-2020 The Board of Trustees of the Leland Stanford Junior University
- * Copyright (c) 2018-2020 TotalEnergies
- * Copyright (c) 2019-     GEOSX Contributors
+ * Copyright (c) 2016-2024 Lawrence Livermore National Security LLC
+ * Copyright (c) 2018-2024 TotalEnergies
+ * Copyright (c) 2018-2024 The Board of Trustees of the Leland Stanford Junior University
+ * Copyright (c) 2023-2024 Chevron
+ * Copyright (c) 2019-     GEOS/GEOSX Contributors
  * All rights reserved
  *
  * See top level LICENSE, COPYRIGHT, CONTRIBUTORS, NOTICE, and ACKNOWLEDGEMENTS files for details.
@@ -22,8 +23,8 @@
  * A collection of timing-related macros that wrap Caliper.
  */
 
-#ifndef GEOSX_COMMON_TIMINGMACROS_HPP_
-#define GEOSX_COMMON_TIMINGMACROS_HPP_
+#ifndef GEOS_COMMON_TIMINGMACROS_HPP_
+#define GEOS_COMMON_TIMINGMACROS_HPP_
 
 #include "common/GeosxConfig.hpp"
 #include "GeosxMacros.hpp"
@@ -40,7 +41,7 @@ namespace timingHelpers
 }
 
 
-#if defined( GEOSX_USE_CUDA_NVTOOLSEXT )
+#if defined( GEOS_USE_CUDA ) && defined( GEOS_USE_CUDA_NVTOOLSEXT )
 
 #include "nvToolsExt.h"
 
@@ -75,74 +76,74 @@ namespace timingHelpers
 
 }
 /// Mark a scope with NVTX with name and color (only a local helper should not be used elsewhere)
-#  define GEOSX_NVTX_MARK_SCOPE_COLORED(name, color) timingHelpers::NVTXScopeTracer __FILE__ ## _ ## __LINE__ ## _ ## scopeTracer = timingHelpers::NVTXScopeTracer(name, color)
+#  define GEOS_NVTX_MARK_SCOPE_COLORED(name, color) timingHelpers::NVTXScopeTracer __FILE__ ## _ ## __LINE__ ## _ ## scopeTracer = timingHelpers::NVTXScopeTracer(name, color)
 /// Mark a scope with NVTX with a given name and color purple
-#  define GEOSX_NVTX_MARK_SCOPE(name) GEOSX_NVTX_MARK_SCOPE_COLORED(STRINGIZE_NX(name), timingHelpers::PURPLE)
+#  define GEOS_NVTX_MARK_SCOPE(name) GEOS_NVTX_MARK_SCOPE_COLORED(STRINGIZE_NX(name), timingHelpers::PURPLE)
 /// Mark a function with NVTX using function name and color blue
-#  define GEOSX_NVTX_MARK_FUNCTION GEOSX_NVTX_MARK_SCOPE_COLORED(timingHelpers::stripPF(__PRETTY_FUNCTION__).c_str(), timingHelpers::BLUE)
+#  define GEOS_NVTX_MARK_FUNCTION GEOS_NVTX_MARK_SCOPE_COLORED(timingHelpers::stripPF(__PRETTY_FUNCTION__).c_str(), timingHelpers::BLUE)
 #else
 /// @cond DO_NOT_DOCUMENT
-#  define GEOSX_NVTX_MARK_SCOPE(name)
-#  define GEOSX_NVTX_MARK_FUNCTION
+#  define GEOS_NVTX_MARK_SCOPE(name)
+#  define GEOS_NVTX_MARK_FUNCTION
 /// @endcond
 #endif /* USE_CUDA */
 
 
-#ifdef GEOSX_USE_CALIPER
+#ifdef GEOS_USE_CALIPER
 #include <caliper/cali.h>
 #include <sys/time.h>
 #include <string>
 #include <iostream>
 
 /// Mark a function or scope for timing with a given name
-#define GEOSX_CALIPER_MARK_SCOPE(name) cali::Function __cali_ann##__LINE__(STRINGIZE_NX(name))
+#define GEOS_CALIPER_MARK_SCOPE(name) cali::Function __cali_ann##__LINE__(STRINGIZE_NX(name))
 
 /// Mark a function for timing using a compiler-provided name
-#define GEOSX_CALIPER_MARK_FUNCTION cali::Function __cali_ann##__func__(timingHelpers::stripPF(__PRETTY_FUNCTION__).c_str())
+#define GEOS_CALIPER_MARK_FUNCTION cali::Function __cali_ann##__func__(timingHelpers::stripPF(__PRETTY_FUNCTION__).c_str())
 
 /// Mark the beginning of timed statement group
-#define GEOSX_CALIPER_MARK_BEGIN(name) CALI_MARK_BEGIN(STRINGIZE(name))
+#define GEOS_CALIPER_MARK_BEGIN(name) CALI_MARK_BEGIN(STRINGIZE(name))
 
 /// Mark the end of timed statements group
-#define GEOSX_CALIPER_MARK_END(name) CALI_MARK_END(STRINGIZE(name))
+#define GEOS_CALIPER_MARK_END(name) CALI_MARK_END(STRINGIZE(name))
 
 /// Mark the beginning of function, only useful when you don't want to or can't mark the whole function.
-#define GEOSX_CALIPER_MARK_FUNCTION_BEGIN CALI_MARK_FUNCTION_BEGIN
+#define GEOS_CALIPER_MARK_FUNCTION_BEGIN CALI_MARK_FUNCTION_BEGIN
 
 /// Mark the end of function, only useful when you don't want to or can't mark the whole function.
-#define GEOSX_CALIPER_MARK_FUNCTION_END CALI_MARK_FUNCTION_END
+#define GEOS_CALIPER_MARK_FUNCTION_END CALI_MARK_FUNCTION_END
 
-#else // GEOSX_USE_CALIPER
+#else // GEOS_USE_CALIPER
 
 /// @cond DO_NOT_DOCUMENT
-#define GEOSX_CALIPER_MARK_SCOPE(name)
-#define GEOSX_CALIPER_MARK_FUNCTION
+#define GEOS_CALIPER_MARK_SCOPE(name)
+#define GEOS_CALIPER_MARK_FUNCTION
 
-#define GEOSX_CALIPER_MARK_BEGIN(name)
-#define GEOSX_CALIPER_MARK_END(name)
+#define GEOS_CALIPER_MARK_BEGIN(name)
+#define GEOS_CALIPER_MARK_END(name)
 
-#define GEOSX_CALIPER_MARK_FUNCTION_BEGIN
-#define GEOSX_CALIPER_MARK_FUNCTION_END
+#define GEOS_CALIPER_MARK_FUNCTION_BEGIN
+#define GEOS_CALIPER_MARK_FUNCTION_END
 /// @endcond
 
-#endif // GEOSX_USE_CALIPER
+#endif // GEOS_USE_CALIPER
 
 /// Mark scope with both Caliper and NVTX if enabled
-#define GEOSX_MARK_SCOPE(name) GEOSX_CALIPER_MARK_SCOPE(name); GEOSX_NVTX_MARK_SCOPE(name)
+#define GEOS_MARK_SCOPE(name) GEOS_CALIPER_MARK_SCOPE(name); GEOS_NVTX_MARK_SCOPE(name)
 /// Mark function with both Caliper and NVTX if enabled
-#define GEOSX_MARK_FUNCTION GEOSX_CALIPER_MARK_FUNCTION; GEOSX_NVTX_MARK_FUNCTION
+#define GEOS_MARK_FUNCTION GEOS_CALIPER_MARK_FUNCTION; GEOS_NVTX_MARK_FUNCTION
 /// Mark the beginning of function, only useful when you don't want to or can't mark the whole function.
-#define GEOSX_MARK_FUNCTION_BEGIN(name) GEOSX_CALIPER_MARK_FUNCTION_BEGIN(name)
+#define GEOS_MARK_FUNCTION_BEGIN(name) GEOS_CALIPER_MARK_FUNCTION_BEGIN(name)
 /// Mark the end of function, only useful when you don't want to or can't mark the whole function.
-#define GEOSX_MARK_FUNCTION_END(name) GEOSX_CALIPER_MARK_FUNCTION_END(name)
+#define GEOS_MARK_FUNCTION_END(name) GEOS_CALIPER_MARK_FUNCTION_END(name)
 /// Mark the beginning of timed statement group
-#define GEOSX_MARK_BEGIN(name) GEOSX_CALIPER_MARK_BEGIN(name)
+#define GEOS_MARK_BEGIN(name) GEOS_CALIPER_MARK_BEGIN(name)
 /// Mark the end of timed statements group
-#define GEOSX_MARK_END(name) GEOSX_CALIPER_MARK_END(name)
+#define GEOS_MARK_END(name) GEOS_CALIPER_MARK_END(name)
 
 /// Get current time of day as a floating point number of seconds in a variable @p time.
-#ifdef GEOSX_USE_TIMERS
-#define GEOSX_GET_TIME( time )                                                 \
+#ifdef GEOS_USE_TIMERS
+#define GEOS_GET_TIME( time )                                                 \
   real64 time;                                                                 \
   do                                                                           \
   {                                                                            \
@@ -151,7 +152,7 @@ namespace timingHelpers
     time = tim.tv_sec + (tim.tv_usec / 1000000.0);                             \
   } while (false)
 #else
-#define GEOSX_GET_TIME( time )
+#define GEOS_GET_TIME( time )
 #endif
 
-#endif // GEOSX_COMMON_TIMINGMACROS_HPP_
+#endif // GEOS_COMMON_TIMINGMACROS_HPP_

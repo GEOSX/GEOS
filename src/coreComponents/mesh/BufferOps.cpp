@@ -2,10 +2,11 @@
  * ------------------------------------------------------------------------------------------------------------
  * SPDX-License-Identifier: LGPL-2.1-only
  *
- * Copyright (c) 2018-2020 Lawrence Livermore National Security LLC
- * Copyright (c) 2018-2020 The Board of Trustees of the Leland Stanford Junior University
- * Copyright (c) 2018-2020 TotalEnergies
- * Copyright (c) 2019-     GEOSX Contributors
+ * Copyright (c) 2016-2024 Lawrence Livermore National Security LLC
+ * Copyright (c) 2018-2024 TotalEnergies
+ * Copyright (c) 2018-2024 The Board of Trustees of the Leland Stanford Junior University
+ * Copyright (c) 2023-2024 Chevron
+ * Copyright (c) 2019-     GEOS/GEOSX Contributors
  * All rights reserved
  *
  * See top level LICENSE, COPYRIGHT, CONTRIBUTORS, NOTICE, and ACKNOWLEDGEMENTS files for details.
@@ -19,7 +20,7 @@
 #include "codingUtilities/Utilities.hpp"
 #include "ElementRegionManager.hpp"
 
-namespace geosx
+namespace geos
 {
 namespace bufferOps
 {
@@ -82,7 +83,7 @@ localIndex Unpack( buffer_unit_type const * & buffer,
 
   localIndex numIndicesUnpacked;
   sizeOfUnpackedChars += bufferOps::Unpack( buffer, numIndicesUnpacked );
-  GEOSX_ERROR_IF( numIndicesUnpacked != packList.size(), "" );
+  GEOS_ERROR_IF( numIndicesUnpacked != packList.size(), "" );
 
   using ElementID = std::array< localIndex, 3 >;
 
@@ -296,7 +297,7 @@ localIndex Unpack( buffer_unit_type const * & buffer,
 
   localIndex numIndicesUnpacked;
   sizeOfUnpackedChars += bufferOps::Unpack( buffer, numIndicesUnpacked );
-  GEOSX_ERROR_IF( numIndicesUnpacked != packList.size(), "" );
+  GEOS_ERROR_IF( numIndicesUnpacked != packList.size(), "" );
 
   for( localIndex a=0; a<packList.size(); ++a )
   {
@@ -304,7 +305,7 @@ localIndex Unpack( buffer_unit_type const * & buffer,
     localIndex numSubIndicesUnpacked;
 
     sizeOfUnpackedChars += bufferOps::Unpack( buffer, numSubIndicesUnpacked );
-    GEOSX_ERROR_IF( numSubIndicesUnpacked != var.m_toElementRegion.size( 1 ), "" );
+    GEOS_ERROR_IF( numSubIndicesUnpacked != var.m_toElementRegion.size( 1 ), "" );
 
     for( localIndex b=0; b<numSubIndicesUnpacked; ++b )
     {

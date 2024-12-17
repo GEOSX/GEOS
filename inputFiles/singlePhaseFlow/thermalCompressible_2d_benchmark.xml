@@ -5,47 +5,46 @@
     <File name="./thermalCompressible_2d_base.xml" />
   </Included>
 
+  <ElementRegions>
+    <CellElementRegion
+      name="region"
+      cellBlocks="{ * }"
+      materialList="{ fluid, rock_linear, thermalCond_linear }"/>
+  </ElementRegions>
+
   <Mesh>
-    <InternalMesh
+    <InternalWellbore
       name="mesh1"
       elementTypes="{ C3D8 }"
-      xCoords="{ 0, 300 }"
-      yCoords="{ 0, 1 }"
-      zCoords="{ 0, 150 }"
-      nx="{ 100 }"
-      ny="{ 1 }"
-      nz="{ 50 }"
-      cellBlockNames="{ cb }"/>
+      radius="{ 0.1, 0.106, 0.133, 1.0 }"
+      theta="{ 0, 90 }"
+      zCoords="{ 0, 0.1 }"
+      nr="{ 3, 10, 50 }"
+      nt="{ 80 }"
+      nz="{ 1 }"
+      trajectory="{ { 0.0, 0.0, 0.0 },
+                    { 0.0, 0.0, 0.1 } }"
+      autoSpaceRadialElems="{ 0, 0, 1 }"
+      cellBlockNames="{ cb }"
+      />
   </Mesh>
 
-  <Geometry>
-    <Box
-      name="sink"
-      xMin="{ -0.01, -0.01, -0.01 }"
-      xMax="{ 150.01, 1.01, 3.01 }"/>
-
-    <Box
-      name="source"
-      xMin="{ -0.01, -0.01, 146.99 }"
-      xMax="{ 300.01, 1.01, 150.01 }"/>
-  </Geometry>
-
   <Events
-    maxTime="6e7">
+    maxTime="1e5">
     <PeriodicEvent
       name="outputs"
-      timeFrequency="6e5"
+      timeFrequency="1e4"
       target="/Outputs/vtkOutput"/>
 
     <PeriodicEvent
       name="solverApplications"
-      maxEventDt="6e5"
+      maxEventDt="1e3"
       target="/Solvers/singleFlow"/>
 
-    <PeriodicEvent
+    <!--PeriodicEvent
       name="restarts"
-      timeFrequency="3e7"
-      target="/Outputs/restartOutput"/>
+      timeFrequency="1e5"
+      target="/Outputs/restartOutput"/-->
   </Events>
 
 </Problem>

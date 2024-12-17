@@ -4,7 +4,7 @@
 Tutorials
 =================================
 
-The easiest way to learn to use GEOSX is through worked examples.
+The easiest way to learn to use GEOS is through worked examples.
 Here, we have included tutorials showing how to run some common problems.
 After working through these examples, you should have a good understanding of how to set up and solve your own models.
 

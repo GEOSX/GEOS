@@ -4,7 +4,7 @@ Code style
 
 Introduction
 ============
-GEOSX is written in standard c++14. In general, target platforms are:
+GEOS is written in standard c++17. In general, target platforms are:
 
 - Linux
 - Mac OS X
@@ -134,9 +134,9 @@ The following examples are provided:
 Code Format
 ===========
 
-GEOSX applies a variant of the
+GEOS applies a variant of the
 `BSD/Allman Style <https://en.wikipedia.org/wiki/Indentation_style#Allman_style>`__.
-Key points to the GEOSX style are:
+Key points to the GEOS style are:
 
 #. Opening braces (i.e. "{") go on the next line of any control statement, and are not indented from the control statement.
 #. NO TABS. Only spaces. In case it isn't clear ... NO TABS!
@@ -166,13 +166,13 @@ Key points to the GEOSX style are:
       code here
     }
 
-As part of the continuous integration testing, this GEOSX code style is enforced via the uncrustify tool.
+As part of the continuous integration testing, this GEOS code style is enforced via the uncrustify tool.
 While quite extensive, uncrustify does not enforce every example of the preferred code style.
 In cases where uncrusitfy is unable to enforce code style, it will ignore formatting rules.
 In these cases it is acceptable to proceed with pull requests, as there is no logical recourse.
 
 Header Guards
 =============
-Header guard names should consist of the name `GEOSX`, followed by the component name (e.g. dataRepository),
+Header guard names should consist of the name `GEOS`, followed by the component name (e.g. dataRepository),
 and finally the name of the header file.
 All characters in the macro should be capitalized.

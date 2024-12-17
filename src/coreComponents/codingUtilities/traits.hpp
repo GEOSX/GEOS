@@ -2,10 +2,11 @@
  * ------------------------------------------------------------------------------------------------------------
  * SPDX-License-Identifier: LGPL-2.1-only
  *
- * Copyright (c) 2018-2020 Lawrence Livermore National Security LLC
- * Copyright (c) 2018-2020 The Board of Trustees of the Leland Stanford Junior University
- * Copyright (c) 2018-2020 TotalEnergies
- * Copyright (c) 2019-     GEOSX Contributors
+ * Copyright (c) 2016-2024 Lawrence Livermore National Security LLC
+ * Copyright (c) 2018-2024 TotalEnergies
+ * Copyright (c) 2018-2024 The Board of Trustees of the Leland Stanford Junior University
+ * Copyright (c) 2023-2024 Chevron
+ * Copyright (c) 2019-     GEOS/GEOSX Contributors
  * All rights reserved
  *
  * See top level LICENSE, COPYRIGHT, CONTRIBUTORS, NOTICE, and ACKNOWLEDGEMENTS files for details.
@@ -16,8 +17,8 @@
  * @file traits.hpp
  */
 
-#ifndef GEOSX_CODINGUTILITIES_TRAITS_HPP_
-#define GEOSX_CODINGUTILITIES_TRAITS_HPP_
+#ifndef GEOS_CODINGUTILITIES_TRAITS_HPP_
+#define GEOS_CODINGUTILITIES_TRAITS_HPP_
 
 // Source includes
 #include "common/DataTypes.hpp"
@@ -28,7 +29,7 @@
 // System includes
 #include <type_traits>
 
-namespace geosx
+namespace geos
 {
 
 namespace traits
@@ -94,6 +95,14 @@ HAS_MEMBER_FUNCTION( capacity, localIndex, );
  * @tparam CLASS The type to test.
  */
 HAS_MEMBER_FUNCTION_NO_RTYPE( resize, 0 );
+
+/**
+ * @brief Defines a static constexpr bool HasMemberFunction_resizeDefault< @p CLASS >
+ *        that is true iff the method @p CLASS ::resizeDefault( int, int, int) exists.
+ * @tparam CLASS The type to test.
+ */
+HAS_MEMBER_FUNCTION_NO_RTYPE( resizeDefault, 0, 0 );
+
 
 /**
  * @brief Defines a static constexpr bool HasMemberFunction_reserve< @p CLASS >
@@ -249,6 +258,6 @@ struct add_const_if
 template< typename T, bool COND >
 using add_const_if_t = typename add_const_if< T, COND >::type;
 
-} /* namespace geosx */
+} /* namespace geos */
 
-#endif /* GEOSX_CODINGUTILITIES_TRAITS_HPP_ */
+#endif /* GEOS_CODINGUTILITIES_TRAITS_HPP_ */

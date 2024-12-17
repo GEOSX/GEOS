@@ -1,0 +1,161 @@
+<?xml version="1.0" ?>
+
+<Problem>
+  <Included>
+    <File name="./ThermoPoroElasticWellbore_base.xml" />
+  </Included>
+
+  <!-- SPHINX_WellboreMesh -->
+  <Mesh>
+    <InternalWellbore
+      name="mesh1"
+      elementTypes="{ C3D8 }"
+      radius="{ 0.1, 5.0 }"
+      theta="{ 0, 90 }"
+      zCoords="{ 0, 0.1 }"
+      nr="{ 100 }"
+      nt="{ 40 }"
+      nz="{ 1 }"
+      trajectory="{ { 0.0, 0.0, 0.0 },
+                    { 0.0, 0.0, 0.1 } }"
+      autoSpaceRadialElems="{ 1 }"
+      cellBlockNames="{ rock }"
+      />
+  </Mesh>
+  <!-- SPHINX_WellboreMeshEnd -->
+
+  <Events
+    maxTime="3700">
+
+    <PeriodicEvent
+      name="stressHistoryCollection_rock_1"
+      beginTime="0"
+      endTime="360"
+      forceDt="60"
+      target="/Tasks/stressCollection_rock"/>
+    <PeriodicEvent
+      name="stressTimeHistoryOutput_rock_1"
+      beginTime="0"
+      endTime="360"
+      forceDt="60"
+      target="/Outputs/stressHistoryOutput_rock"/>
+    <PeriodicEvent
+      name="stressHistoryCollection_rock_2"
+      beginTime="360"
+      endTime="3700"
+      forceDt="360"
+      target="/Tasks/stressCollection_rock"/>
+    <PeriodicEvent
+      name="stressTimeHistoryOutput_rock_2"
+      beginTime="360"
+      endTime="3700"
+      forceDt="360"
+      target="/Outputs/stressHistoryOutput_rock"/>
+
+    <PeriodicEvent
+      name="temperatureHistoryCollection_rock_1"
+      beginTime="0"
+      endTime="360"
+      forceDt="60"
+      target="/Tasks/temperatureCollection_rock"/>
+    <PeriodicEvent
+      name="temperatureTimeHistoryOutput_rock_1"
+      beginTime="0"
+      endTime="360"
+      forceDt="60"
+      target="/Outputs/temperatureHistoryOutput_rock"/>
+    <PeriodicEvent
+      name="temperatureHistoryCollection_rock_2"
+      beginTime="360"
+      endTime="3700"
+      forceDt="360"
+      target="/Tasks/temperatureCollection_rock"/>
+    <PeriodicEvent
+      name="temperatureTimeHistoryOutput_rock_2"
+      beginTime="360"
+      endTime="3700"
+      forceDt="360"
+      target="/Outputs/temperatureHistoryOutput_rock"/>
+
+    <PeriodicEvent
+      name="pressureHistoryCollection_rock_1"
+      beginTime="0"
+      endTime="360"
+      forceDt="60"
+      target="/Tasks/pressureCollection_rock"/>
+    <PeriodicEvent
+      name="pressureTimeHistoryOutput_rock_1"
+      beginTime="0"
+      endTime="360"
+      forceDt="60"
+      target="/Outputs/pressureHistoryOutput_rock"/>
+    <PeriodicEvent
+      name="pressureHistoryCollection_rock_2"
+      beginTime="360"
+      endTime="3700"
+      forceDt="360"
+      target="/Tasks/pressureCollection_rock"/>
+    <PeriodicEvent
+      name="pressureTimeHistoryOutput_rock_2"
+      beginTime="360"
+      endTime="3700"
+      forceDt="360"
+      target="/Outputs/pressureHistoryOutput_rock"/>
+
+    <!-- SPHINX_DisplacementPeriodicEvent -->
+    <PeriodicEvent
+      name="displacementHistoryCollection"
+      beginTime="0"
+      endTime="360"
+      forceDt="60"
+      target="/Tasks/displacementCollection"/>
+    <PeriodicEvent
+      name="displacementTimeHistoryOutput_1"
+      beginTime="0"
+      endTime="360"
+      forceDt="60"
+      target="/Outputs/displacementHistoryOutput"/>
+    <PeriodicEvent
+      name="displacementHistoryCollection_2"
+      beginTime="360"
+      endTime="3700"
+      forceDt="360"
+      target="/Tasks/displacementCollection"/>
+    <PeriodicEvent
+      name="displacementTimeHistoryOutput_2"
+      beginTime="360"
+      endTime="3700"
+      forceDt="360"
+      target="/Outputs/displacementHistoryOutput"/>
+    <!-- SPHINX_DisplacementPeriodicEventEnd -->
+
+    <PeriodicEvent
+      name="outputs"
+      timeFrequency="360"
+      target="/Outputs/vtkOutput"/>
+
+    <PeriodicEvent
+      name="solverApplications_1"
+      endTime="60"
+      forceDt="6"
+      target="/Solvers/THMSolver"/>
+    <PeriodicEvent
+      name="solverApplications_2"
+      beginTime="60"
+      endTime="360"
+      forceDt="60"
+      target="/Solvers/THMSolver"/>
+    <PeriodicEvent
+      name="solverApplications_3"
+      beginTime="360"
+      endTime="3700"
+      forceDt="360"
+      target="/Solvers/THMSolver"/>
+
+    <PeriodicEvent
+      name="restarts"
+      timeFrequency="1800"
+      target="/Outputs/restartOutput"/>
+  </Events>
+
+</Problem>

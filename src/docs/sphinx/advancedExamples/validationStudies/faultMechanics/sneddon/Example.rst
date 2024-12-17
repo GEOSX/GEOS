@@ -15,22 +15,23 @@ At the end of this example you will know:
 
 **Input file**
 
-This example uses no external input files and everything required is contained within GEOSX input files.
+This example uses no external input files and everything required is contained within GEOS input files.
 
 The xml input files for the case with EmbeddedFractures solver are located at:
 
 .. code-block:: console
 
   inputFiles/efemFractureMechanics/Sneddon_embeddedFrac_base.xml
-  inputFiles/efemFractureMechanics/Sneddon_embeddedFrac_benchmark.xml
+  inputFiles/efemFractureMechanics/Sneddon_embeddedFrac_verification.xml
 
 
 The xml input files for the case with LagrangianContact solver are located at:
 
 .. code-block:: console
 
-  inputFiles/lagrangianContactMechanics/Sneddon_contactMechanics_base.xml
-  inputFiles/lagrangianContactMechanics/Sneddon_contactMechanics_benchmark.xml
+  inputFiles/lagrangianContactMechanics/Sneddon_base.xml
+  inputFiles/lagrangianContactMechanics/Sneddon_benchmark.xml
+  inputFiles/lagrangianContactMechanics/ContactMechanics_Sneddon_benchmark.xml
 
 
 The xml input files for the case with HydroFracture solver are located at:
@@ -48,7 +49,7 @@ Description of the case
 We compute the displacement field induced by the presence of a pressurized fracture,
 of length :math:`L_f`, in a porous medium.
 
-GEOSX will calculate the displacement field in the porous matrix and the displacement
+GEOS will calculate the displacement field in the porous matrix and the displacement
 jump at the fracture surface.
 We will use the analytical solution for the fracture aperture, :math:`w_n` (normal component of the
 jump), to verify the numerical results
@@ -75,7 +76,7 @@ define two solvers:
  - a ``SolidMechanicsEmbeddedFractures`` solver, called ``mechSolve``
  - a small-strain Lagrangian mechanics solver, of type ``SolidMechanicsLagrangianSSLE`` called here ``matrixSolver`` (see: :ref:`SolidMechanicsLagrangianFEM`)
 
-Note that the ``name`` attribute of these solvers is chosen by the user and is not imposed by GEOSX. 
+Note that the ``name`` attribute of these solvers is chosen by the user and is not imposed by GEOS. 
 It is important to make sure that the ``solidSolverName`` specified in the embedded fractures solver corresponds to the
 small-strain Lagrangian solver used in the matrix.
 
@@ -84,7 +85,7 @@ verbosity levels, target regions, and other solver-specific attributes.
 
 Additionally, we need to specify another solver of type, ``EmbeddedSurfaceGenerator``, which is used to discretize the fracture planes.
 
-.. literalinclude:: ../../../../../../../inputFiles/efemFractureMechanics/Sneddon_embeddedFrac_base.xml
+.. literalinclude:: ../../../../../../../inputFiles/efemFractureMechanics/Sneddon_embeddedFrac_verification.xml
   :language: xml
   :start-after: <!-- SPHINX_SNEDDON_SOLVER -->
   :end-before: <!-- SPHINX_SNEDDON_SOLVER_END -->
@@ -99,7 +100,7 @@ To setup a coupling between rock and fracture deformations in LagrangianContact 
 - The solver ``SurfaceGenerator`` defines the fracture region and rock toughness.
 
 
-.. literalinclude:: ../../../../../../../inputFiles/lagrangianContactMechanics/Sneddon_contactMechanics_base.xml
+.. literalinclude:: ../../../../../../../inputFiles/lagrangianContactMechanics/ContactMechanics_Sneddon_benchmark.xml
   :language: xml
   :start-after: <!-- SPHINX_SNEDDON_SOLVER -->
   :end-before: <!-- SPHINX_SNEDDON_SOLVER_END -->
@@ -129,7 +130,7 @@ For the case with EmbeddedFractures solver, we add multiple events defining solv
 - a periodic event specifying the execution of the embedded fractures solver.
 - three periodic events specifying the output of simulations results.
 
-.. literalinclude:: ../../../../../../../inputFiles/efemFractureMechanics/Sneddon_embeddedFrac_benchmark.xml
+.. literalinclude:: ../../../../../../../inputFiles/efemFractureMechanics/Sneddon_embeddedFrac_verification.xml
   :language: xml
   :start-after: <!-- SPHINX_SNEDDON_EVENTS -->
   :end-before: <!-- SPHINX_SNEDDON_EVENTS_END -->
@@ -146,16 +147,16 @@ We use the internal mesh generator to create a large domain
 along the Z axes, 121 elements along the X axis and 921 elements along the Y axis.
 
 
-.. literalinclude:: ../../../../../../../inputFiles/efemFractureMechanics/Sneddon_embeddedFrac_benchmark.xml
+.. literalinclude:: ../../../../../../../inputFiles/efemFractureMechanics/Sneddon_embeddedFrac_verification.xml
    :language: xml
    :start-after: <!-- SPHINX_SNEDDON_MESH -->
    :end-before: <!-- SPHINX_SNEDDON_MESH_END -->
 
 
-The mesh for the case with LagrangianContact solver was also created using the internal mesh generator, as parametrized in the ``InternalMesh`` XML tag. The mesh discretizes the same compational domain (:math:`40\, m \, \times 40 \,  m \, \times 1 \, m`) with 300 x 300 x 1 eight-node brick elements in the x, y, and z directions respectively. 
+The mesh for the case with LagrangianContact solver was also created using the internal mesh generator, as parametrized in the ``InternalMesh`` XML tag. The mesh discretizes the same compational domain (:math:`40\, m \, \times 40 \,  m \, \times 1 \, m`) with 300 x 300 x 2 eight-node brick elements in the x, y, and z directions respectively. 
 
 
-.. literalinclude:: ../../../../../../../inputFiles/lagrangianContactMechanics/Sneddon_contactMechanics_benchmark.xml
+.. literalinclude:: ../../../../../../../inputFiles/lagrangianContactMechanics/Sneddon_benchmark.xml
    :language: xml
    :start-after: <!-- SPHINX_SNEDDON_MESH -->
    :end-before: <!-- SPHINX_SNEDDON_MESH_END -->
@@ -189,7 +190,7 @@ The parameters used in the simulation are summarized in the following table.
   | :math:`p_f`    | Fracture pressure     | [MPa]            | -2.0              |
   +----------------+-----------------------+------------------+-------------------+
 
-Note that the internal fracture pressure has a negative value, due to the negative sign convention for compressive stresses in GEOSX. 
+Note that the internal fracture pressure has a negative value, due to the negative sign convention for compressive stresses in GEOS. 
 
 Material properties and boundary conditions are specified in the ``Constitutive`` and ``FieldSpecifications`` sections.
 
@@ -201,7 +202,7 @@ The static fracture is defined by a nodeset occupying a small region within the 
 
 - The test case with EmbeddedFractures solver:
 
-.. literalinclude:: ../../../../../../../inputFiles/efemFractureMechanics/Sneddon_embeddedFrac_base.xml
+.. literalinclude:: ../../../../../../../inputFiles/efemFractureMechanics/Sneddon_embeddedFrac_verification.xml
   :language: xml
   :start-after: <!-- SPHINX_SNEDDON_GEOMETRY -->
   :end-before: <!-- SPHINX_SNEDDON_GEOMETRY_END -->
@@ -209,7 +210,7 @@ The static fracture is defined by a nodeset occupying a small region within the 
 
 - The test case with LagrangianContact solver:
 
-.. literalinclude:: ../../../../../../../inputFiles/lagrangianContactMechanics/Sneddon_contactMechanics_base.xml
+.. literalinclude:: ../../../../../../../inputFiles/lagrangianContactMechanics/Sneddon_base.xml
   :language: xml
   :start-after: <!-- SPHINX_SNEDDON_GEOMETRY -->
   :end-before: <!-- SPHINX_SNEDDON_GEOMETRY_END -->
@@ -242,7 +243,7 @@ In this example, a task is specified to output fracture aperture (normal opening
 
 - The test case with LagrangianContact solver:
 
-.. literalinclude:: ../../../../../../../inputFiles/lagrangianContactMechanics/Sneddon_contactMechanics_base.xml
+.. literalinclude:: ../../../../../../../inputFiles/lagrangianContactMechanics/Sneddon_base.xml
   :language: xml
   :start-after: <!-- SPHINX_SNEDDON_TASK -->
   :end-before: <!-- SPHINX_SNEDDON_TASK_END -->
@@ -257,23 +258,23 @@ In this example, a task is specified to output fracture aperture (normal opening
 
 
 These tasks are triggered using the ``Event`` manager with a ``PeriodicEvent`` defined for these recurring tasks. 
-GEOSX writes output files named after the string defined in the ``filename`` keyword and formatted as HDF5 files. 
+GEOS writes output files named after the string defined in the ``filename`` keyword and formatted as HDF5 files. 
 The ``TimeHistory`` file contains the collected time history information from each specified time history collector.
 This information includes datasets for the simulation time, element center defined in the local coordinate system, and the time history information. 
 A Python script is used to read and plot any specified subset of the time history data for verification and visualization. 
 
 
 ---------------------------------
-Running GEOSX
+Running GEOS
 ---------------------------------
 
 To run these three cases, use the following commands:
 
-``path/to/geosx -i inputFiles/efemFractureMechanics/Sneddon_embeddedFrac_benchmark.xml``
+``path/to/geos -i inputFiles/efemFractureMechanics/Sneddon_embeddedFrac_verification.xml``
 
-``path/to/geosx -i inputFiles/lagrangianContactMechanics/Sneddon_contactMechanics_benchmark.xml``
+``path/to/geos -i inputFiles/lagrangianContactMechanics/ContactMechanics_Sneddon_benchmark.xml``
 
-``path/to/geosx -i inputFiles/hydraulicFracturing/Sneddon_hydroFrac_benchmark.xml``
+``path/to/geos -i inputFiles/hydraulicFracturing/Sneddon_hydroFrac_benchmark.xml``
 
 ---------------------------------
 Inspecting results
@@ -293,4 +294,4 @@ To go further
 **Feedback on this example**
 
 This concludes the Sneddon example.
-For any feedback on this example, please submit a `GitHub issue on the project's GitHub page <https://github.com/GEOSX/GEOSX/issues>`_.
+For any feedback on this example, please submit a `GitHub issue on the project's GitHub page <https://github.com/GEOS-DEV/GEOS/issues>`_.

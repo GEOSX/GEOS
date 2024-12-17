@@ -2,23 +2,24 @@
  * ------------------------------------------------------------------------------------------------------------
  * SPDX-License-Identifier: LGPL-2.1-only
  *
- * Copyright (c) 2018-2019 Lawrence Livermore National Security LLC
- * Copyright (c) 2018-2019 The Board of Trustees of the Leland Stanford Junior University
- * Copyright (c) 2018-2019 TotalEnergies
- * Copyright (c) 2019-     GEOSX Contributors
- * All right reserved
+ * Copyright (c) 2016-2024 Lawrence Livermore National Security LLC
+ * Copyright (c) 2018-2024 TotalEnergies
+ * Copyright (c) 2018-2024 The Board of Trustees of the Leland Stanford Junior University
+ * Copyright (c) 2023-2024 Chevron
+ * Copyright (c) 2019-     GEOS/GEOSX Contributors
+ * All rights reserved
  *
  * See top level LICENSE, COPYRIGHT, CONTRIBUTORS, NOTICE, and ACKNOWLEDGEMENTS files for details.
  * ------------------------------------------------------------------------------------------------------------
  */
 
-#ifndef GEOSX_LINEARALGEBRA_SOLVERS_PRECONDITIONERJACOBI_HPP_
-#define GEOSX_LINEARALGEBRA_SOLVERS_PRECONDITIONERJACOBI_HPP_
+#ifndef GEOS_LINEARALGEBRA_SOLVERS_PRECONDITIONERJACOBI_HPP_
+#define GEOS_LINEARALGEBRA_SOLVERS_PRECONDITIONERJACOBI_HPP_
 
 #include "linearAlgebra/common/LinearOperator.hpp"
 #include "linearAlgebra/common/PreconditionerBase.hpp"
 
-namespace geosx
+namespace geos
 {
 
 /**
@@ -45,7 +46,7 @@ public:
    */
   virtual void setup( Matrix const & mat ) override
   {
-    GEOSX_LAI_ASSERT( mat.ready() );
+    GEOS_LAI_ASSERT( mat.ready() );
     m_diagInv.createWithLocalSize( mat.numLocalRows(), mat.comm() );
     mat.extractDiagonal( m_diagInv );
     m_diagInv.reciprocal();
@@ -73,7 +74,7 @@ public:
    */
   virtual globalIndex numGlobalRows() const override final
   {
-    GEOSX_LAI_ASSERT( m_diagInv.ready() );
+    GEOS_LAI_ASSERT( m_diagInv.ready() );
     return m_diagInv.globalSize();
   }
 
@@ -83,7 +84,7 @@ public:
    */
   virtual globalIndex numGlobalCols() const override final
   {
-    GEOSX_LAI_ASSERT( m_diagInv.ready() );
+    GEOS_LAI_ASSERT( m_diagInv.ready() );
     return m_diagInv.globalSize();
   }
 
@@ -96,9 +97,9 @@ public:
   virtual void apply( Vector const & src,
                       Vector & dst ) const override
   {
-    GEOSX_LAI_ASSERT( m_diagInv.ready() );
-    GEOSX_LAI_ASSERT_EQ( this->numGlobalRows(), dst.globalSize() );
-    GEOSX_LAI_ASSERT_EQ( this->numGlobalCols(), src.globalSize() );
+    GEOS_LAI_ASSERT( m_diagInv.ready() );
+    GEOS_LAI_ASSERT_EQ( this->numGlobalRows(), dst.globalSize() );
+    GEOS_LAI_ASSERT_EQ( this->numGlobalCols(), src.globalSize() );
 
     m_diagInv.pointwiseProduct( src, dst );
   }
@@ -111,4 +112,4 @@ private:
 
 }
 
-#endif //GEOSX_LINEARALGEBRA_SOLVERS_PRECONDITIONERJACOBI_HPP_
+#endif //GEOS_LINEARALGEBRA_SOLVERS_PRECONDITIONERJACOBI_HPP_

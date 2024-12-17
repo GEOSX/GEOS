@@ -2,10 +2,11 @@
  * ------------------------------------------------------------------------------------------------------------
  * SPDX-License-Identifier: LGPL-2.1-only
  *
- * Copyright (c) 2018-2020 Lawrence Livermore National Security LLC
- * Copyright (c) 2018-2020 The Board of Trustees of the Leland Stanford Junior University
- * Copyright (c) 2018-2020 TotalEnergies
- * Copyright (c) 2019-     GEOSX Contributors
+ * Copyright (c) 2016-2024 Lawrence Livermore National Security LLC
+ * Copyright (c) 2018-2024 TotalEnergies
+ * Copyright (c) 2018-2024 The Board of Trustees of the Leland Stanford Junior University
+ * Copyright (c) 2023-2024 Chevron
+ * Copyright (c) 2019-     GEOS/GEOSX Contributors
  * All rights reserved
  *
  * See top level LICENSE, COPYRIGHT, CONTRIBUTORS, NOTICE, and ACKNOWLEDGEMENTS files for details.
@@ -21,7 +22,7 @@
 
 #include <fnmatch.h>
 
-namespace geosx
+namespace geos
 {
 
 namespace
@@ -63,7 +64,7 @@ std::vector< string >
 MeshObjectPath::fillPathTokens( string const & path,
                                 dataRepository::Group const & meshBodies ) const
 {
-  std::vector< string > pathTokens = stringutilities::tokenize< std::vector< string > >( path, "/" );
+  std::vector< string > pathTokens = stringutilities::tokenize( path, "/" );
 
   // find where the object specification is in the path
   auto findObjectIndex = [&]() -> int
@@ -80,14 +81,15 @@ MeshObjectPath::fillPathTokens( string const & path,
 
   int objectIndex = findObjectIndex();
 
-  GEOSX_ERROR_IF( objectIndex==-1,
-                  GEOSX_FMT( "Path ({}) does not contain a valid object type. "
-                             "Must contain one of ({},{},{},{})",
-                             path,
-                             MeshLevel::groupStructKeys::nodeManagerString(),
-                             MeshLevel::groupStructKeys::edgeManagerString(),
-                             MeshLevel::groupStructKeys::faceManagerString(),
-                             MeshLevel::groupStructKeys::elemManagerString() ) );
+  GEOS_THROW_IF( objectIndex==-1,
+                 GEOS_FMT( "Path {} does not contain a valid object type. "
+                           "It must contain one of the following: {}, {}, {}, {}",
+                           path,
+                           MeshLevel::groupStructKeys::nodeManagerString(),
+                           MeshLevel::groupStructKeys::edgeManagerString(),
+                           MeshLevel::groupStructKeys::faceManagerString(),
+                           MeshLevel::groupStructKeys::elemManagerString() ),
+                 InputError );
 
   // No MeshBody or MeshLevels were specified. add all of them
   if( objectIndex==0 )
@@ -110,24 +112,36 @@ MeshObjectPath::fillPathTokens( string const & path,
     {
       pathTokens.insert( pathTokens.begin(), "{*}" );
 
-      string existingMeshBodyAndLevel;
+      // searching if the mesh level exists
       bool levelNameFound = false;
       meshBodies.forSubGroups< MeshBody >( [&]( MeshBody const & meshBody )
       {
-        existingMeshBodyAndLevel += meshBody.getName() + ": ";
         meshBody.forMeshLevels( [&]( MeshLevel const & meshLevel )
         {
-          existingMeshBodyAndLevel += meshLevel.getName() + ", ";
-          levelNameFound = ( unidentifiedName==meshLevel.getName() ) ? true : levelNameFound;
+          levelNameFound |= ( unidentifiedName==meshLevel.getName() );
         } );
-        existingMeshBodyAndLevel += "/n";
       } );
 
-      GEOSX_ERROR_IF( !levelNameFound,
-                      GEOSX_FMT( "Path ({}) specifies an invalid MeshBody or MeshLevel. ",
-                                 "existing MeshBodies: MeshLevels /n",
-                                 path,
-                                 existingMeshBodyAndLevel ) );
+      if( !levelNameFound )
+      {
+        string existingMeshBodiesAndLevels;
+        meshBodies.forSubGroups< MeshBody >( [&]( MeshBody const & meshBody )
+        {
+          std::vector< string > meshLevelsNames;
+          existingMeshBodiesAndLevels += "  MeshBody "+meshBody.getName() + ": { ";
+          meshBody.forMeshLevels( [&]( MeshLevel const & meshLevel )
+          {
+            meshLevelsNames.push_back( meshLevel.getName() );
+          } );
+          existingMeshBodiesAndLevels += stringutilities::join( meshLevelsNames, ", " ) + " }\n";
+        } );
+
+        GEOS_THROW( GEOS_FMT( "Path {0} specifies an invalid MeshBody or MeshLevel. ",
+                              "existing MeshBodies: \n{1}\n",
+                              path,
+                              existingMeshBodiesAndLevels ),
+                    InputError );
+      }
       pathTokens.insert( pathTokens.begin()+1, unidentifiedName );
     }
   }
@@ -136,11 +150,13 @@ MeshObjectPath::fillPathTokens( string const & path,
   objectIndex = findObjectIndex();
   size_t targetTokenLength = pathTokens.size();
 
-  GEOSX_ERROR_IF_NE_MSG( objectIndex, 2,
-                         "Filling of MeshBody and/or MeshLevel in path has failed. Object Index should be 2" );
+  GEOS_THROW_IF_NE_MSG( objectIndex, 2,
+                        "Filling of MeshBody and/or MeshLevel in path has failed. Object Index should be 2",
+                        InputError );
 
-  GEOSX_ERROR_IF( targetTokenLength < 2,
-                  "Filling of MeshBody and/or MeshLevel in path has failed. targetTokenLength should be greater than 2" );
+  GEOS_THROW_IF( targetTokenLength < 2,
+                 "Filling of MeshBody and/or MeshLevel in path has failed. targetTokenLength should be greater than 2",
+                 InputError );
 
   // now we need to fill in any missing region/subregion specifications.
 
@@ -189,13 +205,17 @@ void processTokenRecursive( dataRepository::Group const & parentGroup,
                             NODETYPE & node,
                             CALLBACK && cbfunc )
 {
-  array1d< string > namesInRepository;
+  std::vector< string > namesInRepository;
   parentGroup.forSubGroups< TYPE >( [&]( TYPE const & group )
   {
     namesInRepository.emplace_back( group.getName() );
   } );
 
-  for( string const & inputEntry : stringutilities::tokenize< std::vector< string > >( pathToken, " " ) )
+  GEOS_THROW_IF( namesInRepository.empty(),
+                 GEOS_FMT( "{0} has no children.", parentGroup.getDataContext().toString()),
+                 InputError );
+
+  for( string const & inputEntry : stringutilities::tokenize( pathToken, " " ) )
   {
     bool foundMatch = false;
     for( string const & candidateName : namesInRepository )
@@ -212,12 +232,13 @@ void processTokenRecursive( dataRepository::Group const & parentGroup,
 
       }
     }
-    GEOSX_ERROR_IF( !foundMatch,
-                    GEOSX_FMT( "Specified name ({0}) did not find a match with a object in group ({1}). "
-                               "Objects that are present in ({1}) are:\n{2}",
-                               inputEntry,
-                               parentGroup.getName(),
-                               stringutilities::join( namesInRepository, ", " ) ) );
+    GEOS_THROW_IF( !foundMatch,
+                   GEOS_FMT( "{0} has no child named {1}.\n"
+                             "{0} has the following children: {{ {2} }}",
+                             parentGroup.getDataContext().toString(),
+                             inputEntry,
+                             stringutilities::join( namesInRepository, ", " ) ),
+                   InputError );
   }
 }
 
@@ -292,5 +313,19 @@ void MeshObjectPath::printPermutations() const
   std::cout<<std::endl<<std::endl;
 }
 
+bool MeshObjectPath::containsMeshLevel( MeshLevel const & meshLevel ) const
+{
+  bool isMeshLevelInObjectPath = false;
+  string const bodyName = meshLevel.getParent().getParent().getName();
+  string const levelName = meshLevel.getName();
 
-} /* namespace geosx */
+  auto bodyIter = m_pathPermutations.find( bodyName );
+  if( bodyIter != m_pathPermutations.end() )
+  {
+    auto const levelIter = bodyIter->second.find( levelName );
+    isMeshLevelInObjectPath = ( levelIter != bodyIter->second.end() );
+  }
+  return isMeshLevelInObjectPath;
+}
+
+} /* namespace geos */

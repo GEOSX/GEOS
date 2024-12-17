@@ -2,10 +2,11 @@
  * ------------------------------------------------------------------------------------------------------------
  * SPDX-License-Identifier: LGPL-2.1-only
  *
- * Copyright (c) 2018-2020 Lawrence Livermore National Security LLC
- * Copyright (c) 2018-2020 The Board of Trustees of the Leland Stanford Junior University
- * Copyright (c) 2018-2020 TotalEnergies
- * Copyright (c) 2019-     GEOSX Contributors
+ * Copyright (c) 2016-2024 Lawrence Livermore National Security LLC
+ * Copyright (c) 2018-2024 TotalEnergies
+ * Copyright (c) 2018-2024 The Board of Trustees of the Leland Stanford Junior University
+ * Copyright (c) 2023-2024 Chevron
+ * Copyright (c) 2019-     GEOS/GEOSX Contributors
  * All rights reserved
  *
  * See top level LICENSE, COPYRIGHT, CONTRIBUTORS, NOTICE, and ACKNOWLEDGEMENTS files for details.
@@ -16,14 +17,14 @@
  * @file MatrixBase.hpp
  */
 
-#ifndef GEOSX_LINEARALGEBRA_INTERFACES_MATRIXBASE_HPP_
-#define GEOSX_LINEARALGEBRA_INTERFACES_MATRIXBASE_HPP_
+#ifndef GEOS_LINEARALGEBRA_INTERFACES_MATRIXBASE_HPP_
+#define GEOS_LINEARALGEBRA_INTERFACES_MATRIXBASE_HPP_
 
 #include "linearAlgebra/common/common.hpp"
 #include "linearAlgebra/common/LinearOperator.hpp"
 #include "LvArray/src/output.hpp"
 
-namespace geosx
+namespace geos
 {
 
 class DofManager;
@@ -248,7 +249,7 @@ protected:
                        localIndex const numLocalColumns,
                        MPI_Comm const & comm )
   {
-    localMatrix.move( LvArray::MemorySpace::host, false );
+    localMatrix.move( hostMemorySpace, false );
 
     localIndex maxEntriesPerRow = 0;
     for( localIndex i = 0; i < localMatrix.numRows(); ++i )
@@ -605,11 +606,11 @@ protected:
                             Matrix const & P,
                             Matrix & dst ) const
   {
-    GEOSX_LAI_ASSERT( ready() );
-    GEOSX_LAI_ASSERT( R.ready() );
-    GEOSX_LAI_ASSERT( P.ready() );
-    GEOSX_LAI_ASSERT_EQ( numGlobalRows(), R.numGlobalCols() );
-    GEOSX_LAI_ASSERT_EQ( numGlobalCols(), P.numGlobalRows() );
+    GEOS_LAI_ASSERT( ready() );
+    GEOS_LAI_ASSERT( R.ready() );
+    GEOS_LAI_ASSERT( P.ready() );
+    GEOS_LAI_ASSERT_EQ( numGlobalRows(), R.numGlobalCols() );
+    GEOS_LAI_ASSERT_EQ( numGlobalCols(), P.numGlobalRows() );
 
     Matrix AP;
     multiply( P, AP );
@@ -624,10 +625,10 @@ protected:
   virtual void multiplyPtAP( Matrix const & P,
                              Matrix & dst ) const
   {
-    GEOSX_LAI_ASSERT( ready() );
-    GEOSX_LAI_ASSERT( P.ready() );
-    GEOSX_LAI_ASSERT_EQ( numGlobalRows(), P.numGlobalRows() );
-    GEOSX_LAI_ASSERT_EQ( numGlobalCols(), P.numGlobalRows() );
+    GEOS_LAI_ASSERT( ready() );
+    GEOS_LAI_ASSERT( P.ready() );
+    GEOS_LAI_ASSERT_EQ( numGlobalRows(), P.numGlobalRows() );
+    GEOS_LAI_ASSERT_EQ( numGlobalCols(), P.numGlobalRows() );
 
     Matrix AP;
     multiply( P, AP );
@@ -963,6 +964,6 @@ protected:
 
 };
 
-} // namespace geosx
+} // namespace geos
 
-#endif //GEOSX_LINEARALGEBRA_INTERFACES_MATRIXBASE_HPP_
+#endif //GEOS_LINEARALGEBRA_INTERFACES_MATRIXBASE_HPP_

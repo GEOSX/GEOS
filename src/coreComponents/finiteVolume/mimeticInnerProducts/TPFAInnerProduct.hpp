@@ -2,10 +2,11 @@
  * ------------------------------------------------------------------------------------------------------------
  * SPDX-License-Identifier: LGPL-2.1-only
  *
- * Copyright (c) 2018-2020 Lawrence Livermore National Security LLC
- * Copyright (c) 2018-2020 The Board of Trustees of the Leland Stanford Junior University
- * Copyright (c) 2018-2020 TotalEnergies
- * Copyright (c) 2019-     GEOSX Contributors
+ * Copyright (c) 2016-2024 Lawrence Livermore National Security LLC
+ * Copyright (c) 2018-2024 TotalEnergies
+ * Copyright (c) 2018-2024 The Board of Trustees of the Leland Stanford Junior University
+ * Copyright (c) 2023-2024 Chevron
+ * Copyright (c) 2019-     GEOS/GEOSX Contributors
  * All rights reserved
  *
  * See top level LICENSE, COPYRIGHT, CONTRIBUTORS, NOTICE, and ACKNOWLEDGEMENTS files for details.
@@ -16,12 +17,12 @@
  * @file TPFAInnerProduct.hpp
  */
 
-#ifndef GEOSX_FINITEVOLUME_MIMETICINNERPRODUCTS_TPFAINNERPRODUCT_HPP_
-#define GEOSX_FINITEVOLUME_MIMETICINNERPRODUCTS_TPFAINNERPRODUCT_HPP_
+#ifndef GEOS_FINITEVOLUME_MIMETICINNERPRODUCTS_TPFAINNERPRODUCT_HPP_
+#define GEOS_FINITEVOLUME_MIMETICINNERPRODUCTS_TPFAINNERPRODUCT_HPP_
 
 #include "finiteVolume/mimeticInnerProducts/MimeticInnerProductBase.hpp"
 
-namespace geosx
+namespace geos
 {
 namespace mimeticInnerProduct
 {
@@ -48,7 +49,7 @@ public:
    * @param[inout] transMatrix the output
    */
   template< localIndex NF >
-  GEOSX_HOST_DEVICE
+  GEOS_HOST_DEVICE
   static void
   compute( arrayView2d< real64 const, nodes::REFERENCE_POSITION_USD > const & nodePosition,
            arrayView1d< real64 const > const & transMultiplier,
@@ -63,7 +64,7 @@ public:
 };
 
 template< localIndex NF >
-GEOSX_HOST_DEVICE
+GEOS_HOST_DEVICE
 void
 TPFAInnerProduct::compute( arrayView2d< real64 const, nodes::REFERENCE_POSITION_USD > const & nodePosition,
                            arrayView1d< real64 const > const & transMultiplier,
@@ -75,7 +76,7 @@ TPFAInnerProduct::compute( arrayView2d< real64 const, nodes::REFERENCE_POSITION_
                            real64 const & lengthTolerance,
                            arraySlice2d< real64 > const & transMatrix )
 {
-  GEOSX_UNUSED_VAR( elemVolume );
+  GEOS_UNUSED_VAR( elemVolume );
 
   real64 const areaTolerance = lengthTolerance * lengthTolerance;
   real64 const weightTolerance = 1e-30 * lengthTolerance;
@@ -130,7 +131,7 @@ TPFAInnerProduct::compute( arrayView2d< real64 const, nodes::REFERENCE_POSITION_
 
 } // end namespace mimeticInnerProduct
 
-} // end namespace geosx
+} // end namespace geos
 
 
-#endif //GEOSX_FINITEVOLUME_MIMETICINNERPRODUCTS_TPFAINNERPRODUCT_HPP_
+#endif //GEOS_FINITEVOLUME_MIMETICINNERPRODUCTS_TPFAINNERPRODUCT_HPP_

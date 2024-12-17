@@ -1,0 +1,86 @@
+<?xml version="1.0" ?>
+
+<Problem>
+  <Included>
+    <File name="./PoroElastic_efem-edfm_inclinedFrac_base.xml" />
+  </Included>
+
+  <Mesh>
+    <InternalMesh
+      name="mesh1"
+      elementTypes="{ C3D8 }"
+      xCoords="{ 0, 10 }"
+      yCoords="{ 0, 20 }"
+      zCoords="{ 0, 1 }"
+      nx="{ 75 }"
+      ny="{ 150 }"
+      nz="{ 1 }"
+      cellBlockNames="{ cb1 }"/>
+  </Mesh>
+
+  <Geometry>
+    <Rectangle
+      name="FracturePlane"
+      normal="{ -0.707, 0.707, 0 }"
+      origin="{ 5.0, 8.0, 0.5 }"
+      lengthVector="{ 0.707, 0.707, 0 }"
+      widthVector="{ 0, 0, 1 }"
+      dimensions="{ 8, 4 }"/>
+  </Geometry>
+  
+  <Events
+    maxTime="8.64e6">
+    <PeriodicEvent
+      name="outputs"
+      timeFrequency="8.64e4"
+      target="/Outputs/vtkOutput"/>
+
+    <PeriodicEvent
+      name="pressureCollection" 
+      timeFrequency="8.64e4"
+      target="/Tasks/pressureCollection"/>
+
+    <PeriodicEvent
+      name="pressureOutput"
+      timeFrequency="8.64e4"
+      target="/Outputs/pressureHistoryOutput"/>
+
+    <PeriodicEvent
+      name="apertureCollection" 
+      timeFrequency="8.64e4"
+      target="/Tasks/apertureCollection" />
+
+    <PeriodicEvent
+      name="apertureOutput"
+      timeFrequency="8.64e4"
+      target="/Outputs/apertureOutput" /> 
+
+    <PeriodicEvent
+      name="solverApplication0"
+      endTime="100.0"
+      forceDt="100.0"
+      target="/Solvers/poroSolver"/>
+
+    <PeriodicEvent
+      name="solverApplication1"
+      beginTime="100.0"
+      endTime="1000.0"
+      forceDt="100.0"
+      target="/Solvers/poroSolver"/> 
+  
+    <PeriodicEvent
+      name="solverApplication2"
+      beginTime="1000.0"
+      endTime="8.64e4"
+      forceDt="1000.0"
+      target="/Solvers/poroSolver"/>
+
+    <PeriodicEvent
+      name="solverApplication3"
+      beginTime="8.64e4"
+      endTime="8.64e6"
+      forceDt="8.64e4"
+      target="/Solvers/poroSolver"/> 
+  </Events>
+
+</Problem>

@@ -2,10 +2,11 @@
  * ------------------------------------------------------------------------------------------------------------
  * SPDX-License-Identifier: LGPL-2.1-only
  *
- * Copyright (c) 2018-2020 Lawrence Livermore National Security LLC
- * Copyright (c) 2018-2020 The Board of Trustees of the Leland Stanford Junior University
- * Copyright (c) 2018-2020 TotalEnergies
- * Copyright (c) 2019-     GEOSX Contributors
+ * Copyright (c) 2016-2024 Lawrence Livermore National Security LLC
+ * Copyright (c) 2018-2024 TotalEnergies
+ * Copyright (c) 2018-2024 The Board of Trustees of the Leland Stanford Junior University
+ * Copyright (c) 2023-2024 Chevron
+ * Copyright (c) 2019-     GEOS/GEOSX Contributors
  * All rights reserved
  *
  * See top level LICENSE, COPYRIGHT, CONTRIBUTORS, NOTICE, and ACKNOWLEDGEMENTS files for details.
@@ -16,12 +17,12 @@
  * @file LinearSolverParameters.hpp
  */
 
-#ifndef GEOSX_LINEARALGEBRA_UTILITIES_LINEARSOLVERPARAMETERS_HPP_
-#define GEOSX_LINEARALGEBRA_UTILITIES_LINEARSOLVERPARAMETERS_HPP_
+#ifndef GEOS_LINEARALGEBRA_UTILITIES_LINEARSOLVERPARAMETERS_HPP_
+#define GEOS_LINEARALGEBRA_UTILITIES_LINEARSOLVERPARAMETERS_HPP_
 
-#include "codingUtilities/EnumStrings.hpp"
+#include "common/format/EnumStrings.hpp"
 
-namespace geosx
+namespace geos
 {
 
 /**
@@ -116,19 +117,26 @@ struct LinearSolverParameters
   {
     real64 relTolerance = 1e-6;       ///< Relative convergence tolerance for iterative solvers
     integer maxIterations = 200;      ///< Max iterations before declaring convergence failure
-    integer maxRestart = 200;         ///< Max number of vectors in Krylov basis before restarting
+#if GEOS_USE_HYPRE_DEVICE == GEOS_USE_HYPRE_CUDA || GEOS_USE_HYPRE_DEVICE == GEOS_USE_HYPRE_HIP
+    integer maxRestart = 100;         ///< Max number of vectors in Krylov basis before restarting (GPUs)
+#else
+    integer maxRestart = 200;         ///< Max number of vectors in Krylov basis before restarting (CPUs)
+#endif
     integer useAdaptiveTol = false;   ///< Use Eisenstat-Walker adaptive tolerance
     real64 weakestTol = 1e-3;         ///< Weakest allowed tolerance when using adaptive method
+    real64 strongestTol = 1e-8;       ///< Strongest allowed tolerance when using adaptive method
+    real64 adaptiveGamma = 0.1;       ///< Gamma parameter for adaptive method
+    real64 adaptiveExponent = 1.0;    ///< Exponent parameter for adaptive method
   }
   krylov;                             ///< Krylov-method parameter struct
 
   /// Matrix-scaling parameters
   struct Scaling
   {
-    integer useRowScaling = false;      ///< Apply row scaling
-    integer useRowColScaling = false;   ///< Apply row and column scaling (not yet implemented)
+    integer useRowScaling = false;    ///< Apply row scaling
+    integer useRowColScaling = false; ///< Apply row and column scaling (not yet implemented)
   }
-  scaling;                              ///< Matrix-scaling parameter struct
+  scaling;                            ///< Matrix-scaling parameter struct
 
   /// Algebraic multigrid parameters
   struct AMG
@@ -136,71 +144,126 @@ struct LinearSolverParameters
     /// AMG cycle type
     enum class CycleType : integer
     {
-      V, ///< V-cycle
-      W, ///< W-cycle
+      V,                  ///< V-cycle
+      W                   ///< W-cycle
     };
 
     /// AMG pre/post smoothing option
     enum class PreOrPost : integer
     {
-      pre,  ///< pre-smoothing only
-      post, ///< post-smoothing only
-      both  ///< pre- and post-smoothing
+      pre,                ///< pre-smoothing only
+      post,               ///< post-smoothing only
+      both                ///< pre- and post-smoothing
     };
 
     /// AMG smoother type
     enum class SmootherType : integer
     {
-      default_,  ///< Use LAI's default option
-      jacobi,    ///< Jacobi smoothing
-      l1jacobi,  ///< l1-Jacobi smoothing
-      fgs,       ///< Gauss-Seidel smoothing (forward sweep)
-      bgs,       ///< Gauss-Seidel smoothing (backward sweep)
-      sgs,       ///< Symmetric Gauss-Seidel smoothing
-      l1sgs,     ///< l1-Symmetric Gauss-Seidel smoothing
-      chebyshev, ///< Chebyshev polynomial smoothing
-      ilu0,      ///< ILU(0)
-      ilut,      ///< Incomplete LU with thresholding
-      ic0,       ///< Incomplete Cholesky
-      ict,       ///< Incomplete Cholesky with thresholding
+      default_,           ///< Use LAI's default option
+      jacobi,             ///< Jacobi smoothing
+      l1jacobi,           ///< l1-Jacobi smoothing
+      fgs,                ///< Gauss-Seidel smoothing (forward sweep)
+      bgs,                ///< Gauss-Seidel smoothing (backward sweep)
+      sgs,                ///< Symmetric Gauss-Seidel smoothing
+      l1sgs,              ///< l1-Symmetric Gauss-Seidel smoothing
+      chebyshev,          ///< Chebyshev polynomial smoothing
+      ilu0,               ///< ILU(0)
+      ilut,               ///< Incomplete LU with thresholding
+      ic0,                ///< Incomplete Cholesky
+      ict                 ///< Incomplete Cholesky with thresholding
     };
 
     /// AMG coarse solver type
     enum class CoarseType : integer
     {
-      default_,  ///< Use LAI's default option
-      jacobi,    ///< Jacobi
-      l1jacobi,  ///< l1-Jacobi
-      fgs,       ///< Gauss-Seidel (forward sweep)
-      sgs,       ///< Symmetric Gauss-Seidel
-      l1sgs,     ///< l1-Symmetric Gauss-Seidel
-      chebyshev, ///< Chebyshev polynomial
-      direct,    ///< Direct solver as preconditioner
-      bgs,       ///< Gauss-Seidel smoothing (backward sweep)
+      default_,           ///< Use LAI's default option
+      jacobi,             ///< Jacobi (GPU support in hypre)
+      l1jacobi,           ///< l1-Jacobi (GPU support in hypre)
+      fgs,                ///< Gauss-Seidel (forward sweep)
+      sgs,                ///< Symmetric Gauss-Seidel
+      l1sgs,              ///< l1-Symmetric Gauss-Seidel
+      chebyshev,          ///< Chebyshev polynomial (GPU support in hypre)
+      direct,             ///< Direct solver as preconditioner
+      bgs,                ///< Gauss-Seidel smoothing (backward sweep)
+      gsElimWPivoting,    ///< Gaussian Elimination with pivoting direct solver
+      gsElimWInverse      ///< Direct inverse with Gaussian Elimination
+    };
+
+    /// AMG coarsening types (HYPRE only)
+    enum class CoarseningType : integer
+    {
+      default_,           ///< Use LAI's default option
+      CLJP,               ///< A parallel coarsening algorithm using independent sets
+      RugeStueben,        ///< Classical Ruge-Stueben on each processor, followed by a third pass
+      Falgout,            ///< Ruge-Stueben followed by CLJP
+      PMIS,               ///< Parallel coarsening as CLJP but with lower complexities (GPU support)
+      HMIS                ///< Hybrid PMIS coarsening
+    };
+
+    /// AMG interpolation type (HYPRE only)
+    enum class InterpType : integer
+    {
+      default_,           ///< Use LAI's default option
+      modifiedClassical,  ///< Modified classical
+      direct,             ///< Direct (GPU support)
+      multipass,          ///< Multipass (GPU support)
+      extendedI,          ///< Extended+i (GPU support)
+      standard,           ///< Standard
+      extended,           ///< Extended classical (GPU support)
+      directBAMG,         ///< Direct with separation of weights (GPU support)
+      modifiedExtended,   ///< Modularized extended classical (GPU support)
+      modifiedExtendedI,  ///< Modularized extended+i (GPU support)
+      modifiedExtendedE   ///< Modularized extended+e (GPU support)
+    };
+
+    /// AMG interpolation type for aggressive coarsening levels (HYPRE only)
+    enum class AggInterpType : integer
+    {
+      default_,           ///< Use LAI's default option
+      extendedIStage2,    ///< Extended+i 2-stage (GPU support)
+      standardStage2,     ///< Standard 2-stage
+      extendedStage2,     ///< Extended 2-stage (GPU support)
+      multipass,          ///< Multipass (GPU support)
+      modifiedExtended,   ///< Modularized Extended (GPU support)
+      modifiedExtendedI,  ///< Modularized Extended+i (GPU support)
+      modifiedExtendedE,  ///< Modularized Extended+e (GPU support)
+      modifiedMultipass   ///< Modularized Multipass (GPU support)
     };
 
     /// Null space type
     enum class NullSpaceType : integer
     {
-      constantModes,  ///< Constant modes
-      rigidBodyModes, ///< Rigid body modes
+      constantModes,      ///< Constant modes
+      rigidBodyModes      ///< Rigid body modes
     };
 
-    integer maxLevels = 20;                         ///< Maximum number of coarsening levels
-    CycleType cycleType = CycleType::V;             ///< AMG cycle type
-    SmootherType smootherType = SmootherType::fgs;  ///< Smoother type
-    CoarseType coarseType = CoarseType::direct;     ///< Coarse-level solver/smoother
-    string coarseningType = "HMIS";                 ///< Coarsening algorithm
-    integer interpolationType = 6;                  ///< Coarsening algorithm
-    integer numSweeps = 2;                          ///< Number of smoother sweeps
-    integer numFunctions = 1;                       ///< Number of amg functions
-    integer aggresiveNumLevels = 0;                 ///< Number of levels for aggressive coarsening.
-    PreOrPost preOrPostSmoothing = PreOrPost::both; ///< Pre and/or post smoothing
-    real64 threshold = 0.0;                         ///< Threshold for "strong connections" (for classical and smoothed-aggregation AMG)
-    integer separateComponents = false;             ///< Apply a separate component filter before AMG construction
-    NullSpaceType nullSpaceType = NullSpaceType::constantModes; ///< Null space type [constantModes,rigidBodyModes]
+#if GEOS_USE_HYPRE_DEVICE == GEOS_USE_HYPRE_CUDA || GEOS_USE_HYPRE_DEVICE == GEOS_USE_HYPRE_HIP
+    CoarseningType coarseningType = CoarseningType::PMIS;           ///< Coarsening algorithm (GPUs)
+    SmootherType smootherType = SmootherType::l1jacobi;             ///< Smoother type (GPUs)
+#else
+    CoarseningType coarseningType = CoarseningType::HMIS;           ///< Coarsening algorithm (CPUs)
+    SmootherType smootherType = SmootherType::l1sgs;                ///< Smoother type (CPUs)
+#endif
+
+    integer maxLevels = 20;                                         ///< Maximum number of coarsening levels
+    CycleType cycleType = CycleType::V;                             ///< AMG cycle type
+    CoarseType coarseType = CoarseType::direct;                     ///< Coarse-level solver/smoother
+    InterpType interpolationType = InterpType::extendedI;           ///< Interpolation algorithm
+    integer interpolationMaxNonZeros = 4;                           ///< Interpolation - Max. nonzeros/row
+    real64 relaxWeight = 1.0;                                       ///< Relaxation weight
+    integer numSweeps = 1;                                          ///< Number of smoother sweeps
+    integer numFunctions = 1;                                       ///< Number of amg functions
+    integer aggressiveNumPaths = 1;                                 ///< Number of paths agg. coarsening.
+    integer aggressiveNumLevels = 0;                                ///< Number of levels for aggressive coarsening.
+    AggInterpType aggressiveInterpType = AggInterpType::multipass;  ///< Interp. type for agg. coarsening.
+    integer aggressiveInterpMaxNonZeros = 16;                       ///< Aggressive Interpolation - Max. nonzeros/row.
+    PreOrPost preOrPostSmoothing = PreOrPost::both;                 ///< Pre and/or post smoothing
+    real64 threshold = 0.0;                                         ///< Threshold for "strong connections" (for classical
+                                                                    ///< and smoothed-aggregation AMG)
+    integer separateComponents = false;                             ///< Apply a separate component filter before AMG construction
+    NullSpaceType nullSpaceType = NullSpaceType::constantModes;     ///< Null space type [constantModes,rigidBodyModes]
   }
-  amg;                                              ///< Algebraic Multigrid (AMG) parameters
+  amg;                                                              ///< Algebraic Multigrid (AMG) parameters
 
   /// Multigrid reduction parameters
   struct MGR
@@ -215,16 +278,21 @@ struct LinearSolverParameters
       singlePhaseHybridFVM,                      ///< hybrid finite volume single-phase flow
       singlePhaseReservoirHybridFVM,             ///< hybrid finite volume single-phase flow with wells
       singlePhasePoromechanics,                  ///< single phase poromechanics with finite volume single phase flow
+      thermalSinglePhasePoromechanics,           ///< thermal single phase poromechanics with finite volume single phase flow
       hybridSinglePhasePoromechanics,            ///< single phase poromechanics with hybrid finite volume single phase flow
-      singlePhasePoromechanicsEmbeddedFractures, ///< single phase poromechanics with finite volume single phase flow and embedded fractures
+      singlePhasePoromechanicsEmbeddedFractures, ///< single phase poromechanics with FV embedded fractures
+      singlePhasePoromechanicsConformingFractures, ///< single phase poromechanics with FV embedded fractures
       singlePhasePoromechanicsReservoirFVM,      ///< single phase poromechanics with finite volume single phase flow with wells
       compositionalMultiphaseFVM,                ///< finite volume compositional multiphase flow
       compositionalMultiphaseHybridFVM,          ///< hybrid finite volume compositional multiphase flow
       compositionalMultiphaseReservoirFVM,       ///< finite volume compositional multiphase flow with wells
       compositionalMultiphaseReservoirHybridFVM, ///< hybrid finite volume compositional multiphase flow with wells
+      reactiveCompositionalMultiphaseOBL,        ///< finite volume reactive compositional flow with OBL
       thermalCompositionalMultiphaseFVM,         ///< finite volume thermal compositional multiphase flow
+      thermalCompositionalMultiphaseReservoirFVM,///< finite volume thermal compositional multiphase flow
       multiphasePoromechanics,                   ///< multiphase poromechanics with finite volume compositional multiphase flow
       multiphasePoromechanicsReservoirFVM,       ///< multiphase poromechanics with finite volume compositional multiphase flow with wells
+      thermalMultiphasePoromechanics,            ///< thermal multiphase poromechanics with finite volume compositional multiphase flow
       hydrofracture,                             ///< hydrofracture
       lagrangianContactMechanics,                ///< Lagrangian contact mechanics
       solidMechanicsEmbeddedFractures            ///< Embedded fractures mechanics
@@ -232,7 +300,8 @@ struct LinearSolverParameters
 
     StrategyType strategy = StrategyType::invalid; ///< Predefined MGR solution strategy (solver specific)
     integer separateComponents = false;            ///< Apply a separate displacement component (SDC) filter before AMG construction
-    string displacementFieldName;                  ///< Displacement field name need for SDC filter
+    integer areWellsShut = false;                  ///< Flag to let MGR know that wells are shut, and that jacobi can be applied to the
+                                                   ///< well block
   }
   mgr;                                             ///< Multigrid reduction (MGR) parameters
 
@@ -301,16 +370,21 @@ ENUM_STRINGS( LinearSolverParameters::MGR::StrategyType,
               "singlePhaseHybridFVM",
               "singlePhaseReservoirHybridFVM",
               "singlePhasePoromechanics",
+              "thermalSinglePhasePoromechanics",
               "hybridSinglePhasePoromechanics",
               "singlePhasePoromechanicsEmbeddedFractures",
+              "singlePhasePoromechanicsConformingFractures",
               "singlePhasePoromechanicsReservoirFVM",
               "compositionalMultiphaseFVM",
               "compositionalMultiphaseHybridFVM",
               "compositionalMultiphaseReservoirFVM",
               "compositionalMultiphaseReservoirHybridFVM",
+              "reactiveCompositionalMultiphaseOBL",
               "thermalCompositionalMultiphaseFVM",
+              "thermalCompositionalMultiphaseReservoirFVM",
               "multiphasePoromechanics",
               "multiphasePoromechanicsReservoirFVM",
+              "thermalMultiphasePoromechanics",
               "hydrofracture",
               "lagrangianContactMechanics",
               "solidMechanicsEmbeddedFractures" );
@@ -351,13 +425,50 @@ ENUM_STRINGS( LinearSolverParameters::AMG::CoarseType,
               "l1sgs",
               "chebyshev",
               "direct",
-              "bgs", );
+              "bgs",
+              "gsElimWPivoting",
+              "gsElimWInverse" );
+
+/// Declare strings associated with enumeration values.
+ENUM_STRINGS( LinearSolverParameters::AMG::CoarseningType,
+              "default",
+              "CLJP",
+              "RugeStueben",
+              "Falgout",
+              "PMIS",
+              "HMIS" );
+
+/// Declare strings associated with enumeration values.
+ENUM_STRINGS( LinearSolverParameters::AMG::InterpType,
+              "default",
+              "modifiedClassical",
+              "direct",
+              "multipass",
+              "extendedI",
+              "standard",
+              "extended",
+              "directBAMG",
+              "modifiedExtended",
+              "modifiedExtendedI",
+              "modifiedExtendedE" );
+
+/// Declare strings associated with enumeration values.
+ENUM_STRINGS( LinearSolverParameters::AMG::AggInterpType,
+              "default",
+              "extendedIStage2",
+              "standardStage2",
+              "extendedStage2",
+              "multipass",
+              "modifiedExtended",
+              "modifiedExtendedI",
+              "modifiedExtendedE",
+              "modifiedMultipass" );
 
 /// Declare strings associated with enumeration values.
 ENUM_STRINGS( LinearSolverParameters::AMG::NullSpaceType,
               "constantModes",
               "rigidBodyModes" );
 
-} /* namespace geosx */
+} /* namespace geos */
 
-#endif /*GEOSX_LINEARALGEBRA_UTILITIES_LINEARSOLVERPARAMETERS_HPP_ */
+#endif /*GEOS_LINEARALGEBRA_UTILITIES_LINEARSOLVERPARAMETERS_HPP_ */

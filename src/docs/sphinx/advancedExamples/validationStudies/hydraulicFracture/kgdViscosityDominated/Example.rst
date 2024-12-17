@@ -89,9 +89,9 @@ the HDF5 output is postprocessed and temporal evolution of fracture characterisc
            8  7.28e+05  0.000209         3
           10 6.512e+05  0.000222       3.5
 
-Note: GEOSX python tools ``geosx_xml_tools`` should be installed to run the query script (See :ref:`PythonToolsSetup` for details). 
+Note: GEOS python tools ``geosx_xml_tools`` should be installed to run the query script (See `Python Tools Setup <https://geosx-geosx.readthedocs-hosted.com/projects/geosx-geospythonpackages/en/latest/>`_ for details). 
 
-A good agreement between GEOSX results and analytical solutions is shown in the comparison below, which is generated using the visualization script:
+A good agreement between GEOS results and analytical solutions is shown in the comparison below, which is generated using the visualization script:
 
 .. code-block:: console
 
@@ -108,4 +108,4 @@ To go further
 **Feedback on this example**
 
 This concludes the viscosity dominated KGD example.
-For any feedback on this example, please submit a `GitHub issue on the project's GitHub page <https://github.com/GEOSX/GEOSX/issues>`_.
+For any feedback on this example, please submit a `GitHub issue on the project's GitHub page <https://github.com/GEOS-DEV/GEOS/issues>`_.

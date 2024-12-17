@@ -2,10 +2,11 @@
  * ------------------------------------------------------------------------------------------------------------
  * SPDX-License-Identifier: LGPL-2.1-only
  *
- * Copyright (c) 2018-2020 Lawrence Livermore National Security LLC
- * Copyright (c) 2018-2020 The Board of Trustees of the Leland Stanford Junior University
- * Copyright (c) 2018-2020 TotalEnergies
- * Copyright (c) 2019-     GEOSX Contributors
+ * Copyright (c) 2016-2024 Lawrence Livermore National Security LLC
+ * Copyright (c) 2018-2024 TotalEnergies
+ * Copyright (c) 2018-2024 The Board of Trustees of the Leland Stanford Junior University
+ * Copyright (c) 2023-2024 Chevron
+ * Copyright (c) 2019-     GEOS/GEOSX Contributors
  * All rights reserved
  *
  * See top level LICENSE, COPYRIGHT, CONTRIBUTORS, NOTICE, and ACKNOWLEDGEMENTS files for details.
@@ -19,7 +20,7 @@
 #include "SymbolicFunction.hpp"
 #include "common/DataTypes.hpp"
 
-namespace geosx
+namespace geos
 {
 
 namespace dataRepository
@@ -43,6 +44,7 @@ SymbolicFunction::SymbolicFunction( const string & name,
   #endif
 {
   registerWrapper( keys::variableNames, &m_variableNames ).
+    setRTTypeName( rtTypes::CustomTypes::groupNameRefArray ).
     setInputFlag( InputFlags::REQUIRED ).
     setSizedFromParent( 0 ).
     setDescription( "List of variables in expression.  The order must match the evaluate argument" );
@@ -72,8 +74,8 @@ public:
     string const s = m_stream.str();
     if( !s.empty() )
     {
-      GEOSX_LOG_RANK_0( GEOSX_FMT( "{} '{}': JIT compiler produced the following output:\n{}",
-                                   SymbolicFunction::catalogName(), m_name, s ) );
+      GEOS_LOG_RANK_0( GEOS_FMT( "{} '{}': JIT compiler produced the following output:\n{}",
+                                 SymbolicFunction::catalogName(), m_name, s ) );
     }
   }
 
@@ -81,23 +83,23 @@ public:
                     unsigned int line,
                     unsigned int column,
                     const char * const message,
-                    size_t const GEOSX_UNUSED_PARAM( size ) ) override
+                    size_t const GEOS_UNUSED_PARAM( size ) ) override
   {
     switch( type )
     {
       case kMessageError:
       {
-        m_stream << GEOSX_FMT( "[ERROR]: {} (line {}, column {})\n", message, line, column );
+        m_stream << GEOS_FMT( "[ERROR]: {} (line {}, column {})\n", message, line, column );
         break;
       }
       case kMessageWarning:
       {
-        m_stream << GEOSX_FMT( "[WARNING]: {} (line {}, column {})\n", message, line, column );
+        m_stream << GEOS_FMT( "[WARNING]: {} (line {}, column {})\n", message, line, column );
         break;
       }
       default:
       {
-        m_stream << GEOSX_FMT( "[OTHER]\n{}", message );
+        m_stream << GEOS_FMT( "[OTHER]\n{}", message );
         break;
       }
     }
@@ -136,4 +138,4 @@ void SymbolicFunction::initializeFunction()
 
 REGISTER_CATALOG_ENTRY( FunctionBase, SymbolicFunction, string const &, Group * const )
 
-} // namespace geosx
+} // namespace geos

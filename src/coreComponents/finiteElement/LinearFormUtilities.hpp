@@ -2,10 +2,11 @@
  * ------------------------------------------------------------------------------------------------------------
  * SPDX-License-Identifier: LGPL-2.1-only
  *
- * Copyright (c) 2018-2020 Lawrence Livermore National Security LLC
- * Copyright (c) 2018-2020 The Board of Trustees of the Leland Stanford Junior University
- * Copyright (c) 2018-2020 TotalEnergies
- * Copyright (c) 2019-     GEOSX Contributors
+ * Copyright (c) 2016-2024 Lawrence Livermore National Security LLC
+ * Copyright (c) 2018-2024 TotalEnergies
+ * Copyright (c) 2018-2024 The Board of Trustees of the Leland Stanford Junior University
+ * Copyright (c) 2023-2024 Chevron
+ * Copyright (c) 2019-     GEOS/GEOSX Contributors
  * All rights reserved
  *
  * See top level LICENSE, COPYRIGHT, CONTRIBUTORS, NOTICE, and ACKNOWLEDGEMENTS files for details.
@@ -16,12 +17,12 @@
  * @file BilinearFormUtilities.hpp
  */
 
-#ifndef GEOSX_FINITEELEMENT_LINEARFORMUTILITIES_HPP_
-#define GEOSX_FINITEELEMENT_LINEARFORMUTILITIES_HPP_
+#ifndef GEOS_FINITEELEMENT_LINEARFORMUTILITIES_HPP_
+#define GEOS_FINITEELEMENT_LINEARFORMUTILITIES_HPP_
 
 #include "finiteElement/PDEUtilities.hpp"
 
-namespace geosx
+namespace geos
 {
 
 namespace LinearFormUtilities
@@ -37,13 +38,13 @@ struct Helper< PDEUtilities::FunctionSpace::P0,
                PDEUtilities::DifferentialOperator::Identity >
 {
   template< int numTestDOF >
-  GEOSX_HOST_DEVICE
+  GEOS_HOST_DEVICE
   void static compute( real64 (& vec)[numTestDOF],
                        real64 const & Nv,
                        real64 const A,
                        real64 const weight )
   {
-    GEOSX_UNUSED_VAR( Nv );
+    GEOS_UNUSED_VAR( Nv );
     for( int a = 0; a < numTestDOF; ++a )
     {
       vec[a] = vec[a] + A * weight;
@@ -51,13 +52,13 @@ struct Helper< PDEUtilities::FunctionSpace::P0,
   }
 
   template< int numTestDOF >
-  GEOSX_HOST_DEVICE
+  GEOS_HOST_DEVICE
   void static compute( real64 (& vec)[numTestDOF],
                        real64 const & Nv,
                        real64 const A[numTestDOF],
                        real64 const weight )
   {
-    GEOSX_UNUSED_VAR( Nv );
+    GEOS_UNUSED_VAR( Nv );
     for( int a = 0; a < numTestDOF; ++a )
     {
       vec[a] = vec[a] + A[a] * weight;
@@ -70,7 +71,7 @@ struct Helper< PDEUtilities::FunctionSpace::H1vector,
                PDEUtilities::DifferentialOperator::Identity >
 {
   template< int numTestDOF >
-  GEOSX_HOST_DEVICE
+  GEOS_HOST_DEVICE
   void static compute( double (& vec)[numTestDOF],
                        double const (&Nv)[numTestDOF/3],
                        double const (&A)[3],
@@ -91,7 +92,7 @@ struct Helper< PDEUtilities::FunctionSpace::H1vector,
 {
   // symmetric second-order tensor A
   template< int numTestDOF >
-  GEOSX_HOST_DEVICE
+  GEOS_HOST_DEVICE
   void static compute( real64 (& vec)[numTestDOF],
                        real64 const (&dNdX)[numTestDOF/3][3],
                        real64 const (&A)[6],
@@ -107,7 +108,7 @@ struct Helper< PDEUtilities::FunctionSpace::H1vector,
 
   // diagonal second-order tensor
   template< int numTestDOF >
-  GEOSX_HOST_DEVICE
+  GEOS_HOST_DEVICE
   void static compute( real64 (& vec)[numTestDOF],
                        real64 const (&dNdX)[numTestDOF/3][3],
                        real64 const (&A)[3],
@@ -123,7 +124,7 @@ struct Helper< PDEUtilities::FunctionSpace::H1vector,
 
   // scalar*identity second-order tensor
   template< int numTestDOF >
-  GEOSX_HOST_DEVICE
+  GEOS_HOST_DEVICE
   void static compute( real64 (& vec)[numTestDOF],
                        real64 const (&dNdX)[numTestDOF/3][3],
                        real64 const A,
@@ -172,7 +173,7 @@ template< PDEUtilities::FunctionSpace V,
           typename VECTOR,
           typename FE_VALUES_V,
           typename TENSOR >
-GEOSX_HOST_DEVICE
+GEOS_HOST_DEVICE
 static void compute( VECTOR && vector,
                      FE_VALUES_V const & feValuesV,
                      TENSOR const & tensor,
@@ -183,6 +184,6 @@ static void compute( VECTOR && vector,
 
 } // namespace LinearFormUtilities
 
-} // namespace geosx
+} // namespace geos
 
-#endif //GEOSX_FINITEELEMENT_LINEARFORMUTILITIES_HPP_
+#endif //GEOS_FINITEELEMENT_LINEARFORMUTILITIES_HPP_

@@ -22,7 +22,7 @@ include block as follows:
      </Included>
      
 The files should be placed in the appropriate application specific subdirectory
-under the ``GEOSX/inputFiles`` directory. 
+under the ``GEOS/inputFiles`` directory. 
 For example, the ``beamBending`` problem input files reside in the 
 ``inputFiles/solidMechanics`` directory. 
 The files then be linked to from the appropriate location in the ``integratedTests`` 

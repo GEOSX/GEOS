@@ -48,7 +48,7 @@
   <ElementRegions>
     <CellElementRegion
       name="region"
-      cellBlocks="{ cb1 }"
+      cellBlocks="{ * }"
       materialList="{ water, sand }"/>
 
     <SurfaceElementRegion
@@ -153,7 +153,6 @@
     <SourceFlux
       name="left1a"
       objectPath="ElementRegions/Fracture"
-      fieldName="pressure"
       scale="-0.14"
       component="0"
       setNames="{ left1 }"/>
@@ -169,7 +168,6 @@
     <SourceFlux
       name="left2a"
       objectPath="ElementRegions/Fracture"
-      fieldName="pressure"
       scale="-0.14"
       component="0"
       setNames="{ left2 }"/>
@@ -185,7 +183,6 @@
     <SourceFlux
       name="left3a"
       objectPath="ElementRegions/Fracture"
-      fieldName="pressure"
       scale="-0.14"
       component="0"
       setNames="{ left3 }"/>

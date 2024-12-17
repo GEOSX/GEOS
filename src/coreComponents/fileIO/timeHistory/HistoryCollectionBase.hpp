@@ -2,26 +2,27 @@
  * ------------------------------------------------------------------------------------------------------------
  * SPDX-License-Identifier: LGPL-2.1-only
  *
- * Copyright (c) 2018-2020 Lawrence Livermore National Security LLC
- * Copyright (c) 2018-2020 The Board of Trustees of the Leland Stanford Junior University
- * Copyright (c) 2018-2020 TotalEnergies
- * Copyright (c) 2020-     GEOSX Contributors
+ * Copyright (c) 2016-2024 Lawrence Livermore National Security LLC
+ * Copyright (c) 2018-2024 TotalEnergies
+ * Copyright (c) 2018-2024 The Board of Trustees of the Leland Stanford Junior University
+ * Copyright (c) 2023-2024 Chevron
+ * Copyright (c) 2019-     GEOS/GEOSX Contributors
  * All rights reserved
  *
  * See top level LICENSE, COPYRIGHT, CONTRIBUTORS, NOTICE, and ACKNOWLEDGEMENTS files for details.
  * ------------------------------------------------------------------------------------------------------------
  */
 
-#ifndef GEOSX_HISTORYCOLLECTIONBASE_HPP
-#define GEOSX_HISTORYCOLLECTIONBASE_HPP
+#ifndef GEOS_HISTORYCOLLECTIONBASE_HPP
+#define GEOS_HISTORYCOLLECTIONBASE_HPP
 
 #include "HistoryCollection.hpp"
 
-#if defined(GEOSX_USE_PYGEOSX)
+#if defined(GEOS_USE_PYGEOSX)
 #include "fileIO/python/PyHistoryCollectionType.hpp"
 #endif
 
-namespace geosx
+namespace geos
 {
 
 /**
@@ -32,7 +33,7 @@ namespace geosx
 class HistoryCollectionBase : public HistoryCollection
 {
 public:
-  /// @copydoc geosx::dataRepository::Group::Group(string const & name, Group * const parent)
+  /// @copydoc geos::dataRepository::Group::Group(string const & name, Group * const parent)
   HistoryCollectionBase( string const & name, Group * parent ):
     HistoryCollection( name, parent ),
     m_targetIsMeshObject( false ),
@@ -60,7 +61,7 @@ public:
 
   HistoryCollection & getMetaDataCollector( localIndex metaIdx ) override;
 
-#if defined(GEOSX_USE_PYGEOSX)
+#if defined(GEOS_USE_PYGEOSX)
   /**
    * @brief Return PyHistoryCollection type.
    * @return Return PyHistoryCollection type.

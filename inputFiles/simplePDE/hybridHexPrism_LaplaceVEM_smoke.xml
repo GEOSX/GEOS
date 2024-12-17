@@ -9,7 +9,7 @@
   <Mesh>
     <VTKMesh
       name="mesh"
-      file="../singlePhaseFlow/pebi3d.vtu"/>
+      file="../singlePhaseFlow/pebi3d_with_properties.vtu"/>
   </Mesh>
 
   <ElementRegions>
@@ -29,4 +29,3 @@
   </NumericalMethods>
 
 </Problem>
-

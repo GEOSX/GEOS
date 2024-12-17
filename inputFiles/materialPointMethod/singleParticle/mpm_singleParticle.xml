@@ -1,0 +1,121 @@
+<?xml version="1.0" ?>
+<!-- 
+srun -p pdebug -n 1 /usr/workspace/homel1/GEOS/build-quartz-gcc@12-release/bin/geosx -i mpm_singleParticle.xml
+srun -n 1 /usr/workspace/homel1/GEOS/build-quartz-gcc@12-release/bin/geosx -i mpm_singleParticle.xml
+-->
+<Problem>
+
+  <Mesh>
+    <InternalMesh
+      name="backgroundGrid"
+      elementTypes="{ C3D8 }"
+      xCoords="{-1.5,1.5}"
+      yCoords="{-1.5,1.5}"
+      zCoords="{-1.5,1.5}"
+      nx="{3}"
+      ny="{3}"
+      nz="{3}"
+      cellBlockNames="{ cb1 }"/>
+      
+    <ParticleMesh
+      name="particles"
+      particleFile="mpmParticleFile_singleParticle"
+      headerFile="mpmHeaderFile_singleParticle"
+      particleBlockNames="{ pb1 }"
+      particleTypes="{ CPDI }"/>
+  </Mesh>
+
+  <ElementRegions>
+    <CellElementRegion
+      name="CellRegion1"
+      meshBody="backgroundGrid"
+      cellBlocks="{ * }"
+      materialList="{ null }"/>
+  </ElementRegions>
+
+  <ParticleRegions>
+    
+      <ParticleRegion
+        name="ParticleRegion1"
+        meshBody="particles"
+        particleBlocks="{ pb1 }"
+        materialList="{testMaterial}"/>
+  </ParticleRegions>
+
+  <Solvers
+    gravityVector="{ 0.0, 0.0, 0.0 }">
+    <SolidMechanics_MPM
+      name="mpmsolve"
+      discretization="FE1"
+      targetRegions="{ backgroundGrid/CellRegion1, particles/ParticleRegion1 }"
+      
+timeIntegrationOption="ExplicitDynamic"
+cflFactor="0.5"
+initialDt="1e-16"
+
+prescribedBcTable="0"
+prescribedBoundaryFTable="0"
+fTableInterpType="0"
+
+solverProfiling="0"
+
+boxAverageHistory="0"
+reactionHistory="0"
+
+planeStrain="0"
+
+useDamageAsSurfaceFlag="0"
+
+boundaryConditionTypes="{ 0, 0, 0, 0, 0, 0 }"    
+
+      />
+  </Solvers>
+
+  <Constitutive>
+    <ElasticIsotropic
+      name="null"
+      defaultDensity="1000"
+      defaultBulkModulus="1.0e9"
+      defaultShearModulus="1.0e9"/>
+    
+<ElasticIsotropic
+	name="testMaterial"
+	defaultDensity="1000"
+	defaultBulkModulus="10.0e9"
+	defaultShearModulus="10.0e9"/>
+
+    
+  </Constitutive>
+
+  <Events
+    maxTime="0.1">
+    <PeriodicEvent
+      name="solverApplications"
+      target="/Solvers/mpmsolve"/>
+    <PeriodicEvent
+      name="outputs"
+      timeFrequency="0.01"
+      target="/Outputs/vtkOutput"/>
+    <PeriodicEvent
+      name="restart"
+      timeFrequency="0.05"
+      target="/Outputs/restartOutput"/> 
+  </Events>
+
+  <NumericalMethods>
+    <FiniteElements>
+      <FiniteElementSpace
+        name="FE1"
+        order="1"/>
+    </FiniteElements>
+  </NumericalMethods>
+
+  <Outputs>
+    <VTK
+      name="vtkOutput"
+      format="ascii"/>
+    <Restart
+      name="restartOutput"/>
+  </Outputs>
+
+</Problem>

@@ -2,10 +2,11 @@
  * ------------------------------------------------------------------------------------------------------------
  * SPDX-License-Identifier: LGPL-2.1-only
  *
- * Copyright (c) 2018-2020 Lawrence Livermore National Security LLC
- * Copyright (c) 2018-2020 The Board of Trustees of the Leland Stanford Junior University
- * Copyright (c) 2018-2020 TotalEnergies
- * Copyright (c) 2019-     GEOSX Contributors
+ * Copyright (c) 2016-2024 Lawrence Livermore National Security LLC
+ * Copyright (c) 2018-2024 TotalEnergies
+ * Copyright (c) 2018-2024 The Board of Trustees of the Leland Stanford Junior University
+ * Copyright (c) 2023-2024 Chevron
+ * Copyright (c) 2019-     GEOS/GEOSX Contributors
  * All rights reserved
  *
  * See top level LICENSE, COPYRIGHT, CONTRIBUTORS, NOTICE, and ACKNOWLEDGEMENTS files for details.
@@ -13,15 +14,15 @@
  */
 
 /**
- * @file MultiphasePoromechanics.hpp
+ * @file MultiphasePoromechanicsReservoirFVM.hpp
  */
 
-#ifndef GEOSX_LINEARALGEBRA_INTERFACES_HYPREMGRMULTIPHASEPOROMECHANICSRESERVOIRFVM_HPP_
-#define GEOSX_LINEARALGEBRA_INTERFACES_HYPREMGRMULTIPHASEPOROMECHANICSRESERVOIRFVM_HPP_
+#ifndef GEOS_LINEARALGEBRA_INTERFACES_HYPREMGRMULTIPHASEPOROMECHANICSRESERVOIRFVM_HPP_
+#define GEOS_LINEARALGEBRA_INTERFACES_HYPREMGRMULTIPHASEPOROMECHANICSRESERVOIRFVM_HPP_
 
 #include "linearAlgebra/interfaces/hypre/HypreMGR.hpp"
 
-namespace geosx
+namespace geos
 {
 
 namespace hypre
@@ -83,70 +84,62 @@ public:
     setupLabels();
 
     // Level 0
-    m_levelFRelaxMethod[0]     = MGRFRelaxationMethod::amgVCycle;
-    m_levelInterpType[0]       = MGRInterpolationType::jacobi;
-    m_levelRestrictType[0]     = MGRRestrictionType::injection;
-    m_levelCoarseGridMethod[0] = MGRCoarseGridMethod::nonGalerkin;
+    m_levelFRelaxType[0]          = MGRFRelaxationType::amgVCycle;
+    m_levelFRelaxIters[0]         = 1;
+    m_levelInterpType[0]          = MGRInterpolationType::jacobi;
+    m_levelRestrictType[0]        = MGRRestrictionType::injection;
+    m_levelCoarseGridMethod[0]    = MGRCoarseGridMethod::nonGalerkin;
+    m_levelGlobalSmootherType[0]  = MGRGlobalSmootherType::none;
 
     // Level 1
-    m_levelFRelaxMethod[1]     = MGRFRelaxationMethod::singleLevel;
-    m_levelInterpType[1]       = MGRInterpolationType::blockJacobi;
-    m_levelRestrictType[1]     = MGRRestrictionType::injection;
-    m_levelCoarseGridMethod[1] = MGRCoarseGridMethod::galerkin;
+    m_levelFRelaxType[1]          = MGRFRelaxationType::gsElimWInverse;
+    m_levelFRelaxIters[1]         = 1;
+    m_levelInterpType[1]          = MGRInterpolationType::blockJacobi;
+    m_levelRestrictType[1]        = MGRRestrictionType::injection;
+    m_levelCoarseGridMethod[1]    = MGRCoarseGridMethod::galerkin;
+    m_levelGlobalSmootherType[1]  = MGRGlobalSmootherType::none;
 
     // Level 2
-    m_levelFRelaxMethod[2]     = MGRFRelaxationMethod::singleLevel; //default, i.e. Jacobi
-    m_levelInterpType[2]       = MGRInterpolationType::jacobi;
-    m_levelRestrictType[2]     = MGRRestrictionType::injection;
-    m_levelCoarseGridMethod[2] = MGRCoarseGridMethod::galerkin;
+    m_levelFRelaxType[2]          = MGRFRelaxationType::jacobi; //default, i.e. Jacobi
+    m_levelFRelaxIters[2]         = 1;
+    m_levelInterpType[2]          = MGRInterpolationType::jacobi;
+    m_levelRestrictType[2]        = MGRRestrictionType::injection;
+    m_levelCoarseGridMethod[2]    = MGRCoarseGridMethod::galerkin;
+    m_levelGlobalSmootherType[2]  = MGRGlobalSmootherType::none;
 
     // Level 3
-    m_levelFRelaxMethod[3]     = MGRFRelaxationMethod::singleLevel; //default, i.e. Jacobi
-    m_levelInterpType[3]       = MGRInterpolationType::injection;
-    m_levelRestrictType[3]     = MGRRestrictionType::injection;
-    m_levelCoarseGridMethod[3] = MGRCoarseGridMethod::cprLikeBlockDiag;
-
-    // ILU smoothing for the system made of pressure and densities
-    m_levelSmoothType[2]  = 16;
-    m_levelSmoothIters[2] = 1;
-    // Block GS smoothing for the system made of pressure and densities (except the last one)
-    m_levelSmoothType[3]  = 1;
-    m_levelSmoothIters[3] = 1;
+    m_levelFRelaxType[3]          = MGRFRelaxationType::none;
+    m_levelInterpType[3]          = MGRInterpolationType::injection;
+    m_levelRestrictType[3]        = MGRRestrictionType::blockColLumped; // True-IMPES
+    m_levelCoarseGridMethod[3]    = MGRCoarseGridMethod::galerkin;
+    m_levelGlobalSmootherType[3]  = MGRGlobalSmootherType::ilu0;
+    m_levelGlobalSmootherIters[3] = 1;
   }
 
   /**
    * @brief Setup the MGR strategy.
+   * @param mgrParams MGR configuration parameters
    * @param precond preconditioner wrapper
    * @param mgrData auxiliary MGR data
    */
-  void setup( LinearSolverParameters::MGR const &,
+  void setup( LinearSolverParameters::MGR const & mgrParams,
               HyprePrecWrapper & precond,
               HypreMGRData & mgrData )
   {
-    GEOSX_LAI_CHECK_ERROR( HYPRE_MGRSetCpointsByPointMarkerArray( precond.ptr,
-                                                                  m_numBlocks, numLevels,
-                                                                  m_numLabels, m_ptrLabels,
-                                                                  mgrData.pointMarkers.data() ) );
+    // if the wells are shut, using Gaussian elimination as F-relaxation for the well block is an overkill
+    // in that case, we just use Jacobi
+    if( mgrParams.areWellsShut )
+    {
+      m_levelFRelaxType[1] = MGRFRelaxationType::jacobi;
+    }
 
-    GEOSX_LAI_CHECK_ERROR( HYPRE_MGRSetLevelFRelaxMethod( precond.ptr, toUnderlyingPtr( m_levelFRelaxMethod ) ) );
-    GEOSX_LAI_CHECK_ERROR( HYPRE_MGRSetLevelInterpType( precond.ptr, toUnderlyingPtr( m_levelInterpType ) ) );
-    GEOSX_LAI_CHECK_ERROR( HYPRE_MGRSetLevelRestrictType( precond.ptr, toUnderlyingPtr( m_levelRestrictType ) ) );
-    GEOSX_LAI_CHECK_ERROR( HYPRE_MGRSetCoarseGridMethod( precond.ptr, toUnderlyingPtr( m_levelCoarseGridMethod ) ) );
-    GEOSX_LAI_CHECK_ERROR( HYPRE_MGRSetNonCpointsToFpoints( precond.ptr, 1 ));
-    GEOSX_LAI_CHECK_ERROR( HYPRE_MGRSetPMaxElmts( precond.ptr, 0 ));
+    setReduction( precond, mgrData );
 
-    GEOSX_LAI_CHECK_ERROR( HYPRE_MGRSetLevelSmoothType( precond.ptr, m_levelSmoothType ) );
-    GEOSX_LAI_CHECK_ERROR( HYPRE_MGRSetLevelSmoothIters( precond.ptr, m_levelSmoothIters ) );
+    // Configure the BoomerAMG solver used as F-relaxation for the first level
+    setMechanicsFSolver( precond, mgrData, mgrParams.separateComponents );
 
-    GEOSX_LAI_CHECK_ERROR( HYPRE_BoomerAMGCreate( &mgrData.coarseSolver.ptr ) );
-    GEOSX_LAI_CHECK_ERROR( HYPRE_BoomerAMGSetPrintLevel( mgrData.coarseSolver.ptr, 0 ) );
-    GEOSX_LAI_CHECK_ERROR( HYPRE_BoomerAMGSetMaxIter( mgrData.coarseSolver.ptr, 1 ) );
-    GEOSX_LAI_CHECK_ERROR( HYPRE_BoomerAMGSetTol( mgrData.coarseSolver.ptr, 0.0 ) );
-    GEOSX_LAI_CHECK_ERROR( HYPRE_BoomerAMGSetRelaxOrder( mgrData.coarseSolver.ptr, 1 ) );
-
-    mgrData.coarseSolver.setup = HYPRE_BoomerAMGSetup;
-    mgrData.coarseSolver.solve = HYPRE_BoomerAMGSolve;
-    mgrData.coarseSolver.destroy = HYPRE_BoomerAMGDestroy;
+    // Configure the BoomerAMG solver used as mgr coarse solver for the pressure reduced system
+    setPressureAMG( mgrData.coarseSolver );
   }
 };
 
@@ -154,6 +147,6 @@ public:
 
 } // namespace hypre
 
-} // namespace geosx
+} // namespace geos
 
-#endif /*GEOSX_LINEARALGEBRA_INTERFACES_HYPREMGRMULTIPHASEPOROMECHANICSRESERVOIRFVM_HPP_*/
+#endif /*GEOS_LINEARALGEBRA_INTERFACES_HYPREMGRMULTIPHASEPOROMECHANICSRESERVOIRFVM_HPP_*/

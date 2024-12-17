@@ -2,10 +2,11 @@
  * ------------------------------------------------------------------------------------------------------------
  * SPDX-License-Identifier: LGPL-2.1-only
  *
- * Copyright (c) 2018-2020 Lawrence Livermore National Security LLC
- * Copyright (c) 2018-2020 The Board of Trustees of the Leland Stanford Junior University
- * Copyright (c) 2018-2020 TotalEnergies
- * Copyright (c) 2019-     GEOSX Contributors
+ * Copyright (c) 2016-2024 Lawrence Livermore National Security LLC
+ * Copyright (c) 2018-2024 TotalEnergies
+ * Copyright (c) 2018-2024 The Board of Trustees of the Leland Stanford Junior University
+ * Copyright (c) 2023-2024 Chevron
+ * Copyright (c) 2019-     GEOS/GEOSX Contributors
  * All rights reserved
  *
  * See top level LICENSE, COPYRIGHT, CONTRIBUTORS, NOTICE, and ACKNOWLEDGEMENTS files for details.
@@ -16,13 +17,13 @@
  * @file MeshBody.hpp
  */
 
-#ifndef GEOSX_MESH_MESHBODY_HPP_
-#define GEOSX_MESH_MESHBODY_HPP_
+#ifndef GEOS_MESH_MESHBODY_HPP_
+#define GEOS_MESH_MESHBODY_HPP_
 
 #include "MeshLevel.hpp"
+#include "dataRepository/KeyNames.hpp"
 
-
-namespace geosx
+namespace geos
 {
 
 class MeshLevel;
@@ -167,6 +168,38 @@ public:
   }
 
   /**
+   * @brief Get whether meshbody has particles
+   * @return whether meshbody has particles
+   */
+  bool hasParticles() const
+  {
+    return m_hasParticles;
+  }
+
+  /**
+   * @brief Set whether meshbody has particles
+   * @param hasParticles Boolean indicating whether the meshbody has particles
+   */
+  void setHasParticles( bool hasParticles );
+
+  /**
+   * @brief Get the Abstract representation of the CellBlockManager attached to the MeshBody.
+   * @return The CellBlockManager.
+   */
+  CellBlockManagerABC const & getCellBlockManager() const
+  {
+    return this->getGroup< CellBlockManagerABC >( dataRepository::keys::cellManager );
+  }
+
+  /**
+   * @brief De register the CellBlockManager from this meshBody
+   */
+  void deregisterCellBlockManager()
+  {
+    this->deregisterGroup( dataRepository::keys::cellManager );
+  }
+
+  /**
    * @brief Data repository keys
    */
   struct viewKeysStruct
@@ -184,18 +217,22 @@ public:
     static constexpr char const * baseDiscretizationString() { return "Level0"; }
   } groupKeys; ///< groupKeys
 
+
 private:
+
   Group & m_meshLevels;
 
   /// Mesh length scale used to define an absolute length tolerance
   /// The default value can be set to another value
   real64 m_globalLengthScale { 0. };
 
+  /// flag for whether MeshBody has particles
+  bool m_hasParticles;
 
   static string intToMeshLevelString( localIndex const meshLevel );
 
 };
 
-} /* namespace geosx */
+} /* namespace geos */
 
-#endif /* GEOSX_MESH_MESHBODY_HPP_ */
+#endif /* GEOS_MESH_MESHBODY_HPP_ */

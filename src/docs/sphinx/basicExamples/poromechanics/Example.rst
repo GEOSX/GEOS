@@ -24,7 +24,7 @@ At the end of this example you will know:
 **Input file**
 
 This example uses no external input files and everything required is
-contained within two GEOSX input files located at:
+contained within two GEOS input files located at:
 
 .. code-block:: console
 
@@ -56,10 +56,10 @@ the boundary subject to roller constraints and impervious.
 
    Sketch of the setup for Terzaghi's problem.
 
-GEOSX will calculate displacement and pressure fields along the column as a
+GEOS will calculate displacement and pressure fields along the column as a
 function of time.
 We will use the analytical solution for pressure to check the accuracy of the
-solution obtained with GEOSX, namely
+solution obtained with GEOS, namely
 
 .. math::
    p(x,t) = \frac{4}{\pi} p_0 \sum_{m=0}^{\infty}
@@ -83,7 +83,7 @@ Knowledge of :math:`t_c` is useful for choosing appropriately the  timestep size
 Coupled solvers 
 ----------------
 
-GEOSX is a multi-physics tool. Different combinations of
+GEOS is a multi-physics tool. Different combinations of
 physics solvers available in the code can be applied
 in different regions of the mesh at different moments of the simulation.
 The XML ``Solvers`` tag is used to list and parameterize these solvers.
@@ -105,7 +105,7 @@ To define a poromechanical coupling, we will effectively define three solvers:
  - the coupling solver that will bind the two single-physics solvers above, an object of type ``SinglePhasePoromechanics`` called here ``PoroelasticitySolver`` (more information at :ref:`PoroelasticSolver`).
 
 Note that the ``name`` attribute of these solvers is
-chosen by the user and is not imposed by GEOSX.
+chosen by the user and is not imposed by GEOS.
 
 The two single-physics solvers are parameterized as explained
 in their respective documentation.
@@ -196,7 +196,7 @@ Therefore, as shown in the ``Events`` section, we run this simulation for 90 sec
 
 
 --------------
-Running GEOSX 
+Running GEOS 
 --------------
 
 To run the case, use the following command:
@@ -237,7 +237,7 @@ To go further
 **Feedback on this example**
 
 This concludes the poroelastic example.
-For any feedback on this example, please submit a `GitHub issue on the project's GitHub page <https://github.com/GEOSX/GEOSX/issues>`_.
+For any feedback on this example, please submit a `GitHub issue on the project's GitHub page <https://github.com/GEOS-DEV/GEOS/issues>`_.
 
 
 **For more details**

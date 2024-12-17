@@ -11,6 +11,7 @@
       targetRegions="{ Region1 }">
       <NonlinearSolverParameters
         couplingType="Sequential"
+	lineSearchAction="None"  	  
         newtonMaxIter="100"/>
     </PhaseFieldFracture>
 
@@ -115,7 +116,7 @@
   <ElementRegions>
     <CellElementRegion
       name="Region1"
-      cellBlocks="{ hexahedra }"
+      cellBlocks="{ * }"
       materialList="{ shale }"/>
   </ElementRegions>
 

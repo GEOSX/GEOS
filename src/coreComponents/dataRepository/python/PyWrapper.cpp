@@ -2,11 +2,12 @@
  * ------------------------------------------------------------------------------------------------------------
  * SPDX-License-Identifier: LGPL-2.1-only
  *
- * Copyright (c) 2018-2019 Lawrence Livermore National Security LLC
- * Copyright (c) 2018-2019 The Board of Trustees of the Leland Stanford Junior University
- * Copyright (c) 2018-2019 TotalEnergies
- * Copyright (c) 2019-     GEOSX Contributors
- * All right reserved
+ * Copyright (c) 2016-2024 Lawrence Livermore National Security LLC
+ * Copyright (c) 2018-2024 TotalEnergies
+ * Copyright (c) 2018-2024 The Board of Trustees of the Leland Stanford Junior University
+ * Copyright (c) 2023-2024 Chevron
+ * Copyright (c) 2019-     GEOS/GEOSX Contributors
+ * All rights reserved
  *
  * See top level LICENSE, COPYRIGHT, CONTRIBUTORS, NOTICE, and ACKNOWLEDGEMENTS files for details.
  * ------------------------------------------------------------------------------------------------------------
@@ -26,7 +27,7 @@
 #define VERIFY_INITIALIZED( self ) \
   PYTHON_ERROR_IF( self->wrapper == nullptr, PyExc_RuntimeError, "The PyWrapper is not initialized.", nullptr )
 
-namespace geosx
+namespace geos
 {
 namespace python
 {
@@ -36,7 +37,7 @@ struct PyWrapper
   PyObject_HEAD
 
   static constexpr char const * docString =
-    "A Python interface to geosx::dataRepository::WrapperBase.";
+    "A Python interface to geos::dataRepository::WrapperBase.";
 
   dataRepository::WrapperBase * wrapper;
 };
@@ -141,4 +142,4 @@ PyTypeObject * getPyWrapperType()
 { return &PyWrapperType; }
 
 } // namespace python
-} // namespace geosx
+} // namespace geos

@@ -2,27 +2,29 @@
  * ------------------------------------------------------------------------------------------------------------
  * SPDX-License-Identifier: LGPL-2.1-only
  *
- * Copyright (c) 2018-2019 Lawrence Livermore National Security LLC
- * Copyright (c) 2018-2019 The Board of Trustees of the Leland Stanford Junior University
- * Copyright (c) 2018-2019 TotalEnergies
- * Copyright (c) 2019-     GEOSX Contributors
- * All right reserved
+ * Copyright (c) 2016-2024 Lawrence Livermore National Security LLC
+ * Copyright (c) 2018-2024 TotalEnergies
+ * Copyright (c) 2018-2024 The Board of Trustees of the Leland Stanford Junior University
+ * Copyright (c) 2023-2024 Chevron
+ * Copyright (c) 2019-     GEOS/GEOSX Contributors
+ * All rights reserved
  *
  * See top level LICENSE, COPYRIGHT, CONTRIBUTORS, NOTICE, and ACKNOWLEDGEMENTS files for details.
  * ------------------------------------------------------------------------------------------------------------
  */
 
-#ifndef GEOSX_FILEIO_TIMEHISTORY_HDFFILE_HPP_
-#define GEOSX_FILEIO_TIMEHISTORY_HDFFILE_HPP_
+#ifndef GEOS_FILEIO_TIMEHISTORY_HDFFILE_HPP_
+#define GEOS_FILEIO_TIMEHISTORY_HDFFILE_HPP_
 
 
 #include "dataRepository/HistoryDataSpec.hpp"
 #include "BufferedHistoryIO.hpp"
 #include "common/DataTypes.hpp"
+#include "common/MpiWrapper.hpp"
 
 #include <hdf5.h>
 
-namespace geosx
+namespace geos
 {
 
 /**
@@ -52,7 +54,7 @@ public:
                 localIndex writeHead = 0,
                 localIndex initAlloc = 1,
                 localIndex overallocMultiple = 2,
-                MPI_Comm comm = MPI_COMM_GEOSX );
+                MPI_Comm comm = MPI_COMM_GEOS );
 
   /**
    * @brief Constructor
@@ -68,7 +70,7 @@ public:
                 localIndex writeHead = 0,
                 localIndex initAlloc = 1,
                 localIndex overallocMultiple = 2,
-                MPI_Comm comm = MPI_COMM_GEOSX ):
+                MPI_Comm comm = MPI_COMM_GEOS ):
     HDFHistoryIO( filename,
                   spec.getRank(),
                   spec.getDims(),
@@ -85,16 +87,16 @@ public:
 
   virtual buffer_unit_type * getBufferHead() override;
 
-  /// @copydoc geosx::BufferedHistoryIO::init
+  /// @copydoc geos::BufferedHistoryIO::init
   virtual void init( bool existsOkay ) override;
 
-  /// @copydoc geosx::BufferedHistoryIO::write
+  /// @copydoc geos::BufferedHistoryIO::write
   virtual void write( ) override;
 
-  /// @copydoc geosx::BufferedHistoryIO::compressInFile
+  /// @copydoc geos::BufferedHistoryIO::compressInFile
   virtual void compressInFile( ) override;
 
-  /// @copydoc geosx::BufferedHistoryIO::updateCollectingCount
+  /// @copydoc geos::BufferedHistoryIO::updateCollectingCount
   virtual void updateCollectingCount( localIndex count ) override;
 
   localIndex getBufferedCount() override

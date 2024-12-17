@@ -2,10 +2,11 @@
  * ------------------------------------------------------------------------------------------------------------
  * SPDX-License-Identifier: LGPL-2.1-only
  *
- * Copyright (c) 2018-2020 Lawrence Livermore National Security LLC
- * Copyright (c) 2018-2020 The Board of Trustees of the Leland Stanford Junior University
- * Copyright (c) 2018-2020 TotalEnergies
- * Copyright (c) 2019-     GEOSX Contributors
+ * Copyright (c) 2016-2024 Lawrence Livermore National Security LLC
+ * Copyright (c) 2018-2024 TotalEnergies
+ * Copyright (c) 2018-2024 The Board of Trustees of the Leland Stanford Junior University
+ * Copyright (c) 2023-2024 Chevron
+ * Copyright (c) 2019-     GEOS/GEOSX Contributors
  * All rights reserved
  *
  * See top level LICENSE, COPYRIGHT, CONTRIBUTORS, NOTICE, and ACKNOWLEDGEMENTS files for details.
@@ -17,7 +18,7 @@
 
 #include "ConstitutiveBase.hpp"
 
-namespace geosx
+namespace geos
 {
 namespace constitutive
 {
@@ -29,7 +30,7 @@ class NullModel : public constitutive::ConstitutiveBase
 {
 public:
 
-  /// @copydoc geosx::dataRepository::Group::Group
+  /// @copydoc geos::dataRepository::Group::Group
   NullModel( string const & name,
              Group * const parent );
 
@@ -57,11 +58,11 @@ public:
      * @param[in] k Element index.
      * @return the shear modulus of element k
      */
-    GEOSX_HOST_DEVICE
+    GEOS_HOST_DEVICE
     virtual real64 getShearModulus( localIndex const k ) const
     {
-      GEOSX_UNUSED_VAR( k );
-      GEOSX_ERROR( "getShearModulus() not implemented for this model" );
+      GEOS_UNUSED_VAR( k );
+      GEOS_ERROR( "getShearModulus() not implemented for this model" );
 
       return 0;
     }
@@ -74,12 +75,12 @@ public:
    */
   KernelWrapper createKernelUpdates( bool const includeState = false ) const
   {
-    GEOSX_UNUSED_VAR( includeState );
+    GEOS_UNUSED_VAR( includeState );
     return KernelWrapper();
   }
 };
 
 } // constitutive
-} /* namespace geosx */
+} /* namespace geos */
 
 #endif /* SRC_CORECOMPONENTS_CONSTITUTIVE_NULLMODEL_HPP_ */

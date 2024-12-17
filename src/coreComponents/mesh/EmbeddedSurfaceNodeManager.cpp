@@ -2,10 +2,11 @@
  * ------------------------------------------------------------------------------------------------------------
  * SPDX-License-Identifier: LGPL-2.1-only
  *
- * Copyright (c) 2018-2020 Lawrence Livermore National Security LLC
- * Copyright (c) 2018-2020 The Board of Trustees of the Leland Stanford Junior University
- * Copyright (c) 2018-2020 TotalEnergies
- * Copyright (c) 2019-     GEOSX Contributors
+ * Copyright (c) 2016-2024 Lawrence Livermore National Security LLC
+ * Copyright (c) 2018-2024 TotalEnergies
+ * Copyright (c) 2018-2024 The Board of Trustees of the Leland Stanford Junior University
+ * Copyright (c) 2023-2024 Chevron
+ * Copyright (c) 2019-     GEOS/GEOSX Contributors
  * All rights reserved
  *
  * See top level LICENSE, COPYRIGHT, CONTRIBUTORS, NOTICE, and ACKNOWLEDGEMENTS files for details.
@@ -26,7 +27,7 @@
 #include "mesh/ToElementRelation.hpp"
 #include "mesh/utilities/MeshMapUtilities.hpp"
 
-namespace geosx
+namespace geos
 {
 
 using namespace dataRepository;
@@ -62,7 +63,7 @@ void EmbeddedSurfaceNodeManager::resize( localIndex const newSize )
 
 void EmbeddedSurfaceNodeManager::setEdgeMaps( EdgeManager const & embSurfEdgeManager )
 {
-  GEOSX_MARK_FUNCTION;
+  GEOS_MARK_FUNCTION;
 
   arrayView2d< localIndex const > const edgeToNodeMap = embSurfEdgeManager.nodeList();
 
@@ -78,7 +79,7 @@ void EmbeddedSurfaceNodeManager::setEdgeMaps( EdgeManager const & embSurfEdgeMan
 
 void EmbeddedSurfaceNodeManager::setElementMaps( ElementRegionManager const & elementRegionManager )
 {
-  GEOSX_MARK_FUNCTION;
+  GEOS_MARK_FUNCTION;
 
   ArrayOfArrays< localIndex > & toElementRegionList = m_toElements.m_toElementRegion;
   ArrayOfArrays< localIndex > & toElementSubRegionList = m_toElements.m_toElementSubRegion;
@@ -202,7 +203,7 @@ localIndex EmbeddedSurfaceNodeManager::packNewNodesGlobalMapsImpl( buffer_unit_t
   // this doesn't link without the string()...no idea why.
   packedSize += bufferOps::Pack< DO_PACKING >( buffer, string( viewKeyStruct::localToGlobalMapString() ) );
 
-  int const rank = MpiWrapper::commRank( MPI_COMM_GEOSX );
+  int const rank = MpiWrapper::commRank( MPI_COMM_GEOS );
   packedSize += bufferOps::Pack< DO_PACKING >( buffer, rank );
 
   localIndex const numPackedIndices = packList.size();
@@ -238,18 +239,18 @@ localIndex EmbeddedSurfaceNodeManager::packNewNodesGlobalMapsImpl( buffer_unit_t
 localIndex EmbeddedSurfaceNodeManager::unpackNewNodesGlobalMaps( buffer_unit_type const * & buffer,
                                                                  localIndex_array & packList )
 {
-  GEOSX_MARK_FUNCTION;
+  GEOS_MARK_FUNCTION;
 
   localIndex unpackedSize = 0;
   string groupName;
   unpackedSize += bufferOps::Unpack( buffer, groupName );
-  GEOSX_ERROR_IF( groupName != this->getName(), "EmbeddedSurfaceNodeManager::unpackGlobalMaps(): group names do not match" );
+  GEOS_ERROR_IF( groupName != this->getName(), "EmbeddedSurfaceNodeManager::unpackGlobalMaps(): group names do not match" );
 
   string localToGlobalString;
   unpackedSize += bufferOps::Unpack( buffer, localToGlobalString );
-  GEOSX_ERROR_IF( localToGlobalString != viewKeyStruct::localToGlobalMapString(), "ObjectManagerBase::unpack(): label incorrect" );
+  GEOS_ERROR_IF( localToGlobalString != viewKeyStruct::localToGlobalMapString(), "ObjectManagerBase::unpack(): label incorrect" );
 
-  int const rank = MpiWrapper::commRank( MPI_COMM_GEOSX );
+  int const rank = MpiWrapper::commRank( MPI_COMM_GEOS );
   int sendingRank;
   unpackedSize += bufferOps::Unpack( buffer, sendingRank );
 
@@ -278,7 +279,7 @@ localIndex EmbeddedSurfaceNodeManager::unpackNewNodesGlobalMaps( buffer_unit_typ
     arrayView2d< real64, nodes::REFERENCE_POSITION_USD > const & referencePosition = referencePositionData.toView();
     string referencePositionString;
     unpackedSize += bufferOps::Unpack( buffer, referencePositionString );
-    GEOSX_ERROR_IF( referencePositionString != viewKeyStruct::referencePositionString(), "EmbeddedSurfaceNodeManager::unpackGlobalMaps(): label incorrect" );
+    GEOS_ERROR_IF( referencePositionString != viewKeyStruct::referencePositionString(), "EmbeddedSurfaceNodeManager::unpackGlobalMaps(): label incorrect" );
     unpackedSize += bufferOps::UnpackByIndex( buffer, referencePosition, indicesOnBuffer );
 
     localIndex numNewIndices = 0;
@@ -286,6 +287,8 @@ localIndex EmbeddedSurfaceNodeManager::unpackNewNodesGlobalMaps( buffer_unit_typ
     newGlobalIndices.reserve( numUnpackedIndices );
     array1d< integer > ghostRank;
     ghostRank.reserve( numUnpackedIndices );
+    array1d< integer > originalIndex;
+    originalIndex.reserve( numUnpackedIndices );
     localIndex const oldSize = this->size();
     for( localIndex a = 0; a < numUnpackedIndices; ++a )
     {
@@ -325,17 +328,19 @@ localIndex EmbeddedSurfaceNodeManager::unpackNewNodesGlobalMaps( buffer_unit_typ
         if( ghostRankOnSendingRank[a] == rank )
         {
           ghostRank.emplace_back( -1 );
+          originalIndex.emplace_back( a );
         }
         else
         {
-          ghostRank.emplace_back( rank );
+          ghostRank.emplace_back( sendingRank );
+          originalIndex.emplace_back( -1 );
         }
 
         ++numNewIndices;
 
-        GEOSX_ERROR_IF( packList.size() != 0,
-                        "EmbeddedSurfaceNodeManager::unpackGlobalMaps(): packList specified, "
-                        "but a new globalIndex is unpacked" );
+        GEOS_ERROR_IF( packList.size() != 0,
+                       "EmbeddedSurfaceNodeManager::unpackGlobalMaps(): packList specified, "
+                       "but a new globalIndex is unpacked" );
       }
     }
 
@@ -351,6 +356,10 @@ localIndex EmbeddedSurfaceNodeManager::unpackNewNodesGlobalMaps( buffer_unit_typ
       localIndex const b = oldSize + a;
       m_localToGlobalMap[b] = newGlobalIndices( a );
       m_ghostRank[b] = ghostRank( a );
+      if( originalIndex[a] > -1 && m_ghostRank[b] == -1 )
+      {
+        LvArray::tensorOps::copy< 3 >( m_referencePosition[b], referencePosition[originalIndex[a]] );
+      }
     }
 
 
@@ -400,7 +409,7 @@ localIndex EmbeddedSurfaceNodeManager::unpackUpDownMaps( buffer_unit_type const 
   string temp;
 
   unPackedSize += bufferOps::Unpack( buffer, temp );
-  GEOSX_ERROR_IF( temp != viewKeyStruct::elementListString(), "" );
+  GEOS_ERROR_IF( temp != viewKeyStruct::elementListString(), "" );
   unPackedSize += bufferOps::Unpack( buffer,
                                      this->m_toElements,
                                      packList,

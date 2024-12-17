@@ -1,0 +1,28 @@
+<?xml version="1.0" ?>
+
+<Problem>
+  <Included>
+    <File name="./PoroElastic_efem-edfm_base.xml" />
+  </Included>
+
+  <Outputs>
+    <VTK
+      name="vtkOutput"
+      plotFileRoot="PoroElastic_efem-edfm_inclinedFrac"
+      plotLevel="2"
+      format="binary"/>
+
+    <Restart
+      name="restartOutput"/>
+
+    <TimeHistory
+      name="pressureHistoryOutput"
+      sources="{/Tasks/pressureCollection}"
+      filename="pressure_history"/> 
+    <TimeHistory
+      name="apertureOutput"
+      sources="{/Tasks/apertureCollection}"
+      filename="aperture_history"/>   
+  </Outputs>
+
+</Problem>

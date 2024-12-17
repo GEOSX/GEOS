@@ -2,10 +2,11 @@
  * ------------------------------------------------------------------------------------------------------------
  * SPDX-License-Identifier: LGPL-2.1-only
  *
- * Copyright (c) 2018-2020 Lawrence Livermore National Security LLC
- * Copyright (c) 2018-2020 The Board of Trustees of the Leland Stanford Junior University
- * Copyright (c) 2018-2020 TotalEnergies
- * Copyright (c) 2019-     GEOSX Contributors
+ * Copyright (c) 2016-2024 Lawrence Livermore National Security LLC
+ * Copyright (c) 2018-2024 TotalEnergies
+ * Copyright (c) 2018-2024 The Board of Trustees of the Leland Stanford Junior University
+ * Copyright (c) 2023-2024 Chevron
+ * Copyright (c) 2019-     GEOS/GEOSX Contributors
  * All rights reserved
  *
  * See top level LICENSE, COPYRIGHT, CONTRIBUTORS, NOTICE, and ACKNOWLEDGEMENTS files for details.
@@ -16,32 +17,13 @@
  * @file SurfaceElementStencil.hpp
  */
 
-#ifndef GEOSX_FINITEVOLUME_SURFACEELEMENTSTENCIL_HPP_
-#define GEOSX_FINITEVOLUME_SURFACEELEMENTSTENCIL_HPP_
+#ifndef GEOS_FINITEVOLUME_SURFACEELEMENTSTENCIL_HPP_
+#define GEOS_FINITEVOLUME_SURFACEELEMENTSTENCIL_HPP_
 
 #include "StencilBase.hpp"
 
-namespace geosx
+namespace geos
 {
-
-/// @cond DO_NOT_DOCUMENT
-// TODO remove! This option allows for the creation of new mass inside a newly
-// created FaceElement. The new mass will be equal to:
-// creationMass = defaultDensity * defaultAperture * faceArea.
-// If 0, then the beginning of step density is artificially set to zero...which
-// may cause some newton convergence problems.
-#define ALLOW_CREATION_MASS 1
-
-
-// TODO remove! This option sets the pressure in a newly created FaceElement to
-// be the lowest value of all attached non-new FaceElements.
-#define SET_CREATION_PRESSURE 1
-
-// TODO remove! This option sets the nodal displacements attached a newly
-// created FaceElement to some scalar fraction of the aperture of the
-// lowest attached non-new FaceElements.
-#define SET_CREATION_DISPLACEMENT 0
-/// @endcond
 
 /**
  * @brief Describes properties of SurfaceElementStencil.
@@ -85,8 +67,8 @@ public:
    * @brief Give the number of stencil entries.
    * @return The number of stencil entries
    */
-  GEOSX_HOST_DEVICE
-  GEOSX_FORCE_INLINE
+  GEOS_HOST_DEVICE
+  GEOS_FORCE_INLINE
   localIndex size() const
   { return m_elementRegionIndices.size(); }
 
@@ -95,8 +77,8 @@ public:
    * @param[in] index the index of which the stencil size is request
    * @return The number of stencil entries for the provided index
    */
-  GEOSX_HOST_DEVICE
-  GEOSX_FORCE_INLINE
+  GEOS_HOST_DEVICE
+  GEOS_FORCE_INLINE
   localIndex stencilSize( localIndex index ) const
   { return m_elementRegionIndices.sizeOfArray( index ); }
 
@@ -106,8 +88,8 @@ public:
    * @param[in] index of the stencil entry for which to query the size
    * @return the number of points.
    */
-  GEOSX_HOST_DEVICE
-  GEOSX_FORCE_INLINE
+  GEOS_HOST_DEVICE
+  GEOS_FORCE_INLINE
   localIndex numPointsInFlux( localIndex index ) const
   {
     return stencilSize( index );
@@ -121,7 +103,7 @@ public:
    * @param[out] weight view weights
    * @param[out] dWeight_dVar derivative of the weights w.r.t to the variable
    */
-  GEOSX_HOST_DEVICE
+  GEOS_HOST_DEVICE
   void computeWeights( localIndex iconn,
                        CoefficientAccessor< arrayView3d< real64 const > > const & coefficient,
                        CoefficientAccessor< arrayView3d< real64 const > > const & dCoeff_dVar,
@@ -136,7 +118,7 @@ public:
    * @param[out] weight view weights
    * @param[out] dWeight_dVar derivative of the weights w.r.t to the variable
    */
-  GEOSX_HOST_DEVICE
+  GEOS_HOST_DEVICE
   void computeWeights( localIndex iconn,
                        real64 ( &weight )[maxNumConnections][2],
                        real64 ( &dWeight_dVar )[maxNumConnections][2] ) const;
@@ -152,7 +134,7 @@ public:
    * @param[out] dWeight_dVar1 derivative of the weights w.r.t to the variable 1
    * @param[out] dWeight_dVar2 derivative of the weights w.r.t to the variable 2
    */
-  GEOSX_HOST_DEVICE
+  GEOS_HOST_DEVICE
   void computeWeights( localIndex iconn,
                        CoefficientAccessor< arrayView3d< real64 const > > const & coefficient,
                        CoefficientAccessor< arrayView3d< real64 const > > const & dCoeff_dVar1,
@@ -169,7 +151,7 @@ public:
    * @param[in] gravityVector gravity vector
    * @param[out] weight view weights
    */
-  GEOSX_HOST_DEVICE
+  GEOS_HOST_DEVICE
   void computeWeights( localIndex iconn,
                        CoefficientAccessor< arrayView3d< real64 const > > const & coefficient,
                        CoefficientAccessor< arrayView3d< real64 const > > const & coefficientMultiplier,
@@ -187,7 +169,7 @@ public:
    * @param[out] weight2 view on the second weights
    * @param[out] geometricWeight view on the purely geometric weights
    */
-  GEOSX_HOST_DEVICE
+  GEOS_HOST_DEVICE
   void computeWeights( localIndex iconn,
                        CoefficientAccessor< arrayView3d< real64 const > > const &  coefficient1,
                        CoefficientAccessor< arrayView3d< real64 const > > const &  coefficient1Multiplier,
@@ -202,10 +184,10 @@ public:
    * @param[in] iconn connection index
    * @param[out] stabilizationWeight view weights
    */
-  GEOSX_HOST_DEVICE
+  GEOS_HOST_DEVICE
   void computeStabilizationWeights( localIndex iconn,
                                     real64 ( & stabilizationWeight )[maxNumConnections][2] ) const
-  { GEOSX_UNUSED_VAR( iconn, stabilizationWeight ); }
+  { GEOS_UNUSED_VAR( iconn, stabilizationWeight ); }
 
   /**
    * @brief Accessor to the CellCenterToEdgeCenter vector
@@ -213,6 +195,24 @@ public:
    */
   ArrayOfArraysView< R1Tensor const > getCellCenterToEdgeCenters() const
   { return m_cellCenterToEdgeCenters.toViewConst(); }
+
+  /**
+   * @brief Remove the contribution of the aperture from the weight in the stencil (done before aperture update)
+   *
+   * @param iconn connection index
+   * @param hydraulicAperture hydraulic apertures of the fractures
+   */
+  GEOS_HOST_DEVICE
+  void removeHydraulicApertureContribution( localIndex const iconn, ElementRegionManager::ElementViewConst< arrayView1d< real64 const > > hydraulicAperture ) const;
+
+  /**
+   * @brief Add the contribution of the aperture to the weight in the stencil (done after aperture update)
+   *
+   * @param iconn connection index
+   * @param hydraulicAperture hydraulic apertures of the fractures
+   */
+  GEOS_HOST_DEVICE
+  void addHydraulicApertureContribution( localIndex const iconn, ElementRegionManager::ElementViewConst< arrayView1d< real64 const > > hydraulicAperture ) const;
 
 private:
 
@@ -300,7 +300,7 @@ private:
 
 };
 
-GEOSX_HOST_DEVICE
+GEOS_HOST_DEVICE
 inline void
 SurfaceElementStencilWrapper::
   computeWeights( localIndex iconn,
@@ -364,7 +364,7 @@ SurfaceElementStencilWrapper::
   }
 }
 
-GEOSX_HOST_DEVICE
+GEOS_HOST_DEVICE
 inline void
 SurfaceElementStencilWrapper::
   computeWeights( localIndex iconn,
@@ -416,7 +416,7 @@ SurfaceElementStencilWrapper::
 
 
 
-GEOSX_HOST_DEVICE
+GEOS_HOST_DEVICE
 inline void
 SurfaceElementStencilWrapper::
   computeWeights( localIndex iconn,
@@ -495,7 +495,7 @@ SurfaceElementStencilWrapper::
   }
 }
 
-GEOSX_HOST_DEVICE
+GEOS_HOST_DEVICE
 inline void
 SurfaceElementStencilWrapper::
   computeWeights( localIndex iconn,
@@ -554,7 +554,7 @@ SurfaceElementStencilWrapper::
   }
 }
 
-GEOSX_HOST_DEVICE
+GEOS_HOST_DEVICE
 inline void
 SurfaceElementStencilWrapper::
   computeWeights( localIndex iconn,
@@ -595,7 +595,36 @@ SurfaceElementStencilWrapper::
   }
 }
 
+GEOS_HOST_DEVICE
+inline void
+SurfaceElementStencilWrapper::
+  removeHydraulicApertureContribution( localIndex const iconn, ElementRegionManager::ElementViewConst< arrayView1d< real64 const > > hydraulicAperture ) const
+{
+  for( localIndex k = 0; k < stencilSize( iconn ); ++k )
+  {
+    localIndex const er  =  m_elementRegionIndices[iconn][k];
+    localIndex const esr =  m_elementSubRegionIndices[iconn][k];
+    localIndex const ei  =  m_elementIndices[iconn][k];
 
-} /* namespace geosx */
+    m_weights[iconn][k] = m_weights[iconn][k] / hydraulicAperture[er][esr][ei];
+  }
+}
 
-#endif /* GEOSX_FINITEVOLUME_SURFACEELEMENTSTENCIL_HPP_ */
+GEOS_HOST_DEVICE
+inline void
+SurfaceElementStencilWrapper::
+  addHydraulicApertureContribution( localIndex const iconn, ElementRegionManager::ElementViewConst< arrayView1d< real64 const > > hydraulicAperture ) const
+{
+  for( localIndex k = 0; k < stencilSize( iconn ); ++k )
+  {
+    localIndex const er  =  m_elementRegionIndices[iconn][k];
+    localIndex const esr =  m_elementSubRegionIndices[iconn][k];
+    localIndex const ei  =  m_elementIndices[iconn][k];
+
+    m_weights[iconn][k] = m_weights[iconn][k] * hydraulicAperture[er][esr][ei];
+  }
+}
+
+} /* namespace geos */
+
+#endif /* GEOS_FINITEVOLUME_SURFACEELEMENTSTENCIL_HPP_ */

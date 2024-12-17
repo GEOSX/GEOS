@@ -2,10 +2,11 @@
  * ------------------------------------------------------------------------------------------------------------
  * SPDX-License-Identifier: LGPL-2.1-only
  *
- * Copyright (c) 2018-2020 Lawrence Livermore National Security LLC
- * Copyright (c) 2018-2020 The Board of Trustees of the Leland Stanford Junior University
- * Copyright (c) 2018-2020 TotalEnergies
- * Copyright (c) 2019-     GEOSX Contributors
+ * Copyright (c) 2016-2024 Lawrence Livermore National Security LLC
+ * Copyright (c) 2018-2024 TotalEnergies
+ * Copyright (c) 2018-2024 The Board of Trustees of the Leland Stanford Junior University
+ * Copyright (c) 2023-2024 Chevron
+ * Copyright (c) 2019-     GEOS/GEOSX Contributors
  * All rights reserved
  *
  * See top level LICENSE, COPYRIGHT, CONTRIBUTORS, NOTICE, and ACKNOWLEDGEMENTS files for details.
@@ -23,7 +24,7 @@
 
 #include <chrono>
 
-using namespace geosx;
+using namespace geos;
 using namespace finiteElement;
 
 template< typename POLICY >
@@ -49,7 +50,7 @@ void testKernelDriver()
   };
 
   forAll< POLICY >( 1,
-                    [=] GEOSX_HOST_DEVICE ( localIndex const )
+                    [=] GEOS_HOST_DEVICE ( localIndex const )
   {
 
     for( localIndex q=0; q<numQuadraturePoints; ++q )
@@ -64,7 +65,7 @@ void testKernelDriver()
   } );
 
   forAll< POLICY >( 1,
-                    [=] GEOSX_HOST_DEVICE ( localIndex const )
+                    [=] GEOS_HOST_DEVICE ( localIndex const )
   {
 
     for( localIndex q=0; q<numQuadraturePoints; ++q )
@@ -151,10 +152,10 @@ void testKernelDriver()
 }
 
 
-#ifdef USE_CUDA
+#ifdef GEOS_USE_DEVICE
 TEST( FiniteElementShapeFunctions, testKernelCuda )
 {
-  testKernelDriver< geosx::parallelDevicePolicy< 32 > >();
+  testKernelDriver< geos::parallelDevicePolicy< > >();
 }
 #endif
 TEST( FiniteElementShapeFunctions, testKernelHost )
@@ -164,7 +165,7 @@ TEST( FiniteElementShapeFunctions, testKernelHost )
 
 
 
-using namespace geosx;
+using namespace geos;
 int main( int argc, char * argv[] )
 {
   ::testing::InitGoogleTest( &argc, argv );

@@ -11,6 +11,7 @@
       targetRegions="{ Region1 }">
       <NonlinearSolverParameters
         couplingType="Sequential"
+	lineSearchAction="None"  	  
         newtonMaxIter="100"/>
       <LinearSolverParameters
         directParallel="0"/>
@@ -98,7 +99,7 @@
   <ElementRegions>
     <CellElementRegion
       name="Region1"
-      cellBlocks="{ cb1 }"
+      cellBlocks="{ * }"
       materialList="{ rock }"/>
   </ElementRegions>
 

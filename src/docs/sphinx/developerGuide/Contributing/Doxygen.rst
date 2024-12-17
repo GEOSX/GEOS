@@ -17,7 +17,7 @@ There are two ways to access Doxygen documentation.
 Build locally
 ------------------------------------
 
-Prior to configuring a GEOSX build, have Doxygen installed:
+Prior to configuring a GEOS build, have Doxygen installed:
 
   .. code-block:: sh
 
@@ -27,11 +27,11 @@ Prior to configuring a GEOSX build, have Doxygen installed:
 
   Eventually, doxygen (version 1.8.13) is provided within the `thirdPartyLibs` repository.
 
-Configure GEOSX and go the build directory:
+Configure GEOS and go the build directory:
 
   .. code-block:: sh
 
-   cd GEOSX/build-your-platform-release
+   cd GEOS/build-your-platform-release
 
 Build doxygen docs only:
 
@@ -54,7 +54,7 @@ Open in browser:
 On readthedocs
 ------------------------------------
 
-Go to `GEOSX documentation <https://geosx-geosx.readthedocs-hosted.com/>`__, select the version of interest, and follow
+Go to `GEOS documentation <https://geosx-geosx.readthedocs-hosted.com/>`__, select the version of interest, and follow
 the Doxygen link at the left-hand-side.
 
 Guidelines
@@ -107,12 +107,12 @@ The following rules and conventions are used. Some are stricter than others.
 
 #. For hierarchies with virtual inheritance, document base virtual interfaces rather than overriding implementations.
 
-#. Documented functions cannot use `GEOSX_UNUSED_ARG()` in their declarations.
+#. Documented functions cannot use `GEOS_UNUSED_ARG()` in their declarations.
 
-#. For empty virtual base implementations that use `GEOSX_UNUSED_ARG(x)` to remove compiler warnings, use one of two options:
+#. For empty virtual base implementations that use `GEOS_UNUSED_ARG(x)` to remove compiler warnings, use one of two options:
 
-   * move empty definition away (e.g. out of class body) and keep `GEOSX_UNUSED_ARG(x)` in definition only;
-   * put `GEOSX_UNUSED_VAR(x)` into the inline empty body.
+   * move empty definition away (e.g. out of class body) and keep `GEOS_UNUSED_ARG(x)` in definition only;
+   * put `GEOS_UNUSED_VAR(x)` into the inline empty body.
 
 #. For large classes, logically group functions using member groups via `///@{` and `///@}` and give them group names
    and descriptions (if needed) via a `@name` comment block. Typical groups may include:
@@ -239,4 +239,18 @@ Example
 Current Doxygen
 ====================================
 
-`Link to Doxygen <../../../doxygen_output/html/classes.html>`__
+`Link to Doxygen Class directory <../../../../doxygen_output/html/classes.html>`__
+
+Direct links to some useful class documentation:
+
+`Group API <../../../../doxygen_output/html/classgeos_1_1data_repository_1_1_group.html>`_
+
+`Wrapper API <../../../../doxygen_output/html/classgeos_1_1data_repository_1_1_wrapper.html>`_
+
+`ObjectManagerBase API <../../../../doxygen_output/html/classgeos_1_1_object_manager_base.html>`_
+
+`MeshLevel API <../../../../doxygen_output/html/classgeos_1_1_mesh_level.html>`_
+
+`NodeManager API <../../../../doxygen_output/html/classgeos_1_1_node_manager.html>`_
+
+`FaceManager API <../../../../doxygen_output/html/classgeos_1_1_face_manager.html>`_

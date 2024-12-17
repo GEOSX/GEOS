@@ -1,11 +1,9 @@
 
-set( python_headers pygeosx.hpp
-		    )
+set( python_headers pygeosx.hpp )
 
-set( python_sources pygeosx.cpp
-		    )
-	    	  
-set( dependencyList ${extraComponentsLinkList} ${externalComponentsLinkList} Python3::Python ) 
+set( python_sources pygeosx.cpp )
+
+set( dependencyList ${extraComponentsLinkList} ${externalComponentsLinkList} mainInterface Python3::Python )
 
 blt_add_library( NAME pygeosx
                  SOURCES ${python_sources}
@@ -28,13 +26,15 @@ add_custom_command( TARGET pygeosx
                     COMMAND ln -sf ${CMAKE_BINARY_DIR}/lib/pylvarray.so ${CMAKE_BINARY_DIR}/lib/PYGEOSX/lib/python${Python3_VERSION_MAJOR}.${Python3_VERSION_MINOR}/site-packages/ )
 
 target_include_directories( pygeosx PUBLIC ${CMAKE_SOURCE_DIR}/coreComponents )
+target_include_directories( pygeosx PUBLIC ${CMAKE_BINARY_DIR}/include )
 
 geosx_add_code_checks( PREFIX pygeosx )
 
 install(TARGETS pygeosx LIBRARY DESTINATION lib)
 
-add_subdirectory( unitTests )
-
+if( GEOS_ENABLE_TESTS )
+  add_subdirectory( unitTests )
+endif( )
 
 # Python formatting
 if ( ENABLE_YAPF )

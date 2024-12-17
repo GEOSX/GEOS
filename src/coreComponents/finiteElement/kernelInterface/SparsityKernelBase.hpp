@@ -2,10 +2,11 @@
  * ------------------------------------------------------------------------------------------------------------
  * SPDX-License-Identifier: LGPL-2.1-only
  *
- * Copyright (c) 2018-2020 Lawrence Livermore National Security LLC
- * Copyright (c) 2018-2020 The Board of Trustees of the Leland Stanford Junior University
- * Copyright (c) 2018-2020 TotalEnergies
- * Copyright (c) 2019-     GEOSX Contributors
+ * Copyright (c) 2016-2024 Lawrence Livermore National Security LLC
+ * Copyright (c) 2018-2024 TotalEnergies
+ * Copyright (c) 2018-2024 The Board of Trustees of the Leland Stanford Junior University
+ * Copyright (c) 2023-2024 Chevron
+ * Copyright (c) 2019-     GEOS/GEOSX Contributors
  * All rights reserved
  *
  * See top level LICENSE, COPYRIGHT, CONTRIBUTORS, NOTICE, and ACKNOWLEDGEMENTS files for details.
@@ -18,12 +19,12 @@
  * @file SparsityKernelBase.hpp
  */
 
-#ifndef GEOSX_FINITEELEMENT_SPARSITYKERNELBASE_HPP_
-#define GEOSX_FINITEELEMENT_SPARSITYKERNELBASE_HPP_
+#ifndef GEOS_FINITEELEMENT_SPARSITYKERNELBASE_HPP_
+#define GEOS_FINITEELEMENT_SPARSITYKERNELBASE_HPP_
 
 
 
-namespace geosx
+namespace geos
 {
 
 namespace finiteElement
@@ -35,7 +36,7 @@ namespace finiteElement
 /**
  * @class SparsityKernelBase
  * @brief Define the base interface for implicit finite element kernels.
- * @copydoc geosx::finiteElement::KernelBase
+ * @copydoc geos::finiteElement::KernelBase
  *
  * ### SparsityKernelBase Description
  * Provide common kernels for generation of CRS Sparsity patterns.
@@ -52,7 +53,7 @@ class SparsityKernelBase : public ImplicitKernelBase< SUBREGION_TYPE,
                                                       NUM_DOF_PER_TRIAL_SP >
 {
 public:
-  /// Alias for the base class. (i.e. #geosx::finiteElement::ImplicitKernelBase)
+  /// Alias for the base class. (i.e. #geos::finiteElement::ImplicitKernelBase)
   using Base = ImplicitKernelBase< SUBREGION_TYPE,
                                    CONSTITUTIVE_TYPE,
                                    FE_TYPE,
@@ -62,6 +63,7 @@ public:
 
   using typename Base::StackVariables;
   using Base::m_dofRankOffset;
+  using Base::m_dt;
 
   using Base::setup;
 
@@ -74,7 +76,8 @@ public:
    * @param inputDofNumber The dof number for the primary field.
    * @param rankOffset dof index offset of current rank
    * @param inputSparsity The sparsity pattern to fill.
-   * @copydoc geosx::finiteElement::KernelBase::KernelBase
+   * @param inputDt The timestep for the physics update.
+   * @copydoc geos::finiteElement::KernelBase::KernelBase
    */
   SparsityKernelBase( NodeManager const & nodeManager,
                       EdgeManager const & edgeManager,
@@ -85,6 +88,7 @@ public:
                       CONSTITUTIVE_TYPE & inputConstitutiveType,
                       arrayView1d< globalIndex const > const & inputDofNumber,
                       globalIndex const rankOffset,
+                      real64 const inputDt,
                       SparsityPattern< globalIndex > & inputSparsity ):
     Base( nodeManager,
           edgeManager,
@@ -96,22 +100,23 @@ public:
           inputDofNumber,
           rankOffset,
           CRSMatrixView< real64, globalIndex const >(),
-          arrayView1d< real64 >() ),
+          arrayView1d< real64 >(),
+          inputDt ),
     m_sparsity( inputSparsity )
   {}
 
 
   /**
-   * @copydoc geosx::finiteElement::KernelBase::complete
+   * @copydoc geos::finiteElement::KernelBase::complete
    *
    * In this implementation, only the matrix values are inserted, making this
    * implementation appropriate for generating the sparsity pattern.
    */
-  GEOSX_FORCE_INLINE
+  inline
   real64 complete( localIndex const k,
                    StackVariables & stack ) const
   {
-    GEOSX_UNUSED_VAR( k );
+    GEOS_UNUSED_VAR( k );
 
     for( localIndex r=0; r<stack.numRows; ++r )
     {
@@ -147,7 +152,7 @@ public:
   kernelLaunch( localIndex const numElems,
                 KERNEL_TYPE const & kernelComponent )
   {
-    GEOSX_MARK_FUNCTION;
+    GEOS_MARK_FUNCTION;
 
     // launch the kernel
     forAll< POLICY >( numElems,
@@ -173,7 +178,7 @@ private:
 //*****************************************************************************
 /**
  * @brief Helper struct to define a specialization of
- *   #::geosx::finiteElement::SparsityKernelBase that may be used to generate the sparsity pattern.
+ *   #::geos::finiteElement::SparsityKernelBase that may be used to generate the sparsity pattern.
  * @tparam KERNEL_TEMPLATE Templated class that defines the physics kernel.
  *   Most likely derives from SparsityKernelBase.
  */
@@ -236,6 +241,7 @@ public:
                                                                      inputConstitutiveType,
                                                                      m_inputDofNumber,
                                                                      m_rankOffset,
+                                                                     0.0, //dt but not needed
                                                                      m_inputSparsityPattern );
   }
 
@@ -267,9 +273,9 @@ private:
  * @return 0
  *
  * Fills matrix sparsity using information from physics specific implementation
- * of #geosx::finiteElement::KernelBase interface using the
- * #geosx::finiteElement::ImplicitKernelBase alias to specialize
- * #geosx::finiteElement::SparsityKernelBase to conform with the template
+ * of #geos::finiteElement::KernelBase interface using the
+ * #geos::finiteElement::ImplicitKernelBase alias to specialize
+ * #geos::finiteElement::SparsityKernelBase to conform with the template
  * pattern specified in the physics kernels.
  */
 template< typename REGION_TYPE,
@@ -284,7 +290,7 @@ real64 fillSparsity( MeshLevel & mesh,
                      globalIndex const rankOffset,
                      SparsityPattern< globalIndex > & inputSparsityPattern )
 {
-  GEOSX_MARK_FUNCTION;
+  GEOS_MARK_FUNCTION;
 
   SparsityKernelFactory< KERNEL_TEMPLATE > KernelFactory( inputDofNumber, rankOffset, inputSparsityPattern );
 
@@ -304,4 +310,4 @@ real64 fillSparsity( MeshLevel & mesh,
 
 
 
-#endif /* GEOSX_FINITEELEMENT_SPARSITYKERNELBASE_HPP_ */
+#endif /* GEOS_FINITEELEMENT_SPARSITYKERNELBASE_HPP_ */

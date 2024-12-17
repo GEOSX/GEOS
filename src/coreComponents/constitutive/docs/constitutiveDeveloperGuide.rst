@@ -4,7 +4,7 @@
 Constitutive models
 ################################################################################
 
-In GEOSX, all constitutive models defining fluid and rock properties are implemented
+In GEOS, all constitutive models defining fluid and rock properties are implemented
 in the namespace ``constitutive`` and derived from a common base class,
 ``ConstitutiveBase``. All objects are owned and handled by the ``ConstitutiveManager``.
 
@@ -32,7 +32,7 @@ necessary for multiphase fluid models with properties defined for each component
 For example, a single-phase fluid model where density and viscosity are
 functions of the fluid pressure has the following members:
 
-.. literalinclude:: /coreComponents/constitutive/fluid/SingleFluidBase.hpp
+.. literalinclude:: /coreComponents/constitutive/fluid/singlefluid/SingleFluidBase.hpp
    :language: c++
    :start-after: //START_SPHINX_INCLUDE_00
    :end-before: //END_SPHINX_INCLUDE_00
@@ -44,7 +44,7 @@ This function also resizes all fields based on the size of the subregion and the
 points on it, by calling ``CONSTITUTIVE_MODEL::allocateConstitutiveData``. For the
 single phase fluid example used before, this call is:
 
-.. literalinclude:: /coreComponents/constitutive/fluid/SingleFluidBase.cpp
+.. literalinclude:: /coreComponents/constitutive/fluid/singlefluid/SingleFluidBase.cpp
    :language: c++
    :start-after: //START_SPHINX_INCLUDE_00
    :end-before: //END_SPHINX_INCLUDE_00
@@ -57,7 +57,7 @@ for each constitutive model class, a corresponding `nameOfTheModelUpdates`, whic
 ``LvArray::arrayView`` containers to the data, can be captured by value inside computational kernels.
 For example, for the single phase fluid model `Updates` are:
 
-.. literalinclude:: /coreComponents/constitutive/fluid/SingleFluidBase.hpp
+.. literalinclude:: /coreComponents/constitutive/fluid/singlefluid/SingleFluidBase.hpp
    :language: c++
    :start-after: //START_SPHINX_INCLUDE_01
    :end-before: //END_SPHINX_INCLUDE_01
@@ -65,7 +65,7 @@ For example, for the single phase fluid model `Updates` are:
 Because `Updates` classes are responsible for updating the fields owned by the constitutive models,
 they also implement all functions needed to perform property updates, such as:
 
-.. literalinclude:: /coreComponents/constitutive/fluid/SingleFluidBase.hpp
+.. literalinclude:: /coreComponents/constitutive/fluid/singlefluid/SingleFluidBase.hpp
    :language: c++
    :start-after: //START_SPHINX_INCLUDE_02
    :end-before: //END_SPHINX_INCLUDE_02
@@ -88,7 +88,7 @@ dependency of porosity and permeability on the primary unknowns.
 The base class ``CoupledSolidBase`` implements some basic behaviors
 and is used to access a generic ``CoupledSolid`` in a physics solver:
 
-.. literalinclude:: /coreComponents/physicsSolvers/fluidFlow/SinglePhaseBase.cpp
+.. literalinclude:: /coreComponents/physicsSolvers/fluidFlow/SinglePhaseBase.hpp
    :language: c++
    :start-after: //START_SPHINX_INCLUDE_COUPLEDSOLID
    :end-before: //END_SPHINX_INCLUDE_COUPLEDSOLID

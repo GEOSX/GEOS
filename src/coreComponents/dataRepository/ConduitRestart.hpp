@@ -2,10 +2,11 @@
  * ------------------------------------------------------------------------------------------------------------
  * SPDX-License-Identifier: LGPL-2.1-only
  *
- * Copyright (c) 2018-2020 Lawrence Livermore National Security LLC
- * Copyright (c) 2018-2020 The Board of Trustees of the Leland Stanford Junior University
- * Copyright (c) 2018-2020 TotalEnergies
- * Copyright (c) 2019-     GEOSX Contributors
+ * Copyright (c) 2016-2024 Lawrence Livermore National Security LLC
+ * Copyright (c) 2018-2024 TotalEnergies
+ * Copyright (c) 2018-2024 The Board of Trustees of the Leland Stanford Junior University
+ * Copyright (c) 2023-2024 Chevron
+ * Copyright (c) 2019-     GEOS/GEOSX Contributors
  * All rights reserved
  *
  * See top level LICENSE, COPYRIGHT, CONTRIBUTORS, NOTICE, and ACKNOWLEDGEMENTS files for details.
@@ -16,8 +17,8 @@
  * @file ConduitRestart.hpp
  */
 
-#ifndef GEOSX_DATAREPOSITORY_CONDUITRESTART_HPP_
-#define GEOSX_DATAREPOSITORY_CONDUITRESTART_HPP_
+#ifndef GEOS_DATAREPOSITORY_CONDUITRESTART_HPP_
+#define GEOS_DATAREPOSITORY_CONDUITRESTART_HPP_
 
 // Source includes
 #include "common/GeosxConfig.hpp"
@@ -42,7 +43,7 @@
     static_assert( sizeof( T ) % sizeOfConduitType == 0, #T " cannot be made made up of " #CONDUIT_TYPE "." ); \
   }
 
-namespace geosx
+namespace geos
 {
 namespace dataRepository
 {
@@ -95,8 +96,8 @@ void writeTree( string const & path, conduit::Node & root );
 void loadTree( string const & path, conduit::Node & root );
 
 } // namespace dataRepository
-} // namespace geosx
+} // namespace geos
 
 /// @endcond
 
-#endif /* GEOSX_DATAREPOSITORY_CONDUITRESTART_HPP_ */
+#endif /* GEOS_DATAREPOSITORY_CONDUITRESTART_HPP_ */

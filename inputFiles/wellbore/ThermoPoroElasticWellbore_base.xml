@@ -1,0 +1,317 @@
+<?xml version="1.0" ?>
+
+<Problem>
+  <Solvers>
+    <SinglePhasePoromechanics
+      name="THMSolver"
+      solidSolverName="solidMechSolver"
+      flowSolverName="flowSolver"
+      logLevel="1"
+      isThermal="1"
+      targetRegions="{ rock }">
+      <NonlinearSolverParameters
+        couplingType="FullyImplicit"
+        newtonMaxIter="100"/>
+      <LinearSolverParameters
+        solverType="direct"/>
+    </SinglePhasePoromechanics>
+
+    <SolidMechanicsLagrangianSSLE
+      name="solidMechSolver"
+      timeIntegrationOption="QuasiStatic"
+      logLevel="1"
+      discretization="FE1"
+      targetRegions="{ rock }">
+    </SolidMechanicsLagrangianSSLE>
+   
+    <SinglePhaseFVM
+      name="flowSolver"
+      logLevel="1"
+      discretization="tpfaFlow"
+      temperature="0"
+      isThermal="1"
+      targetRegions="{ rock }">
+    </SinglePhaseFVM>
+  </Solvers>
+
+  <NumericalMethods>
+    <FiniteElements>
+      <FiniteElementSpace
+        name="FE1"
+        order="1"/>
+    </FiniteElements>
+
+    <FiniteVolume>
+      <TwoPointFluxApproximation
+        name="tpfaFlow"/>
+    </FiniteVolume>
+  </NumericalMethods>
+
+  <ElementRegions>
+    <CellElementRegion
+      name="rock"
+      cellBlocks="{ * }"
+      materialList="{ fluid, rock, rockThermalCond }"/>
+  </ElementRegions>
+
+  <Constitutive>
+    <PorousElasticIsotropic
+      name="rock"
+      solidModelName="rockSolid"
+      porosityModelName="rockPorosity"
+      permeabilityModelName="rockPerm"
+      solidInternalEnergyModelName="rockInternalEnergy"/>
+
+    <!-- SPHINX_PoroElasticProperties -->
+    <BiotPorosity
+      name="rockPorosity"
+      defaultReferencePorosity="0.001"
+      defaultGrainBulkModulus="23.5e9"
+      defaultPorosityTEC="4e-5"/>
+    <!-- SPHINX_PoroElasticPropertiesEnd -->
+
+    <!-- SPHINX_HeatCapacityProperties -->
+    <SolidInternalEnergy
+      name="rockInternalEnergy"
+      referenceVolumetricHeatCapacity="1.89e6"
+      referenceTemperature="0"
+      referenceInternalEnergy="0"/>
+    <!-- SPHINX_HeatCapacityPropertiesEnd -->
+
+    <!-- SPHINX_PermeabilityProperties -->
+    <ConstantPermeability
+      name="rockPerm"
+      permeabilityComponents="{ 1.0e-21, 1.0e-21, 1.0e-21 }"/>
+    <!-- SPHINX_PermeabilityPropertiesEnd -->
+
+    <!-- SPHINX_ThermalProperties -->
+    <SinglePhaseThermalConductivity
+      name="rockThermalCond"
+      defaultThermalConductivityComponents="{ 6.6, 6.6, 6.6 }"/>
+    <!-- SPHINX_ThermalPropertiesEnd -->
+
+    <!-- SPHINX_FluidProperties -->
+    <ThermalCompressibleSinglePhaseFluid
+      name="fluid"
+      defaultDensity="1000"
+      defaultViscosity="1e-3"
+      referencePressure="0.0"
+      referenceTemperature="20.0"
+      compressibility="5e-10"
+      thermalExpansionCoeff="3e-4"
+      viscosibility="0.0"
+      specificHeatCapacity="1"
+      referenceInternalEnergy="1"/>
+    <!-- SPHINX_FluidPropertiesEnd -->
+
+    <!-- SPHINX_ThermoElasticProperties -->
+    <ElasticIsotropic
+      name="rockSolid"
+      defaultDensity="2700"
+      defaultBulkModulus="20.7e9"
+      defaultShearModulus="12.4e9"
+      defaultDrainedLinearTEC="4e-5"/>
+    <!-- SPHINX_ThermoElasticPropertiesEnd -->
+    
+  </Constitutive>
+
+  <FieldSpecifications>
+
+    <!-- SPHINX_FixedFarFieldBC -->
+    <FieldSpecification
+      name="rPosConstraint_x"
+      objectPath="nodeManager"
+      fieldName="totalDisplacement"
+      component="0"
+      scale="0.0"
+      setNames="{ rpos }"/>
+
+    <FieldSpecification
+      name="rPosConstraint_y"
+      objectPath="nodeManager"
+      fieldName="totalDisplacement"
+      component="1"
+      scale="0.0"
+      setNames="{ rpos }"/>
+    <!-- SPHINX_FixedFarFieldBCEnd -->
+
+    <!-- SPHINX_PlaneStrainAxisymmetryBC -->
+    <FieldSpecification
+      name="tNegConstraint"
+      objectPath="nodeManager"
+      fieldName="totalDisplacement"
+      component="1"
+      scale="0.0"
+      setNames="{ tneg }"/>
+
+   <FieldSpecification
+      name="tPosConstraint"
+      objectPath="nodeManager"
+      fieldName="totalDisplacement"
+      component="0"
+      scale="0.0"
+      setNames="{ tpos }"/>
+
+    <FieldSpecification
+      name="zconstraint"
+      objectPath="nodeManager"
+      fieldName="totalDisplacement"
+      component="2"
+      scale="0.0"
+      setNames="{ zneg, zpos }"/>
+    <!-- SPHINX_PlaneStrainAxisymmetryBCEnd -->
+
+    <!-- SPHINX_StressInit -->
+    <FieldSpecification
+      name="initialSigma_x_rock"
+      initialCondition="1"
+      setNames="{ all }"
+      objectPath="ElementRegions/rock/rock"
+      fieldName="rockSolid_stress"
+      component="0"
+      scale="0"/>
+    <FieldSpecification
+      name="initialSigma_y_rock"
+      initialCondition="1"
+      setNames="{ all }"
+      objectPath="ElementRegions/rock/rock"
+      fieldName="rockSolid_stress"
+      component="1"
+      scale="0"/>
+    <FieldSpecification
+      name="initialSigma_z_rock"
+      initialCondition="1"
+      setNames="{ all }"
+      objectPath="ElementRegions/rock/rock"
+      fieldName="rockSolid_stress"
+      component="2"
+      scale="0"/>
+    <!-- SPHINX_StressInitEnd -->
+
+    <!-- SPHINX_PorePressureBC -->
+    <FieldSpecification
+      name="initialPressure"
+      initialCondition="1"
+      setNames="{ all }"
+      objectPath="ElementRegions"
+      fieldName="pressure"
+      scale="0e6"/>
+
+    <FieldSpecification
+      name="innerPressure"
+      setNames="{ rneg }"     
+      objectPath="faceManager"
+      fieldName="pressure"
+      scale="0e6"/>
+
+    <FieldSpecification
+      name="farfieldPressure"
+      setNames="{ rpos }"     
+      objectPath="faceManager"
+      fieldName="pressure"
+      scale="0"/>
+    <!-- SPHINX_PorePressureBCEnd -->
+
+    <!-- SPHINX_TemperatureBC -->
+    <FieldSpecification
+      name="initialTemperature"
+      initialCondition="1"
+      setNames="{ all }"
+      objectPath="ElementRegions"
+      fieldName="temperature"
+      scale="0"/>
+
+    <FieldSpecification
+      name="farfieldTemperature"
+      setNames="{ rpos }"       
+      objectPath="faceManager"
+      fieldName="temperature"
+      scale="0"/>
+
+    <FieldSpecification
+      name="innerTemperature"
+      setNames="{ rneg }"     
+      objectPath="faceManager"
+      fieldName="temperature"
+      scale="100.0"/>
+    <!-- SPHINX_TemperatureBCEnd -->
+
+    <!-- SPHINX_ZeroInnerTractionBC -->
+    <Traction
+      name="innerTraction"
+      objectPath="faceManager"
+      tractionType="normal"
+      scale="0.0e6"
+      setNames="{ rneg }"/>
+    <!-- SPHINX_ZeroInnerTractionBCEnd -->
+
+  </FieldSpecifications>
+
+  <Tasks>
+
+    <!-- SPHINX_TemperatureCollection -->
+    <PackCollection
+      name="temperatureCollection_rock"
+      objectPath="ElementRegions/rock/rock"
+      fieldName="temperature"/>
+    <!-- SPHINX_TemperatureCollectionEnd -->
+
+    <!-- SPHINX_PressureCollection -->
+    <PackCollection
+      name="pressureCollection_rock"
+      objectPath="ElementRegions/rock/rock"
+      fieldName="pressure"/>
+    <!-- SPHINX_PressureCollectionEnd -->
+
+    <!-- SPHINX_SolidStressCollection -->
+    <PackCollection
+      name="stressCollection_rock"
+      objectPath="ElementRegions/rock/rock"
+      fieldName="rockSolid_stress"/>
+    <!-- SPHINX_SolidStressCollectionEnd -->
+
+    <!-- SPHINX_DisplacementCollection -->
+    <PackCollection
+      name="displacementCollection"
+      objectPath="nodeManager"
+      fieldName="totalDisplacement"/>
+    <!-- SPHINX_DisplacementCollectionEnd -->
+
+  </Tasks>
+
+  <Outputs>
+    <!-- SPHINX_TemperatureTimeHistory -->
+    <TimeHistory
+      name="temperatureHistoryOutput_rock"
+      sources="{ /Tasks/temperatureCollection_rock }"
+      filename="temperatureHistory_rock"/>
+    <!-- SPHINX_TemperatureTimeHistoryEnd -->
+
+    <!-- SPHINX_PressureTimeHistory -->
+    <TimeHistory
+      name="pressureHistoryOutput_rock"
+      sources="{ /Tasks/pressureCollection_rock }"
+      filename="pressureHistory_rock"/>
+    <!-- SPHINX_PressureTimeHistoryEnd -->
+
+    <!-- SPHINX_SolidStressTimeHistory -->
+    <TimeHistory
+      name="stressHistoryOutput_rock"
+      sources="{ /Tasks/stressCollection_rock }"
+      filename="stressHistory_rock"/>
+    <!-- SPHINX_SolidStressTimeHistoryEnd -->
+
+    <!-- SPHINX_DisplacementTimeHistory -->
+    <TimeHistory
+      name="displacementHistoryOutput"
+      sources="{ /Tasks/displacementCollection }"
+      filename="displacementHistory"/>
+    <!-- SPHINX_DisplacementTimeHistoryEnd -->
+
+    <VTK
+      name="vtkOutput"/>
+
+    <Restart
+      name="restartOutput"/>
+  </Outputs>
+</Problem>

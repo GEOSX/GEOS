@@ -18,21 +18,15 @@
       nx="{ 5, 1, 2, 1, 4 }"
       ny="{ 5, 1, 5 }"
       nz="{ 5, 30, 5 }"
-      cellBlockNames="{ aquiferBottom00, aquitard00, aquiferTop00,
-  		        aquiferBottom01, aquitard01, aquiferTop01,
-		        aquiferBottom02, aquitard02, aquiferTop02,
- 		        aquiferBottom10, aquitard10, aquiferTop10,
-  		        aquiferBottom11, aquitard11, aquiferTop11,
-		        aquiferBottom12, aquitard12, aquiferTop12,
-		        aquiferBottom20, aquitard20, aquiferTop20,
-  		        aquiferBottom21, aquitard21, aquiferTop21,
-		        aquiferBottom22, aquitard22, aquiferTop22,
-		        aquiferBottom30, aquitard30, aquiferTop30,
-		        aquiferBottom31, aquitard31, aquiferTop31,
-			aquiferBottom32, aquitard32, aquiferTop32,
-			aquiferBottom40, aquitard40, aquiferTop40,
-		        aquiferBottom41, aquitard41, aquiferTop41,
-			aquiferBottom42, aquitard42, aquiferTop42 }"/>
+      cellBlockNames="{ aquiferBottom00, aquiferBottom10, aquiferBottom20, aquiferBottom30, aquiferBottom40, 
+                        aquiferBottom01, aquiferBottom11, aquiferBottom21, aquiferBottom31, aquiferBottom41, 
+                        aquiferBottom02, aquiferBottom12, aquiferBottom22, aquiferBottom32, aquiferBottom42, 
+                             aquitard00,      aquitard10,      aquitard20,      aquitard30,      aquitard40, 
+                             aquitard01,      aquitard11,      aquitard21,      aquitard31,      aquitard41, 
+                             aquitard02,      aquitard12,      aquitard22,      aquitard32,      aquitard42, 
+                           aquiferTop00,    aquiferTop10,    aquiferTop20,    aquiferTop30,    aquiferTop40,
+                           aquiferTop01,    aquiferTop11,    aquiferTop21,    aquiferTop31,    aquiferTop41,
+			                     aquiferTop02,    aquiferTop12,    aquiferTop22,    aquiferTop32,    aquiferTop42 }"/>
   </Mesh>
   <!-- SPHINX_MESH_END -->  
   

@@ -2,10 +2,11 @@
  * ------------------------------------------------------------------------------------------------------------
  * SPDX-License-Identifier: LGPL-2.1-only
  *
- * Copyright (c) 2018-2020 Lawrence Livermore National Security LLC
- * Copyright (c) 2018-2020 The Board of Trustees of the Leland Stanford Junior University
- * Copyright (c) 2018-2020 TotalEnergies
- * Copyright (c) 2019-     GEOSX Contributors
+ * Copyright (c) 2016-2024 Lawrence Livermore National Security LLC
+ * Copyright (c) 2018-2024 TotalEnergies
+ * Copyright (c) 2018-2024 The Board of Trustees of the Leland Stanford Junior University
+ * Copyright (c) 2023-2024 Chevron
+ * Copyright (c) 2019-     GEOS/GEOSX Contributors
  * All rights reserved
  *
  * See top level LICENSE, COPYRIGHT, CONTRIBUTORS, NOTICE, and ACKNOWLEDGEMENTS files for details.
@@ -17,13 +18,13 @@
  *
  */
 
-#ifndef GEOSX_MESH_WELLELEMENTREGION_HPP_
-#define GEOSX_MESH_WELLELEMENTREGION_HPP_
+#ifndef GEOS_MESH_WELLELEMENTREGION_HPP_
+#define GEOS_MESH_WELLELEMENTREGION_HPP_
 
 #include "mesh/ElementRegionBase.hpp"
-#include "mesh/generators/InternalWellGenerator.hpp"
+#include "mesh/generators/LineBlockABC.hpp"
 
-namespace geosx
+namespace geos
 {
 
 class MeshLevel;
@@ -121,17 +122,17 @@ public:
   /**
    * @brief Not implemented, this task is performed in GenerateWell.
    */
-  virtual void generateMesh( Group & ) override {}
+  void generateMesh( Group const & ) override {}
 
   /**
    * @brief Build the local well elements and perforations from global well geometry.
    * @param[in] mesh the mesh object (single level only)
-   * @param[in] wellGeometry the InternalWellGenerator containing the global well topology
+   * @param[in] lineBlock the LineBlockABC containing the global well topology
    * @param[in] nodeOffsetGlobal the offset of the first global well node ( = offset of last global mesh node + 1 )
    * @param[in] elemOffsetGlobal the offset of the first global well element ( = offset of last global mesh elem + 1 )
    */
   void generateWell( MeshLevel & mesh,
-                     InternalWellGenerator const & wellGeometry,
+                     LineBlockABC const & lineBlock,
                      globalIndex nodeOffsetGlobal,
                      globalIndex elemOffsetGlobal );
 
@@ -169,6 +170,6 @@ private:
 
 };
 
-} /* namespace geosx */
+} /* namespace geos */
 
-#endif /* GEOSX_MESH_WELLELEMENTREGION_HPP_ */
+#endif /* GEOS_MESH_WELLELEMENTREGION_HPP_ */

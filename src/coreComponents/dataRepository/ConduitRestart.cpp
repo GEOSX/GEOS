@@ -2,10 +2,11 @@
  * ------------------------------------------------------------------------------------------------------------
  * SPDX-License-Identifier: LGPL-2.1-only
  *
- * Copyright (c) 2018-2020 Lawrence Livermore National Security LLC
- * Copyright (c) 2018-2020 The Board of Trustees of the Leland Stanford Junior University
- * Copyright (c) 2018-2020 TotalEnergies
- * Copyright (c) 2019-     GEOSX Contributors
+ * Copyright (c) 2016-2024 Lawrence Livermore National Security LLC
+ * Copyright (c) 2018-2024 TotalEnergies
+ * Copyright (c) 2018-2024 The Board of Trustees of the Leland Stanford Junior University
+ * Copyright (c) 2023-2024 Chevron
+ * Copyright (c) 2019-     GEOS/GEOSX Contributors
  * All rights reserved
  *
  * See top level LICENSE, COPYRIGHT, CONTRIBUTORS, NOTICE, and ACKNOWLEDGEMENTS files for details.
@@ -25,7 +26,7 @@
 // TPL includes
 #include <conduit_relay.hpp>
 
-namespace geosx
+namespace geos
 {
 namespace dataRepository
 {
@@ -51,8 +52,8 @@ string writeRootFile( conduit::Node & root, string const & rootPath )
     conduit::relay::io::save( root, completeRootPath + ".root", "hdf5" );
   }
 
-  MpiWrapper::barrier( MPI_COMM_GEOSX );
-  return GEOSX_FMT( "{}/rank_{:07}.hdf5", completeRootPath.data(), MpiWrapper::commRank() );
+  MpiWrapper::barrier( MPI_COMM_GEOS );
+  return GEOS_FMT( "{}/rank_{:07}.hdf5", completeRootPath.data(), MpiWrapper::commRank() );
 }
 
 
@@ -64,40 +65,40 @@ string readRootNode( string const & rootPath )
     conduit::Node node;
     conduit::relay::io::load( rootPath + ".root", "hdf5", node );
 
-    int const nFiles = node.child( "number_of_files" ).value();
-    GEOSX_THROW_IF_NE( nFiles, MpiWrapper::commSize(), InputError );
+    int const nFiles = node.fetch_existing( "number_of_files" ).value();
+    GEOS_THROW_IF_NE( nFiles, MpiWrapper::commSize(), InputError );
 
-    string const filePattern = node.child( "file_pattern" ).as_string();
+    string const filePattern = node.fetch_existing( "file_pattern" ).as_string();
     string const rootDirName = splitPath( rootPath ).first;
 
     rankFilePattern = rootDirName + "/" + filePattern;
-    GEOSX_LOG_RANK_VAR( rankFilePattern );
+    GEOS_LOG_RANK_VAR( rankFilePattern );
   }
 
   MpiWrapper::broadcast( rankFilePattern, 0 );
 
   char buffer[ 1024 ];
-  GEOSX_ERROR_IF_GE( std::snprintf( buffer, 1024, rankFilePattern.data(), MpiWrapper::commRank() ), 1024 );
+  GEOS_ERROR_IF_GE( std::snprintf( buffer, 1024, rankFilePattern.data(), MpiWrapper::commRank() ), 1024 );
   return buffer;
 }
 
 void writeTree( string const & path, conduit::Node & root )
 {
-  GEOSX_MARK_FUNCTION;
+  GEOS_MARK_FUNCTION;
 
   conduit::Node rootFileNode;
   string const filePathForRank = writeRootFile( rootFileNode, path );
-  GEOSX_LOG_RANK( "Writing out restart file at " << filePathForRank );
+  GEOS_LOG_RANK( "Writing out restart file at " << filePathForRank );
   conduit::relay::io::save( root, filePathForRank, "hdf5" );
 }
 
 void loadTree( string const & path, conduit::Node & root )
 {
-  GEOSX_MARK_FUNCTION;
+  GEOS_MARK_FUNCTION;
   string const filePathForRank = readRootNode( path );
-  GEOSX_LOG_RANK( "Reading in restart file at " << filePathForRank );
+  GEOS_LOG_RANK( "Reading in restart file at " << filePathForRank );
   conduit::relay::io::load( filePathForRank, "hdf5", root );
 }
 
 } /* end namespace dataRepository */
-} /* end namespace geosx */
+} /* end namespace geos */

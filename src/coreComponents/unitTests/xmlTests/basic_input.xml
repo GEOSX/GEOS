@@ -46,7 +46,7 @@
     <!-- ElementRegion name="Region1" cellBlocks="cb1"     numericalMethod="FE1" material="granite"/-->
     <CellElementRegion
       name="Region2"
-      cellBlocks="{ cb1 }"
+      cellBlocks="{ * }"
       materialList="{ shale }"/>
   </ElementRegions>
 
@@ -62,7 +62,7 @@
     <FieldSpecification
       name="v0"
       component="0"
-      fieldName="Velocity"
+      fieldName="velocity"
       functionName="timeFunction"
       objectPath="nodeManager"
       scale="1.0"
@@ -71,7 +71,7 @@
     <FieldSpecification
       name="xconstraint"
       objectPath="nodeManager"
-      fieldName="Velocity"
+      fieldName="velocity"
       component="0"
       scale="0.0"
       setNames="{ xpos }"/>
@@ -79,7 +79,7 @@
     <FieldSpecification
       name="yconstraint"
       objectPath="nodeManager"
-      fieldName="Velocity"
+      fieldName="velocity"
       component="1"
       scale="0.0"
       setNames="{ yneg, ypos }"/>
@@ -87,7 +87,7 @@
     <FieldSpecification
       name="zconstraint"
       objectPath="nodeManager"
-      fieldName="Velocity"
+      fieldName="velocity"
       component="2"
       scale="0.0"
       setNames="{ zneg, zpos }"/>

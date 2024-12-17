@@ -8,12 +8,12 @@ Viscosity-Storage-Dominated PKN Hydraulic Fracture
 
 **Context**
 
-In this example, we simulate the propagation of a Perkins–Kern–Nordgren (PKN) fracture in a viscosity-storage-dominated regime, a classic benchmark in hydraulic fracturing. The developed planar fracture displays an elliptical vertical cross-section. Unlike KGD and penny-shaped fractures, the growth height of a PKN fracture is constrained by mechanical barriers (such as bedding layers, sedimentary laminations, or weak interfaces), thus promoting lateral propagation. This problem is solved using the hydrofracture solver in GEOSX to obtain the temporal evolutions of the fracture characteristics (length, aperture, and pressure). We validate these simulated values against existing analytical solutions `(Kovalyshen and Detournay, 2010;  <https://link.springer.com/article/10.1007/s11242-009-9403-4>`__ `Economides and Nolte, 2000)  <https://books.google.com/books/about/Reservoir_Stimulation.html?id=rDlQAQAAIAAJ>`__. 
+In this example, we simulate the propagation of a Perkins–Kern–Nordgren (PKN) fracture in a viscosity-storage-dominated regime, a classic benchmark in hydraulic fracturing. The developed planar fracture displays an elliptical vertical cross-section. Unlike KGD and penny-shaped fractures, the growth height of a PKN fracture is constrained by mechanical barriers (such as bedding layers, sedimentary laminations, or weak interfaces), thus promoting lateral propagation. This problem is solved using the hydrofracture solver in GEOS to obtain the temporal evolutions of the fracture characteristics (length, aperture, and pressure). We validate these simulated values against existing analytical solutions `(Kovalyshen and Detournay, 2010;  <https://link.springer.com/article/10.1007/s11242-009-9403-4>`__ `Economides and Nolte, 2000)  <https://books.google.com/books/about/Reservoir_Stimulation.html?id=rDlQAQAAIAAJ>`__. 
 
 
 **Input file**
 
-This example uses no external input files. Everything we need is contained within two GEOSX input files:
+This example uses no external input files. Everything we need is contained within two GEOS input files:
 
 .. code-block:: console
 
@@ -39,11 +39,11 @@ Python scripts for post-processing and visualizing the simulation results are al
 Description of the case
 ------------------------------------------------------------------
 
-In this example, a hydraulic fracture initiates and propagates from the center of a 20m-thick layer. This layer is homogeneous and bounded by neighboring upper and lower layers. For viscosity-dominated fractures, more energy is necessary to move the fracturing fluid than to split the intact rock. If fluid leak-off is neglected, storage-dominated propagation occurs with most of the injected fluid confined within the open surfaces. To meet the requirements of the viscosity-storage-dominated assumptions, impermeable domain (no fluid leak-off), incompressible fluid with constant viscosity (:math:`1.0 cp`) and ultra-low rock toughness (:math:`0.1 MPa { \sqrt{m} }`) are chosen in the GEOSX simulation. With these parameters, the fracture stays within the target layer; it extends horizontally and meets the conditions of the PKN fracture in a viscosity-storage-dominated regime.
+In this example, a hydraulic fracture initiates and propagates from the center of a 20m-thick layer. This layer is homogeneous and bounded by neighboring upper and lower layers. For viscosity-dominated fractures, more energy is necessary to move the fracturing fluid than to split the intact rock. If fluid leak-off is neglected, storage-dominated propagation occurs with most of the injected fluid confined within the open surfaces. To meet the requirements of the viscosity-storage-dominated assumptions, impermeable domain (no fluid leak-off), incompressible fluid with constant viscosity (:math:`1.0 cp`) and ultra-low rock toughness (:math:`0.1 MPa { \sqrt{m} }`) are chosen in the GEOS simulation. With these parameters, the fracture stays within the target layer; it extends horizontally and meets the conditions of the PKN fracture in a viscosity-storage-dominated regime.
 
 We assume that the fluid injected in the fracture follows the lubrication equation resulting from mass conservation and Poiseuille's law. The fracture propagates by creating new surfaces if the stress intensity factor exceeds the local rock toughness :math:`K_{IC}`. As the geometry of the PKN fracture exhibits symmetry, the simulation is reduced to a quarter-scale. For verification purposes, a plane strain deformation is considered in the numerical model.
 
-We set up and solve a hydraulic fracture model to obtain the temporal solutions of the fracture half length :math:`l`, the net pressure :math:`p_0` and the fracture aperture :math:`w_0` at the fluid inlet for the PKN fracture propagating in viscosity-storage-dominated regime. `Kovalyshen and Detournay (2010)  <https://link.springer.com/article/10.1007/s11242-009-9403-4>`__ and `Economides and Nolte (2000)  <https://books.google.com/books/about/Reservoir_Stimulation.html?id=rDlQAQAAIAAJ>`__ derived the analytical solutions for this classic hydraulic fracture problem, used here to verify the results of the GEOSX simulations:
+We set up and solve a hydraulic fracture model to obtain the temporal solutions of the fracture half length :math:`l`, the net pressure :math:`p_0` and the fracture aperture :math:`w_0` at the fluid inlet for the PKN fracture propagating in viscosity-storage-dominated regime. `Kovalyshen and Detournay (2010)  <https://link.springer.com/article/10.1007/s11242-009-9403-4>`__ and `Economides and Nolte (2000)  <https://books.google.com/books/about/Reservoir_Stimulation.html?id=rDlQAQAAIAAJ>`__ derived the analytical solutions for this classic hydraulic fracture problem, used here to verify the results of the GEOS simulations:
 
 .. math:: l(t) = 0.3817 (\frac{ E_p Q_0^3 t^4 }{ \mu h^4 })^{ 1/5 }
 
@@ -101,7 +101,7 @@ The fracture plane is defined by a nodeset occupying a small region within the c
 Solid mechanics solver
 ------------------------
 
-GEOSX is a multi-physics platform. Different combinations of
+GEOS is a multi-physics platform. Different combinations of
 physics solvers available in the code can be applied
 in different regions of the domain and be functional at different stages of the simulation.
 The ``Solvers`` tag in the XML file is used to list and parameterize these solvers.
@@ -175,7 +175,7 @@ In this example, ``pressureCollection``, ``apertureCollection``, ``hydraulicAper
     :end-before: <!-- SPHINX_TASKS_END -->
 
 These tasks are triggered using the ``Event`` manager with a ``PeriodicEvent`` defined for the recurring tasks. 
-GEOSX writes one file named after the string defined in the ``filename`` keyword and formatted as a HDF5 file (``pknViscosityDominated_output.hdf5``). This TimeHistory file contains the collected time history information from specified time history collector.
+GEOS writes one file named after the string defined in the ``filename`` keyword and formatted as a HDF5 file (``pknViscosityDominated_output.hdf5``). This TimeHistory file contains the collected time history information from specified time history collector.
 This file includes datasets for the simulation time, fluid pressure, element aperture, hydraulic aperture and element area for the propagating hydraulic fracture.
 A Python script is prepared to read and query any specified subset of the time history data for verification and visualization. 
 
@@ -253,9 +253,9 @@ the HDF5 output is postprocessed and temporal evolution of fracture characterisc
            8 1.044e+06 0.0008482      12.8
           10 1.047e+06 0.0009098      14.8
 
-Note: GEOSX python tools ``geosx_xml_tools`` should be installed to run the query script (See :ref:`PythonToolsSetup` for details). 
+Note: GEOS python tools ``geosx_xml_tools`` should be installed to run the query script (See `Python Tools Setup <https://geosx-geosx.readthedocs-hosted.com/projects/geosx-geospythonpackages/en/latest/>`_ for details). 
  
-Next, figure below shows the comparisons between the results from GEOSX simulations (markers) and the corresponding
+Next, figure below shows the comparisons between the results from GEOS simulations (markers) and the corresponding
 analytical solutions (curves) for the example with viscosity-storage dominated assumptions, which is generated using the visualization script:
 
 .. code-block:: console
@@ -276,4 +276,4 @@ To go further
 
 **Feedback on this example**
 
-For any feedback on this example, please submit a `GitHub issue on the project's GitHub page <https://github.com/GEOSX/GEOSX/issues>`_.
+For any feedback on this example, please submit a `GitHub issue on the project's GitHub page <https://github.com/GEOS-DEV/GEOS/issues>`_.

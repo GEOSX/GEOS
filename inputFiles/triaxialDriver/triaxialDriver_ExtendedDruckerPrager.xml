@@ -11,70 +11,11 @@
       radialControl="stressFunction"
       initialStress="-10.e6"
       steps="200" 
-      output="simulationResults.txt" />
+      output="ExtendedDruckerPragerResults.txt" />
   </Tasks>
   <!-- SPHINX_TASK_END -->
 
-  <!-- SPHINX_EVENTS -->
-  <Events
-    maxTime="1">
-    <SoloEvent
-      name="triaxialDriver"
-      target="/Tasks/triaxialDriver"/>
-  </Events>
-  <!-- SPHINX_EVENTS_END -->
-
-  <!-- SPHINX_MATERIAL -->
-  <Constitutive>
-    <ExtendedDruckerPrager 
-      name="ExtendedDruckerPrager"
-      defaultDensity="2700"
-      defaultBulkModulus="10.0e9"
-      defaultShearModulus="6.0e9"
-      defaultCohesion="6.0e6"
-      defaultInitialFrictionAngle="16.0"
-      defaultResidualFrictionAngle="20.0"
-      defaultDilationRatio="1.0"
-      defaultHardening="0.0001"
-    />    
-  </Constitutive>
-  <!-- SPHINX_MATERIAL_END -->
-
-  <!-- SPHINX_FUNCTION -->
-  <Functions>
-    <TableFunction
-      name="strainFunction"
-      inputVarNames="{ time }"
-      coordinateFiles="{ tables/time.geos }"
-      voxelFile="tables/axialStrain.geos"/>
-
-    <TableFunction
-      name="stressFunction"
-      inputVarNames="{ time }"
-      coordinateFiles="{ tables/time.geos }"
-      voxelFile="tables/radialStress.geos"/>
-  </Functions>
-  <!-- SPHINX_FUNCTION_END -->
-
-  <!-- SPHINX_MESH -->
-  <Mesh>
-    <InternalMesh
-      name="mesh1"
-      elementTypes="{ C3D8 }"
-      xCoords="{ 0, 1 }"
-      yCoords="{ 0, 1 }"
-      zCoords="{ 0, 1 }"
-      nx="{ 1 }"
-      ny="{ 1 }"
-      nz="{ 1 }"
-      cellBlockNames="{ cellBlock01 }"/>
-  </Mesh>
-
-  <ElementRegions>
-    <CellElementRegion
-      name="dummy"
-      cellBlocks="{ cellBlock01 }"
-      materialList="{ dummy }"/>
-  </ElementRegions>
-  <!-- SPHINX_MESH_END -->
+  <Included>
+    <File name="./triaxialDriver_base.xml"/>
+  </Included>
 </Problem>

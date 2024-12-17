@@ -15,11 +15,9 @@
       <LinearSolverParameters 
         solverType="direct"
         directParallel="0"
-        logLevel="0"
-      />
+        logLevel="0"/>
       <NonlinearSolverParameters
-        newtonMaxIter = "40"
-      />
+        newtonMaxIter = "40"/>
     </SinglePhasePoromechanics>
 
     <SolidMechanics_LagrangianFEM 
@@ -40,8 +38,7 @@
       targetRegions="{ Domain }"> 
       <NonlinearSolverParameters
         newtonTol = "1.0e-6"
-        newtonMaxIter = "8"
-      />       
+        newtonMaxIter = "8"/>       
     </SinglePhaseFVM>
   </Solvers>
 

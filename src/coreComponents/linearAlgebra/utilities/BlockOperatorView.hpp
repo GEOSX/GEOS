@@ -2,10 +2,11 @@
  * ------------------------------------------------------------------------------------------------------------
  * SPDX-License-Identifier: LGPL-2.1-only
  *
- * Copyright (c) 2018-2020 Lawrence Livermore National Security LLC
- * Copyright (c) 2018-2020 The Board of Trustees of the Leland Stanford Junior University
- * Copyright (c) 2018-2020 TotalEnergies
- * Copyright (c) 2019-     GEOSX Contributors
+ * Copyright (c) 2016-2024 Lawrence Livermore National Security LLC
+ * Copyright (c) 2018-2024 TotalEnergies
+ * Copyright (c) 2018-2024 The Board of Trustees of the Leland Stanford Junior University
+ * Copyright (c) 2023-2024 Chevron
+ * Copyright (c) 2019-     GEOS/GEOSX Contributors
  * All rights reserved
  *
  * See top level LICENSE, COPYRIGHT, CONTRIBUTORS, NOTICE, and ACKNOWLEDGEMENTS files for details.
@@ -16,8 +17,8 @@
  * @file BlockOperatorView.hpp
  */
 
-#ifndef GEOSX_LINEARALGEBRA_UTILITIES_BLOCKOPERATORVIEW_HPP_
-#define GEOSX_LINEARALGEBRA_UTILITIES_BLOCKOPERATORVIEW_HPP_
+#ifndef GEOS_LINEARALGEBRA_UTILITIES_BLOCKOPERATORVIEW_HPP_
+#define GEOS_LINEARALGEBRA_UTILITIES_BLOCKOPERATORVIEW_HPP_
 
 #include "codingUtilities/SFINAE_Macros.hpp"
 #include "linearAlgebra/common/LinearOperator.hpp"
@@ -25,7 +26,7 @@
 #include "common/traits.hpp"
 #include "linearAlgebra/common/common.hpp"
 
-namespace geosx
+namespace geos
 {
 
 /**
@@ -215,7 +216,7 @@ public:
    */
   OPERATOR const & block( localIndex const blockRowIndex, localIndex const blockColIndex ) const
   {
-    GEOSX_LAI_ASSERT( m_operators( blockRowIndex, blockColIndex ) != nullptr );
+    GEOS_LAI_ASSERT( m_operators( blockRowIndex, blockColIndex ) != nullptr );
     return *m_operators( blockRowIndex, blockColIndex );
   }
 
@@ -224,7 +225,7 @@ public:
    */
   OPERATOR & block( localIndex const blockRowIndex, localIndex const blockColIndex )
   {
-    GEOSX_LAI_ASSERT( m_operators( blockRowIndex, blockColIndex ) != nullptr );
+    GEOS_LAI_ASSERT( m_operators( blockRowIndex, blockColIndex ) != nullptr );
     return *m_operators( blockRowIndex, blockColIndex );
   }
 
@@ -256,8 +257,8 @@ protected:
   BlockOperatorView( localIndex const nRows, localIndex const nCols )
     : m_operators( nRows, nCols )
   {
-    GEOSX_LAI_ASSERT_GT( nRows, 0 );
-    GEOSX_LAI_ASSERT_GT( nCols, 0 );
+    GEOS_LAI_ASSERT_GT( nRows, 0 );
+    GEOS_LAI_ASSERT_GT( nCols, 0 );
   }
 
   /**
@@ -280,10 +281,10 @@ protected:
    */
   void setPointer( localIndex const blockRowIndex, localIndex const blockColIndex, OPERATOR * op )
   {
-    GEOSX_LAI_ASSERT_GE( blockRowIndex, 0 );
-    GEOSX_LAI_ASSERT_GT( numBlockRows(), blockRowIndex );
-    GEOSX_LAI_ASSERT_GE( blockColIndex, 0 );
-    GEOSX_LAI_ASSERT_GT( numBlockCols(), blockColIndex );
+    GEOS_LAI_ASSERT_GE( blockRowIndex, 0 );
+    GEOS_LAI_ASSERT_GT( numBlockRows(), blockRowIndex );
+    GEOS_LAI_ASSERT_GE( blockColIndex, 0 );
+    GEOS_LAI_ASSERT_GT( numBlockCols(), blockColIndex );
     m_operators( blockRowIndex, blockColIndex ) = op;
   }
 
@@ -339,7 +340,7 @@ auto BlockOperatorView< VECTOR, OPERATOR >::computeColSize( FUNC func ) const ->
   return colSize;
 }
 
-}// end geosx namespace
+}// end geos namespace
 
 
-#endif /*GEOSX_LINEARALGEBRA_UTILITIES_BLOCKOPERATORVIEW_HPP_*/
+#endif /*GEOS_LINEARALGEBRA_UTILITIES_BLOCKOPERATORVIEW_HPP_*/

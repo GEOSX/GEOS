@@ -2,10 +2,11 @@
  * ------------------------------------------------------------------------------------------------------------
  * SPDX-License-Identifier: LGPL-2.1-only
  *
- * Copyright (c) 2018-2020 Lawrence Livermore National Security LLC
- * Copyright (c) 2018-2020 The Board of Trustees of the Leland Stanford Junior University
- * Copyright (c) 2018-2020 TotalEnergies
- * Copyright (c) 2019-     GEOSX Contributors
+ * Copyright (c) 2016-2024 Lawrence Livermore National Security LLC
+ * Copyright (c) 2018-2024 TotalEnergies
+ * Copyright (c) 2018-2024 The Board of Trustees of the Leland Stanford Junior University
+ * Copyright (c) 2023-2024 Chevron
+ * Copyright (c) 2019-     GEOS/GEOSX Contributors
  * All rights reserved
  *
  * See top level LICENSE, COPYRIGHT, CONTRIBUTORS, NOTICE, and ACKNOWLEDGEMENTS files for details.
@@ -16,13 +17,13 @@
  * @file VanGenuchtenBakerRelativePermeability.hpp
  */
 
-#ifndef GEOSX_CONSTITUTIVE_VANGENUCHTENBAKERRELATIVEPERMEABILITY_HPP
-#define GEOSX_CONSTITUTIVE_VANGENUCHTENBAKERRELATIVEPERMEABILITY_HPP
+#ifndef GEOS_CONSTITUTIVE_VANGENUCHTENBAKERRELATIVEPERMEABILITY_HPP
+#define GEOS_CONSTITUTIVE_VANGENUCHTENBAKERRELATIVEPERMEABILITY_HPP
 
 #include "constitutive/relativePermeability/RelativePermeabilityBase.hpp"
 #include "constitutive/relativePermeability/RelativePermeabilityInterpolators.hpp"
 
-namespace geosx
+namespace geos
 {
 namespace constitutive
 {
@@ -39,9 +40,9 @@ public:
                                                real64 const volFracScale,
                                                arrayView1d< integer const > const & phaseTypes,
                                                arrayView1d< integer const > const & phaseOrder,
-                                               arrayView3d< real64, relperm::USD_RELPERM > const & phaseRelPerm,
-                                               arrayView4d< real64, relperm::USD_RELPERM_DS > const & dPhaseRelPerm_dPhaseVolFrac,
-                                               arrayView3d< real64, relperm::USD_RELPERM > const & phaseTrappedVolFrac )
+                                               arrayView3d< real64, constitutive::relperm::USD_RELPERM > const & phaseRelPerm,
+                                               arrayView4d< real64, constitutive::relperm::USD_RELPERM_DS > const & dPhaseRelPerm_dPhaseVolFrac,
+                                               arrayView3d< real64, constitutive::relperm::USD_RELPERM > const & phaseTrappedVolFrac )
     : RelativePermeabilityBaseUpdate( phaseTypes,
                                       phaseOrder,
                                       phaseRelPerm,
@@ -55,13 +56,13 @@ public:
     m_volFracScale( volFracScale )
   {}
 
-  GEOSX_HOST_DEVICE
+  GEOS_HOST_DEVICE
   void compute( arraySlice1d< real64 const, compflow::USD_PHASE - 1 > const & phaseVolFraction,
-                arraySlice1d< real64, relperm::USD_RELPERM - 2 > const & phaseTrappedVolFrac,
-                arraySlice1d< real64, relperm::USD_RELPERM - 2 > const & phaseRelPerm,
-                arraySlice2d< real64, relperm::USD_RELPERM_DS - 2 > const & dPhaseRelPerm_dPhaseVolFrac ) const;
+                arraySlice1d< real64, constitutive::relperm::USD_RELPERM - 2 > const & phaseTrappedVolFrac,
+                arraySlice1d< real64, constitutive::relperm::USD_RELPERM - 2 > const & phaseRelPerm,
+                arraySlice2d< real64, constitutive::relperm::USD_RELPERM_DS - 2 > const & dPhaseRelPerm_dPhaseVolFrac ) const;
 
-  GEOSX_HOST_DEVICE
+  GEOS_HOST_DEVICE
   virtual void update( localIndex const k,
                        localIndex const q,
                        arraySlice1d< real64 const, compflow::USD_PHASE - 1 > const & phaseVolFraction ) const override
@@ -86,10 +87,10 @@ private:
    * @return (void)
    *
    * This function evaluates the relperm function and its derivative at a given phase saturation
-   * Reference: Eclipse technical description and Petrowiki
+   * Reference: Petrowiki
    */
-  GEOSX_HOST_DEVICE
-  GEOSX_FORCE_INLINE
+  GEOS_HOST_DEVICE
+  GEOS_FORCE_INLINE
   static void evaluateVanGenuchtenFunction( real64 const & scaledVolFrac,
                                             real64 const & dScaledVolFrac_dVolFrac,
                                             real64 const & exponentInv,
@@ -141,7 +142,7 @@ public:
   arrayView1d< real64 const > getPhaseMinVolumeFraction() const override { return m_phaseMinVolumeFraction; };
 protected:
 
-  virtual void postProcessInput() override;
+  virtual void postInputInitialization() override;
 
   array1d< real64 > m_phaseMinVolumeFraction;
 
@@ -157,13 +158,13 @@ protected:
 };
 
 
-GEOSX_HOST_DEVICE
+GEOS_HOST_DEVICE
 inline void
 VanGenuchtenBakerRelativePermeabilityUpdate::
   compute( arraySlice1d< real64 const, compflow::USD_PHASE - 1 > const & phaseVolFraction,
-           arraySlice1d< real64, relperm::USD_RELPERM - 2 > const & phaseTrappedVolFrac,
-           arraySlice1d< real64, relperm::USD_RELPERM - 2 > const & phaseRelPerm,
-           arraySlice2d< real64, relperm::USD_RELPERM_DS - 2 > const & dPhaseRelPerm_dPhaseVolFrac ) const
+           arraySlice1d< real64, constitutive::relperm::USD_RELPERM - 2 > const & phaseTrappedVolFrac,
+           arraySlice1d< real64, constitutive::relperm::USD_RELPERM - 2 > const & phaseRelPerm,
+           arraySlice2d< real64, constitutive::relperm::USD_RELPERM_DS - 2 > const & dPhaseRelPerm_dPhaseVolFrac ) const
 {
   LvArray::forValuesInSlice( dPhaseRelPerm_dPhaseVolFrac, []( real64 & val ){ val = 0.0; } );
 
@@ -269,6 +270,21 @@ VanGenuchtenBakerRelativePermeabilityUpdate::
                                           dOilRelPerm_go_dOilVolFrac,
                                           phaseRelPerm[ipOil],
                                           dPhaseRelPerm_dPhaseVolFrac[ipOil] );
+
+//      relpermInterpolators::Stone2::compute(shiftedWaterVolFrac,
+//                                            phaseVolFraction[ipGas],
+//                                            m_phaseOrder,
+//                                            m_waterOilRelPermMaxValue[ipOil],
+//                                            oilRelPerm_wo,
+//                                            dOilRelPerm_wo_dOilVolFrac,
+//                                            oilRelPerm_go,
+//                                            dOilRelPerm_go_dOilVolFrac,
+//                                            phaseRelPerm[ipWater],
+//                                            dPhaseRelPerm_dPhaseVolFrac[ipWater][ipWater],
+//                                            phaseRelPerm[ipGas],
+//                                            dPhaseRelPerm_dPhaseVolFrac[ipGas][ipGas],
+//                                            phaseRelPerm[ipOil],
+//                                            dPhaseRelPerm_dPhaseVolFrac[ipOil] );
   }
 
   // update trapped phase volume fraction
@@ -286,8 +302,8 @@ VanGenuchtenBakerRelativePermeabilityUpdate::
   }
 }
 
-GEOSX_HOST_DEVICE
-GEOSX_FORCE_INLINE
+GEOS_HOST_DEVICE
+GEOS_FORCE_INLINE
 void
 VanGenuchtenBakerRelativePermeabilityUpdate::
   evaluateVanGenuchtenFunction( real64 const & scaledVolFrac,
@@ -323,6 +339,6 @@ VanGenuchtenBakerRelativePermeabilityUpdate::
 
 } // namespace constitutive
 
-} // namespace geosx
+} // namespace geos
 
-#endif //GEOSX_CONSTITUTIVE_VANGENUCHTENBAKERRELATIVEPERMEABILITY_HPP
+#endif //GEOS_CONSTITUTIVE_VANGENUCHTENBAKERRELATIVEPERMEABILITY_HPP

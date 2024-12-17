@@ -4,7 +4,7 @@
 Outputs
 ============
 
-This section describes how outputs are handled by GEOSX
+This section describes how outputs are handled by GEOS
 
 The outputs are defined in a ``<Outputs>`` XML block.
 
@@ -28,7 +28,7 @@ The SILO output is defined through the ``<Silo>`` XML node (subnode of ``<Output
   
 The parameter options are listed in the following table:
 
-.. include:: /coreComponents/schema/docs/Silo.rst
+.. include:: /docs/sphinx/datastructure/Silo.rst
 
 
 VTK Output
@@ -44,7 +44,7 @@ The VTK output is defined through the ``<VTK>`` XML node (subnode of ``<Outputs>
 
 The parameter options are listed in the following table:
 
-.. include:: /coreComponents/schema/docs/VTK.rst
+.. include:: /docs/sphinx/datastructure/VTK.rst
 
 TimeHistory Output
 ==================
@@ -59,7 +59,7 @@ The TimeHistory output is defined through the ``<TimeHistory>`` XML node (subnod
 
 The parameter options are listed in the following table:
 
-.. include:: /coreComponents/schema/docs/TimeHistory.rst
+.. include:: /docs/sphinx/datastructure/TimeHistory.rst
 
 In order to properly collect and output time history information the following steps must be accomplished:
 
@@ -95,7 +95,7 @@ We suggest the use of VisIT_, Paraview_, and MatPlotLib_ to visualize the output
 Visualizing Silo outputs with VisIT
 ===================================
 
-If the ``<Silo>`` XML node was defined, GEOSX writes the results in a folder called ``siloFiles``.
+If the ``<Silo>`` XML node was defined, GEOS writes the results in a folder called ``siloFiles``.
 
 In VisIT :
 
@@ -112,11 +112,11 @@ Please consult the VisIT_ documentation for further explanations on its usage.
 Visualizing VTK outputs with VisIT
 ===================================
 
-If the ``<VTK>`` XML node was defined, GEOSX writes the results in a folder named after the ``plotFileRoot`` attribute (default = ``vtkOutputs``).
+If the ``<VTK>`` XML node was defined, GEOS writes the results in a folder named after the ``plotFileRoot`` attribute (default = ``vtkOutputs``).
 For problems with multiple active regions (e.g. :ref:`TutorialHydraulicFractureWithAdvancedXML`), additional work may be required to ensure that vtk files can be read by VisIt.
 Options include:
 
-1. Using a VisIt macro / python script to convert default multi-region vtk files (see ``GEOSX/src/coreComponents/python/visitMacros/visitVTKConversion.py``).
+1. Using a VisIt macro / python script to convert default multi-region vtk files (see ``GEOS/src/coreComponents/python/visitMacros/visitVTKConversion.py``).
 2. Using the ``outputRegionType`` attribute to output separate sets of files per region.  For example:
 
 .. code-block:: xml
@@ -168,7 +168,7 @@ Please consult the VisIT_ documentation for further explanations on its usage.
 Visualizing VTK outputs with Paraview
 =====================================
 
-If the ``<VTK>`` XML node was defined, GEOSX writes a folder and a ``.pvd`` file named after the string defined
+If the ``<VTK>`` XML node was defined, GEOS writes a folder and a ``.pvd`` file named after the string defined
 in ``name`` keyword.
 
 The ``.pvd`` file contains references to the ``.pvtu`` files. One ``.pvtu`` file is output according the frequency defined in the ``timeFrequency`` keyword of the Event that has triggered the output.
@@ -182,7 +182,7 @@ open the ``.pvd`` file.
 Visualizing TimeHistory outputs with MatPlotLib
 ===============================================
 
-If the ``<TimeHistory>`` XML node was defined, GEOSX writes a file named after the string defined
+If the ``<TimeHistory>`` XML node was defined, GEOS writes a file named after the string defined
 in the ``filename`` keyword and formatted as specified by the string defined in the ``format``
 keyword (only HDF5_ is currently supported).
 

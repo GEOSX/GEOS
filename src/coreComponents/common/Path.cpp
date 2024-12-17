@@ -2,10 +2,11 @@
  * ------------------------------------------------------------------------------------------------------------
  * SPDX-License-Identifier: LGPL-2.1-only
  *
- * Copyright (c) 2018-2020 Lawrence Livermore National Security LLC
- * Copyright (c) 2018-2020 The Board of Trustees of the Leland Stanford Junior University
- * Copyright (c) 2018-2020 TotalEnergies
- * Copyright (c) 2019-     GEOSX Contributors
+ * Copyright (c) 2016-2024 Lawrence Livermore National Security LLC
+ * Copyright (c) 2018-2024 TotalEnergies
+ * Copyright (c) 2018-2024 The Board of Trustees of the Leland Stanford Junior University
+ * Copyright (c) 2023-2024 Chevron
+ * Copyright (c) 2019-     GEOS/GEOSX Contributors
  * All rights reserved
  *
  * See top level LICENSE, COPYRIGHT, CONTRIBUTORS, NOTICE, and ACKNOWLEDGEMENTS files for details.
@@ -13,7 +14,7 @@
  */
 
 #include "Path.hpp"
-#include "Logger.hpp"
+#include "logger/Logger.hpp"
 
 #include <unistd.h>
 #include <sys/stat.h>
@@ -21,7 +22,7 @@
 #include <dirent.h>
 #include <vector>
 
-namespace geosx
+namespace geos
 {
 
 std::string getAbsolutePath( std::string const & path )
@@ -47,20 +48,20 @@ std::string getAbsolutePath( std::string const & path )
   }();
 
   char const * const cwd = getcwd( buf, PATH_MAX ) ? buf : "";
-  GEOSX_THROW( GEOSX_FMT( "Could not resolve absolute path for: {}.\n"
-                          "The following error occurred: {}.\n"
-                          "Current working directory is: {}.\n",
-                          path, reason, cwd ),
-               InputError );
+  GEOS_THROW( GEOS_FMT( "Could not resolve absolute path for: {}.\n"
+                        "The following error occurred: {}.\n"
+                        "Current working directory is: {}.\n",
+                        path, reason, cwd ),
+              InputError );
 }
 
 std::istream & operator>>( std::istream & is, Path & p )
 {
   std::string & s = static_cast< std::string & >( p );
   is >> s;
-  if( !isAbsolutePath( s ) && !Path::pathPrefix().empty() )
+  if( !isAbsolutePath( s ) && !Path::getPathPrefix().empty() )
   {
-    s = getAbsolutePath( Path::pathPrefix() + '/' + p );
+    s = getAbsolutePath( std::string( Path::getPathPrefix() ) + '/' + p );
   }
   return is;
 }
@@ -111,7 +112,7 @@ void makeDirectory( std::string const & path )
 {
   constexpr mode_t mode = 0770; // user and group rwx permissions
   int const err = mkdir( path.c_str(), mode );
-  GEOSX_THROW_IF( err && ( errno != EEXIST ), "Failed to create directory: " << path, std::runtime_error );
+  GEOS_THROW_IF( err && ( errno != EEXIST ), "Failed to create directory: " << path, std::runtime_error );
 }
 
 void makeDirsForPath( std::string const & path )
@@ -125,4 +126,4 @@ void makeDirsForPath( std::string const & path )
   while( pos != std::string::npos );
 }
 
-} /* end namespace geosx */
+} /* end namespace geos */

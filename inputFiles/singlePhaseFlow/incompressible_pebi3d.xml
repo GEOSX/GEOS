@@ -19,7 +19,13 @@
   <Mesh>
     <VTKMesh
       name="mesh"
-      file="pebi3d.vtu"/>
+      logLevel="5"	
+      partitionRefinement="3"
+      useGlobalIds="1"
+      fieldsToImport="{ PERM, PORO, NTG }"
+      fieldNamesInGEOS="{ rockPerm_permeability, rockPorosity_referencePorosity, netToGross }"
+	
+      file="pebi3d_with_properties.vtu"/>
   </Mesh>
 
   <Geometry>
@@ -62,7 +68,7 @@
   <ElementRegions>
     <CellElementRegion
       name="Domain"
-      cellBlocks="{ hexahedra, pentagonalPrisms, hexagonalPrisms, heptagonalPrisms, octagonalPrisms }"
+      cellBlocks="{ * }"
       materialList="{ water, rock }"/>
   </ElementRegions>
 
@@ -96,13 +102,6 @@
   </Constitutive>
 
   <FieldSpecifications>
-    <FieldSpecification
-      name="Porosity"
-      initialCondition="1"
-      setNames="{ all }"
-      objectPath="ElementRegions/Domain"
-      fieldName="rockPorosity_referencePorosity"
-      scale="0.05"/>
 
     <FieldSpecification
       name="initialPressure"

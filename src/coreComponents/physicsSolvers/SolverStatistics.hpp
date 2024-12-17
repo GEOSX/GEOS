@@ -2,10 +2,11 @@
  * ------------------------------------------------------------------------------------------------------------
  * SPDX-License-Identifier: LGPL-2.1-only
  *
- * Copyright (c) 2018-2020 Lawrence Livermore National Security LLC
- * Copyright (c) 2018-2020 The Board of Trustees of the Leland Stanford Junior University
- * Copyright (c) 2018-2020 TotalEnergies
- * Copyright (c) 2019-     GEOSX Contributors
+ * Copyright (c) 2016-2024 Lawrence Livermore National Security LLC
+ * Copyright (c) 2018-2024 TotalEnergies
+ * Copyright (c) 2018-2024 The Board of Trustees of the Leland Stanford Junior University
+ * Copyright (c) 2023-2024 Chevron
+ * Copyright (c) 2019-     GEOS/GEOSX Contributors
  * All rights reserved
  *
  * See top level LICENSE, COPYRIGHT, CONTRIBUTORS, NOTICE, and ACKNOWLEDGEMENTS files for details.
@@ -17,12 +18,12 @@
  */
 
 
-#ifndef GEOSX_PHYSICSSOLVERS_SOLVERSTATISTICS_HPP
-#define GEOSX_PHYSICSSOLVERS_SOLVERSTATISTICS_HPP
+#ifndef GEOS_PHYSICSSOLVERS_SOLVERSTATISTICS_HPP
+#define GEOS_PHYSICSSOLVERS_SOLVERSTATISTICS_HPP
 
 #include "dataRepository/Group.hpp"
 
-namespace geosx
+namespace geos
 {
 
 /**
@@ -79,7 +80,54 @@ public:
    */
   void outputStatistics() const;
 
-private:
+  /**
+   * @return Number of time steps
+   */
+  integer getNumTimeSteps() const
+  { return m_numTimeSteps; }
+
+  /**
+   * @return Number of time step cuts
+   */
+  integer getNumTimeStepCuts() const
+  { return m_numTimeStepCuts; }
+
+  /**
+   * @return Cumulative number of successful outer loop iterations
+   */
+  integer getNumSuccessfulOuterLoopIterations() const
+  { return m_numSuccessfulOuterLoopIterations; }
+
+  /**
+   * @return Cumulative number of successful nonlinear iterations
+   */
+  integer getNumSuccessfulNonlinearIterations() const
+  { return m_numSuccessfulNonlinearIterations; }
+
+  /**
+   * @return Cumulative number of successful linear iterations
+   */
+  integer getNumSuccessfulLinearIterations() const
+  { return m_numSuccessfulLinearIterations; }
+
+  /**
+   * @return Cumulative number of discarded outer loop iterations
+   */
+  integer getNumDiscardedOuterLoopIterations() const
+  { return m_numDiscardedOuterLoopIterations; }
+
+  /**
+   * @return Cumulative number of discarded nonlinear iterations
+   */
+  integer getNumDiscardedNonlinearIterations() const
+  { return m_numDiscardedNonlinearIterations; }
+
+  /**
+   * @return Cumulative number of discarded linear iterations
+   */
+  integer getNumDiscardedLinearIterations() const
+  { return m_numDiscardedLinearIterations; }
+
 
   /**
    * @brief Struct to serve as a container for variable strings and keys.
@@ -107,6 +155,7 @@ private:
     static constexpr char const * numDiscardedLinearIterationsString() { return "numDiscardedLinearIterations"; }
   };
 
+private:
   /// Number of time steps
   integer m_numTimeSteps;
 
@@ -145,6 +194,6 @@ private:
 
 };
 
-} //namespace geosx
+} //namespace geos
 
-#endif // GEOSX_PHYSICSSOLVERS_SOLVERSTATISTICS_HPP
+#endif // GEOS_PHYSICSSOLVERS_SOLVERSTATISTICS_HPP

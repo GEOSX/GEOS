@@ -5,7 +5,7 @@
     <FieldSpecification
       name="v0"
       component="0"
-      fieldName="Velocity"
+      fieldName="velocity"
       functionName="timeFunction"
       objectPath="nodeManager"
       scale="1.0"

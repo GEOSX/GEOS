@@ -2,10 +2,11 @@
  * ------------------------------------------------------------------------------------------------------------
  * SPDX-License-Identifier: LGPL-2.1-only
  *
- * Copyright (c) 2018-2020 Lawrence Livermore National Security LLC
- * Copyright (c) 2018-2020 The Board of Trustees of the Leland Stanford Junior University
- * Copyright (c) 2018-2020 TotalEnergies
- * Copyright (c) 2019-     GEOSX Contributors
+ * Copyright (c) 2016-2024 Lawrence Livermore National Security LLC
+ * Copyright (c) 2018-2024 TotalEnergies
+ * Copyright (c) 2018-2024 The Board of Trustees of the Leland Stanford Junior University
+ * Copyright (c) 2023-2024 Chevron
+ * Copyright (c) 2019-     GEOS/GEOSX Contributors
  * All rights reserved
  *
  * See top level LICENSE, COPYRIGHT, CONTRIBUTORS, NOTICE, and ACKNOWLEDGEMENTS files for details.
@@ -20,8 +21,9 @@
 
 #include "common/MpiWrapper.hpp"
 #include "mesh/WellElementSubRegion.hpp"
+#include "mesh/generators/InternalWellGenerator.hpp"
 
-namespace geosx
+namespace geos
 {
 using namespace dataRepository;
 
@@ -31,8 +33,11 @@ WellElementRegion::WellElementRegion( string const & name, Group * const parent 
   m_wellControlsName( "" ),
   m_wellGeneratorName( "" )
 {
-  registerWrapper( viewKeyStruct::wellControlsString(), &m_wellControlsName );
-  registerWrapper( viewKeyStruct::wellGeneratorString(), &m_wellGeneratorName );
+  registerWrapper( viewKeyStruct::wellControlsString(), &m_wellControlsName ).
+    setRTTypeName( rtTypes::CustomTypes::groupNameRef );
+
+  registerWrapper( viewKeyStruct::wellGeneratorString(), &m_wellGeneratorName ).
+    setRTTypeName( rtTypes::CustomTypes::groupNameRef );
 
   this->getGroup( viewKeyStruct::elementSubRegions() ).registerGroup< WellElementSubRegion >( m_subRegionName );
 
@@ -41,9 +46,8 @@ WellElementRegion::WellElementRegion( string const & name, Group * const parent 
 WellElementRegion::~WellElementRegion()
 {}
 
-
 void WellElementRegion::generateWell( MeshLevel & mesh,
-                                      InternalWellGenerator const & wellGeometry,
+                                      LineBlockABC const & lineBlock,
                                       globalIndex nodeOffsetGlobal,
                                       globalIndex elemOffsetGlobal )
 {
@@ -55,31 +59,31 @@ void WellElementRegion::generateWell( MeshLevel & mesh,
   subRegion.setWellControlsName( m_wellControlsName );
 
   PerforationData * const perforationData = subRegion.getPerforationData();
-  perforationData->setNumPerforationsGlobal( wellGeometry.getNumPerforations() );
+  perforationData->setNumPerforationsGlobal( lineBlock.numPerforations() );
 
-  globalIndex const numElemsGlobal        = wellGeometry.getNumElements();
-  globalIndex const numPerforationsGlobal = wellGeometry.getNumPerforations();
+  globalIndex const numElemsGlobal        = lineBlock.numElements();
+  globalIndex const numPerforationsGlobal = lineBlock.numPerforations();
 
   // 1) select the local perforations based on connectivity to the local reservoir elements
-  subRegion.connectPerforationsToMeshElements( mesh, wellGeometry );
+  subRegion.connectPerforationsToMeshElements( mesh, lineBlock );
 
   globalIndex const matchedPerforations = MpiWrapper::sum( perforationData->size() );
-  GEOSX_THROW_IF( matchedPerforations != numPerforationsGlobal,
-                  "Invalid mapping perforation-to-element in well " << wellGeometry.getName() << "." <<
-                  " This happens when GEOSX cannot match a perforation with a reservoir element." <<
-                  " There are two common reasons for this error:\n" <<
-                  " 1- The most common reason for this error is that a perforation is on a section of " <<
-                  " the well polyline located outside the domain.\n" <<
-                  " 2- This error can also happen if a perforation falls on a mesh face or a mesh vertex." <<
-                  " Please try to move the perforation slightly (to the interior of the perforated cell) to see if it fixes the problem.",
-                  InputError );
-
+  GEOS_THROW_IF( matchedPerforations != numPerforationsGlobal,
+                 "Invalid mapping perforation-to-element in "<<
+                 InternalWellGenerator::catalogName() << " " << getWellGeneratorName() << "." <<
+                 " This happens when GEOSX cannot match a perforation with a reservoir element." <<
+                 " There are two common reasons for this error:\n" <<
+                 " 1- The most common reason for this error is that a perforation is on a section of " <<
+                 " the well polyline located outside the domain.\n" <<
+                 " 2- This error can also happen if a perforation falls on a mesh face or a mesh vertex." <<
+                 " Please try to move the perforation slightly (to the interior of the perforated cell) to see if it fixes the problem.",
+                 InputError );
 
   // 2) classify well elements based on connectivity to local mesh partition
   array1d< integer > elemStatusGlobal;
   elemStatusGlobal.resizeDefault( numElemsGlobal, WellElementSubRegion::WellElemStatus::UNOWNED );
 
-  arrayView1d< globalIndex const > const & perfElemIdGlobal = wellGeometry.getPerfElemIndex();
+  arrayView1d< globalIndex const > const & perfElemIdGlobal = lineBlock.getPerfElemIndex();
 
   for( localIndex iperfGlobal = 0; iperfGlobal < numPerforationsGlobal; ++iperfGlobal )
   {
@@ -98,7 +102,7 @@ void WellElementRegion::generateWell( MeshLevel & mesh,
 
   // 3) select the local well elements and mark boundary nodes (for ghosting)
   subRegion.generate( mesh,
-                      wellGeometry,
+                      lineBlock,
                       elemStatusGlobal,
                       nodeOffsetGlobal,
                       elemOffsetGlobal );
@@ -114,16 +118,16 @@ void WellElementRegion::generateWell( MeshLevel & mesh,
   {
     if( allRankTopElem[irank] >= 0 )
     {
-      GEOSX_ASSERT( topRank < 0 );
+      GEOS_ASSERT( topRank < 0 );
       topRank = irank;
     }
   }
-  GEOSX_ASSERT( topRank >= 0 );
+  GEOS_ASSERT( topRank >= 0 );
   subRegion.setTopRank( topRank );
 
 
   // 5) construct the local perforation to well element map
-  perforationData->connectToWellElements( wellGeometry,
+  perforationData->connectToWellElements( lineBlock,
                                           subRegion.globalToLocalMap(),
                                           elemOffsetGlobal );
 
@@ -131,4 +135,4 @@ void WellElementRegion::generateWell( MeshLevel & mesh,
 
 REGISTER_CATALOG_ENTRY( ObjectManagerBase, WellElementRegion, string const &, Group * const )
 
-} /* namespace geosx */
+} /* namespace geos */

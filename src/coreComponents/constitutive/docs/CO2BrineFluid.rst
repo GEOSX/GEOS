@@ -8,7 +8,7 @@ CO2-brine model
 Summary
 =======
 
-The CO2-brine model implemented in GEOSX includes two components (CO2 and H2O) that are transported by one or two fluid phases (the brine phase and the CO2 phase).
+The CO2-brine model implemented in GEOS includes two components (CO2 and H2O) that are transported by one or two fluid phases (the brine phase and the CO2 phase).
 We refer to the brine phase with the subscript :math:`\ell` and to the CO2 phase with the subscript :math:`g` (although the CO2 phase can be in supercritical, liquid, or gas state).
 The water component is only present in the brine phase, while the CO2 component can be present in the CO2 phase as well as in the brine phase.
 Thus, considering the molar phase component fractions, :math:`y_{c,p}` (i.e., the fraction of the molar mass of phase :math:`p` represented by component :math:`c`) the following partition matrix determines the component distribution within the two phases:
@@ -33,7 +33,7 @@ The models that are used in steps 1) and 2) are reviewed in more details below.
 Step 1: Computation of the phase fractions and phase component fractions (flash)
 ================================================================================
 
-At initialization, GEOSX performs a preprocessing step to construct a two-dimensional table storing the values of CO2 solubility in brine as a function of pressure, temperature, and a constant salinity.
+At initialization, GEOS performs a preprocessing step to construct a two-dimensional table storing the values of CO2 solubility in brine as a function of pressure, temperature, and a constant salinity.
 The user can parameterize the construction of the table by specifying the salinity and by defining the pressure (:math:`p`) and temperature (:math:`T`) axis of the table in the form:
 
 +------------+---------------+-----------------+-----------------+------------------+-----------------+-----------------+------------------+----------+
@@ -85,7 +85,7 @@ Step 2: Computation of the phase densities and phase viscosities
 CO2 phase density and viscosity
 -------------------------------
 
-In GEOSX, the computation of the CO2 phase density and viscosity  is entirely based on look-up in precomputed tables.
+In GEOS, the computation of the CO2 phase density and viscosity  is entirely based on look-up in precomputed tables.
 The user defines the pressure (in Pascal) and temperature (in Kelvin) axis of the density table in the form:
 
 +------------+----------------------+-----------------+-----------------+------------------+-----------------+-----------------+------------------+
@@ -93,7 +93,7 @@ The user defines the pressure (in Pascal) and temperature (in Kelvin) axis of th
 +------------+----------------------+-----------------+-----------------+------------------+-----------------+-----------------+------------------+
 
 This correlation is valid for pressures less than :math:`8 \times 10^8` Pascal and temperatures less than 1073.15 Kelvin.  
-Using these parameters, GEOSX internally constructs a two-dimensional table storing the values of density as a function of pressure and temperature.
+Using these parameters, GEOS internally constructs a two-dimensional table storing the values of density as a function of pressure and temperature.
 This table is populated as explained in the work of Span and Wagner (1996) by solving the following nonlinear Helmholtz energy equation for each pair :math:`(p,T)` to obtain the value of density, :math:`\rho_{g}`:
 
 .. math::
@@ -136,7 +136,7 @@ The user specifies the (constant) salinity and defines the pressure and temperat
 The pressure must be in Pascal and must be less than :math:`5 \times 10^7` Pascal.
 The temperature must be in Kelvin and must be between 283.15 and 623.15 Kelvin.
 The salinity is a molality (moles of NaCl per kg of brine).
-Using these parameters, GEOSX performs a preprocessing step to construct a two-dimensional table storing the brine density, :math:`\rho_{\ell,table}` for the specified salinity as a function of pressure and temperature using the expression:
+Using these parameters, GEOS performs a preprocessing step to construct a two-dimensional table storing the brine density, :math:`\rho_{\ell,table}` for the specified salinity as a function of pressure and temperature using the expression:
 
 .. math::
  
@@ -244,7 +244,7 @@ The models are represented by ``<CO2BrinePhillipsFluid>``, ``<CO2BrineEzrokhiFlu
 
 The following attributes are supported:
 
-.. include:: ../../../coreComponents/schema/docs/CO2BrinePhillipsFluid.rst
+.. include:: /docs/sphinx/datastructure/CO2BrinePhillipsFluid.rst
 
 Supported phase names are:
 

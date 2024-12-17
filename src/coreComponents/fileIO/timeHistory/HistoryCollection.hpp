@@ -2,18 +2,19 @@
  * ------------------------------------------------------------------------------------------------------------
  * SPDX-License-Identifier: LGPL-2.1-only
  *
- * Copyright (c) 2018-2019 Lawrence Livermore National Security LLC
- * Copyright (c) 2018-2019 The Board of Trustees of the Leland Stanford Junior University
- * Copyright (c) 2018-2019 TotalEnergies
- * Copyright (c) 2019-     GEOSX Contributors
- * All right reserved
+ * Copyright (c) 2016-2024 Lawrence Livermore National Security LLC
+ * Copyright (c) 2018-2024 TotalEnergies
+ * Copyright (c) 2018-2024 The Board of Trustees of the Leland Stanford Junior University
+ * Copyright (c) 2023-2024 Chevron
+ * Copyright (c) 2019-     GEOS/GEOSX Contributors
+ * All rights reserved
  *
  * See top level LICENSE, COPYRIGHT, CONTRIBUTORS, NOTICE, and ACKNOWLEDGEMENTS files for details.
  * ------------------------------------------------------------------------------------------------------------
  */
 
-#ifndef GEOSX_FILEIO_TIMEHISTORY_HISTORYCOLLECTION_HPP_
-#define GEOSX_FILEIO_TIMEHISTORY_HISTORYCOLLECTION_HPP_
+#ifndef GEOS_FILEIO_TIMEHISTORY_HISTORYCOLLECTION_HPP_
+#define GEOS_FILEIO_TIMEHISTORY_HISTORYCOLLECTION_HPP_
 
 #include "dataRepository/BufferOpsDevice.hpp"
 #include "dataRepository/HistoryDataSpec.hpp"
@@ -22,10 +23,8 @@
 
 #include <functional>
 
-namespace geosx
+namespace geos
 {
-
-using namespace dataRepository;
 
 /**
  * @class HistoryCollection
@@ -35,7 +34,7 @@ using namespace dataRepository;
 class HistoryCollection : public TaskBase
 {
 public:
-  /// @copydoc geosx::dataRepository::Group::Group(string const & name, Group * const parent)
+  /// @copydoc geos::dataRepository::Group::Group(string const & name, Group * const parent)
   HistoryCollection( string const & name, Group * parent ):
     TaskBase( name, parent )
   {}

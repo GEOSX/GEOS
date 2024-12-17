@@ -2,7 +2,7 @@
 Mesh Hierarchy
 ################################################################################
 
-In GEOSX, the mesh structure consists of a hierarchy of classes intended to encapsulate data and
+In GEOS, the mesh structure consists of a hierarchy of classes intended to encapsulate data and
 functionality for each topological type.
 Each class in the mesh hierarchy represents a distinct topological object, such as a nodes, edges,
 faces, elements, etc.
@@ -30,14 +30,14 @@ regions (Top and Bottom) (:numref:`modelMeshDevFig`).
 
 DomainPartition
 ===============
-In :numref:`MeshObjectInstantiationHierarchy` the top level object ``DomainPartition`` represents
+In :numref:`diagMeshDevFig` the top level object ``DomainPartition`` represents
 a partition of the decomposed physical domain.
 At this time there is a unique ``DomainPartition`` for every MPI rank.
 
 .. note::
    Hypothetically,
    there may be more than one ``DomainPartition`` in cases where the ranks are overloaded.
-   Currently GEOSX does not support overloading multiple ``DomainPartition``'s onto a rank, although
+   Currently GEOS does not support overloading multiple ``DomainPartition``'s onto a rank, although
    this may be a future option if its use is properly motivated.
 
 For instance, the model presented as example can be split into two different domains
@@ -59,7 +59,7 @@ both spheres as part of a single mesh body, while another option would be to hav
 a individual body.
 
 .. note::
-  While not currently utilized in GEOSX, the intent is to have the ability to handle the bodies
+  While not currently utilized in GEOS, the intent is to have the ability to handle the bodies
   in a multi-body mesh on an individual basis.
   For instance, when conducting high resolution crush simulations of granular materials (i.e. sand),
   it may be advantagous to represent each particle as a ``MeshBody``.
@@ -71,7 +71,7 @@ The ``MeshLevel`` is intended to facilitate the representation of a multi-level 
 .. note::
   In current practice, the code utilizes a single ``MeshLevel`` until such time as we
   implement a proper multi-level mesh capability.
-  The ``MeshLevel`` contains the main components that compose a discretized mesh in GEOSX.
+  The ``MeshLevel`` contains the main components that compose a discretized mesh in GEOS.
 
 Topological Mesh Objects
 ========================
@@ -135,3 +135,13 @@ tetrahedra, one for all hexahedra, one for all wedges and one for all the pyrami
 
 Now that all the classes of the mesh hierarchy has been described, we propose to adapt the diagram
 presented in :numref:`diagMeshDevFig` to match with the example presented in :numref:`modelMeshDevFig`.
+
+Direct links to some useful class documentation:
+
+`ObjectManagerBase API <../../../doxygen_output/html/classgeos_1_1_object_manager_base.html>`_
+
+`MeshLevel API <../../../doxygen_output/html/classgeos_1_1_mesh_level.html>`_
+
+`NodeManager API <../../../doxygen_output/html/classgeos_1_1_node_manager.html>`_
+
+`FaceManager API <../../../doxygen_output/html/classgeos_1_1_face_manager.html>`_

@@ -1,0 +1,333 @@
+<?xml version="1.0" ?>
+
+<Problem>
+  <Solvers>
+
+    <MultiphasePoromechanics
+      name="multiphasePoroelasticity"
+      solidSolverName="linearElasticity"
+      flowSolverName="twoPhaseFlow"
+      stabilizationType="None"
+      isThermal="1"
+      logLevel="1"
+      targetRegions="{ channel, barrier }">
+      <NonlinearSolverParameters
+        newtonTol="1.0e-8"
+        lineSearchAction="None"
+        newtonMaxIter="40"/>
+      <LinearSolverParameters
+        directParallel="0"/>
+    </MultiphasePoromechanics>      
+
+    <SolidMechanicsLagrangianSSLE
+      name="linearElasticity"
+      timeIntegrationOption="QuasiStatic"
+      logLevel="1"
+      discretization="FE1"
+      targetRegions="{ channel, barrier  }"/>
+
+    <CompositionalMultiphaseFVM
+      name="twoPhaseFlow"
+      logLevel="1"
+      isThermal="1"
+      discretization="fluidTPFA"
+      targetRelativePressureChangeInTimeStep="1"
+      targetPhaseVolFractionChangeInTimeStep="1"
+      targetRegions="{ channel, barrier  }"
+      temperature="300"
+      useMass="1"/>
+
+  </Solvers>
+
+  <Mesh>
+    <InternalMesh
+      name="mesh"
+      elementTypes="{ C3D8 }"
+      xCoords="{ 0, 250, 500 }"
+      yCoords="{ 0, 250, 500 }"
+      zCoords="{ 0, 62.5, 125, 187.5, 250 }"
+      nx="{ 3, 3 }"
+      ny="{ 3, 3 }"
+      nz="{ 2, 2, 2, 2 }"
+      cellBlockNames="{ cb-0_0_0, cb-1_0_0, cb-0_1_0, cb-1_1_0,
+                        cb-0_0_1, cb-1_0_1, cb-0_1_1, cb-1_1_1,
+                        cb-0_0_2, cb-1_0_2, cb-0_1_2, cb-1_1_2,
+			cb-0_0_3, cb-1_0_3, cb-0_1_3, cb-1_1_3 }"/>
+  </Mesh>
+
+  <Geometry>
+    <Box
+      name="source"
+      xMin="{ 415,   -0.01, -0.01 }"
+      xMax="{ 500.01, 84.01, 63 }"/>
+    <Box
+      name="sink"
+      xMin="{ 415,   -0.01,  186 }"
+      xMax="{ 500.01, 84.01, 250.01 }"/>
+  </Geometry>
+  
+  <Events
+    minTime="-1e11"  
+    maxTime="1e7">
+    
+    <PeriodicEvent
+      name="outputs"
+      timeFrequency="1e6"
+      target="/Outputs/vtkOutput"/>
+
+    <SoloEvent
+      name="multiphasePoroelasticityEquilibrationStep"
+      targetTime="-1e11"
+      beginTime="-1e11"
+      target="/Tasks/multiphasePoroelasticityEquilibrationStep"/>
+    
+    <PeriodicEvent
+      name="solverApplications1"
+      endTime="1e3"
+      target="/Solvers/multiphasePoroelasticity"/>
+    <PeriodicEvent
+      name="solverApplications2"
+      beginTime="1e3"
+      maxEventDt="1e6"
+      target="/Solvers/multiphasePoroelasticity"/>
+
+    <PeriodicEvent
+      name="linearElasticityStatistics"
+      timeFrequency="1e6"
+      target="/Tasks/linearElasticityStatistics"/>
+    <PeriodicEvent
+      name="twoPhaseFlowStatistics"
+      timeFrequency="1e6"
+      target="/Tasks/twoPhaseFlowStatistics"/>
+    
+    <PeriodicEvent
+      name="restarts"
+      timeFrequency="5e6"
+      target="/Outputs/restartOutput"/>
+  </Events>
+
+  <NumericalMethods>
+    <FiniteElements>
+      <FiniteElementSpace
+        name="FE1"
+        order="1"/>
+    </FiniteElements>
+    <FiniteVolume>
+      <TwoPointFluxApproximation
+        name="fluidTPFA"/>
+    </FiniteVolume>
+  </NumericalMethods>
+
+  <ElementRegions>
+    <CellElementRegion
+      name="channel"
+      cellBlocks="{ cb-1_0_0, cb-0_0_0, cb-0_0_1, cb-0_1_1, cb-0_1_2, cb-1_1_2, cb-1_1_3, cb-1_0_3 }"
+      materialList="{ fluid, porousRockChannel, relperm, thermalCond }"/>
+    <CellElementRegion
+      name="barrier"
+      cellBlocks="{ cb-0_1_0, cb-1_1_0, cb-1_1_1, cb-1_0_1, cb-1_0_2, cb-0_0_2, cb-0_0_3, cb-0_1_3 }"
+      materialList="{ fluid, porousRockBarrier, relperm, thermalCond }"/>
+  </ElementRegions>
+
+  <Constitutive>
+
+    <CO2BrinePhillipsThermalFluid
+      name="fluid"
+      phaseNames="{ gas, water }"
+      componentNames="{ co2, water }"
+      componentMolarWeight="{ 44e-3, 18e-3 }"
+      phasePVTParaFiles="{ pvt_tables/pvtgas.txt, pvt_tables/pvtliquid.txt }"
+      flashModelParaFile="pvt_tables/co2flash.txt"/>
+    
+    <TableRelativePermeability
+      name="relperm"
+      phaseNames="{ gas, water }"
+      wettingNonWettingRelPermTableNames="{ waterRelativePermeabilityTable,
+                                            gasRelativePermeabilityTable }"/>
+    <PorousElasticIsotropic
+      name="porousRockChannel"
+      solidModelName="skeletonChannel"
+      porosityModelName="rockPorosityChannel"
+      permeabilityModelName="rockPermChannel"
+      solidInternalEnergyModelName="rockInternalEnergy"/>
+    <ElasticIsotropic
+      name="skeletonChannel"
+      defaultDensity="2650"
+      defaultBulkModulus="5.e9"
+      defaultPoissonRatio="0.25"
+      defaultDrainedLinearTEC="1e-5"/>
+    <ConstantPermeability
+      name="rockPermChannel"
+      permeabilityComponents="{ 9.8e-13, 9.8e-13, 9.8e-13 }"/>
+    <BiotPorosity
+      name="rockPorosityChannel"
+      defaultGrainBulkModulus="1.0e27"
+      defaultReferencePorosity="0.2"
+      defaultPorosityTEC="1e-5"/>
+
+    <PorousElasticIsotropic
+      name="porousRockBarrier"
+      solidModelName="skeletonBarrier"
+      porosityModelName="rockPorosityBarrier"
+      permeabilityModelName="rockPermBarrier"
+      solidInternalEnergyModelName="rockInternalEnergy"/>
+    <ElasticIsotropic
+      name="skeletonBarrier"
+      defaultDensity="2650"
+      defaultBulkModulus="5.e9"
+      defaultPoissonRatio="0.25"
+      defaultDrainedLinearTEC="1e-5"/>
+    <ConstantPermeability
+      name="rockPermBarrier"
+      permeabilityComponents="{ 9.8e-16, 9.8e-16, 9.8e-16 }"/>
+    <BiotPorosity
+      name="rockPorosityBarrier"
+      defaultGrainBulkModulus="1.0e27"
+      defaultReferencePorosity="0.05"
+      defaultPorosityTEC="1e-5"/>
+
+    <SolidInternalEnergy
+      name="rockInternalEnergy"
+      referenceVolumetricHeatCapacity="1.95e6"
+      referenceTemperature="353.15"
+      referenceInternalEnergy="0"/>
+
+    <MultiPhaseConstantThermalConductivity
+      name="thermalCond"
+      phaseNames="{ gas, water }"
+      thermalConductivityComponents="{ 3.6, 3.6, 3.6 }"/>
+    
+  </Constitutive>
+
+  <FieldSpecifications>
+
+    <HydrostaticEquilibrium
+      name="equil"
+      objectPath="ElementRegions"      
+      datumElevation="250"
+      datumPressure="1e7"
+      initialPhaseName="water"
+      componentNames="{ co2, water }"
+      componentFractionVsElevationTableNames="{ initCO2CompFracTable,
+                                                initWaterCompFracTable }"
+      temperatureVsElevationTableName="initTempTable"/>
+
+    <SourceFlux
+      name="sourceTerm"
+      component="0"
+      setNames="{ source }"
+      objectPath="ElementRegions/channel"
+      scale="-10"/>
+    <FieldSpecification
+      name="sourceTermTemperature"
+      objectPath="ElementRegions/channel"
+      fieldName="temperature"
+      scale="350"
+      setNames="{ source }"/>
+
+    <FieldSpecification
+      name="sinkTermPressure"
+      objectPath="ElementRegions/channel"
+      fieldName="pressure"
+      scale="1e7"
+      setNames="{ sink }"/>
+    <FieldSpecification
+      name="sinkTermComposition_gas"
+      setNames="{ sink }"
+      objectPath="ElementRegions/channel"
+      fieldName="globalCompFraction"
+      component="0"
+      scale="0.0"/>
+    <FieldSpecification
+      name="sinkTermComposition_water"
+      setNames="{ sink }"
+      objectPath="ElementRegions/channel"
+      fieldName="globalCompFraction"
+      component="1"
+      scale="1.0"/>
+    <FieldSpecification
+      name="sinkTermTemperature"
+      setNames="{ sink }"
+      objectPath="ElementRegions/channel"
+      fieldName="temperature"
+      scale="357"/>
+    
+    <FieldSpecification
+      name="xconstraint"
+      objectPath="nodeManager"
+      fieldName="totalDisplacement"
+      component="0"
+      scale="0.0"
+      setNames="{ xneg, xpos }"/>
+    <FieldSpecification
+      name="yconstraint"
+      objectPath="nodeManager"
+      fieldName="totalDisplacement"
+      component="1"
+      scale="0.0"
+      setNames="{ yneg, ypos }"/>
+    <FieldSpecification
+      name="zconstraint"
+      objectPath="nodeManager"
+      fieldName="totalDisplacement"
+      component="2"
+      scale="0.0"
+      setNames="{ zneg }"/>
+  </FieldSpecifications>
+
+  <Functions>
+   <TableFunction
+      name="initCO2CompFracTable"
+      coordinates="{ 0.0, 250.0 }"
+      values="{ 0.0, 0.0 }"/>
+    <TableFunction
+      name="initWaterCompFracTable"
+      coordinates="{ 0.0, 250.0 }"
+      values="{ 1.0, 1.0 }"/>
+    <TableFunction
+      name="initTempTable"
+      coordinates="{ 0.0, 250.0 }"
+      values="{ 357.5, 350.0 }"/>
+    <TableFunction
+      name="waterRelativePermeabilityTable"
+      coordinates="{ 0, 0.05, 0.1, 0.15, 0.2, 0.25, 0.3, 0.35, 0.4, 0.45, 0.5, 0.55, 0.6, 0.65, 0.7, 0.75, 0.8, 0.85, 0.9, 0.95, 1.0 }"
+      values="{ 0, 0, 0.0118, 0.0333, 0.0612, 0.0943, 0.1318, 0.1732, 0.2183, 0.2667, 0.3182, 0.3727, 0.4300, 0.4899, 0.5524, 0.6173, 0.6847, 0.7542, 0.8261, 0.9000, 0.9760 }"/>
+    <TableFunction
+      name="gasRelativePermeabilityTable"
+      coordinates="{ 0, 0.05, 0.1, 0.15, 0.2, 0.25, 0.3, 0.35, 0.4, 0.45, 0.5, 0.55, 0.6, 0.65, 0.7, 0.75, 0.8, 0.85, 0.9, 0.95, 1.0 }"
+      values="{ 0, 0, 0.0118, 0.0333, 0.0612, 0.0943, 0.1318, 0.1732, 0.2183, 0.2667, 0.3182, 0.3727, 0.4300, 0.4899, 0.5524, 0.6173, 0.6847, 0.7542, 0.8261, 0.9000, 0.9760 }"/>
+    <TableFunction
+      name="jFunctionTable"
+      coordinates="{ 0, 0.05, 0.1, 0.15, 0.2, 0.25, 0.3, 0.35, 0.4, 0.45, 0.5, 0.55, 0.6, 0.65, 0.7, 0.75, 0.8, 0.85, 0.9, 0.95, 1.0 }"
+      values="{ 10.5300, 2.0300, 0.9800, 0.4600, 0.1764, 0.0671, 0.0597, 0.0525, 0.0461, 0.0411, 0.0386, 0.0363, 0.0340, 0.0313, 0.0203, 0.0110, 0.0097, 0.0091, 0.0039, 0.0011, 0.0001 }"/>
+  </Functions>
+
+  <Outputs>
+    <VTK
+      name="vtkOutput"
+      fieldNames="{ initialPressure, skeletonChannel_density }"/>
+    <Restart
+      name="restartOutput"/>
+  </Outputs>
+
+  <Tasks>
+    
+    <SolidMechanicsStatistics
+      name="linearElasticityStatistics"
+      solidSolverName="linearElasticity"
+      logLevel="1"/>
+    <CompositionalMultiphaseStatistics
+      name="twoPhaseFlowStatistics"
+      flowSolverName="twoPhaseFlow"
+      logLevel="1"
+      computeCFLNumbers="1"
+      computeRegionStatistics="1"/>
+
+    <MultiphasePoromechanicsInitialization 
+      logLevel="1"      
+      name="multiphasePoroelasticityEquilibrationStep"
+      poromechanicsSolverName="multiphasePoroelasticity"/>
+   
+  </Tasks>
+  
+</Problem>

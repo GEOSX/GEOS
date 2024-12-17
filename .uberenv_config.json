@@ -1,0 +1,11 @@
+{
+"package_name": "geosx",
+"package_version": "develop",
+"package_final_phase": "lvarray_hostconfig",
+"package_source_dir": "../..",
+"spack_url": "https://github.com/spack/spack",
+"spack_commit": "e8658d6493887ef702dd38f0e9ee5870a1651c1e",
+"spack_configs_path": "scripts/spack_configs",
+"spack_packages_path": "scripts/spack_packages/packages",
+"spack_concretizer": "clingo"
+}

@@ -2,10 +2,11 @@
  * ------------------------------------------------------------------------------------------------------------
  * SPDX-License-Identifier: LGPL-2.1-only
  *
- * Copyright (c) 2018-2020 Lawrence Livermore National Security LLC
- * Copyright (c) 2018-2020 The Board of Trustees of the Leland Stanford Junior University
- * Copyright (c) 2018-2020 TotalEnergies
- * Copyright (c) 2019-     GEOSX Contributors
+ * Copyright (c) 2016-2024 Lawrence Livermore National Security LLC
+ * Copyright (c) 2018-2024 TotalEnergies
+ * Copyright (c) 2018-2024 The Board of Trustees of the Leland Stanford Junior University
+ * Copyright (c) 2023-2024 Chevron
+ * Copyright (c) 2019-     GEOS/GEOSX Contributors
  * All rights reserved
  *
  * See top level LICENSE, COPYRIGHT, CONTRIBUTORS, NOTICE, and ACKNOWLEDGEMENTS files for details.
@@ -17,14 +18,14 @@
  *
  */
 
-#ifndef GEOSX_PHYSICSSOLVERS_MULTIPHYSICS_PHASEFIELDFRACTURESOLVER_HPP_
-#define GEOSX_PHYSICSSOLVERS_MULTIPHYSICS_PHASEFIELDFRACTURESOLVER_HPP_
+#ifndef GEOS_PHYSICSSOLVERS_MULTIPHYSICS_PHASEFIELDFRACTURESOLVER_HPP_
+#define GEOS_PHYSICSSOLVERS_MULTIPHYSICS_PHASEFIELDFRACTURESOLVER_HPP_
 
 #include "physicsSolvers/multiphysics/CoupledSolver.hpp"
 #include "physicsSolvers/solidMechanics/SolidMechanicsLagrangianFEM.hpp"
 #include "physicsSolvers/simplePDE/PhaseFieldDamageFEM.hpp"
 
-namespace geosx
+namespace geos
 {
 
 class PhaseFieldFractureSolver : public CoupledSolver< SolidMechanicsLagrangianFEM, PhaseFieldDamageFEM >
@@ -51,6 +52,10 @@ public:
   {
     return "PhaseFieldFracture";
   }
+  /**
+   * @copydoc PhysicsSolverBase::getCatalogName()
+   */
+  string getCatalogName() const override { return catalogName(); }
 
   /// String used to form the solverName used to register solvers in CoupledSolver
   static string coupledSolverAttributePrefix() { return "PhaseFieldFracture"; }
@@ -61,7 +66,7 @@ public:
     Damage = 1
   };
 
-  virtual void postProcessInput() override final;
+  virtual void postInputInitialization() override final;
 
   /**
    * @brief accessor for the pointer to the solid mechanics solver
@@ -101,7 +106,7 @@ struct DamageInterpolationKernel
                           arrayView1d< real64 const > const nodalDamage,
                           arrayView2d< real64 > damageFieldOnMaterial )
   {
-    forAll< parallelDevicePolicy<> >( m_numElems, [=] GEOSX_HOST_DEVICE ( localIndex const k )
+    forAll< parallelDevicePolicy<> >( m_numElems, [=] GEOS_HOST_DEVICE ( localIndex const k )
     {
       constexpr localIndex numNodesPerElement = FE_TYPE::numNodes;
       constexpr localIndex n_q_points = FE_TYPE::numQuadraturePoints;
@@ -127,6 +132,6 @@ struct DamageInterpolationKernel
   localIndex m_numElems;
 };
 
-} /* namespace geosx */
+} /* namespace geos */
 
-#endif /* GEOSX_PHYSICSSOLVERS_MULTIPHYSICS_PHASEFIELDFRACTURESOLVER_HPP_ */
+#endif /* GEOS_PHYSICSSOLVERS_MULTIPHYSICS_PHASEFIELDFRACTURESOLVER_HPP_ */

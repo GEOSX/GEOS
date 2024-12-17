@@ -1,7 +1,25 @@
+/*
+ * ------------------------------------------------------------------------------------------------------------
+ * SPDX-License-Identifier: LGPL-2.1-only
+ *
+ * Copyright (c) 2016-2024 Lawrence Livermore National Security LLC
+ * Copyright (c) 2018-2024 TotalEnergies
+ * Copyright (c) 2018-2024 The Board of Trustees of the Leland Stanford Junior University
+ * Copyright (c) 2023-2024 Chevron
+ * Copyright (c) 2019-     GEOS/GEOSX Contributors
+ * All rights reserved
+ *
+ * See top level LICENSE, COPYRIGHT, CONTRIBUTORS, NOTICE, and ACKNOWLEDGEMENTS files for details.
+ * ------------------------------------------------------------------------------------------------------------
+ */
+
 #include "PackCollection.hpp"
 
-namespace geosx
+namespace geos
 {
+
+using namespace dataRepository;
+
 PackCollection::PackCollection ( string const & name, Group * parent )
   : HistoryCollectionBase( name, parent )
   , m_setsIndices( )
@@ -10,18 +28,20 @@ PackCollection::PackCollection ( string const & name, Group * parent )
   , m_setNames( )
   , m_setChanged( true )
   , m_onlyOnSetChange( 0 )
-  , m_disableCoordCollection( false )
   , m_initialized( false )
 {
   registerWrapper( PackCollection::viewKeysStruct::objectPathString(), &m_objectPath ).
+    setRTTypeName( rtTypes::CustomTypes::groupNameRef ).
     setInputFlag( InputFlags::REQUIRED ).
     setDescription( "The name of the object from which to retrieve field values." );
 
   registerWrapper( PackCollection::viewKeysStruct::fieldNameString(), &m_fieldName ).
+    setRTTypeName( rtTypes::CustomTypes::groupNameRef ).
     setInputFlag( InputFlags::REQUIRED ).
     setDescription( "The name of the (packable) field associated with the specified object to retrieve data from" );
 
   registerWrapper( PackCollection::viewKeysStruct::setNamesString(), &m_setNames ).
+    setRTTypeName( rtTypes::CustomTypes::groupNameRefArray ).
     setInputFlag( InputFlags::OPTIONAL ).
     setDescription( "The set(s) for which to retrieve data." );
 
@@ -29,6 +49,11 @@ PackCollection::PackCollection ( string const & name, Group * parent )
     setInputFlag( InputFlags::OPTIONAL ).
     setDefaultValue( 0 ).
     setDescription( "Whether or not to only collect when the collected sets of indices change in any way." );
+
+  registerWrapper( PackCollection::viewKeysStruct::disableCoordCollectionString(), &m_disableCoordCollection ).
+    setInputFlag( InputFlags::OPTIONAL ).
+    setDefaultValue( 0 ).
+    setDescription( "Whether or not to create coordinate meta-collectors if collected objects are mesh objects." );
 }
 
 void PackCollection::initializePostSubGroups( )
@@ -50,6 +75,7 @@ void PackCollection::initializePostSubGroups( )
     {
       // coord meta collectors should have m_disableCoordCollection == true to avoid
       //  infinite recursive init calls here
+      //          (side note: should we create a m_isMetaCollector field to prevent any confusion?)
       metaCollector->initializePostSubGroups();
     }
     m_initialized = true;
@@ -70,7 +96,7 @@ HistoryMetadata PackCollection::getMetaData( DomainPartition const & domain, loc
   }
   else
   {
-    GEOSX_ERROR_IF( collectionIdx < 0 || collectionIdx >= m_setNames.size(), "Invalid collection index specified." );
+    GEOS_ERROR_IF( collectionIdx < 0 || collectionIdx >= m_setNames.size(), "Invalid collection index specified." );
     localIndex collectionSize = m_setsIndices[collectionIdx].size();
     if( ( m_onlyOnSetChange != 0 ) && ( !m_setChanged ) ) // if we're only collecting when the set changes but the set hasn't changed
     {
@@ -115,13 +141,21 @@ void PackCollection::updateSetsIndices( DomainPartition const & domain )
   auto asOMB = []( Group const * grp ) -> ObjectManagerBase const *
   {
     ObjectManagerBase const * omb = dynamicCast< ObjectManagerBase const * >( grp );
-    GEOSX_ERROR_IF( omb == nullptr, "Group " << grp->getName() << " could not be converted to an ObjectManagerBase during the `PackCollection` process." );
+    GEOS_ERROR_IF( omb == nullptr, "Group " << grp->getName() << " could not be converted to an ObjectManagerBase during the `PackCollection` process." );
     return omb;
   };
 
   Group const * targetGrp = this->getTargetObject( domain, m_objectPath );
-  WrapperBase const & targetField = targetGrp->getWrapperBase( m_fieldName );
-  GEOSX_ERROR_IF( !targetField.isPackable( false ), "The object targeted for collection must be packable!" );
+  try
+  {
+    WrapperBase const & targetField = targetGrp->getWrapperBase( m_fieldName );
+    GEOS_ERROR_IF( !targetField.isPackable( false ), "The object targeted for collection must be packable!" );
+  }
+  catch( std::exception const & e )
+  {
+    throw InputError( e, getWrapperDataContext( viewKeysStruct::fieldNameString() ).toString() +
+                      ": Target not found !\n" );
+  }
 
   // If no set or "all" is specified we retrieve the entire field.
   // If sets are specified we retrieve the field only from those sets.
@@ -225,7 +259,7 @@ localIndex PackCollection::numMetaDataCollectors() const
 
 void PackCollection::buildMetaDataCollectors()
 {
-  if( !m_disableCoordCollection )
+  if( !m_disableCoordCollection && m_targetIsMeshObject )
   {
     char const * coordField = nullptr;
     if( m_objectPath.find( "nodeManager" ) != string::npos )
@@ -234,7 +268,7 @@ void PackCollection::buildMetaDataCollectors()
     }
     else if( m_objectPath.find( "edgeManager" ) != string::npos )
     {
-      GEOSX_ERROR( "Edge coordinate data collection is unimplemented." );
+      GEOS_ERROR( "Edge coordinate data collection is unimplemented." );
     }
     else if( m_objectPath.find( "faceManager" ) != string::npos )
     {
@@ -262,8 +296,8 @@ void PackCollection::collect( DomainPartition const & domain,
                               localIndex const collectionIdx,
                               buffer_unit_type * & buffer )
 {
-  GEOSX_MARK_FUNCTION;
-  GEOSX_ERROR_IF( collectionIdx < 0 || collectionIdx >= numCollectors(), "Attempting to collection from an invalid collection index!" );
+  GEOS_MARK_FUNCTION;
+  GEOS_ERROR_IF( collectionIdx < 0 || collectionIdx >= numCollectors(), "Attempting to collection from an invalid collection index!" );
   Group const * targetObject = this->getTargetObject( domain, m_objectPath );
   WrapperBase const & targetField = targetObject->getWrapperBase( m_fieldName );
   // If we have any indices to collect, and we're either collecting every time or we're only collecting
@@ -282,7 +316,7 @@ void PackCollection::collect( DomainPartition const & domain,
     targetField.pack< true >( buffer, false, true, events );
   }
   m_setChanged = false;
-  GEOSX_ASYNC_WAIT( 6000000000, 10, testAllDeviceEvents( events ) );
+  GEOS_ASYNC_WAIT( 6000000000, 10, testAllDeviceEvents( events ) );
 }
 
 bool PackCollection::collectAll() const

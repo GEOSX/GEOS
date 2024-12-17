@@ -31,6 +31,7 @@
       logLevel="1">
       <NonlinearSolverParameters
         newtonMaxIter="8"
+        lineSearchAction="None"	  
         couplingType="Sequential"/>
     </FlowProppantTransport>
 
@@ -97,13 +98,13 @@
   <ElementRegions>
     <CellElementRegion
       name="Region2"
-      cellBlocks="{ cb1 }"
+      cellBlocks="{ * }"
       materialList="{ water, sand }"/>
 
     <SurfaceElementRegion
       name="Fracture"
       defaultAperture="7.62e-3"
-      materialList="{ water, fractureFilling, sand, fracturePerm, fracturePorosity }"/>
+      materialList="{ water, fractureFilling, sand }"/>
   </ElementRegions>
 
   <Constitutive>
@@ -124,7 +125,7 @@
       proppantDensity="2550.0"
       proppantDiameter="4.5e-4"/>
 
-    <CompressibleSolidParallelPlatesPermeability
+    <ProppantSolidProppantPermeability
       name="fractureFilling"
       solidModelName="nullSolid"
       porosityModelName="fracturePorosity"
@@ -133,14 +134,15 @@
     <NullModel
       name="nullSolid"/>
 
-    <PressurePorosity
+    <ProppantPorosity
       name="fracturePorosity"
       defaultReferencePorosity="1.00"
-      referencePressure="0.0"
-      compressibility="0.0"/>
+      maxProppantConcentration="0.62"/>
 
-    <ParallelPlatesPermeability
-      name="fracturePerm"/>
+    <ProppantPermeability
+      name="fracturePerm"
+      proppantDiameter="4.5e-4"
+      maxProppantConcentration="0.62"/>
   </Constitutive>
 
   <FieldSpecifications>
@@ -198,7 +200,6 @@
     <SourceFlux
       name="left1a"
       objectPath="ElementRegions/Fracture"
-      fieldName="pressure"
       scale="-0.42"
       component="0"
       setNames="{ left0 }"/>

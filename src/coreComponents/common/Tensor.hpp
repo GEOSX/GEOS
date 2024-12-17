@@ -2,22 +2,23 @@
  * ------------------------------------------------------------------------------------------------------------
  * SPDX-License-Identifier: LGPL-2.1-only
  *
- * Copyright (c) 2018-2020 Lawrence Livermore National Security LLC
- * Copyright (c) 2018-2020 The Board of Trustees of the Leland Stanford Junior University
- * Copyright (c) 2018-2020 TotalEnergies
- * Copyright (c) 2019-     GEOSX Contributors
+ * Copyright (c) 2016-2024 Lawrence Livermore National Security LLC
+ * Copyright (c) 2018-2024 TotalEnergies
+ * Copyright (c) 2018-2024 The Board of Trustees of the Leland Stanford Junior University
+ * Copyright (c) 2023-2024 Chevron
+ * Copyright (c) 2019-     GEOS/GEOSX Contributors
  * All rights reserved
  *
  * See top level LICENSE, COPYRIGHT, CONTRIBUTORS, NOTICE, and ACKNOWLEDGEMENTS files for details.
  * ------------------------------------------------------------------------------------------------------------
  */
 
-#ifndef GEOSX_COMMON_TENSOR_HPP_
-#define GEOSX_COMMON_TENSOR_HPP_
+#ifndef GEOS_COMMON_TENSOR_HPP_
+#define GEOS_COMMON_TENSOR_HPP_
 
 #include "GeosxMacros.hpp"
 
-namespace geosx
+namespace geos
 {
 
 /**
@@ -43,8 +44,8 @@ public:
    * @param i element index
    * @return const reference to the i-th element
    */
-  GEOSX_HOST_DEVICE
-  GEOSX_FORCE_INLINE
+  GEOS_HOST_DEVICE
+  GEOS_FORCE_INLINE
   T const & operator[]( std::ptrdiff_t const i ) const
   {
     return data[i];
@@ -55,8 +56,8 @@ public:
    * @param i element index
    * @return reference to the i-th element
    */
-  GEOSX_HOST_DEVICE
-  GEOSX_FORCE_INLINE
+  GEOS_HOST_DEVICE
+  GEOS_FORCE_INLINE
   T & operator[]( std::ptrdiff_t const i )
   {
     return data[i];
@@ -70,8 +71,8 @@ public:
    * @note Version for floating point types that avoids direct equality comparison.
    */
   template< typename U = T >
-  GEOSX_HOST_DEVICE
-  GEOSX_FORCE_INLINE
+  GEOS_HOST_DEVICE
+  GEOS_FORCE_INLINE
   std::enable_if_t< std::is_floating_point< U >::value, bool >
   operator==( Tensor< U, SIZE > const & rhs ) const
   {
@@ -93,8 +94,8 @@ public:
    * @note Version for all types except floating point.
    */
   template< typename U = T >
-  GEOSX_HOST_DEVICE
-  GEOSX_FORCE_INLINE
+  GEOS_HOST_DEVICE
+  GEOS_FORCE_INLINE
   std::enable_if_t< !std::is_floating_point< U >::value, bool >
   operator==( Tensor< U, SIZE > const & rhs ) const
   {
@@ -113,13 +114,29 @@ public:
    * @param junk Unused
    * @return The value of the template parameter SIZE.
    */
-  GEOSX_HOST_DEVICE
-  GEOSX_FORCE_INLINE
+  GEOS_HOST_DEVICE
+  GEOS_FORCE_INLINE
   constexpr int size( int junk ) const
   {
-    GEOSX_UNUSED_VAR( junk );
+    GEOS_UNUSED_VAR( junk );
     return SIZE;
   }
+
+  /// Declare assignment operators
+  GEOS_HOST_DEVICE Tensor< T, SIZE_TPARAM > & operator=( const double & rhs );
+  GEOS_HOST_DEVICE Tensor< T, SIZE_TPARAM > & operator+=( const double & rhs );
+  GEOS_HOST_DEVICE Tensor< T, SIZE_TPARAM > & operator+=( const Tensor< T, SIZE_TPARAM > & rhs );
+
+  /// Define dot product. TODO: Check compatibility of lhs and rhs.
+  friend double GEOS_HOST_DEVICE operator*( const Tensor< T, SIZE_TPARAM > & lhs, const Tensor< T, SIZE_TPARAM > & rhs )
+  {
+    double result = 0;
+    for( int i = 0; i < SIZE_TPARAM; ++i )
+    {
+      result += lhs.data[i] * rhs.data[i];
+    }
+    return result;
+  };
 
   /// Underlying array
   T data[SIZE] = {};
@@ -144,6 +161,61 @@ private:
   }
 };
 
+// *****************************************************************************
+// ****************************** END DECLARATION ******************************
+// *****************************************************************************
+
+/**
+ * @brief Assigns all tensor components to a single input value
+ * @param rhs the input value
+ * @return The updated tensor.
+ */
+template< typename T, int SIZE_TPARAM >
+GEOS_HOST_DEVICE
+GEOS_FORCE_INLINE Tensor< T, SIZE_TPARAM > &
+Tensor< T, SIZE_TPARAM >::operator=( const double & rhs )
+{
+  for( int i = 0; i < SIZE_TPARAM; ++i )
+  {
+    data[i] = rhs;
+  }
+  return *this;
 }
 
-#endif //GEOSX_COMMON_TENSOR_HPP_
+/**
+ * @brief Adds a single value to all tensor components
+ * @param rhs the input value
+ * @return The updated tensor.
+ */
+template< typename T, int SIZE_TPARAM >
+GEOS_HOST_DEVICE
+GEOS_FORCE_INLINE Tensor< T, SIZE_TPARAM > &
+Tensor< T, SIZE_TPARAM >::operator+=( const double & rhs )
+{
+  for( int i = 0; i < SIZE_TPARAM; ++i )
+  {
+    data[i] += rhs;
+  }
+  return *this;
+}
+
+/**
+ * @brief Component-wise addition of two tensors
+ * @param rhs the tensor being added to 'this' one
+ * @return The updated tensor.
+ */
+template< typename T, int SIZE_TPARAM >
+GEOS_HOST_DEVICE
+GEOS_FORCE_INLINE Tensor< T, SIZE_TPARAM > &
+Tensor< T, SIZE_TPARAM >::operator+=( const Tensor< T, SIZE_TPARAM > & rhs )
+{
+  for( int i = 0; i < SIZE_TPARAM; ++i )
+  {
+    data[i] += rhs.data[i];
+  }
+  return *this;
+}
+
+}
+
+#endif //GEOS_COMMON_TENSOR_HPP_

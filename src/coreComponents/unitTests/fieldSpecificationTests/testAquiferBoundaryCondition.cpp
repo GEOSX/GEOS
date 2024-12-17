@@ -2,10 +2,11 @@
  * ------------------------------------------------------------------------------------------------------------
  * SPDX-License-Identifier: LGPL-2.1-only
  *
- * Copyright (c) 2018-2020 Lawrence Livermore National Security LLC
- * Copyright (c) 2018-2020 The Board of Trustees of the Leland Stanford Junior University
- * Copyright (c) 2018-2020 TotalEnergies
- * Copyright (c) 2019-     GEOSX Contributors
+ * Copyright (c) 2016-2024 Lawrence Livermore National Security LLC
+ * Copyright (c) 2018-2024 TotalEnergies
+ * Copyright (c) 2018-2024 The Board of Trustees of the Leland Stanford Junior University
+ * Copyright (c) 2023-2024 Chevron
+ * Copyright (c) 2019-     GEOS/GEOSX Contributors
  * All rights reserved
  *
  * See top level LICENSE, COPYRIGHT, CONTRIBUTORS, NOTICE, and ACKNOWLEDGEMENTS files for details.
@@ -25,8 +26,8 @@
 // TPL includes
 #include <gtest/gtest.h>
 
-using namespace geosx;
-using namespace geosx::dataRepository;
+using namespace geos;
+using namespace geos::dataRepository;
 
 
 TEST( FieldSpecification, Aquifer )
@@ -36,7 +37,7 @@ TEST( FieldSpecification, Aquifer )
 
   AquiferBoundaryCondition & aquiferBC = dynamicCast< AquiferBoundaryCondition & >( *fieldSpecificationManager.createChild( "Aquifer", "aquiferBoundaryCondition" ) );
 
-  // set up the aquifer as in the simulation matched against IX
+  // set up the aquifer
 
   auto & aquiferPorosity = aquiferBC.getReference< real64 >( AquiferBoundaryCondition::viewKeyStruct::aquiferPorosityString() );
   aquiferPorosity = 2e-1;
@@ -68,7 +69,7 @@ TEST( FieldSpecification, Aquifer )
   auto & aquiferAngle = aquiferBC.getReference< real64 >( AquiferBoundaryCondition::viewKeyStruct::aquiferAngleString() );
   aquiferAngle = 20.0;
 
-  aquiferBC.postProcessInputRecursive();
+  aquiferBC.postInputInitializationRecursive();
 
   AquiferBoundaryCondition::KernelWrapper aquiferBCWrapper = aquiferBC.createKernelWrapper();
 
@@ -88,7 +89,7 @@ TEST( FieldSpecification, Aquifer )
                                                           areaFraction,
                                                           dAquiferVolFlux_dPres );
 
-  // observed flux value in the simulation matched against IX
+  // observed flux value
   real64 const refAquiferVolFlux = -0.2043541482797776;
 
   ASSERT_NEAR( refAquiferVolFlux, aquiferVolFlux, 1e-10 );

@@ -2,10 +2,11 @@
  * ------------------------------------------------------------------------------------------------------------
  * SPDX-License-Identifier: LGPL-2.1-only
  *
- * Copyright (c) 2018-2020 Lawrence Livermore National Security LLC
- * Copyright (c) 2018-2020 The Board of Trustees of the Leland Stanford Junior University
- * Copyright (c) 2018-2020 TotalEnergies
- * Copyright (c) 2019-     GEOSX Contributors
+ * Copyright (c) 2016-2024 Lawrence Livermore National Security LLC
+ * Copyright (c) 2018-2024 TotalEnergies
+ * Copyright (c) 2018-2024 The Board of Trustees of the Leland Stanford Junior University
+ * Copyright (c) 2023-2024 Chevron
+ * Copyright (c) 2019-     GEOS/GEOSX Contributors
  * All rights reserved
  *
  * See top level LICENSE, COPYRIGHT, CONTRIBUTORS, NOTICE, and ACKNOWLEDGEMENTS files for details.
@@ -16,17 +17,19 @@
  * @file relativePermeabilitySelector.hpp
  */
 
-#ifndef GEOSX_CONSTITUTIVE_RELATIVEPERMEABILITY_RELATIVEPERMEABILITYSELECTOR_HPP
-#define GEOSX_CONSTITUTIVE_RELATIVEPERMEABILITY_RELATIVEPERMEABILITYSELECTOR_HPP
+#ifndef GEOS_CONSTITUTIVE_RELATIVEPERMEABILITY_RELATIVEPERMEABILITYSELECTOR_HPP
+#define GEOS_CONSTITUTIVE_RELATIVEPERMEABILITY_RELATIVEPERMEABILITYSELECTOR_HPP
 
 #include "constitutive/ConstitutivePassThruHandler.hpp"
 #include "constitutive/relativePermeability/BrooksCoreyRelativePermeability.hpp"
 #include "constitutive/relativePermeability/BrooksCoreyBakerRelativePermeability.hpp"
+#include "constitutive/relativePermeability/BrooksCoreyStone2RelativePermeability.hpp"
 #include "constitutive/relativePermeability/TableRelativePermeability.hpp"
 #include "constitutive/relativePermeability/TableRelativePermeabilityHysteresis.hpp"
 #include "constitutive/relativePermeability/VanGenuchtenBakerRelativePermeability.hpp"
+#include "constitutive/relativePermeability/VanGenuchtenStone2RelativePermeability.hpp"
 
-namespace geosx
+namespace geos
 {
 
 namespace constitutive
@@ -46,9 +49,11 @@ void constitutiveUpdatePassThru( RelativePermeabilityBase const & relPerm,
 {
   ConstitutivePassThruHandler< BrooksCoreyRelativePermeability,
                                BrooksCoreyBakerRelativePermeability,
+                               BrooksCoreyStone2RelativePermeability,
                                TableRelativePermeability,
-                               TableRelativePermeabilityHysteresis,
-                               VanGenuchtenBakerRelativePermeability >::execute( relPerm, std::forward< LAMBDA >( lambda ) );
+                               constitutive::TableRelativePermeabilityHysteresis,
+                               VanGenuchtenBakerRelativePermeability,
+                               VanGenuchtenStone2RelativePermeability >::execute( relPerm, std::forward< LAMBDA >( lambda ) );
 }
 
 template< typename LAMBDA >
@@ -57,9 +62,11 @@ void constitutiveUpdatePassThru( RelativePermeabilityBase & relPerm,
 {
   ConstitutivePassThruHandler< BrooksCoreyRelativePermeability,
                                BrooksCoreyBakerRelativePermeability,
+                               BrooksCoreyStone2RelativePermeability,
                                TableRelativePermeability,
-                               TableRelativePermeabilityHysteresis,
-                               VanGenuchtenBakerRelativePermeability >::execute( relPerm, std::forward< LAMBDA >( lambda ) );
+                               constitutive::TableRelativePermeabilityHysteresis,
+                               VanGenuchtenBakerRelativePermeability,
+                               VanGenuchtenStone2RelativePermeability >::execute( relPerm, std::forward< LAMBDA >( lambda ) );
 }
 
 #undef PASSTHROUGH_HANDLE_CASE
@@ -67,6 +74,6 @@ void constitutiveUpdatePassThru( RelativePermeabilityBase & relPerm,
 
 } // namespace constitutive
 
-} // namespace geosx
+} // namespace geos
 
-#endif //GEOSX_CONSTITUTIVE_RELATIVEPERMEABILITY_RELATIVEPERMEABILITYSELECTOR_HPP
+#endif //GEOS_CONSTITUTIVE_RELATIVEPERMEABILITY_RELATIVEPERMEABILITYSELECTOR_HPP

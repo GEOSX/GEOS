@@ -2,10 +2,11 @@
  * ------------------------------------------------------------------------------------------------------------
  * SPDX-License-Identifier: LGPL-2.1-only
  *
- * Copyright (c) 2018-2020 Lawrence Livermore National Security LLC
- * Copyright (c) 2018-2020 The Board of Trustees of the Leland Stanford Junior University
- * Copyright (c) 2018-2020 TotalEnergies
- * Copyright (c) 2019-     GEOSX Contributors
+ * Copyright (c) 2016-2024 Lawrence Livermore National Security LLC
+ * Copyright (c) 2018-2024 TotalEnergies
+ * Copyright (c) 2018-2024 The Board of Trustees of the Leland Stanford Junior University
+ * Copyright (c) 2023-2024 Chevron
+ * Copyright (c) 2019-     GEOS/GEOSX Contributors
  * All rights reserved
  *
  * See top level LICENSE, COPYRIGHT, CONTRIBUTORS, NOTICE, and ACKNOWLEDGEMENTS files for details.
@@ -14,17 +15,17 @@
 
 #include "BufferOpsDevice.hpp"
 
-namespace geosx
+namespace geos
 {
 
 namespace bufferOps
 {
 
 template< bool DO_PACKING, typename T >
-GEOSX_HOST_DEVICE
+GEOS_HOST_DEVICE
 localIndex
 PackPointerDataDevice( buffer_unit_type * & buffer,
-                       T const * const GEOSX_RESTRICT var,
+                       T const * const GEOS_RESTRICT var,
                        localIndex const length )
 {
   localIndex const sizeOfPackedChars = length * sizeof( T );
@@ -37,10 +38,10 @@ PackPointerDataDevice( buffer_unit_type * & buffer,
 }
 
 template< bool DO_PACKING, typename T >
-GEOSX_HOST_DEVICE
+GEOS_HOST_DEVICE
 localIndex
 PackPointerDevice( buffer_unit_type * & buffer,
-                   T const * const GEOSX_RESTRICT var,
+                   T const * const GEOS_RESTRICT var,
                    localIndex const length )
 {
   localIndex sizeOfPackedChars = sizeof( localIndex );
@@ -54,10 +55,10 @@ PackPointerDevice( buffer_unit_type * & buffer,
 }
 
 template< typename T >
-GEOSX_HOST_DEVICE
+GEOS_HOST_DEVICE
 localIndex
 UnpackPointerDataDevice( buffer_unit_type const * & buffer,
-                         T * const GEOSX_RESTRICT var,
+                         T * const GEOS_RESTRICT var,
                          localIndex const expectedLength )
 {
   localIndex sizeOfUnpackedChars = expectedLength * sizeof(T);
@@ -67,18 +68,18 @@ UnpackPointerDataDevice( buffer_unit_type const * & buffer,
 }
 
 template< typename T >
-GEOSX_HOST_DEVICE
+GEOS_HOST_DEVICE
 localIndex
 UnpackPointerDevice( buffer_unit_type const * & buffer,
-                     T * const GEOSX_RESTRICT var,
+                     T * const GEOS_RESTRICT var,
                      localIndex const expectedLength )
 {
   localIndex length = 0;
   localIndex sizeOfUnpackedChars = sizeof( localIndex );
   memcpy( &length, buffer, sizeof( localIndex ) );
   buffer += sizeof( localIndex );
-  GEOSX_ASSERT_EQ( length, expectedLength );
-  GEOSX_DEBUG_VAR( expectedLength );
+  GEOS_ASSERT_EQ( length, expectedLength );
+  GEOS_DEBUG_VAR( expectedLength );
   sizeOfUnpackedChars += UnpackPointerDataDevice( buffer, var, length );
   return sizeOfUnpackedChars;
 }
@@ -87,15 +88,16 @@ template< bool DO_PACKING, typename T, int NDIM, int USD >
 typename std::enable_if< can_memcpy< T >, localIndex >::type
 PackDataDevice( buffer_unit_type * & buffer,
                 ArrayView< T const, NDIM, USD > const & var,
-                parallelDeviceEvents & events )
+                parallelDeviceEvents & GEOS_UNUSED_PARAM( events ) )
 {
   if( DO_PACKING )
   {
-    parallelDeviceStream stream;
-    events.emplace_back( forAll< parallelDeviceAsyncPolicy<> >( stream, var.size(), [=] GEOSX_DEVICE ( localIndex ii )
+//    parallelDeviceStream stream;
+//    events.emplace_back( forAll< parallelDeviceAsyncPolicy<> >( stream, var.size(), [=] GEOS_DEVICE ( localIndex ii )
+    forAll< parallelDevicePolicy<> >( var.size(), [=] GEOS_DEVICE ( localIndex ii )
     {
       reinterpret_cast< std::remove_const_t< T > * >( buffer )[ ii ] = var.data()[ ii ];
-    } ) );
+    } );
   }
   localIndex packedSize = var.size() * sizeof(T);
   if( DO_PACKING )
@@ -121,13 +123,14 @@ template< typename T, int NDIM, int USD >
 typename std::enable_if< can_memcpy< T >, localIndex >::type
 UnpackDataDevice( buffer_unit_type const * & buffer,
                   ArrayView< T, NDIM, USD > const & var,
-                  parallelDeviceEvents & events )
+                  parallelDeviceEvents & GEOS_UNUSED_PARAM( events ) )
 {
-  parallelDeviceStream stream;
-  events.emplace_back( forAll< parallelDeviceAsyncPolicy<> >( stream, var.size(), [=] GEOSX_DEVICE ( localIndex ii )
+  // parallelDeviceStream stream;
+  // events.emplace_back( forAll< parallelDeviceAsyncPolicy<> >( stream, var.size(), [=] GEOS_DEVICE ( localIndex ii )
+  forAll< parallelDevicePolicy<> >( var.size(), [=] GEOS_DEVICE ( localIndex ii )
   {
     var.data()[ ii ] = reinterpret_cast< const T * >( buffer )[ ii ];
-  } ) );
+  } );
   localIndex packedSize = var.size() * sizeof(T);
   buffer += var.size() * sizeof(T);
   return packedSize;
@@ -145,7 +148,7 @@ UnpackDevice( buffer_unit_type const * & buffer,
   packedSize += UnpackPointerDevice( buffer, strides, NDIM );
   for( int dd = 0; dd < NDIM; ++dd )
   {
-    GEOSX_ERROR_IF_NE( strides[dd], var.strides()[dd] );
+    GEOS_ERROR_IF_NE( strides[dd], var.strides()[dd] );
   }
   packedSize += UnpackDataDevice( buffer, var, events );
   return packedSize;
@@ -165,10 +168,10 @@ PackDataByIndexDevice ( buffer_unit_type * & buffer,
   {
     T * devBuffer = reinterpret_cast< T * >( buffer );
     parallelDeviceStream stream;
-    events.emplace_back( forAll< parallelDevicePolicy< > >( stream, numIndices, [=] GEOSX_DEVICE ( localIndex const ii )
+    events.emplace_back( forAll< parallelDevicePolicy< > >( stream, numIndices, [=] GEOS_DEVICE ( localIndex const ii )
     {
       T * threadBuffer = &devBuffer[ ii * sliceSize ];
-      LvArray::forValuesInSlice( var[ indices[ ii ] ], [&] GEOSX_DEVICE ( T const & value )
+      LvArray::forValuesInSlice( var[ indices[ ii ] ], [&] GEOS_DEVICE ( T const & value )
       {
         *threadBuffer = value;
         ++threadBuffer;
@@ -210,22 +213,76 @@ typename std::enable_if< can_memcpy< T >, localIndex >::type
 UnpackDataByIndexDevice ( buffer_unit_type const * & buffer,
                           ArrayView< T, NDIM, USD > const & var,
                           T_INDICES const & indices,
-                          parallelDeviceEvents & events )
+                          parallelDeviceEvents & events,
+                          MPI_Op op )
 {
   localIndex numIndices = indices.size();
   localIndex sliceSize = var.size() / var.size( 0 );
   localIndex unpackSize = numIndices * sliceSize * sizeof( T );
   T const * devBuffer = reinterpret_cast< T const * >( buffer );
   parallelDeviceStream stream;
-  events.emplace_back( forAll< parallelDeviceAsyncPolicy<> >( stream, numIndices, [=] GEOSX_DEVICE ( localIndex const ii )
+  if( op == MPI_SUM )
   {
-    T const * threadBuffer = &devBuffer[ ii * sliceSize ];
-    LvArray::forValuesInSlice( var[ indices[ ii ] ], [&threadBuffer] GEOSX_DEVICE ( T & value )
+    events.emplace_back( forAll< parallelDeviceAsyncPolicy<> >( stream, numIndices, [=] GEOS_DEVICE ( localIndex const ii )
     {
-      value = *threadBuffer;
-      ++threadBuffer;
-    } );
-  } ) );
+      T const * threadBuffer = &devBuffer[ ii * sliceSize ];
+      LvArray::forValuesInSlice( var[ indices[ ii ] ], [&threadBuffer] GEOS_DEVICE ( T & value )
+      {
+        value += *threadBuffer;
+        ++threadBuffer;
+      } );
+    } ) );
+  }
+  else if( op == MPI_REPLACE )
+  {
+    events.emplace_back( forAll< parallelDeviceAsyncPolicy<> >( stream, numIndices, [=] GEOS_DEVICE ( localIndex const ii )
+    {
+      T const * threadBuffer = &devBuffer[ ii * sliceSize ];
+      LvArray::forValuesInSlice( var[ indices[ ii ] ], [&threadBuffer] GEOS_DEVICE ( T & value )
+      {
+        value = *threadBuffer;
+        ++threadBuffer;
+      } );
+    } ) );
+  }
+  else if( op == MPI_MAX )
+  {
+    events.emplace_back( forAll< parallelDeviceAsyncPolicy<> >( stream, numIndices, [=] GEOS_DEVICE ( localIndex const ii )
+    {
+      T const * threadBuffer = &devBuffer[ ii * sliceSize ];
+      int count = 0;
+      real64 LHSNormSquared = 0.0, RHSNormSquared = 0.0;
+
+      // Identify if existing value or incoming value has higher norm
+      LvArray::forValuesInSlice( var[ indices[ ii ] ], [&threadBuffer, &LHSNormSquared, &RHSNormSquared, &count] GEOS_DEVICE ( T & value )
+      {
+        LHSNormSquared += value * value; // "value" can be an R1Tensor, in which case this becomes the dot product
+        RHSNormSquared += (*threadBuffer) * (*threadBuffer);
+        ++threadBuffer;
+        ++count;
+      } );
+
+      // Roll back threadBuffer
+      for( int i=0; i<count; i++ )
+      {
+        --threadBuffer;
+      }
+
+      // Load in the buffer if it had higher norm
+      if( LHSNormSquared < RHSNormSquared )
+      {
+        LvArray::forValuesInSlice( var[ indices[ ii ] ], [&threadBuffer] GEOS_DEVICE ( T & value )
+        {
+          value = *threadBuffer;
+          ++threadBuffer;
+        } );
+      }
+    } ) );
+  }
+  else
+  {
+    GEOS_ERROR( "Unsupported MPI operator! MPI_SUM, MPI_REPLACE and MPI_MAX are supported." );
+  }
 
   buffer += unpackSize;
   return unpackSize;
@@ -236,7 +293,8 @@ typename std::enable_if< can_memcpy< T >, localIndex >::type
 UnpackByIndexDevice ( buffer_unit_type const * & buffer,
                       ArrayView< T, NDIM, USD > const & var,
                       T_INDICES const & indices,
-                      parallelDeviceEvents & events )
+                      parallelDeviceEvents & events,
+                      MPI_Op op )
 {
   size_t typeSize = sizeof( T );
   localIndex strides[NDIM];
@@ -248,7 +306,7 @@ UnpackByIndexDevice ( buffer_unit_type const * & buffer,
     buffer += typeSize - misalignment;
   }
   unpackSize += typeSize - 1;
-  unpackSize += UnpackDataByIndexDevice( buffer, var, indices, events );
+  unpackSize += UnpackDataByIndexDevice( buffer, var, indices, events, op );
   return unpackSize;
 }
 
@@ -279,7 +337,8 @@ UnpackByIndexDevice ( buffer_unit_type const * & buffer,
     ( buffer_unit_type const * & buffer, \
     ArrayView< TYPE, NDIM, USD > const & var, \
     arrayView1d< const localIndex > const & indices, \
-    parallelDeviceEvents & events ); \
+    parallelDeviceEvents & events, \
+    MPI_Op op ); \
     \
   template localIndex PackDataDevice< true, TYPE, NDIM, USD > \
     ( buffer_unit_type * &buffer, \
@@ -307,7 +366,8 @@ UnpackByIndexDevice ( buffer_unit_type const * & buffer,
     ( buffer_unit_type const * & buffer, \
     ArrayView< TYPE, NDIM, USD > const & var, \
     arrayView1d< const localIndex > const & indices, \
-    parallelDeviceEvents & events )
+    parallelDeviceEvents & events, \
+    MPI_Op op )
 
 #define DECLARE_PACK_UNPACK_UP_TO_2D( TYPE ) \
   DECLARE_PACK_UNPACK( TYPE, 1, 0 ); \
@@ -344,4 +404,4 @@ DECLARE_PACK_UNPACK_UP_TO_3D( R1Tensor );
 
 } // namespace bufferOps
 
-} // namespace geosx
+} // namespace geos

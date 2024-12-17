@@ -13,7 +13,7 @@ In this benchmark example, the Modified Cam-Clay model (see :ref:`ModifiedCamCla
 
 **Input file**
 
-Everything required is contained within two GEOSX input files located at:
+Everything required is contained within two GEOS input files located at:
 
 .. code-block:: console
 
@@ -115,7 +115,7 @@ Here, Modified Cam-Clay ``ModifiedCamClay`` is used to simulate the elastoplasti
 
 The following material parameters should be defined properly to reproduce the analytical example:
 
-.. include:: ../../../../../../../src/coreComponents/schema/docs/ModifiedCamClay.rst
+.. include:: /docs/sphinx/datastructure/ModifiedCamClay.rst
 
 
 The constitutive parameters such as the density, the bulk modulus, and the shear modulus are specified in the International System of Units.
@@ -157,11 +157,11 @@ You may note :
  - All initial value fields must have ``initialCondition`` field set to ``1``;
  - The ``setName`` field points to the previously defined set to apply the fields;
  - ``nodeManager`` and ``faceManager`` in the ``objectPath`` indicate that the boundary conditions are applied to the element nodes and faces, respectively;
- - ``fieldName`` is the name of the field registered in GEOSX;
+ - ``fieldName`` is the name of the field registered in GEOS;
  - Component ``0``, ``1``, and ``2`` refer to the x, y, and z direction, respectively;
  - And the non-zero values given by ``scale`` indicate the magnitude of the loading; 
  - Some shorthand, such as ``xneg`` and ``xpos``, are used as the locations where the boundary conditions are applied in the computational domain. For instance, ``xneg`` means the face of the computational domain located at the left-most extent in the x-axis, while ``xpos`` refers to the face located at the right-most extent in the x-axis. Similar shorthands include ``ypos``, ``yneg``, ``zpos``, and ``zneg``;
- - The mud pressure loading has a negative value due to the negative sign convention for compressive stress in GEOSX. 
+ - The mud pressure loading has a negative value due to the negative sign convention for compressive stress in GEOS. 
 
  
 The parameters used in the simulation are summarized in the following table.
@@ -222,7 +222,7 @@ To go further
 
 **Feedback on this example**
 
-For any feedback on this example, please submit a `GitHub issue on the project's GitHub page <https://github.com/GEOSX/GEOSX/issues>`_.
+For any feedback on this example, please submit a `GitHub issue on the project's GitHub page <https://github.com/GEOS-DEV/GEOS/issues>`_.
 
 
 

@@ -13,7 +13,7 @@ Injection and production are simulated using boundary conditions.
 
 **Objective**
 
-The main objective of this example is to review the main elements of a simple two-phase simulation in GEOSX, including:
+The main objective of this example is to review the main elements of a simple two-phase simulation in GEOS, including:
 
 - the compositional multiphase flow solver,
 - the multiphase constitutive models,
@@ -27,7 +27,7 @@ This example is based on the XML file located at
 
   inputFiles/compositionalMultiphaseFlow/benchmarks/SPE10/deadOilSpe10Layers84_85_base_iterative.xml
 
-The XML file considered here follows the typical structure of the GEOSX input files:
+The XML file considered here follows the typical structure of the GEOS input files:
 
  #. :ref:`Solver <Solver_tag_dead_oil_bottom_layers_spe10>`
  #. :ref:`Mesh <Mesh_tag_dead_oil_bottom_layers_spe10>`
@@ -45,13 +45,13 @@ The XML file considered here follows the typical structure of the GEOSX input fi
 Multiphase flow solver
 -----------------------
 
-In GEOSX, the setup of a multiphase simulation starts in the **Solvers** XML block of the input file.
+In GEOS, the setup of a multiphase simulation starts in the **Solvers** XML block of the input file.
 This example relies on a solver of type **CompositionalMultiphaseFVM** that implements a fully implicit finite-volume
 scheme based on the standard two-point approximation of the flux (TPFA).
 More information on this solver can be found at :ref:`CompositionalMultiphaseFlow`.  
 
 Let us have a closer look at the **Solvers** XML block displayed below.
-The solver has a name (here, ``compflow``) that can be chosen by the user and is not imposed by GEOSX.
+The solver has a name (here, ``compflow``) that can be chosen by the user and is not imposed by GEOS.
 Note that this name is used in the **Events** XML block to trigger the application of the solver.
 Using the ``targetRegions`` attribute, the solver defines the target regions on which it is applied.
 In this example, there is only one region, named ``reservoir``.
@@ -67,7 +67,7 @@ with the multigrid reduction (MGR) preconditioner (``preconditionerType="mgr"``)
         For non-trivial simulations, we recommend setting the ``initialDt`` attribute to a small value (relative to the time scale of the problem) in seconds. If the simulation appears to be slow, use ``logLevel="1"`` in **CompositionalMultiphaseFVM** to detect potential Newton convergence problems. If the Newton solver struggles, please set ``lineSearchAction="Attempt"`` in **NonlinearSolverParameters**. If the Newton convergence is good, please add ``logLevel="1"`` in the **LinearSolverParameters** block to detect linear solver problems, especially if an iterative linear solver is used.
 
 .. note::
-   To use the linear solver options of this example, you need to ensure that GEOSX is configured to use the Hypre linear solver package.
+   To use the linear solver options of this example, you need to ensure that GEOS is configured to use the Hypre linear solver package.
 	
 .. literalinclude:: ../../../../../inputFiles/compositionalMultiphaseFlow/benchmarks/SPE10/deadOilSpe10Layers84_85_base_iterative.xml
   :language: xml
@@ -82,7 +82,7 @@ Mesh
 -------
 
 In this simulation, we define a simple mesh generated internally using the **InternalMesh** generator, as
-illustrated in the previous examples.
+illustrated in the first tutorial (:ref:`TutorialSinglePhaseFlowWithInternalMesh`).
 The mesh dimensions and cell sizes are chosen to be those specified in the SPE10 test case, but are limited to the two bottom layers.
 The mesh description must be done in meters.
 
@@ -127,11 +127,11 @@ If the time step fails, the time step will be cut. The parameters defining the t
 can be finely tuned by the user in the flow solver block.
 Note that all times are in seconds.
 
-The output event forces GEOSX to write out the results at the frequency specified by the attribute
+The output event forces GEOS to write out the results at the frequency specified by the attribute
 ``timeFrequency``.
 Here, we choose to output the results using the VTK format (see :ref:`TutorialSinglePhaseFlowExternalMesh`
 for a tutorial that uses the Silo output file format).
-Using ``targetExactTimestep=1`` in this XML block forces GEOSX to adapt the time stepping to
+Using ``targetExactTimestep=1`` in this XML block forces GEOS to adapt the time stepping to
 ensure that an output is generated exactly at the time frequency requested by the user.
 In the ``target`` attribute, we must use the name defined in the **VTK** XML tag
 inside the **Output** XML section, as documented at the end of this example (here, ``vtkOutput``).
@@ -173,13 +173,12 @@ Reservoir region
 
 In the **ElementRegions** XML block, we define a **CellElementRegion** named ``reservoir`` corresponding to the
 reservoir mesh.
-The attribute ``cellBlocks`` is set to ``block`` to point this element region
-to the hexahedral mesh defined internally.
+``cellBlocks`` is set to ``{ * }`` to automatically target every cells of the mesh.
 
 The **CellElementRegion** must also point to the constitutive models that are used to update
 the dynamic rock and fluid properties in the cells of the reservoir mesh.
 The names ``fluid``, ``rock``, and ``relperm`` used for this in the ``materialList``
-correspond to the attribute ``name`` of the **Constitutive** block.
+correspond to the **Constitutive** blocks with the coresponding names.
 
 .. literalinclude:: ../../../../../inputFiles/compositionalMultiphaseFlow/benchmarks/SPE10/deadOilSpe10Layers84_85_base_iterative.xml
   :language: xml
@@ -218,7 +217,7 @@ The properties are chosen to match those of the original SPE10 test case.
 .. note::
    The names and order of the phases listed for the attribute ``phaseNames`` must be identical in the fluid model
    (here, **DeadOilFluid**) and the relative permeability model (here, **BrooksCoreyRelativePermeability**).
-   Otherwise, GEOSX will throw an error and terminate.
+   Otherwise, GEOS will throw an error and terminate.
 
 We also introduce models to define rock compressibility and permeability.
 This step is similar to what is described in the previous examples
@@ -290,11 +289,11 @@ Note that the name defined here must match the names used in the **Events** XML 
 
 
       
-All elements are now in place to run GEOSX.
+All elements are now in place to run GEOS.
 
 
 ------------------------------------
-Running GEOSX
+Running GEOS
 ------------------------------------
 
 The first few lines appearing to the console are indicating that the XML elements are read and registered correctly:
@@ -368,7 +367,7 @@ To go further
 
 This concludes the example on setting up an immiscible two-phase flow simulation in a channelized permeability field.
 For any feedback on this example, please submit
-a `GitHub issue on the project's GitHub page <https://github.com/GEOSX/GEOSX/issues>`_.
+a `GitHub issue on the project's GitHub page <https://github.com/GEOS-DEV/GEOS/issues>`_.
 
 **For more details**
 

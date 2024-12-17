@@ -1,0 +1,80 @@
+<?xml version="1.0" ?>
+
+<Problem>
+  <Tasks>
+    <!-- primary species (feed): 1. H+, 2. HCO3-, 3. Ca+2, 4. SO4-2, 5. Cl-, 6. Mg+2, 7. Na+1-->
+    <!-- secondary species: 1. OH-, 2. CO2, 3. CO3-2, 4. H2CO3, 5. CaHCO3+, 6. CaCO3, 7. CaSO4, 8. CaCl+, 9. CaCl2, 10. MgSO4, 11. NaSO4-->
+    <ReactiveFluidDriver
+      name="testDistilledWaterCO2"
+      fluid="reactiveFluid"
+      feedComposition="{1e-1, 1e-1, 1e-20, 1e-20, 1e-20, 1e-20, 1e-20 }"
+      pressureControl="pressureFunction"
+      temperatureControl="temperatureFunction"
+      baseline="testDistilledWater.txt"
+      steps="1"
+      logLevel="1"/>
+    <ReactiveFluidDriver
+      name="testReactiveBrine"
+      fluid="reactiveFluid"
+      feedComposition="{3.76e-1, 3.76e-1, 3.87e-2, 3.21e-2, 1.89, 1.65e-2, 1.09 }"
+      pressureControl="pressureFunction"
+      temperatureControl="temperatureFunction"
+      baseline="testReactiveBrine.txt"
+      steps="1"
+      logLevel="1"/>
+  </Tasks>
+
+  <Events
+    maxTime="1">
+    <SoloEvent
+      name="testDistilledWaterCO2"
+      target="/Tasks/testDistilledWaterCO2"/>
+    <SoloEvent
+      name="testReactiveBrine"
+      target="/Tasks/testReactiveBrine"/>
+  </Events>
+
+  <Constitutive>
+    <ReactiveBrine
+      name="reactiveFluid"
+      phaseNames="{ water }"
+      componentNames="{ H+, HCO3-, Ca+2, SO4-2, Cl-, Mg+2, Na+1 }"
+      componentMolarWeight="{ 18e-3, 18e-3, 18e-3, 18e-3, 18e-3, 18e-3, 18e-3}"
+      phasePVTParaFiles="{ testPVT_data/reactiveBrinePVT.txt }"/>
+  </Constitutive>
+
+  <Functions>
+    <TableFunction
+      name="pressureFunction"
+      inputVarNames="{ time }"
+      coordinates="{ 0.0, 1.0 }"
+      values="{ 1e6, 1e6 }"/>
+
+    <TableFunction
+      name="temperatureFunction"
+      inputVarNames="{ time }"
+      coordinates="{ 0.0, 1.0 }"
+      values="{ 350, 350 }"/>
+  </Functions>
+
+  <!-- Mesh is not used, but GEOSX throws an error without one.  Will resolve soon-->
+  <Mesh>
+    <InternalMesh
+      name="mesh1"
+      elementTypes="{ C3D8 }"
+      xCoords="{ 0, 1 }"
+      yCoords="{ 0, 1 }"
+      zCoords="{ 0, 1 }"
+      nx="{ 1 }"
+      ny="{ 1 }"
+      nz="{ 1 }"
+      cellBlockNames="{ cellBlock01 }"/>
+  </Mesh>
+
+  <ElementRegions>
+    <CellElementRegion
+      name="dummy"
+      cellBlocks="{ * }"
+      materialList="{ dummy }"/>
+  </ElementRegions>
+</Problem>

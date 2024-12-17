@@ -2,10 +2,11 @@
  * ------------------------------------------------------------------------------------------------------------
  * SPDX-License-Identifier: LGPL-2.1-only
  *
- * Copyright (c) 2018-2020 Lawrence Livermore National Security LLC
- * Copyright (c) 2018-2020 The Board of Trustees of the Leland Stanford Junior University
- * Copyright (c) 2018-2020 TotalEnergies
- * Copyright (c) 2019-     GEOSX Contributors
+ * Copyright (c) 2016-2024 Lawrence Livermore National Security LLC
+ * Copyright (c) 2018-2024 TotalEnergies
+ * Copyright (c) 2018-2024 The Board of Trustees of the Leland Stanford Junior University
+ * Copyright (c) 2023-2024 Chevron
+ * Copyright (c) 2019-     GEOS/GEOSX Contributors
  * All rights reserved
  *
  * See top level LICENSE, COPYRIGHT, CONTRIBUTORS, NOTICE, and ACKNOWLEDGEMENTS files for details.
@@ -16,15 +17,15 @@
  *  @file ElasticTransverseIsotropic.hpp
  */
 
-#ifndef GEOSX_CONSTITUTIVE_SOLID_ELASTICTRANSVERSEISOTROPIC_HPP_
-#define GEOSX_CONSTITUTIVE_SOLID_ELASTICTRANSVERSEISOTROPIC_HPP_
+#ifndef GEOS_CONSTITUTIVE_SOLID_ELASTICTRANSVERSEISOTROPIC_HPP_
+#define GEOS_CONSTITUTIVE_SOLID_ELASTICTRANSVERSEISOTROPIC_HPP_
 
 #include "SolidBase.hpp"
 #include "constitutive/ExponentialRelation.hpp"
 #include "LvArray/src/tensorOps.hpp"
 #include "SolidModelDiscretizationOpsTransverseIsotropic.hpp"
 
-namespace geosx
+namespace geos
 {
 
 namespace constitutive
@@ -48,6 +49,7 @@ public:
    * @param[in] c33 The 33 component of the Voigt stiffness tensor.
    * @param[in] c44 The 44 component of the Voigt stiffness tensor.
    * @param[in] c66 The 66 component of the Voigt stiffness tensor.
+   * @param[in] thermalExpansionCoefficient The ArrayView holding the thermal expansion coefficient data for each element.
    * @param[in] newStress The ArrayView holding the new stress data for each point.
    * @param[in] oldStress The ArrayView holding the old stress data for each point.
    * @param[in] disableInelasticity Flag to disable plastic response for inelastic models.
@@ -57,10 +59,11 @@ public:
                                      arrayView1d< real64 const > const & c33,
                                      arrayView1d< real64 const > const & c44,
                                      arrayView1d< real64 const > const & c66,
+                                     arrayView1d< real64 const > const & thermalExpansionCoefficient,
                                      arrayView3d< real64, solid::STRESS_USD > const & newStress,
                                      arrayView3d< real64, solid::STRESS_USD > const & oldStress,
                                      bool const & disableInelasticity ):
-    SolidBaseUpdates( newStress, oldStress, disableInelasticity ),
+    SolidBaseUpdates( newStress, oldStress, thermalExpansionCoefficient, disableInelasticity ),
     m_c11( c11 ),
     m_c13( c13 ),
     m_c33( c33 ),
@@ -91,20 +94,20 @@ public:
 
   // total strain interfaces
 
-  GEOSX_HOST_DEVICE
+  GEOS_HOST_DEVICE
   virtual void smallStrainNoStateUpdate_StressOnly( localIndex const k,
                                                     localIndex const q,
                                                     real64 const ( &totalStrain )[6],
                                                     real64 ( &stress )[6] ) const override final;
 
-  GEOSX_HOST_DEVICE
+  GEOS_HOST_DEVICE
   virtual void smallStrainNoStateUpdate( localIndex const k,
                                          localIndex const q,
                                          real64 const ( &totalStrain )[6],
                                          real64 ( &stress )[6],
                                          real64 ( &stiffness )[6][6] ) const override final;
 
-  GEOSX_HOST_DEVICE
+  GEOS_HOST_DEVICE
   virtual void smallStrainNoStateUpdate( localIndex const k,
                                          localIndex const q,
                                          real64 const ( &totalStrain )[6],
@@ -113,40 +116,44 @@ public:
 
   // incremental strain interfaces
 
-  GEOSX_HOST_DEVICE
+  GEOS_HOST_DEVICE
   virtual void smallStrainUpdate_StressOnly( localIndex const k,
                                              localIndex const q,
+                                             real64 const & timeIncrement,
                                              real64 const ( &strainIncrement )[6],
                                              real64 ( &stress )[6] ) const override final;
 
-  GEOSX_HOST_DEVICE
-  virtual void smallStrainUpdate( localIndex const k,
-                                  localIndex const q,
-                                  real64 const ( &strainIncrement )[6],
-                                  real64 ( &stress )[6],
-                                  real64 ( &stiffness )[6][6] ) const override final;
+  GEOS_HOST_DEVICE
+  void smallStrainUpdate( localIndex const k,
+                          localIndex const q,
+                          real64 const & timeIncrement,
+                          real64 const ( &strainIncrement )[6],
+                          real64 ( &stress )[6],
+                          real64 ( &stiffness )[6][6] ) const;
 
-  GEOSX_HOST_DEVICE
+  GEOS_HOST_DEVICE
   virtual void smallStrainUpdate( localIndex const k,
                                   localIndex const q,
+                                  real64 const & timeIncrement,
                                   real64 const ( &strainIncrement )[6],
                                   real64 ( &stress )[6],
                                   DiscretizationOps & stiffness ) const final;
 
-  // hypo interface
-
-  GEOSX_HOST_DEVICE
-  virtual void hypoUpdate( localIndex const k,
-                           localIndex const q,
-                           real64 const ( &Ddt )[6],
-                           real64 const ( &Rot )[3][3],
-                           real64 ( &stress )[6],
-                           real64 ( &stiffness )[6][6] ) const override final;
-
   // miscellaneous getters
 
-  GEOSX_HOST_DEVICE
+  GEOS_HOST_DEVICE
   virtual void getElasticStiffness( localIndex const k, localIndex const q, real64 ( &stiffness )[6][6] ) const override final;
+
+  /**
+   * @brief Getter for apparent shear modulus.
+   * @return reference to shear modulus that will be used for computing stabilization scalling parameter.
+   */
+  GEOS_HOST_DEVICE
+  virtual real64 getShearModulus( localIndex const k ) const override final
+  {
+    return LvArray::math::max( m_c44[k], m_c66[k] );
+  }
+
 
 private:
 
@@ -164,15 +171,16 @@ private:
 
   /// A reference to the ArrayView holding c66 for each element.
   arrayView1d< real64 const > const m_c66;
+
 };
 
-GEOSX_FORCE_INLINE
-GEOSX_HOST_DEVICE
+inline
+GEOS_HOST_DEVICE
 void ElasticTransverseIsotropicUpdates::getElasticStiffness( localIndex const k,
                                                              localIndex const q,
                                                              real64 ( & stiffness )[6][6] ) const
 {
-  GEOSX_UNUSED_VAR( q );
+  GEOS_UNUSED_VAR( q );
   LvArray::tensorOps::fill< 6, 6 >( stiffness, 0 );
 
   stiffness[0][0] = m_c11[k];
@@ -192,14 +200,14 @@ void ElasticTransverseIsotropicUpdates::getElasticStiffness( localIndex const k,
   stiffness[5][5] = m_c66[k];
 }
 
-GEOSX_FORCE_INLINE
-GEOSX_HOST_DEVICE
+inline
+GEOS_HOST_DEVICE
 void ElasticTransverseIsotropicUpdates::smallStrainNoStateUpdate_StressOnly( localIndex const k,
                                                                              localIndex const q,
                                                                              real64 const ( &totalStrain )[6],
                                                                              real64 ( & stress )[6] ) const
 {
-  GEOSX_UNUSED_VAR( q );
+  GEOS_UNUSED_VAR( q );
   real64 const c12temp = ( m_c11[k] - 2.0 * m_c66[k] );
   stress[0] = m_c11[k] * totalStrain[0] +  c12temp * totalStrain[1] + m_c13[k]*totalStrain[2];
   stress[1] =  c12temp * totalStrain[0] + m_c11[k] * totalStrain[1] + m_c13[k]*totalStrain[2];
@@ -210,8 +218,8 @@ void ElasticTransverseIsotropicUpdates::smallStrainNoStateUpdate_StressOnly( loc
   stress[5] = m_c66[k]*totalStrain[5];
 }
 
-GEOSX_FORCE_INLINE
-GEOSX_HOST_DEVICE
+inline
+GEOS_HOST_DEVICE
 void ElasticTransverseIsotropicUpdates::smallStrainNoStateUpdate( localIndex const k,
                                                                   localIndex const q,
                                                                   real64 const ( &totalStrain )[6],
@@ -222,8 +230,8 @@ void ElasticTransverseIsotropicUpdates::smallStrainNoStateUpdate( localIndex con
   getElasticStiffness( k, q, stiffness );
 }
 
-GEOSX_HOST_DEVICE
-GEOSX_FORCE_INLINE
+GEOS_HOST_DEVICE
+inline
 void ElasticTransverseIsotropicUpdates::smallStrainNoStateUpdate( localIndex const k,
                                                                   localIndex const q,
                                                                   real64 const ( &totalStrain )[6],
@@ -238,62 +246,48 @@ void ElasticTransverseIsotropicUpdates::smallStrainNoStateUpdate( localIndex con
   stiffness.m_c66 = m_c66[k];
 }
 
-GEOSX_FORCE_INLINE
-GEOSX_HOST_DEVICE
+inline
+GEOS_HOST_DEVICE
 void ElasticTransverseIsotropicUpdates::smallStrainUpdate_StressOnly( localIndex const k,
                                                                       localIndex const q,
+                                                                      real64 const & timeIncrement,
                                                                       real64 const ( &strainIncrement )[6],
                                                                       real64 ( & stress )[6] ) const
 {
+  GEOS_UNUSED_VAR( timeIncrement );
   smallStrainNoStateUpdate_StressOnly( k, q, strainIncrement, stress ); // stress =  incrementalStress
   LvArray::tensorOps::add< 6 >( stress, m_oldStress[k][q] );            // stress += m_oldStress
   saveStress( k, q, stress );                                           // m_newStress = stress
 }
 
-GEOSX_FORCE_INLINE
-GEOSX_HOST_DEVICE
+inline
+GEOS_HOST_DEVICE
 void ElasticTransverseIsotropicUpdates::smallStrainUpdate( localIndex const k,
                                                            localIndex const q,
+                                                           real64 const & timeIncrement,
                                                            real64 const ( &strainIncrement )[6],
                                                            real64 ( & stress )[6],
                                                            real64 ( & stiffness )[6][6] ) const
 {
-  smallStrainUpdate_StressOnly( k, q, strainIncrement, stress );
+  smallStrainUpdate_StressOnly( k, q, timeIncrement, strainIncrement, stress );
   getElasticStiffness( k, q, stiffness );
 }
 
-GEOSX_HOST_DEVICE
-GEOSX_FORCE_INLINE
+GEOS_HOST_DEVICE
+inline
 void ElasticTransverseIsotropicUpdates::smallStrainUpdate( localIndex const k,
                                                            localIndex const q,
+                                                           real64 const & timeIncrement,
                                                            real64 const ( &strainIncrement )[6],
                                                            real64 ( & stress )[6],
                                                            DiscretizationOps & stiffness ) const
 {
-  smallStrainUpdate_StressOnly( k, q, strainIncrement, stress );
+  smallStrainUpdate_StressOnly( k, q, timeIncrement, strainIncrement, stress );
   stiffness.m_c11 = m_c11[k];
   stiffness.m_c13 = m_c13[k];
   stiffness.m_c33 = m_c33[k];
   stiffness.m_c44 = m_c44[k];
   stiffness.m_c66 = m_c66[k];
-}
-
-GEOSX_FORCE_INLINE
-GEOSX_HOST_DEVICE
-void ElasticTransverseIsotropicUpdates::hypoUpdate( localIndex const k,
-                                                    localIndex const q,
-                                                    real64 const ( &Ddt )[6],
-                                                    real64 const ( &Rot )[3][3],
-                                                    real64 ( & stress )[6],
-                                                    real64 ( & stiffness )[6][6] ) const
-{
-  GEOSX_UNUSED_VAR( k );
-  GEOSX_UNUSED_VAR( q );
-  GEOSX_UNUSED_VAR( Ddt );
-  GEOSX_UNUSED_VAR( Rot );
-  GEOSX_UNUSED_VAR( stress );
-  GEOSX_UNUSED_VAR( stiffness );
-  GEOSX_ERROR( "hypoUpdate() disabled for anisotropic models when using Hughes-Winget integration" );
 }
 
 /**
@@ -551,6 +545,7 @@ public:
                                               m_c33,
                                               m_c44,
                                               m_c66,
+                                              m_thermalExpansionCoefficient,
                                               m_newStress,
                                               m_oldStress,
                                               m_disableInelasticity );
@@ -573,13 +568,14 @@ public:
                           m_c33,
                           m_c44,
                           m_c66,
+                          m_thermalExpansionCoefficient,
                           m_newStress,
                           m_oldStress,
                           m_disableInelasticity );
   }
 
 protected:
-  virtual void postProcessInput() override;
+  virtual void postInputInitialization() override;
 
   /// The default value of the transverse Young's modulus for any new
   /// allocations.
@@ -615,11 +611,10 @@ protected:
 
   /// The 66 component of the Voigt stiffness tensor.
   array1d< real64 > m_c66;
-
 };
 
 } /* namespace constitutive */
 
-} /* namespace geosx */
+} /* namespace geos */
 
-#endif /* GEOSX_CONSTITUTIVE_SOLID_ELASTICTRANSVERSEISOTROPIC_HPP_ */
+#endif /* GEOS_CONSTITUTIVE_SOLID_ELASTICTRANSVERSEISOTROPIC_HPP_ */

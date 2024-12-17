@@ -2,10 +2,11 @@
  * ------------------------------------------------------------------------------------------------------------
  * SPDX-License-Identifier: LGPL-2.1-only
  *
- * Copyright (c) 2018-2020 Lawrence Livermore National Security LLC
- * Copyright (c) 2018-2020 The Board of Trustees of the Leland Stanford Junior University
- * Copyright (c) 2018-2020 TotalEnergies
- * Copyright (c) 2019-     GEOSX Contributors
+ * Copyright (c) 2016-2024 Lawrence Livermore National Security LLC
+ * Copyright (c) 2018-2024 TotalEnergies
+ * Copyright (c) 2018-2024 The Board of Trustees of the Leland Stanford Junior University
+ * Copyright (c) 2023-2024 Chevron
+ * Copyright (c) 2019-     GEOS/GEOSX Contributors
  * All rights reserved
  *
  * See top level LICENSE, COPYRIGHT, CONTRIBUTORS, NOTICE, and ACKNOWLEDGEMENTS files for details.
@@ -16,17 +17,17 @@
  * @file Span.hpp
  */
 
-#ifndef GEOSX_COMMON_SPAN_HPP
-#define GEOSX_COMMON_SPAN_HPP
+#ifndef GEOS_COMMON_SPAN_HPP
+#define GEOS_COMMON_SPAN_HPP
 
 #include "codingUtilities/traits.hpp"
-#include "common/Logger.hpp"
+#include "common/logger/Logger.hpp"
 
 #include <memory>
 #include <iterator>
 #include <type_traits>
 
-namespace geosx
+namespace geos
 {
 
 /**
@@ -170,7 +171,7 @@ public:
    */
   T & front() const
   {
-    GEOSX_ASSERT_GT( m_size, 0 );
+    GEOS_ASSERT_GT( m_size, 0 );
     return m_data[0];
   }
 
@@ -180,7 +181,7 @@ public:
    */
   T & back() const
   {
-    GEOSX_ASSERT_GT( m_size, 0 );
+    GEOS_ASSERT_GT( m_size, 0 );
     return m_data[m_size-1];
   }
 
@@ -191,7 +192,7 @@ public:
    */
   T & operator[]( size_type const i ) const
   {
-    GEOSX_ASSERT_GT( m_size, i );
+    GEOS_ASSERT_GT( m_size, i );
     return m_data[i];
   }
 
@@ -201,7 +202,7 @@ public:
    */
   Span< element_type > first( size_type const count ) const
   {
-    GEOSX_ASSERT_GE( m_size, count );
+    GEOS_ASSERT_GE( m_size, count );
     return { m_data, count };
   }
 
@@ -211,7 +212,7 @@ public:
    */
   Span< element_type > last( size_type const count ) const
   {
-    GEOSX_ASSERT_GE( m_size, count );
+    GEOS_ASSERT_GE( m_size, count );
     return { m_data + (m_size - count), count };
   }
 
@@ -222,7 +223,7 @@ public:
    */
   Span< element_type > subspan( size_type const offset, size_type const count ) const
   {
-    GEOSX_ASSERT_GE( m_size, offset + count );
+    GEOS_ASSERT_GE( m_size, offset + count );
     return { m_data + offset, count };
   }
 
@@ -238,4 +239,4 @@ private:
 
 }
 
-#endif //GEOSX_COMMON_SPAN_HPP
+#endif //GEOS_COMMON_SPAN_HPP

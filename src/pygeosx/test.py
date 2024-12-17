@@ -64,7 +64,7 @@ def main():
 
     # node_manager = problem.get_group("domain/MeshBodies/mesh1/Level0/nodeManager")
     # print_group(node_manager)
-    # x = node_manager.get_wrapper("TotalDisplacement")
+    # x = node_manager.get_wrapper("totalDisplacement")
 
 
 if __name__ == "__main__":

@@ -2,10 +2,11 @@
  * ------------------------------------------------------------------------------------------------------------
  * SPDX-License-Identifier: LGPL-2.1-only
  *
- * Copyright (c) 2018-2020 Lawrence Livermore National Security LLC
- * Copyright (c) 2018-2020 The Board of Trustees of the Leland Stanford Junior University
- * Copyright (c) 2018-2020 TotalEnergies
- * Copyright (c) 2019-     GEOSX Contributors
+ * Copyright (c) 2016-2024 Lawrence Livermore National Security LLC
+ * Copyright (c) 2018-2024 TotalEnergies
+ * Copyright (c) 2018-2024 The Board of Trustees of the Leland Stanford Junior University
+ * Copyright (c) 2023-2024 Chevron
+ * Copyright (c) 2019-     GEOS/GEOSX Contributors
  * All rights reserved
  *
  * See top level LICENSE, COPYRIGHT, CONTRIBUTORS, NOTICE, and ACKNOWLEDGEMENTS files for details.
@@ -16,8 +17,8 @@
  * @file MeshFields.hpp
  */
 
-#ifndef GEOSX_MESH_FIELDS_HPP_
-#define GEOSX_MESH_FIELDS_HPP_
+#ifndef GEOS_MESH_FIELDS_HPP_
+#define GEOS_MESH_FIELDS_HPP_
 
 #include "codingUtilities/traits.hpp"
 #include "dataRepository/RestartFlags.hpp"
@@ -64,7 +65,7 @@
     static constexpr char const * description = DESCRIPTION; \
   }
 
-namespace geosx
+namespace geos
 {
 /**
  * A scope for field traits.
@@ -114,6 +115,14 @@ DECLARE_FIELD( elementAperture,
                WRITE_AND_READ,
                "Element aperture." );
 
+DECLARE_FIELD( elementArea,
+               "elementArea",
+               array1d< real64 >,
+               0,
+               LEVEL_0,
+               WRITE_AND_READ,
+               "Element area." );
+
 DECLARE_FIELD( parentIndex,
                "parentIndex",
                array1d< localIndex >,
@@ -146,8 +155,32 @@ DECLARE_FIELD( ruptureTime,
                WRITE_AND_READ,
                "Time that the object was ruptured/split." );
 
+DECLARE_FIELD( normalVector,
+               "normalVector",
+               array2d< real64 >,
+               0.0,
+               LEVEL_0,
+               WRITE_AND_READ,
+               "Unit normal vector to the surface." );
+
+DECLARE_FIELD( tangentVector1,
+               "tangentVector1",
+               array2d< real64 >,
+               0.0,
+               LEVEL_0,
+               WRITE_AND_READ,
+               "Unit vector in the first tangent direction to the surface." );
+
+DECLARE_FIELD( tangentVector2,
+               "tangentVector2",
+               array2d< real64 >,
+               0.0,
+               LEVEL_0,
+               WRITE_AND_READ,
+               "Unit vector in the second tangent direction to the surface." );
+
 
 } // namespace fields
-} // namespace geosx
+} // namespace geos
 
-#endif /* GEOSX_MESH_FIELDS_HPP_ */
+#endif /* GEOS_MESH_FIELDS_HPP_ */

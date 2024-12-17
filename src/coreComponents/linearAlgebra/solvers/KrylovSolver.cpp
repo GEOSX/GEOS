@@ -2,10 +2,11 @@
  * ------------------------------------------------------------------------------------------------------------
  * SPDX-License-Identifier: LGPL-2.1-only
  *
- * Copyright (c) 2018-2020 Lawrence Livermore National Security LLC
- * Copyright (c) 2018-2020 The Board of Trustees of the Leland Stanford Junior University
- * Copyright (c) 2018-2020 TotalEnergies
- * Copyright (c) 2019-     GEOSX Contributors
+ * Copyright (c) 2016-2024 Lawrence Livermore National Security LLC
+ * Copyright (c) 2018-2024 TotalEnergies
+ * Copyright (c) 2018-2024 The Board of Trustees of the Leland Stanford Junior University
+ * Copyright (c) 2023-2024 Chevron
+ * Copyright (c) 2019-     GEOS/GEOSX Contributors
  * All rights reserved
  *
  * See top level LICENSE, COPYRIGHT, CONTRIBUTORS, NOTICE, and ACKNOWLEDGEMENTS files for details.
@@ -22,7 +23,7 @@
 #include "linearAlgebra/solvers/GmresSolver.hpp"
 #include "linearAlgebra/interfaces/InterfaceTypes.hpp"
 
-namespace geosx
+namespace geos
 {
 
 template< typename VECTOR >
@@ -34,10 +35,10 @@ KrylovSolver< VECTOR >::KrylovSolver( LinearSolverParameters params,
   m_operator( matrix ),
   m_precond( precond )
 {
-  GEOSX_ERROR_IF_LE_MSG( m_params.krylov.maxIterations, 0, "Krylov solver: max number of iteration must be positive." );
-  GEOSX_LAI_ASSERT_EQ( m_operator.numLocalRows(), m_operator.numLocalCols() );
-  GEOSX_LAI_ASSERT_EQ( m_operator.numLocalRows(), m_precond.numLocalRows() );
-  GEOSX_LAI_ASSERT_EQ( m_operator.numLocalCols(), m_precond.numLocalCols() );
+  GEOS_ERROR_IF_LE_MSG( m_params.krylov.maxIterations, 0, "Krylov solver: max number of iteration must be positive." );
+  GEOS_LAI_ASSERT_EQ( m_operator.numLocalRows(), m_operator.numLocalCols() );
+  GEOS_LAI_ASSERT_EQ( m_operator.numLocalRows(), m_precond.numLocalRows() );
+  GEOS_LAI_ASSERT_EQ( m_operator.numLocalCols(), m_precond.numLocalCols() );
   m_residualNorms.reserve( m_params.krylov.maxIterations + 1 );
 }
 
@@ -69,7 +70,7 @@ KrylovSolver< VECTOR >::create( LinearSolverParameters const & parameters,
     }
     default:
     {
-      GEOSX_ERROR( "Unsupported linear solver type: " << parameters.solverType );
+      GEOS_ERROR( "Unsupported linear solver type: " << parameters.solverType );
     }
   }
   return {};
@@ -78,11 +79,11 @@ KrylovSolver< VECTOR >::create( LinearSolverParameters const & parameters,
 template< typename VECTOR >
 void KrylovSolver< VECTOR >::logProgress() const
 {
-  GEOSX_ASSERT( !m_residualNorms.empty() );
+  GEOS_ASSERT( !m_residualNorms.empty() );
   if( m_params.logLevel >= 2 )
   {
     real64 const relNorm = m_residualNorms[0] > 0.0 ? m_residualNorms.back() / m_residualNorms[0] : 0.0;
-    GEOSX_LOG_RANK_0( GEOSX_FMT( "[{}] iteration {}: residual = {:e}", methodName(), m_result.numIterations, relNorm ) );
+    GEOS_LOG_RANK_0( GEOS_FMT( "[{}] iteration {}: residual = {:e}", methodName(), m_result.numIterations, relNorm ) );
   }
 }
 
@@ -91,26 +92,26 @@ void KrylovSolver< VECTOR >::logResult() const
 {
   if( m_params.logLevel >= 1 )
   {
-    GEOSX_LOG_RANK_0( GEOSX_FMT( "[{}] {} in {} iterations ({:.3f} s)", methodName(),
-                                 m_result.success() ? "converged" : "failed to converge",
-                                 m_result.numIterations, m_result.solveTime ) );
+    GEOS_LOG_RANK_0( GEOS_FMT( "[{}] {} in {} iterations ({:.3f} s)", methodName(),
+                               m_result.success() ? "converged" : "failed to converge",
+                               m_result.numIterations, m_result.solveTime ) );
   }
 }
 
 // -----------------------
 // Explicit Instantiations
 // -----------------------
-#ifdef GEOSX_USE_TRILINOS
+#ifdef GEOS_USE_TRILINOS
 template class KrylovSolver< TrilinosInterface::ParallelVector >;
 template class KrylovSolver< BlockVectorView< TrilinosInterface::ParallelVector > >;
 #endif
 
-#ifdef GEOSX_USE_HYPRE
+#ifdef GEOS_USE_HYPRE
 template class KrylovSolver< HypreInterface::ParallelVector >;
 template class KrylovSolver< BlockVectorView< HypreInterface::ParallelVector > >;
 #endif
 
-#ifdef GEOSX_USE_PETSC
+#ifdef GEOS_USE_PETSC
 template class KrylovSolver< PetscInterface::ParallelVector >;
 template class KrylovSolver< BlockVectorView< PetscInterface::ParallelVector > >;
 #endif

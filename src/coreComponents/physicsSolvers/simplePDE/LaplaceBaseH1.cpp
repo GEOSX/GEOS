@@ -2,10 +2,11 @@
  * ------------------------------------------------------------------------------------------------------------
  * SPDX-License-Identifier: LGPL-2.1-only
  *
- * Copyright (c) 2018-2020 Lawrence Livermore National Security LLC
- * Copyright (c) 2018-2020 The Board of Trustees of the Leland Stanford Junior University
- * Copyright (c) 2018-2020 TotalEnergies
- * Copyright (c) 2019-     GEOSX Contributors
+ * Copyright (c) 2016-2024 Lawrence Livermore National Security LLC
+ * Copyright (c) 2018-2024 TotalEnergies
+ * Copyright (c) 2018-2024 The Board of Trustees of the Leland Stanford Junior University
+ * Copyright (c) 2023-2024 Chevron
+ * Copyright (c) 2019-     GEOS/GEOSX Contributors
  * All rights reserved
  *
  * See top level LICENSE, COPYRIGHT, CONTRIBUTORS, NOTICE, and ACKNOWLEDGEMENTS files for details.
@@ -21,8 +22,9 @@
 #include "dataRepository/InputFlags.hpp"
 #include "mainInterface/GeosxState.hpp"
 #include "mesh/mpiCommunications/CommunicationTools.hpp"
+#include "mesh/DomainPartition.hpp"
 
-namespace geosx
+namespace geos
 {
 
 using namespace dataRepository;
@@ -30,7 +32,7 @@ using namespace dataRepository;
 //START_SPHINX_INCLUDE_CONSTRUCTOR
 LaplaceBaseH1::LaplaceBaseH1( const string & name,
                               Group * const parent ):
-  SolverBase( name, parent ),
+  PhysicsSolverBase( name, parent ),
   m_fieldName( "primaryField" ),
   m_timeIntegrationOption( TimeIntegrationOption::ImplicitTransient )
 {
@@ -39,6 +41,7 @@ LaplaceBaseH1::LaplaceBaseH1( const string & name,
     setDescription( "Time integration method. Options are:\n* " + EnumStrings< TimeIntegrationOption >::concat( "\n* " ) );
 
   this->registerWrapper( viewKeyStruct::fieldVarName(), &m_fieldName ).
+    setRTTypeName( rtTypes::CustomTypes::groupNameRef ).
     setInputFlag( InputFlags::REQUIRED ).
     setDescription( "Name of field variable" );
 
@@ -86,8 +89,8 @@ void LaplaceBaseH1::registerDataOnMesh( Group & meshBodies )
    Here, we decide how we march in time in the resolutions based on the possible two options set in
    the XML file (Steady state or Implicit transient). In the case of Implicit transient, we perform
    an implicit step (backward Euler). The implementation of the Implicit Step is found in the
-   SolverBase.  From now on, we oscillate between specific Laplace solver operations if implemented
-   and more generic SolverBase operations.  The initial values of the solver step are all at time_n,
+   PhysicsSolverBase.  From now on, we oscillate between specific Laplace solver operations if implemented
+   and more generic PhysicsSolverBase operations.  The initial values of the solver step are all at time_n,
    and the solver attempts to advance by a time step of dt.  This dt time step size is specified
    initially by the user and the solverStep method also returns its value.
  */
@@ -102,24 +105,30 @@ real64 LaplaceBaseH1::solverStep( real64 const & time_n,
 
 /*
    IMPLICIT STEP SETUP
-   This method uses the system setup from SolverBase (see below).
-   The current system of this class does not use the time variable. The macro GEOSX_UNUSED_PARAM is
+   This method uses the system setup from PhysicsSolverBase (see below).
+   The current system of this class does not use the time variable. The macro GEOS_UNUSED_PARAM is
    therefore used here to avoid a compilation error.
  */
-void LaplaceBaseH1::implicitStepSetup( real64 const & GEOSX_UNUSED_PARAM( time_n ),
-                                       real64 const & GEOSX_UNUSED_PARAM( dt ),
+void LaplaceBaseH1::implicitStepSetup( real64 const & GEOS_UNUSED_PARAM( time_n ),
+                                       real64 const & GEOS_UNUSED_PARAM( dt ),
                                        DomainPartition & domain )
 {
-  // Computation of the sparsity pattern
-  setupSystem( domain, m_dofManager, m_localMatrix, m_rhs, m_solution );
+  Timestamp const meshModificationTimestamp = getMeshModificationTimestamp( domain );
+
+  // Only build the sparsity pattern if the mesh has changed
+  if( meshModificationTimestamp > getSystemSetupTimestamp() )
+  {
+    setupSystem( domain, m_dofManager, m_localMatrix, m_rhs, m_solution );
+    setSystemSetupTimestamp( meshModificationTimestamp );
+  }
 }
 
-void LaplaceBaseH1::implicitStepComplete( real64 const & GEOSX_UNUSED_PARAM( time_n ),
-                                          real64 const & GEOSX_UNUSED_PARAM( dt ),
-                                          DomainPartition & GEOSX_UNUSED_PARAM( domain ) )
+void LaplaceBaseH1::implicitStepComplete( real64 const & GEOS_UNUSED_PARAM( time_n ),
+                                          real64 const & GEOS_UNUSED_PARAM( dt ),
+                                          DomainPartition & GEOS_UNUSED_PARAM( domain ) )
 {}
 
-void LaplaceBaseH1::setupDofs( DomainPartition const & GEOSX_UNUSED_PARAM( domain ),
+void LaplaceBaseH1::setupDofs( DomainPartition const & GEOS_UNUSED_PARAM( domain ),
                                DofManager & dofManager ) const
 {
   dofManager.addField( m_fieldName,
@@ -135,8 +144,10 @@ void LaplaceBaseH1::setupDofs( DomainPartition const & GEOSX_UNUSED_PARAM( domai
 void LaplaceBaseH1::applySystemSolution( DofManager const & dofManager,
                                          arrayView1d< real64 const > const & localSolution,
                                          real64 const scalingFactor,
+                                         real64 const dt,
                                          DomainPartition & domain )
 {
+  GEOS_UNUSED_VAR( dt );
   dofManager.addVectorToField( localSolution,
                                m_fieldName,
                                m_fieldName,
@@ -159,12 +170,12 @@ void LaplaceBaseH1::applySystemSolution( DofManager const & dofManager,
 
 void LaplaceBaseH1::updateState( DomainPartition & domain )
 {
-  GEOSX_UNUSED_VAR( domain );
+  GEOS_UNUSED_VAR( domain );
 }
 
 /*
    APPLY BOUNDARY CONDITIONS
-   Here, this call is the generic call from SolverBase.
+   Here, this call is the generic call from PhysicsSolverBase.
    All it does is to call a specific Dirichlet boundary condition implemented for this solver
  */
 void LaplaceBaseH1::applyBoundaryConditions( real64 const time_n,
@@ -203,22 +214,22 @@ void LaplaceBaseH1::
                                          string const &,
                                          SortedArrayView< localIndex const > const & targetSet,
                                          NodeManager & targetGroup,
-                                         string const & GEOSX_UNUSED_PARAM( fieldName ) )
+                                         string const & GEOS_UNUSED_PARAM( fieldName ) )
     {
       bc.applyBoundaryConditionToSystem< FieldSpecificationEqual,
-                                         parallelDevicePolicy< 32 > >( targetSet,
-                                                                       time,
-                                                                       targetGroup,
-                                                                       m_fieldName,
-                                                                       dofManager.getKey( m_fieldName ),
-                                                                       dofManager.rankOffset(),
-                                                                       localMatrix,
-                                                                       localRhs );
+                                         parallelDevicePolicy< > >( targetSet,
+                                                                    time,
+                                                                    targetGroup,
+                                                                    m_fieldName,
+                                                                    dofManager.getKey( m_fieldName ),
+                                                                    dofManager.rankOffset(),
+                                                                    localMatrix,
+                                                                    localRhs );
     } );
   } );
 }
 
-void LaplaceBaseH1::resetStateToBeginningOfStep( DomainPartition & GEOSX_UNUSED_PARAM( domain ) )
+void LaplaceBaseH1::resetStateToBeginningOfStep( DomainPartition & GEOS_UNUSED_PARAM( domain ) )
 {}
 
-} // namespace geosx
+} // namespace geos

@@ -22,37 +22,37 @@ The pressure source is the lowest-left corner element, and the pressure sink sit
 
 At the end of this tutorial you will know:
 
-  - the basic structure of XML input files used by GEOSX,
-  - how to run GEOSX on a simple case requiring no external input files,
+  - the basic structure of XML input files used by GEOS,
+  - how to run GEOS on a simple case requiring no external input files,
   - the basic syntax of a solver block for single-phase problems,
   - how to control output and visualize results.
 
 **Input file**
 
-GEOSX runs by reading user input information from one or more XML files.
-For this tutorial, we only need a single GEOSX input file located at:
+GEOS runs by reading user input information from one or more XML files.
+For this tutorial, we only need a single GEOS input file located at:
 
 .. code-block:: console
 
     inputFiles/singlePhaseFlow/3D_10x10x10_compressible_smoke.xml
 
-**Running GEOSX**
+**Running GEOS**
 
-If our XML input file is called ``my_input.xml``, GEOSX runs this file by executing:
+If our XML input file is called ``my_input.xml``, GEOS runs this file by executing:
 
 .. code-block:: console
 
   /path/to/geosx -i /path/to/my_input.xml
 
 The ``-i`` flag indicates the path to the XML input file.
-To get help on what other command line input flags GEOSX supports, run ``geosx --help``.
+To get help on what other command line input flags GEOS supports, run ``geosx --help``.
 
 **Input file structure**
 
 XML files store information in a tree-like structure using nested blocks of information called *elements*.
-In GEOSX, the root of this tree structure is the element called ``Problem``.
+In GEOS, the root of this tree structure is the element called ``Problem``.
 All elements in an XML file are defined by an opening *tag* (``<ElementName>``) and end by a corresponding closing tag (``</ElementName>``). Elements can have properties defined as *attributes* with ``key="value"`` pairs.
-A typical GEOSX input file contains the following tags:
+A typical GEOS input file contains the following tags:
 
 
  #. :ref:`Solver <Solver_tag_single_phase_internal_mesh>`
@@ -82,8 +82,8 @@ Such tools will help you identify common issues that may occur when working with
 Single-phase solver
 -------------------
 
-GEOSX is a multiphysics simulator. To find the solution to different physical problems
-such as diffusion or mechanical deformation, GEOSX uses one or more physics solvers.
+GEOS is a multiphysics simulator. To find the solution to different physical problems
+such as diffusion or mechanical deformation, GEOS uses one or more physics solvers.
 The ``Solvers`` tag is used to define and parameterize these solvers.
 Different combinations of solvers can be applied
 in different regions of the domain at different moments of the simulation.
@@ -91,8 +91,11 @@ in different regions of the domain at different moments of the simulation.
 
 In this first example, we use one type of solver in the entire domain and
 for the entire duration of the simulation.
+The input file for this tutorial can be found in the repository at
+`inputFiles/singlePhaseFlow/3D_10x10x10_compressible_smoke.xml <https://github.com/GEOS-DEV/GEOS/blob/6dd40e776556ec1235ba183e00796f2eedc035ac/inputFiles/singlePhaseFlow/3D_10x10x10_compressible_smoke.xml>`_, which also includes
+`inputFiles/singlePhaseFlow/3D_10x10x10_compressible_base.xml <https://github.com/GEOS-DEV/GEOS/blob/6dd40e776556ec1235ba183e00796f2eedc035ac/inputFiles/singlePhaseFlow/3D_10x10x10_compressible_base.xml>`_.
 The solver we are specifying here is a single-phase flow solver.
-In GEOSX, such a solver is created using a ``SinglePhaseFVM`` element.
+In GEOS, such a solver is created using a ``SinglePhaseFVM`` element.
 This type of solver is one among several cell-centered single-phase finite volume methods.
 
 
@@ -112,8 +115,8 @@ some parameters that are optional. Optional values are usually set with sensible
 First, we register a solver of type ``SinglePhaseFVM`` with a user-chosen name,
 here ``SinglePhaseFlow``. This unique user-defined name can be almost anything.
 However, some symbols are known to cause issues in names : avoid commas, slashes, curly braces.
-GEOSX is case-sensitive: it makes a distinction between two ``SinglePhaseFVM`` solvers called ``mySolver`` and ``MySolver``.
-Giving elements a name is a common practice in GEOSX:
+GEOS is case-sensitive: it makes a distinction between two ``SinglePhaseFVM`` solvers called ``mySolver`` and ``MySolver``.
+Giving elements a name is a common practice in GEOS:
 users need to give unique identifiers to objects they define.
 That name is the handle to this instance of a solver class.
 
@@ -134,7 +137,7 @@ In production runs, you may want to suppress most console output.
 
 For solvers of the ``SinglePhaseFVM`` family, one required attribute is a discretization scheme.
 Here, we use a Two-Point Flux Approximation (TPFA) finite volume discretization scheme called ``singlePhaseTPFA``.
-To know the list of admissible values of an attribute, please see GEOSX's XML schema.
+To know the list of admissible values of an attribute, please see `GEOS's XML schema <https://geosx-geosx.readthedocs-hosted.com/en/latest/docs/sphinx/CompleteXMLSchema.html#>`_.
 This discretization type must know how to find permeability values that it uses internally to compute transmissibilities.
 The ``permeabilityNames`` attribute tells the solver the user-defined name (the *handle*)
 of the permeability values that will be defined elsewhere in the input file.
@@ -144,7 +147,7 @@ Note that the order of attributes inside an element is not important.
 
 Here, we specify a collection of fluids, rocks, and
 target regions of the mesh on which the solver will apply.
-Curly brackets are used in GEOSX inputs to indicate collections of values (sets or lists).
+Curly brackets are used in GEOS inputs to indicate collections of values (sets or lists).
 The curly brackets used here are necessary, even if the collection contains a single value.
 Commas are used to separate members of a set.
 
@@ -168,10 +171,10 @@ Mesh
 To solve this problem, we need to define a mesh for our numerical calculations.
 This is the role of the **Mesh** element.
 
-There are two approaches to specifying meshes in GEOSX: internal or external.
+There are two approaches to specifying meshes in GEOS: internal or external.
 
-  * The external approach allows to import mesh files created outside GEOSX, such as a corner-point grid or an unstructured grid representing complex shapes and structures.
-  * The internal approach uses GEOSX's built-in capability to create simple meshes from a small number of parameters. It does not require any external file information. The geometric complexity of internal meshes is limited, but many practical problems can be solved on such simple grids.
+  * The external approach allows to import mesh files created outside GEOS, such as a corner-point grid or an unstructured grid representing complex shapes and structures.
+  * The internal approach uses GEOS's built-in capability to create simple meshes from a small number of parameters. It does not require any external file information. The geometric complexity of internal meshes is limited, but many practical problems can be solved on such simple grids.
 
 In this tutorial, to keep things self-contained,
 we use the internal mesh generator. We parameterize it with the **InternalMesh** element.
@@ -199,7 +202,7 @@ Keeping things simple, our element collection has only one type of element: a ``
 
 A mesh can contain several geometrical types of elements.
 For numerical convenience, elements are aggregated by types into ``cellBlocks``.
-Here, we only linear 8-node brick elements, so the entire domain is one object called ``cellBlock``.
+Here, we only have linear 8-node brick elements, so the entire domain is one object called ``cellBlock``.
 
 
 **xCoords, yCoords, zCoords, nx, ny, nz**
@@ -249,8 +252,8 @@ The ``Box`` defined here is one of the simplest approaches.
 Events
 --------
 
-In GEOSX, we call ``Events`` anything that happens at a set time or frequency.
-Events are a central element for time-stepping in GEOSX,
+In GEOS, we call ``Events`` anything that happens at a set time or frequency.
+Events are a central element for time-stepping in GEOS,
 and a dedicated section just for events is necessary to give them the treatment they deserve.
 
 
@@ -259,13 +262,13 @@ the times at which we want the solver to perform updates,
 and the times we wish to have simulation output values reported.
 
 
-In GEOSX, all times are specified in **seconds**, so here ``maxTime=5000.0`` means that the simulation will run from time 0 to time 5,000 seconds.
+In GEOS, all times are specified in **seconds**, so here ``maxTime=5000.0`` means that the simulation will run from time 0 to time 5,000 seconds.
 
 
 If we focus on the ``PeriodicEvent`` elements, we see :
 
- #. A **periodic solver** application: this event is named ``solverApplications``. With the attribute ``forceDt=20``, it tells the solver to compute results at 20-second time intervals. We know what this event does by looking at its ``target`` attribute: here, from time 0 to ``maxTime`` and with a forced time step of 20 seconds, we instruct GEOSX to call the solver registered as ``SinglePhaseFlow``. Note the hierarchical structure of the target formulation, using '/' to indicate a specific named instance (``SinglePhaseFlow``) of an element (``Solvers``). If the solver needs to take smaller time steps, it is allowed to do so, but it will have to compute results for every 20-second increment between time zero and ``maxTime`` regardless of possible intermediate time steps.
- #. An **output event**: this event is used for reporting purposes and instructs GEOSX to write out results at specific frequencies. Here, we need to see results at every 100-second increment. This event triggers a full application of solvers, even if solvers were not summoned by the previous event. In other words, an output event will force an application of solvers, possibly in addition to the periodic events requested directly.
+ #. A **periodic solver** application: this event is named ``solverApplications``. With the attribute ``forceDt=20``, it tells the solver to compute results at 20-second time intervals. We know what this event does by looking at its ``target`` attribute: here, from time 0 to ``maxTime`` and with a forced time step of 20 seconds, we instruct GEOS to call the solver registered as ``SinglePhaseFlow``. Note the hierarchical structure of the target formulation, using '/' to indicate a specific named instance (``SinglePhaseFlow``) of an element (``Solvers``). If the solver needs to take smaller time steps, it is allowed to do so, but it will have to compute results for every 20-second increment between time zero and ``maxTime`` regardless of possible intermediate time steps.
+ #. An **output event**: this event is used for reporting purposes and instructs GEOS to write out results at specific frequencies. Here, we need to see results at every 100-second increment. This event triggers a full application of solvers, even if solvers were not summoned by the previous event. In other words, an output event will force an application of solvers, possibly in addition to the periodic events requested directly.
 
 .. literalinclude:: ../../../../../inputFiles/singlePhaseFlow/3D_10x10x10_compressible_smoke.xml
   :language: xml
@@ -281,7 +284,7 @@ If we focus on the ``PeriodicEvent`` elements, we see :
 Numerical methods
 ------------------
 
-GEOSX comes with several useful numerical methods.
+GEOS comes with several useful numerical methods.
 In the ``Solvers`` elements, for instance, we had specified to use a two-point flux approximation
 as discretization scheme for the finite volume single-phase solver.
 Now to use this scheme, we need to supply more details in the ``NumericalMethods`` element.
@@ -291,14 +294,11 @@ Now to use this scheme, we need to supply more details in the ``NumericalMethods
   :start-after: <!-- SPHINX_TUT_INT_HEX_NUM_METHODS -->
   :end-before: <!-- SPHINX_TUT_INT_HEX_NUM_METHODS_END -->
 
-The ``fieldName`` attribute specifies which property will be used for flux computations,
-and also specifies that for Dirichlet boundary conditions, the pressure value at the element face is used.
-The ``coefficientName`` attribute is used for the stencil transmissibility computations.
-
-Note that in GEOSX, there is a difference between physics solvers and numerical methods.
+Note that in GEOS, there is a difference between physics solvers and numerical methods.
 Their parameterizations are thus independent. We can have
 multiple solvers using the same numerical scheme but with different tolerances, for instance.
 
+The available numerical methods and their options are listed in the GEOS XML schema documentation which may be found by using the search function in the documentation.
 
 .. _ElementRegions_tag_single_phase_internal_mesh:
 
@@ -306,12 +306,14 @@ multiple solvers using the same numerical scheme but with different tolerances, 
 Regions
 --------
 
-In GEOSX, ``ElementsRegions`` are used to attach material properties
+In GEOS, ``ElementsRegions`` are used to attach material properties
 to regions of elements.
 Here, we use only one **CellElementRegion** to represent the entire domain (user name: ``mainRegion``).
 It contains all the blocks called ``cellBlock`` defined in the mesh section.
 We specify the materials contained in that region using a ``materialList``.
-Several materials coexist in ``cellBlock``, and we list them using their user-defined names: ``water``, ``rockPorosity``, and ``rockPerm``, etc. What these names mean, and the physical properties that they are attached to are defined next.
+Several materials coexist in ``cellBlock``, and we list them using their user-defined names: 
+``water`` and ``rock`` in this exemple.
+Each material is a definition of physical properties.
 
 
 .. literalinclude:: ../../../../../inputFiles/singlePhaseFlow/3D_10x10x10_compressible_base.xml
@@ -346,7 +348,7 @@ The list of attributes differs between these constitutive materials.
 
 The names ``water``, ``rockPorosity`` and ``rockPerm`` are defined by the user
 as handles to specific instances of physical materials.
-GEOSX uses S.I. units throughout, not field units.
+GEOS uses S.I. units throughout, not field units.
 Pressures, for instance, are in Pascal, not psia.
 The x- and y-permeability are set to 1.0e-12 m\ :sup:`2` corresponding to approximately to 1 Darcy.
 
@@ -356,7 +358,7 @@ in the ``ElementRegions`` section of the XML file,
 before the registration of these materials took place here, in Constitutive element.
 
 .. note::
-  This highlights an important aspect of using XML in GEOSX:
+  This highlights an important aspect of using XML in GEOS:
   the order in which objects are registered and used in the XML file is not important.
 
 
@@ -369,9 +371,9 @@ Defining properties
 --------------------
 
 In the ``FieldSpecifications`` section, properties such as source and sink pressures are set.
-GEOSX offers a lot of flexibility to specify field values through space and time.
+GEOS offers a lot of flexibility to specify field values through space and time.
 
-Spatially, in GEOSX, all field specifications are associated
+Spatially, in GEOS, all field specifications are associated
 to a target object on which the field values are mounted.
 This allows for a lot of freedom in defining fields:
 for instance, one can have volume property values attached to
@@ -423,25 +425,25 @@ It does so by pointing to ``/Outputs/siloOutput``.
   :end-before: <!-- SPHINX_TUT_INT_HEX_OUTPUTS_END -->
 
 
-GEOSX currently supports outputs that are readable by `VisIt
+GEOS currently supports outputs that are readable by `VisIt
 <https://wci.llnl.gov/simulation/computer-codes/visit/>`_ and Kitware's Paraview, as well as other visualization tools.
 In this example, we only request a Silo format compatible with VisIt.
 
 
-All elements are now in place to run GEOSX.
+All elements are now in place to run GEOS.
 
 
 ------------------------------------
-Running GEOSX
+Running GEOS
 ------------------------------------
 
-The command to run GEOSX is
+The command to run GEOS is
 
 ``path/to/geosx -i path/to/this/xml_file.xml``
 
 Note that all paths for files included in the XML file are relative to this XML file.
 
-While running GEOSX, it logs status information on the console output with a verbosity
+While running GEOS, it logs status information on the console output with a verbosity
 that is controlled at the object level, and
 that can be changed using the ``logLevel`` flag.
 
@@ -529,7 +531,7 @@ To go further
 **Feedback on this tutorial**
 
 This concludes the single-phase internal mesh tutorial.
-For any feedback on this tutorial, please submit a `GitHub issue on the project's GitHub page <https://github.com/GEOSX/GEOSX/issues>`_.
+For any feedback on this tutorial, please submit a `GitHub issue on the project's GitHub page <https://github.com/GEOS-DEV/GEOS/issues>`_.
 
 **For more details**
 

@@ -1,0 +1,50 @@
+<?xml version="1.0" ?>
+
+<Problem>
+  <Included>
+    <File name="./PoroElastic_efem-edfm_inclinedFrac_base.xml" />
+  </Included>
+
+  <Mesh>
+    <InternalMesh
+      name="mesh1"
+      elementTypes="{ C3D8 }"
+      xCoords="{ 0, 10 }"
+      yCoords="{ 0, 20 }"
+      zCoords="{ 0, 1 }"
+      nx="{ 5 }"
+      ny="{ 10 }"
+      nz="{ 1 }"
+      cellBlockNames="{ cb1 }"/>
+  </Mesh>
+
+  <Geometry>
+    <Rectangle
+      name="FracturePlane"
+      normal="{ -0.707, 0.707, 0 }"
+      origin="{ 5.0, 8.0, 0.5 }"
+      lengthVector="{ 0.707, 0.707, 0 }"
+      widthVector="{ 0, 0, 1 }"
+      dimensions="{ 8, 4 }"/>
+  </Geometry>
+  
+  <Events
+    maxTime="100">
+    <PeriodicEvent
+      name="outputs"
+      timeFrequency="100"
+      target="/Outputs/vtkOutput"/>
+
+    <PeriodicEvent
+      name="solverApplication0"
+      endTime="100.0"
+      forceDt="10.0"
+      target="/Solvers/poroSolver"/>
+
+    <PeriodicEvent
+      name="restarts"
+      timeFrequency="100"
+      target="/Outputs/restartOutput"/>
+  </Events>
+
+</Problem>

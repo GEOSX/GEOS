@@ -1,2 +1,2 @@
-DensityFun PhillipsBrineDensity 1e6 7.5e7 5e4 367.15 369.15 1 0
+DensityFun PhillipsBrineDensity 1.0e5 7.5e7 1e5 285.15 395.15 5 0
 ViscosityFun PhillipsBrineViscosity 0

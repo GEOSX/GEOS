@@ -2,10 +2,11 @@
  * ------------------------------------------------------------------------------------------------------------
  * SPDX-License-Identifier: LGPL-2.1-only
  *
- * Copyright (c) 2018-2020 Lawrence Livermore National Security LLC
- * Copyright (c) 2018-2020 The Board of Trustees of the Leland Stanford Junior University
- * Copyright (c) 2018-2020 TotalEnergies
- * Copyright (c) 2019-     GEOSX Contributors
+ * Copyright (c) 2016-2024 Lawrence Livermore National Security LLC
+ * Copyright (c) 2018-2024 TotalEnergies
+ * Copyright (c) 2018-2024 The Board of Trustees of the Leland Stanford Junior University
+ * Copyright (c) 2023-2024 Chevron
+ * Copyright (c) 2019-     GEOS/GEOSX Contributors
  * All rights reserved
  *
  * See top level LICENSE, COPYRIGHT, CONTRIBUTORS, NOTICE, and ACKNOWLEDGEMENTS files for details.
@@ -16,13 +17,12 @@
  * @file SinglePhaseHybridFVM.hpp
  */
 
-#ifndef GEOSX_PHYSICSSOLVERS_FLUIDFLOW_SINGLEPHASEHYBRIDFVM_HPP_
-#define GEOSX_PHYSICSSOLVERS_FLUIDFLOW_SINGLEPHASEHYBRIDFVM_HPP_
+#ifndef GEOS_PHYSICSSOLVERS_FLUIDFLOW_SINGLEPHASEHYBRIDFVM_HPP_
+#define GEOS_PHYSICSSOLVERS_FLUIDFLOW_SINGLEPHASEHYBRIDFVM_HPP_
 
 #include "physicsSolvers/fluidFlow/SinglePhaseBase.hpp"
-#include "physicsSolvers/fluidFlow/SinglePhaseHybridFVMKernels.hpp"
 
-namespace geosx
+namespace geos
 {
 
 
@@ -71,6 +71,10 @@ public:
    */
   static string catalogName()
   { return "SinglePhaseHybridFVM"; }
+  /**
+   * @copydoc PhysicsSolverBase::getCatalogName()
+   */
+  string getCatalogName() const override { return catalogName(); }
 
   virtual void registerDataOnMesh( Group & meshBodies ) override;
 
@@ -94,7 +98,9 @@ public:
                            arrayView1d< real64 > const & localRhs ) override;
 
   virtual real64
-  calculateResidualNorm( DomainPartition const & domain,
+  calculateResidualNorm( real64 const & time_n,
+                         real64 const & dt,
+                         DomainPartition const & domain,
                          DofManager const & dofManager,
                          arrayView1d< real64 const > const & localRhs ) override;
 
@@ -102,6 +108,7 @@ public:
   applySystemSolution( DofManager const & dofManager,
                        arrayView1d< real64 const > const & localSolution,
                        real64 const scalingFactor,
+                       real64 const dt,
                        DomainPartition & domain ) override;
 
   virtual void
@@ -113,21 +120,27 @@ public:
                      DomainPartition & domain ) override;
 
   virtual void
-  assembleFluxTerms( real64 const time_n,
-                     real64 const dt,
+  assembleFluxTerms( real64 const dt,
                      DomainPartition const & domain,
                      DofManager const & dofManager,
                      CRSMatrixView< real64, globalIndex const > const & localMatrix,
                      arrayView1d< real64 > const & localRhs ) override;
 
   virtual void
-  assemblePoroelasticFluxTerms( real64 const time_n,
-                                real64 const dt,
-                                DomainPartition const & domain,
-                                DofManager const & dofManager,
-                                CRSMatrixView< real64, globalIndex const > const & localMatrix,
-                                arrayView1d< real64 > const & localRhs,
-                                string const & jumpDofKey ) override final;
+  assembleStabilizedFluxTerms( real64 const dt,
+                               DomainPartition const & domain,
+                               DofManager const & dofManager,
+                               CRSMatrixView< real64, globalIndex const > const & localMatrix,
+                               arrayView1d< real64 > const & localRhs ) override;
+
+  virtual void
+  assembleEDFMFluxTerms( real64 const time_n,
+                         real64 const dt,
+                         DomainPartition const & domain,
+                         DofManager const & dofManager,
+                         CRSMatrixView< real64, globalIndex const > const & localMatrix,
+                         arrayView1d< real64 > const & localRhs,
+                         string const & jumpDofKey ) override final;
 
   virtual void
   assembleHydrofracFluxTerms( real64 const time_n,
@@ -151,6 +164,8 @@ public:
                              real64 const & dt,
                              DomainPartition & domain ) override;
 
+  virtual void updatePressureGradient( DomainPartition & domain ) override final;
+
   /**
    * @brief Function to perform the application of Dirichlet BCs on faces
    * @param[in] time_n current time
@@ -170,13 +185,6 @@ public:
 
   /**@}*/
 
-
-  struct viewKeyStruct : SinglePhaseBase::viewKeyStruct
-  {
-    // primary face-based field
-    static constexpr char const * deltaFacePressureString() { return "deltaFacePressure"; }
-  };
-
   virtual void initializePreSubGroups() override;
 
   virtual void initializePostInitialConditionsPreSubGroups() override;
@@ -191,6 +199,6 @@ private:
 
 };
 
-} /* namespace geosx */
+} /* namespace geos */
 
-#endif //GEOSX_PHYSICSSOLVERS_FLUIDFLOW_SINGLEPHASEHYBRIDFVM_HPP_
+#endif //GEOS_PHYSICSSOLVERS_FLUIDFLOW_SINGLEPHASEHYBRIDFVM_HPP_

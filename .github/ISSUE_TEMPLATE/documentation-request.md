@@ -1,8 +1,8 @@
 ---
 name: Documentation request
 about: Requests to improve on existing documentation
-title: '[Docs] Your Title'
-labels: new
+title: Your Title
+labels: 'type: documentation, type: new'
 assignees: ''
 
 ---

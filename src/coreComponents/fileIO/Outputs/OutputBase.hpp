@@ -2,10 +2,11 @@
  * ------------------------------------------------------------------------------------------------------------
  * SPDX-License-Identifier: LGPL-2.1-only
  *
- * Copyright (c) 2018-2020 Lawrence Livermore National Security LLC
- * Copyright (c) 2018-2020 The Board of Trustees of the Leland Stanford Junior University
- * Copyright (c) 2018-2020 TotalEnergies
- * Copyright (c) 2019-     GEOSX Contributors
+ * Copyright (c) 2016-2024 Lawrence Livermore National Security LLC
+ * Copyright (c) 2018-2024 TotalEnergies
+ * Copyright (c) 2018-2024 The Board of Trustees of the Leland Stanford Junior University
+ * Copyright (c) 2023-2024 Chevron
+ * Copyright (c) 2019-     GEOS/GEOSX Contributors
  * All rights reserved
  *
  * See top level LICENSE, COPYRIGHT, CONTRIBUTORS, NOTICE, and ACKNOWLEDGEMENTS files for details.
@@ -15,15 +16,54 @@
 /**
  * @file OutputBase.hpp
  */
-#ifndef GEOSX_FILEIO_OUTPUTS_OUTPUTBASE_HPP_
-#define GEOSX_FILEIO_OUTPUTS_OUTPUTBASE_HPP_
+#ifndef GEOS_FILEIO_OUTPUTS_OUTPUTBASE_HPP_
+#define GEOS_FILEIO_OUTPUTS_OUTPUTBASE_HPP_
 
 #include "dataRepository/Group.hpp"
 #include "dataRepository/ExecutableGroup.hpp"
+#include "dataRepository/LogLevelsInfo.hpp"  // For logInfo namespace
+#include "common/Timer.hpp"
 
-
-namespace geosx
+namespace geos
 {
+
+namespace logInfo
+{
+/**
+ * @brief Base timer category for output operations
+ * @details Provides configuration for logging output operation timing information
+ */
+struct OutputTimers
+{
+  /**
+   * @brief Get the description of this timer
+   * @return String view containing the timer description
+   */
+  static std::string_view getDescription() { return "Output timing information"; }
+
+  /**
+   * @brief Get the minimum log level for this timer
+   * @return Integer representing the minimum log level
+   */
+  static constexpr int getMinLogLevel() { return 1; }
+};
+
+/**
+ * @brief Base interface for specific output type timers
+ * @details Each output type (VTK, Silo, etc.) implements this interface to provide
+ *          its own timing category. This is used in conjunction with OutputTimers:
+ *          - OutputTimerBase: For polymorphic behavior in derived output classes
+ *          - OutputTimers: For the general output timing logging infrastructure
+ */
+struct OutputTimerBase
+{
+  /**
+   * @brief Get the description of this timer
+   * @return String view containing the timer description
+   */
+  virtual std::string_view getDescription() const = 0;
+};
+}
 
 /**
  * @class OutputBase
@@ -33,17 +73,11 @@ namespace geosx
 class OutputBase : public ExecutableGroup
 {
 public:
-  /// @copydoc geosx::dataRepository::Group::Group( string const & name, Group * const parent )
+  /// @copydoc geos::dataRepository::Group::Group( string const & name, Group * const parent )
   explicit OutputBase( string const & name, Group * const parent );
 
   /// Destructor
   virtual ~OutputBase() override;
-
-  /**
-   * @brief Catalog name interface.
-   * @return This type's catalog name.
-   **/
-  static string catalogName() { return "OutputBase"; }
 
   /**
    * @brief Setter for the output directory
@@ -55,7 +89,7 @@ public:
    * @brief Getter for the output directory
    * @return The output directory
    **/
-  static string getOutputDirectory() {return m_outputDirectory;}
+  static string const & getOutputDirectory();
 
   /**
    * @brief Setter for the file name root
@@ -67,7 +101,7 @@ public:
    * @brief Getter for the file name root
    * @return The file name root
    **/
-  static string getFileNameRoot() { return m_fileNameRoot; }
+  static string const & getFileNameRoot();
 
   /// Method for setting up output directories.
   virtual void setupDirectoryStructure();
@@ -97,6 +131,8 @@ public:
    **/
   integer parallelThreads() const { return m_parallelThreads; }
 
+
+
 protected:
   /**
    * @brief Do initialization prior to calling initialization operations
@@ -105,16 +141,29 @@ protected:
    **/
   virtual void initializePreSubGroups() override;
 
+  /// Timer used to track duration of file writing operations for this specific output type
+  std::chrono::system_clock::duration m_outputTimer;
+
+  /**
+   * @brief Get the timer category for this output type
+   * @return Reference to the output timer base for timing statistics
+   */
+  virtual logInfo::OutputTimerBase const & getTimerCategory() const = 0;
+
+  /// @copydoc geos::ExecutableGroup::cleanup
+  virtual void cleanup( real64 const time_n,
+                        integer const cycleNumber,
+                        integer const eventCounter,
+                        real64 const eventProgress,
+                        DomainPartition & domain ) override;
+
 private:
   string m_childDirectory;
   integer m_parallelThreads;
 
-  static string m_outputDirectory;
-  static string m_fileNameRoot;
-
 };
 
 
-} /* namespace geosx */
+} /* namespace geos */
 
-#endif /* GEOSX_FILEIO_OUTPUTS_OUTPUTBASE_HPP_ */
+#endif /* GEOS_FILEIO_OUTPUTS_OUTPUTBASE_HPP_ */

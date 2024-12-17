@@ -2,10 +2,11 @@
  * ------------------------------------------------------------------------------------------------------------
  * SPDX-License-Identifier: LGPL-2.1-only
  *
- * Copyright (c) 2018-2020 Lawrence Livermore National Security LLC
- * Copyright (c) 2018-2020 The Board of Trustees of the Leland Stanford Junior University
- * Copyright (c) 2018-2020 TotalEnergies
- * Copyright (c) 2019-     GEOSX Contributors
+ * Copyright (c) 2016-2024 Lawrence Livermore National Security LLC
+ * Copyright (c) 2018-2024 TotalEnergies
+ * Copyright (c) 2018-2024 The Board of Trustees of the Leland Stanford Junior University
+ * Copyright (c) 2023-2024 Chevron
+ * Copyright (c) 2019-     GEOS/GEOSX Contributors
  * All rights reserved
  *
  * See top level LICENSE, COPYRIGHT, CONTRIBUTORS, NOTICE, and ACKNOWLEDGEMENTS files for details.
@@ -17,17 +18,16 @@
  *
  */
 
-#ifndef GEOSX_PHYSICSSOLVERS_CONTACT_CONTACTSOLVERBASE_HPP_
-#define GEOSX_PHYSICSSOLVERS_CONTACT_CONTACTSOLVERBASE_HPP_
+#ifndef GEOS_PHYSICSSOLVERS_CONTACT_CONTACTSOLVERBASE_HPP_
+#define GEOS_PHYSICSSOLVERS_CONTACT_CONTACTSOLVERBASE_HPP_
 
-#include "physicsSolvers/SolverBase.hpp"
+#include "physicsSolvers/solidMechanics/SolidMechanicsLagrangianFEM.hpp"
 #include "physicsSolvers/contact/ContactFields.hpp"
 
-namespace geosx
+namespace geos
 {
-class SolidMechanicsLagrangianFEM;
 
-class ContactSolverBase : public SolverBase
+class ContactSolverBase : public SolidMechanicsLagrangianFEM
 {
 public:
   ContactSolverBase( const string & name,
@@ -37,46 +37,41 @@ public:
 
   virtual void registerDataOnMesh( dataRepository::Group & meshBodies ) override;
 
-  virtual real64 solverStep( real64 const & time_n,
-                             real64 const & dt,
-                             int const cycleNumber,
-                             DomainPartition & domain ) override;
-
   virtual real64
   explicitStep( real64 const & time_n,
                 real64 const & dt,
                 integer const cycleNumber,
                 DomainPartition & domain ) override final;
 
-  virtual void
-  applyBoundaryConditions( real64 const time,
-                           real64 const dt,
-                           DomainPartition & domain,
-                           DofManager const & dofManager,
-                           CRSMatrixView< real64, globalIndex const > const & localMatrix,
-                           arrayView1d< real64 > const & localRhs ) override;
-
-  string const & getContactRelationName() const { return m_contactRelationName; }
-
-  string const & getFractureRegionName() const { return m_fractureRegionName; }
+  string const & getUniqueFractureRegionName() const { return m_fractureRegionNames[0]; }
 
   void outputConfigurationStatistics( DomainPartition const & domain ) const override final;
 
-  SolidMechanicsLagrangianFEM * getSolidSolver() { return m_solidSolver; }
+  void synchronizeFractureState( DomainPartition & domain ) const;
 
-  void setSolidSolverDofFlags( bool const flag ) { m_setupSolidSolverDofs = flag; }
+  struct viewKeyStruct : SolidMechanicsLagrangianFEM::viewKeyStruct
+  {
+    constexpr static char const * fractureStateString() { return "fractureState"; }
+
+    constexpr static char const * oldFractureStateString() { return "oldFractureState"; }
+
+    constexpr static char const * frictionLawNameString() { return "frictionLawName"; }
+
+  };
 
 protected:
+  virtual void postInputInitialization() override;
 
-  virtual void postProcessInput() override;
+  virtual void setConstitutiveNamesCallSuper( ElementSubRegionBase & subRegion ) const override final;
 
   void computeFractureStateStatistics( MeshLevel const & mesh,
                                        globalIndex & numStick,
+                                       globalIndex & numNewSlip,
                                        globalIndex & numSlip,
                                        globalIndex & numOpen ) const;
 
-  GEOSX_HOST_DEVICE
-  GEOSX_FORCE_INLINE
+  GEOS_HOST_DEVICE
+  inline
   static bool compareFractureStates( integer const state0,
                                      integer const state1 )
   {
@@ -85,39 +80,49 @@ protected:
            || ( state0 == fields::contact::FractureState::Slip && state1 == fields::contact::FractureState::NewSlip );
   }
 
-  void synchronizeFractureState( DomainPartition & domain ) const;
+  void setFractureRegions( dataRepository::Group const & domain );
 
-  /// Solid mechanics solver name
-  string m_solidSolverName;
+  std::vector< string > m_fractureRegionNames;
 
-  /// fracture region name
-  string m_fractureRegionName;
-
-  /// pointer to the solid mechanics solver
-  SolidMechanicsLagrangianFEM * m_solidSolver;
-
-  /// contact relation name string
-  string m_contactRelationName;
-
-  ///
-  bool m_setupSolidSolverDofs;
-
-  struct viewKeyStruct : SolverBase::viewKeyStruct
+  template< typename LAMBDA >
+  void forFractureRegionOnMeshTargets( Group const & meshBodies, LAMBDA && lambda ) const
   {
-    constexpr static char const * solidSolverNameString() { return "solidSolverName"; }
+    forDiscretizationOnMeshTargets( meshBodies,
+                                    [&]( string const,
+                                         MeshLevel const & mesh,
+                                         arrayView1d< string const > const )
+    {
+      ElementRegionManager const & elemManager = mesh.getElemManager();
 
-    constexpr static char const * contactRelationNameString() { return "contactRelationName"; }
+      elemManager.forElementRegions< SurfaceElementRegion >( m_fractureRegionNames,
+                                                             [&] ( localIndex const,
+                                                                   SurfaceElementRegion const & region )
+      {
+        lambda( region );
+      } );
+    } );
+  }
 
-    constexpr static char const * fractureRegionNameString() { return "fractureRegionName"; }
+  template< typename LAMBDA >
+  void forFractureRegionOnMeshTargets( Group & meshBodies, LAMBDA && lambda ) const
+  {
+    forDiscretizationOnMeshTargets( meshBodies,
+                                    [&]( string const,
+                                         MeshLevel & mesh,
+                                         arrayView1d< string const > const )
+    {
+      ElementRegionManager & elemManager = mesh.getElemManager();
 
-    constexpr static char const * fractureStateString() { return "fractureState"; }
-
-    constexpr static char const * oldFractureStateString() { return "oldFractureState"; }
-
-    constexpr static char const * initialFractureStateString() { return "initialFractureState"; }
-  };
+      elemManager.forElementRegions< SurfaceElementRegion >( m_fractureRegionNames,
+                                                             [&] ( localIndex const,
+                                                                   SurfaceElementRegion & region )
+      {
+        lambda( region );
+      } );
+    } );
+  }
 };
 
-} /* namespace geosx */
+} /* namespace geos */
 
-#endif /* GEOSX_PHYSICSSOLVERS_CONTACT_CONTACTSOLVERBASE_HPP_ */
+#endif /* GEOS_PHYSICSSOLVERS_CONTACT_CONTACTSOLVERBASE_HPP_ */

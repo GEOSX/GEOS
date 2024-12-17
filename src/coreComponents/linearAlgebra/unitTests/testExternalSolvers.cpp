@@ -2,11 +2,12 @@
  * ------------------------------------------------------------------------------------------------------------
  * SPDX-License-Identifier: LGPL-2.1-only
  *
- * Copyright (c) 2018-2019 Lawrence Livermore National Security LLC
- * Copyright (c) 2018-2019 The Board of Trustees of the Leland Stanford Junior University
- * Copyright (c) 2018-2019 TotalEnergies
- * Copyright (c) 2019-     GEOSX Contributors
- * All right reserved
+ * Copyright (c) 2016-2024 Lawrence Livermore National Security LLC
+ * Copyright (c) 2018-2024 TotalEnergies
+ * Copyright (c) 2018-2024 The Board of Trustees of the Leland Stanford Junior University
+ * Copyright (c) 2023-2024 Chevron
+ * Copyright (c) 2019-     GEOS/GEOSX Contributors
+ * All rights reserved
  *
  * See top level LICENSE, COPYRIGHT, CONTRIBUTORS, NOTICE, and ACKNOWLEDGEMENTS files for details.
  * ------------------------------------------------------------------------------------------------------------
@@ -21,14 +22,14 @@
 
 #include <gtest/gtest.h>
 
-using namespace geosx;
+using namespace geos;
 
 ///////////////////////////////////////////////////////////////////////////////////////
 
 LinearSolverParameters params_DirectSerial()
 {
   LinearSolverParameters parameters;
-  parameters.solverType = geosx::LinearSolverParameters::SolverType::direct;
+  parameters.solverType = geos::LinearSolverParameters::SolverType::direct;
   parameters.direct.parallel = 0;
   return parameters;
 }
@@ -36,7 +37,7 @@ LinearSolverParameters params_DirectSerial()
 LinearSolverParameters params_DirectParallel()
 {
   LinearSolverParameters parameters;
-  parameters.solverType = geosx::LinearSolverParameters::SolverType::direct;
+  parameters.solverType = geos::LinearSolverParameters::SolverType::direct;
   parameters.direct.parallel = 1;
   return parameters;
 }
@@ -70,8 +71,8 @@ LinearSolverParameters params_GMRES_AMG()
   parameters.krylov.maxIterations = 300;
   parameters.solverType = LinearSolverParameters::SolverType::gmres;
   parameters.preconditionerType = LinearSolverParameters::PreconditionerType::amg;
-  parameters.amg.smootherType = geosx::LinearSolverParameters::AMG::SmootherType::fgs;
-  parameters.amg.coarseType = geosx::LinearSolverParameters::AMG::CoarseType::direct;
+  parameters.amg.smootherType = geos::LinearSolverParameters::AMG::SmootherType::fgs;
+  parameters.amg.coarseType = geos::LinearSolverParameters::AMG::CoarseType::direct;
   return parameters;
 }
 
@@ -83,8 +84,8 @@ LinearSolverParameters params_CG_AMG()
   parameters.isSymmetric = true;
   parameters.solverType = LinearSolverParameters::SolverType::cg;
   parameters.preconditionerType = LinearSolverParameters::PreconditionerType::amg;
-  parameters.amg.smootherType = geosx::LinearSolverParameters::AMG::SmootherType::fgs;
-  parameters.amg.coarseType = geosx::LinearSolverParameters::AMG::CoarseType::direct;
+  parameters.amg.smootherType = geos::LinearSolverParameters::AMG::SmootherType::sgs;
+  parameters.amg.coarseType = geos::LinearSolverParameters::AMG::CoarseType::direct;
   return parameters;
 }
 
@@ -150,7 +151,7 @@ protected:
   void SetUp() override
   {
     globalIndex constexpr n = 100;
-    geosx::testing::compute2DLaplaceOperator( MPI_COMM_GEOSX, n, this->matrix );
+    geos::testing::compute2DLaplaceOperator( MPI_COMM_GEOS, n, this->matrix );
 
     // Condition number for the Laplacian matrix estimate: 4 * n^2 / pi^2
     this->cond_est = 4.0 * n * n / std::pow( M_PI, 2 );
@@ -166,10 +167,12 @@ TYPED_TEST_P( SolverTestLaplace2D, DirectSerial )
   this->test( params );
 }
 
+#if !defined(GEOS_USE_CUDA) && !defined(GEOS_USE_HIP)
 TYPED_TEST_P( SolverTestLaplace2D, DirectParallel )
 {
   this->test( params_DirectParallel() );
 }
+#endif
 
 TYPED_TEST_P( SolverTestLaplace2D, GMRES_ILU )
 {
@@ -186,22 +189,30 @@ TYPED_TEST_P( SolverTestLaplace2D, CG_AMG )
   this->test( params_CG_AMG() );
 }
 
+#if defined(GEOS_USE_CUDA) || defined(GEOS_USE_HIP)
+REGISTER_TYPED_TEST_SUITE_P( SolverTestLaplace2D,
+                             DirectSerial,
+                             GMRES_ILU,
+                             CG_SGS,
+                             CG_AMG );
+#else
 REGISTER_TYPED_TEST_SUITE_P( SolverTestLaplace2D,
                              DirectSerial,
                              DirectParallel,
                              GMRES_ILU,
                              CG_SGS,
                              CG_AMG );
+#endif
 
-#ifdef GEOSX_USE_TRILINOS
+#ifdef GEOS_USE_TRILINOS
 INSTANTIATE_TYPED_TEST_SUITE_P( Trilinos, SolverTestLaplace2D, TrilinosInterface, );
 #endif
 
-#ifdef GEOSX_USE_HYPRE
+#ifdef GEOS_USE_HYPRE
 INSTANTIATE_TYPED_TEST_SUITE_P( Hypre, SolverTestLaplace2D, HypreInterface, );
 #endif
 
-#ifdef GEOSX_USE_PETSC
+#ifdef GEOS_USE_PETSC
 INSTANTIATE_TYPED_TEST_SUITE_P( Petsc, SolverTestLaplace2D, PetscInterface, );
 #endif
 
@@ -221,7 +232,7 @@ protected:
   void SetUp() override
   {
     globalIndex constexpr n = 100;
-    geosx::testing::compute2DElasticityOperator( MPI_COMM_GEOSX, 1.0, 1.0, n, n, 10000., 0.2, this->matrix );
+    geos::testing::compute2DElasticityOperator( MPI_COMM_GEOS, 1.0, 1.0, n, n, 10000., 0.2, this->matrix );
     this->cond_est = 1e4; // not a true condition number estimate, but enough to pass tests
   }
 };
@@ -233,10 +244,12 @@ TYPED_TEST_P( SolverTestElasticity2D, DirectSerial )
   this->test( params_DirectSerial() );
 }
 
+#if !defined(GEOS_USE_CUDA) && !defined(GEOS_USE_HIP)
 TYPED_TEST_P( SolverTestElasticity2D, DirectParallel )
 {
   this->test( params_DirectParallel() );
 }
+#endif
 
 TYPED_TEST_P( SolverTestElasticity2D, GMRES_AMG )
 {
@@ -246,25 +259,31 @@ TYPED_TEST_P( SolverTestElasticity2D, GMRES_AMG )
   this->test( params );
 }
 
+#if defined(GEOS_USE_CUDA) || defined(GEOS_USE_HIP)
+REGISTER_TYPED_TEST_SUITE_P( SolverTestElasticity2D,
+                             DirectSerial,
+                             GMRES_AMG );
+#else
 REGISTER_TYPED_TEST_SUITE_P( SolverTestElasticity2D,
                              DirectSerial,
                              DirectParallel,
                              GMRES_AMG );
+#endif
 
-#ifdef GEOSX_USE_TRILINOS
+#ifdef GEOS_USE_TRILINOS
 INSTANTIATE_TYPED_TEST_SUITE_P( Trilinos, SolverTestElasticity2D, TrilinosInterface, );
 #endif
 
-#ifdef GEOSX_USE_HYPRE
+#ifdef GEOS_USE_HYPRE
 INSTANTIATE_TYPED_TEST_SUITE_P( Hypre, SolverTestElasticity2D, HypreInterface, );
 #endif
 
-#ifdef GEOSX_USE_PETSC
+#ifdef GEOS_USE_PETSC
 INSTANTIATE_TYPED_TEST_SUITE_P( Petsc, SolverTestElasticity2D, PetscInterface, );
 #endif
 
 int main( int argc, char * * argv )
 {
-  geosx::testing::LinearAlgebraTestScope scope( argc, argv );
+  geos::testing::LinearAlgebraTestScope scope( argc, argv );
   return RUN_ALL_TESTS();
 }

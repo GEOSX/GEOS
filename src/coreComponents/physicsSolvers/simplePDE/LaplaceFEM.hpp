@@ -2,28 +2,29 @@
  * ------------------------------------------------------------------------------------------------------------
  * SPDX-License-Identifier: LGPL-2.1-only
  *
- * Copyright (c) 2018-2020 Lawrence Livermore National Security LLC
- * Copyright (c) 2018-2020 The Board of Trustees of the Leland Stanford Junior University
- * Copyright (c) 2018-2020 TotalEnergies
- * Copyright (c) 2019-     GEOSX Contributors
+ * Copyright (c) 2016-2024 Lawrence Livermore National Security LLC
+ * Copyright (c) 2018-2024 TotalEnergies
+ * Copyright (c) 2018-2024 The Board of Trustees of the Leland Stanford Junior University
+ * Copyright (c) 2023-2024 Chevron
+ * Copyright (c) 2019-     GEOS/GEOSX Contributors
  * All rights reserved
  *
  * See top level LICENSE, COPYRIGHT, CONTRIBUTORS, NOTICE, and ACKNOWLEDGEMENTS files for details.
  * ------------------------------------------------------------------------------------------------------------
  */
 
-#ifndef GEOSX_PHYSICSSOLVERS_SIMPLEPDE_LAPLACE_FEM_HPP_
-#define GEOSX_PHYSICSSOLVERS_SIMPLEPDE_LAPLACE_FEM_HPP_
+#ifndef GEOS_PHYSICSSOLVERS_SIMPLEPDE_LAPLACE_FEM_HPP_
+#define GEOS_PHYSICSSOLVERS_SIMPLEPDE_LAPLACE_FEM_HPP_
 
 #include "physicsSolvers/simplePDE/LaplaceBaseH1.hpp"  // a base class shared by all Laplace solvers
 
-namespace geosx
+namespace geos
 {
 
-// Like most physics solvers, the Laplace solver derives from a generic SolverBase class.
+// Like most physics solvers, the Laplace solver derives from a generic PhysicsSolverBase class.
 // The base class is densely Doxygen-commented and worth a look if you have not done so already.
 // Most important system assembly steps, linear and non-linear resolutions, and time-stepping mechanisms
-// are implemented at the SolverBase class level and can thus be used in Laplace without needing reimplementation.
+// are implemented at the PhysicsSolverBase class level and can thus be used in Laplace without needing reimplementation.
 
 //START_SPHINX_INCLUDE_BEGINCLASS
 class LaplaceFEM : public LaplaceBaseH1
@@ -43,6 +44,10 @@ public:
   /// "CatalogName()" return the string used as XML tag in the input file.  It ties the XML tag with
   /// this C++ classes. This is important.
   static string catalogName() { return "LaplaceFEM"; }
+  /**
+   * @copydoc PhysicsSolverBase::getCatalogName()
+   */
+  string getCatalogName() const override { return catalogName(); }
 
 //END_SPHINX_INCLUDE_BEGINCLASS
 // /**
@@ -74,6 +79,6 @@ public:
   /**@}*/
 
 };
-} /* namespace geosx */
+} /* namespace geos */
 
-#endif /* GEOSX_PHYSICSSOLVERS_SIMPLEPDE_LAPLACE_FEM_HPP_ */
+#endif /* GEOS_PHYSICSSOLVERS_SIMPLEPDE_LAPLACE_FEM_HPP_ */

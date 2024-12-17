@@ -1,0 +1,101 @@
+from geos.ats.test_builder import TestDeck, RestartcheckParameters, generate_geos_tests
+
+restartcheck_params = {'atol': 1e-07, 'rtol': 4e-06}
+
+decks = [
+    TestDeck(
+        name="SlipPermeability_pEDFM_smoke",
+        description='pEDFM slip dependent permeability case',
+        partitions=((1, 1, 1), (2, 2, 1)),
+        restart_step=0,
+        check_step=1,
+        restartcheck_params=RestartcheckParameters(**restartcheck_params)),
+    TestDeck(
+        name="WillisRichardsPermeability_efem-edfm_smoke",
+        description='WillisRichards Permeability model with EDFM',
+        partitions=((1, 1, 1), (2, 2, 1)),
+        restart_step=0,
+        check_step=5,
+        restartcheck_params=RestartcheckParameters(**restartcheck_params)),
+    TestDeck(
+        name="PoroElastic_conformingFracture_2d_openingFrac_horizontal_smoke",
+        description='PoroElastic conformingFracture 2d case',
+        partitions=((1, 1, 1), (2, 2, 1)),
+        restart_step=0,
+        check_step=10,
+        restartcheck_params=RestartcheckParameters(**restartcheck_params)),
+    TestDeck(
+        name="PoroElastic_conformingFracture_2d_openingFrac_horizontal_sequential_smoke",
+        description='PoroElastic conformingFracture 2d case (sequential)',
+        partitions=((1, 1, 1), (2, 2, 1)),
+        restart_step=0,
+        check_step=10,
+        restartcheck_params=RestartcheckParameters(**restartcheck_params)),
+    TestDeck(
+        name="PoroElastic_conformingFracture_2d_openingFrac_vertical_smoke",
+        description='PoroElastic conformingFracture 2d case',
+        partitions=((1, 1, 1), (2, 2, 1)),
+        restart_step=0,
+        check_step=10,
+        restartcheck_params=RestartcheckParameters(**restartcheck_params)),
+    TestDeck(
+        name="PoroElastic_conformingFracture_2d_openingFrac_vertical_sequential_smoke",
+        description='PoroElastic conformingFracture 2d case (sequential)',
+        partitions=((1, 1, 1), (2, 2, 1)),
+        restart_step=0,
+        check_step=10,
+        restartcheck_params=RestartcheckParameters(**restartcheck_params)),
+    TestDeck(
+        name="PoroElastic_efem-edfm_pressurizedFrac_smoke",
+        description='poromechanics efem-edfm pressurized vertical frac',
+        partitions=((1, 1, 1), (2, 2, 1)),
+        restart_step=0,
+        check_step=1,
+        restartcheck_params=RestartcheckParameters(**restartcheck_params)),
+    TestDeck(
+        name="PoroElastic_efem-edfm_verticalFrac_smoke",
+        description='poromechanics efem-edfm vertical frac',
+        partitions=((1, 1, 1), (2, 2, 1)),
+        restart_step=0,
+        check_step=1,
+        restartcheck_params=RestartcheckParameters(**restartcheck_params)),
+    TestDeck(
+        name="PoroElastic_efem-edfm_inclinedFrac_smoke",
+        description='poromechanics efem-edfm inclined frac',
+        partitions=((1, 1, 1), (2, 2, 1)),
+        restart_step=0,
+        check_step=1,
+        restartcheck_params=RestartcheckParameters(**restartcheck_params)),
+    TestDeck(
+        name="ExponentialDecayPermeability_edfm_smoke",
+        description='Exponential Decay Permeability model with EDFM',
+        partitions=((1, 1, 1), (2, 2, 1)),
+        restart_step=0,
+        check_step=5,
+        restartcheck_params=RestartcheckParameters(**restartcheck_params)),
+    TestDeck(name="ExponentialDecayPermeability_conformingFracture_smoke",
+             description=
+             'Exponential Decay Permeability model with conforming fracture',
+             partitions=((1, 1, 1), (2, 2, 1)),
+             restart_step=0,
+             check_step=12,
+             restartcheck_params=RestartcheckParameters(atol=1e-05,
+                                                        rtol=4e-04)),
+   TestDeck(
+        name="PoroElastic_dfm_PEBICrack_smoke",
+        description='Plane strain poro-elastic problems with conforming vertical fracture (unstructured PEBI grid)',
+        partitions=((1, 1, 1), (3, 1, 1)),
+        restart_step=5,
+        check_step=10,
+        restartcheck_params=RestartcheckParameters(**restartcheck_params)),
+    TestDeck(
+        name="singlePhasePoromechanics_FaultModel_smoke",
+        description='PoroElastic conformingFracture intialization with external mesh',
+        partitions=((1, 1, 1), (2, 2, 1)),
+        restart_step=0,
+        check_step=1,
+        restartcheck_params=RestartcheckParameters(atol=1e-05,
+                                                   rtol=1e-04))
+]
+
+generate_geos_tests(decks)

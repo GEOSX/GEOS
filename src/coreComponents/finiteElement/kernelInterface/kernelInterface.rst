@@ -18,7 +18,7 @@ There are several main components of the FEMKI:
    patterns, and call the ``launch`` function.
 
 #. The kernel interface, which is specified by the
-   `finiteElement::KernelBase <../../../../doxygen_output/html/classgeosx_1_1finite_element_1_1_implicit_kernel_base.html>`_ class.
+   `finiteElement::KernelBase <../../../doxygen_output/html/classgeos_1_1finite_element_1_1_implicit_kernel_base.html>`_ class.
    Each physics solver will define a class that contains its kernels functions,
    most likely deriving, or conforming to the API specified by the `KernelBase`
    class. Also part of this class will typically be a nested ``StackVariables``
@@ -27,15 +27,15 @@ There are several main components of the FEMKI:
 
 #. A ``launch`` function, which launches the kernel, and calls the kernel
    interface functions conforming to the interface defined by ``KernelBase``.
-   This function is actaully a member function of the ``Kernel`` class, so it
+   This function is actually a member function of the ``Kernel`` class, so it
    may be overridden by a specific physics kernel, allowing complete
-   customizationAn of the interface, while maintaining the usage of the
+   customization of the interface, while maintaining the usage of the
    looping patterns.
 
 A Generic Element Looping Pattern
 ---------------------------------
 One example of a looping pattern is the
-`regionBasedKernelApplication <../../../../doxygen_output/html/_kernel_base_8hpp.html#file_a22560f1fcca889307fdabb5fa7422c0d>`_
+`regionBasedKernelApplication <../../../doxygen_output/html/_kernel_base_8hpp.html#file_a22560f1fcca889307fdabb5fa7422c0d>`_
 function.
 
 The contents of the looping function are displayed here:
@@ -74,4 +74,4 @@ function are intended to provide a certain amount of modularity and flexibility
 for the physics implementations.
 The general purpose of each function is described by the function name, but may
 be further descibed by the function documentation found
-`here <../../../../doxygen_output/html/classgeosx_1_1finite_element_1_1_kernel_base.html>`_.
+`here <../../../doxygen_output/html/classgeos_1_1finite_element_1_1_kernel_base.html>`_.

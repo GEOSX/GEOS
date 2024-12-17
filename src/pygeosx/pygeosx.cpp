@@ -2,16 +2,16 @@
  * ------------------------------------------------------------------------------------------------------------
  * SPDX-License-Identifier: LGPL-2.1-only
  *
- * Copyright (c) 2018-2019 Lawrence Livermore National Security LLC
- * Copyright (c) 2018-2019 The Board of Trustees of the Leland Stanford Junior University
- * Copyright (c) 2018-2019 TotalEnergies
- * Copyright (c) 2019-     GEOSX Contributors
- * All right reserved
+ * Copyright (c) 2016-2024 Lawrence Livermore National Security LLC
+ * Copyright (c) 2018-2024 TotalEnergies
+ * Copyright (c) 2018-2024 The Board of Trustees of the Leland Stanford Junior University
+ * Copyright (c) 2023-2024 Chevron
+ * Copyright (c) 2019-     GEOS/GEOSX Contributors
+ * All rights reserved
  *
  * See top level LICENSE, COPYRIGHT, CONTRIBUTORS, NOTICE, and ACKNOWLEDGEMENTS files for details.
  * ------------------------------------------------------------------------------------------------------------
  */
-
 
 // Python.h must be included first.
 #define PY_SSIZE_T_CLEAN
@@ -37,7 +37,7 @@
 #include <chrono>
 
 
-namespace geosx
+namespace geos
 {
 
 std::unique_ptr< GeosxState > g_state;
@@ -88,7 +88,7 @@ PyObject * init( PyObject * const pyArgv, bool const performSetup, long const py
     g_alreadyInitialized = true;
 
     // Verify that the ranks match, there is no recovering from this if incorrect.
-    GEOSX_ERROR_IF_NE( pythonMPIRank, MpiWrapper::commRank() );
+    GEOS_ERROR_IF_NE( pythonMPIRank, MpiWrapper::commRank() );
   }
 
   try
@@ -135,7 +135,7 @@ static constexpr char const * initializeDocString =
   "    The ProblemManager.";
 PyObject * initialize( PyObject * self, PyObject * args ) noexcept
 {
-  GEOSX_UNUSED_VAR( self );
+  GEOS_UNUSED_VAR( self );
 
   PYTHON_ERROR_IF( g_alreadyInitialized, PyExc_RuntimeError, "You have already called initialize, call reinitialize.", nullptr );
 
@@ -165,7 +165,7 @@ static constexpr char const * reinitDocString =
   "    The ProblemManager.";
 PyObject * reinit( PyObject * self, PyObject * args ) noexcept
 {
-  GEOSX_UNUSED_VAR( self );
+  GEOS_UNUSED_VAR( self );
 
   PyObject * list;
   if( !PyArg_ParseTuple( args, "O", &list ) )
@@ -186,7 +186,7 @@ static constexpr char const * applyInitialConditionsDocString =
   "None\n";
 PyObject * applyInitialConditions( PyObject * self, PyObject * args ) noexcept
 {
-  GEOSX_UNUSED_VAR( self, args );
+  GEOS_UNUSED_VAR( self, args );
 
   PYTHON_ERROR_IF( g_state == nullptr, PyExc_RuntimeError, "state must be initialized", nullptr );
 
@@ -215,7 +215,7 @@ static constexpr char const * runDocString =
   "simulation still has steps left to run the value is ``READY_TO_RUN``.";
 PyObject * run( PyObject * self, PyObject * args ) noexcept
 {
-  GEOSX_UNUSED_VAR( self, args );
+  GEOS_UNUSED_VAR( self, args );
 
   PYTHON_ERROR_IF( g_state == nullptr, PyExc_RuntimeError, "state must be initialized", nullptr );
 
@@ -232,6 +232,27 @@ PyObject * run( PyObject * self, PyObject * args ) noexcept
   return PyLong_FromLong( static_cast< int >( g_state->getState() ) );
 }
 
+static constexpr char const * getStateDocString =
+  "getState()\n"
+  "--\n\n"
+  "_______\n"
+  "int\n"
+  "    Return the state of GEOS. 0 : UNINITIALIZED, 1 : INITIALIZED, 2 : READY_TO_RUN, 3 : COMPLETED";
+
+PyObject * getState( PyObject * self, PyObject * args ) noexcept
+{
+  GEOS_UNUSED_VAR( self, args );
+
+  if( g_state == nullptr )
+  {
+    return PyLong_FromLong( 0 );
+  }
+  else
+  {
+    return PyLong_FromLong( static_cast< int >( g_state->getState() ) );
+  }
+}
+
 static constexpr char const * finalizeDocString =
   "_finalize()\n"
   "--\n\n"
@@ -242,7 +263,7 @@ static constexpr char const * finalizeDocString =
   "None\n";
 PyObject * finalize( PyObject * self, PyObject * args ) noexcept
 {
-  GEOSX_UNUSED_VAR( self, args );
+  GEOS_UNUSED_VAR( self, args );
 
   if( g_state == nullptr )
   {
@@ -254,20 +275,20 @@ PyObject * finalize( PyObject * self, PyObject * args ) noexcept
   Py_RETURN_NONE;
 }
 
-} // namespace geosx
+} // namespace geos
 
 
 /**
- * Add geosx::State enums to the given module. Return the module, or nullptr on failure
+ * Add geos::State enums to the given module. Return the module, or nullptr on failure
  */
 
 static bool addConstants( PyObject * module )
 {
   std::array< std::pair< long, char const * >, 4 > const constants = { {
-    { static_cast< long >( geosx::State::COMPLETED ), "COMPLETED" },
-    { static_cast< long >( geosx::State::INITIALIZED ), "INITIALIZED" },
-    { static_cast< long >( geosx::State::UNINITIALIZED ), "UNINITIALIZED" },
-    { static_cast< long >( geosx::State::READY_TO_RUN ), "READY_TO_RUN" }
+    { static_cast< long >( geos::State::COMPLETED ), "COMPLETED" },
+    { static_cast< long >( geos::State::INITIALIZED ), "INITIALIZED" },
+    { static_cast< long >( geos::State::UNINITIALIZED ), "UNINITIALIZED" },
+    { static_cast< long >( geos::State::READY_TO_RUN ), "READY_TO_RUN" }
   } };
 
   for( std::pair< long, char const * > const & pair : constants )
@@ -323,11 +344,12 @@ BEGIN_ALLOW_DESIGNATED_INITIALIZERS
  */
 
 static PyMethodDef pygeosxFuncs[] = {
-  { "initialize", geosx::initialize, METH_VARARGS, geosx::initializeDocString },
-  { "reinit", geosx::reinit, METH_VARARGS, geosx::reinitDocString },
-  { "apply_initial_conditions", geosx::applyInitialConditions, METH_NOARGS, geosx::applyInitialConditionsDocString },
-  { "run", geosx::run, METH_NOARGS, geosx::runDocString },
-  { "_finalize", geosx::finalize, METH_NOARGS, geosx::finalizeDocString },
+  { "initialize", geos::initialize, METH_VARARGS, geos::initializeDocString },
+  { "reinit", geos::reinit, METH_VARARGS, geos::reinitDocString },
+  { "apply_initial_conditions", geos::applyInitialConditions, METH_NOARGS, geos::applyInitialConditionsDocString },
+  { "run", geos::run, METH_NOARGS, geos::runDocString },
+  { "getState", geos::getState, METH_NOARGS, geos::getStateDocString },
+  { "_finalize", geos::finalize, METH_NOARGS, geos::finalizeDocString },
   { nullptr, nullptr, 0, nullptr }        /* Sentinel */
 };
 
@@ -378,32 +400,32 @@ PyInit_pygeosx()
     return nullptr;
   }
 
-  if( !LvArray::python::addTypeToModule( module, geosx::python::getPyGroupType(), "Group" ) )
+  if( !LvArray::python::addTypeToModule( module, geos::python::getPyGroupType(), "Group" ) )
   {
     return nullptr;
   }
 
-  if( !LvArray::python::addTypeToModule( module, geosx::python::getPyWrapperType(), "Wrapper" ) )
+  if( !LvArray::python::addTypeToModule( module, geos::python::getPyWrapperType(), "Wrapper" ) )
   {
     return nullptr;
   }
 
-  if( !LvArray::python::addTypeToModule( module, geosx::python::getPySolverType(), "Solver" ) )
+  if( !LvArray::python::addTypeToModule( module, geos::python::getPySolverType(), "Solver" ) )
   {
     return nullptr;
   }
 
-  if( !LvArray::python::addTypeToModule( module, geosx::python::getPyHistoryCollectionType(), "HistoryCollection" ) )
+  if( !LvArray::python::addTypeToModule( module, geos::python::getPyHistoryCollectionType(), "HistoryCollection" ) )
   {
     return nullptr;
   }
 
-  if( !LvArray::python::addTypeToModule( module, geosx::python::getPyHistoryOutputType(), "HistoryOutput" ) )
+  if( !LvArray::python::addTypeToModule( module, geos::python::getPyHistoryOutputType(), "HistoryOutput" ) )
   {
     return nullptr;
   }
 
-  if( !LvArray::python::addTypeToModule( module, geosx::python::getPyVTKOutputType(), "VTKOutput" ) )
+  if( !LvArray::python::addTypeToModule( module, geos::python::getPyVTKOutputType(), "VTKOutput" ) )
   {
     return nullptr;
   }

@@ -2,10 +2,11 @@
  * ------------------------------------------------------------------------------------------------------------
  * SPDX-License-Identifier: LGPL-2.1-only
  *
- * Copyright (c) 2018-2020 Lawrence Livermore National Security LLC
- * Copyright (c) 2018-2020 The Board of Trustees of the Leland Stanford Junior University
- * Copyright (c) 2018-2020 TotalEnergies
- * Copyright (c) 2019-     GEOSX Contributors
+ * Copyright (c) 2016-2024 Lawrence Livermore National Security LLC
+ * Copyright (c) 2018-2024 TotalEnergies
+ * Copyright (c) 2018-2024 The Board of Trustees of the Leland Stanford Junior University
+ * Copyright (c) 2023-2024 Chevron
+ * Copyright (c) 2019-     GEOS/GEOSX Contributors
  * All rights reserved
  *
  * See top level LICENSE, COPYRIGHT, CONTRIBUTORS, NOTICE, and ACKNOWLEDGEMENTS files for details.
@@ -16,15 +17,17 @@
  * @file TableFunction.hpp
  */
 
-#ifndef GEOSX_FUNCTIONS_TABLEFUNCTION_HPP_
-#define GEOSX_FUNCTIONS_TABLEFUNCTION_HPP_
+#ifndef GEOS_FUNCTIONS_TABLEFUNCTION_HPP_
+#define GEOS_FUNCTIONS_TABLEFUNCTION_HPP_
 
 #include "FunctionBase.hpp"
 
-#include "codingUtilities/EnumStrings.hpp"
+#include "common/format/EnumStrings.hpp"
 #include "LvArray/src/tensorOps.hpp"
+#include "common/format/table/TableFormatter.hpp"
+#include "common/Units.hpp"
 
-namespace geosx
+namespace geos
 {
 
 /**
@@ -43,6 +46,15 @@ public:
     Nearest,
     Upper,
     Lower
+  };
+
+  /// Struct containing output options
+  struct OutputOptions
+  {
+    /// Output PVT in CSV file
+    bool writeCSV;
+    /// Output PVT in log
+    bool writeInLog;
   };
 
   /// maximum dimensions for the coordinates in the table
@@ -85,7 +97,7 @@ public:
      * @return interpolated value
      */
     template< typename IN_ARRAY >
-    GEOSX_HOST_DEVICE
+    GEOS_HOST_DEVICE
     real64 compute( IN_ARRAY const & input ) const;
 
     /**
@@ -95,7 +107,7 @@ public:
      * @return interpolated value
      */
     template< typename IN_ARRAY, typename OUT_ARRAY >
-    GEOSX_HOST_DEVICE
+    GEOS_HOST_DEVICE
     real64 compute( IN_ARRAY const & input, OUT_ARRAY && derivatives ) const;
 
     /**
@@ -136,7 +148,7 @@ private:
      * @return interpolated value
      */
     template< typename IN_ARRAY >
-    GEOSX_HOST_DEVICE
+    GEOS_HOST_DEVICE
     real64
     interpolateLinear( IN_ARRAY const & input ) const;
 
@@ -147,7 +159,7 @@ private:
      * @return interpolated value
      */
     template< typename IN_ARRAY, typename OUT_ARRAY >
-    GEOSX_HOST_DEVICE
+    GEOS_HOST_DEVICE
     real64
     interpolateLinear( IN_ARRAY const & input, OUT_ARRAY && derivatives ) const;
 
@@ -157,7 +169,7 @@ private:
      * @return interpolated value
      */
     template< typename IN_ARRAY >
-    GEOSX_HOST_DEVICE
+    GEOS_HOST_DEVICE
     real64
     interpolateRound( IN_ARRAY const & input ) const;
 
@@ -168,7 +180,7 @@ private:
      * @return interpolated value
      */
     template< typename IN_ARRAY, typename OUT_ARRAY >
-    GEOSX_HOST_DEVICE
+    GEOS_HOST_DEVICE
     real64
     interpolateRound( IN_ARRAY const & input, OUT_ARRAY && derivatives ) const;
 
@@ -229,6 +241,15 @@ private:
   virtual real64 evaluate( real64 const * const input ) const override final;
 
   /**
+   * @brief Check if the given coordinate is in the bounds of the table coordinates in the
+   * specified dimension, throw an exception otherwise.
+   * @param coord the coordinate in the 'dim' dimension that must be checked
+   * @param dim the dimension in which the coordinate must be checked
+   * @throw SimulationError if the value is out of the coordinates bounds.
+   */
+  void checkCoord( real64 coord, localIndex dim ) const;
+
+  /**
    * @brief @return Number of table dimensions
    */
   integer numDimensions() const { return LvArray::integerConversion< integer >( m_coordinates.size() ); }
@@ -262,6 +283,15 @@ private:
   InterpolationType getInterpolationMethod() const { return m_interpolationMethod; }
 
   /**
+   * @param dim The coordinate dimension (= axe) we want the Unit.
+   * @return The unit of a coordinate dimension, or units::Unknown if no units has been specified.
+   */
+  units::Unit getDimUnit( localIndex const dim ) const
+  {
+    return size_t(dim) < m_dimUnits.size() ? m_dimUnits[dim] : units::Unknown;
+  }
+
+  /**
    * @brief Set the interpolation method
    * @param method The interpolation method
    */
@@ -270,14 +300,47 @@ private:
   /**
    * @brief Set the table coordinates
    * @param coordinates An array of arrays containing table coordinate definitions
+   * @param dimUnits The units of each dimension of the coordinates, in the same order
    */
-  void setTableCoordinates( array1d< real64_array > const & coordinates );
+  void setTableCoordinates( array1d< real64_array > const & coordinates,
+                            std::vector< units::Unit > const & dimUnits = {} );
+
+  /**
+   * @brief Set the units of each dimension
+   * @param dimUnits The units of each dimension
+   */
+  void setDimUnits( std::vector< units::Unit > const & dimUnits )
+  {
+    m_dimUnits = dimUnits;
+  }
 
   /**
    * @brief Set the table values
    * @param values An array of table values in fortran order
+   * @param unit The unit of the given values
    */
-  void setTableValues( real64_array values );
+  void setTableValues( real64_array values, units::Unit unit = units::Unknown );
+
+  /**
+   * @brief Set the table value units
+   * @param unit The unit of the values
+   */
+  void setValueUnits( units::Unit unit )
+  {
+    m_valueUnit = unit;
+  }
+
+/**
+ * @return The table unit
+ */
+  units::Unit getValueUnit() const { return m_valueUnit; }
+
+
+  /**
+   * @brief Print the table(s) in the log and/or CSV files when requested by the user.
+   * @param pvtOutputOpts Struct containing output options
+   */
+  void outputPVTTableData( OutputOptions const pvtOutputOpts ) const;
 
   /**
    * @brief Create an instance of the kernel wrapper
@@ -310,6 +373,7 @@ private:
    */
   void readFile( string const & filename, array1d< real64 > & target );
 
+
   /// Coordinates for 1D table
   array1d< real64 > m_tableCoordinates1D;
 
@@ -328,13 +392,20 @@ private:
   /// Table values (in fortran order)
   array1d< real64 > m_values;
 
+  /// The units of each table coordinate axes
+  std::vector< units::Unit > m_dimUnits;
+
+  /// The unit of the table values
+  units::Unit m_valueUnit;
+
   /// Kernel wrapper object used in evaluate() interface
   KernelWrapper m_kernelWrapper;
 
 };
-
+/// @cond DO_NOT_DOCUMENT
 template< typename IN_ARRAY >
-GEOSX_HOST_DEVICE
+GEOS_HOST_DEVICE
+GEOS_FORCE_INLINE
 real64
 TableFunction::KernelWrapper::compute( IN_ARRAY const & input ) const
 {
@@ -349,7 +420,8 @@ TableFunction::KernelWrapper::compute( IN_ARRAY const & input ) const
 }
 
 template< typename IN_ARRAY >
-GEOSX_HOST_DEVICE
+GEOS_HOST_DEVICE
+GEOS_FORCE_INLINE
 real64
 TableFunction::KernelWrapper::interpolateLinear( IN_ARRAY const & input ) const
 {
@@ -421,7 +493,8 @@ TableFunction::KernelWrapper::interpolateLinear( IN_ARRAY const & input ) const
 }
 
 template< typename IN_ARRAY >
-GEOSX_HOST_DEVICE
+GEOS_HOST_DEVICE
+GEOS_FORCE_INLINE
 real64
 TableFunction::KernelWrapper::interpolateRound( IN_ARRAY const & input ) const
 {
@@ -482,7 +555,8 @@ TableFunction::KernelWrapper::interpolateRound( IN_ARRAY const & input ) const
 }
 
 template< typename IN_ARRAY, typename OUT_ARRAY >
-GEOSX_HOST_DEVICE
+GEOS_HOST_DEVICE
+GEOS_FORCE_INLINE
 real64
 TableFunction::KernelWrapper::compute( IN_ARRAY const & input, OUT_ARRAY && derivatives ) const
 {
@@ -499,7 +573,8 @@ TableFunction::KernelWrapper::compute( IN_ARRAY const & input, OUT_ARRAY && deri
 }
 
 template< typename IN_ARRAY, typename OUT_ARRAY >
-GEOSX_HOST_DEVICE
+GEOS_HOST_DEVICE
+GEOS_FORCE_INLINE
 real64
 TableFunction::KernelWrapper::interpolateLinear( IN_ARRAY const & input, OUT_ARRAY && derivatives ) const
 {
@@ -599,14 +674,17 @@ TableFunction::KernelWrapper::interpolateLinear( IN_ARRAY const & input, OUT_ARR
 }
 
 template< typename IN_ARRAY, typename OUT_ARRAY >
-GEOSX_HOST_DEVICE
+GEOS_HOST_DEVICE
+GEOS_FORCE_INLINE
 real64
 TableFunction::KernelWrapper::interpolateRound( IN_ARRAY const & input, OUT_ARRAY && derivatives ) const
 {
-  GEOSX_UNUSED_VAR( input, derivatives );
-  GEOSX_ERROR( "Rounding interpolation with derivatives not implemented" );
+  GEOS_UNUSED_VAR( input, derivatives );
+  GEOS_ERROR( "Rounding interpolation with derivatives not implemented" );
   return 0.0;
 }
+
+/// @endcond
 
 /// Declare strings associated with enumeration values.
 ENUM_STRINGS( TableFunction::InterpolationType,
@@ -615,6 +693,22 @@ ENUM_STRINGS( TableFunction::InterpolationType,
               "upper",
               "lower" );
 
-} /* namespace geosx */
+/**
+ * @brief Template specialisation to convert a TableFunction to a CSV string.
+ * @param tableData The TableFunction object to convert.
+ * @return The CSV string representation of the TableFunction.
+ */
+template<>
+string TableTextFormatter::toString< TableFunction >( TableFunction const & tableData ) const;
 
-#endif /* GEOSX_FUNCTIONS_TABLEFUNCTION_HPP_ */
+/**
+ * @brief Template specialisation to convert a TableFunction to a table string.
+ * @param tableData The TableFunction object to convert.
+ * @return The table string representation of the TableFunction.
+ */
+template<>
+string TableCSVFormatter::toString< TableFunction >( TableFunction const & tableData ) const;
+
+} /* namespace geos */
+
+#endif /* GEOS_FUNCTIONS_TABLEFUNCTION_HPP_ */

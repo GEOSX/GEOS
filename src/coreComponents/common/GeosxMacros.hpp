@@ -2,10 +2,11 @@
  * ------------------------------------------------------------------------------------------------------------
  * SPDX-License-Identifier: LGPL-2.1-only
  *
- * Copyright (c) 2018-2020 Lawrence Livermore National Security LLC
- * Copyright (c) 2018-2020 The Board of Trustees of the Leland Stanford Junior University
- * Copyright (c) 2018-2020 TotalEnergies
- * Copyright (c) 2019-     GEOSX Contributors
+ * Copyright (c) 2016-2024 Lawrence Livermore National Security LLC
+ * Copyright (c) 2018-2024 TotalEnergies
+ * Copyright (c) 2018-2024 The Board of Trustees of the Leland Stanford Junior University
+ * Copyright (c) 2023-2024 Chevron
+ * Copyright (c) 2019-     GEOS/GEOSX Contributors
  * All rights reserved
  *
  * See top level LICENSE, COPYRIGHT, CONTRIBUTORS, NOTICE, and ACKNOWLEDGEMENTS files for details.
@@ -21,8 +22,8 @@
 #include "common/GeosxConfig.hpp"
 #include "LvArray/src/Macros.hpp"
 
-#ifndef GEOSX_COMMON_GEOSXMACROS_HPP_
-#define GEOSX_COMMON_GEOSXMACROS_HPP_
+#ifndef GEOS_COMMON_GEOSXMACROS_HPP_
+#define GEOS_COMMON_GEOSXMACROS_HPP_
 
 /**
  * @name Host-device markers
@@ -33,23 +34,28 @@
  */
 ///@{
 
-#if defined(__CUDACC__)
-#define GEOSX_HOST __host__
-#define GEOSX_DEVICE __device__
-#define GEOSX_HOST_DEVICE __host__ __device__
-#define GEOSX_FORCE_INLINE __forceinline__
+#if defined(GEOS_USE_DEVICE)
+#define GEOS_HOST __host__
+#define GEOS_DEVICE __device__
+#define GEOS_HOST_DEVICE __host__ __device__
+#define GEOS_FORCE_INLINE __forceinline__
 #define PRAGMA_UNROLL _Pragma("unroll")
 #else
 /// Marks a host-only function.
-#define GEOSX_HOST
+#define GEOS_HOST
 /// Marks a device-only function.
-#define GEOSX_DEVICE
+#define GEOS_DEVICE
 /// Marks a host-device function.
-#define GEOSX_HOST_DEVICE
+#define GEOS_HOST_DEVICE
 /// Marks a function or lambda for inlining
-#define GEOSX_FORCE_INLINE inline
+#define GEOS_FORCE_INLINE inline
 /// Compiler directive specifying to unroll the loop.
 #define PRAGMA_UNROLL
+#endif
+
+#if defined(__CUDA_ARCH__) || defined(__HIP_DEVICE_COMPILE__)
+/// Macro defined when currently compiling on device (only defined in the device context).
+#define GEOS_DEVICE_COMPILE
 #endif
 
 ///@}
@@ -63,7 +69,7 @@
 ///@{
 
 /// Mark an unused argument and silence compiler warnings.
-#define GEOSX_UNUSED_PARAM( X )
+#define GEOS_UNUSED_PARAM( X )
 
 /**
  * @brief Used to silence unused variable warnings, cuda doesn't respect casting to void.
@@ -71,18 +77,18 @@
  * @param ...
  */
 template< typename ... ARGS >
-GEOSX_HOST_DEVICE inline constexpr
+GEOS_HOST_DEVICE inline constexpr
 void i_g_n_o_r_e( ARGS const & ... ) {}
 
 /// Mark an unused variable and silence compiler warnings.
-#define GEOSX_UNUSED_VAR( ... ) i_g_n_o_r_e( __VA_ARGS__ )
+#define GEOS_UNUSED_VAR( ... ) i_g_n_o_r_e( __VA_ARGS__ )
 
 /// Mark a debug variable and silence compiler warnings.
-#define GEOSX_DEBUG_VAR( ... ) GEOSX_UNUSED_VAR( __VA_ARGS__ )
+#define GEOS_DEBUG_VAR( ... ) GEOS_UNUSED_VAR( __VA_ARGS__ )
 
 ///@}
 
-#if defined(GEOSX_USE_OPENMP)
+#if defined(GEOS_USE_OPENMP)
 /// Wrap a pragma clause in the _Pragma statement. We seek to make this include the omp portion of the clause.
 #define PRAGMA_OMP( clause ) _Pragma( clause )
 //  #define PRAGMA_OMP( clause ) _Pragma( STRINGIZE( omp clause ) )
@@ -92,18 +98,39 @@ void i_g_n_o_r_e( ARGS const & ... ) {}
 #endif
 
 /// preprocessor variable for the C99 restrict keyword for use with pointers
-#define GEOSX_RESTRICT LVARRAY_RESTRICT
+#define GEOS_RESTRICT LVARRAY_RESTRICT
 
 /// preprocessor variable for the C99 restrict keyword for use with the "this" pointer
-#define GEOSX_RESTRICT_THIS LVARRAY_RESTRICT_THIS
+#define GEOS_RESTRICT_THIS LVARRAY_RESTRICT_THIS
 
 /// Doxygen can't parse a `decltype( auto )` return type, using this gets around that.
-#define GEOSX_DECLTYPE_AUTO_RETURN decltype( auto )
+#define GEOS_DECLTYPE_AUTO_RETURN decltype( auto )
 
 /// Macro to concatenate two tokens (low level)
-#define GEOSX_CONCAT_IMPL( A, B ) A ## B
+#define GEOS_CONCAT_IMPL( A, B ) A ## B
 
 /// Macro to concatenate two tokens (user level)
-#define GEOSX_CONCAT( A, B ) GEOSX_CONCAT_IMPL( A, B )
+#define GEOS_CONCAT( A, B ) GEOS_CONCAT_IMPL( A, B )
 
-#endif // GEOSX_COMMON_GEOSXMACROS_HPP_
+/**
+ * @brief [[maybe_unused]] when >= C++17, or compiler-specific implementations
+ *        when < C++17
+ */
+#if __cplusplus >= 201703L
+#define GEOS_MAYBE_UNUSED [[maybe_unused]]
+#else
+// If not C++17 or later, check the compiler.
+    #ifdef _MSC_VER
+// Microsoft Visual Studio
+#define GEOS_MAYBE_UNUSED __pragma(warning(suppress: 4100))
+    #elif defined(__GNUC__) || defined(__clang__)
+// GCC or Clang
+#define GEOS_MAYBE_UNUSED __attribute__((unused))
+    #else
+// If the compiler is unknown, we can't suppress the warning,
+// so we define GEOS_MAYBE_UNUSED as an empty macro.
+#define GEOS_MAYBE_UNUSED
+    #endif
+#endif
+
+#endif // GEOS_COMMON_GEOSXMACROS_HPP_

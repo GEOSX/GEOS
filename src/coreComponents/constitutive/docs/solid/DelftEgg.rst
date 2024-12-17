@@ -13,7 +13,7 @@ The `Delft-Egg  <https://link.springer.com/chapter/10.1007%2F978-94-011-1046-4_1
 
 where :math:`\alpha \geq 1` is the shape parameter. For :math:`\alpha = 1`, this model leads to a Modified Cam-Clay (MCC) type model with an ellipsoidal yield surface. For :math:`\alpha > 1`, an egg-shaped yield surface is obtained.  The additional parameter makes it easier to fit the cap behavior of a broader range of soils and rocks. 
 
-Because Delft-Egg is frequently used for hard rocks, GEOSX uses a linear model for the elastic response, rather than the hyper-elastic model used for MCC.  This is a slight deviation from the original formulation proposed in the reference above.  For reservoir applications, the ability to use a simpler linear model was a frequent user request.
+Because Delft-Egg is frequently used for hard rocks, GEOS uses a linear model for the elastic response, rather than the hyper-elastic model used for MCC.  This is a slight deviation from the original formulation proposed in the reference above.  For reservoir applications, the ability to use a simpler linear model was a frequent user request.
 
 Parameters
 ~~~~~~~~~~~~~~~~~~~~

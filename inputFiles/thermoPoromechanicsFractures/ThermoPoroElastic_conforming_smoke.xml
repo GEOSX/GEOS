@@ -1,0 +1,54 @@
+<?xml version="1.0" ?>
+
+<Problem>
+  <Included>
+    <File
+      name="./ThermoPoroElastic_conforming_base.xml"/>
+  </Included>
+
+  <Mesh>
+    <InternalMesh
+      name="mesh1"
+      elementTypes="{ C3D8 }"
+      xCoords="{ 0, 20 }"
+      yCoords="{ 0, 20 }"
+      zCoords="{ 0, 1 }"
+      nx="{ 10 }"
+      ny="{ 11 }"
+      nz="{ 2 }"
+      cellBlockNames="{ cb1 }"/>
+  </Mesh>
+
+  <Geometry>
+    <Box
+      name="fracture"
+      xMin="{ 9.5, -0.01, -0.01 }"
+      xMax="{ 10.5, 20.01, 1.01 }"/>
+  </Geometry>
+
+  <Events
+    maxTime="1.0e6">
+    <SoloEvent
+      name="preFracture"
+      target="/Solvers/SurfaceGenerator"/>
+
+    <SoloEvent
+      name="preFracPlot"
+      target="/Outputs/vtkOutput"/>
+
+    <PeriodicEvent
+      name="outputs"
+      cycleFrequency="1"
+      target="/Outputs/vtkOutput"/>
+
+    <PeriodicEvent
+      name="solverApplication0"
+      forceDt="1.0e5"
+      target="/Solvers/poroSolver"/>
+
+    <PeriodicEvent
+      name="restarts"
+      timeFrequency="5.0e5"
+      target="/Outputs/restartOutput"/>
+  </Events>
+</Problem>

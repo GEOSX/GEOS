@@ -2,18 +2,19 @@
  * ------------------------------------------------------------------------------------------------------------
  * SPDX-License-Identifier: LGPL-2.1-only
  *
- * Copyright (c) 2018-2020 Lawrence Livermore National Security LLC
- * Copyright (c) 2018-2020 The Board of Trustees of the Leland Stanford Junior University
- * Copyright (c) 2018-2020 TotalEnergies
- * Copyright (c) 2019-     GEOSX Contributors
+ * Copyright (c) 2016-2024 Lawrence Livermore National Security LLC
+ * Copyright (c) 2018-2024 TotalEnergies
+ * Copyright (c) 2018-2024 The Board of Trustees of the Leland Stanford Junior University
+ * Copyright (c) 2023-2024 Chevron
+ * Copyright (c) 2019-     GEOS/GEOSX Contributors
  * All rights reserved
  *
  * See top level LICENSE, COPYRIGHT, CONTRIBUTORS, NOTICE, and ACKNOWLEDGEMENTS files for details.
  * ------------------------------------------------------------------------------------------------------------
  */
 
-#ifndef GEOSX_MESH_UTILITIES_STRUCTUREDGRIDUTILITIES_HPP
-#define GEOSX_MESH_UTILITIES_STRUCTUREDGRIDUTILITIES_HPP
+#ifndef GEOS_MESH_UTILITIES_STRUCTUREDGRIDUTILITIES_HPP
+#define GEOS_MESH_UTILITIES_STRUCTUREDGRIDUTILITIES_HPP
 
 /**
  * @file StructuredGridUtilities.hpp
@@ -60,8 +61,8 @@ void map_index< 1 >( const int index,
                      const int nnx,
                      std::vector< int > & indices )
 {
-  GEOSX_ASSERT_GT( nnx, index );
-  GEOSX_DEBUG_VAR( nnx );
+  GEOS_ASSERT_GT( nnx, index );
+  GEOS_DEBUG_VAR( nnx );
   indices[0] = index;
 }
 
@@ -71,7 +72,7 @@ void map_index< 2 >( const int index,
                      const int nnx,
                      std::vector< int > & indices )
 {
-  GEOSX_ASSERT_GT( nnx*nnx, index );
+  GEOS_ASSERT_GT( nnx*nnx, index );
   indices[0] = index % nnx;
   indices[1] = index / nnx;
 }
@@ -82,7 +83,7 @@ void map_index< 3 >( const int index,
                      const int nnx,
                      std::vector< int > & indices )
 {
-  GEOSX_ASSERT_GT( nnx*nnx*nnx, index );
+  GEOS_ASSERT_GT( nnx*nnx*nnx, index );
   indices[0] = index % nnx;
   indices[1] = (index / nnx) % nnx;
   indices[2] = index / (nnx*nnx);
@@ -92,4 +93,4 @@ void map_index< 3 >( const int index,
 
 } /* namespace structuredGrid */
 
-#endif /* GEOSX_MESH_UTILITIES_STRUCTUREDGRIDUTILITIES_HPP */
+#endif /* GEOS_MESH_UTILITIES_STRUCTUREDGRIDUTILITIES_HPP */

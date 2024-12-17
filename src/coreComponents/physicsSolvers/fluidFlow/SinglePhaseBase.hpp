@@ -2,10 +2,11 @@
  * ------------------------------------------------------------------------------------------------------------
  * SPDX-License-Identifier: LGPL-2.1-only
  *
- * Copyright (c) 2018-2020 Lawrence Livermore National Security LLC
- * Copyright (c) 2018-2020 The Board of Trustees of the Leland Stanford Junior University
- * Copyright (c) 2018-2020 TotalEnergies
- * Copyright (c) 2019-     GEOSX Contributors
+ * Copyright (c) 2016-2024 Lawrence Livermore National Security LLC
+ * Copyright (c) 2018-2024 TotalEnergies
+ * Copyright (c) 2018-2024 The Board of Trustees of the Leland Stanford Junior University
+ * Copyright (c) 2023-2024 Chevron
+ * Copyright (c) 2019-     GEOS/GEOSX Contributors
  * All rights reserved
  *
  * See top level LICENSE, COPYRIGHT, CONTRIBUTORS, NOTICE, and ACKNOWLEDGEMENTS files for details.
@@ -16,14 +17,17 @@
  * @file SinglePhaseBase.hpp
  */
 
-#ifndef GEOSX_PHYSICSSOLVERS_FLUIDFLOW_SINGLEPHASEBASE_HPP_
-#define GEOSX_PHYSICSSOLVERS_FLUIDFLOW_SINGLEPHASEBASE_HPP_
+#ifndef GEOS_PHYSICSSOLVERS_FLUIDFLOW_SINGLEPHASEBASE_HPP_
+#define GEOS_PHYSICSSOLVERS_FLUIDFLOW_SINGLEPHASEBASE_HPP_
 
 #include "physicsSolvers/fluidFlow/FlowSolverBase.hpp"
-#include "physicsSolvers/fluidFlow/SinglePhaseBaseKernels.hpp"
-#include "physicsSolvers/fluidFlow/ThermalSinglePhaseBaseKernels.hpp"
+#include "physicsSolvers/fluidFlow/kernels/singlePhase/AccumulationKernels.hpp"
+#include "physicsSolvers/fluidFlow/kernels/singlePhase/ThermalAccumulationKernels.hpp"
+#include "constitutive/fluid/singlefluid/SingleFluidBase.hpp"
+#include "constitutive/solid/CoupledSolidBase.hpp"
 
-namespace geosx
+
+namespace geos
 {
 
 namespace constitutive
@@ -72,19 +76,6 @@ public:
 
   virtual void registerDataOnMesh( Group & meshBodies ) override;
 
-  virtual void setupSystem( DomainPartition & domain,
-                            DofManager & dofManager,
-                            CRSMatrix< real64, globalIndex > & localMatrix,
-                            ParallelVector & rhs,
-                            ParallelVector & solution,
-                            bool const setSparsity = true ) override;
-
-  virtual real64
-  solverStep( real64 const & time_n,
-              real64 const & dt,
-              integer const cycleNumber,
-              DomainPartition & domain ) override;
-
   /**
    * @defgroup Solver Interface Functions
    *
@@ -113,6 +104,17 @@ public:
                            CRSMatrixView< real64, globalIndex const > const & localMatrix,
                            arrayView1d< real64 > const & localRhs ) override;
 
+  virtual real64
+  scalingForSystemSolution( DomainPartition & domain,
+                            DofManager const & dofManager,
+                            arrayView1d< real64 const > const & localSolution ) override;
+
+  virtual bool
+  checkSystemSolution( DomainPartition & domain,
+                       DofManager const & dofManager,
+                       arrayView1d< real64 const > const & localSolution,
+                       real64 const scalingFactor ) override;
+
   virtual void
   resetStateToBeginningOfStep( DomainPartition & domain ) override;
 
@@ -138,6 +140,21 @@ public:
                                   arrayView1d< real64 > const & localRhs );
 
   /**
+   * @brief assembles the accumulation terms for all cells of a spcefici subRegion.
+   * @tparam SUBREGION_TYPE the subRegion type
+   * @param dofManager degree-of-freedom manager associated with the linear system
+   * @param subRegion the subRegion
+   * @param localMatrix the system matrix
+   * @param localRhs the system right-hand side vector
+   *
+   */
+  template< typename SUBREGION_TYPE >
+  void accumulationAssemblyLaunch( DofManager const & dofManager,
+                                   SUBREGION_TYPE const & subRegion,
+                                   CRSMatrixView< real64, globalIndex const > const & localMatrix,
+                                   arrayView1d< real64 > const & localRhs );
+
+  /**
    * @brief assembles the flux terms for all cells
    * @param time_n previous time value
    * @param dt time step
@@ -147,12 +164,27 @@ public:
    * @param localRhs the system right-hand side vector
    */
   virtual void
-  assembleFluxTerms( real64 const time_n,
-                     real64 const dt,
+  assembleFluxTerms( real64 const dt,
                      DomainPartition const & domain,
                      DofManager const & dofManager,
                      CRSMatrixView< real64, globalIndex const > const & localMatrix,
                      arrayView1d< real64 > const & localRhs ) = 0;
+
+  /**
+   * @brief assembles the flux terms for all cells including jump stabilization
+   * @param time_n previous time value
+   * @param dt time step
+   * @param domain the physical domain object
+   * @param dofManager degree-of-freedom manager associated with the linear system
+   * @param localMatrix the system matrix
+   * @param localRhs the system right-hand side vector
+   */
+  virtual void
+  assembleStabilizedFluxTerms( real64 const dt,
+                               DomainPartition const & domain,
+                               DofManager const & dofManager,
+                               CRSMatrixView< real64, globalIndex const > const & localMatrix,
+                               arrayView1d< real64 > const & localRhs ) = 0;
 
   /**
    * @brief assembles the flux terms for all cells for the poroelastic case
@@ -165,13 +197,13 @@ public:
    * @param jumpDofKey dofKey of the displacement jump
    */
   virtual void
-  assemblePoroelasticFluxTerms( real64 const time_n,
-                                real64 const dt,
-                                DomainPartition const & domain,
-                                DofManager const & dofManager,
-                                CRSMatrixView< real64, globalIndex const > const & localMatrix,
-                                arrayView1d< real64 > const & localRhs,
-                                string const & jumpDofKey ) = 0;
+  assembleEDFMFluxTerms( real64 const time_n,
+                         real64 const dt,
+                         DomainPartition const & domain,
+                         DofManager const & dofManager,
+                         CRSMatrixView< real64, globalIndex const > const & localMatrix,
+                         arrayView1d< real64 > const & localRhs,
+                         string const & jumpDofKey ) = 0;
 
   /**
    * @brief assembles the flux terms for all cells for the hydrofracture case
@@ -194,11 +226,7 @@ public:
 
   struct viewKeyStruct : FlowSolverBase::viewKeyStruct
   {
-    static constexpr char const * elemDofFieldString() { return "primaryVariables"; }
-
-    // inputs
-    static constexpr char const * inputTemperatureString() { return "temperature"; }
-    static constexpr char const * thermalConductivityNamesString() { return "thermalConductivityNames"; }
+    static constexpr char const * elemDofFieldString() { return "singlePhaseVariables"; }
   };
 
   /**
@@ -257,10 +285,10 @@ public:
 
   /**
    * @brief Function to update all constitutive state and dependent variables
-   * @param dataGroup group that contains the fields
+   * @param subRegion subregion that contains the fields
    */
-  void
-  updateFluidState( ObjectManagerBase & subRegion ) const;
+  real64
+  updateFluidState( ElementSubRegionBase & subRegion ) const;
 
 
   /**
@@ -271,10 +299,30 @@ public:
   updateFluidModel( ObjectManagerBase & dataGroup ) const;
 
   /**
+   * @brief Function to update fluid mass
+   * @param subRegion subregion that contains the fields
+   */
+  void
+  updateMass( ElementSubRegionBase & subRegion ) const;
+
+  /**
+   * @brief Function to update energy
+   * @param subRegion subregion that contains the fields
+   */
+  void
+  updateEnergy( ElementSubRegionBase & subRegion ) const;
+
+  /**
    * @brief Update all relevant solid internal energy models using current values of temperature
    * @param dataGroup the group storing the required fields
    */
   void updateSolidInternalEnergyModel( ObjectManagerBase & dataGroup ) const;
+
+  /**
+   * @brief Update thermal conductivity
+   * @param subRegion the group storing the required fields
+   */
+  void updateThermalConductivity( ElementSubRegionBase & subRegion ) const;
 
   /**
    * @brief Function to update fluid mobility
@@ -283,18 +331,44 @@ public:
   void
   updateMobility( ObjectManagerBase & dataGroup ) const;
 
-  /**
-   * @brief Setup stored views into domain data for the current step
-   */
-
   virtual void initializePreSubGroups() override;
 
   virtual void initializePostInitialConditionsPreSubGroups() override;
 
+  virtual void initializeFluidState( MeshLevel & mesh, arrayView1d< string const > const & regionNames ) override;
+
+  virtual void initializeThermalState( MeshLevel & mesh, arrayView1d< string const > const & regionNames ) override;
+
   /**
    * @brief Compute the hydrostatic equilibrium using the compositions and temperature input tables
    */
-  void computeHydrostaticEquilibrium();
+  virtual void computeHydrostaticEquilibrium( DomainPartition & domain ) override;
+
+  /**
+   * @brief Update the cell-wise pressure gradient
+   */
+  virtual void updatePressureGradient( DomainPartition & domain )
+  {
+    GEOS_UNUSED_VAR( domain );
+  }
+
+  /**
+   * @brief Function to fix the initial state during the initialization step in coupled problems
+   * @param[in] time current time
+   * @param[in] dt time step
+   * @param[in] dofManager degree-of-freedom manager associated with the linear system
+   * @param[in] domain the domain
+   * @param[in] localMatrix local system matrix
+   * @param[in] localRhs local system right-hand side vector
+   * @detail This function is meant to be called when the flag m_keepVariablesConstantDuringInitStep is on
+   *         The main use case is the initialization step in coupled problems during which we solve an elastic problem for a fixed pressure
+   */
+  void keepVariablesConstantDuringInitStep( real64 const time,
+                                            real64 const dt,
+                                            DofManager const & dofManager,
+                                            DomainPartition & domain,
+                                            CRSMatrixView< real64, globalIndex const > const & localMatrix,
+                                            arrayView1d< real64 > const & localRhs ) const;
 
 protected:
 
@@ -302,17 +376,20 @@ protected:
    * @brief Checks constitutive models for consistency
    * @param[in] domain the domain partition
    */
-  virtual void
-  validateConstitutiveModels( DomainPartition & domain ) const;
+  virtual void validateConstitutiveModels( DomainPartition & domain ) const;
 
   /**
    * @brief Initialize the aquifer boundary condition (gravity vector, water phase index)
    */
-  void
-  initializeAquiferBC() const;
+  void initializeAquiferBC() const;
 
   virtual void setConstitutiveNamesCallSuper( ElementSubRegionBase & subRegion ) const override;
 
+  /**
+   * @brief Utility function to save the converged state
+   * @param[in] subRegion the element subRegion
+   */
+  virtual void saveConvergedState( ElementSubRegionBase & subRegion ) const override;
 
   /**
    * @brief Structure holding views into fluid properties used by the base solver.
@@ -343,21 +420,59 @@ protected:
    *
    * This function enables derived solvers to substitute SingleFluidBase for a different,
    * unrelated fluid class, and customize property extraction. For example, it is used by
-   * SinglePhaseProppantBase to allow using SlurryFluidBase, which does not inherit from
+   * SinglePhaseProppantBase to allow using  constitutive::SlurryFluidBase, which does not inherit from
    * SingleFluidBase currently (but this design may need to be revised).
    */
   virtual FluidPropViews getFluidProperties( constitutive::ConstitutiveBase const & fluid ) const;
 
   virtual ThermalFluidPropViews getThermalFluidProperties( constitutive::ConstitutiveBase const & fluid ) const;
 
-  /// the input temperature
-  real64 m_inputTemperature;
-
 private:
   virtual void setConstitutiveNames( ElementSubRegionBase & subRegion ) const override;
 
 };
 
-} /* namespace geosx */
+template< typename SUBREGION_TYPE >
+void SinglePhaseBase::accumulationAssemblyLaunch( DofManager const & dofManager,
+                                                  SUBREGION_TYPE const & subRegion,
+                                                  CRSMatrixView< real64, globalIndex const > const & localMatrix,
+                                                  arrayView1d< real64 > const & localRhs )
+{
+  geos::constitutive::SingleFluidBase const & fluid =
+    getConstitutiveModel< geos::constitutive::SingleFluidBase >( subRegion, subRegion.template getReference< string >( viewKeyStruct::fluidNamesString() ) );
+  //START_SPHINX_INCLUDE_COUPLEDSOLID
+  geos::constitutive::CoupledSolidBase const & solid =
+    getConstitutiveModel< geos::constitutive::CoupledSolidBase >( subRegion, subRegion.template getReference< string >( viewKeyStruct::solidNamesString() ) );
+  //END_SPHINX_INCLUDE_COUPLEDSOLID
 
-#endif //GEOSX_PHYSICSSOLVERS_FLUIDFLOW_SINGLEPHASEBASE_HPP_
+  string const dofKey = dofManager.getKey( viewKeyStruct::elemDofFieldString() );
+
+  if( m_isThermal )
+  {
+    thermalSinglePhaseBaseKernels::
+      AccumulationKernelFactory::
+      createAndLaunch< parallelDevicePolicy<> >( dofManager.rankOffset(),
+                                                 dofKey,
+                                                 subRegion,
+                                                 fluid,
+                                                 solid,
+                                                 localMatrix,
+                                                 localRhs );
+  }
+  else
+  {
+    singlePhaseBaseKernels::
+      AccumulationKernelFactory::
+      createAndLaunch< parallelDevicePolicy<> >( dofManager.rankOffset(),
+                                                 dofKey,
+                                                 subRegion,
+                                                 fluid,
+                                                 solid,
+                                                 localMatrix,
+                                                 localRhs );
+  }
+}
+
+} /* namespace geos */
+
+#endif //GEOS_PHYSICSSOLVERS_FLUIDFLOW_SINGLEPHASEBASE_HPP_

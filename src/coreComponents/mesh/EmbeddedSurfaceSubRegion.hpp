@@ -2,10 +2,11 @@
  * ------------------------------------------------------------------------------------------------------------
  * SPDX-License-Identifier: LGPL-2.1-only
  *
- * Copyright (c) 2018-2020 Lawrence Livermore National Security LLC
- * Copyright (c) 2018-2020 The Board of Trustees of the Leland Stanford Junior University
- * Copyright (c) 2018-2020 TotalEnergies
- * Copyright (c) 2019-     GEOSX Contributors
+ * Copyright (c) 2016-2024 Lawrence Livermore National Security LLC
+ * Copyright (c) 2018-2024 TotalEnergies
+ * Copyright (c) 2018-2024 The Board of Trustees of the Leland Stanford Junior University
+ * Copyright (c) 2023-2024 Chevron
+ * Copyright (c) 2019-     GEOS/GEOSX Contributors
  * All rights reserved
  *
  * See top level LICENSE, COPYRIGHT, CONTRIBUTORS, NOTICE, and ACKNOWLEDGEMENTS files for details.
@@ -16,8 +17,8 @@
  * @file EmbeddedSurfaceSubRegion.hpp
  */
 
-#ifndef GEOSX_MESH_EMBEDDEDSURFACESUBREGION_HPP_
-#define GEOSX_MESH_EMBEDDEDSURFACESUBREGION_HPP_
+#ifndef GEOS_MESH_EMBEDDEDSURFACESUBREGION_HPP_
+#define GEOS_MESH_EMBEDDEDSURFACESUBREGION_HPP_
 
 #include "SurfaceElementSubRegion.hpp"
 #include "InterObjectRelation.hpp"
@@ -25,9 +26,10 @@
 #include "EdgeManager.hpp"
 #include "EmbeddedSurfaceNodeManager.hpp"
 #include "CellElementSubRegion.hpp"
-#include "simpleGeometricObjects/BoundedPlane.hpp"
+//Do we really need this include Rectangle?
+#include "simpleGeometricObjects/Rectangle.hpp"
 
-namespace geosx
+namespace geos
 {
 
 /**
@@ -124,16 +126,6 @@ public:
   void calculateElementGeometricQuantities( arrayView2d< real64 const > const intersectionPoints,
                                             localIndex k );
   /**
-   * @brief computes the connectivityIndex of the embedded surface element.
-   * @param k element index
-   * @param cellToNodes cell to nodes map
-   * @param nodesCoord cordinates of the nodes
-   */
-  void computeConnectivityIndex( localIndex const k,
-                                 arrayView2d< localIndex const, cells::NODE_MAP_USD > const cellToNodes,
-                                 arrayView2d< real64 const, nodes::REFERENCE_POSITION_USD > const nodesCoord );
-
-  /**
    * @brief Function to add a new embedded surface element.
    * @param cellIndex cell element index
    * @param regionIndex cell element region index
@@ -152,7 +144,7 @@ public:
                               EmbeddedSurfaceNodeManager & embSurfNodeManager,
                               EdgeManager const & edgeManager,
                               FixedOneToManyRelation const & cellToEdges,
-                              BoundedPlane const * fracture );
+                              PlanarGeometricObject const * fracture );
 
   /**
    * @brief inherit ghost rank from cell elements.
@@ -187,15 +179,6 @@ public:
    */
   struct viewKeyStruct : SurfaceElementSubRegion::viewKeyStruct
   {
-    /// @return Embedded surface element normal vector string
-    static constexpr char const * normalVectorString()      { return "normalVector"; }
-
-    /// @return Tangent vector 1 string
-    static constexpr char const * t1VectorString()          { return "tangentVector1"; }
-
-    /// @return Tangent vector 2 string
-    static constexpr char const * t2VectorString()          { return "tangentVector2"; }
-
     /// @return Connectivity index string
     static constexpr char const * connectivityIndexString() { return "connectivityIndex"; }
 
@@ -226,29 +209,6 @@ public:
   localIndex const & numOfJumpEnrichments() const {return m_numOfJumpEnrichments;}
 
   /**
-   * @brief Get normal vectors.
-   * @return an array of normal vectors.
-   */
-  array2d< real64 > & getNormalVector() { return m_normalVector; }
-
-  /**
-   * @copydoc getNormalVector()
-   */
-  arrayView2d< real64 const > getNormalVector() const { return m_normalVector; }
-
-  /**
-   * @brief Get normal vector of a specific embedded surface element.
-   * @param k index of the embedded surface element
-   * @return the normal vector of a specific embedded surface element
-   */
-  arraySlice1d< real64 > getNormalVector( localIndex k ) { return m_normalVector[k]; }
-
-  /**
-   * @copydoc getNormalVector( localIndex k )
-   */
-  arraySlice1d< real64 const > getNormalVector( localIndex k ) const { return m_normalVector[k]; }
-
-  /**
    * @brief Get the name of the bounding plate that was used to generate fracture element k.
    * @param k the index of the embedded surface element
    * @return the name of the bounded plane, the element was generated from
@@ -256,67 +216,38 @@ public:
   string const & getFractureName( localIndex k ) const { return m_parentPlaneName[k]; }
 
   /**
-   * @brief Get an array of the first tangent vector of the embedded surface elements.
-   * @return an array of the first tangent vector of the embedded surface elements
-   */
-  array2d< real64 > & getTangentVector1() { return m_tangentVector1; }
-
-  /**
-   * @copydoc getTangentVector1()
-   */
-  arrayView2d< real64 const > getTangentVector1() const { return m_tangentVector1; }
-
-  /**
-   * @brief Get the first tangent vector of a specific embedded surface element.
-   * @param k index of the embedded surface element
-   * @return the first tangent vector of a specific embedded surface element
-   */
-  arraySlice1d< real64 > getTangentVector1( localIndex k ) { return m_tangentVector1[k];}
-
-  /**
-   * @copydoc getTangentVector1( localIndex k )
-   */
-  arraySlice1d< real64 const > getTangentVector1( localIndex k ) const { return m_tangentVector1[k]; }
-
-  /**
-   * @brief Get an array of the second tangent vector of the embedded surface elements.
-   * @return an array of the second tangent vector of the embedded surface elements
-   */
-  array2d< real64 > & getTangentVector2() { return m_tangentVector2; }
-
-  /**
-   * @copydoc getTangentVector2()
-   */
-  arrayView2d< real64 const > getTangentVector2() const { return m_tangentVector2; }
-
-  /**
-   * @brief Get the second tangent vector of a specific embedded surface element.
-   * @param k index of the embedded surface element
-   * @return the second tangent vector of a specific embedded surface element
-   */
-  arraySlice1d< real64 > getTangentVector2( localIndex k ) { return m_tangentVector2[k];}
-
-  /**
-   * @copydoc getTangentVector2( localIndex k )
-   */
-  arraySlice1d< real64 const > getTangentVector2( localIndex k ) const { return m_tangentVector2[k];}
-
-  /**
    * @brief Get the connectivity index of the  embedded surface element.
    * @return the connectivity index
    */
-  array1d< real64 > & getConnectivityIndex()   { return m_connectivityIndex;}
+  arrayView1d< real64 > getConnectivityIndex()   { return m_connectivityIndex.toView();}
 
   /**
    * @copydoc getConnectivityIndex()
    */
-  array1d< real64 > const & getConnectivityIndex() const { return m_connectivityIndex;}
+  arrayView1d< real64 const > getConnectivityIndex() const { return m_connectivityIndex;}
 
   /**
    * @brief accessor to the m_surfaceWithGhostNodes list
    * @return the list of surfaces with at least one ghost node.
    */
   std::vector< struct surfaceWithGhostNodes > surfaceWithGhostNodes() { return m_surfaceWithGhostNodes; }
+
+  /**
+   * @brief Get the surface element to cells map.
+   * @return The surface element to cells map
+   */
+  OrderedVariableToManyElementRelation & getToCellRelation()
+  {
+    return m_2dElemToElems;
+  }
+
+  /**
+   * @copydoc getToCellRelation()
+   */
+  OrderedVariableToManyElementRelation const & getToCellRelation() const
+  {
+    return m_2dElemToElems;
+  }
 
   ///@}
 
@@ -333,15 +264,6 @@ private:
   localIndex packUpDownMapsImpl( buffer_unit_type * & buffer,
                                  arrayView1d< localIndex const > const & packList ) const;
 
-  /// normal vector to the embedded surface element
-  array2d< real64 > m_normalVector;
-
-  // tangential direction 1
-  array2d< real64 > m_tangentVector1;
-
-  // tangential direction 2
-  array2d< real64 > m_tangentVector2;
-
   /// The number of jump enrichments
   localIndex m_numOfJumpEnrichments;
 
@@ -353,9 +275,13 @@ private:
 
   /// Surfaces with ghost nodes
   std::vector< struct surfaceWithGhostNodes > m_surfaceWithGhostNodes;
+
+  /// Map between the surface elements and the cells
+  OrderedVariableToManyElementRelation m_2dElemToElems;
+
 };
 
 
-} /* namespace geosx */
+} /* namespace geos */
 
-#endif /* GEOSX_MESH_EMBEDDEDSURFACESUBREGION_HPP_ */
+#endif /* GEOS_MESH_EMBEDDEDSURFACESUBREGION_HPP_ */

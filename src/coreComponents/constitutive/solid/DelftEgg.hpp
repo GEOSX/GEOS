@@ -2,11 +2,12 @@
  * ------------------------------------------------------------------------------------------------------------
  * SPDX-License-Identifier: LGPL-2.1-only
  *
- * Copyright (c) 2018-2019 Lawrence Livermore National Security LLC
- * Copyright (c) 2018-2019 The Board of Trustees of the Leland Stanford Junior University
- * Copyright (c) 2018-2019 TotalEnergies
- * Copyright (c) 2019-     GEOSX Contributors
- * All right reserved
+ * Copyright (c) 2016-2024 Lawrence Livermore National Security LLC
+ * Copyright (c) 2018-2024 TotalEnergies
+ * Copyright (c) 2018-2024 The Board of Trustees of the Leland Stanford Junior University
+ * Copyright (c) 2023-2024 Chevron
+ * Copyright (c) 2019-     GEOS/GEOSX Contributors
+ * All rights reserved
  *
  * See top level LICENSE, COPYRIGHT, CONTRIBUTORS, NOTICE, and ACKNOWLEDGEMENTS files for details.
  * ------------------------------------------------------------------------------------------------------------
@@ -16,8 +17,8 @@
  *  @file DelftEgg.hpp
  */
 
-#ifndef GEOSX_CONSTITUTIVE_SOLID_DELFTEGG_HPP
-#define GEOSX_CONSTITUTIVE_SOLID_DELFTEGG_HPP
+#ifndef GEOS_CONSTITUTIVE_SOLID_DELFTEGG_HPP
+#define GEOS_CONSTITUTIVE_SOLID_DELFTEGG_HPP
 
 #include "ElasticIsotropic.hpp"
 #include "InvariantDecompositions.hpp"
@@ -25,7 +26,7 @@
 #include "SolidModelDiscretizationOpsFullyAnisotroipic.hpp"
 #include "LvArray/src/tensorOps.hpp"
 
-namespace geosx
+namespace geos
 {
 
 namespace constitutive
@@ -52,6 +53,7 @@ public:
    * each quadrature point.
    * @param[in] bulkModulus                 The ArrayView holding the bulk modulus data for each element.
    * @param[in] shearModulus                The ArrayView holding the shear modulus data for each element.
+   * @param[in] thermalExpansionCoefficient The ArrayView holding the thermal expansion coefficient data for each element.
    * @param[in] newStress                   The ArrayView holding the new stress data for each quadrature point.
    * @param[in] oldStress                   The ArrayView holding the old stress data from the previous converged state for each point
    * @param[in] disableInelasticity         Flag to disable plastic response
@@ -64,10 +66,11 @@ public:
                    arrayView2d< real64 > const & oldPreConsolidationPressure,
                    arrayView1d< real64 const > const & bulkModulus,
                    arrayView1d< real64 const > const & shearModulus,
+                   arrayView1d< real64 const > const & thermalExpansionCoefficient,
                    arrayView3d< real64, solid::STRESS_USD > const & newStress,
                    arrayView3d< real64, solid::STRESS_USD > const & oldStress,
                    const bool & disableInelasticity ):
-    ElasticIsotropicUpdates( bulkModulus, shearModulus, newStress, oldStress, disableInelasticity ),
+    ElasticIsotropicUpdates( bulkModulus, shearModulus, thermalExpansionCoefficient, newStress, oldStress, disableInelasticity ),
     m_recompressionIndex( recompressionIndex ),
     m_virginCompressionIndex( virginCompressionIndex ),
     m_cslSlope( cslSlope ),
@@ -97,7 +100,7 @@ public:
   // Bring in base implementations to prevent hiding warnings
   using ElasticIsotropicUpdates::smallStrainUpdate;
 
-  GEOSX_HOST_DEVICE
+  GEOS_HOST_DEVICE
   void evaluateYield( real64 const p,
                       real64 const q,
                       real64 const pc,
@@ -116,22 +119,24 @@ public:
 
 
 
-  GEOSX_HOST_DEVICE
-  virtual void smallStrainUpdate( localIndex const k,
-                                  localIndex const q,
-                                  real64 const ( &strainIncrement )[6],
-                                  real64 ( &stress )[6],
-                                  real64 ( &stiffness )[6][6] ) const override final;
+  GEOS_HOST_DEVICE
+  void smallStrainUpdate( localIndex const k,
+                          localIndex const q,
+                          real64 const & timeIncrement,
+                          real64 const ( &strainIncrement )[6],
+                          real64 ( &stress )[6],
+                          real64 ( &stiffness )[6][6] ) const;
 
-  GEOSX_HOST_DEVICE
+  GEOS_HOST_DEVICE
   virtual void smallStrainUpdate( localIndex const k,
                                   localIndex const q,
+                                  real64 const & timeIncrement,
                                   real64 const ( &strainIncrement )[6],
                                   real64 ( &stress )[6],
                                   DiscretizationOps & stiffness ) const final;
 
-  GEOSX_HOST_DEVICE
-  GEOSX_FORCE_INLINE
+  GEOS_HOST_DEVICE
+  inline
   virtual void saveConvergedState( localIndex const k,
                                    localIndex const q ) const override final
   {
@@ -162,8 +167,8 @@ private:
 };
 
 
-GEOSX_HOST_DEVICE
-GEOSX_FORCE_INLINE
+GEOS_HOST_DEVICE
+inline
 void DelftEggUpdates::evaluateYield( real64 const p,
                                      real64 const q,
                                      real64 const pc,
@@ -204,17 +209,17 @@ void DelftEggUpdates::evaluateYield( real64 const p,
 }
 
 
-GEOSX_HOST_DEVICE
-GEOSX_FORCE_INLINE
+GEOS_HOST_DEVICE
+inline
 void DelftEggUpdates::smallStrainUpdate( localIndex const k,
                                          localIndex const q,
+                                         real64 const & timeIncrement,
                                          real64 const ( &strainIncrement )[6],
                                          real64 ( & stress )[6],
                                          real64 ( & stiffness )[6][6] ) const
 {
 
   // Rename variables for easier implementation
-
   real64 const oldPc  = m_oldPreConsolidationPressure[k][q];   //pre-consolidation pressure
   real64 const mu     = m_shearModulus[k];
   real64 const bulkModulus     = m_bulkModulus[k];
@@ -228,7 +233,7 @@ void DelftEggUpdates::smallStrainUpdate( localIndex const k,
 
   // elastic predictor (assume strainIncrement is all elastic)
 
-  ElasticIsotropicUpdates::smallStrainUpdate( k, q, strainIncrement, stress, stiffness );
+  ElasticIsotropicUpdates::smallStrainUpdate( k, q, timeIncrement, strainIncrement, stress, stiffness );
 
   if( m_disableInelasticity )
   {
@@ -262,7 +267,7 @@ void DelftEggUpdates::smallStrainUpdate( localIndex const k,
 
   eps_s_trial = trialQ/3.0/mu;
 
-  real64 solution[3]{}, residual[3]{}, delta[3]{};
+  real64 solution[3] = {}, residual[3] = {}, delta[3] = {};
   real64 jacobian[3][3] = {{}}, jacobianInv[3][3] = {{}};
 
   solution[0] = eps_v_trial; // initial guess for elastic volumetric strain
@@ -432,15 +437,16 @@ void DelftEggUpdates::smallStrainUpdate( localIndex const k,
 }
 
 
-GEOSX_HOST_DEVICE
-GEOSX_FORCE_INLINE
+GEOS_HOST_DEVICE
+inline
 void DelftEggUpdates::smallStrainUpdate( localIndex const k,
                                          localIndex const q,
+                                         real64 const & timeIncrement,
                                          real64 const ( &strainIncrement )[6],
                                          real64 ( & stress )[6],
                                          DiscretizationOps & stiffness ) const
 {
-  smallStrainUpdate( k, q, strainIncrement, stress, stiffness.m_c );
+  smallStrainUpdate( k, q, timeIncrement, strainIncrement, stress, stiffness.m_c );
 }
 
 
@@ -545,6 +551,7 @@ public:
                             m_oldPreConsolidationPressure,
                             m_bulkModulus,
                             m_shearModulus,
+                            m_thermalExpansionCoefficient,
                             m_newStress,
                             m_oldStress,
                             m_disableInelasticity );
@@ -569,6 +576,7 @@ public:
                           m_oldPreConsolidationPressure,
                           m_bulkModulus,
                           m_shearModulus,
+                          m_thermalExpansionCoefficient,
                           m_newStress,
                           m_oldStress,
                           m_disableInelasticity );
@@ -576,7 +584,7 @@ public:
 
 
 protected:
-  virtual void postProcessInput() override;
+  virtual void postInputInitialization() override;
 
   /// Material parameter: The default value of the recompression index
   real64 m_defaultRecompressionIndex;
@@ -614,6 +622,6 @@ protected:
 
 } /* namespace constitutive */
 
-} /* namespace geosx */
+} /* namespace geos */
 
-#endif /* GEOSX_CONSTITUTIVE_SOLID_DELFTEGG_HPP_ */
+#endif /* GEOS_CONSTITUTIVE_SOLID_DELFTEGG_HPP_ */

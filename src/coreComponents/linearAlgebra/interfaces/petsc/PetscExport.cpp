@@ -2,11 +2,12 @@
  * ------------------------------------------------------------------------------------------------------------
  * SPDX-License-Identifier: LGPL-2.1-only
  *
- * Copyright (c) 2018-2019 Lawrence Livermore National Security LLC
- * Copyright (c) 2018-2019 The Board of Trustees of the Leland Stanford Junior University
- * Copyright (c) 2018-2019 TotalEnergies
- * Copyright (c) 2019-     GEOSX Contributors
- * All right reserved
+ * Copyright (c) 2016-2024 Lawrence Livermore National Security LLC
+ * Copyright (c) 2018-2024 TotalEnergies
+ * Copyright (c) 2018-2024 The Board of Trustees of the Leland Stanford Junior University
+ * Copyright (c) 2023-2024 Chevron
+ * Copyright (c) 2019-     GEOS/GEOSX Contributors
+ * All rights reserved
  *
  * See top level LICENSE, COPYRIGHT, CONTRIBUTORS, NOTICE, and ACKNOWLEDGEMENTS files for details.
  * ------------------------------------------------------------------------------------------------------------
@@ -23,7 +24,7 @@
 
 #include <petsc.h>
 
-namespace geosx
+namespace geos
 {
 
 PetscExport::PetscExport() = default;
@@ -41,12 +42,12 @@ PetscExport::PetscExport( PetscMatrix const & mat,
   // create vector scatter context
   Vec tmpGlobal;
   Vec tmpLocal;
-  GEOSX_LAI_CHECK_ERROR( VecCreateMPI( mat.comm(), numLocalRows, numGlobalRows, &tmpGlobal ) );
-  GEOSX_LAI_CHECK_ERROR( VecCreateSeq( PETSC_COMM_SELF, N, &tmpLocal ) );
-  GEOSX_LAI_CHECK_ERROR( ISCreateStride( PETSC_COMM_SELF, N, 0, 1, &m_indexSet ) );
-  GEOSX_LAI_CHECK_ERROR( VecScatterCreate( tmpGlobal, m_indexSet, tmpLocal, m_indexSet, &m_scatter ) );
-  GEOSX_LAI_CHECK_ERROR( VecDestroy( &tmpGlobal ) );
-  GEOSX_LAI_CHECK_ERROR( VecDestroy( &tmpLocal ) );
+  GEOS_LAI_CHECK_ERROR( VecCreateMPI( mat.comm(), numLocalRows, numGlobalRows, &tmpGlobal ) );
+  GEOS_LAI_CHECK_ERROR( VecCreateSeq( PETSC_COMM_SELF, N, &tmpLocal ) );
+  GEOS_LAI_CHECK_ERROR( ISCreateStride( PETSC_COMM_SELF, N, 0, 1, &m_indexSet ) );
+  GEOS_LAI_CHECK_ERROR( VecScatterCreate( tmpGlobal, m_indexSet, tmpLocal, m_indexSet, &m_scatter ) );
+  GEOS_LAI_CHECK_ERROR( VecDestroy( &tmpGlobal ) );
+  GEOS_LAI_CHECK_ERROR( VecDestroy( &tmpLocal ) );
 }
 
 PetscExport::~PetscExport()
@@ -67,18 +68,18 @@ void PetscExport::exportCRS( PetscMatrix const & mat,
   Mat * submat; // needed by MatCreateSubMatrices API
   Mat localMatrix;
 
-  rowOffsets.move( LvArray::MemorySpace::host, false );
-  colIndices.move( LvArray::MemorySpace::host, false );
-  values.move( LvArray::MemorySpace::host, false );
+  rowOffsets.move( hostMemorySpace, false );
+  colIndices.move( hostMemorySpace, false );
+  values.move( hostMemorySpace, false );
 
   if( m_targetRank < 0 )
   {
-    GEOSX_LAI_CHECK_ERROR( MatMPIAIJGetLocalMat( mat.unwrapped(), MAT_INITIAL_MATRIX, &localMatrix ) );
+    GEOS_LAI_CHECK_ERROR( MatMPIAIJGetLocalMat( mat.unwrapped(), MAT_INITIAL_MATRIX, &localMatrix ) );
   }
   else
   {
-    GEOSX_LAI_CHECK_ERROR( MatCreateSubMatrices( mat.unwrapped(), rank == m_targetRank ? 1 : 0,
-                                                 &m_indexSet, &m_indexSet, MAT_INITIAL_MATRIX, &submat ) );
+    GEOS_LAI_CHECK_ERROR( MatCreateSubMatrices( mat.unwrapped(), rank == m_targetRank ? 1 : 0,
+                                                &m_indexSet, &m_indexSet, MAT_INITIAL_MATRIX, &submat ) );
     localMatrix = rank == m_targetRank ? submat[0] : nullptr;
   }
 
@@ -89,53 +90,53 @@ void PetscExport::exportCRS( PetscMatrix const & mat,
     PetscInt const * ia;
     PetscInt const * ja;
     PetscBool status;
-    GEOSX_LAI_CHECK_ERROR( MatGetRowIJ( localMatrix, 0, PETSC_FALSE, PETSC_FALSE, &numRows, &ia, &ja, &status ) );
-    GEOSX_ERROR_IF( !status, "PetscExtract: MatGetRowIJ reported an error" );
+    GEOS_LAI_CHECK_ERROR( MatGetRowIJ( localMatrix, 0, PETSC_FALSE, PETSC_FALSE, &numRows, &ia, &ja, &status ) );
+    GEOS_ERROR_IF( !status, "PetscExtract: MatGetRowIJ reported an error" );
 
     real64 const * va;
-    GEOSX_LAI_CHECK_ERROR( MatSeqAIJGetArrayRead( localMatrix, &va ) );
+    GEOS_LAI_CHECK_ERROR( MatSeqAIJGetArrayRead( localMatrix, &va ) );
 
     MatInfo info;
-    GEOSX_LAI_CHECK_ERROR( MatGetInfo( localMatrix, MAT_LOCAL, &info ) );
+    GEOS_LAI_CHECK_ERROR( MatGetInfo( localMatrix, MAT_LOCAL, &info ) );
     PetscInt const numNz = static_cast< PetscInt >( info.nz_used );
 
     std::transform( ia, ia + numRows + 1, rowOffsets.data(), LvArray::integerConversion< OFFSET_TYPE, PetscInt > );
     std::transform( ja, ja + numNz, colIndices.data(), LvArray::integerConversion< COLUMN_TYPE, PetscInt > );
     std::copy( va, va + numNz, values.data() );
 
-    GEOSX_LAI_CHECK_ERROR( MatSeqAIJRestoreArrayRead( localMatrix, &va ) );
-    GEOSX_LAI_CHECK_ERROR( MatRestoreRowIJ( localMatrix, 0, PETSC_FALSE, PETSC_FALSE, &numRows, &ia, &ja, &status ) );
+    GEOS_LAI_CHECK_ERROR( MatSeqAIJRestoreArrayRead( localMatrix, &va ) );
+    GEOS_LAI_CHECK_ERROR( MatRestoreRowIJ( localMatrix, 0, PETSC_FALSE, PETSC_FALSE, &numRows, &ia, &ja, &status ) );
   }
 
   if( m_targetRank < 0 )
   {
-    GEOSX_LAI_CHECK_ERROR( MatDestroy( &localMatrix ));
+    GEOS_LAI_CHECK_ERROR( MatDestroy( &localMatrix ));
   }
   else
   {
-    GEOSX_LAI_CHECK_ERROR( MatDestroySubMatrices( rank == m_targetRank ? 1 : 0, &submat ) );
+    GEOS_LAI_CHECK_ERROR( MatDestroySubMatrices( rank == m_targetRank ? 1 : 0, &submat ) );
   }
 }
 
 void PetscExport::exportVector( PetscVector const & vec,
                                 arrayView1d< real64 > const & values ) const
 {
-  values.move( LvArray::MemorySpace::host, false );
+  values.move( hostMemorySpace, false );
   if( m_targetRank >= 0 )
   {
     int const rank = MpiWrapper::commRank( vec.comm() );
     localIndex const N = ( rank == m_targetRank ) ? vec.globalSize() : 0;
 
     Vec localVector;
-    GEOSX_LAI_CHECK_ERROR( VecCreateSeqWithArray( PETSC_COMM_SELF, 1, N, values.data(), &localVector ) );
-    GEOSX_LAI_CHECK_ERROR( VecScatterBegin( m_scatter, vec.unwrapped(), localVector, INSERT_VALUES, SCATTER_FORWARD ) );
-    GEOSX_LAI_CHECK_ERROR( VecScatterEnd( m_scatter, vec.unwrapped(), localVector, INSERT_VALUES, SCATTER_FORWARD ) );
-    GEOSX_LAI_CHECK_ERROR( VecDestroy( &localVector ) );
+    GEOS_LAI_CHECK_ERROR( VecCreateSeqWithArray( PETSC_COMM_SELF, 1, N, values.data(), &localVector ) );
+    GEOS_LAI_CHECK_ERROR( VecScatterBegin( m_scatter, vec.unwrapped(), localVector, INSERT_VALUES, SCATTER_FORWARD ) );
+    GEOS_LAI_CHECK_ERROR( VecScatterEnd( m_scatter, vec.unwrapped(), localVector, INSERT_VALUES, SCATTER_FORWARD ) );
+    GEOS_LAI_CHECK_ERROR( VecDestroy( &localVector ) );
   }
   else
   {
     arrayView1d< real64 const > const data = vec.values();
-    data.move( LvArray::MemorySpace::host, false );
+    data.move( hostMemorySpace, false );
     std::copy( data.begin(), data.end(), values.data() );
   }
 }
@@ -143,7 +144,7 @@ void PetscExport::exportVector( PetscVector const & vec,
 void PetscExport::importVector( arrayView1d< const real64 > const & values,
                                 PetscVector & vec ) const
 {
-  values.move( LvArray::MemorySpace::host, false );
+  values.move( hostMemorySpace, false );
   if( m_targetRank >= 0 )
   {
     int const rank = MpiWrapper::commRank( vec.comm() );
@@ -152,10 +153,10 @@ void PetscExport::importVector( arrayView1d< const real64 > const & values,
     // Note: PETSc creates a vector wrapper around values by taking a pointer-to-const and casting away const-ness (!)
     //       This would lead to UB if we did anything that modified values, but here we only scatter (read) them.
     Vec localVector;
-    GEOSX_LAI_CHECK_ERROR( VecCreateSeqWithArray( PETSC_COMM_SELF, 1, N, values.data(), &localVector ) );
-    GEOSX_LAI_CHECK_ERROR( VecScatterBegin( m_scatter, localVector, vec.unwrapped(), INSERT_VALUES, SCATTER_REVERSE ) );
-    GEOSX_LAI_CHECK_ERROR( VecScatterEnd( m_scatter, localVector, vec.unwrapped(), INSERT_VALUES, SCATTER_REVERSE ) );
-    GEOSX_LAI_CHECK_ERROR( VecDestroy( &localVector ) );
+    GEOS_LAI_CHECK_ERROR( VecCreateSeqWithArray( PETSC_COMM_SELF, 1, N, values.data(), &localVector ) );
+    GEOS_LAI_CHECK_ERROR( VecScatterBegin( m_scatter, localVector, vec.unwrapped(), INSERT_VALUES, SCATTER_REVERSE ) );
+    GEOS_LAI_CHECK_ERROR( VecScatterEnd( m_scatter, localVector, vec.unwrapped(), INSERT_VALUES, SCATTER_REVERSE ) );
+    GEOS_LAI_CHECK_ERROR( VecDestroy( &localVector ) );
   }
   else
   {
@@ -185,4 +186,4 @@ INST_PETSC_EXPORT_CRS( long long, long long );
 
 #undef INST_PETSC_EXPORT_CRS
 
-} // namespace geosx
+} // namespace geos

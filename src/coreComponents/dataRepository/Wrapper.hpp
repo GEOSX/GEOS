@@ -2,10 +2,11 @@
  * ------------------------------------------------------------------------------------------------------------
  * SPDX-License-Identifier: LGPL-2.1-only
  *
- * Copyright (c) 2018-2020 Lawrence Livermore National Security LLC
- * Copyright (c) 2018-2020 The Board of Trustees of the Leland Stanford Junior University
- * Copyright (c) 2018-2020 TotalEnergies
- * Copyright (c) 2019-     GEOSX Contributors
+ * Copyright (c) 2016-2024 Lawrence Livermore National Security LLC
+ * Copyright (c) 2018-2024 TotalEnergies
+ * Copyright (c) 2018-2024 The Board of Trustees of the Leland Stanford Junior University
+ * Copyright (c) 2023-2024 Chevron
+ * Copyright (c) 2019-     GEOS/GEOSX Contributors
  * All rights reserved
  *
  * See top level LICENSE, COPYRIGHT, CONTRIBUTORS, NOTICE, and ACKNOWLEDGEMENTS files for details.
@@ -16,8 +17,8 @@
  * @file Wrapper.hpp
  */
 
-#ifndef GEOSX_DATAREPOSITORY_WRAPPER_HPP_
-#define GEOSX_DATAREPOSITORY_WRAPPER_HPP_
+#ifndef GEOS_DATAREPOSITORY_WRAPPER_HPP_
+#define GEOS_DATAREPOSITORY_WRAPPER_HPP_
 
 // Source inclues
 #include "wrapperHelpers.hpp"
@@ -40,7 +41,7 @@
 #include <cstdlib>
 #include <type_traits>
 
-namespace geosx
+namespace geos
 {
 
 namespace dataRepository
@@ -74,8 +75,9 @@ public:
    */
   explicit Wrapper( string const & name,
                     Group & parent ):
-    WrapperBase( name, parent ),
+    WrapperBase( name, parent, rtTypes::getTypeName( typeid( T ) ) ),
     m_ownsData( true ),
+    m_isClone( false ),
     m_data( new T() ),
     m_default()
   {
@@ -96,8 +98,9 @@ public:
   explicit Wrapper( string const & name,
                     Group & parent,
                     std::unique_ptr< T > object ):
-    WrapperBase( name, parent ),
+    WrapperBase( name, parent, rtTypes::getTypeName( typeid( T ) ) ),
     m_ownsData( true ),
+    m_isClone( false ),
     m_data( object.release() ),
     m_default()
   {
@@ -118,8 +121,9 @@ public:
   explicit Wrapper( string const & name,
                     Group & parent,
                     T * object ):
-    WrapperBase( name, parent ),
+    WrapperBase( name, parent, rtTypes::getTypeName( typeid( T ) ) ),
     m_ownsData( false ),
+    m_isClone( false ),
     m_data( object ),
     m_default()
   {
@@ -181,12 +185,13 @@ public:
   {
     std::unique_ptr< Wrapper< T > > clonedWrapper = std::make_unique< Wrapper< T > >( name, parent, m_data );
     clonedWrapper->copyWrapperAttributes( *this );
+    clonedWrapper->m_isClone = true;
     return clonedWrapper;
   }
 
   virtual void copyWrapper( WrapperBase const & source ) override
   {
-    GEOSX_ERROR_IF( source.getName() != m_name, "Tried to clone wrapper of with different name" );
+    GEOS_ERROR_IF( source.getName() != m_name, "Tried to copy wrapper with a different name" );
     copyWrapperAttributes( source );
     copyData( source );
   }
@@ -215,8 +220,8 @@ public:
    */
   static Wrapper & cast( WrapperBase & wrapper )
   {
-    GEOSX_ERROR_IF( wrapper.getTypeId() != typeid( T ),
-                    "Invalid downcast to Wrapper< " << LvArray::system::demangleType< T >() << " >" );
+    GEOS_ERROR_IF( wrapper.getTypeId() != typeid( T ),
+                   "Invalid downcast to Wrapper< " << LvArray::system::demangleType< T >() << " >" );
     return static_cast< Wrapper< T > & >( wrapper );
   }
 
@@ -228,8 +233,8 @@ public:
    */
   static Wrapper< T > const & cast( WrapperBase const & wrapper )
   {
-    GEOSX_ERROR_IF( wrapper.getTypeId() != typeid( T ),
-                    "Invalid downcast to Wrapper< " << LvArray::system::demangleType< T >() << " >" );
+    GEOS_ERROR_IF( wrapper.getTypeId() != typeid( T ),
+                   "Invalid downcast to Wrapper< " << LvArray::system::demangleType< T >() << " >" );
     return static_cast< Wrapper< T > const & >( wrapper );
   }
 
@@ -262,7 +267,7 @@ public:
   virtual
   HistoryMetadata getHistoryMetadata( localIndex const packCount = -1 ) const override final
   {
-    return geosx::getHistoryMetadata( getName(), referenceAsView( ), numArrayComp(), packCount );
+    return geos::getHistoryMetadata( getName(), referenceAsView( ), numArrayComp(), packCount );
   }
 
   /**
@@ -296,7 +301,7 @@ public:
     {
       string name;
       unpackedSize += bufferOps::Unpack( buffer, name );
-      GEOSX_ERROR_IF( name != getName(), "buffer unpack leads to wrapper names that don't match" );
+      GEOS_ERROR_IF( name != getName(), "buffer unpack leads to wrapper names that don't match" );
     }
     if( onDevice )
     {
@@ -319,7 +324,12 @@ public:
   ///////////////////////////////////////////////////////////////////////////////////////////////////
   /// @copydoc WrapperBase::unpackByIndex
   virtual
-  localIndex unpackByIndex( buffer_unit_type const * & buffer, arrayView1d< localIndex const > const & unpackIndices, bool withMetadata, bool onDevice, parallelDeviceEvents & events ) override final
+  localIndex unpackByIndex( buffer_unit_type const * & buffer,
+                            arrayView1d< localIndex const > const & unpackIndices,
+                            bool withMetadata,
+                            bool onDevice,
+                            parallelDeviceEvents & events,
+                            MPI_Op op ) override final
   {
     localIndex unpackedSize = 0;
 
@@ -327,17 +337,17 @@ public:
     {
       string name;
       unpackedSize += bufferOps::Unpack( buffer, name );
-      GEOSX_ERROR_IF( name != getName(), "buffer unpack leads to wrapper names that don't match" );
+      GEOS_ERROR_IF( name != getName(), "buffer unpack leads to wrapper names that don't match" );
     }
     if( onDevice )
     {
       if( withMetadata )
       {
-        unpackedSize += wrapperHelpers::UnpackByIndexDevice( buffer, referenceAsView(), unpackIndices, events );
+        unpackedSize += wrapperHelpers::UnpackByIndexDevice( buffer, referenceAsView(), unpackIndices, events, op );
       }
       else
       {
-        unpackedSize += wrapperHelpers::UnpackDataByIndexDevice( buffer, referenceAsView(), unpackIndices, events );
+        unpackedSize += wrapperHelpers::UnpackDataByIndexDevice( buffer, referenceAsView(), unpackIndices, events, op );
       }
     }
     else
@@ -358,6 +368,12 @@ public:
   virtual localIndex elementByteSize() const override
   { return wrapperHelpers::byteSizeOfElement< T >(); }
 
+  virtual size_t bytesAllocated() const override final
+  {
+    return m_isClone ? 0 : wrapperHelpers::byteSize< T >( *m_data );
+  }
+
+
   /**
    * @name Methods that delegate to the wrapped type
    *
@@ -373,14 +389,14 @@ public:
   ///////////////////////////////////////////////////////////////////////////////////////////////////
   virtual void resize( int ndims, localIndex const * const dims ) override
   {
-    wrapperHelpers::move( *m_data, LvArray::MemorySpace::host, true );
+    wrapperHelpers::move( *m_data, hostMemorySpace, true );
     wrapperHelpers::resizeDimensions( *m_data, ndims, dims );
   }
 
   ///////////////////////////////////////////////////////////////////////////////////////////////////
   virtual void reserve( localIndex const newCapacity ) override
   {
-    wrapperHelpers::move( *m_data, LvArray::MemorySpace::host, true );
+    wrapperHelpers::move( *m_data, hostMemorySpace, true );
     wrapperHelpers::reserve( reference(), newCapacity );
   }
 
@@ -394,8 +410,8 @@ public:
   ///////////////////////////////////////////////////////////////////////////////////////////////////
   virtual void resize( localIndex const newSize ) override
   {
-    wrapperHelpers::move( *m_data, LvArray::MemorySpace::host, true );
-    wrapperHelpers::resizeDefault( reference(), newSize, m_default );
+    wrapperHelpers::move( *m_data, hostMemorySpace, true );
+    wrapperHelpers::resizeDefault( reference(), newSize, m_default, this->getName() );
   }
 
   /// @cond DO_NOT_DOCUMENT
@@ -405,9 +421,9 @@ public:
     static void copy( Array< U, NDIM, PERMUTATION > const & array, localIndex const sourceIndex, localIndex const destIndex )
     {
       LvArray::forValuesInSliceWithIndices( array[ sourceIndex ],
-                                            [destIndex, &array]( U const & sourceVal, auto const ... indices )
+                                            [destIndex, &array]( U const & sourceVal, auto const ... indicesToErase )
       {
-        array( destIndex, indices ... ) = sourceVal;
+        array( destIndex, indicesToErase ... ) = sourceVal;
       } );
     }
 
@@ -444,13 +460,112 @@ public:
   }
 
 
+  /// @cond DO_NOT_DOCUMENT
+  struct erase_wrapper // This should probably be in LvArray?
+  {
+    template< typename TYPE >
+    static void erase( TYPE &, std::set< localIndex > const & )
+    {}
+
+    template< typename TYPE >
+    static void erase( array1d< TYPE > & array, std::set< localIndex > const & indicesToErase )
+    {
+      int oldSize = array.size( 0 );
+      int numToErase = indicesToErase.size();
+      int newSize = oldSize - numToErase;
+      std::set< localIndex >::iterator it = indicesToErase.begin();
+      int offset = 0;
+      for( localIndex i=*it+1; i<oldSize; i++ )
+      {
+        if( i == *it + 1 )
+        {
+          offset++;
+          if( offset < numToErase )
+          {
+            it++;
+          }
+        }
+        array[i-offset] = array[i];
+      }
+      array.resize( newSize );
+    }
+
+    template< typename TYPE >
+    static void erase( array2d< TYPE > & array, std::set< localIndex > const & indicesToErase )
+    {
+      int oldSize = array.size( 0 );
+      int numToErase = indicesToErase.size();
+      int newSize = oldSize - numToErase;
+      int dim1 = array.size( 1 );
+      std::set< localIndex >::iterator it = indicesToErase.begin();
+      int offset = 0;
+      for( localIndex i=*it+1; i<oldSize; i++ )
+      {
+        if( i == *it + 1 )
+        {
+          offset++;
+          if( offset < numToErase )
+          {
+            it++;
+          }
+        }
+        for( int j=0; j<dim1; j++ )
+        {
+          array[i-offset][j] = array[i][j];
+        }
+      }
+      array.resize( newSize );
+    }
+
+    template< typename TYPE >
+    static void erase( array3d< TYPE > & array, std::set< localIndex > const & indicesToErase )
+    {
+      int oldSize = array.size( 0 );
+      int numToErase = indicesToErase.size();
+      int newSize = oldSize - numToErase;
+      int dim1 = array.size( 1 );
+      int dim2 = array.size( 2 );
+      std::set< localIndex >::iterator it = indicesToErase.begin();
+      int offset = 0;
+      for( localIndex i=*it+1; i<oldSize; i++ )
+      {
+        if( i == *it + 1 )
+        {
+          offset++;
+          if( offset < numToErase )
+          {
+            it++;
+          }
+        }
+        for( int j=0; j<dim1; j++ )
+        {
+          for( int k=0; k<dim2; k++ )
+          {
+            array[i-offset][j][k] = array[i][j][k];
+          }
+        }
+      }
+      array.resize( newSize );
+    }
+  };
+  /// @endcond
+
+
+  ///////////////////////////////////////////////////////////////////////////////////////////////////
+  void erase( std::set< localIndex > const & indicesToErase ) override
+  {
+    GEOS_ERROR_IF( indicesToErase.size() == 0, "Wrapper::erase() can only be called on a populated set of indices!" );
+    erase_wrapper::erase( reference(), indicesToErase );
+  }
+
+
   ///////////////////////////////////////////////////////////////////////////////////////////////////
   virtual void move( LvArray::MemorySpace const space, bool const touch ) const override
   { return wrapperHelpers::move( *m_data, space, touch ); }
 
   ///////////////////////////////////////////////////////////////////////////////////////////////////
-  virtual string typeRegex() const override
-  { return TypeRegex< T >::get(); }
+  virtual Regex const & getTypeRegex() const override
+  { return rtTypes::getTypeRegex< T >( m_rtTypeName ); }
 
   ///@}
 
@@ -471,7 +586,7 @@ public:
    * @return reference to T, or in the case of an Array, a reference to an
    *         ArrayView<T const> const.
    */
-  GEOSX_DECLTYPE_AUTO_RETURN reference() const
+  GEOS_DECLTYPE_AUTO_RETURN reference() const
   { return referenceAsView(); }
 
   /**
@@ -483,7 +598,7 @@ public:
    * themselves into views. For other types, a regular reference is returned.
    */
   template< typename _T=T, typename=std::enable_if_t< traits::HasMemberFunction_toView< _T > > >
-  GEOSX_DECLTYPE_AUTO_RETURN referenceAsView()
+  GEOS_DECLTYPE_AUTO_RETURN referenceAsView()
   { return m_data->toView(); }
 
   /**
@@ -497,7 +612,7 @@ public:
    * @copydoc referenceAsView()
    */
   template< typename _T=T, typename=std::enable_if_t< traits::HasMemberFunction_toView< _T > > >
-  GEOSX_DECLTYPE_AUTO_RETURN referenceAsView() const
+  GEOS_DECLTYPE_AUTO_RETURN referenceAsView() const
   { return m_data->toViewConst(); }
 
   /**
@@ -596,31 +711,45 @@ public:
     return ss.str();
   }
 
-  virtual bool processInputFile( xmlWrapper::xmlNode const & targetNode ) override
+  virtual bool processInputFile( xmlWrapper::xmlNode const & targetNode,
+                                 xmlWrapper::xmlNodePos const & nodePos ) override
   {
     InputFlags const inputFlag = getInputFlag();
     if( inputFlag >= InputFlags::OPTIONAL )
     {
-      if( inputFlag == InputFlags::REQUIRED || !hasDefaultValue() )
+      try
       {
-        m_successfulReadFromInput = xmlWrapper::readAttributeAsType( reference(),
-                                                                     getName(),
-                                                                     targetNode,
-                                                                     inputFlag == InputFlags::REQUIRED );
-        GEOSX_THROW_IF( !m_successfulReadFromInput,
-                        GEOSX_FMT( "XML Node '{}' with name='{}' is missing required attribute '{}'."
-                                   "Available options are:\n{}\nFor more details, please refer to documentation at:\n"
+        if( inputFlag == InputFlags::REQUIRED || !hasDefaultValue() )
+        {
+          m_successfulReadFromInput = xmlWrapper::readAttributeAsType( reference(),
+                                                                       getName(),
+                                                                       rtTypes::getTypeRegex< T >( getRTTypeName() ),
+                                                                       targetNode,
+                                                                       inputFlag == InputFlags::REQUIRED );
+          GEOS_THROW_IF( !m_successfulReadFromInput,
+                         GEOS_FMT( "XML Node {} ({}) with name={} is missing required attribute '{}'."
+                                   "Available options are:\n {}\n For more details, please refer to documentation at:\n"
                                    "http://geosx-geosx.readthedocs-hosted.com/en/latest/docs/sphinx/userGuide/Index.html",
-                                   targetNode.path(), targetNode.attribute( "name" ).value(), getName(), dumpInputOptions( true ) ),
-                        InputError );
+                                   targetNode.name(), nodePos.toString(), targetNode.attribute( "name" ).value(),
+                                   getName(), dumpInputOptions( true ) ),
+                         InputError );
+        }
+        else
+        {
+          m_successfulReadFromInput = xmlWrapper::readAttributeAsType( reference(),
+                                                                       getName(),
+                                                                       rtTypes::getTypeRegex< T >( getRTTypeName() ),
+                                                                       targetNode,
+                                                                       getDefaultValueStruct() );
+        }
       }
-      else
+      catch( std::exception const & ex )
       {
-        m_successfulReadFromInput = xmlWrapper::readAttributeAsType( reference(),
-                                                                     getName(),
-                                                                     targetNode,
-                                                                     getDefaultValueStruct() );
+        xmlWrapper::processInputException( ex, getName(), targetNode, nodePos );
       }
+
+      if( m_successfulReadFromInput )
+        createDataContext( targetNode, nodePos );
 
       return true;
     }
@@ -656,7 +785,7 @@ public:
     auto ptr = wrapperHelpers::averageOverSecondDim( reference() );
     using U = typename decltype( ptr )::element_type;
 
-    GEOSX_ERROR_IF( ptr == nullptr, "Failed to average over the second dimension of." );
+    GEOS_ERROR_IF( ptr == nullptr, "Failed to average over the second dimension of." );
 
     auto ret = std::make_unique< Wrapper< U > >( name, group, std::move( ptr ) );
     for( integer dim = 2; dim < numArrayDims(); ++dim )
@@ -677,7 +806,7 @@ public:
       return;
     }
 
-    move( LvArray::MemorySpace::host, false );
+    move( hostMemorySpace, false );
 
     m_conduitNode[ "__sizedFromParent__" ].set( sizedFromParent() );
 
@@ -766,11 +895,29 @@ public:
   }
 
   /**
+   * @copydoc WrapperBase::appendDescription(string const &)
+   */
+  Wrapper< T > & appendDescription( string const & description )
+  {
+    WrapperBase::appendDescription( description );
+    return *this;
+  }
+
+  /**
    * @copydoc WrapperBase::setRegisteringObjects(string const &)
    */
   Wrapper< T > & setRegisteringObjects( string const & objectName )
   {
     WrapperBase::setRegisteringObjects( objectName );
+    return *this;
+  }
+
+  /**
+   * @copydoc WrapperBase::setRTTypeName(string_view)
+   */
+  Wrapper< T > & setRTTypeName( string_view rtTypeName )
+  {
+    WrapperBase::setRTTypeName( rtTypeName );
     return *this;
   }
 
@@ -794,7 +941,7 @@ public:
 //  void tvTemplateInstantiation();
 #endif
 
-#if defined(GEOSX_USE_PYGEOSX)
+#if defined(GEOS_USE_PYGEOSX)
   virtual PyObject * createPythonObject( ) override
   { return wrapperHelpers::createPythonObject( reference() ); }
 #endif
@@ -936,6 +1083,8 @@ private:
   /// address of m_data
   bool m_ownsData;
 
+  bool m_isClone;
+
   /// the object being wrapped by this wrapper
   T * m_data;
 
@@ -948,22 +1097,22 @@ private:
 
 }
 
-} // end of namespace geosx
+} // end of namespace geos
 
 // Do not remove the following commented code since it's used for debugging with TotalView.
 //template< typename T >
-//int TV_ttf_display_type( geosx::dataRepository::Wrapper<T> const * wrapper)
+//int TV_ttf_display_type( geos::dataRepository::Wrapper<T> const * wrapper)
 //{
 //  std::cout<<"Executing "<<wrapper->totalviewTypeName()<<"::TV_ttf_display_type()"<<std::endl;
 //  return TV_ttf_format_raw;
 //}
 //
-//template int TV_ttf_display_type( geosx::dataRepository::Wrapper<int> const * wrapper );
+//template int TV_ttf_display_type( geos::dataRepository::Wrapper<int> const * wrapper );
 //
 //template< typename T >
-//void geosx::dataRepository::Wrapper<T>::tvTemplateInstantiation()
+//void geos::dataRepository::Wrapper<T>::tvTemplateInstantiation()
 //{
 //  TV_ttf_display_type<T>(this);
 //}
 
-#endif /* GEOSX_DATAREPOSITORY_WRAPPER_HPP_ */
+#endif /* GEOS_DATAREPOSITORY_WRAPPER_HPP_ */

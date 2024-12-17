@@ -7,7 +7,7 @@ Poromechanics Solver
 Introduction
 ===========================================
 
-This section describes the use of the poroelasticity models implemented in GEOSX.
+This section describes the use of the poroelasticity models implemented in GEOS.
 
 Theory
 =========================
@@ -44,11 +44,11 @@ Parameters
 
 The poroelasticity model is implemented as a main solver listed in
 ``<Solvers>`` block of the input XML file that calls both SolidMechanicsLagrangianSSLE and SinglePhaseFlow solvers.
-In the main solver, it requires the specification of solidSolverName, fluidSolverName, and couplingTypeOption.
+In the main solver, it requires the specification of solidSolverName, flowSolverName, and couplingTypeOption.
 
 The following attributes are supported:
 
-.. include:: /coreComponents/schema/docs/SinglePhasePoromechanics.rst
+.. include:: /docs/sphinx/datastructure/SinglePhasePoromechanics.rst
 
 * ``couplingTypeOption``: defines the coupling scheme.
 

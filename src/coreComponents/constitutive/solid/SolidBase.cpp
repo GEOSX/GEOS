@@ -2,10 +2,11 @@
  * ------------------------------------------------------------------------------------------------------------
  * SPDX-License-Identifier: LGPL-2.1-only
  *
- * Copyright (c) 2018-2020 Lawrence Livermore National Security LLC
- * Copyright (c) 2018-2020 The Board of Trustees of the Leland Stanford Junior University
- * Copyright (c) 2018-2020 TotalEnergies
- * Copyright (c) 2019-     GEOSX Contributors
+ * Copyright (c) 2016-2024 Lawrence Livermore National Security LLC
+ * Copyright (c) 2018-2024 TotalEnergies
+ * Copyright (c) 2018-2024 The Board of Trustees of the Leland Stanford Junior University
+ * Copyright (c) 2023-2024 Chevron
+ * Copyright (c) 2019-     GEOS/GEOSX Contributors
  * All rights reserved
  *
  * See top level LICENSE, COPYRIGHT, CONTRIBUTORS, NOTICE, and ACKNOWLEDGEMENTS files for details.
@@ -19,7 +20,7 @@
 
 #include "SolidBase.hpp"
 
-namespace geosx
+namespace geos
 {
 using namespace dataRepository;
 
@@ -30,7 +31,8 @@ SolidBase::SolidBase( string const & name, Group * const parent ):
   ConstitutiveBase( name, parent ),
   m_newStress( 0, 0, 6 ),
   m_oldStress( 0, 0, 6 ),
-  m_density()
+  m_density(),
+  m_thermalExpansionCoefficient()
 {
   string const voightLabels[6] = { "XX", "YY", "ZZ", "YZ", "XZ", "XY" };
 
@@ -45,12 +47,22 @@ SolidBase::SolidBase( string const & name, Group * const parent ):
     setDescription( "Previous Material Stress" );
 
   registerWrapper( viewKeyStruct::densityString(), &m_density ).
+    setPlotLevel( PlotLevel::LEVEL_0 ).
     setApplyDefaultValue( -1 ). // will be overwritten
     setDescription( "Material Density" );
 
   registerWrapper( viewKeyStruct::defaultDensityString(), &m_defaultDensity ).
     setInputFlag( InputFlags::REQUIRED ).
     setDescription( "Default Material Density" );
+
+  registerWrapper( viewKeyStruct::defaultThermalExpansionCoefficientString(), &m_defaultThermalExpansionCoefficient ).
+    setApplyDefaultValue( 0.0 ).
+    setInputFlag( InputFlags::OPTIONAL ).
+    setDescription( "Default Linear Thermal Expansion Coefficient of the Solid Rock Frame" );
+
+  registerWrapper( viewKeyStruct::thermalExpansionCoefficientString(), &m_thermalExpansionCoefficient ).
+    setApplyDefaultValue( -1.0 ). // will be overwritten
+    setDescription( "Linear Thermal Expansion Coefficient Field" );
 }
 
 
@@ -58,10 +70,13 @@ SolidBase::~SolidBase()
 {}
 
 
-void SolidBase::postProcessInput()
+void SolidBase::postInputInitialization()
 {
   this->getWrapper< array2d< real64 > >( viewKeyStruct::densityString() ).
     setApplyDefaultValue( m_defaultDensity );
+
+  this->getWrapper< array1d< real64 > >( viewKeyStruct::thermalExpansionCoefficientString() ).
+    setApplyDefaultValue( m_defaultThermalExpansionCoefficient );
 }
 
 
@@ -84,7 +99,7 @@ void SolidBase::saveConvergedState() const
   arrayView3d< real64 const, solid::STRESS_USD > newStress = m_newStress;
   arrayView3d< real64, solid::STRESS_USD > oldStress = m_oldStress;
 
-  forAll< parallelDevicePolicy<> >( numE, [=] GEOSX_HOST_DEVICE ( localIndex const k )
+  forAll< parallelDevicePolicy<> >( numE, [=] GEOS_HOST_DEVICE ( localIndex const k )
   {
     for( localIndex q = 0; q < numQ; ++q )
     {
@@ -95,4 +110,4 @@ void SolidBase::saveConvergedState() const
 
 
 } /* namespace constitutive */
-} /* namespace geosx */
+} /* namespace geos */

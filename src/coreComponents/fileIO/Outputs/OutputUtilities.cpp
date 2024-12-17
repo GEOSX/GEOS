@@ -2,10 +2,11 @@
  * ------------------------------------------------------------------------------------------------------------
  * SPDX-License-Identifier: LGPL-2.1-only
  *
- * Copyright (c) 2018-2020 Lawrence Livermore National Security LLC
- * Copyright (c) 2018-2020 The Board of Trustees of the Leland Stanford Junior University
- * Copyright (c) 2018-2020 TotalEnergies
- * Copyright (c) 2019-     GEOSX Contributors
+ * Copyright (c) 2016-2024 Lawrence Livermore National Security LLC
+ * Copyright (c) 2018-2024 TotalEnergies
+ * Copyright (c) 2018-2024 The Board of Trustees of the Leland Stanford Junior University
+ * Copyright (c) 2023-2024 Chevron
+ * Copyright (c) 2019-     GEOS/GEOSX Contributors
  * All rights reserved
  *
  * See top level LICENSE, COPYRIGHT, CONTRIBUTORS, NOTICE, and ACKNOWLEDGEMENTS files for details.
@@ -18,14 +19,14 @@
 
 #include "OutputUtilities.hpp"
 
-#include "common/Logger.hpp"
+#include "common/logger/Logger.hpp"
 #include "mesh/ElementRegionManager.hpp"
 #include "mesh/NodeManager.hpp"
 
 #include <algorithm>
 
 
-namespace geosx
+namespace geos
 {
 
 using namespace dataRepository;
@@ -81,10 +82,10 @@ void checkFieldRegistration( ElementRegionManager const & elemManager,
 
   if( !notRegisteredFieldNames.empty() )
   {
-    GEOSX_LOG_RANK_0( "\n" << outputName << ": Warning! " << notRegisteredFieldNames.size() << " field name specified in `fieldNames` is/are not registered anywhere." );
+    GEOS_LOG_RANK_0( "\n" << outputName << ": Warning! " << notRegisteredFieldNames.size() << " field name specified in `fieldNames` is/are not registered anywhere." );
     for( string const & name : notRegisteredFieldNames )
     {
-      GEOSX_LOG_RANK_0( outputName << ": Warning! `" << name << "` is not registered anywhere and will not be displayed.\n" );
+      GEOS_LOG_RANK_0( outputName << ": Warning! `" << name << "` is not registered anywhere and will not be displayed.\n" );
     }
   }
 }
@@ -116,4 +117,4 @@ bool isFieldPlotEnabled( PlotLevel const wrapperPlotLevel,
 
 } /* namespace outputUtilities */
 
-} /* namespace geosx */
+} /* namespace geos */

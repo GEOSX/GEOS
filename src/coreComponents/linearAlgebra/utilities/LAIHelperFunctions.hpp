@@ -2,10 +2,11 @@
  * ------------------------------------------------------------------------------------------------------------
  * SPDX-License-Identifier: LGPL-2.1-only
  *
- * Copyright (c) 2018-2020 Lawrence Livermore National Security LLC
- * Copyright (c) 2018-2020 The Board of Trustees of the Leland Stanford Junior University
- * Copyright (c) 2018-2020 TotalEnergies
- * Copyright (c) 2019-     GEOSX Contributors
+ * Copyright (c) 2016-2024 Lawrence Livermore National Security LLC
+ * Copyright (c) 2018-2024 TotalEnergies
+ * Copyright (c) 2018-2024 The Board of Trustees of the Leland Stanford Junior University
+ * Copyright (c) 2023-2024 Chevron
+ * Copyright (c) 2019-     GEOS/GEOSX Contributors
  * All rights reserved
  *
  * See top level LICENSE, COPYRIGHT, CONTRIBUTORS, NOTICE, and ACKNOWLEDGEMENTS files for details.
@@ -16,8 +17,8 @@
  * @file LAIHelperFunctions.hpp
  */
 
-#ifndef GEOSX_LINEARALGEBRA_UTILITIES_LAIHELPERFUNCTIONS_HPP_
-#define GEOSX_LINEARALGEBRA_UTILITIES_LAIHELPERFUNCTIONS_HPP_
+#ifndef GEOS_LINEARALGEBRA_UTILITIES_LAIHELPERFUNCTIONS_HPP_
+#define GEOS_LINEARALGEBRA_UTILITIES_LAIHELPERFUNCTIONS_HPP_
 
 #include "common/DataTypes.hpp"
 #include "linearAlgebra/interfaces/InterfaceTypes.hpp"
@@ -26,7 +27,7 @@
 #include "mesh/NodeManager.hpp"
 #include "mesh/ElementRegionManager.hpp"
 
-namespace geosx
+namespace geos
 {
 namespace LAIHelperFunctions
 {
@@ -74,7 +75,7 @@ void createPermutationMatrix( NodeManager const & nodeManager,
    */
 
   localIndex const numLocalRows = nodeManager.getNumberOfLocalIndices() * nDofPerNode;
-  permutationMatrix.createWithLocalSize( numLocalRows, numLocalRows, 1, MPI_COMM_GEOSX );
+  permutationMatrix.createWithLocalSize( numLocalRows, numLocalRows, 1, MPI_COMM_GEOS );
 
   arrayView1d< globalIndex const > const & dofNumber = nodeManager.getReference< globalIndex_array >( dofKey );
   arrayView1d< globalIndex const > const & localToGlobal = nodeManager.localToGlobalMap();
@@ -126,7 +127,7 @@ void createPermutationMatrix( ElementRegionManager const & elemManager,
       numLocalRows += elementSubRegion.getNumberOfLocalIndices() * nDofPerCell;
     }
   } );
-  permutationMatrix.createWithLocalSize( numLocalRows, numLocalRows, 1, MPI_COMM_GEOSX );
+  permutationMatrix.createWithLocalSize( numLocalRows, numLocalRows, 1, MPI_COMM_GEOS );
 
   permutationMatrix.open();
   elemManager.forElementSubRegions< ElementSubRegionBase >( [&]( ElementSubRegionBase const & elementSubRegion )
@@ -228,7 +229,7 @@ void computeRigidBodyModes( MeshLevel const & mesh,
       arrayView1d< globalIndex const > const & dofNumber = nodeManager.getReference< globalIndex_array >( dispDofKey );
       localIndex const numComponentsField = dofManager.numComponents( selection[k] );
       numComponents = numComponents > 0 ? numComponents : numComponentsField;
-      GEOSX_ERROR_IF( numComponents != numComponentsField, "Rigid body modes called with different number of components." );
+      GEOS_ERROR_IF( numComponents != numComponentsField, "Rigid body modes called with different number of components." );
       globalIndex const globalOffset = dofManager.globalOffset( selection[k] );
       globalIndex const numLocalDofs = LvArray::integerConversion< globalIndex >( dofManager.numLocalDofs( selection[k] ) );
       for( globalIndex i = 0; i < dofNumber.size(); ++i )
@@ -249,7 +250,7 @@ void computeRigidBodyModes( MeshLevel const & mesh,
   rigidBodyModes.resize( numRidigBodyModes );
   for( localIndex k = 0; k < numComponents; ++k )
   {
-    rigidBodyModes[k].create( numNodes * numComponents, MPI_COMM_GEOSX );
+    rigidBodyModes[k].create( numNodes * numComponents, MPI_COMM_GEOS );
     arrayView1d< real64 > const values = rigidBodyModes[k].open();
     forAll< parallelHostPolicy >( numNodes, [=]( localIndex const i )
     {
@@ -263,7 +264,7 @@ void computeRigidBodyModes( MeshLevel const & mesh,
     case 2:
     {
       localIndex const k = 2;
-      rigidBodyModes[k].create( numNodes*numComponents, MPI_COMM_GEOSX );
+      rigidBodyModes[k].create( numNodes*numComponents, MPI_COMM_GEOS );
       {
         arrayView1d< real64 > const values = rigidBodyModes[k].open();
         forAll< parallelHostPolicy >( numNodes, [=]( localIndex const i )
@@ -284,7 +285,7 @@ void computeRigidBodyModes( MeshLevel const & mesh,
     case 3:
     {
       localIndex k = 3;
-      rigidBodyModes[k].create( numNodes*numComponents, MPI_COMM_GEOSX );
+      rigidBodyModes[k].create( numNodes*numComponents, MPI_COMM_GEOS );
       {
         arrayView1d< real64 > const values = rigidBodyModes[k].open();
         forAll< parallelHostPolicy >( numNodes, [=]( localIndex const i )
@@ -302,7 +303,7 @@ void computeRigidBodyModes( MeshLevel const & mesh,
       rigidBodyModes[k].scale( 1.0 / rigidBodyModes[k].norm2() );
 
       ++k;
-      rigidBodyModes[k].create( numNodes*numComponents, MPI_COMM_GEOSX );
+      rigidBodyModes[k].create( numNodes*numComponents, MPI_COMM_GEOS );
       {
         arrayView1d< real64 > const values = rigidBodyModes[k].open();
         forAll< parallelHostPolicy >( numNodes, [=]( localIndex const i )
@@ -320,7 +321,7 @@ void computeRigidBodyModes( MeshLevel const & mesh,
       rigidBodyModes[k].scale( 1.0 / rigidBodyModes[k].norm2() );
 
       ++k;
-      rigidBodyModes[k].create( numNodes*numComponents, MPI_COMM_GEOSX );
+      rigidBodyModes[k].create( numNodes*numComponents, MPI_COMM_GEOS );
       {
         arrayView1d< real64 > const values = rigidBodyModes[k].open();
         forAll< parallelHostPolicy >( numNodes, [=]( localIndex const i )
@@ -340,13 +341,13 @@ void computeRigidBodyModes( MeshLevel const & mesh,
     }
     default:
     {
-      GEOSX_ERROR( "Rigid body modes computation unsupported for " << numComponents << " components." );
+      GEOS_ERROR( "Rigid body modes computation unsupported for " << numComponents << " components." );
     }
   }
 }
 
 } // LAIHelperFunctions namespace
 
-} // geosx namespace
+} // geos namespace
 
-#endif /*GEOSX_LINEARALGEBRA_UTILITIES_LAIHELPERFUNCTIONS_HPP_*/
+#endif /*GEOS_LINEARALGEBRA_UTILITIES_LAIHELPERFUNCTIONS_HPP_*/

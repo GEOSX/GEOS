@@ -1,0 +1,189 @@
+<?xml version="1.0" ?>
+
+<Problem>
+  <Solvers
+    gravityVector="{0,-9.81, 0}">
+    <SinglePhaseFVM
+      name="SinglePhaseFlow"
+      logLevel="1"
+      discretization="singlePhaseTPFA"
+      targetRegions="{ Domain, Fracture }">
+      <NonlinearSolverParameters
+        newtonTol="1.0e-3"
+        newtonMaxIter="8"/>
+      <LinearSolverParameters
+        directParallel="0"/>
+    </SinglePhaseFVM>
+
+    <EmbeddedSurfaceGenerator
+      name="SurfaceGen"
+      logLevel="1"
+      discretization="FE1"
+      targetRegions="{ Domain, Fracture }"
+      targetObjects="{ FracturePlane }"
+      fractureRegion="Fracture"
+      mpiCommOrder="1"/>
+  </Solvers>
+
+  <Mesh>
+    <InternalMesh
+      name="mesh1"
+      elementTypes="{ C3D8 }"
+      xCoords="{ -50, 50 }"
+      yCoords="{ 0, 1000 }"
+      zCoords="{ 0, 50 }"
+      nx="{ 3 }"
+      ny="{ 100 }"
+      nz="{ 1 }"
+      cellBlockNames="{ cb1 }"/>
+  </Mesh>
+
+  <Geometry>
+    <Rectangle
+      name="FracturePlane"
+      normal="{ 1, 0, 0 }"
+      origin="{ 0, 500, 0 }"
+      lengthVector="{ 0, 1, 0 }"
+      widthVector="{ 0, 0, 1 }"
+      dimensions="{ 990, 100 }"/>
+
+    <Box
+      name="fractureTop"
+      xMin="{ -0.01, 979.99, -0.01 }"
+      xMax="{ 0.01, 990.01, 50.01 }"/>
+  </Geometry>
+
+  <Events
+    maxTime="100.0">
+
+    <SoloEvent
+      name="preFracture"
+      target="/Solvers/SurfaceGen"/>
+
+    <SoloEvent
+      name="output1"
+      target="/Outputs/vtkOutput"/>
+
+    <PeriodicEvent
+      name="solverApplications"
+      forceDt="100.0"
+      target="/Solvers/SinglePhaseFlow"/>
+
+    <PeriodicEvent
+      name="outputs"
+      target="/Outputs/vtkOutput"/>
+
+    <PeriodicEvent
+      name="restarts"
+      timeFrequency="100.0"
+      targetExactTimestep="0"
+      target="/Outputs/restartOutput"/>
+  </Events>
+
+  <NumericalMethods>
+    <FiniteVolume>
+      <TwoPointFluxApproximation
+        name="singlePhaseTPFA"/>
+    </FiniteVolume>
+    <FiniteElements>
+    <FiniteElementSpace
+        name="FE1"
+        order="1"/>
+  </FiniteElements>
+  </NumericalMethods>
+
+  <ElementRegions>
+    <CellElementRegion
+      name="Domain"
+      cellBlocks="{ * }"
+      materialList="{ water, rock }"/>
+
+    <SurfaceElementRegion
+      name="Fracture"
+      defaultAperture="1.0e-3"
+      subRegionType="embeddedElement"
+      materialList="{ water, fractureFilling }"/>
+  </ElementRegions>
+
+  <Constitutive>
+    <CompressibleSinglePhaseFluid
+      name="water"
+      defaultDensity="1000"
+      defaultViscosity="0.001"
+      referencePressure="0.0"
+      compressibility="0.0"
+      viscosibility="0.0"/>
+
+    <CompressibleSolidParallelPlatesPermeability
+      name="fractureFilling"
+      solidModelName="nullSolid"
+      porosityModelName="fracturePorosity"
+      permeabilityModelName="fracturePerm"/>
+
+    <CompressibleSolidConstantPermeability
+      name="rock"
+      solidModelName="nullSolid"
+      porosityModelName="rockPorosity"
+      permeabilityModelName="rockPerm"/>
+
+    <NullModel
+      name="nullSolid"/>
+
+    <PressurePorosity
+      name="rockPorosity"
+      defaultReferencePorosity="0.05"
+      referencePressure="0.0"
+      compressibility="1.0e-9"/>
+
+    <ConstantPermeability
+      name="rockPerm"
+      permeabilityComponents="{ 2.0e-17, 2.0e-17, 2.0e-17 }"/>
+
+    <PressurePorosity
+      name="fracturePorosity"
+      defaultReferencePorosity="1.00"
+      referencePressure="0.0"
+      compressibility="0.0"/>
+
+    <ParallelPlatesPermeability
+      name="fracturePerm"/>
+  </Constitutive>
+
+  <FieldSpecifications>
+
+    <FieldSpecification
+      name="fracPorosity"
+      initialCondition="1"
+      setNames="{ all }"
+      objectPath="ElementRegions/Fracture"
+      fieldName="fracturePorosity_porosity"
+      scale="1.00"/>
+
+    <FieldSpecification
+      name="initalPressure"
+      initialCondition="1"
+      objectPath="ElementRegions"
+      fieldName="pressure"
+      scale="1.0e6"
+      setNames="{ all }"/>
+
+    <FieldSpecification
+      name="topPressure"
+      initialCondition="0"
+      objectPath="faceManager"
+      fieldName="pressure"
+      scale="1.0e6"
+      setNames="{ ypos }"/>  
+
+  </FieldSpecifications>
+
+  <Outputs>
+    <VTK
+      name="vtkOutput"
+      plotFileRoot="fractureFlow_Gravity"
+      plotLevel="1"/>
+
+    <Restart
+      name="restartOutput"/>
+  </Outputs>
+</Problem>

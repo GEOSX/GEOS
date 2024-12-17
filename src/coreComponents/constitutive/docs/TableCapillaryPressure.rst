@@ -26,7 +26,7 @@ oil, gas                     Oil phase
 water, gas                   Gas phase
 ============================ ================
 
-In all cases, the user-provided capillary pressure is used in GEOSX to compute the phase pressure using the formula:
+In all cases, the user-provided capillary pressure is used in GEOS to compute the phase pressure using the formula:
 
 .. math::
     P_c = p_{nw} - p_w.
@@ -46,7 +46,7 @@ node.
 
 The following attributes are supported:
 
-.. include:: /coreComponents/schema/docs/TableCapillaryPressure.rst
+.. include:: /docs/sphinx/datastructure/TableCapillaryPressure.rst
 
 Below are some comments on the model parameters.
 

@@ -2,10 +2,11 @@
  * ------------------------------------------------------------------------------------------------------------
  * SPDX-License-Identifier: LGPL-2.1-only
  *
- * Copyright (c) 2018-2020 Lawrence Livermore National Security LLC
- * Copyright (c) 2018-2020 The Board of Trustees of the Leland Stanford Junior University
- * Copyright (c) 2018-2020 Total, S.A
- * Copyright (c) 2019-     GEOSX Contributors
+ * Copyright (c) 2016-2024 Lawrence Livermore National Security LLC
+ * Copyright (c) 2018-2024 TotalEnergies
+ * Copyright (c) 2018-2024 The Board of Trustees of the Leland Stanford Junior University
+ * Copyright (c) 2023-2024 Chevron
+ * Copyright (c) 2019-     GEOS/GEOSX Contributors
  * All rights reserved
  *
  * See top level LICENSE, COPYRIGHT, CONTRIBUTORS, NOTICE, and ACKNOWLEDGEMENTS files for details.
@@ -24,27 +25,33 @@
 
 #include <numeric>
 
-#define GEOSX_PARMETIS_CHECK( call ) \
+#define GEOS_PARMETIS_CHECK( call ) \
   do { \
     auto const ierr = call; \
-    GEOSX_ERROR_IF_NE_MSG( ierr, METIS_OK, "Error in call to:\n" << #call ); \
+    GEOS_ERROR_IF_NE_MSG( ierr, METIS_OK, "Error in call to:\n" << #call ); \
   } while( false )
 
-namespace geosx
+namespace geos
 {
 namespace parmetis
 {
 
-static_assert( std::is_same< idx_t, int64_t >::value,
-               "Non-matching index types. ParMETIS must be built with 64-bit indices." );
+static_assert( std::is_same< idx_t, pmet_idx_t >::value, "Non-matching index types. ParMETIS must be built with 64-bit indices." );
 
-ArrayOfArrays< int64_t, int64_t >
-meshToDual( ArrayOfArraysView< int64_t const, int64_t > const & elemToNodes,
-            arrayView1d< int64_t const > const & elemDist,
+ArrayOfArrays< idx_t, idx_t >
+meshToDual( ArrayOfArraysView< idx_t const, idx_t > const & elemToNodes,
+            arrayView1d< idx_t const > const & elemDist,
             MPI_Comm comm,
             int const minCommonNodes )
 {
   idx_t const numElems = elemToNodes.size();
+
+  // `parmetis` awaits the arrays to be allocated as two continuous arrays: one for values, the other for offsets.
+  // Our `ArrayOfArrays` allows to reserve some extra space for further element insertion,
+  // but this is not compatible with what `parmetis` requires.
+  GEOS_ASSERT_EQ_MSG( std::accumulate( elemToNodes.getSizes(), elemToNodes.getSizes() + numElems, 0 ),
+                      elemToNodes.valueCapacity(),
+                      "Internal error. The element to nodes mapping must be strictly allocated for compatibility with a third party library." );
 
   idx_t numflag = 0;
   idx_t ncommonnodes = minCommonNodes;
@@ -52,12 +59,12 @@ meshToDual( ArrayOfArraysView< int64_t const, int64_t > const & elemToNodes,
   idx_t * adjncy;
 
   // Technical UB if ParMETIS writes into these arrays; in practice we discard them right after
-  GEOSX_PARMETIS_CHECK( ParMETIS_V3_Mesh2Dual( const_cast< idx_t * >( elemDist.data() ),
-                                               const_cast< idx_t * >( elemToNodes.getOffsets() ),
-                                               const_cast< idx_t * >( elemToNodes.getValues() ),
-                                               &numflag, &ncommonnodes, &xadj, &adjncy, &comm ) );
+  GEOS_PARMETIS_CHECK( ParMETIS_V3_Mesh2Dual( const_cast< idx_t * >( elemDist.data() ),
+                                              const_cast< idx_t * >( elemToNodes.getOffsets() ),
+                                              const_cast< idx_t * >( elemToNodes.getValues() ),
+                                              &numflag, &ncommonnodes, &xadj, &adjncy, &comm ) );
 
-  ArrayOfArrays< int64_t, int64_t > graph;
+  ArrayOfArrays< idx_t, idx_t > graph;
   graph.resizeFromOffsets( numElems, xadj );
 
   // There is no way to direct-copy values into ArrayOfArrays without UB (casting away const)
@@ -72,14 +79,14 @@ meshToDual( ArrayOfArraysView< int64_t const, int64_t > const & elemToNodes,
   return graph;
 }
 
-array1d< int64_t >
-partition( ArrayOfArraysView< int64_t const, int64_t > const & graph,
-           arrayView1d< int64_t const > const & vertDist,
-           int64_t const numParts,
+array1d< idx_t >
+partition( ArrayOfArraysView< idx_t const, idx_t > const & graph,
+           arrayView1d< idx_t const > const & vertDist,
+           idx_t const numParts,
            MPI_Comm comm,
            int const numRefinements )
 {
-  array1d< int64_t > part( graph.size() ); // all 0 by default
+  array1d< idx_t > part( graph.size() ); // all 0 by default
   if( numParts == 1 )
   {
     return part;
@@ -99,25 +106,25 @@ partition( ArrayOfArraysView< int64_t const, int64_t > const & graph,
   real_t ubvec = 1.05;
 
   // Technical UB if ParMETIS writes into these arrays; in practice we discard them right after
-  GEOSX_PARMETIS_CHECK( ParMETIS_V3_PartKway( const_cast< idx_t * >( vertDist.data() ),
-                                              const_cast< idx_t * >( graph.getOffsets() ),
-                                              const_cast< idx_t * >( graph.getValues() ),
-                                              nullptr, nullptr, &wgtflag,
-                                              &numflag, &ncon, &npart, tpwgts.data(),
-                                              &ubvec, options, &edgecut, part.data(), &comm ) );
+  GEOS_PARMETIS_CHECK( ParMETIS_V3_PartKway( const_cast< idx_t * >( vertDist.data() ),
+                                             const_cast< idx_t * >( graph.getOffsets() ),
+                                             const_cast< idx_t * >( graph.getValues() ),
+                                             nullptr, nullptr, &wgtflag,
+                                             &numflag, &ncon, &npart, tpwgts.data(),
+                                             &ubvec, options, &edgecut, part.data(), &comm ) );
 
   for( int iter = 0; iter < numRefinements; ++iter )
   {
-    GEOSX_PARMETIS_CHECK( ParMETIS_V3_RefineKway( const_cast< idx_t * >( vertDist.data() ),
-                                                  const_cast< idx_t * >( graph.getOffsets() ),
-                                                  const_cast< idx_t * >( graph.getValues() ),
-                                                  nullptr, nullptr, &wgtflag,
-                                                  &numflag, &ncon, &npart, tpwgts.data(),
-                                                  &ubvec, options, &edgecut, part.data(), &comm ) );
+    GEOS_PARMETIS_CHECK( ParMETIS_V3_RefineKway( const_cast< idx_t * >( vertDist.data() ),
+                                                 const_cast< idx_t * >( graph.getOffsets() ),
+                                                 const_cast< idx_t * >( graph.getValues() ),
+                                                 nullptr, nullptr, &wgtflag,
+                                                 &numflag, &ncon, &npart, tpwgts.data(),
+                                                 &ubvec, options, &edgecut, part.data(), &comm ) );
   }
 
   return part;
 }
 
 } // namespace parmetis
-} // namespace geosx
+} // namespace geos

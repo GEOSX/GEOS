@@ -2,10 +2,11 @@
  * ------------------------------------------------------------------------------------------------------------
  * SPDX-License-Identifier: LGPL-2.1-only
  *
- * Copyright (c) 2018-2020 Lawrence Livermore National Security LLC
- * Copyright (c) 2018-2020 The Board of Trustees of the Leland Stanford Junior University
- * Copyright (c) 2018-2020 TotalEnergies
- * Copyright (c) 2019-     GEOSX Contributors
+ * Copyright (c) 2016-2024 Lawrence Livermore National Security LLC
+ * Copyright (c) 2018-2024 TotalEnergies
+ * Copyright (c) 2018-2024 The Board of Trustees of the Leland Stanford Junior University
+ * Copyright (c) 2023-2024 Chevron
+ * Copyright (c) 2019-     GEOS/GEOSX Contributors
  * All rights reserved
  *
  * See top level LICENSE, COPYRIGHT, CONTRIBUTORS, NOTICE, and ACKNOWLEDGEMENTS files for details.
@@ -24,16 +25,16 @@
 // TPL includes
 #include "gtest/gtest.h"
 
-using namespace geosx;
+using namespace geos;
 using namespace finiteElement;
-using namespace geosx::testing;
+using namespace geos::testing;
 
 CommandLineOptions g_commandLineOptions;
-constexpr real64 absTol = geosx::testing::DEFAULT_ABS_TOL;
-constexpr real64 relTol = geosx::testing::DEFAULT_REL_TOL*10;
+constexpr real64 absTol = geos::testing::DEFAULT_ABS_TOL;
+constexpr real64 relTol = geos::testing::DEFAULT_REL_TOL*10;
 
 template< typename VEM >
-GEOSX_HOST_DEVICE
+GEOS_HOST_DEVICE
 static void checkIntegralMeanConsistency( FiniteElementBase const & feBase,
                                           typename VEM::StackVariables const & stack,
                                           real64 & sumBasisFunctions )
@@ -51,7 +52,7 @@ static void checkIntegralMeanConsistency( FiniteElementBase const & feBase,
 }
 
 template< typename VEM >
-GEOSX_HOST_DEVICE
+GEOS_HOST_DEVICE
 static void
 checkIntegralMeanDerivativesConsistency( FiniteElementBase const & feBase,
                                          typename VEM::StackVariables const & stack,
@@ -80,7 +81,7 @@ checkIntegralMeanDerivativesConsistency( FiniteElementBase const & feBase,
 }
 
 template< typename VEM >
-GEOSX_HOST_DEVICE
+GEOS_HOST_DEVICE
 static void
 checkStabilizationMatrixConsistency ( arrayView2d< real64 const,
                                                    nodes::REFERENCE_POSITION_USD > const & nodesCoords,
@@ -156,7 +157,7 @@ checkStabilizationMatrixConsistency ( arrayView2d< real64 const,
 }
 
 template< typename VEM >
-GEOSX_HOST_DEVICE
+GEOS_HOST_DEVICE
 static void checkSumOfQuadratureWeights( typename VEM::StackVariables stack,
                                          real64 & sumOfQuadratureWeights )
 {
@@ -213,8 +214,8 @@ static void testCellsInMeshLevel( MeshLevel const & mesh )
   arrayView2d< real64 > stabTimeMonomialDofsNormView = stabTimeMonomialDofsNorm.toView();
 
   // Loop over cells on the device.
-  forAll< parallelDevicePolicy< > >( numCells, [=] GEOSX_HOST_DEVICE
-                                       ( localIndex const cellIndex )
+  forAll< geos::parallelDevicePolicy< > >( numCells, [=] GEOS_HOST_DEVICE
+                                             ( localIndex const cellIndex )
   {
     typename VEM::StackVariables stack;
     VEM virtualElement;
@@ -280,19 +281,19 @@ TEST( ConformingVirtualElementOrder1, hexahedra )
     "</Problem>";
 
   xmlWrapper::xmlDocument inputFile;
-  xmlWrapper::xmlResult xmlResult = inputFile.load_buffer( inputStream.c_str(), inputStream.size());
+  xmlWrapper::xmlResult xmlResult = inputFile.loadString( inputStream );
   if( !xmlResult )
   {
-    GEOSX_LOG_RANK_0( "XML parsed with errors!" );
-    GEOSX_LOG_RANK_0( "Error description: " << xmlResult.description());
-    GEOSX_LOG_RANK_0( "Error offset: " << xmlResult.offset );
+    GEOS_LOG_RANK_0( "XML parsed with errors!" );
+    GEOS_LOG_RANK_0( "Error description: " << xmlResult.description());
+    GEOS_LOG_RANK_0( "Error offset: " << xmlResult.offset );
   }
-  xmlWrapper::xmlNode xmlProblemNode = inputFile.child( dataRepository::keys::ProblemManager );
+  xmlWrapper::xmlNode xmlProblemNode = inputFile.getChild( dataRepository::keys::ProblemManager );
 
   GeosxState state( std::make_unique< CommandLineOptions >( g_commandLineOptions ) );
 
   ProblemManager & problemManager = state.getProblemManager();
-  problemManager.processInputFileRecursive( xmlProblemNode );
+  problemManager.processInputFileRecursive( inputFile, xmlProblemNode );
 
   // Open mesh levels
   DomainPartition & domain  = problemManager.getDomainPartition();
@@ -302,8 +303,8 @@ TEST( ConformingVirtualElementOrder1, hexahedra )
   MeshLevel & mesh = domain.getMeshBody( 0 ).getBaseDiscretization();
   ElementRegionManager & elementManager = mesh.getElemManager();
   xmlWrapper::xmlNode topLevelNode = xmlProblemNode.child( elementManager.getName().c_str() );
-  elementManager.processInputFileRecursive( topLevelNode );
-  elementManager.postProcessInputRecursive();
+  elementManager.processInputFileRecursive( inputFile, topLevelNode );
+  elementManager.postInputInitializationRecursive();
   problemManager.problemSetup();
 
   // Test computed projectors for all cells in MeshLevel
@@ -333,19 +334,19 @@ TEST( ConformingVirtualElementOrder1, wedges )
     "  </ElementRegions>"
     "</Problem>";
   xmlWrapper::xmlDocument inputFile;
-  xmlWrapper::xmlResult xmlResult = inputFile.load_buffer( inputStream.c_str(), inputStream.size());
+  xmlWrapper::xmlResult xmlResult = inputFile.loadString( inputStream );
   if( !xmlResult )
   {
-    GEOSX_LOG_RANK_0( "XML parsed with errors!" );
-    GEOSX_LOG_RANK_0( "Error description: " << xmlResult.description());
-    GEOSX_LOG_RANK_0( "Error offset: " << xmlResult.offset );
+    GEOS_LOG_RANK_0( "XML parsed with errors!" );
+    GEOS_LOG_RANK_0( "Error description: " << xmlResult.description());
+    GEOS_LOG_RANK_0( "Error offset: " << xmlResult.offset );
   }
-  xmlWrapper::xmlNode xmlProblemNode = inputFile.child( dataRepository::keys::ProblemManager );
+  xmlWrapper::xmlNode xmlProblemNode = inputFile.getChild( dataRepository::keys::ProblemManager );
 
   GeosxState state( std::make_unique< CommandLineOptions >( g_commandLineOptions ) );
 
   ProblemManager & problemManager = state.getProblemManager();
-  problemManager.processInputFileRecursive( xmlProblemNode );
+  problemManager.processInputFileRecursive( inputFile, xmlProblemNode );
 
   // Open mesh levels
   DomainPartition & domain  = problemManager.getDomainPartition();
@@ -355,8 +356,8 @@ TEST( ConformingVirtualElementOrder1, wedges )
   MeshLevel & mesh = domain.getMeshBody( 0 ).getBaseDiscretization();
   ElementRegionManager & elementManager = mesh.getElemManager();
   xmlWrapper::xmlNode topLevelNode = xmlProblemNode.child( elementManager.getName().c_str() );
-  elementManager.processInputFileRecursive( topLevelNode );
-  elementManager.postProcessInputRecursive();
+  elementManager.processInputFileRecursive( inputFile, topLevelNode );
+  elementManager.postInputInitializationRecursive();
   problemManager.problemSetup();
 
   // Test computed projectors for all cells in MeshLevel
@@ -366,8 +367,8 @@ TEST( ConformingVirtualElementOrder1, wedges )
 int main( int argc, char * * argv )
 {
   ::testing::InitGoogleTest( &argc, argv );
-  g_commandLineOptions = *geosx::basicSetup( argc, argv );
+  g_commandLineOptions = *geos::basicSetup( argc, argv );
   int const result = RUN_ALL_TESTS();
-  geosx::basicCleanup();
+  geos::basicCleanup();
   return result;
 }

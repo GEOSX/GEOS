@@ -2,11 +2,12 @@
  * ------------------------------------------------------------------------------------------------------------
  * SPDX-License-Identifier: LGPL-2.1-only
  *
- * Copyright (c) 2018-2019 Lawrence Livermore National Security LLC
- * Copyright (c) 2018-2019 The Board of Trustees of the Leland Stanford Junior University
- * Copyright (c) 2018-2019 TotalEnergies
- * Copyright (c) 2019-     GEOSX Contributors
- * All right reserved
+ * Copyright (c) 2016-2024 Lawrence Livermore National Security LLC
+ * Copyright (c) 2018-2024 TotalEnergies
+ * Copyright (c) 2018-2024 The Board of Trustees of the Leland Stanford Junior University
+ * Copyright (c) 2023-2024 Chevron
+ * Copyright (c) 2019-     GEOS/GEOSX Contributors
+ * All rights reserved
  *
  * See top level LICENSE, COPYRIGHT, CONTRIBUTORS, NOTICE, and ACKNOWLEDGEMENTS files for details.
  * ------------------------------------------------------------------------------------------------------------
@@ -16,8 +17,8 @@
  *  @file ModifiedCamClay.hpp
  */
 
-#ifndef GEOSX_CONSTITUTIVE_SOLID_MODIFIEDCAMCLAY_HPP
-#define GEOSX_CONSTITUTIVE_SOLID_MODIFIEDCAMCLAY_HPP
+#ifndef GEOS_CONSTITUTIVE_SOLID_MODIFIEDCAMCLAY_HPP
+#define GEOS_CONSTITUTIVE_SOLID_MODIFIEDCAMCLAY_HPP
 
 #include "ElasticIsotropicPressureDependent.hpp"
 #include "InvariantDecompositions.hpp"
@@ -25,7 +26,7 @@
 #include "SolidModelDiscretizationOpsFullyAnisotroipic.hpp"
 #include "LvArray/src/tensorOps.hpp"
 
-namespace geosx
+namespace geos
 {
 
 namespace constitutive
@@ -52,6 +53,7 @@ public:
    * @param[in] oldPreConsolidationPressure The ArrayView holding the old preconsolidation pressure data from the previous converged state
    * for each quadrature point.
    * @param[in] shearModulus                The ArrayView holding the shear modulus data for each element.
+   * @param[in] thermalExpansionCoefficient The ArrayView holding the thermal expansion coefficient data for each element.
    * @param[in] newstress                   The ArrayView holding the new stress data for each quadrature point.
    * @param[in] oldstress                   The ArrayView holding the old stress data from the previous converged state for each quadrature
    * point.
@@ -65,10 +67,11 @@ public:
                           arrayView2d< real64 > const & newPreConsolidationPressure,
                           arrayView2d< real64 > const & oldPreConsolidationPressure,
                           arrayView1d< real64 const > const & shearModulus,
+                          arrayView1d< real64 const > const & thermalExpansionCoefficient,
                           arrayView3d< real64, solid::STRESS_USD > const & newStress,
                           arrayView3d< real64, solid::STRESS_USD > const & oldStress,
                           bool const & disableInelasticity ):
-    ElasticIsotropicPressureDependentUpdates( refPressure, refStrainVol, recompressionIndex, shearModulus, newStress, oldStress, disableInelasticity ),
+    ElasticIsotropicPressureDependentUpdates( refPressure, refStrainVol, recompressionIndex, shearModulus, thermalExpansionCoefficient, newStress, oldStress, disableInelasticity ),
     m_virginCompressionIndex( virginCompressionIndex ),
     m_cslSlope( cslSlope ),
     m_newPreConsolidationPressure( newPreConsolidationPressure ),
@@ -96,7 +99,7 @@ public:
   // Bring in base implementations to prevent hiding warnings
   using ElasticIsotropicPressureDependentUpdates::smallStrainUpdate;
 
-  GEOSX_HOST_DEVICE
+  GEOS_HOST_DEVICE
   void evaluateYield( real64 const p,
                       real64 const q,
                       real64 const pc,
@@ -114,34 +117,44 @@ public:
 
 
 
-  GEOSX_HOST_DEVICE
+  GEOS_HOST_DEVICE
+  void smallStrainUpdate( localIndex const k,
+                          localIndex const q,
+                          real64 const & timeIncrement,
+                          real64 const ( &strainIncrement )[6],
+                          real64 ( &stress )[6],
+                          real64 ( &stiffness )[6][6] ) const;
+
+  GEOS_HOST_DEVICE
   virtual void smallStrainUpdate( localIndex const k,
                                   localIndex const q,
+                                  real64 const & timeIncrement,
                                   real64 const ( &strainIncrement )[6],
                                   real64 ( &stress )[6],
-                                  real64 ( &stiffness )[6][6] ) const override final;
+                                  DiscretizationOps & stiffness ) const;
 
-  GEOSX_HOST_DEVICE
-  virtual void smallStrainUpdate( localIndex const k,
-                                  localIndex const q,
-                                  real64 const ( &strainIncrement )[6],
-                                  real64 ( &stress )[6],
-                                  DiscretizationOps & stiffness ) const final;
+  GEOS_HOST_DEVICE
+  virtual void smallStrainUpdate_ElasticOnly( localIndex const k,
+                                              localIndex const q,
+                                              real64 const & timeIncrement,
+                                              real64 const ( &strainIncrement )[6],
+                                              real64 ( &stress )[6],
+                                              real64 ( &stiffness )[6][6] ) const override;
 
-  GEOSX_HOST_DEVICE
+  GEOS_HOST_DEVICE
   virtual real64 getBulkModulus( localIndex const k ) const override final
   {
     return -m_refPressure/m_recompressionIndex[k]; // bulk modulus at cell index K
   }
 
-  GEOSX_HOST_DEVICE
+  GEOS_HOST_DEVICE
   virtual real64 getShearModulus( localIndex const k ) const override final
   {
     return m_shearModulus[k];
   }
 
-  GEOSX_HOST_DEVICE
-  GEOSX_FORCE_INLINE
+  GEOS_HOST_DEVICE
+  inline
   virtual void saveConvergedState( localIndex const k,
                                    localIndex const q ) const override final
   {
@@ -149,6 +162,14 @@ public:
     m_oldPreConsolidationPressure[k][q] = m_newPreConsolidationPressure[k][q];
   }
 
+  GEOS_HOST_DEVICE
+  GEOS_FORCE_INLINE
+  virtual void viscousStateUpdate( localIndex const k,
+                                   localIndex const q,
+                                   real64 beta ) const override
+  {
+    m_newPreConsolidationPressure[k][q] = beta * m_oldPreConsolidationPressure[k][q] + (1 - beta) * m_newPreConsolidationPressure[k][q];
+  }
 private:
 
   /// A reference to the ArrayView holding the virgin compression index for each element.
@@ -166,8 +187,8 @@ private:
 };
 
 
-GEOSX_HOST_DEVICE
-GEOSX_FORCE_INLINE
+GEOS_HOST_DEVICE
+inline
 void ModifiedCamClayUpdates::evaluateYield( real64 const p,
                                             real64 const q,
                                             real64 const pc,
@@ -196,10 +217,11 @@ void ModifiedCamClayUpdates::evaluateYield( real64 const p,
 }
 
 
-GEOSX_HOST_DEVICE
-GEOSX_FORCE_INLINE
+GEOS_HOST_DEVICE
+inline
 void ModifiedCamClayUpdates::smallStrainUpdate( localIndex const k,
                                                 localIndex const q,
+                                                real64 const & timeIncrement,
                                                 real64 const ( &strainIncrement )[6],
                                                 real64 ( & stress )[6],
                                                 real64 ( & stiffness )[6][6] ) const
@@ -207,6 +229,7 @@ void ModifiedCamClayUpdates::smallStrainUpdate( localIndex const k,
 
   // Rename variables for easier implementation
 
+  GEOS_UNUSED_VAR( timeIncrement );
   real64 const oldPc  = m_oldPreConsolidationPressure[k][q];   //pre-consolidation pressure
   real64 const mu     = m_shearModulus[k];
   real64 const p0     = m_refPressure;
@@ -221,7 +244,7 @@ void ModifiedCamClayUpdates::smallStrainUpdate( localIndex const k,
 
   // elastic predictor (assume strainIncrement is all elastic)
 
-  ElasticIsotropicPressureDependentUpdates::smallStrainUpdate( k, q, strainIncrement, stress, stiffness );
+  ElasticIsotropicPressureDependentUpdates::smallStrainUpdate( k, q, timeIncrement, strainIncrement, stress, stiffness );
 
   if( m_disableInelasticity )
   {
@@ -250,11 +273,10 @@ void ModifiedCamClayUpdates::smallStrainUpdate( localIndex const k,
   }
 
   // else, plasticity (trial stress point lies outside yield surface)
-
   eps_v_trial = std::log( trialP/p0 ) * Cr * (-1.0) + eps_v0;
   eps_s_trial = trialQ/3.0/mu;
 
-  real64 solution[3]{}, residual[3]{}, delta[3]{};
+  real64 solution[3] = {}, residual[3] = {}, delta[3] = {};
   real64 jacobian[3][3] = {{}}, jacobianInv[3][3] = {{}};
 
   solution[0] = eps_v_trial; // initial guess for elastic volumetric strain
@@ -419,16 +441,31 @@ void ModifiedCamClayUpdates::smallStrainUpdate( localIndex const k,
   return;
 }
 
+GEOS_HOST_DEVICE
+GEOS_FORCE_INLINE
+void ModifiedCamClayUpdates::smallStrainUpdate_ElasticOnly( localIndex const k,
+                                                            localIndex const q,
+                                                            real64 const & timeIncrement,
+                                                            real64 const ( &strainIncrement )[6],
+                                                            real64 ( & stress )[6],
+                                                            real64 ( & stiffness )[6][6] ) const
+{
+  // elastic predictor (assume strainIncrement is all elastic)
+  GEOS_UNUSED_VAR( timeIncrement );
+  ElasticIsotropicPressureDependentUpdates::smallStrainUpdate( k, q, timeIncrement, strainIncrement, stress, stiffness );
+  return;
+}
 
-GEOSX_HOST_DEVICE
-GEOSX_FORCE_INLINE
+GEOS_HOST_DEVICE
+inline
 void ModifiedCamClayUpdates::smallStrainUpdate( localIndex const k,
                                                 localIndex const q,
+                                                real64 const & timeIncrement,
                                                 real64 const ( &strainIncrement )[6],
                                                 real64 ( & stress )[6],
                                                 DiscretizationOps & stiffness ) const
 {
-  smallStrainUpdate( k, q, strainIncrement, stress, stiffness.m_c );
+  smallStrainUpdate( k, q, timeIncrement, strainIncrement, stress, stiffness.m_c );
 }
 
 /**
@@ -519,6 +556,7 @@ public:
                                    m_newPreConsolidationPressure,
                                    m_oldPreConsolidationPressure,
                                    m_shearModulus,
+                                   m_thermalExpansionCoefficient,
                                    m_newStress,
                                    m_oldStress,
                                    m_disableInelasticity );
@@ -532,7 +570,7 @@ public:
    * @return An @p UPDATE_KERNEL object.
    */
   template< typename UPDATE_KERNEL, typename ... PARAMS >
-  UPDATE_KERNEL createDerivedKernelUpdates( PARAMS && ... constructorParams )
+  UPDATE_KERNEL createDerivedKernelUpdates( PARAMS && ... constructorParams ) const
   {
     return UPDATE_KERNEL( std::forward< PARAMS >( constructorParams )...,
                           m_refPressure,
@@ -543,6 +581,7 @@ public:
                           m_newPreConsolidationPressure,
                           m_oldPreConsolidationPressure,
                           m_shearModulus,
+                          m_thermalExpansionCoefficient,
                           m_newStress,
                           m_oldStress,
                           m_disableInelasticity );
@@ -550,7 +589,7 @@ public:
 
 
 protected:
-  virtual void postProcessInput() override;
+  virtual void postInputInitialization() override;
 
   /// Material parameter: The default value of the virgin compression index
   real64 m_defaultVirginCompressionIndex;
@@ -576,6 +615,6 @@ protected:
 
 } /* namespace constitutive */
 
-} /* namespace geosx */
+} /* namespace geos */
 
-#endif /* GEOSX_CONSTITUTIVE_SOLID_MODIFIEDCAMCLAY_HPP_ */
+#endif /* GEOS_CONSTITUTIVE_SOLID_MODIFIEDCAMCLAY_HPP_ */

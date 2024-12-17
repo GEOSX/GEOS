@@ -2,10 +2,11 @@
  * ------------------------------------------------------------------------------------------------------------
  * SPDX-License-Identifier: LGPL-2.1-only
  *
- * Copyright (c) 2018-2020 Lawrence Livermore National Security LLC
- * Copyright (c) 2018-2020 The Board of Trustees of the Leland Stanford Junior University
- * Copyright (c) 2018-2020 TotalEnergies
- * Copyright (c) 2019-     GEOSX Contributors
+ * Copyright (c) 2016-2024 Lawrence Livermore National Security LLC
+ * Copyright (c) 2018-2024 TotalEnergies
+ * Copyright (c) 2018-2024 The Board of Trustees of the Leland Stanford Junior University
+ * Copyright (c) 2023-2024 Chevron
+ * Copyright (c) 2019-     GEOS/GEOSX Contributors
  * All rights reserved
  *
  * See top level LICENSE, COPYRIGHT, CONTRIBUTORS, NOTICE, and ACKNOWLEDGEMENTS files for details.
@@ -17,12 +18,12 @@
  *
  */
 
-#ifndef GEOSX_MESH_SIMPLEGEOMETRICOBJECTS_CYLINDER_HPP_
-#define GEOSX_MESH_SIMPLEGEOMETRICOBJECTS_CYLINDER_HPP_
+#ifndef GEOS_MESH_SIMPLEGEOMETRICOBJECTS_CYLINDER_HPP_
+#define GEOS_MESH_SIMPLEGEOMETRICOBJECTS_CYLINDER_HPP_
 
 #include "SimpleGeometricObjectBase.hpp"
 
-namespace geosx
+namespace geos
 {
 
 /**
@@ -68,32 +69,34 @@ public:
 
   bool isCoordInObject( real64 const ( &coord ) [3] ) const override final;
 
-
-private:
-
-  /// Center point of one (upper or lower) face of the cylinder
-  R1Tensor m_point1;
-  /// Center point of the other face of the cylinder
-  R1Tensor m_point2;
-  /// Radius of the cylinder
-  real64 m_radius = 0.0;
-
-  real64 m_innerRadius = 0.0;
-
   /// @cond DO_NOT_DOCUMENT
 
   struct viewKeyStruct
   {
-    static constexpr char const * point1String() { return "point1"; }
-    static constexpr char const * point2String() { return "point2"; }
-    static constexpr char const * radiusString() { return "radius"; }
+    static constexpr char const * point1String() { return "firstFaceCenter"; }
+    static constexpr char const * point2String() { return "secondFaceCenter"; }
+    static constexpr char const * radiusString() { return "outerRadius"; }
     static constexpr char const * innerRadiusString() { return "innerRadius"; }
   };
 
   /// @endcond
 
-};
-} /* namespace geosx */
+private:
 
-#endif /* GEOSX_MESH_SIMPLEGEOMETRICOBJECTS_CYLINDER_HPP_
+  /// Center point of the first face of the cylinder
+  R1Tensor m_point1;
+
+  /// Center point of the second face of the cylinder
+  R1Tensor m_point2;
+
+  /// Outer radius of the cylinder
+  real64 m_radius = 0.0;
+
+  /// Inner radius of the annulus
+  real64 m_innerRadius = 0.0;
+
+};
+} /* namespace geos */
+
+#endif /* GEOS_MESH_SIMPLEGEOMETRICOBJECTS_CYLINDER_HPP_
         */

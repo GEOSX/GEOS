@@ -2,10 +2,11 @@
  * ------------------------------------------------------------------------------------------------------------
  * SPDX-License-Identifier: LGPL-2.1-only
  *
- * Copyright (c) 2018-2020 Lawrence Livermore National Security LLC
- * Copyright (c) 2018-2020 The Board of Trustees of the Leland Stanford Junior University
- * Copyright (c) 2018-2020 TotalEnergies
- * Copyright (c) 2019-     GEOSX Contributors
+ * Copyright (c) 2016-2024 Lawrence Livermore National Security LLC
+ * Copyright (c) 2018-2024 TotalEnergies
+ * Copyright (c) 2018-2024 The Board of Trustees of the Leland Stanford Junior University
+ * Copyright (c) 2023-2024 Chevron
+ * Copyright (c) 2019-     GEOS/GEOSX Contributors
  * All rights reserved
  *
  * See top level LICENSE, COPYRIGHT, CONTRIBUTORS, NOTICE, and ACKNOWLEDGEMENTS files for details.
@@ -26,7 +27,7 @@
 #include <ml_MultiLevelPreconditioner.h>
 #include <Ifpack.h>
 
-namespace geosx
+namespace geos
 {
 
 TrilinosPreconditioner::TrilinosPreconditioner( LinearSolverParameters params )
@@ -87,7 +88,7 @@ string getMLCycleType( LinearSolverParameters::AMG::CycleType const & value )
     { LinearSolverParameters::AMG::CycleType::W, "MGW" },
   };
 
-  GEOSX_LAI_ASSERT_MSG( optionMap.count( value ) > 0, "Unsupported Trilinos/ML cycle option: " << value );
+  GEOS_LAI_ASSERT_MSG( optionMap.count( value ) > 0, "Unsupported Trilinos/ML cycle option: " << value );
   return optionMap.at( value );
 }
 
@@ -108,7 +109,7 @@ string getMLSmootherType( LinearSolverParameters::AMG::SmootherType const & valu
     { LinearSolverParameters::AMG::SmootherType::ilut, "ILUT" },
   };
 
-  GEOSX_LAI_ASSERT_MSG( optionMap.count( value ) > 0, "Unsupported Trilinos/ML smoother option: " << value );
+  GEOS_LAI_ASSERT_MSG( optionMap.count( value ) > 0, "Unsupported Trilinos/ML smoother option: " << value );
   return optionMap.at( value );
 }
 
@@ -127,7 +128,7 @@ string getMLCoarseType( LinearSolverParameters::AMG::CoarseType const & value )
     { LinearSolverParameters::AMG::CoarseType::direct, "Amesos-KLU"},
   };
 
-  GEOSX_LAI_ASSERT_MSG( optionMap.count( value ) > 0, "Unsupported Trilinos/ML coarse solver option: " << value );
+  GEOS_LAI_ASSERT_MSG( optionMap.count( value ) > 0, "Unsupported Trilinos/ML coarse solver option: " << value );
   return optionMap.at( value );
 }
 
@@ -140,7 +141,7 @@ string getMLPreOrPostSmoothingType( LinearSolverParameters::AMG::PreOrPost const
     { LinearSolverParameters::AMG::PreOrPost::both, "both" }
   };
 
-  GEOSX_LAI_ASSERT_MSG( optionMap.count( value ) > 0, "Unsupported Trilinos/ML smoothing direction option: " << value );
+  GEOS_LAI_ASSERT_MSG( optionMap.count( value ) > 0, "Unsupported Trilinos/ML smoothing direction option: " << value );
   return optionMap.at( value );
 }
 
@@ -150,7 +151,7 @@ createMLOperator( LinearSolverParameters const & params,
                   array2d< real64 > const & nullSpacePointer )
 {
   Teuchos::ParameterList list;
-  GEOSX_LAI_CHECK_ERROR( ML_Epetra::SetDefaults( params.isSymmetric ? "SA" : "NSSA", list ) );
+  GEOS_LAI_CHECK_ERROR( ML_Epetra::SetDefaults( params.isSymmetric ? "SA" : "NSSA", list ) );
 
   list.set( "ML output", params.logLevel );
   list.set( "max levels", params.amg.maxLevels );
@@ -197,7 +198,7 @@ Ifpack::EPrecType getIfpackPrecondType( LinearSolverParameters::PreconditionerTy
     { LinearSolverParameters::PreconditionerType::direct, Ifpack::AMESOS }
   };
 
-  GEOSX_LAI_ASSERT_MSG( typeMap.count( type ) > 0, "Unsupported Trilinos/Ifpack preconditioner option: " << type );
+  GEOS_LAI_ASSERT_MSG( typeMap.count( type ) > 0, "Unsupported Trilinos/Ifpack preconditioner option: " << type );
   return typeMap.at( type );
 }
 string getIfpackRelaxationType( LinearSolverParameters::PreconditionerType const & type )
@@ -209,7 +210,7 @@ string getIfpackRelaxationType( LinearSolverParameters::PreconditionerType const
     { LinearSolverParameters::PreconditionerType::sgs, "symmetric Gauss-Seidel" },
   };
 
-  GEOSX_LAI_ASSERT_MSG( typeMap.count( type ) > 0, "Unsupported Trilinos/Ifpack preconditioner option: " << type );
+  GEOS_LAI_ASSERT_MSG( typeMap.count( type ) > 0, "Unsupported Trilinos/Ifpack preconditioner option: " << type );
   return typeMap.at( type );
 }
 
@@ -251,8 +252,8 @@ createIfpackOperator( LinearSolverParameters const & params,
     }
   }
 
-  GEOSX_LAI_CHECK_ERROR( precond->SetParameters( list ) );
-  GEOSX_LAI_CHECK_ERROR( precond->Compute() );
+  GEOS_LAI_CHECK_ERROR( precond->SetParameters( list ) );
+  GEOS_LAI_CHECK_ERROR( precond->Compute() );
 
   return precond;
 }
@@ -306,7 +307,7 @@ void TrilinosPreconditioner::setup( Matrix const & mat )
     }
     default:
     {
-      GEOSX_ERROR( "Preconditioner type not supported in Trilinos interface: " << m_params.preconditionerType );
+      GEOS_ERROR( "Preconditioner type not supported in Trilinos interface: " << m_params.preconditionerType );
     }
   }
 }
@@ -314,11 +315,11 @@ void TrilinosPreconditioner::setup( Matrix const & mat )
 void TrilinosPreconditioner::apply( Vector const & src,
                                     Vector & dst ) const
 {
-  GEOSX_LAI_ASSERT( ready() );
-  GEOSX_LAI_ASSERT( src.ready() );
-  GEOSX_LAI_ASSERT( dst.ready() );
-  GEOSX_LAI_ASSERT_EQ( src.globalSize(), this->numGlobalCols() );
-  GEOSX_LAI_ASSERT_EQ( dst.globalSize(), this->numGlobalRows() );
+  GEOS_LAI_ASSERT( ready() );
+  GEOS_LAI_ASSERT( src.ready() );
+  GEOS_LAI_ASSERT( dst.ready() );
+  GEOS_LAI_ASSERT_EQ( src.globalSize(), this->numGlobalCols() );
+  GEOS_LAI_ASSERT_EQ( dst.globalSize(), this->numGlobalRows() );
 
   if( !m_precond )
   {
@@ -326,7 +327,7 @@ void TrilinosPreconditioner::apply( Vector const & src,
   }
   else
   {
-    GEOSX_LAI_ASSERT( m_precond );
+    GEOS_LAI_ASSERT( m_precond );
     m_precond->ApplyInverse( src.unwrapped(), dst.unwrapped() );
     dst.touch();
   }
@@ -340,13 +341,13 @@ void TrilinosPreconditioner::clear()
 
 Epetra_Operator const & TrilinosPreconditioner::unwrapped() const
 {
-  GEOSX_LAI_ASSERT( ready() );
+  GEOS_LAI_ASSERT( ready() );
   return *m_precond;
 }
 
 Epetra_Operator & TrilinosPreconditioner::unwrapped()
 {
-  GEOSX_LAI_ASSERT( ready() );
+  GEOS_LAI_ASSERT( ready() );
   return *m_precond;
 }
 

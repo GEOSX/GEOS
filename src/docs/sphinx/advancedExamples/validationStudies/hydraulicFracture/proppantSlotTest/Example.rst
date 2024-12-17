@@ -78,14 +78,14 @@ This mesh is defined as a cell block with the name ``cb1``.
 Proppant transport solver
 ---------------------------
 
-GEOSX is a multi-physics platform. Different combinations of physics solvers available in the code can be applied in different regions of the domain and be functional at different stages of the simulation. The ``Solvers`` tag in the XML file is used to define these solvers.
+GEOS is a multi-physics platform. Different combinations of physics solvers available in the code can be applied in different regions of the domain and be functional at different stages of the simulation. The ``Solvers`` tag in the XML file is used to define these solvers.
 
 To specify a coupling between two different solvers, we define and characterize each single-physics solver separately.
 Then, we customize a *coupling solver* between these single-physics
 solvers as an additional solver.
 This approach allows for generality and flexibility in constructing multi-physics solvers.
-The order of specifying these solvers is not restricted in GEOSX.
-Note that end-users should give each single-physics solver a meaningful and distinct name, as GEOSX will recognize these single-physics solvers based on their customized names and create user-expected coupling.
+The order of specifying these solvers is not restricted in GEOS.
+Note that end-users should give each single-physics solver a meaningful and distinct name, as GEOS will recognize these single-physics solvers based on their customized names and create user-expected coupling.
 
 As demonstrated in this example, to setup a coupled proppant transport solver, we need to define three different solvers in the XML file:
 
@@ -219,7 +219,7 @@ To go further
 **Feedback on this example**
 
 This concludes the example on simulating a proppant slot test.
-For any feedback on this example, please submit a `GitHub issue on the project's GitHub page <https://github.com/GEOSX/GEOSX/issues>`_.
+For any feedback on this example, please submit a `GitHub issue on the project's GitHub page <https://github.com/GEOS-DEV/GEOS/issues>`_.
 
 
 

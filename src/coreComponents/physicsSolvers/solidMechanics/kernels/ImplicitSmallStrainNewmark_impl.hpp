@@ -2,10 +2,11 @@
  * ------------------------------------------------------------------------------------------------------------
  * SPDX-License-Identifier: LGPL-2.1-only
  *
- * Copyright (c) 2018-2020 Lawrence Livermore National Security LLC
- * Copyright (c) 2018-2020 The Board of Trustees of the Leland Stanford Junior University
- * Copyright (c) 2018-2020 TotalEnergies
- * Copyright (c) 2019-     GEOSX Contributors
+ * Copyright (c) 2016-2024 Lawrence Livermore National Security LLC
+ * Copyright (c) 2018-2024 TotalEnergies
+ * Copyright (c) 2018-2024 The Board of Trustees of the Leland Stanford Junior University
+ * Copyright (c) 2023-2024 Chevron
+ * Copyright (c) 2019-     GEOS/GEOSX Contributors
  * All rights reserved
  *
  * See top level LICENSE, COPYRIGHT, CONTRIBUTORS, NOTICE, and ACKNOWLEDGEMENTS files for details.
@@ -16,13 +17,13 @@
  * @file ImplicitSmallStrainNewmark_impl.hpp
  */
 
-#ifndef GEOSX_PHYSICSSOLVERS_SOLIDMECHANICS_KERNELS_IMPLCITSMALLSTRAINNEWMARK_IMPL_HPP_
-#define GEOSX_PHYSICSSOLVERS_SOLIDMECHANICS_KERNELS_IMPLCITSMALLSTRAINNEWMARK_IMPL_HPP_
+#ifndef GEOS_PHYSICSSOLVERS_SOLIDMECHANICS_KERNELS_IMPLCITSMALLSTRAINNEWMARK_IMPL_HPP_
+#define GEOS_PHYSICSSOLVERS_SOLIDMECHANICS_KERNELS_IMPLCITSMALLSTRAINNEWMARK_IMPL_HPP_
 
 #include "ImplicitSmallStrainNewmark.hpp"
 #include "ImplicitSmallStrainQuasiStatic_impl.hpp"
 
-namespace geosx
+namespace geos
 {
 
 namespace solidMechanicsLagrangianFEMKernels
@@ -43,12 +44,13 @@ ImplicitSmallStrainNewmark( NodeManager const & nodeManager,
                             globalIndex const rankOffset,
                             CRSMatrixView< real64, globalIndex const > const inputMatrix,
                             arrayView1d< real64 > const inputRhs,
+                            real64 const inputDt,
                             real64 const (&inputGravityVector)[3],
                             real64 const inputNewmarkGamma,
                             real64 const inputNewmarkBeta,
                             real64 const inputMassDamping,
-                            real64 const inputStiffnessDamping,
-                            real64 const inputDt ):
+                            real64 const inputStiffnessDamping ):
+  // real64 const inputDt ):
   Base( nodeManager,
         edgeManager,
         faceManager,
@@ -60,22 +62,23 @@ ImplicitSmallStrainNewmark( NodeManager const & nodeManager,
         rankOffset,
         inputMatrix,
         inputRhs,
+        inputDt,
         inputGravityVector ),
   m_vtilde( nodeManager.getField< fields::solidMechanics::totalDisplacement >() ),
   m_uhattilde( nodeManager.getField< fields::solidMechanics::totalDisplacement >() ),
   m_newmarkGamma( inputNewmarkGamma ),
   m_newmarkBeta( inputNewmarkBeta ),
   m_massDamping( inputMassDamping ),
-  m_stiffnessDamping( inputStiffnessDamping ),
-  m_dt( inputDt )
+  m_stiffnessDamping( inputStiffnessDamping )
+  //m_dt( inputDt )
 {}
 
 
 template< typename SUBREGION_TYPE,
           typename CONSTITUTIVE_TYPE,
           typename FE_TYPE >
-GEOSX_HOST_DEVICE
-GEOSX_FORCE_INLINE
+GEOS_HOST_DEVICE
+inline
 void ImplicitSmallStrainNewmark< SUBREGION_TYPE, CONSTITUTIVE_TYPE, FE_TYPE >::
 setup( localIndex const k,
        StackVariables & stack ) const
@@ -95,8 +98,8 @@ setup( localIndex const k,
 template< typename SUBREGION_TYPE,
           typename CONSTITUTIVE_TYPE,
           typename FE_TYPE >
-GEOSX_HOST_DEVICE
-GEOSX_FORCE_INLINE
+GEOS_HOST_DEVICE
+inline
 void ImplicitSmallStrainNewmark< SUBREGION_TYPE, CONSTITUTIVE_TYPE, FE_TYPE >::
 quadraturePointKernel( localIndex const k,
                        localIndex const q,
@@ -135,8 +138,8 @@ quadraturePointKernel( localIndex const k,
 template< typename SUBREGION_TYPE,
           typename CONSTITUTIVE_TYPE,
           typename FE_TYPE >
-GEOSX_HOST_DEVICE
-GEOSX_FORCE_INLINE
+GEOS_HOST_DEVICE
+inline
 real64 ImplicitSmallStrainNewmark< SUBREGION_TYPE, CONSTITUTIVE_TYPE, FE_TYPE >::
 complete( localIndex const k,
           StackVariables & stack ) const
@@ -191,6 +194,6 @@ ImplicitSmallStrainNewmark< SUBREGION_TYPE, CONSTITUTIVE_TYPE, FE_TYPE >::kernel
 
 } // namespace solidMechanicsLagrangianFEMKernels
 
-} // namespace geosx
+} // namespace geos
 
-#endif //GEOSX_PHYSICSSOLVERS_SOLIDMECHANICS_KERNELS_IMPLCITSMALLSTRAINNEWMARK_IMPL_HPP_
+#endif //GEOS_PHYSICSSOLVERS_SOLIDMECHANICS_KERNELS_IMPLCITSMALLSTRAINNEWMARK_IMPL_HPP_

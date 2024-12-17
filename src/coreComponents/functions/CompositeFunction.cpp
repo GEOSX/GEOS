@@ -2,10 +2,11 @@
  * ------------------------------------------------------------------------------------------------------------
  * SPDX-License-Identifier: LGPL-2.1-only
  *
- * Copyright (c) 2018-2020 Lawrence Livermore National Security LLC
- * Copyright (c) 2018-2020 The Board of Trustees of the Leland Stanford Junior University
- * Copyright (c) 2018-2020 TotalEnergies
- * Copyright (c) 2019-     GEOSX Contributors
+ * Copyright (c) 2016-2024 Lawrence Livermore National Security LLC
+ * Copyright (c) 2018-2024 TotalEnergies
+ * Copyright (c) 2018-2024 The Board of Trustees of the Leland Stanford Junior University
+ * Copyright (c) 2023-2024 Chevron
+ * Copyright (c) 2019-     GEOS/GEOSX Contributors
  * All rights reserved
  *
  * See top level LICENSE, COPYRIGHT, CONTRIBUTORS, NOTICE, and ACKNOWLEDGEMENTS files for details.
@@ -15,7 +16,7 @@
 #include "FunctionManager.hpp"
 #include "CompositeFunction.hpp"
 
-namespace geosx
+namespace geos
 {
 
 namespace dataRepository
@@ -44,6 +45,7 @@ CompositeFunction::CompositeFunction( const string & name,
     setDescription( "List of source functions. The order must match the variableNames argument." );
 
   registerWrapper( keys::variableNames, &m_variableNames ).
+    setRTTypeName( rtTypes::CustomTypes::groupNameRefArray ).
     setInputFlag( InputFlags::OPTIONAL ).
     setDescription( "List of variables in expression" );
 
@@ -67,7 +69,7 @@ void CompositeFunction::initializeFunction()
   // compile
   parserContext.addBuiltIns();
   mathpresso::Error err = parserExpression.compile( parserContext, m_expression.c_str(), mathpresso::kNoOptions );
-  GEOSX_ERROR_IF( err != mathpresso::kErrorOk, "JIT Compiler Error" );
+  GEOS_ERROR_IF( err != mathpresso::kErrorOk, "JIT Compiler Error" );
 
   // Grab pointers to sub functions
   FunctionManager & functionManager = FunctionManager::getInstance();
@@ -120,4 +122,4 @@ real64 CompositeFunction::evaluate( real64 const * const input ) const
 
 REGISTER_CATALOG_ENTRY( FunctionBase, CompositeFunction, string const &, Group * const )
 
-} // namespace geosx
+} // namespace geos

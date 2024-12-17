@@ -1,0 +1,66 @@
+<?xml version="1.0" ?>
+
+<Problem>
+
+  <Included>
+    <File name="./SlippingFault_horizontal_smoke.xml"/>
+  </Included>
+
+  <Solvers
+    gravityVector="{0.0, 0.0, 0.0}">
+    <SolidMechanicsLagrangeContact
+      name="lagrangiancontact"
+      timeIntegrationOption="QuasiStatic"
+      stabilizationName="TPFAstabilization"
+      logLevel="1"
+      discretization="FE1"
+      targetRegions="{ Region, Fracture }">
+      <NonlinearSolverParameters
+        newtonTol="1.0e-8"
+        logLevel="2"
+        newtonMaxIter="10"
+        maxNumConfigurationAttempts="10"
+        lineSearchAction="Require"
+        lineSearchMaxCuts="2"
+        maxTimeStepCuts="2"/>
+      <LinearSolverParameters
+        solverType="direct"
+        directParallel="0"
+        logLevel="0"/>
+    </SolidMechanicsLagrangeContact>
+  </Solvers>
+
+  <NumericalMethods>
+    <FiniteVolume>
+      <TwoPointFluxApproximation
+        name="TPFAstabilization"/>
+    </FiniteVolume>
+  </NumericalMethods>
+
+  <Events
+    maxTime="1.0">
+    <SoloEvent
+      name="preFracture"
+      target="/Solvers/SurfaceGen"/>
+
+    <PeriodicEvent
+      name="solverApplications"
+      beginTime="0.0"
+      endTime="1.0"
+      forceDt="0.1"
+      target="/Solvers/lagrangiancontact"/>
+
+    <PeriodicEvent
+      name="restarts"
+      timeFrequency="0.5"
+      target="/Outputs/restartOutput"/>
+
+    <PeriodicEvent
+      name="outputs"
+      beginTime="0.0"
+      endTime="1.0"
+      forceDt="0.1"
+      target="/Outputs/vtkOutput"/>
+  </Events> 
+  
+</Problem>

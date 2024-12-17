@@ -11,7 +11,7 @@ At the end of this example you will know:
 
   - how to run a problem using the pygeosx interface,
   - how to process advanced xml features using pygeosx,
-  - how to extract and monitor values within the GEOSX datastructure in real-time
+  - how to extract and monitor values within the GEOS datastructure in real-time
 
 
 **Input files**
@@ -20,7 +20,7 @@ This example requires two input xml files and one python script located at:
 
 .. code-block:: console
 
-  GEOSX/examples/pygeosxExamples/hydraulicFractureWithMonitor
+  GEOS/examples/pygeosxExamples/hydraulicFractureWithMonitor
 
 
 ------------------------------------------------------------------
@@ -45,7 +45,7 @@ Note that these paths will need to be updated if you run this problem outside of
   :end-before: <!-- SPHINX_HYDROFRACTURE_INCLUDED_PARAMETERS_END -->
 
 Next, we add a new entry to the output block Python and an entry in the Events block.
-Whenever the python event is triggered, GEOSX will pause and return to the controlling python script (in this case, every 10 cycles).
+Whenever the python event is triggered, GEOS will pause and return to the controlling python script (in this case, every 10 cycles).
 
 .. literalinclude:: ../../../../../../examples/pygeosxExamples/hydraulicFractureWithMonitor/hydraulicFracture.xml
   :language: xml
@@ -59,7 +59,7 @@ Python Script
 
 Problems that use the pygeosx interface are driven by a custom python script.
 To begin, we import a number of packages and check whether this is a parallel run.
-The custom packages include pygeosx, which provides an interface to GEOSX, and pygeosx_tools, which provides a number of common tools for working with the datastructure and dealing with parallel communication.
+The custom packages include pygeosx, which provides an interface to GEOS, and pygeosx_tools, which provides a number of common tools for working with the datastructure and dealing with parallel communication.
 
 .. literalinclude:: ../../../../../../examples/pygeosxExamples/hydraulicFractureWithMonitor/hydraulicFractureWithMonitor.py
   :language: python
@@ -67,9 +67,9 @@ The custom packages include pygeosx, which provides an interface to GEOSX, and p
   :end-before: # PYGEOSX_SETUP_END
 
 In the next step, we apply the xml preprocessor to resolve the advanced xml features.
-Note that this step will modify the input arguments to reflect the location of the compiled xml file, which is processed directly by GEOSX.
-The script then initializes GEOSX and receives the `problem` handle, which is the scripts view into the datastructure.
-There is an opportunity to interact with the GEOSX before the initial conditions are set, which we do not use in this example.
+Note that this step will modify the input arguments to reflect the location of the compiled xml file, which is processed directly by GEOS.
+The script then initializes GEOS and receives the `problem` handle, which is the scripts view into the datastructure.
+There is an opportunity to interact with the GEOS before the initial conditions are set, which we do not use in this example.
 
 .. literalinclude:: ../../../../../../examples/pygeosxExamples/hydraulicFractureWithMonitor/hydraulicFractureWithMonitor.py
   :language: python
@@ -143,14 +143,14 @@ This is likeley located here:
 
 .. code-block:: console
 
-   GEOSX/[build_dir]/lib/PYGEOSX/bin/python
+   GEOS/[build_dir]/lib/PYGEOSX/bin/python
 
 Note that you may need to manually install the pygeosx_tools package (and its pre-requisites) into this python distribution.
 To do so, you can run the following:
 
 .. code-block:: console
 
-   cd GEOSX/[build_dir]/lib/PYGEOSX/bin
+   cd GEOS/[build_dir]/lib/PYGEOSX/bin
    pip install --upgrade ../../../../src/coreComponents/python/modules/pygeosx_tools_package/
 
 To run the code, you will call the pygeosx run script with python, and supply the typical geosx command-line arguments and any parallel arguments.
@@ -161,7 +161,7 @@ For example:
    # Load the correct python environment
    # If you are not using a bash shell, you may need to target one of
    # the other activation scripts
-   source GEOSX/[build_dir]/lib/PYGEOSX/bin/activate
+   source GEOS/[build_dir]/lib/PYGEOSX/bin/activate
 
    # Move to the correct directory and run
    cd /path/to/problem
@@ -174,7 +174,7 @@ To go further
 
 **Feedback on this example**
 
-For any feedback on this example, please submit a `GitHub issue on the project's GitHub page <https://github.com/GEOSX/GEOSX/issues>`_.
+For any feedback on this example, please submit a `GitHub issue on the project's GitHub page <https://github.com/GEOS-DEV/GEOS/issues>`_.
 
 **For more details**
 

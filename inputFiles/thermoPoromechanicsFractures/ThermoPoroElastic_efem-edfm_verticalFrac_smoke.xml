@@ -1,0 +1,145 @@
+<?xml version="1.0" ?>
+
+<Problem>
+  <Included>
+    <File
+      name="./ThermoPoroElastic_efem-edfm_verticalFrac_base.xml"/>
+  </Included>
+
+  <Mesh>
+    <InternalMesh
+      name="mesh1"
+      elementTypes="{ C3D8 }"
+      xCoords="{ 0, 20 }"
+      yCoords="{ 0, 20 }"
+      zCoords="{ 0, 1 }"
+      nx="{ 11 }"
+      ny="{ 10 }"
+      nz="{ 1 }"
+      cellBlockNames="{ cb1 }"/>
+  </Mesh>
+
+  <Geometry>
+    <Rectangle
+      name="FracturePlane"
+      normal="{ 1, 0, 0 }"
+      origin="{ 10.0, 10.0, 0.5 }"
+      lengthVector="{ 0, 1, 0 }"
+      widthVector="{ 0, 0, 1 }"
+      dimensions="{ 25, 4 }"/>
+  </Geometry>
+
+  <Events
+    maxTime="1e6">
+    <SoloEvent
+      name="preFracture"
+      target="/Solvers/SurfaceGenerator"/>
+
+    <PeriodicEvent
+      name="outputs"
+      cycleFrequency="1"
+      target="/Outputs/vtkOutput"/>
+
+    <PeriodicEvent
+      name="solverApplication0"
+      forceDt="1e5"
+      target="/Solvers/poroSolver"/>
+
+    <PeriodicEvent
+      name="restarts"
+      timeFrequency="5e5"
+      target="/Outputs/restartOutput"/>
+  </Events>
+  
+  <FieldSpecifications>
+    <FieldSpecification
+      name="fracPorosity"
+      initialCondition="1"
+      setNames="{ all }"
+      objectPath="ElementRegions/Fracture"
+      fieldName="fracturePorosity_porosity"
+      scale="1.00"/>
+
+    <FieldSpecification
+      name="initialPressure"
+      initialCondition="1"
+      setNames="{ all }"
+      objectPath="ElementRegions/RockMatrix/cb1"
+      fieldName="pressure"
+      scale="0.0"/>
+
+    <FieldSpecification
+      name="initialPressureFracture"
+      setNames="{ all }"
+      objectPath="ElementRegions/Fracture"
+      fieldName="pressure"
+      scale="1.0e5"/>
+
+    <FieldSpecification
+      name="initialTemperature"
+      initialCondition="1"
+      setNames="{ all }"
+      objectPath="ElementRegions/RockMatrix/cb1"
+      fieldName="temperature"
+      scale="0.0"/>
+
+    <FieldSpecification
+      name="initialTemperatureFracture"
+      setNames="{ all }"
+      objectPath="ElementRegions/Fracture"
+      fieldName="temperature"
+      scale="300"/>
+
+    <FieldSpecification
+      name="xnegconstraint"
+      objectPath="nodeManager"
+      fieldName="totalDisplacement"
+      component="0"
+      scale="0.0"
+      setNames="{ xneg, xpos }"/>
+
+    <FieldSpecification
+      name="yposconstraint"
+      objectPath="nodeManager"
+      fieldName="totalDisplacement"
+      component="1"
+      scale="0.0"
+      setNames="{ ypos, yneg }"/>
+
+    <FieldSpecification
+      name="zconstraint"
+      objectPath="nodeManager"
+      fieldName="totalDisplacement"
+      component="2"
+      scale="0.0"
+      setNames="{ zneg, zpos }"/>
+
+    <FieldSpecification
+      name="leftPressure"
+      objectPath="faceManager"
+      fieldName="pressure"
+      scale="0.0"
+      setNames="{ xneg }"/>
+
+    <FieldSpecification
+      name="rightPressure"
+      objectPath="faceManager"
+      fieldName="pressure"
+      scale="0.0"
+      setNames="{ xpos }"/>
+
+    <FieldSpecification
+      name="leftTemperature"
+      objectPath="faceManager"
+      fieldName="temperature"
+      scale="0.0"
+      setNames="{ xneg }"/>
+
+    <FieldSpecification
+      name="rightTemperature"
+      objectPath="faceManager"
+      fieldName="temperature"
+      scale="0.0"
+      setNames="{ xpos }"/>
+  </FieldSpecifications>
+</Problem>

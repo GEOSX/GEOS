@@ -1,0 +1,18 @@
+from geos.ats.test_builder import TestDeck, RestartcheckParameters, generate_geos_tests
+
+restartcheck_params = {}
+restartcheck_params['atol'] = 1.0E-8
+restartcheck_params['rtol'] = 1.0E-8
+
+decks = [
+    TestDeck(
+        name="mpm_singleParticle",
+        description=
+        'Test that a single particle is set up properly and does nothing with the solid mechanics mpm solver on one rank.',
+        partitions=((1, 1, 1), ),
+        restart_step=0,
+        check_step=972,
+        restartcheck_params=RestartcheckParameters(**restartcheck_params)),
+]
+
+generate_geos_tests(decks)

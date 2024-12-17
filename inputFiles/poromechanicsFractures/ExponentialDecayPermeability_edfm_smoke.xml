@@ -1,0 +1,131 @@
+<?xml version="1.0" ?>
+
+<Problem>
+  <Included>
+    <File
+      name="./ExponentialDecayPermeability_edfm_base.xml"/>
+  </Included>
+
+  <Mesh>
+    <InternalMesh
+      name="mesh1"
+      elementTypes="{ C3D8 }"
+      xCoords="{ -40, -3.5, 3.5, 40 }"
+      yCoords="{ -40, -3.5, 3.5, 40 }"
+      zCoords="{ 0, 1 }"
+      nx="{ 10, 21, 10 }"
+      ny="{ 10, 21, 10 }"
+      nz="{ 1 }"
+      cellBlockNames="{ cb1 }"/>
+  </Mesh>
+
+  <Geometry>
+    <Rectangle
+      name="FracturePlane"
+      normal="{-0.342020143325669, 0.939692620785908, 0.0}"
+      origin="{0.0, 0.0, 0.5}"
+      lengthVector="{0.939692620785908, 0.342020143325669, 0.0}"
+      widthVector="{0, 0, 1}"
+      dimensions="{ 2,  10 }"/>
+
+    <Box
+      name="rightPoint"
+      xMin="{ 39.9, -0.5, -0.001}"
+      xMax="{ 40.1,  0.5,  1.001}"/>
+
+    <Box
+      name="leftPoint"
+      xMin="{-40.1, -0.5, -0.001}"
+      xMax="{-39.9,  0.5,  1.001}"/>
+
+    <Box
+      name="topPoint"
+      xMin="{-0.5, 39.9, -0.001}"
+      xMax="{ 0.5, 40.1,  1.001}"/>
+
+    <Box
+      name="bottomPoint"
+      xMin="{-0.5, -40.1, -0.001}"
+      xMax="{ 0.5, -39.9,  1.001}"/>
+  </Geometry>
+
+  <Events
+    maxTime="0.05">
+    <SoloEvent
+      name="preFracture"
+      target="/Solvers/SurfaceGenerator"/>  
+   
+    <PeriodicEvent
+      name="outputs"
+      timeFrequency="5.0e-03"
+      target="/Outputs/vtkOutput"/>
+  
+    <PeriodicEvent
+      name="solverApplication0"
+      endTime="1.e-10"
+      forceDt="1.e-10"
+      target="/Solvers/poroSolver"/>
+
+    <PeriodicEvent
+      name="solverApplication1"
+      beginTime="1.e-10"
+      endTime="5.0000000e-03"
+      forceDt="4.9999999e-03"
+      target="/Solvers/poroSolver"/>
+
+    <PeriodicEvent
+      name="solverApplication2"
+      beginTime="5.0e-03"
+      endTime="0.05"
+      forceDt="5.0e-03"
+      target="/Solvers/poroSolver"/>
+
+    <PeriodicEvent
+      name="solverApplication3"
+      beginTime="0.05"
+      endTime="10.0"
+      forceDt="0.01"
+      target="/Solvers/poroSolver"/>
+
+    <PeriodicEvent
+      name="timeHistoryCollection"      
+      target="/Tasks/tractionCollection" />
+
+    <PeriodicEvent
+      name="timeHistoryOutput"
+      targetExactTimestep="0"
+      target="/Outputs/timeHistoryOutput"/>
+
+    <PeriodicEvent
+      name="timeHistoryCollection1"
+      target="/Tasks/displacementJumpCollection" />
+
+    <PeriodicEvent
+      name="timeHistoryOutput1"
+      targetExactTimestep="0"
+      target="/Outputs/timeHistoryOutput1"/> 
+
+    <PeriodicEvent
+      name="timeHistoryCollection2"
+      target="/Tasks/fracPermeabilityCollection" />
+
+    <PeriodicEvent
+      name="timeHistoryOutput2"
+      targetExactTimestep="0"
+      target="/Outputs/timeHistoryOutput2"/> 
+
+    <PeriodicEvent
+      name="timeHistoryCollection3"
+      target="/Tasks/pressureCollection" />
+
+    <PeriodicEvent
+      name="timeHistoryOutput3"
+      targetExactTimestep="0"
+      target="/Outputs/timeHistoryOutput3"/> 
+
+    <PeriodicEvent
+      name="restarts"
+      timeFrequency="0.02"
+      target="/Outputs/restartOutput"/>          
+  </Events>
+</Problem>

@@ -25,25 +25,6 @@ def extract_cmake_location(file_path):
     return None
 
 
-def setup_ats(scripts_dir, build_path):
-    bin_dir = os.path.join(build_path, "bin")
-    ats_dir = os.path.abspath(os.path.join(scripts_dir, "..", "integratedTests"))
-    ats_update_dir = os.path.join(ats_dir, "update", "run")
-    geosxats_path = os.path.join(ats_dir, "geosxats", "geosxats")
-
-    # Create a symbolic link to test directory
-    os.symlink(ats_update_dir, os.path.join(build_path, "integratedTests"))
-
-    # Write the bash script to run ats.
-    ats_script_path = os.path.join(build_path, "geosxats.sh")
-    with open(ats_script_path, "w") as f:
-        f.write("#!/bin/bash\n{} {} --workingDir {} \"$@\"\n".format(geosxats_path, bin_dir, ats_update_dir))
-
-    # Make the script executable
-    st = os.stat(ats_script_path)
-    os.chmod(ats_script_path, st.st_mode | stat.S_IXUSR | stat.S_IXGRP | stat.S_IXOTH)
-
-
 def parse_args(cli_arguments):
     """
     Parse command line arguments into an ArgumentParser instance.
@@ -174,8 +155,6 @@ def main(calling_script, args, unknown_args):
     logging.info("Creating build directory '%s'..." % build_path)
     os.makedirs(build_path)
 
-    setup_ats(scripts_dir, build_path)
-
     #####################
     # Setup Install Dir
     #####################
@@ -191,12 +170,12 @@ def main(calling_script, args, unknown_args):
 
         install_path = os.path.abspath(install_path)
 
-        if os.path.exists(install_path):
-            logging.info("Install directory '%s' already exists. Deleting..." % install_path)
-            shutil.rmtree(install_path)
+        #     logging.info("Install directory '%s' already exists. Deleting..." % install_path)
+        #     shutil.rmtree(install_path)
 
-        logging.info("Creating install path '%s'..." % install_path)
-        os.makedirs(install_path)
+        if not os.path.exists(install_path):
+            logging.info("Creating install path '%s'..." % install_path)
+            os.makedirs(install_path)
 
     ############################
     # Build CMake command line

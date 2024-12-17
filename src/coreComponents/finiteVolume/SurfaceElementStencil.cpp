@@ -2,10 +2,11 @@
  * ------------------------------------------------------------------------------------------------------------
  * SPDX-License-Identifier: LGPL-2.1-only
  *
- * Copyright (c) 2018-2020 Lawrence Livermore National Security LLC
- * Copyright (c) 2018-2020 The Board of Trustees of the Leland Stanford Junior University
- * Copyright (c) 2018-2020 TotalEnergies
- * Copyright (c) 2019-     GEOSX Contributors
+ * Copyright (c) 2016-2024 Lawrence Livermore National Security LLC
+ * Copyright (c) 2018-2024 TotalEnergies
+ * Copyright (c) 2018-2024 The Board of Trustees of the Leland Stanford Junior University
+ * Copyright (c) 2023-2024 Chevron
+ * Copyright (c) 2019-     GEOS/GEOSX Contributors
  * All rights reserved
  *
  * See top level LICENSE, COPYRIGHT, CONTRIBUTORS, NOTICE, and ACKNOWLEDGEMENTS files for details.
@@ -18,7 +19,7 @@
 
 #include "SurfaceElementStencil.hpp"
 
-namespace geosx
+namespace geos
 {
 
 void SurfaceElementStencil::move( LvArray::MemorySpace const space )
@@ -34,7 +35,7 @@ void SurfaceElementStencil::add( localIndex const numPts,
                                  real64 const * const weights,
                                  localIndex const connectorIndex )
 {
-  GEOSX_ERROR_IF( numPts >= maxStencilSize, "Maximum stencil size exceeded" );
+  GEOS_ERROR_IF( numPts >= maxStencilSize, "Maximum stencil size exceeded" );
 
   auto const iter = m_connectorIndices.find( connectorIndex );
   if( iter == m_connectorIndices.end() )
@@ -65,12 +66,12 @@ void SurfaceElementStencil::add( localIndex const numPts,
                                  R1Tensor const * const cellCenterToEdgeCenter,
                                  localIndex const connectorIndex )
 {
-  GEOSX_ERROR_IF( numPts >= maxStencilSize, "Maximum stencil size exceeded" );
+  GEOS_ERROR_IF( numPts >= maxStencilSize, "Maximum stencil size exceeded" );
 
   auto const iter = m_connectorIndices.find( connectorIndex );
   if( iter == m_connectorIndices.end() )
   {
-    GEOSX_ERROR( "Wrong connectorIndex" );
+    GEOS_ERROR( "Wrong connectorIndex" );
   }
   else
   {
@@ -114,4 +115,4 @@ SurfaceElementStencilWrapper::
   m_meanPermCoefficient( meanPermCoefficient )
 {}
 
-} /* namespace geosx */
+} /* namespace geos */

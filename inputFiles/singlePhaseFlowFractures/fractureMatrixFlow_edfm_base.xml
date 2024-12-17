@@ -1,0 +1,137 @@
+<?xml version="1.0" ?>
+
+<Problem>
+  <Solvers
+    gravityVector="{ 0.0, 0.0, -9.81 }">
+    <SinglePhaseFVM
+      name="SinglePhaseFlow"
+      logLevel="1"
+      discretization="singlePhaseTPFA"
+      targetRegions="{ RockMatrix, Fracture }">
+      <NonlinearSolverParameters
+        newtonTol="1.0e-6"
+        newtonMaxIter="8"/>
+      <LinearSolverParameters
+        directParallel="0"/>
+    </SinglePhaseFVM>
+
+    <EmbeddedSurfaceGenerator
+      name="SurfaceGenerator"
+      logLevel="1"
+      discretization="FE1"
+      targetRegions="{ RockMatrix, Fracture }"
+      targetObjects="{ FracturePlane }"
+      fractureRegion="Fracture"
+      mpiCommOrder="1"/>
+  </Solvers>
+
+  <NumericalMethods>
+    <FiniteVolume>
+      <TwoPointFluxApproximation
+        name="singlePhaseTPFA"/>
+    </FiniteVolume>
+    <FiniteElements>
+    <FiniteElementSpace
+        name="FE1"
+        order="1"/>
+    </FiniteElements>
+  </NumericalMethods>
+
+  <ElementRegions>
+    <CellElementRegion
+      name="RockMatrix"
+      cellBlocks="{ * }"
+      materialList="{ water, rock }"/>
+
+    <SurfaceElementRegion
+      name="Fracture"
+      defaultAperture="1e-3"
+      materialList="{ water, fractureFilling }"
+      subRegionType="embeddedElement"/>
+  </ElementRegions>
+
+  <Constitutive>
+    <CompressibleSinglePhaseFluid
+      name="water"
+      defaultDensity="1000"
+      defaultViscosity="0.001"
+      referencePressure="0.0"
+      compressibility="0.0"
+      viscosibility="0.0"/>
+
+    <CompressibleSolidParallelPlatesPermeability
+      name="fractureFilling"
+      solidModelName="nullSolid"
+      porosityModelName="fracturePorosity"
+      permeabilityModelName="fracturePerm"/>
+
+    <CompressibleSolidConstantPermeability
+      name="rock"
+      solidModelName="nullSolid"
+      porosityModelName="rockPorosity"
+      permeabilityModelName="rockPerm"/>
+
+    <NullModel
+      name="nullSolid"/>
+
+    <PressurePorosity
+      name="rockPorosity"
+      defaultReferencePorosity="0.1"
+      referencePressure="0.0"
+      compressibility="0.0"/>
+
+    <ConstantPermeability
+      name="rockPerm"
+      permeabilityComponents="{ 2.0e-15, 2.0e-15, 2.0e-15 }"/>
+
+    <PressurePorosity
+      name="fracturePorosity"
+      defaultReferencePorosity="1.00"
+      referencePressure="0.0"
+      compressibility="0.0"/>
+
+    <ParallelPlatesPermeability
+      name="fracturePerm"/>
+  </Constitutive>
+
+  <FieldSpecifications>
+
+    <FieldSpecification
+      name="Porosity"
+      initialCondition="1"
+      setNames="{ all }"
+      objectPath="ElementRegions/RockMatrix/cb1"
+      fieldName="rockPorosity_referencePorosity"
+      scale="0.1"/>
+
+    <FieldSpecification
+      name="fracPorosity"
+      initialCondition="1"
+      setNames="{ all }"
+      objectPath="ElementRegions/Fracture"
+      fieldName="fracturePorosity_porosity"
+      scale="1.00"/>
+
+    <FieldSpecification
+      name="initialPressure"
+      initialCondition="1"
+      setNames="{ all }"
+      objectPath="ElementRegions/RockMatrix/cb1"
+      fieldName="pressure"
+      scale="0.0"/>
+
+    <FieldSpecification
+      name="sourceTerm"
+      objectPath="ElementRegions/RockMatrix/cb1"
+      fieldName="pressure"
+      scale="1e7"
+      setNames="{ source }"/>
+
+    <FieldSpecification
+      name="sinkTerm"
+      objectPath="ElementRegions/RockMatrix/cb1"
+      fieldName="pressure"
+      scale="0.0"
+      setNames="{ sink }"/>
+  </FieldSpecifications>
+</Problem>

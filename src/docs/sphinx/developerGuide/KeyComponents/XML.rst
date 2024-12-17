@@ -4,22 +4,22 @@ XML Input
 ##################################################
 
 
-In this document, you will learn how GEOSX classes interact with external information parsed from XML files, and how to add a new XML block that can be interpreted by GEOSX.
+In this document, you will learn how GEOS classes interact with external information parsed from XML files, and how to add a new XML block that can be interpreted by GEOS.
 Flow solvers and relative permeability are used as examples.
 
 
-GEOSX data structure overview
+GEOS data structure overview
 =============================
 
 .. _GroupPar:
 
-Group : the base class of GEOSX
+Group : the base class of GEOS
 -------------------------------
 
-All GEOSX classes derive from a base class called ``dataRepository::Group``.
-The ``Group`` class provides a way to organize all GEOSX objects in a filesystem-like structure.
+All GEOS classes derive from a base class called ``dataRepository::Group``.
+The ``Group`` class provides a way to organize all GEOS objects in a filesystem-like structure.
 One could think of ``Group`` s as *file folders* that can bear data (stored in ``Wrapper`` s), have a parent folder (another ``Group``),  and have possibly multiple subfolders (referred to as the subgroups).
-Below, we briefly review the data members of the ``Group`` class that are essential to understand the correspondence between the GEOSX data structure and the XML input.
+Below, we briefly review the data members of the ``Group`` class that are essential to understand the correspondence between the GEOS data structure and the XML input.
 For more details, we refer the reader to the extensive documentation of the :ref:`dataRepository`, including the :ref:`Group` class documentation.
 
 
@@ -47,9 +47,9 @@ A few words about the ObjectCatalog
 
 Some classes need external information (physical and/or algorithmic parameters for instance) provided by the user to be instantiated.
 This is the case when the ``m_input_flags`` data member of one of the ``Group`` 's ``Wrapper`` s has an entry set to ``REQUIRED`` (we will illustrate this below).
-In this situation, the required information must be supplied in the XML input file, and if it is absent, an error is raised by GEOSX.
+In this situation, the required information must be supplied in the XML input file, and if it is absent, an error is raised by GEOS.
 
-To connect the external (XML) and internal (C++) data structures, GEOSX uses an **ObjectCatalog** that maps keys (of type ``string``) to the corresponding classes (one unique key per mapped class).
+To connect the external (XML) and internal (C++) data structures, GEOS uses an **ObjectCatalog** that maps keys (of type ``string``) to the corresponding classes (one unique key per mapped class).
 These string keys, referred to as ``catalogName`` s, are essential to transfer the information from the XML file to the factory functions in charge of object instantiation (see below).
 
 **What is a CatalogName?**
@@ -66,11 +66,11 @@ You can have several objects of the same class and hence the same ``catalogName`
 
 **How can I add my new externally-accessible class to the ObjectCatalog?**
 
-Let us consider a flow solver class derived from ``FlowSolverBase``, that itself is derived from ``SolverBase``.
+Let us consider a flow solver class derived from ``FlowSolverBase``, that itself is derived from ``PhysicsSolverBase``.
 To instantiate and use this solver, the developer needs to make the derived flow solver class reachable from the XML file, via an XML tag.
-Internally, this requires adding the derived class information to ``ObjectCatalog``, which is achieved with two main ingredients: 1) a ``CatalogName()`` method in the class that lets GEOSX know *what* to search for in the internal ``ObjectCatalog`` to instantiate an object of this class, 2) a macro that specifies *where* to search in the ``ObjectCatalog``.
+Internally, this requires adding the derived class information to ``ObjectCatalog``, which is achieved with two main ingredients: 1) a ``CatalogName()`` method in the class that lets GEOS know *what* to search for in the internal ``ObjectCatalog`` to instantiate an object of this class, 2) a macro that specifies *where* to search in the ``ObjectCatalog``.
 
-1. To let GEOSX know what to search for in the catalog to instantiate an object of the derived class, the developer must equip the class  with a ``CatalogName()`` method that returns a ``string``.
+1. To let GEOS know what to search for in the catalog to instantiate an object of the derived class, the developer must equip the class  with a ``CatalogName()`` method that returns a ``string``.
    In this document, we have referred to this returned ``string`` as the object's ``catalogName``, but in fact, the method ``CatalogName()`` is what matters since the ``ObjectCatalog`` contains all the ``CatalogName()`` return values.
    Below, we illustrate this with the ``CompositionalMultiphaseFlow`` solver.
    The first code listing defines the class name, which in this case is the same as the ``catalogName`` shown in the second listing.
@@ -88,8 +88,8 @@ Internally, this requires adding the derived class information to ``ObjectCatalo
 *[Source: src/coreComponents/physicsSolvers/fluidFlow/CompositionalMultiphaseBase.hpp]*
 
 
-2. To let GEOSX know where to search in the ``ObjectCatalog``, a macro needs to be added at the end of the .cpp file implementing the class.
-   This macro (illustrated below) must contain the type of the base class (in this case, ``SolverBase``), and the name of the derived class (continuing with the example used above, this is ``CompositionalMultiphaseFlow``).
+2. To let GEOS know where to search in the ``ObjectCatalog``, a macro needs to be added at the end of the .cpp file implementing the class.
+   This macro (illustrated below) must contain the type of the base class (in this case, ``PhysicsSolverBase``), and the name of the derived class (continuing with the example used above, this is ``CompositionalMultiphaseFlow``).
    As a result of this construct, the ``ObjectCatalog`` is not a flat list of ``string`` s mapping the C++ classes.
    Instead, the ``ObjectCatalog`` forms a tree that reproduces locally the structure of the class diagram, from the base class to the derived classes.
 
@@ -102,14 +102,14 @@ Internally, this requires adding the derived class information to ``ObjectCatalo
 
 
 .. highlights::
-  Summary: All GEOSX objects form a filesystem-like structure. If an object needs to be accessible externally, it must be registered in the ``ObjectCatalog``. This is done by adding ``CatalogName()`` method that returns a ``string`` key to the object's class, and by adding the appropriate macro. The catalog has the same tree structure as the class diagram.
+  Summary: All GEOS objects form a filesystem-like structure. If an object needs to be accessible externally, it must be registered in the ``ObjectCatalog``. This is done by adding ``CatalogName()`` method that returns a ``string`` key to the object's class, and by adding the appropriate macro. The catalog has the same tree structure as the class diagram.
 
 
-Registration: parsing XML input files to instantiate GEOSX objects
+Registration: parsing XML input files to instantiate GEOS objects
 ------------------------------------------------------------------
 
 
-In this section, we describe with more details the connection between **internal GEOSX objects** and **external XML tags** parsed from parameter files.
+In this section, we describe with more details the connection between **internal GEOS objects** and **external XML tags** parsed from parameter files.
 We call this process *Registration*.
 The registration process works in three steps:
 
@@ -175,7 +175,7 @@ This is how the XML block would look like.
 
 Here, we see that the XML structure defines a parent node "Problem", that has (among many others) a child node "Solvers".
 In the "Solvers" block, we have placed the new solver block as a child node of the "Solvers" block with the XML tag corresponding to the ``catalogName`` of the new class.
-We will see in details next how the GEOSX internal structure constructed from this block mirrors the XML file structure.
+We will see in details next how the GEOS internal structure constructed from this block mirrors the XML file structure.
 
 
 Instantiating the new solver
@@ -196,7 +196,7 @@ To do this, the method ``CreateChild`` of the ``PhysicsSolverManager`` class is 
     // --------------------------------
     // childKey = "XmlNameOfMySolver" (string)
     // childName = "nameOfThisSolverInstance" (string)
-    // SolverBase::CatalogInterface = the Catalog attached to the base Solver class
+    // PhysicsSolverBase::CatalogInterface = the Catalog attached to the base Solver class
     // hasKeyName = bool method to test if the childKey string is present in the Catalog
     // registerGroup = method to create a new instance of the solver and add it to the group tree
 
@@ -207,11 +207,11 @@ To do this, the method ``CreateChild`` of the ``PhysicsSolverManager`` class is 
 
 *[Source: src/coreComponents/physicsSolvers/PhysicsSolverManager.cpp]*
 
-In the code listing above, we see that in the ``PhysicsSolverManager`` class, the ``ObjectCatalog`` is searched to find the ``catalogName`` "CompositionalMultiphaseFlow" in the scope of the ``SolverBase`` class.
-Then, the factory function of the base class ``SolverBase`` is called.
+In the code listing above, we see that in the ``PhysicsSolverManager`` class, the ``ObjectCatalog`` is searched to find the ``catalogName`` "CompositionalMultiphaseFlow" in the scope of the ``PhysicsSolverBase`` class.
+Then, the factory function of the base class ``PhysicsSolverBase`` is called.
 The ``catalogName`` (stored in ``childKey``) is passed as an argument of the factory function to ensure that it instantiates an object of the desired derived class.
 
-As explained above, this is working because 1) the XML tag matches the ``catalogName`` of the ``CompositionalMultiphaseFlow`` class and 2) a macro is placed at the end of the .cpp file implementing the ``CompositionalMultiphaseFlow`` class to let the ``ObjectCatalog`` know that ``CompositionalMultiphaseFlow`` is a derived class of ``SolverBase``.
+As explained above, this is working because 1) the XML tag matches the ``catalogName`` of the ``CompositionalMultiphaseFlow`` class and 2) a macro is placed at the end of the .cpp file implementing the ``CompositionalMultiphaseFlow`` class to let the ``ObjectCatalog`` know that ``CompositionalMultiphaseFlow`` is a derived class of ``PhysicsSolverBase``.
 
 Note that several instances of the same type of solver can be created, as long as they each have a different name.
 
@@ -243,10 +243,10 @@ To summarize:
 -------------
 
 
-  - Every class in GEOSX derive from a ``Group`` in a filesystem-like structure.
+  - Every class in GEOS derive from a ``Group`` in a filesystem-like structure.
     A ``Group`` must have a parent ``Group``, can have data (in ``Wrapper`` s), and can have one or many children (the subgroups).
     There is an ``ObjectCatalog`` in which the classes derived from ``Group`` are identified by a key called the ``catalogName``.
-  - When parsing XML input files, GEOSX inspects each object's scope in the ``ObjectCatalog`` to find classes with the same ``catalogName`` as the XML tag.
+  - When parsing XML input files, GEOS inspects each object's scope in the ``ObjectCatalog`` to find classes with the same ``catalogName`` as the XML tag.
     Once it finds an XML tag in the ``ObjectCatalog``, it registers it inside the filesystem structure.
   - In the registration process, properties from the XML file are parsed and used to allocate member data ``Wrapper`` s and fully instantiate the ``Group`` class.
   - If XML tags are nested, subgroups are allocated and processed in a nested manner.
@@ -331,7 +331,7 @@ The short description that completes the registration will be added to the auto-
 The XML block
 -------------
 
-We are ready to use the relative permeability model in GEOSX.
+We are ready to use the relative permeability model in GEOS.
 The corresponding XML block (child node of the "Constitutive" block) reads:
 
 .. code-block:: XML
@@ -348,22 +348,22 @@ The corresponding XML block (child node of the "Constitutive" block) reads:
 
 With this construct, we instruct the ``ConstitutiveManager`` class (whose ``catalogName`` is "Constitutive") to instantiate a subgroup of type ``BrooksCoreyRelativePermeability``.
 We also fill the data members of the values that we want to use for the simulation.
-For a simulation with multiple regions, we could define multiple relative permeability models in the "Constitutive" XML block (yielding multiple relperm subgroups in GEOSX), with a unique name attribute for each model.
+For a simulation with multiple regions, we could define multiple relative permeability models in the "Constitutive" XML block (yielding multiple relperm subgroups in GEOS), with a unique name attribute for each model.
 
-*For more examples on how to contribute to GEOSX, please read* :ref:`AddingNewSolver`
+*For more examples on how to contribute to GEOS, please read* :ref:`AddingNewSolver`
 
 
 Input Schema Generation
 ===========================
 
-A schema file is a useful tool for validating input .xml files and constructing user-interfaces.  Rather than manually maintaining the schema during development, GEOSX is designed to automatically generate one by traversing the documentation structure.
+A schema file is a useful tool for validating input .xml files and constructing user-interfaces.  Rather than manually maintaining the schema during development, GEOS is designed to automatically generate one by traversing the documentation structure.
 
-To generate the schema, run GEOSX with the input, schema, and the (optional) schema_level arguments, i.e.: ``geosx -i input.xml -s schema.xsd``.  There are two ways to limit the scope of the schema:
+To generate the schema, run GEOS with the input, schema, and the (optional) schema_level arguments, i.e.: ``geosx -i input.xml -s schema.xsd``.  There are two ways to limit the scope of the schema:
 
 1. Setting the verbosity flag for an object in the documentation structure.  If the schema-level argument is used, then only objects (and their children) and attributes with ``(verbosity < schema-level)`` will be output.
 
-2. By supplying a limited input xml file.  When GEOSX builds its data structure, it will only include objects that are listed within the xml (or those that are explicitly appended when those objects are initialized).  The code will add all available *attributes* for these objects to the schema.
+2. By supplying a limited input xml file.  When GEOS builds its data structure, it will only include objects that are listed within the xml (or those that are explicitly appended when those objects are initialized).  The code will add all available *attributes* for these objects to the schema.
 
 To take advantage of this design it is necessary to use the automatic xml parsing approach that relies upon the documentation node.  If values are read in manually, then the schema can not be used to validate xml those inputs.
 
-Note: the lightweight xml parser that is used in GEOSX cannot be used to validate inputs with the schema directly.  As such, it is necessary to use an external tool for validation, such as the geosx_tools python module.
+Note: the lightweight xml parser that is used in GEOS cannot be used to validate inputs with the schema directly.  As such, it is necessary to use an external tool for validation, such as the geosx_tools python module.

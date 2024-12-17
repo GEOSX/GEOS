@@ -2,10 +2,11 @@
  * ------------------------------------------------------------------------------------------------------------
  * SPDX-License-Identifier: LGPL-2.1-only
  *
- * Copyright (c) 2018-2020 Lawrence Livermore National Security LLC
- * Copyright (c) 2018-2020 The Board of Trustees of the Leland Stanford Junior University
- * Copyright (c) 2018-2020 TotalEnergies
- * Copyright (c) 2019-     GEOSX Contributors
+ * Copyright (c) 2016-2024 Lawrence Livermore National Security LLC
+ * Copyright (c) 2018-2024 TotalEnergies
+ * Copyright (c) 2018-2024 The Board of Trustees of the Leland Stanford Junior University
+ * Copyright (c) 2023-2024 Chevron
+ * Copyright (c) 2019-     GEOS/GEOSX Contributors
  * All rights reserved
  *
  * See top level LICENSE, COPYRIGHT, CONTRIBUTORS, NOTICE, and ACKNOWLEDGEMENTS files for details.
@@ -16,14 +17,14 @@
  * @file TableCapillaryPressure.hpp
  */
 
-#ifndef GEOSX_CONSTITUTIVE_CAPILLARYPRESSURE_TABLECAPILLARYPRESSURE_HPP
-#define GEOSX_CONSTITUTIVE_CAPILLARYPRESSURE_TABLECAPILLARYPRESSURE_HPP
+#ifndef GEOS_CONSTITUTIVE_CAPILLARYPRESSURE_TABLECAPILLARYPRESSURE_HPP
+#define GEOS_CONSTITUTIVE_CAPILLARYPRESSURE_TABLECAPILLARYPRESSURE_HPP
 
 #include "constitutive/capillaryPressure/CapillaryPressureBase.hpp"
 
 #include "functions/TableFunction.hpp"
 
-namespace geosx
+namespace geos
 {
 namespace constitutive
 {
@@ -59,12 +60,12 @@ public:
                    arrayView3d< real64, cappres::USD_CAPPRES > const & phaseCapPres,
                    arrayView4d< real64, cappres::USD_CAPPRES_DS > const & dPhaseCapPres_dPhaseVolFrac );
 
-    GEOSX_HOST_DEVICE
+    GEOS_HOST_DEVICE
     void compute( arraySlice1d< real64 const, compflow::USD_PHASE - 1 > const & phaseVolFraction,
                   arraySlice1d< real64, cappres::USD_CAPPRES - 2 > const & phaseCapPres,
                   arraySlice2d< real64, cappres::USD_CAPPRES_DS - 2 > const & dPhaseCapPres_dPhaseVolFrac ) const;
 
-    GEOSX_HOST_DEVICE
+    GEOS_HOST_DEVICE
     virtual void update( localIndex const k,
                          localIndex const q,
                          arraySlice1d< real64 const, compflow::USD_PHASE - 1 > const & phaseVolFraction ) const override;
@@ -95,7 +96,7 @@ private:
 
 private:
 
-  virtual void postProcessInput() override;
+  virtual void postInputInitialization() override;
 
   virtual void initializePreSubGroups() override;
 
@@ -118,7 +119,7 @@ private:
 
 };
 
-GEOSX_HOST_DEVICE
+GEOS_HOST_DEVICE
 inline void
 TableCapillaryPressure::KernelWrapper::
   compute( arraySlice1d< real64 const, compflow::USD_PHASE - 1 > const & phaseVolFraction,
@@ -172,12 +173,12 @@ TableCapillaryPressure::KernelWrapper::
   }
 }
 
-GEOSX_HOST_DEVICE
+GEOS_HOST_DEVICE
 inline void
 TableCapillaryPressure::KernelWrapper::
   update( localIndex const k,
           localIndex const q,
-          arraySlice1d< geosx::real64 const, compflow::USD_PHASE - 1 > const & phaseVolFraction ) const
+          arraySlice1d< geos::real64 const, compflow::USD_PHASE - 1 > const & phaseVolFraction ) const
 {
   compute( phaseVolFraction,
            m_phaseCapPressure[k][q],
@@ -186,6 +187,6 @@ TableCapillaryPressure::KernelWrapper::
 
 } // namespace constitutive
 
-} // namespace geosx
+} // namespace geos
 
-#endif // GEOSX_CONSTITUTIVE_CAPILLARYPRESSURE_TABLECAPILLARYPRESSURE_HPP
+#endif // GEOS_CONSTITUTIVE_CAPILLARYPRESSURE_TABLECAPILLARYPRESSURE_HPP

@@ -2,10 +2,11 @@
  * ------------------------------------------------------------------------------------------------------------
  * SPDX-License-Identifier: LGPL-2.1-only
  *
- * Copyright (c) 2018-2020 Lawrence Livermore National Security LLC
- * Copyright (c) 2018-2020 The Board of Trustees of the Leland Stanford Junior University
- * Copyright (c) 2018-2020 TotalEnergies
- * Copyright (c) 2019-     GEOSX Contributors
+ * Copyright (c) 2016-2024 Lawrence Livermore National Security LLC
+ * Copyright (c) 2018-2024 TotalEnergies
+ * Copyright (c) 2018-2024 The Board of Trustees of the Leland Stanford Junior University
+ * Copyright (c) 2023-2024 Chevron
+ * Copyright (c) 2019-     GEOS/GEOSX Contributors
  * All rights reserved
  *
  * See top level LICENSE, COPYRIGHT, CONTRIBUTORS, NOTICE, and ACKNOWLEDGEMENTS files for details.
@@ -19,7 +20,7 @@
 #include "mesh/MeshLevel.hpp"
 #include "mesh/generators/CellBlockUtilities.hpp"
 
-namespace geosx
+namespace geos
 {
 using namespace dataRepository;
 using namespace constitutive;
@@ -44,6 +45,10 @@ CellElementSubRegion::CellElementSubRegion( string const & name, Group * const p
 
   registerWrapper( viewKeyStruct::fracturedCellsString(), &m_fracturedCells ).setSizedFromParent( 1 );
 
+  registerWrapper( viewKeyStruct::bubbleCellsString(), &m_bubbleCells ).setSizedFromParent( 0 );
+
+  registerWrapper( viewKeyStruct::toFaceElementsString(), &m_toFaceElements ).setSizedFromParent( 0 );
+
   excludeWrappersFromPacking( { viewKeyStruct::nodeListString(),
                                 viewKeyStruct::edgeListString(),
                                 viewKeyStruct::faceListString(),
@@ -66,7 +71,7 @@ void CellElementSubRegion::resizePerElementValues( localIndex const newNumNodesP
 }
 
 
-void CellElementSubRegion::copyFromCellBlock( CellBlockABC & cellBlock )
+void CellElementSubRegion::copyFromCellBlock( CellBlockABC const & cellBlock )
 {
   // Defines the (unique) element type of this cell element region,
   // and its associated number of nodes, edges, faces.
@@ -90,14 +95,14 @@ void CellElementSubRegion::copyFromCellBlock( CellBlockABC & cellBlock )
   this->m_localToGlobalMap = cellBlock.localToGlobalMap();
 
   this->constructGlobalToLocalMap();
-  cellBlock.forExternalProperties( [&]( WrapperBase & wrapper )
+  cellBlock.forExternalProperties( [&]( WrapperBase const & wrapper )
   {
-    types::dispatch( types::StandardArrays{}, wrapper.getTypeId(), true, [&]( auto array )
+    types::dispatch( types::ListofTypeList< types::StandardArrays >{}, [&]( auto tupleOfTypes )
     {
-      using ArrayType = decltype( array );
-      Wrapper< ArrayType > & wrapperT = Wrapper< ArrayType >::cast( wrapper );
-      this->registerWrapper( wrapper.getName(), std::make_unique< ArrayType >( wrapperT.reference() ) );
-    } );
+      using ArrayType = camp::first< decltype( tupleOfTypes ) >;
+      auto const src = Wrapper< ArrayType >::cast( wrapper ).reference().toViewConst();
+      this->registerWrapper( wrapper.getName(), std::make_unique< ArrayType >( &src ) );
+    }, wrapper );
   } );
 }
 
@@ -162,8 +167,8 @@ localIndex CellElementSubRegion::packUpDownMapsImpl( buffer_unit_type * & buffer
 
 localIndex CellElementSubRegion::unpackUpDownMaps( buffer_unit_type const * & buffer,
                                                    localIndex_array & packList,
-                                                   bool const GEOSX_UNUSED_PARAM( overwriteUpMaps ),
-                                                   bool const GEOSX_UNUSED_PARAM( overwriteDownMaps ) )
+                                                   bool const GEOS_UNUSED_PARAM( overwriteUpMaps ),
+                                                   bool const GEOS_UNUSED_PARAM( overwriteDownMaps ) )
 {
   localIndex unPackedSize = 0;
   unPackedSize += bufferOps::Unpack( buffer,
@@ -186,6 +191,11 @@ localIndex CellElementSubRegion::unpackUpDownMaps( buffer_unit_type const * & bu
                                      m_unmappedGlobalIndicesInFacelist,
                                      this->globalToLocalMap(),
                                      faceList().relatedObjectGlobalToLocal() );
+
+
+  GEOS_ERROR_IF_NE( m_unmappedGlobalIndicesInNodelist.size(), 0 );
+  GEOS_ERROR_IF_NE( m_unmappedGlobalIndicesInEdgelist.size(), 0 );
+  GEOS_ERROR_IF_NE( m_unmappedGlobalIndicesInFacelist.size(), 0 );
 
   return unPackedSize;
 }
@@ -243,7 +253,7 @@ localIndex CellElementSubRegion::unpackFracturedElements( buffer_unit_type const
 
   string toEmbSurfString;
   unPackedSize += bufferOps::Unpack( buffer, toEmbSurfString );
-  GEOSX_ERROR_IF_NE( toEmbSurfString, viewKeyStruct::toEmbSurfString() );
+  GEOS_ERROR_IF_NE( toEmbSurfString, viewKeyStruct::toEmbSurfString() );
 
   // only here to use that packing function
   map< localIndex, array1d< globalIndex > > unmappedGlobalIndices;
@@ -257,7 +267,7 @@ localIndex CellElementSubRegion::unpackFracturedElements( buffer_unit_type const
 
   string fracturedCellsString;
   unPackedSize += bufferOps::Unpack( buffer, fracturedCellsString );
-  GEOSX_ERROR_IF_NE( fracturedCellsString, viewKeyStruct::fracturedCellsString() );
+  GEOS_ERROR_IF_NE( fracturedCellsString, viewKeyStruct::fracturedCellsString() );
 
   SortedArray< globalIndex > junk;
   unPackedSize += bufferOps::Unpack( buffer,
@@ -290,7 +300,7 @@ localIndex CellElementSubRegion::getFaceNodes( localIndex const elementIndex,
                                                localIndex const localFaceIndex,
                                                Span< localIndex > const nodeIndices ) const
 {
-  return geosx::getFaceNodes( m_elementType, elementIndex, localFaceIndex, m_toNodesRelation, nodeIndices );
+  return geos::getFaceNodes( m_elementType, elementIndex, localFaceIndex, m_toNodesRelation, nodeIndices );
 }
 
 void CellElementSubRegion::
@@ -389,20 +399,20 @@ void CellElementSubRegion::
     }
     default:
     {
-      GEOSX_ERROR( GEOSX_FMT( "Volume calculation not supported for element type {} in subregion {}",
-                              m_elementType, getName() ) );
+      GEOS_ERROR( GEOS_FMT( "Volume calculation not supported for element type {} in subregion {}",
+                            m_elementType, getDataContext() ) );
     }
   }
 
-  GEOSX_ERROR_IF( m_elementVolume[k] <= 0.0,
-                  GEOSX_FMT( "Negative volume for element {} type {} in subregion {}",
-                             k, m_elementType, getName() ) );
+  GEOS_ERROR_IF( m_elementVolume[k] <= 0.0,
+                 GEOS_FMT( "Negative volume for element {} type {} in subregion {}",
+                           k, m_elementType, getDataContext() ) );
 }
 
 void CellElementSubRegion::calculateElementGeometricQuantities( NodeManager const & nodeManager,
-                                                                FaceManager const & GEOSX_UNUSED_PARAM( faceManager ) )
+                                                                FaceManager const & GEOS_UNUSED_PARAM( faceManager ) )
 {
-  GEOSX_MARK_FUNCTION;
+  GEOS_MARK_FUNCTION;
 
   arrayView2d< real64 const, nodes::REFERENCE_POSITION_USD > const X = nodeManager.referencePosition();
 
@@ -421,4 +431,4 @@ void CellElementSubRegion::setupRelatedObjectsInRelations( MeshLevel const & mes
 
 REGISTER_CATALOG_ENTRY( ObjectManagerBase, CellElementSubRegion, string const &, Group * const )
 
-} /* namespace geosx */
+} /* namespace geos */

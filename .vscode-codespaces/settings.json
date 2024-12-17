@@ -1,0 +1,17 @@
+{
+    "cmake": {
+        "sourceDirectory": "${workspaceFolder}/src",
+        "buildDirectory": "${userHome}/geos-build",
+        "installPrefix": "${userHome}/geos-install",
+        "cacheInit": "/workspaces/GEOS/host-configs/environment.cmake",
+        "configureSettings": {
+            "BLT_MPI_COMMAND_APPEND": "--use-hwthread-cpus;--oversubscribe",
+            "ENABLE_OPENMP": "OFF",
+            "ENABLE_HYPRE": "ON",
+            "ENABLE_TRILINOS": "OFF",
+            "ENABLE_CUDA": "OFF"
+        },
+        "configurationType": "Debug",
+        "generator": "Ninja"
+    }
+}

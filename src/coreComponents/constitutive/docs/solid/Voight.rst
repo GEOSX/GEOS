@@ -1,6 +1,6 @@
 Voigt Notation 
 ------------------------------------------------
-In GEOSX we express rank-two symmetric tensors using
+In GEOS we express rank-two symmetric tensors using
 `Voigt notation <https://en.wikipedia.org/wiki/Voigt_notation>`_.
 Stress tensors are represented as an "unrolled" six-component
 vector storing only the unique component values.  For strain tensors, note that *engineering
@@ -56,6 +56,6 @@ where
    The factor of two in the shear components of strain (and strain-like) quantities is a frequent
    source of confusion, even for expert modelers.  It can be particularly challenging to use in nuanced 
    situations like stiffness tensor calculations or invariant decompositions.  If you plan to implement new models within 
-   GEOSX, please pay extra attention to this detail. We also provide many common operations in 
+   GEOS, please pay extra attention to this detail. We also provide many common operations in 
    centralized helper functions to avoid re-inventing the wheel.
 

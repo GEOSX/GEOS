@@ -2,10 +2,11 @@
  * ------------------------------------------------------------------------------------------------------------
  * SPDX-License-Identifier: LGPL-2.1-only
  *
- * Copyright (c) 2018-2020 Lawrence Livermore National Security LLC
- * Copyright (c) 2018-2020 The Board of Trustees of the Leland Stanford Junior University
- * Copyright (c) 2018-2020 TotalEnergies
- * Copyright (c) 2019-     GEOSX Contributors
+ * Copyright (c) 2016-2024 Lawrence Livermore National Security LLC
+ * Copyright (c) 2018-2024 TotalEnergies
+ * Copyright (c) 2018-2024 The Board of Trustees of the Leland Stanford Junior University
+ * Copyright (c) 2023-2024 Chevron
+ * Copyright (c) 2019-     GEOS/GEOSX Contributors
  * All rights reserved
  *
  * See top level LICENSE, COPYRIGHT, CONTRIBUTORS, NOTICE, and ACKNOWLEDGEMENTS files for details.
@@ -18,12 +19,12 @@
  * @file ImplicitKernelBase.hpp
  */
 
-#ifndef GEOSX_FINITEELEMENT_IMPLICITKERNELBASE_HPP_
-#define GEOSX_FINITEELEMENT_IMPLICITKERNELBASE_HPP_
+#ifndef GEOS_FINITEELEMENT_IMPLICITKERNELBASE_HPP_
+#define GEOS_FINITEELEMENT_IMPLICITKERNELBASE_HPP_
 
 
 
-namespace geosx
+namespace geos
 {
 
 namespace finiteElement
@@ -35,7 +36,7 @@ namespace finiteElement
 /**
  * @class ImplicitKernelBase
  * @brief Define the base interface for implicit finite element kernels.
- * @copydoc geosx::finiteElement::KernelBase
+ * @copydoc geos::finiteElement::KernelBase
  *
  * ### ImplicitKernelBase Description
  * Provides a common base for kernels that require the assembly of a system of
@@ -54,7 +55,7 @@ class ImplicitKernelBase : public KernelBase< SUBREGION_TYPE,
                                               NUM_DOF_PER_TRIAL_SP >
 {
 public:
-  /// Alias for the base class. (i.e. #geosx::finiteElement::KernelBase)
+  /// Alias for the base class. (i.e. #geos::finiteElement::KernelBase)
   using Base = KernelBase< SUBREGION_TYPE,
                            CONSTITUTIVE_TYPE,
                            FE_TYPE,
@@ -79,7 +80,8 @@ public:
    * @param rankOffset dof index offset of current rank
    * @param inputMatrix Reference to the Jacobian matrix.
    * @param inputRhs Reference to the RHS vector.
-   * @copydoc geosx::finiteElement::KernelBase::KernelBase
+   * @param inputDt The timestep for the physics update.
+   * @copydoc geos::finiteElement::KernelBase::KernelBase
    */
   ImplicitKernelBase( NodeManager const & nodeManager,
                       EdgeManager const & edgeManager,
@@ -91,21 +93,23 @@ public:
                       arrayView1d< globalIndex const > const & inputDofNumber,
                       globalIndex const rankOffset,
                       CRSMatrixView< real64, globalIndex const > const & inputMatrix,
-                      arrayView1d< real64 > const & inputRhs ):
+                      arrayView1d< real64 > const & inputRhs,
+                      real64 const inputDt ):
     Base( elementSubRegion,
           finiteElementSpace,
           inputConstitutiveType ),
     m_dofNumber( inputDofNumber ),
     m_dofRankOffset( rankOffset ),
     m_matrix( inputMatrix ),
-    m_rhs( inputRhs )
+    m_rhs( inputRhs ),
+    m_dt( inputDt )
   {
     FiniteElementBase::initialize< FE_TYPE >( nodeManager,
                                               edgeManager,
                                               faceManager,
                                               elementSubRegion,
                                               m_meshData );
-    GEOSX_UNUSED_VAR( targetRegionIndex );
+    GEOS_UNUSED_VAR( targetRegionIndex );
   }
 
 
@@ -124,13 +128,21 @@ public:
     /**
      * Default constructor
      */
-    GEOSX_HOST_DEVICE
+    GEOS_HOST_DEVICE
     StackVariables():
       localRowDofIndex{ 0 },
       localColDofIndex{ 0 },
       localResidual{ 0.0 },
       localJacobian{ {0.0} }
-    {}
+    {
+      for( int ii = 0; ii < maxNumRows; ++ii )
+      {
+        for( int jj = 0; jj < maxNumCols; ++jj )
+        {
+          localJacobian[ii][jj] = 0.0;
+        }
+      }
+    }
 
     /// The actual number of rows in the element local jacobian matrix (<= maxNumRows).
     localIndex numRows;
@@ -156,7 +168,7 @@ public:
   //***************************************************************************
 
   /**
-   * @copydoc geosx::finiteElement::KernelBase::setup
+   * @copydoc geos::finiteElement::KernelBase::setup
    *
    * ### ImplicitKernelBase::setup() Description
    *
@@ -166,8 +178,8 @@ public:
    * @note This seems like a waste of register space. We should do this in
    *       complete() unless we actually need these dof somewhere else in the kernel.
    */
-  GEOSX_HOST_DEVICE
-  GEOSX_FORCE_INLINE
+  GEOS_HOST_DEVICE
+  inline
   void setup( localIndex const k,
               StackVariables & stack ) const
   {
@@ -212,6 +224,9 @@ protected:
   /// Data structure containing mesh data used to setup the finite element
   typename FE_TYPE::template MeshData< SUBREGION_TYPE > m_meshData;
 
+  /// time increment
+  real64 const m_dt; ///TODO: Consider moving to finite element kernel base?
+
 };
 
 }
@@ -219,4 +234,4 @@ protected:
 
 
 
-#endif /* GEOSX_FINITEELEMENT_IMPLICITKERNELBASE_HPP_ */
+#endif /* GEOS_FINITEELEMENT_IMPLICITKERNELBASE_HPP_ */

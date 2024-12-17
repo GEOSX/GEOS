@@ -1,21 +1,16 @@
 .. _ValidationStudiesFaultMechanics:
 
 
-Fault Mechanics
+Faults & fractures
 ===================================
 
 .. toctree::
    :maxdepth: 1
 
+   sneddon/Example
+   
    singleFracCompression/Example
 
    intersectFrac/Example
 
-   sneddon/Example
-
-   mandel/Example
-
    faultVerification/Example
-
-
-

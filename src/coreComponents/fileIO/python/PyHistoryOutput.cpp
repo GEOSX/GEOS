@@ -1,3 +1,18 @@
+/*
+ * ------------------------------------------------------------------------------------------------------------
+ * SPDX-License-Identifier: LGPL-2.1-only
+ *
+ * Copyright (c) 2016-2024 Lawrence Livermore National Security LLC
+ * Copyright (c) 2018-2024 TotalEnergies
+ * Copyright (c) 2018-2024 The Board of Trustees of the Leland Stanford Junior University
+ * Copyright (c) 2023-2024 Chevron
+ * Copyright (c) 2019-     GEOS/GEOSX Contributors
+ * All rights reserved
+ *
+ * See top level LICENSE, COPYRIGHT, CONTRIBUTORS, NOTICE, and ACKNOWLEDGEMENTS files for details.
+ * ------------------------------------------------------------------------------------------------------------
+ */
+
 #define PY_SSIZE_T_CLEAN
 #include <Python.h>
 
@@ -15,7 +30,7 @@
   PYTHON_ERROR_IF( self->group == nullptr, PyExc_RuntimeError, "The PyHistoryOutput is not initialized.", nullptr )
 
 
-namespace geosx
+namespace geos
 {
 namespace python
 {
@@ -27,13 +42,13 @@ struct PyHistoryOutput
   static constexpr char const * docString =
     "A Python interface to TimeHistoryOutput.";
 
-  geosx::TimeHistoryOutput * group;
+  geos::TimeHistoryOutput * group;
 };
 
 
 static PyObject * PyHistoryOutput_new( PyTypeObject *type, PyObject *args, PyObject *kwds )
 {
-  GEOSX_UNUSED_VAR( args, kwds );
+  GEOS_UNUSED_VAR( args, kwds );
   PyHistoryOutput *self;
 
   self = (PyHistoryOutput *)type->tp_alloc( type, 0 );
@@ -79,7 +94,7 @@ static PyObject * output( PyHistoryOutput * self, PyObject * args )
     return nullptr;
   }
 
-  geosx::DomainPartition & domain = self->group->getGroupByPath< DomainPartition >( "/Problem/domain" );
+  geos::DomainPartition & domain = self->group->getGroupByPath< DomainPartition >( "/Problem/domain" );
 
   int cycleNumber = int(round( time/dt ));
   try
@@ -132,7 +147,7 @@ static PyObject * reinit( PyHistoryOutput * self, PyObject *args )
 {
   VERIFY_NON_NULL_SELF( self );
   VERIFY_INITIALIZED( self );
-  GEOSX_UNUSED_VAR( args );
+  GEOS_UNUSED_VAR( args );
 
   self->group->reinit();
 

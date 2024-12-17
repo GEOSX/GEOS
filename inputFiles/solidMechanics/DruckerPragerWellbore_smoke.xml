@@ -1,0 +1,48 @@
+<?xml version="1.0" ?>
+
+<Problem>
+  <Included>
+    <File name="./DruckerPragerWellbore_base.xml"/>
+  </Included>
+
+  <!-- SPHINX_DP_WELLBORE_MESH -->
+  <Mesh>
+    <InternalWellbore
+      name="mesh1"
+      elementTypes="{ C3D8 }"
+      radius="{ 0.1, 5.0 }"
+      theta="{ 0, 90 }"
+      zCoords="{ -1, 1 }"
+      nr="{ 4 }"
+      nt="{ 4 }"
+      nz="{ 1 }"
+      trajectory="{ { 0.0, 0.0, -1.0 },
+                    { 0.0, 0.0, 1.0 } }"
+      autoSpaceRadialElems="{ 1 }"
+      cellBlockNames="{ cb1 }"/>
+  </Mesh>
+
+  <!-- SPHINX_DP_WELLBORE_MESH_END -->
+  
+   <!-- SPHINX_DP_WELLBORE_EXECUTION -->
+  <Events
+    maxTime="1.0">
+    <PeriodicEvent
+      name="solverApplications"
+      forceDt="1.0"
+      targetExactTimestep="1"
+      target="/Solvers/mechanicsSolver"/>
+
+    <PeriodicEvent
+      name="outputs"
+      target="/Outputs/vtkOutput"/>
+
+   <PeriodicEvent
+      name="restarts"
+      timeFrequency="1"
+      targetExactTimestep="0"
+      target="/Outputs/restartOutput"/>
+  </Events>
+  <!-- SPHINX_DP_WELLBORE_EXECUTION_END -->
+ 
+</Problem>

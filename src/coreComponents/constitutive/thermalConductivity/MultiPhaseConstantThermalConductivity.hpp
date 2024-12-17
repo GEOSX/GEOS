@@ -2,10 +2,11 @@
  * ------------------------------------------------------------------------------------------------------------
  * SPDX-License-Identifier: LGPL-2.1-only
  *
- * Copyright (c) 2018-2020 Lawrence Livermore National Security LLC
- * Copyright (c) 2018-2020 The Board of Trustees of the Leland Stanford Junior University
- * Copyright (c) 2018-2020 TotalEnergies
- * Copyright (c) 2019-     GEOSX Contributors
+ * Copyright (c) 2016-2024 Lawrence Livermore National Security LLC
+ * Copyright (c) 2018-2024 TotalEnergies
+ * Copyright (c) 2018-2024 The Board of Trustees of the Leland Stanford Junior University
+ * Copyright (c) 2023-2024 Chevron
+ * Copyright (c) 2019-     GEOS/GEOSX Contributors
  * All rights reserved
  *
  * See top level LICENSE, COPYRIGHT, CONTRIBUTORS, NOTICE, and ACKNOWLEDGEMENTS files for details.
@@ -16,13 +17,13 @@
  * @file MultiPhaseConstantThermalConductivity.hpp
  */
 
-#ifndef GEOSX_CONSTITUTIVE_MULTIPHASE_THERMALCONDUCTIVITY_CONSTANTTHERMALCONDUCTIVITY_HPP_
-#define GEOSX_CONSTITUTIVE_MULTIPHASE_THERMALCONDUCTIVITY_CONSTANTTHERMALCONDUCTIVITY_HPP_
+#ifndef GEOS_CONSTITUTIVE_MULTIPHASE_THERMALCONDUCTIVITY_CONSTANTTHERMALCONDUCTIVITY_HPP_
+#define GEOS_CONSTITUTIVE_MULTIPHASE_THERMALCONDUCTIVITY_CONSTANTTHERMALCONDUCTIVITY_HPP_
 
 #include "constitutive/thermalConductivity/MultiPhaseThermalConductivityBase.hpp"
 
 
-namespace geosx
+namespace geos
 {
 namespace constitutive
 {
@@ -45,12 +46,12 @@ public:
     : MultiPhaseThermalConductivityBaseUpdate( effectiveConductivity, dEffectiveConductivity_dPhaseVolFrac )
   {}
 
-  GEOSX_HOST_DEVICE
+  GEOS_HOST_DEVICE
   virtual void update( localIndex const k,
                        localIndex const q,
                        real64 const & laggedPorosity,
                        arraySlice1d< real64 const, compflow::USD_PHASE - 1 > const & phaseVolFraction ) const override
-  { GEOSX_UNUSED_VAR( k, q, laggedPorosity, phaseVolFraction ); }
+  { GEOS_UNUSED_VAR( k, q, laggedPorosity, phaseVolFraction ); }
 
 };
 
@@ -98,7 +99,7 @@ public:
 
 protected:
 
-  virtual void postProcessInput() override;
+  virtual void postInputInitialization() override;
 
 private:
 
@@ -109,7 +110,7 @@ private:
 
 } // namespace constitutive
 
-} // namespace geosx
+} // namespace geos
 
 
-#endif //GEOSX_CONSTITUTIVE_MULTIPHASE_THERMALCONDUCTIVITY_CONSTANTTHERMALCONDUCTIVITY_HPP_
+#endif //GEOS_CONSTITUTIVE_MULTIPHASE_THERMALCONDUCTIVITY_CONSTANTTHERMALCONDUCTIVITY_HPP_

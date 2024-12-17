@@ -2,10 +2,11 @@
  * ------------------------------------------------------------------------------------------------------------
  * SPDX-License-Identifier: LGPL-2.1-only
  *
- * Copyright (c) 2018-2020 Lawrence Livermore National Security LLC
- * Copyright (c) 2018-2020 The Board of Trustees of the Leland Stanford Junior University
- * Copyright (c) 2018-2020 TotalEnergies
- * Copyright (c) 2019-     GEOSX Contributors
+ * Copyright (c) 2016-2024 Lawrence Livermore National Security LLC
+ * Copyright (c) 2018-2024 TotalEnergies
+ * Copyright (c) 2018-2024 The Board of Trustees of the Leland Stanford Junior University
+ * Copyright (c) 2023-2024 Chevron
+ * Copyright (c) 2019-     GEOS/GEOSX Contributors
  * All rights reserved
  *
  * See top level LICENSE, COPYRIGHT, CONTRIBUTORS, NOTICE, and ACKNOWLEDGEMENTS files for details.
@@ -16,14 +17,14 @@
  * @file H1_QuadrilateralFace_Lagrange1_GaussLegendre2.hpp
  */
 
-#ifndef GEOSX_FINITEELEMENT_ELEMENTFORMULATIONS_H1QUADRILATERALFACELAGRANGE1GAUSSLEGENDRE2
-#define GEOSX_FINITEELEMENT_ELEMENTFORMULATIONS_H1QUADRILATERALFACELAGRANGE1GAUSSLEGENDRE2
+#ifndef GEOS_FINITEELEMENT_ELEMENTFORMULATIONS_H1QUADRILATERALFACELAGRANGE1GAUSSLEGENDRE2_HPP_
+#define GEOS_FINITEELEMENT_ELEMENTFORMULATIONS_H1QUADRILATERALFACELAGRANGE1GAUSSLEGENDRE2_HPP_
 
 #include "FiniteElementBase.hpp"
 #include "LagrangeBasis1.hpp"
 
 
-namespace geosx
+namespace geos
 {
 namespace finiteElement
 {
@@ -61,11 +62,11 @@ public:
   /// The number of quadrature points per element.
   constexpr static localIndex numQuadraturePoints = 4;
 
-
+  GEOS_HOST_DEVICE
   virtual ~H1_QuadrilateralFace_Lagrange1_GaussLegendre2() override
   {}
 
-  GEOSX_HOST_DEVICE
+  GEOS_HOST_DEVICE
   virtual localIndex getNumQuadraturePoints() const override
   {
     return numQuadraturePoints;
@@ -76,20 +77,20 @@ public:
    * @param stack Stack variables as filled by @ref setupStack.
    * @return The number of quadrature points.
    */
-  GEOSX_HOST_DEVICE
+  GEOS_HOST_DEVICE
   static localIndex getNumQuadraturePoints( StackVariables const & stack )
   {
-    GEOSX_UNUSED_VAR( stack );
+    GEOS_UNUSED_VAR( stack );
     return numQuadraturePoints;
   }
 
-  GEOSX_HOST_DEVICE
+  GEOS_HOST_DEVICE
   virtual localIndex getNumSupportPoints() const override
   {
     return numNodes;
   }
 
-  GEOSX_HOST_DEVICE
+  GEOS_HOST_DEVICE
   virtual localIndex getMaxSupportPoints() const override
   {
     return maxSupportPoints;
@@ -100,10 +101,10 @@ public:
    * @param stack Object that holds stack variables.
    * @return The number of support points.
    */
-  GEOSX_HOST_DEVICE
+  GEOS_HOST_DEVICE
   static localIndex getNumSupportPoints( StackVariables const & stack )
   {
-    GEOSX_UNUSED_VAR( stack );
+    GEOS_UNUSED_VAR( stack );
     return numNodes;
   }
 
@@ -112,7 +113,7 @@ public:
    * @param[in] coords The parent coordinates at which to evaluate the shape function value
    * @param[out] N The shape function values.
    */
-  GEOSX_HOST_DEVICE
+  GEOS_HOST_DEVICE
   static void calcN( real64 const (&coords)[2],
                      real64 ( &N )[numNodes] );
 
@@ -123,7 +124,7 @@ public:
    * @param N An array to pass back the shape function values for each support
    *
    */
-  GEOSX_HOST_DEVICE
+  GEOS_HOST_DEVICE
   static void calcN( localIndex const q,
                      real64 ( &N )[numNodes] );
 
@@ -135,11 +136,41 @@ public:
    * @param N An array to pass back the shape function values for each support
    *   point.
    */
-  GEOSX_HOST_DEVICE
-  GEOSX_FORCE_INLINE
+  GEOS_HOST_DEVICE
+  inline
   static void calcN( localIndex const q,
                      StackVariables const & stack,
                      real64 ( &N )[numNodes] );
+
+  /**
+   * @brief Calculate shape bubble functions values at a given point in the parent space.
+   * @param pointCoord coordinates of the given point.
+   * @param N An array to pass back the shape function values.
+   */
+  GEOS_HOST_DEVICE
+  GEOS_FORCE_INLINE
+  static void calcBubbleN( real64 const (&pointCoord)[2],
+                           real64 (& N)[1] )
+  {
+    LagrangeBasis1::TensorProduct2D::valueBubble( pointCoord, N );
+  }
+
+  /**
+   * @brief Calculate shape bubble functions values at a
+   *   quadrature point.
+   * @param q Index of the quadrature point.
+   * @param N An array to pass back the shape function values.
+   */
+  GEOS_HOST_DEVICE
+  inline
+  static void calcBubbleN( localIndex const q,
+                           real64 (& N)[1] )
+  {
+    real64 const qCoords[2] = { quadratureFactor *parentCoords0( q ),
+                                quadratureFactor *parentCoords1( q ) };
+
+    calcBubbleN( qCoords, N );
+  }
 
   /**
    * @brief Calculate the integration weights for a quadrature point.
@@ -148,7 +179,7 @@ public:
    * @return The product of the quadrature rule weight and the determinate of
    *   the parent/physical transformation matrix.
    */
-  GEOSX_HOST_DEVICE
+  GEOS_HOST_DEVICE
   static real64 transformedQuadratureWeight( localIndex const q,
                                              real64 const (&X)[numNodes][3] );
 
@@ -162,13 +193,28 @@ public:
    * @param scaleFactor Optional scaling of the stabilization matrix.
    */
   template< localIndex NUMDOFSPERTRIALSUPPORTPOINT, bool UPPER >
-  GEOSX_HOST_DEVICE
-  GEOSX_FORCE_INLINE
+  GEOS_HOST_DEVICE
+  inline
   static void addGradGradStabilization( StackVariables const & stack,
                                         real64 ( &matrix )
                                         [maxSupportPoints * NUMDOFSPERTRIALSUPPORTPOINT]
                                         [maxSupportPoints * NUMDOFSPERTRIALSUPPORTPOINT],
                                         real64 const & scaleFactor );
+
+  /**
+   * @brief Calculate the node permutation between the parent element and the geometric element.
+   *   Note: The optimal location for this calculation is yet to be determined.
+   * @param permutation An array to return the node permutation.
+   */
+  GEOS_HOST_DEVICE
+  inline
+  static void getPermutation( int (& permutation)[numNodes] )
+  {
+    permutation[0] = 0;
+    permutation[1] = 1;
+    permutation[2] = 3;
+    permutation[3] = 2;
+  }
 
 private:
   /// The area of the element in the parent configuration.
@@ -190,8 +236,8 @@ private:
    * @return The linear index of the support/quadrature point (0-3)
    */
   template< typename T >
-  GEOSX_HOST_DEVICE
-  GEOSX_FORCE_INLINE
+  GEOS_HOST_DEVICE
+  inline
   constexpr static T linearMap( T const i, T const j )
   {
     return i + 2 * j;
@@ -203,8 +249,8 @@ private:
    * @param a The linear index of support point
    * @return parent coordinate in the r direction.
    */
-  GEOSX_HOST_DEVICE
-  GEOSX_FORCE_INLINE
+  GEOS_HOST_DEVICE
+  inline
   constexpr static real64 parentCoords0( localIndex const a )
   {
     return -1.0 + 2.0 * (a & 1);
@@ -216,8 +262,8 @@ private:
    * @param a The linear index of support point
    * @return parent coordinate in the r direction.
    */
-  GEOSX_HOST_DEVICE
-  GEOSX_FORCE_INLINE
+  GEOS_HOST_DEVICE
+  inline
   constexpr static real64 parentCoords1( localIndex const a )
   {
     return -1.0 + ( a & 2 );
@@ -228,8 +274,8 @@ private:
 /// @cond Doxygen_Suppress
 
 template< localIndex NUMDOFSPERTRIALSUPPORTPOINT, bool UPPER >
-GEOSX_HOST_DEVICE
-GEOSX_FORCE_INLINE
+GEOS_HOST_DEVICE
+inline
 void H1_QuadrilateralFace_Lagrange1_GaussLegendre2::
   addGradGradStabilization( StackVariables const & stack,
                             real64 ( & matrix )
@@ -237,13 +283,13 @@ void H1_QuadrilateralFace_Lagrange1_GaussLegendre2::
                             [maxSupportPoints * NUMDOFSPERTRIALSUPPORTPOINT],
                             real64 const & scaleFactor )
 {
-  GEOSX_UNUSED_VAR( stack );
-  GEOSX_UNUSED_VAR( matrix );
-  GEOSX_UNUSED_VAR( scaleFactor );
+  GEOS_UNUSED_VAR( stack );
+  GEOS_UNUSED_VAR( matrix );
+  GEOS_UNUSED_VAR( scaleFactor );
 }
 
-GEOSX_HOST_DEVICE
-GEOSX_FORCE_INLINE
+GEOS_HOST_DEVICE
+inline
 void
 H1_QuadrilateralFace_Lagrange1_GaussLegendre2::
   calcN( real64 const (&coords)[2],
@@ -256,8 +302,8 @@ H1_QuadrilateralFace_Lagrange1_GaussLegendre2::
            ( 1 + quadratureFactor*coords[1]*parentCoords1( a ) );
   }
 }
-GEOSX_HOST_DEVICE
-GEOSX_FORCE_INLINE
+GEOS_HOST_DEVICE
+inline
 void
 H1_QuadrilateralFace_Lagrange1_GaussLegendre2::
   calcN( localIndex const q,
@@ -271,11 +317,11 @@ H1_QuadrilateralFace_Lagrange1_GaussLegendre2::
   }
 }
 
-GEOSX_HOST_DEVICE
-GEOSX_FORCE_INLINE
+GEOS_HOST_DEVICE
+inline
 void H1_QuadrilateralFace_Lagrange1_GaussLegendre2::
   calcN( localIndex const q,
-         StackVariables const & GEOSX_UNUSED_PARAM( stack ),
+         StackVariables const & GEOS_UNUSED_PARAM( stack ),
          real64 ( & N )[numNodes] )
 {
   return calcN( q, N );
@@ -283,8 +329,8 @@ void H1_QuadrilateralFace_Lagrange1_GaussLegendre2::
 
 //*************************************************************************************************
 
-GEOSX_HOST_DEVICE
-GEOSX_FORCE_INLINE
+GEOS_HOST_DEVICE
+inline
 real64
 H1_QuadrilateralFace_Lagrange1_GaussLegendre2::
   transformedQuadratureWeight( localIndex const q,
@@ -331,4 +377,4 @@ H1_QuadrilateralFace_Lagrange1_GaussLegendre2::
 
 }
 }
-#endif //GEOSX_FINITEELEMENT_ELEMENTFORMULATIONS_H1QUADRILATERALFACELAGRANGE1GAUSSLEGENDRE2
+#endif //GEOS_FINITEELEMENT_ELEMENTFORMULATIONS_H1QUADRILATERALFACELAGRANGE1GAUSSLEGENDRE2_HPP_

@@ -2,10 +2,11 @@
  * ------------------------------------------------------------------------------------------------------------
  * SPDX-License-Identifier: LGPL-2.1-only
  *
- * Copyright (c) 2018-2020 Lawrence Livermore National Security LLC
- * Copyright (c) 2018-2020 The Board of Trustees of the Leland Stanford Junior University
- * Copyright (c) 2018-2020 TotalEnergies
- * Copyright (c) 2019-     GEOSX Contributors
+ * Copyright (c) 2016-2024 Lawrence Livermore National Security LLC
+ * Copyright (c) 2018-2024 TotalEnergies
+ * Copyright (c) 2018-2024 The Board of Trustees of the Leland Stanford Junior University
+ * Copyright (c) 2023-2024 Chevron
+ * Copyright (c) 2019-     GEOS/GEOSX Contributors
  * All rights reserved
  *
  * See top level LICENSE, COPYRIGHT, CONTRIBUTORS, NOTICE, and ACKNOWLEDGEMENTS files for details.
@@ -16,13 +17,13 @@
  * @file ChomboIO.hpp
  */
 
-#ifndef GEOSX_FILEIO_OUTPUTS_CHOMBOIO_HPP_
-#define GEOSX_FILEIO_OUTPUTS_CHOMBOIO_HPP_
+#ifndef GEOS_FILEIO_OUTPUTS_CHOMBOIO_HPP_
+#define GEOS_FILEIO_OUTPUTS_CHOMBOIO_HPP_
 
 #include "OutputBase.hpp"
 #include "fileIO/coupling/ChomboCoupler.hpp"
 
-namespace geosx
+namespace geos
 {
 
 /**
@@ -33,7 +34,7 @@ namespace geosx
 class ChomboIO final : public OutputBase
 {
 public:
-  /// @copydoc geosx::dataRepository::Group::Group( string const & name, Group * const parent )
+  /// @copydoc geos::dataRepository::Group::Group( string const & name, Group * const parent )
   ChomboIO( string const & name, Group * const parent );
 
   /// Destructor
@@ -88,6 +89,12 @@ public:
   } viewKeys;
   /// @endcond
 
+protected:
+  /**
+   * @copydoc OutputBase::getTimerCategory
+   */
+  logInfo::OutputTimerBase const & getTimerCategory() const override;
+
 private:
   ChomboCoupler * m_coupler;
   string m_outputPath;
@@ -98,6 +105,6 @@ private:
 };
 
 
-} /* namespace geosx */
+} /* namespace geos */
 
-#endif /* GEOSX_FILEIO_OUTPUTS_CHOMBOIO_HPP_ */
+#endif /* GEOS_FILEIO_OUTPUTS_CHOMBOIO_HPP_ */

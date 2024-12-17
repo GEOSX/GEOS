@@ -1,24 +1,24 @@
-<Problem> 
+<Problem>
   <Included>
     <File
       name="./walshQuarterNoChombo_base.xml"/>
   </Included>
-  
+
   <Mesh>
     <InternalMesh name="mesh1"
                   elementTypes="{C3D8}"
                   xCoords="{  0.0000000,  0.0087500 }"
                   yCoords="{  0.0000000,  0.0075000, 0.0075800, 0.0150000 }"
                   zCoords="{ -0.0075000, -0.0012500, 0.0012500, 0.0075000 }"
-                  nx="{18}"
-                  ny="{14, 2, 14}"
-                  nz="{14, 6, 14}"
+                  nx="{ 8 }"
+                  ny="{ 14, 6, 14 }"
+                  nz="{ 14, 6, 14 }"
                   cellBlockNames="{cb1,  cb1, cb1,
                                    cb1, void, cb1,
                                    cb1,  cb1, cb1 }"/>
   </Mesh>
 
-  <Solvers 
+  <Solvers
     gravityVector="{0.0,0.0,-0.0}">
 
     <Hydrofracture
@@ -28,39 +28,39 @@
       surfaceGeneratorName="SurfaceGen"
       logLevel="1"
       targetRegions="{Fracture}"
-      contactRelationName="fractureContact"
       maxNumResolves="5"
       initialDt="0.1">
 
       <NonlinearSolverParameters newtonTol="1.0e-6"
                                  newtonMaxIter="50"
-                                 lineSearchMaxCuts="2"/>
+                                 lineSearchMaxCuts="2"
+                                 logLevel="1"/>
 
       <LinearSolverParameters
         solverType="gmres"
+        krylovAdaptiveTol="1"
         preconditionerType="mgr"
-        logLevel="1"
-        krylovAdaptiveTol="1"/>
-        
+        logLevel="1"/>
+
       <!-- LinearSolverParameters
         logLevel="1"
         solverType="gmres"
         preconditionerType="mgr"
-        krylovTol="1.0e-08"
+        krylovAdaptiveTol="1"
         amgThreshold="0.3"
         amgNumSweeps="2"
         amgSmootherType="default"
         amgCoarseningType="HMIS"
-        amgInterpolationType="6"
+        amgInterpolationType="extendedI"
         amgNumFunctions="3"
-        amgAggresiveCoarseningLevels="1"
+        amgAggressiveCoarseningLevels="1"
         /-->
     </Hydrofracture>
 
     <SolidMechanicsLagrangianSSLE
       name="lagsolve"
       timeIntegrationOption="QuasiStatic"
-      logLevel="0"
+      logLevel="1"
       discretization="FE1"
       targetRegions="{Domain, void, Fracture}"
       contactRelationName="fractureContact">
@@ -68,49 +68,48 @@
 
     <SinglePhaseFVM
       name="SinglePhaseFlow"
-      logLevel="0"
+      logLevel="1"
       discretization="singlePhaseTPFA"
-      targetRegions="{Fracture}"
-      inputFluxEstimate="1.0">
+      targetRegions="{Fracture}">
     </SinglePhaseFVM>
 
     <SurfaceGenerator
       name="SurfaceGen"
-      logLevel="0"
+      logLevel="1"
       fractureRegion="Fracture"
       targetRegions="{Domain, void}"
       nodeBasedSIF="1"
       rockToughness="3.0e6">
     </SurfaceGenerator>
   </Solvers>
-    
+
   <Events maxTime="10.0">
     <SoloEvent
       name="preFracture"
       target="/Solvers/SurfaceGen"/>
-
+<!--
     <SoloEvent
       name="postFracOuput"
-      target="/Outputs/siloOutput"/>
+      target="/Outputs/siloOutput"/> -->
 
     <PeriodicEvent
       name="solverApplications1"
       beginTime="0.0"
-      endTime="1.0"
+      endTime="0.001"
       forceDt="1.0e-4"
       target="/Solvers/hydrofracture" />
 
-    <PeriodicEvent name="outputs2"
+    <!-- <PeriodicEvent name="outputs2"
                    beginTime="0.0"
                    timeFrequency="0.0001"
                    targetExactTimestep="0"
-                   target="/Outputs/siloOutput" />
+                   target="/Outputs/siloOutput" /> -->
 
-    <!-- PeriodicEvent name="chomboCoupling"
+    <!-- <PeriodicEvent name="chomboCoupling"
                    cycleFrequency="1"
                    targetExactTimestep="0"
-                   target="/Outputs/chomboCoupling" /-->
+                   target="/Outputs/chomboCoupling" /> -->
   </Events>
-    
-  
+
+
 </Problem>

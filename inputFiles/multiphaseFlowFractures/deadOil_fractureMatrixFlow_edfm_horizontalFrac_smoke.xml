@@ -1,0 +1,38 @@
+<?xml version="1.0" ?>
+
+<Problem>
+  <Included>
+    <File name="./deadOil_fractureMatrixFlow_edfm_base.xml" />
+  </Included>
+
+  <Geometry>
+     <Box
+      name="source"
+      xMin="{ -0.01, -0.01, -0.01 }"
+      xMax="{ 0.11, 0.11, 0.11 }"/>
+
+     <Box
+      name="sink"
+      xMin="{ 0.9, 0.90, -0.01 }"
+      xMax="{ 1.01, 1.01, 0.11 }"/>
+
+    <Rectangle
+      name="FracturePlane"
+      normal="{ 1, 0, 0 }"
+      origin="{ 0.5, 0.5, 0.5 }"
+      lengthVector="{ 0, 1, 0 }"
+      widthVector="{ 0, 0, 1 }"
+      dimensions="{ 0.5, 1 }"/>
+  </Geometry>
+
+  <Outputs>
+    <VTK
+      name="vtkOutput"
+      plotFileRoot="deadOil_fracMatFlow_edfm_horizontal"
+      plotLevel="2"
+      format="ascii"/>
+
+    <Restart
+      name="sidreRestart"/>
+  </Outputs>
+</Problem>

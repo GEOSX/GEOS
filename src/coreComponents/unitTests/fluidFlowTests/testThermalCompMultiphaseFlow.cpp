@@ -2,17 +2,18 @@
  * ------------------------------------------------------------------------------------------------------------
  * SPDX-License-Identifier: LGPL-2.1-only
  *
- * Copyright (c) 2018-2020 Lawrence Livermore National Security LLC
- * Copyright (c) 2018-2020 The Board of Trustees of the Leland Stanford Junior University
- * Copyright (c) 2018-2020 TotalEnergies
- * Copyright (c) 2019-     GEOSX Contributors
+ * Copyright (c) 2016-2024 Lawrence Livermore National Security LLC
+ * Copyright (c) 2018-2024 TotalEnergies
+ * Copyright (c) 2018-2024 The Board of Trustees of the Leland Stanford Junior University
+ * Copyright (c) 2023-2024 Chevron
+ * Copyright (c) 2019-     GEOS/GEOSX Contributors
  * All rights reserved
  *
  * See top level LICENSE, COPYRIGHT, CONTRIBUTORS, NOTICE, and ACKNOWLEDGEMENTS files for details.
  * ------------------------------------------------------------------------------------------------------------
  */
 
-#include "constitutive/fluid/MultiFluidBase.hpp"
+#include "constitutive/fluid/multifluid/MultiFluidBase.hpp"
 #include "finiteVolume/FiniteVolumeManager.hpp"
 #include "finiteVolume/FluxApproximationBase.hpp"
 #include "mainInterface/initialization.hpp"
@@ -23,11 +24,11 @@
 #include "physicsSolvers/fluidFlow/FlowSolverBaseFields.hpp"
 #include "unitTests/fluidFlowTests/testCompFlowUtils.hpp"
 
-using namespace geosx;
-using namespace geosx::dataRepository;
-using namespace geosx::constitutive;
-using namespace geosx::constitutive::multifluid;
-using namespace geosx::testing;
+using namespace geos;
+using namespace geos::dataRepository;
+using namespace geos::constitutive;
+using namespace geos::constitutive::multifluid;
+using namespace geos::testing;
 
 CommandLineOptions g_commandLineOptions;
 
@@ -44,193 +45,165 @@ char const * pvtGas = "DensityFun SpanWagnerCO2Density 1e6 7.5e7 5e5 295.15 370.
 char const * co2flash = "FlashModel CO2Solubility  1e6 7.5e7 5e5 295.15 370.15 25 0";
 
 char const * xmlInput =
-  "<Problem>\n"
-  "<Solvers>\n"
-  "<CompositionalMultiphaseFVM\n"
-  "name=\"compflow\"\n"
-  "logLevel=\"1\"\n"
-  "discretization=\"fluidTPFA\"\n"
-  "temperature=\"368.15\"\n"
-  "useMass=\"1\"\n"
-  "isThermal=\"1\"\n"
-  "initialDt=\"1000\"\n"
-  "maxCompFractionChange=\"0.5\"\n"
-  "targetRegions=\"{ region }\">\n"
-  "<NonlinearSolverParameters\n"
-  "newtonTol=\"1.0e-6\"\n"
-  "newtonMaxIter=\"100\"\n"
-  "lineSearchAction=\"None\"\n"
-  "maxTimeStepCuts=\"5\"/>\n"
-  "<LinearSolverParameters\n"
-  "directParallel=\"0\"/>\n"
-  "</CompositionalMultiphaseFVM>\n"
-  "</Solvers>\n"
-  "<Mesh>\n"
-  "<InternalMesh\n"
-  "name=\"mesh\"\n"
-  "elementTypes=\"{ C3D8 }\"\n"
-  "xCoords=\"{ 0, 20 }\"\n"
-  "yCoords=\"{ 0, 1 }\"\n"
-  "zCoords=\"{ 0, 1 }\"\n"
-  "nx=\"{ 5 }\"\n"
-  "ny=\"{ 1 }\"\n"
-  "nz=\"{ 1 }\"\n"
-  "cellBlockNames=\"{ cb }\"/>\n"
-  "</Mesh>\n"
-  "<Geometry>\n"
-  "<Box\n"
-  "name=\"sink\"\n"
-  "xMin=\"{ -0.01, -0.01, -0.01 }\"\n"
-  "xMax=\"{ 4.01, 1.01, 1.01 }\"/>\n"
-  "<Box\n"
-  "name=\"source\"\n"
-  "xMin=\"{ -0.01, -0.01, -0.01 }\"\n"
-  "xMax=\"{ 4.01, 1.01, 1.01 }\"/>\n"
-  "</Geometry>\n"
-  "<Events\n"
-  "maxTime=\"1000\">\n"
-  "<PeriodicEvent\n"
-  "name=\"solverApplications\"\n"
-  "maxEventDt=\"1000\"\n"
-  "target=\"/Solvers/compflow\"/>\n"
-  "</Events>\n"
-  "<NumericalMethods>\n"
-  "<FiniteVolume>\n"
-  "<TwoPointFluxApproximation\n"
-  "name=\"fluidTPFA\"/>\n"
-  "</FiniteVolume>\n"
-  "</NumericalMethods>\n"
-  "<ElementRegions>\n"
-  "<CellElementRegion\n"
-  "name=\"region\"\n"
-  "cellBlocks=\"{ cb }\"\n"
-  "materialList=\"{ fluid, rock, relperm, thermalCond }\"/>\n"
-  "</ElementRegions>\n"
-  "<Constitutive>\n"
-  "<CompressibleSolidConstantPermeability\n"
-  "name=\"rock\"\n"
-  "solidModelName=\"nullSolid\"\n"
-  "porosityModelName=\"rockPorosity\"\n"
-  "permeabilityModelName=\"rockPerm\"\n"
-  "solidInternalEnergyModelName=\"rockInternalEnergy\"/>\n"
-  "<NullModel\n"
-  "name=\"nullSolid\"/>\n"
-  "<PressurePorosity\n"
-  "name=\"rockPorosity\"\n"
-  "defaultReferencePorosity=\"0.2\"\n"
-  "referencePressure=\"0.0\"\n"
-  "compressibility=\"1.0e-9\"/>\n"
-  "<SolidInternalEnergy\n"
-  "name=\"rockInternalEnergy\"\n"
-  "volumetricHeatCapacity=\"1.95e6\"\n"
-  "referenceTemperature=\"368.15\"\n"
-  "referenceInternalEnergy=\"0\"/>\n"
-  "<ConstantPermeability\n"
-  "name=\"rockPerm\"\n"
-  "permeabilityComponents=\"{ 1.0e-13, 1.0e-13, 1.0e-13 }\"/>\n"
-  "<CO2BrinePhillipsThermalFluid\n"
-  "name=\"fluid\"\n"
-  "phaseNames=\"{ gas, water }\"\n"
-  "componentNames=\"{ co2, water }\"\n"
-  "componentMolarWeight=\"{ 44e-3, 18e-3 }\"\n"
-  "phasePVTParaFiles=\"{ pvtgas.txt, pvtliquid.txt }\"\n"
-  "flashModelParaFile=\"co2flash.txt\"/>\n"
-  "<BrooksCoreyRelativePermeability\n"
-  "name=\"relperm\"\n"
-  "phaseNames=\"{ gas, water }\"\n"
-  "phaseMinVolumeFraction=\"{ 0.0, 0.0 }\"\n"
-  "phaseRelPermExponent=\"{ 1.5, 1.5 }\"\n"
-  "phaseRelPermMaxValue=\"{ 0.9, 0.9 }\"/>\n"
-  "<MultiPhaseConstantThermalConductivity\n"
-  "name=\"thermalCond\"\n"
-  "phaseNames=\"{ gas, water }\"\n"
-  "thermalConductivityComponents=\"{ 0.6, 0.6, 0.6 }\"/>\n"
-  "</Constitutive>\n"
-  "<FieldSpecifications>\n"
-  "<FieldSpecification\n"
-  "name=\"initialPressure\"\n"
-  "initialCondition=\"1\"\n"
-  "setNames=\"{ all }\"\n"
-  "objectPath=\"ElementRegions/region/cb\"\n"
-  "fieldName=\"pressure\"\n"
-  "scale=\"9e6\"/>\n"
-  "<FieldSpecification\n"
-  "name=\"initialTemperature\"\n"
-  "initialCondition=\"1\"\n"
-  "setNames=\"{ all }\"\n"
-  "objectPath=\"ElementRegions/region/cb\"\n"
-  "fieldName=\"temperature\"\n"
-  "scale=\"368.15\"/>\n"
-  "<FieldSpecification\n"
-  "name=\"initialComposition_co2\"\n"
-  "initialCondition=\"1\"\n"
-  "setNames=\"{ all }\"\n"
-  "objectPath=\"ElementRegions/region/cb\"\n"
-  "fieldName=\"globalCompFraction\"\n"
-  "component=\"0\"\n"
-  "scale=\"0.1\"/>\n"
-  "<FieldSpecification\n"
-  "name=\"initialComposition_water\"\n"
-  "initialCondition=\"1\"\n"
-  "setNames=\"{ all }\"\n"
-  "objectPath=\"ElementRegions/region/cb\"\n"
-  "fieldName=\"globalCompFraction\"\n"
-  "component=\"1\"\n"
-  "scale=\"0.9\"/>\n"
-  "<FieldSpecification\n"
-  "name=\"sinkPressure\"\n"
-  "setNames=\"{ sink }\"\n"
-  "objectPath=\"ElementRegions/region/cb\"\n"
-  "fieldName=\"pressure\"\n"
-  "scale=\"7e6\"/>\n"
-  "<FieldSpecification\n"
-  "name=\"sinkTemperature\"\n"
-  "setNames=\"{ sink }\"\n"
-  "objectPath=\"ElementRegions/region/cb\"\n"
-  "fieldName=\"temperature\"\n"
-  "scale=\"368.15\"/>\n"
-  "<FieldSpecification\n"
-  "name=\"sinkTermComposition_co2\"\n"
-  "setNames=\"{ sink }\"\n"
-  "objectPath=\"ElementRegions/region/cb\"\n"
-  "fieldName=\"globalCompFraction\"\n"
-  "component=\"0\"\n"
-  "scale=\"0.1\"/>\n"
-  "<FieldSpecification\n"
-  "name=\"sinkTermComposition_water\"\n"
-  "setNames=\"{ sink }\"\n"
-  "objectPath=\"ElementRegions/region/cb\"\n"
-  "fieldName=\"globalCompFraction\"\n"
-  "component=\"1\"\n"
-  "scale=\"0.9\"/>\n"
-  "<FieldSpecification\n"
-  "name=\"sourcePressure\"\n"
-  "setNames=\"{ source }\"\n"
-  "objectPath=\"ElementRegions/region/cb\"\n"
-  "fieldName=\"pressure\"\n"
-  "scale=\"1.45e7\"/>\n"
-  "<FieldSpecification\n"
-  "name=\"sourceTemperature\"\n"
-  "setNames=\"{ source }\"\n"
-  "objectPath=\"ElementRegions/region/cb\"\n"
-  "fieldName=\"temperature\"\n"
-  "scale=\"300.15\"/>\n"
-  "<FieldSpecification\n"
-  "name=\"sourceTermComposition_co2\"\n"
-  "setNames=\"{ source }\"\n"
-  "objectPath=\"ElementRegions/region/cb\"\n"
-  "fieldName=\"globalCompFraction\"\n"
-  "component=\"0\"\n"
-  "scale=\"0.9\"/>\n"
-  "<FieldSpecification\n"
-  "name=\"sourceTermComposition_water\"\n"
-  "setNames=\"{ source }\"\n"
-  "objectPath=\"ElementRegions/region/cb\"\n"
-  "fieldName=\"globalCompFraction\"\n"
-  "component=\"1\"\n"
-  "scale=\"0.1\"/>\n"
-  "</FieldSpecifications>\n"
-  "</Problem>\n";
+  R"xml(
+  <Problem>
+    <Solvers>
+      <CompositionalMultiphaseFVM name="compflow"
+                                  logLevel="1"
+                                  discretization="fluidTPFA"
+                                  temperature="368.15"
+                                  useMass="1"
+                                  isThermal="1"
+                                  initialDt="1000"
+                                  maxCompFractionChange="0.5"
+                                  targetRegions="{ region }">
+        <NonlinearSolverParameters newtonTol="1.0e-6"
+                                   newtonMaxIter="100"
+                                   lineSearchAction="None"
+                                   maxTimeStepCuts="5" />
+        <LinearSolverParameters directParallel="0" />
+      </CompositionalMultiphaseFVM>
+    </Solvers>
+    <Mesh>
+      <InternalMesh name="mesh"
+                    elementTypes="{ C3D8 }"
+                    xCoords="{ 0, 20 }"
+                    yCoords="{ 0, 1 }"
+                    zCoords="{ 0, 1 }"
+                    nx="{ 5 }"
+                    ny="{ 1 }"
+                    nz="{ 1 }"
+                    cellBlockNames="{ cb }" />
+    </Mesh>
+    <Geometry>
+      <Box name="sink"
+           xMin="{ -0.01, -0.01, -0.01 }"
+           xMax="{ 4.01, 1.01, 1.01 }" />
+      <Box name="source"
+           xMin="{ -0.01, -0.01, -0.01 }"
+           xMax="{ 4.01, 1.01, 1.01 }" />
+    </Geometry>
+    <Events maxTime="1000">
+      <PeriodicEvent name="solverApplications"
+                     maxEventDt="1000"
+                     target="/Solvers/compflow" />
+    </Events>
+    <NumericalMethods>
+      <FiniteVolume>
+        <TwoPointFluxApproximation name="fluidTPFA" />
+      </FiniteVolume>
+    </NumericalMethods>
+    <ElementRegions>
+      <CellElementRegion name="region"
+                         cellBlocks="{ * }"
+                         materialList="{ fluid, rock, relperm, thermalCond }" />
+    </ElementRegions>
+    <Constitutive>
+      <CompressibleSolidConstantPermeability name="rock"
+                                             solidModelName="nullSolid"
+                                             porosityModelName="rockPorosity"
+                                             permeabilityModelName="rockPerm"
+                                             solidInternalEnergyModelName="rockInternalEnergy"/>
+      <NullModel name="nullSolid" />
+      <PressurePorosity name="rockPorosity"
+                        defaultReferencePorosity="0.2"
+                        referencePressure="0.0"
+                        compressibility="1.0e-9" />
+      <SolidInternalEnergy name="rockInternalEnergy"
+                           referenceVolumetricHeatCapacity="1.95e6"
+                           referenceTemperature="368.15"
+                           referenceInternalEnergy="0" />
+      <ConstantPermeability name="rockPerm"
+                            permeabilityComponents="{ 1.0e-13, 1.0e-13, 1.0e-13 }" />
+      <CO2BrinePhillipsThermalFluid name="fluid"
+                                    phaseNames="{ gas, water }"
+                                    componentNames="{ co2, water }"
+                                    componentMolarWeight="{ 44e-3, 18e-3 }"
+                                    phasePVTParaFiles="{ pvtgas.txt, pvtliquid.txt }"
+                                    flashModelParaFile="co2flash.txt" />
+      <BrooksCoreyRelativePermeability name="relperm"
+                                       phaseNames="{ gas, water }"
+                                       phaseMinVolumeFraction="{ 0.0, 0.0 }"
+                                       phaseRelPermExponent="{ 1.5, 1.5 }"
+                                       phaseRelPermMaxValue="{ 0.9, 0.9 }" />
+      <MultiPhaseConstantThermalConductivity name="thermalCond"
+                                             phaseNames="{ gas, water }"
+                                             thermalConductivityComponents="{ 0.6, 0.6, 0.6 }" />
+    </Constitutive>
+    <FieldSpecifications>
+      <FieldSpecification name="initialPressure"
+                          initialCondition="1"
+                          setNames="{ all }"
+                          objectPath="ElementRegions/region/cb"
+                          fieldName="pressure"
+                          scale="9e6" />
+      <FieldSpecification name="initialTemperature"
+                          initialCondition="1"
+                          setNames="{ all }"
+                          objectPath="ElementRegions/region/cb"
+                          fieldName="temperature"
+                          scale="368.15" />
+      <FieldSpecification name="initialComposition_co2"
+                          initialCondition="1"
+                          setNames="{ all }"
+                          objectPath="ElementRegions/region/cb"
+                          fieldName="globalCompFraction"
+                          component="0"
+                          scale="0.1" />
+      <FieldSpecification name="initialComposition_water"
+                          initialCondition="1"
+                          setNames="{ all }"
+                          objectPath="ElementRegions/region/cb"
+                          fieldName="globalCompFraction"
+                          component="1"
+                          scale="0.9" />
+      <FieldSpecification name="sinkPressure"
+                          setNames="{ sink }"
+                          objectPath="ElementRegions/region/cb"
+                          fieldName="pressure"
+                          scale="7e6" />
+      <FieldSpecification name="sinkTemperature"
+                          setNames="{ sink }"
+                          objectPath="ElementRegions/region/cb"
+                          fieldName="temperature"
+                          scale="368.15" />
+      <FieldSpecification name="sinkTermComposition_co2"
+                          setNames="{ sink }"
+                          objectPath="ElementRegions/region/cb"
+                          fieldName="globalCompFraction"
+                          component="0"
+                          scale="0.1" />
+      <FieldSpecification name="sinkTermComposition_water"
+                          setNames="{ sink }"
+                          objectPath="ElementRegions/region/cb"
+                          fieldName="globalCompFraction"
+                          component="1"
+                          scale="0.9" />
+      <FieldSpecification name="sourcePressure"
+                          setNames="{ source }"
+                          objectPath="ElementRegions/region/cb"
+                          fieldName="pressure"
+                          scale="1.45e7" />
+      <FieldSpecification name="sourceTemperature"
+                          setNames="{ source }"
+                          objectPath="ElementRegions/region/cb"
+                          fieldName="temperature"
+                          scale="300.15" />
+      <FieldSpecification name="sourceTermComposition_co2"
+                          setNames="{ source }"
+                          objectPath="ElementRegions/region/cb"
+                          fieldName="globalCompFraction"
+                          component="0"
+                          scale="0.9" />
+      <FieldSpecification name="sourceTermComposition_water"
+                          setNames="{ source }"
+                          objectPath="ElementRegions/region/cb"
+                          fieldName="globalCompFraction"
+                          component="1"
+                          scale="0.1" />
+    </FieldSpecifications>
+  </Problem>
+  )xml";
 
 // Sphinx end before input XML
 
@@ -251,13 +224,13 @@ void testNumericalJacobian( CompositionalMultiphaseFVM & solver,
   jacobian.zero();
 
   assembleFunction( jacobian.toViewConstSizes(), residual.toView() );
-  residual.move( LvArray::MemorySpace::host, false );
+  residual.move( hostMemorySpace, false );
 
   // copy the analytical residual
   array1d< real64 > residualOrig( residual );
 
   // create the numerical jacobian
-  jacobian.move( LvArray::MemorySpace::host );
+  jacobian.move( hostMemorySpace );
   CRSMatrix< real64, globalIndex > jacobianFD( jacobian );
   jacobianFD.zero();
 
@@ -414,8 +387,8 @@ TEST_F( ThermalCompositionalMultiphaseFlowTest, jacobianNumericalCheck_accumulat
 int main( int argc, char * * argv )
 {
   ::testing::InitGoogleTest( &argc, argv );
-  g_commandLineOptions = *geosx::basicSetup( argc, argv );
+  g_commandLineOptions = *geos::basicSetup( argc, argv );
   int const result = RUN_ALL_TESTS();
-  geosx::basicCleanup();
+  geos::basicCleanup();
   return result;
 }

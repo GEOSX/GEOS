@@ -2,10 +2,11 @@
  * ------------------------------------------------------------------------------------------------------------
  * SPDX-License-Identifier: LGPL-2.1-only
  *
- * Copyright (c) 2018-2020 Lawrence Livermore National Security LLC
- * Copyright (c) 2018-2020 The Board of Trustees of the Leland Stanford Junior University
- * Copyright (c) 2018-2020 TotalEnergies
- * Copyright (c) 2019-     GEOSX Contributors
+ * Copyright (c) 2016-2024 Lawrence Livermore National Security LLC
+ * Copyright (c) 2018-2024 TotalEnergies
+ * Copyright (c) 2018-2024 The Board of Trustees of the Leland Stanford Junior University
+ * Copyright (c) 2023-2024 Chevron
+ * Copyright (c) 2019-     GEOS/GEOSX Contributors
  * All rights reserved
  *
  * See top level LICENSE, COPYRIGHT, CONTRIBUTORS, NOTICE, and ACKNOWLEDGEMENTS files for details.
@@ -23,12 +24,12 @@
 //***** DECLARATIONS **********************************************************
 //*****************************************************************************
 
-namespace geosx
+namespace geos
 {
 
 template< int N, typename ARRAY_2D >
-GEOSX_HOST_DEVICE
-GEOSX_FORCE_INLINE
+GEOS_HOST_DEVICE
+GEOS_FORCE_INLINE
 void CalculateGradients( real64 ( & gradient0 )[ 3 ][ 3 ],
                          real64 ( & gradient1 )[ 3 ][ 3 ],
                          real64 const ( &var0 )[ N ][ 3 ],
@@ -45,8 +46,8 @@ void CalculateGradients( real64 ( & gradient0 )[ 3 ][ 3 ],
   }
 }
 
-GEOSX_HOST_DEVICE
-GEOSX_FORCE_INLINE
+GEOS_HOST_DEVICE
+GEOS_FORCE_INLINE
 void HughesWinget( real64 ( & Rot )[ 3 ][ 3 ], real64 ( & Dadt )[ 6 ], real64 const ( &G )[ 3 ][ 3 ] )
 {
   //Dadt = 0.5*(G + GT);

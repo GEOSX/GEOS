@@ -7,7 +7,7 @@ Proppant Transport Solver
 Introduction
 =========================
 
-The `ProppantTransport` solver applies the finite volume method to solve the equations of proppant transport in hydraulic fractures. The behavior of proppant transport is described by a continuum formulation. Here we briefly outline the usage, governing equations and numerical implementation of the proppant transport model in GEOSX.
+The `ProppantTransport` solver applies the finite volume method to solve the equations of proppant transport in hydraulic fractures. The behavior of proppant transport is described by a continuum formulation. Here we briefly outline the usage, governing equations and numerical implementation of the proppant transport model in GEOS.
 
 Theory
 =========================
@@ -124,7 +124,7 @@ where :math:`\alpha` and :math:`\beta` are empirical constants, :math:`c_{slip}`
 Proppant Bed Build-up and Load Transport
 ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
 
-In addition to suspended particle flow the GEOSX has the option to model proppant settling into an immobile bed at the bottom of the fracture. As the proppant cannot settle further down the proppant bed starts to form and develop at the element that is either at the bottom of the fracture or has an underlying element already filled with particles. Such an "inter-facial" element is divided into proppant flow and immobile bed regions based on the proppant-pack height.
+In addition to suspended particle flow the GEOS has the option to model proppant settling into an immobile bed at the bottom of the fracture. As the proppant cannot settle further down the proppant bed starts to form and develop at the element that is either at the bottom of the fracture or has an underlying element already filled with particles. Such an "inter-facial" element is divided into proppant flow and immobile bed regions based on the proppant-pack height.
 
 Although proppant becomes immobile fluid can continue to flow through the settled proppant pack. The pack permeability `K` is defined based on the Kozeny-Carmen relationship:
 
@@ -207,7 +207,7 @@ Like any solver, time stepping is driven by events, see :ref:`EventManager`.
 
 The following attributes are supported:
 
-.. include:: /coreComponents/schema/docs/ProppantTransport.rst
+.. include:: /docs/sphinx/datastructure/ProppantTransport.rst
 
 In particular:
 

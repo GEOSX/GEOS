@@ -2,10 +2,11 @@
  * ------------------------------------------------------------------------------------------------------------
  * SPDX-License-Identifier: LGPL-2.1-only
  *
- * Copyright (c) 2018-2020 Lawrence Livermore National Security LLC
- * Copyright (c) 2018-2020 The Board of Trustees of the Leland Stanford Junior University
- * Copyright (c) 2018-2020 TotalEnergies
- * Copyright (c) 2019-     GEOSX Contributors
+ * Copyright (c) 2016-2024 Lawrence Livermore National Security LLC
+ * Copyright (c) 2018-2024 TotalEnergies
+ * Copyright (c) 2018-2024 The Board of Trustees of the Leland Stanford Junior University
+ * Copyright (c) 2023-2024 Chevron
+ * Copyright (c) 2019-     GEOS/GEOSX Contributors
  * All rights reserved
  *
  * See top level LICENSE, COPYRIGHT, CONTRIBUTORS, NOTICE, and ACKNOWLEDGEMENTS files for details.
@@ -16,14 +17,14 @@
  * @file VectorBase.hpp
  */
 
-#ifndef GEOSX_LINEARALGEBRA_INTERFACES_VECTORBASE_HPP_
-#define GEOSX_LINEARALGEBRA_INTERFACES_VECTORBASE_HPP_
+#ifndef GEOS_LINEARALGEBRA_INTERFACES_VECTORBASE_HPP_
+#define GEOS_LINEARALGEBRA_INTERFACES_VECTORBASE_HPP_
 
 #include "linearAlgebra/common/common.hpp"
 #include "common/MpiWrapper.hpp"
 #include "common/GEOS_RAJA_Interface.hpp"
 
-namespace geosx
+namespace geos
 {
 
 /**
@@ -91,9 +92,9 @@ protected:
    */
   virtual void create( localIndex const localSize, MPI_Comm const & comm )
   {
-    GEOSX_UNUSED_VAR( comm );
-    GEOSX_LAI_ASSERT( closed() );
-    GEOSX_LAI_ASSERT_GE( localSize, 0 );
+    GEOS_UNUSED_VAR( comm );
+    GEOS_LAI_ASSERT( closed() );
+    GEOS_LAI_ASSERT_GE( localSize, 0 );
     reset();
 
     // Ideally, resizing to the same size should be a no-op.
@@ -127,7 +128,7 @@ protected:
    */
   virtual arrayView1d< real64 > open()
   {
-    GEOSX_LAI_ASSERT( ready() );
+    GEOS_LAI_ASSERT( ready() );
     m_closed = false;
     return m_values.toView();
   }
@@ -303,7 +304,7 @@ protected:
    */
   arrayView1d< real64 const > values() const
   {
-    GEOSX_LAI_ASSERT( ready() );
+    GEOS_LAI_ASSERT( ready() );
     return m_values.toViewConst();
   }
 
@@ -355,6 +356,6 @@ protected:
   array1d< real64 > m_values;
 };
 
-} // namespace geosx
+} // namespace geos
 
-#endif //GEOSX_LINEARALGEBRA_INTERFACES_VECTORBASE_HPP_
+#endif //GEOS_LINEARALGEBRA_INTERFACES_VECTORBASE_HPP_

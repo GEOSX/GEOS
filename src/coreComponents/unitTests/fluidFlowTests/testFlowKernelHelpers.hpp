@@ -2,22 +2,23 @@
  * ------------------------------------------------------------------------------------------------------------
  * SPDX-License-Identifier: LGPL-2.1-only
  *
- * Copyright (c) 2018-2020 Lawrence Livermore National Security LLC
- * Copyright (c) 2018-2020 The Board of Trustees of the Leland Stanford Junior University
- * Copyright (c) 2018-2020 TotalEnergies
- * Copyright (c) 2019-     GEOSX Contributors
+ * Copyright (c) 2016-2024 Lawrence Livermore National Security LLC
+ * Copyright (c) 2018-2024 TotalEnergies
+ * Copyright (c) 2018-2024 The Board of Trustees of the Leland Stanford Junior University
+ * Copyright (c) 2023-2024 Chevron
+ * Copyright (c) 2019-     GEOS/GEOSX Contributors
  * All rights reserved
  *
  * See top level LICENSE, COPYRIGHT, CONTRIBUTORS, NOTICE, and ACKNOWLEDGEMENTS files for details.
  * ------------------------------------------------------------------------------------------------------------
  */
 
-#ifndef GEOSX_TESTFLOWKERNELHELPERS_HPP
-#define GEOSX_TESTFLOWKERNELHELPERS_HPP
+#ifndef GEOS_TESTFLOWKERNELHELPERS_HPP
+#define GEOS_TESTFLOWKERNELHELPERS_HPP
 
 #include "common/DataTypes.hpp"
 
-namespace geosx
+namespace geos
 {
 
 namespace detail
@@ -64,8 +65,8 @@ struct AccessorHelper< false >
   static ElementAccessor< NDIM, T >
   makeElementAccessor( T const * const data,
                        localIndex const stencilSize,
-                       arraySlice1d< localIndex const > const & GEOSX_UNUSED_PARAM( stencilRegIndices ),
-                       arraySlice1d< localIndex const > const & GEOSX_UNUSED_PARAM( stencilSubRegIndices ),
+                       arraySlice1d< localIndex const > const & GEOS_UNUSED_PARAM( stencilRegIndices ),
+                       arraySlice1d< localIndex const > const & GEOS_UNUSED_PARAM( stencilSubRegIndices ),
                        arraySlice1d< localIndex const > const & stencilElemIndices,
                        DIMS... otherDims )
   {
@@ -89,10 +90,10 @@ struct AccessorHelper< false >
   static MaterialAccessor< NDIM, T >
   makeMaterialAccessor( T const * const data,
                         localIndex const stencilSize,
-                        arraySlice1d< localIndex const > const & GEOSX_UNUSED_PARAM( stencilRegIndices ),
-                        arraySlice1d< localIndex const > const & GEOSX_UNUSED_PARAM( stencilSubRegIndices ),
+                        arraySlice1d< localIndex const > const & GEOS_UNUSED_PARAM( stencilRegIndices ),
+                        arraySlice1d< localIndex const > const & GEOS_UNUSED_PARAM( stencilSubRegIndices ),
                         arraySlice1d< localIndex const > const & stencilElemIndices,
-                        localIndex GEOSX_UNUSED_PARAM( matIndex ),
+                        localIndex GEOS_UNUSED_PARAM( matIndex ),
                         DIMS... otherDims )
   {
     localIndex numElems = 0;
@@ -199,6 +200,6 @@ struct AccessorHelper< true >
   }
 };
 
-} // namespace geosx
+} // namespace geos
 
-#endif //GEOSX_TESTFLOWKERNELHELPERS_HPP
+#endif //GEOS_TESTFLOWKERNELHELPERS_HPP

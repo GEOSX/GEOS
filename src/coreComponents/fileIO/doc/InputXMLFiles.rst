@@ -8,9 +8,9 @@ Input Files
 XML
 =================================
 
-GEOSX is configured via one (or more) `Extensible Markup Language <https://en.wikipedia.org/wiki/XML>`_ (XML) files.
-These files contain a set of elements and attributes that closely follow the internal datastructure of GEOSX.
-When running GEOSX, these files are specified using the `-i` argument:
+GEOS is configured via one (or more) `Extensible Markup Language <https://en.wikipedia.org/wiki/XML>`_ (XML) files.
+These files contain a set of elements and attributes that closely follow the internal datastructure of GEOS.
+When running GEOS, these files are specified using the `-i` argument:
 
 .. code-block:: bash
 
@@ -21,7 +21,7 @@ When running GEOSX, these files are specified using the `-i` argument:
 XML Components
 ------------------------------
 
-The following illustrates some of the key features of a GEOSX-format xml file:
+The following illustrates some of the key features of a GEOS-format xml file:
 
 .. code-block:: xml
 
@@ -46,8 +46,8 @@ The two basic components of an xml file are blocks, which are specified using an
 Block and attributes can use any ASCII character aside from `<`, `&`, `'`, and `"` (if necessary, use `&lt;`, `&amp;`, `&apos;`, or `&quot;`).
 Comments are indicated as follows: `<!-- Some comment -->`.
 
-At the beginning of a GEOSX input file, you will find an optional xml declaration (`<?xml version="1.0" ?>`) that is used to indicate the format to certain text editors.
-You will also find the root `Problem` block, where the GEOSX configuration is placed.
+At the beginning of a GEOS input file, you will find an optional xml declaration (`<?xml version="1.0" ?>`) that is used to indicate the format to certain text editors.
+You will also find the root `Problem` block, where the GEOS configuration is placed.
 Note that, aside from these elements and commented text, the xml format requires that no other objects exist at the first level.
 
 In the example above, there is a single element within the `Problem` block: `BlockA`.
@@ -67,9 +67,9 @@ The optional `xmlns:xsi` and `xsi:noNamespaceSchemaLocation` attributes in the P
         xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance"
         xsi:noNamespaceSchemaLocation="/path/to/schema.xsd" />
 
-The schema contains a list of xml blocks and attributes that are supported by GEOSX, indicates whether a given object is optional or required, and defines the format of the object (string, floating point number, etc.).
-A copy of the schema is included in the GEOSX source code (/path/to/GEOSX/src/coreComponents/schema/schema.xsd).
-It can also be generated using GEOSX: ``geosx -s schema.xsd``
+The schema contains a list of xml blocks and attributes that are supported by GEOS, indicates whether a given object is optional or required, and defines the format of the object (string, floating point number, etc.).
+A copy of the schema is included in the GEOS source code (/path/to/GEOS/src/coreComponents/schema/schema.xsd).
+It can also be generated using GEOS: ``geosx -s schema.xsd``
 
 Many text editors can use the schema to help in the construction of an xml file and to indicate whether it is valid.
 Using a validation tool is highly recommended for all users.
@@ -123,7 +123,7 @@ VS Code
 ------------------------------
 
 We recommend using the `XML <https://marketplace.visualstudio.com/items?itemName=redhat.vscode-xml>`_ for validating xml files.
-After installing this extension, you can associate GEOSX format xml files by adding the following entry to the user settings file (replacing `systemId` with the correct path to the schema file):
+After installing this extension, you can associate GEOS format xml files by adding the following entry to the user settings file (replacing `systemId` with the correct path to the schema file):
 
 
  .. code-block:: python
@@ -133,7 +133,7 @@ After installing this extension, you can associate GEOSX format xml files by add
 
             {
                 "pattern": "**.xml",
-                "systemId": "/path/to/GEOSX/src/coreComponents/schema/schema.xsd"
+                "systemId": "/path/to/GEOS/src/coreComponents/schema/schema.xsd"
             }
         ]
     }
@@ -149,7 +149,7 @@ Eclipse will automatically fetch the schema, and validate an active xml file.
 The editor will highlight any lines with errors, and underline the specific errors.
 
 
-GEOSX XML Tools
+GEOS XML Tools
 ------------------------------
 
 The geosx_xml_tools package, which is used to enable advanced features such as parameters, symbolic math, etc., contains tools for validating xml files.
@@ -164,7 +164,7 @@ XML Schema
 =================================
 
 An XML schema definition (XSD) file lays out the expected structure of an input XML file.
-During the build process, GEOSX automatically constructs a comprehensive schema from the code's data structure, and updates the version in the source (GEOSX/src/coreComponents/schema/schema.xsd).
+During the build process, GEOS automatically constructs a comprehensive schema from the code's data structure, and updates the version in the source (GEOS/src/coreComponents/schema/schema.xsd).
 
 
 Schema Components
@@ -173,7 +173,7 @@ Schema Components
 The first entry in the schema are a set of headers the file type and version.
 Following this, the set of available simple types for attributes are laid out.
 Each of these includes a variable type name, which mirrors those used in the main code, and a regular expression, which is designed to match valid inputs.
-These patterns are defined and documented in ``DataTypes::typeRegex``.
+These patterns are defined and documented in ``rtTypes`` (in ``DataTypes.hpp``.
 The final part of the schema is the file layout, beginning with the root ``Problem``.
 Each complex type defines an element, its children, and its attributes.
 Each attribute defines the input name, type, default value, and/or usage.
@@ -184,11 +184,11 @@ Automatic Schema Generation
 ------------------------------
 
 A schema may be generated by calling the main code with the -s argument , e.g.: ``geosx -s schema.xsd`` (Note: this is done automatically during the bulid process).
-To do this, GEOSX does the following:
+To do this, GEOS does the following:
 
-  1) Initialize the GEOSX data structure.
+  1) Initialize the GEOS data structure.
   2) Initialize objects that are registered to catalogs via ``ManagedGroup::ExpandObjectCatalogs()``.
-  3) Recursively write element and attribute definitions to the schema using information stored in GEOSX groups and wrappers.
+  3) Recursively write element and attribute definitions to the schema using information stored in GEOS groups and wrappers.
   4) Define any expected deviations from the schema via ``ManagedGroup::SetSchemaDeviations()``.
 
 
@@ -197,18 +197,18 @@ To do this, GEOSX does the following:
 Advanced XML Features
 =================================
 
-The `geosx_xml_tools` python package adds a set of advanced features to the GEOSX xml format: units, parameters, and symbolic expressions.
-See :ref:`PythonToolsSetup` for details on setup instructions, and :ref:`XMLToolsPackage` for package API details.
+The `geosx_xml_tools` python package adds a set of advanced features to the GEOS xml format: units, parameters, and symbolic expressions.
+See`Python Tools Setup <https://geosx-geosx.readthedocs-hosted.com/projects/geosx-geospythonpackages/en/latest/>`_ for details on setup instructions, and `XML Parser Documentation <https://geosx-geosx.readthedocs-hosted.com/projects/geosx-geospythonpackages/en/latest/geosx_xml_tools.html>`_ for package API details.
 
 
 Usage
 ---------------------------------
 
-An input file that uses advanced xml features requires preprocessing before it can be used with GEOSX.
-The preprocessor writes a compiled xml file to the disk, which can be read directly by GEOSX and serves as a permanent record for the simulation.
+An input file that uses advanced xml features requires preprocessing before it can be used with GEOS.
+The preprocessor writes a compiled xml file to the disk, which can be read directly by GEOS and serves as a permanent record for the simulation.
 There are three ways to apply the preprocessor:
 
-1) Automatic Preprocessing:  Substituting `geosx` for `geosx_preprocessed` when calling the code will automatically apply the preprocessor to the input xml file, and then pass the remaining arguments to GEOSX.  With this method, the compiled xml files will have the suffix '.preprocessed'.  Before running the code, the compiled xml file will also be validated against the xml schema.
+1) Automatic Preprocessing:  Substituting `geosx` for `geosx_preprocessed` when calling the code will automatically apply the preprocessor to the input xml file, and then pass the remaining arguments to GEOS.  With this method, the compiled xml files will have the suffix '.preprocessed'.  Before running the code, the compiled xml file will also be validated against the xml schema.
 
 .. code-block:: bash
 
@@ -219,7 +219,7 @@ There are three ways to apply the preprocessor:
     srun -n 2 geosx_preprocessed -i input.xml -x 2
 
 
-2) Manual Preprocessing:  For this approach, xml files are preprocessed manually by the user with the `preprocess_xml` script.  These files can then be submitted to GEOSX separately:
+2) Manual Preprocessing:  For this approach, xml files are preprocessed manually by the user with the `preprocess_xml` script.  These files can then be submitted to GEOS separately:
 
 .. code-block:: bash
 
@@ -232,7 +232,7 @@ There are three ways to apply the preprocessor:
     geosx -i $compiled_input
 
 
-3) Python / pygeosx: The preprocessor can also be applied directly in python or in pygeosx simulations.  An example of this is method is provided here: `GEOSX/examples/pygeosxExamples/hydraulicFractureWithMonitor/`.
+3) Python / pygeosx: The preprocessor can also be applied directly in python or in pygeosx simulations.  An example of this is method is provided here: `GEOS/examples/pygeosxExamples/hydraulicFractureWithMonitor/`.
 
 
 Each of these options support specifying multiple input files via the command line (e.g. `geosx_preprocessed -i input_a.xml -i input_b.xml`).
@@ -242,7 +242,7 @@ They also support any number of command-line parameter overrides (e.g. `geosx_pr
 Included Files
 ------------------------------
 
-Both the XML preprocessor and GEOSX executable itself provide the capability to build complex
+Both the XML preprocessor and GEOS executable itself provide the capability to build complex
 multi-file input decks by including XML files into other XML files.
 
 The files to be included are listed via the `<Included>` block. There maybe any number of such blocks.
@@ -257,7 +257,7 @@ which in turn includes `c.xml`.
    This applies both to XML includes, and to other types of file references (for example, table file names).
    Relative paths keep input decks both relocatable within the file system and sharable between users.
 
-XML preprocessor's merging capabilities are more advanced than GEOSX built-in ones.
+XML preprocessor's merging capabilities are more advanced than GEOS built-in ones.
 Both are outlined below.
 
 XML preprocessor
@@ -272,19 +272,19 @@ Any potential conflicts are handled via the following scheme:
     - Any preexisting attributes on the object are overwritten by the donor.
 - Otherwise append the XML structure with the target.
 
-GEOSX
+GEOS
 ^^^^^
 
-GEOSX's built-in processing simply inserts the included files' content (excluding the root node)
+GEOS's built-in processing simply inserts the included files' content (excluding the root node)
 into the XML element tree, at the level of `<Included>` tag. Partial merging is handled implicitly
-by GEOSX's data structure, which treats repeated top-level XML blocks as if they are one single block.
+by GEOS's data structure, which treats repeated top-level XML blocks as if they are one single block.
 This is usually sufficient for merging together top-level input sections from multiple files,
 such as multiple `<FieldSpecifications>` or `<Events>` sections, but more complex cases may require
 the use of preprocessor.
 
 .. note::
-   While GEOSX's XML processing is capable of handling any number of `<Included>` block at any level,
-   the XML schema currently produced by GEOSX only allows a single such block, and only directly
+   While GEOS's XML processing is capable of handling any number of `<Included>` block at any level,
+   the XML schema currently produced by GEOS only allows a single such block, and only directly
    within the `<Problem>` tag. Inputs that use multiple blocks or nest them deeper may run but will
    fail to validate against the schema. This is a known discrepancy that may be fixed in the future.
 
@@ -348,7 +348,7 @@ Note that if the override value contains any spaces, it may need to be surrounde
 Units
 ------------------------------
 
-The units for any input values to GEOSX can be in any self-consistent system.
+The units for any input values to GEOS can be in any self-consistent system.
 In many cases, it is useful to override this behavior by explicitly specifying the units of the input.
 These are specified by appending a valid number with a unit definition in square braces.
 During pre-processing, these units are converted into base-SI units (we plan to support other unit systems in the future).
@@ -402,5 +402,5 @@ Validation
 
 Unmatched special characters ($, [, \`, etc.) in the final xml file indicate that parameters, units, or symbolic math were not specified correctly.  
 If the prepreprocessor detects these, it will throw an error and exit.
-Additional validation of the compiled files can be completed with `preprocess_xml` by supplying the -s argument and the path to the GEOSX schema.
+Additional validation of the compiled files can be completed with `preprocess_xml` by supplying the -s argument and the path to the GEOS schema.
 

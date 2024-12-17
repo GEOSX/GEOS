@@ -1,15 +1,15 @@
 [submodule "src/coreComponents/LvArray"]
 	path = src/coreComponents/LvArray
-	url = ../../GEOSX/LvArray.git
+	url = ../../GEOS-DEV/LvArray.git
 [submodule "src/cmake/blt"]
 	path = src/cmake/blt
 	url = ../../LLNL/blt.git
 [submodule "src/coreComponents/constitutive/PVTPackage"]
 	path = src/coreComponents/constitutive/PVTPackage
-	url = ../../GEOSX/PVTPackage.git
-[submodule "integratedTests"]
-	path = integratedTests
-	url = ../../GEOSX/integratedTests.git
+	url = ../../GEOS-DEV/PVTPackage.git
 [submodule "src/coreComponents/fileIO/coupling/hdf5_interface"]
 	path = src/coreComponents/fileIO/coupling/hdf5_interface
-	url = ../../GEOSX/hdf5_interface.git
+	url = ../../GEOS-DEV/hdf5_interface.git
+[submodule "scripts/uberenv"]
+	path = scripts/uberenv
+	url = ../../LLNL/uberenv.git

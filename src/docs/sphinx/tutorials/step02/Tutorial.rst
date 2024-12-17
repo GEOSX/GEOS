@@ -9,10 +9,10 @@ Tutorial 2: External Meshes
 **Context**
 
 In this tutorial, we use a simple single-phase flow solver (see :ref:`SinglePhaseFlow`)
-to solve for pressure propagation on a mesh that is imported into GEOSX.
+to solve for pressure propagation on a mesh that is imported into GEOS.
 The main goal of this tutorial is to learn how to work with external meshes,
-and to learn how easy it is to swap meshes on the same physical problem in GEOSX.
-This makes GEOSX a powerful tool to solve real field applications with complex geometries
+and to learn how easy it is to swap meshes on the same physical problem in GEOS.
+This makes GEOS a powerful tool to solve real field applications with complex geometries
 and perform assessments of mesh geometry and resolution effects.
 
 **Objectives**
@@ -20,14 +20,14 @@ and perform assessments of mesh geometry and resolution effects.
 At the end of this tutorial you will know:
 
   - the syntax and format of input meshes,
-  - how to input external files into a GEOSX input XML file,
+  - how to input external files into a GEOS input XML file,
   - how to run the same physical problem with two different meshes,
   - how to use and visualize hexahedral and tetrahedral meshes.
 
 
 **Input Files**
 
-This tutorial uses an XML file containing the main input for GEOSX
+This tutorial uses an XML file containing the main input for GEOS
 and a separate file with all the mesh information.
 As we will see later, the main XML file points to the external
 mesh file with an ``include`` statement.
@@ -38,7 +38,7 @@ The XML input file for this test case is located at:
   inputFiles/singlePhaseFlow/vtk/3D_10x10x10_compressible_hex_gravity_smoke.xml
 
 The mesh file format used in this tutorial is `vtk <https://vtk.org/>`_.
-This format is a standard scientific meshing format not specific to GEOSX.
+This format is a standard scientific meshing format not specific to GEOS.
 ``vtk`` is a multi-purpose mesh format (structured, unstructured, serial, parallel, multi-block...) and contains a
 compact and complete representation of the mesh geometry and of its properties.
 The mesh file used here is human-readable ASCII, and there is a binary storage as well.
@@ -61,13 +61,13 @@ or corner-point grids or pillar grids.
 
 
 
-Brief discussion about hexahedral meshes in GEOSX
+Brief discussion about hexahedral meshes in GEOS
 ------------------------------------------------------------------------
 
-Although closely related, the hexahedral grids that GEOSX
+Although closely related, the hexahedral grids that GEOS
 can process are slightly different
 than either structured grid or corner-point grids.
-The differences are worth pointing out here. In GEOSX:
+The differences are worth pointing out here. In GEOS:
 
  - **Hexahedra can have irregular shapes**: no pillars are needed and
    vertices can be anywhere in space. This is useful for grids that turn, fold,
@@ -85,12 +85,12 @@ The differences are worth pointing out here. In GEOSX:
    problem is solved by splitting shifted grid blocks to restore conformity.
    While it may seem convenient to be able to have offset grid blocks at first,
    the advantages
-   of conformal grids used in GEOSX are worth the extra meshing effort:
+   of conformal grids used in GEOS are worth the extra meshing effort:
    by using conformal grids,
-   GEOSX can run finite element and finite volume simulations on the same mesh
+   GEOS can run finite element and finite volume simulations on the same mesh
    without problems, going seamlessly from one numerical method to the other.
    This is key to enabling multiphysics simulation.
- - **There is no assumption of overall structure**: GEOSX does not need to know
+ - **There is no assumption of overall structure**: GEOS does not need to know
    a number of block in the X, Y, Z direction (no NX, NY, NZ) and does not assume that the
    mesh is a full cartesian domain that the interesting parts of the reservoir
    must be carved out from.
@@ -107,10 +107,10 @@ The differences are worth pointing out here. In GEOSX:
 Importing an external mesh with VTK
 -----------------------------------
 
-In this first part of the tutorial, we use an hexahedral mesh provided to GEOSX.
+In this first part of the tutorial, we use an hexahedral mesh provided to GEOS.
 This hexahedral mesh is strictly identical to the grid used in the first tutorial (:ref:`TutorialSinglePhaseFlowWithInternalMesh`), but instead of using
-the internal grid generator GEOSX, we specify it with spatial node coordinates in ``vtk`` format.
-To import external grid into GEOSX, we did develop a component directly using the **vtk** library.
+the internal grid generator GEOS, we specify it with spatial node coordinates in ``vtk`` format.
+To import external grid into GEOS, we did develop a component directly using the **vtk** library.
 
 
 So here, our mesh consists of a simple sugar-cube stack of size 10x10x10.
@@ -119,7 +119,7 @@ and we let the pressure equilibrate in the closed domain.
 The displacement is a single-phase, compressible fluid subject to gravity forces,
 so we expect the pressure to be constant on the injection face,
 and to be close to hydrostatic on the opposite plane (x=10).
-We use GEOSX to compute the pressure inside each grid block over a period of time
+We use GEOS to compute the pressure inside each grid block over a period of time
 of 100 seconds.
 
 
@@ -152,17 +152,16 @@ Here is the ``vtk`` file :
 .. literalinclude::
    ../../../../../inputFiles/singlePhaseFlow/vtk/cube_10x10x10_hex.vtk
    :caption: cube_10x10x10_hex.vtk
-   :lines: 1-20
+   :lines: 1-7
 
-GEOSX can run different physical solvers on different regions of the mesh at different times.
+GEOS can run different physical solvers on different regions of the mesh at different times.
 Here, to keep things simple, we run one solver (single-phase flow)
 on the entire domain throughout the simulation.
-Even this is trivial, we need to define and name a region encompassing the entire domain
-and assign it to the single-phase flow solver.
-We also need to provide material properties to the regions.
-This is done by specifying ``ElementRegions``.
-Here, the entire field is one region called ``Domain``,
-and contains multiple constitutive models, including ``water``, ``rockPorosity``, and ``rockPerm``.
+To do so, we need to define a region encompassing the entire domain.
+We will name it ``Domain``, as refered to in the single-phase flow solver (in its ``targetRegions``),
+and list its constitutive models in the ``materialList``, which are ``water`` and ``rock``.
+Since we have imported a mesh with only one region, we can set ``cellBlocks`` to ``{ * }``
+(we have could also set ``cellBlocks`` to ``{ hexahedra }`` as the mesh has only hexahedral cells).
 
 
 .. literalinclude:: ../../../../../inputFiles/singlePhaseFlow/vtk/3D_10x10x10_compressible_hex_gravity_base.xml
@@ -171,18 +170,23 @@ and contains multiple constitutive models, including ``water``, ``rockPorosity``
   :end-before: <!-- SPHINX_TUT_EXT_HEX_ELEM_REGIONS_END -->
 
 
-Running GEOSX
+.. note::
+  If you use a name that is not ``hexahedra`` or ``all`` for this attribute, or if the mesh is
+  changed and have not-hexahedral cells, GEOS will throw an error at the beginning of the
+  simulation. See :ref:`Meshes` for more information.
+
+Running GEOS
 ----------------------------------------
 
-The command to run GEOSX is
+The command to run GEOS is
 
 .. code-block:: console
 
   path/to/geosx -i ../../../../../inputFiles/singlePhaseFlow/vtk/3D_10x10x10_compressible_hex_gravity_smoke.xml
 
 Note that all paths for files included in the XML file are relative
-to this XML file, not to the GEOSX executable.
-When running GEOSX, console messages will provide indications regarding the
+to this XML file, not to the GEOS executable.
+When running GEOS, console messages will provide indications regarding the
 status of the simulation.
 
 In our case, the first lines are:
@@ -199,7 +203,7 @@ In our case, the first lines are:
   Adding Output: Restart, restartOutput
   Adding Object CellElementRegion named Domain from ObjectManager::Catalog.
 
-This indicates initialization of GEOSX.
+This indicates initialization of GEOS.
 The mesh preprocessing tool ``VTKMesh`` is launched next,
 with console messages as follows.
 
@@ -207,7 +211,7 @@ with console messages as follows.
 
   VTKMesh 'CubeHex': reading mesh from /path/to/inputFiles/singlePhaseFlow/vtk/cube_10x10x10_hex.vtk
   Generating global Ids from VTK mesh
-  VTKMesh 'CubeHex': generating GEOSX mesh data structure
+  VTKMesh 'CubeHex': generating GEOS mesh data structure
   Number of nodes: 1331
     Number of elems: 1000
                C3D8: 1000
@@ -215,7 +219,7 @@ with console messages as follows.
   (element/rank): 1000 1000 1000
 
 Notice the specification of the number of nodes (1331), and hexahedra (1000).
-After the adjacency calculations, GEOSX starts the simulation itself.
+After the adjacency calculations, GEOS starts the simulation itself.
 with the time-step increments specified in the XML file.
 
 At the end of your simulation, you should see something like:
@@ -239,7 +243,7 @@ At the end of your simulation, you should see something like:
 
   Process finished with exit code 0
 
-Once this is done, GEOSX is finished and we can inspect the outcome.
+Once this is done, GEOS is finished and we can inspect the outcome.
 
 Visualization of results in VisIt
 ----------------------------------------
@@ -274,7 +278,7 @@ in modeling fracture planes, faults, complex reservoir
 horizons and boundaries.
 Just like for hexahedral meshes,
 and for the same reasons (compatibility with finite volume and finite element methods),
-tetrahedral meshes in GEOSX must be conformal.
+tetrahedral meshes in GEOS must be conformal.
 
 
 As stated previously, the problem we wish to solve here
@@ -284,16 +288,16 @@ from the x=0 vertical face of the domain, and we let pressure
 equilibrate over time. We observe the opposite side of the cube and expect
 to see hydrostatic pressure profiles because of the gravitational effect.
 The displacement is a single phase, compressible flow subject to gravity forces.
-We use GEOSX to compute the pressure inside each grid block.
+We use GEOS to compute the pressure inside each grid block.
 
 
 The set-up for this problem is almost identical to
 the hexahedral mesh set-up. We simply point our ``Mesh`` tag to
 include a tetrahedral grid. The interest of not relying on I,J,K indices
 for any property specification or well trajectory
-makes it **easy to try different meshes for the same physical problems with GEOSX**.
+makes it **easy to try different meshes for the same physical problems with GEOS**.
 Swapping out meshes without requiring other modifications
-to the input files makes mesh refinement studies easy to perform with GEOSX.
+to the input files makes mesh refinement studies easy to perform with GEOS.
 
 
 Like before, the XML file for this problem is the following:
@@ -303,7 +307,7 @@ Like before, the XML file for this problem is the following:
    inputFiles/singlePhaseFlow/vtk/3D_10x10x10_compressible_tetra_gravity_smoke.xml
 
 
-The only difference, is that now, the ``Mesh`` tag points GEOSX to
+The only difference, is that now, the ``Mesh`` tag points GEOS to
 a different mesh file called ``cube_10x10x10_tet.vtk``.
 This file contains nodes and tetrahedral elements in `vtk`_ format,
 representing a different discretization of the exact same 10x10x10 cubic domain.
@@ -326,7 +330,9 @@ And the ``vtk`` file starts as follows (notice the tetrahedral point coordinates
    :caption: cube_10x10x10_tet.vtk
    :lines: 1-20
 
-Again, the entire field is one region called ``Domain`` and contains ``water`` and ``rock`` only.
+Again, the entire field is one region called ``Domain`` which contains ``water`` and ``rock``.
+Since we have imported a mesh with only one region, we can again set ``cellBlocks`` to ``{ * }``
+(we have could also set ``cellBlocks`` to ``{ tetrahedra }`` as the mesh has only tetrahedric cells).
 
 .. literalinclude:: ../../../../../inputFiles/singlePhaseFlow/vtk/3D_10x10x10_compressible_tetra_gravity_base.xml
   :language: xml
@@ -334,18 +340,18 @@ Again, the entire field is one region called ``Domain`` and contains ``water`` a
   :end-before: <!-- SPHINX_TUT_EXT_TETRA_ELEM_REGIONS_END -->
 
 
-Running GEOSX
+Running GEOS
 -------------------------
 
-The command to run GEOSX is
+The command to run GEOS is
 
 .. code-block:: console
 
   path/to/geosx -i ../../../../../inputFiles/singlePhaseFlow/vtk/3D_10x10x10_compressible_tetra_gravity_smoke.xml
 
 Again, all paths for files included in the XML file are relative
-to this XML file, not to the GEOSX executable.
-When running GEOSX, console messages will provide indications regarding the
+to this XML file, not to the GEOS executable.
+When running GEOS, console messages will provide indications regarding the
 status of the simulation.
 In our case, the first lines are:
 
@@ -367,7 +373,7 @@ Followed by:
 
   VTKMesh 'CubeTetra': reading mesh from /path/to/inputFiles/singlePhaseFlow/vtk/cube_10x10x10_tet.vtk
   Generating global Ids from VTK mesh
-  VTKMesh 'CubeTetra': generating GEOSX mesh data structure
+  VTKMesh 'CubeTetra': generating GEOS mesh data structure
   Number of nodes:  366
     Number of elems: 1153
                C3D4: 1153
@@ -434,10 +440,10 @@ To go further
 **Feedback on this tutorial**
 
 This concludes the single-phase external mesh tutorial.
-For any feedback on this tutorial, please submit a `GitHub issue on the project's GitHub page <https://github.com/GEOSX/GEOSX/issues>`_.
+For any feedback on this tutorial, please submit a `GitHub issue on the project's GitHub page <https://github.com/GEOS-DEV/GEOS/issues>`_.
 
 **For more details**
 
   - A complete description of the Internal Mesh generator is found here :ref:`Meshes`.
   - ``vtk`` is extensively documented. You can start browsing `here <https://vtk.org/documentation/>`_.
-  - GEOSX can handle tetrahedra, hexahedra, pyramids, wedges, prisms, and any combination thereof in one mesh.
+  - GEOS can handle tetrahedra, hexahedra, pyramids, wedges, prisms, and any combination thereof in one mesh.

@@ -27,6 +27,7 @@
       logLevel="1">
       <NonlinearSolverParameters
         newtonMaxIter="8"
+	lineSearchAction="None"  	  
         couplingType="Sequential"/>
     </FlowProppantTransport>
 
@@ -80,7 +81,7 @@
   <ElementRegions>
     <CellElementRegion
       name="region"
-      cellBlocks="{ cb1 }"
+      cellBlocks="{ * }"
       materialList="{ water, sand }"/>
 
     <SurfaceElementRegion
@@ -178,7 +179,6 @@
     <SourceFlux
       name="left1a"
       objectPath="ElementRegions/Fracture"
-      fieldName="pressure"
       scale="-0.42"
       component="0"
       setNames="{ left }"/>

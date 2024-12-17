@@ -6,7 +6,7 @@ Hydraulic Fracturing
 
 **Context**
 
-In this example, we use a fully coupled hydrofracture solver from GEOSX to solve for the propagation of a single fracture within a reservoir with heterogeneous in-situ properties.
+In this example, we use a fully coupled hydrofracture solver from GEOS to solve for the propagation of a single fracture within a reservoir with heterogeneous in-situ properties.
 Advanced xml features will be used throughout the example.
 
 **Objectives**
@@ -53,7 +53,7 @@ This example will first focus on the case-specific input file, which contains th
 Included: including external xml files
 ---------------------------------------------
 
-At the head of the case-specific xml file is a block that will instruct GEOSX to include an external file.
+At the head of the case-specific xml file is a block that will instruct GEOS to include an external file.
 In our case, this points to the base hydraulic fracturing input file.
 
 .. literalinclude:: ../../../../../inputFiles/hydraulicFracturing/heterogeneousInSitu_benchmark.xml
@@ -228,11 +228,11 @@ The interpolation method used here is upper, so the values in the table indicate
   :end-before: <!-- SPHINX_HYDROFRACTURE_FUNCTIONS_END -->
 
 ---------------------------------
-Running GEOSX
+Running GEOS
 ---------------------------------
 
-Assuming that the preprocessing tools have been correctly installed (see :ref:`AdvancedXMLFeatures` ), there will be a script in the GEOSX build/bin directory called `geosx_preprocessed`.
-Replacing `geosx` with `geosx_preprocessed` in an input command will automatically apply the preprocessor and send the results to GEOSX.
+Assuming that the preprocessing tools have been correctly installed (see :ref:`AdvancedXMLFeatures` ), there will be a script in the GEOS build/bin directory called `geosx_preprocessed`.
+Replacing `geosx` with `geosx_preprocessed` in an input command will automatically apply the preprocessor and send the results to GEOS.
 
 Before beginning, we reccomend that you make a local copy of the example and its tables.
 Because we are using advanced xml features in this example, the input file must be pre-processed before running.
@@ -298,7 +298,7 @@ To go further
 **Feedback on this example**
 
 This concludes the hydraulic fracturing example.
-For any feedback on this example, please submit a `GitHub issue on the project's GitHub page <https://github.com/GEOSX/GEOSX/issues>`_.
+For any feedback on this example, please submit a `GitHub issue on the project's GitHub page <https://github.com/GEOS-DEV/GEOS/issues>`_.
 
 
 

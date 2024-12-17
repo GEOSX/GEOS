@@ -2,10 +2,11 @@
  * ------------------------------------------------------------------------------------------------------------
  * SPDX-License-Identifier: LGPL-2.1-only
  *
- * Copyright (c) 2018-2020 Lawrence Livermore National Security LLC
- * Copyright (c) 2018-2020 The Board of Trustees of the Leland Stanford Junior University
- * Copyright (c) 2018-2020 TotalEnergies
- * Copyright (c) 2019-     GEOSX Contributors
+ * Copyright (c) 2016-2024 Lawrence Livermore National Security LLC
+ * Copyright (c) 2018-2024 TotalEnergies
+ * Copyright (c) 2018-2024 The Board of Trustees of the Leland Stanford Junior University
+ * Copyright (c) 2023-2024 Chevron
+ * Copyright (c) 2019-     GEOS/GEOSX Contributors
  * All rights reserved
  *
  * See top level LICENSE, COPYRIGHT, CONTRIBUTORS, NOTICE, and ACKNOWLEDGEMENTS files for details.
@@ -16,13 +17,13 @@
  * @file LinearSolverParameters.hpp
  */
 
-#ifndef GEOSX_PHYSICSSOLVERS_LINEARSOLVERPARAMETERS_HPP_
-#define GEOSX_PHYSICSSOLVERS_LINEARSOLVERPARAMETERS_HPP_
+#ifndef GEOS_PHYSICSSOLVERS_LINEARSOLVERPARAMETERS_HPP_
+#define GEOS_PHYSICSSOLVERS_LINEARSOLVERPARAMETERS_HPP_
 
 #include "dataRepository/Group.hpp"
 #include "linearAlgebra/utilities/LinearSolverParameters.hpp"
 
-namespace geosx
+namespace geos
 {
 
 /**
@@ -57,7 +58,9 @@ public:
   static string catalogName() { return "LinearSolverParameters"; }
 
   /// Postprocessing of input
-  virtual void postProcessInput() override;
+  virtual void postInputInitialization() override;
+
+  void print();
 
   LinearSolverParameters const & get() const
   { return m_parameters; }
@@ -100,22 +103,42 @@ public:
     static constexpr char const * krylovAdaptiveTolString() { return "krylovAdaptiveTol"; }
     /// Krylov weakest tolerance key
     static constexpr char const * krylovWeakTolString() { return "krylovWeakestTol"; }
+    /// Krylov strongest tolerance key
+    static constexpr char const * krylovStrongTolString() { return "krylovStrongestTol"; }
+    /// Adaptive gamma parameter key
+    static constexpr char const * adaptiveGammaString() { return "adaptiveGamma"; }
+    /// Adaptive exponent parameter key
+    static constexpr char const * adaptiveExponentString() { return "adaptiveExponent"; }
 
     /// AMG number of sweeps key
     static constexpr char const * amgNumSweepsString() { return "amgNumSweeps"; }
     /// AMG smoother type key
     static constexpr char const * amgSmootherString() { return "amgSmootherType"; }
+    /// AMG smoother relax factor key
+    static constexpr char const * amgRelaxWeight() { return "amgRelaxWeight"; }
     /// AMG coarse solver key
     static constexpr char const * amgCoarseString() { return "amgCoarseSolver"; }
     /// AMG threshold key
     static constexpr char const * amgThresholdString() { return "amgThreshold"; }
     /// AMG near null space type key
     static constexpr char const * amgNullSpaceTypeString() { return "amgNullSpaceType"; }
+    /// AMG coarsening key
+    static constexpr char const * amgCoarseningString() { return "amgCoarseningType"; }
+    /// AMG interpolation key
+    static constexpr char const * amgInterpolationString() { return "amgInterpolationType"; }
+    /// AMG max. nonzero entries per row
+    static constexpr char const * amgInterpMaxNonZerosString() { return "amgInterpolationMaxNonZeros"; }
+    /// AMG number of functions for unknown-based approach
+    static constexpr char const * amgNumFunctionsString() { return "amgNumFunctions"; }
+    /// AMG number of paths for aggressive coarsening
+    static constexpr char const * amgAggressiveNumPathsString() { return "amgAggressiveCoarseningPaths"; }
+    /// AMG number of levels for aggressive coarsening
+    static constexpr char const * amgAggressiveNumLevelsString() { return "amgAggressiveCoarseningLevels"; }
+    /// AMG interpolation type during aggressive coarsening
+    static constexpr char const * amgAggressiveInterpTypeString() { return "amgAggressiveInterpType"; }
+    /// AMG separate components flag
+    static constexpr char const * amgSeparateComponentsString() { return "amgSeparateComponents"; }
 
-    static constexpr char const * amgCoarseningString()         { return "amgCoarseningType";           } ///< AMG coarsening key
-    static constexpr char const * amgInterpolationString()      { return "amgInterpolationType";        }   ///< AMG interpolation key
-    static constexpr char const * amgNumFunctionsString()       { return "amgNumFunctions";             }   ///< AMG threshold key
-    static constexpr char const * amgAggresiveNumLevelsString() { return "amgAggresiveCoarseningLevels";}             ///< AMG threshold key
     /// ILU fill key
     static constexpr char const * iluFillString() { return "iluFill"; }
     /// ILU threshold key
@@ -128,6 +151,6 @@ private:
 
 };
 
-} // namespace geosx
+} // namespace geos
 
-#endif //GEOSX_PHYSICSSOLVERS_LINEARSOLVERPARAMETERS_HPP_
+#endif //GEOS_PHYSICSSOLVERS_LINEARSOLVERPARAMETERS_HPP_

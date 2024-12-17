@@ -51,7 +51,7 @@
   <ElementRegions>
     <CellElementRegion
       name="reservoir"
-      cellBlocks="{ 1_hexahedra }"
+      cellBlocks="{ * }"
       materialList="{ fluid, rock, relperm, cappres }"/>
 
     <WellElementRegion
@@ -119,28 +119,28 @@
     <FieldSpecification
       name="bcPressure"
       objectPath="faceManager"
-      setNames="{3}"
+      setNames="{ xpos, xneg, ypos, yneg }"
       fieldName="pressure"
       functionName="pressureFunction"
       scale="1"/>
     <FieldSpecification
       name="bcTemperature"
       objectPath="faceManager"
-      setNames="{3}"
+      setNames="{ xpos, xneg, ypos, yneg }"
       fieldName="temperature"
       functionName="temperatureFunction"
       scale="1"/>
     <FieldSpecification
       name="bcCompositionCO2"
       objectPath="faceManager"
-      setNames="{3}"
+      setNames="{ xpos, xneg, ypos, yneg }"
       fieldName="globalCompFraction"
       component="0"
       scale="0.000001"/>
     <FieldSpecification
       name="bcCompositionWater"
       objectPath="faceManager"
-      setNames="{3}"
+      setNames="{ xpos, xneg, ypos, yneg }"
       fieldName="globalCompFraction"
       component="1"
       scale="0.999999"/>

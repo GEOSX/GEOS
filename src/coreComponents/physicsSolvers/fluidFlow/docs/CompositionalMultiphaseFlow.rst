@@ -39,7 +39,7 @@ where :math:`\phi` is the porosity of the medium,
 :math:`S_{\ell}` is the saturation of phase :math:`\ell`, :math:`y_{c \ell}`
 is the mass fraction of component :math:`c` in phase :math:`\ell`,
 :math:`\rho_{\ell}` is the phase density, and :math:`t` is time. We note that the
-formulation currently implemented in GEOSX is isothermal.
+formulation currently implemented in GEOS is isothermal.
 
 Darcy's Law
 ~~~~~~~~~~~
@@ -102,7 +102,7 @@ Number of equations  Equation type
 Primary Variables
 ------------------
 
-The variable formulation implemented in GEOSX is a global variable formulation based on
+The variable formulation implemented in GEOS is a global variable formulation based on
 :math:`n_c+1` primary variables, namely, one pressure, :math:`p`, and
 :math:`n_c` component densities, :math:`\rho_c`.
 By default, we use molar component densities.
@@ -182,7 +182,7 @@ Parameters
 
 The following attributes are supported:
 
-.. include:: /coreComponents/schema/docs/CompositionalMultiphaseFVM.rst
+.. include:: /docs/sphinx/datastructure/CompositionalMultiphaseFVM.rst
 
 .. _input_example:
 

@@ -2,18 +2,19 @@
  * ------------------------------------------------------------------------------------------------------------
  * SPDX-License-Identifier: LGPL-2.1-only
  *
- * Copyright (c) 2018-2020 Lawrence Livermore National Security LLC
- * Copyright (c) 2018-2020 The Board of Trustees of the Leland Stanford Junior University
- * Copyright (c) 2018-2020 TotalEnergies
- * Copyright (c) 2019-     GEOSX Contributors
+ * Copyright (c) 2016-2024 Lawrence Livermore National Security LLC
+ * Copyright (c) 2018-2024 TotalEnergies
+ * Copyright (c) 2018-2024 The Board of Trustees of the Leland Stanford Junior University
+ * Copyright (c) 2023-2024 Chevron
+ * Copyright (c) 2019-     GEOS/GEOSX Contributors
  * All rights reserved
  *
  * See top level LICENSE, COPYRIGHT, CONTRIBUTORS, NOTICE, and ACKNOWLEDGEMENTS files for details.
  * ------------------------------------------------------------------------------------------------------------
  */
 
-#ifndef GEOSX_FINITEELEMENT_ELEMENTFORMULATIONS_ELEMENTFORMULATIONS_LAGRANGEBASIS1_HPP_
-#define GEOSX_FINITEELEMENT_ELEMENTFORMULATIONS_ELEMENTFORMULATIONS_LAGRANGEBASIS1_HPP_
+#ifndef GEOS_FINITEELEMENT_ELEMENTFORMULATIONS_ELEMENTFORMULATIONS_LAGRANGEBASIS1_HPP_
+#define GEOS_FINITEELEMENT_ELEMENTFORMULATIONS_ELEMENTFORMULATIONS_LAGRANGEBASIS1_HPP_
 
 /**
  * @file LagrangeBasis1.hpp
@@ -21,7 +22,7 @@
 
 #include "common/DataTypes.hpp"
 
-namespace geosx
+namespace geos
 {
 namespace finiteElement
 {
@@ -46,11 +47,11 @@ public:
    * @param q The index of the support point
    * @return The value of the weight
    */
-  GEOSX_HOST_DEVICE
-  GEOSX_FORCE_INLINE
+  GEOS_HOST_DEVICE
+  GEOS_FORCE_INLINE
   constexpr static real64 weight( const int q )
   {
-    GEOSX_UNUSED_VAR( q );
+    GEOS_UNUSED_VAR( q );
     return 1.0;
   }
 
@@ -60,8 +61,8 @@ public:
    * @param supportPointIndex The linear index of support point
    * @return parent coordinate in the xi0 direction.
    */
-  GEOSX_HOST_DEVICE
-  GEOSX_FORCE_INLINE
+  GEOS_HOST_DEVICE
+  GEOS_FORCE_INLINE
   constexpr static real64 parentSupportCoord( const localIndex supportPointIndex )
   {
     return -1.0 + 2.0 * (supportPointIndex & 1);
@@ -74,8 +75,8 @@ public:
    * @param xi The coordinate at which to evaluate the basis.
    * @return The value of basis function.
    */
-  GEOSX_HOST_DEVICE
-  GEOSX_FORCE_INLINE
+  GEOS_HOST_DEVICE
+  GEOS_FORCE_INLINE
   constexpr static real64 value( const int index,
                                  const real64 xi )
   {
@@ -88,8 +89,8 @@ public:
    * @param xi The coordinate at which to evaluate the basis.
    * @return The value of the basis.
    */
-  GEOSX_HOST_DEVICE
-  GEOSX_FORCE_INLINE
+  GEOS_HOST_DEVICE
+  GEOS_FORCE_INLINE
   constexpr static real64 value0( const real64 xi )
   {
     return 0.5 - 0.5 * xi;
@@ -100,11 +101,23 @@ public:
    * @param xi The coordinate at which to evaluate the basis.
    * @return The value of the basis.
    */
-  GEOSX_HOST_DEVICE
-  GEOSX_FORCE_INLINE
+  GEOS_HOST_DEVICE
+  GEOS_FORCE_INLINE
   constexpr static real64 value1( const real64 xi )
   {
     return 0.5 + 0.5 * xi;
+  }
+
+  /**
+   * @brief The value of the bubble basis function.
+   * @param xi The coordinate at which to evaluate the basis.
+   * @return The value of the basis.
+   */
+  GEOS_HOST_DEVICE
+  GEOS_FORCE_INLINE
+  constexpr static real64 valueBubble( const real64 xi )
+  {
+    return 1.0 - pow( xi, 2 );
   }
 
 
@@ -116,12 +129,12 @@ public:
    * @param xi The coordinate at which to evaluate the gradient.
    * @return The gradient of basis function.
    */
-  GEOSX_HOST_DEVICE
-  GEOSX_FORCE_INLINE
+  GEOS_HOST_DEVICE
+  GEOS_FORCE_INLINE
   constexpr static real64 gradient( const int index,
                                     const real64 xi )
   {
-    GEOSX_UNUSED_VAR( xi );
+    GEOS_UNUSED_VAR( xi );
     return 0.5 * parentSupportCoord( index );
   }
 
@@ -131,11 +144,11 @@ public:
    * @param xi The coordinate at which to evaluate the gradient.
    * @return The gradient of basis function (-0.5)
    */
-  GEOSX_HOST_DEVICE
-  GEOSX_FORCE_INLINE
+  GEOS_HOST_DEVICE
+  GEOS_FORCE_INLINE
   constexpr static real64 gradient0( const real64 xi )
   {
-    GEOSX_UNUSED_VAR( xi );
+    GEOS_UNUSED_VAR( xi );
     return -0.5;
   }
 
@@ -145,12 +158,40 @@ public:
    * @param xi The coordinate at which to evaluate the gradient.
    * @return The gradient of basis function (0.5)
    */
-  GEOSX_HOST_DEVICE
-  GEOSX_FORCE_INLINE
+  GEOS_HOST_DEVICE
+  GEOS_FORCE_INLINE
   constexpr static real64 gradient1( const real64 xi )
   {
-    GEOSX_UNUSED_VAR( xi );
+    GEOS_UNUSED_VAR( xi );
     return 0.5;
+  }
+
+  /**
+   * @brief The gradient of the bubble basis function for support point 1 evaluated at
+   *   a point along the axes.
+   * @param xi The coordinate at which to evaluate the gradient.
+   * @return The gradient of basis function
+   */
+  GEOS_HOST_DEVICE
+  GEOS_FORCE_INLINE
+  constexpr static real64 gradientBubble( const real64 xi )
+  {
+    return -2.0*xi;
+  }
+
+  /**
+   * @brief The gradient of the basis function for a support point evaluated at
+   *   a given support point. By symmetry, p is assumed to be in 0, ..., (N-1)/2.
+   *   in the case of the first-order basis, this value is independent of p.
+   * @param q The index of the basis function
+   * @return The gradient of basis function.
+   */
+  GEOS_HOST_DEVICE
+  GEOS_FORCE_INLINE
+  constexpr static real64 gradientAt( const int q,
+                                      const int )
+  {
+    return q == 0 ? -0.5 : 0.5;
   }
 
   /**
@@ -183,8 +224,8 @@ public:
      * @param j The index in the xi1 direction (0,1)
      * @return The linear index of the support/quadrature point (0-3)
      */
-    GEOSX_HOST_DEVICE
-    GEOSX_FORCE_INLINE
+    GEOS_HOST_DEVICE
+    GEOS_FORCE_INLINE
     constexpr static int linearIndex( const int i,
                                       const int j )
     {
@@ -198,8 +239,8 @@ public:
      * @param i0 The Cartesian index of the support point in the xi0 direction.
      * @param i1 The Cartesian index of the support point in the xi1 direction.
      */
-    GEOSX_HOST_DEVICE
-    GEOSX_FORCE_INLINE
+    GEOS_HOST_DEVICE
+    GEOS_FORCE_INLINE
     constexpr static void multiIndex( const int linearIndex,
                                       int & i0,
                                       int & i1 )
@@ -215,8 +256,8 @@ public:
      * @param coords The coordinates (in the parent frame) at which to evaluate the basis
      * @param N Array to hold the value of the basis functions at each support point.
      */
-    GEOSX_HOST_DEVICE
-    GEOSX_FORCE_INLINE
+    GEOS_HOST_DEVICE
+    GEOS_FORCE_INLINE
     static void value( real64 const (&coords)[2],
                        real64 (& N)[numSupportPoints] )
     {
@@ -232,12 +273,28 @@ public:
     }
 
     /**
+     * @brief The value of the bubble basis function evaluated at a
+     *   point along the axes.
+     *
+     * @param coords The coordinates (in the parent frame) at which to evaluate the basis
+     * @param N Array to hold the value of the basis functions.
+     */
+    GEOS_HOST_DEVICE
+    GEOS_FORCE_INLINE
+    static void valueBubble( real64 const (&coords)[2],
+                             real64 (& N)[1] )
+    {
+      N[0] = LagrangeBasis1::valueBubble( coords[0] ) *
+             LagrangeBasis1::valueBubble( coords[1] );
+    }
+
+    /**
      * @brief The parent coordinates for a support point in the xi0 direction.
      * @param linearIndex The linear index of the support point
      * @return
      */
-    GEOSX_HOST_DEVICE
-    GEOSX_FORCE_INLINE
+    GEOS_HOST_DEVICE
+    GEOS_FORCE_INLINE
     constexpr static real64 parentCoords0( localIndex const linearIndex )
     {
       return -1.0 + 2.0 * (linearIndex & 1);
@@ -248,8 +305,8 @@ public:
      * @param linearIndex The linear index of the support point
      * @return
      */
-    GEOSX_HOST_DEVICE
-    GEOSX_FORCE_INLINE
+    GEOS_HOST_DEVICE
+    GEOS_FORCE_INLINE
     constexpr static real64 parentCoords1( localIndex const linearIndex )
     {
       return -1.0 + ( linearIndex & 2 );
@@ -283,6 +340,9 @@ public:
     /// The number of support points in the basis.
     constexpr static localIndex numSupportPoints = 8;
 
+    /// The number of support faces in the basis.
+    constexpr static localIndex numSupportFaces = 6;
+
     /**
      * @brief Calculates the linear index for support/quadrature points from ijk
      *   coordinates.
@@ -291,8 +351,8 @@ public:
      * @param k The index in the xi2 direction (0,1)
      * @return The linear index of the support/quadrature point (0-7)
      */
-    GEOSX_HOST_DEVICE
-    GEOSX_FORCE_INLINE
+    GEOS_HOST_DEVICE
+    GEOS_FORCE_INLINE
     constexpr static int linearIndex( const int i,
                                       const int j,
                                       const int k )
@@ -308,8 +368,8 @@ public:
      * @param i1 The Cartesian index of the support point in the xi1 direction.
      * @param i2 The Cartesian index of the support point in the xi2 direction.
      */
-    GEOSX_HOST_DEVICE
-    GEOSX_FORCE_INLINE
+    GEOS_HOST_DEVICE
+    GEOS_FORCE_INLINE
     constexpr static void multiIndex( const int linearIndex,
                                       int & i0,
                                       int & i1,
@@ -327,8 +387,8 @@ public:
      * @param coords The coordinates (in the parent frame) at which to evaluate the basis
      * @param N Array to hold the value of the basis functions at each support point.
      */
-    GEOSX_HOST_DEVICE
-    GEOSX_FORCE_INLINE
+    GEOS_HOST_DEVICE
+    GEOS_FORCE_INLINE
     static void value( real64 const (&coords)[3],
                        real64 (& N)[numSupportPoints] )
     {
@@ -348,12 +408,122 @@ public:
     }
 
     /**
+     * @brief The value of the bubble basis function for a support face evaluated at a
+     *   point along the axes.
+     *
+     * @param coords The coordinates (in the parent frame) at which to evaluate the basis
+     * @param N Array to hold the value of the basis functions at each support face.
+     */
+    GEOS_HOST_DEVICE
+    GEOS_FORCE_INLINE
+    static void valueFaceBubble( real64 const (&coords)[3],
+                                 real64 (& N)[numSupportFaces] )
+    {
+      N[ 0 ] = LagrangeBasis1::valueBubble( coords[0] ) *
+               LagrangeBasis1::value( 0, coords[1] ) *
+               LagrangeBasis1::valueBubble( coords[2] );
+
+      N[ 1 ] = LagrangeBasis1::valueBubble( coords[0] ) *
+               LagrangeBasis1::valueBubble( coords[1] ) *
+               LagrangeBasis1::value( 0, coords[2] );
+
+      N[ 2 ] = LagrangeBasis1::value( 0, coords[0] ) *
+               LagrangeBasis1::valueBubble( coords[1] ) *
+               LagrangeBasis1::valueBubble( coords[2] );
+
+      N[ 3 ] = LagrangeBasis1::value( 1, coords[0] ) *
+               LagrangeBasis1::valueBubble( coords[1] ) *
+               LagrangeBasis1::valueBubble( coords[2] );
+
+      N[ 4 ] = LagrangeBasis1::valueBubble( coords[0] ) *
+               LagrangeBasis1::value( 1, coords[1] ) *
+               LagrangeBasis1::valueBubble( coords[2] );
+
+      N[ 5 ] = LagrangeBasis1::valueBubble( coords[0] ) *
+               LagrangeBasis1::valueBubble( coords[1] ) *
+               LagrangeBasis1::value( 1, coords[2] );
+    }
+
+    /**
+     * @brief The value of the bubble basis function derivatives for a support face evaluated at a
+     *   point along the axes.
+     *
+     * @param coords The coordinates (in the parent frame) at which to evaluate the basis
+     * @param dNdXi Array to hold the value of the basis function derivatives at each support face.
+     */
+    GEOS_HOST_DEVICE
+    GEOS_FORCE_INLINE
+    static void gradientFaceBubble( real64 const (&coords)[3],
+                                    real64 (& dNdXi)[numSupportFaces][3] )
+    {
+      dNdXi[0][0] = LagrangeBasis1::gradientBubble( coords[0] ) *
+                    LagrangeBasis1::value( 0, coords[1] ) *
+                    LagrangeBasis1::valueBubble( coords[2] );
+      dNdXi[0][1] = LagrangeBasis1::valueBubble( coords[0] ) *
+                    LagrangeBasis1::gradient( 0, coords[1] ) *
+                    LagrangeBasis1::valueBubble( coords[2] );
+      dNdXi[0][2] = LagrangeBasis1::valueBubble( coords[0] ) *
+                    LagrangeBasis1::value( 0, coords[1] ) *
+                    LagrangeBasis1::gradientBubble( coords[2] );
+
+      dNdXi[1][0] = LagrangeBasis1::gradientBubble( coords[0] ) *
+                    LagrangeBasis1::valueBubble( coords[1] ) *
+                    LagrangeBasis1::value( 0, coords[2] );
+      dNdXi[1][1] = LagrangeBasis1::valueBubble( coords[0] ) *
+                    LagrangeBasis1::gradientBubble( coords[1] ) *
+                    LagrangeBasis1::value( 0, coords[2] );
+      dNdXi[1][2] = LagrangeBasis1::valueBubble( coords[0] ) *
+                    LagrangeBasis1::valueBubble( coords[1] ) *
+                    LagrangeBasis1::gradient( 0, coords[2] );
+
+      dNdXi[2][0] = LagrangeBasis1::gradient( 0, coords[0] ) *
+                    LagrangeBasis1::valueBubble( coords[1] ) *
+                    LagrangeBasis1::valueBubble( coords[2] );
+      dNdXi[2][1] = LagrangeBasis1::value( 0, coords[0] ) *
+                    LagrangeBasis1::gradientBubble( coords[1] ) *
+                    LagrangeBasis1::valueBubble( coords[2] );
+      dNdXi[2][2] = LagrangeBasis1::value( 0, coords[0] ) *
+                    LagrangeBasis1::valueBubble( coords[1] ) *
+                    LagrangeBasis1::gradientBubble( coords[2] );
+
+      dNdXi[3][0] = LagrangeBasis1::gradient( 1, coords[0] ) *
+                    LagrangeBasis1::valueBubble( coords[1] ) *
+                    LagrangeBasis1::valueBubble( coords[2] );
+      dNdXi[3][1] = LagrangeBasis1::value( 1, coords[0] ) *
+                    LagrangeBasis1::gradientBubble( coords[1] ) *
+                    LagrangeBasis1::valueBubble( coords[2] );
+      dNdXi[3][2] = LagrangeBasis1::value( 1, coords[0] ) *
+                    LagrangeBasis1::valueBubble( coords[1] ) *
+                    LagrangeBasis1::gradientBubble( coords[2] );
+
+      dNdXi[4][0] = LagrangeBasis1::gradientBubble( coords[0] ) *
+                    LagrangeBasis1::value( 1, coords[1] ) *
+                    LagrangeBasis1::valueBubble( coords[2] );
+      dNdXi[4][1] = LagrangeBasis1::valueBubble( coords[0] ) *
+                    LagrangeBasis1::gradient( 1, coords[1] ) *
+                    LagrangeBasis1::valueBubble( coords[2] );
+      dNdXi[4][2] = LagrangeBasis1::valueBubble( coords[0] ) *
+                    LagrangeBasis1::value( 1, coords[1] ) *
+                    LagrangeBasis1::gradientBubble( coords[2] );
+
+      dNdXi[5][0] = LagrangeBasis1::gradientBubble( coords[0] ) *
+                    LagrangeBasis1::valueBubble( coords[1] ) *
+                    LagrangeBasis1::value( 1, coords[2] );
+      dNdXi[5][1] = LagrangeBasis1::valueBubble( coords[0] ) *
+                    LagrangeBasis1::gradientBubble( coords[1] ) *
+                    LagrangeBasis1::value( 1, coords[2] );
+      dNdXi[5][2] = LagrangeBasis1::valueBubble( coords[0] ) *
+                    LagrangeBasis1::valueBubble( coords[1] ) *
+                    LagrangeBasis1::gradient( 1, coords[2] );
+    }
+
+    /**
      * @brief The parent coordinates for a support point in the xi0 direction.
      * @param linearIndex The linear index of the support point
      * @return
      */
-    GEOSX_HOST_DEVICE
-    GEOSX_FORCE_INLINE
+    GEOS_HOST_DEVICE
+    GEOS_FORCE_INLINE
     constexpr static real64 parentCoords0( localIndex const linearIndex )
     {
       return -1.0 + 2.0 * (linearIndex & 1);
@@ -364,8 +534,8 @@ public:
      * @param linearIndex The linear index of the support point
      * @return
      */
-    GEOSX_HOST_DEVICE
-    GEOSX_FORCE_INLINE
+    GEOS_HOST_DEVICE
+    GEOS_FORCE_INLINE
     constexpr static real64 parentCoords1( localIndex const linearIndex )
     {
       return -1.0 + ( linearIndex & 2 );
@@ -376,8 +546,8 @@ public:
      * @param linearIndex The linear index of the support point
      * @return
      */
-    GEOSX_HOST_DEVICE
-    GEOSX_FORCE_INLINE
+    GEOS_HOST_DEVICE
+    GEOS_FORCE_INLINE
     constexpr static real64 parentCoords2( localIndex const linearIndex )
     {
       return -1.0 + 0.5 * ( linearIndex & 4 );
@@ -391,4 +561,4 @@ public:
 }
 
 
-#endif /* GEOSX_FINITEELEMENT_ELEMENTFORMULATIONS_ELEMENTFORMULATIONS_LAGRANGEBASIS1_HPP_ */
+#endif /* GEOS_FINITEELEMENT_ELEMENTFORMULATIONS_ELEMENTFORMULATIONS_LAGRANGEBASIS1_HPP_ */

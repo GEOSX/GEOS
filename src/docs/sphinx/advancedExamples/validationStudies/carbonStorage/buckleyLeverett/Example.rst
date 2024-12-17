@@ -9,7 +9,7 @@
 **Context**
 
 In this example, we simulate a CO2 core flood experiment representing immiscible transport of two-phase
-flow (CO2 and water) through porous media `(Ekechukwu et al., 2022) <https://arxiv.org/pdf/2203.05021.pdf>`__. This problem is solved using the multiphase flow solver in GEOSX to obtain the temporal evolution of saturation along the flow direction, and verified against the Buckley-Leverett analytical solutions `(Buckley and Leverett, 1942;  <https://onepetro.org/TRANS/article/146/01/107/161720/Mechanism-of-Fluid-Displacement-in-Sands>`__ `Arabzai and Honma, 2013)  <http://bulletin.soe.u-tokai.ac.jp/english_vol38/20_25.pdf>`__.
+flow (CO2 and water) through porous media `(Ekechukwu et al., 2022) <https://arxiv.org/pdf/2203.05021.pdf>`__. This problem is solved using the multiphase flow solver in GEOS to obtain the temporal evolution of saturation along the flow direction, and verified against the Buckley-Leverett analytical solutions `(Buckley and Leverett, 1942;  <https://onepetro.org/TRANS/article/146/01/107/161720/Mechanism-of-Fluid-Displacement-in-Sands>`__ `Arabzai and Honma, 2013)  <http://bulletin.soe.u-tokai.ac.jp/english_vol38/20_25.pdf>`__.
 
 
 **Input file**
@@ -107,7 +107,7 @@ with one group of cell blocks named here ``cellBlock``. The width of the domain 
 Flow solver
 ------------------------------------------------------------------
 
-The isothermal immiscible simulation is performed using the GEOSX general-purpose multiphase
+The isothermal immiscible simulation is performed using the GEOS general-purpose multiphase
 flow solver. The multiphase flow solver, a solver of type ``CompositionalMultiphaseFVM`` called here ``compflow`` (more information on these solvers at :ref:`CompositionalMultiphaseFlow`) is defined in the XML block **CompositionalMultiphaseFVM**:
 
 .. literalinclude:: ../../../../../../../inputFiles/compositionalMultiphaseFlow/benchmarks/buckleyLeverettProblem/buckleyLeverett_base.xml
@@ -123,7 +123,7 @@ Here, we only simulate fluid flow in one region named as ``region``. We specify 
 Constitutive laws
 ------------------------------
 
-This benchmark example involves an immiscible, incompressible, two-phase model, whose fluid rheology and permeability are specified in the ``Constitutive`` section. The best approach to represent this fluid behavior in GEOSX is to use the **DeadOilFluid** model in GEOSX.
+This benchmark example involves an immiscible, incompressible, two-phase model, whose fluid rheology and permeability are specified in the ``Constitutive`` section. The best approach to represent this fluid behavior in GEOS is to use the **DeadOilFluid** model in GEOS.
 
 .. literalinclude:: ../../../../../../../inputFiles/compositionalMultiphaseFlow/benchmarks/buckleyLeverettProblem/buckleyLeverett_base.xml
     :language: xml
@@ -154,12 +154,12 @@ Either the entire field or specified named sets of indices in the field can be c
 In this example, ``phaseVolumeFractionCollection`` is specified to output the time history of phase saturations ``fieldName="phaseVolumeFraction"`` across the computational domain.
 
 .. literalinclude:: ../../../../../../../inputFiles/compositionalMultiphaseFlow/benchmarks/buckleyLeverettProblem/buckleyLeverett_base.xml
-    :language: xml
-    :start-after: <!-- SPHINX_TASKS -->
-    :end-before: <!-- SPHINX_TASKS_END -->
+   :language: xml
+   :start-after: <!-- SPHINX_TASKS -->
+   :end-before: <!-- SPHINX_TASKS_END -->
 
 This task is triggered using the ``Event`` manager with a ``PeriodicEvent`` defined for the recurring tasks. 
-GEOSX writes one file named after the string defined in the ``filename`` keyword, formatted as a HDF5 file (saturationHistory.hdf5). The TimeHistory file contains the collected time history information from the specified time history collector.
+GEOS writes one file named after the string defined in the ``filename`` keyword, formatted as a HDF5 file (saturationHistory.hdf5). The TimeHistory file contains the collected time history information from the specified time history collector.
 This file includes datasets for the simulation time, element center, and the time history information for both phases.
 A Python script is prepared to read and plot any specified subset of the time history data for verification and visualization. 
 
@@ -246,9 +246,9 @@ Two following dimensionless terms are defined when comparing the numerical solut
 .. math::
    x_d = \frac { x_{S_g} } { D_L }
 
-The figure below compares the results from GEOSX (dashed curves) and the corresponding analytical solution (solid curves) for the change of gas saturation (:math:`S_g`) and water saturation (:math:`S_w`) along the flow direction. 
+The figure below compares the results from GEOS (dashed curves) and the corresponding analytical solution (solid curves) for the change of gas saturation (:math:`S_g`) and water saturation (:math:`S_w`) along the flow direction. 
 
-GEOSX reliably captures the immiscible transport of two phase flow (CO2 and water). GEOSX matches the analytical solutions in the formation and the progress of abrupt fronts in the saturation profiles. 
+GEOS reliably captures the immiscible transport of two phase flow (CO2 and water). GEOS matches the analytical solutions in the formation and the progress of abrupt fronts in the saturation profiles. 
 
 .. plot:: docs/sphinx/advancedExamples/validationStudies/carbonStorage/buckleyLeverett/buckleyLeverettFigure.py
 
@@ -260,4 +260,4 @@ To go further
 
 **Feedback on this example**
 
-For any feedback on this example, please submit a `GitHub issue on the project's GitHub page <https://github.com/GEOSX/GEOSX/issues>`_.
+For any feedback on this example, please submit a `GitHub issue on the project's GitHub page <https://github.com/GEOS-DEV/GEOS/issues>`_.

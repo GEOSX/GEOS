@@ -187,7 +187,7 @@ In this example, ``pressureCollection``, ``apertureCollection``, ``hydraulicAper
     :end-before: <!-- SPHINX_TASKS_END -->
 
 These tasks are triggered using the ``Event`` manager with a ``PeriodicEvent`` defined for the recurring tasks. 
-GEOSX writes one file named after the string defined in the ``filename`` keyword and formatted as a HDF5 file (``kgdToughnessDominated_output.hdf5``). This TimeHistory file contains the collected time history information from specified time history collector.
+GEOS writes one file named after the string defined in the ``filename`` keyword and formatted as a HDF5 file (``kgdToughnessDominated_output.hdf5``). This TimeHistory file contains the collected time history information from specified time history collector.
 This file includes datasets for the simulation time, fluid pressure, element aperture, hydraulic aperture and element area for the propagating hydraulic fracture.
 A Python script is prepared to read and query any specified subset of the time history data for verification and visualization. 
 
@@ -236,9 +236,9 @@ the HDF5 output is postprocessed and temporal evolution of fracture characterisc
            8 2.446e+05 0.0001277       4.5
           10 2.411e+05 0.0001409         5
 
-Note: GEOSX python tools ``geosx_xml_tools`` should be installed to run the query script (See :ref:`PythonToolsSetup` for details). 
+Note: GEOS python tools ``geosx_xml_tools`` should be installed to run the query script (See `Python Tools Setup <https://geosx-geosx.readthedocs-hosted.com/projects/geosx-geospythonpackages/en/latest/>`_ for details). 
 
-A good agreement between GEOSX results and analytical solutions is shown in the comparison below, which is generated using the visualization script:
+A good agreement between GEOS results and analytical solutions is shown in the comparison below, which is generated using the visualization script:
 
 .. code-block:: console
 
@@ -255,4 +255,4 @@ To go further
 **Feedback on this example**
 
 This concludes the toughness dominated KGD example.
-For any feedback on this example, please submit a `GitHub issue on the project's GitHub page <https://github.com/GEOSX/GEOSX/issues>`_.
+For any feedback on this example, please submit a `GitHub issue on the project's GitHub page <https://github.com/GEOS-DEV/GEOS/issues>`_.

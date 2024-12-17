@@ -2,10 +2,11 @@
  * ------------------------------------------------------------------------------------------------------------
  * SPDX-License-Identifier: LGPL-2.1-only
  *
- * Copyright (c) 2018-2020 Lawrence Livermore National Security LLC
- * Copyright (c) 2018-2020 The Board of Trustees of the Leland Stanford Junior University
- * Copyright (c) 2018-2020 TotalEnergies
- * Copyright (c) 2019-     GEOSX Contributors
+ * Copyright (c) 2016-2024 Lawrence Livermore National Security LLC
+ * Copyright (c) 2018-2024 TotalEnergies
+ * Copyright (c) 2018-2024 The Board of Trustees of the Leland Stanford Junior University
+ * Copyright (c) 2023-2024 Chevron
+ * Copyright (c) 2019-     GEOS/GEOSX Contributors
  * All rights reserved
  *
  * See top level LICENSE, COPYRIGHT, CONTRIBUTORS, NOTICE, and ACKNOWLEDGEMENTS files for details.
@@ -29,25 +30,27 @@
 
 #include <gtest/gtest.h>
 
-using namespace geosx;
+using namespace geos;
 
 char const * xmlInput =
-  "<Problem>"
-  "  <Mesh>"
-  "    <InternalMesh name=\"mesh1\""
-  "                  elementTypes=\"{C3D8}\""
-  "                  xCoords=\"{0, 1}\""
-  "                  yCoords=\"{0, 1}\""
-  "                  zCoords=\"{0, 1}\""
-  "                  nx=\"{6}\""
-  "                  ny=\"{9}\""
-  "                  nz=\"{5}\""
-  "                  cellBlockNames=\"{block1}\"/>"
-  "  </Mesh>"
-  "  <ElementRegions>"
-  "    <CellElementRegion name=\"region1\" cellBlocks=\"{block1}\" materialList=\"{dummy}\" />"
-  "  </ElementRegions>"
-  "</Problem>";
+  R"xml(
+  <Problem>
+    <Mesh>
+      <InternalMesh name="mesh1"
+                    elementTypes="{C3D8}"
+                    xCoords="{0, 1}"
+                    yCoords="{0, 1}"
+                    zCoords="{0, 1}"
+                    nx="{6}"
+                    ny="{9}"
+                    nz="{5}"
+                    cellBlockNames="{block1}"/>
+    </Mesh>
+    <ElementRegions>
+      <CellElementRegion name="region1" cellBlocks="{block1}" materialList="{dummy}"/>
+    </ElementRegions>
+  </Problem>
+  )xml";
 
 template< typename LAI >
 class LAIHelperFunctionsTest : public ::testing::Test
@@ -60,7 +63,7 @@ protected:
     Base(),
     state( std::make_unique< CommandLineOptions >() )
   {
-    geosx::testing::setupProblemFromXML( &state.getProblemManager(), xmlInput );
+    geos::testing::setupProblemFromXML( &state.getProblemManager(), xmlInput );
     mesh = &state.getProblemManager().getDomainPartition().getMeshBody( 0 ).getBaseDiscretization();
   }
 
@@ -77,7 +80,7 @@ void assembleGlobalIndexVector( arrayView1d< globalIndex const > const & localTo
                                 integer const numDofPerPoint,
                                 arrayView1d< real64 > const & values )
 {
-  forAll< parallelDevicePolicy<> >( dofNumber.size(), [=] GEOSX_HOST_DEVICE ( localIndex const k )
+  forAll< geos::parallelDevicePolicy<> >( dofNumber.size(), [=] GEOS_HOST_DEVICE ( localIndex const k )
   {
     if( dofNumber[k] >= 0 && ghostRank[k] < 0 )
     {
@@ -104,8 +107,8 @@ TYPED_TEST_P( LAIHelperFunctionsTest, nodalVectorPermutation )
   DofManager dofManager( "test" );
   dofManager.setDomain( domain );
 
-  std::vector< DofManager::Regions > regions;
-  DofManager::Regions region = { "mesh1", "Level0", {"region1"} };
+  std::vector< DofManager::FieldSupport > regions;
+  DofManager::FieldSupport region = { "mesh1", "Level0", {"region1"} };
   regions.emplace_back( region );
 
   dofManager.addField( "nodalVariable", FieldLocation::Node, 3, regions );
@@ -113,7 +116,7 @@ TYPED_TEST_P( LAIHelperFunctionsTest, nodalVectorPermutation )
   dofManager.reorderByRank();
 
   Vector nodalVariable;
-  nodalVariable.create( dofManager.numLocalDofs(), MPI_COMM_GEOSX );
+  nodalVariable.create( dofManager.numLocalDofs(), MPI_COMM_GEOS );
   globalIndex const rankOffset = dofManager.rankOffset();
 
   arrayView1d< real64 > const nodalVariableView = nodalVariable.open();
@@ -155,8 +158,8 @@ TYPED_TEST_P( LAIHelperFunctionsTest, cellCenteredVectorPermutation )
   DofManager dofManager( "test" );
   dofManager.setDomain( domain );
 
-  std::vector< DofManager::Regions > regions;
-  DofManager::Regions region = { "mesh1", "Level0", {"region1"} };
+  std::vector< DofManager::FieldSupport > regions;
+  DofManager::FieldSupport region = { "mesh1", "Level0", {"region1"} };
   regions.emplace_back( region );
 
   dofManager.addField( fieldName, FieldLocation::Elem, numDofPerCell, regions );
@@ -164,7 +167,7 @@ TYPED_TEST_P( LAIHelperFunctionsTest, cellCenteredVectorPermutation )
   dofManager.reorderByRank();
 
   Vector cellCenteredVariable;
-  cellCenteredVariable.create( dofManager.numLocalDofs(), MPI_COMM_GEOSX );
+  cellCenteredVariable.create( dofManager.numLocalDofs(), MPI_COMM_GEOS );
   globalIndex const rankOffset = dofManager.rankOffset();
 
   arrayView1d< real64 > const cellCenteredVariableView = cellCenteredVariable.open();
@@ -198,15 +201,15 @@ REGISTER_TYPED_TEST_SUITE_P( LAIHelperFunctionsTest,
                              nodalVectorPermutation,
                              cellCenteredVectorPermutation );
 
-#ifdef GEOSX_USE_TRILINOS
+#ifdef GEOS_USE_TRILINOS
 INSTANTIATE_TYPED_TEST_SUITE_P( Trilinos, LAIHelperFunctionsTest, TrilinosInterface, );
 #endif
 
-#ifdef GEOSX_USE_HYPRE
+#ifdef GEOS_USE_HYPRE
 INSTANTIATE_TYPED_TEST_SUITE_P( Hypre, LAIHelperFunctionsTest, HypreInterface, );
 #endif
 
-#ifdef GEOSX_USE_PETSC
+#ifdef GEOS_USE_PETSC
 INSTANTIATE_TYPED_TEST_SUITE_P( Petsc, LAIHelperFunctionsTest, PetscInterface, );
 #endif
 
@@ -217,8 +220,8 @@ INSTANTIATE_TYPED_TEST_SUITE_P( Petsc, LAIHelperFunctionsTest, PetscInterface, )
 int main( int argc, char * * argv )
 {
   ::testing::InitGoogleTest( &argc, argv );
-  geosx::basicSetup( argc, argv );
+  geos::basicSetup( argc, argv );
   int const result = RUN_ALL_TESTS();
-  geosx::basicCleanup();
+  geos::basicCleanup();
   return result;
 }

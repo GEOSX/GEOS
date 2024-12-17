@@ -2,10 +2,11 @@
  * ------------------------------------------------------------------------------------------------------------
  * SPDX-License-Identifier: LGPL-2.1-only
  *
- * Copyright (c) 2018-2020 Lawrence Livermore National Security LLC
- * Copyright (c) 2018-2020 The Board of Trustees of the Leland Stanford Junior University
- * Copyright (c) 2018-2020 TotalEnergies
- * Copyright (c) 2019-     GEOSX Contributors
+ * Copyright (c) 2016-2024 Lawrence Livermore National Security LLC
+ * Copyright (c) 2018-2024 TotalEnergies
+ * Copyright (c) 2018-2024 The Board of Trustees of the Leland Stanford Junior University
+ * Copyright (c) 2023-2024 Chevron
+ * Copyright (c) 2019-     GEOS/GEOSX Contributors
  * All rights reserved
  *
  * See top level LICENSE, COPYRIGHT, CONTRIBUTORS, NOTICE, and ACKNOWLEDGEMENTS files for details.
@@ -16,15 +17,15 @@
  * @file PoromechanicsBase.hpp
  */
 
-#ifndef GEOSX_PHYSICSSOLVERS_MULTIPHYSICS_POROMECHANICSKERNELS_POROMECHANICSBASE_HPP_
-#define GEOSX_PHYSICSSOLVERS_MULTIPHYSICS_POROMECHANICSKERNELS_POROMECHANICSBASE_HPP_
+#ifndef GEOS_PHYSICSSOLVERS_MULTIPHYSICS_POROMECHANICSKERNELS_POROMECHANICSBASE_HPP_
+#define GEOS_PHYSICSSOLVERS_MULTIPHYSICS_POROMECHANICSKERNELS_POROMECHANICSBASE_HPP_
 
 #include "finiteElement/BilinearFormUtilities.hpp"
 #include "finiteElement/LinearFormUtilities.hpp"
 #include "finiteElement/kernelInterface/ImplicitKernelBase.hpp"
 #include "physicsSolvers/solidMechanics/SolidMechanicsFields.hpp"
 
-namespace geosx
+namespace geos
 {
 
 namespace poromechanicsKernels
@@ -32,7 +33,7 @@ namespace poromechanicsKernels
 
 /**
  * @brief Defines the kernel structure for solving quasi-static poromechanics.
- * @copydoc geosx::finiteElement::ImplicitKernelBase
+ * @copydoc geos::finiteElement::ImplicitKernelBase
  * @tparam NUM_NODES_PER_ELEM The number of nodes per element for the
  *                            @p SUBREGION_TYPE.
  * @tparam UNUSED An unused parameter since we are assuming that the test and
@@ -42,7 +43,7 @@ namespace poromechanicsKernels
  * Defines the KernelBase interface functions required for solving the
  * quasi-static poromechanics problem using one of the
  * "finite element kernel application" functions such as
- * geosx::finiteElement::RegionBasedKernelApplication.
+ * geos::finiteElement::RegionBasedKernelApplication.
  *
  */
 template< typename SUBREGION_TYPE,
@@ -78,7 +79,7 @@ public:
 
   /**
    * @brief Constructor
-   * @copydoc geosx::finiteElement::ImplicitKernelBase::ImplicitKernelBase
+   * @copydoc geos::finiteElement::ImplicitKernelBase::ImplicitKernelBase
    * @param gravityVector The gravity vector.
    */
   PoromechanicsBase( NodeManager const & nodeManager,
@@ -92,6 +93,7 @@ public:
                      globalIndex const rankOffset,
                      CRSMatrixView< real64, globalIndex const > const inputMatrix,
                      arrayView1d< real64 > const inputRhs,
+                     real64 const inputDt,
                      real64 const (&gravityVector)[3],
                      string const inputFlowDofKey,
                      string const fluidModelKey ):
@@ -105,7 +107,8 @@ public:
           inputDispDofNumber,
           rankOffset,
           inputMatrix,
-          inputRhs ),
+          inputRhs,
+          inputDt ),
     m_X( nodeManager.referencePosition() ),
     m_disp( nodeManager.getField< fields::solidMechanics::totalDisplacement >() ),
     m_uhat( nodeManager.getField< fields::solidMechanics::incrementalDisplacement >() ),
@@ -116,13 +119,13 @@ public:
     m_pressure_n( elementSubRegion.template getField< fields::flow::pressure_n >() ),
     m_pressure( elementSubRegion.template getField< fields::flow::pressure >() )
   {
-    GEOSX_UNUSED_VAR( fluidModelKey );
+    GEOS_UNUSED_VAR( fluidModelKey );
   }
 
   //*****************************************************************************
   /**
    * @class StackVariables
-   * @copydoc geosx::finiteElement::ImplicitKernelBase::StackVariables
+   * @copydoc geos::finiteElement::ImplicitKernelBase::StackVariables
    *
    * Adds a stack array for the displacement, incremental displacement, and the
    * constitutive stiffness.
@@ -134,7 +137,7 @@ public:
     static constexpr int numDispDofPerElem =  Base::StackVariables::maxNumRows;
 
     /// Constructor.
-    GEOSX_HOST_DEVICE
+    GEOS_HOST_DEVICE
     StackVariables():
       Base::StackVariables(),
             xLocal(),
@@ -164,6 +167,9 @@ public:
 
     // Storage for helper variables used in the quadrature point kernel
 
+    /// Strain increment
+    real64 strainIncrement[6]{};
+
     /// Total stress
     real64 totalStress[6]{};
     /// Derivative of total stress wrt displacement
@@ -180,8 +186,8 @@ public:
     /// Derivative of body force wrt pressure
     real64 dBodyForce_dPressure[3]{};
 
-    /// Delta temperature since the beginning of the simulation
-    real64 deltaTemperatureFromInit{}; // for stress computation
+    /// Temperature
+    real64 temperature{}; // for stress computation
     /// Delta temperature since last time step
     real64 deltaTemperatureFromLastStep{}; // for porosity update
 
@@ -202,14 +208,14 @@ public:
 
   /**
    * @brief Copy global values from primary field to a local stack array.
-   * @copydoc ::geosx::finiteElement::ImplicitKernelBase::setup
+   * @copydoc ::geos::finiteElement::ImplicitKernelBase::setup
    *
    * For the PoromechanicsBase implementation, global values from the displacement,
    * incremental displacement, and degree of freedom numbers are placed into
    * element local stack storage.
    */
-  GEOSX_HOST_DEVICE
-  GEOSX_FORCE_INLINE
+  GEOS_HOST_DEVICE
+  GEOS_FORCE_INLINE
   void setup( localIndex const k,
               StackVariables & stack ) const
   {
@@ -259,8 +265,8 @@ public:
    * @param[in] k Element index.
    * @return A parameter representative of the stiffness matrix dstress/dstrain
    */
-  GEOSX_HOST_DEVICE
-  GEOSX_FORCE_INLINE
+  GEOS_HOST_DEVICE
+  GEOS_FORCE_INLINE
   real64 computeStabilizationScaling( localIndex const k ) const
   {
     // TODO: generalize this to other constitutive models (currently we assume linear elasticity).
@@ -296,8 +302,9 @@ protected:
 
 };
 
+
 } // namespace poromechanicsKernels
 
-} // namespace geosx
+} // namespace geos
 
-#endif // GEOSX_PHYSICSSOLVERS_MULTIPHYSICS_POROMECHANICSKERNELS_POROMECHANICSBASE_HPP_
+#endif // GEOS_PHYSICSSOLVERS_MULTIPHYSICS_POROMECHANICSKERNELS_POROMECHANICSBASE_HPP_

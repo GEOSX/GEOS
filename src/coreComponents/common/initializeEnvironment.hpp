@@ -2,26 +2,30 @@
  * ------------------------------------------------------------------------------------------------------------
  * SPDX-License-Identifier: LGPL-2.1-only
  *
- * Copyright (c) 2018-2020 Lawrence Livermore National Security LLC
- * Copyright (c) 2018-2020 The Board of Trustees of the Leland Stanford Junior University
- * Copyright (c) 2018-2020 TotalEnergies
- * Copyright (c) 2019-     GEOSX Contributors
+ * Copyright (c) 2016-2024 Lawrence Livermore National Security LLC
+ * Copyright (c) 2018-2024 TotalEnergies
+ * Copyright (c) 2018-2024 The Board of Trustees of the Leland Stanford Junior University
+ * Copyright (c) 2023-2024 Chevron
+ * Copyright (c) 2019-     GEOS/GEOSX Contributors
  * All rights reserved
  *
  * See top level LICENSE, COPYRIGHT, CONTRIBUTORS, NOTICE, and ACKNOWLEDGEMENTS files for details.
  * ------------------------------------------------------------------------------------------------------------
  */
 
-#ifndef GEOSX_COMMON_INITIALIZEENVIRONMENT_HPP_
-#define GEOSX_COMMON_INITIALIZEENVIRONMENT_HPP_
+#ifndef GEOS_COMMON_INITIALIZEENVIRONMENT_HPP_
+#define GEOS_COMMON_INITIALIZEENVIRONMENT_HPP_
 
 // Source includes
 #include "DataTypes.hpp"
 #include "MpiWrapper.hpp"
 
 // TPL includes
-#ifdef GEOSX_USE_CALIPER
+#ifdef GEOS_USE_CALIPER
+
+#ifdef GEOS_USE_ADIAK
 #include <adiak.hpp>
+#endif
 
 //Forward declaration of cali::ConfigManager.
 namespace cali
@@ -30,7 +34,7 @@ class ConfigManager;
 }
 #endif
 
-namespace geosx
+namespace geos
 {
 
 /**
@@ -82,6 +86,9 @@ struct CommandLineOptions
 
   /// Trace host-device data migration.
   integer traceDataMigration = false;
+
+  /// Print memory usage in data repository
+  real64 printMemoryUsage = -1.0;
 };
 
 /**
@@ -140,7 +147,7 @@ void setupEnvironment( int argc, char * argv[] );
  */
 void cleanupEnvironment();
 
-#if defined( GEOSX_USE_CALIPER )
+#if defined( GEOS_USE_CALIPER )
 
 /**
  * @brief Setup Caliper and Adiak.
@@ -163,7 +170,7 @@ void setupCaliper( cali::ConfigManager & caliperManager,
 template< typename T >
 void pushStatsIntoAdiak( string const & name, T const value )
 {
-#if defined( GEOSX_USE_CALIPER ) && !defined(__APPLE__)
+#if defined( GEOS_USE_CALIPER ) && defined( GEOS_USE_ADIAK ) && !defined(__APPLE__)
   // Apple clang doesn't like adiak.
   T const total = MpiWrapper::sum( value );
   adiak::value( name + " sum", total );
@@ -171,11 +178,11 @@ void pushStatsIntoAdiak( string const & name, T const value )
   adiak::value( name + " min", MpiWrapper::min( value ) );
   adiak::value( name + " max", MpiWrapper::max( value ) );
 #else
-  GEOSX_UNUSED_VAR( name );
-  GEOSX_UNUSED_VAR( value );
+  GEOS_UNUSED_VAR( name );
+  GEOS_UNUSED_VAR( value );
 #endif
 }
 
-} // namespace geosx
+} // namespace geos
 
-#endif // GEOSX_COMMON_INITIALIZEENVIRONMENT_HPP_
+#endif // GEOS_COMMON_INITIALIZEENVIRONMENT_HPP_

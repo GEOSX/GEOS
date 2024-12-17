@@ -2,10 +2,11 @@
  * ------------------------------------------------------------------------------------------------------------
  * SPDX-License-Identifier: LGPL-2.1-only
  *
- * Copyright (c) 2018-2020 Lawrence Livermore National Security LLC
- * Copyright (c) 2018-2020 The Board of Trustees of the Leland Stanford Junior University
- * Copyright (c) 2018-2020 Total, S.A
- * Copyright (c) 2019-     GEOSX Contributors
+ * Copyright (c) 2016-2024 Lawrence Livermore National Security LLC
+ * Copyright (c) 2018-2024 TotalEnergies
+ * Copyright (c) 2018-2024 The Board of Trustees of the Leland Stanford Junior University
+ * Copyright (c) 2023-2024 Chevron
+ * Copyright (c) 2019-     GEOS/GEOSX Contributors
  * All rights reserved
  *
  * See top level LICENSE, COPYRIGHT, CONTRIBUTORS, NOTICE, and ACKNOWLEDGEMENTS files for details.
@@ -25,13 +26,13 @@
 static_assert( std::is_same< int64_t, SCOTCH_Num >::value,
                "Non-matching index types. Scotch must be configured with 64-bit indices." );
 
-#define GEOSX_SCOTCH_CHECK( call ) \
+#define GEOS_SCOTCH_CHECK( call ) \
   do { \
     auto const ierr = call; \
-    GEOSX_ERROR_IF_NE_MSG( ierr, 0, "Error in call to:\n" << #call ); \
+    GEOS_ERROR_IF_NE_MSG( ierr, 0, "Error in call to:\n" << #call ); \
   } while( false )
 
-namespace geosx
+namespace geos
 {
 namespace ptscotch
 {
@@ -50,7 +51,7 @@ partition( ArrayOfArraysView< int64_t const, int64_t > const & graph,
   }
 
   SCOTCH_Dgraph * const gr = SCOTCH_dgraphAlloc();
-  GEOSX_SCOTCH_CHECK( SCOTCH_dgraphInit( gr, comm ) );
+  GEOS_SCOTCH_CHECK( SCOTCH_dgraphInit( gr, comm ) );
 
   SCOTCH_Num const numEdges = graph.getOffsets()[numVerts];
 
@@ -58,28 +59,28 @@ partition( ArrayOfArraysView< int64_t const, int64_t > const & graph,
   SCOTCH_Num * const offsets = const_cast< SCOTCH_Num * >( graph.getOffsets() );
   SCOTCH_Num * const edges = const_cast< SCOTCH_Num * >( graph.getValues() );
 
-  GEOSX_SCOTCH_CHECK( SCOTCH_dgraphBuild( gr,          // graphptr
-                                          0,           // baseval
-                                          numVerts,    // vertlocnbr
-                                          numVerts,    // vertlocmax
-                                          offsets,     // vertloctab
-                                          offsets + 1, // vendloctab
-                                          nullptr,     // veloloctab
-                                          nullptr,     // vlblloctab
-                                          numEdges,    // edgelocnbr
-                                          numEdges,    // edgelocsiz
-                                          edges,       // edgeloctab
-                                          nullptr,     // edgegsttab
-                                          nullptr      // edloloctab,
-                                          ) );
+  GEOS_SCOTCH_CHECK( SCOTCH_dgraphBuild( gr,          // graphptr
+                                         0,            // baseval
+                                         numVerts,     // vertlocnbr
+                                         numVerts,     // vertlocmax
+                                         offsets,      // vertloctab
+                                         offsets + 1,  // vendloctab
+                                         nullptr,      // veloloctab
+                                         nullptr,      // vlblloctab
+                                         numEdges,     // edgelocnbr
+                                         numEdges,     // edgelocsiz
+                                         edges,        // edgeloctab
+                                         nullptr,      // edgegsttab
+                                         nullptr       // edloloctab,
+                                         ) );
 
   // TODO: maybe remove?
-  GEOSX_SCOTCH_CHECK( SCOTCH_dgraphCheck( gr ) );
+  GEOS_SCOTCH_CHECK( SCOTCH_dgraphCheck( gr ) );
 
   SCOTCH_Strat * const strategy = SCOTCH_stratAlloc();
-  GEOSX_SCOTCH_CHECK( SCOTCH_stratInit( strategy ) );
+  GEOS_SCOTCH_CHECK( SCOTCH_stratInit( strategy ) );
 
-  GEOSX_SCOTCH_CHECK( SCOTCH_dgraphPart( gr, numParts, strategy, part.data() ) );
+  GEOS_SCOTCH_CHECK( SCOTCH_dgraphPart( gr, numParts, strategy, part.data() ) );
 
   SCOTCH_stratExit( strategy );
   SCOTCH_dgraphExit( gr );
@@ -88,4 +89,4 @@ partition( ArrayOfArraysView< int64_t const, int64_t > const & graph,
 }
 
 } // namespace ptscotch
-} // namespace geosx
+} // namespace geos

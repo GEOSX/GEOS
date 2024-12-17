@@ -1,0 +1,2 @@
+DensityFun WaterDensity 
+ViscosityFun PhillipsBrineViscosity 1.0

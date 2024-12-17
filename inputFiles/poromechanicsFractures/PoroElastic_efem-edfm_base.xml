@@ -1,0 +1,217 @@
+<?xml version="1.0" ?>
+
+<Problem>
+  <Solvers
+    gravityVector="{ 0.0, 0.0, 0.0 }">
+    <SinglePhasePoromechanicsEmbeddedFractures
+      name="poroSolver"
+      targetRegions="{ Domain, Fracture }"
+      initialDt="1e-3"
+      flowSolverName="flowSolver"
+      solidSolverName="fractureMechSolver"
+      logLevel="1">
+      <NonlinearSolverParameters
+        newtonTol="1.0e-5"
+        newtonMaxIter="10"
+        maxTimeStepCuts="4"/>
+      <LinearSolverParameters
+        directParallel="0"
+        solverType="direct"/>
+    </SinglePhasePoromechanicsEmbeddedFractures>
+
+    <SolidMechanicsEmbeddedFractures
+      name="fractureMechSolver"
+      targetRegions="{ Domain, Fracture }"
+      timeIntegrationOption="QuasiStatic"
+      discretization="FE1"
+      contactPenaltyStiffness="4.0e9"/>
+
+    <SinglePhaseFVM
+      name="flowSolver"
+      discretization="singlePhaseTPFA"
+      targetRegions="{ Domain, Fracture }">
+      <NonlinearSolverParameters
+        normType="L2"/>
+    </SinglePhaseFVM>      
+      
+
+    <EmbeddedSurfaceGenerator
+      name="SurfaceGenerator"      
+      targetRegions="{ Domain, Fracture }"
+      discretization="FE1"    
+      fractureRegion="Fracture"
+      targetObjects="{ FracturePlane }"
+      logLevel="1"
+      mpiCommOrder="1"/>
+  </Solvers>
+
+  <NumericalMethods>
+    <FiniteElements>
+      <FiniteElementSpace
+        name="FE1"
+        order="1"/>
+    </FiniteElements>
+
+    <FiniteVolume>
+      <TwoPointFluxApproximation
+        name="singlePhaseTPFA"/>
+    </FiniteVolume>
+  </NumericalMethods>
+
+  <ElementRegions>
+    <CellElementRegion
+      name="Domain"
+      cellBlocks="{ * }"
+      materialList="{ porousRock, water }"/>
+
+    <SurfaceElementRegion
+      name="Fracture"
+      subRegionType="embeddedElement"
+      materialList="{ water, fractureFilling, fractureContact, hApertureModel }"
+      defaultAperture="5.e-3"/>
+  </ElementRegions>
+
+  <Constitutive>
+    <PorousElasticIsotropic
+      name="porousRock"
+      solidModelName="rock"
+      porosityModelName="rockPorosity"
+      permeabilityModelName="rockPerm"/>
+
+    <ElasticIsotropic
+      name="rock"
+      defaultDensity="1"
+      defaultYoungModulus="10.0e9"
+      defaultPoissonRatio="0.2"/>
+
+    <ConstantPermeability
+      name="rockPerm"
+      permeabilityComponents="{ 2.0e-15, 1.0e-15, 1.0e-20 }"/>
+
+    <CompressibleSinglePhaseFluid
+      name="water"
+      defaultDensity="1000"
+      defaultViscosity="1.0e-3"
+      referencePressure="1e6"
+      compressibility="5.0e-9"
+      referenceViscosity="1e-3"
+      viscosibility="0.0"/>
+
+    <BiotPorosity
+      name="rockPorosity"
+      defaultGrainBulkModulus="1e27"
+      defaultReferencePorosity="0.2"/>
+
+    <CompressibleSolidParallelPlatesPermeability
+      name="fractureFilling"
+      solidModelName="nullSolid"
+      porosityModelName="fracturePorosity"
+      permeabilityModelName="fracturePerm"/>
+
+    <NullModel
+      name="nullSolid"/>
+
+    <PressurePorosity
+      name="fracturePorosity"
+      defaultReferencePorosity="1.00"
+      referencePressure="0.0"
+      compressibility="0.0"/>
+
+    <ParallelPlatesPermeability
+      name="fracturePerm"/>
+
+    <FrictionlessContact
+      name="fractureContact"/> 
+
+    <HydraulicApertureTable
+      name="hApertureModel"
+      apertureTableName="apertureTable"/>       
+  </Constitutive>
+
+  
+
+  <FieldSpecifications>
+
+    <FieldSpecification
+      name="fracPorosity"
+      initialCondition="1"
+      setNames="{ all }"
+      objectPath="ElementRegions/Fracture"
+      fieldName="fracturePorosity_porosity"
+      scale="1.00"/>
+
+    <FieldSpecification
+      name="initialPressure"
+      initialCondition="1"
+      setNames="{ all }"
+      objectPath="ElementRegions/Domain/cb1"
+      fieldName="pressure"
+      scale="0.0e6"/>
+
+    <FieldSpecification
+      name="initialPressureFracture"
+      initialCondition="1"
+      setNames="{ all }"
+      objectPath="ElementRegions/Fracture"
+      fieldName="pressure"
+      scale="0.0e6"/>
+
+    <FieldSpecification
+      name="xnegconstraint"
+      objectPath="nodeManager"
+      fieldName="totalDisplacement"
+      component="0"
+      scale="0.0"
+      setNames="{ xneg, xpos, yneg }"/>
+
+    <FieldSpecification
+      name="yposconstraint"
+      objectPath="nodeManager"
+      fieldName="totalDisplacement"
+      component="1"
+      scale="0.0"
+      setNames="{ yneg }"/>
+
+    <FieldSpecification
+      name="zconstraint"
+      objectPath="nodeManager"
+      fieldName="totalDisplacement"
+      component="2"
+      scale="0.0"
+      setNames="{ zneg, zpos }"/>
+
+    <FieldSpecification
+      name="topPressure"
+      objectPath="faceManager"
+      fieldName="pressure"
+      scale="0.0"
+      setNames="{ ypos }"/>
+
+    <Traction
+      name="normalTraction"
+      objectPath="faceManager"
+      tractionType="normal"
+      scale="-20.0e6"      
+      setNames="{ ypos }"/>
+  </FieldSpecifications>
+
+  <Functions>
+    <TableFunction
+      name="apertureTable"
+      coordinates="{ -1.0e-3, 0.0 }"
+      values="{ 4.01e-3, 5.0e-3 }"/>
+  </Functions>
+
+  <Tasks>
+    <PackCollection
+      name="pressureCollection"
+      objectPath="ElementRegions/Domain/cb1"
+      fieldName="pressure"/>
+
+    <PackCollection
+      name="apertureCollection"
+      objectPath="ElementRegions/Fracture/FractureSubRegion"
+      fieldName="hydraulicAperture"/> 
+  </Tasks>
+  
+</Problem>

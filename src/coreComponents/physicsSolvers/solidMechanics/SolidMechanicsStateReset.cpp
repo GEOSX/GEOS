@@ -2,10 +2,11 @@
  * ------------------------------------------------------------------------------------------------------------
  * SPDX-License-Identifier: LGPL-2.1-only
  *
- * Copyright (c) 2018-2020 Lawrence Livermore National Security LLC
- * Copyright (c) 2018-2020 The Board of Trustees of the Leland Stanford Junior University
- * Copyright (c) 2018-2020 TotalEnergies
- * Copyright (c) 2019-     GEOSX Contributors
+ * Copyright (c) 2016-2024 Lawrence Livermore National Security LLC
+ * Copyright (c) 2018-2024 TotalEnergies
+ * Copyright (c) 2018-2024 The Board of Trustees of the Leland Stanford Junior University
+ * Copyright (c) 2023-2024 Chevron
+ * Copyright (c) 2019-     GEOS/GEOSX Contributors
  * All rights reserved
  *
  * See top level LICENSE, COPYRIGHT, CONTRIBUTORS, NOTICE, and ACKNOWLEDGEMENTS files for details.
@@ -20,9 +21,10 @@
 
 #include "physicsSolvers/PhysicsSolverManager.hpp"
 #include "physicsSolvers/solidMechanics/SolidMechanicsLagrangianFEM.hpp"
-#include "mainInterface/ProblemManager.hpp"
+#include "physicsSolvers/LogLevelsInfo.hpp"
+#include "mesh/DomainPartition.hpp"
 
-namespace geosx
+namespace geos
 {
 
 using namespace constitutive;
@@ -37,6 +39,7 @@ SolidMechanicsStateReset::SolidMechanicsStateReset( const string & name,
   enableLogLevelInput();
 
   registerWrapper( viewKeyStruct::solidSolverNameString(), &m_solidSolverName ).
+    setRTTypeName( rtTypes::CustomTypes::groupNameRef ).
     setInputFlag( InputFlags::REQUIRED ).
     setDescription( "Name of the solid mechanics solver" );
 
@@ -49,29 +52,31 @@ SolidMechanicsStateReset::SolidMechanicsStateReset( const string & name,
     setApplyDefaultValue( false ).
     setInputFlag( InputFlags::OPTIONAL ).
     setDescription( "Flag to enable/disable inelastic behavior" );
+
+  addLogLevel< logInfo::Initialization >();
 }
 
 SolidMechanicsStateReset::~SolidMechanicsStateReset()
 {}
 
-void SolidMechanicsStateReset::postProcessInput()
+void SolidMechanicsStateReset::postInputInitialization()
 {
-  ProblemManager & problemManager = this->getGroupByPath< ProblemManager >( "/Problem" );
-  PhysicsSolverManager & physicsSolverManager = problemManager.getPhysicsSolverManager();
+  Group & problemManager = this->getGroupByPath( "/Problem" );
+  Group & physicsSolverManager = problemManager.getGroup( "Solvers" );
 
-  GEOSX_THROW_IF( !physicsSolverManager.hasGroup( m_solidSolverName ),
-                  GEOSX_FMT( "Task {}: physics solver named {} not found",
-                             getName(), m_solidSolverName ),
-                  InputError );
+  GEOS_THROW_IF( !physicsSolverManager.hasGroup( m_solidSolverName ),
+                 GEOS_FMT( "Task {}: physics solver named {} not found",
+                           getDataContext(), m_solidSolverName ),
+                 InputError );
 
   m_solidSolver = &physicsSolverManager.getGroup< SolidMechanicsLagrangianFEM >( m_solidSolverName );
 }
 
 bool SolidMechanicsStateReset::execute( real64 const time_n,
-                                        real64 const GEOSX_UNUSED_PARAM( dt ),
-                                        integer const GEOSX_UNUSED_PARAM( cycleNumber ),
-                                        integer const GEOSX_UNUSED_PARAM( eventCounter ),
-                                        real64 const GEOSX_UNUSED_PARAM( eventProgress ),
+                                        real64 const GEOS_UNUSED_PARAM( dt ),
+                                        integer const GEOS_UNUSED_PARAM( cycleNumber ),
+                                        integer const GEOS_UNUSED_PARAM( eventCounter ),
+                                        real64 const GEOS_UNUSED_PARAM( eventProgress ),
                                         DomainPartition & domain )
 {
   m_solidSolver->forDiscretizationOnMeshTargets( domain.getMeshBodies(), [&] ( string const &,
@@ -81,7 +86,8 @@ bool SolidMechanicsStateReset::execute( real64 const time_n,
     // Option 1: zero out velocity, incremental displacement, and displacement
     if( m_resetDisplacements )
     {
-      GEOSX_LOG_LEVEL_RANK_0( 1, GEOSX_FMT( "Task `{}`: at time {}s, physics solver `{}` is resetting total displacement and velocity to zero",
+      GEOS_LOG_LEVEL_INFO_RANK_0( logInfo::Initialization,
+                                  GEOS_FMT( "Task `{}`: at time {}s, physics solver `{}` is resetting total displacement and velocity to zero",
                                             getName(), time_n, m_solidSolverName ) );
 
       NodeManager & nodeManager = mesh.getNodeManager();
@@ -103,10 +109,10 @@ bool SolidMechanicsStateReset::execute( real64 const time_n,
       string const & solidMaterialName = subRegion.getReference< string >( SolidMechanicsLagrangianFEM::viewKeyStruct::solidMaterialNamesString() );
       Group & constitutiveModels = subRegion.getGroup( ElementSubRegionBase::groupKeyStruct::constitutiveModelsString() );
 
-      GEOSX_LOG_LEVEL_RANK_0( 2, GEOSX_FMT( "Task `{}`: at time {}s, solid model `{}` is setting inelastic behavior to `{}` on subRegion `{}`. ",
-                                            getName(), time_n, solidMaterialName,
-                                            m_disableInelasticity ? "OFF" : "ON",
-                                            subRegion.getName() ) );
+      GEOS_LOG_LEVEL_INFO_RANK_0( logInfo::Initialization, GEOS_FMT( "Task `{}`: at time {}s, solid model `{}` is setting inelastic behavior to `{}` on subRegion `{}`. ",
+                                                                     getName(), time_n, solidMaterialName,
+                                                                     m_disableInelasticity ? "OFF" : "ON",
+                                                                     subRegion.getName() ) );
 
       SolidBase & constitutiveRelation = constitutiveModels.getGroup< SolidBase >( solidMaterialName );
       constitutiveRelation.disableInelasticity( m_disableInelasticity );
@@ -120,4 +126,4 @@ REGISTER_CATALOG_ENTRY( TaskBase,
                         SolidMechanicsStateReset,
                         string const &, dataRepository::Group * const )
 
-} /* namespace geosx */
+} /* namespace geos */

@@ -2,10 +2,11 @@
  * ------------------------------------------------------------------------------------------------------------
  * SPDX-License-Identifier: LGPL-2.1-only
  *
- * Copyright (c) 2018-2020 Lawrence Livermore National Security LLC
- * Copyright (c) 2018-2020 The Board of Trustees of the Leland Stanford Junior University
- * Copyright (c) 2018-2020 TotalEnergies
- * Copyright (c) 2019-     GEOSX Contributors
+ * Copyright (c) 2016-2024 Lawrence Livermore National Security LLC
+ * Copyright (c) 2018-2024 TotalEnergies
+ * Copyright (c) 2018-2024 The Board of Trustees of the Leland Stanford Junior University
+ * Copyright (c) 2023-2024 Chevron
+ * Copyright (c) 2019-     GEOS/GEOSX Contributors
  * All rights reserved
  *
  * See top level LICENSE, COPYRIGHT, CONTRIBUTORS, NOTICE, and ACKNOWLEDGEMENTS files for details.
@@ -16,18 +17,16 @@
  * @file FieldSpecificationManager.hpp
  */
 
-#ifndef GEOSX_FIELDSPECIFICATION_FIELDSPECIFICATIONMANAGER_HPP_
-#define GEOSX_FIELDSPECIFICATION_FIELDSPECIFICATIONMANAGER_HPP_
+#ifndef GEOS_FIELDSPECIFICATION_FIELDSPECIFICATIONMANAGER_HPP_
+#define GEOS_FIELDSPECIFICATION_FIELDSPECIFICATIONMANAGER_HPP_
 
 #include "FieldSpecificationBase.hpp"
 
-#include "codingUtilities/StringUtilities.hpp"
+#include "common/format/StringUtilities.hpp"
 #include "common/DataTypes.hpp"
 #include "common/TimingMacros.hpp"
-#include "mesh/ObjectManagerBase.hpp"
-#include "mesh/DomainPartition.hpp"
 
-namespace geosx
+namespace geos
 {
 namespace dataRepository
 {
@@ -99,7 +98,7 @@ public:
                         MeshLevel & mesh,
                         string const & fieldName ) const
   {
-    GEOSX_MARK_FUNCTION;
+    GEOS_MARK_FUNCTION;
 
     applyFieldValue< POLICY >( time, mesh, fieldName,
                                [&]( FieldSpecificationBase const &,
@@ -179,6 +178,12 @@ public:
    */
   void applyInitialConditions( MeshLevel & mesh ) const;
 
+  /**
+   * @brief function to validate the application of boundary conditions
+   * @param mesh the MeshLevel object
+   */
+  void validateBoundaryConditions( MeshLevel & mesh ) const;
+
 
   /**
    * @brief This function is the main driver for the field applications
@@ -207,7 +212,7 @@ public:
               string const & fieldName,
               LAMBDA && lambda ) const
   {
-    GEOSX_MARK_FUNCTION;
+    GEOS_MARK_FUNCTION;
 
     string const meshBodyName = mesh.getParent().getParent().getName();
     string const meshLevelName = mesh.getName();
@@ -215,8 +220,8 @@ public:
     // loop over all FieldSpecificationBase objects
     this->forSubGroups< BCTYPE >( [&] ( BCTYPE const & fs )
     {
-      int const isInitialCondition = fs.initialCondition();
-      if( ( isInitialCondition && fieldName=="") ||
+      integer const isInitialCondition = fs.initialCondition();
+      if( ( isInitialCondition && fieldName=="") || // this only use case for this line is in the unit test for field specification
           ( !isInitialCondition && time >= fs.getStartTime() && time < fs.getEndTime() && fieldName == fs.getFieldName() ) )
       {
         fs.template apply< OBJECT_TYPE, BCTYPE, LAMBDA >( mesh, std::forward< LAMBDA >( lambda ) );
@@ -237,7 +242,7 @@ FieldSpecificationManager::
                    string const & fieldName,
                    LAMBDA && lambda ) const
 {
-  GEOSX_MARK_FUNCTION;
+  GEOS_MARK_FUNCTION;
 
   apply( time, mesh, fieldName,
          [&]( FieldSpecificationBase const & fs,
@@ -260,7 +265,7 @@ FieldSpecificationManager::
                    PRELAMBDA && preLambda,
                    POSTLAMBDA && postLambda ) const
 {
-  GEOSX_MARK_FUNCTION;
+  GEOS_MARK_FUNCTION;
 
   apply( time, mesh, fieldName,
          [&]( FieldSpecificationBase const & fs,
@@ -275,6 +280,6 @@ FieldSpecificationManager::
   } );
 }
 
-} /* namespace geosx */
+} /* namespace geos */
 
-#endif /* GEOSX_FIELDSPECIFICATION_FIELDSPECIFICATIONMANAGER_HPP_ */
+#endif /* GEOS_FIELDSPECIFICATION_FIELDSPECIFICATIONMANAGER_HPP_ */

@@ -8,12 +8,12 @@ Toughness-Storage-Dominated Penny Shaped Hydraulic Fracture
 
 **Context**
 
-In this example, we simulate the growth of a radial hydraulic fracture in toughness-storage-dominated regime, a classic benchmark in hydraulic fracturing `(Settgast et al., 2016)  <https://onlinelibrary.wiley.com/doi/full/10.1002/nag.2557>`__. The developed fracture is characterized as a planar fracture with an elliptical cross-section perpendicular to the fracture plane and a circular fracture tip. This problem is solved using the hydrofracture solver in GEOSX. The modeling predictions on the temporal evolutions of the fracture characteristics (length, aperture, and pressure) are verified against the analytical solutions `(Savitski and Detournay, 2002)  <https://www.sciencedirect.com/science/article/pii/S0020768302004924>`__. 
+In this example, we simulate the growth of a radial hydraulic fracture in toughness-storage-dominated regime, a classic benchmark in hydraulic fracturing `(Settgast et al., 2016)  <https://onlinelibrary.wiley.com/doi/full/10.1002/nag.2557>`__. The developed fracture is characterized as a planar fracture with an elliptical cross-section perpendicular to the fracture plane and a circular fracture tip. This problem is solved using the hydrofracture solver in GEOS. The modeling predictions on the temporal evolutions of the fracture characteristics (length, aperture, and pressure) are verified against the analytical solutions `(Savitski and Detournay, 2002)  <https://www.sciencedirect.com/science/article/pii/S0020768302004924>`__. 
 
 
 **Input file**
 
-This example uses no external input files. Everything we need is contained within two GEOSX input files:
+This example uses no external input files. Everything we need is contained within two GEOS input files:
 
 .. code-block:: console
 
@@ -39,11 +39,11 @@ Python scripts for post-processing and visualizing the simulation results are al
 Description of the case
 ------------------------------------------------------------------
 
-We model a radial fracture emerging from a point source and forming a perfect circular shape in an infinite, isotropic, and homogenous elastic domain. As with the KGD problem, we simplify the model to a radial fracture in a toughness-storage-dominated propagation regime. For toughness-dominated fractures, more work is spent on splitting the intact rock than on moving the fracturing fluid. Storage-dominated propagation occurs if most of the fracturing fluid is contained within the propagating fracture. In this analysis, incompressible fluid with ultra-low viscosity (:math:`0.001 cp`) and medium rock toughness (:math:`3.0 MPa { \sqrt{m} }`) are specified. In addition, an impermeable fracture surface is assumed to eliminate the effect of fluid leak-off. This way, the GEOSX simulations represent cases within the valid range of the toughness-storage-dominated assumptions. 
+We model a radial fracture emerging from a point source and forming a perfect circular shape in an infinite, isotropic, and homogenous elastic domain. As with the KGD problem, we simplify the model to a radial fracture in a toughness-storage-dominated propagation regime. For toughness-dominated fractures, more work is spent on splitting the intact rock than on moving the fracturing fluid. Storage-dominated propagation occurs if most of the fracturing fluid is contained within the propagating fracture. In this analysis, incompressible fluid with ultra-low viscosity (:math:`0.001 cp`) and medium rock toughness (:math:`3.0 MPa { \sqrt{m} }`) are specified. In addition, an impermeable fracture surface is assumed to eliminate the effect of fluid leak-off. This way, the GEOS simulations represent cases within the valid range of the toughness-storage-dominated assumptions. 
 
 In this model, the injected fluid within the fracture follows the lubrication equation resulting from mass conservation and Poiseuille's law. The fracture propagates by creating new surfaces if the stress intensity factor exceeds the local rock toughness :math:`K_{IC}`. By symmetry, the simulation is reduced to a quarter-scale to save computational cost. For verification purposes, a plane strain deformation is considered in the numerical model. 
 
-In this example, we set up and solve a hydraulic fracture model to obtain the temporal solutions of the fracture radius :math:`R`, the net pressure :math:`p_0` and the fracture aperture :math:`w_0` at the injection point for the penny-shaped fracture developed in this toughness-storage-dominated regime. The numerical predictions from GEOSX are then compared with the corresponding asymptotic solutions `(Savitski and Detournay, 2002)  <https://www.sciencedirect.com/science/article/pii/S0020768302004924>`__:
+In this example, we set up and solve a hydraulic fracture model to obtain the temporal solutions of the fracture radius :math:`R`, the net pressure :math:`p_0` and the fracture aperture :math:`w_0` at the injection point for the penny-shaped fracture developed in this toughness-storage-dominated regime. The numerical predictions from GEOS are then compared with the corresponding asymptotic solutions `(Savitski and Detournay, 2002)  <https://www.sciencedirect.com/science/article/pii/S0020768302004924>`__:
 
 .. math:: R(t) = 0.8546 (\frac{ E_p^2 Q_0^2 t^2 }{ K_p^2 })^{ 1/5 }
 
@@ -107,7 +107,7 @@ The fracture plane is defined by a nodeset occupying a small region within the c
 Solid mechanics solver
 ------------------------
 
-GEOSX is a multi-physics platform. Different combinations of
+GEOS is a multi-physics platform. Different combinations of
 physics solvers available in the code can be applied
 in different regions of the domain and be functional at different stages of the simulation.
 The ``Solvers`` tag in the XML file is used to list and parameterize these solvers.
@@ -181,7 +181,7 @@ In this example, ``pressureCollection``, ``apertureCollection``, ``hydraulicAper
     :end-before: <!-- SPHINX_TASKS_END -->
 
 These tasks are triggered using the ``Event`` manager with a ``PeriodicEvent`` defined for the recurring tasks. 
-GEOSX writes one file named after the string defined in the ``filename`` keyword and formatted as a HDF5 file (``pennyShapedToughnessDominated_output.hdf5``). This TimeHistory file contains the collected time history information from specified time history collector.
+GEOS writes one file named after the string defined in the ``filename`` keyword and formatted as a HDF5 file (``pennyShapedToughnessDominated_output.hdf5``). This TimeHistory file contains the collected time history information from specified time history collector.
 This file includes datasets for the simulation time, fluid pressure, element aperture, hydraulic aperture and element area for the propagating hydraulic fracture.
 A Python script is prepared to read and query any specified subset of the time history data for verification and visualization. 
 
@@ -258,16 +258,16 @@ the HDF5 output is postprocessed and temporal evolution of fracture characterisc
            8  6.07e+05 0.0006163     13.73
           10  6.32e+05 0.0006827     14.45
 
-Note: GEOSX python tools ``geosx_xml_tools`` should be installed to run the query script (See :ref:`PythonToolsSetup` for details). 
+Note: GEOS python tools ``geosx_xml_tools`` should be installed to run the query script (See `Python Tools Setup <https://geosx-geosx.readthedocs-hosted.com/projects/geosx-geospythonpackages/en/latest/>`_ for details). 
  
-Next, the figure below compares the asymptotic solutions (curves) and the GEOSX simulation results (markers) for this analysis, which is generated using the visualization script: 
+Next, the figure below compares the asymptotic solutions (curves) and the GEOS simulation results (markers) for this analysis, which is generated using the visualization script: 
 
 .. code-block:: console
 
    python ./pennyShapedToughnessDominatedFigure.py
 
 
-The time history plots of fracture radius, fracture aperture and fluid pressure at the point source match the asymptotic solutions, confirming the accuracy of GEOSX simulations. 
+The time history plots of fracture radius, fracture aperture and fluid pressure at the point source match the asymptotic solutions, confirming the accuracy of GEOS simulations. 
 
 .. plot:: docs/sphinx/advancedExamples/validationStudies/hydraulicFracture/pennyFracToughnessDominated/pennyShapedToughnessDominatedFigure.py
 
@@ -279,4 +279,4 @@ To go further
 
 **Feedback on this example**
 
-For any feedback on this example, please submit a `GitHub issue on the project's GitHub page <https://github.com/GEOSX/GEOSX/issues>`_.
+For any feedback on this example, please submit a `GitHub issue on the project's GitHub page <https://github.com/GEOS-DEV/GEOS/issues>`_.

@@ -7,7 +7,7 @@ Tutorial 4: Boundary Conditions and Time-Dependent Functions
 **Context**
 
 In this tutorial, we use a small strain linear elastic based solid mechanics solver
-(see :ref:`SolidMechanicsLagrangianFEM`) from GEOSX to solve for the bending problem of
+(see :ref:`SolidMechanicsLagrangianFEM`) from GEOS to solve for the bending problem of
 a three-dimensional cantilever beam. The beam is fixed at one end, and subjects to a traction force pointing to the y-positive direction on the other end. The beam is deformed in the x-y plane.
 
 **Objectives**
@@ -22,7 +22,7 @@ At the end of this tutorial, you will know:
 **Input file**
 
 This tutorial uses no external input files and everything required is
-contained within a single GEOSX input file.
+contained within a single GEOS input file.
 The xml input file for this test case is located at:
 
 .. code-block:: console
@@ -82,7 +82,7 @@ The computational domain is discretized by ``C3D8`` elements with the first orde
 functions at each direction in the parent domain. The 2 x 2 x 2 Gauss quadrature rule is adopted to be
 compatible with the first order interpolation functions.
 
-.. literalinclude:: ../../../../../inputFiles/solidMechanics/beamBending_base.xml
+.. literalinclude:: ../../../../../inputFiles/solidMechanics/beamBending_smoke.xml
   :language: xml
   :start-after: <!-- SPHINX_FEDiscretization -->
   :end-before:  <!-- SPHINX_FEDiscretizationEnd -->
@@ -159,7 +159,7 @@ To go further
 **Feedback on this tutorial**
 
 This concludes the solid mechanics for small-strain linear elasticity tutorial.
-For any feedback on this tutorial, please submit a `GitHub issue on the project's GitHub page <https://github.com/GEOSX/GEOSX/issues>`_.
+For any feedback on this tutorial, please submit a `GitHub issue on the project's GitHub page <https://github.com/GEOS-DEV/GEOS/issues>`_.
 
 
 **For more details**

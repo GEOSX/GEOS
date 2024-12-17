@@ -2,10 +2,11 @@
  * ------------------------------------------------------------------------------------------------------------
  * SPDX-License-Identifier: LGPL-2.1-only
  *
- * Copyright (c) 2018-2020 Lawrence Livermore National Security LLC
- * Copyright (c) 2018-2020 The Board of Trustees of the Leland Stanford Junior University
- * Copyright (c) 2018-2020 TotalEnergies
- * Copyright (c) 2019-     GEOSX Contributors
+ * Copyright (c) 2016-2024 Lawrence Livermore National Security LLC
+ * Copyright (c) 2018-2024 TotalEnergies
+ * Copyright (c) 2018-2024 The Board of Trustees of the Leland Stanford Junior University
+ * Copyright (c) 2023-2024 Chevron
+ * Copyright (c) 2019-     GEOS/GEOSX Contributors
  * All rights reserved
  *
  * See top level LICENSE, COPYRIGHT, CONTRIBUTORS, NOTICE, and ACKNOWLEDGEMENTS files for details.
@@ -14,7 +15,7 @@
 
 // Source includes
 #include "codingUtilities/UnitTestUtilities.hpp"
-#include "common/Logger.hpp"
+#include "common/logger/Logger.hpp"
 #include "finiteVolume/mimeticInnerProducts/MimeticInnerProductBase.hpp"
 #include "finiteVolume/mimeticInnerProducts/TPFAInnerProduct.hpp"
 #include "finiteVolume/mimeticInnerProducts/QuasiTPFAInnerProduct.hpp"
@@ -27,10 +28,10 @@
 // TPL includes
 #include <gtest/gtest.h>
 
-using namespace geosx;
-using namespace geosx::mimeticInnerProduct;
-using namespace geosx::computationalGeometry;
-using namespace geosx::testing;
+using namespace geos;
+using namespace geos::mimeticInnerProduct;
+using namespace geos::computationalGeometry;
+using namespace geos::testing;
 
 struct InnerProductType
 {
@@ -64,8 +65,8 @@ void computeVolumeAndCenter( array2d< real64, nodes::REFERENCE_POSITION_PERM > c
 {
   localIndex const numNodes = toNodes.size();
 
-  GEOSX_ERROR_IF( numNodes != 8 && numNodes != 4,
-                  "This number of nodes is not supported in the test yet" );
+  GEOS_ERROR_IF( numNodes != 8 && numNodes != 4,
+                 "This number of nodes is not supported in the test yet" );
 
   LvArray::tensorOps::fill< 3 >( elemCenter, 0.0 );
 
@@ -912,11 +913,11 @@ int main( int argc, char * * argv )
 {
   ::testing::InitGoogleTest( &argc, argv );
 
-  geosx::basicSetup( argc, argv );
+  geos::basicSetup( argc, argv );
 
   int const result = RUN_ALL_TESTS();
 
-  geosx::basicCleanup();
+  geos::basicCleanup();
 
   return result;
 }

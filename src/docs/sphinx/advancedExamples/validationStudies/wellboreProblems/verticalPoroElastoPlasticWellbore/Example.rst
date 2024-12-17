@@ -8,7 +8,7 @@ Vertical PoroElasto-Plastic Wellbore Problem
 
 **Context**
 
-The main objective of this example is to demonstrate how to use the internal wellbore mesh generator and poromechanical solvers in GEOSX to tackle wellbore problems in porous media. In this example, a poroplastic model is applied to find the solution of rock deformation within the vicinity of a vertical wellbore, considering elastoplastic deformation, fluid diffusion and poromechanical coupling effect. To do so, a single phase flow solver is fully coupled with a Lagrangian mechanics solver and the Extended Drucker-Prager model (see :ref:`DruckerPragerExtended`) is chosen as the material model for the solid domain. We first solve this problem with a poroelastic model and verify the modeling results with the corresponding analytical solutions. Then, the verified case is modified to test a poroplastic version, whose results are compared with the ones obtained from the poroelastic case to highlight the impact of plasticity in this specific problem.
+The main objective of this example is to demonstrate how to use the internal wellbore mesh generator and poromechanical solvers in GEOS to tackle wellbore problems in porous media. In this example, a poroplastic model is applied to find the solution of rock deformation within the vicinity of a vertical wellbore, considering elastoplastic deformation, fluid diffusion and poromechanical coupling effect. To do so, a single phase flow solver is fully coupled with a Lagrangian mechanics solver and the Extended Drucker-Prager model (see :ref:`DruckerPragerExtended`) is chosen as the material model for the solid domain. We first solve this problem with a poroelastic model and verify the modeling results with the corresponding analytical solutions. Then, the verified case is modified to test a poroplastic version, whose results are compared with the ones obtained from the poroelastic case to highlight the impact of plasticity in this specific problem.
  
 
 **Objectives**
@@ -17,13 +17,13 @@ At the end of this example you will know:
 
   - how to construct meshes for wellbore problems with the internal wellbore mesh generator,
   - how to specify initial and boundary conditions, such as reservoir properties, in-situ stresses, mixed loading (mechanical and fluid) at wellbore wall and far-field constraints,
-  - how to use multiple solvers in GEOSX for predicting poroplastic deformations in the near wellbore region.
+  - how to use multiple solvers in GEOS for predicting poroplastic deformations in the near wellbore region.
 
 
 **Input file**
 
 This example uses no external input files and everything required is
-contained within a single GEOSX input file. 
+contained within a single GEOS input file. 
 
 The xml input files for the test case with poroelasticity are located at:
 
@@ -96,7 +96,7 @@ to conform with the wellbore geometry. This mesh is defined as a cell block with
 Solid mechanics solver
 --------------------------
 
-GEOSX is a multi-physics platform. Different combinations of
+GEOS is a multi-physics platform. Different combinations of
 physics solvers available in the code can be applied
 in different regions of the domain and be functional at different stages of the simulation.
 The ``Solvers`` tag in the XML file is used to list and parameterize these solvers.
@@ -105,8 +105,8 @@ To specify a coupling between two different solvers, we define and characterize 
 Then, we customize a *coupling solver* between these single-physics
 solvers as an additional solver.
 This approach allows for generality and flexibility in constructing multi-physics solvers.
-The order of specifying these solvers is not restricted in GEOSX.
-Note that end-users should give each single-physics solver a meaningful and distinct name, as GEOSX will recognize these single-physics solvers based on their customized names and create user-expected coupling.
+The order of specifying these solvers is not restricted in GEOS.
+Note that end-users should give each single-physics solver a meaningful and distinct name, as GEOS will recognize these single-physics solvers based on their customized names and create user-expected coupling.
 
 As demonstrated in this example, to setup a poromechanical coupling, we need to define three different solvers in the XML file:
 
@@ -150,7 +150,7 @@ Discretization methods for multiphysics solvers
 Numerical methods in multiphysics settings are similar to single physics numerical methods. In this problem, we use finite volume for flow and finite elements for solid mechanics. All necessary parameters for these methods are defined in the ``NumericalMethods`` section.
 
 As mentioned before, the coupling solver and the solid mechanics solver require the specification of a discretization method called ``FE1``.
-In GEOSX, this discretization method represents a finite element method
+In GEOS, this discretization method represents a finite element method
 using linear basis functions and Gaussian quadrature rules.
 For more information on defining finite elements numerical schemes,
 please see the dedicated :ref:`FiniteElement` section.
@@ -231,11 +231,11 @@ You may note :
  - All initial value fields must have ``initialCondition`` field set to ``1``;
  - The ``setName`` field points to the previously defined box to apply the fields;
  - ``nodeManager`` and ``faceManager`` in the ``objectPath`` indicate that the boundary conditions are applied to the element nodes and faces, respectively;
- - ``fieldName`` is the name of the field registered in GEOSX;
+ - ``fieldName`` is the name of the field registered in GEOS;
  - Component ``0``, ``1``, and ``2`` refer to the x, y, and z direction, respectively;
  - And the non-zero values given by ``scale`` indicate the magnitude of the loading;
  - Some shorthands, such as ``xneg`` and ``xpos``, are used as the locations where the boundary conditions are applied in the computational domain. For instance, ``xneg`` means the portion of the computational domain located at the left-most in the x-axis, while ``xpos`` refers to the portion located at the right-most area in the x-axis. Similar shorthands include ``ypos``, ``yneg``, ``zpos``, and ``zneg``;
- - The mud pressure loading has a negative value due to the negative sign convention for compressive stress in GEOSX. 
+ - The mud pressure loading has a negative value due to the negative sign convention for compressive stress in GEOS. 
 
  
 The parameters used in the simulation are summarized in the following table, which are specified in the
@@ -296,7 +296,7 @@ Using the poroelastic solver, below figure shows the prediction of pore pressure
    Simulation result of pore pressure distribution
 
 
-For the above poroelastic example, an analytical solution `(Detournay and Cheng, 1993)  <https://www.sciencedirect.com/science/article/pii/B9780080406152500113>`__ is hereby employed to verify the accuracy of the numerical results. Following figure shows the comparisons between the numerical predictions (marks) and the corresponding analytical solutions (solid curves) with respect to the distributions of pore pressure, radial displacement, effective radial and tangential stresses along the minimum horizontal stress direction (x-axis). One can observe that GEOSX results correlate very well with the analytical solutions for the poroelastic case. 
+For the above poroelastic example, an analytical solution `(Detournay and Cheng, 1993)  <https://www.sciencedirect.com/science/article/pii/B9780080406152500113>`__ is hereby employed to verify the accuracy of the numerical results. Following figure shows the comparisons between the numerical predictions (marks) and the corresponding analytical solutions (solid curves) with respect to the distributions of pore pressure, radial displacement, effective radial and tangential stresses along the minimum horizontal stress direction (x-axis). One can observe that GEOS results correlate very well with the analytical solutions for the poroelastic case. 
 
 
 .. _problemVerificationVerticalPoroWellboreFig2:
@@ -305,7 +305,7 @@ For the above poroelastic example, an analytical solution `(Detournay and Cheng,
    :width: 1000
    :figclass: align-center
 
-   Comparing GEOSX results with analytical solutions
+   Comparing GEOS results with analytical solutions
 
 
 
@@ -342,7 +342,7 @@ To go further
 **Feedback on this example**
 
 This concludes the example on PoroPlasticity Model for Wellbore Problems.
-For any feedback on this example, please submit a `GitHub issue on the project's GitHub page <https://github.com/GEOSX/GEOSX/issues>`_.
+For any feedback on this example, please submit a `GitHub issue on the project's GitHub page <https://github.com/GEOS-DEV/GEOS/issues>`_.
 
 
 

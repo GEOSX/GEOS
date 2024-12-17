@@ -2,10 +2,11 @@
  * ------------------------------------------------------------------------------------------------------------
  * SPDX-License-Identifier: LGPL-2.1-only
  *
- * Copyright (c) 2018-2020 Lawrence Livermore National Security LLC
- * Copyright (c) 2018-2020 The Board of Trustees of the Leland Stanford Junior University
- * Copyright (c) 2018-2020 TotalEnergies
- * Copyright (c) 2019-     GEOSX Contributors
+ * Copyright (c) 2016-2024 Lawrence Livermore National Security LLC
+ * Copyright (c) 2018-2024 TotalEnergies
+ * Copyright (c) 2018-2024 The Board of Trustees of the Leland Stanford Junior University
+ * Copyright (c) 2023-2024 Chevron
+ * Copyright (c) 2019-     GEOS/GEOSX Contributors
  * All rights reserved
  *
  * See top level LICENSE, COPYRIGHT, CONTRIBUTORS, NOTICE, and ACKNOWLEDGEMENTS files for details.
@@ -16,14 +17,14 @@
  * @file EventBase.hpp
  */
 
-#ifndef GEOSX_EVENTS_EVENTSBASE_HPP_
-#define GEOSX_EVENTS_EVENTSBASE_HPP_
+#ifndef GEOS_EVENTS_EVENTSBASE_HPP_
+#define GEOS_EVENTS_EVENTSBASE_HPP_
 
 #include "dataRepository/Group.hpp"
 #include "dataRepository/ExecutableGroup.hpp"
 
 
-namespace geosx
+namespace geos
 {
 
 /**
@@ -43,12 +44,6 @@ public:
 
   /// Destructor
   virtual ~EventBase() override;
-
-  /**
-   * @brief Catalog name interface.
-   * @return This type's catalog name.
-   **/
-  static string catalogName() { return "EventBase"; }
 
   /**
    * @brief If the event forecast is equal to 1, then signal the targets to prepare for execution
@@ -156,10 +151,15 @@ public:
    */
   virtual real64 getEventTypeDtRequest( real64 const time )
   {
-    GEOSX_UNUSED_VAR( time );
+    GEOS_UNUSED_VAR( time );
     return std::numeric_limits< real64 >::max();
   }
 
+  /**
+   * @brief Helper function to validate the consistency of the event input
+   * @note We cannot use postInputInitialization here because we can perform the validation only after the m_target pointer is set
+   */
+  virtual void validate() const {};
 
   /**
    * @brief Count the number of events/sub-events
@@ -170,7 +170,7 @@ public:
   /**
    * @brief Update the event progress for the event/sub-events.
    * @note This method is used to determine how to handle the timestamp for an event
-   * @note If the event occurs after anything targeting a SolverBase object, then
+   * @note If the event occurs after anything targeting a PhysicsSolverBase object, then
    *       set the m_isPostSolverEvent flag.  If set, then the time passed to the target
    *       will be time + dt.
    * @param eventCounters The event count for each event/sub-event.
@@ -316,6 +316,14 @@ protected:
   bool isActive( real64 const time ) const
   { return ( time >= m_beginTime ) && ( time < m_endTime ); }
 
+  /**
+   * @brief Is the event ready for cleanup?
+   * @param time The time at which we want to check if the event is cleanup.
+   * @return @p true if is ready for cleanup, @p false otherwise.
+   */
+  bool isReadyForCleanup( real64 const time ) const
+  { return isActive( time ) || isZero( time - m_endTime ); }
+
 
   /// The last time the event occurred.
   real64 m_lastTime;
@@ -343,6 +351,6 @@ private:
   ExecutableGroup * m_target;
 };
 
-} /* namespace geosx */
+} /* namespace geos */
 
-#endif /* GEOSX_EVENTS_EVENTSBASE_HPP_ */
+#endif /* GEOS_EVENTS_EVENTSBASE_HPP_ */

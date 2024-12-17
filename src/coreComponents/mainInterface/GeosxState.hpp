@@ -2,11 +2,12 @@
  * ------------------------------------------------------------------------------------------------------------
  * SPDX-License-Identifier: LGPL-2.1-only
  *
- * Copyright (c) 2018-2019 Lawrence Livermore National Security LLC
- * Copyright (c) 2018-2019 The Board of Trustees of the Leland Stanford Junior University
- * Copyright (c) 2018-2019 TotalEnergies
- * Copyright (c) 2019-     GEOSX Contributors
- * All right reserved
+ * Copyright (c) 2016-2024 Lawrence Livermore National Security LLC
+ * Copyright (c) 2018-2024 TotalEnergies
+ * Copyright (c) 2018-2024 The Board of Trustees of the Leland Stanford Junior University
+ * Copyright (c) 2023-2024 Chevron
+ * Copyright (c) 2019-     GEOS/GEOSX Contributors
+ * All rights reserved
  *
  * See top level LICENSE, COPYRIGHT, CONTRIBUTORS, NOTICE, and ACKNOWLEDGEMENTS files for details.
  * ------------------------------------------------------------------------------------------------------------
@@ -16,15 +17,15 @@
  * @file GeosxState.hpp
  */
 
-#ifndef GEOSX_MAININTERFACE_GEOSXSTATE_HPP_
-#define GEOSX_MAININTERFACE_GEOSXSTATE_HPP_
+#ifndef GEOS_MAININTERFACE_GEOSXSTATE_HPP_
+#define GEOS_MAININTERFACE_GEOSXSTATE_HPP_
 
 // Source includes
 #include "common/DataTypes.hpp"
+#include "common/logger/Logger.hpp"
 
 // System includes
 #include <functional>
-#include <chrono>
 #include <memory>
 
 // Forward declaration of conduit::Node.
@@ -33,7 +34,7 @@ namespace conduit
 class Node;
 }
 
-#if defined( GEOSX_USE_CALIPER )
+#if defined( GEOS_USE_CALIPER )
 //Forward declaration of cali::ConfigManager.
 namespace cali
 {
@@ -42,7 +43,7 @@ class ConfigManager;
 #endif
 
 
-namespace geosx
+namespace geos
 {
 
 // Forward declarations.
@@ -150,7 +151,7 @@ public:
    */
   CommandLineOptions const & getCommandLineOptions()
   {
-    GEOSX_ERROR_IF( m_commandLineOptions == nullptr, "Not initialized." );
+    GEOS_ERROR_IF( m_commandLineOptions == nullptr, "Not initialized." );
     return *m_commandLineOptions;
   }
 
@@ -160,7 +161,7 @@ public:
    */
   conduit::Node & getRootConduitNode()
   {
-    GEOSX_ERROR_IF( m_rootNode == nullptr, "Not initialized." );
+    GEOS_ERROR_IF( m_rootNode == nullptr, "Not initialized." );
     return *m_rootNode;
   }
 
@@ -170,7 +171,7 @@ public:
    */
   ProblemManager & getProblemManager()
   {
-    GEOSX_ERROR_IF( m_problemManager == nullptr, "Not initialized." );
+    GEOS_ERROR_IF( m_problemManager == nullptr, "Not initialized." );
     return *m_problemManager;
   }
 
@@ -200,7 +201,7 @@ public:
    */
   CommunicationTools & getCommunicationTools()
   {
-    GEOSX_ERROR_IF( m_commTools == nullptr, "Not initialized." );
+    GEOS_ERROR_IF( m_commTools == nullptr, "Not initialized." );
     return *m_commTools;
   }
 
@@ -235,7 +236,7 @@ private:
   /// The CommunicationTools.
   std::unique_ptr< CommunicationTools > m_commTools;
 
-#if defined( GEOSX_USE_CALIPER )
+#if defined( GEOS_USE_CALIPER )
   /// The Caliper ConfigManager.
   std::unique_ptr< cali::ConfigManager > m_caliperManager;
 #endif
@@ -253,6 +254,6 @@ private:
  */
 GeosxState & getGlobalState();
 
-} // namespace geosx
+} // namespace geos
 
-#endif /* GEOSX_MAININTERFACE_GEOSXSTATE_HPP_ */
+#endif /* GEOS_MAININTERFACE_GEOSXSTATE_HPP_ */

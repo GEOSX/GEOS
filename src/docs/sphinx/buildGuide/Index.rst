@@ -4,7 +4,7 @@
 Build Guide
 ###############################################################################
 
-Welcome to the GEOSX build guide.
+Welcome to the GEOS build guide.
 
 .. toctree::
    :maxdepth: 1
@@ -18,3 +18,5 @@ Welcome to the GEOSX build guide.
    SpackUberenv
 
    ContinuousIntegration
+
+   AppleMacOS

@@ -31,7 +31,7 @@ The material parameters :math:`a` and :math:`b` are derived as:
 
 where plus signs are for circles passing through the tension corners, and minus signs are for circles passing through compression corners.
 Also, :math:`\phi` and :math:`c` denote friction angle and cohesion, respectively, as defined by the Mohr-Coulomb failure envelope shown in Figure 5.
-In GEOSX, we use a compression corner fit (minus signs) to convert the user-specified friction angle and cohesion to :math:`a` and :math:`b`.
+In GEOS, we use a compression corner fit (minus signs) to convert the user-specified friction angle and cohesion to :math:`a` and :math:`b`.
 
 .. _deviatoricView:
 .. figure:: DevView.png
@@ -83,7 +83,7 @@ Parameters
 
 The following attributes are supported:
 
-.. include:: /coreComponents/schema/docs/DruckerPrager.rst
+.. include:: /docs/sphinx/datastructure/DruckerPrager.rst
 
 Example
 ~~~~~~~~~~~~~~~

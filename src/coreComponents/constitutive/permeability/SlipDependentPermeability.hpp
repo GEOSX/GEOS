@@ -2,10 +2,11 @@
  * ------------------------------------------------------------------------------------------------------------
  * SPDX-License-Identifier: LGPL-2.1-only
  *
- * Copyright (c) 2018-2020 Lawrence Livermore National Security LLC
- * Copyright (c) 2018-2020 The Board of Trustees of the Leland Stanford Junior University
- * Copyright (c) 2018-2020 TotalEnergies
- * Copyright (c) 2019-     GEOSX Contributors
+ * Copyright (c) 2016-2024 Lawrence Livermore National Security LLC
+ * Copyright (c) 2018-2024 TotalEnergies
+ * Copyright (c) 2018-2024 The Board of Trustees of the Leland Stanford Junior University
+ * Copyright (c) 2023-2024 Chevron
+ * Copyright (c) 2019-     GEOS/GEOSX Contributors
  * All rights reserved
  *
  * See top level LICENSE, COPYRIGHT, CONTRIBUTORS, NOTICE, and ACKNOWLEDGEMENTS files for details.
@@ -16,13 +17,13 @@
  * @file SlipDependentPermeability.hpp
  */
 
-#ifndef GEOSX_CONSTITUTIVE_PERMEABILITY_SLIPDEPENDENTPERMEABILITY_HPP_
-#define GEOSX_CONSTITUTIVE_PERMEABILITY_SLIPDEPENDENTPERMEABILITY_HPP_
+#ifndef GEOS_CONSTITUTIVE_PERMEABILITY_SLIPDEPENDENTPERMEABILITY_HPP_
+#define GEOS_CONSTITUTIVE_PERMEABILITY_SLIPDEPENDENTPERMEABILITY_HPP_
 
 #include "constitutive/permeability/PermeabilityBase.hpp"
 
 
-namespace geosx
+namespace geos
 {
 namespace constitutive
 {
@@ -44,22 +45,23 @@ public:
     m_initialPermeability( initialPermeability )
   {}
 
-  GEOSX_HOST_DEVICE
+  GEOS_HOST_DEVICE
   void compute( real64 const ( &dispJump )[3],
                 R1Tensor const & initialPermeability,
                 arraySlice1d< real64 > const & permeability,
                 arraySlice2d< real64 > const & dPerm_dDispJump ) const;
 
-  GEOSX_HOST_DEVICE
+  GEOS_HOST_DEVICE
   virtual void updateFromApertureAndShearDisplacement( localIndex const k,
                                                        localIndex const q,
                                                        real64 const & oldHydraulicAperture,
                                                        real64 const & newHydraulicAperture,
+                                                       real64 const & dHydraulicAperture_dNormalJump,
                                                        real64 const & pressure,
                                                        real64 const ( &dispJump )[3],
                                                        real64 const ( &traction )[3] ) const override
   {
-    GEOSX_UNUSED_VAR( q, oldHydraulicAperture, newHydraulicAperture, traction, pressure );
+    GEOS_UNUSED_VAR( q, oldHydraulicAperture, newHydraulicAperture, dHydraulicAperture_dNormalJump, traction, pressure );
 
     compute( dispJump,
              m_initialPermeability,
@@ -141,8 +143,8 @@ private:
 };
 
 
-GEOSX_HOST_DEVICE
-GEOSX_FORCE_INLINE
+GEOS_HOST_DEVICE
+GEOS_FORCE_INLINE
 void SlipDependentPermeabilityUpdate::compute( real64 const ( &dispJump )[3],
                                                R1Tensor const & initialPermeability,
                                                arraySlice1d< real64 > const & permeability,
@@ -170,6 +172,6 @@ void SlipDependentPermeabilityUpdate::compute( real64 const ( &dispJump )[3],
 
 } /* namespace constitutive */
 
-} /* namespace geosx */
+} /* namespace geos */
 
-#endif //GEOSX_CONSTITUTIVE_PERMEABILITY_FRACTUREPERMEABILITY_HPP_
+#endif //GEOS_CONSTITUTIVE_PERMEABILITY_FRACTUREPERMEABILITY_HPP_

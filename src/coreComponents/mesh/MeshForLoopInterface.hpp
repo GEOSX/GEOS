@@ -2,10 +2,11 @@
  * ------------------------------------------------------------------------------------------------------------
  * SPDX-License-Identifier: LGPL-2.1-only
  *
- * Copyright (c) 2018-2020 Lawrence Livermore National Security LLC
- * Copyright (c) 2018-2020 The Board of Trustees of the Leland Stanford Junior University
- * Copyright (c) 2018-2020 TotalEnergies
- * Copyright (c) 2019-     GEOSX Contributors
+ * Copyright (c) 2016-2024 Lawrence Livermore National Security LLC
+ * Copyright (c) 2018-2024 TotalEnergies
+ * Copyright (c) 2018-2024 The Board of Trustees of the Leland Stanford Junior University
+ * Copyright (c) 2023-2024 Chevron
+ * Copyright (c) 2019-     GEOS/GEOSX Contributors
  * All rights reserved
  *
  * See top level LICENSE, COPYRIGHT, CONTRIBUTORS, NOTICE, and ACKNOWLEDGEMENTS files for details.
@@ -16,8 +17,8 @@
  * @file MeshForLoopInterface.hpp
  */
 
-#ifndef GEOSX_MESH_MESHFORLOOPINTERFACE_HPP
-#define GEOSX_MESH_MESHFORLOOPINTERFACE_HPP
+#ifndef GEOS_MESH_MESHFORLOOPINTERFACE_HPP
+#define GEOS_MESH_MESHFORLOOPINTERFACE_HPP
 
 #include "finiteElement/FiniteElementDiscretization.hpp"
 #include "finiteElement/FiniteElementDiscretizationManager.hpp"
@@ -27,14 +28,14 @@
 #include "mesh/MeshLevel.hpp"
 #include "constitutive/ConstitutiveManager.hpp"
 
-namespace geosx
+namespace geos
 {
 
 /**
- * @brief Loop over all elements in a geosx::MeshLevel.
- * @tparam POLICY The execution policy for the loop over elements in a geosx::ElementSubRegionBase.
+ * @brief Loop over all elements in a geos::MeshLevel.
+ * @tparam POLICY The execution policy for the loop over elements in a geos::ElementSubRegionBase.
  * @tparam LAMBDA The type of lambda function to execute for each element.
- * @param mesh The geosx::MeshLevel that will have all of its elements processed by this function.
+ * @param mesh The geos::MeshLevel that will have all of its elements processed by this function.
  * @param lambda The type of lambda function to execute for each element.
  */
 template< class POLICY=serialPolicy, typename LAMBDA=void >
@@ -54,7 +55,7 @@ void forAllElemsInMesh( MeshLevel const & mesh, LAMBDA && lambda )
 /**
  * @brief @return Return the minimum location/indices for a value condition specified by @p lambda.
  * @tparam LAMBDA The type of the lambda function to be used to specify the minimum condition.
- * @param mesh The geosx::MeshLevel that will have all of its elements processed by this function.
+ * @param mesh The geos::MeshLevel that will have all of its elements processed by this function.
  * @param lambda  A lambda function that returns as value that will be used in the minimum comparison.
  */
 template< typename LAMBDA >
@@ -92,6 +93,6 @@ minLocOverElemsInMesh( MeshLevel const & mesh, LAMBDA && lambda )
   return std::make_pair( minVal, std::make_tuple( minReg, minSubreg, minIndex ));
 }
 
-} // namespace geosx
+} // namespace geos
 
-#endif // GEOSX_MESH_MESHFORLOOPINTERFACE_HPP
+#endif // GEOS_MESH_MESHFORLOOPINTERFACE_HPP

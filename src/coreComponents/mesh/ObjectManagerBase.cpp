@@ -2,10 +2,11 @@
  * ------------------------------------------------------------------------------------------------------------
  * SPDX-License-Identifier: LGPL-2.1-only
  *
- * Copyright (c) 2018-2020 Lawrence Livermore National Security LLC
- * Copyright (c) 2018-2020 The Board of Trustees of the Leland Stanford Junior University
- * Copyright (c) 2018-2020 TotalEnergies
- * Copyright (c) 2019-     GEOSX Contributors
+ * Copyright (c) 2016-2024 Lawrence Livermore National Security LLC
+ * Copyright (c) 2018-2024 TotalEnergies
+ * Copyright (c) 2018-2024 The Board of Trustees of the Leland Stanford Junior University
+ * Copyright (c) 2023-2024 Chevron
+ * Copyright (c) 2019-     GEOS/GEOSX Contributors
  * All rights reserved
  *
  * See top level LICENSE, COPYRIGHT, CONTRIBUTORS, NOTICE, and ACKNOWLEDGEMENTS files for details.
@@ -22,7 +23,7 @@
 #include "mesh/MeshFields.hpp"
 #include "common/MpiWrapper.hpp"
 
-namespace geosx
+namespace geos
 {
 using namespace dataRepository;
 
@@ -43,6 +44,7 @@ ObjectManagerBase::ObjectManagerBase( string const & name,
 
   registerWrapper( viewKeyStruct::localToGlobalMapString(), &m_localToGlobalMap ).
     setApplyDefaultValue( -1 ).
+    setPlotLevel( PlotLevel::LEVEL_0 ).
     setDescription( "Array that contains a map from localIndex to globalIndex." );
 
   registerWrapper( viewKeyStruct::globalToLocalMapString(), &m_globalToLocalMap );
@@ -54,6 +56,16 @@ ObjectManagerBase::ObjectManagerBase( string const & name,
     setPlotLevel( PlotLevel::LEVEL_0 );
 
   registerWrapper< array1d< integer > >( viewKeyStruct::domainBoundaryIndicatorString(), &m_domainBoundaryIndicator );
+
+  registerWrapper( viewKeyStruct::localMaxGlobalIndexString(), &m_localMaxGlobalIndex ).
+    setApplyDefaultValue( -1 ).
+    setRestartFlags( RestartFlags::WRITE_AND_READ ).
+    setPlotLevel( PlotLevel::NOPLOT );
+
+  registerWrapper( viewKeyStruct::maxGlobalIndexString(), &m_maxGlobalIndex ).
+    setApplyDefaultValue( -1 ).
+    setRestartFlags( RestartFlags::WRITE_AND_READ ).
+    setPlotLevel( PlotLevel::NOPLOT );
 
   m_sets.registerWrapper< SortedArray< localIndex > >( this->m_ObjectManagerBaseViewKeys.externalSet );
 
@@ -88,7 +100,7 @@ void ObjectManagerBase::constructSetFromSetAndMap( SortedArrayView< localIndex c
   newset.clear();
 
   localIndex const numObjects = size();
-  GEOSX_ERROR_IF( map.size( 0 ) != numObjects, "Size mismatch. " << map.size( 0 ) << " != " << numObjects );
+  GEOS_ERROR_IF( map.size( 0 ) != numObjects, "Size mismatch. " << map.size( 0 ) << " != " << numObjects );
 
   if( setName == "all" )
   {
@@ -120,7 +132,7 @@ void ObjectManagerBase::constructSetFromSetAndMap( SortedArrayView< localIndex c
   newset.clear();
 
   localIndex const numObjects = size();
-  GEOSX_ERROR_IF( map.size() != numObjects, "Size mismatch. " << map.size() << " != " << numObjects );
+  GEOS_ERROR_IF( map.size() != numObjects, "Size mismatch. " << map.size() << " != " << numObjects );
 
   if( setName == "all" )
   {
@@ -151,7 +163,7 @@ void ObjectManagerBase::constructSetFromSetAndMap( SortedArrayView< localIndex c
   newSet.clear();
 
   localIndex const numObjects = size();
-  GEOSX_ERROR_IF_NE_MSG( map.size(), numObjects, "Map size does not match number of objects." );
+  GEOS_ERROR_IF_NE_MSG( map.size(), numObjects, "Map size does not match number of objects." );
 
   if( setName == "all" )
   {
@@ -192,7 +204,7 @@ ObjectManagerBase::constructGlobalListOfBoundaryObjects() const
 
 void ObjectManagerBase::constructGlobalToLocalMap()
 {
-  GEOSX_MARK_FUNCTION;
+  GEOS_MARK_FUNCTION;
 
   m_globalToLocalMap.clear();
   localIndex const N = size();
@@ -239,7 +251,7 @@ localIndex ObjectManagerBase::packImpl( buffer_unit_type * & buffer,
   localIndex packedSize = 0;
   packedSize += bufferOps::Pack< DO_PACKING >( buffer, this->getName() );
 
-  int const rank = MpiWrapper::commRank( MPI_COMM_GEOSX );
+  int const rank = MpiWrapper::commRank( MPI_COMM_GEOS );
   packedSize += bufferOps::Pack< DO_PACKING >( buffer, rank );
 
   localIndex const numPackedIndices = packList.size();
@@ -257,7 +269,7 @@ localIndex ObjectManagerBase::packImpl( buffer_unit_type * & buffer,
     std::set_difference( input.cbegin(), input.cend(), available.cbegin(), available.cend(), std::inserter( reqNotAvail, reqNotAvail.end() ) );
     if( !reqNotAvail.empty() )
     {
-      GEOSX_ERROR( "Wrapper(s) \"" << stringutilities::join( reqNotAvail, ", " ) << "\" was (were) requested from \"" << getName() << "\" but is (are) not available." );
+      GEOS_ERROR( "Wrapper(s) \"" << stringutilities::join( reqNotAvail, ", " ) << "\" was (were) requested from \"" << getName() << "\" but is (are) not available." );
     }
     // From now on all the requested wrappers are guarantied to be available.
 
@@ -314,12 +326,13 @@ localIndex ObjectManagerBase::unpack( buffer_unit_type const * & buffer,
                                       arrayView1d< localIndex > & packList,
                                       integer const recursive,
                                       bool onDevice,
-                                      parallelDeviceEvents & events )
+                                      parallelDeviceEvents & events,
+                                      MPI_Op op )
 {
   localIndex unpackedSize = 0;
   string groupName;
   unpackedSize += bufferOps::Unpack( buffer, groupName );
-  GEOSX_ERROR_IF_NE( groupName, this->getName() );
+  GEOS_ERROR_IF_NE( groupName, this->getName() );
 
   int sendingRank;
   unpackedSize += bufferOps::Unpack( buffer, sendingRank );
@@ -331,7 +344,7 @@ localIndex ObjectManagerBase::unpack( buffer_unit_type const * & buffer,
 
     string wrappersLabel;
     unpackedSize += bufferOps::Unpack( buffer, wrappersLabel );
-    GEOSX_ERROR_IF_NE( wrappersLabel, "Wrappers" );
+    GEOS_ERROR_IF_NE( wrappersLabel, "Wrappers" );
 
     localIndex numWrappers;
     unpackedSize += bufferOps::Unpack( buffer, numWrappers );
@@ -339,7 +352,7 @@ localIndex ObjectManagerBase::unpack( buffer_unit_type const * & buffer,
     {
       string wrapperName;
       unpackedSize += bufferOps::Unpack( buffer, wrapperName );
-      unpackedSize += this->getWrapperBase( wrapperName ).unpackByIndex( buffer, packList, true, onDevice, events );
+      unpackedSize += this->getWrapperBase( wrapperName ).unpackByIndex( buffer, packList, true, onDevice, events, op );
     }
   }
 
@@ -347,11 +360,11 @@ localIndex ObjectManagerBase::unpack( buffer_unit_type const * & buffer,
   {
     string subGroups;
     unpackedSize += bufferOps::Unpack( buffer, subGroups );
-    GEOSX_ERROR_IF_NE( subGroups, "SubGroups" );
+    GEOS_ERROR_IF_NE( subGroups, "SubGroups" );
 
     decltype( this->getSubGroups().size()) numSubGroups;
     unpackedSize += bufferOps::Unpack( buffer, numSubGroups );
-    GEOSX_ERROR_IF_NE( numSubGroups, this->getSubGroups().size() );
+    GEOS_ERROR_IF_NE( numSubGroups, this->getSubGroups().size() );
 
     for( localIndex i = 0; i < this->numSubGroups(); ++i )
     {
@@ -362,7 +375,7 @@ localIndex ObjectManagerBase::unpack( buffer_unit_type const * & buffer,
   }
 
   unpackedSize += bufferOps::Unpack( buffer, groupName );
-  GEOSX_ERROR_IF_NE( groupName, this->getName() );
+  GEOS_ERROR_IF_NE( groupName, this->getName() );
 
   return unpackedSize;
 }
@@ -416,8 +429,8 @@ localIndex ObjectManagerBase::unpackParentChildMaps( buffer_unit_type const * & 
     arrayView1d< localIndex > const & parentIndex = this->getField< fields::parentIndex >();
     string shouldBeParentIndexString;
     unpackedSize += bufferOps::Unpack( buffer, shouldBeParentIndexString );
-    GEOSX_ERROR_IF( shouldBeParentIndexString != fields::parentIndex::key(),
-                    "value read from buffer is:" << shouldBeParentIndexString << ". It should be " << fields::parentIndex::key() );
+    GEOS_ERROR_IF( shouldBeParentIndexString != fields::parentIndex::key(),
+                   "value read from buffer is:" << shouldBeParentIndexString << ". It should be " << fields::parentIndex::key() );
     unpackedSize += bufferOps::Unpack( buffer,
                                        parentIndex,
                                        packList,
@@ -430,8 +443,8 @@ localIndex ObjectManagerBase::unpackParentChildMaps( buffer_unit_type const * & 
     arrayView1d< localIndex > const & childIndex = this->getField< fields::childIndex >();
     string shouldBeChildIndexString;
     unpackedSize += bufferOps::Unpack( buffer, shouldBeChildIndexString );
-    GEOSX_ERROR_IF( shouldBeChildIndexString != fields::childIndex::key(),
-                    "value read from buffer is:" << shouldBeChildIndexString << ". It should be " << fields::childIndex::key() );
+    GEOS_ERROR_IF( shouldBeChildIndexString != fields::childIndex::key(),
+                   "value read from buffer is:" << shouldBeChildIndexString << ". It should be " << fields::childIndex::key() );
     unpackedSize += bufferOps::Unpack( buffer,
                                        childIndex,
                                        packList,
@@ -479,7 +492,7 @@ localIndex ObjectManagerBase::unpackSets( buffer_unit_type const * & buffer )
   localIndex unpackedSize = 0;
   string name;
   unpackedSize += bufferOps::Unpack( buffer, name );
-  GEOSX_ERROR_IF( name != m_sets.getName(), "ObjectManagerBase::UnpackSets(): group names do not match" );
+  GEOS_ERROR_IF( name != m_sets.getName(), "ObjectManagerBase::UnpackSets(): group names do not match" );
 
   localIndex numUnpackedSets;
   unpackedSize += bufferOps::Unpack( buffer, numUnpackedSets );
@@ -521,7 +534,7 @@ localIndex ObjectManagerBase::packGlobalMapsImpl( buffer_unit_type * & buffer,
                                                   arrayView1d< localIndex const > const & packList,
                                                   integer const recursive ) const
 {
-  int const rank = MpiWrapper::commRank( MPI_COMM_GEOSX );
+  int const rank = MpiWrapper::commRank( MPI_COMM_GEOS );
 
   localIndex packedSize = bufferOps::Pack< DO_PACKING >( buffer, this->getName() );
 
@@ -582,18 +595,18 @@ localIndex ObjectManagerBase::unpackGlobalMaps( buffer_unit_type const * & buffe
                                                 localIndex_array & packList,
                                                 integer const recursive )
 {
-  GEOSX_MARK_FUNCTION;
-  int const rank = MpiWrapper::commRank( MPI_COMM_GEOSX );
+  GEOS_MARK_FUNCTION;
+  int const rank = MpiWrapper::commRank( MPI_COMM_GEOS );
 
   localIndex unpackedSize = 0;
   string groupName;
   unpackedSize += bufferOps::Unpack( buffer, groupName );
   string msg = "ObjectManagerBase::unpack(): group names do not match as they are groupName = " + groupName + " and this->getName= " + this->getName();
-  GEOSX_ERROR_IF( groupName != this->getName(), msg );
+  GEOS_ERROR_IF( groupName != this->getName(), msg );
 
   string localToGlobalString;
   unpackedSize += bufferOps::Unpack( buffer, localToGlobalString );
-  GEOSX_ERROR_IF( localToGlobalString != viewKeyStruct::localToGlobalMapString(), "ObjectManagerBase::unpack(): label incorrect" );
+  GEOS_ERROR_IF( localToGlobalString != viewKeyStruct::localToGlobalMapString(), "ObjectManagerBase::unpack(): label incorrect" );
 
   int sendingRank;
   unpackedSize += bufferOps::Unpack( buffer, sendingRank );
@@ -606,10 +619,10 @@ localIndex ObjectManagerBase::unpackGlobalMaps( buffer_unit_type const * & buffe
     localIndex_array unpackedLocalIndices;
     unpackedLocalIndices.resize( numUnpackedIndices );
 
-    globalIndex_array globalIndices;
+    array1d< globalIndex > globalIndices;
     unpackedSize += bufferOps::Unpack( buffer, globalIndices );
     localIndex numNewIndices = 0;
-    globalIndex_array newGlobalIndices;
+    array1d< globalIndex > newGlobalIndices;
     newGlobalIndices.reserve( numUnpackedIndices );
     localIndex const oldSize = this->size();
     for( localIndex a = 0; a < numUnpackedIndices; ++a )
@@ -632,9 +645,9 @@ localIndex ObjectManagerBase::unpackGlobalMaps( buffer_unit_type const * & buffe
 
         ++numNewIndices;
 
-        GEOSX_ERROR_IF( packList.size() != 0,
-                        "ObjectManagerBase::unpack(): packList specified, "
-                        "but a new globalIndex is unpacked" );
+        GEOS_ERROR_IF( packList.size() != 0,
+                       "ObjectManagerBase::unpack(): packList specified, "
+                       "but a new globalIndex is unpacked" );
       }
       else
       {
@@ -671,7 +684,7 @@ localIndex ObjectManagerBase::unpackGlobalMaps( buffer_unit_type const * & buffe
     arrayView1d< localIndex > const & parentIndex = this->getField< fields::parentIndex >();
     string parentIndicesString;
     unpackedSize += bufferOps::Unpack( buffer, parentIndicesString );
-    GEOSX_ERROR_IF( parentIndicesString != fields::parentIndex::key(), "ObjectManagerBase::unpack(): label incorrect" );
+    GEOS_ERROR_IF( parentIndicesString != fields::parentIndex::key(), "ObjectManagerBase::unpack(): label incorrect" );
     unpackedSize += bufferOps::Unpack( buffer,
                                        parentIndex,
                                        packList,
@@ -684,15 +697,15 @@ localIndex ObjectManagerBase::unpackGlobalMaps( buffer_unit_type const * & buffe
   {
     string subGroups;
     unpackedSize += bufferOps::Unpack( buffer, subGroups );
-    GEOSX_ERROR_IF( subGroups != "SubGroups", "Group::unpack(): group names do not match" );
+    GEOS_ERROR_IF( subGroups != "SubGroups", "Group::unpack(): group names do not match" );
 
     decltype( this->getSubGroups().size()) numSubGroups;
     unpackedSize += bufferOps::Unpack( buffer, numSubGroups );
-    GEOSX_ERROR_IF( numSubGroups != this->getSubGroups().size(), "Group::unpack(): incorrect number of subGroups" );
+    GEOS_ERROR_IF( numSubGroups != this->getSubGroups().size(), "Group::unpack(): incorrect number of subGroups" );
 
     for( auto const & index : this->getSubGroups() )
     {
-      GEOSX_UNUSED_VAR( index );
+      GEOS_UNUSED_VAR( index );
       string subGroupName;
       unpackedSize += bufferOps::Unpack( buffer, subGroupName );
       unpackedSize += this->getGroup< ObjectManagerBase >( subGroupName ).unpackGlobalMaps( buffer, packList, recursive );
@@ -758,7 +771,7 @@ void ObjectManagerBase::setReceiveLists()
 }
 
 integer ObjectManagerBase::splitObject( localIndex const indexToSplit,
-                                        int const GEOSX_UNUSED_PARAM( rank ),
+                                        int const GEOS_UNUSED_PARAM( rank ),
                                         localIndex & newIndex )
 {
   // if the object index has a zero sized childIndices entry, then this object can be split into two
@@ -831,8 +844,8 @@ void ObjectManagerBase::copyObject( const localIndex source, const localIndex de
   {
     SortedArray< localIndex > & targetSet = m_sets.getReference< SortedArray< localIndex > >( i );
 
-#if !defined(__CUDA_ARCH__)
-    targetSet.move( LvArray::MemorySpace::host, true );
+#if !defined(GEOS_DEVICE_COMPILE)
+    targetSet.move( hostMemorySpace, true );
 #endif
 
     if( targetSet.count( source ) > 0 )
@@ -842,9 +855,21 @@ void ObjectManagerBase::copyObject( const localIndex source, const localIndex de
   }
 }
 
+void ObjectManagerBase::eraseObject( std::set< localIndex > const & indicesToErase )
+{
+  for( auto & nameToWrapper: wrappers() )
+  {
+    WrapperBase * wrapper = nameToWrapper.second;
+    if( wrapper->sizedFromParent() )
+    {
+      wrapper->erase( indicesToErase );
+    }
+  }
+}
+
 void ObjectManagerBase::setMaxGlobalIndex()
 {
-  m_maxGlobalIndex = MpiWrapper::max( m_localMaxGlobalIndex, MPI_COMM_GEOSX );
+  m_maxGlobalIndex = MpiWrapper::max( m_localMaxGlobalIndex, MPI_COMM_GEOS );
 }
 
 void ObjectManagerBase::cleanUpMap( std::set< localIndex > const & targetIndices,
@@ -1031,4 +1056,4 @@ void ObjectManagerBase::moveSets( LvArray::MemorySpace const targetSpace )
 }
 
 
-} /* namespace geosx */
+} /* namespace geos */

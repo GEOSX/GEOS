@@ -2,10 +2,11 @@
  * ------------------------------------------------------------------------------------------------------------
  * SPDX-License-Identifier: LGPL-2.1-only
  *
- * Copyright (c) 2018-2020 Lawrence Livermore National Security LLC
- * Copyright (c) 2018-2020 The Board of Trustees of the Leland Stanford Junior University
- * Copyright (c) 2018-2020 TotalEnergies
- * Copyright (c) 2019-     GEOSX Contributors
+ * Copyright (c) 2016-2024 Lawrence Livermore National Security LLC
+ * Copyright (c) 2018-2024 TotalEnergies
+ * Copyright (c) 2018-2024 The Board of Trustees of the Leland Stanford Junior University
+ * Copyright (c) 2023-2024 Chevron
+ * Copyright (c) 2019-     GEOS/GEOSX Contributors
  * All rights reserved
  *
  * See top level LICENSE, COPYRIGHT, CONTRIBUTORS, NOTICE, and ACKNOWLEDGEMENTS files for details.
@@ -16,14 +17,15 @@
  * @file Parsing.hpp
  */
 
-#ifndef GEOSX_CODINGUTILITIES_PARSING_HPP_
-#define GEOSX_CODINGUTILITIES_PARSING_HPP_
+#ifndef GEOS_CODINGUTILITIES_PARSING_HPP_
+#define GEOS_CODINGUTILITIES_PARSING_HPP_
 
 #include "common/DataTypes.hpp"
+#include "common/logger/Logger.hpp"
 
 #include <fstream>
 
-namespace geosx
+namespace geos
 {
 
 /**
@@ -129,18 +131,18 @@ void parseFile( string const & filename,
     if( ptr != end )
     {
       std::ptrdiff_t const left = std::distance( ptr, end );
-      GEOSX_THROW( GEOSX_FMT( "Unable to parse value in file {} at position {}: {}...",
-                              filename, static_cast< std::streamoff >( inputStream.tellg() ) - left,
-                              string( ptr, std::min( left, std::ptrdiff_t{32} ) ) ),
-                   std::runtime_error );
+      GEOS_THROW( GEOS_FMT( "Unable to parse value in file {} at position {}: {}...",
+                            filename, static_cast< std::streamoff >( inputStream.tellg() ) - left,
+                            string( ptr, std::min( left, std::ptrdiff_t{32} ) ) ),
+                  std::runtime_error );
     }
   }
 
-  GEOSX_THROW_IF( inputStream.fail() && !inputStream.eof(),
-                  GEOSX_FMT( "Error while reading file {}: {}", filename, std::strerror( errno ) ),
-                  std::runtime_error );
+  GEOS_THROW_IF( inputStream.fail() && !inputStream.eof(),
+                 GEOS_FMT( "Error while reading file {}: {}", filename, std::strerror( errno ) ),
+                 std::runtime_error );
 }
 
-} // namespace geosx
+} // namespace geos
 
-#endif //GEOSX_CODINGUTILITIES_PARSING_HPP_
+#endif //GEOS_CODINGUTILITIES_PARSING_HPP_

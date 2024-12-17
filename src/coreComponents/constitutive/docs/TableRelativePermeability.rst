@@ -28,7 +28,7 @@ node.
 
 The following attributes are supported:
 
-.. include:: /coreComponents/schema/docs/TableRelativePermeability.rst
+.. include:: /docs/sphinx/datastructure/TableRelativePermeability.rst
 
 Below are some comments on the model parameters.
 
@@ -49,7 +49,7 @@ water Water phase
 * ``nonWettingIntermediateRelPermTableNames`` - The list of relative permeability table names for the pair non-wetting-phase--intermediate-phase, starting with the name of the non-wetting-phase relative permeability table, and continuing with the name of the intermediate phase relative permeability table. Note that this keyword is only valid for three-phase systems, and is not allowed for two-phase systems (for which the user must specify instead ``wettingNonWettingRelPermTableNames``).  
 
 .. note::     
-   We remind the user that the relative permeability must be a strictly increasing function of phase volume fraction. GEOSX throws an error when this condition is not satisfied.
+   We remind the user that the relative permeability must be a strictly increasing function of phase volume fraction. GEOS throws an error when this condition is not satisfied.
 
 Examples
 =======================

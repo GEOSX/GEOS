@@ -1,3 +1,18 @@
+/*
+ * ------------------------------------------------------------------------------------------------------------
+ * SPDX-License-Identifier: LGPL-2.1-only
+ *
+ * Copyright (c) 2016-2024 Lawrence Livermore National Security LLC
+ * Copyright (c) 2018-2024 TotalEnergies
+ * Copyright (c) 2018-2024 The Board of Trustees of the Leland Stanford Junior University
+ * Copyright (c) 2023-2024 Chevron
+ * Copyright (c) 2019-     GEOS/GEOSX Contributors
+ * All rights reserved
+ *
+ * See top level LICENSE, COPYRIGHT, CONTRIBUTORS, NOTICE, and ACKNOWLEDGEMENTS files for details.
+ * ------------------------------------------------------------------------------------------------------------
+ */
+
 #include "ProjectionEDFMHelper.hpp"
 #include "mesh/MeshLevel.hpp"
 #include "finiteVolume/CellElementStencilTPFA.hpp"
@@ -6,7 +21,7 @@
 
 #include <limits>  // numeric_limits
 
-namespace geosx
+namespace geos
 {
 
 ProjectionEDFMHelper::ProjectionEDFMHelper( MeshLevel const & mesh,
@@ -33,7 +48,7 @@ void ProjectionEDFMHelper::addNonNeighboringConnections() const
   EmbeddedSurfaceSubRegion const & fractureSubRegion = fractureRegion.getUniqueSubRegion< EmbeddedSurfaceSubRegion >();
 
   arrayView1d< integer const > const ghostRank = fractureSubRegion.ghostRank();
-  FixedToManyElementRelation const & surfaceElementsToCells = fractureSubRegion.getToCellRelation();
+  OrderedVariableToManyElementRelation const & surfaceElementsToCells = fractureSubRegion.getToCellRelation();
 
   for( localIndex fracElement = 0; fracElement < fractureSubRegion.size(); fracElement++ )
   {
@@ -198,7 +213,7 @@ bool ProjectionEDFMHelper::neighborOnSameSide( localIndex const faceIdx,
   {
     return false;
   }
-  GEOSX_ERROR_IF( efracElements.size() > 1, "pEDFM with fracture intersections is not supported yet." );
+  GEOS_ERROR_IF( efracElements.size() > 1, "pEDFM with fracture intersections is not supported yet." );
 
   localIndex const fracElement = efracElements[0];
   arraySlice1d< real64 const > const n = fractureSubRegion.getNormalVector( fracElement );
@@ -292,4 +307,4 @@ void ProjectionEDFMHelper::
   weights[1] = faceArea * LvArray::tensorOps::l2Norm< 3 >( projectionPointToFracCenter );
 }
 
-}  // end namespace geosx
+}  // end namespace geos

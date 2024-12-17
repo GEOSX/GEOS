@@ -2,10 +2,11 @@
  * ------------------------------------------------------------------------------------------------------------
  * SPDX-License-Identifier: LGPL-2.1-only
  *
- * Copyright (c) 2018-2020 Lawrence Livermore National Security LLC
- * Copyright (c) 2018-2020 The Board of Trustees of the Leland Stanford Junior University
- * Copyright (c) 2018-2020 TotalEnergies
- * Copyright (c) 2019-     GEOSX Contributors
+ * Copyright (c) 2016-2024 Lawrence Livermore National Security LLC
+ * Copyright (c) 2018-2024 TotalEnergies
+ * Copyright (c) 2018-2024 The Board of Trustees of the Leland Stanford Junior University
+ * Copyright (c) 2023-2024 Chevron
+ * Copyright (c) 2019-     GEOS/GEOSX Contributors
  * All rights reserved
  *
  * See top level LICENSE, COPYRIGHT, CONTRIBUTORS, NOTICE, and ACKNOWLEDGEMENTS files for details.
@@ -16,16 +17,16 @@
  * @file BufferAllocator.hpp
  */
 
-#ifndef GEOSX_COMMON_BUFFERALLOCATOR_HPP
-#define GEOSX_COMMON_BUFFERALLOCATOR_HPP
+#ifndef GEOS_COMMON_BUFFERALLOCATOR_HPP
+#define GEOS_COMMON_BUFFERALLOCATOR_HPP
 
 #include "common/GeosxConfig.hpp"
 
-#ifdef GEOSX_USE_CHAI
+#ifdef GEOS_USE_CHAI
 #include <umpire/ResourceManager.hpp>
 #include <umpire/TypedAllocator.hpp>
 
-namespace geosx
+namespace geos
 {
 /**
  * @brief Set the current desired behaviour of the BufferAllocator

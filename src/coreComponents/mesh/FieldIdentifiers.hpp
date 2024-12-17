@@ -2,10 +2,11 @@
  * ------------------------------------------------------------------------------------------------------------
  * SPDX-License-Identifier: LGPL-2.1-only
  *
- * Copyright (c) 2018-2020 Lawrence Livermore National Security LLC
- * Copyright (c) 2018-2020 The Board of Trustees of the Leland Stanford Junior University
- * Copyright (c) 2018-2020 TotalEnergies
- * Copyright (c) 2019-     GEOSX Contributors
+ * Copyright (c) 2016-2024 Lawrence Livermore National Security LLC
+ * Copyright (c) 2018-2024 TotalEnergies
+ * Copyright (c) 2018-2024 The Board of Trustees of the Leland Stanford Junior University
+ * Copyright (c) 2023-2024 Chevron
+ * Copyright (c) 2019-     GEOS/GEOSX Contributors
  * All rights reserved
  *
  * See top level LICENSE, COPYRIGHT, CONTRIBUTORS, NOTICE, and ACKNOWLEDGEMENTS files for details.
@@ -16,13 +17,14 @@
  * @file FieldIdentifiers.hpp
  */
 
-#ifndef GEOSX_MESH_MPICOMMUNICATIONS_FIELDIDENTIFIERS_HPP_
-#define GEOSX_MESH_MPICOMMUNICATIONS_FIELDIDENTIFIERS_HPP_
+#ifndef GEOS_MESH_MPICOMMUNICATIONS_FIELDIDENTIFIERS_HPP_
+#define GEOS_MESH_MPICOMMUNICATIONS_FIELDIDENTIFIERS_HPP_
 
 #include "common/DataTypes.hpp"
-#include "codingUtilities/StringUtilities.hpp"
+#include "common/format/StringUtilities.hpp"
+#include "common/logger/Logger.hpp"
 
-namespace geosx
+namespace geos
 {
 /**
  * @brief Enum defining the possible location of a field on the mesh.
@@ -62,24 +64,15 @@ public:
  * @param fieldNames vector of names of the  element-based fields to be added to the map.
  * @param regionNames vector of the regions on which these fields exist.
  */
-  void addElementFields( std::vector< string > const & fieldNames, std::vector< string > const & regionNames )
+  template< typename T = std::vector< string > >
+  void addElementFields( std::vector< string > const & fieldNames, T const & regionNames )
   {
-    for( string const & regionName : regionNames )
+    for( auto const & regionName : regionNames )
     {
       addFields( fieldNames, generateKey( regionName ) );
     }
   }
-/**
- * @brief
- *
- * @param fieldNames array1d of names of the element-based fields to be added to the map.
- * @param regionNames vector of the regions on which these fields exist.
- */
-  void addElementFields( std::vector< string > const & fieldNames, arrayView1d< string const > const & regionNames )
-  {
-    std::vector< string > regions( regionNames.begin(), regionNames.end());
-    addElementFields( fieldNames, regions );
-  }
+
 /**
  * @brief Get the Fields object which is the map containing the fields existing for each location.
  *
@@ -105,11 +98,11 @@ public:
  * @brief Get the Location object
  *
  * @param key key used to store the list of fields in the map.
- * @param location mesh location where fields defined by the key provided were registered.
+ * @return mesh location where fields defined by the key provided were registered.
  */
-  void getLocation( string const & key,
-                    FieldLocation & location ) const
+  FieldLocation getLocation( string const & key ) const
   {
+    FieldLocation location{};
     if( key.find( m_locationKeys.nodesKey() ) != string::npos )
     {
       location = FieldLocation::Node;
@@ -128,8 +121,9 @@ public:
     }
     else
     {
-      GEOSX_ERROR( GEOSX_FMT( "Invalid key, {}, was provided. Location cannot be retrieved.", key ) );
+      GEOS_ERROR( GEOS_FMT( "Invalid key, {}, was provided. Location cannot be retrieved.", key ) );
     }
+    return location;
   }
 
 private:
@@ -177,7 +171,7 @@ private:
       }
       case FieldLocation::Elem:
       {
-        GEOSX_ERROR( "An element located field also requires a region name to be specified." );
+        GEOS_ERROR( "An element located field also requires a region name to be specified." );
         break;
       }
     }
@@ -207,6 +201,6 @@ private:
   }
 };
 
-} /* namespace geosx */
+} /* namespace geos */
 
-#endif /* GEOSX_MESH_MPICOMMUNICATIONS_FIELDIDENTIFIERS_HPP_ */
+#endif /* GEOS_MESH_MPICOMMUNICATIONS_FIELDIDENTIFIERS_HPP_ */

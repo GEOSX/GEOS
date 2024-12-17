@@ -19,7 +19,7 @@ Because performance is system specific we currently only support running the ben
                             geosxPath outputDirectory
 
     positional arguments:
-      geosxPath             The path to the GEOSX executable to benchmark.
+      geosxPath             The path to the GEOS executable to benchmark.
       outputDirectory       The parent directory to run the benchmarks in.
 
     optional arguments:
@@ -32,7 +32,7 @@ Because performance is system specific we currently only support running the ben
       -e ERRORCOLLECTIONDIR, --errorCollectionDir ERRORCOLLECTIONDIR
                             Directory to copy the output from any failed runs to.
 
-At a minimum you need to pass the script the path to the GEOSX executable and a directory to run the benchmarks in. This directory will be created if it doesn't exist. The script will collect a list of benchmarks to be run and submit a job to the system's scheduler for each benchmark. This means that you don't need to be in an allocation to run the benchmarks. Note that this is different from the integrated tests where you need to already be in an allocation and an internal scheduler is used to run the individual tests. Since a benchmark is a measure of performance to get consistent results it is important that each time a benchmark is run it has access to the same resources. Using the system scheduler guarantees this.
+At a minimum you need to pass the script the path to the GEOS executable and a directory to run the benchmarks in. This directory will be created if it doesn't exist. The script will collect a list of benchmarks to be run and submit a job to the system's scheduler for each benchmark. This means that you don't need to be in an allocation to run the benchmarks. Note that this is different from the integrated tests where you need to already be in an allocation and an internal scheduler is used to run the individual tests. Since a benchmark is a measure of performance to get consistent results it is important that each time a benchmark is run it has access to the same resources. Using the system scheduler guarantees this.
 
 In addition to whatever outputs the input would normally produce (plot files, restart files, ...) each benchmark will produce an output file ``output.txt`` containing the standard output and standard error of the run and a ``.cali`` file containing the Caliper timing data in a format that Spot_ can read.
 
@@ -42,7 +42,7 @@ In addition to whatever outputs the input would normally produce (plot files, re
 Specifying a benchmark
 ----------------------
 
-A group of benchmarks is specified with a standard GEOSX input XML file with an extra ``Benchmarks`` block added at the top level. This block is ignored by GEOSX itself and only used by the ``runBenchmarks.py`` script.
+A group of benchmarks is specified with a standard GEOS input XML file with an extra ``Benchmarks`` block added at the top level. This block is ignored by GEOS itself and only used by the ``runBenchmarks.py`` script.
 
 .. literalinclude:: ../../../../../inputFiles/solidMechanics/benchmarks/SSLE-io.xml
    :language: xml
@@ -51,7 +51,7 @@ A group of benchmarks is specified with a standard GEOSX input XML file with an 
 
 *[Source: benchmarks/SSLE-small.xml]*
 
-The ``Benchmarks`` block consists of a block for each machine the benchmarks are to run on. Currently the only options are ``quartz`` and ``lassen``.
+The ``Benchmarks`` block consists of a block for each machine the benchmarks are to run on. Currently the only options are ``quartz``, ``lassen``, and ``crusher``.
 
 
 The ``Run`` block
@@ -67,7 +67,7 @@ Each ``Run`` block may contain the following optional attributes
 
   - ``threadsPerTask``: An integer specifying the number of threads to allocate each task.
   - ``timeLimit``: An integer specifying the time limit in minutes to pass to the system scheduler when submitting the benchmark.
-  - ``args``: containing any extra command line arguments to pass to GEOSX.
+  - ``args``: containing any extra command line arguments to pass to GEOS.
   - ``autoPartition``: Either ``On`` or ``Off``, not specifying ``autoPartition`` is equivalent to ``autoPartition="Off"``. When auto partitioning is enabled the script will compute the number of ``x``, ``y`` and ``z`` partitions such that the the resulting partition is close to a perfect cube as possible, ie with 27 tasks ``x = 3, y = 3, z = 3`` and with 36 tasks ``x = 4, y = 3, z = 3``. This is optimal when the domain itself is a cube, but will be suboptimal otherwise.
   - ``strongScaling``: A list of unique integers specifying the factors to scale the number of nodes by. If ``N`` number are provided then ``N`` benchmarks are run and benchmark ``i`` uses ``nodes * strongScaling[ i ]`` nodes. Not specifying ``strongScaling`` is equivalent to ``strongScaling="{ 1 }"``.
 
@@ -92,5 +92,5 @@ If you want to run the benchmarks on your local branch and compare the results w
 .. note::
   A future version of the script will be able to pull timing results straight from the ``.cali`` files so that if you have access to the NightlyTests_ timing files you won't need to run the benchmarks on develop. Furthermore it will be able to provide more detailed information than just initialization and run times.
 
-.. _NightlyTests: https://github.com/GEOSX/NightlyTests
+.. _NightlyTests: https://github.com/GEOS-DEV/NightlyTests
 .. _Spot: https://lc.llnl.gov/spot2/?sf=/usr/gapps/GEOSX/timingFiles

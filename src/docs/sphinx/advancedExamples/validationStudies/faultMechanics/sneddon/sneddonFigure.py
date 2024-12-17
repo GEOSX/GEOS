@@ -5,6 +5,8 @@ import h5py
 import xml.etree.ElementTree as ElementTree
 from mpmath import *
 import math
+import os
+import argparse
 
 
 class Sneddon:
@@ -51,24 +53,37 @@ def getFracturePressureFromXML(xmlFilePath):
 def getFractureLengthFromXML(xmlFilePath):
     tree = ElementTree.parse(xmlFilePath)
 
-    boundedPlane = tree.find('Geometry/BoundedPlane')
-    dimensions = boundedPlane.get("dimensions")
+    rectangle = tree.find('Geometry/Rectangle')
+    dimensions = rectangle.get("dimensions")
     dimensions = [float(i) for i in dimensions[1:-1].split(",")]
     length = dimensions[0] / 2
-    origin = boundedPlane.get("origin")
+    origin = rectangle.get("origin")
     origin = [float(i) for i in origin[1:-1].split(",")]
 
     return length, origin[0]
 
 
 def main():
+
+   # Initialize the argument parser
+    parser = argparse.ArgumentParser(description="Script to generate figure from tutorial.")
+
+    # Add arguments to accept individual file paths
+    parser.add_argument('--geosDir', help='Path to the GEOS repository ', default='../../../../../../..')
+    parser.add_argument('--outputDir', help='Path to output directory', default='.')
+
+    # Parse the command-line arguments
+    args = parser.parse_args()
+
     #-------- EmbeddeFrac File path
-    hdf5File1Path = "displacementJump_embeddedFrac.hdf5"
+    outputDir = args.outputDir
+    geosDir = args.geosDir
+    hdf5File1Path = outputDir + "/displacementJump_embeddedFrac.hdf5"
 
     # Read HDF5
     hf = h5py.File(hdf5File1Path, 'r')
     jump = hf.get('displacementJump')
-    jump = np.array(jump)
+    jump = np.asarray(jump)
     aperture_EmbeddeFrac = jump[0, :, 0]
     x = hf.get('displacementJump elementCenter')
     loc_EmbeddeFrac = x[0, :, 1]
@@ -79,7 +94,7 @@ def main():
     # Read HDF5
     hf = h5py.File(hdf5File2Path, 'r')
     jump = hf.get('displacementJump')
-    jump = np.array(jump)
+    jump = np.asarray(jump)
     aperture_Contact = jump[0, :, 0]
     x = hf.get('displacementJump elementCenter')
     loc_Contact = x[0, :, 1]
@@ -90,19 +105,19 @@ def main():
     # Read HDF5
     hf = h5py.File(hdf5File3Path, 'r')
     jump = hf.get('elementAperture')
-    jump = np.array(jump)
+    jump = np.asarray(jump)
     aperture_HydroFrac = jump[0, :]
     x = hf.get('elementAperture elementCenter')
     loc_HydroFrac = x[0, :, 1]
 
     #-------- Extract info from XML
-    xmlFilePath = "../../../../../../../inputFiles/efemFractureMechanics/Sneddon_embeddedFrac_base.xml"
+    xmlFilePath = geosDir + "/inputFiles/efemFractureMechanics/Sneddon_embeddedFrac"
 
-    mechanicalParameters = getMechanicalParametersFromXML(xmlFilePath)
-    appliedPressure = getFracturePressureFromXML(xmlFilePath)
+    mechanicalParameters = getMechanicalParametersFromXML(xmlFilePath+"_base.xml")
+    appliedPressure = getFracturePressureFromXML(xmlFilePath+"_base.xml")
 
     # Get length of the fracture
-    length, origin = getFractureLengthFromXML(xmlFilePath)
+    length, origin = getFractureLengthFromXML(xmlFilePath+"_verification.xml")
 
     # Initialize Sneddon's analytical solution
     sneddonAnalyticalSolution = Sneddon(mechanicalParameters, length, appliedPressure)

@@ -2,10 +2,11 @@
  * ------------------------------------------------------------------------------------------------------------
  * SPDX-License-Identifier: LGPL-2.1-only
  *
- * Copyright (c) 2018-2020 Lawrence Livermore National Security LLC
- * Copyright (c) 2018-2020 The Board of Trustees of the Leland Stanford Junior University
- * Copyright (c) 2018-2020 TotalEnergies
- * Copyright (c) 2019-     GEOSX Contributors
+ * Copyright (c) 2016-2024 Lawrence Livermore National Security LLC
+ * Copyright (c) 2018-2024 TotalEnergies
+ * Copyright (c) 2018-2024 The Board of Trustees of the Leland Stanford Junior University
+ * Copyright (c) 2023-2024 Chevron
+ * Copyright (c) 2019-     GEOS/GEOSX Contributors
  * All rights reserved
  *
  * See top level LICENSE, COPYRIGHT, CONTRIBUTORS, NOTICE, and ACKNOWLEDGEMENTS files for details.
@@ -16,12 +17,12 @@
  * @file PerforationFields.hpp
  */
 
-#ifndef GEOSX_MESH_PERFORATIONFIELDS_HPP_
-#define GEOSX_MESH_PERFORATIONFIELDS_HPP_
+#ifndef GEOS_MESH_PERFORATIONFIELDS_HPP_
+#define GEOS_MESH_PERFORATIONFIELDS_HPP_
 
 #include "mesh/MeshFields.hpp"
 
-namespace geosx
+namespace geos
 {
 /**
  * A scope for field traits.
@@ -57,6 +58,14 @@ DECLARE_FIELD( reservoirElementIndex,
                WRITE_AND_READ,
                "For each perforation, element index of the perforated element" );
 
+DECLARE_FIELD( reservoirElementGlobalIndex,
+               "reservoirElementGlobalIndex",
+               array1d< globalIndex >,
+               0,
+               NOPLOT,
+               WRITE_AND_READ,
+               "For each perforation, global element index of the perforated element" );
+
 DECLARE_FIELD( wellElementIndex,
                "wellElementIndex",
                array1d< localIndex >,
@@ -73,6 +82,14 @@ DECLARE_FIELD( wellTransmissibility,
                WRITE_AND_READ,
                "For each perforation, well transmissibility" );
 
+DECLARE_FIELD( wellSkinFactor,
+               "wellSkinFactor",
+               array1d< real64 >,
+               0,
+               NOPLOT,
+               WRITE_AND_READ,
+               "For each perforation, well skin factor" );
+
 DECLARE_FIELD( location,
                "location",
                array2d< real64 >,
@@ -88,4 +105,4 @@ DECLARE_FIELD( location,
 
 }
 
-#endif // GEOSX_MESH_PERFORATIONFIELDS_HPP_
+#endif // GEOS_MESH_PERFORATIONFIELDS_HPP_

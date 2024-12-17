@@ -45,7 +45,7 @@
   <ElementRegions>
     <CellElementRegion
       name="Omega"
-      cellBlocks="{ cb1 }"
+      cellBlocks="{ * }"
       materialList="{ porousRock, water }"/>
   </ElementRegions>
 
@@ -75,7 +75,7 @@
 
     <BiotPorosity
       name="rockPorosity"
-      grainBulkModulus="48208109259"
+      defaultGrainBulkModulus="48208109259"
       defaultReferencePorosity="0.3"/>
 
     <ConstantPermeability
@@ -111,7 +111,7 @@
       objectPath="ElementRegions/Omega/cb1"
       fieldName="rock_stress"
       component="0"
-      scale="-14.19e6"/>
+      scale="-21.9e6"/>
 
     <FieldSpecification 
       name="Sy"
@@ -120,7 +120,7 @@
       objectPath="ElementRegions/Omega/cb1"
       fieldName="rock_stress"
       component="1"
-      scale="-5.19e6"/>
+      scale="-12.9e6"/>
 
     <FieldSpecification 
       name="Sz"
@@ -129,7 +129,7 @@
       objectPath="ElementRegions/Omega/cb1"
       fieldName="rock_stress"
       component="2"
-      scale="-10.19e6"/>
+      scale="-17.9e6"/>
 
     <FieldSpecification
       name="innerPorePressure"

@@ -2,10 +2,11 @@
  * ------------------------------------------------------------------------------------------------------------
  * SPDX-License-Identifier: LGPL-2.1-only
  *
- * Copyright (c) 2018-2020 Lawrence Livermore National Security LLC
- * Copyright (c) 2018-2020 The Board of Trustees of the Leland Stanford Junior University
- * Copyright (c) 2018-2020 TotalEnergies
- * Copyright (c) 2019-     GEOSX Contributors
+ * Copyright (c) 2016-2024 Lawrence Livermore National Security LLC
+ * Copyright (c) 2018-2024 TotalEnergies
+ * Copyright (c) 2018-2024 The Board of Trustees of the Leland Stanford Junior University
+ * Copyright (c) 2023-2024 Chevron
+ * Copyright (c) 2019-     GEOS/GEOSX Contributors
  * All rights reserved
  *
  * See top level LICENSE, COPYRIGHT, CONTRIBUTORS, NOTICE, and ACKNOWLEDGEMENTS files for details.
@@ -16,33 +17,18 @@
  * @file SinglePhasePoromechanicsEFEM.hpp
  */
 
-#ifndef GEOSX_PHYSICSSOLVERS_MULTIPHYSICS_POROMECHANICSKERNELS_SINGLEPHASEPOROMECHANICSEFEM_HPP_
-#define GEOSX_PHYSICSSOLVERS_MULTIPHYSICS_POROMECHANICSKERNELS_SINGLEPHASEPOROMECHANICSEFEM_HPP_
+#ifndef GEOS_PHYSICSSOLVERS_MULTIPHYSICS_POROMECHANICSKERNELS_SINGLEPHASEPOROMECHANICSEFEM_HPP_
+#define GEOS_PHYSICSSOLVERS_MULTIPHYSICS_POROMECHANICSKERNELS_SINGLEPHASEPOROMECHANICSEFEM_HPP_
 
-#include "constitutive/contact/ContactBase.hpp"
 #include "finiteElement/kernelInterface/ImplicitKernelBase.hpp"
+#include "codingUtilities/Utilities.hpp"
 
-namespace geosx
+namespace geos
 {
 
 namespace poromechanicsEFEMKernels
 {
 
-/**
- * @brief Implements kernels for solving quasi-static single-phase poromechanics.
- * @copydoc geosx::finiteElement::ImplicitKernelBase
- * @tparam NUM_NODES_PER_ELEM The number of nodes per element for the
- *                            @p SUBREGION_TYPE.
- * @tparam UNUSED An unused parameter since we are assuming that the test and
- *                trial space have the same number of support points.
- *
- * ### SinglePhasePoromechanics Description
- * Implements the KernelBase interface functions required for solving the
- * quasi-static single-phase poromechanics problem using one of the
- * "finite element kernel application" functions such as
- * geosx::finiteElement::RegionBasedKernelApplication.
- *
- */
 template< typename SUBREGION_TYPE,
           typename CONSTITUTIVE_TYPE,
           typename FE_TYPE >
@@ -76,6 +62,7 @@ public:
   using Base::m_elemsToNodes;
   using Base::m_constitutiveUpdate;
   using Base::m_finiteElementSpace;
+  using Base::m_dt;
 
 
   SinglePhasePoromechanicsEFEM( NodeManager const & nodeManager,
@@ -92,13 +79,14 @@ public:
                                 globalIndex const rankOffset,
                                 CRSMatrixView< real64, globalIndex const > const inputMatrix,
                                 arrayView1d< real64 > const inputRhs,
+                                real64 const inputDt,
                                 real64 const (&inputGravityVector)[3],
                                 string const fluidModelKey );
 
   //*****************************************************************************
   /**
    * @class StackVariables
-   * @copydoc geosx::finiteElement::ImplicitKernelBase::StackVariables
+   * @copydoc geos::finiteElement::ImplicitKernelBase::StackVariables
    *
    * Adds a stack array for the displacement, incremental displacement, and the
    * constitutive stiffness.
@@ -115,7 +103,7 @@ public:
     static constexpr int numWdofs = 3;
 
     /// Constructor.
-    GEOSX_HOST_DEVICE
+    GEOS_HOST_DEVICE
     StackVariables():
       Base::StackVariables(),
             dispEqnRowIndices{ 0 },
@@ -127,6 +115,7 @@ public:
       localKww{ { 0.0 } },
       localKwu{ { 0.0 } },
       localKuw{ { 0.0 } },
+      localEqMStress { 0.0 },
       localKwpm{ 0.0 },
       localKwpf( 0.0 ),
       wLocal(),
@@ -165,6 +154,9 @@ public:
 
     /// C-array storage for the element local Kuw matrix.
     real64 localKuw[numUdofs][numWdofs];
+
+    /// C-array storage for the element local EqM*effStress vector.
+    real64 localEqMStress[numWdofs];
 
     /// C-array storage for the element local Kwpm matrix.
     real64 localKwpm[numWdofs];
@@ -209,25 +201,27 @@ public:
 
   /**
    * @brief Copy global values from primary field to a local stack array.
-   * @copydoc ::geosx::finiteElement::ImplicitKernelBase::setup
+   * @copydoc ::geos::finiteElement::ImplicitKernelBase::setup
    *
    * For the SinglePhasePoromechanicsEFEM implementation, global values from the displacement,
    * incremental displacement, and degree of freedom numbers are placed into
    * element local stack storage.
    */
-  GEOSX_HOST_DEVICE
+  GEOS_HOST_DEVICE
   void setup( localIndex const k,
               StackVariables & stack ) const;
 
-  GEOSX_HOST_DEVICE
+  template< typename FUNC = NoOpFunc >
+  GEOS_HOST_DEVICE
   void quadraturePointKernel( localIndex const k,
                               localIndex const q,
-                              StackVariables & stack ) const;
+                              StackVariables & stack,
+                              FUNC && kernelOp = NoOpFunc{} ) const;
 
   /**
-   * @copydoc geosx::finiteElement::ImplicitKernelBase::complete
+   * @copydoc geos::finiteElement::ImplicitKernelBase::complete
    */
-  GEOSX_HOST_DEVICE
+  GEOS_HOST_DEVICE
   real64 complete( localIndex const k,
                    StackVariables & stack ) const;
 
@@ -242,6 +236,9 @@ protected:
   arrayView2d< real64 const, nodes::INCR_DISPLACEMENT_USD > const m_deltaDisp;
 
   arrayView2d< real64 const > const m_w;
+
+  /// The effective stress at the current time
+  arrayView3d< real64 const, solid::STRESS_USD > m_effStress;
 
   /// The global degree of freedom number
   arrayView1d< globalIndex const > const m_matrixPresDofNumber;
@@ -258,6 +255,9 @@ protected:
 
   /// The rank-global fluid pressure array.
   arrayView1d< real64 const > const m_matrixPressure;
+
+  /// The rank-global fluid pressure array.
+  arrayView1d< real64 const > const m_fracturePressure;
 
   /// The rank-global delta-fluid pressure array.
   arrayView2d< real64 const > const m_porosity_n;
@@ -278,7 +278,9 @@ protected:
 
   arrayView1d< real64 const > const m_surfaceArea;
 
-  arrayView1d< real64 const > const m_elementVolume;
+  arrayView1d< real64 const > const m_elementVolumeCell;
+
+  arrayView1d< real64 const > const m_elementVolumeFrac;
 
   arrayView1d< real64 const > const m_deltaVolume;
 
@@ -301,6 +303,7 @@ using SinglePhaseKernelFactory = finiteElement::KernelFactory< SinglePhasePorome
                                                                globalIndex const,
                                                                CRSMatrixView< real64, globalIndex const > const,
                                                                arrayView1d< real64 > const,
+                                                               real64 const,
                                                                real64 const (&)[3],
                                                                string const >;
 
@@ -323,13 +326,12 @@ struct StateUpdateKernel
    * @param[out] deltaVolume the change in volume
    * @param[out] aperture the aperture
    * @param[out] hydraulicAperture the effecture aperture
-   * @param[out] fractureTraction the fracture traction
-   * @param[out] dFractureTraction_dPressure the derivative of the fracture traction wrt pressure
+   * @param[out] fractureContactTraction the fracture contact traction
    */
-  template< typename POLICY, typename POROUS_WRAPPER >
+  template< typename POLICY, typename POROUS_WRAPPER, typename CONTACT_WRAPPER >
   static void
   launch( localIndex const size,
-          constitutive::ContactBase::KernelWrapper const & contactWrapper,
+          CONTACT_WRAPPER const & contactWrapper,
           POROUS_WRAPPER const & porousMaterialWrapper,
           arrayView2d< real64 const > const & dispJump,
           arrayView1d< real64 const > const & pressure,
@@ -339,31 +341,31 @@ struct StateUpdateKernel
           arrayView1d< real64 > const & aperture,
           arrayView1d< real64 const > const & oldHydraulicAperture,
           arrayView1d< real64 > const & hydraulicAperture,
-          arrayView2d< real64 > const & fractureTraction,
-          arrayView1d< real64 > const & dFractureTraction_dPressure )
+          arrayView2d< real64 > const & fractureEffectiveTraction )
   {
-    forAll< POLICY >( size, [=] GEOSX_HOST_DEVICE ( localIndex const k )
+    forAll< POLICY >( size, [=] GEOS_HOST_DEVICE ( localIndex const k )
     {
       // update aperture to be equal to the normal displacement jump
       aperture[k] = dispJump[k][0]; // the first component of the jump is the normal one.
 
-      real64 dHydraulicAperture_dAperture = 0;
+      real64 dHydraulicAperture_dNormalJump = 0.0;
+      real64 dHydraulicAperture_dNormalTraction = 0.0;
       hydraulicAperture[k] = contactWrapper.computeHydraulicAperture( aperture[k],
-                                                                      dHydraulicAperture_dAperture );
+                                                                      fractureEffectiveTraction[k][0],
+                                                                      dHydraulicAperture_dNormalJump,
+                                                                      dHydraulicAperture_dNormalTraction );
 
       deltaVolume[k] = hydraulicAperture[k] * area[k] - volume[k];
 
-      // traction on the fracture to include the pressure contribution
-      contactWrapper.addPressureToTraction( pressure[k],
-                                            fractureTraction[k],
-                                            dFractureTraction_dPressure[k] );
-
       real64 const jump[3] = LVARRAY_TENSOROPS_INIT_LOCAL_3 ( dispJump[k] );
-      real64 const traction[3] = LVARRAY_TENSOROPS_INIT_LOCAL_3 ( fractureTraction[k] );
+      real64 const effectiveTraction[3] = LVARRAY_TENSOROPS_INIT_LOCAL_3 ( fractureEffectiveTraction[k] );
 
+      // all perm update models below should need effective traction instead of total traction
+      // (total traction is combined forces of fluid pressure and effective traction)
       porousMaterialWrapper.updateStateFromPressureApertureJumpAndTraction( k, 0, pressure[k],
                                                                             oldHydraulicAperture[k], hydraulicAperture[k],
-                                                                            jump, traction );
+                                                                            dHydraulicAperture_dNormalJump,
+                                                                            jump, effectiveTraction );
 
     } );
   }
@@ -371,6 +373,6 @@ struct StateUpdateKernel
 
 } // namespace poromechanicsEFEMKernels
 
-} /* namespace geosx */
+} /* namespace geos */
 
-#endif // GEOSX_PHYSICSSOLVERS_MULTIPHYSICS_POROMECHANICSKERNELS_SINGLEPHASEPOROMECHANICSEFEM_HPP_
+#endif // GEOS_PHYSICSSOLVERS_MULTIPHYSICS_POROMECHANICSKERNELS_SINGLEPHASEPOROMECHANICSEFEM_HPP_

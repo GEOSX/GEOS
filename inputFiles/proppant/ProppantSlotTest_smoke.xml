@@ -76,6 +76,7 @@
       logLevel="1">
       <NonlinearSolverParameters
         newtonMaxIter="8"
+	lineSearchAction="None"  	  
         couplingType="Sequential"/>
     </FlowProppantTransport>
 <!-- SPHINX_PROPPANT_COUPLEDSOLVER_END -->

@@ -1,14 +1,14 @@
 .. _BuildProcess:
 
-Building GEOSX
+Building GEOS
 ==============
 
 Build steps
 ---------------------
 
 - Create a host-config file that sets all system-specific CMake variables.
-  Take a look at `host-config examples <https://github.com/GEOSX/GEOSX/blob/develop/host-configs>`_.
-  We recommend the same host-config is used for both TPL and GEOSX builds.
+  Take a look at `host-config examples <https://github.com/GEOS-DEV/GEOS/blob/develop/host-configs>`_.
+  We recommend the same host-config is used for both TPL and GEOS builds.
   In particular, certain options (such as ``ENABLE_MPI`` or ``ENABLE_CUDA``) need to match between the two.
 
 - Provide paths to all enabled TPLs.
@@ -19,7 +19,7 @@ Build steps
 
     .. code-block:: cmake
 
-       include("/path/to/GEOSX/host-configs/tpls.cmake")
+       include("/path/to/GEOS/host-configs/tpls.cmake")
 
     which will set all the individual TPL paths for you.
 
@@ -27,7 +27,7 @@ Build steps
 
   .. code-block:: console
 
-     cd GEOSX
+     cd GEOS
      python scripts/config-build.py --hostconfig=/path/to/host-config.cmake --buildtype=Release --installpath=/path/to/install/dir
 
   where
@@ -59,7 +59,7 @@ Configuration options
 
 Below is a list of CMake configuration options, in addition to TPL options above.
 Some options, when enabled, require additional settings (e.g. ``ENABLE_CUDA``).
-Please see `host-config examples <https://github.com/GEOSX/GEOSX/blob/develop/host-configs>`_.
+Please see `host-config examples <https://github.com/GEOS-DEV/GEOS/blob/develop/host-configs>`_.
 
 =============================== ========= ==============================================================================
 Option                          Default   Explanation
@@ -67,15 +67,18 @@ Option                          Default   Explanation
 ``ENABLE_MPI``                  ``ON``    Build with MPI (also applies to TPLs)
 ``ENABLE_OPENMP``               ``OFF``   Build with OpenMP (also applies to TPLs)
 ``ENABLE_CUDA``                 ``OFF``   Build with CUDA (also applies to TPLs)
-``ENABLE_CUDA_NVTOOLSEXT``      ``OFF``   Enable CUDA NVTX user instrumentation (via GEOSX_MARK_SCOPE or GEOSX_MARK_FUNCTION macros)
+``ENABLE_CUDA_NVTOOLSEXT``      ``OFF``   Enable CUDA NVTX user instrumentation (via GEOS_MARK_SCOPE or GEOS_MARK_FUNCTION macros)
+``ENABLE_HIP``                  ``OFF``   Build with HIP/ROCM (also applies to TPLs)
 ``ENABLE_DOCS``                 ``ON``    Build documentation (Sphinx and Doxygen)
 ``ENABLE_WARNINGS_AS_ERRORS``   ``ON``    Treat all warnings as errors
 ``ENABLE_PVTPackage``           ``ON``    Enable PVTPackage library (required for compositional flow runs)
-``ENABLE_TOTALVIEW_OUTPUT``     ``OFF``   Enables TotalView debugger custom view of GEOSX data structures
-``GEOSX_ENABLE_FPE``            ``ON``    Enable floating point exception trapping
-``GEOSX_LA_INTERFACE``          ``Hypre`` Choiсe of Linear Algebra backend (Hypre/Petsc/Trilinos)
-``GEOSX_BUILD_OBJ_LIBS``        ``ON``    Use CMake Object Libraries build
-``GEOSX_BUILD_SHARED_LIBS``     ``OFF``   Build ``geosx_core`` as a shared library instead of static
-``GEOSX_PARALLEL_COMPILE_JOBS``           Max. number of compile jobs (when using Ninja), in addition to ``-j`` flag
-``GEOSX_PARALLEL_LINK_JOBS``              Max. number of link jobs (when using Ninja), in addition to ``-j`` flag
+``ENABLE_TOTALVIEW_OUTPUT``     ``OFF``   Enables TotalView debugger custom view of GEOS data structures
+``ENABLE_COV``                  ``OFF``   Enables code coverage
+``GEOS_ENABLE_TESTS``           ``ON``    Enables unit testing targets
+``GEOS_LA_INTERFACE``           ``Hypre`` Choiсe of Linear Algebra backend (Hypre/Petsc/Trilinos)
+``GEOS_BUILD_OBJ_LIBS``         ``ON``    Use CMake Object Libraries build
+``GEOS_BUILD_SHARED_LIBS``      ``OFF``   Build ``geosx_core`` as a shared library instead of static
+``GEOS_PARALLEL_COMPILE_JOBS``            Max. number of compile jobs (when using Ninja), in addition to ``-j`` flag
+``GEOS_PARALLEL_LINK_JOBS``               Max. number of link jobs (when using Ninja), in addition to ``-j`` flag
+``GEOS_INSTALL_SCHEMA``         ``ON``    Enables schema generation and installation
 =============================== ========= ==============================================================================

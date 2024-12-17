@@ -2,23 +2,24 @@
  * ------------------------------------------------------------------------------------------------------------
  * SPDX-License-Identifier: LGPL-2.1-only
  *
- * Copyright (c) 2018-2020 Lawrence Livermore National Security LLC
- * Copyright (c) 2018-2020 The Board of Trustees of the Leland Stanford Junior University
- * Copyright (c) 2018-2020 TotalEnergies
- * Copyright (c) 2020-     GEOSX Contributors
+ * Copyright (c) 2016-2024 Lawrence Livermore National Security LLC
+ * Copyright (c) 2018-2024 TotalEnergies
+ * Copyright (c) 2018-2024 The Board of Trustees of the Leland Stanford Junior University
+ * Copyright (c) 2023-2024 Chevron
+ * Copyright (c) 2019-     GEOS/GEOSX Contributors
  * All rights reserved
  *
  * See top level LICENSE, COPYRIGHT, CONTRIBUTORS, NOTICE, and ACKNOWLEDGEMENTS files for details.
  * ------------------------------------------------------------------------------------------------------------
  */
 
-#ifndef GEOSX_MESH_GENERATORS_PRISMUTILITIES_HPP_
-#define GEOSX_MESH_GENERATORS_PRISMUTILITIES_HPP_
+#ifndef GEOS_MESH_GENERATORS_PRISMUTILITIES_HPP_
+#define GEOS_MESH_GENERATORS_PRISMUTILITIES_HPP_
 
 #include "common/DataTypes.hpp"
 #include "common/Span.hpp"
 
-namespace geosx
+namespace geos
 {
 
 /**
@@ -39,10 +40,11 @@ localIndex getFaceNodesPrism( localIndex const faceNum,
 {
   static_assert( N > 4,
                  "Function getFaceNodePrism can be called for a prism with N-sided polygon base where N > 5." );
+  static constexpr auto nodeCountError = "Not enough nodes for {} element (face index = {}).\n";
 
   if( faceNum == 0 )
   {
-    GEOSX_ERROR_IF_LT( faceNodes.size(), 4 );
+    GEOS_ERROR_IF_LT_MSG( faceNodes.size(), 4, GEOS_FMT( nodeCountError, N, faceNum ) << generalMeshErrorAdvice );
     faceNodes[0] = elemNodes[0];
     faceNodes[1] = elemNodes[1];
     faceNodes[2] = elemNodes[N+1];
@@ -51,7 +53,7 @@ localIndex getFaceNodesPrism( localIndex const faceNum,
   }
   else if( faceNum == 1 )
   {
-    GEOSX_ERROR_IF_LT( faceNodes.size(), N );
+    GEOS_ERROR_IF_LT_MSG( faceNodes.size(), N, GEOS_FMT( nodeCountError, N, faceNum ) << generalMeshErrorAdvice );
     faceNodes[0] = elemNodes[0];
     for( localIndex i = 1; i <  N; ++i )
     {
@@ -61,7 +63,7 @@ localIndex getFaceNodesPrism( localIndex const faceNum,
   }
   else if( faceNum == 2 )
   {
-    GEOSX_ERROR_IF_LT( faceNodes.size(), 4 );
+    GEOS_ERROR_IF_LT_MSG( faceNodes.size(), 4, GEOS_FMT( nodeCountError, N, faceNum ) << generalMeshErrorAdvice );
     faceNodes[0] = elemNodes[0];
     faceNodes[1] = elemNodes[N];
     faceNodes[2] = elemNodes[N*2-1];
@@ -70,7 +72,7 @@ localIndex getFaceNodesPrism( localIndex const faceNum,
   }
   else if( faceNum >= 3 && faceNum <= N )
   {
-    GEOSX_ERROR_IF_LT( faceNodes.size(), 4 );
+    GEOS_ERROR_IF_LT_MSG( faceNodes.size(), 4, GEOS_FMT( nodeCountError, N, faceNum ) << generalMeshErrorAdvice );
     faceNodes[0] = elemNodes[faceNum-2];
     faceNodes[1] = elemNodes[faceNum-1];
     faceNodes[2] = elemNodes[N+faceNum-1];
@@ -79,7 +81,7 @@ localIndex getFaceNodesPrism( localIndex const faceNum,
   }
   else if( faceNum == N + 1 )
   {
-    GEOSX_ERROR_IF_LT( faceNodes.size(), N );
+    GEOS_ERROR_IF_LT_MSG( faceNodes.size(), N, GEOS_FMT( nodeCountError, N, faceNum ) << generalMeshErrorAdvice );
     for( localIndex i = 0; i <  N; ++i )
     {
       faceNodes[i] = elemNodes[i+N];
@@ -88,7 +90,8 @@ localIndex getFaceNodesPrism( localIndex const faceNum,
   }
   else
   {
-    GEOSX_ERROR( GEOSX_FMT( "Invalid local face index for element of type Prism{}: {}", N, faceNum ) );
+    GEOS_ERROR( GEOS_FMT( "Local face index out of range for Prism{} element: face index = {}.\n{}",
+                          N, faceNum, generalMeshErrorAdvice ) );
     return 0;
   }
 
@@ -96,4 +99,4 @@ localIndex getFaceNodesPrism( localIndex const faceNum,
 
 }
 
-#endif // GEOSX_MESH_GENERATORS_PRISMUTILITIES_HPP_
+#endif // GEOS_MESH_GENERATORS_PRISMUTILITIES_HPP_

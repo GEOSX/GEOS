@@ -3,17 +3,17 @@
 System prerequisites
 ====================
 
-To configure and build GEOSX you will need the following tools available on your system.
+To configure and build GEOS you will need the following tools available on your system.
 
 List of prerequisites
 ---------------------
 
 Minimal requirements:
 
-- `CMake <https://cmake.org/>`_ build system generator (3.17+).
+- `CMake <https://cmake.org/>`_ build system generator (3.23.1+).
 - build tools (`GNU make <https://www.gnu.org/software/make/>`_ or `ninja <https://ninja-build.org/>`_ on Linux, XCode on MacOS).
-- a C++ compiler with full c++14 standard support (`gcc <https://gcc.gnu.org/>`_ 8.3+ or `clang <https://clang.llvm.org/>`_ 8.0+ are recommended).
-- `python <https://www.python.org/>`_ (2.7+ or 3.6+).
+- a C++ compiler with full c++17 standard support (`gcc <https://gcc.gnu.org/>`_ 12+ or `clang <https://clang.llvm.org/>`_ 13.0+ are recommended).
+- `python <https://www.python.org/>`_ 3.9-3.11 (versions 3.12+ are untested).
 - :code:`zlib`, :code:`blas` and :code:`lapack` libraries
 - any compatible MPI runtime and compilers (if building with MPI)
 
@@ -25,7 +25,7 @@ If you plan on building bundled third-party library (TPLs) dependencies yourself
 
 - Compatible C and Fortran compilers
 
-If you will be checking out and running integrated tests (a submodule of GEOSX, currently not publicly available):
+If you will be checking out and running integrated tests (a submodule of GEOS, currently not publicly available):
 
 - `git-lfs <https://git-lfs.github.com/>`_ (Git Large File Storage extension)
 - `h5py <https://www.h5py.org/>`_ and `mpi4py <https://pypi.org/project/mpi4py/>`_ python modules

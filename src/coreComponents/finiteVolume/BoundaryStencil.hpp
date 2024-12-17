@@ -2,10 +2,11 @@
  * ------------------------------------------------------------------------------------------------------------
  * SPDX-License-Identifier: LGPL-2.1-only
  *
- * Copyright (c) 2018-2020 Lawrence Livermore National Security LLC
- * Copyright (c) 2018-2020 The Board of Trustees of the Leland Stanford Junior University
- * Copyright (c) 2018-2020 TotalEnergies
- * Copyright (c) 2019-     GEOSX Contributors
+ * Copyright (c) 2016-2024 Lawrence Livermore National Security LLC
+ * Copyright (c) 2018-2024 TotalEnergies
+ * Copyright (c) 2018-2024 The Board of Trustees of the Leland Stanford Junior University
+ * Copyright (c) 2023-2024 Chevron
+ * Copyright (c) 2019-     GEOS/GEOSX Contributors
  * All rights reserved
  *
  * See top level LICENSE, COPYRIGHT, CONTRIBUTORS, NOTICE, and ACKNOWLEDGEMENTS files for details.
@@ -16,12 +17,12 @@
  * @file BoundaryStencil.hpp
  */
 
-#ifndef GEOSX_FINITEVOLUME_BOUNDARYSTENCIL_HPP_
-#define GEOSX_FINITEVOLUME_BOUNDARYSTENCIL_HPP_
+#ifndef GEOS_FINITEVOLUME_BOUNDARYSTENCIL_HPP_
+#define GEOS_FINITEVOLUME_BOUNDARYSTENCIL_HPP_
 
 #include "StencilBase.hpp"
 
-namespace geosx
+namespace geos
 {
 
 /**
@@ -60,7 +61,7 @@ public:
    * @param[out] weight view weights
    * @param[out] dWeight_dCoef derivative of the weights w.r.t to the coefficient
    */
-  GEOSX_HOST_DEVICE
+  GEOS_HOST_DEVICE
   void computeWeights( localIndex const iconn,
                        CoefficientAccessor< arrayView3d< real64 const > > const & coefficient,
                        real64 & weight,
@@ -70,8 +71,8 @@ public:
    * @brief Give the number of stencil entries.
    * @return The number of stencil entries
    */
-  GEOSX_HOST_DEVICE
-  GEOSX_FORCE_INLINE
+  GEOS_HOST_DEVICE
+  GEOS_FORCE_INLINE
   localIndex size() const
   { return m_elementRegionIndices.size( 0 ); }
 
@@ -80,11 +81,11 @@ public:
    * @param[in] index of the stencil entry for which to query the size
    * @return the size of a stencil entry
    */
-  GEOSX_HOST_DEVICE
-  GEOSX_FORCE_INLINE
+  GEOS_HOST_DEVICE
+  GEOS_FORCE_INLINE
   constexpr localIndex stencilSize( localIndex const index ) const
   {
-    GEOSX_UNUSED_VAR( index );
+    GEOS_UNUSED_VAR( index );
     return maxStencilSize;
   }
 
@@ -93,11 +94,11 @@ public:
    * @param[in] index of the stencil entry for which to query the size
    * @return the number of points.
    */
-  GEOSX_HOST_DEVICE
-  GEOSX_FORCE_INLINE
+  GEOS_HOST_DEVICE
+  GEOS_FORCE_INLINE
   constexpr localIndex numPointsInFlux( localIndex const index ) const
   {
-    GEOSX_UNUSED_VAR( index );
+    GEOS_UNUSED_VAR( index );
     return maxNumPointsInFlux;
   }
 
@@ -162,7 +163,7 @@ public:
    */
   constexpr localIndex stencilSize( localIndex const index ) const
   {
-    GEOSX_UNUSED_VAR( index );
+    GEOS_UNUSED_VAR( index );
     return maxStencilSize;
   }
 
@@ -183,7 +184,7 @@ private:
 
 };
 
-GEOSX_HOST_DEVICE
+GEOS_HOST_DEVICE
 inline void
 BoundaryStencilWrapper::
   computeWeights( localIndex const iconn,
@@ -224,6 +225,6 @@ BoundaryStencilWrapper::
   LvArray::tensorOps::scale< 3 >( dWeight_dCoef, mult );
 }
 
-} // namespace geosx
+} // namespace geos
 
-#endif // GEOSX_FINITEVOLUME_BOUNDARYSTENCIL_HPP_
+#endif // GEOS_FINITEVOLUME_BOUNDARYSTENCIL_HPP_

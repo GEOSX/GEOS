@@ -1,0 +1,255 @@
+<?xml version="1.0" ?>
+
+<Problem>
+  <Solvers
+    gravityVector="{ 0.0, 0.0, 0.0 }">
+    <SinglePhasePoromechanicsEmbeddedFractures
+      name="poroSolver"
+      targetRegions="{ Domain, Fracture }"
+      initialDt="1e-3"
+      flowSolverName="flowSolver"
+      solidSolverName="fractureMechSolver"
+      logLevel="1">
+      <NonlinearSolverParameters
+        maxTimeStepCuts="1"/>
+      <LinearSolverParameters
+        directParallel="0"
+        solverType="direct"/>
+    </SinglePhasePoromechanicsEmbeddedFractures>
+
+    <SolidMechanicsEmbeddedFractures
+      name="fractureMechSolver"
+      targetRegions="{ Domain, Fracture }"
+      timeIntegrationOption="QuasiStatic"
+      discretization="FE1"
+      contactPenaltyStiffness="0.0e8"/>
+
+    <SinglePhaseFVM
+      name="flowSolver"
+      discretization="singlePhaseTPFA"
+      targetRegions="{ Domain, Fracture }"/>
+
+    <EmbeddedSurfaceGenerator
+      name="SurfaceGenerator"
+      discretization="FE1"
+      targetRegions="{ Domain, Fracture }"
+      fractureRegion="Fracture"
+      targetObjects="{ FracturePlane }"
+      logLevel="2"
+      mpiCommOrder="1"/>
+  </Solvers>
+
+  <Mesh>
+    <InternalMesh
+      name="mesh1"
+      elementTypes="{ C3D8 }"
+      xCoords="{ 0, 3 }"
+      yCoords="{ 0, 3 }"
+      zCoords="{ 0, 1 }"
+      nx="{ 11 }"
+      ny="{ 11 }"
+      nz="{ 1 }"
+      cellBlockNames="{ cb1 }"/>
+  </Mesh>
+
+  <Geometry>
+    <Box
+    name="fractureTip"
+    xMin="{ 1., -0.01, -0.1 }"
+    xMax="{ 2.,  .3,  1.1 }"/>
+    <Rectangle
+      name="FracturePlane"
+      normal="{ 1, 0, 0 }"
+      origin="{ 1.5, 1.5, 1.5 }"
+      lengthVector="{ 0, 1, 0 }"
+      widthVector="{ 0, 0, 1 }"
+      dimensions="{ 3, 4 }"/>
+  </Geometry>
+
+  <Events
+    maxTime="10">
+    <SoloEvent
+      name="preFracture"
+      target="/Solvers/SurfaceGenerator"/>
+
+    <PeriodicEvent
+      name="solverApplications"
+      forceDt="10"
+      target="/Solvers/poroSolver"/>
+
+    <PeriodicEvent
+      name="outputs"
+      cycleFrequency="10"
+      target="/Outputs/vtkOutput"/>
+
+    <PeriodicEvent
+      name="restarts"
+      timeFrequency="10"
+      target="/Outputs/restartOutput"/>
+  </Events>
+
+  <NumericalMethods>
+    <FiniteElements>
+      <FiniteElementSpace
+        name="FE1"
+        order="1"/>
+    </FiniteElements>
+
+    <FiniteVolume>
+      <TwoPointFluxApproximation
+        name="singlePhaseTPFA"/>
+    </FiniteVolume>
+  </NumericalMethods>
+
+  <ElementRegions>
+    <CellElementRegion
+      name="Domain"
+      cellBlocks="{ * }"
+      materialList="{ porousRock, water }"/>
+
+    <SurfaceElementRegion
+      name="Fracture"
+      subRegionType="embeddedElement"
+      materialList="{ water, fractureFilling, fractureContact, hApertureModel }"
+      defaultAperture="1e-3"/>
+  </ElementRegions>
+
+  <Constitutive>
+    <PorousElasticIsotropic
+      name="porousRock"
+      solidModelName="rock"
+      porosityModelName="rockPorosity"
+      permeabilityModelName="rockPerm"/>
+
+    <ElasticIsotropic
+      name="rock"
+      defaultDensity="1"
+      defaultBulkModulus="5555555555.5556"
+      defaultShearModulus="4166666666.6667"/>
+
+    <ConstantPermeability
+      name="rockPerm"
+      permeabilityComponents="{ 1.0e-12, 1.0e-12, 1.0e-12 }"/>
+
+    <CompressibleSinglePhaseFluid
+      name="water"
+      defaultDensity="1000"
+      defaultViscosity="1.0e-3"
+      referencePressure="1e6"
+      compressibility="0.0e0"
+      referenceViscosity="1e-3"
+      viscosibility="0.0"/>
+
+    <BiotPorosity
+      name="rockPorosity"
+      defaultGrainBulkModulus="1.0e27"
+      defaultReferencePorosity="0.2"/>
+
+    <CompressibleSolidParallelPlatesPermeability
+      name="fractureFilling"
+      solidModelName="nullSolid"
+      porosityModelName="fracturePorosity"
+      permeabilityModelName="fracturePerm"/>
+
+    <NullModel
+      name="nullSolid"/>
+
+    <PressurePorosity
+      name="fracturePorosity"
+      defaultReferencePorosity="1.00"
+      referencePressure="0.0"
+      compressibility="0.0"/>
+
+    <ParallelPlatesPermeability
+      name="fracturePerm"/>
+
+    <FrictionlessContact
+      name="fractureContact"/>
+
+ <HydraulicApertureTable
+      name="hApertureModel"
+      apertureTableName="apertureTable"/>   
+    
+  </Constitutive>
+
+  <FieldSpecifications>
+
+    <FieldSpecification
+      name="fracPorosity"
+      initialCondition="1"
+      setNames="{ all }"
+      objectPath="ElementRegions/Fracture"
+      fieldName="fracturePorosity_porosity"
+      scale="1.00"/>
+
+    <FieldSpecification
+      name="initialPressure"
+      initialCondition="1"
+      setNames="{ all }"
+      objectPath="ElementRegions/Domain/cb1"
+      fieldName="pressure"/>
+
+    <FieldSpecification
+      name="initialPressureFracture"
+      setNames="{ fractureTip }"
+      objectPath="ElementRegions/Fracture"
+      fieldName="pressure"
+      scale="1.0e5"/>
+
+    <FieldSpecification
+      name="xnegconstraint"
+      objectPath="nodeManager"
+      fieldName="totalDisplacement"
+      component="0"
+      scale="0.0"
+      setNames="{ xneg, xpos }"/>
+
+    <FieldSpecification
+      name="yposconstraint"
+      objectPath="nodeManager"
+      fieldName="totalDisplacement"
+      component="1"
+      scale="0.0"
+      setNames="{ ypos, yneg }"/>
+
+    <FieldSpecification
+      name="zconstraint"
+      objectPath="nodeManager"
+      fieldName="totalDisplacement"
+      component="2"
+      scale="0.0"
+      setNames="{ zneg, zpos }"/>
+
+    <FieldSpecification
+      name="leftPressure"
+      objectPath="faceManager"
+      fieldName="pressure"
+      scale="0.0"
+      setNames="{ xneg }"/>
+
+    <FieldSpecification
+      name="rightPressure"
+      objectPath="faceManager"
+      fieldName="pressure"
+      scale="0.0"
+      setNames="{ xpos }"/>
+  </FieldSpecifications>
+
+  <Functions>
+    <TableFunction
+      name="apertureTable"
+      coordinates="{ -1.0e-3, 0.0 }"
+      values="{ 1.0e-6, 1.0e-3 }"/>
+  </Functions>
+  
+  <Outputs>
+    <VTK
+      name="vtkOutput"
+      plotFileRoot="PoroElastic_embedded"
+      plotLevel="2"
+      format="ascii"/>
+
+    <Restart
+      name="restartOutput"/>
+  </Outputs>
+</Problem>

@@ -1,14 +1,29 @@
+/*
+ * ------------------------------------------------------------------------------------------------------------
+ * SPDX-License-Identifier: LGPL-2.1-only
+ *
+ * Copyright (c) 2016-2024 Lawrence Livermore National Security LLC
+ * Copyright (c) 2018-2024 TotalEnergies
+ * Copyright (c) 2018-2024 The Board of Trustees of the Leland Stanford Junior University
+ * Copyright (c) 2023-2024 Chevron
+ * Copyright (c) 2019-     GEOS/GEOSX Contributors
+ * All rights reserved
+ *
+ * See top level LICENSE, COPYRIGHT, CONTRIBUTORS, NOTICE, and ACKNOWLEDGEMENTS files for details.
+ * ------------------------------------------------------------------------------------------------------------
+ */
+
 #include "fileIO/timeHistory/HDFHistoryIO.hpp"
 #include "common/TimingMacros.hpp"
 #include "mainInterface/initialization.hpp"
 
 #include <gtest/gtest.h>
 
-using namespace geosx;
+using namespace geos;
 
 TEST( testHDFIO_parallel, SingleValueHistory )
 {
-  GEOSX_MARK_FUNCTION;
+  GEOS_MARK_FUNCTION;
   string filename( "single_value_parallel" );
   HistoryMetadata spec( "Time History", 1, std::type_index( typeid(real64)));
 
@@ -31,7 +46,7 @@ TEST( testHDFIO_parallel, SingleValueHistory )
 
 TEST( testHDFIO_parallel, DynamicHistory )
 {
-  GEOSX_MARK_FUNCTION;
+  GEOS_MARK_FUNCTION;
   string filename( "dynamic_parallel" );
   HistoryMetadata singleItemSpec( "some_real", 1, std::type_index( typeid(real64)));
 
@@ -79,8 +94,8 @@ TEST( testHDFIO_parallel, DynamicHistory )
 int main( int ac, char * av[] )
 {
   ::testing::InitGoogleTest( &ac, av );
-  geosx::basicSetup( ac, av );
+  geos::basicSetup( ac, av );
   int const result = RUN_ALL_TESTS();
-  geosx::basicCleanup();
+  geos::basicCleanup();
   return result;
 }

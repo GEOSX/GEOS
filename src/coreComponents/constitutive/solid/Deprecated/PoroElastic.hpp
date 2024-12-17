@@ -2,10 +2,11 @@
  * ------------------------------------------------------------------------------------------------------------
  * SPDX-License-Identifier: LGPL-2.1-only
  *
- * Copyright (c) 2018-2020 Lawrence Livermore National Security LLC
- * Copyright (c) 2018-2020 The Board of Trustees of the Leland Stanford Junior University
- * Copyright (c) 2018-2020 TotalEnergies
- * Copyright (c) 2019-     GEOSX Contributors
+ * Copyright (c) 2016-2024 Lawrence Livermore National Security LLC
+ * Copyright (c) 2018-2024 TotalEnergies
+ * Copyright (c) 2018-2024 The Board of Trustees of the Leland Stanford Junior University
+ * Copyright (c) 2023-2024 Chevron
+ * Copyright (c) 2019-     GEOS/GEOSX Contributors
  * All rights reserved
  *
  * See top level LICENSE, COPYRIGHT, CONTRIBUTORS, NOTICE, and ACKNOWLEDGEMENTS files for details.
@@ -17,13 +18,13 @@
  * @file PoroElastic.hpp
  */
 
-#ifndef GEOSX_CONSTITUTIVE_SOLID_POROELASTIC_HPP_
-#define GEOSX_CONSTITUTIVE_SOLID_POROELASTIC_HPP_
+#ifndef GEOS_CONSTITUTIVE_SOLID_POROELASTIC_HPP_
+#define GEOS_CONSTITUTIVE_SOLID_POROELASTIC_HPP_
 
 #include "SolidBase.hpp"
 #include "constitutive/ExponentialRelation.hpp"
 
-namespace geosx
+namespace geos
 {
 namespace constitutive
 {
@@ -68,7 +69,7 @@ public:
    * @brief Get Biot coefficient
    * @return Biot coefficient
    */
-  GEOSX_HOST_DEVICE
+  GEOS_HOST_DEVICE
   real64 getBiotCoefficient() const
   {
     return m_biotCoefficient;
@@ -121,7 +122,7 @@ public:
   virtual string getCatalogName() const override { return catalogName(); }
 
   /// Post-process XML input
-  virtual void postProcessInput() override;
+  virtual void postInputInitialization() override;
 
   /**
    * @brief Deliver a clone of this object
@@ -203,6 +204,6 @@ protected:
 };
 
 }
-} /* namespace geosx */
+} /* namespace geos */
 
-#endif /* GEOSX_CONSTITUTIVE_SOLID_POROELASTIC_HPP_ */
+#endif /* GEOS_CONSTITUTIVE_SOLID_POROELASTIC_HPP_ */

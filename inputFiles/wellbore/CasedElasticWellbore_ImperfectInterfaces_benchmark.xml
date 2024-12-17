@@ -1,0 +1,128 @@
+<?xml version="1.0" ?>
+
+<Problem>
+  <Included>
+    <File name="./CasedElasticWellbore_ImperfectInterfaces_base.xml"/>
+  </Included>
+
+  <!-- SPHINX_WellboreMesh -->
+  <Mesh>
+    <InternalWellbore
+      name="mesh1"
+      elementTypes="{ C3D8, C3D8, C3D8 }"
+      radius="{ 0.1, 0.106, 0.133, 0.17 }"
+      theta="{ 0, 90 }"
+      zCoords="{ 0, 0.1 }"
+      nr="{ 3, 5, 5 }"
+      nt="{ 40 }"
+      nz="{ 1 }"
+      trajectory="{ { 0.0, 0.0, 0.0 },
+                    { 0.0, 0.0, 0.1 } }"
+      autoSpaceRadialElems="{ 0, 0, 0 }"
+      cellBlockNames="{ casing, cement, rock }"
+      />
+  </Mesh>
+  <!-- SPHINX_WellboreMeshEnd -->
+
+  <!-- SPHINX_CementSheathInterfaces -->
+  <Geometry>
+    <Cylinder
+      name="casingCementInterface"
+      firstFaceCenter="{ 0.0, 0.0,  -0.001 }"
+      secondFaceCenter="{ 0.0, 0.0, 0.101 }"
+      outerRadius="0.1061"
+      innerRadius="0.1059"
+    />
+
+    <Cylinder
+      name="cementRockInterface"
+      firstFaceCenter="{ 0.0, 0.0,  -0.001 }"
+      secondFaceCenter="{ 0.0, 0.0, 0.101 }"
+      outerRadius="0.1331"
+      innerRadius="0.1329"
+    />
+  </Geometry>
+  <!-- SPHINX_CementSheathInterfacesEnd -->
+
+  <Events maxTime="2.0">
+
+    <PeriodicEvent
+      name="stressHistoryCollection_casing"
+      endTime="2.0"
+      forceDt="0.1"
+      target="/Tasks/stressCollection_casing"/>
+    <PeriodicEvent
+      name="stressHistoryCollection_cement"
+      endTime="2.0"
+      forceDt="0.1"
+      target="/Tasks/stressCollection_cement"/>
+    <PeriodicEvent
+      name="stressHistoryCollection_rock"
+      endTime="2.0"
+      forceDt="0.1"
+      target="/Tasks/stressCollection_rock"/>
+    <PeriodicEvent
+      name="stressTimeHistoryOutput_casing"
+      endTime="2.0"
+      forceDt="0.1"
+      target="/Outputs/stressHistoryOutput_casing"/>
+    <PeriodicEvent
+      name="stressTimeHistoryOutput_cement"
+      endTime="2.0"
+      forceDt="0.1"
+      target="/Outputs/stressHistoryOutput_cement"/>
+    <PeriodicEvent
+      name="stressTimeHistoryOutput_rock"
+      endTime="2.0"
+      forceDt="0.1"
+      target="/Outputs/stressHistoryOutput_rock"/>
+
+    <PeriodicEvent
+      name="displacementHistoryCollection"
+      endTime="2.0"
+      forceDt="0.1"
+      target="/Tasks/displacementCollection"/>
+    <PeriodicEvent
+      name="displacementTimeHistoryOutput"
+      endTime="2.0"
+      forceDt="0.1"
+      target="/Outputs/displacementHistoryOutput"/>
+
+    <!-- SPHINX_EventDisplacementJumpHistoryCollection -->
+    <PeriodicEvent
+      name="displacementJumpHistoryCollection"
+      endTime="2.0"
+      forceDt="0.1"
+      target="/Tasks/displacementJumpCollection"/>
+    <PeriodicEvent
+      name="displacementJumpTimeHistoryOutput"
+      endTime="2.0"
+      forceDt="0.1"
+      target="/Outputs/displacementJumpHistoryOutput"/>
+    <!-- SPHINX_EventDisplacementJumpHistoryCollectionEnd -->
+
+    <!-- SPHINX_EventSurfaceGen -->
+    <SoloEvent
+      name="preFracture"
+      target="/Solvers/SurfaceGen"/>
+    <!-- SPHINX_EventSurfaceGenEnd -->
+
+    <PeriodicEvent
+      name="solverApplications"
+      forceDt="0.1"
+      target="/Solvers/lagrangiancontact"/>
+
+    <PeriodicEvent
+      name="outputs"
+      forceDt="0.1"
+      target="/Outputs/vtkOutput"/>
+    
+    <!--PeriodicEvent
+      name="restarts"
+      timeFrequency="1.0"
+      targetExactTimestep="0"
+      target="/Outputs/restartOutput"/-->
+  </Events>
+
+
+</Problem>

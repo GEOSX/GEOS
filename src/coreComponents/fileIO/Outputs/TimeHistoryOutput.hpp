@@ -2,11 +2,12 @@
  * ------------------------------------------------------------------------------------------------------------
  * SPDX-License-Identifier: LGPL-2.1-only
  *
- * Copyright (c) 2018-2019 Lawrence Livermore National Security LLC
- * Copyright (c) 2018-2019 The Board of Trustees of the Leland Stanford Junior University
- * Copyright (c) 2018-2019 TotalEnergies
- * Copyright (c) 2019-     GEOSX Contributors
- * All right reserved
+ * Copyright (c) 2016-2024 Lawrence Livermore National Security LLC
+ * Copyright (c) 2018-2024 TotalEnergies
+ * Copyright (c) 2018-2024 The Board of Trustees of the Leland Stanford Junior University
+ * Copyright (c) 2023-2024 Chevron
+ * Copyright (c) 2019-     GEOS/GEOSX Contributors
+ * All rights reserved
  *
  * See top level LICENSE, COPYRIGHT, CONTRIBUTORS, NOTICE, and ACKNOWLEDGEMENTS files for details.
  * ------------------------------------------------------------------------------------------------------------
@@ -16,8 +17,8 @@
  * @file TimeHistoryOutput.hpp
  */
 
-#ifndef GEOSX_FILEIO_OUTPUTS_HISTORYOUTPUT_HPP_
-#define GEOSX_FILEIO_OUTPUTS_HISTORYOUTPUT_HPP_
+#ifndef GEOS_FILEIO_OUTPUTS_HISTORYOUTPUT_HPP_
+#define GEOS_FILEIO_OUTPUTS_HISTORYOUTPUT_HPP_
 
 #include "OutputBase.hpp"
 #include "fileIO/timeHistory/HistoryCollection.hpp"
@@ -26,7 +27,7 @@
 
 #include "LvArray/src/Array.hpp" // just for collector
 
-namespace geosx
+namespace geos
 {
 
 /**
@@ -37,7 +38,7 @@ namespace geosx
 class TimeHistoryOutput : public OutputBase
 {
 public:
-  /// @copydoc geosx::dataRepository::Group::Group(string const & name, Group * const parent)
+  /// @copydoc geos::dataRepository::Group::Group(string const & name, Group * const parent)
   TimeHistoryOutput( string const & name,
                      Group * const parent );
 
@@ -109,9 +110,15 @@ public:
    * @brief Return PyHistoryOutput type.
    * @return Return PyHistoryOutput type.
    */
-#if defined(GEOSX_USE_PYGEOSX)
+#if defined(GEOS_USE_PYGEOSX)
   virtual PyTypeObject * getPythonType() const override;
 #endif
+
+protected:
+  /**
+   * @copydoc OutputBase::getTimerCategory
+   */
+  logInfo::OutputTimerBase const & getTimerCategory() const override;
 
 private:
 

@@ -2,11 +2,12 @@
  * ------------------------------------------------------------------------------------------------------------
  * SPDX-License-Identifier: LGPL-2.1-only
  *
- * Copyright (c) 2018-2019 Lawrence Livermore National Security LLC
- * Copyright (c) 2018-2019 The Board of Trustees of the Leland Stanford Junior University
- * Copyright (c) 2018-2019 TotalEnergies
- * Copyright (c) 2019-     GEOSX Contributors
- * All right reserved
+ * Copyright (c) 2016-2024 Lawrence Livermore National Security LLC
+ * Copyright (c) 2018-2024 TotalEnergies
+ * Copyright (c) 2018-2024 The Board of Trustees of the Leland Stanford Junior University
+ * Copyright (c) 2023-2024 Chevron
+ * Copyright (c) 2019-     GEOS/GEOSX Contributors
+ * All rights reserved
  *
  * See top level LICENSE, COPYRIGHT, CONTRIBUTORS, NOTICE, and ACKNOWLEDGEMENTS files for details.
  * ------------------------------------------------------------------------------------------------------------
@@ -27,7 +28,7 @@
 #define VERIFY_INITIALIZED( self ) \
   PYTHON_ERROR_IF( self->group == nullptr, PyExc_RuntimeError, "The PyGroup is not initialized.", nullptr )
 
-namespace geosx
+namespace geos
 {
 namespace python
 {
@@ -40,7 +41,7 @@ struct PyGroup
   PyObject_HEAD
 
   static constexpr char const * docString =
-    "A Python interface to geosx::dataRepository::Group.";
+    "A Python interface to geos::dataRepository::Group.";
 
   dataRepository::Group * group;
 };
@@ -76,7 +77,7 @@ static constexpr char const * PyGroup_groupsDocString =
   "    A list containing each subgroup.";
 static PyObject * PyGroup_groups( PyGroup * const self, PyObject * const args ) noexcept
 {
-  GEOSX_UNUSED_VAR( args );
+  GEOS_UNUSED_VAR( args );
 
   VERIFY_NON_NULL_SELF( self );
   VERIFY_INITIALIZED( self );
@@ -118,7 +119,7 @@ static constexpr char const * PyGroup_wrappersDocString =
   "    A list containing each wrapper.";
 static PyObject * PyGroup_wrappers( PyGroup * const self, PyObject * const args ) noexcept
 {
-  GEOSX_UNUSED_VAR( args );
+  GEOS_UNUSED_VAR( args );
 
   VERIFY_NON_NULL_SELF( self );
   VERIFY_INITIALIZED( self );
@@ -354,4 +355,4 @@ PyTypeObject * getPyGroupType()
 { return &PyGroupType; }
 
 } // namespace python
-} // namespace geosx
+} // namespace geos

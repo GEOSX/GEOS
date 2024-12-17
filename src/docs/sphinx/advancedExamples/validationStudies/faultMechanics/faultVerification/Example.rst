@@ -8,7 +8,7 @@ Verification of Induced Stresses Along a Fault
 
 **Context**
 
-In this example, we evaluate the induced stresses in a pressurized reservoir displaced by a normal fault (permeable or impermeable). This problem is solved using the poroelastic solver in GEOSX to obtain the stress perturbations along the fault plane, which are verified against the corresponding analytical solution `(Wu et al., 2020)  <https://agupubs.onlinelibrary.wiley.com/doi/full/10.1029/2020JB020436>`__. 
+In this example, we evaluate the induced stresses in a pressurized reservoir displaced by a normal fault (permeable or impermeable). This problem is solved using the poroelastic solver in GEOS to obtain the stress perturbations along the fault plane, which are verified against the corresponding analytical solution `(Wu et al., 2020)  <https://agupubs.onlinelibrary.wiley.com/doi/full/10.1029/2020JB020436>`__. 
 
 
 **Input file**
@@ -81,7 +81,7 @@ The following figure shows the mesh used in this problem.
 
 Here, we load the mesh with ``VTKMesh``.
 The syntax to import external meshes is simple: in the XML file,
-the mesh file ``faultMesh.vtu`` is included with its relative or absolute path to the location of the GEOSX XML file and a user-specified label (here ``FaultModel``) is given to the mesh object. This mesh contains quadrilateral elements and local refinement to conform with the fault geometry, and two reservoir compartments displaced by the fault. The size of the reservoir should be large enough to avoid boundary effects.
+the mesh file ``faultMesh.vtu`` is included with its relative or absolute path to the location of the GEOS XML file and a user-specified label (here ``FaultModel``) is given to the mesh object. This mesh contains quadrilateral elements and local refinement to conform with the fault geometry, and two reservoir compartments displaced by the fault. The size of the reservoir should be large enough to avoid boundary effects.
 
 
 .. literalinclude:: ../../../../../../../inputFiles/poromechanics/impermeableFault_benchmark.xml
@@ -93,7 +93,7 @@ the mesh file ``faultMesh.vtu`` is included with its relative or absolute path t
 Solid mechanics solver
 --------------------------
 
-GEOSX is a multi-physics platform. Different combinations of
+GEOS is a multi-physics platform. Different combinations of
 physics solvers available in the code can be applied
 in different regions of the domain and be functional at different stages of the simulation.
 The ``Solvers`` tag in the XML file is used to list and parameterize these solvers.
@@ -102,8 +102,8 @@ To specify a coupling between two different solvers, we define and characterize 
 Then, we customize a *coupling solver* between these single-physics
 solvers as an additional solver.
 This approach allows for generality and flexibility in constructing multi-physics solvers.
-The order in which solvers are specified is not important in GEOSX.
-Note that end-users should give each single-physics solver a meaningful and distinct name, as GEOSX will recognize these single-physics solvers based on their customized names to create the expected couplings.
+The order in which solvers are specified is not important in GEOS.
+Note that end-users should give each single-physics solver a meaningful and distinct name, as GEOS will recognize these single-physics solvers based on their customized names to create the expected couplings.
 
 As demonstrated in this example, to setup a poromechanical coupling, we need to define three different solvers in the XML file:
 
@@ -150,7 +150,7 @@ Discretization methods for multiphysics solvers
 Numerical methods in multiphysics settings are similar to single physics numerical methods. In this problem, we use finite volume for flow and finite elements for solid mechanics. All necessary parameters for these methods are defined in the ``NumericalMethods`` section.
 
 As mentioned before, the coupling solver and the solid mechanics solver require the specification of a discretization method called ``FE1``.
-In GEOSX, this discretization method represents a finite element method
+In GEOS, this discretization method represents a finite element method
 using linear basis functions and Gaussian quadrature rules.
 For more information on defining finite elements numerical schemes,
 please see the dedicated :ref:`FiniteElement` section.
@@ -220,7 +220,7 @@ For the permeable fault case, a constant pressure buildup is imposed to both com
 
 
 The parameters used in the simulation are summarized in the following table, which are specified in the
-``Constitutive`` and ``FieldSpecifications`` sections. Note that stresses and traction have negative values, due to the negative sign convention for compressive stresses in GEOSX.
+``Constitutive`` and ``FieldSpecifications`` sections. Note that stresses and traction have negative values, due to the negative sign convention for compressive stresses in GEOS.
 
 +------------------+-----------------------------+------------------+--------------------+
 | Symbol           | Parameter                   | Unit             | Value              |
@@ -275,7 +275,7 @@ The following figure shows the distribution of resulting shear stress (:math:`\s
    Simulation results of :math:`\sigma_{xy}`
 
 
-The figure below compares the results from GEOSX (marks) and the corresponding analytical solution (solid curves) for the change of total stresses (:math:`\sigma_{xx}`, :math:`\sigma_{yy}` and :math:`\sigma_{xy}`) along the fault plane. As shown, GEOSX reliably captures the mechanical deformation of the faulted reservoir and shows excellent agreement with the analytical solutions for two different scenarios. Differences in the stress perturbations between the cases with permeable and impermeable fault are also noticeable, which suggests that fault permeability plays a crucial role in governing reservoir deformation for the problems with reservoir pressurization or depletion. 
+The figure below compares the results from GEOS (marks) and the corresponding analytical solution (solid curves) for the change of total stresses (:math:`\sigma_{xx}`, :math:`\sigma_{yy}` and :math:`\sigma_{xy}`) along the fault plane. As shown, GEOS reliably captures the mechanical deformation of the faulted reservoir and shows excellent agreement with the analytical solutions for two different scenarios. Differences in the stress perturbations between the cases with permeable and impermeable fault are also noticeable, which suggests that fault permeability plays a crucial role in governing reservoir deformation for the problems with reservoir pressurization or depletion. 
 
 .. plot:: docs/sphinx/advancedExamples/validationStudies/faultMechanics/faultVerification/faultVerificationFigure.py
 
@@ -287,4 +287,4 @@ To go further
 
 **Feedback on this example**
 
-For any feedback on this example, please submit a `GitHub issue on the project's GitHub page <https://github.com/GEOSX/GEOSX/issues>`_.
+For any feedback on this example, please submit a `GitHub issue on the project's GitHub page <https://github.com/GEOS-DEV/GEOS/issues>`_.

@@ -2,11 +2,11 @@
 Contributors
 ###############################################################################
 
-An up-to-date list of all GEOSX contributors can be found on our Github page:
+An up-to-date list of all GEOS contributors can be found on our Github page:
 
-`GEOSX Contributors <https://github.com/GEOSX/GEOSX/graphs/contributors>`_
+`GEOS Contributors <https://github.com/GEOS-DEV/GEOS/graphs/contributors>`_
 
-The following is the list of GEOSX contributors as of January 2019:
+The following is the list of GEOS contributors as of January 2019:
 
 .. list-table::
    :widths: 10 30

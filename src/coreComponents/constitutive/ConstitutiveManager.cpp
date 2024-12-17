@@ -2,10 +2,11 @@
  * ------------------------------------------------------------------------------------------------------------
  * SPDX-License-Identifier: LGPL-2.1-only
  *
- * Copyright (c) 2018-2020 Lawrence Livermore National Security LLC
- * Copyright (c) 2018-2020 The Board of Trustees of the Leland Stanford Junior University
- * Copyright (c) 2018-2020 TotalEnergies
- * Copyright (c) 2019-     GEOSX Contributors
+ * Copyright (c) 2016-2024 Lawrence Livermore National Security LLC
+ * Copyright (c) 2018-2024 TotalEnergies
+ * Copyright (c) 2018-2024 The Board of Trustees of the Leland Stanford Junior University
+ * Copyright (c) 2023-2024 Chevron
+ * Copyright (c) 2019-     GEOS/GEOSX Contributors
  * All rights reserved
  *
  * See top level LICENSE, COPYRIGHT, CONTRIBUTORS, NOTICE, and ACKNOWLEDGEMENTS files for details.
@@ -20,7 +21,7 @@
 
 #include "mesh/ElementSubRegionBase.hpp"
 
-namespace geosx
+namespace geos
 {
 
 using namespace dataRepository;
@@ -42,6 +43,7 @@ ConstitutiveManager::~ConstitutiveManager()
 
 Group * ConstitutiveManager::createChild( string const & childKey, string const & childName )
 {
+  GEOS_LOG_RANK_0( GEOS_FMT( "{}: adding {} {}", getName(), childKey, childName ) );
   std::unique_ptr< ConstitutiveBase > material = ConstitutiveBase::CatalogInterface::factory( childKey, childName, this );
   return &registerGroup< ConstitutiveBase >( childName, std::move( material ) );
 }
@@ -71,11 +73,11 @@ ConstitutiveManager::hangConstitutiveRelation( string const & constitutiveRelati
 
   // 1. Allocate constitutive relation
   // we only register the constitutive relation if it has not been registered yet.
-  GEOSX_ERROR_IF( constitutiveGroup->hasGroup( constitutiveRelationInstanceName ),
-                  GEOSX_FMT( "Error! The constitutive relation {} has already been registered on the subRegion {}. "
-                             "Make sure that the same constitutive model is not listed as a material on a"
-                             " region both as a stand-alone one and as part of a compound constitutive model.",
-                             constitutiveRelationInstanceName, parent->getName() ) );
+  GEOS_ERROR_IF( constitutiveGroup->hasGroup( constitutiveRelationInstanceName ),
+                 GEOS_FMT( "Error! The constitutive relation {} has already been registered on the subRegion {}. "
+                           "Make sure that the same constitutive model is not listed as a material on a"
+                           " region both as a stand-alone one and as part of a compound constitutive model.",
+                           constitutiveRelationInstanceName, parent->getDataContext().toString() ) );
 
   ConstitutiveBase const & constitutiveRelation = getConstitutiveRelation( constitutiveRelationInstanceName );
 
@@ -94,11 +96,11 @@ ConstitutiveManager::hangConstitutiveRelation( string const & constitutiveRelati
   for( string const & subRelationName : subRelationNames )
   {
     // we only want to register the subRelation if it has not been registered yet.
-    GEOSX_ERROR_IF( constitutiveGroup->hasGroup( subRelationName ),
-                    GEOSX_FMT( "Error! The constitutive relation {} has already been registered on the subRegion {}. "
-                               "Make sure that the same constitutive model is not listed as a material on a"
-                               " region both as a stand-alone one and as part of a compound constitutive model.",
-                               subRelationName, parent->getName() ) );
+    GEOS_ERROR_IF( constitutiveGroup->hasGroup( subRelationName ),
+                   GEOS_FMT( "Error! The constitutive relation {} has already been registered on the subRegion {}. "
+                             "Make sure that the same constitutive model is not listed as a material on a"
+                             " region both as a stand-alone one and as part of a compound constitutive model.",
+                             subRelationName, parent->getDataContext().toString() ) );
 
     ConstitutiveBase const & subRelation = getConstitutiveRelation( subRelationName );
 
@@ -117,4 +119,4 @@ ConstitutiveManager::hangConstitutiveRelation( string const & constitutiveRelati
 
 } /* namespace constitutive */
 
-} /* namespace geosx */
+} /* namespace geos */

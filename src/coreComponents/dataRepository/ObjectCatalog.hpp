@@ -1,18 +1,20 @@
-#ifndef GEOSX_DATAREPOSITORY_OBJECTCATALOG_HPP_
-#define GEOSX_DATAREPOSITORY_OBJECTCATALOG_HPP_
 /*
  * ------------------------------------------------------------------------------------------------------------
  * SPDX-License-Identifier: LGPL-2.1-only
  *
- * Copyright (c) 2018-2020 Lawrence Livermore National Security LLC
- * Copyright (c) 2018-2020 The Board of Trustees of the Leland Stanford Junior University
- * Copyright (c) 2018-2020 TotalEnergies
- * Copyright (c) 2019-     GEOSX Contributors
+ * Copyright (c) 2016-2024 Lawrence Livermore National Security LLC
+ * Copyright (c) 2018-2024 TotalEnergies
+ * Copyright (c) 2018-2024 The Board of Trustees of the Leland Stanford Junior University
+ * Copyright (c) 2023-2024 Chevron
+ * Copyright (c) 2019-     GEOS/GEOSX Contributors
  * All rights reserved
  *
  * See top level LICENSE, COPYRIGHT, CONTRIBUTORS, NOTICE, and ACKNOWLEDGEMENTS files for details.
  * ------------------------------------------------------------------------------------------------------------
  */
+
+#ifndef GEOS_DATAREPOSITORY_OBJECTCATALOG_HPP_
+#define GEOS_DATAREPOSITORY_OBJECTCATALOG_HPP_
 
 /**
  * @file ObjectCatalog.hpp
@@ -25,8 +27,8 @@
  * of a
  */
 
-#include "common/Logger.hpp"
-#include "codingUtilities/StringUtilities.hpp"
+#include "common/logger/Logger.hpp"
+#include "common/format/StringUtilities.hpp"
 #include "LvArray/src/system.hpp"
 
 #include <iostream>
@@ -49,7 +51,7 @@
 #define BASEHOLDSCATALOG 1
 #endif
 
-namespace geosx
+namespace geos
 {
 namespace dataRepository
 {
@@ -78,7 +80,7 @@ public:
   CatalogInterface()
   {
 #if OBJECTCATALOGVERBOSE > 1
-    GEOSX_LOG( "Calling constructor for CatalogInterface< " << LvArray::system::demangle( typeid( BASETYPE ).name() ) << " , ... >" );
+    GEOS_LOG( "Calling constructor for CatalogInterface< " << LvArray::system::demangle( typeid( BASETYPE ).name() ) << " , ... >" );
 #endif
   }
 
@@ -88,7 +90,7 @@ public:
   virtual ~CatalogInterface()
   {
 #if OBJECTCATALOGVERBOSE > 1
-    GEOSX_LOG( "Calling destructor for CatalogInterface< " << LvArray::system::demangle( typeid( BASETYPE ).name() ) << " , ... >" );
+    GEOS_LOG( "Calling destructor for CatalogInterface< " << LvArray::system::demangle( typeid( BASETYPE ).name() ) << " , ... >" );
 #endif
   }
 
@@ -187,7 +189,7 @@ public:
       string errorMsg = "Could not find keyword \"" + objectTypeName + "\" in this context. ";
       errorMsg += "Please be sure that all your keywords are properly spelled or that input file parameters have not changed.\n";
       errorMsg += "All available keys are: [\n" + tmp + "\n]";
-      GEOSX_ERROR( errorMsg );
+      GEOS_ERROR( errorMsg );
     }
 
     // We also stop the simulation if the builder is not here.
@@ -195,7 +197,7 @@ public:
     if( builder == nullptr )
     {
       const string errorMsg = "\"" + objectTypeName + "\" could be found. But the builder is invalid.\n";
-      GEOSX_ERROR( errorMsg );
+      GEOS_ERROR( errorMsg );
     }
 
     return builder->allocate( args ... );
@@ -221,7 +223,7 @@ public:
     if( castedName != objectName )
     {
 #if OBJECTCATALOGVERBOSE > 1
-      GEOSX_LOG( "Invalid Cast of " << objectName << " to " << castedName );
+      GEOS_LOG( "Invalid Cast of " << objectName << " to " << castedName );
 #endif
     }
 
@@ -249,9 +251,9 @@ public:
     CatalogInterface< BASETYPE, ARGS... >()
   {
 #if OBJECTCATALOGVERBOSE > 1
-    GEOSX_LOG( "Calling constructor for CatalogEntry< " << LvArray::system::demangle( typeid(TYPE).name())
-                                                        << " , " << LvArray::system::demangle( typeid(BASETYPE).name())
-                                                        << " , ... >" );
+    GEOS_LOG( "Calling constructor for CatalogEntry< " << LvArray::system::demangle( typeid(TYPE).name())
+                                                       << " , " << LvArray::system::demangle( typeid(BASETYPE).name())
+                                                       << " , ... >" );
 #endif
   }
 
@@ -261,9 +263,9 @@ public:
   ~CatalogEntry() override
   {
 #if OBJECTCATALOGVERBOSE > 1
-    GEOSX_LOG( "Calling destructor for CatalogEntry< " << LvArray::system::demangle( typeid(TYPE).name())
-                                                       << " , " << LvArray::system::demangle( typeid(BASETYPE).name())
-                                                       << " , ... >" );
+    GEOS_LOG( "Calling destructor for CatalogEntry< " << LvArray::system::demangle( typeid(TYPE).name())
+                                                      << " , " << LvArray::system::demangle( typeid(BASETYPE).name())
+                                                      << " , ... >" );
 #endif
 
   }
@@ -313,8 +315,8 @@ public:
   virtual std::unique_ptr< BASETYPE > allocate( ARGS... args ) const override
   {
 #if OBJECTCATALOGVERBOSE > 0
-    GEOSX_LOG( "Creating type " << LvArray::system::demangle( typeid(TYPE).name())
-                                << " from catalog of " << LvArray::system::demangle( typeid(BASETYPE).name()));
+    GEOS_LOG( "Creating type " << LvArray::system::demangle( typeid(TYPE).name())
+                               << " from catalog of " << LvArray::system::demangle( typeid(BASETYPE).name()));
 #endif
 #if ( __cplusplus >= 201402L )
     return std::make_unique< TYPE >( args ... );
@@ -343,9 +345,9 @@ public:
   CatalogEntryConstructor()
   {
 #if OBJECTCATALOGVERBOSE > 1
-    GEOSX_LOG( "Calling constructor for CatalogEntryConstructor< " << LvArray::system::demangle( typeid(TYPE).name())
-                                                                   << " , " << LvArray::system::demangle( typeid(BASETYPE).name())
-                                                                   << " , ... >" );
+    GEOS_LOG( "Calling constructor for CatalogEntryConstructor< " << LvArray::system::demangle( typeid(TYPE).name())
+                                                                  << " , " << LvArray::system::demangle( typeid(BASETYPE).name())
+                                                                  << " , ... >" );
 #endif
 
     std::string name = TYPE::catalogName();
@@ -359,11 +361,11 @@ public:
     ( CatalogInterface< BASETYPE, ARGS... >::getCatalog() ).insert( std::move( std::make_pair( name, std::move( temp ) ) ) );
 
 #if OBJECTCATALOGVERBOSE > 0
-    GEOSX_LOG( "Registered " << LvArray::system::demangle( typeid(BASETYPE).name())
-                             << " catalog component of derived type "
-                             << LvArray::system::demangle( typeid(TYPE).name())
-                             << " where " << LvArray::system::demangle( typeid(TYPE).name())
-                             << "::catalogName() = " << TYPE::catalogName());
+    GEOS_LOG( "Registered " << LvArray::system::demangle( typeid(BASETYPE).name())
+                            << " catalog component of derived type "
+                            << LvArray::system::demangle( typeid(TYPE).name())
+                            << " where " << LvArray::system::demangle( typeid(TYPE).name())
+                            << "::catalogName() = " << TYPE::catalogName());
 #endif
   }
 
@@ -373,9 +375,9 @@ public:
   ~CatalogEntryConstructor()
   {
 #if OBJECTCATALOGVERBOSE > 1
-    GEOSX_LOG( "Calling destructor for CatalogEntryConstructor< " << LvArray::system::demangle( typeid(TYPE).name())
-                                                                  << " , " << LvArray::system::demangle( typeid(BASETYPE).name())
-                                                                  << " , ... >" );
+    GEOS_LOG( "Calling destructor for CatalogEntryConstructor< " << LvArray::system::demangle( typeid(TYPE).name())
+                                                                 << " , " << LvArray::system::demangle( typeid(BASETYPE).name())
+                                                                 << " , ... >" );
 #endif
   }
 
@@ -422,8 +424,8 @@ public:
   CatalogInterface()
   {
 #if OBJECTCATALOGVERBOSE > 1
-    GEOSX_LOG( "Calling constructor for CatalogInterface< " << LvArray::system::demangle( typeid(BASETYPE).name())
-                                                            << " , ... >" );
+    GEOS_LOG( "Calling constructor for CatalogInterface< " << LvArray::system::demangle( typeid(BASETYPE).name())
+                                                           << " , ... >" );
 #endif
   }
 
@@ -433,8 +435,8 @@ public:
   virtual ~CatalogInterface()
   {
 #if OBJECTCATALOGVERBOSE > 1
-    GEOSX_LOG( "Calling destructor for CatalogInterface< " << LvArray::system::demangle( typeid(BASETYPE).name())
-                                                           << " , ... >" );
+    GEOS_LOG( "Calling destructor for CatalogInterface< " << LvArray::system::demangle( typeid(BASETYPE).name())
+                                                          << " , ... >" );
 #endif
   }
 
@@ -510,7 +512,7 @@ public:
     if( castedName != objectName )
     {
 #if OBJECTCATALOGVERBOSE > 1
-      GEOSX_LOG( "Invalid Cast of " << objectName << " to " << castedName );
+      GEOS_LOG( "Invalid Cast of " << objectName << " to " << castedName );
 #endif
     }
 
@@ -535,9 +537,9 @@ public:
     CatalogInterface< BASETYPE >()
   {
 #if OBJECTCATALOGVERBOSE > 1
-    GEOSX_LOG( "Calling constructor for CatalogEntry< " << LvArray::system::demangle( typeid(TYPE).name())
-                                                        << " , " << LvArray::system::demangle( typeid(BASETYPE).name())
-                                                        << " , ... >" );
+    GEOS_LOG( "Calling constructor for CatalogEntry< " << LvArray::system::demangle( typeid(TYPE).name())
+                                                       << " , " << LvArray::system::demangle( typeid(BASETYPE).name())
+                                                       << " , ... >" );
 #endif
   }
 
@@ -547,9 +549,9 @@ public:
   ~CatalogEntry() override
   {
 #if OBJECTCATALOGVERBOSE > 1
-    GEOSX_LOG( "Calling destructor for CatalogEntry< " << LvArray::system::demangle( typeid(TYPE).name())
-                                                       << " , " << LvArray::system::demangle( typeid(BASETYPE).name())
-                                                       << " , ... >" );
+    GEOS_LOG( "Calling destructor for CatalogEntry< " << LvArray::system::demangle( typeid(TYPE).name())
+                                                      << " , " << LvArray::system::demangle( typeid(BASETYPE).name())
+                                                      << " , ... >" );
 #endif
 
   }
@@ -597,8 +599,8 @@ public:
   virtual std::unique_ptr< BASETYPE > allocate(  ) const override
   {
 #if OBJECTCATALOGVERBOSE > 0
-    GEOSX_LOG( "Creating type " << LvArray::system::demangle( typeid(TYPE).name())
-                                << " from catalog of " << LvArray::system::demangle( typeid(BASETYPE).name()));
+    GEOS_LOG( "Creating type " << LvArray::system::demangle( typeid(TYPE).name())
+                               << " from catalog of " << LvArray::system::demangle( typeid(BASETYPE).name()));
 #endif
 #if ( __cplusplus >= 201402L )
     return std::make_unique< TYPE >(  );
@@ -623,9 +625,9 @@ public:
   CatalogEntryConstructor()
   {
 #if OBJECTCATALOGVERBOSE > 1
-    GEOSX_LOG( "Calling constructor for CatalogEntryConstructor< " << LvArray::system::demangle( typeid(TYPE).name())
-                                                                   << " , " << LvArray::system::demangle( typeid(BASETYPE).name())
-                                                                   << " , ... >" );
+    GEOS_LOG( "Calling constructor for CatalogEntryConstructor< " << LvArray::system::demangle( typeid(TYPE).name())
+                                                                  << " , " << LvArray::system::demangle( typeid(BASETYPE).name())
+                                                                  << " , ... >" );
 #endif
 
     std::string name = TYPE::catalogName();
@@ -637,11 +639,11 @@ public:
     ( CatalogInterface< BASETYPE >::getCatalog() ).insert( std::move( std::make_pair( name, std::move( temp ) ) ) );
 
 #if OBJECTCATALOGVERBOSE > 0
-    GEOSX_LOG( "Registered " << LvArray::system::demangle( typeid(BASETYPE).name())
-                             << " catalog component of derived type "
-                             << LvArray::system::demangle( typeid(TYPE).name())
-                             << " where " << LvArray::system::demangle( typeid(TYPE).name())
-                             << "::catalogName() = " << TYPE::catalogName());
+    GEOS_LOG( "Registered " << LvArray::system::demangle( typeid(BASETYPE).name())
+                            << " catalog component of derived type "
+                            << LvArray::system::demangle( typeid(TYPE).name())
+                            << " where " << LvArray::system::demangle( typeid(TYPE).name())
+                            << "::catalogName() = " << TYPE::catalogName());
 #endif
   }
 
@@ -651,8 +653,8 @@ public:
   ~CatalogEntryConstructor()
   {
 #if OBJECTCATALOGVERBOSE > 1
-    GEOSX_LOG( "Calling destructor for CatalogEntryConstructor< " << LvArray::system::demangle( typeid(TYPE).name())
-                                                                  << " , " << LvArray::system::demangle( typeid(BASETYPE).name()) << " , ... >" );
+    GEOS_LOG( "Calling destructor for CatalogEntryConstructor< " << LvArray::system::demangle( typeid(TYPE).name())
+                                                                 << " , " << LvArray::system::demangle( typeid(BASETYPE).name()) << " , ... >" );
 #endif
   }
 
@@ -697,12 +699,12 @@ public:
  * generation of a CatalogEntry<BaseType,ClassName,...> prior to main().
  */
 #define REGISTER_CATALOG_ENTRY( BaseType, DerivedType, ... ) \
-  namespace { geosx::dataRepository::CatalogEntryConstructor< BaseType, DerivedType, __VA_ARGS__ > catEntry_ ## DerivedType; }
+  namespace { GEOS_MAYBE_UNUSED geos::dataRepository::CatalogEntryConstructor< BaseType, DerivedType, __VA_ARGS__ > catEntry_ ## DerivedType; }
 
 /**
  * @brief Same as REGISTER_CATALOG_ENTRY, but for classes with no-argument constructors.
  */
 #define REGISTER_CATALOG_ENTRY0( BaseType, DerivedType ) \
-  namespace { geosx::dataRepository::CatalogEntryConstructor< BaseType, DerivedType > catEntry_ ## DerivedType; }
+  namespace { GEOS_MAYBE_UNUSED geos::dataRepository::CatalogEntryConstructor< BaseType, DerivedType > catEntry_ ## DerivedType; }
 
-#endif /* GEOSX_DATAREPOSITORY_OBJECTCATALOG_HPP_ */
+#endif /* GEOS_DATAREPOSITORY_OBJECTCATALOG_HPP_ */

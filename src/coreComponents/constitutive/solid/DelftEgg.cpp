@@ -2,11 +2,12 @@
  * ------------------------------------------------------------------------------------------------------------
  * SPDX-License-Identifier: LGPL-2.1-only
  *
- * Copyright (c) 2018-2019 Lawrence Livermore National Security LLC
- * Copyright (c) 2018-2019 The Board of Trustees of the Leland Stanford Junior University
- * Copyright (c) 2018-2019 TotalEnergies
- * Copyright (c) 2019-     GEOSX Contributors
- * All right reserved
+ * Copyright (c) 2016-2024 Lawrence Livermore National Security LLC
+ * Copyright (c) 2018-2024 TotalEnergies
+ * Copyright (c) 2018-2024 The Board of Trustees of the Leland Stanford Junior University
+ * Copyright (c) 2023-2024 Chevron
+ * Copyright (c) 2019-     GEOS/GEOSX Contributors
+ * All rights reserved
  *
  * See top level LICENSE, COPYRIGHT, CONTRIBUTORS, NOTICE, and ACKNOWLEDGEMENTS files for details.
  * ------------------------------------------------------------------------------------------------------------
@@ -18,7 +19,7 @@
 
 #include "DelftEgg.hpp"
 
-namespace geosx
+namespace geos
 {
 using namespace dataRepository;
 namespace constitutive
@@ -108,14 +109,18 @@ void DelftEgg::allocateConstitutiveData( Group & parent,
 }
 
 
-void DelftEgg::postProcessInput()
+void DelftEgg::postInputInitialization()
 {
-  ElasticIsotropic::postProcessInput();
+  ElasticIsotropic::postInputInitialization();
 
-  GEOSX_THROW_IF( m_defaultCslSlope <= 0, "Non-positive slope of critical state line detected", InputError );
-  GEOSX_THROW_IF( m_defaultShapeParameter < 1., "Shape parameter for yield surface must be greater than or equal to one", InputError );
-  GEOSX_THROW_IF( m_defaultVirginCompressionIndex <= 0, "Non-positive virgin compression index detected", InputError );
-  GEOSX_THROW_IF( m_defaultVirginCompressionIndex <= m_defaultRecompressionIndex, "Recompression index should exceed virgin recompression index", InputError );
+  GEOS_THROW_IF( m_defaultCslSlope <= 0,
+                 getFullName() << ": Non-positive slope of critical state line detected", InputError );
+  GEOS_THROW_IF( m_defaultShapeParameter < 1.,
+                 getFullName() << ": Shape parameter for yield surface must be greater than or equal to one", InputError );
+  GEOS_THROW_IF( m_defaultVirginCompressionIndex <= 0,
+                 getFullName() << ": Non-positive virgin compression index detected", InputError );
+  GEOS_THROW_IF( m_defaultVirginCompressionIndex <= m_defaultRecompressionIndex,
+                 getFullName() << ": Recompression index should exceed virgin recompression index", InputError );
 
   // set results as array default values
 
@@ -149,7 +154,7 @@ void DelftEgg::saveConvergedState() const
   arrayView2d< real64 const > newPreConsolidationPressure = m_newPreConsolidationPressure;
   arrayView2d< real64 > oldPreConsolidationPressure = m_oldPreConsolidationPressure;
 
-  forAll< parallelDevicePolicy<> >( numE, [=] GEOSX_HOST_DEVICE ( localIndex const k )
+  forAll< parallelDevicePolicy<> >( numE, [=] GEOS_HOST_DEVICE ( localIndex const k )
   {
     for( localIndex q = 0; q < numQ; ++q )
     {
@@ -160,4 +165,4 @@ void DelftEgg::saveConvergedState() const
 
 REGISTER_CATALOG_ENTRY( ConstitutiveBase, DelftEgg, string const &, Group * const )
 }
-} /* namespace geosx */
+} /* namespace geos */

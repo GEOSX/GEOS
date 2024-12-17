@@ -2,10 +2,11 @@
  * ------------------------------------------------------------------------------------------------------------
  * SPDX-License-Identifier: LGPL-2.1-only
  *
- * Copyright (c) 2018-2020 Lawrence Livermore National Security LLC
- * Copyright (c) 2018-2020 The Board of Trustees of the Leland Stanford Junior University
- * Copyright (c) 2018-2020 TotalEnergies
- * Copyright (c) 2019-     GEOSX Contributors
+ * Copyright (c) 2016-2024 Lawrence Livermore National Security LLC
+ * Copyright (c) 2018-2024 TotalEnergies
+ * Copyright (c) 2018-2024 The Board of Trustees of the Leland Stanford Junior University
+ * Copyright (c) 2023-2024 Chevron
+ * Copyright (c) 2019-     GEOS/GEOSX Contributors
  * All rights reserved
  *
  * See top level LICENSE, COPYRIGHT, CONTRIBUTORS, NOTICE, and ACKNOWLEDGEMENTS files for details.
@@ -16,14 +17,14 @@
  * @file MultiPhaseThermalConductivityBase.hpp
  */
 
-#ifndef GEOSX_CONSTITUTIVE_MULTIPHASE_THERMALCONDUCTIVITY_THERMALCONDUCTIVITYBASE_HPP
-#define GEOSX_CONSTITUTIVE_MULTIPHASE_THERMALCONDUCTIVITY_THERMALCONDUCTIVITYBASE_HPP
+#ifndef GEOS_CONSTITUTIVE_MULTIPHASE_THERMALCONDUCTIVITY_THERMALCONDUCTIVITYBASE_HPP
+#define GEOS_CONSTITUTIVE_MULTIPHASE_THERMALCONDUCTIVITY_THERMALCONDUCTIVITYBASE_HPP
 
 #include "common/DataLayouts.hpp"
 #include "common/GEOS_RAJA_Interface.hpp"
 #include "constitutive/ConstitutiveBase.hpp"
 
-namespace geosx
+namespace geos
 {
 
 namespace constitutive
@@ -40,21 +41,21 @@ public:
    * @brief Get number of elements in this wrapper.
    * @return number of elements
    */
-  GEOSX_HOST_DEVICE
+  GEOS_HOST_DEVICE
   localIndex numElems() const { return m_effectiveConductivity.size( 0 ); }
 
   /**
    * @brief Get number of gauss points per element.
    * @return number of gauss points per element
    */
-  GEOSX_HOST_DEVICE
+  GEOS_HOST_DEVICE
   localIndex numGauss() const { return m_effectiveConductivity.size( 1 ); }
 
   /**
    * @brief Get number of fluid phases.
    * @return number of phases
    */
-  GEOSX_HOST_DEVICE
+  GEOS_HOST_DEVICE
   integer numPhases() const { return LvArray::integerConversion< integer >( m_dEffectiveConductivity_dPhaseVolFrac.size( 3 ) ); }
 
 protected:
@@ -86,7 +87,7 @@ private:
    * @param[in] laggedPorosity lagged porosity in the cell (for fractures, this will be unused)
    * @param[in] phaseVolFrac phase volume fraction in the cell
    */
-  GEOSX_HOST_DEVICE
+  GEOS_HOST_DEVICE
   virtual void update( localIndex const k,
                        localIndex const q,
                        real64 const & laggedPorosity,
@@ -122,7 +123,7 @@ public:
    */
   virtual void initializeRockFluidState( arrayView2d< real64 const > const & initialPorosity,
                                          arrayView2d< real64 const, compflow::USD_PHASE > const & initialPhaseVolumeFraction ) const
-  { GEOSX_UNUSED_VAR( initialPorosity, initialPhaseVolumeFraction ); }
+  { GEOS_UNUSED_VAR( initialPorosity, initialPhaseVolumeFraction ); }
 
   /**
    * @brief Save the thermal conductivity state (needed when thermal conductivity depends on porosity and phase volume fraction)
@@ -133,7 +134,7 @@ public:
    */
   virtual void saveConvergedRockFluidState( arrayView2d< real64 const > const & convergedPorosity,
                                             arrayView2d< real64 const, compflow::USD_PHASE > const & convergedPhaseVolumeFraction ) const
-  { GEOSX_UNUSED_VAR( convergedPorosity, convergedPhaseVolumeFraction ); }
+  { GEOS_UNUSED_VAR( convergedPorosity, convergedPhaseVolumeFraction ); }
 
   /**
    * @brief Getter for the number of fluid phases
@@ -175,7 +176,7 @@ private:
 
 protected:
 
-  virtual void postProcessInput() override;
+  virtual void postInputInitialization() override;
 
   /// phase names read from input
   string_array m_phaseNames;
@@ -193,7 +194,7 @@ protected:
 
 } // namespace constitutive
 
-} // namespace geosx
+} // namespace geos
 
 
-#endif //GEOSX_CONSTITUTIVE_MULTIPHASE_THERMALCONDUCTIVITY_THERMALCONDUCTIVITYBASE_HPP
+#endif //GEOS_CONSTITUTIVE_MULTIPHASE_THERMALCONDUCTIVITY_THERMALCONDUCTIVITYBASE_HPP

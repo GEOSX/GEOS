@@ -2,10 +2,11 @@
  * ------------------------------------------------------------------------------------------------------------
  * SPDX-License-Identifier: LGPL-2.1-only
  *
- * Copyright (c) 2018-2020 Lawrence Livermore National Security LLC
- * Copyright (c) 2018-2020 The Board of Trustees of the Leland Stanford Junior University
- * Copyright (c) 2018-2020 Total, S.A
- * Copyright (c) 2019-     GEOSX Contributors
+ * Copyright (c) 2016-2024 Lawrence Livermore National Security LLC
+ * Copyright (c) 2018-2024 TotalEnergies
+ * Copyright (c) 2018-2024 The Board of Trustees of the Leland Stanford Junior University
+ * Copyright (c) 2023-2024 Chevron
+ * Copyright (c) 2019-     GEOS/GEOSX Contributors
  * All rights reserved
  *
  * See top level LICENSE, COPYRIGHT, CONTRIBUTORS, NOTICE, and ACKNOWLEDGEMENTS files for details.
@@ -16,27 +17,22 @@
  * @file VTKUtilities.hpp
  */
 
-#ifndef GEOSX_MESH_GENERATORS_VTKUTILITIES_HPP
-#define GEOSX_MESH_GENERATORS_VTKUTILITIES_HPP
+#ifndef GEOS_MESH_GENERATORS_VTKUTILITIES_HPP
+#define GEOS_MESH_GENERATORS_VTKUTILITIES_HPP
 
 #include "common/DataTypes.hpp"
-#include "common/DataLayouts.hpp"
 #include "common/MpiWrapper.hpp"
-#include "mesh/DomainPartition.hpp"
 #include "mesh/generators/CellBlockManager.hpp"
 
-#include <vtkSmartPointer.h>
 #include <vtkDataSet.h>
 #include <vtkMultiProcessController.h>
+#include <vtkSmartPointer.h>
 
 #include <numeric>
 #include <unordered_set>
 
-namespace geosx
+namespace geos
 {
-
-using namespace dataRepository;
-
 namespace vtk
 {
 
@@ -69,11 +65,76 @@ using CellMapType = std::map< ElementType, std::unordered_map< int, std::vector<
 vtkSmartPointer< vtkMultiProcessController > getController();
 
 /**
+ * @brief Gathers all the vtk meshes together.
+ */
+class AllMeshes
+{
+public:
+  AllMeshes() = default;
+
+  /**
+   * @brief Builds the compound from values.
+   * @param main The main 3d mesh (the matrix).
+   * @param faceBlocks The fractures meshes.
+   */
+  AllMeshes( vtkSmartPointer< vtkDataSet > const & main,
+             std::map< string, vtkSmartPointer< vtkDataSet > > const & faceBlocks )
+    : m_main( main ),
+    m_faceBlocks( faceBlocks )
+  { }
+
+  /**
+   * @return the main 3d mesh for the simulation.
+   */
+  vtkSmartPointer< vtkDataSet > getMainMesh()
+  {
+    return m_main;
+  }
+
+  /**
+   * @return a mapping linking the name of each face block to its mesh.
+   */
+  std::map< string, vtkSmartPointer< vtkDataSet > > & getFaceBlocks()
+  {
+    return m_faceBlocks;
+  }
+
+  /**
+   * @brief Defines the main 3d mesh for the simulation.
+   * @param main The new 3d mesh.
+   */
+  void setMainMesh( vtkSmartPointer< vtkDataSet > main )
+  {
+    m_main = main;
+  }
+
+  /**
+   * @brief Defines the face blocks/fractures.
+   * @param faceBlocks A map which connects each name of the face block to its mesh.
+   */
+  void setFaceBlocks( std::map< string, vtkSmartPointer< vtkDataSet > > const & faceBlocks )
+  {
+    m_faceBlocks = faceBlocks;
+  }
+
+private:
+  /// The main 3d mesh (namely the matrix).
+  vtkSmartPointer< vtkDataSet > m_main;
+
+  /// The face meshes (namely the fractures).
+  std::map< string, vtkSmartPointer< vtkDataSet > > m_faceBlocks;
+};
+
+/**
  * @brief Load the VTK file into the VTK data structure
  * @param[in] filePath the Path of the file to load
- * @return a vtk mesh
+ * @param[in] mainBlockName The name of the block to import (will be considered for multi-block files only).
+ * @param[in] faceBlockNames The names of the face blocks to import  (will be considered for multi-block files only).
+ * @return The compound of the main mesh and the face block meshes.
  */
-vtkSmartPointer< vtkDataSet > loadMesh( Path const & filePath );
+AllMeshes loadAllMeshes( Path const & filePath,
+                         string const & mainBlockName,
+                         array1d< string > const & faceBlockNames );
 
 /**
  * @brief Compute the rank neighbor candidate list.
@@ -85,19 +146,23 @@ findNeighborRanks( std::vector< vtkBoundingBox > boundingBoxes );
 
 /**
  * @brief Generate global point/cell IDs and redistribute the mesh among MPI ranks.
+ * @param[in] logLevel the log level
  * @param[in] loadedMesh the mesh that was loaded on one or several MPI ranks
+ * @param[in] namesToFractures the fracture meshes
  * @param[in] comm the MPI communicator
  * @param[in] method the partitionning method
  * @param[in] partitionRefinement number of graph partitioning refinement cycles
  * @param[in] useGlobalIds controls whether global id arrays from the vtk input should be used
  * @return the vtk grid redistributed
  */
-vtkSmartPointer< vtkDataSet >
-redistributeMesh( vtkDataSet & loadedMesh,
-                  MPI_Comm const comm,
-                  PartitionMethod const method,
-                  int const partitionRefinement,
-                  int const useGlobalIds );
+AllMeshes
+redistributeMeshes( integer const logLevel,
+                    vtkSmartPointer< vtkDataSet > loadedMesh,
+                    std::map< string, vtkSmartPointer< vtkDataSet > > & namesToFractures,
+                    MPI_Comm const comm,
+                    PartitionMethod const method,
+                    int const partitionRefinement,
+                    int const useGlobalIds );
 
 /**
  * @brief Collect lists of VTK cell indices organized by type and attribute value.
@@ -124,12 +189,56 @@ void printMeshStatistics( vtkDataSet & mesh,
 /**
  * @brief Collect the data to be imported.
  * @param[in] mesh an input mesh
- * @param[in] srcFieldNames an array of field names
- * @return A list of pointers to VTK data arrays.
+ * @param[in] sourceName a field name
+ * @return A VTK data array pointer.
  */
-std::vector< vtkDataArray * >
-findArraysForImport( vtkDataSet & mesh,
-                     arrayView1d< string const > const & srcFieldNames );
+vtkDataArray * findArrayForImport( vtkDataSet & mesh, string const & sourceName );
+
+/**
+ * @brief Check if the vtk mesh as a cell data field of name @p sourceName
+ * @param[in] mesh an input mesh
+ * @param[in] sourceName a field name
+ * @return The boolean result.
+ * @note No check is performed to see if the type of the vtk array matches any requirement.
+ */
+bool hasArray( vtkDataSet & mesh, string const & sourceName );
+
+/**
+ * @brief build cell block name from regionId and cellType
+ * @param[in] type The type of element in the region
+ * @param[in] regionId The region considered
+ * @return The cell block name
+ */
+string buildCellBlockName( ElementType const type, int const regionId );
+
+/**
+ * @brief Imports 2d and 3d arrays from @p vtkArray to @p wrapper, only for @p cellIds
+ * @param cellIds The cells for which we should copy the data.
+ * @param vtkArray The source.
+ * @param wrapper The destination.
+ */
+void importMaterialField( std::vector< vtkIdType > const & cellIds,
+                          vtkDataArray * vtkArray,
+                          dataRepository::WrapperBase & wrapper );
+
+/**
+ * @brief Imports 1d and 2d arrays from @p vtkArray to @p wrapper, only for @p cellIds
+ * @param cellIds The cells for which we should copy the data.
+ * @param vtkArray The source.
+ * @param wrapper The destination.
+ */
+void importRegularField( std::vector< vtkIdType > const & cellIds,
+                         vtkDataArray * vtkArray,
+                         dataRepository::WrapperBase & wrapper );
+
+/**
+ * @brief Imports 1d and 2d arrays from @p vtkArray to @p wrapper, for all the elements/cells of the provided wrapper.
+ * @param vtkArray The source.
+ * @param wrapper The destination.
+ */
+void importRegularField( vtkDataArray * vtkArray,
+                         dataRepository::WrapperBase & wrapper );
+
 
 } // namespace vtk
 
@@ -147,8 +256,8 @@ real64 writeNodes( integer const logLevel,
                    vtkDataSet & mesh,
                    string_array & nodesetNames,
                    CellBlockManager & cellBlockManager,
-                   const geosx::R1Tensor & translate,
-                   const geosx::R1Tensor & scale );
+                   const geos::R1Tensor & translate,
+                   const geos::R1Tensor & scale );
 
 /**
  * @brief Build all the cell blocks.
@@ -159,7 +268,7 @@ real64 writeNodes( integer const logLevel,
  */
 void writeCells( integer const logLevel,
                  vtkDataSet & mesh,
-                 const geosx::vtk::CellMapType & cellMap,
+                 const geos::vtk::CellMapType & cellMap,
                  CellBlockManager & cellBlockManager );
 
 /**
@@ -173,31 +282,9 @@ void writeCells( integer const logLevel,
  */
 void writeSurfaces( integer const logLevel,
                     vtkDataSet & mesh,
-                    const geosx::vtk::CellMapType & cellMap,
+                    const geos::vtk::CellMapType & cellMap,
                     CellBlockManager & cellBlockManager );
 
-/**
- * @brief Import data on 3d cells restricted to cells in a specific region
- *
- * @param logLevel the log level
- * @param regionId The id of the region
- * @param elemType The type of the element to store the data
- * @param cellIds The cell ids of the specific region
- * @param elemManager The instance that stores the elements.
- * @param fieldNames An array of the fields names
- * @param srcArrays an array of data to import
- * @param fieldsToBeSync Indentifies the fields to synchronize
- */
-void importFieldOnCellElementSubRegion( integer const logLevel,
-                                        integer const regionId,
-                                        ElementType const elemType,
-                                        std::vector< vtkIdType > const & cellIds,
-                                        ElementRegionManager & elemManager,
-                                        arrayView1d< string const > const & fieldNames,
-                                        std::vector< vtkDataArray * > const & srcArrays,
-                                        FieldIdentifiers & fieldsToBeSync );
+} // namespace geos
 
-
-} // namespace geosx
-
-#endif /* GEOSX_MESH_GENERATORS_VTKUTILITIES_HPP */
+#endif /* GEOS_MESH_GENERATORS_VTKUTILITIES_HPP */

@@ -2,7 +2,7 @@ Solid Models
 ======================
 
 A solid model governs the relationship between deformation and stress in a solid
-(or porous) material.  GEOSX provides interfaces for both small and large
+(or porous) material.  GEOS provides interfaces for both small and large
 deformation models, as well as specific implementations of a number of well
 known models.
 
@@ -12,7 +12,6 @@ known models.
    Theory
    Voight
    Plasticity
-   TriaxialDriver
    ElasticIsotropic
    ElasticIsotropicPressureDependent
    ElasticTransverseIsotropic
@@ -22,3 +21,4 @@ known models.
    ModifiedCamClay
    DelftEgg
    Damage
+   ViscoPlasticity 

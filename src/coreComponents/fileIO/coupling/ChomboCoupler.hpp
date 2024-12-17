@@ -2,25 +2,26 @@
  * ------------------------------------------------------------------------------------------------------------
  * SPDX-License-Identifier: LGPL-2.1-only
  *
- * Copyright (c) 2018-2020 Lawrence Livermore National Security LLC
- * Copyright (c) 2018-2020 The Board of Trustees of the Leland Stanford Junior University
- * Copyright (c) 2018-2020 TotalEnergies
- * Copyright (c) 2019-     GEOSX Contributors
+ * Copyright (c) 2016-2024 Lawrence Livermore National Security LLC
+ * Copyright (c) 2018-2024 TotalEnergies
+ * Copyright (c) 2018-2024 The Board of Trustees of the Leland Stanford Junior University
+ * Copyright (c) 2023-2024 Chevron
+ * Copyright (c) 2019-     GEOS/GEOSX Contributors
  * All rights reserved
  *
  * See top level LICENSE, COPYRIGHT, CONTRIBUTORS, NOTICE, and ACKNOWLEDGEMENTS files for details.
  * ------------------------------------------------------------------------------------------------------------
  */
 
-#ifndef GEOSX_FILEIO_COUPLING_CHOMBOCOUPLER_HPP_
-#define GEOSX_FILEIO_COUPLING_CHOMBOCOUPLER_HPP_
+#ifndef GEOS_FILEIO_COUPLING_CHOMBOCOUPLER_HPP_
+#define GEOS_FILEIO_COUPLING_CHOMBOCOUPLER_HPP_
 
 #include "common/DataTypes.hpp"
 #include "mesh/MeshLevel.hpp"
 
 
 
-namespace geosx
+namespace geos
 {
 
 /**
@@ -88,6 +89,6 @@ private:
   array2d< real64 > m_velocityCopy;
 };
 
-} /* namespace geosx */
+} /* namespace geos */
 
-#endif /* GEOSX_FILEIO_COUPLING_CHOMBOCOUPLER_HPP_ */
+#endif /* GEOS_FILEIO_COUPLING_CHOMBOCOUPLER_HPP_ */

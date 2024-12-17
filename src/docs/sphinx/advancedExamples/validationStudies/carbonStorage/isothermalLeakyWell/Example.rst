@@ -15,11 +15,11 @@ simulation of the advective spreading of CO2 injected into an aquifer and the le
 of CO2 from the aquifer through an abandoned, leaky well.
 
 Our goal is to review the different sections of the XML file reproducing the benchmark configuration
-and to demonstrate that the GEOSX results (i.e., arrival time of the CO2 plume at the leaky well
+and to demonstrate that the GEOS results (i.e., arrival time of the CO2 plume at the leaky well
 and leakage rate through the abandoned well) are in agreement with the reference results published in 
 `(Class et al., 2009) <https://link.springer.com/article/10.1007/s10596-009-9146-x>`__.
 
-The GEOSX results obtained for the non-isothermal version of this test case (referred to as Problem 1.2 in
+The GEOS results obtained for the non-isothermal version of this test case (referred to as Problem 1.2 in
 `(Class et al., 2009) <https://link.springer.com/article/10.1007/s10596-009-9146-x>`__) are 
 presented in a separate documentation page.
 
@@ -95,7 +95,7 @@ cell block using an k-j-i logic in which the k index is the fastest index, and t
     :end-before: <!-- SPHINX_MESH_END -->
 
 .. note::
-   In the GEOSX input file, the two wells are defined as columns of hexahedral elements of individual size 0.2658 x 0.2658 x 1 m. The coefficient 0.2858 is chosen to ensure that the cross-section of the wells is equal to the one defined in the benchmark, in which wells are defined as cylinders with a radius of 0.15 m.   
+   In the GEOS input file, the two wells are defined as columns of hexahedral elements of individual size 0.2658 x 0.2658 x 1 m. The coefficient 0.2858 is chosen to ensure that the cross-section of the wells is equal to the one defined in the benchmark, in which wells are defined as cylinders with a radius of 0.15 m.   
 
 The cell block names are used in the **ElementRegions** block to define element regions
 in the aquifers and in the wells.
@@ -121,7 +121,7 @@ and do not simulate flow in the aquitard, as we will see in the next section.
 Flow solver
 ------------------------
 
-The isothermal immiscible simulation is performed by the GEOSX general-purpose multiphase
+The isothermal immiscible simulation is performed by the GEOS general-purpose multiphase
 flow solver based on a TPFA discretization defined in the XML block **CompositionalMultiphaseFVM**:
 
 .. literalinclude:: ../../../../../../../inputFiles/compositionalMultiphaseFlow/benchmarks/isothermalLeakyWell/isothermalLeakyWell_base_iterative.xml
@@ -142,7 +142,7 @@ Constitutive laws
 ------------------------------
 
 This benchmark test involves an immiscible, incompressible, two-phase model.
-The best approach to represent this fluid behavior in GEOSX is to use the **DeadOilFluid** model,
+The best approach to represent this fluid behavior in GEOS is to use the **DeadOilFluid** model,
 although this model was initially developed for simple isothermal oil-water or oil-gas systems
 (note that this is also the approach used for the Eclipse simulator, as documented in
 `(Class et al., 2009) <https://link.springer.com/article/10.1007/s10596-009-9146-x>`__). 
@@ -228,7 +228,7 @@ The following figure shows the distribution of CO2 saturation and pressure along
 
    Pressure after 200 days
    
-To validate the GEOSX results, we consider the metrics used in
+To validate the GEOS results, we consider the metrics used in
 `(Class et al., 2009) <https://link.springer.com/article/10.1007/s10596-009-9146-x>`__.
 
 First, we consider the arrival time of the CO2 plume at the leaky well.
@@ -237,7 +237,7 @@ we use the leakage rate threshold of 0.005% to detect the arrival time.
 Although the arrival time is highly dependent on the degree of spatial refinement in the
 vicinity of the wells (not documented in 
 `(Class et al., 2009) <https://link.springer.com/article/10.1007/s10596-009-9146-x>`__),
-the next table shows that the GEOSX arrival time at the leaky well (9.6 days) is in agreement with the values published in  
+the next table shows that the GEOS arrival time at the leaky well (9.6 days) is in agreement with the values published in  
 `(Class et al., 2009) <https://link.springer.com/article/10.1007/s10596-009-9146-x>`__.
 
 +------------------+---------------------+
@@ -277,7 +277,7 @@ the next table shows that the GEOSX arrival time at the leaky well (9.6 days) is
 
 Next, we measure the CO2 leakage rate through the leaky well, defined by the authors as the CO2 mass
 flow at midway between top and bottom aquifers divided by the injection rate (8.87 kg/s), in percent.
-The GEOSX leakage rate is shown in the figure below:
+The GEOS leakage rate is shown in the figure below:
 
 
 .. plot:: docs/sphinx/advancedExamples/validationStudies/carbonStorage/isothermalLeakyWell/isothermalLeakyWellFigure.py
@@ -295,9 +295,9 @@ are shown in the figure below.
 
    Leakage rates [%] obtained with the simulators considered in `(Class et al., 2009) <https://link.springer.com/article/10.1007/s10596-009-9146-x>`__.
 
-The comparison between the previous two figures shows that GEOSX can successfully reproduce the trend
+The comparison between the previous two figures shows that GEOS can successfully reproduce the trend
 in leakage rate observed in the published benchmark results.
-To further validate the GEOSX results, we reproduce below Table 8 of
+To further validate the GEOS results, we reproduce below Table 8 of
 `(Class et al., 2009) <https://link.springer.com/article/10.1007/s10596-009-9146-x>`__
 to compare the maximum leakage rate, the time at which this maximum leakage rate is attained, and the
 leakage rate at 1000 days.
@@ -334,7 +334,7 @@ leakage rate at 1000 days.
 +------------------+-------------------------+---------------------------+--------------------------+
 
 
-This table confirms the agreement between GEOSX and the results of `(Class et al., 2009) <https://link.springer.com/article/10.1007/s10596-009-9146-x>`__.
+This table confirms the agreement between GEOS and the results of `(Class et al., 2009) <https://link.springer.com/article/10.1007/s10596-009-9146-x>`__.
 A particularly good match is obtained with Eclipse, FEHM, and TOUGH2/ECO2N (2).
 
 ------------------------------------------------------------------
@@ -345,7 +345,7 @@ The more complex, non-isothermal version of this test is in :ref:`ExampleThermal
 
 **Feedback on this example**
 
-For any feedback on this example, please submit a `GitHub issue on the project's GitHub page <https://github.com/GEOSX/GEOSX/issues>`_.
+For any feedback on this example, please submit a `GitHub issue on the project's GitHub page <https://github.com/GEOS-DEV/GEOS/issues>`_.
 
 
 

@@ -1,0 +1,234 @@
+<?xml version="1.0" ?>
+<Problem>
+  <Solvers
+    gravityVector="{ 0.0, 0.0, 0.0 }">
+    <SolidMechanicsLagrangeContact
+      name="lagrangiancontact"
+      timeIntegrationOption="QuasiStatic"
+      stabilizationName="TPFAstabilization"
+      discretization="FE1"
+      targetRegions="{ casing, cement, rock, Fracture }"
+      logLevel="1">
+      <NonlinearSolverParameters
+        newtonTol="1.0e-6"
+        logLevel="2"
+        newtonMaxIter="10"/>
+      <LinearSolverParameters
+        directParallel="0"/>
+    </SolidMechanicsLagrangeContact>
+
+    <!-- SPHINX_SolversSurfaceGenerator -->
+    <SurfaceGenerator
+      name="SurfaceGen"
+      fractureRegion="Fracture"
+      targetRegions="{ casing, cement, rock }"
+      rockToughness="1.0e6"
+      mpiCommOrder="1"/>
+    <!-- SPHINX_SolversSurfaceGeneratorEnd -->
+ 
+  </Solvers>
+
+  <NumericalMethods>
+    <FiniteElements>
+      <FiniteElementSpace
+        name="FE1"
+        order="1"/>
+    </FiniteElements>
+
+  <!-- SPHINX_NumericalMethods -->   
+    <FiniteVolume>
+      <TwoPointFluxApproximation
+        name="TPFAstabilization"/>
+    </FiniteVolume>
+  <!-- SPHINX_NumericalMethodsEnd -->
+  </NumericalMethods>
+  
+  <!-- SPHINX_SurfaceElementRegion -->   
+  <ElementRegions>
+    <SurfaceElementRegion
+      name="Fracture"
+      faceBlock="faceElementSubRegion"
+      defaultAperture="1e-6"
+      materialList="{ fractureContact }"/>
+  <!-- SPHINX_SurfaceElementRegionEnd -->   
+ 
+    <CellElementRegion
+      name="casing"
+      cellBlocks="{ casing }"
+      materialList="{ casing }"/>
+      
+    <CellElementRegion
+      name="cement"
+      cellBlocks="{ cement }"
+      materialList="{ cement }"/>
+
+    <CellElementRegion
+      name="rock"
+      cellBlocks="{ rock }"
+      materialList="{ rock }"/>
+      
+  </ElementRegions>
+
+  <Constitutive>
+    <!-- SPHINX_MaterialContact -->
+    <Coulomb
+      name="fractureContact"
+      cohesion="0"
+      frictionCoefficient="0.5"/>
+    <!-- SPHINX_MaterialContactEnd --> 
+  
+    <ElasticIsotropic
+      name="casing"
+      defaultDensity="2700"
+      defaultBulkModulus="175e9"
+      defaultShearModulus="80.8e9"/>
+
+    <ElasticIsotropic
+      name="cement"
+      defaultDensity="2700"
+      defaultBulkModulus="10.3e9"
+      defaultShearModulus="6.45e9"/>
+
+    <ElasticIsotropic
+      name="rock"
+      defaultDensity="2700"
+      defaultBulkModulus="5.5556e9"
+      defaultShearModulus="4.16667e9"/>
+
+  </Constitutive>
+
+  <!-- SPHINX_BoundaryConditions -->
+  <FieldSpecifications>
+    <FieldSpecification
+      name="frac"
+      initialCondition="1"
+      setNames="{ casingCementInterface, cementRockInterface }"
+      objectPath="faceManager"
+      fieldName="ruptureState"
+      scale="1"/>
+
+    <FieldSpecification
+      name="separableFace"
+      initialCondition="1"
+      setNames="{ casingCementInterface, cementRockInterface }"
+      objectPath="faceManager"
+      fieldName="isFaceSeparable"
+      scale="1"/>
+    <!-- SPHINX_BoundaryConditionsEnd -->
+
+    <FieldSpecification
+      name="rPosConstraint_x"
+      objectPath="nodeManager"
+      fieldName="totalDisplacement"
+      component="0"
+      scale="0.0"
+      setNames="{ rpos }"/>
+
+    <FieldSpecification
+      name="rPosConstraint_y"
+      objectPath="nodeManager"
+      fieldName="totalDisplacement"
+      component="1"
+      scale="0.0"
+      setNames="{ rpos }"/>
+
+    <FieldSpecification
+      name="tNegConstraint"
+      objectPath="nodeManager"
+      fieldName="totalDisplacement"
+      component="1"
+      scale="0.0"
+      setNames="{ tneg }"/>
+
+   <FieldSpecification
+      name="tPosConstraint"
+      objectPath="nodeManager"
+      fieldName="totalDisplacement"
+      component="0"
+      scale="0.0"
+      setNames="{ tpos }"/>
+
+    <FieldSpecification
+      name="zconstraint"
+      objectPath="nodeManager"
+      fieldName="totalDisplacement"
+      component="2"
+      scale="0.0"
+      setNames="{ zneg, zpos }"/>
+
+    <Traction
+      name="innerPressure"
+      objectPath="faceManager"
+      tractionType="normal"
+      scale="10.0e6"
+      functionName="ForceTimeFunction"
+      setNames="{ rneg }"/>
+
+  </FieldSpecifications>
+
+  <!-- SPHINX_TableFunction -->
+  <Functions>
+    <TableFunction
+      name="ForceTimeFunction"
+      inputVarNames="{ time }"
+      coordinates="{ 0.0, 0.5, 2.0 }"
+      values="{ 0.0, -1.0, 1.0 }"/>
+  </Functions>
+  <!-- SPHINX_TableFunctionEnd -->
+
+  <Tasks>
+
+    <PackCollection
+      name="stressCollection_casing"
+      objectPath="ElementRegions/casing/casing"
+      fieldName="casing_stress"/>
+    <PackCollection
+      name="stressCollection_cement"
+      objectPath="ElementRegions/cement/cement"
+      fieldName="cement_stress"/>
+    <PackCollection
+      name="stressCollection_rock"
+      objectPath="ElementRegions/rock/rock"
+      fieldName="rock_stress"/>
+
+    <PackCollection
+      name="displacementCollection"
+      objectPath="nodeManager"
+      fieldName="totalDisplacement"/>
+
+    <PackCollection
+      name="displacementJumpCollection"
+      objectPath="ElementRegions/Fracture/faceElementSubRegion"
+      fieldName="displacementJump"/>
+    
+  </Tasks>
+
+  <Outputs>
+    <TimeHistory
+      name="stressHistoryOutput_casing"
+      sources="{ /Tasks/stressCollection_casing }"
+      filename="stressHistory_casing"/>
+    <TimeHistory
+      name="stressHistoryOutput_cement"
+      sources="{ /Tasks/stressCollection_cement }"
+      filename="stressHistory_cement"/>
+    <TimeHistory
+      name="stressHistoryOutput_rock"
+      sources="{ /Tasks/stressCollection_rock }"
+      filename="stressHistory_rock"/>
+
+    <TimeHistory
+      name="displacementHistoryOutput"
+      sources="{ /Tasks/displacementCollection }"
+      filename="displacementHistory"/>
+
+    <TimeHistory
+      name="displacementJumpHistoryOutput"
+      sources="{ /Tasks/displacementJumpCollection }"
+      filename="displacementJumpHistory"/>
+
+    <VTK name="vtkOutput"/>
+    <Restart
+      name="restartOutput"/>
+  </Outputs>
+</Problem>

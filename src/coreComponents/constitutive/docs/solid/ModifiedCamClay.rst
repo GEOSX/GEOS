@@ -7,7 +7,7 @@ Model: Modified Cam-Clay
 This model may be used to represent a solid material with plastic response to loading according to the `Modified Cam-Clay  (MCC) <https://en.wikipedia.org/wiki/Critical_state_soil_mechanics>`__ critical state model.  The MCC yield function is defined as:
 
 .. math::
-  f = q^2 + M^2 \left[ p(p - p_c) \right] = 0 , 
+  f = q^2 + M^2 p(p - p_c) = 0 , 
 
 where :math:`p_c` is the preconsolidation pressure, and :math:`M` is the slope of the critical state line (CSL).  :math:`M` can be related to the critical state friction angle :math:`\phi_{cs}` as
 

@@ -2,10 +2,11 @@
  * ------------------------------------------------------------------------------------------------------------
  * SPDX-License-Identifier: LGPL-2.1-only
  *
- * Copyright (c) 2018-2020 Lawrence Livermore National Security LLC
- * Copyright (c) 2018-2020 The Board of Trustees of the Leland Stanford Junior University
- * Copyright (c) 2018-2020 TotalEnergies
- * Copyright (c) 2019-     GEOSX Contributors
+ * Copyright (c) 2016-2024 Lawrence Livermore National Security LLC
+ * Copyright (c) 2018-2024 TotalEnergies
+ * Copyright (c) 2018-2024 The Board of Trustees of the Leland Stanford Junior University
+ * Copyright (c) 2023-2024 Chevron
+ * Copyright (c) 2019-     GEOS/GEOSX Contributors
  * All rights reserved
  *
  * See top level LICENSE, COPYRIGHT, CONTRIBUTORS, NOTICE, and ACKNOWLEDGEMENTS files for details.
@@ -24,13 +25,13 @@
 
 #include "codingUtilities/Utilities.hpp"
 #include "common/DataTypes.hpp"
-#include "common/Logger.hpp"
+#include "common/logger/Logger.hpp"
 #include "common/MpiWrapper.hpp"
 #include "common/TypeDispatch.hpp"
 #include "constitutive/ConstitutiveManager.hpp"
-#include "constitutive/fluid/SingleFluidBase.hpp"
-#include "constitutive/fluid/MultiFluidBase.hpp"
-#include "constitutive/contact/ContactBase.hpp"
+#include "constitutive/fluid/singlefluid/SingleFluidBase.hpp"
+#include "constitutive/fluid/multifluid/MultiFluidBase.hpp"
+#include "constitutive/contact/FrictionBase.hpp"
 #include "constitutive/NullModel.hpp"
 #include "fileIO/Outputs/OutputUtilities.hpp"
 #include "mesh/DomainPartition.hpp"
@@ -46,7 +47,7 @@
 
 
 
-#if !defined(GEOSX_USE_MPI)
+#if !defined(GEOS_USE_MPI)
 int MPI_Comm_size( MPI_Comm, int * size ) { *size=1; return 0; }
 int MPI_Comm_rank( MPI_Comm, int * rank ) { *rank=1; return 0; }
 
@@ -68,7 +69,7 @@ int MPI_Recv( void * buf, int, MPI_Datatype, int, int,
 /// forward declaration of NodeManagerT for use as a template argument
 class NodeManager;
 
-namespace geosx
+namespace geos
 {
 
 /**
@@ -281,8 +282,8 @@ void SiloFile::makeSiloDirectories()
 {
 
   int rank=0;
-#ifdef GEOSX_USE_MPI
-  MPI_Comm_rank( MPI_COMM_GEOSX, &rank );
+#ifdef GEOS_USE_MPI
+  MPI_Comm_rank( MPI_COMM_GEOS, &rank );
 #endif
 
   if( rank==0 )
@@ -298,18 +299,18 @@ void SiloFile::initialize( int const MPI_PARAM( numGroups ) )
 {
   makeSiloDirectories();
 
-#ifdef GEOSX_USE_MPI
+#ifdef GEOS_USE_MPI
   // Ensure all procs agree on numGroups, driver and file_ext
   m_numGroups = numGroups;
 #else
   m_numGroups = 1;
 #endif
-  MpiWrapper::bcast( &m_numGroups, 1, 0, MPI_COMM_GEOSX );
-//  MPI_Bcast( const_cast<int*>(&m_driver), 1, MPI_INT, 0, MPI_COMM_GEOSX);
+  MpiWrapper::bcast( &m_numGroups, 1, 0, MPI_COMM_GEOS );
+//  MPI_Bcast( const_cast<int*>(&m_driver), 1, MPI_INT, 0, MPI_COMM_GEOS);
   // Initialize PMPIO, pass a pointer to the driver type as the user data.
   m_baton = PMPIO_Init( m_numGroups,
                         PMPIO_WRITE,
-                        MPI_COMM_GEOSX,
+                        MPI_COMM_GEOS,
                         1,
                         PMPIO_DefaultCreate,
                         PMPIO_DefaultOpen,
@@ -346,23 +347,23 @@ void SiloFile::waitForBatonWrite( int const domainNumber,
 {
 
   int rank = 0;
-#ifdef GEOSX_USE_MPI
-  MPI_Comm_rank( MPI_COMM_GEOSX, &rank );
+#ifdef GEOS_USE_MPI
+  MPI_Comm_rank( MPI_COMM_GEOS, &rank );
 #endif
   int const groupRank = PMPIO_GroupRank( m_baton, rank );
 
   if( isRestart )
   {
     // The integrated test repo does not use the eventProgress indicator, so skip it for now
-    m_baseFileName = GEOSX_FMT( "{}_{:06}", m_restartFileRoot, cycleNum );
-    m_fileName = GEOSX_FMT( "{}_{:06}.{:03}", m_restartFileRoot, cycleNum, groupRank );
+    m_baseFileName = GEOS_FMT( "{}_{:06}", m_restartFileRoot, cycleNum );
+    m_fileName = GEOS_FMT( "{}_{:06}.{:03}", m_restartFileRoot, cycleNum, groupRank );
   }
   else
   {
-    m_baseFileName = GEOSX_FMT( "{}_{:06}{:02}", m_plotFileRoot, cycleNum, eventCounter );
-    m_fileName = GEOSX_FMT( "{}_{:06}{:02}.{:03}", m_plotFileRoot.c_str(), cycleNum, eventCounter, groupRank );
+    m_baseFileName = GEOS_FMT( "{}_{:06}{:02}", m_plotFileRoot, cycleNum, eventCounter );
+    m_fileName = GEOS_FMT( "{}_{:06}{:02}.{:03}", m_plotFileRoot.c_str(), cycleNum, eventCounter, groupRank );
   }
-  string const dirName = GEOSX_FMT( "domain_{:05}", domainNumber );
+  string const dirName = GEOS_FMT( "domain_{:05}", domainNumber );
 
   string const dataFileFullPath = joinPath( m_siloDirectory, m_siloDataSubDirectory, m_fileName );
   m_dbFilePtr = static_cast< DBfile * >( PMPIO_WaitForBaton( m_baton, dataFileFullPath.c_str(), dirName.c_str() ) );
@@ -380,8 +381,8 @@ void SiloFile::waitForBaton( int const domainNumber, string const & restartFileN
 {
 
   int rank = 0;
-#ifdef GEOSX_USE_MPI
-  MPI_Comm_rank( MPI_COMM_GEOSX, &rank );
+#ifdef GEOS_USE_MPI
+  MPI_Comm_rank( MPI_COMM_GEOS, &rank );
 #endif
   int const groupRank = PMPIO_GroupRank( m_baton, rank );
 
@@ -394,15 +395,15 @@ void SiloFile::waitForBaton( int const domainNumber, string const & restartFileN
   {
     if( m_siloDirectory.empty() )
     {
-      m_fileName = GEOSX_FMT( "{}.{:03}", restartFileName, groupRank );
+      m_fileName = GEOS_FMT( "{}.{:03}", restartFileName, groupRank );
     }
     else
     {
-      m_fileName = GEOSX_FMT( "{}/{}.{:03}", m_siloDirectory, restartFileName, groupRank );
+      m_fileName = GEOS_FMT( "{}/{}.{:03}", m_siloDirectory, restartFileName, groupRank );
     }
   }
 
-  string const dirName = GEOSX_FMT( "domain_{:05}", domainNumber );
+  string const dirName = GEOS_FMT( "domain_{:05}", domainNumber );
 
   m_dbFilePtr = (DBfile *) PMPIO_WaitForBaton( m_baton, m_fileName.c_str(), dirName.c_str() );
 }
@@ -414,8 +415,8 @@ void SiloFile::handOffBaton()
   PMPIO_HandOffBaton( m_baton, m_dbFilePtr );
 
   int rank = 0;
-#ifdef GEOSX_USE_MPI
-  MPI_Comm_rank( MPI_COMM_GEOSX, &rank );
+#ifdef GEOS_USE_MPI
+  MPI_Comm_rank( MPI_COMM_GEOS, &rank );
 #endif
   if( rank==0 )
   {
@@ -576,8 +577,8 @@ void SiloFile::writeMeshObject( string const & meshName,
 
   // write multimesh object
   int rank = 0;
-#ifdef GEOSX_USE_MPI
-  MPI_Comm_rank( MPI_COMM_GEOSX, &rank );
+#ifdef GEOS_USE_MPI
+  MPI_Comm_rank( MPI_COMM_GEOS, &rank );
 #endif
   if( rank == 0 )
   {
@@ -651,8 +652,8 @@ void SiloFile::writeBeamMesh( string const & meshName,
   //----write multimesh object
   {
     int rank = 0;
-  #ifdef GEOSX_USE_MPI
-    MPI_Comm_rank( MPI_COMM_GEOSX, &rank );
+  #ifdef GEOS_USE_MPI
+    MPI_Comm_rank( MPI_COMM_GEOS, &rank );
   #endif
     if( rank == 0 )
     {
@@ -684,8 +685,8 @@ void SiloFile::writePointMesh( string const & meshName,
   //----write multimesh object
   {
     int rank = 0;
-  #ifdef GEOSX_USE_MPI
-    MPI_Comm_rank( MPI_COMM_GEOSX, &rank );
+  #ifdef GEOS_USE_MPI
+    MPI_Comm_rank( MPI_COMM_GEOS, &rank );
   #endif
     if( rank == 0 )
     {
@@ -812,13 +813,13 @@ void SiloFile::writeMaterialMapsFullStorage( ElementRegionBase const & elemRegio
     }
     // write multimesh object
     int rank = 0;
-  #ifdef GEOSX_USE_MPI
-    MPI_Comm_rank( MPI_COMM_GEOSX, &rank );
+  #ifdef GEOS_USE_MPI
+    MPI_Comm_rank( MPI_COMM_GEOS, &rank );
   #endif
     if( rank == 0 )
     {
 
-      int const size = MpiWrapper::commSize( MPI_COMM_GEOSX );
+      int const size = MpiWrapper::commSize( MPI_COMM_GEOS );
 
       array1d< string > vBlockNames( size );
       std::vector< char * > BlockNames( size );
@@ -832,7 +833,7 @@ void SiloFile::writeMaterialMapsFullStorage( ElementRegionBase const & elemRegio
         int groupRank = PMPIO_GroupRank( m_baton, i );
 
         /* this mesh block is another file */
-        vBlockNames[i] = GEOSX_FMT( "{}/{}.{:03}:/domain_{:05}/{}", m_siloDataSubDirectory, m_baseFileName, groupRank, i, name );
+        vBlockNames[i] = GEOS_FMT( "{}/{}.{:03}:/domain_{:05}/{}", m_siloDataSubDirectory, m_baseFileName, groupRank, i, name );
         BlockNames[i] = const_cast< char * >( vBlockNames[i].c_str() );
       }
 
@@ -982,8 +983,8 @@ void SiloFile::writeMaterialVarDefinition( string const & subDir,
 void SiloFile::clearEmptiesFromMultiObjects( int const cycleNum )
 {
 
-  int const size = MpiWrapper::commSize( MPI_COMM_GEOSX );
-  int const rank = MpiWrapper::commRank( MPI_COMM_GEOSX );
+  int const size = MpiWrapper::commSize( MPI_COMM_GEOS );
+  int const rank = MpiWrapper::commRank( MPI_COMM_GEOS );
 
   string sendbufferVars;
   string sendbufferMesh;
@@ -1014,7 +1015,7 @@ void SiloFile::clearEmptiesFromMultiObjects( int const cycleNum )
 
   integer_array rcounts( size );
   integer_array displs( size );
-  MpiWrapper::gather( &sizeOfSendBufferVars, 1, rcounts.data(), 1, 0, MPI_COMM_GEOSX );
+  MpiWrapper::gather( &sizeOfSendBufferVars, 1, rcounts.data(), 1, 0, MPI_COMM_GEOS );
 
   int sizeOfReceiveBuffer = 0;
   displs[0] = 0;
@@ -1031,10 +1032,10 @@ void SiloFile::clearEmptiesFromMultiObjects( int const cycleNum )
                         rcounts.data(),
                         displs.data(),
                         0,
-                        MPI_COMM_GEOSX );
+                        MPI_COMM_GEOS );
 
 
-  MpiWrapper::gather( &sizeOfSendBufferMesh, 1, rcounts.data(), 1, 0, MPI_COMM_GEOSX );
+  MpiWrapper::gather( &sizeOfSendBufferMesh, 1, rcounts.data(), 1, 0, MPI_COMM_GEOS );
 
   int sizeOfReceiveBufferMesh = 0;
   displs[0] = 0;
@@ -1051,7 +1052,7 @@ void SiloFile::clearEmptiesFromMultiObjects( int const cycleNum )
                         rcounts.data(),
                         displs.data(),
                         0,
-                        MPI_COMM_GEOSX );
+                        MPI_COMM_GEOS );
 
 
 
@@ -1243,15 +1244,15 @@ void SiloFile::writeElementRegionSilo( ElementRegionBase const & elemRegion,
         string const & fieldName = wrapper.getName();
         viewPointers[esr][fieldName] = &wrapper;
 
-        types::dispatch( types::StandardArrays{}, wrapper.getTypeId(), true, [&]( auto array )
+        types::dispatch( types::ListofTypeList< types::StandardArrays >{}, [&]( auto tupleOfTypes )
         {
-          using ArrayType = decltype( array );
+          using ArrayType = camp::first< decltype( tupleOfTypes ) >;
           Wrapper< ArrayType > const & sourceWrapper = Wrapper< ArrayType >::cast( wrapper );
           Wrapper< ArrayType > & newWrapper = fakeGroup.registerWrapper< ArrayType >( fieldName );
 
           newWrapper.setPlotLevel( PlotLevel::LEVEL_0 );
           newWrapper.reference().resize( ArrayType::NDIM, sourceWrapper.reference().dims() );
-        } );
+        }, wrapper );
       }
     }
   } );
@@ -1263,9 +1264,9 @@ void SiloFile::writeElementRegionSilo( ElementRegionBase const & elemRegion,
     WrapperBase & wrapper = *wrapperIter.second;
     string const & fieldName = wrapper.getName();
 
-    types::dispatch( types::StandardArrays{}, wrapper.getTypeId(), true, [&]( auto array )
+    types::dispatch( types::ListofTypeList< types::StandardArrays >{}, [&]( auto tupleOfTypes )
     {
-      using ArrayType = decltype( array );
+      using ArrayType = camp::first< decltype( tupleOfTypes ) >;
       Wrapper< ArrayType > & wrapperT = Wrapper< ArrayType >::cast( wrapper );
       ArrayType & targetArray = wrapperT.reference();
 
@@ -1280,7 +1281,7 @@ void SiloFile::writeElementRegionSilo( ElementRegionBase const & elemRegion,
           auto const sourceArray = sourceWrapper.reference().toViewConst();
 
           localIndex const offset = counter * targetArray.strides()[0];
-          GEOSX_ERROR_IF_GT( sourceArray.size(), targetArray.size() - offset );
+          GEOS_ERROR_IF_GT( sourceArray.size(), targetArray.size() - offset );
 
           for( localIndex i = 0; i < sourceArray.size(); ++i )
           {
@@ -1294,7 +1295,7 @@ void SiloFile::writeElementRegionSilo( ElementRegionBase const & elemRegion,
           counter += subRegion.size();
         }
       } );
-    } );
+    }, wrapper );
   }
 
   writeGroupSilo( fakeGroup,
@@ -1373,7 +1374,7 @@ static int toSiloShapeType( ElementType const elementType )
     case ElementType::Polyhedron:    return DB_ZONETYPE_POLYHEDRON;
     default:
     {
-      GEOSX_ERROR( "Unsupported element type: " << elementType );
+      GEOS_ERROR( "Unsupported element type: " << elementType );
     }
   }
   return -1;
@@ -1420,7 +1421,7 @@ void SiloFile::writeElementMesh( ElementRegionBase const & elementRegion,
       typename TYPEOFREF( elementSubRegion ) ::NodeMapType const & elemsToNodes = elementSubRegion.nodeList();
 
       // TODO HACK. this isn't correct for variable relations.
-      elementToNodeMap[count].resize( elementSubRegion.size(), elementSubRegion.numNodesPerElement( 0 ) );
+      elementToNodeMap[count].resize( elementSubRegion.size(), elementSubRegion.numNodesPerElement() );
 
       arrayView1d< integer const > const & elemGhostRank = elementSubRegion.ghostRank();
       std::vector< int > const nodeOrdering = getSiloNodeOrdering( elementSubRegion.getElementType() );
@@ -1447,7 +1448,7 @@ void SiloFile::writeElementMesh( ElementRegionBase const & elementRegion,
       // globalElementNumbers[count] = elementRegion.localToGlobalMap().data();
       shapecnt[count] = static_cast< int >( elementSubRegion.size() );
       shapetype[count] = toSiloShapeType( elementSubRegion.getElementType() );
-      shapesize[count] = LvArray::integerConversion< int >( elementSubRegion.numNodesPerElement( 0 ) );
+      shapesize[count] = LvArray::integerConversion< int >( elementSubRegion.numNodesPerElement() );
       writeArbitraryPolygon = writeArbitraryPolygon || shapetype[count] == DB_ZONETYPE_PRISM || shapetype[count] == DB_ZONETYPE_PYRAMID;
       ++count;
     } );
@@ -1467,7 +1468,7 @@ void SiloFile::writeElementMesh( ElementRegionBase const & elementRegion,
     localIndex const numFluids = regionFluidMaterialList.size();
 
     string_array
-      fractureContactMaterialList = elementRegion.getConstitutiveNames< constitutive::ContactBase >();
+      fractureContactMaterialList = elementRegion.getConstitutiveNames< constitutive::FrictionBase >();
 
     localIndex const numContacts = fractureContactMaterialList.size();
 
@@ -1969,7 +1970,7 @@ void SiloFile::writePolygonMeshObject( const string & meshName,
 
   // write multimesh object
   int rank = 0;
-#ifdef GEOSX_USE_MPI
+#ifdef GEOS_USE_MPI
   MPI_Comm_rank( MPI_COMM_WORLD, &rank );
 #endif
   if( rank == 0 )
@@ -2013,9 +2014,9 @@ void SiloFile::writeWrappersToSilo( string const & meshname,
                                     int const centering,
                                     int const cycleNum,
                                     real64 const problemTime,
-                                    bool const GEOSX_UNUSED_PARAM( isRestart ),
+                                    bool const GEOS_UNUSED_PARAM( isRestart ),
                                     string const & multiRoot,
-                                    const localIndex_array & GEOSX_UNUSED_PARAM( mask ) )
+                                    const localIndex_array & GEOS_UNUSED_PARAM( mask ) )
 {
 
   // iterate over all entries in the member map
@@ -2110,8 +2111,8 @@ void SiloFile::writeMultiXXXX( const DBObjectType type,
   (void)centering;
 
   int size = 1;
-#ifdef GEOSX_USE_MPI
-  MPI_Comm_size( MPI_COMM_GEOSX, &size );
+#ifdef GEOS_USE_MPI
+  MPI_Comm_size( MPI_COMM_GEOS, &size );
 #endif
 
   string_array vBlockNames( size );
@@ -2131,7 +2132,7 @@ void SiloFile::writeMultiXXXX( const DBObjectType type,
 
   for( int i = 0; i < size; ++i )
   {
-    vBlockNames[i] = GEOSX_FMT( "{}/{}.{:03}:/domain_{:05}{}/{}", m_siloDataSubDirectory, m_baseFileName, groupRank( i ), i, multiRootString, name );
+    vBlockNames[i] = GEOS_FMT( "{}/{}.{:03}:/domain_{:05}{}/{}", m_siloDataSubDirectory, m_baseFileName, groupRank( i ), i, multiRootString, name );
     BlockNames[i] = const_cast< char * >( vBlockNames[i].c_str() );
     blockTypes[i] = type;
   }
@@ -2180,7 +2181,7 @@ void SiloFile::writeDataField( string const & meshName,
   string_array varnamestring( nvars );
   array1d< array1d< OUTTYPE > > castedField( nvars );
 
-  field.move( LvArray::MemorySpace::host );
+  field.move( hostMemorySpace );
 
   for( int i = 0; i < nvars; ++i )
   {
@@ -2192,7 +2193,7 @@ void SiloFile::writeDataField( string const & meshName,
     {
       castedField[i].resize( nels );
       vars[i] = static_cast< void * >( (castedField[i]).data() );
-      forAll< serialPolicy >( nels, [=, &castedField] GEOSX_HOST ( localIndex const k )
+      forAll< serialPolicy >( nels, [=, &castedField] GEOS_HOST ( localIndex const k )
         {
           castedField[i][k] = siloFileUtilities::CastField< OUTTYPE >( field[k], i );
         } );
@@ -2247,19 +2248,19 @@ void SiloFile::writeDataField( string const & meshName,
     {
       if( err < -1 )
       {
-        GEOSX_ERROR( "unhandled case in SiloFile::WriteDataField A\n" );
+        GEOS_ERROR( "unhandled case in SiloFile::WriteDataField A\n" );
       }
       else
       {
-        GEOSX_ERROR( "unhandled failure in adding variable during SiloFile::WriteDataField\n" );
+        GEOS_ERROR( "unhandled failure in adding variable during SiloFile::WriteDataField\n" );
       }
     }
   }
 
   // write multimesh object
   int rank = 0;
-#ifdef GEOSX_USE_MPI
-  MPI_Comm_rank( MPI_COMM_GEOSX, &rank );
+#ifdef GEOS_USE_MPI
+  MPI_Comm_rank( MPI_COMM_GEOS, &rank );
 #endif
   if( rank == 0 )
   {
@@ -2306,7 +2307,7 @@ void SiloFile::writeDataField( string const & meshName,
 {
   int const primaryDimIndex = 0;
   int const secondaryDimIndex = 1;
-  field.move( LvArray::MemorySpace::host );
+  field.move( hostMemorySpace );
 
   localIndex const npts = field.size( primaryDimIndex );
   localIndex const nvar = field.size( secondaryDimIndex );
@@ -2345,7 +2346,7 @@ void SiloFile::writeDataField( string const & meshName,
   int const primaryDimIndex = 0;
   int const secondaryDimIndex1 = 1;
   int const secondaryDimIndex2 = 2;
-  field.move( LvArray::MemorySpace::host );
+  field.move( hostMemorySpace );
 
   localIndex const npts  = field.size( primaryDimIndex );
   localIndex const nvar1 = field.size( secondaryDimIndex1 );
@@ -2438,7 +2439,7 @@ void SiloFile::writeDataField( string const & meshName,
                                string const & multiRoot )
 {
   int nvars = 1;
-  field.move( LvArray::MemorySpace::host );
+  field.move( hostMemorySpace );
 
   for( int i=1; i<NDIM; ++i )
   {
@@ -2516,19 +2517,19 @@ void SiloFile::writeDataField( string const & meshName,
     {
       if( err < -1 )
       {
-        GEOSX_ERROR( "unhandled case in SiloFile::WriteDataField A\n" );
+        GEOS_ERROR( "unhandled case in SiloFile::WriteDataField A\n" );
       }
       else
       {
-        GEOSX_ERROR( "unhandled failure in adding variable during SiloFile::WriteDataField\n" );
+        GEOS_ERROR( "unhandled failure in adding variable during SiloFile::WriteDataField\n" );
       }
     }
   }
 
   // write multimesh object
   int rank = 0;
-#ifdef GEOSX_USE_MPI
-  MPI_Comm_rank( MPI_COMM_GEOSX, &rank );
+#ifdef GEOS_USE_MPI
+  MPI_Comm_rank( MPI_COMM_GEOS, &rank );
 #endif
   if( rank == 0 )
   {
@@ -2804,19 +2805,19 @@ void SiloFile::writeMaterialDataField( string const & meshName,
     {
       if( err < -1 )
       {
-        GEOSX_ERROR( "unhandled case in SiloFile::WriteDataField A\n" );
+        GEOS_ERROR( "unhandled case in SiloFile::WriteDataField A\n" );
       }
       else
       {
-        GEOSX_ERROR( "unhandled failure in adding variable during SiloFile::WriteDataField\n" );
+        GEOS_ERROR( "unhandled failure in adding variable during SiloFile::WriteDataField\n" );
       }
     }
   }
 
   // write multimesh object
   int rank = 0;
-#ifdef GEOSX_USE_MPI
-  MPI_Comm_rank( MPI_COMM_GEOSX, &rank );
+#ifdef GEOS_USE_MPI
+  MPI_Comm_rank( MPI_COMM_GEOS, &rank );
 #endif
   if( rank == 0 )
   {
@@ -2841,7 +2842,7 @@ void SiloFile::writeMaterialDataField( string const & meshName,
     else
     {
       vartype = DB_UCDVAR;
-//      GEOSX_ERROR("unhandled case in SiloFile::WriteDataField B\n");
+//      GEOS_ERROR("unhandled case in SiloFile::WriteDataField B\n");
     }
 
     writeMultiXXXX( vartype, DBPutMultivar, centering, fieldName.c_str(), cycleNumber, multiRoot,
@@ -3126,7 +3127,7 @@ void SiloFile::writeStressVarDefinition( string const & MatDir )
 void SiloFile::writeVectorVarDefinition( string const & fieldName,
                                          string const & subDirectory )
 {
-  if( MpiWrapper::commRank( MPI_COMM_GEOSX ) == 0 )
+  if( MpiWrapper::commRank( MPI_COMM_GEOS ) == 0 )
   {
     DBSetDir( m_dbBaseFilePtr, subDirectory.c_str() );
     DBtoc * const siloTOC = DBGetToc ( m_dbBaseFilePtr );

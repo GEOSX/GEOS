@@ -1,14 +1,14 @@
 .. _triaxialDriverExample:
 
 
-###########################################################
-Triaxial Driver
-###########################################################
+#############################################################
+Triaxial Driver: Extended Drucker-Prager Elasto-Plastic Model
+#############################################################
 
 
 **Context**
 
-In this example, we use the ``TriaxialDriver`` inside GEOSX to simulate rock mechanics experiments, such as triaxial tests.
+In this example, we use the ``TriaxialDriver`` inside GEOS to simulate rock mechanics experiments, such as triaxial tests.
 The triaxial driver allows to calibrate properties and model parameters against experimental data before using them in field-scale simulations.
 
 
@@ -28,7 +28,7 @@ The XML file for this test case is located at:
 
 .. code-block:: console
 
-  inputFiles/triaxialDriver/triaxialDriver_ExtendedDruckerPrager.xml
+  inputFiles/triaxialDriver/triaxialDriver_ExtendedDruckerPrager_basicExample.xml
 
 
 This example also uses a set of table files located at:
@@ -49,7 +49,7 @@ Last, a Python script for post-processing the results is provided:
 Description of the case
 ------------------------------------------------------------------
 
-Instead of launching a full finite-element simulation to mimic experimental loading conditions, GEOSX provides a ``TriaxialDriver`` to investigate constitutive behaviors and simulate laboratory tests. The triaxial driver makes it easy to interpret the mechanical response and calibrate the constitutive models against experimental data. 
+Instead of launching a full finite-element simulation to mimic experimental loading conditions, GEOS provides a ``TriaxialDriver`` to investigate constitutive behaviors and simulate laboratory tests. The triaxial driver makes it easy to interpret the mechanical response and calibrate the constitutive models against experimental data. 
 
 In this example, the Extended Drucker-Prager model (see :ref:`DruckerPragerExtended`) is used to solve elastoplastic deformations of rock samples when subject to controlled loading conditions. The strain-hardening Extended Drucker-Prager model with an associated plastic flow rule is tested in this example. To replicate a typical triaxial test, we use a table function to specify loading conditions in axial and radial directions. The resulting strains and stresses in both directions are numerically calculated and saved into a simple ASCII output file.
 
@@ -60,7 +60,7 @@ For this example, we focus on the ``Task``, the ``Constitutive``, and the ``Func
 Task
 ------------------------------------------------------------------
 
-In GEOSX, the ``TriaxialDriver`` is defined with a dedicated XML structure. 
+In GEOS, the ``TriaxialDriver`` is defined with a dedicated XML structure. 
 The ``TriaxialDriver`` is added to a standard XML input deck as a solo task to the ``Tasks`` queue and added as a ``SoloEvent`` to the event queue.
 
 For this example, we simulate the elastoplastic deformation of a confined specimen caused by external load. A homogeneous domain with one solid material is assumed. The material is named ``ExtendedDruckerPrager``, and its mechanical properties are specified in the ``Constitutive`` section.
@@ -86,13 +86,13 @@ As shown, a conventional triaxial test is described using the ``mode="mixedContr
 In a triaxial test, the testing sample is under confining pressure (radial stresses) and subject to increased axial load. Therefore, a stress control ``radialControl="stressFunction"`` is defined in the radial direction to impose confining pressure. A strain control ``axialControl="strainFunction"`` is applied in the axial direction to represent axial compression.
  
 The initial stress is specified by ``initialStress="-10.e6"``. To ensure static equilibrium at the first timestep, its value should be consistent with the initial set of applied stresses defined in axial or radial loading functions.
-This stress has a negative value due to the negative sign convention for compressive stress in GEOSX.
+This stress has a negative value due to the negative sign convention for compressive stress in GEOS.
 
 
 Then, ``steps="200"`` defines the number of load steps and ``output="simulationResults.txt"`` specifies an output file to which the simulation results will be written. 
 
 
-.. literalinclude:: ../../../../../inputFiles/triaxialDriver/triaxialDriver_ExtendedDruckerPrager.xml
+.. literalinclude:: ../../../../../inputFiles/triaxialDriver/triaxialDriver_ExtendedDruckerPrager_basicExample.xml
     :language: xml
     :start-after: <!-- SPHINX_TASK -->
     :end-before: <!-- SPHINX_TASK_END -->
@@ -105,7 +105,7 @@ In addition to triaxial tests, volumetric and oedometer tests can be simulated b
 Constitutive laws
 ------------------------------
 
-Any solid material model implemented in GEOSX can be called by the ``TriaxialDriver``.
+Any solid material model implemented in GEOS can be called by the ``TriaxialDriver``.
 
 For this problem, Extended Drucker Prager model ``ExtendedDruckerPrager`` is used to describe the mechanical behavior of an isotropic material, when subject to external loading.
 As for the material parameters, ``defaultInitialFrictionAngle``, ``defaultResidualFrictionAngle`` and ``defaultCohesion`` denote the initial friction angle, the residual friction angle, and cohesion, respectively, as defined by the Mohr-Coulomb failure envelope.
@@ -114,7 +114,7 @@ If the residual friction angle is set to be less than the initial one, strain we
 Setting ``defaultDilationRatio="1.0"`` corresponds to an associated flow rule.
 
 
-.. literalinclude:: ../../../../../inputFiles/triaxialDriver/triaxialDriver_ExtendedDruckerPrager.xml
+.. literalinclude:: ../../../../../inputFiles/triaxialDriver/triaxialDriver_ExtendedDruckerPrager_basicExample.xml
     :language: xml
     :start-after: <!-- SPHINX_MATERIAL -->
     :end-before: <!-- SPHINX_MATERIAL_END -->
@@ -133,7 +133,7 @@ In this case, users should define two different time history functions (``strain
 Note that for standard tests with simple loading history, functions can be embedded directly in the XML file without using external tables.
 
 
-.. literalinclude:: ../../../../../inputFiles/triaxialDriver/triaxialDriver_ExtendedDruckerPrager.xml
+.. literalinclude:: ../../../../../inputFiles/triaxialDriver/triaxialDriver_ExtendedDruckerPrager_basicExample.xml
     :language: xml
     :start-after: <!-- SPHINX_FUNCTION -->
     :end-before: <!-- SPHINX_FUNCTION_END -->
@@ -165,34 +165,34 @@ For this specific test, the confining stress is kept constant and equal to the `
 Instead of monotonic changing the axial load, two loading/unloading cycles are specified in the ``strainFunction``. 
 This way, both plastic loading and elastic unloading can be modeled. 
 
-Note that by convention in GEOSX, ``stressFunction`` and ``strainFunction`` have negative values for a compressive test.
+Note that by convention in GEOS, ``stressFunction`` and ``strainFunction`` have negative values for a compressive test.
 
 
 ------------------------------------------------------------------
 Mesh
 ------------------------------------------------------------------
 
-Even if discretization is not required for the ``TriaxialDriver``, a dummy mesh should be defined to pass all the necessary checks when initializing GEOSX and running the module. A dummy mesh should be created in the ``Mesh`` section and assigned to the ``cellBlocks`` in the ``ElementRegions`` section. 
+Even if discretization is not required for the ``TriaxialDriver``, a dummy mesh should be defined to pass all the necessary checks when initializing GEOS and running the module. A dummy mesh should be created in the ``Mesh`` section and assigned to the ``cellBlocks`` in the ``ElementRegions`` section. 
 
 
-.. literalinclude:: ../../../../../inputFiles/triaxialDriver/triaxialDriver_ExtendedDruckerPrager.xml
+.. literalinclude:: ../../../../../inputFiles/triaxialDriver/triaxialDriver_ExtendedDruckerPrager_basicExample.xml
     :language: xml
     :start-after: <!-- SPHINX_MESH -->
     :end-before: <!-- SPHINX_MESH_END -->
 
 
-Once calibrated, the testing constitutive models can be easily used in full field-scale simulation by adding solver, discretization, and boundary condition blocks to the xml file. Also, it is possible to run a full GEOSX model and generate identical results as those provided by the ``TriaxialDriver``.
+Once calibrated, the testing constitutive models can be easily used in full field-scale simulation by adding solver, discretization, and boundary condition blocks to the xml file. Also, it is possible to run a full GEOS model and generate identical results as those provided by the ``TriaxialDriver``.
 
 
 ---------------------------------
 Running  TriaxialDriver
 ---------------------------------
 
-The ``TriaxialDriver`` is launched like any other GEOSX simulation by using the following command:
+The ``TriaxialDriver`` is launched like any other GEOS simulation by using the following command:
 
 .. code-block:: sh
 
-   path/to/geosx -i triaxialDriver_ExtendedDruckerPrager.xml
+   path/to/geosx -i triaxialDriver_ExtendedDruckerPrager_basicExample.xml
 
 
 The running log appears to the console to indicate if the case can be successfully executed or not:
@@ -201,7 +201,7 @@ The running log appears to the console to indicate if the case can be successful
 
    Max threads: 32
    MKL max threads: 16
-   GEOSX version 0.2.0 (HEAD, sha1: bb16d72)
+   GEOS version 0.2.0 (HEAD, sha1: bb16d72)
    Adding Event: SoloEvent, triaxialDriver
       TableFunction: strainFunction
       TableFunction: stressFunction
@@ -261,4 +261,4 @@ To go further
 
 **Feedback on this example**
 
-For any feedback on this example, please submit a `GitHub issue on the project's GitHub page <https://github.com/GEOSX/GEOSX/issues>`_.
+For any feedback on this example, please submit a `GitHub issue on the project's GitHub page <https://github.com/GEOS-DEV/GEOS/issues>`_.

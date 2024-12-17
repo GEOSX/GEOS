@@ -2,11 +2,12 @@
  * ------------------------------------------------------------------------------------------------------------
  * SPDX-License-Identifier: LGPL-2.1-only
  *
- * Copyright (c) 2018-2019 Lawrence Livermore National Security LLC
- * Copyright (c) 2018-2019 The Board of Trustees of the Leland Stanford Junior University
- * Copyright (c) 2018-2019 Total, S.A
- * Copyright (c) 2019-     GEOSX Contributors
- * All right reserved
+ * Copyright (c) 2016-2024 Lawrence Livermore National Security LLC
+ * Copyright (c) 2018-2024 TotalEnergies
+ * Copyright (c) 2018-2024 The Board of Trustees of the Leland Stanford Junior University
+ * Copyright (c) 2023-2024 Chevron
+ * Copyright (c) 2019-     GEOS/GEOSX Contributors
+ * All rights reserved
  *
  * See top level LICENSE, COPYRIGHT, CONTRIBUTORS, NOTICE, and ACKNOWLEDGEMENTS files for details.
  * ------------------------------------------------------------------------------------------------------------
@@ -23,7 +24,7 @@
 #include <_hypre_parcsr_mv.h>
 #include <_hypre_parcsr_ls.h>
 
-namespace geosx
+namespace geos
 {
 
 namespace hypre
@@ -58,13 +59,27 @@ HYPRE_Int SuperLUDistSolve( HYPRE_Solver solver,
                             HYPRE_ParVector b,
                             HYPRE_ParVector x )
 {
-  GEOSX_UNUSED_VAR( A );
+  GEOS_UNUSED_VAR( A );
+#if defined(GEOS_USE_SUPERLU_DIST)
   return hypre_SLUDistSolve( solver, b, x );
+#else
+  GEOS_UNUSED_VAR( solver );
+  GEOS_UNUSED_VAR( b );
+  GEOS_UNUSED_VAR( x );
+  GEOS_ERROR( "GEOSX is configured without support for SuperLU_dist." );
+  return -1;
+#endif
 }
 
 HYPRE_Int SuperLUDistDestroy( HYPRE_Solver solver )
 {
+#if defined(GEOS_USE_SUPERLU_DIST)
   return hypre_SLUDistDestroy( solver );
+#else
+  GEOS_UNUSED_VAR( solver );
+  GEOS_ERROR( "GEOSX is configured without support for SuperLU_dist." );
+  return -1;
+#endif
 }
 
 /**
@@ -116,7 +131,7 @@ HYPRE_Int relaxationSetup( HYPRE_Solver solver,
                            HYPRE_ParVector b,
                            HYPRE_ParVector x )
 {
-  GEOSX_UNUSED_VAR( b, x );
+  GEOS_UNUSED_VAR( b, x );
 
   // Refer to RelaxationData doxygen above for explanation of reinterpret_cast
   RelaxationData * const data = reinterpret_cast< RelaxationData * >( solver );
@@ -160,4 +175,4 @@ HYPRE_Int relaxationDestroy( HYPRE_Solver solver )
 
 } // namespace hypre
 
-} // namespace geosx
+} // namespace geos

@@ -2,10 +2,11 @@
  * ------------------------------------------------------------------------------------------------------------
  * SPDX-License-Identifier: LGPL-2.1-only
  *
- * Copyright (c) 2018-2020 Lawrence Livermore National Security LLC
- * Copyright (c) 2018-2020 The Board of Trustees of the Leland Stanford Junior University
- * Copyright (c) 2018-2020 TotalEnergies
- * Copyright (c) 2019-     GEOSX Contributors
+ * Copyright (c) 2016-2024 Lawrence Livermore National Security LLC
+ * Copyright (c) 2018-2024 TotalEnergies
+ * Copyright (c) 2018-2024 The Board of Trustees of the Leland Stanford Junior University
+ * Copyright (c) 2023-2024 Chevron
+ * Copyright (c) 2019-     GEOS/GEOSX Contributors
  * All rights reserved
  *
  * See top level LICENSE, COPYRIGHT, CONTRIBUTORS, NOTICE, and ACKNOWLEDGEMENTS files for details.
@@ -18,7 +19,7 @@
 
 #include "FunctionManager.hpp"
 
-namespace geosx
+namespace geos
 {
 
 FunctionManager * FunctionManager::m_instance = nullptr;
@@ -32,27 +33,27 @@ FunctionManager::FunctionManager( const string & name,
 {
   setInputFlags( InputFlags::OPTIONAL );
 
-  GEOSX_ERROR_IF( m_instance != nullptr, "Only one FunctionManager can exist at a time." );
+  GEOS_ERROR_IF( m_instance != nullptr, "Only one FunctionManager can exist at a time." );
   m_instance = this;
 }
 
 FunctionManager::~FunctionManager()
 {
-  GEOSX_ERROR_IF( m_instance != this, "m_instance != this should not be possible." );
+  GEOS_ERROR_IF( m_instance != this, "m_instance != this should not be possible." );
   m_instance = nullptr;
 }
 
 FunctionManager & FunctionManager::getInstance()
 {
-  GEOSX_ERROR_IF( m_instance == nullptr,
-                  "FunctionManager has not been constructed, or is already been destructed." );
+  GEOS_ERROR_IF( m_instance == nullptr,
+                 "FunctionManager has not been constructed, or is already been destructed." );
   return *m_instance;
 }
 
 Group * FunctionManager::createChild( string const & functionCatalogKey,
                                       string const & functionName )
 {
-  GEOSX_LOG_RANK_0( "   " << functionCatalogKey << ": " << functionName );
+  GEOS_LOG_RANK_0( GEOS_FMT( "{}: adding {} {}", getName(), functionCatalogKey, functionName ) );
   std::unique_ptr< FunctionBase > function = FunctionBase::CatalogInterface::factory( functionCatalogKey, functionName, this );
   return &this->registerGroup< FunctionBase >( functionName, std::move( function ) );
 }
@@ -67,4 +68,4 @@ void FunctionManager::expandObjectCatalogs()
   }
 }
 
-} // end of namespace geosx
+} // end of namespace geos

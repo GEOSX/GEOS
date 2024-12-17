@@ -31,7 +31,7 @@ The XML file for this test case is located at :
 This mesh is a simple internally generated regular grid (50 x 1 x 150).
 A single CO :sub:`2` injection well is at the center of the reservoir.
 
-The XML file considered here follows the typical structure of the GEOSX input files:
+The XML file considered here follows the typical structure of the GEOS input files:
 
  #. :ref:`Solver <Solver_tag_co2_field_case>`
  #. :ref:`Mesh <Mesh_tag_co2_field_case>`
@@ -62,10 +62,10 @@ In the **CompositionalMultiphaseFVM** (:ref:`CompositionalMultiphaseFlow`), a cl
 The **CompositionalMultiphaseWell** (:ref:`CompositionalMultiphaseWell`)  consists of wellbore specifications (see :ref:`TutorialDeadOilEgg` for detailed example). As its reservoir counterpart, it includes references to fluid and relative permeability models, but also defines a  **WellControls** sub-tag.
 This sub-tag specifies the CO :sub:`2` injector control mode: the well is initially rate-controlled, with a rate specified in ``targetTotalRate`` and a maximum pressure specified in ``targetBHP``. The injector-specific attribute, ``injectionStream``, describes the composition of the injected mixture (here, pure CO :sub:`2`).
 
-The **CompositionalMultiphaseReservoir** coupling section describes the binding between those two previous elements (see :ref:`TutorialPoroelasticity` for detailed example on coupling physics in GEOSX). In addition to being bound to the previously described blocks through ``flowSolverName`` and ``wellSolverName`` sub-tags, it contains the ``initialDt`` starting time-step size value and defines the **NonlinearSolverParameters** and **LinearSolverParameters** that are used to control Newton-loop and linear solver behaviors (see :ref:`LinearSolvers` for a detailed description of linear solver attributes). 
+The **CompositionalMultiphaseReservoir** coupling section describes the binding between those two previous elements (see :ref:`TutorialPoroelasticity` for detailed example on coupling physics in GEOS). In addition to being bound to the previously described blocks through ``flowSolverName`` and ``wellSolverName`` sub-tags, it contains the ``initialDt`` starting time-step size value and defines the **NonlinearSolverParameters** and **LinearSolverParameters** that are used to control Newton-loop and linear solver behaviors (see :ref:`LinearSolvers` for a detailed description of linear solver attributes). 
 
 .. note::
-   To use the linear solver options of this example, you need to ensure that GEOSX is configured to use the Hypre linear solver package.
+   To use the linear solver options of this example, you need to ensure that GEOS is configured to use the Hypre linear solver package.
    
 
 .. _Mesh_tag_co2_field_case:
@@ -134,8 +134,9 @@ The **TwoPointFluxApproximation** is chosen for the fluid equation discretizatio
 Element regions
 ---------------
 
-We define a **CellElementRegion** pointing to the cell block defining the reservoir mesh, and a **WellElementRegion** for the well.
+We define a **CellElementRegion** pointing to all reservoir mesh cells, and a **WellElementRegion** for the well.
 The two regions contain a list of constitutive model names.
+The keyword "all" is used here to automatically select all cells of the mesh.
 
 .. literalinclude:: ../../../../../inputFiles/compositionalMultiphaseWell/simpleCo2InjTutorial_base.xml
   :language: xml
@@ -181,12 +182,12 @@ The *pvtgas.txt* and *pvtliquid.txt* files define the models used to compute the
 
 .. code:: 
 
-        DensityFun SpanWagnerCO2Density 1e6 1.5e7 5e4 94 96 1
-        ViscosityFun FenghourCO2Viscosity 1e6 1.5e7 5e4 94 96 
+        DensityFun SpanWagnerCO2Density 1.0e5 7.5e7 1e5 285.15 395.15 5
+        ViscosityFun FenghourCO2Viscosity 1.0e5 7.5e7 1e5 285.15 395.15 5 
 
 .. code::
   
-        DensityFun PhillipsBrineDensity 1e6 1.5e7 5e4 94 96 1 0
+        DensityFun PhillipsBrineDensity 1.0e5 7.5e7 1e5 285.15 395.15 5 0
         ViscosityFun PhillipsBrineViscosity 0
 
 In these files, the first keyword of each line is an identifier for the model type (either a density or a viscosity model).
@@ -195,7 +196,7 @@ Then, the lower, upper, and step increment values for pressure and temperature r
 The trailing 0 for ``PhillipsBrineDensity`` and ``PhillipsBrineViscosity`` entry is the salinity of the brine, set to zero.
 
 .. note::
-   It is the responsibility of the user to make sure that the pressure and temperature values encountered in the simulation (in the reservoir and in the well) are within the bounds specified in the PVT files. GEOSX will not throw an error if a value outside these bounds is encountered, but the (nonlinear) behavior of the simulation and the quality of the results will likely be negatively impacted.  
+   It is the responsibility of the user to make sure that the pressure and temperature values encountered in the simulation (in the reservoir and in the well) are within the bounds specified in the PVT files. GEOS will not throw an error if a value outside these bounds is encountered, but the (nonlinear) behavior of the simulation and the quality of the results will likely be negatively impacted.  
 
 .. _FieldSpecifications_tag_co2_field_case:
 
@@ -217,6 +218,10 @@ Here, these fields are homogeneous, except for the permeability field that is ta
         a **Constitutive** law. These permeability values will overwrite the values already set in the **Constitutive** block. 
 
 .. _Outputs_tag_co2_field_case:
+
+.. warning::
+  This XML file example does not take into account elevation when imposing the intial pressure with ``initialPressure``. 
+  Consider using a "HydrostraticEquilibrium" for a closer answer to modeled physical processes.
 
 ------
 Output
@@ -253,31 +258,31 @@ The details of the history collection mechanism can be found in :ref:`TasksManag
 
 
 ------------------------------------
-Running GEOSX
+Running GEOS
 ------------------------------------
 
 The simulation can be launched with 4 cores using MPI-parallelism:
 
 .. code-block:: console
 
-  mpirun -np 4 geosx -i SimpleCo2InjTutorial.xml -x 1 -y 1 -z 4
+  mpirun -np 4 geosx -i simpleCo2InjTutorial_smoke.xml -x 1 -y 1 -z 4
 
-A restart from a checkpoint file `SimpleCo2InjTutorial_restart_000000024.root` is always available thanks to the following command line :
+A restart from a checkpoint file `simpleCo2InjTutorial_restart_000000024.root` is always available thanks to the following command line :
 
 .. code-block:: console
 
-  mpirun -np 4 geosx -i SimpleCo2InjTutorial.xml -r SimpleCo2InjTutorial_restart_000000024 -x 1 -y 1 -z 4
+  mpirun -np 4 geosx -i simpleCo2InjTutorial_smoke.xml -r simpleCo2InjTutorial_restart_000000024 -x 1 -y 1 -z 4
 
 The output then shows the loading of HDF5 restart files by each core. 
 
 .. code-block:: console
 
-        Loading restart file SimpleCo2InjTutorial_restart_000000024
-        Rank 0: rankFilePattern = SimpleCo2InjTutorial_restart_000000024/rank_%07d.hdf5
-        Rank 0: Reading in restart file at SimpleCo2InjTutorial_restart_000000024/rank_0000000.hdf5
-        Rank 1: Reading in restart file at SimpleCo2InjTutorial_restart_000000024/rank_0000001.hdf5
-        Rank 3: Reading in restart file at SimpleCo2InjTutorial_restart_000000024/rank_0000003.hdf5
-        Rank 2: Reading in restart file at SimpleCo2InjTutorial_restart_000000024/rank_0000002.hdf5
+        Loading restart file simpleCo2InjTutorial_restart_000000024
+        Rank 0: rankFilePattern = simpleCo2InjTutorial_restart_000000024/rank_%07d.hdf5
+        Rank 0: Reading in restart file at simpleCo2InjTutorial_restart_000000024/rank_0000000.hdf5
+        Rank 1: Reading in restart file at simpleCo2InjTutorial_restart_000000024/rank_0000001.hdf5
+        Rank 3: Reading in restart file at simpleCo2InjTutorial_restart_000000024/rank_0000003.hdf5
+        Rank 2: Reading in restart file at simpleCo2InjTutorial_restart_000000024/rank_0000002.hdf5
 
 and the simulation restarts from this point in time. 	
 
@@ -310,7 +315,7 @@ To go further
 **Feedback on this example**
 
 This concludes the CO :sub:`2` injection field case example.
-For any feedback on this example, please submit a `GitHub issue on the project's GitHub page <https://github.com/GEOSX/GEOSX/issues>`_.
+For any feedback on this example, please submit a `GitHub issue on the project's GitHub page <https://github.com/GEOS-DEV/GEOS/issues>`_.
 
 **For more details**
 

@@ -2,10 +2,11 @@
  * ------------------------------------------------------------------------------------------------------------
  * SPDX-License-Identifier: LGPL-2.1-only
  *
- * Copyright (c) 2018-2020 Lawrence Livermore National Security LLC
- * Copyright (c) 2018-2020 The Board of Trustees of the Leland Stanford Junior University
- * Copyright (c) 2018-2020 TotalEnergies
- * Copyright (c) 2019-     GEOSX Contributors
+ * Copyright (c) 2016-2024 Lawrence Livermore National Security LLC
+ * Copyright (c) 2018-2024 TotalEnergies
+ * Copyright (c) 2018-2024 The Board of Trustees of the Leland Stanford Junior University
+ * Copyright (c) 2023-2024 Chevron
+ * Copyright (c) 2019-     GEOS/GEOSX Contributors
  * All rights reserved
  *
  * See top level LICENSE, COPYRIGHT, CONTRIBUTORS, NOTICE, and ACKNOWLEDGEMENTS files for details.
@@ -16,8 +17,8 @@
  * @file HypreUtils.hpp
  */
 
-#ifndef GEOSX_LINEARALGEBRA_INTERFACES_HYPREUTILS_HPP_
-#define GEOSX_LINEARALGEBRA_INTERFACES_HYPREUTILS_HPP_
+#ifndef GEOS_LINEARALGEBRA_INTERFACES_HYPREUTILS_HPP_
+#define GEOS_LINEARALGEBRA_INTERFACES_HYPREUTILS_HPP_
 
 #include "common/DataTypes.hpp"
 #include "common/GEOS_RAJA_Interface.hpp"
@@ -28,15 +29,19 @@
 #include <HYPRE_krylov.h>
 #include <HYPRE_parcsr_ls.h>
 
-#ifdef GEOSX_USE_HYPRE_CUDA
+#if GEOS_USE_HYPRE_DEVICE == GEOS_USE_HYPRE_CUDA || GEOS_USE_HYPRE_DEVICE == GEOS_USE_HYPRE_HIP
 /// Host-device marker for custom hypre kernels
-#define GEOSX_HYPRE_DEVICE GEOSX_DEVICE
+#define GEOS_HYPRE_DEVICE GEOS_DEVICE
+/// Host-device marker for custom hypre kernels
+#define GEOS_HYPRE_HOST_DEVICE GEOS_HOST_DEVICE
 #else
 /// Host-device marker for custom hypre kernels
-#define GEOSX_HYPRE_DEVICE
+#define GEOS_HYPRE_DEVICE
+/// Host-device marker for custom hypre kernels
+#define GEOS_HYPRE_HOST_DEVICE
 #endif
 
-namespace geosx
+namespace geos
 {
 
 /**
@@ -76,9 +81,12 @@ constexpr HYPRE_MemoryLocation getMemoryLocation( LvArray::MemorySpace const spa
 {
   switch( space )
   {
-    case LvArray::MemorySpace::host: return HYPRE_MEMORY_HOST;
-#ifdef GEOSX_USE_HYPRE_CUDA
+    case hostMemorySpace: return HYPRE_MEMORY_HOST;
+#if GEOS_USE_HYPRE_DEVICE == GEOS_USE_HYPRE_CUDA
     case LvArray::MemorySpace::cuda: return HYPRE_MEMORY_DEVICE;
+#endif
+#if GEOS_USE_HYPRE_DEVICE == GEOS_USE_HYPRE_HIP
+    case  LvArray::MemorySpace::hip: return HYPRE_MEMORY_DEVICE;
 #endif
     default: return HYPRE_MEMORY_HOST;
   }
@@ -92,28 +100,35 @@ constexpr LvArray::MemorySpace getLvArrayMemorySpace( HYPRE_MemoryLocation const
 {
   switch( location )
   {
-    case HYPRE_MEMORY_HOST: return LvArray::MemorySpace::host;
-#ifdef GEOSX_USE_HYPRE_CUDA
-    case HYPRE_MEMORY_DEVICE: return LvArray::MemorySpace::cuda;
+    case HYPRE_MEMORY_HOST: return hostMemorySpace;
+#if GEOS_USE_HYPRE_DEVICE == GEOS_USE_HYPRE_CUDA
+    case HYPRE_MEMORY_DEVICE: return parallelDeviceMemorySpace;
 #endif
-    default: return LvArray::MemorySpace::host;
+#if GEOS_USE_HYPRE_DEVICE == GEOS_USE_HYPRE_HIP
+    case HYPRE_MEMORY_DEVICE: return parallelDeviceMemorySpace;
+#endif
+    default: return hostMemorySpace;
   }
 }
 
-#ifdef GEOSX_USE_HYPRE_CUDA
+#if GEOS_USE_HYPRE_DEVICE == GEOS_USE_HYPRE_CUDA || GEOS_USE_HYPRE_DEVICE == GEOS_USE_HYPRE_HIP
+
 /// Execution policy for operations on hypre data
 using execPolicy = parallelDevicePolicy<>;
 /// Memory space used by hypre matrix/vector objects
-constexpr LvArray::MemorySpace memorySpace = LvArray::MemorySpace::cuda;
+constexpr LvArray::MemorySpace memorySpace = parallelDeviceMemorySpace;
 /// Memory location used by hypre matrix/vector objects
 constexpr HYPRE_MemoryLocation memoryLocation = HYPRE_MEMORY_DEVICE;
+
 #else
+
 /// Execution policy for operations on hypre data
 using execPolicy = parallelHostPolicy;
 /// Memory space used by hypre matrix/vector objects
-constexpr LvArray::MemorySpace memorySpace = LvArray::MemorySpace::host;
+constexpr LvArray::MemorySpace memorySpace = hostMemorySpace;
 /// Memory location used by hypre matrix/vector objects
 constexpr HYPRE_MemoryLocation memoryLocation = HYPRE_MEMORY_HOST;
+
 #endif
 
 // Check matching requirements on index/value types between GEOSX and Hypre
@@ -123,11 +138,11 @@ constexpr HYPRE_MemoryLocation memoryLocation = HYPRE_MEMORY_HOST;
 //          localIndex to int. We are getting away with this because we do not
 //          pass ( localIndex * ) to hypre except when it is on the GPU, in
 //          which case we are using int for localIndex.
-#ifdef GEOSX_USE_HYPRE_CUDA
-static_assert( sizeof( HYPRE_Int ) == sizeof( geosx::localIndex ),
-               "HYPRE_Int and geosx::localIndex must have the same size" );
-static_assert( std::is_signed< HYPRE_Int >::value == std::is_signed< geosx::localIndex >::value,
-               "HYPRE_Int and geosx::localIndex must both be signed or unsigned" );
+#if GEOS_USE_HYPRE_DEVICE == GEOS_USE_HYPRE_CUDA || GEOS_USE_HYPRE_DEVICE == GEOS_USE_HYPRE_HIP
+static_assert( sizeof( HYPRE_Int ) == sizeof( geos::localIndex ),
+               "HYPRE_Int and geos::localIndex must have the same size" );
+static_assert( std::is_signed< HYPRE_Int >::value == std::is_signed< geos::localIndex >::value,
+               "HYPRE_Int and geos::localIndex must both be signed or unsigned" );
 #endif
 
 /**
@@ -138,11 +153,16 @@ static_assert( std::is_signed< HYPRE_Int >::value == std::is_signed< geosx::loca
  */
 inline void checkDeviceErrors( char const * msg, char const * file, int const line )
 {
-#ifdef GEOSX_USE_HYPRE_CUDA
+#if GEOS_USE_HYPRE_DEVICE == GEOS_USE_HYPRE_CUDA
   cudaError_t const err = cudaGetLastError();
-  GEOSX_ERROR_IF( err != cudaSuccess, GEOSX_FMT( "Previous CUDA errors found: {} ({} at {}:{})", msg, cudaGetErrorString( err ), file, line ) );
+  GEOS_ERROR_IF( err != cudaSuccess, GEOS_FMT( "Previous CUDA errors found: {} ({} at {}:{})", msg, cudaGetErrorString( err ), file, line ) );
+#elif GEOS_USE_HYPRE_DEVICE == GEOS_USE_HYPRE_HIP
+  hipError_t const err = hipGetLastError();
+  GEOS_UNUSED_VAR( msg, file, line ); // on crusher geos_error_if ultimately resolves to an assert, which drops the content on release
+                                      // builds
+  GEOS_ERROR_IF( err != hipSuccess, GEOS_FMT( "Previous HIP errors found: {} ({} at {}:{})", msg, hipGetErrorString( err ), file, line ) );
 #else
-  GEOSX_UNUSED_VAR( msg, file, line );
+  GEOS_UNUSED_VAR( msg, file, line );
 #endif
 }
 
@@ -150,23 +170,23 @@ inline void checkDeviceErrors( char const * msg, char const * file, int const li
  * @brief Check for previous device errors and report with line information.
  * @param msg custom message to add
  */
-#define GEOSX_HYPRE_CHECK_DEVICE_ERRORS( msg ) ::geosx::hypre::checkDeviceErrors( msg, __FILE__, __LINE__ )
+#define GEOS_HYPRE_CHECK_DEVICE_ERRORS( msg ) ::geos::hypre::checkDeviceErrors( msg, __FILE__, __LINE__ )
 
-static_assert( sizeof( HYPRE_BigInt ) == sizeof( geosx::globalIndex ),
-               "HYPRE_BigInt and geosx::globalIndex must have the same size" );
+static_assert( sizeof( HYPRE_BigInt ) == sizeof( geos::globalIndex ),
+               "HYPRE_BigInt and geos::globalIndex must have the same size" );
 
-static_assert( std::is_signed< HYPRE_BigInt >::value == std::is_signed< geosx::globalIndex >::value,
-               "HYPRE_BigInt and geosx::globalIndex must both be signed or unsigned" );
+static_assert( std::is_signed< HYPRE_BigInt >::value == std::is_signed< geos::globalIndex >::value,
+               "HYPRE_BigInt and geos::globalIndex must both be signed or unsigned" );
 
-static_assert( std::is_same< HYPRE_Real, geosx::real64 >::value,
-               "HYPRE_Real and geosx::real64 must be the same type" );
+static_assert( std::is_same< HYPRE_Real, geos::real64 >::value,
+               "HYPRE_Real and geos::real64 must be the same type" );
 
 /**
  * @brief Converts a non-const array from GEOSX globalIndex type to HYPRE_BigInt.
  * @param[in] index the input array
  * @return the converted array
  */
-inline HYPRE_BigInt * toHypreBigInt( geosx::globalIndex * const index )
+inline HYPRE_BigInt * toHypreBigInt( geos::globalIndex * const index )
 {
   return reinterpret_cast< HYPRE_BigInt * >(index);
 }
@@ -176,7 +196,7 @@ inline HYPRE_BigInt * toHypreBigInt( geosx::globalIndex * const index )
  * @param[in] index the input array
  * @return the converted array
  */
-inline HYPRE_BigInt const * toHypreBigInt( geosx::globalIndex const * const index )
+inline HYPRE_BigInt const * toHypreBigInt( geos::globalIndex const * const index )
 {
   return reinterpret_cast< HYPRE_BigInt const * >(index);
 }
@@ -289,19 +309,61 @@ inline HYPRE_Int getAMGRelaxationType( LinearSolverParameters::AMG::SmootherType
   static map< LinearSolverParameters::AMG::SmootherType, HYPRE_Int > const typeMap =
   {
     { LinearSolverParameters::AMG::SmootherType::default_, -1 },
-#ifdef GEOSX_USE_HYPRE_CUDA
-    { LinearSolverParameters::AMG::SmootherType::jacobi, 7 },
-#else
-    { LinearSolverParameters::AMG::SmootherType::jacobi, 0 },
-#endif
     { LinearSolverParameters::AMG::SmootherType::fgs, 3 },
     { LinearSolverParameters::AMG::SmootherType::bgs, 4 },
     { LinearSolverParameters::AMG::SmootherType::sgs, 6 },
+    { LinearSolverParameters::AMG::SmootherType::jacobi, 7 },
     { LinearSolverParameters::AMG::SmootherType::l1sgs, 8 },
     { LinearSolverParameters::AMG::SmootherType::chebyshev, 16 },
     { LinearSolverParameters::AMG::SmootherType::l1jacobi, 18 },
   };
   return findOption( typeMap, type, "multigrid relaxation", "HyprePreconditioner" );
+}
+
+/**
+ * @brief Returns hypre's identifier of the AMG interpolation type.
+ * @param type AMG interpolation type
+ * @return hypre AMG interpolation type identifier code
+ */
+inline HYPRE_Int getAMGInterpolationType( LinearSolverParameters::AMG::InterpType const & type )
+{
+  static map< LinearSolverParameters::AMG::InterpType, HYPRE_Int > const typeMap =
+  {
+    { LinearSolverParameters::AMG::InterpType::default_, -1 },
+    { LinearSolverParameters::AMG::InterpType::modifiedClassical, 0 },
+    { LinearSolverParameters::AMG::InterpType::direct, 3 },
+    { LinearSolverParameters::AMG::InterpType::multipass, 4 },
+    { LinearSolverParameters::AMG::InterpType::extendedI, 6 },
+    { LinearSolverParameters::AMG::InterpType::standard, 8 },
+    { LinearSolverParameters::AMG::InterpType::extended, 14 },
+    { LinearSolverParameters::AMG::InterpType::directBAMG, 15 },
+    { LinearSolverParameters::AMG::InterpType::modifiedExtended, 16 },
+    { LinearSolverParameters::AMG::InterpType::modifiedExtendedI, 17 },
+    { LinearSolverParameters::AMG::InterpType::modifiedExtendedE, 18 },
+  };
+  return findOption( typeMap, type, "multigrid interpolation", "HyprePreconditioner" );
+}
+
+/**
+ * @brief Returns hypre's identifier of the AMG aggressive interpolation type.
+ * @param type AMG aggressive interpolation type
+ * @return hypre AMG aggressive interpolation type identifier code
+ */
+inline HYPRE_Int getAMGAggressiveInterpolationType( LinearSolverParameters::AMG::AggInterpType const & type )
+{
+  static map< LinearSolverParameters::AMG::AggInterpType, HYPRE_Int > const typeMap =
+  {
+    { LinearSolverParameters::AMG::AggInterpType::default_, -1 },
+    { LinearSolverParameters::AMG::AggInterpType::extendedIStage2, 1 },
+    { LinearSolverParameters::AMG::AggInterpType::standardStage2, 2 },
+    { LinearSolverParameters::AMG::AggInterpType::extendedStage2, 3 },
+    { LinearSolverParameters::AMG::AggInterpType::multipass, 4 },
+    { LinearSolverParameters::AMG::AggInterpType::modifiedExtended, 5 },
+    { LinearSolverParameters::AMG::AggInterpType::modifiedExtendedI, 6 },
+    { LinearSolverParameters::AMG::AggInterpType::modifiedExtendedE, 7 },
+    { LinearSolverParameters::AMG::AggInterpType::modifiedMultipass, 8 },
+  };
+  return findOption( typeMap, type, "multigrid aggressive interpolation", "HyprePreconditioner" );
 }
 
 /**
@@ -329,18 +391,16 @@ inline HYPRE_Int getAMGCoarseType( LinearSolverParameters::AMG::CoarseType const
   static map< LinearSolverParameters::AMG::CoarseType, HYPRE_Int > const typeMap =
   {
     { LinearSolverParameters::AMG::CoarseType::default_, -1 },
-#ifdef GEOSX_USE_HYPRE_CUDA
-    { LinearSolverParameters::AMG::CoarseType::jacobi, 7 },
-#else
-    { LinearSolverParameters::AMG::CoarseType::jacobi, 0 },
-#endif
     { LinearSolverParameters::AMG::CoarseType::fgs, 3 },
     { LinearSolverParameters::AMG::CoarseType::bgs, 4 },
     { LinearSolverParameters::AMG::CoarseType::sgs, 6 },
+    { LinearSolverParameters::AMG::CoarseType::jacobi, 7 },
     { LinearSolverParameters::AMG::CoarseType::l1sgs, 8 },
     { LinearSolverParameters::AMG::CoarseType::direct, 9 },
     { LinearSolverParameters::AMG::CoarseType::chebyshev, 16 },
     { LinearSolverParameters::AMG::CoarseType::l1jacobi, 18 },
+    { LinearSolverParameters::AMG::CoarseType::gsElimWPivoting, 99 },
+    { LinearSolverParameters::AMG::CoarseType::gsElimWInverse, 199 },
   };
   return findOption( typeMap, type, "multigrid coarse solver", "HyprePreconditioner" );
 }
@@ -350,19 +410,16 @@ inline HYPRE_Int getAMGCoarseType( LinearSolverParameters::AMG::CoarseType const
  * @param type AMG coarsening type
  * @return hypre AMG coarsening type identifier code
  */
-inline HYPRE_Int getAMGCoarseningType( string const & type )
+inline HYPRE_Int getAMGCoarseningType( LinearSolverParameters::AMG::CoarseningType const & type )
 {
-  static map< string, HYPRE_Int > const typeMap =
+  static map< LinearSolverParameters::AMG::CoarseningType, HYPRE_Int > const typeMap =
   {
-    { "CLJP", 0 },
-    { "Ruge-Stueben", 3 },
-    { "Falgout", 6 },
-    { "CLJPDebug", 7 },
-    { "PMIS", 8 },
-    { "PMISDebug", 9 },
-    { "HMIS", 10 },
-    { "CGC", 21 },
-    { "CGC-E", 22 }
+    { LinearSolverParameters::AMG::CoarseningType::default_, -1 },
+    { LinearSolverParameters::AMG::CoarseningType::CLJP, 0 },
+    { LinearSolverParameters::AMG::CoarseningType::RugeStueben, 3 },
+    { LinearSolverParameters::AMG::CoarseningType::Falgout, 6 },
+    { LinearSolverParameters::AMG::CoarseningType::PMIS, 8 },
+    { LinearSolverParameters::AMG::CoarseningType::HMIS, 10 },
   };
   return findOption( typeMap, type, "multigrid coarsening", "HyprePreconditioner" );
 }
@@ -376,14 +433,10 @@ inline HYPRE_Int getRelaxationType( LinearSolverParameters::PreconditionerType c
 {
   static map< LinearSolverParameters::PreconditionerType, HYPRE_Int > const typeMap =
   {
-#ifdef GEOSX_USE_HYPRE_CUDA
-    { LinearSolverParameters::PreconditionerType::jacobi, 7 },
-#else
-    { LinearSolverParameters::PreconditionerType::jacobi, 0 },
-#endif
     { LinearSolverParameters::PreconditionerType::fgs, 3 },
     { LinearSolverParameters::PreconditionerType::bgs, 4 },
     { LinearSolverParameters::PreconditionerType::sgs, 6 },
+    { LinearSolverParameters::PreconditionerType::jacobi, 7 },
     { LinearSolverParameters::PreconditionerType::l1sgs, 8 },
     { LinearSolverParameters::PreconditionerType::chebyshev, 16 },
     { LinearSolverParameters::PreconditionerType::l1jacobi, 18 },
@@ -448,7 +501,8 @@ enum class MGRRestrictionType : HYPRE_Int
   jacobi = 2,              //!< Diagonal scaling
   approximateInverse = 3,  //!< Approximate inverse
   blockJacobi = 12,        //!< Block-Jacobi
-  cprLike = 13             //!< CPR-like restriction
+  cprLike = 13,            //!< CPR-like restriction
+  blockColLumped = 14      //!< Block column-lumped approximation
 };
 
 /**
@@ -457,26 +511,15 @@ enum class MGRRestrictionType : HYPRE_Int
  */
 enum class MGRCoarseGridMethod : HYPRE_Int
 {
-  galerkin = 0,          //!< Galerkin coarse grid computation using RAP
-  nonGalerkin = 1,       //!< Non-Galerkin coarse grid computation with dropping strategy: inv(A_FF) approximated by its (block) diagonal
-                         //!< inverse
-  cprLikeDiag = 2,       //!< Non-Galerkin coarse grid computation with dropping strategy: CPR-like approximation with inv(A_FF)
-                         //!< approximated by its diagonal inverse
-  cprLikeBlockDiag = 3,  //!< Non-Galerkin coarse grid computation with dropping strategy: CPR-like approximation with inv(A_FF)
-                         //!< approximated by its block diagonal inverse
-  approximateInverse = 4 //!< Non-Galerkin coarse grid computation with dropping strategy: inv(A_FF) approximated by sparse approximate
-                         //!< inverse
-};
-
-/**
- * @enum MGRFRelaxationMethod
- * @brief This enum class specifies the F-relaxation strategy.
- */
-enum class MGRFRelaxationMethod : HYPRE_Int
-{
-  singleLevel = 0, //!< single-level relaxation
-  multilevel = 1,  //!< multilevel relaxation
-  amgVCycle = 2    //!< multilevel relaxation
+  galerkin = 0,           //!< Galerkin coarse grid computation using RAP
+  nonGalerkin = 1,        //!< Non-Galerkin coarse grid computation with dropping strategy: inv(A_FF) approximated by its (block) diagonal
+                          //!< inverse
+  cprLikeDiag = 2,        //!< Non-Galerkin coarse grid computation with dropping strategy: CPR-like approximation with inv(A_FF)
+                          //!< approximated by its diagonal inverse
+  cprLikeBlockDiag = 3,   //!< Non-Galerkin coarse grid computation with dropping strategy: CPR-like approximation with inv(A_FF)
+                          //!< approximated by its block diagonal inverse
+  approximateInverse = 4  //!< Non-Galerkin coarse grid computation with dropping strategy: inv(A_FF) approximated by sparse approximate
+                          //!< inverse
 };
 
 /**
@@ -485,14 +528,20 @@ enum class MGRFRelaxationMethod : HYPRE_Int
  */
 enum class MGRFRelaxationType : HYPRE_Int
 {
-  jacobi = 0,                       //!< Jacobi
+  none = -1,                        //!< no F-relaxation if performed
+  singleVCycleSmoother = 1,         //!< V(1,0) cycle smoother
+  amgVCycle = 2,                    //!< Full AMG VCycle solver
   forwardHybridGaussSeidel = 3,     //!< hybrid Gauss-Seidel or SOR, forward solve
   backwardHybridGaussSeidel = 4,    //!< hybrid Gauss-Seidel or SOR, backward solve
   hybridSymmetricGaussSeidel = 6,   //!< hybrid symmetric Gauss-Seidel or SSOR
+  jacobi = 7,                       //!< Jacobi
   l1hybridSymmetricGaussSeidel = 8, //!< \f$\ell_1\f$-scaled hybrid symmetric Gauss-Seidel
+  gsElim = 9,                       //!< Gaussian Elimination direct solver (for small systems)
   l1forwardGaussSeidel = 13,        //!< \f$\ell_1\f$ Gauss-Seidel, forward solve
   l1backwardGaussSeidel = 14,       //!< \f$\ell_1\f$ Gauss-Seidel, backward solve
   l1jacobi = 18,                    //!< \f$\ell_1\f$-scaled Jacobi
+  gsElimWPivoting = 99,             //!< Gaussian Elimination with pivoting direct solver (for small systems)
+  gsElimWInverse = 199              //!< Direct Inversion with Gaussian Elimination (OK for larger systems)
 };
 
 /**
@@ -501,13 +550,15 @@ enum class MGRFRelaxationType : HYPRE_Int
  */
 enum class MGRGlobalSmootherType : HYPRE_Int
 {
-  blockJacobi = 0, //!< block Jacobi (default)
-  jacobi = 1,      //!< Jacobi
-  ilu0 = 16        //!< incomplete LU factorization
+  none = -1,            //!< no global smoothing is performed (default)
+  blockJacobi = 0,      //!< block Jacobi
+  blockGaussSeidel = 1, //!< block Jacobi
+  jacobi = 2,           //!< Jacobi
+  ilu0 = 16             //!< incomplete LU factorization
 };
 
 } // namespace hypre
 
-} // namespace geosx
+} // namespace geos
 
-#endif /*GEOSX_LINEARALGEBRA_INTERFACES_HYPREUTILS_HPP_*/
+#endif /*GEOS_LINEARALGEBRA_INTERFACES_HYPREUTILS_HPP_*/

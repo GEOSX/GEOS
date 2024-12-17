@@ -2,10 +2,11 @@
  * ------------------------------------------------------------------------------------------------------------
  * SPDX-License-Identifier: LGPL-2.1-only
  *
- * Copyright (c) 2018-2020 Lawrence Livermore National Security LLC
- * Copyright (c) 2018-2020 The Board of Trustees of the Leland Stanford Junior University
- * Copyright (c) 2018-2020 TotalEnergies
- * Copyright (c) 2019-     GEOSX Contributors
+ * Copyright (c) 2016-2024 Lawrence Livermore National Security LLC
+ * Copyright (c) 2018-2024 TotalEnergies
+ * Copyright (c) 2018-2024 The Board of Trustees of the Leland Stanford Junior University
+ * Copyright (c) 2023-2024 Chevron
+ * Copyright (c) 2019-     GEOS/GEOSX Contributors
  * All rights reserved
  *
  * See top level LICENSE, COPYRIGHT, CONTRIBUTORS, NOTICE, and ACKNOWLEDGEMENTS files for details.
@@ -39,13 +40,13 @@
  *
  */
 
-#ifndef GEOSX_CONSTITUTIVE_SOLID_DAMAGE_HPP_
-#define GEOSX_CONSTITUTIVE_SOLID_DAMAGE_HPP_
+#ifndef GEOS_CONSTITUTIVE_SOLID_DAMAGE_HPP_
+#define GEOS_CONSTITUTIVE_SOLID_DAMAGE_HPP_
 
 #include "constitutive/solid/SolidBase.hpp"
 #include "InvariantDecompositions.hpp"
 
-namespace geosx
+namespace geos
 {
 namespace constitutive
 {
@@ -100,18 +101,14 @@ public:
   using UPDATE_BASE::smallStrainUpdate;
   using UPDATE_BASE::smallStrainNoStateUpdate_StressOnly;
   using UPDATE_BASE::smallStrainUpdate_StressOnly;
-  using UPDATE_BASE::hypoUpdate;
-  using UPDATE_BASE::hypoUpdate_StressOnly;
-  using UPDATE_BASE::hyperUpdate;
-  using UPDATE_BASE::hyperUpdate_StressOnly;
   using UPDATE_BASE::saveConvergedState;
 
   using UPDATE_BASE::m_disableInelasticity;
 
   //Standard quadratic degradation functions
 
-  GEOSX_FORCE_INLINE
-  GEOSX_HOST_DEVICE
+  inline
+  GEOS_HOST_DEVICE
   virtual real64 getDegradationValue( localIndex const k,
                                       localIndex const q ) const
   {
@@ -133,31 +130,32 @@ public:
   }
 
 
-  GEOSX_FORCE_INLINE
-  GEOSX_HOST_DEVICE
+  inline
+  GEOS_HOST_DEVICE
   virtual real64 getDegradationDerivative( real64 const d ) const
   {
     return -2*(1 - d);
   }
 
 
-  GEOSX_FORCE_INLINE
-  GEOSX_HOST_DEVICE
+  inline
+  GEOS_HOST_DEVICE
   virtual real64 getDegradationSecondDerivative( real64 const d ) const
   {
-    GEOSX_UNUSED_VAR( d );
+    GEOS_UNUSED_VAR( d );
 
     return 2.0;
   }
 
-  GEOSX_HOST_DEVICE
+  GEOS_HOST_DEVICE
   virtual void smallStrainUpdate( localIndex const k,
                                   localIndex const q,
+                                  real64 const & timeIncrement,
                                   real64 const ( &strainIncrement )[6],
                                   real64 ( & stress )[6],
                                   DiscretizationOps & stiffness ) const override
   {
-    UPDATE_BASE::smallStrainUpdate( k, q, strainIncrement, stress, stiffness );
+    UPDATE_BASE::smallStrainUpdate( k, q, timeIncrement, strainIncrement, stress, stiffness );
 
     if( m_disableInelasticity )
     {
@@ -209,7 +207,7 @@ public:
   // TODO: The code below assumes the strain energy density will never be
   //       evaluated in a non-converged / garbage configuration.
 
-  GEOSX_HOST_DEVICE
+  GEOS_HOST_DEVICE
   virtual real64 getStrainEnergyDensity( localIndex const k,
                                          localIndex const q ) const override
   {
@@ -223,19 +221,19 @@ public:
     return m_strainEnergyDensity( k, q );
   }
 
-  GEOSX_HOST_DEVICE
+  GEOS_HOST_DEVICE
   real64 getRegularizationLength() const
   {
     return m_lengthScale;
   }
 
-  GEOSX_HOST_DEVICE
+  GEOS_HOST_DEVICE
   real64 getCriticalFractureEnergy() const
   {
     return m_criticalFractureEnergy;
   }
 
-  GEOSX_HOST_DEVICE
+  GEOS_HOST_DEVICE
   virtual real64 getEnergyThreshold( localIndex const k,
                                      localIndex const q ) const
   {
@@ -284,7 +282,7 @@ public:
   static string catalogName() { return string( "Damage" ) + BASE::m_catalogNameString; }
   virtual string getCatalogName() const override { return catalogName(); }
 
-  virtual void postProcessInput() override;
+  virtual void postInputInitialization() override;
 
   virtual void allocateConstitutiveData( dataRepository::Group & parent,
                                          localIndex const numConstitutivePointsPerParentIndex ) override;
@@ -349,6 +347,6 @@ protected:
 };
 
 }
-} /* namespace geosx */
+} /* namespace geos */
 
-#endif /* GEOSX_CONSTITUTIVE_SOLID_DAMAGE_HPP_ */
+#endif /* GEOS_CONSTITUTIVE_SOLID_DAMAGE_HPP_ */

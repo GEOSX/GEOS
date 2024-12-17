@@ -2,10 +2,11 @@
  * ------------------------------------------------------------------------------------------------------------
  * SPDX-License-Identifier: LGPL-2.1-only
  *
- * Copyright (c) 2018-2020 Lawrence Livermore National Security LLC
- * Copyright (c) 2018-2020 The Board of Trustees of the Leland Stanford Junior University
- * Copyright (c) 2018-2020 TotalEnergies
- * Copyright (c) 2019-     GEOSX Contributors
+ * Copyright (c) 2016-2024 Lawrence Livermore National Security LLC
+ * Copyright (c) 2018-2024 TotalEnergies
+ * Copyright (c) 2018-2024 The Board of Trustees of the Leland Stanford Junior University
+ * Copyright (c) 2023-2024 Chevron
+ * Copyright (c) 2019-     GEOS/GEOSX Contributors
  * All rights reserved
  *
  * See top level LICENSE, COPYRIGHT, CONTRIBUTORS, NOTICE, and ACKNOWLEDGEMENTS files for details.
@@ -24,8 +25,9 @@
 #include "DruckerPrager.hpp"
 #include "DruckerPragerExtended.hpp"
 #include "ModifiedCamClay.hpp"
+#include "DuvautLionsSolid.hpp"
 
-namespace geosx
+namespace geos
 {
 
 using namespace dataRepository;
@@ -72,9 +74,9 @@ PoroElastic< BASE >::~PoroElastic()
 {}
 
 template< typename BASE >
-void PoroElastic< BASE >::postProcessInput()
+void PoroElastic< BASE >::postInputInitialization()
 {
-  BASE::postProcessInput();
+  BASE::postInputInitialization();
   m_poreVolumeRelation.setCoefficients( m_referencePressure, 1.0, m_compressibility );
 }
 
@@ -106,15 +108,15 @@ void PoroElastic< BASE >::stateUpdateBatchPressure( arrayView1d< real64 const > 
   localIndex const numElems = m_poreVolumeMultiplier.size( 0 );
   localIndex const numQuad  = m_poreVolumeMultiplier.size( 1 );
 
-  GEOSX_ASSERT_EQ( pres.size(), numElems );
-  GEOSX_ASSERT_EQ( dPres.size(), numElems );
+  GEOS_ASSERT_EQ( pres.size(), numElems );
+  GEOS_ASSERT_EQ( dPres.size(), numElems );
 
   ExponentialRelation< real64, ExponentApproximationType::Linear > const relation = m_poreVolumeRelation;
 
   arrayView2d< real64 > const & pvmult = m_poreVolumeMultiplier;
   arrayView2d< real64 > const & dPVMult_dPres = m_dPVMult_dPressure;
 
-  forAll< parallelDevicePolicy<> >( numElems, [=] GEOSX_HOST_DEVICE ( localIndex const k )
+  forAll< parallelDevicePolicy<> >( numElems, [=] GEOS_HOST_DEVICE ( localIndex const k )
   {
     for( localIndex q = 0; q < numQuad; ++q )
     {
@@ -137,4 +139,4 @@ REGISTER_CATALOG_ENTRY( ConstitutiveBase, PoroModifiedCamClay, string const &, G
 
 
 }
-} /* namespace geosx */
+} /* namespace geos */

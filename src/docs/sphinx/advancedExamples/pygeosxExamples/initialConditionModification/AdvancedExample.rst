@@ -9,7 +9,7 @@ Initial Condition Modification
 
 At the end of this example you will know:
 
-  - how to modify GEOSX arrays using pygeosx
+  - how to modify GEOS arrays using pygeosx
   - handle parallel communication with pygeosx_tools
 
 
@@ -19,14 +19,14 @@ This example requires an input xml and python script located at:
 
 .. code-block:: console
 
-  GEOSX/examples/pygeosxExamples/sedovWithStressFunction
+  GEOS/examples/pygeosxExamples/sedovWithStressFunction
 
 
 ------------------------------------------------------------------
 Description of the case
 ------------------------------------------------------------------
 
-This example is derived from the sedov integrated test (`GEOSX/src/coreComponents/physicsSolvers/solidMechanics/integratedTests/sedov.xml`), which looks at the propagation of elastic waves due to an initial stress field.
+This example is derived from the sedov integrated test (`GEOS/src/coreComponents/physicsSolvers/solidMechanics/integratedTests/sedov.xml`), which looks at the propagation of elastic waves due to an initial stress field.
 The pygeosx interface is used to modify the initial conditions of the problem to something of our choosing.
 
 
@@ -43,7 +43,7 @@ First, we use the advanced xml input features to include the base problem (this 
   :end-before: <!-- SPHINX_SEDOV_INCLUDED_END -->
 
 Next, we add a new entry to the output block Python and an entry in the Events block.
-Whenever the python event is triggered, GEOSX will pause and return to the controlling python script.
+Whenever the python event is triggered, GEOS will pause and return to the controlling python script.
 
 .. literalinclude:: ../../../../../../examples/pygeosxExamples/sedovWithStressFunction/modified_sedov.xml
   :language: xml
@@ -55,7 +55,7 @@ Whenever the python event is triggered, GEOSX will pause and return to the contr
 Python Script
 ---------------------------------
 
-Similar to the previous example, the python script begins by importing the required packages, applying the xml preprocessor, GEOSX initialization, and key search.
+Similar to the previous example, the python script begins by importing the required packages, applying the xml preprocessor, GEOS initialization, and key search.
 
 .. literalinclude:: ../../../../../../examples/pygeosxExamples/sedovWithStressFunction/run_sedov_problem.py
   :language: python
@@ -96,14 +96,14 @@ This is likeley located here:
 
 .. code-block:: console
 
-   GEOSX/[build_dir]/lib/PYGEOSX/bin/python
+   GEOS/[build_dir]/lib/PYGEOSX/bin/python
 
 Note that you may need to manually install the pygeosx_tools package (and its pre-requisites) into this python distribution.
 To do so, you can run the following:
 
 .. code-block:: console
 
-   cd GEOSX/[build_dir]/lib/PYGEOSX/bin
+   cd GEOS/[build_dir]/lib/PYGEOSX/bin
    pip install --upgrade ../../../../src/coreComponents/python/modules/pygeosx_tools_package/
 
 To run the code, you will call the pygeosx run script with python, and supply the typical geosx command-line arguments and any parallel arguments.
@@ -114,7 +114,7 @@ For example:
    # Load the correct python environment
    # If you are not using a bash shell, you may need to target one of
    # the other activation scripts
-   source GEOSX/[build_dir]/lib/PYGEOSX/bin/activate
+   source GEOS/[build_dir]/lib/PYGEOSX/bin/activate
 
    # Move to the correct directory and run
    cd /path/to/problem
@@ -127,7 +127,7 @@ To go further
 
 **Feedback on this example**
 
-For any feedback on this example, please submit a `GitHub issue on the project's GitHub page <https://github.com/GEOSX/GEOSX/issues>`_.
+For any feedback on this example, please submit a `GitHub issue on the project's GitHub page <https://github.com/GEOS-DEV/GEOS/issues>`_.
 
 **For more details**
 

@@ -13,7 +13,7 @@ In this example, we simulate a vertical elastic wellbore subjected to in-situ st
 
 **Input file**
 
-Everything required is contained within two GEOSX input files located at:
+Everything required is contained within two GEOS input files located at:
 
 .. code-block:: console
 
@@ -146,7 +146,7 @@ In this example, ``stressCollection`` and ``displacementCollection`` tasks are s
     :end-before: <!-- SPHINX_TASKS_END -->
 
 These two tasks are triggered using the ``Event`` management, where ``PeriodicEvent`` are defined for these recurring tasks. 
-GEOSX writes two files named after the string defined in the ``filename`` keyword and formatted as HDF5 files (displacement_history.hdf5 and stress_history.hdf5). The TimeHistory file contains the collected time history information from each specified time history collector. This information includes datasets for the simulation time, element center or nodal position, and the time history information. Then, a Python script is prepared to access and plot any specified subset of the time history data for verification and visualization.
+GEOS writes two files named after the string defined in the ``filename`` keyword and formatted as HDF5 files (displacement_history.hdf5 and stress_history.hdf5). The TimeHistory file contains the collected time history information from each specified time history collector. This information includes datasets for the simulation time, element center or nodal position, and the time history information. Then, a Python script is prepared to access and plot any specified subset of the time history data for verification and visualization.
 
 
 -----------------------------------------------------------
@@ -179,11 +179,11 @@ You may note :
  - All initial value fields must have ``initialCondition`` field set to ``1``;
  - The ``setName`` field points to the previously defined set to apply the fields;
  - ``nodeManager`` and ``faceManager`` in the ``objectPath`` indicate that the boundary conditions are applied to the element nodes and faces, respectively;
- - ``fieldName`` is the name of the field registered in GEOSX;
+ - ``fieldName`` is the name of the field registered in GEOS;
  - Component ``0``, ``1``, and ``2`` refer to the x, y, and z direction, respectively;
  - And the non-zero values given by ``scale`` indicate the magnitude of the loading; 
  - Some shorthand, such as ``xneg`` and ``xpos``, are used as the locations where the boundary conditions are applied in the computational domain. For instance, ``xneg`` means the face of the computational domain located at the left-most extent in the x-axis, while ``xpos`` refers to the face located at the right-most extent in the x-axis. Similar shorthands include ``ypos``, ``yneg``, ``zpos``, and ``zneg``;
- - The mud pressure loading and in situ stresses have negative values due to the negative sign convention for compressive stress in GEOSX. 
+ - The mud pressure loading and in situ stresses have negative values due to the negative sign convention for compressive stress in GEOS. 
 
  
 The parameters used in the simulation are summarized in the following table.
@@ -222,7 +222,7 @@ In the above examples, we request VTK output files that can be imported into Par
    Simulation result of :math:`\sigma_{xx}`
 
 
-We use time history function to collect time history information and run a Python script to query and plot the results. The figure below shows the comparisons between the numerical predictions (marks) and the corresponding analytical solutions (solid curves) with respect to the distributions of stress components and displacement at :math:`\theta` = 45 degrees. Predictions computed by GEOSX match the analytical results.  
+We use time history function to collect time history information and run a Python script to query and plot the results. The figure below shows the comparisons between the numerical predictions (marks) and the corresponding analytical solutions (solid curves) with respect to the distributions of stress components and displacement at :math:`\theta` = 45 degrees. Predictions computed by GEOS match the analytical results.  
 
 
 .. plot:: docs/sphinx/advancedExamples/validationStudies/wellboreProblems/kirschWellbore/kirschWellboreFigure.py
@@ -236,4 +236,4 @@ To go further
 
 **Feedback on this example**
 
-For any feedback on this example, please submit a `GitHub issue on the project's GitHub page <https://github.com/GEOSX/GEOSX/issues>`_.
+For any feedback on this example, please submit a `GitHub issue on the project's GitHub page <https://github.com/GEOS-DEV/GEOS/issues>`_.
