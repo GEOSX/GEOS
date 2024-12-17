@@ -221,8 +221,8 @@ TableLayout::Column & TableLayout::Column::setValuesAlignment( Alignment valueAl
 size_t TableLayout::Column::getNumberCellMerge()
 { return m_headerMergeCount; }
 
-void TableLayout::Column::incrementMergeHeaderCount()
-{ m_headerMergeCount++;}
+void TableLayout::Column::incrementMergeHeaderCount( size_t value )
+{ m_headerMergeCount+= value;}
 
 void TableLayout::Column::decrementMergeHeaderCount()
 { m_headerMergeCount--; }

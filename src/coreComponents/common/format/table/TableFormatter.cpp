@@ -258,18 +258,26 @@ void TableTextFormatter::populateHeaderCellsLayout( TableLayout & tableLayout,
     }
     currentCell.m_cellWidth = it->m_header.m_cellWidth;
 
-    if( it->hasParent() && it->getParent()->getNumberCellMerge() == 0 )
+    if( it->hasParent() )
     {
-      it->getParent()->incrementMergeHeaderCount();
+      if( it->getNumberCellMerge() == 0 )
+      {
+        it->getParent()->incrementMergeHeaderCount( 1 );
+      }
+      else
+      {
+        it->getParent()->incrementMergeHeaderCount( it->getNumberCellMerge() );
+      }
     }
 
     if( it->getNumberCellMerge()  > 1 )
     {
-      it->getParent()->decrementMergeHeaderCount();
+      it->decrementMergeHeaderCount();
     }
 
     sublineHeaderCounts[currentLayer] = std::max( sublineHeaderCounts[currentLayer],
                                                   currentCell.m_lines.size() );
+
     for( size_t idxColumn = 0; idxColumn < it->getNumberCellMerge(); idxColumn++ )
     {
       TableLayout::CellLayout mergingCell{ CellType::MergeNext, "", TableLayout::Alignment::center };
@@ -643,7 +651,7 @@ void TableTextFormatter::outputLines( TableLayout & tableLayout,
 
   if( sectionType == CellType::Value && !cellsLayout.empty())
   {
-    tableOutput << GEOS_FMT( "{}\n", separatorLine );
+    tableOutput << separatorLine;
   }
 
 }

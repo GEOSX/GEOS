@@ -158,7 +158,7 @@ public:
 
     /**
      * @brief Set the column visibility.
-     * @param CellType Cell type to apply to hide the colmun
+     * @param celltype Cell type to apply to hide the colmun
      * @return The current column .
      */
     Column & setVisibility( CellType celltype );
@@ -193,7 +193,7 @@ public:
 
     /**
      * @brief Sets the values alignment for the column.
-     * @param headerAlignment The alignment to set for the column values (left, right, or center).
+     * @param valueAlignment The alignment to set for the column values (left, right, or center).
      * @return The current column object
      */
     TableLayout::Column & setValuesAlignment( Alignment valueAlignment );
@@ -205,8 +205,9 @@ public:
 
     /**
      * @brief Increment number of times we will divide the current cell
+     * @param value number of division to add
      */
-    void incrementMergeHeaderCount();
+    void incrementMergeHeaderCount( size_t value );
 
     /**
      * @brief Decremente number of times we will divide the current cell
@@ -241,6 +242,7 @@ private:
   class LeafIterator
   {
 public:
+    ///alias for column
     using ColumnType = Column;
 
     /**
