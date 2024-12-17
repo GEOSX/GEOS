@@ -483,7 +483,7 @@ void CompositionalMultiphaseWell::validateWellConstraints( real64 const & time_n
                  InputError );
   GEOS_THROW_IF( !m_useMass && !isZero( targetMassRate ),
                  "WellControls " << wellControls.getDataContext() <<
-                 ": Target mass rate cannot with m_useMass=0",
+                 ": Target mass rate cannot with useMass=0",
                  InputError );
 
   // The user always provides positive rates, but these rates are later multiplied by -1 internally for producers
