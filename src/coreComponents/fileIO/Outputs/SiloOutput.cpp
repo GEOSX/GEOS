@@ -2,10 +2,11 @@
  * ------------------------------------------------------------------------------------------------------------
  * SPDX-License-Identifier: LGPL-2.1-only
  *
- * Copyright (c) 2018-2020 Lawrence Livermore National Security LLC
- * Copyright (c) 2018-2020 The Board of Trustees of the Leland Stanford Junior University
- * Copyright (c) 2018-2020 TotalEnergies
- * Copyright (c) 2019-     GEOSX Contributors
+ * Copyright (c) 2016-2024 Lawrence Livermore National Security LLC
+ * Copyright (c) 2018-2024 TotalEnergies
+ * Copyright (c) 2018-2024 The Board of Trustees of the Leland Stanford Junior University
+ * Copyright (c) 2023-2024 Chevron
+ * Copyright (c) 2019-     GEOS/GEOSX Contributors
  * All rights reserved
  *
  * See top level LICENSE, COPYRIGHT, CONTRIBUTORS, NOTICE, and ACKNOWLEDGEMENTS files for details.
@@ -26,6 +27,20 @@ namespace geos
 {
 
 using namespace dataRepository;
+
+namespace logInfo
+{
+struct SiloOutputTimer : public OutputTimerBase
+{
+  std::string_view getDescription() const override { return "Silo output timing"; }
+};
+}
+
+logInfo::OutputTimerBase const & SiloOutput::getTimerCategory() const
+{
+  static logInfo::SiloOutputTimer timer;
+  return timer;
+}
 
 SiloOutput::SiloOutput( string const & name,
                         Group * const parent ):
@@ -85,7 +100,7 @@ SiloOutput::SiloOutput( string const & name,
 SiloOutput::~SiloOutput()
 {}
 
-void SiloOutput::postProcessInput()
+void SiloOutput::postInputInitialization()
 {
   string const fieldNamesString = viewKeysStruct::fieldNames;
   string const onlyPlotSpecifiedFieldNamesString = viewKeysStruct::onlyPlotSpecifiedFieldNames;
@@ -121,31 +136,35 @@ bool SiloOutput::execute( real64 const time_n,
 {
   GEOS_MARK_FUNCTION;
 
-  SiloFile silo;
+  {
+    Timer timer( m_outputTimer );
 
-  int const size = MpiWrapper::commSize( MPI_COMM_GEOSX );
-  int const rank = MpiWrapper::commRank( MPI_COMM_GEOSX );
-  MpiWrapper::barrier( MPI_COMM_GEOSX );
+    SiloFile silo;
 
-  integer const numFiles = parallelThreads() == 0 ? size : parallelThreads();
+    int const size = MpiWrapper::commSize( MPI_COMM_GEOS );
+    int const rank = MpiWrapper::commRank( MPI_COMM_GEOS );
+    MpiWrapper::barrier( MPI_COMM_GEOS );
 
-  // TODO set this during initialization
-  //  silo.setOutputDirectory( getGlobalState().getCommandLineOptions().outputDirectory ),
-  silo.setOutputDirectory( getOutputDirectory() ),
-  silo.setPlotLevel( m_plotLevel );
-  silo.setWriteEdgeMesh( m_writeEdgeMesh );
-  silo.setWriteFaceMesh( m_writeFaceMesh );
-  silo.setWriteCellElementMesh( m_writeCellElementMesh );
-  silo.setWriteFaceElementMesh( m_writeFaceElementMesh );
-  silo.setOnlyPlotSpecifiedFieldNamesFlag( m_onlyPlotSpecifiedFieldNames );
-  silo.setFieldNames( m_fieldNames.toViewConst() );
-  silo.setPlotFileRoot( m_plotFileRoot );
-  silo.initialize( numFiles );
-  silo.waitForBatonWrite( rank, cycleNumber, eventCounter, false );
-  silo.writeDomainPartition( domain, cycleNumber, time_n + dt * eventProgress, 0 );
-  silo.handOffBaton();
-  silo.clearEmptiesFromMultiObjects( cycleNumber );
-  silo.finish();
+    integer const numFiles = parallelThreads() == 0 ? size : parallelThreads();
+
+    // TODO set this during initialization
+    //  silo.setOutputDirectory( getGlobalState().getCommandLineOptions().outputDirectory ),
+    silo.setOutputDirectory( getOutputDirectory() ),
+    silo.setPlotLevel( m_plotLevel );
+    silo.setWriteEdgeMesh( m_writeEdgeMesh );
+    silo.setWriteFaceMesh( m_writeFaceMesh );
+    silo.setWriteCellElementMesh( m_writeCellElementMesh );
+    silo.setWriteFaceElementMesh( m_writeFaceElementMesh );
+    silo.setOnlyPlotSpecifiedFieldNamesFlag( m_onlyPlotSpecifiedFieldNames );
+    silo.setFieldNames( m_fieldNames.toViewConst() );
+    silo.setPlotFileRoot( m_plotFileRoot );
+    silo.initialize( numFiles );
+    silo.waitForBatonWrite( rank, cycleNumber, eventCounter, false );
+    silo.writeDomainPartition( domain, cycleNumber, time_n + dt * eventProgress, 0 );
+    silo.handOffBaton();
+    silo.clearEmptiesFromMultiObjects( cycleNumber );
+    silo.finish();
+  }
 
   return false;
 }

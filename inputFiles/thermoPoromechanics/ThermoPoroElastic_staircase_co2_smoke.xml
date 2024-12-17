@@ -161,7 +161,7 @@
       permeabilityComponents="{ 9.8e-13, 9.8e-13, 9.8e-13 }"/>
     <BiotPorosity
       name="rockPorosityChannel"
-      grainBulkModulus="1.0e27"
+      defaultGrainBulkModulus="1.0e27"
       defaultReferencePorosity="0.2"
       defaultPorosityTEC="1e-5"/>
 
@@ -182,13 +182,13 @@
       permeabilityComponents="{ 9.8e-16, 9.8e-16, 9.8e-16 }"/>
     <BiotPorosity
       name="rockPorosityBarrier"
-      grainBulkModulus="1.0e27"
+      defaultGrainBulkModulus="1.0e27"
       defaultReferencePorosity="0.05"
       defaultPorosityTEC="1e-5"/>
 
     <SolidInternalEnergy
       name="rockInternalEnergy"
-      volumetricHeatCapacity="1.95e6"
+      referenceVolumetricHeatCapacity="1.95e6"
       referenceTemperature="353.15"
       referenceInternalEnergy="0"/>
 

@@ -18,13 +18,13 @@
   <ElementRegions>
     <CellElementRegion
       name="Domain"
-      cellBlocks="{ cb1 }"
+      cellBlocks="{ * }"
       materialList="{ porousRock, water }"/>
 
     <SurfaceElementRegion
       name="Fracture"
       faceBlock="FractureSubRegion"
-      materialList="{ water, fractureFilling, fractureContact }"
+      materialList="{ water, fractureFilling, frictionLaw, hApertureModel }"
       defaultAperture="1e-3"/>
   </ElementRegions>
 
@@ -56,7 +56,7 @@
 
     <BiotPorosity
       name="rockPorosity"
-      grainBulkModulus="1.0e27"
+      defaultGrainBulkModulus="1.0e27"
       defaultReferencePorosity="0.2"/>
 
     <CompressibleSolidParallelPlatesPermeability
@@ -78,10 +78,13 @@
       name="fracturePerm"/>
 
     <Coulomb
-      name="fractureContact"
+      name="frictionLaw"
       cohesion="0.0"
-      frictionCoefficient="0.577350269"
-      apertureTableName="apertureTable"/>
+      frictionCoefficient="0.577350269"/>
+
+    <HydraulicApertureTable
+      name="hApertureModel"
+      apertureTableName="apertureTable"/>    
   </Constitutive>
 
   <Functions>

@@ -19,7 +19,7 @@
     <CellElementRegion
       name="all"
       meshBody="mesh"
-      cellBlocks="{ cellBlock1 }"
+      cellBlocks="{ * }"
       materialList="{ materialPlastic }"/>
   </ElementRegions>
 
@@ -160,4 +160,3 @@
       name="restartOutput"/>
   </Outputs>
 </Problem>
-

@@ -212,8 +212,6 @@ Results and benchmark
 
 A good agreement between the GEOS results and analytical results for temperature distribution around the cased wellbore is shown in the figures below:
 
-.. plot:: docs/sphinx/advancedExamples/validationStudies/wellboreProblems/casedThermoElasticWellbore/thermoElastic_casedWellbore_temperature.py
-
 .. _problemCasedThermoElasticWellbore_Temperature_Fig:
 .. figure:: temperature.png
    :align: center
@@ -224,8 +222,6 @@ A good agreement between the GEOS results and analytical results for temperature
 
 and the validation for the radial displacement around the cased wellbore is shown below:
 
-.. plot:: docs/sphinx/advancedExamples/validationStudies/wellboreProblems/casedThermoElasticWellbore/thermoElastic_casedWellbore_displacement.py
-
 .. _problemCasedThermoElasticWellbore_Displacement_Fig:
 .. figure:: displacement.png
    :align: center
@@ -235,8 +231,6 @@ and the validation for the radial displacement around the cased wellbore is show
    Validation of the displacement.
 
 The validations of the total radial and hoop stress (tangent stress) components computed by GEOS against reference results are shown in the figure below:
-
-.. plot:: docs/sphinx/advancedExamples/validationStudies/wellboreProblems/casedThermoElasticWellbore/thermoElastic_casedWellbore_stress.py
 
 .. _problemCasedThermoElasticWellbore_Stresses_Fig:
 .. figure:: stress.png

@@ -2,10 +2,11 @@
  * ------------------------------------------------------------------------------------------------------------
  * SPDX-License-Identifier: LGPL-2.1-only
  *
- * Copyright (c) 2018-2020 Lawrence Livermore National Security LLC
- * Copyright (c) 2018-2020 The Board of Trustees of the Leland Stanford Junior University
- * Copyright (c) 2018-2020 TotalEnergies
- * Copyright (c) 2019-     GEOSX Contributors
+ * Copyright (c) 2016-2024 Lawrence Livermore National Security LLC
+ * Copyright (c) 2018-2024 TotalEnergies
+ * Copyright (c) 2018-2024 The Board of Trustees of the Leland Stanford Junior University
+ * Copyright (c) 2023-2024 Chevron
+ * Copyright (c) 2019-     GEOS/GEOSX Contributors
  * All rights reserved
  *
  * See top level LICENSE, COPYRIGHT, CONTRIBUTORS, NOTICE, and ACKNOWLEDGEMENTS files for details.
@@ -19,6 +20,7 @@
 #include "MeshFields.hpp"
 #include "EdgeManager.hpp"
 #include "SurfaceElementRegion.hpp"
+#include "common/MpiWrapper.hpp"
 
 
 namespace geos
@@ -74,6 +76,10 @@ void SurfaceElementRegion::generateMesh( Group const & faceBlocks )
 
 void SurfaceElementRegion::initializePreSubGroups()
 {
+  GEOS_ERROR_IF_LE_MSG( m_defaultAperture, 0.0,
+                        getWrapperDataContext( viewKeyStruct::defaultApertureString() ) <<
+                        ": default aperture must be larger than 0.0" );
+
   this->forElementSubRegions< SurfaceElementSubRegion >( [&] ( SurfaceElementSubRegion & subRegion )
   {
     subRegion.getWrapper< array1d< real64 > >( fields::elementAperture::key() ).
@@ -101,11 +107,8 @@ localIndex SurfaceElementRegion::addToFractureMesh( real64 const time_np1,
 
   arrayView1d< real64 > const ruptureTime = subRegion.getField< fields::ruptureTime >();
 
-  arrayView1d< real64 > const creationMass = subRegion.getReference< real64_array >( FaceElementSubRegion::viewKeyStruct::creationMassString() );
-
   arrayView2d< real64 const > const faceCenter = faceManager->faceCenter();
   arrayView2d< real64 > const elemCenter = subRegion.getElementCenter();
-  arrayView1d< real64 const > const elemArea = subRegion.getElementArea().toViewConst();
 
   arrayView1d< integer > const subRegionGhostRank = subRegion.ghostRank();
 
@@ -122,7 +125,6 @@ localIndex SurfaceElementRegion::addToFractureMesh( real64 const time_np1,
 
   LvArray::tensorOps::copy< 3 >( elemCenter[ kfe ], faceCenter[ faceIndices[ 0 ] ] );
 
-  faceMap.resizeArray( kfe, 2 );
   faceMap[kfe][0] = faceIndices[0];
   faceMap[kfe][1] = faceIndices[1];
 
@@ -166,19 +168,20 @@ localIndex SurfaceElementRegion::addToFractureMesh( real64 const time_np1,
   }
 
   // Add the cell region/subregion/index to the faceElementToCells map
-  OrderedVariableToManyElementRelation & faceElementsToCells = subRegion.getToCellRelation();
+  FixedToManyElementRelation & faceElementsToCells = subRegion.getToCellRelation();
 
   for( localIndex ke = 0; ke < 2; ++ke )
   {
-    localIndex const & er = faceToElementRegion[faceIndices[ke]][ke];
-    localIndex const & esr = faceToElementSubRegion[faceIndices[ke]][ke];
-    localIndex const & ei = faceToElementIndex[faceIndices[ke]][ke];
+
+    localIndex const er = faceToElementRegion[faceIndices[ke]][ke];
+    localIndex const esr = faceToElementSubRegion[faceIndices[ke]][ke];
+    localIndex const ei = faceToElementIndex[faceIndices[ke]][ke];
 
     if( er != -1 && esr != -1 && ei != -1 )
     {
-      faceElementsToCells.m_toElementRegion.emplaceBack( kfe, er );
-      faceElementsToCells.m_toElementSubRegion.emplaceBack( kfe, esr );
-      faceElementsToCells.m_toElementIndex.emplaceBack( kfe, ei );
+      faceElementsToCells.m_toElementRegion[kfe][ke]    = er;
+      faceElementsToCells.m_toElementSubRegion[kfe][ke] = esr;
+      faceElementsToCells.m_toElementIndex[kfe][ke]     = ei;
     }
   }
 
@@ -207,14 +210,12 @@ localIndex SurfaceElementRegion::addToFractureMesh( real64 const time_np1,
 
   subRegion.calculateSingleElementGeometricQuantities( kfe, faceManager->faceArea() );
 
-  creationMass[kfe] *= elemArea[kfe];
-
   // update the sets
   for( auto const & setIter : faceManager->sets().wrappers() )
   {
     SortedArrayView< localIndex const > const & faceSet = faceManager->sets().getReference< SortedArray< localIndex > >( setIter.first );
     SortedArray< localIndex > & faceElementSet = subRegion.sets().registerWrapper< SortedArray< localIndex > >( setIter.first ).reference();
-    for( localIndex a = 0; a < faceMap.size(); ++a )
+    for( localIndex a = 0; a < faceMap.size( 0 ); ++a )
     {
       if( faceSet.count( faceMap[a][0] ) )
       {

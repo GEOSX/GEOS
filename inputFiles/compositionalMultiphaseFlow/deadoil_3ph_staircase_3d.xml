@@ -13,7 +13,7 @@
       temperature="300">
       <NonlinearSolverParameters
         newtonTol="1.0e-10"
-        newtonMaxIter="40"/>
+        newtonMaxIter="10"/>
       <LinearSolverParameters
         directParallel="0"/>
     </CompositionalMultiphaseFVM>
@@ -57,11 +57,11 @@
     maxTime="2e8">
     <PeriodicEvent
       name="siloOutputs"
-      timeFrequency="1e7"
+      timeFrequency="1e8"
       target="/Outputs/siloOutput"/>
     <PeriodicEvent
       name="vtkOutputs"
-      timeFrequency="1e7"
+      timeFrequency="1e8"
       target="/Outputs/vtkOutput"/>
 
     <PeriodicEvent
@@ -140,7 +140,7 @@
     <PressurePorosity
       name="rockPorosity"
       defaultReferencePorosity="0.2"
-      referencePressure="0.0"
+      referencePressure="7.5e6"
       compressibility="1.0e-9"/>
 
     <BrooksCoreyBakerRelativePermeability
@@ -306,7 +306,8 @@
       name="siloOutput"
       plotLevel="3"/>
     <VTK
-      name="vtkOutput"/>
+      name="vtkOutput"
+      plotFileRoot="deadoil_3ph_staircase_3d"/>
 
     <Restart
       name="restartOutput"/>

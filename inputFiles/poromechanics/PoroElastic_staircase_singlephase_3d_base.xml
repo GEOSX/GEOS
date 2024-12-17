@@ -110,7 +110,7 @@
       permeabilityComponents="{ 9.8e-13, 9.8e-13, 9.8e-13 }"/>
     <BiotPorosity
       name="rockPorosityChannel"
-      grainBulkModulus="1.0e27"
+      defaultGrainBulkModulus="1.0e27"
       defaultReferencePorosity="0.2"/>
 
     <PorousElasticIsotropic
@@ -128,7 +128,7 @@
       permeabilityComponents="{ 9.8e-16, 9.8e-16, 9.8e-16 }"/>
     <BiotPorosity
       name="rockPorosityBarrier"
-      grainBulkModulus="1.0e27"
+      defaultGrainBulkModulus="1.0e27"
       defaultReferencePorosity="0.05"/>
   </Constitutive>
 
