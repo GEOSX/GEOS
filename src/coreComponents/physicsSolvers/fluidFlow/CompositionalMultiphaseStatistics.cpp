@@ -2,10 +2,11 @@
  * ------------------------------------------------------------------------------------------------------------
  * SPDX-License-Identifier: LGPL-2.1-only
  *
- * Copyright (c) 2018-2020 Lawrence Livermore National Security LLC
- * Copyright (c) 2018-2020 The Board of Trustees of the Leland Stanford Junior University
- * Copyright (c) 2018-2020 TotalEnergies
- * Copyright (c) 2019-     GEOSX Contributors
+ * Copyright (c) 2016-2024 Lawrence Livermore National Security LLC
+ * Copyright (c) 2018-2024 TotalEnergies
+ * Copyright (c) 2018-2024 The Board of Trustees of the Leland Stanford Junior University
+ * Copyright (c) 2023-2024 Chevron
+ * Copyright (c) 2019-     GEOS/GEOSX Contributors
  * All rights reserved
  *
  * See top level LICENSE, COPYRIGHT, CONTRIBUTORS, NOTICE, and ACKNOWLEDGEMENTS files for details.
@@ -18,19 +19,16 @@
 
 #include "CompositionalMultiphaseStatistics.hpp"
 
+#include "mesh/DomainPartition.hpp"
 #include "constitutive/fluid/multifluid/MultiFluidBase.hpp"
 #include "constitutive/relativePermeability/RelativePermeabilityBase.hpp"
 #include "constitutive/solid/CoupledSolidBase.hpp"
-#include "finiteVolume/FiniteVolumeManager.hpp"
-#include "finiteVolume/FluxApproximationBase.hpp"
-#include "mainInterface/ProblemManager.hpp"
-#include "physicsSolvers/PhysicsSolverManager.hpp"
 #include "physicsSolvers/fluidFlow/CompositionalMultiphaseBase.hpp"
 #include "physicsSolvers/fluidFlow/CompositionalMultiphaseBaseFields.hpp"
 #include "physicsSolvers/fluidFlow/CompositionalMultiphaseHybridFVM.hpp"
 #include "physicsSolvers/fluidFlow/FlowSolverBaseFields.hpp"
-#include "physicsSolvers/fluidFlow/IsothermalCompositionalMultiphaseBaseKernels.hpp"
-#include "physicsSolvers/fluidFlow/IsothermalCompositionalMultiphaseFVMKernels.hpp"
+#include "physicsSolvers/fluidFlow/kernels/compositional/StatisticsKernel.hpp"
+#include "physicsSolvers/fluidFlow/LogLevelsInfo.hpp"
 
 
 namespace geos
@@ -59,11 +57,14 @@ CompositionalMultiphaseStatistics::CompositionalMultiphaseStatistics( const stri
     setApplyDefaultValue( 1e-6 ).
     setInputFlag( InputFlags::OPTIONAL ).
     setDescription( "Flag to decide whether a phase is considered mobile (when the relperm is above the threshold) or immobile (when the relperm is below the threshold) in metric 2" );
+
+  addLogLevel< logInfo::CFL >();
+  addLogLevel< logInfo::Statistics >();
 }
 
-void CompositionalMultiphaseStatistics::postProcessInput()
+void CompositionalMultiphaseStatistics::postInputInitialization()
 {
-  Base::postProcessInput();
+  Base::postInputInitialization();
 
   if( dynamicCast< CompositionalMultiphaseHybridFVM * >( m_solver ) && m_computeCFLNumbers != 0 )
   {
@@ -115,8 +116,7 @@ void CompositionalMultiphaseStatistics::registerDataOnMesh( Group & meshBodies )
         if( m_writeCSV > 0 && MpiWrapper::commRank() == 0 )
         {
           std::ofstream outputFile( m_outputDir + "/" + regionNames[i] + ".csv" );
-          integer const useMass = m_solver->getReference< integer >( CompositionalMultiphaseBase::viewKeyStruct::useMassFlagString() );
-          string const massUnit = useMass ? "kg" : "mol";
+          string_view massUnit = units::getSymbol( m_solver->getMassUnit() );
           outputFile <<
             "Time [s],Min pressure [Pa],Average pressure [Pa],Max pressure [Pa],Min delta pressure [Pa],Max delta pressure [Pa]," <<
             "Min temperature [Pa],Average temperature [Pa],Max temperature [Pa],Total dynamic pore volume [rm^3]";
@@ -305,7 +305,7 @@ void CompositionalMultiphaseStatistics::computeRegionStatistics( real64 const ti
                                         subRegionImmobilePhaseMass.toView(),
                                         subRegionComponentMass.toView() );
 
-    ElementRegionBase & region = elemManager.getRegion( subRegion.getParent().getParent().getName() );
+    ElementRegionBase & region = elemManager.getRegion( ElementRegionBase::getParentRegion( subRegion ).getName() );
     RegionStatistics & regionStatistics = region.getReference< RegionStatistics >( viewKeyStruct::regionStatisticsString() );
 
     regionStatistics.averagePressure += subRegionAvgPresNumerator;
@@ -391,8 +391,8 @@ void CompositionalMultiphaseStatistics::computeRegionStatistics( real64 const ti
     {
       regionStatistics.averagePressure = 0.0;
       regionStatistics.averageTemperature = 0.0;
-      GEOS_LOG_LEVEL_RANK_0( 1, getName() << ", " << regionNames[i]
-                                          << ": Cannot compute average pressure because region pore volume is zero." );
+      GEOS_LOG_LEVEL_INFO_RANK_0( logInfo::Statistics,
+                                  GEOS_FMT( "{}, {}: Cannot compute average pressure because region pore volume is zero.", getName(), regionNames[i] ) );
     }
 
 
@@ -405,36 +405,47 @@ void CompositionalMultiphaseStatistics::computeRegionStatistics( real64 const ti
       mobilePhaseMass[ip] = regionStatistics.phaseMass[ip] - regionStatistics.immobilePhaseMass[ip];
     }
 
-    integer const useMass = m_solver->getReference< integer >( CompositionalMultiphaseBase::viewKeyStruct::useMassFlagString() );
-    string const massUnit = useMass ? "kg" : "mol";
+    string_view massUnit = units::getSymbol( m_solver->getMassUnit() );
+    string statPrefix = GEOS_FMT( "{}, {} (time {} s):", getName(), regionNames[i], time );
+    GEOS_LOG_LEVEL_INFO_RANK_0( logInfo::Statistics,
+                                GEOS_FMT( "{} Pressure (min, average, max): {}, {}, {} Pa",
+                                          statPrefix, regionStatistics.minPressure, regionStatistics.averagePressure, regionStatistics.maxPressure ) );
+    GEOS_LOG_LEVEL_INFO_RANK_0( logInfo::Statistics,
+                                GEOS_FMT( "{} Delta pressure (min, max): {}, {} Pa",
+                                          statPrefix, regionStatistics.minDeltaPressure, regionStatistics.maxDeltaPressure ) );
+    GEOS_LOG_LEVEL_INFO_RANK_0( logInfo::Statistics,
+                                GEOS_FMT( "{} Temperature (min, average, max): {}, {}, {} K",
+                                          statPrefix, regionStatistics.minTemperature, regionStatistics.averageTemperature,
+                                          regionStatistics.maxTemperature ) );
+    GEOS_LOG_LEVEL_INFO_RANK_0( logInfo::Statistics,
+                                GEOS_FMT( "{} Total dynamic pore volume: {} rm^3",
+                                          statPrefix, regionStatistics.totalPoreVolume ) );
+    GEOS_LOG_LEVEL_INFO_RANK_0( logInfo::Statistics,
+                                GEOS_FMT( "{} Phase dynamic pore volume: {} rm^3",
+                                          statPrefix, regionStatistics.phasePoreVolume ) );
+    GEOS_LOG_LEVEL_INFO_RANK_0( logInfo::Statistics,
+                                GEOS_FMT( "{} Phase mass: {} {}",
+                                          statPrefix, regionStatistics.phaseMass, massUnit ) );
 
-    GEOS_LOG_LEVEL_RANK_0( 1, GEOS_FMT( "{}, {} (time {} s): Pressure (min, average, max): {}, {}, {} Pa",
-                                        getName(), regionNames[i], time, regionStatistics.minPressure, regionStatistics.averagePressure, regionStatistics.maxPressure ) );
-    GEOS_LOG_LEVEL_RANK_0( 1, GEOS_FMT( "{}, {} (time {} s): Delta pressure (min, max): {}, {} Pa",
-                                        getName(), regionNames[i], time, regionStatistics.minDeltaPressure, regionStatistics.maxDeltaPressure ) );
-    GEOS_LOG_LEVEL_RANK_0( 1, GEOS_FMT( "{}, {} (time {} s): Temperature (min, average, max): {}, {}, {} K",
-                                        getName(), regionNames[i], time, regionStatistics.minTemperature, regionStatistics.averageTemperature, regionStatistics.maxTemperature ) );
-    GEOS_LOG_LEVEL_RANK_0( 1, GEOS_FMT( "{}, {} (time {} s): Total dynamic pore volume: {} rm^3",
-                                        getName(), regionNames[i], time, regionStatistics.totalPoreVolume ) );
-    GEOS_LOG_LEVEL_RANK_0( 1, GEOS_FMT( "{}, {} (time {} s): Phase dynamic pore volume: {} rm^3",
-                                        getName(), regionNames[i], time, regionStatistics.phasePoreVolume ) );
-    GEOS_LOG_LEVEL_RANK_0( 1, GEOS_FMT( "{}, {} (time {} s): Phase mass: {} {}",
-                                        getName(), regionNames[i], time, regionStatistics.phaseMass, massUnit ) );
-
-    // metric 1: trapping computed with the Land trapping coefficient (similar to Eclipse)
-    GEOS_LOG_LEVEL_RANK_0( 1, GEOS_FMT( "{}, {} (time {} s): Trapped phase mass (metric 1): {} {}",
-                                        getName(), regionNames[i], time, regionStatistics.trappedPhaseMass, massUnit ) );
-    GEOS_LOG_LEVEL_RANK_0( 1, GEOS_FMT( "{}, {} (time {} s): Non-trapped phase mass (metric 1): {} {}",
-                                        getName(), regionNames[i], time, nonTrappedPhaseMass, massUnit ) );
+    // metric 1: trapping computed with the Land trapping coefficient
+    GEOS_LOG_LEVEL_INFO_RANK_0( logInfo::Statistics,
+                                GEOS_FMT( "{} Trapped phase mass (metric 1): {} {}",
+                                          statPrefix, regionStatistics.trappedPhaseMass, massUnit ) );
+    GEOS_LOG_LEVEL_INFO_RANK_0( logInfo::Statistics,
+                                GEOS_FMT( "{} Non-trapped phase mass (metric 1): {} {}",
+                                          statPrefix, nonTrappedPhaseMass, massUnit ) );
 
     // metric 2: immobile phase mass computed with a threshold on relative permeability
-    GEOS_LOG_LEVEL_RANK_0( 1, GEOS_FMT( "{}, {} (time {} s): Immobile phase mass (metric 2): {} {}",
-                                        getName(), regionNames[i], time, regionStatistics.immobilePhaseMass, massUnit ) );
-    GEOS_LOG_LEVEL_RANK_0( 1, GEOS_FMT( "{}, {} (time {} s): Mobile phase mass (metric 2): {} {}",
-                                        getName(), regionNames[i], time, mobilePhaseMass, massUnit ) );
+    GEOS_LOG_LEVEL_INFO_RANK_0( logInfo::Statistics,
+                                GEOS_FMT( "{} Immobile phase mass (metric 2): {} {}",
+                                          statPrefix, regionStatistics.immobilePhaseMass, massUnit ) );
+    GEOS_LOG_LEVEL_INFO_RANK_0( logInfo::Statistics,
+                                GEOS_FMT( "{} Mobile phase mass (metric 2): {} {}",
+                                          statPrefix, mobilePhaseMass, massUnit ) );
 
-    GEOS_LOG_LEVEL_RANK_0( 1, GEOS_FMT( "{}, {} (time {} s): Component mass: {} {}",
-                                        getName(), regionNames[i], time, regionStatistics.componentMass, massUnit ) );
+    GEOS_LOG_LEVEL_INFO_RANK_0( logInfo::Statistics,
+                                GEOS_FMT( "{} Component mass: {} {}",
+                                          statPrefix, regionStatistics.componentMass, massUnit ) );
 
     if( m_writeCSV > 0 && MpiWrapper::commRank() == 0 )
     {
@@ -473,8 +484,8 @@ void CompositionalMultiphaseStatistics::computeCFLNumbers( real64 const time,
   real64 maxPhaseCFL, maxCompCFL;
   m_solver->computeCFLNumbers( domain, dt, maxPhaseCFL, maxCompCFL );
 
-  GEOS_LOG_LEVEL_RANK_0( 1, GEOS_FMT( "{} (time {} s): Max phase CFL number: {}", getName(), time, maxPhaseCFL ) );
-  GEOS_LOG_LEVEL_RANK_0( 1, GEOS_FMT( "{} (time {} s): Max component CFL number: {}", getName(), time, maxCompCFL ) );
+  GEOS_LOG_LEVEL_INFO_RANK_0( logInfo::CFL, GEOS_FMT( "{} (time {} s): Max phase CFL number: {}", getName(), time, maxPhaseCFL ) );
+  GEOS_LOG_LEVEL_INFO_RANK_0( logInfo::CFL, GEOS_FMT( "{} (time {} s): Max component CFL number: {}", getName(), time, maxCompCFL ) );
 }
 
 

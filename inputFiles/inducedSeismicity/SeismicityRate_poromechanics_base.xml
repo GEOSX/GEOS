@@ -1,0 +1,169 @@
+<Problem>
+  <Solvers
+    gravityVector="{ 0.0, 0.0, -9.8 }">
+    <SeismicityRate
+      name="seismicityRateSolver"
+      stressSolverName="PoroelasticitySolver"
+      targetRegions="{ Domain }"
+      directEffect="0.003"
+      faultNormalDirection="{0.0, 0.0, 1.0}"
+      faultShearDirection="{0.0, 1.0, 0.0}"
+      backgroundStressingRate="3.171e-5">
+    </SeismicityRate>
+
+    <SinglePhasePoromechanics
+      name="PoroelasticitySolver"
+      solidSolverName="LinearElasticitySolver"
+      flowSolverName="SinglePhaseFlowSolver"
+      logLevel="1"
+      targetRegions="{ Domain }"
+      stabilizationType="Global"
+      stabilizationRegionNames="{Domain}">
+      <LinearSolverParameters
+        directParallel="0"/>
+    </SinglePhasePoromechanics>
+
+    <SolidMechanicsLagrangianSSLE
+      name="LinearElasticitySolver"
+      timeIntegrationOption="QuasiStatic"
+      logLevel="1"
+      discretization="FE1"
+      targetRegions="{ Domain }"/>
+
+    <SinglePhaseFVM
+      name="SinglePhaseFlowSolver"
+      logLevel="1"
+      discretization="singlePhaseTPFA"
+      targetRegions="{ Domain }"/>
+  </Solvers>
+
+  <NumericalMethods>
+    <FiniteElements>
+      <FiniteElementSpace
+        name="FE1"
+        order="1"/>
+    </FiniteElements>
+
+    <FiniteVolume>
+      <TwoPointFluxApproximation
+        name="singlePhaseTPFA"/>
+    </FiniteVolume>
+  </NumericalMethods>
+
+  <Events
+    maxTime="2.592e+6">
+    <SoloEvent
+      name="singlePhasePoroelasticityEquilibrationStep"
+      targetTime="-1e11"
+      beginTime="-1e11"
+      target="/Tasks/singlePhasePoroelasticityEquilibrationStep"/>
+
+    <PeriodicEvent
+      name="outputs"
+      cycleFrequency="1"
+      targetExactTimestep="0"
+      target="/Outputs/vtkOutput"/>
+
+    <PeriodicEvent
+      name="solverApplication"
+      maxEventDt="86400"
+      target="/Solvers/seismicityRateSolver"/>
+
+    <PeriodicEvent
+      name="restarts"
+      cycleFrequency="10"
+      target="/Outputs/restartOutput"/>
+  </Events>
+
+   <Tasks>
+    <SinglePhasePoromechanicsInitialization 
+      logLevel="1"      
+      name="singlePhasePoroelasticityEquilibrationStep"
+      poromechanicsSolverName="PoroelasticitySolver"/>
+  </Tasks>
+
+  <ElementRegions>
+    <CellElementRegion
+      name="Domain"
+      cellBlocks="{ cb1 }"
+      materialList="{ fluid, porousRock }"/>
+  </ElementRegions>
+
+  <Constitutive>
+    <PorousElasticIsotropic
+      name="porousRock"
+      solidModelName="skeleton"
+      porosityModelName="skeletonPorosity"
+      permeabilityModelName="skeletonPerm"/>
+
+    <ElasticIsotropic
+      name="skeleton"
+      defaultDensity="2500"
+      defaultPoissonRatio="0.25"
+      defaultShearModulus="20.0e9"/>
+
+    <CompressibleSinglePhaseFluid
+      name="fluid"
+      defaultDensity="1000"
+      defaultViscosity="1.0e-3"
+      referencePressure="0.0"
+      referenceDensity="1000"
+      compressibility="4.0e-10"
+      referenceViscosity="1e-3"
+      viscosibility="0.0"/>
+
+    <BiotPorosity
+      name="skeletonPorosity"
+      defaultGrainBulkModulus="1e27"
+      defaultReferencePorosity="0.3"/>
+
+    <ConstantPermeability
+      name="skeletonPerm"
+      permeabilityComponents="{ 3.0e-16, 3.0e-16, 3.0e-16 }"/>
+  </Constitutive>
+
+  <FieldSpecifications>
+    <HydrostaticEquilibrium
+      name="equil"
+      objectPath="ElementRegions"      
+      datumElevation="0"
+      datumPressure="0.0e5"/>
+
+    <FieldSpecification
+      name="xnegconstraint"
+      objectPath="nodeManager"
+      fieldName="totalDisplacement"
+      component="0"
+      scale="0.0"
+      setNames="{ xpos, xneg }"/>
+    <FieldSpecification
+      name="yconstraint"
+      objectPath="nodeManager"
+      fieldName="totalDisplacement"
+      component="1"
+      scale="0.0"
+      setNames="{ yneg, ypos }"/>
+    <FieldSpecification
+      name="zconstraint"
+      objectPath="nodeManager"
+      fieldName="totalDisplacement"
+      component="2"
+      scale="0.0"
+      setNames="{ zneg }"/>
+
+    <SourceFlux
+      name="sourceTerm"
+      objectPath="ElementRegions"
+      scale="-10"
+      setNames="{ source }"/>
+  
+  </FieldSpecifications>
+
+  <Outputs>
+    <VTK
+      name="vtkOutput"/>
+
+    <Restart
+      name="restartOutput"/>
+  </Outputs>
+</Problem>

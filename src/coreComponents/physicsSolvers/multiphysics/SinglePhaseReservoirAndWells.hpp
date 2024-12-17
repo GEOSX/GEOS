@@ -2,10 +2,11 @@
  * ------------------------------------------------------------------------------------------------------------
  * SPDX-License-Identifier: LGPL-2.1-only
  *
- * Copyright (c) 2018-2020 Lawrence Livermore National Security LLC
- * Copyright (c) 2018-2020 The Board of Trustees of the Leland Stanford Junior University
- * Copyright (c) 2018-2020 TotalEnergies
- * Copyright (c) 2019-     GEOSX Contributors
+ * Copyright (c) 2016-2024 Lawrence Livermore National Security LLC
+ * Copyright (c) 2018-2024 TotalEnergies
+ * Copyright (c) 2018-2024 The Board of Trustees of the Leland Stanford Junior University
+ * Copyright (c) 2023-2024 Chevron
+ * Copyright (c) 2019-     GEOS/GEOSX Contributors
  * All rights reserved
  *
  * See top level LICENSE, COPYRIGHT, CONTRIBUTORS, NOTICE, and ACKNOWLEDGEMENTS files for details.
@@ -21,18 +22,20 @@
 #define GEOS_PHYSICSSOLVERS_MULTIPHYSICS_SINGLEPHASERESERVOIRANDWELLS_HPP_
 
 #include "physicsSolvers/multiphysics/CoupledReservoirAndWellsBase.hpp"
+#include "physicsSolvers/fluidFlow/SinglePhaseBase.hpp"
 #include "physicsSolvers/fluidFlow/wells/SinglePhaseWell.hpp"
 
 namespace geos
 {
 
-template< typename SINGLEPHASE_RESERVOIR_SOLVER >
-class SinglePhaseReservoirAndWells : public CoupledReservoirAndWellsBase< SINGLEPHASE_RESERVOIR_SOLVER,
+/// @tparam RESERVOIR_SOLVER single-phase flow or single-phase poromechanics solver
+template< typename RESERVOIR_SOLVER = SinglePhaseBase >
+class SinglePhaseReservoirAndWells : public CoupledReservoirAndWellsBase< RESERVOIR_SOLVER,
                                                                           SinglePhaseWell >
 {
 public:
 
-  using Base = CoupledReservoirAndWellsBase< SINGLEPHASE_RESERVOIR_SOLVER,
+  using Base = CoupledReservoirAndWellsBase< RESERVOIR_SOLVER,
                                              SinglePhaseWell >;
   using Base::m_solvers;
   using Base::m_linearSolverParameters;
@@ -54,9 +57,20 @@ public:
    * @brief name of the node manager in the object catalog
    * @return string that contains the catalog name to generate a new NodeManager object through the object catalog.
    */
-  static string catalogName();
+  static string catalogName()
+  {
+    if constexpr (std::is_same_v< RESERVOIR_SOLVER, SinglePhaseBase > ) // special case
+    {
+      return "SinglePhaseReservoir";
+    }
+    else // default
+    {
+      return RESERVOIR_SOLVER::catalogName() + "Reservoir";
+    }
+  }
+
   /**
-   * @copydoc SolverBase::getCatalogName()
+   * @copydoc PhysicsSolverBase::getCatalogName()
    */
   string getCatalogName() const override { return catalogName(); }
 
@@ -72,40 +86,40 @@ public:
                                       arrayView1d< real64 > const & localRhs ) override;
 
   void
-  assembleFluxTerms( real64 const dt,
-                     DomainPartition const & domain,
-                     DofManager const & dofManager,
-                     CRSMatrixView< real64, globalIndex const > const & localMatrix,
-                     arrayView1d< real64 > const & localRhs ) const
-  { flowSolver()->assembleFluxTerms( dt, domain, dofManager, localMatrix, localRhs );  }
+  assembleHydrofracFluxTerms( real64 const time_n,
+                              real64 const dt,
+                              DomainPartition const & domain,
+                              DofManager const & dofManager,
+                              CRSMatrixView< real64, globalIndex const > const & localMatrix,
+                              arrayView1d< real64 > const & localRhs,
+                              CRSMatrixView< real64, localIndex const > const & dR_dAper )
+  { flowSolver()->assembleHydrofracFluxTerms( time_n, dt, domain, dofManager, localMatrix, localRhs, dR_dAper ); }
 
-  void keepFlowVariablesConstantDuringInitStep( bool const keepFlowVariablesConstantDuringInitStep )
-  { flowSolver()->keepFlowVariablesConstantDuringInitStep( keepFlowVariablesConstantDuringInitStep ); }
+  template< typename SUBREGION_TYPE >
+  void accumulationAssemblyLaunch( DofManager const & dofManager,
+                                   SUBREGION_TYPE const & subRegion,
+                                   CRSMatrixView< real64, globalIndex const > const & localMatrix,
+                                   arrayView1d< real64 > const & localRhs )
+  { flowSolver()->accumulationAssemblyLaunch( dofManager, subRegion, localMatrix, localRhs ); }
 
-  void updateFluidState( ObjectManagerBase & subRegion ) const
-  { flowSolver()->updateFluidState( subRegion ); }
-  void updatePorosityAndPermeability( CellElementSubRegion & subRegion ) const
-  { flowSolver()->updatePorosityAndPermeability( subRegion ); }
-  void updateSolidInternalEnergyModel( ObjectManagerBase & dataGroup ) const
-  { flowSolver()->updateSolidInternalEnergyModel( dataGroup ); }
-
-  integer & isThermal() { return flowSolver()->isThermal(); }
-
-  void enableFixedStressPoromechanicsUpdate() { flowSolver()->enableFixedStressPoromechanicsUpdate(); }
-
-  virtual void saveSequentialIterationState( DomainPartition & domain ) const override { flowSolver()->saveSequentialIterationState( domain ); }
+  void prepareStencilWeights( DomainPartition & domain ) const
+  { flowSolver()->prepareStencilWeights( domain ); }
+  void updateStencilWeights( DomainPartition & domain ) const
+  { flowSolver()->updateStencilWeights( domain ); }
 
 protected:
 
   virtual void initializePreSubGroups() override;
 
-  virtual void initializePostInitialConditionsPreSubGroups() override;
+  virtual void setMGRStrategy() override
+  {
+    if( this->m_linearSolverParameters.get().preconditionerType == LinearSolverParameters::PreconditionerType::mgr )
+      GEOS_ERROR( GEOS_FMT( "{}: MGR strategy is not implemented for {}", this->getName(), this->getCatalogName()));
+  }
 
 private:
 
   SinglePhaseBase * flowSolver() const;
-
-  void setMGRStrategy();
 
 };
 

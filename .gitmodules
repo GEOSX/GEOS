@@ -7,9 +7,6 @@
 [submodule "src/coreComponents/constitutive/PVTPackage"]
 	path = src/coreComponents/constitutive/PVTPackage
 	url = ../../GEOS-DEV/PVTPackage.git
-[submodule "integratedTests"]
-	path = integratedTests
-	url = ../../GEOS-DEV/integratedTests.git
 [submodule "src/coreComponents/fileIO/coupling/hdf5_interface"]
 	path = src/coreComponents/fileIO/coupling/hdf5_interface
 	url = ../../GEOS-DEV/hdf5_interface.git

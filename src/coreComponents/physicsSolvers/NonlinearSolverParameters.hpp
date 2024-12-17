@@ -2,10 +2,11 @@
  * ------------------------------------------------------------------------------------------------------------
  * SPDX-License-Identifier: LGPL-2.1-only
  *
- * Copyright (c) 2018-2020 Lawrence Livermore National Security LLC
- * Copyright (c) 2018-2020 The Board of Trustees of the Leland Stanford Junior University
- * Copyright (c) 2018-2020 TotalEnergies
- * Copyright (c) 2019-     GEOSX Contributors
+ * Copyright (c) 2016-2024 Lawrence Livermore National Security LLC
+ * Copyright (c) 2018-2024 TotalEnergies
+ * Copyright (c) 2018-2024 The Board of Trustees of the Leland Stanford Junior University
+ * Copyright (c) 2023-2024 Chevron
+ * Copyright (c) 2019-     GEOS/GEOSX Contributors
  * All rights reserved
  *
  * See top level LICENSE, COPYRIGHT, CONTRIBUTORS, NOTICE, and ACKNOWLEDGEMENTS files for details.
@@ -15,9 +16,9 @@
 #ifndef GEOS_PHYSICSSOLVERS_NONLINEARSOLVERPARAMETERS_HPP_
 #define GEOS_PHYSICSSOLVERS_NONLINEARSOLVERPARAMETERS_HPP_
 
-#include "codingUtilities/EnumStrings.hpp"
+#include "common/format/EnumStrings.hpp"
 #include "dataRepository/Group.hpp"
-#include "physicsSolvers/SolverBaseKernels.hpp"
+#include "physicsSolvers/PhysicsSolverBaseKernels.hpp"
 
 namespace geos
 {
@@ -64,6 +65,7 @@ public:
     m_lineSearchMaxCuts = params.m_lineSearchMaxCuts;
     m_lineSearchCutFactor = params.m_lineSearchCutFactor;
     m_lineSearchStartingIteration = params.m_lineSearchStartingIteration;
+    m_lineSearchResidualFactor = params.m_lineSearchResidualFactor;
 
     m_newtonTol = params.m_newtonTol;
     m_maxIterNewton = params.m_maxIterNewton;
@@ -77,10 +79,14 @@ public:
     m_timeStepIncreaseIterLimit = params.m_timeStepIncreaseIterLimit;
     m_timeStepDecreaseFactor = params.m_timeStepDecreaseFactor;
     m_timeStepIncreaseFactor = params.m_timeStepIncreaseFactor;
+    m_minTimeStepIncreaseInterval = params.m_minTimeStepIncreaseInterval;
     m_maxSubSteps = params.m_maxSubSteps;
     m_maxTimeStepCuts = params.m_maxTimeStepCuts;
     m_timeStepCutFactor = params.m_timeStepCutFactor;
     m_maxNumConfigurationAttempts = params.m_maxNumConfigurationAttempts;
+    m_configurationTolerance = params.m_configurationTolerance;
+
+    setLogLevel( params.getLogLevel());
 
     return *this;
   }
@@ -94,7 +100,9 @@ public:
    */
   static string catalogName() { return "NonlinearSolverParameters"; }
 
-  virtual void postProcessInput() override;
+  virtual void postInputInitialization() override;
+
+  void print() const;
 
   struct viewKeysStruct
   {
@@ -103,6 +111,7 @@ public:
     static constexpr char const * lineSearchCutFactorString()     { return "lineSearchCutFactor"; }
     static constexpr char const * lineSearchInterpolationTypeString() { return "lineSearchInterpolationType"; }
     static constexpr char const * lineSearchStartingIterationString() { return "lineSearchStartingIteration"; }
+    static constexpr char const * lineSearchResidualFactorString() { return "lineSearchResidualFactor"; }
 
     static constexpr char const * normTypeString()                { return "normType"; }
     static constexpr char const * minNormalizerString()           { return "minNormalizer"; }
@@ -117,15 +126,15 @@ public:
     static constexpr char const * timeStepIncreaseIterLimString() { return "timeStepIncreaseIterLimit"; }
     static constexpr char const * timeStepDecreaseFactorString()  { return "timeStepDecreaseFactor"; }
     static constexpr char const * timeStepIncreaseFactorString()  { return "timeStepIncreaseFactor"; }
+    static constexpr char const * minTimeStepIncreaseIntervalString()  { return "minTimeStepIncreaseInterval"; }
 
     static constexpr char const * maxSubStepsString()             { return "maxSubSteps"; }
     static constexpr char const * maxTimeStepCutsString()         { return "maxTimeStepCuts"; }
-    static constexpr char const * minNumNewtonIterationsString()  { return "minNumberOfNewtonIterations"; }
     static constexpr char const * timeStepCutFactorString()       { return "timeStepCutFactor"; }
     static constexpr char const * maxAllowedResidualNormString()  { return "maxAllowedResidualNorm"; }
 
-    static constexpr char const * numConfigurationAttemptsString()    { return "numConfigurationAttempts"; }
     static constexpr char const * maxNumConfigurationAttemptsString() { return "maxNumConfigurationAttempts"; }
+    static constexpr char const * configurationToleranceString() { return "configurationTolerance"; }
 
     static constexpr char const * couplingTypeString()                   { return "couplingType"; }
     static constexpr char const * sequentialConvergenceCriterionString() { return "sequentialConvergenceCriterion"; }
@@ -220,10 +229,19 @@ public:
   }
 
   /**
+   * @brief Getter for the minimum interval for increasing the time-step
+   * @return the minimum interval for increasing the time-step
+   */
+  integer minTimeStepIncreaseInterval() const
+  {
+    return m_minTimeStepIncreaseInterval;
+  }
+
+  /**
    * @brief Getter for the norm type used to check convergence in the flow/well solvers
    * @return the norm type
    */
-  solverBaseKernels::NormType normType() const
+  physicsSolverBaseKernels::NormType normType() const
   {
     return m_normType;
   }
@@ -261,8 +279,11 @@ public:
   /// Iteration when line search starts
   integer m_lineSearchStartingIteration;
 
+  /// Factor to determine residual increase
+  real64 m_lineSearchResidualFactor;
+
   /// Norm used to check the nonlinear loop convergence
-  solverBaseKernels::NormType m_normType;
+  physicsSolverBaseKernels::NormType m_normType;
 
   /// The tolerance for the nonlinear convergence check.
   real64 m_newtonTol;
@@ -294,6 +315,9 @@ public:
   /// Factor used to increase the time step size
   real64 m_timeStepIncreaseFactor;
 
+  /// Minimum interval, since the last time-step cut, for increasing the time-step
+  integer m_minTimeStepIncreaseInterval;
+
   /// Maximum number of time sub-steps allowed for the solver
   integer m_maxSubSteps;
 
@@ -311,6 +335,9 @@ public:
 
   /// Max number of times that the configuration can be changed
   integer m_maxNumConfigurationAttempts;
+
+  /// Configuration tolerance
+  double m_configurationTolerance;
 
   /// Type of coupling
   CouplingType m_couplingType;

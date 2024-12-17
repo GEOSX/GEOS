@@ -2,10 +2,11 @@
  * ------------------------------------------------------------------------------------------------------------
  * SPDX-License-Identifier: LGPL-2.1-only
  *
- * Copyright (c) 2018-2020 Lawrence Livermore National Security LLC
- * Copyright (c) 2018-2020 The Board of Trustees of the Leland Stanford Junior University
- * Copyright (c) 2018-2020 TotalEnergies
- * Copyright (c) 2019-     GEOSX Contributors
+ * Copyright (c) 2016-2024 Lawrence Livermore National Security LLC
+ * Copyright (c) 2018-2024 TotalEnergies
+ * Copyright (c) 2018-2024 The Board of Trustees of the Leland Stanford Junior University
+ * Copyright (c) 2023-2024 Chevron
+ * Copyright (c) 2019-     GEOS/GEOSX Contributors
  * All rights reserved
  *
  * See top level LICENSE, COPYRIGHT, CONTRIBUTORS, NOTICE, and ACKNOWLEDGEMENTS files for details.
@@ -21,7 +22,7 @@
 #include "common/TimingMacros.hpp"
 #include "common/GEOS_RAJA_Interface.hpp"
 #include "constitutive/ConstitutiveManager.hpp"
-#include "constitutive/contact/ContactSelector.hpp"
+#include "constitutive/contact/FrictionSelector.hpp"
 #include "constitutive/solid/ElasticIsotropic.hpp"
 #include "fieldSpecification/FieldSpecificationManager.hpp"
 #include "finiteElement/elementFormulations/FiniteElementBase.hpp"
@@ -31,9 +32,9 @@
 #include "mesh/SurfaceElementRegion.hpp"
 #include "physicsSolvers/solidMechanics/SolidMechanicsFields.hpp"
 #include "physicsSolvers/solidMechanics/SolidMechanicsLagrangianFEM.hpp"
-#include "physicsSolvers/contact/SolidMechanicsEFEMKernels.hpp"
-#include "physicsSolvers/contact/SolidMechanicsEFEMStaticCondensationKernels.hpp"
-#include "physicsSolvers/contact/SolidMechanicsEFEMJumpUpdateKernels.hpp"
+#include "physicsSolvers/contact/kernels/SolidMechanicsEFEMKernels.hpp"
+#include "physicsSolvers/contact/kernels/SolidMechanicsEFEMStaticCondensationKernels.hpp"
+#include "physicsSolvers/contact/kernels/SolidMechanicsEFEMJumpUpdateKernels.hpp"
 
 namespace geos
 {
@@ -50,6 +51,10 @@ SolidMechanicsEmbeddedFractures::SolidMechanicsEmbeddedFractures( const string &
     setInputFlag( InputFlags::OPTIONAL ).
     setApplyDefaultValue( 0 ).
     setDescription( "Defines whether to use static condensation or not." );
+
+  getWrapperBase( viewKeyStruct::contactPenaltyStiffnessString() ).
+    setInputFlag( InputFlags::REQUIRED ).
+    setDescription( "Value of the penetration penalty stiffness. Units of Pressure/length" );
 }
 
 SolidMechanicsEmbeddedFractures::~SolidMechanicsEmbeddedFractures()
@@ -57,22 +62,37 @@ SolidMechanicsEmbeddedFractures::~SolidMechanicsEmbeddedFractures()
   // TODO Auto-generated destructor stub
 }
 
-void SolidMechanicsEmbeddedFractures::postProcessInput()
+void SolidMechanicsEmbeddedFractures::postInputInitialization()
 {
-  SolidMechanicsLagrangianFEM::postProcessInput();
+  ContactSolverBase::postInputInitialization();
 
-  LinearSolverParameters & linParams = m_linearSolverParameters.get();
-
+  LinearSolverParameters & linearSolverParameters = m_linearSolverParameters.get();
   if( m_useStaticCondensation )
   {
-    linParams.dofsPerNode = 3;
-    linParams.isSymmetric = true;
-    linParams.amg.separateComponents = true;
+    // configure AMG
+    linearSolverParameters.isSymmetric = true;
+    linearSolverParameters.amg.separateComponents = true;
+    linearSolverParameters.dofsPerNode = 3;
   }
   else
   {
-    linParams.mgr.strategy = LinearSolverParameters::MGR::StrategyType::solidMechanicsEmbeddedFractures;
+    setMGRStrategy();
   }
+}
+
+void SolidMechanicsEmbeddedFractures::setMGRStrategy()
+{
+  LinearSolverParameters & linearSolverParameters = m_linearSolverParameters.get();
+
+  if( linearSolverParameters.preconditionerType != LinearSolverParameters::PreconditionerType::mgr )
+    return;
+
+  linearSolverParameters.mgr.separateComponents = true;
+  linearSolverParameters.dofsPerNode = 3;
+
+  linearSolverParameters.mgr.strategy = LinearSolverParameters::MGR::StrategyType::solidMechanicsEmbeddedFractures;
+  GEOS_LOG_LEVEL_RANK_0( 1, GEOS_FMT( "{}: MGR strategy set to {}", getName(),
+                                      EnumStrings< LinearSolverParameters::MGR::StrategyType >::toString( linearSolverParameters.mgr.strategy )));
 }
 
 void SolidMechanicsEmbeddedFractures::registerDataOnMesh( dataRepository::Group & meshBodies )
@@ -148,11 +168,39 @@ void SolidMechanicsEmbeddedFractures::implicitStepComplete( real64 const & time_
     arrayView2d< real64 > oldDispJump = subRegion.getField< contact::oldDispJump >();
     arrayView2d< real64 const > const dispJump = subRegion.getField< contact::dispJump >();
 
+    // update elastic slip before copying dispJump to oldDispJump
+    string const & frictionLawName = subRegion.template getReference< string >( viewKeyStruct::frictionLawNameString() );
+    FrictionBase const & frictionLaw = getConstitutiveModel< FrictionBase >( subRegion, frictionLawName );
+    arrayView2d< real64 const > const & traction = subRegion.getField< fields::contact::traction >();
+    arrayView1d< integer > const & fractureState = subRegion.getField< fields::contact::fractureState >();
+    constitutiveUpdatePassThru( frictionLaw, [&] ( auto & castedFrictionLaw )
+    {
+      using FrictionType = TYPEOFREF( castedFrictionLaw );
+      typename FrictionType::KernelWrapper frictionWrapper = castedFrictionLaw.createKernelUpdates();
+
+      updateElasticSlip( subRegion, frictionWrapper, dispJump, oldDispJump, traction, fractureState );
+    } );
+
+    // now update oldDispJump = dispJump
     forAll< parallelDevicePolicy<> >( subRegion.size(),
                                       [=] GEOS_HOST_DEVICE ( localIndex const k )
     {
       LvArray::tensorOps::copy< 3 >( oldDispJump[k], dispJump[k] );
     } );
+  } );
+}
+
+template< typename WRAPPER_TYPE >
+void SolidMechanicsEmbeddedFractures::updateElasticSlip( EmbeddedSurfaceSubRegion const & subRegion,
+                                                         WRAPPER_TYPE & frictionWrapper,
+                                                         arrayView2d< real64 const > const & dispJump,
+                                                         arrayView2d< real64 const > const & oldDispJump,
+                                                         arrayView2d< real64 const > const & traction,
+                                                         arrayView1d< integer > const & fractureState )
+{
+  forAll< parallelDevicePolicy<> >( subRegion.size(), [=] GEOS_HOST_DEVICE ( localIndex const kfe )
+  {
+    frictionWrapper.updateElasticSlip( kfe, dispJump[kfe], oldDispJump[kfe], traction[kfe], fractureState[kfe] );
   } );
 }
 
@@ -236,10 +284,10 @@ void SolidMechanicsEmbeddedFractures::setupSystem( DomainPartition & domain,
     localMatrix.setName( this->getName() + "/localMatrix" );
 
     rhs.setName( this->getName() + "/rhs" );
-    rhs.create( dofManager.numLocalDofs(), MPI_COMM_GEOSX );
+    rhs.create( dofManager.numLocalDofs(), MPI_COMM_GEOS );
 
     solution.setName( this->getName() + "/solution" );
-    solution.create( dofManager.numLocalDofs(), MPI_COMM_GEOSX );
+    solution.create( dofManager.numLocalDofs(), MPI_COMM_GEOS );
   }
   else
   {
@@ -537,76 +585,7 @@ real64 SolidMechanicsEmbeddedFractures::calculateResidualNorm( real64 const & ti
 
   if( !m_useStaticCondensation )
   {
-
-    string const jumpDofKey = dofManager.getKey( contact::dispJump::key() );
-
-    globalIndex const rankOffset = dofManager.rankOffset();
-
-    RAJA::ReduceSum< parallelDeviceReduce, real64 > localSum( 0.0 );
-
-    // globalResidualNorm[0]: the sum of all the local sum(rhs^2).
-    // globalResidualNorm[1]: max of max force of each rank. Basically max force globally
-    real64 globalResidualNorm[2] = {0, 0};
-
-    // Fracture residual
-    forFractureRegionOnMeshTargets( domain.getMeshBodies(), [&] ( SurfaceElementRegion const & fractureRegion )
-    {
-      fractureRegion.forElementSubRegions< SurfaceElementSubRegion >( [&]( SurfaceElementSubRegion const & subRegion )
-      {
-        arrayView1d< globalIndex const > const &
-        dofNumber = subRegion.getReference< array1d< globalIndex > >( jumpDofKey );
-        arrayView1d< integer const > const & ghostRank = subRegion.ghostRank();
-
-        forAll< parallelDevicePolicy<> >( subRegion.size(),
-                                          [localRhs, localSum, dofNumber, rankOffset, ghostRank] GEOS_HOST_DEVICE ( localIndex const k )
-        {
-          if( ghostRank[k] < 0 )
-          {
-            localIndex const localRow = LvArray::integerConversion< localIndex >( dofNumber[k] - rankOffset );
-            for( localIndex i = 0; i < 3; ++i )
-            {
-              localSum += localRhs[localRow + i] * localRhs[localRow + i];
-            }
-          }
-        } );
-
-      } );
-
-      real64 const localResidualNorm[2] = { localSum.get(), SolidMechanicsLagrangianFEM::getMaxForce() };
-
-
-      int const rank     = MpiWrapper::commRank( MPI_COMM_GEOSX );
-      int const numRanks = MpiWrapper::commSize( MPI_COMM_GEOSX );
-      array1d< real64 > globalValues( numRanks * 2 );
-
-      // Everything is done on rank 0
-      MpiWrapper::gather( localResidualNorm,
-                          2,
-                          globalValues.data(),
-                          2,
-                          0,
-                          MPI_COMM_GEOSX );
-
-      if( rank==0 )
-      {
-        for( int r=0; r<numRanks; ++r )
-        {
-          // sum/max across all ranks
-          globalResidualNorm[0] += globalValues[r*2];
-          globalResidualNorm[1] = std::max( globalResidualNorm[1], globalValues[r*2+1] );
-        }
-      }
-
-      MpiWrapper::bcast( globalResidualNorm, 2, 0, MPI_COMM_GEOSX );
-    } );
-
-    real64 const fractureResidualNorm = sqrt( globalResidualNorm[0] )/(globalResidualNorm[1]+1);  // the + 1 is for the first
-    // time-step when maxForce = 0;
-
-    if( getLogLevel() >= 1 && logger::internal::rank==0 )
-    {
-      std::cout << GEOS_FMT( "        ( RFracture ) = ( {:4.2e} )", fractureResidualNorm );
-    }
+    real64 const fractureResidualNorm = calculateFractureResidualNorm( domain, dofManager, localRhs );
 
     return sqrt( solidResidualNorm * solidResidualNorm + fractureResidualNorm * fractureResidualNorm );
   }
@@ -614,6 +593,82 @@ real64 SolidMechanicsEmbeddedFractures::calculateResidualNorm( real64 const & ti
   {
     return solidResidualNorm;
   }
+}
+
+real64 SolidMechanicsEmbeddedFractures::calculateFractureResidualNorm( DomainPartition const & domain,
+                                                                       DofManager const & dofManager,
+                                                                       arrayView1d< real64 const > const & localRhs ) const
+{
+  string const jumpDofKey = dofManager.getKey( contact::dispJump::key() );
+
+  globalIndex const rankOffset = dofManager.rankOffset();
+
+  RAJA::ReduceSum< parallelDeviceReduce, real64 > localSum( 0.0 );
+
+  // globalResidualNorm[0]: the sum of all the local sum(rhs^2).
+  // globalResidualNorm[1]: max of max force of each rank. Basically max force globally
+  real64 globalResidualNorm[2] = {0.0, 0.0};
+
+  // Fracture residual
+  forFractureRegionOnMeshTargets( domain.getMeshBodies(), [&] ( SurfaceElementRegion const & fractureRegion )
+  {
+    fractureRegion.forElementSubRegions< SurfaceElementSubRegion >( [&]( SurfaceElementSubRegion const & subRegion )
+    {
+      arrayView1d< globalIndex const > const &
+      dofNumber = subRegion.getReference< array1d< globalIndex > >( jumpDofKey );
+      arrayView1d< integer const > const & ghostRank = subRegion.ghostRank();
+
+      forAll< parallelDevicePolicy<> >( subRegion.size(),
+                                        [localRhs, localSum, dofNumber, rankOffset, ghostRank] GEOS_HOST_DEVICE ( localIndex const k )
+      {
+        if( ghostRank[k] < 0 )
+        {
+          localIndex const localRow = LvArray::integerConversion< localIndex >( dofNumber[k] - rankOffset );
+          for( int i = 0; i < 3; ++i )
+          {
+            localSum += localRhs[localRow + i] * localRhs[localRow + i];
+          }
+        }
+      } );
+
+    } );
+
+    real64 const localResidualNorm[2] = { localSum.get(), SolidMechanicsLagrangianFEM::getMaxForce() };
+
+    int const rank     = MpiWrapper::commRank( MPI_COMM_GEOS );
+    int const numRanks = MpiWrapper::commSize( MPI_COMM_GEOS );
+    array1d< real64 > globalValues( numRanks * 2 );
+
+    // Everything is done on rank 0
+    MpiWrapper::gather( localResidualNorm,
+                        2,
+                        globalValues.data(),
+                        2,
+                        0,
+                        MPI_COMM_GEOS );
+
+    if( rank==0 )
+    {
+      for( int r=0; r<numRanks; ++r )
+      {
+        // sum/max across all ranks
+        globalResidualNorm[0] += globalValues[r*2];
+        globalResidualNorm[1] = std::max( globalResidualNorm[1], globalValues[r*2+1] );
+      }
+    }
+
+    MpiWrapper::bcast( globalResidualNorm, 2, 0, MPI_COMM_GEOS );
+  } );
+
+  real64 const fractureResidualNorm = sqrt( globalResidualNorm[0] )/(globalResidualNorm[1]+1);  // the + 1 is for the first
+                                                                                                // time-step when maxForce = 0;
+
+  if( getLogLevel() >= 1 && logger::internal::rank==0 )
+  {
+    std::cout << GEOS_FMT( "        ( RFracture ) = ( {:4.2e} )", fractureResidualNorm );
+  }
+
+  return fractureResidualNorm;
 }
 
 void SolidMechanicsEmbeddedFractures::applySystemSolution( DofManager const & dofManager,
@@ -710,8 +765,8 @@ void SolidMechanicsEmbeddedFractures::updateState( DomainPartition & domain )
   {
     fractureRegion.forElementSubRegions< SurfaceElementSubRegion >( [&]( SurfaceElementSubRegion & subRegion )
     {
-      string const & contactRelationName = subRegion.template getReference< string >( viewKeyStruct::contactRelationNameString() );
-      ContactBase const & contact = getConstitutiveModel< ContactBase >( subRegion, contactRelationName );
+      string const & frictionLawName = subRegion.template getReference< string >( viewKeyStruct::frictionLawNameString() );
+      FrictionBase const & frictionLaw = getConstitutiveModel< FrictionBase >( subRegion, frictionLawName );
 
       arrayView2d< real64 const > const & jump = subRegion.getField< contact::dispJump >();
 
@@ -723,19 +778,23 @@ void SolidMechanicsEmbeddedFractures::updateState( DomainPartition & domain )
 
       arrayView1d< integer const > const & fractureState = subRegion.getField< contact::fractureState >();
 
-      constitutiveUpdatePassThru( contact, [&] ( auto & castedContact )
+      arrayView1d< real64 > const & slip = subRegion.getField< fields::contact::slip >();
+
+      constitutiveUpdatePassThru( frictionLaw, [&] ( auto & castedFrictionLaw )
       {
-        using ContactType = TYPEOFREF( castedContact );
-        typename ContactType::KernelWrapper contactWrapper = castedContact.createKernelWrapper();
+        using FrictionType = TYPEOFREF( castedFrictionLaw );
+        typename FrictionType::KernelWrapper frictionWrapper = castedFrictionLaw.createKernelUpdates();
 
         solidMechanicsEFEMKernels::StateUpdateKernel::
           launch< parallelDevicePolicy<> >( subRegion.size(),
-                                            contactWrapper,
+                                            frictionWrapper,
+                                            m_contactPenaltyStiffness,
                                             oldJump,
                                             jump,
                                             fractureTraction,
                                             dFractureTraction_dJump,
-                                            fractureState );
+                                            fractureState,
+                                            slip );
       } );
     } );
   } );
@@ -754,13 +813,13 @@ bool SolidMechanicsEmbeddedFractures::updateConfiguration( DomainPartition & dom
       arrayView2d< real64 const > const & traction = subRegion.getField< fields::contact::traction >();
       arrayView1d< integer > const & fractureState = subRegion.getField< fields::contact::fractureState >();
 
-      string const & contactRelationName = subRegion.template getReference< string >( viewKeyStruct::contactRelationNameString() );
-      ContactBase const & contact = getConstitutiveModel< ContactBase >( subRegion, contactRelationName );
+      string const & frictionLawName = subRegion.template getReference< string >( viewKeyStruct::frictionLawNameString() );
+      FrictionBase const & frictionLaw = getConstitutiveModel< FrictionBase >( subRegion, frictionLawName );
 
-      constitutiveUpdatePassThru( contact, [&] ( auto & castedContact )
+      constitutiveUpdatePassThru( frictionLaw, [&] ( auto & castedFrictionLaw )
       {
-        using ContactType = TYPEOFREF( castedContact );
-        typename ContactType::KernelWrapper contactWrapper = castedContact.createKernelWrapper();
+        using FrictionType = TYPEOFREF( castedFrictionLaw );
+        typename FrictionType::KernelWrapper frictionWrapper = castedFrictionLaw.createKernelUpdates();
 
         RAJA::ReduceMin< parallelHostReduce, integer > checkActiveSetSub( 1 );
 
@@ -769,7 +828,7 @@ bool SolidMechanicsEmbeddedFractures::updateConfiguration( DomainPartition & dom
           if( ghostRank[kfe] < 0 )
           {
             integer const originalFractureState = fractureState[kfe];
-            contactWrapper.updateFractureState( kfe, dispJump[kfe], traction[kfe], fractureState[kfe] );
+            frictionWrapper.updateFractureState( dispJump[kfe], traction[kfe], fractureState[kfe] );
             checkActiveSetSub.min( compareFractureStates( originalFractureState, fractureState[kfe] ) );
           }
         } );
@@ -787,7 +846,7 @@ bool SolidMechanicsEmbeddedFractures::updateConfiguration( DomainPartition & dom
                          &hasConfigurationConvergedGlobally,
                          1,
                          MPI_LAND,
-                         MPI_COMM_GEOSX );
+                         MPI_COMM_GEOS );
 
   // for this solver it makes sense to reset the state.
   // if( !hasConfigurationConvergedGlobally )
@@ -796,5 +855,5 @@ bool SolidMechanicsEmbeddedFractures::updateConfiguration( DomainPartition & dom
   return hasConfigurationConvergedGlobally;
 }
 
-REGISTER_CATALOG_ENTRY( SolverBase, SolidMechanicsEmbeddedFractures, string const &, Group * const )
+REGISTER_CATALOG_ENTRY( PhysicsSolverBase, SolidMechanicsEmbeddedFractures, string const &, Group * const )
 } /* namespace geos */

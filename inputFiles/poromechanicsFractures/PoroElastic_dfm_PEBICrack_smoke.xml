@@ -1,0 +1,99 @@
+<?xml version="1.0" ?>
+
+<Problem>
+
+  <Included>
+     <File name="./PoroElastic_dfm_PEBICrack_base.xml"/>
+  </Included>
+
+  <Solvers gravityVector="{0.0, 0.0, 0.0}">
+
+    <SinglePhasePoromechanicsConformingFractures
+      name="poroFractureSolver"
+      targetRegions="{ Region, Fault}" 
+      initialDt="1e-3"
+      flowSolverName="flowSolver"
+      solidSolverName="fractureMechSolver"      
+      logLevel="1">
+      <NonlinearSolverParameters
+        maxTimeStepCuts="5"
+        newtonTol="1e0"
+        newtonMaxIter="10" 
+        logLevel="2"
+        maxAllowedResidualNorm="1e+15"/>
+      <LinearSolverParameters
+        directParallel="0"/>
+
+    </SinglePhasePoromechanicsConformingFractures>
+
+    <SolidMechanicsLagrangeContact
+      name="fractureMechSolver"
+      stabilizationName="singlePhaseTPFA_stab"
+      logLevel="1"
+      targetRegions="{ Region, Fault }"
+      timeIntegrationOption="QuasiStatic"
+      discretization="FE1"/>  
+
+    <SinglePhaseFVM 
+      name="flowSolver"
+      logLevel="1"
+      discretization="singlePhaseTPFA"
+      targetRegions="{ Region, Fault}" > 
+      <NonlinearSolverParameters
+        newtonTol="1.0e-2"
+        newtonMaxIter="8"
+        allowNonConverged="1"/>
+      <LinearSolverParameters
+        directParallel="0"/> 
+    </SinglePhaseFVM>
+
+  </Solvers>
+
+  <Mesh>
+    <VTKMesh
+      name="mesh1"
+      useGlobalIds="1"
+      faceBlocks="{ fracture }"
+      file="displacedFault.vtm"/>
+  </Mesh>
+
+  <Events maxTime="100.0">
+    <PeriodicEvent
+      name="outputs"
+      timeFrequency="100.0"
+      target="/Outputs/vtkOutput"/>
+
+   <PeriodicEvent
+      name="solverApplications"
+      beginTime="0.0"
+      endTime="100.0"
+      forceDt="10"
+      target="/Solvers/poroFractureSolver"/>
+
+    <PeriodicEvent
+      name="tractionCollection"      
+      target="/Tasks/tractionCollection" />
+
+    <PeriodicEvent
+      name="tractionOutput"
+      targetExactTimestep="0"
+      target="/Outputs/tractionOutput"/>
+
+    <PeriodicEvent
+      name="displacementJumpCollection"      
+      target="/Tasks/displacementJumpCollection" />
+
+    <PeriodicEvent
+      name="displacementJumpOutput"
+      targetExactTimestep="0"
+      target="/Outputs/displacementJumpOutput"/>  
+  
+    <PeriodicEvent
+      name="restarts"
+      timeFrequency="50.0"
+      targetExactTimestep="0"
+      target="/Outputs/restartOutput"/>
+
+  </Events>
+
+</Problem>

@@ -1,6 +1,4 @@
-import os
-import geos_ats
-from geos_ats.test_builder import TestDeck, RestartcheckParameters, generate_geos_tests
+from geos.ats.test_builder import TestDeck, RestartcheckParameters, generate_geos_tests
 
 restartcheck_params = {}
 restartcheck_params['atol'] = 0.0001
@@ -33,6 +31,22 @@ decks = [
         name="elas3D_Q3_abc_fs_smoke",
         description=
         'Elastic wave solver, third-order FE, absorbing BC on the sides, free surface BC at the top',
+        partitions=((1, 1, 1), (2, 2, 2)),
+        restart_step=100,
+        check_step=200,
+        restartcheck_params=RestartcheckParameters(**restartcheck_params)),
+    TestDeck(
+        name="elas3D_att_smoke",
+        description=
+        'Elastic wave solver, first-order FE, with SLS attenuation mechanism',
+        partitions=((1, 1, 1), (2, 2, 2)),
+        restart_step=100,
+        check_step=200,
+        restartcheck_params=RestartcheckParameters(**restartcheck_params)),
+    TestDeck(
+        name="elas3D_DAS_smoke",
+        description=
+        'Elastic wave solver, first-order FE, DAS signal',
         partitions=((1, 1, 1), (2, 2, 2)),
         restart_step=100,
         check_step=200,

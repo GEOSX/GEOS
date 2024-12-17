@@ -17,7 +17,7 @@
   <ElementRegions>
     <CellElementRegion 
       name="Omega" 
-      cellBlocks="{ cb1 }" 
+      cellBlocks="{ * }" 
       materialList="{ rock }"
     />
   </ElementRegions>

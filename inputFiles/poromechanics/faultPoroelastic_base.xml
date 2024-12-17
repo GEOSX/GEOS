@@ -5,7 +5,7 @@
   <ElementRegions>
     <CellElementRegion
       name="Domain"
-      cellBlocks="{ 94_hexahedra, 95_hexahedra, 96_hexahedra, 97_hexahedra }"
+      cellBlocks="{ * }"
       materialList="{ water, porousRock }"/>  
   </ElementRegions> 
   <!-- SPHINX_ELEMENTREGIONS_END -->
@@ -55,7 +55,7 @@
 
     <BiotPorosity
       name="rockPorosity"
-      grainBulkModulus="7.12e10"
+      defaultGrainBulkModulus="7.12e10"
       defaultReferencePorosity="0.3"
     />  
   

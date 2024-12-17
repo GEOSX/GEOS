@@ -19,18 +19,18 @@ endif()
 # Inputs:
 #   -- SOURCE_DIR
 # Outputs:
-#   -- GEOSX_VERSION_FULL
-#   -- GEOSX_VERSION_LIST
-#   -- GEOSX_VERSION_MAJOR
-#   -- GEOSX_VERSION_MINOR
-#   -- GEOSX_VERSION_PATCH
+#   -- GEOS_VERSION_FULL
+#   -- GEOS_VERSION_LIST
+#   -- GEOS_VERSION_MAJOR
+#   -- GEOS_VERSION_MINOR
+#   -- GEOS_VERSION_PATCH
 macro(geosx_get_file_version)
-  file ( STRINGS "${SOURCE_DIR}/VERSION" GEOSX_VERSION_FULL )
-  string( REGEX REPLACE "VERSION_ID = v" "" GEOSX_VERSION_FULL "${GEOSX_VERSION_FULL}" )
-  string( REPLACE "." ";" GEOSX_VERSION_LIST ${GEOSX_VERSION_FULL} )
-  list( GET GEOSX_VERSION_LIST  0 GEOSX_VERSION_MAJOR )
-  list( GET GEOSX_VERSION_LIST  1 GEOSX_VERSION_MINOR )
-  list( GET GEOSX_VERSION_LIST  2 GEOSX_VERSION_PATCH )
+  file ( STRINGS "${SOURCE_DIR}/VERSION" GEOS_VERSION_FULL )
+  string( REGEX REPLACE "VERSION_ID = v" "" GEOS_VERSION_FULL "${GEOS_VERSION_FULL}" )
+  string( REPLACE "." ";" GEOS_VERSION_LIST ${GEOS_VERSION_FULL} )
+  list( GET GEOS_VERSION_LIST  0 GEOS_VERSION_MAJOR )
+  list( GET GEOS_VERSION_LIST  1 GEOS_VERSION_MINOR )
+  list( GET GEOS_VERSION_LIST  2 GEOS_VERSION_PATCH )
 endmacro()
 
 # Get GEOSX development version from git
@@ -39,9 +39,9 @@ endmacro()
 #   -- GIT_FOUND
 #   -- GIT_EXECUTABLE (only when GIT_FOUND=TRUE )
 # Outputs (if GIT_FOUND=TRUE and inside git repo):
-#   -- GEOSX_GIT_BRANCH
-#   -- GEOSX_GIT_HASH
-#   -- GEOSX_GIT_TAG
+#   -- GEOS_GIT_BRANCH
+#   -- GEOS_GIT_HASH
+#   -- GEOS_GIT_TAG
 macro(geosx_get_git_version)
   if( GIT_FOUND )
     # Use BLT Git macros for convenience
@@ -49,13 +49,13 @@ macro(geosx_get_git_version)
     blt_is_git_repo( OUTPUT_STATE is_git_repo
                      SOURCE_DIR ${SOURCE_DIR} )
     if( is_git_repo )
-      blt_git_branch( BRANCH_NAME GEOSX_GIT_BRANCH
+      blt_git_branch( BRANCH_NAME GEOS_GIT_BRANCH
                       RETURN_CODE _git_rc
                       SOURCE_DIR ${SOURCE_DIR} )
-      blt_git_hashcode( HASHCODE GEOSX_GIT_HASH
+      blt_git_hashcode( HASHCODE GEOS_GIT_HASH
                         RETURN_CODE _git_rc
                         SOURCE_DIR ${SOURCE_DIR} )
-      blt_git_tag( OUTPUT_TAG GEOSX_GIT_TAG
+      blt_git_tag( OUTPUT_TAG GEOS_GIT_TAG
                    RETURN_CODE _git_rc
                    SOURCE_DIR ${SOURCE_DIR} )
     endif()
