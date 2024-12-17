@@ -2,10 +2,11 @@
  * ------------------------------------------------------------------------------------------------------------
  * SPDX-License-Identifier: LGPL-2.1-only
  *
- * Copyright (c) 2018-2020 Lawrence Livermore National Security LLC
- * Copyright (c) 2018-2020 The Board of Trustees of the Leland Stanford Junior University
- * Copyright (c) 2018-2020 TotalEnergies
- * Copyright (c) 2019-     GEOSX Contributors
+ * Copyright (c) 2016-2024 Lawrence Livermore National Security LLC
+ * Copyright (c) 2018-2024 TotalEnergies
+ * Copyright (c) 2018-2024 The Board of Trustees of the Leland Stanford Junior University
+ * Copyright (c) 2023-2024 Chevron
+ * Copyright (c) 2019-     GEOS/GEOSX Contributors
  * All rights reserved
  *
  * See top level LICENSE, COPYRIGHT, CONTRIBUTORS, NOTICE, and ACKNOWLEDGEMENTS files for details.
@@ -39,7 +40,7 @@
 
 
 /**
- * @namespace the geosx namespace that encapsulates the majority of the code
+ * @namespace the geos namespace that encapsulates the majority of the code
  */
 namespace geos
 {
@@ -82,9 +83,9 @@ ProppantTransport::ProppantTransport( const string & name,
 
 }
 
-void ProppantTransport::postProcessInput()
+void ProppantTransport::postInputInitialization()
 {
-  FlowSolverBase::postProcessInput();
+  FlowSolverBase::postInputInitialization();
 }
 
 void ProppantTransport::registerDataOnMesh( Group & meshBodies )
@@ -834,7 +835,7 @@ ProppantTransport::calculateResidualNorm( real64 const & GEOS_UNUSED_PARAM( time
   real64 localResidualNorm = 0.0;
   real64 localResidualNormalizer = 0.0;
 
-  solverBaseKernels::NormType const normType = getNonlinearSolverParameters().normType();
+  physicsSolverBaseKernels::NormType const normType = getNonlinearSolverParameters().normType();
 
   localIndex const rankOffset = dofManager.rankOffset();
   string const dofKey = dofManager.getKey( fields::proppant::proppantConcentration::key() );
@@ -866,7 +867,7 @@ ProppantTransport::calculateResidualNorm( real64 const & GEOS_UNUSED_PARAM( time
 
       // step 2: first reduction across meshBodies/regions/subRegions
 
-      if( normType == solverBaseKernels::NormType::Linf )
+      if( normType == physicsSolverBaseKernels::NormType::Linf )
       {
         if( subRegionResidualNorm[0] > localResidualNorm )
         {
@@ -884,13 +885,13 @@ ProppantTransport::calculateResidualNorm( real64 const & GEOS_UNUSED_PARAM( time
   // step 3: second reduction across MPI ranks
 
   real64 residualNorm = 0.0;
-  if( normType == solverBaseKernels::NormType::Linf )
+  if( normType == physicsSolverBaseKernels::NormType::Linf )
   {
-    solverBaseKernels::LinfResidualNormHelper::computeGlobalNorm( localResidualNorm, residualNorm );
+    physicsSolverBaseKernels::LinfResidualNormHelper::computeGlobalNorm( localResidualNorm, residualNorm );
   }
   else
   {
-    solverBaseKernels::L2ResidualNormHelper::computeGlobalNorm( localResidualNorm, localResidualNormalizer, residualNorm );
+    physicsSolverBaseKernels::L2ResidualNormHelper::computeGlobalNorm( localResidualNorm, localResidualNormalizer, residualNorm );
   }
 
   if( getLogLevel() >= 1 && logger::internal::rank == 0 )
@@ -1140,5 +1141,5 @@ void ProppantTransport::updateProppantPackVolume( real64 const GEOS_UNUSED_PARAM
 }
 
 
-REGISTER_CATALOG_ENTRY( SolverBase, ProppantTransport, string const &, Group * const )
+REGISTER_CATALOG_ENTRY( PhysicsSolverBase, ProppantTransport, string const &, Group * const )
 } /* namespace geos */

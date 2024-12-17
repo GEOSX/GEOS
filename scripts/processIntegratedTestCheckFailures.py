@@ -48,9 +48,11 @@ if unknown_args:
 matchStrings = ['Error:']
 
 # What stings to look for in order to exclude a block
+print( args.exclusionStrings )
+exclusionStrings = []
 #exclusionStrings = [ 'sizedFromParent', 'different shapes' ]
-#exclusionStrings = [ 'sizedFromParent', 'different shapes', 'but not the' ]
-exclusionStrings = ['logLevel', 'NonlinearSolverParameters', 'has a child', 'different shapes', 'different types', 'differing types']
+#exclusionStrings = [ 'but not the' ]
+#exclusionStrings = ['logLevel', 'NonlinearSolverParameters', 'has a child', 'different shapes', 'different types', 'differing types']
 exclusionStrings += args.exclusionStrings
 
 directory = args.directory

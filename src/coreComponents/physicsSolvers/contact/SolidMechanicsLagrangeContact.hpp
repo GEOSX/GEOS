@@ -2,10 +2,11 @@
  * ------------------------------------------------------------------------------------------------------------
  * SPDX-License-Identifier: LGPL-2.1-only
  *
- * Copyright (c) 2018-2020 Lawrence Livermore National Security LLC
- * Copyright (c) 2018-2020 The Board of Trustees of the Leland Stanford Junior University
- * Copyright (c) 2018-2020 TotalEnergies
- * Copyright (c) 2019-     GEOSX Contributors
+ * Copyright (c) 2016-2024 Lawrence Livermore National Security LLC
+ * Copyright (c) 2018-2024 TotalEnergies
+ * Copyright (c) 2018-2024 The Board of Trustees of the Leland Stanford Junior University
+ * Copyright (c) 2023-2024 Chevron
+ * Copyright (c) 2019-     GEOS/GEOSX Contributors
  * All rights reserved
  *
  * See top level LICENSE, COPYRIGHT, CONTRIBUTORS, NOTICE, and ACKNOWLEDGEMENTS files for details.
@@ -30,7 +31,6 @@ class NumericalMethodsManager;
 class SolidMechanicsLagrangeContact : public ContactSolverBase
 {
 public:
-
   SolidMechanicsLagrangeContact( const string & name,
                                  Group * const parent );
 
@@ -45,7 +45,7 @@ public:
     return "SolidMechanicsLagrangeContact";
   }
   /**
-   * @copydoc SolverBase::getCatalogName()
+   * @copydoc PhysicsSolverBase::getCatalogName()
    */
   string getCatalogName() const override { return catalogName(); }
 
@@ -100,10 +100,6 @@ public:
   virtual void
   resetStateToBeginningOfStep( DomainPartition & domain ) override;
 
-  virtual real64
-  setNextDt( real64 const & currentDt,
-             DomainPartition & domain ) override;
-
   void updateState( DomainPartition & domain ) override final;
 
   void assembleContact( DomainPartition & domain,
@@ -145,10 +141,28 @@ public:
 
   void computeTolerances( DomainPartition & domain ) const;
 
-  void computeFaceNodalArea( arrayView2d< real64 const, nodes::REFERENCE_POSITION_USD > const & nodePosition,
+  void computeFaceNodalArea( localIndex const kf0,
+                             arrayView2d< real64 const, nodes::REFERENCE_POSITION_USD > const & nodePosition,
                              ArrayOfArraysView< localIndex const > const & faceToNodeMap,
-                             localIndex const kf0,
-                             array1d< real64 > & nodalArea ) const;
+                             ArrayOfArraysView< localIndex const > const & faceToEdgeMap,
+                             arrayView2d< localIndex const > const & edgeToNodeMap,
+                             arrayView2d< real64 const > const faceCenters,
+                             arrayView2d< real64 const > const faceNormals,
+                             arrayView1d< real64 const > const faceAreas,
+                             stackArray1d< real64, FaceManager::maxFaceNodes() > & nodalArea ) const;
+
+  void computeFaceIntegrals( arrayView2d< real64 const, nodes::REFERENCE_POSITION_USD > const & nodesCoords,
+                             localIndex const (&faceToNodes)[11],
+                             localIndex const (&faceToEdges)[11],
+                             localIndex const & numFaceVertices,
+                             real64 const & faceArea,
+                             real64 const (&faceCenter)[3],
+                             real64 const (&faceNormal)[3],
+                             arrayView2d< localIndex const > const & edgeToNodes,
+                             real64 const & invCellDiameter,
+                             real64 const (&cellCenter)[3],
+                             stackArray1d< real64, FaceManager::maxFaceNodes() > & basisIntegrals,
+                             real64 ( &threeDMonomialIntegrals )[3] ) const;
 
   real64 const machinePrecision = std::numeric_limits< real64 >::epsilon();
 
@@ -160,12 +174,18 @@ protected:
                                        DofManager const & dofManager,
                                        arrayView1d< real64 const > const & localRhs );
 
+  virtual void postInputInitialization() override final;
+
+  void setMGRStrategy();
+
 private:
   string m_stabilizationName;
 
   real64 const m_slidingCheckTolerance = 0.05;
 
   real64 m_stabilitzationScalingCoefficient = 1.0;
+
+  static const localIndex m_maxFaceNodes; // Maximum number of nodes on a contact face
 
   void createPreconditioner( DomainPartition const & domain );
 

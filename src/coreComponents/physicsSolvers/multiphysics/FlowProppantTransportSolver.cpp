@@ -2,10 +2,11 @@
  * ------------------------------------------------------------------------------------------------------------
  * SPDX-License-Identifier: LGPL-2.1-only
  *
- * Copyright (c) 2018-2020 Lawrence Livermore National Security LLC
- * Copyright (c) 2018-2020 The Board of Trustees of the Leland Stanford Junior University
- * Copyright (c) 2018-2020 TotalEnergies
- * Copyright (c) 2019-     GEOSX Contributors
+ * Copyright (c) 2016-2024 Lawrence Livermore National Security LLC
+ * Copyright (c) 2018-2024 TotalEnergies
+ * Copyright (c) 2018-2024 The Board of Trustees of the Leland Stanford Junior University
+ * Copyright (c) 2023-2024 Chevron
+ * Copyright (c) 2019-     GEOS/GEOSX Contributors
  * All rights reserved
  *
  * See top level LICENSE, COPYRIGHT, CONTRIBUTORS, NOTICE, and ACKNOWLEDGEMENTS files for details.
@@ -101,7 +102,7 @@ real64 FlowProppantTransportSolver::sequentiallyCoupledSolverStep( real64 const 
       resetStateToBeginningOfStep( domain );
     }
 
-    GEOS_LOG_LEVEL_RANK_0( 1, "  Iteration: " << iter+1  << ", FlowSolver: " );
+    GEOS_LOG_LEVEL_INFO_RANK_0( logInfo::NonlinearSolver, GEOS_FMT( "  Iteration: {}, FlowSolver: ", iter+1 ) );
 
     dtReturnTemporary = flowSolver()->nonlinearImplicitStep( time_n, dtReturn, cycleNumber, domain );
 
@@ -116,11 +117,11 @@ real64 FlowProppantTransportSolver::sequentiallyCoupledSolverStep( real64 const 
     if( fluidNonLinearParams.m_numNewtonIterations <= this->m_nonlinearSolverParameters.m_minIterNewton && iter > 0 )
     {
       m_solverStatistics.logNonlinearIteration();
-      GEOS_LOG_LEVEL_RANK_0( 1, GEOS_FMT( "***** The iterative coupling has converged in {} iterations *****", iter ) );
+      GEOS_LOG_LEVEL_INFO_RANK_0( logInfo::Convergence, GEOS_FMT( "***** The iterative coupling has converged in {} iterations *****", iter ) );
       break;
     }
 
-    GEOS_LOG_LEVEL_RANK_0( 1, GEOS_FMT( "  Iteration: {}, Proppant Solver: ", iter+1 ) );
+    GEOS_LOG_LEVEL_INFO_RANK_0( logInfo::NonlinearSolver, GEOS_FMT( "  Iteration: {}, Proppant Solver: ", iter+1 ) );
 
     dtReturnTemporary = proppantTransportSolver()->nonlinearImplicitStep( time_n, dtReturn, cycleNumber, domain );
 
@@ -139,6 +140,6 @@ real64 FlowProppantTransportSolver::sequentiallyCoupledSolverStep( real64 const 
   return dtReturn;
 }
 
-REGISTER_CATALOG_ENTRY( SolverBase, FlowProppantTransportSolver, string const &, Group * const )
+REGISTER_CATALOG_ENTRY( PhysicsSolverBase, FlowProppantTransportSolver, string const &, Group * const )
 
 } /* namespace geos */

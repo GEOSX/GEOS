@@ -83,7 +83,7 @@ Parameters
 
 The following attributes are supported:
 
-.. include:: /coreComponents/schema/docs/DruckerPrager.rst
+.. include:: /docs/sphinx/datastructure/DruckerPrager.rst
 
 Example
 ~~~~~~~~~~~~~~~

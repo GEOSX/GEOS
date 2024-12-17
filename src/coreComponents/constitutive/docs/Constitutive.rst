@@ -19,6 +19,7 @@ These models are grouped together based on their input/output interface.
    PermeabilityModels
    PorousSolids
    TemperatureDependentSolidVolumetricHeatCapacity
+   TemperatureDependentThermalConductivity
 
 
 In an input XML file, constitutive models are listed in the ``<Constitutive>`` block.
@@ -50,7 +51,7 @@ A typical ``<Constitutive>`` and ``<ElementRegions>`` block will look like:
       <!--Add water to the material list for region 1-->
       <CellElementRegion
          name="region1"
-         cellBlocks="{ hexahedra, wedges, tetrahedra, pyramids }"
+         cellBlocks="{ * }"
          materialList="{ water }"/>
 
     </ElementRegions>

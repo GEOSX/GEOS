@@ -2,10 +2,11 @@
  * ------------------------------------------------------------------------------------------------------------
  * SPDX-License-Identifier: LGPL-2.1-only
  *
- * Copyright (c) 2018-2020 Lawrence Livermore National Security LLC
- * Copyright (c) 2018-2020 The Board of Trustees of the Leland Stanford Junior University
- * Copyright (c) 2018-2020 TotalEnergies
- * Copyright (c) 2019-     GEOSX Contributors
+ * Copyright (c) 2016-2024 Lawrence Livermore National Security LLC
+ * Copyright (c) 2018-2024 TotalEnergies
+ * Copyright (c) 2018-2024 The Board of Trustees of the Leland Stanford Junior University
+ * Copyright (c) 2023-2024 Chevron
+ * Copyright (c) 2019-     GEOS/GEOSX Contributors
  * All rights reserved
  *
  * See top level LICENSE, COPYRIGHT, CONTRIBUTORS, NOTICE, and ACKNOWLEDGEMENTS files for details.
@@ -16,7 +17,7 @@
 #include "unitTests/testingUtilities/TestingTasks.hpp"
 #include "mainInterface/initialization.hpp"
 #include "mainInterface/GeosxState.hpp"
-#include "fieldSpecification/SourceFluxStatistics.hpp"
+#include "physicsSolvers/fluidFlow/SourceFluxStatistics.hpp"
 #include "physicsSolvers/fluidFlow/SinglePhaseStatistics.hpp"
 
 #include <gtest/gtest.h>
@@ -194,7 +195,7 @@ void setRateTable( array2d< real64 > & rateTable, std::initializer_list< std::in
 real64 getTotalFluidMass( ProblemManager & problem, string_view flowSolverPath )
 {
   real64 totalMass = 0.0;
-  SolverBase const & solver = problem.getGroupByPath< SolverBase >( string( flowSolverPath ) );
+  PhysicsSolverBase const & solver = problem.getGroupByPath< PhysicsSolverBase >( string( flowSolverPath ) );
   solver.forDiscretizationOnMeshTargets( problem.getDomainPartition().getMeshBodies(),
                                          [&] ( string const &,
                                                MeshLevel & mesh,
@@ -342,7 +343,7 @@ void checkWholeSimTimeStepStats( ProblemManager & problem,
 {
   EXPECT_EQ( timeStepChecker.getTestedTimeStepCount(), testSet.timestepCount ) << "The tested time-step were different than expected.";
 
-  SolverBase const & solver = problem.getGroupByPath< SolverBase >( testSet.inputs.flowSolverPath );
+  PhysicsSolverBase const & solver = problem.getGroupByPath< PhysicsSolverBase >( testSet.inputs.flowSolverPath );
   SolverStatistics const & solverStats = solver.getSolverStatistics();
   EXPECT_GE( solverStats.getNumTimeStepCuts(), testSet.inputs.requiredSubTimeStep ) << "The test did not encountered any timestep cut, but were expected to. "
                                                                                        "Consider adapting the simulation so a timestep cut occurs to check they work as expected.";

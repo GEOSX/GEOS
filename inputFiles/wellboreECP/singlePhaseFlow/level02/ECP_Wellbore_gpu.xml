@@ -1,0 +1,64 @@
+<?xml version="1.0" ?>
+
+<Problem>
+  <Solvers>
+
+    <SinglePhaseFVM
+      name="singlePhaseFlow"
+      logLevel="1"
+      discretization="TPFA"
+      initialDt="1"
+      targetRegions="{ cement, rock }">
+      <NonlinearSolverParameters
+        newtonTol="1.0e-3"
+        newtonMaxIter="20"/>
+      <LinearSolverParameters
+        logLevel="1"
+        solverType="fgmres"
+        krylovTol="1e-9"
+        preconditionerType="amg"
+        amgSmootherType="chebyshev"
+        amgNumSweeps="1"
+        amgCoarseningType="PMIS"
+        amgInterpolationType="modifiedExtendedI"
+        />
+    </SinglePhaseFVM>
+
+  </Solvers>
+
+  <Included>
+    <File name="../../ECP_Wellbore_geom02.xml"/>
+    <File name="../ECP_Wellbore_probdef.xml"/>
+  </Included>
+
+  <Events
+    maxTime="946080000"> <!-- 30 years -->
+
+    <!--PeriodicEvent
+      name="outputs"
+      timeFrequency="946080000"
+      targetExactTimestep="1"
+      target="/Outputs/siloOutput"/-->
+
+    <PeriodicEvent
+      name="solverApplications"
+      maxEventDt="1.5e7"
+      target="/Solvers/singlePhaseFlow"/>
+
+  </Events>
+
+  <Outputs>
+    <!--Silo
+      name="siloOutput"
+      parallelThreads="32"
+      plotFileRoot="plot"
+      childDirectory="sub"/-->
+
+    <!--Restart
+      name="restartOutput"/-->
+
+    <!--VTK
+      name="vtkOutput"/-->
+  </Outputs>
+
+</Problem>

@@ -2,10 +2,11 @@
  * ------------------------------------------------------------------------------------------------------------
  * SPDX-License-Identifier: LGPL-2.1-only
  *
- * Copyright (c) 2018-2020 Lawrence Livermore National Security LLC
- * Copyright (c) 2018-2020 The Board of Trustees of the Leland Stanford Junior University
- * Copyright (c) 2018-2020 TotalEnergies
- * Copyright (c) 2019-     GEOSX Contributors
+ * Copyright (c) 2016-2024 Lawrence Livermore National Security LLC
+ * Copyright (c) 2018-2024 TotalEnergies
+ * Copyright (c) 2018-2024 The Board of Trustees of the Leland Stanford Junior University
+ * Copyright (c) 2023-2024 Chevron
+ * Copyright (c) 2019-     GEOS/GEOSX Contributors
  * All rights reserved
  *
  * See top level LICENSE, COPYRIGHT, CONTRIBUTORS, NOTICE, and ACKNOWLEDGEMENTS files for details.
@@ -17,8 +18,6 @@
  */
 
 #include "AquiferBoundaryCondition.hpp"
-
-#include "mesh/DomainPartition.hpp"
 
 namespace geos
 {
@@ -113,7 +112,7 @@ AquiferBoundaryCondition::AquiferBoundaryCondition( string const & name, Group *
 
 }
 
-void AquiferBoundaryCondition::postProcessInput()
+void AquiferBoundaryCondition::postInputInitialization()
 {
   GEOS_THROW_IF_LE_MSG( m_permeability, 0.0,
                         getCatalogName() << " " << getDataContext() <<
@@ -164,7 +163,7 @@ void AquiferBoundaryCondition::postProcessInput()
 
 void AquiferBoundaryCondition::setupDefaultPressureInfluenceFunction()
 {
-  // default table; see Eclipse or Intersect documentation
+  // default table
 
   array1d< array1d< real64 > > dimensionlessTime;
   dimensionlessTime.resize( 1 );
@@ -282,14 +281,13 @@ void AquiferBoundaryCondition::setGravityVector( R1Tensor const & gravityVector 
 
 void AquiferBoundaryCondition::computeTimeConstant()
 {
-  // equation 5.3 of the Eclipse TD
   m_timeConstant = m_viscosity * m_porosity * m_totalCompressibility * m_innerRadius * m_innerRadius;
   m_timeConstant /= m_permeability;
 }
 
 void AquiferBoundaryCondition::computeInfluxConstant()
 {
-  // equation 5.4 of the Eclipse TD, including the constant 6.283 of the Carter-Tracy model
+  // 6.283 is the constant of the Carter-Tracy model
   m_influxConstant = 6.283 * m_thickness * ( m_angle / 360.0 ) * m_porosity * m_totalCompressibility * m_innerRadius * m_innerRadius;
 }
 

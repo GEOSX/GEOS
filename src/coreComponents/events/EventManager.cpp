@@ -2,10 +2,11 @@
  * ------------------------------------------------------------------------------------------------------------
  * SPDX-License-Identifier: LGPL-2.1-only
  *
- * Copyright (c) 2018-2020 Lawrence Livermore National Security LLC
- * Copyright (c) 2018-2020 The Board of Trustees of the Leland Stanford Junior University
- * Copyright (c) 2018-2020 TotalEnergies
- * Copyright (c) 2019-     GEOSX Contributors
+ * Copyright (c) 2016-2024 Lawrence Livermore National Security LLC
+ * Copyright (c) 2018-2024 TotalEnergies
+ * Copyright (c) 2018-2024 The Board of Trustees of the Leland Stanford Junior University
+ * Copyright (c) 2023-2024 Chevron
+ * Copyright (c) 2019-     GEOS/GEOSX Contributors
  * All rights reserved
  *
  * See top level LICENSE, COPYRIGHT, CONTRIBUTORS, NOTICE, and ACKNOWLEDGEMENTS files for details.
@@ -20,7 +21,7 @@
 
 #include "common/TimingMacros.hpp"
 #include "events/EventBase.hpp"
-#include "mesh/mpiCommunications/CommunicationTools.hpp"
+#include "common/MpiWrapper.hpp"
 #include "common/Units.hpp"
 
 namespace geos
@@ -53,7 +54,7 @@ EventManager::EventManager( string const & name,
     setDescription( "Start simulation time for the global event loop." );
 
   registerWrapper( viewKeyStruct::maxTimeString(), &m_maxTime ).
-    setApplyDefaultValue( std::numeric_limits< real64 >::max() ).
+    setApplyDefaultValue( 10000 * units::YearSeconds ). // 10000 years
     setInputFlag( InputFlags::OPTIONAL ).
     setDescription( "Maximum simulation time for the global event loop. Disabled by default." );
 
@@ -92,7 +93,7 @@ EventManager::~EventManager()
 
 Group * EventManager::createChild( string const & childKey, string const & childName )
 {
-  GEOS_LOG_RANK_0( "Adding Event: " << childKey << ", " << childName );
+  GEOS_LOG_RANK_0( GEOS_FMT( "{}: adding {} {}", getName(), childKey, childName ) );
   std::unique_ptr< EventBase > event = EventBase::CatalogInterface::factory( childKey, childName, this );
   return &this->registerGroup< EventBase >( childName, std::move( event ) );
 }
@@ -162,10 +163,10 @@ bool EventManager::run( DomainPartition & domain )
       }
       m_currentSubEvent = 0;
 
-#ifdef GEOSX_USE_MPI
+#ifdef GEOS_USE_MPI
       // Find the min dt across processes
       real64 dt_global;
-      MPI_Allreduce( &m_dt, &dt_global, 1, MPI_DOUBLE, MPI_MIN, MPI_COMM_GEOSX );
+      MPI_Allreduce( &m_dt, &dt_global, 1, MPI_DOUBLE, MPI_MIN, MPI_COMM_GEOS );
       m_dt = dt_global;
 #endif
     }
