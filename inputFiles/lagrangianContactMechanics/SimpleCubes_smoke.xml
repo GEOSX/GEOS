@@ -1,0 +1,54 @@
+<?xml version="1.0" ?>
+
+<Problem>
+  <Included>
+    <File
+      name="./SimpleCubes_base.xml"/>
+  </Included>
+
+  <Mesh>
+    <InternalMesh
+      name="mesh1"
+      elementTypes="{ C3D8 }"
+      xCoords="{ -4, 4 }"
+      yCoords="{ 0, 20 }"
+      zCoords="{ 0, 20 }"
+      nx="{ 4 }"
+      ny="{ 10 }"
+      nz="{ 10 }"
+      cellBlockNames="{ cb1 }"/>
+  </Mesh>
+
+  <Geometry>
+    <Box
+      name="fracture"
+      xMin="{ -0.01, -0.01, -0.01 }"
+      xMax="{ 0.01, 20.01, 20.01 }"/>
+
+    <Box
+      name="core"
+      xMin="{ -0.01, -0.01, -0.01 }"
+      xMax="{ 0.01, 20.01, 20.01 }"/>
+
+    <Box
+      name="front"
+      xMin="{ 3.99, -0.01, -0.01 }"
+      xMax="{ 4.01, 20.01, 20.01 }"/>
+
+    <Box
+      name="back"
+      xMin="{ -4.01, -0.01, -0.01 }"
+      xMax="{ -3.99, 20.01, 20.01 }"/>
+
+    <Box
+      name="xpos_top"
+      xMin="{ -0.01, -0.01, 19.99 }"
+      xMax="{ 4.01, 20.01, 20.01 }"/>
+
+    <Box
+      name="bottom"
+      xMin="{ -4.01, -0.01, -0.01 }"
+      xMax="{ 4.01, 20.01, 0.01 }"/>
+  </Geometry>
+
+</Problem>

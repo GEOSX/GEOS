@@ -3,9 +3,9 @@
  * SPDX-License-Identifier: LGPL-2.1-only
  *
  * Copyright (c) 2016-2024 Lawrence Livermore National Security LLC
- * Copyright (c) 2018-2024 Total, S.A
+ * Copyright (c) 2018-2024 TotalEnergies
  * Copyright (c) 2018-2024 The Board of Trustees of the Leland Stanford Junior University
- * Copyright (c) 2018-2024 Chevron
+ * Copyright (c) 2023-2024 Chevron
  * Copyright (c) 2019-     GEOS/GEOSX Contributors
  * All rights reserved
  *
@@ -20,6 +20,7 @@
 #include "MeshFields.hpp"
 #include "EdgeManager.hpp"
 #include "SurfaceElementRegion.hpp"
+#include "common/MpiWrapper.hpp"
 
 
 namespace geos
@@ -124,7 +125,6 @@ localIndex SurfaceElementRegion::addToFractureMesh( real64 const time_np1,
 
   LvArray::tensorOps::copy< 3 >( elemCenter[ kfe ], faceCenter[ faceIndices[ 0 ] ] );
 
-  faceMap.resizeArray( kfe, 2 );
   faceMap[kfe][0] = faceIndices[0];
   faceMap[kfe][1] = faceIndices[1];
 
@@ -168,19 +168,20 @@ localIndex SurfaceElementRegion::addToFractureMesh( real64 const time_np1,
   }
 
   // Add the cell region/subregion/index to the faceElementToCells map
-  OrderedVariableToManyElementRelation & faceElementsToCells = subRegion.getToCellRelation();
+  FixedToManyElementRelation & faceElementsToCells = subRegion.getToCellRelation();
 
   for( localIndex ke = 0; ke < 2; ++ke )
   {
+
     localIndex const er = faceToElementRegion[faceIndices[ke]][ke];
     localIndex const esr = faceToElementSubRegion[faceIndices[ke]][ke];
     localIndex const ei = faceToElementIndex[faceIndices[ke]][ke];
 
     if( er != -1 && esr != -1 && ei != -1 )
     {
-      faceElementsToCells.m_toElementRegion.emplaceBack( kfe, er );
-      faceElementsToCells.m_toElementSubRegion.emplaceBack( kfe, esr );
-      faceElementsToCells.m_toElementIndex.emplaceBack( kfe, ei );
+      faceElementsToCells.m_toElementRegion[kfe][ke]    = er;
+      faceElementsToCells.m_toElementSubRegion[kfe][ke] = esr;
+      faceElementsToCells.m_toElementIndex[kfe][ke]     = ei;
     }
   }
 
@@ -214,7 +215,7 @@ localIndex SurfaceElementRegion::addToFractureMesh( real64 const time_np1,
   {
     SortedArrayView< localIndex const > const & faceSet = faceManager->sets().getReference< SortedArray< localIndex > >( setIter.first );
     SortedArray< localIndex > & faceElementSet = subRegion.sets().registerWrapper< SortedArray< localIndex > >( setIter.first ).reference();
-    for( localIndex a = 0; a < faceMap.size(); ++a )
+    for( localIndex a = 0; a < faceMap.size( 0 ); ++a )
     {
       if( faceSet.count( faceMap[a][0] ) )
       {

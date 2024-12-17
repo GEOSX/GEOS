@@ -88,7 +88,7 @@ dependency of porosity and permeability on the primary unknowns.
 The base class ``CoupledSolidBase`` implements some basic behaviors
 and is used to access a generic ``CoupledSolid`` in a physics solver:
 
-.. literalinclude:: /coreComponents/physicsSolvers/fluidFlow/SinglePhaseBase.cpp
+.. literalinclude:: /coreComponents/physicsSolvers/fluidFlow/SinglePhaseBase.hpp
    :language: c++
    :start-after: //START_SPHINX_INCLUDE_COUPLEDSOLID
    :end-before: //END_SPHINX_INCLUDE_COUPLEDSOLID

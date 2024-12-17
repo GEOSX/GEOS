@@ -38,12 +38,11 @@
       target="/Outputs/restartOutput"/>
   </Events>
 
-  <!-- SPHINX_FEDiscretizationEnd -->
   <ElementRegions>
     <CellElementRegion
       name="Region2"
       meshBody="mesh1"
-      cellBlocks="{ cb1 }"
+      cellBlocks="{ * }"
       materialList="{ shale }"/>
   </ElementRegions>
 

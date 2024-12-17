@@ -3,9 +3,9 @@
  * SPDX-License-Identifier: LGPL-2.1-only
  *
  * Copyright (c) 2016-2024 Lawrence Livermore National Security LLC
- * Copyright (c) 2018-2024 Total, S.A
+ * Copyright (c) 2018-2024 TotalEnergies
  * Copyright (c) 2018-2024 The Board of Trustees of the Leland Stanford Junior University
- * Copyright (c) 2018-2024 Chevron
+ * Copyright (c) 2023-2024 Chevron
  * Copyright (c) 2019-     GEOS/GEOSX Contributors
  * All rights reserved
  *
@@ -394,6 +394,34 @@ struct WaveSolverUtils
         coordsOnRefElem[i] += invJ[i][j] * (coords[j] - xLocal[0][j]);
       }
     }
+  }
+
+  /**
+   * @brief Compute dotProduct between two vectors
+   * @param numFacesPerElem number of face on an element
+   * @param elemCenter array containing the center of the elements
+   * @param faceNormal array containing the normal of all faces
+   * @param faceCenter array containing the center of all faces
+   * @param elemsToFaces map to get the global faces from element index and local face index
+   * @param coords coordinate of the point
+   * @return true if coords is inside the element
+   */
+
+
+  static void dotProduct( localIndex const size,
+                          arrayView1d< real32 > const & vector1,
+                          arrayView1d< real32 > const & vector2,
+                          real64 & res )
+  {
+
+    RAJA::ReduceSum< parallelDeviceReduce, real64 > tmp( 0.0 );
+    forAll< EXEC_POLICY >( size, [=] GEOS_HOST_DEVICE ( localIndex const a )
+    {
+      tmp+= vector1[a]*vector2[a];
+    } );
+
+    res = tmp.get();
+
   }
 
 /**

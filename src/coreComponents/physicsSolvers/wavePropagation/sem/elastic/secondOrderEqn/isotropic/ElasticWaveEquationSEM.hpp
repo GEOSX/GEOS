@@ -3,9 +3,9 @@
  * SPDX-License-Identifier: LGPL-2.1-only
  *
  * Copyright (c) 2016-2024 Lawrence Livermore National Security LLC
- * Copyright (c) 2018-2024 Total, S.A
+ * Copyright (c) 2018-2024 TotalEnergies
  * Copyright (c) 2018-2024 The Board of Trustees of the Leland Stanford Junior University
- * Copyright (c) 2018-2024 Chevron
+ * Copyright (c) 2023-2024 Chevron
  * Copyright (c) 2019-     GEOS/GEOSX Contributors
  * All rights reserved
  *
@@ -23,7 +23,7 @@
 
 #include "physicsSolvers/wavePropagation/shared/WaveSolverBase.hpp"
 #include "mesh/MeshFields.hpp"
-#include "physicsSolvers/SolverBase.hpp"
+#include "physicsSolvers/PhysicsSolverBase.hpp"
 #include "physicsSolvers/wavePropagation/sem/elastic/shared/ElasticFields.hpp"
 
 namespace geos
@@ -53,7 +53,7 @@ public:
 
   static string catalogName() { return "ElasticSEM"; }
   /**
-   * @copydoc SolverBase::getCatalogName()
+   * @copydoc PhysicsSolverBase::getCatalogName()
    */
   string getCatalogName() const override { return catalogName(); }
 
@@ -88,7 +88,7 @@ public:
    * @param rhsy the right hand side vector to be computed (y-component)
    * @param rhsz the right hand side vector to be computed (z-component)
    */
-  void addSourceToRightHandSide( integer const & cycleNumber, arrayView1d< real32 > const rhsx, arrayView1d< real32 > const rhsy, arrayView1d< real32 > const rhsz );
+  void addSourceToRightHandSide( real64 const & time_n, arrayView1d< real32 > const rhsx, arrayView1d< real32 > const rhsy, arrayView1d< real32 > const rhsz );
 
   /**
    * TODO: move implementation into WaveSolverBase once 'm_receiverIsLocal' is also moved
@@ -101,6 +101,9 @@ public:
   void computeDAS( arrayView2d< real32 > const xCompRcv,
                    arrayView2d< real32 > const yCompRcv,
                    arrayView2d< real32 > const zCompRcv );
+
+  virtual real64 computeTimeStep( real64 & dtOut ) override;
+
 
   /**
    * @brief Overridden from ExecutableGroup. Used to write last seismogram if needed.
@@ -138,19 +141,16 @@ public:
    */
   real64 explicitStepInternal( real64 const & time_n,
                                real64 const & dt,
-                               integer const cycleNumber,
                                DomainPartition & domain );
 
   void computeUnknowns( real64 const & time_n,
                         real64 const & dt,
-                        integer const cycleNumber,
                         DomainPartition & domain,
                         MeshLevel & mesh,
                         arrayView1d< string const > const & regionNames );
 
   void synchronizeUnknowns( real64 const & time_n,
                             real64 const & dt,
-                            integer const cycleNumber,
                             DomainPartition & domain,
                             MeshLevel & mesh,
                             arrayView1d< string const > const & regionNames );

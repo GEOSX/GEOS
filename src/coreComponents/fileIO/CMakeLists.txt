@@ -1,4 +1,27 @@
+# SPDX-License-Identifier: LGPL-2.1-only
+#
+# Copyright (c) 2016-2024 Lawrence Livermore National Security LLC
+# Copyright (c) 2018-2024 TotalEnergies
+# Copyright (c) 2018-2024 The Board of Trustees of the Leland Stanford Junior University
+# Copyright (c) 2023-2024 Chevron
+# Copyright (c) 2019-     GEOS/GEOSX Contributors
+# All rights reserved
+#
+# See top level LICENSE, COPYRIGHT, CONTRIBUTORS, NOTICE, and ACKNOWLEDGEMENTS files for details.
+#
+#--------------------------------------------------------------------------------------------------
+
+#[[
+Package: fileIO
+
+Contains:
+ - I/O interfaces for the packing components and supported outputs and their python wrappers.
+ - a coupler for data exchange with CHOMBO.
+#]]
+
+#
 # Specify all headers
+#
 set( fileIO_headers
      Outputs/BlueprintOutput.hpp
      Outputs/OutputBase.hpp
@@ -14,7 +37,9 @@ set( fileIO_headers
      timeHistory/HDFHistoryIO.hpp
      timeHistory/HistoryCollection.hpp )
 
+#
 # Specify all sources
+#
 set( fileIO_sources
      Outputs/BlueprintOutput.cpp
      Outputs/OutputBase.cpp
@@ -28,7 +53,7 @@ set( fileIO_sources
      timeHistory/PackCollection.cpp
      timeHistory/HDFHistoryIO.cpp )
 
-set( dependencyList ${parallelDeps} mesh constitutive HDF5::HDF5 )
+set( dependencyList ${parallelDeps} events mesh HDF5::HDF5 )
 if( ENABLE_PYGEOSX )
   list( APPEND fileIO_headers
         python/PyHistoryCollectionType.hpp
@@ -51,10 +76,10 @@ endif()
 
 if( ENABLE_SILO )
   list( APPEND dependencyList silo HDF5::HDF5)
-  list( APPEND fileIO_headers 
-               silo/SiloFile.hpp 
+  list( APPEND fileIO_headers
+               silo/SiloFile.hpp
                Outputs/SiloOutput.hpp )
-  list( APPEND fileIO_sources 
+  list( APPEND fileIO_sources
                silo/SiloFile.cpp
                Outputs/SiloOutput.cpp )
 endif( )
@@ -79,15 +104,21 @@ if( ENABLE_CUDA AND ENABLE_CUDA_NVTOOLSEXT )
   list( APPEND dependencyList CUDA::nvToolsExt )
 endif()
 
+geos_decorate_link_dependencies( LIST decoratedDependencies
+                                 DEPENDENCIES ${dependencyList} )
+
 blt_add_library( NAME       fileIO
                  SOURCES    ${fileIO_sources}
                  HEADERS    ${fileIO_headers}
-                 DEPENDS_ON ${dependencyList}
-                 OBJECT     ${GEOS_BUILD_OBJ_LIBS} )
+                 DEPENDS_ON ${decoratedDependencies}
+                 OBJECT     ${GEOS_BUILD_OBJ_LIBS}
+                 SHARED     ${GEOS_BUILD_SHARED_LIBS}
+               )
 
 
 target_include_directories( fileIO PUBLIC ${CMAKE_SOURCE_DIR}/coreComponents )
 
+install( TARGETS fileIO LIBRARY DESTINATION ${CMAKE_INSTALL_PREFIX}/lib )
 
 
 

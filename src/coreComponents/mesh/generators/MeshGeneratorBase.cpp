@@ -3,9 +3,9 @@
  * SPDX-License-Identifier: LGPL-2.1-only
  *
  * Copyright (c) 2016-2024 Lawrence Livermore National Security LLC
- * Copyright (c) 2018-2024 Total, S.A
+ * Copyright (c) 2018-2024 TotalEnergies
  * Copyright (c) 2018-2024 The Board of Trustees of the Leland Stanford Junior University
- * Copyright (c) 2018-2024 Chevron
+ * Copyright (c) 2023-2024 Chevron
  * Copyright (c) 2019-     GEOS/GEOSX Contributors
  * All rights reserved
  *
@@ -16,7 +16,7 @@
 #include "MeshGeneratorBase.hpp"
 #include "mesh/generators/CellBlockManager.hpp"
 #include "mesh/generators/ParticleBlockManager.hpp"
-
+#include "mesh/generators/MeshComponentBase.hpp"
 namespace geos
 {
 using namespace dataRepository;
@@ -29,15 +29,15 @@ MeshGeneratorBase::MeshGeneratorBase( string const & name, Group * const parent 
 
 Group * MeshGeneratorBase::createChild( string const & childKey, string const & childName )
 {
-  GEOS_LOG_RANK_0( "Adding Mesh attribute: " << childKey << ", " << childName );
-  std::unique_ptr< WellGeneratorBase > wellGen = WellGeneratorBase::CatalogInterface::factory( childKey, childName, this );
-  return &this->registerGroup< WellGeneratorBase >( childName, std::move( wellGen ) );
+  GEOS_LOG_RANK_0( GEOS_FMT( "{}: adding {} {}", getName(), childKey, childName ) );
+  std::unique_ptr< MeshComponentBase > comp = MeshComponentBase::CatalogInterface::factory( childKey, childName, this );
+  return &this->registerGroup< MeshComponentBase >( childName, std::move( comp ) );
 }
 
 void MeshGeneratorBase::expandObjectCatalogs()
 {
-  // During schema generation, register one of each type derived from WellGeneratorBase here
-  for( auto & catalogIter: WellGeneratorBase::getCatalog())
+  // During schema generation, register one of each type derived from MeshComponentBase here
+  for( auto & catalogIter: MeshComponentBase::getCatalog())
   {
     createChild( catalogIter.first, catalogIter.first );
   }

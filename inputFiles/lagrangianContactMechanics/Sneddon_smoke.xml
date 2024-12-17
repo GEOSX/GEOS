@@ -1,0 +1,35 @@
+<?xml version="1.0" ?>
+
+<Problem>
+ <Included>
+    <File
+      name="./Sneddon_base.xml"/>
+  </Included>
+
+  <Solvers
+    gravityVector="{0.0, 0.0, 0.0}">
+    <SurfaceGenerator
+      name="SurfaceGen"
+      logLevel="0"
+      fractureRegion="Fracture"
+      targetRegions="{ Region }"
+      rockToughness="1.0e6"
+      mpiCommOrder="1"/>
+  </Solvers>
+  <!-- SPHINX_SNEDDON_SOLVER_END -->
+
+  <!-- SPHINX_SNEDDON_MESH -->
+  <Mesh>
+    <InternalMesh
+      name="mesh1"
+      elementTypes="{ C3D8 }"
+      xCoords="{ -20, -2, 2, 20 }"
+      yCoords="{ -20, -2, 2, 20 }"
+      zCoords="{ 0, 1 }"
+      nx="{ 4, 22, 4 }"
+      ny="{ 4, 22, 4 }"
+      nz="{ 2 }"
+      cellBlockNames="{ cb1 }"/>
+  </Mesh>
+  <!-- SPHINX_SNEDDON_MESH_END -->
+</Problem>

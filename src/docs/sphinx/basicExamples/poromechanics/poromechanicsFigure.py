@@ -5,6 +5,8 @@ import h5py
 import xml.etree.ElementTree as ElementTree
 from mpmath import *
 import math
+import os
+import argparse
 
 
 class terzaghi:
@@ -91,10 +93,23 @@ def getDomainMaxMinXCoordFromXML(xmlFilePath):
 
 
 def main():
+
+   # Initialize the argument parser
+    parser = argparse.ArgumentParser(description="Script to generate figure from tutorial.")
+
+    # Add arguments to accept individual file paths
+    parser.add_argument('--geosDir', help='Path to the GEOS repository ', default='../../../../..')
+    parser.add_argument('--outputDir', help='Path to output directory', default='.')
+
+    # Parse the command-line arguments
+    args = parser.parse_args()
+    outputDir = args.outputDir
+    geosDir = args.geosDir
+
     # File path
-    hdf5FilePath = "pressure_history.hdf5"
-    xmlBaseFilePath = "../../../../../inputFiles/poromechanics/PoroElastic_Terzaghi_base_direct.xml"
-    xmlSmokeFilePath = "../../../../../inputFiles/poromechanics/PoroElastic_Terzaghi_smoke.xml"
+    hdf5FilePath = outputDir + "/pressure_history.hdf5"
+    xmlBaseFilePath = geosDir + "/inputFiles/poromechanics/PoroElastic_Terzaghi_base_direct.xml"
+    xmlSmokeFilePath = geosDir + "/inputFiles/poromechanics/PoroElastic_Terzaghi_smoke.xml"
 
     # Read HDF5
     hf = h5py.File(hdf5FilePath, 'r')

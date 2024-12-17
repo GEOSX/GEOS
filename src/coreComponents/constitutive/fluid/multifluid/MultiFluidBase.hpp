@@ -3,9 +3,9 @@
  * SPDX-License-Identifier: LGPL-2.1-only
  *
  * Copyright (c) 2016-2024 Lawrence Livermore National Security LLC
- * Copyright (c) 2018-2024 Total, S.A
+ * Copyright (c) 2018-2024 TotalEnergies
  * Copyright (c) 2018-2024 The Board of Trustees of the Leland Stanford Junior University
- * Copyright (c) 2018-2024 Chevron
+ * Copyright (c) 2023-2024 Chevron
  * Copyright (c) 2019-     GEOS/GEOSX Contributors
  * All rights reserved
  *
@@ -783,12 +783,14 @@ MultiFluidBase::KernelWrapper::
   real64 totalMolality = 0.0;
   for( integer ic = 0; ic < numComps; ++ic )
   {
+    // component weight can not be zero, checked in MultiFluidBase::postInputInitialization
     real64 const mwInv = 1.0 / m_componentMolarWeight[ic];
     compMoleFrac[ic] = composition[ic] * mwInv; // this is molality (units of mole/mass)
     dCompMoleFrac_dCompMassFrac[ic][ic] = mwInv;
     totalMolality += compMoleFrac[ic];
   }
 
+  GEOS_ERROR_IF( totalMolality < LvArray::NumericLimits< real64 >::epsilon, "Zero total molality, all component concentrations are equal to zero." );
   real64 const totalMolalityInv = 1.0 / totalMolality;
   for( integer ic = 0; ic < numComps; ++ic )
   {

@@ -1,10 +1,8 @@
 
-cmake_minimum_required( VERSION 3.23 )
+cmake_minimum_required( VERSION 3.24 )
 
 # At the moment we are manually passing the cuda arch flag.
-if(${CMAKE_VERSION} VERSION_GREATER_EQUAL "3.23.0")
-  cmake_policy(SET CMP0104 OLD) # when using nvcc populate CMAKE_CUDA_ARCHITECTURES, raise error if we can't
-endif()
+cmake_policy(SET CMP0104 OLD) # when using nvcc populate CMAKE_CUDA_ARCHITECTURES, raise error if we can't
 cmake_policy(SET CMP0074 NEW) # dont ignore <PackageName>_ROOT env vars when searching for packages via find_package()
 cmake_policy(SET CMP0066 NEW) # use CMAKE_<LANG>_FLAGS_<BUILD_TYPE> for try_compile() instead of only CMAKE_<LANG>_FLAGS
 cmake_policy(SET CMP0056 NEW) # use CMAKE_EXE_LINKER_FLAGS in try_compile() in addition to CMAKE_<LANG>_FLAGS
@@ -135,32 +133,17 @@ if( ENABLE_HIP )
   list( APPEND extraComponentsLinkList blt::hip )
 endif()
 
-if ( GEOS_BUILD_SHARED_LIBS )
-  list( APPEND extraComponentsLinkList geosx_core )
-else()
-  list( APPEND extraComponentsLinkList ${geosx_core_libs} )
-endif()
-
 blt_add_executable( NAME geosx
                     SOURCES main/main.cpp
-                    DEPENDS_ON ${extraComponentsLinkList}
-                               ${externalComponentsLinkList} fmt::fmt-header-only HDF5::HDF5 )
-
-# blt_print_target_properties(TARGET               geosx
-#                             CHILDREN             TRUE
-#                             PROPERTY_NAME_REGEX  "LINK_LIBRARIES"
-#                             )
-
-# blt_print_target_properties(TARGET               HDF5::HDF5
-#                             CHILDREN             TRUE )
+                    DEPENDS_ON geosx_core 
+                               ${extraComponentsLinkList}
+                               ${externalComponentsLinkList} )
 
 # Seems to be required on some CMake versions (e.g. 3.16) to get enforce device linking
 if( ${ENABLE_HYPRE_DEVICE} STREQUAL "CUDA"  )
   set_target_properties( geosx PROPERTIES CUDA_RESOLVE_DEVICE_SYMBOLS TRUE )
 endif()
 
-
-target_include_directories( geosx PUBLIC ${CMAKE_SOURCE_DIR}/coreComponents )
 
 # To change the runtime path during installation
 set_target_properties( geosx PROPERTIES INSTALL_RPATH "${CMAKE_INSTALL_PREFIX}/lib" )
@@ -173,7 +156,7 @@ install( FILES ${CMAKE_INSTALL_PREFIX}/bin/geosx
          RENAME geos
          PERMISSIONS OWNER_READ OWNER_WRITE OWNER_EXECUTE GROUP_READ GROUP_EXECUTE WORLD_READ WORLD_EXECUTE )
 
-if( ENABLE_XML_UPDATES AND ENABLE_MPI AND UNIX AND NOT CMAKE_HOST_APPLE AND NOT ENABLE_CUDA AND NOT ENABLE_HIP )
+if( ENABLE_XML_UPDATES AND ENABLE_MPI AND UNIX AND NOT ENABLE_CUDA AND NOT ENABLE_HIP )
 
   set(SCHEMA_DIR ${CMAKE_SOURCE_DIR}/coreComponents/schema)
   set(SCRIPT_DIR ${CMAKE_SOURCE_DIR}/../scripts)
@@ -186,9 +169,9 @@ if( ENABLE_XML_UPDATES AND ENABLE_MPI AND UNIX AND NOT CMAKE_HOST_APPLE AND NOT 
                      COMMENT "Generating XML schema"
                      )
 
-  add_custom_target( geosx_update_rst_tables
+  add_custom_target( geosx_build_datastructure_tables
                      ALL
-                     COMMAND python3 ${SCRIPT_DIR}/SchemaToRSTDocumentation.py ${SCHEMA_DIR} >update_rst_tables.log 2>&1 || (cat update_rst_tables.log && exit 1)
+                     COMMAND python3 ${SCRIPT_DIR}/SchemaToRSTDocumentation.py -s ${SCHEMA_DIR}/schema.xsd -o ${CMAKE_SOURCE_DIR}/docs/sphinx >update_rst_tables.log 2>&1 || (cat update_rst_tables.log && exit 1)
                      WORKING_DIRECTORY ${CMAKE_BINARY_DIR}
                      DEPENDS geosx_generate_schema
                      COMMENT "Generating schema-dependent RST files"
@@ -198,19 +181,18 @@ if( ENABLE_XML_UPDATES AND ENABLE_MPI AND UNIX AND NOT CMAKE_HOST_APPLE AND NOT 
                      ALL
                      COMMAND bash ${SCRIPT_DIR}/validateXMLFiles.bash -g ${SCHEMA_DIR}/schema.xsd ${CMAKE_SOURCE_DIR} ${CMAKE_SOURCE_DIR}/../examples ${CMAKE_SOURCE_DIR}/../inputFiles
                      WORKING_DIRECTORY ${CMAKE_BINARY_DIR}
-                     DEPENDS geosx_update_rst_tables
+                     DEPENDS geosx_generate_schema
                      COMMENT "Validating all XML files in the repository against the schema"
                      )
+  if( SPHINX_FOUND )
+    blt_add_sphinx_target( geosx_docs )
+    add_dependencies( geosx_docs geosx_build_datastructure_tables )
+  endif()
 endif()
 
 if( ENABLE_PYGEOSX )
    add_subdirectory( pygeosx )
 endif()
-
-if( SPHINX_FOUND )
-  blt_add_sphinx_target( geosx_docs )
-endif()
-
 
 install( DIRECTORY ../examples/
          DESTINATION ${CMAKE_INSTALL_DATAROOTDIR}/${CMAKE_PROJECT_NAME}/examples )
@@ -237,8 +219,8 @@ install( FILES ${CMAKE_BINARY_DIR}/schema.xsd
 ################################
 # Add python environment setup
 ################################
-# message(WARNING "Temporarily changing the geosPythonBranch to feature/packaging")
-# set(GEOS_PYTHON_PACKAGES_BRANCH "feature/packaging" CACHE STRING "" FORCE)
+# message(WARNING "Temporarily changing the geosPythonBranch to bugfix/sherman/fixNumpyProd")
+# set(GEOS_PYTHON_PACKAGES_BRANCH "bugfix/sherman/fixNumpyProd" CACHE STRING "" FORCE)
 
 
 if ( Python3_EXECUTABLE )

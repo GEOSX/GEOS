@@ -3,9 +3,9 @@
  * SPDX-License-Identifier: LGPL-2.1-only
  *
  * Copyright (c) 2016-2024 Lawrence Livermore National Security LLC
- * Copyright (c) 2018-2024 Total, S.A
+ * Copyright (c) 2018-2024 TotalEnergies
  * Copyright (c) 2018-2024 The Board of Trustees of the Leland Stanford Junior University
- * Copyright (c) 2018-2024 Chevron
+ * Copyright (c) 2023-2024 Chevron
  * Copyright (c) 2019-     GEOS/GEOSX Contributors
  * All rights reserved
  *
@@ -276,7 +276,7 @@ private:
   virtual void readInputDataFromPVTFiles() override;
 
   /**
-   * @brief Read all the PVT table provided by the user in Eclipse format
+   * @brief Read all the PVT table provided by the user in text format
    * @param[in] oilTable the oil table data read from file
    * @param[in] oilSurfaceMassDensity the oil phase surface mass density
    * @param[in] oilSurfaceMolecularWeight the oil phase surface molecular weight

@@ -17,6 +17,8 @@ Welcome to the GEOS user guide.
 
    /coreComponents/constitutive/docs/Constitutive
 
+   /coreComponents/constitutiveDrivers/docs/ConstitutiveDrivers
+
    /coreComponents/fieldSpecification/docs/FieldSpecification
    
    /coreComponents/events/docs/EventManager
