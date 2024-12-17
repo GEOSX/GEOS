@@ -1,7 +1,6 @@
-
-#####################################
+*************************************
 Acoustic VTI Wave Propagation Solvers
-#####################################
+*************************************
 
 Available Solvers
 =================
@@ -15,7 +14,7 @@ The anisotropy is said to be TI when there exists an axis of symmetry that is no
 .. _sec-vti-fletcher:
 
 ``AcousticVTIFletcherWavePropagationSEM``
-+++++++++++++++++++++++++++++++++++++++++
+^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
 
 This solver relies on the set of equations proposed by Fletcher and his collaborators :footcite:`FlecherDuFowler2009`. This solver has a tunable parameter :math:`\vtif` (or equivalently :math:`\sigma`, see :ref:`paragraph on the quantities <sec-vti-quantities>`) to manage the spurious artefact s-wave.
 
@@ -33,7 +32,7 @@ This solver relies on the set of equations proposed by Fletcher and his collabor
 .. _sec-vti-zhang:
 
 ``AcousticVTIZhangWavePropagationSEM``
-++++++++++++++++++++++++++++++++++++++
+^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
 
 This second one is based on Zhang et. al set of equations in :footcite:`ZhangZhangZhang2011`. As it is self-adjoint, this solver is mainly use for full waveform inversion.
 
@@ -101,7 +100,7 @@ Damping methods
 .. _sec-vti-abc:
 
 Absorbing Boundary Condition (ABC - default)
-++++++++++++++++++++++++++++++++++++++++++++
+^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
 
 The following ABC is set for both equations on the borders :math:`\Gamma_{xy}` and :math:`\Gamma_{z}` (See equation (2.66) in L. Boillot PhD thesis :footcite:`Boillot2014` )):
 
@@ -122,7 +121,7 @@ The following ABC is set for both equations on the borders :math:`\Gamma_{xy}` a
 .. _sec-vti-plm:
 
 Perfectly Matched Layer (PML - not supported yet)
-+++++++++++++++++++++++++++++++++++++++++++++++++
+^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
 
 Perfectly Matched Layers (PML) are known to be unstable in a VTI media. They could however be used in conjunction with a taper to the model where the anisotropic parameters are vanishing (in a smooth way). The isotropic PML could then be applied as the medium is now isotropic at the border.
 
@@ -132,7 +131,7 @@ Parameters and Fields
 ---------------------
 
 Supported Parameters
-++++++++++++++++++++
+^^^^^^^^^^^^^^^^^^^^
 
 The following attributes are supported, for the Fletcher's equations:
 
@@ -145,8 +144,8 @@ And for the Zhang equations:
 
 .. _sec-vti-fields:
 
-Additional ``Fields``
-+++++++++++++++++++++
+Additional Input Parameters (Fields)
+^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
 
 The solvers use the exact same parameters as the isotropic one. The anisotropic parameters are implemented as GEOS ``Fields``. Another difference with isotropic solver is that the lateral and top/bottom surfaces must be properly defined. This is currently done using GEOS ``Fields``. 
 
@@ -415,7 +414,7 @@ The weak formulation for both solvers finally read as followm where the ABC para
 
 
 Weak formulation for ``AcousticVTIFletcherWavePropagationSEM``
-++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++
+^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
 
 .. math::
 
@@ -458,7 +457,7 @@ Weak formulation for ``AcousticVTIFletcherWavePropagationSEM``
 
 
 Weak formulation for ``AcousticVTIZhangWavePropagationSEM``
-+++++++++++++++++++++++++++++++++++++++++++++++++++++++++++
+^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
 
 
 .. math::
@@ -501,7 +500,7 @@ Generalized Stiffness Matrices
 ------------------------------
 
 General case
-++++++++++++
+^^^^^^^^^^^^
 
 
 In this section is explained how are computed the terms :math:`\vtiStiffxy` and :math:`\vtiStiffz` in equation :eq:` eq-vti-stiff` and actually how, in GEOS, are computed every general stiffness matrix :math:`\vtiStiff^{\mathbf{A}}` for a matrix :math:`\mathbf{A}`:
@@ -554,7 +553,7 @@ The only difference with the standard stiffness is thus the :math:`\vtiBbp` matr
 
 
 Case :math:`\mathbf{A}=\vtiAxy` or :math:`\mathbf{A}=\vtiAz`
-++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++
+^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
 
 These matrices, given by :eq:`eq-vti-AxyAz`, satisfy :math:`\mathbf{A}^T\mathbf{A}=\mathbf{A}`. Their associated matrices :math:`\vtiBbpxy` and :math:`\vtiBbpz` can be easily computed and are given by
 
