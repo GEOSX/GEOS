@@ -25,7 +25,7 @@ namespace geos
 
 void TableData::addRow( std::vector< TableData::CellData > const & row )
 {
-  m_rows.push_back( rows );
+  m_rows.push_back( row );
 }
 
 void TableData::addSeparator()
@@ -43,7 +43,6 @@ void TableData::addSeparator()
 void TableData::clear()
 {
   m_rows.clear();
-  m_errorsMsg.clear();
 }
 
 std::vector< std::vector< TableData::CellData > > const & TableData::getTableDataRows() const

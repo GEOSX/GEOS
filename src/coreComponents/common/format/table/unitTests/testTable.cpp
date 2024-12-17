@@ -428,7 +428,7 @@ TEST( testTable, testCellMerging )
   tableData.addRow( "Long product size", 54, 4564575, "long size value", 5454554512, 60 );
   tableData.addRow( "ProductA", 54, 4564575, "long size value", 5454554512, 60 );
   tableData.addSeparator();
-  tableData.addRow( "P1", "2002", CellType::MergeNext,  CellType::MergeNext, CellType::MergeNext, "1212121245452145454545" );
+  tableData.addRow( "P1", "2002", CellType::MergeNext, CellType::MergeNext, CellType::MergeNext, "1212121245452145454545" );
   tableData.addSeparator();
   tableData.addRow( "Alpha", 1001, 8, "Beta\nwater", "2002\n1.0", CellType::MergeNext );
 
