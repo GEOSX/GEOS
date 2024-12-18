@@ -542,7 +542,7 @@ void TableTextFormatter::adjustColumnWidth( CellLayoutRows & cells,
     {
       auto & currentCell = cells[idxRow][idxColumn];
 
-      if( currentCell.m_cellType != CellType::Hidden ||
+      if( currentCell.m_cellType != CellType::Hidden &&
           currentCell.m_cellType != CellType::Disabled )
       {
         size_t nextIdxColumn = idxColumn + 1;
