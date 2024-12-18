@@ -607,6 +607,16 @@ public:
                                     real64 const (&X)[4][3] );
 
   /**
+   * @brief computes the volume of a Hexahedra
+   * @param q The quadrature point index
+   * @param X Array containing the coordinates of the mesh support points.
+   * @return The diagonal mass term associated to q
+   */
+  GEOS_HOST_DEVICE
+  GEOS_FORCE_INLINE
+  static real64 computeVolumeHexahedra( real64 const (&X)[8][3] );
+
+  /**
    * @brief computes the matrix B, defined as J^{-T}J^{-1}/det(J), where J is the Jacobian matrix,
    *   at the given Gauss-Lobatto point.
    * @param qa The 1d quadrature point index in xi0 direction (0,1)
@@ -674,6 +684,30 @@ public:
                                       real64 const (&X)[8][3],
                                       FUNC && func );
 
+  template< typename FUNC >
+  GEOS_HOST_DEVICE
+  GEOS_FORCE_INLINE
+  static void computeMissingxyTerm( localIndex const q,
+                                    real64 const (&X)[8][3],
+                                    FUNC && func );
+
+
+  template< typename FUNC >
+  GEOS_HOST_DEVICE
+  GEOS_FORCE_INLINE
+  static void computeMissingzVolumeTerm( localIndex const q,
+                                         real64 const (&X)[8][3],
+                                         FUNC && func );
+
+  template< typename FUNC >
+  GEOS_HOST_DEVICE
+  GEOS_FORCE_INLINE
+  static void computeMissingzFluxTerm( localIndex const q3D,
+                                       localIndex const q2D,
+                                       real64 const (&X3D)[8][3],
+                                       real64 const (&X2D)[4][3],
+                                       real64 const (&N)[3],
+                                       FUNC && func );
   /**
    * @brief computes the matrix B in the case of quasi-stiffness (e.g. for pseudo-acoustic case), defined as J^{-T}A_z J^{-1}/det(J), where
    * J is the Jacobian matrix, and A_z is a zero matrix except on A_z(3,3) = 1.
@@ -726,6 +760,30 @@ public:
                           int const qc,
                           real64 const (&B)[6],
                           FUNC && func );
+
+
+  template< typename FUNC >
+  GEOS_HOST_DEVICE
+  GEOS_FORCE_INLINE
+  static void
+  computeGradPhiBGradzF( int const qa,
+                         int const qb,
+                         int const qc,
+                         real64 const (&B)[3][3],
+                         FUNC && func );
+
+  template< typename FUNC >
+  GEOS_HOST_DEVICE
+  GEOS_FORCE_INLINE
+  static void
+  computeFluxGradPhiBGradzF( int const q3Da,
+                             int const q3Db,
+                             int const q3Dc,
+                             int const qa,
+                             int const qb,
+                             real64 const (&N)[3],
+                             real64 const (&AzJmT)[3][3],
+                             FUNC && func );
 
   /**
    * @brief computes the non-zero contributions of the d.o.f. indexd by q to the
@@ -1312,6 +1370,236 @@ computeBxyMatrix( int const qa,
   B[4] = detJ*(Jinv[0][0]*Jinv[2][0] + Jinv[0][1]*Jinv[2][1]);
   B[5] = detJ*(Jinv[0][0]*Jinv[1][0] + Jinv[0][1]*Jinv[1][1]);
 }
+
+
+template< typename GL_BASIS >
+template< typename FUNC >
+GEOS_HOST_DEVICE
+GEOS_FORCE_INLINE
+void
+Qk_Hexahedron_Lagrange_GaussLobatto< GL_BASIS >::
+computeMissingxyTerm( localIndex const q,
+                      real64 const (&X)[8][3],
+                      FUNC && func )
+{
+  // TODO
+  //int qa, qb, qc;
+  //GL_BASIS::TensorProduct3D::multiIndex( q, qa, qb, qc );
+  //real64 B[6] = {0};
+  //real64 J[3][3] = {{0}};
+  //computeBMatrix( qa, qb, qc, X, J, B );
+  //computeGradPhiBGradPhi( qa, qb, qc, B, func );
+}
+
+template< typename GL_BASIS >
+template< typename FUNC >
+GEOS_HOST_DEVICE
+GEOS_FORCE_INLINE
+void
+Qk_Hexahedron_Lagrange_GaussLobatto< GL_BASIS >::
+computeMissingzVolumeTerm( localIndex const q,
+                           real64 const (&X)[8][3],
+                           FUNC && func )
+{
+  int qa, qb, qc;
+  GL_BASIS::TensorProduct3D::multiIndex( q, qa, qb, qc );
+  real64 J[3][3] = {{0}};
+  jacobianTransformation( qa, qb, qc, X, J );
+  real64 const detJ = LvArray::tensorOps::determinant< 3 >( J );
+  LvArray::tensorOps::transpose< 3 >( J ); // J <- J^T
+  LvArray::tensorOps::invert< 3 >( J ); // J <- J^-T
+  real64 AzInvJT[3][3] = {{0}}; // = det(J) * Az * J^-T
+  // compute Az * J{-T)
+  AzInvJT[2][0] = detJ * J[2][0];
+  AzInvJT[2][1] = detJ * J[2][1];
+  AzInvJT[2][2] = detJ * J[2][2];
+
+  computeGradPhiBGradzF( qa, qb, qc, AzInvJT, func );
+}
+
+
+template< typename GL_BASIS >
+template< typename FUNC >
+GEOS_HOST_DEVICE
+GEOS_FORCE_INLINE
+void
+Qk_Hexahedron_Lagrange_GaussLobatto< GL_BASIS >::
+computeGradPhiBGradzF( int const qa,
+                       int const qb,
+                       int const qc,
+                       real64 const (&AzInvJT)[3][3],
+                       FUNC && func )
+{
+  const real64 w = GL_BASIS::weight( qa )*GL_BASIS::weight( qb )*GL_BASIS::weight( qc );
+/*OLD (patch qui fonctionnait)
+   // Ceci fonctionnait mais dans le cas où je pouvais calculer (et donner en input) la dérivée en z de delta
+   // Je le garde pour archive :)
+   for( int j=0; j<num1dNodes; j++ )
+   {
+    const int i = GL_BASIS::TensorProduct3D::linearIndex( qa, qb, qc ); // i = control point q  =abc
+
+    const int jbc = GL_BASIS::TensorProduct3D::linearIndex( j, qb, qc );
+    const int ajc = GL_BASIS::TensorProduct3D::linearIndex( qa, j, qc );
+    const int abj = GL_BASIS::TensorProduct3D::linearIndex( qa, qb, j );
+    const real64 gja = basisGradientAt( j, qa );
+    const real64 gjb = basisGradientAt( j, qb );
+    const real64 gjc = basisGradientAt( j, qc );
+    // diagonal terms
+    const real64 w2 = w * gjc;
+    func( i, abj, w2 * AzInvJT[2][2] );  // to be multiply by "dz(f)/rho" in the element K (supposedly constant)
+    //Of diagonal terms
+    const real64 w4 = w * gja;
+    func( i, jbc, w4 * AzInvJT[2][0] );
+    const real64 w3 = w * gjb;
+    func( i, ajc, w3 * AzInvJT[2][1] );
+    END OLD
+   }
+ */
+// Nouvelle version où delta et epsilon sont Q1
+  ///////const int i = GL_BASIS::TensorProduct3D::linearIndex( qa, qb, qc ); // i = control point q  =abc
+  //1D Coord of the nodes
+  real64 xa = GL_BASIS::parentSupportCoord( qa );
+  real64 xb = GL_BASIS::parentSupportCoord( qb );
+  real64 xc = GL_BASIS::parentSupportCoord( qc );
+  for( int j=0; j<num1dNodes; j++ )
+  {
+    const int jbc = GL_BASIS::TensorProduct3D::linearIndex( j, qb, qc );
+    const int ajc = GL_BASIS::TensorProduct3D::linearIndex( qa, j, qc );
+    const int abj = GL_BASIS::TensorProduct3D::linearIndex( qa, qb, j );
+    const real64 gja = basisGradientAt( j, qa );
+    const real64 gjb = basisGradientAt( j, qb );
+    const real64 gjc = basisGradientAt( j, qc );
+
+    for( localIndex k=0; k < LagrangeBasis1::TensorProduct3D::numSupportPoints; k++ )
+    {
+      localIndex ik = meshIndexToLinearIndex3D( k ); // indices in Q_r
+      localIndex k1, k2, k3; // 1D indices: k1=0 or 1
+      GL_BASIS::TensorProduct3D::multiIndex( k, k1, k2, k3 ); // split k into each dimension
+      real64 dphik1, dphik2, dphik3, phik1, phik2, phik3 = 0;
+      dphik1 = LagrangeBasis1::gradientAt( k1, 0 ); // Second argument useless
+      dphik2 = LagrangeBasis1::gradientAt( k2, 0 ); // Second argument useless
+      dphik3 = LagrangeBasis1::gradientAt( k3, 0 ); // Second argument useless
+      if( k1 == 0 )
+        phik1 = LagrangeBasis1::value0( xa );
+      else
+        phik1 = LagrangeBasis1::value1( xa );
+      if( k2 == 0 )
+        phik2 = LagrangeBasis1::value0( xb );
+      else
+        phik2 = LagrangeBasis1::value1( xb );
+      if( k3 == 0 )
+        phik3 = LagrangeBasis1::value0( xc );
+      else
+        phik3 = LagrangeBasis1::value1( xc );
+
+      // diagonal terms
+      const real64 w0 = w * gja * dphik1 * phik2 * phik3;
+      func( ik, jbc, w0 * AzInvJT[0][0] );
+      const real64 w1 = w * gjb * phik1 * dphik2 * phik3;
+      func( ik, ajc, w1 * AzInvJT[1][1] );
+      const real64 w2 = w * gjc * phik1 * phik2 * dphik3;
+      func( ik, abj, w2 * AzInvJT[2][2] );
+      // off-diagonal terms
+      const real64 w3 = w * gjb * dphik1 * phik2 * phik3;
+      func( ik, ajc, w3 * AzInvJT[0][1] );
+      const real64 w4 = w * gjc * dphik1 * phik2 * phik3;
+      func( ik, abj, w4 * AzInvJT[0][2] );
+      const real64 w5 = w * gja * phik1 * dphik2 * phik3;
+      func( ik, jbc, w5 * AzInvJT[0][1] );
+      const real64 w6 = w * gjc * phik1 * dphik2 * phik3;
+      func( ik, abj, w6 * AzInvJT[1][2] );
+      const real64 w7 = w * gja * phik1 * phik2 * dphik3;
+      func( ik, jbc, w7 * AzInvJT[0][2] );
+      const real64 w8 = w * gjb * phik1 * phik2 * dphik3;
+      func( ik, ajc, w8 * AzInvJT[1][2] );
+    }
+  }
+}
+
+// With the "BIS" : compute the flux term instead (new version)
+template< typename GL_BASIS >
+template< typename FUNC >
+GEOS_HOST_DEVICE
+GEOS_FORCE_INLINE
+void
+Qk_Hexahedron_Lagrange_GaussLobatto< GL_BASIS >::
+computeMissingzFluxTerm( localIndex const q3D,
+                         localIndex const q2D,
+                         real64 const (&X3D)[8][3],
+                         real64 const (&X2D)[4][3],
+                         real64 const (&N)[3],
+                         FUNC && func )
+{
+  //Get local numbering in ref element
+  int q3Da, q3Db, q3Dc;
+  GL_BASIS::TensorProduct3D::multiIndex( q3D, q3Da, q3Db, q3Dc );
+  //Get local numbering in parametrized surface
+  int q2Da, q2Db;
+  GL_BASIS::TensorProduct2D::multiIndex( q2D, q2Da, q2Db );
+  // 2D Jacobian transformation
+  real64 J2D[3][2] = {{0}};
+  jacobianTransformation2d( q2Da, q2Db, X2D, J2D );
+  // compute J^T.J, using Voigt notation
+  real64 JtJ2D[3] = {0}; // J^T.J (Voigt notation)
+  JtJ2D[0] = J2D[0][0]*J2D[0][0]+J2D[1][0]*J2D[1][0]+J2D[2][0]*J2D[2][0];
+  JtJ2D[1] = J2D[0][1]*J2D[0][1]+J2D[1][1]*J2D[1][1]+J2D[2][1]*J2D[2][1];
+  JtJ2D[2] = J2D[0][0]*J2D[0][1]+J2D[1][0]*J2D[1][1]+J2D[2][0]*J2D[2][1];
+  real64 det2D= LvArray::tensorOps::symDeterminant< 2 >( JtJ2D );
+  real64 const sqrtDetJ2D = sqrt( LvArray::math::abs( det2D ) );
+  real64 sgnDet = det2D > 0 ? 1.:-1.; //Surface orientation preserved?
+  //Get 3D jacobian to compute the Trace of the Gradient properly
+  real64 J3D[3][3] = {{0}};
+  jacobianTransformation( q3Da, q3Db, q3Dc, X3D, J3D );
+  LvArray::tensorOps::transpose< 3 >( J3D ); // J3D <- Jacobian^T
+  LvArray::tensorOps::invert< 3 >( J3D ); // J3D <- Jacobian^{-T}
+  real64 Az[3][3] = {{0}};
+  Az[2][2] = sqrtDetJ2D;
+  real64 AzJmT[3][3] = {{0}};
+  LvArray::tensorOps::Rij_eq_AikBkj< 3, 3, 3 >( AzJmT, Az, J3D ); // AzJmT <- sqrtDetJ2D*Az * J^{-T}
+  real64 AzN[3]; // Normal vector
+  AzN[0] = 0;
+  AzN[1] = 0;
+  AzN[2] = N[2];
+  computeFluxGradPhiBGradzF( q3Da, q3Db, q3Dc, q2Da, q2Db, AzN, AzJmT, func );
+}
+
+
+template< typename GL_BASIS >
+template< typename FUNC >
+GEOS_HOST_DEVICE
+GEOS_FORCE_INLINE
+void
+Qk_Hexahedron_Lagrange_GaussLobatto< GL_BASIS >::
+computeFluxGradPhiBGradzF( int const q3Da,
+                           int const q3Db,
+                           int const q3Dc,
+                           int const q2Da,
+                           int const q2Db,
+                           real64 const (&AzN)[3],
+                           real64 const (&AzJmT)[3][3],
+                           FUNC && func )
+{
+  const real64 w = GL_BASIS::weight( q2Da )*GL_BASIS::weight( q2Db );
+  for( int j=0; j<num1dNodes; j++ )
+  {
+    const int i = GL_BASIS::TensorProduct3D::linearIndex( q3Da, q3Db, q3Dc );
+    const int jbc = GL_BASIS::TensorProduct3D::linearIndex( j, q3Db, q3Dc );
+    const int ajc = GL_BASIS::TensorProduct3D::linearIndex( q3Da, j, q3Dc );
+    const int abj = GL_BASIS::TensorProduct3D::linearIndex( q3Da, q3Db, j );
+    const real64 gja = basisGradientAt( j, q3Da );
+    const real64 gjb = basisGradientAt( j, q3Db );
+    const real64 gjc = basisGradientAt( j, q3Dc );
+    //Warning, points associated to jbc, ajc and abj MUST be on the surface
+    const real64 w1 = w * gja* (AzJmT[0][0]*AzN[0] + AzJmT[1][0]*AzN[1] + AzJmT[2][0]*AzN[2]);
+    func( i, jbc, w1 );
+    const real64 w2 = w * gjb* (AzJmT[0][1]*AzN[0] + AzJmT[1][1]*AzN[1] + AzJmT[2][1]*AzN[2]);
+    func( i, ajc, w2 );
+    const real64 w3 = w * gjc* (AzJmT[0][2]*AzN[0] + AzJmT[1][2]*AzN[1] + AzJmT[2][2]*AzN[2]);
+    func( i, abj, w3 );
+  }
+}
+
+
 
 template< typename GL_BASIS >
 template< typename FUNC >

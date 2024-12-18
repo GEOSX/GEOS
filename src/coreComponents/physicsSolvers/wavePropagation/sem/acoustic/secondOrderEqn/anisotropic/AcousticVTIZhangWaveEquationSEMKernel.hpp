@@ -115,6 +115,9 @@ public:
     m_density( elementSubRegion.template getField< geos::fields::acousticfields::AcousticDensity >() ),
     m_vti_epsilon( elementSubRegion.template getField< geos::fields::acousticvtifields::AcousticEpsilon >() ),
     m_vti_delta( elementSubRegion.template getField< geos::fields::acousticvtifields::AcousticDelta >() ),
+    m_vti_DofEpsilon( nodeManager.getField< geos::fields::acousticvtifields::AcousticDofEpsilon >() ),
+    m_vti_DofDelta( nodeManager.getField< geos::fields::acousticvtifields::AcousticDofDelta >() ),
+    m_vti_GradzDelta( elementSubRegion.template getField< geos::fields::acousticvtifields::AcousticGradzDelta >() ),
     m_dt( dt )
   {
     GEOS_UNUSED_VAR( edgeManager );
@@ -144,8 +147,10 @@ public:
     real32 stiffnessVectorLocal_p[ numNodesPerElem ]{};
     real32 stiffnessVectorLocal_q[ numNodesPerElem ]{};
     real32 invDensity;
-    real32 vti_epsi; // (1 + 2*epsilon)
-    real32 vti_sqrtDelta; // sqrt(1 + 2*delta)
+    //Debug
+    //    real32 vti_epsi; // (1 + 2*epsilon)
+    //    real32 vti_sqrtDelta; // sqrt(1 + 2*delta)
+    //End Debug
   };
   //***************************************************************************
 
@@ -160,6 +165,7 @@ public:
   void setup( localIndex const k,
               StackVariables & stack ) const
   {
+#if 0
     real32 epsi = std::fabs( m_vti_epsilon[k] );
     real32 delt = std::fabs( m_vti_delta[k] );
     if( std::fabs( epsi ) < 1e-5 )
@@ -170,6 +176,7 @@ public:
       delt = epsi;
     stack.vti_epsi = (1 + 2 * epsi);
     stack.vti_sqrtDelta = sqrt( 1 + 2 * delt );
+#endif
     stack.invDensity = 1./m_density[k];
     for( localIndex a=0; a< 8; a++ )
     {
@@ -211,25 +218,84 @@ public:
                               localIndex const q,
                               StackVariables & stack ) const
   {
-    // (A_xy nabla u)((A_xy nabla v)
+    // Pseudo Stiffness xy
     m_finiteElementSpace.template computeStiffnessxyTerm( q, stack.xLocal, [&] ( int i, int j, real64 val )
     {
-      real32 const localIncrement_p = -val * stack.invDensity * stack.vti_epsi * m_p_n[m_elemsToNodes( k, j )];
-      stack.stiffnessVectorLocal_p[i] += localIncrement_p;
+      real32 epsi = std::fabs( m_vti_DofEpsilon[m_elemsToNodes( k, q )] ); // value on control point
+      real32 delt = std::fabs( m_vti_DofDelta[m_elemsToNodes( k, q )] ); // value on control point
+      if( std::fabs( epsi ) < 1e-5 )
+        epsi = 0;
+      if( std::fabs( delt ) < 1e-5 )
+        delt = 0;
+      if( delt > epsi )
+        delt = epsi;
+      real32 vti_sqrtDelta = std::sqrt( 1 + 2 *delt );
 
-      real32 const localIncrement_q = -val * stack.invDensity * stack.vti_sqrtDelta * m_p_n[m_elemsToNodes( k, j )];
+      real32 const localIncrement_p = -val * stack.invDensity * (1 + 2 * epsi) * m_p_n[m_elemsToNodes( k, j )];
+      stack.stiffnessVectorLocal_p[i] += localIncrement_p;
+      real32 const localIncrement_q = -val * stack.invDensity * vti_sqrtDelta * m_p_n[m_elemsToNodes( k, j )];
       stack.stiffnessVectorLocal_q[i] += localIncrement_q;
     } );
 
-    // (A_z nabla u)((A_z nabla v)
+
+
+    // Pseudo-Stiffness z
+
     m_finiteElementSpace.template computeStiffnesszTerm( q, stack.xLocal, [&] ( int i, int j, real64 val )
     {
-      real32 const localIncrement_p = -val * stack.invDensity * stack.vti_sqrtDelta* m_q_n[m_elemsToNodes( k, j )];
+      real32 epsi = std::fabs( m_vti_DofEpsilon[m_elemsToNodes( k, q )] ); // value on control point
+      real32 delt = std::fabs( m_vti_DofDelta[m_elemsToNodes( k, q )] ); // value on control point
+      if( std::fabs( epsi ) < 1e-5 )
+        epsi = 0;
+      if( std::fabs( delt ) < 1e-5 )
+        delt = 0;
+      if( delt > epsi )
+        delt = epsi;
+      real32 vti_sqrtDelta = sqrt( 1 + 2 *delt );
+
+      real32 const localIncrement_p = -val * stack.invDensity * vti_sqrtDelta* m_q_n[m_elemsToNodes( k, j )];
       stack.stiffnessVectorLocal_p[i] += localIncrement_p;
 
       real32 const localIncrement_q = -val * stack.invDensity * m_q_n[m_elemsToNodes( k, j )];
       stack.stiffnessVectorLocal_q[i] += localIncrement_q;
     } );
+
+    // missing dz term
+/* OLD THAT WORKS   m_finiteElementSpace.template computeMissingzVolumeTerm( q, stack.xLocal, [&] ( int i, int j, real64 val )
+    {
+      real32 epsi = std::fabs( m_vti_epsilon[k]); // value on control point
+      real32 delt = std::fabs( m_vti_delta[k]); // value on control point
+      if( std::fabs( epsi ) < 1e-5 )
+        epsi = 0;
+      if( std::fabs( delt ) < 1e-5 )
+        delt = 0;
+      if( delt > epsi )
+        delt = epsi;
+      real32 vti_sqrtDelta = sqrt(1 + 2 *delt);
+      real32 GradzsqrtDelta = m_vti_GradzDelta[k]/vti_sqrtDelta;
+
+      real32 const localIncrement_p = -val * stack.invDensity * GradzsqrtDelta* m_q_n[m_elemsToNodes( k, j )];
+      stack.stiffnessVectorLocal_p[i] += localIncrement_p;
+    } );*/
+#if 0
+    m_finiteElementSpace.template computeMissingzVolumeTerm( q, stack.xLocal, [&] ( int iVertice, int j, real64 val )
+    {
+      //iVertice is the "Qr" index of the vertice in the element (so 0 < iVertice < (r+1)^3)
+      real32 epsi = std::fabs( m_vti_DofEpsilon[m_elemsToNodes( k, iVertice )] ); // value on k
+      real32 delt = std::fabs( m_vti_DofDelta[m_elemsToNodes( k, iVertice )] ); // value on
+      if( std::fabs( epsi ) < 1e-5 )
+        epsi = 0;
+      if( std::fabs( delt ) < 1e-5 )
+        delt = 0;
+      if( delt > epsi )
+        delt = epsi;
+      real32 vti_sqrtDelta = sqrt( 1 + 2 *delt );
+
+      real32 const localIncrement_p = -val * stack.invDensity * vti_sqrtDelta * m_q_n[m_elemsToNodes( k, j )];
+      stack.stiffnessVectorLocal_p[iVertice] += localIncrement_p;
+    } );
+#endif
+
   }
 
 protected:
@@ -251,11 +317,21 @@ protected:
   /// The array containing the medium density.
   arrayView1d< real32 const > const m_density;
 
+
   /// The array containing the epsilon Thomsen parameter.
   arrayView1d< real32 const > const m_vti_epsilon;
-
   /// The array containing the delta Thomsen parameter.
   arrayView1d< real32 const > const m_vti_delta;
+
+  /// The array containing the epsilon Thomsen parameter.
+  arrayView1d< real32 const > const m_vti_DofEpsilon;
+  /// The array containing the delta Thomsen parameter.
+  arrayView1d< real32 const > const m_vti_DofDelta;
+
+
+
+  /// dz delta.
+  arrayView1d< real32 const > const m_vti_GradzDelta;
 
   /// The time increment for this time integration step.
   real64 const m_dt;

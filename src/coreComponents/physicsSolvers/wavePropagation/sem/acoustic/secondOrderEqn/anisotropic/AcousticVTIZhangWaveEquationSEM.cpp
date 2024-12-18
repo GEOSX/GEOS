@@ -90,6 +90,11 @@ void AcousticVTIZhangWaveEquationSEM::registerDataOnMesh( Group & meshBodies )
                                acousticvtifields::DampingVector_qp,
                                acousticvtifields::StiffnessVector_p,
                                acousticvtifields::StiffnessVector_q,
+                               //Debug
+                               acousticvtifields::AcousticDofEpsilon,
+                               acousticvtifields::AcousticDofDelta,
+                               acousticvtifields::AcousticDofOrder,
+                               //end  debug
                                acousticvtifields::AcousticLateralSurfaceNodeIndicator,
                                acousticvtifields::AcousticBottomSurfaceNodeIndicator >( getName() );
 
@@ -114,6 +119,7 @@ void AcousticVTIZhangWaveEquationSEM::registerDataOnMesh( Group & meshBodies )
 
       subRegion.registerField< acousticvtifields::AcousticDelta >( getName() );
       subRegion.registerField< acousticvtifields::AcousticEpsilon >( getName() );
+      subRegion.registerField< acousticvtifields::AcousticGradzDelta >( getName() );
     } );
 
   } );
@@ -290,6 +296,15 @@ void AcousticVTIZhangWaveEquationSEM::initializePostInitialConditionsPreSubGroup
     damping_qp.zero();
     damping_qq.zero();
 
+    // Debug
+    arrayView1d< real32 > const dofEpsilon = nodeManager.getField< acousticvtifields::AcousticDofEpsilon >();
+    arrayView1d< real32 > const dofDelta   = nodeManager.getField< acousticvtifields::AcousticDofDelta >();
+    arrayView1d< real32 > const dofOrder   = nodeManager.getField< acousticvtifields::AcousticDofOrder >();
+    dofEpsilon.zero();
+    dofDelta.zero();
+    dofOrder.zero(); // number of Hexa countaining a dof
+    // End Debug
+
     /// get array of indicators: 1 if face is on the free surface; 0 otherwise
     arrayView1d< localIndex const > const freeSurfaceFaceIndicator = faceManager.getField< acousticfields::AcousticFreeSurfaceFaceIndicator >();
     arrayView1d< localIndex const > const lateralSurfaceFaceIndicator = faceManager.getField< acousticvtifields::AcousticLateralSurfaceFaceIndicator >();
@@ -310,6 +325,7 @@ void AcousticVTIZhangWaveEquationSEM::initializePostInitialConditionsPreSubGroup
       arrayView1d< real32 const > const density = elementSubRegion.getField< acousticfields::AcousticDensity >();
       arrayView1d< real32 const > const vti_epsilon = elementSubRegion.getField< acousticvtifields::AcousticEpsilon >();
       arrayView1d< real32 const > const vti_delta = elementSubRegion.getField< acousticvtifields::AcousticDelta >();
+      arrayView1d< real32 const > const vti_GradzDelta = elementSubRegion.getField< acousticvtifields::AcousticGradzDelta >();
 
       /// Partial gradient if gradient as to be computed
       arrayView1d< real32 > grad = elementSubRegion.getField< acousticfields::PartialGradient >();
@@ -319,6 +335,19 @@ void AcousticVTIZhangWaveEquationSEM::initializePostInitialConditionsPreSubGroup
       finiteElement::FiniteElementDispatchHandler< SEM_FE_TYPES >::dispatch3D( fe, [&] ( auto const finiteElement )
       {
         using FE_TYPE = TYPEOFREF( finiteElement );
+
+        // Debug
+        AcousticMatricesSEM::DofArrays< FE_TYPE > kernelDebug( finiteElement );
+        kernelDebug.template computeDofArrays< EXEC_POLICY, ATOMIC_POLICY >( elementSubRegion.size(),
+                                                                             nodeCoords,
+                                                                             elemsToNodes,
+                                                                             vti_epsilon,
+                                                                             vti_delta,
+                                                                             dofEpsilon,
+                                                                             dofDelta,
+                                                                             dofOrder );
+
+        // End Debug
 
         AcousticMatricesSEM::MassMatrix< FE_TYPE > kernelM( finiteElement );
         kernelM.template computeMassMatrix< EXEC_POLICY, ATOMIC_POLICY >( elementSubRegion.size(),
@@ -338,9 +367,9 @@ void AcousticVTIZhangWaveEquationSEM::initializePostInitialConditionsPreSubGroup
                                                                                        lateralSurfaceFaceIndicator,
                                                                                        bottomSurfaceFaceIndicator,
                                                                                        velocity,
-                                                                                       density,
-                                                                                       vti_epsilon,
-                                                                                       vti_delta,
+                                                                                       density,//Debug
+                                                                                       dofEpsilon,
+                                                                                       dofDelta,//End Debug
                                                                                        damping_pp,
                                                                                        damping_pq,
                                                                                        damping_qp,
