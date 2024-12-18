@@ -2978,6 +2978,7 @@ void SolidMechanicsMPM::triggerEvents( const real64 dt,
         // with consistent state variables would be good.  This won't work with anything hyperelastic and might cause
         // misbehavior if the initial stress state is inelastic or the material isn't in equlibrium with the BC.
         InitializeStressMPMEvent & initializeStress = dynamicCast< InitializeStressMPMEvent & >( event );
+        real64 initialMeanStress = -1.0*initializeStress.getPressure(); // negative in compression
 
         particleManager.forParticleRegions< ParticleRegion >( [&]( ParticleRegion & region )
         {
@@ -2988,6 +2989,23 @@ void SolidMechanicsMPM::triggerEvents( const real64 dt,
             {
               ParticleSubRegion & targetSubRegion = dynamicCast< ParticleSubRegion & >( *targetSubRegions[r] );
 
+              
+
+
+              SortedArrayView< localIndex const > const activeParticleIndices = targetSubRegion.activeParticleIndices();
+              arrayView2d< real64 > const particleStress = targetSubRegion.getField< fields::mpm::particleStress >();
+              forAll< serialPolicy >( activeParticleIndices.size(), [=] GEOS_HOST ( localIndex const pp )
+              {
+                localIndex const p = activeParticleIndices[pp];
+                particleStress[p][0] = initialMeanStress;
+                particleStress[p][1] = initialMeanStress;
+                particleStress[p][2] = initialMeanStress;
+                particleStress[p][3] = 0.;
+                particleStress[p][4] = 0.;
+                particleStress[p][5] = 0.;
+              });
+
+
               // Get constitutive model reference
               string const & solidMaterialName = targetSubRegion.template getReference< string >( viewKeyStruct::solidMaterialNamesString() );
               ContinuumBase & constitutiveModel = getConstitutiveModel< ContinuumBase >( targetSubRegion, solidMaterialName );
@@ -2995,7 +3013,7 @@ void SolidMechanicsMPM::triggerEvents( const real64 dt,
               GEOS_ERROR_IF( !constitutiveModel.hasWrapper( "oldStress" ), "Cannot InitializeStress for constitutive model that does not have oldStress wrapper!");
               arrayView3d< real64 > const constitutiveOldStress = constitutiveModel.getReference< array3d< real64 > >( "oldStress" );
 
-              real64 initialMeanStress = -1.0*initializeStress.getPressure(); // negative in compression
+              
                           
               // SortedArrayView< localIndex const > const activeParticleIndices = subRegion.activeParticleIndices();
               forAll< serialPolicy >( constitutiveOldStress.size(0), [=] GEOS_HOST ( localIndex const p )
@@ -6508,7 +6526,7 @@ void SolidMechanicsMPM::stressControl( real64 dt,
   // }
 
   // Uses maximum bulk modulus ( lowest effective PID gains ) of all materials
-  real64 maximumBulkModulus = 0.0;
+  real64 maximumBulkModulus = 1.0;
   particleManager.forParticleSubRegions( [&]( ParticleSubRegion & subRegion )
   {
     string const & solidMaterialName = subRegion.template getReference< string >( viewKeyStruct::solidMaterialNamesString() );

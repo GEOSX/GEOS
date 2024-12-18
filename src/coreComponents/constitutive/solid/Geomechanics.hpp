@@ -638,14 +638,6 @@ void GeomechanicsUpdates::smallStrainUpdateHelper( localIndex const k,
   oldPlasticStrain[4] *= 2.0;
   oldPlasticStrain[5] *= 2.0;
 
-  // Update effective elastic properties
-  m_bulkModulus[k] = m_b0 + m_b1;
-  m_shearModulus[k] = m_g0;
-  
-  // MH:TODO set wavespeed based on actual pressure-dependent bulk modulus, not the high-pressure limit.
-  // m_wavespeed[k][0] = sqrt( ( m_bulkModulus[k] + (4.0/3.0) * m_shearModulus[k] ) / m_density[k][0] );
-  m_wavespeed[k][0] = sqrt( ( m_b0 + m_b1 + (4.0/3.0) * m_g0 ) / m_density[k][q] );  //MH: should this be [0] or [q]?
-
   real64 characteristicLength = m_lengthScale[k];
   real64 oldZeta = 0.0;
   real64 oldCoher = 1.0 - m_damage[k][q];
@@ -655,6 +647,27 @@ void GeomechanicsUpdates::smallStrainUpdateHelper( localIndex const k,
   real64 newPorosity;
   real64 newStress[6] = {0.};
   real64 newPlasticStrain[6] = {0.};
+
+  computeElasticProperties( oldStress,
+                            oldPlasticStrain,
+		                        0.,
+		                        0.,
+		                        0.,             // Matrix bulk modulus
+		                        0,             // Fluid bulk modulus
+		                        0.,             // Term to simplify the fluid model expressions
+		                        0.,            // Zero fluid pressure vol. strain.  (will equal zero if pfi=0)
+		                        0.,			    // Initial porosity (inferred from crush curve, used for fluid model/
+		                        m_bulkModulus[k],
+		                        m_shearModulus[k] = m_g0
+  );
+
+    // // Update effective elastic properties
+    // m_bulkModulus[k] = m_b0 + m_b1;
+    // m_shearModulus[k] = m_g0;
+  
+  // MH:TODO set wavespeed based on actual pressure-dependent bulk modulus, not the high-pressure limit.
+  // m_wavespeed[k][0] = sqrt( ( m_bulkModulus[k] + (4.0/3.0) * m_shearModulus[k] ) / m_density[k][0] );
+  m_wavespeed[k][0] = sqrt( ( m_b0 + m_b1 + (4.0/3.0) * m_g0 ) / m_density[k][q] );  //MH: should this be [0] or [q]?
 
   int errorFlag = computeStep( D,               // strain "rate"
                timeIncrement,                     // time step (s)
@@ -1253,6 +1266,8 @@ void GeomechanicsUpdates::computeElasticProperties( real64 const ( &stress )[6],
     nu = std::min( std::max( nu, 0.5 ), 0.0  );
 		shear = 1.5 * bulk * ( 1.0 - 2.0 * nu ) / ( 1.0 + nu );
 	}
+
+  shear = fmax(shear, m_g0);
 }
 
 // [nsub] = computeStepDivisions(X,Zeta,ep,sigma_n,sigma_trial)
@@ -2872,6 +2887,7 @@ protected:
   real64 m_b2;
   real64 m_b3;
   real64 m_b4;
+
 
   // Tangent elastic shear modulus parameters
   real64 m_g0;
