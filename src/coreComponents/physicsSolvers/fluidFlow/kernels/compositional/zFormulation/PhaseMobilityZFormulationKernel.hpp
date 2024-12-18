@@ -120,7 +120,7 @@ public:
       real64 const viscosity = phaseVisc[ip];
       real64 const dVisc_dP = dPhaseVisc[ip][Deriv::dP];
       for( integer jc = 0; jc < numComp; ++jc )
-        dDens_dC[jc] = dPhaseVisc[ip][Deriv::dC+jc];
+        dVisc_dC[jc] = dPhaseVisc[ip][Deriv::dC+jc];
 
       real64 const relPerm = phaseRelPerm[ip];
       real64 dRelPerm_dP = 0.0;

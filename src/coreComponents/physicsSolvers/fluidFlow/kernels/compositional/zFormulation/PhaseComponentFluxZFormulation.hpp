@@ -50,7 +50,6 @@ struct PhaseComponentFluxZFormulation
    * @param sei arraySlice of the stencil-implied element index
    * @param phaseCompFrac phase component fraction
    * @param dPhaseCompFrac derivative of phase component fraction wrt pressure, temperature, component fraction
-   * @param dCompFrac_dCompDens derivative of component fraction wrt component density
    * @param phaseFlux phase flux
    * @param dPhaseFlux_dP derivative of phase flux wrt pressure
    * @param dPhaseFlux_dC derivative of phase flux wrt comp density
