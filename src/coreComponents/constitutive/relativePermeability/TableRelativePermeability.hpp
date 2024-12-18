@@ -344,7 +344,8 @@ TableRelativePermeability::KernelWrapper::
                      dPhaseRelPerm_dPhaseVolFrac );
   }
 
-  for( int dir= 0; dir < 3; ++dir )
+  // OV -- begin original lines
+  /*for( int dir= 0; dir < 3; ++dir )
   {
 
     // update trapped phase volume fraction
@@ -360,7 +361,32 @@ TableRelativePermeability::KernelWrapper::
     {
       phaseTrappedVolFrac[ipOil] = LvArray::math::min( phaseVolFraction[ipOil], m_phaseMinVolumeFraction[dir][ipOil] );
     }
-  }
+  }*/
+  // OV -- end original lines
+  // OV -- begin replacement 
+    // update trapped phase volume fraction
+    if( ipWater >= 0 )
+    {
+      //phaseTrappedVolFrac[ipWater] = LvArray::math::min( phaseVolFraction[ipWater], m_phaseMinVolumeFraction[dir][ipWater] );
+      phaseTrappedVolFrac[ipWater] = 0;
+        if (phaseRelPerm[ipWater][0]+phaseRelPerm[ipWater][1]+phaseRelPerm[ipWater][2] < 1e-6)
+          phaseTrappedVolFrac[ipWater] = phaseVolFraction[ipWater];
+    }
+    if( ipGas >= 0 )
+    {
+      //phaseTrappedVolFrac[ipGas] = LvArray::math::min( phaseVolFraction[ipGas], m_phaseMinVolumeFraction[dir][ipGas] );
+      phaseTrappedVolFrac[ipGas] = 0;
+      if (phaseRelPerm[ipGas][0] + phaseRelPerm[ipGas][1] + phaseRelPerm[ipGas][2] < 1e-6)
+        phaseTrappedVolFrac[ipGas] = phaseVolFraction[ipGas];
+    }
+    if( ipOil >= 0 )
+    {
+      //phaseTrappedVolFrac[ipOil] = LvArray::math::min( phaseVolFraction[ipOil], m_phaseMinVolumeFraction[dir][ipOil] );
+      phaseTrappedVolFrac[ipOil] = 0;
+      if (phaseRelPerm[ipOil][0] + phaseRelPerm[ipOil][1] + phaseRelPerm[ipOil][2] < 1e-6)
+        phaseTrappedVolFrac[ipOil] = phaseVolFraction[ipOil];
+    }
+  // OV -- end replacement
 
 }
 
