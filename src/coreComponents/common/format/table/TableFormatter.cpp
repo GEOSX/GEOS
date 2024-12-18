@@ -86,8 +86,7 @@ string TableCSVFormatter::dataToString( TableData const & tableData ) const
     {
       total_size += item.value.size();
     }
-    total_size += row.size() - 1;
-    total_size += 1;
+    total_size += row.size();
   }
 
   result.reserve( total_size );
@@ -185,7 +184,7 @@ void TableTextFormatter::initalizeTableLayout( TableLayout & tableLayout,
 
   updateColumnMaxLength( tableLayout, cellsHeaderLayout, cellsDataLayout );
 
-  calculateTableSeparators( tableLayout, cellsHeaderLayout, cellsDataLayout, separatorLine, nbVisibleColumn );
+  adjustTableWidth( tableLayout, cellsHeaderLayout, cellsDataLayout, separatorLine, nbVisibleColumn );
 }
 
 void TableTextFormatter::outputTable( TableLayout & tableLayout,
@@ -482,11 +481,11 @@ void TableTextFormatter::updateColumnMaxLength( TableLayout & tableLayout,
   }
 }
 
-void TableTextFormatter::calculateTableSeparators( TableLayout & tableLayout,
-                                                   CellLayoutRows & cellsHeaderLayout,
-                                                   CellLayoutRows & cellsDataLayout,
-                                                   string & separatorLine,
-                                                   size_t & nbVisibleColumn ) const
+void TableTextFormatter::adjustTableWidth( TableLayout & tableLayout,
+                                           CellLayoutRows & cellsHeaderLayout,
+                                           CellLayoutRows & cellsDataLayout,
+                                           string & separatorLine,
+                                           size_t & nbVisibleColumn ) const
 {
   std::string const tableTitle = std::string( tableLayout.getTitle() );
   size_t const margins = (size_t) tableLayout.getBorderMargin() * 2;
@@ -521,17 +520,17 @@ void TableTextFormatter::calculateTableSeparators( TableLayout & tableLayout,
   if( sectionlineLength < maxLength )
   {
     size_t const paddingCharacters = maxLength - sectionlineLength;
-    adjustTableWidth( cellsHeaderLayout, nbHiddenColumns, paddingCharacters );
-    adjustTableWidth( cellsDataLayout, nbHiddenColumns, paddingCharacters );
+    adjustColumnWidth( cellsHeaderLayout, nbHiddenColumns, paddingCharacters );
+    adjustColumnWidth( cellsDataLayout, nbHiddenColumns, paddingCharacters );
     sectionlineLength = maxLength;
   }
 
   separatorLine = GEOS_FMT( "{:-^{}}", m_horizontalLine, sectionlineLength );
 }
 
-void TableTextFormatter::adjustTableWidth( CellLayoutRows & cells,
-                                           size_t const nbHiddenColumns,
-                                           size_t const paddingCharacters ) const
+void TableTextFormatter::adjustColumnWidth( CellLayoutRows & cells,
+                                            size_t const nbHiddenColumns,
+                                            size_t const paddingCharacters ) const
 {
   size_t const numRows = cells.size();
   size_t const nbColumns = cells[0].size();

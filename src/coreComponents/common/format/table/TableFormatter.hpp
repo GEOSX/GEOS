@@ -223,11 +223,11 @@ private:
    * @param cellsDataLayout A reference to the collection of data cells that can be affected by column resizing.
    * @param separatorLine A string reference where the table separator line will be created
    */
-  void calculateTableSeparators( TableLayout & tableLayout,
-                                 CellLayoutRows & cellsHeaderLayout,
-                                 CellLayoutRows & cellsDataLayout,
-                                 string & separatorLine,
-                                 size_t & nbVisibleColumn ) const;
+  void adjustTableWidth( TableLayout & tableLayout,
+                         CellLayoutRows & cellsHeaderLayout,
+                         CellLayoutRows & cellsDataLayout,
+                         string & separatorLine,
+                         size_t & nbVisibleColumn ) const;
 
   /**
    * @brief Increases the size of columns to accommodate extra characters.
@@ -235,9 +235,9 @@ private:
    * @param nbHiddenColumns The total number of hidden columns in the table.
    * @param extraCharacters The total number of extra characters to be distributed across the columns.
    */
-  void adjustTableWidth( CellLayoutRows & cells,
-                         size_t nbHiddenColumns,
-                         size_t const paddingCharacters ) const;
+  void adjustColumnWidth( CellLayoutRows & cells,
+                          size_t nbHiddenColumns,
+                          size_t const paddingCharacters ) const;
 
   /**
    * @brief Output the title row in the table
