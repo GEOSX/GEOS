@@ -33,7 +33,7 @@ jobs:
     steps:      
     # The TPL tag is contained in the codespaces configuration to avoid duplications.
     - name: Checkout .devcontainer/devcontainer.json
-      uses: actions/checkout@v4.1.7
+      uses: actions/checkout@v4.2.2
       with:
         sparse-checkout: |
           .devcontainer/devcontainer.json

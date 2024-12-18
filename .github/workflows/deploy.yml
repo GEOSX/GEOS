@@ -10,7 +10,7 @@ jobs:
 
     steps:
       - name: Checkout Code
-        uses: actions/checkout@v4.1.7
+        uses: actions/checkout@v4.2.2
         with:
           submodules: false
           lfs: false
