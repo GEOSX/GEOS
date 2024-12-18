@@ -108,7 +108,6 @@ TEST( testTable, tableColumnParamClassic )
   tableData.addRow( "val1", "v", "[3.045,42.02,89.25]", 3.0, 10.0f, 3 );
 
   TableTextFormatter const tableText( tableLayout );
-  std::cout << tableText.toString( tableData )<< std::endl;
   EXPECT_EQ( tableText.toString( tableData ),
              "\n-------------------------------------------------------------------------------------------\n"
              "|  Cras egestas  |  CoordX  |           C           |   CoordZ    |   Prev    |   Next    |\n"
@@ -134,7 +133,7 @@ TEST( testTable, tableHiddenColumn )
       .setName( "CoordX" )
       .setValuesAlignment( TableLayout::Alignment::left )
       .setHeaderAlignment( TableLayout::Alignment::right )
-      .setVisibility( CellType::Hidden ),
+      .setVisibility( CellType::Disabled ),
     TableLayout::Column()
       .setName( "C" )
       .setValuesAlignment( TableLayout::Alignment::left )
@@ -145,10 +144,10 @@ TEST( testTable, tableHiddenColumn )
       .setHeaderAlignment( TableLayout::Alignment::left ),
     TableLayout::Column()
       .setName( "Prev\nelement" )
-      .setVisibility( CellType::Hidden ),
+      .setVisibility( CellType::Disabled ),
     TableLayout::Column()
       .setName( "Next\nelement" )
-      .setVisibility( CellType::Hidden )
+      .setVisibility( CellType::Disabled )
   } );
 
   TableData tableData;
@@ -349,7 +348,6 @@ TEST( testTable, variadicTest )
         .setName( "Elems" )
         .addSubColumns( {"Locales", "Ghost"} ),
     } );
-    std::cout << std::endl;
     TableData tableData;
     tableData.addRow( "min(local/total)", 1, 2, 3, 4, 5, 6, 7 );
     tableData.addRow( "min(local/total)", 1, 2, 3, 4, 5, 6, 7 );
@@ -372,7 +370,7 @@ TEST( testTable, variadicTest )
 TEST( testTable, testLineBreak )
 {
   TableLayout tableLayout( {"Cras egestas", "CoordX", "C", "CoordZ", "Prev\nelement", "Next\nelement"} );
-  tableLayout.setTitle( "title" ).setMargin( TableLayout::MarginValue::tiny ).disableLineBreak();
+  tableLayout.setTitle( "title" ).setMargin( TableLayout::MarginValue::tiny ).disableLineBreak( false );
 
   TableData tableData;
   tableData.addRow( "1", "2", "3.0", 3.0129877, 2.0f, 1 );

@@ -47,9 +47,9 @@ TableLayout & TableLayout::setTitle( string_view title )
   return *this;
 }
 
-TableLayout & TableLayout::disableLineBreak()
+TableLayout & TableLayout::disableLineBreak( bool value )
 {
-  m_wrapLine = false;
+  m_wrapLine = value;
   return *this;
 }
 

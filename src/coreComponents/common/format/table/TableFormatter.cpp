@@ -41,10 +41,10 @@ TableCSVFormatter::TableCSVFormatter( TableLayout const & tableLayout ):
   m_tableLayout = tableLayout;
 }
 
+static constexpr string_view separator = ",";
 string TableCSVFormatter::headerToString() const
 {
   string result;
-  static constexpr string_view separator = ",";
 
   size_t total_size = 0;
   for( const auto & column : m_tableLayout.getColumns())
@@ -53,7 +53,7 @@ string TableCSVFormatter::headerToString() const
     {
       total_size += str.size();
     }
-    total_size += 1;
+    total_size += separator.size();
   }
   result.reserve( total_size );
 
@@ -140,16 +140,8 @@ TableTextFormatter::TableTextFormatter( TableLayout const & tableLayout ):
 
 string TableTextFormatter::toString() const
 {
-  std::ostringstream tableOutput;
   TableData tableData;
-  CellLayoutRows cellsHeaderLayout;
-  CellLayoutRows cellsDataLayout;
-  string separatorLine;
-
-  TableLayout tableLayout = m_tableLayout;
-  initalizeTableLayout( tableLayout, tableData, cellsHeaderLayout, cellsDataLayout, separatorLine );
-  outputTable( tableLayout, tableOutput, cellsHeaderLayout, cellsDataLayout, separatorLine );
-  return tableOutput.str();
+  return toString( tableData );
 }
 
 template<>
@@ -161,12 +153,16 @@ string TableTextFormatter::toString< TableData >( TableData const & tableData ) 
   string separatorLine;
 
   TableLayout tableLayout = m_tableLayout;
+  size_t nbVisibleColumn = 0;
+
   initalizeTableLayout( tableLayout, tableData,
                         cellsHeaderLayout, cellsDataLayout,
-                        separatorLine );
+                        separatorLine,
+                        nbVisibleColumn );
   outputTable( tableLayout, tableOutput,
                cellsHeaderLayout, cellsDataLayout,
-               separatorLine );
+               separatorLine,
+               nbVisibleColumn );
   return tableOutput.str();
 }
 
@@ -174,7 +170,8 @@ void TableTextFormatter::initalizeTableLayout( TableLayout & tableLayout,
                                                TableData const & tableData,
                                                CellLayoutRows & cellsHeaderLayout,
                                                CellLayoutRows & cellsDataLayout,
-                                               string & separatorLine ) const
+                                               string & separatorLine,
+                                               size_t & nbVisibleColumn ) const
 {
   setLinks( tableLayout.getColumns()  );
 
@@ -188,14 +185,15 @@ void TableTextFormatter::initalizeTableLayout( TableLayout & tableLayout,
 
   updateColumnMaxLength( tableLayout, cellsHeaderLayout, cellsDataLayout );
 
-  calculateTableSeparators( tableLayout, cellsHeaderLayout, cellsDataLayout, separatorLine );
+  calculateTableSeparators( tableLayout, cellsHeaderLayout, cellsDataLayout, separatorLine, nbVisibleColumn );
 }
 
 void TableTextFormatter::outputTable( TableLayout & tableLayout,
                                       std::ostringstream & tableOutput,
                                       CellLayoutRows const & cellsHeader,
                                       CellLayoutRows const & cellsData,
-                                      string_view separatorLine ) const
+                                      string_view separatorLine,
+                                      size_t & nbVisibleColumn ) const
 {
   if( tableLayout.isLineBreakEnabled())
   {
@@ -204,9 +202,9 @@ void TableTextFormatter::outputTable( TableLayout & tableLayout,
   outputTitleRow( tableLayout, tableOutput, separatorLine );
   tableOutput << GEOS_FMT( "{}\n", separatorLine );
   outputLines( tableLayout, cellsHeader, tableOutput, tableLayout.getSublineInHeaderCounts(),
-               CellType::Header, separatorLine );
+               CellType::Header, separatorLine, nbVisibleColumn );
   outputLines( tableLayout, cellsData, tableOutput, tableLayout.getNbSubDataLines(),
-               CellType::Value, separatorLine );
+               CellType::Value, separatorLine, nbVisibleColumn );
   if( tableLayout.isLineBreakEnabled())
   {
     tableOutput << '\n';
@@ -327,7 +325,8 @@ void TableTextFormatter::populateDataCellsLayout( TableLayout & tableLayout,
                                                   cellAlignement.headerAlignment :
                                                   cellAlignement.valueAlignment;
 
-        if( it->m_header.m_cellType == CellType::Hidden )
+        if( it->m_header.m_cellType == CellType::Hidden ||
+            it->m_header.m_cellType == CellType::Disabled )
         {
           cell.type = it->m_header.m_cellType;
         }
@@ -335,6 +334,7 @@ void TableTextFormatter::populateDataCellsLayout( TableLayout & tableLayout,
         {
           cell.value = m_horizontalLine;
         }
+
         cellsDataLayout[idxRow][idxColumn] = TableLayout::CellLayout( cell.type, cell.value, alignement );
         maxLinesPerRow  = std::max( maxLinesPerRow, cellsDataLayout[idxRow][idxColumn].m_lines.size() );
         idxColumn++;
@@ -485,7 +485,8 @@ void TableTextFormatter::updateColumnMaxLength( TableLayout & tableLayout,
 void TableTextFormatter::calculateTableSeparators( TableLayout & tableLayout,
                                                    CellLayoutRows & cellsHeaderLayout,
                                                    CellLayoutRows & cellsDataLayout,
-                                                   string & separatorLine ) const
+                                                   string & separatorLine,
+                                                   size_t & nbVisibleColumn ) const
 {
   std::string const tableTitle = std::string( tableLayout.getTitle() );
   size_t const margins = (size_t) tableLayout.getBorderMargin() * 2;
@@ -497,11 +498,15 @@ void TableTextFormatter::calculateTableSeparators( TableLayout & tableLayout,
 
   for( auto const & column : cellsHeaderLayout[0] )
   {
-    if( column.m_cellType == CellType::Hidden )
+    if( column.m_cellType == CellType::Hidden ||  column.m_cellType == CellType::Disabled )
     {
       nbHiddenColumns++;
     }
-    if( column.m_cellType != CellType::Hidden && column.m_cellType != CellType::MergeNext )
+    if( column.m_cellType != CellType::Disabled )
+    {
+      nbVisibleColumn++;
+    }
+    if( column.m_cellType != CellType::Hidden &&  column.m_cellType != CellType::Disabled && column.m_cellType != CellType::MergeNext )
     {
       sectionlineLength += column.m_cellWidth;
       nbColumns++;
@@ -516,34 +521,35 @@ void TableTextFormatter::calculateTableSeparators( TableLayout & tableLayout,
   if( sectionlineLength < maxLength )
   {
     size_t const paddingCharacters = maxLength - sectionlineLength;
-    adjustColumnWidths( cellsHeaderLayout, nbHiddenColumns, paddingCharacters );
-    adjustColumnWidths( cellsDataLayout, nbHiddenColumns, paddingCharacters );
+    adjustTableWidth( cellsHeaderLayout, nbHiddenColumns, paddingCharacters );
+    adjustTableWidth( cellsDataLayout, nbHiddenColumns, paddingCharacters );
     sectionlineLength = maxLength;
   }
 
   separatorLine = GEOS_FMT( "{:-^{}}", m_horizontalLine, sectionlineLength );
 }
 
-void TableTextFormatter::adjustColumnWidths( CellLayoutRows & cells,
-                                             size_t nbHiddenColumns,
-                                             size_t const paddingCharacters ) const
+void TableTextFormatter::adjustTableWidth( CellLayoutRows & cells,
+                                           size_t const nbHiddenColumns,
+                                           size_t const paddingCharacters ) const
 {
   size_t const numRows = cells.size();
   size_t const nbColumns = cells[0].size();
-
   size_t remainingPaddingForLastColumn = paddingCharacters % (nbColumns - nbHiddenColumns);
-  size_t paddingPerColumn = std::floor( paddingCharacters / (nbColumns - nbHiddenColumns));
+  size_t paddingPerColumn = paddingCharacters / (nbColumns - nbHiddenColumns);
   for( size_t idxRow = 0; idxRow < numRows; ++idxRow )
   {
     for( size_t idxColumn = 0; idxColumn < nbColumns; ++idxColumn )
     {
       auto & currentCell = cells[idxRow][idxColumn];
 
-      if( currentCell.m_cellType != CellType::Hidden )
+      if( currentCell.m_cellType != CellType::Hidden ||
+          currentCell.m_cellType != CellType::Disabled )
       {
         size_t nextIdxColumn = idxColumn + 1;
-
-        while( nextIdxColumn < nbColumns && cells[idxRow][nextIdxColumn].m_cellType == CellType::Hidden )
+        while( nextIdxColumn < nbColumns &&
+               ( cells[idxRow][nextIdxColumn].m_cellType == CellType::Hidden ||
+                 cells[idxRow][nextIdxColumn].m_cellType == CellType::Disabled ) )
         {
           nextIdxColumn++;
         }
@@ -599,60 +605,80 @@ void TableTextFormatter::outputLines( TableLayout & tableLayout,
                                       std::ostringstream & tableOutput,
                                       std::vector< size_t > const & nbLinesRow,
                                       CellType sectionType,
-                                      string_view separatorLine ) const
+                                      string_view separatorLine,
+                                      size_t & nbVisibleColumn ) const
 {
   size_t idxLine = 0;
-  for( auto const & line : cellsLayout )
+  for( auto const & row : cellsLayout )
   {
-
     for( size_t idxSubLine = 0; idxSubLine < nbLinesRow[idxLine]; idxSubLine++ )
     {
-      for( auto const & cell : line )
+      size_t idxColumn = 0;
+      size_t nbVisibleColumnTemp = nbVisibleColumn;
+      while( nbVisibleColumnTemp > 0 )
       {
-
-        if( &cell == &(line.front()) && cell.m_cellType != CellType::Separator )
+        auto & cell = row[idxColumn];
+        switch( cell.m_cellType )
         {
-          tableOutput << GEOS_FMT( "{:<{}}", m_verticalLine, tableLayout.getBorderMargin() + 1 );
-        }
+          case CellType::Value:
+          case CellType::Header:
+            if( &cell == &(row.front()) )
+            {
+              tableOutput << GEOS_FMT( "{:<{}}", m_verticalLine, tableLayout.getBorderMargin() + 1 );
+            }
 
-        if( cell.m_cellType != CellType::Hidden && cell.m_cellType != CellType::MergeNext )
-        {
-          formatCell( tableLayout, tableOutput, cell, idxSubLine );
-        }
+            formatCell( tableLayout, tableOutput, cell, idxSubLine );
 
-        if( cell.m_cellType == CellType::MergeNext && (&cell == &(line.back())))
-        {
-          formatCell( tableLayout, tableOutput, cell, idxSubLine );
-          tableOutput << GEOS_FMT( "{:>{}}", m_verticalLine, tableLayout.getBorderMargin() + 1 );
+            if( &cell == &(row.back()) || nbVisibleColumnTemp == 1 )
+            {
+              tableOutput << GEOS_FMT( "{:>{}}", m_verticalLine, tableLayout.getBorderMargin() + 1 );
+            }
+            else
+            {
+              tableOutput << GEOS_FMT( "{:^{}}", m_verticalLine, tableLayout.getColumnMargin());
+            }
+            nbVisibleColumnTemp--;
+            break;
+          case CellType::MergeNext:
+            if( &cell == &(row.front()) )
+            {
+              tableOutput << GEOS_FMT( "{:<{}}", m_verticalLine, tableLayout.getBorderMargin() + 1 );
+            }
+            if( &cell == &(row.back()) )
+            {
+              formatCell( tableLayout, tableOutput, cell, idxSubLine );
+              tableOutput << GEOS_FMT( "{:>{}}", m_verticalLine, tableLayout.getBorderMargin() + 1 );
+            }
+            nbVisibleColumnTemp--;
+            break;
+          case CellType::Separator:
+            formatCell( tableLayout, tableOutput, cell, idxSubLine );
+            nbVisibleColumnTemp--;
+            break;
+          case CellType::Disabled:
+            if( &cell == &(row.back()) )
+            {
+              tableOutput << GEOS_FMT( "{:>{}}", m_verticalLine, tableLayout.getBorderMargin() + 1 );
+            }
+          default:
+            break;
         }
-
-        if( cell.m_cellType  == CellType::Header || cell.m_cellType  == CellType::Value )
-        {
-          if( &cell == &(line.back()) )
-          {
-            tableOutput << GEOS_FMT( "{:>{}}", m_verticalLine, tableLayout.getBorderMargin() + 1 );
-          }
-          else
-          {
-            tableOutput << GEOS_FMT( "{:^{}}", m_verticalLine, tableLayout.getColumnMargin());
-          }
-        }
-
+        idxColumn++;
       }
-      tableOutput <<std::endl;
-    }
 
+      tableOutput <<std::endl;
+
+    }
     if( sectionType == CellType::Header )
     {
       tableOutput << GEOS_FMT( "{}\n", separatorLine );
     }
     idxLine++;
-  }
 
+  }
   if( sectionType == CellType::Value && !cellsLayout.empty())
   {
     tableOutput << separatorLine;
   }
-
 }
 }

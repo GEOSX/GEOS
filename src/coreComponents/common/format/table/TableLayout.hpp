@@ -339,6 +339,17 @@ public:
     size_t getCurrentLayer() const
     { return m_currentLayer; }
 
+    bool isLastColumn()
+    {
+      if( m_currentColumn == nullptr ) return true;
+      Column * tempColumn = m_currentColumn;
+      while( tempColumn->getParent() )
+      {
+        tempColumn = tempColumn->getParent();
+      }
+      return tempColumn->getNextCell() == nullptr;
+    }
+
 private:
     /// Pointer to the current column
     ColumnType * m_currentColumn;
@@ -463,9 +474,10 @@ private:
 
   /**
    * @brief Remove the return line at the end & begenning of the table
+   * @param value Value to desactivate or not wrapLine at the end
    * @return The tableLayout reference
    */
-  TableLayout & disableLineBreak();
+  TableLayout & disableLineBreak( bool value );
 
   /**
    * @brief Set the minimal margin width between cell content and borders.

@@ -160,7 +160,8 @@ private:
                              TableData const & tableData,
                              CellLayoutRows & cellsDataLayout,
                              CellLayoutRows & cellsHeaderLayout,
-                             string & separatorLine ) const;
+                             string & separatorLine,
+                             size_t & nbVisibleColumn ) const;
 /**
  * @brief Outputs the formatted table to the provided output stream.
  * @param tableLayout The layout of the table
@@ -173,7 +174,8 @@ private:
                     std::ostringstream & tableOutput,
                     CellLayoutRows const & cellsHeader,
                     CellLayoutRows const & cellsData,
-                    string_view separatorLine ) const;
+                    string_view separatorLine,
+                    size_t & nbVisibleColumn ) const;
 
   /**
    * @brief Sets parent-child relationships between columns and sub-columns.
@@ -224,7 +226,8 @@ private:
   void calculateTableSeparators( TableLayout & tableLayout,
                                  CellLayoutRows & cellsHeaderLayout,
                                  CellLayoutRows & cellsDataLayout,
-                                 string & separatorLine ) const;
+                                 string & separatorLine,
+                                 size_t & nbVisibleColumn ) const;
 
   /**
    * @brief Increases the size of columns to accommodate extra characters.
@@ -232,9 +235,9 @@ private:
    * @param nbHiddenColumns The total number of hidden columns in the table.
    * @param extraCharacters The total number of extra characters to be distributed across the columns.
    */
-  void adjustColumnWidths( CellLayoutRows & cells,
-                           size_t nbHiddenColumns,
-                           size_t const paddingCharacters ) const;
+  void adjustTableWidth( CellLayoutRows & cells,
+                         size_t nbHiddenColumns,
+                         size_t const paddingCharacters ) const;
 
   /**
    * @brief Output the title row in the table
@@ -272,7 +275,8 @@ private:
                     std::ostringstream & tableOutput,
                     std::vector< size_t > const & nbLinesRow,
                     CellType sectionType,
-                    string_view separatorLine ) const;
+                    string_view separatorLine,
+                    size_t & nbVisibleColumn ) const;
 };
 
 /**

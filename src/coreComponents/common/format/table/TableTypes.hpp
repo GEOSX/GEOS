@@ -35,7 +35,8 @@ enum class CellType : integer
   Value,
   Separator,
   MergeNext,
-  Hidden
+  Hidden,
+  Disabled
 };
 
 }
