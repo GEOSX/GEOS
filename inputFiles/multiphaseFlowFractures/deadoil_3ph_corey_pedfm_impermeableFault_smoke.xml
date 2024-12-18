@@ -28,7 +28,7 @@
     <EmbeddedSurfaceGenerator
       name="SurfaceGenerator"
       logLevel="1"
-      discretization="fluidTPFA"
+      discretization="FE1"
       targetRegions="{ Domain, Fracture }"
       targetObjects="{ FracturePlane }"
       fractureRegion="Fracture"
@@ -98,12 +98,17 @@
         name="fluidTPFA"
         usePEDFM="1"/>
     </FiniteVolume>
+    <FiniteElements>
+    <FiniteElementSpace
+        name="FE1"
+        order="1"/>
+    </FiniteElements>
   </NumericalMethods>
 
   <ElementRegions>
     <CellElementRegion
       name="Domain"
-      cellBlocks="{ block1 }"
+      cellBlocks="{ * }"
       materialList="{ fluid1, rock, relperm }"/>
 
     <SurfaceElementRegion

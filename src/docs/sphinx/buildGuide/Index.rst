@@ -18,3 +18,5 @@ Welcome to the GEOS build guide.
    SpackUberenv
 
    ContinuousIntegration
+
+   AppleMacOS

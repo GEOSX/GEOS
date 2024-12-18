@@ -7,8 +7,7 @@
 #
 ###############################################################################
 
-set( GEOSX_BUILD_SHARED_LIBS ON CACHE BOOL "" )
-set( GEOSX_BUILD_OBJ_LIBS OFF CACHE BOOL "" )
+set( GEOS_BUILD_OBJ_LIBS OFF CACHE BOOL "" )
 # Fortran
 set(ENABLE_FORTRAN OFF CACHE BOOL "")
 
@@ -31,19 +30,19 @@ set(ENABLE_CUDA_NVTOOLSEXT OFF CACHE BOOL "")
 
 # ESSL
 set(ENABLE_ESSL ON CACHE BOOL "" FORCE )
-set(ESSL_INCLUDE_DIRS /usr/tcetmp/packages/essl/essl-6.3.0.2/include CACHE STRING "" FORCE )
-set(ESSL_LIBRARIES /usr/tcetmp/packages/essl/essl-6.3.0.2/lib64/libesslsmpcuda.so
+set(ESSL_DIR /usr/tcetmp/packages/essl/essl-6.3.0.2 CACHE STRING "" FORCE )
+set(ESSL_INCLUDE_DIRS ${ESSL_DIR}/include CACHE STRING "" FORCE )
+set(ESSL_LIBRARIES ${ESSL_DIR}/lib64/libesslsmpcuda.so
                    ${CUDA_TOOLKIT_ROOT_DIR}/lib64/libcublas.so
                    ${CUDA_TOOLKIT_ROOT_DIR}/lib64/libcublasLt.so
                    ${CUDA_TOOLKIT_ROOT_DIR}/lib64/libcudart.so
-                   /usr/tcetmp/packages/essl/essl-6.3.0.2/lib64/liblapackforessl.so
-                   /usr/tcetmp/packages/essl/essl-6.3.0.2/lib64/liblapackforessl_.so
+                   ${ESSL_DIR}/lib64/liblapackforessl.so
+                   ${ESSL_DIR}/lib64/liblapackforessl_.so
                    CACHE PATH "" FORCE )
-                   
+
 # TPL
 set(ENABLE_PAPI OFF CACHE BOOL "")
 set(SILO_BUILD_TYPE powerpc64-unknown-linux-gnu CACHE STRING "")
-set(ENABLE_FESAPI OFF CACHE BOOL "" FORCE)
 
 # GEOSX specific options
 set(ENABLE_PVTPackage ON CACHE BOOL "")
@@ -54,7 +53,7 @@ if( ${ENABLE_HYPRE_DEVICE} STREQUAL "HIP" OR ${ENABLE_HYPRE_DEVICE} STREQUAL "CU
     set(ENABLE_TRILINOS OFF CACHE BOOL "" FORCE )
 else()
     set(ENABLE_HYPRE OFF CACHE BOOL "" FORCE )
-    set(GEOSX_LA_INTERFACE "Trilinos" CACHE STRING "" FORCE )
+    set(GEOS_LA_INTERFACE "Trilinos" CACHE STRING "" FORCE )
 endif()
 
 # Documentation

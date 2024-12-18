@@ -12,42 +12,26 @@
       name="poroSolver"
       targetRegions="{ RockMatrix, Fracture }"
       initialDt="1e-3"
-      LagrangianContactSolverName="fractureMechSolver"
-      poromechanicsSolverName="singlePhasePoromechanicsSolver"
+      flowSolverName="flowSolver"
+      solidSolverName="fractureMechSolver"
       logLevel="1"
       isThermal="1">
       <NonlinearSolverParameters
         newtonTol="1.0e-5"
-        newtonMaxIter="10"
+        newtonMaxIter="20"
         maxTimeStepCuts="4"/>
       <LinearSolverParameters
         directParallel="0"
         solverType="direct"/>
     </SinglePhasePoromechanicsConformingFractures>
 
-    <SinglePhasePoromechanics
-      name="singlePhasePoromechanicsSolver"
-      solidSolverName="matrixMechSolver"
-      flowSolverName="flowSolver"
-      logLevel="1"
-      isThermal="1"
-      targetRegions="{ RockMatrix, Fracture }"/>
-
-    <LagrangianContact
+    <SolidMechanicsLagrangeContact
       name="fractureMechSolver"
-      solidSolverName="matrixMechSolver"
+      timeIntegrationOption="QuasiStatic"
       stabilizationName="singlePhaseTPFA_stab"
       logLevel="1"
       targetRegions="{ RockMatrix, Fracture }"
-      fractureRegionName="Fracture"
-      discretization="FE1"
-      contactRelationName="fractureContact"/>
-
-    <SolidMechanicsLagrangianSSLE
-      name="matrixMechSolver"
-      timeIntegrationOption="QuasiStatic"
-      discretization="FE1"
-      targetRegions="{ RockMatrix }"/>
+      discretization="FE1"/>
 
     <SinglePhaseFVM
       name="flowSolver"
@@ -85,13 +69,13 @@
   <ElementRegions>
     <CellElementRegion
       name="RockMatrix"
-      cellBlocks="{ cb1 }"
+      cellBlocks="{ * }"
       materialList="{ porousRock, water, thermalCond }"/>
 
     <SurfaceElementRegion
       name="Fracture"
-      materialList="{ water, fractureFilling, fractureContact, thermalCond }"
-      defaultAperture="5.e-3"/>
+      materialList="{ water, fractureFilling, fractureContact, thermalCond, hApertureModel }"
+      defaultAperture="1.e-4"/>
   </ElementRegions>
 
   <FieldSpecifications>

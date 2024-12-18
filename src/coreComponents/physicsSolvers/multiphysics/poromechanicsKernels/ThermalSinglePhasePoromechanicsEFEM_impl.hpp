@@ -2,10 +2,11 @@
  * ------------------------------------------------------------------------------------------------------------
  * SPDX-License-Identifier: LGPL-2.1-only
  *
- * Copyright (c) 2018-2020 Lawrence Livermore National Security LLC
- * Copyright (c) 2018-2020 The Board of Trustees of the Leland Stanford Junior University
- * Copyright (c) 2018-2020 TotalEnergies
- * Copyright (c) 2019-     GEOSX Contributors
+ * Copyright (c) 2016-2024 Lawrence Livermore National Security LLC
+ * Copyright (c) 2018-2024 TotalEnergies
+ * Copyright (c) 2018-2024 The Board of Trustees of the Leland Stanford Junior University
+ * Copyright (c) 2023-2024 Chevron
+ * Copyright (c) 2019-     GEOS/GEOSX Contributors
  * All rights reserved
  *
  * See top level LICENSE, COPYRIGHT, CONTRIBUTORS, NOTICE, and ACKNOWLEDGEMENTS files for details.
@@ -45,6 +46,7 @@ ThermalSinglePhasePoromechanicsEFEM( NodeManager const & nodeManager,
                                      globalIndex const rankOffset,
                                      CRSMatrixView< real64, globalIndex const > const inputMatrix,
                                      arrayView1d< real64 > const inputRhs,
+                                     real64 const inputDt,
                                      real64 const (&inputGravityVector)[3],
                                      string const fluidModelKey ):
   Base( nodeManager,
@@ -61,6 +63,7 @@ ThermalSinglePhasePoromechanicsEFEM( NodeManager const & nodeManager,
         rankOffset,
         inputMatrix,
         inputRhs,
+        inputDt,
         inputGravityVector,
         fluidModelKey ),
   m_dFluidDensity_dTemperature( embeddedSurfSubRegion.template getConstitutiveModel< constitutive::SingleFluidBase >( elementSubRegion.template getReference< string >(
@@ -121,7 +124,9 @@ quadraturePointKernel( localIndex const k,
                                                   real64 const detJ )
   {
     real64 KwTm_gauss[3]{};
-    real64 const thermalExpansionCoefficient = 1.0; /// TODO: should not be hardcoded.
+    real64 thermalExpansionCoefficient{};
+
+    m_constitutiveUpdate.getThermalExpansionCoefficient( k, thermalExpansionCoefficient );
 
     // assemble KwTmLocal
     LvArray::tensorOps::fill< 3 >( KwTm_gauss, 0 );
@@ -131,7 +136,7 @@ quadraturePointKernel( localIndex const k,
       KwTm_gauss[1] += eqMatrix[1][i];
       KwTm_gauss[2] += eqMatrix[2][i];
     }
-    LvArray::tensorOps::scaledAdd< 3 >( stack.localKwTm, KwTm_gauss, detJ*thermalExpansionCoefficient );
+    LvArray::tensorOps::scaledAdd< 3 >( stack.localKwTm, KwTm_gauss, 3*detJ*thermalExpansionCoefficient );
   } );
 
 }
@@ -170,8 +175,8 @@ complete( localIndex const k,
 
   localIndex const embSurfIndex = m_cellsToEmbeddedSurfaces[k][0];
   // Energy balance accumulation
-  real64 const volume        =  m_elementVolume( embSurfIndex ) + m_deltaVolume( embSurfIndex );
-  real64 const volume_n      =  m_elementVolume( embSurfIndex );
+  real64 const volume        =  m_elementVolumeFrac( embSurfIndex ) + m_deltaVolume( embSurfIndex );
+  real64 const volume_n      =  m_elementVolumeFrac( embSurfIndex );
   real64 const fluidEnergy   =  m_fluidDensity( embSurfIndex, 0 ) * m_fluidInternalEnergy( embSurfIndex, 0 ) * volume;
   real64 const fluidEnergy_n =  m_fluidDensity_n( embSurfIndex, 0 ) * m_fluidInternalEnergy_n( embSurfIndex, 0 ) * volume_n;
 

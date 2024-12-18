@@ -2,10 +2,11 @@
  * ------------------------------------------------------------------------------------------------------------
  * SPDX-License-Identifier: LGPL-2.1-only
  *
- * Copyright (c) 2018-2020 Lawrence Livermore National Security LLC
- * Copyright (c) 2018-2020 The Board of Trustees of the Leland Stanford Junior University
- * Copyright (c) 2018-2020 TotalEnergies
- * Copyright (c) 2019-     GEOSX Contributors
+ * Copyright (c) 2016-2024 Lawrence Livermore National Security LLC
+ * Copyright (c) 2018-2024 TotalEnergies
+ * Copyright (c) 2018-2024 The Board of Trustees of the Leland Stanford Junior University
+ * Copyright (c) 2023-2024 Chevron
+ * Copyright (c) 2019-     GEOS/GEOSX Contributors
  * All rights reserved
  *
  * See top level LICENSE, COPYRIGHT, CONTRIBUTORS, NOTICE, and ACKNOWLEDGEMENTS files for details.
@@ -35,10 +36,12 @@ FluxApproximationBase::FluxApproximationBase( string const & name, Group * const
   setInputFlags( InputFlags::OPTIONAL_NONUNIQUE );
 
   registerWrapper( viewKeyStruct::fieldNameString(), &m_fieldNames ).
+    setRTTypeName( rtTypes::CustomTypes::groupNameRefArray ).
     setInputFlag( InputFlags::FALSE ).
     setDescription( "Name of primary solution field" ).setSizedFromParent( 0 );
 
   registerWrapper( viewKeyStruct::coeffNameString(), &m_coeffName ).
+    setRTTypeName( rtTypes::CustomTypes::groupNameRef ).
     setInputFlag( InputFlags::FALSE ).
     setDescription( "Name of coefficient field" );
 
@@ -57,10 +60,6 @@ FluxApproximationBase::FluxApproximationBase( string const & name, Group * const
     setDescription( "Type of upwinding scheme. "
                     "Valid options:\n* " + EnumStrings< UpwindingScheme >::concat( "\n* " ) );
 
-//  registerWrapper( viewKeyStruct::epsC1PPUString(), &m_upwindingParams.epsC1PPU ).
-//    setApplyDefaultValue( 1e-10 ).
-//    setInputFlag( InputFlags::OPTIONAL ).
-//    setDescription( "Tolerance for C1-PPU smoothing" );
 }
 
 FluxApproximationBase::CatalogInterface::CatalogType &

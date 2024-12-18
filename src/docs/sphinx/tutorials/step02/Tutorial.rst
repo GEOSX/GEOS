@@ -152,17 +152,16 @@ Here is the ``vtk`` file :
 .. literalinclude::
    ../../../../../inputFiles/singlePhaseFlow/vtk/cube_10x10x10_hex.vtk
    :caption: cube_10x10x10_hex.vtk
-   :lines: 1-20
+   :lines: 1-7
 
 GEOS can run different physical solvers on different regions of the mesh at different times.
 Here, to keep things simple, we run one solver (single-phase flow)
 on the entire domain throughout the simulation.
-Even this is trivial, we need to define and name a region encompassing the entire domain
-and assign it to the single-phase flow solver.
-We also need to provide material properties to the regions.
-This is done by specifying ``ElementRegions``.
-Here, the entire field is one region called ``Domain``,
-and contains multiple constitutive models, including ``water``, ``rockPorosity``, and ``rockPerm``.
+To do so, we need to define a region encompassing the entire domain.
+We will name it ``Domain``, as refered to in the single-phase flow solver (in its ``targetRegions``),
+and list its constitutive models in the ``materialList``, which are ``water`` and ``rock``.
+Since we have imported a mesh with only one region, we can set ``cellBlocks`` to ``{ * }``
+(we have could also set ``cellBlocks`` to ``{ hexahedra }`` as the mesh has only hexahedral cells).
 
 
 .. literalinclude:: ../../../../../inputFiles/singlePhaseFlow/vtk/3D_10x10x10_compressible_hex_gravity_base.xml
@@ -170,6 +169,11 @@ and contains multiple constitutive models, including ``water``, ``rockPorosity``
   :start-after: <!-- SPHINX_TUT_EXT_HEX_ELEM_REGIONS -->
   :end-before: <!-- SPHINX_TUT_EXT_HEX_ELEM_REGIONS_END -->
 
+
+.. note::
+  If you use a name that is not ``hexahedra`` or ``all`` for this attribute, or if the mesh is
+  changed and have not-hexahedral cells, GEOS will throw an error at the beginning of the
+  simulation. See :ref:`Meshes` for more information.
 
 Running GEOS
 ----------------------------------------
@@ -326,7 +330,9 @@ And the ``vtk`` file starts as follows (notice the tetrahedral point coordinates
    :caption: cube_10x10x10_tet.vtk
    :lines: 1-20
 
-Again, the entire field is one region called ``Domain`` and contains ``water`` and ``rock`` only.
+Again, the entire field is one region called ``Domain`` which contains ``water`` and ``rock``.
+Since we have imported a mesh with only one region, we can again set ``cellBlocks`` to ``{ * }``
+(we have could also set ``cellBlocks`` to ``{ tetrahedra }`` as the mesh has only tetrahedric cells).
 
 .. literalinclude:: ../../../../../inputFiles/singlePhaseFlow/vtk/3D_10x10x10_compressible_tetra_gravity_base.xml
   :language: xml

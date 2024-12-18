@@ -2,10 +2,11 @@
  * ------------------------------------------------------------------------------------------------------------
  * SPDX-License-Identifier: LGPL-2.1-only
  *
- * Copyright (c) 2018-2020 Lawrence Livermore National Security LLC
- * Copyright (c) 2018-2020 The Board of Trustees of the Leland Stanford Junior University
- * Copyright (c) 2018-2020 TotalEnergies
- * Copyright (c) 2019-     GEOSX Contributors
+ * Copyright (c) 2016-2024 Lawrence Livermore National Security LLC
+ * Copyright (c) 2018-2024 TotalEnergies
+ * Copyright (c) 2018-2024 The Board of Trustees of the Leland Stanford Junior University
+ * Copyright (c) 2023-2024 Chevron
+ * Copyright (c) 2019-     GEOS/GEOSX Contributors
  * All rights reserved
  *
  * See top level LICENSE, COPYRIGHT, CONTRIBUTORS, NOTICE, and ACKNOWLEDGEMENTS files for details.
@@ -36,7 +37,8 @@ namespace PVTProps
 EzrokhiBrineViscosity::EzrokhiBrineViscosity( string const & name,
                                               string_array const & inputPara,
                                               string_array const & componentNames,
-                                              array1d< real64 > const & componentMolarWeight ):
+                                              array1d< real64 > const & componentMolarWeight,
+                                              TableFunction::OutputOptions const pvtOutputOpts ):
   PVTFunctionBase( name,
                    componentNames,
                    componentMolarWeight )
@@ -49,11 +51,13 @@ EzrokhiBrineViscosity::EzrokhiBrineViscosity( string const & name,
 
   makeCoefficients( inputPara );
   m_waterViscosityTable = PureWaterProperties::makeSaturationViscosityTable( m_functionName, FunctionManager::getInstance() );
+
+  m_waterViscosityTable->outputPVTTableData( pvtOutputOpts );
 }
 
 void EzrokhiBrineViscosity::makeCoefficients( string_array const & inputPara )
 {
-  // compute brine viscosity following Ezrokhi`s method (referenced in Eclipse TD, Aqueous phase properties)
+  // compute brine viscosity following Ezrokhi`s method
   // Reference : Zaytsev, I.D. and Aseyev, G.G. Properties of Aqueous Solutions of Electrolytes, Boca Raton, Florida, USA CRC Press (1993).
   GEOS_THROW_IF_LT_MSG( inputPara.size(), 5,
                         GEOS_FMT( "{}: insufficient number of model parameters", m_functionName ),
@@ -72,6 +76,12 @@ void EzrokhiBrineViscosity::makeCoefficients( string_array const & inputPara )
   }
 }
 
+void EzrokhiBrineViscosity::checkTablesParameters( real64 const GEOS_UNUSED_PARAM( pressure ),
+                                                   real64 const temperature ) const
+{
+  m_waterViscosityTable->checkCoord( temperature, 0 );
+}
+
 EzrokhiBrineViscosity::KernelWrapper
 EzrokhiBrineViscosity::createKernelWrapper() const
 {
@@ -83,8 +93,6 @@ EzrokhiBrineViscosity::createKernelWrapper() const
                         m_coef1,
                         m_coef2 );
 }
-
-REGISTER_CATALOG_ENTRY( PVTFunctionBase, EzrokhiBrineViscosity, string const &, string_array const &, string_array const &, array1d< real64 > const & )
 
 } // end namespace PVTProps
 

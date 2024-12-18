@@ -1,0 +1,489 @@
+<Problem>
+  <Solvers
+    gravityVector="{ 0.0, 0.0, 0.0 }">
+
+    <!-- SPHINX_POROMECHANICSSOLVER -->
+    <SinglePhasePoromechanics
+      name="singlePhasePoroelasticity"
+      solidSolverName="linearElasticity"
+      flowSolverName="singlePhaseFlow"
+      logLevel="1"
+      targetRegions="{ reservoir, extendedRegion }">
+      <NonlinearSolverParameters
+        newtonMaxIter="200"
+        newtonTol="1.0e-6"
+        couplingType="Sequential"
+        lineSearchAction="None"
+        subcycling="1"
+        nonlinearAccelerationType="Aitken"/>
+    </SinglePhasePoromechanics>
+    <!-- SPHINX_POROMECHANICSSOLVER_END -->
+
+    <!-- SPHINX_MECHANICALSOLVER -->
+    <SolidMechanicsLagrangianSSLE
+      name="linearElasticity"
+      timeIntegrationOption="QuasiStatic"
+      logLevel="1"
+      discretization="FE1"
+      targetRegions="{ reservoir, extendedRegion }">
+      <NonlinearSolverParameters
+        newtonTol="1.0e-7"
+        newtonMaxIter="40"/>
+      <LinearSolverParameters
+        solverType="direct"
+        directParallel="0"/>
+    </SolidMechanicsLagrangianSSLE>      
+    <!-- SPHINX_MECHANICALSOLVER_END -->
+
+    <!-- SPHINX_SINGLEPHASEFVM -->
+    <SinglePhaseFVM
+      name="singlePhaseFlow"
+      logLevel="1"
+      discretization="singlePhaseTPFA"
+      targetRegions="{ reservoir, extendedRegion }"
+      temperature="380.372">
+      <NonlinearSolverParameters
+        newtonTol="1.0e-7"
+        newtonMaxIter="40"/>
+      <LinearSolverParameters
+        solverType="direct"
+        directParallel="0"/>
+    </SinglePhaseFVM>
+    <!-- SPHINX_SINGLEPHASEFVM_END -->
+
+  </Solvers>
+
+  <!-- SPHINX_NUMERICAL -->
+  <NumericalMethods>
+    <FiniteElements>
+      <FiniteElementSpace
+        name="FE1"
+        order="1"/>
+    </FiniteElements>
+
+    <FiniteVolume>
+      <TwoPointFluxApproximation
+        name="singlePhaseTPFA"/>
+    </FiniteVolume>
+  </NumericalMethods>
+  <!-- SPHINX_NUMERICAL_END -->
+
+  <!-- SPHINX_MESH -->
+  <Mesh>
+    <InternalMesh
+      name="mesh"
+      elementTypes="{ C3D8 }"
+      xCoords="{ 0, 6096, 12801.6, 18897.6 }"
+      yCoords="{ 0, 3048, 6400.8, 9448.8 }"
+      zCoords="{ -3185.16, -3124.2, -3048, -2987.04, -2743.2, -2133.6, -1219.2, 0 }"
+      nx="{ 5, 11, 5 }"
+      ny="{ 5, 11, 5 }"
+      nz="{ 2, 5, 1, 1, 1, 1, 1 }"
+      cellBlockNames="{ cb-0_0_0, cb-1_0_0, cb-2_0_0, cb-0_1_0, cb-1_1_0, cb-2_1_0, cb-0_2_0, cb-1_2_0, cb-2_2_0,
+                        cb-0_0_1, cb-1_0_1, cb-2_0_1, cb-0_1_1, cb-1_1_1, cb-2_1_1, cb-0_2_1, cb-1_2_1, cb-2_2_1,
+                        cb-0_0_2, cb-1_0_2, cb-2_0_2, cb-0_1_2, cb-1_1_2, cb-2_1_2, cb-0_2_2, cb-1_2_2, cb-2_2_2,
+                        cb-0_0_3, cb-1_0_3, cb-2_0_3, cb-0_1_3, cb-1_1_3, cb-2_1_3, cb-0_2_3, cb-1_2_3, cb-2_2_3,
+                        cb-0_0_4, cb-1_0_4, cb-2_0_4, cb-0_1_4, cb-1_1_4, cb-2_1_4, cb-0_2_4, cb-1_2_4, cb-2_2_4,
+                        cb-0_0_5, cb-1_0_5, cb-2_0_5, cb-0_1_5, cb-1_1_5, cb-2_1_5, cb-0_2_5, cb-1_2_5, cb-2_2_5,
+                        cb-0_0_6, cb-1_0_6, cb-2_0_6, cb-0_1_6, cb-1_1_6, cb-2_1_6, cb-0_2_6, cb-1_2_6, cb-2_2_6 }">
+    </InternalMesh>
+
+  </Mesh>
+  <!-- SPHINX_MESH_END -->
+
+  <Geometry>
+  <!-- SPHINX_INJ_SOURCE -->
+    <Box
+      name="source"
+      xMin="{ 9143.9, 4571.9, -3093.82 }"
+      xMax="{ 9753.7, 4876.9, -3078.38 }"/>
+
+  <!-- SPHINX_INJ_SOURCE_END -->
+
+    <Box
+      name="corner0"
+      xMin="{ -0.01, -0.01, -0.01 }"
+      xMax="{ 0.01, 0.01, 0.01 }"/>
+    <Box
+      name="corner1"
+      xMin="{ 18897.59, -0.01, -0.01 }"
+      xMax="{ 18897.61, 0.01, 0.01 }"/>
+    <Box
+      name="corner2"
+      xMin="{ -0.01, 9448.79, -0.01 }"
+      xMax="{ 0.01, 9448.81, 0.01 }"/>
+    <Box
+      name="corner3"
+      xMin="{ 18897.59, 9448.79, -0.01 }"
+      xMax="{ 18897.61, 9448.81, 0.01 }"/>
+
+    <Box
+      name="bottomEdge0"
+      xMin="{ -0.01, -0.01, -3185.17 }"
+      xMax="{ 0.01, 9448.81, -3185.15 }"/>
+    <Box
+      name="bottomEdge1"
+      xMin="{ 18897.59, -0.01, -3185.17 }"
+      xMax="{ 18897.61, 9448.81, -3185.15 }"/>
+    <Box
+      name="bottomEdge2"
+      xMin="{ -0.01, -0.01, -3185.17 }"
+      xMax="{ 18897.61, 0.01, -3185.15 }"/>
+    <Box
+      name="bottomEdge3"
+      xMin="{ -0.01, 9448.79, -3185.17 }"
+      xMax="{ 18897.61, 9448.81, -3185.15 }"/>
+
+    <Box
+      name="verticalEdge0"
+      xMin="{ -0.01, -0.01, -3185.18 }"
+      xMax="{ 0.01, 0.01, 0.01 }"/>
+    <Box
+      name="verticalEdge1"
+      xMin="{ 18897.59, -0.01, -3185.18 }"
+      xMax="{ 18897.61, 0.01, 0.01 }"/>
+    <Box
+      name="verticalEdge2"
+      xMin="{ -0.01, 9448.79, -3185.18 }"
+      xMax="{ 0.01, 9448.81, 0.01 }"/>
+    <Box
+      name="verticalEdge3"
+      xMin="{ 18897.59, 9448.79, -3185.18 }"
+      xMax="{ 18897.61, 9448.81, 0.01 }"/>
+
+  </Geometry>
+
+  <ElementRegions>
+    <CellElementRegion name="extendedRegion"
+                  cellBlocks="{ cb-0_0_0, cb-1_0_0, cb-2_0_0, cb-0_1_0, cb-1_1_0, cb-2_1_0, cb-0_2_0, cb-1_2_0, cb-2_2_0,
+                                cb-0_0_1, cb-1_0_1, cb-2_0_1, cb-0_1_1,           cb-2_1_1, cb-0_2_1, cb-1_2_1, cb-2_2_1,
+                                cb-0_0_2, cb-1_0_2, cb-2_0_2, cb-0_1_2, cb-1_1_2, cb-2_1_2, cb-0_2_2, cb-1_2_2, cb-2_2_2,
+                                cb-0_0_3, cb-1_0_3, cb-2_0_3, cb-0_1_3, cb-1_1_3, cb-2_1_3, cb-0_2_3, cb-1_2_3, cb-2_2_3,
+                                cb-0_0_4, cb-1_0_4, cb-2_0_4, cb-0_1_4, cb-1_1_4, cb-2_1_4, cb-0_2_4, cb-1_2_4, cb-2_2_4,
+                                cb-0_0_5, cb-1_0_5, cb-2_0_5, cb-0_1_5, cb-1_1_5, cb-2_1_5, cb-0_2_5, cb-1_2_5, cb-2_2_5,
+                                cb-0_0_6, cb-1_0_6, cb-2_0_6, cb-0_1_6, cb-1_1_6, cb-2_1_6, cb-0_2_6, cb-1_2_6, cb-2_2_6 }"
+                  materialList="{fluid, porousRockExt}"/>
+    <CellElementRegion name="reservoir"
+                  cellBlocks="{ cb-1_1_1 }"
+                  materialList="{ fluid, porousRockRes }"/>
+
+
+  </ElementRegions>
+
+  <Functions>                                                                                                                                                                                                                                                                                                                                                
+    <TableFunction                                                                                                                                                               
+      name="statusTable"                                                                                                                                                         
+      inputVarNames="{ time }"                                                                                                                                                   
+      interpolation="lower"                                                                                                                                                      
+      coordinates="{ -1e11, 0, 1e11 }"                                                                                                                                           
+      values="{ -1, 1, 1 }"/>                                                                                                                                                                                                                                                                                                                                 
+  </Functions>   
+
+  <Events
+      minTime="0"
+      maxTime="3456000">
+   
+    <PeriodicEvent
+      name="outputs"
+      beginTime="0"
+      timeFrequency="1728000"
+      target="/Outputs/vtkOutput"/>  
+
+    <PeriodicEvent
+      name="solverApplication"
+      beginTime="0"
+      forceDt="1728000"
+      target="/Solvers/singlePhasePoroelasticity"/>
+
+    <PeriodicEvent
+      name="timeHistoryCollection"
+      beginTime="0"
+      timeFrequency="1728000"
+      target="/Tasks/pressureCollection"/>
+
+    <PeriodicEvent
+      name="timeHistoryOutput"
+      beginTime="0"
+      timeFrequency="1728000"
+      targetExactTimestep="0"
+      target="/Outputs/timeHistoryOutput"/>
+
+    <PeriodicEvent
+      name="restarts"
+      timeFrequency="1728000"
+      target="/Outputs/restartOutput"/>
+
+  </Events>
+
+  <Constitutive>
+    <CompressibleSinglePhaseFluid
+      name="fluid"
+      defaultDensity="1000"
+      defaultViscosity="0.001"
+      referencePressure="101325"
+      referenceDensity="1000"
+      compressibility="4.496e-10"
+      referenceViscosity="0.001"
+      viscosibility="0.0"/>
+
+    <PorousElasticIsotropic
+      name="porousRockRes"
+      solidModelName="skeletonRes"
+      porosityModelName="rockPorosityRes"
+      permeabilityModelName="rockPermRes"/>
+    <ElasticIsotropic
+      name="skeletonRes"
+      defaultDensity="2700"
+      defaultYoungModulus="6.894757e+7"
+      defaultPoissonRatio="0.25"/>
+    <ConstantPermeability
+      name="rockPermRes"
+      permeabilityComponents="{ 9.869233e-14, 9.869233e-14, 9.869233e-15 }"/>
+    <BiotPorosity
+      name="rockPorosityRes"
+      defaultGrainBulkModulus="1.0e27"
+      defaultReferencePorosity="0.25"/>
+
+    <PorousElasticIsotropic
+      name="porousRockExt"
+      solidModelName="skeletonExt"
+      porosityModelName="rockPorosityExt"
+      permeabilityModelName="rockPermExt"/>
+    <ElasticIsotropic
+      name="skeletonExt"
+      defaultDensity="2700"
+      defaultYoungModulus="6.894757e+9"
+      defaultPoissonRatio="0.25"/>
+    <ConstantPermeability
+      name="rockPermExt"
+      permeabilityComponents="{ 0, 0, 0 }"/>
+    <BiotPorosity
+      name="rockPorosityExt"
+      defaultGrainBulkModulus="1.0e27"
+      defaultReferencePorosity="0.25"/>
+
+  </Constitutive>
+
+
+  <FieldSpecifications>
+
+    <FieldSpecification
+      name="initialPressure"
+      initialCondition="1"
+      setNames="{ all }"
+      objectPath="ElementRegions"
+      fieldName="pressure"
+      scale="2.7579e+7"/>
+
+    <FieldSpecification
+      name="xconstraint"
+      objectPath="nodeManager"
+      fieldName="totalDisplacement"
+      component="0"
+      scale="0.0"
+      setNames="{ xneg, xpos }"/>
+
+    <FieldSpecification
+      name="yconstraint"
+      objectPath="nodeManager"
+      fieldName="totalDisplacement"
+      component="1"
+      scale="0.0"
+      setNames="{ yneg, ypos }"/>
+
+    <FieldSpecification
+      name="zconstraint"
+      objectPath="nodeManager"
+      fieldName="totalDisplacement"
+      component="2"
+      scale="0.0"
+      setNames="{ zneg }"/>
+
+    <FieldSpecification
+      name="xCornersConstraint"
+      objectPath="nodeManager"
+      fieldName="totalDisplacement"
+      component="0"
+      scale="0.0"
+      setNames="{ corner0, corner1, corner2, corner3 }"/>
+    <FieldSpecification
+      name="yCornersConstraint"
+      objectPath="nodeManager"
+      fieldName="totalDisplacement"
+      component="1"
+      scale="0.0"
+      setNames="{ corner0, corner1, corner2, corner3 }"/>
+    <FieldSpecification
+      name="zCornersConstraint"
+      objectPath="nodeManager"
+      fieldName="totalDisplacement"
+      component="2"
+      scale="0.0"
+      setNames="{ corner0, corner1, corner2, corner3 }"/>
+
+    <FieldSpecification
+      name="xVerticalEdgesConstraint"
+      objectPath="nodeManager"
+      fieldName="totalDisplacement"
+      component="0"
+      scale="0.0"
+      setNames="{ verticalEdge0, verticalEdge1, verticalEdge2, verticalEdge3 }"/>
+    <FieldSpecification
+      name="yVerticalEdgesConstraint"
+      objectPath="nodeManager"
+      fieldName="totalDisplacement"
+      component="1"
+      scale="0.0"
+      setNames="{ verticalEdge0, verticalEdge1, verticalEdge2, verticalEdge3 }"/>
+
+    <FieldSpecification
+      name="xXZBottomEdgesConstraint"
+      objectPath="nodeManager"
+      fieldName="totalDisplacement"
+      component="0"
+      scale="0.0"
+      setNames="{ bottomEdge0, bottomEdge1 }"/>
+    <FieldSpecification
+      name="zXZBottomEdgesConstraint"
+      objectPath="nodeManager"
+      fieldName="totalDisplacement"
+      component="2"
+      scale="0.0"
+      setNames="{ bottomEdge0, bottomEdge1 }"/>
+
+    <FieldSpecification
+      name="yYZBottomEdgesConstraint"
+      objectPath="nodeManager"
+      fieldName="totalDisplacement"
+      component="1"
+      scale="0.0"
+      setNames="{ bottomEdge1, bottomEdge2 }"/>
+    <FieldSpecification
+      name="zYZBottomEdgesConstraint"
+      objectPath="nodeManager"
+      fieldName="totalDisplacement"
+      component="2"
+      scale="0.0"
+      setNames="{ bottomEdge1, bottomEdge2 }"/>
+
+    <Traction
+      name="zposconstraint"
+      objectPath="faceManager"
+      tractionType="normal"
+      scale="-2.7579e+7"
+      setNames="{ zpos }"/>
+
+    <FieldSpecification
+      name="sigma_xx_Res"
+      initialCondition="1"
+      setNames="{ all }"
+      objectPath="ElementRegions/reservoir/cb-1_1_1"
+      fieldName="skeletonRes_stress"
+      component="0"
+      scale="0.0"/>
+    <FieldSpecification
+      name="sigma_xx_Ext"
+      initialCondition="1"
+      setNames="{ all }"
+      objectPath="ElementRegions/extendedRegion"
+      fieldName="skeletonExt_stress"
+      component="0"
+      scale="0.0"/>
+    <FieldSpecification
+      name="sigma_yy_Res"
+      initialCondition="1"
+      setNames="{ all }"
+      objectPath="ElementRegions/reservoir/cb-1_1_1"
+      fieldName="skeletonRes_stress"
+      component="1"
+      scale="0.0"/>
+    <FieldSpecification
+      name="sigma_yy_Ext"
+      initialCondition="1"
+      setNames="{ all }"
+      objectPath="ElementRegions/extendedRegion"
+      fieldName="skeletonExt_stress"
+      component="1"
+      scale="0.0"/>
+    <FieldSpecification
+      name="sigma_zz_Res"
+      initialCondition="1"
+      setNames="{ all }"
+      objectPath="ElementRegions/reservoir/cb-1_1_1"
+      fieldName="skeletonRes_stress"
+      component="2"
+      scale="0.0"/>
+    <FieldSpecification
+      name="sigma_zz_Ext"
+      initialCondition="1"
+      setNames="{ all }"
+      objectPath="ElementRegions/extendedRegion"
+      fieldName="skeletonExt_stress"
+      component="2"
+      scale="0.0"/>
+
+    <FieldSpecification
+      name="xInitialTotalDisplacement"
+      initialCondition="1"
+      objectPath="nodeManager"
+      fieldName="totalDisplacement"
+      component="0"
+      scale="0.0"
+      setNames="{ all }"/>
+    <FieldSpecification
+      name="yInitialTotalDisplacement"
+      initialCondition="1"
+      objectPath="nodeManager"
+      fieldName="totalDisplacement"
+      component="1"
+      scale="0.0"
+      setNames="{ all }"/>
+    <FieldSpecification
+      name="zInitialTotalDisplacement"
+      initialCondition="1"
+      objectPath="nodeManager"
+      fieldName="totalDisplacement"
+      component="2"
+      scale="0.0"
+      setNames="{ all }"/>
+
+    <SourceFlux
+      name="sourceTerm"
+      objectPath="ElementRegions/reservoir/cb-1_1_1"
+      scale="-1.84E+01"
+      setNames="{ source }"/>
+
+  </FieldSpecifications>
+
+  <Tasks>
+    <SolidMechanicsStatistics
+      name="linearElasticityStatistics"
+      solidSolverName="linearElasticity"
+      logLevel="1"/>
+    <SinglePhaseStatistics
+      name="singlePhaseFlowStatistics"
+      flowSolverName="singlePhaseFlow"
+      logLevel="1"/>
+
+    <PackCollection
+      name="pressureCollection"
+      objectPath="ElementRegions/reservoir/cb-1_1_1"
+      fieldName="pressure"/>
+
+  </Tasks>
+
+  <Outputs>
+    <VTK
+      name="vtkOutput"/>
+
+    <TimeHistory
+      name="timeHistoryOutput"
+      sources="{ /Tasks/pressureCollection }"
+      filename="pressure_history"/>
+
+    <Restart
+      name="restartOutput"/>
+  </Outputs>
+
+</Problem>
+

@@ -1,3 +1,18 @@
+/*
+ * ------------------------------------------------------------------------------------------------------------
+ * SPDX-License-Identifier: LGPL-2.1-only
+ *
+ * Copyright (c) 2016-2024 Lawrence Livermore National Security LLC
+ * Copyright (c) 2018-2024 TotalEnergies
+ * Copyright (c) 2018-2024 The Board of Trustees of the Leland Stanford Junior University
+ * Copyright (c) 2023-2024 Chevron
+ * Copyright (c) 2019-     GEOS/GEOSX Contributors
+ * All rights reserved
+ *
+ * See top level LICENSE, COPYRIGHT, CONTRIBUTORS, NOTICE, and ACKNOWLEDGEMENTS files for details.
+ * ------------------------------------------------------------------------------------------------------------
+ */
+
 /**
  * @file ParallelTopologyChange.cpp
  */
@@ -11,7 +26,7 @@
 #include "mesh/mpiCommunications/CommunicationTools.hpp"
 #include "mesh/mpiCommunications/MPI_iCommData.hpp"
 
-
+#if PARALLEL_TOPOLOGY_CHANGE_METHOD==0
 namespace geos
 {
 
@@ -492,7 +507,7 @@ void packNewModifiedObjectsToGhosts( NeighborCommunicator * const neighbor,
     elemRegion.forElementSubRegionsIndex< FaceElementSubRegion >( [&]( localIndex const esr,
                                                                        FaceElementSubRegion & subRegion )
     {
-      FaceElementSubRegion::FaceMapType const & faceList = subRegion.faceList();
+      arrayView2d< localIndex const > const faceList = subRegion.faceList().toViewConst();
       localIndex_array & elemGhostsToSend = subRegion.getNeighborData( neighbor->neighborRank() ).ghostsToSend();
       elemGhostsToSend.move( hostMemorySpace );
       for( localIndex const & k : receivedObjects.newElements.at( {er, esr} ) )
@@ -736,9 +751,9 @@ void unpackNewModToGhosts( NeighborCommunicator * const neighbor,
 void updateConnectorsToFaceElems( std::set< localIndex > const & newFaceElements,
                                   FaceElementSubRegion & faceElemSubRegion )
 {
-  ArrayOfArrays< localIndex > & connectorToElem = faceElemSubRegion.m_fractureConnectorEdgesToFaceElements;
-  map< localIndex, localIndex > & edgesToConnectorEdges = faceElemSubRegion.m_edgesToFractureConnectorsEdges;
-  array1d< localIndex > & connectorEdgesToEdges = faceElemSubRegion.m_fractureConnectorsEdgesToEdges;
+  ArrayOfArrays< localIndex > & connectorToElem = faceElemSubRegion.m_2dFaceTo2dElems;
+  map< localIndex, localIndex > & edgesToConnectorEdges = faceElemSubRegion.m_edgesTo2dFaces;
+  array1d< localIndex > & connectorEdgesToEdges = faceElemSubRegion.m_2dFaceToEdge;
 
   ArrayOfArraysView< localIndex const > const facesToEdges = faceElemSubRegion.edgeList().toViewConst();
 
@@ -771,7 +786,7 @@ void updateConnectorsToFaceElems( std::set< localIndex > const & newFaceElements
       {
         connectorToElem.resizeArray( connectorIndex, numExistingCells+1 );
         connectorToElem[connectorIndex][ numExistingCells ] = kfe;
-        faceElemSubRegion.m_recalculateFractureConnectorEdges.insert( connectorIndex );
+        faceElemSubRegion.m_recalculateConnectionsFor2dFaces.insert( connectorIndex );
       }
     }
   }
@@ -798,7 +813,7 @@ void parallelTopologyChange::synchronizeTopologyChange( MeshLevel * const mesh,
   //   b) the modified objects to the owning ranks.
 
   // pack the buffers, and send the size of the buffers
-  MPI_iCommData commData( CommunicationTools::getInstance().getCommID() );
+  MPI_iCommData commData;
   commData.resize( neighbors.size() );
   for( unsigned int neighborIndex=0; neighborIndex<neighbors.size(); ++neighborIndex )
   {
@@ -812,7 +827,7 @@ void parallelTopologyChange::synchronizeTopologyChange( MeshLevel * const mesh,
     neighbor.mpiISendReceiveBufferSizes( commData.commID(),
                                          commData.mpiSendBufferSizeRequest( neighborIndex ),
                                          commData.mpiRecvBufferSizeRequest( neighborIndex ),
-                                         MPI_COMM_GEOSX );
+                                         MPI_COMM_GEOS );
 
   }
 
@@ -830,7 +845,7 @@ void parallelTopologyChange::synchronizeTopologyChange( MeshLevel * const mesh,
     neighbor.mpiISendReceiveBuffers( commData.commID(),
                                      commData.mpiSendBufferRequest( neighborIndex ),
                                      commData.mpiRecvBufferRequest( neighborIndex ),
-                                     MPI_COMM_GEOSX );
+                                     MPI_COMM_GEOS );
   }
 
   // unpack the buffers and get lists of the new objects.
@@ -890,7 +905,7 @@ void parallelTopologyChange::synchronizeTopologyChange( MeshLevel * const mesh,
 
 
 
-  MPI_iCommData commData2( CommunicationTools::getInstance().getCommID() );
+  MPI_iCommData commData2;
   commData2.resize( neighbors.size());
   for( unsigned int neighborIndex=0; neighborIndex<neighbors.size(); ++neighborIndex )
   {
@@ -904,7 +919,7 @@ void parallelTopologyChange::synchronizeTopologyChange( MeshLevel * const mesh,
     neighbor.mpiISendReceiveBufferSizes( commData2.commID(),
                                          commData2.mpiSendBufferSizeRequest( neighborIndex ),
                                          commData2.mpiRecvBufferSizeRequest( neighborIndex ),
-                                         MPI_COMM_GEOSX );
+                                         MPI_COMM_GEOS );
 
   }
 
@@ -921,7 +936,7 @@ void parallelTopologyChange::synchronizeTopologyChange( MeshLevel * const mesh,
     neighbor.mpiISendReceiveBuffers( commData2.commID(),
                                      commData2.mpiSendBufferRequest( neighborIndex ),
                                      commData2.mpiRecvBufferRequest( neighborIndex ),
-                                     MPI_COMM_GEOSX );
+                                     MPI_COMM_GEOS );
   }
 
 
@@ -1009,3 +1024,4 @@ void parallelTopologyChange::synchronizeTopologyChange( MeshLevel * const mesh,
 
 
 } /* namespace geos */
+#endif // PARALLEL_TOPOLOGY_CHANGE_METHOD==0

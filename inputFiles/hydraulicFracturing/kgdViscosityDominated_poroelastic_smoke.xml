@@ -65,6 +65,10 @@
       target="/Outputs/restartOutput"/>
 
     <PeriodicEvent
+      name="vtk"
+      target="/Outputs/vtkOutput"/>
+
+    <PeriodicEvent
       name="output"
       timeFrequency="1.0"
       targetExactTimestep="0"

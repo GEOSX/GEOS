@@ -10,7 +10,7 @@
       useMass="0"
       targetRegions="{ Domain, Fracture }">
       <NonlinearSolverParameters
-        newtonTol="1.0e-10"
+        newtonTol="1.0e-8"
         newtonMaxIter="15"
         maxTimeStepCuts="2"
         lineSearchMaxCuts="2"/>
@@ -23,7 +23,7 @@
     <EmbeddedSurfaceGenerator
       name="SurfaceGenerator"
       logLevel="1"
-      discretization="fluidTPFA"
+      discretization="FE1"
       targetRegions="{ Domain, Fracture }"
       targetObjects="{ FracturePlane }"
       fractureRegion="Fracture"/>
@@ -99,12 +99,17 @@
       <TwoPointFluxApproximation
         name="fluidTPFA"/>
     </FiniteVolume>
+    <FiniteElements>
+    <FiniteElementSpace
+        name="FE1"
+        order="1"/>
+    </FiniteElements>
   </NumericalMethods>
 
   <ElementRegions>
     <CellElementRegion
       name="Domain"
-      cellBlocks="{ block1 }"
+      cellBlocks="{ * }"
       materialList="{ fluid1, rock, relperm }"/>
 
     <SurfaceElementRegion

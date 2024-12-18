@@ -12,7 +12,8 @@ Viscoplasticity
    ExtendedDruckerPrager/Example
    ViscoExtendedDruckerPrager/Example
    ModifiedCamClay/Example	
-   ViscoModifiedCamClay/Example		   
+   ViscoModifiedCamClay/Example
+   RelaxationTest/Example		   
 
 
 

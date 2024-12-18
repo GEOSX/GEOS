@@ -25,25 +25,25 @@
       defaultViscosity="1e-3"
       referencePressure="0.0"
       referenceTemperature="0.0"
-      compressibility="0.0"
+      compressibility="1.0e-10"
       thermalExpansionCoeff="0.0"
       viscosibility="0.0"
-      volumetricHeatCapacity="1.672e2"
+      specificHeatCapacity="1.672e2"
       referenceInternalEnergy="0.001"/>
 
-    <SinglePhaseConstantThermalConductivity
+    <SinglePhaseThermalConductivity
       name="thermalCond"
-      thermalConductivityComponents="{ 1, 1, 1 }"/>
+      defaultThermalConductivityComponents="{ 1, 1, 1 }"/>
 
     <SolidInternalEnergy
       name="rockInternalEnergy"
-      volumetricHeatCapacity="1.672e5"
+      referenceVolumetricHeatCapacity="1.672e5"
       referenceTemperature="0.0"
       referenceInternalEnergy="0.0"/>
 
     <BiotPorosity
       name="rockPorosity"
-      grainBulkModulus="2.2222e27"
+      defaultGrainBulkModulus="2.2222e27"
       defaultReferencePorosity="0.2"/>
 
     <CompressibleSolidParallelPlatesPermeability
@@ -66,16 +66,18 @@
       name="fracturePerm"/>
 
     <FrictionlessContact
-      name="fractureContact"
-      penaltyStiffness="4.0e9"
-      apertureTableName="apertureTable"/>
+      name="fractureContact"/>
+
+    <HydraulicApertureTable
+      name="hApertureModel"
+      apertureTableName="apertureTable"/>     
   </Constitutive>
 
   <Functions>
     <TableFunction
       name="apertureTable"
-      coordinates="{ -1.0e-3, 0.0 }"
-      values="{ 4.01e-3, 5.0e-3 }"/>
+      coordinates="{ -1.0e-4, 0.0 }"
+      values="{ 0.5e-4, 1.0e-4 }"/>
   </Functions>
 
   <Tasks>

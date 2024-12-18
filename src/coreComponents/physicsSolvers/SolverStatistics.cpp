@@ -2,10 +2,11 @@
  * ------------------------------------------------------------------------------------------------------------
  * SPDX-License-Identifier: LGPL-2.1-only
  *
- * Copyright (c) 2018-2020 Lawrence Livermore National Security LLC
- * Copyright (c) 2018-2020 The Board of Trustees of the Leland Stanford Junior University
- * Copyright (c) 2018-2020 TotalEnergies
- * Copyright (c) 2019-     GEOSX Contributors
+ * Copyright (c) 2016-2024 Lawrence Livermore National Security LLC
+ * Copyright (c) 2018-2024 TotalEnergies
+ * Copyright (c) 2018-2024 The Board of Trustees of the Leland Stanford Junior University
+ * Copyright (c) 2023-2024 Chevron
+ * Copyright (c) 2019-     GEOS/GEOSX Contributors
  * All rights reserved
  *
  * See top level LICENSE, COPYRIGHT, CONTRIBUTORS, NOTICE, and ACKNOWLEDGEMENTS files for details.
@@ -36,7 +37,6 @@ SolverStatistics::SolverStatistics( string const & name, Group * const parent )
   registerWrapper( viewKeyStruct::numTimeStepCutsString(), &m_numTimeStepCuts ).
     setApplyDefaultValue( 0 ).
     setDescription( "Number of time step cuts" );
-
 
   registerWrapper( viewKeyStruct::numSuccessfulOuterLoopIterationsString(), &m_numSuccessfulOuterLoopIterations ).
     setApplyDefaultValue( 0 ).
@@ -127,7 +127,11 @@ void SolverStatistics::outputStatistics() const
 
   // TODO: the print logic is really convoluted to accomodate the needs of the different solvers, needs simplification
 
-  logStat( "time steps", m_numTimeSteps );
+  if( m_numTimeSteps > 0 )
+  {
+    logStat( "time steps", m_numTimeSteps );
+  }
+
   if( printIterations )
   {
     if( printOuterLoopIterations )

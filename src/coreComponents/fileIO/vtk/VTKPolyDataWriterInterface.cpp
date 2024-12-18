@@ -2,10 +2,11 @@
  * ------------------------------------------------------------------------------------------------------------
  * SPDX-License-Identifier: LGPL-2.1-only
  *
- * Copyright (c) 2018-2020 Lawrence Livermore National Security LLC
- * Copyright (c) 2018-2020 The Board of Trustees of the Leland Stanford Junior University
- * Copyright (c) 2018-2020 TotalEnergies
- * Copyright (c) 2019-     GEOSX Contributors
+ * Copyright (c) 2016-2024 Lawrence Livermore National Security LLC
+ * Copyright (c) 2018-2024 TotalEnergies
+ * Copyright (c) 2018-2024 The Board of Trustees of the Leland Stanford Junior University
+ * Copyright (c) 2023-2024 Chevron
+ * Copyright (c) 2019-     GEOS/GEOSX Contributors
  * All rights reserved
  *
  * See top level LICENSE, COPYRIGHT, CONTRIBUTORS, NOTICE, and ACKNOWLEDGEMENTS files for details.
@@ -15,7 +16,7 @@
 // Source includes
 #include "VTKPolyDataWriterInterface.hpp"
 
-#include "common/Logger.hpp"
+#include "common/logger/Logger.hpp"
 #include "common/TypeDispatch.hpp"
 #include "dataRepository/Group.hpp"
 #include "mesh/DomainPartition.hpp"
@@ -32,9 +33,13 @@
 #include <vtkThreshold.h>
 #include <vtkUnstructuredGrid.h>
 #include <vtkXMLUnstructuredGridWriter.h>
-
+#include <vtkAggregateDataSetFilter.h>
 // System includes
+#include <numeric>
 #include <unordered_set>
+
+#include "mesh/generators/VTKUtilities.hpp"
+
 
 namespace geos
 {
@@ -53,11 +58,12 @@ VTKPolyDataWriterInterface::VTKPolyDataWriterInterface( string name ):
   m_requireFieldRegistrationCheck( true ),
   m_previousCycle( -1 ),
   m_outputMode( VTKOutputMode::BINARY ),
-  m_outputRegionType( VTKRegionTypes::ALL )
+  m_outputRegionType( VTKRegionTypes::ALL ),
+  m_writeFaceElementsAs3D( false )
 {}
 
 static int
-toVTKCellType( ElementType const elementType )
+toVTKCellType( ElementType const elementType, localIndex const numNodes )
 {
   switch( elementType )
   {
@@ -69,7 +75,16 @@ toVTKCellType( ElementType const elementType )
     case ElementType::Tetrahedron:   return VTK_TETRA;
     case ElementType::Pyramid:       return VTK_PYRAMID;
     case ElementType::Wedge:         return VTK_WEDGE;
-    case ElementType::Hexahedron:    return VTK_HEXAHEDRON;
+    case ElementType::Hexahedron:
+      switch( numNodes )
+      {
+        case 8:
+          return VTK_HEXAHEDRON;
+        case 27:
+          return VTK_QUADRATIC_HEXAHEDRON;
+        default:
+          return VTK_HEXAHEDRON;
+      }
     case ElementType::Prism5:        return VTK_PENTAGONAL_PRISM;
     case ElementType::Prism6:        return VTK_HEXAGONAL_PRISM;
     case ElementType::Prism7:        return VTK_POLYHEDRON;
@@ -82,14 +97,40 @@ toVTKCellType( ElementType const elementType )
   return VTK_EMPTY_CELL;
 }
 
+static int
+toVTKCellType( ParticleType const particleType )
+{
+  switch( particleType )
+  {
+    case ParticleType::SinglePoint:   return VTK_HEXAHEDRON;
+    case ParticleType::CPDI:          return VTK_HEXAHEDRON;
+    case ParticleType::CPDI2:         return VTK_HEXAHEDRON;
+    case ParticleType::CPTI:          return VTK_TETRA;
+  }
+  return VTK_EMPTY_CELL;
+}
+
+static std::vector< int >
+getVtkToGeosxNodeOrdering( ParticleType const particleType )
+{
+  switch( particleType )
+  {
+    case ParticleType::SinglePoint:   return { 0, 1, 3, 2, 4, 5, 7, 6 };
+    case ParticleType::CPDI:          return { 0, 1, 3, 2, 4, 5, 7, 6 };
+    case ParticleType::CPDI2:         return { 0, 1, 3, 2, 4, 5, 7, 6 };
+    case ParticleType::CPTI:          return { 0, 1, 2, 3 };
+  }
+  return {};
+}
+
 /**
  * @brief Provide the local list of nodes or face streams for the corresponding VTK element
  *
- * @param elementType geosx element type
+ * @param elementType geos element type
  * @return list of nodes or face streams
  *
- * For geosx element with existing standard VTK element the corresponding list of nodes is provided.
- * For Prism7+, the geosx element is converted to VTK_POLYHEDRON. The vtkUnstructuredGrid
+ * For geos element with existing standard VTK element the corresponding list of nodes is provided.
+ * For Prism7+, the geos element is converted to VTK_POLYHEDRON. The vtkUnstructuredGrid
  * stores polyhedron cells as face streams of the following format:
  * [numberOfCellFaces,
  * (numberOfPointsOfFace0, pointId0, pointId1, ... ),
@@ -100,25 +141,40 @@ toVTKCellType( ElementType const elementType )
  * nodes for mapping purpose while keeping a face streams data structure. The negative values are
  * converted to positives when generating the VTK_POLYHEDRON. Check getVtkCells() for more details.
  */
-static std::vector< int > getVtkConnectivity( ElementType const elementType )
+static std::vector< int > getVtkConnectivity( ElementType const elementType, localIndex const numNodes )
 {
   switch( elementType )
   {
     case ElementType::Vertex:        return { 0 };
     case ElementType::Line:          return { 0, 1 };
     case ElementType::Triangle:      return { 0, 1, 2 };
-    case ElementType::Quadrilateral: return { 0, 1, 2, 3 };  // TODO check
+    case ElementType::Quadrilateral: return { 0, 1, 2, 3 };
     case ElementType::Polygon:       return { };  // TODO
     case ElementType::Tetrahedron:   return { 0, 1, 2, 3 };
     case ElementType::Pyramid:       return { 0, 1, 3, 2, 4 };
     case ElementType::Wedge:         return { 0, 4, 2, 1, 5, 3 };
-    case ElementType::Hexahedron:    return { 0, 1, 3, 2, 4, 5, 7, 6 };
+    case ElementType::Hexahedron:
+      switch( numNodes )
+      {
+        case 8:
+          return { 0, 1, 3, 2, 4, 5, 7, 6 };
+          break;
+        case 27:
+          // Numbering convention changed between VTK writer 1.0 and 2.2, see
+          // https://discourse.julialang.org/t/writevtk-node-numbering-for-27-node-lagrange-hexahedron/93698/8
+          // GEOS uses 1.0 API
+          return { 0, 2, 8, 6, 18, 20, 26, 24, 1, 5, 7, 3, 19, 23, 25, 21, 9, 11, 17, 15, 12, 14, 10, 16, 4, 22, 17 };
+          break;
+        default:
+          return { }; // TODO
+      }
     case ElementType::Prism5:        return { 0, 1, 2, 3, 4, 5, 6, 7, 8, 9 };
     case ElementType::Prism6:        return { 0, 1, 2, 3, 4, 5, 6, 7, 8, 9, 10, 11 };
     case ElementType::Prism7:        return {-9,
                                              -7, 0, 1, 2, 3, 4, 5, 6,
                                              -7, 7, 8, 9, 10, 11, 12, 13,
-                                             -4, 0, 1, 8, 7, -4, 1, 2, 9, 8,
+                                             -4, 0, 1, 8, 7,
+                                             -4, 1, 2, 9, 8,
                                              -4, 2, 3, 10, 9,
                                              -4, 3, 4, 11, 10,
                                              -4, 4, 5, 12, 11,
@@ -200,9 +256,33 @@ getVtkPoints( NodeManager const & nodeManager,
   return points;
 }
 
+/**
+ * @brief Gets the vertex coordinates as a VTK Object for @p particleManager
+ * @param[in] particleManager the ParticleManager associated with the domain being written
+ * @return a VTK object storing all particle centers/corners of the mesh
+ */
+static vtkSmartPointer< vtkPoints >
+getVtkPoints( ParticleRegion const & particleRegion ) // TODO: Loop over the subregions owned by this region and operate on them directly
+{
+  // Particles are plotted as polyhedron with the geometry determined by the particle
+  // type.  CPDI particles are parallelepiped (8 corners and 6 faces).
+  // TODO: add support for CPTI (tet) and single point (cube or sphere) geometries
+
+  localIndex const numCornersPerParticle = 8; // Each CPDI particle has 8 corners. TODO: add support for other particle types.
+  localIndex const numCorners = numCornersPerParticle * particleRegion.getNumberOfParticles();
+  auto points = vtkSmartPointer< vtkPoints >::New();
+  points->SetNumberOfPoints( numCorners );
+  array2d< real64 > const coord = particleRegion.getParticleCorners();
+  forAll< parallelHostPolicy >( numCorners, [=, pts = points.GetPointer()]( localIndex const k )
+  {
+    pts->SetPoint( k, coord[k][0], coord[k][1], coord[k][2] );
+  } );
+  return points;
+}
+
 struct ElementData
 {
-  VTKCellType type;
+  std::vector< int > cellTypes;
   vtkSmartPointer< vtkCellArray > cells;
   vtkSmartPointer< vtkPoints > points;
 };
@@ -254,74 +334,93 @@ getWell( WellElementSubRegion const & subRegion,
     points->SetPoint( subRegion.size(), point[0], point[1], point[2] );
   }
 
-  return { VTK_LINE, cellsArray, points };
+  std::vector< int > cellTypes( subRegion.size(), VTK_LINE );
+  return { cellTypes, cellsArray, points };
 }
 
 /**
  * @brief Gets the cell connectivities and the vertices coordinates as VTK objects for a specific FaceElementSubRegion.
  * @param[in] subRegion the FaceElementSubRegion to be output
  * @param[in] nodeManager the NodeManager associated with the DomainPartition being written.
+ * @param[in] faceManager the faceManager associated with the DomainPartition being written.
  * @return a pair containing a VTKPoints (with the information on the vertices and their coordinates)
  * and a VTKCellArray (with the cell connectivities).
  */
 static ElementData
 getSurface( FaceElementSubRegion const & subRegion,
-            NodeManager const & nodeManager )
+            NodeManager const & nodeManager,
+            FaceManager const & faceManager,
+            bool const writeFaceElementsAs3D )
 {
   // Get unique node set composing the surface
-  auto & nodeListPerElement = subRegion.nodeList();
-  auto cellsArray = vtkSmartPointer< vtkCellArray >::New();
-  cellsArray->SetNumberOfCells( subRegion.size() );
-  std::unordered_map< localIndex, localIndex > geosx2VTKIndexing;
-  geosx2VTKIndexing.reserve( subRegion.size() * subRegion.numNodesPerElement() );
+  auto & elemToFaces = subRegion.faceList();
+  auto & elemToNodes = subRegion.nodeList();
+  auto & faceToNodes = faceManager.nodeList();
+
+  auto cellArray = vtkSmartPointer< vtkCellArray >::New();
+  cellArray->SetNumberOfCells( subRegion.size() );
+  std::vector< int > cellTypes;
+  cellTypes.reserve( subRegion.size() );
+
+  std::unordered_map< localIndex, localIndex > geos2VTKIndexing;
+  geos2VTKIndexing.reserve( subRegion.size() * subRegion.numNodesPerElement() );
   localIndex nodeIndexInVTK = 0;
-  std::vector< vtkIdType > connectivity( subRegion.numNodesPerElement() );
-  std::vector< int > const vtkOrdering = getVtkConnectivity( subRegion.getElementType() );
+  // FaceElementSubRegion being heterogeneous, the size of the connectivity vector may vary for each element.
+  // In order not to allocate a new vector every time, we combine the usage of `clear` and `push_back`.
+  std::vector< vtkIdType > connectivity;
 
   for( localIndex ei = 0; ei < subRegion.size(); ei++ )
   {
-    auto const & elem = nodeListPerElement[ei];
-    for( localIndex i = 0; i < elem.size(); ++i )
+    // we use the nodes of face 0
+    auto const & nodes = !writeFaceElementsAs3D ? faceToNodes[elemToFaces( ei, 0 )] : elemToNodes[ei];
+    auto const numNodes = nodes.size();
+
+    ElementType const elementType = subRegion.getElementType( ei );
+    std::vector< int > vtkOrdering;
+    if( elementType == ElementType::Polygon || writeFaceElementsAs3D )
     {
-      auto const & VTKIndexPos = geosx2VTKIndexing.find( elem[vtkOrdering[i]] );
-      if( VTKIndexPos == geosx2VTKIndexing.end() )
+      vtkOrdering.resize( numNodes );
+      std::iota( vtkOrdering.begin(), vtkOrdering.end(), 0 );
+    }
+    else
+    {
+      vtkOrdering = getVtkConnectivity( elementType, numNodes );
+    }
+
+    connectivity.clear();
+    for( int const & ordering : vtkOrdering )
+    {
+      auto const & VTKIndexPos = geos2VTKIndexing.find( nodes[ordering] );
+      if( VTKIndexPos == geos2VTKIndexing.end() )
       {
-        connectivity[i] = geosx2VTKIndexing[elem[vtkOrdering[i]]] = nodeIndexInVTK++;
+        /// If the node is not found in the geos2VTKIndexing map:
+        /// 1. we assign the current value of nodeIndexInVTK to this node in the map (geos2VTKIndexing[nodes[ordering]] =
+        /// nodeIndexInVTK++).
+        /// 2. we increment nodeIndexInVTK to ensure the next new node gets a unique index.
+        /// 3. we add this new VTK node index to the connectivity vector (connectivity.push_back).
+        connectivity.push_back( geos2VTKIndexing[nodes[ordering]] = nodeIndexInVTK++ );
       }
       else
       {
-        connectivity[i] = VTKIndexPos->second;
+        connectivity.push_back( VTKIndexPos->second );
       }
     }
-    cellsArray->InsertNextCell( elem.size(), connectivity.data() );
+
+    cellArray->InsertNextCell( vtkOrdering.size(), connectivity.data() );
+    cellTypes.emplace_back( toVTKCellType( elementType, numNodes ) );
   }
 
   auto points = vtkSmartPointer< vtkPoints >::New();
-  points->SetNumberOfPoints( geosx2VTKIndexing.size() );
+  points->SetNumberOfPoints( geos2VTKIndexing.size() );
   arrayView2d< real64 const, nodes::REFERENCE_POSITION_USD > const referencePosition = nodeManager.referencePosition();
 
-  for( auto nodeIndex: geosx2VTKIndexing )
+  for( auto nodeIndex: geos2VTKIndexing )
   {
     auto point = referencePosition[nodeIndex.first];
     points->SetPoint( nodeIndex.second, point[0], point[1], point[2] );
   }
 
-  VTKCellType const type = [&]()
-  {
-    switch( subRegion.numNodesPerElement() )
-    {
-      case 6: return VTK_WEDGE;
-      case 8: return VTK_HEXAHEDRON;
-      default:
-      {
-        GEOS_ERROR( GEOS_FMT( "Elements with {} nodes can't be output in the subregion {}",
-                              subRegion.numNodesPerElement(), subRegion.getName() ) );
-        return VTK_POLYGON;
-      }
-    }
-  }();
-
-  return { type, cellsArray, points };
+  return { cellTypes, cellArray, points };
 }
 
 /**
@@ -362,7 +461,8 @@ getEmbeddedSurface( EmbeddedSurfaceSubRegion const & subRegion,
     cellsArray->InsertNextCell( nodes.size(), connectivity.data() );
   }
 
-  return { VTK_POLYGON, cellsArray, points };
+  std::vector< int > cellTypes( subRegion.size(), VTK_POLYGON );
+  return { cellTypes, cellsArray, points };
 }
 
 struct CellData
@@ -426,7 +526,7 @@ getVtkCells( CellElementRegion const & region,
     localIndex numConn = 0;
     region.forElementSubRegions< CellElementSubRegion >( [&]( CellElementSubRegion const & subRegion )
     {
-      numConn += subRegion.size() * getVtkConnectivity( subRegion.getElementType() ).size();
+      numConn += subRegion.size() * getVtkConnectivity( subRegion.getElementType(), subRegion.nodeList().size( 1 ) ).size();
     } );
     return numConn;
   }();
@@ -445,18 +545,19 @@ getVtkCells( CellElementRegion const & region,
   localIndex connOffset = 0;
   region.forElementSubRegions< CellElementSubRegion >( [&]( CellElementSubRegion const & subRegion )
   {
-    cellTypes.insert( cellTypes.end(), subRegion.size(), toVTKCellType( subRegion.getElementType() ) );
-    std::vector< int > const vtkOrdering = getVtkConnectivity( subRegion.getElementType() );
-    localIndex const numVtkData = vtkOrdering.size();
     auto const nodeList = subRegion.nodeList().toViewConst();
+    auto subRegionNumNodes = nodeList.size( 1 );
+    cellTypes.insert( cellTypes.end(), subRegion.size(), toVTKCellType( subRegion.getElementType(), subRegionNumNodes ) );
+    std::vector< int > const vtkOrdering = getVtkConnectivity( subRegion.getElementType(), subRegionNumNodes );
+    localIndex const numVtkData = vtkOrdering.size();
 
-// For all geosx element, the corresponding VTK data are copied in "connectivity".
-// Local nodes are mapped to global indices. Any negative value in "vtkOrdering"
-// corresponds to the number of faces or the number of nodes per faces, and they
-// are copied as positive values.
-// Here we privilege code simplicity. This can be more efficient (less tests) if the code is
-// specialized for each type of subregion.
-// This is not a time sensitive part of the code. Can be optimized later if needed.
+    // For all geos element, the corresponding VTK data are copied in "connectivity".
+    // Local nodes are mapped to global indices. Any negative value in "vtkOrdering"
+    // corresponds to the number of faces or the number of nodes per faces, and they
+    // are copied as positive values.
+    // Here we privilege code simplicity. This can be more efficient (less tests) if the code is
+    // specialized for each type of subregion.
+    // This is not a time sensitive part of the code. Can be optimized later if needed.
     forAll< parallelHostPolicy >( subRegion.size(), [&]( localIndex const c )
     {
       localIndex const elemConnOffset = connOffset + c * numVtkData;
@@ -486,6 +587,44 @@ getVtkCells( CellElementRegion const & region,
   return { std::move( cellTypes ), cellsArray, std::move( relevantNodes ) };
 }
 
+using ParticleData = std::pair< std::vector< int >, vtkSmartPointer< vtkCellArray > >;
+/**
+ * @brief Gets the cell connectivities as a VTK object for the ParticleRegion @p region
+ * @param[in] region the ParticleRegion to be written
+ * @return a standard pair consisting of:
+ *         - a list of types for each cell,
+ *         - a VTK object containing the connectivity information
+ */
+static ParticleData
+getVtkCells( ParticleRegion const & region )
+{
+  vtkSmartPointer< vtkCellArray > cellsArray = vtkCellArray::New();
+  cellsArray->SetNumberOfCells( region.getNumberOfParticles< ParticleRegion >() );
+  std::vector< int > cellType;
+  cellType.reserve( region.getNumberOfParticles< ParticleRegion >() );
+
+  vtkIdType nodeIndex = 0;
+
+  region.forParticleSubRegions< ParticleSubRegion >( [&]( ParticleSubRegion const & subRegion )
+  {
+    std::vector< int > vtkOrdering = getVtkToGeosxNodeOrdering( subRegion.getParticleType() );
+    std::vector< vtkIdType > connectivity( vtkOrdering.size() );
+    int vtkCellType = toVTKCellType( subRegion.getParticleType() );
+    for( localIndex c = 0; c < subRegion.size(); c++ )
+    {
+      for( std::size_t i = 0; i < connectivity.size(); i++ )
+      {
+
+        connectivity[i] = vtkOrdering.size()*nodeIndex + vtkOrdering[i];
+      }
+      nodeIndex++;
+      cellType.push_back( vtkCellType );
+      cellsArray->InsertNextCell( vtkOrdering.size(), connectivity.data() );
+    }
+  } );
+  return std::make_pair( cellType, cellsArray );
+}
+
 /**
  * @brief Writes timestamp information required by VisIt
  * @param[in] ug the VTK unstructured grid.
@@ -513,9 +652,9 @@ writeField( WrapperBase const & wrapper,
             localIndex const offset,
             vtkDataArray * data )
 {
-  types::dispatch( types::StandardArrays{}, wrapper.getTypeId(), true, [&]( auto array )
+  types::dispatch( types::ListofTypeList< types::StandardArrays >{}, [&]( auto tupleOfTypes )
   {
-    using ArrayType = decltype( array );
+    using ArrayType = camp::first< decltype( tupleOfTypes ) >;
     using T = typename ArrayType::ValueType;
     vtkAOSDataArrayTemplate< T > * typedData = vtkAOSDataArrayTemplate< T >::FastDownCast( data );
     auto const sourceArray = Wrapper< ArrayType >::cast( wrapper ).reference().toViewConst();
@@ -527,7 +666,7 @@ writeField( WrapperBase const & wrapper,
         typedData->SetTypedComponent( offset + i, compIndex++, value );
       } );
     } );
-  } );
+  }, wrapper );
 }
 
 /**
@@ -543,9 +682,9 @@ writeField( WrapperBase const & wrapper,
             localIndex const offset,
             vtkDataArray * data )
 {
-  types::dispatch( types::StandardArrays{}, wrapper.getTypeId(), true, [&]( auto array )
+  types::dispatch( types::ListofTypeList< types::StandardArrays >{}, [&]( auto tupleOfTypes )
   {
-    using ArrayType = decltype( array );
+    using ArrayType = camp::first< decltype( tupleOfTypes ) >;
     using T = typename ArrayType::ValueType;
     vtkAOSDataArrayTemplate< T > * typedData = vtkAOSDataArrayTemplate< T >::FastDownCast( data );
     auto const sourceArray = Wrapper< ArrayType >::cast( wrapper ).reference().toViewConst();
@@ -557,7 +696,7 @@ writeField( WrapperBase const & wrapper,
         typedData->SetTypedComponent( offset + i, compIndex++, value );
       } );
     } );
-  } );
+  }, wrapper );
 }
 
 /**
@@ -731,14 +870,14 @@ writeElementField( Group const & subRegions,
     WrapperBase const & wrapper = subRegion.getWrapperBase( field );
     if( first )
     {
-      types::dispatch( types::StandardArrays{}, wrapper.getTypeId(), true, [&]( auto array )
+      types::dispatch( types::ListofTypeList< types::StandardArrays >{}, [&]( auto tupleOfTypes )
       {
-        using ArrayType = decltype( array );
+        using ArrayType = camp::first< decltype( tupleOfTypes ) >;
         using T = typename ArrayType::ValueType;
         auto typedData = vtkAOSDataArrayTemplate< T >::New();
         data.TakeReference( typedData );
         setComponentMetadata( Wrapper< ArrayType >::cast( wrapper ), typedData );
-      } );
+      }, wrapper );
       first = false;
       numDims = wrapper.numArrayDims();
     }
@@ -766,6 +905,60 @@ writeElementField( Group const & subRegions,
   cellData->AddArray( data );
 }
 
+void VTKPolyDataWriterInterface::writeParticleFields( ParticleRegionBase const & region,
+                                                      vtkCellData * cellData ) const
+{
+  std::unordered_set< string > materialFields;
+  conduit::Node fakeRoot;
+  Group materialData( "materialData", fakeRoot );
+  region.forParticleSubRegions( [&]( ParticleSubRegionBase const & subRegion )
+  {
+    // Register a dummy group for each subregion
+    Group & subReg = materialData.registerGroup( subRegion.getName() );
+    subReg.resize( subRegion.size() );
+
+    // Collect a list of plotted constitutive fields and create wrappers containing averaged data
+    subRegion.getConstitutiveModels().forSubGroups( [&]( Group const & material )
+    {
+      material.forWrappers( [&]( WrapperBase const & wrapper )
+      {
+        string const fieldName = constitutive::ConstitutiveBase::makeFieldName( material.getName(), wrapper.getName() );
+        if( outputUtilities::isFieldPlotEnabled( wrapper.getPlotLevel(), m_plotLevel, fieldName, m_fieldNames, m_onlyPlotSpecifiedFieldNames ) )
+        {
+          subReg.registerWrapper( wrapper.averageOverSecondDim( fieldName, subReg ) );
+          materialFields.insert( fieldName );
+        }
+      } );
+    } );
+  } );
+
+  // Write averaged material data
+  for( string const & field : materialFields )
+  {
+    writeElementField( materialData, field, cellData );
+  }
+
+  // Collect a list of regular fields (filter out material field wrappers)
+  // TODO: this can be removed if we stop hanging constitutive wrappers on the mesh
+  std::unordered_set< string > regularFields;
+  region.forParticleSubRegions( [&]( ParticleSubRegionBase const & subRegion )
+  {
+    for( auto const & wrapperIter : subRegion.wrappers() )
+    {
+      if( isFieldPlotEnabled( *wrapperIter.second ) && materialFields.count( wrapperIter.first ) == 0 )
+      {
+        regularFields.insert( wrapperIter.first );
+      }
+    }
+  } );
+
+  // Write regular fields
+  for( string const & field : regularFields )
+  {
+    writeElementField( region.getGroup( ParticleRegionBase::viewKeyStruct::particleSubRegions() ), field, cellData );
+  }
+}
+
 void VTKPolyDataWriterInterface::writeNodeFields( NodeManager const & nodeManager,
                                                   arrayView1d< localIndex const > const & nodeIndices,
                                                   vtkPointData * pointData ) const
@@ -776,14 +969,14 @@ void VTKPolyDataWriterInterface::writeNodeFields( NodeManager const & nodeManage
     if( isFieldPlotEnabled( wrapper ) )
     {
       vtkSmartPointer< vtkDataArray > data;
-      types::dispatch( types::StandardArrays{}, wrapper.getTypeId(), true, [&]( auto array )
+      types::dispatch( types::ListofTypeList< types::StandardArrays >{}, [&]( auto tupleOfTypes )
       {
-        using ArrayType = decltype( array );
+        using ArrayType = camp::first< decltype( tupleOfTypes ) >;
         using T = typename ArrayType::ValueType;
         auto typedData = vtkAOSDataArrayTemplate< T >::New();
         data.TakeReference( typedData );
         setComponentMetadata( Wrapper< ArrayType >::cast( wrapper ), typedData );
-      } );
+      }, wrapper );
 
       data->SetNumberOfTuples( nodeIndices.size() );
       data->SetName( wrapper.getName().c_str() );
@@ -851,7 +1044,7 @@ void VTKPolyDataWriterInterface::writeElementFields( ElementRegionBase const & r
 void VTKPolyDataWriterInterface::writeCellElementRegions( real64 const time,
                                                           ElementRegionManager const & elemManager,
                                                           NodeManager const & nodeManager,
-                                                          string const & path ) const
+                                                          string const & path )
 {
   elemManager.forElementRegions< CellElementRegion >( [&]( CellElementRegion const & region )
   {
@@ -865,31 +1058,47 @@ void VTKPolyDataWriterInterface::writeCellElementRegions( real64 const time,
     writeTimestamp( ug.GetPointer(), time );
     writeElementFields( region, ug->GetCellData() );
     writeNodeFields( nodeManager, VTKCells.nodes, ug->GetPointData() );
+    writeUnstructuredGrid( path, region, ug.GetPointer() );
+  } );
+}
 
-    string const regionDir = joinPath( path, region.getName() );
-    writeUnstructuredGrid( regionDir, ug.GetPointer() );
+void VTKPolyDataWriterInterface::writeParticleRegions( real64 const time,
+                                                       ParticleManager const & particleManager,
+                                                       string const & path )
+{
+  particleManager.forParticleRegions< ParticleRegion >( [&]( ParticleRegion const & region )
+  {
+    auto VTKCells = getVtkCells( region );
+    auto VTKPoints = getVtkPoints( region );
+
+    auto const ug = vtkSmartPointer< vtkUnstructuredGrid >::New();
+    ug->SetPoints( VTKPoints );
+    ug->SetCells( VTKCells.first.data(), VTKCells.second );
+
+    writeTimestamp( ug.GetPointer(), time );
+    writeParticleFields( region, ug->GetCellData() );
+
+    writeUnstructuredGrid( path, region, ug.GetPointer() );
   } );
 }
 
 void VTKPolyDataWriterInterface::writeWellElementRegions( real64 const time,
                                                           ElementRegionManager const & elemManager,
                                                           NodeManager const & nodeManager,
-                                                          string const & path ) const
+                                                          string const & path )
 {
   elemManager.forElementRegions< WellElementRegion >( [&]( WellElementRegion const & region )
   {
     auto const & subRegion = region.getSubRegion< WellElementSubRegion >( 0 );
-    ElementData const well = getWell( subRegion, nodeManager );
+    ElementData well = getWell( subRegion, nodeManager );
 
     auto const ug = vtkSmartPointer< vtkUnstructuredGrid >::New();
     ug->SetPoints( well.points );
-    ug->SetCells( well.type, well.cells );
+    ug->SetCells( well.cellTypes.data(), well.cells );
 
     writeTimestamp( ug.GetPointer(), time );
     writeElementFields( region, ug->GetCellData() );
-
-    string const regionDir = joinPath( path, region.getName() );
-    writeUnstructuredGrid( regionDir, ug.GetPointer() );
+    writeUnstructuredGrid( path, region, ug.GetPointer() );
   } );
 }
 
@@ -897,12 +1106,13 @@ void VTKPolyDataWriterInterface::writeSurfaceElementRegions( real64 const time,
                                                              ElementRegionManager const & elemManager,
                                                              NodeManager const & nodeManager,
                                                              EmbeddedSurfaceNodeManager const & embSurfNodeManager,
-                                                             string const & path ) const
+                                                             FaceManager const & faceManager,
+                                                             string const & path )
 {
   elemManager.forElementRegions< SurfaceElementRegion >( [&]( SurfaceElementRegion const & region )
   {
     auto const ug = vtkSmartPointer< vtkUnstructuredGrid >::New();
-    ElementData const surface = [&]()
+    ElementData surface = [&]()
     {
       switch( region.subRegionType() )
       {
@@ -914,7 +1124,7 @@ void VTKPolyDataWriterInterface::writeSurfaceElementRegions( real64 const time,
         case SurfaceElementRegion::SurfaceSubRegionType::faceElement:
           {
             auto const & subRegion = region.getUniqueSubRegion< FaceElementSubRegion >();
-            return getSurface( subRegion, nodeManager );
+            return getSurface( subRegion, nodeManager, faceManager, m_writeFaceElementsAs3D );
           }
         default:
           {
@@ -924,13 +1134,11 @@ void VTKPolyDataWriterInterface::writeSurfaceElementRegions( real64 const time,
     }();
 
     ug->SetPoints( surface.points );
-    ug->SetCells( surface.type, surface.cells );
+    ug->SetCells( surface.cellTypes.data(), surface.cells );
 
     writeTimestamp( ug.GetPointer(), time );
     writeElementFields( region, ug->GetCellData() );
-
-    string const regionDir = joinPath( path, region.getName() );
-    writeUnstructuredGrid( regionDir, ug.GetPointer() );
+    writeUnstructuredGrid( path, region, ug.GetPointer() );
   } );
 }
 
@@ -942,7 +1150,7 @@ static string getCycleSubFolder( integer const cycle )
 static string getRankFileName( integer const rank )
 {
   int const width = static_cast< int >( std::log10( MpiWrapper::commSize() ) ) + 1;
-  return GEOS_FMT( "rank_{:>0{}}", rank, width );
+  return GEOS_FMT( "rank_{0:0>{1}}", rank, width );
 }
 
 void VTKPolyDataWriterInterface::writeVtmFile( integer const cycle,
@@ -958,19 +1166,42 @@ void VTKPolyDataWriterInterface::writeVtmFile( integer const cycle,
     {
 
       if( meshLevel.isShallowCopy() )
-      {
         return;
+
+      string const & meshLevelName = meshLevel.getName();
+
+      if( !m_levelNames.empty())
+      {
+        if( m_levelNames.find( meshLevelName ) == m_levelNames.end())
+          return;
       }
 
-      ElementRegionManager const & elemManager = meshLevel.getElemManager();
-      string const meshPath = joinPath( getCycleSubFolder( cycle ), meshBody.getName(), meshLevel.getName() );
-      int const mpiSize = MpiWrapper::commSize();
+      string const & meshBodyName = meshBody.getName();
 
-      auto addRegion = [&]( ElementRegionBase const & region )
+      ElementRegionManager const & elemManager = meshLevel.getElemManager();
+
+      ParticleManager const & particleManager = meshLevel.getParticleManager();
+
+      string const meshPath = joinPath( getCycleSubFolder( cycle ), meshBodyName, meshLevelName );
+
+      auto addElementRegion = [&]( ElementRegionBase const & region )
       {
         std::vector< string > const blockPath{ meshBody.getName(), meshLevel.getName(), region.getCatalogName(), region.getName() };
         string const regionPath = joinPath( meshPath, region.getName() );
-        for( int i = 0; i < mpiSize; i++ )
+        for( const auto & i : m_targetProcessesId.at( region.getName()) )
+        {
+          string const dataSetName = getRankFileName( i );
+          string const dataSetFile = joinPath( regionPath, dataSetName + ".vtu" );
+          vtmWriter.addDataSet( blockPath, dataSetName, dataSetFile );
+        }
+      };
+
+      auto addParticleRegion = [&]( ParticleRegionBase const & region )
+      {
+        string const & regionName = region.getName();
+        std::vector< string > const blockPath{ meshBodyName, meshLevelName, region.getCatalogName(), regionName };
+        string const regionPath = joinPath( meshPath, regionName );
+        for( const auto & i : m_targetProcessesId.at( region.getName()) )
         {
           string const dataSetName = getRankFileName( i );
           string const dataSetFile = joinPath( regionPath, dataSetName + ".vtu" );
@@ -981,17 +1212,22 @@ void VTKPolyDataWriterInterface::writeVtmFile( integer const cycle,
       // Output each of the region types
       if( m_outputRegionType == VTKRegionTypes::CELL || m_outputRegionType == VTKRegionTypes::ALL )
       {
-        elemManager.forElementRegions< CellElementRegion >( addRegion );
+        elemManager.forElementRegions< CellElementRegion >( addElementRegion );
       }
 
       if( m_outputRegionType == VTKRegionTypes::WELL || m_outputRegionType == VTKRegionTypes::ALL )
       {
-        elemManager.forElementRegions< WellElementRegion >( addRegion );
+        elemManager.forElementRegions< WellElementRegion >( addElementRegion );
       }
 
       if( m_outputRegionType == VTKRegionTypes::SURFACE || m_outputRegionType == VTKRegionTypes::ALL )
       {
-        elemManager.forElementRegions< SurfaceElementRegion >( addRegion );
+        elemManager.forElementRegions< SurfaceElementRegion >( addElementRegion );
+      }
+
+      if( m_outputRegionType == VTKRegionTypes::PARTICLE || m_outputRegionType == VTKRegionTypes::ALL )
+      {
+        particleManager.forParticleRegions< ParticleRegion >( addParticleRegion );
       }
     } );
   } );
@@ -1014,8 +1250,11 @@ int toVtkOutputMode( VTKOutputMode const mode )
 }
 
 void VTKPolyDataWriterInterface::writeUnstructuredGrid( string const & path,
-                                                        vtkUnstructuredGrid * ug ) const
+                                                        ObjectManagerBase const & region,
+                                                        vtkUnstructuredGrid * ug )
 {
+  string const regionDir = joinPath( path, region.getName() );
+
   vtkSmartPointer< vtkAlgorithm > filter;
 
   // If we want to get rid of the ghost ranks, we use the appropriate `vtkThreshold` filter.
@@ -1037,26 +1276,60 @@ void VTKPolyDataWriterInterface::writeUnstructuredGrid( string const & path,
   }
 
   filter->SetInputDataObject( ug );
-  filter->Update();
 
-  makeDirectory( path );
-  string const vtuFilePath = joinPath( path, getRankFileName( MpiWrapper::commRank() ) + ".vtu" );
-  auto const vtuWriter = vtkSmartPointer< vtkXMLUnstructuredGridWriter >::New();
-  vtuWriter->SetInputData( filter->GetOutputDataObject( 0 ) );
-  vtuWriter->SetFileName( vtuFilePath.c_str() );
-  vtuWriter->SetDataMode( toVtkOutputMode( m_outputMode ) );
-  vtuWriter->Write();
+  vtkSmartPointer< vtkMultiProcessController > controller = vtk::getController();
+  vtkMultiProcessController::SetGlobalController( controller );
+
+  // In case of m_numberOfTargetProcesses == GetNumberOfProcesses the filter returns a shallow copy
+  // The behavior  is the same as previously in this case. The rank number is computed instead of implicitly written
+  vtkNew< vtkAggregateDataSetFilter > aggregate;
+  aggregate->SetInputConnection( filter->GetOutputPort());
+  aggregate->SetNumberOfTargetProcesses( m_numberOfTargetProcesses );
+  aggregate->SetMergePoints( false );
+  aggregate->Update();
+
+  int localCommRank = -1;
+  if( vtkDataSet::SafeDownCast( aggregate->GetOutput())->GetNumberOfPoints() != 0 )
+  {
+    localCommRank = MpiWrapper::commRank();
+    makeDirectory( regionDir );
+    string const vtuFilePath = joinPath( regionDir, getRankFileName( localCommRank ) + ".vtu" );
+    auto const vtuWriter = vtkSmartPointer< vtkXMLUnstructuredGridWriter >::New();
+    vtuWriter->SetInputData( aggregate->GetOutput() );
+    vtuWriter->SetFileName( vtuFilePath.c_str() );
+    vtuWriter->SetDataMode( toVtkOutputMode( m_outputMode ) );
+    vtuWriter->Write();
+  }
+
+  const int size = MpiWrapper::commSize( MPI_COMM_GEOS );
+  std::vector< int > globalValues( size );
+
+  // Everything is done on rank 0
+  MpiWrapper::gather( &localCommRank,
+                      1,
+                      globalValues.data(),
+                      1,
+                      0,
+                      MPI_COMM_GEOS );
+
+  if( MpiWrapper::commRank() == 0 )
+  {
+    // any rank that does not hold data will not participate in the output
+    globalValues.erase( std::remove_if( globalValues.begin(),
+                                        globalValues.end(),
+                                        []( int x ) { return x == -1; } ),
+                        globalValues.end());
+    m_targetProcessesId[region.getName()] = globalValues;
+  }
 }
 
 void VTKPolyDataWriterInterface::write( real64 const time,
                                         integer const cycle,
                                         DomainPartition const & domain )
 {
-  // This guard prevents crashes observed on MacOS due to a floating point exception
+  // This guard prevents crashes due to a floating point exception (SIGFPE)
   // triggered inside VTK by a progress indicator
-#if defined(__APPLE__) && defined(__MACH__)
   LvArray::system::FloatingPointExceptionGuard guard;
-#endif
 
   string const stepSubDir = joinPath( m_outputName, getCycleSubFolder( cycle ) );
   string const stepSubDirFull = joinPath( m_outputDir, stepSubDir );
@@ -1066,7 +1339,7 @@ void VTKPolyDataWriterInterface::write( real64 const time,
   {
     makeDirsForPath( stepSubDirFull );
   }
-  MpiWrapper::barrier( MPI_COMM_GEOSX );
+  MpiWrapper::barrier( MPI_COMM_GEOS );
 
   // loop over all mesh levels and mesh bodies
   domain.forMeshBodies( [&]( MeshBody const & meshBody )
@@ -1075,14 +1348,21 @@ void VTKPolyDataWriterInterface::write( real64 const time,
     {
 
       if( meshLevel.isShallowCopy() )
-      {
         return;
+
+      string const & meshLevelName = meshLevel.getName();
+
+      if( !m_levelNames.empty())
+      {
+        if( m_levelNames.find( meshLevelName ) == m_levelNames.end())
+          return;
       }
 
       ElementRegionManager const & elemManager = meshLevel.getElemManager();
+      ParticleManager const & particleManager = meshLevel.getParticleManager();
       NodeManager const & nodeManager = meshLevel.getNodeManager();
+      FaceManager const & faceManager = meshLevel.getFaceManager();
       EmbeddedSurfaceNodeManager const & embSurfNodeManager = meshLevel.getEmbSurfNodeManager();
-      string const & meshLevelName = meshLevel.getName();
       string const & meshBodyName = meshBody.getName();
 
       if( m_requireFieldRegistrationCheck && !m_fieldNames.empty() )
@@ -1107,7 +1387,11 @@ void VTKPolyDataWriterInterface::write( real64 const time,
       }
       if( m_outputRegionType == VTKRegionTypes::SURFACE || m_outputRegionType == VTKRegionTypes::ALL )
       {
-        writeSurfaceElementRegions( time, elemManager, nodeManager, embSurfNodeManager, meshDir );
+        writeSurfaceElementRegions( time, elemManager, nodeManager, embSurfNodeManager, faceManager, meshDir );
+      }
+      if( m_outputRegionType == VTKRegionTypes::PARTICLE || m_outputRegionType == VTKRegionTypes::ALL )
+      {
+        writeParticleRegions( time, particleManager, meshDir );
       }
     } );
   } );

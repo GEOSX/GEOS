@@ -2,10 +2,11 @@
  * ------------------------------------------------------------------------------------------------------------
  * SPDX-License-Identifier: LGPL-2.1-only
  *
- * Copyright (c) 2018-2020 Lawrence Livermore National Security LLC
- * Copyright (c) 2018-2020 The Board of Trustees of the Leland Stanford Junior University
- * Copyright (c) 2018-2020 TotalEnergies
- * Copyright (c) 2019-     GEOSX Contributors
+ * Copyright (c) 2016-2024 Lawrence Livermore National Security LLC
+ * Copyright (c) 2018-2024 TotalEnergies
+ * Copyright (c) 2018-2024 The Board of Trustees of the Leland Stanford Junior University
+ * Copyright (c) 2023-2024 Chevron
+ * Copyright (c) 2019-     GEOS/GEOSX Contributors
  * All rights reserved
  *
  * See top level LICENSE, COPYRIGHT, CONTRIBUTORS, NOTICE, and ACKNOWLEDGEMENTS files for details.
@@ -520,6 +521,7 @@ processCouplingRegionList( std::set< string > inputList,
     // Check that both fields exist on all regions in the list
     auto const checkSupport = [&regions]( std::set< string > const & fieldRegions, string const & fieldName )
     {
+      GEOS_UNUSED_VAR( fieldName ); // unused if geos_error_if is nulld
       // Both regions lists are sorted at this point
       GEOS_ERROR_IF( !std::includes( fieldRegions.begin(), fieldRegions.end(), regions.begin(), regions.end() ),
                      GEOS_FMT( "Coupling domain is not a subset of {}'s support:\nCoupling: {}\nField: {}",
@@ -572,6 +574,7 @@ processCouplingRegionList( std::vector< DofManager::FieldSupport > inputList,
     // Check that each input entry is included in both row and col field supports
     auto const checkSupport = [&regions]( std::vector< DofManager::FieldSupport > const & fieldRegions, string const & fieldName )
     {
+      GEOS_UNUSED_VAR( fieldName ); // unused if geos_error_if is nulled
       for( DofManager::FieldSupport const & r : regions )
       {
         auto const comp = [&r]( auto const & f ){ return RegionComp< std::equal_to<> >{} ( r, f ); };
@@ -1341,10 +1344,10 @@ void vectorToFieldImpl( arrayView1d< real64 const > const & localVector,
 
   // Restrict primary solution fields to 1-2D real arrays,
   // because applying component index is not well defined for 3D and higher
-  using FieldTypes = types::ArrayTypes< types::RealTypes, types::DimsUpTo< 2 > >;
-  types::dispatch( FieldTypes{}, wrapper.getTypeId(), true, [&]( auto array )
+  using FieldTypes = types::ListofTypeList< types::ArrayTypes< types::RealTypes, types::DimsUpTo< 2 > > >;
+  types::dispatch( FieldTypes{}, [&]( auto tupleOfTypes )
   {
-    using ArrayType = decltype( array );
+    using ArrayType = camp::first< decltype( tupleOfTypes ) >;
     Wrapper< ArrayType > & wrapperT = Wrapper< ArrayType >::cast( wrapper );
     vectorToFieldKernel< FIELD_OP, POLICY >( manager,
                                              localVector,
@@ -1354,7 +1357,7 @@ void vectorToFieldImpl( arrayView1d< real64 const > const & localVector,
                                              scalingFactor,
                                              dofOffset,
                                              mask );
-  } );
+  }, wrapper );
 }
 
 template< typename FIELD_OP, typename POLICY, typename FIELD_VIEW >
@@ -1401,10 +1404,10 @@ void fieldToVectorImpl( arrayView1d< real64 > const & localVector,
 
   // Restrict primary solution fields to 1-2D real arrays,
   // because applying component index is not well defined for 3D and higher
-  using FieldTypes = types::ArrayTypes< types::RealTypes, types::DimsUpTo< 2 > >;
-  types::dispatch( FieldTypes{}, wrapper.getTypeId(), true, [&]( auto array )
+  using FieldTypes = types::ListofTypeList< types::ArrayTypes< types::RealTypes, types::DimsUpTo< 2 > > >;
+  types::dispatch( FieldTypes{}, [&]( auto tupleOfTypes )
   {
-    using ArrayType = decltype( array );
+    using ArrayType = camp::first< decltype( tupleOfTypes ) >;
     Wrapper< ArrayType > const & wrapperT = Wrapper< ArrayType >::cast( wrapper );
     fieldToVectorKernel< FIELD_OP, POLICY >( localVector,
                                              wrapperT.reference(),
@@ -1413,7 +1416,7 @@ void fieldToVectorImpl( arrayView1d< real64 > const & localVector,
                                              scalingFactor,
                                              dofOffset,
                                              mask );
-  } );
+  }, wrapper );
 }
 
 } // namespace
@@ -1787,7 +1790,7 @@ void DofManager::makeRestrictor( std::vector< SubComponent > const & selection,
 
 void DofManager::printFieldInfo( std::ostream & os ) const
 {
-  if( MpiWrapper::commRank( MPI_COMM_GEOSX ) == 0 )
+  if( MpiWrapper::commRank( MPI_COMM_GEOS ) == 0 )
   {
     localIndex const numFields = LvArray::integerConversion< localIndex >( m_fields.size() );
 
@@ -1875,15 +1878,15 @@ void DofManager::printFieldInfo( std::ostream & os ) const
                                             bool const transpose, \
                                             LAI::ParallelMatrix & restrictor ) const;
 
-#ifdef GEOSX_USE_TRILINOS
+#ifdef GEOS_USE_TRILINOS
 MAKE_DOFMANAGER_METHOD_INST( TrilinosInterface )
 #endif
 
-#ifdef GEOSX_USE_HYPRE
+#ifdef GEOS_USE_HYPRE
 MAKE_DOFMANAGER_METHOD_INST( HypreInterface )
 #endif
 
-#ifdef GEOSX_USE_PETSC
+#ifdef GEOS_USE_PETSC
 MAKE_DOFMANAGER_METHOD_INST( PetscInterface )
 #endif
 

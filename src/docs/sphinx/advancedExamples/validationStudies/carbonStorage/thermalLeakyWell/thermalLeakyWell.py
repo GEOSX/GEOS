@@ -15,15 +15,15 @@ def main():
     # Read HDF5
     hf = h5py.File(hdf5FilePathRefined, 'r')
     timeRefined = hf.get('componentOutflux Time')
-    timeRefined = np.array(timeRefined)
+    timeRefined = np.asarray(timeRefined)
     compOutfluxRefined = hf.get('componentOutflux')
-    compOutfluxRefined = np.array(compOutfluxRefined)
+    compOutfluxRefined = np.asarray(compOutfluxRefined)
 
     hf = h5py.File(hdf5FilePathCoarse, 'r')
     timeCoarse = hf.get('componentOutflux Time')
-    timeCoarse = np.array(timeCoarse)
+    timeCoarse = np.asarray(timeCoarse)
     compOutfluxCoarse = hf.get('componentOutflux')
-    compOutfluxCoarse = np.array(compOutfluxCoarse)
+    compOutfluxCoarse = np.asarray(compOutfluxCoarse)
 
     # Conversions
     inDays = 1.0 / 86400.0

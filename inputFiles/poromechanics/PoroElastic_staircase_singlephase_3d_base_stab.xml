@@ -1,0 +1,141 @@
+<?xml version="1.0" ?>
+
+<Problem>
+
+  <Mesh>
+    <InternalMesh
+      name="mesh"
+      elementTypes="{ C3D8 }"
+      xCoords="{ 0, 250, 500 }"
+      yCoords="{ 0, 250, 500 }"
+      zCoords="{ 0, 62.5, 125, 187.5, 250 }"
+      nx="{ 3, 3 }"
+      ny="{ 3, 3 }"
+      nz="{ 2, 2, 2, 2 }"
+      cellBlockNames="{ cb-0_0_0, cb-1_0_0, cb-0_1_0, cb-1_1_0,
+                        cb-0_0_1, cb-1_0_1, cb-0_1_1, cb-1_1_1,
+                        cb-0_0_2, cb-1_0_2, cb-0_1_2, cb-1_1_2,
+                        cb-0_0_3, cb-1_0_3, cb-0_1_3, cb-1_1_3 }">
+    </InternalMesh>
+  </Mesh>
+
+  <Geometry>
+          <Box
+                  name="source"
+                  xMin="{ 416.5, -0.1, -0.1}"
+                  xMax="{ 500.1, 83.5, 62.6}"/>
+  </Geometry>
+
+  <NumericalMethods>
+    <FiniteElements>
+      <FiniteElementSpace
+        name="FE1"
+        order="1"/>
+    </FiniteElements>
+    <FiniteVolume>
+      <TwoPointFluxApproximation
+        name="fluidTPFA"/>
+    </FiniteVolume>
+  </NumericalMethods>
+
+  <ElementRegions>
+    <CellElementRegion
+      name="channel"
+      cellBlocks="{ cb-1_0_0, cb-0_0_0, cb-0_0_1, cb-0_1_1, cb-0_1_2, cb-1_1_2, cb-1_1_3, cb-1_0_3 }"
+      materialList="{ fluid, porousRockChannel }"/>
+    <CellElementRegion
+      name="barrier"
+      cellBlocks="{ cb-0_1_0, cb-1_1_0, cb-1_1_1, cb-1_0_1, cb-1_0_2, cb-0_0_2, cb-0_0_3, cb-0_1_3 }"
+      materialList="{ fluid, porousRockBarrier }"/>
+  </ElementRegions>
+
+  <Constitutive>
+
+    <CompressibleSinglePhaseFluid
+      name="fluid"
+      defaultDensity="1000"
+      defaultViscosity="0.001"
+      referencePressure="1e7"
+      referenceDensity="1000"
+      compressibility="4.4e-10"
+      referenceViscosity="0.001"
+      viscosibility="0.0"/>
+
+    <PorousElasticIsotropic
+      name="porousRockChannel"
+      solidModelName="skeletonChannel"
+      porosityModelName="rockPorosityChannel"
+      permeabilityModelName="rockPermChannel"/>
+    <ElasticIsotropic
+      name="skeletonChannel"
+      defaultDensity="2650"
+      defaultBulkModulus="5.e9"
+      defaultPoissonRatio="0.25"/>
+    <ConstantPermeability
+      name="rockPermChannel"
+      permeabilityComponents="{ 9.8e-13, 9.8e-13, 9.8e-13 }"/>
+    <BiotPorosity
+      name="rockPorosityChannel"
+      defaultGrainBulkModulus="1.0e27"
+      defaultReferencePorosity="0.2"/>
+
+    <PorousElasticIsotropic
+      name="porousRockBarrier"
+      solidModelName="skeletonBarrier"
+      porosityModelName="rockPorosityBarrier"
+      permeabilityModelName="rockPermBarrier"/>
+    <ElasticIsotropic
+      name="skeletonBarrier"
+      defaultDensity="2650"
+      defaultBulkModulus="5.e9"
+      defaultPoissonRatio="0.25"/>
+    <ConstantPermeability
+      name="rockPermBarrier"
+      permeabilityComponents="{ 0.0, 0.0, 0.0 }"/>
+    <BiotPorosity
+      name="rockPorosityBarrier"
+      defaultGrainBulkModulus="1.0e27"
+      defaultReferencePorosity="0.05"/>
+  </Constitutive>
+
+  <FieldSpecifications>
+
+    <HydrostaticEquilibrium
+      name="equil"
+      objectPath="ElementRegions"      
+      datumElevation="250"
+      datumPressure="1e7"/>
+
+    <FieldSpecification
+      name="xconstraint"
+      objectPath="nodeManager"
+      fieldName="totalDisplacement"
+      component="0"
+      scale="0.0"
+      setNames="{ xneg, xpos }"/>
+    <FieldSpecification
+      name="yconstraint"
+      objectPath="nodeManager"
+      fieldName="totalDisplacement"
+      component="1"
+      scale="0.0"
+      setNames="{ yneg, ypos }"/>
+    <FieldSpecification
+      name="zconstraint"
+      objectPath="nodeManager"
+      fieldName="totalDisplacement"
+      component="2"
+      scale="0.0"
+      setNames="{ zneg }"/>
+
+    <SourceFlux
+            name="sourceTerm"
+            objectPath="ElementRegions"
+            component="0"
+            scale="-1.0"
+            setNames="{source}"/>
+  </FieldSpecifications>
+
+  
+</Problem>
+

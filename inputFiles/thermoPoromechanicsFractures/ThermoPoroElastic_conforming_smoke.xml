@@ -15,7 +15,7 @@
       zCoords="{ 0, 1 }"
       nx="{ 10 }"
       ny="{ 11 }"
-      nz="{ 1 }"
+      nz="{ 2 }"
       cellBlockNames="{ cb1 }"/>
   </Mesh>
 
@@ -48,7 +48,7 @@
 
     <PeriodicEvent
       name="restarts"
-      timeFrequency="1.0e6"
+      timeFrequency="5.0e5"
       target="/Outputs/restartOutput"/>
   </Events>
 </Problem>

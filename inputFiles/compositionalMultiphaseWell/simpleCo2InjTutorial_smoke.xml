@@ -22,8 +22,8 @@
         name="wellInjector1"
         wellRegionName="wellRegion"
         wellControlsName="wellControls"
-        polylineNodeCoords="{ { 500.0, 500.0, 6650.00 },
-                              { 500.0, 500.0, 6600.00 } }"
+        polylineNodeCoords="{ { 525.0, 525.0, 6650.00 },
+                              { 525.0, 525.0, 6600.00 } }"
         polylineSegmentConn="{ { 0, 1 } }"
         radius="0.1"
         numElementsPerSegment="2">
@@ -71,4 +71,3 @@
   </Events>
   <!-- SPHINX_FIELD_CASE_Co2_EVENTS_END -->  
 </Problem>
-

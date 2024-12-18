@@ -12,14 +12,13 @@
       name="poroSolver"
       targetRegions="{ RockMatrix, Fracture }"
       initialDt="1e-3"
-      fracturesSolverName="fractureMechSolver"
       flowSolverName="flowSolver"
-      solidSolverName="matrixMechSolver"
+      solidSolverName="fractureMechSolver"
       logLevel="1"
       isThermal="1">
       <NonlinearSolverParameters
-        newtonTol="1.0e-5"
-        newtonMaxIter="10"
+        newtonTol="1.0e-2"
+        newtonMaxIter="15"
         maxTimeStepCuts="4"/>
       <LinearSolverParameters
         directParallel="0"
@@ -29,15 +28,9 @@
     <SolidMechanicsEmbeddedFractures
       name="fractureMechSolver"
       targetRegions="{ RockMatrix, Fracture }"
-      solidSolverName="matrixMechSolver"
-      fractureRegionName="Fracture"
-      contactRelationName="fractureContact"/>
-
-    <SolidMechanicsLagrangianSSLE
-      name="matrixMechSolver"
       timeIntegrationOption="QuasiStatic"
       discretization="FE1"
-      targetRegions="{ RockMatrix }"/>
+      contactPenaltyStiffness="4.0e9"/>
 
     <SinglePhaseFVM
       name="flowSolver"
@@ -74,105 +67,13 @@
   <ElementRegions>
     <CellElementRegion
       name="RockMatrix"
-      cellBlocks="{ cb1 }"
+      cellBlocks="{ * }"
       materialList="{ porousRock, water, thermalCond }"/>
 
     <SurfaceElementRegion
       name="Fracture"
       subRegionType="embeddedElement"
-      materialList="{ water, fractureFilling, fractureContact, thermalCond }"
-      defaultAperture="5.e-3"/>
+      materialList="{ water, fractureFilling, fractureContact, thermalCond, hApertureModel }"
+      defaultAperture="1.e-4"/>
   </ElementRegions>
-
-  <FieldSpecifications>
-    <FieldSpecification
-      name="fracPorosity"
-      initialCondition="1"
-      setNames="{ all }"
-      objectPath="ElementRegions/Fracture"
-      fieldName="fracturePorosity_porosity"
-      scale="1.00"/>
-
-    <FieldSpecification
-      name="initialPressure"
-      initialCondition="1"
-      setNames="{ all }"
-      objectPath="ElementRegions/RockMatrix/cb1"
-      fieldName="pressure"
-      scale="0.0"/>
-
-    <FieldSpecification
-      name="initialPressureFracture"
-      setNames="{ all }"
-      objectPath="ElementRegions/Fracture"
-      fieldName="pressure"
-      scale="1.0e5"/>
-
-    <FieldSpecification
-      name="initialTemperature"
-      initialCondition="1"
-      setNames="{ all }"
-      objectPath="ElementRegions/RockMatrix/cb1"
-      fieldName="temperature"
-      scale="0.0"/>
-
-    <FieldSpecification
-      name="initialTemperatureFracture"
-      setNames="{ all }"
-      objectPath="ElementRegions/Fracture"
-      fieldName="temperature"
-      scale="300"/>
-
-    <FieldSpecification
-      name="xnegconstraint"
-      objectPath="nodeManager"
-      fieldName="totalDisplacement"
-      component="0"
-      scale="0.0"
-      setNames="{ xneg, xpos }"/>
-
-    <FieldSpecification
-      name="yposconstraint"
-      objectPath="nodeManager"
-      fieldName="totalDisplacement"
-      component="1"
-      scale="0.0"
-      setNames="{ ypos, yneg }"/>
-
-    <FieldSpecification
-      name="zconstraint"
-      objectPath="nodeManager"
-      fieldName="totalDisplacement"
-      component="2"
-      scale="0.0"
-      setNames="{ zneg, zpos }"/>
-
-    <FieldSpecification
-      name="leftPressure"
-      objectPath="faceManager"
-      fieldName="pressure"
-      scale="0.0"
-      setNames="{ xneg }"/>
-
-    <FieldSpecification
-      name="rightPressure"
-      objectPath="faceManager"
-      fieldName="pressure"
-      scale="0.0"
-      setNames="{ xpos }"/>
-
-    <FieldSpecification
-      name="leftTemperature"
-      objectPath="faceManager"
-      fieldName="temperature"
-      scale="0.0"
-      setNames="{ xneg }"/>
-
-    <FieldSpecification
-      name="rightTemperature"
-      objectPath="faceManager"
-      fieldName="temperature"
-      scale="0.0"
-      setNames="{ xpos }"/>
-  </FieldSpecifications>
 </Problem>

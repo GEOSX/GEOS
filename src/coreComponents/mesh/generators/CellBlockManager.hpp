@@ -2,10 +2,11 @@
  * ------------------------------------------------------------------------------------------------------------
  * SPDX-License-Identifier: LGPL-2.1-only
  *
- * Copyright (c) 2018-2020 Lawrence Livermore National Security LLC
- * Copyright (c) 2018-2020 The Board of Trustees of the Leland Stanford Junior University
- * Copyright (c) 2018-2020 TotalEnergies
- * Copyright (c) 2019-     GEOSX Contributors
+ * Copyright (c) 2016-2024 Lawrence Livermore National Security LLC
+ * Copyright (c) 2018-2024 TotalEnergies
+ * Copyright (c) 2018-2024 The Board of Trustees of the Leland Stanford Junior University
+ * Copyright (c) 2023-2024 Chevron
+ * Copyright (c) 2019-     GEOS/GEOSX Contributors
  * All rights reserved
  *
  * See top level LICENSE, COPYRIGHT, CONTRIBUTORS, NOTICE, and ACKNOWLEDGEMENTS files for details.
@@ -104,11 +105,12 @@ public:
 
   /**
    * @brief Defines the number of nodes and resizes some underlying arrays appropriately.
-   * @param[in] numNodes The number of nodes.
+   * @param[in] numNodes The number of nodes on the MPI rank (that is per domain).
+   * Nodes are not duplicated along subregion interfaces.
    *
    * The nodes coordinates and nodes local to global mappings get resized to @p numNodes.
    */
-  void setNumNodes( localIndex numNodes ); // TODO Improve doc. Is it per domain, are there duplicated nodes because of subregions?
+  void setNumNodes( localIndex numNodes );
 
   void generateHighOrderMaps( localIndex const order,
                               globalIndex const maxVertexGlobalID,
@@ -156,6 +158,9 @@ public:
 
   Group & getCellBlocks() override;
 
+  std::map< integer, std::set< string > > const & getRegionAttributesCellBlocks() const override
+  { return m_regionAttributesCellBlocks; }
+
   Group const & getFaceBlocks() const override;
 
   Group & getFaceBlocks() override;
@@ -168,6 +173,14 @@ public:
    * @return A reference to the new cell block. The CellBlockManager owns this new instance.
    */
   CellBlock & registerCellBlock( string const & name );
+
+  /**
+   * @brief Registers and returns a cell block of name @p name.
+   * @param cellBlockName The name of the created cell block.
+   * @param regionAttribute The region attribute of the created cell block.
+   * @return A reference to the new cell block. The CellBlockManager owns this new instance.
+   */
+  CellBlock & registerCellBlock( string const & cellBlockName, integer regionAttribute );
 
   /**
    * @brief Registers and returns a face block of name @p name.
@@ -269,6 +282,8 @@ private:
   array1d< globalIndex > m_nodeLocalToGlobal;
 
   std::map< string, SortedArray< localIndex > > m_nodeSets;
+
+  std::map< integer, std::set< string > > m_regionAttributesCellBlocks;
 
   real64 m_globalLength;
 

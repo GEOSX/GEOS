@@ -2,10 +2,11 @@
  * ------------------------------------------------------------------------------------------------------------
  * SPDX-License-Identifier: LGPL-2.1-only
  *
- * Copyright (c) 2018-2020 Lawrence Livermore National Security LLC
- * Copyright (c) 2018-2020 The Board of Trustees of the Leland Stanford Junior University
- * Copyright (c) 2018-2020 TotalEnergies
- * Copyright (c) 2019-     GEOSX Contributors
+ * Copyright (c) 2016-2024 Lawrence Livermore National Security LLC
+ * Copyright (c) 2018-2024 TotalEnergies
+ * Copyright (c) 2018-2024 The Board of Trustees of the Leland Stanford Junior University
+ * Copyright (c) 2023-2024 Chevron
+ * Copyright (c) 2019-     GEOS/GEOSX Contributors
  * All rights reserved
  *
  * See top level LICENSE, COPYRIGHT, CONTRIBUTORS, NOTICE, and ACKNOWLEDGEMENTS files for details.
@@ -19,6 +20,7 @@
 #include "MeshFields.hpp"
 #include "EdgeManager.hpp"
 #include "SurfaceElementRegion.hpp"
+#include "common/MpiWrapper.hpp"
 
 
 namespace geos
@@ -35,6 +37,7 @@ SurfaceElementRegion::SurfaceElementRegion( string const & name, Group * const p
     setDescription( "Type of surface element subregion. Valid options: {" + EnumStrings< SurfaceSubRegionType >::concat( ", " ) + "}." );
 
   registerWrapper( viewKeyStruct::faceBlockString(), &m_faceBlockName ).
+    setRTTypeName( rtTypes::CustomTypes::groupNameRef ).
     setInputFlag( InputFlags::OPTIONAL ).
     setDefaultValue( "FractureSubRegion" ).
     setDescription( "The name of the face block in the mesh, or the embedded surface." );
@@ -73,9 +76,13 @@ void SurfaceElementRegion::generateMesh( Group const & faceBlocks )
 
 void SurfaceElementRegion::initializePreSubGroups()
 {
+  GEOS_ERROR_IF_LE_MSG( m_defaultAperture, 0.0,
+                        getWrapperDataContext( viewKeyStruct::defaultApertureString() ) <<
+                        ": default aperture must be larger than 0.0" );
+
   this->forElementSubRegions< SurfaceElementSubRegion >( [&] ( SurfaceElementSubRegion & subRegion )
   {
-    subRegion.getWrapper< array1d< real64 > >( SurfaceElementSubRegion::viewKeyStruct::elementApertureString() ).
+    subRegion.getWrapper< array1d< real64 > >( fields::elementAperture::key() ).
       setApplyDefaultValue( m_defaultAperture );
   } );
 }
@@ -100,11 +107,8 @@ localIndex SurfaceElementRegion::addToFractureMesh( real64 const time_np1,
 
   arrayView1d< real64 > const ruptureTime = subRegion.getField< fields::ruptureTime >();
 
-  arrayView1d< real64 > const creationMass = subRegion.getReference< real64_array >( FaceElementSubRegion::viewKeyStruct::creationMassString() );
-
   arrayView2d< real64 const > const faceCenter = faceManager->faceCenter();
   arrayView2d< real64 > const elemCenter = subRegion.getElementCenter();
-  arrayView1d< real64 const > const elemArea = subRegion.getElementArea().toViewConst();
 
   arrayView1d< integer > const subRegionGhostRank = subRegion.ghostRank();
 
@@ -123,6 +127,7 @@ localIndex SurfaceElementRegion::addToFractureMesh( real64 const time_np1,
 
   faceMap[kfe][0] = faceIndices[0];
   faceMap[kfe][1] = faceIndices[1];
+
   globalIndex const gi = faceManager->localToGlobalMap()[faceIndices[0]];
   subRegion.localToGlobalMap()[kfe] = gi;
   subRegion.updateGlobalToLocalMap( kfe );
@@ -164,11 +169,20 @@ localIndex SurfaceElementRegion::addToFractureMesh( real64 const time_np1,
 
   // Add the cell region/subregion/index to the faceElementToCells map
   FixedToManyElementRelation & faceElementsToCells = subRegion.getToCellRelation();
-  for( localIndex ke=0; ke<2; ++ke )
+
+  for( localIndex ke = 0; ke < 2; ++ke )
   {
-    faceElementsToCells.m_toElementRegion[kfe][ke] = faceToElementRegion[faceIndices[ke]][ke];
-    faceElementsToCells.m_toElementSubRegion[kfe][ke] = faceToElementSubRegion[faceIndices[ke]][ke];
-    faceElementsToCells.m_toElementIndex[kfe][ke] = faceToElementIndex[faceIndices[ke]][ke];
+
+    localIndex const er = faceToElementRegion[faceIndices[ke]][ke];
+    localIndex const esr = faceToElementSubRegion[faceIndices[ke]][ke];
+    localIndex const ei = faceToElementIndex[faceIndices[ke]][ke];
+
+    if( er != -1 && esr != -1 && ei != -1 )
+    {
+      faceElementsToCells.m_toElementRegion[kfe][ke]    = er;
+      faceElementsToCells.m_toElementSubRegion[kfe][ke] = esr;
+      faceElementsToCells.m_toElementIndex[kfe][ke]     = ei;
+    }
   }
 
   // Fill the connectivity between FaceElement entries. This is essentially a copy of the
@@ -176,34 +190,32 @@ localIndex SurfaceElementRegion::addToFractureMesh( real64 const time_np1,
   for( auto const & edge : connectedEdges )
   {
     // check to see if the edgesToFractureConnectors already have an entry
-    if( subRegion.m_edgesToFractureConnectorsEdges.count( edge )==0 )
+    if( subRegion.m_edgesTo2dFaces.count( edge )==0 )
     {
       // if not, then fill increase the size of the fractureConnectors to face elements map and
       // fill the fractureConnectorsToEdges map with the current edge....and the inverse map too.
-      subRegion.m_fractureConnectorEdgesToFaceElements.appendArray( 0 );
-      subRegion.m_fractureConnectorsEdgesToEdges.emplace_back( edge );
-      subRegion.m_edgesToFractureConnectorsEdges[edge] = subRegion.m_fractureConnectorsEdgesToEdges.size()-1;
+      subRegion.m_2dFaceTo2dElems.appendArray( 0 );
+      subRegion.m_2dFaceToEdge.emplace_back( edge );
+      subRegion.m_edgesTo2dFaces[edge] = subRegion.m_2dFaceToEdge.size()-1;
     }
     // now fill the fractureConnectorsToFaceElements map. This is analogous to the edge to face map
-    localIndex const connectorIndex = subRegion.m_edgesToFractureConnectorsEdges[edge];
-    localIndex const numCells = subRegion.m_fractureConnectorEdgesToFaceElements.sizeOfArray( connectorIndex ) + 1;
-    subRegion.m_fractureConnectorEdgesToFaceElements.resizeArray( connectorIndex, numCells );
-    subRegion.m_fractureConnectorEdgesToFaceElements[connectorIndex][ numCells-1 ] = kfe;
+    localIndex const connectorIndex = subRegion.m_edgesTo2dFaces[edge];
+    localIndex const numCells = subRegion.m_2dFaceTo2dElems.sizeOfArray( connectorIndex ) + 1;
+    subRegion.m_2dFaceTo2dElems.resizeArray( connectorIndex, numCells );
+    subRegion.m_2dFaceTo2dElems[connectorIndex][ numCells-1 ] = kfe;
 
     // And fill the list of connectors that will need stencil modifications
-    subRegion.m_recalculateFractureConnectorEdges.insert( connectorIndex );
+    subRegion.m_recalculateConnectionsFor2dFaces.insert( connectorIndex );
   }
 
   subRegion.calculateSingleElementGeometricQuantities( kfe, faceManager->faceArea() );
-
-  creationMass[kfe] *= elemArea[kfe];
 
   // update the sets
   for( auto const & setIter : faceManager->sets().wrappers() )
   {
     SortedArrayView< localIndex const > const & faceSet = faceManager->sets().getReference< SortedArray< localIndex > >( setIter.first );
     SortedArray< localIndex > & faceElementSet = subRegion.sets().registerWrapper< SortedArray< localIndex > >( setIter.first ).reference();
-    for( localIndex a=0; a<faceMap.size( 0 ); ++a )
+    for( localIndex a = 0; a < faceMap.size( 0 ); ++a )
     {
       if( faceSet.count( faceMap[a][0] ) )
       {

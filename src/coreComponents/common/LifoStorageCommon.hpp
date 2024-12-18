@@ -2,15 +2,17 @@
  * ------------------------------------------------------------------------------------------------------------
  * SPDX-License-Identifier: LGPL-2.1-only
  *
- * Copyright (c) 2018-2020 Lawrence Livermore National Security LLC
- * Copyright (c) 2018-2020 The Board of Trustees of the Leland Stanford Junior University
- * Copyright (c) 2018-2020 TotalEnergies
- * Copyright (c) 2019-     GEOSX Contributors
+ * Copyright (c) 2016-2024 Lawrence Livermore National Security LLC
+ * Copyright (c) 2018-2024 TotalEnergies
+ * Copyright (c) 2018-2024 The Board of Trustees of the Leland Stanford Junior University
+ * Copyright (c) 2023-2024 Chevron
+ * Copyright (c) 2019-     GEOS/GEOSX Contributors
  * All rights reserved
  *
  * See top level LICENSE, COPYRIGHT, CONTRIBUTORS, NOTICE, and ACKNOWLEDGEMENTS files for details.
  * ------------------------------------------------------------------------------------------------------------
  */
+
 #ifndef LIFOSTORAGECOMMON_HPP
 #define LIFOSTORAGECOMMON_HPP
 
@@ -155,7 +157,12 @@ public:
   static int computeNumberOfBufferOnHost( int percent, size_t bufferSize, int maxNumberOfBuffers, int numberOfBuffersToStoreOnDevice )
   {
     GEOS_ERROR_IF( percent > 100, "Error, percentage of memory should be smallerer than -100, check lifoOnHost (should be greater that -100)" );
-    size_t free = sysconf( _SC_AVPHYS_PAGES ) * sysconf( _SC_PAGESIZE );
+#if defined( _SC_AVPHYS_PAGES ) && defined( _SC_PAGESIZE )
+    size_t const free = sysconf( _SC_AVPHYS_PAGES ) * sysconf( _SC_PAGESIZE );
+#else
+    size_t const free = 0;
+    GEOS_ERROR( "To use LifoStorage, both _SC_AVPHYS_PAGES and _SC_PAGESIZE must be defined." );
+#endif
     int numberOfBuffersToStoreOnHost = std::max( 1, std::min( ( int )( 0.01 * percent * free / bufferSize ), maxNumberOfBuffers - numberOfBuffersToStoreOnDevice ) );
     double freeGB = ( ( double ) free ) / ( 1024.0 * 1024.0 * 1024.0 ) / MpiWrapper::nodeCommSize();
     LIFO_LOG_RANK( " LIFO : available memory on host " << freeGB << " GB" );

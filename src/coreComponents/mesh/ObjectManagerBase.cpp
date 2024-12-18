@@ -2,10 +2,11 @@
  * ------------------------------------------------------------------------------------------------------------
  * SPDX-License-Identifier: LGPL-2.1-only
  *
- * Copyright (c) 2018-2020 Lawrence Livermore National Security LLC
- * Copyright (c) 2018-2020 The Board of Trustees of the Leland Stanford Junior University
- * Copyright (c) 2018-2020 TotalEnergies
- * Copyright (c) 2019-     GEOSX Contributors
+ * Copyright (c) 2016-2024 Lawrence Livermore National Security LLC
+ * Copyright (c) 2018-2024 TotalEnergies
+ * Copyright (c) 2018-2024 The Board of Trustees of the Leland Stanford Junior University
+ * Copyright (c) 2023-2024 Chevron
+ * Copyright (c) 2019-     GEOS/GEOSX Contributors
  * All rights reserved
  *
  * See top level LICENSE, COPYRIGHT, CONTRIBUTORS, NOTICE, and ACKNOWLEDGEMENTS files for details.
@@ -43,6 +44,7 @@ ObjectManagerBase::ObjectManagerBase( string const & name,
 
   registerWrapper( viewKeyStruct::localToGlobalMapString(), &m_localToGlobalMap ).
     setApplyDefaultValue( -1 ).
+    setPlotLevel( PlotLevel::LEVEL_0 ).
     setDescription( "Array that contains a map from localIndex to globalIndex." );
 
   registerWrapper( viewKeyStruct::globalToLocalMapString(), &m_globalToLocalMap );
@@ -54,6 +56,16 @@ ObjectManagerBase::ObjectManagerBase( string const & name,
     setPlotLevel( PlotLevel::LEVEL_0 );
 
   registerWrapper< array1d< integer > >( viewKeyStruct::domainBoundaryIndicatorString(), &m_domainBoundaryIndicator );
+
+  registerWrapper( viewKeyStruct::localMaxGlobalIndexString(), &m_localMaxGlobalIndex ).
+    setApplyDefaultValue( -1 ).
+    setRestartFlags( RestartFlags::WRITE_AND_READ ).
+    setPlotLevel( PlotLevel::NOPLOT );
+
+  registerWrapper( viewKeyStruct::maxGlobalIndexString(), &m_maxGlobalIndex ).
+    setApplyDefaultValue( -1 ).
+    setRestartFlags( RestartFlags::WRITE_AND_READ ).
+    setPlotLevel( PlotLevel::NOPLOT );
 
   m_sets.registerWrapper< SortedArray< localIndex > >( this->m_ObjectManagerBaseViewKeys.externalSet );
 
@@ -239,7 +251,7 @@ localIndex ObjectManagerBase::packImpl( buffer_unit_type * & buffer,
   localIndex packedSize = 0;
   packedSize += bufferOps::Pack< DO_PACKING >( buffer, this->getName() );
 
-  int const rank = MpiWrapper::commRank( MPI_COMM_GEOSX );
+  int const rank = MpiWrapper::commRank( MPI_COMM_GEOS );
   packedSize += bufferOps::Pack< DO_PACKING >( buffer, rank );
 
   localIndex const numPackedIndices = packList.size();
@@ -314,7 +326,8 @@ localIndex ObjectManagerBase::unpack( buffer_unit_type const * & buffer,
                                       arrayView1d< localIndex > & packList,
                                       integer const recursive,
                                       bool onDevice,
-                                      parallelDeviceEvents & events )
+                                      parallelDeviceEvents & events,
+                                      MPI_Op op )
 {
   localIndex unpackedSize = 0;
   string groupName;
@@ -339,7 +352,7 @@ localIndex ObjectManagerBase::unpack( buffer_unit_type const * & buffer,
     {
       string wrapperName;
       unpackedSize += bufferOps::Unpack( buffer, wrapperName );
-      unpackedSize += this->getWrapperBase( wrapperName ).unpackByIndex( buffer, packList, true, onDevice, events );
+      unpackedSize += this->getWrapperBase( wrapperName ).unpackByIndex( buffer, packList, true, onDevice, events, op );
     }
   }
 
@@ -521,7 +534,7 @@ localIndex ObjectManagerBase::packGlobalMapsImpl( buffer_unit_type * & buffer,
                                                   arrayView1d< localIndex const > const & packList,
                                                   integer const recursive ) const
 {
-  int const rank = MpiWrapper::commRank( MPI_COMM_GEOSX );
+  int const rank = MpiWrapper::commRank( MPI_COMM_GEOS );
 
   localIndex packedSize = bufferOps::Pack< DO_PACKING >( buffer, this->getName() );
 
@@ -583,7 +596,7 @@ localIndex ObjectManagerBase::unpackGlobalMaps( buffer_unit_type const * & buffe
                                                 integer const recursive )
 {
   GEOS_MARK_FUNCTION;
-  int const rank = MpiWrapper::commRank( MPI_COMM_GEOSX );
+  int const rank = MpiWrapper::commRank( MPI_COMM_GEOS );
 
   localIndex unpackedSize = 0;
   string groupName;
@@ -606,10 +619,10 @@ localIndex ObjectManagerBase::unpackGlobalMaps( buffer_unit_type const * & buffe
     localIndex_array unpackedLocalIndices;
     unpackedLocalIndices.resize( numUnpackedIndices );
 
-    globalIndex_array globalIndices;
+    array1d< globalIndex > globalIndices;
     unpackedSize += bufferOps::Unpack( buffer, globalIndices );
     localIndex numNewIndices = 0;
-    globalIndex_array newGlobalIndices;
+    array1d< globalIndex > newGlobalIndices;
     newGlobalIndices.reserve( numUnpackedIndices );
     localIndex const oldSize = this->size();
     for( localIndex a = 0; a < numUnpackedIndices; ++a )
@@ -842,9 +855,21 @@ void ObjectManagerBase::copyObject( const localIndex source, const localIndex de
   }
 }
 
+void ObjectManagerBase::eraseObject( std::set< localIndex > const & indicesToErase )
+{
+  for( auto & nameToWrapper: wrappers() )
+  {
+    WrapperBase * wrapper = nameToWrapper.second;
+    if( wrapper->sizedFromParent() )
+    {
+      wrapper->erase( indicesToErase );
+    }
+  }
+}
+
 void ObjectManagerBase::setMaxGlobalIndex()
 {
-  m_maxGlobalIndex = MpiWrapper::max( m_localMaxGlobalIndex, MPI_COMM_GEOSX );
+  m_maxGlobalIndex = MpiWrapper::max( m_localMaxGlobalIndex, MPI_COMM_GEOS );
 }
 
 void ObjectManagerBase::cleanUpMap( std::set< localIndex > const & targetIndices,

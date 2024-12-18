@@ -2,10 +2,11 @@
  * ------------------------------------------------------------------------------------------------------------
  * SPDX-License-Identifier: LGPL-2.1-only
  *
- * Copyright (c) 2018-2020 Lawrence Livermore National Security LLC
- * Copyright (c) 2018-2020 The Board of Trustees of the Leland Stanford Junior University
- * Copyright (c) 2018-2020 TotalEnergies
- * Copyright (c) 2019-     GEOSX Contributors
+ * Copyright (c) 2016-2024 Lawrence Livermore National Security LLC
+ * Copyright (c) 2018-2024 TotalEnergies
+ * Copyright (c) 2018-2024 The Board of Trustees of the Leland Stanford Junior University
+ * Copyright (c) 2023-2024 Chevron
+ * Copyright (c) 2019-     GEOS/GEOSX Contributors
  * All rights reserved
  *
  * See top level LICENSE, COPYRIGHT, CONTRIBUTORS, NOTICE, and ACKNOWLEDGEMENTS files for details.
@@ -99,6 +100,53 @@ static constexpr int ACCELERATION_USD = LvArray::typeManipulation::getStrideOneD
 
 } // namespace nodes
 
+namespace particles
+{
+
+#if defined( GEOS_USE_CUDA )
+
+/// Particle reference position permutation when using cuda.
+using REFERENCE_POSITION_PERM = RAJA::PERM_JI;
+
+/// Particle total displacement permutation when using cuda.
+using TOTAL_DISPLACEMENT_PERM = RAJA::PERM_JI;
+
+/// Particle velocity permutation when using cuda.
+using VELOCITY_PERM = RAJA::PERM_JI;
+
+/// Particle acceleration permutation when using cuda.
+using ACCELERATION_PERM = RAJA::PERM_JI;
+
+#else
+
+/// Particle reference position permutation when not using cuda.
+using REFERENCE_POSITION_PERM = RAJA::PERM_IJ;
+
+/// Particle total displacement permutation when not using cuda.
+using TOTAL_DISPLACEMENT_PERM = RAJA::PERM_IJ;
+
+/// Particle velocity permutation when not using cuda.
+using VELOCITY_PERM = RAJA::PERM_IJ;
+
+/// Particle acceleration permutation when not using cuda.
+using ACCELERATION_PERM = RAJA::PERM_IJ;
+
+#endif
+
+/// Particle reference position unit stride dimension.
+static constexpr int REFERENCE_POSITION_USD = LvArray::typeManipulation::getStrideOneDimension( REFERENCE_POSITION_PERM {} );
+
+/// Particle total displacement unit stride dimension.
+static constexpr int TOTAL_DISPLACEMENT_USD = LvArray::typeManipulation::getStrideOneDimension( TOTAL_DISPLACEMENT_PERM {} );
+
+/// Particle velocity unit stride dimension.
+static constexpr int VELOCITY_USD = LvArray::typeManipulation::getStrideOneDimension( VELOCITY_PERM {} );
+
+/// Particle acceleration unit stride dimension.
+static constexpr int ACCELERATION_USD = LvArray::typeManipulation::getStrideOneDimension( ACCELERATION_PERM {} );
+
+} // namespace particles
+
 namespace cells
 {
 
@@ -107,15 +155,24 @@ namespace cells
 /// Cell node map permutation when using cuda.
 using NODE_MAP_PERMUTATION = RAJA::PERM_JI;
 
+/// Cell strain permutation when using cuda
+using STRAIN_PERM = RAJA::PERM_JI;
+
 #else
 
 /// Cell node map permutation when not using cuda.
 using NODE_MAP_PERMUTATION = RAJA::PERM_IJ;
 
+/// Cell strain permutation when not using cuda
+using STRAIN_PERM = RAJA::PERM_IJ;
+
 #endif
 
 /// Cell node map unit stride dimension.
 static constexpr int NODE_MAP_USD = LvArray::typeManipulation::getStrideOneDimension( NODE_MAP_PERMUTATION {} );
+
+/// Cell strain unit stride dimension
+static constexpr int STRAIN_USD = LvArray::typeManipulation::getStrideOneDimension( STRAIN_PERM {} );
 
 } // namespace cells
 

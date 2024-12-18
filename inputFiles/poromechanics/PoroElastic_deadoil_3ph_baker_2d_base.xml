@@ -82,7 +82,7 @@
   <ElementRegions>
     <CellElementRegion
       name="Domain"
-      cellBlocks="{ block1 }"
+      cellBlocks="{ * }"
       materialList="{ fluid1, relperm, porousRock }"/>
   </ElementRegions>
 
@@ -121,7 +121,7 @@
 
     <BiotPorosity
       name="rockPorosity"
-      grainBulkModulus="1.0e27"
+      defaultGrainBulkModulus="1.0e27"
       defaultReferencePorosity="0.05"/>
   </Constitutive>
 

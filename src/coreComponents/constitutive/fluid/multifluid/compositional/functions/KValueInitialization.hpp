@@ -2,10 +2,11 @@
  * ------------------------------------------------------------------------------------------------------------
  * SPDX-License-Identifier: LGPL-2.1-only
  *
- * Copyright (c) 2018-2020 Lawrence Livermore National Security LLC
- * Copyright (c) 2018-2020 The Board of Trustees of the Leland Stanford Junior University
- * Copyright (c) 2018-2020 TotalEnergies
- * Copyright (c) 2019-     GEOSX Contributors
+ * Copyright (c) 2016-2024 Lawrence Livermore National Security LLC
+ * Copyright (c) 2018-2024 TotalEnergies
+ * Copyright (c) 2018-2024 The Board of Trustees of the Leland Stanford Junior University
+ * Copyright (c) 2023-2024 Chevron
+ * Copyright (c) 2019-     GEOS/GEOSX Contributors
  * All rights reserved
  *
  * See top level LICENSE, COPYRIGHT, CONTRIBUTORS, NOTICE, and ACKNOWLEDGEMENTS files for details.
@@ -20,11 +21,15 @@
 #define GEOS_CONSTITUTIVE_FLUID_MULTIFLUID_COMPOSITIONAL_FUNCTIONS_KVALUEINITIALIZATION_HPP_
 
 #include "common/DataTypes.hpp"
+#include "constitutive/fluid/multifluid/compositional/models/ComponentProperties.hpp"
 
 namespace geos
 {
 
 namespace constitutive
+{
+
+namespace compositional
 {
 
 struct KValueInitialization
@@ -35,22 +40,22 @@ public:
    * @param[in] numComps number of components
    * @param[in] pressure pressure
    * @param[in] temperature temperature
-   * @param[in] criticalPressure critical pressures
-   * @param[in] criticalTemperature critical temperatures
-   * @param[in] acentricFactor acentric factors
+   * @param[in] componentProperties The compositional component properties
    * @param[out] kValues the calculated k-values
    **/
+  template< integer USD >
   GEOS_HOST_DEVICE
   GEOS_FORCE_INLINE
   static void
   computeWilsonGasLiquidKvalue( integer const numComps,
                                 real64 const pressure,
                                 real64 const temperature,
-                                arrayView1d< real64 const > const criticalPressure,
-                                arrayView1d< real64 const > const criticalTemperature,
-                                arrayView1d< real64 const > const acentricFactor,
-                                arraySlice1d< real64 > const kValues )
+                                ComponentProperties::KernelWrapper const & componentProperties,
+                                arraySlice1d< real64, USD > const & kValues )
   {
+    arrayView1d< real64 const > const & criticalPressure = componentProperties.m_componentCriticalPressure;
+    arrayView1d< real64 const > const & criticalTemperature = componentProperties.m_componentCriticalTemperature;
+    arrayView1d< real64 const > const & acentricFactor = componentProperties.m_componentAcentricFactor;
     for( integer ic = 0; ic < numComps; ++ic )
     {
       real64 const pr = criticalPressure[ic] / pressure;
@@ -75,6 +80,8 @@ public:
   }
 
 };
+
+} // namespace compositional
 
 } // namespace constitutive
 

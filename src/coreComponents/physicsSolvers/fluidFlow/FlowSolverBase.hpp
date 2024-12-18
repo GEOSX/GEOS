@@ -2,10 +2,11 @@
  * ------------------------------------------------------------------------------------------------------------
  * SPDX-License-Identifier: LGPL-2.1-only
  *
- * Copyright (c) 2018-2020 Lawrence Livermore National Security LLC
- * Copyright (c) 2018-2020 The Board of Trustees of the Leland Stanford Junior University
- * Copyright (c) 2018-2020 TotalEnergies
- * Copyright (c) 2019-     GEOSX Contributors
+ * Copyright (c) 2016-2024 Lawrence Livermore National Security LLC
+ * Copyright (c) 2018-2024 TotalEnergies
+ * Copyright (c) 2018-2024 The Board of Trustees of the Leland Stanford Junior University
+ * Copyright (c) 2023-2024 Chevron
+ * Copyright (c) 2019-     GEOS/GEOSX Contributors
  * All rights reserved
  *
  * See top level LICENSE, COPYRIGHT, CONTRIBUTORS, NOTICE, and ACKNOWLEDGEMENTS files for details.
@@ -19,7 +20,10 @@
 #ifndef GEOS_PHYSICSSOLVERS_FINITEVOLUME_FLOWSOLVERBASE_HPP_
 #define GEOS_PHYSICSSOLVERS_FINITEVOLUME_FLOWSOLVERBASE_HPP_
 
-#include "physicsSolvers/SolverBase.hpp"
+#include "physicsSolvers/PhysicsSolverBase.hpp"
+#include "common/Units.hpp"
+#include "finiteVolume/BoundaryStencil.hpp"
+#include "fieldSpecification/AquiferBoundaryCondition.hpp"
 
 namespace geos
 {
@@ -30,8 +34,11 @@ namespace geos
  * Base class for finite volume fluid flow solvers.
  * Provides some common features
  */
-class FlowSolverBase : public SolverBase
+class FlowSolverBase : public PhysicsSolverBase
 {
+  template< typename VIEWTYPE >
+  using ElementViewConst = ElementRegionManager::ElementViewConst< VIEWTYPE >;
+
 public:
 
   /// String used to form the solverName used to register single-physics solvers in CoupledSolver
@@ -63,19 +70,39 @@ public:
 
   virtual void registerDataOnMesh( Group & MeshBodies ) override;
 
-  localIndex numDofPerCell() const { return m_numDofPerCell; }
-
-  struct viewKeyStruct : SolverBase::viewKeyStruct
+  struct viewKeyStruct : PhysicsSolverBase::viewKeyStruct
   {
     // misc inputs
     static constexpr char const * fluidNamesString() { return "fluidNames"; }
     static constexpr char const * solidNamesString() { return "solidNames"; }
     static constexpr char const * permeabilityNamesString() { return "permeabilityNames"; }
     static constexpr char const * isThermalString() { return "isThermal"; }
+    static constexpr char const * inputTemperatureString() { return "temperature"; }
     static constexpr char const * solidInternalEnergyNamesString() { return "solidInternalEnergyNames"; }
+    static constexpr char const * thermalConductivityNamesString() { return "thermalConductivityNames"; }
+    static constexpr char const * allowNegativePressureString() { return "allowNegativePressure"; }
+    static constexpr char const * maxAbsolutePresChangeString() { return "maxAbsolutePressureChange"; }
+    static constexpr char const * maxSequentialPresChangeString() { return "maxSequentialPressureChange"; }
+    static constexpr char const * maxSequentialTempChangeString() { return "maxSequentialTemperatureChange"; }
   };
 
-  void enableFixedStressPoromechanicsUpdate();
+  /**
+   * @brief Prepare the stencil weights by removing the contribution of the hydraulic aperture before
+   * the aperture is updated
+   * @param[in] domain the domain partition
+   */
+  void prepareStencilWeights( DomainPartition & domain ) const;
+
+  /**
+   * @brief Update the stencil weights by adding the contribution of the hydraulic aperture after
+   * the aperture is updated
+   * @param[in] domain the domain partition
+   */
+  void updateStencilWeights( DomainPartition & domain ) const;
+
+  void enableFixedStressPoromechanicsUpdate() { m_isFixedStressPoromechanicsUpdate = true; }
+
+  void enableJumpStabilization() { m_isJumpStabilized = true; }
 
   void updatePorosityAndPermeability( CellElementSubRegion & subRegion ) const;
 
@@ -85,7 +112,43 @@ public:
    * @brief Utility function to save the iteration state (useful for sequential simulations)
    * @param[in] domain the domain partition
    */
-  virtual void saveIterationState( DomainPartition & domain ) const;
+  virtual void saveSequentialIterationState( DomainPartition & domain ) override;
+
+  integer & isThermal() { return m_isThermal; }
+
+  /**
+   * @return The unit in which we evaluate the amount of fluid per element (Mass or Mole).
+   */
+  virtual units::Unit getMassUnit() const { return units::Unit::Mass; }
+
+  /**
+   * @brief Function to activate the flag allowing negative pressure
+   */
+  void allowNegativePressure() { m_allowNegativePressure = 1; }
+
+  /**
+   * @brief Utility function to keep the flow variables during a time step (used in poromechanics simulations)
+   * @param[in] keepVariablesConstantDuringInitStep flag to tell the solver to freeze its primary variables during a time step
+   * @detail This function is meant to be called by a specific task before/after the initialization step
+   */
+  void setKeepVariablesConstantDuringInitStep( bool const keepVariablesConstantDuringInitStep )
+  { m_keepVariablesConstantDuringInitStep = keepVariablesConstantDuringInitStep; }
+
+  virtual bool checkSequentialSolutionIncrements( DomainPartition & domain ) const override;
+
+  void enableLaggingFractureStencilWeightsUpdate(){ m_isLaggingFractureStencilWeightsUpdate = 1; };
+
+  real64 sumAquiferFluxes( BoundaryStencil const & stencil,
+                           AquiferBoundaryCondition::KernelWrapper const & aquiferBCWrapper,
+                           ElementViewConst< arrayView1d< real64 const > > const & pres,
+                           ElementViewConst< arrayView1d< real64 const > > const & presOld,
+                           ElementViewConst< arrayView1d< real64 const > > const & gravCoef,
+                           real64 const & timeAtBeginningOfStep,
+                           real64 const & dt );
+
+  virtual void initializeFluidState( MeshLevel & mesh, const arrayView1d< const string > & regionNames ) { GEOS_UNUSED_VAR( mesh, regionNames ); }
+
+  virtual void initializeThermalState( MeshLevel & mesh, const arrayView1d< const string > & regionNames ) { GEOS_UNUSED_VAR( mesh, regionNames ); }
 
   /**
    * @brief For each equilibrium initial condition, loop over all the target cells and compute the min/max elevation
@@ -113,7 +176,6 @@ public:
                                            std::map< string, localIndex > const & bcNameToBcId,
                                            arrayView1d< globalIndex > const & bcAllSetsSize ) const;
 
-
 protected:
 
   /**
@@ -136,12 +198,6 @@ protected:
   virtual void saveConvergedState( ElementSubRegionBase & subRegion ) const;
 
   /**
-   * @brief Utility function to save the state at the end of a sequential iteration
-   * @param[in] subRegion the element subRegion
-   */
-  virtual void saveIterationState( ElementSubRegionBase & subRegion ) const;
-
-  /**
    * @brief Helper function to compute/report the elements with small pore volumes
    * @param[in] domain the domain partition
    */
@@ -154,6 +210,16 @@ protected:
 
   virtual void initializePostInitialConditionsPreSubGroups() override;
 
+  void initializeState( DomainPartition & domain );
+
+  virtual void computeHydrostaticEquilibrium( DomainPartition & domain ) { GEOS_UNUSED_VAR( domain ); }
+
+  void initializePorosityAndPermeability( MeshLevel & mesh, arrayView1d< string const > const & regionNames );
+
+  void initializeHydraulicAperture( MeshLevel & mesh, const arrayView1d< const string > & regionNames );
+
+  void saveInitialPressureAndTemperature( MeshLevel & mesh, const arrayView1d< const string > & regionNames );
+
   virtual void setConstitutiveNamesCallSuper( ElementSubRegionBase & subRegion ) const override;
 
   /// the number of Degrees of Freedom per cell
@@ -162,12 +228,72 @@ protected:
   /// flag to determine whether or not this is a thermal simulation
   integer m_isThermal;
 
+  /// the input temperature
+  real64 m_inputTemperature;
+
+  /// flag to freeze the initial state during initialization in coupled problems
+  integer m_keepVariablesConstantDuringInitStep;
+
   /// enable the fixed stress poromechanics update of porosity
   bool m_isFixedStressPoromechanicsUpdate;
+
+  /// enable pressure jump stabilzation for fixed-stress poromechanics
+  bool m_isJumpStabilized;
+
+  /// flag if negative pressure is allowed
+  integer m_allowNegativePressure;
+
+  /// maximum (absolute) pressure change in a Newton iteration
+  real64 m_maxAbsolutePresChange;
+
+  /// maximum (absolute) pressure change in a sequential iteration
+  real64 m_sequentialPresChange;
+  real64 m_maxSequentialPresChange;
+
+  /// maximum (absolute) temperature change in a sequential iteration
+  real64 m_sequentialTempChange;
+  real64 m_maxSequentialTempChange;
+
+  /**
+   * @brief Class used for displaying boundary warning message
+   */
+  class BCMessage
+  {
+public:
+    static string pressureConflict( string_view regionName, string_view subRegionName,
+                                    string_view setName, string_view fieldName );
+
+    static string temperatureConflict( string_view regionName, string_view subRegionName,
+                                       string_view setName, string_view fieldName );
+
+    static string missingPressure( string_view regionName, string_view subRegionName,
+                                   string_view setName, string_view fieldName );
+
+    static string missingTemperature( string_view regionName, string_view subRegionName,
+                                      string_view setName, string_view fieldName );
+
+    static string conflictingComposition( int comp, string_view componentName,
+                                          string_view regionName, string_view subRegionName,
+                                          string_view setName, string_view fieldName );
+
+    static string invalidComponentIndex( int comp,
+                                         string_view fsName, string_view fieldName );
+
+    static string notAppliedOnRegion( int componentIndex, string_view componentName,
+                                      string_view regionName, string_view subRegionName,
+                                      string_view setName, string_view fieldName );
+private:
+    static string generateMessage( string_view baseMessage,
+                                   string_view fieldName, string_view setName );
+
+    BCMessage();
+  };
 
 private:
   virtual void setConstitutiveNames( ElementSubRegionBase & subRegion ) const override;
 
+  // flag to determine whether or not to apply lagging update for the fracture stencil weights
+  integer m_isLaggingFractureStencilWeightsUpdate;
 
 };
 

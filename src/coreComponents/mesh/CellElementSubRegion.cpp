@@ -2,10 +2,11 @@
  * ------------------------------------------------------------------------------------------------------------
  * SPDX-License-Identifier: LGPL-2.1-only
  *
- * Copyright (c) 2018-2020 Lawrence Livermore National Security LLC
- * Copyright (c) 2018-2020 The Board of Trustees of the Leland Stanford Junior University
- * Copyright (c) 2018-2020 TotalEnergies
- * Copyright (c) 2019-     GEOSX Contributors
+ * Copyright (c) 2016-2024 Lawrence Livermore National Security LLC
+ * Copyright (c) 2018-2024 TotalEnergies
+ * Copyright (c) 2018-2024 The Board of Trustees of the Leland Stanford Junior University
+ * Copyright (c) 2023-2024 Chevron
+ * Copyright (c) 2019-     GEOS/GEOSX Contributors
  * All rights reserved
  *
  * See top level LICENSE, COPYRIGHT, CONTRIBUTORS, NOTICE, and ACKNOWLEDGEMENTS files for details.
@@ -43,6 +44,10 @@ CellElementSubRegion::CellElementSubRegion( string const & name, Group * const p
   registerWrapper( viewKeyStruct::toEmbSurfString(), &m_toEmbeddedSurfaces ).setSizedFromParent( 1 );
 
   registerWrapper( viewKeyStruct::fracturedCellsString(), &m_fracturedCells ).setSizedFromParent( 1 );
+
+  registerWrapper( viewKeyStruct::bubbleCellsString(), &m_bubbleCells ).setSizedFromParent( 0 );
+
+  registerWrapper( viewKeyStruct::toFaceElementsString(), &m_toFaceElements ).setSizedFromParent( 0 );
 
   excludeWrappersFromPacking( { viewKeyStruct::nodeListString(),
                                 viewKeyStruct::edgeListString(),
@@ -92,12 +97,12 @@ void CellElementSubRegion::copyFromCellBlock( CellBlockABC const & cellBlock )
   this->constructGlobalToLocalMap();
   cellBlock.forExternalProperties( [&]( WrapperBase const & wrapper )
   {
-    types::dispatch( types::StandardArrays{}, wrapper.getTypeId(), true, [&]( auto array )
+    types::dispatch( types::ListofTypeList< types::StandardArrays >{}, [&]( auto tupleOfTypes )
     {
-      using ArrayType = decltype( array );
+      using ArrayType = camp::first< decltype( tupleOfTypes ) >;
       auto const src = Wrapper< ArrayType >::cast( wrapper ).reference().toViewConst();
       this->registerWrapper( wrapper.getName(), std::make_unique< ArrayType >( &src ) );
-    } );
+    }, wrapper );
   } );
 }
 
@@ -186,6 +191,11 @@ localIndex CellElementSubRegion::unpackUpDownMaps( buffer_unit_type const * & bu
                                      m_unmappedGlobalIndicesInFacelist,
                                      this->globalToLocalMap(),
                                      faceList().relatedObjectGlobalToLocal() );
+
+
+  GEOS_ERROR_IF_NE( m_unmappedGlobalIndicesInNodelist.size(), 0 );
+  GEOS_ERROR_IF_NE( m_unmappedGlobalIndicesInEdgelist.size(), 0 );
+  GEOS_ERROR_IF_NE( m_unmappedGlobalIndicesInFacelist.size(), 0 );
 
   return unPackedSize;
 }
@@ -390,13 +400,13 @@ void CellElementSubRegion::
     default:
     {
       GEOS_ERROR( GEOS_FMT( "Volume calculation not supported for element type {} in subregion {}",
-                            m_elementType, getName() ) );
+                            m_elementType, getDataContext() ) );
     }
   }
 
   GEOS_ERROR_IF( m_elementVolume[k] <= 0.0,
                  GEOS_FMT( "Negative volume for element {} type {} in subregion {}",
-                           k, m_elementType, getName() ) );
+                           k, m_elementType, getDataContext() ) );
 }
 
 void CellElementSubRegion::calculateElementGeometricQuantities( NodeManager const & nodeManager,

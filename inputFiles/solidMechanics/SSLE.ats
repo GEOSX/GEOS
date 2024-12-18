@@ -1,0 +1,18 @@
+from geos.ats.test_builder import generate_geos_tests, RestartcheckParameters, TestDeck
+
+restartcheck_params = {}
+restartcheck_params["atol"] = 1.0E-10
+restartcheck_params["rtol"] = 2.0E-13
+
+partitions = ((1, 1, 1), (2, 2, 2), (3, 3, 3))
+
+decks = [
+    TestDeck(name="sedov_ssle_smoke",
+             description="Test the small strain linear elastic solver",
+             partitions=partitions,
+             restart_step=50,
+             check_step=100,
+             restartcheck_params=RestartcheckParameters(**restartcheck_params))
+]
+
+generate_geos_tests(decks)

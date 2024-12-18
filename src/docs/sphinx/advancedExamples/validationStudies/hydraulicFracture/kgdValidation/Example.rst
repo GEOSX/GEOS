@@ -245,7 +245,7 @@ By running the query script ``kgdValidationQueries.py``, the HDF5 output is post
           0.4  1.183e+07          0          0          0  0.0005662
           0.5  1.125e+07          0          0          0  0.0005662
 
-Note: GEOS python tools ``geosx_xml_tools`` should be installed to run the query script (See :ref:`PythonToolsSetup` for details). 
+Note: GEOS python tools ``geosx_xml_tools`` should be installed to run the query script (See `Python Tools Setup <https://geosx-geosx.readthedocs-hosted.com/projects/geosx-geospythonpackages/en/latest/>`_ for details). 
  
 The figure below shows simulation results of the fracture extent at the end of the injection, which is generated using the visualization script ``kgdValidationFigure.py``. The temporal evolution of the fracture characteristics (length, aperture and pressure) from the GEOS simulation are extracted and compared with the experimental data gathered at specific locations. As observed, the time history plots of the modelling predictions (green curves) for the pressure at three gage locations, the fracture length, and the fracture aperture at LVDT location correlate well with the experimental data (blue circles).  
 

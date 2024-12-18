@@ -1,0 +1,317 @@
+from geos.ats.test_builder import TestDeck, RestartcheckParameters, generate_geos_tests
+
+
+class Description(object):
+
+    def __init__(self, description_builder, label, owner, isIndependent):
+        """
+        The ATS description of the test case for poro-elastic coupling.
+
+        description_builder: callable
+            A callable taking the partition tuple in argument and returning the TestCase description.
+        label: str
+            The label of the TestCase
+        owner: str
+            The owner of the TestCase
+        isIndependent: boolean
+            Is the TestCase independent from other cases?
+        """
+        self.description_builder = description_builder
+        self.label = label
+        self.owner = owner
+        self.isIndependent = isIndependent
+
+
+def _n_ranks(partition):
+    """
+    Returns the number of ranks for a given MPI partitioning.
+
+    partition: iterable
+        The MPI cartesian partitioning.
+        (x, y, z) ranks are supposed to be integers (or None which will be considered as 1).
+    """
+    result = 1
+    # I wanted to do `filter( None, partition )` with the `filter` builtin function
+    # but it has been rewritten by ATS. This is sooo wrong :(
+    for n in partition:
+        result *= n if n else 1
+    return result
+
+
+def _build_poro_elastic_coupling_case(deck, cycles, partitions, description,
+                                      restartcheck_params):
+    """
+    Generic function that build the poro-elastic cases.
+    A first run is done and a second takes an intermediate timestep to validate the restart.
+
+    deck: str
+        XML input file
+    cycles: pair of integers
+        The (intermediate_cycle, last_cycle). First being the restart initial timestep.
+        The second being the last simulated cycle.
+    partitions: Iterable of length-3 iterables
+        The (x, y, z) parallel partitioning.
+        `None` can be provided when nothing has to be done in the considered direction.
+    description: Description
+        Description of the TestCase
+    restartcheck_params: dict
+        Restart validation parameters (relative or absolute tolerance mainly).
+    test_name_builder: callable
+        A callable taking the partition tuple in argument and returning the test name.
+    """
+
+    # The simulation will generate data for two cycles
+    intermediate_cycle, last_cycle = cycles
+
+    return TestDeck(
+        name=deck.split(".")[0],
+        description=description.description_builder,
+        partitions=partitions,
+        restart_step=intermediate_cycle,
+        check_step=last_cycle,
+        restartcheck_params=RestartcheckParameters(**restartcheck_params))
+
+
+def _build_Terzaghi_cases():
+    description = Description("Terzaghi's 1D Consolidation", "auto",
+                              "Nicola Castelletto", True)
+    restartcheck_params = {"atol": 1.0e-8, "rtol": 2.0e-8}
+    return _build_poro_elastic_coupling_case("PoroElastic_Terzaghi_smoke.xml",
+                                             (50, 91),
+                                             ((1, 1, 1), (2, 1, 1), (7, 1, 1)),
+                                             description, restartcheck_params)
+
+
+def _build_Mandel_fim_cases():
+    description = Description("Mandel's 2D Consolidation on ranks", "auto",
+                              "Nicola Castelletto, Jian Huang", True)
+    restartcheck_params = {"atol": 1.0e-8, "rtol": 2.0e-8}
+    return _build_poro_elastic_coupling_case(
+        "PoroElastic_Mandel_smoke_fim.xml", (2, 4),
+        ((1, 1, 1), (3, 1, 1), (3, 1, 2)), description, restartcheck_params)
+
+
+def _build_Mandel_sequential_cases():
+    description = Description("Sequential Mandel's 2D Consolidation ", "auto",
+                              "Nicola Castelletto, Jian Huang", True)
+    restartcheck_params = {"atol": 1.0e-8, "rtol": 2.0e-8}
+    return _build_poro_elastic_coupling_case(
+        "PoroElastic_Mandel_smoke_sequential.xml", (2, 4),
+        ((1, 1, 1), (3, 1, 1), (3, 1, 2)), description, restartcheck_params)
+
+
+def _build_Mandel_prism6_cases():
+    description = Description(
+        "Mandel's 2D Consolidation using VEM-MFD on a prism mesh ", "auto",
+        "Andrea Borio, Francois Hamon", True)
+    restartcheck_params = {"atol": 1.0e-8, "rtol": 2.0e-8}
+    return _build_poro_elastic_coupling_case(
+        "PoroElastic_Mandel_prism6_smoke.xml", (2, 4), ((1, 1, 1), ),
+        description, restartcheck_params)
+
+
+def _build_Deadoil_fim_cases():
+    description = Description("Deadoil 3 phase poroelastic case ", "auto",
+                              "N. Castelletto & M. Cusini", True)
+    restartcheck_params = {"atol": 1.0e-8, "rtol": 2.0e-8}
+    return _build_poro_elastic_coupling_case(
+        "PoroElastic_deadoil_3ph_baker_2d_fim.xml", (0, 15),
+        ((1, 1, 1), (2, 1, 2)), description, restartcheck_params)
+
+
+def _build_Deadoil_sequential_cases():
+    description = Description("Sequential Deadoil 3 phase poroelastic case ",
+                              "auto", "N. Castelletto & M. Cusini", True)
+    restartcheck_params = {"atol": 1.0e-8, "rtol": 2.0e-8}
+    return _build_poro_elastic_coupling_case(
+        "PoroElastic_deadoil_3ph_baker_2d_sequential.xml", (0, 15),
+        ((1, 1, 1), (2, 1, 2)), description, restartcheck_params)
+
+
+def _build_PoroElasticWell_cases():
+    description = Description("PoroElastic wellbore problem ", "auto",
+                              "Jian Huang", True)
+    restartcheck_params = {"atol": 1.0e-8, "rtol": 2.0e-8}
+    return _build_poro_elastic_coupling_case("PoroElasticWellbore_smoke.xml",
+                                             (2, 8), ((1, 1, 1), (2, 2, 1)),
+                                             description, restartcheck_params)
+
+
+def _build_PoroDruckerPragerWell_cases():
+    description = Description("PoroDruckerPrager wellbore problem", "auto",
+                              "Jian Huang", True)
+    restartcheck_params = {"atol": 1.0e-8, "rtol": 2.0e-8}
+    return _build_poro_elastic_coupling_case(
+        "PoroDruckerPragerWellbore_smoke.xml", (2, 8), ((1, 1, 1), (2, 2, 1)),
+        description, restartcheck_params)
+
+
+def _build_PoroDelftEggWell_cases():
+    description = Description("PoroDelftEgg wellbore problem ", "auto",
+                              "Jian Huang", True)
+    restartcheck_params = {"atol": 1.0e-8, "rtol": 2.0e-8}
+    return _build_poro_elastic_coupling_case("PoroDelftEggWellbore_smoke.xml",
+                                             (2, 8), ((1, 1, 1), (2, 2, 1)),
+                                             description, restartcheck_params)
+
+
+def _build_PoroModifiedCamClayWell_cases():
+    description = Description("PoroModifiedCamClay wellbore problem ", "auto",
+                              "Jian Huang", True)
+    restartcheck_params = {"atol": 1.0e-8, "rtol": 2.0e-8}
+    return _build_poro_elastic_coupling_case(
+        "PoroModifiedCamClayWellbore_smoke.xml", (2, 8),
+        ((1, 1, 1), (2, 2, 1)), description, restartcheck_params)
+
+
+def _build_PoroImpermeableFault_cases():
+    description = Description("Impermeable fault problem ", "auto",
+                              "Jian Huang", True)
+    restartcheck_params = {"atol": 1.0e-5, "rtol": 2.0e-7}
+    return _build_poro_elastic_coupling_case("impermeableFault_smoke.xml",
+                                             (0, 1), ((1, 1, 1), (2, 2, 1)),
+                                             description, restartcheck_params)
+
+
+def _build_PoroPermeableFault_cases():
+    description = Description("Permeable fault problem ", "auto", "Jian Huang",
+                              True)
+    restartcheck_params = {"atol": 1.0e-5, "rtol": 2.0e-7}
+    return _build_poro_elastic_coupling_case("permeableFault_smoke.xml",
+                                             (0, 1), ((1, 1, 1), (2, 2, 1)),
+                                             description, restartcheck_params)
+
+
+def _build_PoroStaircaseSinglePhasePeacemanWell_fim_cases():
+    description = Description(
+        "Staircase single-phase poroelastic problem with Peaceman wells ",
+        "auto", "Francois Hamon", True)
+    restartcheck_params = {"atol": 1.0e-5, "rtol": 2.0e-7}
+    return _build_poro_elastic_coupling_case(
+        "PoroElastic_staircase_singlephase_3d_fim.xml", (6, 11),
+        ((1, 1, 1), (2, 2, 1)), description, restartcheck_params)
+
+
+def _build_PoroStaircaseSinglePhasePeacemanWell_sequential_cases():
+    description = Description(
+        "Staircase single-phase poroelastic problem with Peaceman wells ",
+        "auto", "Francois Hamon", True)
+    restartcheck_params = {"atol": 1.0e-5, "rtol": 2.0e-7}
+    return _build_poro_elastic_coupling_case(
+        "PoroElastic_staircase_singlephase_3d_sequential.xml", (6, 11),
+        ((1, 1, 1), (2, 2, 1)), description, restartcheck_params)
+
+
+def _build_PoroStaircaseCO2PeacemanWell_fim_cases():
+    description = Description(
+        "Staircase CO2 poroelastic problem with Peaceman wells ", "auto",
+        "Francois Hamon", True)
+    restartcheck_params = {"atol": 1.0e-5, "rtol": 2.0e-7}
+    return _build_poro_elastic_coupling_case(
+        "PoroElastic_staircase_co2_3d_fim.xml", (22, 33),
+        ((1, 1, 1), (2, 2, 1)), description, restartcheck_params)
+
+
+def _build_PoroStaircaseCO2PeacemanWell_sequential_cases():
+    description = Description(
+        "Staircase CO2 poroelastic problem with Peaceman wells ", "auto",
+        "Francois Hamon", True)
+    restartcheck_params = {"atol": 1.0e-5, "rtol": 2.0e-7}
+    return _build_poro_elastic_coupling_case(
+        "PoroElastic_staircase_co2_3d_sequential.xml", (22, 33),
+        ((1, 1, 1), (2, 2, 1)), description, restartcheck_params)
+
+
+def _build_PoroStaircaseSinglePhaseStabilized_fim_cases():
+    description = Description(
+        "Staircase single-phase poroelastic problem with pressure jump stabilization ",
+        "auto", "Ryan Aronson", True)
+    restartcheck_params = {"atol": 1.0e-5, "rtol": 2.0e-7}
+    return _build_poro_elastic_coupling_case(
+        "PoroElastic_staircase_singlephase_3d_fim_stab.xml", (4, 7),
+        ((1, 1, 1), (2, 2, 1)), description, restartcheck_params)
+
+
+def _build_PoroStaircaseSinglePhaseStabilized_seq_cases():
+    description = Description(
+        "Staircase single-phase poroelastic problem with pressure jump stabilization ",
+        "auto", "Ryan Aronson", True)
+    restartcheck_params = {"atol": 1.0e-5, "rtol": 2.0e-7}
+    return _build_poro_elastic_coupling_case(
+        "PoroElastic_staircase_singlephase_3d_sequential_stab.xml", (4, 7),
+        ((1, 1, 1), (2, 2, 1)), description, restartcheck_params)
+
+def _build_PoroStaircaseCO2Stabilized_fim_cases():
+    description = Description(
+        "Staircase CO2 poroelastic problem with pressure jump stabilization ",
+        "auto", "Ryan Aronson", True)
+    restartcheck_params = {"atol": 1.0e-5, "rtol": 2.0e-7}
+    return _build_poro_elastic_coupling_case(
+        "PoroElastic_staircase_co2_3d_fim_stab.xml", (4, 7),
+        ((1, 1, 1), (2, 2, 1)), description, restartcheck_params)
+
+def _build_PoroStaircaseCO2Stabilized_seq_cases():
+    description = Description(
+        "Staircase CO2 poroelastic problem with pressure jump stabilization ",
+        "auto", "Ryan Aronson", True)
+    restartcheck_params = {"atol": 1.0e-5, "rtol": 2.0e-7}
+    return _build_poro_elastic_coupling_case(
+        "PoroElastic_staircase_co2_3d_sequential_stab.xml", (4, 7),
+        ((1, 1, 1), (2, 2, 1)), description, restartcheck_params)
+
+def _build_PoroElasticPEBICO2FIM_cases():
+    description = Description(
+        "CO2 poroelastic problem with VEM-TPFA (FIM) on a PEBI mesh ", "auto",
+        "Francois Hamon", True)
+    restartcheck_params = {"atol": 1.0e-5, "rtol": 2.0e-7}
+    return _build_poro_elastic_coupling_case(
+        "PoroElastic_hybridHexPrism_co2_fim_3d.xml", (10, 20),
+        ((1, 1, 1), (2, 2, 1)), description, restartcheck_params)
+
+
+def _build_PoroElasticPEBICO2Sequential_cases():
+    description = Description(
+        "CO2 poroelastic problem with VEM-TPFA (Sequential) on a PEBI mesh ",
+        "auto", "Francois Hamon", True)
+    restartcheck_params = {"atol": 1.0e-5, "rtol": 2.0e-7}
+    return _build_poro_elastic_coupling_case(
+        "PoroElastic_hybridHexPrism_co2_sequential_3d.xml", (10, 20),
+        ((1, 1, 1), (2, 2, 1)), description, restartcheck_params)
+
+
+def _build_PoroElasticGravity_cases():
+    description = Description("Single-phase poroelastic problem with gravity ",
+                              "auto", "Francois Hamon", True)
+    restartcheck_params = {"atol": 1.0e-5, "rtol": 2.0e-7}
+    return _build_poro_elastic_coupling_case("PoroElastic_gravity.xml",
+                                             (5, 10), ((1, 1, 1), (1, 1, 2)),
+                                             description, restartcheck_params)
+
+
+def test_poro_elastic_coupling_cases():
+    deck_instances = [
+        _build_Terzaghi_cases(),
+        _build_Mandel_fim_cases(),
+        _build_Mandel_sequential_cases(),
+        _build_Mandel_prism6_cases(),
+        _build_Deadoil_fim_cases(),
+        _build_Deadoil_sequential_cases(),
+        _build_PoroElasticWell_cases(),
+        _build_PoroDruckerPragerWell_cases(),
+        _build_PoroDelftEggWell_cases(),
+        _build_PoroModifiedCamClayWell_cases(),
+        _build_PoroImpermeableFault_cases(),
+        _build_PoroPermeableFault_cases(),
+        _build_PoroStaircaseSinglePhasePeacemanWell_fim_cases(),
+        _build_PoroStaircaseSinglePhasePeacemanWell_sequential_cases(),
+        _build_PoroStaircaseCO2PeacemanWell_fim_cases(),
+        _build_PoroStaircaseCO2PeacemanWell_sequential_cases(),
+        _build_PoroElasticPEBICO2FIM_cases(),
+        _build_PoroElasticPEBICO2Sequential_cases(),
+        _build_PoroElasticGravity_cases()
+    ]
+
+    generate_geos_tests(deck_instances)
+
+
+test_poro_elastic_coupling_cases()
