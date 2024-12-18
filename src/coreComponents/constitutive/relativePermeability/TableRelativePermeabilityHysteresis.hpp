@@ -326,7 +326,13 @@ private:
     static constexpr char const * imbibitionWettingRelPermTableNameString() { return "imbibitionWettingRelPermTableName"; }
     static constexpr char const * imbibitionNonWettingRelPermTableNameString() { return "imbibitionNonWettingRelPermTableName"; }
 
+    /// STONEII specific
+    static constexpr char const * waterOilMaxRelPermString() { return "waterOilMaxRelPerm"; }
+    static constexpr char const * threePhaseInterpolatorString() { return "threePhaseInterpolator"; }
+
   };
+
+  arrayView1d< real64 const > getPhaseMinVolumeFraction() const override { return m_phaseMinVolumeFraction; };
 
   real64  getWettingPhaseMinVolumeFraction() const override
   {
@@ -337,14 +343,6 @@ private:
   {
     return m_nonWettingCurve.m_criticalDrainagePhaseVolFraction;
   }
-
-    static constexpr char const * waterOilMaxRelPermString() { return "waterOilMaxRelPerm"; }
-
-    static constexpr char const * threePhaseInterpolatorString() { return "threePhaseInterpolator"; }
-  };
-
-  arrayView1d< real64 const > getPhaseMinVolumeFraction() const override
-  { return m_imbibitionPhaseMinVolFraction; };
 
 private:
 
@@ -460,6 +458,13 @@ private:
 
   /// The non-wetting phase hysteretic curve
   KilloughHysteresis::HysteresisCurve m_nonWettingCurve;
+
+  /// Min phase volume fractions (deduced from the tables). With Baker, only the water phase entry is used
+  array1d< real64 > m_phaseMinVolumeFraction;
+
+  real64 m_waterOilMaxRelPerm;
+
+  ThreePhaseInterpolator m_threePhaseInterpolator;
 
 };
 
@@ -584,7 +589,7 @@ TableRelativePermeabilityHysteresis::KernelWrapper::
                                                               m_landParam[IPT::NONWETTING],
                                                               m_jerauldParam_a,
                                                               m_jerauldParam_b,
-                                          Scrt );
+                                                              Scrt );
 
   if( S <= Scrt )  // S is below the trapped critical saturation, so the relperm is zero
   {

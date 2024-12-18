@@ -131,16 +131,15 @@ TableRelativePermeabilityHysteresis::TableRelativePermeabilityHysteresis( std::s
     setSizedFromParent( 0 ).
     setRestartFlags( RestartFlags::NO_WRITE );
 
-  registerWrapper( viewKeyStruct::waterOilMaxRelPermString(), &m_waterOilMaxRelPerm ).
-    setInputFlag( InputFlags::FALSE ). // will be deduced from tables
-    setSizedFromParent( 0 );
-
-
-  registerWrapper( viewKeyStruct::threePhaseInterpolatorString(), &m_threePhaseInterpolator ).
-    setInputFlag( InputFlags::OPTIONAL ).
-    setApplyDefaultValue( ThreePhaseInterpolator::BAKER ).
-    setDescription( "Type of Three phase interpolator."
-                    "Valid options \n* " + EnumStrings< ThreePhaseInterpolator >::concat( "\n* " ) );
+//  registerWrapper( viewKeyStruct::waterOilMaxRelPermString(), &m_waterOilMaxRelPerm ).
+//    setInputFlag( InputFlags::FALSE ). // will be deduced from tables
+//    setSizedFromParent( 0 );
+//
+//  registerWrapper( viewKeyStruct::threePhaseInterpolatorString(), &m_threePhaseInterpolator ).
+//    setInputFlag( InputFlags::OPTIONAL ).
+//    setApplyDefaultValue( ThreePhaseInterpolator::BAKER ).
+//    setDescription( "Type of Three phase interpolator."
+//                    "Valid options \n* " + EnumStrings< ThreePhaseInterpolator >::concat( "\n* " ) );
 
   // register fields
   registerField( fields::relperm::phaseMaxHistoricalVolFraction{},
@@ -319,6 +318,14 @@ void TableRelativePermeabilityHysteresis::checkExistenceAndValidateWettingRelPer
   m_wettingCurve.setPoints( drainagePhaseMinVolFraction, drainagePhaseRelPermMinEndPoint,   // same as imbibition min
                             imbibitionPhaseMaxVolFraction, imbibitionPhaseRelPermMaxEndPoint,
                             drainagePhaseMaxVolFraction, drainagePhaseRelPermMaxEndPoint );
+
+  m_phaseMinVolumeFraction[ipWetting] = drainagePhaseMinVolFraction;
+
+  GEOS_LOG_LEVEL_RANK_0( 1, GEOS_FMT( "Initializing wetting relperm curve with {(smin,krmin), (simax,krimax), (sdmax,krdmax)} : {({},{}),({},{}),({},{})}",
+                                      m_wettingCurve.m_extremumPhaseVolFraction, m_wettingCurve.m_extremumValue,
+                                      m_wettingCurve.m_criticalImbibitionPhaseVolFraction, m_wettingCurve.m_criticalImbibitionValue,
+                                      m_wettingCurve.m_criticalDrainagePhaseVolFraction, m_wettingCurve.m_criticalDrainageValue
+                                      ));
 }
 
 void TableRelativePermeabilityHysteresis::checkExistenceAndValidateNonWettingRelPermTables()
@@ -389,6 +396,14 @@ void TableRelativePermeabilityHysteresis::checkExistenceAndValidateNonWettingRel
   m_nonWettingCurve.setPoints( drainagePhaseMaxVolFraction, drainagePhaseRelPermMaxEndPoint,   // same as imbibition max
                                imbibitionPhaseMinVolFraction, imbibitionPhaseRelPermMinEndPoint,
                                drainagePhaseMinVolFraction, drainagePhaseRelPermMinEndPoint );
+
+  m_phaseMinVolumeFraction[ipNonWetting] = drainagePhaseMinVolFraction;
+
+  GEOS_LOG_LEVEL_RANK_0( 1, GEOS_FMT( "Initializing non-wetting relperm curve with {(sdmin,krdmin), (simin,krimin), (smax,krmax)} : {({},{}),({},{}),({},{})}",
+                                      m_wettingCurve.m_criticalDrainagePhaseVolFraction, m_wettingCurve.m_criticalDrainageValue,
+                                      m_wettingCurve.m_criticalImbibitionPhaseVolFraction, m_wettingCurve.m_criticalImbibitionValue,
+                                      m_wettingCurve.m_extremumPhaseVolFraction, m_wettingCurve.m_extremumValue
+                                      ));
 
 }
 
@@ -550,6 +565,7 @@ void TableRelativePermeabilityHysteresis::resizeFields( localIndex const size, l
 
   integer const numPhases = numFluidPhases();
 
+  m_phaseMinVolumeFraction.resize( numPhases );
   m_phaseMaxHistoricalVolFraction.resize( size, numPhases );
   m_phaseMinHistoricalVolFraction.resize( size, numPhases );
   m_phaseMaxHistoricalVolFraction.setValues< parallelDevicePolicy<> >( 0.0 );
@@ -588,8 +604,8 @@ TableRelativePermeabilityHysteresis::KernelWrapper::KernelWrapper( arrayView1d< 
                                                                    KilloughHysteresis::HysteresisCurve const & nonWettingCurve,
                                                                    arrayView1d< integer const > const & phaseTypes,
                                                                    arrayView1d< integer const > const & phaseOrder,
-                 ThreePhaseInterpolator const & threePhaseInterpolator,
-                 real64 const & waterOilRelPermMaxValue,
+                                                                   ThreePhaseInterpolator const & threePhaseInterpolator,
+                                                                   real64 const & waterOilRelPermMaxValue,
                                                                    arrayView2d< real64 const, compflow::USD_PHASE > const & phaseMinHistoricalVolFraction,
                                                                    arrayView2d< real64 const, compflow::USD_PHASE > const & phaseMaxHistoricalVolFraction,
                                                                    arrayView3d< real64, relperm::USD_RELPERM > const & phaseTrappedVolFrac,

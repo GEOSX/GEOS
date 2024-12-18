@@ -142,6 +142,8 @@ private:
     static constexpr char const * threePhaseInterpolatorString() { return "threePhaseInterpolator"; }
   };
 
+  arrayView1d< real64 const > getPhaseMinVolumeFraction() const override { return m_phaseMinVolumeFraction; };
+
   real64 getWettingPhaseMinVolumeFraction() const override
   {
     integer ipWetting;

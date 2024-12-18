@@ -2,17 +2,16 @@
  * ------------------------------------------------------------------------------------------------------------
  * SPDX-License-Identifier: LGPL-2.1-only
  *
- * Copyright (c) 2018-2020 Lawrence Livermore National Security LLC
- * Copyright (c) 2018-2020 The Board of Trustees of the Leland Stanford Junior University
- * Copyright (c) 2018-2020 TotalEnergies
- * Copyright (c) 2019-     GEOSX Contributors
+ * Copyright (c) 2016-2024 Lawrence Livermore National Security LLC
+ * Copyright (c) 2018-2024 TotalEnergies
+ * Copyright (c) 2018-2024 The Board of Trustees of the Leland Stanford Junior University
+ * Copyright (c) 2023-2024 Chevron
+ * Copyright (c) 2019-     GEOS/GEOSX Contributors
  * All rights reserved
  *
  * See top level LICENSE, COPYRIGHT, CONTRIBUTORS, NOTICE, and ACKNOWLEDGEMENTS files for details.
  * ------------------------------------------------------------------------------------------------------------
- */
-
-/**
+ *//**
  * @file KilloughHysteresis.hpp
  */
 
@@ -86,10 +85,13 @@ public:
    */
   struct HysteresisCurve
   {
+    /// Extremum phase volume fraction is the phase volume fraction at the merging point
+    /// i.e. maximum saturation for non-wetting phase( resp. minimum for wetting phase)
     real64 m_extremumPhaseVolFraction = -1.;
     real64 m_criticalImbibitionPhaseVolFraction = -1.;
     real64 m_criticalDrainagePhaseVolFraction = -1.;
 
+    // Value here is used as Hysteresis Curves are used for relperm as well as capillary pressure
     real64 m_extremumValue = -1.;
     real64 m_criticalImbibitionValue = -1.;
     real64 m_criticalDrainageValue = -1.;
@@ -148,14 +150,6 @@ public:
                                m_extremumValue ),
                      InputError );
 
-
-      std::cout << m_extremumPhaseVolFraction << " "
-                << m_criticalImbibitionPhaseVolFraction << " "
-                << m_criticalDrainagePhaseVolFraction << " "
-                << m_extremumValue << " "
-                << m_criticalImbibitionValue << " "
-                << m_criticalDrainageValue << std::endl;
-
       m_isWetting =  ((m_criticalDrainagePhaseVolFraction > m_extremumPhaseVolFraction) ?
                       PhaseWettability::WETTING :
                       PhaseWettability::NONWETTING) == PhaseWettability::WETTING;
@@ -171,16 +165,16 @@ public:
       return m_isWetting;
     }
 
-    /**
-     * @brief Helper function to know if the class has been initialized or not
-     * @return true if the phase has been initialized, false otherwise
-     */
-    bool isInitialized() const
-    {
-      return (m_extremumPhaseVolFraction <= 0.0) &&
-             (m_criticalImbibitionPhaseVolFraction <= 0.0) &&
-             (m_criticalDrainagePhaseVolFraction <= 0.0);
-    }
+//    /**
+//     * @brief Helper function to know if the class has been initialized or not
+//     * @return true if the phase has been initialized, false otherwise
+//     */
+//    bool isInitialized() const
+//    {
+//      return (m_extremumPhaseVolFraction <= 0.0) &&
+//             (m_criticalImbibitionPhaseVolFraction <= 0.0) &&
+//             (m_criticalDrainagePhaseVolFraction <= 0.0);
+//    }
 
   };
 
@@ -250,7 +244,6 @@ KilloughHysteresis::computeLandCoefficient( KilloughHysteresis::HysteresisCurve 
     real64 const Smxi = hystereticCurve.m_criticalImbibitionPhaseVolFraction;
     real64 const Swc = Scrd;
 
-    std::cout << Scrd << " " << Smxd << " " << Smxi << " " << Swc << std::endl;
     GEOS_ERROR_IF(  (Smxi - Smxd) > 0,
                     GEOS_FMT( "{}: For wetting-phase hysteresis, the imbibition end-point saturation Smxi( {} ) must be smaller "
                               "than the drainage saturation end-point Smxd( {} ).\n Crossing relative permeability curves.\n",

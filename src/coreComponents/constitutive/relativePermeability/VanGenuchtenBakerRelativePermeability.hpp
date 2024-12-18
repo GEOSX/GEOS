@@ -140,6 +140,8 @@ public:
   };
 
 
+  arrayView1d< real64 const > getPhaseMinVolumeFraction() const override { return m_phaseMinVolumeFraction; };
+
   real64 getWettingPhaseMinVolumeFraction() const override
   {
     integer ipWetting;

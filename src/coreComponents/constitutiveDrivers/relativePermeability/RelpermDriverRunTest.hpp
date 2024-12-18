@@ -19,6 +19,7 @@
 #include "constitutiveDrivers/relativePermeability/RelpermDriver.hpp"
 #include "constitutive/relativePermeability/RelativePermeabilityFields.hpp"
 #include "constitutive/relativePermeability/Layouts.hpp"
+#include "constitutive/relativePermeability/KilloughHysteresis.hpp"
 
 
 namespace geos
@@ -95,15 +96,15 @@ RelpermDriver::runTest( RELPERM_TYPE & relperm,
   arrayView2d< real64, compflow::USD_PHASE > phaseMaxHistoricalVolFraction = relperm.template getField< fields::relperm::phaseMaxHistoricalVolFraction >().reference();
   arrayView2d< real64, compflow::USD_PHASE >  phaseMinHistoricalVolFraction = relperm.template getField< fields::relperm::phaseMinHistoricalVolFraction >().reference();
 
-  arrayView1d< real64 > const drainagePhaseMinVolFraction = relperm.template getReference< array1d< real64 > >(
-    constitutive::TableRelativePermeabilityHysteresis::viewKeyStruct::drainagePhaseMinVolumeFractionString());
-  arrayView1d< real64 > const drainagePhaseMaxVolFraction = relperm.template getReference< array1d< real64 > >(
-    constitutive::TableRelativePermeabilityHysteresis::viewKeyStruct::drainagePhaseMaxVolumeFractionString());
-  KilloughHysteresis::HysteresisCurve const wettingCurve = relperm.template getReference< KilloughHysteresis::HysteresisCurve >(
-    TableRelativePermeabilityHysteresis::viewKeyStruct::wettingCurveString());
+//  arrayView1d< real64 > const drainagePhaseMinVolFraction = relperm.template getReference< array1d< real64 > >(
+//    constitutive::TableRelativePermeabilityHysteresis::viewKeyStruct::drainagePhaseMinVolumeFractionString());
+//  arrayView1d< real64 > const drainagePhaseMaxVolFraction = relperm.template getReference< array1d< real64 > >(
+//    constitutive::TableRelativePermeabilityHysteresis::viewKeyStruct::drainagePhaseMaxVolumeFractionString());
+  constitutive::KilloughHysteresis::HysteresisCurve const wettingCurve = relperm.template getReference< constitutive::KilloughHysteresis::HysteresisCurve >(
+    constitutive::TableRelativePermeabilityHysteresis::viewKeyStruct::wettingCurveString());
 
-  KilloughHysteresis::HysteresisCurve const nonWettingCurve = relperm.template getReference< KilloughHysteresis::HysteresisCurve >(
-    TableRelativePermeabilityHysteresis::viewKeyStruct::nonWettingCurveString());
+  constitutive::KilloughHysteresis::HysteresisCurve const nonWettingCurve = relperm.template getReference< constitutive::KilloughHysteresis::HysteresisCurve >(
+    constitutive::TableRelativePermeabilityHysteresis::viewKeyStruct::nonWettingCurveString());
   //setting for drainage
   {
     if( phaseHasHysteresis[ipNonWetting] )

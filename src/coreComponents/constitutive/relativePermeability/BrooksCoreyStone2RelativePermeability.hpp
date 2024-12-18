@@ -140,6 +140,20 @@ public:
 
   arrayView1d< real64 const > getPhaseMinVolumeFraction() const override { return m_phaseMinVolumeFraction; };
 
+  real64 getWettingPhaseMinVolumeFraction() const override
+  {
+    integer ipWetting;
+    std::tie( ipWetting, std::ignore ) = phaseIndex( getPhaseOrder());
+    return m_phaseMinVolumeFraction[ipWetting];
+  }
+
+  real64 getNonWettingMinVolumeFraction() const override
+  {
+    integer ipNonWetting;
+    std::tie( std::ignore, ipNonWetting ) = phaseIndex( getPhaseOrder());
+    return m_phaseMinVolumeFraction[ipNonWetting];
+  };
+
 protected:
 
   virtual void postInputInitialization() override;

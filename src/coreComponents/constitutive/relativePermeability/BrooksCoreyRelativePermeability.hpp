@@ -105,6 +105,7 @@ public:
     static constexpr char const * volFracScaleString() { return "volFracScale"; }
   } vieKeysBrooksCoreyRelativePermeability;
 //END_SPHINX_INCLUDE_01
+  arrayView1d< real64 const > getPhaseMinVolumeFraction() const override { return m_phaseMinVolumeFraction; };
 
   real64 getWettingPhaseMinVolumeFraction() const override
   {

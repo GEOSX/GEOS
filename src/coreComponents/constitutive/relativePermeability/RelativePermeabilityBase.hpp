@@ -165,8 +165,8 @@ public:
   static std::tuple< integer, integer > phaseIndex( arrayView1d< integer const > const & phaseOrder );
   arrayView1d< integer const > getPhaseOrder() const { return m_phaseOrder; }
 
+  virtual arrayView1d< real64 const > getPhaseMinVolumeFraction() const = 0;
   virtual real64 getWettingPhaseMinVolumeFraction() const = 0;
-
   virtual real64 getNonWettingMinVolumeFraction() const = 0;
 
   std::tuple< integer, integer > wettingAndNonWettingPhaseIndices() const;

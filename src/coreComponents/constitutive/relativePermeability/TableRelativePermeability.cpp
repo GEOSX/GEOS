@@ -212,7 +212,7 @@ void TableRelativePermeability::initializePreSubGroups()
       else if( ip == 1 ) // intermediate phase is oil
       {
         m_phaseMinVolumeFraction[m_phaseOrder[PhaseType::OIL]] = phaseMinVolFrac;
-        m_waterOilMaxRelPerm = phaseRelPermEndPoint;
+        m_waterOilMaxRelPerm = phaseRelPermMaxEndPoint;
       }
     }
     for( integer ip = 0; ip < m_nonWettingIntermediateRelPermTableNames.size(); ++ip )

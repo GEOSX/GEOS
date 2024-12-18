@@ -23,7 +23,7 @@
 #include "common/DataLayouts.hpp"
 #include "common/DataTypes.hpp"
 #include "constitutive/fluid/multifluid/Layouts.hpp"
-#include "constitutive/capillaryPressure/layouts.hpp"
+#include "constitutive/capillaryPressure/Layouts.hpp"
 #include "mesh/ElementRegionManager.hpp"
 #include "physicsSolvers/fluidFlow/kernels/compositional/PotGrad.hpp"
 #include "physicsSolvers/fluidFlow/kernels/compositional/PhaseComponentFlux.hpp"
