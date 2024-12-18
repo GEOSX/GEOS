@@ -129,7 +129,7 @@ CompositionalMultiphaseBase::CompositionalMultiphaseBase( const string & name,
     setSizedFromParent( 0 ).
     setInputFlag( InputFlags::OPTIONAL ).
     setApplyDefaultValue( LvArray::NumericLimits< real64 >::max ). // disabled by default
-    setDescription( "Target change in component fraction in a time step" );  
+    setDescription( "Target change in component fraction in a time step" );
 
   this->registerWrapper( viewKeyStruct::maxCompFracChangeString(), &m_maxCompFracChange ).
     setSizedFromParent( 0 ).
@@ -186,7 +186,7 @@ CompositionalMultiphaseBase::CompositionalMultiphaseBase( const string & name,
     setSizedFromParent( 0 ).
     setInputFlag( InputFlags::OPTIONAL ).
     setApplyDefaultValue( isothermalCompositionalMultiphaseBaseKernels::minCompFracForDivision ).
-    setDescription( "Minimum allowed global component fraction" );  
+    setDescription( "Minimum allowed global component fraction" );
 
   this->registerWrapper( viewKeyStruct::maxSequentialCompDensChangeString(), &m_maxSequentialCompDensChange ).
     setSizedFromParent( 0 ).
@@ -234,7 +234,7 @@ void CompositionalMultiphaseBase::postInputInitialization()
                         ": The target change in component density in a time step must be larger than 0.0" );
   GEOS_ERROR_IF_LE_MSG( m_targetCompFracChange, 0.0,
                         getWrapperDataContext( viewKeyStruct::targetCompFracChangeString() ) <<
-                        ": The target change in component fraction in a time step must be larger than 0.0" );                      
+                        ": The target change in component fraction in a time step must be larger than 0.0" );
 
   GEOS_ERROR_IF_LT_MSG( m_solutionChangeScalingFactor, 0.0,
                         getWrapperDataContext( viewKeyStruct::solutionChangeScalingFactorString() ) <<
@@ -403,8 +403,8 @@ void CompositionalMultiphaseBase::registerDataOnMesh( Group & meshBodies )
       subRegion.registerField< globalCompFractionScalingFactor >( getName() );
 
       // The resizing of the arrays needs to happen here, before the call to initializePreSubGroups,
-      // to make sure that the dimensions are properly set before the timeHistoryOutput starts its initialization. 
-      if (m_useZFormulation)
+      // to make sure that the dimensions are properly set before the timeHistoryOutput starts its initialization.
+      if( m_useZFormulation )
       {
         subRegion.registerField< globalCompFraction >( getName() ).
           setDimLabels( 1, fluid.componentNames() ).
@@ -417,7 +417,7 @@ void CompositionalMultiphaseBase::registerDataOnMesh( Group & meshBodies )
           subRegion.registerField< globalCompFraction_k >( getName() ).
             setDimLabels( 1, fluid.componentNames() ).
             reference().resizeDimension< 1 >( m_numComponents );
-        }  
+        }
       }
       else
       {
@@ -436,12 +436,8 @@ void CompositionalMultiphaseBase::registerDataOnMesh( Group & meshBodies )
           setDimLabels( 1, fluid.componentNames() ).
           reference().resizeDimension< 1 >( m_numComponents );
         subRegion.registerField< dGlobalCompFraction_dGlobalCompDensity >( getName() ).
-          reference().resizeDimension< 1, 2 >( m_numComponents, m_numComponents );  
+          reference().resizeDimension< 1, 2 >( m_numComponents, m_numComponents );
       }
-      // for Dirichlet boundary condition
-      subRegion.registerField< fields::flow::bcglobalCompFraction >( getName() ).
-        setDimLabels( 1, fluid.componentNames() ).
-        reference().resizeDimension< 1 >( m_numComponents );
 
       subRegion.registerField< phaseVolumeFraction >( getName() ).
         setDimLabels( 1, fluid.phaseNames() ).
@@ -730,7 +726,7 @@ real64 CompositionalMultiphaseBase::updatePhaseVolumeFractionZFormulation( Objec
   MultiFluidBase const & fluid = getConstitutiveModel< MultiFluidBase >( dataGroup, fluidName );
 
   // For now: isothermal only
-  GEOS_ERROR_IF( m_isThermal, GEOS_FMT( "CompositionalMultiphaseBase {}: Z Formulation is currently not available for thermal simulations", getDataContext() ) );
+  GEOS_ERROR_IF( m_isThermal, GEOS_FMT( "{}: Z Formulation is currently not available for thermal simulations", getDataContext() ) );
 
   real64 maxDeltaPhaseVolFrac  =
     isothermalCompositionalMultiphaseBaseKernels::
@@ -918,17 +914,14 @@ real64 CompositionalMultiphaseBase::updateFluidState( ElementSubRegionBase & sub
 {
   GEOS_MARK_FUNCTION;
 
-  real64 maxdS;
+  real64 maxDeltaPhaseVolFrac;
 
   if( m_useZFormulation )
   {
     // For p, z_c as the primary unknowns
     updateFluidModel( subRegion ); // rho_T is now a function of p, z_c from volume balance
     updateCompAmountZFormulation( subRegion );
-    maxdS = updatePhaseVolumeFractionZFormulation( subRegion );
-    updateRelPermModel( subRegion );
-    updatePhaseMobility( subRegion );
-    updateCapPressureModel( subRegion );
+    maxDeltaPhaseVolFrac = updatePhaseVolumeFractionZFormulation( subRegion );
   }
   else
   {
@@ -936,16 +929,15 @@ real64 CompositionalMultiphaseBase::updateFluidState( ElementSubRegionBase & sub
     updateGlobalComponentFraction( subRegion );
     updateFluidModel( subRegion );
     updateCompAmount( subRegion );
-    maxdS = updatePhaseVolumeFraction( subRegion );
-    updateRelPermModel( subRegion );
-    updatePhaseMobility( subRegion );
-    updateCapPressureModel( subRegion );
-    // note1: for now, thermal conductivity is treated explicitly, so no update here
-    // note2: for now, diffusion and dispersion are also treated explicitly
+    maxDeltaPhaseVolFrac = updatePhaseVolumeFraction( subRegion );
+
   }
 
-
-  real64 const maxDeltaPhaseVolFrac = maxdS;
+  updateRelPermModel( subRegion );
+  updatePhaseMobility( subRegion );
+  updateCapPressureModel( subRegion );
+  // note1: for now, thermal conductivity is treated explicitly, so no update here
+  // note2: for now, diffusion and dispersion are also treated explicitly
 
   return maxDeltaPhaseVolFrac;
 }
@@ -974,8 +966,8 @@ void CompositionalMultiphaseBase::initializeFluidState( MeshLevel & mesh,
     string const & fluidName = subRegion.getReference< string >( viewKeyStruct::fluidNamesString() );
     MultiFluidBase const & fluid = getConstitutiveModel< MultiFluidBase >( subRegion, fluidName );
     arrayView2d< real64 const, multifluid::USD_FLUID > const totalDens = fluid.totalDensity();
-    
-    if (!m_useZFormulation)
+
+    if( !m_useZFormulation )
     {
       arrayView2d< real64 const, compflow::USD_COMP > const compFrac =
         subRegion.getField< fields::flow::globalCompFraction >();
@@ -993,7 +985,7 @@ void CompositionalMultiphaseBase::initializeFluidState( MeshLevel & mesh,
   } );
 
   // with initial component densities defined - check if they need to be corrected to avoid zero diags etc
-  if (m_useZFormulation)
+  if( m_useZFormulation )
     chopNegativeCompFractions( domain );
   else
     chopNegativeDensities( domain );
@@ -1030,8 +1022,8 @@ void CompositionalMultiphaseBase::initializeFluidState( MeshLevel & mesh,
       updateCompAmount( subRegion );
       updatePhaseVolumeFraction( subRegion );
     }
-    
-    
+
+
 
     // Now, we initialize and update each constitutive model one by one
 
@@ -1417,19 +1409,19 @@ void CompositionalMultiphaseBase::initializePostInitialConditionsPreSubGroups()
                                                                arrayView1d< string const > const & regionNames )
   {
     FieldIdentifiers fieldsToBeSync;
-    if (m_useZFormulation)
+    if( m_useZFormulation )
     {
       fieldsToBeSync.addElementFields( { fields::flow::pressure::key(),
-                                       fields::flow::globalCompFraction::key() },
-                                     regionNames );
+                                         fields::flow::globalCompFraction::key() },
+                                       regionNames );
     }
     else
     {
       fieldsToBeSync.addElementFields( { fields::flow::pressure::key(),
-                                       fields::flow::globalCompDensity::key() },
-                                     regionNames );
+                                         fields::flow::globalCompDensity::key() },
+                                       regionNames );
     }
-    
+
 
     CommunicationTools::getInstance().synchronizeFields( fieldsToBeSync, mesh, domain.getNeighbors(), false );
 
@@ -2124,11 +2116,11 @@ void CompositionalMultiphaseBase::applyDirichletBC( real64 const time_n,
         subRegion.getReference< array1d< real64 > >( fields::flow::pressure::key() );
 
       // for now to avoid lambda function complain
-      
-      if (m_useZFormulation)
+
+      if( m_useZFormulation )
       {
         //arrayView2d< real64 const, compflow::USD_COMP > const compFrac =
-          //subRegion.getReference< array2d< real64, compflow::LAYOUT_COMP > >( fields::flow::globalCompFraction::key() );
+        //subRegion.getReference< array2d< real64, compflow::LAYOUT_COMP > >( fields::flow::globalCompFraction::key() );
 
         integer const numComp = m_numComponents;
         forAll< parallelDevicePolicy<> >( targetSet.size(), [=] GEOS_HOST_DEVICE ( localIndex const a )
@@ -2165,7 +2157,7 @@ void CompositionalMultiphaseBase::applyDirichletBC( real64 const time_n,
           }
         } );
       }
-      else 
+      else
       {
         arrayView2d< real64 const, compflow::USD_COMP > const compDens =
           subRegion.getReference< array2d< real64, compflow::LAYOUT_COMP > >( fields::flow::globalCompDensity::key() );
@@ -2207,7 +2199,7 @@ void CompositionalMultiphaseBase::applyDirichletBC( real64 const time_n,
         } );
       }
     } );
-  
+
 
     // 5. Apply temperature to the system
     if( m_isThermal )
@@ -2340,8 +2332,6 @@ void CompositionalMultiphaseBase::chopNegativeDensities( DomainPartition & domai
 {
   GEOS_MARK_FUNCTION;
 
-  using namespace isothermalCompositionalMultiphaseBaseKernels;
-
   integer const numComp = m_numComponents;
   real64 const minCompDens = m_minCompDens;
 
@@ -2418,7 +2408,7 @@ real64 CompositionalMultiphaseBase::setNextDtBasedOnStateChange( real64 const & 
                                                                  DomainPartition & domain )
 {
   // TODO: put in a seprate function or put flags to avoid duplication of code
-  if (m_useZFormulation)
+  if( m_useZFormulation )
   {
     if( m_targetRelativePresChange >= 1.0 &&
         m_targetPhaseVolFracChange >= 1.0 &&
@@ -2437,12 +2427,12 @@ real64 CompositionalMultiphaseBase::setNextDtBasedOnStateChange( real64 const & 
     integer const numComp = m_numComponents;
 
     forDiscretizationOnMeshTargets( domain.getMeshBodies(), [&]( string const &,
-                                                                MeshLevel & mesh,
-                                                                arrayView1d< string const > const & regionNames )
+                                                                 MeshLevel & mesh,
+                                                                 arrayView1d< string const > const & regionNames )
     {
       mesh.getElemManager().forElementSubRegions( regionNames,
                                                   [&]( localIndex const,
-                                                      ElementSubRegionBase & subRegion )
+                                                       ElementSubRegionBase & subRegion )
       {
         arrayView1d< integer const > const ghostRank = subRegion.ghostRank();
 
@@ -2494,22 +2484,22 @@ real64 CompositionalMultiphaseBase::setNextDtBasedOnStateChange( real64 const & 
     maxAbsolutePhaseVolFracChange = MpiWrapper::max( maxAbsolutePhaseVolFracChange );
 
     GEOS_LOG_LEVEL_INFO_RANK_0( logInfo::TimeStep, GEOS_FMT( "{}: max relative pressure change during time step = {} %",
-                                                            getName(), GEOS_FMT( "{:.{}f}", 100*maxRelativePresChange, 3 ) ) );
+                                                             getName(), GEOS_FMT( "{:.{}f}", 100*maxRelativePresChange, 3 ) ) );
     GEOS_LOG_LEVEL_INFO_RANK_0( logInfo::TimeStep, GEOS_FMT( "{}: max absolute phase volume fraction change during time step = {}",
-                                                            getName(), GEOS_FMT( "{:.{}f}", maxAbsolutePhaseVolFracChange, 3 ) ) );
+                                                             getName(), GEOS_FMT( "{:.{}f}", maxAbsolutePhaseVolFracChange, 3 ) ) );
 
     if( m_targetCompFracChange < LvArray::NumericLimits< real64 >::max )
     {
       maxCompFracChange = MpiWrapper::max( maxCompFracChange );
       GEOS_LOG_LEVEL_INFO_RANK_0( logInfo::TimeStep, GEOS_FMT( "{}: max component fraction change during time step = {} %",
-                                                              getName(), GEOS_FMT( "{:.{}f}", 100*maxCompFracChange, 3 ) ) );
+                                                               getName(), GEOS_FMT( "{:.{}f}", 100*maxCompFracChange, 3 ) ) );
     }
 
     if( m_isThermal )
     {
       maxRelativeTempChange = MpiWrapper::max( maxRelativeTempChange );
       GEOS_LOG_LEVEL_INFO_RANK_0( logInfo::TimeStep, GEOS_FMT( "{}: max relative temperature change during time step = {} %",
-                                                              getName(), GEOS_FMT( "{:.{}f}", 100*maxRelativeTempChange, 3 ) ) );
+                                                               getName(), GEOS_FMT( "{:.{}f}", 100*maxRelativeTempChange, 3 ) ) );
     }
 
     real64 const eps = LvArray::NumericLimits< real64 >::epsilon;
@@ -2526,7 +2516,7 @@ real64 CompositionalMultiphaseBase::setNextDtBasedOnStateChange( real64 const & 
     if( m_targetCompFracChange < LvArray::NumericLimits< real64 >::max )
     {
       nextDtCompFrac = currentDt * ( 1.0 + m_solutionChangeScalingFactor ) * m_targetCompFracChange
-                      / std::max( eps, maxCompFracChange + m_solutionChangeScalingFactor * m_targetCompFracChange );
+                       / std::max( eps, maxCompFracChange + m_solutionChangeScalingFactor * m_targetCompFracChange );
       if( m_nonlinearSolverParameters.getLogLevel() > 0 )
         GEOS_LOG_RANK_0( GEOS_FMT( "{}: next time step based on component fraction change = {}", getName(), nextDtCompFrac ));
     }
@@ -2540,7 +2530,7 @@ real64 CompositionalMultiphaseBase::setNextDtBasedOnStateChange( real64 const & 
     }
 
     return std::min( std::min( nextDtPressure, std::min( nextDtPhaseVolFrac, nextDtCompFrac ) ), nextDtTemperature );
-  } 
+  }
   else
   {
     if( m_targetRelativePresChange >= 1.0 &&
@@ -2560,12 +2550,12 @@ real64 CompositionalMultiphaseBase::setNextDtBasedOnStateChange( real64 const & 
     integer const numComp = m_numComponents;
 
     forDiscretizationOnMeshTargets( domain.getMeshBodies(), [&]( string const &,
-                                                                MeshLevel & mesh,
-                                                                arrayView1d< string const > const & regionNames )
+                                                                 MeshLevel & mesh,
+                                                                 arrayView1d< string const > const & regionNames )
     {
       mesh.getElemManager().forElementSubRegions( regionNames,
                                                   [&]( localIndex const,
-                                                      ElementSubRegionBase & subRegion )
+                                                       ElementSubRegionBase & subRegion )
       {
         arrayView1d< integer const > const ghostRank = subRegion.ghostRank();
 
@@ -2617,22 +2607,22 @@ real64 CompositionalMultiphaseBase::setNextDtBasedOnStateChange( real64 const & 
     maxAbsolutePhaseVolFracChange = MpiWrapper::max( maxAbsolutePhaseVolFracChange );
 
     GEOS_LOG_LEVEL_INFO_RANK_0( logInfo::TimeStep, GEOS_FMT( "{}: max relative pressure change during time step = {} %",
-                                                            getName(), GEOS_FMT( "{:.{}f}", 100*maxRelativePresChange, 3 ) ) );
+                                                             getName(), GEOS_FMT( "{:.{}f}", 100*maxRelativePresChange, 3 ) ) );
     GEOS_LOG_LEVEL_INFO_RANK_0( logInfo::TimeStep, GEOS_FMT( "{}: max absolute phase volume fraction change during time step = {}",
-                                                            getName(), GEOS_FMT( "{:.{}f}", maxAbsolutePhaseVolFracChange, 3 ) ) );
+                                                             getName(), GEOS_FMT( "{:.{}f}", maxAbsolutePhaseVolFracChange, 3 ) ) );
 
     if( m_targetRelativeCompDensChange < LvArray::NumericLimits< real64 >::max )
     {
       maxRelativeCompDensChange = MpiWrapper::max( maxRelativeCompDensChange );
       GEOS_LOG_LEVEL_INFO_RANK_0( logInfo::TimeStep, GEOS_FMT( "{}: max relative component density change during time step = {} %",
-                                                              getName(), GEOS_FMT( "{:.{}f}", 100*maxRelativeCompDensChange, 3 ) ) );
+                                                               getName(), GEOS_FMT( "{:.{}f}", 100*maxRelativeCompDensChange, 3 ) ) );
     }
 
     if( m_isThermal )
     {
       maxRelativeTempChange = MpiWrapper::max( maxRelativeTempChange );
       GEOS_LOG_LEVEL_INFO_RANK_0( logInfo::TimeStep, GEOS_FMT( "{}: max relative temperature change during time step = {} %",
-                                                              getName(), GEOS_FMT( "{:.{}f}", 100*maxRelativeTempChange, 3 ) ) );
+                                                               getName(), GEOS_FMT( "{:.{}f}", 100*maxRelativeTempChange, 3 ) ) );
     }
 
     real64 const eps = LvArray::NumericLimits< real64 >::epsilon;
@@ -2649,7 +2639,7 @@ real64 CompositionalMultiphaseBase::setNextDtBasedOnStateChange( real64 const & 
     if( m_targetRelativeCompDensChange < LvArray::NumericLimits< real64 >::max )
     {
       nextDtCompDens = currentDt * ( 1.0 + m_solutionChangeScalingFactor ) * m_targetRelativeCompDensChange
-                      / std::max( eps, maxRelativeCompDensChange + m_solutionChangeScalingFactor * m_targetRelativeCompDensChange );
+                       / std::max( eps, maxRelativeCompDensChange + m_solutionChangeScalingFactor * m_targetRelativeCompDensChange );
       if( m_nonlinearSolverParameters.getLogLevel() > 0 )
         GEOS_LOG_RANK_0( GEOS_FMT( "{}: next time step based on component density change = {}", getName(), nextDtCompDens ));
     }
@@ -2850,7 +2840,7 @@ void CompositionalMultiphaseBase::resetStateToBeginningOfStep( DomainPartition &
         subRegion.template getField< fields::flow::pressure_n >();
       pres.setValues< parallelDevicePolicy<> >( pres_n );
 
-      if (m_useZFormulation)
+      if( m_useZFormulation )
       {
         arrayView2d< real64, compflow::USD_COMP > const & compFrac =
           subRegion.template getField< fields::flow::globalCompFraction >();
@@ -2866,7 +2856,7 @@ void CompositionalMultiphaseBase::resetStateToBeginningOfStep( DomainPartition &
           subRegion.template getField< fields::flow::globalCompDensity_n >();
         compDens.setValues< parallelDevicePolicy<> >( compDens_n );
       }
-      
+
 
       if( m_isThermal )
       {
@@ -2993,7 +2983,7 @@ void CompositionalMultiphaseBase::saveConvergedState( ElementSubRegionBase & sub
 {
   FlowSolverBase::saveConvergedState( subRegion );
 
-  if (m_useZFormulation)
+  if( m_useZFormulation )
   {
     arrayView2d< real64 const, compflow::USD_COMP > const & compFrac =
       subRegion.template getField< fields::flow::globalCompFraction >();
@@ -3022,7 +3012,7 @@ void CompositionalMultiphaseBase::saveConvergedState( ElementSubRegionBase & sub
     }
   }
 
-  
+
 
   arrayView2d< real64 const, compflow::USD_COMP > const & compAmount =
     subRegion.template getField< fields::flow::compAmount >();

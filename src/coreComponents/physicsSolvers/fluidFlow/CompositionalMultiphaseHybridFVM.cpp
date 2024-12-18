@@ -522,8 +522,8 @@ real64 CompositionalMultiphaseHybridFVM::scalingForSystemSolution( DomainPartiti
 }
 
 real64 CompositionalMultiphaseHybridFVM::scalingForSystemSolutionZFormulation( DomainPartition & domain,
-                                                                   DofManager const & dofManager,
-                                                                   arrayView1d< real64 const > const & localSolution )
+                                                                               DofManager const & dofManager,
+                                                                               arrayView1d< real64 const > const & localSolution )
 {
   GEOS_MARK_FUNCTION;
   // z formulation not implemented

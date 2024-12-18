@@ -78,7 +78,7 @@ DECLARE_FIELD( globalCompFraction_n,
                0,
                NOPLOT,
                NO_WRITE,
-               "Global component fraction at the previous converged time step" );               
+               "Global component fraction at the previous converged time step" );
 
 DECLARE_FIELD( globalCompFraction_k,
                "globalCompFraction_k",
@@ -87,14 +87,6 @@ DECLARE_FIELD( globalCompFraction_k,
                NOPLOT,
                NO_WRITE,
                "Global component fraction updates at the previous sequential iteration" );
-
-DECLARE_FIELD( bcglobalCompFraction,
-               "bcglobalCompFraction",
-               array2dLayoutComp,
-               0,
-               NOPLOT,
-               WRITE_AND_READ,
-               "Dirichlet boundary condition composition" );               
 
 DECLARE_FIELD( faceGlobalCompFraction,
                "faceGlobalCompFraction",
@@ -199,7 +191,7 @@ DECLARE_FIELD( globalCompFractionScalingFactor,
                1,
                NOPLOT,
                NO_WRITE,
-               "Scaling factors for global component fractions" );               
+               "Scaling factors for global component fractions" );
 
 DECLARE_FIELD( compAmount,
                "compAmount",

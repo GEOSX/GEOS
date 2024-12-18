@@ -38,7 +38,7 @@ namespace geos
 namespace isothermalCompositionalMultiphaseBaseKernels
 {
 
-  static constexpr real64 minCompFracForDivision = 0;
+static constexpr real64 minCompFracForDivision = 0;
 
 /******************************** AccumulationKernel ********************************/
 
@@ -217,8 +217,8 @@ public:
    */
   template< typename FUNC = NoOpFunc >
   GEOS_HOST_DEVICE
-  void computeVolumeBalance( localIndex const ei,
-                             StackVariables & stack ) const
+  void computeCompFracSum( localIndex const ei,
+                           StackVariables & stack ) const
   {
 
     arraySlice1d< real64 const, compflow::USD_PHASE - 1 > compFrac = m_compFrac[ei];
@@ -305,7 +305,7 @@ public:
 
       kernelComponent.setup( ei, stack );
       kernelComponent.computeAccumulation( ei, stack );
-      kernelComponent.computeVolumeBalance( ei, stack );
+      kernelComponent.computeCompFracSum( ei, stack );
       kernelComponent.complete( ei, stack );
     } );
   }

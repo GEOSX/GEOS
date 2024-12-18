@@ -112,7 +112,7 @@ public:
   virtual real64
   scalingForSystemSolutionZFormulation( DomainPartition & domain,
                                         DofManager const & dofManager,
-                                        arrayView1d< real64 const > const & localSolution );                            
+                                        arrayView1d< real64 const > const & localSolution );
 
   virtual bool
   checkSystemSolution( DomainPartition & domain,
@@ -126,7 +126,7 @@ public:
                        real64 const scalingFactor,
                        real64 const dt,
                        DomainPartition & domain ) override;
-  
+
   /**@}*/
 
   virtual void

@@ -317,9 +317,9 @@ void CompositionalMultiphaseFVM::assembleZFormulationFluxTerms( real64 const dt,
       typename TYPEOFREF( stencil ) ::KernelWrapper stencilWrapper = stencil.createKernelWrapper();
 
       GEOS_ERROR_IF( m_isThermal, GEOS_FMT(
-                       "CompositionalMultiphaseBase {}: Z Formulation is currently not available for thermal simulations", getDataContext() ) );
+                       "{}: Z Formulation is currently not available for thermal simulations", getDataContext() ) );
       GEOS_ERROR_IF( m_hasDiffusion || m_hasDispersion, GEOS_FMT(
-                       "CompositionalMultiphaseBase {}: Z Formulation is currently not available for Diffusion or Dispersion", getDataContext() ) );
+                       "{}: Z Formulation is currently not available for Diffusion or Dispersion", getDataContext() ) );
 
       // isothermal only for now
       isothermalCompositionalMultiphaseFVMKernels::
@@ -540,7 +540,7 @@ real64 CompositionalMultiphaseFVM::scalingForSystemSolution( DomainPartition & d
 {
   GEOS_MARK_FUNCTION;
 
-  if (m_useZFormulation)
+  if( m_useZFormulation )
   {
     return scalingForSystemSolutionZFormulation( domain, dofManager, localSolution );
   }
@@ -552,12 +552,12 @@ real64 CompositionalMultiphaseFVM::scalingForSystemSolution( DomainPartition & d
     real64 minPresScalingFactor = 1.0, minCompDensScalingFactor = 1.0, minTempScalingFactor = 1.0;
 
     forDiscretizationOnMeshTargets( domain.getMeshBodies(), [&]( string const &,
-                                                                MeshLevel & mesh,
-                                                                arrayView1d< string const > const & regionNames )
+                                                                 MeshLevel & mesh,
+                                                                 arrayView1d< string const > const & regionNames )
     {
       mesh.getElemManager().forElementSubRegions( regionNames,
                                                   [&]( localIndex const,
-                                                      ElementSubRegionBase & subRegion )
+                                                       ElementSubRegionBase & subRegion )
       {
         arrayView1d< real64 const > const pressure = subRegion.getField< fields::flow::pressure >();
         arrayView1d< real64 const > const temperature = subRegion.getField< fields::flow::temperature >();
@@ -572,37 +572,37 @@ real64 CompositionalMultiphaseFVM::scalingForSystemSolution( DomainPartition & d
     ? thermalCompositionalMultiphaseBaseKernels::
             SolutionScalingKernelFactory::
             createAndLaunch< parallelDevicePolicy<> >( m_maxRelativePresChange,
-                                                      m_maxAbsolutePresChange,
-                                                      m_maxRelativeTempChange,
-                                                      m_maxCompFracChange,
-                                                      m_maxRelativeCompDensChange,
-                                                      pressure,
-                                                      temperature,
-                                                      compDens,
-                                                      pressureScalingFactor,
-                                                      compDensScalingFactor,
-                                                      temperatureScalingFactor,
-                                                      dofManager.rankOffset(),
-                                                      m_numComponents,
-                                                      dofKey,
-                                                      subRegion,
-                                                      localSolution,
-                                                      temperatureOffset )
+                                                       m_maxAbsolutePresChange,
+                                                       m_maxRelativeTempChange,
+                                                       m_maxCompFracChange,
+                                                       m_maxRelativeCompDensChange,
+                                                       pressure,
+                                                       temperature,
+                                                       compDens,
+                                                       pressureScalingFactor,
+                                                       compDensScalingFactor,
+                                                       temperatureScalingFactor,
+                                                       dofManager.rankOffset(),
+                                                       m_numComponents,
+                                                       dofKey,
+                                                       subRegion,
+                                                       localSolution,
+                                                       temperatureOffset )
     : isothermalCompositionalMultiphaseBaseKernels::
             SolutionScalingKernelFactory::
             createAndLaunch< parallelDevicePolicy<> >( m_maxRelativePresChange,
-                                                      m_maxAbsolutePresChange,
-                                                      m_maxCompFracChange,
-                                                      m_maxRelativeCompDensChange,
-                                                      pressure,
-                                                      compDens,
-                                                      pressureScalingFactor,
-                                                      compDensScalingFactor,
-                                                      dofManager.rankOffset(),
-                                                      m_numComponents,
-                                                      dofKey,
-                                                      subRegion,
-                                                      localSolution );
+                                                       m_maxAbsolutePresChange,
+                                                       m_maxCompFracChange,
+                                                       m_maxRelativeCompDensChange,
+                                                       pressure,
+                                                       compDens,
+                                                       pressureScalingFactor,
+                                                       compDensScalingFactor,
+                                                       dofManager.rankOffset(),
+                                                       m_numComponents,
+                                                       dofKey,
+                                                       subRegion,
+                                                       localSolution );
 
         if( m_scalingType == ScalingType::Global )
         {
@@ -625,16 +625,16 @@ real64 CompositionalMultiphaseFVM::scalingForSystemSolution( DomainPartition & d
 
     string const massUnit = m_useMass ? "kg/m3" : "mol/m3";
     GEOS_LOG_LEVEL_INFO_RANK_0( logInfo::Solution, GEOS_FMT( "        {}: Max pressure change = {} Pa (before scaling)",
-                                                            getName(), GEOS_FMT( "{:.{}f}", maxDeltaPres, 3 ) ) );
+                                                             getName(), GEOS_FMT( "{:.{}f}", maxDeltaPres, 3 ) ) );
     GEOS_LOG_LEVEL_INFO_RANK_0( logInfo::Solution, GEOS_FMT( "        {}: Max component density change = {} {} (before scaling)",
-                                                            getName(), GEOS_FMT( "{:.{}f}", maxDeltaCompDens, 3 ), massUnit ) );
+                                                             getName(), GEOS_FMT( "{:.{}f}", maxDeltaCompDens, 3 ), massUnit ) );
 
     if( m_isThermal )
     {
       maxDeltaTemp = MpiWrapper::max( maxDeltaTemp );
       minTempScalingFactor = MpiWrapper::min( minTempScalingFactor );
       GEOS_LOG_LEVEL_INFO_RANK_0( logInfo::Solution, GEOS_FMT( "        {}: Max temperature change = {} K (before scaling)",
-                                                              getName(), GEOS_FMT( "{:.{}f}", maxDeltaTemp, 3 ) ) );
+                                                               getName(), GEOS_FMT( "{:.{}f}", maxDeltaTemp, 3 ) ) );
     }
 
     if( m_scalingType == ScalingType::Local )
@@ -652,8 +652,8 @@ real64 CompositionalMultiphaseFVM::scalingForSystemSolution( DomainPartition & d
 }
 
 real64 CompositionalMultiphaseFVM::scalingForSystemSolutionZFormulation( DomainPartition & domain,
-                                                             DofManager const & dofManager,
-                                                             arrayView1d< real64 const > const & localSolution )
+                                                                         DofManager const & dofManager,
+                                                                         arrayView1d< real64 const > const & localSolution )
 {
   GEOS_MARK_FUNCTION;
 
@@ -677,22 +677,20 @@ real64 CompositionalMultiphaseFVM::scalingForSystemSolutionZFormulation( DomainP
       arrayView1d< real64 > temperatureScalingFactor = subRegion.getField< fields::flow::temperatureScalingFactor >();
       arrayView1d< real64 > compFracScalingFactor = subRegion.getField< fields::flow::globalCompFractionScalingFactor >();
 
-      GEOS_ERROR_IF( m_isThermal, GEOS_FMT( "CompositionalMultiphaseBase {}: Z Formulation is currently not available for thermal simulations", getDataContext() ) );
-
       auto const subRegionData = isothermalCompositionalMultiphaseBaseKernels::
-        SolutionScalingZFormulationKernelFactory::
-        createAndLaunch< parallelDevicePolicy<> >( m_maxRelativePresChange,
-                                                    m_maxAbsolutePresChange,
-                                                    m_maxCompFracChange,
-                                                    pressure,
-                                                    compFrac,
-                                                    pressureScalingFactor,
-                                                    compFracScalingFactor,
-                                                    dofManager.rankOffset(),
-                                                    m_numComponents,
-                                                    dofKey,
-                                                    subRegion,
-                                                    localSolution );
+                                   SolutionScalingZFormulationKernelFactory::
+                                   createAndLaunch< parallelDevicePolicy<> >( m_maxRelativePresChange,
+                                                                              m_maxAbsolutePresChange,
+                                                                              m_maxCompFracChange,
+                                                                              pressure,
+                                                                              compFrac,
+                                                                              pressureScalingFactor,
+                                                                              compFracScalingFactor,
+                                                                              dofManager.rankOffset(),
+                                                                              m_numComponents,
+                                                                              dofKey,
+                                                                              subRegion,
+                                                                              localSolution );
 
       if( m_scalingType == ScalingType::Global )
       {
@@ -704,7 +702,7 @@ real64 CompositionalMultiphaseFVM::scalingForSystemSolutionZFormulation( DomainP
       minPresScalingFactor = std::min( minPresScalingFactor, subRegionData.localMinPresScalingFactor );
       minCompFracScalingFactor = std::min( minCompFracScalingFactor, subRegionData.localMinCompFracScalingFactor );
       minTempScalingFactor = std::min( minTempScalingFactor, subRegionData.localMinTempScalingFactor );
-      
+
     } );
   } );
 
@@ -747,8 +745,8 @@ bool CompositionalMultiphaseFVM::checkSystemSolution( DomainPartition & domain,
 {
   GEOS_MARK_FUNCTION;
 
-  // TO DO: Implement the solution check for Z Formulation 
-  if (m_useZFormulation)
+  // TO DO: Implement the solution check for Z Formulation
+  if( m_useZFormulation )
     return true;
   else
   {
@@ -758,12 +756,12 @@ bool CompositionalMultiphaseFVM::checkSystemSolution( DomainPartition & domain,
     integer numNegPres = 0, numNegDens = 0, numNegTotalDens = 0;
 
     forDiscretizationOnMeshTargets( domain.getMeshBodies(), [&]( string const &,
-                                                                MeshLevel & mesh,
-                                                                arrayView1d< string const > const & regionNames )
+                                                                 MeshLevel & mesh,
+                                                                 arrayView1d< string const > const & regionNames )
     {
       mesh.getElemManager().forElementSubRegions( regionNames,
                                                   [&]( localIndex const,
-                                                      ElementSubRegionBase & subRegion )
+                                                       ElementSubRegionBase & subRegion )
       {
         arrayView1d< real64 const > const pressure =
           subRegion.getField< fields::flow::pressure >();
@@ -782,36 +780,36 @@ bool CompositionalMultiphaseFVM::checkSystemSolution( DomainPartition & domain,
     ? thermalCompositionalMultiphaseBaseKernels::
             SolutionCheckKernelFactory::
             createAndLaunch< parallelDevicePolicy<> >( m_allowCompDensChopping,
-                                                      m_allowNegativePressure,
-                                                      m_scalingType,
-                                                      scalingFactor,
-                                                      pressure,
-                                                      temperature,
-                                                      compDens,
-                                                      pressureScalingFactor,
-                                                      temperatureScalingFactor,
-                                                      compDensScalingFactor,
-                                                      dofManager.rankOffset(),
-                                                      m_numComponents,
-                                                      dofKey,
-                                                      subRegion,
-                                                      localSolution,
-                                                      temperatureOffset )
+                                                       m_allowNegativePressure,
+                                                       m_scalingType,
+                                                       scalingFactor,
+                                                       pressure,
+                                                       temperature,
+                                                       compDens,
+                                                       pressureScalingFactor,
+                                                       temperatureScalingFactor,
+                                                       compDensScalingFactor,
+                                                       dofManager.rankOffset(),
+                                                       m_numComponents,
+                                                       dofKey,
+                                                       subRegion,
+                                                       localSolution,
+                                                       temperatureOffset )
     : isothermalCompositionalMultiphaseBaseKernels::
             SolutionCheckKernelFactory::
             createAndLaunch< parallelDevicePolicy<> >( m_allowCompDensChopping,
-                                                      m_allowNegativePressure,
-                                                      m_scalingType,
-                                                      scalingFactor,
-                                                      pressure,
-                                                      compDens,
-                                                      pressureScalingFactor,
-                                                      compDensScalingFactor,
-                                                      dofManager.rankOffset(),
-                                                      m_numComponents,
-                                                      dofKey,
-                                                      subRegion,
-                                                      localSolution );
+                                                       m_allowNegativePressure,
+                                                       m_scalingType,
+                                                       scalingFactor,
+                                                       pressure,
+                                                       compDens,
+                                                       pressureScalingFactor,
+                                                       compDensScalingFactor,
+                                                       dofManager.rankOffset(),
+                                                       m_numComponents,
+                                                       dofKey,
+                                                       subRegion,
+                                                       localSolution );
 
         localCheck = std::min( localCheck, subRegionData.localMinVal );
 
@@ -833,14 +831,14 @@ bool CompositionalMultiphaseFVM::checkSystemSolution( DomainPartition & domain,
 
     if( numNegPres > 0 )
       GEOS_LOG_LEVEL_INFO_RANK_0( logInfo::Solution, GEOS_FMT( "        {}: Number of negative pressure values: {}, minimum value: {} Pa",
-                                                              getName(), numNegPres, fmt::format( "{:.{}f}", minPres, 3 ) ) );
+                                                               getName(), numNegPres, fmt::format( "{:.{}f}", minPres, 3 ) ) );
     string const massUnit = m_useMass ? "kg/m3" : "mol/m3";
     if( numNegDens > 0 )
       GEOS_LOG_LEVEL_INFO_RANK_0( logInfo::Solution, GEOS_FMT( "        {}: Number of negative component density values: {}, minimum value: {} {}}",
-                                                              getName(), numNegDens, fmt::format( "{:.{}f}", minDens, 3 ), massUnit ) );
+                                                               getName(), numNegDens, fmt::format( "{:.{}f}", minDens, 3 ), massUnit ) );
     if( minTotalDens > 0 )
       GEOS_LOG_LEVEL_INFO_RANK_0( logInfo::Solution, GEOS_FMT( "        {}: Number of negative total density values: {}, minimum value: {} {}}",
-                                                              getName(), minTotalDens, fmt::format( "{:.{}f}", minDens, 3 ), massUnit ) );
+                                                               getName(), minTotalDens, fmt::format( "{:.{}f}", minDens, 3 ), massUnit ) );
 
     return MpiWrapper::min( localCheck );
   }
@@ -940,10 +938,10 @@ void CompositionalMultiphaseFVM::applySystemSolution( DofManager const & dofMana
   // these negative component densities are set to zero in this function
 
   // TODO: implement chopNegativeZ
-  
-  if( m_allowCompDensChopping)
+
+  if( m_allowCompDensChopping )
   {
-    if (m_useZFormulation)
+    if( m_useZFormulation )
       chopNegativeCompFractions( domain );
     else
       chopNegativeDensities( domain );
@@ -954,7 +952,7 @@ void CompositionalMultiphaseFVM::applySystemSolution( DofManager const & dofMana
                                                                arrayView1d< string const > const & regionNames )
   {
     std::vector< string > fields{ fields::flow::pressure::key() };
-    if (m_useZFormulation)
+    if( m_useZFormulation )
     {
       fields.emplace_back( fields::flow::globalCompFraction::key() );
     }
@@ -990,7 +988,7 @@ void CompositionalMultiphaseFVM::updatePhaseMobility( ObjectManagerBase & dataGr
     {
       // For now: isothermal only
       GEOS_ERROR_IF( m_isThermal, GEOS_FMT(
-                       "CompositionalMultiphaseBase {}: Z Formulation is currently not available for thermal simulations", getDataContext() ) );
+                       "{}: Z Formulation is currently not available for thermal simulations", getDataContext() ) );
     }
     else
     {
@@ -1187,7 +1185,7 @@ void CompositionalMultiphaseFVM::applyFaceDirichletBC( real64 const time_n,
   if( m_nonlinearSolverParameters.m_numNewtonIterations == 0 )
   {
     bool const bcConsistent = validateFaceDirichletBC( domain, time_n + dt );
-    GEOS_ERROR_IF( !bcConsistent, GEOS_FMT( "CompositionalMultiphaseBase {}: inconsistent boundary conditions", getDataContext() ) );
+    GEOS_ERROR_IF( !bcConsistent, GEOS_FMT( "{}: inconsistent boundary conditions", getDataContext() ) );
   }
 
   FieldSpecificationManager & fsManager = FieldSpecificationManager::getInstance();
@@ -1247,22 +1245,22 @@ void CompositionalMultiphaseFVM::applyFaceDirichletBC( real64 const time_n,
       if( m_useZFormulation )
       {
         GEOS_ERROR_IF( m_isThermal, GEOS_FMT(
-                        "{}: Z Formulation is currently not available for thermal simulations", getDataContext() ) );
+                         "{}: Z Formulation is currently not available for thermal simulations", getDataContext() ) );
         isothermalCompositionalMultiphaseFVMKernels::
           DirichletFluxComputeZFormulationKernelFactory::
           createAndLaunch< parallelDevicePolicy<> >( m_numComponents,
-                                                      m_numPhases,
-                                                      dofManager.rankOffset(),
-                                                      m_useTotalMassEquation,
-                                                      elemDofKey,
-                                                      getName(),
-                                                      faceManager,
-                                                      elemManager,
-                                                      stencilWrapper,
-                                                      multiFluidBase,
-                                                      dt,
-                                                      localMatrix,
-                                                      localRhs );
+                                                     m_numPhases,
+                                                     dofManager.rankOffset(),
+                                                     m_useTotalMassEquation,
+                                                     elemDofKey,
+                                                     getName(),
+                                                     faceManager,
+                                                     elemManager,
+                                                     stencilWrapper,
+                                                     multiFluidBase,
+                                                     dt,
+                                                     localMatrix,
+                                                     localRhs );
 
       }
       else
@@ -1273,36 +1271,36 @@ void CompositionalMultiphaseFVM::applyFaceDirichletBC( real64 const time_n,
           thermalCompositionalMultiphaseFVMKernels::
             DirichletFluxComputeKernelFactory::
             createAndLaunch< parallelDevicePolicy<> >( m_numComponents,
-                                                      m_numPhases,
-                                                      dofManager.rankOffset(),
-                                                      m_useTotalMassEquation,
-                                                      elemDofKey,
-                                                      getName(),
-                                                      faceManager,
-                                                      elemManager,
-                                                      stencilWrapper,
-                                                      multiFluidBase,
-                                                      dt,
-                                                      localMatrix,
-                                                      localRhs );
+                                                       m_numPhases,
+                                                       dofManager.rankOffset(),
+                                                       m_useTotalMassEquation,
+                                                       elemDofKey,
+                                                       getName(),
+                                                       faceManager,
+                                                       elemManager,
+                                                       stencilWrapper,
+                                                       multiFluidBase,
+                                                       dt,
+                                                       localMatrix,
+                                                       localRhs );
         }
         else
         {
           isothermalCompositionalMultiphaseFVMKernels::
             DirichletFluxComputeKernelFactory::
             createAndLaunch< parallelDevicePolicy<> >( m_numComponents,
-                                                      m_numPhases,
-                                                      dofManager.rankOffset(),
-                                                      m_useTotalMassEquation,
-                                                      elemDofKey,
-                                                      getName(),
-                                                      faceManager,
-                                                      elemManager,
-                                                      stencilWrapper,
-                                                      multiFluidBase,
-                                                      dt,
-                                                      localMatrix,
-                                                      localRhs );
+                                                       m_numPhases,
+                                                       dofManager.rankOffset(),
+                                                       m_useTotalMassEquation,
+                                                       elemDofKey,
+                                                       getName(),
+                                                       faceManager,
+                                                       elemManager,
+                                                       stencilWrapper,
+                                                       multiFluidBase,
+                                                       dt,
+                                                       localMatrix,
+                                                       localRhs );
         }
       }
 
