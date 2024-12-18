@@ -1,0 +1,22 @@
+name: Compute a build number
+
+on: 
+  pull_request:
+    branches: 
+      - develop
+  workflow_dispatch:
+
+
+jobs:    
+  build:
+    runs-on: ubuntu-latest
+    steps:
+    - name: Generate build number
+      id: buildnumber
+      uses: onyxmueller/build-tag-number@v1
+      with:
+        token: ${{secrets.github_token}}
+
+    - name: Echo
+      run: |
+        echo ${{ steps.buildnumber.outputs.build_number }}
