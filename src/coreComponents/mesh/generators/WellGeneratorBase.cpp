@@ -74,14 +74,13 @@ WellGeneratorBase::WellGeneratorBase( string const & name, Group * const parent 
 
 Group * WellGeneratorBase::createChild( string const & childKey, string const & childName )
 {
-  GEOS_LOG_RANK_0( "Adding Well attribute: " << childKey << ", " << childName );
+  GEOS_LOG_RANK_0( GEOS_FMT( "{}: adding {} {}", getName(), childKey, childName ) );
   const auto childTypes = { viewKeyStruct::perforationString() };
   GEOS_ERROR_IF( childKey != viewKeyStruct::perforationString(),
                  CatalogInterface::unknownTypeError( childKey, getDataContext(), childTypes ) );
 
   ++m_numPerforations;
   m_perforationList.emplace_back( childName );
-  GEOS_LOG_RANK_0( GEOS_FMT( "{}: adding {} {}", getName(), childKey, childName ) );
 
   return &registerGroup< Perforation >( childName );
 }
