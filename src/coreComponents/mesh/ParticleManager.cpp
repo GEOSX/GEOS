@@ -86,7 +86,7 @@ void ParticleManager::setMaxGlobalIndex()
 
 Group * ParticleManager::createChild( string const & childKey, string const & childName )
 {
-  GEOS_LOG_RANK_0( "Adding Object " << childKey << " named " << childName << " from ObjectManager::Catalog." );
+  GEOS_LOG_RANK_0( GEOS_FMT( "{}: adding {} {}", getName(), childKey, childName ) );
   Group & particleRegions = this->getGroup( ParticleManager::groupKeyStruct::particleRegionsGroup() );
   return &particleRegions.registerGroup( childName,
                                          CatalogInterface::factory( childKey, getDataContext(),

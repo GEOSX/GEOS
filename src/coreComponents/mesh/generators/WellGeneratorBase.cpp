@@ -81,6 +81,7 @@ Group * WellGeneratorBase::createChild( string const & childKey, string const & 
 
   ++m_numPerforations;
   m_perforationList.emplace_back( childName );
+  GEOS_LOG_RANK_0( GEOS_FMT( "{}: adding {} {}", getName(), childKey, childName ) );
 
   return &registerGroup< Perforation >( childName );
 }

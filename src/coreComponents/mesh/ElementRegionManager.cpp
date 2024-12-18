@@ -83,7 +83,7 @@ Group * ElementRegionManager::createChild( string const & childKey, string const
 {
   GEOS_ERROR_IF( getUserAvailableKeys().count( childKey ) == 0,
                  CatalogInterface::unknownTypeError( childKey, getDataContext(), getUserAvailableKeys() ) );
-  GEOS_LOG_RANK_0( "Adding Object " << childKey<<" named "<< childName<<" from ObjectManager::Catalog." );
+  GEOS_LOG_RANK_0( GEOS_FMT( "{}: adding {} {}", getName(), childKey, childName ) );
 
   Group & elementRegions = this->getGroup( ElementRegionManager::groupKeyStruct::elementRegionsGroup() );
   return &elementRegions.registerGroup( childName,

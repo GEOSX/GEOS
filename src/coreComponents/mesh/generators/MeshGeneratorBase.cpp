@@ -29,7 +29,7 @@ MeshGeneratorBase::MeshGeneratorBase( string const & name, Group * const parent 
 
 Group * MeshGeneratorBase::createChild( string const & childKey, string const & childName )
 {
-  GEOS_LOG_RANK_0( "Adding Mesh attribute: " << childKey << ", " << childName );
+  GEOS_LOG_RANK_0( GEOS_FMT( "{}: adding {} {}", getName(), childKey, childName ) );
   std::unique_ptr< MeshComponentBase > meshComp =
     MeshComponentBase::CatalogInterface::factory( childKey, getDataContext(), childName, this );
   return &this->registerGroup< MeshComponentBase >( childName, std::move( meshComp ) );

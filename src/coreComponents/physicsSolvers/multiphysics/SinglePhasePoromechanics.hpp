@@ -118,6 +118,12 @@ protected:
 
   virtual void initializePostInitialConditionsPreSubGroups() override;
 
+  virtual void setMGRStrategy()
+  {
+    if( this->m_linearSolverParameters.get().preconditionerType == LinearSolverParameters::PreconditionerType::mgr )
+      GEOS_ERROR( GEOS_FMT( "{}: MGR strategy is not implemented for {}", this->getName(), this->getCatalogName()));
+  }
+
   /**
    * @brief Helper function to recompute the bulk density
    * @param[in] subRegion the element subRegion
