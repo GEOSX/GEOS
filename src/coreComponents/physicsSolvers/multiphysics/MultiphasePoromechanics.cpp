@@ -184,6 +184,7 @@ void MultiphasePoromechanics< FLOW_SOLVER >::assembleSystem( real64 const GEOS_U
                                                                                                     this->flowSolver()->numFluidComponents(),
                                                                                                     this->flowSolver()->numFluidPhases(),
                                                                                                     this->flowSolver()->useTotalMassEquation(),
+                                                                                                    this->m_performStressInitialization,
                                                                                                     FlowSolverBase::viewKeyStruct::fluidNamesString() );
     }
     else
@@ -202,6 +203,7 @@ void MultiphasePoromechanics< FLOW_SOLVER >::assembleSystem( real64 const GEOS_U
                                                                                       this->flowSolver()->numFluidPhases(),
                                                                                       this->flowSolver()->useSimpleAccumulation(),
                                                                                       this->flowSolver()->useTotalMassEquation(),
+                                                                                      this->m_performStressInitialization,
                                                                                       FlowSolverBase::viewKeyStruct::fluidNamesString() );
     }
   } );

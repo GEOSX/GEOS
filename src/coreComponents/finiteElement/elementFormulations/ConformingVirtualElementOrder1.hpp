@@ -94,6 +94,8 @@ public:
     /// Array holding the integral mean of derivatives of basis functions in the first @ref
     /// numSupportPoints position of the first dimension.
     real64 basisDerivativesIntegralMean[MAXCELLNODES][3];
+    /// The cell diameters in each coordinate direction, used for scaling of stabilization matrix 
+    real64 cellDiameters[3] = {0.0, 0.0, 0.0}; 
   };
 
   /**
@@ -233,7 +235,7 @@ public:
         real64 const contribution = scaleFactor * stack.stabilizationMatrix[i][j];
         for( localIndex d = 0; d < NUMDOFSPERTRIALSUPPORTPOINT; ++d )
         {
-          matrix[i*NUMDOFSPERTRIALSUPPORTPOINT + d][j*NUMDOFSPERTRIALSUPPORTPOINT + d] += contribution;
+          matrix[i*NUMDOFSPERTRIALSUPPORTPOINT + d][j*NUMDOFSPERTRIALSUPPORTPOINT + d] += stack.cellDiameters[d]*contribution;
         }
       }
     }
@@ -265,7 +267,7 @@ public:
       {
         for( localIndex j = 0; j < stack.numSupportPoints; ++j )
         {
-          targetVector[i][d] += scaleFactor * stack.stabilizationMatrix[i][j] * dofs[j][d];
+          targetVector[i][d] += scaleFactor* stack.cellDiameters[d]* stack.stabilizationMatrix[i][j] * dofs[j][d];
         }
       }
     }
@@ -337,6 +339,41 @@ public:
                                  meshData.cellCenters( cellIndex, 1 ),
                                  meshData.cellCenters( cellIndex, 2 ) };
     real64 const cellVolume = meshData.cellVolumes( cellIndex );
+
+
+    // compute cell sizes in each direction
+    auto nodesCoords = meshData.nodesCoords;
+    auto cellToNodeMap = meshData.cellToNodeMap;
+    auto numCellPoints = cellToNodeMap[cellIndex].size(); 
+
+    real64 cellDiameter = 
+               computeDiameter< 3 >
+                          ( nodesCoords, cellToNodeMap[cellIndex], numCellPoints );
+    stack.cellDiameters[0] = cellDiameter*1.0;
+    stack.cellDiameters[1] = cellDiameter*1.0;
+    stack.cellDiameters[2] = cellDiameter*1.0;
+
+   /* 
+    for( localIndex numPoint = 0; numPoint < numCellPoints; ++numPoint )
+    {
+
+        for( localIndex numOthPoint = 0; numOthPoint < numPoint; ++numOthPoint )
+        {
+             real64 candidateDiameter[3]  = {0.0, 0.0, 0.0};
+             for( localIndex i = 0; i < 3; ++i )
+             {
+                  candidateDiameter[i] = nodesCoords[cellToNodeMap[cellIndex][numPoint]][i] - nodesCoords[cellToNodeMap[cellIndex][numOthPoint]][i];
+                  if (candidateDiameter[i] < 0.0) {candidateDiameter[i] = -1.0*candidateDiameter[i];}
+                  if (candidateDiameter[i] > stack.cellDiameters[i]) {stack.cellDiameters[i] = candidateDiameter[i];}
+             } 
+        }
+
+    } 
+    
+    stack.cellDiameters[0] = cellDiameter*cellDiameter/stack.cellDiameters[0];
+    stack.cellDiameters[1] = cellDiameter*cellDiameter/stack.cellDiameters[1];
+    stack.cellDiameters[2] = cellDiameter*cellDiameter/stack.cellDiameters[2];
+    */
 
     computeProjectors< SUBREGION_TYPE >( cellIndex,
                                          meshData.nodesCoords,

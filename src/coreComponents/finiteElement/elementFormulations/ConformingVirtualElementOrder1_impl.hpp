@@ -271,7 +271,8 @@ computeProjectors( localIndex const & cellIndex,
       {
         rowColProd += piNablaVemDofsMinusIdentity[ k ][ i ]*piNablaVemDofsMinusIdentity[ k ][ j ];
       }
-      stabilizationMatrix[ i ][ j ] = cellDiameter*rowColProd;
+      //stabilizationMatrix[ i ][ j ] = cellDiameter*rowColProd;
+      stabilizationMatrix[i][j] = rowColProd;
     }
   }
 }

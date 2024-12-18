@@ -82,6 +82,7 @@ public:
                                        real64 ( & dTotalStress_dPressure )[6],
                                        real64 ( & dTotalStress_dTemperature )[6],
                                        DiscretizationOps & stiffness,
+                                       integer const performStressInitialization, 
                                        real64 & porosity,
                                        real64 & porosity_n,
                                        real64 & dPorosity_dVolStrain,
@@ -115,6 +116,15 @@ public:
                      dPorosity_dVolStrain,
                      dPorosity_dPressure,
                      dPorosity_dTemperature );
+
+    // skip porosity update when doing poromechanics initialization
+    if( performStressInitialization )
+    {
+      porosity=porosityInit;
+      dPorosity_dVolStrain = 0.0;
+      dPorosity_dPressure = 0.0;
+      dPorosity_dTemperature = 0.0;
+    }  
 
     // Save the derivative of solid density wrt pressure for the computation of the body force
     dSolidDensity_dPressure = m_porosityUpdate.dGrainDensity_dPressure();

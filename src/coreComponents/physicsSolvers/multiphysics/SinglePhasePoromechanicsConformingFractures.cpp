@@ -225,6 +225,7 @@ void SinglePhasePoromechanicsConformingFractures::assembleCellBasedContributions
                                                                                                    localRhs,
                                                                                                    dt,
                                                                                                    flowDofKey,
+                                                                                                   0, 
                                                                                                    FlowSolverBase::viewKeyStruct::fluidNamesString() );
     }
     else
@@ -238,6 +239,7 @@ void SinglePhasePoromechanicsConformingFractures::assembleCellBasedContributions
                                                                                      localRhs,
                                                                                      dt,
                                                                                      flowDofKey,
+                                                                                     0, 
                                                                                      FlowSolverBase::viewKeyStruct::fluidNamesString() );
     }
 

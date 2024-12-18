@@ -193,6 +193,7 @@ real64 SinglePhasePoromechanicsEmbeddedFractures::assemblyLaunch( MeshLevel & me
                                 dt,
                                 gravityVectorData,
                                 flowDofKey,
+                                m_performStressInitialization,
                                 FlowSolverBase::viewKeyStruct::fluidNamesString() );
 
   real64 const maxForce =

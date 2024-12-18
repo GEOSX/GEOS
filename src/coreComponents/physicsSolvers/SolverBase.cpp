@@ -1012,7 +1012,7 @@ bool SolverBase::solveNonlinearSystem( real64 const & time_n,
       Timer timer( m_timers["apply solution"] );
 
       // Compute the scaling factor for the Newton update
-      scaleFactor = scalingForSystemSolution( domain, m_dofManager, m_solution.values() );
+      //scaleFactor = scalingForSystemSolution( domain, m_dofManager, m_solution.values() );
 
       if( getLogLevel() >= 1 )
       {

@@ -94,6 +94,7 @@ public:
                             real64 const inputDt,
                             real64 const (&gravityVector)[3],
                             string const inputFlowDofKey,
+                            integer const performStressInitialization,
                             string const fluidModelKey );
 
   //*****************************************************************************
@@ -257,6 +258,7 @@ protected:
   /// Derivative of fluid density wrt pressure
   arrayView2d< real64 const > const m_dFluidDensity_dPressure;
 
+  integer const m_performStressInitialization;
 };
 
 using SinglePhasePoromechanicsKernelFactory =
@@ -268,6 +270,7 @@ using SinglePhasePoromechanicsKernelFactory =
                                 real64 const,
                                 real64 const (&)[3],
                                 string const,
+                                integer const,
                                 string const >;
 
 /**

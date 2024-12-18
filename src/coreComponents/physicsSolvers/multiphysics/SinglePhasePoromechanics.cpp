@@ -228,6 +228,7 @@ void SinglePhasePoromechanics< FLOW_SOLVER >::assembleElementBasedTerms( real64 
                                                                                                      localRhs,
                                                                                                      dt,
                                                                                                      flowDofKey,
+                                                                                                     this->m_performStressInitialization,
                                                                                                      FlowSolverBase::viewKeyStruct::fluidNamesString() );
     }
     else
@@ -242,6 +243,7 @@ void SinglePhasePoromechanics< FLOW_SOLVER >::assembleElementBasedTerms( real64 
                                                                                        localRhs,
                                                                                        dt,
                                                                                        flowDofKey,
+                                                                                       this->m_performStressInitialization,
                                                                                        FlowSolverBase::viewKeyStruct::fluidNamesString() );
     }
   } );

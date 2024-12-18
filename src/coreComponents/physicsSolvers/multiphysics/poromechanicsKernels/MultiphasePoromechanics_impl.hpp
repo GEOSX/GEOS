@@ -54,6 +54,7 @@ MultiphasePoromechanics( NodeManager const & nodeManager,
                          localIndex const numPhases,
                          integer const useSimpleAccumulation,
                          integer const useTotalMassEquation,
+                         integer const performStressInitialization,
                          string const fluidModelKey ):
   Base( nodeManager,
         edgeManager,
@@ -79,7 +80,8 @@ MultiphasePoromechanics( NodeManager const & nodeManager,
   m_numComponents( numComponents ),
   m_numPhases( numPhases ),
   m_useSimpleAccumulation( useSimpleAccumulation ),
-  m_useTotalMassEquation( useTotalMassEquation )
+  m_useTotalMassEquation( useTotalMassEquation ),
+  m_performStressInitialization( performStressInitialization )
 {
   GEOS_ERROR_IF_GT_MSG( m_numComponents, maxNumComponents,
                         "MultiphasePoromechanics solver allows at most " <<
@@ -162,6 +164,7 @@ smallStrainUpdate( localIndex const k,
                                                        stack.dTotalStress_dPressure,
                                                        stack.dTotalStress_dTemperature,
                                                        stack.stiffness,
+                                                       m_performStressInitialization,
                                                        porosity,
                                                        porosity_n,
                                                        dPorosity_dVolStrain,
