@@ -3,7 +3,7 @@
  * SPDX-License-Identifier: LGPL-2.1-only
  *
  * Copyright (c) 2016-2024 Lawrence Livermore National Security LLC
- * Copyright (c) 2018-2024 Total, S.A
+ * Copyright (c) 2018-2024 TotalEnergies
  * Copyright (c) 2018-2024 The Board of Trustees of the Leland Stanford Junior University
  * Copyright (c) 2023-2024 Chevron
  * Copyright (c) 2019-     GEOS/GEOSX Contributors
@@ -95,6 +95,14 @@ HAS_MEMBER_FUNCTION( capacity, localIndex, );
  * @tparam CLASS The type to test.
  */
 HAS_MEMBER_FUNCTION_NO_RTYPE( resize, 0 );
+
+/**
+ * @brief Defines a static constexpr bool HasMemberFunction_resizeDefault< @p CLASS >
+ *        that is true iff the method @p CLASS ::resizeDefault( int, int, int) exists.
+ * @tparam CLASS The type to test.
+ */
+HAS_MEMBER_FUNCTION_NO_RTYPE( resizeDefault, 0, 0 );
+
 
 /**
  * @brief Defines a static constexpr bool HasMemberFunction_reserve< @p CLASS >

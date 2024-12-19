@@ -3,7 +3,7 @@
  * SPDX-License-Identifier: LGPL-2.1-only
  *
  * Copyright (c) 2016-2024 Lawrence Livermore National Security LLC
- * Copyright (c) 2018-2024 Total, S.A
+ * Copyright (c) 2018-2024 TotalEnergies
  * Copyright (c) 2018-2024 The Board of Trustees of the Leland Stanford Junior University
  * Copyright (c) 2023-2024 Chevron
  * Copyright (c) 2019-     GEOS/GEOSX Contributors
@@ -42,8 +42,14 @@
 #include "physicsSolvers/fluidFlow/wells/kernels/CompositionalMultiphaseWellKernels.hpp"
 #include "physicsSolvers/fluidFlow/wells/kernels/ThermalCompositionalMultiphaseWellKernels.hpp"
 #include "physicsSolvers/fluidFlow/wells/kernels/PerforationFluxKernels.hpp"
-#include "physicsSolvers/fluidFlow/kernels/IsothermalCompositionalMultiphaseBaseKernels.hpp"
-#include "physicsSolvers/fluidFlow/kernels/ThermalCompositionalMultiphaseBaseKernels.hpp"
+#include "physicsSolvers/fluidFlow/kernels/compositional/SolutionScalingKernel.hpp"
+#include "physicsSolvers/fluidFlow/kernels/compositional/ThermalSolutionScalingKernel.hpp"
+#include "physicsSolvers/fluidFlow/kernels/compositional/SolutionCheckKernel.hpp"
+#include "physicsSolvers/fluidFlow/kernels/compositional/ThermalSolutionCheckKernel.hpp"
+#include "physicsSolvers/fluidFlow/kernels/compositional/GlobalComponentFractionKernel.hpp"
+#include "physicsSolvers/fluidFlow/kernels/compositional/PhaseVolumeFractionKernel.hpp"
+#include "physicsSolvers/fluidFlow/kernels/compositional/ThermalPhaseVolumeFractionKernel.hpp"
+#include "physicsSolvers/fluidFlow/kernels/compositional/FluidUpdateKernel.hpp"
 
 #if defined( __INTEL_COMPILER )
 #pragma GCC optimize "O0"
@@ -54,7 +60,6 @@ namespace geos
 
 using namespace dataRepository;
 using namespace constitutive;
-using namespace compositionalMultiphaseWellKernels;
 
 CompositionalMultiphaseWell::CompositionalMultiphaseWell( const string & name,
                                                           Group * const parent )
@@ -905,7 +910,8 @@ void CompositionalMultiphaseWell::updateTotalMassDensity( WellElementSubRegion &
                                                subRegion,
                                                fluid )
   :
-  TotalMassDensityKernelFactory::
+  compositionalMultiphaseWellKernels::
+    TotalMassDensityKernelFactory::
     createAndLaunch< parallelDevicePolicy<> >( m_numComponents,
                                                m_numPhases,
                                                subRegion,
@@ -971,8 +977,10 @@ void CompositionalMultiphaseWell::initializeWells( DomainPartition & domain, rea
   {
 
     ElementRegionManager & elemManager = mesh.getElemManager();
-    PresTempCompFracInitializationKernel::CompFlowAccessors resCompFlowAccessors( mesh.getElemManager(), flowSolver.getName() );
-    PresTempCompFracInitializationKernel::MultiFluidAccessors resMultiFluidAccessors( mesh.getElemManager(), flowSolver.getName() );
+    compositionalMultiphaseWellKernels::PresTempCompFracInitializationKernel::CompFlowAccessors
+    resCompFlowAccessors( mesh.getElemManager(), flowSolver.getName() );
+    compositionalMultiphaseWellKernels::PresTempCompFracInitializationKernel::MultiFluidAccessors
+    resMultiFluidAccessors( mesh.getElemManager(), flowSolver.getName() );
 
     elemManager.forElementSubRegions< WellElementSubRegion >( regionNames,
                                                               [&]( localIndex const,
@@ -1006,7 +1014,8 @@ void CompositionalMultiphaseWell::initializeWells( DomainPartition & domain, rea
         // 1) Loop over all perforations to compute an average mixture density and component fraction
         // 2) Initialize the reference pressure
         // 3) Estimate the pressures in the well elements using the average density
-        PresTempCompFracInitializationKernel::
+        compositionalMultiphaseWellKernels::
+          PresTempCompFracInitializationKernel::
           launch( perforationData.size(),
                   subRegion.size(),
                   numComp,
@@ -1048,11 +1057,12 @@ void CompositionalMultiphaseWell::initializeWells( DomainPartition & domain, rea
                                     wellElemCompFrac );
         } );
 
-        CompDensInitializationKernel::launch( subRegion.size(),
-                                              numComp,
-                                              wellElemCompFrac,
-                                              wellElemTotalDens,
-                                              wellElemCompDens );
+        compositionalMultiphaseWellKernels::
+          CompDensInitializationKernel::launch( subRegion.size(),
+                                                numComp,
+                                                wellElemCompFrac,
+                                                wellElemTotalDens,
+                                                wellElemCompDens );
 
         // 5) Recompute the pressure-dependent properties
         updateSubRegionState( subRegion );
@@ -1094,7 +1104,7 @@ void CompositionalMultiphaseWell::assembleFluxTerms( real64 const & time,
                                                                              WellElementSubRegion & subRegion )
     {
       WellControls const & well_controls = getWellControls( subRegion );
-      if( well_controls.isWellOpen( time+ dt ) )
+      if( well_controls.isWellOpen( time + dt ) && !m_keepVariablesConstantDuringInitStep )
       {
         string const & fluidName = subRegion.getReference< string >( viewKeyStruct::fluidNamesString());
         MultiFluidBase const & fluid = getConstitutiveModel< MultiFluidBase >( subRegion, fluidName );
@@ -1159,7 +1169,7 @@ void CompositionalMultiphaseWell::assembleAccumulationTerms( real64 const & time
       int numPhases = fluid.numFluidPhases();
       int numComponents = fluid.numFluidComponents();
       WellControls const & wellControls = getWellControls( subRegion );
-      if( wellControls.isWellOpen( time+ dt ) )
+      if( wellControls.isWellOpen( time+ dt ) && !m_keepVariablesConstantDuringInitStep )
       {
         if( isThermal() )
         {
@@ -1305,7 +1315,7 @@ CompositionalMultiphaseWell::calculateResidualNorm( real64 const & time_n,
       else
       {
         real64 subRegionResidualNorm[1]{};
-        ResidualNormKernelFactory::
+        compositionalMultiphaseWellKernels::ResidualNormKernelFactory::
           createAndLaunch< parallelDevicePolicy<> >( m_numComponents,
                                                      numDofPerWellElement(),
                                                      m_targetPhaseIndex,
@@ -1388,7 +1398,7 @@ CompositionalMultiphaseWell::scalingForSystemSolution( DomainPartition & domain,
       auto const subRegionData =
         m_isThermal
   ? thermalCompositionalMultiphaseBaseKernels::
-          ScalingForSystemSolutionKernelFactory::
+          SolutionScalingKernelFactory::
           createAndLaunch< parallelDevicePolicy<> >( m_maxRelativePresChange,
                                                      m_maxAbsolutePresChange,
                                                      m_maxRelativeTempChange,
@@ -1407,7 +1417,7 @@ CompositionalMultiphaseWell::scalingForSystemSolution( DomainPartition & domain,
                                                      localSolution,
                                                      temperatureOffset )
   : isothermalCompositionalMultiphaseBaseKernels::
-          ScalingForSystemSolutionKernelFactory::
+          SolutionScalingKernelFactory::
           createAndLaunch< parallelDevicePolicy<> >( m_maxRelativePresChange,
                                                      m_maxAbsolutePresChange,
                                                      m_maxCompFracChange,
@@ -1639,7 +1649,7 @@ void CompositionalMultiphaseWell::computePerforationRates( real64 const & time_n
     {
       PerforationData * const perforationData = subRegion.getPerforationData();
       WellControls const & wellControls = getWellControls( subRegion );
-      if( wellControls.isWellOpen( time_n+ dt ) )
+      if( wellControls.isWellOpen( time_n + dt ) && !m_keepVariablesConstantDuringInitStep )
       {
 
         bool const disableReservoirToWellFlow = wellControls.isInjector() and !wellControls.isCrossflowEnabled();
@@ -1883,7 +1893,7 @@ void CompositionalMultiphaseWell::assemblePressureRelations( real64 const & time
 
       WellControls & wellControls = getWellControls( subRegion );
 
-      if( wellControls.isWellOpen( time_n+ dt ) )
+      if( wellControls.isWellOpen( time_n + dt ) && !m_keepVariablesConstantDuringInitStep )
       {
         string const & fluidName = subRegion.getReference< string >( viewKeyStruct::fluidNamesString() );
         MultiFluidBase const & fluid = getConstitutiveModel< MultiFluidBase >( subRegion, fluidName );
@@ -1909,24 +1919,25 @@ void CompositionalMultiphaseWell::assemblePressureRelations( real64 const & time
 
         bool controlHasSwitched = false;
         isothermalCompositionalMultiphaseBaseKernels::
-          KernelLaunchSelectorCompTherm< PressureRelationKernel >( numFluidComponents(),
-                                                                   isThermal,
-                                                                   subRegion.size(),
-                                                                   dofManager.rankOffset(),
-                                                                   subRegion.isLocallyOwned(),
-                                                                   subRegion.getTopWellElementIndex(),
-                                                                   m_targetPhaseIndex,
-                                                                   wellControls,
-                                                                   time_n + dt, // controls evaluated with BHP/rate of the end of step
-                                                                   wellElemDofNumber,
-                                                                   wellElemGravCoef,
-                                                                   nextWellElemIndex,
-                                                                   wellElemPres,
-                                                                   wellElemTotalMassDens,
-                                                                   dWellElemTotalMassDens,
-                                                                   controlHasSwitched,
-                                                                   localMatrix,
-                                                                   localRhs );
+          KernelLaunchSelectorCompTherm< compositionalMultiphaseWellKernels::PressureRelationKernel >
+          ( numFluidComponents(),
+          isThermal,
+          subRegion.size(),
+          dofManager.rankOffset(),
+          subRegion.isLocallyOwned(),
+          subRegion.getTopWellElementIndex(),
+          m_targetPhaseIndex,
+          wellControls,
+          time_n + dt,                                                          // controls evaluated with BHP/rate of the end of step
+          wellElemDofNumber,
+          wellElemGravCoef,
+          nextWellElemIndex,
+          wellElemPres,
+          wellElemTotalMassDens,
+          dWellElemTotalMassDens,
+          controlHasSwitched,
+          localMatrix,
+          localRhs );
 
         if( controlHasSwitched )
         {
@@ -1959,98 +1970,6 @@ void CompositionalMultiphaseWell::assemblePressureRelations( real64 const & time
         }
       }
 
-    } );
-  } );
-}
-
-void CompositionalMultiphaseWell::shutDownWell( real64 const time_n,
-                                                real64 const dt,
-                                                DomainPartition const & domain,
-                                                DofManager const & dofManager,
-                                                CRSMatrixView< real64, globalIndex const > const & localMatrix,
-                                                arrayView1d< real64 > const & localRhs )
-{
-  GEOS_MARK_FUNCTION;
-
-  string const wellDofKey = dofManager.getKey( wellElementDofName() );
-
-  forDiscretizationOnMeshTargets( domain.getMeshBodies(), [&] ( string const &,
-                                                                MeshLevel const & mesh,
-                                                                arrayView1d< string const > const & regionNames )
-  {
-
-    ElementRegionManager const & elemManager = mesh.getElemManager();
-
-    elemManager.forElementSubRegions< WellElementSubRegion >( regionNames,
-                                                              [&]( localIndex const,
-                                                                   WellElementSubRegion const & subRegion )
-    {
-
-      // if the well is open, we don't have to do anything, so we just return
-      WellControls const & wellControls = getWellControls( subRegion );
-      if( wellControls.isWellOpen( time_n + dt ) )
-      {
-        return;
-      }
-
-      globalIndex const rankOffset = dofManager.rankOffset();
-
-      arrayView1d< integer const > const ghostRank =
-        subRegion.getReference< array1d< integer > >( ObjectManagerBase::viewKeyStruct::ghostRankString() );
-      arrayView1d< globalIndex const > const dofNumber =
-        subRegion.getReference< array1d< globalIndex > >( wellDofKey );
-
-      arrayView1d< real64 const > const pres =
-        subRegion.getField< fields::well::pressure >();
-      arrayView2d< real64 const, compflow::USD_COMP > const compDens =
-        subRegion.getField< fields::well::globalCompDensity >();
-      arrayView1d< real64 const > const connRate =
-        subRegion.getField< fields::well::mixtureConnectionRate >();
-
-      integer const numComp = m_numComponents;
-
-      forAll< parallelDevicePolicy<> >( subRegion.size(), [=] GEOS_HOST_DEVICE ( localIndex const ei )
-      {
-        if( ghostRank[ei] >= 0 )
-        {
-          return;
-        }
-
-        globalIndex const dofIndex = dofNumber[ei];
-        localIndex const localRow = dofIndex - rankOffset;
-        real64 rhsValue;
-
-        // 4.1. Apply pressure value to the matrix/rhs
-        FieldSpecificationEqual::SpecifyFieldValue( dofIndex,
-                                                    rankOffset,
-                                                    localMatrix,
-                                                    rhsValue,
-                                                    pres[ei],   // freeze the current pressure value
-                                                    pres[ei] );
-        localRhs[localRow] = rhsValue;
-
-        // 4.2. For each component, apply target global density value
-        for( integer ic = 0; ic < numComp; ++ic )
-        {
-          FieldSpecificationEqual::SpecifyFieldValue( dofIndex + ic + 1,
-                                                      rankOffset,
-                                                      localMatrix,
-                                                      rhsValue,
-                                                      compDens[ei][ic],   // freeze the current component density values
-                                                      compDens[ei][ic] );
-          localRhs[localRow + ic + 1] = rhsValue;
-        }
-
-        // 4.3. Apply rate value to the matrix/rhs
-        FieldSpecificationEqual::SpecifyFieldValue( dofIndex + numComp + 1,
-                                                    rankOffset,
-                                                    localMatrix,
-                                                    rhsValue,
-                                                    connRate[ei],   // freeze the current pressure value
-                                                    connRate[ei] );
-        localRhs[localRow + numComp + 1] = rhsValue;
-
-      } );
     } );
   } );
 }

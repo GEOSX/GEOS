@@ -3,7 +3,7 @@
  * SPDX-License-Identifier: LGPL-2.1-only
  *
  * Copyright (c) 2016-2024 Lawrence Livermore National Security LLC
- * Copyright (c) 2018-2024 Total, S.A
+ * Copyright (c) 2018-2024 TotalEnergies
  * Copyright (c) 2018-2024 The Board of Trustees of the Leland Stanford Junior University
  * Copyright (c) 2023-2024 Chevron
  * Copyright (c) 2019-     GEOS/GEOSX Contributors
@@ -239,7 +239,7 @@ public:
                                   real64 const & dt,
                                   DomainPartition & domain ) override
   {
-    flowSolver()->setKeepFlowVariablesConstantDuringInitStep( m_performStressInitialization );
+    flowSolver()->setKeepVariablesConstantDuringInitStep( m_performStressInitialization );
 
     if( this->m_stabilizationType == stabilization::StabilizationType::Global || this->m_stabilizationType == stabilization::StabilizationType::Local )
     {
@@ -394,6 +394,45 @@ public:
   }
 
 protected:
+
+  template< typename CONSTITUTIVE_BASE,
+            typename KERNEL_WRAPPER,
+            typename ... PARAMS >
+  real64 assemblyLaunch( MeshLevel & mesh,
+                         DofManager const & dofManager,
+                         arrayView1d< string const > const & regionNames,
+                         string const & materialNamesString,
+                         CRSMatrixView< real64, globalIndex const > const & localMatrix,
+                         arrayView1d< real64 > const & localRhs,
+                         real64 const dt,
+                         PARAMS && ... params )
+  {
+    GEOS_MARK_FUNCTION;
+
+    NodeManager const & nodeManager = mesh.getNodeManager();
+
+    string const dofKey = dofManager.getKey( fields::solidMechanics::totalDisplacement::key() );
+    arrayView1d< globalIndex const > const & dofNumber = nodeManager.getReference< globalIndex_array >( dofKey );
+
+    real64 const gravityVectorData[3] = LVARRAY_TENSOROPS_INIT_LOCAL_3( PhysicsSolverBase::gravityVector() );
+
+    KERNEL_WRAPPER kernelWrapper( dofNumber,
+                                  dofManager.rankOffset(),
+                                  localMatrix,
+                                  localRhs,
+                                  dt,
+                                  gravityVectorData,
+                                  std::forward< PARAMS >( params )... );
+
+    return finiteElement::
+             regionBasedKernelApplication< parallelDevicePolicy< >,
+                                           CONSTITUTIVE_BASE,
+                                           CellElementSubRegion >( mesh,
+                                                                   regionNames,
+                                                                   this->solidMechanicsSolver()->getDiscretizationName(),
+                                                                   materialNamesString,
+                                                                   kernelWrapper );
+  }
 
   /* Implementation of Nonlinear Acceleration (Aitken) of averageMeanTotalStressIncrement */
 

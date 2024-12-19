@@ -3,7 +3,7 @@
  * SPDX-License-Identifier: LGPL-2.1-only
  *
  * Copyright (c) 2016-2024 Lawrence Livermore National Security LLC
- * Copyright (c) 2018-2024 Total, S.A
+ * Copyright (c) 2018-2024 TotalEnergies
  * Copyright (c) 2018-2024 The Board of Trustees of the Leland Stanford Junior University
  * Copyright (c) 2023-2024 Chevron
  * Copyright (c) 2019-     GEOS/GEOSX Contributors
@@ -34,6 +34,7 @@ namespace geos
 using namespace dataRepository;
 using namespace fields;
 using namespace constitutive;
+using namespace rateAndStateKernels;
 
 QuasiDynamicEQ::QuasiDynamicEQ( const string & name,
                                 Group * const parent ):
@@ -153,8 +154,8 @@ real64 QuasiDynamicEQ::solverStep( real64 const & time_n,
 
   /// 2. Solve for slip rate and state variable and, compute slip
   GEOS_LOG_LEVEL_INFO_RANK_0( logInfo::SolverSteps, "Rate and State solver" );
-
-  integer const maxNewtonIter = m_nonlinearSolverParameters.m_maxIterNewton;
+  integer const maxIterNewton = m_nonlinearSolverParameters.m_maxIterNewton;
+  real64 const newtonTol = m_nonlinearSolverParameters.m_newtonTol;
   forDiscretizationOnMeshTargets( domain.getMeshBodies(), [&]( string const &,
                                                                MeshLevel & mesh,
                                                                arrayView1d< string const > const & regionNames )
@@ -165,7 +166,8 @@ real64 QuasiDynamicEQ::solverStep( real64 const & time_n,
                                                                                 SurfaceElementSubRegion & subRegion )
     {
       // solve rate and state equations.
-      rateAndStateKernels::createAndLaunch< parallelDevicePolicy<> >( subRegion, viewKeyStruct::frictionLawNameString(), m_shearImpedance, maxNewtonIter, time_n, dtStress );
+      createAndLaunch< ImplicitFixedStressRateAndStateKernel, parallelDevicePolicy<> >( subRegion, viewKeyStruct::frictionLawNameString(), m_shearImpedance, maxIterNewton, newtonTol, time_n,
+                                                                                        dtStress );
       // save old state
       saveOldStateAndUpdateSlip( subRegion, dtStress );
     } );

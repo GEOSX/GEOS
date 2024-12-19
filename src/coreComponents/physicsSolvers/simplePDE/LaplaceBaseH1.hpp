@@ -3,7 +3,7 @@
  * SPDX-License-Identifier: LGPL-2.1-only
  *
  * Copyright (c) 2016-2024 Lawrence Livermore National Security LLC
- * Copyright (c) 2018-2024 Total, S.A
+ * Copyright (c) 2018-2024 TotalEnergies
  * Copyright (c) 2018-2024 The Board of Trustees of the Leland Stanford Junior University
  * Copyright (c) 2023-2024 Chevron
  * Copyright (c) 2019-     GEOS/GEOSX Contributors
@@ -16,7 +16,7 @@
 #ifndef GEOS_PHYSICSSOLVERS_SIMPLEPDE_LAPLACE_BASE_HPP
 #define GEOS_PHYSICSSOLVERS_SIMPLEPDE_LAPLACE_BASE_HPP
 
-#include "codingUtilities/EnumStrings.hpp"   // facilities for enum-string conversion (for reading enum values from XML input)
+#include "common/format/EnumStrings.hpp"   // facilities for enum-string conversion (for reading enum values from XML input)
 #include "physicsSolvers/PhysicsSolverBase.hpp"  // an abstraction class shared by all physics solvers
 #include "fieldSpecification/FieldSpecificationManager.hpp" // a manager that can access and set values on the discretized domain
 

@@ -2,10 +2,11 @@
  * ------------------------------------------------------------------------------------------------------------
  * SPDX-License-Identifier: LGPL-2.1-only
  *
- * Copyright (c) 2018-2020 Lawrence Livermore National Security LLC
- * Copyright (c) 2018-2020 The Board of Trustees of the Leland Stanford Junior University
- * Copyright (c) 2018-2020 TotalEnergies
- * Copyright (c) 2019-     GEOSX Contributors
+ * Copyright (c) 2016-2024 Lawrence Livermore National Security LLC
+ * Copyright (c) 2018-2024 TotalEnergies
+ * Copyright (c) 2018-2024 The Board of Trustees of the Leland Stanford Junior University
+ * Copyright (c) 2023-2024 Chevron
+ * Copyright (c) 2019-     GEOS/GEOSX Contributors
  * All rights reserved
  *
  * See top level LICENSE, COPYRIGHT, CONTRIBUTORS, NOTICE, and ACKNOWLEDGEMENTS files for details.
@@ -482,7 +483,7 @@ public:
                               MultiFluidBase const & fluid,
                               CRSMatrixView< real64, globalIndex const > const & localMatrix,
                               arrayView1d< real64 > const & localRhs,
-                              BitFlags< isothermalCompositionalMultiphaseBaseKernels::ElementBasedAssemblyKernelFlags > const kernelFlags )
+                              BitFlags< isothermalCompositionalMultiphaseBaseKernels::KernelFlags > const kernelFlags )
     : Base( numPhases, isProducer, rankOffset, dofKey, subRegion, fluid, localMatrix, localRhs, kernelFlags ),
     m_phaseInternalEnergy_n( fluid.phaseInternalEnergy_n()),
     m_phaseInternalEnergy( fluid.phaseInternalEnergy()),
@@ -650,9 +651,9 @@ public:
       localIndex constexpr NUM_COMP = NC();
 
 
-      BitFlags< isothermalCompositionalMultiphaseBaseKernels::ElementBasedAssemblyKernelFlags > kernelFlags;
+      BitFlags< isothermalCompositionalMultiphaseBaseKernels::KernelFlags > kernelFlags;
       if( useTotalMassEquation )
-        kernelFlags.set( isothermalCompositionalMultiphaseBaseKernels::ElementBasedAssemblyKernelFlags::TotalMassEquation );
+        kernelFlags.set( isothermalCompositionalMultiphaseBaseKernels::KernelFlags::TotalMassEquation );
 
       ElementBasedAssemblyKernel< NUM_COMP >
       kernel( numPhases, isProducer, rankOffset, dofKey, subRegion, fluid, localMatrix, localRhs, kernelFlags );
@@ -722,7 +723,7 @@ public:
                            MultiFluidBase const & fluid,
                            CRSMatrixView< real64, globalIndex const > const & localMatrix,
                            arrayView1d< real64 > const & localRhs,
-                           BitFlags< isothermalCompositionalMultiphaseBaseKernels::ElementBasedAssemblyKernelFlags > kernelFlags )
+                           BitFlags< isothermalCompositionalMultiphaseBaseKernels::KernelFlags > kernelFlags )
     : Base( dt
             , rankOffset
             , wellDofKey
@@ -1101,9 +1102,9 @@ public:
       integer constexpr NUM_COMP = NC();
 
 
-      BitFlags< isothermalCompositionalMultiphaseBaseKernels::ElementBasedAssemblyKernelFlags > kernelFlags;
+      BitFlags< isothermalCompositionalMultiphaseBaseKernels::KernelFlags > kernelFlags;
       if( useTotalMassEquation )
-        kernelFlags.set( isothermalCompositionalMultiphaseBaseKernels::ElementBasedAssemblyKernelFlags::TotalMassEquation );
+        kernelFlags.set( isothermalCompositionalMultiphaseBaseKernels::KernelFlags::TotalMassEquation );
 
 
       using kernelType = FaceBasedAssemblyKernel< NUM_COMP >;

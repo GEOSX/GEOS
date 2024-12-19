@@ -6,6 +6,90 @@ This file is designed to track changes to the integrated test baselines.
 Any developer who updates the baseline ID in the .integrated_tests.yaml file is expected to create an entry in this file with the pull request number, date, and their justification for rebaselining.
 These notes should be in reverse-chronological order, and use the following time format: (YYYY-MM-DD).
 
+PR #3479 (2024-12-15)
+=====================
+Refine inputFiles/compositionalMultiphaseFlow: shift reference pressures to initial pressures, make nonlinear tuning more reasonable, minimize output.
+
+PR #3450 (2024-12-14)
+=====================
+Fix timestep selector flaw in SolidMechanicsLagrangeContact.
+
+PR #3450 (2024-12-08)
+=====================
+Added test for explicit runge kutta sprinslider.
+
+PR #3480 (2024-12-06)
+=====================
+Add "logLevel" parameter under /Problem/Outputs in baseline files
+
+PR #3361 (2024-12-03)
+=====================
+Revert default gravity treatment to old version. Make the way introduced in #3337 optional.
+
+PR #3361 (2024-12-03)
+=====================
+Baseline diffs after reimplementation of wave equation acoustic gradient for velocity and density parameters: new field "partialGradient2" and "pressureForward" field replacing "pressureDoubleDerivative".
+
+PR #3393 (2024-12-02)
+=====================
+Fix netToGross bug.
+
+PR #3381 (2024-12-01)
+=====================
+A few baseline diffs for order FaceElementSubRegion::m_toFacesRelation map. Not sure why this was changed by this PR, but the previous order seems incorrect for a couple of cases.
+
+PR #2957 (2024-11-27)
+=====================
+Added ExternalDataRepository.
+
+PR #3448 (2024-11-21)
+=====================
+Switched the FaceElementSubRegion::m_toFacesRelation and FaceElementSubRegion::m_2dElemToElems back to array2d instead of ArrayOfArray. This results in a reordering m_toFacesRelation back to the "correct" assumed order of "original face first". This fixes a bug that failed to remove the CellStencil entry when a FaceElement splits two cells.
+
+PR #2637 (2024-11-21)
+=====================
+Added numberOfTargetProcesses.
+
+PR #3439 (2024-11-20)
+=====================
+EDFM bugfixes: derivatives sign, frac/cell element volume, fix apertures inconsistency in test cases.
+
+PR ##3440 (2024-11-18)
+=====================
+Added Lagrange multiplier with bubble functions stabilization (sli only) and possibility to specify a slip.
+
+PR #3339 (2024-11-14)
+=====================
+Hypre improvements, rebaseline is due to field value change (amgNumFunctions).
+
+PR #3434 (2024-11-09)
+=====================
+Bugfix: Fixed output of ArrayOfArray objects to restart files.
+
+PR #3374 (2024-11-09)
+====================
+Bugfix for gravity treatment in flux for thermal.
+
+PR #3372 (2024-11-09)
+====================
+Fix a bug related to mass and energy updates for poromechanics.
+
+PR #3426 (2024-11-08)
+====================
+Bugfix: reset accumulation in fracture when time step cut occurs in hydrofrac solver.
+
+PR #3413 (2024-11-07)
+====================
+Add tests for poro-thermo-plastic model.
+
+PR #3337 (2024-11-06)
+====================
+Change density treatment for gravity in multiphase flow solver.
+
+PR #3408 (2024-11-06)
+====================
+EFEM bugfixes: effective traction + oldStress.
+
 PR #3280 (2024-11-05)
 ====================
 Added Sprig-slider test.
@@ -82,7 +166,7 @@ PR #3278 (2024-08-12)
 ======================
 Renamed GEOSX to GEOS in enternal mesh import, so rebaseline to change these names is the baselines.
 
-202 (2024-08-03)
+PR #3202 (2024-08-03)
 ======================
 Acoustic VTI tests needed rebaselining after update in source and receiver location algorithm.
 

@@ -3,7 +3,7 @@
  * SPDX-License-Identifier: LGPL-2.1-only
  *
  * Copyright (c) 2016-2024 Lawrence Livermore National Security LLC
- * Copyright (c) 2018-2024 Total, S.A
+ * Copyright (c) 2018-2024 TotalEnergies
  * Copyright (c) 2018-2024 The Board of Trustees of the Leland Stanford Junior University
  * Copyright (c) 2023-2024 Chevron
  * Copyright (c) 2019-     GEOS/GEOSX Contributors
@@ -37,6 +37,8 @@
 #include "physicsSolvers/fluidFlow/wells/SinglePhaseWellFields.hpp"
 #include "physicsSolvers/fluidFlow/wells/WellControls.hpp"
 #include "physicsSolvers/fluidFlow/wells/kernels/SinglePhaseWellKernels.hpp"
+#include "physicsSolvers/fluidFlow/kernels/singlePhase/FluidUpdateKernel.hpp"
+#include "physicsSolvers/fluidFlow/kernels/singlePhase/SolutionCheckKernel.hpp"
 
 namespace geos
 {
@@ -314,7 +316,7 @@ void SinglePhaseWell::updateFluidModel( WellElementSubRegion & subRegion ) const
   constitutiveUpdatePassThru( fluid, [&]( auto & castedFluid )
   {
     typename TYPEOFREF( castedFluid ) ::KernelWrapper fluidWrapper = castedFluid.createKernelWrapper();
-    thermalSinglePhaseBaseKernels::FluidUpdateKernel::launch( fluidWrapper, pres, temp );
+    singlePhaseBaseKernels::FluidUpdateKernel::launch( fluidWrapper, pres, temp );
   } );
 }
 
@@ -613,83 +615,6 @@ void SinglePhaseWell::assembleVolumeBalanceTerms( DomainPartition const & GEOS_U
 {
   // not implemented for single phase flow
 }
-
-void SinglePhaseWell::shutDownWell( real64 const time_n,
-                                    real64 const dt,
-                                    DomainPartition const & domain,
-                                    DofManager const & dofManager,
-                                    CRSMatrixView< real64, globalIndex const > const & localMatrix,
-                                    arrayView1d< real64 > const & localRhs )
-{
-  GEOS_MARK_FUNCTION;
-
-  string const wellDofKey = dofManager.getKey( wellElementDofName() );
-
-  forDiscretizationOnMeshTargets( domain.getMeshBodies(), [&] ( string const &,
-                                                                MeshLevel const & mesh,
-                                                                arrayView1d< string const > const & regionNames )
-  {
-
-    ElementRegionManager const & elemManager = mesh.getElemManager();
-
-    elemManager.forElementSubRegions< WellElementSubRegion >( regionNames,
-                                                              [&]( localIndex const,
-                                                                   WellElementSubRegion const & subRegion )
-    {
-
-      // if the well is open, we don't have to do anything, so we just return
-      WellControls const & wellControls = getWellControls( subRegion );
-      if( wellControls.isWellOpen( time_n + dt ) )
-      {
-        return;
-      }
-
-      globalIndex const rankOffset = dofManager.rankOffset();
-
-      arrayView1d< integer const > const ghostRank =
-        subRegion.getReference< array1d< integer > >( ObjectManagerBase::viewKeyStruct::ghostRankString() );
-      arrayView1d< globalIndex const > const dofNumber =
-        subRegion.getReference< array1d< globalIndex > >( wellDofKey );
-
-      arrayView1d< real64 const > const pres =
-        subRegion.getField< fields::well::pressure >();
-      arrayView1d< real64 const > const connRate =
-        subRegion.getField< fields::well::connectionRate >();
-
-      forAll< parallelDevicePolicy<> >( subRegion.size(), [=] GEOS_HOST_DEVICE ( localIndex const ei )
-      {
-        if( ghostRank[ei] >= 0 )
-        {
-          return;
-        }
-
-        globalIndex const dofIndex = dofNumber[ei];
-        localIndex const localRow = dofIndex - rankOffset;
-        real64 rhsValue;
-
-        // 4.1. Apply pressure value to the matrix/rhs
-        FieldSpecificationEqual::SpecifyFieldValue( dofIndex,
-                                                    rankOffset,
-                                                    localMatrix,
-                                                    rhsValue,
-                                                    pres[ei], // freeze the current pressure value
-                                                    pres[ei] );
-        localRhs[localRow] = rhsValue;
-
-        // 4.2. Apply rate value to the matrix/rhs
-        FieldSpecificationEqual::SpecifyFieldValue( dofIndex + 1,
-                                                    rankOffset,
-                                                    localMatrix,
-                                                    rhsValue,
-                                                    connRate[ei], // freeze the current pressure value
-                                                    connRate[ei] );
-        localRhs[localRow + 1] = rhsValue;
-
-      } );
-    } );
-  } );
-}
-
 
 void SinglePhaseWell::computePerforationRates( real64 const & time_n,
                                                real64 const & dt, DomainPartition & domain )

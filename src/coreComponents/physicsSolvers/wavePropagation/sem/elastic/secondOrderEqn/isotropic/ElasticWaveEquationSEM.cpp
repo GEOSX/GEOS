@@ -3,7 +3,7 @@
  * SPDX-License-Identifier: LGPL-2.1-only
  *
  * Copyright (c) 2016-2024 Lawrence Livermore National Security LLC
- * Copyright (c) 2018-2024 Total, S.A
+ * Copyright (c) 2018-2024 TotalEnergies
  * Copyright (c) 2018-2024 The Board of Trustees of the Leland Stanford Junior University
  * Copyright (c) 2023-2024 Chevron
  * Copyright (c) 2019-     GEOS/GEOSX Contributors
@@ -507,7 +507,7 @@ real64 ElasticWaveEquationSEM::computeTimeStep( real64 & dtOut )
     {
       ux_n[a] = (real64)rand()/(real64) RAND_MAX;
       uy_n[a] = (real64)rand()/(real64) RAND_MAX;
-      uy_n[a] = (real64)rand()/(real64) RAND_MAX;
+      uz_n[a] = (real64)rand()/(real64) RAND_MAX;
     }
 
     //Step 1: Normalize randomized pressure
@@ -565,20 +565,20 @@ real64 ElasticWaveEquationSEM::computeTimeStep( real64 & dtOut )
       lambdaOld = lambdaNew;
 
       //Compute lambdaNew using two dotProducts
-      dotProductUzUzaux = 0.0;
       dotProductUxUxaux = 0.0;
       dotProductUyUyaux = 0.0;
+      dotProductUzUzaux = 0.0;
       normUx= 0.0;
       normUy= 0.0;
       normUz= 0.0;
 
       WaveSolverUtils::dotProduct( sizeNode, ux_n, stiffnessVectorx, dotProductUxUxaux );
       WaveSolverUtils::dotProduct( sizeNode, uy_n, stiffnessVectory, dotProductUyUyaux );
-      WaveSolverUtils::dotProduct( sizeNode, ux_n, stiffnessVectorz, dotProductUzUzaux );
+      WaveSolverUtils::dotProduct( sizeNode, uz_n, stiffnessVectorz, dotProductUzUzaux );
       dotProductUtotUtotAux = dotProductUxUxaux+dotProductUyUyaux+dotProductUzUzaux;
       WaveSolverUtils::dotProduct( sizeNode, ux_n, ux_n, normUx );
-      WaveSolverUtils::dotProduct( sizeNode, uy_n, ux_n, normUy );
-      WaveSolverUtils::dotProduct( sizeNode, uz_n, ux_n, normUz );
+      WaveSolverUtils::dotProduct( sizeNode, uy_n, uy_n, normUy );
+      WaveSolverUtils::dotProduct( sizeNode, uz_n, uz_n, normUz );
       normUtot = normUx+normUy+normUz;
 
       lambdaNew = dotProductUtotUtotAux/normUtot;

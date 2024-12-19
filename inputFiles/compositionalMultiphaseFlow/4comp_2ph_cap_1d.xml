@@ -45,7 +45,7 @@
     maxTime="2e7">
     <PeriodicEvent
       name="outputs"
-      timeFrequency="1e6"
+      timeFrequency="1e7"
       target="/Outputs/siloOutput"/>
 
     <PeriodicEvent
@@ -77,8 +77,7 @@
   <NumericalMethods>
     <FiniteVolume>
       <TwoPointFluxApproximation
-        name="fluidTPFA"
-        />
+        name="fluidTPFA"/>
     </FiniteVolume>
   </NumericalMethods>
 
@@ -117,7 +116,7 @@
     <PressurePorosity
       name="rockPorosity"
       defaultReferencePorosity="0.2"
-      referencePressure="0.0"
+      referencePressure="5e6"
       compressibility="1.0e-9"/>
 
     <BrooksCoreyRelativePermeability
