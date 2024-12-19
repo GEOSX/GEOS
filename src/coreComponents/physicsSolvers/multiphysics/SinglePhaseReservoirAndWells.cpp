@@ -86,8 +86,9 @@ setMGRStrategy()
   {
     linearSolverParameters.mgr.strategy = LinearSolverParameters::MGR::StrategyType::singlePhaseReservoirFVM;
   }
-  GEOS_LOG_LEVEL_RANK_0( 1, GEOS_FMT( "{}: MGR strategy set to {}", getName(),
-                                      EnumStrings< LinearSolverParameters::MGR::StrategyType >::toString( linearSolverParameters.mgr.strategy )));
+  GEOS_LOG_LEVEL_INFO_RANK_0( logInfo::LinearSolverConfiguration,
+                              GEOS_FMT( "{}: MGR strategy set to {}", getName(),
+                                        EnumStrings< LinearSolverParameters::MGR::StrategyType >::toString( linearSolverParameters.mgr.strategy )));
 }
 
 template<>
@@ -112,8 +113,9 @@ setMGRStrategy()
   {
     linearSolverParameters.mgr.strategy = LinearSolverParameters::MGR::StrategyType::singlePhasePoromechanicsReservoirFVM;
   }
-  GEOS_LOG_LEVEL_RANK_0( 1, GEOS_FMT( "{}: MGR strategy set to {}", this->getName(),
-                                      EnumStrings< LinearSolverParameters::MGR::StrategyType >::toString( linearSolverParameters.mgr.strategy )));
+  GEOS_LOG_LEVEL_INFO_RANK_0( logInfo::LinearSolverConfiguration,
+                              GEOS_FMT( "{}: MGR strategy set to {}", this->getName(),
+                                        EnumStrings< LinearSolverParameters::MGR::StrategyType >::toString( linearSolverParameters.mgr.strategy )));
 }
 
 template< typename RESERVOIR_SOLVER >

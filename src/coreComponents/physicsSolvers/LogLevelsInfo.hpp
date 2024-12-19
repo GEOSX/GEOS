@@ -84,6 +84,12 @@ struct Timers
   static constexpr std::string_view getDescription() { return "Solver timers information"; }
 };
 
+struct LinearSolverConfiguration
+{
+  static constexpr int getMinLogLevel() { return 1; }
+  static constexpr std::string_view getDescription() { return "Print linear solver configuration"; }
+};
+
 /// @endcond
 ///@}
 

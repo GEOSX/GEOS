@@ -104,6 +104,7 @@ PhysicsSolverBase::PhysicsSolverBase( string const & name,
   addLogLevel< logInfo::LinearSolver >();
   addLogLevel< logInfo::NonlinearSolver >();
   addLogLevel< logInfo::Timers >();
+  addLogLevel< logInfo::LinearSolverConfiguration >();
 
   registerGroup( groupKeyStruct::linearSolverParametersString(), &m_linearSolverParameters );
   registerGroup( groupKeyStruct::nonlinearSolverParametersString(), &m_nonlinearSolverParameters );

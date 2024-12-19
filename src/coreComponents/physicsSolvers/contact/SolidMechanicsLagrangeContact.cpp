@@ -35,7 +35,6 @@
 #include "physicsSolvers/fluidFlow/FlowSolverBaseFields.hpp" // needed to register pressure(_n)
 #include "physicsSolvers/solidMechanics/SolidMechanicsLagrangianFEM.hpp"
 #include "physicsSolvers/contact/ContactFields.hpp"
-#include "physicsSolvers/contact/LogLevelsInfo.hpp"
 #include "common/GEOS_RAJA_Interface.hpp"
 #include "linearAlgebra/utilities/LAIHelperFunctions.hpp"
 #include "linearAlgebra/solvers/PreconditionerJacobi.hpp"
@@ -93,8 +92,9 @@ void SolidMechanicsLagrangeContact::setMGRStrategy()
   linearSolverParameters.dofsPerNode = 3;
 
   linearSolverParameters.mgr.strategy = LinearSolverParameters::MGR::StrategyType::lagrangianContactMechanics;
-  GEOS_LOG_LEVEL_RANK_0( 1, GEOS_FMT( "{}: MGR strategy set to {}", getName(),
-                                      EnumStrings< LinearSolverParameters::MGR::StrategyType >::toString( linearSolverParameters.mgr.strategy )));
+  GEOS_LOG_LEVEL_INFO_RANK_0( logInfo::LinearSolverConfiguration,
+                              GEOS_FMT( "{}: MGR strategy set to {}", getName(),
+                                        EnumStrings< LinearSolverParameters::MGR::StrategyType >::toString( linearSolverParameters.mgr.strategy )));
 }
 
 void SolidMechanicsLagrangeContact::registerDataOnMesh( Group & meshBodies )

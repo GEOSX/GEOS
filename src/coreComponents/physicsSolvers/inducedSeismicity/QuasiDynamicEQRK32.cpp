@@ -52,6 +52,8 @@ QuasiDynamicEQRK32::QuasiDynamicEQRK32( const string & name,
   this->registerWrapper( viewKeyStruct::stressSolverNameString(), &m_stressSolverName ).
     setInputFlag( InputFlags::OPTIONAL ).
     setDescription( "Name of solver for computing stress. If empty, the spring-slider model is run." );
+
+  addLogLevel< logInfo::SolverSteps >();
 }
 
 void QuasiDynamicEQRK32::postInputInitialization()
@@ -162,7 +164,7 @@ real64 QuasiDynamicEQRK32::solverStep( real64 const & time_n,
 
   real64 dtAdaptive = dt;
 
-  GEOS_LOG_LEVEL_RANK_0( 1, "Begin adaptive time step" );
+  GEOS_LOG_LEVEL_INFO_RANK_0( logInfo::SolverSteps, "Begin adaptive time step" );
   while( true ) // Adaptive time step loop. Performs a Runge-Kutta time stepping with error control on state and slip
   {
     real64 dtStress; GEOS_UNUSED_VAR( dtStress );
@@ -321,7 +323,7 @@ real64 QuasiDynamicEQRK32::updateStresses( real64 const & time_n,
                                            const int cycleNumber,
                                            DomainPartition & domain ) const
 {
-  GEOS_LOG_LEVEL_RANK_0( 1, "Stress solver" );
+  GEOS_LOG_LEVEL_INFO_RANK_0( logInfo::SolverSteps, "Stress solver" );
   // Call member variable stress solver to update the stress state
   if( m_stressSolver )
   {
@@ -375,7 +377,7 @@ void QuasiDynamicEQRK32::updateSlipVelocity( real64 const & time_n,
                                              real64 const & dt,
                                              DomainPartition & domain ) const
 {
-  GEOS_LOG_LEVEL_RANK_0( 1, "Rate and State solver" );
+  GEOS_LOG_LEVEL_INFO_RANK_0( logInfo::SolverSteps, "Rate and State solver" );
   integer const maxIterNewton = m_nonlinearSolverParameters.m_maxIterNewton;
   real64 const newtonTol = m_nonlinearSolverParameters.m_newtonTol;
   forDiscretizationOnMeshTargets( domain.getMeshBodies(), [&]( string const &,
@@ -463,11 +465,13 @@ real64 QuasiDynamicEQRK32::setNextDt( real64 const & currentDt, DomainPartition 
   {
     m_controller.errors[2] = m_controller.errors[1];
     m_controller.errors[1] = m_controller.errors[0];
-    GEOS_LOG_LEVEL_RANK_0( 1, GEOS_FMT( "Adaptive time step successful. The next dt will be {:.2e} s", nextDt ));
+    GEOS_LOG_LEVEL_INFO_RANK_0( logInfo::SolverSteps,
+                                GEOS_FMT( "Adaptive time step successful. The next dt will be {:.2e} s", nextDt ));
   }
   else
   {
-    GEOS_LOG_LEVEL_RANK_0( 1, GEOS_FMT( "Adaptive time step failed. The next dt will be {:.2e} s", nextDt ));
+    GEOS_LOG_LEVEL_INFO_RANK_0( logInfo::SolverSteps,
+                                GEOS_FMT( "Adaptive time step failed. The next dt will be {:.2e} s", nextDt ));
   }
 
   return nextDt;
