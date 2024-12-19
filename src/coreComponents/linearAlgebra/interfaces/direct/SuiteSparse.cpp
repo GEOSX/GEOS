@@ -19,6 +19,7 @@
 
 #include "SuiteSparse.hpp"
 
+#if defined(suitesparse_VERSION)
 #include "codingUtilities/Utilities.hpp"
 #include "common/Stopwatch.hpp"
 #include "linearAlgebra/common/common.hpp"
@@ -384,3 +385,5 @@ template class SuiteSparse< PetscInterface >;
 #endif
 
 }
+
+#endif /* if defined(suitesparse_VERSION) */

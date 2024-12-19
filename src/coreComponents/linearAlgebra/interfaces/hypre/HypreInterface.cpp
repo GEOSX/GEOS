@@ -92,13 +92,19 @@ HypreInterface::createSolver( LinearSolverParameters params )
 #if defined(GEOS_USE_SUPERLU_DIST)
       return std::make_unique< SuperLUDist< HypreInterface > >( std::move( params ) );
 #else
-      GEOS_ERROR( "GEOSX is configured without support for SuperLU_dist." );
+      GEOS_ERROR( "GEOS is configured without support for SuperLU_dist." );
       return std::unique_ptr< LinearSolverBase< HypreInterface > >( nullptr );
 #endif
     }
     else
     {
+      /* TODO: add GEOS_USE_SUITESPARSE and use it below */
+#if defined(suitesparse_VERSION)
       return std::make_unique< SuiteSparse< HypreInterface > >( std::move( params ) );
+#else
+      GEOS_ERROR( "GEOS is configured without support for SuiteSparse." );
+      return std::unique_ptr< LinearSolverBase< HypreInterface > >( nullptr );
+#endif
     }
   }
   else
