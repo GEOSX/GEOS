@@ -250,7 +250,8 @@ void JFunctionCapillaryPressure::saveConvergedRockState( arrayView2d< real64 con
     {
       permeability = convergedPermeability[ei][0][2];
     }
-    GEOS_ERROR_IF( permeability < LvArray::NumericLimits< real64 >::epsilon, "Zero permeability in J-function capillary pressure" );
+    // 9.869233×10−13 is Darcy to sq m factor
+    GEOS_ERROR_IF( permeability < LvArray::NumericLimits< real64 >::epsilon * 9.869233e-13, "Zero permeability in J-function capillary pressure" );
 
     // here we compute an average of the porosity over quadrature points
     // this average is exact for tets, regular pyramids/wedges/hexes, or for VEM
