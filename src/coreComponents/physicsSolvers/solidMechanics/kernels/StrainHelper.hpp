@@ -142,16 +142,18 @@ public:
     real64 elasticStrainInc[6] = {0.0};
     m_solidUpdate.getElasticStrainInc( k, q, elasticStrainInc );
 
+    real64 conversionFactor[6] = {1.0, 1.0, 1.0, 0.5, 0.5, 0.5}; // used for converting from engineering shear to tensor shear
+
     for( int icomp = 0; icomp < 6; ++icomp )
     {
-      m_avgStrain[k][icomp] += detJxW*strain[icomp]/m_elementVolume[k];
+      m_avgStrain[k][icomp] += conversionFactor[icomp]*detJxW*strain[icomp]/m_elementVolume[k];
 
       // This is a hack to handle boundary conditions such as those seen in plane-strain wellbore problems
       // Essentially, if bcs are constraining the strain (and thus total displacement), we do not accumulate any plastic strain (regardless
       // of stresses in material law)
       if( std::abs( strainInc[icomp] ) > 1.0e-8 )
       {
-        m_avgPlasticStrain[k][icomp] += detJxW*(strainInc[icomp] - elasticStrainInc[icomp])/m_elementVolume[k];
+        m_avgPlasticStrain[k][icomp] += conversionFactor[icomp]*detJxW*(strainInc[icomp] - elasticStrainInc[icomp])/m_elementVolume[k];
       }
     }
   }
