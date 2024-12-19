@@ -341,8 +341,8 @@ public:
 
     /**
      * @brief Check if the current cell belong the last column
-     * @return true 
-     * @return false 
+     * @return true
+     * @return false
      */
     bool isLastColumn()
     {

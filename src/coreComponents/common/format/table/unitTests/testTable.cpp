@@ -24,6 +24,35 @@
 
 using namespace geos;
 
+TEST( testTable, testCSVTable )
+{
+  TableLayout const tableLayout( {
+    TableLayout::Column()
+      .setName( "Cras egestas" ),
+    TableLayout::Column()
+      .setName( "CoordX" ),
+    TableLayout::Column()
+      .setName( "C" ),
+    TableLayout::Column()
+      .setName( "CoordZ" ),
+    TableLayout::Column()
+      .setName( "Prev\nelement" ),
+    TableLayout::Column()
+      .setName( "Next\nelement" )} );
+
+  TableData tableData;
+  tableData.addRow( "value1", "gaz", "3.0", "3.0129877", "2", "1" );
+  tableData.addRow( "val1", "val2", "[3.045,42.02,89.25]", 3.0, 10.0f, 3 );
+
+  TableCSVFormatter const csvOutput( tableLayout );
+
+  EXPECT_EQ( csvOutput.toString( tableData ),
+             "Cras egestas,CoordX,C,CoordZ,Prevelement,Nextelement\n"
+             "value1,gaz,3.0,3.0129877,2,1\n"
+             "val1,val2,[3.045,42.02,89.25],3,10,3\n"
+             );
+}
+
 TEST( testTable, tableEmptyRow )
 {
   //table with empty row
