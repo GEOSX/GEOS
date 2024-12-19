@@ -53,14 +53,14 @@ public:
    * @param[in] compFracScalingFactor the component local scaling factor
    */
   SolutionScalingAndCheckingZFormulationKernelBase( globalIndex const rankOffset,
-                                        integer const numComp,
-                                        string const dofKey,
-                                        ElementSubRegionBase const & subRegion,
-                                        arrayView1d< real64 const > const localSolution,
-                                        arrayView1d< real64 const > const pressure,
-                                        arrayView2d< real64 const, compflow::USD_COMP > const compFrac,
-                                        arrayView1d< real64 > pressureScalingFactor,
-                                        arrayView1d< real64 > compFracScalingFactor )
+                                                    integer const numComp,
+                                                    string const dofKey,
+                                                    ElementSubRegionBase const & subRegion,
+                                                    arrayView1d< real64 const > const localSolution,
+                                                    arrayView1d< real64 const > const pressure,
+                                                    arrayView2d< real64 const, compflow::USD_COMP > const compFrac,
+                                                    arrayView1d< real64 > pressureScalingFactor,
+                                                    arrayView1d< real64 > compFracScalingFactor )
     : m_rankOffset( rankOffset ),
     m_numComp( numComp ),
     m_dofNumber( subRegion.getReference< array1d< globalIndex > >( dofKey ) ),

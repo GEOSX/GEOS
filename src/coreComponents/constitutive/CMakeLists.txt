@@ -1,7 +1,7 @@
 # SPDX-License-Identifier: LGPL-2.1-only
 #
 # Copyright (c) 2016-2024 Lawrence Livermore National Security LLC
-# Copyright (c) 2018-2024 Total, S.A
+# Copyright (c) 2018-2024 TotalEnergies
 # Copyright (c) 2018-2024 The Board of Trustees of the Leland Stanford Junior University
 # Copyright (c) 2023-2024 Chevron
 # Copyright (c) 2019-     GEOS/GEOSX Contributors
@@ -97,8 +97,10 @@ set( constitutive_headers
      fluid/multifluid/compositional/models/CriticalVolume.hpp
      fluid/multifluid/compositional/models/EquationOfState.hpp
      fluid/multifluid/compositional/models/FunctionBase.hpp
+     fluid/multifluid/compositional/models/ImmiscibleWaterDensity.hpp
      fluid/multifluid/compositional/models/ImmiscibleWaterFlashModel.hpp
      fluid/multifluid/compositional/models/ImmiscibleWaterParameters.hpp
+     fluid/multifluid/compositional/models/ImmiscibleWaterViscosity.hpp
      fluid/multifluid/compositional/models/LohrenzBrayClarkViscosity.hpp
      fluid/multifluid/compositional/models/LohrenzBrayClarkViscosityImpl.hpp
      fluid/multifluid/compositional/models/NegativeTwoPhaseFlashModel.hpp
@@ -242,8 +244,10 @@ set( constitutive_sources
      fluid/multifluid/compositional/models/CompositionalDensity.cpp
      fluid/multifluid/compositional/models/ConstantViscosity.cpp
      fluid/multifluid/compositional/models/CriticalVolume.cpp
+     fluid/multifluid/compositional/models/ImmiscibleWaterDensity.cpp
      fluid/multifluid/compositional/models/ImmiscibleWaterFlashModel.cpp
      fluid/multifluid/compositional/models/ImmiscibleWaterParameters.cpp
+     fluid/multifluid/compositional/models/ImmiscibleWaterViscosity.cpp
      fluid/multifluid/compositional/models/LohrenzBrayClarkViscosity.cpp
      fluid/multifluid/compositional/models/NegativeTwoPhaseFlashModel.cpp
      fluid/multifluid/compositional/CompositionalMultiphaseFluid.cpp

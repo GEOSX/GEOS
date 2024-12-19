@@ -66,17 +66,17 @@ public:
    * @param[in] compFracScalingFactor the component density local scaling factor
    */
   SolutionScalingZFormulationKernel( real64 const maxRelativePresChange,
-                         real64 const maxAbsolutePresChange,
-                         real64 const maxCompFracChange,
-                         globalIndex const rankOffset,
-                         integer const numComp,
-                         string const dofKey,
-                         ElementSubRegionBase const & subRegion,
-                         arrayView1d< real64 const > const localSolution,
-                         arrayView1d< real64 const > const pressure,
-                         arrayView2d< real64 const, compflow::USD_COMP > const compFrac,
-                         arrayView1d< real64 > pressureScalingFactor,
-                         arrayView1d< real64 > compFracScalingFactor )
+                                     real64 const maxAbsolutePresChange,
+                                     real64 const maxCompFracChange,
+                                     globalIndex const rankOffset,
+                                     integer const numComp,
+                                     string const dofKey,
+                                     ElementSubRegionBase const & subRegion,
+                                     arrayView1d< real64 const > const localSolution,
+                                     arrayView1d< real64 const > const pressure,
+                                     arrayView2d< real64 const, compflow::USD_COMP > const compFrac,
+                                     arrayView1d< real64 > pressureScalingFactor,
+                                     arrayView1d< real64 > compFracScalingFactor )
     : Base( rankOffset,
             numComp,
             dofKey,
@@ -335,7 +335,7 @@ public:
                    arrayView1d< real64 const > const localSolution )
   {
     SolutionScalingZFormulationKernel kernel( maxRelativePresChange, maxAbsolutePresChange, maxCompFracChange, rankOffset,
-                                  numComp, dofKey, subRegion, localSolution, pressure, compFrac, pressureScalingFactor, compFracScalingFactor );
+                                              numComp, dofKey, subRegion, localSolution, pressure, compFrac, pressureScalingFactor, compFracScalingFactor );
     return SolutionScalingZFormulationKernel::launch< POLICY >( subRegion.size(), kernel );
   }
 };

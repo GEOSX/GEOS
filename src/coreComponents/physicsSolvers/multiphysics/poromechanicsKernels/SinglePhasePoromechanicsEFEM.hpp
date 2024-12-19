@@ -3,7 +3,7 @@
  * SPDX-License-Identifier: LGPL-2.1-only
  *
  * Copyright (c) 2016-2024 Lawrence Livermore National Security LLC
- * Copyright (c) 2018-2024 Total, S.A
+ * Copyright (c) 2018-2024 TotalEnergies
  * Copyright (c) 2018-2024 The Board of Trustees of the Leland Stanford Junior University
  * Copyright (c) 2023-2024 Chevron
  * Copyright (c) 2019-     GEOS/GEOSX Contributors
@@ -278,7 +278,9 @@ protected:
 
   arrayView1d< real64 const > const m_surfaceArea;
 
-  arrayView1d< real64 const > const m_elementVolume;
+  arrayView1d< real64 const > const m_elementVolumeCell;
+
+  arrayView1d< real64 const > const m_elementVolumeFrac;
 
   arrayView1d< real64 const > const m_deltaVolume;
 

@@ -1,0 +1,83 @@
+<?xml version="1.0" ?>
+
+<Problem>
+  <Tasks>
+    <PVTDriver
+      name="testBlackOil"
+      fluid="blackOil"
+      feedComposition="{ 0.3, 0.3, 0.4 }"
+      pressureControl="pressureFunction"
+      temperatureControl="temperatureFunction"
+      steps="100"
+      outputMassDensity="1"
+      outputCompressibility="1"
+      outputPhaseComposition="1"
+      baseline="testPVT_ThreePhaseCompositional_blackOil.txt"
+      logLevel="1"/>
+  </Tasks>
+
+  <Events
+    maxTime="1">
+    <SoloEvent
+      name="eventtestblackOil"
+      target="/Tasks/testBlackOil"/>
+  </Events>
+
+  <Constitutive>
+    <CompositionalThreePhaseFluidLohrenzBrayClark
+      name="blackOil"
+      phaseNames="{ oil, gas, water }"
+      equationsOfState="{ pr, pr, pr }"
+      componentNames="{ C1, C7+, H2O }"
+      componentCriticalPressure="{ 46.0421e5, 20.549e5, 220.50e5 }"
+      componentCriticalTemperature="{ 190.6, 678.8, 647.0 }"
+      componentAcentricFactor="{ 0.013, 0.5618, 0.344 }"
+      componentMolarWeight="{ 16.04e-3, 173e-3, 18.01e-3 }"
+      componentVolumeShift="{ -0.1486264, 0.0, 0.0 }"
+      componentBinaryCoeff="{
+        { 0.00, 0.25, 0.00 },
+        { 0.25, 0.00, 0.00 },
+        { 0.00, 0.00, 0.00 }
+      }"
+      waterReferencePressure="215.0e5"
+      waterDensity="1020.0"
+      waterCompressibility="4.1483E-10"
+      waterViscosity="0.32929e-3" />
+  </Constitutive>
+
+  <Functions>
+    <TableFunction
+      name="pressureFunction"
+      inputVarNames="{ time }"
+      coordinates="{ 0.0, 0.5, 1.0, 1.5, 2.0 }"
+      values="{ 3.5e+07, 1.0e+07, 1.0e+05, 1.0e+07, 3.5e+07 }"/>
+
+    <TableFunction
+      name="temperatureFunction"
+      inputVarNames="{ time }"
+      interpolation="lower"
+      coordinates="{ 0.0, 1.0, 2.0 }"
+      values="{ 553.15, 583.15, 583.15 }"/>
+  </Functions>
+
+  <!-- Mesh is not used, but GEOSX throws an error without one.  Will resolve soon-->
+  <Mesh>
+    <InternalMesh
+      name="mesh1"
+      elementTypes="{ C3D8 }"
+      xCoords="{ 0, 1 }"
+      yCoords="{ 0, 1 }"
+      zCoords="{ 0, 1 }"
+      nx="{ 1 }"
+      ny="{ 1 }"
+      nz="{ 1 }"
+      cellBlockNames="{ cellBlock01 }"/>
+  </Mesh>
+
+  <ElementRegions>
+    <CellElementRegion
+      name="dummy"
+      cellBlocks="{ cellBlock01 }"
+      materialList="{ dummy }"/>
+  </ElementRegions>
+</Problem>
