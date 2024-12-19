@@ -197,6 +197,25 @@ CFLFluxKernel::
     // real64 faceNormal[3];
     real64 faceNormal[3] = {.33,.33,.33};
     stencilWrapper.getFaceNormal( iconn, faceNormal );
+    int maxdir = 0;
+    real64 maxnormal = 0;
+    for (int dir = 0; dir < 3; ++dir)
+    {
+      if (fabs(faceNormal[dir]) > maxnormal)
+      {
+        maxnormal = fabs(faceNormal[dir]);
+        maxdir = dir;
+      }
+    }
+    for (int dir = 0; dir < 3; ++dir)
+    {
+      if (dir == maxdir)
+        faceNormal[dir] = 1;
+      else
+        faceNormal[dir] = 0;
+    }
+    // end OV
+
 
     CFLFluxKernel::compute< NC, numElems, maxStencilSize >( numPhases,
                                                             sei[iconn].size(),

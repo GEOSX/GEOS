@@ -672,7 +672,7 @@ AssemblerKernelHelper::
         // no density evaluated at the face center
         // OV begin
 	// real64 faceNormal[3];
-        real64 faceNormal[3];
+        real64 faceNormal[3]= {.33,.33,.33};
 	// OV end
 	assert( true ); // should not got there for now
 
