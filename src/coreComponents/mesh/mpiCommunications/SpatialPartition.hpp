@@ -212,11 +212,10 @@ public:
                                          EdgeManager & edgeManager,
                                          FaceManager & faceManager );
 
-  void repartitionMasterParticles( ParticleSubRegion & subRegion,
-                                   MPI_iCommData & commData );
+  void repartitionMasterParticles( DomainPartition & domain,
+                                   ParticleSubRegion & subRegion );
 
   void getGhostParticlesFromNeighboringPartitions( DomainPartition & domain,
-                                                   MPI_iCommData & commData,
                                                    const real64 & boundaryRadius );
 
   /**

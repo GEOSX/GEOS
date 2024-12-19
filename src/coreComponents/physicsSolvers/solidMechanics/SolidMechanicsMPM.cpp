@@ -55,6 +55,7 @@ namespace geos
 using namespace dataRepository;
 using namespace constitutive;
 
+using forAllPolicy = serialPolicy; // forAllPolicy;
 
 // Eventually add a MPM solver utils file somewhere to move these functions into
 // A helper function to calculate polar decomposition. TODO: Previously this was an LvArray method, hopefully it will be again someday.
@@ -109,7 +110,6 @@ SolidMechanicsMPM::SolidMechanicsMPM( const string & name,
   m_timeIntegrationOption( TimeIntegrationOption::ExplicitDynamic ),
   m_updateMethod( UpdateMethodOption::FLIP ),
   m_updateOrder( 2 ),
-  m_iComm(),
   m_prescribedBcTable( 0 ),
   m_boundaryConditionTypes(),
   m_boundaryFaceCoefficientsOfRestitution(),
@@ -1046,7 +1046,6 @@ void SolidMechanicsMPM::postRestartInitialization()
 
 void SolidMechanicsMPM::postInputInitialization()
 {
-  GEOS_LOG_RANK("Started SolidMechanicsMPM::postInputInitialization");
   PhysicsSolverBase::postInputInitialization();
 
   if( m_overlapCorrection == OverlapCorrectionOption::SPH )
@@ -1288,14 +1287,10 @@ void SolidMechanicsMPM::postInputInitialization()
   // Move unique global grid node indices to member variable
   m_plottableFieldsSorted.insert( m_plottableFields.begin(), m_plottableFields.begin() + numUniqueValues );
   GEOS_LOG_RANK_0( "Plotting fields: " << m_plottableFieldsSorted );
-
-  GEOS_LOG_RANK("Ended SolidMechanicsMPM::postInputInitialization");
 }
 
 void SolidMechanicsMPM::registerDataOnMesh( Group & meshBodies )
 {
-  GEOS_LOG_RANK("Started SolidMechanicsMPM::registerDataOnMesh");
-
   using namespace fields::mpm;
 
   ExecutableGroup::registerDataOnMesh( meshBodies );
@@ -1621,13 +1616,10 @@ void SolidMechanicsMPM::registerDataOnMesh( Group & meshBodies )
       }
     }
   } );
-
-  GEOS_LOG_RANK("Ended SolidMechanicsMPM::registerDataOnMesh");
 }
 
 void SolidMechanicsMPM::initializePreSubGroups()
 {
-  GEOS_LOG_RANK("Started SolidMechanicsMPM::initializePreSubGroups");
   PhysicsSolverBase::initializePreSubGroups();
 
   DomainPartition & domain = this->getGroupByPath< DomainPartition >( "/Problem/domain" );
@@ -1661,8 +1653,6 @@ void SolidMechanicsMPM::initializePreSubGroups()
   FiniteElementDiscretization const &
   feDiscretization = feDiscretizationManager.getGroup< FiniteElementDiscretization >( m_discretizationName );
   GEOS_UNUSED_VAR( feDiscretization );
-
-  GEOS_LOG_RANK("Ended SolidMechanicsMPM::initializePreSubGroups");
 }
 
 
@@ -1965,7 +1955,7 @@ void SolidMechanicsMPM::initialize( NodeManager & nodeManager,
     int const numberOfVerticesPerParticle = subRegion.numberOfVerticesPerParticle();
 
     // real64 localMinMass = 0.0;
-    forAll< parallelDevicePolicy<> >( subRegion.size(), [=] GEOS_HOST_DEVICE ( localIndex const p )
+    forAll< forAllPolicy >( subRegion.size(), [=] GEOS_HOST_DEVICE ( localIndex const p )
     {
       particleMaterialType[p] = regionIndexOfSubRegion;
       particleReferenceVolume[p] = particleVolume[p];
@@ -2220,7 +2210,7 @@ void SolidMechanicsMPM::initializeConstitutiveModelDependencies( ParticleManager
       SortedArrayView< localIndex const > const activeParticleIndices = subRegion.activeParticleIndices();
       arrayView1d< real64 > const particleStrengthScale = subRegion.getParticleStrengthScale();
       arrayView1d< real64 > const constitutiveStrengthScale = constitutiveModel.getReference< array1d< real64 > >( "strengthScale" );
-      forAll< parallelDevicePolicy<> >( activeParticleIndices.size(), [=] GEOS_HOST_DEVICE ( localIndex const pp )
+      forAll< forAllPolicy >( activeParticleIndices.size(), [=] GEOS_HOST_DEVICE ( localIndex const pp )
       {
         localIndex const p = activeParticleIndices[pp];
         constitutiveStrengthScale[p] = particleStrengthScale[p];
@@ -2239,8 +2229,8 @@ real64 SolidMechanicsMPM::explicitStep( real64 const & time_n,
   #define USE_PHYSICS_LOOP
 
   //#######################################################################################
-  GEOS_LOG_LEVEL_BY_RANK( 1, "Get spatial partition, get node and particle managers. Resize m_iComm." );
-  solverProfiling( "Get spatial partition, get node and particle managers. Resize m_iComm." );
+  GEOS_LOG_LEVEL_BY_RANK( 1, "Get spatial partition, get node and particle managers." );
+  solverProfiling( "Get spatial partition, get node and particle managers." );
 
   // SpatialPartition & partition = dynamic_cast< SpatialPartition & >( domain.getReference< PartitionBase >( keys::partitionManager ) );
   SpatialPartition & partition = dynamic_cast< SpatialPartition & >( domain.getGroup( domain.groupKeys.partitionManager ) );
@@ -2257,8 +2247,6 @@ real64 SolidMechanicsMPM::explicitStep( real64 const & time_n,
   ParticleManager & particleManager = particles.getBaseDiscretization().getParticleManager();
   MeshLevel & mesh = grid.getBaseDiscretization();
   NodeManager & nodeManager = mesh.getNodeManager();
-
-  m_iComm.resize( domain.getNeighbors().size() );
   //#######################################################################################
 
   //#######################################################################################
@@ -2333,7 +2321,7 @@ real64 SolidMechanicsMPM::explicitStep( real64 const & time_n,
     } );
 
     // Perform ghosting
-    partition.getGhostParticlesFromNeighboringPartitions( domain, m_iComm, m_neighborRadius );
+    partition.getGhostParticlesFromNeighboringPartitions( domain, m_neighborRadius );
   }
   //#######################################################################################
 
@@ -2439,7 +2427,7 @@ real64 SolidMechanicsMPM::explicitStep( real64 const & time_n,
       // arrayView1d< int > const particleSurfaceFlag = subRegion.getParticleSurfaceFlag();
 
       SortedArrayView< localIndex const > const activeParticleIndices = subRegion.activeParticleIndices();
-      forAll< parallelDevicePolicy<> >( activeParticleIndices.size(), [=] GEOS_HOST_DEVICE ( localIndex const pp )
+      forAll< forAllPolicy >( activeParticleIndices.size(), [=] GEOS_HOST_DEVICE ( localIndex const pp )
       {
         localIndex const p = activeParticleIndices[pp];
 
@@ -2846,7 +2834,7 @@ real64 SolidMechanicsMPM::explicitStep( real64 const & time_n,
       {
         wrapper.move( LvArray::MemorySpace::host, true );
       } );
-      partition.repartitionMasterParticles( subRegion, m_iComm );
+      partition.repartitionMasterParticles( domain, subRegion );
 
       subRegion.setActiveParticleIndices(); // Can't we just loop over all the particles when correcting across periodic boundaries? Do we really need to reset the active particle indices again?
     } );
@@ -2988,7 +2976,7 @@ void SolidMechanicsMPM::triggerEvents( const real64 dt,
               arrayView3d< real64 > const constitutiveOldStress = constitutiveModel.getReference< array3d< real64 > >( "oldStress" );
             
               // SortedArrayView< localIndex const > const activeParticleIndices = subRegion.activeParticleIndices();
-              forAll< parallelDevicePolicy<> >( constitutiveOldStress.size(0), [=] GEOS_HOST_DEVICE ( localIndex const p )
+              forAll< forAllPolicy >( constitutiveOldStress.size(0), [=] GEOS_HOST_DEVICE ( localIndex const p )
               {
                   real64 knockdown = 0.0; // At the end of the annealing process, strongly enforce zero deviatoric stress.
                   if( !( time_n - dt / 2 <= eventTime + eventInterval && time_n + dt / 2 > eventTime + eventInterval ) )
@@ -3031,7 +3019,7 @@ void SolidMechanicsMPM::triggerEvents( const real64 dt,
           arrayView1d< int > const particleSurfaceFlag = subRegion.getParticleSurfaceFlag();
           
           SortedArrayView< localIndex const > const activeParticleIndices = subRegion.activeParticleIndices();
-          forAll< parallelDevicePolicy<> >( activeParticleIndices.size(), [=] GEOS_HOST_DEVICE ( localIndex const pp )
+          forAll< forAllPolicy >( activeParticleIndices.size(), [=] GEOS_HOST_DEVICE ( localIndex const pp )
           {
             localIndex const p = activeParticleIndices[pp];
             particleSurfaceFlag[p] = 0;
@@ -3060,7 +3048,7 @@ void SolidMechanicsMPM::triggerEvents( const real64 dt,
             arrayView1d< int > const particleSurfaceFlag = subRegion.getParticleSurfaceFlag();
 
             SortedArrayView< localIndex const > const activeParticleIndices = subRegion.activeParticleIndices();
-            forAll< parallelDevicePolicy<> >( activeParticleIndices.size(), [=] GEOS_HOST_DEVICE ( localIndex const pp )
+            forAll< forAllPolicy >( activeParticleIndices.size(), [=] GEOS_HOST_DEVICE ( localIndex const pp )
             {
               localIndex const p = activeParticleIndices[pp];
               for(int i =0; i < 3; ++i)
@@ -3115,7 +3103,7 @@ void SolidMechanicsMPM::triggerEvents( const real64 dt,
                   crackSpeed *= 1e-100;
                 }
 
-                forAll< parallelDevicePolicy<> >( activeParticleIndices.size(), [=] GEOS_HOST_DEVICE ( localIndex const pp )
+                forAll< forAllPolicy >( activeParticleIndices.size(), [=] GEOS_HOST_DEVICE ( localIndex const pp )
                 {
                   localIndex const p = activeParticleIndices[pp];
 
@@ -3185,7 +3173,7 @@ void SolidMechanicsMPM::triggerEvents( const real64 dt,
                 // Explicitly force exactly zero damage at the end.
                 if( time_n - dt/2 <= eventTime + eventInterval && eventTime + eventInterval < time_n + dt / 2 )
                 {
-                  forAll< parallelDevicePolicy<> >( activeParticleIndices.size(), [=] GEOS_HOST_DEVICE ( localIndex const pp )
+                  forAll< forAllPolicy >( activeParticleIndices.size(), [=] GEOS_HOST_DEVICE ( localIndex const pp )
                   {
                     localIndex const p = activeParticleIndices[pp];
                     if( particleCrystalHealFlag[p] == 1 )
@@ -3197,7 +3185,7 @@ void SolidMechanicsMPM::triggerEvents( const real64 dt,
                 }
                 else
                 {
-                  forAll< parallelDevicePolicy<> >( activeParticleIndices.size(), [=] GEOS_HOST_DEVICE ( localIndex const pp )
+                  forAll< forAllPolicy >( activeParticleIndices.size(), [=] GEOS_HOST_DEVICE ( localIndex const pp )
                   {
                     localIndex const p = activeParticleIndices[pp];
                     if( particleCrystalHealFlag[p] == 1 )
@@ -3495,6 +3483,9 @@ void SolidMechanicsMPM::syncGridFields( std::vector< std::string > const & field
 {
   GEOS_MARK_FUNCTION;
 
+  MPI_iCommData iComm;
+  iComm.resize( domain.getNeighbors().size() );
+
   // (0) Bring grid fields to host
   for( auto const & name : fieldNames )
   {
@@ -3519,13 +3510,13 @@ void SolidMechanicsMPM::syncGridFields( std::vector< std::string > const & field
   }
 
   // (3) Additive sync
-  CommunicationTools::getInstance().synchronizePackSendRecvSizes( fieldsToBeSynced, mesh, neighbors, m_iComm, true );
+  CommunicationTools::getInstance().synchronizePackSendRecvSizes( fieldsToBeSynced, mesh, neighbors, iComm, true );
   parallelDeviceEvents packEvents;
-  CommunicationTools::getInstance().asyncPack( fieldsToBeSynced, mesh, neighbors, m_iComm, true, packEvents );
+  CommunicationTools::getInstance().asyncPack( fieldsToBeSynced, mesh, neighbors, iComm, true, packEvents );
   waitAllDeviceEvents( packEvents );
-  CommunicationTools::getInstance().asyncSendRecv( neighbors, m_iComm, true, packEvents );
+  CommunicationTools::getInstance().asyncSendRecv( neighbors, iComm, true, packEvents );
   parallelDeviceEvents unpackEvents;
-  CommunicationTools::getInstance().finalizeUnpack( mesh, neighbors, m_iComm, true, unpackEvents, op ); // needs an extra argument to
+  CommunicationTools::getInstance().finalizeUnpack( mesh, neighbors, iComm, true, unpackEvents, op ); // needs an extra argument to
                                                                                                         // indicate unpack operation
   // (4) Swap send and receive indices back so we can sync from master to ghost
   for( size_t n=0; n<neighbors.size(); n++ )
@@ -3539,13 +3530,13 @@ void SolidMechanicsMPM::syncGridFields( std::vector< std::string > const & field
   }
 
   // (5) Perform sync
-  CommunicationTools::getInstance().synchronizePackSendRecvSizes( fieldsToBeSynced, mesh, neighbors, m_iComm, true );
+  CommunicationTools::getInstance().synchronizePackSendRecvSizes( fieldsToBeSynced, mesh, neighbors, iComm, true );
   parallelDeviceEvents packEvents2;
-  CommunicationTools::getInstance().asyncPack( fieldsToBeSynced, mesh, neighbors, m_iComm, true, packEvents2 );
+  CommunicationTools::getInstance().asyncPack( fieldsToBeSynced, mesh, neighbors, iComm, true, packEvents2 );
   waitAllDeviceEvents( packEvents2 );
-  CommunicationTools::getInstance().asyncSendRecv( neighbors, m_iComm, true, packEvents2 );
+  CommunicationTools::getInstance().asyncSendRecv( neighbors, iComm, true, packEvents2 );
   parallelDeviceEvents unpackEvents2;
-  CommunicationTools::getInstance().finalizeUnpack( mesh, neighbors, m_iComm, true, unpackEvents2 );
+  CommunicationTools::getInstance().finalizeUnpack( mesh, neighbors, iComm, true, unpackEvents2 );
 }
 
 void SolidMechanicsMPM::singleFaceVectorFieldSymmetryBC( const int face,
@@ -4013,7 +4004,7 @@ void SolidMechanicsMPM::computeGridSurfacePositions( ParticleManager & particleM
     int const numberOfVerticesPerParticle = subRegion.numberOfVerticesPerParticle();
     ParticleType const particleType = subRegion.getParticleType();
     SortedArrayView< localIndex const > const activeParticleIndices = subRegion.activeParticleIndices();
-    forAll< parallelDevicePolicy<> >( activeParticleIndices.size(), [=] GEOS_HOST_DEVICE ( localIndex const pp )
+    forAll< forAllPolicy >( activeParticleIndices.size(), [=] GEOS_HOST_DEVICE ( localIndex const pp )
     {
       localIndex const p = activeParticleIndices[pp];
       
@@ -4091,7 +4082,7 @@ void SolidMechanicsMPM::normalizeGridSurfaceNormals( NodeManager & nodeManager )
   // arrayView2d< real64 const > const gridNumMappedParticles = nodeManager.getReference< array2d< real64 > >( viewKeyStruct::gridNumMappedParticlesString() );
 
   int const numNodes = nodeManager.size();
-  forAll< parallelDevicePolicy<> >( numNodes, [=] GEOS_HOST_DEVICE ( localIndex const g )
+  forAll< forAllPolicy >( numNodes, [=] GEOS_HOST_DEVICE ( localIndex const g )
   {
     for( localIndex fieldIndex = 0; fieldIndex < numVelocityFields; fieldIndex++ )
     {
@@ -4127,7 +4118,7 @@ void SolidMechanicsMPM::normalizeGridSurfacePositions( NodeManager & nodeManager
   arrayView3d< real64 > const gridSurfacePosition = nodeManager.getReference< array3d< real64 > >( viewKeyStruct::gridSurfacePositionString() );
 
   int const numNodes = nodeManager.size();
-  forAll< parallelDevicePolicy<> >( numNodes, [=] GEOS_HOST_DEVICE ( localIndex const g )
+  forAll< forAllPolicy >( numNodes, [=] GEOS_HOST_DEVICE ( localIndex const g )
   {
     for( localIndex fieldIndex = 0; fieldIndex < numVelocityFields; fieldIndex++ )
     {
@@ -4183,7 +4174,7 @@ void SolidMechanicsMPM::computeGridSurfaceNormalWeights( ParticleManager & parti
     // arrayView3d< real64 const > const shapeFunctionGradientValues = m_shapeFunctionGradientValues[subRegionIndex];
 
     SortedArrayView< localIndex const > const activeParticleIndices = subRegion.activeParticleIndices();
-    forAll< parallelDevicePolicy<> >( activeParticleIndices.size(), [=] GEOS_HOST_DEVICE ( localIndex const pp ) // Can parallelize with atomics
+    forAll< forAllPolicy >( activeParticleIndices.size(), [=] GEOS_HOST_DEVICE ( localIndex const pp ) // Can parallelize with atomics
     {
       localIndex const p = activeParticleIndices[pp];
 
@@ -4221,7 +4212,7 @@ void SolidMechanicsMPM::computeGridSurfaceNormalWeights( ParticleManager & parti
 
   // Loop over grid nodes and their fields to normalize the grid surface normal weights
   int const numNodes = nodeManager.size();
-  forAll< parallelDevicePolicy<> >( numNodes, [=] GEOS_HOST_DEVICE ( localIndex const g )
+  forAll< forAllPolicy >( numNodes, [=] GEOS_HOST_DEVICE ( localIndex const g )
   {
     for( localIndex fieldIndex = 0; fieldIndex < numVelocityFields; fieldIndex++ )
     {
@@ -4324,7 +4315,7 @@ void SolidMechanicsMPM::computeContactForces( real64 const dt,
   arrayView3d< real64 > const gridContactForce = nodeManager.getReference< array3d< real64 > >( viewKeyStruct::gridContactForceString() );
   arrayView2d< real64 > const gridDamageGradient = nodeManager.getReference< array2d< real64 > >( viewKeyStruct::gridDamageGradientString() );
 
-  forAll< parallelDevicePolicy<> >( numNodes, [=] GEOS_HOST_DEVICE ( localIndex const g )
+  forAll< forAllPolicy >( numNodes, [=] GEOS_HOST_DEVICE ( localIndex const g )
     {
       // Initialize gridContactForce[g] to zero. TODO: This shouldn't be necessary?
       // This looks to be zeroed every timestep in initializeGridFields, need to test if removing this breaks anything
@@ -4944,7 +4935,7 @@ void SolidMechanicsMPM::resizeGrid( SpatialPartition & partition,
 
   // Update nodal positions
   arrayView2d< real64, nodes::REFERENCE_POSITION_USD > const gridPosition = nodeManager.referencePosition();
-  forAll< parallelDevicePolicy<> >( gridPosition.size( 0 ), [=] GEOS_HOST_DEVICE ( localIndex const g )
+  forAll< forAllPolicy >( gridPosition.size( 0 ), [=] GEOS_HOST_DEVICE ( localIndex const g )
   {
     gridPosition[g][0] *= ratio[0];
     gridPosition[g][1] *= ratio[1];
@@ -5515,7 +5506,7 @@ void SolidMechanicsMPM::updateSurfaceFlagOverload( ParticleManager & particleMan
     arrayView1d< int > const particleSurfaceFlag = subRegion.getParticleSurfaceFlag();
     arrayView1d< real64 const > const particleDamage = subRegion.getParticleDamage();
     SortedArrayView< localIndex const > const activeParticleIndices = subRegion.activeParticleIndices();
-    forAll< parallelDevicePolicy<> >( activeParticleIndices.size(), [=] GEOS_HOST_DEVICE ( localIndex const pp )
+    forAll< forAllPolicy >( activeParticleIndices.size(), [=] GEOS_HOST_DEVICE ( localIndex const pp )
     {
       localIndex const p = activeParticleIndices[pp];
       if( particleSurfaceFlag[p] < 2 )
@@ -5618,7 +5609,7 @@ void SolidMechanicsMPM::updateDeformationGradient( real64 dt,
 
     // Update F
     SortedArrayView< localIndex const > const activeParticleIndices = subRegion.activeParticleIndices();
-    forAll< parallelDevicePolicy<> >( activeParticleIndices.size(), [=] GEOS_HOST_DEVICE ( localIndex const pp )
+    forAll< forAllPolicy >( activeParticleIndices.size(), [=] GEOS_HOST_DEVICE ( localIndex const pp )
     {
       localIndex const p = activeParticleIndices[pp];
 
@@ -5690,7 +5681,7 @@ void SolidMechanicsMPM::updateConstitutiveModelDependencies( ParticleManager & p
                                                  // integrated test that checks this
     {
       arrayView1d< real64 > const lengthScale = constitutiveModel.getReference< array1d< real64 > >( "lengthScale" );
-      forAll< parallelDevicePolicy<> >( activeParticleIndices.size(), [=] GEOS_HOST_DEVICE ( localIndex const pp )
+      forAll< forAllPolicy >( activeParticleIndices.size(), [=] GEOS_HOST_DEVICE ( localIndex const pp )
       {
         localIndex const p = activeParticleIndices[pp];
         lengthScale[p] = pow( particleVolume[p], 1.0 / 3.0 );
@@ -5702,7 +5693,7 @@ void SolidMechanicsMPM::updateConstitutiveModelDependencies( ParticleManager & p
       // CC: Todo add check for fiber vs plane update to material direction
       arrayView2d< real64 const > const particleMaterialDirection = subRegion.getParticleMaterialDirection();
       arrayView2d< real64 > const constitutiveMaterialDirection = constitutiveModel.getReference< array2d< real64 > >( "materialDirection" );
-      forAll< parallelDevicePolicy<> >( activeParticleIndices.size(), [=] GEOS_HOST_DEVICE ( localIndex const pp )
+      forAll< forAllPolicy >( activeParticleIndices.size(), [=] GEOS_HOST_DEVICE ( localIndex const pp )
       {
         localIndex const p = activeParticleIndices[pp];
         LvArray::tensorOps::copy< 3 >( constitutiveMaterialDirection[p], particleMaterialDirection[p] ); 
@@ -5713,7 +5704,7 @@ void SolidMechanicsMPM::updateConstitutiveModelDependencies( ParticleManager & p
     {
       arrayView3d< real64 const > const particleDeformationGradient = subRegion.getField< fields::mpm::particleDeformationGradient >();
       arrayView3d< real64 > const constitutiveDeformationGradient = constitutiveModel.getReference< array3d< real64 > >( "deformationGradient" );
-      forAll< parallelDevicePolicy<> >( activeParticleIndices.size(), [=] GEOS_HOST_DEVICE ( localIndex const pp )
+      forAll< forAllPolicy >( activeParticleIndices.size(), [=] GEOS_HOST_DEVICE ( localIndex const pp )
       {
         localIndex const p = activeParticleIndices[pp];
         LvArray::tensorOps::copy< 3, 3 >(constitutiveDeformationGradient[p], particleDeformationGradient[p]); 
@@ -5724,7 +5715,7 @@ void SolidMechanicsMPM::updateConstitutiveModelDependencies( ParticleManager & p
     {
       arrayView3d< real64 const > const particleVelocityGradient = subRegion.getField< fields::mpm::particleVelocityGradient >();
       arrayView3d< real64 > const constitutiveVelocityGradient = constitutiveModel.getReference< array3d< real64 > >( "velocityGradient" );
-      forAll< parallelDevicePolicy<> >( activeParticleIndices.size(), [=] GEOS_HOST_DEVICE ( localIndex const pp )
+      forAll< forAllPolicy >( activeParticleIndices.size(), [=] GEOS_HOST_DEVICE ( localIndex const pp )
       {
         localIndex const p = activeParticleIndices[pp];
         LvArray::tensorOps::copy< 3, 3 >(constitutiveVelocityGradient[p], particleVelocityGradient[p]); 
@@ -5735,7 +5726,7 @@ void SolidMechanicsMPM::updateConstitutiveModelDependencies( ParticleManager & p
     {
       arrayView1d< real64 const > const particleTemperature = subRegion.getParticleTemperature();
       arrayView1d< real64 > const constitutiveTemperature = constitutiveModel.getReference< array1d< real64 > >( "temperature" );
-      forAll< parallelDevicePolicy<> >( activeParticleIndices.size(), [=] GEOS_HOST_DEVICE ( localIndex const pp )
+      forAll< forAllPolicy >( activeParticleIndices.size(), [=] GEOS_HOST_DEVICE ( localIndex const pp )
       {
         localIndex const p = activeParticleIndices[pp];
         constitutiveTemperature[p] = particleTemperature[p];
@@ -5745,7 +5736,7 @@ void SolidMechanicsMPM::updateConstitutiveModelDependencies( ParticleManager & p
     if(  constitutiveModel.hasWrapper( "volume" ) )
     {
       arrayView1d< real64 > const constitutiveVolume = constitutiveModel.getReference< array1d< real64 > >( "volume" );
-      forAll< parallelDevicePolicy<> >( activeParticleIndices.size(), [=] GEOS_HOST_DEVICE ( localIndex const pp )
+      forAll< forAllPolicy >( activeParticleIndices.size(), [=] GEOS_HOST_DEVICE ( localIndex const pp )
       {
         localIndex const p = activeParticleIndices[pp];
         constitutiveVolume[p] = particleVolume[p]; 
@@ -5756,7 +5747,7 @@ void SolidMechanicsMPM::updateConstitutiveModelDependencies( ParticleManager & p
     {
       arrayView1d< real64 > const particleDensity = subRegion.getField< fields::mpm::particleDensity >();
       arrayView2d< real64 > const constitutiveDensity = constitutiveModel.getReference< array2d< real64 > >( "density" );
-      forAll< parallelDevicePolicy<> >( activeParticleIndices.size(), [=] GEOS_HOST_DEVICE ( localIndex const pp )
+      forAll< forAllPolicy >( activeParticleIndices.size(), [=] GEOS_HOST_DEVICE ( localIndex const pp )
       {
         localIndex const p = activeParticleIndices[pp];
         constitutiveDensity[p][0] = particleDensity[p]; 
@@ -5767,7 +5758,7 @@ void SolidMechanicsMPM::updateConstitutiveModelDependencies( ParticleManager & p
     {
       arrayView3d< real64 const > const particleDeformationGradient = subRegion.getField< fields::mpm::particleDeformationGradient >();
       arrayView2d< real64 > const constitutiveJacobian = constitutiveModel.getReference< array2d< real64 > >( "jacobian" );
-      forAll< parallelDevicePolicy<> >( activeParticleIndices.size(), [=] GEOS_HOST_DEVICE ( localIndex const pp )
+      forAll< forAllPolicy >( activeParticleIndices.size(), [=] GEOS_HOST_DEVICE ( localIndex const pp )
       {
         localIndex const p = activeParticleIndices[pp];
         constitutiveJacobian[p][0] = LvArray::tensorOps::determinant< 3 >( particleDeformationGradient[p] ); 
@@ -5804,7 +5795,7 @@ void SolidMechanicsMPM::updateStress( real64 dt,
     {
       using SolidType = TYPEOFREF( castedSolid );
       typename SolidType::KernelWrapper constitutiveModelWrapper = castedSolid.createKernelUpdates();
-      solidMechanicsMPMKernels::StateUpdateKernel::launch< parallelDevicePolicy<> >( subRegion.activeParticleIndices(),
+      solidMechanicsMPMKernels::StateUpdateKernel::launch< forAllPolicy >( subRegion.activeParticleIndices(),
                                                                            constitutiveModelWrapper,
                                                                            dt,
                                                                            hyperelasticUpdate,
@@ -5859,7 +5850,7 @@ void SolidMechanicsMPM::particleKinematicUpdate( ParticleManager & particleManag
 
     // Update volume and r-vectors
     SortedArrayView< localIndex const > const activeParticleIndices = subRegion.activeParticleIndices();
-    forAll< parallelDevicePolicy<> >( activeParticleIndices.size(), [=] GEOS_HOST_DEVICE ( localIndex const pp )
+    forAll< forAllPolicy >( activeParticleIndices.size(), [=] GEOS_HOST_DEVICE ( localIndex const pp )
     {
       localIndex const p = activeParticleIndices[pp];
       real64 detF = LvArray::tensorOps::determinant< 3 >( particleDeformationGradient[p] );
@@ -6056,7 +6047,7 @@ void SolidMechanicsMPM::computeAndWriteBoxAverage( const real64 dt,
   boxSums[4] = boxStress[4].get();       // sig_xz * volume
   boxSums[5] = boxStress[5].get();       // sig_xy * volume
   boxSums[6] = boxMass.get();            // total mass in box
-  boxSums[7] = boxParticleReferenceVolume.get() > 0.0 ? boxParticleReferenceVolume : 1.0;  // total particle reference volume in box; prevent div0 error
+  boxSums[7] = boxParticleReferenceVolume.get() > 0.0 ? boxParticleReferenceVolume.get() : 1.0;  // total particle reference volume in box; prevent div0 error
   boxSums[8] = boxDamage.get();          // damage * volume
   boxSums[9] = boxInternalEnergy.get();          // internal energy * volume
   boxSums[10] = boxKineticEnergy.get(); // kinetic energy * volume
@@ -6193,7 +6184,7 @@ void SolidMechanicsMPM::computeBoxMetrics( ParticleManager & particleManager,
 
     // Accumulate values
     SortedArrayView< localIndex const > const activeParticleIndices = subRegion.activeParticleIndices();
-    forAll< parallelDevicePolicy<> >( activeParticleIndices.size(), [=] GEOS_HOST_DEVICE ( localIndex const pp )
+    forAll< forAllPolicy >( activeParticleIndices.size(), [=] GEOS_HOST_DEVICE ( localIndex const pp )
     {
       localIndex const p = activeParticleIndices[pp];
 
@@ -6439,7 +6430,7 @@ void SolidMechanicsMPM::applySuperimposedVelocityGradient( const real64 dt,
     arrayView3d< real64 > const particleVelocityGradient = subRegion.getField< fields::mpm::particleVelocityGradient >();
 
     SortedArrayView< localIndex const > const activeParticleIndices = subRegion.activeParticleIndices();
-    forAll< parallelDevicePolicy<> >( activeParticleIndices.size(), [=] GEOS_DEVICE ( localIndex const pp )
+    forAll< forAllPolicy >( activeParticleIndices.size(), [=] GEOS_DEVICE ( localIndex const pp )
        {
         localIndex const p = activeParticleIndices[pp];
         
@@ -6500,57 +6491,57 @@ void SolidMechanicsMPM::initializeGridFields( NodeManager & nodeManager )
   arrayView2d< real64 > const gridBoreholeStress = nodeManager.getReference< array2d< real64 > >( viewKeyStruct::gridBoreholeStressString() );
 
   int const numNodes = nodeManager.size();
-  forAll< parallelDevicePolicy<> >( numNodes, [=] GEOS_HOST_DEVICE ( localIndex const g )
-    {
-      gridCohesiveNode[g] = 0.0;
-      gridSurfaceMass[g] = 0.0;
+  forAll< forAllPolicy >( numNodes, [=] GEOS_HOST_DEVICE ( localIndex const g )
+  {
+    gridCohesiveNode[g] = 0.0;
+    gridSurfaceMass[g] = 0.0;
 
-      gridMaxMappedParticleID[g] = -1;
+    gridMaxMappedParticleID[g] = -1;
+    
+    for( int i = 0; i < 3; i++ )
+    {
+      gridDamageGradient[g][i] = 0.0;
+      gridExplicitSurfaceNormal[g][i] = 0.0;
+      gridPrincipalExplicitSurfaceNormal[g][i] = 0.0;
+    }
+
+    LvArray::tensorOps::fill< 6 >( gridBoreholeStress[g], 0.0 );
+
+    for( int fieldIndex = 0; fieldIndex < m_numVelocityFields; fieldIndex++ )
+    {
+      gridSurfaceFieldMass[g][fieldIndex] = 0.0;
+      gridCohesiveFieldFlag[g][fieldIndex] = 0;
+
+      gridMass[g][fieldIndex] = 0.0;
+      gridMaterialVolume[g][fieldIndex] = 0.0;
+      gridDamage[g][fieldIndex] = 0.0;
+      gridMaxDamage[g][fieldIndex] = 0.0;
+      gridMassWeightedDamage[g][fieldIndex] = 0.0;
       
+      gridSurfaceNormalWeightNormalization[g][fieldIndex] = 0;
+      gridSurfaceNormalWeights[g][fieldIndex] = 0.0;
+
       for( int i = 0; i < 3; i++ )
       {
-        gridDamageGradient[g][i] = 0.0;
-        gridExplicitSurfaceNormal[g][i] = 0.0;
-        gridPrincipalExplicitSurfaceNormal[g][i] = 0.0;
+        gridCenterOfMass[g][fieldIndex][i] = 0.0;
+        gridDisplacement[g][fieldIndex][i] = 0.0;
+        gridCenterOfVolume[g][fieldIndex][i] = 0.0;
+        gridVelocity[g][fieldIndex][i] = 0.0;
+        gridDVelocity[g][fieldIndex][i] = 0.0;
+        gridMomentum[g][fieldIndex][i] = 0.0;
+        gridAcceleration[g][fieldIndex][i] = 0.0;
+        gridInternalForce[g][fieldIndex][i] = 0.0;
+        gridExternalForce[g][fieldIndex][i] = 0.0;
+        gridContactForce[g][fieldIndex][i] = 0.0;
+        gridNormalStress[g][fieldIndex][i] = 0.0;
+        gridCohesiveArea[g][fieldIndex][i] = 0.0;
+        gridCohesiveForce[g][fieldIndex][i] = 0.0;
+        gridParticleSurfaceNormal[g][fieldIndex][i] = 0.0;
+        gridSurfaceNormal[g][fieldIndex][i] = 0.0;
+        gridSurfacePosition[g][fieldIndex][i] = 0.0;
       }
-
-      LvArray::tensorOps::fill< 6 >( gridBoreholeStress[g], 0.0 );
-
-      for( int fieldIndex = 0; fieldIndex < m_numVelocityFields; fieldIndex++ )
-      {
-        gridSurfaceFieldMass[g][fieldIndex] = 0.0;
-        gridCohesiveFieldFlag[g][fieldIndex] = 0;
-
-        gridMass[g][fieldIndex] = 0.0;
-        gridMaterialVolume[g][fieldIndex] = 0.0;
-        gridDamage[g][fieldIndex] = 0.0;
-        gridMaxDamage[g][fieldIndex] = 0.0;
-        gridMassWeightedDamage[g][fieldIndex] = 0.0;
-        
-        gridSurfaceNormalWeightNormalization[g][fieldIndex] = 0;
-        gridSurfaceNormalWeights[g][fieldIndex] = 0.0;
-
-        for( int i = 0; i < 3; i++ )
-        {
-          gridCenterOfMass[g][fieldIndex][i] = 0.0;
-          gridDisplacement[g][fieldIndex][i] = 0.0;
-          gridCenterOfVolume[g][fieldIndex][i] = 0.0;
-          gridVelocity[g][fieldIndex][i] = 0.0;
-          gridDVelocity[g][fieldIndex][i] = 0.0;
-          gridMomentum[g][fieldIndex][i] = 0.0;
-          gridAcceleration[g][fieldIndex][i] = 0.0;
-          gridInternalForce[g][fieldIndex][i] = 0.0;
-          gridExternalForce[g][fieldIndex][i] = 0.0;
-          gridContactForce[g][fieldIndex][i] = 0.0;
-          gridNormalStress[g][fieldIndex][i] = 0.0;
-          gridCohesiveArea[g][fieldIndex][i] = 0.0;
-          gridCohesiveForce[g][fieldIndex][i] = 0.0;
-          gridParticleSurfaceNormal[g][fieldIndex][i] = 0.0;
-          gridSurfaceNormal[g][fieldIndex][i] = 0.0;
-          gridSurfacePosition[g][fieldIndex][i] = 0.0;
-        }
-      }
-    } );
+    }
+  } );
 }
 
 void SolidMechanicsMPM::boundaryConditionUpdate( real64 dt, real64 time_n )
@@ -6597,7 +6588,7 @@ void SolidMechanicsMPM::projectParticleSurfaceNormalsToGrid( DomainPartition & d
     arrayView2d< localIndex const > const mappedNodes = m_mappedNodes[subRegionIndex];
 
     SortedArrayView< localIndex const > const activeParticleIndices = subRegion.activeParticleIndices();
-    forAll< parallelDevicePolicy<> >( activeParticleIndices.size(), [=] GEOS_HOST_DEVICE ( localIndex const pp )
+    forAll< forAllPolicy >( activeParticleIndices.size(), [=] GEOS_HOST_DEVICE ( localIndex const pp )
     {
       localIndex const p = activeParticleIndices[pp];
 
@@ -6733,7 +6724,7 @@ void SolidMechanicsMPM::initializeCohesiveReferenceConfiguration( DomainPartitio
     arrayView2d< real64 const > const shapeFunctionValues = m_shapeFunctionValues[subRegionIndex];
 
     SortedArrayView< localIndex const > const activeParticleIndices = subRegion.activeParticleIndices();
-    forAll< parallelDevicePolicy<> >( activeParticleIndices.size(), [=] GEOS_HOST_DEVICE ( localIndex const pp )
+    forAll< forAllPolicy >( activeParticleIndices.size(), [=] GEOS_HOST_DEVICE ( localIndex const pp )
     { 
       localIndex const p = activeParticleIndices[pp];
 
@@ -6970,7 +6961,7 @@ void SolidMechanicsMPM::initializeCohesiveReferenceConfiguration( DomainPartitio
     arrayView2d< real64 const > const shapeFunctionValues = m_shapeFunctionValues[subRegionIndex];
 
     SortedArrayView< localIndex const > const activeParticleIndices = subRegion.activeParticleIndices();
-    forAll< parallelDevicePolicy<> >( activeParticleIndices.size(), [=] GEOS_HOST_DEVICE ( localIndex const pp )
+    forAll< forAllPolicy >( activeParticleIndices.size(), [=] GEOS_HOST_DEVICE ( localIndex const pp )
     {
       localIndex const p = activeParticleIndices[pp];
 
@@ -7159,7 +7150,7 @@ void SolidMechanicsMPM::initializeCohesiveReferenceConfiguration( DomainPartitio
   real64 dA = pow( 2 * L / m_numSurfaceIntegrationPoints, 2 );
 
   // Integrate shapefunctions along cohesive interface (approximated as plane from mapped normals) to determine grid area
-  // forAll< parallelDevicePolicy<> >( numCohesiveNodes, [=, &referenceCohesiveGridNodeAreas, &referenceCohesiveGridNodeSurfaceNormals ] GEOS_HOST ( localIndex const g )
+  // forAll< forAllPolicy >( numCohesiveNodes, [=, &referenceCohesiveGridNodeAreas, &referenceCohesiveGridNodeSurfaceNormals ] GEOS_HOST ( localIndex const g )
   for( localIndex g = 0; g < numCohesiveNodes; g++)
   {
     for(int fieldIndex = 0; fieldIndex < m_numVelocityFields; fieldIndex++)
@@ -8194,7 +8185,7 @@ void SolidMechanicsMPM::updateGridBoreholeStress( NodeManager & nodeManager )
   arrayView2d< real64 const, nodes::REFERENCE_POSITION_USD > const gridPosition = nodeManager.referencePosition();
   arrayView2d< real64 > const gridBoreholeStress = nodeManager.getReference< array2d< real64 > >( viewKeyStruct::gridBoreholeStressString() );
 
-  forAll< parallelDevicePolicy<> >( nodeManager.size(), [=] GEOS_HOST_DEVICE ( localIndex const g )
+  forAll< forAllPolicy >( nodeManager.size(), [=] GEOS_HOST_DEVICE ( localIndex const g )
   { 
     if ( LvArray::math::square( gridPosition[g][0] ) + LvArray::math::square( gridPosition[g][1] ) < boreholeRadiusSqr )
     {
@@ -8272,7 +8263,37 @@ void SolidMechanicsMPM::particleToGrid( real64 const time_n,
     // Map to grid
     SortedArrayView< localIndex const > const activeParticleIndices = subRegion.activeParticleIndices();
     ParticleType const particleType = subRegion.getParticleType();
-    forAll< parallelDevicePolicy<> >( activeParticleIndices.size(), [=] GEOS_HOST_DEVICE ( localIndex const pp )
+
+    // Working out how to recast for all as loop to name kernel for debugging
+    // No provided in cudakernel.hpp if num_blocks and num threads are 0 then they are chosen at runtime
+    // localIndex const numActiveParticles = activeParticleIndices.size()
+    // constexpr int block_size = GEOS_BLOCK_SIZE;
+    // constexpr bool async = false;
+    // #if defined(GEOS_USE_CUDA)
+    //   using launch_policy = RAJA::LaunchPolicy<RAJA::seq_launch_t, RAJA::cuda_launch_t<async>>;
+    //   using loop_policy = RAJA::LoopPolicy<RAJA::seq_exec, RAJA::cuda_global_thread_x>;
+    // #endif
+
+    // #if defined(GEOS_USE_HIP)
+    //   using launch_policy = RAJA::LaunchPolicy<RAJA::seq_launch_t, RAJA::hip_launch_t<async>>;
+    //   using loop_policy = RAJA::LoopPolicy<RAJA::seq_exec, RAJA::hip_global_thread_x>;
+    // #endif
+    //
+    // RAJA::launch< launch_policy >(
+    //       RAJA::ExecPlace::DEVICE,
+    //       RAJA::LaunchParams(RAJA::Teams(1),
+    //                          RAJA::Threads(block_size)),
+    //                          "particleToGrid", // Name kernel for profiling
+    //       [=] RAJA_HOST_DEVICE (RAJA::LaunchContext ctx) {
+    //         // Loop over particles
+    //         RAJA::loop< loop_policy >( ctx,
+    //                       RAJA::TypedRangeSegment< localIndex >(0, numActiveParticles),
+    //                       [&] ( localIndex const pp ) {
+    //                         // Do particle to grid here
+    //                       });
+    //                 });
+
+    forAll< forAllPolicy >( activeParticleIndices.size(), [=] GEOS_HOST_DEVICE ( localIndex const pp )
     {
       localIndex const p = activeParticleIndices[pp];
 
@@ -8335,7 +8356,7 @@ void SolidMechanicsMPM::particleToGrid( real64 const time_n,
 
         for( int i=0; i < numDims; i++ )
         {
-          particleContributionToGrid = particleMass[p] * particleVelocity[p][i] * shapeFunctionValues[g];
+          particleContributionToGrid = particleMass[p] * particleVelocity[p][i] * shapeFunctionValue;
           RAJA::atomicAdd( parallelDeviceAtomic{}, &gridMomentum[mappedNode][fieldIndex][i], particleContributionToGrid );
 
           particleContributionToGrid = ( particleBodyForce[p][i] * particleMass[p] + particleSurfaceTraction[p][i] + particleCohesiveForce[p][i] ) * shapeFunctionValue;
@@ -8427,13 +8448,17 @@ void SolidMechanicsMPM::gridTrialUpdate( real64 dt,
   arrayView2d< real64 const > const gridMaterialVolume = nodeManager.getReference< array2d< real64 > >( viewKeyStruct::gridMaterialVolumeString() );
   arrayView3d< real64 > const & gridCenterOfVolume = nodeManager.getReference< array3d< real64 > >( viewKeyStruct::gridCenterOfVolumeString() );
 
+  // In certain situations it seems that using a parallelDeviecPolicy causes erroneous grid updates
+  // Cause...unknown
+
   // Loop over velocity fields
-  int const numNodes = nodeManager.size();
+  localIndex const numNodes = nodeManager.size();
   real64 const smallMass = m_smallMass;
   int const numDims = m_numDims;
   for( int fieldIndex=0; fieldIndex<m_numVelocityFields; fieldIndex++ )
   {
-    forAll< parallelDevicePolicy<> >( numNodes, [=] GEOS_HOST_DEVICE ( localIndex const g )
+    RAJA::MultiReduceSum< RAJA::seq_multi_reduce, real64 > internalForce(3, 0.0);
+    forAll< serialPolicy >( numNodes, [=] GEOS_HOST_DEVICE ( localIndex const g )
     {
       if( gridMass[g][fieldIndex] > smallMass ) // small mass threshold
       {
@@ -8459,10 +8484,15 @@ void SolidMechanicsMPM::gridTrialUpdate( real64 dt,
           gridVelocity[g][fieldIndex][i] = 0.0;
           gridMomentum[g][fieldIndex][i] = 0.0;
           gridCenterOfVolume[g][fieldIndex][i] = 0.0;
-          gridCenterOfMass[g][fieldIndex][i] = 0 * gridPosition[g][i]; // TODO: zero? since it's supposed to be relative position?
+          gridCenterOfMass[g][fieldIndex][i] = 0.0; // * gridPosition[g][i]; // TODO: zero? since it's supposed to be relative position?
         }
       }
+      for(int i =0; i < numDims; i++)
+      {
+        internalForce[i] += gridInternalForce[g][fieldIndex][i];
+      }
     } );
+    GEOS_LOG_RANK_0("Field: " << fieldIndex << ", force: {"<< internalForce[0].get() << ", " << internalForce[1].get() << ", " << internalForce[2].get() << "}");
   }
 }
 
@@ -8536,7 +8566,7 @@ void SolidMechanicsMPM::enforceContact( real64 dt,
   int const numDims = m_numDims;
   for( int fieldIndex=0; fieldIndex<m_numVelocityFields; fieldIndex++ )
   {
-    forAll< parallelDevicePolicy<> >( numNodes, [=] GEOS_HOST_DEVICE ( localIndex const g )
+    forAll< forAllPolicy >( numNodes, [=] GEOS_HOST_DEVICE ( localIndex const g )
     {
       if( gridMass[g][fieldIndex] > smallMass ) // small mass threshold
       {
@@ -8786,7 +8816,7 @@ void SolidMechanicsMPM::performFLIPUpdate( real64 dt,
     int const numContactGroups = m_numContactGroups;
     int const damageFieldPartitioning = m_damageFieldPartitioning;
     ParticleType const particleType = subRegion.getParticleType();
-    forAll< parallelDevicePolicy<> >( activeParticleIndices.size(), [=] GEOS_HOST_DEVICE ( localIndex const pp )
+    forAll< forAllPolicy >( activeParticleIndices.size(), [=] GEOS_HOST_DEVICE ( localIndex const pp )
     {
       localIndex const p = activeParticleIndices[pp];
 
@@ -8913,7 +8943,7 @@ void SolidMechanicsMPM::performPICUpdate(  real64 dt,
     int const damageFieldPartitioning = m_damageFieldPartitioning;
     int const numContactGroups = m_numContactGroups;
     ParticleType const particleType = subRegion.getParticleType();
-    forAll< parallelDevicePolicy<> >( activeParticleIndices.size(), [=] GEOS_HOST_DEVICE ( localIndex const pp )
+    forAll< forAllPolicy >( activeParticleIndices.size(), [=] GEOS_HOST_DEVICE ( localIndex const pp )
     {
       localIndex const p = activeParticleIndices[pp];
 
@@ -9069,7 +9099,7 @@ void SolidMechanicsMPM::performXPICUpdate( real64 dt,
       // Map to particles
       // Seems like LvArrays that aren't views need to be passed by reference to forAll loops (e.g. vPlus)
       SortedArrayView< localIndex const > const activeParticleIndices = subRegion.activeParticleIndices();
-      forAll< parallelDevicePolicy<> >( activeParticleIndices.size(), [=] GEOS_HOST_DEVICE ( localIndex const pp )
+      forAll< forAllPolicy >( activeParticleIndices.size(), [=] GEOS_HOST_DEVICE ( localIndex const pp )
       {
         localIndex const p = activeParticleIndices[pp];
       
@@ -9179,7 +9209,7 @@ void SolidMechanicsMPM::performXPICUpdate( real64 dt,
 
       // Update dVStar
       SortedArrayView< localIndex const > const activeParticleIndices = subRegion.activeParticleIndices();
-      forAll< parallelDevicePolicy<> >( activeParticleIndices.size(), [=] GEOS_HOST_DEVICE ( localIndex const pp )
+      forAll< forAllPolicy >( activeParticleIndices.size(), [=] GEOS_HOST_DEVICE ( localIndex const pp )
       {
         localIndex const p = activeParticleIndices[pp];
         
@@ -9269,7 +9299,7 @@ void SolidMechanicsMPM::performXPICUpdate( real64 dt,
 
     // Update particles position and velocities now
     SortedArrayView< localIndex const > const activeParticleIndices = subRegion.activeParticleIndices();
-    forAll< parallelDevicePolicy<> >( activeParticleIndices.size(), [=] GEOS_HOST_DEVICE ( localIndex const pp )
+    forAll< forAllPolicy >( activeParticleIndices.size(), [=] GEOS_HOST_DEVICE ( localIndex const pp )
     {
       localIndex const p = activeParticleIndices[pp];
 
@@ -9402,7 +9432,7 @@ void SolidMechanicsMPM::performFMPMUpdate(  real64 dt,
 
       // Map to particles
       SortedArrayView< localIndex const > const activeParticleIndices = subRegion.activeParticleIndices();  
-      forAll< parallelDevicePolicy<> >( activeParticleIndices.size(), [=] GEOS_HOST_DEVICE ( localIndex const pp )
+      forAll< forAllPolicy >( activeParticleIndices.size(), [=] GEOS_HOST_DEVICE ( localIndex const pp )
       {
         localIndex const p = activeParticleIndices[pp];
 
@@ -9491,7 +9521,7 @@ void SolidMechanicsMPM::performFMPMUpdate(  real64 dt,
     int const numberOfVerticesPerParticle = subRegion.numberOfVerticesPerParticle();
     SortedArrayView< localIndex const > const activeParticleIndices = subRegion.activeParticleIndices();  
     ParticleType const particleType = subRegion.getParticleType();
-    forAll< parallelDevicePolicy<> >( activeParticleIndices.size(), [=] GEOS_HOST_DEVICE ( localIndex const pp )
+    forAll< forAllPolicy >( activeParticleIndices.size(), [=] GEOS_HOST_DEVICE ( localIndex const pp )
     {
       localIndex const p = activeParticleIndices[pp];
 
@@ -9564,7 +9594,7 @@ void SolidMechanicsMPM::updateSolverDependencies( ParticleManager & particleMana
     {
       arrayView1d< real64 > const particleDamage = subRegion.getParticleDamage();
       arrayView2d< real64 const > const constitutiveDamage = constitutiveModel.getReference< array2d< real64 > >( "damage" );
-      forAll< parallelDevicePolicy<> >( activeParticleIndices.size(), [=] GEOS_HOST_DEVICE ( localIndex const pp )
+      forAll< forAllPolicy >( activeParticleIndices.size(), [=] GEOS_HOST_DEVICE ( localIndex const pp )
       {
         localIndex const p = activeParticleIndices[pp];
         if( constitutiveDamage[p][0] > particleDamage[p] ) // Damage can only increase - This will also preserve user-specified damage at
@@ -9582,7 +9612,7 @@ void SolidMechanicsMPM::updateSolverDependencies( ParticleManager & particleMana
     {
       arrayView2d< real64 > const particlePlasticStrain = subRegion.getField< fields::mpm::particlePlasticStrain >();
       arrayView3d< real64 const > const constitutivePlasticStrain = constitutiveModel.getReference< array3d< real64 > >( "plasticStrain" );
-      forAll< parallelDevicePolicy<> >( activeParticleIndices.size(), [=] GEOS_HOST_DEVICE ( localIndex const pp )
+      forAll< forAllPolicy >( activeParticleIndices.size(), [=] GEOS_HOST_DEVICE ( localIndex const pp )
       {
         localIndex const p = activeParticleIndices[pp];
         LvArray::tensorOps::copy< 6 >( particlePlasticStrain[p], constitutivePlasticStrain[p][0] );
@@ -9593,7 +9623,7 @@ void SolidMechanicsMPM::updateSolverDependencies( ParticleManager & particleMana
     {
       arrayView1d< real64 > const particleTemperature = subRegion.getParticleTemperature();
       arrayView1d< real64 const > const constitutiveTemperature = constitutiveModel.getReference< array1d< real64 > >( "temperature" );
-      forAll< parallelDevicePolicy<> >( activeParticleIndices.size(), [=] GEOS_HOST_DEVICE ( localIndex const pp )
+      forAll< forAllPolicy >( activeParticleIndices.size(), [=] GEOS_HOST_DEVICE ( localIndex const pp )
       {
         localIndex const p = activeParticleIndices[pp];
         particleTemperature[p] = constitutiveTemperature[p]; 
@@ -9605,7 +9635,7 @@ void SolidMechanicsMPM::updateSolverDependencies( ParticleManager & particleMana
     {
       arrayView1d< real64 > const particleWavespeed = subRegion.getField< fields::mpm::particleWavespeed >();
       arrayView2d< real64 const > const constitutiveWavespeed = constitutiveModel.getReference< array2d< real64 > >( "wavespeed" );
-      forAll< parallelDevicePolicy<> >( activeParticleIndices.size(), [=] GEOS_HOST_DEVICE ( localIndex const pp )
+      forAll< forAllPolicy >( activeParticleIndices.size(), [=] GEOS_HOST_DEVICE ( localIndex const pp )
       {
         localIndex const p = activeParticleIndices[pp];
         particleWavespeed[p] = constitutiveWavespeed[p][0]; 
@@ -9630,7 +9660,7 @@ real64 SolidMechanicsMPM::getStableTimeStep( ParticleManager & particleManager )
 
 
     SortedArrayView< localIndex const > const activeParticleIndices = subRegion.activeParticleIndices();
-    forAll< parallelDevicePolicy<> >( activeParticleIndices.size(), [=] GEOS_HOST_DEVICE ( localIndex const pp ) // would need reduction to parallelize
+    forAll< forAllPolicy >( activeParticleIndices.size(), [=] GEOS_HOST_DEVICE ( localIndex const pp ) // would need reduction to parallelize
     {
       localIndex const p = activeParticleIndices[pp];
       maxWavespeed.max( particleWavespeed[p] + LvArray::tensorOps::l2Norm< 3 >( particleVelocity[p] ) );
@@ -9761,7 +9791,7 @@ void SolidMechanicsMPM::computeSurfaceFlags( ParticleManager & particleManager )
 
     // Loop over neighbors
     SortedArrayView< localIndex const > const activeParticleIndices = subRegion.activeParticleIndices();
-    forAll< parallelDevicePolicy<> >( activeParticleIndices.size(), [=] GEOS_HOST_DEVICE ( localIndex const pp ) // Must be on host since we call a 'this'
+    forAll< forAllPolicy >( activeParticleIndices.size(), [=] GEOS_HOST_DEVICE ( localIndex const pp ) // Must be on host since we call a 'this'
                                                                                                 // method which uses class variables
       {
         localIndex const p = activeParticleIndices[pp];
@@ -9848,7 +9878,7 @@ void SolidMechanicsMPM::computeSurfaceNormals( ParticleManager & particleManager
     int const numDims = m_numDims;
     int const numContactGroups = m_numContactGroups;
     int const damageFieldPartitioning = m_damageFieldPartitioning;
-    forAll< parallelDevicePolicy<> >( activeParticleIndices.size(), [=] GEOS_HOST_DEVICE ( localIndex const pp )
+    forAll< forAllPolicy >( activeParticleIndices.size(), [=] GEOS_HOST_DEVICE ( localIndex const pp )
     {
       localIndex const p = activeParticleIndices[pp];
       
@@ -9997,7 +10027,7 @@ void SolidMechanicsMPM::computeSphF( ParticleManager & particleManager )
 //     arrayView3d< real64 const > const particleSphF = subRegion.getField< fields::mpm::particleSphF >();
 
 //     SortedArrayView< localIndex const > const activeParticleIndices = subRegion.activeParticleIndices();
-//     forAll< parallelDevicePolicy<> >( activeParticleIndices.size(), [=] GEOS_HOST ( localIndex const pp )
+//     forAll< forAllPolicy >( activeParticleIndices.size(), [=] GEOS_HOST ( localIndex const pp )
 //     {
 //       localIndex const p = activeParticleIndices[pp];
 //       if( LvArray::tensorOps::l2NormSquared< 3 >( particleDamageGradient[p] ) > 0.0 )
@@ -10174,7 +10204,7 @@ void SolidMechanicsMPM::flagOutOfRangeParticles( ParticleManager & particleManag
     {
       case ParticleType::SinglePoint:
         {
-          forAll< parallelDevicePolicy<> >( activeParticleIndices.size(), [=] GEOS_HOST_DEVICE ( localIndex const pp )
+          forAll< forAllPolicy >( activeParticleIndices.size(), [=] GEOS_HOST_DEVICE ( localIndex const pp )
           {
             localIndex const p = activeParticleIndices[pp];
             for( int i=0; i<3; i++ )
@@ -10199,7 +10229,7 @@ void SolidMechanicsMPM::flagOutOfRangeParticles( ParticleManager & particleManag
             {-1, 1, -1},
             {-1, -1, 1},
             {-1, -1, -1} };
-          forAll< parallelDevicePolicy<> >( activeParticleIndices.size(), [=] GEOS_HOST_DEVICE ( localIndex const pp )
+          forAll< forAllPolicy >( activeParticleIndices.size(), [=] GEOS_HOST_DEVICE ( localIndex const pp )
           {
             localIndex const p = activeParticleIndices[pp];
             for( int cornerIndex=0; cornerIndex<8; cornerIndex++ )
@@ -10241,7 +10271,7 @@ void SolidMechanicsMPM::computeRVectors( ParticleManager & particleManager )
       arrayView3d< real64 > const particleRVectors = subRegion.getParticleRVectors();
       arrayView3d< real64 const > const particleReferenceRVectors = subRegion.getField< fields::mpm::particleReferenceRVectors >();
       arrayView3d< real64 const > const particleDeformationGradient = subRegion.getField< fields::mpm::particleDeformationGradient >();
-      forAll< parallelDevicePolicy<> >( activeParticleIndices.size(), [=] GEOS_HOST_DEVICE ( localIndex const pp )
+      forAll< forAllPolicy >( activeParticleIndices.size(), [=] GEOS_HOST_DEVICE ( localIndex const pp )
       {
         localIndex const p = activeParticleIndices[pp];
         
@@ -10277,7 +10307,7 @@ void SolidMechanicsMPM::cpdiDomainScaling( ParticleManager & particleManager )
 
       int const planeStrain = m_planeStrain;
       int const disableSurfaceNormalsAndPositionsOnCPDIScaling = m_disableSurfaceNormalsAndPositionsOnCPDIScaling;
-      forAll< parallelDevicePolicy<> >( subRegion.size(), [=] GEOS_HOST_DEVICE ( localIndex const p )
+      forAll< forAllPolicy >( subRegion.size(), [=] GEOS_HOST_DEVICE ( localIndex const p )
       {
         // Reset cpdi domain scaled flag
         particleDomainScaledFlag[p] = 0;
@@ -10412,7 +10442,7 @@ void SolidMechanicsMPM::subdivideParticles( ParticleManager & particleManager )
     RAJA::ReduceSum< parallelDeviceReduce, int > subRegionNumNewParticles( 0 );
 
     // Loop over all particles, because there should be no ghost particles yet
-    forAll< parallelDevicePolicy<> >( subRegion.size(), [=] GEOS_HOST_DEVICE ( localIndex const p )
+    forAll< forAllPolicy >( subRegion.size(), [=] GEOS_HOST_DEVICE ( localIndex const p )
     {      
       maxParticleIDRank.max( particleID[p] );
 
@@ -10494,7 +10524,7 @@ void SolidMechanicsMPM::subdivideParticles( ParticleManager & particleManager )
   
     // Only iterate over old particles, assumes on resize they are all at the front of the arrays
     // TODO convert this to RAJA forAll for device parallelization
-    // forAll< parallelDevicePolicy<> >( oldSubRegionSize, [=, &currGlobalIndex, &subRegionNewParticleIndex] GEOS_HOST_DEVICE ( localIndex const p )
+    // forAll< forAllPolicy >( oldSubRegionSize, [=, &currGlobalIndex, &subRegionNewParticleIndex] GEOS_HOST_DEVICE ( localIndex const p )
     for( size_t p = 0; p < oldSubRegionSize; p++)
     {   
       if( particleSubdivideFlag[p] == 1 )
@@ -10692,7 +10722,7 @@ void SolidMechanicsMPM::subdivideParticles( ParticleManager & particleManager )
     } );
 
     //Erase copy flags after completing particle subdivision
-    forAll< parallelDevicePolicy<> >( subRegion.size(), [=] GEOS_HOST_DEVICE ( localIndex const p )
+    forAll< forAllPolicy >( subRegion.size(), [=] GEOS_HOST_DEVICE ( localIndex const p )
     { 
       particleCopyFlag[p] = -1;
     } );
@@ -10734,8 +10764,8 @@ void SolidMechanicsMPM::resizeMappingArrays( ParticleManager & particleManager )
 }
 
 
-void SolidMechanicsMPM::correctGhostParticleCentersAcrossPeriodicBoundaries(ParticleManager & particleManager,
-                                                                         SpatialPartition & partition)
+void SolidMechanicsMPM::correctGhostParticleCentersAcrossPeriodicBoundaries( ParticleManager & particleManager,
+                                                                             SpatialPartition & partition )
 {
   GEOS_MARK_FUNCTION;
 
@@ -10750,7 +10780,7 @@ void SolidMechanicsMPM::correctGhostParticleCentersAcrossPeriodicBoundaries(Part
     arrayView2d< real64 > const particlePosition = subRegion.getParticleCenter();
 
     SortedArrayView< localIndex const > const inactiveParticleIndices = subRegion.inactiveParticleIndices();
-    forAll< parallelDevicePolicy<> >( inactiveParticleIndices.size(), [=] GEOS_HOST_DEVICE ( localIndex const pp )
+    forAll< forAllPolicy >( inactiveParticleIndices.size(), [=] GEOS_HOST_DEVICE ( localIndex const pp )
     {
       localIndex const p = inactiveParticleIndices[pp];
 
@@ -10782,7 +10812,7 @@ void SolidMechanicsMPM::correctParticleCentersAcrossPeriodicBoundaries( Particle
     SortedArrayView< localIndex const > const activeParticleIndices = subRegion.activeParticleIndices();
     arrayView2d< real64 > particlePosition = subRegion.getParticleCenter();
 
-    forAll< parallelDevicePolicy<> >( activeParticleIndices.size(), [=] GEOS_HOST_DEVICE ( localIndex const pp )
+    forAll< forAllPolicy >( activeParticleIndices.size(), [=] GEOS_HOST_DEVICE ( localIndex const pp )
     {
       localIndex const p = activeParticleIndices[pp];
 
@@ -10860,7 +10890,7 @@ void SolidMechanicsMPM::populateMappingArrays( ParticleManager & particleManager
     {
       case ParticleType::SinglePoint:
         {
-          forAll< parallelDevicePolicy<> >( activeParticleIndices.size(), [=] GEOS_HOST_DEVICE ( localIndex const pp )
+          forAll< forAllPolicy >( activeParticleIndices.size(), [=] GEOS_HOST_DEVICE ( localIndex const pp )
           {
             localIndex const p = activeParticleIndices[pp];
 
@@ -10878,7 +10908,7 @@ void SolidMechanicsMPM::populateMappingArrays( ParticleManager & particleManager
       case ParticleType::CPDI:
         {
           arrayView3d< real64 const > const particleRVectors = subRegion.getParticleRVectors();
-          forAll< parallelDevicePolicy<> >( activeParticleIndices.size(), [=] GEOS_HOST_DEVICE ( localIndex const pp )
+          forAll< forAllPolicy >( activeParticleIndices.size(), [=] GEOS_HOST_DEVICE ( localIndex const pp )
           {
             localIndex const p = activeParticleIndices[pp];
 
@@ -11353,7 +11383,7 @@ inline void SolidMechanicsMPM::computeGeneralizedVortexMMSBodyForce( real64 cons
     GEOS_ERROR_IF( !constitutiveModel.hasWrapper( constitutive::SolidBase::viewKeyStruct:: defaultDensityString() ) , "Constitutive model must have particle density for the generalized vortex problem!");
     real64 const initialDensity = constitutiveModel.getReference< real64 >( constitutive::SolidBase::viewKeyStruct:: defaultDensityString() );
 
-    forAll< parallelDevicePolicy<> >( activeParticleIndices.size(), [=] GEOS_HOST_DEVICE ( localIndex const pp )                                                                                          
+    forAll< forAllPolicy >( activeParticleIndices.size(), [=] GEOS_HOST_DEVICE ( localIndex const pp )                                                                                          
     {                                                                                         
       localIndex const p = activeParticleIndices[pp];
 
@@ -11434,7 +11464,7 @@ void SolidMechanicsMPM::computeBodyForce( ParticleManager & particleManager )
     real64 bodyForce[3] = { 0 };
     LvArray::tensorOps::copy< 3 >( bodyForce, m_bodyForce );
     SortedArrayView< localIndex const > const activeParticleIndices = subRegion.activeParticleIndices();
-    forAll< parallelDevicePolicy<> >( activeParticleIndices.size(), [=] GEOS_HOST_DEVICE ( localIndex const pp )                                                                                          
+    forAll< forAllPolicy >( activeParticleIndices.size(), [=] GEOS_HOST_DEVICE ( localIndex const pp )                                                                                          
     {                                                                                         
       localIndex const p = activeParticleIndices[pp];
 
@@ -11465,7 +11495,7 @@ void SolidMechanicsMPM::computeArtificialViscosity( ParticleManager & particleMa
     real64 const artificialViscosityQ0 = m_artificialViscosityQ0;
     real64 const artificialViscosityQ1 = m_artificialViscosityQ1;
     SortedArrayView< localIndex const > const activeParticleIndices = subRegion.activeParticleIndices();
-    forAll< parallelDevicePolicy<> >( activeParticleIndices.size(), [=] GEOS_HOST_DEVICE ( localIndex const pp )
+    forAll< forAllPolicy >( activeParticleIndices.size(), [=] GEOS_HOST_DEVICE ( localIndex const pp )
     {
       localIndex const p = activeParticleIndices[pp];
 
@@ -11509,7 +11539,7 @@ void SolidMechanicsMPM::computeInternalEnergyAndTemperature( const real64 dt,
       arrayView1d< real64 > const particleInternalEnergy = subRegion.getField< fields::mpm::particleInternalEnergy >();
 
       SortedArrayView< localIndex const > const activeParticleIndices = subRegion.activeParticleIndices();
-      forAll< parallelDevicePolicy<> >( activeParticleIndices.size(), [=] GEOS_HOST_DEVICE ( localIndex const pp )
+      forAll< forAllPolicy >( activeParticleIndices.size(), [=] GEOS_HOST_DEVICE ( localIndex const pp )
       {
         localIndex const p = activeParticleIndices[pp];
         
@@ -11617,7 +11647,7 @@ void SolidMechanicsMPM::computeSPHJacobian( ParticleManager & particleManager )
     localIndex regionIndexOfSubRegion = region.getIndexInParent();
 
     SortedArrayView< localIndex const > const activeParticleIndices = subRegion.activeParticleIndices();
-    forAll< parallelDevicePolicy<> >( activeParticleIndices.size(), [=] GEOS_HOST_DEVICE ( localIndex const pp )
+    forAll< forAllPolicy >( activeParticleIndices.size(), [=] GEOS_HOST_DEVICE ( localIndex const pp )
     {
       localIndex const p = activeParticleIndices[pp];
 
@@ -11738,7 +11768,7 @@ void SolidMechanicsMPM::overlapCorrection( real64 const dt,
     arrayView1d< real64 const > const particleSPHJacobian = subRegion.getField< fields::mpm::particleSPHJacobian >();
 
     SortedArrayView< localIndex const > const activeParticleIndices = subRegion.activeParticleIndices();
-    forAll< parallelDevicePolicy<> >( activeParticleIndices.size(), [=] GEOS_HOST_DEVICE ( localIndex const pp )
+    forAll< forAllPolicy >( activeParticleIndices.size(), [=] GEOS_HOST_DEVICE ( localIndex const pp )
     {
       localIndex const p = activeParticleIndices[pp];
 
@@ -11896,7 +11926,7 @@ void SolidMechanicsMPM::unscaleCPDIVectors( ParticleManager & particleManager )
       arrayView3d< real64 > const particleRVectors = subRegion.getParticleRVectors();
 
       SortedArrayView< localIndex const > const activeParticleIndices = subRegion.activeParticleIndices();
-      forAll< parallelDevicePolicy<> >( activeParticleIndices.size(), [=] GEOS_HOST_DEVICE ( localIndex const pp )
+      forAll< forAllPolicy >( activeParticleIndices.size(), [=] GEOS_HOST_DEVICE ( localIndex const pp )
       {
         localIndex const p = activeParticleIndices[pp];
 
@@ -11919,7 +11949,7 @@ void SolidMechanicsMPM::computeKineticEnergy( ParticleManager & particleManager 
     arrayView2d< real64 const > const particleVelocity = subRegion.getParticleVelocity();
 
     SortedArrayView< localIndex const > const activeParticleIndices = subRegion.activeParticleIndices();
-    forAll< parallelDevicePolicy<> >( activeParticleIndices.size(), [=] GEOS_HOST_DEVICE ( localIndex const pp )
+    forAll< forAllPolicy >( activeParticleIndices.size(), [=] GEOS_HOST_DEVICE ( localIndex const pp )
     {
       localIndex const p = activeParticleIndices[pp];
 

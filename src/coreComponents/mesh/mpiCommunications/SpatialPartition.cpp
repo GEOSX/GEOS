@@ -14,6 +14,7 @@
  */
 
 #include "SpatialPartition.hpp"
+// #include "mesh/DomainPartition.hpp"
 #include "codingUtilities/Utilities.hpp"
 #include "LvArray/src/genericTensorOps.hpp"
 #include "mesh/mpiCommunications/MPI_iCommData.hpp"
@@ -676,8 +677,8 @@ void SpatialPartition::setPeriodicDomainBoundaryObjects( MeshBody & grid,
 }
 
 
-void SpatialPartition::repartitionMasterParticles( ParticleSubRegion & subRegion,
-                                                   MPI_iCommData & commData )
+void SpatialPartition::repartitionMasterParticles( DomainPartition & domain,
+                                                   ParticleSubRegion & subRegion )
 {
 
   /*
@@ -705,6 +706,9 @@ void SpatialPartition::repartitionMasterParticles( ParticleSubRegion & subRegion
   // requested by another partition, its ghost rank will be updated.  Any particle that still
   // has a Rank=-1 at the end of this function is lost and needs to be deleted.  This
   // should only happen if it has left the global domain (hopefully at an outflow b.c.).
+
+  MPI_iCommData commData;
+  commData.resize( domain.getNeighbors().size() );
 
   arrayView2d< real64 > const particleCenter = subRegion.getParticleCenter();
   arrayView1d< localIndex > const particleRank = subRegion.getParticleRank();
@@ -880,7 +884,6 @@ void SpatialPartition::repartitionMasterParticles( ParticleSubRegion & subRegion
 
 
 void SpatialPartition::getGhostParticlesFromNeighboringPartitions( DomainPartition & domain,
-                                                                   MPI_iCommData & commData,
                                                                    const real64 & boundaryRadius )
 {
 
@@ -893,6 +896,9 @@ void SpatialPartition::getGhostParticlesFromNeighboringPartitions( DomainPartiti
    * potentially abandoned.
    *
    */
+
+  MPI_iCommData commData;
+  commData.resize( domain.getNeighbors().size() );
 
   // MPM-specific code where we assume there are 2 mesh bodies and only one of them has particles
   dataRepository::Group & meshBodies = domain.getMeshBodies();
