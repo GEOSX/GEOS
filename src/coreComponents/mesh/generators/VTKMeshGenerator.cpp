@@ -228,7 +228,7 @@ void VTKMeshGenerator::fillCellBlockManager( CellBlockManager & cellBlockManager
   for( auto const & [name, mesh]: m_embeddedSurfaceBlockMeshes )
   {
     GEOS_LOG_LEVEL_RANK_0( 2, GEOS_FMT( "{} '{}': importing embedded fracture network {}...", catalogName(), getName(), name ) );
-    vtk::importEmbeddedFractureNetwork( name, mesh, m_vtkMesh, cellBlockManager );
+    vtk::importEmbeddedFractureNetwork( name, mesh, cellBlockManager );
   }
 
   GEOS_LOG_LEVEL_RANK_0( 2, GEOS_FMT( "{} '{}': done!", catalogName(), getName() ) );

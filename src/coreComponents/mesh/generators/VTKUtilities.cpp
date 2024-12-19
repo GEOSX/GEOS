@@ -754,6 +754,7 @@ vtkSmartPointer< vtkDataSet > manageGlobalIds( vtkSmartPointer< vtkDataSet > mes
   {
     // Add global ids on the fly if needed
     int const me = hasGlobalIds( mesh );
+    GEOS_LOG_RANK( "me hasGlobalIds="<<me );
     int everyone;
     MpiWrapper::allReduce( &me, &everyone, 1, MPI_MAX, MPI_COMM_GEOS );
 
@@ -761,6 +762,7 @@ vtkSmartPointer< vtkDataSet > manageGlobalIds( vtkSmartPointer< vtkDataSet > mes
     {
       mesh->GetPointData()->SetGlobalIds( vtkIdTypeArray::New() );
       mesh->GetCellData()->SetGlobalIds( vtkIdTypeArray::New() );
+      GEOS_LOG_RANK( "SetGlobalIds" );
     }
   }
 
@@ -930,6 +932,7 @@ redistributeMeshes( integer const logLevel,
 
   // Generate global IDs for vertices and cells, if needed
   vtkSmartPointer< vtkDataSet > mesh = manageGlobalIds( loadedMesh, useGlobalIds, !std::empty( fractures ) );
+  //vtkSmartPointer< vtkDataSet > mesh = manageGlobalIds( loadedMesh, useGlobalIds, !std::empty( fractures ) || !std::empty( edfms ) );
 
   if( MpiWrapper::commRank( comm ) != ( MpiWrapper::commSize( comm ) - 1 ) )
   {
@@ -1795,6 +1798,7 @@ void fillCellBlock( vtkDataSet & mesh,
   localIndex const numNodesPerElement = cellBlock.numNodesPerElement();
   arrayView2d< localIndex, cells::NODE_MAP_USD > const cellToVertex = cellBlock.getElemToNode();
   arrayView1d< globalIndex > const & localToGlobal = cellBlock.localToGlobalMap();
+  auto & globalToLocal = cellBlock.globalToLocalMap();
   vtkIdTypeArray const * const globalCellId = vtkIdTypeArray::FastDownCast( mesh.GetCellData()->GetGlobalIds() );
   GEOS_ERROR_IF( !cellIds.empty() && globalCellId == nullptr, "Global cell IDs have not been generated" );
 
@@ -1805,7 +1809,10 @@ void fillCellBlock( vtkDataSet & mesh,
     {
       cellToVertex[cellCount][v] = cell->GetPointId( nodeOrder[v] );
     }
-    localToGlobal[cellCount++] = globalCellId->GetValue( c );
+    globalIndex g = globalCellId->GetValue( c );
+    localToGlobal[cellCount] = g;
+    globalToLocal[g] = cellCount;
+    cellCount++;
   };
 
   // Writing connectivity and Local to Global

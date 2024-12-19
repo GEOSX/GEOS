@@ -29,12 +29,10 @@ namespace geos::vtk
  * @brief Attach the embedded surface block information to the cell block manager.
  * @param embeddedSurfaceBlockName[in] The name of the embedded surface block.
  * @param embeddedSurfaceMesh[in] The vtk mesh for the embedded surface block.
- * @param mesh[in] The vtk volumic mesh.
  * @param cellBlockManager[inout] The cell block manager that will receive the embedded surface block information.
  */
 void importEmbeddedFractureNetwork( string const & embeddedSurfaceBlockName,
                                     vtkSmartPointer< vtkDataSet > embeddedSurfaceMesh,
-                                    vtkSmartPointer< vtkDataSet > mesh,
                                     CellBlockManager & cellBlockManager );
 }
 

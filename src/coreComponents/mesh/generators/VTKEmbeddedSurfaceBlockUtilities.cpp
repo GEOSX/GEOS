@@ -22,29 +22,50 @@
 namespace geos::vtk
 {
 
+unordered_map< globalIndex, localIndex > buildGlobalToLocal( vtkIdTypeArray const * edfmMeshCellGlobalIds )
+{
+  unordered_map< globalIndex, localIndex > g2l;
+
+  vtkIdType const numEdfms = edfmMeshCellGlobalIds ? edfmMeshCellGlobalIds->GetNumberOfTuples() : 0;
+
+  for( auto i = 0; i < numEdfms; ++i )
+  {
+    // Note that `numEdfms` is zero if `edfmMeshCellGlobalIds` is 0 too.
+    // This prevents from calling a member on a null instance.
+    g2l[edfmMeshCellGlobalIds->GetValue( i )] =  i;
+  }
+
+  return g2l;
+}
+
 void importEmbeddedFractureNetwork( string const & embeddedSurfaceBlockName,
                                     vtkSmartPointer< vtkDataSet > embeddedSurfaceMesh,
-                                    vtkSmartPointer< vtkDataSet > GEOS_UNUSED_PARAM( mesh ),
                                     CellBlockManager & cellBlockManager )
 {
+  EmbeddedSurfaceBlock & embeddedSurfBlock = cellBlockManager.registerEmbeddedSurfaceBlock( embeddedSurfaceBlockName );
+  vtkIdType const numEdfmFracs = embeddedSurfaceMesh->GetNumberOfCells();
+  
+  vtkIdTypeArray const * edfmMeshCellGlobalIds = vtkIdTypeArray::FastDownCast( embeddedSurfaceMesh->GetCellData()->GetGlobalIds() );
 
-  // Ouassim change
-  vtkIdType numEdfmFracs = embeddedSurfaceMesh->GetNumberOfCells();
+  GEOS_ERROR_IF(numEdfmFracs > 0 && !edfmMeshCellGlobalIds, "GlobalIds needs to be provided for " << embeddedSurfaceBlockName);
+
+  // build and set global to local mapping to use later for 'fracture_to_parent_matrix_cell_mapping'
+  embeddedSurfBlock.setGlobalToLocalMap( buildGlobalToLocal( edfmMeshCellGlobalIds ) );
+
   //1.Get EDFM vertices
-  vtkUnstructuredGrid * grid = vtkUnstructuredGrid::SafeDownCast( embeddedSurfaceMesh );
+  vtkUnstructuredGrid * const grid = vtkUnstructuredGrid::SafeDownCast( embeddedSurfaceMesh );
   vtkPoints * const nodes = grid->GetPoints();
-  vtkIdType numNodes = nodes ? nodes->GetNumberOfPoints() : 0;
+  vtkIdType const numNodes = nodes ? nodes->GetNumberOfPoints() : 0;
 
   ArrayOfArrays< localIndex > elem2dToNodes( numEdfmFracs );
   for( vtkIdType i = 0; i < numEdfmFracs; ++i )
   {
-    auto val = grid->GetCell( i )->GetPointIds();
+    auto const val = grid->GetCell( i )->GetPointIds();
     elem2dToNodes.emplaceBack( i, val->GetId( 0 ));
     elem2dToNodes.emplaceBack( i, val->GetId( 1 ));
     elem2dToNodes.emplaceBack( i, val->GetId( 2 ));
     elem2dToNodes.emplaceBack( i, val->GetId( 3 ));
   }
-
 
   ArrayOfArrays< real64 > embeddedSurfaceElemNodes( LvArray::integerConversion< localIndex >( numNodes ) );
   for( vtkIdType i = 0; i < numNodes; ++i )
@@ -59,10 +80,10 @@ void importEmbeddedFractureNetwork( string const & embeddedSurfaceBlockName,
   //2. Get EDFM normal vectors
   ArrayOfArrays< real64 > embeddedSurfaceNormalVectors( numEdfmFracs );
   const char * const normal_str = "normal_vectors";
-  vtkDataArray * normals =grid->GetCellData()->GetArray( normal_str );
+  vtkDataArray * const normals = grid->GetCellData()->GetArray( normal_str );
   for( vtkIdType i = 0; i < numEdfmFracs; ++i )
   {
-    auto val = normals->GetTuple3( i );
+    auto const val = normals->GetTuple3( i );
     embeddedSurfaceNormalVectors.emplaceBack( i, val[0] );
     embeddedSurfaceNormalVectors.emplaceBack( i, val[1] );
     embeddedSurfaceNormalVectors.emplaceBack( i, val[2] );
@@ -71,10 +92,10 @@ void importEmbeddedFractureNetwork( string const & embeddedSurfaceBlockName,
   //3. Get EDFM  tangential length vectors (horizontal)
   ArrayOfArrays< real64 > embeddedSurfaceTangentialLengthVectors( numEdfmFracs );
   const char * const tl_str = "tangential_length_vectors";
-  vtkDataArray * tangential_len =grid->GetCellData()->GetArray( tl_str );
+  vtkDataArray * const tangential_len = grid->GetCellData()->GetArray( tl_str );
   for( vtkIdType i = 0; i < numEdfmFracs; ++i )
   {
-    auto val = tangential_len->GetTuple3( i );
+    auto const val = tangential_len->GetTuple3( i );
     embeddedSurfaceTangentialLengthVectors.emplaceBack( i, val[0] );
     embeddedSurfaceTangentialLengthVectors.emplaceBack( i, val[1] );
     embeddedSurfaceTangentialLengthVectors.emplaceBack( i, val[2] );
@@ -83,10 +104,10 @@ void importEmbeddedFractureNetwork( string const & embeddedSurfaceBlockName,
   //4. Get EDFM  tangential width vectors (vertical)
   ArrayOfArrays< real64 > embeddedSurfaceTangentialWidthVectors( numEdfmFracs );
   const char * const tw_str = "tangential_width_vectors";
-  vtkDataArray * tangential_width =grid->GetCellData()->GetArray( tw_str );
+  vtkDataArray * const tangential_width = grid->GetCellData()->GetArray( tw_str );
   for( vtkIdType i = 0; i < numEdfmFracs; ++i )
   {
-    auto val = tangential_width->GetTuple3( i );
+    auto const val = tangential_width->GetTuple3( i );
     embeddedSurfaceTangentialWidthVectors.emplaceBack( i, val[0] );
     embeddedSurfaceTangentialWidthVectors.emplaceBack( i, val[1] );
     embeddedSurfaceTangentialWidthVectors.emplaceBack( i, val[2] );
@@ -95,17 +116,17 @@ void importEmbeddedFractureNetwork( string const & embeddedSurfaceBlockName,
   //4. Get EDFM aperture
   array1d< real64 > embeddedSurfaceAperture( numEdfmFracs );
   const char * const aperture_str = "aperture";
-  vtkDataArray * apertures =grid->GetCellData()->GetArray( aperture_str );
+  vtkDataArray * const apertures = grid->GetCellData()->GetArray( aperture_str );
   for( vtkIdType i = 0; i < numEdfmFracs; ++i )
   {
-    auto val =apertures->GetTuple1( i );
+    auto const val = apertures->GetTuple1( i );
     embeddedSurfaceAperture[i] = val;
   }
 
   //5. Get EDFM permeability
   array1d< real64 > embeddedSurfacePermeability( numEdfmFracs );
   const char * const perm_str = "permeability";
-  vtkDataArray * perms =grid->GetCellData()->GetArray( perm_str );
+  vtkDataArray * const perms = grid->GetCellData()->GetArray( perm_str );
   for( vtkIdType i = 0; i < numEdfmFracs; ++i )
   {
     auto val =perms->GetTuple1( i );
@@ -114,19 +135,25 @@ void importEmbeddedFractureNetwork( string const & embeddedSurfaceBlockName,
 
   //6. Get edfm to matrix cell mapping
   const char * const fid_to_mid_mapping  = "fracture_to_parent_matrix_cell_mapping";
-  vtkDataArray * fid_mid =grid->GetCellData()->GetArray( fid_to_mid_mapping );
+  vtkDataArray * const fid_mid = grid->GetCellData()->GetArray( fid_to_mid_mapping );
+  localIndex const blockIndex = 0; // TODO what happens when there are multiple blocks?
+  CellBlock const & cellBlock = cellBlockManager.getCellBlock( blockIndex );
+  auto const & globalToLocalCell = cellBlock.globalToLocalMap();
+  auto const & globalToLocalEdfm = embeddedSurfBlock.globalToLocalMap();
 
   ArrayOfArrays< localIndex > toBlockIndex( numEdfmFracs );
   ArrayOfArrays< localIndex > toCellIndex( numEdfmFracs );
   for( vtkIdType i = 0; i < numEdfmFracs; ++i )
   {
-    auto fidmid = fid_mid->GetTuple2( i ); // TODO these indexes are global and needs to be converted to local
-    toBlockIndex.emplaceBack( fidmid[0], 0 );// cell block is set to 0 for now
-    toCellIndex.emplaceBack( fidmid[0], fidmid[1] );
+    // these indexes are global and needs to be converted to local
+    auto const fidmid = fid_mid->GetTuple2( i );
+    // convert global to local using the maps
+    localIndex const id0 = globalToLocalEdfm.at( fidmid[0] );
+    localIndex const id1 = globalToLocalCell.at( fidmid[1] );
+    toBlockIndex.emplaceBack( id0, blockIndex );// cell block is set to 0 for now
+    toCellIndex.emplaceBack( id0, id1 );
   }
   ToCellRelation< ArrayOfArrays< localIndex > > elem2dTo3d( std::move( toBlockIndex ), std::move( toCellIndex ) );
-
-  EmbeddedSurfaceBlock & embeddedSurfBlock = cellBlockManager.registerEmbeddedSurfaceBlock( embeddedSurfaceBlockName );
 
   embeddedSurfBlock.setNumEmbeddedSurfElem( numEdfmFracs );
   embeddedSurfBlock.setEmbeddedSurfElemNodes( std::move( embeddedSurfaceElemNodes ));

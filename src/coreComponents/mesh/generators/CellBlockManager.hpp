@@ -225,6 +225,15 @@ public:
    */
   void setGlobalLength( real64 globalLength ) { m_globalLength = globalLength; }
 
+  /**
+   * @brief Get cell block at index @p blockIndex.
+   * @param[in] blockIndex The cell block index.
+   * @return Const reference to the instance.
+   *
+   * @note Mainly useful for iteration purposes.
+   */
+  CellBlock const & getCellBlock( localIndex const blockIndex ) const;
+
 private:
 
   struct viewKeyStruct
@@ -252,15 +261,6 @@ private:
    * @note It should probably be better not to expose a non-const accessor here.
    */
   Group & getLineBlocks();
-
-  /**
-   * @brief Get cell block at index @p blockIndex.
-   * @param[in] blockIndex The cell block index.
-   * @return Const reference to the instance.
-   *
-   * @note Mainly useful for iteration purposes.
-   */
-  CellBlock const & getCellBlock( localIndex const blockIndex ) const;
 
   /**
    * @brief Returns the number of cells blocks

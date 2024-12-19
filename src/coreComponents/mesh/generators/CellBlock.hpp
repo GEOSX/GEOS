@@ -196,6 +196,12 @@ public:
   arrayView1d< globalIndex const > localToGlobalMapConstView() const
   { return m_localToGlobalMap.toViewConst(); }
 
+  unordered_map< globalIndex, localIndex > & globalToLocalMap()
+  { return m_globalToLocalMap; }
+
+  unordered_map< globalIndex, localIndex > const & globalToLocalMap() const
+  { return m_globalToLocalMap; }
+
   /**
    * @brief Resize the cell block to hold @p numElements
    * @param numElements The new number of elements.
@@ -241,6 +247,9 @@ private:
 
   /// Contains the global index of each object.
   array1d< globalIndex > m_localToGlobalMap;
+
+  /// Map from object global index to the local index.
+  unordered_map< globalIndex, localIndex > m_globalToLocalMap;
 
   /// Name of the properties registered from an external mesh
   string_array m_externalPropertyNames;

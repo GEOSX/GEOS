@@ -102,6 +102,17 @@ public:
    */
   void setEmbeddedSurfElemPermeability( array1d< real64 > && _perms );
 
+  unordered_map< globalIndex, localIndex > & globalToLocalMap()
+  { return m_globalToLocalMap; }
+
+  unordered_map< globalIndex, localIndex > const & globalToLocalMap() const
+  { return m_globalToLocalMap; }
+
+  void setGlobalToLocalMap( unordered_map< globalIndex, localIndex > && g2l )
+  {
+    m_globalToLocalMap = g2l;
+  }
+
 private:
 
   localIndex m_numEmbeddedSurfaces;
@@ -113,6 +124,10 @@ private:
   ArrayOfArrays< real64 > m_embeddedSurfElemWidthVectors;
   array1d< real64 > m_embeddedSurfElemApertures;
   array1d< real64 > m_embeddedSurfElemPermeability;
+
+  /// Map from object global index to the local index.
+  unordered_map< globalIndex, localIndex > m_globalToLocalMap;
+
 };
 
 }
