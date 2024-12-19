@@ -12,10 +12,13 @@
          5
         </DataArray>
       </PointData>
-      <CellData>
+      <CellData GlobalIds="GLOBAL_IDS_CELLS">
+        <DataArray type="Int64" IdType="1" Name="GLOBAL_IDS_CELLS" format="ascii" RangeMin="18" RangeMax="19">
+          18 19
+        </DataArray>
         <DataArray type="Int32" Name="fracture_to_parent_matrix_cell_mapping" NumberOfComponents="2" format="ascii">
-         0 4
-         1 13
+         18 4
+         19 13
         </DataArray>
         <DataArray type="Float32" Name="permeability" NumberOfComponents="1" format="ascii" RangeMin="0.1" RangeMax="0.1">
           0.1
