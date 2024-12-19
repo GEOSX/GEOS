@@ -46,6 +46,7 @@ struct PotGradZFormulation
   compute ( integer const numPhase,
             integer const ip,
             integer const hasCapPressure,
+            integer const useNewGravity,
             localIndex const ( &seri )[numFluxSupportPoints],
             localIndex const ( &sesri )[numFluxSupportPoints],
             localIndex const ( &sei )[numFluxSupportPoints],
@@ -86,45 +87,7 @@ struct PotGradZFormulation
     real64 gravHead = 0.0;
     real64 dCapPressure_dC[numComp]{};
 
-    // calculate quantities on primary connected cells
-    integer denom = 0;
-    for( integer i = 0; i < numFluxSupportPoints; ++i )
-    {
-      localIndex const er  = seri[i];
-      localIndex const esr = sesri[i];
-      localIndex const ei  = sei[i];
-
-      bool const phaseExists = (phaseVolFrac[er][esr][ei][ip] > 0);
-      if( !phaseExists )
-      {
-        continue;
-      }
-
-      // density
-      real64 const density  = phaseMassDens[er][esr][ei][0][ip];
-      real64 const dDens_dP = dPhaseMassDens[er][esr][ei][0][ip][Deriv::dP];
-
-      // average density and derivatives
-      densMean += density;
-      dDensMean_dP[i] = dDens_dP;
-      for( integer jc = 0; jc < numComp; ++jc )
-      {
-        dDensMean_dC[i][jc] = dPhaseMassDens[er][esr][ei][0][ip][Deriv::dC+jc];
-      }
-      denom++;
-    }
-    if( denom > 1 )
-    {
-      densMean /= denom;
-      for( integer i = 0; i < numFluxSupportPoints; ++i )
-      {
-        dDensMean_dP[i] /= denom;
-        for( integer jc = 0; jc < numComp; ++jc )
-        {
-          dDensMean_dC[i][jc] /= denom;
-        }
-      }
-    }
+    calculateMeanDensity( useNewGravity, ip, seri, sesri, sei, phaseVolFrac, phaseMassDens, dPhaseMassDens, densMean, dDensMean_dP, dDensMean_dC );
 
     /// compute the TPFA potential difference
     for( integer i = 0; i < numFluxSupportPoints; i++ )
@@ -188,6 +151,60 @@ struct PotGradZFormulation
     // compute phase potential gradient
     potGrad = presGrad - gravHead;
 
+  }
+
+  template< integer numComp, integer numFluxSupportPoints >
+  GEOS_HOST_DEVICE
+  static void
+  calculateMeanDensity( integer const useNewGravity,
+                        integer const ip,
+                        localIndex const ( &seri )[numFluxSupportPoints],
+                        localIndex const ( &sesri )[numFluxSupportPoints],
+                        localIndex const ( &sei )[numFluxSupportPoints],
+                        ElementViewConst< arrayView2d< real64 const, compflow::USD_PHASE > > const & phaseVolFrac,
+                        ElementViewConst< arrayView3d< real64 const, constitutive::multifluid::USD_PHASE > > const & phaseMassDens,
+                        ElementViewConst< arrayView4d< real64 const, constitutive::multifluid::USD_PHASE_DC > > const & dPhaseMassDens,
+                        real64 & densMean, real64 ( & dDensMean_dP)[numFluxSupportPoints], real64 ( & dDensMean_dC )[numFluxSupportPoints][numComp] )
+  {
+    // calculate quantities on primary connected cells
+    integer denom = 0;
+    for( integer i = 0; i < numFluxSupportPoints; ++i )
+    {
+      localIndex const er  = seri[i];
+      localIndex const esr = sesri[i];
+      localIndex const ei  = sei[i];
+
+      bool const phaseExists = (phaseVolFrac[er][esr][ei][ip] > 0);
+      if( useNewGravity && !phaseExists )
+      {
+        continue;
+      }
+
+      // density
+      real64 const density  = phaseMassDens[er][esr][ei][0][ip];
+      real64 const dDens_dP = dPhaseMassDens[er][esr][ei][0][ip][Deriv::dP];
+
+      // average density and derivatives
+      densMean += density;
+      dDensMean_dP[i] = dDens_dP;
+      for( integer jc = 0; jc < numComp; ++jc )
+      {
+        dDensMean_dC[i][jc] = dPhaseMassDens[er][esr][ei][0][ip][Deriv::dC+jc];
+      }
+      denom++;
+    }
+    if( denom > 1 )
+    {
+      densMean /= denom;
+      for( integer i = 0; i < numFluxSupportPoints; ++i )
+      {
+        dDensMean_dP[i] /= denom;
+        for( integer jc = 0; jc < numComp; ++jc )
+        {
+          dDensMean_dC[i][jc] /= denom;
+        }
+      }
+    }
   }
 
 };
