@@ -76,7 +76,7 @@ ChomboIO::ChomboIO( string const & name, Group * const parent ):
     setInputFlag( InputFlags::OPTIONAL ).
     setDefaultValue( 0 ).
     setDescription( "True iff geos should use the pressures chombo writes out." );
-    
+
   addLogLevel< logInfo::OutputEvents >();
 }
 
