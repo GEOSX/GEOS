@@ -124,15 +124,11 @@ void VTKMeshGenerator::fillCellBlockManager( CellBlockManager & cellBlockManager
   vtkSmartPointer< vtkMultiProcessController > controller = vtk::getController();
   vtkMultiProcessController::SetGlobalController( controller );
 
-  GEOS_LOG_RANK_0( GEOS_FMT( "{} '{}': reading mesh from {}", catalogName(), getName(), m_filePath ) );
-  {
-    GEOS_LOG_LEVEL_INFO_RANK_0( logInfo::VTKSteps, "  reading the dataset..." );
-    vtk::AllMeshes allMeshes = vtk::loadAllMeshes( m_filePath, m_mainBlockName, m_faceBlockNames );
-    GEOS_LOG_LEVEL_INFO_RANK_0( logInfo::VTKSteps, "  redistributing mesh..." );
+  GEOS_LOG_LEVEL_INFO_RANK_0( logInfo::VTKSteps, "  redistributing mesh..." );
   {
     vtk::AllMeshes allMeshes;
 
-    GEOS_LOG_LEVEL_RANK_0( 2, GEOS_FMT( "{} '{}': reading the dataset...", catalogName(), getName() ) );
+    GEOS_LOG_LEVEL_INFO_RANK_0( logInfo::VTKSteps, GEOS_FMT( "{} '{}': reading the dataset...", catalogName(), getName() ) );
 
     if( !m_filePath.empty())
     {
