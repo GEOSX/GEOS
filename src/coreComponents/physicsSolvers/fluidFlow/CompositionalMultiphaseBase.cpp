@@ -1357,7 +1357,6 @@ void CompositionalMultiphaseBase::assembleAccumulationAndVolumeBalanceTerms( Dom
   if( m_useSimpleAccumulation )
     kernelFlags.set( KernelFlags::SimpleAccumulation );
 
-
   forDiscretizationOnMeshTargets( domain.getMeshBodies(), [&]( string const &,
                                                                MeshLevel const & mesh,
                                                                arrayView1d< string const > const & regionNames )
