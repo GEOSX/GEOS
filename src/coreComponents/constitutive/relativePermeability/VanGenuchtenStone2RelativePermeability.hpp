@@ -144,14 +144,14 @@ public:
   real64  getWettingPhaseMinVolumeFraction() const override
   {
     integer ipWetting;
-    std::tie( ipWetting, std::ignore ) = phaseIndex( getPhaseOrder());
+    std::tie( ipWetting, std::ignore ) = wettingAndNonWettingPhaseIndices();
     return m_phaseMinVolumeFraction[ipWetting];
   }
 
   real64 getNonWettingMinVolumeFraction() const override
   {
     integer ipNonWetting;
-    std::tie( std::ignore, ipNonWetting ) = phaseIndex( getPhaseOrder());
+    std::tie( std::ignore, ipNonWetting ) = wettingAndNonWettingPhaseIndices();
     return m_phaseMinVolumeFraction[ipNonWetting];
   }
 
@@ -280,16 +280,7 @@ VanGenuchtenStone2RelativePermeabilityUpdate::
   {
     real64 const shiftedWaterVolFrac = (phaseVolFraction[ipWater] - m_phaseMinVolumeFraction[ipWater]);
 
-    // TODO: change name of the class and add template to choose interpolation
-//    relpermInterpolators::Stone2::compute( shiftedWaterVolFrac,
-//                                          phaseVolFraction[ipGas],
-//                                          m_phaseOrder,
-//                                          oilRelPerm_wo,
-//                                          dOilRelPerm_wo_dOilVolFrac,
-//                                          oilRelPerm_go,
-//                                          dOilRelPerm_go_dOilVolFrac,
-//                                          phaseRelPerm[ipOil],
-//                                          dPhaseRelPerm_dPhaseVolFrac[ipOil] );
+
 
     relpermInterpolators::Stone2::compute( shiftedWaterVolFrac,
                                            phaseVolFraction[ipGas],

@@ -131,15 +131,15 @@ TableRelativePermeabilityHysteresis::TableRelativePermeabilityHysteresis( std::s
     setSizedFromParent( 0 ).
     setRestartFlags( RestartFlags::NO_WRITE );
 
-//  registerWrapper( viewKeyStruct::waterOilMaxRelPermString(), &m_waterOilMaxRelPerm ).
-//    setInputFlag( InputFlags::FALSE ). // will be deduced from tables
-//    setSizedFromParent( 0 );
-//
-//  registerWrapper( viewKeyStruct::threePhaseInterpolatorString(), &m_threePhaseInterpolator ).
-//    setInputFlag( InputFlags::OPTIONAL ).
-//    setApplyDefaultValue( ThreePhaseInterpolator::BAKER ).
-//    setDescription( "Type of Three phase interpolator."
-//                    "Valid options \n* " + EnumStrings< ThreePhaseInterpolator >::concat( "\n* " ) );
+  registerWrapper( viewKeyStruct::waterOilMaxRelPermString(), &m_waterOilMaxRelPerm ).
+    setInputFlag( InputFlags::FALSE ). // will be deduced from tables
+    setSizedFromParent( 0 );
+
+  registerWrapper( viewKeyStruct::threePhaseInterpolatorString(), &m_threePhaseInterpolator ).
+    setInputFlag( InputFlags::OPTIONAL ).
+    setApplyDefaultValue( ThreePhaseInterpolator::BAKER ).
+    setDescription( "Type of Three phase interpolator."
+                    "Valid options \n* " + EnumStrings< ThreePhaseInterpolator >::concat( "\n* " ) );
 
   registerWrapper( viewKeyStruct::phaseHasHysteresisString(),
                    &m_phaseHasHysteresis ).
@@ -263,7 +263,7 @@ void TableRelativePermeabilityHysteresis::checkExistenceAndValidateWettingRelPer
   using IPT = TableRelativePermeabilityHysteresis::ImbibitionPhasePairPhaseType;
   integer const numPhases = m_phaseNames.size();
   integer ipWetting = -1, ipNonWetting = -1;
-  std::tie( ipWetting, ipNonWetting ) = RelativePermeabilityBase::phaseIndex( m_phaseOrder );
+  std::tie( ipWetting, ipNonWetting ) = RelativePermeabilityBase::wettingAndNonWettingPhaseIndices();
 
   // Step 1.a: take care of the two-phase case
   real64 drainagePhaseMinVolFraction = -1; // output
@@ -339,7 +339,7 @@ void TableRelativePermeabilityHysteresis::checkExistenceAndValidateNonWettingRel
 
   integer const numPhases = m_phaseNames.size();
   integer ipWetting = -1, ipNonWetting = -1;
-  std::tie( ipWetting, ipNonWetting ) = RelativePermeabilityBase::phaseIndex( m_phaseOrder );
+  std::tie( ipWetting, ipNonWetting ) = RelativePermeabilityBase::wettingAndNonWettingPhaseIndices();
 
   // treat drainage
   real64 drainagePhaseMinVolFraction = -1; // output
