@@ -40,7 +40,7 @@ localIndex getFaceNodesPrism( localIndex const faceNum,
 {
   static_assert( N > 4,
                  "Function getFaceNodePrism can be called for a prism with N-sided polygon base where N > 5." );
-  static constexpr auto nodeCountError = "Not enough nodes for {} element (face index = {}).\n";
+  GEOS_MAYBE_UNUSED static constexpr auto nodeCountError = "Not enough nodes for {} element (face index = {}).\n";
 
   if( faceNum == 0 )
   {

@@ -982,6 +982,7 @@ void CommunicationTools::asyncSendRecv( std::vector< NeighborCommunicator > & ne
     waitAllDeviceEvents( events );
   }
 #else
+  GEOS_UNUSED_VAR( events );
   GEOS_UNUSED_VAR( onDevice );
 #endif
 
@@ -1077,6 +1078,7 @@ void CommunicationTools::finalizeUnpack( MeshLevel & mesh,
     waitAllDeviceEvents( events );
   }
 #else
+  GEOS_UNUSED_VAR( events );
   GEOS_UNUSED_VAR( onDevice );
 #endif
 
