@@ -45,17 +45,19 @@ enum class KernelFlags
 {
   /// Flag to specify whether capillary pressure is used or not
   CapPressure = 1 << 0, // 1
+  /// Flag to specify whether diffusion is used or not
+  Diffusion = 1 << 1, // 2
+  /// Flag to specify whether dispersion is used or not
+  Dispersion = 1 << 2, // 4
   /// Flag indicating whether total mass equation is formed or not
-  TotalMassEquation = 1 << 1, // 2
+  TotalMassEquation = 1 << 3, // 8
   /// Flag indicating whether new gravity treatment is used or not
-  NewGravity = 1 << 2, // 4
+  NewGravity = 1 << 4, // 16
   /// Flag indicating whether C1-PPU is used or not
-  C1PPU = 1 << 3, // 8
+  C1PPU = 1 << 5, // 32
   /// Flag indicating whether IHU is used or not
-  IHU = 1 << 4 // 16
+  IHU = 1 << 6 // 64
         /// Add more flags like that if needed:
-        // Flag6 = 1 << 5, // 32
-        // Flag7 = 1 << 6, // 64
         // Flag8 = 1 << 7  //128
 };
 

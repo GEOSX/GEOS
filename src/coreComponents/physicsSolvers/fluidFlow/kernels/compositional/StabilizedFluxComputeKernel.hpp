@@ -327,8 +327,7 @@ public:
                    integer const numPhases,
                    globalIndex const rankOffset,
                    string const & dofKey,
-                   integer const hasCapPressure,
-                   integer const useTotalMassEquation,
+                   BitFlags< isothermalCompositionalMultiphaseFVMKernels::KernelFlags > kernelFlags,
                    string const & solverName,
                    ElementRegionManager const & elemManager,
                    STENCILWRAPPER const & stencilWrapper,
@@ -345,12 +344,6 @@ public:
       ElementRegionManager::ElementViewAccessor< arrayView1d< globalIndex const > > dofNumberAccessor =
         elemManager.constructArrayViewAccessor< globalIndex, 1 >( dofKey );
       dofNumberAccessor.setName( solverName + "/accessors/" + dofKey );
-
-      BitFlags< isothermalCompositionalMultiphaseFVMKernels::KernelFlags > kernelFlags;
-      if( hasCapPressure )
-        kernelFlags.set( isothermalCompositionalMultiphaseFVMKernels::KernelFlags::CapPressure );
-      if( useTotalMassEquation )
-        kernelFlags.set( isothermalCompositionalMultiphaseFVMKernels::KernelFlags::TotalMassEquation );
 
       using KERNEL_TYPE = FluxComputeKernel< NUM_COMP, NUM_DOF, STENCILWRAPPER >;
       typename KERNEL_TYPE::CompFlowAccessors compFlowAccessors( elemManager, solverName );

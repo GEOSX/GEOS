@@ -1090,6 +1090,9 @@ void CompositionalMultiphaseWell::assembleFluxTerms( real64 const & time,
 {
   GEOS_MARK_FUNCTION;
 
+  BitFlags< isothermalCompositionalMultiphaseBaseKernels::KernelFlags > kernelFlags;
+  if( m_useTotalMassEquation )
+    kernelFlags.set( isothermalCompositionalMultiphaseBaseKernels::KernelFlags::TotalMassEquation );
 
   string const wellDofKey = dofManager.getKey( wellElementDofName());
   forDiscretizationOnMeshTargets( domain.getMeshBodies(), [&]( string const &,
@@ -1114,7 +1117,7 @@ void CompositionalMultiphaseWell::assembleFluxTerms( real64 const & time,
             createAndLaunch< parallelDevicePolicy<> >( numComponents,
                                                        dt,
                                                        dofManager.rankOffset(),
-                                                       m_useTotalMassEquation,
+                                                       kernelFlags,
                                                        wellDofKey,
                                                        well_controls,
                                                        subRegion,
@@ -1129,7 +1132,7 @@ void CompositionalMultiphaseWell::assembleFluxTerms( real64 const & time,
             createAndLaunch< parallelDevicePolicy<> >( numComponents,
                                                        dt,
                                                        dofManager.rankOffset(),
-                                                       m_useTotalMassEquation,
+                                                       kernelFlags,
                                                        wellDofKey,
                                                        well_controls,
                                                        subRegion,
@@ -1152,6 +1155,11 @@ void CompositionalMultiphaseWell::assembleAccumulationTerms( real64 const & time
   GEOS_MARK_FUNCTION;
   GEOS_UNUSED_VAR( time );
   GEOS_UNUSED_VAR( dt );
+
+  BitFlags< isothermalCompositionalMultiphaseBaseKernels::KernelFlags > kernelFlags;
+  if( m_useTotalMassEquation )
+    kernelFlags.set( isothermalCompositionalMultiphaseBaseKernels::KernelFlags::TotalMassEquation );
+
   string const wellDofKey = dofManager.getKey( wellElementDofName() );
   forDiscretizationOnMeshTargets( domain.getMeshBodies(), [&]( string const &,
                                                                MeshLevel & mesh,
@@ -1177,7 +1185,7 @@ void CompositionalMultiphaseWell::assembleAccumulationTerms( real64 const & time
                                                        numPhases,
                                                        wellControls.isProducer(),
                                                        dofManager.rankOffset(),
-                                                       m_useTotalMassEquation,
+                                                       kernelFlags,
                                                        wellDofKey,
                                                        subRegion,
                                                        fluid,
@@ -1192,7 +1200,7 @@ void CompositionalMultiphaseWell::assembleAccumulationTerms( real64 const & time
                                                        numPhases,
                                                        wellControls.isProducer(),
                                                        dofManager.rankOffset(),
-                                                       m_useTotalMassEquation,
+                                                       kernelFlags,
                                                        wellDofKey,
                                                        subRegion,
                                                        fluid,
