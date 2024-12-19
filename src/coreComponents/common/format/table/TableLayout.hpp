@@ -339,6 +339,11 @@ public:
     size_t getCurrentLayer() const
     { return m_currentLayer; }
 
+    /**
+     * @brief Check if the current cell belong the last column
+     * @return true 
+     * @return false 
+     */
     bool isLastColumn()
     {
       if( m_currentColumn == nullptr ) return true;
