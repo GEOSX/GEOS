@@ -141,6 +141,11 @@ TableRelativePermeabilityHysteresis::TableRelativePermeabilityHysteresis( std::s
 //    setDescription( "Type of Three phase interpolator."
 //                    "Valid options \n* " + EnumStrings< ThreePhaseInterpolator >::concat( "\n* " ) );
 
+  registerWrapper( viewKeyStruct::phaseHasHysteresisString(),
+                   &m_phaseHasHysteresis ).
+    setSizedFromParent( 0 ).
+    setRestartFlags( RestartFlags::NO_WRITE );
+
   // register fields
   registerField( fields::relperm::phaseMaxHistoricalVolFraction{},
                  &m_phaseMaxHistoricalVolFraction );
