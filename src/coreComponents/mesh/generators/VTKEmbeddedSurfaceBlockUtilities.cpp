@@ -44,10 +44,10 @@ void importEmbeddedFractureNetwork( string const & embeddedSurfaceBlockName,
 {
   EmbeddedSurfaceBlock & embeddedSurfBlock = cellBlockManager.registerEmbeddedSurfaceBlock( embeddedSurfaceBlockName );
   vtkIdType const numEdfmFracs = embeddedSurfaceMesh->GetNumberOfCells();
-  
+
   vtkIdTypeArray const * edfmMeshCellGlobalIds = vtkIdTypeArray::FastDownCast( embeddedSurfaceMesh->GetCellData()->GetGlobalIds() );
 
-  GEOS_ERROR_IF(numEdfmFracs > 0 && !edfmMeshCellGlobalIds, "GlobalIds needs to be provided for " << embeddedSurfaceBlockName);
+  GEOS_ERROR_IF( numEdfmFracs > 0 && !edfmMeshCellGlobalIds, "GlobalIds needs to be provided for " << embeddedSurfaceBlockName );
 
   // build and set global to local mapping to use later for 'fracture_to_parent_matrix_cell_mapping'
   embeddedSurfBlock.setGlobalToLocalMap( buildGlobalToLocal( edfmMeshCellGlobalIds ) );
