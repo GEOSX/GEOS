@@ -189,6 +189,7 @@ public:
   void computeFlux( localIndex const iconn,
                     StackVariables & stack ) const
   {
+    using DerivOffset = constitutive::singlefluid::DerivativeOffsetC<1>;
     // ***********************************************
     // First, we call the base computeFlux to compute:
     //  1) compFlux and its derivatives (including derivatives wrt temperature),
@@ -218,8 +219,8 @@ public:
       {
         //real64 const dDens_dT = m_dDens_dTemp[seri[ke]][sesri[ke]][sei[ke]][0];
         //tjb derivid
-        real64 const dDens_dT = m_dDens[seri[ke]][sesri[ke]][sei[ke]][0][1];
-        assert( fabs( m_dDens_dTemp[seri[ke]][sesri[ke]][sei[ke]][0]-m_dDens[seri[ke]][sesri[ke]][sei[ke]][0][1] )<FLT_EPSILON );
+        real64 const dDens_dT = m_dDens[seri[ke]][sesri[ke]][sei[ke]][0][DerivOffset::dT];
+        assert( fabs( m_dDens_dTemp[seri[ke]][sesri[ke]][sei[ke]][0]-m_dDens[seri[ke]][sesri[ke]][sei[ke]][0][DerivOffset::dT] )<FLT_EPSILON );
         dDensMean_dT[ke] = 0.5 * dDens_dT;
       }
 
@@ -265,9 +266,9 @@ public:
       if( alpha <= 0.0 || alpha >= 1.0 )
       {
         localIndex const k_up = 1 - localIndex( fmax( fmin( alpha, 1.0 ), 0.0 ) );
-        dMob_dT[k_up] = m_dMob[seri[k_up]][sesri[k_up]][sei[k_up]][1];
+        dMob_dT[k_up] = m_dMob[seri[k_up]][sesri[k_up]][sei[k_up]][DerivOffset::dT];
         // tjb remove
-         assert( fabs( m_dMob_dTemp[seri[k_up]][sesri[k_up]][sei[k_up]]-m_dMob[seri[k_up]][sesri[k_up]][sei[k_up]][1] )<FLT_EPSILON );
+        assert( fabs( m_dMob_dTemp[seri[k_up]][sesri[k_up]][sei[k_up]]-m_dMob[seri[k_up]][sesri[k_up]][sei[k_up]][DerivOffset::dT] )<FLT_EPSILON );
         dMob_dT[k_up] = m_dMob_dTemp[seri[k_up]][sesri[k_up]][sei[k_up]];
       }
       else
@@ -275,8 +276,9 @@ public:
         real64 const mobWeights[2] = { alpha, 1.0 - alpha };
         for( integer ke = 0; ke < 2; ++ke )
         {
-          dMob_dT[ke] = mobWeights[ke] * m_dMob[seri[ke]][sesri[ke]][sei[ke]][1];
-          assert( fabs( m_dMob_dTemp[seri[ke]][sesri[ke]][sei[ke]]-m_dMob[seri[ke]][sesri[ke]][sei[ke]][1] )<FLT_EPSILON );
+          dMob_dT[ke] = mobWeights[ke] * m_dMob[seri[ke]][sesri[ke]][sei[ke]][DerivOffset::dT];
+          // tjb - remove
+          assert( fabs( m_dMob_dTemp[seri[ke]][sesri[ke]][sei[ke]]-m_dMob[seri[ke]][sesri[ke]][sei[ke]][DerivOffset::dT] )<FLT_EPSILON );
           dMob_dT[ke] = mobWeights[ke] * m_dMob_dTemp[seri[ke]][sesri[ke]][sei[ke]];
         }
       }
@@ -306,10 +308,10 @@ public:
 
         enthalpy = m_enthalpy[seri[k_up]][sesri[k_up]][sei[k_up]][0];
         //tjb
-        assert( fabs( m_dEnthalpy_dPres[seri[k_up]][sesri[k_up]][sei[k_up]][0]-m_dEnthalpy[seri[k_up]][sesri[k_up]][sei[k_up]][0][0] )<FLT_EPSILON );
-        assert( fabs( m_dEnthalpy_dTemp[seri[k_up]][sesri[k_up]][sei[k_up]][0]-m_dEnthalpy[seri[k_up]][sesri[k_up]][sei[k_up]][0][1] )<FLT_EPSILON );
-        dEnthalpy_dP[k_up] = m_dEnthalpy[seri[k_up]][sesri[k_up]][sei[k_up]][0][0];
-        dEnthalpy_dT[k_up] = m_dEnthalpy[seri[k_up]][sesri[k_up]][sei[k_up]][0][1];
+        assert( fabs( m_dEnthalpy_dPres[seri[k_up]][sesri[k_up]][sei[k_up]][0]-m_dEnthalpy[seri[k_up]][sesri[k_up]][sei[k_up]][0][DerivOffset::dP] )<FLT_EPSILON );
+        assert( fabs( m_dEnthalpy_dTemp[seri[k_up]][sesri[k_up]][sei[k_up]][0]-m_dEnthalpy[seri[k_up]][sesri[k_up]][sei[k_up]][0][DerivOffset::dT] )<FLT_EPSILON );
+        dEnthalpy_dP[k_up] = m_dEnthalpy[seri[k_up]][sesri[k_up]][sei[k_up]][0][DerivOffset::dP];
+        dEnthalpy_dT[k_up] = m_dEnthalpy[seri[k_up]][sesri[k_up]][sei[k_up]][0][DerivOffset::dT];
       }
       else
       {
@@ -318,10 +320,10 @@ public:
         {
           enthalpy += mobWeights[ke] * m_enthalpy[seri[ke]][sesri[ke]][sei[ke]][0];
           //tjb
-          assert( fabs( m_dEnthalpy_dPres[seri[ke]][sesri[ke]][sei[ke]][0]-m_dEnthalpy[seri[ke]][sesri[ke]][sei[ke]][0][0] )<FLT_EPSILON );
-          assert( fabs( m_dEnthalpy_dTemp[seri[ke]][sesri[ke]][sei[ke]][0]-m_dEnthalpy[seri[ke]][sesri[ke]][sei[ke]][0][1] )<FLT_EPSILON );
-          dEnthalpy_dP[ke] = mobWeights[ke] * m_dEnthalpy[seri[ke]][sesri[ke]][sei[ke]][0][0];
-          dEnthalpy_dT[ke] = mobWeights[ke] * m_dEnthalpy[seri[ke]][sesri[ke]][sei[ke]][0][1];
+          assert( fabs( m_dEnthalpy_dPres[seri[ke]][sesri[ke]][sei[ke]][0]-m_dEnthalpy[seri[ke]][sesri[ke]][sei[ke]][0][DerivOffset::dP] )<FLT_EPSILON );
+          assert( fabs( m_dEnthalpy_dTemp[seri[ke]][sesri[ke]][sei[ke]][0]-m_dEnthalpy[seri[ke]][sesri[ke]][sei[ke]][0][DerivOffset::dT] )<FLT_EPSILON );
+          dEnthalpy_dP[ke] = mobWeights[ke] * m_dEnthalpy[seri[ke]][sesri[ke]][sei[ke]][0][DerivOffset::dP];
+          dEnthalpy_dT[ke] = mobWeights[ke] * m_dEnthalpy[seri[ke]][sesri[ke]][sei[ke]][0][DerivOffset::dT];
         }
       }
 

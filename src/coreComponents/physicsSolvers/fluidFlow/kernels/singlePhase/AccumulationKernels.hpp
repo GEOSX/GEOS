@@ -47,12 +47,17 @@ class AccumulationKernel
 
 public:
   using SingleFluidProp = constitutive::SingleFluidVar< real64, 2, constitutive::singlefluid::LAYOUT_FLUID, constitutive::singlefluid::LAYOUT_FLUID_DC >;
-  using DerivOffset = constitutive::singlefluid::DerivativeOffset;
+
   /// Compute time value for the number of degrees of freedom
   static constexpr integer numDof = NUM_DOF;
 
   /// Compute time value for the number of equations
   static constexpr integer numEqn = NUM_DOF;
+
+
+  /// Note: Derivative lineup only supports dP & dT, not component terms 
+  static constexpr integer isThermal = NUM_DOF-1;
+  using DerivOffset = constitutive::singlefluid::DerivativeOffsetC<isThermal>;
 
   /**
    * @brief Constructor
@@ -169,11 +174,11 @@ public:
     //std::cout << m_dDensity_dPres[ei][0]<< " " <<  m_dDensity[ei][0][DerivOffset::dP] << std::endl;
     //tjb  use DerivOffset::dP
     //    std::cout.flush();
-    assert( fabs( m_dDensity_dPres[ei][0]-m_dDensity[ei][0][0] )<FLT_EPSILON );
+    assert( fabs( m_dDensity_dPres[ei][0]-m_dDensity[ei][0][DerivOffset::dP] )<FLT_EPSILON );
 
 
     //stack.localJacobian[0][0] = stack.dPoreVolume_dPres * m_density[ei][0] + m_dDensity_dPres[ei][0] * stack.poreVolume;
-    stack.localJacobian[0][0] = stack.dPoreVolume_dPres * m_density[ei][0] + m_dDensity[ei][0][0] * stack.poreVolume;
+    stack.localJacobian[0][0] = stack.dPoreVolume_dPres * m_density[ei][0] + m_dDensity[ei][0][DerivOffset::dP] * stack.poreVolume;
     // Customize the kernel with this lambda
     kernelOp();
   }

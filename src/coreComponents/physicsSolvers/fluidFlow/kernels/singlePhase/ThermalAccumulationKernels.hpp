@@ -56,6 +56,9 @@ public:
   using Base::m_localMatrix;
   using Base::m_localRhs;
 
+  /// Note: Derivative lineup only supports dP & dT, not component terms 
+  static constexpr integer isThermal = NUM_DOF-1;
+  using DerivOffset = constitutive::singlefluid::DerivativeOffsetC<isThermal>;
   /**
    * @brief Constructor
    * @param[in] rankOffset the offset of my MPI rank
@@ -166,28 +169,28 @@ public:
       // Step 2: assemble the fluid part of the accumulation term of the energy equation
       real64 const fluidEnergy = stack.poreVolume * m_density[ei][0] * m_internalEnergy[ei][0];
       // tjb
-      assert( fabs( m_dDensity_dPres[ei][0]-m_dDensity[ei][0][0] )<FLT_EPSILON );
-      assert( fabs( m_dInternalEnergy_dPres[ei][0]-m_dInternalEnergy[ei][0][0] )<FLT_EPSILON );
+      assert( fabs( m_dDensity_dPres[ei][0]-m_dDensity[ei][0][DerivOffset::dP] )<FLT_EPSILON );
+      assert( fabs( m_dInternalEnergy_dPres[ei][0]-m_dInternalEnergy[ei][0][DerivOffset::dP] )<FLT_EPSILON );
       real64 const dFluidEnergy_dP = stack.dPoreVolume_dPres * m_density[ei][0] * m_internalEnergy[ei][0]
-                                     + stack.poreVolume * m_dDensity[ei][0][0] * m_internalEnergy[ei][0]
-                                     + stack.poreVolume * m_density[ei][0] * m_dInternalEnergy[ei][0][0];
+                                     + stack.poreVolume * m_dDensity[ei][0][DerivOffset::dP] * m_internalEnergy[ei][0]
+                                     + stack.poreVolume * m_density[ei][0] * m_dInternalEnergy[ei][0][DerivOffset::dP];
       // tjb delete
       real64 xx = stack.dPoreVolume_dPres * m_density[ei][0] * m_internalEnergy[ei][0]
                   + stack.poreVolume * m_dDensity_dPres[ei][0] * m_internalEnergy[ei][0]
                   + stack.poreVolume * m_density[ei][0] * m_dInternalEnergy_dPres[ei][0];
-      GEOS_UNUSED_VAR(xx);
+      GEOS_UNUSED_VAR( xx );
       assert( fabs( dFluidEnergy_dP-xx )<FLT_EPSILON );
       // tjb
-      assert( fabs( m_dDensity_dTemp[ei][0]-m_dDensity[ei][0][1] )<FLT_EPSILON );
-      assert( fabs( m_dInternalEnergy_dTemp[ei][0]-m_dInternalEnergy[ei][0][1] )<FLT_EPSILON );
-      real64 const dFluidEnergy_dT = stack.poreVolume * m_dDensity[ei][0][1] * m_internalEnergy[ei][0]
-                                     + stack.poreVolume * m_density[ei][0] * m_dInternalEnergy[ei][0][1]
+      assert( fabs( m_dDensity_dTemp[ei][0]-m_dDensity[ei][0][DerivOffset::dT] )<FLT_EPSILON );
+      assert( fabs( m_dInternalEnergy_dTemp[ei][0]-m_dInternalEnergy[ei][0][DerivOffset::dT] )<FLT_EPSILON );
+      real64 const dFluidEnergy_dT = stack.poreVolume * m_dDensity[ei][0][DerivOffset::dT] * m_internalEnergy[ei][0]
+                                     + stack.poreVolume * m_density[ei][0] * m_dInternalEnergy[ei][0][DerivOffset::dT]
                                      + stack.dPoreVolume_dTemp * m_density[ei][0] * m_internalEnergy[ei][0];
       // tjb - delete
       real64 yy   = stack.poreVolume * m_dDensity_dTemp[ei][0] * m_internalEnergy[ei][0]
                     + stack.poreVolume * m_density[ei][0] * m_dInternalEnergy_dTemp[ei][0]
                     + stack.dPoreVolume_dTemp * m_density[ei][0] * m_internalEnergy[ei][0];
-      GEOS_UNUSED_VAR(yy);
+      GEOS_UNUSED_VAR( yy );
       assert( fabs( dFluidEnergy_dT-yy )<FLT_EPSILON );
       // local accumulation
       stack.localResidual[numEqn-1] += fluidEnergy;

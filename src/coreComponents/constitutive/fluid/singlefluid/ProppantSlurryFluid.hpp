@@ -35,6 +35,8 @@ class ProppantSlurryFluidUpdate final : public SlurryFluidBaseUpdate
 {
 public:
   using SingleFluidProp = SingleFluidVar< real64, 2, constitutive::singlefluid::LAYOUT_FLUID, constitutive::singlefluid::LAYOUT_FLUID_DC >;
+  using DerivOffset = constitutive::singlefluid::DerivativeOffsetC<0>;
+
   /**
    * @brief
    * @param compressibility
@@ -168,12 +170,12 @@ public:
              m_dFluidVisc_dCompConc[k][q],
              isProppantBoundary,
              m_density[k][q],
-             m_dDensity[k][q][0],  // tjb add deriv:dp
+             m_dDensity[k][q][DerivOffset::dP],  // tjb add deriv:dp
              m_dDensity_dPressure[k][q],
              m_dDensity_dProppantConc[k][q],
              m_dDensity_dCompConc[k][q],
              m_viscosity[k][q],
-             m_dViscosity[k][q][0],// tjb add deriv:dp
+             m_dViscosity[k][q][DerivOffset::dP],// tjb add deriv:dp
              m_dViscosity_dPressure[k][q],
              m_dViscosity_dProppantConc[k][q],
              m_dViscosity_dCompConc[k][q] );
