@@ -80,13 +80,14 @@ DECLARE_FIELD( globalCompFraction_n,
                NO_WRITE,
                "Global component fraction at the previous converged time step" );
 
-DECLARE_FIELD( globalCompFraction_k,
-               "globalCompFraction_k",
-               array2dLayoutComp,
-               0,
-               NOPLOT,
-               NO_WRITE,
-               "Global component fraction updates at the previous sequential iteration" );
+// may be needed later for sequential poromechanics implementation
+//DECLARE_FIELD( globalCompFraction_k,
+//               "globalCompFraction_k",
+//               array2dLayoutComp,
+//               0,
+//               NOPLOT,
+//               NO_WRITE,
+//               "Global component fraction updates at the previous sequential iteration" );
 
 DECLARE_FIELD( faceGlobalCompFraction,
                "faceGlobalCompFraction",

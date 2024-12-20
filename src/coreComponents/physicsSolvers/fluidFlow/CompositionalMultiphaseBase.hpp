@@ -141,12 +141,6 @@ public:
   void updateCompAmount( ElementSubRegionBase & subRegion ) const;
 
   /**
-   * @brief Update components mass/moles if Z formulation is used
-   * @param subRegion the subregion storing the required fields
-   */
-  void updateCompAmountZFormulation( ElementSubRegionBase & subRegion ) const;
-
-  /**
    * @brief Update energy
    * @param subRegion the subregion storing the required fields
    */
@@ -197,7 +191,7 @@ public:
   { return m_useMass ? units::Unit::Mass : units::Unit::Mole; }
 
   /**
-   * @brief assembles the accumulation and volume balance terms for all cells
+   * @brief assembles the accumulation other local terms for all cells
    * @param time_n previous time value
    * @param dt time step
    * @param domain the physical domain object
@@ -205,10 +199,10 @@ public:
    * @param localMatrix the system matrix
    * @param localRhs the system right-hand side vector
    */
-  void assembleAccumulationAndVolumeBalanceTerms( DomainPartition & domain,
-                                                  DofManager const & dofManager,
-                                                  CRSMatrixView< real64, globalIndex const > const & localMatrix,
-                                                  arrayView1d< real64 > const & localRhs ) const;
+  void assembleLocalTerms( DomainPartition & domain,
+                           DofManager const & dofManager,
+                           CRSMatrixView< real64, globalIndex const > const & localMatrix,
+                           arrayView1d< real64 > const & localRhs ) const;
 
   /**
    * @brief assembles the flux terms for all cells
@@ -241,35 +235,6 @@ public:
                                CRSMatrixView< real64, globalIndex const > const & localMatrix,
                                arrayView1d< real64 > const & localRhs ) const = 0;
 
-  /**
-   * @brief assembles the accumulation term (Z formulation) for all cells
-   * @param time_n previous time value
-   * @param dt time step
-   * @param domain the physical domain object
-   * @param dofManager degree-of-freedom manager associated with the linear system
-   * @param localMatrix the system matrix
-   * @param localRhs the system right-hand side vector
-   */
-  void assembleZFormulationAccumulation( DomainPartition & domain,
-                                         DofManager const & dofManager,
-                                         CRSMatrixView< real64, globalIndex const > const & localMatrix,
-                                         arrayView1d< real64 > const & localRhs ) const;
-
-  /**
-   * @brief assembles the flux terms (Z formulation) for all cells
-   * @param time_n previous time value
-   * @param dt time step
-   * @param domain the physical domain object
-   * @param dofManager degree-of-freedom manager associated with the linear system
-   * @param matrix the system matrix
-   * @param rhs the system right-hand side vector
-   */
-  virtual void
-  assembleZFormulationFluxTerms( real64 const dt,
-                                 DomainPartition const & domain,
-                                 DofManager const & dofManager,
-                                 CRSMatrixView< real64, globalIndex const > const & localMatrix,
-                                 arrayView1d< real64 > const & localRhs ) const = 0;
   /**@}*/
 
 

@@ -272,6 +272,10 @@ void ReactiveCompositionalMultiphaseOBL::registerDataOnMesh( Group & meshBodies 
       subRegion.registerField< bcGlobalCompFraction >( solverName ).
         reference().resizeDimension< 1 >( m_numComponents );
 
+      // we need to register this fiels in any case (if there is a single component or not)
+      // to be able to pass the view to OBLOperatorsKernel
+      subRegion.registerField< globalCompFraction_n >( solverName ).
+        reference().resizeDimension< 1 >( m_numComponents );
       // in principle, referencePorosity could be used directly from solid model,
       // but was duplicated to remove dependency on solid
       subRegion.registerField< referencePorosity >( solverName );

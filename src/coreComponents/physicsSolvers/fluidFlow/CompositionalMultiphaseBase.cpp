@@ -270,6 +270,11 @@ void CompositionalMultiphaseBase::postInputInitialization()
       GEOS_ERROR( GEOS_FMT( "{}: '{}' is currently not available for thermal simulations",
                             getDataContext(), viewKeyStruct::useZFormulationFlagString() ) );
     }
+    if( m_hasDiffusion || m_hasDispersion )
+    {
+      GEOS_ERROR( GEOS_FMT( "{}: {} is currently not available for diffusion or dispersion",
+                            getDataContext(), viewKeyStruct::useZFormulationFlagString() ) );
+    }
     if( m_isJumpStabilized ) // useZFormulation is not yet compatible with pressure stabilization
     {
       GEOS_ERROR( GEOS_FMT( "{}: pressure stabilization is not yet supported by {}",
@@ -434,12 +439,13 @@ void CompositionalMultiphaseBase::registerDataOnMesh( Group & meshBodies )
         subRegion.registerField< globalCompFraction_n >( getName() ).
           setDimLabels( 1, fluid.componentNames() ).
           reference().resizeDimension< 1 >( m_numComponents );
-        if( m_isFixedStressPoromechanicsUpdate )
-        {
-          subRegion.registerField< globalCompFraction_k >( getName() ).
-            setDimLabels( 1, fluid.componentNames() ).
-            reference().resizeDimension< 1 >( m_numComponents );
-        }
+        // may be needed later for sequential poromechanics implementation
+        //if( m_isFixedStressPoromechanicsUpdate )
+        //{
+        //  subRegion.registerField< globalCompFraction_k >( getName() ).
+        //    setDimLabels( 1, fluid.componentNames() ).
+        //    reference().resizeDimension< 1 >( m_numComponents );
+        //}
         subRegion.registerField< globalCompFractionScalingFactor >( getName() );
       }
       else
@@ -721,10 +727,11 @@ real64 CompositionalMultiphaseBase::updatePhaseVolumeFraction( ObjectManagerBase
   string const & fluidName = dataGroup.getReference< string >( viewKeyStruct::fluidNamesString() );
   MultiFluidBase const & fluid = getConstitutiveModel< MultiFluidBase >( dataGroup, fluidName );
 
-  if( m_isThermal )
+  if( m_useZFormulation )
   {
-    return thermalCompositionalMultiphaseBaseKernels::
-             PhaseVolumeFractionKernelFactory::
+    // isothermal for now
+    return isothermalCompositionalMultiphaseBaseKernels::
+             PhaseVolumeFractionZFormulationKernelFactory::
              createAndLaunch< parallelDevicePolicy<> >( m_numComponents,
                                                         m_numPhases,
                                                         dataGroup,
@@ -732,10 +739,10 @@ real64 CompositionalMultiphaseBase::updatePhaseVolumeFraction( ObjectManagerBase
   }
   else
   {
-    if( m_useZFormulation )
+    if( m_isThermal )
     {
-      return isothermalCompositionalMultiphaseBaseKernels::
-               PhaseVolumeFractionZFormulationKernelFactory::
+      return thermalCompositionalMultiphaseBaseKernels::
+               PhaseVolumeFractionKernelFactory::
                createAndLaunch< parallelDevicePolicy<> >( m_numComponents,
                                                           m_numPhases,
                                                           dataGroup,
@@ -832,49 +839,43 @@ void CompositionalMultiphaseBase::updateCompAmount( ElementSubRegionBase & subRe
 {
   GEOS_MARK_FUNCTION;
 
+  arrayView2d< real64, compflow::USD_COMP > const compAmount = subRegion.getField< fields::flow::compAmount >();
+  arrayView1d< real64 const > const volume = subRegion.getElementVolume();
   string const & solidName = subRegion.template getReference< string >( viewKeyStruct::solidNamesString() );
   CoupledSolidBase const & porousMaterial = getConstitutiveModel< CoupledSolidBase >( subRegion, solidName );
   arrayView2d< real64 const > const porosity = porousMaterial.getPorosity();
-  arrayView1d< real64 const > const volume = subRegion.getElementVolume();
-  arrayView2d< real64 const, compflow::USD_COMP > const compDens = subRegion.getField< fields::flow::globalCompDensity >();
-  arrayView2d< real64, compflow::USD_COMP > const compAmount = subRegion.getField< fields::flow::compAmount >();
 
   integer const numComp = m_numComponents;
 
-  forAll< parallelDevicePolicy<> >( subRegion.size(), [=] GEOS_HOST_DEVICE ( localIndex const ei )
+  if( m_useZFormulation )
   {
-    for( integer ic = 0; ic < numComp; ++ic )
+    arrayView2d< real64 const, compflow::USD_COMP > const compFrac = subRegion.getField< fields::flow::globalCompFraction >();
+    // access total density stored in the fluid
+    string const & fluidName = subRegion.getReference< string >( viewKeyStruct::fluidNamesString() );
+    MultiFluidBase const & fluid = getConstitutiveModel< MultiFluidBase >( subRegion, fluidName );
+    arrayView2d< real64 const, multifluid::USD_FLUID > const totalDens = fluid.totalDensity();
+
+    forAll< parallelDevicePolicy<> >( subRegion.size(), [=] GEOS_HOST_DEVICE ( localIndex const ei )
     {
-      compAmount[ei][ic] = porosity[ei][0] * volume[ei] * compDens[ei][ic];
-    }
-  } );
-}
-
-void CompositionalMultiphaseBase::updateCompAmountZFormulation( ElementSubRegionBase & subRegion ) const
-{
-  GEOS_MARK_FUNCTION;
-
-  string const & solidName = subRegion.template getReference< string >( viewKeyStruct::solidNamesString() );
-  CoupledSolidBase const & porousMaterial = getConstitutiveModel< CoupledSolidBase >( subRegion, solidName );
-  arrayView2d< real64 const > const porosity = porousMaterial.getPorosity();
-  arrayView1d< real64 const > const volume = subRegion.getElementVolume();
-  arrayView2d< real64 const, compflow::USD_COMP > const compFrac = subRegion.getField< fields::flow::globalCompFraction >();
-  arrayView2d< real64, compflow::USD_COMP > const compAmount = subRegion.getField< fields::flow::compAmount >();
-  // access total density stored in the fluid
-  string const & fluidName = subRegion.getReference< string >( viewKeyStruct::fluidNamesString() );
-  MultiFluidBase const & fluid = getConstitutiveModel< MultiFluidBase >( subRegion, fluidName );
-  arrayView2d< real64 const, multifluid::USD_FLUID > const totalDens = fluid.totalDensity();
-
-  integer const numComp = m_numComponents;
-
-  forAll< parallelDevicePolicy<> >( subRegion.size(), [=] GEOS_HOST_DEVICE ( localIndex const ei )
+      for( integer ic = 0; ic < numComp; ++ic )
+      {
+        // m = phi*V*z_c*rho_T
+        compAmount[ei][ic] = porosity[ei][0] * volume[ei] * compFrac[ei][ic] * totalDens[ei][0];
+      }
+    } );
+  }
+  else
   {
-    for( integer ic = 0; ic < numComp; ++ic )
+    arrayView2d< real64 const, compflow::USD_COMP > const compDens = subRegion.getField< fields::flow::globalCompDensity >();
+
+    forAll< parallelDevicePolicy<> >( subRegion.size(), [=] GEOS_HOST_DEVICE ( localIndex const ei )
     {
-      // m = phi*V*z_c*rho_T
-      compAmount[ei][ic] = porosity[ei][0] * volume[ei] * compFrac[ei][ic] * totalDens[ei][0];
-    }
-  } );
+      for( integer ic = 0; ic < numComp; ++ic )
+      {
+        compAmount[ei][ic] = porosity[ei][0] * volume[ei] * compDens[ei][ic];
+      }
+    } );
+  }
 }
 
 void CompositionalMultiphaseBase::updateEnergy( ElementSubRegionBase & subRegion ) const
@@ -930,19 +931,13 @@ real64 CompositionalMultiphaseBase::updateFluidState( ElementSubRegionBase & sub
 
   real64 maxDeltaPhaseVolFrac;
 
-  if( m_useZFormulation )
-  {
-    // For p, z_c as the primary unknowns
-    updateFluidModel( subRegion );   // rho_T is now a function of p, z_c from volume balance
-    updateCompAmountZFormulation( subRegion );
-  }
-  else
+  if( !m_useZFormulation )
   {
     // For p, rho_c as the primary unknowns
     updateGlobalComponentFraction( subRegion );
-    updateFluidModel( subRegion );
-    updateCompAmount( subRegion );
   }
+  updateFluidModel( subRegion );
+  updateCompAmount( subRegion );
   maxDeltaPhaseVolFrac = updatePhaseVolumeFraction( subRegion );
   updateRelPermModel( subRegion );
   updatePhaseMobility( subRegion );
@@ -988,16 +983,16 @@ void CompositionalMultiphaseBase::initializeFluidState( MeshLevel & mesh,
           compDens[ei][ic] = totalDens[ei][0] * compFrac[ei][ic];
         }
       } );
-    }
 
-    // with initial component densities defined - check if they need to be corrected to avoid zero diags etc
-    if( m_allowCompDensChopping )
-    {
-      chopNegativeDensities( subRegion );
+      // with initial component densities defined - check if they need to be corrected to avoid zero diags etc
+      if( m_allowCompDensChopping )
+      {
+        chopNegativeDensities( subRegion );
+      }
     }
   } );
 
-  // with initial component densities defined - check if they need to be corrected to avoid zero diags etc
+  // check if comp fractions need to be corrected to avoid zero diags etc
   if( m_useZFormulation )
   {
     DomainPartition & domain = this->getGroupByPath< DomainPartition >( "/Problem/domain" );
@@ -1012,14 +1007,7 @@ void CompositionalMultiphaseBase::initializeFluidState( MeshLevel & mesh,
   {
     // Initialize/update dependent state quantities
 
-    if( m_useZFormulation )
-    {
-      updateCompAmountZFormulation( subRegion );
-    }
-    else
-    {
-      updateCompAmount( subRegion );
-    }
+    updateCompAmount( subRegion );
     updatePhaseVolumeFraction( subRegion );
 
     // Update the constitutive models that only depend on
@@ -1388,16 +1376,8 @@ void CompositionalMultiphaseBase::initializePostInitialConditionsPreSubGroups()
                                                                arrayView1d< string const > const & regionNames )
   {
     FieldIdentifiers fieldsToBeSync;
-    if( m_useZFormulation )
-    {
-      fieldsToBeSync.addElementFields( { fields::flow::globalCompFraction::key() },
-                                       regionNames );
-    }
-    else
-    {
-      fieldsToBeSync.addElementFields( { fields::flow::globalCompDensity::key() },
-                                       regionNames );
-    }
+    fieldsToBeSync.addElementFields( {m_useZFormulation ? fields::flow::globalCompFraction::key() : fields::flow::globalCompDensity::key() },
+                                     regionNames );
 
     CommunicationTools::getInstance().synchronizeFields( fieldsToBeSync, mesh, domain.getNeighbors(), false );
 
@@ -1461,50 +1441,34 @@ void CompositionalMultiphaseBase::assembleSystem( real64 const GEOS_UNUSED_PARAM
 {
   GEOS_MARK_FUNCTION;
 
-  // Accumulation term
-  if( m_useZFormulation )
-  {
-    assembleZFormulationAccumulation( domain,
-                                      dofManager,
-                                      localMatrix,
-                                      localRhs );
+  // Accumulation and other local terms
+  assembleLocalTerms( domain,
+                      dofManager,
+                      localMatrix,
+                      localRhs );
 
-    assembleZFormulationFluxTerms( dt,
-                                   domain,
-                                   dofManager,
-                                   localMatrix,
-                                   localRhs );
+  if( m_isJumpStabilized )
+  {
+    assembleStabilizedFluxTerms( dt,
+                                 domain,
+                                 dofManager,
+                                 localMatrix,
+                                 localRhs );
   }
   else
   {
-    assembleAccumulationAndVolumeBalanceTerms( domain,
-                                               dofManager,
-                                               localMatrix,
-                                               localRhs );
-
-    if( m_isJumpStabilized )
-    {
-      assembleStabilizedFluxTerms( dt,
-                                   domain,
-                                   dofManager,
-                                   localMatrix,
-                                   localRhs );
-    }
-    else
-    {
-      assembleFluxTerms( dt,
-                         domain,
-                         dofManager,
-                         localMatrix,
-                         localRhs );
-    }
+    assembleFluxTerms( dt,
+                       domain,
+                       dofManager,
+                       localMatrix,
+                       localRhs );
   }
 }
 
-void CompositionalMultiphaseBase::assembleAccumulationAndVolumeBalanceTerms( DomainPartition & domain,
-                                                                             DofManager const & dofManager,
-                                                                             CRSMatrixView< real64, globalIndex const > const & localMatrix,
-                                                                             arrayView1d< real64 > const & localRhs ) const
+void CompositionalMultiphaseBase::assembleLocalTerms( DomainPartition & domain,
+                                                      DofManager const & dofManager,
+                                                      CRSMatrixView< real64, globalIndex const > const & localMatrix,
+                                                      arrayView1d< real64 > const & localRhs ) const
 {
   GEOS_MARK_FUNCTION;
 
@@ -1523,25 +1487,11 @@ void CompositionalMultiphaseBase::assembleAccumulationAndVolumeBalanceTerms( Dom
       MultiFluidBase const & fluid = getConstitutiveModel< MultiFluidBase >( subRegion, fluidName );
       CoupledSolidBase const & solid = getConstitutiveModel< CoupledSolidBase >( subRegion, solidName );
 
-      if( m_isThermal )
+      if( m_useZFormulation )
       {
-        thermalCompositionalMultiphaseBaseKernels::
-          AccumulationKernelFactory::
-          createAndLaunch< parallelDevicePolicy<> >( m_numComponents,
-                                                     m_numPhases,
-                                                     dofManager.rankOffset(),
-                                                     m_useTotalMassEquation,
-                                                     dofKey,
-                                                     subRegion,
-                                                     fluid,
-                                                     solid,
-                                                     localMatrix,
-                                                     localRhs );
-      }
-      else
-      {
+        // isothermal for now
         isothermalCompositionalMultiphaseBaseKernels::
-          AccumulationKernelFactory::
+          AccumulationZFormulationKernelFactory::
           createAndLaunch< parallelDevicePolicy<> >( m_numComponents,
                                                      m_numPhases,
                                                      dofManager.rankOffset(),
@@ -1554,46 +1504,40 @@ void CompositionalMultiphaseBase::assembleAccumulationAndVolumeBalanceTerms( Dom
                                                      localMatrix,
                                                      localRhs );
       }
-    } );
-  } );
-}
-
-void CompositionalMultiphaseBase::assembleZFormulationAccumulation( DomainPartition & domain,
-                                                                    DofManager const & dofManager,
-                                                                    CRSMatrixView< real64, globalIndex const > const & localMatrix,
-                                                                    arrayView1d< real64 > const & localRhs ) const
-{
-  GEOS_MARK_FUNCTION;
-
-  forDiscretizationOnMeshTargets( domain.getMeshBodies(), [&]( string const &,
-                                                               MeshLevel const & mesh,
-                                                               arrayView1d< string const > const & regionNames )
-  {
-    mesh.getElemManager().forElementSubRegions( regionNames,
-                                                [&]( localIndex const,
-                                                     ElementSubRegionBase const & subRegion )
-    {
-      string const dofKey = dofManager.getKey( viewKeyStruct::elemDofFieldString() );
-      string const & fluidName = subRegion.getReference< string >( viewKeyStruct::fluidNamesString() );
-      string const & solidName = subRegion.getReference< string >( viewKeyStruct::solidNamesString() );
-
-      MultiFluidBase const & fluid = getConstitutiveModel< MultiFluidBase >( subRegion, fluidName );
-      CoupledSolidBase const & solid = getConstitutiveModel< CoupledSolidBase >( subRegion, solidName );
-
-      // isothermal for now
-      isothermalCompositionalMultiphaseBaseKernels::
-        AccumulationZFormulationKernelFactory::
-        createAndLaunch< parallelDevicePolicy<> >( m_numComponents,
-                                                   m_numPhases,
-                                                   dofManager.rankOffset(),
-                                                   m_useTotalMassEquation,
-                                                   m_useSimpleAccumulation,
-                                                   dofKey,
-                                                   subRegion,
-                                                   fluid,
-                                                   solid,
-                                                   localMatrix,
-                                                   localRhs );
+      else
+      {
+        if( m_isThermal )
+        {
+          thermalCompositionalMultiphaseBaseKernels::
+            AccumulationKernelFactory::
+            createAndLaunch< parallelDevicePolicy<> >( m_numComponents,
+                                                       m_numPhases,
+                                                       dofManager.rankOffset(),
+                                                       m_useTotalMassEquation,
+                                                       dofKey,
+                                                       subRegion,
+                                                       fluid,
+                                                       solid,
+                                                       localMatrix,
+                                                       localRhs );
+        }
+        else
+        {
+          isothermalCompositionalMultiphaseBaseKernels::
+            AccumulationKernelFactory::
+            createAndLaunch< parallelDevicePolicy<> >( m_numComponents,
+                                                       m_numPhases,
+                                                       dofManager.rankOffset(),
+                                                       m_useTotalMassEquation,
+                                                       m_useSimpleAccumulation,
+                                                       dofKey,
+                                                       subRegion,
+                                                       fluid,
+                                                       solid,
+                                                       localMatrix,
+                                                       localRhs );
+        }
+      }
     } );
   } );
 }
@@ -2926,12 +2870,13 @@ void CompositionalMultiphaseBase::saveConvergedState( ElementSubRegionBase & sub
     arrayView2d< real64, compflow::USD_COMP > const & compFrac_n =
       subRegion.template getField< fields::flow::globalCompFraction_n >();
     compFrac_n.setValues< parallelDevicePolicy<> >( compFrac );
-    if( m_isFixedStressPoromechanicsUpdate )
-    {
-      arrayView2d< real64, compflow::USD_COMP > const & compFrac_k =
-        subRegion.template getField< fields::flow::globalCompFraction_k >();
-      compFrac_k.setValues< parallelDevicePolicy<> >( compFrac );
-    }
+    // may be useful later for sequential poromechanics implementation
+    //if( m_isFixedStressPoromechanicsUpdate )
+    //{
+    //  arrayView2d< real64, compflow::USD_COMP > const & compFrac_k =
+    //    subRegion.template getField< fields::flow::globalCompFraction_k >();
+    //  compFrac_k.setValues< parallelDevicePolicy<> >( compFrac );
+    //}
   }
   else
   {
@@ -2947,8 +2892,6 @@ void CompositionalMultiphaseBase::saveConvergedState( ElementSubRegionBase & sub
       compDens_k.setValues< parallelDevicePolicy<> >( compDens );
     }
   }
-
-
 
   arrayView2d< real64 const, compflow::USD_COMP > const & compAmount =
     subRegion.template getField< fields::flow::compAmount >();
