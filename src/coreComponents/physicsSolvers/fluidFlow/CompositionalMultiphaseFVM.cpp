@@ -686,10 +686,10 @@ real64 CompositionalMultiphaseFVM::scalingForSystemSolutionZFormulation( DomainP
                                                      ElementSubRegionBase & subRegion )
     {
       arrayView1d< real64 const > const pressure = subRegion.getField< fields::flow::pressure >();
-      arrayView1d< real64 const > const temperature = subRegion.getField< fields::flow::temperature >();
+      //arrayView1d< real64 const > const temperature = subRegion.getField< fields::flow::temperature >();
       arrayView2d< real64 const, compflow::USD_COMP > const compFrac = subRegion.getField< fields::flow::globalCompFraction >();
       arrayView1d< real64 > pressureScalingFactor = subRegion.getField< fields::flow::pressureScalingFactor >();
-      arrayView1d< real64 > temperatureScalingFactor = subRegion.getField< fields::flow::temperatureScalingFactor >();
+      //arrayView1d< real64 > temperatureScalingFactor = subRegion.getField< fields::flow::temperatureScalingFactor >();
       arrayView1d< real64 > compFracScalingFactor = subRegion.getField< fields::flow::globalCompFractionScalingFactor >();
 
       auto const subRegionData = isothermalCompositionalMultiphaseBaseKernels::
@@ -762,7 +762,9 @@ bool CompositionalMultiphaseFVM::checkSystemSolution( DomainPartition & domain,
 
   // TO DO: Implement the solution check for Z Formulation
   if( m_useZFormulation )
+  {
     return true;
+  }
   else
   {
     string const dofKey = dofManager.getKey( viewKeyStruct::elemDofFieldString() );
