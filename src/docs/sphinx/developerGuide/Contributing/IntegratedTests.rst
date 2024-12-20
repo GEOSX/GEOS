@@ -121,7 +121,7 @@ After building GEOS, the integrated tests can be triggered in the GEOS build dir
 
 
 .. note::
-  The `make_ats_environment` and `ats_run` steps may require internet access to collect python packages and baseline files.
+  The `make ats_environment` and `make ats_run` steps may require internet access to collect python packages and baseline files.
 
 
 .. note::

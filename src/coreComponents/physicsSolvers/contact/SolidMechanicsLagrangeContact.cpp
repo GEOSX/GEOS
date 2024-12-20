@@ -3,7 +3,7 @@
  * SPDX-License-Identifier: LGPL-2.1-only
  *
  * Copyright (c) 2016-2024 Lawrence Livermore National Security LLC
- * Copyright (c) 2018-2024 Total, S.A
+ * Copyright (c) 2018-2024 TotalEnergies
  * Copyright (c) 2018-2024 The Board of Trustees of the Leland Stanford Junior University
  * Copyright (c) 2023-2024 Chevron
  * Copyright (c) 2019-     GEOS/GEOSX Contributors
@@ -78,11 +78,28 @@ SolidMechanicsLagrangeContact::SolidMechanicsLagrangeContact( const string & nam
     setDescription( "Flag to enable local acceleration for yield (to accelerate configuration loop convergence)." );
 
   addLogLevel< logInfo::Configuration >();
+}
 
-  LinearSolverParameters & linSolParams = m_linearSolverParameters.get();
-  linSolParams.mgr.strategy = LinearSolverParameters::MGR::StrategyType::lagrangianContactMechanics;
-  linSolParams.mgr.separateComponents = true;
-  linSolParams.dofsPerNode = 3;
+void SolidMechanicsLagrangeContact::postInputInitialization()
+{
+  ContactSolverBase::postInputInitialization();
+
+  setMGRStrategy();
+}
+
+void SolidMechanicsLagrangeContact::setMGRStrategy()
+{
+  LinearSolverParameters & linearSolverParameters = m_linearSolverParameters.get();
+
+  if( linearSolverParameters.preconditionerType != LinearSolverParameters::PreconditionerType::mgr )
+    return;
+
+  linearSolverParameters.mgr.separateComponents = true;
+  linearSolverParameters.dofsPerNode = 3;
+
+  linearSolverParameters.mgr.strategy = LinearSolverParameters::MGR::StrategyType::lagrangianContactMechanics;
+  GEOS_LOG_LEVEL_RANK_0( 1, GEOS_FMT( "{}: MGR strategy set to {}", getName(),
+                                      EnumStrings< LinearSolverParameters::MGR::StrategyType >::toString( linearSolverParameters.mgr.strategy )));
 }
 
 void SolidMechanicsLagrangeContact::registerDataOnMesh( Group & meshBodies )
@@ -2445,13 +2462,6 @@ bool SolidMechanicsLagrangeContact::isFractureAllInStickCondition( DomainPartiti
   } );
 
   return ( ( numNewSlip + numSlip + numOpen ) == 0 );
-}
-
-real64 SolidMechanicsLagrangeContact::setNextDt( real64 const & currentDt,
-                                                 DomainPartition & domain )
-{
-  GEOS_UNUSED_VAR( domain );
-  return currentDt;
 }
 
 REGISTER_CATALOG_ENTRY( PhysicsSolverBase, SolidMechanicsLagrangeContact, string const &, Group * const )
