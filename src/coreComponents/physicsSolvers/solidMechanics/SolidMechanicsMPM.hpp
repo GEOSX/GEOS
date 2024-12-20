@@ -593,6 +593,7 @@ void interpolateTable( real64 x,
                        real64 dx,
                        array2d< real64 > table,
                        arrayView1d< real64 > output,
+                       arrayView1d< real64 > outputRate,
                        SolidMechanicsMPM::InterpolationOption interpolationType );
 
 void interpolateValueInRange( real64 const & x, 

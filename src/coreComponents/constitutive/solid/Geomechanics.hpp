@@ -809,6 +809,13 @@ int GeomechanicsUpdates::computeStep( real64 const ( & D )[6],               // 
 
   real64 bulk, shear;
 
+
+  real64 p_old;
+  real64 evp_old;
+  real64 p_new;
+  real64 evp_new;
+  real64 trDdt;
+
   // (1) Define conservative elastic properties based on the high-pressure
   // limit of the bulk modulus function. The bulk modulus function can be
   // without stress and plastic strain arguments to return the
@@ -977,7 +984,7 @@ int GeomechanicsUpdates::computeStep( real64 const ( & D )[6],               // 
 		real64 phi_e = std::max(1.e-10 , A*exp(-p/B));    
 
     // uncomment for debugging:
-    //		  std::cout<<"evp = "<<evp<<", phi_p = "<<phi_p<<", phi_e = "<<phi_e<<std::endl;
+    //std::cout<<"pn = "<<p<<", evp_n = "<<evp<<", phi_p_n = "<<phi_p<<", phi_e_n = "<<phi_e<<", X_n = "<<X_old<<std::endl;
 
     // TODO: have the creep model use actual bulk, not the conservative bulk=b0+b1
 
@@ -990,6 +997,7 @@ int GeomechanicsUpdates::computeStep( real64 const ( & D )[6],               // 
         real64 devp = evp_c - evp;  // creep vol. strain increment
 
         real64 p_c;  // pressure after relaxation.
+
         // We don't want to allow more plastic vol strain than the current elastic vol strain.
         if ( devp < - p / bulk )
         { // increment in p. vol strain is greater than current elastic vol strain.
@@ -1001,12 +1009,6 @@ int GeomechanicsUpdates::computeStep( real64 const ( & D )[6],               // 
         {
           p_c = std::max( 0., p + bulk*devp );  // relaxed pressure after creep.
         }
- 			  
-        // uncomment for debugging:
-        // real64 evp_0 = log( (phi_i - 1. ) / ( phi_p - 1. ) ); // vol. strain before creep, computed from porosity (uncomment for debugging)
-        // std::cout<<"creep compaction:phi_p = "<<phi_p<<", phi_e = "<<phi_e<<", phi_c = "<<phi_c<<", dphiDt = "<<dphidt
-        // <<", evp_0 = "<<evp_0<<", evp = "<<evp<<", devp = "<<devp<<", bulk = "<<bulk
-        // <<", p_old = "<<p<<", p_c = "<<p_c<<std::endl;
 
         // update stress and plastic strain values after creep
         stress_iso[0] = -1.0*p_c;
@@ -1024,6 +1026,9 @@ int GeomechanicsUpdates::computeStep( real64 const ( & D )[6],               // 
         0.0, // Term to simplify the fluid model expressions
         0.0, // Zero fluid pressure vol. strain.  (will equal zero if pfi=0)
         0.0 );
+
+        // uncomment for debugging:
+        //std::cout<<"Creep compaction: dphidt = "<<dphidt<<", phi_c = "<<phi_c<<", evp_c = "<<evp_c<<", devp = "<<devp<<", p_c = "<<p_c<<", X_c = "<<X_old<<std::endl;
  		  }
 
 	    // Reassemble the stress with a scaled deviatoric stress tensor
@@ -1057,6 +1062,15 @@ int GeomechanicsUpdates::computeStep( real64 const ( & D )[6],               // 
                                   X_new,
                                   Zeta_new,
                                   coher_new );
+
+    p_old = (-1./3.)*( sigma_old[0] + sigma_old[1] + sigma_old[2] );
+    evp_old = ( ep_old[0] + ep_old[1] + ep_old[2] );
+    p_new = (-1./3.)*( sigma_new[0] + sigma_new[1] + sigma_new[2] );
+    evp_new = ( ep_new[0] + ep_new[1] + ep_new[2] );
+    trDdt = ( D[0] + D[1] + D[2] )*dt;
+
+    std::cout<<"Substep: trDdt = "<<trDdt<<", p_old = "<<p_old<<", evp_old = "<<evp_old<<", X_old = "<<X_old<<", p_new = "<<p_new<<", evp_new = "<<evp_new<<", X_new = "<<X_new<<std::endl;
+
 
 
   // (6) Check error flag from substep calculation:

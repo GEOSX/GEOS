@@ -2633,6 +2633,14 @@ real64 SolidMechanicsMPM::explicitStep( real64 const & time_n,
   GEOS_LOG_RANK_IF( m_debugFlag == 1 && ( !( m_stressControl[0] && m_stressControl[1]&& m_stressControl[2] ) && ( m_prescribedBoundaryFTable == 1 || m_prescribedFTable == 1 ) ), "Interpolate F table" );
   solverProfilingIf( "Interpolate F table", !( m_stressControl[0] && m_stressControl[1]&& m_stressControl[2] ) && ( m_prescribedBoundaryFTable == 1 || m_prescribedFTable == 1 ) );
   //#######################################################################################
+  
+  // Store the old domainF so we can integrate it when using stress control
+  real64 oldDomainF[3] = {1};
+  for(int i=0; i < m_numDims; i++ )
+	{
+			oldDomainF[i] = m_domainF[i];
+  }
+
   if( !( m_stressControl[0]==1 && m_stressControl[1]==1 && m_stressControl[2]==1 ) && ( m_prescribedBoundaryFTable == 1 || m_prescribedFTable == 1 ) )
   {
     interpolateFTable( dt, time_n );
@@ -2656,7 +2664,10 @@ real64 SolidMechanicsMPM::explicitStep( real64 const & time_n,
   // Integrate domainF:
   for(int i=0; i < m_numDims; i++ )
 	{
-			m_domainF[i] += m_domainL[i]*m_domainF[i]*dt;
+    if( m_stressControl[i] == 1 )
+    {
+			m_domainF[i] = oldDomainF[i] + m_domainL[i]*oldDomainF[i]*dt;
+    }
   }
 
   //#######################################################################################
@@ -2991,7 +3002,7 @@ void SolidMechanicsMPM::triggerEvents( const real64 dt,
 
               
 
-
+              // Initialize stress particle data:
               SortedArrayView< localIndex const > const activeParticleIndices = targetSubRegion.activeParticleIndices();
               arrayView2d< real64 > const particleStress = targetSubRegion.getField< fields::mpm::particleStress >();
               forAll< serialPolicy >( activeParticleIndices.size(), [=] GEOS_HOST ( localIndex const pp )
@@ -3005,7 +3016,7 @@ void SolidMechanicsMPM::triggerEvents( const real64 dt,
                 particleStress[p][5] = 0.;
               });
 
-
+              // initialize constitutive model data:
               // Get constitutive model reference
               string const & solidMaterialName = targetSubRegion.template getReference< string >( viewKeyStruct::solidMaterialNamesString() );
               ContinuumBase & constitutiveModel = getConstitutiveModel< ContinuumBase >( targetSubRegion, solidMaterialName );
@@ -8747,6 +8758,7 @@ void SolidMechanicsMPM::interpolateTable( real64 x,
                                           real64 dx,
                                           array2d< real64 > table,
                                           arrayView1d< real64 > output,
+                                          arrayView1d< real64 > outputRate,
                                           SolidMechanicsMPM::InterpolationOption interpolationType )
 {
   int numRows = table.size(0);
@@ -8795,15 +8807,19 @@ void SolidMechanicsMPM::interpolateTable( real64 x,
         case SolidMechanicsMPM::InterpolationOption::Linear:
           // default linear interpolation
           output[i] = table[tableInterval][i + 1] * ( 1.0 - timeFrac ) + table[tableInterval + 1][i + 1] * timeFrac;
+          outputRate[i] = ( table[tableInterval + 1][i + 1] - table[tableInterval][i + 1] ) / timeInterval;
           break;
         case SolidMechanicsMPM::InterpolationOption::Cosine:
           // smooth-step interpolation with cosine, zero endpoint velocity
           output[i] = table[tableInterval][i + 1] - 0.5 * ( table[tableInterval + 1][i + 1] - table[tableInterval][i + 1] ) * ( cos( 3.141592653589793 * timeFrac ) - 1.0 );
+          outputRate[i] = - 0.5 * ( table[tableInterval + 1][i + 1] - table[tableInterval][i + 1] ) * sin( 3.141592653589793 * timeFrac ) / timeInterval;
           break;
         case SolidMechanicsMPM::InterpolationOption::Smoothstep:
           // smooth-step interpolation with 5th order polynomial, zero endpoint velocity and acceleration
           output[i] = table[tableInterval][i+1] + ( table[tableInterval+1][i+1] - table[tableInterval][i+1] ) *
                       ( 10.0 * pow( timeFrac, 3 ) - 15.0 * pow( timeFrac, 4 ) + 6.0 * pow( timeFrac, 5 ) );
+          outputRate[i] = ( table[tableInterval+1][i+1] - table[tableInterval][i+1] ) *
+                      ( 30.0 * pow( timeFrac, 2 ) - 60.0 * pow( timeFrac, 3 ) +30.0 * pow( timeFrac, 4 ) ) / timeInterval;
           break;
         default:
           GEOS_ERROR( "No interpolation option of that type!" );
@@ -8866,27 +8882,22 @@ void SolidMechanicsMPM::interpolateFTable( real64 dt, real64 time_n )
   // at t-dt.  So we compute two values of F and use that to compute Fdot
   // using the current time step.
 
-  array1d< real64 > Fii_old(3);
   array1d< real64 > Fii_new(3);
-
-  interpolateTable( time_n - dt, 
-                    dt,
-                    m_fTable,
-                    Fii_old,
-                    m_fTableInterpType );
+  array1d< real64 > Fii_dot(3);
 
   interpolateTable( time_n, 
                     dt,
                     m_fTable,
                     Fii_new,
+                    Fii_dot,
                     m_fTableInterpType );
 
   for( int i = 0; i < m_numDims; i++ )
   {
     if( m_stressControl[i] != 1 )
     {
-      real64 Fii_dot = ( Fii_new[i] - Fii_old[i] ) / (dt);
-      m_domainL[i] = Fii_dot / Fii_new[i]; // L = Fdot.Finv
+      m_domainL[i] = Fii_dot[i] / Fii_new[i]; // L = Fdot.Finv
+      m_domainF[i] = Fii_new[i]; // L = Fdot.Finv
     }
   }
 }
@@ -8896,10 +8907,13 @@ void SolidMechanicsMPM::interpolateStressTable( real64 dt,
 {
   GEOS_MARK_FUNCTION;
 
+  array1d< real64 > stress_rate(3); // not used
+
   interpolateTable( time_n, 
                     dt,
                     m_stressTable,
                     m_domainStress,
+                    stress_rate,
                     m_fTableInterpType );
 }
 
