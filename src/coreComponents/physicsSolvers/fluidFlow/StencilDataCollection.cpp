@@ -2,10 +2,11 @@
  * ------------------------------------------------------------------------------------------------------------
  * SPDX-License-Identifier: LGPL-2.1-only
  *
- * Copyright (c) 2018-2020 Lawrence Livermore National Security LLC
- * Copyright (c) 2018-2020 The Board of Trustees of the Leland Stanford Junior University
- * Copyright (c) 2018-2020 TotalEnergies
- * Copyright (c) 2019-     GEOSX Contributors
+ * Copyright (c) 2016-2024 Lawrence Livermore National Security LLC
+ * Copyright (c) 2018-2024 TotalEnergies
+ * Copyright (c) 2018-2024 The Board of Trustees of the Leland Stanford Junior University
+ * Copyright (c) 2023-2024 Chevron
+ * Copyright (c) 2019-     GEOS/GEOSX Contributors
  * All rights reserved
  *
  * See top level LICENSE, COPYRIGHT, CONTRIBUTORS, NOTICE, and ACKNOWLEDGEMENTS files for details.
@@ -24,7 +25,6 @@
 #include "constitutive/permeability/PermeabilityBase.hpp"
 #include "constitutive/permeability/PermeabilityFields.hpp"
 #include "physicsSolvers/fluidFlow/StencilAccessors.hpp"
-#include "mainInterface/ProblemManager.hpp"
 #include "physicsSolvers/PhysicsSolverManager.hpp"
 #include "common/format/table/TableFormatter.hpp"
 
@@ -61,10 +61,10 @@ StencilDataCollection::StencilDataCollection( const string & name,
 
 void StencilDataCollection::postInputInitialization()
 {
-  ProblemManager & problemManager = this->getGroupByPath< ProblemManager >( "/Problem" );
+  Group & problemManager = this->getGroupByPath( "/Problem" );
 
   { // find targeted solver
-    PhysicsSolverManager & physicsSolverManager = problemManager.getPhysicsSolverManager();
+    Group & physicsSolverManager = problemManager.getGroup( "Solvers" );
 
     m_solver = physicsSolverManager.getGroupPointer< FlowSolverBase >( m_solverName );
     GEOS_THROW_IF( m_solver == nullptr,
@@ -75,7 +75,8 @@ void StencilDataCollection::postInputInitialization()
   }
 
   { // find mesh & discretization
-    DomainPartition & domain = problemManager.getDomainPartition();
+//    DomainPartition & domain = problemManager.getDomainPartition();
+    DomainPartition & domain = problemManager.getGroup< DomainPartition >( "domain" );
 
     MeshBody const & meshBody = domain.getMeshBody( m_meshName );
     m_meshLevel = &meshBody.getBaseDiscretization();

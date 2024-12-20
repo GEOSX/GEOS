@@ -3,9 +3,9 @@
  * SPDX-License-Identifier: LGPL-2.1-only
  *
  * Copyright (c) 2016-2024 Lawrence Livermore National Security LLC
- * Copyright (c) 2018-2024 Total, S.A
+ * Copyright (c) 2018-2024 TotalEnergies
  * Copyright (c) 2018-2024 The Board of Trustees of the Leland Stanford Junior University
- * Copyright (c) 2018-2024 Chevron
+ * Copyright (c) 2023-2024 Chevron
  * Copyright (c) 2019-     GEOS/GEOSX Contributors
  * All rights reserved
  *
@@ -22,10 +22,12 @@
 
 #include "common/TimingMacros.hpp"
 #include "mesh/PerforationFields.hpp"
+#include "physicsSolvers/KernelLaunchSelectors.hpp"
 #include "physicsSolvers/fluidFlow/SinglePhaseFVM.hpp"
+#include "physicsSolvers/fluidFlow/SinglePhaseHybridFVM.hpp"
 #include "physicsSolvers/fluidFlow/wells/SinglePhaseWellFields.hpp"
-#include "physicsSolvers/fluidFlow/wells/SinglePhaseWellKernels.hpp"
 #include "physicsSolvers/fluidFlow/wells/WellControls.hpp"
+#include "physicsSolvers/fluidFlow/wells/kernels/SinglePhaseWellKernels.hpp"
 #include "physicsSolvers/multiphysics/SinglePhasePoromechanics.hpp"
 #include "physicsSolvers/multiphysics/SinglePhasePoromechanicsConformingFractures.hpp"
 
@@ -68,33 +70,50 @@ void
 SinglePhaseReservoirAndWells<>::
 setMGRStrategy()
 {
-  if( flowSolver()->getLinearSolverParameters().mgr.strategy == LinearSolverParameters::MGR::StrategyType::singlePhaseHybridFVM )
+  LinearSolverParameters & linearSolverParameters = m_linearSolverParameters.get();
+
+  if( linearSolverParameters.preconditionerType != LinearSolverParameters::PreconditionerType::mgr )
+    return;
+
+  linearSolverParameters.mgr.separateComponents = true;
+  linearSolverParameters.dofsPerNode = 3;
+
+  if( dynamic_cast< SinglePhaseHybridFVM * >( this->flowSolver() ) )
   {
-    // add Reservoir
-    m_linearSolverParameters.get().mgr.strategy = LinearSolverParameters::MGR::StrategyType::singlePhaseReservoirHybridFVM;
+    linearSolverParameters.mgr.strategy = LinearSolverParameters::MGR::StrategyType::singlePhaseReservoirHybridFVM;
   }
   else
   {
-    // add Reservoir
-    m_linearSolverParameters.get().mgr.strategy = LinearSolverParameters::MGR::StrategyType::singlePhaseReservoirFVM;
+    linearSolverParameters.mgr.strategy = LinearSolverParameters::MGR::StrategyType::singlePhaseReservoirFVM;
   }
+  GEOS_LOG_LEVEL_RANK_0( 1, GEOS_FMT( "{}: MGR strategy set to {}", getName(),
+                                      EnumStrings< LinearSolverParameters::MGR::StrategyType >::toString( linearSolverParameters.mgr.strategy )));
 }
 
-template< typename POROMECHANICS_SOLVER >
+template<>
 void
-SinglePhaseReservoirAndWells< POROMECHANICS_SOLVER >::
+SinglePhaseReservoirAndWells< SinglePhasePoromechanics<> >::
 setMGRStrategy()
 {
-  // flow solver here is indeed flow solver, not poromechanics solver
-  if( flowSolver()->getLinearSolverParameters().mgr.strategy == LinearSolverParameters::MGR::StrategyType::singlePhaseHybridFVM )
+  LinearSolverParameters & linearSolverParameters = m_linearSolverParameters.get();
+
+  if( linearSolverParameters.preconditionerType != LinearSolverParameters::PreconditionerType::mgr )
+    return;
+
+  linearSolverParameters.mgr.separateComponents = true;
+  linearSolverParameters.dofsPerNode = 3;
+
+  if( dynamic_cast< SinglePhaseHybridFVM * >( this->flowSolver() ) )
   {
-    GEOS_LOG_RANK_0( "The poromechanics MGR strategy for hybrid FVM is not implemented" );
+    GEOS_ERROR( GEOS_FMT( "{}: MGR strategy is not implemented for poromechanics {}/{}",
+                          this->getName(), this->getCatalogName(), this->flowSolver()->getCatalogName()));
   }
   else
   {
-    // add Reservoir
-    m_linearSolverParameters.get().mgr.strategy = LinearSolverParameters::MGR::StrategyType::singlePhasePoromechanicsReservoirFVM;
+    linearSolverParameters.mgr.strategy = LinearSolverParameters::MGR::StrategyType::singlePhasePoromechanicsReservoirFVM;
   }
+  GEOS_LOG_LEVEL_RANK_0( 1, GEOS_FMT( "{}: MGR strategy set to {}", this->getName(),
+                                      EnumStrings< LinearSolverParameters::MGR::StrategyType >::toString( linearSolverParameters.mgr.strategy )));
 }
 
 template< typename RESERVOIR_SOLVER >
@@ -105,15 +124,6 @@ initializePreSubGroups()
   Base::initializePreSubGroups();
   SinglePhaseBase const * const flowSolver = this->flowSolver();
   Base::wellSolver()->setFlowSolverName( flowSolver->getName() );
-}
-
-template< typename RESERVOIR_SOLVER >
-void
-SinglePhaseReservoirAndWells< RESERVOIR_SOLVER >::
-initializePostInitialConditionsPreSubGroups()
-{
-  Base::initializePostInitialConditionsPreSubGroups();
-  setMGRStrategy();
 }
 
 template< typename RESERVOIR_SOLVER >
@@ -131,79 +141,81 @@ addCouplingSparsityPattern( DomainPartition const & domain,
   {
     ElementRegionManager const & elemManager = mesh.getElemManager();
 
-    // TODO: remove this and just call SolverBase::setupSystem when DofManager can handle the coupling
+    // TODO: remove this and just call PhysicsSolverBase::setupSystem when DofManager can handle the coupling
 
     // Populate off-diagonal sparsity between well and reservoir
 
     string const resDofKey  = dofManager.getKey( Base::wellSolver()->resElementDofName() );
     string const wellDofKey = dofManager.getKey( Base::wellSolver()->wellElementDofName() );
-
+    integer isThermal = Base::wellSolver()->isThermal();
     integer const wellNDOF = Base::wellSolver()->numDofPerWellElement();
 
     ElementRegionManager::ElementViewAccessor< arrayView1d< globalIndex const > > const & resDofNumber =
       elemManager.constructArrayViewAccessor< globalIndex, 1 >( resDofKey );
 
     globalIndex const rankOffset = dofManager.rankOffset();
-
-    elemManager.forElementSubRegions< WellElementSubRegion >( regionNames, [&]( localIndex const,
-                                                                                WellElementSubRegion const & subRegion )
-    {
-      PerforationData const * const perforationData = subRegion.getPerforationData();
-
-      // get the well degrees of freedom and ghosting info
-      arrayView1d< globalIndex const > const & wellElemDofNumber =
-        subRegion.getReference< array1d< globalIndex > >( wellDofKey );
-
-      // get the well element indices corresponding to each perforation
-      arrayView1d< localIndex const > const & perfWellElemIndex =
-        perforationData->getField< fields::perforation::wellElementIndex >();
-
-      // get the element region, subregion, index
-      arrayView1d< localIndex const > const & resElementRegion =
-        perforationData->getField< fields::perforation::reservoirElementRegion >();
-      arrayView1d< localIndex const > const & resElementSubRegion =
-        perforationData->getField< fields::perforation::reservoirElementSubRegion >();
-      arrayView1d< localIndex const > const & resElementIndex =
-        perforationData->getField< fields::perforation::reservoirElementIndex >();
-
-      // Insert the entries corresponding to reservoir-well perforations
-      // This will fill J_WR, and J_RW
-      forAll< serialPolicy >( perforationData->size(), [=] ( localIndex const iperf )
+    geos::internal::kernelLaunchSelectorThermalSwitch( isThermal, [&] ( auto ISTHERMAL ) {
+      integer constexpr IS_THERMAL = ISTHERMAL();
+      elemManager.forElementSubRegions< WellElementSubRegion >( regionNames, [&]( localIndex const,
+                                                                                  WellElementSubRegion const & subRegion )
       {
-        // Get the reservoir (sub)region and element indices
-        localIndex const er = resElementRegion[iperf];
-        localIndex const esr = resElementSubRegion[iperf];
-        localIndex const ei = resElementIndex[iperf];
-        localIndex const iwelem = perfWellElemIndex[iperf];
+        PerforationData const * const perforationData = subRegion.getPerforationData();
 
-        globalIndex const eqnRowIndexRes = resDofNumber[er][esr][ei] - rankOffset;
-        globalIndex const dofColIndexRes = resDofNumber[er][esr][ei];
+        // get the well degrees of freedom and ghosting info
+        arrayView1d< globalIndex const > const & wellElemDofNumber =
+          subRegion.getReference< array1d< globalIndex > >( wellDofKey );
 
-        // working arrays
-        stackArray1d< globalIndex, 2 > eqnRowIndicesWell( wellNDOF );
-        stackArray1d< globalIndex, 2 > dofColIndicesWell( wellNDOF );
+        // get the well element indices corresponding to each perforation
+        arrayView1d< localIndex const > const & perfWellElemIndex =
+          perforationData->getField< fields::perforation::wellElementIndex >();
 
-        for( integer idof = 0; idof < wellNDOF; ++idof )
+        // get the element region, subregion, index
+        arrayView1d< localIndex const > const & resElementRegion =
+          perforationData->getField< fields::perforation::reservoirElementRegion >();
+        arrayView1d< localIndex const > const & resElementSubRegion =
+          perforationData->getField< fields::perforation::reservoirElementSubRegion >();
+        arrayView1d< localIndex const > const & resElementIndex =
+          perforationData->getField< fields::perforation::reservoirElementIndex >();
+
+        // Insert the entries corresponding to reservoir-well perforations
+        // This will fill J_WR, and J_RW
+        forAll< serialPolicy >( perforationData->size(), [=] ( localIndex const iperf )
         {
-          eqnRowIndicesWell[idof] = wellElemDofNumber[iwelem] + idof - rankOffset;
-          dofColIndicesWell[idof] = wellElemDofNumber[iwelem] + idof;
-        }
+          // Get the reservoir (sub)region and element indices
+          localIndex const er = resElementRegion[iperf];
+          localIndex const esr = resElementSubRegion[iperf];
+          localIndex const ei = resElementIndex[iperf];
+          localIndex const iwelem = perfWellElemIndex[iperf];
 
-        if( eqnRowIndexRes >= 0 && eqnRowIndexRes < pattern.numRows() )
-        {
-          for( localIndex j = 0; j < dofColIndicesWell.size(); ++j )
+          globalIndex const eqnRowIndexRes = resDofNumber[er][esr][ei] - rankOffset;
+          globalIndex const dofColIndexRes = resDofNumber[er][esr][ei];
+
+          // working arrays - tjb previously dim was 2
+          stackArray1d< globalIndex, 2+IS_THERMAL > eqnRowIndicesWell( wellNDOF );
+          stackArray1d< globalIndex, 2+IS_THERMAL > dofColIndicesWell( wellNDOF );
+
+          for( integer idof = 0; idof < wellNDOF; ++idof )
           {
-            pattern.insertNonZero( eqnRowIndexRes, dofColIndicesWell[j] );
+            eqnRowIndicesWell[idof] = wellElemDofNumber[iwelem] + idof - rankOffset;
+            dofColIndicesWell[idof] = wellElemDofNumber[iwelem] + idof;
           }
-        }
 
-        for( localIndex i = 0; i < eqnRowIndicesWell.size(); ++i )
-        {
-          if( eqnRowIndicesWell[i] >= 0 && eqnRowIndicesWell[i] < pattern.numRows() )
+          if( eqnRowIndexRes >= 0 && eqnRowIndexRes < pattern.numRows() )
           {
-            pattern.insertNonZero( eqnRowIndicesWell[i], dofColIndexRes );
+            for( localIndex j = 0; j < dofColIndicesWell.size(); ++j )
+            {
+              pattern.insertNonZero( eqnRowIndexRes, dofColIndicesWell[j] );
+            }
           }
-        }
+
+          for( localIndex i = 0; i < eqnRowIndicesWell.size(); ++i )
+          {
+            if( eqnRowIndicesWell[i] >= 0 && eqnRowIndicesWell[i] < pattern.numRows() )
+            {
+              pattern.insertNonZero( eqnRowIndicesWell[i], dofColIndexRes );
+            }
+          }
+        } );
       } );
     } );
   } );
@@ -349,11 +361,11 @@ template class SinglePhaseReservoirAndWells< SinglePhasePoromechanicsConformingF
 namespace
 {
 typedef SinglePhaseReservoirAndWells<> SinglePhaseFlowAndWells;
-REGISTER_CATALOG_ENTRY( SolverBase, SinglePhaseFlowAndWells, string const &, Group * const )
+REGISTER_CATALOG_ENTRY( PhysicsSolverBase, SinglePhaseFlowAndWells, string const &, Group * const )
 typedef SinglePhaseReservoirAndWells< SinglePhasePoromechanics<> > SinglePhasePoromechanicsAndWells;
-REGISTER_CATALOG_ENTRY( SolverBase, SinglePhasePoromechanicsAndWells, string const &, Group * const )
+REGISTER_CATALOG_ENTRY( PhysicsSolverBase, SinglePhasePoromechanicsAndWells, string const &, Group * const )
 typedef SinglePhaseReservoirAndWells< SinglePhasePoromechanicsConformingFractures<> > SinglePhasePoromechanicsConformingFracturesAndWells;
-REGISTER_CATALOG_ENTRY( SolverBase, SinglePhasePoromechanicsConformingFracturesAndWells, string const &, Group * const )
+REGISTER_CATALOG_ENTRY( PhysicsSolverBase, SinglePhasePoromechanicsConformingFracturesAndWells, string const &, Group * const )
 }
 
 } /* namespace geos */

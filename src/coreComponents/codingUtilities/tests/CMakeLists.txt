@@ -4,8 +4,10 @@ set( testSources
      testParsing.cpp
      testUtilities.cpp )
 
-set( dependencyList gtest codingUtilities ${parallelDeps} )
+set( dependencyList codingUtilities ${parallelDeps} )
 
+geos_decorate_link_dependencies( LIST decoratedDependencies
+                                 DEPENDENCIES ${dependencyList} )
 # Add gtest C++ based tests
 foreach( test ${testSources} )
 
@@ -13,7 +15,7 @@ foreach( test ${testSources} )
   blt_add_executable( NAME ${test_name}
                       SOURCES ${test}
                       OUTPUT_DIR ${TEST_OUTPUT_DIRECTORY}
-                      DEPENDS_ON ${dependencyList} )
+                      DEPENDS_ON ${decoratedDependencies} gtest )
 
   geos_add_test( NAME ${test_name}
                  COMMAND ${test_name} )

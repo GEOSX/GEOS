@@ -3,9 +3,9 @@
  * SPDX-License-Identifier: LGPL-2.1-only
  *
  * Copyright (c) 2016-2024 Lawrence Livermore National Security LLC
- * Copyright (c) 2018-2024 Total, S.A
+ * Copyright (c) 2018-2024 TotalEnergies
  * Copyright (c) 2018-2024 The Board of Trustees of the Leland Stanford Junior University
- * Copyright (c) 2018-2024 Chevron
+ * Copyright (c) 2023-2024 Chevron
  * Copyright (c) 2019-     GEOS/GEOSX Contributors
  * All rights reserved
  *
@@ -51,11 +51,6 @@ struct PreComputeSourcesAndReceivers
    * @param[out] receiverIsLocal flag indicating whether the receiver is local or not
    * @param[out] receiverNodeIds indices of the nodes of the element where the receiver is located
    * @param[out] receiverConstants constant part of the receiver term
-   * @param[out] sourceValue value of the temporal source (eg. Ricker)
-   * @param[in] dt time-step
-   * @param[in] timeSourceFrequency the central frequency of the source
-   * @param[in] timeSourceDelay the time delay of the source
-   * @param[in] rickerOrder order of the Ricker wavelet
    */
   template< typename EXEC_POLICY, typename FE_TYPE >
   static void
@@ -77,12 +72,7 @@ struct PreComputeSourcesAndReceivers
                                        arrayView2d< real64 const > const receiverCoordinates,
                                        arrayView1d< localIndex > const receiverIsLocal,
                                        arrayView2d< localIndex > const receiverNodeIds,
-                                       arrayView2d< real64 > const receiverConstants,
-                                       arrayView2d< real32 > const sourceValue,
-                                       real64 const dt,
-                                       real32 const timeSourceFrequency,
-                                       real32 const timeSourceDelay,
-                                       localIndex const rickerOrder )
+                                       arrayView2d< real64 > const receiverConstants )
   {
     constexpr localIndex numNodesPerElem = FE_TYPE::numNodes;
 
@@ -130,11 +120,6 @@ struct PreComputeSourcesAndReceivers
             {
               sourceNodeIds[isrc][a] = elemsToNodes( k, a );
               sourceConstants[isrc][a] = Ntest[a];
-            }
-
-            for( localIndex cycle = 0; cycle < sourceValue.size( 0 ); ++cycle )
-            {
-              sourceValue[cycle][isrc] = WaveSolverUtils::evaluateRicker( cycle * dt, timeSourceFrequency, timeSourceDelay, rickerOrder );
             }
           }
         }
@@ -216,11 +201,6 @@ struct PreComputeSourcesAndReceivers
    * @param[out] receiverElem element where a receiver is located
    * @param[out] receiverNodeIds indices of the nodes of the element where the receiver is located
    * @param[out] receiverConstants constant part of the receiver term
-   * @param[out] sourceValue value of the temporal source (eg. Ricker)
-   * @param[in] dt time-step
-   * @param[in] timeSourceFrequency the central frequency of the source
-   * @param[in] timeSourceDelay the time delay of the source
-   * @param[in] rickerOrder order of the Ricker wavelet
    */
   template< typename EXEC_POLICY, typename FE_TYPE >
   static void
@@ -247,12 +227,7 @@ struct PreComputeSourcesAndReceivers
                                                                    arrayView1d< localIndex > const receiverElem,
                                                                    arrayView2d< localIndex > const receiverNodeIds,
                                                                    arrayView2d< real64 > const receiverConstants,
-                                                                   arrayView1d< localIndex > const receiverRegion,
-                                                                   arrayView2d< real32 > const sourceValue,
-                                                                   real64 const dt,
-                                                                   real32 const timeSourceFrequency,
-                                                                   real32 const timeSourceDelay,
-                                                                   localIndex const rickerOrder )
+                                                                   arrayView1d< localIndex > const receiverRegion )
   {
     constexpr localIndex numNodesPerElem = FE_TYPE::numNodes;
 
@@ -304,10 +279,6 @@ struct PreComputeSourcesAndReceivers
               sourceConstants[isrc][a] = Ntest[a];
             }
 
-            for( localIndex cycle = 0; cycle < sourceValue.size( 0 ); ++cycle )
-            {
-              sourceValue[cycle][isrc] = WaveSolverUtils::evaluateRicker( cycle * dt, timeSourceFrequency, timeSourceDelay, rickerOrder );
-            }
           }
         }
       } // end loop over all sources
@@ -390,11 +361,6 @@ struct PreComputeSourcesAndReceivers
    * @param[out] receiverIsLocal flag indicating whether the receiver is local or not
    * @param[out] receiverNodeIds indices of the nodes of the element where the receiver is located
    * @param[out] receiverConstants constant part of the receiver term
-   * @param[out] sourceValue array containing the value of the time dependent source (Ricker for e.g)
-   * @param[in] dt time-step
-   * @param[in] timeSourceFrequency Peak frequency of the source
-   * @param[in] timeSourceDelay  Delay of the source
-   * @param[in] rickerOrder Order of the Ricker wavelet
    * @param[in] useDAS parameter that determines which kind of receiver needs to be modeled (DAS or not, and which type)
    * @param[in] linearDASSamples parameter that gives the number of integration points to be used when computing the DAS signal via strain
    * integration
@@ -425,11 +391,6 @@ struct PreComputeSourcesAndReceivers
                                               arrayView1d< localIndex > const receiverIsLocal,
                                               arrayView2d< localIndex > const receiverNodeIds,
                                               arrayView2d< real64 > const receiverConstants,
-                                              arrayView2d< real32 > const sourceValue,
-                                              real64 const dt,
-                                              real32 const timeSourceFrequency,
-                                              real32 const timeSourceDelay,
-                                              localIndex const rickerOrder,
                                               WaveSolverUtils::DASType useDAS,
                                               integer linearDASSamples,
                                               arrayView2d< real64 const > const linearDASGeometry,
@@ -460,13 +421,13 @@ struct PreComputeSourcesAndReceivers
                                      sourceCoordinates[isrc][1],
                                      sourceCoordinates[isrc][2] };
 
-          real64 xLocal[numNodesPerElem][3];
+          real64 xLocal[8][3];
 
-          for( localIndex a=0; a< numNodesPerElem; ++a )
+          for( localIndex a = 0; a < 8; ++a )
           {
-            for( localIndex i=0; i<3; ++i )
+            for( localIndex i = 0; i < 3; ++i )
             {
-              xLocal[a][i] = baseNodeCoords( elemsToNodes( k, a ), i );
+              xLocal[a][i] = baseNodeCoords( baseElemsToNodes( k, a ), i );
             }
           }
 
@@ -496,7 +457,7 @@ struct PreComputeSourcesAndReceivers
             real64 N[numNodesPerElem];
             real64 gradN[numNodesPerElem][3];
             FE_TYPE::calcN( coordsOnRefElem, N );
-            FE_TYPE::calcGradN( coordsOnRefElem, xLocal, gradN );
+            FE_TYPE::calcGradNWithCorners( coordsOnRefElem, xLocal, gradN );
             R2SymTensor moment = sourceMoment;
             for( localIndex q=0; q< numNodesPerElem; ++q )
             {
@@ -510,11 +471,6 @@ struct PreComputeSourcesAndReceivers
               sourceConstantsx[isrc][q] += inc[0];
               sourceConstantsy[isrc][q] += inc[1];
               sourceConstantsz[isrc][q] += inc[2];
-            }
-
-            for( localIndex cycle = 0; cycle < sourceValue.size( 0 ); ++cycle )
-            {
-              sourceValue[cycle][isrc] = WaveSolverUtils::evaluateRicker( cycle * dt, timeSourceFrequency, timeSourceDelay, rickerOrder );
             }
 
           }
@@ -593,13 +549,13 @@ struct PreComputeSourcesAndReceivers
           if( sampleFound && elemGhostRank[k] < 0 )
           {
             real64 coordsOnRefElem[3]{};
-            real64 xLocal[numNodesPerElem][3];
+            real64 xLocal[8][3];
 
-            for( localIndex a=0; a< numNodesPerElem; ++a )
+            for( localIndex a = 0; a < 8; ++a )
             {
-              for( localIndex i=0; i<3; ++i )
+              for( localIndex i=0; i < 3; ++i )
               {
-                xLocal[a][i] = baseNodeCoords( elemsToNodes( k, a ), i );
+                xLocal[a][i] = baseNodeCoords( baseElemsToNodes( k, a ), i );
               }
             }
 
@@ -610,7 +566,7 @@ struct PreComputeSourcesAndReceivers
             real64 N[numNodesPerElem];
             real64 gradN[numNodesPerElem][3];
             FE_TYPE::calcN( coordsOnRefElem, N );
-            FE_TYPE::calcGradN( coordsOnRefElem, xLocal, gradN );
+            FE_TYPE::calcGradNWithCorners( coordsOnRefElem, xLocal, gradN );
             for( localIndex a = 0; a < numNodesPerElem; ++a )
             {
               receiverNodeIds[ircv][iSample * numNodesPerElem + a] = elemsToNodes( k,

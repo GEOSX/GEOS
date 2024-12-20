@@ -4,7 +4,8 @@ message( "CMAKE_SYSTEM_NAME = ${CMAKE_SYSTEM_NAME}" )
 message( "CMAKE_HOST_APPLE = ${CMAKE_HOST_APPLE}" )
 
 ### OPTIONS ###
-option( GEOS_ENABLE_TESTS "" ON )
+option( GEOS_ENABLE_FPE "Enables floating point exceptions" ON )
+option( GEOS_ENABLE_TESTS "Enables unit tests" ON )
 option( ENABLE_CALIPER "Enables Caliper instrumentation" OFF )
 
 option( ENABLE_MATHPRESSO "" ON )
@@ -158,18 +159,6 @@ if( ${CMAKE_MAKE_PROGRAM} STREQUAL "ninja" OR ${CMAKE_MAKE_PROGRAM} MATCHES ".*/
   set( CMAKE_CXX_FLAGS "${CMAKE_CXX_FLAGS} ${GEOS_NINJA_FLAGS}" )
 endif()
 
-
-if( CMAKE_HOST_APPLE )
-#    set(GEOS_LINK_PREPEND_FLAG "-Wl,-force_load" CACHE STRING "")
-#    set(GEOS_LINK_POSTPEND_FLAG "" CACHE STRING "")
-# elseif( ENABLE_CUDA )
-#     set( GEOS_LINK_PREPEND_FLAG  "-Xcompiler \\\\\"-Wl,--whole-archive\\\\\""    CACHE STRING "" )
-#     set( GEOS_LINK_POSTPEND_FLAG "-Xcompiler \\\\\"-Wl,--no-whole-archive\\\\\"" CACHE STRING "" )
-else()
-    set( GEOS_LINK_PREPEND_FLAG  "-Wl,--whole-archive"    CACHE STRING "" )
-    set( GEOS_LINK_POSTPEND_FLAG "-Wl,--no-whole-archive" CACHE STRING "" )
-endif()
-
 set( GEOS_LOCALINDEX_TYPE "int" CACHE STRING "" )
 if( ENABLE_HYPRE_MIXINT )
   set( GEOS_GLOBALINDEX_TYPE "long long int" CACHE STRING "" )
@@ -216,6 +205,5 @@ message( "GEOS_GLOBALINDEX_TYPE_FLAG = ${GEOS_GLOBALINDEX_TYPE_FLAG}" )
 
 
 message( "CMAKE_CXX_FLAGS = ${CMAKE_CXX_FLAGS}" )
-message( "GEOS_LINK_PREPEND_FLAG=${GEOS_LINK_PREPEND_FLAG}" )
-message( "GEOS_LINK_POSTPEND_FLAG=${GEOS_LINK_POSTPEND_FLAG}" )
+
 message( "Leaving GeosxOptions.cmake\n" )

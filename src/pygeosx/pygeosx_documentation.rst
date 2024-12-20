@@ -6,7 +6,7 @@ GEOS can be manipulated and executed through a Python script.
 
 High-level control of GEOS is managed through the top-level ``pygeosx`` functions,
 like ``initialize`` and ``run``. GEOS's data can be manipulated by getting
-:ref:`pylvarray <pylvarray>` views of LvArray objects living in GEOS's data repository.
+`pylvarray <https://lvarray.readthedocs.io/en/latest/python/index.html>`_ views of LvArray objects living in GEOS's data repository.
 These ``pylvarray`` views are fetched by calling ``Wrapper.value()`` after getting
 a ``Wrapper`` out of the data repository.
 

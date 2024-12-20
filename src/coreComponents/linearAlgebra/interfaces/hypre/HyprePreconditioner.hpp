@@ -3,9 +3,9 @@
  * SPDX-License-Identifier: LGPL-2.1-only
  *
  * Copyright (c) 2016-2024 Lawrence Livermore National Security LLC
- * Copyright (c) 2018-2024 Total, S.A
+ * Copyright (c) 2018-2024 TotalEnergies
  * Copyright (c) 2018-2024 The Board of Trustees of the Leland Stanford Junior University
- * Copyright (c) 2018-2024 Chevron
+ * Copyright (c) 2023-2024 Chevron
  * Copyright (c) 2019-     GEOS/GEOSX Contributors
  * All rights reserved
  *
@@ -95,26 +95,6 @@ public:
    */
   HyprePrecWrapper const & unwrapped() const;
 
-  /**
-   * @brief @return time spent setting up separate component matrix.
-   */
-  real64 componentFilterTime() const
-  {
-    return m_componentFilterTime;
-  }
-
-  /// @return time to construct restrictor matrix.
-  real64 makeRestrictorTime() const
-  {
-    return m_makeRestrictorTime;
-  }
-
-  /// @return time to apply restrictor matrix.
-  real64 computeAuuTime() const
-  {
-    return m_computeAuuTime;
-  }
-
 private:
 
   /**
@@ -144,15 +124,6 @@ private:
 
   /// Null space vectors
   std::unique_ptr< HypreNullSpace > m_nullSpace;
-
-  /// Timing of separate component matrix construction
-  real64 m_componentFilterTime = 0.0;
-
-  /// Timing of the restrictor matrix construction
-  real64 m_makeRestrictorTime = 0.0;
-
-  /// Timing of the cost of applying the restrictor matrix to the system
-  real64 m_computeAuuTime = 0.0;
 };
 
 }

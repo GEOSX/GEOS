@@ -2,10 +2,11 @@
  * ------------------------------------------------------------------------------------------------------------
  * SPDX-License-Identifier: LGPL-2.1-only
  *
- * Copyright (c) 2018-2020 Lawrence Livermore National Security LLC
- * Copyright (c) 2018-2020 The Board of Trustees of the Leland Stanford Junior University
- * Copyright (c) 2018-2020 TotalEnergies
- * Copyright (c) 2019-     GEOSX Contributors
+ * Copyright (c) 2016-2024 Lawrence Livermore National Security LLC
+ * Copyright (c) 2018-2024 TotalEnergies
+ * Copyright (c) 2018-2024 The Board of Trustees of the Leland Stanford Junior University
+ * Copyright (c) 2023-2024 Chevron
+ * Copyright (c) 2019-     GEOS/GEOSX Contributors
  * All rights reserved
  *
  * See top level LICENSE, COPYRIGHT, CONTRIBUTORS, NOTICE, and ACKNOWLEDGEMENTS files for details.
@@ -83,13 +84,104 @@ public:
    */
   GEOS_HOST_DEVICE
   inline
-  virtual void updateFractureState( localIndex const k,
-                                    arraySlice1d< real64 const > const & dispJump,
+  virtual void updateFractureState( arraySlice1d< real64 const > const & dispJump,
                                     arraySlice1d< real64 const > const & tractionVector,
                                     integer & fractureState ) const
-  { GEOS_UNUSED_VAR( k, dispJump, tractionVector, fractureState ); }
+  { GEOS_UNUSED_VAR( dispJump, tractionVector, fractureState ); }
 
+  /**
+   * @brief Evaluate and store the elastic slip
+   * @param[in] dispJump the displacement jump
+   * @param[in] oldDispJump the previous displacement jump
+   * @param[in] tractionVector the traction vector
+   * @param[out] fractureState the fracture state
+   */
+  GEOS_HOST_DEVICE
+  inline
+  virtual void updateElasticSlip( localIndex const k,
+                                  arraySlice1d< real64 const > const & dispJump,
+                                  arraySlice1d< real64 const > const & oldDispJump,
+                                  arraySlice1d< real64 const > const & tractionVector,
+                                  integer const & fractureState ) const
+  { GEOS_UNUSED_VAR( k, dispJump, oldDispJump, tractionVector, fractureState ); }
 
+  /**
+   * @brief Update the trial traction vector ( return mapping )
+   * @param[in] oldDispJump the displacement jump of the previous time step
+   * @param[in] dispJump the displacement jump of the current time step
+   * @param[in] penalty  the penalty coefficients
+   * @param[in] traction the traction vector
+   * @param[in] symmetric flag to compute only the symmetric part of dTraction_dDispJump
+   * @param[in] fixedLimitTau flag to keep fixed the tangential stress
+   * @param[in] normalTractionTolerance normal traction tolerance (if tn > tol => fracture is open)
+   * @param[in] tangentialTractionTolerance tangential traction tolerance (if tau < tol => tau = 0)
+   * @param[out] dTraction_dDispJump matrix containing the derivatives of traction over the displacement jump
+   * @param[out] tractionNew the new traction vector
+   * @param[out] fractureState the fracture state
+   */
+  GEOS_HOST_DEVICE
+  inline
+  virtual void updateTraction( arraySlice1d< real64 const > const & oldDispJump,
+                               arraySlice1d< real64 const > const & dispJump,
+                               arraySlice1d< real64 const > const & penalty,
+                               arraySlice1d< real64 const > const & traction,
+                               real64 const faceArea,
+                               bool const symmetric,
+                               bool const fixedLimitTau,
+                               real64 const normalTractionTolerance,
+                               real64 const tangentialTractionTolerance,
+                               real64 ( & dTraction_dDispJump )[3][3],
+                               real64 ( & tractionNew )[3],
+                               integer & fractureState ) const
+  {
+    GEOS_UNUSED_VAR( oldDispJump, dispJump, penalty, traction, faceArea, symmetric, fixedLimitTau,
+                     normalTractionTolerance, tangentialTractionTolerance,
+                     dTraction_dDispJump, tractionNew, fractureState );
+  }
+
+  /**
+   * @brief Update the traction vector only ( return mapping )
+   * @param[in] dispJump the displacement jump of the current time step
+   * @param[in] deltaDispJump the delta displacement jump of the current time step
+   * @param[in] penalty  the penalty coefficients
+   * @param[in] traction the traction vector
+   * @param[out] tractionNew the new traction vector
+   */
+  GEOS_HOST_DEVICE
+  inline
+  virtual void updateTractionOnly( arraySlice1d< real64 const > const & dispJump,
+                                   arraySlice1d< real64 const > const & deltaDispJump,
+                                   arraySlice1d< real64 const > const & penalty,
+                                   arraySlice1d< real64 const > const & traction,
+                                   real64 const faceArea,
+                                   arraySlice1d< real64 > const & tractionNew ) const
+  { GEOS_UNUSED_VAR( dispJump, deltaDispJump, penalty, traction, faceArea, tractionNew ); }
+
+  /**
+   * @brief Check for the constraint satisfaction
+   * @param[in] dispJump the displacement jump of the current time step
+   * @param[in] deltaDispJump the delta displacement jump of the current time step
+   * @param[in] tractionVector the traction vector
+   * @param[in] fractureState the fracture check
+   * @param[in] tolerance the tolerance
+   * @param[out] condConv flag indicating the result of the check
+   */
+  GEOS_HOST_DEVICE
+  inline
+  virtual void constraintCheck( arraySlice1d< real64 const > const & dispJump,
+                                arraySlice1d< real64 const > const & deltaDispJump,
+                                arraySlice1d< real64 > const & tractionVector,
+                                integer const fractureState,
+                                real64 const normalTractionTolerance,
+                                real64 const normalDisplacementTolerance,
+                                real64 const slidingTolerance,
+                                real64 const slidingCheckTolerance,
+                                integer & condConv ) const
+  {
+    GEOS_UNUSED_VAR( dispJump, deltaDispJump, tractionVector, fractureState,
+                     normalTractionTolerance, normalDisplacementTolerance, slidingTolerance,
+                     slidingCheckTolerance, condConv );
+  }
 
   /**
    * @brief Evaluate the limit tangential traction norm and return the derivative wrt normal traction
@@ -101,7 +193,11 @@ public:
   inline
   virtual real64 computeLimitTangentialTractionNorm( real64 const & normalTraction,
                                                      real64 & dLimitTangentialTractionNorm_dTraction ) const
-  { GEOS_UNUSED_VAR( normalTraction, dLimitTangentialTractionNorm_dTraction ); return 0; };
+  {
+    GEOS_UNUSED_VAR( normalTraction );
+    dLimitTangentialTractionNorm_dTraction = 0.0;
+    return 0;
+  }
 
 protected:
 

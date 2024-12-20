@@ -34,12 +34,12 @@ def getDataFromXML(xmlFilePathPrefix):
 	defaultShearModulus = float( tree.find('Constitutive/ElasticIsotropic').get('defaultShearModulus') )
 	defaultDrainedLinearTEC = float( tree.find('Constitutive/ElasticIsotropic').get('defaultDrainedLinearTEC') )
 	defaultReferencePorosity = float( tree.find('Constitutive/BiotPorosity').get('defaultReferencePorosity') )		
-	grainBulkModulus = float( tree.find('Constitutive/BiotPorosity').get('grainBulkModulus') )		
+	grainBulkModulus = float( tree.find('Constitutive/BiotPorosity').get('defaultGrainBulkModulus') )		
 	fluidCompressibility = float( tree.find('Constitutive/ThermalCompressibleSinglePhaseFluid').get('compressibility') )
 	fluidViscosity = float( tree.find('Constitutive/ThermalCompressibleSinglePhaseFluid').get('defaultViscosity') )
 	fluidThermalExpansionCoefficient = float( tree.find('Constitutive/ThermalCompressibleSinglePhaseFluid').get('thermalExpansionCoeff') )
-	thermalConductivity = float( extractDataFromXMLList( tree.find('Constitutive/SinglePhaseConstantThermalConductivity').get('thermalConductivityComponents') )[0] )
-	volumetricHeatCapacity = float( tree.find('Constitutive/SolidInternalEnergy').get('volumetricHeatCapacity') )	
+	thermalConductivity = float( extractDataFromXMLList( tree.find('Constitutive/SinglePhaseThermalConductivity').get('defaultThermalConductivityComponents') )[0] )
+	volumetricHeatCapacity = float( tree.find('Constitutive/SolidInternalEnergy').get('referenceVolumetricHeatCapacity') )	
 	permeability = float( extractDataFromXMLList( tree.find('Constitutive/ConstantPermeability').get('permeabilityComponents') )[0] )
 
 	return [ri, Ti, drainedBulkModulusRock, defaultShearModulus, defaultDrainedLinearTEC, defaultReferencePorosity, grainBulkModulus, fluidCompressibility, fluidViscosity, fluidThermalExpansionCoefficient, permeability, thermalConductivity, volumetricHeatCapacity]

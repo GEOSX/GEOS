@@ -95,3 +95,39 @@ macro( geos_add_test )
                   COMMAND ${arg_COMMAND} ${ARGN} )
 
 endmacro( geos_add_test )
+
+
+macro( geos_decorate_link_dependencies )
+
+    set( options )
+    set( singleValueArgs LIST )
+    set( multiValueArgs DEPENDENCIES )
+
+    # Parse the arguments to the macro
+    cmake_parse_arguments( arg
+         "${options}" "${singleValueArgs}" "${multiValueArgs}" ${ARGN} )
+
+    set( staticLibs "" )
+    set( otherLibs "" )
+    foreach( dep ${arg_DEPENDENCIES} )
+        if( NOT TARGET ${dep} )
+            message( FATAL_ERROR "Dependency ${dep} not found" )
+        endif()
+
+        get_target_property( targetType ${dep} TYPE)
+        # message( "  ${dep} targetType = ${targetType}" )  # debug
+
+        if (targetType STREQUAL STATIC_LIBRARY)
+            list( APPEND staticLibs ${dep} )
+        else()
+            list( APPEND otherLibs ${dep} )
+        endif()
+    endforeach()
+
+    # message( "  staticLibs = ${staticLibs}" )  # debug
+    # message( "  otherLibs = ${otherLibs}" )  # debug
+
+    string (REPLACE ";" "," staticLibsString "${staticLibs}")
+    set( ${arg_LIST} "$<LINK_LIBRARY:WHOLE_ARCHIVE,${staticLibsString}>" ${otherLibs} )
+
+endmacro( geos_decorate_link_dependencies )

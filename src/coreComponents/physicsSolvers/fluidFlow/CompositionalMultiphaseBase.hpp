@@ -3,9 +3,9 @@
  * SPDX-License-Identifier: LGPL-2.1-only
  *
  * Copyright (c) 2016-2024 Lawrence Livermore National Security LLC
- * Copyright (c) 2018-2024 Total, S.A
+ * Copyright (c) 2018-2024 TotalEnergies
  * Copyright (c) 2018-2024 The Board of Trustees of the Leland Stanford Junior University
- * Copyright (c) 2018-2024 Chevron
+ * Copyright (c) 2023-2024 Chevron
  * Copyright (c) 2019-     GEOS/GEOSX Contributors
  * All rights reserved
  *
@@ -268,6 +268,7 @@ public:
     static constexpr char const * allowLocalCompDensChoppingString() { return "allowLocalCompDensityChopping"; }
     static constexpr char const * useTotalMassEquationString() { return "useTotalMassEquation"; }
     static constexpr char const * useSimpleAccumulationString() { return "useSimpleAccumulation"; }
+    static constexpr char const * useNewGravityString() { return "useNewGravity"; }
     static constexpr char const * minCompDensString() { return "minCompDens"; }
     static constexpr char const * maxSequentialCompDensChangeString() { return "maxSequentialCompDensChange"; }
     static constexpr char const * minScalingFactorString() { return "minScalingFactor"; }
@@ -282,12 +283,14 @@ public:
    * from prescribed intermediate values (i.e. global densities from global fractions)
    * and any applicable hydrostatic equilibration of the domain
    */
-  void initializeFluidState( MeshLevel & mesh, DomainPartition & domain, arrayView1d< string const > const & regionNames );
+  virtual void initializeFluidState( MeshLevel & mesh, arrayView1d< string const > const & regionNames ) override;
+
+  virtual void initializeThermalState( MeshLevel & mesh, arrayView1d< string const > const & regionNames ) override;
 
   /**
    * @brief Compute the hydrostatic equilibrium using the compositions and temperature input tables
    */
-  void computeHydrostaticEquilibrium();
+  virtual void computeHydrostaticEquilibrium( DomainPartition & domain ) override;
 
   /**
    * @brief Function to perform the Application of Dirichlet type BC's
@@ -345,15 +348,15 @@ public:
    * @param[in] domain the domain
    * @param[in] localMatrix local system matrix
    * @param[in] localRhs local system right-hand side vector
-   * @detail This function is meant to be called when the flag m_keepFlowVariablesConstantDuringInitStep is on
+   * @detail This function is meant to be called when the flag m_keepVariablesConstantDuringInitStep is on
    *         The main use case is the initialization step in coupled problems during which we solve an elastic problem for a fixed pressure
    */
-  void keepFlowVariablesConstantDuringInitStep( real64 const time,
-                                                real64 const dt,
-                                                DofManager const & dofManager,
-                                                DomainPartition & domain,
-                                                CRSMatrixView< real64, globalIndex const > const & localMatrix,
-                                                arrayView1d< real64 > const & localRhs ) const;
+  void keepVariablesConstantDuringInitStep( real64 const time,
+                                            real64 const dt,
+                                            DofManager const & dofManager,
+                                            DomainPartition & domain,
+                                            CRSMatrixView< real64, globalIndex const > const & localMatrix,
+                                            arrayView1d< real64 > const & localRhs ) const;
 
 
   /**
@@ -361,6 +364,8 @@ public:
    * @param domain the physical domain object
    */
   void chopNegativeDensities( DomainPartition & domain );
+
+  void chopNegativeDensities( ElementSubRegionBase & subRegion );
 
   virtual real64 setNextDtBasedOnStateChange( real64 const & currentDt,
                                               DomainPartition & domain ) override;
@@ -481,6 +486,9 @@ protected:
 
   /// flag indicating whether simple accumulation form is used
   integer m_useSimpleAccumulation;
+
+  /// flag indicating whether new gravity treatment is used
+  integer m_useNewGravity;
 
   /// minimum allowed global component density
   real64 m_minCompDens;

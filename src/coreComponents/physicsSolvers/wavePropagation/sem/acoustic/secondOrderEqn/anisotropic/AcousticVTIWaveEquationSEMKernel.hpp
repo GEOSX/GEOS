@@ -3,9 +3,9 @@
  * SPDX-License-Identifier: LGPL-2.1-only
  *
  * Copyright (c) 2016-2024 Lawrence Livermore National Security LLC
- * Copyright (c) 2018-2024 Total, S.A
+ * Copyright (c) 2018-2024 TotalEnergies
  * Copyright (c) 2018-2024 The Board of Trustees of the Leland Stanford Junior University
- * Copyright (c) 2018-2024 Chevron
+ * Copyright (c) 2023-2024 Chevron
  * Copyright (c) 2019-     GEOS/GEOSX Contributors
  * All rights reserved
  *
@@ -27,7 +27,6 @@
 
 namespace geos
 {
-using namespace fields;
 
 /// Namespace to contain the acoustic wave kernels.
 namespace acousticVTIWaveEquationSEMKernels
@@ -58,11 +57,6 @@ struct PrecomputeSourceAndReceiverKernel
    * @param[out] receiverIsLocal flag indicating whether the receiver is local or not
    * @param[out] receiverNodeIds indices of the nodes of the element where the receiver is located
    * @param[out] receiverConstants constant part of the receiver term
-   * @param[out] sourceValue value of the temporal source (eg. Ricker)
-   * @param[in] dt time-step
-   * @param[in] timeSourceFrequency the central frequency of the source
-   * @param[in] timeSourceDelay the time delay of the source
-   * @param[in] rickerOrder order of the Ricker wavelet
    */
   template< typename EXEC_POLICY, typename FE_TYPE >
   static void
@@ -84,12 +78,7 @@ struct PrecomputeSourceAndReceiverKernel
           arrayView2d< real64 const > const receiverCoordinates,
           arrayView1d< localIndex > const receiverIsLocal,
           arrayView2d< localIndex > const receiverNodeIds,
-          arrayView2d< real64 > const receiverConstants,
-          arrayView2d< real32 > const sourceValue,
-          real64 const dt,
-          real32 const timeSourceFrequency,
-          real32 const timeSourceDelay,
-          localIndex const rickerOrder )
+          arrayView2d< real64 > const receiverConstants )
   {
     constexpr localIndex numNodesPerElem = FE_TYPE::numNodes;
 
@@ -140,10 +129,6 @@ struct PrecomputeSourceAndReceiverKernel
               sourceConstants[isrc][a] = Ntest[a];
             }
 
-            for( localIndex cycle = 0; cycle < sourceValue.size( 0 ); ++cycle )
-            {
-              sourceValue[cycle][isrc] = WaveSolverUtils::evaluateRicker( cycle * dt, timeSourceFrequency, timeSourceDelay, rickerOrder );
-            }
           }
         }
       } // end loop over all sources
@@ -442,13 +427,13 @@ public:
           finiteElementSpace,
           inputConstitutiveType ),
     m_nodeCoords( nodeManager.getField< fields::referencePosition32 >() ),
-    m_p_n( nodeManager.getField< acousticvtifields::Pressure_p_n >() ),
-    m_q_n( nodeManager.getField< acousticvtifields::Pressure_q_n >() ),
-    m_stiffnessVector_p( nodeManager.getField< acousticvtifields::StiffnessVector_p >() ),
-    m_stiffnessVector_q( nodeManager.getField< acousticvtifields::StiffnessVector_q >() ),
-    m_epsilon( elementSubRegion.template getField< acousticvtifields::Epsilon >() ),
-    m_delta( elementSubRegion.template getField< acousticvtifields::Delta >() ),
-    m_vti_f( elementSubRegion.template getField< acousticvtifields::F >() ),
+    m_p_n( nodeManager.getField< fields::acousticvtifields::Pressure_p_n >() ),
+    m_q_n( nodeManager.getField< fields::acousticvtifields::Pressure_q_n >() ),
+    m_stiffnessVector_p( nodeManager.getField< fields::acousticvtifields::StiffnessVector_p >() ),
+    m_stiffnessVector_q( nodeManager.getField< fields::acousticvtifields::StiffnessVector_q >() ),
+    m_epsilon( elementSubRegion.template getField< fields::acousticvtifields::Epsilon >() ),
+    m_delta( elementSubRegion.template getField< fields::acousticvtifields::Delta >() ),
+    m_vti_f( elementSubRegion.template getField< fields::acousticvtifields::F >() ),
     m_dt( dt )
   {
     GEOS_UNUSED_VAR( edgeManager );
