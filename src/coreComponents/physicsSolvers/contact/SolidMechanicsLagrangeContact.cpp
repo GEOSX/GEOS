@@ -196,7 +196,6 @@ void SolidMechanicsLagrangeContact::initializePreSubGroups()
   if( m_useLocalYieldAcceleration )
   {
     GEOS_LOG_LEVEL_RANK_0( 1, GEOS_FMT( "{}: local yield acceleration enabled", getName() ) );
-    initializeAccelerationVariables( domain );
   }
 
 }
@@ -219,6 +218,11 @@ void SolidMechanicsLagrangeContact::setupSystem( DomainPartition & domain,
   if( !m_precond && m_linearSolverParameters.get().solverType != LinearSolverParameters::SolverType::direct )
   {
     createPreconditioner( domain );
+  }
+
+  if( m_useLocalYieldAcceleration )
+  {
+    initializeAccelerationVariables( domain );
   }
 }
 
