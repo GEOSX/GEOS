@@ -200,6 +200,7 @@ jobs:
 
     uses: ./.github/workflows/build_and_test.yml
     with:
+      BUILD_AND_TEST_CLI_ARGS: ${{ matrix.BUILD_AND_TEST_CLI_ARGS }}
       BUILD_SHARED_LIBS: ${{ matrix.BUILD_SHARED_LIBS }}
       CMAKE_BUILD_TYPE: ${{ matrix.CMAKE_BUILD_TYPE }}
       BUILD_GENERATOR: ${{ matrix.BUILD_GENERATOR }}
