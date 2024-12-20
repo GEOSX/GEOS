@@ -63,3 +63,12 @@ set( RAJA_ENABLE_TBB    OFF         CACHE BOOL "" FORCE )
 
 set( ENABLE_PYGEOSX         ON CACHE BOOL "" )
 set( ENABLE_VTK_WRAP_PYTHON ON CACHE BOOL "" )
+
+#######################################
+# TPLs
+#######################################
+
+set( GEOS_TPL_DIR "$ENV{GEOS_TPL_DIR}" CACHE PATH "" )
+if( NOT EXISTS ${GEOS_TPL_DIR} )
+  message(FATAL_ERROR "GEOS_TPL_DIR not found in environment, set it with -DGEOS_TPL_DIR=")
+endif()
