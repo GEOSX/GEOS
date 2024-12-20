@@ -1325,6 +1325,15 @@ void CompositionalMultiphaseBase::assembleAccumulationAndVolumeBalanceTerms( Dom
 {
   GEOS_MARK_FUNCTION;
 
+  using namespace isothermalCompositionalMultiphaseBaseKernels;
+
+  BitFlags< KernelFlags > kernelFlags;
+  if( m_useTotalMassEquation )
+    kernelFlags.set( KernelFlags::TotalMassEquation );
+  if( m_useSimpleAccumulation )
+    kernelFlags.set( KernelFlags::SimpleAccumulation );
+
+
   forDiscretizationOnMeshTargets( domain.getMeshBodies(), [&]( string const &,
                                                                MeshLevel const & mesh,
                                                                arrayView1d< string const > const & regionNames )
@@ -1347,7 +1356,7 @@ void CompositionalMultiphaseBase::assembleAccumulationAndVolumeBalanceTerms( Dom
           createAndLaunch< parallelDevicePolicy<> >( m_numComponents,
                                                      m_numPhases,
                                                      dofManager.rankOffset(),
-                                                     m_useTotalMassEquation,
+                                                     kernelFlags,
                                                      dofKey,
                                                      subRegion,
                                                      fluid,
@@ -1362,8 +1371,7 @@ void CompositionalMultiphaseBase::assembleAccumulationAndVolumeBalanceTerms( Dom
           createAndLaunch< parallelDevicePolicy<> >( m_numComponents,
                                                      m_numPhases,
                                                      dofManager.rankOffset(),
-                                                     m_useTotalMassEquation,
-                                                     m_useSimpleAccumulation,
+                                                     kernelFlags,
                                                      dofKey,
                                                      subRegion,
                                                      fluid,

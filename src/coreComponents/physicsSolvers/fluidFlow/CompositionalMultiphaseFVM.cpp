@@ -207,6 +207,20 @@ void CompositionalMultiphaseFVM::assembleFluxTerms( real64 const dt,
 {
   GEOS_MARK_FUNCTION;
 
+  using namespace isothermalCompositionalMultiphaseFVMKernels;
+
+  BitFlags< KernelFlags > kernelFlags;
+  if( m_hasCapPressure )
+    kernelFlags.set( KernelFlags::CapPressure );
+  if( m_hasDiffusion )
+    kernelFlags.set( KernelFlags::Diffusion );
+  if( m_hasDispersion )
+    kernelFlags.set( KernelFlags::Dispersion );
+  if( m_useTotalMassEquation )
+    kernelFlags.set( KernelFlags::TotalMassEquation );
+  if( m_gravityDensityScheme == GravityDensityScheme::PhasePresence )
+    kernelFlags.set( KernelFlags::CheckPhasePresenceInGravity );
+
   forDiscretizationOnMeshTargets( domain.getMeshBodies(), [&]( string const &,
                                                                MeshLevel const & mesh,
                                                                arrayView1d< string const > const & )
@@ -214,6 +228,13 @@ void CompositionalMultiphaseFVM::assembleFluxTerms( real64 const dt,
     NumericalMethodsManager const & numericalMethodManager = domain.getNumericalMethodManager();
     FiniteVolumeManager const & fvManager = numericalMethodManager.getFiniteVolumeManager();
     FluxApproximationBase const & fluxApprox = fvManager.getFluxApproximation( m_discretizationName );
+
+    auto const & upwindingParams = fluxApprox.upwindingParams();
+    if( upwindingParams.upwindingScheme == UpwindingScheme::C1PPU &&
+        isothermalCompositionalMultiphaseFVMKernelUtilities::epsC1PPU > 0 )
+      kernelFlags.set( KernelFlags::C1PPU );
+    else if( upwindingParams.upwindingScheme == UpwindingScheme::IHU )
+      kernelFlags.set( KernelFlags::IHU );
 
     string const & elemDofKey = dofManager.getKey( viewKeyStruct::elemDofFieldString() );
 
@@ -230,8 +251,7 @@ void CompositionalMultiphaseFVM::assembleFluxTerms( real64 const dt,
                                                      m_numPhases,
                                                      dofManager.rankOffset(),
                                                      elemDofKey,
-                                                     m_hasCapPressure,
-                                                     m_useTotalMassEquation,
+                                                     kernelFlags,
                                                      getName(),
                                                      mesh.getElemManager(),
                                                      stencilWrapper,
@@ -249,8 +269,7 @@ void CompositionalMultiphaseFVM::assembleFluxTerms( real64 const dt,
                                                        m_numPhases,
                                                        dofManager.rankOffset(),
                                                        elemDofKey,
-                                                       m_hasCapPressure,
-                                                       m_useTotalMassEquation,
+                                                       kernelFlags,
                                                        getName(),
                                                        mesh.getElemManager(),
                                                        stencilWrapper,
@@ -272,10 +291,7 @@ void CompositionalMultiphaseFVM::assembleFluxTerms( real64 const dt,
                                                        m_numPhases,
                                                        dofManager.rankOffset(),
                                                        elemDofKey,
-                                                       m_hasCapPressure,
-                                                       m_useTotalMassEquation,
-                                                       m_gravityDensityScheme == GravityDensityScheme::PhasePresence,
-                                                       fluxApprox.upwindingParams(),
+                                                       kernelFlags,
                                                        getName(),
                                                        mesh.getElemManager(),
                                                        stencilWrapper,
@@ -297,9 +313,7 @@ void CompositionalMultiphaseFVM::assembleFluxTerms( real64 const dt,
                                                        m_numPhases,
                                                        dofManager.rankOffset(),
                                                        elemDofKey,
-                                                       m_hasDiffusion,
-                                                       m_hasDispersion,
-                                                       m_useTotalMassEquation,
+                                                       kernelFlags,
                                                        getName(),
                                                        mesh.getElemManager(),
                                                        stencilWrapper,
@@ -315,9 +329,7 @@ void CompositionalMultiphaseFVM::assembleFluxTerms( real64 const dt,
                                                        m_numPhases,
                                                        dofManager.rankOffset(),
                                                        elemDofKey,
-                                                       m_hasDiffusion,
-                                                       m_hasDispersion,
-                                                       m_useTotalMassEquation,
+                                                       kernelFlags,
                                                        getName(),
                                                        mesh.getElemManager(),
                                                        stencilWrapper,
@@ -338,6 +350,14 @@ void CompositionalMultiphaseFVM::assembleStabilizedFluxTerms( real64 const dt,
                                                               arrayView1d< real64 > const & localRhs ) const
 {
   GEOS_MARK_FUNCTION;
+
+  using namespace isothermalCompositionalMultiphaseFVMKernels;
+
+  BitFlags< KernelFlags > kernelFlags;
+  if( m_hasCapPressure )
+    kernelFlags.set( KernelFlags::CapPressure );
+  if( m_useTotalMassEquation )
+    kernelFlags.set( KernelFlags::TotalMassEquation );
 
   forDiscretizationOnMeshTargets( domain.getMeshBodies(), [&]( string const &,
                                                                MeshLevel const & mesh,
@@ -364,8 +384,7 @@ void CompositionalMultiphaseFVM::assembleStabilizedFluxTerms( real64 const dt,
                                                    m_numPhases,
                                                    dofManager.rankOffset(),
                                                    elemDofKey,
-                                                   m_hasCapPressure,
-                                                   m_useTotalMassEquation,
+                                                   kernelFlags,
                                                    getName(),
                                                    mesh.getElemManager(),
                                                    stencilWrapper,
@@ -1051,6 +1070,12 @@ void CompositionalMultiphaseFVM::applyFaceDirichletBC( real64 const time_n,
     GEOS_ERROR_IF( !bcConsistent, GEOS_FMT( "CompositionalMultiphaseBase {}: inconsistent boundary conditions", getDataContext() ) );
   }
 
+  using namespace isothermalCompositionalMultiphaseFVMKernels;
+
+  BitFlags< KernelFlags > kernelFlags;
+  if( m_useTotalMassEquation )
+    kernelFlags.set( KernelFlags::TotalMassEquation );
+
   FieldSpecificationManager & fsManager = FieldSpecificationManager::getInstance();
 
   NumericalMethodsManager const & numericalMethodManager = domain.getNumericalMethodManager();
@@ -1113,7 +1138,7 @@ void CompositionalMultiphaseFVM::applyFaceDirichletBC( real64 const time_n,
           createAndLaunch< parallelDevicePolicy<> >( m_numComponents,
                                                      m_numPhases,
                                                      dofManager.rankOffset(),
-                                                     m_useTotalMassEquation,
+                                                     kernelFlags,
                                                      elemDofKey,
                                                      getName(),
                                                      faceManager,
