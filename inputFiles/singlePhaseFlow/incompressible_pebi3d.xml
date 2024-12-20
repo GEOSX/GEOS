@@ -23,7 +23,7 @@
       partitionRefinement="3"
       useGlobalIds="1"
       fieldsToImport="{ PERM, PORO, NTG }"
-      fieldNamesInGEOSX="{ rockPerm_permeability, rockPorosity_referencePorosity, netToGross }"
+      fieldNamesInGEOS="{ rockPerm_permeability, rockPorosity_referencePorosity, netToGross }"
 	
       file="pebi3d_with_properties.vtu"/>
   </Mesh>
@@ -68,7 +68,7 @@
   <ElementRegions>
     <CellElementRegion
       name="Domain"
-      cellBlocks="{ hexahedra, pentagonalPrisms, hexagonalPrisms, heptagonalPrisms, octagonalPrisms }"
+      cellBlocks="{ * }"
       materialList="{ water, rock }"/>
   </ElementRegions>
 

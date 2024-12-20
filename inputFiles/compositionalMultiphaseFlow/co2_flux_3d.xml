@@ -9,12 +9,10 @@
       temperature="368.15"
       useMass="1"
       useTotalMassEquation="0"
-      useSimpleAccumulation="1"
       targetRegions="{ region }">
       <NonlinearSolverParameters
         newtonTol="1.0e-5"
-        newtonMaxIter="100"
-        maxTimeStepCuts="5"
+        newtonMaxIter="10"
         lineSearchAction="None"/>
       <LinearSolverParameters
         directParallel="0"/>
@@ -92,7 +90,7 @@
 
     <PeriodicEvent
       name="outputs"
-      timeFrequency="1e5"
+      timeFrequency="5e5"
       target="/Outputs/vtkOutput"/>
 
     <PeriodicEvent
@@ -112,13 +110,14 @@
   <ElementRegions>
     <CellElementRegion
       name="region"
-      cellBlocks="{ cellBlock }"
+      cellBlocks="{ * }"
       materialList="{ fluid, rock, relperm, cappres }"/>
   </ElementRegions>
 
   <Constitutive>
     <CO2BrinePhillipsFluid
       name="fluid"
+      logLevel="1"
       phaseNames="{ gas, water }"
       componentNames="{ co2, water }"
       componentMolarWeight="{ 44e-3, 18e-3 }"
@@ -135,7 +134,7 @@
     <PressurePorosity
       name="rockPorosity"
       defaultReferencePorosity="0.2"
-      referencePressure="0.0"
+      referencePressure="1.1e7"
       compressibility="1.0e-9"/>
     <ConstantPermeability
       name="rockPerm"
@@ -312,7 +311,8 @@
   
   <Outputs>
     <VTK
-      name="vtkOutput"/>
+      name="vtkOutput"
+      plotFileRoot="co2_flux_3d"/>
 
     <Restart
       name="sidreRestart"/>

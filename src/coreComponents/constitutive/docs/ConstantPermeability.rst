@@ -17,7 +17,7 @@ Parameters
 
 The following attributes are supported:
 
-.. include:: /coreComponents/schema/docs/ConstantPermeability.rst
+.. include:: /docs/sphinx/datastructure/ConstantPermeability.rst
 
 
 Example

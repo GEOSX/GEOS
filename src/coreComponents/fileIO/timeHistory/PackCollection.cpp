@@ -1,7 +1,25 @@
+/*
+ * ------------------------------------------------------------------------------------------------------------
+ * SPDX-License-Identifier: LGPL-2.1-only
+ *
+ * Copyright (c) 2016-2024 Lawrence Livermore National Security LLC
+ * Copyright (c) 2018-2024 TotalEnergies
+ * Copyright (c) 2018-2024 The Board of Trustees of the Leland Stanford Junior University
+ * Copyright (c) 2023-2024 Chevron
+ * Copyright (c) 2019-     GEOS/GEOSX Contributors
+ * All rights reserved
+ *
+ * See top level LICENSE, COPYRIGHT, CONTRIBUTORS, NOTICE, and ACKNOWLEDGEMENTS files for details.
+ * ------------------------------------------------------------------------------------------------------------
+ */
+
 #include "PackCollection.hpp"
 
 namespace geos
 {
+
+using namespace dataRepository;
+
 PackCollection::PackCollection ( string const & name, Group * parent )
   : HistoryCollectionBase( name, parent )
   , m_setsIndices( )
@@ -13,14 +31,17 @@ PackCollection::PackCollection ( string const & name, Group * parent )
   , m_initialized( false )
 {
   registerWrapper( PackCollection::viewKeysStruct::objectPathString(), &m_objectPath ).
+    setRTTypeName( rtTypes::CustomTypes::groupNameRef ).
     setInputFlag( InputFlags::REQUIRED ).
     setDescription( "The name of the object from which to retrieve field values." );
 
   registerWrapper( PackCollection::viewKeysStruct::fieldNameString(), &m_fieldName ).
+    setRTTypeName( rtTypes::CustomTypes::groupNameRef ).
     setInputFlag( InputFlags::REQUIRED ).
     setDescription( "The name of the (packable) field associated with the specified object to retrieve data from" );
 
   registerWrapper( PackCollection::viewKeysStruct::setNamesString(), &m_setNames ).
+    setRTTypeName( rtTypes::CustomTypes::groupNameRefArray ).
     setInputFlag( InputFlags::OPTIONAL ).
     setDescription( "The set(s) for which to retrieve data." );
 
@@ -54,6 +75,7 @@ void PackCollection::initializePostSubGroups( )
     {
       // coord meta collectors should have m_disableCoordCollection == true to avoid
       //  infinite recursive init calls here
+      //          (side note: should we create a m_isMetaCollector field to prevent any confusion?)
       metaCollector->initializePostSubGroups();
     }
     m_initialized = true;
@@ -237,7 +259,7 @@ localIndex PackCollection::numMetaDataCollectors() const
 
 void PackCollection::buildMetaDataCollectors()
 {
-  if( !m_disableCoordCollection )
+  if( !m_disableCoordCollection && m_targetIsMeshObject )
   {
     char const * coordField = nullptr;
     if( m_objectPath.find( "nodeManager" ) != string::npos )

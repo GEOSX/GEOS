@@ -2,10 +2,11 @@
  * ------------------------------------------------------------------------------------------------------------
  * SPDX-License-Identifier: LGPL-2.1-only
  *
- * Copyright (c) 2018-2020 Lawrence Livermore National Security LLC
- * Copyright (c) 2018-2020 The Board of Trustees of the Leland Stanford Junior University
- * Copyright (c) 2018-2020 TotalEnergies
- * Copyright (c) 2019-     GEOSX Contributors
+ * Copyright (c) 2016-2024 Lawrence Livermore National Security LLC
+ * Copyright (c) 2018-2024 TotalEnergies
+ * Copyright (c) 2018-2024 The Board of Trustees of the Leland Stanford Junior University
+ * Copyright (c) 2023-2024 Chevron
+ * Copyright (c) 2019-     GEOS/GEOSX Contributors
  * All rights reserved
  *
  * See top level LICENSE, COPYRIGHT, CONTRIBUTORS, NOTICE, and ACKNOWLEDGEMENTS files for details.
@@ -207,7 +208,11 @@ TableFunction const * makeCO2EnthalpyTable( string_array const & inputParams,
 
   if( functionManager.hasGroup< TableFunction >( tableName ) )
   {
-    return functionManager.getGroupPointer< TableFunction >( tableName );
+    TableFunction * const enthalpyTable = functionManager.getGroupPointer< TableFunction >( tableName );
+    enthalpyTable->initializeFunction();
+    enthalpyTable->setDimUnits( { units::Pressure, units::TemperatureInC } );
+    enthalpyTable->setValueUnits( units::Enthalpy );
+    return enthalpyTable;
   }
   else
   {
@@ -251,7 +256,8 @@ TableFunction const * makeCO2EnthalpyTable( string_array const & inputParams,
 CO2Enthalpy::CO2Enthalpy( string const & name,
                           string_array const & inputParams,
                           string_array const & componentNames,
-                          array1d< real64 > const & componentMolarWeight ):
+                          array1d< real64 > const & componentMolarWeight,
+                          TableFunction::OutputOptions const pvtOutputOpts ):
   PVTFunctionBase( name,
                    componentNames,
                    componentMolarWeight )
@@ -260,6 +266,9 @@ CO2Enthalpy::CO2Enthalpy( string const & name,
   m_CO2Index = PVTFunctionHelpers::findName( componentNames, expectedCO2ComponentNames, "componentNames" );
 
   m_CO2EnthalpyTable = makeCO2EnthalpyTable( inputParams, m_functionName, FunctionManager::getInstance() );
+
+  m_CO2EnthalpyTable->outputPVTTableData( pvtOutputOpts );
+  m_CO2EnthalpyTable->outputPVTTableData( pvtOutputOpts );
 }
 
 
@@ -300,8 +309,6 @@ CO2Enthalpy::createKernelWrapper() const
                         *m_CO2EnthalpyTable,
                         m_CO2Index );
 }
-
-REGISTER_CATALOG_ENTRY( PVTFunctionBase, CO2Enthalpy, string const &, string_array const &, string_array const &, array1d< real64 > const & )
 
 } // namespace PVTProps
 

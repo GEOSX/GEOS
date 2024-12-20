@@ -47,7 +47,7 @@ node.
 
 The following attributes are supported:
 
-.. include:: /coreComponents/schema/docs/BrooksCoreyCapillaryPressure.rst
+.. include:: /docs/sphinx/datastructure/BrooksCoreyCapillaryPressure.rst
 
 Below are some comments on the model parameters:
 

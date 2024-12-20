@@ -2,7 +2,7 @@
 
 <Problem>
   <Included>
-    <File name="./acous3D_Q3_small_base.xml"/>
+    <File name="./acous3D_Q5_small_base.xml"/>
   </Included>
 
   <!-- hexahedral mesh generated internally by GEOSX -->

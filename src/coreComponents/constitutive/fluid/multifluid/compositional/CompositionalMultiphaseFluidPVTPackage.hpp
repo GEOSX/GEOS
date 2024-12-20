@@ -2,10 +2,11 @@
  * ------------------------------------------------------------------------------------------------------------
  * SPDX-License-Identifier: LGPL-2.1-only
  *
- * Copyright (c) 2018-2020 Lawrence Livermore National Security LLC
- * Copyright (c) 2018-2020 The Board of Trustees of the Leland Stanford Junior University
- * Copyright (c) 2018-2020 TotalEnergies
- * Copyright (c) 2019-     GEOSX Contributors
+ * Copyright (c) 2016-2024 Lawrence Livermore National Security LLC
+ * Copyright (c) 2018-2024 TotalEnergies
+ * Copyright (c) 2018-2024 The Board of Trustees of the Leland Stanford Junior University
+ * Copyright (c) 2023-2024 Chevron
+ * Copyright (c) 2019-     GEOS/GEOSX Contributors
  * All rights reserved
  *
  * See top level LICENSE, COPYRIGHT, CONTRIBUTORS, NOTICE, and ACKNOWLEDGEMENTS files for details.
@@ -45,6 +46,8 @@ public:
 
   virtual string getCatalogName() const override { return catalogName(); }
 
+  static constexpr bool isThermalType(){ return false; }
+
   // TODO: This method should be implemented if an incorrect extrapolation of the pressure and temperature is encountered in the kernel
   /**
    * @copydoc MultiFluidBase::checkTablesParameters( real64 pressure, real64 temperature )
@@ -64,6 +67,7 @@ public:
     static constexpr char const * componentAcentricFactorString() { return "componentAcentricFactor"; }
     static constexpr char const * componentVolumeShiftString() { return "componentVolumeShift"; }
     static constexpr char const * componentBinaryCoeffString() { return "componentBinaryCoeff"; }
+    static constexpr char const * constantPhaseViscosityString() { return "constantPhaseViscosity"; }
   };
 
   /**
@@ -72,20 +76,6 @@ public:
   class KernelWrapper final : public MultiFluidBase::KernelWrapper
   {
 public:
-
-    GEOS_HOST_DEVICE
-    virtual void compute( real64 const pressure,
-                          real64 const temperature,
-                          arraySlice1d< real64 const, compflow::USD_COMP - 1 > const & composition,
-                          arraySlice1d< real64, multifluid::USD_PHASE - 2 > const & phaseFraction,
-                          arraySlice1d< real64, multifluid::USD_PHASE - 2 > const & phaseDensity,
-                          arraySlice1d< real64, multifluid::USD_PHASE - 2 > const & phaseMassDensity,
-                          arraySlice1d< real64, multifluid::USD_PHASE - 2 > const & phaseEnthalpy,
-                          arraySlice1d< real64, multifluid::USD_PHASE - 2 > const & phaseInternalEnergy,
-                          arraySlice1d< real64, multifluid::USD_PHASE - 2 > const & phaseViscosity,
-                          arraySlice2d< real64, multifluid::USD_PHASE_COMP-2 > const & phaseCompFraction,
-                          real64 & totalDensity ) const override;
-
     GEOS_HOST_DEVICE
     virtual void compute( real64 const pressure,
                           real64 const temperature,
@@ -112,6 +102,7 @@ private:
 
     KernelWrapper( pvt::MultiphaseSystem & fluid,
                    arrayView1d< pvt::PHASE_TYPE > const & phaseTypes,
+                   arrayView1d< real64 const > const & constantPhaseViscosity,
                    arrayView1d< real64 const > const & componentMolarWeight,
                    bool const useMass,
                    PhaseProp::ViewType phaseFraction,
@@ -126,6 +117,7 @@ private:
     pvt::MultiphaseSystem & m_fluid;
 
     arrayView1d< pvt::PHASE_TYPE > m_phaseTypes;
+    arrayView1d< real64 const > m_constantPhaseViscosity;
   };
 
   /**
@@ -136,7 +128,7 @@ private:
 
 protected:
 
-  virtual void postProcessInput() override;
+  virtual void postInputInitialization() override;
 
   virtual void initializePostSubGroups() override;
 
@@ -153,6 +145,9 @@ private:
   // names of equations of state to use for each phase
   string_array m_equationsOfState;
 
+  // Phase viscosity
+  array1d< real64 > m_constantPhaseViscosity;
+
   // standard EOS component input
   array1d< real64 > m_componentCriticalPressure;
   array1d< real64 > m_componentCriticalTemperature;
@@ -161,113 +156,6 @@ private:
   array2d< real64 > m_componentBinaryCoeff;
 
 };
-
-GEOS_HOST_DEVICE
-GEOS_FORCE_INLINE
-void
-CompositionalMultiphaseFluidPVTPackage::KernelWrapper::
-  compute( real64 const pressure,
-           real64 const temperature,
-           arraySlice1d< real64 const, compflow::USD_COMP - 1 > const & composition,
-           arraySlice1d< real64, multifluid::USD_PHASE - 2 > const & phaseFrac,
-           arraySlice1d< real64, multifluid::USD_PHASE - 2 > const & phaseDens,
-           arraySlice1d< real64, multifluid::USD_PHASE - 2 > const & phaseMassDens,
-           arraySlice1d< real64, multifluid::USD_PHASE - 2 > const & phaseVisc,
-           arraySlice1d< real64, multifluid::USD_PHASE - 2 > const & phaseEnthalpy,
-           arraySlice1d< real64, multifluid::USD_PHASE - 2 > const & phaseInternalEnergy,
-           arraySlice2d< real64, multifluid::USD_PHASE_COMP - 2 > const & phaseCompFrac,
-           real64 & totalDens ) const
-{
-  GEOS_UNUSED_VAR( phaseEnthalpy, phaseInternalEnergy );
-#if defined(GEOS_DEVICE_COMPILE)
-  GEOS_ERROR( "This function cannot be used on GPU" );
-  GEOS_UNUSED_VAR( pressure );
-  GEOS_UNUSED_VAR( temperature );
-  GEOS_UNUSED_VAR( composition );
-  GEOS_UNUSED_VAR( phaseFrac );
-  GEOS_UNUSED_VAR( phaseDens );
-  GEOS_UNUSED_VAR( phaseMassDens );
-  GEOS_UNUSED_VAR( phaseVisc );
-  GEOS_UNUSED_VAR( phaseCompFrac );
-  GEOS_UNUSED_VAR( totalDens );
-#else
-  integer constexpr maxNumComp = MultiFluidBase::MAX_NUM_COMPONENTS;
-  integer constexpr maxNumPhase = MultiFluidBase::MAX_NUM_PHASES;
-  integer const numComp = numComponents();
-  integer const numPhase = numPhases();
-
-  // 1. Convert input mass fractions to mole fractions and keep derivatives
-
-  std::vector< double > compMoleFrac( numComp );
-  if( m_useMass )
-  {
-    convertToMoleFractions< maxNumComp >( composition,
-                                          compMoleFrac );
-  }
-  else
-  {
-    for( integer ic = 0; ic < numComp; ++ic )
-    {
-      compMoleFrac[ic] = composition[ic];
-    }
-  }
-
-  // 2. Trigger PVTPackage compute and get back phase split
-  m_fluid.Update( pressure, temperature, compMoleFrac );
-
-  GEOS_WARNING_IF( !m_fluid.hasSucceeded(),
-                   "Phase equilibrium calculations not converged" );
-
-  pvt::MultiphaseSystemProperties const & props = m_fluid.getMultiphaseSystemProperties();
-
-  // 3. Extract phase split and phase properties from PVTPackage
-
-  for( integer ip = 0; ip < numPhase; ++ip )
-  {
-    pvt::PHASE_TYPE const & phaseType = m_phaseTypes[ip];
-
-    auto const & frac = props.getPhaseMoleFraction( phaseType );
-    auto const & comp = props.getMoleComposition( phaseType );
-    auto const & dens = m_useMass ? props.getMassDensity( phaseType ) : props.getMoleDensity( phaseType );
-    auto const & massDens = props.getMassDensity( phaseType );
-
-    phaseFrac[ip] = frac.value;
-    phaseDens[ip] = dens.value;
-    phaseMassDens[ip] = massDens.value;
-    phaseVisc[ip] = 0.001;   // TODO
-    for( integer jc = 0; jc < numComp; ++jc )
-    {
-      phaseCompFrac[ip][jc] = comp.value[jc];
-    }
-  }
-
-  // 4. if mass variables used instead of molar, perform the conversion
-
-  if( m_useMass )
-  {
-
-    // unfortunately here, we have to copy the molecular weight coming from PVT package...
-    real64 phaseMolecularWeight[maxNumPhase]{};
-    for( integer ip = 0; ip < numPhase; ++ip )
-    {
-      phaseMolecularWeight[ip] = props.getMolecularWeight( m_phaseTypes[ip] ).value;
-    }
-
-    // convert mole fractions to mass fractions
-    convertToMassFractions< maxNumComp >( phaseMolecularWeight,
-                                          phaseFrac,
-                                          phaseCompFrac );
-
-  }
-
-  // 5. Compute total fluid mass/molar density
-
-  computeTotalDensity< maxNumComp, maxNumPhase >( phaseFrac,
-                                                  phaseDens,
-                                                  totalDens );
-
-#endif
-}
 
 GEOS_HOST_DEVICE
 GEOS_FORCE_INLINE
@@ -300,7 +188,7 @@ CompositionalMultiphaseFluidPVTPackage::KernelWrapper::
   GEOS_UNUSED_VAR( totalDensity );
 #else
 
-  using Deriv = multifluid::DerivativeOffset;
+  using Deriv = constitutive::multifluid::DerivativeOffset;
 
   integer constexpr maxNumComp = MultiFluidBase::MAX_NUM_COMPONENTS;
   integer constexpr maxNumPhase = MultiFluidBase::MAX_NUM_PHASES;
@@ -360,7 +248,7 @@ CompositionalMultiphaseFluidPVTPackage::KernelWrapper::
     phaseMassDensity.derivs[ip][Deriv::dT] = massDens.dT;
 
     // TODO
-    phaseViscosity.value[ip] = 0.001;
+    phaseViscosity.value[ip] = m_constantPhaseViscosity[ip];
     phaseViscosity.derivs[ip][Deriv::dP] = 0.0;
     phaseViscosity.derivs[ip][Deriv::dT] = 0.0;
 

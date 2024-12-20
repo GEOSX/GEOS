@@ -1,0 +1,154 @@
+<?xml version="1.0" ?>
+<!--
+# Reference
+  Komatitsch, Dimitri / Barnes, Christophe / Tromp, Jeroen 
+  Wave propagation near a fluid-solid interface: A spectral-element approach 
+  2000
+  Geophysics , Vol. 65, No. 2 
+  Society of Exploration Geophysicists 
+  p. 623-631
+
+# Discretization
+  hexahedral mesh generated internally by GEOSX
+  6400x1600x4800m domain
+-->
+
+<Problem>
+  <Solvers>
+    <!-- define the solver, source coordinates, time source frequency, receiver coordinates -->
+    <AcousticSEM
+      name="acousticSolver"
+      discretization="FE1"
+      targetRegions="{ Fluid }"
+      sourceCoordinates="{ { 1575, 2400, 2900 } }"
+      timeSourceFrequency="10"
+      timeSourceDelay="0.115"
+      rickerOrder="3"
+      outputSeismoTrace="1"
+      dtSeismoTrace="1e-3"
+      receiverCoordinates="{ { 3752.2936, 2400, 2933.3333 } }"/>
+    <ElasticSEM
+      name="elasticSolver"
+      discretization="FE1"
+      targetRegions="{ Solid }"
+      outputSeismoTrace="1"
+      dtSeismoTrace="1e-3"
+      receiverCoordinates="{ { 3752.2936, 2400, 1866.6667 } }"/>
+    <!-- NOTES:
+      - coupled solver must be declared at the end (for interface computations)
+      - discretization is also needed for the correct mesh to be passed through from the coupled solver to the elastic / acoustic solvers
+    -->
+    <AcousticElasticSEM
+      name="acousticelasticSolver"
+      discretization="FE1"
+      targetRegions="{ Solid, Fluid }"
+      acousticSolverName="acousticSolver"
+      elasticSolverName="elasticSolver"/>
+  </Solvers>
+
+  <Mesh>
+    <InternalMesh
+      name="mesh"
+      elementTypes="{ C3D8 }"
+      xCoords="{ 0, 6400 }"
+      yCoords="{ 0, 4800.0001 }"
+      zCoords="{ 0, 2400, 4800 }"
+      nx="{ 40 }"
+      ny="{ 15 }"
+      nz="{ 15, 15 }"
+      cellBlockNames="{ solid, fluid }"/>
+  </Mesh>
+
+  <NumericalMethods>
+    <FiniteElements>
+      <FiniteElementSpace
+        name="FE1"
+        order="2"
+        formulation="SEM"/>
+    </FiniteElements>
+  </NumericalMethods>
+
+  <Events
+    maxTime="2e-3">
+    <!-- control the timestepping here with forceDt -->
+    <PeriodicEvent
+      name="solidfluidSolverApplications"
+      forceDt="1e-4"
+      target="/Solvers/acousticelasticSolver"/>
+    <!-- FIXME: forceDt hack to satisfy pre-timeloop computation -->
+    <SoloEvent
+      name="solidSolverApplications"
+      forceDt="1e-4"
+      endTime="0"
+      target="/Solvers/elasticSolver"/>
+    <SoloEvent
+      name="fluidSolverApplications"
+      forceDt="1e-4"
+      endTime="0"
+      target="/Solvers/acousticSolver"/>
+    <PeriodicEvent
+      name="restarts"
+      timeFrequency="1e-3"
+      target="/Outputs/restartOutput"/>
+  </Events>
+
+  <ElementRegions>
+    <CellElementRegion
+      name="Fluid"
+      cellBlocks="{ fluid }"
+      materialList="{ nullModel }"/>
+    <CellElementRegion
+      name="Solid"
+      cellBlocks="{ solid }"
+      materialList="{ nullModel }"/>
+  </ElementRegions>
+
+  <Constitutive>
+    <NullModel
+      name="nullModel"/>
+  </Constitutive>
+
+  <FieldSpecifications>
+    <!-- initial condition for ρ, 𝓋ₚ and 𝓋ₛ -->
+    <FieldSpecification
+      name="acousticVelocity"
+      initialCondition="1"
+      objectPath="mesh/FE1/ElementRegions/Fluid/fluid"
+      fieldName="acousticVelocity"
+      scale="1500.0"
+      setNames="{ all }"/>
+    <FieldSpecification
+      name="acousticDensity"
+      initialCondition="1"
+      objectPath="mesh/FE1/ElementRegions/Fluid/fluid"
+      fieldName="acousticDensity"
+      scale="1020.0"
+      setNames="{ all }"/>
+    <FieldSpecification
+      name="elasticVelocityVp"
+      initialCondition="1"
+      objectPath="mesh/FE1/ElementRegions/Solid/solid"
+      fieldName="elasticVelocityVp"
+      scale="3400.0"
+      setNames="{ all }"/>
+    <FieldSpecification
+      name="elasticVelocityVs"
+      initialCondition="1"
+      objectPath="mesh/FE1/ElementRegions/Solid/solid"
+      fieldName="elasticVelocityVs"
+      scale="1963.0"
+      setNames="{ all }"/>
+    <FieldSpecification
+      name="elasticDensity"
+      initialCondition="1"
+      objectPath="mesh/FE1/ElementRegions/Solid/solid"
+      fieldName="elasticDensity"
+      scale="2500.0"
+      setNames="{ all }"/>
+  </FieldSpecifications>
+
+  <Outputs>
+    <Restart
+      name="restartOutput"/>
+  </Outputs>
+</Problem>

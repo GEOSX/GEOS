@@ -2,10 +2,11 @@
  * ------------------------------------------------------------------------------------------------------------
  * SPDX-License-Identifier: LGPL-2.1-only
  *
- * Copyright (c) 2018-2020 Lawrence Livermore National Security LLC
- * Copyright (c) 2018-2020 The Board of Trustees of the Leland Stanford Junior University
- * Copyright (c) 2018-2020 TotalEnergies
- * Copyright (c) 2019-     GEOSX Contributors
+ * Copyright (c) 2016-2024 Lawrence Livermore National Security LLC
+ * Copyright (c) 2018-2024 TotalEnergies
+ * Copyright (c) 2018-2024 The Board of Trustees of the Leland Stanford Junior University
+ * Copyright (c) 2023-2024 Chevron
+ * Copyright (c) 2019-     GEOS/GEOSX Contributors
  * All rights reserved
  *
  * See top level LICENSE, COPYRIGHT, CONTRIBUTORS, NOTICE, and ACKNOWLEDGEMENTS files for details.
@@ -77,7 +78,7 @@ void createHypreGMRES( LinearSolverParameters const & params,
   GEOS_LAI_CHECK_ERROR( HYPRE_ParCSRGMRESSetTol( solver.ptr, params.krylov.relTolerance ) );
 
   // Default for now
-  HYPRE_Int logLevel = (params.logLevel >= 3) ? 1 : 0;
+  HYPRE_Int logLevel = (params.logLevel >= 3) ? 2 : 0;
 
   GEOS_LAI_CHECK_ERROR( HYPRE_ParCSRGMRESSetPrintLevel( solver.ptr, logLevel ) ); // print iteration info
   GEOS_LAI_CHECK_ERROR( HYPRE_ParCSRGMRESSetLogging( solver.ptr, 1 ) ); /* needed to get run info later */
@@ -200,11 +201,7 @@ void HypreSolver::setup( HypreMatrix const & mat )
   clear();
   Base::setup( mat );
   Stopwatch timer( m_result.setupTime );
-
   m_precond.setup( mat );
-  m_componentFilterTime = m_precond.componentFilterTime();
-  m_makeRestrictorTime = m_precond.makeRestrictorTime();
-  m_computeAuuTime = m_precond.computeAuuTime();
 
   m_solver = std::make_unique< HypreSolverWrapper >();
   createHypreKrylovSolver( m_params, mat.comm(), *m_solver );
@@ -275,14 +272,18 @@ void HypreSolver::solve( HypreVector const & rhs,
 
   if( m_params.logLevel >= 1 )
   {
-    GEOS_LOG_RANK_0( "        Linear Solver | " << m_result.status <<
-                     " | Iterations: " << m_result.numIterations <<
-                     " | Final Rel Res: " << m_result.residualReduction <<
-                     " | Make Restrictor Time: " << m_makeRestrictorTime <<
-                     " | Compute Auu Time: " << m_computeAuuTime <<
-                     " | SC Filter Time: " << m_componentFilterTime <<
-                     " | Setup Time: " << m_result.setupTime << " s" <<
-                     " | Solve Time: " << m_result.solveTime << " s" );
+    HYPRE_BigInt global_num_rows, global_num_nonzeros;
+
+    // This involves an MPI collective call, and therefore we call it only when necessary
+    GEOS_LAI_CHECK_ERROR( HYPRE_IJMatrixGetGlobalInfo( matrix().unwrappedIJ(),
+                                                       &global_num_rows,
+                                                       &global_num_rows, // This is intentional and assuming the matrix is square
+                                                       &global_num_nonzeros ) );
+
+    GEOS_LOG_RANK_0( GEOS_FMT( "        Linear Solver | {} | Unknowns: {} | Nonzeros: {} | Iterations: {} | Final Rel Res: {:.4e} | Setup Time: {:.3f} s | Solve Time: {:.3f} s",
+                               m_result.status, stringutilities::addCommaSeparators( global_num_rows ),
+                               stringutilities::addCommaSeparators( global_num_nonzeros ), m_result.numIterations,
+                               m_result.residualReduction, m_result.setupTime, m_result.solveTime ) );
   }
 }
 
@@ -297,4 +298,4 @@ void HypreSolver::clear()
   m_solver.reset();
 }
 
-} // end geosx namespace
+} // end geos namespace

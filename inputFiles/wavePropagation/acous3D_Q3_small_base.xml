@@ -31,7 +31,7 @@
   <ElementRegions>
     <CellElementRegion
       name="Region"
-      cellBlocks="{ cb }"
+      cellBlocks="{ * }"
       materialList="{ nullModel }"/>
   </ElementRegions>
 
@@ -63,7 +63,7 @@
       name="cellVelocity"
       initialCondition="1"
       objectPath="mesh/FE2/ElementRegions/Region/cb"
-      fieldName="mediumVelocity"
+      fieldName="acousticVelocity"
       scale="1500"
       setNames="{ all }"/>
 
@@ -71,7 +71,7 @@
       name="cellDensity"
       initialCondition="1"
       objectPath="mesh/FE2/ElementRegions/Region/cb"
-      fieldName="mediumDensity"
+      fieldName="acousticDensity"
       scale="1"
       setNames="{ all }"/>
 

@@ -1,14 +1,12 @@
 # hostconfig for pangea3
 #
-# export MODULEPATH=/workrd/SCR/NUM/geosx_num/module_files:$MODULEPATH
-# module load cmake/3.21.4 gcc/8.4.1 cuda/11.0.3 ompi/4.1.2 openblas/0.3.18 python4geosx/p3/gcc8.4.1-ompi4.1.2
 #
 set(CONFIG_NAME "pangea3-gcc8.4.1-ompi-4.1.2" CACHE PATH "")
 
 # Set up the tpls
-set(GEOSX_TPL_DIR "$ENV{GEOSX_TPL_DIR}" CACHE PATH "" FORCE)
-if (NOT DEFINED GEOSX_TPL_DIR)
-  message(FATAL_ERROR "You must set GEOSX_TPL_DIR with -D GEOSX_TPL_DIR=")
+set(GEOS_TPL_DIR "$ENV{GEOSX_TPL_DIR}" CACHE PATH "" FORCE)
+if (NOT DEFINED GEOS_TPL_DIR)
+  message(FATAL_ERROR "You must set GEOS_TPL_DIR with -D GEOS_TPL_DIR=")
 endif ()
 
 
@@ -56,7 +54,7 @@ if (DEFINED ENV{CUDA_ROOT})
   set(CMAKE_CUDA_COMPILER ${CUDA_TOOLKIT_ROOT_DIR}/bin/nvcc CACHE STRING "")
   set(CUDA_ARCH sm_70 CACHE STRING "")
   set(CMAKE_CUDA_ARCHITECTURES 70 CACHE STRING "")
-  set(CMAKE_CUDA_FLAGS "-restrict -arch ${CUDA_ARCH} --expt-extended-lambda -Werror cross-execution-space-call,reorder,deprecated-declarations" CACHE STRING "")
+  set(CMAKE_CUDA_FLAGS "-restrict -arch ${CUDA_ARCH} --expt-relaxed-constexpr --expt-extended-lambda -Werror cross-execution-space-call,reorder,deprecated-declarations" CACHE STRING "")
   set(CMAKE_CUDA_FLAGS_RELEASE "-O3 -DNDEBUG -Xcompiler -DNDEBUG -Xcompiler -O3 -Xcompiler -mcpu=powerpc64le -Xcompiler -mtune=powerpc64le" CACHE STRING "")
   set(CMAKE_CUDA_FLAGS_RELWITHDEBINFO "-g -lineinfo ${CMAKE_CUDA_FLAGS_RELEASE}" CACHE STRING "")
   set(CMAKE_CUDA_FLAGS_DEBUG "-g -G -O0 -Xcompiler -O0" CACHE STRING "")
@@ -64,7 +62,7 @@ if (DEFINED ENV{CUDA_ROOT})
   # Uncomment this line to make nvcc output register usage for each kernel.
   # set(CMAKE_CUDA_FLAGS "${CMAKE_CUDA_FLAGS} --resource-usage" CACHE STRING "" FORCE)
 else()
-  message(FATAL_ERROR "You must have CUDA_ROOT environment variable set, we advise loading module cuda/11.0.3")
+  message(FATAL_ERROR "You must have CUDA_ROOT environment variable set, we advise loading module cuda/11.5.0")
 endif()
 
 # GTEST options
@@ -79,7 +77,6 @@ set(ENABLE_MATHPRESSO OFF CACHE BOOL "")
 # Silo configure script doesn't recognize systype
 set(SILO_BUILD_TYPE powerpc64-unknown-linux-gnu CACHE STRING "")
 
-set(GEOSX_BUILD_SHARED_LIBS OFF CACHE BOOL "")
 set(ENABLE_PVTPackage ON CACHE BOOL "")
 
 set(ENABLE_CALIPER ON CACHE BOOL "")
@@ -100,7 +97,7 @@ endif()
 
 set(ENABLE_DOXYGEN OFF CACHE PATH "")
 
-set(PETSC_OMP_DIR ${GEOSX_TPL_ROOT_DIR}/omp-links-for-petsc CACHE STRING "")
+set(PETSC_OMP_DIR ${GEOS_TPL_ROOT_DIR}/omp-links-for-petsc CACHE STRING "")
 
 # PETSc doesn't seem to work correctly with clang.
 set(ENABLE_PETSC OFF CACHE BOOL "")
@@ -108,7 +105,7 @@ set(ENABLE_PETSC OFF CACHE BOOL "")
 set(ENABLE_HYPRE ON CACHE BOOL "")
 set(ENABLE_HYPRE_DEVICE "CUDA" CACHE BOOL "")
 
-# activate workaround for fmt formatter
-set(ENABLE_FMT_CONST_FORMATTER_WORKAROUND ON CACHE BOOL "")
+# disable benchmarks, they are incompatible with P3's nvcc version (cuda 11.5.0)
+set(ENABLE_BENCHMARKS OFF CACHE BOOL "")
 
 include( ${CMAKE_CURRENT_LIST_DIR}/../tpls.cmake )

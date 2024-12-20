@@ -21,6 +21,10 @@ stages:
     - git submodule set-url integratedTests git@github.com:GEOS-DEV/integratedTests.git
     - git submodule set-url src/coreComponents/fileIO/coupling/hdf5_interface https://github.com/GEOS-DEV/hdf5_interface.git
 
+    # Clean up directory and submodules when pre-initialized from previous CI run
+    - git clean -x -f -d
+    - git submodule foreach --recursive git clean -x -f -d
+
     # Update submodules
     - git submodule update --init --recursive src/cmake/blt
     - git submodule update --init --recursive src/coreComponents/LvArray

@@ -2,10 +2,11 @@
  * ------------------------------------------------------------------------------------------------------------
  * SPDX-License-Identifier: LGPL-2.1-only
  *
- * Copyright (c) 2018-2020 Lawrence Livermore National Security LLC
- * Copyright (c) 2018-2020 The Board of Trustees of the Leland Stanford Junior University
- * Copyright (c) 2018-2020 TotalEnergies
- * Copyright (c) 2019-     GEOSX Contributors
+ * Copyright (c) 2016-2024 Lawrence Livermore National Security LLC
+ * Copyright (c) 2018-2024 TotalEnergies
+ * Copyright (c) 2018-2024 The Board of Trustees of the Leland Stanford Junior University
+ * Copyright (c) 2023-2024 Chevron
+ * Copyright (c) 2019-     GEOS/GEOSX Contributors
  * All rights reserved
  *
  * See top level LICENSE, COPYRIGHT, CONTRIBUTORS, NOTICE, and ACKNOWLEDGEMENTS files for details.
@@ -44,9 +45,12 @@
 #include "permeability/CarmanKozenyPermeability.hpp"
 #include "permeability/ExponentialDecayPermeability.hpp"
 #include "permeability/ParallelPlatesPermeability.hpp"
+#include "permeability/PressurePermeability.hpp"
 #include "permeability/ProppantPermeability.hpp"
 #include "permeability/SlipDependentPermeability.hpp"
 #include "permeability/WillisRichardsPermeability.hpp"
+#include "contact/CoulombFriction.hpp"
+#include "contact/RateAndStateFriction.hpp"
 
 
 namespace geos
@@ -81,6 +85,37 @@ struct ConstitutivePassThru< ElasticIsotropic >
   }
 };
 
+/**
+ * Specialization for models that derive from FrictionBase.
+ */
+template<>
+struct ConstitutivePassThru< FrictionBase >
+{
+  template< typename LAMBDA >
+  static
+  void execute( ConstitutiveBase & constitutiveRelation, LAMBDA && lambda )
+  {
+    ConstitutivePassThruHandler< CoulombFriction,
+                                 RateAndStateFriction >::execute( constitutiveRelation,
+                                                                  std::forward< LAMBDA >( lambda ) );
+  }
+};
+
+
+/**
+ * Specialization for models that derive from CoulombFriction.
+ */
+template<>
+struct ConstitutivePassThru< CoulombFriction >
+{
+  template< typename LAMBDA >
+  static
+  void execute( ConstitutiveBase & constitutiveRelation, LAMBDA && lambda )
+  {
+    ConstitutivePassThruHandler< CoulombFriction >::execute( constitutiveRelation,
+                                                             std::forward< LAMBDA >( lambda ) );
+  }
+};
 
 /**
  * Specialization for models that derive from SolidBase.
@@ -269,9 +304,9 @@ struct ConstitutivePassThru< PorousSolidBase >
                                  PorousSolid< ModifiedCamClay >,
                                  PorousSolid< DelftEgg >,
                                  PorousSolid< DruckerPrager >,
-                                 //PorousSolid< DuvautLionsSolid< DruckerPrager > >,
-                                 // PorousSolid< DuvautLionsSolid< DruckerPragerExtended > >,
-                                 //PorousSolid< DuvautLionsSolid< ModifiedCamClay > >,
+                                 PorousSolid< DuvautLionsSolid< DruckerPrager > >,
+                                 PorousSolid< DuvautLionsSolid< DruckerPragerExtended > >,
+                                 PorousSolid< DuvautLionsSolid< ModifiedCamClay > >,
                                  PorousSolid< ElasticIsotropic >,
                                  PorousSolid< ElasticTransverseIsotropic >,
                                  PorousSolid< ElasticIsotropicPressureDependent >,
@@ -296,6 +331,7 @@ struct ConstitutivePassThru< CompressibleSolidBase >
                                  CompressibleSolid< PressurePorosity, CarmanKozenyPermeability >,
                                  CompressibleSolid< PressurePorosity, ExponentialDecayPermeability >,
                                  CompressibleSolid< PressurePorosity, ParallelPlatesPermeability >,
+                                 CompressibleSolid< PressurePorosity, PressurePermeability >,
                                  CompressibleSolid< PressurePorosity, SlipDependentPermeability >,
                                  CompressibleSolid< PressurePorosity, WillisRichardsPermeability >
                                  >::execute( constitutiveRelation,
@@ -309,6 +345,7 @@ struct ConstitutivePassThru< CompressibleSolidBase >
                                  CompressibleSolid< PressurePorosity, CarmanKozenyPermeability >,
                                  CompressibleSolid< PressurePorosity, ExponentialDecayPermeability >,
                                  CompressibleSolid< PressurePorosity, ParallelPlatesPermeability >,
+                                 CompressibleSolid< PressurePorosity, PressurePermeability >,
                                  CompressibleSolid< PressurePorosity, SlipDependentPermeability >,
                                  CompressibleSolid< PressurePorosity, WillisRichardsPermeability >
                                  >::execute( constitutiveRelation,
@@ -353,15 +390,16 @@ struct ConstitutivePassThru< CoupledSolidBase >
                                  CompressibleSolid< PressurePorosity, CarmanKozenyPermeability >,
                                  CompressibleSolid< PressurePorosity, ExponentialDecayPermeability >,
                                  CompressibleSolid< PressurePorosity, ParallelPlatesPermeability >,
+                                 CompressibleSolid< PressurePorosity, PressurePermeability >,
                                  CompressibleSolid< PressurePorosity, SlipDependentPermeability >,
                                  CompressibleSolid< PressurePorosity, WillisRichardsPermeability >,
                                  PorousSolid< DruckerPragerExtended >,
                                  PorousSolid< ModifiedCamClay >,
                                  PorousSolid< DelftEgg >,
                                  PorousSolid< DruckerPrager >,
-                                 //PorousSolid< DuvautLionsSolid< DruckerPrager > >,
-                                 //PorousSolid< DuvautLionsSolid< DruckerPragerExtended > >,
-                                 //PorousSolid< DuvautLionsSolid< ModifiedCamClay > >,
+                                 PorousSolid< DuvautLionsSolid< DruckerPrager > >,
+                                 PorousSolid< DuvautLionsSolid< DruckerPragerExtended > >,
+                                 PorousSolid< DuvautLionsSolid< ModifiedCamClay > >,
                                  PorousSolid< ElasticIsotropic >,
                                  PorousSolid< ElasticTransverseIsotropic >,
                                  PorousSolid< ElasticIsotropicPressureDependent >,
@@ -379,15 +417,16 @@ struct ConstitutivePassThru< CoupledSolidBase >
                                  CompressibleSolid< PressurePorosity, CarmanKozenyPermeability >,
                                  CompressibleSolid< PressurePorosity, ExponentialDecayPermeability >,
                                  CompressibleSolid< PressurePorosity, ParallelPlatesPermeability >,
+                                 CompressibleSolid< PressurePorosity, PressurePermeability >,
                                  CompressibleSolid< PressurePorosity, SlipDependentPermeability >,
                                  CompressibleSolid< PressurePorosity, WillisRichardsPermeability >,
                                  PorousSolid< DruckerPragerExtended >,
                                  PorousSolid< ModifiedCamClay >,
                                  PorousSolid< DelftEgg >,
                                  PorousSolid< DruckerPrager >,
-                                 //PorousSolid< DuvautLionsSolid< DruckerPrager > >,
-                                 //PorousSolid< DuvautLionsSolid< DruckerPragerExtended > >,
-                                 //PorousSolid< DuvautLionsSolid< ModifiedCamClay > >,
+                                 PorousSolid< DuvautLionsSolid< DruckerPrager > >,
+                                 PorousSolid< DuvautLionsSolid< DruckerPragerExtended > >,
+                                 PorousSolid< DuvautLionsSolid< ModifiedCamClay > >,
                                  PorousSolid< ElasticIsotropic >,
                                  PorousSolid< ElasticTransverseIsotropic >,
                                  PorousSolid< ElasticIsotropicPressureDependent >,

@@ -2,10 +2,11 @@
  * ------------------------------------------------------------------------------------------------------------
  * SPDX-License-Identifier: LGPL-2.1-only
  *
- * Copyright (c) 2018-2020 Lawrence Livermore National Security LLC
- * Copyright (c) 2018-2020 The Board of Trustees of the Leland Stanford Junior University
- * Copyright (c) 2018-2020 TotalEnergies
- * Copyright (c) 2020-     GEOSX Contributors
+ * Copyright (c) 2016-2024 Lawrence Livermore National Security LLC
+ * Copyright (c) 2018-2024 TotalEnergies
+ * Copyright (c) 2018-2024 The Board of Trustees of the Leland Stanford Junior University
+ * Copyright (c) 2023-2024 Chevron
+ * Copyright (c) 2019-     GEOS/GEOSX Contributors
  * All rights reserved
  *
  * See top level LICENSE, COPYRIGHT, CONTRIBUTORS, NOTICE, and ACKNOWLEDGEMENTS files for details.
@@ -39,7 +40,7 @@ localIndex getFaceNodesPrism( localIndex const faceNum,
 {
   static_assert( N > 4,
                  "Function getFaceNodePrism can be called for a prism with N-sided polygon base where N > 5." );
-  static constexpr auto nodeCountError = "Not enough nodes for {} element (face index = {}).";
+  static constexpr auto nodeCountError = "Not enough nodes for {} element (face index = {}).\n";
 
   if( faceNum == 0 )
   {
@@ -89,8 +90,8 @@ localIndex getFaceNodesPrism( localIndex const faceNum,
   }
   else
   {
-    GEOS_ERROR( GEOS_FMT( "Local face index out of range for Prism{} element: face index = {}.",
-                          N, faceNum ) << generalMeshErrorAdvice );
+    GEOS_ERROR( GEOS_FMT( "Local face index out of range for Prism{} element: face index = {}.\n{}",
+                          N, faceNum, generalMeshErrorAdvice ) );
     return 0;
   }
 

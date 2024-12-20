@@ -2,10 +2,11 @@
  * ------------------------------------------------------------------------------------------------------------
  * SPDX-License-Identifier: LGPL-2.1-only
  *
- * Copyright (c) 2018-2020 Lawrence Livermore National Security LLC
- * Copyright (c) 2018-2020 The Board of Trustees of the Leland Stanford Junior University
- * Copyright (c) 2018-2020 TotalEnergies
- * Copyright (c) 2019-     GEOSX Contributors
+ * Copyright (c) 2016-2024 Lawrence Livermore National Security LLC
+ * Copyright (c) 2018-2024 TotalEnergies
+ * Copyright (c) 2018-2024 The Board of Trustees of the Leland Stanford Junior University
+ * Copyright (c) 2023-2024 Chevron
+ * Copyright (c) 2019-     GEOS/GEOSX Contributors
  * All rights reserved
  *
  * See top level LICENSE, COPYRIGHT, CONTRIBUTORS, NOTICE, and ACKNOWLEDGEMENTS files for details.
@@ -50,11 +51,13 @@ BlackOilFluidBase::BlackOilFluidBase( string const & name,
   //                   and then specify water reference pressure, water Bw, water compressibility and water viscosity
 
   registerWrapper( viewKeyStruct::formationVolumeFactorTableNamesString(), &m_formationVolFactorTableNames ).
+    setRTTypeName( rtTypes::CustomTypes::groupNameRefArray ).
     setInputFlag( InputFlags::OPTIONAL ).
     setDescription( "List of formation volume factor TableFunction names from the Functions block. \n"
                     "The user must provide one TableFunction per hydrocarbon phase, in the order provided in \"phaseNames\". \n"
                     "For instance, if \"oil\" is before \"gas\" in \"phaseNames\", the table order should be: oilTableName, gasTableName" );
   registerWrapper( viewKeyStruct::viscosityTableNamesString(), &m_viscosityTableNames ).
+    setRTTypeName( rtTypes::CustomTypes::groupNameRefArray ).
     setInputFlag( InputFlags::OPTIONAL ).
     setDescription( "List of viscosity TableFunction names from the Functions block. \n"
                     "The user must provide one TableFunction per hydrocarbon phase, in the order provided in \"phaseNames\". \n"
@@ -158,11 +161,11 @@ integer BlackOilFluidBase::getWaterPhaseIndex() const
   return PVTProps::PVTFunctionHelpers::findName( m_phaseNames, expectedWaterPhaseNames, viewKeyStruct::phaseNamesString() );
 }
 
-void BlackOilFluidBase::postProcessInput()
+void BlackOilFluidBase::postInputInitialization()
 {
   m_componentNames = m_phaseNames;
 
-  MultiFluidBase::postProcessInput();
+  MultiFluidBase::postInputInitialization();
 
   m_phaseTypes.resize( numFluidPhases() );
   m_phaseOrder.resizeDefault( MAX_NUM_PHASES, -1 );
@@ -183,6 +186,13 @@ void BlackOilFluidBase::postProcessInput()
     m_phaseTypes[ip] = toPhaseType( m_phaseNames[ip] );
     m_phaseOrder[m_phaseTypes[ip]] = ip;
   }
+
+  // Number of components should be at least equal to number of phases
+  GEOS_THROW_IF_LT_MSG( numFluidComponents(), numFluidPhases(),
+                        GEOS_FMT( "{}: {} number of components ({}) must be at least number of phases ({})",
+                                  getFullName(), viewKeyStruct::componentNamesString(),
+                                  numFluidComponents(), numFluidPhases() ),
+                        InputError );
 
   auto const checkInputSize = [&]( auto const & array, auto const & attribute )
   {

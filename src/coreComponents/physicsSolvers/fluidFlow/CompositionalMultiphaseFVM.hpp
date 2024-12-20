@@ -2,10 +2,11 @@
  * ------------------------------------------------------------------------------------------------------------
  * SPDX-License-Identifier: LGPL-2.1-only
  *
- * Copyright (c) 2018-2020 Lawrence Livermore National Security LLC
- * Copyright (c) 2018-2020 The Board of Trustees of the Leland Stanford Junior University
- * Copyright (c) 2018-2020 TotalEnergies
- * Copyright (c) 2019-     GEOSX Contributors
+ * Copyright (c) 2016-2024 Lawrence Livermore National Security LLC
+ * Copyright (c) 2018-2024 TotalEnergies
+ * Copyright (c) 2018-2024 The Board of Trustees of the Leland Stanford Junior University
+ * Copyright (c) 2023-2024 Chevron
+ * Copyright (c) 2019-     GEOS/GEOSX Contributors
  * All rights reserved
  *
  * See top level LICENSE, COPYRIGHT, CONTRIBUTORS, NOTICE, and ACKNOWLEDGEMENTS files for details.
@@ -71,6 +72,10 @@ public:
    * @return string that contains the catalog name to generate a new object through the object catalog.
    */
   static string catalogName() { return "CompositionalMultiphaseFVM"; }
+  /**
+   * @copydoc PhysicsSolverBase::getCatalogName()
+   */
+  string getCatalogName() const override { return catalogName(); }
 //END_SPHINX_INCLUDE_01
 
   /**
@@ -147,6 +152,15 @@ public:
 
   struct viewKeyStruct : CompositionalMultiphaseBase::viewKeyStruct
   {
+    // DBC parameters
+    static constexpr char const * useDBCString()                  { return "useDBC"; }
+    static constexpr char const * omegaDBCString()                { return "omegaDBC"; }
+    static constexpr char const * continuationDBCString()         { return "continuationDBC"; }
+
+    static constexpr char const * miscibleDBCString()             { return "miscibleDBC"; }
+    static constexpr char const * kappaminDBCString()             { return "kappaminDBC"; }
+    static constexpr char const * contMultiplierDBCString()       { return "contMultiplierDBC"; }
+
     // nonlinear solver parameters
     static constexpr char const * scalingTypeString()               { return "scalingType"; }
   };
@@ -160,20 +174,43 @@ public:
     Local            ///< Scale the Newton update locally (modifies the Newton direction)
   };
 
+  /**
+   * @brief Storage for value and element location, used to determine global max + location
+   */
+  template< typename VALUE_TYPE, typename INDEX_TYPE >
+  struct valueAndLocation
+  {
+    valueAndLocation(){}
+    valueAndLocation( VALUE_TYPE val, INDEX_TYPE loc ): value( val ), location( loc ){}
+    VALUE_TYPE value;
+    INDEX_TYPE location;
+  };
+  typedef valueAndLocation< real64, globalIndex > valueAndLocationType;
+
 protected:
 
-  virtual void postProcessInput() override;
+  virtual void postInputInitialization() override;
 
   virtual void
   initializePreSubGroups() override;
 
-  /**
-   * @brief Compute the largest CFL number in the domain
-   * @param dt the time step size
-   * @param domain the domain containing the mesh and fields
-   */
-  void
-  computeCFLNumbers( real64 const & dt, DomainPartition & domain );
+  struct DBCParameters
+  {
+    /// Flag to enable Dissipation Based Continuation Method
+    integer useDBC;
+    /// Factor by which the DBC flux is multiplied
+    real64 omega;
+    /// Factor by which the DBC flux is diminished every Newton
+    real64 kappa;
+    /// Flag to enable continuation for DBC Method
+    integer continuation;
+    /// Flag to enable DBC formulation
+    integer miscible;
+    /// Factor that controls how much dissipation is kept in the system when continuation is used
+    real64 kappamin;
+    /// Factor by which continuation parameter is changed every newton when DBC is used
+    real64 contMultiplier;
+  } m_dbcParams;
 
   /// Solution scaling type
   ScalingType m_scalingType;

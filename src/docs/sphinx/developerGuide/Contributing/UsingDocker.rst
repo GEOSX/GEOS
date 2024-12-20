@@ -1,6 +1,6 @@
 .. _UsingDocker:
 
-[Unsupported] Developing inside Docker with precompiled TPL binaries
+[Best effort] Developing inside Docker with precompiled TPL binaries
 ====================================================================
 
 For development purposes, you may want to use the publicly available docker images instead of compiling them yourself.
@@ -14,9 +14,7 @@ There are multiple options to use the exposed docker images.
   Install your favorite development inside the image (be mindful of X display issues), connect to the running container and start hacking!
 - It is also possible to develop directly in the cloud using `GitHub codespaces <https://docs.github.com/en/codespaces>`_.
   This product will let you buy a machine in the cloud with an environment already configured to build and run ``geos``.
-  To make it work, create a branch and/or fork the repository, then before creating your ``codespace`` instance, control the version of the TPL you need (defined by ``build.args.GEOS_TPL_TAG`` in `.devcontainer/devcontainer.json <https://github.com/GEOS-DEV/GEOS/blob/develop/.devcontainer/devcontainer.json>`_).
-  (You may most probably stick to the ``GEOSX_TPL_TAG`` of the ``.github/workflows/ci_tests.yml`` file).
-  The submodules are automatically cloned (expect for the ``integratedTests`` which you may need to ``init`` yourself if you really need them).
+  The submodules are automatically cloned (except for the ``integratedTests`` which you may need to ``init`` yourself if you really need them, see `.devcontainer/postCreateCommand.sh <https://github.com/GEOS-DEV/GEOS/blob/develop/.devcontainer/postCreateCommand.sh>`_).
   You do not need to run the ``scripts/config-build.py`` scripts since ``cmake`` and ``vscode`` are already configured.
   Last, run ``cmake`` through the ``vscode`` interface and start hacking!
 

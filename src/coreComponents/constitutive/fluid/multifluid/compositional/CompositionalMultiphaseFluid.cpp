@@ -2,10 +2,11 @@
  * ------------------------------------------------------------------------------------------------------------
  * SPDX-License-Identifier: LGPL-2.1-only
  *
- * Copyright (c) 2018-2020 Lawrence Livermore National Security LLC
- * Copyright (c) 2018-2020 The Board of Trustees of the Leland Stanford Junior University
- * Copyright (c) 2018-2020 TotalEnergies
- * Copyright (c) 2019-     GEOSX Contributors
+ * Copyright (c) 2016-2024 Lawrence Livermore National Security LLC
+ * Copyright (c) 2018-2024 TotalEnergies
+ * Copyright (c) 2018-2024 The Board of Trustees of the Leland Stanford Junior University
+ * Copyright (c) 2023-2024 Chevron
+ * Copyright (c) 2019-     GEOS/GEOSX Contributors
  * All rights reserved
  *
  * See top level LICENSE, COPYRIGHT, CONTRIBUTORS, NOTICE, and ACKNOWLEDGEMENTS files for details.
@@ -19,10 +20,26 @@
 #include "CompositionalMultiphaseFluid.hpp"
 
 #include "constitutive/fluid/multifluid/CO2Brine/functions/PVTFunctionHelpers.hpp"
+#include "constitutive/fluid/multifluid/MultiFluidFields.hpp"
 #include "codingUtilities/Utilities.hpp"
+#include "common/format/StringUtilities.hpp"
 
 namespace geos
 {
+
+namespace fields
+{
+namespace multifluid
+{
+DECLARE_FIELD( kValues,
+               "kValues",
+               array4dLayoutPhaseComp,
+               0,
+               NOPLOT,
+               WRITE_AND_READ,
+               "Phase equilibrium ratios" );
+}
+}
 
 namespace constitutive
 {
@@ -30,67 +47,77 @@ namespace constitutive
 template< typename FLASH, typename PHASE1, typename PHASE2, typename PHASE3 >
 CompositionalMultiphaseFluid< FLASH, PHASE1, PHASE2, PHASE3 >::
 CompositionalMultiphaseFluid( string const & name, Group * const parent )
-  : MultiFluidBase( name, parent )
+  : MultiFluidBase( name, parent ),
+  m_componentProperties( std::make_unique< compositional::ComponentProperties >( m_componentNames, m_componentMolarWeight ) ),
+  m_parameters( createModelParameters() )
 {
   using InputFlags = dataRepository::InputFlags;
+  using RestartFlags = dataRepository::RestartFlags;
 
   getWrapperBase( viewKeyStruct::componentNamesString() ).setInputFlag( InputFlags::REQUIRED );
   getWrapperBase( viewKeyStruct::componentMolarWeightString() ).setInputFlag( InputFlags::REQUIRED );
   getWrapperBase( viewKeyStruct::phaseNamesString() ).setInputFlag( InputFlags::REQUIRED );
 
-  registerWrapper( viewKeyStruct::componentCriticalPressureString(), &m_componentCriticalPressure ).
+  registerWrapper( viewKeyStruct::componentCriticalPressureString(), &m_componentProperties->m_componentCriticalPressure ).
     setInputFlag( InputFlags::REQUIRED ).
     setDescription( "Component critical pressures" );
 
-  registerWrapper( viewKeyStruct::componentCriticalTemperatureString(), &m_componentCriticalTemperature ).
+  registerWrapper( viewKeyStruct::componentCriticalTemperatureString(), &m_componentProperties->m_componentCriticalTemperature ).
     setInputFlag( InputFlags::REQUIRED ).
     setDescription( "Component critical temperatures" );
 
-  registerWrapper( viewKeyStruct::componentCriticalVolumeString(), &m_componentCriticalVolume ).
-    setInputFlag( InputFlags::OPTIONAL ).
-    setDescription( "Component critical volumnes" );
-
-  registerWrapper( viewKeyStruct::componentAcentricFactorString(), &m_componentAcentricFactor ).
+  registerWrapper( viewKeyStruct::componentAcentricFactorString(), &m_componentProperties->m_componentAcentricFactor ).
     setInputFlag( InputFlags::REQUIRED ).
     setDescription( "Component acentric factors" );
 
-  registerWrapper( viewKeyStruct::componentVolumeShiftString(), &m_componentVolumeShift ).
+  registerWrapper( viewKeyStruct::componentVolumeShiftString(), &m_componentProperties->m_componentVolumeShift ).
     setInputFlag( InputFlags::OPTIONAL ).
     setDescription( "Component volume shifts" );
 
-  registerWrapper( viewKeyStruct::componentBinaryCoeffString(), &m_componentBinaryCoeff ).
+  registerWrapper( viewKeyStruct::componentBinaryCoeffString(), &m_componentProperties->m_componentBinaryCoeff ).
     setInputFlag( InputFlags::OPTIONAL ).
     setDescription( "Table of binary interaction coefficients" );
+
+  registerField( fields::multifluid::kValues{}, &m_kValues );
+
+  // Link parameters specific to each model
+  m_parameters->registerParameters( this );
+
+  // Register extra wrappers to enable auto-cloning
+  registerWrapper( "phaseOrder", &m_phaseOrder )
+    .setSizedFromParent( 0 )
+    .setRestartFlags( RestartFlags::NO_WRITE );
 }
 
 template< typename FLASH, typename PHASE1, typename PHASE2, typename PHASE3 >
 integer CompositionalMultiphaseFluid< FLASH, PHASE1, PHASE2, PHASE3 >::getWaterPhaseIndex() const
 {
-  string const expectedWaterPhaseNames[] = { "water" };
-  return PVTProps::PVTFunctionHelpers::findName( m_phaseNames, expectedWaterPhaseNames, viewKeyStruct::phaseNamesString() );
-}
-
-// Naming conventions
-namespace compositional
-{
-template< int NP > struct PhaseName {};
-template<> struct PhaseName< 2 > { static constexpr char const * catalogName() { return "TwoPhase"; } };
-template<> struct PhaseName< 3 > { static constexpr char const * catalogName() { return "ThreePhase"; } };
+  integer const aqueous = static_cast< integer >(PhaseType::AQUEOUS);
+  return m_phaseOrder.size() > aqueous ? m_phaseOrder[aqueous] : -1;
 }
 
 template< typename FLASH, typename PHASE1, typename PHASE2, typename PHASE3 >
 string CompositionalMultiphaseFluid< FLASH, PHASE1, PHASE2, PHASE3 >::catalogName()
 {
-  return GEOS_FMT( "Compositonal{}Fluid{}{}",
-                   compositional::PhaseName< FLASH::KernelWrapper::getNumberOfPhases() >::catalogName(),
+  return GEOS_FMT( "Compositional{}Fluid{}",
                    FLASH::catalogName(),
                    PHASE1::Viscosity::catalogName() );
 }
 
 template< typename FLASH, typename PHASE1, typename PHASE2, typename PHASE3 >
-void CompositionalMultiphaseFluid< FLASH, PHASE1, PHASE2, PHASE3 >::postProcessInput()
+void CompositionalMultiphaseFluid< FLASH, PHASE1, PHASE2, PHASE3 >::allocateConstitutiveData( dataRepository::Group & parent,
+                                                                                              localIndex const numConstitutivePointsPerParentIndex )
 {
-  MultiFluidBase::postProcessInput();
+  MultiFluidBase::allocateConstitutiveData( parent, numConstitutivePointsPerParentIndex );
+
+  // Zero k-Values to force initialisation with Wilson k-Values
+  m_kValues.zero();
+}
+
+template< typename FLASH, typename PHASE1, typename PHASE2, typename PHASE3 >
+void CompositionalMultiphaseFluid< FLASH, PHASE1, PHASE2, PHASE3 >::postInputInitialization()
+{
+  MultiFluidBase::postInputInitialization();
 
   integer const NC = numFluidComponents();
   integer const NP = numFluidPhases();
@@ -107,32 +134,56 @@ void CompositionalMultiphaseFluid< FLASH, PHASE1, PHASE2, PHASE3 >::postProcessI
                           InputError );
 
   };
-  checkInputSize( m_componentCriticalPressure, NC, viewKeyStruct::componentCriticalPressureString() );
-  checkInputSize( m_componentCriticalTemperature, NC, viewKeyStruct::componentCriticalTemperatureString() );
-  checkInputSize( m_componentAcentricFactor, NC, viewKeyStruct::componentAcentricFactorString() );
+  checkInputSize( m_componentProperties->m_componentCriticalPressure, NC, viewKeyStruct::componentCriticalPressureString() );
+  checkInputSize( m_componentProperties->m_componentCriticalTemperature, NC, viewKeyStruct::componentCriticalTemperatureString() );
+  checkInputSize( m_componentProperties->m_componentAcentricFactor, NC, viewKeyStruct::componentAcentricFactorString() );
 
-  if( m_componentCriticalVolume.empty() )
+  if( m_componentProperties->m_componentVolumeShift.empty() )
   {
-    m_componentCriticalVolume.resize( NC );
-    calculateCriticalVolume( m_componentCriticalPressure,
-                             m_componentCriticalTemperature,
-                             m_componentCriticalVolume );
+    m_componentProperties->m_componentVolumeShift.resize( NC );
+    m_componentProperties->m_componentVolumeShift.zero();
   }
-  checkInputSize( m_componentCriticalVolume, NC, viewKeyStruct::componentCriticalVolumeString() );
+  checkInputSize( m_componentProperties->m_componentVolumeShift, NC, viewKeyStruct::componentVolumeShiftString() );
 
-  if( m_componentVolumeShift.empty() )
+  array2d< real64 > & componentBinaryCoeff = m_componentProperties->m_componentBinaryCoeff;
+  if( componentBinaryCoeff.empty() )
   {
-    m_componentVolumeShift.resize( NC );
-    m_componentVolumeShift.zero();
+    componentBinaryCoeff.resize( NC, NC );
+    componentBinaryCoeff.zero();
   }
-  checkInputSize( m_componentVolumeShift, NC, viewKeyStruct::componentVolumeShiftString() );
+  checkInputSize( componentBinaryCoeff, NC * NC, viewKeyStruct::componentBinaryCoeffString() );
 
-  if( m_componentBinaryCoeff.empty() )
+  // Binary interaction coefficients should be symmetric and have zero diagonal
+  GEOS_THROW_IF_NE_MSG( componentBinaryCoeff.size( 0 ), NC,
+                        GEOS_FMT( "{}: invalid number of values in attribute '{}'", getFullName(), viewKeyStruct::componentBinaryCoeffString() ),
+                        InputError );
+  GEOS_THROW_IF_NE_MSG( componentBinaryCoeff.size( 1 ), NC,
+                        GEOS_FMT( "{}: invalid number of values in attribute '{}'", getFullName(), viewKeyStruct::componentBinaryCoeffString() ),
+                        InputError );
+  for( integer ic = 0; ic < NC; ++ic )
   {
-    m_componentBinaryCoeff.resize( NC, NC );
-    m_componentBinaryCoeff.zero();
+    GEOS_THROW_IF_GT_MSG( LvArray::math::abs( componentBinaryCoeff( ic, ic )), MultiFluidConstants::epsilon,
+                          GEOS_FMT( "{}: {} entry at ({},{}) is {}: should be zero", getFullName(), viewKeyStruct::componentBinaryCoeffString(),
+                                    ic, ic, componentBinaryCoeff( ic, ic ) ),
+                          InputError );
+    for( integer jc = ic + 1; jc < NC; ++jc )
+    {
+      real64 const difference = LvArray::math::abs( componentBinaryCoeff( ic, jc )-componentBinaryCoeff( jc, ic ));
+      GEOS_THROW_IF_GT_MSG( difference, MultiFluidConstants::epsilon,
+                            GEOS_FMT( "{}: {} entry at ({},{}) is {} and is different from entry at ({},{}) which is {}",
+                                      getFullName(), viewKeyStruct::componentBinaryCoeffString(),
+                                      ic, jc, componentBinaryCoeff( ic, jc ), jc, ic, componentBinaryCoeff( jc, ic ) ),
+                            InputError );
+    }
   }
-  checkInputSize( m_componentBinaryCoeff, NC * NC, viewKeyStruct::componentBinaryCoeffString() );
+
+  // Determine the phase ordering
+  m_phaseOrder.resize( 3 );
+  m_phaseOrder[PhaseType::LIQUID] = findPhaseIndex( "oil,liq,liquid" );
+  m_phaseOrder[PhaseType::VAPOUR] = findPhaseIndex( "gas,vap,vapor,vapour" );
+  m_phaseOrder[PhaseType::AQUEOUS] = findPhaseIndex( "wat,water,aqueous" );
+
+  m_parameters->postInputInitialization( this, *m_componentProperties );
 }
 
 template< typename FLASH, typename PHASE1, typename PHASE2, typename PHASE3 >
@@ -145,11 +196,21 @@ void CompositionalMultiphaseFluid< FLASH, PHASE1, PHASE2, PHASE3 >::initializePo
 }
 
 template< typename FLASH, typename PHASE1, typename PHASE2, typename PHASE3 >
+void CompositionalMultiphaseFluid< FLASH, PHASE1, PHASE2, PHASE3 >::resizeFields( localIndex const size, localIndex const numPts )
+{
+  MultiFluidBase::resizeFields( size, numPts );
+
+  m_kValues.resize( size, numPts, numFluidPhases()-1, numFluidComponents() );
+}
+
+template< typename FLASH, typename PHASE1, typename PHASE2, typename PHASE3 >
 std::unique_ptr< ConstitutiveBase >
 CompositionalMultiphaseFluid< FLASH, PHASE1, PHASE2, PHASE3 >::deliverClone( string const & name,
                                                                              Group * const parent ) const
 {
   std::unique_ptr< ConstitutiveBase > clone = MultiFluidBase::deliverClone( name, parent );
+  CompositionalMultiphaseFluid & newFluid = dynamicCast< CompositionalMultiphaseFluid & >( *clone );
+  newFluid.createModels();
   return clone;
 }
 
@@ -157,12 +218,12 @@ template< typename FLASH, typename PHASE1, typename PHASE2, typename PHASE3 >
 typename CompositionalMultiphaseFluid< FLASH, PHASE1, PHASE2, PHASE3 >::KernelWrapper
 CompositionalMultiphaseFluid< FLASH, PHASE1, PHASE2, PHASE3 >::createKernelWrapper()
 {
-  //auto phaseModels = std::make_tuple((m_phases)...);
   return KernelWrapper( *m_componentProperties,
                         *m_flash,
                         *m_phase1,
                         *m_phase2,
                         *m_phase3,
+                        m_phaseOrder.toViewConst(),
                         m_componentMolarWeight,
                         m_useMass,
                         m_phaseFraction.toView(),
@@ -172,66 +233,90 @@ CompositionalMultiphaseFluid< FLASH, PHASE1, PHASE2, PHASE3 >::createKernelWrapp
                         m_phaseEnthalpy.toView(),
                         m_phaseInternalEnergy.toView(),
                         m_phaseCompFraction.toView(),
-                        m_totalDensity.toView() );
+                        m_totalDensity.toView(),
+                        m_kValues.toView() );
 }
 
 // Create the fluid models
 template< typename FLASH, typename PHASE1, typename PHASE2, typename PHASE3 >
 void CompositionalMultiphaseFluid< FLASH, PHASE1, PHASE2, PHASE3 >::createModels()
 {
-  m_componentProperties = std::make_unique< compositional::ComponentProperties >(
-    m_componentNames,
-    m_componentMolarWeight,
-    m_componentCriticalPressure,
-    m_componentCriticalTemperature,
-    m_componentCriticalVolume,
-    m_componentAcentricFactor,
-    m_componentVolumeShift,
-    m_componentBinaryCoeff );
-
   m_flash = std::make_unique< FLASH >( getName() + '_' + FLASH::catalogName(),
-                                       *m_componentProperties );
+                                       *m_componentProperties,
+                                       *m_parameters );
 
   m_phase1 = std::make_unique< PHASE1 >( GEOS_FMT( "{}_PhaseModel1", getName() ),
-                                         *m_componentProperties );
+                                         *m_componentProperties,
+                                         0,
+                                         *m_parameters );
 
   m_phase2 = std::make_unique< PHASE2 >( GEOS_FMT( "{}_PhaseModel2", getName() ),
-                                         *m_componentProperties );
+                                         *m_componentProperties,
+                                         1,
+                                         *m_parameters );
 
   m_phase3 = std::make_unique< PHASE3 >( GEOS_FMT( "{}_PhaseModel3", getName() ),
-                                         *m_componentProperties );
+                                         *m_componentProperties,
+                                         2,
+                                         *m_parameters );
 }
 
 template< typename FLASH, typename PHASE1, typename PHASE2, typename PHASE3 >
-void CompositionalMultiphaseFluid< FLASH, PHASE1, PHASE2, PHASE3 >::calculateCriticalVolume(
-  arrayView1d< const real64 > const criticalPressure,
-  arrayView1d< const real64 > const criticalTemperature,
-  arrayView1d< real64 > const criticalVolume ) const
+integer CompositionalMultiphaseFluid< FLASH, PHASE1, PHASE2, PHASE3 >::findPhaseIndex( string names ) const
 {
-  integer const numComponents = criticalPressure.size( 0 );
-  for( integer ic=0; ic<numComponents; ++ic )
+  auto const nameContainer = stringutilities::tokenize( names, ",", true, false );
+
+  for( integer ip = 0; ip < numFluidPhases(); ++ip )
   {
-    criticalVolume[ic] = 2.215e-6 * criticalTemperature[ic] / (0.025 + 1e-6*criticalPressure[ic] );   // m^3/mol
+    std::string const phaseName = stringutilities::toLower( m_phaseNames[ip] );
+    if( std::find( nameContainer.begin(), nameContainer.end(), phaseName ) != nameContainer.end())
+    {
+      return ip;
+    }
   }
+  return -1;
+}
+
+// Create the fluid models
+template< typename FLASH, typename PHASE1, typename PHASE2, typename PHASE3 >
+std::unique_ptr< compositional::ModelParameters >
+CompositionalMultiphaseFluid< FLASH, PHASE1, PHASE2, PHASE3 >::createModelParameters()
+{
+  std::unique_ptr< compositional::ModelParameters > parameters;
+  parameters = FLASH::createParameters( std::move( parameters ));
+  parameters = PHASE1::createParameters( std::move( parameters ));
+  parameters = PHASE2::createParameters( std::move( parameters ));
+  parameters = PHASE3::createParameters( std::move( parameters ));
+  return parameters;
 }
 
 // Explicit instantiation of the model template.
 template class CompositionalMultiphaseFluid<
-    compositional::NegativeTwoPhaseFlashPRPR,
+    compositional::NegativeTwoPhaseFlashModel,
     compositional::PhaseModel< compositional::CompositionalDensity, compositional::ConstantViscosity, compositional::NullModel >,
     compositional::PhaseModel< compositional::CompositionalDensity, compositional::ConstantViscosity, compositional::NullModel > >;
 template class CompositionalMultiphaseFluid<
-    compositional::NegativeTwoPhaseFlashSRKSRK,
-    compositional::PhaseModel< compositional::CompositionalDensity, compositional::ConstantViscosity, compositional::NullModel >,
-    compositional::PhaseModel< compositional::CompositionalDensity, compositional::ConstantViscosity, compositional::NullModel > >;
+    compositional::NegativeTwoPhaseFlashModel,
+    compositional::PhaseModel< compositional::CompositionalDensity, compositional::LohrenzBrayClarkViscosity, compositional::NullModel >,
+    compositional::PhaseModel< compositional::CompositionalDensity, compositional::LohrenzBrayClarkViscosity, compositional::NullModel > >;
+template class CompositionalMultiphaseFluid<
+    compositional::ImmiscibleWaterFlashModel,
+    compositional::PhaseModel< compositional::CompositionalDensity, compositional::LohrenzBrayClarkViscosity, compositional::NullModel >,
+    compositional::PhaseModel< compositional::CompositionalDensity, compositional::LohrenzBrayClarkViscosity, compositional::NullModel >,
+    compositional::PhaseModel< compositional::ImmiscibleWaterDensity, compositional::ImmiscibleWaterViscosity, compositional::NullModel > >;
 
 REGISTER_CATALOG_ENTRY( ConstitutiveBase,
-                        CompositionalTwoPhasePengRobinsonConstantViscosity,
+                        CompositionalTwoPhaseConstantViscosity,
                         string const &,
                         dataRepository::Group * const )
 
 REGISTER_CATALOG_ENTRY( ConstitutiveBase,
-                        CompositionalTwoPhaseSoaveRedlichKwongConstantViscosity,
+                        CompositionalTwoPhaseLohrenzBrayClarkViscosity,
+                        string const &,
+                        dataRepository::Group * const )
+
+REGISTER_CATALOG_ENTRY( ConstitutiveBase,
+                        CompositionalThreePhaseLohrenzBrayClarkViscosity,
                         string const &,
                         dataRepository::Group * const )
 

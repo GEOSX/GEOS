@@ -2,7 +2,7 @@
     "build": {
         "dockerfile": "Dockerfile",
         "args": {
-            "GEOS_TPL_TAG": "245-86"
+            "GEOS_TPL_TAG": "288-584"
         }
     },
     "runArgs": [
@@ -15,11 +15,36 @@
             "extensions": [
                 "eamodio.gitlens",
                 "fredericbonnet.cmake-test-adapter",
-                "github.vscode-github-actions",
+                "GitHub.vscode-github-actions",
                 "GitHub.vscode-pull-request-github",
                 "ms-vscode.cpptools-extension-pack",
                 "redhat.vscode-xml"
             ]
+        },
+        "codespaces": {
+            "repositories": {
+                "GEOS-DEV/hdf5_interface": {
+                    "permissions": {
+                        "contents": "write"
+                    }
+                },
+                "GEOS-DEV/integratedTests": {
+                    "permissions": {
+                        "contents": "write"
+                    }
+                },
+                "GEOS-DEV/LvArray": {
+                    "permissions": {
+                        "contents": "write"
+                    }
+                },
+                "GEOS-DEV/PVTPackage": {
+                    "permissions": {
+                        "contents": "write"
+                    }
+                }
+            },
+            "openFiles": []
         }
     },
     "features": {

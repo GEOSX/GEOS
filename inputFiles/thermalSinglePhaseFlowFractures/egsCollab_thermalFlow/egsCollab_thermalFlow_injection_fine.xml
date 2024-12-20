@@ -28,7 +28,7 @@
       name="SurfaceGenerator"
       discretization="FE1"
       targetRegions="{ matrix }"
-      targetObjects="{ FracturePlanes }"
+      targetObjects="{ FracturePlane }"
       fractureRegion="fracture"
       logLevel="1"
       mpiCommOrder="1"/>

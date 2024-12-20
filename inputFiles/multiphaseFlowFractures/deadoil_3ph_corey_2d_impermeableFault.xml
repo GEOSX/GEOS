@@ -15,6 +15,7 @@
       targetRegions="{ Domain, Fracture }"
       initialDt="1e4">
       <NonlinearSolverParameters
+        lineSearchAction="None"
         newtonTol="1.0e-6"
         newtonMaxIter="15"
         maxTimeStepCuts="2"
@@ -108,7 +109,7 @@
   <ElementRegions>
     <CellElementRegion
       name="Domain"
-      cellBlocks="{ block1 }"
+      cellBlocks="{ * }"
       materialList="{ fluid1, rock, relperm }"/>
 
     <SurfaceElementRegion

@@ -2,10 +2,11 @@
  * ------------------------------------------------------------------------------------------------------------
  * SPDX-License-Identifier: LGPL-2.1-only
  *
- * Copyright (c) 2018-2020 Lawrence Livermore National Security LLC
- * Copyright (c) 2018-2020 The Board of Trustees of the Leland Stanford Junior University
- * Copyright (c) 2018-2020 TotalEnergies
- * Copyright (c) 2019-     GEOSX Contributors
+ * Copyright (c) 2016-2024 Lawrence Livermore National Security LLC
+ * Copyright (c) 2018-2024 TotalEnergies
+ * Copyright (c) 2018-2024 The Board of Trustees of the Leland Stanford Junior University
+ * Copyright (c) 2023-2024 Chevron
+ * Copyright (c) 2019-     GEOS/GEOSX Contributors
  * All rights reserved
  *
  * See top level LICENSE, COPYRIGHT, CONTRIBUTORS, NOTICE, and ACKNOWLEDGEMENTS files for details.
@@ -21,8 +22,9 @@
 
 #include "FunctionBase.hpp"
 
-#include "codingUtilities/EnumStrings.hpp"
+#include "common/format/EnumStrings.hpp"
 #include "LvArray/src/tensorOps.hpp"
+#include "common/format/table/TableFormatter.hpp"
 #include "common/Units.hpp"
 
 namespace geos
@@ -44,6 +46,15 @@ public:
     Nearest,
     Upper,
     Lower
+  };
+
+  /// Struct containing output options
+  struct OutputOptions
+  {
+    /// Output PVT in CSV file
+    bool writeCSV;
+    /// Output PVT in log
+    bool writeInLog;
   };
 
   /// maximum dimensions for the coordinates in the table
@@ -276,7 +287,9 @@ private:
    * @return The unit of a coordinate dimension, or units::Unknown if no units has been specified.
    */
   units::Unit getDimUnit( localIndex const dim ) const
-  { return size_t(dim) < m_dimUnits.size() ? m_dimUnits[dim] : units::Unknown; }
+  {
+    return size_t(dim) < m_dimUnits.size() ? m_dimUnits[dim] : units::Unknown;
+  }
 
   /**
    * @brief Set the interpolation method
@@ -293,11 +306,41 @@ private:
                             std::vector< units::Unit > const & dimUnits = {} );
 
   /**
+   * @brief Set the units of each dimension
+   * @param dimUnits The units of each dimension
+   */
+  void setDimUnits( std::vector< units::Unit > const & dimUnits )
+  {
+    m_dimUnits = dimUnits;
+  }
+
+  /**
    * @brief Set the table values
    * @param values An array of table values in fortran order
    * @param unit The unit of the given values
    */
   void setTableValues( real64_array values, units::Unit unit = units::Unknown );
+
+  /**
+   * @brief Set the table value units
+   * @param unit The unit of the values
+   */
+  void setValueUnits( units::Unit unit )
+  {
+    m_valueUnit = unit;
+  }
+
+/**
+ * @return The table unit
+ */
+  units::Unit getValueUnit() const { return m_valueUnit; }
+
+
+  /**
+   * @brief Print the table(s) in the log and/or CSV files when requested by the user.
+   * @param pvtOutputOpts Struct containing output options
+   */
+  void outputPVTTableData( OutputOptions const pvtOutputOpts ) const;
 
   /**
    * @brief Create an instance of the kernel wrapper
@@ -329,6 +372,7 @@ private:
    * @param[in] delimiter The delimiter used for file entries.
    */
   void readFile( string const & filename, array1d< real64 > & target );
+
 
   /// Coordinates for 1D table
   array1d< real64 > m_tableCoordinates1D;
@@ -648,6 +692,22 @@ ENUM_STRINGS( TableFunction::InterpolationType,
               "nearest",
               "upper",
               "lower" );
+
+/**
+ * @brief Template specialisation to convert a TableFunction to a CSV string.
+ * @param tableData The TableFunction object to convert.
+ * @return The CSV string representation of the TableFunction.
+ */
+template<>
+string TableTextFormatter::toString< TableFunction >( TableFunction const & tableData ) const;
+
+/**
+ * @brief Template specialisation to convert a TableFunction to a table string.
+ * @param tableData The TableFunction object to convert.
+ * @return The table string representation of the TableFunction.
+ */
+template<>
+string TableCSVFormatter::toString< TableFunction >( TableFunction const & tableData ) const;
 
 } /* namespace geos */
 

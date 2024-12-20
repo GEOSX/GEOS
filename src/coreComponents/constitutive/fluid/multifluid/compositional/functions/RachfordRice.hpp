@@ -2,10 +2,11 @@
  * ------------------------------------------------------------------------------------------------------------
  * SPDX-License-Identifier: LGPL-2.1-only
  *
- * Copyright (c) 2018-2020 Lawrence Livermore National Security LLC
- * Copyright (c) 2018-2020 The Board of Trustees of the Leland Stanford Junior University
- * Copyright (c) 2018-2020 TotalEnergies
- * Copyright (c) 2019-     GEOSX Contributors
+ * Copyright (c) 2016-2024 Lawrence Livermore National Security LLC
+ * Copyright (c) 2018-2024 TotalEnergies
+ * Copyright (c) 2018-2024 The Board of Trustees of the Leland Stanford Junior University
+ * Copyright (c) 2023-2024 Chevron
+ * Copyright (c) 2019-     GEOS/GEOSX Contributors
  * All rights reserved
  *
  * See top level LICENSE, COPYRIGHT, CONTRIBUTORS, NOTICE, and ACKNOWLEDGEMENTS files for details.
@@ -21,6 +22,7 @@
 
 #include "common/DataTypes.hpp"
 #include "constitutive/fluid/multifluid/MultiFluidConstants.hpp"
+#include "constitutive/fluid/multifluid/Layouts.hpp"
 
 namespace geos
 {
@@ -44,36 +46,24 @@ public:
 
   /**
    * @brief Function solving the Rachford-Rice equation
-   * @input[in] kValues the array fo K-values
+   * @input[in] kValues the array of K-values
    * @input[in] feed the component fractions
    * @input[in] presentComponentIds the indices of components with a non-zero fractions
    * @return the gas mole fraction
    **/
+  template< integer USD1, integer USD2 >
   GEOS_HOST_DEVICE
   real64
   static
-  solve( arraySlice1d< real64 const > const kValues,
-         arraySlice1d< real64 const > const feed,
-         arraySlice1d< integer const > const presentComponentIds )
+  solve( arraySlice1d< real64 const, USD2 > const & kValues,
+         arraySlice1d< real64 const, USD1 > const & feed,
+         arraySlice1d< integer const > const & presentComponentIds )
   {
     real64 gasPhaseMoleFraction = 0;
 
     // min and max Kvalues for non-zero composition
-    real64 maxK = 0.0;
-    real64 minK = 1 / epsilon;
-
-    for( integer i = 0; i < presentComponentIds.size(); ++i )
-    {
-      integer const ic = presentComponentIds[i];
-      if( kValues[ic] > maxK )
-      {
-        maxK = kValues[ic];
-      }
-      if( kValues[ic] < minK )
-      {
-        minK = kValues[ic];
-      }
-    }
+    real64 minK, maxK;
+    findKValueRange( kValues, presentComponentIds, minK, maxK );
 
     // check for trivial solutions.
     // this corresponds to bad Kvalues
@@ -98,48 +88,37 @@ public:
     real64 currentError = 1 / epsilon;
 
     // step 2: start the SSI loop
-    real64 funcXMin = 0.0;
+    // Evaluate at the bounds
+    real64 funcXMin = evaluate( kValues, feed, presentComponentIds, xMin );
+    real64 funcXMax = evaluate( kValues, feed, presentComponentIds, xMax );
     real64 funcXMid = 0.0;
-    real64 funcXMax = 0.0;
-    bool recomputeMin = true;
-    bool recomputeMax = true;
+
+    // If the bound values are the same sign then we have a trivial solution
+    if( 0.0 < funcXMin * funcXMax )
+    {
+      gasPhaseMoleFraction = (0.0 < funcXMin) ? 1.0 : 0.0;
+      return gasPhaseMoleFraction;
+    }
+
     integer SSIIteration = 0;
 
     while( ( currentError > SSITolerance ) && ( SSIIteration < maxSSIIterations ) )
     {
       real64 const xMid = 0.5 * ( xMin + xMax );
-      if( recomputeMin )
-      {
-        funcXMin = evaluate( kValues, feed, presentComponentIds, xMin );
-      }
-      if( recomputeMax )
-      {
-        funcXMax = evaluate( kValues, feed, presentComponentIds, xMax );
-      }
       funcXMid = evaluate( kValues, feed, presentComponentIds, xMid );
 
-      if( ( funcXMin < 0 ) && ( funcXMax < 0 ) )
-      {
-        return gasPhaseMoleFraction = 0.0;
-      }
-      else if( ( funcXMin > 1 ) && ( funcXMax > 1 ) )
-      {
-        return gasPhaseMoleFraction = 1.0;
-      }
-      else if( funcXMin * funcXMid < 0.0 )
+      if( 0.0 < funcXMax * funcXMid )
       {
         xMax = xMid;
-        recomputeMax = true;
-        recomputeMin = false;
+        funcXMax = funcXMid;
       }
-      else if( funcXMax * funcXMid < 0.0 )
+      else if( 0.0 < funcXMin * funcXMid )
       {
         xMin = xMid;
-        recomputeMax = false;
-        recomputeMin = true;
+        funcXMin = funcXMid;
       }
 
-      currentError = LvArray::math::min( LvArray::math::abs( funcXMax - funcXMin ),
+      currentError = LvArray::math::min( LvArray::math::abs( funcXMid ),
                                          LvArray::math::abs( xMax - xMin ) );
       SSIIteration++;
 
@@ -151,26 +130,28 @@ public:
     // step 3: start the Newton loop
     integer newtonIteration = 0;
     real64 newtonValue = gasPhaseMoleFraction;
+    real64 funcNewton = evaluate( kValues, feed, presentComponentIds, newtonValue );
 
     while( ( currentError > newtonTolerance ) && ( newtonIteration < maxNewtonIterations ) )
     {
-      real64 const deltaNewton = -evaluate( kValues, feed, presentComponentIds, newtonValue )
-                                 / evaluateDerivative( kValues, feed, presentComponentIds, newtonValue );
-      currentError = LvArray::math::abs( deltaNewton ) / LvArray::math::abs( newtonValue );
+      real64 deltaNewton = -funcNewton / evaluateDerivative( kValues, feed, presentComponentIds, newtonValue );
 
       // test if we are stepping out of the [xMin;xMax] interval
       if( newtonValue + deltaNewton < xMin )
       {
-        newtonValue = 0.5 * ( newtonValue + xMin );
+        deltaNewton = 0.5 * ( xMin - newtonValue );
       }
       else if( newtonValue + deltaNewton > xMax )
       {
-        newtonValue = 0.5 * ( newtonValue + xMax );
+        deltaNewton = 0.5 * ( xMax - newtonValue );
       }
-      else
-      {
-        newtonValue = newtonValue + deltaNewton;
-      }
+
+      newtonValue = newtonValue + deltaNewton;
+
+      funcNewton = evaluate( kValues, feed, presentComponentIds, newtonValue );
+
+      currentError = LvArray::math::min( LvArray::math::abs( funcNewton ),
+                                         LvArray::math::abs( deltaNewton ) );
       newtonIteration++;
 
       // TODO: add warning if max number of Newton iterations is reached
@@ -188,12 +169,13 @@ private:
    * @input[in] x the value at which the Rachford-Rice function is evaluated
    * @return the value of the Rachford-Rice function at x
    **/
+  template< integer USD1, integer USD2 >
   GEOS_HOST_DEVICE
   real64
   static
-  evaluate( arraySlice1d< real64 const > const kValues,
-            arraySlice1d< real64 const > const feed,
-            arraySlice1d< integer const > const presentComponentIds,
+  evaluate( arraySlice1d< real64 const, USD2 > const & kValues,
+            arraySlice1d< real64 const, USD1 > const & feed,
+            arraySlice1d< integer const > const & presentComponentIds,
             real64 const & x )
   {
     real64 value = 0.0;
@@ -214,12 +196,13 @@ private:
    * @input[in] x the value at which the derivative of the Rachford-Rice function is evaluated
    * @return the value of the derivative of the Rachford-Rice function at x
    **/
+  template< integer USD1, integer USD2 >
   GEOS_HOST_DEVICE
   real64
   static
-  evaluateDerivative( arraySlice1d< real64 const > const kValues,
-                      arraySlice1d< real64 const > const feed,
-                      arraySlice1d< integer const > const presentComponentIds,
+  evaluateDerivative( arraySlice1d< real64 const, USD2 > const & kValues,
+                      arraySlice1d< real64 const, USD1 > const & feed,
+                      arraySlice1d< integer const > const & presentComponentIds,
                       real64 const & x )
   {
     real64 value = 0.0;
@@ -231,6 +214,38 @@ private:
       value -= feed[ic] * r * r;
     }
     return value;
+  }
+
+  /**
+   * @brief Calculate the minimum and maximum k-value
+   * @input[in] kValues the array fo K-values
+   * @input[in] presentComponentIds the indices of components with a non-zero fractions
+   * @input[out] minK the minimum k-value for non-zero components
+   * @input[out] maxK the maximum k-value for non-zero components
+   **/
+  template< integer USD >
+  GEOS_FORCE_INLINE
+  GEOS_HOST_DEVICE
+  void
+  static
+  findKValueRange( arraySlice1d< real64 const, USD > const & kValues,
+                   arraySlice1d< integer const > const & presentComponentIds,
+                   real64 & minK,
+                   real64 & maxK )
+  {
+    minK = 1.0 / epsilon;
+    maxK = 0.0;
+    for( integer const ic : presentComponentIds )
+    {
+      if( kValues[ic] > maxK )
+      {
+        maxK = kValues[ic];
+      }
+      if( kValues[ic] < minK )
+      {
+        minK = kValues[ic];
+      }
+    }
   }
 
 };

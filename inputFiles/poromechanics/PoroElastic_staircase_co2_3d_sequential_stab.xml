@@ -1,0 +1,121 @@
+<?xml version="1.0" ?>
+
+<Problem>
+
+  <Included>
+    <File name="./PoroElastic_staircase_co2_3d_base_stab.xml"/>
+  </Included>  
+
+  <Solvers
+	  gravityVector="{0,0,0}">
+
+    <MultiphasePoromechanics
+      name="multiphasePoroelasticity"
+      solidSolverName="linearElasticity"
+      flowSolverName="twoPhaseFlow"
+      logLevel="1"
+	    targetRegions="{ channel, barrier}"
+	    stabilizationType="Global"
+	    stabilizationRegionNames="{channel, barrier}"
+	    stabilizationMultiplier="1.0">
+      <NonlinearSolverParameters
+        couplingType="Sequential"
+        subcycling="1"
+        newtonTol="1.0e-8"
+        lineSearchAction="None"
+        newtonMaxIter="100"/>
+    </MultiphasePoromechanics>
+    
+    <SolidMechanicsLagrangianSSLE
+      name="linearElasticity"
+      timeIntegrationOption="QuasiStatic"
+      logLevel="1"
+      discretization="FE1"
+	    targetRegions="{ channel, barrier  }">
+	    <LinearSolverParameters
+		    directParallel="0"/>
+    </SolidMechanicsLagrangianSSLE>
+
+    <CompositionalMultiphaseFVM
+      name="twoPhaseFlow"
+      logLevel="1"
+      discretization="fluidTPFA"
+      targetRelativePressureChangeInTimeStep="1"
+      targetPhaseVolFractionChangeInTimeStep="1"
+      targetRegions="{ channel, barrier  }"
+      temperature="300"
+      useMass="1">
+    <NonlinearSolverParameters
+	    newtonMaxIter="40"/>
+    <LinearSolverParameters
+	    directParallel="0"/>
+    </CompositionalMultiphaseFVM>
+    
+  </Solvers>
+
+  <Events
+    minTime="-1e11"  
+    maxTime="15552000">
+    
+    <PeriodicEvent
+      name="outputs"
+      timeFrequency="15552000"
+      target="/Outputs/vtkOutput_seq"/>
+
+    <SoloEvent
+      name="multiphasePoroelasticityEquilibrationStep"
+      targetTime="-1e11"
+      beginTime="-1e11"
+      target="/Tasks/multiphasePoroelasticityEquilibrationStep"/>
+    
+    <PeriodicEvent
+      name="linearElasticityStatistics"
+      timeFrequency="15552000"
+      target="/Tasks/linearElasticityStatistics"/>
+    <PeriodicEvent
+      name="twoPhaseFlowStatistics"
+      timeFrequency="15552000"
+      target="/Tasks/twoPhaseFlowStatistics"/>
+    
+    <PeriodicEvent
+      name="solverApplications1"
+      endTime="15552000"
+      forceDt="2592000"
+      target="/Solvers/multiphasePoroelasticity"/>
+
+    <PeriodicEvent
+      name="restarts"
+      timeFrequency="7776000"
+      target="/Outputs/restartOutput"/> 
+  </Events>
+
+  <Outputs>
+    <VTK
+      name="vtkOutput_seq"
+      fieldNames="{ initialPressure, skeletonChannel_density }"/>
+    <Restart
+      name="restartOutput"/>
+  </Outputs>
+
+  <Tasks>
+    
+    <SolidMechanicsStatistics
+      name="linearElasticityStatistics"
+      solidSolverName="linearElasticity"
+      logLevel="1"/>
+    <CompositionalMultiphaseStatistics
+      name="twoPhaseFlowStatistics"
+      flowSolverName="twoPhaseFlow"
+      logLevel="1"
+      computeCFLNumbers="1"
+      computeRegionStatistics="1"/>
+
+    <MultiphasePoromechanicsInitialization
+      logLevel="1"      
+      name="multiphasePoroelasticityEquilibrationStep"
+      poromechanicsSolverName="multiphasePoroelasticity"/>
+    
+    
+  </Tasks>
+  
+</Problem>

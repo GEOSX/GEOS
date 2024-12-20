@@ -1,7 +1,7 @@
 #!/bin/bash
 
 # Submodules not checking for
-declare -ar exclusion_list=( "blt" "integratedTests" )
+declare -ar exclusion_list=( "blt" "integratedTests" "uberenv" )
 echo "Submodules that are excluded from sync test : ${exclusion_list[@]}"
 
 # Do not pull large files
@@ -30,7 +30,7 @@ declare -Ar main_branches=(
   ["LvArray"]="origin/develop"
   ["integratedTests"]="origin/develop"
   ["hdf5_interface"]="origin/master"
-  ["PVTPackage"]="origin/master"
+  ["PVTPackage"]="origin/develop"
 )
 
 

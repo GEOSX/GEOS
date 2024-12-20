@@ -2,10 +2,11 @@
  * ------------------------------------------------------------------------------------------------------------
  * SPDX-License-Identifier: LGPL-2.1-only
  *
- * Copyright (c) 2018-2020 Lawrence Livermore National Security LLC
- * Copyright (c) 2018-2020 The Board of Trustees of the Leland Stanford Junior University
- * Copyright (c) 2018-2020 TotalEnergies
- * Copyright (c) 2019-     GEOSX Contributors
+ * Copyright (c) 2016-2024 Lawrence Livermore National Security LLC
+ * Copyright (c) 2018-2024 TotalEnergies
+ * Copyright (c) 2018-2024 The Board of Trustees of the Leland Stanford Junior University
+ * Copyright (c) 2023-2024 Chevron
+ * Copyright (c) 2019-     GEOS/GEOSX Contributors
  * All rights reserved
  *
  * See top level LICENSE, COPYRIGHT, CONTRIBUTORS, NOTICE, and ACKNOWLEDGEMENTS files for details.
@@ -21,6 +22,7 @@
 #include "dataRepository/InputFlags.hpp"
 #include "mainInterface/GeosxState.hpp"
 #include "mesh/mpiCommunications/CommunicationTools.hpp"
+#include "mesh/DomainPartition.hpp"
 
 namespace geos
 {
@@ -30,7 +32,7 @@ using namespace dataRepository;
 //START_SPHINX_INCLUDE_CONSTRUCTOR
 LaplaceBaseH1::LaplaceBaseH1( const string & name,
                               Group * const parent ):
-  SolverBase( name, parent ),
+  PhysicsSolverBase( name, parent ),
   m_fieldName( "primaryField" ),
   m_timeIntegrationOption( TimeIntegrationOption::ImplicitTransient )
 {
@@ -39,6 +41,7 @@ LaplaceBaseH1::LaplaceBaseH1( const string & name,
     setDescription( "Time integration method. Options are:\n* " + EnumStrings< TimeIntegrationOption >::concat( "\n* " ) );
 
   this->registerWrapper( viewKeyStruct::fieldVarName(), &m_fieldName ).
+    setRTTypeName( rtTypes::CustomTypes::groupNameRef ).
     setInputFlag( InputFlags::REQUIRED ).
     setDescription( "Name of field variable" );
 
@@ -86,8 +89,8 @@ void LaplaceBaseH1::registerDataOnMesh( Group & meshBodies )
    Here, we decide how we march in time in the resolutions based on the possible two options set in
    the XML file (Steady state or Implicit transient). In the case of Implicit transient, we perform
    an implicit step (backward Euler). The implementation of the Implicit Step is found in the
-   SolverBase.  From now on, we oscillate between specific Laplace solver operations if implemented
-   and more generic SolverBase operations.  The initial values of the solver step are all at time_n,
+   PhysicsSolverBase.  From now on, we oscillate between specific Laplace solver operations if implemented
+   and more generic PhysicsSolverBase operations.  The initial values of the solver step are all at time_n,
    and the solver attempts to advance by a time step of dt.  This dt time step size is specified
    initially by the user and the solverStep method also returns its value.
  */
@@ -102,7 +105,7 @@ real64 LaplaceBaseH1::solverStep( real64 const & time_n,
 
 /*
    IMPLICIT STEP SETUP
-   This method uses the system setup from SolverBase (see below).
+   This method uses the system setup from PhysicsSolverBase (see below).
    The current system of this class does not use the time variable. The macro GEOS_UNUSED_PARAM is
    therefore used here to avoid a compilation error.
  */
@@ -172,7 +175,7 @@ void LaplaceBaseH1::updateState( DomainPartition & domain )
 
 /*
    APPLY BOUNDARY CONDITIONS
-   Here, this call is the generic call from SolverBase.
+   Here, this call is the generic call from PhysicsSolverBase.
    All it does is to call a specific Dirichlet boundary condition implemented for this solver
  */
 void LaplaceBaseH1::applyBoundaryConditions( real64 const time_n,

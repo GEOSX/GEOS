@@ -1,0 +1,106 @@
+<?xml version="1.0" ?>
+  <Problem>
+    <Solvers>
+      <SeismicityRate
+        name="dieterichSR"
+        targetRegions="{ Domain }"
+        directEffect="0.01"
+        backgroundStressingRate="3.171e-5">
+      </SeismicityRate>
+    </Solvers>
+    <Mesh>
+      <InternalMesh
+        name="mesh"
+        elementTypes="{ C3D8 }"
+        xCoords="{ 0, 1e2 }"
+        yCoords="{ 0, 1e2 }"
+        zCoords="{ 0, 1e2 }"
+        nx="{ 1 }"
+        ny="{ 1 }"
+        nz="{ 1 }"
+        cellBlockNames="{ cb1 }"/>
+    </Mesh>
+    <Events
+      maxTime="360000.0">
+      <PeriodicEvent
+        name="solverApplications"
+        forceDt="3600.0"
+        target="/Solvers/dieterichSR"/>
+
+      <PeriodicEvent
+      name="timeHistoryOutput"
+      timeFrequency="360000.0"
+      targetExactTimestep="1"
+      target="/Outputs/timeHistoryOutput" />
+
+     <PeriodicEvent
+      name="seismicRateCollection"
+      timeFrequency="3600.0"
+      targetExactTimestep="1"
+      target="/Tasks/seismicRateCollection" />  
+    </Events>
+    <ElementRegions>
+      <CellElementRegion
+        name="Domain"
+        cellBlocks="{ cb1 }"
+        materialList="{}"/>
+    </ElementRegions>
+    <Constitutive>
+    </Constitutive>
+    <FieldSpecifications>
+      <FieldSpecification
+        name="initialNormalTraction"
+        initialCondition="1"
+        setNames="{ all }"
+        objectPath="ElementRegions/Domain/cb1"
+        fieldName="projectedNormalTraction"
+        scale="-100e6"/>
+      <FieldSpecification
+        name="initialShearTraction"
+        initialCondition="1"
+        setNames="{ all }"
+        objectPath="ElementRegions/Domain/cb1"
+        fieldName="projectedShearTraction"
+        scale="60.0e6"/>
+      <FieldSpecification
+        name="normalTractionHistory"
+        objectPath="ElementRegions/Domain/cb1"
+        fieldName="projectedNormalTraction"
+        scale="-100.0e6"
+        setNames="{ all }"/>
+      <FieldSpecification
+        name="shearTractionHistory"
+        objectPath="ElementRegions/Domain/cb1"
+        fieldName="projectedShearTraction"
+        scale="1.0"
+        functionName="shearStress_function"
+        setNames="{ all }"
+        logLevel="0"/>
+    </FieldSpecifications>
+
+    <Functions>
+    <TableFunction
+      name="shearStress_function"
+      inputVarNames="{ time }"
+      coordinateFiles="{ shearStress_time.csv }"
+      voxelFile="shearStress_values.csv"/>
+    </Functions>
+
+     <Outputs>
+    <VTK
+      name="vtkOutput"/>
+
+    <TimeHistory
+      name="timeHistoryOutput"
+      sources="{/Tasks/seismicRateCollection}"
+      filename="seismicityRate" />
+   </Outputs>
+
+   <Tasks>
+    <PackCollection
+      name="seismicRateCollection"
+      objectPath="ElementRegions/Domain/cb1"
+      fieldName="seismicityRate"/>
+  </Tasks>
+
+  </Problem>

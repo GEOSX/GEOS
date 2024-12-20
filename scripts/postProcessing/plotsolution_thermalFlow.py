@@ -17,21 +17,21 @@ def main(directory):
     # Read simulation output from HDF5 file
     hf = h5py.File(hdf5FilePathTemperature, 'r')
     timeTemperature = hf.get('temperature Time')
-    timeTemperature = np.array(timeTemperature)
+    timeTemperature = np.asarray(timeTemperature)
     centerTemperature = hf.get('temperature elementCenter')
-    centerTemperature = np.array(centerTemperature)
+    centerTemperature = np.asarray(centerTemperature)
     xcord_elm = centerTemperature[0,:,0]
     ycord_elm = centerTemperature[0,:,1]
     zcord_elm = centerTemperature[0,:,2]
     temperature = hf.get('temperature')
-    temperature = np.array(temperature)
+    temperature = np.asarray(temperature)
     print(ycord_elm)
     
     filename = "pressure_history.hdf5"
     hdf5FilePathPressure = os.path.join( directory, filename ) 
 
     hf = h5py.File(hdf5FilePathPressure, 'r')
-    pressure = np.array( hf.get('pressure') )
+    pressure = np.asarray( hf.get('pressure') )
     
     t_index = [0, 1, 2, 9]
     tstar = [0, 100, 200, 900]     
@@ -57,9 +57,9 @@ def main(directory):
         pplist.append(ptemp)
         temperaturelist.append(ttemp)
 
-    xlist = np.array(xlist)
-    pplist = np.array(pplist)
-    temperaturelist = np.array(temperaturelist)
+    xlist = np.asarray(xlist)
+    pplist = np.asarray(pplist)
+    temperaturelist = np.asarray(temperaturelist)
 
 
     #Visualization

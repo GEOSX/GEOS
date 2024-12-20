@@ -114,7 +114,7 @@
   <ElementRegions>
     <CellElementRegion
       name="Region"
-      cellBlocks="{ cb }"
+      cellBlocks="{ * }"
       materialList="{ nullModel }"/>
   </ElementRegions>
 
@@ -162,7 +162,7 @@
       name="cellVelocity"
       initialCondition="1"
       objectPath="ElementRegions/Region/cb"
-      fieldName="mediumVelocity"
+      fieldName="acousticVelocity"
       scale="1500"
       setNames="{ all }"/>
 

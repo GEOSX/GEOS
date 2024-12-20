@@ -46,7 +46,7 @@
   <ElementRegions>
     <CellElementRegion
             name="dummy"
-            cellBlocks="{ cellBlock01 }"
+            cellBlocks="{ * }"
             materialList="{ dummy }"/>
   </ElementRegions>
 

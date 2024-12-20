@@ -12,7 +12,7 @@
       targetRegions="{ region, wellRegion1, wellRegion2 }">
       <NonlinearSolverParameters
         maxTimeStepCuts="5"
-        newtonTol="1e-7"  
+        newtonTol="1e-8"  
         newtonMaxIter="20"/>
       <LinearSolverParameters 
         directParallel="0"/> 
@@ -146,7 +146,7 @@
   <ElementRegions>
     <CellElementRegion
       name="region"
-      cellBlocks="{ cb }"
+      cellBlocks="{ * }"
       materialList="{ fluid, rock, relperm }"/>
     <WellElementRegion
       name="wellRegion1"

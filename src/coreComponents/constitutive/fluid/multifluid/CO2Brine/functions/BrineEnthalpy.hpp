@@ -2,10 +2,11 @@
  * ------------------------------------------------------------------------------------------------------------
  * SPDX-License-Identifier: LGPL-2.1-only
  *
- * Copyright (c) 2018-2020 Lawrence Livermore National Security LLC
- * Copyright (c) 2018-2020 The Board of Trustees of the Leland Stanford Junior University
- * Copyright (c) 2018-2020 TotalEnergies
- * Copyright (c) 2019-     GEOSX Contributors
+ * Copyright (c) 2016-2024 Lawrence Livermore National Security LLC
+ * Copyright (c) 2018-2024 TotalEnergies
+ * Copyright (c) 2018-2024 The Board of Trustees of the Leland Stanford Junior University
+ * Copyright (c) 2023-2024 Chevron
+ * Copyright (c) 2019-     GEOS/GEOSX Contributors
  * All rights reserved
  *
  * See top level LICENSE, COPYRIGHT, CONTRIBUTORS, NOTICE, and ACKNOWLEDGEMENTS files for details.
@@ -50,14 +51,6 @@ public:
     m_waterIndex( waterIndex )
   {}
 
-  template< int USD1 >
-  GEOS_HOST_DEVICE
-  void compute( real64 const & pressure,
-                real64 const & temperature,
-                arraySlice1d< real64 const, USD1 > const & phaseComposition,
-                real64 & value,
-                bool useMass ) const;
-
   template< int USD1, int USD2, int USD3 >
   GEOS_HOST_DEVICE
   void compute( real64 const & pressure,
@@ -98,7 +91,8 @@ public:
   BrineEnthalpy( string const & name,
                  string_array const & inputParams,
                  string_array const & componentNames,
-                 array1d< real64 > const & componentMolarWeight );
+                 array1d< real64 > const & componentMolarWeight,
+                 TableFunction::OutputOptions const pvtOutputOpts );
 
   static string catalogName() { return "BrineEnthalpy"; }
 
@@ -140,36 +134,6 @@ private:
 
 };
 
-template< int USD1 >
-GEOS_HOST_DEVICE
-void BrineEnthalpyUpdate::compute( real64 const & pressure,
-                                   real64 const & temperature,
-                                   arraySlice1d< real64 const, USD1 > const & phaseComposition,
-                                   real64 & value,
-                                   bool useMass ) const
-{
-  real64 const input[2] = { pressure, temperature };
-  real64 const brineEnthalpy = m_brineEnthalpyTable.compute( &temperature );
-  real64 const CO2Enthalpy = m_CO2EnthalpyTable.compute( input );
-
-
-  //assume there are only CO2 and brine here.
-
-  real64 const C = phaseComposition[m_waterIndex];
-
-  real64 const waterMW = m_componentMolarWeight[m_waterIndex];
-  real64 const CO2MW = m_componentMolarWeight[m_CO2Index];
-
-  if( useMass )
-  {
-    value = (1.0 - C ) * CO2Enthalpy + C * brineEnthalpy;
-  }
-  else
-  {
-    value = (1.0 - C ) * CO2Enthalpy / CO2MW + C * brineEnthalpy / waterMW;
-  }
-}
-
 template< int USD1, int USD2, int USD3 >
 GEOS_HOST_DEVICE
 void BrineEnthalpyUpdate::compute( real64 const & pressure,
@@ -180,7 +144,7 @@ void BrineEnthalpyUpdate::compute( real64 const & pressure,
                                    arraySlice1d< real64, USD3 > const & dValue,
                                    bool useMass ) const
 {
-  using Deriv = multifluid::DerivativeOffset;
+  using Deriv = constitutive::multifluid::DerivativeOffset;
 
   real64 const input[2] = { pressure, temperature };
   real64 brineEnthalpy_dTemperature = 0.0;

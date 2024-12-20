@@ -83,7 +83,7 @@
   <ElementRegions>
     <CellElementRegion
       name="region"
-      cellBlocks="{ cb }"
+      cellBlocks="{ * }"
       materialList="{ fluid, rock, relperm, thermalCond, diffusion }"/>
   </ElementRegions>
 
@@ -104,7 +104,7 @@
       compressibility="1.0e-9"/>
     <SolidInternalEnergy
       name="rockInternalEnergy"
-      volumetricHeatCapacity="1.95e6"
+      referenceVolumetricHeatCapacity="1.95e6"
       referenceTemperature="368.15"
       referenceInternalEnergy="0"/>
     <ConstantPermeability
@@ -113,6 +113,7 @@
 
     <CO2BrinePhillipsThermalFluid
       name="fluid"
+      logLevel="1"
       phaseNames="{ gas, water }"
       componentNames="{ co2, water }"
       componentMolarWeight="{ 44e-3, 18e-3 }"

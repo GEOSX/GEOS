@@ -2,10 +2,11 @@
  * ------------------------------------------------------------------------------------------------------------
  * SPDX-License-Identifier: LGPL-2.1-only
  *
- * Copyright (c) 2018-2020 Lawrence Livermore National Security LLC
- * Copyright (c) 2018-2020 The Board of Trustees of the Leland Stanford Junior University
- * Copyright (c) 2018-2020 TotalEnergies
- * Copyright (c) 2019-     GEOSX Contributors
+ * Copyright (c) 2016-2024 Lawrence Livermore National Security LLC
+ * Copyright (c) 2018-2024 TotalEnergies
+ * Copyright (c) 2018-2024 The Board of Trustees of the Leland Stanford Junior University
+ * Copyright (c) 2023-2024 Chevron
+ * Copyright (c) 2019-     GEOS/GEOSX Contributors
  * All rights reserved
  *
  * See top level LICENSE, COPYRIGHT, CONTRIBUTORS, NOTICE, and ACKNOWLEDGEMENTS files for details.
@@ -74,7 +75,7 @@ public:
    */
   explicit Wrapper( string const & name,
                     Group & parent ):
-    WrapperBase( name, parent ),
+    WrapperBase( name, parent, rtTypes::getTypeName( typeid( T ) ) ),
     m_ownsData( true ),
     m_isClone( false ),
     m_data( new T() ),
@@ -97,7 +98,7 @@ public:
   explicit Wrapper( string const & name,
                     Group & parent,
                     std::unique_ptr< T > object ):
-    WrapperBase( name, parent ),
+    WrapperBase( name, parent, rtTypes::getTypeName( typeid( T ) ) ),
     m_ownsData( true ),
     m_isClone( false ),
     m_data( object.release() ),
@@ -120,7 +121,7 @@ public:
   explicit Wrapper( string const & name,
                     Group & parent,
                     T * object ):
-    WrapperBase( name, parent ),
+    WrapperBase( name, parent, rtTypes::getTypeName( typeid( T ) ) ),
     m_ownsData( false ),
     m_isClone( false ),
     m_data( object ),
@@ -410,7 +411,7 @@ public:
   virtual void resize( localIndex const newSize ) override
   {
     wrapperHelpers::move( *m_data, hostMemorySpace, true );
-    wrapperHelpers::resizeDefault( reference(), newSize, m_default );
+    wrapperHelpers::resizeDefault( reference(), newSize, m_default, this->getName() );
   }
 
   /// @cond DO_NOT_DOCUMENT
@@ -563,8 +564,8 @@ public:
   { return wrapperHelpers::move( *m_data, space, touch ); }
 
   ///////////////////////////////////////////////////////////////////////////////////////////////////
-  virtual string typeRegex() const override
-  { return TypeRegex< T >::get(); }
+  virtual Regex const & getTypeRegex() const override
+  { return rtTypes::getTypeRegex< T >( m_rtTypeName ); }
 
   ///@}
 
@@ -722,6 +723,7 @@ public:
         {
           m_successfulReadFromInput = xmlWrapper::readAttributeAsType( reference(),
                                                                        getName(),
+                                                                       rtTypes::getTypeRegex< T >( getRTTypeName() ),
                                                                        targetNode,
                                                                        inputFlag == InputFlags::REQUIRED );
           GEOS_THROW_IF( !m_successfulReadFromInput,
@@ -736,13 +738,14 @@ public:
         {
           m_successfulReadFromInput = xmlWrapper::readAttributeAsType( reference(),
                                                                        getName(),
+                                                                       rtTypes::getTypeRegex< T >( getRTTypeName() ),
                                                                        targetNode,
                                                                        getDefaultValueStruct() );
         }
       }
       catch( std::exception const & ex )
       {
-        processInputException( ex, targetNode, nodePos );
+        xmlWrapper::processInputException( ex, getName(), targetNode, nodePos );
       }
 
       if( m_successfulReadFromInput )
@@ -892,11 +895,29 @@ public:
   }
 
   /**
+   * @copydoc WrapperBase::appendDescription(string const &)
+   */
+  Wrapper< T > & appendDescription( string const & description )
+  {
+    WrapperBase::appendDescription( description );
+    return *this;
+  }
+
+  /**
    * @copydoc WrapperBase::setRegisteringObjects(string const &)
    */
   Wrapper< T > & setRegisteringObjects( string const & objectName )
   {
     WrapperBase::setRegisteringObjects( objectName );
+    return *this;
+  }
+
+  /**
+   * @copydoc WrapperBase::setRTTypeName(string_view)
+   */
+  Wrapper< T > & setRTTypeName( string_view rtTypeName )
+  {
+    WrapperBase::setRTTypeName( rtTypeName );
     return *this;
   }
 
@@ -920,7 +941,7 @@ public:
 //  void tvTemplateInstantiation();
 #endif
 
-#if defined(GEOSX_USE_PYGEOSX)
+#if defined(GEOS_USE_PYGEOSX)
   virtual PyObject * createPythonObject( ) override
   { return wrapperHelpers::createPythonObject( reference() ); }
 #endif

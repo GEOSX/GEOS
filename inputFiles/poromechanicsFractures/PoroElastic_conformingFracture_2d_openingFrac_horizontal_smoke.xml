@@ -3,6 +3,10 @@
 <Problem>
   <Included>
     <File
+      name="./PoroElastic_conformingFracture_2d_openingFrac_solvers.xml"/>
+  </Included> 
+  <Included>
+    <File
       name="./PoroElastic_conformingFracture_2d_openingFrac_base.xml"/>
   </Included> 
 
