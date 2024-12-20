@@ -993,7 +993,7 @@ void CompositionalMultiphaseBase::initializeFluidState( MeshLevel & mesh,
   } );
 
   // check if comp fractions need to be corrected to avoid zero diags etc
-  if( m_useZFormulation )
+  if( m_useZFormulation && m_allowCompDensChopping )
   {
     DomainPartition & domain = this->getGroupByPath< DomainPartition >( "/Problem/domain" );
     chopNegativeCompFractions( domain );

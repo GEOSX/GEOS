@@ -672,8 +672,6 @@ real64 CompositionalMultiphaseFVM::scalingForSystemSolutionZFormulation( DomainP
                                                                          DofManager const & dofManager,
                                                                          arrayView1d< real64 const > const & localSolution )
 {
-  GEOS_MARK_FUNCTION;
-
   string const dofKey = dofManager.getKey( viewKeyStruct::elemDofFieldString() );
   real64 scalingFactor = 1.0;
   real64 maxDeltaPres = 0.0, maxDeltaCompFrac = 0.0, maxDeltaTemp = 0.0;
@@ -954,8 +952,6 @@ void CompositionalMultiphaseFVM::applySystemSolution( DofManager const & dofMana
   // if component density chopping is allowed, some component densities may be negative after the update
   // these negative component densities are set to zero in this function
 
-  // TODO: implement chopNegativeZ
-
   if( m_allowCompDensChopping )
   {
     if( m_useZFormulation )
@@ -968,15 +964,8 @@ void CompositionalMultiphaseFVM::applySystemSolution( DofManager const & dofMana
                                                                MeshLevel & mesh,
                                                                arrayView1d< string const > const & regionNames )
   {
-    std::vector< string > fields{ fields::flow::pressure::key() };
-    if( m_useZFormulation )
-    {
-      fields.emplace_back( fields::flow::globalCompFraction::key() );
-    }
-    else
-    {
-      fields.emplace_back( fields::flow::globalCompDensity::key() );
-    }
+    std::vector< string > fields{ fields::flow::pressure::key(),
+                                  m_useZFormulation ? fields::flow::globalCompFraction::key() : fields::flow::globalCompDensity::key() };
     if( m_isThermal )
     {
       fields.emplace_back( fields::flow::temperature::key() );
@@ -1001,22 +990,14 @@ void CompositionalMultiphaseFVM::updatePhaseMobility( ObjectManagerBase & dataGr
 
   if( m_useZFormulation )
   {
-    if( m_isThermal )
-    {
-      // For now: isothermal only
-      GEOS_ERROR_IF( m_isThermal, GEOS_FMT(
-                       "{}: Z Formulation is currently not available for thermal simulations", getDataContext() ) );
-    }
-    else
-    {
-      isothermalCompositionalMultiphaseFVMKernels::
-        PhaseMobilityZFormulationKernelFactory::
-        createAndLaunch< parallelDevicePolicy<> >( m_numComponents,
-                                                   m_numPhases,
-                                                   dataGroup,
-                                                   fluid,
-                                                   relperm );
-    }
+    // For now: isothermal only
+    isothermalCompositionalMultiphaseFVMKernels::
+      PhaseMobilityZFormulationKernelFactory::
+      createAndLaunch< parallelDevicePolicy<> >( m_numComponents,
+                                                 m_numPhases,
+                                                 dataGroup,
+                                                 fluid,
+                                                 relperm );
   }
   else
   {
@@ -1261,8 +1242,6 @@ void CompositionalMultiphaseFVM::applyFaceDirichletBC( real64 const time_n,
 
       if( m_useZFormulation )
       {
-        GEOS_ERROR_IF( m_isThermal, GEOS_FMT(
-                         "{}: Z Formulation is currently not available for thermal simulations", getDataContext() ) );
         isothermalCompositionalMultiphaseFVMKernels::
           DirichletFluxComputeZFormulationKernelFactory::
           createAndLaunch< parallelDevicePolicy<> >( m_numComponents,

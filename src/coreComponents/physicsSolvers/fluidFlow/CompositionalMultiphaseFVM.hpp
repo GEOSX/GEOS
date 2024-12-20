@@ -109,7 +109,7 @@ public:
                             DofManager const & dofManager,
                             arrayView1d< real64 const > const & localSolution ) override;
 
-  virtual real64
+  real64
   scalingForSystemSolutionZFormulation( DomainPartition & domain,
                                         DofManager const & dofManager,
                                         arrayView1d< real64 const > const & localSolution );

@@ -509,17 +509,6 @@ real64 CompositionalMultiphaseHybridFVM::scalingForSystemSolution( DomainPartiti
   return LvArray::math::max( MpiWrapper::min( scalingFactor ), m_minScalingFactor );
 }
 
-real64 CompositionalMultiphaseHybridFVM::scalingForSystemSolutionZFormulation( DomainPartition & domain,
-                                                                               DofManager const & dofManager,
-                                                                               arrayView1d< real64 const > const & localSolution )
-{
-  GEOS_MARK_FUNCTION;
-  // z formulation not implemented
-  GEOS_UNUSED_VAR( domain, dofManager, localSolution );
-  GEOS_ERROR( "Z formulation not yet available for this flow solver" );
-  return 0;
-}
-
 bool CompositionalMultiphaseHybridFVM::checkSystemSolution( DomainPartition & domain,
                                                             DofManager const & dofManager,
                                                             arrayView1d< real64 const > const & localSolution,
