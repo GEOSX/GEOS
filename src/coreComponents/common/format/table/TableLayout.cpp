@@ -83,33 +83,6 @@ size_t TableLayout::getMaxDepth() const
   return depthMax;
 }
 
-std::vector< TableLayout::Column > & TableLayout::getColumns()
-{ return m_tableColumnsData; }
-
-std::vector< TableLayout::Column > const & TableLayout::getColumns() const
-{ return m_tableColumnsData; }
-
-string_view TableLayout::getTitle() const
-{ return m_tableTitle; }
-
-integer const & TableLayout::getBorderMargin() const
-{ return m_borderMargin; }
-
-integer const & TableLayout::getColumnMargin() const
-{ return m_columnMargin; }
-
-integer const & TableLayout::getMarginValue() const
-{ return m_marginValue; }
-
-integer const & TableLayout::getMarginTitle() const
-{ return m_titleMargin; }
-
-std::vector< size_t > & TableLayout::getSublineInHeaderCounts()
-{ return m_sublineHeaderCounts; }
-
-std::vector< size_t > & TableLayout::getNbSubDataLines()
-{ return m_sublineDataCounts; }
-
 void divideCell( std::vector< string > & lines, string const & value )
 {
   std::istringstream strStream( value );
@@ -218,18 +191,59 @@ TableLayout::Column & TableLayout::Column::setValuesAlignment( Alignment valueAl
   return *this;
 }
 
-size_t TableLayout::Column::getNumberCellMerge()
-{ return m_headerMergeCount; }
+TableLayout::DeepFirstIterator & TableLayout::DeepFirstIterator::operator++()
+{
+  if( m_currentColumn->getNextCell() != nullptr )
+  {
+    m_currentColumn = m_currentColumn->getNextCell();
+    while( m_currentColumn->hasChild() )
+    {
+      m_currentLayer++;
+      m_currentColumn = &m_currentColumn->m_subColumn[0];
+    }
+  }
+  else
+  {
+    bool const hasParent = (m_currentColumn->getParent() != nullptr);
+    m_currentLayer -= size_t( hasParent );
+    m_currentColumn = hasParent ? m_currentColumn->getParent() : nullptr;
+  }
+  return *this;
+}
 
-void TableLayout::Column::incrementMergeHeaderCount( size_t value )
-{ m_headerMergeCount+= value;}
+TableLayout::DeepFirstIterator TableLayout::DeepFirstIterator::operator++( int )
+{
+  TableLayout::DeepFirstIterator temp = *this;
+  ++(*this);
+  return temp;
+}
 
-void TableLayout::Column::decrementMergeHeaderCount()
-{ m_headerMergeCount--; }
+TableLayout::DeepFirstIterator TableLayout::beginDeepFirst()
+{
+  TableLayout::Column * startColumn = &(*m_tableColumnsData.begin());
+  size_t idxLayer = 0;
+  if( startColumn->hasChild() )
+  {
+    while( startColumn->hasChild() )
+    {
+      idxLayer++;
+      startColumn = &startColumn->m_subColumn[0];
+    }
+  }
+  return DeepFirstIterator( startColumn, idxLayer );
+}
 
-bool TableLayout::Column::hasChild() const
-{ return !this->m_subColumn.empty(); }
-bool TableLayout::Column::hasParent() const
-{ return this->m_parent != nullptr; }
+bool TableLayout::DeepFirstIterator::isLastColumn()
+{
+  if( m_currentColumn == nullptr )
+    return true;
+  TableLayout::Column * tempColumn = m_currentColumn;
+  while( tempColumn->getParent() )
+  {
+    tempColumn = tempColumn->getParent();
+  }
+  return tempColumn->getNextCell() == nullptr;
+}
+
 
 }

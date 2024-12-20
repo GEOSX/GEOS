@@ -239,7 +239,7 @@ void TableTextFormatter::populateHeaderCellsLayout( TableLayout & tableLayout,
   std::vector< size_t > & sublineHeaderCounts = tableLayout.getSublineInHeaderCounts();
   sublineHeaderCounts.resize( headerLayersCount, 1 );
 
-  for( auto it = tableLayout.beginLeaf(); it !=  tableLayout.endLeaf(); ++it )
+  for( auto it = tableLayout.beginDeepFirst(); it !=  tableLayout.endDeepFirst(); ++it )
   {
     size_t const currentLayer = it.getCurrentLayer();
     TableLayout::CellLayout currentCell = it->m_header;
@@ -314,7 +314,7 @@ void TableTextFormatter::populateDataCellsLayout( TableLayout & tableLayout,
   {
     size_t maxLinesPerRow  = 0;
     size_t idxColumn = 0;
-    for( auto it = tableLayout.beginLeaf(); it != tableLayout.endLeaf(); ++it )
+    for( auto it = tableLayout.beginDeepFirst(); it != tableLayout.endDeepFirst(); ++it )
     {
       if( !it->hasChild())
       {
@@ -397,7 +397,11 @@ void TableTextFormatter::updateColumnMaxLength( TableLayout & tableLayout,
     for( size_t rowIdx = 0; rowIdx < cellsDataLayout.size(); ++rowIdx )
     {
       size_t const cellDataLength = getMaxLineLength( cellsDataLayout[rowIdx][idxColumn].m_lines );
-      maxColumnSize = std::max( {maxColumnSize, cellDataLength} );
+      if( idxColumn == 0 ||
+          (idxColumn > 0 && cellsDataLayout[rowIdx][idxColumn - 1].m_cellType != CellType::MergeNext))
+      {
+        maxColumnSize = std::max( maxColumnSize, cellDataLength );
+      }
     }
 
     for( size_t rowIdx = 0; rowIdx < cellsHeaderLayout.size(); ++rowIdx )
@@ -423,20 +427,14 @@ void TableTextFormatter::updateColumnMaxLength( TableLayout & tableLayout,
       if( idxColumn > 0 &&
           previousDataCell->m_cellType == CellType::MergeNext && dataCell.m_cellType != CellType::MergeNext )
       {
+        // root header cells know the maximum string size in the column
         size_t sumOfMergingCell = accMaxStringColumn[rowIdx] + cellsHeaderLayout[0][idxColumn].m_cellWidth;
         if( sumOfMergingCell <  dataCell.m_cellWidth )
         {
-          maxColumnSize += dataCell.m_cellWidth - sumOfMergingCell;
+          maxColumnSize -= dataCell.m_cellWidth - sumOfMergingCell;
           for( size_t rowIdx2 = 0; rowIdx2 < rowIdx; rowIdx2++ )
           {
-            TableLayout::CellLayout * previousDataCellTemp = (idxColumn > 0) ?
-                                                             &cellsDataLayout[rowIdx2][idxColumn - 1] :
-                                                             nullptr;
-            if( previousDataCellTemp )
-            {
-              previousDataCellTemp->m_cellWidth = cellsHeaderLayout[0][idxColumn - 1].m_cellWidth;
-            }
-            updateCellMaxLength( cellsDataLayout[rowIdx2][idxColumn], maxColumnSize, previousDataCellTemp );
+            updateCellMaxLength( cellsDataLayout[rowIdx2][idxColumn], maxColumnSize );
             if( cellsDataLayout[rowIdx2][idxColumn].m_cellType == CellType::Separator )
             {
               size_t const additionnalMargin = (idxColumn == numColumns - 1) ?
@@ -505,7 +503,7 @@ void TableTextFormatter::adjustTableWidth( TableLayout & tableLayout,
     {
       nbVisibleColumn++;
     }
-    if( column.m_cellType != CellType::Hidden &&  column.m_cellType != CellType::Disabled && column.m_cellType != CellType::MergeNext )
+    if( column.m_cellType == CellType::Value || column.m_cellType == CellType::Header )
     {
       sectionlineLength += column.m_cellWidth;
       nbColumns++;
@@ -515,8 +513,8 @@ void TableTextFormatter::adjustTableWidth( TableLayout & tableLayout,
   size_t const spacingBetweenColumns = (nbColumns - 1) * (size_t) tableLayout.getColumnMargin();
   sectionlineLength += spacingBetweenColumns + margins + horizontalBar;
 
-  size_t titleRowLength = tableTitle.length() + margins + horizontalBar;
-  size_t maxLength = std::max( {titleRowLength, sectionlineLength} );
+  size_t const titleRowLength = tableTitle.length() + margins + horizontalBar;
+  size_t const maxLength = std::max( {titleRowLength, sectionlineLength} );
   if( sectionlineLength < maxLength )
   {
     size_t const paddingCharacters = maxLength - sectionlineLength;

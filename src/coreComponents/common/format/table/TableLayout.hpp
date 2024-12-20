@@ -201,30 +201,35 @@ public:
     /**
      * @return number of times we will divide the current cell
      */
-    size_t getNumberCellMerge();
+    size_t getNumberCellMerge()
+    { return m_headerMergeCount; }
 
     /**
      * @brief Increment number of times we will divide the current cell
      * @param value number of division to add
      */
-    void incrementMergeHeaderCount( size_t value );
+    void incrementMergeHeaderCount( size_t value )
+    { m_headerMergeCount+= value;}
 
     /**
      * @brief Decremente number of times we will divide the current cell
      */
-    void decrementMergeHeaderCount();
+    void decrementMergeHeaderCount()
+    { m_headerMergeCount--; }
 
     /**
      * @brief Checks if the column has any child columns.
      * @return bool True if the column has child columns, otherwise false.
      */
-    bool hasChild() const;
+    bool hasChild() const
+    { return !this->m_subColumn.empty(); }
 
     /**
      * @brief Checks if the column has a parent column.
      * @return bool True if the column has a parent, otherwise false.
      */
-    bool hasParent() const;
+    bool hasParent() const
+    { return this->m_parent != nullptr; }
 
 private:
     /// Pointer to the parent cell (if any).
@@ -239,7 +244,7 @@ private:
    * @brief Iterator to loop over all columns, starting by the deepest sub columns,
    * then to their parents, then to their siblings.
    */
-  class LeafIterator
+  class DeepFirstIterator
   {
 public:
     ///alias for column
@@ -250,7 +255,7 @@ public:
      * @param columnPtr The first deepest column of vector
      * @param idxLayer the layer associated with the column
      */
-    LeafIterator( ColumnType * columnPtr, size_t idxLayer ):
+    DeepFirstIterator( ColumnType * columnPtr, size_t idxLayer ):
       m_currentColumn( columnPtr ), m_currentLayer( idxLayer )
     {}
 
@@ -259,7 +264,7 @@ public:
      * @param[in] columnPtr Coulmn  to copy
      * @return Leaf iterator
      */
-    LeafIterator & operator=( Column * columnPtr )
+    DeepFirstIterator & operator=( Column * columnPtr )
     {
       this->m_currentColumn= columnPtr;
       return *this;
@@ -269,37 +274,13 @@ public:
      * @brief Prefix ++ overload
      * @return Leaf iterator
      */
-    LeafIterator & operator++()
-    {
-      if( m_currentColumn->getNextCell() != nullptr )
-      {
-        // chercher le dernier sous-enfant du suivant //todo
-        m_currentColumn = m_currentColumn->getNextCell();
-        while( m_currentColumn->hasChild() )
-        {
-          m_currentLayer++;
-          m_currentColumn = &m_currentColumn->m_subColumn[0];
-        }
-      }
-      else
-      {
-        bool const hasParent = (m_currentColumn->getParent() != nullptr);
-        m_currentLayer -= size_t( hasParent );
-        m_currentColumn = hasParent ? m_currentColumn->getParent() : nullptr;
-      }
-      return *this;
-    }
+    DeepFirstIterator & operator++();
 
     /**
      * @brief Postfix ++ overload
      * @return Leaf iterator
      */
-    LeafIterator operator++( int )
-    {
-      LeafIterator temp = *this;
-      ++(*this);
-      return temp;
-    }
+    DeepFirstIterator operator++( int );
 
     /**
      * @brief Dereference operator.
@@ -321,7 +302,7 @@ public:
      * @param b The second iterator.
      * @return True if both iterators point to the same column; false otherwise.
      */
-    friend bool operator== ( LeafIterator const & a, LeafIterator const & b )
+    friend bool operator== ( DeepFirstIterator const & a, DeepFirstIterator const & b )
     { return a.m_currentColumn == b.m_currentColumn; };
     /**
      * @brief Inequality comparison operator.
@@ -329,7 +310,7 @@ public:
      * @param b The second iterator.
      * @return True if the iterators point to different columns; false otherwise.
      */
-    friend bool operator!= ( LeafIterator const & a, LeafIterator const & b )
+    friend bool operator!= ( DeepFirstIterator const & a, DeepFirstIterator const & b )
     { return a.m_currentColumn != b.m_currentColumn; };
 
     /**
@@ -344,16 +325,7 @@ public:
      * @return true
      * @return false
      */
-    bool isLastColumn()
-    {
-      if( m_currentColumn == nullptr ) return true;
-      Column * tempColumn = m_currentColumn;
-      while( tempColumn->getParent() )
-      {
-        tempColumn = tempColumn->getParent();
-      }
-      return tempColumn->getNextCell() == nullptr;
-    }
+    bool isLastColumn();
 
 private:
     /// Pointer to the current column
@@ -367,29 +339,16 @@ private:
    * Example on 2 column with Column A : 2 layer and Column B : 3 layers
    * A.A -> A-B -> A-C -> A -> B-A-A -> B-A-B -> B-A -> B-B-A -> B-B-B -> B-B -> B
    */
-  LeafIterator beginLeaf()
-  {
-    Column * startColumn = &(*m_tableColumnsData.begin());
-    size_t idxLayer = 0;
-    if( startColumn->hasChild() )
-    {
-      while( startColumn->hasChild() )
-      {
-        idxLayer++;
-        startColumn = &startColumn->m_subColumn[0];
-      }
-    }
-    return LeafIterator( startColumn, idxLayer );
-  }
+  DeepFirstIterator beginDeepFirst();
 
   /**
    * @return Return a end itarator
    * This iterator is initialized with a null pointer
    * representing a position after the last valid element
    */
-  LeafIterator endLeaf()
+  DeepFirstIterator endDeepFirst()
   {
-    return LeafIterator( nullptr, 0 );
+    return DeepFirstIterator( nullptr, 0 );
   }
 
   /// Alias for an initializer list of variants that can contain either a string or a layout column.
@@ -459,17 +418,20 @@ private:
   /**
    * @return The columns vector
    */
-  std::vector< Column > & getColumns();
+  std::vector< Column > & getColumns()
+  { return m_tableColumnsData; }
 
   /**
    * @return The columns vector
    */
-  std::vector< Column > const & getColumns() const;
+  std::vector< Column > const & getColumns() const
+  { return m_tableColumnsData; }
 
   /**
    * @return The table name
    */
-  string_view getTitle() const;
+  string_view getTitle() const
+  { return m_tableTitle; }
 
   /**
    * @param title The table title
@@ -501,36 +463,41 @@ private:
    * @return The border margin,
    * number of spaces at both left and right table sides plus vertical character
    */
-  integer const & getBorderMargin() const;
+  integer const & getBorderMargin() const
+  { return m_borderMargin; }
 
   /**
    * @return The column margin,
    * numbers of spaces separating both left and right side from a vertical line
    */
-  integer const & getColumnMargin() const;
+  integer const & getColumnMargin() const
+  { return m_columnMargin; }
 
   /**
    * @return The table margin value
    */
-  integer const & getMarginValue() const;
+  integer const & getMarginValue() const
+  { return m_marginValue; }
 
   /**
    * @return The margin title
    */
-  integer const & getMarginTitle() const;
+  integer const & getMarginTitle() const
+  { return m_titleMargin; }
 
 /**
  * @brief Get the Nb Rows object
  * @return std::vector< integer >&
  */
-  std::vector< size_t > & getSublineInHeaderCounts();
+  std::vector< size_t > & getSublineInHeaderCounts()
+  { return m_sublineHeaderCounts; }
 
 /**
  * @brief Get the Nb Rows object
  * @return std::vector< integer >&
  */
-  std::vector< size_t > & getNbSubDataLines();
-
+  std::vector< size_t > & getNbSubDataLines()
+  { return m_sublineDataCounts; }
 
 private:
 

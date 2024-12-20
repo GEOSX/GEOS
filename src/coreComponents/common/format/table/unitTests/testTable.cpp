@@ -446,49 +446,50 @@ TEST( testTable, testCellMerging )
   tableData.addRow( "ProductAfdggfd", 5445, 4565, "PrName", 5454512, 64650 );
   tableData.addRow( 3.14f, 2.718f, CellType::MergeNext, 1.618f, 0.577f, CellType::MergeNext );
   tableData.addSeparator();
-  tableData.addRow( CellType::MergeNext, CellType::MergeNext, CellType::MergeNext, CellType::MergeNext, CellType::MergeNext, "Item2" );
+  tableData.addRow( "CellType::MergeNext", CellType::MergeNext, CellType::MergeNext, CellType::MergeNext, CellType::MergeNext, "Item2" );
   tableData.addSeparator();
   tableData.addRow( 1500, 2500, CellType::MergeNext, CellType::MergeNext, CellType::MergeNext, CellType::MergeNext );
   tableData.addSeparator();
-  tableData.addRow( 1.23f, 4.56f, CellType::MergeNext, 7.89f, 0.12f, 40 );
+  tableData.addRow( 1.23f, 4.56f, CellType::MergeNext, "764654665465465654654646", 0.12f, 40 );
   tableData.addRow( "Long product size", 54, 4564575, "long size value", 5454554512, 60 );
   tableData.addRow( "ProductA", 54, 4564575, "long size value", 5454554512, 60 );
   tableData.addSeparator();
-  tableData.addRow( "P1", "2002", CellType::MergeNext, CellType::MergeNext, CellType::MergeNext, "1212121245452145454545" );
+  tableData.addRow( "P1", "2002", CellType::MergeNext, CellType::MergeNext, CellType::MergeNext, "121212465465465666656461245452145454545" );
   tableData.addSeparator();
   tableData.addRow( "Alpha", 1001, 8, "Beta\nwater", "2002\n1.0", CellType::MergeNext );
 
   TableTextFormatter const tableText( tableLayout );
+  std::cout << tableText.toString( tableData ) << std::endl;
   EXPECT_EQ( tableText.toString( tableData ),
-             "\n-------------------------------------------------------------------------------------------------------------------\n"
-             "|    Cras egestas     |  CoordX  |     C     |          CoordZ          |     Prev     |           Next           |\n"
-             "|                     |          |           |                          |   element    |         element          |\n"
-             "-------------------------------------------------------------------------------------------------------------------\n"
-             "|           ProductA  |    1234  |       40  |             ProductName  |        5678  |                      60  |\n"
-             "|           ProductA  |      54  |  4564575  |         long size value  |  5454554512  |                      60  |\n"
-             "-------------------------------------------------------------------------------------------------------------------\n"
-             "|           ProductA  |      54  |  4564575  |         long size value  |  5454554512  |                      60  |\n"
-             "|               3.14  |   2.718  |                               1.618  |       0.577  |                          |\n"
-             "|                 P1  |    2002  |              1212121245452145454545  |        4004  |                          |\n"
-             "|                 P2  |    2003  |                                      |              |                          |\n"
-             "|                 P3  |    2004  |                                      |              |                          |\n"
-             "|  Long product size  |      54  |  4564575  |         long size value  |  5454554512  |                      60  |\n"
-             "|     ProductAfdggfd  |    5445  |     4565  |                  PrName  |     5454512  |                   64650  |\n"
-             "|               3.14  |   2.718  |                               1.618  |       0.577  |                          |\n"
-             "-------------------------------------------------------------------------------------------------------------------\n"
-             "|                                                                                                          Item2  |\n"
-             "-------------------------------------------------------------------------------------------------------------------\n"
-             "|               1500  |    2500  |                                                                                |\n"
-             "-------------------------------------------------------------------------------------------------------------------\n"
-             "|               1.23  |    4.56  |                                7.89  |        0.12  |                      40  |\n"
-             "|  Long product size  |      54  |  4564575  |         long size value  |  5454554512  |                      60  |\n"
-             "|           ProductA  |      54  |  4564575  |         long size value  |  5454554512  |                      60  |\n"
-             "-------------------------------------------------------------------------------------------------------------------\n"
-             "|                 P1  |    2002  |                                                        1212121245452145454545  |\n"
-             "-------------------------------------------------------------------------------------------------------------------\n"
-             "|              Alpha  |    1001  |        8  |                    Beta  |        2002  |                          |\n"
-             "|                     |          |           |                   water  |         1.0  |                          |\n"
-             "-------------------------------------------------------------------------------------------------------------------\n"
+             "\n-----------------------------------------------------------------------------------------------\n"
+             "|     Cras egestas      |  CoordX  |     C     |      CoordZ       |     Prev     |   Next    |\n"
+             "|                       |          |           |                   |   element    |  element  |\n"
+             "-----------------------------------------------------------------------------------------------\n"
+             "|             ProductA  |    1234  |       40  |      ProductName  |        5678  |       60  |\n"
+             "|             ProductA  |      54  |  4564575  |  long size value  |  5454554512  |       60  |\n"
+             "-----------------------------------------------------------------------------------------------\n"
+             "|             ProductA  |      54  |  4564575  |  long size value  |  5454554512  |       60  |\n"
+             "|                 3.14  |   2.718  |                        1.618  |       0.577  |           |\n"
+             "|                   P1  |    2002  |       1212121245452145454545  |        4004  |           |\n"
+             "|                   P2  |    2003  |                               |              |           |\n"
+             "|                   P3  |    2004  |                               |              |           |\n"
+             "|    Long product size  |      54  |  4564575  |  long size value  |  5454554512  |       60  |\n"
+             "|       ProductAfdggfd  |    5445  |     4565  |           PrName  |     5454512  |    64650  |\n"
+             "|                 3.14  |   2.718  |                        1.618  |       0.577  |           |\n"
+             "-----------------------------------------------------------------------------------------------\n"
+             "|  CellType::MergeNext  |                                                              Item2  |\n"
+             "-----------------------------------------------------------------------------------------------\n"
+             "|                 1500  |    2500  |                                                          |\n"
+             "-----------------------------------------------------------------------------------------------\n"
+             "|                 1.23  |    4.56  |     764654665465465654654646  |        0.12  |       40  |\n"
+             "|    Long product size  |      54  |  4564575  |  long size value  |  5454554512  |       60  |\n"
+             "|             ProductA  |      54  |  4564575  |  long size value  |  5454554512  |       60  |\n"
+             "-----------------------------------------------------------------------------------------------\n"
+             "|                   P1  |    2002  |                 121212465465465666656461245452145454545  |\n"
+             "-----------------------------------------------------------------------------------------------\n"
+             "|                Alpha  |    1001  |        8  |             Beta  |        2002  |           |\n"
+             "|                       |          |           |            water  |         1.0  |           |\n"
+             "-----------------------------------------------------------------------------------------------\n"
              );
 }
 
