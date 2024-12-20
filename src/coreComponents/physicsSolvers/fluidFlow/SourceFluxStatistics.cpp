@@ -220,6 +220,10 @@ bool SourceFluxStatsAggregator::execute( real64 const GEOS_UNUSED_PARAM( time_n 
                                          real64 const GEOS_UNUSED_PARAM( eventProgress ),
                                          DomainPartition & domain )
 {
+  bool const allStats = isLogLevelActive< logInfo::sourceFluxRegionsStatistics >( getLogLevel() );
+  bool const fluxesStats = isLogLevelActive< logInfo::sourceFluxStatistics >( getLogLevel() );
+  bool const fluxMeshesStats = isLogLevelActive< logInfo::sourceFluxMeshStatistics >( getLogLevel() );
+  bool const regionsStats = isLogLevelActive< logInfo::sourceFluxRegionsStatistics >( getLogLevel() );
   forMeshLevelStatsWrapper( domain,
                             [&] ( MeshLevel & meshLevel, WrappedStats & meshLevelStats )
   {
@@ -245,32 +249,27 @@ bool SourceFluxStatsAggregator::execute( real64 const GEOS_UNUSED_PARAM( time_n 
         } );
         fluxStats.stats().combine( regionStats.stats() );
 
-        gatherStatsForLog( isLogLevelActive< logInfo::sourceFluxRegionsStatistics >( getLogLevel() ),
-                           region.getName(), tableRegionsData, regionStats );
+        gatherStatsForLog( allStats, region.getName(), tableRegionsData, regionStats );
         gatherStatsForCSV( csvData, regionStats );
       } );
 
-      outputStatsToLog( isLogLevelActive< logInfo::sourceFluxRegionsStatistics >( getLogLevel() ),
-                        fluxStats.getFluxName(), tableRegionsData );
+      outputStatsToLog( regionsStats, fluxStats.getFluxName(), tableRegionsData );
       outputStatsToCSV( m_regionsfilename, csvData );
 
       meshLevelStats.stats().combine( fluxStats.stats() );
 
-      gatherStatsForLog( isLogLevelActive< logInfo::sourceFluxStatistics >( getLogLevel() ),
-                         viewKeyStruct::allRegionWrapperString(), tableFluxData, fluxStats );
+      gatherStatsForLog( fluxesStats, viewKeyStruct::allRegionWrapperString(), tableFluxData, fluxStats );
       gatherStatsForCSV( csvData, fluxStats );
 
-      outputStatsToLog( isLogLevelActive< logInfo::sourceFluxStatistics >( getLogLevel() ),
-                        fluxStats.getFluxName(), tableFluxData );
+      outputStatsToLog( fluxesStats, fluxStats.getFluxName(), tableFluxData );
       outputStatsToCSV( m_allRegionFluxsfilename, csvData );
 
     } );
-    gatherStatsForLog( isLogLevelActive< logInfo::sourceFluxMeshStatistics >( getLogLevel() ),
+    gatherStatsForLog( fluxMeshesStats,
                        viewKeyStruct::allRegionWrapperString(), tableMeshData, meshLevelStats );
     gatherStatsForCSV( csvData, meshLevelStats );
 
-    outputStatsToLog( isLogLevelActive< logInfo::sourceFluxMeshStatistics >( getLogLevel() ),
-                      meshLevelStats.getFluxName(), tableMeshData );
+    outputStatsToLog( fluxMeshesStats, meshLevelStats.getFluxName(), tableMeshData );
     outputStatsToCSV( m_allRegionWrapperFluxFilename, csvData );
   } );
   return false;

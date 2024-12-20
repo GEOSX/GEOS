@@ -399,7 +399,7 @@ TEST( testTable, variadicTest )
 TEST( testTable, testLineBreak )
 {
   TableLayout tableLayout( {"Cras egestas", "CoordX", "C", "CoordZ", "Prev\nelement", "Next\nelement"} );
-  tableLayout.setTitle( "title" ).setMargin( TableLayout::MarginValue::tiny ).disableLineBreak( false );
+  tableLayout.setTitle( "title" ).setMargin( TableLayout::MarginValue::tiny ).enableLineBreak( false );
 
   TableData tableData;
   tableData.addRow( "1", "2", "3.0", 3.0129877, 2.0f, 1 );

@@ -98,7 +98,7 @@ string TableCSVFormatter::dataToString( TableData const & tableData ) const
     {
       rowConverted.push_back( item.value );
     }
-    result.append( stringutilities::join( rowConverted.cbegin(), rowConverted.cend(), "," ));
+    result.append( stringutilities::join( rowConverted.cbegin(), rowConverted.cend(), separator ));
     result.append( "\n" );
   }
 

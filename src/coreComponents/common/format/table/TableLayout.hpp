@@ -444,7 +444,7 @@ private:
    * @param value Value to desactivate or not wrapLine at the end
    * @return The tableLayout reference
    */
-  TableLayout & disableLineBreak( bool value );
+  TableLayout & enableLineBreak( bool value );
 
   /**
    * @brief Set the minimal margin width between cell content and borders.
