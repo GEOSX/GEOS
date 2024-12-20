@@ -98,7 +98,7 @@ void RelativePermeabilityBase::resizeFields( localIndex const size, localIndex c
   m_phaseRelPerm_n.resize( size, numPts, numPhases, numDir );
   m_dPhaseRelPerm_dPhaseVolFrac.resize( size, numPts, numPhases, numPhases, numDir );
   //phase trapped for stats
-  m_phaseTrappedVolFrac.resize( size, numPts, numPhases );
+  m_phaseTrappedVolFrac.resize( size, numPts, numPhases, numDir );
   m_phaseTrappedVolFrac.zero();
 }
 

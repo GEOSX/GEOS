@@ -689,7 +689,7 @@ TableRelativePermeabilityHysteresis::KernelWrapper::
                  arrayView1d< real64 const > const & waterOilRelPermMaxValue,
                  arrayView2d< real64 const, compflow::USD_PHASE > const & phaseMinHistoricalVolFraction,
                  arrayView2d< real64 const, compflow::USD_PHASE > const & phaseMaxHistoricalVolFraction,
-                 arrayView3d< real64, relperm::USD_PHASE > const & phaseTrappedVolFrac,
+                 arrayView4d< real64, relperm::USD_PHASE > const & phaseTrappedVolFrac,
                  arrayView4d< real64, relperm::USD_RELPERM > const & phaseRelPerm,
                  arrayView5d< real64, relperm::USD_RELPERM_DS > const & dPhaseRelPerm_dPhaseVolFrac )
   : RelativePermeabilityBaseUpdate( phaseTypes,

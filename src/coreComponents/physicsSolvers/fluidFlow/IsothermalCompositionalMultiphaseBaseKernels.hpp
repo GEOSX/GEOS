@@ -2051,9 +2051,8 @@ struct StatisticsKernel
         RAJA::atomicAdd( parallelDeviceAtomic{}, &phaseDynamicPoreVol[ip], elemPhaseVolume );
         RAJA::atomicAdd( parallelDeviceAtomic{}, &phaseMass[ip], elemPhaseMass );
         RAJA::atomicAdd( parallelDeviceAtomic{}, &trappedPhaseMass[ip], elemTrappedPhaseMass );
-        for( int dir = 0; dir < 3; ++dir )
-        {
-          if( phaseRelperm[ei][0][ip][dir] < relpermThreshold )
+
+        if( phaseRelperm[ei][0][ip][0] && phaseRelperm[ei][0][ip][1] && phaseRelperm[ei][0][ip][2]< relpermThreshold )  // double check for double counting
           {
             RAJA::atomicAdd( parallelDeviceAtomic{}, &immobilePhaseMass[ip], elemPhaseMass );
           }
@@ -2064,7 +2063,7 @@ struct StatisticsKernel
           RAJA::atomicAdd( parallelDeviceAtomic{}, &dissolvedComponentMass[ip][ic],
                            phaseCompFraction[ei][0][ip][ic] * elemPhaseMass );
 
-        }
+        
       }
 
     } );

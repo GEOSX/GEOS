@@ -41,7 +41,7 @@ public:
                                                arrayView1d< integer const > const & phaseOrder,
                                                arrayView4d< real64, relperm::USD_RELPERM > const & phaseRelPerm,
                                                arrayView5d< real64, relperm::USD_RELPERM_DS > const & dPhaseRelPerm_dPhaseVolFrac,
-                                               arrayView3d< real64, relperm::USD_PHASE > const & phaseTrappedVolFrac )
+                                               arrayView4d< real64, relperm::USD_PHASE > const & phaseTrappedVolFrac )
     : RelativePermeabilityBaseUpdate( phaseTypes,
                                       phaseOrder,
                                       phaseRelPerm,
@@ -57,7 +57,7 @@ public:
 
   GEOS_HOST_DEVICE
   void compute( arraySlice1d< real64 const, compflow::USD_PHASE - 1 > const & phaseVolFraction,
-                arraySlice1d< real64, relperm::USD_PHASE - 2 > const & phaseTrappedVolFrac,
+                arraySlice2d< real64, relperm::USD_PHASE - 2 > const & phaseTrappedVolFrac,
                 arraySlice2d< real64, relperm::USD_RELPERM - 2 > const & phaseRelPerm,
                 arraySlice3d< real64, relperm::USD_RELPERM_DS - 2 > const & dPhaseRelPerm_dPhaseVolFrac ) const;
 
@@ -161,7 +161,7 @@ GEOS_HOST_DEVICE
 inline void
 BrooksCoreyStone2RelativePermeabilityUpdate::
   compute( arraySlice1d< real64 const, compflow::USD_PHASE - 1 > const & phaseVolFraction,
-           arraySlice1d< real64, relperm::USD_PHASE - 2 > const & phaseTrappedVolFrac,
+           arraySlice2d< real64, relperm::USD_PHASE - 2 > const & phaseTrappedVolFrac,
            arraySlice2d< real64, relperm::USD_RELPERM - 2 > const & phaseRelPerm,
            arraySlice3d< real64, relperm::USD_RELPERM_DS - 2 > const & dPhaseRelPerm_dPhaseVolFrac ) const
 {
@@ -287,16 +287,16 @@ BrooksCoreyStone2RelativePermeabilityUpdate::
     // update trapped phase volume fraction
     if( ipWater >= 0 )
     {
-      phaseTrappedVolFrac[ipWater] = LvArray::math::min( phaseVolFraction[ipWater],
+      phaseTrappedVolFrac[ipWater][dir] = LvArray::math::min( phaseVolFraction[ipWater],
                                                          m_phaseMinVolumeFraction[dir][ipWater] );
     }
     if( ipGas >= 0 )
     {
-      phaseTrappedVolFrac[ipGas] = LvArray::math::min( phaseVolFraction[ipGas], m_phaseMinVolumeFraction[dir][ipGas] );
+      phaseTrappedVolFrac[ipGas][dir] = LvArray::math::min( phaseVolFraction[ipGas], m_phaseMinVolumeFraction[dir][ipGas] );
     }
     if( ipOil >= 0 )
     {
-      phaseTrappedVolFrac[ipOil] = LvArray::math::min( phaseVolFraction[ipOil], m_phaseMinVolumeFraction[dir][ipOil] );
+      phaseTrappedVolFrac[ipOil][dir] = LvArray::math::min( phaseVolFraction[ipOil], m_phaseMinVolumeFraction[dir][ipOil] );
     }
 
   }//end dir loop

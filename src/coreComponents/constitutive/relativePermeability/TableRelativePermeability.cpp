@@ -307,7 +307,7 @@ TableRelativePermeability::KernelWrapper::
                  ThreePhaseInterpolator const & threePhaseInterpolator,
                  arrayView4d< real64, relperm::USD_RELPERM > const & phaseRelPerm,
                  arrayView5d< real64, relperm::USD_RELPERM_DS > const & dPhaseRelPerm_dPhaseVolFrac,
-                 arrayView3d< real64, relperm::USD_PHASE > const & phaseTrappedVolFrac )
+                 arrayView4d< real64, relperm::USD_PHASE > const & phaseTrappedVolFrac )
   : RelativePermeabilityBaseUpdate( phaseTypes,
                                     phaseOrder,
                                     phaseRelPerm,
