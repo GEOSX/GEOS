@@ -38,11 +38,13 @@ TrilinosInterface::createSolver( LinearSolverParameters params )
 {
   if( params.solverType == LinearSolverParameters::SolverType::direct )
   {
+#if defined(GEOS_USE_SUPERLU_DIST)
     if( params.direct.parallel )
     {
       return std::make_unique< SuperLUDist< TrilinosInterface > >( std::move( params ) );
     }
     else
+#endif
     {
       return std::make_unique< SuiteSparse< TrilinosInterface > >( std::move( params ) );
     }
