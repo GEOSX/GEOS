@@ -137,7 +137,7 @@ public:
                    arrayView1d< real64 const > const & waterOilRelPermMaxValue,
                    arrayView2d< real64 const, compflow::USD_PHASE > const & phaseMinHistoricalVolFraction,
                    arrayView2d< real64 const, compflow::USD_PHASE > const & phaseMaxHistoricalVolFraction,
-                   arrayView4d< real64, relperm::USD_PHASE > const & phaseTrappedVolFrac,
+                   arrayView4d< real64, relperm::USD_RELPERM > const & phaseTrappedVolFrac,
                    arrayView4d< real64, relperm::USD_RELPERM > const & phaseRelPerm,
                    arrayView5d< real64, relperm::USD_RELPERM_DS > const & dPhaseRelPerm_dPhaseVolFrac );
 
@@ -258,7 +258,7 @@ public:
                           arraySlice1d< real64 const, compflow::USD_PHASE - 1 > const & phaseVolFraction,
                           arraySlice1d< real64 const, compflow::USD_PHASE - 1 > const & phaseMaxHistoricalVolFraction,
                           arraySlice1d< real64 const, compflow::USD_PHASE - 1 > const & phaseMinHistoricalVolFraction,
-                          arraySlice2d< real64, relperm::USD_PHASE - 2 > const & phaseTrappedVolFrac,
+                          arraySlice2d< real64, relperm::USD_RELPERM - 2 > const & phaseTrappedVolFrac,
                           arraySlice2d< real64, relperm::USD_RELPERM - 2 > const & phaseRelPerm,
                           arraySlice3d< real64,
                                         relperm::USD_RELPERM_DS - 2 > const & dPhaseRelPerm_dPhaseVolFrac ) const;
@@ -283,7 +283,7 @@ public:
                             arraySlice1d< real64 const, compflow::USD_PHASE - 1 > const & phaseVolFraction,
                             arraySlice1d< real64 const, compflow::USD_PHASE - 1 > const & phaseMaxHistoricalVolFraction,
                             arraySlice1d< real64 const, compflow::USD_PHASE - 1 > const & phaseMinHistoricalVolFraction,
-                            arraySlice2d< real64, relperm::USD_PHASE - 2 > const & phaseTrappedVolFrac,
+                            arraySlice2d< real64, relperm::USD_RELPERM - 2 > const & phaseTrappedVolFrac,
                             arraySlice2d< real64, relperm::USD_RELPERM - 2 > const & phaseRelPerm,
                             arraySlice3d< real64,
                                           relperm::USD_RELPERM_DS - 2 > const & dPhaseRelPerm_dPhaseVolFrac ) const;
@@ -300,7 +300,7 @@ public:
     void compute( arraySlice1d< real64 const, compflow::USD_PHASE - 1 > const & phaseVolFraction,
                   arraySlice1d< real64 const, compflow::USD_PHASE - 1 > const & phaseMaxHistoricalVolFraction,
                   arraySlice1d< real64 const, compflow::USD_PHASE - 1 > const & phaseMinHistoricalVolFraction,
-                  arraySlice2d< real64, relperm::USD_PHASE - 2 > const & phaseTrappedVolFrac,
+                  arraySlice2d< real64, relperm::USD_RELPERM - 2 > const & phaseTrappedVolFrac,
                   arraySlice2d< real64, relperm::USD_RELPERM - 2 > const & phaseRelPerm,
                   arraySlice3d< real64, relperm::USD_RELPERM_DS - 2 > const & dPhaseRelPerm_dPhaseVolFrac ) const;
 
@@ -784,7 +784,7 @@ TableRelativePermeabilityHysteresis::KernelWrapper::
                    arraySlice1d< real64 const, compflow::USD_PHASE - 1 > const & phaseVolFraction,
                    arraySlice1d< real64 const, compflow::USD_PHASE - 1 > const & phaseMaxHistoricalVolFraction,
                    arraySlice1d< real64 const, compflow::USD_PHASE - 1 > const & phaseMinHistoricalVolFraction,
-                   arraySlice2d< real64, relperm::USD_PHASE - 2 > const & phaseTrappedVolFrac,
+                   arraySlice2d< real64, relperm::USD_RELPERM - 2 > const & phaseTrappedVolFrac,
                    arraySlice2d< real64, relperm::USD_RELPERM - 2 > const & phaseRelPerm,
                    arraySlice3d< real64, relperm::USD_RELPERM_DS - 2 > const & dPhaseRelPerm_dPhaseVolFrac ) const
 {
@@ -878,7 +878,7 @@ TableRelativePermeabilityHysteresis::KernelWrapper::
                      arraySlice1d< real64 const, compflow::USD_PHASE - 1 > const & phaseVolFraction,
                      arraySlice1d< real64 const, compflow::USD_PHASE - 1 > const & phaseMaxHistoricalVolFraction,
                      arraySlice1d< real64 const, compflow::USD_PHASE - 1 > const & phaseMinHistoricalVolFraction,
-                     arraySlice2d< real64, relperm::USD_PHASE - 2 > const & phaseTrappedVolFrac,
+                     arraySlice2d< real64, relperm::USD_RELPERM - 2 > const & phaseTrappedVolFrac,
                      arraySlice2d< real64, relperm::USD_RELPERM - 2 > const & phaseRelPerm,
                      arraySlice3d< real64, relperm::USD_RELPERM_DS - 2 > const & dPhaseRelPerm_dPhaseVolFrac ) const
 {
@@ -1023,7 +1023,7 @@ TableRelativePermeabilityHysteresis::KernelWrapper::
   compute( arraySlice1d< real64 const, compflow::USD_PHASE - 1 > const & phaseVolFraction,
            arraySlice1d< real64 const, compflow::USD_PHASE - 1 > const & phaseMaxHistoricalVolFraction,
            arraySlice1d< real64 const, compflow::USD_PHASE - 1 > const & phaseMinHistoricalVolFraction,
-           arraySlice1d< real64, relperm::USD_PHASE - 2 > const & phaseTrappedVolFrac,
+           arraySlice2d< real64, relperm::USD_RELPERM - 2 > const & phaseTrappedVolFrac,
            arraySlice2d< real64, relperm::USD_RELPERM - 2 > const & phaseRelPerm,
            arraySlice3d< real64, relperm::USD_RELPERM_DS - 2 > const & dPhaseRelPerm_dPhaseVolFrac ) const
 {

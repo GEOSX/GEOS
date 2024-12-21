@@ -107,7 +107,7 @@ void CompositionalMultiphaseStatistics::registerDataOnMesh( Group & meshBodies )
 
         regionStatistics.phasePoreVolume.resizeDimension< 0 >( numPhases );
         regionStatistics.phaseMass.resizeDimension< 0 >( numPhases );
-        regionStatistics.trappedPhaseMass.resizeDimension< 0 >( numPhases, 3 ); // where to pull numDir currently hardcoded
+        regionStatistics.trappedPhaseMass.resizeDimension< 0 >( numPhases ); // where to pull numDir currently hardcoded
         regionStatistics.immobilePhaseMass.resizeDimension< 0 >( numPhases );
         regionStatistics.componentMass.resizeDimension< 0, 1 >( numPhases, numComps );
 
@@ -253,7 +253,7 @@ void CompositionalMultiphaseStatistics::computeRegionStatistics( real64 const ti
     //get min vol fraction for each phase to dispactche immobile/mobile mass
     string const & relpermName = subRegion.getReference< string >( CompositionalMultiphaseBase::viewKeyStruct::relPermNamesString() );
     RelativePermeabilityBase const & relperm = constitutiveModels.getGroup< RelativePermeabilityBase >( relpermName );
-    arrayView4d< real64 const, relperm::USD_PHASE > const phaseTrappedVolFrac = relperm.phaseTrappedVolFraction();
+    arrayView4d< real64 const, relperm::USD_RELPERM > const phaseTrappedVolFrac = relperm.phaseTrappedVolFraction();
     arrayView4d< real64 const, relperm::USD_RELPERM > const phaseRelperm = relperm.phaseRelPerm();
 
     real64 subRegionAvgPresNumerator = 0.0;
@@ -344,7 +344,7 @@ void CompositionalMultiphaseStatistics::computeRegionStatistics( real64 const ti
       regionStatistics.phaseMass[ip] += subRegionPhaseMass[ip];
       for( int dir = 0; dir < 3; ++dir )
         {
-        regionStatistics.trappedPhaseMass[ip][dir] += subRegionTrappedPhaseMass[ip][dir];
+        regionStatistics.trappedPhaseMass[ip] += subRegionTrappedPhaseMass[ip];  // again should be calculated for minimum direction in isocomp
         }
       regionStatistics.immobilePhaseMass[ip] += subRegionImmobilePhaseMass[ip];
 
@@ -374,7 +374,7 @@ void CompositionalMultiphaseStatistics::computeRegionStatistics( real64 const ti
     {
       regionStatistics.phasePoreVolume[ip] = MpiWrapper::sum( regionStatistics.phasePoreVolume[ip] );
       regionStatistics.phaseMass[ip] = MpiWrapper::sum( regionStatistics.phaseMass[ip] );
-      regionStatistics.trappedPhaseMass[ip][dir] = MpiWrapper::sum( regionStatistics.trappedPhaseMass[ip][dir] );
+      regionStatistics.trappedPhaseMass[ip] = MpiWrapper::sum( regionStatistics.trappedPhaseMass[ip] );
       regionStatistics.immobilePhaseMass[ip] = MpiWrapper::sum( regionStatistics.immobilePhaseMass[ip] );
       regionStatistics.totalPoreVolume += regionStatistics.phasePoreVolume[ip];
       for( integer ic = 0; ic < numComps; ++ic )
@@ -404,7 +404,7 @@ void CompositionalMultiphaseStatistics::computeRegionStatistics( real64 const ti
     array1d< real64 > mobilePhaseMass( numPhases );
     for( integer ip = 0; ip < numPhases; ++ip )
     {
-      nonTrappedPhaseMass[ip] = regionStatistics.phaseMass[ip] - std::min(regionStatistics.trappedPhaseMass[ip]);  // min here
+      nonTrappedPhaseMass[ip] = regionStatistics.phaseMass[ip] - regionStatistics.trappedPhaseMass[ip];  // min here? removed bc min caluclated earlier but could add
       mobilePhaseMass[ip] = regionStatistics.phaseMass[ip] - regionStatistics.immobilePhaseMass[ip];
     }
 
@@ -426,7 +426,7 @@ void CompositionalMultiphaseStatistics::computeRegionStatistics( real64 const ti
 
     // metric 1: trapping computed with the Land trapping coefficient (similar to Eclipse)
     GEOS_LOG_LEVEL_RANK_0( 1, GEOS_FMT( "{}, {} (time {} s): Trapped phase mass (metric 1): {} {}",
-                                        getName(), regionNames[i], time, std::min(regionStatistics.trappedPhaseMass), massUnit ) );
+                                        getName(), regionNames[i], time, regionStatistics.trappedPhaseMass, massUnit ) );
     GEOS_LOG_LEVEL_RANK_0( 1, GEOS_FMT( "{}, {} (time {} s): Non-trapped phase mass (metric 1): {} {}",
                                         getName(), regionNames[i], time, nonTrappedPhaseMass, massUnit ) );
 
@@ -450,7 +450,7 @@ void CompositionalMultiphaseStatistics::computeRegionStatistics( real64 const ti
       for( integer ip = 0; ip < numPhases; ++ip )
         outputFile << "," << regionStatistics.phaseMass[ip];
       for( integer ip = 0; ip < numPhases; ++ip )
-        outputFile << "," << std::min(regionStatistics.trappedPhaseMass[ip]);
+        outputFile << "," << regionStatistics.trappedPhaseMass[ip];
       for( integer ip = 0; ip < numPhases; ++ip )
         outputFile << "," << nonTrappedPhaseMass[ip];
       for( integer ip = 0; ip < numPhases; ++ip )

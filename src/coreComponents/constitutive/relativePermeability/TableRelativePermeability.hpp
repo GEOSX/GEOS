@@ -74,7 +74,7 @@ public:
                    ThreePhaseInterpolator const & threePhaseInterpolator,
                    arrayView4d< real64, relperm::USD_RELPERM > const & phaseRelPerm,
                    arrayView5d< real64, relperm::USD_RELPERM_DS > const & dPhaseRelPerm_dPhaseVolFrac,
-                   arrayView4d< real64, relperm::USD_PHASE > const & phaseTrappedVolFrac );
+                   arrayView4d< real64, relperm::USD_RELPERM > const & phaseTrappedVolFrac );
 
 
     GEOS_HOST_DEVICE
@@ -94,7 +94,7 @@ public:
 
     GEOS_HOST_DEVICE
     void compute( arraySlice1d< real64 const, compflow::USD_PHASE - 1 > const & phaseVolFraction,
-                  arraySlice2d< real64, relperm::USD_PHASE - 2 > const & phaseTrappedVolFrac,
+                  arraySlice2d< real64, relperm::USD_RELPERM - 2 > const & phaseTrappedVolFrac,
                   arraySlice2d< real64, relperm::USD_RELPERM - 2 > const & phaseRelPerm,
                   arraySlice3d< real64, relperm::USD_RELPERM_DS - 2 > const & dPhaseRelPerm_dPhaseVolFrac ) const;
 
@@ -298,7 +298,7 @@ GEOS_HOST_DEVICE
 inline void
 TableRelativePermeability::KernelWrapper::
   compute( arraySlice1d< real64 const, compflow::USD_PHASE - 1 > const & phaseVolFraction,
-           arraySlice2d< real64, relperm::USD_PHASE - 2 > const & phaseTrappedVolFrac,
+           arraySlice2d< real64, relperm::USD_RELPERM - 2 > const & phaseTrappedVolFrac,
            arraySlice2d< real64, relperm::USD_RELPERM - 2 > const & phaseRelPerm,
            arraySlice3d< real64, relperm::USD_RELPERM_DS - 2 > const & dPhaseRelPerm_dPhaseVolFrac ) const
 {
@@ -345,51 +345,51 @@ TableRelativePermeability::KernelWrapper::
   }
 
   // OV -- begin original lines
-  /*for( int dir= 0; dir < 3; ++dir )
+  for( int dir= 0; dir < 3; ++dir )
   {
 
     // update trapped phase volume fraction
     if( ipWater >= 0 )
     {
-      phaseTrappedVolFrac[ipWater] = LvArray::math::min( phaseVolFraction[ipWater], m_phaseMinVolumeFraction[dir][ipWater] );
+      phaseTrappedVolFrac[ipWater][dir] = LvArray::math::min( phaseVolFraction[ipWater], m_phaseMinVolumeFraction[dir][ipWater] );
     }
     if( ipGas >= 0 )
     {
-      phaseTrappedVolFrac[ipGas] = LvArray::math::min( phaseVolFraction[ipGas], m_phaseMinVolumeFraction[dir][ipGas] );
+      phaseTrappedVolFrac[ipGas][dir] = LvArray::math::min( phaseVolFraction[ipGas], m_phaseMinVolumeFraction[dir][ipGas] );
     }
     if( ipOil >= 0 )
     {
-      phaseTrappedVolFrac[ipOil] = LvArray::math::min( phaseVolFraction[ipOil], m_phaseMinVolumeFraction[dir][ipOil] );
+      phaseTrappedVolFrac[ipOil][dir] = LvArray::math::min( phaseVolFraction[ipOil], m_phaseMinVolumeFraction[dir][ipOil] );
     }
-  }*/
+  }
   // OV -- end original lines
   // OV -- begin replacement 
     // update trapped phase volume fraction
     // RCL adding directionality, his change actually calculates the correct value
-  for( int dir=0; dir<3; ++dir )
+/*   for( int dir=0; dir<3; ++dir )
     {  
       if( ipWater >= 0 )
       {
         //phaseTrappedVolFrac[ipWater] = LvArray::math::min( phaseVolFraction[ipWater], m_phaseMinVolumeFraction[dir][ipWater] );
         phaseTrappedVolFrac[ipWater][dir] = 0;
           if (phaseRelPerm[ipWater][0]+phaseRelPerm[ipWater][1]+phaseRelPerm[ipWater][2] < 1e-6)
-            phaseTrappedVolFrac[ipWater][dir] = phaseVolFraction[ipWater][dir];
+            phaseTrappedVolFrac[ipWater][dir] = phaseVolFraction[ipWater];
       }
       if( ipGas >= 0 )
       {
         //phaseTrappedVolFrac[ipGas] = LvArray::math::min( phaseVolFraction[ipGas], m_phaseMinVolumeFraction[dir][ipGas] );
         phaseTrappedVolFrac[ipGas][dir] = 0;
         if (phaseRelPerm[ipGas][0] + phaseRelPerm[ipGas][1] + phaseRelPerm[ipGas][2] < 1e-6)
-          phaseTrappedVolFrac[ipGas][dir] = phaseVolFraction[ipGas][dir];
+          phaseTrappedVolFrac[ipGas][dir] = phaseVolFraction[ipGas];
       }
       if( ipOil >= 0 )
       {
         //phaseTrappedVolFrac[ipOil] = LvArray::math::min( phaseVolFraction[ipOil], m_phaseMinVolumeFraction[dir][ipOil] );
         phaseTrappedVolFrac[ipOil][dir] = 0;
         if (phaseRelPerm[ipOil][0] + phaseRelPerm[ipOil][1] + phaseRelPerm[ipOil][2] < 1e-6)
-          phaseTrappedVolFrac[ipOil][dir] = phaseVolFraction[ipOil][dir]
+          phaseTrappedVolFrac[ipOil][dir] = phaseVolFraction[ipOil];
       }
-    }
+    } */
   // OV -- end replacement
 
 }

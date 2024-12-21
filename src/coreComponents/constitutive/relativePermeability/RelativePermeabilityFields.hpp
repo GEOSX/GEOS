@@ -33,6 +33,9 @@ namespace relperm
 
 using array2dLayoutPhase = array2d< real64, compflow::LAYOUT_PHASE >;
 using array3dLayoutRelPerm = array3d< real64, constitutive::relperm::LAYOUT_PHASE >;
+
+// using array4dLayoutPhase = array4d< real64, constitutive::relperm::LAYOUT_PHASE >;
+
 using array4dLayoutRelPerm = array4d< real64, constitutive::relperm::LAYOUT_RELPERM >;
 using array5dLayoutRelPerm_dS = array5d< real64, constitutive::relperm::LAYOUT_RELPERM_DS >;
 
@@ -62,7 +65,7 @@ DECLARE_FIELD( dPhaseRelPerm_dPhaseVolFraction,
 
 DECLARE_FIELD( phaseTrappedVolFraction,
                "phaseTrappedVolFraction",
-               array3dLayoutRelPerm,
+               array4dLayoutRelPerm,
                0,
                LEVEL_0,
                WRITE_AND_READ,
