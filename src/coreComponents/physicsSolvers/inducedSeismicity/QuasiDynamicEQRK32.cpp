@@ -184,7 +184,7 @@ real64 QuasiDynamicEQRK32::solverStep( real64 const & time_n,
 
     stepRateStateODEAndComputeError( dtAdaptive, domain );
     // Update timestep based on the time step error
-    real64 const dtNext = setNextDt( dtAdaptive, domain );
+    real64 const dtNext = setNextDt( time_n, dtAdaptive, domain );
     if( m_successfulStep ) // set in setNextDt
     {
       // Compute stresses, and slip velocity and save results at updated time,
@@ -429,7 +429,9 @@ void QuasiDynamicEQRK32::saveState( DomainPartition & domain ) const
   } );
 }
 
-real64 QuasiDynamicEQRK32::setNextDt( real64 const & currentDt, DomainPartition & domain )
+real64 QuasiDynamicEQRK32::setNextDt( real64 const & GEOS_UNUSED_PARAM( currentTime ),
+                                      real64 const & currentDt,
+                                      DomainPartition & domain )
 {
 
   // Spring-slider shear traction computation
