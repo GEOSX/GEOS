@@ -3,7 +3,7 @@
  * SPDX-License-Identifier: LGPL-2.1-only
  *
  * Copyright (c) 2016-2024 Lawrence Livermore National Security LLC
- * Copyright (c) 2018-2024 Total, S.A
+ * Copyright (c) 2018-2024 TotalEnergies
  * Copyright (c) 2018-2024 The Board of Trustees of the Leland Stanford Junior University
  * Copyright (c) 2023-2024 Chevron
  * Copyright (c) 2019-     GEOS/GEOSX Contributors
@@ -24,6 +24,20 @@
 namespace geos
 {
 using namespace dataRepository;
+
+namespace logInfo
+{
+struct TimeHistoryOutputTimer : public OutputTimerBase
+{
+  std::string_view getDescription() const override { return "Time history output timing"; }
+};
+}
+
+logInfo::OutputTimerBase const & TimeHistoryOutput::getTimerCategory() const
+{
+  static logInfo::TimeHistoryOutputTimer timer;
+  return timer;
+}
 
 TimeHistoryOutput::TimeHistoryOutput( string const & name,
                                       Group * const parent ):
@@ -166,12 +180,18 @@ bool TimeHistoryOutput::execute( real64 const GEOS_UNUSED_PARAM( time_n ),
                                  DomainPartition & GEOS_UNUSED_PARAM( domain ) )
 {
   GEOS_MARK_FUNCTION;
-  localIndex newBuffered = m_io.front()->getBufferedCount( );
-  for( auto & th_io : m_io )
+
   {
-    th_io->write( );
+    Timer timer( m_outputTimer );
+
+    localIndex newBuffered = m_io.front()->getBufferedCount( );
+    for( auto & th_io : m_io )
+    {
+      th_io->write( );
+    }
+    m_recordCount += newBuffered;
   }
-  m_recordCount += newBuffered;
+
   return false;
 }
 

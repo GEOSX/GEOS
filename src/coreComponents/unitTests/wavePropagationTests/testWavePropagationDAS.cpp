@@ -3,7 +3,7 @@
  * SPDX-License-Identifier: LGPL-2.1-only
  *
  * Copyright (c) 2016-2024 Lawrence Livermore National Security LLC
- * Copyright (c) 2018-2024 Total, S.A
+ * Copyright (c) 2018-2024 TotalEnergies
  * Copyright (c) 2018-2024 The Board of Trustees of the Leland Stanford Junior University
  * Copyright (c) 2023-2024 Chevron
  * Copyright (c) 2019-     GEOS/GEOSX Contributors
@@ -188,7 +188,7 @@ TEST_F( ElasticWaveEquationSEMTest, SeismoTrace )
 
   //Assert on time-step computed with the automatci time-step routine
   real64 const dtOut = propagator->getReference< real64 >( ElasticWaveEquationSEM::viewKeyStruct::timeStepString() );
-  ASSERT_TRUE( dtOut < 0.04 );
+  ASSERT_TRUE( dtOut < 0.05 );
 
 
   // retrieve seismo

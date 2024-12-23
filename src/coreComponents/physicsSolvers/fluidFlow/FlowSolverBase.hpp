@@ -3,7 +3,7 @@
  * SPDX-License-Identifier: LGPL-2.1-only
  *
  * Copyright (c) 2016-2024 Lawrence Livermore National Security LLC
- * Copyright (c) 2018-2024 Total, S.A
+ * Copyright (c) 2018-2024 TotalEnergies
  * Copyright (c) 2018-2024 The Board of Trustees of the Leland Stanford Junior University
  * Copyright (c) 2023-2024 Chevron
  * Copyright (c) 2019-     GEOS/GEOSX Contributors
@@ -100,9 +100,9 @@ public:
    */
   void updateStencilWeights( DomainPartition & domain ) const;
 
-  void enableFixedStressPoromechanicsUpdate();
+  void enableFixedStressPoromechanicsUpdate() { m_isFixedStressPoromechanicsUpdate = true; }
 
-  void enableJumpStabilization();
+  void enableJumpStabilization() { m_isJumpStabilized = true; }
 
   void updatePorosityAndPermeability( CellElementSubRegion & subRegion ) const;
 
@@ -114,39 +114,12 @@ public:
    */
   virtual void saveSequentialIterationState( DomainPartition & domain ) override;
 
-  /**
-   * @brief For each equilibrium initial condition, loop over all the target cells and compute the min/max elevation
-   * @param[in] domain the domain partition
-   * @param[in] equilNameToEquilId the map from the name of the initial condition to the initial condition index (used in min/maxElevation)
-   * @param[out] maxElevation the max elevation for each initial condition
-   * @param[out] minElevation the min elevation for each initial condition
-   */
-  void findMinMaxElevationInEquilibriumTarget( DomainPartition & domain, // cannot be const...
-                                               std::map< string, localIndex > const & equilNameToEquilId,
-                                               arrayView1d< real64 > const & maxElevation,
-                                               arrayView1d< real64 > const & minElevation ) const;
-
-  /**
-   * @brief For each source flux boundary condition, loop over all the target cells and sum the owned cells
-   * @param[in] time the time at the beginning of the time step
-   * @param[in] dt the time step size
-   * @param[in] domain the domain partition
-   * @param[in] bcNameToBcId the map from the name of the boundary condition to the boundary condition index
-   * @param[out] bcAllSetsSize the total number of owned cells for each source flux boundary condition
-   */
-  void computeSourceFluxSizeScalingFactor( real64 const & time,
-                                           real64 const & dt,
-                                           DomainPartition & domain, // cannot be const...
-                                           std::map< string, localIndex > const & bcNameToBcId,
-                                           arrayView1d< globalIndex > const & bcAllSetsSize ) const;
-
   integer & isThermal() { return m_isThermal; }
 
   /**
    * @return The unit in which we evaluate the amount of fluid per element (Mass or Mole).
    */
-  virtual units::Unit getMassUnit() const
-  { return units::Unit::Mass; }
+  virtual units::Unit getMassUnit() const { return units::Unit::Mass; }
 
   /**
    * @brief Function to activate the flag allowing negative pressure
@@ -191,16 +164,39 @@ public:
                                            arrayView1d< real64 > const & localRhs,
                                            CRSMatrixView< real64, localIndex const > const & dR_dAper )
   {
-    GEOS_UNUSED_VAR ( time_n );
-    GEOS_UNUSED_VAR ( dt );
-    GEOS_UNUSED_VAR ( domain );
-    GEOS_UNUSED_VAR ( dofManager );
-    GEOS_UNUSED_VAR ( localMatrix );
-    GEOS_UNUSED_VAR ( localRhs );
-    GEOS_UNUSED_VAR ( dR_dAper );
-
+    GEOS_UNUSED_VAR ( time_n, dt, domain, dofManager, localMatrix, localRhs, dR_dAper );
     GEOS_ERROR( "Poroelastic fluxes with conforming fractures not yet implemented." );
   }
+
+  virtual void initializeFluidState( MeshLevel & mesh, const arrayView1d< const string > & regionNames ) { GEOS_UNUSED_VAR( mesh, regionNames ); }
+
+  virtual void initializeThermalState( MeshLevel & mesh, const arrayView1d< const string > & regionNames ) { GEOS_UNUSED_VAR( mesh, regionNames ); }
+
+  /**
+   * @brief For each equilibrium initial condition, loop over all the target cells and compute the min/max elevation
+   * @param[in] domain the domain partition
+   * @param[in] equilNameToEquilId the map from the name of the initial condition to the initial condition index (used in min/maxElevation)
+   * @param[out] maxElevation the max elevation for each initial condition
+   * @param[out] minElevation the min elevation for each initial condition
+   */
+  void findMinMaxElevationInEquilibriumTarget( DomainPartition & domain, // cannot be const...
+                                               std::map< string, localIndex > const & equilNameToEquilId,
+                                               arrayView1d< real64 > const & maxElevation,
+                                               arrayView1d< real64 > const & minElevation ) const;
+
+  /**
+   * @brief For each source flux boundary condition, loop over all the target cells and sum the owned cells
+   * @param[in] time the time at the beginning of the time step
+   * @param[in] dt the time step size
+   * @param[in] domain the domain partition
+   * @param[in] bcNameToBcId the map from the name of the boundary condition to the boundary condition index
+   * @param[out] bcAllSetsSize the total number of owned cells for each source flux boundary condition
+   */
+  void computeSourceFluxSizeScalingFactor( real64 const & time,
+                                           real64 const & dt,
+                                           DomainPartition & domain, // cannot be const...
+                                           std::map< string, localIndex > const & bcNameToBcId,
+                                           arrayView1d< globalIndex > const & bcAllSetsSize ) const;
 
 protected:
 
@@ -235,6 +231,16 @@ protected:
   virtual void initializePreSubGroups() override;
 
   virtual void initializePostInitialConditionsPreSubGroups() override;
+
+  void initializeState( DomainPartition & domain );
+
+  virtual void computeHydrostaticEquilibrium( DomainPartition & domain ) { GEOS_UNUSED_VAR( domain ); }
+
+  void initializePorosityAndPermeability( MeshLevel & mesh, arrayView1d< string const > const & regionNames );
+
+  void initializeHydraulicAperture( MeshLevel & mesh, const arrayView1d< const string > & regionNames );
+
+  void saveInitialPressureAndTemperature( MeshLevel & mesh, const arrayView1d< const string > & regionNames );
 
   virtual void setConstitutiveNamesCallSuper( ElementSubRegionBase & subRegion ) const override;
 

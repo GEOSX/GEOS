@@ -3,7 +3,7 @@
  * SPDX-License-Identifier: LGPL-2.1-only
  *
  * Copyright (c) 2016-2024 Lawrence Livermore National Security LLC
- * Copyright (c) 2018-2024 Total, S.A
+ * Copyright (c) 2018-2024 TotalEnergies
  * Copyright (c) 2018-2024 The Board of Trustees of the Leland Stanford Junior University
  * Copyright (c) 2023-2024 Chevron
  * Copyright (c) 2019-     GEOS/GEOSX Contributors
@@ -79,6 +79,7 @@ struct PPUPhaseFlux
   compute( integer const numPhase,
            integer const ip,
            integer const hasCapPressure,
+           integer const useNewGravity,
            localIndex const ( &seri )[numFluxSupportPoints],
            localIndex const ( &sesri )[numFluxSupportPoints],
            localIndex const ( &sei )[numFluxSupportPoints],
@@ -112,7 +113,7 @@ struct PPUPhaseFlux
     real64 dPresGrad_dC[numFluxSupportPoints][numComp]{};
     real64 dGravHead_dP[numFluxSupportPoints]{};
     real64 dGravHead_dC[numFluxSupportPoints][numComp]{};
-    PotGrad::compute< numComp, numFluxSupportPoints >( numPhase, ip, hasCapPressure, seri, sesri, sei, trans, dTrans_dPres, pres,
+    PotGrad::compute< numComp, numFluxSupportPoints >( numPhase, ip, hasCapPressure, useNewGravity, seri, sesri, sei, trans, dTrans_dPres, pres,
                                                        gravCoef, phaseVolFrac, dPhaseVolFrac, dCompFrac_dCompDens, phaseMassDens, dPhaseMassDens,
                                                        phaseCapPressure, dPhaseCapPressure_dPhaseVolFrac, potGrad, dPotGrad_dTrans,
                                                        dPresGrad_dP, dPresGrad_dC, dGravHead_dP, dGravHead_dC );
