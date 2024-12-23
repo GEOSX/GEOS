@@ -229,6 +229,7 @@ public:
             ( m_numPhases,
             ip,
             m_kernelFlags.isSet( isothermalCompositionalMultiphaseFVMKernels::KernelFlags::CapPressure ),
+            m_kernelFlags.isSet( isothermalCompositionalMultiphaseFVMKernels::KernelFlags::NewGravity ),
             seri, sesri, sei,
             trans,
             dTrans_dPres,
@@ -370,6 +371,7 @@ public:
                    string const & dofKey,
                    integer const hasCapPressure,
                    integer const useTotalMassEquation,
+                   integer const useNewGravity,
                    UpwindingParameters GEOS_UNUSED_PARAM( upwindingParams ),
                    string const & solverName,
                    ElementRegionManager const & elemManager,
@@ -393,6 +395,8 @@ public:
         kernelFlags.set( isothermalCompositionalMultiphaseFVMKernels::KernelFlags::CapPressure );
       if( useTotalMassEquation )
         kernelFlags.set( isothermalCompositionalMultiphaseFVMKernels::KernelFlags::TotalMassEquation );
+      if( useNewGravity )
+        kernelFlags.set( isothermalCompositionalMultiphaseFVMKernels::KernelFlags::NewGravity );
 
       using kernelType = FluxComputeKernel< NUM_COMP, NUM_DOF >;
       typename kernelType::CompFlowAccessors compFlowAccessors( elemManager, solverName );

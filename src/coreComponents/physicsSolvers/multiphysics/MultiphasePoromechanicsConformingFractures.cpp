@@ -392,14 +392,12 @@ addTransmissibilityCouplingPattern( DomainPartition const & domain,
     GEOS_ERROR_IF( !fractureSubRegion.hasWrapper( flow::pressure::key() ),
                    this->getDataContext() << ": The fracture subregion must contain pressure field." );
 
-    ArrayOfArraysView< localIndex const > const elem2dToFaces = fractureSubRegion.faceList().toViewConst();
+    arrayView2d< localIndex const > const elem2dToFaces = fractureSubRegion.faceList().toViewConst();
 
     arrayView1d< globalIndex const > const &
     flowDofNumber = fractureSubRegion.getReference< globalIndex_array >( flowDofKey );
 
     globalIndex const rankOffset = dofManager.rankOffset();
-
-    ArrayOfArraysView< localIndex const > const & elemsToFaces = fractureSubRegion.faceList().toViewConst();
 
     fvDiscretization.forStencils< SurfaceElementStencil >( mesh, [&]( SurfaceElementStencil const & stencil )
     {
@@ -422,15 +420,14 @@ addTransmissibilityCouplingPattern( DomainPartition const & domain,
 
             if( rowIndex >= 0 && rowIndex < pattern.numRows() )
             {
+
               // Get fracture, face and region/subregion/element indices (for elements on both sides)
               localIndex const fractureIndex = sei[iconn][kf];
 
               // Get the number of nodes
-              localIndex const numNodesPerFace = faceToNodeMap.sizeOfArray( elemsToFaces[fractureIndex][0] );
+              localIndex const numNodesPerFace = faceToNodeMap.sizeOfArray( elem2dToFaces[fractureIndex][0] );
 
               // Loop over the two sides of each fracture element
-              GEOS_ERROR_IF( elem2dToFaces.sizeOfArray( fractureIndex ) != 2,
-                             "Fracture face " << fractureIndex << " has to be shared by two cells." );
               for( localIndex kf1 = 0; kf1 < 2; ++kf1 )
               {
                 localIndex const faceIndex = elem2dToFaces[fractureIndex][kf1];
@@ -492,7 +489,7 @@ assembleForceResidualDerivativeWrtPressure( MeshLevel const & mesh,
     arrayView1d< globalIndex const > const &
     flowDofNumber = subRegion.getReference< globalIndex_array >( flowDofKey );
     arrayView1d< real64 const > const & pressure = subRegion.getReference< array1d< real64 > >( flow::pressure::key() );
-    ArrayOfArraysView< localIndex const > const & elemsToFaces = subRegion.faceList().toViewConst();
+    arrayView2d< localIndex const > const & elemsToFaces = subRegion.faceList().toViewConst();
 
     forAll< serialPolicy >( subRegion.size(), [=]( localIndex const kfe )
     {
@@ -605,7 +602,7 @@ assembleFluidMassResidualDerivativeWrtDisplacement( MeshLevel const & mesh,
 
     arrayView1d< globalIndex const > const & flowDofNumber = subRegion.getReference< array1d< globalIndex > >( flowDofKey );
 
-    ArrayOfArraysView< localIndex const > const & elemsToFaces = subRegion.faceList().toViewConst();
+    arrayView2d< localIndex const > const & elemsToFaces = subRegion.faceList().toViewConst();
     arrayView1d< real64 const > const & area = subRegion.getElementArea().toViewConst();
 
     arrayView1d< integer const > const & fractureState = subRegion.getField< fields::contact::fractureState >();
