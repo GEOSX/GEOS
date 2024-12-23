@@ -3,7 +3,7 @@
  * SPDX-License-Identifier: LGPL-2.1-only
  *
  * Copyright (c) 2016-2024 Lawrence Livermore National Security LLC
- * Copyright (c) 2018-2024 Total, S.A
+ * Copyright (c) 2018-2024 TotalEnergies
  * Copyright (c) 2018-2024 The Board of Trustees of the Leland Stanford Junior University
  * Copyright (c) 2023-2024 Chevron
  * Copyright (c) 2019-     GEOS/GEOSX Contributors
@@ -1090,6 +1090,34 @@ public:
                         ElementReferenceAccessor< localIndex_array > & packList,
                         bool const overwriteMap );
 
+
+  /**
+   * @brief Get the buffer size needed to pack element-to-node and element-to-face maps.
+   * @param packList list of indices to pack
+   * @return the size of data packed.
+   */
+  int packFaceElementToFaceSize( ElementViewAccessor< arrayView1d< localIndex > > const & packList ) const;
+
+  /**
+   * @brief Pack element-to-node and element-to-face maps.
+   * @param buffer pointer to the buffer to be packed
+   * @param packList list of indices to pack
+   * @return the size of data packed.
+   */
+  int packFaceElementToFace( buffer_unit_type * & buffer,
+                             ElementViewAccessor< arrayView1d< localIndex > > const & packList ) const;
+
+  /**
+   * @brief Unpack element-to-node and element-to-face maps.
+   * @param buffer pointer to the buffer to be unpacked
+   * @param packList list of indices to pack
+   * @param overwriteMap flag to indicate whether to overwrite the local map
+   * @return the size of data packed.
+   */
+  int unpackFaceElementToFace( buffer_unit_type const * & buffer,
+                               ElementReferenceAccessor< localIndex_array > & packList,
+                               bool const overwriteMap );
+
   /**
    * @brief Get the buffer size needed to pack the set of fractured elements and the map toEmbSurfaces.
    * @param packList list of indices to pack
@@ -1120,6 +1148,12 @@ public:
   int unpackFracturedElements( buffer_unit_type const * & buffer,
                                ElementReferenceAccessor< localIndex_array > & packList,
                                string const fractureRegionName );
+
+  /**
+   * @brief Function to output connectivity in order to assist debugging issues
+   *        with object connectivity.
+   */
+  virtual void outputObjectConnectivity() const override final;
 
 
 private:
@@ -1154,6 +1188,12 @@ private:
   int
   packUpDownMapsImpl( buffer_unit_type * & buffer,
                       T const & packList ) const;
+
+  template< bool DO_PACKING, typename T >
+  int
+  packFaceElementToFaceImpl( buffer_unit_type * & buffer,
+                             T const & packList ) const;
+
   /**
    * @brief Unpack element-to-node and element-to-face maps.
    * @param buffer pointer to the buffer to be unpacked

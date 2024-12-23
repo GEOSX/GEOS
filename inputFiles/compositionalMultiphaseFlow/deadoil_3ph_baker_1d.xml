@@ -10,8 +10,7 @@
       temperature="300">
       <NonlinearSolverParameters
         newtonTol="1.0e-10"
-        newtonMaxIter="15"
-        lineSearchMaxCuts="2"/>
+        newtonMaxIter="10"/>
       <LinearSolverParameters
         directParallel="0"/>
     </CompositionalMultiphaseFVM>
@@ -46,7 +45,7 @@
     maxTime="2e7">
     <PeriodicEvent
       name="outputs"
-      timeFrequency="1e6"
+      timeFrequency="1e7"
       target="/Outputs/siloOutput"/>
 
     <PeriodicEvent
@@ -107,7 +106,7 @@
     <PressurePorosity
       name="rockPorosity"
       defaultReferencePorosity="0.05"
-      referencePressure="0.0"
+      referencePressure="7.5e6"
       compressibility="1.0e-9"/>
 
     <BrooksCoreyBakerRelativePermeability
