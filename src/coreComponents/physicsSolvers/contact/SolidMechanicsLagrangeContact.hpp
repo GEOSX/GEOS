@@ -31,7 +31,6 @@ class NumericalMethodsManager;
 class SolidMechanicsLagrangeContact : public ContactSolverBase
 {
 public:
-
   SolidMechanicsLagrangeContact( const string & name,
                                  Group * const parent );
 
@@ -100,11 +99,6 @@ public:
 
   virtual void
   resetStateToBeginningOfStep( DomainPartition & domain ) override;
-
-  virtual real64
-  setNextDt( real64 const & currentTime,
-             real64 const & currentDt,
-             DomainPartition & domain ) override;
 
   void updateState( DomainPartition & domain ) override final;
 
@@ -179,6 +173,10 @@ protected:
   real64 calculateContactResidualNorm( DomainPartition const & domain,
                                        DofManager const & dofManager,
                                        arrayView1d< real64 const > const & localRhs );
+
+  virtual void postInputInitialization() override final;
+
+  void setMGRStrategy();
 
 private:
   string m_stabilizationName;

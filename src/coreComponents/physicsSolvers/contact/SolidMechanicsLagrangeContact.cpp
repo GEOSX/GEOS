@@ -73,11 +73,28 @@ SolidMechanicsLagrangeContact::SolidMechanicsLagrangeContact( const string & nam
     setDescription( "It be used to increase the scale of the stabilization entries. A value < 1.0 results in larger entries in the stabilization matrix." );
 
   addLogLevel< logInfo::Configuration >();
+}
 
-  LinearSolverParameters & linSolParams = m_linearSolverParameters.get();
-  linSolParams.mgr.strategy = LinearSolverParameters::MGR::StrategyType::lagrangianContactMechanics;
-  linSolParams.mgr.separateComponents = true;
-  linSolParams.dofsPerNode = 3;
+void SolidMechanicsLagrangeContact::postInputInitialization()
+{
+  ContactSolverBase::postInputInitialization();
+
+  setMGRStrategy();
+}
+
+void SolidMechanicsLagrangeContact::setMGRStrategy()
+{
+  LinearSolverParameters & linearSolverParameters = m_linearSolverParameters.get();
+
+  if( linearSolverParameters.preconditionerType != LinearSolverParameters::PreconditionerType::mgr )
+    return;
+
+  linearSolverParameters.mgr.separateComponents = true;
+  linearSolverParameters.dofsPerNode = 3;
+
+  linearSolverParameters.mgr.strategy = LinearSolverParameters::MGR::StrategyType::lagrangianContactMechanics;
+  GEOS_LOG_LEVEL_RANK_0( 1, GEOS_FMT( "{}: MGR strategy set to {}", getName(),
+                                      EnumStrings< LinearSolverParameters::MGR::StrategyType >::toString( linearSolverParameters.mgr.strategy )));
 }
 
 void SolidMechanicsLagrangeContact::registerDataOnMesh( Group & meshBodies )
@@ -2340,14 +2357,6 @@ bool SolidMechanicsLagrangeContact::isFractureAllInStickCondition( DomainPartiti
   } );
 
   return ( ( numNewSlip + numSlip + numOpen ) == 0 );
-}
-
-real64 SolidMechanicsLagrangeContact::setNextDt( real64 const & currentTime,
-                                                 real64 const & currentDt,
-                                                 DomainPartition & domain )
-{
-  GEOS_UNUSED_VAR( domain );
-  return currentDt;
 }
 
 REGISTER_CATALOG_ENTRY( PhysicsSolverBase, SolidMechanicsLagrangeContact, string const &, Group * const )
