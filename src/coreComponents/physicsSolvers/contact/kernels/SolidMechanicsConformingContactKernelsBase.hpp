@@ -3,7 +3,7 @@
  * SPDX-License-Identifier: LGPL-2.1-only
  *
  * Copyright (c) 2016-2024 Lawrence Livermore National Security LLC
- * Copyright (c) 2018-2024 Total, S.A
+ * Copyright (c) 2018-2024 TotalEnergies
  * Copyright (c) 2018-2024 The Board of Trustees of the Leland Stanford Junior University
  * Copyright (c) 2023-2024 Chevron
  * Copyright (c) 2019-     GEOS/GEOSX Contributors
@@ -244,7 +244,7 @@ protected:
   ArrayOfArraysView< localIndex const > const m_faceToNodes;
 
   /// The array of array containing the element to face map.
-  ArrayOfArraysView< localIndex const > const m_elemsToFaces;
+  arrayView2d< localIndex const > const m_elemsToFaces;
 
   /// The array containing the list of face element of the same type.
   arrayView1d< localIndex const > const m_faceElementList;
@@ -281,7 +281,7 @@ struct ComputeRotationMatricesKernel
   static void
   launch( localIndex const size,
           arrayView2d< real64 const > const & faceNormal,
-          ArrayOfArraysView< localIndex const > const & elemsToFaces,
+          arrayView2d< localIndex const > const & elemsToFaces,
           arrayView3d< real64 > const & rotationMatrix,
           arrayView2d< real64 > const & unitNormal,
           arrayView2d< real64 > const & unitTangent1,

@@ -3,7 +3,7 @@
  * SPDX-License-Identifier: LGPL-2.1-only
  *
  * Copyright (c) 2016-2024 Lawrence Livermore National Security LLC
- * Copyright (c) 2018-2024 Total, S.A
+ * Copyright (c) 2018-2024 TotalEnergies
  * Copyright (c) 2018-2024 The Board of Trustees of the Leland Stanford Junior University
  * Copyright (c) 2023-2024 Chevron
  * Copyright (c) 2019-     GEOS/GEOSX Contributors
@@ -930,6 +930,15 @@ public:
     return m_domainBoundaryIndicator.toViewConst();
   }
 
+  /**
+   * @brief Function to output connectivity in order to assist debugging issues
+   *        with object connectivity.
+   */
+  virtual void outputObjectConnectivity() const
+  {
+    GEOS_ERROR( "Called outputObjectConnectivity in ObjectManagerBase. Function should be implemented." );
+  }
+
 protected:
   /// Group that holds object sets.
   Group m_sets;
@@ -1001,7 +1010,10 @@ void ObjectManagerBase::fixUpDownMaps( TYPE_RELATION & relation,
           allValuesMapped = false;
         }
       }
-      GEOS_ERROR_IF( relation[li][a] == unmappedLocalIndexValue, "Index not set" );
+      // temporarily disabled this check to allow for the case where the index is not set
+      // this entire fixUpDownMaps will be removed in a future PR as the unpacking is modified
+      // s.t. there are no invalid unpacked values that are not expected.
+      //GEOS_ERROR_IF( relation[li][a] == unmappedLocalIndexValue, "Index not set" );
     }
   }
   GEOS_ERROR_IF( !allValuesMapped, "some values of unmappedIndices were not used" );

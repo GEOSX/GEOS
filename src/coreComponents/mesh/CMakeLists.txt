@@ -1,7 +1,7 @@
 # SPDX-License-Identifier: LGPL-2.1-only
 #
 # Copyright (c) 2016-2024 Lawrence Livermore National Security LLC
-# Copyright (c) 2018-2024 Total, S.A
+# Copyright (c) 2018-2024 TotalEnergies
 # Copyright (c) 2018-2024 The Board of Trustees of the Leland Stanford Junior University
 # Copyright (c) 2023-2024 Chevron
 # Copyright (c) 2019-     GEOS/GEOSX Contributors
@@ -35,6 +35,8 @@ set( mesh_headers
      ElementRegionManager.hpp
      ElementSubRegionBase.hpp
      ElementType.hpp
+     ExternalDataSourceBase.hpp
+     ExternalDataSourceManager.hpp
      EmbeddedSurfaceNodeManager.hpp
      EmbeddedSurfaceSubRegion.hpp
      MeshFields.hpp
@@ -80,12 +82,13 @@ set( mesh_headers
      generators/InternalMeshGenerator.hpp
      generators/InternalWellGenerator.hpp
      generators/InternalWellboreGenerator.hpp
+     generators/MeshComponentBase.hpp
      generators/MeshGeneratorBase.hpp
      generators/ParMETISInterface.hpp
      generators/ParticleMeshGenerator.hpp
      generators/PartitionDescriptor.hpp
      generators/PrismUtilities.hpp
-     generators/WellGeneratorABC.hpp
+     generators/Region.hpp
      generators/WellGeneratorBase.hpp
      mpiCommunications/CommID.hpp
      mpiCommunications/CommunicationTools.hpp
@@ -124,6 +127,8 @@ set( mesh_sources
      ElementSubRegionBase.cpp
      EmbeddedSurfaceNodeManager.cpp
      EmbeddedSurfaceSubRegion.cpp
+     ExternalDataSourceBase.cpp
+     ExternalDataSourceManager.cpp
      FaceElementSubRegion.cpp
      FaceManager.cpp
      MeshBody.cpp
@@ -156,9 +161,11 @@ set( mesh_sources
      generators/InternalMeshGenerator.cpp
      generators/InternalWellGenerator.cpp
      generators/InternalWellboreGenerator.cpp
+     generators/MeshComponentBase.cpp
      generators/MeshGeneratorBase.cpp
      generators/ParMETISInterface.cpp
      generators/ParticleMeshGenerator.cpp
+     generators/Region.cpp
      generators/WellGeneratorBase.cpp
      mpiCommunications/CommID.cpp
      mpiCommunications/CommunicationTools.cpp
@@ -184,6 +191,7 @@ if( ENABLE_VTK )
     set( mesh_headers ${mesh_headers}
          generators/CollocatedNodes.hpp
          generators/VTKFaceBlockUtilities.hpp
+         generators/VTKHierarchicalDataSource.hpp
          generators/VTKMeshGenerator.hpp
          generators/VTKMeshGeneratorTools.hpp
          generators/VTKWellGenerator.hpp
@@ -192,6 +200,7 @@ if( ENABLE_VTK )
     set( mesh_sources ${mesh_sources}
          generators/CollocatedNodes.cpp
          generators/VTKFaceBlockUtilities.cpp
+         generators/VTKHierarchicalDataSource.cpp
          generators/VTKMeshGenerator.cpp
          generators/VTKMeshGeneratorTools.cpp
          generators/VTKWellGenerator.cpp
