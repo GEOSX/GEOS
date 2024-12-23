@@ -3,7 +3,7 @@
  * SPDX-License-Identifier: LGPL-2.1-only
  *
  * Copyright (c) 2016-2024 Lawrence Livermore National Security LLC
- * Copyright (c) 2018-2024 Total, S.A
+ * Copyright (c) 2018-2024 TotalEnergies
  * Copyright (c) 2018-2024 The Board of Trustees of the Leland Stanford Junior University
  * Copyright (c) 2023-2024 Chevron
  * Copyright (c) 2019-     GEOS/GEOSX Contributors
@@ -47,14 +47,15 @@ enum class KernelFlags
   CapPressure = 1 << 0, // 1
   /// Flag indicating whether total mass equation is formed or not
   TotalMassEquation = 1 << 1, // 2
+  /// Flag indicating whether new gravity treatment is used or not
+  NewGravity = 1 << 2, // 4
   /// Flag indicating whether C1-PPU is used or not
-  C1PPU = 1 << 2, // 4
+  C1PPU = 1 << 3, // 8
   /// Flag indicating whether IHU is used or not
-  IHU = 1 << 3, // 8
+  IHU = 1 << 4, // 16
   /// Flag indicating whether HU 2-phase simplified version is used or not
-  HU2PH = 1 << 4 // 16
+  HU2PH = 1 << 5 // 32
           /// Add more flags like that if needed:
-          // Flag6 = 1 << 5, // 32
           // Flag7 = 1 << 6, // 64
           // Flag8 = 1 << 7  //128
 };

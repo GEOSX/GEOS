@@ -78,6 +78,7 @@ struct HU2PhaseFlux
   compute( integer const numPhase,
            integer const ip,
            integer const hasCapPressure,
+           integer const useNewGravity,
            localIndex const ( &seri )[numFluxSupportPoints],
            localIndex const ( &sesri )[numFluxSupportPoints],
            localIndex const ( &sei )[numFluxSupportPoints],
@@ -100,7 +101,9 @@ struct HU2PhaseFlux
            real64 ( & dPhaseFlux_dC )[numFluxSupportPoints][numComp] )
   {
     // viscous part
-    computeViscousFlux< numComp, numFluxSupportPoints >( ip, numPhase, hasCapPressure,
+    computeViscousFlux< numComp, numFluxSupportPoints >( ip, numPhase,
+                                                         hasCapPressure,
+                                                         useNewGravity,
                                                          seri, sesri, sei,
                                                          trans, dTrans_dPres,
                                                          pres, gravCoef,
@@ -137,7 +140,10 @@ protected:
   template< localIndex numComp, localIndex numFluxSupportPoints >
   GEOS_HOST_DEVICE
   static void
-  computeViscousFlux( integer const & ip, integer const & numPhase, integer const & hasCapPressure,
+  computeViscousFlux( integer const & ip,
+                      integer const & numPhase,
+                      integer const & hasCapPressure,
+                      integer const & useNewGravity,
                       localIndex const (&seri)[numFluxSupportPoints],
                       localIndex const (&sesri)[numFluxSupportPoints],
                       localIndex const (&sei)[numFluxSupportPoints],
@@ -162,7 +168,9 @@ protected:
     real64 dTotFlux_dP[numFluxSupportPoints]{};
     real64 dTotFlux_dC[numFluxSupportPoints][numComp]{};
 
-    computeTotalFlux( numPhase, hasCapPressure,
+    computeTotalFlux( numPhase,
+                      hasCapPressure,
+                      useNewGravity,
                       seri, sesri, sei,
                       trans, dTrans_dPres,
                       pres, gravCoef,
@@ -400,7 +408,9 @@ protected:
   template< localIndex numComp, localIndex numFluxSupportPoints >
   GEOS_HOST_DEVICE
   static void
-  computeTotalFlux( integer const & numPhase, const integer & hasCapPressure,
+  computeTotalFlux( integer const & numPhase,
+                    const integer & hasCapPressure,
+                    const integer & useNewGravity,
                     localIndex const (&seri)[numFluxSupportPoints],
                     localIndex const (&sesri)[numFluxSupportPoints],
                     localIndex const (&sei)[numFluxSupportPoints],
@@ -425,7 +435,9 @@ protected:
       real64 phaseFlux{};
       real64 dPhaseFlux_dP[numFluxSupportPoints]{};
       real64 dPhaseFlux_dC[numFluxSupportPoints][numComp]{};
-      PPUPhaseFlux::compute( numPhase, jp, hasCapPressure,
+      PPUPhaseFlux::compute( numPhase, jp,
+                             hasCapPressure,
+                             useNewGravity,
                              seri, sesri, sei,
                              trans, dTrans_dPres,
                              pres, gravCoef,
