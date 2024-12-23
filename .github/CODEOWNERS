@@ -11,8 +11,8 @@
 
 /BASELINE_NOTES.md
 /.integrated_tests.yaml                               @rrsettgast @CusiniM @cssherman @wrtobin @castelletto1 @jhuang2601 @paveltomin
-/inputFiles                                           @rrsettgast @CusiniM  @cssherman @paveltomin @jhuang2601
-/inputFiles/compositionalMultiphaseFlow               @paveltomin @dkachuma
+/inputFiles                                           @rrsettgast @CusiniM @cssherman @paveltomin @jhuang2601
+/inputFiles/compositionalMultiphaseFlow               @paveltomin @dkachuma @tjb-ltk
 /inputFiles/compositionalMultiphaseWell               @CusiniM @paveltomin @tjb-ltk @dkachuma
 /inputFiles/efemFractureMechanics                     @CusiniM @matteofrigo5 @Guotong-Ren
 /inputFiles/hydraulicFracturing                       @CusiniM @rrsettgast @frankfeifan @Guotong-Ren @cssherman @jhuang2601
@@ -21,7 +21,7 @@
 /inputFiles/lagrangianContactMechanics                @CusiniM @jhuang2601 @matteofrigo5 
 /inputFiles/materialPointMethod                       @homel1 @cmcrook5 
 /inputFiles/meshGeneration                            @rrsettgast @cssherman
-/inputFiles/multiphaseFlowFractures                   @CusiniM @paveltomin @jhuang2601
+/inputFiles/multiphaseFlowFractures                   @CusiniM @paveltomin @jhuang2601 @tjb-ltk
 /inputFiles/multipleMeshBodies                        @rrsettgast @wrtobin
 /inputFiles/phaseField                                @CusiniM @frankfeifan 
 /inputFiles/poromechanics                             @CusiniM @castelletto1 @paveltomin @jhuang2601 @ryar9534 
@@ -34,7 +34,7 @@
 /inputFiles/singlePhaseWell                           @CusiniM @paveltomin @tjb-ltk
 /inputFiles/solidMechanics                            @CusiniM @castelletto1 @jhuang2601 
 /inputFiles/surfaceGeneration                         @CusiniM @castelletto1 @rrsettgast 
-/inputFiles/thermalMultiphaseFlow                     @paveltomin @dkachuma
+/inputFiles/thermalMultiphaseFlow                     @paveltomin @dkachuma @tjb-ltk
 /inputFiles/thermalSinglePhaseFlowFractures           @CusiniM @castelletto1 @paveltomin @jhuang2601 @frankfeifan
 /inputFiles/thermoPoromechanics                       @paveltomin @jhuang2601 @castelletto1 @frankfeifan
 /inputFiles/thermoPoromechanicsFractures              @CusiniM @castelletto1 @paveltomin @jhuang2601 
@@ -74,7 +74,7 @@
 /src/coreComponents/mesh                              @rrsettgast @CusiniM  @wrtobin @untereiner 
 /src/coreComponents/physicsSolvers                    @rrsettgast @CusiniM
 /src/coreComponents/physicsSolvers/contact            @rrsettgast @CusiniM @matteofrigo5 @Guotong-Ren
-/src/coreComponents/physicsSolvers/fluidFlow          @CusiniM @paveltomin @ryar9534
+/src/coreComponents/physicsSolvers/fluidFlow          @CusiniM @paveltomin @ryar9534 @tjb-ltk @dkachuma
 /src/coreComponents/physicsSolvers/inducedSeismicity  @rrsettgast @CusiniM @matteofrigo5 @VidarStiernstrom
 /src/coreComponents/physicsSolvers/multiphysics       @rrsettgast @CusiniM @paveltomin @castelletto1 @frankfeifan @ryar9534 @jhuang2601
 /src/coreComponents/physicsSolvers/python             @cssherman @corbett5 @alexbenedicto 
