@@ -62,7 +62,7 @@ string TableCSVFormatter::headerToString() const
     std::ostringstream strValue;
     for( auto const & str :  m_tableLayout.getColumns()[idxColumn].m_header.m_lines )
     {
-      result.append( str );
+        result.append( str );
     }
 
     if( idxColumn < m_tableLayout.getColumns().size() - 1 )
@@ -96,7 +96,17 @@ string TableCSVFormatter::dataToString( TableData const & tableData ) const
     std::vector< string > rowConverted;
     for( const auto & item : row )
     {
-      rowConverted.push_back( item.value );
+      std::istringstream strStream( item.value );
+      string line;
+      bool detectNewLine = false;
+      while( getline( strStream, line, '\n' ))
+      {
+        rowConverted.push_back( line );
+        detectNewLine = true;
+      }
+
+      if( !detectNewLine )
+        rowConverted.push_back( item.value );
     }
     result.append( stringutilities::join( rowConverted.cbegin(), rowConverted.cend(), separator ));
     result.append( "\n" );

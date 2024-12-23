@@ -115,34 +115,6 @@ void CompositionalMultiphaseStatistics::registerDataOnMesh( Group & meshBodies )
         stats.immobilePhaseMass.resizeDimension< 0 >( numPhases );
         stats.componentMass.resizeDimension< 0, 1 >( numPhases, numComps );
 
-        // write output header
-        if( m_writeCSV > 0 && MpiWrapper::commRank() == 0 )
-        {
-          std::ofstream outputFile( m_outputDir + "/" + regionNames[i] + ".csv" );
-          string_view massUnit = units::getSymbol( m_solver->getMassUnit() );
-          outputFile <<
-            "Time [s],Min pressure [Pa],Average pressure [Pa],Max pressure [Pa],Min delta pressure [Pa],Max delta pressure [Pa]," <<
-            "Min temperature [Pa],Average temperature [Pa],Max temperature [Pa],Total dynamic pore volume [rm^3]";
-          for( integer ip = 0; ip < numPhases; ++ip )
-            outputFile << ",Phase " << ip << " dynamic pore volume [rm^3]";
-          for( integer ip = 0; ip < numPhases; ++ip )
-            outputFile << ",Phase " << ip << " mass [" << massUnit << "]";
-          for( integer ip = 0; ip < numPhases; ++ip )
-            outputFile << ",Trapped phase " << ip << " mass (metric 1) [" << massUnit << "]";
-          for( integer ip = 0; ip < numPhases; ++ip )
-            outputFile << ",Non-trapped phase " << ip << " mass (metric 1) [" << massUnit << "]";
-          for( integer ip = 0; ip < numPhases; ++ip )
-            outputFile << ",Immobile phase " << ip << " mass (metric 2) [" << massUnit << "]";
-          for( integer ip = 0; ip < numPhases; ++ip )
-            outputFile << ",Mobile phase " << ip << " mass (metric 2) [" << massUnit << "]";
-          for( integer ip = 0; ip < numPhases; ++ip )
-          {
-            for( integer ic = 0; ic < numComps; ++ic )
-              outputFile << ",Component " << ic << " (phase " << ip << ") mass [" << massUnit << "]";
-          }
-          outputFile << std::endl;
-          outputFile.close();
-        }
       }
     }
 
@@ -487,29 +459,68 @@ void CompositionalMultiphaseStatistics::computeRegionStatistics( real64 const ti
     GEOS_LOG_RANK_0( tableFormatter.toString( compPhaseStatsData ) );
 
     if( m_writeCSV > 0 && MpiWrapper::commRank() == 0 )
-    {
-      std::ofstream outputFile( m_outputDir + "/" + regionNames[i] + ".csv", std::ios_base::app );
-      outputFile << time << "," << stats.minPressure << "," << stats.averagePressure << "," << stats.maxPressure << "," <<
-        stats.minDeltaPressure << "," << stats.maxDeltaPressure << "," << stats.minTemperature << "," <<
-        stats.averageTemperature << "," << stats.maxTemperature << "," << stats.totalPoreVolume;
-      for( integer ip = 0; ip < numPhases; ++ip )
-        outputFile << "," << stats.phasePoreVolume[ip];
-      for( integer ip = 0; ip < numPhases; ++ip )
-        outputFile << "," << stats.phaseMass[ip];
-      for( integer ip = 0; ip < numPhases; ++ip )
-        outputFile << "," << stats.trappedPhaseMass[ip];
-      for( integer ip = 0; ip < numPhases; ++ip )
-        outputFile << "," << nonTrappedPhaseMass[ip];
-      for( integer ip = 0; ip < numPhases; ++ip )
-        outputFile << "," << stats.immobilePhaseMass[ip];
-      for( integer ip = 0; ip < numPhases; ++ip )
-        outputFile << "," << mobilePhaseMass[ip];
-      for( integer ip = 0; ip < numPhases; ++ip )
+    { 
+      auto addStatsValue = []( std::ostringstream & pstatsLayout, TableLayout & ptableLayout,
+                                string const & description, string_view  pmassUnit,
+                                integer pnumPhases, integer pnumComps = 0 )
       {
-        for( integer ic = 0; ic < numComps; ++ic )
-          outputFile << "," << stats.componentMass[ip][ic];
-      }
-      outputFile << std::endl;
+        for( int ip = 0; ip < pnumPhases; ++ip )
+        {
+          if( pnumComps == 0 )
+          {
+            pstatsLayout << "," << description << " " << ip << " [" << pmassUnit << "]";
+          }
+          else
+          {
+            for( int ic = 0; ic < pnumComps; ++ic )
+            {
+              pstatsLayout << ",Component " << ic << " (phase " << ip << ") mass [" << pmassUnit << "]";
+            }
+          }
+        }
+
+        ptableLayout.addToColumns( pstatsLayout.str());
+        pstatsLayout.str( "" );
+      };
+
+      TableLayout tableLayout( {
+          TableLayout::Column().setName( "Time [s]" ),
+          TableLayout::Column().setName( "Min pressure [Pa]" ),
+          TableLayout::Column().setName( "Average pressure [Pa]" ),
+          TableLayout::Column().setName( "Max pressure [Pa]" ),
+          TableLayout::Column().setName( "Min delta pressure [Pa]" ),
+          TableLayout::Column().setName( "Max delta pressure [Pa]" ),
+          TableLayout::Column().setName( "Min temperature [Pa]]" ),
+          TableLayout::Column().setName( "Average temperature [Pa]" ),
+          TableLayout::Column().setName( "Max temperature [Pa]" ),
+          TableLayout::Column().setName( "Total dynamic pore volume [rm^3]" ),
+          TableLayout::Column().setName( GEOS_FMT( "Phase mass [{}] dynamic pore volume [rm^3]", massUnit ) ),
+        } );
+
+      std::ostringstream statsLayout;
+      addStatsValue( statsLayout, tableLayout, "Phase dynamic pore volume", massUnit, numPhases );
+      addStatsValue( statsLayout, tableLayout, "Phase mass", massUnit, numPhases );
+      addStatsValue( statsLayout, tableLayout, "Trapped phase mass (metric 1)", massUnit, numPhases );
+      addStatsValue( statsLayout, tableLayout, "Non-trapped phase mass (metric 1)", massUnit, numPhases );
+      addStatsValue( statsLayout, tableLayout, "Immobile phase mass (metric 2)", massUnit, numPhases );
+      addStatsValue( statsLayout, tableLayout, "Mobile phase mass (metric 2)", massUnit, numPhases );
+      addStatsValue( statsLayout, tableLayout, "Component", massUnit, numPhases, numComps );
+      tableLayout.addToColumns( statsLayout.str());
+
+      TableData tableData;
+      tableData.addRow( time, stats.minPressure, stats.averagePressure, stats.maxPressure, stats.minDeltaPressure, stats.maxDeltaPressure,
+                        stats.minTemperature, stats.averageTemperature, stats.maxTemperature, stats.totalPoreVolume,
+                        stringutilities::joinLamda( stats.phasePoreVolume, "\n", []( auto data ) { return data[0]; } ),
+                        stringutilities::joinLamda( stats.phaseMass, "\n", []( auto data ) { return data[0]; } ),
+                        stringutilities::joinLamda( stats.trappedPhaseMass, "\n", []( auto value ) { return value[0]; } ),
+                        stringutilities::joinLamda( nonTrappedPhaseMass, "\n", []( auto value ) { return value[0]; } ),
+                        stringutilities::joinLamda( stats.immobilePhaseMass, "\n", []( auto value ) { return value[0]; } ),
+                        stringutilities::joinLamda( mobilePhaseMass, "\n", []( auto value ) { return value[0]; } ),
+                        stringutilities::join( massValues, '\n' ) );
+
+      std::ofstream outputFile( m_outputDir + "/" + regionNames[i] + ".csv" );
+      TableCSVFormatter const csvOutput( tableLayout );
+      outputFile << csvOutput.toString( tableData );
       outputFile.close();
     }
   }

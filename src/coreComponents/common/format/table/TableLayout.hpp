@@ -499,6 +499,12 @@ private:
   std::vector< size_t > & getNbSubDataLines()
   { return m_sublineDataCounts; }
 
+  /**
+   * @brief Create and add a column to the columns vector given a string
+   * @param m_header The column name
+   */
+  void addToColumns( string_view m_header );
+  
 private:
 
   /**
@@ -532,12 +538,6 @@ private:
    * @param columnNames The columns name
    */
   void addToColumns( std::vector< string > const & columnNames );
-
-  /**
-   * @brief Create and add a column to the columns vector given a string
-   * @param m_header The column name
-   */
-  void addToColumns( string_view m_header );
 
 /**
  *
