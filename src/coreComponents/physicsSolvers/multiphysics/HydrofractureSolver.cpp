@@ -189,10 +189,8 @@ real64 HydrofractureSolver< POROMECHANICS_SOLVER >::fullyCoupledSolverStep( real
                                                                             int const cycleNumber,
                                                                             DomainPartition & domain )
 {
-  if( cycleNumber == 0 && time_n <= 0 )
-  {
-    initializeNewFractureFields( domain );
-  }
+  // for initial fracture initialization in case when surface generator was called outside of the solver
+  initializeNewFractureFields( domain );
 
   real64 dtReturn = dt;
 
@@ -379,11 +377,11 @@ void HydrofractureSolver< POROMECHANICS_SOLVER >::updateHydraulicApertureAndFrac
   maxHydraulicAperture  = MpiWrapper::max( maxHydraulicAperture );
 
   GEOS_LOG_LEVEL_INFO_RANK_0( logInfo::Solution, GEOS_FMT( "        {}: Max aperture change: {} m, max hydraulic aperture change: {} m",
-                                                           this->getName(), fmt::format( "{:.{}f}", maxApertureChange, 6 ), fmt::format( "{:.{}f}", maxHydraulicApertureChange, 6 ) ) );
+                                                           this->getName(), fmt::format( "{:.{}e}", maxApertureChange, 6 ), fmt::format( "{:.{}e}", maxHydraulicApertureChange, 6 ) ) );
   GEOS_LOG_LEVEL_INFO_RANK_0( logInfo::Solution, GEOS_FMT( "        {}: Min aperture: {} m, max aperture: {} m",
-                                                           this->getName(), fmt::format( "{:.{}f}", minAperture, 6 ), fmt::format( "{:.{}f}", maxAperture, 6 ) ) );
+                                                           this->getName(), fmt::format( "{:.{}e}", minAperture, 6 ), fmt::format( "{:.{}e}", maxAperture, 6 ) ) );
   GEOS_LOG_LEVEL_INFO_RANK_0( logInfo::Solution, GEOS_FMT( "        {}: Min hydraulic aperture: {} m, max hydraulic aperture: {} m",
-                                                           this->getName(), fmt::format( "{:.{}f}", minHydraulicAperture, 6 ), fmt::format( "{:.{}f}", maxHydraulicAperture, 6 ) ) );
+                                                           this->getName(), fmt::format( "{:.{}e}", minHydraulicAperture, 6 ), fmt::format( "{:.{}e}", maxHydraulicAperture, 6 ) ) );
 }
 template< typename POROMECHANICS_SOLVER >
 void HydrofractureSolver< POROMECHANICS_SOLVER >::setupCoupling( DomainPartition const & domain,
@@ -750,7 +748,6 @@ assembleForceResidualDerivativeWrtPressure( DomainPartition & domain,
         for( localIndex kf=0; kf<2; ++kf )
         {
           localIndex const faceIndex = elemsToFaces[kfe][kf];
-
           for( localIndex a=0; a<numNodesPerFace; ++a )
           {
 
@@ -1173,7 +1170,6 @@ void HydrofractureSolver< POROMECHANICS_SOLVER >::initializeNewFractureFields( D
             }
           } );
         }
-
         subRegion.m_recalculateConnectionsFor2dFaces.clear();
         subRegion.m_newFaceElements.clear();
       } );
