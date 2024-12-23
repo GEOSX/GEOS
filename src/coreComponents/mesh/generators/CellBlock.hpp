@@ -196,9 +196,17 @@ public:
   arrayView1d< globalIndex const > localToGlobalMapConstView() const
   { return m_localToGlobalMap.toViewConst(); }
 
+  /**
+   * @brief Get global to local map.
+   * @return The mapping relationship.
+   */
   unordered_map< globalIndex, localIndex > & globalToLocalMap()
   { return m_globalToLocalMap; }
 
+  /**
+   * @brief Get global to local map, const version.
+   * @return The mapping relationship.
+   */
   unordered_map< globalIndex, localIndex > const & globalToLocalMap() const
   { return m_globalToLocalMap; }
 

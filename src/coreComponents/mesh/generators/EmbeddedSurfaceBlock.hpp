@@ -102,16 +102,22 @@ public:
    */
   void setEmbeddedSurfElemPermeability( array1d< real64 > && _perms );
 
-  unordered_map< globalIndex, localIndex > & globalToLocalMap()
-  { return m_globalToLocalMap; }
+  /**
+   * @brief Get global to local map.
+   * @return The mapping relationship.
+   */
+  unordered_map< globalIndex, localIndex > & globalToLocalMap();
 
-  unordered_map< globalIndex, localIndex > const & globalToLocalMap() const
-  { return m_globalToLocalMap; }
+  /**
+   * @brief Get global to local map, const version.
+   * @return The mapping relationship.
+   */
+  unordered_map< globalIndex, localIndex > const & globalToLocalMap() const;
 
-  void setGlobalToLocalMap( unordered_map< globalIndex, localIndex > && g2l )
-  {
-    m_globalToLocalMap = g2l;
-  }
+  /**
+   * @brief Set global to local map from a provided mapping.
+   */
+  void setGlobalToLocalMap( unordered_map< globalIndex, localIndex > && g2l );
 
 private:
 

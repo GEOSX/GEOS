@@ -96,4 +96,19 @@ void EmbeddedSurfaceBlock::setEmbeddedSurfElemNodes( ArrayOfArrays< real64 > && 
   m_embeddedSurfElemNodesCoords = _embeddedSurfElemNodes;
 }
 
+unordered_map< globalIndex, localIndex > & EmbeddedSurfaceBlock::globalToLocalMap()
+{
+  return m_globalToLocalMap;
+}
+
+unordered_map< globalIndex, localIndex > const & EmbeddedSurfaceBlock::globalToLocalMap() const
+{
+  return m_globalToLocalMap;
+}
+
+void EmbeddedSurfaceBlock::setGlobalToLocalMap( unordered_map< globalIndex, localIndex > && g2l )
+{
+  m_globalToLocalMap = g2l;
+}
+
 }
