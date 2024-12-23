@@ -402,7 +402,7 @@ private:
    * @param args An initializer_list containing string / column
    */
   TableLayout( string_view title,
-               std::vector< string > args )
+               std::vector< string > const & args )
   {
     setMargin( MarginValue::medium );
     setTitle( title );
