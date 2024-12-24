@@ -193,13 +193,34 @@ void FieldSpecificationManager::validateBoundaryConditions( MeshLevel & mesh ) c
 
     if( isFieldNameFound == 0 )
     {
+      std::ostringstream listFieldsName;
+      fs.apply< dataRepository::Group >( mesh,
+                                         [&]( FieldSpecificationBase const &,
+                                              string const &,
+                                              SortedArrayView< localIndex const > const &,
+                                              Group & targetGroup,
+                                              string const fieldName )
+      {
+
+        if( !targetGroup.hasWrapper( fieldName ) )
+        {
+          for( auto const & wrapperIter : targetGroup.wrappers() )
+          {
+            auto const & wrapper = wrapperIter.second;
+            listFieldsName<<  wrapper->getName() <<  " ";
+          }
+        }
+      } );
+
       char const fieldNameNotFoundMessage[] =
-        "\n{}: there is no {} named `{}` under the {} `{}`.\n";
+        "\n{}: there is no {} named `{}` under the {} `{}`.\n The fields ame available are :\n{}";
       string const errorMsg =
         GEOS_FMT( fieldNameNotFoundMessage,
                   fs.getWrapperDataContext( FieldSpecificationBase::viewKeyStruct::fieldNameString() ),
                   FieldSpecificationBase::viewKeyStruct::fieldNameString(),
-                  fs.getFieldName(), FieldSpecificationBase::viewKeyStruct::objectPathString(), fs.getObjectPath() );
+                  fs.getFieldName(), FieldSpecificationBase::viewKeyStruct::objectPathString(), fs.getObjectPath(),
+                  listFieldsName.str() );
+
       if( areAllSetsEmpty )
       {
         GEOS_LOG_RANK_0( errorMsg );
