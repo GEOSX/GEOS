@@ -76,6 +76,7 @@ public:
    * @brief Builds the compound from values.
    * @param main The main 3d mesh (the matrix).
    * @param faceBlocks The fractures meshes.
+   * @param edfmSurfBlocks The edfm fractures meshes.
    */
   AllMeshes( vtkSmartPointer< vtkDataSet > const & main,
              std::map< string, vtkSmartPointer< vtkDataSet > > const & faceBlocks,
