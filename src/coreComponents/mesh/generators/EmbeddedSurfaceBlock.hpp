@@ -116,6 +116,7 @@ public:
 
   /**
    * @brief Set global to local map from a provided mapping.
+   * @param g2l provided mapping.
    */
   void setGlobalToLocalMap( unordered_map< globalIndex, localIndex > && g2l );
 
