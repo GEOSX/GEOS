@@ -193,33 +193,12 @@ void FieldSpecificationManager::validateBoundaryConditions( MeshLevel & mesh ) c
 
     if( isFieldNameFound == 0 )
     {
-      std::ostringstream listFieldsName;
-      fs.apply< dataRepository::Group >( mesh,
-                                         [&]( FieldSpecificationBase const &,
-                                              string const &,
-                                              SortedArrayView< localIndex const > const &,
-                                              Group & targetGroup,
-                                              string const fieldName )
-      {
-
-        if( !targetGroup.hasWrapper( fieldName ) )
-        {
-          for( auto const & wrapperIter : targetGroup.wrappers() )
-          {
-            auto const & wrapper = wrapperIter.second;
-            listFieldsName<<  wrapper->getName() <<  " ";
-          }
-        }
-      } );
-
       char const fieldNameNotFoundMessage[] =
-        "\n{}: there is no {} named `{}` under the {} `{}`.\n The fields ame available are :\n{}";
-      string const errorMsg =
-        GEOS_FMT( fieldNameNotFoundMessage,
-                  fs.getWrapperDataContext( FieldSpecificationBase::viewKeyStruct::fieldNameString() ),
-                  FieldSpecificationBase::viewKeyStruct::fieldNameString(),
-                  fs.getFieldName(), FieldSpecificationBase::viewKeyStruct::objectPathString(), fs.getObjectPath(),
-                  listFieldsName.str() );
+        "\n{}: there is no {} named `{}` under the {} `{}`.\n";
+      string errorMsg = GEOS_FMT( fieldNameNotFoundMessage,
+                                  fs.getWrapperDataContext( FieldSpecificationBase::viewKeyStruct::fieldNameString() ),
+                                  FieldSpecificationBase::viewKeyStruct::fieldNameString(),
+                                  fs.getFieldName(), FieldSpecificationBase::viewKeyStruct::objectPathString(), fs.getObjectPath());
 
       if( areAllSetsEmpty )
       {
@@ -227,6 +206,28 @@ void FieldSpecificationManager::validateBoundaryConditions( MeshLevel & mesh ) c
       }
       else
       {
+        std::ostringstream listFieldsName;
+        bool stopIteration = false;
+
+        ElementRegionManager const & elemRegionGroup = mesh.getElemManager();
+        elemRegionGroup.forElementRegions( [&]( ElementRegionBase const & elemRegion )
+        {
+          if( stopIteration )
+            return;
+          auto const & subCellRegion = elemRegion.getSubRegion< CellElementSubRegion >( 0 );
+          if( !subCellRegion.hasWrapper( fs.getFieldName() ) )
+          {
+            stopIteration = true;
+            for( auto const & wrapperIter : subCellRegion.wrappers() )
+            {
+              auto const & wrapper = wrapperIter.second;
+              listFieldsName<<  wrapper->getName() <<  " ";
+            }
+          }
+        } );
+
+        string fieldAvailable = GEOS_FMT( "The fields ame available are :\n{}", listFieldsName.str());
+        errorMsg.append( listFieldsName.str());
         GEOS_THROW( errorMsg, InputError );
       }
     }
