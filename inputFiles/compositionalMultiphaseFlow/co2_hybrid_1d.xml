@@ -14,8 +14,7 @@
       targetRegions="{ region }">
       <NonlinearSolverParameters
         newtonTol="1.0e-6"
-        newtonMaxIter="100"
-        maxTimeStepCuts="5"/>
+        newtonMaxIter="10"/>
       <LinearSolverParameters
         directParallel="0"/>
     </CompositionalMultiphaseHybridFVM>
@@ -50,7 +49,7 @@
     maxTime="1e5">
     <PeriodicEvent
       name="outputs"
-      timeFrequency="1e4"
+      timeFrequency="5e4"
       target="/Outputs/vtkOutput"/>
 
     <PeriodicEvent
@@ -100,7 +99,7 @@
     <PressurePorosity
       name="rockPorosity"
       defaultReferencePorosity="0.2"
-      referencePressure="0.0"
+      referencePressure="9e6"
       compressibility="1.0e-9"/>
 
     <BrooksCoreyRelativePermeability
