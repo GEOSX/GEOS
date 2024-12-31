@@ -764,16 +764,19 @@ real64 PhysicsSolverBase::eisenstatWalker( real64 const newNewtonNorm,
 void MemoryUsageOutput( std::string const & message )
 {
 #if defined( GEOS_USE_HIP )
+  size_t free, total;
 
-  std::cout<<message<<std::endl;
-  for( int rank=0; rank<MpiWrapper::commSize(); ++rank )
+  for( int rank=0; rank < MpiWrapper::commSize(); ++rank )
   {
-    MpiWrapper::commBarrier();
-    if( rank==MpiWrapper::commRank() )
+    MpiWrapper::barrier();
+    if( rank == MpiWrapper::commRank() )
     {
-      
-      hipError_t const err = hipMemGetInfo( &m_availableMemory, &m_totalMemory );
-      std::cout<<"Rank "<<rank<<" allocated memory: "<<m_totalMemory - m_availableMemory<<std::endl;
+      hipError_t const err = hipMemGetInfo( &free, &total );
+      std::cout << std::fixed << std::setprecision(3)
+                << "Rank " << rank
+                << " - " << message
+                << " - allocated memory: " << static_cast<double>(total - free) / (1e9)
+                << " GiB" << std::endl;
     }
   }
 #endif
