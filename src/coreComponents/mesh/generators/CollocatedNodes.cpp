@@ -28,9 +28,12 @@ CollocatedNodes::CollocatedNodes( string const & faceBlockName,
                                   bool isParallel )
 {
   // The vtk field to the collocated nodes for fractures.
-  string const COLLOCATED_NODES = "collocated_nodes";
+  string const collocatedNodesField = "collocated_nodes";
 
-  vtkIdTypeArray const * collocatedNodes = vtkIdTypeArray::FastDownCast( faceMesh->GetPointData()->GetArray( COLLOCATED_NODES.c_str() ) );
+  // Error message in case field is not found
+  GEOS_MAYBE_UNUSED constexpr char err[] = "Could not find valid field {} for fracture {}.";
+
+  vtkIdTypeArray const * collocatedNodes = vtkIdTypeArray::FastDownCast( faceMesh->GetPointData()->GetArray( collocatedNodesField.c_str() ) );
   if( isParallel )
   {
     // Depending on the parallel split, the vtk face mesh may be empty on a rank.
@@ -41,7 +44,7 @@ CollocatedNodes::CollocatedNodes( string const & faceBlockName,
     std::uintptr_t const address = MpiWrapper::max( reinterpret_cast< std::uintptr_t >(collocatedNodes) );
     if( address == 0 )
     {
-      GEOS_ERROR_IF( collocatedNodes == nullptr, "Could not find valid field \"" << COLLOCATED_NODES << "\" for fracture \"" << faceBlockName << "\"." );
+      GEOS_ERROR_IF_EQ_MSG( collocatedNodes, nullptr, GEOS_FMT( err, collocatedNodesField, faceBlockName ) );
     }
   }
 
