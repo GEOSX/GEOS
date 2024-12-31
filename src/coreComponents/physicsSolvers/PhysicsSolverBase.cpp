@@ -775,7 +775,7 @@ void MemoryUsageOutput( std::string const & message )
       std::cout << std::fixed << std::setprecision(3)
                 << "Rank " << rank
                 << " - " << message
-                << " - allocated memory: " << static_cast<double>(total - free) / (1e9)
+                << " - allocated memory: " << static_cast<double>(total - free) / (1 << 30)
                 << " GiB" << std::endl;
     }
   }
