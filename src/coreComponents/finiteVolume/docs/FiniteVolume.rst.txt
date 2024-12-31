@@ -20,7 +20,7 @@ The numerical flux is obtained using the following expression for the mass flux 
 where :math:`p_K` is the pressure of cell :math:`K`, :math:`\rho^{avg}` is the average fluid density, :math:`d_K` is the depth of cell :math:`K`, and :math:`\Upsilon_{KL}` is the standard TPFA transmissibility coefficient at the interface.
 The fluid density, :math:`\rho^{upw}`, and the fluid viscosity, :math:`\mu^{upw}`, are upwinded using the sign of the potential difference at the interface. 
 
-For :ref:`CompositionalMultiphaseFlow` there are different options how :math:`\rho^{avg}` can be computed, which are controlled by `gravityDensityScheme` parameter:
+For :ref:`CompositionalMultiphaseFlow` there are two options to compute the average density, :math:`\rho^{avg}`. The desired option can be selected using the `gravityDensityScheme` parameter:
 
 #. `ArithmeticAverage`: :math:`\rho^{avg}` is computed using simple arithmetic average: :math:`\rho^{avg} = 0.5 \cdot (rho_K + rho_L)`, where :math:`rho_K` and :math:`rho_K` are densities in the two cells.
 
