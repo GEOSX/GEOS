@@ -358,8 +358,8 @@ void DomainPartition::outputPartitionInformation() const
         localIndex const values[8] = { numLocalNodes, numGhostNodes, numLocalEdges, numGhostEdges, numLocalFaces, numGhostFaces, numLocalElems, numGhostElems };
         localIndex minValues[8] = {0};
         localIndex maxValues[8] = {0};
-        MpiWrapper::allReduce( values, minValues, 8, MPI_MIN, MPI_COMM_WORLD );
-        MpiWrapper::allReduce( values, maxValues, 8, MPI_MAX, MPI_COMM_WORLD );
+        MpiWrapper::allReduce( Span< localIndex const >( values ), Span< localIndex >( minValues ), MpiWrapper::Reduction::Min, MPI_COMM_WORLD );
+        MpiWrapper::allReduce( Span< localIndex const >( values ),  Span< localIndex >( maxValues ), MpiWrapper::Reduction::Max, MPI_COMM_WORLD );
         localIndex const minNumLocalNodes = minValues[0];
         localIndex const maxNumLocalNodes = maxValues[0];
         localIndex const minNumGhostNodes = minValues[1];
@@ -380,8 +380,8 @@ void DomainPartition::outputPartitionInformation() const
         real64 const ratios[4] = { nodeRatio, edgeRatio, faceRatio, elemRatio };
         real64 minRatios[4] = {0};
         real64 maxRatios[4] = {0};
-        MpiWrapper::allReduce( ratios, minRatios, 4, MPI_MIN, MPI_COMM_WORLD );
-        MpiWrapper::allReduce( ratios, maxRatios, 4, MPI_MAX, MPI_COMM_WORLD );
+        MpiWrapper::allReduce(  Span< real64 const >( ratios ),  Span< real64 >( minRatios ), MpiWrapper::Reduction::Min, MPI_COMM_WORLD );
+        MpiWrapper::allReduce(  Span< real64 const >( ratios ),  Span< real64 >( maxRatios ), MpiWrapper::Reduction::Max, MPI_COMM_WORLD );
         real64 const minNodeRatio = minRatios[0];
         real64 const maxNodeRatio = maxRatios[0];
         real64 const minEdgeRatio = minRatios[1];

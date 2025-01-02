@@ -77,10 +77,9 @@ void ParticleManager::setMaxGlobalIndex()
     m_localMaxGlobalIndex = std::max( m_localMaxGlobalIndex, subRegion.maxGlobalIndex() );
   } );
 
-  MpiWrapper::allReduce( &m_localMaxGlobalIndex,
-                         &m_maxGlobalIndex,
-                         1,
-                         MPI_MAX,
+  MpiWrapper::allReduce( Span< globalIndex const > ( &m_localMaxGlobalIndex, 1 ),
+                         Span< globalIndex > ( &m_maxGlobalIndex, 1 ),
+                         MpiWrapper::Reduction::Max,
                          MPI_COMM_GEOS );
 }
 

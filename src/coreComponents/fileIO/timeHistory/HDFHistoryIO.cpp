@@ -259,7 +259,7 @@ void HDFHistoryIO::write()
 {
   // check if the size has changed on any process in the primary comm
   int anyChanged = false;
-  MpiWrapper::allReduce( &m_sizeChanged, &anyChanged, 1, MPI_LOR, m_comm );
+  MpiWrapper::allReduce( Span< int const >( &m_sizeChanged, 1 ), Span< int >( &anyChanged, 1),  MpiWrapper::Reduction::LogicalOr, m_comm );
   m_sizeChanged = anyChanged;
 
   // this will set the first dim large enough to hold all the rows we're about to write

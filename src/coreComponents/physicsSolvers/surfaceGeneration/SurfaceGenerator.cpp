@@ -4552,12 +4552,9 @@ SurfaceGenerator::calculateRuptureRate( SurfaceElementRegion & faceElementRegion
     maxRuptureRate = std::max( maxRuptureRate, ruptureRate( faceElemIndex ) );
   }
 
-  real64 globalMaxRuptureRate;
-  MpiWrapper::allReduce( &maxRuptureRate,
-                         &globalMaxRuptureRate,
-                         1,
-                         MPI_MAX,
-                         MPI_COMM_GEOS );
+  real64 const globalMaxRuptureRate = MpiWrapper::allReduce( maxRuptureRate,
+                                                             MpiWrapper::Reduction::Max,
+                                                             MPI_COMM_GEOS );
 
   return globalMaxRuptureRate;
 }

@@ -510,11 +510,9 @@ real64 SolidMechanicsLagrangianFEM::solverStep( real64 const & time_n,
         {
           locallyFractured = 1;
         }
-        MpiWrapper::allReduce( &locallyFractured,
-                               &globallyFractured,
-                               1,
-                               MPI_MAX,
-                               MPI_COMM_GEOS );
+        globallyFractured = MpiWrapper::allReduce( locallyFractured,
+                                                   MpiWrapper::Reduction::Max,
+                                                   MPI_COMM_GEOS );
       }
       if( globallyFractured == 0 )
       {
