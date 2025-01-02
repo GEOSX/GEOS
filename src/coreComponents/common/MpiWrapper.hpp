@@ -632,7 +632,7 @@ private:
    * @return The return value of the underlying call to MPI_Allreduce().
    */
   template< typename T >
-  static int allReduce( T const * sendbuf, T * recvbuf, int count, MPI_Op op, MPI_Comm comm = MPI_COMM_GEOS );  
+  static int allReduce( T const * sendbuf, T * recvbuf, int count, MPI_Op op, MPI_Comm comm = MPI_COMM_GEOS );
 };
 
 namespace internal
@@ -1099,13 +1099,13 @@ void MpiWrapper::allReduce( Span< T const > const src, Span< T > const dst, Redu
 template< typename SRC_CONTAINER_TYPE, typename DST_CONTAINER_TYPE >
 void MpiWrapper::allReduce( SRC_CONTAINER_TYPE const & src, DST_CONTAINER_TYPE & dst, Reduction const op, MPI_Comm const comm )
 {
-  static_assert(std::is_trivially_copyable<typename get_value_type<SRC_CONTAINER_TYPE>::type>::value,
-                  "The type in the source container must be trivially copyable.");
-  static_assert(std::is_trivially_copyable<typename get_value_type<DST_CONTAINER_TYPE>::type>::value,
-                  "The type in the destination container must be trivially copyable.");
-  static_assert(std::is_same< typename get_value_type<SRC_CONTAINER_TYPE>::type,
-                              typename get_value_type<DST_CONTAINER_TYPE>::type >::value,
-                  "Source and destination containers must have the same value type.");
+  static_assert( std::is_trivially_copyable< typename get_value_type< SRC_CONTAINER_TYPE >::type >::value,
+                 "The type in the source container must be trivially copyable." );
+  static_assert( std::is_trivially_copyable< typename get_value_type< DST_CONTAINER_TYPE >::type >::value,
+                 "The type in the destination container must be trivially copyable." );
+  static_assert( std::is_same< typename get_value_type< SRC_CONTAINER_TYPE >::type,
+                               typename get_value_type< DST_CONTAINER_TYPE >::type >::value,
+                 "Source and destination containers must have the same value type." );
   GEOS_ASSERT_EQ( src.size(), dst.size() );
   allReduce( src.data(), dst.data(), LvArray::integerConversion< int >( src.size() ), getMpiOp( op ), comm );
 }

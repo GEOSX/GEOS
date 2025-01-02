@@ -3322,8 +3322,8 @@ void SolidMechanicsMPM::printProfilingResults()
   {
     real64 timeIntervalThisRank = ( m_profilingTimes[i+1] - m_profilingTimes[i] );
     real64 const timeIntervalAllRanks = MpiWrapper::allReduce( timeIntervalThisRank,
-                                        MpiWrapper::Reduction::Sum,
-                                        MPI_COMM_GEOS );
+                                                               MpiWrapper::Reduction::Sum,
+                                                               MPI_COMM_GEOS );
     if( rank == 0 )
     {
       timeIntervalsAllRanks[i] = timeIntervalAllRanks;

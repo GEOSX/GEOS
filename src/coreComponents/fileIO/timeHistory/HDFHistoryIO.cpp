@@ -258,8 +258,8 @@ void HDFHistoryIO::init( bool existsOkay )
 void HDFHistoryIO::write()
 {
   // check if the size has changed on any process in the primary comm
-  int const anyChanged = MpiWrapper::allReduce( m_sizeChanged,  
-                                                MpiWrapper::Reduction::LogicalOr, 
+  int const anyChanged = MpiWrapper::allReduce( m_sizeChanged,
+                                                MpiWrapper::Reduction::LogicalOr,
                                                 m_comm );
   m_sizeChanged = anyChanged;
 
