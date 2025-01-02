@@ -841,11 +841,9 @@ bool SolidMechanicsEmbeddedFractures::updateConfiguration( DomainPartition & dom
   synchronizeFractureState( domain );
 
   // Compute if globally the fracture state has changed
-  int hasConfigurationConvergedGlobally;
-  MpiWrapper::allReduce( Span< int const >( &hasConfigurationConverged, 1 ),
-                         Span< int >( &hasConfigurationConvergedGlobally, 1),
-                         MpiWrapper::Reduction::LogicalAnd,
-                         MPI_COMM_GEOS );
+  int const hasConfigurationConvergedGlobally = MpiWrapper::allReduce( hasConfigurationConverged,
+                                                                       MpiWrapper::Reduction::LogicalAnd,
+                                                                       MPI_COMM_GEOS );
 
   // for this solver it makes sense to reset the state.
   // if( !hasConfigurationConvergedGlobally )

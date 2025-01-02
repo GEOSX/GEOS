@@ -746,8 +746,7 @@ vtkSmartPointer< vtkDataSet > manageGlobalIds( vtkSmartPointer< vtkDataSet > mes
   {
     // Add global ids on the fly if needed
     int const me = hasGlobalIds( mesh );
-    int everyone;
-    MpiWrapper::allReduce( Span< int const >( &me, 1 ), Span< int >(&everyone, 1), MpiWrapper::Reduction::Max, MPI_COMM_GEOS );
+    int const everyone = MpiWrapper::allReduce( me, MpiWrapper::Reduction::Max, MPI_COMM_GEOS );
 
     if( everyone and not me )
     {
