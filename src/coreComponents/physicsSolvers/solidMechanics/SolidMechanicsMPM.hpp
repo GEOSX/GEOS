@@ -162,6 +162,15 @@ public:
     Polymer
   };
 
+  enum struct GPUSchemeOption : integer
+  {
+    Atomics,
+    NoAtomics,
+    RandomMix,
+    MinimalAtomics,
+    Reduction
+  };
+
   /**
    * Constructor
    * @param name The name of the solver instance
@@ -337,7 +346,7 @@ public:
                                          arraySlice1d< real64 const > const particlePosition,
                                          arraySlice2d< real64 const > const particleRVectors,
                                          arrayView2d< real64 const, nodes::REFERENCE_POSITION_USD > const gridPosition,
-                                         int * const mappedNode,
+                                         localIndex * const mappedNode,
                                          real64 * const shapeFunctionValues,
                                          real64 shapeFunctionGradientValues[][3] );
 
@@ -348,7 +357,7 @@ public:
                                                  arrayView3d< int const > const ijkMap,
                                                  real64 const (& xLocalMin)[3],
                                                  real64 const (&hEl)[3],
-                                                 int * const mappedNodes,
+                                                 localIndex * const mappedNodes,
                                                  real64 * const shapeFunctionValues,
                                                  real64 shapeFunctionGradientValues[][3] );
 
@@ -360,7 +369,7 @@ public:
                                           arrayView3d< int const > const ijkMap,
                                           real64 const (& xLocalMin)[3],
                                           real64 const (&hEl)[3],
-                                          int * const mappedNodes,
+                                          localIndex * const mappedNodes,
                                           real64 * const shapeFunctionValues,
                                           real64 shapeFunctionGradientValues[][3] );
 
@@ -486,8 +495,10 @@ public:
   GEOS_FORCE_INLINE
   real64 kernel( real64 const & r ); // distance from particle to query point
 
+  GEOS_HOST_DEVICE
+  GEOS_FORCE_INLINE
   void kernelGradient( arraySlice1d< real64 const > const x,  // query point
-                       std::vector< real64 > & xp,            // particle location
+                       arraySlice1d< real64 const > const xp,            // particle location
                        real64 const & r,                      // distance from particle to query point
                        real64 * result );
 
@@ -498,16 +509,20 @@ public:
                              arrayView1d< real64 const > const Vp,    // List of neighbor particle volumes.
                              arrayView1d< real64 const > const fp );  // scalar field values (e.g. damage) at neighbor particles
 
-  void computeKernelFieldGradient( arraySlice1d< real64 const > const x,       // query point
-                                   std::vector< std::vector< real64 > > & xp,  // List of neighbor particle locations.
-                                   std::vector< real64 > & Vp,                 // List of neighbor particle volumes.
-                                   std::vector< real64 > & fp,                 // scalar field values (e.g. damage) at neighbor particles
+  GEOS_HOST_DEVICE
+  GEOS_FORCE_INLINE
+  void computeKernelFieldGradient( arraySlice1d< real64 const > const x, // query point
+                                   arrayView2d< real64 > & xp,           // List of neighbor particle locations.
+                                   arrayView1d< real64 > & Vp,           // List of neighbor particle volumes.
+                                   arrayView1d< real64 > & fp,           // scalar field values (e.g. damage) at neighbor particles
                                    arraySlice1d< real64 > const result );
 
+  GEOS_HOST_DEVICE
+  GEOS_FORCE_INLINE
   void computeKernelVectorGradient( arraySlice1d< real64 const > const x,       // query point
-                                    std::vector< std::vector< real64 > > & xp,  // List of neighbor particle locations.
-                                    std::vector< real64 > & Vp,                 // List of neighbor particle volumes.
-                                    std::vector< std::vector< real64 > > & fp,  // vector field values (e.g. velocity) at neighbor particles
+                                    arrayView2d< real64 > & xp,  // List of neighbor particle locations.
+                                    arrayView1d< real64 > & Vp,                 // List of neighbor particle volumes.
+                                    arrayView2d< real64 > & fp,  // vector field values (e.g. velocity) at neighbor particles
                                     arraySlice2d< real64 > const result );
 
   void computeDamageFieldGradient( ParticleManager & particleManager );
@@ -615,6 +630,26 @@ public:
                        integer const cycleNumber,
                        ParticleManager & particleManager,
                        NodeManager & nodeManager );
+
+  void particleToGrid_reduction( real64 const time_n,
+                                 integer const cycleNumber,
+                                 ParticleManager & particleManager,
+                                 NodeManager & nodeManager );
+
+  void particleToGrid_noAtomics( real64 const time_n,
+                                 integer const cycleNumber,
+                                 ParticleManager & particleManager,
+                                 NodeManager & nodeManager );
+
+  void particleToGrid_randomMix( real64 const time_n,
+                                 integer const cycleNumber,
+                                 ParticleManager & particleManager,
+                                 NodeManager & nodeManager );
+
+  void particleToGrid_minimalAtomics( real64 const time_n,
+                                      integer const cycleNumber,
+                                      ParticleManager & particleManager,
+                                      NodeManager & nodeManager );
 
   void gridTrialUpdate( real64 dt,
                         NodeManager & nodeManager );
@@ -884,6 +919,8 @@ protected:
   real64 m_normalForceConstant;
   real64 m_shearForceConstant;
 
+  GPUSchemeOption m_gpuScheme;
+
   real64 m_numSurfaceIntegrationPoints;
   real64 m_maxCohesiveNormalStress;
   real64 m_maxCohesiveShearStress;
@@ -1071,6 +1108,13 @@ ENUM_STRINGS( SolidMechanicsMPM::CohesiveLawOption,
               "Uncoupled",
               "NeedlemanXu",
               "Polymer" );
+
+ENUM_STRINGS( SolidMechanicsMPM::GPUSchemeOption,
+              "Atomics",
+              "NoAtomics",
+              "RandomMix",
+              "MinimalAtomics",
+              "Reduction" );
 
 //**********************************************************************************************************************
 //**********************************************************************************************************************
